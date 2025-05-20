@@ -10,7 +10,6 @@
  */
 
 #include "tclInt.h"
-#define ALLOW_DEPRECATED_OPCODES
 #include "tclCompile.h"
 #include <assert.h>
 
@@ -80,13 +79,6 @@ LocateTargetAddresses(
 	    currentInstPtr < envPtr->codeNext ;
 	    currentInstPtr += AddrLength(currentInstPtr)) {
 	switch (*currentInstPtr) {
-#ifndef REMOVE_DEPRECATED_OPCODES
-	case INST_JUMP1:
-	case INST_JUMP_TRUE1:
-	case INST_JUMP_FALSE1:
-	    targetInstPtr = currentInstPtr+TclGetInt1AtPtr(currentInstPtr+1);
-	    goto storeTarget;
-#endif
 	case INST_JUMP:
 	case INST_JUMP_TRUE:
 	case INST_JUMP_FALSE:
@@ -115,13 +107,6 @@ LocateTargetAddresses(
 		DefineTargetAddress(tablePtr, targetInstPtr);
 	    }
 	    break;
-#ifndef REMOVE_DEPRECATED_OPCODES
-	case INST_RETURN_CODE_BRANCH:
-	    for (i=TCL_ERROR ; i<TCL_CONTINUE+1 ; i++) {
-		DefineTargetAddress(tablePtr, currentInstPtr + 2*i - 1);
-	    }
-	    break;
-#endif
 	}
     }
 
@@ -236,21 +221,6 @@ ConvertZeroEffectToNOP(
 	}
 	nextInst = currentInstPtr[size];
 	switch (*currentInstPtr) {
-	case INST_PUSH1:
-	    if (nextInst == INST_POP) {
-		blank = size + InstLength(nextInst);
-	    } else if (nextInst == INST_STR_CONCAT1
-		    && TclGetUInt1AtPtr(currentInstPtr + size + 1) == 2) {
-		Tcl_Obj *litPtr = TclFetchLiteral(envPtr,
-			TclGetUInt1AtPtr(currentInstPtr + 1));
-		Tcl_Size numBytes;
-
-		(void) TclGetStringFromObj(litPtr, &numBytes);
-		if (numBytes == 0) {
-		    blank = size + InstLength(nextInst);
-		}
-	    }
-	    break;
 	case INST_PUSH:
 	    if (nextInst == INST_POP) {
 		blank = size + 1;
@@ -269,16 +239,6 @@ ConvertZeroEffectToNOP(
 
 	case INST_LNOT:
 	    switch (nextInst) {
-#ifndef REMOVE_DEPRECATED_OPCODES
-	    case INST_JUMP_TRUE1:
-		blank = size;
-		currentInstPtr[size] = INST_JUMP_FALSE1;
-		break;
-	    case INST_JUMP_FALSE1:
-		blank = size;
-		currentInstPtr[size] = INST_JUMP_TRUE1;
-		break;
-#endif
 	    case INST_JUMP_TRUE:
 		blank = size;
 		currentInstPtr[size] = INST_JUMP_FALSE;
@@ -292,15 +252,9 @@ ConvertZeroEffectToNOP(
 
 	case INST_TRY_CVT_TO_NUMERIC:
 	    switch (nextInst) {
-#ifndef REMOVE_DEPRECATED_OPCODES
-	    case INST_JUMP_TRUE1:
-	    case INST_JUMP_FALSE1:
-#endif
 	    case INST_JUMP_TRUE:
 	    case INST_JUMP_FALSE:
-	    case INST_INCR_SCALAR1:
 	    case INST_INCR_SCALAR:
-	    case INST_INCR_ARRAY1:
 	    case INST_INCR_ARRAY:
 	    case INST_INCR_ARRAY_STK:
 	    case INST_INCR_SCALAR_STK:
@@ -368,40 +322,6 @@ AdvanceJumps(
 	int offset, delta, isNew;
 
 	switch (*currentInstPtr) {
-#ifndef REMOVE_DEPRECATED_OPCODES
-	case INST_JUMP1:
-	case INST_JUMP_TRUE1:
-	case INST_JUMP_FALSE1:
-	    offset = TclGetInt1AtPtr(currentInstPtr + 1);
-	    Tcl_InitHashTable(&jumps, TCL_ONE_WORD_KEYS);
-	    for (delta=0 ; offset+delta != 0 ;) {
-		if (offset + delta < -128 || offset + delta > 127) {
-		    break;
-		}
-		Tcl_CreateHashEntry(&jumps, INT2PTR(offset), &isNew);
-		if (!isNew) {
-		    offset = TclGetInt1AtPtr(currentInstPtr + 1);
-		    break;
-		}
-		offset += delta;
-		switch (currentInstPtr[offset]) {
-		case INST_NOP:
-		    delta = InstLength(INST_NOP);
-		    continue;
-		case INST_JUMP1:
-		    delta = TclGetInt1AtPtr(currentInstPtr + offset + 1);
-		    continue;
-		case INST_JUMP:
-		    delta = TclGetInt4AtPtr(currentInstPtr + offset + 1);
-		    continue;
-		}
-		break;
-	    }
-	    Tcl_DeleteHashTable(&jumps);
-	    TclStoreInt1AtPtr(offset, currentInstPtr + 1);
-	    continue;
-#endif
-
 	case INST_JUMP:
 	case INST_JUMP_TRUE:
 	case INST_JUMP_FALSE:
@@ -417,11 +337,6 @@ AdvanceJumps(
 		case INST_NOP:
 		    offset += InstLength(INST_NOP);
 		    continue;
-#ifndef REMOVE_DEPRECATED_OPCODES
-		case INST_JUMP1:
-		    offset += TclGetInt1AtPtr(currentInstPtr + offset + 1);
-		    continue;
-#endif
 		case INST_JUMP:
 		    offset += TclGetInt4AtPtr(currentInstPtr + offset + 1);
 		    continue;

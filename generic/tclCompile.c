@@ -13,7 +13,6 @@
  */
 
 #include "tclInt.h"
-#define ALLOW_DEPRECATED_OPCODES
 #include "tclCompile.h"
 #include "tclParse.h"
 #include <assert.h>
@@ -43,14 +42,7 @@ static int traceInitialized = 0;
     {name,size,stack,1,{type1,OPERAND_NONE}}
 #define TCL_INSTRUCTION_ENTRY2(name,size,stack,type1,type2) \
     {name,size,stack,2,{type1,type2}}
-
-/* TODO: Mark these differently when REMOVE_DEPRECATED_OPCODES is defined. */
-#define DEPRECATED_INSTRUCTION_ENTRY(name,stack) \
-    {name,1,stack,0,{OPERAND_NONE,OPERAND_NONE}}
-#define DEPRECATED_INSTRUCTION_ENTRY1(name,size,stack,type1) \
-    {name,size,stack,1,{type1,OPERAND_NONE}}
-#define DEPRECATED_INSTRUCTION_ENTRY2(name,size,stack,type1,type2) \
-    {name,size,stack,2,{type1,type2}}
+#define REMOVED_INSTRUCTION(name) {0, 0, 0, 0, {OPERAND_NONE, OPERAND_NONE}}
 
 /*
  * A table describing the Tcl bytecode instructions. Entries in this table
@@ -69,8 +61,8 @@ InstructionDesc const tclInstructionTable[] = {
     TCL_INSTRUCTION_ENTRY(
 	"done",			-1),
 	/* Finish ByteCode execution and return stktop (top stack item) */
-    DEPRECATED_INSTRUCTION_ENTRY1(
-	"push1",	  2,	+1,	  OPERAND_LIT1),
+
+    REMOVED_INSTRUCTION("push1"),
 	/* Push object at ByteCode objArray[op1] */
     TCL_INSTRUCTION_ENTRY1(
 	"push",		  5,	+1,	  OPERAND_LIT4),
@@ -84,8 +76,7 @@ InstructionDesc const tclInstructionTable[] = {
     TCL_INSTRUCTION_ENTRY1(
 	"strcat",	  2,	INT_MIN,  OPERAND_UINT1),
 	/* Concatenate the top op1 items and push result */
-    DEPRECATED_INSTRUCTION_ENTRY1(
-	"invokeStk1",	  2,	INT_MIN,  OPERAND_UINT1),
+    REMOVED_INSTRUCTION("invokeStk1"),
 	/* Invoke command named objv[0]; <objc,objv> = <op1,top op1> */
     TCL_INSTRUCTION_ENTRY1(
 	"invokeStk",	  5,	INT_MIN,  OPERAND_UINT4),
@@ -97,8 +88,7 @@ InstructionDesc const tclInstructionTable[] = {
 	"exprStk",		0),
 	/* Execute expression in stktop using Tcl_ExprStringObj. */
 
-    DEPRECATED_INSTRUCTION_ENTRY1(
-	"loadScalar1",	  2,	1,	  OPERAND_LVT1),
+    REMOVED_INSTRUCTION("loadScalar1"),
 	/* Load scalar variable at index op1 <= 255 in call frame */
     TCL_INSTRUCTION_ENTRY1(
 	"loadScalar",	  5,	1,	  OPERAND_LVT4),
@@ -106,8 +96,7 @@ InstructionDesc const tclInstructionTable[] = {
     TCL_INSTRUCTION_ENTRY(
 	"loadScalarStk",	0),
 	/* Load scalar variable; scalar's name is stktop */
-    DEPRECATED_INSTRUCTION_ENTRY1(
-	"loadArray1",	  2,	0,	  OPERAND_LVT1),
+    REMOVED_INSTRUCTION("loadArray1"),
 	/* Load array element; array at slot op1<=255, element is stktop */
     TCL_INSTRUCTION_ENTRY1(
 	"loadArray",	  5,	0,	  OPERAND_LVT4),
@@ -118,8 +107,7 @@ InstructionDesc const tclInstructionTable[] = {
     TCL_INSTRUCTION_ENTRY(
 	"loadStk",		0),
 	/* Load general variable; unparsed variable name is stktop */
-    DEPRECATED_INSTRUCTION_ENTRY1(
-	"storeScalar1",	  2,	0,	  OPERAND_LVT1),
+    REMOVED_INSTRUCTION("storeScalar1"),
 	/* Store scalar variable at op1<=255 in frame; value is stktop */
     TCL_INSTRUCTION_ENTRY1(
 	"storeScalar",	  5,	0,	  OPERAND_LVT4),
@@ -127,8 +115,7 @@ InstructionDesc const tclInstructionTable[] = {
     TCL_INSTRUCTION_ENTRY(
 	"storeScalarStk",	-1),
 	/* Store scalar; value is stktop, scalar name is stknext */
-    DEPRECATED_INSTRUCTION_ENTRY1(
-	"storeArray1",	  2,	-1,	  OPERAND_LVT1),
+    REMOVED_INSTRUCTION("storeArray1"),
 	/* Store array element; array at op1<=255, value is top then elem */
     TCL_INSTRUCTION_ENTRY1(
 	"storeArray",	  5,	-1,	  OPERAND_LVT4),
@@ -140,14 +127,12 @@ InstructionDesc const tclInstructionTable[] = {
 	"storeStk",		-1),
 	/* Store general variable; value is stktop, then unparsed name */
 
-    DEPRECATED_INSTRUCTION_ENTRY1(
-	"incrScalar1",	  2,	0,	  OPERAND_LVT1),
+    REMOVED_INSTRUCTION("incrScalar1"),
 	/* Incr scalar at index op1<=255 in frame; incr amount is stktop */
     TCL_INSTRUCTION_ENTRY(
 	"incrScalarStk",	-1),
 	/* Incr scalar; incr amount is stktop, scalar's name is stknext */
-    DEPRECATED_INSTRUCTION_ENTRY1(
-	"incrArray1",	  2,	-1,	  OPERAND_LVT1),
+    REMOVED_INSTRUCTION("incrArray1"),
 	/* Incr array elem; arr at slot op1<=255, amount is top then elem */
     TCL_INSTRUCTION_ENTRY(
 	"incrArrayStk",		-2),
@@ -155,14 +140,12 @@ InstructionDesc const tclInstructionTable[] = {
     TCL_INSTRUCTION_ENTRY(
 	"incrStk",		-1),
 	/* Incr general variable; amount is stktop then unparsed var name */
-    DEPRECATED_INSTRUCTION_ENTRY2(
-	"incrScalar1Imm", 3,	+1,	  OPERAND_LVT1, OPERAND_INT1),
+    REMOVED_INSTRUCTION("incrScalar1Imm"),
 	/* Incr scalar at slot op1 <= 255; amount is 2nd operand byte */
     TCL_INSTRUCTION_ENTRY1(
 	"incrScalarStkImm",2,	0,	  OPERAND_INT1),
 	/* Incr scalar; scalar name is stktop; incr amount is op1 */
-    DEPRECATED_INSTRUCTION_ENTRY2(
- 	"incrArray1Imm",  3,	0,	  OPERAND_LVT1, OPERAND_INT1),
+    REMOVED_INSTRUCTION("incrArray1Imm"),
 	/* Incr array elem; array at slot op1 <= 255, elem is stktop,
 	 * amount is 2nd operand byte */
     TCL_INSTRUCTION_ENTRY1(
@@ -172,20 +155,17 @@ InstructionDesc const tclInstructionTable[] = {
 	"incrStkImm",	  2,	0,	  OPERAND_INT1),
 	/* Incr general variable; unparsed name is top, amount is op1 */
 
-    DEPRECATED_INSTRUCTION_ENTRY1(
-	"jump1",	  2,	0,	  OPERAND_OFFSET1),
+    REMOVED_INSTRUCTION("jump1"),
 	/* Jump relative to (pc + op1) */
     TCL_INSTRUCTION_ENTRY1(
 	"jump",		  5,	0,	  OPERAND_OFFSET4),
 	/* Jump relative to (pc + op4) */
-    DEPRECATED_INSTRUCTION_ENTRY1(
-	"jumpTrue1",	  2,	-1,	  OPERAND_OFFSET1),
+    REMOVED_INSTRUCTION("jumpTrue1"),
 	/* Jump relative to (pc + op1) if stktop expr object is true */
     TCL_INSTRUCTION_ENTRY1(
 	"jumpTrue",	  5,	-1,	  OPERAND_OFFSET4),
 	/* Jump relative to (pc + op4) if stktop expr object is true */
-    DEPRECATED_INSTRUCTION_ENTRY1(
-	"jumpFalse1",	  2,	-1,	  OPERAND_OFFSET1),
+    REMOVED_INSTRUCTION("jumpFalse1"),
 	/* Jump relative to (pc + op1) if stktop expr object is false */
     TCL_INSTRUCTION_ENTRY1(
 	"jumpFalse",	  5,	-1,	  OPERAND_OFFSET4),
@@ -307,14 +287,12 @@ InstructionDesc const tclInstructionTable[] = {
 	"listLength",		0),
 	/* List Len:	push (listlength stktop) */
 
-    DEPRECATED_INSTRUCTION_ENTRY1(
-	"appendScalar1",  2,	0,	  OPERAND_LVT1),
+    REMOVED_INSTRUCTION("appendScalar1"),
 	/* Append scalar variable at op1<=255 in frame; value is stktop */
     TCL_INSTRUCTION_ENTRY1(
 	"appendScalar",	  5,	0,	  OPERAND_LVT4),
 	/* Append scalar variable at op1 > 255 in frame; value is stktop */
-    DEPRECATED_INSTRUCTION_ENTRY1(
-	"appendArray1",	  2,	-1,	  OPERAND_LVT1),
+    REMOVED_INSTRUCTION("appendArray1"),
 	/* Append array element; array at op1<=255, value is top then elem */
     TCL_INSTRUCTION_ENTRY1(
 	"appendArray",	  5,	-1,	  OPERAND_LVT4),
@@ -325,14 +303,12 @@ InstructionDesc const tclInstructionTable[] = {
     TCL_INSTRUCTION_ENTRY(
 	"appendStk",		-1),
 	/* Append general variable; value is stktop, then unparsed name */
-    DEPRECATED_INSTRUCTION_ENTRY1(
-	"lappendScalar1", 2,	0,	  OPERAND_LVT1),
+    REMOVED_INSTRUCTION("lappendScalar1"),
 	/* Lappend scalar variable at op1<=255 in frame; value is stktop */
     TCL_INSTRUCTION_ENTRY1(
 	"lappendScalar",  5,	0,	  OPERAND_LVT4),
 	/* Lappend scalar variable at op1 > 255 in frame; value is stktop */
-    DEPRECATED_INSTRUCTION_ENTRY1(
-	"lappendArray1",  2,	-1,	  OPERAND_LVT1),
+    REMOVED_INSTRUCTION("lappendArray1"),
 	/* Lappend array element; array at op1<=255, value is top then elem */
     TCL_INSTRUCTION_ENTRY1(
 	"lappendArray",	  5,	-1,	  OPERAND_LVT4),
@@ -525,8 +501,7 @@ InstructionDesc const tclInstructionTable[] = {
     TCL_INSTRUCTION_ENTRY(
 	"nop",			0),
 	/* Do nothing */
-    DEPRECATED_INSTRUCTION_ENTRY(
-	"returnCodeBranch1",	-1),
+    REMOVED_INSTRUCTION("returnCodeBranch1"),
 	/* Jump to next instruction based on the return code on top of stack
 	 * ERROR: +1;	RETURN: +3;	BREAK: +5;	CONTINUE: +7;
 	 * Other non-OK: +9 */
@@ -610,8 +585,7 @@ InstructionDesc const tclInstructionTable[] = {
 	"coroName",		+1),
 	/* Push the name of the interpreter's current coroutine as an object
 	 * on the stack. */
-    DEPRECATED_INSTRUCTION_ENTRY1(
-	"tailcall",	 2,	INT_MIN,  OPERAND_UINT1),
+    REMOVED_INSTRUCTION("tailcall"),
 	/* Do a tailcall with the opnd items on the stack as the thing to
 	 * tailcall to; opnd must be greater than 0 for the semantics to work
 	 * right. */
@@ -783,15 +757,13 @@ InstructionDesc const tclInstructionTable[] = {
 	 * of the command named on the top of the stack.
 	 * Stack:  ... cmdName => ... fullOriginalCmdName */
 
-    DEPRECATED_INSTRUCTION_ENTRY1(
-	"tclooNext",	 2,	INT_MIN,  OPERAND_UINT1),
+    REMOVED_INSTRUCTION("tclooNext"),
 	/* Call the next item on the TclOO call chain, passing opnd arguments
 	 * (min 1, max 255, *includes* "next").  The result of the invoked
 	 * method implementation will be pushed on the stack in place of the
 	 * arguments (similar to invokeStk).
 	 * Stack:  ... "next" arg2 arg3 -- argN => ... result */
-    DEPRECATED_INSTRUCTION_ENTRY1(
-	"tclooNextClass", 2,	INT_MIN,  OPERAND_UINT1),
+    REMOVED_INSTRUCTION("tclooNextClass"),
 	/* Call the following item on the TclOO call chain defined by class
 	 * className, passing opnd arguments (min 2, max 255, *includes*
 	 * "nextto" and the class name). The result of the invoked method
@@ -1486,7 +1458,6 @@ IsCompactibleCompileEnv(
     for (pc = envPtr->codeStart ; pc < envPtr->codeNext ; pc += size) {
 	switch (*pc) {
 	    /* Invokes */
-	case INST_INVOKE_STK1:
 	case INST_INVOKE_STK:
 	case INST_INVOKE_EXPANDED:
 	case INST_INVOKE_REPLACE:
@@ -4341,14 +4312,6 @@ TclEmitInvoke(
 
     va_start(argList, opcode);
     switch (opcode) {
-#ifndef TCL_NO_DEPRECATED
-    case INST_TCLOO_NEXT1:
-    case INST_TCLOO_NEXT_CLASS1:
-    case INST_INVOKE_STK1:
-	wordCount = arg1 = cleanup = va_arg(argList, int);
-	arg2 = 0;
-	break;
-#endif
     case INST_TCLOO_NEXT:
     case INST_TCLOO_NEXT_CLASS:
     case INST_INVOKE_STK:
@@ -4422,11 +4385,6 @@ TclEmitInvoke(
      */
 
     switch (opcode) {
-#ifndef TCL_NO_DEPRECATED
-    case INST_INVOKE_STK1:
-	OP1(			INVOKE_STK1, arg1);
-	break;
-#endif
     case INST_INVOKE_STK:
 	OP4(			INVOKE_STK, arg1);
 	break;
@@ -4444,14 +4402,6 @@ TclEmitInvoke(
     case INST_INVOKE_REPLACE:
 	OP41(			INVOKE_REPLACE, arg1, arg2);
 	break;
-#ifndef TCL_NO_DEPRECATED
-    case INST_TCLOO_NEXT1:
-	OP1(			TCLOO_NEXT1, arg1);
-	break;
-    case INST_TCLOO_NEXT_CLASS1:
-	OP1(			TCLOO_NEXT_CLASS1, arg1);
-	break;
-#endif
     case INST_TCLOO_NEXT:
 	OP4(			TCLOO_NEXT, arg1);
 	break;

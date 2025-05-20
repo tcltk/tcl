@@ -13,7 +13,6 @@
  */
 
 #include "tclInt.h"
-#define ALLOW_DEPRECATED_OPCODES
 #include "tclCompile.h"
 #include "tclOOInt.h"
 #include <assert.h>
@@ -813,12 +812,6 @@ TclGetInnerContext(
     case INST_INVOKE_STK:
 	objc = TclGetUInt4AtPtr(pc + 1);
 	break;
-
-#ifndef REMOVE_DEPRECATED_OPCODES
-    case INST_INVOKE_STK1:
-	objc = TclGetUInt1AtPtr(pc + 1);
-	break;
-#endif
     }
 
     result = iPtr->innerContext;

@@ -16,10 +16,6 @@
  */
 
 #include "tclInt.h"
-#ifndef REMOVE_DEPRECATED_OPCODES
-/* If we're not removing them, stop the deprecated opcodes giving warnings. */
-#define ALLOW_DEPRECATED_OPCODES
-#endif
 #include "tclCompile.h"
 #include "tclOOInt.h"
 #include "tclTomMath.h"
@@ -265,60 +261,6 @@ VarHashFindVar(
     } while (0)
 
 #ifndef TCL_COMPILE_DEBUG
-#ifndef REMOVE_DEPRECATED_OPCODES
-#define JUMP_PEEPHOLE_F(condition, pcAdjustment, cleanup) \
-    do {								\
-	pc += (pcAdjustment);						\
-	switch (*pc) {							\
-	case INST_JUMP_FALSE1:						\
-	    NEXT_INST_F0(((condition)? 2 : TclGetInt1AtPtr(pc + 1)), (cleanup)); \
-	    break;							\
-	case INST_JUMP_TRUE1:						\
-	    NEXT_INST_F0(((condition)? TclGetInt1AtPtr(pc + 1) : 2), (cleanup)); \
-	    break;							\
-	case INST_JUMP_FALSE:						\
-	    NEXT_INST_F0(((condition)? 5 : TclGetInt4AtPtr(pc + 1)), (cleanup)); \
-	    break;							\
-	case INST_JUMP_TRUE:						\
-	    NEXT_INST_F0(((condition)? TclGetInt4AtPtr(pc + 1) : 5), (cleanup)); \
-	    break;							\
-	default:							\
-	    if ((condition) < 0) {					\
-		TclNewIntObj(objResultPtr, -1);				\
-	    } else {							\
-		objResultPtr = TCONST((condition) > 0);			\
-	    }								\
-	    NEXT_INST_F(0, (cleanup), 1);				\
-	    break;							\
-	}								\
-    } while (0)
-#define JUMP_PEEPHOLE_V(condition, pcAdjustment, cleanup) \
-    do {								\
-	pc += (pcAdjustment);						\
-	switch (*pc) {							\
-	case INST_JUMP_FALSE1:						\
-	    NEXT_INST_V(((condition)? 2 : TclGetInt1AtPtr(pc + 1)), (cleanup), 0); \
-	    break;							\
-	case INST_JUMP_TRUE1:						\
-	    NEXT_INST_V(((condition)? TclGetInt1AtPtr(pc + 1) : 2), (cleanup), 0); \
-	    break;							\
-	case INST_JUMP_FALSE:						\
-	    NEXT_INST_V(((condition)? 5 : TclGetInt4AtPtr(pc + 1)), (cleanup), 0); \
-	    break;							\
-	case INST_JUMP_TRUE:						\
-	    NEXT_INST_V(((condition)? TclGetInt4AtPtr(pc + 1) : 5), (cleanup), 0); \
-	    break;							\
-	default:							\
-	    if ((condition) < 0) {					\
-		TclNewIntObj(objResultPtr, -1);				\
-	    } else {							\
-		objResultPtr = TCONST((condition) > 0);			\
-	    }								\
-	    NEXT_INST_V(0, (cleanup), 1);				\
-	    break;							\
-	}								\
-    } while (0)
-#else
 #define JUMP_PEEPHOLE_F(condition, pcAdjustment, cleanup) \
     do {								\
 	pc += (pcAdjustment);						\
@@ -359,7 +301,6 @@ VarHashFindVar(
 	    break;							\
 	}								\
     } while (0)
-#endif
 #else /* TCL_COMPILE_DEBUG */
 #define JUMP_PEEPHOLE_F(condition, pcAdjustment, cleanup) \
     do{									\
@@ -470,15 +411,6 @@ VarHashFindVar(
 #   define TRACE_WITH_OBJ(a, objPtr)
 #   define O2S(objPtr)
 #endif /* TCL_COMPILE_DEBUG */
-
-#ifndef REMOVE_DEPRECATED_OPCODES
-#ifdef PANIC_ON_DEPRECATED_OPCODES
-#define DEPRECATED_OPCODE_MARK(opcode) \
-	Tcl_Panic("%s deprecated for removal", #name)
-#else
-#define DEPRECATED_OPCODE_MARK(opcode) /* Do nothing. */
-#endif
-#endif
 
 /*
  * DTrace instruction probe macros.
@@ -2534,19 +2466,9 @@ TEBCresume(
 	return TCL_OK;
     }
 
-#ifndef REMOVE_DEPRECATED_OPCODES
-    case INST_TAILCALL1:
-	DEPRECATED_OPCODE_MARK(INST_TAILCALL1);
-	numArgs = TclGetUInt1AtPtr(pc + 1);
-	goto doTailcall;
-#endif
-
     case INST_TAILCALL:
 	numArgs = TclGetUInt4AtPtr(pc + 1);
 
-#ifndef REMOVE_DEPRECATED_OPCODES
-    doTailcall:
-#endif
 	if (!(iPtr->varFramePtr->isProcCallFrame & 1)) {
 	    TRACE(("%u => ERROR: tailcall in non-proc context\n", (unsigned) numArgs));
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
@@ -2580,13 +2502,6 @@ TEBCresume(
 
     {
 	Tcl_Obj *listPtr = Tcl_NewListObj(numArgs, &OBJ_AT_DEPTH(numArgs - 1));
-#ifndef REMOVE_DEPRECATED_OPCODES
-	/* New instruction sequence just gets this right. */
-	if (inst == INST_TAILCALL1) {
-	    TclListObjSetElement(NULL, listPtr, 0, TclNewNamespaceObj(
-		    TclGetCurrentNamespace(interp)));
-	}
-#endif
 	if (iPtr->varFramePtr->tailcallPtr) {
 	    Tcl_DecrRefCount(iPtr->varFramePtr->tailcallPtr);
 	}
@@ -2626,15 +2541,6 @@ TEBCresume(
 	}
 	(void) POP_OBJECT();
 	goto abnormalReturn;
-
-#ifndef REMOVE_DEPRECATED_OPCODES
-    case INST_PUSH1:
-	DEPRECATED_OPCODE_MARK(INST_PUSH1);
-	objResultPtr = codePtr->objArrayPtr[TclGetUInt1AtPtr(pc + 1)];
-	TRACE_WITH_OBJ(("%u => ", TclGetUInt1AtPtr(pc + 1)), objResultPtr);
-	NEXT_INST_F(2, 0, 1);
-    break;
-#endif
 
     case INST_PUSH:
 	objResultPtr = codePtr->objArrayPtr[TclGetUInt4AtPtr(pc + 1)];
@@ -2874,15 +2780,6 @@ TEBCresume(
     case INST_INVOKE_STK:
 	objc = TclGetUInt4AtPtr(pc + 1);
 	pcAdjustment = 5;
-#ifndef REMOVE_DEPRECATED_OPCODES
-	goto doInvocation;
-
-    case INST_INVOKE_STK1:
-	DEPRECATED_OPCODE_MARK(INST_INVOKE_STK1);
-	objc = TclGetUInt1AtPtr(pc + 1);
-
-	pcAdjustment = 2;
-#endif
 
     doInvocation:
 	objv = &OBJ_AT_DEPTH(objc - 1);
@@ -3004,31 +2901,6 @@ TEBCresume(
      * common execution code.
      */
 
-#ifndef REMOVE_DEPRECATED_OPCODES
-    case INST_LOAD_SCALAR1:
-	DEPRECATED_OPCODE_MARK(INST_LOAD_SCALAR1);
-	varIdx = TclGetUInt1AtPtr(pc + 1);
-	varPtr = LOCAL(varIdx);
-	while (TclIsVarLink(varPtr)) {
-	    varPtr = varPtr->value.linkPtr;
-	}
-	TRACE(("%u => ", (unsigned) varIdx));
-	if (TclIsVarDirectReadable(varPtr)) {
-	    /*
-	     * No errors, no traces: just get the value.
-	     */
-
-	    objResultPtr = varPtr->value.objPtr;
-	    TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
-	    NEXT_INST_F(2, 0, 1);
-	}
-	pcAdjustment = 2;
-	cleanup = 0;
-	arrayPtr = NULL;
-	part1Ptr = part2Ptr = NULL;
-	goto doCallPtrGetVar;
-#endif
-
     case INST_LOAD_SCALAR:
     instLoadScalar:
 	varIdx = TclGetUInt4AtPtr(pc + 1);
@@ -3055,16 +2927,6 @@ TEBCresume(
     case INST_LOAD_ARRAY:
 	varIdx = TclGetUInt4AtPtr(pc + 1);
 	pcAdjustment = 5;
-#ifndef REMOVE_DEPRECATED_OPCODES
-	goto doLoadArray;
-
-    case INST_LOAD_ARRAY1:
-	DEPRECATED_OPCODE_MARK(INST_LOAD_ARRAY1);
-	varIdx = TclGetUInt1AtPtr(pc + 1);
-	pcAdjustment = 2;
-
-    doLoadArray:
-#endif
 	part1Ptr = NULL;
 	part2Ptr = OBJ_AT_TOS;
 	arrayPtr = LOCAL(varIdx);
@@ -3101,10 +2963,6 @@ TEBCresume(
 	goto doLoadStk;
 
     case INST_LOAD_STK:
-#ifndef REMOVE_DEPRECATED_OPCODES
-	/* Who uses this opcode nowadays? */
-    case INST_LOAD_SCALAR_STK:
-#endif
 	cleanup = 1;
 	part2Ptr = NULL;
 	objPtr = OBJ_AT_TOS;		/* variable name */
@@ -3163,21 +3021,10 @@ TEBCresume(
 	int storeFlags;
 	Tcl_Size len;
 
-#ifndef REMOVE_DEPRECATED_OPCODES
-    case INST_STORE_ARRAY1:
-	DEPRECATED_OPCODE_MARK(INST_STORE_ARRAY1);
-	varIdx = TclGetUInt1AtPtr(pc + 1);
-	pcAdjustment = 2;
-	goto doStoreArrayDirect;
-#endif
-
     case INST_STORE_ARRAY:
 	varIdx = TclGetUInt4AtPtr(pc + 1);
 	pcAdjustment = 5;
 
-#ifndef REMOVE_DEPRECATED_OPCODES
-    doStoreArrayDirect:
-#endif
 	valuePtr = OBJ_AT_TOS;
 	part2Ptr = OBJ_UNDER_TOS;
 	arrayPtr = LOCAL(varIdx);
@@ -3200,21 +3047,10 @@ TEBCresume(
 	part1Ptr = NULL;
 	goto doStoreArrayDirectFailed;
 
-#ifndef REMOVE_DEPRECATED_OPCODES
-    case INST_STORE_SCALAR1:
-	DEPRECATED_OPCODE_MARK(INST_STORE_SCALAR1);
-	varIdx = TclGetUInt1AtPtr(pc + 1);
-	pcAdjustment = 2;
-	goto doStoreScalarDirect;
-#endif
-
     case INST_STORE_SCALAR:
 	varIdx = TclGetUInt4AtPtr(pc + 1);
 	pcAdjustment = 5;
 
-#ifndef REMOVE_DEPRECATED_OPCODES
-    doStoreScalarDirect:
-#endif
 	valuePtr = OBJ_AT_TOS;
 	varPtr = LOCAL(varIdx);
 	TRACE(("%u <- \"%.30s\" => ", (unsigned) varIdx, O2S(valuePtr)));
@@ -3284,10 +3120,6 @@ TEBCresume(
 	goto doStoreStk;
 
     case INST_STORE_STK:
-#ifndef REMOVE_DEPRECATED_OPCODES
-	/* Who uses this opcode nowadays? */
-    case INST_STORE_SCALAR_STK:
-#endif
 	valuePtr = OBJ_AT_TOS;
 	part2Ptr = NULL;
 	storeFlags = TCL_LEAVE_ERR_MSG;
@@ -3321,30 +3153,10 @@ TEBCresume(
 		| TCL_LIST_ELEMENT);
 	goto doStoreArray;
 
-#ifndef REMOVE_DEPRECATED_OPCODES
-    case INST_LAPPEND_ARRAY1:
-	DEPRECATED_OPCODE_MARK(INST_LAPPEND_ARRAY1);
-	varIdx = TclGetUInt1AtPtr(pc + 1);
-	pcAdjustment = 2;
-	storeFlags = (TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE
-		| TCL_LIST_ELEMENT);
-	goto doStoreArray;
-#endif
-
     case INST_APPEND_ARRAY:
 	varIdx = TclGetUInt4AtPtr(pc + 1);
 	pcAdjustment = 5;
 	storeFlags = (TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE);
-#ifndef REMOVE_DEPRECATED_OPCODES
-	goto doStoreArray;
-
-    case INST_APPEND_ARRAY1:
-	DEPRECATED_OPCODE_MARK(INST_APPEND_ARRAY1);
-	varIdx = TclGetUInt1AtPtr(pc + 1);
-	pcAdjustment = 2;
-	storeFlags = (TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE);
-	goto doStoreArray;
-#endif
 
     doStoreArray:
 	valuePtr = OBJ_AT_TOS;
@@ -3374,30 +3186,11 @@ TEBCresume(
 		| TCL_LIST_ELEMENT);
 	goto doStoreScalar;
 
-#ifndef REMOVE_DEPRECATED_OPCODES
-    case INST_LAPPEND_SCALAR1:
-	DEPRECATED_OPCODE_MARK(INST_LAPPEND_SCALAR1);
-	varIdx = TclGetUInt1AtPtr(pc + 1);
-	pcAdjustment = 2;
-	storeFlags = (TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE
-		| TCL_LIST_ELEMENT);
-	goto doStoreScalar;
-#endif
-
     case INST_APPEND_SCALAR:
 	varIdx = TclGetUInt4AtPtr(pc + 1);
 	pcAdjustment = 5;
 	storeFlags = (TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE);
 	goto doStoreScalar;
-
-#ifndef REMOVE_DEPRECATED_OPCODES
-    case INST_APPEND_SCALAR1:
-	DEPRECATED_OPCODE_MARK(INST_APPEND_ARRAY1);
-	varIdx = TclGetUInt1AtPtr(pc + 1);
-	pcAdjustment = 2;
-	storeFlags = (TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE);
-	goto doStoreScalar;
-#endif
 
     doStoreScalar:
 	valuePtr = OBJ_AT_TOS;
@@ -3619,26 +3412,12 @@ TEBCresume(
 	Tcl_WideInt w;
 	long increment;
 
-#ifndef REMOVE_DEPRECATED_OPCODES
-    case INST_INCR_SCALAR1:
-    case INST_INCR_ARRAY1:
-#endif
     case INST_INCR_ARRAY_STK:
     case INST_INCR_SCALAR_STK:
     case INST_INCR_STK:
 	varIdx = TclGetUInt1AtPtr(pc + 1);
 	incrPtr = POP_OBJECT();
 	switch (*pc) {
-#ifndef REMOVE_DEPRECATED_OPCODES
-	case INST_INCR_SCALAR1:
-	    DEPRECATED_OPCODE_MARK(INST_INCR_SCALAR1);
-	    pcAdjustment = 2;
-	    goto doIncrScalar;
-	case INST_INCR_ARRAY1:
-	    DEPRECATED_OPCODE_MARK(INST_INCR_ARRAY1);
-	    pcAdjustment = 2;
-	    goto doIncrArray;
-#endif
 	default:
 	    pcAdjustment = 1;
 	    goto doIncrStk;
@@ -3694,17 +3473,6 @@ TEBCresume(
 	cleanup = ((part2Ptr == NULL)? 1 : 2);
 	goto doIncrVar;
 
-#ifndef REMOVE_DEPRECATED_OPCODES
-    case INST_INCR_ARRAY1_IMM:
-	DEPRECATED_OPCODE_MARK(INST_INCR_ARRAY1_IMM);
-	varIdx = TclGetUInt1AtPtr(pc + 1);
-	increment = TclGetInt1AtPtr(pc + 2);
-	TclNewIntObj(incrPtr, increment);
-	Tcl_IncrRefCount(incrPtr);
-	pcAdjustment = 3;
-        goto doIncrArray;
-#endif
-
     case INST_INCR_ARRAY_IMM:
 	varIdx = TclGetUInt4AtPtr(pc + 1);
 	increment = TclGetInt1AtPtr(pc + 5);
@@ -3731,21 +3499,10 @@ TEBCresume(
 	}
 	goto doIncrVar;
 
-#ifndef REMOVE_DEPRECATED_OPCODES
-    case INST_INCR_SCALAR1_IMM:
-	DEPRECATED_OPCODE_MARK(INST_INCR_SCALAR1_IMM);
-	varIdx = TclGetUInt1AtPtr(pc + 1);
-	increment = TclGetInt1AtPtr(pc + 2);
-	pcAdjustment = 3;
-	goto doIncrScalarImm;
-#endif
     case INST_INCR_SCALAR_IMM:
 	varIdx = TclGetUInt4AtPtr(pc + 1);
 	increment = TclGetInt1AtPtr(pc + 5);
 	pcAdjustment = 6;
-#ifndef REMOVE_DEPRECATED_OPCODES
-    doIncrScalarImm:
-#endif
 	cleanup = 0;
 	varPtr = LOCAL(varIdx);
 	while (TclIsVarLink(varPtr)) {
@@ -4399,15 +4156,6 @@ TEBCresume(
      * -----------------------------------------------------------------
      */
 
-#ifndef REMOVE_DEPRECATED_OPCODES
-    case INST_JUMP1:
-	DEPRECATED_OPCODE_MARK(INST_JUMP1);
-	pcAdjustment = TclGetInt1AtPtr(pc + 1);
-	TRACE(("%d => new pc %" TCL_Z_MODIFIER "u\n", pcAdjustment,
-		(size_t)(pc + pcAdjustment - codePtr->codeStart)));
-	NEXT_INST_F0(pcAdjustment, 0);
-#endif
-
     case INST_JUMP:
 	pcAdjustment = TclGetInt4AtPtr(pc + 1);
 	TRACE(("%d => new pc %" TCL_Z_MODIFIER "u\n", pcAdjustment,
@@ -4419,19 +4167,6 @@ TEBCresume(
 
 	/* TODO: consider rewrite so we don't compute the offset we're not
 	 * going to take. */
-#ifndef REMOVE_DEPRECATED_OPCODES
-    case INST_JUMP_FALSE1:
-	DEPRECATED_OPCODE_MARK(INST_JUMP_FALSE1);
-	jmpOffset[0] = TclGetInt1AtPtr(pc + 1);
-	jmpOffset[1] = 2;
-	goto doCondJump;
-
-    case INST_JUMP_TRUE1:
-	DEPRECATED_OPCODE_MARK(INST_JUMP_TRUE1);
-	jmpOffset[0] = 2;
-	jmpOffset[1] = TclGetInt1AtPtr(pc + 1);
-	goto doCondJump;
-#endif
 
     case INST_JUMP_FALSE:
 	jmpOffset[0] = TclGetInt4AtPtr(pc + 1);	/* FALSE offset */
@@ -4444,11 +4179,7 @@ TEBCresume(
 
     doCondJump:
 	valuePtr = OBJ_AT_TOS;
-	TRACE(("%d => ", jmpOffset[(
-#ifndef REMOVE_DEPRECATED_OPCODES
-		*pc==INST_JUMP_FALSE1 ||
-#endif
-		*pc==INST_JUMP_FALSE) ? 0 : 1]));
+	TRACE(("%d => ", jmpOffset[(*pc==INST_JUMP_FALSE) ? 0 : 1]));
 
 	/* TODO - check claim that taking address of b harms performance */
 	/* TODO - consider optimization search for constants */
@@ -4459,22 +4190,14 @@ TEBCresume(
 
 #ifdef TCL_COMPILE_DEBUG
 	if (b) {
-	    if ((*pc == INST_JUMP_TRUE)
-#ifndef REMOVE_DEPRECATED_OPCODES
-		    ||  (*pc == INST_JUMP_TRUE1)
-#endif
-	) {
+	    if ((*pc == INST_JUMP_TRUE)) {
 		TRACE_APPEND(("%.20s true, new pc %" TCL_T_MODIFIER "u\n", O2S(valuePtr),
 			(pc + jmpOffset[1] - codePtr->codeStart)));
 	    } else {
 		TRACE_APPEND(("%.20s true\n", O2S(valuePtr)));
 	    }
 	} else {
-	    if ((*pc == INST_JUMP_TRUE)
-#ifndef REMOVE_DEPRECATED_OPCODES
-		    || (*pc == INST_JUMP_TRUE1)
-#endif
-	    ) {
+	    if ((*pc == INST_JUMP_TRUE)) {
 		TRACE_APPEND(("%.20s false\n", O2S(valuePtr)));
 	    } else {
 		TRACE_APPEND(("%.20s false, new pc %" TCL_T_MODIFIER "u\n", O2S(valuePtr),
@@ -4675,19 +4398,9 @@ TEBCresume(
 	TRACE_WITH_OBJ(("=> "), objResultPtr);
 	NEXT_INST_F(1, 0, 1);
 
-#ifndef REMOVE_DEPRECATED_OPCODES
-    case INST_TCLOO_NEXT_CLASS1:
-	DEPRECATED_OPCODE_MARK(INST_TCLOO_NEXT_CLASS1);
-	numArgs = TclGetUInt1AtPtr(pc + 1);
-	pcAdjustment = 2;
-	goto invokeNextClass;
-#endif
     case INST_TCLOO_NEXT_CLASS:
 	numArgs = TclGetUInt4AtPtr(pc + 1);
 	pcAdjustment = 5;
-#ifndef REMOVE_DEPRECATED_OPCODES
-    invokeNextClass:
-#endif
 	framePtr = iPtr->varFramePtr;
 	valuePtr = OBJ_AT_DEPTH(numArgs - 2);
 	objv = &OBJ_AT_DEPTH(numArgs - 1);
@@ -4786,19 +4499,9 @@ TEBCresume(
 	    goto gotError;
 	}
 
-#ifndef REMOVE_DEPRECATED_OPCODES
-    case INST_TCLOO_NEXT1:
-	DEPRECATED_OPCODE_MARK(INST_TCLOO_NEXT1);
-	numArgs = TclGetUInt1AtPtr(pc + 1);
-	pcAdjustment = 2;
-	goto invokeNext;
-#endif
     case INST_TCLOO_NEXT:
 	numArgs = TclGetUInt4AtPtr(pc + 1);
 	pcAdjustment = 5;
-#ifndef REMOVE_DEPRECATED_OPCODES
-    invokeNext:
-#endif
 	objv = &OBJ_AT_DEPTH(numArgs - 1);
 	framePtr = iPtr->varFramePtr;
 	skip = 1;
@@ -6991,25 +6694,6 @@ TEBCresume(
 	TRACE_WITH_OBJ(("=> "), objResultPtr);
 	NEXT_INST_F(1, 0, 1);
     break;
-
-#ifndef REMOVE_DEPRECATED_OPCODES
-    case INST_RETURN_CODE_BRANCH: {
-	int code;
-
-	DEPRECATED_OPCODE_MARK(INST_RETURN_CODE_BRANCH);
-	if (TclGetIntFromObj(NULL, OBJ_AT_TOS, &code) != TCL_OK) {
-	    Tcl_Panic("INST_RETURN_CODE_BRANCH: TOS not a return code!");
-	}
-	if (code == TCL_OK) {
-	    Tcl_Panic("INST_RETURN_CODE_BRANCH: TOS is TCL_OK!");
-	}
-	if (code < TCL_ERROR || code > TCL_CONTINUE) {
-	    code = TCL_CONTINUE + 1;
-	}
-	TRACE(("\"%s\" => jump offset %d\n", O2S(OBJ_AT_TOS), 2*code - 1));
-	NEXT_INST_F0(2*code - 1, 1);
-    }
-#endif
 
     case INST_ERROR_PREFIX_EQ: {
 	/*
