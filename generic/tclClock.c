@@ -116,7 +116,7 @@ struct ClockCommand {
     const char *name;		/* The tail of the command name. The full name
 				 * is "::tcl::clock::<name>". When NULL marks
 				 * the end of the table. */
-    Tcl_ObjCmdProc *objCmdProc; /* Function that implements the command. This
+    Tcl_ObjCmdProc *objCmdProc;	/* Function that implements the command. This
 				 * will always have the ClockClientData sent
 				 * to it, but may well ignore this data. */
     CompileProc *compileProc;	/* The compiler for the command. */
@@ -341,7 +341,7 @@ ClockConfigureClear(
  */
 static void
 ClockDeleteCmdProc(
-    void *clientData)	/* Opaque pointer to the client data */
+    void *clientData)		/* Opaque pointer to the client data */
 {
     ClockClientData *data = (ClockClientData *)clientData;
     int i;
@@ -3277,7 +3277,7 @@ ClockParseFmtScnArgs(
     ClockFmtScnCmdArgs *opts,	/* Result vector: format, locale, timezone... */
     TclDateFields *date,	/* Extracted date-time corresponding base
 				 * (by scan or add) resp. clockval (by format) */
-    Tcl_Size objc,			/* Parameter count */
+    Tcl_Size objc,		/* Parameter count */
     Tcl_Obj *const objv[],	/* Parameter vector */
     ClockOperation operation,	/* What operation are we doing: format, scan, add */
     const char *syntax)		/* Syntax of the current command */
@@ -4255,7 +4255,7 @@ ClockCalcRelTime(
 	 * and hereafter convert back to TZ, otherwise apply it direct here.
 	 */
 	if (opts->timezoneObj != opts->dataPtr->literals[LIT_GMT]) {
-	    /* 
+	    /*
 	     * Convert date info structure into UTC seconds and add relative
 	     * seconds (happens in commit).
 	     */
@@ -4277,7 +4277,7 @@ ClockCalcRelTime(
 	    /* restore scanned day of week */
 	    yyDayOfWeek = prevDayOfWeek;
 	} else {
-	    /* 
+	    /*
 	     * GMT/UTC zone, so no DST and no offsets - apply it here, so that
 	     * if time exceeds current date, do the day conversion and leave the
 	     * rest of increment in yyRelSeconds (add it later in UTC by commit)
@@ -4625,11 +4625,11 @@ ClockSafeCatchCmd(
     Tcl_Obj *const objv[])
 {
     typedef struct {
-	int status;			/* return code status */
-	int flags;			/* Each remaining field saves the */
-	int returnLevel;		/* corresponding field of the Interp */
-	int returnCode;			/* struct. These fields taken together are */
-	Tcl_Obj *errorInfo;		/* the "state" of the interp. */
+	int status;		/* return code status */
+	int flags;		/* Each remaining field saves the */
+	int returnLevel;	/* corresponding field of the Interp */
+	int returnCode;		/* struct. These fields taken together are */
+	Tcl_Obj *errorInfo;	/* the "state" of the interp. */
 	Tcl_Obj *errorCode;
 	Tcl_Obj *returnOpts;
 	Tcl_Obj *objResult;

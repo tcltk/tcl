@@ -14,6 +14,12 @@
 #include "tclInt.h"
 
 /*
+ * Prevent macros from clashing with function definitions.
+ */
+
+#undef Tcl_CreateHashEntry
+
+/*
  * When there are this many entries per bucket, on average, rebuild the hash
  * table to make it larger.
  */
@@ -104,8 +110,7 @@ const Tcl_HashKeyType tclStringHashKeyType = {
 
 void
 Tcl_InitHashTable(
-    Tcl_HashTable *tablePtr,
-				/* Pointer to table record, which is supplied
+    Tcl_HashTable *tablePtr,	/* Pointer to table record, which is supplied
 				 * by the caller. */
     int keyType)		/* Type of keys to use in table:
 				 * TCL_STRING_KEYS, TCL_ONE_WORD_KEYS, or an
@@ -142,8 +147,7 @@ Tcl_InitHashTable(
 
 void
 Tcl_InitCustomHashTable(
-    Tcl_HashTable *tablePtr,
-				/* Pointer to table record, which is supplied
+    Tcl_HashTable *tablePtr,	/* Pointer to table record, which is supplied
 				 * by the caller. */
     int keyType,		/* Type of keys to use in table:
 				 * TCL_STRING_KEYS, TCL_ONE_WORD_KEYS,
@@ -234,6 +238,8 @@ FindHashEntry(
  *----------------------------------------------------------------------
  */
 
+#define TCL_HASH_FIND	((int *)-1)
+
 static Tcl_HashEntry *
 CreateHashEntry(
     Tcl_HashTable *tablePtr,	/* Table in which to lookup entry. */
@@ -284,7 +290,7 @@ CreateHashEntry(
 		/* if keys pointers or values are equal */
 		if ((key == hPtr->key.oneWordValue)
 		    || compareKeysProc((void *) key, hPtr)) {
-		    if (newPtr) {
+		    if (newPtr && (newPtr != TCL_HASH_FIND)) {
 			*newPtr = 0;
 		    }
 		    return hPtr;
@@ -299,7 +305,7 @@ CreateHashEntry(
 		/* if needle pointer equals content pointer or values equal */
 		if ((key == hPtr->key.string)
 			|| compareKeysProc((void *) key, hPtr)) {
-		    if (newPtr) {
+		    if (newPtr && (newPtr != TCL_HASH_FIND)) {
 			*newPtr = 0;
 		    }
 		    return hPtr;
@@ -313,7 +319,7 @@ CreateHashEntry(
 		continue;
 	    }
 	    if (key == hPtr->key.oneWordValue) {
-		if (newPtr) {
+		if (newPtr && (newPtr != TCL_HASH_FIND)) {
 		    *newPtr = 0;
 		}
 		return hPtr;
@@ -321,7 +327,8 @@ CreateHashEntry(
 	}
     }
 
-    if (!newPtr) {
+    if (!newPtr || (newPtr == TCL_HASH_FIND)) {
+	/* This is the findProc functionality, so we are done. */
 	return NULL;
     }
 
@@ -623,9 +630,9 @@ Tcl_HashStats(
 	} else {
 	    overflow++;
 	}
-	tmp = j;
+	tmp = (double)j;
 	if (tablePtr->numEntries != 0) {
-	    average += (tmp+1.0)*(tmp/tablePtr->numEntries)/2.0;
+	    average += (tmp+1.0)*(tmp/(double)tablePtr->numEntries)/2.0;
 	}
     }
 
