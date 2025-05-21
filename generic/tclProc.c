@@ -416,7 +416,8 @@ TclCreateProc(
     Tcl_Size i, numArgs;
     CompiledLocal *localPtr = NULL;
     Tcl_Obj **argArray;
-    int precompiled = 0, result;
+    bool precompiled = false;
+    int result;
     const char *errorCode = NULL;
 
     ProcGetInternalRep(bodyPtr, procPtr);
@@ -435,7 +436,7 @@ TclCreateProc(
 
 	procPtr->iPtr = iPtr;
 	procPtr->refCount++;
-	precompiled = 1;
+	precompiled = true;
     } else {
 	/*
 	 * If the procedure's body object is shared because its string value
@@ -733,15 +734,15 @@ TclGetFrame(
     CallFrame **framePtrPtr)	/* Store pointer to frame here (or NULL if
 				 * global frame indicated). */
 {
-	int result;
-	Tcl_Obj obj;
+    int result;
+    Tcl_Obj obj;		// NOT A REFERENCE!
 
-	obj.bytes = (char *) name;
-	obj.length = strlen(name);
-	obj.typePtr = NULL;
-	result = TclObjGetFrame(interp, &obj, framePtrPtr);
-	TclFreeInternalRep(&obj);
-	return result;
+    obj.bytes = (char *) name;
+    obj.length = strlen(name);
+    obj.typePtr = NULL;
+    result = TclObjGetFrame(interp, &obj, framePtrPtr);
+    TclFreeInternalRep(&obj);
+    return result;
 }
 
 /*
@@ -854,7 +855,7 @@ TclObjGetFrame(
 	    }
 	}
     }
-badLevel:
+  badLevel:
     if (name == NULL) {
 	name = objPtr ? TclGetString(objPtr) : "1" ;
     }
@@ -1097,7 +1098,7 @@ ProcWrongNumArgs(
     if (framePtr->isProcCallFrame & FRAME_IS_LAMBDA) {
 	desiredObjs[0] = Tcl_NewStringObj("lambdaExpr", -1);
     } else {
-	desiredObjs[0] = framePtr->objv[skip-1];
+	desiredObjs[0] = framePtr->objv[skip - 1];
     }
     Tcl_IncrRefCount(desiredObjs[0]);
 
@@ -1160,7 +1161,7 @@ InitResolvedLocals(
     Namespace *nsPtr)		/* Pointer to current namespace. */
 {
     Interp *iPtr = (Interp *) interp;
-    int haveResolvers = (nsPtr->compiledVarResProc || iPtr->resolverPtr);
+    bool haveResolvers = (nsPtr->compiledVarResProc || iPtr->resolverPtr);
     CompiledLocal *firstLocalPtr, *localPtr;
     int varNum;
     Tcl_ResolvedVarInfo *resVarInfo;
@@ -1292,7 +1293,7 @@ InitLocalCache(
     Var *varPtr;
     LocalCache *localCachePtr;
     CompiledLocal *localPtr;
-    int isNew;
+    bool isNew;
 
     ByteCodeGetInternalRep(procPtr->bodyPtr, &tclByteCodeType, codePtr);
 
@@ -1526,7 +1527,7 @@ TclPushProcCallFrame(
     Tcl_Size objc,		/* Count of number of arguments to this
 				 * procedure. */
     Tcl_Obj *const objv[],	/* Argument value objects. */
-    int isLambda)		/* 1 if this is a call by ApplyObjCmd: it
+    bool isLambda)		/* true if this is a call by ApplyObjCmd: it
 				 * needs special rules for error msg */
 {
     Proc *procPtr = (Proc *)clientData;
@@ -1639,7 +1640,7 @@ TclNRInterpProc(
     Tcl_Obj *const objv[])	/* Argument value objects. */
 {
     int result = TclPushProcCallFrame(clientData, interp, objc, objv,
-	    /*isLambda*/ 0);
+	    /*isLambda*/ false);
 
     if (result != TCL_OK) {
 	return TCL_ERROR;
@@ -1658,7 +1659,7 @@ NRInterpProc(
     Tcl_Obj *const objv[])	/* Argument value objects. */
 {
     int result = TclPushProcCallFrame(clientData, interp, objc, objv,
-	    /*isLambda*/ 0);
+	    /*isLambda*/ false);
 
     if (result != TCL_OK) {
 	return TCL_ERROR;
@@ -1832,7 +1833,7 @@ InterpProcNR2(
 	goto process;
     }
 
-    done:
+  done:
     if (TCL_DTRACE_PROC_RESULT_ENABLED()) {
 	Tcl_Size l = iPtr->varFramePtr->isProcCallFrame & FRAME_IS_LAMBDA ? 1 : 0;
 	Tcl_Obj *r = Tcl_GetObjResult(interp);
@@ -1853,7 +1854,7 @@ InterpProcNR2(
      * Process any non-TCL_OK result code.
      */
 
-    process:
+  process:
     switch (result) {
     case TCL_RETURN:
 	/*
@@ -2006,7 +2007,7 @@ TclProcCompileProc(
 	if (procPtr->numCompiledLocals > procPtr->numArgs) {
 	    CompiledLocal *clPtr = procPtr->firstLocalPtr;
 	    CompiledLocal *lastPtr = NULL;
-	    int i, numArgs = procPtr->numArgs;
+	    Tcl_Size i, numArgs = procPtr->numArgs;
 
 	    for (i = 0; i < numArgs; i++) {
 		lastPtr = clPtr;
@@ -2091,14 +2092,15 @@ MakeProcError(
     Tcl_Obj *procNameObj)	/* Name of the procedure. Used for error
 				 * messages and trace information. */
 {
-    int overflow, limit = 60;
+    bool overflow;
+    const Tcl_Size limit = 60;
     Tcl_Size nameLen;
     const char *procName = TclGetStringFromObj(procNameObj, &nameLen);
 
     overflow = (nameLen > (Tcl_Size)limit);
     Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 	    "\n    (procedure \"%.*s%s\" line %d)",
-	    (overflow ? limit : (int)nameLen), procName,
+	    (int)(overflow ? limit : nameLen), procName,
 	    (overflow ? "..." : ""), Tcl_GetErrorLine(interp)));
 }
 
@@ -2740,7 +2742,7 @@ TclNRApplyObjCmd(
     extraPtr->efi.fields[0].clientData = lambdaPtr;
     extraPtr->cmd.clientData = &extraPtr->efi;
 
-    result = TclPushProcCallFrame(procPtr, interp, objc, objv, 1);
+    result = TclPushProcCallFrame(procPtr, interp, objc, objv, true);
     if (result == TCL_OK) {
 	TclNRAddCallback(interp, ApplyNR2, extraPtr, NULL, NULL, NULL);
 	result = TclNRInterpProcCore(interp, objv[1], 2, &MakeLambdaError);
@@ -2785,14 +2787,15 @@ MakeLambdaError(
     Tcl_Obj *procNameObj)	/* Name of the procedure. Used for error
 				 * messages and trace information. */
 {
-    int overflow, limit = 60;
+    bool overflow;
+    const Tcl_Size limit = 60;
     Tcl_Size nameLen;
     const char *procName = TclGetStringFromObj(procNameObj, &nameLen);
 
     overflow = (nameLen > (Tcl_Size)limit);
     Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 	    "\n    (lambda term \"%.*s%s\" line %d)",
-	    (overflow ? limit : (int)nameLen), procName,
+	    (int)(overflow ? limit : nameLen), procName,
 	    (overflow ? "..." : ""), Tcl_GetErrorLine(interp)));
 }
 

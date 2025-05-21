@@ -2445,9 +2445,10 @@ TclBounceRefCount(
 /*
  * Declare that obj will no longer be used or referenced.
  * This will free the obj if there are no references to the obj.
+ * Also handles a NULL objPtr (by doing nothing).
  */
 #   define Tcl_BounceRefCount(objPtr) \
-    TclBounceRefCount(objPtr);
+    TclBounceRefCount(objPtr)
 
 static inline void
 TclBounceRefCount(
@@ -2455,7 +2456,7 @@ TclBounceRefCount(
 {
     if (objPtr) {
 	if ((objPtr)->refCount == 0) {
-	    Tcl_DecrRefCount(objPtr);
+	    TclFreeObj(objPtr);
 	}
     }
 }

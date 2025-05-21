@@ -267,7 +267,7 @@ InitEnsembleFromOptions(
     Namespace *altFoundNsPtr, *actualCxtPtr;
     const char *name = nsPtr->name;
     Tcl_Size len;
-    int allocatedMapFlag = 0;
+    bool allocatedMapFlag = false;
     enum EnsCreateOpts index;
     Tcl_Command token;		/* The created ensemble command. */
     Namespace *foundNsPtr;
@@ -365,7 +365,7 @@ InitEnsembleFromOptions(
 	    }
 	    mapObj = (patchedDict ? patchedDict : objv[1]);
 	    if (patchedDict) {
-		allocatedMapFlag = 1;
+		allocatedMapFlag = true;
 	    }
 	    continue;
 	mapError:
@@ -589,7 +589,7 @@ SetEnsembleConfigOptions(
     Tcl_Obj *const objv[])	/* Option-related arguments. */
 {
     Tcl_Size len;
-    int allocatedMapFlag = 0;
+    bool allocatedMapFlag = false;
     Tcl_Obj *subcmdObj = NULL, *mapObj = NULL, *paramObj = NULL,
 	    *unknownObj = NULL;	/* Defaults, silence gcc 4 warnings */
     Tcl_Obj *listObj;
@@ -686,7 +686,7 @@ SetEnsembleConfigOptions(
 	    }
 	    mapObj = (patchedDict ? patchedDict : objv[1]);
 	    if (patchedDict) {
-		allocatedMapFlag = 1;
+		allocatedMapFlag = true;
 	    }
 	    continue;
 
@@ -2989,8 +2989,8 @@ TclCompileEnsemble(
     Tcl_Obj *replaced, *replacement;
     Tcl_Command ensemble = (Tcl_Command) cmdPtr;
     Command *oldCmdPtr = cmdPtr, *newCmdPtr;
-    int result, flags = 0, depth = 1, invokeAnyway = 0;
-    int ourResult = TCL_ERROR;
+    int result, flags = 0, depth = 1, ourResult = TCL_ERROR;
+    bool invokeAnyway = false;
     Tcl_Size i, len, numBytes;
     const char *word;
 
@@ -3169,7 +3169,7 @@ TclCompileEnsemble(
 	 */
 
 	if (matched != 1) {
-	    invokeAnyway = 1;
+	    invokeAnyway = true;
 	    goto tryCompileToInv;
 	}
     }
@@ -3244,7 +3244,7 @@ TclCompileEnsemble(
      * invoke at runtime.
      */
 
-    invokeAnyway = 1;
+    invokeAnyway = true;
     if (TCL_OK == TclAttemptCompileProc(interp, parsePtr, depth, cmdPtr,
 	    envPtr)) {
 	ourResult = TCL_OK;
@@ -3744,7 +3744,7 @@ TclCompileBasicMin0ArgCmd(
      * which is the only code that sees the shenanigans of ensemble dispatch.
      */
 
-    if ((int)parsePtr->numWords < 1) {
+    if (parsePtr->numWords < 1) {
 	return TCL_ERROR;
     }
 
@@ -3766,7 +3766,7 @@ TclCompileBasicMin1ArgCmd(
      * which is the only code that sees the shenanigans of ensemble dispatch.
      */
 
-    if ((int)parsePtr->numWords < 2) {
+    if (parsePtr->numWords < 2) {
 	return TCL_ERROR;
     }
 
@@ -3788,7 +3788,7 @@ TclCompileBasicMin2ArgCmd(
      * which is the only code that sees the shenanigans of ensemble dispatch.
      */
 
-    if ((int)parsePtr->numWords < 3) {
+    if (parsePtr->numWords < 3) {
 	return TCL_ERROR;
     }
 
