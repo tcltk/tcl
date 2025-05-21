@@ -280,14 +280,12 @@ TclCompileIfCmd(
 	    code = TCL_ERROR;
 	    goto done;
 	}
-	if (tokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
-	    if (IS_TOKEN_LITERALLY(tokenPtr, "then")) {
-		tokenPtr = TokenAfter(tokenPtr);
-		wordIdx++;
-		if (wordIdx >= numWords) {
-		    code = TCL_ERROR;
-		    goto done;
-		}
+	if (IS_TOKEN_LITERALLY(tokenPtr, "then")) {
+	    tokenPtr = TokenAfter(tokenPtr);
+	    wordIdx++;
+	    if (wordIdx >= numWords) {
+		code = TCL_ERROR;
+		goto done;
 	    }
 	}
 
@@ -296,7 +294,7 @@ TclCompileIfCmd(
 	 */
 
 	if (compileScripts) {
-	    BODY(tokenPtr, wordIdx);
+	    BODY(		tokenPtr, wordIdx);
 	}
 
 	if (realCond) {
@@ -363,7 +361,7 @@ TclCompileIfCmd(
 	     * Compile the else command body.
 	     */
 
-	    BODY(tokenPtr, wordIdx);
+	    BODY(		tokenPtr, wordIdx);
 	}
 
 	/*
@@ -2108,7 +2106,7 @@ TclCompileRegsubCmd(
 	    goto done;
 	}
 	tokenPtr = TokenAfter(tokenPtr);
-	Tcl_DecrRefCount(patternObj);
+	Tcl_BounceRefCount(patternObj);
 	TclNewObj(patternObj);
 	if (!TclWordKnownAtCompileTime(tokenPtr, patternObj)) {
 	    goto done;
@@ -2188,12 +2186,8 @@ TclCompileRegsubCmd(
 
   done:
     Tcl_DStringFree(&pattern);
-    if (patternObj) {
-	Tcl_DecrRefCount(patternObj);
-    }
-    if (replacementObj) {
-	Tcl_BounceRefCount(replacementObj);
-    }
+    Tcl_BounceRefCount(patternObj);
+    Tcl_BounceRefCount(replacementObj);
     return result;
 }
 

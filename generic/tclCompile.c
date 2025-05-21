@@ -15,6 +15,7 @@
 #include "tclInt.h"
 #define ALLOW_DEPRECATED_OPCODES
 #include "tclCompile.h"
+#include "tclParse.h"
 #include <assert.h>
 
 /*
@@ -2003,6 +2004,7 @@ TclFreeCompileEnv(
  * Side effects:
  *	When returning true, appends the known value of the word to the
  *	unshared Tcl_Obj (*valuePtr), unless valuePtr is NULL.
+ *	NB: Does *NOT* manipulate the refCount of valuePtr.
  *
  *----------------------------------------------------------------------
  */
@@ -4750,6 +4752,43 @@ EncodeCmdLocMap(
     }
 
     return p;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclIsEmptyToken --
+ *
+ *	Test if the token is empty.
+ *
+ *	We don't test if it's just comments. Fixes are welcome.
+ *
+ * Results:
+ *	True iff the token (assumed a TCL_TOKEN_SIMPLE_TEXT) only contains
+ *	whitespace of the kind that never results in code being generated.
+ *	False otherwise.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+TclIsEmptyToken(
+    const Tcl_Token *tokenPtr)
+{
+    const char *ptr, *end;
+    int ucs4, chLen = 0;
+
+    end = tokenPtr[1].start + tokenPtr[1].size;
+    for (ptr = tokenPtr[1].start; ptr < end; ptr += chLen) {
+	chLen = TclUtfToUniChar(ptr, &ucs4);
+	// Can't use Tcl_UniCharIsSpace; see test dict-22.24
+	if (ucs4 < 0 || ucs4 > 255 || tclCharTypeTable[ucs4] != TYPE_SPACE) {
+	    return 0;
+	}
+    }
+    return 1;
 }
 
 #ifdef TCL_COMPILE_STATS
