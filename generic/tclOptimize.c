@@ -176,7 +176,7 @@ TrimUnreachable(
     for (currentInstPtr = envPtr->codeStart ;
 	    currentInstPtr < envPtr->codeNext-1 ;
 	    currentInstPtr += AddrLength(currentInstPtr)) {
-	int clear = 0;
+	Tcl_Size clear = 0;
 
 	if (*currentInstPtr != INST_DONE) {
 	    continue;
@@ -215,13 +215,14 @@ ConvertZeroEffectToNOP(
     CompileEnv *envPtr)
 {
     unsigned char *currentInstPtr;
-    int size;
+    Tcl_Size size;
     Tcl_HashTable targets;
 
     LocateTargetAddresses(envPtr, &targets);
     for (currentInstPtr = envPtr->codeStart ;
 	    currentInstPtr < envPtr->codeNext ; currentInstPtr += size) {
-	int blank = 0, i, nextInst;
+	Tcl_Size blank = 0, i;
+	unsigned char nextInst;
 
 	size = AddrLength(currentInstPtr);
 	while ((currentInstPtr + size < envPtr->codeNext)

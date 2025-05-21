@@ -33,10 +33,10 @@ static AuxDataPrintProc	PrintNewForeachInfo;
 static AuxDataPrintProc	DisassembleNewForeachInfo;
 static int		CompileEachloopCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
-			    CompileEnv *envPtr, int collect);
+			    CompileEnv *envPtr, bool collect);
 static int		CompileDictEachCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
-			    struct CompileEnv *envPtr, int collect);
+			    struct CompileEnv *envPtr, bool collect);
 static inline void	IssueDictWithEmpty(Tcl_Interp *interp,
 			    Tcl_Size numWords, Tcl_Token *varTokenPtr,
 			    CompileEnv *envPtr);
@@ -591,7 +591,7 @@ TclCompileCatchCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *cmdTokenPtr, *resultNameTokenPtr, *optsNameTokenPtr;
-    int dropScript = 0;
+    bool dropScript = false;
     Tcl_LVTIndex resultIndex, optsIndex;
     Tcl_BytecodeLabel haveResultAndCode;
     Tcl_ExceptionRange range;
@@ -670,7 +670,7 @@ TclCompileCatchCmd(
 	    INVOKE(		EVAL_STK);
 	}
 	/* drop the script */
-	dropScript = 1;
+	dropScript = true;
 	OP(			SWAP);
 	OP(			POP);
     }
@@ -691,7 +691,7 @@ TclCompileCatchCmd(
      */
 
     CATCH_TARGET(	range);
-    TclSetStackDepth(depth + dropScript, envPtr);
+    TclSetStackDepth(depth + (int)dropScript, envPtr);
 
     if (dropScript) {
 	OP(			POP);
@@ -1598,8 +1598,7 @@ TclCompileDictForCmd(
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
-    return CompileDictEachCmd(interp, parsePtr, cmdPtr, envPtr,
-	    TCL_EACH_KEEP_NONE);
+    return CompileDictEachCmd(interp, parsePtr, cmdPtr, envPtr, false);
 }
 
 int
@@ -1611,8 +1610,7 @@ TclCompileDictMapCmd(
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
-    return CompileDictEachCmd(interp, parsePtr, cmdPtr, envPtr,
-	    TCL_EACH_COLLECT);
+    return CompileDictEachCmd(interp, parsePtr, cmdPtr, envPtr, true);
 }
 
 int
@@ -1623,9 +1621,8 @@ CompileDictEachCmd(
     Command *cmdPtr,		/* Points to definition of command being
 				 * compiled. */
     CompileEnv *envPtr,		/* Holds resulting instructions. */
-    int collect)		/* Flag == TCL_EACH_COLLECT to collect and
-				 * construct a new dictionary with the loop
-				 * body result. */
+    bool collect)		/* Whether to collect and construct a new
+				 * dictionary with the loop body result. */
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *varsTokenPtr, *dictTokenPtr, *bodyTokenPtr;
@@ -1661,7 +1658,7 @@ CompileDictEachCmd(
      * we're collecting results.
      */
 
-    if (collect == TCL_EACH_COLLECT) {
+    if (collect) {
 	collectVar = AnonymousLocal(envPtr);
 	if (collectVar < 0) {
 	    return TclCompileBasic3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
@@ -1715,7 +1712,7 @@ CompileDictEachCmd(
      * First up, initialize the accumulator dictionary if needed.
      */
 
-    if (collect == TCL_EACH_COLLECT) {
+    if (collect) {
 	PUSH(			"");
 	OP4(			STORE_SCALAR, collectVar);
 	OP(			POP);
@@ -1761,7 +1758,7 @@ CompileDictEachCmd(
 
 	CATCH_RANGE(loopRange) {
 	    BODY(		bodyTokenPtr, 3);
-	    if (collect == TCL_EACH_COLLECT) {
+	    if (collect) {
 		OP4(		LOAD_SCALAR, keyVarIndex);
 		OP(		SWAP);
 		OP44(		DICT_SET, 1, collectVar);
@@ -1792,7 +1789,7 @@ CompileDictEachCmd(
     OP(				PUSH_RESULT);
     OP(				END_CATCH);
     OP14(			UNSET_SCALAR, 0, infoIndex);
-    if (collect == TCL_EACH_COLLECT) {
+    if (collect) {
 	OP14(			UNSET_SCALAR, 0, collectVar);
     }
     INVOKE(			RETURN_STK);
@@ -1818,7 +1815,7 @@ CompileDictEachCmd(
      */
 
     OP14(			UNSET_SCALAR, 0, infoIndex);
-    if (collect == TCL_EACH_COLLECT) {
+    if (collect) {
 	OP4(			LOAD_SCALAR, collectVar);
 	OP14(			UNSET_SCALAR, 0, collectVar);
     } else {
@@ -2750,8 +2747,7 @@ TclCompileForeachCmd(
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
-    return CompileEachloopCmd(interp, parsePtr, cmdPtr, envPtr,
-	    TCL_EACH_KEEP_NONE);
+    return CompileEachloopCmd(interp, parsePtr, cmdPtr, envPtr, false);
 }
 
 /*
@@ -2781,8 +2777,7 @@ TclCompileLmapCmd(
 				 *  being compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
-    return CompileEachloopCmd(interp, parsePtr, cmdPtr, envPtr,
-	    TCL_EACH_COLLECT);
+    return CompileEachloopCmd(interp, parsePtr, cmdPtr, envPtr, true);
 }
 
 /*
@@ -2810,8 +2805,7 @@ CompileEachloopCmd(
 				 * created by Tcl_ParseCommand. */
     TCL_UNUSED(Command *),
     CompileEnv *envPtr,		/* Holds resulting instructions. */
-    int collect)		/* Select collecting or accumulating mode
-				 * (TCL_EACH_*) */
+    bool collect)		/* Whether to run in collecting mode. */
 {
     DefineLineInformation;	/* TIP #280 */
     ForeachInfo *infoPtr=NULL;	/* Points to the structure describing this
@@ -2927,7 +2921,7 @@ CompileEachloopCmd(
      * Create the collecting object, unshared.
      */
 
-    if (collect == TCL_EACH_COLLECT) {
+    if (collect) {
 	OP4(			LIST, 0);
     }
 
@@ -2955,7 +2949,7 @@ CompileEachloopCmd(
 	BODY(			bodyTokenPtr, numWords - 1);
     }
 
-    if (collect == TCL_EACH_COLLECT) {
+    if (collect) {
 	OP(			LMAP_COLLECT);
     } else {
 	OP(			POP);
@@ -2987,7 +2981,7 @@ CompileEachloopCmd(
      * collecting, it is automatically left on stack after FOREACH_END.
      */
 
-    if (collect != TCL_EACH_COLLECT) {
+    if (!collect) {
 	PUSH(			"");
     }
 

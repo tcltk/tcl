@@ -15,14 +15,7 @@
 #define _TCLCOMPILATION 1
 
 #include "tclInt.h"
-#ifdef NO_STDBOOL
-/* If there's no stdbool.h, here's the workaround. */
-typedef int bool;
-enum {
-    false = 0,
-    true = 1	
-};
-#else
+#if __STDC_VERSION__ < 202311l
 #include <stdbool.h>
 #endif
 
@@ -1146,7 +1139,7 @@ AllocJumptable(void)
     return jtPtr;
 }
 
-static inline int
+static inline bool
 CreateJumptableEntry(
     JumptableInfo *jtPtr,
     const char *keyPtr,
@@ -1158,7 +1151,7 @@ CreateJumptableEntry(
     if (isNew) {
 	Tcl_SetHashValue(hPtr, INT2PTR(offset));
     }
-    return isNew;
+    return (bool) isNew;
 }
 
 #define CreateJumptableEntryToHere(jtPtr, key, baseOffset) \
@@ -1183,7 +1176,7 @@ AllocJumptableNum(void)
     return jtnPtr;
 }
 
-static inline int
+static inline bool
 CreateJumptableNumEntry(
     JumptableNumInfo *jtnPtr,
     Tcl_Size key,
@@ -1195,7 +1188,7 @@ CreateJumptableNumEntry(
     if (isNew) {
 	Tcl_SetHashValue(hPtr, INT2PTR(offset));
     }
-    return isNew;
+    return (bool) isNew;
 }
 
 #define CreateJumptableNumEntryToHere(jtnPtr, key, baseOffset) \
@@ -2132,9 +2125,9 @@ typedef Tcl_Size Tcl_BytecodeLabel;
 #define MAKE_LOOP_RANGE() \
     TclCreateExceptRange(LOOP_EXCEPTION_RANGE, envPtr)
 #define CATCH_RANGE_VAR(range,var) \
-    for(int var=(ExceptionRangeStarts(envPtr,(range)), 0);		\
+    for(bool var=(ExceptionRangeStarts(envPtr,(range)), false);		\
 	    !var;							\
-	    var=(ExceptionRangeEnds(envPtr,(range)), 1))
+	    var=(ExceptionRangeEnds(envPtr,(range)), true))
 // Wrap the given range around a body of code, placing its start and end.
 #define CATCH_RANGE(range) \
     CATCH_RANGE_VAR((range), JOIN(catchRange_, __LINE__))
