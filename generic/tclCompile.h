@@ -603,11 +603,11 @@ typedef struct ByteCode {
 #elif defined(ALLOW_DEPRECATED_OPCODES)
 #define DEPRECATED_OPCODE(name) \
     name
-#elif defined(_MSC_VER) && (_MSC_VER >= 1900)
-// This is actually the C++17 and C23 standard form
+#elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L
 #define DEPRECATED_OPCODE(name) \
     name [[deprecated("use 4-byte operand version instead")]]
 #elif defined(__GNUC__) || defined(__clang__)
+/* Technically missing guards for some very old gcc/clang versions. */
 #define DEPRECATED_OPCODE(name) \
     name __attribute__((deprecated ("use 4-byte operand version instead")))
 #else
@@ -1313,6 +1313,7 @@ MODULE_SCOPE void	TclInitJumpFixupArray(JumpFixupArray *fixupArrayPtr);
 MODULE_SCOPE void	TclInitLiteralTable(LiteralTable *tablePtr);
 MODULE_SCOPE ExceptionRange *TclGetInnermostExceptionRange(CompileEnv *envPtr,
 			    int returnCode, ExceptionAux **auxPtrPtr);
+MODULE_SCOPE int	TclIsEmptyToken(const Tcl_Token *tokenPtr);
 MODULE_SCOPE void	TclAddLoopBreakFixup(CompileEnv *envPtr,
 			    ExceptionAux *auxPtr);
 MODULE_SCOPE void	TclAddLoopContinueFixup(CompileEnv *envPtr,
