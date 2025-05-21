@@ -33,6 +33,12 @@ of the pipeline specification.  The following switches are
 currently supported:
 .\" OPTION: -ignorestderr
 .TP 13
+\fB\-encoding \fIencodingName\fR
+.
+Specifies the name of the encoding to use to decode the output of the first
+subprocess. Defaults to that returned by the \fBencoding system\fR command.
+.\" OPTION: -ignorestderr
+.TP 13
 \fB\-ignorestderr\fR
 .
 Stops the \fBexec\fR command from treating the output of messages to the
