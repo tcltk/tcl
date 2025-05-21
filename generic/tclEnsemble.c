@@ -277,7 +277,7 @@ InitEnsembleFromOptions(
      */
     Tcl_Obj *subcmdObj = NULL;
     Tcl_Obj *mapObj = NULL;
-    int permitPrefix = 1;
+    bool permitPrefix = true;
     Tcl_Obj *unknownObj = NULL;
     Tcl_Obj *paramObj = NULL;
 
@@ -594,9 +594,9 @@ SetEnsembleConfigOptions(
 	    *unknownObj = NULL;	/* Defaults, silence gcc 4 warnings */
     Tcl_Obj *listObj;
     Tcl_DictSearch search;
-    int permitPrefix, flags = 0;	/* silence gcc 4 warning */
+    bool permitPrefix;
+    int done, flags = 0;	/* silence gcc 4 warning */
     enum EnsConfigOpts index;
-    int done;
 
     Tcl_GetEnsembleSubcommandList(NULL, token, &subcmdObj);
     Tcl_GetEnsembleMappingDict(NULL, token, &mapObj);
@@ -2989,9 +2989,9 @@ TclCompileEnsemble(
     Tcl_Obj *replaced, *replacement;
     Tcl_Command ensemble = (Tcl_Command) cmdPtr;
     Command *oldCmdPtr = cmdPtr, *newCmdPtr;
-    int result, flags = 0, depth = 1, ourResult = TCL_ERROR;
+    int result, flags = 0, ourResult = TCL_ERROR;
     bool invokeAnyway = false;
-    Tcl_Size i, len, numBytes;
+    Tcl_Size i, len, numBytes, depth = 1;
     const char *word;
 
     TclNewObj(replaced);
@@ -3222,7 +3222,7 @@ TclCompileEnsemble(
 
     if (cmdPtr->compileProc == TclCompileEnsemble) {
 	tokenPtr = TokenAfter(tokenPtr);
-	if ((int)parsePtr->numWords < depth + 1
+	if (parsePtr->numWords < depth + 1
 		|| tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
 	    /*
 	     * Too hard because the user has done something unpleasant like

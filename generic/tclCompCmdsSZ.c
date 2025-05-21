@@ -66,10 +66,10 @@ static int		CompileUnaryOpCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, int instruction,
 			    CompileEnv *envPtr);
 static void		IssueSwitchChainedTests(Tcl_Interp *interp,
-			    CompileEnv *envPtr, int mode, int noCase,
+			    CompileEnv *envPtr, int mode, bool noCase,
 			    Tcl_Size numArms, SwitchArmInfo *arms);
 static void		IssueSwitchJumpTable(Tcl_Interp *interp,
-			    CompileEnv *envPtr, int noCase, Tcl_Size numArms,
+			    CompileEnv *envPtr, bool noCase, Tcl_Size numArms,
 			    SwitchArmInfo *arms);
 static int		IssueTryClausesInstructions(Tcl_Interp *interp,
 			    CompileEnv *envPtr, Tcl_Token *bodyToken,
@@ -791,7 +791,7 @@ TclCompileStringMatchCmd(
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr;
     bool exactMatch = false;
-    int nocase = 0;
+    bool nocase = false;
     Tcl_Size i, numWords = parsePtr->numWords;
 
     if (numWords < 3 || numWords > 4) {
@@ -811,7 +811,7 @@ TclCompileStringMatchCmd(
 
 	    return TclCompileBasic3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
 	}
-	nocase = 1;
+	nocase = true;
 	tokenPtr = TokenAfter(tokenPtr);
     }
 
@@ -831,7 +831,7 @@ TclCompileStringMatchCmd(
 	    exactMatch = TclMatchIsTrivial(TclGetString(copy));
 	    Tcl_BounceRefCount(copy);
 	}
-	PUSH_TOKEN(		tokenPtr, i + 1 + nocase);
+	PUSH_TOKEN(		tokenPtr, i + 1 + (int) nocase);
 	tokenPtr = TokenAfter(tokenPtr);
     }
 
@@ -1551,11 +1551,11 @@ TclSubstCompile(
 
 	    if (tokenPtr->numComponents > 1) {
 		Tcl_Size i;
-		int foundCommand = 0;
+		bool foundCommand = false;
 
 		for (i=2 ; i<=tokenPtr->numComponents ; i++) {
 		    if (tokenPtr[i].type == TCL_TOKEN_COMMAND) {
-			foundCommand = 1;
+			foundCommand = true;
 			break;
 		    }
 		}
@@ -1769,7 +1769,7 @@ TclCompileSwitchCmd(
 
     Tcl_Token *bodyTokenArray;	/* Array of real pattern list items. */
     SwitchArmInfo *arms;	/* Array of information about switch arms. */
-    int noCase;			/* Has the -nocase flag been given? */
+    bool noCase;		/* Has the -nocase flag been given? */
     bool foundMode = false;	/* Have we seen a mode flag yet? */
     Tcl_Size i, valueIndex;
     int result = TCL_ERROR;
@@ -1802,7 +1802,7 @@ TclCompileSwitchCmd(
      * Check for options.
      */
 
-    noCase = 0;
+    noCase = false;
     mode = Switch_Exact;
     if (numWords == 2) {
 	/*
@@ -1855,7 +1855,7 @@ TclCompileSwitchCmd(
 	    valueIndex++;
 	    continue;
 	} else if (IS_TOKEN_PREFIX(tokenPtr, 2, "-nocase")) {
-	    noCase = 1;
+	    noCase = true;
 	    valueIndex++;
 	    continue;
 	} else if (IS_TOKEN_LITERALLY(tokenPtr, "--")) {
@@ -2091,7 +2091,7 @@ IssueSwitchChainedTests(
     Tcl_Interp *interp,		/* Context for compiling script bodies. */
     CompileEnv *envPtr,		/* Holds resulting instructions. */
     int mode,			/* Exact, Glob or Regexp */
-    int noCase,			/* Case-insensitivity flag. */
+    bool noCase,		/* Case-insensitivity flag. */
     Tcl_Size numArms,		/* Number of arms of the switch. */
     SwitchArmInfo *arms)	/* Array of arm descriptors. */
 {
@@ -2311,14 +2311,13 @@ static void
 IssueSwitchJumpTable(
     Tcl_Interp *interp,		/* Context for compiling script bodies. */
     CompileEnv *envPtr,		/* Holds resulting instructions. */
-    int noCase,			/* Whether to do case-insensitive matches. */
+    bool noCase,		/* Whether to do case-insensitive matches. */
     Tcl_Size numArms,		/* Number of arms of the switch. */
     SwitchArmInfo *arms)	/* Array of arm descriptors. */
 {
     JumptableInfo *jtPtr;
     Tcl_AuxDataRef infoIndex;
-    int isNew;
-    bool mustGenerate, foundDefault;
+    bool isNew, mustGenerate, foundDefault;
     Tcl_Size numRealBodies = 0, i;
     Tcl_BytecodeLabel jumpLocation, jumpToDefault, *finalFixups;
     Tcl_DString buffer;
@@ -2401,7 +2400,7 @@ IssueSwitchJumpTable(
 	     */
 
 	    foundDefault = true;
-	    isNew = 1;
+	    isNew = true;
 	    FWDLABEL(	jumpToDefault);
 	}
 

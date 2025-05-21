@@ -415,7 +415,7 @@ TclRegisterLiteral(
     LiteralEntry *globalPtr, *localPtr;
     Tcl_Obj *objPtr;
     size_t hash, localHash, objIndex;
-    int isNew;
+    bool isNew;
     Namespace *nsPtr;
 
     if (length < 0) {

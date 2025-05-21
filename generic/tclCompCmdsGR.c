@@ -184,7 +184,7 @@ TclCompileIfCmd(
     int code;
     bool realCond = true;	/* Set to false for static conditions:
 				 * "if 0 {..}" */
-    int boolVal;		/* Value of static condition. */
+    bool boolVal;		/* Value of static condition. */
     bool compileScripts = true;
 
     /*
@@ -1899,8 +1899,8 @@ TclCompileRegexpCmd(
 				 * parse of the RE or string. */
     size_t len;
     Tcl_Size i, numWords = parsePtr->numWords;
-    int nocase, exact;
-    bool sawLast, simple;
+    int exact;
+    bool nocase, sawLast, simple;
     const char *str;
 
     /*
@@ -1915,7 +1915,7 @@ TclCompileRegexpCmd(
     }
 
     simple = false;
-    nocase = 0;
+    nocase = false;
     sawLast = false;
     varTokenPtr = parsePtr->tokenPtr;
 
@@ -2228,8 +2228,8 @@ TclCompileReturnCmd(
     int level, code, objc, status = TCL_OK;
     Tcl_Size size;
     Tcl_Size numWords = parsePtr->numWords;
-    int explicitResult = (0 == (numWords % 2));
-    Tcl_Size numOptionWords = numWords - 1 - explicitResult;
+    bool explicitResult = (0 == (numWords % 2));
+    Tcl_Size numOptionWords = numWords - 1 - (int) explicitResult;
     Tcl_Obj *returnOpts, **objv;
     Tcl_Token *wordTokenPtr = TokenAfter(parsePtr->tokenPtr);
 
@@ -2333,14 +2333,14 @@ TclCompileReturnCmd(
 	 */
 
 	Tcl_ExceptionRange index = envPtr->exceptArrayNext - 1;
-	int enclosingCatch = 0;
+	bool enclosingCatch = false;
 
 	while (index >= 0) {
 	    const ExceptionRange *rangePtr = &envPtr->exceptArrayPtr[index];
 
 	    if ((rangePtr->type == CATCH_EXCEPTION_RANGE)
 		    && (rangePtr->catchOffset == TCL_INDEX_NONE)) {
-		enclosingCatch = 1;
+		enclosingCatch = true;
 		break;
 	    }
 	    index--;
