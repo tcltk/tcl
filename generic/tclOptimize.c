@@ -253,7 +253,7 @@ ConvertZeroEffectToNOP(
 	    break;
 	case INST_PUSH:
 	    if (nextInst == INST_POP) {
-		blank = size + 1;
+		blank = size + InstLength(nextInst);
 	    } else if (nextInst == INST_STR_CONCAT1
 		    && TclGetUInt1AtPtr(currentInstPtr + size + 1) == 2) {
 		Tcl_Obj *litPtr = TclFetchLiteral(envPtr,

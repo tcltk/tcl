@@ -15,6 +15,16 @@
 #define _TCLCOMPILATION 1
 
 #include "tclInt.h"
+#ifdef NO_STDBOOL
+/* If there's no stdbool.h, here's the workaround. */
+typedef int bool;
+enum {
+    false = 0,
+    true = 1	
+};
+#else
+#include <stdbool.h>
+#endif
 
 struct ByteCode;		/* Forward declaration. */
 
@@ -141,7 +151,7 @@ typedef struct ExceptionRange {
  */
 
 typedef struct ExceptionAux {
-    int supportsContinue;	/* Whether this exception range will have a
+    bool supportsContinue;	/* Whether this exception range will have a
 				 * continueOffset created for it; if it is a
 				 * loop exception range that *doesn't* have
 				 * one (see [for] next-clause) then we must
@@ -346,16 +356,20 @@ typedef struct CompileEnv {
     unsigned char *codeNext;	/* Points to next code array byte to use. */
     unsigned char *codeEnd;	/* Points just after the last allocated code
 				 * array byte. */
-    int mallocedCodeArray;	/* Set 1 if code array was expanded and
-				 * codeStart points into the heap.*/
-    int mallocedExceptArray;	/* 1 if ExceptionRange array was expanded and
-				 * exceptArrayPtr points in heap, else 0. */
+    bool mallocedCodeArray;	/* Set true if code array was expanded and
+				 * codeStart points into the heap. */
+    bool mallocedExceptArray;	/* true if ExceptionRange array was expanded
+				 * and exceptArrayPtr points in heap. */
+    bool mallocedLiteralArray;	/* true if object array was expanded and
+				 * objArray points into the heap. */
+    bool mallocedCmdMap;	/* 1 if command map array was expanded and
+				 * cmdMapPtr points in the heap, else 0. */
+    bool mallocedAuxDataArray;	/* 1 if aux data array was expanded and
+				 * auxDataArrayPtr points in heap else 0. */
     LiteralEntry *literalArrayPtr;
 				/* Points to start of LiteralEntry array. */
     Tcl_Size literalArrayNext;	/* Index of next free object array entry. */
     Tcl_Size literalArrayEnd;	/* Index just after last obj array entry. */
-    int mallocedLiteralArray;	/* 1 if object array was expanded and objArray
-				 * points into the heap, else 0. */
     ExceptionRange *exceptArrayPtr;
 				/* Points to start of the ExceptionRange
 				 * array. */
@@ -375,10 +389,6 @@ typedef struct CompileEnv {
 				 * to use; (numCommands-1) is the entry index
 				 * for the last command. */
     Tcl_Size cmdMapEnd;		/* Index after last CmdLocation entry. */
-    int mallocedCmdMap;		/* 1 if command map array was expanded and
-				 * cmdMapPtr points in the heap, else 0. */
-    int mallocedAuxDataArray;	/* 1 if aux data array was expanded and
-				 * auxDataArrayPtr points in heap else 0. */
     AuxData *auxDataArrayPtr;	/* Points to auxiliary data array start. */
     Tcl_Size auxDataArrayNext;	/* Next free compile aux data array index.
 				 * auxDataArrayNext is the number of aux data
@@ -1064,8 +1074,8 @@ typedef struct JumpFixupArray {
     JumpFixup *fixup;		/* Points to start of jump fixup array. */
     Tcl_Size next;		/* Index of next free array entry. */
     Tcl_Size end;		/* Index of last usable entry in array. */
-    int mallocedArray;		/* 1 if array was expanded and fixups points
-				 * into the heap, else 0. */
+    bool mallocedArray;		/* true if array was expanded and fixups points
+				 * into the heap, else false. */
     JumpFixup staticFixupSpace[JUMPFIXUP_INIT_ENTRIES];
 				/* Initial storage for jump fixup array. */
 } JumpFixupArray;
@@ -1257,7 +1267,7 @@ MODULE_SCOPE void	TclCompileCmdWord(Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, Tcl_Size count,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCompileExpr(Tcl_Interp *interp, const char *script,
-			    Tcl_Size numBytes, CompileEnv *envPtr, int optimize);
+			    Tcl_Size numBytes, CompileEnv *envPtr, bool optimize);
 MODULE_SCOPE void	TclCompileExprWords(Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, size_t numWords,
 			    CompileEnv *envPtr);
@@ -1280,7 +1290,7 @@ MODULE_SCOPE Tcl_ExceptionRange TclCreateExceptRange(ExceptionRangeType type,
 			    CompileEnv *envPtr);
 MODULE_SCOPE ExecEnv *	TclCreateExecEnv(Tcl_Interp *interp, size_t size);
 MODULE_SCOPE Tcl_Obj *	TclCreateLiteral(Interp *iPtr, const char *bytes,
-			    Tcl_Size length, size_t hash, int *newPtr,
+			    Tcl_Size length, size_t hash, bool *newPtr,
 			    Namespace *nsPtr, int flags,
 			    LiteralEntry **globalPtrPtr);
 MODULE_SCOPE void	TclDeleteExecEnv(ExecEnv *eePtr);
@@ -1290,13 +1300,13 @@ MODULE_SCOPE void	TclEmitForwardJump(CompileEnv *envPtr,
 			    TclJumpType jumpType, JumpFixup *jumpFixupPtr);
 MODULE_SCOPE void	TclEmitInvoke(CompileEnv *envPtr, int opcode, ...);
 MODULE_SCOPE ExceptionRange * TclGetExceptionRangeForPc(unsigned char *pc,
-			    int catchOnly, ByteCode *codePtr);
+			    bool catchOnly, ByteCode *codePtr);
 MODULE_SCOPE void	TclExpandJumpFixupArray(JumpFixupArray *fixupArrayPtr);
 MODULE_SCOPE int	TclNRExecuteByteCode(Tcl_Interp *interp,
 			    ByteCode *codePtr);
 MODULE_SCOPE Tcl_Obj *	TclFetchLiteral(CompileEnv *envPtr, Tcl_Size index);
 MODULE_SCOPE Tcl_LVTIndex TclFindCompiledLocal(const char *name, Tcl_Size nameChars,
-			    int create, CompileEnv *envPtr);
+			    bool create, CompileEnv *envPtr);
 MODULE_SCOPE void	TclFixupForwardJump(CompileEnv *envPtr,
 			    JumpFixup *jumpFixupPtr, Tcl_Size jumpDist);
 MODULE_SCOPE void	TclFreeCompileEnv(CompileEnv *envPtr);
@@ -1313,7 +1323,7 @@ MODULE_SCOPE void	TclInitJumpFixupArray(JumpFixupArray *fixupArrayPtr);
 MODULE_SCOPE void	TclInitLiteralTable(LiteralTable *tablePtr);
 MODULE_SCOPE ExceptionRange *TclGetInnermostExceptionRange(CompileEnv *envPtr,
 			    int returnCode, ExceptionAux **auxPtrPtr);
-MODULE_SCOPE int	TclIsEmptyToken(const Tcl_Token *tokenPtr);
+MODULE_SCOPE bool	TclIsEmptyToken(const Tcl_Token *tokenPtr);
 MODULE_SCOPE void	TclAddLoopBreakFixup(CompileEnv *envPtr,
 			    ExceptionAux *auxPtr);
 MODULE_SCOPE void	TclAddLoopContinueFixup(CompileEnv *envPtr,
@@ -1343,7 +1353,7 @@ MODULE_SCOPE void	TclPrintSource(FILE *outFile,
 MODULE_SCOPE void	TclPushVarName(Tcl_Interp *interp,
 			    Tcl_Token *varTokenPtr, CompileEnv *envPtr,
 			    int flags, Tcl_LVTIndex *localIndexPtr,
-			    int *isScalarPtr);
+			    bool *isScalarPtr);
 MODULE_SCOPE void	TclPreserveByteCode(ByteCode *codePtr);
 MODULE_SCOPE int	TclRegisterLiteralObj(CompileEnv *envPtr,
 			    Tcl_Obj *objPtr, int flags);
@@ -1359,7 +1369,7 @@ MODULE_SCOPE Tcl_ObjCmdProc	TclNoIdentOpCmd;
 MODULE_SCOPE void	TclVerifyGlobalLiteralTable(Interp *iPtr);
 MODULE_SCOPE void	TclVerifyLocalLiteralTable(CompileEnv *envPtr);
 #endif
-MODULE_SCOPE int	TclWordKnownAtCompileTime(Tcl_Token *tokenPtr,
+MODULE_SCOPE bool	TclWordKnownAtCompileTime(Tcl_Token *tokenPtr,
 			    Tcl_Obj *valuePtr);
 MODULE_SCOPE void	TclLogCommandInfo(Tcl_Interp *interp,
 			    const char *script, const char *command,
@@ -1370,7 +1380,7 @@ MODULE_SCOPE Tcl_Obj *	TclGetInnerContext(Tcl_Interp *interp,
 MODULE_SCOPE Tcl_Obj *	TclNewInstNameObj(unsigned char inst);
 MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
 			    Tcl_Interp *interp, Tcl_Size objc,
-			    Tcl_Obj *const objv[], int isLambda);
+			    Tcl_Obj *const objv[], bool isLambda);
 
 /*
  *----------------------------------------------------------------
@@ -1736,13 +1746,13 @@ TclStoreInt4AtPtrImpl(
     do {								\
 	*(pc) = UCHAR(op);						\
 	TclStoreInt1AtPtr((i), ((pc)+1));				\
-    } while (0)
+    } while (false)
 
 #define TclUpdateInstInt4AtPc(op, i, pc) \
     do {								\
 	*(pc) = UCHAR(op);						\
 	TclStoreInt4AtPtr((i), ((pc)+1));				\
-    } while (0)
+    } while (false)
 
 /*
  * Inline func to fix up a forward jump to point to the current code-generation
@@ -1961,7 +1971,7 @@ ExceptionRangeEnds(
 	ECL *eclPtr = &ExtCmdLocation;					\
 	envPtr->line = eclPtr->line[(word)];				\
 	envPtr->clNext = eclPtr->next[(word)];				\
-    } while (0)
+    } while (false)
 
 #define PushVarNameWord(varTokenPtr,flags,localIndexPtr,isScalarPtr,wordIndex) \
     do {								\
@@ -1979,7 +1989,7 @@ ExceptionRangeEnds(
  */
 
 #define AnonymousLocal(envPtr) \
-    (TclFindCompiledLocal(NULL, /*nameChars*/ 0, /*create*/ 1, (envPtr)))
+    (TclFindCompiledLocal(NULL, /*nameChars*/ 0, /*create*/ true, (envPtr)))
 #define LocalScalar(chars,len,envPtr) \
     TclLocalScalar(chars, len, envPtr)
 #define LocalScalarFromToken(tokenPtr,envPtr) \

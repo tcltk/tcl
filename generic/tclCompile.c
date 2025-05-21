@@ -979,7 +979,7 @@ static void		EnterCmdStartData(CompileEnv *envPtr,
 static void		FreeByteCodeInternalRep(Tcl_Obj *objPtr);
 static void		FreeSubstCodeInternalRep(Tcl_Obj *objPtr);
 static int		GetCmdLocEncodingSize(CompileEnv *envPtr);
-static int		IsCompactibleCompileEnv(CompileEnv *envPtr);
+static bool		IsCompactibleCompileEnv(CompileEnv *envPtr);
 static void		PreventCycle(Tcl_Obj *objPtr, CompileEnv *envPtr);
 #ifdef TCL_COMPILE_STATS
 static void		RecordByteCodeStats(ByteCode *codePtr);
@@ -1452,7 +1452,7 @@ CleanupByteCode(
  * ---------------------------------------------------------------------
  */
 
-static int
+static bool
 IsCompactibleCompileEnv(
     CompileEnv *envPtr)
 {
@@ -1471,7 +1471,7 @@ IsCompactibleCompileEnv(
 
 	if (strcmp(nsPtr->fullName, "::tcl") == 0
 		|| strncmp(nsPtr->fullName, "::tcl::", 7) == 0) {
-	    return 1;
+	    return true;
 	}
     }
 
@@ -1490,17 +1490,17 @@ IsCompactibleCompileEnv(
 	case INST_INVOKE_STK:
 	case INST_INVOKE_EXPANDED:
 	case INST_INVOKE_REPLACE:
-	    return 0;
+	    return false;
 	    /* Runtime evals */
 	case INST_EVAL_STK:
 	case INST_EXPR_STK:
 	case INST_YIELD:
-	    return 0;
+	    return false;
 	    /* Upvars */
 	case INST_UPVAR:
 	case INST_NSUPVAR:
 	case INST_VARIABLE:
-	    return 0;
+	    return false;
 	default:
 	    size = tclInstructionTable[*pc].numBytes;
 	    assert (size > 0);
@@ -1508,7 +1508,7 @@ IsCompactibleCompileEnv(
 	}
     }
 
-    return 1;
+    return true;
 }
 
 /*
@@ -1744,22 +1744,22 @@ TclInitCompileEnv(
     envPtr->codeStart = envPtr->staticCodeSpace;
     envPtr->codeNext = envPtr->codeStart;
     envPtr->codeEnd = envPtr->codeStart + COMPILEENV_INIT_CODE_BYTES;
-    envPtr->mallocedCodeArray = 0;
+    envPtr->mallocedCodeArray = false;
 
     envPtr->literalArrayPtr = envPtr->staticLiteralSpace;
     envPtr->literalArrayNext = 0;
     envPtr->literalArrayEnd = COMPILEENV_INIT_NUM_OBJECTS;
-    envPtr->mallocedLiteralArray = 0;
+    envPtr->mallocedLiteralArray = false;
 
     envPtr->exceptArrayPtr = envPtr->staticExceptArraySpace;
     envPtr->exceptAuxArrayPtr = envPtr->staticExAuxArraySpace;
     envPtr->exceptArrayNext = 0;
     envPtr->exceptArrayEnd = COMPILEENV_INIT_EXCEPT_RANGES;
-    envPtr->mallocedExceptArray = 0;
+    envPtr->mallocedExceptArray = false;
 
     envPtr->cmdMapPtr = envPtr->staticCmdMapSpace;
     envPtr->cmdMapEnd = COMPILEENV_INIT_CMD_MAP_SIZE;
-    envPtr->mallocedCmdMap = 0;
+    envPtr->mallocedCmdMap = false;
     envPtr->atCmdStart = 1;
     envPtr->expandCount = 0;
 
@@ -1818,7 +1818,7 @@ TclInitCompileEnv(
 	    Tcl_IncrRefCount(envPtr->extCmdMapPtr->path);
 	} else {
 	    envPtr->extCmdMapPtr->type =
-		(envPtr->procPtr ? TCL_LOCATION_PROC : TCL_LOCATION_BC);
+		    (envPtr->procPtr ? TCL_LOCATION_PROC : TCL_LOCATION_BC);
 	}
     } else {
 	/*
@@ -1829,7 +1829,7 @@ TclInitCompileEnv(
 	 */
 
 	CmdFrame *ctxPtr = (CmdFrame *)TclStackAlloc(interp, sizeof(CmdFrame));
-	int pc = 0;
+	bool pc = false;
 
 	*ctxPtr = *invoker;
 	if (invoker->type == TCL_LOCATION_BC) {
@@ -1839,7 +1839,7 @@ TclInitCompileEnv(
 	     */
 
 	    TclGetSrcInfoForPc(ctxPtr);
-	    pc = 1;
+	    pc = true;
 	}
 
 	if ((ctxPtr->nline <= word) || (ctxPtr->line[word] < 0)) {
@@ -1897,7 +1897,7 @@ TclInitCompileEnv(
     envPtr->auxDataArrayPtr = envPtr->staticAuxDataArraySpace;
     envPtr->auxDataArrayNext = 0;
     envPtr->auxDataArrayEnd = COMPILEENV_INIT_AUX_DATA_SIZE;
-    envPtr->mallocedAuxDataArray = 0;
+    envPtr->mallocedAuxDataArray = false;
 }
 
 /*
@@ -2003,7 +2003,7 @@ TclFreeCompileEnv(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 TclWordKnownAtCompileTime(
     Tcl_Token *tokenPtr,	/* Points to Tcl_Token we should check */
     Tcl_Obj *valuePtr)		/* If not NULL, points to an unshared Tcl_Obj
@@ -2017,15 +2017,14 @@ TclWordKnownAtCompileTime(
 	if (valuePtr != NULL) {
 	    Tcl_AppendToObj(valuePtr, tokenPtr[1].start, tokenPtr[1].size);
 	}
-	return 1;
+	return true;
     }
     if (tokenPtr->type != TCL_TOKEN_WORD) {
-	return 0;
+	return false;
     }
     tokenPtr++;
     if (valuePtr != NULL) {
 	TclNewObj(tempPtr);
-	Tcl_IncrRefCount(tempPtr);
     }
     while (numComponents--) {
 	switch (tokenPtr->type) {
@@ -2037,7 +2036,7 @@ TclWordKnownAtCompileTime(
 
 	case TCL_TOKEN_BS:
 	    if (tempPtr != NULL) {
-		char utfBuf[4] = "";
+		char utfBuf[4] = {'\0', '\0', '\0', '\0'};
 		size_t length = TclParseBackslash(tokenPtr->start,
 			tokenPtr->size, NULL, utfBuf);
 
@@ -2046,18 +2045,16 @@ TclWordKnownAtCompileTime(
 	    break;
 
 	default:
-	    if (tempPtr != NULL) {
-		Tcl_DecrRefCount(tempPtr);
-	    }
-	    return 0;
+	    Tcl_BounceRefCount(tempPtr);
+	    return false;
 	}
 	tokenPtr++;
     }
     if (valuePtr != NULL) {
 	Tcl_AppendObjToObj(valuePtr, tempPtr);
-	Tcl_DecrRefCount(tempPtr);
+	Tcl_BounceRefCount(tempPtr);
     }
-    return 1;
+    return true;
 }
 
 /*
@@ -2078,12 +2075,13 @@ TclWordKnownAtCompileTime(
  *----------------------------------------------------------------------
  */
 
+/* Determine whether any words of the command require expansion;
+ * Bool result, but consumer is an int. */
 static int
 ExpandRequested(
     Tcl_Token *tokenPtr,
     Tcl_Size numWords)
 {
-    /* Determine whether any words of the command require expansion */
     while (numWords--) {
 	if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
 	    return 1;
@@ -2317,7 +2315,7 @@ CompileCommandTokens(
     Tcl_Obj *cmdObj;
     Command *cmdPtr = NULL;
     int code = TCL_ERROR, expand = -1;
-    int cmdKnown;
+    bool cmdKnown;
     int *wlines;
     Tcl_Size wlineat, numWords = parsePtr->numWords;
     Tcl_Size cmdLine = envPtr->line;
@@ -2670,7 +2668,8 @@ TclCompileVarSubst(
 
     localVar = TCL_INDEX_NONE;
     if (localVarName != -1) {
-	localVar = TclFindCompiledLocal(name, nameBytes, localVarName, envPtr);
+	localVar = TclFindCompiledLocal(name, nameBytes, (bool)localVarName,
+		envPtr);
     }
     if (localVar < 0) {
 	PushLiteral(envPtr, name, nameBytes);
@@ -2715,7 +2714,7 @@ TclCompileTokens(
     Tcl_Size length;
     unsigned char *entryCodeNext = envPtr->codeNext;
 #define NUM_STATIC_POS 20
-    int isLiteral;
+    bool isLiteral;
     Tcl_Size maxNumCL, numCL;
     Tcl_Size *clPosition = NULL;
     Tcl_Size depth = TclGetStackDepth(envPtr);
@@ -2735,11 +2734,11 @@ TclCompileTokens(
 
     numCL = 0;
     maxNumCL = 0;
-    isLiteral = 1;
+    isLiteral = true;
     for (i=0 ; i < count; i++) {
 	if ((tokenPtr[i].type != TCL_TOKEN_TEXT)
 		&& (tokenPtr[i].type != TCL_TOKEN_BS)) {
-	    isLiteral = 0;
+	    isLiteral = false;
 	    break;
 	}
     }
@@ -2979,7 +2978,7 @@ TclCompileExprWords(
      */
 
     if ((numWords == 1) && (tokenPtr->type == TCL_TOKEN_SIMPLE_WORD)) {
-	TclCompileExpr(interp, tokenPtr[1].start,tokenPtr[1].size, envPtr, 1);
+	TclCompileExpr(interp, tokenPtr[1].start,tokenPtr[1].size, envPtr, true);
 	return;
     }
 
@@ -3303,7 +3302,7 @@ TclFindCompiledLocal(
 				 * scalar or array variable. If NULL, a
 				 * temporary var should be created. */
     Tcl_Size nameBytes,		/* Number of bytes in the name. */
-    int create,			/* If 1, allocate a local frame entry for the
+    bool create,		/* If 1, allocate a local frame entry for the
 				 * variable if it is new. */
     CompileEnv *envPtr)		/* Points to the current compile environment*/
 {
@@ -3408,7 +3407,7 @@ TclFindCompiledLocal(
  *
  * Side effects:
  *	The size of the bytecode array is doubled. If envPtr->mallocedCodeArray
- *	is non-zero the old array is freed. Byte codes are copied from the old
+ *	is true the old array is freed. Byte codes are copied from the old
  *	array to the new one.
  *
  *----------------------------------------------------------------------
@@ -3433,7 +3432,8 @@ TclExpandCodeArray(
     size_t newBytes = 2 * (envPtr->codeEnd - envPtr->codeStart);
 
     if (envPtr->mallocedCodeArray) {
-	envPtr->codeStart = (unsigned char *)Tcl_Realloc(envPtr->codeStart, newBytes);
+	envPtr->codeStart = (unsigned char *)
+		Tcl_Realloc(envPtr->codeStart, newBytes);
     } else {
 	/*
 	 * envPtr->exceptArrayPtr isn't a Tcl_Alloc'd pointer, so
@@ -3444,7 +3444,7 @@ TclExpandCodeArray(
 
 	memcpy(newPtr, envPtr->codeStart, currBytes);
 	envPtr->codeStart = newPtr;
-	envPtr->mallocedCodeArray = 1;
+	envPtr->mallocedCodeArray = true;
     }
 
     envPtr->codeNext = envPtr->codeStart + currBytes;
@@ -3513,7 +3513,7 @@ EnterCmdStartData(
 
 	    memcpy(newPtr, envPtr->cmdMapPtr, currBytes);
 	    envPtr->cmdMapPtr = newPtr;
-	    envPtr->mallocedCmdMap = 1;
+	    envPtr->mallocedCmdMap = true;
 	}
 	envPtr->cmdMapEnd = newElems;
     }
@@ -3678,7 +3678,7 @@ EnterCmdWordData(
  * Side effects:
  *	If there is not enough room in the CompileEnv's ExceptionRange array,
  *	the array in expanded: a new array of double the size is allocated, if
- *	envPtr->mallocedExceptArray is non-zero the old array is freed, and
+ *	envPtr->mallocedExceptArray is true the old array is freed, and
  *	ExceptionRange entries are copied from the old array to the new one.
  *
  *----------------------------------------------------------------------
@@ -3726,7 +3726,7 @@ TclCreateExceptRange(
 	    memcpy(newPtr2, envPtr->exceptAuxArrayPtr, currBytes2);
 	    envPtr->exceptArrayPtr = newPtr;
 	    envPtr->exceptAuxArrayPtr = newPtr2;
-	    envPtr->mallocedExceptArray = 1;
+	    envPtr->mallocedExceptArray = true;
 	}
 	envPtr->exceptArrayEnd = newElems;
     }
@@ -3741,7 +3741,7 @@ TclCreateExceptRange(
     rangePtr->continueOffset = TCL_INDEX_NONE;
     rangePtr->catchOffset = TCL_INDEX_NONE;
     auxPtr = &envPtr->exceptAuxArrayPtr[index];
-    auxPtr->supportsContinue = 1;
+    auxPtr->supportsContinue = true;
     auxPtr->stackDepth = envPtr->currStackDepth;
     auxPtr->expandTarget = envPtr->expandCount;
     auxPtr->expandTargetDepth = TCL_INDEX_NONE;
@@ -4081,7 +4081,7 @@ TclCreateAuxData(
 
 	    memcpy(newPtr, envPtr->auxDataArrayPtr, currBytes);
 	    envPtr->auxDataArrayPtr = newPtr;
-	    envPtr->mallocedAuxDataArray = 1;
+	    envPtr->mallocedAuxDataArray = true;
 	}
 	envPtr->auxDataArrayEnd = newElems;
     }
@@ -4119,7 +4119,7 @@ TclInitJumpFixupArray(
     fixupArrayPtr->fixup = fixupArrayPtr->staticFixupSpace;
     fixupArrayPtr->next = 0;
     fixupArrayPtr->end = JUMPFIXUP_INIT_ENTRIES - 1;
-    fixupArrayPtr->mallocedArray = 0;
+    fixupArrayPtr->mallocedArray = false;
 }
 
 /*
@@ -4134,7 +4134,7 @@ TclInitJumpFixupArray(
  *
  * Side effects:
  *	The jump fixup array in *fixupArrayPtr is reallocated to a new array
- *	of double the size, and if fixupArrayPtr->mallocedArray is non-zero
+ *	of double the size, and if fixupArrayPtr->mallocedArray is true
  *	the old array is freed. Jump fixup structures are copied from the old
  *	array to the new one.
  *
@@ -4170,7 +4170,7 @@ TclExpandJumpFixupArray(
 
 	memcpy(newPtr, fixupArrayPtr->fixup, currBytes);
 	fixupArrayPtr->fixup = newPtr;
-	fixupArrayPtr->mallocedArray = 1;
+	fixupArrayPtr->mallocedArray = true;
     }
     fixupArrayPtr->end = newElems;
 }
@@ -4767,7 +4767,7 @@ EncodeCmdLocMap(
  *
  *----------------------------------------------------------------------
  */
-int
+bool
 TclIsEmptyToken(
     const Tcl_Token *tokenPtr)
 {
@@ -4779,10 +4779,10 @@ TclIsEmptyToken(
 	chLen = TclUtfToUniChar(ptr, &ucs4);
 	// Can't use Tcl_UniCharIsSpace; see test dict-22.24
 	if (ucs4 < 0 || ucs4 > 255 || tclCharTypeTable[ucs4] != TYPE_SPACE) {
-	    return 0;
+	    return false;
 	}
     }
-    return 1;
+    return true;
 }
 
 #ifdef TCL_COMPILE_STATS
