@@ -40,7 +40,7 @@
  * Rounding controls. (Thanks a lot, Intel!)
  */
 
-#ifdef __i386
+#if defined(i386) || defined(__i386__) || defined(__i386) || defined(_M_IX86)
 /*
  * gcc on x86 needs access to rounding controls, because of a questionable
  * feature where it retains intermediate results as IEEE 'long double' values
@@ -1252,7 +1252,7 @@ TclParseNumber(
 	    }
 	}
 	if (endPtrPtr == NULL) {
-	    if ((len != 0) && ((numBytes + 1 > 1) || (*p != '\0'))) {
+	    if ((len != 0) && ((numBytes > 0) || (*p != '\0'))) {
 		status = TCL_ERROR;
 	    }
 	} else {
@@ -1822,6 +1822,8 @@ MakeHighPrecisionDouble(
     TCL_IEEE_DOUBLE_ROUNDING_DECL
 
     int machexp = 0;		/* Machine exponent of a power of 10. */
+    int shift, n;
+    mp_int bntmp;
 
     /*
      * With gcc on x86, the floating point rounding mode is double-extended.
@@ -1869,6 +1871,43 @@ MakeHighPrecisionDouble(
      * for overflow. Convert back to a double, and test for underflow.
      */
 
+    /*
+     * TCL bug ca62367d61: the following two if-conditions handle the case,
+     * if the mantissa is to long to be represented.
+     * Very high numbers are returned, if this is not handled
+     */
+
+
+    if (exponent < -511) {
+	if (mp_init_copy(&bntmp, significand) != MP_OKAY) {
+	    Tcl_Panic("initialization failure in MakeHighPrecisionDouble");
+	}
+	shift = -exponent - 511;
+	exponent += shift;
+	while (shift > 0) {
+	    n = (shift > 9) ? 9 : shift;
+	    if (mp_div_d(&bntmp, (mp_digit) pow10_wide[n], &bntmp, NULL) != MP_OKAY) {
+		Tcl_Panic("initialization failure in MakeHighPrecisionDouble");
+	    }
+	    shift -= n;
+	}
+	significand = &bntmp;
+    } else if (exponent > 511) {
+	if (mp_init_copy(&bntmp, significand) != MP_OKAY) {
+	    Tcl_Panic("initialization failure in MakeHighPrecisionDouble");
+	}
+	shift = exponent - 511;
+	exponent -= shift;
+	while (shift > 0) {
+	    n = (shift > 9) ? 9 : shift;
+	    if (mp_mul_d(&bntmp, (mp_digit) pow10_wide[n], &bntmp) != MP_OKAY) {
+		Tcl_Panic("initialization failure in MakeHighPrecisionDouble");
+	    }
+	    shift -= n;
+	}
+	significand = &bntmp;
+    }
+
     retval = BignumToBiasedFrExp(significand, &machexp);
     retval = Pow10TimesFrExp(exponent, retval, &machexp);
     if (machexp > DBL_MAX_EXP*log2FLT_RADIX) {
@@ -1896,6 +1935,9 @@ MakeHighPrecisionDouble(
      */
 
   returnValue:
+    if (significand == &bntmp) {
+	mp_clear(&bntmp);
+    }
     if (signum) {
 	retval = -retval;
     }
@@ -2310,33 +2352,9 @@ static int
 RequiredPrecision(
     Tcl_WideUInt w)		/* Number to interrogate. */
 {
-    int rv;
-    unsigned int wi;
+    /* assert(sizeof(Tcl_WideUInt) <= sizeof(long long)) */
 
-    if (w & ((Tcl_WideUInt)0xFFFFFFFF << 32)) {
-	wi = (unsigned int)(w >> 32); rv = 32;
-    } else {
-	wi = (unsigned int)w; rv = 0;
-    }
-    if (wi & 0xFFFF0000) {
-	wi >>= 16; rv += 16;
-    }
-    if (wi & 0xFF00) {
-	wi >>= 8; rv += 8;
-    }
-    if (wi & 0xF0) {
-	wi >>= 4; rv += 4;
-    }
-    if (wi & 0xC) {
-	wi >>= 2; rv += 2;
-    }
-    if (wi & 0x2) {
-	wi >>= 1; ++rv;
-    }
-    if (wi & 0x1) {
-	++rv;
-    }
-    return rv;
+    return  w ? 1 + TclMSB((unsigned long long) w) : 0;
 }
 
 /*
