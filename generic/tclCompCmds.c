@@ -1450,7 +1450,6 @@ TclCompileDictCreateCmd(
 	keyToken = TokenAfter(valueToken);
 	Tcl_DictObjPut(NULL, dictObj, keyObj, valueObj);
 	Tcl_BounceRefCount(keyObj);
-	Tcl_BounceRefCount(valueObj);
     }
 
     /*
@@ -2078,23 +2077,6 @@ TclCompileDictLappendCmd(
     return TCL_OK;
 }
 
-static inline int
-IsEmptyToken(
-    const Tcl_Token *tokenPtr)
-{
-    const char *ptr, *end;
-    int ucs4, chLen = 0;
-
-    end = tokenPtr[1].start + tokenPtr[1].size;
-    for (ptr = tokenPtr[1].start; ptr < end; ptr += chLen) {
-	chLen = TclUtfToUniChar(ptr, &ucs4);
-	if (!Tcl_UniCharIsSpace(ucs4)) {
-	    return 0;
-	}
-    }
-    return 1;
-}
-
 /* Compile [dict with]. Delegates code issuing to IssueDictWithEmpty() and
  * IssueDictWithBodied(). */
 int
@@ -2137,11 +2119,9 @@ TclCompileDictWithCmd(
      * Test if the last word is an empty script; if so, we can compile it in
      * all cases, but if it is non-empty we need local variable table entries
      * to hold the temporary variables (used to keep stack usage simple).
-     *
-     * We don't test if it's just comments. Fixes please, if you care.
      */
 
-    if (!IsEmptyToken(tokenPtr)) {
+    if (!TclIsEmptyToken(tokenPtr)) {
 	if (!EnvHasLVT(envPtr)) {
 	    return TclCompileBasicMin2ArgCmd(interp, parsePtr, cmdPtr,
 		    envPtr);
@@ -2632,7 +2612,7 @@ TclCompileForCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *startTokenPtr, *testTokenPtr, *nextTokenPtr, *bodyTokenPtr;
-    Tcl_ExceptionRange bodyRange, nextRange;
+    Tcl_ExceptionRange bodyRange, nextRange = -1;
     Tcl_BytecodeLabel evalBody, testCondition;
 
     if (parsePtr->numWords != 5) {
@@ -2667,7 +2647,7 @@ TclCompileForCmd(
      * Inline compile the initial command.
      */
 
-    BODY(startTokenPtr, 1);
+    BODY(			startTokenPtr, 1);
     OP(				POP);
 
     /*
@@ -2701,13 +2681,15 @@ TclCompileForCmd(
      * TCL_CONTINUE but rather just TCL_BREAK.
      */
 
-    nextRange = MAKE_LOOP_RANGE();
-    envPtr->exceptAuxArrayPtr[nextRange].supportsContinue = 0;
     CONTINUE_TARGET(	bodyRange);
-    CATCH_RANGE(nextRange) {
-	BODY(			nextTokenPtr, 3);
+    if (!TclIsEmptyToken(nextTokenPtr)) {
+	nextRange = MAKE_LOOP_RANGE();
+	envPtr->exceptAuxArrayPtr[nextRange].supportsContinue = 0;
+	CATCH_RANGE(nextRange) {
+	    BODY(		nextTokenPtr, 3);
+	}
+	OP(			POP);
     }
-    OP(				POP);
 
     /*
      * Compile the test expression then emit the conditional jump that
@@ -2724,9 +2706,11 @@ TclCompileForCmd(
      */
 
     BREAK_TARGET(	bodyRange);
-    BREAK_TARGET(	nextRange);
     FINALIZE_LOOP(bodyRange);
-    FINALIZE_LOOP(nextRange);
+    if (nextRange != -1) {
+	BREAK_TARGET(	nextRange);
+	FINALIZE_LOOP(nextRange);
+    }
 
     /*
      * The for command's result is an empty string.

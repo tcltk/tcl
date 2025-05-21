@@ -2988,7 +2988,7 @@ TclCompileTryCmd(
 	    goto failedToCompile;
 	}
 	// Special case: empty finally clause
-	if (finallyToken[1].size == 0) {
+	if (TclIsEmptyToken(finallyToken)) {
 	    finallyToken = NULL;
 	}
     } else {
@@ -3198,7 +3198,7 @@ IssueTryClausesInstructions(
 		}
 	    }
 
-	    if (handlers[i].tokenPtr[1].size == 0) {
+	    if (TclIsEmptyToken(handlers[i].tokenPtr)) {
 		// Empty handler body; can't generate non-trivial result tuple
 		OP(		PUSH_EMPTY);
 		FWDJUMP(	JUMP, noError[i]);
@@ -3394,7 +3394,7 @@ IssueTryTraplessClausesInstructions(
 		}
 	    }
 
-	    if (handlers[i].tokenPtr[1].size == 0) {
+	    if (TclIsEmptyToken(handlers[i].tokenPtr)) {
 		// Empty handler body; can't generate non-trivial result tuple
 		OP(		PUSH_EMPTY);
 		FWDJUMP(	JUMP, noError[i]);
@@ -3642,6 +3642,7 @@ IssueTryClausesFinallyInstructions(
 	    OP4(		BEGIN_CATCH, range);
 	    FWDLABEL(	bodyStart);
 	}
+	// TODO: Simplify based on TclIsEmptyToken(handlers[i].tokenPtr)
 	BODY(			handlers[i].tokenPtr, 5 + i*4);
 	ExceptionRangeEnds(envPtr, range);
 	OP1(			PUSH_CONST, 0);
@@ -3927,6 +3928,7 @@ IssueTryTraplessClausesFinallyInstructions(
 	    OP4(		BEGIN_CATCH, range);
 	    FWDLABEL(	bodyStart);
 	}
+	// TODO: Simplfy based on TclIsEmptyToken(handlers[i].tokenPtr)
 	BODY(			handlers[i].tokenPtr, 5 + i*4);
 	ExceptionRangeEnds(envPtr, range);
 	OP(			PUSH_RETURN_OPTIONS);

@@ -53,6 +53,7 @@ default-install: default-install-stubs
 default-install: default-install-headers
 default-install-headers:
 	@echo Installing headers to '$(INCLUDE_INSTALL_DIR)'
+	@if not exist "$(INCLUDE_INSTALL_DIR)" $(MKDIR) "$(INCLUDE_INSTALL_DIR)"
 	@for %f in ($(PRJ_HEADERS_PUBLIC)) do @$(COPY) %f "$(INCLUDE_INSTALL_DIR)"
 !endif
 
