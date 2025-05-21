@@ -819,9 +819,7 @@ parent interpreter upon its children. Command limits (of type \fBcommand\fR)
 restrict the total number of Tcl commands that may be executed by an
 interpreter (as can be inspected via the \fBinfo cmdcount\fR command), and
 time limits (of type \fBtime\fR) place a limit by which execution within the
-interpreter must complete. Note that time limits are expressed as
-\fIabsolute\fR times (as in \fBclock seconds\fR) and not relative times (as in
-\fBafter\fR) because they may be modified after creation.
+interpreter must complete.
 .PP
 When a limit is exceeded for an interpreter, first any handler callbacks
 defined by parent interpreters are called. If those callbacks increase or
