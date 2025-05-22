@@ -23,7 +23,30 @@
 #define LRANGE_LENGTH_THRESHOLD 100
 
 /*
- * TclObjArray stores a reference counted Tcl_Obj array.
+ * Returns index of first matching entry in an array of Tcl_Obj,
+ * TCL_INDEX_NONE if not found.
+ */
+static Tcl_Size
+TclFindInArrayOfObjs(Tcl_Size haySize, Tcl_Obj * const hayElems[], Tcl_Obj *needlePtr)
+{
+    const char *needle;
+    Tcl_Size needleLen;
+    needle = TclGetStringFromObj(needlePtr, &needleLen);
+    for (int i = 0; i < haySize; i++) {
+	const char *hayElem;
+	Tcl_Size hayElemLen;
+	hayElem = TclGetStringFromObj(hayElems[i], &hayElemLen);
+	if (needleLen == hayElemLen &&
+	    memcmp(needle, hayElem, needleLen) == 0) {
+	    return i;
+	}
+    }
+    return TCL_INDEX_NONE;
+}
+
+/*
+ * TclObjArray stores a reference counted Tcl_Obj array. Basically, a
+ * cheaper, less functional version of Tcl lists.
  */
 typedef struct TclObjArray {
     Tcl_Size refCount;   /* Reference count */
@@ -90,6 +113,13 @@ TclObjArrayElems(TclObjArray *arrayPtr, Tcl_Obj ***objPtrPtr)
     return arrayPtr->nelems;
 }
 
+/* Returns index of first matching entry, TCL_INDEX_NONE if not found */
+static inline Tcl_Size
+TclObjArrayFind(TclObjArray *arrayPtr, Tcl_Obj *needlePtr)
+{
+    return TclFindInArrayOfObjs(arrayPtr->nelems, arrayPtr->elemPtrs, needlePtr);
+}
+
 /* FUTURES - move to tclInt.h and use in other list implementations as well */
 static inline Tcl_Size
 TclNormalizeRangeLimits(Tcl_Size *startPtr, Tcl_Size *endPtr, Tcl_Size len)
@@ -105,6 +135,88 @@ TclNormalizeRangeLimits(Tcl_Size *startPtr, Tcl_Size *endPtr, Tcl_Size len)
 	*endPtr = *startPtr - 1;
     }
     return *endPtr - *startPtr + 1;
+}
+
+/*
+ * TclListContainsValue --
+ *
+ *    Common function to locate a value in a list based on
+ *    a string comparison of values. Note there is no guarantee in abstract
+ *    lists about the order in which elements are searched so cannot use as
+ *    a "find first" kind of function.
+ *
+ * Results:
+ *    Standard Tcl result code.
+ *
+ * Side effects:
+ *    Stores 1 in *foundPtr if the value is found, 0 otherwise.
+ */
+int TclListContainsValue(
+    Tcl_Interp *interp, /* Used for error messages. May be NULL */
+    Tcl_Obj *needlePtr,	/* List to search */
+    Tcl_Obj *hayPtr,	/* List to search */
+    int *foundPtr)	/* Result */
+{
+    /* Adapted from TEBCresume. */
+    /* FUTURES - use this in TEBCresume INST_LIST_IN as well */
+
+    if (TclObjTypeHasProc(hayPtr, inOperProc)) {
+	return TclObjTypeInOperator(interp, needlePtr, hayPtr, foundPtr);
+    }
+
+    int status;
+    Tcl_Size haySize;
+
+    status = TclListObjLength(interp, hayPtr, &haySize);
+    if (status != TCL_OK) {
+	return status;
+    }
+
+    if (haySize == 0) {
+	*foundPtr = 0;
+	return TCL_OK;
+    }
+
+    const char *needle;
+    Tcl_Size needleLen;
+    needle = TclGetStringFromObj(needlePtr, &needleLen);
+
+    /*
+     * We iterate over an array in two cases:
+     *  - the list is non-abstract. In this case, the array already exists
+     *    and iteration is much faster than Tcl_ListObjIndex.
+     *  - the list is abstract but does not have a index proc so we are
+     *    forced shimmer to non-abstract array form.
+     */
+    Tcl_ObjTypeIndexProc *indexProc = TclObjTypeHasProc(hayPtr, indexProc);
+    if (TclHasInternalRep(hayPtr, &tclListType) || indexProc == NULL) {
+	Tcl_Obj **hayElems;
+	TclListObjGetElements(interp, hayPtr, &haySize, &hayElems);
+	*foundPtr =
+	    TclFindInArrayOfObjs(haySize, hayElems, needlePtr) == TCL_INDEX_NONE
+		? 0
+		: 1;
+	return TCL_OK;
+    }
+
+    /* Abstract list */
+    for (int i = 0; i < haySize; i++) {
+	Tcl_Obj *hayElemObj;
+	const char *hayElem;
+	Tcl_Size hayElemLen;
+	if (indexProc(interp, hayPtr, i, &hayElemObj) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	assert(hayElemObj != NULL); // Should never be NULL for i < haySize
+	hayElem = TclGetStringFromObj(hayElemObj, &hayElemLen);
+	if (needleLen == hayElemLen &&
+	    memcmp(needle, hayElem, needleLen) == 0) {
+	    *foundPtr = 1;
+	    return TCL_OK;
+	}
+    }
+    *foundPtr = 0;
+    return TCL_OK;
 }
 
 /*
@@ -218,9 +330,10 @@ static void TclAbstractListUpdateString (Tcl_Obj *objPtr)
 
 static void LreverseFreeIntrep(Tcl_Obj *objPtr);
 static void LreverseDupIntrep(Tcl_Obj *srcObj, Tcl_Obj *dupObj);
-static Tcl_ObjTypeLengthProc LreverseTypeLength;
-static Tcl_ObjTypeIndexProc LreverseTypeIndex;
-static Tcl_ObjTypeReverseProc LreverseTypeReverse;
+static Tcl_ObjTypeLengthProc     LreverseTypeLength;
+static Tcl_ObjTypeIndexProc      LreverseTypeIndex;
+static Tcl_ObjTypeReverseProc    LreverseTypeReverse;
+static Tcl_ObjTypeInOperatorProc LreverseTypeInOper;
 
 /*
  * IMPORTANT - current implementation is read-only except for reverseProc.
@@ -242,7 +355,7 @@ static const Tcl_ObjType lreverseType = {
 		   NULL,                /* getElementsProc */
 		   NULL,                /* setElementProc - FUTURES */
 		   NULL,                /* replaceProc - FUTURES */
-		   NULL)                /* inOperProc - FUTURES */
+		   LreverseTypeInOper)  /* inOperProc */
 };
 
 void
@@ -296,6 +409,19 @@ LreverseTypeReverse(Tcl_Interp *interp,
     *reversedPtrPtr = (Tcl_Obj *) objPtr->internalRep.ptrAndSize.ptr;
     return TCL_OK;
 }
+
+/* Implementation of Tcl_ObjType.inOperProc for lreverseType */
+int
+LreverseTypeInOper(
+    Tcl_Interp *interp,
+    Tcl_Obj *needlePtr, /* Value to check */
+    Tcl_Obj *hayPtr,    /* List to search */
+    int *foundPtr)      /* Result */
+{
+    Tcl_Obj *targetPtr = (Tcl_Obj *)hayPtr->internalRep.ptrAndSize.ptr;
+    return TclListContainsValue(interp, needlePtr, targetPtr, foundPtr);
+}
+
 
 /*
  *------------------------------------------------------------------------
@@ -402,8 +528,9 @@ Tcl_ListObjReverse(
 
 static void LrepeatFreeIntrep(Tcl_Obj *objPtr);
 static void LrepeatDupIntrep(Tcl_Obj *srcObj, Tcl_Obj *dupObj);
-static Tcl_ObjTypeLengthProc LrepeatTypeLength;
-static Tcl_ObjTypeIndexProc LrepeatTypeIndex;
+static Tcl_ObjTypeLengthProc     LrepeatTypeLength;
+static Tcl_ObjTypeIndexProc      LrepeatTypeIndex;
+static Tcl_ObjTypeInOperatorProc LrepeatTypeInOper;
 
 /*
  * IMPORTANT - current implementation is read-only. That is, the
@@ -424,7 +551,7 @@ static const Tcl_ObjType lrepeatType = {
 		   NULL,              /* getElementsProc */
 		   NULL,              /* Must be NULL - see above comment */
 		   NULL,              /* Must be NULL - see above comment */
-		   NULL)              /* inOperProc - FUTURES */
+		   LrepeatTypeInOper) /* inOperProc */
 };
 
 void
@@ -469,6 +596,20 @@ LrepeatTypeIndex(
     Tcl_Size arraySize = TclObjArrayElems(arrayPtr, &elems);
     index = index % arraySize; /* Modulo the size of the array */
     *elemPtrPtr = arrayPtr->elemPtrs[index];
+    return TCL_OK;
+}
+
+/* Implementation of Tcl_ObjType.inOperProc for lrepeatType */
+int
+LrepeatTypeInOper(
+    Tcl_Interp *interp,
+    Tcl_Obj *needlePtr, /* Value to check */
+    Tcl_Obj *hayPtr,    /* List to search */
+    int *foundPtr)      /* Result */
+{
+    TclObjArray *arrayPtr = (TclObjArray *)hayPtr->internalRep.ptrAndSize.ptr;
+    Tcl_Size foundIndex = TclObjArrayFind(arrayPtr, needlePtr);
+    *foundPtr = foundIndex == TCL_INDEX_NONE ? 0 : 1;
     return TCL_OK;
 }
 
@@ -617,7 +758,7 @@ static const Tcl_ObjType lrangeType = {
 		   NULL,             /* getElementsProc */
 		   NULL,             /* setElementProc, see above comment */
 		   NULL,             /* replaceProc, see above comment */
-		   NULL)             /* inOperProc - FUTURES */
+		   NULL)             /* inOperProc */
 };
 
 static inline int
