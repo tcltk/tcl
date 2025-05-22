@@ -4424,31 +4424,30 @@ TEBCresume(
 	DEPRECATED_OPCODE_MARK(INST_JUMP_FALSE1);
 	jmpOffset[0] = TclGetInt1AtPtr(pc + 1);
 	jmpOffset[1] = 2;
+	TRACE(("%d => ", jmpOffset[0]));
 	goto doCondJump;
 
     case INST_JUMP_TRUE1:
 	DEPRECATED_OPCODE_MARK(INST_JUMP_TRUE1);
 	jmpOffset[0] = 2;
 	jmpOffset[1] = TclGetInt1AtPtr(pc + 1);
+	TRACE(("%d => ", jmpOffset[1]));
 	goto doCondJump;
 #endif
 
     case INST_JUMP_FALSE:
 	jmpOffset[0] = TclGetInt4AtPtr(pc + 1);	/* FALSE offset */
 	jmpOffset[1] = 5;			/* TRUE offset */
+	TRACE(("%d => ", jmpOffset[0]));
 	goto doCondJump;
 
     case INST_JUMP_TRUE:
 	jmpOffset[0] = 5;
 	jmpOffset[1] = TclGetInt4AtPtr(pc + 1);
+	TRACE(("%d => ", jmpOffset[1]));
 
     doCondJump:
 	valuePtr = OBJ_AT_TOS;
-	TRACE(("%d => ", jmpOffset[(
-#ifndef REMOVE_DEPRECATED_OPCODES
-		*pc==INST_JUMP_FALSE1 ||
-#endif
-		*pc==INST_JUMP_FALSE) ? 0 : 1]));
 
 	/* TODO - check claim that taking address of b harms performance */
 	/* TODO - consider optimization search for constants */
@@ -7028,7 +7027,7 @@ TEBCresume(
 	value2Ptr = OBJ_AT_TOS;
 	valuePtr = OBJ_UNDER_TOS;
 	TRACE(("\"%.20s\" \"%.20s\" %u => ",
-		O2S(valuePtr), O2S(value2Ptr), cmpLen));
+		O2S(valuePtr), O2S(value2Ptr), (unsigned) cmpLen));
 	if (TclListObjGetElements(interp, valuePtr, &aObjc, &aObjv) != TCL_OK) {
 	    TRACE_ERROR(interp);
 	    goto gotError;
