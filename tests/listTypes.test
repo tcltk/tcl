@@ -906,6 +906,29 @@ namespace eval listtype {
     }
 
     ################################################################
+    # expr in/ni operators
+    foreach ltype $listTypes {
+        testdef expr-in-$ltype-first "expr first in/ni list of type $ltype" -body {
+            set l [makeList $ltype]
+            list [expr {[lindex $l 0] in $l}] \
+                [expr {[lindex $l 0] ni $l}] \
+                [getListType $l]
+        } -result [list 1 0 $ltype]
+        testdef expr-in-$ltype-last "expr end in/ni list of type $ltype" -body {
+            set l [makeList $ltype]
+            list [expr {[lindex $l end] in $l}] \
+                [expr {[lindex $l end] ni $l}] \
+                [getListType $l]
+        } -result [list 1 0 $ltype]
+        testdef expr-in-$ltype-fail "value not in/ni list of type $ltype" -body {
+            set l [makeList $ltype]
+            list [expr {"XX" in $l}] \
+                [expr {"XX" ni $l}] \
+                [getListType $l]
+        } -result [list 0 1 $ltype]
+    }
+
+    ################################################################
     # lreverse tests
     #
 
