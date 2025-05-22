@@ -124,31 +124,31 @@ typedef struct {
 } TEBCdata;
 
 #define TEBC_YIELD() \
-    do {						\
-	esPtr->tosPtr = tosPtr;				\
-	TclNRAddCallback(interp, TEBCresume,		\
-		TD, pc, INT2PTR(cleanup), NULL);	\
+    do {								\
+	esPtr->tosPtr = tosPtr;						\
+	TclNRAddCallback(interp, TEBCresume,				\
+		TD, pc, INT2PTR(cleanup), NULL);			\
     } while (0)
 
 #define TEBC_DATA_DIG() \
-    do {					\
-	tosPtr = esPtr->tosPtr;			\
+    do {								\
+	tosPtr = esPtr->tosPtr;						\
     } while (0)
 
 #define PUSH_TAUX_OBJ(objPtr) \
-    do {							\
-	if (auxObjList) {					\
-	    (objPtr)->length += auxObjList->length;		\
-	}							\
-	(objPtr)->internalRep.twoPtrValue.ptr1 = auxObjList;	\
-	auxObjList = (objPtr);					\
+    do {								\
+	if (auxObjList) {						\
+	    (objPtr)->length += auxObjList->length;			\
+	}								\
+	(objPtr)->internalRep.twoPtrValue.ptr1 = auxObjList;		\
+	auxObjList = (objPtr);						\
     } while (0)
 
 #define POP_TAUX_OBJ() \
-    do {							\
-	tmpPtr = auxObjList;					\
+    do {								\
+	tmpPtr = auxObjList;						\
 	auxObjList = (Tcl_Obj *)tmpPtr->internalRep.twoPtrValue.ptr1;	\
-	Tcl_DecrRefCount(tmpPtr);				\
+	Tcl_DecrRefCount(tmpPtr);					\
     } while (0)
 
 /*
@@ -499,23 +499,23 @@ VarHashFindVar(
     do {								\
 	if (TCL_DTRACE_INST_DONE_ENABLED()) {				\
 	    if (curInstName) {						\
-		TCL_DTRACE_INST_DONE(curInstName, CURR_DEPTH,	\
+		TCL_DTRACE_INST_DONE(curInstName, CURR_DEPTH,		\
 			tosPtr);					\
 	    }								\
 	    curInstName = tclInstructionTable[*pc].name;		\
 	    if (TCL_DTRACE_INST_START_ENABLED()) {			\
-		TCL_DTRACE_INST_START(curInstName, CURR_DEPTH,	\
+		TCL_DTRACE_INST_START(curInstName, CURR_DEPTH,		\
 			tosPtr);					\
 	    }								\
 	} else if (TCL_DTRACE_INST_START_ENABLED()) {			\
 	    TCL_DTRACE_INST_START(tclInstructionTable[*pc].name,	\
-			CURR_DEPTH, tosPtr);			\
+			CURR_DEPTH, tosPtr);				\
 	}								\
     } while (0)
 #define TCL_DTRACE_INST_LAST() \
     do {								\
 	if (TCL_DTRACE_INST_DONE_ENABLED() && curInstName) {		\
-	    TCL_DTRACE_INST_DONE(curInstName, CURR_DEPTH, tosPtr);\
+	    TCL_DTRACE_INST_DONE(curInstName, CURR_DEPTH, tosPtr);	\
 	}								\
     } while (0)
 
@@ -539,7 +539,7 @@ VarHashFindVar(
 		*(ptrPtr) = (void *)					\
 		    (&((objPtr)->internalRep.doubleValue)), TCL_OK) :	\
     (((objPtr)->bytes != NULL) && ((objPtr)->length == 0))		\
-	? TCL_ERROR :			\
+	? TCL_ERROR :							\
     Tcl_GetNumberFromObj((interp), (objPtr), (ptrPtr), (tPtr)))
 
 /*
@@ -2861,7 +2861,7 @@ TEBCresume(
 	TEBC_YIELD();
 	/* add TEBCResume for object at top of stack */
 	return TclNRExecuteByteCode(interp,
-		    TclCompileObj(interp, OBJ_AT_TOS, NULL, 0));
+		TclCompileObj(interp, OBJ_AT_TOS, NULL, 0));
 
     case INST_INVOKE_EXPANDED:
 	CLANG_ASSERT(auxObjList);
@@ -6858,7 +6858,7 @@ TEBCresume(
 			    valuePtr = elements[valIndex];
 			} else {
 			    status = Tcl_ListObjIndex(
-				interp, listPtr, valIndex, &valuePtr);
+				    interp, listPtr, valIndex, &valuePtr);
 			    if (status != TCL_OK) {
 				/* Could happen for abstract lists */
 				CACHE_STACK_INFO();
@@ -8310,26 +8310,26 @@ ExecuteExtendedBinaryMathOp(
     Tcl_Obj *value2Ptr)		/* The second operand on the stack. */
 {
 #define WIDE_RESULT(w) \
-    if (Tcl_IsShared(valuePtr)) {		\
-	return Tcl_NewWideIntObj(w);		\
-    } else {					\
-	TclSetIntObj(valuePtr, (w));		\
-	return NULL;				\
+    if (Tcl_IsShared(valuePtr)) {					\
+	return Tcl_NewWideIntObj(w);					\
+    } else {								\
+	TclSetIntObj(valuePtr, (w));					\
+	return NULL;							\
     }
 #define BIG_RESULT(b) \
-    if (Tcl_IsShared(valuePtr)) {		\
-	return Tcl_NewBignumObj(b);		\
-    } else {					\
-	Tcl_SetBignumObj(valuePtr, (b));		\
-	return NULL;				\
+    if (Tcl_IsShared(valuePtr)) {					\
+	return Tcl_NewBignumObj(b);					\
+    } else {								\
+	Tcl_SetBignumObj(valuePtr, (b));				\
+	return NULL;							\
     }
 #define DOUBLE_RESULT(d) \
-    if (Tcl_IsShared(valuePtr)) {		\
-	TclNewDoubleObj(objResultPtr, (d));	\
-	return objResultPtr;			\
-    } else {					\
-	Tcl_SetDoubleObj(valuePtr, (d));	\
-	return NULL;				\
+    if (Tcl_IsShared(valuePtr)) {					\
+	TclNewDoubleObj(objResultPtr, (d));				\
+	return objResultPtr;						\
+    } else {								\
+	Tcl_SetDoubleObj(valuePtr, (d));				\
+	return NULL;							\
     }
 
     int type1, type2;
@@ -9902,13 +9902,13 @@ TclExprFloatError(
 
 int
 TclLog2(
-    long long value)			/* The integer for which to compute the log
+    long long value)		/* The integer for which to compute the log
 				 * base 2. The maximum output is 31 */
 {
    return (value > 0) ?  (
-		(value > 0x7FFFFFFF) ?
-			31 : TclMSB((unsigned long long) value)
-		) : 0;
+	(value > 0x7FFFFFFF) ?
+		31 : TclMSB((unsigned long long) value)
+	) : 0;
 }
 
 /*
