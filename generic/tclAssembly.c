@@ -1377,8 +1377,8 @@ AssembleOneLine(
 	    goto cleanup;
 	}
 	if (opnd < 0 || opnd > 3) {
-	    Tcl_SetObjResult(interp,
-		     Tcl_NewStringObj("operand must be [0..3]", -1));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "operand must be [0..3]", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "ASSEM", "OPERAND<0,>3", (char *)NULL);
 	    goto cleanup;
 	}
@@ -1618,8 +1618,8 @@ AssembleOneLine(
 	}
 	if (opnd < 2) {
 	    if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
-		Tcl_SetObjResult(interp,
-			Tcl_NewStringObj("operand must be >=2", -1));
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"operand must be >=2", -1));
 		Tcl_SetErrorCode(interp, "TCL", "ASSEM", "OPERAND>=2", (char *)NULL);
 	    }
 	    goto cleanup;
@@ -1749,7 +1749,7 @@ AssembleOneLine(
     }
 
     status = TCL_OK;
- cleanup:
+  cleanup:
     Tcl_DecrRefCount(instNameObj);
     if (operand1Obj) {
 	Tcl_DecrRefCount(operand1Obj);

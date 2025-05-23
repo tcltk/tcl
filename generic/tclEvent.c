@@ -1725,7 +1725,7 @@ Tcl_VwaitObjCmd(
 
     foundEvent = 1;
     while (!timedOut && foundEvent &&
-	   ((!any && (done < numItems)) || (any && !done))) {
+	    ((!any && (done < numItems)) || (any && !done))) {
 	foundEvent = Tcl_DoOneEvent(mask);
 	if (Tcl_Canceled(interp, TCL_LEAVE_ERR_MSG) == TCL_ERROR) {
 	    break;

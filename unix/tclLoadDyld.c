@@ -466,7 +466,7 @@ TclpLoadMemory(
 	    ms = codeSize;
 	}
 	if (ms && !(ms >= mh_size && mh->magic == mh_magic &&
-		 mh->filetype == MH_BUNDLE)) {
+		mh->filetype == MH_BUNDLE)) {
 	    err = NSObjectFileImageInappropriateFile;
 	}
 	if (err == NSObjectFileImageSuccess) {

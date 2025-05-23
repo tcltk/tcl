@@ -177,7 +177,7 @@ GrowUnicodeBuffer(
     /* Note STRING_MAXCHARS already takes into account space for nul */
     if (needed > STRING_MAXCHARS) {
 	Tcl_Panic("max size for a Tcl unicode rep (%" TCL_Z_MODIFIER "d bytes) exceeded",
-		  STRING_MAXCHARS);
+		STRING_MAXCHARS);
     }
     if (stringPtr->maxChars > 0) {
 	/* Expansion - try allocating extra space */
@@ -2562,8 +2562,8 @@ Tcl_AppendFormatToObj(
 	}
 	default:
 	    if (interp != NULL) {
-		Tcl_SetObjResult(interp,
-			Tcl_ObjPrintf("bad field specifier \"%c\"", ch));
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"bad field specifier \"%c\"", ch));
 		Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BADTYPE", (char *)NULL);
 	    }
 	    goto error;

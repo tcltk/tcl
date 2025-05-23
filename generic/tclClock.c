@@ -3474,7 +3474,7 @@ ClockParseFmtScnArgs(
 	/* extact fields from base */
 	date->seconds = baseVal;
 	if (ClockGetDateFields(dataPtr, interp, date, opts->timezoneObj,
-	      GREGORIAN_CHANGE_DATE) != TCL_OK) {
+		GREGORIAN_CHANGE_DATE) != TCL_OK) {
 	    /* TODO - GREGORIAN_CHANGE_DATE should be locale-dependent */
 	    return TCL_ERROR;
 	}
@@ -4265,7 +4265,7 @@ ClockCalcRelTime(
 	    yyRelSeconds = 0;
 	    /* Convert it back */
 	    if (ClockGetDateFields(opts->dataPtr, opts->interp, &yydate,
-		  opts->timezoneObj, GREGORIAN_CHANGE_DATE) != TCL_OK) {
+		    opts->timezoneObj, GREGORIAN_CHANGE_DATE) != TCL_OK) {
 		/* TODO - GREGORIAN_CHANGE_DATE should be locale-dependent */
 		return TCL_ERROR;
 	    }

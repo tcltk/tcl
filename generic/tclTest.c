@@ -597,7 +597,7 @@ Tcltest_Init(
     Tcl_CreateObjCommand(interp, "testdelassocdata", TestdelassocdataCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testdoubledigits", TestdoubledigitsCmd,
-			 NULL, NULL);
+	    NULL, NULL);
     Tcl_DStringInit(&dstring);
     Tcl_CreateObjCommand(interp, "testdstring", TestdstringCmd, NULL,
 	    NULL);
@@ -1106,7 +1106,7 @@ TestcmdinfoCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     static const char *const subcmds[] = {
-	   "call", "call2", "create", "delete", "get", "modify", NULL
+	"call", "call2", "create", "delete", "get", "modify", NULL
     };
     enum options {
 	CMDINFO_CALL, CMDINFO_CALL2, CMDINFO_CREATE,
@@ -1622,7 +1622,8 @@ CreatedCommandProc(
     found = Tcl_GetCommandInfo(interp, "test_ns_basic::createdcommand",
 	    &info);
     if (!found) {
-	Tcl_AppendResult(interp, "CreatedCommandProc could not get command info for test_ns_basic::createdcommand",
+	Tcl_AppendResult(interp,
+		"CreatedCommandProc could not get command info for test_ns_basic::createdcommand",
 		(char *)NULL);
 	return TCL_ERROR;
     }
@@ -1643,7 +1644,8 @@ CreatedCommandProc2(
 
     found = Tcl_GetCommandInfo(interp, "value:at:", &info);
     if (!found) {
-	Tcl_AppendResult(interp, "CreatedCommandProc2 could not get command info for test_ns_basic::createdcommand",
+	Tcl_AppendResult(interp,
+		"CreatedCommandProc2 could not get command info for test_ns_basic::createdcommand",
 		(char *)NULL);
 	return TCL_ERROR;
     }
@@ -1981,7 +1983,15 @@ TestdstringCmd(
 	if (strcmp(Tcl_GetString(objv[2]), "staticsmall") == 0) {
 	    Tcl_AppendResult(interp, "short", (char *)NULL);
 	} else if (strcmp(Tcl_GetString(objv[2]), "staticlarge") == 0) {
-	    Tcl_AppendResult(interp, "first0 first1 first2 first3 first4 first5 first6 first7 first8 first9\nsecond0 second1 second2 second3 second4 second5 second6 second7 second8 second9\nthird0 third1 third2 third3 third4 third5 third6 third7 third8 third9\nfourth0 fourth1 fourth2 fourth3 fourth4 fourth5 fourth6 fourth7 fourth8 fourth9\nfifth0 fifth1 fifth2 fifth3 fifth4 fifth5 fifth6 fifth7 fifth8 fifth9\nsixth0 sixth1 sixth2 sixth3 sixth4 sixth5 sixth6 sixth7 sixth8 sixth9\nseventh0 seventh1 seventh2 seventh3 seventh4 seventh5 seventh6 seventh7 seventh8 seventh9\n", (char *)NULL);
+	    Tcl_AppendResult(interp,
+		    "first0 first1 first2 first3 first4 first5 first6 first7 first8 first9\n"
+		    "second0 second1 second2 second3 second4 second5 second6 second7 second8 second9\n"
+		    "third0 third1 third2 third3 third4 third5 third6 third7 third8 third9\n"
+		    "fourth0 fourth1 fourth2 fourth3 fourth4 fourth5 fourth6 fourth7 fourth8 fourth9\n"
+		    "fifth0 fifth1 fifth2 fifth3 fifth4 fifth5 fifth6 fifth7 fifth8 fifth9\n"
+		    "sixth0 sixth1 sixth2 sixth3 sixth4 sixth5 sixth6 sixth7 sixth8 sixth9\n"
+		    "seventh0 seventh1 seventh2 seventh3 seventh4 seventh5 seventh6 seventh7 seventh8 seventh9\n",
+		    (char *)NULL);
 	} else if (strcmp(Tcl_GetString(objv[2]), "free") == 0) {
 	    char *s = (char *)Tcl_Alloc(100);
 	    strcpy(s, "This is a malloc-ed string");
@@ -2204,10 +2214,10 @@ static int UtfExtWrapper(
 	    &dstWrote,
 	    dstCharsVar ? &dstChars : NULL);
     if (memcmp(bufPtr + bufLen - 4, "\xAB\xCD\xEF\xAB", 4)) {
-	Tcl_SetObjResult(interp,
-			 Tcl_ObjPrintf("%s wrote past output buffer",
-				       transformer == Tcl_ExternalToUtf ?
-				       "Tcl_ExternalToUtf" : "Tcl_UtfToExternal"));
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"%s wrote past output buffer",
+		transformer == Tcl_ExternalToUtf ?
+			"Tcl_ExternalToUtf" : "Tcl_UtfToExternal"));
 	result = TCL_ERROR;
     } else if (result != TCL_ERROR) {
 	Tcl_Obj *resultObjs[3];
@@ -3838,12 +3848,12 @@ TestlistrepCmd(
 	break;
 
     case LISTREP_DESCRIBE:
-#define APPEND_FIELD(targetObj_, structPtr_, fld_)                        \
-    do {                                                                  \
-	Tcl_ListObjAppendElement(                                         \
-	    interp, (targetObj_), Tcl_NewStringObj(#fld_, -1));           \
-	Tcl_ListObjAppendElement(                                         \
-	    interp, (targetObj_), Tcl_NewWideIntObj((structPtr_)->fld_)); \
+#define APPEND_FIELD(targetObj_, structPtr_, fld_) \
+    do {								\
+	Tcl_ListObjAppendElement(interp, (targetObj_),			\
+		Tcl_NewStringObj(#fld_, -1));				\
+	Tcl_ListObjAppendElement(interp, (targetObj_),			\
+		Tcl_NewWideIntObj((structPtr_)->fld_));			\
     } while (0)
 	if (objc != 3) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "object");
@@ -4031,8 +4041,8 @@ TestmsbObjCmd(
 	return TCL_ERROR;
     }
     if (w <= 0) {
-	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("argument must be positive",-1));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"argument must be positive", -1));
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, Tcl_NewIntObj(TclMSB((unsigned long long)w)));
@@ -5059,7 +5069,8 @@ TestupvarCmd(
 	} else if (strcmp(Tcl_GetString(objv[4]), "namespace") == 0) {
 	    flags = TCL_NAMESPACE_ONLY;
 	}
-	return Tcl_UpVar2(interp, Tcl_GetString(objv[1]), Tcl_GetString(objv[2]), NULL, Tcl_GetString(objv[3]), flags);
+	return Tcl_UpVar2(interp, Tcl_GetString(objv[1]), Tcl_GetString(objv[2]),
+		NULL, Tcl_GetString(objv[3]), flags);
     } else {
 	if (strcmp(Tcl_GetString(objv[5]), "global") == 0) {
 	    flags = TCL_GLOBAL_ONLY;
@@ -5067,8 +5078,8 @@ TestupvarCmd(
 	    flags = TCL_NAMESPACE_ONLY;
 	}
 	return Tcl_UpVar2(interp, Tcl_GetString(objv[1]), Tcl_GetString(objv[2]),
-		(Tcl_GetString(objv[3])[0] == 0) ? NULL : Tcl_GetString(objv[3]), Tcl_GetString(objv[4]),
-		flags);
+		(Tcl_GetString(objv[3])[0] == 0) ? NULL : Tcl_GetString(objv[3]),
+		Tcl_GetString(objv[4]), flags);
     }
 }
 
@@ -5109,16 +5120,20 @@ TestseterrorcodeCmd(
 	Tcl_SetErrorCode(interp, Tcl_GetString(objv[1]), (char *)NULL);
 	break;
     case 3:
-	Tcl_SetErrorCode(interp, Tcl_GetString(objv[1]), Tcl_GetString(objv[2]), (char *)NULL);
+	Tcl_SetErrorCode(interp, Tcl_GetString(objv[1]), Tcl_GetString(objv[2]),
+		(char *)NULL);
 	break;
     case 4:
-	Tcl_SetErrorCode(interp, Tcl_GetString(objv[1]), Tcl_GetString(objv[2]), Tcl_GetString(objv[3]), (char *)NULL);
+	Tcl_SetErrorCode(interp, Tcl_GetString(objv[1]), Tcl_GetString(objv[2]),
+		Tcl_GetString(objv[3]), (char *)NULL);
 	break;
     case 5:
-	Tcl_SetErrorCode(interp, Tcl_GetString(objv[1]), Tcl_GetString(objv[2]), Tcl_GetString(objv[3]), Tcl_GetString(objv[4]), (char *)NULL);
+	Tcl_SetErrorCode(interp, Tcl_GetString(objv[1]), Tcl_GetString(objv[2]),
+		Tcl_GetString(objv[3]), Tcl_GetString(objv[4]), (char *)NULL);
 	break;
     case 6:
-	Tcl_SetErrorCode(interp, Tcl_GetString(objv[1]), Tcl_GetString(objv[2]), Tcl_GetString(objv[3]), Tcl_GetString(objv[4]),
+	Tcl_SetErrorCode(interp, Tcl_GetString(objv[1]), Tcl_GetString(objv[2]),
+		Tcl_GetString(objv[3]), Tcl_GetString(objv[4]),
 		Tcl_GetString(objv[5]), (char *)NULL);
     }
     return TCL_ERROR;
@@ -5855,7 +5870,8 @@ TestsetCmd(
 	return TCL_OK;
     } else if (objc == 3) {
 	Tcl_AppendResult(interp, "before set", (char *)NULL);
-	value = Tcl_SetVar2(interp, Tcl_GetString(objv[1]), NULL, Tcl_GetString(objv[2]), flags);
+	value = Tcl_SetVar2(interp, Tcl_GetString(objv[1]), NULL,
+		Tcl_GetString(objv[2]), flags);
 	if (value == NULL) {
 	    return TCL_ERROR;
 	}
@@ -5878,7 +5894,8 @@ Testset2Cmd(
 
     if (objc == 3) {
 	Tcl_AppendResult(interp, "before get", (char *)NULL);
-	value = Tcl_GetVar2(interp, Tcl_GetString(objv[1]), Tcl_GetString(objv[2]), flags);
+	value = Tcl_GetVar2(interp, Tcl_GetString(objv[1]),
+		Tcl_GetString(objv[2]), flags);
 	if (value == NULL) {
 	    return TCL_ERROR;
 	}
@@ -5886,7 +5903,8 @@ Testset2Cmd(
 	return TCL_OK;
     } else if (objc == 4) {
 	Tcl_AppendResult(interp, "before set", (char *)NULL);
-	value = Tcl_SetVar2(interp, Tcl_GetString(objv[1]), Tcl_GetString(objv[2]), Tcl_GetString(objv[3]), flags);
+	value = Tcl_SetVar2(interp, Tcl_GetString(objv[1]), Tcl_GetString(objv[2]),
+		Tcl_GetString(objv[3]), flags);
 	if (value == NULL) {
 	    return TCL_ERROR;
 	}
@@ -6070,8 +6088,8 @@ TestChannelCmd(
 
 	    chan = (Tcl_Channel) NULL;
 	    for (nextPtrPtr = &firstDetached, curPtr = firstDetached;
-		 curPtr != NULL;
-		 nextPtrPtr = &(curPtr->nextPtr), curPtr = curPtr->nextPtr) {
+		    curPtr != NULL;
+		     nextPtrPtr = &(curPtr->nextPtr), curPtr = curPtr->nextPtr) {
 
 		if (strcmp(Tcl_GetString(objv[2]), Tcl_GetChannelName(curPtr->chan)) == 0) {
 		    *nextPtrPtr = curPtr->nextPtr;
@@ -6615,9 +6633,8 @@ TestChannelEventCmd(
 	    statePtr->scriptRecordPtr = esPtr->nextPtr;
 	} else {
 	    for (prevEsPtr = statePtr->scriptRecordPtr;
-		 (prevEsPtr != NULL) &&
-		     (prevEsPtr->nextPtr != esPtr);
-		 prevEsPtr = prevEsPtr->nextPtr) {
+		    (prevEsPtr != NULL) && (prevEsPtr->nextPtr != esPtr);
+		    prevEsPtr = prevEsPtr->nextPtr) {
 		/* Empty loop body. */
 	    }
 	    if (prevEsPtr == NULL) {
@@ -6934,12 +6951,14 @@ TestGetIndexFromObjStructCmd(
 	return TCL_ERROR;
     }
     memset(idx, 85, sizeof(idx));
-    if (Tcl_GetIndexFromObjStruct(interp, (Tcl_GetString(objv[1])[0] ? objv[1] : NULL), ary, 2*sizeof(char *),
-	    "dummy", flags, &idx[1]) != TCL_OK) {
+    if (Tcl_GetIndexFromObjStruct(interp, (Tcl_GetString(objv[1])[0] ? objv[1] : NULL),
+	    ary, 2*sizeof(char *), "dummy", flags, &idx[1]) != TCL_OK) {
 	return TCL_ERROR;
     }
     if (idx[0] != 85 || idx[2] != 85) {
-	Tcl_AppendResult(interp, "Tcl_GetIndexFromObjStruct overwrites bytes near index variable", (char *)NULL);
+	Tcl_AppendResult(interp,
+		"Tcl_GetIndexFromObjStruct overwrites bytes near index variable",
+		(char *)NULL);
 	return TCL_ERROR;
     } else if (idx[1] != target) {
 	char buffer[64];
@@ -7773,8 +7792,8 @@ TestcpuidCmd(
     }
     status = TclWinCPUID(index, regs);
     if (status != TCL_OK) {
-	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("operation not available", -1));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"operation not available", -1));
 	return status;
     }
     for (i=0 ; i<4 ; ++i) {
@@ -8026,8 +8045,8 @@ TestconcatobjCmd(
      * the end if no errors were found.
      */
 
-    Tcl_SetObjResult(interp,
-	    Tcl_NewStringObj("Tcl_ConcatObj is unsafe:", -1));
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+	    "Tcl_ConcatObj is unsafe:", -1));
 
     emptyPtr = Tcl_NewObj();
 
@@ -8720,10 +8739,10 @@ TestLutilCmd(
     Tcl_Obj **l1Elems;
     Tcl_Obj **l2Elems;
     static const char *const subcmds[] = {
-	   "equal", "diffindex", NULL
+	"equal", "diffindex", NULL
     };
     enum options {
-	   LUTIL_EQUAL, LUTIL_DIFFINDEX
+	LUTIL_EQUAL, LUTIL_DIFFINDEX
     } idx;
 
     if (objc != 4) {
