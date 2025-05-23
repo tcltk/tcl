@@ -3720,7 +3720,7 @@ TclStringCmp(
 		case -1:
 		    s1 = "";
 		    s1len = 0;
-		    s2 = TclGetStringFromObj(value2Ptr, &s2len);
+		    s2 = TclAttemptGetStringFromObj(value2Ptr, &s2len);
 		    break;
 		case 0:
 		    match = -1;
@@ -3735,7 +3735,7 @@ TclStringCmp(
 		case -1:
 		    s2 = "";
 		    s2len = 0;
-		    s1 = TclGetStringFromObj(value1Ptr, &s1len);
+		    s1 = TclAttemptGetStringFromObj(value1Ptr, &s1len);
 		    break;
 		case 0:
 		    match = 1;
@@ -3746,8 +3746,11 @@ TclStringCmp(
 		    goto matchdone;
 		}
 	    } else {
-		s1 = TclGetStringFromObj(value1Ptr, &s1len);
-		s2 = TclGetStringFromObj(value2Ptr, &s2len);
+		s1 = TclAttemptGetStringFromObj(value1Ptr, &s1len);
+		s2 = TclAttemptGetStringFromObj(value2Ptr, &s2len);
+	    }
+	    if (!s1 || !s2) {
+		return INT_MIN;
 	    }
 	    if (!nocase && checkEq && reqlength < 0) {
 		/*
@@ -4501,7 +4504,7 @@ DupStringInternalRep(
 
 static int
 SetStringFromAny(
-    TCL_UNUSED(Tcl_Interp *),
+    Tcl_Interp *interp,
     Tcl_Obj *objPtr)		/* The object to convert. */
 {
     if (!TclHasInternalRep(objPtr, &tclStringType)) {
@@ -4511,7 +4514,11 @@ SetStringFromAny(
 	 * Convert whatever we have into an untyped value. Just A String.
 	 */
 
-	(void) TclGetString(objPtr);
+	(void)TclAttemptGetString(objPtr);
+	if (!objPtr->bytes) {
+	    Tcl_AppendResult(interp, "allocation error", (char *)NULL);
+	    return TCL_ERROR;
+	}
 	TclFreeInternalRep(objPtr);
 
 	/*
@@ -4612,7 +4619,11 @@ ExtendStringRepWithUnicode(
 	size += TclUtfCount(unicode[i]);
     }
     if (size < 0) {
-	Tcl_Panic("max size for a Tcl value (%" TCL_SIZE_MODIFIER "d bytes) exceeded", TCL_SIZE_MAX);
+	if (objPtr->bytes) {
+	    Tcl_Free(objPtr->bytes);
+	    objPtr->bytes = NULL;
+	}
+    return TCL_ERROR;
     }
 
     /*
