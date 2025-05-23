@@ -2360,7 +2360,7 @@ TclCompileReturnCmd(
      */
 
     if (explicitResult) {
-	 CompileWord(envPtr, wordTokenPtr, interp, numWords - 1);
+	CompileWord(envPtr, wordTokenPtr, interp, numWords - 1);
     } else {
 	/*
 	 * No explict result argument, so default result is empty string.

@@ -393,9 +393,11 @@ TclCompileArraySetCmd(
     keyVar = AnonymousLocal(envPtr);
     valVar = AnonymousLocal(envPtr);
 
-    infoPtr = (ForeachInfo *)Tcl_Alloc(offsetof(ForeachInfo, varLists) + sizeof(ForeachVarList *));
+    infoPtr = (ForeachInfo *)
+	    Tcl_Alloc(offsetof(ForeachInfo, varLists) + sizeof(ForeachVarList *));
     infoPtr->numLists = 1;
-    infoPtr->varLists[0] = (ForeachVarList *)Tcl_Alloc(offsetof(ForeachVarList, varIndexes) + 2 * sizeof(Tcl_Size));
+    infoPtr->varLists[0] = (ForeachVarList *)
+	    Tcl_Alloc(offsetof(ForeachVarList, varIndexes) + 2 * sizeof(Tcl_Size));
     infoPtr->varLists[0]->numVars = 2;
     infoPtr->varLists[0]->varIndexes[0] = keyVar;
     infoPtr->varLists[0]->varIndexes[1] = valVar;
@@ -3610,34 +3612,34 @@ TclPushVarName(
 	    elNameLen = (varTokenPtr[n].start-p) + varTokenPtr[n].size - 1;
 
 	    if (!(flags & TCL_NO_ELEMENT)) {
-	      if (remainingLen) {
-		/*
-		 * Make a first token with the extra characters in the first
-		 * token.
-		 */
+		if (remainingLen) {
+		    /*
+		     * Make a first token with the extra characters in the first
+		     * token.
+		     */
 
-		elemTokenPtr = (Tcl_Token *)TclStackAlloc(interp, n * sizeof(Tcl_Token));
-		allocedTokens = 1;
-		elemTokenPtr->type = TCL_TOKEN_TEXT;
-		elemTokenPtr->start = elName;
-		elemTokenPtr->size = remainingLen;
-		elemTokenPtr->numComponents = 0;
-		elemTokenCount = n;
+		    elemTokenPtr = (Tcl_Token *)TclStackAlloc(interp, n * sizeof(Tcl_Token));
+		    allocedTokens = 1;
+		    elemTokenPtr->type = TCL_TOKEN_TEXT;
+		    elemTokenPtr->start = elName;
+		    elemTokenPtr->size = remainingLen;
+		    elemTokenPtr->numComponents = 0;
+		    elemTokenCount = n;
 
-		/*
-		 * Copy the remaining tokens.
-		 */
+		    /*
+		     * Copy the remaining tokens.
+		     */
 
-		memcpy(elemTokenPtr+1, varTokenPtr+2,
-			(n-1) * sizeof(Tcl_Token));
-	      } else {
-		/*
-		 * Use the already available tokens.
-		 */
+		    memcpy(elemTokenPtr+1, varTokenPtr+2,
+			    (n-1) * sizeof(Tcl_Token));
+		} else {
+		    /*
+		     * Use the already available tokens.
+		     */
 
-		elemTokenPtr = &varTokenPtr[2];
-		elemTokenCount = n - 1;
-	      }
+		    elemTokenPtr = &varTokenPtr[2];
+		    elemTokenCount = n - 1;
+		}
 	    }
 	}
     }
