@@ -12,6 +12,7 @@
  */
 
 #include "tclWinInt.h"
+#include <assert.h>
 #include <winnt.h>
 #include <winbase.h>
 #include <lmcons.h>
@@ -34,6 +35,12 @@ typedef struct {
     WORD wProcessorArchitecture;
     WORD wReserved;
 } OemId;
+
+typedef struct {
+    Tcl_Encoding userEncoding;
+} ThreadSpecificData;
+
+static Tcl_ThreadDataKey dataKey;
 
 /*
  * The following arrays contain the human readable strings for the
@@ -119,7 +126,74 @@ static const OSVERSIONINFOW *TclpGetWindowsVersion(void)
     return result ? osInfoPtr : NULL;
 }
 
-
+/*
+ * TclpGetCodePageOnce --
+ *
+ *	Callback to retrieve user code page. To be invoked only
+ *	through InitOnceExecuteOnce for thread safety.
+ *
+ * Results:
+ *	None.
+ */
+static BOOL CALLBACK
+TclpGetCodePageOnce(
+    TCL_UNUSED(PINIT_ONCE),
+    TCL_UNUSED(PVOID),
+    PVOID *lpContext)
+{
+    static char codePage[20];
+    codePage[0] = 'c';
+    codePage[1] = 'p';
+    DWORD size = sizeof(codePage) - 2;
+
+    /*
+     * When retrieving code page from registry,
+     *  - use ANSI API's since all values will be ASCII and saves conversion
+     *  - use RegGetValue, not RegQueryValueEx, since the latter does not
+     *    guarantee the value is null terminated
+     *  - added bonus, RegGetValue is much more convenient to use
+     */
+    if (RegGetValueA(HKEY_LOCAL_MACHINE,
+        "SYSTEM\\CurrentControlSet\\Control\\Nls\\CodePage",
+        "ACP", RRF_RT_REG_SZ, NULL, codePage+2,
+        &size) != ERROR_SUCCESS) {
+	/* On failure, fallback to GetACP() */
+	UINT acp = GetACP();
+	snprintf(codePage, sizeof(codePage), "cp%u", acp);
+    }
+    if (strcmp(codePage, "cp65001") == 0) {
+	strcpy(codePage, "utf-8");
+    }
+    *lpContext = (LPVOID)&codePage[0];
+    return TRUE;
+}
+
+/*
+ * TclpGetCodePage --
+ *
+ *  Returns a pointer to the string identifying the user code page.
+ *
+ *  For consistency with Windows, which caches the code page at program
+ *  startup, the code page is not updated even if the value in the registry
+ *  changes. (This is similar to environment variables.)
+ */
+static const char *
+TclpGetCodePage(void)
+{
+    static INIT_ONCE codePageOnce = INIT_ONCE_STATIC_INIT;
+    const char *codePagePtr = NULL;
+    BOOL result = InitOnceExecuteOnce(
+	&codePageOnce, TclpGetCodePageOnce, NULL, (LPVOID *)&codePagePtr);
+#ifdef NDEBUG
+    (void) result; /* Keep gcc unused variable quiet */
+#else
+    assert(result == TRUE);
+#endif
+    assert(codePagePtr != NULL);
+    return codePagePtr;
+}
+
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -162,8 +236,11 @@ TclpInitPlatform(void)
 
     TclWinInit(GetModuleHandleW(NULL));
 #endif
+
+    /* Initialize code page once at startup, will not be updated */
+    (void)TclpGetCodePage();
 }
-
+
 /*
  *-------------------------------------------------------------------------
  *
@@ -453,21 +530,54 @@ TclpSetInitialEncodings(void)
     Tcl_DStringFree(&encodingName);
 }
 
-const char *
-Tcl_GetEncodingNameForUser(
-    Tcl_DString *bufPtr)
-{
-    UINT acp = GetACP();
+#if 0
 
-    Tcl_DStringInit(bufPtr);
-    if (acp == CP_UTF8) {
-	Tcl_DStringAppend(bufPtr, "utf-8", 5);
-    } else {
-	Tcl_DStringSetLength(bufPtr, 2 + TCL_INTEGER_SPACE);
-	snprintf(Tcl_DStringValue(bufPtr), 2 + TCL_INTEGER_SPACE, "cp%d",
-		acp);
-	Tcl_DStringSetLength(bufPtr, strlen(Tcl_DStringValue(bufPtr)));
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TclpGetEncodingForUser --
+ *
+ *    Returns the Tcl_Encoding corresponding to the user code page.
+ *
+ * Results:
+ *    A Tcl_Encoding value or NULL if the encoding cannot be found or
+ *    if Tcl does not support the encoding.
+ *
+ * Side effects:
+ *    The encoding is cached in the thread local storage.
+ *---------------------------------------------------------------------------
+ */
+Tcl_Encoding
+TclpGetEncodingForUser(Tcl_Interp *interp)
+{
+    /*
+     * In keeping with Windows, the encoding will not be updated if the
+     * registry value changes so we never need to update it once
+     * successfully retrieved.
+     */
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    if (tsdPtr->userEncoding == NULL) {
+	tsdPtr->userEncoding =
+	    Tcl_GetEncoding(interp, TclpGetCodePage());
     }
+    return tsdPtr->userEncoding;
+}
+
+void TclpReleaseEncodingForUser(void)
+{
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    if (tsdPtr->userEncoding) {
+	Tcl_FreeEncoding(tsdPtr->userEncoding);
+	tsdPtr->userEncoding = NULL;
+    }
+}
+#endif
+
+const char *
+Tcl_GetEncodingNameForUser(Tcl_DString *bufPtr)
+{
+    Tcl_DStringInit(bufPtr);
+    Tcl_DStringAppend(bufPtr, TclpGetCodePage(), -1);
     return Tcl_DStringValue(bufPtr);
 }
 
@@ -484,8 +594,9 @@ Tcl_GetEncodingNameFromEnvironment(
 	Tcl_DStringInit(bufPtr);
 	Tcl_DStringAppend(bufPtr, "utf-8", 5);
 	return Tcl_DStringValue(bufPtr);
+    } else {
+	return Tcl_GetEncodingNameForUser(bufPtr);
     }
-    return Tcl_GetEncodingNameForUser(bufPtr);
 }
 
 const char *
