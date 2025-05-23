@@ -15,7 +15,6 @@
 #include "tclInt.h"
 #define ALLOW_DEPRECATED_OPCODES
 #include "tclCompile.h"
-#include "tclParse.h"
 #include <assert.h>
 
 /*
@@ -4778,7 +4777,7 @@ TclIsEmptyToken(
     for (ptr = tokenPtr[1].start; ptr < end; ptr += chLen) {
 	chLen = TclUtfToUniChar(ptr, &ucs4);
 	// Can't use Tcl_UniCharIsSpace; see test dict-22.24
-	if (ucs4 < 0 || ucs4 > 255 || tclCharTypeTable[ucs4] != TYPE_SPACE) {
+	if (!TclIsSpaceProcM((unsigned) ucs4)) {
 	    return 0;
 	}
     }

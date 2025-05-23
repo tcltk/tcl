@@ -233,23 +233,22 @@ PlatformEventsControl(
 	 */
 	return;
     } else if (epoll_ctl(tsdPtr->eventsFd, op, filePtr->fd, &newEvent) == -1) {
-       switch (errno) {
-	    case EPERM:
-		switch (op) {
-		case EPOLL_CTL_ADD:
-		    if (isNew) {
-			LIST_INSERT_HEAD(&tsdPtr->firstReadyFileHandlerPtr, filePtr,
-				readyNode);
-		    }
-		    break;
-		case EPOLL_CTL_DEL:
-		    LIST_REMOVE(filePtr, readyNode);
-		    break;
-
+	switch (errno) {
+	case EPERM:
+	    switch (op) {
+	    case EPOLL_CTL_ADD:
+		if (isNew) {
+		    LIST_INSERT_HEAD(&tsdPtr->firstReadyFileHandlerPtr, filePtr,
+			    readyNode);
 		}
 		break;
-	    default:
-		Tcl_Panic("epoll_ctl: %s", strerror(errno));
+	    case EPOLL_CTL_DEL:
+		LIST_REMOVE(filePtr, readyNode);
+		break;
+	    }
+	    break;
+	default:
+	    Tcl_Panic("epoll_ctl: %s", strerror(errno));
 	}
     }
     return;

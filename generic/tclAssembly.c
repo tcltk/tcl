@@ -1718,7 +1718,7 @@ AssembleOneLine(
     }
 
     status = TCL_OK;
- cleanup:
+  cleanup:
     Tcl_DecrRefCount(instNameObj);
     if (operand1Obj) {
 	Tcl_DecrRefCount(operand1Obj);

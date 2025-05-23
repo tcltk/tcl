@@ -3669,7 +3669,7 @@ MODULE_SCOPE void	TclZipfsFinalize(void);
 
 MODULE_SCOPE int	TclIsSpaceProc(int byte);
 #define TclIsSpaceProcM(byte) \
-    (((byte) > 0x20) ? 0 : TclIsSpaceProc(byte))
+    (((unsigned)(byte) > 0x20) ? 0 : TclIsSpaceProc(byte))
 
 /*
  *----------------------------------------------------------------
