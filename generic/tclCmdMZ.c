@@ -1904,7 +1904,7 @@ StringIsCmd(
      * valid fail index (>= 0).
      */
 
- str_is_done:
+  str_is_done:
     if ((result == 0) && (failVarObj != NULL)) {
 	TclNewIndexObj(objPtr, failat);
 	if (Tcl_ObjSetVar2(interp, failVarObj, NULL, objPtr, TCL_LEAVE_ERR_MSG) == NULL) {
@@ -2040,8 +2040,8 @@ StringMapCmd(
 	     * The charMap must be an even number of key/value items.
 	     */
 
-	    Tcl_SetObjResult(interp,
-		    Tcl_NewStringObj("char map list unbalanced", -1));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "char map list unbalanced", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "MAP",
 		    "UNBALANCED", (char *)NULL);
 	    return TCL_ERROR;
@@ -4507,10 +4507,10 @@ Tcl_TimeRateObjCmd(
 	     * considering last known iteration growth factor.
 	     */
 	    threshold = (Tcl_WideUInt)(stop - middle) * TR_SCALE;
-	     /*
-	      * Estimated count of iteration til the end of execution.
-	      * Thereby 2.5% longer execution time would be OK.
-	      */
+	    /*
+	     * Estimated count of iteration til the end of execution.
+	     * Thereby 2.5% longer execution time would be OK.
+	     */
 	    if (threshold / estIterTm < 0.975) {
 		/* estimated time for next iteration is too large */
 		break;

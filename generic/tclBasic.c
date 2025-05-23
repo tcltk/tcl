@@ -5574,7 +5574,7 @@ TclEvalEx(
 	Tcl_LogCommandInfo(interp, script, parsePtr->commandStart,
 		commandLength);
     }
- posterror:
+  posterror:
     iPtr->flags &= ~ERR_ALREADY_LOGGED;
 
     /*
@@ -5596,7 +5596,7 @@ TclEvalEx(
     }
     iPtr->varFramePtr = savedVarFramePtr;
 
- cleanup_return:
+  cleanup_return:
     /*
      * TIP #280. Release the local CmdFrame, and its contents.
      */
@@ -8063,16 +8063,16 @@ DoubleObjClass(
 	return TCL_ERROR;
     }
     switch (type) {
-      case TCL_NUMBER_NAN:
+    case TCL_NUMBER_NAN:
 	*fpClsPtr = FP_NAN;
 	return TCL_OK;
-      case TCL_NUMBER_DOUBLE:
+    case TCL_NUMBER_DOUBLE:
 	d = *((const double *) ptr);
 	break;
-      case TCL_NUMBER_INT:
+    case TCL_NUMBER_INT:
 	d = (double)*((const Tcl_WideInt *) ptr);
 	break;
-      default:
+    default:
 	if (Tcl_GetDoubleFromObj(interp, objPtr, &d) != TCL_OK) {
 	    return TCL_ERROR;
 	}
@@ -9607,8 +9607,8 @@ TclNRInterpCoroutine(
 	break;
     default:
 	if (corPtr->nargs + 1 != objc) {
-	    Tcl_SetObjResult(interp,
-		    Tcl_NewStringObj("wrong coro nargs; how did we get here? "
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "wrong coro nargs; how did we get here? "
 		    "not implemented!", TCL_INDEX_NONE));
 	    Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", (char *)NULL);
 	    return TCL_ERROR;
