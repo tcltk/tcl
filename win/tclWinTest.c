@@ -477,7 +477,7 @@ TestplatformChmod(
      * Always include DACL modify rights so we don't get locked out
      */
     aceEntry[nSids].mask = READ_CONTROL | WRITE_DAC | WRITE_OWNER | SYNCHRONIZE |
-			   FILE_READ_ATTRIBUTES | FILE_WRITE_ATTRIBUTES;
+	    FILE_READ_ATTRIBUTES | FILE_WRITE_ATTRIBUTES;
     if (pmode & 0700) {
 	/* Owner permissions. Assumes current process is owner */
 	if (pmode & 0400) {
@@ -510,7 +510,8 @@ TestplatformChmod(
 	}
 	aceEntry[nSids].sidLen = GetLengthSid(pTokenGroup->PrimaryGroup);
 	aceEntry[nSids].pSid = (PSID)Tcl_Alloc(aceEntry[nSids].sidLen);
-	if (!CopySid(aceEntry[nSids].sidLen, aceEntry[nSids].pSid, pTokenGroup->PrimaryGroup)) {
+	if (!CopySid(aceEntry[nSids].sidLen, aceEntry[nSids].pSid,
+		pTokenGroup->PrimaryGroup)) {
 	    Tcl_Free(pTokenGroup);
 	    Tcl_Free(aceEntry[nSids].pSid); /* Since we have not ++'ed nSids */
 	    goto done;
