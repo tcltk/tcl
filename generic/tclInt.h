@@ -4433,6 +4433,14 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 	    ? (*(lenPtr) = (objPtr)->length, (objPtr)->bytes)		\
 	    : (Tcl_GetStringFromObj)((objPtr), (lenPtr)))
 
+#define TclAttemptGetString(objPtr) \
+    ((objPtr)->bytes? (objPtr)->bytes : Tcl_AttemptGetString(objPtr))
+
+#define TclAttemptGetStringFromObj(objPtr, lenPtr) \
+    ((objPtr)->bytes							\
+	    ? (*(lenPtr) = (objPtr)->length, (objPtr)->bytes)		\
+	    : (Tcl_AttemptGetStringFromObj)((objPtr), (lenPtr)))
+
 /*
  *----------------------------------------------------------------
  * Macro used by the Tcl core to clean out an object's internal

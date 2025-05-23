@@ -1175,9 +1175,7 @@ UpdateStringOfArithSeries(
 	    Tcl_PrintDouble(NULL,d,tmp);
 	    elen = strlen(tmp);
 	    if (bytlen > TCL_SIZE_MAX - elen) {
-		/* overflow, todo: check we could use some representation instead of the panic
-		 * to signal it is too large for string representation, because too heavy */
-		Tcl_Panic("UpdateStringOfArithSeries: too large to represent");
+		goto repTooLarge;
 	    }
 	    bytlen += elen;
 	}
@@ -1188,8 +1186,16 @@ UpdateStringOfArithSeries(
      * Pass 2: generate the string repr.
      */
 
-    p = srep = Tcl_InitStringRep(arithSeriesObjPtr, NULL, bytlen);
-    TclOOM(p, bytlen+1);
+    p = srep = TclAttemptInitStringRep(arithSeriesObjPtr, NULL, bytlen);
+    if (!p) {
+    repTooLarge:
+	if (arithSeriesObjPtr->bytes) {
+	    Tcl_Free(arithSeriesObjPtr->bytes);
+	    arithSeriesObjPtr->bytes = 0;
+	}
+	arithSeriesObjPtr->length = bytlen;
+	return;
+    }
 
     if (!arithSeriesRepPtr->isDouble) {
 	for (i = 0; i < arithSeriesRepPtr->len; i++) {
