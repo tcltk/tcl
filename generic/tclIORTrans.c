@@ -1211,7 +1211,7 @@ ReflectInput(
 	Tcl_SetByteArrayLength(bufObj, 0);
     } /* while toRead > 0 */
 
- stop:
+  stop:
     if (gotBytes == 0) {
 	rtPtr->eofPending = 0;
     }
@@ -1219,7 +1219,7 @@ ReflectInput(
     Tcl_Release(rtPtr);
     return gotBytes;
 
- error:
+  error:
     gotBytes = -1;
     goto stop;
 }
