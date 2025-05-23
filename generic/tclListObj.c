@@ -1457,7 +1457,7 @@ ListRepRange(
     if (rangeStart == 0 && rangeEnd == (numSrcElems-1)) {
 	/* Option 0 - entire list. This may be used to canonicalize */
 	/* T:listrep-1.10.1,2.8.1 */
-	*rangeRepPtr = *srcRepPtr; /* Not ref counts not incremented */
+	*rangeRepPtr = *srcRepPtr; /* Note ref counts not incremented */
     } else if (rangeStart == 0 && (!preserveSrcRep)
 	    && (!ListRepIsShared(srcRepPtr) && srcRepPtr->spanPtr == NULL)) {
 	/* Option 1 - Special case unshared, exclude end elements, no span */
