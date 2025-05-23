@@ -1728,7 +1728,7 @@ TclNRInterpProcCore(
     }
 
 #if defined(TCL_COMPILE_DEBUG)
-    if (tclTraceExec >= 1) {
+    if (tclTraceExec >= TCL_TRACE_BYTECODE_EXEC_PROCS) {
 	CallFrame *framePtr = iPtr->varFramePtr;
 	Tcl_Size i;
 
@@ -1971,7 +1971,7 @@ TclProcCompileProc(
 	Tcl_HashEntry *hePtr;
 
 #ifdef TCL_COMPILE_DEBUG
-	if (tclTraceCompile >= 1) {
+	if (tclTraceCompile >= TCL_TRACE_BYTECODE_COMPILE_SUMMARY) {
 	    /*
 	     * Display a line summarizing the top level command we are about
 	     * to compile.

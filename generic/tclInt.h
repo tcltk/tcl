@@ -3225,6 +3225,17 @@ struct Tcl_LoadHandle_ {
 				/* Mask to isolate the conversion type */
 
 /*
+ * Clock operations, communicated from command definitions to the bytecode
+ * compiler.
+ */
+enum ClockOps {
+    CLOCK_READ_CLICKS = 0,	/* Read the click counter. */
+    CLOCK_READ_MICROS = 1,	/* Time in microseconds. */
+    CLOCK_READ_MILLIS = 2,	/* Time in milliseconds. */
+    CLOCK_READ_SECS = 3		/* Time in seconds. */
+};
+
+/*
  *----------------------------------------------------------------
  * Procedures shared among Tcl modules but not used by the outside world:
  *----------------------------------------------------------------
@@ -3810,6 +3821,8 @@ MODULE_SCOPE CompileProc TclCompileDictIncrCmd;
 MODULE_SCOPE CompileProc TclCompileDictLappendCmd;
 MODULE_SCOPE CompileProc TclCompileDictMapCmd;
 MODULE_SCOPE CompileProc TclCompileDictMergeCmd;
+MODULE_SCOPE CompileProc TclCompileDictRemoveCmd;
+MODULE_SCOPE CompileProc TclCompileDictReplaceCmd;
 MODULE_SCOPE CompileProc TclCompileDictSetCmd;
 MODULE_SCOPE CompileProc TclCompileDictUnsetCmd;
 MODULE_SCOPE CompileProc TclCompileDictUpdateCmd;
@@ -3827,6 +3840,7 @@ MODULE_SCOPE CompileProc TclCompileInfoCoroutineCmd;
 MODULE_SCOPE CompileProc TclCompileInfoExistsCmd;
 MODULE_SCOPE CompileProc TclCompileInfoLevelCmd;
 MODULE_SCOPE CompileProc TclCompileInfoObjectClassCmd;
+MODULE_SCOPE CompileProc TclCompileInfoObjectCreationIdCmd;
 MODULE_SCOPE CompileProc TclCompileInfoObjectIsACmd;
 MODULE_SCOPE CompileProc TclCompileInfoObjectNamespaceCmd;
 MODULE_SCOPE CompileProc TclCompileIncrCmd;
@@ -3965,9 +3979,10 @@ MODULE_SCOPE Tcl_Obj *	TclStringReplace(Tcl_Interp *interp, Tcl_Obj *objPtr,
 MODULE_SCOPE Tcl_Obj *	TclStringReverse(Tcl_Obj *objPtr, int flags);
 
 /* Flag values for the [string] ensemble functions. */
-
-#define TCL_STRING_MATCH_NOCASE TCL_MATCH_NOCASE /* (1<<0) in tcl.h */
-#define TCL_STRING_IN_PLACE (1<<1)
+enum StringOpFlags {
+    TCL_STRING_MATCH_NOCASE = TCL_MATCH_NOCASE, /* (1<<0) in tcl.h */
+    TCL_STRING_IN_PLACE = (1<<1)	/* Do in-place surgery on Tcl_Obj */
+};
 
 /*
  * Functions defined in generic/tclVar.c and currently exported only for use
