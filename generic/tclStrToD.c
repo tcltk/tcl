@@ -592,11 +592,11 @@ TclParseNumber(
 	     *   example: 5___6
 	     */
 	    for (before = (p - 1);
-		 (before && *before == '_');
-		 before = (before > p ? (before - 1) : NULL));
+		    (before && *before == '_');
+		    before = (before > p ? (before - 1) : NULL));
 	    for (after = (p + 1);
-		 (after && *after && *after == '_');
-		 after = (*after && *after == '_') ? (after + 1) : NULL);
+		    (after && *after && *after == '_');
+		    after = (*after && *after == '_') ? (after + 1) : NULL);
 
 	    switch (state) {
 	    case ZERO_B:
