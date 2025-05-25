@@ -1304,7 +1304,7 @@ TclInfoFrame(
 	break;
 
     case TCL_LOCATION_PREBC:
-      precompiled:
+    precompiled:
 	/*
 	 * Precompiled. Result contains the type as signal, nothing else.
 	 */
@@ -3772,7 +3772,7 @@ Tcl_LsearchObjCmd(
 		} else if (returnSubindices && (sortInfo.indexc == 0) && (groupSize > 1)) {
 		    Tcl_BounceRefCount(itemPtr);
 		    itemPtr = listv[i + groupOffset];
-			Tcl_ListObjAppendElement(interp, listPtr, itemPtr);
+		    Tcl_ListObjAppendElement(interp, listPtr, itemPtr);
 		} else if (groupSize > 1) {
 		    Tcl_ListObjReplace(interp, listPtr, LIST_MAX, 0,
 			    groupSize, &listv[i]);
@@ -3820,8 +3820,8 @@ Tcl_LsearchObjCmd(
 	    }
 	    Tcl_SetObjResult(interp, itemPtr);
 	} else {
-		Tcl_Obj *elObj;
-		TclNewIndexObj(elObj, index);
+	    Tcl_Obj *elObj;
+	    TclNewIndexObj(elObj, index);
 	    Tcl_SetObjResult(interp, elObj);
 	}
     } else if (index < 0) {
@@ -3893,7 +3893,7 @@ SequenceIdentifyArgument(
     if (allowedArgs & NumericArg) {
 	/* speed-up a bit (and avoid shimmer for compiled expressions) */
 	if (TclHasInternalRep(argPtr, &tclExprCodeType)) {
-	   goto doExpr;
+	    goto doExpr;
 	}
 	result = Tcl_GetNumberFromObj(NULL, argPtr, &internalPtr, keywordIndexPtr);
 	if (result == TCL_OK) {
@@ -3904,13 +3904,13 @@ SequenceIdentifyArgument(
     }
     if (allowedArgs & RangeKeywordArg) {
 	result = Tcl_GetIndexFromObj(NULL, argPtr, seq_operations,
-			"range operation", 0, &opmode);
+		"range operation", 0, &opmode);
     }
     if (result == TCL_OK) {
 	if (allowedArgs & LastArg) {
 	    /* keyword found, but no followed number */
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		  "missing \"%s\" value.", TclGetString(argPtr)));
+		    "missing \"%s\" value.", TclGetString(argPtr)));
 	    return ErrArg;
 	}
 	*keywordIndexPtr = opmode;
@@ -3993,8 +3993,8 @@ Tcl_LseqObjCmd(
     SequenceDecoded decoded;
     int i, arg_key = 0, value_i = 0;
     /* Default constants */
-    #define zero ((Interp *)interp)->execEnvPtr->constants[0];
-    #define one ((Interp *)interp)->execEnvPtr->constants[1];
+#define zero	((Interp *)interp)->execEnvPtr->constants[0];
+#define one	((Interp *)interp)->execEnvPtr->constants[1];
 
     /*
      * Create a decoding key by looping through the arguments and identify
@@ -4009,19 +4009,19 @@ Tcl_LseqObjCmd(
 	arg_key = (arg_key * 10);
 	numValues[value_i] = NULL;
 	decoded = SequenceIdentifyArgument(interp, objv[i],
-			allowedArgs | (i == objc-1 ? LastArg : 0),
-			&numberObj, &keyword);
+		allowedArgs | (i == objc-1 ? LastArg : 0),
+		&numberObj, &keyword);
 	switch (decoded) {
-	  case NoneArg:
+	case NoneArg:
 	    /*
 	     * Unrecognizable argument
 	     * Reproduce operation error message
 	     */
 	    status = Tcl_GetIndexFromObj(interp, objv[i], seq_operations,
-			"operation", 0, &opmode);
+		    "operation", 0, &opmode);
 	    goto done;
 
-	  case NumericArg:
+	case NumericArg:
 	    remNums--;
 	    arg_key += NumericArg;
 	    allowedArgs = RangeKeywordArg;
@@ -4037,14 +4037,14 @@ Tcl_LseqObjCmd(
 	    value_i++;
 	    break;
 
-	  case RangeKeywordArg:
+	case RangeKeywordArg:
 	    arg_key += RangeKeywordArg;
 	    allowedArgs = NumericArg;   /* after keyword always numeric only */
 	    values[value_i] = keyword;  /* SequenceOperators */
 	    value_i++;
 	    break;
 
-	  default: /* Error state */
+	default: /* Error state */
 	    status = TCL_ERROR;
 	    goto done;
 	}
@@ -4183,10 +4183,10 @@ Tcl_LseqObjCmd(
 
 /*    All other argument errors */
     default:
-      syntax:
-	 Tcl_WrongNumArgs(interp, 1, objv, "n ??op? n ??by? n??");
-	 goto done;
-	 break;
+    syntax:
+	Tcl_WrongNumArgs(interp, 1, objv, "n ??op? n ??by? n??");
+	goto done;
+	break;
     }
 
     /* Count needs to be integer, so try to convert if possible */
@@ -4215,7 +4215,7 @@ Tcl_LseqObjCmd(
      * Success!  Now lets create the series object.
      */
     arithSeriesPtr = TclNewArithSeriesObj(interp,
-		  useDoubles, start, end, step, elementCount);
+	    useDoubles, start, end, step, elementCount);
 
     status = TCL_ERROR;
     if (arithSeriesPtr) {
@@ -4223,7 +4223,7 @@ Tcl_LseqObjCmd(
 	Tcl_SetObjResult(interp, arithSeriesPtr);
     }
 
- done:
+  done:
     // Free number arguments.
     while (--value_i>=0) {
 	if (numValues[value_i]) {
@@ -4238,8 +4238,8 @@ Tcl_LseqObjCmd(
     }
 
     /* Undef constants */
-    #undef zero
-    #undef one
+#undef zero
+#undef one
 
     return status;
 }
@@ -4300,13 +4300,13 @@ Tcl_LsetObjCmd(
     } else {
 	if (TclObjTypeHasProc(listPtr, setElementProc)) {
 	    finalValuePtr = TclObjTypeSetElement(interp, listPtr,
-						       objc-3, objv+2, objv[objc-1]);
+		    objc-3, objv+2, objv[objc-1]);
 	    if (finalValuePtr) {
 		Tcl_IncrRefCount(finalValuePtr);
 	    }
 	} else {
 	    finalValuePtr = TclLsetFlat(interp, listPtr, objc-3, objv+2,
-					objv[objc-1]);
+		    objv[objc-1]);
 	}
     }
 

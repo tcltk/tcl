@@ -390,7 +390,7 @@ WinSymLinkDirectory(
 
     memcpy(nativeTarget, L"\\??\\", 4 * sizeof(WCHAR));
     memcpy(nativeTarget + 4, linkTargetPath,
-	   sizeof(WCHAR) * (1+wcslen((WCHAR *) linkTargetPath)));
+	    sizeof(WCHAR) * (1+wcslen((WCHAR *) linkTargetPath)));
     len = wcslen(nativeTarget);
 
     /*
