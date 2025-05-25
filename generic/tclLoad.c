@@ -132,7 +132,8 @@ Tcl_LoadObjCmd(
     Tcl_DString pfx, tmp, initName, safeInitName;
     Tcl_DString unloadName, safeUnloadName;
     InterpLibrary *ipFirstPtr, *ipPtr;
-    int code, namesMatch, filesMatch, offset;
+    int code, namesMatch, filesMatch;
+    Tcl_Size offset;
     const char *symbols[2];
     Tcl_LibraryInitProc *initProc;
     const char *p, *fullFileName, *prefix;

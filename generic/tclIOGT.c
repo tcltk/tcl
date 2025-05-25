@@ -56,7 +56,7 @@ typedef struct TransformChannelData TransformChannelData;
 
 static int		ExecuteCallback(TransformChannelData *ctrl,
 			    Tcl_Interp *interp, unsigned char *op,
-			    unsigned char *buf, int bufLen, int transmit,
+			    unsigned char *buf, Tcl_Size bufLen, int transmit,
 			    int preserve);
 
 /*
@@ -267,8 +267,8 @@ TclChannelTransform(
     }
 
     if (TCL_OK != TclListObjLength(interp, cmdObjPtr, &objc)) {
-	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("-command value is not a list", -1));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"-command value is not a list", -1));
 	return TCL_ERROR;
     }
 
@@ -366,7 +366,7 @@ ExecuteCallback(
     Tcl_Interp *interp,		/* Current interpreter, possibly NULL. */
     unsigned char *op,		/* Operation invoking the callback. */
     unsigned char *buf,		/* Buffer to give to the script. */
-    int bufLen,			/* And its length. */
+    Tcl_Size bufLen,		/* And its length. */
     int transmit,		/* Flag, determines whether the result of the
 				 * callback is sent to the underlying channel
 				 * or not. */
@@ -515,7 +515,7 @@ ExecuteCallback(
 
 static int
 TransformBlockModeProc(
-    void *instanceData,	/* State of transformation. */
+    void *instanceData,		/* State of transformation. */
     int mode)			/* New blocking mode. */
 {
     TransformChannelData *dataPtr = (TransformChannelData *)instanceData;
@@ -637,7 +637,8 @@ TransformInputProc(
     int *errorCodePtr)
 {
     TransformChannelData *dataPtr = (TransformChannelData *)instanceData;
-    int gotBytes, read, copied;
+    int gotBytes, copied;
+    Tcl_Size read;
     Tcl_Channel downChan;
 
     /*
@@ -1013,7 +1014,7 @@ TransformGetOptionProc(
 
 static void
 TransformWatchProc(
-    void *instanceData,	/* Channel to watch. */
+    void *instanceData,		/* Channel to watch. */
     int mask)			/* Events of interest. */
 {
     TransformChannelData *dataPtr = (TransformChannelData *)instanceData;
@@ -1091,9 +1092,9 @@ TransformWatchProc(
 
 static int
 TransformGetFileHandleProc(
-    void *instanceData,	/* Channel to query. */
+    void *instanceData,		/* Channel to query. */
     int direction,		/* Direction of interest. */
-    void **handlePtr)	/* Place to store the handle into. */
+    void **handlePtr)		/* Place to store the handle into. */
 {
     TransformChannelData *dataPtr = (TransformChannelData *)instanceData;
 
@@ -1125,7 +1126,7 @@ TransformGetFileHandleProc(
 
 static int
 TransformNotifyProc(
-    void *clientData,	/* The state of the notified
+    void *clientData,		/* The state of the notified
 				 * transformation. */
     int mask)			/* The mask of occurring events. */
 {
@@ -1170,7 +1171,7 @@ TransformNotifyProc(
 
 static void
 TransformChannelHandlerTimer(
-    void *clientData)	/* Transformation to query. */
+    void *clientData)		/* Transformation to query. */
 {
     TransformChannelData *dataPtr = (TransformChannelData *)clientData;
 

@@ -1107,15 +1107,15 @@ TcpThreadActionProc(
 	 * so the callback will run in the correct thread, bug [f583715154].
 	 */
 	switch (action) {
-	  case TCL_CHANNEL_THREAD_REMOVE:
+	case TCL_CHANNEL_THREAD_REMOVE:
 	    CLEAR_BITS(statePtr->flags, TCP_ASYNC_PENDING);
 	    Tcl_DeleteFileHandler(statePtr->fds.fd);
-	  break;
-	  case TCL_CHANNEL_THREAD_INSERT:
+	    break;
+	case TCL_CHANNEL_THREAD_INSERT:
 	    Tcl_CreateFileHandler(statePtr->fds.fd,
-		TCL_WRITABLE | TCL_EXCEPTION, TcpAsyncCallback, statePtr);
+		    TCL_WRITABLE | TCL_EXCEPTION, TcpAsyncCallback, statePtr);
 	    SET_BITS(statePtr->flags, TCP_ASYNC_PENDING);
-	  break;
+	    break;
 	}
     }
 }
@@ -1681,7 +1681,7 @@ Tcl_OpenTcpServerEx(
     int retry = 0;
 #define MAXRETRY 10
 
- repeat:
+  repeat:
     if (retry > 0) {
 	if (statePtr != NULL) {
 	    TcpCloseProc(statePtr, NULL);

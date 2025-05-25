@@ -10,6 +10,7 @@
  */
 
 #include "tclInt.h"
+#define ALLOW_DEPRECATED_OPCODES
 #include "tclCompile.h"
 #include <assert.h>
 
@@ -79,38 +80,48 @@ LocateTargetAddresses(
 	    currentInstPtr < envPtr->codeNext ;
 	    currentInstPtr += AddrLength(currentInstPtr)) {
 	switch (*currentInstPtr) {
+#ifndef REMOVE_DEPRECATED_OPCODES
 	case INST_JUMP1:
 	case INST_JUMP_TRUE1:
 	case INST_JUMP_FALSE1:
 	    targetInstPtr = currentInstPtr+TclGetInt1AtPtr(currentInstPtr+1);
 	    goto storeTarget;
-	case INST_JUMP4:
-	case INST_JUMP_TRUE4:
-	case INST_JUMP_FALSE4:
+#endif
+	case INST_JUMP:
+	case INST_JUMP_TRUE:
+	case INST_JUMP_FALSE:
 	case INST_START_CMD:
 	    targetInstPtr = currentInstPtr+TclGetInt4AtPtr(currentInstPtr+1);
 	    goto storeTarget;
-	case INST_BEGIN_CATCH4:
+	case INST_BEGIN_CATCH:
 	    targetInstPtr = envPtr->codeStart + envPtr->exceptArrayPtr[
 		    TclGetUInt4AtPtr(currentInstPtr+1)].codeOffset;
 	storeTarget:
 	    DefineTargetAddress(tablePtr, targetInstPtr);
 	    break;
+	case INST_JUMP_TABLE_NUM:
+	    hPtr = Tcl_FirstHashEntry(
+		    &JUMPTABLENUMINFO(envPtr, currentInstPtr+1)->hashTable,
+		    &hSearch);
+	    goto storeJumpTableTargets;
 	case INST_JUMP_TABLE:
 	    hPtr = Tcl_FirstHashEntry(
 		    &JUMPTABLEINFO(envPtr, currentInstPtr+1)->hashTable,
 		    &hSearch);
+	storeJumpTableTargets:
 	    for (; hPtr ; hPtr = Tcl_NextHashEntry(&hSearch)) {
 		targetInstPtr = currentInstPtr +
 			PTR2INT(Tcl_GetHashValue(hPtr));
 		DefineTargetAddress(tablePtr, targetInstPtr);
 	    }
 	    break;
+#ifndef REMOVE_DEPRECATED_OPCODES
 	case INST_RETURN_CODE_BRANCH:
 	    for (i=TCL_ERROR ; i<TCL_CONTINUE+1 ; i++) {
 		DefineTargetAddress(tablePtr, currentInstPtr + 2*i - 1);
 	    }
 	    break;
+#endif
 	}
     }
 
@@ -240,7 +251,7 @@ ConvertZeroEffectToNOP(
 		}
 	    }
 	    break;
-	case INST_PUSH4:
+	case INST_PUSH:
 	    if (nextInst == INST_POP) {
 		blank = size + 1;
 	    } else if (nextInst == INST_STR_CONCAT1
@@ -258,6 +269,7 @@ ConvertZeroEffectToNOP(
 
 	case INST_LNOT:
 	    switch (nextInst) {
+#ifndef REMOVE_DEPRECATED_OPCODES
 	    case INST_JUMP_TRUE1:
 		blank = size;
 		currentInstPtr[size] = INST_JUMP_FALSE1;
@@ -266,25 +278,30 @@ ConvertZeroEffectToNOP(
 		blank = size;
 		currentInstPtr[size] = INST_JUMP_TRUE1;
 		break;
-	    case INST_JUMP_TRUE4:
+#endif
+	    case INST_JUMP_TRUE:
 		blank = size;
-		currentInstPtr[size] = INST_JUMP_FALSE4;
+		currentInstPtr[size] = INST_JUMP_FALSE;
 		break;
-	    case INST_JUMP_FALSE4:
+	    case INST_JUMP_FALSE:
 		blank = size;
-		currentInstPtr[size] = INST_JUMP_TRUE4;
+		currentInstPtr[size] = INST_JUMP_TRUE;
 		break;
 	    }
 	    break;
 
 	case INST_TRY_CVT_TO_NUMERIC:
 	    switch (nextInst) {
+#ifndef REMOVE_DEPRECATED_OPCODES
 	    case INST_JUMP_TRUE1:
-	    case INST_JUMP_TRUE4:
 	    case INST_JUMP_FALSE1:
-	    case INST_JUMP_FALSE4:
+#endif
+	    case INST_JUMP_TRUE:
+	    case INST_JUMP_FALSE:
 	    case INST_INCR_SCALAR1:
+	    case INST_INCR_SCALAR:
 	    case INST_INCR_ARRAY1:
+	    case INST_INCR_ARRAY:
 	    case INST_INCR_ARRAY_STK:
 	    case INST_INCR_SCALAR_STK:
 	    case INST_INCR_STK:
@@ -351,6 +368,7 @@ AdvanceJumps(
 	int offset, delta, isNew;
 
 	switch (*currentInstPtr) {
+#ifndef REMOVE_DEPRECATED_OPCODES
 	case INST_JUMP1:
 	case INST_JUMP_TRUE1:
 	case INST_JUMP_FALSE1:
@@ -373,7 +391,7 @@ AdvanceJumps(
 		case INST_JUMP1:
 		    delta = TclGetInt1AtPtr(currentInstPtr + offset + 1);
 		    continue;
-		case INST_JUMP4:
+		case INST_JUMP:
 		    delta = TclGetInt4AtPtr(currentInstPtr + offset + 1);
 		    continue;
 		}
@@ -382,12 +400,13 @@ AdvanceJumps(
 	    Tcl_DeleteHashTable(&jumps);
 	    TclStoreInt1AtPtr(offset, currentInstPtr + 1);
 	    continue;
+#endif
 
-	case INST_JUMP4:
-	case INST_JUMP_TRUE4:
-	case INST_JUMP_FALSE4:
+	case INST_JUMP:
+	case INST_JUMP_TRUE:
+	case INST_JUMP_FALSE:
 	    Tcl_InitHashTable(&jumps, TCL_ONE_WORD_KEYS);
-	    Tcl_CreateHashEntry(&jumps, INT2PTR(0), &isNew);
+	    Tcl_CreateHashEntry(&jumps, INT2PTR(0), NULL);
 	    for (offset = TclGetInt4AtPtr(currentInstPtr + 1); offset!=0 ;) {
 		Tcl_CreateHashEntry(&jumps, INT2PTR(offset), &isNew);
 		if (!isNew) {
@@ -398,10 +417,12 @@ AdvanceJumps(
 		case INST_NOP:
 		    offset += InstLength(INST_NOP);
 		    continue;
+#ifndef REMOVE_DEPRECATED_OPCODES
 		case INST_JUMP1:
 		    offset += TclGetInt1AtPtr(currentInstPtr + offset + 1);
 		    continue;
-		case INST_JUMP4:
+#endif
+		case INST_JUMP:
 		    offset += TclGetInt4AtPtr(currentInstPtr + offset + 1);
 		    continue;
 		}
@@ -412,6 +433,71 @@ AdvanceJumps(
 	    continue;
 	}
     }
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * BetterEqualityTesting --
+ *
+ *	Convert PUSH("");OP(STR_EQ); into OP(IS_EMPTY); and some NOPs.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+static void
+BetterEqualityTesting(
+    CompileEnv *envPtr)
+{
+    unsigned char *currentInstPtr, *emptyPushInstPtr = NULL;
+    Tcl_HashTable targets;
+
+    LocateTargetAddresses(envPtr, &targets);
+    for (currentInstPtr = envPtr->codeStart ;
+	    currentInstPtr < envPtr->codeNext-1 ;
+	    currentInstPtr += AddrLength(currentInstPtr)) {
+	if (emptyPushInstPtr && IsTargetAddress(&targets, currentInstPtr)) {
+	    emptyPushInstPtr = NULL;
+	}
+	switch (*currentInstPtr) {
+	case INST_PUSH: {
+	    Tcl_Size idx = TclGetUInt4AtPtr(currentInstPtr + 1);
+	    Tcl_Obj *literal = TclFetchLiteral(envPtr, idx);
+	    if (literal->bytes && literal->length == 0) {
+		emptyPushInstPtr = currentInstPtr;
+	    } else {
+		emptyPushInstPtr = NULL;
+	    }
+	    break;
+	}
+	case INST_EQ:
+	case INST_STR_EQ:
+	    if (emptyPushInstPtr != NULL) {
+		while (emptyPushInstPtr < currentInstPtr) {
+		    *emptyPushInstPtr++ = INST_NOP;
+		}
+		*currentInstPtr = INST_IS_EMPTY;
+	    }
+	    emptyPushInstPtr = NULL;
+	    break;
+	case INST_NEQ:
+	case INST_STR_NEQ:
+	    if (emptyPushInstPtr != NULL) {
+		while (emptyPushInstPtr < currentInstPtr) {
+		    *emptyPushInstPtr++ = INST_NOP;
+		}
+		currentInstPtr[-1] = INST_IS_EMPTY;
+		currentInstPtr[0] = INST_LNOT;
+	    }
+	    emptyPushInstPtr = NULL;
+	    break;
+	case INST_NOP:
+	    break;
+	default:
+	    emptyPushInstPtr = NULL;
+	}
+    }
+    Tcl_DeleteHashTable(&targets);
 }
 
 /*
@@ -428,9 +514,11 @@ void
 TclOptimizeBytecode(
     void *envPtr)
 {
-    ConvertZeroEffectToNOP((CompileEnv *)envPtr);
-    AdvanceJumps((CompileEnv *)envPtr);
-    TrimUnreachable((CompileEnv *)envPtr);
+    CompileEnv *realEnvPtr = (CompileEnv *) envPtr;
+    ConvertZeroEffectToNOP(realEnvPtr);
+    BetterEqualityTesting(realEnvPtr);    
+    AdvanceJumps(realEnvPtr);
+    TrimUnreachable(realEnvPtr);
 }
 
 /*

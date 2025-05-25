@@ -9,7 +9,7 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_InitHashTable, Tcl_InitCustomHashTable, Tcl_InitObjHashTable, Tcl_DeleteHashTable, Tcl_CreateHashEntry, Tcl_DeleteHashEntry, Tcl_FindHashEntry, Tcl_GetHashValue, Tcl_SetHashValue, Tcl_GetHashKey, Tcl_FirstHashEntry, Tcl_NextHashEntry, Tcl_HashStats \- procedures to manage hash tables
+Tcl_InitHashTable, Tcl_InitCustomHashTable, Tcl_InitObjHashTable, Tcl_DeleteHashTable, Tcl_CreateHashEntry, Tcl_AttemptCreateHashEntry, Tcl_DeleteHashEntry, Tcl_FindHashEntry, Tcl_GetHashValue, Tcl_SetHashValue, Tcl_GetHashKey, Tcl_FirstHashEntry, Tcl_NextHashEntry, Tcl_HashStats \- procedures to manage hash tables
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -24,6 +24,9 @@ Tcl_InitHashTable, Tcl_InitCustomHashTable, Tcl_InitObjHashTable, Tcl_DeleteHash
 .sp
 Tcl_HashEntry *
 \fBTcl_CreateHashEntry\fR(\fItablePtr, key, newPtr\fR)
+.sp
+Tcl_HashEntry *
+\fBTcl_AttemptCreateHashEntry\fR(\fItablePtr, key, newPtr\fR)
 .sp
 \fBTcl_DeleteHashEntry\fR(\fIentryPtr\fR)
 .sp
@@ -170,9 +173,15 @@ If an entry already existed with the given key then \fI*newPtr\fR
 is set to zero.
 If a new entry was created, then \fI*newPtr\fR is set to a non-zero
 value and the value of the new entry will be set to zero.
+\fI*newPtr\fR is allowed to be NULL.
 The return value from \fBTcl_CreateHashEntry\fR is a pointer to
 the entry, which may be used to retrieve and modify the entry's
 value or to delete the entry from the table.
+.PP
+\fBTcl_AttemptCreateHashEntry\fR does the same as
+\fBTcl_CreateHashEntry\fR, except in case of a memory
+overflow. \fBTcl_AttemptCreateHashEntry\fR returns NULL
+in that case while \fBTcl_CreateHashEntry\fR panics.
 .PP
 \fBTcl_DeleteHashEntry\fR will remove an existing entry from a
 table.
@@ -276,7 +285,7 @@ The \fIhashKeyProc\fR member contains the address of a function called to
 calculate a hash value for the key.
 .PP
 .CS
-typedef TCL_HASH_TYPE \fBTcl_HashKeyProc\fR(
+typedef size_t \fBTcl_HashKeyProc\fR(
         Tcl_HashTable *\fItablePtr\fR,
         void *\fIkeyPtr\fR);
 .CE

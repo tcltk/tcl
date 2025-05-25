@@ -526,7 +526,7 @@ EncodingConvertfromObjCmd(
     Tcl_Obj *data;		/* Byte array to convert */
     Tcl_DString ds;		/* Buffer to hold the string */
     Tcl_Encoding encoding;	/* Encoding to use */
-    Tcl_Size length = 0;			/* Length of the byte array being converted */
+    Tcl_Size length = 0;	/* Length of the byte array being converted */
     const char *bytesPtr;	/* Pointer to the first byte of the array */
     int flags;
     int result;
@@ -595,7 +595,6 @@ EncodingConvertfromObjCmd(
 
     Tcl_FreeEncoding(encoding);
     return TCL_OK;
-
 }
 
 /*
@@ -688,7 +687,6 @@ EncodingConverttoObjCmd(
 
     Tcl_FreeEncoding(encoding);
     return TCL_OK;
-
 }
 
 /*
@@ -754,9 +752,9 @@ EncodingDirsObjCmd(
 int
 EncodingNamesObjCmd(
     TCL_UNUSED(void *),
-    Tcl_Interp* interp,	    /* Tcl interpreter */
-    int objc,		    /* Number of command line args */
-    Tcl_Obj* const objv[])  /* Vector of command line args */
+    Tcl_Interp* interp,		/* Tcl interpreter */
+    int objc,			/* Number of command line args */
+    Tcl_Obj* const objv[])	/* Vector of command line args */
 {
     if (objc > 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, NULL);
@@ -2373,34 +2371,30 @@ StoreStatData(
 				 * store in varName. */
 {
     Tcl_Obj *field, *value, *result;
-    unsigned short mode;
+    unsigned short modeVal = (unsigned short) statPtr->st_mode;
 
     if (varName == NULL) {
 	TclNewObj(result);
 	Tcl_IncrRefCount(result);
-#define DOBJPUT(key, objValue)                  \
-	Tcl_DictObjPut(NULL, result,            \
-	    Tcl_NewStringObj((key), -1),        \
-	    (objValue));
-	DOBJPUT("dev",	Tcl_NewWideIntObj((long)statPtr->st_dev));
-	DOBJPUT("ino",	Tcl_NewWideIntObj((Tcl_WideInt)statPtr->st_ino));
-	DOBJPUT("nlink",	Tcl_NewWideIntObj((long)statPtr->st_nlink));
-	DOBJPUT("uid",	Tcl_NewWideIntObj((long)statPtr->st_uid));
-	DOBJPUT("gid",	Tcl_NewWideIntObj((long)statPtr->st_gid));
-	DOBJPUT("size",	Tcl_NewWideIntObj((Tcl_WideInt)statPtr->st_size));
+#define D_PUT(key, objValue)	TclDictPut(NULL, result, #key, (objValue))
+	D_PUT(dev,	Tcl_NewWideIntObj((long)statPtr->st_dev));
+	D_PUT(ino,	Tcl_NewWideIntObj((Tcl_WideInt)statPtr->st_ino));
+	D_PUT(nlink,	Tcl_NewWideIntObj((long)statPtr->st_nlink));
+	D_PUT(uid,	Tcl_NewWideIntObj((long)statPtr->st_uid));
+	D_PUT(gid,	Tcl_NewWideIntObj((long)statPtr->st_gid));
+	D_PUT(size,	Tcl_NewWideIntObj((Tcl_WideInt)statPtr->st_size));
 #ifdef HAVE_STRUCT_STAT_ST_BLOCKS
-	DOBJPUT("blocks",	Tcl_NewWideIntObj((Tcl_WideInt)statPtr->st_blocks));
+	D_PUT(blocks,	Tcl_NewWideIntObj((Tcl_WideInt)statPtr->st_blocks));
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
-	DOBJPUT("blksize", Tcl_NewWideIntObj((long)statPtr->st_blksize));
+	D_PUT(blksize,	Tcl_NewWideIntObj((long)statPtr->st_blksize));
 #endif
-	DOBJPUT("atime",	Tcl_NewWideIntObj(Tcl_GetAccessTimeFromStat(statPtr)));
-	DOBJPUT("mtime",	Tcl_NewWideIntObj(Tcl_GetModificationTimeFromStat(statPtr)));
-	DOBJPUT("ctime",	Tcl_NewWideIntObj(Tcl_GetChangeTimeFromStat(statPtr)));
-	mode = (unsigned short) statPtr->st_mode;
-	DOBJPUT("mode",	Tcl_NewWideIntObj(mode));
-	DOBJPUT("type",	Tcl_NewStringObj(GetTypeFromMode(mode), -1));
-#undef DOBJPUT
+	D_PUT(atime,	Tcl_NewWideIntObj(Tcl_GetAccessTimeFromStat(statPtr)));
+	D_PUT(mtime,	Tcl_NewWideIntObj(Tcl_GetModificationTimeFromStat(statPtr)));
+	D_PUT(ctime,	Tcl_NewWideIntObj(Tcl_GetChangeTimeFromStat(statPtr)));
+	D_PUT(mode,	Tcl_NewWideIntObj(modeVal));
+	D_PUT(type,	Tcl_NewStringObj(GetTypeFromMode(modeVal), -1));
+#undef D_PUT
 	Tcl_SetObjResult(interp, result);
 	Tcl_DecrRefCount(result);
 	return TCL_OK;
@@ -2413,44 +2407,45 @@ StoreStatData(
      */
 
 #define STORE_ARY(fieldName, object) \
-    TclNewLiteralStringObj(field, fieldName);				\
-    Tcl_IncrRefCount(field);						\
-    value = (object);							\
-    if (Tcl_ObjSetVar2(interp,varName,field,value,TCL_LEAVE_ERR_MSG)==NULL) { \
+    do {								\
+	TclNewLiteralStringObj(field, #fieldName);			\
+	Tcl_IncrRefCount(field);					\
+	value = (object);						\
+	if (Tcl_ObjSetVar2(interp, varName, field, value,		\
+		TCL_LEAVE_ERR_MSG) == NULL) {				\
+	    TclDecrRefCount(field);					\
+	    return TCL_ERROR;						\
+	}								\
 	TclDecrRefCount(field);						\
-	return TCL_ERROR;						\
-    }									\
-    TclDecrRefCount(field);
+    } while (0)
 
     /*
      * Watch out porters; the inode is meant to be an *unsigned* value, so the
      * cast might fail when there isn't a real arithmetic 'long long' type...
      */
 
-    STORE_ARY("dev",	Tcl_NewWideIntObj((long)statPtr->st_dev));
-    STORE_ARY("ino",	Tcl_NewWideIntObj(statPtr->st_ino));
-    STORE_ARY("nlink",	Tcl_NewWideIntObj((long)statPtr->st_nlink));
-    STORE_ARY("uid",	Tcl_NewWideIntObj((long)statPtr->st_uid));
-    STORE_ARY("gid",	Tcl_NewWideIntObj((long)statPtr->st_gid));
-    STORE_ARY("size",	Tcl_NewWideIntObj(statPtr->st_size));
+    STORE_ARY(dev,	Tcl_NewWideIntObj((long)statPtr->st_dev));
+    STORE_ARY(ino,	Tcl_NewWideIntObj(statPtr->st_ino));
+    STORE_ARY(nlink,	Tcl_NewWideIntObj((long)statPtr->st_nlink));
+    STORE_ARY(uid,	Tcl_NewWideIntObj((long)statPtr->st_uid));
+    STORE_ARY(gid,	Tcl_NewWideIntObj((long)statPtr->st_gid));
+    STORE_ARY(size,	Tcl_NewWideIntObj(statPtr->st_size));
 #ifdef HAVE_STRUCT_STAT_ST_BLOCKS
-    STORE_ARY("blocks",	Tcl_NewWideIntObj(statPtr->st_blocks));
+    STORE_ARY(blocks,	Tcl_NewWideIntObj(statPtr->st_blocks));
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
-    STORE_ARY("blksize", Tcl_NewWideIntObj((long)statPtr->st_blksize));
+    STORE_ARY(blksize,	Tcl_NewWideIntObj((long)statPtr->st_blksize));
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_RDEV
     if (S_ISCHR(statPtr->st_mode) || S_ISBLK(statPtr->st_mode)) {
 	STORE_ARY("rdev", Tcl_NewWideIntObj((long) statPtr->st_rdev));
     }
 #endif
-    STORE_ARY("atime",	Tcl_NewWideIntObj(Tcl_GetAccessTimeFromStat(statPtr)));
-    STORE_ARY("mtime",	Tcl_NewWideIntObj(
-	    Tcl_GetModificationTimeFromStat(statPtr)));
-    STORE_ARY("ctime",	Tcl_NewWideIntObj(Tcl_GetChangeTimeFromStat(statPtr)));
-    mode = (unsigned short) statPtr->st_mode;
-    STORE_ARY("mode",	Tcl_NewWideIntObj(mode));
-    STORE_ARY("type",	Tcl_NewStringObj(GetTypeFromMode(mode), -1));
+    STORE_ARY(atime,	Tcl_NewWideIntObj(Tcl_GetAccessTimeFromStat(statPtr)));
+    STORE_ARY(mtime,	Tcl_NewWideIntObj(Tcl_GetModificationTimeFromStat(statPtr)));
+    STORE_ARY(ctime,	Tcl_NewWideIntObj(Tcl_GetChangeTimeFromStat(statPtr)));
+    STORE_ARY(mode,	Tcl_NewWideIntObj(modeVal));
+    STORE_ARY(type,	Tcl_NewStringObj(GetTypeFromMode(modeVal), -1));
 #undef STORE_ARY
 
     return TCL_OK;

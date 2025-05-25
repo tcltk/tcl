@@ -15,7 +15,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 
-package require -exact tcl 9.0.2
+package require -exact tcl 9.1a0
 
 # Compute the auto path to use in this interpreter.
 # The values on the path come from several locations:

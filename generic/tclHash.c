@@ -55,12 +55,13 @@ static Tcl_HashEntry *	AllocStringEntry(Tcl_HashTable *tablePtr,
  * Function prototypes for static functions in this file:
  */
 
-static Tcl_HashEntry *	BogusFind(Tcl_HashTable *tablePtr, const char *key);
 static Tcl_HashEntry *	BogusCreate(Tcl_HashTable *tablePtr, const char *key,
 			    int *newPtr);
 static Tcl_HashEntry *	CreateHashEntry(Tcl_HashTable *tablePtr, const char *key,
 			    int *newPtr);
+#ifndef TCL_NO_DEPRECATED
 static Tcl_HashEntry *	FindHashEntry(Tcl_HashTable *tablePtr, const char *key);
+#endif
 static void		RebuildTable(Tcl_HashTable *tablePtr);
 
 const Tcl_HashKeyType tclArrayHashKeyType = {
@@ -170,7 +171,9 @@ Tcl_InitCustomHashTable(
     tablePtr->downShift = 28;
     tablePtr->mask = 3;
     tablePtr->keyType = keyType;
+#ifndef TCL_NO_DEPRECATED
     tablePtr->findProc = FindHashEntry;
+#endif
     tablePtr->createProc = CreateHashEntry;
 
     if (typePtr == NULL) {
@@ -209,18 +212,20 @@ Tcl_InitCustomHashTable(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 static Tcl_HashEntry *
 FindHashEntry(
     Tcl_HashTable *tablePtr,	/* Table in which to lookup entry. */
     const char *key)		/* Key to use to find matching entry. */
 {
-    return CreateHashEntry(tablePtr, key, NULL);
+    return tablePtr->createProc(tablePtr, key, TCL_HASH_FIND);
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
  *
- * CreateHashEntry --
+ * Tcl_CreateHashEntry --
  *
  *	Given a hash table with string keys, and a string key, find the entry
  *	with a matching key. If there is no matching entry, then create a new
@@ -238,7 +243,37 @@ FindHashEntry(
  *----------------------------------------------------------------------
  */
 
-#define TCL_HASH_FIND	((int *)-1)
+Tcl_HashEntry *
+Tcl_CreateHashEntry(
+    Tcl_HashTable *tablePtr,	/* Table in which to lookup entry. */
+    const void *key,		/* Key to use to find or create matching
+				 * entry. */
+    int *newPtr)		/* Store info here telling whether a new entry
+				 * was created. */
+{
+    Tcl_HashEntry *entry = (*((tablePtr)->createProc))(tablePtr, (const char *)key, newPtr);
+    if (!entry) {
+	Tcl_Panic("%s: Memory overflow", "Tcl_CreateHashEntry");
+    }
+    return entry;
+}
+
+Tcl_HashEntry *
+Tcl_DbCreateHashEntry(
+    Tcl_HashTable *tablePtr,	/* Table in which to lookup entry. */
+    const void *key,		/* Key to use to find or create matching
+				 * entry. */
+    int *newPtr,		/* Store info here telling whether a new entry
+				 * was created. */
+    const char *file,
+    int line)
+{
+    Tcl_HashEntry *entry = (*((tablePtr)->createProc))(tablePtr, (const char *)key, newPtr);
+    if (!entry) {
+	Tcl_Panic("%s: Memory overflow in file %s:%d", "Tcl_CreateHashEntry", file, line);
+    }
+    return entry;
+}
 
 static Tcl_HashEntry *
 CreateHashEntry(
@@ -327,7 +362,7 @@ CreateHashEntry(
 	}
     }
 
-    if (!newPtr || (newPtr == TCL_HASH_FIND)) {
+    if (newPtr == TCL_HASH_FIND) {
 	/* This is the findProc functionality, so we are done. */
 	return NULL;
     }
@@ -336,11 +371,16 @@ CreateHashEntry(
      * Entry not found. Add a new one to the bucket.
      */
 
-    *newPtr = 1;
+    if (newPtr) {
+	*newPtr = 1;
+    }
     if (typePtr->allocEntryProc) {
 	hPtr = typePtr->allocEntryProc(tablePtr, (void *) key);
     } else {
-	hPtr = (Tcl_HashEntry *)Tcl_Alloc(sizeof(Tcl_HashEntry));
+	hPtr = (Tcl_HashEntry *)Tcl_AttemptAlloc(sizeof(Tcl_HashEntry));
+	if (!hPtr) {
+	    return NULL;
+	}
 	hPtr->key.oneWordValue = (char *) key;
 	Tcl_SetHashValue(hPtr, NULL);
     }
@@ -504,7 +544,9 @@ Tcl_DeleteHashTable(
      * re-initialization.
      */
 
-    tablePtr->findProc = BogusFind;
+#ifndef TCL_NO_DEPRECATED
+    tablePtr->findProc = FindHashEntry;
+#endif
     tablePtr->createProc = BogusCreate;
 }
 
@@ -684,10 +726,12 @@ AllocArrayEntry(
     if (size < sizeof(Tcl_HashEntry)) {
 	size = sizeof(Tcl_HashEntry);
     }
-    hPtr = (Tcl_HashEntry *)Tcl_Alloc(size);
+    hPtr = (Tcl_HashEntry *)Tcl_AttemptAlloc(size);
 
-    memcpy(hPtr->key.string, keyPtr, count);
-    Tcl_SetHashValue(hPtr, NULL);
+    if (hPtr) {
+	memcpy(hPtr->key.string, keyPtr, count);
+	Tcl_SetHashValue(hPtr, NULL);
+    }
 
     return hPtr;
 }
@@ -782,10 +826,12 @@ AllocStringEntry(
     if (size < sizeof(hPtr->key)) {
 	allocsize = sizeof(hPtr->key);
     }
-    hPtr = (Tcl_HashEntry *)Tcl_Alloc(offsetof(Tcl_HashEntry, key) + allocsize);
-    memset(hPtr, 0, offsetof(Tcl_HashEntry, key) + allocsize);
-    memcpy(hPtr->key.string, string, size);
-    Tcl_SetHashValue(hPtr, NULL);
+    hPtr = (Tcl_HashEntry *)Tcl_AttemptAlloc(offsetof(Tcl_HashEntry, key) + allocsize);
+    if (hPtr) {
+	memset(hPtr, 0, offsetof(Tcl_HashEntry, key) + allocsize);
+	memcpy(hPtr->key.string, string, size);
+	Tcl_SetHashValue(hPtr, NULL);
+    }
     return hPtr;
 }
 
@@ -883,32 +929,6 @@ TclHashStringKey(
 /*
  *----------------------------------------------------------------------
  *
- * BogusFind --
- *
- *	This function is invoked when Tcl_FindHashEntry is called on a
- *	table that has been deleted.
- *
- * Results:
- *	If Tcl_Panic returns (which it shouldn't) this function returns NULL.
- *
- * Side effects:
- *	Generates a panic.
- *
- *----------------------------------------------------------------------
- */
-
-static Tcl_HashEntry *
-BogusFind(
-    TCL_UNUSED(Tcl_HashTable *),
-    TCL_UNUSED(const char *))
-{
-    Tcl_Panic("called %s on deleted table", "Tcl_FindHashEntry");
-    return NULL;
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * BogusCreate --
  *
  *	This function is invoked when Tcl_CreateHashEntry is called on a
@@ -927,9 +947,10 @@ static Tcl_HashEntry *
 BogusCreate(
     TCL_UNUSED(Tcl_HashTable *),
     TCL_UNUSED(const char *),
-    TCL_UNUSED(int *))
+    int *isNew)
 {
-    Tcl_Panic("called %s on deleted table", "Tcl_CreateHashEntry");
+    Tcl_Panic("called %s on deleted table",
+	    (isNew != TCL_HASH_FIND)? "Tcl_CreateHashEntry" : "Tcl_FindHashEntry");
     return NULL;
 }
 

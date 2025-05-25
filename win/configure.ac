@@ -3,29 +3,29 @@
 # generate the file "configure", which is run during Tcl installation
 # to configure the system for the local environment.
 
-AC_INIT([tcl],[9.0])
+AC_INIT([tcl],[9.1])
 AC_CONFIG_SRCDIR([../generic/tcl.h])
-AC_PREREQ([2.69])
+AC_PREREQ([2.72])
 
 # The following define is needed when building with Cygwin since newer
 # versions of autoconf incorrectly set SHELL to /bin/bash instead of
 # /bin/sh. The bash shell seems to suffer from some strange failures.
 SHELL=/bin/sh
 
-TCL_VERSION=9.0
+TCL_VERSION=9.1
 TCL_MAJOR_VERSION=9
-TCL_MINOR_VERSION=0
-TCL_PATCH_LEVEL=".2"
+TCL_MINOR_VERSION=1
+TCL_PATCH_LEVEL="a0"
 VER=$TCL_MAJOR_VERSION$TCL_MINOR_VERSION
 
-TCL_DDE_VERSION=1.4
+TCL_DDE_VERSION=1.5
 TCL_DDE_MAJOR_VERSION=1
-TCL_DDE_MINOR_VERSION=4
+TCL_DDE_MINOR_VERSION=5
 DDEVER=$TCL_DDE_MAJOR_VERSION$TCL_DDE_MINOR_VERSION
 
-TCL_REG_VERSION=1.3
+TCL_REG_VERSION=1.4
 TCL_REG_MAJOR_VERSION=1
-TCL_REG_MINOR_VERSION=3
+TCL_REG_MINOR_VERSION=4
 REGVER=$TCL_REG_MAJOR_VERSION$TCL_REG_MINOR_VERSION
 
 PKG_CFG_ARGS=$@

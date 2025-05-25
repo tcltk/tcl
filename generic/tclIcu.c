@@ -45,9 +45,9 @@ typedef enum {
 } UConverterCallbackReasonx;
 
 typedef enum UNormalizationCheckResultx {
-  UNORM_NO,
-  UNORM_YES,
-  UNORM_MAYBE
+    UNORM_NO,
+    UNORM_YES,
+    UNORM_MAYBE
 } UNormalizationCheckResultx;
 
 typedef struct UEnumeration UEnumeration;
@@ -59,50 +59,31 @@ typedef struct UConverter UConverter;
 typedef struct UConverterFromUnicodeArgs UConverterFromUnicodeArgs;
 typedef struct UConverterToUnicodeArgs UConverterToUnicodeArgs;
 typedef void   (*UConverterFromUCallback)(const void *context,
-					  UConverterFromUnicodeArgs *args,
-					  const UCharx *codeUnits,
-					  int32_t length, UChar32x codePoint,
-					  UConverterCallbackReasonx reason,
-					  UErrorCodex *pErrorCode);
+	UConverterFromUnicodeArgs *args, const UCharx *codeUnits,
+	int32_t length, UChar32x codePoint, UConverterCallbackReasonx reason,
+	UErrorCodex *pErrorCode);
 typedef void   (*UConverterToUCallback)(const void *context,
-					UConverterToUnicodeArgs *args,
-					const char *codeUnits,
-					int32_t length,
-					UConverterCallbackReasonx reason,
-					UErrorCodex *pErrorCode);
+	UConverterToUnicodeArgs *args, const char *codeUnits,
+	int32_t length, UConverterCallbackReasonx reason,
+	UErrorCodex *pErrorCode);
 /*
  * Prototypes for ICU functions sorted by category.
  */
 typedef void        (*fn_u_cleanup)(void);
 typedef const char *(*fn_u_errorName)(UErrorCodex);
-typedef UCharx *(*fn_u_strFromUTF32)(UCharx *dest,
-				     int32_t destCapacity,
-				     int32_t *pDestLength,
-				     const UChar32x *src,
-				     int32_t srcLength,
-				     UErrorCodex *pErrorCode);
-typedef UCharx *(*fn_u_strFromUTF32WithSub)(UCharx *dest,
-					    int32_t destCapacity,
-					    int32_t *pDestLength,
-					    const UChar32x *src,
-					    int32_t srcLength,
-					    UChar32x subchar,
-					    int32_t *pNumSubstitutions,
-					    UErrorCodex *pErrorCode);
-typedef UChar32x *(*fn_u_strToUTF32)(UChar32x *dest,
-				     int32_t destCapacity,
-				     int32_t *pDestLength,
-				     const UCharx *src,
-				     int32_t srcLength,
-				     UErrorCodex *pErrorCode);
+typedef UCharx *(*fn_u_strFromUTF32)(UCharx *dest, int32_t destCapacity,
+	int32_t *pDestLength, const UChar32x *src, int32_t srcLength,
+	UErrorCodex *pErrorCode);
+typedef UCharx *(*fn_u_strFromUTF32WithSub)(UCharx *dest, int32_t destCapacity,
+	int32_t *pDestLength, const UChar32x *src, int32_t srcLength,
+	UChar32x subchar, int32_t *pNumSubstitutions, UErrorCodex *pErrorCode);
+typedef UChar32x *(*fn_u_strToUTF32)(UChar32x *dest, int32_t destCapacity,
+	int32_t *pDestLength, const UCharx *src, int32_t srcLength,
+	UErrorCodex *pErrorCode);
 typedef UChar32x *(*fn_u_strToUTF32WithSub)(UChar32x *dest,
-					    int32_t destCapacity,
-					    int32_t *pDestLength,
-					    const UCharx *src,
-					    int32_t srcLength,
-					    UChar32x subchar,
-					    int32_t *pNumSubstitutions,
-					    UErrorCodex *pErrorCode);
+	int32_t destCapacity, int32_t *pDestLength, const UCharx *src,
+	int32_t srcLength, UChar32x subchar, int32_t *pNumSubstitutions,
+	UErrorCodex *pErrorCode);
 
 typedef void        (*fn_ucnv_close)(UConverter *);
 typedef uint16_t    (*fn_ucnv_countAliases)(const char *, UErrorCodex *);
@@ -113,19 +94,15 @@ typedef const char *(*fn_ucnv_getAlias)(const char *, uint16_t, UErrorCodex *);
 typedef const char *(*fn_ucnv_getAvailableName)(int32_t);
 typedef UConverter *(*fn_ucnv_open)(const char *converterName, UErrorCodex *);
 typedef void        (*fn_ucnv_setFromUCallBack)(UConverter *,
-						UConverterFromUCallback newAction,
-						const void *newContext,
-						UConverterFromUCallback *oldAction,
-						const void **oldContext,
-						UErrorCodex *err);
+	UConverterFromUCallback newAction, const void *newContext,
+	UConverterFromUCallback *oldAction, const void **oldContext,
+	UErrorCodex *err);
 typedef void        (*fn_ucnv_setToUCallBack)(UConverter *,
-						UConverterToUCallback newAction,
-						const void *newContext,
-						UConverterToUCallback *oldAction,
-						const void **oldContext,
-						UErrorCodex *err);
+	UConverterToUCallback newAction, const void *newContext,
+	UConverterToUCallback *oldAction, const void **oldContext,
+	UErrorCodex *err);
 typedef int32_t     (*fn_ucnv_toUChars)(UConverter *, UCharx *dest,
-					int32_t destCapacity, const char *src, int32_t srcLen, UErrorCodex *);
+	int32_t destCapacity, const char *src, int32_t srcLen, UErrorCodex *);
 typedef UConverterFromUCallback fn_UCNV_FROM_U_CALLBACK_STOP;
 typedef UConverterToUCallback   fn_UCNV_TO_U_CALLBACK_STOP;
 
@@ -161,12 +138,8 @@ typedef UNormalizer2 *(*fn_unorm2_getNFCInstance)(UErrorCodex *);
 typedef UNormalizer2 *(*fn_unorm2_getNFDInstance)(UErrorCodex *);
 typedef UNormalizer2 *(*fn_unorm2_getNFKCInstance)(UErrorCodex *);
 typedef UNormalizer2 *(*fn_unorm2_getNFKDInstance)(UErrorCodex *);
-typedef int32_t (*fn_unorm2_normalize)(const UNormalizer2 *,
-				       const UCharx *,
-				       int32_t,
-				       UCharx *,
-				       int32_t,
-				       UErrorCodex *);
+typedef int32_t (*fn_unorm2_normalize)(const UNormalizer2 *, const UCharx *,
+	int32_t, UCharx *, int32_t, UErrorCodex *);
 
 #define FIELD(name) fn_ ## name _ ## name
 
@@ -354,8 +327,8 @@ DetectEncoding(
 	return TCL_ERROR;
     }
     if (len > INT_MAX) {
-	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("Max length supported by ICU exceeded.", TCL_INDEX_NONE));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"Max length supported by ICU exceeded.", TCL_INDEX_NONE));
 	return TCL_ERROR;
     }
     UErrorCodex status = U_ZERO_ERRORZ;
@@ -499,14 +472,9 @@ IcuObjToUCharDString(
     char *s;
     Tcl_Size len;
     s = Tcl_GetStringFromObj(objPtr, &len);
-    result = Tcl_UtfToExternalDStringEx(interp,
-					encoding,
-					s,
-					len,
-					strict ? TCL_ENCODING_PROFILE_STRICT
-					       : TCL_ENCODING_PROFILE_REPLACE,
-					dsPtr,
-					NULL);
+    result = Tcl_UtfToExternalDStringEx(interp, encoding, s, len,
+	    strict ? TCL_ENCODING_PROFILE_STRICT : TCL_ENCODING_PROFILE_REPLACE,
+	    dsPtr, NULL);
     if (result != TCL_OK) {
 	Tcl_DStringFree(dsPtr); /* Must be done on error */
 	/* TCL_CONVER_* errors -> TCL_ERROR */
@@ -554,14 +522,9 @@ IcuObjFromUCharDString(
     Tcl_Size len = Tcl_DStringLength(dsPtr);
     Tcl_DString dsOut;
     int result;
-    result  = Tcl_ExternalToUtfDStringEx(interp,
-					encoding,
-					s,
-					len,
-					strict ? TCL_ENCODING_PROFILE_STRICT
-					       : TCL_ENCODING_PROFILE_REPLACE,
-					&dsOut,
-					NULL);
+    result  = Tcl_ExternalToUtfDStringEx(interp, encoding, s, len,
+	    strict ? TCL_ENCODING_PROFILE_STRICT : TCL_ENCODING_PROFILE_REPLACE,
+	    &dsOut, NULL);
 
     if (result == TCL_OK) {
 	objPtr = Tcl_DStringToObj(&dsOut); /* Clears dsPtr! */
@@ -776,8 +739,8 @@ IcuConverttoDString(
     Tcl_Size utf16len = Tcl_DStringLength(dsInPtr) / sizeof(UCharx);
     Tcl_Size dstLen, dstCapacity;
     if (utf16len > INT_MAX) {
-	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("Max length supported by ICU exceeded.", TCL_INDEX_NONE));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"Max length supported by ICU exceeded.", TCL_INDEX_NONE));
 	return TCL_ERROR;
     }
 
@@ -840,8 +803,8 @@ IcuBytesToUCharDString(
     }
 
     if (nbytes > INT_MAX) {
-	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("Max length supported by ICU exceeded.", TCL_INDEX_NONE));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"Max length supported by ICU exceeded.", TCL_INDEX_NONE));
 	return TCL_ERROR;
     }
 
@@ -864,7 +827,7 @@ IcuBytesToUCharDString(
     Tcl_DStringInit(dsOutPtr);
     Tcl_DStringSetLength(dsOutPtr, dstCapacity);
     dstLen = ucnv_toUChars(ucnvPtr, (UCharx *)Tcl_DStringValue(dsOutPtr), dstCapacity,
-			   (const char *)bytes, (int)nbytes, &status);
+	    (const char *)bytes, (int)nbytes, &status);
     if (U_FAILURE(status)) {
 	switch (status) {
 	case U_STRING_NOT_TERMINATED_WARNING:
@@ -874,7 +837,7 @@ IcuBytesToUCharDString(
 	    Tcl_DStringSetLength(dsOutPtr, dstCapacity);
 	    status = U_ZERO_ERRORZ; /* Reset before call */
 	    dstLen = ucnv_toUChars(ucnvPtr, (UCharx *)Tcl_DStringValue(dsOutPtr), dstCapacity,
-				   (const char *)bytes, (int)nbytes, &status);
+		    (const char *)bytes, (int)nbytes, &status);
 	    if (U_SUCCESS(status)) {
 		break;
 	    }
@@ -949,8 +912,8 @@ IcuNormalizeUCharDString(
     utf16 = (UCharx *) Tcl_DStringValue(dsInPtr);
     utf16len = Tcl_DStringLength(dsInPtr) / sizeof(UCharx);
     if (utf16len > INT_MAX) {
-	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("Max length supported by ICU exceeded.", TCL_INDEX_NONE));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"Max length supported by ICU exceeded.", TCL_INDEX_NONE));
 	return TCL_ERROR;
     }
     Tcl_DStringInit(dsOutPtr);
@@ -1014,9 +977,9 @@ static int IcuParseConvertOptions(
 	}
 	++i;
 	if (i == objc) {
-	    Tcl_SetObjResult(interp,
-			     Tcl_ObjPrintf("Missing value for option %s.",
-					   Tcl_GetString(objv[i - 1])));
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "Missing value for option %s.",
+		    Tcl_GetString(objv[i - 1])));
 	    return TCL_ERROR;
 	}
 	const char *s = Tcl_GetString(objv[i]);
@@ -1025,17 +988,17 @@ static int IcuParseConvertOptions(
 	    if (!strcmp(s, "replace")) {
 		strict = 0;
 	    } else if (strcmp(s, "strict")) {
-		Tcl_SetObjResult(interp,
-		    Tcl_ObjPrintf("Invalid value \"%s\" supplied for option"
-			 " \"-profile\". Must be \"strict\" or \"replace\".",
-			 s));
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"Invalid value \"%s\" supplied for option"
+			" \"-profile\". Must be \"strict\" or \"replace\".",
+			s));
 		return TCL_ERROR;
 	    }
 	    break;
 	case OPT_FAILINDEX:
 	    /* TBD */
-	    Tcl_SetObjResult(interp,
-		    Tcl_NewStringObj("Option -failindex not implemented.", TCL_INDEX_NONE));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "Option -failindex not implemented.", TCL_INDEX_NONE));
 	    return TCL_ERROR;
 	}
     }
@@ -1182,9 +1145,9 @@ IcuNormalizeObjCmd(
 	}
 	++i;
 	if (i == (objc-1)) {
-	    Tcl_SetObjResult(interp,
-			     Tcl_ObjPrintf("Missing value for option %s.",
-					   Tcl_GetString(objv[i - 1])));
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "Missing value for option %s.",
+		    Tcl_GetString(objv[i - 1])));
 	    return TCL_ERROR;
 	}
 	const char *s = Tcl_GetString(objv[i]);
@@ -1193,15 +1156,16 @@ IcuNormalizeObjCmd(
 	    if (!strcmp(s, "replace")) {
 		strict = 0;
 	    } else if (strcmp(s, "strict")) {
-		Tcl_SetObjResult(interp,
-		    Tcl_ObjPrintf("Invalid value \"%s\" supplied for option \"-profile\". Must be "
-				  "\"strict\" or \"replace\".",
-				  s));
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"Invalid value \"%s\" supplied for option \"-profile\". "
+			"Must be \"strict\" or \"replace\".",
+			s));
 		return TCL_ERROR;
 	    }
 	    break;
 	case OPT_MODE:
-	    if (Tcl_GetIndexFromObj(interp, objv[i], normalizationForms, "normalization mode", 0, &mode) != TCL_OK) {
+	    if (Tcl_GetIndexFromObj(interp, objv[i], normalizationForms,
+		    "normalization mode", 0, &mode) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    break;
@@ -1438,10 +1402,10 @@ TclIcuInit(
 
 	/* Symbol may have version (Linux), or not (Windows, FreeBSD) */
 
-#define ICUUC_SYM(name)                                                   \
-    do {                                                                  \
-	icu_fns._##name =                                                 \
-	    (fn_##name)IcuFindSymbol(icu_fns.libs[0], #name, icuversion); \
+#define ICUUC_SYM(name) \
+    do {								\
+	icu_fns._##name = (fn_##name)					\
+		IcuFindSymbol(icu_fns.libs[0], #name, icuversion);	\
     } while (0)
 
 	if (icu_fns.libs[0] != NULL) {
@@ -1485,10 +1449,10 @@ TclIcuInit(
 #undef ICUUC_SYM
 	}
 
-#define ICUIN_SYM(name)                                                   \
-    do {                                                                  \
-	icu_fns._##name =                                                 \
-	    (fn_##name)IcuFindSymbol(icu_fns.libs[1], #name, icuversion); \
+#define ICUIN_SYM(name) \
+    do {								\
+	icu_fns._##name = (fn_##name)					\
+		IcuFindSymbol(icu_fns.libs[1], #name, icuversion);	\
     } while (0)
 
 	if (icu_fns.libs[1] != NULL) {
@@ -1514,9 +1478,9 @@ TclIcuInit(
 	    /* Ref count number of commands */
 	    icu_fns.nopen += 3;
 	    Tcl_CreateObjCommand(interp,  "::tcl::unsupported::icu::convertto",
-				 IcuConverttoObjCmd, 0, TclIcuCleanup);
+		    IcuConverttoObjCmd, 0, TclIcuCleanup);
 	    Tcl_CreateObjCommand(interp,  "::tcl::unsupported::icu::convertfrom",
-				 IcuConvertfromObjCmd, 0, TclIcuCleanup);
+		    IcuConvertfromObjCmd, 0, TclIcuCleanup);
 	    Tcl_CreateObjCommand(interp,  "::tcl::unsupported::icu::detect",
 		    IcuDetectObjCmd, 0, TclIcuCleanup);
 	}

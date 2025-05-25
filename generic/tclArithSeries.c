@@ -168,7 +168,7 @@ ArithSeriesEndDbl(
     if (!dblRepPtr->base.len) {
 	return dblRepPtr->start;
     }
-    d = dblRepPtr->start + ((dblRepPtr->base.len-1) * dblRepPtr->step);
+    d = dblRepPtr->start + ((double)(dblRepPtr->base.len-1) * dblRepPtr->step);
     return ArithRound(d, dblRepPtr->precision);
 }
 
@@ -191,7 +191,7 @@ ArithSeriesIndexDbl(
     assert(arithSeriesRepPtr->isDouble);
     double d = dblRepPtr->start;
     if (index) {
-	d += (index * dblRepPtr->step);
+	d += ((double)index * dblRepPtr->step);
     }
 
     return ArithRound(d, dblRepPtr->precision);
@@ -227,15 +227,14 @@ ObjPrecision(
     int type;
 
     if (TclHasInternalRep(numObj, &tclDoubleType) || (
-	  Tcl_GetNumberFromObj(NULL, numObj, &ptr, &type) == TCL_OK &&
-	  type == TCL_NUMBER_DOUBLE
-	)
+	    Tcl_GetNumberFromObj(NULL, numObj, &ptr, &type) == TCL_OK
+	    && type == TCL_NUMBER_DOUBLE)
     ) { /* TCL_NUMBER_DOUBLE */
 	const char *str = TclGetString(numObj);
 
 	if (strchr(str, 'e') == NULL && strchr(str, 'E') == NULL) {
 	    str = strchr(str, '.');
-	    return (str ? strlen(str + 1) : 0);
+	    return (str ? (unsigned)strlen(str + 1) : 0);
 	}
 	/* don't calculate precision for e-notation */
     }
@@ -338,10 +337,8 @@ ArithSeriesLenDbl(
      * To improve numerical stability use wide arithmetic instead of IEEE-754
      * when distance and step do not exceed wide-integers.
      */
-    if (
-	((double)WIDE_MIN <= end && end <= (double)WIDE_MAX) &&
-	((double)WIDE_MIN <= step && step <= (double)WIDE_MAX)
-    ) {
+    if (((double)WIDE_MIN <= end && end <= (double)WIDE_MAX) &&
+	    ((double)WIDE_MIN <= step && step <= (double)WIDE_MAX)) {
 	Tcl_WideInt iend = end < 0 ? end - 0.5 : end + 0.5;
 	Tcl_WideInt istep = step < 0 ? step - 0.5 : step + 0.5;
 	if (istep) { /* avoid div by zero, steps like 0.1, precision 0 */
@@ -629,13 +626,13 @@ assignNumber(
  */
 Tcl_Obj *
 TclNewArithSeriesObj(
-    Tcl_Interp *interp,       /* For error reporting */
-    int useDoubles,           /* Flag indicates values start,
-			      ** end, step, are treated as doubles */
-    Tcl_Obj *startObj,        /* Starting value */
-    Tcl_Obj *endObj,          /* Ending limit */
-    Tcl_Obj *stepObj,         /* increment value */
-    Tcl_Obj *lenObj)          /* Number of elements */
+    Tcl_Interp *interp,		/* For error reporting */
+    int useDoubles,		/* Flag indicates values start,
+				 * end, step, are treated as doubles */
+    Tcl_Obj *startObj,		/* Starting value */
+    Tcl_Obj *endObj,		/* Ending limit */
+    Tcl_Obj *stepObj,		/* increment value */
+    Tcl_Obj *lenObj)		/* Number of elements */
 {
     double dstart, dend, dstep = 1.0;
     Tcl_WideInt start, end, step = 1;
@@ -715,13 +712,13 @@ TclNewArithSeriesObj(
 	    // Compute precision based on given command argument values
 	    precision = maxObjPrecision(startObj, NULL, stepObj);
 
-	    dend = dstart + (dstep * (len-1));
+	    dend = dstart + (dstep * (double)(len-1));
 	    // Make computed end value match argument(s) precision
 	    dend = ArithRound(dend, precision);
 	    end = dend;
 	} else {
 	    end = start + (step * (len - 1));
-	    dend = end;
+	    dend = (double)end;
 	}
     }
 
@@ -731,7 +728,7 @@ TclNewArithSeriesObj(
      * (0x0ffffffffffffffa instead of 0x7fffffffffffffff by 64bit)
      */
     if (len > TCL_SIZE_MAX) {
-      exceeded:
+    exceeded:
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"max length of a Tcl list exceeded", TCL_AUTO_LENGTH));
 	Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
@@ -741,7 +738,7 @@ TclNewArithSeriesObj(
     if (useDoubles) {
 	/* ensure we'll not get NaN somewhere in the arith-series,
 	 * so simply check the end of it and behave like [expr {Inf - Inf}] */
-	double d = dstart + (len - 1) * dstep;
+	double d = dstart + (double)(len - 1) * dstep;
 	if (isnan(d)) {
 	    const char *s = "domain error: argument not in valid range";
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
@@ -876,11 +873,11 @@ SetArithSeriesFromAny(
 
 int
 TclArithSeriesObjRange(
-    Tcl_Interp *interp,         /* For error message(s) */
+    Tcl_Interp *interp,		/* For error message(s) */
     Tcl_Obj *arithSeriesObj,	/* List object to take a range from. */
     Tcl_Size fromIdx,		/* Index of first element to include. */
     Tcl_Size toIdx,		/* Index of last element to include. */
-    Tcl_Obj **newObjPtr)        /* return value */
+    Tcl_Obj **newObjPtr)	/* return value */
 {
     ArithSeries *arithSeriesRepPtr;
     Tcl_WideInt len;
@@ -1066,7 +1063,7 @@ TclArithSeriesGetElements(
  */
 int
 TclArithSeriesObjReverse(
-    Tcl_Interp *interp,         /* For error message(s) */
+    Tcl_Interp *interp,		/* For error message(s) */
     Tcl_Obj *arithSeriesObj,	/* List object to reverse. */
     Tcl_Obj **newObjPtr)
 {

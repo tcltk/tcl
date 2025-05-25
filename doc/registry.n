@@ -13,7 +13,7 @@
 registry \- Manipulate the Windows registry
 .SH SYNOPSIS
 .nf
-\fBpackage require registry 1.3\fR
+\fBpackage require registry 1.4\fR
 
 \fBregistry \fR?\fI\-mode\fR? \fIoption keyName\fR ?\fIarg arg ...\fR?
 .fi

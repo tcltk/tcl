@@ -603,7 +603,7 @@ CopyRenameOneFile(
 
 	{
 	    Tcl_Obj *perm;
-	    int index;
+	    Tcl_Size index;
 
 	    TclNewLiteralStringObj(perm, "u+w");
 	    Tcl_IncrRefCount(perm);

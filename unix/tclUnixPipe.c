@@ -213,7 +213,8 @@ TclpCreateTempFile(
 	Tcl_DString dstring;
 	char *native;
 
-	if (Tcl_UtfToExternalDStringEx(NULL, NULL, contents, TCL_INDEX_NONE, 0, &dstring, NULL) != TCL_OK) {
+	if (Tcl_UtfToExternalDStringEx(NULL, NULL, contents, TCL_INDEX_NONE,
+		0, &dstring, NULL) != TCL_OK) {
 	    close(fd);
 	    Tcl_DStringFree(&dstring);
 	    return NULL;
@@ -462,7 +463,8 @@ TclpCreateProcess(
     newArgv = (char **)TclStackAlloc(interp, (argc+1) * sizeof(char *));
     newArgv[argc] = NULL;
     for (i = 0; i < argc; i++) {
-	if (Tcl_UtfToExternalDStringEx(interp, NULL, argv[i], TCL_INDEX_NONE, 0, &dsArray[i], NULL) != TCL_OK) {
+	if (Tcl_UtfToExternalDStringEx(interp, NULL, argv[i], TCL_INDEX_NONE,
+		0, &dsArray[i], NULL) != TCL_OK) {
 	    while (i-- > 0) {
 		Tcl_DStringFree(&dsArray[i]);
 	    }

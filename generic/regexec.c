@@ -145,7 +145,7 @@ static chr *shortest(struct vars *const, struct dfa *const, chr *const, chr *con
 static chr *lastCold(struct vars *const, struct dfa *const);
 static struct dfa *newDFA(struct vars *const, struct cnfa *const, struct colormap *const, struct smalldfa *);
 static void freeDFA(struct dfa *const);
-static unsigned hash(unsigned *const, int);
+static unsigned hash(unsigned *const, size_t);
 static struct sset *initialize(struct vars *const, struct dfa *const, chr *const);
 static struct sset *miss(struct vars *const, struct dfa *const, struct sset *const, const pcolor, chr *const, chr *const);
 static int checkLAConstraint(struct vars *const, struct cnfa *const, chr *const, const pcolor);
@@ -171,8 +171,8 @@ exec(
 {
     AllocVars(v);
     int st, backref;
-    int n;
-    int i;
+    size_t n;
+    size_t i;
 #define	LOCALMAT	20
     regmatch_t mat[LOCALMAT];
 #define LOCALDFAS	40
@@ -592,7 +592,7 @@ subset(
     chr *const begin,
     chr *const end)
 {
-    int n = sub->subno;
+    size_t n = sub->subno;
 
     assert(n > 0);
     if ((size_t)n >= v->nmatch) {
@@ -874,7 +874,8 @@ cbrdissect(
     chr *begin,		/* beginning of relevant substring */
     chr *end)		/* end of same */
 {
-    int n = t->subno, min = t->min, max = t->max;
+    size_t n = t->subno;
+    int min = t->min, max = t->max;
     size_t numreps;
     size_t tlen;
     size_t brlen;

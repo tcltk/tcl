@@ -66,7 +66,7 @@ typedef struct {
     ((objPtr)->internalRep.twoPtrValue.ptr2 = NULL),			\
     ((objPtr)->internalRep.twoPtrValue.ptr1 = (void *) (stringPtr))
 
-#endif /*  _TCLSTRINGREP */
+#endif /* _TCLSTRINGREP */
 /*
  * Local Variables:
  * mode: c

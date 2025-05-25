@@ -340,8 +340,8 @@ Tcl_Init(
      * pre-init and init scripts are running. The real version of this struct
      * is in tclPkg.c.
      */
-    typedef struct PkgName {
-	struct PkgName *nextPtr;/* Next in list of package names being
+    typedef struct PkgNameStruct {
+	struct PkgNameStruct *nextPtr;/* Next in list of package names being
 				 * initialized. */
 	char name[4];		/* Enough space for "tcl". The *real* version
 				 * of this structure uses a flex array. */
@@ -3962,7 +3962,7 @@ Tcl_LimitSetCommands(
  *----------------------------------------------------------------------
  */
 
-int
+Tcl_Size
 Tcl_LimitGetCommands(
     Tcl_Interp *interp)
 {
@@ -4329,7 +4329,7 @@ TclRemoveScriptLimitCallbacks(
     while (hashPtr != NULL) {
 	keyPtr = (ScriptLimitCallbackKey *)
 		Tcl_GetHashKey(&iPtr->limit.callbacks, hashPtr);
-	Tcl_LimitRemoveHandler(keyPtr->interp, keyPtr->type,
+	Tcl_LimitRemoveHandler(keyPtr->interp, (int)keyPtr->type,
 		CallScriptLimitCallback, Tcl_GetHashValue(hashPtr));
 	hashPtr = Tcl_NextHashEntry(&search);
     }

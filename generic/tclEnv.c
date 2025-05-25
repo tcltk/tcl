@@ -45,7 +45,7 @@ static struct {
     char **cache;		/* Array containing all of the environment
 				 * strings that Tcl has allocated. */
 #ifndef USE_PUTENV
-    techar **ourEnviron;		/* Cache of the array that we allocate. We
+    techar **ourEnviron;	/* Cache of the array that we allocate. We
 				 * need to track this in case another
 				 * subsystem swaps around the environ array
 				 * like we do. */

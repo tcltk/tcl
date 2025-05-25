@@ -193,7 +193,7 @@ typedef struct ConsoleChannelInfo {
     Tcl_Channel channel;	/* Pointer to channel structure. */
     DWORD initMode;		/* Initial console mode. */
     int numRefs;		/* See comments above */
-    int permissions;            /* OR'ed combination of TCL_READABLE,
+    int permissions;		/* OR'ed combination of TCL_READABLE,
 				 * TCL_WRITABLE, or TCL_EXCEPTION: indicates
 				 * which operations are valid on the file. */
     int watchMask;		/* OR'ed combination of TCL_READABLE,
@@ -276,7 +276,7 @@ static int		RingBufferCheck(const RingBuffer *ringPtr);
 
 typedef struct {
     /* Currently this struct is only used to detect thread initialization */
-    int notUsed; /* Dummy field */
+    int notUsed;		/* Dummy field */
 } ThreadSpecificData;
 static Tcl_ThreadDataKey dataKey;
 
@@ -570,7 +570,7 @@ ReadConsoleChars(
      * or https://github.com/microsoft/terminal/issues/12143
      */
     nRead = (DWORD)-1;
-    if (!ReadConsoleW(hConsole, lpBuffer, nChars, &nRead, NULL)) {
+    if (!ReadConsoleW(hConsole, lpBuffer, (DWORD)nChars, &nRead, NULL)) {
 	return GetLastError();
     }
     if ((nRead == 0 || nRead == (DWORD)-1)
@@ -610,7 +610,7 @@ WriteConsoleChars(
 
     /* See comments in ReadConsoleChars, not sure that applies here */
     nCharsWritten = (DWORD)-1;
-    if (!WriteConsoleW(hConsole, lpBuffer, nChars, &nCharsWritten, NULL)) {
+    if (!WriteConsoleW(hConsole, lpBuffer, (DWORD)nChars, &nCharsWritten, NULL)) {
 	return GetLastError();
     }
     if (nCharsWritten == (DWORD) -1) {
@@ -1190,7 +1190,7 @@ ConsoleInputProc(
 		return -1;
 	    } else if (numChars > 0) {
 		/* Successfully read something. */
-		return numChars * sizeof(WCHAR);
+		return (int)(numChars * sizeof(WCHAR));
 	    } else {
 		/*
 		 * Ctrl-C/Ctrl-Brk interrupt. Loop around to retry.
@@ -1228,7 +1228,7 @@ ConsoleInputProc(
     }
 
     ReleaseSRWLockExclusive(&handleInfoPtr->lock);
-    return numRead;
+    return (int)numRead;
 }
 
 /*
@@ -1342,7 +1342,7 @@ ConsoleOutputProc(
 	    winStatus = WriteConsoleChars(consoleHandle,
 		    (WCHAR *)buf, toWrite / sizeof(WCHAR), &numWritten);
 	    if (winStatus == ERROR_SUCCESS) {
-		return numWritten * sizeof(WCHAR);
+		return (int)(numWritten * sizeof(WCHAR));
 	    } else {
 		Tcl_WinConvertError(winStatus);
 		*errorCode = Tcl_GetErrno();
@@ -1354,7 +1354,7 @@ ConsoleOutputProc(
     }
     WakeConditionVariable(&handleInfoPtr->consoleThreadCV);
     ReleaseSRWLockExclusive(&handleInfoPtr->lock);
-    return numWritten;
+    return (int)numWritten;
 }
 
 /*
@@ -1867,7 +1867,7 @@ ConsoleWriterThread(
     while (1) {
 	/* handleInfoPtr->lock must be held on entry to loop */
 
-	int offset;
+	Tcl_Size offset;
 	HANDLE consoleHandle;
 
 	/*
@@ -2000,7 +2000,7 @@ ConsoleWriterThread(
 static ConsoleHandleInfo *
 AllocateConsoleHandleInfo(
     HANDLE consoleHandle,
-    int permissions)   /* TCL_READABLE or TCL_WRITABLE */
+    int permissions)		/* TCL_READABLE or TCL_WRITABLE */
 {
     ConsoleHandleInfo *handleInfoPtr;
     DWORD consoleMode;
@@ -2265,8 +2265,8 @@ ConsoleSetOptionProc(
     const char *value)		/* New value for option. */
 {
     ConsoleChannelInfo *chanInfoPtr = (ConsoleChannelInfo *)instanceData;
-    int len = strlen(optionName);
-    int vlen = strlen(value);
+    size_t len = strlen(optionName);
+    size_t vlen = strlen(value);
 
     /*
      * Option -inputmode normal|password|raw
@@ -2355,7 +2355,7 @@ ConsoleGetOptionProc(
 {
     ConsoleChannelInfo *chanInfoPtr = (ConsoleChannelInfo *)instanceData;
     int valid = 0;		/* Flag if valid option parsed. */
-    unsigned int len;
+    size_t len;
     char buf[TCL_INTEGER_SPACE];
 
     if (optionName == NULL) {

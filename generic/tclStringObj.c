@@ -177,7 +177,7 @@ GrowUnicodeBuffer(
     /* Note STRING_MAXCHARS already takes into account space for nul */
     if (needed > STRING_MAXCHARS) {
 	Tcl_Panic("max size for a Tcl unicode rep (%" TCL_Z_MODIFIER "d bytes) exceeded",
-		  STRING_MAXCHARS);
+		STRING_MAXCHARS);
     }
     if (stringPtr->maxChars > 0) {
 	/* Expansion - try allocating extra space */
@@ -641,7 +641,7 @@ TclGetUniChar(
  */
 
 #undef Tcl_GetUnicodeFromObj
-#if !defined(TCL_NO_DEPRECATED)
+#ifndef TCL_NO_DEPRECATED
 Tcl_UniChar *
 TclGetUnicodeFromObj(
     Tcl_Obj *objPtr,		/* The object to find the Unicode string
@@ -669,7 +669,7 @@ TclGetUnicodeFromObj(
     }
     return stringPtr->unicode;
 }
-#endif /* !defined(TCL_NO_DEPRECATED) */
+#endif /* !TCL_NO_DEPRECATED */
 
 Tcl_UniChar *
 Tcl_GetUnicodeFromObj(
@@ -2562,8 +2562,8 @@ Tcl_AppendFormatToObj(
 	}
 	default:
 	    if (interp != NULL) {
-		Tcl_SetObjResult(interp,
-			Tcl_ObjPrintf("bad field specifier \"%c\"", ch));
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"bad field specifier \"%c\"", ch));
 		Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BADTYPE", (char *)NULL);
 	    }
 	    goto error;
@@ -4363,6 +4363,49 @@ ExtendUnicodeRepWithString(
 	}
     }
     *dst = 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_IsEmpty --
+ *
+ *	Check whether the obj is the empty string.
+ *
+ * Results:
+ *	 1 if the obj is ""
+ *   0 otherwise
+ *
+ * Side effects:
+ *	If there is no other way to determine whethere the string
+ *	representation is the empty string, the string representation
+ *	is generated.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_IsEmpty(
+    Tcl_Obj *objPtr)
+{
+    if (objPtr == NULL) {
+	Tcl_Panic("%s: objPtr is NULL", "Tcl_IsEmpty");
+    }
+    if (!objPtr->bytes) {
+	if (TclHasInternalRep(objPtr, &tclDictType)) {
+	    /* Since "dict" doesn't have a lengthProc */
+	    Tcl_Size size;
+	    Tcl_DictObjSize(NULL, objPtr, &size);
+	    return !size;
+	}
+
+	Tcl_ObjTypeLengthProc *proc = TclObjTypeHasProc(objPtr, lengthProc);
+	if (proc != NULL) {
+	    return !proc(objPtr);
+	}
+	(void)TclGetString(objPtr);
+    }
+    return !objPtr->length;
 }
 
 /*

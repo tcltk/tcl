@@ -86,12 +86,12 @@ static int		CompareVersions(char *v1i, char *v2i,
 			    int *isMajorPtr);
 static int		CheckRequirement(Tcl_Interp *interp,
 			    const char *string);
-static int		CheckAllRequirements(Tcl_Interp *interp, int reqc,
+static int		CheckAllRequirements(Tcl_Interp *interp, Tcl_Size reqc,
 			    Tcl_Obj *const reqv[]);
 static int		RequirementSatisfied(char *havei, const char *req);
-static int		SomeRequirementSatisfied(char *havei, int reqc,
+static int		SomeRequirementSatisfied(char *havei, Tcl_Size reqc,
 			    Tcl_Obj *const reqv[]);
-static void		AddRequirementsToResult(Tcl_Interp *interp, int reqc,
+static void		AddRequirementsToResult(Tcl_Interp *interp, Tcl_Size reqc,
 			    Tcl_Obj *const reqv[]);
 static void		AddRequirementsToDString(Tcl_DString *dstring,
 			    int reqc, Tcl_Obj *const reqv[]);
@@ -101,7 +101,8 @@ static int		PkgRequireCoreFinal(void *data[], Tcl_Interp *interp, int result);
 static int		PkgRequireCoreCleanup(void *data[], Tcl_Interp *interp, int result);
 static int		PkgRequireCoreStep1(void *data[], Tcl_Interp *interp, int result);
 static int		PkgRequireCoreStep2(void *data[], Tcl_Interp *interp, int result);
-static int		TclNRPkgRequireProc(void *clientData, Tcl_Interp *interp, int reqc, Tcl_Obj *const reqv[]);
+static int		TclNRPkgRequireProc(void *clientData, Tcl_Interp *interp,
+			    int reqc, Tcl_Obj *const reqv[]);
 static int		SelectPackage(void *data[], Tcl_Interp *interp, int result);
 static int		SelectPackageFinal(void *data[], Tcl_Interp *interp, int result);
 static int		TclNRPackageObjCmdCleanup(void *data[], Tcl_Interp *interp, int result);
@@ -583,7 +584,7 @@ PkgRequireCoreFinal(
     TCL_UNUSED(int))
 {
     Require *reqPtr = (Require *)data[0];
-    int reqc = (int)PTR2INT(data[1]), satisfies;
+    Tcl_Size reqc = PTR2INT(data[1]), satisfies;
     Tcl_Obj **const reqv = (Tcl_Obj **)data[2];
     char *pkgVersionI;
     void *clientDataPtr = reqPtr->clientDataPtr;
@@ -649,7 +650,7 @@ SelectPackage(
 				/* Internal rep. of versions */
     int availStable, satisfies;
     Require *reqPtr = (Require *)data[0];
-    int reqc = (int)PTR2INT(data[1]);
+    Tcl_Size reqc = PTR2INT(data[1]);
     Tcl_Obj **const reqv = (Tcl_Obj **)data[2];
     const char *name = reqPtr->name;
     Package *pkgPtr = reqPtr->pkgPtr;
@@ -1955,10 +1956,10 @@ CompareVersions(
 static int
 CheckAllRequirements(
     Tcl_Interp *interp,
-    int reqc,			/* Requirements to check. */
+    Tcl_Size reqc,			/* Requirements to check. */
     Tcl_Obj *const reqv[])
 {
-    int i;
+    Tcl_Size i;
 
     for (i = 0; i < reqc; i++) {
 	if ((CheckRequirement(interp, TclGetString(reqv[i])) != TCL_OK)) {
@@ -2061,7 +2062,7 @@ CheckRequirement(
 static void
 AddRequirementsToResult(
     Tcl_Interp *interp,
-    int reqc,			/* Requirements constraining the desired
+    Tcl_Size reqc,			/* Requirements constraining the desired
 				 * version. */
     Tcl_Obj *const reqv[])	/* 0 means to use the latest version
 				 * available. */
@@ -2141,12 +2142,12 @@ static int
 SomeRequirementSatisfied(
     char *availVersionI,	/* Candidate version to check against the
 				 * requirements. */
-    int reqc,			/* Requirements constraining the desired
+    Tcl_Size reqc,			/* Requirements constraining the desired
 				 * version. */
     Tcl_Obj *const reqv[])	/* 0 means to use the latest version
 				 * available. */
 {
-    int i;
+    Tcl_Size i;
 
     for (i = 0; i < reqc; i++) {
 	if (RequirementSatisfied(availVersionI, TclGetString(reqv[i]))) {

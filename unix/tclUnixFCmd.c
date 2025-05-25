@@ -2317,7 +2317,8 @@ TclpCreateTemporaryDirectory(
 
     if (dirObj) {
 	string = TclGetString(dirObj);
-	if (Tcl_UtfToExternalDStringEx(NULL, NULL, string, dirObj->length, 0, &templ, NULL) != TCL_OK) {
+	if (Tcl_UtfToExternalDStringEx(NULL, NULL, string, dirObj->length, 0,
+		&templ, NULL) != TCL_OK) {
 	    return NULL;
 	}
     } else {
@@ -2332,7 +2333,8 @@ TclpCreateTemporaryDirectory(
     if (basenameObj) {
 	string = TclGetString(basenameObj);
 	if (basenameObj->length) {
-	    if (Tcl_UtfToExternalDStringEx(NULL, NULL, string, basenameObj->length, 0, &tmp, NULL) != TCL_OK) {
+	    if (Tcl_UtfToExternalDStringEx(NULL, NULL, string, basenameObj->length,
+		    0, &tmp, NULL) != TCL_OK) {
 		Tcl_DStringFree(&templ);
 		return NULL;
 	    }

@@ -1,6 +1,6 @@
 # README:  Tcl
 
-This is the **Tcl 9.0.2** source distribution.
+This is the **Tcl 9.1a0** source distribution.
 
 You can get any source release of Tcl from [our distribution
 site](https://sourceforge.net/projects/tcl/files/Tcl/).
@@ -51,7 +51,7 @@ and selling it either in whole or in part.  See the file
 ## <a id="doc">2.</a> Documentation
 Extensive documentation is available on our website.
 The home page for this release, including new features, is
-[here](https://www.tcl-lang.org/software/tcltk/9.0.html).
+[here](https://www.tcl-lang.org/software/tcltk/9.1.html).
 Detailed release notes can be found at the
 [file distributions page](https://sourceforge.net/projects/tcl/files/Tcl/)
 by clicking on the relevant version.
@@ -61,8 +61,8 @@ Xchange](https://www.tcl-lang.org/about/).
 There have been many Tcl books on the market.  Many are mentioned in
 [the Wiki](https://wiki.tcl-lang.org/_/ref?N=25206).
 
-The complete set of reference manual entries for Tcl 9.0 is [online,
-here](https://www.tcl-lang.org/man/tcl9.0/).
+The complete set of reference manual entries for Tcl 9.1 is [online,
+here](https://www.tcl-lang.org/man/tcl9.1/).
 
 ### <a id="doc.unix">2a.</a> Unix Documentation
 The `doc` subdirectory in this release contains a complete set of

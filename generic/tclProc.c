@@ -272,7 +272,7 @@ Tcl_ProcObjCmd(
 
 		cfPtr->level = -1;
 		cfPtr->type = contextPtr->type;
-		cfPtr->line = (Tcl_Size *)Tcl_Alloc(sizeof(Tcl_Size));
+		cfPtr->line = (int *)Tcl_Alloc(sizeof(int));
 		cfPtr->line[0] = contextPtr->line[3];
 		cfPtr->nline = 1;
 		cfPtr->framePtr = NULL;
@@ -777,7 +777,8 @@ TclObjGetFrame(
 				 * global frame indicated). */
 {
     Interp *iPtr = (Interp *) interp;
-    int curLevel, level, result;
+    int curLevel;
+    int result, level;
     const Tcl_ObjInternalRep *irPtr;
     const char *name = NULL;
     Tcl_WideInt w;
@@ -1645,7 +1646,7 @@ TclNRInterpProc(
     }
     return TclNRInterpProcCore(interp, objv[0], 1, &MakeProcError);
 }
-
+
 static int
 NRInterpProc(
     void *clientData,		/* Record describing procedure to be
@@ -1727,7 +1728,7 @@ TclNRInterpProcCore(
     }
 
 #if defined(TCL_COMPILE_DEBUG)
-    if (tclTraceExec >= 1) {
+    if (tclTraceExec >= TCL_TRACE_BYTECODE_EXEC_PROCS) {
 	CallFrame *framePtr = iPtr->varFramePtr;
 	Tcl_Size i;
 
@@ -1970,7 +1971,7 @@ TclProcCompileProc(
 	Tcl_HashEntry *hePtr;
 
 #ifdef TCL_COMPILE_DEBUG
-	if (tclTraceCompile >= 1) {
+	if (tclTraceCompile >= TCL_TRACE_BYTECODE_COMPILE_SUMMARY) {
 	    /*
 	     * Display a line summarizing the top level command we are about
 	     * to compile.
@@ -2454,7 +2455,7 @@ SetLambdaFromAny(
     Interp *iPtr = (Interp *) interp;
     const char *name;
     Tcl_Obj *argsPtr, *bodyPtr, *nsObjPtr, **objv;
-    int isNew, result;
+    int result;
     Tcl_Size objc;
     CmdFrame *cfPtr = NULL;
     Proc *procPtr;
@@ -2559,7 +2560,7 @@ SetLambdaFromAny(
 
 	    if (contextPtr->line
 		    && (contextPtr->nline >= 2) && (contextPtr->line[1] >= 0)) {
-		Tcl_Size buf[2];
+		int buf[2];
 
 		/*
 		 * Move from approximation (line of list cmd word) to actual
@@ -2571,7 +2572,7 @@ SetLambdaFromAny(
 
 		cfPtr->level = -1;
 		cfPtr->type = contextPtr->type;
-		cfPtr->line = (Tcl_Size *)Tcl_Alloc(sizeof(Tcl_Size));
+		cfPtr->line = (int *)Tcl_Alloc(sizeof(int));
 		cfPtr->line[0] = buf[1];
 		cfPtr->nline = 1;
 		cfPtr->framePtr = NULL;
@@ -2594,7 +2595,7 @@ SetLambdaFromAny(
 	TclStackFree(interp, contextPtr);
     }
     Tcl_SetHashValue(Tcl_CreateHashEntry(iPtr->linePBodyPtr, procPtr,
-	    &isNew), cfPtr);
+	    NULL), cfPtr);
 
     /*
      * Set the namespace for this lambda: given by objv[2] understood as a
