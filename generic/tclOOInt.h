@@ -202,7 +202,7 @@ struct PropertyStorage {
 				 * exposed by this object or class (in its
 				 * stereotypical instances). Contains a sorted
 				 * unique list if not NULL. */
-    int epoch;			/* The epoch that the caches are valid for. */
+    Tcl_Size epoch;			/* The epoch that the caches are valid for. */
 };
 
 /*
@@ -259,7 +259,7 @@ struct Object {
 
 enum ObjectFlags {
     OBJECT_DESTRUCTING = 1,	/* Indicates that an object is being or has
-				 *  been destroyed  */
+				 * been destroyed. */
     DESTRUCTOR_CALLED = 2,	/* Indicates that evaluation of destructor
 				 * script for the object has began */
     ROOT_OBJECT = 0x1000,	/* Flag to say that this object is the root of
@@ -591,7 +591,7 @@ MODULE_SCOPE Proc *	TclOOGetProcFromMethod(Method *mPtr);
 MODULE_SCOPE Tcl_Obj *	TclOOGetMethodBody(Method *mPtr);
 MODULE_SCOPE size_t	TclOOGetSortedClassMethodList(Class *clsPtr,
 			    int flags, const char ***stringsPtr);
-MODULE_SCOPE int	TclOOGetSortedMethodList(Object *oPtr,
+MODULE_SCOPE Tcl_Size	TclOOGetSortedMethodList(Object *oPtr,
 			    Object *contextObj, Class *contextCls, int flags,
 			    const char ***stringsPtr);
 MODULE_SCOPE int	TclOOInit(Tcl_Interp *interp);
@@ -656,7 +656,7 @@ MODULE_SCOPE void	TclOORegisterInstanceProperty(Object *oPtr,
  */
 
 #define FOREACH(var,ary) \
-    for(i=0 ; i<(ary).num; i++) if ((ary).list[i] == NULL) { \
+    for (i=0 ; i<(ary).num; i++) if ((ary).list[i] == NULL) { \
 	continue; \
     } else if ((var) = (ary).list[i], 1)
 
@@ -668,7 +668,7 @@ MODULE_SCOPE void	TclOORegisterInstanceProperty(Object *oPtr,
  */
 
 #define FOREACH_STRUCT(var,ary) \
-    if (i=0, (ary).num>0) for(; var=&((ary).list[i]), i<(ary).num; i++)
+    if (i=0, (ary).num>0) for (; var=&((ary).list[i]), i<(ary).num; i++)
 
 /*
  * Convenience macros for iterating through hash tables. FOREACH_HASH_DECLS
@@ -681,16 +681,16 @@ MODULE_SCOPE void	TclOORegisterInstanceProperty(Object *oPtr,
 #define FOREACH_HASH_DECLS \
     Tcl_HashEntry *hPtr;Tcl_HashSearch search
 #define FOREACH_HASH(key, val, tablePtr) \
-    for(hPtr = Tcl_FirstHashEntry((tablePtr), &search); hPtr != NULL ? \
+    for (hPtr = Tcl_FirstHashEntry((tablePtr), &search); hPtr != NULL ? \
 	    (*(void **)&(key) = Tcl_GetHashKey((tablePtr), hPtr), \
 	    *(void **)&(val) = Tcl_GetHashValue(hPtr), 1) : 0; \
 	    hPtr = Tcl_NextHashEntry(&search))
 #define FOREACH_HASH_KEY(key, tablePtr) \
-    for(hPtr = Tcl_FirstHashEntry((tablePtr), &search); hPtr != NULL ? \
+    for (hPtr = Tcl_FirstHashEntry((tablePtr), &search); hPtr != NULL ? \
 	    (*(void **)&(key) = Tcl_GetHashKey((tablePtr), hPtr), 1) : 0; \
 	    hPtr = Tcl_NextHashEntry(&search))
 #define FOREACH_HASH_VALUE(val, tablePtr) \
-    for(hPtr = Tcl_FirstHashEntry((tablePtr), &search); hPtr != NULL ? \
+    for (hPtr = Tcl_FirstHashEntry((tablePtr), &search); hPtr != NULL ? \
 	    (*(void **)&(val) = Tcl_GetHashValue(hPtr), 1) : 0; \
 	    hPtr = Tcl_NextHashEntry(&search))
 

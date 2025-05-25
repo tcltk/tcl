@@ -38,7 +38,7 @@ static const char checkCommand[] = "check";
  */
 
 typedef struct {
-    const char *cmdName;		/* command name */
+    const char *cmdName;	/* command name */
     Tcl_ObjCmdProc *proc;	/* command proc */
     int exportIt;		/* if 1, export the command */
 } CmdTable;

@@ -8,7 +8,7 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_NewStringObj, Tcl_NewUnicodeObj, Tcl_SetStringObj, Tcl_SetUnicodeObj, Tcl_GetStringFromObj, Tcl_GetString, Tcl_GetUnicodeFromObj, Tcl_GetUnicode, Tcl_GetUniChar, Tcl_GetCharLength, Tcl_GetRange, Tcl_AppendToObj, Tcl_AppendUnicodeToObj, Tcl_AppendObjToObj, Tcl_AppendStringsToObj, Tcl_AppendLimitedToObj, Tcl_Format, Tcl_AppendFormatToObj, Tcl_ObjPrintf, Tcl_AppendPrintfToObj, Tcl_SetObjLength, Tcl_AttemptSetObjLength, Tcl_ConcatObj \- manipulate Tcl values as strings
+Tcl_NewStringObj, Tcl_NewUnicodeObj, Tcl_SetStringObj, Tcl_SetUnicodeObj, Tcl_GetStringFromObj, Tcl_GetString, Tcl_GetUnicodeFromObj, Tcl_GetUnicode, Tcl_GetUniChar, Tcl_GetCharLength, Tcl_GetRange, Tcl_AppendToObj, Tcl_AppendUnicodeToObj, Tcl_AppendObjToObj, Tcl_AppendStringsToObj, Tcl_AppendLimitedToObj, Tcl_Format, Tcl_AppendFormatToObj, Tcl_ObjPrintf, Tcl_AppendPrintfToObj, Tcl_SetObjLength, Tcl_AttemptSetObjLength, Tcl_ConcatObj, Tcl_IsEmpty \- manipulate Tcl values as strings
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -81,6 +81,9 @@ int
 .sp
 Tcl_Obj *
 \fBTcl_ConcatObj\fR(\fIobjc, objv\fR)
+.sp
+int
+\fBTcl_IsEmpty\fR(\fIfIobjPtr\fR)
 .fi
 .SH ARGUMENTS
 .AS "const Tcl_UniChar" *appendObjPtr in/out
@@ -403,6 +406,13 @@ white space, then that value is ignored entirely. This white-space
 removal was added to make the output of the \fBconcat\fR command
 cleaner-looking. \fBTcl_ConcatObj\fR returns a pointer to a
 newly-created value whose ref count is zero.
+.PP
+The \fBTcl_IsEmpty\fR function returns 1 if \fIobjPtr\fR is the empty
+string, 0 otherwise.
+It doesn't generate the string representation (unless there
+is no other way to do it), so it can safely be called on lists with
+billions of elements, or any other data structure for which
+it is impossible or expensive to construct the string representation.
 .SH "REFERENCE COUNT MANAGEMENT"
 .PP
 \fBTcl_NewStringObj\fR, \fBTcl_NewUnicodeObj\fR, \fBTcl_Format\fR,

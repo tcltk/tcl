@@ -384,7 +384,7 @@ Tcl_GetBytesFromObj(
     return baPtr->bytes;
 }
 
-#if !defined(TCL_NO_DEPRECATED)
+#ifndef TCL_NO_DEPRECATED
 unsigned char *
 TclGetBytesFromObj(
     Tcl_Interp *interp,		/* For error reporting */
@@ -512,7 +512,7 @@ MakeByteArray(
 
     for (; src < srcEnd && dst < dstEnd; ) {
 	int ch;
-	int count = TclUtfToUniChar(src, &ch);
+	Tcl_Size count = TclUtfToUniChar(src, &ch);
 
 	if (ch > 255) {
 	    proper = 0;
@@ -770,12 +770,9 @@ TclAppendBytesToByteArray(
     needed = byteArrayPtr->used + len;
     if (needed > byteArrayPtr->allocated) {
 	Tcl_Size newCapacity;
-	byteArrayPtr =
-	    (ByteArray *)TclReallocElemsEx(byteArrayPtr,
-					   needed,
-					   1,
-					   offsetof(ByteArray, bytes),
-					   &newCapacity);
+	byteArrayPtr = (ByteArray *)
+		TclReallocElemsEx(byteArrayPtr, needed, 1,
+		offsetof(ByteArray, bytes), &newCapacity);
 	byteArrayPtr->allocated = newCapacity;
 	SET_BYTEARRAY(irPtr, byteArrayPtr);
     }
@@ -1296,22 +1293,22 @@ BinaryFormatCmd(
     Tcl_SetObjResult(interp, resultPtr);
     return TCL_OK;
 
- badValue:
+  badValue:
     Tcl_ResetResult(interp);
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "expected %s string but got \"%s\" instead",
 	    errorString, errorValue));
     return TCL_ERROR;
 
- badCount:
+  badCount:
     errorString = "missing count for \"@\" field specifier";
     goto error;
 
- badIndex:
+  badIndex:
     errorString = "not enough arguments for all format specifiers";
     goto error;
 
- badField:
+  badField:
     {
 	Tcl_UniChar ch = 0;
 	char buf[5] = "";
@@ -1323,7 +1320,7 @@ BinaryFormatCmd(
 	return TCL_ERROR;
     }
 
- error:
+  error:
     Tcl_SetObjResult(interp, Tcl_NewStringObj(errorString, -1));
     return TCL_ERROR;
 }
@@ -1678,21 +1675,21 @@ BinaryScanCmd(
      * Set the result to the last position of the cursor.
      */
 
- done:
+  done:
     Tcl_SetObjResult(interp, Tcl_NewWideIntObj(arg - 3));
     DeleteScanNumberCache(numberCachePtr);
 
     return TCL_OK;
 
- badCount:
+  badCount:
     errorString = "missing count for \"@\" field specifier";
     goto error;
 
- badIndex:
+  badIndex:
     errorString = "not enough arguments for all format specifiers";
     goto error;
 
- badField:
+  badField:
     {
 	Tcl_UniChar ch = 0;
 	char buf[5] = "";
@@ -1704,7 +1701,7 @@ BinaryScanCmd(
 	return TCL_ERROR;
     }
 
- error:
+  error:
     Tcl_SetObjResult(interp, Tcl_NewStringObj(errorString, -1));
     return TCL_ERROR;
 }
@@ -2665,7 +2662,7 @@ BinaryEncode64(
 
 	size = (((count * 4) / 3) + 3) & ~3;	/* ensure 4 byte chunks */
 	if (maxlen > 0 && size > maxlen) {
-	    int adjusted = size + (wrapcharlen * (size / maxlen));
+	    Tcl_Size adjusted = size + (wrapcharlen * (size / maxlen));
 
 	    if (size % maxlen == 0) {
 		adjusted -= wrapcharlen;
@@ -2972,14 +2969,14 @@ BinaryDecodeUu(
 	 */
 
 	if (lineLen > 0) {
-	    *cursor++ = (((d[0] - 0x20) & 0x3F) << 2)
+	    *cursor++ = (unsigned char)(((d[0] - 0x20) & 0x3F) << 2)
 		    | (((d[1] - 0x20) & 0x3F) >> 4);
 	    if (--lineLen > 0) {
-		*cursor++ = (((d[1] - 0x20) & 0x3F) << 4)
+		*cursor++ = (unsigned char)(((d[1] - 0x20) & 0x3F) << 4)
 			| (((d[2] - 0x20) & 0x3F) >> 2);
 		if (--lineLen > 0) {
-		    *cursor++ = (((d[2] - 0x20) & 0x3F) << 6)
-			    | (((d[3] - 0x20) & 0x3F));
+		    *cursor++ = (unsigned char)((((d[2] - 0x20) & 0x3F) << 6)
+			    | (((d[3] - 0x20) & 0x3F)));
 		    lineLen--;
 		}
 	    }

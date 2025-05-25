@@ -385,7 +385,7 @@ FileEventProc(
 
 static int
 FileBlockProc(
-    void *instanceData,	/* Instance data for channel. */
+    void *instanceData,		/* Instance data for channel. */
     int mode)			/* TCL_MODE_BLOCKING or
 				 * TCL_MODE_NONBLOCKING. */
 {
@@ -424,7 +424,7 @@ FileBlockProc(
 
 static int
 FileCloseProc(
-    void *instanceData,	/* Pointer to FileInfo structure. */
+    void *instanceData,		/* Pointer to FileInfo structure. */
     TCL_UNUSED(Tcl_Interp *),
     int flags)
 {
@@ -502,7 +502,7 @@ FileCloseProc(
 
 static long long
 FileWideSeekProc(
-    void *instanceData,	/* File state. */
+    void *instanceData,		/* File state. */
     long long offset,		/* Offset to seek to. */
     int mode,			/* Relative to where should we seek? */
     int *errorCodePtr)		/* To store error code. */
@@ -554,7 +554,7 @@ FileWideSeekProc(
 
 static int
 FileTruncateProc(
-    void *instanceData,	/* File state. */
+    void *instanceData,		/* File state. */
     long long length)		/* Length to truncate at. */
 {
     FileInfo *infoPtr = (FileInfo *)instanceData;
@@ -630,7 +630,7 @@ FileTruncateProc(
 
 static int
 FileInputProc(
-    void *instanceData,	/* File state. */
+    void *instanceData,		/* File state. */
     char *buf,			/* Where to store data read. */
     int bufSize,		/* Num bytes available in buffer. */
     int *errorCode)		/* Where to store error code. */
@@ -685,7 +685,7 @@ FileInputProc(
 
 static int
 FileOutputProc(
-    void *instanceData,	/* File state. */
+    void *instanceData,		/* File state. */
     const char *buf,		/* The data buffer. */
     int toWrite,		/* How many bytes to write? */
     int *errorCode)		/* Where to store error code. */
@@ -732,7 +732,7 @@ FileOutputProc(
 
 static void
 FileWatchProc(
-    void *instanceData,	/* File state. */
+    void *instanceData,		/* File state. */
     int mask)			/* What events to watch for; OR-ed combination
 				 * of TCL_READABLE, TCL_WRITABLE and
 				 * TCL_EXCEPTION. */
@@ -771,9 +771,9 @@ FileWatchProc(
 
 static int
 FileGetHandleProc(
-    void *instanceData,	/* The file state. */
+    void *instanceData,		/* The file state. */
     int direction,		/* TCL_READABLE or TCL_WRITABLE */
-    void **handlePtr)	/* Where to store the handle.  */
+    void **handlePtr)		/* Where to store the handle. */
 {
     FileInfo *infoPtr = (FileInfo *)instanceData;
 
@@ -868,9 +868,9 @@ StatOpenFile(
      */
 
     mode = (attr & FILE_ATTRIBUTE_DIRECTORY) ? S_IFDIR|S_IEXEC : S_IFREG;
-    mode |= (attr & FILE_ATTRIBUTE_READONLY) ? S_IREAD : S_IREAD|S_IWRITE;
-    mode |= (mode & (S_IREAD|S_IWRITE|S_IEXEC)) >> 3;
-    mode |= (mode & (S_IREAD|S_IWRITE|S_IEXEC)) >> 6;
+    mode = mode | (attr & FILE_ATTRIBUTE_READONLY) ? S_IREAD : S_IREAD|S_IWRITE;
+    mode = mode | (unsigned short)((mode & (S_IREAD|S_IWRITE|S_IEXEC)) >> 3);
+    mode = mode | (unsigned short)((mode & (S_IREAD|S_IWRITE|S_IEXEC)) >> 6);
 
     /*
      * We don't construct a Tcl_StatBuf; we're using the info immediately.
@@ -906,14 +906,14 @@ StatOpenFile(
 
 static int
 FileGetOptionProc(
-    void *instanceData,	/* The file state. */
+    void *instanceData,		/* The file state. */
     Tcl_Interp *interp,		/* For error reporting. */
     const char *optionName,	/* What option to read, or NULL for all. */
     Tcl_DString *dsPtr)		/* Where to write the value read. */
 {
     FileInfo *infoPtr = (FileInfo *)instanceData;
     int valid = 0;		/* Flag if valid option parsed. */
-    int len;
+    size_t len;
 
     if (optionName == NULL) {
 	len = 0;
@@ -1004,13 +1004,9 @@ TclpOpenFileChannel(
 	     * Note: since paths starting with ~ are relative in 9.0 for windows,
 	     * it doesn't need to consider tilde expansion (in opposite to 8.x).
 	     */
-	    if (
-		(
-		    !TclFSCwdIsNative() &&
-		    (Tcl_FSGetPathType(pathPtr) != TCL_PATH_ABSOLUTE)
-		) &&
-		Tcl_FSGetNormalizedPath(interp, pathPtr) == NULL
-	    ) {
+	    if (!TclFSCwdIsNative()
+		    && (Tcl_FSGetPathType(pathPtr) != TCL_PATH_ABSOLUTE)
+		    && Tcl_FSGetNormalizedPath(interp, pathPtr) == NULL) {
 		return NULL;
 	    }
 
@@ -1221,7 +1217,7 @@ TclpOpenFileChannel(
 
 Tcl_Channel
 Tcl_MakeFileChannel(
-    void *rawHandle,	/* OS level handle */
+    void *rawHandle,		/* OS level handle */
     int mode)			/* OR'ed combination of TCL_READABLE and
 				 * TCL_WRITABLE to indicate file mode. */
 {

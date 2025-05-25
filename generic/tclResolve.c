@@ -65,7 +65,7 @@ Tcl_AddInterpResolvers(
 {
     Interp *iPtr = (Interp *) interp;
     ResolverScheme *resPtr;
-    unsigned len;
+    size_t len;
 
     /*
      * Since we're adding a new name resolution scheme, we must force all code

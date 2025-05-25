@@ -40,22 +40,22 @@ declare 2 {
     TCL_NORETURN void Tcl_Panic(const char *format, ...)
 }
 declare 3 {
-    void *Tcl_Alloc(TCL_HASH_TYPE size)
+    void *Tcl_Alloc(size_t size)
 }
 declare 4 {
     void Tcl_Free(void *ptr)
 }
 declare 5 {
-    void *Tcl_Realloc(void *ptr, TCL_HASH_TYPE size)
+    void *Tcl_Realloc(void *ptr, size_t size)
 }
 declare 6 {
-    void *Tcl_DbCkalloc(TCL_HASH_TYPE size, const char *file, int line)
+    void *Tcl_DbCkalloc(size_t size, const char *file, int line)
 }
 declare 7 {
     void Tcl_DbCkfree(void *ptr, const char *file, int line)
 }
 declare 8 {
-    void *Tcl_DbCkrealloc(void *ptr, TCL_HASH_TYPE size,
+    void *Tcl_DbCkrealloc(void *ptr, size_t size,
 	    const char *file, int line)
 }
 
@@ -128,17 +128,6 @@ declare 29 {
 }
 declare 30 {
     void TclFreeObj(Tcl_Obj *objPtr)
-}
-declare 31 {
-    int Tcl_GetBoolean(Tcl_Interp *interp, const char *src, int *intPtr)
-}
-declare 32 {
-    int Tcl_GetBooleanFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-	    int *intPtr)
-}
-# Only available in Tcl 8.x, NULL in Tcl 9.0
-declare 33 {
-    unsigned char *Tcl_GetByteArrayFromObj(Tcl_Obj *objPtr, Tcl_Size *numBytesPtr)
 }
 declare 34 {
     int Tcl_GetDouble(Tcl_Interp *interp, const char *src, double *doublePtr)
@@ -258,10 +247,6 @@ declare 79 {
 }
 declare 80 {
     void Tcl_CancelIdleCall(Tcl_IdleProc *idleProc, void *clientData)
-}
-# Only available in Tcl 8.x, NULL in Tcl 9.0
-declare 81 {
-    int Tcl_Close(Tcl_Interp *interp, Tcl_Channel chan)
 }
 declare 82 {
     int Tcl_CommandComplete(const char *cmd)
@@ -1053,9 +1038,6 @@ declare 338 {
 declare 339 {
     Tcl_Size Tcl_WriteObj(Tcl_Channel chan, Tcl_Obj *objPtr)
 }
-declare 340 {
-    char *Tcl_GetString(Tcl_Obj *objPtr)
-}
 declare 343 {
     void Tcl_AlertNotifier(void *clientData)
 }
@@ -1217,7 +1199,7 @@ declare 392 {
 }
 declare 393 {
     int Tcl_CreateThread(Tcl_ThreadId *idPtr, Tcl_ThreadCreateProc *proc,
-	    void *clientData, TCL_HASH_TYPE stackSize, int flags)
+	    void *clientData, size_t stackSize, int flags)
 }
 
 # Introduced in 8.3.2
@@ -1303,6 +1285,10 @@ declare 417 {
 declare 418 {
     int Tcl_IsChannelExisting(const char *channelName)
 }
+declare 421 {
+    Tcl_HashEntry *Tcl_DbCreateHashEntry(Tcl_HashTable *tablePtr,
+	    const void *key, int *newPtr, const char *file, int line)
+}
 declare 422 {
     Tcl_HashEntry *Tcl_CreateHashEntry(Tcl_HashTable *tablePtr,
 	    const void *key, int *newPtr)
@@ -1328,16 +1314,16 @@ declare 427 {
 	    int flags, Tcl_CommandTraceProc *proc, void *clientData)
 }
 declare 428 {
-    void *Tcl_AttemptAlloc(TCL_HASH_TYPE size)
+    void *Tcl_AttemptAlloc(size_t size)
 }
 declare 429 {
-    void *Tcl_AttemptDbCkalloc(TCL_HASH_TYPE size, const char *file, int line)
+    void *Tcl_AttemptDbCkalloc(size_t size, const char *file, int line)
 }
 declare 430 {
-    void *Tcl_AttemptRealloc(void *ptr, TCL_HASH_TYPE size)
+    void *Tcl_AttemptRealloc(void *ptr, size_t size)
 }
 declare 431 {
-    void *Tcl_AttemptDbCkrealloc(void *ptr, TCL_HASH_TYPE size,
+    void *Tcl_AttemptDbCkrealloc(void *ptr, size_t size,
 	    const char *file, int line)
 }
 declare 432 {
@@ -1708,7 +1694,7 @@ declare 531 {
     void Tcl_LimitTypeReset(Tcl_Interp *interp, int type)
 }
 declare 532 {
-    int Tcl_LimitGetCommands(Tcl_Interp *interp)
+    Tcl_Size Tcl_LimitGetCommands(Tcl_Interp *interp)
 }
 declare 533 {
     void Tcl_LimitGetTime(Tcl_Interp *interp, Tcl_Time *timeLimitPtr)
@@ -2148,7 +2134,7 @@ declare 636 {
 }
 declare 637 {
     char *Tcl_InitStringRep(Tcl_Obj *objPtr, const char *bytes,
-	    TCL_HASH_TYPE numBytes)
+	    size_t numBytes)
 }
 declare 638 {
     Tcl_ObjInternalRep *Tcl_FetchInternalRep(Tcl_Obj *objPtr, const Tcl_ObjType *typePtr)
@@ -2379,9 +2365,15 @@ declare 689 {
     void Tcl_SetWideUIntObj(Tcl_Obj *objPtr, Tcl_WideUInt uwideValue)
 }
 
-# ----- BASELINE -- FOR -- 8.7.0 / 9.0.0 ----- #
+# ----- BASELINE -- FOR -- 9.0.0 ----- #
 
 declare 690 {
+    int Tcl_IsEmpty(Tcl_Obj *obj)
+}
+
+# ----- BASELINE -- FOR -- 9.1.0 ----- #
+
+declare 691 {
     void TclUnusedStubEntry(void)
 }
 

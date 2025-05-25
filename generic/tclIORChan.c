@@ -162,7 +162,7 @@ typedef enum {
 static const char *const methodNames[] = {
     "blocking",		/* OPT */
     "cget",		/* OPT \/ Together or none */
-    "cgetall",		/* OPT /\ of these two     */
+    "cgetall",		/* OPT /\ of these two. */
     "configure",	/* OPT */
     "finalize",		/*     */
     "initialize",	/*     */
@@ -461,8 +461,9 @@ static const char *msg_seek_beforestart = "{Tried to seek before origin}";
 #if TCL_THREADS
 static const char *msg_send_originlost = "{Channel thread lost}";
 #endif /* TCL_THREADS */
-static const char *msg_send_dstlost    = "{Owner lost}";
-static const char *msg_dstlost    = "-code 1 -level 0 -errorcode NONE -errorinfo {} -errorline 1 {Owner lost}";
+static const char *msg_send_dstlost = "{Owner lost}";
+static const char *msg_dstlost =
+	"-code 1 -level 0 -errorcode NONE -errorinfo {} -errorline 1 {Owner lost}";
 
 /*
  * Main methods to plug into the 'chan' ensemble'. ==================
@@ -722,7 +723,7 @@ TclChanCreateObjCmd(
 #if TCL_THREADS
     rcmPtr = GetThreadReflectedChannelMap();
     hPtr = Tcl_CreateHashEntry(&rcmPtr->map, chanPtr->state->channelName,
-	    &isNew);
+	    NULL);
     Tcl_SetHashValue(hPtr, chan);
 #endif
 
@@ -913,8 +914,8 @@ TclChanPostEventObjCmd(
 	return TCL_ERROR;
     }
     if (events == 0) {
-	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("bad event list: is empty", -1));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"bad event list: is empty", -1));
 	return TCL_ERROR;
     }
 
@@ -1350,14 +1351,14 @@ ReflectInput(
 	memcpy(buf, bytev, bytec);
     }
 
- stop:
+  stop:
     Tcl_DecrRefCount(toReadObj);
     Tcl_DecrRefCount(resObj);		/* Remove reference held from invoke */
     Tcl_Release(rcPtr);
     return bytec;
- invalid:
+  invalid:
     *errorCodePtr = EINVAL;
- error:
+  error:
     bytec = -1;
     goto stop;
 }
@@ -1478,15 +1479,15 @@ ReflectOutput(
     }
 
     *errorCodePtr = EOK;
- stop:
+  stop:
     Tcl_DecrRefCount(bufObj);
     Tcl_DecrRefCount(resObj);		/* Remove reference held from invoke */
     Tcl_Release(rcPtr->interp);
     Tcl_Release(rcPtr);
     return written;
- invalid:
+  invalid:
     *errorCodePtr = EINVAL;
- error:
+  error:
     written = -1;
     goto stop;
 }
@@ -1571,13 +1572,13 @@ ReflectSeekWide(
     }
 
     *errorCodePtr = EOK;
- stop:
+  stop:
     Tcl_DecrRefCount(offObj);
     Tcl_DecrRefCount(baseObj);
     Tcl_DecrRefCount(resObj);		/* Remove reference held from invoke */
     Tcl_Release(rcPtr);
     return newLoc;
- invalid:
+  invalid:
     *errorCodePtr = EINVAL;
     newLoc = -1;
     goto stop;
@@ -1778,7 +1779,7 @@ ReflectThread(
 
 static int
 ReflectSetOption(
-    void *clientData,	/* Channel to query */
+    void *clientData,		/* Channel to query */
     Tcl_Interp *interp,		/* Interpreter to leave error messages in */
     const char *optionName,	/* Name of requested option */
     const char *newValue)	/* The new value */
@@ -1850,7 +1851,7 @@ ReflectSetOption(
 
 static int
 ReflectGetOption(
-    void *clientData,	/* Channel to query */
+    void *clientData,		/* Channel to query */
     Tcl_Interp *interp,		/* Interpreter to leave error messages in */
     const char *optionName,	/* Name of reuqested option */
     Tcl_DString *dsPtr)		/* String to place the result into */
@@ -1971,16 +1972,16 @@ ReflectGetOption(
 	goto ok;
     }
 
- ok:
+  ok:
     result = TCL_OK;
- stop:
+  stop:
     if (optionObj) {
 	Tcl_DecrRefCount(optionObj);
     }
     Tcl_DecrRefCount(resObj);	/* Remove reference held from invoke */
     Tcl_Release(rcPtr);
     return result;
- error:
+  error:
     result = TCL_ERROR;
     goto stop;
 }
@@ -2003,7 +2004,7 @@ ReflectGetOption(
 
 static int
 ReflectTruncate(
-    void *clientData,	/* Channel to query */
+    void *clientData,		/* Channel to query */
     long long length)		/* Length to truncate to. */
 {
     ReflectedChannel *rcPtr = (ReflectedChannel *)clientData;
@@ -2086,7 +2087,7 @@ EncodeEventMask(
     int *mask)
 {
     int events;			/* Mask of events to post */
-    Tcl_Size listc;			/* #elements in eventspec list */
+    Tcl_Size listc;		/* #elements in eventspec list */
     Tcl_Obj **listv;		/* Elements of eventspec list */
     int evIndex;		/* Id of event for an element of the eventspec
 				 * list. */
@@ -2563,13 +2564,13 @@ MarkDead(
 
 static void
 DeleteReflectedChannelMap(
-    void *clientData,	/* The per-interpreter data structure. */
+    void *clientData,		/* The per-interpreter data structure. */
     Tcl_Interp *interp)		/* The interpreter being deleted. */
 {
     ReflectedChannelMap *rcmPtr = (ReflectedChannelMap *)clientData;
 				/* The map */
-    Tcl_HashSearch hSearch;	 /* Search variable. */
-    Tcl_HashEntry *hPtr;	 /* Search variable. */
+    Tcl_HashSearch hSearch;	/* Search variable. */
+    Tcl_HashEntry *hPtr;	/* Search variable. */
     ReflectedChannel *rcPtr;
     Tcl_Channel chan;
 #if TCL_THREADS

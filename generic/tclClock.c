@@ -129,10 +129,10 @@ static const struct ClockCommand clockCommands[] = {
     {"clicks",		ClockClicksObjCmd,	TclCompileClockClicksCmd,  NULL},
     {"format",		ClockFormatObjCmd,	TclCompileBasicMin1ArgCmd, NULL},
     {"getenv",		ClockGetenvObjCmd,	TclCompileBasicMin1ArgCmd, NULL},
-    {"microseconds",	ClockMicrosecondsObjCmd,TclCompileClockReadingCmd, INT2PTR(1)},
-    {"milliseconds",	ClockMillisecondsObjCmd,TclCompileClockReadingCmd, INT2PTR(2)},
+    {"microseconds",	ClockMicrosecondsObjCmd,TclCompileClockReadingCmd, INT2PTR(CLOCK_READ_MICROS)},
+    {"milliseconds",	ClockMillisecondsObjCmd,TclCompileClockReadingCmd, INT2PTR(CLOCK_READ_MILLIS)},
     {"scan",		ClockScanObjCmd,	TclCompileBasicMin1ArgCmd, NULL},
-    {"seconds",		ClockSecondsObjCmd,	TclCompileClockReadingCmd, INT2PTR(3)},
+    {"seconds",		ClockSecondsObjCmd,	TclCompileClockReadingCmd, INT2PTR(CLOCK_READ_SECS)},
     {"ConvertLocalToUTC", ClockConvertlocaltoutcObjCmd,		NULL, NULL},
     {"GetDateFields",	  ClockGetdatefieldsObjCmd,		NULL, NULL},
     {"GetJulianDayFromEraYearMonthDay",
@@ -3474,7 +3474,7 @@ ClockParseFmtScnArgs(
 	/* extact fields from base */
 	date->seconds = baseVal;
 	if (ClockGetDateFields(dataPtr, interp, date, opts->timezoneObj,
-	      GREGORIAN_CHANGE_DATE) != TCL_OK) {
+		GREGORIAN_CHANGE_DATE) != TCL_OK) {
 	    /* TODO - GREGORIAN_CHANGE_DATE should be locale-dependent */
 	    return TCL_ERROR;
 	}
@@ -4265,7 +4265,7 @@ ClockCalcRelTime(
 	    yyRelSeconds = 0;
 	    /* Convert it back */
 	    if (ClockGetDateFields(opts->dataPtr, opts->interp, &yydate,
-		  opts->timezoneObj, GREGORIAN_CHANGE_DATE) != TCL_OK) {
+		    opts->timezoneObj, GREGORIAN_CHANGE_DATE) != TCL_OK) {
 		/* TODO - GREGORIAN_CHANGE_DATE should be locale-dependent */
 		return TCL_ERROR;
 	    }
@@ -4706,11 +4706,7 @@ ClockSafeCatchCmd(
 
 typedef struct ClockTzStatic {
     WCHAR *was;			/* Previous value of TZ. */
-#if TCL_MAJOR_VERSION > 8
     long long lastRefresh;	/* Used for latency before next refresh. */
-#else
-    long lastRefresh;		/* Used for latency before next refresh. */
-#endif
     size_t epoch;		/* Epoch, signals that TZ changed. */
     size_t envEpoch;		/* Last env epoch, for faster signaling,
 				 * that TZ changed via TCL */

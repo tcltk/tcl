@@ -360,7 +360,7 @@ static const Tcl_ObjType chanObjType = {
     } while (0)
 
 #define BUSY_STATE(st, fl) \
-     ((((st)->csPtrR) && ((fl) & TCL_READABLE)) || \
+     ((((st)->csPtrR) && ((fl) & TCL_READABLE)) ||			\
       (((st)->csPtrW) && ((fl) & TCL_WRITABLE)))
 
 #define MAX_CHANNEL_BUFFER_SIZE (1024*1024)
@@ -738,8 +738,10 @@ Tcl_SetStdChannel(
 	tsdPtr->stderrInitialized = init;
 	tsdPtr->stderrChannel = channel;
 	if (channel) {
-	    ENCODING_PROFILE_SET(((Channel *)channel)->state->inputEncodingFlags, TCL_ENCODING_PROFILE_REPLACE);
-	    ENCODING_PROFILE_SET(((Channel *)channel)->state->outputEncodingFlags, TCL_ENCODING_PROFILE_REPLACE);
+	    ENCODING_PROFILE_SET(((Channel *)channel)->state->inputEncodingFlags,
+		    TCL_ENCODING_PROFILE_REPLACE);
+	    ENCODING_PROFILE_SET(((Channel *)channel)->state->outputEncodingFlags,
+		    TCL_ENCODING_PROFILE_REPLACE);
 	}
 	break;
     }
@@ -811,8 +813,10 @@ Tcl_GetStdChannel(
 	    tsdPtr->stderrInitialized = -1;
 	    tsdPtr->stderrChannel = TclpGetDefaultStdChannel(TCL_STDERR);
 	    if (tsdPtr->stderrChannel != NULL) {
-		ENCODING_PROFILE_SET(((Channel *)tsdPtr->stderrChannel)->state->inputEncodingFlags, TCL_ENCODING_PROFILE_REPLACE);
-		ENCODING_PROFILE_SET(((Channel *)tsdPtr->stderrChannel)->state->outputEncodingFlags, TCL_ENCODING_PROFILE_REPLACE);
+		ENCODING_PROFILE_SET(((Channel *)tsdPtr->stderrChannel)->state->inputEncodingFlags,
+			TCL_ENCODING_PROFILE_REPLACE);
+		ENCODING_PROFILE_SET(((Channel *)tsdPtr->stderrChannel)->state->outputEncodingFlags,
+			TCL_ENCODING_PROFILE_REPLACE);
 		tsdPtr->stderrInitialized = 1;
 		Tcl_RegisterChannel(NULL, tsdPtr->stderrChannel);
 	    }
@@ -1617,10 +1621,12 @@ Tcl_CreateChannel(
 	Tcl_Panic("channel type %s must define close2Proc", typePtr->typeName);
     }
     if ((TCL_READABLE & mask) && (NULL == typePtr->inputProc)) {
-	Tcl_Panic("channel type %s must define inputProc when used for reader channel", typePtr->typeName);
+	Tcl_Panic("channel type %s must define inputProc when used for reader channel",
+		typePtr->typeName);
     }
     if ((TCL_WRITABLE & mask) &&  (NULL == typePtr->outputProc)) {
-	Tcl_Panic("channel type %s must define outputProc when used for writer channel", typePtr->typeName);
+	Tcl_Panic("channel type %s must define outputProc when used for writer channel",
+		typePtr->typeName);
     }
     if (NULL == typePtr->watchProc) {
 	Tcl_Panic("channel type %s must define watchProc", typePtr->typeName);
@@ -2458,7 +2464,7 @@ Tcl_RemoveChannelMode(
     ResetFlag(statePtr, mode);
     return TCL_OK;
 
- error:
+  error:
     if (interp != NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"Tcl_RemoveChannelMode error: %s. Channel: \"%s\"",
@@ -9423,7 +9429,8 @@ TclCopyChannel(
      * completed.
      */
 
-    csPtr = (CopyState *)Tcl_Alloc(offsetof(CopyState, buffer) + 1U + !moveBytes * inStatePtr->bufSize);
+    csPtr = (CopyState *)
+	    Tcl_Alloc(offsetof(CopyState, buffer) + 1U + !moveBytes * inStatePtr->bufSize);
     csPtr->bufSize = !moveBytes * inStatePtr->bufSize;
     csPtr->readPtr = inPtr;
     csPtr->writePtr = outPtr;
@@ -9802,7 +9809,7 @@ CopyData(
 
 	    if (moveBytes) {
 		size = DoRead(inStatePtr->topChanPtr, csPtr->buffer, sizeb,
-			      !GotFlag(inStatePtr, CHANNEL_NONBLOCKING));
+			!GotFlag(inStatePtr, CHANNEL_NONBLOCKING));
 	    } else {
 		size = DoReadChars(inStatePtr->topChanPtr, bufObj, sizeb,
 			!GotFlag(inStatePtr, CHANNEL_NONBLOCKING)
@@ -10165,8 +10172,7 @@ DoRead(
 	}
 
 	if (!bufPtr) {
-	  readErr:
-
+	readErr:
 	    UpdateInterest(chanPtr);
 	    TclChannelRelease((Tcl_Channel)chanPtr);
 	    return -1;

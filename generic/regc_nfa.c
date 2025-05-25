@@ -592,8 +592,8 @@ sortins(
 {
     struct arc **sortarray;
     struct arc *a;
-    int n = s->nins;
-    int i;
+    size_t n = s->nins;
+    size_t i;
 
     if (n <= 1) {
 	return;		/* nothing to do */
@@ -668,8 +668,8 @@ sortouts(
 {
     struct arc **sortarray;
     struct arc *a;
-    int	n = s->nouts;
-    int	i;
+    size_t	n = s->nouts;
+    size_t	i;
 
     if (n <= 1) {
 	return;					/* nothing to do */
@@ -1872,12 +1872,12 @@ fixempties(
     struct state *nexts;
     struct arc *a;
     struct arc *nexta;
-    int totalinarcs;
+    size_t totalinarcs;
     struct arc **inarcsorig;
     struct arc **arcarray;
     int arccount;
-    int prevnins;
-    int nskip;
+    size_t prevnins;
+    size_t nskip;
 
     /*
      * First, get rid of any states whose sole out-arc is an EMPTY,

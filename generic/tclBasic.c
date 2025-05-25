@@ -207,8 +207,8 @@ static Tcl_ObjCmdProc	ExprSrandFunc;
 static Tcl_ObjCmdProc	ExprUnaryFunc;
 static Tcl_ObjCmdProc	ExprWideFunc;
 static Tcl_ObjCmdProc	FloatClassifyObjCmd;
-static void		MathFuncWrongNumArgs(Tcl_Interp *interp, int expected,
-			    int actual, Tcl_Obj *const *objv);
+static void		MathFuncWrongNumArgs(Tcl_Interp *interp, Tcl_Size expected,
+			    Tcl_Size actual, Tcl_Obj *const *objv);
 static Tcl_NRPostProc	NRCoroutineCallerCallback;
 static Tcl_NRPostProc	NRCoroutineExitCallback;
 static Tcl_NRPostProc	NRCommand;
@@ -2717,9 +2717,9 @@ Tcl_CreateCommand(
 
 typedef struct {
     Tcl_ObjCmdProc2 *proc;
-    void *clientData; /* Arbitrary value to pass to proc function. */
+    void *clientData;	/* Arbitrary value to pass to proc function. */
     Tcl_CmdDeleteProc *deleteProc;
-    void *deleteData; /* Arbitrary value to pass to deleteProc function. */
+    void *deleteData;	/* Arbitrary value to pass to deleteProc function. */
     Tcl_ObjCmdProc2 *nreProc;
 } CmdWrapperInfo;
 
@@ -2734,7 +2734,7 @@ cmdWrapperProc(
     if (objc < 0) {
 	objc = -1;
     }
-    return info->proc(info->clientData, interp, objc, objv);
+    return info->proc(info->clientData, interp, (int)objc, objv);
 }
 
 static void
@@ -3006,9 +3006,9 @@ TclCreateObjCommandInNs(
 
 int
 InvokeStringCommand(
-    void *clientData,	/* Points to command's Command structure. */
+    void *clientData,		/* Points to command's Command structure. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,		/* Number of arguments. */
+    int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Command *cmdPtr = (Command *)clientData;
@@ -3550,7 +3550,6 @@ Tcl_GetCommandFullName(
 				 * not have been deleted. */
     Tcl_Obj *objPtr)		/* Points to the object onto which the
 				 * command's full name is appended. */
-
 {
     Interp *iPtr = (Interp *) interp;
     Command *cmdPtr = (Command *) command;
@@ -3948,7 +3947,7 @@ CallCommandTraces(
 
 static int
 CancelEvalProc(
-    void *clientData,	/* Interp to cancel the script in progress. */
+    void *clientData,		/* Interp to cancel the script in progress. */
     TCL_UNUSED(Tcl_Interp *),
     int code)			/* Current return code from command. */
 {
@@ -4438,7 +4437,7 @@ EvalObjvCore(
     TCL_UNUSED(int) /*result*/)
 {
     Command *cmdPtr = NULL, *preCmdPtr = (Command *)data[0];
-    int flags = PTR2INT(data[1]);
+    int flags = (int)PTR2INT(data[1]);
     Tcl_Size objc = PTR2INT(data[2]);
     Tcl_Obj **objv = (Tcl_Obj **)data[3];
     Interp *iPtr = (Interp *) interp;
@@ -5157,7 +5156,7 @@ TclEvalEx(
     int flags,			/* Collection of OR-ed bits that control the
 				 * evaluation of the script. Only
 				 * TCL_EVAL_GLOBAL is currently supported. */
-    Tcl_Size line,		/* The line the script starts on. */
+    int line,		/* The line the script starts on. */
     Tcl_Size *clNextOuter,	/* Information about an outer context for */
     const char *outerScript)	/* continuation line data. This is set only in
 				 * TclSubstTokens(), to properly handle
@@ -5180,8 +5179,8 @@ TclEvalEx(
     const char *p, *next;
     const int minObjs = 20;
     Tcl_Obj **objv, **objvSpace;
-    int *expand;
-    Tcl_Size *lines, *lineSpace;
+    char *expand;
+    int *lines, *lineSpace;
     Tcl_Token *tokenPtr;
     int expandRequested, code = TCL_OK;
     Tcl_Size bytesLeft, commandLength;
@@ -5197,8 +5196,8 @@ TclEvalEx(
     Tcl_Parse *parsePtr = (Tcl_Parse *)TclStackAlloc(interp, sizeof(Tcl_Parse));
     CmdFrame *eeFramePtr = (CmdFrame *)TclStackAlloc(interp, sizeof(CmdFrame));
     Tcl_Obj **stackObjArray = (Tcl_Obj **)TclStackAlloc(interp, minObjs * sizeof(Tcl_Obj *));
-    int *expandStack = (int *)TclStackAlloc(interp, minObjs * sizeof(int));
-    Tcl_Size *linesStack = (Tcl_Size *)TclStackAlloc(interp, minObjs * sizeof(Tcl_Size));
+    char *expandStack = (char *)TclStackAlloc(interp, minObjs * sizeof(char));
+    int *linesStack = (int *)TclStackAlloc(interp, minObjs * sizeof(int));
 				/* TIP #280 Structures for tracking of command
 				 * locations. */
     Tcl_Size *clNext = NULL;	/* Pointer for the tracking of invisible
@@ -5323,7 +5322,7 @@ TclEvalEx(
 	     * per-command parsing.
 	     */
 
-	    Tcl_Size wordLine = line;
+	    int wordLine = line;
 	    const char *wordStart = parsePtr->commandStart;
 	    Tcl_Size *wordCLNext = clNext;
 	    Tcl_Size objectsNeeded = 0;
@@ -5334,11 +5333,11 @@ TclEvalEx(
 	     */
 
 	    if (numWords > minObjs) {
-		expand = (int *)Tcl_Alloc(numWords * sizeof(int));
+		expand = (char *)Tcl_Alloc(numWords * sizeof(char));
 		objvSpace = (Tcl_Obj **)
 			Tcl_Alloc(numWords * sizeof(Tcl_Obj *));
-		lineSpace = (Tcl_Size *)
-			Tcl_Alloc(numWords * sizeof(Tcl_Size));
+		lineSpace = (int *)
+			Tcl_Alloc(numWords * sizeof(int));
 	    }
 	    expandRequested = 0;
 	    objv = objvSpace;
@@ -5430,13 +5429,13 @@ TclEvalEx(
 		 */
 
 		Tcl_Obj **copy = objvSpace;
-		Tcl_Size *lcopy = lineSpace;
+		int *lcopy = lineSpace;
 		Tcl_Size wordIdx = numWords;
 		Tcl_Size objIdx = objectsNeeded - 1;
 
 		if ((numWords > minObjs) || (objectsNeeded > minObjs)) {
 		    objv = objvSpace = (Tcl_Obj **)Tcl_Alloc(objectsNeeded * sizeof(Tcl_Obj *));
-		    lines = lineSpace = (Tcl_Size *)Tcl_Alloc(objectsNeeded * sizeof(Tcl_Size));
+		    lines = lineSpace = (int *)Tcl_Alloc(objectsNeeded * sizeof(int));
 		}
 
 		objectsUsed = 0;
@@ -5575,7 +5574,7 @@ TclEvalEx(
 	Tcl_LogCommandInfo(interp, script, parsePtr->commandStart,
 		commandLength);
     }
- posterror:
+  posterror:
     iPtr->flags &= ~ERR_ALREADY_LOGGED;
 
     /*
@@ -5597,7 +5596,7 @@ TclEvalEx(
     }
     iPtr->varFramePtr = savedVarFramePtr;
 
- cleanup_return:
+  cleanup_return:
     /*
      * TIP #280. Release the local CmdFrame, and its contents.
      */
@@ -5635,7 +5634,7 @@ TclEvalEx(
 
 void
 TclAdvanceLines(
-    Tcl_Size *line,
+    int *line,
     const char *start,
     const char *end)
 {
@@ -5670,9 +5669,9 @@ TclAdvanceLines(
 
 void
 TclAdvanceContinuations(
-    Tcl_Size *line,
+    int *line,
     Tcl_Size **clNextPtrPtr,
-    int loc)
+    Tcl_Size loc)
 {
     /*
      * Track the invisible continuation lines embedded in a script, if any.
@@ -5853,7 +5852,7 @@ TclArgumentBCEnter(
     Tcl_Size pc)
 {
     ExtCmdLoc *eclPtr;
-    Tcl_Size word;
+    int word;
     ECL *ePtr;
     CFWordBC *lastPtr = NULL;
     Interp *iPtr = (Interp *) interp;
@@ -6125,7 +6124,7 @@ TclNREvalObjEx(
 				 * evaluation of the script. Supported values
 				 * are TCL_EVAL_GLOBAL and TCL_EVAL_DIRECT. */
     const CmdFrame *invoker,	/* Frame of the command doing the eval. */
-    int word)			/* Index of the word which is in objPtr. */
+    int word)		/* Index of the word which is in objPtr. */
 {
     Interp *iPtr = (Interp *) interp;
     int result;
@@ -6294,7 +6293,7 @@ TEOEx_ByteCodeCallback(
     Interp *iPtr = (Interp *) interp;
     CallFrame *savedVarFramePtr = (CallFrame *)data[0];
     Tcl_Obj *objPtr = (Tcl_Obj *)data[1];
-    int allowExceptions = PTR2INT(data[2]);
+    int allowExceptions = (int)PTR2INT(data[2]);
 
     if (iPtr->numLevels == 0) {
 	if (result == TCL_RETURN) {
@@ -7716,7 +7715,7 @@ ExprRandFunc(
 	 * take into consideration the thread this interp is running in.
 	 */
 
-	iPtr->randSeed = TclpGetClicks() + PTR2UINT(Tcl_GetCurrentThread()) * 4093U;
+	iPtr->randSeed = (long)TclpGetClicks() + (long)PTR2UINT(Tcl_GetCurrentThread()) * 4093U;
 
 	/*
 	 * Make sure 1 <= randSeed <= (2^31) - 2. See below.
@@ -7771,7 +7770,7 @@ ExprRandFunc(
      * dividing by RAND_IM yields a double in the range (0, 1).
      */
 
-    dResult = iPtr->randSeed * (1.0/RAND_IM);
+    dResult = (double)iPtr->randSeed * (1.0/RAND_IM);
 
     /*
      * Push a Tcl object with the result.
@@ -8064,16 +8063,16 @@ DoubleObjClass(
 	return TCL_ERROR;
     }
     switch (type) {
-      case TCL_NUMBER_NAN:
+    case TCL_NUMBER_NAN:
 	*fpClsPtr = FP_NAN;
 	return TCL_OK;
-      case TCL_NUMBER_DOUBLE:
+    case TCL_NUMBER_DOUBLE:
 	d = *((const double *) ptr);
 	break;
-      case TCL_NUMBER_INT:
+    case TCL_NUMBER_INT:
 	d = (double)*((const Tcl_WideInt *) ptr);
 	break;
-      default:
+    default:
 	if (Tcl_GetDoubleFromObj(interp, objPtr, &d) != TCL_OK) {
 	    return TCL_ERROR;
 	}
@@ -8088,7 +8087,7 @@ DoubleObjIsClass(
     int objc,			/* Actual parameter count */
     Tcl_Obj *const *objv,	/* Actual parameter list */
     int cmpCls,			/* FP class to compare. */
-    int positive)		/* 1 if compare positive, 0 - otherwise  */
+    int positive)		/* 1 if compare positive, 0 - otherwise */
 {
     int dCls;
 
@@ -8179,10 +8178,8 @@ ExprIsUnorderedFunc(
 	return TCL_ERROR;
     }
 
-    if (
-	DoubleObjClass(interp, objv[1], &dCls) != TCL_OK ||
-	DoubleObjClass(interp, objv[2], &dCls2) != TCL_OK
-    ) {
+    if (DoubleObjClass(interp, objv[1], &dCls) != TCL_OK ||
+	    DoubleObjClass(interp, objv[2], &dCls2) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -8263,8 +8260,8 @@ FloatClassifyObjCmd(
 static void
 MathFuncWrongNumArgs(
     Tcl_Interp *interp,		/* Tcl interpreter */
-    int expected,		/* Formal parameter count. */
-    int found,			/* Actual parameter count. */
+    Tcl_Size expected,		/* Formal parameter count. */
+    Tcl_Size found,			/* Actual parameter count. */
     Tcl_Obj *const *objv)	/* Actual parameter vector. */
 {
     const char *name = TclGetString(objv[0]);
@@ -9610,8 +9607,8 @@ TclNRInterpCoroutine(
 	break;
     default:
 	if (corPtr->nargs + 1 != objc) {
-	    Tcl_SetObjResult(interp,
-		    Tcl_NewStringObj("wrong coro nargs; how did we get here? "
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "wrong coro nargs; how did we get here? "
 		    "not implemented!", TCL_INDEX_NONE));
 	    Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", (char *)NULL);
 	    return TCL_ERROR;
@@ -9710,11 +9707,10 @@ TclNRCoroutineObjCmd(
 
 	for (hePtr = Tcl_FirstHashEntry(iPtr->lineLABCPtr,&hSearch);
 		hePtr; hePtr = Tcl_NextHashEntry(&hSearch)) {
-	    int isNew;
 	    Tcl_HashEntry *newPtr =
 		    Tcl_CreateHashEntry(corPtr->lineLABCPtr,
 		    Tcl_GetHashKey(iPtr->lineLABCPtr, hePtr),
-		    &isNew);
+		    NULL);
 
 	    Tcl_SetHashValue(newPtr, Tcl_GetHashValue(hePtr));
 	}

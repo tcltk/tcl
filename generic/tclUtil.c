@@ -1056,7 +1056,7 @@ TclScanElement(
     Tcl_Size extra = 0;		/* Count of number of extra bytes needed for
 				 * formatted element, assuming we use escape
 				 * sequences in formatting. */
-    Tcl_Size bytesNeeded;		/* Buffer length computed to complete the
+    Tcl_Size bytesNeeded;	/* Buffer length computed to complete the
 				 * element formatting in the selected mode. */
 #if COMPAT
     int preferEscape = 0;	/* Use preferences to track whether to use */
@@ -1103,96 +1103,97 @@ TclScanElement(
     }
 
     while (length) {
-      if (CHAR_TYPE(*p) != TYPE_NORMAL) {
-	switch (*p) {
-	case '{':	/* TYPE_BRACE */
+	if (CHAR_TYPE(*p) != TYPE_NORMAL) {
+	    switch (*p) {
+	    case '{':	/* TYPE_BRACE */
 #if COMPAT
-	    braceCount++;
+		braceCount++;
 #endif /* COMPAT */
-	    extra++;				/* Escape '{' => '\{' */
-	    nestingLevel++;
-	    break;
-	case '}':	/* TYPE_BRACE */
+		extra++;			/* Escape '{' => '\{' */
+		nestingLevel++;
+		break;
+	    case '}':	/* TYPE_BRACE */
 #if COMPAT
-	    braceCount++;
+		braceCount++;
 #endif /* COMPAT */
-	    extra++;				/* Escape '}' => '\}' */
-	    if (nestingLevel-- < 1) {
-		/*
-		 * Unbalanced braces!  Cannot format with brace quoting.
-		 */
+		extra++;			/* Escape '}' => '\}' */
+		if (nestingLevel-- < 1) {
+		    /*
+		     * Unbalanced braces!  Cannot format with brace quoting.
+		     */
 
-		requireEscape = 1;
-	    }
-	    break;
-	case ']':	/* TYPE_CLOSE_BRACK */
-	case '"':	/* TYPE_SPACE */
+		    requireEscape = 1;
+		}
+		break;
+	    case ']':	/* TYPE_CLOSE_BRACK */
+	    case '"':	/* TYPE_SPACE */
 #if COMPAT
-	    forbidNone = 1;
-	    extra++;		/* Escapes all just prepend a backslash */
-	    preferEscape = 1;
-	    break;
+		forbidNone = 1;
+		extra++;	/* Escapes all just prepend a backslash */
+		preferEscape = 1;
+		break;
 #else
-	    /* FLOW THROUGH */
+		/* FLOW THROUGH */
 #endif /* COMPAT */
-	case '[':	/* TYPE_SUBS */
-	case '$':	/* TYPE_SUBS */
-	case ';':	/* TYPE_COMMAND_END */
-	    forbidNone = 1;
-	    extra++;		/* Escape sequences all one byte longer. */
-#if COMPAT
-	    preferBrace = 1;
-#endif /* COMPAT */
-	    break;
-	case '\\':	/* TYPE_SUBS */
-	    extra++;				/* Escape '\' => '\\' */
-	    if ((length == 1) || ((length == TCL_INDEX_NONE) && (p[1] == '\0'))) {
-		/*
-		 * Final backslash. Cannot format with brace quoting.
-		 */
-
-		requireEscape = 1;
-		break;
-	    }
-	    if (p[1] == '\n') {
-		extra++;	/* Escape newline => '\n', one byte longer */
-
-		/*
-		 * Backslash newline sequence.  Brace quoting not permitted.
-		 */
-
-		requireEscape = 1;
-		length -= (length > 0);
-		p++;
-		break;
-	    }
-	    if ((p[1] == '{') || (p[1] == '}') || (p[1] == '\\')) {
-		extra++;	/* Escape sequences all one byte longer. */
-		length -= (length > 0);
-		p++;
-	    }
-	    forbidNone = 1;
-#if COMPAT
-	    preferBrace = 1;
-#endif /* COMPAT */
-	    break;
-	case '\0':	/* TYPE_SUBS */
-	    if (length == TCL_INDEX_NONE) {
-		goto endOfString;
-	    }
-	    /* TODO: Panic on improper encoding? */
-	    break;
-	default:
-	    if (TclIsSpaceProcM(*p)) {
+	    case '[':	/* TYPE_SUBS */
+	    case '$':	/* TYPE_SUBS */
+	    case ';':	/* TYPE_COMMAND_END */
 		forbidNone = 1;
 		extra++;	/* Escape sequences all one byte longer. */
 #if COMPAT
 		preferBrace = 1;
+#endif /* COMPAT */
+		break;
+	    case '\\':	/* TYPE_SUBS */
+		extra++;			/* Escape '\' => '\\' */
+		if ((length == 1) ||
+			((length == TCL_INDEX_NONE) && (p[1] == '\0'))) {
+		    /*
+		     * Final backslash. Cannot format with brace quoting.
+		     */
+
+		    requireEscape = 1;
+		    break;
+		}
+		if (p[1] == '\n') {
+		    extra++;	/* Escape newline => '\n', one byte longer */
+
+		    /*
+		     * Backslash newline sequence.  Brace quoting not permitted.
+		     */
+
+		    requireEscape = 1;
+		    length -= (length > 0);
+		    p++;
+		    break;
+		}
+		if ((p[1] == '{') || (p[1] == '}') || (p[1] == '\\')) {
+		    extra++;	/* Escape sequences all one byte longer. */
+		    length -= (length > 0);
+		    p++;
+		}
+		forbidNone = 1;
+#if COMPAT
+		preferBrace = 1;
+#endif /* COMPAT */
+		break;
+	    case '\0':	/* TYPE_SUBS */
+		if (length == TCL_INDEX_NONE) {
+		    goto endOfString;
+		}
+		/* TODO: Panic on improper encoding? */
+		break;
+	    default:
+		if (TclIsSpaceProcM(*p)) {
+		    forbidNone = 1;
+		    extra++;	/* Escape sequences all one byte longer. */
+#if COMPAT
+		    preferBrace = 1;
 #endif
+		}
+		break;
 	    }
-	    break;
 	}
-      }
 	length -= (length > 0);
 	p++;
     }
@@ -1343,9 +1344,9 @@ TclScanElement(
 
 Tcl_Size
 Tcl_ConvertElement(
-    const char *src,	/* Source information for list element. */
-    char *dst,		/* Place to put list-ified element. */
-    int flags)		/* Flags produced by Tcl_ScanElement. */
+    const char *src,		/* Source information for list element. */
+    char *dst,			/* Place to put list-ified element. */
+    int flags)			/* Flags produced by Tcl_ScanElement. */
 {
     return Tcl_ConvertCountedElement(src, TCL_INDEX_NONE, dst, flags);
 }
@@ -1373,7 +1374,7 @@ Tcl_ConvertElement(
 
 Tcl_Size
 Tcl_ConvertCountedElement(
-    const char *src,	/* Source information for list element. */
+    const char *src,		/* Source information for list element. */
     Tcl_Size length,		/* Number of bytes in src, or TCL_INDEX_NONE. */
     char *dst,			/* Place to put list-ified element. */
     int flags)			/* Flags produced by Tcl_ScanElement. */
@@ -1406,7 +1407,7 @@ Tcl_ConvertCountedElement(
 
 Tcl_Size
 TclConvertElement(
-    const char *src,	/* Source information for list element. */
+    const char *src,		/* Source information for list element. */
     Tcl_Size length,		/* Number of bytes in src, or TCL_INDEX_NONE. */
     char *dst,			/* Place to put list-ified element. */
     int flags)			/* Flags produced by Tcl_ScanElement. */
@@ -1587,7 +1588,7 @@ TclConvertElement(
 
 char *
 Tcl_Merge(
-    Tcl_Size argc,			/* How many strings to merge. */
+    Tcl_Size argc,		/* How many strings to merge. */
     const char *const *argv)	/* Array of string values. */
 {
 #define LOCAL_SIZE 64
@@ -1632,7 +1633,9 @@ Tcl_Merge(
     result = (char *)Tcl_Alloc(bytesNeeded);
     dst = result;
     for (i = 0; i < argc; i++) {
-	flagPtr[i] |= ( i ? DONT_QUOTE_HASH : 0 );
+	if (i) {
+	    flagPtr[i] |= DONT_QUOTE_HASH;
+	}
 	dst += TclConvertElement(argv[i], TCL_INDEX_NONE, dst, flagPtr[i]);
 	*dst = ' ';
 	dst++;
@@ -1664,14 +1667,14 @@ Tcl_Merge(
 
 Tcl_Size
 TclTrimRight(
-    const char *bytes,	/* String to be trimmed... */
-    Tcl_Size numBytes,	/* ...and its length in bytes */
-			/* Calls to TclUtfToUniChar() in this routine
-			 * rely on (bytes[numBytes] == '\0'). */
-    const char *trim,	/* String of trim characters... */
-    Tcl_Size numTrim)	/* ...and its length in bytes */
-			/* Calls to TclUtfToUniChar() in this routine
-			 * rely on (trim[numTrim] == '\0'). */
+    const char *bytes,		/* String to be trimmed... */
+    Tcl_Size numBytes,		/* ...and its length in bytes */
+				/* Calls to TclUtfToUniChar() in this routine
+				 * rely on (bytes[numBytes] == '\0'). */
+    const char *trim,		/* String of trim characters... */
+    Tcl_Size numTrim)		/* ...and its length in bytes */
+				/* Calls to TclUtfToUniChar() in this routine
+				 * rely on (trim[numTrim] == '\0'). */
 {
     const char *pp, *p = bytes + numBytes;
     int ch1, ch2;
@@ -1743,14 +1746,14 @@ TclTrimRight(
 
 Tcl_Size
 TclTrimLeft(
-    const char *bytes,	/* String to be trimmed... */
-    Tcl_Size numBytes,	/* ...and its length in bytes */
-			/* Calls to TclUtfToUniChar() in this routine
-			 * rely on (bytes[numBytes] == '\0'). */
-    const char *trim,	/* String of trim characters... */
-    Tcl_Size numTrim)	/* ...and its length in bytes */
-			/* Calls to TclUtfToUniChar() in this routine
-			 * rely on (trim[numTrim] == '\0'). */
+    const char *bytes,		/* String to be trimmed... */
+    Tcl_Size numBytes,		/* ...and its length in bytes */
+				/* Calls to TclUtfToUniChar() in this routine
+				 * rely on (bytes[numBytes] == '\0'). */
+    const char *trim,		/* String of trim characters... */
+    Tcl_Size numTrim)		/* ...and its length in bytes */
+				/* Calls to TclUtfToUniChar() in this routine
+				 * rely on (trim[numTrim] == '\0'). */
 {
     const char *p = bytes;
     int ch1, ch2;
@@ -1817,14 +1820,14 @@ TclTrimLeft(
 
 Tcl_Size
 TclTrim(
-    const char *bytes,	/* String to be trimmed... */
-    Tcl_Size numBytes,	/* ...and its length in bytes */
-			/* Calls in this routine
-			 * rely on (bytes[numBytes] == '\0'). */
-    const char *trim,	/* String of trim characters... */
-    Tcl_Size numTrim,	/* ...and its length in bytes */
-			/* Calls in this routine
-			 * rely on (trim[numTrim] == '\0'). */
+    const char *bytes,		/* String to be trimmed... */
+    Tcl_Size numBytes,		/* ...and its length in bytes */
+				/* Calls in this routine
+				 * rely on (bytes[numBytes] == '\0'). */
+    const char *trim,		/* String of trim characters... */
+    Tcl_Size numTrim,		/* ...and its length in bytes */
+				/* Calls in this routine
+				 * rely on (trim[numTrim] == '\0'). */
     Tcl_Size *trimRightPtr)	/* Offset from the end of the string. */
 {
     Tcl_Size trimLeft = 0, trimRight = 0;
@@ -1879,7 +1882,7 @@ TclTrim(
 
 char *
 Tcl_Concat(
-    Tcl_Size argc,			/* Number of strings to concatenate. */
+    Tcl_Size argc,		/* Number of strings to concatenate. */
     const char *const *argv)	/* Array of strings to concatenate. */
 {
     Tcl_Size i, needSpace = 0, bytesNeeded = 0;
@@ -2126,8 +2129,8 @@ Tcl_StringCaseMatch(
 				 * characters. */
     int nocase)			/* 0 for case sensitive, 1 for insensitive */
 {
-    int p, charLen;
-    int ch1 = 0, ch2 = 0;
+    Tcl_Size charLen;
+    int p, ch1 = 0, ch2 = 0;
 
     while (1) {
 	p = *pattern;
@@ -2357,11 +2360,11 @@ Tcl_StringCaseMatch(
 int
 TclByteArrayMatch(
     const unsigned char *string,/* String. */
-    Tcl_Size strLen,			/* Length of String */
+    Tcl_Size strLen,		/* Length of String */
     const unsigned char *pattern,
 				/* Pattern, which may contain special
 				 * characters. */
-    Tcl_Size ptnLen,			/* Length of Pattern */
+    Tcl_Size ptnLen,		/* Length of Pattern */
     TCL_UNUSED(int) /*flags*/)
 {
     const unsigned char *stringEnd, *patternEnd;
@@ -2632,8 +2635,8 @@ Tcl_DStringAppend(
 
     if (length > (TCL_SIZE_MAX - dsPtr->length - 1)) {
 	Tcl_Panic("max size for a Tcl value (%" TCL_SIZE_MODIFIER
-		  "d bytes) exceeded",
-		  TCL_SIZE_MAX);
+		"d bytes) exceeded",
+		TCL_SIZE_MAX);
 	return NULL; /* NOTREACHED */
     }
     newSize = length + dsPtr->length + 1;
@@ -2775,7 +2778,7 @@ Tcl_DStringAppendElement(
 	    memcpy(newString, dsPtr->string, dsPtr->length);
 	    dsPtr->string = newString;
 	} else {
-	    int offset = -1;
+	    Tcl_Size offset = -1;
 
 	    /* See [16896d49fd] */
 	    if (element >= dsPtr->string
@@ -2829,7 +2832,7 @@ Tcl_DStringAppendElement(
 void
 Tcl_DStringSetLength(
     Tcl_DString *dsPtr,		/* Structure describing dynamic string. */
-    Tcl_Size length)			/* New length for dynamic string. */
+    Tcl_Size length)		/* New length for dynamic string. */
 {
     Tcl_Size newsize;
 
@@ -3318,7 +3321,7 @@ Tcl_Size
 TclFormatInt(
     char *buffer,		/* Points to the storage into which the
 				 * formatted characters are written. */
-    Tcl_WideInt n)			/* The integer to format. */
+    Tcl_WideInt n)		/* The integer to format. */
 {
     Tcl_WideUInt intVal;
     int i = 0, numFormatted, j;
@@ -3380,14 +3383,14 @@ TclFormatInt(
 
 static int
 GetWideForIndex(
-    Tcl_Interp *interp,         /* Interpreter to use for error reporting. If
+    Tcl_Interp *interp,		/* Interpreter to use for error reporting. If
 				 * NULL, then no error message is left after
 				 * errors. */
-    Tcl_Obj *objPtr,            /* Points to the value to be parsed */
-    Tcl_WideInt endValue,       /* The value to be stored at *widePtr if
+    Tcl_Obj *objPtr,		/* Points to the value to be parsed */
+    Tcl_WideInt endValue,	/* The value to be stored at *widePtr if
 				 * objPtr holds "end".
 				 * NOTE: this value may be TCL_INDEX_NONE. */
-    Tcl_WideInt *widePtr)       /* Location filled in with a wide integer
+    Tcl_WideInt *widePtr)	/* Location filled in with a wide integer
 				 * representing an index. */
 {
     int numType;
@@ -3515,10 +3518,10 @@ Tcl_GetIntForIndex(
 static int
 GetEndOffsetFromObj(
     Tcl_Interp *interp,
-    Tcl_Obj *objPtr,            /* Pointer to the object to parse */
-    Tcl_WideInt endValue,       /* The value to be stored at "widePtr" if
+    Tcl_Obj *objPtr,		/* Pointer to the object to parse */
+    Tcl_WideInt endValue,	/* The value to be stored at "widePtr" if
 				 * "objPtr" holds "end". */
-    Tcl_WideInt *widePtr)       /* Location filled in with an integer
+    Tcl_WideInt *widePtr)	/* Location filled in with an integer
 				 * representing an index. */
 {
     Tcl_ObjInternalRep *irPtr;
@@ -3814,11 +3817,11 @@ GetEndOffsetFromObj(
 
 int
 TclIndexEncode(
-    Tcl_Interp *interp,	/* For error reporting, may be NULL */
-    Tcl_Obj *objPtr,	/* Index value to parse */
-    int before,		/* Value to return for index before beginning */
-    int after,		/* Value to return for index after end */
-    int *indexPtr)	/* Where to write the encoded answer, not NULL */
+    Tcl_Interp *interp,		/* For error reporting, may be NULL */
+    Tcl_Obj *objPtr,		/* Index value to parse */
+    int before,			/* Value to return for index before beginning */
+    int after,			/* Value to return for index after end */
+    int *indexPtr)		/* Where to write the encoded answer, not NULL */
 {
     Tcl_WideInt wide;
     int idx;
@@ -3901,7 +3904,7 @@ TclIndexEncode(
 	    idx = (int)wide;
 	}
     } else {
-	/* objPtr is not purely numeric (end etc.)  */
+	/* objPtr is not purely numeric (end etc.) */
 
 	/*
 	 * On 64-bit systems, indices in the range end-LIST_MAX:end-INT_MAX
@@ -3960,8 +3963,8 @@ rangeerror:
 
 Tcl_Size
 TclIndexDecode(
-    int encoded,	/* Value to decode */
-    Tcl_Size endValue)	/* Meaning of "end" to use, > TCL_INDEX_END */
+    int encoded,		/* Value to decode */
+    Tcl_Size endValue)		/* Meaning of "end" to use, > TCL_INDEX_END */
 {
     if (encoded > TCL_INDEX_END) {
 	return encoded;
@@ -3990,8 +3993,8 @@ TclIndexDecode(
  */
 int
 TclCommandWordLimitError(
-    Tcl_Interp *interp,   /* May be NULL */
-    Tcl_Size count)       /* If <= 0, "unknown" */
+    Tcl_Interp *interp,		/* May be NULL */
+    Tcl_Size count)		/* If <= 0, "unknown" */
 {
     if (interp) {
 	if (count > 0) {
@@ -4140,7 +4143,6 @@ TclSetProcessGlobalValue(
     const char *bytes;
     Tcl_HashTable *cacheMap;
     Tcl_HashEntry *hPtr;
-    int dummy;
     Tcl_DString ds;
 
     Tcl_MutexLock(&pgvPtr->mutex);
@@ -4177,7 +4179,7 @@ TclSetProcessGlobalValue(
     Tcl_IncrRefCount(newValue);
     cacheMap = GetThreadHash(&pgvPtr->key);
     ClearHash(cacheMap);
-    hPtr = Tcl_CreateHashEntry(cacheMap, INT2PTR(pgvPtr->epoch), &dummy);
+    hPtr = Tcl_CreateHashEntry(cacheMap, INT2PTR(pgvPtr->epoch), NULL);
     Tcl_SetHashValue(hPtr, newValue);
     Tcl_MutexUnlock(&pgvPtr->mutex);
 }
@@ -4241,7 +4243,6 @@ TclGetProcessGlobalValue(
     cacheMap = GetThreadHash(&pgvPtr->key);
     hPtr = Tcl_FindHashEntry(cacheMap, INT2PTR(epoch));
     if (NULL == hPtr) {
-	int dummy;
 
 	/*
 	 * No cache for the current epoch - must be a new one.
@@ -4274,7 +4275,7 @@ TclGetProcessGlobalValue(
 	Tcl_ExternalToUtfDString(NULL, pgvPtr->value, pgvPtr->numBytes, &newValue);
 	value = Tcl_DStringToObj(&newValue);
 	hPtr = Tcl_CreateHashEntry(cacheMap,
-		INT2PTR(pgvPtr->epoch), &dummy);
+		INT2PTR(pgvPtr->epoch), NULL);
 	Tcl_MutexUnlock(&pgvPtr->mutex);
 	Tcl_SetHashValue(hPtr, value);
 	Tcl_IncrRefCount(value);

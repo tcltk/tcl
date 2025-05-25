@@ -201,16 +201,15 @@ CreateChildEntry(
     Namespace *nsPtr,		/* Parent namespace. */
     const char *name)		/* Simple name to look for. */
 {
-    int newEntry;
 #ifndef BREAK_NAMESPACE_COMPAT
-    return Tcl_CreateHashEntry(&nsPtr->childTable, name, &newEntry);
+    return Tcl_CreateHashEntry(&nsPtr->childTable, name, NULL);
 #else
     if (nsPtr->childTablePtr == NULL) {
 	nsPtr->childTablePtr = (Tcl_HashTable *)
 		Tcl_Alloc(sizeof(Tcl_HashTable));
 	Tcl_InitHashTable(nsPtr->childTablePtr, TCL_STRING_KEYS);
     }
-    return Tcl_CreateHashEntry(nsPtr->childTablePtr, name, &newEntry);
+    return Tcl_CreateHashEntry(nsPtr->childTablePtr, name, NULL);
 #endif
 }
 
@@ -2028,8 +2027,7 @@ Tcl_ForgetImport(
 	     */
 
 	    Command *cmdPtr = (Command *) token;
-	    ImportedCmdData *dataPtr = (ImportedCmdData *)
-		    cmdPtr->objClientData;
+	    ImportedCmdData *dataPtr = (ImportedCmdData *)cmdPtr->objClientData;
 	    Tcl_Command firstToken = (Tcl_Command) dataPtr->realCmdPtr;
 
 	    if (firstToken == origin) {
@@ -2302,7 +2300,7 @@ TclGetNamespaceForQualName(
 				 * namespace if TCL_GLOBAL_ONLY was specified,
 				 * or the current namespace if cxtNsPtr was
 				 * NULL. */
-    const char **simpleNamePtr) /* Address where function stores the simple
+    const char **simpleNamePtr)	/* Address where function stores the simple
 				 * name at end of the qualName, or NULL if
 				 * qualName is "::" or the flag
 				 * TCL_FIND_ONLY_NS was specified. */
@@ -3744,7 +3742,8 @@ NamespaceForgetCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     const char *pattern;
-    int i, result;
+    int i;
+    int result;
 
     if (objc < 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?pattern pattern...?");
@@ -3810,8 +3809,8 @@ NamespaceImportCmd(
 {
     int allowOverwrite = 0;
     const char *string, *pattern;
-    int i, result;
-    int firstArg;
+    int i, firstArg;
+    int result;
 
     if (objc < 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?-force? ?pattern pattern...?");
@@ -5020,7 +5019,7 @@ TclLogCommandInfo(
 				 * the error. */
     Tcl_Size length,		/* Number of bytes in command (< 0 means use
 				 * all bytes up to first null byte). */
-    const unsigned char *pc,    /* Current pc of bytecode execution context */
+    const unsigned char *pc,	/* Current pc of bytecode execution context */
     Tcl_Obj **tosPtr)		/* Current stack of bytecode execution
 				 * context */
 {
