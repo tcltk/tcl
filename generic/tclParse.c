@@ -1397,7 +1397,8 @@ Tcl_ParseVarName(
 		/* if 2 or more left, consume 2, else consume
 		 * just the \ and let it run into the end */
 		if (numBytes > 1) {
-		   src++; numBytes--;
+		    src++;
+		    numBytes--;
 		}
 	    }
 	    numBytes--;

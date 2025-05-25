@@ -101,7 +101,8 @@ static int		PkgRequireCoreFinal(void *data[], Tcl_Interp *interp, int result);
 static int		PkgRequireCoreCleanup(void *data[], Tcl_Interp *interp, int result);
 static int		PkgRequireCoreStep1(void *data[], Tcl_Interp *interp, int result);
 static int		PkgRequireCoreStep2(void *data[], Tcl_Interp *interp, int result);
-static int		TclNRPkgRequireProc(void *clientData, Tcl_Interp *interp, int reqc, Tcl_Obj *const reqv[]);
+static int		TclNRPkgRequireProc(void *clientData, Tcl_Interp *interp,
+			    int reqc, Tcl_Obj *const reqv[]);
 static int		SelectPackage(void *data[], Tcl_Interp *interp, int result);
 static int		SelectPackageFinal(void *data[], Tcl_Interp *interp, int result);
 static int		TclNRPackageObjCmdCleanup(void *data[], Tcl_Interp *interp, int result);

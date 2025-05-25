@@ -1734,9 +1734,9 @@ static const int groups[] = {
 };
 
 #if TCL_UTF_MAX > 3 || TCL_MAJOR_VERSION > 8 || TCL_MINOR_VERSION > 6
-#   define UNICODE_OUT_OF_RANGE(ch) (((ch) & 0x1FFFFF) >= 0x323C0)
+#   define UNICODE_OUT_OF_RANGE(ch)	(((ch) & 0x1FFFFF) >= 0x323C0)
 #else
-#   define UNICODE_OUT_OF_RANGE(ch) (((ch) & 0x1F0000) != 0)
+#   define UNICODE_OUT_OF_RANGE(ch)	(((ch) & 0x1F0000) != 0)
 #endif
 
 /*
@@ -1783,9 +1783,9 @@ enum {
  * to do sign extension on right shifts.
  */
 
-#define GetCaseType(info) (((info) & 0xE0) >> 5)
-#define GetCategory(ch) (GetUniCharInfo(ch) & 0x1F)
-#define GetDelta(info) ((info) >> 8)
+#define GetCaseType(info)	(((info) & 0xE0) >> 5)
+#define GetCategory(ch)		(GetUniCharInfo(ch) & 0x1F)
+#define GetDelta(info)		((info) >> 8)
 
 /*
  * This macro extracts the information about a character from the
@@ -1793,7 +1793,9 @@ enum {
  */
 
 #if TCL_UTF_MAX > 3 || TCL_MAJOR_VERSION > 8 || TCL_MINOR_VERSION > 6
-#   define GetUniCharInfo(ch) (groups[groupMap[pageMap[((ch) & 0x1FFFFF) >> OFFSET_BITS] | ((ch) & ((1 << OFFSET_BITS)-1))]])
+#   define GetUniCharInfo(ch) \
+	(groups[groupMap[pageMap[((ch) & 0x1FFFFF) >> OFFSET_BITS] | ((ch) & ((1 << OFFSET_BITS)-1))]])
 #else
-#   define GetUniCharInfo(ch) (groups[groupMap[pageMap[((ch) & 0xFFFF) >> OFFSET_BITS] | ((ch) & ((1 << OFFSET_BITS)-1))]])
+#   define GetUniCharInfo(ch) \
+	(groups[groupMap[pageMap[((ch) & 0xFFFF) >> OFFSET_BITS] | ((ch) & ((1 << OFFSET_BITS)-1))]])
 #endif

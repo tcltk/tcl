@@ -154,7 +154,8 @@ TclpFindExecutable(
     if (name[0] == '/')
 #endif
     {
-	Tcl_ExternalToUtfDStringEx(NULL, NULL, name, TCL_INDEX_NONE, TCL_ENCODING_PROFILE_TCL8, &utfName, NULL);
+	Tcl_ExternalToUtfDStringEx(NULL, NULL, name, TCL_INDEX_NONE,
+		TCL_ENCODING_PROFILE_TCL8, &utfName, NULL);
 	TclSetObjNameOfExecutable(Tcl_DStringToObj(&utfName), NULL);
 	goto done;
     }
@@ -604,7 +605,8 @@ TclpGetUserHome(
     Tcl_DString ds;
     const char *native;
 
-    if (Tcl_UtfToExternalDStringEx(NULL, NULL, name, TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
+    if (Tcl_UtfToExternalDStringEx(NULL, NULL, name, TCL_INDEX_NONE, 0, &ds,
+	    NULL) != TCL_OK) {
 	Tcl_DStringFree(&ds);
 	return NULL;
     }
@@ -616,7 +618,8 @@ TclpGetUserHome(
     if (pwPtr == NULL) {
 	return NULL;
     }
-    if (Tcl_ExternalToUtfDStringEx(NULL, NULL, pwPtr->pw_dir, TCL_INDEX_NONE, 0, bufferPtr, NULL) != TCL_OK) {
+    if (Tcl_ExternalToUtfDStringEx(NULL, NULL, pwPtr->pw_dir, TCL_INDEX_NONE,
+	    0, bufferPtr, NULL) != TCL_OK) {
 	return NULL;
     } else {
 	return Tcl_DStringValue(bufferPtr);
@@ -798,7 +801,8 @@ TclpGetCwd(
 	}
 	return NULL;
     }
-    if (Tcl_ExternalToUtfDStringEx(interp, NULL, buffer, TCL_INDEX_NONE, 0, bufferPtr, NULL) != TCL_OK) {
+    if (Tcl_ExternalToUtfDStringEx(interp, NULL, buffer, TCL_INDEX_NONE, 0,
+	    bufferPtr, NULL) != TCL_OK) {
 	return NULL;
     }
     return Tcl_DStringValue(bufferPtr);
@@ -1089,7 +1093,8 @@ TclpNativeToNormalized(
 {
     Tcl_DString ds;
 
-    Tcl_ExternalToUtfDStringEx(NULL, NULL, (const char *) clientData, TCL_INDEX_NONE, TCL_ENCODING_PROFILE_TCL8, &ds, NULL);
+    Tcl_ExternalToUtfDStringEx(NULL, NULL, (const char *) clientData,
+	    TCL_INDEX_NONE, TCL_ENCODING_PROFILE_TCL8, &ds, NULL);
     return Tcl_DStringToObj(&ds);
 }
 
