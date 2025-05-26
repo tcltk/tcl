@@ -3710,7 +3710,7 @@ TEBCresume(
 	TclNewIntObj(incrPtr, increment);
 	Tcl_IncrRefCount(incrPtr);
 	pcAdjustment = 3;
-        goto doIncrArray;
+	goto doIncrArray;
 #endif
 
     case INST_INCR_ARRAY_IMM:

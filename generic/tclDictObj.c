@@ -1472,7 +1472,7 @@ Tcl_DbNewDictObj(
 
     TclDbNewObj(dictPtr, file, line);
     TclInvalidateStringRep(dictPtr);
-    dict = (Dict *)Tcl_Alloc(sizeof(Dict));
+    dict = (Dict *)Tcl_DbCkalloc(sizeof(Dict), file, line);
     InitChainTable(dict);
     dict->epoch = 1;
     dict->chain = NULL;
