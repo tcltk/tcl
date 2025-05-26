@@ -340,8 +340,8 @@ Tcl_Init(
      * pre-init and init scripts are running. The real version of this struct
      * is in tclPkg.c.
      */
-    typedef struct PkgName {
-	struct PkgName *nextPtr;/* Next in list of package names being
+    typedef struct PkgName_ {
+	struct PkgName_ *nextPtr;/* Next in list of package names being
 				 * initialized. */
 	char name[4];		/* Enough space for "tcl". The *real* version
 				 * of this structure uses a flex array. */
