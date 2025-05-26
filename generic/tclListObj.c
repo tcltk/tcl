@@ -201,7 +201,7 @@ const Tcl_ObjType tclListType = {
 #define ListObjStompRep(objPtr_, repPtr_) \
     do {								\
 	(objPtr_)->internalRep.twoPtrValue.ptr1 = (repPtr_)->storePtr;	\
-	(objPtr_)->internalRep.twoPtrValue.ptr2 = (repPtr_)->spanPtr; 	\
+	(objPtr_)->internalRep.twoPtrValue.ptr2 = (repPtr_)->spanPtr;	\
 	(objPtr_)->typePtr = &tclListType;				\
     } while (0)
 
@@ -1193,6 +1193,7 @@ Tcl_DbNewListObj(
  *
  *------------------------------------------------------------------------
  */
+#if 0
 Tcl_Obj *
 TclNewListObj2(
     Tcl_Size objc1,		/* Count of objects referenced by objv1. */
@@ -1226,6 +1227,7 @@ TclNewListObj2(
     storePtr->numUsed = objc;
     return listObj;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------

@@ -161,7 +161,7 @@ InstructionDesc const tclInstructionTable[] = {
 	"incrScalarStkImm",2,	0,	  OPERAND_INT1),
 	/* Incr scalar; scalar name is stktop; incr amount is op1 */
     DEPRECATED_INSTRUCTION_ENTRY2(
- 	"incrArray1Imm",  3,	0,	  OPERAND_LVT1, OPERAND_INT1),
+	"incrArray1Imm",  3,	0,	  OPERAND_LVT1, OPERAND_INT1),
 	/* Incr array elem; array at slot op1 <= 255, elem is stktop,
 	 * amount is 2nd operand byte */
     TCL_INSTRUCTION_ENTRY1(

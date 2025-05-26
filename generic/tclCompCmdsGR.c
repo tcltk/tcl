@@ -831,7 +831,7 @@ TclCompileLappendCmd(
 
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
     PushVarNameWord(varTokenPtr, 0, &localIndex, &isScalar, 1);
- 
+
     /*
      * The weird cluster of bugs around INST_LAPPEND_STK without a LVT ought
      * to be sorted out. INST_LAPPEND_LIST_STK does the right thing.

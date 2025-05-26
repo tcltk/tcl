@@ -302,7 +302,10 @@ Tcl_DbNewStringObj(
 	length = (bytes? strlen(bytes) : 0);
     }
     TclDbNewObj(objPtr, file, line);
-    TclInitStringRep(objPtr, bytes, length);
+    if (!TclAttemptInitStringRep(objPtr, bytes, length)) {
+	Tcl_Panic("Failed to allocate %" TCL_SIZE_MODIFIER
+		"d bytes. %s:%d", length, file, line);
+    }
     return objPtr;
 }
 #else /* if not TCL_MEM_DEBUG */
