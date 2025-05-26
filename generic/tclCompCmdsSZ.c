@@ -2840,7 +2840,7 @@ TclCompileTryCmd(
     int result = TCL_ERROR, anyTrapClauses = 0;
     Tcl_Token *bodyToken, *finallyToken, *tokenPtr;
     TryHandlerInfo staticHandler, *handlers = &staticHandler;
-    Tcl_Size handlerIdx = 0;
+    Tcl_Size handlerIdx = -1;
 
     if (numWords < 2 || numWords > UINT_MAX) {
 	return TCL_ERROR;
@@ -2864,9 +2864,11 @@ TclCompileTryCmd(
 	    handlers = &staticHandler;
 	}
 
-	for (; handlerIdx < numHandlers ; handlerIdx++) {
+	for (handlerIdx = 0; handlerIdx < numHandlers ; handlerIdx++) {
 	    Tcl_Obj *tmpObj, **objv;
 	    Tcl_Size objc;
+
+	    handlers[handlerIdx].matchClause = NULL;/* Init for cleanup checks */
 
 	    if (IS_TOKEN_LITERALLY(tokenPtr, "trap")) {
 		/*
@@ -3033,10 +3035,11 @@ TclCompileTryCmd(
      */
 
   failedToCompile:
-    while (handlerIdx-- > 0) {
+    while (handlerIdx >= 0) {
 	if (handlers[handlerIdx].matchClause) {
 	    TclDecrRefCount(handlers[handlerIdx].matchClause);
 	}
+	--handlerIdx;
     }
     if (handlers != &staticHandler) {
 	TclStackFree(interp, handlers);
