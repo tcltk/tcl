@@ -4441,6 +4441,14 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 	    ? (*(lenPtr) = (objPtr)->length, (objPtr)->bytes)		\
 	    : (Tcl_GetStringFromObj)((objPtr), (lenPtr)))
 
+#define TclAttemptGetString(objPtr) \
+    ((objPtr)->bytes? (objPtr)->bytes : Tcl_AttemptGetString(objPtr))
+
+#define TclAttemptGetStringFromObj(objPtr, lenPtr) \
+    ((objPtr)->bytes							\
+	    ? (*(lenPtr) = (objPtr)->length, (objPtr)->bytes)		\
+	    : (Tcl_AttemptGetStringFromObj)((objPtr), (lenPtr)))
+
 /*
  *----------------------------------------------------------------
  * Macro used by the Tcl core to clean out an object's internal
@@ -4812,6 +4820,20 @@ MODULE_SCOPE Tcl_LibraryInitProc Tcl_ABSListTest_Init;
 	TCL_DTRACE_OBJ_CREATE(objPtr);					\
     } while (0)
 
+#define TclAttemptNewStringObj(objPtr, s, len) \
+    do {								\
+	TclIncrObjsAllocated();						\
+	TclAllocObjStorage(objPtr);					\
+	(objPtr)->refCount = 0;						\
+	if (TclAttemptInitStringRep((objPtr), (s), (len))) { \
+	    (objPtr)->typePtr = NULL;					\
+	    TCL_DTRACE_OBJ_CREATE(objPtr);					\
+	} else { \
+	    Tcl_DecrRefCount(objPtr); \
+	    (objPtr) = NULL; \
+	} \
+    } while (0)
+
 #else /* TCL_MEM_DEBUG */
 #define TclNewIntObj(objPtr, w) \
     (objPtr) = Tcl_NewWideIntObj(w)
@@ -4839,6 +4861,10 @@ MODULE_SCOPE Tcl_LibraryInitProc Tcl_ABSListTest_Init;
 
 #define TclNewStringObj(objPtr, s, len) \
     (objPtr) = Tcl_NewStringObj((s), (len))
+
+#define TclAttemptNewStringObj(objPtr, s, len) \
+    (objPtr) = Tcl_AttemptNewStringObj((s), (len))
+
 #endif /* TCL_MEM_DEBUG */
 
 /*

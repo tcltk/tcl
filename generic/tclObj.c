@@ -1555,6 +1555,25 @@ TclObjBeingDeleted(
 	}								\
     }
 
+#define AttemptSetDuplicateObj(dupPtr, objPtr)					\
+    {									\
+	const Tcl_ObjType *typePtr = (objPtr)->typePtr;			\
+	const char *bytes = (objPtr)->bytes;				\
+	if (bytes) {							\
+	    TclAttemptInitStringRep((dupPtr), bytes, (objPtr)->length);	\
+	} else {							\
+	    (dupPtr)->bytes = NULL;					\
+	}								\
+	if (typePtr) {							\
+	    if (typePtr->dupIntRepProc) {				\
+		typePtr->dupIntRepProc((objPtr), (dupPtr));		\
+	    } else {							\
+		(dupPtr)->internalRep = (objPtr)->internalRep;		\
+		(dupPtr)->typePtr = typePtr;				\
+	    }								\
+	}								\
+    }
+
 Tcl_Obj *
 Tcl_DuplicateObj(
     Tcl_Obj *objPtr)		/* The object to duplicate. */
@@ -1563,6 +1582,21 @@ Tcl_DuplicateObj(
 
     TclNewObj(dupPtr);
     SetDuplicateObj(dupPtr, objPtr);
+    return dupPtr;
+}
+
+Tcl_Obj *
+Tcl_AttemptDuplicateObj(
+    Tcl_Obj *objPtr)		/* The object to duplicate. */
+{
+    Tcl_Obj *dupPtr;
+
+    TclNewObj(dupPtr);
+    AttemptSetDuplicateObj(dupPtr, objPtr);
+    if (!dupPtr->bytes) {
+	Tcl_DecrRefCount(dupPtr);
+	dupPtr = NULL;
+    }
     return dupPtr;
 }
 
@@ -1675,8 +1709,11 @@ Tcl_GetStringFromObj(
 		    objPtr->typePtr->name);
 	}
 	objPtr->typePtr->updateStringProc(objPtr);
-	if (objPtr->bytes == NULL
-		|| objPtr->bytes[objPtr->length] != '\0') {
+	if (objPtr->bytes == NULL) {
+	    Tcl_Panic("UpdateStringProc for type '%s' "
+		    "failed to allocate %" TCL_SIZE_MODIFIER "d bytes",
+		    objPtr->typePtr->name, objPtr->length);
+	} else if (objPtr->bytes[objPtr->length] != '\0') {
 	    Tcl_Panic("UpdateStringProc for type '%s' "
 		    "failed to create a valid string rep",
 		    objPtr->typePtr->name);
@@ -1684,6 +1721,89 @@ Tcl_GetStringFromObj(
     }
     if (lengthPtr != NULL) {
 	*lengthPtr = objPtr->length;
+    }
+    return objPtr->bytes;
+}
+
+char *
+Tcl_DbGetStringFromObj(
+    Tcl_Obj *objPtr,		/* Object whose string rep byte pointer should
+				 * be returned. */
+    Tcl_Size *lengthPtr,	/* If non-NULL, the location where the string
+				 * rep's byte array length should * be stored.
+				 * If NULL, no length is stored. */
+    const char *file,
+    int line)
+{
+    if (objPtr->bytes == NULL) {
+	/*
+	 * Note we do not check for objPtr->typePtr == NULL.  An invariant
+	 * of a properly maintained Tcl_Obj is that at least  one of
+	 * objPtr->bytes and objPtr->typePtr must not be NULL.  If broken
+	 * extensions fail to maintain that invariant, we can crash here.
+	 */
+
+	if (objPtr->typePtr->updateStringProc == NULL) {
+	    /*
+	     * Those Tcl_ObjTypes which choose not to define an
+	     * updateStringProc must be written in such a way that
+	     * (objPtr->bytes) never becomes NULL.
+	     */
+	    Tcl_Panic("UpdateStringProc should not be invoked for type %s. %s:%d",
+		    objPtr->typePtr->name, file, line);
+	}
+	objPtr->typePtr->updateStringProc(objPtr);
+	if (objPtr->bytes == NULL) {
+	    Tcl_Panic("UpdateStringProc for type '%s' "
+		    "failed to allocate %" TCL_SIZE_MODIFIER "d bytes. %s:%d",
+		    objPtr->typePtr->name, objPtr->length, file, line);
+	} else if (objPtr->bytes[objPtr->length] != '\0') {
+	    Tcl_Panic("UpdateStringProc for type '%s' "
+		    "failed to create a valid string rep. %s:%d",
+		    objPtr->typePtr->name, file, line);
+	}
+    }
+    if (lengthPtr != NULL) {
+	*lengthPtr = objPtr->length;
+    }
+    return objPtr->bytes;
+}
+
+char *
+Tcl_AttemptGetStringFromObj(
+    Tcl_Obj *objPtr,		/* Object whose string rep byte pointer should
+				 * be returned. */
+    Tcl_Size *lengthPtr)	/* If non-NULL, the location where the string
+				 * rep's byte array length should * be stored.
+				 * If NULL, no length is stored. */
+{
+    if (objPtr->bytes == NULL) {
+	/*
+	 * Note we do not check for objPtr->typePtr == NULL.  An invariant
+	 * of a properly maintained Tcl_Obj is that at least  one of
+	 * objPtr->bytes and objPtr->typePtr must not be NULL.  If broken
+	 * extensions fail to maintain that invariant, we can crash here.
+	 */
+
+	if (objPtr->typePtr->updateStringProc == NULL) {
+	    /*
+	     * Those Tcl_ObjTypes which choose not to define an
+	     * updateStringProc must be written in such a way that
+	     * (objPtr->bytes) never becomes NULL.
+	     */
+	    Tcl_Panic("UpdateStringProc should not be invoked for type %s",
+		    objPtr->typePtr->name);
+	}
+	objPtr->typePtr->updateStringProc(objPtr);
+	if (objPtr->bytes != NULL
+		&& objPtr->bytes[objPtr->length] != '\0') {
+	    Tcl_Panic("UpdateStringProc for type '%s' "
+		    "failed to create a valid string rep",
+		    objPtr->typePtr->name);
+	}
+    }
+    if (lengthPtr != NULL) {
+	*lengthPtr = objPtr->bytes ? objPtr->length : -1;
     }
     return objPtr->bytes;
 }
