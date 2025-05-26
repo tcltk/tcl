@@ -253,6 +253,24 @@ Tcl_NewStringObj(
     return objPtr;
 }
 #endif /* TCL_MEM_DEBUG */
+
+Tcl_Obj *
+Tcl_AttemptNewStringObj(
+    const char *bytes,		/* Points to the first of the length bytes
+				 * used to initialize the new object. */
+    Tcl_Size length)		/* The number of bytes to copy from "bytes"
+				 * when initializing the new object. If -1,
+				 * use bytes up to the first NUL byte. */
+{
+    Tcl_Obj *objPtr;
+
+    if (length < 0) {
+	length = (bytes? strlen(bytes) : 0);
+    }
+    TclAttemptNewStringObj(objPtr, bytes, length);
+    return objPtr;
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -898,6 +916,58 @@ Tcl_SetStringObj(
     TclInitStringRep(objPtr, bytes, length);
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_AttemptSetStringObj --
+ *
+ *	Modify an object to hold a string that is a copy of the bytes
+ *	indicated by the byte pointer and length arguments.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The object's string representation will be set to a copy of the
+ *	"length" bytes starting at "bytes". If "length" is TCL_INDEX_NONE, use bytes
+ *	up to the first NUL byte; i.e., assume "bytes" points to a C-style
+ *	NUL-terminated string. The object's old string and internal
+ *	representations are freed and the object's type is set NULL.
+ *
+ *----------------------------------------------------------------------
+ */
+
+char *
+Tcl_AttemptSetStringObj(
+    Tcl_Obj *objPtr,		/* Object whose internal rep to init. */
+    const char *bytes,		/* Points to the first of the length bytes
+				 * used to initialize the object. */
+    Tcl_Size length)		/* The number of bytes to copy from "bytes"
+				 * when initializing the object. If -1,
+				 * use bytes up to the first NUL byte.*/
+{
+    if (Tcl_IsShared(objPtr)) {
+	Tcl_Panic("%s called with shared object", "Tcl_SetStringObj");
+    }
+
+    /*
+     * Set the type to NULL and free any internal rep for the old type.
+     */
+
+    TclFreeInternalRep(objPtr);
+
+    /*
+     * Free any old string rep, then set the string rep to a copy of the
+     * length bytes starting at "bytes".
+     */
+
+    TclInvalidateStringRep(objPtr);
+    if (length == TCL_INDEX_NONE) {
+	length = (bytes ? strlen(bytes) : 0);
+    }
+    return TclAttemptInitStringRep(objPtr, bytes, length);
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -3723,7 +3793,7 @@ TclStringCmp(
 		case -1:
 		    s1 = "";
 		    s1len = 0;
-		    s2 = TclGetStringFromObj(value2Ptr, &s2len);
+		    s2 = TclAttemptGetStringFromObj(value2Ptr, &s2len);
 		    break;
 		case 0:
 		    match = -1;
@@ -3738,7 +3808,7 @@ TclStringCmp(
 		case -1:
 		    s2 = "";
 		    s2len = 0;
-		    s1 = TclGetStringFromObj(value1Ptr, &s1len);
+		    s1 = TclAttemptGetStringFromObj(value1Ptr, &s1len);
 		    break;
 		case 0:
 		    match = 1;
@@ -3749,8 +3819,11 @@ TclStringCmp(
 		    goto matchdone;
 		}
 	    } else {
-		s1 = TclGetStringFromObj(value1Ptr, &s1len);
-		s2 = TclGetStringFromObj(value2Ptr, &s2len);
+		s1 = TclAttemptGetStringFromObj(value1Ptr, &s1len);
+		s2 = TclAttemptGetStringFromObj(value2Ptr, &s2len);
+	    }
+	    if (!s1 || !s2) {
+		return INT_MIN;
 	    }
 	    if (!nocase && checkEq && reqlength < 0) {
 		/*
@@ -4504,7 +4577,7 @@ DupStringInternalRep(
 
 static int
 SetStringFromAny(
-    TCL_UNUSED(Tcl_Interp *),
+    Tcl_Interp *interp,
     Tcl_Obj *objPtr)		/* The object to convert. */
 {
     if (!TclHasInternalRep(objPtr, &tclStringType)) {
@@ -4514,7 +4587,11 @@ SetStringFromAny(
 	 * Convert whatever we have into an untyped value. Just A String.
 	 */
 
-	(void) TclGetString(objPtr);
+	(void)TclAttemptGetString(objPtr);
+	if (!objPtr->bytes) {
+	    Tcl_AppendResult(interp, "allocation error", (char *)NULL);
+	    return TCL_ERROR;
+	}
 	TclFreeInternalRep(objPtr);
 
 	/*
@@ -4615,7 +4692,11 @@ ExtendStringRepWithUnicode(
 	size += TclUtfCount(unicode[i]);
     }
     if (size < 0) {
-	Tcl_Panic("max size for a Tcl value (%" TCL_SIZE_MODIFIER "d bytes) exceeded", TCL_SIZE_MAX);
+	if (objPtr->bytes) {
+	    Tcl_Free(objPtr->bytes);
+	    objPtr->bytes = NULL;
+	}
+    return TCL_ERROR;
     }
 
     /*

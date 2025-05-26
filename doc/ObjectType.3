@@ -269,6 +269,9 @@ Tcl routines accepting string values as arguments.
 Storage for the byte array must be allocated in the heap by \fBTcl_Alloc\fR.
 Note that \fIupdateStringProc\fRs must allocate
 enough storage for the string's bytes and the terminating null byte.
+If the \fIupdateStringProc\fR cannot do that, it must set
+interp->bytes to be NULL (freeing the previous content), and set
+interp->length to the number of bytes it tried to allocate.
 .PP
 The \fIupdateStringProc\fR for Tcl's built-in double type, for example,
 calls Tcl_PrintDouble to write to a buffer of size TCL_DOUBLE_SPACE,

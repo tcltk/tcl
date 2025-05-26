@@ -829,7 +829,7 @@ const TclStubs tclStubs = {
     Tcl_DbDecrRefCount, /* 19 */
     Tcl_DbIncrRefCount, /* 20 */
     Tcl_DbIsShared, /* 21 */
-    0, /* 22 */
+    Tcl_DbGetStringFromObj, /* 22 */
     Tcl_DbNewByteArrayObj, /* 23 */
     Tcl_DbNewDoubleObj, /* 24 */
     Tcl_DbNewListObj, /* 25 */
@@ -864,7 +864,7 @@ const TclStubs tclStubs = {
     0, /* 54 */
     Tcl_NewObj, /* 55 */
     Tcl_NewStringObj, /* 56 */
-    0, /* 57 */
+    Tcl_AttemptNewStringObj, /* 57 */
     Tcl_SetByteArrayLength, /* 58 */
     Tcl_SetByteArrayObj, /* 59 */
     Tcl_SetDoubleObj, /* 60 */
@@ -1147,9 +1147,9 @@ const TclStubs tclStubs = {
     Tcl_UtfToUpper, /* 337 */
     Tcl_WriteChars, /* 338 */
     Tcl_WriteObj, /* 339 */
-    0, /* 340 */
-    0, /* 341 */
-    0, /* 342 */
+    Tcl_AttemptGetStringFromObj, /* 340 */
+    Tcl_AttemptSetStringObj, /* 341 */
+    Tcl_AttemptDuplicateObj, /* 342 */
     Tcl_AlertNotifier, /* 343 */
     Tcl_ServiceModeHook, /* 344 */
     Tcl_UniCharIsAlnum, /* 345 */
