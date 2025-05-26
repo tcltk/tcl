@@ -1927,7 +1927,7 @@ TclCompileSwitchCmd(
 	/*
 	 * Need to be slightly careful; we're iterating over the words of the
 	 * list, not the arms of the [switch]. This means we go round this loop
-	 * twice per arm. 
+	 * twice per arm.
 	 */
 
 	while (numBytes > 0) {

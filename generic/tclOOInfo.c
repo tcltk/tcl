@@ -110,7 +110,7 @@ DescribeMethodArgs(
 	    localPtr=localPtr->nextPtr) {
 	if (TclIsVarArgument(localPtr)) {
 	    Tcl_Obj *argObj;
-    
+
 	    TclNewObj(argObj);
 	    Tcl_ListObjAppendElement(NULL, argObj, Tcl_NewStringObj(
 		    localPtr->name, localPtr->nameLength));
