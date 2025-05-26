@@ -461,6 +461,7 @@ typedef DWORD_PTR * PDWORD_PTR;
 #endif
 #   pragma warning(disable:4267)
 #   pragma warning(disable:4996)
+#   pragma warning(disable:5287) /* See [1dcda0e862] */
 #endif
 
 /*
