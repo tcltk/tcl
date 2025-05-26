@@ -185,7 +185,7 @@ namespace eval utftest {
 	set out [binary decode hex $hexout]
 	set dstlen 40 ;# Should be enough for all encoding tests
 
-	test $cmd-$enc-$id "$cmd - $enc - $hexin - frag" -constraints testencoding -body {
+	test $cmd-$enc-$id-0 "$cmd - $enc - $hexin - frag=$fragindex" -constraints testencoding -body {
 	    set frag1Result [testencoding $cmd $enc [string range $in 0 $fragindex-1] {start} 0 $dstlen frag1Read frag1Written]
 	    lassign $frag1Result frag1Status frag1State frag1Decoded
 	    set frag2Result [testencoding $cmd $enc [string range $in $frag1Read end] {end} $frag1State $dstlen frag2Read frag2Written]
@@ -195,6 +195,16 @@ namespace eval utftest {
 		$frag2Status [expr {$frag1Read+$frag2Read}] \
 		[expr {$frag1Written+$frag2Written}] $decoded
 	} -result [list $status1 1 ok [string length $in] [string length $out] $out]
+
+        if {$direction eq "toutf"} {
+            # Fragmentation but with no more data.
+            # Only check status. Content output is already checked in above test.
+            test $cmd-$enc-$id-1 "$cmd - $enc - $hexin - frag=$fragindex - no more data" -constraints testencoding -body {
+                set frag1Result [testencoding $cmd $enc [string range $in 0 $fragindex-1] {start end} 0 $dstlen frag1Read frag1Written]
+                lassign $frag1Result frag1Status frag1State frag1Decoded
+                set frag1Status
+            } -result syntax
+        }
     }
 
     proc testcharlimit {direction enc comment hexin hexout} {
