@@ -65,8 +65,8 @@ TclObjArrayNew(size_t nelems, Tcl_Obj * const elemPtrs[])
     TclObjArray *arrayPtr = (TclObjArray *)Tcl_Alloc(
 	sizeof(TclObjArray) + (nelems - 1) * sizeof(Tcl_Obj *));
     for (size_t i = 0; i < nelems; i++) {
-        Tcl_IncrRefCount(elemPtrs[i]);
-        arrayPtr->elemPtrs[i] = elemPtrs[i];
+	Tcl_IncrRefCount(elemPtrs[i]);
+	arrayPtr->elemPtrs[i] = elemPtrs[i];
     }
     arrayPtr->refCount = 0;
     arrayPtr->nelems = nelems;
@@ -261,25 +261,25 @@ static void TclAbstractListUpdateString (Tcl_Obj *objPtr)
 
     /* Pass 1: estimate space, gather flags. */
     if (numElems <= LOCAL_SIZE) {
-        flagPtr = localFlags;
+	flagPtr = localFlags;
     }
     else {
-        flagPtr = (char *)Tcl_Alloc(numElems);
+	flagPtr = (char *)Tcl_Alloc(numElems);
     }
     for (i = 0; i < numElems; i++) {
-        Tcl_Obj *elemObj;
-        flagPtr[i] = (i ? TCL_DONT_QUOTE_HASH : 0);
-        ret = Tcl_ListObjIndex(NULL, objPtr, i, &elemObj);
-        assert(ret == TCL_OK);
-        elem       = Tcl_GetStringFromObj(elemObj, &length);
-        bytesNeeded += TclScanElement(elem, length, flagPtr + i);
-        if (bytesNeeded > SIZE_MAX - numElems) {
-            Tcl_Panic("max size for a Tcl value (%" TCL_Z_MODIFIER
-                      "u bytes) exceeded",
-                      SIZE_MAX);
-        }
+	Tcl_Obj *elemObj;
+	flagPtr[i] = (i ? TCL_DONT_QUOTE_HASH : 0);
+	ret = Tcl_ListObjIndex(NULL, objPtr, i, &elemObj);
+	assert(ret == TCL_OK);
+	elem       = Tcl_GetStringFromObj(elemObj, &length);
+	bytesNeeded += TclScanElement(elem, length, flagPtr + i);
+	if (bytesNeeded > SIZE_MAX - numElems) {
+	    Tcl_Panic("max size for a Tcl value (%" TCL_Z_MODIFIER
+		      "u bytes) exceeded",
+		      SIZE_MAX);
+	}
 #if TCL_MAJOR_VERSION > 8
-        Tcl_BounceRefCount(elemObj);
+	Tcl_BounceRefCount(elemObj);
 #endif
     }
     bytesNeeded += numElems; /* Including trailing nul */
@@ -290,29 +290,29 @@ static void TclAbstractListUpdateString (Tcl_Obj *objPtr)
 
     start = dst = (char *) Tcl_Alloc(bytesNeeded);
     for (i = 0; i < numElems; i++) {
-        Tcl_Obj *elemObj;
-        flagPtr[i] |= (i ? TCL_DONT_QUOTE_HASH : 0);
-        ret = Tcl_ListObjIndex(NULL, objPtr, i, &elemObj);
-        assert(ret == TCL_OK);
-        elem = Tcl_GetStringFromObj(elemObj, &length);
-        dst += TclConvertElement(elem, length, dst, flagPtr[i]);
-        *dst++ = ' ';
+	Tcl_Obj *elemObj;
+	flagPtr[i] |= (i ? TCL_DONT_QUOTE_HASH : 0);
+	ret = Tcl_ListObjIndex(NULL, objPtr, i, &elemObj);
+	assert(ret == TCL_OK);
+	elem = Tcl_GetStringFromObj(elemObj, &length);
+	dst += TclConvertElement(elem, length, dst, flagPtr[i]);
+	*dst++ = ' ';
     }
     dst[-1]         = '\0'; /* Overwrite last space */
     size_t finalLen = dst - start; /* Includes trailing nul */
 
     /* If we are wasting "too many" bytes, attempt a reallocation */
     if (bytesNeeded > 1000 && (bytesNeeded-finalLen) > (bytesNeeded/4)) {
-        char *newBytes = (char *)Tcl_Realloc(start, finalLen);
-        if (newBytes != NULL) {
-            start = newBytes;
-        }
+	char *newBytes = (char *)Tcl_Realloc(start, finalLen);
+	if (newBytes != NULL) {
+	    start = newBytes;
+	}
     }
     objPtr->bytes = start;
     objPtr->length = finalLen-1; /* Exclude the trailing null */
 
     if (flagPtr != localFlags) {
-        Tcl_Free(flagPtr);
+	Tcl_Free(flagPtr);
     }
 }
 
@@ -391,8 +391,8 @@ LreverseTypeIndex(Tcl_Interp *interp,
     Tcl_Obj *targetPtr = (Tcl_Obj *)objPtr->internalRep.ptrAndSize.ptr;
     Tcl_Size len = objPtr->internalRep.ptrAndSize.size;
     if (index < 0 || index >= len) {
-        *elemPtrPtr = NULL;
-        return TCL_OK;
+	*elemPtrPtr = NULL;
+	return TCL_OK;
     }
     index = len - index - 1; /* Reverse the index */
     return Tcl_ListObjIndex(interp, targetPtr, index, elemPtrPtr);
@@ -506,8 +506,8 @@ Tcl_ListObjReverse(
 	listRep.spanPtr->spanLength = listRep.storePtr->numUsed;
     }
     for (Tcl_Size i = 0; i < elemc; i++) {
-        Tcl_IncrRefCount(elemv[i]);
-        dataArray[elemc - i - 1] = elemv[i];
+	Tcl_IncrRefCount(elemv[i]);
+	dataArray[elemc - i - 1] = elemv[i];
     }
 
     *reversedPtrPtr = resultPtr;
@@ -588,8 +588,8 @@ LrepeatTypeIndex(
     (void) interp; /* Unused */
     Tcl_Size len = objPtr->internalRep.ptrAndSize.size;
     if (index < 0 || index >= len) {
-        *elemPtrPtr = NULL;
-        return TCL_OK;
+	*elemPtrPtr = NULL;
+	return TCL_OK;
     }
     TclObjArray *arrayPtr = (TclObjArray *)objPtr->internalRep.ptrAndSize.ptr;
     Tcl_Obj **elems;
@@ -777,7 +777,7 @@ LrangeMeetsLengthCriteria(
      *   accessing the abstract list.
      */
     return (rangeLen >= LRANGE_LENGTH_THRESHOLD &&
-            rangeLen >= srcLen / 2);
+	    rangeLen >= srcLen / 2);
 }
 
 /* Returns a new lrangeType object that references the source list */
@@ -888,7 +888,7 @@ LrangeSlice(
     Tcl_Size newSrcIndex = start + repPtr->srcIndex;
     if (TclListObjLength(interp, sourcePtr, &sourceLen) != TCL_OK) {
 	/* Cannot fail because how rangeType's are constructed but ... */
-        return TCL_ERROR;
+	return TCL_ERROR;
     }
 
     /*
