@@ -28,6 +28,8 @@ to the userbase.
  - [lseq crash on out-of-range index](https://core.tcl-lang.org/tcl/tktview/7d3101)
  - [lseq crash on nested indices](https://core.tcl-lang.org/tcl/tktview/452b10)
  - [Build broken (trunk branch) tclCompExpr.c tclOOCall.c](https://core.tcl-lang.org/tcl/tktview/1dcda0)
+ - [Memory allocation runaway on truncated iso2022 encoding](https://core.tcl-lang.org/tcl/tktview/7346adc50)
+ - [Missing include dir for extensions in non-default locations](https://core.tcl-lang.org/tcl/tktview/3335120320)
 
 # Incompatibilities
  - No known incompatibilities with the Tcl 9.0.0 public interface.
