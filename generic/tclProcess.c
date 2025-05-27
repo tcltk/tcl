@@ -26,7 +26,7 @@ static int autopurge = 1;	/* Autopurge flag. */
 
 typedef struct ProcessInfo {
     Tcl_Pid pid;		/* Process id. */
-    int resolvedPid;		/* Resolved process id. */
+    Tcl_Size resolvedPid;	/* Resolved process id. */
     int purge;			/* Purge eventualy. */
     TclProcessWaitStatus status;/* Process status. */
     int code;			/* Error code, exit status or signal
@@ -858,7 +858,7 @@ TclProcessCreated(
 
     Tcl_SetHashValue(entry, info);
     entry = Tcl_CreateHashEntry(&infoTablePerResolvedPid, INT2PTR(resolvedPid),
-	    &isNew);
+	    NULL);
     Tcl_SetHashValue(entry, info);
 
     Tcl_MutexUnlock(&infoTablesMutex);

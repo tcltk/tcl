@@ -31,6 +31,14 @@
  *----------------------------------------------------------------------
  */
 
+#ifdef __CYGWIN__
+/* Those are deprecated in Cygwin, but still might be used by Cygwin applications */
+# undef ENOSHARE
+# define ENOSHARE 136
+# undef ECASECLASH
+# define ECASECLASH 137
+#endif
+
 const char *
 Tcl_ErrnoId(void)
 {
@@ -374,7 +382,8 @@ Tcl_ErrnoId(void)
 #ifdef EOTHER
     case EOTHER: return "EOTHER";
 #endif
-#if defined(EOVERFLOW) && (!defined(EFBIG) || (EOVERFLOW != EFBIG)) && (!defined(EINVAL) || (EOVERFLOW != EINVAL))
+#if defined(EOVERFLOW) && (!defined(EFBIG) || (EOVERFLOW != EFBIG)) \
+	&& (!defined(EINVAL) || (EOVERFLOW != EINVAL))
     case EOVERFLOW: return "EOVERFLOW";
 #endif
 #ifdef EOWNERDEAD
@@ -867,7 +876,8 @@ Tcl_ErrnoMsg(
 #ifdef EOTHER
     case EOTHER: return "other error";
 #endif
-#if defined(EOVERFLOW) && (!defined(EFBIG) || (EOVERFLOW != EFBIG)) && (!defined(EINVAL) || (EOVERFLOW != EINVAL))
+#if defined(EOVERFLOW) && (!defined(EFBIG) || (EOVERFLOW != EFBIG)) \
+	&& (!defined(EINVAL) || (EOVERFLOW != EINVAL))
     case EOVERFLOW: return "value too large for defined data type";
 #endif
 #ifdef EOWNERDEAD
@@ -1067,7 +1077,10 @@ Tcl_SignalId(
 #ifdef SIGKILL
     case SIGKILL: return "SIGKILL";
 #endif
-#if defined(SIGLOST) && (!defined(SIGIOT) || (SIGLOST != SIGIOT)) && (!defined(SIGURG) || (SIGLOST != SIGURG)) && (!defined(SIGPROF) || (SIGLOST != SIGPROF)) && (!defined(SIGIO) || (SIGLOST != SIGIO))
+#if defined(SIGLOST) && (!defined(SIGIOT) || (SIGLOST != SIGIOT)) && \
+	(!defined(SIGURG) || (SIGLOST != SIGURG)) && \
+	(!defined(SIGPROF) || (SIGLOST != SIGPROF)) && \
+	(!defined(SIGIO) || (SIGLOST != SIGIO))
     case SIGLOST: return "SIGLOST";
 #endif
 #ifdef SIGPIPE
@@ -1079,7 +1092,8 @@ Tcl_SignalId(
 #ifdef SIGPROF
     case SIGPROF: return "SIGPROF";
 #endif
-#if defined(SIGPWR) && (!defined(SIGXFSZ) || (SIGPWR != SIGXFSZ)) && (!defined(SIGLOST) || (SIGPWR != SIGLOST))
+#if defined(SIGPWR) && (!defined(SIGXFSZ) || (SIGPWR != SIGXFSZ)) && \
+	(!defined(SIGLOST) || (SIGPWR != SIGLOST))
     case SIGPWR: return "SIGPWR";
 #endif
 #ifdef SIGQUIT
@@ -1201,7 +1215,10 @@ Tcl_SignalMsg(
 #ifdef SIGKILL
     case SIGKILL: return "kill signal";
 #endif
-#if defined(SIGLOST) && (!defined(SIGIOT) || (SIGLOST != SIGIOT)) && (!defined(SIGURG) || (SIGLOST != SIGURG)) && (!defined(SIGPROF) || (SIGLOST != SIGPROF)) && (!defined(SIGIO) || (SIGLOST != SIGIO))
+#if defined(SIGLOST) && (!defined(SIGIOT) || (SIGLOST != SIGIOT)) && \
+	(!defined(SIGURG) || (SIGLOST != SIGURG)) && \
+	(!defined(SIGPROF) || (SIGLOST != SIGPROF)) && \
+	(!defined(SIGIO) || (SIGLOST != SIGIO))
     case SIGLOST: return "resource lost";
 #endif
 #ifdef SIGPIPE
@@ -1213,7 +1230,8 @@ Tcl_SignalMsg(
 #ifdef SIGPROF
     case SIGPROF: return "profiling alarm";
 #endif
-#if defined(SIGPWR) && (!defined(SIGXFSZ) || (SIGPWR != SIGXFSZ)) && (!defined(SIGLOST) || (SIGPWR != SIGLOST))
+#if defined(SIGPWR) && (!defined(SIGXFSZ) || (SIGPWR != SIGXFSZ)) && \
+	(!defined(SIGLOST) || (SIGPWR != SIGLOST))
     case SIGPWR: return "power-fail restart";
 #endif
 #ifdef SIGQUIT

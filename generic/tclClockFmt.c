@@ -565,7 +565,10 @@ ClockFmtScnStorageAllocProc(
 	allocsize -= sizeof(hPtr->key);
     }
 
-    fss = (ClockFmtScnStorage *)Tcl_Alloc(allocsize);
+    fss = (ClockFmtScnStorage *)Tcl_AttemptAlloc(allocsize);
+    if (!fss) {
+	return NULL;
+    }
 
     /* initialize */
     memset(fss, 0, sizeof(*fss));
@@ -841,7 +844,7 @@ FindOrCreateFmtScnStorage(
     }
 
     /* get or create entry (and alocate storage) */
-    hPtr = Tcl_CreateHashEntry(&FmtScnHashTable, strFmt, &isNew);
+    hPtr = Tcl_AttemptCreateHashEntry(&FmtScnHashTable, strFmt, &isNew);
     if (hPtr != NULL) {
 	fss = FmtScn4HashEntry(hPtr);
 
@@ -2300,30 +2303,30 @@ ClockGetOrParseScanFormat(
 		    tokCnt++;
 		    continue;
 		}
-	      word_tok:
+	    word_tok:
 		{
-		/* try continue with previous word token */
-		ClockScanToken *wordTok = tok - 1;
+		    /* try continue with previous word token */
+		    ClockScanToken *wordTok = tok - 1;
 
-		if (wordTok < scnTok || wordTok->map != &ScnWordTokenMap) {
-		    /* start with new word token */
-		    wordTok = tok;
-		    wordTok->tokWord.start = p;
-		    wordTok->map = &ScnWordTokenMap;
-		}
-
-		do {
-		    if (isspace(UCHAR(*p))) {
-			fss->scnSpaceCount++;
+		    if (wordTok < scnTok || wordTok->map != &ScnWordTokenMap) {
+			/* start with new word token */
+			wordTok = tok;
+			wordTok->tokWord.start = p;
+			wordTok->map = &ScnWordTokenMap;
 		    }
-		    p = Tcl_UtfNext(p);
-		} while (p < e && *p != '%');
-		wordTok->tokWord.end = p;
 
-		if (wordTok == tok) {
-		    AllocTokenInChain(tok, scnTok, fss->scnTokC, ClockScanToken *);
-		    tokCnt++;
-		}
+		    do {
+			if (isspace(UCHAR(*p))) {
+			    fss->scnSpaceCount++;
+			}
+			p = Tcl_UtfNext(p);
+		    } while (p < e && *p != '%');
+		    wordTok->tokWord.end = p;
+
+		    if (wordTok == tok) {
+			AllocTokenInChain(tok, scnTok, fss->scnTokC, ClockScanToken *);
+			tokCnt++;
+		    }
 		}
 		break;
 	    }
@@ -3343,8 +3346,7 @@ ClockGetOrParseFmtFormat(
 		continue;
 	    }
 	    default:
-	      word_tok:
-		{
+	    word_tok: {
 		/* try continue with previous word token */
 		ClockFormatToken *wordTok = tok - 1;
 
@@ -3363,8 +3365,8 @@ ClockGetOrParseFmtFormat(
 		    AllocTokenInChain(tok, fmtTok, fss->fmtTokC, ClockFormatToken *);
 		    tokCnt++;
 		}
-		}
 		break;
+	    }
 	    }
 	}
 

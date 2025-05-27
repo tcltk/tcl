@@ -112,9 +112,9 @@ extern "C" {
 #   else
 #	define TCL_FORMAT_PRINTF(a,b) __attribute__ ((__format__ (__printf__, a, b)))
 #   endif
-#   define TCL_NORETURN __attribute__ ((noreturn))
-#   define TCL_NOINLINE __attribute__ ((noinline))
-#   define TCL_NORETURN1 __attribute__ ((noreturn))
+#   define TCL_NORETURN __attribute__ ((__noreturn__))
+#   define TCL_NOINLINE __attribute__ ((__noinline__))
+#   define TCL_NORETURN1 __attribute__ ((__noreturn__))
 #else
 #   define TCL_FORMAT_PRINTF(a,b)
 #   if defined(_MSC_VER)
@@ -1155,7 +1155,11 @@ struct Tcl_HashTable {
 				 * TCL_ONE_WORD_KEYS, or an integer giving the
 				 * number of ints that is the size of the
 				 * key. */
+#ifndef TCL_NO_DEPRECATED
     Tcl_HashEntry *(*findProc) (Tcl_HashTable *tablePtr, const char *key);
+#else
+    void *unUsed;
+#endif
     Tcl_HashEntry *(*createProc) (Tcl_HashTable *tablePtr, const char *key,
 	    int *newPtr);
     const Tcl_HashKeyType *typePtr;
@@ -2409,12 +2413,12 @@ EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
 static inline void
 TclBounceRefCount(
     Tcl_Obj* objPtr,
-    const char* fn,
+    const char* file,
     int line)
 {
     if (objPtr) {
 	if ((objPtr)->refCount == 0) {
-	    Tcl_DbDecrRefCount(objPtr, fn, line);
+	    Tcl_DbDecrRefCount(objPtr, file, line);
 	}
     }
 }
@@ -2509,12 +2513,15 @@ TclBounceRefCount(
  * hash tables:
  */
 
-#undef  Tcl_FindHashEntry
 #define Tcl_FindHashEntry(tablePtr, key) \
-	(*((tablePtr)->findProc))(tablePtr, (const char *)(key))
-#undef  Tcl_CreateHashEntry
-#define Tcl_CreateHashEntry(tablePtr, key, newPtr) \
+	(*((tablePtr)->createProc))(tablePtr, (const char *)(key), (int *)-1)
+#define Tcl_AttemptCreateHashEntry(tablePtr, key, newPtr) \
 	(*((tablePtr)->createProc))(tablePtr, (const char *)(key), newPtr)
+#ifdef TCL_MEM_DEBUG
+#undef Tcl_CreateHashEntry
+#define Tcl_CreateHashEntry(tablePtr, key, newPtr) \
+		Tcl_DbCreateHashEntry(tablePtr, key, newPtr, __FILE__, __LINE__)
+#endif
 
 #endif /* RC_INVOKED */
 

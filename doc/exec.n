@@ -88,7 +88,9 @@ It is used as the standard input for the first command in the pipeline.
 .TP 15
 \fB<<\0\fIvalue\fR
 .
-\fIValue\fR is passed to the first command as its standard input.
+\fIValue\fR is encoded using the system encoding, newlines
+replaced by platform-specific line ending sequences, and then
+passed to the first command as its standard input.
 .TP 15
 \fB>\0\fIfileName\fR
 .

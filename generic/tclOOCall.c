@@ -437,7 +437,7 @@ FinalizeMethodRefs(
  * ----------------------------------------------------------------------
  */
 
-int
+Tcl_Size
 TclOOGetSortedMethodList(
     Object *oPtr,		/* The object to get the method names for. */
     Object *contextObj,		/* From what context object we are inquiring.
@@ -776,9 +776,7 @@ AddPrivateMethodNames(
 
     FOREACH_HASH(namePtr, mPtr, methodsTablePtr) {
 	if (IS_PRIVATE(mPtr)) {
-	    int isNew;
-
-	    hPtr = Tcl_CreateHashEntry(namesPtr, namePtr, &isNew);
+	    hPtr = Tcl_CreateHashEntry(namesPtr, namePtr, NULL);
 	    Tcl_SetHashValue(hPtr, INT2PTR(IN_LIST));
 	}
     }
@@ -804,7 +802,7 @@ AddStandardMethodName(
 	    Tcl_SetHashValue(hPtr, INT2PTR(isWanted));
 	} else if ((PTR2INT(Tcl_GetHashValue(hPtr)) & NO_IMPLEMENTATION)
 		&& mPtr->typePtr != NULL) {
-	    int isWanted = PTR2INT(Tcl_GetHashValue(hPtr));
+	    Tcl_Size isWanted = PTR2INT(Tcl_GetHashValue(hPtr));
 
 	    isWanted &= ~NO_IMPLEMENTATION;
 	    Tcl_SetHashValue(hPtr, INT2PTR(isWanted));
@@ -1554,14 +1552,13 @@ TclOOGetStereotypeCallChain(
 	}
     } else {
 	if (hPtr == NULL) {
-	    int isNew;
 	    if (clsPtr->classChainCache == NULL) {
 		clsPtr->classChainCache = (Tcl_HashTable *)
 			Tcl_Alloc(sizeof(Tcl_HashTable));
 		Tcl_InitObjHashTable(clsPtr->classChainCache);
 	    }
 	    hPtr = Tcl_CreateHashEntry(clsPtr->classChainCache,
-		    methodNameObj, &isNew);
+		    methodNameObj, NULL);
 	}
 	callPtr->refCount++;
 	Tcl_SetHashValue(hPtr, callPtr);
