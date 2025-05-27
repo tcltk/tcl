@@ -1027,7 +1027,7 @@ static const char *
 FindTokenBegin(
     const char *p,
     const char *end,
-    ClockScanToken *tok,
+    const ClockScanToken *tok,
     int flags)
 {
     if (p < end) {
@@ -1040,10 +1040,14 @@ FindTokenBegin(
 	    if (!(flags & CLF_STRICT)) {
 		/* should match at least one digit or space */
 		while (!isdigit(UCHAR(*p)) && !isspace(UCHAR(*p)) &&
-			(p = Tcl_UtfNext(p)) < end) {}
+			(p = Tcl_UtfNext(p)) < end) {
+		    // Empty
+		}
 	    } else {
 		/* should match at least one digit */
-		while (!isdigit(UCHAR(*p)) && (p = Tcl_UtfNext(p)) < end) {}
+		while (!isdigit(UCHAR(*p)) && (p = Tcl_UtfNext(p)) < end) {
+		    // Empty
+		}
 	    }
 	    return p;
 
@@ -1052,19 +1056,25 @@ FindTokenBegin(
 	    goto findChar;
 
 	case CTOKT_SPACE:
-	    while (!isspace(UCHAR(*p)) && (p = Tcl_UtfNext(p)) < end) {}
+	    while (!isspace(UCHAR(*p)) && (p = Tcl_UtfNext(p)) < end) {
+		// Empty
+	    }
 	    return p;
 
 	case CTOKT_CHAR:
 	    c = *((char *)tok->map->data);
-findChar:
+	findChar:
 	    if (!(flags & CLF_STRICT)) {
 		/* should match the char or space */
 		while (*p != c && !isspace(UCHAR(*p)) &&
-			(p = Tcl_UtfNext(p)) < end) {}
+			(p = Tcl_UtfNext(p)) < end) {
+		    // Empty
+		}
 	    } else {
 		/* should match the char */
-		while (*p != c && (p = Tcl_UtfNext(p)) < end) {}
+		while (*p != c && (p = Tcl_UtfNext(p)) < end) {
+		    // Empty
+		}
 	    }
 	    return p;
 	}
@@ -1092,7 +1102,7 @@ static void
 DetermineGreedySearchLen(
     ClockFmtScnCmdArgs *opts,
     DateInfo *info,
-    ClockScanToken *tok,
+    const ClockScanToken *tok,
     int *minLenPtr,
     int *maxLenPtr)
 {
@@ -1144,7 +1154,7 @@ DetermineGreedySearchLen(
     /* try to get max length more precise for greedy match,
      * check the next ahead token available there */
     if (minLen < maxLen && tok->lookAhTok) {
-	ClockScanToken *laTok = tok + tok->lookAhTok + 1;
+	const ClockScanToken *laTok = tok + tok->lookAhTok + 1;
 
 	p = yyInput + maxLen;
 	/* regards all possible spaces here (because they are optional) */
@@ -1158,7 +1168,7 @@ DetermineGreedySearchLen(
 	    /* try to find laTok between [lookAhMin, lookAhMax] */
 	    while (minLen < maxLen) {
 		const char *f = FindTokenBegin(p, end, laTok,
-				    TCL_CLOCK_FULL_COMPAT ? opts->flags : CLF_STRICT);
+			TCL_CLOCK_FULL_COMPAT ? opts->flags : CLF_STRICT);
 		/* if found (not below lookAhMax) */
 		if (f < end) {
 		    break;
@@ -1494,7 +1504,7 @@ StaticListSearch(
 
 static inline const char *
 FindWordEnd(
-    ClockScanToken *tok,
+    const ClockScanToken *tok,
     const char *p,
     const char *end)
 {
@@ -1519,7 +1529,7 @@ static int
 ClockScnToken_Month_Proc(
     ClockFmtScnCmdArgs *opts,
     DateInfo *info,
-    ClockScanToken *tok)
+    const ClockScanToken *tok)
 {
 #if 0
 /* currently unused, test purposes only */
@@ -1569,7 +1579,7 @@ static int
 ClockScnToken_DayOfWeek_Proc(
     ClockFmtScnCmdArgs *opts,
     DateInfo *info,
-    ClockScanToken *tok)
+    const ClockScanToken *tok)
 {
     static int dowKeys[] = {MCLIT_DAYS_OF_WEEK_ABBREV, MCLIT_DAYS_OF_WEEK_FULL, 0};
 
@@ -1643,7 +1653,7 @@ static int
 ClockScnToken_amPmInd_Proc(
     ClockFmtScnCmdArgs *opts,
     DateInfo *info,
-    ClockScanToken *tok)
+    const ClockScanToken *tok)
 {
     int ret, val;
     int minLen, maxLen;
@@ -1676,7 +1686,7 @@ static int
 ClockScnToken_LocaleERA_Proc(
     ClockFmtScnCmdArgs *opts,
     DateInfo *info,
-    ClockScanToken *tok)
+    const ClockScanToken *tok)
 {
     ClockClientData *dataPtr = opts->dataPtr;
 
@@ -1715,7 +1725,7 @@ static int
 ClockScnToken_LocaleListMatcher_Proc(
     ClockFmtScnCmdArgs *opts,
     DateInfo *info,
-    ClockScanToken *tok)
+    const ClockScanToken *tok)
 {
     int ret, val;
     int minLen, maxLen;
@@ -1746,7 +1756,7 @@ static int
 ClockScnToken_JDN_Proc(
     ClockFmtScnCmdArgs *opts,
     DateInfo *info,
-    ClockScanToken *tok)
+    const ClockScanToken *tok)
 {
     int minLen, maxLen;
     const char *p = yyInput, *end, *s;
@@ -1817,7 +1827,7 @@ static int
 ClockScnToken_TimeZone_Proc(
     ClockFmtScnCmdArgs *opts,
     DateInfo *info,
-    ClockScanToken *tok)
+    const ClockScanToken *tok)
 {
     int minLen, maxLen;
     int len = 0;
@@ -1909,7 +1919,7 @@ static int
 ClockScnToken_StarDate_Proc(
     ClockFmtScnCmdArgs *opts,
     DateInfo *info,
-    ClockScanToken *tok)
+    const ClockScanToken *tok)
 {
     int minLen, maxLen;
     const char *p = yyInput, *end, *s;
@@ -2304,29 +2314,27 @@ ClockGetOrParseScanFormat(
 		    continue;
 		}
 	    word_tok:
-		{
-		    /* try continue with previous word token */
-		    ClockScanToken *wordTok = tok - 1;
+		/* try continue with previous word token */
+		ClockScanToken *wordTok = tok - 1;
 
-		    if (wordTok < scnTok || wordTok->map != &ScnWordTokenMap) {
-			/* start with new word token */
-			wordTok = tok;
-			wordTok->tokWord.start = p;
-			wordTok->map = &ScnWordTokenMap;
+		if (wordTok < scnTok || wordTok->map != &ScnWordTokenMap) {
+		    /* start with new word token */
+		    wordTok = tok;
+		    wordTok->tokWord.start = p;
+		    wordTok->map = &ScnWordTokenMap;
+		}
+
+		do {
+		    if (isspace(UCHAR(*p))) {
+			fss->scnSpaceCount++;
 		    }
+		    p = Tcl_UtfNext(p);
+		} while (p < e && *p != '%');
+		wordTok->tokWord.end = p;
 
-		    do {
-			if (isspace(UCHAR(*p))) {
-			    fss->scnSpaceCount++;
-			}
-			p = Tcl_UtfNext(p);
-		    } while (p < e && *p != '%');
-		    wordTok->tokWord.end = p;
-
-		    if (wordTok == tok) {
-			AllocTokenInChain(tok, scnTok, fss->scnTokC, ClockScanToken *);
-			tokCnt++;
-		    }
+		if (wordTok == tok) {
+		    AllocTokenInChain(tok, scnTok, fss->scnTokC, ClockScanToken *);
+		    tokCnt++;
 		}
 		break;
 	    }
@@ -2376,8 +2384,8 @@ ClockScan(
     ClockFmtScnCmdArgs *opts)	/* Command options */
 {
     ClockClientData *dataPtr = opts->dataPtr;
-    ClockFmtScnStorage *fss;
-    ClockScanToken *tok;
+    const ClockFmtScnStorage *fss;
+    const ClockScanToken *tok;
     const ClockScanTokenMap *map;
     const char *p, *x, *end;
     unsigned short flags = 0;
@@ -2557,6 +2565,8 @@ ClockScan(
 	    }
 	    p++;
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
     /* check end was reached */
