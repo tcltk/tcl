@@ -7170,7 +7170,6 @@ TEBCresume(
 		    &OBJ_AT_DEPTH(numArgs - 1));
 	    break;
 	default:
-	    Tcl_Panic("Should not happen!");
 	    TCL_UNREACHABLE();
 	}
 
@@ -7312,7 +7311,6 @@ TEBCresume(
 	    }
 	    break;
 	default:
-	    Tcl_Panic("Should not happen!");
 	    TCL_UNREACHABLE();
 	}
 

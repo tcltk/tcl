@@ -1494,12 +1494,18 @@ IsCompactibleCompileEnv(
 	case INST_EVAL_STK:
 	case INST_EXPR_STK:
 	case INST_YIELD:
+	case INST_YIELD_TO_INVOKE:
 	    return 0;
 	    /* Upvars */
 	case INST_UPVAR:
 	case INST_NSUPVAR:
 	case INST_VARIABLE:
 	    return 0;
+	    /* TclOO::next is NOT a problem: puts stack frame out of way.
+	     * There's a way to do it, but it's beneath the threshold of
+	     * likelihood. */
+	case INST_TCLOO_NEXT:
+	case INST_TCLOO_NEXT_CLASS:
 	default:
 	    size = tclInstructionTable[*pc].numBytes;
 	    assert (size > 0);
