@@ -2864,7 +2864,12 @@ TclCompileTryCmd(
 	    handlers = &staticHandler;
 	}
 
-	for (; handlerIdx < numHandlers ; handlerIdx++) {
+	/* Bug [c587295271]. Initialize so they can be released on exit. */
+	for (handlerIdx = 0; handlerIdx < numHandlers ; handlerIdx++) {
+	    handlers[handlerIdx].matchClause = NULL;
+	}
+
+	for (handlerIdx = 0; handlerIdx < numHandlers ; handlerIdx++) {
 	    Tcl_Obj *tmpObj, **objv;
 	    Tcl_Size objc;
 
@@ -3033,11 +3038,11 @@ TclCompileTryCmd(
      */
 
   failedToCompile:
-    while (handlerIdx-- > 0) {
-	if (handlers[handlerIdx].matchClause) {
-	    TclDecrRefCount(handlers[handlerIdx].matchClause);
-	}
-    }
+      for (handlerIdx = 0; handlerIdx < numHandlers; ++handlerIdx) {
+	  if (handlers[handlerIdx].matchClause) {
+	      TclDecrRefCount(handlers[handlerIdx].matchClause);
+	  }
+      }
     if (handlers != &staticHandler) {
 	TclStackFree(interp, handlers);
     }
