@@ -63,6 +63,62 @@ static ProcessGlobalValue defaultLibraryDir =
 	{0, 0, NULL, NULL, InitializeDefaultLibraryDir, NULL, NULL};
 static ProcessGlobalValue sourceLibraryDir =
 	{0, 0, NULL, NULL, InitializeSourceLibraryDir, NULL, NULL};
+
+
+/*
+ * TclpGetWindowsVersionOnce --
+ *
+ *	Callback to retrieve Windows version information. To be invoked only
+ *	through InitOnceExecuteOnce for thread safety.
+ *
+ * Results:
+ *	None.
+ */
+static BOOL CALLBACK TclpGetWindowsVersionOnce(
+    TCL_UNUSED(PINIT_ONCE),
+    TCL_UNUSED(PVOID),
+    PVOID *lpContext)
+{
+    typedef int(__stdcall getVersionProc)(void *);
+    static OSVERSIONINFOW osInfo;
+
+    /*
+     * GetVersionExW will not return the "real" Windows version so use
+     * RtlGetVersion if available and falling back.
+     */
+    HMODULE handle = GetModuleHandleW(L"NTDLL");
+    getVersionProc *getVersion =
+	(getVersionProc *)(void *)GetProcAddress(handle, "RtlGetVersion");
+
+    osInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOW);
+    if (getVersion == NULL || getVersion(&osInfo)) {
+	if (!GetVersionExW(&osInfo)) {
+	    /* Should never happen but ...*/
+	    return FALSE;
+	}
+    }
+    *lpContext = (LPVOID)&osInfo;
+    return TRUE;
+}
+
+/*
+ * TclpGetWindowsVersion --
+ *
+ *	Returns a pointer to the OSVERSIONINFOW structure containing the
+ *	version information for the current Windows version.
+ *
+ * Results:
+ *	Pointer to OSVERSIONINFOW structure.
+ */
+static const OSVERSIONINFOW *TclpGetWindowsVersion(void)
+{
+    static INIT_ONCE osInfoOnce = INIT_ONCE_STATIC_INIT;
+    OSVERSIONINFOW *osInfoPtr = NULL;
+    BOOL result = InitOnceExecuteOnce(
+	&osInfoOnce, TclpGetWindowsVersionOnce, NULL, (LPVOID *)&osInfoPtr);
+    return result ? osInfoPtr : NULL;
+}
+
 
 /*
  *---------------------------------------------------------------------------
@@ -401,7 +457,9 @@ const char *
 Tcl_GetEncodingNameFromEnvironment(
     Tcl_DString *bufPtr)
 {
-    UINT acp = GetACP();
+    const OSVERSIONINFOW *osInfoPtr = TclpGetWindowsVersion();
+    UINT acp = (!osInfoPtr || osInfoPtr->dwBuildNumber < 18362)
+	    ? GetACP() : CP_UTF8;
 
     Tcl_DStringInit(bufPtr);
     if (acp == CP_UTF8) {
@@ -409,7 +467,7 @@ Tcl_GetEncodingNameFromEnvironment(
     } else {
 	Tcl_DStringSetLength(bufPtr, 2 + TCL_INTEGER_SPACE);
 	snprintf(Tcl_DStringValue(bufPtr), 2 + TCL_INTEGER_SPACE, "cp%d",
-		GetACP());
+		acp);
 	Tcl_DStringSetLength(bufPtr, strlen(Tcl_DStringValue(bufPtr)));
     }
     return Tcl_DStringValue(bufPtr);

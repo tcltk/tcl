@@ -863,7 +863,8 @@ CompileRegexp(
 {
     TclRegexp *regexpPtr;
     const Tcl_UniChar *uniString;
-    int numChars, status, i, exact;
+    int status, i, exact;
+    Tcl_Size numChars;
     Tcl_DString stringBuf;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 

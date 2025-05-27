@@ -5,7 +5,7 @@
 
 AC_INIT([tcl],[9.1])
 AC_CONFIG_SRCDIR([../generic/tcl.h])
-AC_PREREQ([2.69])
+AC_PREREQ([2.72])
 
 # The following define is needed when building with Cygwin since newer
 # versions of autoconf incorrectly set SHELL to /bin/bash instead of

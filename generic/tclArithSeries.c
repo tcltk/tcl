@@ -168,7 +168,7 @@ ArithSeriesEndDbl(
     if (!dblRepPtr->base.len) {
 	return dblRepPtr->start;
     }
-    d = dblRepPtr->start + ((dblRepPtr->base.len-1) * dblRepPtr->step);
+    d = dblRepPtr->start + ((double)(dblRepPtr->base.len-1) * dblRepPtr->step);
     return ArithRound(d, dblRepPtr->precision);
 }
 
@@ -191,7 +191,7 @@ ArithSeriesIndexDbl(
     assert(arithSeriesRepPtr->isDouble);
     double d = dblRepPtr->start;
     if (index) {
-	d += (index * dblRepPtr->step);
+	d += ((double)index * dblRepPtr->step);
     }
 
     return ArithRound(d, dblRepPtr->precision);
@@ -234,7 +234,7 @@ ObjPrecision(
 
 	if (strchr(str, 'e') == NULL && strchr(str, 'E') == NULL) {
 	    str = strchr(str, '.');
-	    return (str ? strlen(str + 1) : 0);
+	    return (str ? (unsigned)strlen(str + 1) : 0);
 	}
 	/* don't calculate precision for e-notation */
     }
@@ -712,13 +712,13 @@ TclNewArithSeriesObj(
 	    // Compute precision based on given command argument values
 	    precision = maxObjPrecision(startObj, NULL, stepObj);
 
-	    dend = dstart + (dstep * (len-1));
+	    dend = dstart + (dstep * (double)(len-1));
 	    // Make computed end value match argument(s) precision
 	    dend = ArithRound(dend, precision);
 	    end = dend;
 	} else {
 	    end = start + (step * (len - 1));
-	    dend = end;
+	    dend = (double)end;
 	}
     }
 
@@ -728,7 +728,7 @@ TclNewArithSeriesObj(
      * (0x0ffffffffffffffa instead of 0x7fffffffffffffff by 64bit)
      */
     if (len > TCL_SIZE_MAX) {
-      exceeded:
+    exceeded:
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"max length of a Tcl list exceeded", TCL_AUTO_LENGTH));
 	Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
@@ -738,7 +738,7 @@ TclNewArithSeriesObj(
     if (useDoubles) {
 	/* ensure we'll not get NaN somewhere in the arith-series,
 	 * so simply check the end of it and behave like [expr {Inf - Inf}] */
-	double d = dstart + (len - 1) * dstep;
+	double d = dstart + (double)(len - 1) * dstep;
 	if (isnan(d)) {
 	    const char *s = "domain error: argument not in valid range";
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
@@ -1147,11 +1147,11 @@ UpdateStringOfArithSeries(
 {
     ArithSeries *arithSeriesRepPtr = (ArithSeries *)
 	    arithSeriesObjPtr->internalRep.twoPtrValue.ptr1;
-    char *p;
+    char *p, *srep;
     Tcl_Size i, bytlen = 0;
 
-    if (!arithSeriesRepPtr->len) {
-	TclInitEmptyStringRep(arithSeriesObjPtr);
+    if (arithSeriesRepPtr->len == 0) {
+	(void)Tcl_InitStringRep(arithSeriesObjPtr, NULL, 0);
 	return;
     }
 
@@ -1169,15 +1169,17 @@ UpdateStringOfArithSeries(
 	char tmp[TCL_DOUBLE_SPACE + 2];
 	for (i = 0; i < arithSeriesRepPtr->len; i++) {
 	    double d = ArithSeriesIndexDbl(arithSeriesRepPtr, i);
+	    Tcl_Size elen;
 
 	    tmp[0] = '\0';
 	    Tcl_PrintDouble(NULL,d,tmp);
-	    bytlen += strlen(tmp);
-	    if (bytlen > TCL_SIZE_MAX) {
+	    elen = strlen(tmp);
+	    if (bytlen > TCL_SIZE_MAX - elen) {
 		/* overflow, todo: check we could use some representation instead of the panic
 		 * to signal it is too large for string representation, because too heavy */
 		Tcl_Panic("UpdateStringOfArithSeries: too large to represent");
 	    }
+	    bytlen += elen;
 	}
     }
     bytlen += arithSeriesRepPtr->len; // Space for each separator
@@ -1186,7 +1188,9 @@ UpdateStringOfArithSeries(
      * Pass 2: generate the string repr.
      */
 
-    p = Tcl_InitStringRep(arithSeriesObjPtr, NULL, bytlen);
+    p = srep = Tcl_InitStringRep(arithSeriesObjPtr, NULL, bytlen);
+    TclOOM(p, bytlen+1);
+
     if (!arithSeriesRepPtr->isDouble) {
 	for (i = 0; i < arithSeriesRepPtr->len; i++) {
 	    Tcl_WideInt d = ArithSeriesIndexInt(arithSeriesRepPtr, i);
@@ -1205,8 +1209,7 @@ UpdateStringOfArithSeries(
 	    *p++ = ' ';
 	}
     }
-    *(--p) = '\0';
-    arithSeriesObjPtr->length = p - arithSeriesObjPtr->bytes;
+    (void) Tcl_InitStringRep(arithSeriesObjPtr, NULL, (--p - srep));
 }
 
 /*

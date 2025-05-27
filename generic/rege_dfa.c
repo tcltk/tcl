@@ -414,14 +414,14 @@ freeDFA(
 /*
  - hash - construct a hash code for a bitvector
  * There are probably better ways, but they're more expensive.
- ^ static unsigned hash(unsigned *, int);
+ ^ static unsigned hash(unsigned *, size_t);
  */
 static unsigned
 hash(
     unsigned *const uv,
-    int n)
+    size_t n)
 {
-    int i;
+    size_t i;
     unsigned h;
 
     h = 0;

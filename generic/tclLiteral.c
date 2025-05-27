@@ -29,9 +29,9 @@
  */
 
 static size_t		AddLocalLiteralEntry(CompileEnv *envPtr,
-			    Tcl_Obj *objPtr, int localHash);
+			    Tcl_Obj *objPtr, size_t localHash);
 static void		ExpandLocalLiteralArray(CompileEnv *envPtr);
-static size_t		HashString(const char *string, size_t length);
+static size_t		HashString(const char *string, Tcl_Size length);
 #ifdef TCL_COMPILE_DEBUG
 static LiteralEntry *	LookupLiteralEntry(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr);
@@ -250,8 +250,9 @@ TclCreateLiteral(
     if ((flags & LITERAL_ON_HEAP)) {
 	objPtr->bytes = (char *) bytes;
 	objPtr->length = length;
-    } else {
-	TclInitStringRep(objPtr, bytes, length);
+    } else if (!TclAttemptInitStringRep(objPtr, bytes, length)) {
+	Tcl_DecrRefCount(objPtr);
+	return NULL;
     }
 
     /* Should the new literal be shared globally? */
@@ -439,7 +440,7 @@ TclRegisterLiteral(
 	    if (objIndex > INT_MAX) {
 		Tcl_Panic("Literal table index too large. Cannot be handled by TclEmitPush");
 	    }
-	    return objIndex;
+	    return (int)objIndex;
 	}
     }
 
@@ -481,7 +482,7 @@ TclRegisterLiteral(
 	Tcl_Panic(
 	    "Literal table index too large. Cannot be handled by TclEmitPush");
     }
-    return objIndex;
+    return (int)objIndex;
 }
 
 #ifdef TCL_COMPILE_DEBUG
@@ -506,7 +507,7 @@ static LiteralEntry *
 LookupLiteralEntry(
     Tcl_Interp *interp,		/* Interpreter for which objPtr was created to
 				 * hold a literal. */
-    Tcl_Obj *objPtr)	/* Points to a Tcl object holding a literal
+    Tcl_Obj *objPtr)		/* Points to a Tcl object holding a literal
 				 * that was previously created by a call to
 				 * TclRegisterLiteral. */
 {
@@ -552,7 +553,7 @@ void
 TclHideLiteral(
     Tcl_Interp *interp,		/* Interpreter for which objPtr was created to
 				 * hold a literal. */
-    CompileEnv *envPtr,/* Points to CompileEnv whose literal array
+    CompileEnv *envPtr,		/* Points to CompileEnv whose literal array
 				 * contains the entry being hidden. */
     int index)			/* The index of the entry in the literal
 				 * array. */
@@ -616,7 +617,7 @@ TclHideLiteral(
 
 int
 TclAddLiteralObj(
-    CompileEnv *envPtr,/* Points to CompileEnv in whose literal array
+    CompileEnv *envPtr,		/* Points to CompileEnv in whose literal array
 				 * the object is to be inserted. */
     Tcl_Obj *objPtr,		/* The object to insert into the array. */
     LiteralEntry **litPtrPtr)	/* The location where the pointer to the new
@@ -646,7 +647,49 @@ TclAddLiteralObj(
 	*litPtrPtr = lPtr;
     }
 
-    return objIndex;
+    return (int)objIndex;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclRegisterLiteralObj --
+ *
+ *	Find, or if necessary create, an object in a CompileEnv literal array
+ *	that has a string representation matching the argument object.
+ *
+ * Results:
+ *	The index in the CompileEnv's literal array that references a shared
+ *	literal matching the string. The object is created if necessary.
+ *
+ * Side effects:
+ *	To maximize sharing, we look up the string in the interpreter's global
+ *	literal table. If not found, we create a new shared literal in the
+ *	global table. We then add a reference to the shared literal in the
+ *	CompileEnv's literal array.
+ *
+ *	The reference count of the argument object is bounced, so that the
+ *	normal case where the object is zero ref count (as it is really acting
+ *	as a local worker buffer) doesn't need explicit refcount handling by
+ *	the caller.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+TclRegisterLiteralObj(
+    CompileEnv *envPtr,		/* Points to CompileEnv in whose literal array
+				 * the object is to be inserted. */
+    Tcl_Obj *objPtr,		/* The object to insert into the array. */
+    int flags)			/* If LITERAL_CMD_NAME then the literal should
+				 * not be shared across namespaces.
+				 * LITERAL_ON_HEAP is unsupported/ignored. */
+{
+    Tcl_Size length;
+    const char *bytes = Tcl_GetStringFromObj(objPtr, &length);
+    int num = TclRegisterLiteral(envPtr, bytes, length,
+	    flags & ~LITERAL_ON_HEAP);
+    Tcl_BounceRefCount(objPtr);
+    return num;
 }
 
 /*
@@ -669,10 +712,10 @@ TclAddLiteralObj(
 
 static size_t
 AddLocalLiteralEntry(
-    CompileEnv *envPtr,/* Points to CompileEnv in whose literal array
+    CompileEnv *envPtr,		/* Points to CompileEnv in whose literal array
 				 * the object is to be inserted. */
     Tcl_Obj *objPtr,		/* The literal to add to the CompileEnv. */
-    int localHash)		/* Hash value for the literal's string. */
+    size_t localHash)		/* Hash value for the literal's string. */
 {
     LiteralTable *localTablePtr = &envPtr->localLitTable;
     LiteralEntry *localPtr;
@@ -748,7 +791,7 @@ AddLocalLiteralEntry(
 
 static void
 ExpandLocalLiteralArray(
-    CompileEnv *envPtr)/* Points to the CompileEnv whose object array
+    CompileEnv *envPtr)		/* Points to the CompileEnv whose object array
 				 * must be enlarged. */
 {
     /*
@@ -830,7 +873,7 @@ void
 TclReleaseLiteral(
     Tcl_Interp *interp,		/* Interpreter for which objPtr was created to
 				 * hold a literal. */
-    Tcl_Obj *objPtr)	/* Points to a literal object that was
+    Tcl_Obj *objPtr)		/* Points to a literal object that was
 				 * previously created by a call to
 				 * TclRegisterLiteral. */
 {
@@ -911,7 +954,7 @@ TclReleaseLiteral(
 static size_t
 HashString(
     const char *string,		/* String for which to compute hash value. */
-    size_t length)		/* Number of bytes in the string. */
+    Tcl_Size length)		/* Number of bytes in the string. */
 {
     size_t result = 0;
 

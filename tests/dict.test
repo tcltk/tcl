@@ -1667,6 +1667,13 @@ test dict-22.23 {dict with: compiled} {
 	return $a,$b
     }}
 } 1,2
+test dict-22.24 {dict with: unicode space body} -setup {
+    proc \u3000 {} {return IDEOGRAPHICSPACE}
+} -body {
+    apply [list d [list dict with d \u3000]] [dict create a 0]
+} -cleanup {
+    rename \u3000 {}
+} -result {IDEOGRAPHICSPACE}
 
 proc linenumber {} {
     dict get [info frame -1] line

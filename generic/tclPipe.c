@@ -329,7 +329,7 @@ TclCleanupChildren(
 	 */
 
 	if (interp != NULL) {
-	    int count;
+	    Tcl_Size count;
 	    Tcl_Obj *objPtr;
 
 	    Tcl_Seek(errorChan, 0, SEEK_SET);

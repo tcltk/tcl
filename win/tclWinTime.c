@@ -260,7 +260,7 @@ TclpGetWideClicks(void)
 
 	if (QueryPerformanceFrequency(&perfCounterFreq)) {
 	    wideClick.perfCounter = 1;
-	    wideClick.microsecsScale = 1000000.0 / perfCounterFreq.QuadPart;
+	    wideClick.microsecsScale = 1000000.0 / (double)perfCounterFreq.QuadPart;
 	} else {
 	    /* fallback using microseconds */
 	    wideClick.perfCounter = 0;
@@ -384,7 +384,7 @@ Tcl_GetTime(
 
     if (IsTimeNative() && (usecSincePosixEpoch = NativeGetMicroseconds())) {
 	timePtr->sec = usecSincePosixEpoch / 1000000;
-	timePtr->usec = usecSincePosixEpoch % 1000000;
+	timePtr->usec = (long)(usecSincePosixEpoch % 1000000);
     } else {
 	GetTime(timePtr);
     }
@@ -687,7 +687,7 @@ NativeGetTime(
     usecSincePosixEpoch = NativeGetMicroseconds();
     if (usecSincePosixEpoch) {
 	timePtr->sec = usecSincePosixEpoch / 1000000;
-	timePtr->usec = usecSincePosixEpoch % 1000000;
+	timePtr->usec = (long)(usecSincePosixEpoch % 1000000);
     } else {
 	/*
 	 * High resolution timer is not available. Just use ftime.

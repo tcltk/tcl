@@ -10018,7 +10018,7 @@ test io-bug-73bb43fb-4 {
       fconfigure stdout -translation binary
       puts -nonewline "START-"; flush stdout
       foreach {ch} [split [encoding convertto utf-8 \u30B3] ""] {; # 3 bytes E3 82 B3
-        puts -nonewline $ch; flush stdout; if {$ch ne "\xB3"} {after 100}
+	puts -nonewline $ch; flush stdout; if {$ch ne "\xB3"} {after 100}
       }
       puts -nonewline "-DONE"; flush stdout
     }]]

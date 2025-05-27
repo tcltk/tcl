@@ -332,6 +332,7 @@ GENERIC_OBJS = \
 	tclLink.$(OBJEXT) \
 	tclLiteral.$(OBJEXT) \
 	tclListObj.$(OBJEXT) \
+	tclListTypes.$(OBJEXT) \
 	tclLoad.$(OBJEXT) \
 	tclMainW.$(OBJEXT) \
 	tclMain.$(OBJEXT) \

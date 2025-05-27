@@ -289,6 +289,7 @@ COREOBJS = \
 	$(TMP_DIR)\tclIORTrans.obj \
 	$(TMP_DIR)\tclLink.obj \
 	$(TMP_DIR)\tclListObj.obj \
+	$(TMP_DIR)\tclListTypes.obj \
 	$(TMP_DIR)\tclLiteral.obj \
 	$(TMP_DIR)\tclLoad.obj \
 	$(TMP_DIR)\tclMainW.obj \

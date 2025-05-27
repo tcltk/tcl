@@ -1038,9 +1038,6 @@ declare 338 {
 declare 339 {
     Tcl_Size Tcl_WriteObj(Tcl_Channel chan, Tcl_Obj *objPtr)
 }
-declare 340 {
-    char *Tcl_GetString(Tcl_Obj *objPtr)
-}
 declare 343 {
     void Tcl_AlertNotifier(void *clientData)
 }
@@ -1287,6 +1284,14 @@ declare 417 {
 }
 declare 418 {
     int Tcl_IsChannelExisting(const char *channelName)
+}
+declare 421 {
+    Tcl_HashEntry *Tcl_DbCreateHashEntry(Tcl_HashTable *tablePtr,
+	    const void *key, int *newPtr, const char *file, int line)
+}
+declare 422 {
+    Tcl_HashEntry *Tcl_CreateHashEntry(Tcl_HashTable *tablePtr,
+	    const void *key, int *newPtr)
 }
 declare 423 {
     void Tcl_InitCustomHashTable(Tcl_HashTable *tablePtr, int keyType,
@@ -1689,7 +1694,7 @@ declare 531 {
     void Tcl_LimitTypeReset(Tcl_Interp *interp, int type)
 }
 declare 532 {
-    int Tcl_LimitGetCommands(Tcl_Interp *interp)
+    Tcl_Size Tcl_LimitGetCommands(Tcl_Interp *interp)
 }
 declare 533 {
     void Tcl_LimitGetTime(Tcl_Interp *interp, Tcl_Time *timeLimitPtr)
@@ -2360,7 +2365,7 @@ declare 689 {
     void Tcl_SetWideUIntObj(Tcl_Obj *objPtr, Tcl_WideUInt uwideValue)
 }
 
-# ----- BASELINE -- FOR -- 8.7.0 / 9.0.0 ----- #
+# ----- BASELINE -- FOR -- 9.0.0 ----- #
 
 declare 690 {
     int Tcl_IsEmpty(Tcl_Obj *obj)

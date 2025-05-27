@@ -63,6 +63,7 @@ enum DateInfoFlags {
 
     CLF_RELCONV = 1 << 17,
     CLF_ORDINALMONTH = 1 << 18,
+    CLF_TREK = 1 << 19,
 
     /* On demand (lazy) assemble flags */
 

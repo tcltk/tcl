@@ -552,7 +552,7 @@ Tcl_UtfToChar16(
 		&& ((src[1] & 0xC0) == 0x80) && ((src[2] & 0xC0) == 0x80)
 		&& (((((byte - 0x10) << 2) & 0xFC) | 0xD800) == (*chPtr & 0xFCFC))
 		&& ((src[1] & 0xF0) == (((*chPtr << 4) & 0x30) | 0x80))) {
-	    *chPtr = ((src[1] & 0x0F) << 6) + (src[2] & 0x3F) + 0xDC00;
+	    *chPtr = (unsigned short)(((src[1] & 0x0F) << 6) + (src[2] & 0x3F) + 0xDC00);
 	    return 3;
 	}
 	if ((unsigned)(byte-0x80) < (unsigned)0x20) {
@@ -604,7 +604,7 @@ Tcl_UtfToChar16(
 		    | ((src[2] & 0x3F) >> 4)) - 0x40;
 	    if (high < 0x400) {
 		/* produce high surrogate, advance source pointer */
-		*chPtr = 0xD800 + high;
+		*chPtr = (unsigned short)(0xD800 + high);
 		return 1;
 	    }
 	    /* out of range, < 0x10000 or > 0x10FFFF */
@@ -1646,8 +1646,8 @@ TclUtfNcasecmp(
 	    } else if ((ch2 & 0xFC00) == 0xD800) {
 		return -ch2;
 	    }
-	    ch1 = Tcl_UniCharToLower(ch1);
-	    ch2 = Tcl_UniCharToLower(ch2);
+	    ch1 = (unsigned short)Tcl_UniCharToLower(ch1);
+	    ch2 = (unsigned short)Tcl_UniCharToLower(ch2);
 	    if (ch1 != ch2) {
 		return (ch1 - ch2);
 	    }
