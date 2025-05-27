@@ -678,16 +678,16 @@ FormatInstruction(
 	case OPERAND_CLK1:
 	    opnd = TclGetUInt1AtPtr(pc+numBytes); numBytes++;
 	    switch (opnd) {
-	    case 0:
+	    case CLOCK_READ_CLICKS:
 		Tcl_AppendPrintfToObj(bufferObj, "clicks " );
 		break;
-	    case 1:
+	    case CLOCK_READ_MICROS:
 		Tcl_AppendPrintfToObj(bufferObj, "micros " );
 		break;
-	    case 2:
+	    case CLOCK_READ_MILLIS:
 		Tcl_AppendPrintfToObj(bufferObj, "millis " );
 		break;
-	    case 3:
+	    case CLOCK_READ_SECS:
 		Tcl_AppendPrintfToObj(bufferObj, "secs " );
 		break;
 	    default:
@@ -1658,7 +1658,7 @@ Tcl_DisassembleObjCmd(
 	codeObjPtr = procPtr->bodyPtr;
 	break;
     default:
-	CLANG_ASSERT(0);
+	TCL_UNREACHABLE();
     }
 
     /*

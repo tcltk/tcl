@@ -3457,20 +3457,18 @@ DictFilterCmd(
 	    TclDecrRefCount(resultObj);
 	}
 	return result;
-
-    abnormalResult:
-	Tcl_DictObjDone(&search);
-	TclDecrRefCount(keyObj);
-	TclDecrRefCount(valueObj);
-	TclDecrRefCount(keyVarObj);
-	TclDecrRefCount(valueVarObj);
-	TclDecrRefCount(scriptObj);
-	TclDecrRefCount(resultObj);
-	return result;
     }
-    Tcl_Panic("unexpected fallthrough");
-    /* Control never reaches this point. */
-    return TCL_ERROR;
+    TCL_UNREACHABLE();
+
+  abnormalResult:
+    Tcl_DictObjDone(&search);
+    TclDecrRefCount(keyObj);
+    TclDecrRefCount(valueObj);
+    TclDecrRefCount(keyVarObj);
+    TclDecrRefCount(valueVarObj);
+    TclDecrRefCount(scriptObj);
+    TclDecrRefCount(resultObj);
+    return result;
 }
 
 /*
