@@ -3504,6 +3504,8 @@ Tcl_LsearchObjCmd(
 	    }
 	    break;
 	}
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
 
@@ -4684,6 +4686,8 @@ Tcl_LsortObjCmd(
 	    group = 1;
 	    i++;
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
     if (nocase && (sortInfo.sortMode == SORTMODE_ASCII)) {

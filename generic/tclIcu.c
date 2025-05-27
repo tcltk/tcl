@@ -1000,6 +1000,8 @@ static int IcuParseConvertOptions(
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "Option -failindex not implemented.", TCL_INDEX_NONE));
 	    return TCL_ERROR;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
     *strictPtr = strict;
@@ -1169,6 +1171,8 @@ IcuNormalizeObjCmd(
 		return TCL_ERROR;
 	    }
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
 

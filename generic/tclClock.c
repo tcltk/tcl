@@ -1154,6 +1154,8 @@ ClockConfigureObjCmd(
 	    }
 	    break;
 	}
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
 
@@ -3159,6 +3161,8 @@ ClockClicksObjCmd(
     case CLICKS_MICROS:
 	clicks = TclpGetMicroseconds();
 	break;
+    default:
+	TCL_UNREACHABLE();
     }
 
     Tcl_SetObjResult(interp, Tcl_NewWideIntObj(clicks));
@@ -3371,6 +3375,8 @@ ClockParseFmtScnArgs(
 		}
 	    }
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
 	saw |= 1 << optionIndex;
     }
@@ -3431,8 +3437,8 @@ ClockParseFmtScnArgs(
 	    }
 
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"bad seconds \"%s\": must be now or integer",
-		TclGetString(baseObj)));
+		    "bad seconds \"%s\": must be now or integer",
+		    TclGetString(baseObj)));
 	    i = baseIdx;
 	    goto badOption;
 	}
@@ -4537,6 +4543,8 @@ ClockAddObjCmd(
 	case CLC_ADD_SECONDS:
 	    yyRelSeconds += offs;
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
 	if (unitIndex < CLC_ADD_HOURS) { /* date units only */
 	    info->flags |= CLF_RELCONV;

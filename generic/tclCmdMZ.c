@@ -211,6 +211,8 @@ Tcl_RegexpObjCmd(
 	case REGEXP_LAST:
 	    i++;
 	    goto endOfForLoop;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
 
@@ -566,6 +568,8 @@ Tcl_RegsubObjCmd(
 	case REGSUB_LAST:
 	    idx++;
 	    goto endOfForLoop;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
 
@@ -1580,6 +1584,8 @@ StringIsCmd(
 		}
 		failVarObj = objv[++i];
 		break;
+	    default:
+		TCL_UNREACHABLE();
 	    }
 	}
     }
@@ -1877,6 +1883,8 @@ StringIsCmd(
     case STR_IS_XDIGIT:
 	chcomp = UniCharIsHexDigit;
 	break;
+    default:
+	TCL_UNREACHABLE();
     }
 
     if (chcomp != NULL) {
@@ -4186,6 +4194,8 @@ Tcl_TimeRateObjCmd(
 	    break;
 	case TMRT_LAST:
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
 
@@ -4836,6 +4846,8 @@ TclNRTryObjCmd(
 	    haveHandlers = 1;
 	    i += 3;
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
     if (bodyShared) {

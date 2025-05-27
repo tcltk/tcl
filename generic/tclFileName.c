@@ -1233,6 +1233,8 @@ Tcl_GlobObjCmd(
 	case GLOB_LAST:				/* -- */
 	    i++;
 	    goto endOfForLoop;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
 

@@ -2109,6 +2109,8 @@ EncodeEventMask(
 	case EVENT_WRITE:
 	    events |= TCL_WRITABLE;
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
 	listc --;
     }
