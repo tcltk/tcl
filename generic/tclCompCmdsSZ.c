@@ -2193,7 +2193,7 @@ IssueSwitchChainedTests(
 		}
 		break;
 	    default:
-		Tcl_Panic("unknown switch mode: %d", mode);
+		TCL_UNREACHABLE();
 	    }
 
 	    /*
