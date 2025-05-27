@@ -36,12 +36,6 @@ typedef struct {
     WORD wReserved;
 } OemId;
 
-typedef struct {
-    Tcl_Encoding userEncoding;
-} ThreadSpecificData;
-
-static Tcl_ThreadDataKey dataKey;
-
 /*
  * The following arrays contain the human readable strings for the
  * processor values.
@@ -154,9 +148,9 @@ TclpGetCodePageOnce(
      *  - added bonus, RegGetValue is much more convenient to use
      */
     if (RegGetValueA(HKEY_LOCAL_MACHINE,
-        "SYSTEM\\CurrentControlSet\\Control\\Nls\\CodePage",
-        "ACP", RRF_RT_REG_SZ, NULL, codePage+2,
-        &size) != ERROR_SUCCESS) {
+	    "SYSTEM\\CurrentControlSet\\Control\\Nls\\CodePage",
+	    "ACP", RRF_RT_REG_SZ, NULL, codePage+2,
+	    &size) != ERROR_SUCCESS) {
 	/* On failure, fallback to GetACP() */
 	UINT acp = GetACP();
 	snprintf(codePage, sizeof(codePage), "cp%u", acp);
@@ -529,49 +523,6 @@ TclpSetInitialEncodings(void)
 	    Tcl_GetEncodingNameFromEnvironment(&encodingName));
     Tcl_DStringFree(&encodingName);
 }
-
-#if 0
-
-/*
- *---------------------------------------------------------------------------
- *
- * TclpGetEncodingForUser --
- *
- *    Returns the Tcl_Encoding corresponding to the user code page.
- *
- * Results:
- *    A Tcl_Encoding value or NULL if the encoding cannot be found or
- *    if Tcl does not support the encoding.
- *
- * Side effects:
- *    The encoding is cached in the thread local storage.
- *---------------------------------------------------------------------------
- */
-Tcl_Encoding
-TclpGetEncodingForUser(Tcl_Interp *interp)
-{
-    /*
-     * In keeping with Windows, the encoding will not be updated if the
-     * registry value changes so we never need to update it once
-     * successfully retrieved.
-     */
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    if (tsdPtr->userEncoding == NULL) {
-	tsdPtr->userEncoding =
-	    Tcl_GetEncoding(interp, TclpGetCodePage());
-    }
-    return tsdPtr->userEncoding;
-}
-
-void TclpReleaseEncodingForUser(void)
-{
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    if (tsdPtr->userEncoding) {
-	Tcl_FreeEncoding(tsdPtr->userEncoding);
-	tsdPtr->userEncoding = NULL;
-    }
-}
-#endif
 
 const char *
 Tcl_GetEncodingNameForUser(Tcl_DString *bufPtr)
