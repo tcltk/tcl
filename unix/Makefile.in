@@ -309,7 +309,7 @@ GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
 	tclHash.o tclHistory.o \
 	tclIcu.o tclIndexObj.o tclInterp.o tclIO.o tclIOCmd.o \
 	tclIORChan.o tclIORTrans.o tclIOGT.o tclIOSock.o tclIOUtil.o \
-	tclLink.o tclListObj.o \
+	tclLink.o tclListObj.o tclListTypes.o \
 	tclLiteral.o tclLoad.o tclMain.o tclNamesp.o tclNotify.o \
 	tclObj.o tclOptimize.o tclPanic.o tclParse.o tclPathObj.o tclPipe.o \
 	tclPkg.o tclPkgConfig.o tclPosixStr.o \
@@ -447,6 +447,7 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/tclIORTrans.c \
 	$(GENERIC_DIR)/tclLink.c \
 	$(GENERIC_DIR)/tclListObj.c \
+	$(GENERIC_DIR)/tclListTypes.c \
 	$(GENERIC_DIR)/tclLiteral.c \
 	$(GENERIC_DIR)/tclLoad.c \
 	$(GENERIC_DIR)/tclMain.c \
@@ -812,7 +813,7 @@ ${LIB_FILE}: ${STUB_LIB_FILE} ${OBJS} ${TCL_ZIP_FILE}
 	fi
 
 ${STUB_LIB_FILE}: ${STUB_LIB_OBJS}
-	@if [ "x${LIB_FILE}" = "xlibtcl${MAJOR_VERSION}.${MINOR_VERSION}.dll" ] ; then \
+	@if [ "x${LIB_FILE}" = "xcygtcl${MAJOR_VERSION}.${MINOR_VERSION}.dll" ] ; then \
 	    ( cd ${TOP_DIR}/win; ${MAKE} winextensions ); \
 	fi
 	rm -f $@
@@ -1409,6 +1410,9 @@ tclLink.o: $(GENERIC_DIR)/tclLink.c
 
 tclListObj.o: $(GENERIC_DIR)/tclListObj.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclListObj.c
+
+tclListTypes.o: $(GENERIC_DIR)/tclListTypes.c
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclListTypes.c
 
 tclLiteral.o: $(GENERIC_DIR)/tclLiteral.c $(COMPILEHDR)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclLiteral.c
@@ -2278,11 +2282,10 @@ BUILTIN_PACKAGE_LIST = cookiejar http opt msgcat registry dde tcltest platform
 
 $(UNIX_DIR)/configure: $(UNIX_DIR)/configure.ac $(UNIX_DIR)/tcl.m4 \
 		$(UNIX_DIR)/aclocal.m4
-	cd $(UNIX_DIR); autoconf
-$(MAC_OSX_DIR)/configure: $(MAC_OSX_DIR)/configure.ac $(UNIX_DIR)/configure
-	cd $(MAC_OSX_DIR); autoconf
-$(UNIX_DIR)/tclConfig.h.in: $(MAC_OSX_DIR)/configure
-	cd $(MAC_OSX_DIR); autoheader; touch $@
+	@cd $(UNIX_DIR); autoconf || \
+		echo "WARNING: Unable to rebuild $(UNIX_DIR)/configure. Please upgrade autoconf."
+$(UNIX_DIR)/tclConfig.h.in: $(MAC_OSX_DIR)/configure.ac
+	@cd $(MAC_OSX_DIR); autoheader || touch $@
 
 tclUuid.h: $(TOP_DIR)/manifest.uuid
 	echo "#define TCL_VERSION_UUID \\" >$@
@@ -2297,7 +2300,7 @@ $(TOP_DIR)/manifest.uuid:
 	    printf "unknown" >$(TOP_DIR)/manifest.uuid)
 
 dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in genstubs \
-		$(MAC_OSX_DIR)/configure $(TOP_DIR)/manifest.uuid dist-packages ${NATIVE_TCLSH}
+		$(TOP_DIR)/manifest.uuid dist-packages ${NATIVE_TCLSH}
 	rm -rf $(DISTDIR)
 	$(INSTALL_DATA_DIR) $(DISTDIR)/unix
 	$(DIST_INSTALL_DATA) $(TOP_DIR)/manifest.uuid $(DISTDIR)
@@ -2403,7 +2406,6 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in gen
 		$(MAC_OSX_DIR)/*.c $(MAC_OSX_DIR)/*.in \
 		$(MAC_OSX_DIR)/*.ac \
 		$(DISTDIR)/macosx
-	$(DIST_INSTALL_SCRIPT) $(MAC_OSX_DIR)/configure $(DISTDIR)/macosx
 	$(DIST_INSTALL_DATA) $(TOP_DIR)/license.terms $(DISTDIR)/macosx
 	$(INSTALL_DATA_DIR) $(DISTDIR)/unix/dltest
 	$(DIST_INSTALL_DATA) $(UNIX_DIR)/dltest/*.c $(UNIX_DIR)/dltest/Makefile.in \

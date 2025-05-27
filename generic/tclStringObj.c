@@ -177,7 +177,7 @@ GrowUnicodeBuffer(
     /* Note STRING_MAXCHARS already takes into account space for nul */
     if (needed > STRING_MAXCHARS) {
 	Tcl_Panic("max size for a Tcl unicode rep (%" TCL_Z_MODIFIER "d bytes) exceeded",
-		  STRING_MAXCHARS);
+		STRING_MAXCHARS);
     }
     if (stringPtr->maxChars > 0) {
 	/* Expansion - try allocating extra space */
@@ -302,7 +302,10 @@ Tcl_DbNewStringObj(
 	length = (bytes? strlen(bytes) : 0);
     }
     TclDbNewObj(objPtr, file, line);
-    TclInitStringRep(objPtr, bytes, length);
+    if (!TclAttemptInitStringRep(objPtr, bytes, length)) {
+	Tcl_Panic("Failed to allocate %" TCL_SIZE_MODIFIER
+		"d bytes. %s:%d", length, file, line);
+    }
     return objPtr;
 }
 #else /* if not TCL_MEM_DEBUG */
@@ -641,7 +644,7 @@ TclGetUniChar(
  */
 
 #undef Tcl_GetUnicodeFromObj
-#if !defined(TCL_NO_DEPRECATED)
+#ifndef TCL_NO_DEPRECATED
 Tcl_UniChar *
 TclGetUnicodeFromObj(
     Tcl_Obj *objPtr,		/* The object to find the Unicode string
@@ -669,7 +672,7 @@ TclGetUnicodeFromObj(
     }
     return stringPtr->unicode;
 }
-#endif /* !defined(TCL_NO_DEPRECATED) */
+#endif /* !TCL_NO_DEPRECATED */
 
 Tcl_UniChar *
 Tcl_GetUnicodeFromObj(
@@ -803,7 +806,7 @@ TclGetRange(
     Tcl_Size first,		/* First index of the range. */
     Tcl_Size last)		/* Last index of the range. */
 {
-    Tcl_Obj *newObjPtr;	 	/* The Tcl object to return that is the new
+    Tcl_Obj *newObjPtr;		/* The Tcl object to return that is the new
 				 * range. */
     Tcl_Size length = 0;
 
@@ -2562,8 +2565,8 @@ Tcl_AppendFormatToObj(
 	}
 	default:
 	    if (interp != NULL) {
-		Tcl_SetObjResult(interp,
-			Tcl_ObjPrintf("bad field specifier \"%c\"", ch));
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"bad field specifier \"%c\"", ch));
 		Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BADTYPE", (char *)NULL);
 	    }
 	    goto error;

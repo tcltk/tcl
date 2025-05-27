@@ -427,8 +427,8 @@ DeleteKey(
     }
 
     if (*keyName == '\0') {
-	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("bad key: cannot delete root keys", -1));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"bad key: cannot delete root keys", -1));
 	Tcl_SetErrorCode(interp, "WIN_REG", "DEL_ROOT_KEY", (char *)NULL);
 	Tcl_Free(buffer);
 	return TCL_ERROR;
@@ -449,8 +449,8 @@ DeleteKey(
 	if (result == ERROR_FILE_NOT_FOUND) {
 	    return TCL_OK;
 	}
-	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("unable to delete key: ", -1));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"unable to delete key: ", -1));
 	AppendSystemError(interp, result);
 	return TCL_ERROR;
     }
@@ -465,8 +465,8 @@ DeleteKey(
     Tcl_DStringFree(&buf);
 
     if (result != ERROR_SUCCESS && result != ERROR_FILE_NOT_FOUND) {
-	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("unable to delete key: ", -1));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"unable to delete key: ", -1));
 	AppendSystemError(interp, result);
 	result = TCL_ERROR;
     } else {
@@ -730,7 +730,7 @@ GetValue(
     HKEY key;
     const char *valueName;
     const WCHAR *nativeValue;
-    DWORD result, length, type;
+    DWORD result, type, length;
     Tcl_DString data, buf;
     Tcl_Size len;
 
@@ -770,7 +770,7 @@ GetValue(
 	 * HKEY_PERFORMANCE_DATA
 	 */
 
-	length = Tcl_DStringLength(&data) * (2 / sizeof(WCHAR));
+	length = (DWORD)(Tcl_DStringLength(&data) * (2 / sizeof(WCHAR)));
 	Tcl_DStringSetLength(&data, length * sizeof(WCHAR));
 	result = RegQueryValueExW(key, nativeValue,
 		NULL, &type, (BYTE *) Tcl_DStringValue(&data), &length);
@@ -960,8 +960,8 @@ OpenKey(
     if (result == TCL_OK) {
 	result = OpenSubKey(hostName, rootKey, keyName, mode, flags, keyPtr);
 	if (result != ERROR_SUCCESS) {
-	    Tcl_SetObjResult(interp,
-		    Tcl_NewStringObj("unable to open key: ", -1));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "unable to open key: ", -1));
 	    AppendSystemError(interp, result);
 	    result = TCL_ERROR;
 	} else {
@@ -1348,8 +1348,8 @@ SetValue(
     RegCloseKey(key);
 
     if (result != ERROR_SUCCESS) {
-	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("unable to set value: ", -1));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"unable to set value: ", -1));
 	AppendSystemError(interp, result);
 	return TCL_ERROR;
     }
@@ -1443,7 +1443,7 @@ AppendSystemError(
     Tcl_Interp *interp,		/* Current interpreter. */
     DWORD error)		/* Result code from error. */
 {
-    int length;
+    Tcl_Size length;
     WCHAR *tMsgPtr, **tMsgPtrPtr = &tMsgPtr;
     const char *msg;
     char id[TCL_INTEGER_SPACE], msgBuf[24 + TCL_INTEGER_SPACE];

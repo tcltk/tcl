@@ -1057,7 +1057,7 @@ test encoding-27.2 {encoding dirs basic behavior} -returnCodes error -body {
     encoding dirs "\{not a list"
 } -result "expected directory list but got \"\{not a list\""
 
-}
+}; # proc runtests
 
 
 test encoding-28.0 {all encodings load} -body {
@@ -1193,6 +1193,25 @@ test encoding-bug-201c7a3aa6-replace {Crash encoding non-BMP to iso2022} -body {
 test encoding-bug-201c7a3aa6-tcl8 {Crash encoding non-BMP to iso2022} -body {
     encoding convertto -profile tcl8 iso2022 \U1f600
 } -result ?
+
+test encoding-bug-7346adc50f-strict {OOM on convertfrom truncated iso2022 - strict} -body {
+    encoding convertfrom -profile strict iso2022-jp "\x1b\$B\$*;n\$"
+} -result {unexpected byte sequence starting at index 7: '\x24'} -returnCodes error
+
+test encoding-bug-7346adc50f-failindex {OOM on convertfrom truncated iso2022 - failindex} -body {
+    list [encoding convertfrom -failindex failix iso2022-jp "\x1b\$B\$*;n\$"] $failix
+} -cleanup {
+    unset -nocomplain failix
+} -result [list \u304A\u8A66 7]
+
+test encoding-bug-7346adc50f-strict {OOM on convertfrom truncated iso2022 - replace} -body {
+    encoding convertfrom -profile replace iso2022-jp "\x1b\$B\$*;n\$"
+} -result \u304A\u8A66\uFFFD
+
+test encoding-bug-7346adc50f-tcl8 {OOM on convertfrom truncated iso2022 - tcl8} -body {
+    encoding convertfrom -profile tcl8 iso2022-jp "\x1b\$B\$*;n\$"
+} -result \u304A\u8A66\uFFFD
+
 
 # cleanup
 namespace delete ::tcl::test::encoding

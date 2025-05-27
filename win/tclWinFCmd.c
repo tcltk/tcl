@@ -1186,7 +1186,8 @@ TraverseWinTree(
 {
     DWORD sourceAttr;
     WCHAR *nativeSource, *nativeTarget, *nativeErrfile;
-    int result, found, sourceLen, targetLen = 0, oldSourceLen, oldTargetLen;
+    int result, found;
+    Tcl_Size sourceLen, oldSourceLen, oldTargetLen, targetLen = 0;
     HANDLE handle;
     WIN32_FIND_DATAW data;
 
@@ -1261,7 +1262,7 @@ TraverseWinTree(
     found = 1;
     for (; found; found = FindNextFileW(handle, &data)) {
 	WCHAR *nativeName;
-	int len;
+	size_t len;
 
 	WCHAR *wp = data.cFileName;
 	if (*wp == '.') {
@@ -1976,7 +1977,7 @@ TclpCreateTemporaryDirectory(
     Tcl_Obj *basenameObj)
 {
     Tcl_DString base, name;	/* Contains WCHARs */
-    int baseLen;
+    Tcl_Size baseLen;
     DWORD error;
     WCHAR tempBuf[MAX_PATH + 1];
     DWORD len = GetTempPathW(MAX_PATH, tempBuf);

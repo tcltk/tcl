@@ -1787,15 +1787,15 @@ TraceExecutionProc(
 	if ((flags & TCL_TRACE_ENTER_EXEC) && (tcmdPtr->stepTrace == NULL)
 		&& (tcmdPtr->flags & (TCL_TRACE_ENTER_DURING_EXEC |
 			TCL_TRACE_LEAVE_DURING_EXEC))) {
-	    unsigned len = strlen(command) + 1;
+	    size_t len = strlen(command) + 1;
 
 	    tcmdPtr->startLevel = level;
 	    tcmdPtr->startCmd = (char *)Tcl_Alloc(len);
 	    memcpy(tcmdPtr->startCmd, command, len);
 	    tcmdPtr->refCount++;
 	    tcmdPtr->stepTrace = Tcl_CreateObjTrace2(interp, 0,
-		   (tcmdPtr->flags & TCL_TRACE_ANY_EXEC) >> 2,
-		   TraceExecutionProc, tcmdPtr, CommandObjTraceDeleted);
+		    (tcmdPtr->flags & TCL_TRACE_ANY_EXEC) >> 2,
+		    TraceExecutionProc, tcmdPtr, CommandObjTraceDeleted);
 	}
     }
     if (flags & TCL_TRACE_DESTROYED) {
@@ -1995,10 +1995,10 @@ traceWrapperProc(
     Tcl_Obj *const objv[])
 {
     TraceWrapperInfo *info = (TraceWrapperInfo *)clientData;
-    if (objc > INT_MAX) {
+    if (objc > INT_MAX || objc < 0) {
 	objc = -1; /* Signal Tcl_CmdObjTraceProc that objc is out of range */
     }
-    return info->proc(info->clientData, interp, (int)level, command, commandInfo, objc, objv);
+    return info->proc(info->clientData, interp, (int)level, command, commandInfo, (int)objc, objv);
 }
 
 static void
@@ -2187,8 +2187,8 @@ StringTraceProc(
      * either command or argv.
      */
 
-    data->proc(data->clientData, interp, level, (char *) command,
-	    cmdPtr->proc, cmdPtr->clientData, objc, argv);
+    data->proc(data->clientData, interp, (int)level, (char *) command,
+	    cmdPtr->proc, cmdPtr->clientData, (int)objc, argv);
     TclStackFree(interp, (void *) argv);
 
     return TCL_OK;
@@ -2393,7 +2393,7 @@ TclCheckArrayTraces(
     Var *varPtr,
     Var *arrayPtr,
     Tcl_Obj *name,
-    int index)
+    Tcl_Size index)
 {
     int code = TCL_OK;
 
@@ -2446,7 +2446,7 @@ TclObjCallVarTraces(
     int leaveErrMsg,		/* If true, and one of the traces indicates an
 				 * error, then leave an error message and
 				 * stack trace information in *iPTr. */
-    int index)			/* Index into the local variable table of the
+    Tcl_Size index)		/* Index into the local variable table of the
 				 * variable, or -1. Only used when part1Ptr is
 				 * NULL. */
 {
@@ -2528,7 +2528,7 @@ TclCallVarTraces(
 		} while (*p != '\0');
 		p--;
 		if (*p == ')') {
-		    int offset = (openParen - part1);
+		    Tcl_Size offset = (openParen - part1);
 		    char *newPart1;
 
 		    Tcl_DStringInit(&nameCopy);
@@ -2804,7 +2804,7 @@ Tcl_UntraceVar2(
      */
 
     flagMask = TCL_TRACE_READS | TCL_TRACE_WRITES | TCL_TRACE_UNSETS |
-	  TCL_TRACE_ARRAY | TCL_TRACE_RESULT_DYNAMIC | TCL_TRACE_RESULT_OBJECT;
+	    TCL_TRACE_ARRAY | TCL_TRACE_RESULT_DYNAMIC | TCL_TRACE_RESULT_OBJECT;
     flags &= flagMask;
 
     hPtr = Tcl_FindHashEntry(&iPtr->varTraces, varPtr);
@@ -3068,7 +3068,7 @@ TraceVarEx(
      */
 
     flagMask = TCL_TRACE_READS | TCL_TRACE_WRITES | TCL_TRACE_UNSETS |
-	  TCL_TRACE_ARRAY | TCL_TRACE_RESULT_DYNAMIC | TCL_TRACE_RESULT_OBJECT;
+	    TCL_TRACE_ARRAY | TCL_TRACE_RESULT_DYNAMIC | TCL_TRACE_RESULT_OBJECT;
     tracePtr->flags = tracePtr->flags & flagMask;
 
     hPtr = Tcl_CreateHashEntry(&iPtr->varTraces, varPtr, &isNew);

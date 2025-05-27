@@ -894,8 +894,7 @@ EXTERN Tcl_Size		Tcl_WriteChars(Tcl_Channel chan, const char *src,
 				Tcl_Size srcLen);
 /* 339 */
 EXTERN Tcl_Size		Tcl_WriteObj(Tcl_Channel chan, Tcl_Obj *objPtr);
-/* 340 */
-EXTERN char *		Tcl_GetString(Tcl_Obj *objPtr);
+/* Slot 340 is reserved */
 /* Slot 341 is reserved */
 /* Slot 342 is reserved */
 /* 343 */
@@ -1094,8 +1093,13 @@ EXTERN void		Tcl_ClearChannelHandlers(Tcl_Channel channel);
 EXTERN int		Tcl_IsChannelExisting(const char *channelName);
 /* Slot 419 is reserved */
 /* Slot 420 is reserved */
-/* Slot 421 is reserved */
-/* Slot 422 is reserved */
+/* 421 */
+EXTERN Tcl_HashEntry *	Tcl_DbCreateHashEntry(Tcl_HashTable *tablePtr,
+				const void *key, int *newPtr,
+				const char *file, int line);
+/* 422 */
+EXTERN Tcl_HashEntry *	Tcl_CreateHashEntry(Tcl_HashTable *tablePtr,
+				const void *key, int *newPtr);
 /* 423 */
 EXTERN void		Tcl_InitCustomHashTable(Tcl_HashTable *tablePtr,
 				int keyType, const Tcl_HashKeyType *typePtr);
@@ -1401,7 +1405,7 @@ EXTERN void		Tcl_LimitTypeSet(Tcl_Interp *interp, int type);
 /* 531 */
 EXTERN void		Tcl_LimitTypeReset(Tcl_Interp *interp, int type);
 /* 532 */
-EXTERN int		Tcl_LimitGetCommands(Tcl_Interp *interp);
+EXTERN Tcl_Size		Tcl_LimitGetCommands(Tcl_Interp *interp);
 /* 533 */
 EXTERN void		Tcl_LimitGetTime(Tcl_Interp *interp,
 				Tcl_Time *timeLimitPtr);
@@ -2221,7 +2225,7 @@ typedef struct TclStubs {
     Tcl_Size (*tcl_UtfToUpper) (char *src); /* 337 */
     Tcl_Size (*tcl_WriteChars) (Tcl_Channel chan, const char *src, Tcl_Size srcLen); /* 338 */
     Tcl_Size (*tcl_WriteObj) (Tcl_Channel chan, Tcl_Obj *objPtr); /* 339 */
-    char * (*tcl_GetString) (Tcl_Obj *objPtr); /* 340 */
+    void (*reserved340)(void);
     void (*reserved341)(void);
     void (*reserved342)(void);
     void (*tcl_AlertNotifier) (void *clientData); /* 343 */
@@ -2302,8 +2306,8 @@ typedef struct TclStubs {
     int (*tcl_IsChannelExisting) (const char *channelName); /* 418 */
     void (*reserved419)(void);
     void (*reserved420)(void);
-    void (*reserved421)(void);
-    void (*reserved422)(void);
+    Tcl_HashEntry * (*tcl_DbCreateHashEntry) (Tcl_HashTable *tablePtr, const void *key, int *newPtr, const char *file, int line); /* 421 */
+    Tcl_HashEntry * (*tcl_CreateHashEntry) (Tcl_HashTable *tablePtr, const void *key, int *newPtr); /* 422 */
     void (*tcl_InitCustomHashTable) (Tcl_HashTable *tablePtr, int keyType, const Tcl_HashKeyType *typePtr); /* 423 */
     void (*tcl_InitObjHashTable) (Tcl_HashTable *tablePtr); /* 424 */
     void * (*tcl_CommandTraceInfo) (Tcl_Interp *interp, const char *varName, int flags, Tcl_CommandTraceProc *procPtr, void *prevClientData); /* 425 */
@@ -2413,7 +2417,7 @@ typedef struct TclStubs {
     int (*tcl_LimitTypeExceeded) (Tcl_Interp *interp, int type); /* 529 */
     void (*tcl_LimitTypeSet) (Tcl_Interp *interp, int type); /* 530 */
     void (*tcl_LimitTypeReset) (Tcl_Interp *interp, int type); /* 531 */
-    int (*tcl_LimitGetCommands) (Tcl_Interp *interp); /* 532 */
+    Tcl_Size (*tcl_LimitGetCommands) (Tcl_Interp *interp); /* 532 */
     void (*tcl_LimitGetTime) (Tcl_Interp *interp, Tcl_Time *timeLimitPtr); /* 533 */
     int (*tcl_LimitGetGranularity) (Tcl_Interp *interp, int type); /* 534 */
     Tcl_InterpState (*tcl_SaveInterpState) (Tcl_Interp *interp, int status); /* 535 */
@@ -3215,8 +3219,7 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_WriteChars) /* 338 */
 #define Tcl_WriteObj \
 	(tclStubsPtr->tcl_WriteObj) /* 339 */
-#define Tcl_GetString \
-	(tclStubsPtr->tcl_GetString) /* 340 */
+/* Slot 340 is reserved */
 /* Slot 341 is reserved */
 /* Slot 342 is reserved */
 #define Tcl_AlertNotifier \
@@ -3368,8 +3371,10 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_IsChannelExisting) /* 418 */
 /* Slot 419 is reserved */
 /* Slot 420 is reserved */
-/* Slot 421 is reserved */
-/* Slot 422 is reserved */
+#define Tcl_DbCreateHashEntry \
+	(tclStubsPtr->tcl_DbCreateHashEntry) /* 421 */
+#define Tcl_CreateHashEntry \
+	(tclStubsPtr->tcl_CreateHashEntry) /* 422 */
 #define Tcl_InitCustomHashTable \
 	(tclStubsPtr->tcl_InitCustomHashTable) /* 423 */
 #define Tcl_InitObjHashTable \
@@ -4003,8 +4008,6 @@ extern const TclStubs *tclStubsPtr;
 #   endif
 #endif
 
-#undef Tcl_GetString
-#undef Tcl_GetUnicode
 #define Tcl_GetString(objPtr) \
 	Tcl_GetStringFromObj(objPtr, (Tcl_Size *)NULL)
 #define Tcl_GetUnicode(objPtr) \

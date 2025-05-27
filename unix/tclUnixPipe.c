@@ -34,8 +34,8 @@
  * the same as NULL.
  */
 
-#define MakeFile(fd)	((TclFile) INT2PTR(((int) (fd)) + 1))
-#define GetFd(file)	(PTR2INT(file) - 1)
+#define MakeFile(fd)	((TclFile)INT2PTR((fd) + 1))
+#define GetFd(file)	((int)PTR2INT(file) - 1)
 
 /*
  * This structure describes per-instance state of a pipe based channel.
@@ -213,7 +213,8 @@ TclpCreateTempFile(
 	Tcl_DString dstring;
 	char *native;
 
-	if (Tcl_UtfToExternalDStringEx(NULL, NULL, contents, TCL_INDEX_NONE, 0, &dstring, NULL) != TCL_OK) {
+	if (Tcl_UtfToExternalDStringEx(NULL, NULL, contents, TCL_INDEX_NONE,
+		0, &dstring, NULL) != TCL_OK) {
 	    close(fd);
 	    Tcl_DStringFree(&dstring);
 	    return NULL;
@@ -426,7 +427,8 @@ TclpCreateProcess(
 				 * process. */
 {
     TclFile errPipeIn, errPipeOut;
-    int count, status, fd;
+    ssize_t count;
+    int status, fd;
     char errSpace[200 + TCL_INTEGER_SPACE];
     Tcl_DString *volatile dsArray;
     char **volatile newArgv;
@@ -461,7 +463,8 @@ TclpCreateProcess(
     newArgv = (char **)TclStackAlloc(interp, (argc+1) * sizeof(char *));
     newArgv[argc] = NULL;
     for (i = 0; i < argc; i++) {
-	if (Tcl_UtfToExternalDStringEx(interp, NULL, argv[i], TCL_INDEX_NONE, 0, &dsArray[i], NULL) != TCL_OK) {
+	if (Tcl_UtfToExternalDStringEx(interp, NULL, argv[i], TCL_INDEX_NONE,
+		0, &dsArray[i], NULL) != TCL_OK) {
 	    while (i-- > 0) {
 		Tcl_DStringFree(&dsArray[i]);
 	    }
@@ -630,7 +633,7 @@ TclpCreateProcess(
 	char *end;
 
 	errSpace[count] = 0;
-	errno = strtol(errSpace, &end, 10);
+	errno = (int)strtol(errSpace, &end, 10);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf("%s: %s",
 		end, Tcl_PosixError(interp)));
 	goto error;
@@ -1147,7 +1150,7 @@ PipeInputProc(
     int *errorCodePtr)		/* Where to store error code. */
 {
     PipeState *psPtr = (PipeState *)instanceData;
-    int bytesRead;		/* How many bytes were actually read from the
+    ssize_t bytesRead;		/* How many bytes were actually read from the
 				 * input device? */
 
     *errorCodePtr = 0;
@@ -1168,7 +1171,7 @@ PipeInputProc(
 	*errorCodePtr = errno;
 	return -1;
     }
-    return bytesRead;
+    return (int)bytesRead;
 }
 
 /*
@@ -1197,7 +1200,7 @@ PipeOutputProc(
     int *errorCodePtr)		/* Where to store error code. */
 {
     PipeState *psPtr = (PipeState *)instanceData;
-    int written;
+    ssize_t written;
 
     *errorCodePtr = 0;
 
@@ -1214,7 +1217,7 @@ PipeOutputProc(
 	*errorCodePtr = errno;
 	return -1;
     }
-    return written;
+    return (int)written;
 }
 
 /*
