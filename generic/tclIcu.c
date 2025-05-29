@@ -761,7 +761,7 @@ IcuConverttoDString(
 	    if (U_SUCCESS(status)) {
 		break;
 	    }
-	    /* FALLTHRU */
+	    TCL_FALLTHROUGH();
 	default:
 	    Tcl_DStringFree(dsOutPtr);
 	    ucnv_close(ucnvPtr);
@@ -841,7 +841,7 @@ IcuBytesToUCharDString(
 	    if (U_SUCCESS(status)) {
 		break;
 	    }
-	    /* FALLTHRU */
+	    TCL_FALLTHROUGH();
 	default:
 	    Tcl_DStringFree(dsOutPtr);
 	    ucnv_close(ucnvPtr);
@@ -937,7 +937,7 @@ IcuNormalizeUCharDString(
 	    if (U_SUCCESS(status)) {
 		break;
 	    }
-	    /* FALLTHRU */
+	    TCL_FALLTHROUGH();
 	default:
 	    Tcl_DStringFree(dsOutPtr);
 	    return IcuError(interp, "String normalization failed", status);
@@ -1327,7 +1327,8 @@ TclIcuInit(
 	/* Going back down to ICU version 60 */
 	while ((icu_fns.libs[0] == NULL) && (icuversion[1] >= '6')) {
 	    if (--icuversion[2] < '0') {
-		icuversion[1]--; icuversion[2] = '9';
+		icuversion[1]--;
+		icuversion[2] = '9';
 	    }
 #if defined(__CYGWIN__)
 	    i = 2;
