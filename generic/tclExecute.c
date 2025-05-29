@@ -5496,6 +5496,7 @@ TEBCresume(
 	    objResultPtr = Tcl_DuplicateObj(valuePtr);
 	    slength = transform(TclGetString(objResultPtr));
 	    Tcl_SetObjLength(objResultPtr, slength);
+	    TclFreeInternalRep(objResultPtr);
 	    TRACE_APPEND_OBJ(objResultPtr);
 	    NEXT_INST_F(1, 1, 1);
 	} else {
@@ -7683,13 +7684,15 @@ TEBCresume(
     processExceptionReturn:
 #ifdef TCL_COMPILE_DEBUG
 	switch (*pc) {
+#ifndef REMOVE_DEPRECATED_OPCODES
 	case INST_INVOKE_STK1:
 	    numArgs = TclGetUInt1AtPtr(pc + 1);
-	    TRACE(("%u => ... after \"%.20s\": ", (unsigned)numArgs, cmdNameBuf));
+	    TRACE(("%u => ... after call: ", (unsigned)numArgs));
 	    break;
+#endif // REMOVE_DEPRECATED_OPCODES
 	case INST_INVOKE_STK:
 	    numArgs = TclGetUInt4AtPtr(pc + 1);
-	    TRACE(("%u => ... after \"%.20s\": ", (unsigned)numArgs, cmdNameBuf));
+	    TRACE(("%u => ... after call: ", (unsigned)numArgs));
 	    break;
 	case INST_EVAL_STK:
 	    /*
