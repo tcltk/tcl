@@ -1228,7 +1228,7 @@ Tcl_ExternalToUtfDStringEx(
 	 * and loop. Otherwise, return the result we got.
 	 */
 	if ((result != TCL_CONVERT_NOSPACE) &&
-		!(result == TCL_CONVERT_MULTIBYTE && (flags & TCL_ENCODING_END))) {
+		(result != TCL_CONVERT_MULTIBYTE || (flags & TCL_ENCODING_END))) {
 	    Tcl_Size nBytesProcessed = (src - srcStart);
 
 	    Tcl_DStringSetLength(dstPtr, soFar);
@@ -1544,7 +1544,7 @@ Tcl_UtfToExternalDStringEx(
 	 * and loop. Otherwise, return the result we got.
 	 */
 	if ((result != TCL_CONVERT_NOSPACE) &&
-		!(result == TCL_CONVERT_MULTIBYTE && (flags & TCL_ENCODING_END))) {
+		(result != TCL_CONVERT_MULTIBYTE || (flags & TCL_ENCODING_END))) {
 	    Tcl_Size nBytesProcessed = (src - srcStart);
 	    Tcl_Size i = soFar + encodingPtr->nullSize - 1;
 	    /* Loop as DStringSetLength only stores one nul byte at a time */

@@ -4671,9 +4671,9 @@ TclMSB(
 	 * clzll() = Count of Leading Zeroes in a Long Long
 	 * NOTE: we rely on input constraint (n != 0).
 	 */
-	
+
 	return 63 - __builtin_clzll(n);
-	
+
 #else
 
 	/*
