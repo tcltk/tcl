@@ -3424,7 +3424,7 @@ DictFilterCmd(
 
 		Tcl_ResetResult(interp);
 		Tcl_DictObjDone(&search);
-	    /* FALLTHRU */
+		TCL_FALLTHROUGH();
 	    case TCL_CONTINUE:
 		result = TCL_OK;
 		break;
@@ -3432,6 +3432,7 @@ DictFilterCmd(
 		Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 			"\n    (\"dict filter\" script line %d)",
 			Tcl_GetErrorLine(interp)));
+		TCL_FALLTHROUGH();
 	    default:
 		goto abnormalResult;
 	    }

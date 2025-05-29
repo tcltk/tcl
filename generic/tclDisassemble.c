@@ -578,19 +578,23 @@ FormatInstruction(
     for (i = 0;  i < instDesc->numOperands;  i++) {
 	switch (instDesc->opTypes[i]) {
 	case OPERAND_INT1:
-	    opnd = TclGetInt1AtPtr(pc+numBytes); numBytes++;
+	    opnd = TclGetInt1AtPtr(pc+numBytes);
+	    numBytes++;
 	    Tcl_AppendPrintfToObj(bufferObj, "%+d ", opnd);
 	    break;
 	case OPERAND_INT4:
-	    opnd = TclGetInt4AtPtr(pc+numBytes); numBytes += 4;
+	    opnd = TclGetInt4AtPtr(pc+numBytes);
+	    numBytes += 4;
 	    Tcl_AppendPrintfToObj(bufferObj, "%+d ", opnd);
 	    break;
 	case OPERAND_UINT1:
-	    opnd = TclGetUInt1AtPtr(pc+numBytes); numBytes++;
+	    opnd = TclGetUInt1AtPtr(pc+numBytes);
+	    numBytes++;
 	    Tcl_AppendPrintfToObj(bufferObj, "%u ", opnd);
 	    break;
 	case OPERAND_UINT4:
-	    opnd = TclGetUInt4AtPtr(pc+numBytes); numBytes += 4;
+	    opnd = TclGetUInt4AtPtr(pc+numBytes);
+	    numBytes += 4;
 	    if (opCode == INST_START_CMD) {
 		snprintf(suffixBuffer+strlen(suffixBuffer),
 			sizeof(suffixBuffer) - strlen(suffixBuffer),
@@ -599,12 +603,14 @@ FormatInstruction(
 	    Tcl_AppendPrintfToObj(bufferObj, "%u ", opnd);
 	    break;
 	case OPERAND_OFFSET1:
-	    opnd = TclGetInt1AtPtr(pc+numBytes); numBytes++;
+	    opnd = TclGetInt1AtPtr(pc+numBytes);
+	    numBytes++;
 	    snprintf(suffixBuffer, sizeof(suffixBuffer), "pc %u", pcOffset+opnd);
 	    Tcl_AppendPrintfToObj(bufferObj, "%+d ", opnd);
 	    break;
 	case OPERAND_OFFSET4:
-	    opnd = TclGetInt4AtPtr(pc+numBytes); numBytes += 4;
+	    opnd = TclGetInt4AtPtr(pc+numBytes);
+	    numBytes += 4;
 	    if (opCode == INST_START_CMD) {
 		snprintf(suffixBuffer, sizeof(suffixBuffer),
 			"next cmd at pc %u", pcOffset+opnd);
@@ -615,22 +621,26 @@ FormatInstruction(
 	    Tcl_AppendPrintfToObj(bufferObj, "%+d ", opnd);
 	    break;
 	case OPERAND_LIT1:
-	    opnd = TclGetUInt1AtPtr(pc+numBytes); numBytes++;
+	    opnd = TclGetUInt1AtPtr(pc+numBytes);
+	    numBytes++;
 	    suffixObj = codePtr->objArrayPtr[opnd];
 	    Tcl_AppendPrintfToObj(bufferObj, "%u ", opnd);
 	    break;
 	case OPERAND_LIT4:
-	    opnd = TclGetUInt4AtPtr(pc+numBytes); numBytes += 4;
+	    opnd = TclGetUInt4AtPtr(pc+numBytes);
+	    numBytes += 4;
 	    suffixObj = codePtr->objArrayPtr[opnd];
 	    Tcl_AppendPrintfToObj(bufferObj, "%u ", opnd);
 	    break;
 	case OPERAND_AUX4:
-	    opnd = TclGetUInt4AtPtr(pc+numBytes); numBytes += 4;
+	    opnd = TclGetUInt4AtPtr(pc+numBytes);
+	    numBytes += 4;
 	    Tcl_AppendPrintfToObj(bufferObj, "%u ", opnd);
 	    auxPtr = &codePtr->auxDataArrayPtr[opnd];
 	    break;
 	case OPERAND_IDX4:
-	    opnd = TclGetInt4AtPtr(pc+numBytes); numBytes += 4;
+	    opnd = TclGetInt4AtPtr(pc+numBytes);
+	    numBytes += 4;
 	    if (opnd >= -1) {
 		Tcl_AppendPrintfToObj(bufferObj, "%d ", opnd);
 	    } else if (opnd == -2) {
@@ -667,16 +677,19 @@ FormatInstruction(
 	    Tcl_AppendPrintfToObj(bufferObj, "%%v%u ", opnd);
 	    break;
 	case OPERAND_SCLS1:
-	    opnd = TclGetUInt1AtPtr(pc+numBytes); numBytes++;
+	    opnd = TclGetUInt1AtPtr(pc+numBytes);
+	    numBytes++;
 	    Tcl_AppendPrintfToObj(bufferObj, "%s ",
 		    tclStringClassTable[opnd].name);
 	    break;
 	case OPERAND_UNSF1:
-	    opnd = TclGetUInt1AtPtr(pc+numBytes); numBytes++;
+	    opnd = TclGetUInt1AtPtr(pc+numBytes);
+	    numBytes++;
 	    Tcl_AppendPrintfToObj(bufferObj, "silent=%s ", opnd?"no":"yes");
 	    break;
 	case OPERAND_CLK1:
-	    opnd = TclGetUInt1AtPtr(pc+numBytes); numBytes++;
+	    opnd = TclGetUInt1AtPtr(pc+numBytes);
+	    numBytes++;
 	    switch (opnd) {
 	    case CLOCK_READ_CLICKS:
 		Tcl_AppendPrintfToObj(bufferObj, "clicks " );
@@ -695,7 +708,8 @@ FormatInstruction(
 	    }
 	    break;
 	case OPERAND_LRPL1:
-	    opnd = TclGetUInt1AtPtr(pc+numBytes); numBytes++;
+	    opnd = TclGetUInt1AtPtr(pc+numBytes);
+	    numBytes++;
 	    switch (opnd) {
 	    case 0:
 		Tcl_AppendPrintfToObj(bufferObj, "0 ");

@@ -2615,7 +2615,7 @@ ClockScan(
 		case (CLF_DAYOFYEAR | CLF_DAYOFMONTH):
 		    /* miss month: ddd over dd (without month) */
 		    flags &= ~CLF_DAYOFMONTH;
-		    /* fallthrough */
+		    TCL_FALLTHROUGH();
 		case CLF_DAYOFYEAR:
 		    /* ddd over naked weekday */
 		    if (!(flags & CLF_ISO8601YEAR)) {

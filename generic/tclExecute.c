@@ -2216,12 +2216,12 @@ TEBCresume(
 	    objPtr = POP_OBJECT();
 	    TclDecrRefCount(objPtr);
 	}
-	/* FALLTHRU */
+	TCL_FALLTHROUGH();
     case 2:
     cleanup2_pushObjResultPtr:
 	objPtr = POP_OBJECT();
 	TclDecrRefCount(objPtr);
-	/* FALLTHRU */
+	TCL_FALLTHROUGH();
     case 1:
     cleanup1_pushObjResultPtr:
 	objPtr = OBJ_AT_TOS;
@@ -2238,17 +2238,17 @@ TEBCresume(
 	    objPtr = POP_OBJECT();
 	    TclDecrRefCount(objPtr);
 	}
-	/* FALLTHRU */
+	TCL_FALLTHROUGH();
     case 2:
     cleanup2:
 	objPtr = POP_OBJECT();
 	TclDecrRefCount(objPtr);
-	/* FALLTHRU */
+	TCL_FALLTHROUGH();
     case 1:
     cleanup1:
 	objPtr = POP_OBJECT();
 	TclDecrRefCount(objPtr);
-	/* FALLTHRU */
+	TCL_FALLTHROUGH();
     case 0:
 	/*
 	 * We really want to do nothing now, but this is needed for some
@@ -4453,20 +4453,11 @@ TEBCresume(
 		codePtr->auxDataArrayPtr[tblIdx].clientData;
 	TRACE(("%u \"%.20s\" => ", tblIdx, O2S(OBJ_AT_TOS)));
 	hPtr = Tcl_FindHashEntry(&jtPtr->hashTable, TclGetString(OBJ_AT_TOS));
-	if (hPtr != NULL) {
-	    Tcl_Size jumpOffset = PTR2INT(Tcl_GetHashValue(hPtr));
-
-	    TRACE_APPEND(("found in table, new pc %" SIZEu "\n",
-		    PC_REL + jumpOffset));
-	    NEXT_INST_F0(jumpOffset, 1);
-	} else {
-	    TRACE_APPEND(("not found in table\n"));
-	    NEXT_INST_F0(5, 1);
-	}
+	goto processJumpTableEntry;
 
 	/*
 	 * Jump to location looked up in a hashtable; fall through to next
-	 * instr if lookup fails. Lookup by integer.
+	 * instr if lookup fails or key is non-integer. Lookup by integer.
 	 */
 
     case INST_JUMP_TABLE_NUM:
@@ -4479,17 +4470,18 @@ TEBCresume(
 	    goto jumpTableNumFallthrough;
 	}
 	hPtr = Tcl_FindHashEntry(&jtnPtr->hashTable, (void *)key);
+
+    processJumpTableEntry:
 	if (hPtr != NULL) {
 	    Tcl_Size jumpOffset = PTR2INT(Tcl_GetHashValue(hPtr));
 
 	    TRACE_APPEND(("found in table, new pc %" SIZEu "\n",
 		    PC_REL + jumpOffset));
 	    NEXT_INST_F0(jumpOffset, 1);
-	} else {
-	jumpTableNumFallthrough:
-	    TRACE_APPEND(("not found in table\n"));
-	    NEXT_INST_F0(5, 1);
 	}
+    jumpTableNumFallthrough:
+	TRACE_APPEND(("not found in table\n"));
+	NEXT_INST_F0(5, 1);
     }
 
     /*
@@ -6476,7 +6468,9 @@ TEBCresume(
 		TRACE_APPEND_NUM_OBJ(valuePtr);
 		NEXT_INST_F0(1, 0);
 	    }
-	    /* FALLTHROUGH */
+	    TCL_FALLTHROUGH();
+	default:
+	    break;
 	}
 	objResultPtr = ExecuteExtendedUnaryMathOp(*pc, valuePtr);
 	if (objResultPtr != NULL) {
@@ -6688,6 +6682,7 @@ TEBCresume(
 	 */
 
 	pc += 5 - infoPtr->loopCtTemp;
+	TCL_FALLTHROUGH();
 
     case INST_FOREACH_STEP: /* TODO: address abstract list indexing here! */
 	/*
@@ -6802,10 +6797,8 @@ TEBCresume(
 #ifdef TCL_COMPILE_DEBUG
 	NEXT_INST_F0(1, 0);
 #else
-	/*
-	 * FALL THROUGH
-	 */
 	pc++;
+	TCL_FALLTHROUGH();
 #endif
     case INST_FOREACH_END:
 	/* THIS INSTRUCTION IS ONLY CALLED AS A BREAK TARGET */
@@ -8471,14 +8464,14 @@ ExecuteExtendedBinaryMathOp(
 		case INST_BITAND:
 		    err = mp_and(&big1, &big2, &bigResult);
 		    break;
-
 		case INST_BITOR:
 		    err = mp_or(&big1, &big2, &bigResult);
 		    break;
-
 		case INST_BITXOR:
 		    err = mp_xor(&big1, &big2, &bigResult);
 		    break;
+		default:
+		    TCL_UNREACHABLE();
 		}
 	    }
 	    if (err != MP_OKAY) {
@@ -8564,7 +8557,7 @@ ExecuteExtendedBinaryMathOp(
 		    if (oddExponent) {
 			WIDE_RESULT(-1);
 		    }
-		    /* fallthrough */
+		    TCL_FALLTHROUGH();
 		case 1:
 		    /*
 		     * 1 to any power is 1.
@@ -8575,7 +8568,6 @@ ExecuteExtendedBinaryMathOp(
 	    }
 	}
 	if (negativeExponent) {
-
 	    /*
 	     * Integers with magnitude greater than 1 raise to a negative
 	     * power yield the answer zero (see TIP 123).
@@ -8588,23 +8580,23 @@ ExecuteExtendedBinaryMathOp(
 	}
 
 	switch (w1) {
-	    case 0:
-		/*
-		 * Zero to a positive power is zero.
-		 */
+	case 0:
+	    /*
+	     * Zero to a positive power is zero.
+	     */
 
-		return constants[0];
-	    case 1:
-		/*
-		 * 1 to any power is 1.
-		 */
+	    return constants[0];
+	case 1:
+	    /*
+	     * 1 to any power is 1.
+	     */
 
+	    return constants[1];
+	case -1:
+	    if (!oddExponent) {
 		return constants[1];
-	    case -1:
-		if (!oddExponent) {
-		    return constants[1];
-		}
-		WIDE_RESULT(-1);
+	    }
+	    WIDE_RESULT(-1);
 	}
 
 	/*
@@ -9045,7 +9037,6 @@ TclCompareTwoNumbers(
 	default:
 	    TCL_UNREACHABLE();
 	}
-    break;
 
     case TCL_NUMBER_DOUBLE:
 	d1 = *((const double *)ptr1);
@@ -9094,7 +9085,6 @@ TclCompareTwoNumbers(
 	default:
 	    TCL_UNREACHABLE();
 	}
-    break;
 
     case TCL_NUMBER_BIG:
 	Tcl_TakeBignumFromObj(NULL, valuePtr, &big1);
@@ -9133,7 +9123,6 @@ TclCompareTwoNumbers(
 	default:
 	    TCL_UNREACHABLE();
 	}
-    break;
     default:
 	Tcl_Panic("unexpected number type");
 	TCL_UNREACHABLE();
