@@ -2327,22 +2327,14 @@ Tcl_LassignObjCmd(
     }
 
     if (listObjc > 0) {
-	Tcl_Obj *resultObjPtr = NULL;
-	Tcl_Size fromIdx = origListObjc - listObjc;
-	Tcl_Size toIdx = origListObjc - 1;
-	if (TclObjTypeHasProc(listPtr, sliceProc)) {
-	    if (TclObjTypeSlice(
-		    interp, listPtr, fromIdx, toIdx, &resultObjPtr) != TCL_OK) {
-		return TCL_ERROR;
-	    }
-	} else {
-	    resultObjPtr = TclListObjRange(
-		interp, listPtr, origListObjc - listObjc, origListObjc - 1);
-	    if (resultObjPtr == NULL) {
-		return TCL_ERROR;
-	    }
+	Tcl_Obj *resultObj = NULL;
+	Tcl_Size first = origListObjc - listObjc;
+	Tcl_Size last = origListObjc - 1;
+	int result = Tcl_ListObjRange(interp, listPtr, first, last, &resultObj);
+	if (result != TCL_OK) {
+	    return result;
 	}
-	Tcl_SetObjResult(interp, resultObjPtr);
+	Tcl_SetObjResult(interp, resultObj);
     }
 
     return TCL_OK;
@@ -2748,22 +2740,12 @@ Tcl_LrangeObjCmd(
 	return result;
     }
 
-    if (TclObjTypeHasProc(objv[1], sliceProc)) {
-	Tcl_Obj *resultObj;
-	int status = TclObjTypeSlice(interp, objv[1], first, last, &resultObj);
-	if (status == TCL_OK) {
-	    Tcl_SetObjResult(interp, resultObj);
-	} else {
-	    return TCL_ERROR;
-	}
-    } else {
-	Tcl_Obj *resultObj = TclListObjRange(interp, objv[1], first, last);
-	if (resultObj == NULL) {
-	    return TCL_ERROR;
-	}
+    Tcl_Obj *resultObj;
+    result = Tcl_ListObjRange(interp, objv[1], first, last, &resultObj);
+    if (result == TCL_OK) {
 	Tcl_SetObjResult(interp, resultObj);
     }
-    return TCL_OK;
+    return result;
 }
 
 /*
@@ -2936,92 +2918,24 @@ Tcl_LrepeatObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* The argument objects. */
 {
-    Tcl_WideInt elementCount, i;
-    Tcl_Size totalElems;
-    Tcl_Obj *listPtr, **dataArray = NULL;
-
-    /*
-     * Check arguments for legality:
-     *		lrepeat count ?value ...?
-     */
+    Tcl_Size repeatCount;
+    Tcl_Obj *resultPtr;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "count ?value ...?");
 	return TCL_ERROR;
     }
-    if (TCL_OK != TclGetWideIntFromObj(interp, objv[1], &elementCount)) {
-	return TCL_ERROR;
-    }
-    if (elementCount < 0) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"bad count \"%" TCL_LL_MODIFIER "d\": must be integer >= 0", elementCount));
-	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LREPEAT", "NEGARG",
-		(char *)NULL);
+
+    if (Tcl_GetSizeIntFromObj(interp, objv[1], &repeatCount) != TCL_OK) {
 	return TCL_ERROR;
     }
 
-    /*
-     * Skip forward to the interesting arguments now we've finished parsing.
-     */
-
-    objc -= 2;
-    objv += 2;
-
-    /* Final sanity check. Do not exceed limits on max list length. */
-
-    if (elementCount && objc > LIST_MAX/elementCount) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"max length of a Tcl list (%" TCL_SIZE_MODIFIER "d elements) exceeded", LIST_MAX));
-	Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
+    if (Tcl_ListObjRepeat(
+	    interp, repeatCount, objc - 2, objv + 2, &resultPtr) != TCL_OK) {
 	return TCL_ERROR;
     }
-    totalElems = objc * elementCount;
 
-    /*
-     * Get an empty list object that is allocated large enough to hold each
-     * init value elementCount times.
-     */
-
-    listPtr = Tcl_NewListObj(totalElems, NULL);
-    if (totalElems) {
-	ListRep listRep;
-	ListObjGetRep(listPtr, &listRep);
-	dataArray = ListRepElementsBase(&listRep);
-	listRep.storePtr->numUsed = totalElems;
-	if (listRep.spanPtr) {
-	    /* Future proofing in case Tcl_NewListObj returns a span */
-	    listRep.spanPtr->spanStart = listRep.storePtr->firstUsed;
-	    listRep.spanPtr->spanLength = listRep.storePtr->numUsed;
-	}
-    }
-
-    /*
-     * Set the elements. Note that we handle the common degenerate case of a
-     * single value being repeated separately to permit the compiler as much
-     * room as possible to optimize a loop that might be run a very large
-     * number of times.
-     */
-
-    CLANG_ASSERT(dataArray || totalElems == 0 );
-    if (objc == 1) {
-	Tcl_Obj *tmpPtr = objv[0];
-
-	tmpPtr->refCount += elementCount;
-	for (i=0 ; i<elementCount ; i++) {
-	    dataArray[i] = tmpPtr;
-	}
-    } else {
-	Tcl_Size j, k = 0;
-
-	for (i=0 ; i<elementCount ; i++) {
-	    for (j=0 ; j<objc ; j++) {
-		Tcl_IncrRefCount(objv[j]);
-		dataArray[k++] = objv[j];
-	    }
-	}
-    }
-
-    Tcl_SetObjResult(interp, listPtr);
+    Tcl_SetObjResult(interp, resultPtr);
     return TCL_OK;
 }
 
@@ -3152,82 +3066,16 @@ Tcl_LreverseObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument values. */
 {
-    Tcl_Obj **elemv;
-    Tcl_Size elemc, i, j;
-
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "list");
 	return TCL_ERROR;
     }
 
-    /*
-     *  Handle AbstractList special case - do not shimmer into a list, if it
-     *  supports a private Reverse function, just to reverse it.
-     */
-    if (TclObjTypeHasProc(objv[1], reverseProc)) {
-	Tcl_Obj *resultObj;
-
-	if (TclObjTypeReverse(interp, objv[1], &resultObj) == TCL_OK) {
-	    Tcl_SetObjResult(interp, resultObj);
-	    return TCL_OK;
-	}
-    } /* end Abstract List */
-
-    if (TclListObjLength(interp, objv[1], &elemc) != TCL_OK) {
+    Tcl_Obj *resultObj = NULL;
+    if (Tcl_ListObjReverse(interp, objv[1], &resultObj) != TCL_OK) {
 	return TCL_ERROR;
     }
-
-    /*
-     * If the list is empty, just return it. [Bug 1876793]
-     */
-
-    if (!elemc) {
-	Tcl_SetObjResult(interp, objv[1]);
-	return TCL_OK;
-    }
-    if (TclListObjGetElements(interp, objv[1], &elemc, &elemv) != TCL_OK) {
-	return TCL_ERROR;
-    }
-
-    if (Tcl_IsShared(objv[1])
-	    || ListObjRepIsShared(objv[1])) { /* Bug 1675044 */
-	Tcl_Obj *resultObj, **dataArray;
-	ListRep listRep;
-
-	resultObj = Tcl_NewListObj(elemc, NULL);
-
-	/* Modify the internal rep in-place */
-	ListObjGetRep(resultObj, &listRep);
-	listRep.storePtr->numUsed = elemc;
-	dataArray = ListRepElementsBase(&listRep);
-	if (listRep.spanPtr) {
-	    /* Future proofing */
-	    listRep.spanPtr->spanStart = listRep.storePtr->firstUsed;
-	    listRep.spanPtr->spanLength = listRep.storePtr->numUsed;
-	}
-
-	for (i=0,j=elemc-1 ; i<elemc ; i++,j--) {
-	    dataArray[j] = elemv[i];
-	    Tcl_IncrRefCount(elemv[i]);
-	}
-
-	Tcl_SetObjResult(interp, resultObj);
-    } else {
-
-	/*
-	 * Not shared, so swap "in place". This relies on Tcl_LOGE above
-	 * returning a pointer to the live array of Tcl_Obj values.
-	 */
-
-	for (i=0,j=elemc-1 ; i<j ; i++,j--) {
-	    Tcl_Obj *tmp = elemv[i];
-
-	    elemv[i] = elemv[j];
-	    elemv[j] = tmp;
-	}
-	TclInvalidateStringRep(objv[1]);
-	Tcl_SetObjResult(interp, objv[1]);
-    }
+    Tcl_SetObjResult(interp, resultObj);
     return TCL_OK;
 }
 

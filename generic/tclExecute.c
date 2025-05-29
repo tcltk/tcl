@@ -3659,7 +3659,7 @@ TEBCresume(
 	TclNewIntObj(incrPtr, increment);
 	Tcl_IncrRefCount(incrPtr);
 	pcAdjustment = 3;
-        goto doIncrArray;
+	goto doIncrArray;
 #endif
 
     case INST_INCR_ARRAY_IMM:
@@ -5221,15 +5221,9 @@ TEBCresume(
 	fromIdx = TclIndexDecode(fromIdxEnc, objc - 1);
 
 	DECACHE_STACK_INFO();
-	if (TclObjTypeHasProc(valuePtr, sliceProc)) {
-	    if (TclObjTypeSlice(interp, valuePtr, fromIdx, toIdx, &objResultPtr) != TCL_OK) {
-		objResultPtr = NULL;
-	    }
-	} else {
-	    objResultPtr = TclListObjRange(interp, valuePtr, fromIdx, toIdx);
-	}
-	CACHE_STACK_INFO();
-	if (objResultPtr == NULL) {
+	if (Tcl_ListObjRange(interp, valuePtr, fromIdx, toIdx,
+		&objResultPtr) != TCL_OK) {
+	    objResultPtr = NULL;
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
