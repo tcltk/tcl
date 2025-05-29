@@ -2313,7 +2313,7 @@ ClockGetOrParseScanFormat(
 		    tokCnt++;
 		    continue;
 		}
-	    word_tok:
+	    word_tok: {
 		/* try continue with previous word token */
 		ClockScanToken *wordTok = tok - 1;
 
@@ -2337,6 +2337,7 @@ ClockGetOrParseScanFormat(
 		    tokCnt++;
 		}
 		break;
+	    }
 	    }
 	}
 
