@@ -124,6 +124,9 @@ typedef struct {
     Tcl_Obj **catchTop;		/* These fields are used on return TO this */
     Tcl_Obj *auxObjList;	/* level: they record the state when a new */
     CmdFrame cmdFrame;		/* codePtr was received for NR execution. */
+#ifdef TCL_COMPILE_DEBUG
+    char cmdNameBuf[21];	/* Space to store the command name across an invoke. */
+#endif
     Tcl_Obj *stack[1];		/* Start of the actual combined catch and obj
 				 * stacks; the struct will be expanded as
 				 * necessary */
@@ -1664,7 +1667,7 @@ TclCompileObj(
 
 	if (!(codePtr->flags & TCL_BYTECODE_PRECOMPILED) &&
 		(codePtr->procPtr == NULL) &&
-		(codePtr->localCachePtr != iPtr->varFramePtr->localCachePtr)){
+		(codePtr->localCachePtr != iPtr->varFramePtr->localCachePtr)) {
 	    goto recompileObj;
 	}
 
@@ -1906,6 +1909,38 @@ ArgumentBCEnter(
 /*
  *----------------------------------------------------------------------
  *
+ * PrintArgumentWords --
+ *
+ *	A helper for TEBC. Prints a sequence of words.
+ *
+ * Results:
+ *	None
+ *
+ * Side effects:
+ *	May register information about the bytecode in the command frame.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#ifdef TCL_COMPILE_DEBUG
+static inline void
+PrintArgumentWords(
+    Tcl_Size objc,
+    Tcl_Obj *const *objv)
+{
+    Tcl_Size i;
+    for (i = 0;  i < objc;  i++) {
+	TclPrintObject(stdout, objv[i], 15);
+	if (i < objc - 1) {
+	    fprintf(stdout, " ");
+	}
+    }
+}
+#endif // TCL_COMPILE_DEBUG
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclNRExecuteByteCode --
  *
  *	This procedure executes the instructions of a ByteCode structure. It
@@ -1957,6 +1992,9 @@ TclNRExecuteByteCode(
     TD->codePtr     = codePtr;
     TD->catchTop    = initCatchTop;
     TD->auxObjList  = NULL;
+#ifdef TCL_COMPILE_DEBUG
+    TD->cmdNameBuf[0] = 0;
+#endif
 
     /*
      * TIP #280: Initialize the frame. Do not push it yet: it will be pushed
@@ -2063,6 +2101,7 @@ TEBCresume(
 #define catchTop	(TD->catchTop)
 #define codePtr		(TD->codePtr)
 #define curEvalFlags	PTR2INT(data[3])  /* calling iPtr->evalFlags */
+#define cmdNameBuf	(TD->cmdNameBuf)
 
     /*
      * Globals: variables that store state, must remain valid at all times.
@@ -2096,9 +2135,6 @@ TEBCresume(
     unsigned tblIdx;
     int pcAdjustment;
     Var *varPtr, *arrayPtr;
-#ifdef TCL_COMPILE_DEBUG
-    char cmdNameBuf[21];
-#endif
 
 #ifdef TCL_COMPILE_DEBUG
     int starting = 1;
@@ -2856,11 +2892,7 @@ TEBCresume(
 		fprintf(stdout, "%" SIZEd ": (%" SIZEd ") invoking ",
 			iPtr->numLevels, PC_REL);
 	    }
-	    Tcl_Size i;
-	    for (i = 0;  i < objc;  i++) {
-		TclPrintObject(stdout, objv[i], 15);
-		fprintf(stdout, " ");
-	    }
+	    PrintArgumentWords(objc, objv);
 	    fprintf(stdout, "\n");
 	    fflush(stdout);
 	}
@@ -4672,17 +4704,13 @@ TEBCresume(
 		    newDepth = i;
 #ifdef TCL_COMPILE_DEBUG
 		    if (tclTraceExec >= TCL_TRACE_BYTECODE_EXEC_COMMANDS) {
-			Tcl_Size j;
 			if (traceInstructions) {
 			    strncpy(cmdNameBuf, TclGetString(objv[0]), 20);
 			} else {
 			    fprintf(stdout, "%" SIZEd ": (%" SIZEd ") invoking ",
 				    iPtr->numLevels, PC_REL);
 			}
-			for (j = 0;  j < numArgs;  j++) {
-			    TclPrintObject(stdout, objv[j], 15);
-			    fprintf(stdout, " ");
-			}
+			PrintArgumentWords(numArgs, objv);
 			fprintf(stdout, "\n");
 			fflush(stdout);
 		    }
@@ -4782,18 +4810,13 @@ TEBCresume(
 	    goto gotError;
 #ifdef TCL_COMPILE_DEBUG
 	} else if (tclTraceExec >= TCL_TRACE_BYTECODE_EXEC_COMMANDS) {
-	    Tcl_Size i;
-
 	    if (traceInstructions) {
 		strncpy(cmdNameBuf, TclGetString(objv[0]), 20);
 	    } else {
 		fprintf(stdout, "%" SIZEd ": (%" SIZEu ") invoking ",
 			iPtr->numLevels, PC_REL);
 	    }
-	    for (i = 0;  i < numArgs;  i++) {
-		TclPrintObject(stdout, objv[i], 15);
-		fprintf(stdout, " ");
-	    }
+    	    PrintArgumentWords(numArgs, objv);
 	    fprintf(stdout, "\n");
 	    fflush(stdout);
 #endif /*TCL_COMPILE_DEBUG*/
@@ -4834,14 +4857,16 @@ TEBCresume(
 	}
 
 	{
-	    Method *const mPtr =
-		    contextPtr->callPtr->chain[newDepth].mPtr;
+	    const Method *mPtr = contextPtr->callPtr->chain[newDepth].mPtr;
 
 	    if (mPtr->typePtr->version < TCL_OO_METHOD_VERSION_2) {
 		return mPtr->typePtr->callProc(mPtr->clientData, interp,
-			(Tcl_ObjectContext) contextPtr, numArgs, objv);
+			(Tcl_ObjectContext) contextPtr, (int)numArgs, objv);
 	    }
-	    return ((Tcl_MethodCallProc2 *)(void *)(mPtr->typePtr->callProc))(mPtr->clientData, interp,
+	    // Ugly indirect cast
+	    Tcl_MethodCallProc2 *call2Proc = (Tcl_MethodCallProc2 *)
+		    (void *)mPtr->typePtr->callProc;
+	    return call2Proc(mPtr->clientData, interp,
 		    (Tcl_ObjectContext) contextPtr, numArgs, objv);
 	}
 
@@ -5319,7 +5344,7 @@ TEBCresume(
 	    TRACE_APPEND_OBJ(objResultPtr);
 	    NEXT_INST_F(1, 2, 1);
 	} else {
-	    if (Tcl_ListObjAppendList(interp, valuePtr, value2Ptr) != TCL_OK){
+	    if (Tcl_ListObjAppendList(interp, valuePtr, value2Ptr) != TCL_OK) {
 		TRACE_ERROR(interp);
 		goto gotError;
 	    }
@@ -6772,7 +6797,7 @@ TEBCresume(
 		    } else {
 			DECACHE_STACK_INFO();
 			if (TclPtrSetVarIdx(interp, varPtr, NULL, NULL, NULL,
-				valuePtr, TCL_LEAVE_ERR_MSG, varIndex)==NULL){
+				valuePtr, TCL_LEAVE_ERR_MSG, varIndex) == NULL) {
 			    CACHE_STACK_INFO();
 			    TRACE_APPEND(("ERROR init. index temp %" SIZEd ": %s\n",
 				    varIndex, O2S(Tcl_GetObjResult(interp))));
@@ -7682,12 +7707,15 @@ TEBCresume(
 #ifndef REMOVE_DEPRECATED_OPCODES
 	case INST_INVOKE_STK1:
 	    numArgs = TclGetUInt1AtPtr(pc + 1);
-	    TRACE(("%u => ... after call: ", (unsigned)numArgs));
+	    TRACE(("%u => ... after \"%.20s\": ", (unsigned)numArgs, cmdNameBuf));
 	    break;
 #endif // REMOVE_DEPRECATED_OPCODES
 	case INST_INVOKE_STK:
 	    numArgs = TclGetUInt4AtPtr(pc + 1);
-	    TRACE(("%u => ... after call: ", (unsigned)numArgs));
+	    TRACE(("%u => ... after \"%.20s\": ", (unsigned)numArgs, cmdNameBuf));
+	    break;
+	case INST_INVOKE_EXPANDED:
+	    TRACE((" => ... after \"%.20s\": ", cmdNameBuf));
 	    break;
 	case INST_EVAL_STK:
 	    /*
@@ -9656,7 +9684,8 @@ GetExceptRangeForPc(
 	    if (searchMode == TCL_BREAK) {
 		return rangePtr;
 	    }
-	    if (searchMode == TCL_CONTINUE && rangePtr->continueOffset != TCL_INDEX_NONE){
+	    if (searchMode == TCL_CONTINUE
+		    && rangePtr->continueOffset != TCL_INDEX_NONE) {
 		return rangePtr;
 	    }
 	}
