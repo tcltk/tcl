@@ -5487,10 +5487,11 @@ TEBCresume(
 	valuePtr = OBJ_AT_TOS;
 	TRACE(("\"%.30s\" => ", O2S(valuePtr)));
 	if (Tcl_IsShared(valuePtr)) {
-	    objResultPtr = Tcl_DuplicateObj(valuePtr);
+	    // Make copy of UTF-8 representation ONLY; we're about to modify it
+	    s1 = TclGetStringFromObj(valuePtr, &slength);
+	    TclNewStringObj(objResultPtr, s1, slength);
 	    slength = transform(TclGetString(objResultPtr));
 	    Tcl_SetObjLength(objResultPtr, slength);
-	    TclFreeInternalRep(objResultPtr);
 	    TRACE_APPEND_OBJ(objResultPtr);
 	    NEXT_INST_F(1, 1, 1);
 	} else {
