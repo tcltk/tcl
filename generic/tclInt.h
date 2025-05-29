@@ -1206,6 +1206,14 @@ TclObjTypeInOperator(
     return proc(interp, valueObj, listObj, boolResult);
 }
 
+/* Functions related to abstract list implementations */
+MODULE_SCOPE int
+Tcl_ListObjReverse(Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Obj **resultPtrPtr);
+MODULE_SCOPE int Tcl_ListObjRepeat(Tcl_Interp *interp, Tcl_Size repeatCount,
+    Tcl_Size objc, Tcl_Obj *const objv[], Tcl_Obj **resultPtrPtr);
+MODULE_SCOPE int Tcl_ListObjRange(Tcl_Interp *interp, Tcl_Obj *objPtr,
+    Tcl_Size start, Tcl_Size end, Tcl_Obj **resultPtrPtr);
+
 /*
  * The structure below defines an entry in the assocData hash table which is
  * associated with an interpreter. The entry contains a pointer to a function
@@ -4411,7 +4419,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
  *
  * MODULE_SCOPE void TclInitEmptyStringRep(Tcl_Obj *objPtr);
  * MODULE_SCOPE void TclInitStringRep(Tcl_Obj *objPtr, char *bytePtr, size_t len);
- * MODULE_SCOPE void TclAttemptInitStringRep(Tcl_Obj *objPtr, char *bytePtr, size_t len);
+ * MODULE_SCOPE const char *TclAttemptInitStringRep(Tcl_Obj *objPtr, char *bytePtr, size_t len);
  *
  *----------------------------------------------------------------
  */
@@ -4436,7 +4444,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 	(objPtr)->bytes = (char *)Tcl_AttemptAlloc((len) + 1U),		\
 	(objPtr)->length = ((objPtr)->bytes) ?				\
 		(memcpy((objPtr)->bytes, (bytePtr) ? (bytePtr) : &tclEmptyString, (len)), \
-		(objPtr)->bytes[len] = '\0', (len)) : (-1)		\
+		(objPtr)->bytes[len] = '\0', (Tcl_Size)(len)) : (-1)		\
     )), (objPtr)->bytes)
 
 /*

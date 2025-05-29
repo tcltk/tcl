@@ -1509,7 +1509,7 @@ AssembleOneLine(
 	    Tcl_SetErrorCode(interp, "TCL", "ASSEM", "BADJUMPTABLE", (char *)NULL);
 	    goto cleanup;
 	}
-	
+
 	if (TalInstructionTable[tblIdx].tclInstCode == INST_JUMP_TABLE) {
 	    JumptableInfo* jtPtr = AllocJumptable();
 
@@ -3092,11 +3092,11 @@ ResolveJumpTableTargets(
 		symEntryPtr = Tcl_NextHashEntry(&search)) {
 	    symbolObj = (Tcl_Obj*)Tcl_GetHashValue(symEntryPtr);
 	    DEBUG_PRINT("     symbol %s\n", TclGetString(symbolObj));
- 
+
 	    valEntryPtr = Tcl_FindHashEntry(&assemEnvPtr->labelHash,
 		    TclGetString(symbolObj));
 	    jumpTargetBBPtr = (BasicBlock*)Tcl_GetHashValue(valEntryPtr);
- 
+
 	    realJumpEntryPtr = Tcl_CreateHashEntry(realJumpHashPtr,
 		    Tcl_GetHashKey(symHash, symEntryPtr), NULL);
 	    DEBUG_PRINT(
@@ -3105,7 +3105,7 @@ ResolveJumpTableTargets(
 		    (Tcl_Size) Tcl_GetHashKey(symHash, symEntryPtr),
 		    TclGetString(symbolObj), jumpTargetBBPtr,
 		    jumpTargetBBPtr->startOffset, realJumpEntryPtr);
- 
+
 	    Tcl_SetHashValue(realJumpEntryPtr,
 		    INT2PTR(jumpTargetBBPtr->startOffset - bbPtr->jumpOffset));
 	}
