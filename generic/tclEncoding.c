@@ -4067,6 +4067,30 @@ EscapeToUtfProc(
 	numChars++;
     }
 
+    if ((flags & TCL_ENCODING_END) && (result == TCL_CONVERT_MULTIBYTE)) {
+	/* We have a code fragment left-over at the end */
+	if (dst > dstEnd) {
+	    result = TCL_CONVERT_NOSPACE;
+	} else {
+	    /* destination is not full, so we really are at the end now */
+	    if (PROFILE_STRICT(flags)) {
+		result = TCL_CONVERT_SYNTAX;
+	    } else {
+		/*
+		 * PROFILE_REPLACE or PROFILE_TCL8. The latter is treated
+		 * similar to former because Tcl8 was broken in this regard
+		 * as it just ignored the byte and truncated which is really
+		 * a no-no as per Unicode recommendations.
+		 */
+		result = TCL_OK;
+		dst += Tcl_UniCharToUtf(UNICODE_REPLACE_CHAR, dst);
+		numChars++;
+		/* TCL_CONVERT_MULTIBYTE means all source consumed */
+		src = srcEnd;
+	    }
+	}
+    }
+
     *statePtr = (Tcl_EncodingState) INT2PTR(state);
     *srcReadPtr = src - srcStart;
     *dstWrotePtr = dst - dstStart;
