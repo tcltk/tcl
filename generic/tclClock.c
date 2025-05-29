@@ -3630,7 +3630,8 @@ ClockScanObjCmd(
     }
 
     /* seconds are in localSeconds (relative base date), so reset time here */
-    yyHour = yyMinutes = yySeconds = yySecondOfDay = 0; yyMeridian = MER24;
+    yyHour = yyMinutes = yySeconds = yySecondOfDay = 0;
+    yyMeridian = MER24;
 
     /* If free scan */
     if (opts.formatObj == NULL) {

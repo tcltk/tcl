@@ -4420,7 +4420,7 @@ Tcl_TimeRateObjCmd(
 		     */
 		    threshold = 1;
 		    maxcnt = 0;
-		    /* FALLTHRU */
+		    TCL_FALLTHROUGH();
 		case TCL_CONTINUE:
 		    result = TCL_OK;
 		    break;
@@ -4509,7 +4509,8 @@ Tcl_TimeRateObjCmd(
 		lastIterTm = avgIterTm;
 	    }
 	    estIterTm *= lastIterTm;
-	    last = middle; lastCount = count;
+	    last = middle;
+	    lastCount = count;
 
 	    /*
 	     * Calculate next threshold to check.

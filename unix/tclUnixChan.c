@@ -1509,15 +1509,15 @@ TtyGetAttributes(
     parity = 'n';
 #ifdef PAREXT
     switch ((int) (iostate.c_cflag & (PARENB | PARODD | PAREXT))) {
-    case PARENB			  : parity = 'e'; break;
-    case PARENB | PARODD	  : parity = 'o'; break;
-    case PARENB |	   PAREXT : parity = 's'; break;
-    case PARENB | PARODD | PAREXT : parity = 'm'; break;
+    case PARENB			  :	parity = 'e'; break;
+    case PARENB | PARODD	  :	parity = 'o'; break;
+    case PARENB |	   PAREXT :	parity = 's'; break;
+    case PARENB | PARODD | PAREXT :	parity = 'm'; break;
     }
 #else /* !PAREXT */
     switch ((int) (iostate.c_cflag & (PARENB | PARODD))) {
-    case PARENB		 : parity = 'e'; break;
-    case PARENB | PARODD : parity = 'o'; break;
+    case PARENB		 :		parity = 'e'; break;
+    case PARENB | PARODD :		parity = 'o'; break;
     }
 #endif /* PAREXT */
 

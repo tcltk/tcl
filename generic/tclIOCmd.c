@@ -135,7 +135,7 @@ Tcl_PutsObjCmd(
 	    string = objv[3];
 	    break;
 	}
-	/* Fall through */
+	TCL_FALLTHROUGH();
     default:			/* [puts] or
 				 * [puts some bad number of arguments...] */
 	Tcl_WrongNumArgs(interp, 1, objv, "?-nonewline? ?channel? string");

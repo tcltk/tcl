@@ -2926,6 +2926,7 @@ ForeachLoopStep(
 		"\n    (\"%s\" body line %d)",
 		(statePtr->resultList != NULL ? "lmap" : "foreach"),
 		Tcl_GetErrorLine(interp)));
+	TCL_FALLTHROUGH();
     default:
 	goto done;
     }

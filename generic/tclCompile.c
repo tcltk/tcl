@@ -3783,7 +3783,8 @@ TclGetInnermostExceptionRange(
     ExceptionRange *rangePtr = envPtr->exceptArrayPtr + i;
 
     while (i > 0) {
-	rangePtr--; i--;
+	rangePtr--;
+	i--;
 
 	if (CurrentOffset(envPtr) >= rangePtr->codeOffset &&
 		(rangePtr->numCodeBytes == TCL_INDEX_NONE || CurrentOffset(envPtr) <
