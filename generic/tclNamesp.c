@@ -4769,14 +4769,14 @@ NamespaceWhichCmd(
 
     TclNewObj(resultPtr);
     switch (lookupType) {
-    case 0:				/* -command */
+    case 0:;				/* -command */
 	Tcl_Command cmd = Tcl_GetCommandFromObj(interp, objv[objc-1]);
 
 	if (cmd != NULL) {
 	    Tcl_GetCommandFullName(interp, cmd, resultPtr);
 	}
 	break;
-    case 1:				/* -variable */
+    case 1:;				/* -variable */
 	Tcl_Var var = Tcl_FindNamespaceVar(interp,
 		TclGetString(objv[objc-1]), NULL, /*flags*/ 0);
 
