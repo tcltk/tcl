@@ -958,11 +958,6 @@ TclOONextToObjCmd(
 {
     Interp *iPtr = (Interp *) interp;
     CallFrame *framePtr = iPtr->varFramePtr;
-    Class *classPtr;
-    CallContext *contextPtr;
-    Tcl_Size i;
-    Tcl_Object object;
-    const char *methodType;
 
     /*
      * Start with sanity checks on the calling context to make sure that we
@@ -977,7 +972,7 @@ TclOONextToObjCmd(
 	OO_ERROR(interp, CONTEXT_REQUIRED);
 	return TCL_ERROR;
     }
-    contextPtr = (CallContext *) framePtr->clientData;
+    CallContext *contextPtr = (CallContext *) framePtr->clientData;
 
     /*
      * Sanity check the arguments; we need the first one to refer to a class.
@@ -987,15 +982,8 @@ TclOONextToObjCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "class ?arg...?");
 	return TCL_ERROR;
     }
-    object = Tcl_GetObjectFromObj(interp, objv[1]);
-    if (object == NULL) {
-	return TCL_ERROR;
-    }
-    classPtr = ((Object *) object)->classPtr;
+    Class *classPtr = TclOOGetClassFromObj(interp, objv[1]);
     if (classPtr == NULL) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"\"%s\" is not a class", TclGetString(objv[1])));
-	OO_ERROR(interp, CLASS_REQUIRED);
 	return TCL_ERROR;
     }
 
@@ -1005,6 +993,7 @@ TclOONextToObjCmd(
      * allow jumping backwards!
      */
 
+    Tcl_Size i;
     for (i=contextPtr->index+1 ; i<contextPtr->callPtr->numChain ; i++) {
 	MInvoke *miPtr = &contextPtr->callPtr->chain[i];
 
@@ -1028,14 +1017,7 @@ TclOONextToObjCmd(
      * is on the chain but unreachable, or not on the chain at all.
      */
 
-    if (contextPtr->callPtr->flags & CONSTRUCTOR) {
-	methodType = "constructor";
-    } else if (contextPtr->callPtr->flags & DESTRUCTOR) {
-	methodType = "destructor";
-    } else {
-	methodType = "method";
-    }
-
+    const char *methodType = TclOOContextTypeName(contextPtr);
     for (i=contextPtr->index ; i != TCL_INDEX_NONE ; i--) {
 	MInvoke *miPtr = &contextPtr->callPtr->chain[i];
 
