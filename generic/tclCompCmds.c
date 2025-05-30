@@ -2122,7 +2122,7 @@ TclCompileDictWithCmd(
      */
 
     if (!TclIsEmptyToken(tokenPtr)) {
-	if (!EnvHasLVT(envPtr)) {
+	if (envPtr->procPtr == NULL) {
 	    return TclCompileBasicMin2ArgCmd(interp, parsePtr, cmdPtr,
 		    envPtr);
 	}
