@@ -430,6 +430,29 @@ FinalizeMethodRefs(
 /*
  * ----------------------------------------------------------------------
  *
+ * TclOOContextTypeName --
+ *
+ *	Get the name of the (high-level) type of method that a context is
+ *	processing. Used for error message generation.
+ *
+ * ----------------------------------------------------------------------
+ */
+const char *
+TclOOContextTypeName(
+    CallContext *contextPtr)
+{
+    if (contextPtr->callPtr->flags & CONSTRUCTOR) {
+	return "constructor";
+    } else if (contextPtr->callPtr->flags & DESTRUCTOR) {
+	return "destructor";
+    } else {
+	return "method";
+    }
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
  * TclOOGetSortedMethodList, TclOOGetSortedClassMethodList --
  *
  *	Discovers the list of method names supported by an object or class.

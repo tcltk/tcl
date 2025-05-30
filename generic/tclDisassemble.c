@@ -1353,9 +1353,12 @@ Tcl_DisassembleObjCmd(
     Tcl_Obj *codeObjPtr = NULL;
     Proc *procPtr = NULL;
     Tcl_HashEntry *hPtr;
+    Tcl_Obj *ooWhat;
     Object *oPtr;
+    Class *classPtr;
     ByteCode *codePtr;
     Method *methodPtr;
+    const char *bodyType;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "type ...");
@@ -1453,23 +1456,17 @@ Tcl_DisassembleObjCmd(
 	 * Look up the body of a constructor.
 	 */
 
-	oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[2]);
-	if (oPtr == NULL) {
-	    return TCL_ERROR;
-	}
-	if (oPtr->classPtr == NULL) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "\"%s\" is not a class", TclGetString(objv[2])));
-	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CLASS",
-		    TclGetString(objv[2]), (char *)NULL);
+	ooWhat = objv[2];
+	classPtr = TclOOGetClassFromObj(interp, ooWhat);
+	if (classPtr == NULL) {
 	    return TCL_ERROR;
 	}
 
-	methodPtr = oPtr->classPtr->constructorPtr;
+	methodPtr = classPtr->constructorPtr;
 	if (methodPtr == NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "\"%s\" has no defined constructor",
-		    TclGetString(objv[2])));
+		    TclGetString(ooWhat)));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "DISASSEMBLE",
 		    "CONSRUCTOR", (char *)NULL);
 	    return TCL_ERROR;
@@ -1483,30 +1480,9 @@ Tcl_DisassembleObjCmd(
 	    return TCL_ERROR;
 	}
 
-	/*
-	 * Compile if necessary.
-	 */
-
-	if (!TclHasInternalRep(procPtr->bodyPtr, &tclByteCodeType)) {
-	    Command cmd;
-
-	    /*
-	     * Yes, this is ugly, but we need to pass the namespace in to the
-	     * compiler in two places.
-	     */
-
-	    cmd.nsPtr = (Namespace *) oPtr->namespacePtr;
-	    procPtr->cmdPtr = &cmd;
-	    result = TclProcCompileProc(interp, procPtr, procPtr->bodyPtr,
-		    (Namespace *) oPtr->namespacePtr, "body of constructor",
-		    TclGetString(objv[2]));
-	    procPtr->cmdPtr = NULL;
-	    if (result != TCL_OK) {
-		return result;
-	    }
-	}
-	codeObjPtr = procPtr->bodyPtr;
-	break;
+	oPtr = classPtr->thisPtr;
+	bodyType = "body of constructor";
+	goto compileMethodIfNeeded;
 
     case DISAS_CLASS_DESTRUCTOR:
 	if (objc != 3) {
@@ -1518,23 +1494,17 @@ Tcl_DisassembleObjCmd(
 	 * Look up the body of a destructor.
 	 */
 
-	oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[2]);
-	if (oPtr == NULL) {
-	    return TCL_ERROR;
-	}
-	if (oPtr->classPtr == NULL) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "\"%s\" is not a class", TclGetString(objv[2])));
-	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CLASS",
-		    TclGetString(objv[2]), (char *)NULL);
+	ooWhat = objv[2];
+	classPtr = TclOOGetClassFromObj(interp, ooWhat);
+	if (classPtr == NULL) {
 	    return TCL_ERROR;
 	}
 
-	methodPtr = oPtr->classPtr->destructorPtr;
+	methodPtr = classPtr->destructorPtr;
 	if (methodPtr == NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "\"%s\" has no defined destructor",
-		    TclGetString(objv[2])));
+		    TclGetString(ooWhat)));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "DISASSEMBLE",
 		    "DESRUCTOR", (char *)NULL);
 	    return TCL_ERROR;
@@ -1548,30 +1518,9 @@ Tcl_DisassembleObjCmd(
 	    return TCL_ERROR;
 	}
 
-	/*
-	 * Compile if necessary.
-	 */
-
-	if (!TclHasInternalRep(procPtr->bodyPtr, &tclByteCodeType)) {
-	    Command cmd;
-
-	    /*
-	     * Yes, this is ugly, but we need to pass the namespace in to the
-	     * compiler in two places.
-	     */
-
-	    cmd.nsPtr = (Namespace *) oPtr->namespacePtr;
-	    procPtr->cmdPtr = &cmd;
-	    result = TclProcCompileProc(interp, procPtr, procPtr->bodyPtr,
-		    (Namespace *) oPtr->namespacePtr, "body of destructor",
-		    TclGetString(objv[2]));
-	    procPtr->cmdPtr = NULL;
-	    if (result != TCL_OK) {
-		return result;
-	    }
-	}
-	codeObjPtr = procPtr->bodyPtr;
-	break;
+	oPtr = classPtr->thisPtr;
+	bodyType = "body of destructor";
+	goto compileMethodIfNeeded;
 
     case DISAS_CLASS_METHOD:
 	if (objc != 4) {
@@ -1583,19 +1532,13 @@ Tcl_DisassembleObjCmd(
 	 * Look up the body of a class method.
 	 */
 
-	oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[2]);
-	if (oPtr == NULL) {
+	classPtr = TclOOGetClassFromObj(interp, objv[2]);
+	if (classPtr == NULL) {
 	    return TCL_ERROR;
 	}
-	if (oPtr->classPtr == NULL) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "\"%s\" is not a class", TclGetString(objv[2])));
-	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CLASS",
-		    TclGetString(objv[2]), (char *)NULL);
-	    return TCL_ERROR;
-	}
-	hPtr = Tcl_FindHashEntry(&oPtr->classPtr->classMethods,
-		objv[3]);
+	oPtr = classPtr->thisPtr;
+	ooWhat = objv[3];
+	hPtr = Tcl_FindHashEntry(&classPtr->classMethods, ooWhat);
 	goto methodBody;
     case DISAS_OBJECT_METHOD:
 	if (objc != 4) {
@@ -1614,7 +1557,8 @@ Tcl_DisassembleObjCmd(
 	if (oPtr->methodsPtr == NULL) {
 	    goto unknownMethod;
 	}
-	hPtr = Tcl_FindHashEntry(oPtr->methodsPtr, objv[3]);
+	ooWhat = objv[3];
+	hPtr = Tcl_FindHashEntry(oPtr->methodsPtr, ooWhat);
 
 	/*
 	 * Compile (if necessary) and disassemble a method body.
@@ -1624,9 +1568,9 @@ Tcl_DisassembleObjCmd(
 	if (hPtr == NULL) {
 	unknownMethod:
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "unknown method \"%s\"", TclGetString(objv[3])));
+		    "unknown method \"%s\"", TclGetString(ooWhat)));
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
-		    TclGetString(objv[3]), (char *)NULL);
+		    TclGetString(ooWhat), (char *)NULL);
 	    return TCL_ERROR;
 	}
 	procPtr = TclOOGetProcFromMethod((Method *)Tcl_GetHashValue(hPtr));
@@ -1637,6 +1581,9 @@ Tcl_DisassembleObjCmd(
 		    "METHODTYPE", (char *)NULL);
 	    return TCL_ERROR;
 	}
+	bodyType = "body of method";
+
+    compileMethodIfNeeded:
 	if (!TclHasInternalRep(procPtr->bodyPtr, &tclByteCodeType)) {
 	    Command cmd;
 
@@ -1648,8 +1595,8 @@ Tcl_DisassembleObjCmd(
 	    cmd.nsPtr = (Namespace *) oPtr->namespacePtr;
 	    procPtr->cmdPtr = &cmd;
 	    result = TclProcCompileProc(interp, procPtr, procPtr->bodyPtr,
-		    (Namespace *) oPtr->namespacePtr, "body of method",
-		    TclGetString(objv[3]));
+		    (Namespace *) oPtr->namespacePtr, bodyType,
+		    TclGetString(ooWhat));
 	    procPtr->cmdPtr = NULL;
 	    if (result != TCL_OK) {
 		return result;

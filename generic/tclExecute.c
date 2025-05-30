@@ -4655,6 +4655,7 @@ TEBCresume(
 
     {
 	Object *oPtr;
+	Class *classPtr;
 	CallFrame *framePtr;
 	CallContext *contextPtr;
 	Tcl_Size skip, newDepth;
@@ -4713,79 +4714,44 @@ TEBCresume(
 	}
 	contextPtr = (CallContext *)framePtr->clientData;
 
-	oPtr = (Object *) Tcl_GetObjectFromObj(interp, valuePtr);
-	if (oPtr == NULL) {
-	    TRACE_APPEND(("ERROR: \"%.30s\" not object\n", O2S(valuePtr)));
+	DECACHE_STACK_INFO();
+	classPtr = TclOOGetClassFromObj(interp, valuePtr);
+	CACHE_STACK_INFO();
+	if (classPtr == NULL) {
+	    TRACE_APPEND(("ERROR: \"%.30s\" not class\n", O2S(valuePtr)));
 	    goto gotError;
 	} else {
-	    Class *classPtr = oPtr->classPtr;
-	    struct MInvoke *miPtr;
 	    Tcl_Size i;
-	    const char *methodType;
-
-	    if (classPtr == NULL) {
-		TRACE_APPEND(("ERROR: \"%.30s\" not class\n", O2S(valuePtr)));
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"\"%s\" is not a class", TclGetString(valuePtr)));
-		DECACHE_STACK_INFO();
-		OO_ERROR(interp, CLASS_REQUIRED);
-		CACHE_STACK_INFO();
-		goto gotError;
-	    }
 
 	    for (i=contextPtr->index+1 ; i<contextPtr->callPtr->numChain ; i++) {
-		miPtr = contextPtr->callPtr->chain + i;
+		MInvoke *miPtr = contextPtr->callPtr->chain + i;
 		if (!miPtr->isFilter &&
 			miPtr->mPtr->declaringClassPtr == classPtr) {
 		    newDepth = i;
-#ifdef TCL_COMPILE_DEBUG
-		    if (tclTraceExec >= TCL_TRACE_BYTECODE_EXEC_COMMANDS) {
-			Tcl_Size j;
-			if (traceInstructions) {
-			    strncpy(cmdNameBuf, TclGetString(objv[0]), 20);
-			} else {
-			    fprintf(stdout, "%" SIZEd ": (%" SIZEd ") invoking ",
-				    iPtr->numLevels, PC_REL);
-			}
-			for (j = 0;  j < numArgs;  j++) {
-			    TclPrintObject(stdout, objv[j], 15);
-			    fprintf(stdout, " ");
-			}
-			fprintf(stdout, "\n");
-			fflush(stdout);
-		    }
-#endif /*TCL_COMPILE_DEBUG*/
 		    goto doInvokeNext;
 		}
 	    }
-
-	    if (contextPtr->callPtr->flags & CONSTRUCTOR) {
-		methodType = "constructor";
-	    } else if (contextPtr->callPtr->flags & DESTRUCTOR) {
-		methodType = "destructor";
-	    } else {
-		methodType = "method";
-	    }
+	    // Unlikely; cold path
 
 	    TRACE_APPEND(("ERROR: \"%.30s\" not on reachable chain\n",
 		    O2S(valuePtr)));
 	    for (i = contextPtr->index ; i != TCL_INDEX_NONE ; i--) {
-		miPtr = contextPtr->callPtr->chain + i;
-		if (miPtr->isFilter
-			|| miPtr->mPtr->declaringClassPtr != classPtr) {
-		    continue;
+		MInvoke *miPtr = contextPtr->callPtr->chain + i;
+		if (!miPtr->isFilter
+			&& miPtr->mPtr->declaringClassPtr == classPtr) {
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			    "%s implementation by \"%s\" not reachable from here",
+			    TclOOContextTypeName(contextPtr),
+			    TclGetString(valuePtr)));
+		    DECACHE_STACK_INFO();
+		    OO_ERROR(interp, CLASS_NOT_REACHABLE);
+		    CACHE_STACK_INFO();
+		    goto gotError;
 		}
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"%s implementation by \"%s\" not reachable from here",
-			methodType, TclGetString(valuePtr)));
-		DECACHE_STACK_INFO();
-		OO_ERROR(interp, CLASS_NOT_REACHABLE);
-		CACHE_STACK_INFO();
-		goto gotError;
 	    }
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "%s has no non-filter implementation by \"%s\"",
-		    methodType, TclGetString(valuePtr)));
+		    TclOOContextTypeName(contextPtr), TclGetString(valuePtr)));
 	    DECACHE_STACK_INFO();
 	    OO_ERROR(interp, CLASS_NOT_THERE);
 	    CACHE_STACK_INFO();
@@ -4831,31 +4797,24 @@ TEBCresume(
 	     * equivalent) unexpectedly.
 	     */
 
-	    const char *methodType;
-
-	    if (contextPtr->callPtr->flags & CONSTRUCTOR) {
-		methodType = "constructor";
-	    } else if (contextPtr->callPtr->flags & DESTRUCTOR) {
-		methodType = "destructor";
-	    } else {
-		methodType = "method";
-	    }
-
 	    TRACE_APPEND(("ERROR: no TclOO next impl\n"));
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "no next %s implementation", methodType));
+		    "no next %s implementation", TclOOContextTypeName(contextPtr)));
 	    DECACHE_STACK_INFO();
 	    OO_ERROR(interp, NOTHING_NEXT);
 	    CACHE_STACK_INFO();
 	    goto gotError;
+	}
+
+    doInvokeNext:
 #ifdef TCL_COMPILE_DEBUG
-	} else if (tclTraceExec >= TCL_TRACE_BYTECODE_EXEC_COMMANDS) {
+	if (tclTraceExec >= TCL_TRACE_BYTECODE_EXEC_COMMANDS) {
 	    Tcl_Size i;
 
 	    if (traceInstructions) {
 		strncpy(cmdNameBuf, TclGetString(objv[0]), 20);
 	    } else {
-		fprintf(stdout, "%" SIZEd ": (%" SIZEu ") invoking ",
+		fprintf(stdout, "%" SIZEd ": (%" SIZEd ") invoking ",
 			iPtr->numLevels, PC_REL);
 	    }
 	    for (i = 0;  i < numArgs;  i++) {
@@ -4864,10 +4823,8 @@ TEBCresume(
 	    }
 	    fprintf(stdout, "\n");
 	    fflush(stdout);
-#endif /*TCL_COMPILE_DEBUG*/
 	}
-
-    doInvokeNext:
+#endif /*TCL_COMPILE_DEBUG*/
 	bcFramePtr->data.tebc.pc = (char *) pc;
 	iPtr->cmdFramePtr = bcFramePtr;
 
@@ -4914,14 +4871,18 @@ TEBCresume(
 	}
 
     case INST_TCLOO_IS_OBJECT:
+	DECACHE_STACK_INFO();
 	oPtr = (Object *) Tcl_GetObjectFromObj(interp, OBJ_AT_TOS);
+	CACHE_STACK_INFO();
 	objResultPtr = TCONST(oPtr != NULL ? 1 : 0);
 	TRACE_WITH_OBJ(("%.30s => ", O2S(OBJ_AT_TOS)), objResultPtr);
 	NEXT_INST_F(1, 1, 1);
     case INST_TCLOO_CLASS:
     case INST_TCLOO_NS:
     case INST_TCLOO_ID:
+	DECACHE_STACK_INFO();
 	oPtr = (Object *) Tcl_GetObjectFromObj(interp, OBJ_AT_TOS);
+	CACHE_STACK_INFO();
 	if (oPtr == NULL) {
 	    TRACE(("%.30s => ERROR: not object\n", O2S(OBJ_AT_TOS)));
 	    goto gotError;
