@@ -4893,6 +4893,8 @@ TEBCresume(
 	case INST_TCLOO_ID:
 	    objResultPtr = Tcl_NewWideIntObj(oPtr->creationEpoch);
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
 	TRACE_WITH_OBJ(("%.30s => ", O2S(OBJ_AT_TOS)), objResultPtr);
 	NEXT_INST_F(1, 1, 1);
