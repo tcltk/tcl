@@ -1353,7 +1353,7 @@ Tcl_DisassembleObjCmd(
     Tcl_Obj *codeObjPtr = NULL;
     Proc *procPtr = NULL;
     Tcl_HashEntry *hPtr;
-    Tcl_Obj *ooWhat;
+    Tcl_Obj *ooWhat = NULL;
     Object *oPtr;
     Class *classPtr;
     ByteCode *codePtr;
