@@ -1532,12 +1532,12 @@ Tcl_DisassembleObjCmd(
 	 * Look up the body of a class method.
 	 */
 
+	ooWhat = objv[3];
 	classPtr = TclOOGetClassFromObj(interp, objv[2]);
 	if (classPtr == NULL) {
 	    return TCL_ERROR;
 	}
 	oPtr = classPtr->thisPtr;
-	ooWhat = objv[3];
 	hPtr = Tcl_FindHashEntry(&classPtr->classMethods, ooWhat);
 	goto methodBody;
     case DISAS_OBJECT_METHOD:
@@ -1550,6 +1550,7 @@ Tcl_DisassembleObjCmd(
 	 * Look up the body of an instance method.
 	 */
 
+	ooWhat = objv[3];
 	oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[2]);
 	if (oPtr == NULL) {
 	    return TCL_ERROR;
@@ -1557,7 +1558,6 @@ Tcl_DisassembleObjCmd(
 	if (oPtr->methodsPtr == NULL) {
 	    goto unknownMethod;
 	}
-	ooWhat = objv[3];
 	hPtr = Tcl_FindHashEntry(oPtr->methodsPtr, ooWhat);
 
 	/*
