@@ -1568,10 +1568,10 @@ Tcl_DisassembleObjCmd(
 	if (oPtr == NULL) {
 	    return TCL_ERROR;
 	}
+	ooWhat = objv[3];
 	if (oPtr->methodsPtr == NULL) {
 	    goto unknownMethod;
 	}
-	ooWhat = objv[3];
 	hPtr = Tcl_FindHashEntry(oPtr->methodsPtr, ooWhat);
 
 	/*
