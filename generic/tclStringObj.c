@@ -2168,7 +2168,6 @@ Tcl_AppendFormatToObj(
 	}
 
 	case 'u':
-	    /* FALLTHRU */
 	case 'd':
 	case 'o':
 	case 'p':
@@ -2776,7 +2775,7 @@ AppendPrintfToObjVA(
 		if (sizeof(size_t) == sizeof(Tcl_WideInt)) {
 		    size = 2;
 		}
-		/* FALLTHRU */
+		TCL_FALLTHROUGH();
 	    case 'c':
 	    case 'i':
 	    case 'u':
@@ -2871,7 +2870,7 @@ AppendPrintfToObjVA(
 		break;
 	    case 'h':
 		size = -1;
-		/* FALLTHRU */
+		TCL_FALLTHROUGH();
 	    default:
 		p++;
 	    }
@@ -3275,7 +3274,8 @@ TclStringCat(
 	} while (--oc);
     } else {
 	/* Result will be concat of string reps. Pre-size it. */
-	ov = objv; oc = objc;
+	ov = objv;
+	oc = objc;
 	do {
 	    Tcl_Obj *pendingPtr = NULL;
 
@@ -3359,7 +3359,8 @@ TclStringCat(
 	return objv[first];
     }
 
-    objv += first; objc = (last - first + 1);
+    objv += first;
+    objc = (last - first + 1);
     inPlace = (flags & TCL_STRING_IN_PLACE) && !Tcl_IsShared(*objv);
 
     if (binary) {
@@ -3374,7 +3375,8 @@ TclStringCat(
 	if (inPlace) {
 	    Tcl_Size start = 0;
 
-	    objResultPtr = *objv++; objc--;
+	    objResultPtr = *objv++;
+	    objc--;
 	    (void)Tcl_GetBytesFromObj(NULL, objResultPtr, &start);
 	    dst = Tcl_SetByteArrayLength(objResultPtr, length) + start;
 	} else {
@@ -3404,7 +3406,8 @@ TclStringCat(
 	if (inPlace) {
 	    Tcl_Size start;
 
-	    objResultPtr = *objv++; objc--;
+	    objResultPtr = *objv++;
+	    objc--;
 
 	    /* Ugly interface! Force resize of the unicode array. */
 	    (void)Tcl_GetUnicodeFromObj(objResultPtr, &start);
@@ -3455,7 +3458,8 @@ TclStringCat(
 	if (inPlace) {
 	    Tcl_Size start;
 
-	    objResultPtr = *objv++; objc--;
+	    objResultPtr = *objv++;
+	    objc--;
 
 	    (void)TclGetStringFromObj(objResultPtr, &start);
 	    if (0 == Tcl_AttemptSetObjLength(objResultPtr, length)) {
