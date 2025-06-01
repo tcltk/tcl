@@ -238,8 +238,6 @@ FindHashEntry(
  *----------------------------------------------------------------------
  */
 
-#define TCL_HASH_FIND	((int *)-1)
-
 static Tcl_HashEntry *
 CreateHashEntry(
     Tcl_HashTable *tablePtr,	/* Table in which to lookup entry. */
