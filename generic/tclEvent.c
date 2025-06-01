@@ -1650,6 +1650,8 @@ Tcl_VwaitObjCmd(
 	    vwaitItems[numItems].sourceObj = objv[i];
 	    numItems++;
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
 
@@ -1967,7 +1969,7 @@ Tcl_UpdateObjCmd(
 	    flags = TCL_IDLE_EVENTS|TCL_DONT_WAIT;
 	    break;
 	default:
-	    Tcl_Panic("Tcl_UpdateObjCmd: bad option index to UpdateOptions");
+	    TCL_UNREACHABLE();
 	}
     } else {
 	Tcl_WrongNumArgs(interp, 1, objv, "?idletasks?");

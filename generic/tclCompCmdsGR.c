@@ -2160,6 +2160,7 @@ TclCompileRegsubCmd(
 		 * but we definitely can't handle that at all.
 		 */
 	    }
+	    TCL_FALLTHROUGH();
 	case '\0': case '?': case '[': case '\\':
 	    goto done;
 	}

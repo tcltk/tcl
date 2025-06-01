@@ -8776,7 +8776,7 @@ TestLutilCmd(
 	    Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
 	    break;
 	}
-	/* FALLTHRU */
+	TCL_FALLTHROUGH();
     case LUTIL_DIFFINDEX:
 	nCmp = nL1 <= nL2 ? nL1 : nL2;
 	for (i = 0; i < nCmp; ++i) {

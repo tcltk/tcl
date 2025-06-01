@@ -3945,6 +3945,8 @@ ArrayNamesCmd(
 		    return TCL_ERROR;
 		}
 		break;
+	    default:
+		TCL_UNREACHABLE();
 	    }
 	    if (matched == 0) {
 		continue;
@@ -6980,10 +6982,10 @@ ArrayDefaultCmd(
 	    SetArrayDefault(varPtr, NULL);
 	}
 	return TCL_OK;
-    }
 
-    /* Unreached */
-    return TCL_ERROR;
+    default:
+	TCL_UNREACHABLE();
+    }
 }
 
 /*

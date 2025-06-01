@@ -157,13 +157,14 @@ Tcl_LoadObjCmd(
 		&index) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	++objv; --objc;
+	++objv;
+	--objc;
 	if (LOAD_GLOBAL == index) {
 	    flags |= TCL_LOAD_GLOBAL;
 	} else if (LOAD_LAZY == index) {
 	    flags |= TCL_LOAD_LAZY;
 	} else {
-		break;
+	    break;
 	}
     }
     if ((objc < 2) || (objc > 4)) {
@@ -599,6 +600,8 @@ Tcl_UnloadObjCmd(
 	case UNLOAD_LAST:		/* -- */
 	    i++;
 	    goto endOfForLoop;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
   endOfForLoop:
