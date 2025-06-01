@@ -483,6 +483,8 @@ EncodingConvertParseOptions(
 	    case FAILINDEX:
 		failVarObj = objv[argIndex];
 		break;
+	    default:
+		TCL_UNREACHABLE();
 	    }
 	}
 	/* Get encoding after opts so no need to free it on option error */
@@ -2118,8 +2120,7 @@ PathTypeCmd(
 	TclNewLiteralStringObj(typeName, "volumerelative");
 	break;
     default:
-	/* Should be unreachable */
-	return TCL_OK;
+	TCL_UNREACHABLE();
     }
     Tcl_SetObjResult(interp, typeName);
     return TCL_OK;
@@ -2925,6 +2926,7 @@ ForeachLoopStep(
 		"\n    (\"%s\" body line %d)",
 		(statePtr->resultList != NULL ? "lmap" : "foreach"),
 		Tcl_GetErrorLine(interp)));
+	TCL_FALLTHROUGH();
     default:
 	goto done;
     }

@@ -3352,6 +3352,8 @@ Tcl_LsearchObjCmd(
 	    }
 	    break;
 	}
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
 
@@ -4126,10 +4128,8 @@ Tcl_LseqObjCmd(
 	case LSEQ_BY:
 	    /* Error case */
 	    goto syntax;
-	    break;
 	default:
 	    goto syntax;
-	    break;
 	}
 	break;
 
@@ -4147,7 +4147,6 @@ Tcl_LseqObjCmd(
 	case LSEQ_COUNT:
 	default:
 	    goto syntax;
-	    break;
 	}
 	break;
 
@@ -4162,7 +4161,6 @@ Tcl_LseqObjCmd(
 	    break;
 	default:
 	    goto syntax;
-	    break;
 	}
 	opmode = (SequenceOperators)values[1];
 	switch (opmode) {
@@ -4177,7 +4175,6 @@ Tcl_LseqObjCmd(
 	    break;
 	default:
 	    goto syntax;
-	    break;
 	}
 	break;
 
@@ -4186,7 +4183,6 @@ Tcl_LseqObjCmd(
     syntax:
 	Tcl_WrongNumArgs(interp, 1, objv, "n ??op? n ??by? n??");
 	goto done;
-	break;
     }
 
     /* Count needs to be integer, so try to convert if possible */
@@ -4532,6 +4528,8 @@ Tcl_LsortObjCmd(
 	    group = 1;
 	    i++;
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
     if (nocase && (sortInfo.sortMode == SORTMODE_ASCII)) {

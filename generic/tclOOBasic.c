@@ -1189,13 +1189,7 @@ TclOOSelfObjCmd(
 	    } else if (mPtr->declaringObjectPtr != NULL) {
 		declarerPtr = mPtr->declaringObjectPtr;
 	    } else {
-		/*
-		 * This should be unreachable code.
-		 */
-
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"method without declarer!", TCL_AUTO_LENGTH));
-		return TCL_ERROR;
+		TCL_UNREACHABLE();
 	    }
 
 	    result[0] = TclOOObjectName(interp, declarerPtr);
@@ -1221,13 +1215,7 @@ TclOOSelfObjCmd(
 	    } else if (mPtr->declaringObjectPtr != NULL) {
 		declarerPtr = mPtr->declaringObjectPtr;
 	    } else {
-		/*
-		 * This should be unreachable code.
-		 */
-
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"method without declarer!", TCL_AUTO_LENGTH));
-		return TCL_ERROR;
+		TCL_UNREACHABLE();
 	    }
 
 	    result[0] = TclOOObjectName(interp, declarerPtr);
@@ -1266,13 +1254,7 @@ TclOOSelfObjCmd(
 	    } else if (mPtr->declaringObjectPtr != NULL) {
 		declarerPtr = mPtr->declaringObjectPtr;
 	    } else {
-		/*
-		 * This should be unreachable code.
-		 */
-
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"method without declarer!", TCL_AUTO_LENGTH));
-		return TCL_ERROR;
+		TCL_UNREACHABLE();
 	    }
 	    result[0] = TclOOObjectName(interp, declarerPtr);
 	    result[1] = mPtr->namePtr;
@@ -1284,8 +1266,9 @@ TclOOSelfObjCmd(
 	TclNewIndexObj(result[1], contextPtr->index);
 	Tcl_SetObjResult(interp, Tcl_NewListObj(2, result));
 	return TCL_OK;
+    default:
+	TCL_UNREACHABLE();
     }
-    return TCL_ERROR;
 }
 
 /*
