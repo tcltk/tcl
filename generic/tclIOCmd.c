@@ -910,11 +910,12 @@ Tcl_ExecObjCmd(
     int argc, background, i, index, keepNewline, result, skip, ignoreStderr;
     Tcl_Size length;
     static const char *const options[] = {
-	"-ignorestderr", "-keepnewline", "--", NULL
+	"-ignorestderr", "-keepnewline", "-encoding", "--", NULL
     };
     enum execOptionsEnum {
-	EXEC_IGNORESTDERR, EXEC_KEEPNEWLINE, EXEC_LAST
+	EXEC_IGNORESTDERR, EXEC_KEEPNEWLINE, EXEC_ENCODING, EXEC_LAST
     };
+    Tcl_Obj *encodingObj = NULL;
 
     /*
      * Check for any leading option arguments.
@@ -931,12 +932,24 @@ Tcl_ExecObjCmd(
 		TCL_EXACT, &index) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	if (index == EXEC_KEEPNEWLINE) {
-	    keepNewline = 1;
-	} else if (index == EXEC_IGNORESTDERR) {
-	    ignoreStderr = 1;
-	} else {
+	if (index == EXEC_LAST) {
 	    skip++;
+	    break;
+	}
+	switch (index) {
+	case EXEC_KEEPNEWLINE:
+	    keepNewline = 1;
+	    break;
+	case EXEC_IGNORESTDERR:
+	    ignoreStderr = 1;
+	    break;
+	case EXEC_ENCODING:
+	    if (++skip >= objc) {
+		Tcl_SetResult(interp, "No value given for option -encoding.",
+			TCL_STATIC);
+		return TCL_ERROR;
+	    }
+	    encodingObj = objv[skip];
 	    break;
 	}
     }
@@ -986,11 +999,6 @@ Tcl_ExecObjCmd(
 	return TCL_ERROR;
     }
 
-    /* Bug [0f1ddc0df7] - encoding errors - use replace profile */
-    if (Tcl_SetChannelOption(NULL, chan, "-profile", "replace") != TCL_OK) {
-	return TCL_ERROR;
-    }
-
     if (background) {
 	/*
 	 * Store the list of PIDs from the pipeline in interp's result and
@@ -1002,6 +1010,20 @@ Tcl_ExecObjCmd(
 	    return TCL_ERROR;
 	}
 	return TCL_OK;
+    }
+
+    /* Bug [0f1ddc0df7] - encoding errors - use replace profile */
+    if (Tcl_SetChannelOption(interp, chan, "-profile", "replace") != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    /* TIP 716 */
+    if (encodingObj) {
+	if (Tcl_SetChannelOption(
+		interp, chan, "-encoding", Tcl_GetString(encodingObj)) !=
+	    TCL_OK) {
+	    return TCL_ERROR;
+	}
     }
 
     TclNewObj(resultPtr);
