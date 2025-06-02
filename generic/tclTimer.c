@@ -979,7 +979,7 @@ Tcl_AfterObjCmd(
 	}
 	break;
     default:
-	Tcl_Panic("Tcl_AfterObjCmd: bad subcommand index to afterSubCmds");
+	TCL_UNREACHABLE();
     }
     return TCL_OK;
 }

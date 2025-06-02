@@ -250,9 +250,9 @@ Tcl_TraceObjCmd(
 	    return TCL_ERROR;
 	}
 	return traceSubCmds[typeIndex](interp, optionIndex, objc, objv);
-	break;
     }
-
+    default:
+	TCL_UNREACHABLE();
     }
     return TCL_OK;
 }
@@ -344,6 +344,8 @@ TraceExecutionObjCmd(
 	    case TRACE_EXEC_LEAVE_STEP:
 		flags |= TCL_TRACE_LEAVE_DURING_EXEC;
 		break;
+	    default:
+		TCL_UNREACHABLE();
 	    }
 	}
 	command = TclGetStringFromObj(objv[5], &length);
@@ -500,6 +502,8 @@ TraceExecutionObjCmd(
 	Tcl_SetObjResult(interp, resultListPtr);
 	break;
     }
+    default:
+	TCL_UNREACHABLE();
     }
     return TCL_OK;
 }
@@ -580,6 +584,8 @@ TraceCommandObjCmd(
 	    case TRACE_CMD_DELETE:
 		flags |= TCL_TRACE_DELETE;
 		break;
+	    default:
+		TCL_UNREACHABLE();
 	    }
 	}
 
@@ -694,6 +700,8 @@ TraceCommandObjCmd(
 	Tcl_SetObjResult(interp, resultListPtr);
 	break;
     }
+    default:
+	TCL_UNREACHABLE();
     }
     return TCL_OK;
 }
@@ -785,6 +793,8 @@ TraceVariableObjCmd(
 	    case TRACE_VAR_WRITE:
 		flags |= TCL_TRACE_WRITES;
 		break;
+	    default:
+		TCL_UNREACHABLE();
 	    }
 	}
 	command = TclGetStringFromObj(objv[5], &length);
@@ -878,6 +888,8 @@ TraceVariableObjCmd(
 	Tcl_SetObjResult(interp, resultListPtr);
 	break;
     }
+    default:
+	TCL_UNREACHABLE();
     }
     return TCL_OK;
 }

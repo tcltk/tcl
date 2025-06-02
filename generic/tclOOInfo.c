@@ -485,6 +485,8 @@ InfoObjectIsACmd(
 	    return TCL_ERROR;
 	}
 	break;
+    default:
+	TCL_UNREACHABLE();
     }
 
     /*
@@ -538,6 +540,8 @@ InfoObjectIsACmd(
 	    result = TclOOIsReachable(o2Ptr->classPtr, oPtr->selfCls);
 	}
 	break;
+    default:
+	TCL_UNREACHABLE();
     }
     Tcl_SetObjResult(interp, Tcl_NewBooleanObj(result));
     return TCL_OK;
@@ -628,6 +632,8 @@ InfoObjectMethodsCmd(
 		    return TCL_ERROR;
 		}
 		break;
+	    default:
+		TCL_UNREACHABLE();
 	    }
 	}
     }
@@ -1145,9 +1151,9 @@ InfoClassDefnNsCmd(
 	return TCL_ERROR;
     }
 
-    if (kind) {
+    if (kind) {			// -instance
 	nsNamePtr = clsPtr->objDefinitionNs;
-    } else {
+    } else {			// -class
 	nsNamePtr = clsPtr->clsDefinitionNs;
     }
     if (nsNamePtr) {
@@ -1412,6 +1418,8 @@ InfoClassMethodsCmd(
 		    return TCL_ERROR;
 		}
 		break;
+	    default:
+		TCL_UNREACHABLE();
 	    }
 	}
     }
@@ -1427,6 +1435,8 @@ InfoClassMethodsCmd(
 	case SCOPE_UNEXPORTED:
 	    flag = 0;
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
 

@@ -1099,6 +1099,8 @@ TclOODefinePropertyCmd(
 		    return TCL_ERROR;
 		}
 		break;
+	    default:
+		TCL_UNREACHABLE();
 	    }
 	}
 
@@ -1221,6 +1223,8 @@ TclOOInfoClassPropCmd(
 	case PROP_WRITABLE:
 	    writable = 1;
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
 
@@ -1279,6 +1283,8 @@ TclOOInfoObjectPropCmd(
 	case PROP_WRITABLE:
 	    writable = 1;
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
 

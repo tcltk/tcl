@@ -499,7 +499,8 @@ ProcessStatusObjCmd(
 		&index) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	++objv; --objc;
+	++objv;
+	--objc;
 	if (STATUS_WAIT == index) {
 	    options = 0;
 	} else {
