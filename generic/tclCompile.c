@@ -161,7 +161,7 @@ InstructionDesc const tclInstructionTable[] = {
 	"incrScalarStkImm",2,	0,	  OPERAND_INT1),
 	/* Incr scalar; scalar name is stktop; incr amount is op1 */
     DEPRECATED_INSTRUCTION_ENTRY2(
- 	"incrArray1Imm",  3,	0,	  OPERAND_LVT1, OPERAND_INT1),
+	"incrArray1Imm",  3,	0,	  OPERAND_LVT1, OPERAND_INT1),
 	/* Incr array elem; array at slot op1 <= 255, elem is stktop,
 	 * amount is 2nd operand byte */
     TCL_INSTRUCTION_ENTRY1(
@@ -1494,12 +1494,18 @@ IsCompactibleCompileEnv(
 	case INST_EVAL_STK:
 	case INST_EXPR_STK:
 	case INST_YIELD:
+	case INST_YIELD_TO_INVOKE:
 	    return 0;
 	    /* Upvars */
 	case INST_UPVAR:
 	case INST_NSUPVAR:
 	case INST_VARIABLE:
 	    return 0;
+	    /* TclOO::next is NOT a problem: puts stack frame out of way.
+	     * There's a way to do it, but it's beneath the threshold of
+	     * likelihood. */
+	case INST_TCLOO_NEXT:
+	case INST_TCLOO_NEXT_CLASS:
 	default:
 	    size = tclInstructionTable[*pc].numBytes;
 	    assert (size > 0);
@@ -3777,7 +3783,8 @@ TclGetInnermostExceptionRange(
     ExceptionRange *rangePtr = envPtr->exceptArrayPtr + i;
 
     while (i > 0) {
-	rangePtr--; i--;
+	rangePtr--;
+	i--;
 
 	if (CurrentOffset(envPtr) >= rangePtr->codeOffset &&
 		(rangePtr->numCodeBytes == TCL_INDEX_NONE || CurrentOffset(envPtr) <

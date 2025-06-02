@@ -88,22 +88,39 @@ static const EnsembleImplMap infoClassCmds[] = {
     {"variables",    InfoClassVariablesCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
     {NULL, NULL, NULL, NULL, NULL, 0}
 };
-
 /*
  * ----------------------------------------------------------------------
  *
- * LocalVarName --
+ * DescribeMethodArgs --
  *
- *	Get the name of a local variable (especially a method argument) as a
- *	Tcl value.
+ *	Generate the descriptor for the arguments to a method (including a
+ *	constructor, usually).
  *
  * ----------------------------------------------------------------------
  */
 static inline Tcl_Obj *
-LocalVarName(
-    CompiledLocal *localPtr)
+DescribeMethodArgs(
+    Proc *procPtr)
 {
-    return Tcl_NewStringObj(localPtr->name, TCL_AUTO_LENGTH);
+    Tcl_Obj *argObjList;
+    CompiledLocal *localPtr;
+
+    TclNewObj(argObjList);
+    for (localPtr=procPtr->firstLocalPtr; localPtr!=NULL;
+	    localPtr=localPtr->nextPtr) {
+	if (TclIsVarArgument(localPtr)) {
+	    Tcl_Obj *argObj;
+
+	    TclNewObj(argObj);
+	    Tcl_ListObjAppendElement(NULL, argObj, Tcl_NewStringObj(
+		    localPtr->name, localPtr->nameLength));
+	    if (localPtr->defValuePtr != NULL) {
+		Tcl_ListObjAppendElement(NULL, argObj, localPtr->defValuePtr);
+	    }
+	    Tcl_ListObjAppendElement(NULL, argObjList, argObj);
+	}
+    }
+    return argObjList;
 }
 
 /*
@@ -252,7 +269,6 @@ InfoObjectDefnCmd(
     Object *oPtr;
     Tcl_HashEntry *hPtr;
     Proc *procPtr;
-    CompiledLocal *localPtr;
     Tcl_Obj *resultObjs[2];
 
     if (objc != 3) {
@@ -281,20 +297,7 @@ InfoObjectDefnCmd(
      * We now have the method to describe the definition of.
      */
 
-    TclNewObj(resultObjs[0]);
-    for (localPtr=procPtr->firstLocalPtr; localPtr!=NULL;
-	    localPtr=localPtr->nextPtr) {
-	if (TclIsVarArgument(localPtr)) {
-	    Tcl_Obj *argObj;
-
-	    TclNewObj(argObj);
-	    Tcl_ListObjAppendElement(NULL, argObj, LocalVarName(localPtr));
-	    if (localPtr->defValuePtr != NULL) {
-		Tcl_ListObjAppendElement(NULL, argObj, localPtr->defValuePtr);
-	    }
-	    Tcl_ListObjAppendElement(NULL, resultObjs[0], argObj);
-	}
-    }
+    resultObjs[0] = DescribeMethodArgs(procPtr);
     resultObjs[1] = TclOOGetMethodBody((Method *) Tcl_GetHashValue(hPtr));
     Tcl_SetObjResult(interp, Tcl_NewListObj(2, resultObjs));
     return TCL_OK;
@@ -485,6 +488,8 @@ InfoObjectIsACmd(
 	    return TCL_ERROR;
 	}
 	break;
+    default:
+	TCL_UNREACHABLE();
     }
 
     /*
@@ -538,6 +543,8 @@ InfoObjectIsACmd(
 	    result = TclOOIsReachable(o2Ptr->classPtr, oPtr->selfCls);
 	}
 	break;
+    default:
+	TCL_UNREACHABLE();
     }
     Tcl_SetObjResult(interp, Tcl_NewBooleanObj(result));
     return TCL_OK;
@@ -628,6 +635,8 @@ InfoObjectMethodsCmd(
 		    return TCL_ERROR;
 		}
 		break;
+	    default:
+		TCL_UNREACHABLE();
 	    }
 	}
     }
@@ -995,7 +1004,6 @@ InfoClassConstrCmd(
     Tcl_Obj *const objv[])
 {
     Proc *procPtr;
-    CompiledLocal *localPtr;
     Tcl_Obj *resultObjs[2];
     Class *clsPtr;
 
@@ -1019,20 +1027,7 @@ InfoClassConstrCmd(
 	return TCL_ERROR;
     }
 
-    TclNewObj(resultObjs[0]);
-    for (localPtr=procPtr->firstLocalPtr; localPtr!=NULL;
-	    localPtr=localPtr->nextPtr) {
-	if (TclIsVarArgument(localPtr)) {
-	    Tcl_Obj *argObj;
-
-	    TclNewObj(argObj);
-	    Tcl_ListObjAppendElement(NULL, argObj, LocalVarName(localPtr));
-	    if (localPtr->defValuePtr != NULL) {
-		Tcl_ListObjAppendElement(NULL, argObj, localPtr->defValuePtr);
-	    }
-	    Tcl_ListObjAppendElement(NULL, resultObjs[0], argObj);
-	}
-    }
+    resultObjs[0] = DescribeMethodArgs(procPtr);
     resultObjs[1] = TclOOGetMethodBody(clsPtr->constructorPtr);
     Tcl_SetObjResult(interp, Tcl_NewListObj(2, resultObjs));
     return TCL_OK;
@@ -1057,7 +1052,6 @@ InfoClassDefnCmd(
 {
     Tcl_HashEntry *hPtr;
     Proc *procPtr;
-    CompiledLocal *localPtr;
     Tcl_Obj *resultObjs[2];
     Class *clsPtr;
 
@@ -1087,20 +1081,7 @@ InfoClassDefnCmd(
 	return TCL_ERROR;
     }
 
-    TclNewObj(resultObjs[0]);
-    for (localPtr=procPtr->firstLocalPtr; localPtr!=NULL;
-	    localPtr=localPtr->nextPtr) {
-	if (TclIsVarArgument(localPtr)) {
-	    Tcl_Obj *argObj;
-
-	    TclNewObj(argObj);
-	    Tcl_ListObjAppendElement(NULL, argObj, LocalVarName(localPtr));
-	    if (localPtr->defValuePtr != NULL) {
-		Tcl_ListObjAppendElement(NULL, argObj, localPtr->defValuePtr);
-	    }
-	    Tcl_ListObjAppendElement(NULL, resultObjs[0], argObj);
-	}
-    }
+    resultObjs[0] = DescribeMethodArgs(procPtr);
     resultObjs[1] = TclOOGetMethodBody((Method *) Tcl_GetHashValue(hPtr));
     Tcl_SetObjResult(interp, Tcl_NewListObj(2, resultObjs));
     return TCL_OK;
@@ -1145,9 +1126,9 @@ InfoClassDefnNsCmd(
 	return TCL_ERROR;
     }
 
-    if (kind) {
+    if (kind) {			// -instance
 	nsNamePtr = clsPtr->objDefinitionNs;
-    } else {
+    } else {			// -class
 	nsNamePtr = clsPtr->clsDefinitionNs;
     }
     if (nsNamePtr) {
@@ -1412,6 +1393,8 @@ InfoClassMethodsCmd(
 		    return TCL_ERROR;
 		}
 		break;
+	    default:
+		TCL_UNREACHABLE();
 	    }
 	}
     }
@@ -1427,6 +1410,8 @@ InfoClassMethodsCmd(
 	case SCOPE_UNEXPORTED:
 	    flag = 0;
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
 

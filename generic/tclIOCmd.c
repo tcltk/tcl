@@ -135,7 +135,7 @@ Tcl_PutsObjCmd(
 	    string = objv[3];
 	    break;
 	}
-	/* Fall through */
+	TCL_FALLTHROUGH();
     default:			/* [puts] or
 				 * [puts some bad number of arguments...] */
 	Tcl_WrongNumArgs(interp, 1, objv, "?-nonewline? ?channel? string");
@@ -1605,7 +1605,7 @@ Tcl_SocketObjCmd(
 	    }
 	    break;
 	default:
-	    Tcl_Panic("Tcl_SocketObjCmd: bad option index to SocketOptions");
+	    TCL_UNREACHABLE();
 	}
     }
     if (server) {
@@ -1810,6 +1810,8 @@ Tcl_FcopyObjCmd(
 	case FcopyCommand:
 	    cmdPtr = objv[i+1];
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
 
@@ -1876,6 +1878,8 @@ ChanPendingObjCmd(
 	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(Tcl_OutputBuffered(chan)));
 	}
 	break;
+    default:
+	TCL_UNREACHABLE();
     }
     return TCL_OK;
 }

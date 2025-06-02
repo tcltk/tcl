@@ -240,92 +240,9 @@ proc listobjmemcheck script {
     expr {$end - $tmp}
 }
 
-test listobj-12.1 {Tcl_ListObjIndex memory leaks for native lists} -constraints {
-    testobj memory
-} -body {
-    list [listobjmemcheck {
-	testobj set 1 [lrepeat 1000 x]
-	set errorMessage [testlistobj indexmemcheck 1]
-	testobj freeallvars
-    }] $errorMessage
-} -result {0 {}}
-test listobj-12.2 {Tcl_ListObjIndex memory leaks for native lists with spans} -constraints {
-    testobj memory
-} -body {
-    list [listobjmemcheck {
-	testobj set 1 [testlistrep new 1000 100 100]
-	set errorMessage [testlistobj indexmemcheck 1]
-	testobj freeallvars
-    }] $errorMessage
-} -result {0 {}}
-test listobj-12.3 {Tcl_ListObjIndex memory leaks for lseq} -constraints {
-    testobj memory
-} -body {
-    list [listobjmemcheck {
-	testobj set 1 [lseq 1000]
-	set errorMessage [testlistobj indexmemcheck 1]
-	testobj freeallvars
-    }] $errorMessage
-} -result {0 {}}
-
-test listobj-13.1 {Tcl_ListObjGetElements memory leaks for native lists} -constraints {
-    testobj memory
-} -body {
-    list [listobjmemcheck {
-	testobj set 1 [lrepeat 1000 x]
-	set errorMessage [testlistobj getelementsmemcheck 1]
-	testobj freeallvars
-    }] $errorMessage
-} -result {0 {}}
-test listobj-13.2 {Tcl_ListObjElements memory leaks for native lists with spans} -constraints {
-    testobj memory
-} -body {
-    list [listobjmemcheck {
-	testobj set 1 [testlistrep new 1000 100 100]
-	set errorMessage [testlistobj getelementsmemcheck 1]
-	testobj freeallvars
-    }] $errorMessage
-} -result {0 {}}
-test listobj-13.3 {Tcl_ListObjElements memory leaks for lseq} -constraints {
-    testobj memory
-} -body {
-    list [listobjmemcheck {
-	testobj set 1 [lseq 1000]
-	set errorMessage [testlistobj getelementsmemcheck 1]
-	testobj freeallvars
-    }] $errorMessage
-} -result {0 {}}
-
-# Tests for Tcl_ListObjIndex as sematics are different from lindex for
-# out of bounds indices. Out of bounds should return a null pointer and
-# not empty string.
-test listobj-14.1 {Tcl_ListObjIndex out-of-bounds index for native lists} -constraints {
-    testobj
-} -setup {
-    testobj set 1 [list a b c]
-} -cleanup {
-    testobj freeallvars
-} -body {
-    list [testlistobj index 1 -1] [testlistobj index 1 3]
-} -result {null null}
-
-test listobj-14.2 {Tcl_ListObjIndex out-of-bounds index for native lists with spans} -constraints {
-    testobj
-} -setup {
-    testobj set 1 [testlistrep new 1000 100 100]
-} -cleanup {
-    testobj freeallvars
-} -body {
-    list [testlistobj index 1 -1] [testlistobj index 1 1000]
-} -result {null null}
-
-test listobj-14.3 {Tcl_ListObjIndex out-of-bounds index for lseq} -constraints {bug_30e4e9102f testobj} -setup {
-    testobj set 1 [lseq 3]
-} -cleanup {
-    testobj freeallvars
-} -body {
-    list [testlistobj index 1 -1] [testlistobj index 1 3]
-} -result {null null}
+# NOTE: listobj-{12,13}.* tests are now memcheck-lindex-* tests in listTypes.test
+# where lindex memory checks are done for all list types.
+# listobj-14.* tests are now lindex-oob-* in listTypes.test.
 
 # cleanup
 ::tcltest::cleanupTests

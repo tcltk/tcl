@@ -834,7 +834,7 @@ TclCompileLappendCmd(
 	return TCL_ERROR;
     }
     PushVarNameWord(varTokenPtr, 0, &localIndex, &isScalar, 1);
- 
+
     if (numWords != 3) {
 	goto lappendMultiple;
     }
@@ -2202,6 +2202,7 @@ TclCompileRegsubCmd(
 		 * but we definitely can't handle that at all.
 		 */
 	    }
+	    TCL_FALLTHROUGH();
 	case '\0': case '?': case '[': case '\\':
 	    goto done;
 	}
