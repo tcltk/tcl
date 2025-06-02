@@ -211,10 +211,10 @@ GetPropertyName(
 	 * We use a recursive call to look this up.
 	 */
 
-	Tcl_InterpState foo = Tcl_SaveInterpState(interp, result);
+	Tcl_InterpState state = Tcl_SaveInterpState(interp, result);
 	Tcl_Obj *otherName = GetPropertyName(interp, oPtr,
 		flags ^ (GPN_WRITABLE | GPN_FALLING_BACK), namePtr, NULL);
-	result = Tcl_RestoreInterpState(interp, foo);
+	result = Tcl_RestoreInterpState(interp, state);
 	if (otherName != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "property \"%s\" is %s only",
