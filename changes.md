@@ -9,6 +9,10 @@ Release Tcl 9.0.2 arises from the check-in with tag `core-9-0-2`.
 Tcl patch releases have the primary purpose of delivering bug fixes
 to the userbase.
 
+# New commands and options
+ - [New command encoding user](https://core.tcl-lang.org/tips/doc/trunk/tip/716.md)
+ - [New exec option -encoding](https://core.tcl-lang.org/tips/doc/trunk/tip/716.md)
+
 # Bug fixes
  - [Better error-message than "interpreter uses an incompatible stubs mechanism"](https://core.tcl-lang.org/tcl/tktview/fc3509)
  - [\[$interp eval $lambda\] after \[eval $lambda\] or vice versa fails](https://core.tcl-lang.org/tcl/tktview/67d5f7)
@@ -32,7 +36,7 @@ to the userbase.
  - [Missing include dir for extensions in non-default locations](https://core.tcl-lang.org/tcl/tktview/3335120320)
 
 # Incompatibilities
- - No known incompatibilities with the Tcl 9.0.0 public interface.
+ - [The ActiveCodePage element has been removed from the Windows executable manifest for tclsh](https://core.tcl-lang.org/tips/doc/trunk/tip/716.md)
 
 # Updated bundled packages, libraries, standards, data
  - sqlite3 3.49.1
