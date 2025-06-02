@@ -141,6 +141,32 @@
 #   define Tcl_ConditionFinalize(condPtr)
 #endif
 
+// A way to mark a code path as unreachable.
+#ifndef TCL_UNREACHABLE
+#if defined(__STDC__) && __STDC__ >= 202311L
+#include <stddef.h>
+#define TCL_UNREACHABLE()	unreachable()
+#elif defined(__GNUC__)
+#define TCL_UNREACHABLE()	__builtin_unreachable()
+#elif defined(_MSC_VER)
+#include <stdbool.h>
+#define TCL_UNREACHABLE()	__assume(false)
+#else
+#define TCL_UNREACHABLE()	((void) 0)
+#endif
+#endif // TCL_UNREACHABLE
+
+#ifndef TCL_FALLTHROUGH
+#if defined(__STDC__) && __STDC__ >= 202311L
+#define TCL_FALLTHROUGH()	[[fallthrough]]
+#elif defined(__GNUC__)
+#define TCL_FALLTHROUGH()	__attribute__((fallthrough))
+#else
+// Nothing documented as an alternative to the standard [[fallthrough]].
+#define TCL_FALLTHROUGH()	((void) 0)
+#endif
+#endif // TCL_FALLTHROUGH
+
 /*
  * The following procedures allow namespaces to be customized to support
  * special name resolution rules for commands/variables.
@@ -1179,6 +1205,14 @@ TclObjTypeInOperator(
     Tcl_ObjTypeInOperatorProc *proc = TclObjTypeHasProc(listObj, inOperProc);
     return proc(interp, valueObj, listObj, boolResult);
 }
+
+/* Functions related to abstract list implementations */
+MODULE_SCOPE int
+Tcl_ListObjReverse(Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Obj **resultPtrPtr);
+MODULE_SCOPE int Tcl_ListObjRepeat(Tcl_Interp *interp, Tcl_Size repeatCount,
+    Tcl_Size objc, Tcl_Obj *const objv[], Tcl_Obj **resultPtrPtr);
+MODULE_SCOPE int Tcl_ListObjRange(Tcl_Interp *interp, Tcl_Obj *objPtr,
+    Tcl_Size start, Tcl_Size end, Tcl_Obj **resultPtrPtr);
 
 /*
  * The structure below defines an entry in the assocData hash table which is
@@ -4385,7 +4419,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
  *
  * MODULE_SCOPE void TclInitEmptyStringRep(Tcl_Obj *objPtr);
  * MODULE_SCOPE void TclInitStringRep(Tcl_Obj *objPtr, char *bytePtr, size_t len);
- * MODULE_SCOPE void TclAttemptInitStringRep(Tcl_Obj *objPtr, char *bytePtr, size_t len);
+ * MODULE_SCOPE const char *TclAttemptInitStringRep(Tcl_Obj *objPtr, char *bytePtr, size_t len);
  *
  *----------------------------------------------------------------
  */
@@ -4410,7 +4444,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 	(objPtr)->bytes = (char *)Tcl_AttemptAlloc((len) + 1U),		\
 	(objPtr)->length = ((objPtr)->bytes) ?				\
 		(memcpy((objPtr)->bytes, (bytePtr) ? (bytePtr) : &tclEmptyString, (len)), \
-		(objPtr)->bytes[len] = '\0', (len)) : (-1)		\
+		(objPtr)->bytes[len] = '\0', (Tcl_Size)(len)) : (-1)		\
     )), (objPtr)->bytes)
 
 /*

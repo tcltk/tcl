@@ -1133,7 +1133,7 @@ TclScanElement(
 		preferEscape = 1;
 		break;
 #else
-		/* FLOW THROUGH */
+		TCL_FALLTHROUGH();
 #endif /* COMPAT */
 	    case '[':	/* TYPE_SUBS */
 	    case '$':	/* TYPE_SUBS */
@@ -4449,7 +4449,7 @@ TclReToGlob(
 	    case '\\': case '*': case '[': case ']': case '?':
 		/* Only add \ where necessary for glob */
 		*dsStr++ = '\\';
-		/* fall through */
+		TCL_FALLTHROUGH();
 	    default:
 		*dsStr++ = *p;
 		break;
@@ -4530,7 +4530,7 @@ TclReToGlob(
 		/* Only add \ where necessary for glob */
 		*dsStr++ = '\\';
 		anchorLeft = 0; /* prevent exact match */
-		/* fall through */
+		TCL_FALLTHROUGH();
 	    case '{': case '}': case '(': case ')': case '+':
 	    case '.': case '|': case '^': case '$':
 		*dsStr++ = *p;
@@ -4671,9 +4671,9 @@ TclMSB(
 	 * clzll() = Count of Leading Zeroes in a Long Long
 	 * NOTE: we rely on input constraint (n != 0).
 	 */
-	
+
 	return 63 - __builtin_clzll(n);
-	
+
 #else
 
 	/*

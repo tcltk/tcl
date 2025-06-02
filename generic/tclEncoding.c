@@ -1228,7 +1228,7 @@ Tcl_ExternalToUtfDStringEx(
 	 * and loop. Otherwise, return the result we got.
 	 */
 	if ((result != TCL_CONVERT_NOSPACE) &&
-		!(result == TCL_CONVERT_MULTIBYTE && (flags & TCL_ENCODING_END))) {
+		(result != TCL_CONVERT_MULTIBYTE || (flags & TCL_ENCODING_END))) {
 	    Tcl_Size nBytesProcessed = (src - srcStart);
 
 	    Tcl_DStringSetLength(dstPtr, soFar);
@@ -1544,7 +1544,7 @@ Tcl_UtfToExternalDStringEx(
 	 * and loop. Otherwise, return the result we got.
 	 */
 	if ((result != TCL_CONVERT_NOSPACE) &&
-		!(result == TCL_CONVERT_MULTIBYTE && (flags & TCL_ENCODING_END))) {
+		(result != TCL_CONVERT_MULTIBYTE || (flags & TCL_ENCODING_END))) {
 	    Tcl_Size nBytesProcessed = (src - srcStart);
 	    Tcl_Size i = soFar + encodingPtr->nullSize - 1;
 	    /* Loop as DStringSetLength only stores one nul byte at a time */
@@ -2582,7 +2582,8 @@ UtfToUtfProc(
 	    } else {
 		/* TCL_ENCODING_PROFILE_TCL8 */
 		char chbuf[2];
-		chbuf[0] = UCHAR(*src++); chbuf[1] = 0;
+		chbuf[0] = UCHAR(*src++);
+		chbuf[1] = 0;
 		TclUtfToUniChar(chbuf, &ch);
 	    }
 	    dst += Tcl_UniCharToUtf(ch, dst);
@@ -3508,7 +3509,8 @@ TableToUtfProc(
 		ch = UNICODE_REPLACE_CHAR;
 	    } else {
 		char chbuf[2];
-		chbuf[0] = byte; chbuf[1] = 0;
+		chbuf[0] = byte;
+		chbuf[1] = 0;
 		TclUtfToUniChar(chbuf, &ch);
 	    }
 	}
@@ -4063,6 +4065,30 @@ EscapeToUtfProc(
 	dst += Tcl_UniCharToUtf(ch, dst);
 	src++;
 	numChars++;
+    }
+
+    if ((flags & TCL_ENCODING_END) && (result == TCL_CONVERT_MULTIBYTE)) {
+	/* We have a code fragment left-over at the end */
+	if (dst > dstEnd) {
+	    result = TCL_CONVERT_NOSPACE;
+	} else {
+	    /* destination is not full, so we really are at the end now */
+	    if (PROFILE_STRICT(flags)) {
+		result = TCL_CONVERT_SYNTAX;
+	    } else {
+		/*
+		 * PROFILE_REPLACE or PROFILE_TCL8. The latter is treated
+		 * similar to former because Tcl8 was broken in this regard
+		 * as it just ignored the byte and truncated which is really
+		 * a no-no as per Unicode recommendations.
+		 */
+		result = TCL_OK;
+		dst += Tcl_UniCharToUtf(UNICODE_REPLACE_CHAR, dst);
+		numChars++;
+		/* TCL_CONVERT_MULTIBYTE means all source consumed */
+		src = srcEnd;
+	    }
+	}
     }
 
     *statePtr = (Tcl_EncodingState) INT2PTR(state);

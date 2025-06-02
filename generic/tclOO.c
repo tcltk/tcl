@@ -2885,7 +2885,6 @@ Tcl_ObjectContextInvokeNext(
     CallContext *contextPtr = (CallContext *) context;
     size_t savedIndex = contextPtr->index;
     size_t savedSkip = contextPtr->skip;
-    int result;
 
     if (contextPtr->index + 1 >= contextPtr->callPtr->numChain) {
 	/*
@@ -2895,22 +2894,11 @@ Tcl_ObjectContextInvokeNext(
 	 * unexpectedly.
 	 */
 
-	const char *methodType;
-
 	if (Tcl_InterpDeleted(interp)) {
 	    return TCL_OK;
 	}
-
-	if (contextPtr->callPtr->flags & CONSTRUCTOR) {
-	    methodType = "constructor";
-	} else if (contextPtr->callPtr->flags & DESTRUCTOR) {
-	    methodType = "destructor";
-	} else {
-	    methodType = "method";
-	}
-
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"no next %s implementation", methodType));
+		"no next %s implementation", TclOOContextTypeName(contextPtr)));
 	OO_ERROR(interp, NOTHING_NEXT);
 	return TCL_ERROR;
     }
@@ -2932,8 +2920,8 @@ Tcl_ObjectContextInvokeNext(
      * Invoke the (advanced) method call context in the caller context.
      */
 
-    result = Tcl_NRCallObjProc(interp, TclOOInvokeContext, contextPtr, objc,
-	    objv);
+    int result = Tcl_NRCallObjProc(interp, TclOOInvokeContext, contextPtr,
+	    objc, objv);
 
     /*
      * Restore the call chain context index as we've finished the inner invoke
@@ -2964,22 +2952,11 @@ TclNRObjectContextInvokeNext(
 	 * unexpectedly.
 	 */
 
-	const char *methodType;
-
 	if (Tcl_InterpDeleted(interp)) {
 	    return TCL_OK;
 	}
-
-	if (contextPtr->callPtr->flags & CONSTRUCTOR) {
-	    methodType = "constructor";
-	} else if (contextPtr->callPtr->flags & DESTRUCTOR) {
-	    methodType = "destructor";
-	} else {
-	    methodType = "method";
-	}
-
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"no next %s implementation", methodType));
+		"no next %s implementation", TclOOContextTypeName(contextPtr)));
 	OO_ERROR(interp, NOTHING_NEXT);
 	return TCL_ERROR;
     }

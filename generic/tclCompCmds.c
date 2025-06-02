@@ -450,8 +450,8 @@ TclCompileArraySetCmd(
     OP4(			STORE_ARRAY, localIndex);
     OP(				POP);
     infoPtr->loopCtTemp = offsetBack - CurrentOffset(envPtr); /*misuse */
-    OP( 			FOREACH_STEP);
-    OP( 			FOREACH_END);
+    OP(			FOREACH_STEP);
+    OP(			FOREACH_END);
     STKDELTA(-3);
     PUSH(			"");
 

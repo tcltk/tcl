@@ -1099,13 +1099,12 @@ TclNRPackageObjCmd(
     }
     switch (optionIndex) {
     case PKG_FILES: {
-	PkgFiles *pkgFiles;
-
 	if (objc != 3) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "package");
 	    return TCL_ERROR;
 	}
-	pkgFiles = (PkgFiles *) Tcl_GetAssocData(interp, "tclPkgFiles", NULL);
+	PkgFiles *pkgFiles = (PkgFiles *)
+		Tcl_GetAssocData(interp, "tclPkgFiles", NULL);
 	if (pkgFiles) {
 	    Tcl_HashEntry *entry = Tcl_FindHashEntry(&pkgFiles->table,
 		    TclGetString(objv[2]));
@@ -1117,12 +1116,11 @@ TclNRPackageObjCmd(
 	break;
     }
     case PKG_FORGET: {
-	const char *keyString;
 	PkgFiles *pkgFiles = (PkgFiles *)
 		Tcl_GetAssocData(interp, "tclPkgFiles", NULL);
 
 	for (i = 2; i < objc; i++) {
-	    keyString = TclGetString(objv[i]);
+	    const char *keyString = TclGetString(objv[i]);
 	    if (pkgFiles) {
 		hPtr = Tcl_FindHashEntry(&pkgFiles->table, keyString);
 		if (hPtr) {
@@ -1158,8 +1156,7 @@ TclNRPackageObjCmd(
     }
     case PKG_IFNEEDED: {
 	Tcl_Size length;
-	int res;
-	char *argv3i, *avi;
+	char *argv3i;
 
 	if ((objc != 4) && (objc != 5)) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "package version ?script?");
@@ -1184,13 +1181,14 @@ TclNRPackageObjCmd(
 
 	for (availPtr = pkgPtr->availPtr, prevPtr = NULL; availPtr != NULL;
 		prevPtr = availPtr, availPtr = availPtr->nextPtr) {
+	    char *avi;
 	    if (CheckVersionAndConvert(interp, availPtr->version, &avi,
 		    NULL) != TCL_OK) {
 		Tcl_Free(argv3i);
 		return TCL_ERROR;
 	    }
 
-	    res = CompareVersions(avi, argv3i, NULL);
+	    int res = CompareVersions(avi, argv3i, NULL);
 	    Tcl_Free(avi);
 
 	    if (res == 0) {
@@ -1395,9 +1393,7 @@ TclNRPackageObjCmd(
 	    return TCL_OK;
 	}
 	break;
-    case PKG_UNKNOWN: {
-	Tcl_Size length;
-
+    case PKG_UNKNOWN:
 	if (objc == 2) {
 	    if (iPtr->packageUnknown != NULL) {
 		Tcl_SetObjResult(interp,
@@ -1407,6 +1403,7 @@ TclNRPackageObjCmd(
 	    if (iPtr->packageUnknown != NULL) {
 		Tcl_Free(iPtr->packageUnknown);
 	    }
+	    Tcl_Size length;
 	    argv2 = TclGetStringFromObj(objv[2], &length);
 	    if (argv2[0] == 0) {
 		iPtr->packageUnknown = NULL;
@@ -1418,7 +1415,6 @@ TclNRPackageObjCmd(
 	    return TCL_ERROR;
 	}
 	break;
-    }
     case PKG_PREFER: {
 	static const char *const pkgPreferOptions[] = {
 	    "latest", "stable", NULL
@@ -1529,7 +1525,7 @@ TclNRPackageObjCmd(
 	break;
     }
     default:
-	Tcl_Panic("Tcl_PackageObjCmd: bad option index to pkgOptions");
+	TCL_UNREACHABLE();
     }
     return TCL_OK;
 }
