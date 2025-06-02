@@ -165,18 +165,19 @@ GetPropertyName(
     Tcl_Obj *namePtr,		/* The name supplied by the user. */
     GPNCache **cachePtr)	/* Where to cache the table, if the caller
 				 * wants that. The contents are to be freed
-				 * with Tcl_Free if the cache is used. */
+				 * with ReleasePropertyNameCache if the cache
+				 * is used. */
 {
-    Tcl_Size objc, index, i;
-    Tcl_Obj *listPtr = TclOOGetAllObjectProperties(
-	    oPtr, flags & GPN_WRITABLE);
-    Tcl_Obj **objv;
+    // A Tcl list, by contract of TclOOGetAllObjectProperties()
+    Tcl_Obj *listPtr = TclOOGetAllObjectProperties(oPtr, flags & GPN_WRITABLE);
     GPNCache *tablePtr;
 
-    (void) Tcl_ListObjGetElements(NULL, listPtr, &objc, &objv);
     if (cachePtr && *cachePtr) {
 	tablePtr = *cachePtr;
     } else {
+	Tcl_Size objc, i;
+	Tcl_Obj **objv;
+	(void) Tcl_ListObjGetElements(NULL, listPtr, &objc, &objv);
 	tablePtr = (GPNCache *) TclStackAlloc(interp,
 		offsetof(GPNCache, names) + sizeof(char *) * (objc + 1));
 
@@ -201,6 +202,7 @@ GetPropertyName(
 	    tablePtr->listPtr = NULL;
 	}
     }
+    Tcl_Size index;
     int result = Tcl_GetIndexFromObjStruct(interp, namePtr, tablePtr->names,
 	    sizeof(char *), "property", TCL_INDEX_TEMP_TABLE, &index);
     if (result == TCL_ERROR && !(flags & GPN_FALLING_BACK)) {
@@ -209,10 +211,10 @@ GetPropertyName(
 	 * We use a recursive call to look this up.
 	 */
 
-	Tcl_InterpState foo = Tcl_SaveInterpState(interp, result);
+	Tcl_InterpState state = Tcl_SaveInterpState(interp, result);
 	Tcl_Obj *otherName = GetPropertyName(interp, oPtr,
 		flags ^ (GPN_WRITABLE | GPN_FALLING_BACK), namePtr, NULL);
-	result = Tcl_RestoreInterpState(interp, foo);
+	result = Tcl_RestoreInterpState(interp, state);
 	if (otherName != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "property \"%s\" is %s only",
@@ -226,7 +228,9 @@ GetPropertyName(
     if (result != TCL_OK) {
 	return NULL;
     }
-    return objv[index];
+    Tcl_Obj *resultObj;
+    Tcl_ListObjIndex(NULL, listPtr, index, &resultObj);
+    return resultObj;
 }
 
 // Release the cache made by GetPropertyName().
