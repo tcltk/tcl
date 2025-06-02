@@ -48,6 +48,11 @@ set path(echo2) [makeFile {
     puts stderr [lindex $argv 1]
     exit
 } echo2]
+set path(echobin) [makeFile {
+    fconfigure stdout -translation binary
+    puts -nonewline [binary decode hex [join $argv ""]]
+    exit
+} echobin]
 set path(cat) [makeFile {
     if {$argv eq ""} {
 	set argv -
@@ -568,7 +573,7 @@ test exec-14.2 {-keepnewline switch} -constraints {exec} -body {
 } -returnCodes error -result {wrong # args: should be "exec ?-option ...? arg ?arg ...?"}
 test exec-14.3 {unknown switch} -constraints {exec} -body {
     exec -gorp
-} -returnCodes error -result {bad option "-gorp": must be -ignorestderr, -keepnewline, or --}
+} -returnCodes error -result {bad option "-gorp": must be -ignorestderr, -keepnewline, -encoding, or --}
 test exec-14.4 {-- switch} -constraints {exec notValgrind} -body {
     exec -- -gorp
 } -returnCodes error -result {couldn't execute "-gorp": no such file or directory}
@@ -749,6 +754,15 @@ test exec-21.2 {exec encoding mismatch on stderr} -setup {
 } -body {
     list [catch {exec [info nameofexecutable] $path(script)} r] $r
 } -result [list 1 a\uFFFDb]
+
+# TIP 716 -encoding option
+test exec-22.0 {exec -encoding} -body {
+    set enc [expr {[encoding system] eq "utf-8" ? "iso2022-jp" : "utf-8"}]
+    exec -encoding $enc -- [interpreter] $path(echobin) [binary encode hex [encoding convertto $enc \u4e4e\u68d9]]
+} -result \u4e4e\u68d9
+test exec-22.1 {exec -encoding invalid encoding} -body {
+    exec -encoding nosuchencoding -- [interpreter] $path(echobin) abc
+} -result {unknown encoding "nosuchencoding"} -returnCodes error
 
 test exec-bug-4f0b5767ac {exec App Execution Alias} -constraints haveWinget -body {
     exec winget --info
