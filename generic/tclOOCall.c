@@ -1647,6 +1647,7 @@ AddClassFiltersToCallContext(
 	    AddClassFiltersToCallContext(oPtr, superPtr, cbPtr, doneFilters,
 		    flags);
 	}
+	TCL_FALLTHROUGH();
     case 0:
 	return;
     }
@@ -1734,7 +1735,7 @@ AddPrivatesFromClassChainToCallContext(
 		return 1;
 	    }
 	}
-	/* FALLTHRU */
+	TCL_FALLTHROUGH();
     case 0:
 	return 0;
     }
@@ -1829,7 +1830,7 @@ AddSimpleClassChainToCallContext(
 	    privateDanger |= AddSimpleClassChainToCallContext(superPtr,
 		    methodNameObj, cbPtr, doneFilters, flags, filterDecl);
 	}
-	/* FALLTHRU */
+	TCL_FALLTHROUGH();
     case 0:
 	return privateDanger;
     }
@@ -2067,6 +2068,7 @@ AddSimpleClassDefineNamespaces(
 	FOREACH(superPtr, classPtr->superclasses) {
 	    AddSimpleClassDefineNamespaces(superPtr, definePtr, flags);
 	}
+	TCL_FALLTHROUGH();
     case 0:
 	return;
     }

@@ -3421,7 +3421,7 @@ DictFilterCmd(
 
 		Tcl_ResetResult(interp);
 		Tcl_DictObjDone(&search);
-	    /* FALLTHRU */
+		TCL_FALLTHROUGH();
 	    case TCL_CONTINUE:
 		result = TCL_OK;
 		break;
@@ -3429,6 +3429,7 @@ DictFilterCmd(
 		Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 			"\n    (\"dict filter\" script line %d)",
 			Tcl_GetErrorLine(interp)));
+		TCL_FALLTHROUGH();
 	    default:
 		goto abnormalResult;
 	    }
@@ -3454,20 +3455,18 @@ DictFilterCmd(
 	    TclDecrRefCount(resultObj);
 	}
 	return result;
-
-    abnormalResult:
-	Tcl_DictObjDone(&search);
-	TclDecrRefCount(keyObj);
-	TclDecrRefCount(valueObj);
-	TclDecrRefCount(keyVarObj);
-	TclDecrRefCount(valueVarObj);
-	TclDecrRefCount(scriptObj);
-	TclDecrRefCount(resultObj);
-	return result;
     }
-    Tcl_Panic("unexpected fallthrough");
-    /* Control never reaches this point. */
-    return TCL_ERROR;
+    TCL_UNREACHABLE();
+
+  abnormalResult:
+    Tcl_DictObjDone(&search);
+    TclDecrRefCount(keyObj);
+    TclDecrRefCount(valueObj);
+    TclDecrRefCount(keyVarObj);
+    TclDecrRefCount(valueVarObj);
+    TclDecrRefCount(scriptObj);
+    TclDecrRefCount(resultObj);
+    return result;
 }
 
 /*

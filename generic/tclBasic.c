@@ -4620,7 +4620,8 @@ Dispatch(
     }
     if (TCL_DTRACE_CMD_INFO_ENABLED() && iPtr->cmdFramePtr) {
 	Tcl_Obj *info = TclInfoFrame(interp, iPtr->cmdFramePtr);
-	const char *a[6]; Tcl_Size i[2];
+	const char *a[6];
+	Tcl_Size i[2];
 
 	TclDTraceInfo(info, a, i);
 	TCL_DTRACE_CMD_INFO(a[0], a[1], a[2], a[3], i[0], i[1], a[4], a[5]);
@@ -6548,7 +6549,7 @@ Tcl_ExprLongObj(
 	}
 	resultPtr = Tcl_NewBignumObj(&big);
     }
-    /* FALLTHRU */
+	TCL_FALLTHROUGH();
     case TCL_NUMBER_INT:
     case TCL_NUMBER_BIG:
 	result = TclGetLongFromObj(interp, resultPtr, ptr);
@@ -9616,7 +9617,7 @@ TclNRInterpCoroutine(
 	    Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", (char *)NULL);
 	    return TCL_ERROR;
 	}
-	/* fallthrough */
+	TCL_FALLTHROUGH();
     case COROUTINE_ARGUMENTS_ARBITRARY:
 	if (objc > 1) {
 	    Tcl_SetObjResult(interp, Tcl_NewListObj(objc - 1, objv + 1));

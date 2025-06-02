@@ -679,10 +679,7 @@ TclPathPart(
 		}
 	    }
 	    default:
-		/* We should never get here */
-		Tcl_Panic("Bad portion to TclPathPart");
-		/* For less clever compilers */
-		return NULL;
+		TCL_UNREACHABLE();
 	    }
 	} else if (fsPathPtr->cwdPtr != NULL) {
 	    /* Relative path */

@@ -141,6 +141,32 @@
 #   define Tcl_ConditionFinalize(condPtr)
 #endif
 
+// A way to mark a code path as unreachable.
+#ifndef TCL_UNREACHABLE
+#if defined(__STDC__) && __STDC__ >= 202311L
+#include <stddef.h>
+#define TCL_UNREACHABLE()	unreachable()
+#elif defined(__GNUC__)
+#define TCL_UNREACHABLE()	__builtin_unreachable()
+#elif defined(_MSC_VER)
+#include <stdbool.h>
+#define TCL_UNREACHABLE()	__assume(false)
+#else
+#define TCL_UNREACHABLE()	((void) 0)
+#endif
+#endif // TCL_UNREACHABLE
+
+#ifndef TCL_FALLTHROUGH
+#if defined(__STDC__) && __STDC__ >= 202311L
+#define TCL_FALLTHROUGH()	[[fallthrough]]
+#elif defined(__GNUC__)
+#define TCL_FALLTHROUGH()	__attribute__((fallthrough))
+#else
+// Nothing documented as an alternative to the standard [[fallthrough]].
+#define TCL_FALLTHROUGH()	((void) 0)
+#endif
+#endif // TCL_FALLTHROUGH
+
 /*
  * The following procedures allow namespaces to be customized to support
  * special name resolution rules for commands/variables.

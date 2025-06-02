@@ -2505,6 +2505,8 @@ BinaryDecodeHex(
 	case OPT_STRICT:
 	    strict = 1;
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
 
@@ -2649,6 +2651,8 @@ BinaryEncode64(
 		wrapchar = TclGetStringFromObj(objv[i + 1], &wrapcharlen);
 	    }
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
     if (wrapcharlen == 0) {
@@ -2773,36 +2777,36 @@ BinaryEncodeUu(
 	case OPT_WRAPCHAR:
 	    wrapchar = (const unsigned char *)TclGetStringFromObj(
 		    objv[i + 1], &wrapcharlen);
-	    {
-		const unsigned char *p = wrapchar;
-		Tcl_Size numBytes = wrapcharlen;
+	    const unsigned char *p = wrapchar;
+	    Tcl_Size numBytes = wrapcharlen;
 
-		while (numBytes) {
-		    switch (*p) {
-			case '\t':
-			case '\v':
-			case '\f':
-			case '\r':
-			    p++; numBytes--;
-			    continue;
-			case '\n':
-			    numBytes--;
-			    break;
-			default:
-			badwrap:
-			    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-				    "invalid wrapchar; will defeat decoding",
-				    -1));
-			    Tcl_SetErrorCode(interp, "TCL", "BINARY",
-				    "ENCODE", "WRAPCHAR", (char *)NULL);
-			    return TCL_ERROR;
-		    }
-		}
-		if (numBytes) {
+	    while (numBytes) {
+		switch (*p) {
+		case '\t':
+		case '\v':
+		case '\f':
+		case '\r':
+		    p++;
+		    numBytes--;
+		    continue;
+		case '\n':
+		    numBytes--;
+		    break;
+		default:
 		    goto badwrap;
 		}
 	    }
+	    if (numBytes) {
+	    badwrap:
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"invalid wrapchar; will defeat decoding", -1));
+		Tcl_SetErrorCode(interp, "TCL", "BINARY",
+			"ENCODE", "WRAPCHAR", (char *)NULL);
+		return TCL_ERROR;
+	    }
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
 
@@ -2909,6 +2913,8 @@ BinaryDecodeUu(
 	case OPT_STRICT:
 	    strict = 1;
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
 
@@ -3084,6 +3090,8 @@ BinaryDecode64(
 	case OPT_STRICT:
 	    strict = 1;
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
 
