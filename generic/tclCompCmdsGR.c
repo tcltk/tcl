@@ -27,6 +27,9 @@ static void		CompileReturnInternal(CompileEnv *envPtr,
 			    Tcl_Obj *returnOpts);
 static Tcl_LVTIndex	IndexTailVarIfKnown(Tcl_Interp *interp,
 			    Tcl_Token *varTokenPtr, CompileEnv *envPtr);
+
+// Maximum number of items to concatenate in one go.
+#define MAX_LIST_CONCAT	0x7FFFFFFE
 
 /*
  *----------------------------------------------------------------------
@@ -902,11 +905,10 @@ TclCompileLappendCmd(
     if (numWords == 2) {
 	PUSH(			"");
     } else {
-	Tcl_Size build;
-	int concat;
+	Tcl_Size build = 0;
+	int concat = 0;
 
 	valueTokenPtr = TokenAfter(varTokenPtr);
-	concat = build = 0;
 	for (i = 2; i < numWords; i++) {
 	    if (valueTokenPtr->type == TCL_TOKEN_EXPAND_WORD && build > 0) {
 		OP4(		LIST, build);
@@ -925,6 +927,14 @@ TclCompileLappendCmd(
 		}
 	    } else {
 		build++;
+	    }
+	    if (build > MAX_LIST_CONCAT) {
+		OP4(		LIST, build);
+		if (concat) {
+		    OP(		LIST_CONCAT);
+		}
+		build = 0;
+		concat = 1;
 	    }
 	    valueTokenPtr = TokenAfter(valueTokenPtr);
 	}
@@ -1179,8 +1189,8 @@ TclCompileListCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *valueTokenPtr;
-    Tcl_Size i, numWords = parsePtr->numWords;
-    int concat, build;
+    Tcl_Size i, build, numWords = parsePtr->numWords;
+    int concat;
     Tcl_Obj *listObj, *objPtr;
 
     if (numWords > UINT_MAX) {
@@ -1223,8 +1233,7 @@ TclCompileListCmd(
      */
 
     valueTokenPtr = TokenAfter(parsePtr->tokenPtr);
-    concat = build = 0;
-    for (i = 1; i < numWords; i++) {
+    for (concat = 0, build = 0, i = 1; i < numWords; i++) {
 	if (valueTokenPtr->type == TCL_TOKEN_EXPAND_WORD && build > 0) {
 	    OP4(		LIST, build);
 	    if (concat) {
@@ -1242,6 +1251,14 @@ TclCompileListCmd(
 	    }
 	} else {
 	    build++;
+	}
+	if (build > MAX_LIST_CONCAT) {
+	    OP4(		LIST, build);
+	    if (concat) {
+		OP(		LIST_CONCAT);
+	    }
+	    build = 0;
+	    concat = 1;
 	}
 	valueTokenPtr = TokenAfter(valueTokenPtr);
     }
