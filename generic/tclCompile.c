@@ -955,6 +955,11 @@ InstructionDesc const tclInstructionTable[] = {
 	 * Stack:  ... value => ...
 	 * Note that the jump table contains offsets relative to the PC when
 	 * it points to this instruction; the code is relocatable. */
+    TCL_INSTRUCTION_ENTRY(
+	"tailcallList",		-1),
+	/* Do a tailcall with the words from wordList as the thing to
+	 * tailcall to, and currNs is the namespace scope.
+	 * Stack: ... currNs wordList => ...[NOT REACHED] */
 
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };
