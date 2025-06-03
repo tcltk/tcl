@@ -2697,10 +2697,63 @@ TclCompileTailcallCmd(
     OP(				NS_CURRENT);
     for (i=1 ; i<numWords ; i++) {
 	tokenPtr = TokenAfter(tokenPtr);
+	if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
+	    goto tailcallExpanded;
+	}
+    }
+    tokenPtr = parsePtr->tokenPtr;
+
+    for (i=1 ; i<numWords ; i++) {
+	tokenPtr = TokenAfter(tokenPtr);
 	// TODO: If the first token is a literal, add LITERAL_CMD_NAME to its flags
 	PUSH_TOKEN(		tokenPtr, i);
     }
     OP4(			TAILCALL, numWords);
+    return TCL_OK;
+
+  tailcallExpanded:
+    {
+	Tcl_Size build = 0;
+	int concat = 0;
+
+	tokenPtr = parsePtr->tokenPtr;
+	for (i = 1; i < numWords; i++) {
+	    tokenPtr = TokenAfter(tokenPtr);
+	    if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD && build > 0) {
+		OP4(		LIST, build);
+		if (concat) {
+		    OP(		LIST_CONCAT);
+		}
+		build = 0;
+		concat = 1;
+	    }
+	    PUSH_TOKEN(		tokenPtr, i);
+	    if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
+		if (concat) {
+		    OP(		LIST_CONCAT);
+		} else {
+		    concat = 1;
+		}
+	    } else {
+		build++;
+	    }
+	    if (build > (1 << 12)) {
+		OP4(		LIST, build);
+		if (concat) {
+		    OP(		LIST_CONCAT);
+		}
+		build = 0;
+		concat = 1;
+	    }
+	}
+	if (build > 0) {
+	    OP4(		LIST, build);
+	    if (concat) {
+		OP(		LIST_CONCAT);
+	    }
+	}
+    }
+    OP(				TAILCALL_LIST);
     return TCL_OK;
 }
 

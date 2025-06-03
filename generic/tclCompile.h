@@ -931,6 +931,7 @@ enum TclInstruction {
     INST_DICT_REMOVE,
     INST_IS_EMPTY,
     INST_JUMP_TABLE_NUM,
+    INST_TAILCALL_LIST,
 
     /* The last opcode */
     LAST_INST_OPCODE
