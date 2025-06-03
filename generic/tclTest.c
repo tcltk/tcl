@@ -2300,10 +2300,12 @@ TestencodingCmd(
     const char *string;
     TclEncoding *encodingPtr;
     static const char *const optionStrings[] = {
-	"create", "delete", "nullength", "Tcl_ExternalToUtf", "Tcl_UtfToExternal", NULL
+	"create", "delete", "nullength", "Tcl_ExternalToUtf", "Tcl_UtfToExternal",
+	"Tcl_GetEncodingNameFromEnvironment", "Tcl_GetEncodingNameForUser", NULL
     };
     enum options {
-	ENC_CREATE, ENC_DELETE, ENC_NULLENGTH, ENC_EXTTOUTF, ENC_UTFTOEXT
+	ENC_CREATE, ENC_DELETE, ENC_NULLENGTH, ENC_EXTTOUTF, ENC_UTFTOEXT,
+	ENC_GETNAMEENV, ENC_GETNAMEUSER
     } index;
 
     if (objc < 2) {
@@ -2377,6 +2379,25 @@ TestencodingCmd(
 	return UtfExtWrapper(interp,Tcl_ExternalToUtf,objc,objv);
     case ENC_UTFTOEXT:
 	return UtfExtWrapper(interp,Tcl_UtfToExternal,objc,objv);
+    case ENC_GETNAMEUSER:
+    case ENC_GETNAMEENV:
+	if (objc != 2) {
+	    Tcl_WrongNumArgs(interp, 2, objv, NULL);
+	    return TCL_ERROR;
+	}
+	Tcl_DString ds;
+	string = (index == ENC_GETNAMEUSER
+		      ? Tcl_GetEncodingNameForUser
+		      : Tcl_GetEncodingNameFromEnvironment)(&ds);
+	/* Note not string compare, the actual pointer must be the same */
+	if (string != Tcl_DStringValue(&ds)) {
+	    Tcl_DStringFree(&ds);
+	    Tcl_SetResult(interp, "Returned pointer not same as DString value",
+		    TCL_STATIC);
+	    return TCL_ERROR;
+	}
+	Tcl_DStringResult(interp, &ds);
+	break;
     }
     return TCL_OK;
 }
