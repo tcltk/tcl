@@ -27,9 +27,6 @@ static void		CompileReturnInternal(CompileEnv *envPtr,
 			    Tcl_Obj *returnOpts);
 static Tcl_LVTIndex	IndexTailVarIfKnown(Tcl_Interp *interp,
 			    Tcl_Token *varTokenPtr, CompileEnv *envPtr);
-
-// Maximum number of items to concatenate in one go.
-#define MAX_LIST_CONCAT	0x7FFFFFFE
 
 /*
  *----------------------------------------------------------------------
@@ -819,6 +816,7 @@ TclCompileLappendCmd(
     int isScalar;
     Tcl_LVTIndex localIndex;
 
+    /* TODO: Consider support for compiling expanded args. */
     if (numWords < 2 || numWords > UINT_MAX) {
 	return TCL_ERROR;
     }
@@ -832,13 +830,13 @@ TclCompileLappendCmd(
      */
 
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
-    if (varTokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
-	/* Cannot compile if we don't know the variable properly! */
-	return TCL_ERROR;
-    }
     PushVarNameWord(varTokenPtr, 0, &localIndex, &isScalar, 1);
 
-    if (numWords != 3) {
+    /*
+     * The weird cluster of bugs around INST_LAPPEND_STK without a LVT ought
+     * to be sorted out. INST_LAPPEND_LIST_STK does the right thing.
+     */
+    if (numWords != 3 || !EnvHasLVT(envPtr)) {
 	goto lappendMultiple;
     }
 
@@ -848,25 +846,9 @@ TclCompileLappendCmd(
 
     valueTokenPtr = TokenAfter(varTokenPtr);
     PUSH_TOKEN(			valueTokenPtr, 2);
-    if (valueTokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
-	/*
-	 * Special case: appending a single expanded list. MUST force a drop of
-	 * the string representation at this point because INST_LAPPEND_LIST*
-	 * might use it directly.
-	 */
-	OP44(			LIST_RANGE_IMM, 0, TCL_INDEX_END);
-	goto lappendList;
-    } else if (!EnvHasLVT(envPtr)) {
-	/*
-	 * The weird cluster of bugs around INST_LAPPEND_STK without a LVT
-	 * ought to be sorted out. INST_LAPPEND_LIST_STK does the right thing.
-	 */
-	OP4(			LIST, 1);
-	goto lappendList;
-    }
 
     /*
-     * Emit instructions to append the item to the variable.
+     * Emit instructions to set/get the variable.
      *
      * The *_STK opcodes should be refactored to make better use of existing
      * LOAD/STORE instructions.
@@ -898,52 +880,19 @@ TclCompileLappendCmd(
   lappendMultiple:
 
     /*
-     * Concatenate all our remaining arguments into a list. This is slightly
-     * complicated because we also handle expansion.
+     * Concatenate all our remaining arguments into a list.
+     * TODO: Turn this into an expand-handling list building sequence.
      */
 
     if (numWords == 2) {
 	PUSH(			"");
     } else {
-	Tcl_Size build = 0;
-	int concat = 0;
-
 	valueTokenPtr = TokenAfter(varTokenPtr);
-	for (i = 2; i < numWords; i++) {
-	    if (valueTokenPtr->type == TCL_TOKEN_EXPAND_WORD && build > 0) {
-		OP4(		LIST, build);
-		if (concat) {
-		    OP(		LIST_CONCAT);
-		}
-		build = 0;
-		concat = 1;
-	    }
+	for (i = 2 ; i < numWords ; i++) {
 	    PUSH_TOKEN(		valueTokenPtr, i);
-	    if (valueTokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
-		if (concat) {
-		    OP(		LIST_CONCAT);
-		} else {
-		    concat = 1;
-		}
-	    } else {
-		build++;
-	    }
-	    if (build > MAX_LIST_CONCAT) {
-		OP4(		LIST, build);
-		if (concat) {
-		    OP(		LIST_CONCAT);
-		}
-		build = 0;
-		concat = 1;
-	    }
 	    valueTokenPtr = TokenAfter(valueTokenPtr);
 	}
-	if (build > 0) {
-	    OP4(		LIST, build);
-	    if (concat) {
-		OP(		LIST_CONCAT);
-	    }
-	}
+	OP4(			LIST, numWords - 2);
     }
 
     /*
@@ -951,7 +900,6 @@ TclCompileLappendCmd(
      * these opcodes handles all the special cases that [lappend] knows about.
      */
 
-  lappendList:
     if (isScalar) {
 	if (localIndex < 0) {
 	    OP(			LAPPEND_LIST_STK);
@@ -1189,8 +1137,8 @@ TclCompileListCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *valueTokenPtr;
-    Tcl_Size i, build, numWords = parsePtr->numWords;
-    int concat;
+    Tcl_Size i, numWords = parsePtr->numWords;
+    int concat, build;
     Tcl_Obj *listObj, *objPtr;
 
     if (numWords > UINT_MAX) {
@@ -1233,7 +1181,8 @@ TclCompileListCmd(
      */
 
     valueTokenPtr = TokenAfter(parsePtr->tokenPtr);
-    for (concat = 0, build = 0, i = 1; i < numWords; i++) {
+    concat = build = 0;
+    for (i = 1; i < numWords; i++) {
 	if (valueTokenPtr->type == TCL_TOKEN_EXPAND_WORD && build > 0) {
 	    OP4(		LIST, build);
 	    if (concat) {
@@ -1251,14 +1200,6 @@ TclCompileListCmd(
 	    }
 	} else {
 	    build++;
-	}
-	if (build > MAX_LIST_CONCAT) {
-	    OP4(		LIST, build);
-	    if (concat) {
-		OP(		LIST_CONCAT);
-	    }
-	    build = 0;
-	    concat = 1;
 	}
 	valueTokenPtr = TokenAfter(valueTokenPtr);
     }
