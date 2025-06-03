@@ -2576,8 +2576,7 @@ TEBCresume(
 	}
 
 #ifdef TCL_COMPILE_DEBUG
-	/* FIXME: What is the right thing to trace? */
-	{
+	if (tclTraceExec >= TCL_TRACE_BYTECODE_EXEC_COMMANDS) {
 	    Tcl_Size i;
 
 	    TRACE(("%u [", (unsigned) numArgs));
@@ -2587,7 +2586,7 @@ TEBCresume(
 		    TRACE_APPEND((" "));
 		}
 	    }
-	    TRACE_APPEND(("] => RETURN...\n"));
+	    TRACE_APPEND(("] => REGISTERED TAILCALL...\n"));
 	}
 #endif
 
@@ -2609,9 +2608,53 @@ TEBCresume(
 	    Tcl_DecrRefCount(iPtr->varFramePtr->tailcallPtr);
 	}
 	iPtr->varFramePtr->tailcallPtr = listPtr;
+	Tcl_IncrRefCount(listPtr);
 
 	result = TCL_RETURN;
 	cleanup = numArgs;
+	goto processExceptionReturn;
+    }
+
+    case INST_TAILCALL_LIST:
+	if (!(iPtr->varFramePtr->isProcCallFrame & 1)) {
+	    TRACE((" => ERROR: tailcall in non-proc context\n"));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "tailcall can only be called from a proc or lambda", -1));
+	    DECACHE_STACK_INFO();
+	    Tcl_SetErrorCode(interp, "TCL", "TAILCALL", "ILLEGAL", (char *)NULL);
+	    CACHE_STACK_INFO();
+	    goto gotError;
+	}
+
+    {
+	Tcl_Obj *listPtr = OBJ_AT_TOS;
+	// nsPtr = OBJ_UNDER_TOS;	// Don't need this variable
+#ifdef TCL_COMPILE_DEBUG
+	if (tclTraceExec >= TCL_TRACE_BYTECODE_EXEC_COMMANDS) {
+	    TRACE(("%s [", O2S(OBJ_UNDER_TOS)));
+	    TclPrintObject(stdout, listPtr, 40);
+	    TRACE_APPEND(("] => REGISTERED TAILCALL...\n"));
+	}
+#endif
+
+	/*
+	 * Push the evaluation of the called command into the NR callback
+	 * stack.
+	 */
+
+	if (iPtr->varFramePtr->tailcallPtr) {
+	    Tcl_DecrRefCount(iPtr->varFramePtr->tailcallPtr);
+	}
+	if (Tcl_IsShared(listPtr)) {
+	    listPtr = Tcl_DuplicateObj(listPtr);
+	}
+	// TODO: Consider requiring a blank or the NS at the start of the list.
+	Tcl_ListObjReplace(NULL, listPtr, 0, 0, 1, &OBJ_UNDER_TOS);
+	Tcl_IncrRefCount(listPtr);
+	iPtr->varFramePtr->tailcallPtr = listPtr;
+
+	result = TCL_RETURN;
+	cleanup = 2;
 	goto processExceptionReturn;
     }
 
