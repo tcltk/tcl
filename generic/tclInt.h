@@ -3103,16 +3103,7 @@ MODULE_SCOPE int	TclEncodingProfileNameToId(Tcl_Interp *interp,
 MODULE_SCOPE const char *TclEncodingProfileIdToName(Tcl_Interp *interp,
 			    int profileId);
 MODULE_SCOPE void	TclGetEncodingProfiles(Tcl_Interp *interp);
-/* TIP 716 - MODULE_SCOPE for 9.0.2. Will be public in 9.1 */
-#ifdef _WIN32
-MODULE_SCOPE const char *Tcl_GetEncodingNameForUser(Tcl_DString *bufPtr);
-#else
-static inline const char *
-Tcl_GetEncodingNameForUser(Tcl_DString *bufPtr)
-{
-    return Tcl_GetEncodingNameFromEnvironment(bufPtr);
-}
-#endif
+
 /*
  * TIP #233 (Virtualized Time)
  * Data for the time hooks, if any.
