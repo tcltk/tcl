@@ -9,6 +9,44 @@ on:
 permissions:
   contents: read
 jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      clang: ${{ steps.set-matrix.outputs.clang }}
+    steps:
+      - id: set-matrix
+        # DO NOT CHANGE THIS MATRIX SPEC; IT AFFECTS OUR COST CONTROLS
+        run: |
+          case "$GITHUB_REF_NAME" in
+            "main" | "core-9-0-branch")
+              cat >>$GITHUB_OUTPUT <<'EOF'
+              clang=<<'EOJ'
+              {
+                "config": [
+                  "",
+                  "--disable-shared",
+                  "--disable-zipfs",
+                  "--enable-symbols",
+                  "--enable-symbols=mem",
+                  "--enable-symbols=all"
+                ]
+              }
+              EOJ
+              EOF
+              ;;
+            *)
+              cat >>$GITHUB_OUTPUT <<'EOF'
+              clang=<<'EOJ'
+              {
+                "config": [
+                  "",
+                  "--enable-symbols=all"
+                ]
+              }
+              EOJ
+              EOF
+              ;;
+          esac
   xcode:
     runs-on: macos-15
     defaults:
@@ -36,15 +74,9 @@ jobs:
         timeout-minutes: 15
   clang:
     runs-on: macos-15
+    needs: plan
     strategy:
-      matrix:
-        config:
-          - ""
-          - "--disable-shared"
-          - "--disable-zipfs"
-          - "--enable-symbols"
-          - "--enable-symbols=mem"
-          - "--enable-symbols=all"
+      matrix: ${{ fromJson(need.plan.outputs.clang) }}
     defaults:
       run:
         shell: bash
