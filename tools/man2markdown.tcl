@@ -16,7 +16,7 @@
 # When this script is called directly from the command line using tclsh,
 # specifying an nroff file as an argument will call the [::ndoc::man2markdown] procedure
 # on that file and return the markdown on stdout. When not specifying an argument,
-# it runs in test mode, converting a specific manual page from within the fossil
+# it runs in test mode, converting a specific manual page from within the
 # repository structure which this script is a part of.
 #
 # This script is part of the implementation of TIP 700 <https://core.tcl-lang.org/tips/doc/trunk/tip/700.md>
@@ -1382,8 +1382,8 @@ proc ::ndoc::main {} {
 	if {[lindex $argv 0] eq ""} {
 		#### main testing code follows ####
 		set myDir [file dirname [info script]]
-		set tclManDir [file join $myDir .. nroff tcl9.0 doc]
-		set tkManDir [file join $myDir .. nroff tk9.0 doc]
+		set tclManDir [file join $myDir .. doc]
+		set tkManDir [file join $myDir .. doc]
 	
 		set myFile [file join $tclManDir string.n]
 		#set myFile [file join $tclManDir clock.n]
