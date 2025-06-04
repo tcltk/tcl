@@ -1170,10 +1170,10 @@ test encoding-31.1 {encoding system does not change encoding user} -setup {
 
 test encoding-31.2 {encoding system on newer Windows always returns utf-8} -body {
     string equal [encoding system] \
-        [expr {
-               [tcltests::windowsbuildnumber] > 18362 ?
-               "utf-8" : [tcltests::windowscodepage]
-           }]
+	[expr {
+	       [tcltests::windowsbuildnumber] > 18362 ?
+	       "utf-8" : [tcltests::windowscodepage]
+	   }]
 } -constraints win -result 1
 
 test encoding-31.3 {Tcl_GetEncodingNameFromEnvironment} -constraints testencoding -body {
