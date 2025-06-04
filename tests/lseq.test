@@ -26,6 +26,7 @@ proc memusage {} {
     if {[llength $line] != 7} {
 	error "Unexpected /proc/pid/statm format"
     }
+    close $fd
     return [lindex $line 5]
 }
 testConstraint hasMemUsage [expr {![catch {memusage}]}]
