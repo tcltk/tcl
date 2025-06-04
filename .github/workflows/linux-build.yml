@@ -5,25 +5,57 @@ on:
     - "main"
     - "core-9-0-branch"
     tags:
-    - "core-**"
+    - "core-*"
 permissions:
   contents: read
 jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      gcc: ${{ steps.set-matrix.outputs.gcc }}
+    steps:
+      - id: set-matrix
+        # DO NOT CHANGE THIS MATRIX SPEC; IT AFFECTS OUR COST CONTROLS
+        run: |
+          case "$GITHUB_REF_NAME" in
+            "main" | "core-9-0-branch")
+              cat >>$GITHUB_OUTPUT <<'EOF'
+              gcc=<<'EOJ'
+              {
+                "config": [
+                  "",
+                  "CFLAGS=-DTCL_NO_DEPRECATED=1",
+                  "--disable-shared",
+                  "--disable-zipfs",
+                  "--enable-symbols",
+                  "--enable-symbols=mem",
+                  "--enable-symbols=all",
+                  "CFLAGS=-ftrapv",
+                  "CFLAGS=-m32 CPPFLAGS=-m32 LDFLAGS=-m32 --disable-64bit"
+                ]
+              }
+              EOJ
+              EOF
+              ;;
+            *)
+              cat >>$GITHUB_OUTPUT <<'EOF'
+              gcc=<<'EOJ'
+              {
+                "config": [
+                  "",
+                  "--enable-symbols=all",
+                  "CFLAGS=-m32 CPPFLAGS=-m32 LDFLAGS=-m32 --disable-64bit"
+                ]
+              }
+              EOJ
+              EOF
+              ;;
+          esac
   gcc:
+    needs: plan
     runs-on: ubuntu-24.04
     strategy:
-      matrix:
-        config:
-          - ""
-          - "CFLAGS=-DTCL_NO_DEPRECATED=1"
-          - "--disable-shared"
-          - "--disable-zipfs"
-          - "--enable-symbols"
-          - "--enable-symbols=mem"
-          - "--enable-symbols=all"
-          - "CFLAGS=-ftrapv"
-          # Duplicated below
-          - "CFLAGS=-m32 CPPFLAGS=-m32 LDFLAGS=-m32 --disable-64bit"
+      matrix: ${{ fromJson(need.plan.outputs.gcc) }}
     defaults:
       run:
         shell: bash
@@ -72,10 +104,12 @@ jobs:
           make install
         timeout-minutes: 5
       - name: Create Distribution Package
+        if: ${{ matrix.config == '' }}
         run: |
           make dist
         timeout-minutes: 5
       - name: Convert Documentation to HTML
+        if: ${{ matrix.config == '' }}
         run: |
           make html-tcl
         timeout-minutes: 5

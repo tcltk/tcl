@@ -5,27 +5,80 @@ on:
     - "main"
     - "core-9-0-branch"
     tags:
-    - "core-**"
+    - "core-*"
 permissions:
   contents: read
-env:
-  ERROR_ON_FAILURES: 1
 jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      msvc: ${{ steps.set-matrix.outputs.msvc }}
+      gcc: ${{ steps.set-matrix.outputs.gcc }}
+    steps:
+      - id: set-matrix
+        # DO NOT CHANGE THIS MATRIX SPEC; IT AFFECTS OUR COST CONTROLS
+        run: |
+          case "$GITHUB_REF_NAME" in
+            "main" | "core-9-0-branch")
+              cat >>$GITHUB_OUTPUT <<'EOF'
+              msvc=<<'EOJ'
+              {
+                "config": [
+                  "",
+                  "CHECKS=nodep",
+                  "OPTS=static",
+                  "OPTS=noembed",
+                  "OPTS=symbols",
+                  "OPTS=symbols STATS=compdbg,memdbg"
+                ]
+              }
+              EOJ
+              gcc=<<'EOJ'
+              {
+                "config": [
+                  "",
+                  "CFLAGS=-DTCL_NO_DEPRECATED=1",
+                  "--disable-shared",
+                  "--disable-zipfs",
+                  "--enable-symbols",
+                  "--enable-symbols=mem",
+                  "--enable-symbols=all"
+                ]
+              }
+              EOJ
+              EOF
+              ;;
+            *)
+              cat >>$GITHUB_OUTPUT <<'EOF'
+              msvc=<<'EOJ'
+              {
+                "config": [
+                  "",
+                  "OPTS=symbols STATS=compdbg,memdbg"
+                ]
+              }
+              EOJ
+              gcc=<<'EOJ'
+              {
+                "config": [
+                  "",
+                  "--disable-shared",
+                  "--enable-symbols=all"
+                ]
+              }
+              EOJ
+              EOF
+              ;;
+          esac
   msvc:
     runs-on: windows-2025
+    needs: plan
     defaults:
       run:
         shell: powershell
         working-directory: win
     strategy:
-      matrix:
-        config:
-          - ""
-          - "CHECKS=nodep"
-          - "OPTS=static"
-          - "OPTS=noembed"
-          - "OPTS=symbols"
-          - "OPTS=symbols STATS=compdbg,memdbg"
+      matrix: ${{ fromJson(needs.plan.outputs.msvc) }}
     # Using powershell means we need to explicitly stop on failure
     steps:
       - name: Checkout
@@ -55,23 +108,18 @@ jobs:
              throw "nmake exit code: $lastexitcode"
           }
         timeout-minutes: 30
+        env:
+          ERROR_ON_FAILURES: 1
   gcc:
     runs-on: windows-2025
+    needs: plan
     defaults:
       run:
         shell: msys2 {0}
         working-directory: win
     strategy:
       matrix:
-        config:
-          - ""
-          - "CFLAGS=-DTCL_NO_DEPRECATED=1"
-          - "--disable-shared"
-          - "--disable-zipfs"
-          - "--enable-symbols"
-          - "--enable-symbols=mem"
-          - "--enable-symbols=all"
-    # Using powershell means we need to explicitly stop on failure
+        config: ${{ fromJson(need.plan.outputs.gcc) }}
     steps:
       - name: Install MSYS2
         uses: msys2/setup-msys2@v2
@@ -106,6 +154,8 @@ jobs:
       - name: Run Tests
         run: make test
         timeout-minutes: 30
+        env:
+          ERROR_ON_FAILURES: 1
 
 # If you add builds with Wine, be sure to define the environment variable
 # CI_USING_WINE when running them so that broken tests know not to run.
