@@ -1,0 +1,29 @@
+---
+CommandName: fileevent
+ManualSection: n
+Version: 7.5
+TclPart: Tcl
+TclDescription: Tcl Built-In Commands
+Links:
+ - chan(n)
+Copyright:
+ - Copyright (c) 1994 The Regents of the University of California.
+ - Copyright (c) 1994-1996 Sun Microsystems, Inc.
+ - Copyright (c) 2008 Pat Thoyts
+---
+
+# Name
+
+fileevent - Execute a script when a channel becomes readable or writable
+
+# Synopsis
+
+::: {.synopsis} :::
+[fileevent]{.cmd} [channel]{.arg} [script]{.optarg} 
+[fileevent]{.cmd} [channel]{.arg} [script]{.optarg} 
+:::
+
+# Description
+
+The **fileevent** command has been superceded by the **chan event** command which supports the same syntax and options.
+

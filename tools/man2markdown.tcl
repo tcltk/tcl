@@ -15,9 +15,25 @@
 #
 # When this script is called directly from the command line using tclsh,
 # specifying an nroff file as an argument will call the [::ndoc::man2markdown] procedure
-# on that file and return the markdown on stdout. When not specifying an argument,
+# on that file and return the markdown on stdout.
+#
+# When not specifying an argument,
 # it runs in test mode, converting a specific manual page from within the
-# repository structure which this script is a part of.
+# repository structure which this script is a part of. The result is written to stdout.
+#
+# When run with two directory names, it will convert all nroff files in the (existing) first directory
+# and put the result as markdown files into the second directory (which will be created if it does not exist).
+# This should be used to produce the current status of afairs into doc/markdown/:
+#
+# ```
+# # (from the tools directory)
+# tclsh man2markdown.tcl ../doc ../markdown
+# ```
+#
+# The last invocation can be used to check what changed with respect to the last `fossil commit`.
+# Any change reported by fossil (before committing) is a change that might have issues
+# compared to teh previous version, so it should be checked before the commit
+# and amended before the commit!
 #
 # This script is part of the implementation of TIP 700 <https://core.tcl-lang.org/tips/doc/trunk/tip/700.md>
 #
@@ -965,7 +981,11 @@ proc ::ndoc::parseCommand {mode line} {
 						} else {
 							lappend spanList [list Span $type [string range $word 0 end]]
 						}
-						if {$i > [llength $line]} {puts emergencyStop; exit}
+						if {$i > [llength $line]} {
+							puts "emergencyStop 1 in parseCommand"
+							puts "Line: $line"
+							exit
+						}
 					}
 				}
 				{^\+.+=$} {
@@ -1001,7 +1021,11 @@ proc ::ndoc::parseCommand {mode line} {
 						} else {
 							lappend sublist [list Span .arg $word]
 						}
-						if {$i > [llength $line]} {puts emergencyStop; exit}
+						if {$i > [llength $line]} {
+							puts "emergencyStop 2 in parseCommand"
+							puts "Line: $line"
+							exit
+						}
 					}
 					lappend spanList {*}[apply $expandSpan $sublist]
 					
@@ -1035,7 +1059,11 @@ proc ::ndoc::parseCommand {mode line} {
 						} else {
 							return -code error "detected a second arg in an optional argument group that is not optional ... not yet a handled case."
 						}
-						if {$i > [llength $line]} {puts emergencyStop; exit}
+						if {$i > [llength $line]} {
+							puts "emergencyStop 3 in parseCommand"
+							puts "Line: $line"
+							exit
+						}
 					}
 					set sublist [apply $expandSpan $sublist]
 					lappend spanList [list Span .optarg $sublist]
@@ -1058,7 +1086,11 @@ proc ::ndoc::parseCommand {mode line} {
 						} else {
 							lappend content $word
 						}
-						if {$i > [llength $line]} {puts emergencyStop; exit}
+						if {$i > [llength $line]} {
+							puts "emergencyStop 4 in parseCommand"
+							puts "Line: $line"
+							exit
+						}
 					}
 					lappend spanList {*}[apply $expandSpan [list [list Span $type [join $content " "]]]]
 				}
@@ -1380,7 +1412,7 @@ proc ::ndoc::main {} {
 	variable manual
 	variable verbose
 	if {[lindex $argv 0] eq ""} {
-		#### main testing code follows ####
+		#### main testing code follows (prints to stdout) ####
 		set myDir [file dirname [info script]]
 		set tclManDir [file join $myDir .. doc]
 		set tkManDir [file join $myDir .. doc]
@@ -1396,10 +1428,30 @@ proc ::ndoc::main {} {
 		#set myFile [file join $tkManDir bind.n]
 		#set myFile [file join $tclManDir filename.n]
 		#set myFile [file join $tkManDir scrollbar.n]
-		lset argv 0 $myFile
+		puts [man2markdown $myFile]
+	} elseif {[llength $argv] == 2} {
+		# convert whole directory:
+		lassign $argv inDir outDir
+		if {! [file isdirectory $inDir]} {
+			return -code error "Error: first argument is not a directory"
+		}
+		if {[file exists $outDir] && ! [file isdirectory $outDir]} {
+			return -code error "Error: second argument is not a directory"
+		} elseif {! [file exists $outDir]} {
+			file mkdir $outDir
+		}
+		foreach file [glob [file join $inDir *.n]] {
+			puts "converting $file ..."
+			set md [man2markdown $file]
+			set stem [file rootname [file tail $file]]
+			set fh [open [file join $outDir ${stem}.md] w]
+			puts $fh $md
+			close $fh
+		}
+	} else {
+		# convert single file (to stdout):
+		puts [man2markdown [lindex $argv 0]]
 	}
-	#### main program follows ####
-	puts [man2markdown [lindex $argv 0]]
 }
 
 
