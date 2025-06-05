@@ -76,7 +76,7 @@ jobs:
     runs-on: macos-15
     needs: plan
     strategy:
-      matrix: ${{ fromJson(need.plan.outputs.clang) }}
+      matrix: ${{ fromJson(needs.plan.outputs.clang) }}
     defaults:
       run:
         shell: bash
