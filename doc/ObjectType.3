@@ -367,10 +367,14 @@ use of the List commands without causing the type of the Tcl_Obj value
 to be converted to a list.
 
 Unless specified otherwise, all functions specific to Version 2 should return
-\fBTCL_OK\fR on success and \fBTCL_ERROR\fR on failure. Further, in the case
-that a \fBTcl_Obj*\fR is also returned, the reference count of the returned
-\fBTcl_Obj\fR should not be incremented so, for example, if a new \fBTcl_Obj\fR
-value is returned it should have a reference count of zero.
+\fBTCL_OK\fR on success and \fBTCL_ERROR\fR on failure.
+
+In the case that a \fBTcl_Obj*\fR is also returned, the reference count of the
+returned \fBTcl_Obj\fR should not be incremented so, for example, if a new
+\fBTcl_Obj\fR value is returned it should have a reference count of zero.
+
+The functions should not assume that any \fBTcl_Obj\fR passed in
+is unshared.
 
 .SS "THE LENGTHPROC FIELD"
 .PP
