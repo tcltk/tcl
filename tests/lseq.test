@@ -1044,7 +1044,7 @@ test lseq-bug-54329e39c7 {does not cause memory bloat} -constraints {
 test lseq-bug-54329e39c7-bis {does not cause memory bloat} -constraints {
     exec memory
 } -body {
-    set memdelta [exec [interpreter] << {
+    exec [interpreter] << {
 	# No change to PEAK memory usage in a fresh interpreter
 	proc memtest script {
 	    set start [lindex [split [memory info] \n] 5 end]
@@ -1058,7 +1058,7 @@ test lseq-bug-54329e39c7-bis {does not cause memory bloat} -constraints {
 	    set l [lseq 1000000]
 	    p $l
 	}]
-    }]
+    }
 } -result 0
 
 test lseq-bug-578b7e273c03-1 {Arithmetic Series Objects get wrong precision when end value is not specified} -body {
