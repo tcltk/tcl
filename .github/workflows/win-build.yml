@@ -119,7 +119,7 @@ jobs:
         working-directory: win
     strategy:
       matrix:
-        config: ${{ fromJson(need.plan.outputs.gcc) }}
+        config: ${{ fromJson(needs.plan.outputs.gcc) }}
     steps:
       - name: Install MSYS2
         uses: msys2/setup-msys2@v2
