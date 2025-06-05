@@ -19,6 +19,8 @@ testConstraint arithSeriesShimmer 1
 testConstraint arithSeriesShimmerOk 1
 testConstraint has64BitLengths [expr {$tcl_platform(pointerSize) == 8}]
 testConstraint has32BitLengths [expr {$tcl_platform(pointerSize) == 4}]
+testConstraint exec [llength [info commands exec]]
+testConstraint memory [llength [info commands memory]]
 
 proc memusage {} {
     set fd [open /proc/[pid]/statm]
@@ -1039,6 +1041,25 @@ test lseq-bug-54329e39c7 {does not cause memory bloat} -constraints {
     rename p {}
     unset -nocomplain l
 } -result ok
+test lseq-bug-54329e39c7-bis {does not cause memory bloat} -constraints {
+    exec memory
+} -body {
+    set memdelta [exec [interpreter] << {
+	# No change to PEAK memory usage in a fresh interpreter
+	proc memtest script {
+	    set start [lindex [split [memory info] \n] 5 end]
+	    uplevel 1 $script
+	    set end [lindex [split [memory info] \n] 5 end]
+	    expr {$end - $start}
+	}
+	proc p l {foreach x $l {}}
+	p {1 2}
+	puts [memtest {
+	    set l [lseq 1000000]
+	    p $l
+	}]
+    }]
+} -result 0
 
 test lseq-bug-578b7e273c03-1 {Arithmetic Series Objects get wrong precision when end value is not specified} -body {
     set bl [expr {2.8 in [lseq 0 count 100 by .1]}]
