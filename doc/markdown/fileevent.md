@@ -19,8 +19,8 @@ fileevent - Execute a script when a channel becomes readable or writable
 # Synopsis
 
 ::: {.synopsis} :::
-[fileevent]{.cmd} [channel]{.arg} [script]{.optarg} 
-[fileevent]{.cmd} [channel]{.arg} [script]{.optarg} 
+[fileevent]{.cmd} [channel]{.arg} [readable]{.lit} [script]{.optarg} 
+[fileevent]{.cmd} [channel]{.arg} [writable]{.lit} [script]{.optarg} 
 :::
 
 # Description

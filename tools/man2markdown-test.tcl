@@ -6,6 +6,11 @@ source man2markdown.tcl
 tcltest::configure -verbose {pass error}
 
 
+tcltest::test BIRPclean-0 {...} {
+	::ndoc::BIRPclean {\fB::pkg::create\fR \fB\-name \fIpackageName \fB\-version \fIpackageVersion\fR ?\fB\-load \fIfilespec\fR? ... ?\fB\-source \fIfilespec\fR? ...}
+} {\fB::pkg::create\fR \fB\-name\fR \fIpackageName\fR \fB\-version\fR \fIpackageVersion\fR ?\fB\-load\fR \fIfilespec\fR? ... ?\fB\-source\fR \fIfilespec\fR? ...}
+
+
 foreach {num before after md ast} {
 	1
 	{\fBappend \fIvarName \fR?\fIvalue value value ...\fR?}
