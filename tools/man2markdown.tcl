@@ -937,8 +937,10 @@ proc ::ndoc::parseCommand {mode line} {
 	#
 	# Note: the Span elements are alread fully expanded with appropriate AST "Text" elements
 	#
+	set DEBUG 1
 	set line [BIRPclean $line]
-	# make life a bit easier for parsing by replacing nroff syntax with something simpler:
+	# make life a bit easier for parsing by replacing nroff syntax with something simpler,
+	# so this is the internal representation:
 	# § is bold
 	# + is italic
 	# = is reset
@@ -961,16 +963,18 @@ proc ::ndoc::parseCommand {mode line} {
 		set word [lindex $line $i]
 		if {$i == 0} {
 			# the first word
+			if $DEBUG {puts 1st-word}
 			switch -regexp $word {
 				{^§.+=$} {
 					# only one cmd without subcommand:
 					lappend spanList [list Span .cmd [string range $word 1 end-1]]
+					if $DEBUG {puts "single .cmd: $spanList"}
 				}
 				{^§.+[^=]$} {
 					# a cmd with a subcommand and possibly more elements:
 					lappend spanList [list Span .cmd [string range $word 1 end]]
 					# there must be a second word = subcommand,
-					# sometimes also more word and these are then literals
+					# sometimes also more words and these are then literals
 					while 1 {
 						incr i
 						set word [lindex $line $i]
@@ -987,6 +991,7 @@ proc ::ndoc::parseCommand {mode line} {
 							exit
 						}
 					}
+					if $DEBUG {puts ".cmd with subcommand: $spanList"}
 				}
 				{^\+.+=$} {
 					# an instance as a command name:
@@ -995,11 +1000,13 @@ proc ::ndoc::parseCommand {mode line} {
 					set sub [lindex $line $i]
 					lappend spanList [list Span .ins [string range $word 1 end-1]] \
 						[list Span .sub [string range $sub 1 end-1]]
+					if $DEBUG {puts "instance command .ins: $spanList"}
 				}
 			}
 			set spanList [apply $expandSpan $spanList]
 		} else {
 			# remaining words of the command:
+			if $DEBUG {puts "word $i: $word"}
 			set sublist [list]
 			switch -regexp $word {
 				{^\+.+=$} {
@@ -1007,6 +1014,7 @@ proc ::ndoc::parseCommand {mode line} {
 					# + followed by some word followed by =
 					lappend sublist [list Span .arg [string range $word 1 end-1]]
 					lappend spanList {*}[apply $expandSpan $sublist]
+					if $DEBUG {puts "single mandatory .arg: $spanList"}
 				}
 				{^\+.+[^=]$} {
 					# multiple mandatory args: .arg
@@ -1028,19 +1036,30 @@ proc ::ndoc::parseCommand {mode line} {
 						}
 					}
 					lappend spanList {*}[apply $expandSpan $sublist]
-					
+					if $DEBUG {puts "multiple mandartoy .arg: $spanList"}
 				}
 				{^\?\+.+=\?$} {
 					# single optional arg = .optarg
 					# ? followed by + followed by a word followed by = followed by ?
 					lappend sublist [list Span .optarg [string range $word 2 end-2]]
 					lappend spanList {*}[apply $expandSpan $sublist]
+					if $DEBUG {puts "single optional arg .optarg: $spanList"}
+				}
+				{^§.+=$} {
+					# single mandatory literal = .lit
+					# (can also start with a dash and is then called a 'required option' in Tcl jargon):
+					lappend sublist [list Span .lit [string range $word 1 end-1]]
+					lappend spanList {*}[apply $expandSpan $sublist]
+					if $DEBUG {puts "single mandatory literal .lit: $spanList"}
 				}
 				{^\?§.+=\?$} {
+					# single optional literal = .optlit:
 					lappend sublist [list Span .optlit [string range $word 2 end-2]]
 					lappend spanList {*}[apply $expandSpan $sublist]
+					if $DEBUG {puts "single optional literal .optlit: $spanList"}
 				}
-				{^\?§.+=$} {					# multiple optional arg group (first arg is mandatory literal):
+				{^\?§.+=$} {
+					# multiple optional arg group (first arg is mandatory literal):
 					lappend sublist  [list Span .lit [string range $word 2 end-1]]
 					# also get all other members of this group and put them into the first span
 					while 1 {
@@ -1067,6 +1086,7 @@ proc ::ndoc::parseCommand {mode line} {
 					}
 					set sublist [apply $expandSpan $sublist]
 					lappend spanList [list Span .optarg $sublist]
+					if $DEBUG {puts "multiple optional arg group: $spanList"}
 				}
 				{^\?\+.+[^=][^\?]} {
 					# multiple optional arguments
@@ -1093,10 +1113,12 @@ proc ::ndoc::parseCommand {mode line} {
 						}
 					}
 					lappend spanList {*}[apply $expandSpan [list [list Span $type [join $content " "]]]]
+					if $DEBUG {puts "multiple optional arguments: $spanList"}
 				}
 			}
 		}
 	}
+	if $DEBUG {puts "RESULT = $spanList"}
 	return $spanList
 }
 
