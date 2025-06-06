@@ -1070,6 +1070,49 @@ namespace eval listtype {
     }
 
     ################################################################
+    # Raw C API tests
+
+    # Tcl_ListObjRange
+    foreach ltype $listTypes {
+        switch $ltype {
+            list - spanlist {
+                set ltype2 list; # Because the C level does not distinguish
+            }
+            arithseries {set ltype2 arithseries}
+            default {set ltype2 rangeList}
+        }
+        # Check normal operation with unshared (0, 1) and shared objects
+        foreach nrefs {0 1 2} {
+            # - Source object type must not change except spanlist->list
+            #   since the type returned at C level is list for both
+            #   list and spanlist
+            # - Source object reference counts must not change
+            # - Result object must not be same as source object even if unshared
+            test Tcl_ListObjRange-$ltype-nrefs$nrefs {
+                Tcl_ListObjRange for $ltype lists 1 end-1
+            } -body {
+                set apiresult [testlistapi Tcl_ListObjRange $nrefs [makeList $ltype] 1 [expr {$largeListLength-2}]]
+                dict with apiresult {}; # Explode apiresult into status, srcRefCount ...
+                list $status $srcRefCount $srcType $resultRefCount $resultType $result [expr {$srcPtr != $resultPtr}]
+            } -cleanup {
+                unset -nocomplain {*}[dict keys $apiresult] apiresult
+            } -result [list 0 $nrefs [expr {$ltype eq "spanlist" ? "list" : $ltype}] 0 $ltype2 [lrange [getNonAbstract $ltype] 1 end-1] 1]
+
+            # Small ranges are always plain old lists
+            test Tcl_ListObjRange-$ltype-nrefs$nrefs-smalllist {
+                Tcl_ListObjRange for $ltype lists 1 10
+            } -body {
+                set apiresult [testlistapi Tcl_ListObjRange $nrefs [makeList $ltype] 1 10]
+                dict with apiresult {}; # Explode apiresult into status, srcRefCount ...
+                list $status $srcRefCount $srcType $resultRefCount $resultType $result [expr {$srcPtr != $resultPtr}]
+            } -cleanup {
+                unset -nocomplain {*}[dict keys $apiresult] apiresult
+            } -result [list 0 $nrefs [expr {$ltype eq "spanlist" ? "list" : $ltype}] 0 [expr {$ltype in "arithseries" ? $ltype : "list"}] [lrange [getNonAbstract $ltype] 1 10] 1]
+
+        }
+    }
+
+    ################################################################
     # Checks for memory leaks in raw C API
     # If Tcl has been compiled with memory checking, use it, else will rely
     # on valgrind -DPURIFY builds.

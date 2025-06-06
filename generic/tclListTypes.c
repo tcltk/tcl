@@ -1029,22 +1029,29 @@ Tcl_ListObjRange(
 
     /*
      * If the list is an AbstractList with a specialized slice, use it.
-     * Note this includes rangeType itself.
-     *
-     * We will only use the lrangeType abstract list if the following
-     * conditions are met:
-     *  1. The source list is not a non-abstract list since that has its
-     *     own range operation with better performance and additional features.
-     *  2. The length criteria for using rangeType are met.
+     * Note this includes rangeType itself. Non-abstract lists already
+     * implement their own efficient range operation.
      */
     if (TclObjTypeHasProc(objPtr, sliceProc)) {
 	result = TclObjTypeSlice(interp, objPtr, start, end, &resultPtr);
-    } else if (objPtr->typePtr == &tclListType ||
-	!LrangeMeetsLengthCriteria(rangeLen, srcLen)) {
-	/* Conditions not met, create non-abstract list */
+    } else if (objPtr->typePtr == &tclListType) {
+	/* Do not use TclListObjRange for abstract lists as it will shimmer */
 	resultPtr = TclListObjRange(interp, objPtr, start, end);
 	result = resultPtr ? TCL_OK : TCL_ERROR;
-    } else {
+    } else if (!LrangeMeetsLengthCriteria(rangeLen, srcLen)) {
+	/* Range is too small, create a non-abstract list */
+	resultPtr = Tcl_NewListObj(rangeLen, NULL);
+	for (Tcl_Size i = 0; i < rangeLen; i++) {
+	    Tcl_Obj *elemPtr;
+	    result = Tcl_ListObjIndex(interp, objPtr, start + i, &elemPtr);
+	    if (result != TCL_OK) {
+		break;
+	    }
+	    assert(elemPtr);
+	    Tcl_ListObjAppendElement(interp, resultPtr, elemPtr);
+	}
+    }
+    else {
 	/* Create a lrangeType referencing the original source list */
 	result = LrangeNew(objPtr, start, rangeLen, &resultPtr);
     }
