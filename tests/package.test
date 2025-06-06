@@ -1069,8 +1069,9 @@ test package-8.10 {Tcl_PkgPresent procedure, unknown package} -body {
     package present -exact t 2.4
 } -returnCodes error -result {package t 2.4 is not present}
 test package-8.11 {Tcl_PackageCmd procedure, "present" option} -body {
-    package present
-} -returnCodes error -result {wrong # args: should be "package present ?-exact? package ?requirement ...?"}
+    set l [package present]
+    expr {"Tcl" in $l}
+} -result 1
 test package-8.12 {Tcl_PackageCmd procedure, "present" option} -body {
     package present a b c
 } -returnCodes error -result {expected version number but got "b"}
