@@ -12,41 +12,31 @@ jobs:
   plan:
     runs-on: ubuntu-latest
     outputs:
-      clang: ${{ steps.set-matrix.outputs.clang }}
+      clang: ${{ steps.matrix.outputs.clang }}
     steps:
-      - id: set-matrix
-        # DO NOT CHANGE THIS MATRIX SPEC; IT AFFECTS OUR COST CONTROLS
+      - name: Select build matrix based on branch name
+        id: matrix
         run: |
-          case "$GITHUB_REF_NAME" in
-            "main" | "core-9-0-branch")
-              cat >>$GITHUB_OUTPUT <<'EOF'
-              clang=<<'EOJ'
-              {
-                "config": [
-                  "",
-                  "--disable-shared",
-                  "--disable-zipfs",
-                  "--enable-symbols",
-                  "--enable-symbols=mem",
-                  "--enable-symbols=all"
-                ]
-              }
-              EOJ
-              EOF
-              ;;
-            *)
-              cat >>$GITHUB_OUTPUT <<'EOF'
-              clang=<<'EOJ'
-              {
-                "config": [
-                  "",
-                  "--enable-symbols=all"
-                ]
-              }
-              EOJ
-              EOF
-              ;;
-          esac
+          (
+            echo clang=$(jq -nc '{config: (if env.IsMatched == "true" then env.FULL else env.PARTIAL end) | fromjson }' )
+          ) | tee -a $GITHUB_OUTPUT
+        env:
+          IsMatched: ${{ github.ref_name == 'main' || github.ref_name == 'core-9-0-branch' }}
+          # DO NOT CHANGE THIS MATRIX SPEC; IT AFFECTS OUR COST CONTROLS
+          FULL: >
+            [
+              "",
+              "--disable-shared",
+              "--disable-zipfs",
+              "--enable-symbols",
+              "--enable-symbols=mem",
+              "--enable-symbols=all"
+            ]
+          PARTIAL: >
+            [
+              "",
+              "--enable-symbols=all"
+            ]
   xcode:
     runs-on: macos-15
     defaults:
