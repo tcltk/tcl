@@ -1875,6 +1875,18 @@ EXTERN int		Tcl_IsEmpty(Tcl_Obj *obj);
 /* 691 */
 EXTERN const char *	Tcl_GetEncodingNameForUser(Tcl_DString *bufPtr);
 /* 692 */
+EXTERN int		Tcl_ListObjReverse(Tcl_Interp *interp,
+				Tcl_Obj *objPtr, Tcl_Obj **resultPtrPtr);
+/* 693 */
+EXTERN int		Tcl_ListObjRepeat(Tcl_Interp *interp,
+				Tcl_Size repeatCount, Tcl_Size objc,
+				Tcl_Obj *const objv[],
+				Tcl_Obj **resultPtrPtr);
+/* 694 */
+EXTERN int		Tcl_ListObjRange(Tcl_Interp *interp, Tcl_Obj *objPtr,
+				Tcl_Size start, Tcl_Size end,
+				Tcl_Obj **resultPtrPtr);
+/* 695 */
 EXTERN void		TclUnusedStubEntry(void);
 
 typedef struct {
@@ -2579,7 +2591,10 @@ typedef struct TclStubs {
     void (*tcl_SetWideUIntObj) (Tcl_Obj *objPtr, Tcl_WideUInt uwideValue); /* 689 */
     int (*tcl_IsEmpty) (Tcl_Obj *obj); /* 690 */
     const char * (*tcl_GetEncodingNameForUser) (Tcl_DString *bufPtr); /* 691 */
-    void (*tclUnusedStubEntry) (void); /* 692 */
+    int (*tcl_ListObjReverse) (Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Obj **resultPtrPtr); /* 692 */
+    int (*tcl_ListObjRepeat) (Tcl_Interp *interp, Tcl_Size repeatCount, Tcl_Size objc, Tcl_Obj *const objv[], Tcl_Obj **resultPtrPtr); /* 693 */
+    int (*tcl_ListObjRange) (Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Size start, Tcl_Size end, Tcl_Obj **resultPtrPtr); /* 694 */
+    void (*tclUnusedStubEntry) (void); /* 695 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3913,8 +3928,14 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_IsEmpty) /* 690 */
 #define Tcl_GetEncodingNameForUser \
 	(tclStubsPtr->tcl_GetEncodingNameForUser) /* 691 */
+#define Tcl_ListObjReverse \
+	(tclStubsPtr->tcl_ListObjReverse) /* 692 */
+#define Tcl_ListObjRepeat \
+	(tclStubsPtr->tcl_ListObjRepeat) /* 693 */
+#define Tcl_ListObjRange \
+	(tclStubsPtr->tcl_ListObjRange) /* 694 */
 #define TclUnusedStubEntry \
-	(tclStubsPtr->tclUnusedStubEntry) /* 692 */
+	(tclStubsPtr->tclUnusedStubEntry) /* 695 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
