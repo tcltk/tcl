@@ -96,7 +96,7 @@ jobs:
       - name: Info
         run: |
           ulimit -a || echo 'get limit failed'
-          make runtest sCRIPT=../.github/workflows/info.tcl || echo 'get info failed'
+          make runtest SCRIPT=../.github/workflows/info.tcl || echo 'get info failed'
       - name: Run Tests
         run: |
           make test
