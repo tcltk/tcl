@@ -1254,10 +1254,32 @@ TclNRPackageObjCmd(
 	break;
     case PKG_PRESENT: {
 	const char *name;
+	
+	/*
+	 * No package argument: return all loaded packages (TIP 722)
+	 */
 
 	if (objc < 3) {
-	    goto require;
+	    Tcl_Obj *resultObj;
+
+	    TclNewObj(resultObj);
+	    tablePtr = &iPtr->packageTable;
+	    for (hPtr = Tcl_FirstHashEntry(tablePtr, &search); hPtr != NULL;
+		     hPtr = Tcl_NextHashEntry(&search)) {
+		pkgPtr = Tcl_GetHashValue(hPtr);
+		if (pkgPtr->version != NULL) {
+		    Tcl_ListObjAppendElement(NULL, resultObj, Tcl_NewStringObj(
+			    Tcl_GetHashKey(tablePtr, hPtr), -1));
+		}
+	    }
+	    Tcl_SetObjResult(interp, resultObj);
+	    break;
 	}
+
+	/*
+	 * Package argument: check if this package is present
+	 */
+
 	argv2 = TclGetString(objv[2]);
 	if ((argv2[0] == '-') && (strcmp(argv2, "-exact") == 0)) {
 	    if (objc != 5) {
