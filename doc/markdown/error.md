@@ -22,7 +22,7 @@ error - Generate an error
 # Synopsis
 
 ::: {.synopsis} :::
-[error]{.cmd} [message]{.arg} [info]{.optarg} [code]{.optarg} 
+[error]{.cmd} [message]{.arg} [info]{.optarg} [code]{.optarg}
 :::
 
 # Description

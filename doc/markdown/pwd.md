@@ -23,7 +23,7 @@ pwd - Return the absolute path of the current working directory
 # Synopsis
 
 ::: {.synopsis} :::
-[pwd]{.cmd} 
+[pwd]{.cmd}
 :::
 
 # Description

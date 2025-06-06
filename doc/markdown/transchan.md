@@ -24,16 +24,16 @@ transchan - command handler API of channel transforms
 # Synopsis
 
 ::: {.synopsis} :::
-[chan]{.cmd} [push]{.sub} [channel]{.arg} [cmdPrefix]{.arg} 
+[chan]{.cmd} [push]{.sub} [channel]{.arg} [cmdPrefix]{.arg}
 
-[cmdPrefix]{.ins} [clear]{.sub} [handle]{.arg} 
-[cmdPrefix]{.ins} [drain]{.sub} [handle]{.arg} 
-[cmdPrefix]{.ins} [finalize]{.sub} [handle]{.arg} 
-[cmdPrefix]{.ins} [flush]{.sub} [handle]{.arg} 
-[cmdPrefix]{.ins} [initialize]{.sub} [handle]{.arg} [mode]{.arg} 
-[cmdPrefix]{.ins} [limit?]{.sub} [handle]{.arg} 
-[cmdPrefix]{.ins} [read]{.sub} [handle]{.arg} [buffer]{.arg} 
-[cmdPrefix]{.ins} [write]{.sub} [handle]{.arg} [buffer]{.arg} 
+[cmdPrefix]{.ins} [clear]{.sub} [handle]{.arg}
+[cmdPrefix]{.ins} [drain]{.sub} [handle]{.arg}
+[cmdPrefix]{.ins} [finalize]{.sub} [handle]{.arg}
+[cmdPrefix]{.ins} [flush]{.sub} [handle]{.arg}
+[cmdPrefix]{.ins} [initialize]{.sub} [handle]{.arg} [mode]{.arg}
+[cmdPrefix]{.ins} [limit?]{.sub} [handle]{.arg}
+[cmdPrefix]{.ins} [read]{.sub} [handle]{.arg} [buffer]{.arg}
+[cmdPrefix]{.ins} [write]{.sub} [handle]{.arg} [buffer]{.arg}
 :::
 
 # Description

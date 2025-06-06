@@ -26,7 +26,7 @@ unknown - Handle attempts to use non-existent commands
 # Synopsis
 
 ::: {.synopsis} :::
-[unknown]{.cmd} [cmdName]{.arg} [arg arg]{.optdot} 
+[unknown]{.cmd} [cmdName]{.arg} [arg arg]{.optdot}
 :::
 
 # Description
