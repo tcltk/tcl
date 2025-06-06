@@ -1170,11 +1170,21 @@ test encoding-31.1 {encoding system does not change encoding user} -setup {
 
 test encoding-31.2 {encoding system on newer Windows always returns utf-8} -body {
     string equal [encoding system] \
-        [expr {
-               [tcltests::windowsbuildnumber] > 18362 ?
-               "utf-8" : [tcltests::windowscodepage]
-           }]
+	[expr {
+	       [tcltests::windowsbuildnumber] > 18362 ?
+	       "utf-8" : [tcltests::windowscodepage]
+	   }]
 } -constraints win -result 1
+
+test encoding-31.3 {Tcl_GetEncodingNameFromEnvironment} -constraints testencoding -body {
+    # Primarily tests that stub is callable from outside tcl.{so,dll} via stubs
+    testencoding Tcl_GetEncodingNameFromEnvironment
+} -result [encoding system]
+
+test encoding-31.4 {Tcl_GetEncodingNameForUser} -constraints testencoding -body {
+    # Primarily tests that stub is callable from outside tcl.{so,dll} via stubs
+    testencoding Tcl_GetEncodingNameForUser
+} -result [encoding user]
 
 test encoding-bug-6a3e2cb0f0-1 {Bug [6a3e2cb0f0] - invalid bytes in escape encodings} -body {
     encoding convertfrom -profile tcl8 iso2022-jp x\x1B\x7Aaby
