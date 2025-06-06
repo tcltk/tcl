@@ -1079,7 +1079,7 @@ test lseq-bug-578b7e273c03-2 {Arithmetic Series Objects get wrong precision when
     lappend ll [llength [lseq 0 count 200 by .011]]
 } -result {100 200 100 200 100 200}
 
-test lseq-bug-f4a4bd7f1070-1 {} -body {
+test lseq-bug-f4a4bd7f1070-1 {semantics of count parameter} -body {
     set result {}
     lappend result [catch {lseq 3.1} msg]
     lappend result $msg
