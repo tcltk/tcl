@@ -21,10 +21,10 @@ tm - Facilities for locating and loading of Tcl Modules
 # Synopsis
 
 ::: {.synopsis} :::
-[::tcl::tm::path]{.cmd} [add]{.sub} [path]{.optdot} 
-[::tcl::tm::path]{.cmd} [remove]{.sub} [path]{.optdot} 
-[::tcl::tm::path]{.cmd} [list]{.sub} 
-[::tcl::tm::roots]{.cmd} [paths]{.arg} 
+[::tcl::tm::path]{.cmd} [add]{.sub} [path]{.optdot}
+[::tcl::tm::path]{.cmd} [remove]{.sub} [path]{.optdot}
+[::tcl::tm::path]{.cmd} [list]{.sub}
+[::tcl::tm::roots]{.cmd} [paths]{.arg}
 :::
 
 # Description

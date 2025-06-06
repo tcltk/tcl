@@ -21,7 +21,7 @@ time - Time the execution of a script
 # Synopsis
 
 ::: {.synopsis} :::
-[time]{.cmd} [script]{.arg} [count]{.optarg} 
+[time]{.cmd} [script]{.arg} [count]{.optarg}
 :::
 
 # Description

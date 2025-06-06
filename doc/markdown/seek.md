@@ -18,7 +18,7 @@ seek - Change the access position for an open channel
 # Synopsis
 
 ::: {.synopsis} :::
-[seek]{.cmd} [channel]{.arg} [offset]{.arg} [origin]{.optarg} 
+[seek]{.cmd} [channel]{.arg} [offset]{.arg} [origin]{.optarg}
 :::
 
 # Description

@@ -4,18 +4,17 @@
 #
 #
 # When this script is called from another Tcl script (i.e. using the [source] command),
-# you can call the procedure [::ndoc::man2markdown] with a file to be converted as an argument
-# (the whole script and its procedureslive in the '::ndoc::' namespace).
+# you can call the procedure `::ndoc::man2markdown` with a the content of a man file
+# to be converted as an argument
+# (the whole script and its procedures live in the '::ndoc::' namespace).
+# If you just have the man file, you can use: `::ndoc::man2markdown [::ndoc::readFile /path/to/my/file.n]`
 #
-# ```
-# ::ndoc::man2markdown /User/me/Tcl/doc/string.n
-# ```
 #
 # This procedure will return the resulting markdown.
 #
 # When this script is called directly from the command line using tclsh,
 # specifying an nroff file as an argument will call the [::ndoc::man2markdown] procedure
-# on that file and return the markdown on stdout.
+# on the file content and return the markdown on stdout.
 #
 # When not specifying an argument,
 # it runs in test mode, converting a specific manual page from within the
@@ -47,22 +46,23 @@ namespace eval ::ndoc {
 		and conforms to the following structure (only loosely used BNF notation here ...):
 		
 		``` {.BNF}
-		Block  = Paragraph | Code | Header | List | Dlist | Div
+		Block  = Paragraph | Code | Header | List | Dlist | Div | Syntax
 		Inline = Space | Text | Emphasis | Strong | Quoted | Link | Span
 		
 		Document  = Block +
 		Paragraph = Inline +
 		Header    = Text
 		List      = ListItem +
-		ListItem  = Block +   [but without 'Header']
+		ListItem  = Block +  [but without 'Header']
 		Dlist     = DlistItem +
 		DlistItem = Block +  [but without 'Header']
 		Emphasis  = Inline +
 		Strong    = Inline +
 		Quoted    = Inline +
 		Link      = Inline +
+		Syntax    = Span + | Space +
 		Div       = Div + | Span + | Inline +
-		Span      = Span | Text   [currently a Span can not hold any other inline elements except itself (but only once) or Text]
+		Span      = Span | Text | Space +  [currently a Span can not hold any other inline elements except itself (but only once) or Text/Space]
 		
 		Text = <a string of visible characters including spaces>
 		Code = <a string of visible characters including spaces and newlines>
@@ -89,7 +89,7 @@ namespace eval ::ndoc {
 		All structural items with a '+' above have one or more nested AST items as their <content> elements.
 		This means, the content is itself a list with AST elements, each of these elements being a 3-element list as described above.
 		The others (the terminals: Text, Code, Space) only have a simple string of characters in the <content> element.
-		They do not have nested elements.
+		They do not have nested elements. Note, that the content element of Space is an empty string.
 		For most items, the options are currently empty (i.e. the empty list). These are the
 		possible structural items of the AST in the Tcl representation:
 		
@@ -500,13 +500,13 @@ proc ::ndoc::parseBackslash {text} {
 }
 
 
-proc ::ndoc::man2AST {file} {
+proc ::ndoc::man2AST {manContent} {
 	#
-	# parses the content of a file,
+	# parses the data in manContent
 	# interpreting it as nroff format inlcuding Tcl macros,
 	# and converting it into an abstract syntax tree (AST)
 	#
-	# file - path and name of a file containing an nroff formatted manual page
+	# manContent - the content of a file containing an nroff formatted manual page
 	#
 	# The procedure fills the global dict 'manual' with four elements:
 	#  - copyright = a list of copyright entries
@@ -519,11 +519,8 @@ proc ::ndoc::man2AST {file} {
 	dict set manual copyright [list]
 	dict set manual meta [list]
 	dict set manual content [list]
-	dict set manual name [file root [file tail $file]]
 	
-	set fh [open $file r]
-	set manContent [split [read $fh] \n]
-	close $fh
+	set manContent [split $manContent \n]
 	
 	if {$verbose} {puts "++++ processing blocks ++++"}
 	set blockAST [parseBlock Document $manContent]
@@ -937,7 +934,7 @@ proc ::ndoc::parseCommand {mode line} {
 	#
 	# Note: the Span elements are alread fully expanded with appropriate AST "Text" elements
 	#
-	set DEBUG 1
+	set DEBUG 0
 	set line [BIRPclean $line]
 	# make life a bit easier for parsing by replacing nroff syntax with something simpler,
 	# so this is the internal representation:
@@ -947,15 +944,19 @@ proc ::ndoc::parseCommand {mode line} {
 	set line [string map {{\fB} § {\fI} + {\fR} = {\fP} =} $line]
 	set line [string map {\\ {}} $line]
 	if {$mode eq "-internal"} {return $line}
-	# translate line to Span elements:
+	# translate line to Span elements with Space elements in between:
 	set spanList [list]
 	set state =
 	set chunk {}
-	# code to expand the content of a Span to contain a correct AST Text elements:
+	# [apply] code to expand the content of a Span (except Space) to contain a correct AST Text element:
 	set expandSpan	[list spanList {
 		lmap el $spanList {
 			lassign $el sName sAttr sContent
-			set el [list $sName $sAttr [list [list Text {} $sContent]]]
+			if {$sName eq "Space"} {
+				set el
+			} else {
+				set el [list $sName $sAttr [list [list Text {} $sContent]]]
+			}
 		}
 	}]
 	# treat the line as a list so that we easily can detect the individual elements:
@@ -980,10 +981,10 @@ proc ::ndoc::parseCommand {mode line} {
 						set word [lindex $line $i]
 						if {$i == 1} {set type .sub} else {set type .lit}
 						if {[string index $word end] eq "="} {
-							lappend spanList [list Span $type [string range $word 0 end-1]]
+							lappend spanList [list Space {} {}] [list Span $type [string range $word 0 end-1]]
 							break
 						} else {
-							lappend spanList [list Span $type [string range $word 0 end]]
+							lappend spanList [list Space {} {}] [list Span $type [string range $word 0 end]]
 						}
 						if {$i > [llength $line]} {
 							puts "emergencyStop 1 in parseCommand"
@@ -999,6 +1000,7 @@ proc ::ndoc::parseCommand {mode line} {
 					incr i
 					set sub [lindex $line $i]
 					lappend spanList [list Span .ins [string range $word 1 end-1]] \
+						[list Space {} {}] \
 						[list Span .sub [string range $sub 1 end-1]]
 					if $DEBUG {puts "instance command .ins: $spanList"}
 				}
@@ -1013,21 +1015,21 @@ proc ::ndoc::parseCommand {mode line} {
 					# single mandatory arg: .arg
 					# + followed by some word followed by =
 					lappend sublist [list Span .arg [string range $word 1 end-1]]
-					lappend spanList {*}[apply $expandSpan $sublist]
+					lappend spanList [list Space {} {}] {*}[apply $expandSpan $sublist]
 					if $DEBUG {puts "single mandatory .arg: $spanList"}
 				}
 				{^\+.+[^=]$} {
 					# multiple mandatory args: .arg
-					lappend sublist [list Span .arg [string range $word 1 end]]
+					lappend sublist [list Space {} {}] [list Span .arg [string range $word 1 end]]
 					# also get all other members of this group:
 					while 1 {
 						incr i
 						set word [lindex $line $i]
 						if {[string index $word end] eq "="} {
-							lappend sublist [list Span .arg [string range $word 0 end-1]]
+							lappend sublist [list Space {} {}] [list Span .arg [string range $word 0 end-1]]
 							break
 						} else {
-							lappend sublist [list Span .arg $word]
+							lappend sublist [list Space {} {}] [list Span .arg $word]
 						}
 						if {$i > [llength $line]} {
 							puts "emergencyStop 2 in parseCommand"
@@ -1042,25 +1044,25 @@ proc ::ndoc::parseCommand {mode line} {
 					# single optional arg = .optarg
 					# ? followed by + followed by a word followed by = followed by ?
 					lappend sublist [list Span .optarg [string range $word 2 end-2]]
-					lappend spanList {*}[apply $expandSpan $sublist]
+					lappend spanList [list Space {} {}] {*}[apply $expandSpan $sublist]
 					if $DEBUG {puts "single optional arg .optarg: $spanList"}
 				}
 				{^§.+=$} {
 					# single mandatory literal = .lit
 					# (can also start with a dash and is then called a 'required option' in Tcl jargon):
 					lappend sublist [list Span .lit [string range $word 1 end-1]]
-					lappend spanList {*}[apply $expandSpan $sublist]
+					lappend spanList [list Space {} {}] {*}[apply $expandSpan $sublist]
 					if $DEBUG {puts "single mandatory literal .lit: $spanList"}
 				}
 				{^\?§.+=\?$} {
 					# single optional literal = .optlit:
 					lappend sublist [list Span .optlit [string range $word 2 end-2]]
-					lappend spanList {*}[apply $expandSpan $sublist]
+					lappend spanList [list Space {} {}] {*}[apply $expandSpan $sublist]
 					if $DEBUG {puts "single optional literal .optlit: $spanList"}
 				}
 				{^\?§.+=$} {
 					# multiple optional arg group (first arg is mandatory literal):
-					lappend sublist  [list Span .lit [string range $word 2 end-1]]
+					lappend sublist [list Span .lit [string range $word 2 end-1]]
 					# also get all other members of this group and put them into the first span
 					while 1 {
 						incr i
@@ -1069,11 +1071,11 @@ proc ::ndoc::parseCommand {mode line} {
 						if {[string index $word 0] eq "+"} {
 							if {[string index $word end] eq "?"} {
 								# end of group
-								lappend sublist [list Span .arg [string range $word 1 end-2]]
+								lappend sublist [list Space {} {}] [list Span .arg [string range $word 1 end-2]]
 								break
 							} else {
 								# middle of group
-								lappend sublist [list Span .arg [string range $word 1 end-1]]
+								lappend sublist [list Space {} {}] [list Span .arg [string range $word 1 end-1]]
 							}
 						} else {
 							return -code error "detected a second arg in an optional argument group that is not optional ... not yet a handled case."
@@ -1085,7 +1087,7 @@ proc ::ndoc::parseCommand {mode line} {
 						}
 					}
 					set sublist [apply $expandSpan $sublist]
-					lappend spanList [list Span .optarg $sublist]
+					lappend spanList [list Space {} {}] [list Span .optarg $sublist]
 					if $DEBUG {puts "multiple optional arg group: $spanList"}
 				}
 				{^\?\+.+[^=][^\?]} {
@@ -1112,7 +1114,7 @@ proc ::ndoc::parseCommand {mode line} {
 							exit
 						}
 					}
-					lappend spanList {*}[apply $expandSpan [list [list Span $type [join $content " "]]]]
+					lappend spanList [list Space {} {}] {*}[apply $expandSpan [list [list Span $type [join $content " "]]]]
 					if $DEBUG {puts "multiple optional arguments: $spanList"}
 				}
 			}
@@ -1251,18 +1253,14 @@ proc ::ndoc::AST2Markdown_Element {parentType indent ASTelement} {
 	#
 	# parentType - the AST type of the parent element (needed in some context to modify the formatting of the child element)
 	# indent     - nmber of spaces the content must be indented
-	# type       - the AST type of the element to convert
-	# attributes - the list with option-valie-pairs of AST attributes
-	# content    - the actual content of the AST element, may be another nested AST element
+	# ASTelement - the AST element (3 element list) to be converted to markdown
 	#
 	variable listCounter
 	variable listType
-	#puts t:$type
-	#puts a:$attributes
-	#puts c:$content
+	# type       - the AST type of the element to convert
+	# attributes - the list with option-value-pairs of AST attributes
+	# content    - the actual content of the AST element, may be another nested AST element
 	lassign $ASTelement type attributes content
-#puts "p:$parentType\ni:$indent\nt:$type\na:$attributes"
-#foreach item $content {puts "c:$item\n"}
 	set output {}
 	### prefix: ###
 	switch $type {
@@ -1343,19 +1341,16 @@ proc ::ndoc::AST2Markdown_Element {parentType indent ASTelement} {
 			foreach item [lrange $content 1 end] {append output [AST2Markdown_Element $type 4 $item]}
 		}
 		Span {
-			switch $attributes {
-				.optart {set prefix ?; set postfix ?}
-				.optdot {set prefix ?; set postfix { ... ?}}
-				default {set prefix {}; set postfix {}}
-			}
-			#append output \[ $prefix [AST2Markdown_Element $type 0 {*}$content] $postfix \]\{ $attributes \}
-			append output \[ [AST2Markdown_Element $type 0 {*}$content] \]\{ $attributes \}
+			append output \[
+			foreach item $content {append output [AST2Markdown_Element $type 0 $item]}
+			append output \]
+			append output \{ $attributes \}
 		}
 		Div {
 			foreach item $content {append output [AST2Markdown_Element $type $indent $item]\n}
 		}
 		Syntax {
-			foreach item $content {append output [AST2Markdown_Element $type $indent $item] { }}
+			foreach item $content {append output [AST2Markdown_Element $type $indent $item]}
 		}
 		default {
 			foreach item $content {append output [AST2Markdown_Element $type $indent $item]}
@@ -1390,18 +1385,15 @@ proc ::ndoc::AST2Markdown_Element {parentType indent ASTelement} {
 }
 
 
-proc ::ndoc::man2markdown {fileName} {
+proc ::ndoc::man2markdown {manContent} {
 	#
 	# convert the nroff from a Tcl/Tk manual page into markdown
 	#
-	# fileName - full path to the nroff file to be converted
+	# manContent - the content of the nroff file to be converted
 	#
 	# Returns the markdown
 	#
-	if {![file exists $fileName]} {
-		return -code error "man2markdown: File '$fileName' does not exist." 
-	}
-	man2AST $fileName
+	man2AST $manContent
 	set md [AST2Markdown]
 	return [mdExceptions $md]
 }
@@ -1421,6 +1413,26 @@ proc ::ndoc::mdExceptions {md} {
 		}
 	}
 	return $md
+}
+
+
+proc ::ndoc::readFile {filename} {
+	#
+	# read a text file and returns its content as a list split at \n
+	#
+	# filename - name (including path) of the file to be read
+	#
+	# Side effect: sets the 'name' property in the variable 'manual'
+	#
+	variable manual
+	dict set manual name [file root [file tail $filename]]
+	if {![file exists $filename]} {
+		return -code error "readFile: File '$filename' does not exist." 
+	}
+	set fh [open $filename r]
+	set manContent [read $fh]
+	close $fh
+	return $manContent
 }
 
 
@@ -1450,7 +1462,7 @@ proc ::ndoc::main {} {
 		#set myFile [file join $tkManDir bind.n]
 		#set myFile [file join $tclManDir filename.n]
 		#set myFile [file join $tkManDir scrollbar.n]
-		puts [man2markdown $myFile]
+		puts [man2markdown [readFile $myFile]]
 	} elseif {[llength $argv] == 2} {
 		# convert whole directory:
 		lassign $argv inDir outDir
@@ -1464,7 +1476,7 @@ proc ::ndoc::main {} {
 		}
 		foreach file [glob [file join $inDir *.n]] {
 			puts "converting $file ..."
-			set md [man2markdown $file]
+			set md [man2markdown [readFile $file]]
 			set stem [file rootname [file tail $file]]
 			set fh [open [file join $outDir ${stem}.md] w]
 			puts $fh $md
@@ -1472,7 +1484,7 @@ proc ::ndoc::main {} {
 		}
 	} else {
 		# convert single file (to stdout):
-		puts [man2markdown [lindex $argv 0]]
+		puts [man2markdown [readFile [lindex $argv 0]]]
 	}
 }
 
