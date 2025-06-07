@@ -1455,6 +1455,48 @@ namespace eval listtype {
         }] $errorMessage
     } -result {0 {}}
 
+    ## Test Tcl_ListObjReverse does not leak memory
+    foreach ltype $listTypes {
+        foreach nrefs {0 1 2} {
+            test memcheck-reverse-$ltype-nrefs$nrefs \
+                "Tcl_ListObjReverse memory leaks for $ltype lists" \
+                -constraints {testobj memory} \
+                -body {
+                    {*}$memcheckcmd {
+                        testlistapi Tcl_ListObjReverse $nrefs [makeList $ltype]
+                    }
+                } -result 0
+        }
+    }
+
+    ## Test Tcl_ListObjRange does not leak memory
+    foreach ltype $listTypes {
+        foreach nrefs {0 1 2} {
+            test memcheck-range-$ltype-nrefs$nrefs \
+                "Tcl_ListObjRange memory leaks for $ltype lists" \
+                -constraints {testobj memory} \
+                -body {
+                    {*}$memcheckcmd {
+                        testlistapi Tcl_ListObjRange $nrefs [makeList $ltype] \
+                            1 [expr {$largeListLength-2}]
+                    }
+                } -result 0
+        }
+    }
+
+    ## Test Tcl_ListObjRepeat does not leak memory
+    foreach ltype $listTypes {
+        foreach repeatCount [list 0 $largeListLength] {
+            test memcheck-repeat-$ltype-count$repeatCount \
+                "Tcl_ListObjRepeat memory leaks for $ltype lists" \
+                -constraints {testobj memory} \
+                -body {
+                    {*}$memcheckcmd {
+                        testlistapi Tcl_ListObjRepeat $repeatCount x y
+                    }
+                } -result 0
+        }
+    }
 }
 
 # All done
