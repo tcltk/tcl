@@ -60,6 +60,7 @@ namespace eval listtype {
     variable last
     variable indices
     variable result
+    variable repeatCount
 
     # Compiled bytecode depends on whether arguments are literals or
     # variables. So test variations are needed for both.
@@ -1061,7 +1062,7 @@ namespace eval listtype {
                        [makeList $ltype] $ltype2 [lrange [makeList $ltype] 1 end-1]]
 
         # Except for arithseries, all small ranges are basic lists
-        testdef lrange-$ltype-smalllist "lrange small list of type $ltype should always be non-abstract list" -body {
+        testdef lrange-$ltype-smalllist "lrange small list of type $ltype" -body {
             set l [lrange [makeList $ltype] 1 10]
             list [getListType $l] $l
         } -result [list \
@@ -1072,7 +1073,86 @@ namespace eval listtype {
     ################################################################
     # Raw C API tests
 
+    # Tcl_ListObjRepeat
+    # - refCount of result is checked for 0 but that is not by
+    #   API contract but is expected for current implementation.
+    # - on invalid counts, returned Tcl_Obj * is set to NULL but
+    #   that is again not by contract, but current implementation
+    #   so unchecked return status is caught early.
+
+    test Tcl_ListObjRepeat-repeat0-noargs {
+        Tcl_ListObjRepeat 0
+    } -body {
+        set apiresult [testlistapi Tcl_ListObjRepeat 0]
+        dict with apiresult {}
+        list $status $resultRefCount $resultType $result
+    } -cleanup {
+        unset -nocomplain {*}[dict keys $apiresult] apiresult
+    } -result [list 0 0 "" {}]
+
+    test Tcl_ListObjRepeat-repeat0-withargs {
+        Tcl_ListObjRepeat 0 x y
+    } -body {
+        set apiresult [testlistapi Tcl_ListObjRepeat 0 x y]
+        dict with apiresult {}
+        list $status $resultRefCount $resultType $result
+    } -cleanup {
+        unset -nocomplain {*}[dict keys $apiresult] apiresult
+    } -result [list 0 0 "" {}]
+
+    test Tcl_ListObjRepeat-repeatN-noargs {
+        Tcl_ListObjRepeat 10
+    } -body {
+        set apiresult [testlistapi Tcl_ListObjRepeat 10]
+        dict with apiresult {}
+        list $status $resultRefCount $resultType $result
+    } -cleanup {
+        unset -nocomplain {*}[dict keys $apiresult] apiresult
+    } -result [list 0 0 "" {}]
+
+    test Tcl_ListObjRepeat-repeat-large {
+        Tcl_ListObjRepeat with total elements above threshold
+    } -body {
+        set apiresult [testlistapi Tcl_ListObjRepeat 20 a b c d e f g h i j]
+        dict with apiresult {}
+        list $status $resultRefCount $resultType [join $result ""]
+    } -cleanup {
+        unset -nocomplain {*}[dict keys $apiresult] apiresult
+    } -result [list 0 0 repeatedList [string repeat abcdefghij 20]]
+
+    test Tcl_ListObjRepeat-repeat-small {
+        Tcl_ListObjRepeat with total elements below threshold
+    } -body {
+        set apiresult [testlistapi Tcl_ListObjRepeat 2 a b c d e f g h i j]
+        dict with apiresult {}
+        list $status $resultRefCount $resultType [join $result ""]
+    } -cleanup {
+        unset -nocomplain {*}[dict keys $apiresult] apiresult
+    } -result [list 0 0 list [string repeat abcdefghij 2]]
+
+    test Tcl_ListObjRepeat-invalid-repeatcount {
+        Invalid count should return NULL in resultPtr
+    } -body {
+        set apiresult [testlistapi Tcl_ListObjRepeat -1 x]
+        dict with apiresult {}
+        list $status $result $resultPtr
+    } -cleanup {
+        unset -nocomplain {*}[dict keys $apiresult] apiresult
+    } -result [list 1 {bad count "-1": must be integer >= 0} 0]
+
+    test Tcl_ListObjRepeat-toolarge-repeatcount {
+        Too large a count should return NULL in resultPtr
+    } -body {
+        set apiresult [testlistapi Tcl_ListObjRepeat \
+                           [expr {$::tcltests::TCL_SIZE_MAX/2}] x y]
+        dict with apiresult {}
+        list $status $result $resultPtr
+    } -cleanup {
+        unset -nocomplain {*}[dict keys $apiresult] apiresult
+    } -result [list 1 {max length * exceeded} 0] -match glob
+
     # Tcl_ListObjRange
+
     foreach ltype $listTypes {
         switch $ltype {
             list - spanlist {
@@ -1091,25 +1171,56 @@ namespace eval listtype {
             test Tcl_ListObjRange-$ltype-nrefs$nrefs {
                 Tcl_ListObjRange for $ltype lists 1 end-1
             } -body {
-                set apiresult [testlistapi Tcl_ListObjRange $nrefs [makeList $ltype] 1 [expr {$largeListLength-2}]]
-                dict with apiresult {}; # Explode apiresult into status, srcRefCount ...
-                list $status $srcRefCount $srcType $resultRefCount $resultType $result [expr {$srcPtr != $resultPtr}]
+                set apiresult \
+                    [testlistapi Tcl_ListObjRange $nrefs \
+                         [makeList $ltype] 1 [expr {$largeListLength-2}]]
+                dict with apiresult {}
+                # Note by contract $resultRefCount can be anything. It is 0
+                # only for the current lrange implementation. $srcRefCount
+                # should not be less than the original ref count.
+                list $status [expr {$srcRefCount >= $nrefs}] $srcType $resultRefCount $resultType \
+                    $result [expr {$srcPtr != $resultPtr}]
             } -cleanup {
                 unset -nocomplain {*}[dict keys $apiresult] apiresult
-            } -result [list 0 $nrefs [expr {$ltype eq "spanlist" ? "list" : $ltype}] 0 $ltype2 [lrange [getNonAbstract $ltype] 1 end-1] 1]
+            } -result [list 0 1 \
+                           [expr {$ltype eq "spanlist" ? "list" : $ltype}] \
+                           0 $ltype2 \
+                           [lrange [getNonAbstract $ltype] 1 end-1] \
+                           1]
 
             # Small ranges are always plain old lists
             test Tcl_ListObjRange-$ltype-nrefs$nrefs-smalllist {
                 Tcl_ListObjRange for $ltype lists 1 10
             } -body {
-                set apiresult [testlistapi Tcl_ListObjRange $nrefs [makeList $ltype] 1 10]
-                dict with apiresult {}; # Explode apiresult into status, srcRefCount ...
-                list $status $srcRefCount $srcType $resultRefCount $resultType $result [expr {$srcPtr != $resultPtr}]
+                set apiresult [testlistapi Tcl_ListObjRange $nrefs \
+                                   [makeList $ltype] 1 10]
+                dict with apiresult {}
+                # Note by contract $resultRefCount can be anything. It is 0
+                # only for the current lrange implementation. $srcRefCount
+                # for small lists is expected to be unchanged in the *current*
+                # implementation.
+                list $status $srcRefCount $srcType $resultRefCount \
+                    $resultType $result [expr {$srcPtr != $resultPtr}]
             } -cleanup {
                 unset -nocomplain {*}[dict keys $apiresult] apiresult
-            } -result [list 0 $nrefs [expr {$ltype eq "spanlist" ? "list" : $ltype}] 0 [expr {$ltype in "arithseries" ? $ltype : "list"}] [lrange [getNonAbstract $ltype] 1 10] 1]
-
+            } -result [list 0 $nrefs \
+                           [expr {$ltype eq "spanlist" ? "list" : $ltype}] \
+                           0 \
+                           [expr {$ltype in "arithseries" ? "arithseries" : "list"}] \
+                           [lrange [getNonAbstract $ltype] 1 10] \
+                           1]
         }
+    }
+    foreach nrefs {0 1 2} {
+        test Tcl_ListObjRange-invalid-list {
+            Invalid list should return NULL in resultPtr
+        } -body {
+            set apiresult [testlistapi Tcl_ListObjRange $nrefs \{ 0 0]
+            dict with apiresult {}; # Explode apiresult into status, srcRefCount ...
+            list $status $srcRefCount $result $resultPtr
+        } -cleanup {
+            unset -nocomplain {*}[dict keys $apiresult] apiresult
+        } -result [list 1 $nrefs {unmatched open brace in list} 0]
     }
 
     ################################################################
@@ -1127,9 +1238,9 @@ namespace eval listtype {
 
     ## Test Tcl_ListObjIndex does not leak memory
 
-    test memcheck-lindex-list {Tcl_ListObjIndex memory leaks for native lists} -constraints {
-        testobj memory
-    } -body {
+    test memcheck-lindex-list {
+        Tcl_ListObjIndex memory leaks for native lists
+    } -constraints {testobj memory} -body {
         list [{*}$memcheckcmd {
             testobj set 1 [testlistrep new 1000]
             assertListType [testobj duplicate 1 2] list
@@ -1138,9 +1249,9 @@ namespace eval listtype {
         }] $errorMessage
     } -result {0 {}}
 
-    test memcheck-lindex-spanlist {Tcl_ListObjIndex memory leaks for native lists} -constraints {
-        testobj memory
-    } -body {
+    test memcheck-lindex-spanlist {
+        Tcl_ListObjIndex memory leaks for native lists
+    } -constraints {testobj memory} -body {
         list [{*}$memcheckcmd {
             testobj set 1 [testlistrep new 1000 10 10]
             assertListType [testobj duplicate 1 2] spanlist
@@ -1149,9 +1260,9 @@ namespace eval listtype {
         }] $errorMessage
     } -result {0 {}}
 
-    test memcheck-lindex-arithseries {Tcl_ListObjIndex memory leaks for lseq} -constraints {
-        testobj memory
-    } -body {
+    test memcheck-lindex-arithseries {
+        Tcl_ListObjIndex memory leaks for lseq
+    } -constraints {testobj memory} -body {
         list [{*}$memcheckcmd {
             testobj set 1 [lseq 1000]
             set errorMessage [testlistobj indexmemcheck 1]
@@ -1159,9 +1270,9 @@ namespace eval listtype {
         }] $errorMessage
     } -result {0 {}}
 
-    test memcheck-lindex-repeatedList {Tcl_ListObjIndex memory leaks for lists of type repeatedList} -constraints {
-        testobj memory
-    } -body {
+    test memcheck-lindex-repeatedList {
+        Tcl_ListObjIndex memory leaks for lists of type repeatedList
+    } -constraints {testobj memory} -body {
         list [{*}$memcheckcmd {
             testobj set 1 [lrepeat $largeListLength [testobj new 2]]
             set errorMessage [testlistobj indexmemcheck 1]
@@ -1169,9 +1280,9 @@ namespace eval listtype {
         }] $errorMessage
     } -result {0 {}}
 
-    test memcheck-lindex-reversedList {Tcl_ListObjIndex memory leaks for reversedList lists} -constraints {
-        testobj memory
-    } -body {
+    test memcheck-lindex-reversedList {
+        Tcl_ListObjIndex memory leaks for reversedList lists
+    } -constraints {testobj memory} -body {
         list [{*}$memcheckcmd {
             testobj set 1 [lreverse [testlistrep new 1000]]
             assertListType [testobj duplicate 1 2] reversedList
@@ -1180,11 +1291,13 @@ namespace eval listtype {
         }] $errorMessage
     } -result {0 {}}
 
-    test memcheck-lindex-rangeList {Tcl_ListObjIndex memory leaks for rangeList lists} -constraints {
-        testobj memory
-    } -body {
+    test memcheck-lindex-rangeList {
+        Tcl_ListObjIndex memory leaks for rangeList lists
+    } -constraints {testobj memory} -body {
         list [{*}$memcheckcmd {
-            testobj set 1 [lrange [lrepeat $largeListLength [testobj new 2]] 1 end-1]
+            testobj set 1 [lrange \
+                               [lrepeat $largeListLength [testobj new 2]] \
+                               1 end-1]
             assertListType [testobj duplicate 1 2] rangeList
             set errorMessage [testlistobj indexmemcheck 1]
             testobj freeallvars
@@ -1193,9 +1306,9 @@ namespace eval listtype {
 
     ## Test Tcl_ListObjGetElements does not leak memory
 
-    test memcheck-getelements-list {Tcl_ListObjElements memory leaks for native lists} -constraints {
-        testobj memory
-    } -body {
+    test memcheck-getelements-list {
+        Tcl_ListObjElements memory leaks for native lists
+    } -constraints {testobj memory} -body {
         list [{*}$memcheckcmd {
             testobj set 1 [testlistrep new 1000]
             assertListType [testobj duplicate 1 2] list
@@ -1204,9 +1317,9 @@ namespace eval listtype {
         }] $errorMessage
     } -result {0 {}}
 
-    test memcheck-getelements-spanlist {Tcl_ListObjElements memory leaks for native lists} -constraints {
-        testobj memory
-    } -body {
+    test memcheck-getelements-spanlist {
+        Tcl_ListObjElements memory leaks for native lists
+    } -constraints {testobj memory} -body {
         list [{*}$memcheckcmd {
             testobj set 1 [testlistrep new 1000 10 10]
             assertListType [testobj duplicate 1 2] spanlist
@@ -1215,9 +1328,9 @@ namespace eval listtype {
         }] $errorMessage
     } -result {0 {}}
 
-    test memcheck-getelements-arithseries {Tcl_ListObjElements memory leaks for lseq} -constraints {
-        testobj memory
-    } -body {
+    test memcheck-getelements-arithseries {
+        Tcl_ListObjElements memory leaks for lseq
+    } -constraints {testobj memory} -body {
         list [{*}$memcheckcmd {
             testobj set 1 [lseq 1000]
             set errorMessage [testlistobj getelementsmemcheck 1]
@@ -1225,9 +1338,9 @@ namespace eval listtype {
         }] $errorMessage
     } -result {0 {}}
 
-    test memcheck-getelements-repeatedList "Tcl_ListObjElements memory leaks for lists of type repeatedList" -constraints {
-        testobj memory
-    } -body {
+    test memcheck-getelements-repeatedList {
+        Tcl_ListObjElements memory leaks for lists of type repeatedList
+    } -constraints {testobj memory} -body {
         list [{*}$memcheckcmd {
             testobj set 1 [lrepeat $largeListLength [testobj new 2]]
             set errorMessage [testlistobj getelementsmemcheck 1]
@@ -1235,9 +1348,9 @@ namespace eval listtype {
         }] $errorMessage
     } -result {0 {}}
 
-    test memcheck-getelements-reversedList {Tcl_ListObjElements memory leaks for reversedList lists} -constraints {
-        testobj memory
-    } -body {
+    test memcheck-getelements-reversedList {
+        Tcl_ListObjElements memory leaks for reversedList lists
+    } -constraints {testobj memory} -body {
         list [{*}$memcheckcmd {
             testobj set 1 [lreverse [testlistrep new 1000]]
             assertListType [testobj duplicate 1 2] reversedList
@@ -1246,18 +1359,18 @@ namespace eval listtype {
         }] $errorMessage
     } -result {0 {}}
 
-    test memcheck-getelements-rangeList {Tcl_ListObjElements memory leaks for rangeList lists} -constraints {
-        testobj memory
-    } -body {
+    test memcheck-getelements-rangeList {
+        Tcl_ListObjElements memory leaks for rangeList lists
+    } -constraints {testobj memory} -body {
         list [{*}$memcheckcmd {
-            testobj set 1 [lrange [lrepeat $largeListLength [testobj new 2]] 1 end-1]
+            testobj set 1 [lrange \
+                               [lrepeat $largeListLength [testobj new 2]] \
+                               1 end-1]
             assertListType [testobj duplicate 1 2] rangeList
             set errorMessage [testlistobj getelementsmemcheck 1]
             testobj freeallvars
         }] $errorMessage
     } -result {0 {}}
-
-
 }
 
 # All done
