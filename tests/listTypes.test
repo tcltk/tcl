@@ -1074,6 +1074,7 @@ namespace eval listtype {
     # Raw C API tests
 
     # Tcl_ListObjRepeat
+    #
     # - refCount of result is checked for 0 but that is not by
     #   API contract but is expected for current implementation.
     # - on invalid counts, returned Tcl_Obj * is set to NULL but
@@ -1152,6 +1153,21 @@ namespace eval listtype {
     } -result [list 1 {max length * exceeded} 0] -match glob
 
     # Tcl_ListObjRange
+    #
+    # Aside from the correct range result,
+    # - Source object type must not change (except spanlist->list
+    #   since the type returned at C level is list for both
+    #   list and spanlist)
+    # - Source object reference counts may increase by at most 1
+    # - Result object must not be same as source object even if unshared
+    # - Small ranges are non-abstract lists
+    #
+    # In addition, in the *current* implementation, but not guaranteed
+    # by the contract in the documented API,
+    # - $resultRefCount is 0 (i.e. unshared object is returned)
+    # - on errors, the result Tcl_Obj* is set to NULL
+    # This may change in a future implementation, in which case the tests
+    # will have to be modified.
 
     foreach ltype $listTypes {
         switch $ltype {
@@ -1163,23 +1179,16 @@ namespace eval listtype {
         }
         # Check normal operation with unshared (0, 1) and shared objects
         foreach nrefs {0 1 2} {
-            # - Source object type must not change except spanlist->list
-            #   since the type returned at C level is list for both
-            #   list and spanlist
-            # - Source object reference counts must not change
-            # - Result object must not be same as source object even if unshared
-            test Tcl_ListObjRange-$ltype-nrefs$nrefs {
-                Tcl_ListObjRange for $ltype lists 1 end-1
-            } -body {
+            test Tcl_ListObjRange-$ltype-nrefs$nrefs \
+                "Tcl_ListObjRange for $ltype lists 1 end-1" -body {
                 set apiresult \
                     [testlistapi Tcl_ListObjRange $nrefs \
                          [makeList $ltype] 1 [expr {$largeListLength-2}]]
                 dict with apiresult {}
-                # Note by contract $resultRefCount can be anything. It is 0
-                # only for the current lrange implementation. $srcRefCount
-                # should not be less than the original ref count.
-                list $status [expr {$srcRefCount >= $nrefs}] $srcType $resultRefCount $resultType \
-                    $result [expr {$srcPtr != $resultPtr}]
+                set srcRefDiff [expr {$srcRefCount-$nrefs}]
+                list $status [tcl::mathop::<= 0 $srcRefDiff 1] $srcType \
+                    $resultRefCount $resultType $result \
+                    [expr {$srcPtr != $resultPtr}]
             } -cleanup {
                 unset -nocomplain {*}[dict keys $apiresult] apiresult
             } -result [list 0 1 \
@@ -1189,16 +1198,11 @@ namespace eval listtype {
                            1]
 
             # Small ranges are always plain old lists
-            test Tcl_ListObjRange-$ltype-nrefs$nrefs-smalllist {
-                Tcl_ListObjRange for $ltype lists 1 10
-            } -body {
+            test Tcl_ListObjRange-$ltype-nrefs$nrefs-smalllist \
+                "Tcl_ListObjRange for $ltype lists 1 10" -body {
                 set apiresult [testlistapi Tcl_ListObjRange $nrefs \
                                    [makeList $ltype] 1 10]
                 dict with apiresult {}
-                # Note by contract $resultRefCount can be anything. It is 0
-                # only for the current lrange implementation. $srcRefCount
-                # for small lists is expected to be unchanged in the *current*
-                # implementation.
                 list $status $srcRefCount $srcType $resultRefCount \
                     $resultType $result [expr {$srcPtr != $resultPtr}]
             } -cleanup {
@@ -1222,6 +1226,85 @@ namespace eval listtype {
             unset -nocomplain {*}[dict keys $apiresult] apiresult
         } -result [list 1 $nrefs {unmatched open brace in list} 0]
     }
+
+    #-----
+
+    # Tcl_ListObjReverse
+    #
+    # Aside from the correct result,
+    # - Source object type must not change (except spanlist->list
+    #   since the type returned at C level is list for both
+    #   list and spanlist)
+    # - Source object reference counts may increase by at most 1
+    # - Result object must not be same as source object even if unshared
+    # - Reverses of small non-abstract lists are non-abstract
+    #
+    # In addition, in the *current* implementation, but not guaranteed
+    # by the contract in the documented API,
+    # - on errors, the result Tcl_Obj* is set to NULL
+    # This may change in a future implementation, in which case the tests
+    # will have to be modified.
+
+    foreach ltype $listTypes {
+        switch $ltype {
+            reversedList {
+                # [makeList reversedList] is itself a reverse of a "list"
+                set ltype2 list
+            }
+            arithseries {set ltype2 arithseries}
+            default {set ltype2 reversedList}
+        }
+        # Check normal operation with unshared (0, 1) and shared objects
+        foreach nrefs {0 1 2} {
+            test Tcl_ListObjReverse-$ltype-nrefs$nrefs \
+                "Tcl_ListObjReverse for $ltype list" -body {
+                set apiresult \
+                    [testlistapi Tcl_ListObjReverse $nrefs [makeList $ltype]]
+                dict with apiresult {}
+                set srcRefDiff [expr {$srcRefCount-$nrefs}]
+                list $status [tcl::mathop::<= 0 $srcRefDiff 1] $srcType \
+                    $resultType $result \
+                    [expr {$srcPtr != $resultPtr}]
+            } -cleanup {
+                unset -nocomplain {*}[dict keys $apiresult] apiresult
+            } -result [list 0 1 \
+                           [expr {$ltype eq "spanlist" ? "list" : $ltype}] \
+                           $ltype2 \
+                           [doReverse [getNonAbstract $ltype]] \
+                           1]
+
+            if {$ltype in {list spanlist}} {
+                test Tcl_ListObjReverse-$ltype-nrefs$nrefs-smalllist \
+                    "Tcl_ListObjReverse for $ltype (small)" -body {
+                        set apiresult [testlistapi Tcl_ListObjReverse $nrefs \
+                                           [makeList $ltype $smallListLength]]
+                        dict with apiresult {}
+                        list $status $srcRefCount $srcType $resultRefCount \
+                            $resultType $result [expr {$srcPtr != $resultPtr}]
+                    } -cleanup {
+                        unset -nocomplain {*}[dict keys $apiresult] apiresult
+                    } -result [list 0 $nrefs \
+                                   list \
+                                   0 \
+                                   list \
+                                   [doReverse [getNonAbstract $ltype $smallListLength]] \
+                                   1]
+            }
+        }
+    }
+    foreach nrefs {0 1 2} {
+        test Tcl_ListObjReverse-invalid-list {
+            Invalid list should return NULL in resultPtr
+        } -body {
+            set apiresult [testlistapi Tcl_ListObjReverse $nrefs \{]
+            dict with apiresult {}
+            list $status $srcRefCount $result $resultPtr
+        } -cleanup {
+            unset -nocomplain {*}[dict keys $apiresult] apiresult
+        } -result [list 1 $nrefs {unmatched open brace in list} 0]
+    }
+
+    #-----
 
     ################################################################
     # Checks for memory leaks in raw C API
@@ -1371,6 +1454,7 @@ namespace eval listtype {
             testobj freeallvars
         }] $errorMessage
     } -result {0 {}}
+
 }
 
 # All done

@@ -4049,9 +4049,19 @@ TestlistapiCmd(
 		    Tcl_ListObjRange(interp, srcPtr, start, end, &resultPtr);
 	    }
 	    break;
+	case LISTAPI_REVERSE:
+	    if (objc != 4) {
+		Tcl_WrongNumArgs(interp, 2, objv, "refcount list");
+		status = TCL_ERROR;
+		goto vamoose; /* To free up srcPtr */
+	    }
+	    status = Tcl_ListObjReverse(interp, srcPtr, &resultPtr);
+	    break;
+	default: /* Keep gcc happy */
+	    Tcl_Panic("Unknown list API command %d", cmdIndex);
+	    return TCL_ERROR; /* Not reached */
 	}
     }
-
 
 #define APPENDINT(name_, var_)                                    \
     do {                                                           \
