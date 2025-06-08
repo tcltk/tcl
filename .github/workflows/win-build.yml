@@ -50,11 +50,11 @@ jobs:
               "--enable-symbols=all"
             ]
           GCC_PARTIAL: >
-              [
-                "",
-                "--disable-shared",
-                "--enable-symbols=all"
-              ]
+            [
+              "",
+              "--disable-shared",
+              "--enable-symbols=all"
+            ]
   msvc:
     runs-on: windows-2025
     needs: plan
@@ -103,8 +103,7 @@ jobs:
         shell: msys2 {0}
         working-directory: win
     strategy:
-      matrix:
-        config: ${{ fromJson(needs.plan.outputs.gcc) }}
+      matrix: ${{ fromJson(needs.plan.outputs.gcc) }}
     steps:
       - name: Install MSYS2
         uses: msys2/setup-msys2@v2
