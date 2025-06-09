@@ -456,21 +456,61 @@ static Tcl_Obj *
 NewArithSeriesInt(
     Tcl_WideInt start,
     Tcl_WideInt step,
-    Tcl_WideInt len)
+    Tcl_WideInt length)
 {
-    Tcl_WideInt length;
-    Tcl_Obj *arithSeriesObj;
+    Tcl_Obj *arithSeriesObj = NULL;
     ArithSeriesInt *arithSeriesRepPtr;
-
-    length = len>=0 ? len : -1;
-    if (length < 0) {
-	length = -1;
-    }
 
     TclNewObj(arithSeriesObj);
 
     if (length <= 0) {
+	/* TODO - should negative lengths be an error? */
 	return arithSeriesObj;
+    } else if (length > 1) {
+	/* Check for numeric overflow. Not needed for single element lists */
+	Tcl_WideUInt absoluteStep;
+	Tcl_WideInt numIntervals = length - 1;
+	/*
+	 * The checks below can probably be condensed but it is very easy to
+	 * either inadvertently use undefined C behavior or unintended type
+	 * promotion. Separating the cases helps me think more clearly.
+	 */
+	if (step >= 0) {
+	    absoluteStep = step;
+	} else if (step == WIDE_MIN) {
+	    /* -step and abs(step) are both undefined behavior */
+	    absoluteStep = 1 + (Tcl_WideUInt)WIDE_MAX;
+	} else {
+	    absoluteStep = -step;
+	}
+	/* First, step*number of intervals should not overflow */
+	if ((UWIDE_MAX / absoluteStep) < (Tcl_WideUInt) numIntervals) {
+	    goto invalid_range;
+	}
+	if (step > 0) {
+	    /*
+	     * Because of check above and UWIDE_MAX=2*WIDE_MAX+1,
+	     * second term will not underflow a Tcl_WideInt
+	     */
+	    if (start > (WIDE_MAX - (step * numIntervals))) {
+		goto invalid_range;
+	    }
+	} else if (step == WIDE_MIN) {
+	    if (numIntervals > 0 || start < 0) {
+		goto invalid_range;
+	    }
+	} else if (step < 0) {
+	    /*
+	     * Because of check above and UWIDE_MAX=2*WIDE_MAX+1 and
+	     * step != WIDE_MIN second term will not underflow a Tcl_WideInt.
+	     * DON'T use absoluteStep here because of unsigned type promotion
+	     */
+	    if (start < (WIDE_MIN + ((-step) * numIntervals))) {
+		goto invalid_range;
+	    }
+	} else /* step == 0 */ {
+	    /* TODO - step == 0 && length > 1 should be error? */
+	}
     }
 
     arithSeriesRepPtr = (ArithSeriesInt *) Tcl_Alloc(sizeof(ArithSeriesInt));
@@ -483,11 +523,13 @@ NewArithSeriesInt(
     arithSeriesObj->internalRep.twoPtrValue.ptr1 = arithSeriesRepPtr;
     arithSeriesObj->internalRep.twoPtrValue.ptr2 = NULL;
     arithSeriesObj->typePtr = &arithSeriesType;
-    if (length > 0) {
-	Tcl_InvalidateStringRep(arithSeriesObj);
-    }
+    Tcl_InvalidateStringRep(arithSeriesObj);
 
     return arithSeriesObj;
+
+invalid_range:
+    Tcl_BounceRefCount(arithSeriesObj);
+    return NULL;
 }
 
 /*
@@ -755,6 +797,11 @@ TclNewArithSeriesObj(
 	objPtr = NewArithSeriesInt(start, step, len);
     }
 
+    if (objPtr == NULL && interp) {
+	const char *description = "invalid arithmetic series parameter values";
+	Tcl_SetResult(interp, description, TCL_STATIC);
+	Tcl_SetErrorCode(interp, "ARITH", "DOMAIN", description, (char *)NULL);
+    }
     return objPtr;
 }
 
