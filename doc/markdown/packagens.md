@@ -22,7 +22,7 @@ pkg::create - Construct an appropriate 'package ifneeded' command for a given pa
 # Synopsis
 
 ::: {.synopsis} :::
-[::pkg::create]{.cmd} [-name]{.lit} [packageName]{.arg} [-version]{.lit} [packageVersion]{.arg} [[-load]{.lit} [filespec]{.arg}]{.optarg} [[-source]{.lit} [filespec]{.arg}]{.optarg}
+[::pkg::create]{.cmd} [-name]{.lit} [packageName]{.arg} [-version]{.lit} [packageVersion]{.arg} [[-load]{.lit} [filespec]{.arg}]{.optdot} [[-source]{.lit} [filespec]{.arg}]{.optdot}
 :::
 
 # Description

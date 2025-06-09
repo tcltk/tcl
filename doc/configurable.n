@@ -12,16 +12,16 @@
 oo::configurable, configure, property \- class that makes configurable classes and objects, and supports making configurable properties
 .SH SYNOPSIS
 .nf
-package require TclOO
+\fBpackage require TclOO\fR
 
 \fBoo::configurable create \fIclass\fR ?\fIdefinitionScript\fR?
 
 \fBoo::define \fIclass\fB {\fR
-    \fBproperty \fIpropName\fR ?\fIoptions...\fR? ?\fIpropName\fR ?\fIoptions...\fR?...?
+    \fBproperty \fIpropName\fR ?\fIoptions ...\fR? ?\fIpropName\fR ?\fIoptions ...\fR?...?
 \fB}\fR
 
 \fBoo::objdefine \fIobject\fB {\fR
-    \fBproperty \fIpropName\fR ?\fIoptions...\fR? ?\fIpropName\fR ?\fIoptions...\fR?...?
+    \fBproperty \fIpropName\fR ?\fIoptions ...\fR? ?\fIpropName\fR ?\fIoptions ...\fR?...?
 \fB}\fR
 
 \fIobjectName \fBconfigure\fR

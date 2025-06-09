@@ -29,7 +29,7 @@ oo::singleton - a class that does only allows one instance of itself
 
 # Class hierarchy
 
-.nf **oo::object**    \(-> **oo::class**        \(-> **oo::singleton** .fi
+**oo::object**    \(-> **oo::class**        \(-> **oo::singleton**
 
 # Description
 
