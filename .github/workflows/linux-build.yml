@@ -12,50 +12,40 @@ jobs:
   plan:
     runs-on: ubuntu-latest
     outputs:
-      gcc: ${{ steps.set-matrix.outputs.gcc }}
+      gcc: ${{ steps.matrix.outputs.gcc }}
     steps:
-      - id: set-matrix
-        # DO NOT CHANGE THIS MATRIX SPEC; IT AFFECTS OUR COST CONTROLS
+      - name: Select build matrix based on branch name
+        id: matrix
         run: |
-          case "$GITHUB_REF_NAME" in
-            "main" | "core-9-0-branch")
-              cat >>$GITHUB_OUTPUT <<'EOF'
-              gcc=<<'EOJ'
-              {
-                "config": [
-                  "",
-                  "CFLAGS=-DTCL_NO_DEPRECATED=1",
-                  "--disable-shared",
-                  "--disable-zipfs",
-                  "--enable-symbols",
-                  "--enable-symbols=mem",
-                  "--enable-symbols=all",
-                  "CFLAGS=-ftrapv",
-                  "CFLAGS=-m32 CPPFLAGS=-m32 LDFLAGS=-m32 --disable-64bit"
-                ]
-              }
-              EOJ
-              EOF
-              ;;
-            *)
-              cat >>$GITHUB_OUTPUT <<'EOF'
-              gcc=<<'EOJ'
-              {
-                "config": [
-                  "",
-                  "--enable-symbols=all",
-                  "CFLAGS=-m32 CPPFLAGS=-m32 LDFLAGS=-m32 --disable-64bit"
-                ]
-              }
-              EOJ
-              EOF
-              ;;
-          esac
+          (
+            echo gcc=$(jq -nc '{config: (if env.IsMatched == "true" then env.FULL else env.PARTIAL end) | fromjson }' )
+          ) | tee -a $GITHUB_OUTPUT
+        env:
+          IsMatched: ${{ github.ref_name == 'main' || github.ref_name == 'core-9-0-branch' }}
+          # DO NOT CHANGE THESE MATRIX SPECS; IT AFFECTS OUR COST CONTROLS
+          FULL: >
+            [
+              "",
+              "CFLAGS=-DTCL_NO_DEPRECATED=1",
+              "--disable-shared",
+              "--disable-zipfs",
+              "--enable-symbols",
+              "--enable-symbols=mem",
+              "--enable-symbols=all",
+              "CFLAGS=-ftrapv",
+              "CFLAGS=-m32 CPPFLAGS=-m32 LDFLAGS=-m32 --disable-64bit"
+            ]
+          PARTIAL: >
+            [
+              "",
+              "--enable-symbols=all",
+              "CFLAGS=-m32 CPPFLAGS=-m32 LDFLAGS=-m32 --disable-64bit"
+            ]
   gcc:
     needs: plan
     runs-on: ubuntu-24.04
     strategy:
-      matrix: ${{ fromJson(need.plan.outputs.gcc) }}
+      matrix: ${{ fromJson(needs.plan.outputs.gcc) }}
     defaults:
       run:
         shell: bash
@@ -92,7 +82,7 @@ jobs:
       - name: Info
         run: |
           ulimit -a || echo 'get limit failed'
-          echo 'puts exe:\t[info nameofexecutable]\nver:\t[info patchlevel]\t[if {![catch tcl::build-info ret]} {set ret}]\nlib:\t[info library]\nplat:\t[lsort -dictionary -stride 2 [array get tcl_platform]]' | make runtest || echo 'get info failed'
+          make runtest SCRIPT=../.github/workflows/info.tcl || echo 'get info failed'
       - name: Run Tests
         run: |
           make test
