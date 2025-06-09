@@ -1108,13 +1108,46 @@ test lseq-bug-452b103a74-5 {Bug 452b103a74 - crash on nested indices} -body {
     lindex [lseq 10] {end 0}
 } -result 9
 
-test lseq-bug-0ee626dfb2-0 {Bug 0ee626dfb2 - integer overflow} -body {
-    lseq 0x7fffffffffffffff count 2
-} -result {invalid arithmetic series parameter values} -returnCodes error
+# Boundary tests
+proc lseqLengthAndBounds {l} {
+    list [llength $l] [lindex $l 0] [lindex $l end]
+}
+variable lseqWideMin [format %ld -0x8000000000000000]
+variable lseqWideMax  [format %ld 0x7fffffffffffffff]
+variable lseqInvalidMessage {invalid arithmetic series parameter values}
 
-test lseq-bug-0ee626dfb2-1 {Bug 0ee626dfb2 - integer overflow} -body {
-    lseq 0x7fffffffffffffff count 3 by -0x8000000000000000
-} -result {invalid arithmetic series parameter values} -returnCodes error
+test lseq-4.22.1.1 {lseq integer limits - max wide as start} -body {
+    lseqLengthAndBounds [lseq $lseqWideMax count 1]
+} -result [list 1 $lseqWideMax $lseqWideMax]
+
+test lseq-4.22.1.2 {lseq integer limits - max wide as start negative step} -body {
+    lseqLengthAndBounds [lseq $lseqWideMax count 2 by -1]
+} -result [list 2 $lseqWideMax [expr {$lseqWideMax-1}]]
+
+test lseq-4.22.1.3 {lseq integer limits - max wide positive step} -body {
+    # Bug 0ee626dfb2 - integer overflow in sequence
+    lseq $lseqWideMax count 2
+} -result $lseqInvalidMessage -returnCodes error
+
+test lseq-4.22.2.1 {lseq integer limits - min wide as start} -body {
+    lseqLengthAndBounds [lseq $lseqWideMin count 1]
+} -result [list 1 $lseqWideMin $lseqWideMin]
+
+test lseq-4.22.2.2 {lseq integer limits - min wide as start positive step} -body {
+    lseqLengthAndBounds [lseq $lseqWideMin count 2]
+} -result [list 2 $lseqWideMin [expr {$lseqWideMin+1}]]
+
+test lseq-4.22.2.3 {lseq integer limits - min wide negative step} -body {
+    lseq $lseqWideMin count 2 by -1
+} -result $lseqInvalidMessage -returnCodes error
+
+test lseq-4.22.3.1 {lseq integer limits - max step} -body {
+    lseqLengthAndBounds [lseq $lseqWideMin count 3 by $lseqWideMax]
+} -result [list 3 $lseqWideMin 0 [expr {$lseqWideMax-1}]]
+
+
+rename lseqLengthAndBounds {}
+unset -nocomplain lseqWideMin lseqWideMax lseqInvalidMessage
 
 # cleanup
 ::tcltest::cleanupTests

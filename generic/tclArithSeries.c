@@ -499,7 +499,7 @@ NewArithSeriesInt(
 		goto invalid_range;
 	    }
 	} else if (step == WIDE_MIN) {
-	    if (numIntervals > 0 || start < 0) {
+	    if (numIntervals > 1 || start < 0) {
 		goto invalid_range;
 	    }
 	} else if (step < 0) {
