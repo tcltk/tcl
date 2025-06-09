@@ -631,13 +631,14 @@ proc ::ndoc::parseBlock {parent manContent} {
 				}
 				set manContent [lrange $manContent 1 end]
 			}
-			.so - .BS - .BE - .AS - .ta - .RS - .RE {
+			.so - .BS - .BE - .AS - .ta - .RS - .RE - .nf - .fi {
 				# can be ignored
 				# .so = include files
 				# .BS .BE = start and end of box enclosure
 				# .AS = maximum sizes of arguments for setting tab stops
 				# .ta = set tab stops
 				# .RS .RE = relative inset, i.e. indentation
+				# .nf .fi = turn off/on filling of lines
 				if $verbose {puts "IGNORED ($markup)"}
 				set manContent [lrange $manContent 1 end]
 			}
@@ -959,6 +960,7 @@ proc ::ndoc::parseCommand {mode line} {
 			}
 		}
 	}]
+	if $DEBUG {puts "parseCommand: $line"}
 	# treat the line as a list so that we easily can detect the individual elements:
 	for {set i 0} {$i < [llength $line]} {incr i} {
 		set word [lindex $line $i]
@@ -1008,9 +1010,16 @@ proc ::ndoc::parseCommand {mode line} {
 			set spanList [apply $expandSpan $spanList]
 		} else {
 			# remaining words of the command:
-			if $DEBUG {puts "word $i: $word"}
+			if $DEBUG {puts "word [expr {$i + 1}]: $word"}
 			set sublist [list]
 			switch -regexp $word {
+				{^\?\+.+ \.\.\.\=\?$} {
+					# possibly multiple optional args
+					# a word with trailing "..." and a space between
+					lappend sublist [list Span .optdot [string range $word 2 end-6]]
+					lappend spanList [list Space {} {}] {*}[apply $expandSpan $sublist]
+					if $DEBUG {puts "(multiple) optional .optdot: $spanList"}
+				}
 				{^\+.+=$} {
 					# single mandatory arg: .arg
 					# + followed by some word followed by =
@@ -1063,6 +1072,8 @@ proc ::ndoc::parseCommand {mode line} {
 				{^\?§.+=$} {
 					# multiple optional arg group (first arg is mandatory literal):
 					lappend sublist [list Span .lit [string range $word 2 end-1]]
+#puts a:[string range $word 2 end-1]
+					set grouptype .optarg
 					# also get all other members of this group and put them into the first span
 					while 1 {
 						incr i
@@ -1071,14 +1082,26 @@ proc ::ndoc::parseCommand {mode line} {
 						if {[string index $word 0] eq "+"} {
 							if {[string index $word end] eq "?"} {
 								# end of group
+#puts b:[string range $word 1 end-2]
 								lappend sublist [list Space {} {}] [list Span .arg [string range $word 1 end-2]]
 								break
 							} else {
 								# middle of group
-								lappend sublist [list Space {} {}] [list Span .arg [string range $word 1 end-1]]
+
+								if {[lindex $word end] eq "="} {
+#puts c:[string range $word 1 end-1]
+									lappend sublist [list Space {} {}] [list Span .arg [string range $word 1 end-1]]
+								} else {
+#puts c:[string range $word 1 end]
+									lappend sublist [list Space {} {}] [list Span .arg [string range $word 1 end]]
+								}
 							}
+						} elseif {[string range $word 0 2] eq "..."} {
+#puts d:...
+							set grouptype .optdot
+							break
 						} else {
-							return -code error "detected a second arg in an optional argument group that is not optional ... not yet a handled case."
+							return -code error "parseCommand: detected an arg in an optional argument group that not yet a handled case."
 						}
 						if {$i > [llength $line]} {
 							puts "emergencyStop 3 in parseCommand"
@@ -1087,7 +1110,7 @@ proc ::ndoc::parseCommand {mode line} {
 						}
 					}
 					set sublist [apply $expandSpan $sublist]
-					lappend spanList [list Space {} {}] [list Span .optarg $sublist]
+					lappend spanList [list Space {} {}] [list Span $grouptype $sublist]
 					if $DEBUG {puts "multiple optional arg group: $spanList"}
 				}
 				{^\?\+.+[^=][^\?]} {
@@ -1116,6 +1139,11 @@ proc ::ndoc::parseCommand {mode line} {
 					}
 					lappend spanList [list Space {} {}] {*}[apply $expandSpan [list [list Span $type [join $content " "]]]]
 					if $DEBUG {puts "multiple optional arguments: $spanList"}
+				}
+				default {
+					puts "parseCommand error: unknown syntax pattern"
+					puts "Line: $line"
+					exit
 				}
 			}
 		}

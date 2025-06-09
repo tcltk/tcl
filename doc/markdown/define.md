@@ -37,7 +37,7 @@ oo::define, oo::objdefine, oo::Slot - define and configure classes and objects
 
 # Class hierarchy
 
-.nf **oo::object**    \(-> **oo::Slot** .fi
+**oo::object**    \(-> **oo::Slot**
 
 # Description
 
