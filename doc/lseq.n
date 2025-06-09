@@ -19,7 +19,8 @@ lseq \- Build a numeric sequence returned as a list
 .BE
 .SH DESCRIPTION
 .PP
-The \fBlseq\fR command creates a sequence of numeric values using the given
+The \fBlseq\fR command creates a sequence of numeric values, which may
+be either wide integers or doubles, using the given
 parameters \fIstart\fR, \fIend\fR, and \fIstep\fR. The \fIoperation\fR
 argument "\fB..\fR" or "\fBto\fR" defines the range. The "\fBcount\fR" option
 is used to define a count of the number of elements in the list. A short form
@@ -41,6 +42,9 @@ empty list is returned.  For example:
 
 % \fBlseq\fR 5 to 1    ;# decreasing
 \fI\(-> 5 4 3 2 1
+
+% \fBlseq\fR 0 0.5 by 0.1  ;# doubles
+\fI\(-> 0.0 0.1 0.2 0.3 0.4 0.5\fR
 
 % \fBlseq\fR 6 to 1 by 2   ;# decreasing, step wrong sign, empty list
 
