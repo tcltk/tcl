@@ -109,6 +109,9 @@ const AuxDataType tclJumptableNumericInfoType = {
     PrintJumptableNumInfo,	/* printProc */
     DisassembleJumptableNumInfo	/* disassembleProc */
 };
+
+// Point at which we issue a LIST_CONCAT anyway
+#define LIST_CONCAT_THRESHOLD	(1 << 15)
 
 /*
  *----------------------------------------------------------------------
@@ -2688,13 +2691,23 @@ TclCompileTailcallCmd(
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr = parsePtr->tokenPtr;
     Tcl_Size i, numWords = parsePtr->numWords;
-    /* TODO: Consider support for compiling expanded args. */
+    Tcl_Size build = 1;
+    int concat = 0;
 
-    if (numWords < 2 || numWords > UINT_MAX || envPtr->procPtr == NULL) {
+    if (envPtr->procPtr == NULL) {
 	return TCL_ERROR;
     }
 
+    // All paths want the current namespace at this point.
     OP(				NS_CURRENT);
+
+    // If the number of words is too large, use the concat sequence.
+    // Also send the no-command route there.
+    if (numWords < 2 || numWords > LIST_CONCAT_THRESHOLD) {
+	goto tailcallExpanded;
+    }
+
+    // Check if we're doing expansion.
     for (i=1 ; i<numWords ; i++) {
 	tokenPtr = TokenAfter(tokenPtr);
 	if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
@@ -2703,56 +2716,70 @@ TclCompileTailcallCmd(
     }
     tokenPtr = parsePtr->tokenPtr;
 
+    // Push the words. The first one is marked for limited sharing.
     for (i=1 ; i<numWords ; i++) {
 	tokenPtr = TokenAfter(tokenPtr);
-	// TODO: If the first token is a literal, add LITERAL_CMD_NAME to its flags
-	PUSH_TOKEN(		tokenPtr, i);
+	if (i == 1 && tokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
+	    PUSH_COMMAND_TOKEN(	tokenPtr);
+	} else {
+	    PUSH_TOKEN(		tokenPtr, i);
+	}
     }
+
+    // The tailcall operation itself.
     OP4(			TAILCALL, numWords);
     return TCL_OK;
 
   tailcallExpanded:
-    {
-	Tcl_Size build = 0;
-	int concat = 0;
-
-	tokenPtr = parsePtr->tokenPtr;
-	for (i = 1; i < numWords; i++) {
-	    tokenPtr = TokenAfter(tokenPtr);
-	    if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD && build > 0) {
-		OP4(		LIST, build);
-		if (concat) {
-		    OP(		LIST_CONCAT);
-		}
-		build = 0;
-		concat = 1;
-	    }
-	    PUSH_TOKEN(		tokenPtr, i);
-	    if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
-		if (concat) {
-		    OP(		LIST_CONCAT);
-		} else {
-		    concat = 1;
-		}
-	    } else {
-		build++;
-	    }
-	    if (build > (1 << 12)) {
-		OP4(		LIST, build);
-		if (concat) {
-		    OP(		LIST_CONCAT);
-		}
-		build = 0;
-		concat = 1;
-	    }
-	}
-	if (build > 0) {
+    // Build all the words into a list. Handles expansion.
+    tokenPtr = parsePtr->tokenPtr;
+    for (i = 1; i < numWords; i++) {
+	tokenPtr = TokenAfter(tokenPtr);
+	// If we're about to expand, make sure we have a single list before.
+	if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD && build > 0) {
 	    OP4(		LIST, build);
 	    if (concat) {
 		OP(		LIST_CONCAT);
 	    }
+	    build = 0;
+	    concat = 1;
+	}
+	// Push the word. The first one is marked for limited sharing.
+	if (i == 1 && tokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
+	    PUSH_COMMAND_TOKEN(	tokenPtr);
+	} else {
+	    PUSH_TOKEN(		tokenPtr, i);
+	}
+	// If it was expansion, join to list.
+	if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
+	    if (concat) {
+		OP(		LIST_CONCAT);
+	    } else {
+		concat = 1;
+	    }
+	} else {
+	    // Otherwise, count how many words are pending to make into a list.
+	    build++;
+	}
+	// Too many words pending? Convert to a list now.
+	if (build > LIST_CONCAT_THRESHOLD) {
+	    OP4(		LIST, build);
+	    if (concat) {
+		OP(		LIST_CONCAT);
+	    }
+	    build = 0;
+	    concat = 1;
 	}
     }
+    // Anything left over? Handle now.
+    if (build > 0) {
+	OP4(			LIST, build);
+	if (concat) {
+	    OP(			LIST_CONCAT);
+	}
+    }
+
+    // The tailcall operation itself.
     OP(				TAILCALL_LIST);
     return TCL_OK;
 }
