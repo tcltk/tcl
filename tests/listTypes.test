@@ -1323,7 +1323,7 @@ namespace eval listtype {
 
     test memcheck-lindex-list {
         Tcl_ListObjIndex memory leaks for native lists
-    } -constraints {testobj memory} -body {
+    } -constraints {testobj} -body {
         list [{*}$memcheckcmd {
             testobj set 1 [testlistrep new 1000]
             assertListType [testobj duplicate 1 2] list
@@ -1334,7 +1334,7 @@ namespace eval listtype {
 
     test memcheck-lindex-spanlist {
         Tcl_ListObjIndex memory leaks for native lists
-    } -constraints {testobj memory} -body {
+    } -constraints {testobj} -body {
         list [{*}$memcheckcmd {
             testobj set 1 [testlistrep new 1000 10 10]
             assertListType [testobj duplicate 1 2] spanlist
@@ -1345,7 +1345,7 @@ namespace eval listtype {
 
     test memcheck-lindex-arithseries {
         Tcl_ListObjIndex memory leaks for lseq
-    } -constraints {testobj memory} -body {
+    } -constraints {testobj} -body {
         list [{*}$memcheckcmd {
             testobj set 1 [lseq 1000]
             set errorMessage [testlistobj indexmemcheck 1]
@@ -1355,7 +1355,7 @@ namespace eval listtype {
 
     test memcheck-lindex-repeatedList {
         Tcl_ListObjIndex memory leaks for lists of type repeatedList
-    } -constraints {testobj memory} -body {
+    } -constraints {testobj} -body {
         list [{*}$memcheckcmd {
             testobj set 1 [lrepeat $largeListLength [testobj new 2]]
             set errorMessage [testlistobj indexmemcheck 1]
@@ -1365,7 +1365,7 @@ namespace eval listtype {
 
     test memcheck-lindex-reversedList {
         Tcl_ListObjIndex memory leaks for reversedList lists
-    } -constraints {testobj memory} -body {
+    } -constraints {testobj} -body {
         list [{*}$memcheckcmd {
             testobj set 1 [lreverse [testlistrep new 1000]]
             assertListType [testobj duplicate 1 2] reversedList
@@ -1376,7 +1376,7 @@ namespace eval listtype {
 
     test memcheck-lindex-rangeList {
         Tcl_ListObjIndex memory leaks for rangeList lists
-    } -constraints {testobj memory} -body {
+    } -constraints {testobj} -body {
         list [{*}$memcheckcmd {
             testobj set 1 [lrange \
                                [lrepeat $largeListLength [testobj new 2]] \
@@ -1391,7 +1391,7 @@ namespace eval listtype {
 
     test memcheck-getelements-list {
         Tcl_ListObjElements memory leaks for native lists
-    } -constraints {testobj memory} -body {
+    } -constraints {testobj} -body {
         list [{*}$memcheckcmd {
             testobj set 1 [testlistrep new 1000]
             assertListType [testobj duplicate 1 2] list
@@ -1402,7 +1402,7 @@ namespace eval listtype {
 
     test memcheck-getelements-spanlist {
         Tcl_ListObjElements memory leaks for native lists
-    } -constraints {testobj memory} -body {
+    } -constraints {testobj} -body {
         list [{*}$memcheckcmd {
             testobj set 1 [testlistrep new 1000 10 10]
             assertListType [testobj duplicate 1 2] spanlist
@@ -1413,7 +1413,7 @@ namespace eval listtype {
 
     test memcheck-getelements-arithseries {
         Tcl_ListObjElements memory leaks for lseq
-    } -constraints {testobj memory} -body {
+    } -constraints {testobj} -body {
         list [{*}$memcheckcmd {
             testobj set 1 [lseq 1000]
             set errorMessage [testlistobj getelementsmemcheck 1]
@@ -1423,7 +1423,7 @@ namespace eval listtype {
 
     test memcheck-getelements-repeatedList {
         Tcl_ListObjElements memory leaks for lists of type repeatedList
-    } -constraints {testobj memory} -body {
+    } -constraints {testobj} -body {
         list [{*}$memcheckcmd {
             testobj set 1 [lrepeat $largeListLength [testobj new 2]]
             set errorMessage [testlistobj getelementsmemcheck 1]
@@ -1433,7 +1433,7 @@ namespace eval listtype {
 
     test memcheck-getelements-reversedList {
         Tcl_ListObjElements memory leaks for reversedList lists
-    } -constraints {testobj memory} -body {
+    } -constraints {testobj} -body {
         list [{*}$memcheckcmd {
             testobj set 1 [lreverse [testlistrep new 1000]]
             assertListType [testobj duplicate 1 2] reversedList
@@ -1444,7 +1444,7 @@ namespace eval listtype {
 
     test memcheck-getelements-rangeList {
         Tcl_ListObjElements memory leaks for rangeList lists
-    } -constraints {testobj memory} -body {
+    } -constraints {testobj} -body {
         list [{*}$memcheckcmd {
             testobj set 1 [lrange \
                                [lrepeat $largeListLength [testobj new 2]] \
@@ -1460,7 +1460,7 @@ namespace eval listtype {
         foreach nrefs {0 1 2} {
             test memcheck-reverse-$ltype-nrefs$nrefs \
                 "Tcl_ListObjReverse memory leaks for $ltype lists" \
-                -constraints {testobj memory} \
+                -constraints {testobj} \
                 -body {
                     {*}$memcheckcmd {
                         testlistapi Tcl_ListObjReverse $nrefs [makeList $ltype]
@@ -1474,7 +1474,7 @@ namespace eval listtype {
         foreach nrefs {0 1 2} {
             test memcheck-range-$ltype-nrefs$nrefs \
                 "Tcl_ListObjRange memory leaks for $ltype lists" \
-                -constraints {testobj memory} \
+                -constraints {testobj} \
                 -body {
                     {*}$memcheckcmd {
                         testlistapi Tcl_ListObjRange $nrefs [makeList $ltype] \
@@ -1489,7 +1489,7 @@ namespace eval listtype {
         foreach repeatCount [list 0 $largeListLength] {
             test memcheck-repeat-$ltype-count$repeatCount \
                 "Tcl_ListObjRepeat memory leaks for $ltype lists" \
-                -constraints {testobj memory} \
+                -constraints {testobj} \
                 -body {
                     {*}$memcheckcmd {
                         testlistapi Tcl_ListObjRepeat $repeatCount x y
