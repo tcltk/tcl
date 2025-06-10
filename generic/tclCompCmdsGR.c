@@ -1487,6 +1487,36 @@ TclCompileLreplaceCmd(
 /*
  *----------------------------------------------------------------------
  *
+ * TclCompileLseqCmd --
+ *
+ *	Procedure called to compile the "lseq" command.
+ *
+ * Results:
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to runtime.
+ *
+ * Side effects:
+ *	Instructions are added to envPtr to execute the "lseq" command at
+ *	runtime.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclCompileLseqCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    TCL_UNUSED(Command *),
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    // FIXME: Not yet implemented
+    return TCL_ERROR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclCompileLsetCmd --
  *
  *	Procedure called to compile the "lset" command.
