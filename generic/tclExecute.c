@@ -2508,7 +2508,7 @@ TEBCresume(
 #ifdef TCL_COMPILE_DEBUG
 	if (tclTraceExec >= TCL_TRACE_BYTECODE_EXEC_COMMANDS) {
 	    if (traceInstructions) {
-		TRACE_APPEND(("YIELD...\n", O2S(valuePtr)));
+		TRACE_APPEND(("YIELD...\n"));
 	    } else {
 		/* FIXME: What is the right thing to trace? */
 		fprintf(stdout, "%" SIZEd ": (%" SIZEd ") yielding to [%.30s]\n",
