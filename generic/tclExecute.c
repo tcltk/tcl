@@ -5392,6 +5392,54 @@ TEBCresume(
 	}
     }
 
+    {
+	Tcl_Obj *from, *to, *step, *count;
+	unsigned opnd;
+	int useDoubles;
+	
+    case INST_ARITH_SERIES:
+	opnd = TclGetUInt1AtPtr(pc + 1);
+	count = (opnd & (1 << 3)) ? OBJ_AT_TOS : NULL;
+	step = (opnd & (1 << 2)) ? OBJ_UNDER_TOS : NULL;
+	to = (opnd & (1 << 1)) ? OBJ_AT_DEPTH(2) : NULL;
+	from = (opnd & (1 << 0)) ? OBJ_AT_DEPTH(3) : NULL;
+	TRACE(("0x%x \"%s\" \"%s\" \"%s\" \"%s\" => ",
+		opnd, O2S(from), O2S(to), O2S(step), O2S(count)));
+
+	// Decide whether to request a double series or an int series.
+	if (opnd & (1 << 4)) {
+	    useDoubles = 1;
+	} else if (opnd & (1 << 5)) {
+	    useDoubles = 0;
+	} else {
+	    int type;
+	    void *dummy;
+	    useDoubles = 0;
+	    if (from && GetNumberFromObj(NULL, from, &dummy, &type) == TCL_OK
+		    && (type == TCL_NUMBER_DOUBLE || type == TCL_NUMBER_NAN)) {
+		useDoubles = 1;
+	    } else if (to && GetNumberFromObj(NULL, to, &dummy, &type) == TCL_OK
+		    && (type == TCL_NUMBER_DOUBLE || type == TCL_NUMBER_NAN)) {
+		useDoubles = 1;
+	    } else if (step && GetNumberFromObj(NULL, step, &dummy, &type) == TCL_OK
+		    && (type == TCL_NUMBER_DOUBLE || type == TCL_NUMBER_NAN)) {
+		useDoubles = 1;
+	    }
+	}
+
+	// Construct the series.
+	DECACHE_STACK_INFO();
+	objResultPtr = TclNewArithSeriesObj(interp, useDoubles, from, to, step,
+		count);
+	CACHE_STACK_INFO();
+	if (objResultPtr == NULL) {
+	    TRACE_ERROR(interp);
+	    goto gotError;
+	}
+	TRACE_APPEND_OBJ(objResultPtr);
+	NEXT_INST_V(2, 4, 1);
+    }
+
 	/*
 	 *	   End of INST_LIST and related instructions.
 	 * -----------------------------------------------------------------
