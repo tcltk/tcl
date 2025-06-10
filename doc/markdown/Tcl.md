@@ -22,9 +22,7 @@ Tcl - Tool Command Language
 
 # Synopsis
 
-::: {.synopsis} :::
-
-:::
+Summary of Tcl language syntax.
 
 # Description
 

@@ -22,7 +22,7 @@ oo::singleton - a class that does only allows one instance of itself
 # Synopsis
 
 ::: {.synopsis} :::
-
+[package]{.cmd} [require]{.sub} [tcl::oo]{.lit}
 
 [oo::singleton]{.cmd} [method]{.arg} [arg]{.optdot}
 :::

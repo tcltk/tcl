@@ -17,16 +17,18 @@ oo::configurable, configure, property \- class that makes configurable classes a
 \fBoo::configurable create \fIclass\fR ?\fIdefinitionScript\fR?
 
 \fBoo::define \fIclass\fB {\fR
-    \fBproperty \fIpropName\fR ?\fIoptions ...\fR? ?\fIpropName\fR ?\fIoptions ...\fR?...?
+    \fBproperty \fIpropName\fR ?\fIpropName ...\fR?
+    \fBproperty \fIpropName\fR \fIoption value\fR  ?\fIoption value ...\fR? ?\fIpropName\fR? ?\fIoption value\fR? ?\fIoption value ...\fR?
 \fB}\fR
 
 \fBoo::objdefine \fIobject\fB {\fR
-    \fBproperty \fIpropName\fR ?\fIoptions ...\fR? ?\fIpropName\fR ?\fIoptions ...\fR?...?
+    \fBproperty \fIpropName\fR ?\fIpropName ...\fR?
+    \fBproperty \fIpropName\fR \fIoption value\fR  ?\fIoption value ...\fR? ?\fIpropName\fR? ?\fIoption value\fR? ?\fIoption value ...\fR?
 \fB}\fR
 
 \fIobjectName \fBconfigure\fR
 \fIobjectName \fBconfigure\fI \-prop\fR
-\fIobjectName \fBconfigure\fI \-prop value\fR ?\fI\-prop value\fR...
+\fIobjectName \fBconfigure\fI \-prop value\fR ?\fI\-prop value ...\fR?
 .fi
 .SH "CLASS HIERARCHY"
 .nf
