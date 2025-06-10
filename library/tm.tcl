@@ -97,11 +97,6 @@ proc ::tcl::tm::add {args} {
 
     set newpaths $paths
     foreach p $args {
-	set pe $p
-	if {![interp issafe] && [catch {file tildeexpand $p} p]} {
-	    # Paths relative to unresolvable home dirs are ignored
-	    continue
-	}
 	if {($p eq "") || ($p in $newpaths)} {
 	    # Ignore any path which is empty or already on the list.
 	    continue
@@ -110,11 +105,11 @@ proc ::tcl::tm::add {args} {
 	# Search for paths which are subdirectories of the new one. If there
 	# are any then the new path violates the restriction about ancestors.
 
-	set pos [lsearch -glob $newpaths $p/*]
+	set pos [lsearch -glob $newpaths ${p}/*]
 	# Cannot use "in", we need the position for the message.
 	if {$pos >= 0} {
 	    return -code error \
-		"$pe is ancestor of existing module path [lindex $newpaths $pos]."
+		"$p is ancestor of existing module path [lindex $newpaths $pos]."
 	}
 
 	# Now look for existing paths which are ancestors of the new one. This
@@ -124,7 +119,7 @@ proc ::tcl::tm::add {args} {
 	foreach ep $newpaths {
 	    if {[string match ${ep}/* $p]} {
 		return -code error \
-		    "$pe is subdirectory of existing module path $ep."
+		    "$p is subdirectory of existing module path $ep."
 	    }
 	}
 
@@ -148,10 +143,6 @@ proc ::tcl::tm::remove {args} {
     variable paths
 
     foreach p $args {
-	if {![interp issafe] && [catch {file tildeexpand $p} p]} {
-	    # Paths relative to unresolvable home dirs are ignored
-	    continue
-	}
 	set pos [lsearch -exact $paths $p]
 	if {$pos >= 0} {
 	    set paths [lreplace $paths $pos $pos]
@@ -342,7 +333,10 @@ proc ::tcl::tm::Defaults {} {
 	] {
 	    if {![info exists env($ev)]} continue
 	    foreach p [split $env($ev) $::tcl_platform(pathSeparator)] {
-		path add $p
+		# Paths relative to unresolvable home dirs are ignored
+		if {![catch {file tildeexpand $p} expanded_path]} {
+		    path add $expanded_path
+		}
 	    }
 	}
     }
@@ -365,16 +359,14 @@ proc ::tcl::tm::Defaults {} {
 proc ::tcl::tm::roots {paths} {
     regexp {^(\d+)\.(\d+)} [package provide tcl] - major minor
     foreach pa $paths {
-	# Paths relative to unresolvable home dirs are ignored
-	if {[catch {file tildeexpand $pa} pa]} {
-	    continue
-	}
-	set p [file join [file normalize $pa] tcl$major]
+	set p [file join $pa tcl$major]
 	for {set n $minor} {$n >= 0} {incr n -1} {
 	    set px [file join $p ${major}.${n}]
+	    if {![interp issafe]} {set px [file normalize $px]}
 	    path add $px
 	}
 	set px [file join $p site-tcl]
+	if {![interp issafe]} {set px [file normalize $px]}
 	path add $px
     }
     return
