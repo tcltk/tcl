@@ -2005,6 +2005,16 @@ enum Lreplace4Flags {
     TCL_LREPLACE4_SINGLE_INDEX = 2	/* Second index absent (pure insert) */
 };
 
+/* Flag bits  used by arithSeries instruction */
+enum ArithSeqriesFlags {
+    TCL_ARITHSERIES_FROM = 1 << 0,	// from is defined
+    TCL_ARITHSERIES_TO = 1 << 1,	// to is defined
+    TCL_ARITHSERIES_STEP = 1 << 2,	// step is defined
+    TCL_ARITHSERIES_COUNT = 1 << 3,	// count is defined
+    TCL_ARITHSERIES_DOUBLE = 1 << 4,	// definitely require double series
+    TCL_ARITHSERIES_INT = 1 << 5,	// definitely require int series
+};
+
 /*
  * Helper functions for jump tables that call other internal API bits.
  */

@@ -5399,17 +5399,17 @@ TEBCresume(
 	
     case INST_ARITH_SERIES:
 	opnd = TclGetUInt1AtPtr(pc + 1);
-	count = (opnd & (1 << 3)) ? OBJ_AT_TOS : NULL;
-	step = (opnd & (1 << 2)) ? OBJ_UNDER_TOS : NULL;
-	to = (opnd & (1 << 1)) ? OBJ_AT_DEPTH(2) : NULL;
-	from = (opnd & (1 << 0)) ? OBJ_AT_DEPTH(3) : NULL;
+	count = (opnd & TCL_ARITHSERIES_COUNT) ? OBJ_AT_DEPTH(0) : NULL;
+	step =  (opnd & TCL_ARITHSERIES_STEP)  ? OBJ_AT_DEPTH(1) : NULL;
+	to =    (opnd & TCL_ARITHSERIES_TO)    ? OBJ_AT_DEPTH(2) : NULL;
+	from =  (opnd & TCL_ARITHSERIES_FROM)  ? OBJ_AT_DEPTH(3) : NULL;
 	TRACE(("0x%x \"%s\" \"%s\" \"%s\" \"%s\" => ",
 		opnd, O2S(from), O2S(to), O2S(step), O2S(count)));
 
 	// Decide whether to request a double series or an int series.
-	if (opnd & (1 << 4)) {
+	if (opnd & TCL_ARITHSERIES_DOUBLE) {
 	    useDoubles = 1;
-	} else if (opnd & (1 << 5)) {
+	} else if (opnd & TCL_ARITHSERIES_INT) {
 	    useDoubles = 0;
 	} else {
 	    int type;
