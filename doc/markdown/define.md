@@ -25,7 +25,7 @@ oo::define, oo::objdefine, oo::Slot - define and configure classes and objects
 # Synopsis
 
 ::: {.synopsis} :::
-
+[package]{.cmd} [require]{.sub} [tcl::oo]{.lit}
 
 [oo::define]{.cmd} [class]{.arg} [defScript]{.arg}
 [oo::define]{.cmd} [class]{.arg} [subcommand]{.arg} [arg]{.arg} [arg]{.optdot}

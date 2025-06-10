@@ -831,6 +831,12 @@ proc ::ndoc::parseBlock {parent manContent} {
 						# go to first line of section content:
 						set manContent [lrange $manContent 1 end]
 						set line [lindex $manContent 0]
+						# the Tcl.n page is special (has no command syntax):
+						if {[dict get $manual name] eq "Tcl"} {
+							lappend blockList [list Paragraph {} $line]
+							set manContent [lrange $manContent 1 end]
+							continue
+						}
 						set cmd [string range $line 0 2]
 						# the content of this section is some command syntax
 						# with one command per line
@@ -1125,7 +1131,7 @@ proc ::ndoc::parseCommand {mode line} {
 								set type .optdot
 							} else {
 								set type .optarg
-								lappend content [string range $word 0 end-2]
+								lappend content [string range $word 0 end]
 							}
 							break
 						} else {

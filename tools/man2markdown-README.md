@@ -36,17 +36,53 @@ section | number of documents | initial conversion | final conversion
 --------|---------------------|--------------------|-----------------
 1       | 1                   | 0                  | 0
 3       | 108                 | 0                  | 0
-n       | 139                 | 21                 | 0
+n       | 139                 | 25                 | 0
 
 
 The tk/doc directory comes next, after finishing Tcl.
 
 
 # Open issues
-
+This section lists the shortcoming which are still present in the pages tha already have an initial markdown version.
 
 ## General
-- handling of '\fB\e\fIk\fR' (see test script)
+- handling of '\fB\e\fIk\fR' (see test script) not correct yet
 
-## oo::... pages
-- No handling of the class hierarchy subsection
+## Specific pages
+- oo::... pages: no handling of the class hierarchy subsection yet
+- configurable.n: no way to represent nested '?' in synopsis, attempt made to split syntax definition into pieces
+
+
+# Implemented and missing features in conversion script
+
+List of nroff commands/macros currently implemented (partly not a complete implementation):
+
+- .\" (comments)
+- '\" (comments)
+- backslash escapes "e" and "c"
+- . (single dot as placeholder)
+- \\fB (bold text)
+- \\fI (italic text)
+- \\fR (reset font info)
+- \\fP (treated the same as \\fB)
+- .QW (text in quotes)
+- .PQ (text in quotes + paranthesis)
+- .QR (text in quotes + dash between elements)
+- .so (include files)
+- .BS .BE (start and end of box enclosure)
+- .AS (maximum sizes of arguments for setting tab stops)
+- .ta (set tab stops)
+- .RS .RE (relative inset, i.e. indentation)
+- .nf .fi (turn off/on filling of lines)
+- .TH (title heading)
+- .TP (tagged paragraph)
+- .IP (indented paragaph)
+- .PP (paragraph)
+- .SH (section header)
+- .SS (subsection header)
+- .VS .VE (start and end of vertical line)
+- .CS .CE (start and end of code block)
+
+
+
+AST element "Paragraph" is not yet treated properly (the content field of the AST is not yet a list of Inline AST elements).
