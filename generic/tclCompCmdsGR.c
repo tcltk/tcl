@@ -1510,8 +1510,22 @@ TclCompileLseqCmd(
     TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
-    // FIXME: Not yet implemented
-    return TCL_ERROR;
+    DefineLineInformation;	// TIP #280
+    if (parsePtr->numWords != 2) {
+	// FIXME: Not yet implemented
+	return TCL_ERROR;
+    }
+
+    // So far, just the one case...
+    Tcl_Token *tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    int flags = (TCL_ARITHSERIES_FROM | TCL_ARITHSERIES_STEP |
+	    TCL_ARITHSERIES_COUNT | TCL_ARITHSERIES_INT);
+    PUSH(			"0");		// from
+    PUSH(			"");		// to
+    PUSH(			"1");		// step
+    PUSH_TOKEN(			tokenPtr, 1);	// count
+    OP1(			ARITH_SERIES, flags);
+    return TCL_OK;
 }
 
 /*
