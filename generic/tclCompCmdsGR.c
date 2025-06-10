@@ -1511,19 +1511,42 @@ TclCompileLseqCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     DefineLineInformation;	// TIP #280
+    Tcl_Token *tokenPtr;
+    int flags;
+
+    if (parsePtr->numWords == 2) {
+	goto oneArg;
+    } else if (parsePtr->numWords == 3) {
+	goto twoArgs;
+    }
     if (parsePtr->numWords != 2) {
 	// FIXME: Not yet implemented
 	return TCL_ERROR;
     }
 
-    // So far, just the one case...
-    Tcl_Token *tokenPtr = TokenAfter(parsePtr->tokenPtr);
-    int flags = (TCL_ARITHSERIES_FROM | TCL_ARITHSERIES_STEP |
+    // Handle [lseq $n]
+  oneArg:
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    flags = (TCL_ARITHSERIES_FROM | TCL_ARITHSERIES_STEP |
 	    TCL_ARITHSERIES_COUNT | TCL_ARITHSERIES_INT);
     PUSH(			"0");		// from
     PUSH(			"");		// to
     PUSH(			"1");		// step
+    // FIXME: These are expressions!
     PUSH_TOKEN(			tokenPtr, 1);	// count
+    OP1(			ARITH_SERIES, flags);
+    return TCL_OK;
+
+    // Handle [lseq $m $n]
+  twoArgs:
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    flags = (TCL_ARITHSERIES_FROM | TCL_ARITHSERIES_TO);
+    // FIXME: These are expressions!
+    PUSH_TOKEN(			tokenPtr, 1);	// from
+    tokenPtr = TokenAfter(tokenPtr);
+    PUSH_TOKEN(			tokenPtr, 2);	// to
+    PUSH(			"");		// step
+    PUSH(			"");		// count
     OP1(			ARITH_SERIES, flags);
     return TCL_OK;
 }
