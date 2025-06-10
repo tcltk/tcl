@@ -35,6 +35,7 @@ to the userbase.
  - [Memory allocation runaway on truncated iso2022 encoding](https://core.tcl-lang.org/tcl/tktview/7346ad)
  - [Missing include dir for extensions in non-default locations](https://core.tcl-lang.org/tcl/tktview/333512)
  - [tcl::tm::path doesn't handle tilde expand](https://core.tcl-lang.org/tcl/tktview/b87673)
+ - [lseq numeric overflow](https://core.tcl-lang.org/tcl/tktview/0ee626)
 
 # Incompatibilities
  - [The ActiveCodePage element has been removed from the Windows executable manifest for tclsh](https://core.tcl-lang.org/tips/doc/trunk/tip/716.md)
