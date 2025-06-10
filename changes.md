@@ -32,8 +32,9 @@ to the userbase.
  - [lseq crash on out-of-range index](https://core.tcl-lang.org/tcl/tktview/7d3101)
  - [lseq crash on nested indices](https://core.tcl-lang.org/tcl/tktview/452b10)
  - [Build broken (trunk branch) tclCompExpr.c tclOOCall.c](https://core.tcl-lang.org/tcl/tktview/1dcda0)
- - [Memory allocation runaway on truncated iso2022 encoding](https://core.tcl-lang.org/tcl/tktview/7346adc50)
- - [Missing include dir for extensions in non-default locations](https://core.tcl-lang.org/tcl/tktview/3335120320)
+ - [Memory allocation runaway on truncated iso2022 encoding](https://core.tcl-lang.org/tcl/tktview/7346ad)
+ - [Missing include dir for extensions in non-default locations](https://core.tcl-lang.org/tcl/tktview/333512)
+ - [tcl::tm::path doesn't handle tilde expand](https://core.tcl-lang.org/tcl/tktview/b87673)
 
 # Incompatibilities
  - [The ActiveCodePage element has been removed from the Windows executable manifest for tclsh](https://core.tcl-lang.org/tips/doc/trunk/tip/716.md)
