@@ -758,9 +758,6 @@ TclNewArithSeriesObj(
 	    // Make computed end value match argument(s) precision
 	    dend = ArithRound(dend, precision);
 	    end = dend;
-	} else {
-	    end = start + (step * (len - 1));
-	    dend = (double)end;
 	}
     }
 
