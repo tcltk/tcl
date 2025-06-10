@@ -1518,8 +1518,7 @@ TclCompileLseqCmd(
 	goto oneArg;
     } else if (parsePtr->numWords == 3) {
 	goto twoArgs;
-    }
-    if (parsePtr->numWords != 2) {
+    } else {
 	// FIXME: Not yet implemented
 	return TCL_ERROR;
     }
@@ -1532,8 +1531,7 @@ TclCompileLseqCmd(
     PUSH(			"0");		// from
     PUSH(			"");		// to
     PUSH(			"1");		// step
-    // FIXME: These are expressions!
-    PUSH_TOKEN(			tokenPtr, 1);	// count
+    PUSH_EXPR_TOKEN(		tokenPtr, 1);	// count
     OP1(			ARITH_SERIES, flags);
     return TCL_OK;
 
@@ -1541,10 +1539,9 @@ TclCompileLseqCmd(
   twoArgs:
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
     flags = (TCL_ARITHSERIES_FROM | TCL_ARITHSERIES_TO);
-    // FIXME: These are expressions!
-    PUSH_TOKEN(			tokenPtr, 1);	// from
+    PUSH_EXPR_TOKEN(		tokenPtr, 1);	// from
     tokenPtr = TokenAfter(tokenPtr);
-    PUSH_TOKEN(			tokenPtr, 2);	// to
+    PUSH_EXPR_TOKEN(		tokenPtr, 2);	// to
     PUSH(			"");		// step
     PUSH(			"");		// count
     OP1(			ARITH_SERIES, flags);
