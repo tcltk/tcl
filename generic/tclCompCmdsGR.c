@@ -1511,7 +1511,7 @@ TclCompileLseqCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     DefineLineInformation;	// TIP #280
-    Tcl_Token *tokenPtr, *token2Ptr, *token3Ptr;
+    Tcl_Token *tokenPtr, *token2Ptr, *token3Ptr, *token4Ptr, *token5Ptr;
     int flags;
 
     if (parsePtr->numWords == 2) {
@@ -1589,13 +1589,63 @@ TclCompileLseqCmd(
 
     // Handle [lseq $x to $y $z], [lseq $x $y by $z], [lseq $x count $y $z]
   fourArgs:
-    // FIXME: Not implemented
-    return TCL_ERROR;
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    token2Ptr = TokenAfter(tokenPtr);
+    token3Ptr = TokenAfter(token2Ptr);
+    token4Ptr = TokenAfter(token3Ptr);
+    if (IS_TOKEN_LITERALLY(token2Ptr, "to") || IS_TOKEN_LITERALLY(token2Ptr, "..")) {
+	flags = (TCL_ARITHSERIES_FROM | TCL_ARITHSERIES_TO | TCL_ARITHSERIES_STEP);
+	PUSH_EXPR_TOKEN(	tokenPtr, 1);	// from
+	PUSH_EXPR_TOKEN(	token3Ptr, 3);	// to
+	PUSH_EXPR_TOKEN(	token4Ptr, 4);	// step
+	PUSH(			"");		// count
+    } else if (IS_TOKEN_LITERALLY(token2Ptr, "count")) {
+	flags = (TCL_ARITHSERIES_FROM | TCL_ARITHSERIES_STEP | TCL_ARITHSERIES_COUNT);
+	PUSH_EXPR_TOKEN(	tokenPtr, 1);	// from
+	PUSH(			"");		// to
+	PUSH_EXPR_TOKEN(	token3Ptr, 3);	// count
+	PUSH_EXPR_TOKEN(	token4Ptr, 4);	// step
+	OP(			SWAP);
+    } else if (IS_TOKEN_LITERALLY(token3Ptr, "by")) {
+	flags = (TCL_ARITHSERIES_FROM | TCL_ARITHSERIES_TO | TCL_ARITHSERIES_STEP);
+	PUSH_EXPR_TOKEN(	tokenPtr, 1);	// from
+	PUSH_EXPR_TOKEN(	token2Ptr, 2);	// to
+	PUSH_EXPR_TOKEN(	token4Ptr, 4);	// step
+	PUSH(			"");		// count
+    } else {
+	return TCL_ERROR;
+    }
+    OP1(			ARITH_SERIES, flags);
+    return TCL_OK;
 
     // Handle [lseq $x to $y by $z], [lseq $x count $y by $z]
   fiveArgs:
-    // FIXME: Not implemented
-    return TCL_ERROR;
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    token2Ptr = TokenAfter(tokenPtr);
+    token3Ptr = TokenAfter(token2Ptr);
+    token4Ptr = TokenAfter(token3Ptr);
+    token5Ptr = TokenAfter(token4Ptr);
+    if (!IS_TOKEN_LITERALLY(token4Ptr, "by")) {
+	return TCL_ERROR;
+    }
+    if (IS_TOKEN_LITERALLY(token2Ptr, "to") || IS_TOKEN_LITERALLY(token2Ptr, "..")) {
+	flags = (TCL_ARITHSERIES_FROM | TCL_ARITHSERIES_TO | TCL_ARITHSERIES_STEP);
+	PUSH_EXPR_TOKEN(	tokenPtr, 1);	// from
+	PUSH_EXPR_TOKEN(	token3Ptr, 3);	// to
+	PUSH_EXPR_TOKEN(	token5Ptr, 5);	// step
+	PUSH(			"");		// count
+    } else if (IS_TOKEN_LITERALLY(token2Ptr, "count")) {
+	flags = (TCL_ARITHSERIES_FROM | TCL_ARITHSERIES_STEP | TCL_ARITHSERIES_COUNT);
+	PUSH_EXPR_TOKEN(	tokenPtr, 1);	// from
+	PUSH(			"");		// to
+	PUSH_EXPR_TOKEN(	token3Ptr, 3);	// count
+	PUSH_EXPR_TOKEN(	token5Ptr, 5);	// step
+	OP(			SWAP);
+    } else {
+	return TCL_ERROR;
+    }
+    OP1(			ARITH_SERIES, flags);
+    return TCL_OK;
 }
 
 /*
