@@ -1511,15 +1511,21 @@ TclCompileLseqCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     DefineLineInformation;	// TIP #280
-    Tcl_Token *tokenPtr;
+    Tcl_Token *tokenPtr, *token2Ptr, *token3Ptr;
     int flags;
 
     if (parsePtr->numWords == 2) {
 	goto oneArg;
     } else if (parsePtr->numWords == 3) {
 	goto twoArgs;
+    } else if (parsePtr->numWords == 4) {
+	goto threeArgs;
+    } else if (parsePtr->numWords == 5) {
+	goto fourArgs;
+    } else if (parsePtr->numWords == 6) {
+	goto fiveArgs;
     } else {
-	// FIXME: Not yet implemented
+	// This is a syntax error case.
 	return TCL_ERROR;
     }
 
@@ -1538,14 +1544,58 @@ TclCompileLseqCmd(
     // Handle [lseq $m $n]
   twoArgs:
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    token2Ptr = TokenAfter(tokenPtr);
     flags = (TCL_ARITHSERIES_FROM | TCL_ARITHSERIES_TO);
     PUSH_EXPR_TOKEN(		tokenPtr, 1);	// from
-    tokenPtr = TokenAfter(tokenPtr);
-    PUSH_EXPR_TOKEN(		tokenPtr, 2);	// to
+    PUSH_EXPR_TOKEN(		token2Ptr, 2);	// to
     PUSH(			"");		// step
     PUSH(			"");		// count
     OP1(			ARITH_SERIES, flags);
     return TCL_OK;
+
+    // Handle [lseq $x $y $z], [lseq $x to $y], [lseq $x count $y], [lseq $x by $y]
+  threeArgs:
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    token2Ptr = TokenAfter(tokenPtr);
+    token3Ptr = TokenAfter(token2Ptr);
+    if (IS_TOKEN_LITERALLY(token2Ptr, "to") || IS_TOKEN_LITERALLY(token2Ptr, "..")) {
+	flags = (TCL_ARITHSERIES_FROM | TCL_ARITHSERIES_TO);
+	PUSH_EXPR_TOKEN(	tokenPtr, 1);	// from
+	PUSH_EXPR_TOKEN(	token3Ptr, 3);	// to
+	PUSH(			"");		// step
+	PUSH(			"");		// count
+    } else if (IS_TOKEN_LITERALLY(token2Ptr, "count")) {
+	flags = (TCL_ARITHSERIES_FROM | TCL_ARITHSERIES_STEP | TCL_ARITHSERIES_COUNT);
+	PUSH_EXPR_TOKEN(	tokenPtr, 1);	// from
+	PUSH(			"");		// to
+	PUSH(			"1");		// step
+	PUSH_EXPR_TOKEN(	token3Ptr, 3);	// count
+    } else if (IS_TOKEN_LITERALLY(token2Ptr, "by")) {
+	flags = (TCL_ARITHSERIES_FROM | TCL_ARITHSERIES_STEP | TCL_ARITHSERIES_COUNT);
+	PUSH(			"0");		// from
+	PUSH(			"");		// to
+	PUSH_EXPR_TOKEN(	tokenPtr, 1);	// count
+	PUSH_EXPR_TOKEN(	token3Ptr, 3);	// step
+	OP(			SWAP);
+    } else {
+	flags = (TCL_ARITHSERIES_FROM | TCL_ARITHSERIES_TO | TCL_ARITHSERIES_STEP);
+	PUSH_EXPR_TOKEN(	tokenPtr, 1);	// from
+	PUSH_EXPR_TOKEN(	token2Ptr, 2);	// to
+	PUSH_EXPR_TOKEN(	token3Ptr, 3);	// step
+	PUSH(			"");		// count
+    }
+    OP1(			ARITH_SERIES, flags);
+    return TCL_OK;
+
+    // Handle [lseq $x to $y $z], [lseq $x $y by $z], [lseq $x count $y $z]
+  fourArgs:
+    // FIXME: Not implemented
+    return TCL_ERROR;
+
+    // Handle [lseq $x to $y by $z], [lseq $x count $y by $z]
+  fiveArgs:
+    // FIXME: Not implemented
+    return TCL_ERROR;
 }
 
 /*
