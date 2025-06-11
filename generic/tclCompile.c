@@ -961,10 +961,7 @@ InstructionDesc const tclInstructionTable[] = {
 	 * stating which values are valid; bit 0 -> from, bit 1 -> to,
 	 * bit 2 -> step, bit 3 -> count. Invalid values are passed to
 	 * TclNewArithSeriesObj() as NULL (and the corresponding values on the
-	 * stack simply are ignored). If bit 4 is set, the useDoubles flag will
-	 * be true, and if bit 5 is set, the useDoubles flag will be false. If
-	 * neither is set, the type of the arguments will be examined to
-	 * determine what to pass for the flag.
+	 * stack simply are ignored).
 	 * Stack:  ... from to step count => ... series */
 
     {NULL, 0, 0, 0, {OPERAND_NONE}}

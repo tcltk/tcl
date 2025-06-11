@@ -5407,85 +5407,139 @@ TEBCresume(
 	from =  (opnd & TCL_ARITHSERIES_FROM)  ? OBJ_AT_DEPTH(3) : NULL;
 	TRACE(("0x%x \"%s\" \"%s\" \"%s\" \"%s\" => ",
 		opnd, O2S(from), O2S(to), O2S(step), O2S(count)));
+	DECACHE_STACK_INFO();
 
 	// Decide whether to request a double series or an int series.
+	// Note the call to Tcl_ExprObj. UGH!
 	useDoubles = 0;
-	if (from && GetNumberFromObj(NULL, from, &ptr, &type) == TCL_OK) {
-	    switch (type) {
-	    case TCL_NUMBER_DOUBLE:
-		useDoubles = 1;
-		break;
-	    case TCL_NUMBER_NAN:
-		failure = from;
-		goto handleLseqNan;
+	if (from) {
+	    if (!TclHasInternalRep(from, &tclExprCodeType)
+		    && GetNumberFromObj(NULL, from, &ptr, &type) == TCL_OK) {
+		goto lseqFromComprehend;
+	    }
+	    if (Tcl_ExprObj(interp, from, &from) != TCL_OK) {
+		goto handleLseqError;
+	    }
+	    if (GetNumberFromObj(NULL, from, &ptr, &type) == TCL_OK) {
+	    lseqFromComprehend:
+		switch (type) {
+		case TCL_NUMBER_DOUBLE:
+		    useDoubles = 1;
+		    break;
+		case TCL_NUMBER_NAN:
+		    failure = from;
+		    goto handleLseqNan;
+		}
 	    }
 	}
-	if (to && GetNumberFromObj(NULL, to, &ptr, &type) == TCL_OK) {
-	    switch (type) {
-	    case TCL_NUMBER_DOUBLE:
-		useDoubles = 1;
-		break;
-	    case TCL_NUMBER_NAN:
-		failure = to;
-		goto handleLseqNan;
+	if (to) {
+	    if (!TclHasInternalRep(to, &tclExprCodeType)
+		    && GetNumberFromObj(NULL, to, &ptr, &type) == TCL_OK) {
+		goto lseqToComprehend;
+	    }
+	    if (Tcl_ExprObj(interp, to, &to) != TCL_OK) {
+		goto handleLseqError;
+	    }
+	    if (GetNumberFromObj(NULL, to, &ptr, &type) == TCL_OK) {
+	    lseqToComprehend:
+		switch (type) {
+		case TCL_NUMBER_DOUBLE:
+		    useDoubles = 1;
+		    break;
+		case TCL_NUMBER_NAN:
+		    failure = to;
+		    goto handleLseqNanTo;
+		}
 	    }
 	}
-	if (step && GetNumberFromObj(NULL, step, &ptr, &type) == TCL_OK) {
-	    switch (type) {
-	    case TCL_NUMBER_DOUBLE:
-		useDoubles = 1;
-		break;
-	    case TCL_NUMBER_NAN:
-		failure = step;
-		goto handleLseqNan;
+	if (step) {
+	    if (!TclHasInternalRep(step, &tclExprCodeType)
+		    && GetNumberFromObj(NULL, step, &ptr, &type) == TCL_OK) {
+		goto lseqStepComprehend;
+	    }
+	    if (Tcl_ExprObj(interp, step, &step) != TCL_OK) {
+		goto handleLseqError;
+	    }
+	    if (GetNumberFromObj(NULL, step, &ptr, &type) == TCL_OK) {
+	    lseqStepComprehend:
+		switch (type) {
+		case TCL_NUMBER_DOUBLE:
+		    useDoubles = 1;
+		    break;
+		case TCL_NUMBER_NAN:
+		    failure = step;
+		    goto handleLseqNan;
+		}
 	    }
 	}
 
 	// Convert count to integer if not already
-	if (count && GetNumberFromObj(NULL, count, &ptr, &type) == TCL_OK) {
-	    switch(type) {
-	    case TCL_NUMBER_DOUBLE:
-		dcount = *((const double *)ptr);
-		if (dcount - (int)dcount == 0.0) {
-		    TclNewIntObj(count, (int)dcount);
+	if (count) {
+	    if (!TclHasInternalRep(count, &tclExprCodeType)
+		    && GetNumberFromObj(NULL, count, &ptr, &type) == TCL_OK) {
+		goto lseqCountComprehend;
+	    }
+	    if (Tcl_ExprObj(interp, count, &count) != TCL_OK) {
+		goto handleLseqError;
+	    }
+	    if (GetNumberFromObj(NULL, count, &ptr, &type) == TCL_OK) {
+	    lseqCountComprehend:
+		switch (type) {
+		case TCL_NUMBER_DOUBLE:
+		    dcount = *((const double *)ptr);
+		    if (dcount - (int)dcount == 0.0) {
+			Tcl_BounceRefCount(count);
+			TclNewIntObj(count, (int)dcount);
+		    }
+		    break;
+		case TCL_NUMBER_NAN:
+		    failure = count;
+		    goto handleLseqNanCount;
 		}
-		break;
-	    case TCL_NUMBER_NAN:
-		goto handleLseqNanCount;
 	    }
 	}
 
 	// Construct the series.
-	DECACHE_STACK_INFO();
 	objResultPtr = TclNewArithSeriesObj(interp, useDoubles, from, to, step,
 		count);
-	CACHE_STACK_INFO();
-	Tcl_BounceRefCount(count);
 	if (objResultPtr == NULL) {
-	    TRACE_ERROR(interp);
-	    goto gotError;
+	    goto handleLseqError;
 	}
+	CACHE_STACK_INFO();
+	Tcl_BounceRefCount(from);
+	Tcl_BounceRefCount(to);
+	Tcl_BounceRefCount(step);
+	Tcl_BounceRefCount(count);
 	TRACE_APPEND_OBJ(objResultPtr);
 	NEXT_INST_V(2, 4, 1);
+
+	// Why does lseq have these extra squirrelly cases?
     handleLseqNan:
-	DECACHE_STACK_INFO();
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"domain error: argument not in valid range"));
+	Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
+		"domain error: argument not in valid range", NULL);
+	goto handleLseqError;
+    handleLseqNanTo:
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"cannot use non-numeric floating-point value \"%s\" to "
 		"estimate length of arith-series",
-		TclGetString(count)));
+		TclGetString(failure)));
 	Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
 		"domain error: argument not in valid range", NULL);
-	CACHE_STACK_INFO();
-	TRACE_ERROR(interp);
-	goto gotError;
+	goto handleLseqError;
     handleLseqNanCount:
-	DECACHE_STACK_INFO();
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"expected integer but got \"%s\"",
 		TclGetString(failure)));
 	Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
 		"domain error: argument not in valid range", NULL);
+    handleLseqError:
 	CACHE_STACK_INFO();
+	Tcl_BounceRefCount(from);
+	Tcl_BounceRefCount(to);
+	Tcl_BounceRefCount(step);
+	Tcl_BounceRefCount(count);
 	TRACE_ERROR(interp);
 	goto gotError;
     }
