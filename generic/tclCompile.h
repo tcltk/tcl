@@ -2011,8 +2011,6 @@ enum ArithSeqriesFlags {
     TCL_ARITHSERIES_TO = 1 << 1,	// to is defined
     TCL_ARITHSERIES_STEP = 1 << 2,	// step is defined
     TCL_ARITHSERIES_COUNT = 1 << 3,	// count is defined
-    TCL_ARITHSERIES_DOUBLE = 1 << 4,	// definitely require double series
-    TCL_ARITHSERIES_INT = 1 << 5,	// definitely require int series
 };
 
 /*
