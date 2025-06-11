@@ -17,9 +17,9 @@ http \- Client-side implementation of the HTTP/1.1 protocol
 \fBpackage require http\fR ?\fB2.10\fR?
 .\" See Also -useragent option documentation in body!
 
-\fB::http::config\fR ?\fI\-option value\fR ...?
-\fB::http::geturl \fIurl\fR ?\fI\-option value\fR ...?
-\fB::http::formatQuery\fI key value\fR ?\fIkey value\fR ...?
+\fB::http::config\fR ?\fI\-option value ...\fR?
+\fB::http::geturl \fIurl\fR ?\fI\-option value ...\fR?
+\fB::http::formatQuery\fI key value\fR ?\fIkey value ...\fR?
 \fB::http::quoteString\fI value\fR
 \fB::http::reset\fI token\fR ?\fIwhy\fR?
 \fB::http::wait \fItoken\fR
