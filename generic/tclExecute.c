@@ -5393,9 +5393,11 @@ TEBCresume(
     }
 
     {
-	Tcl_Obj *from, *to, *step, *count;
+	Tcl_Obj *from, *to, *step, *count, *failure;
 	unsigned opnd;
-	int useDoubles;
+	int useDoubles, type;
+	double dcount;
+	void *ptr;
 	
     case INST_ARITH_SERIES:
 	opnd = TclGetUInt1AtPtr(pc + 1);
@@ -5407,23 +5409,49 @@ TEBCresume(
 		opnd, O2S(from), O2S(to), O2S(step), O2S(count)));
 
 	// Decide whether to request a double series or an int series.
-	if (opnd & TCL_ARITHSERIES_DOUBLE) {
-	    useDoubles = 1;
-	} else if (opnd & TCL_ARITHSERIES_INT) {
-	    useDoubles = 0;
-	} else {
-	    int type;
-	    void *dummy;
-	    useDoubles = 0;
-	    if (from && GetNumberFromObj(NULL, from, &dummy, &type) == TCL_OK
-		    && (type == TCL_NUMBER_DOUBLE || type == TCL_NUMBER_NAN)) {
+	useDoubles = 0;
+	if (from && GetNumberFromObj(NULL, from, &ptr, &type) == TCL_OK) {
+	    switch (type) {
+	    case TCL_NUMBER_DOUBLE:
 		useDoubles = 1;
-	    } else if (to && GetNumberFromObj(NULL, to, &dummy, &type) == TCL_OK
-		    && (type == TCL_NUMBER_DOUBLE || type == TCL_NUMBER_NAN)) {
+		break;
+	    case TCL_NUMBER_NAN:
+		failure = from;
+		goto handleLseqNan;
+	    }
+	}
+	if (to && GetNumberFromObj(NULL, to, &ptr, &type) == TCL_OK) {
+	    switch (type) {
+	    case TCL_NUMBER_DOUBLE:
 		useDoubles = 1;
-	    } else if (step && GetNumberFromObj(NULL, step, &dummy, &type) == TCL_OK
-		    && (type == TCL_NUMBER_DOUBLE || type == TCL_NUMBER_NAN)) {
+		break;
+	    case TCL_NUMBER_NAN:
+		failure = to;
+		goto handleLseqNan;
+	    }
+	}
+	if (step && GetNumberFromObj(NULL, step, &ptr, &type) == TCL_OK) {
+	    switch (type) {
+	    case TCL_NUMBER_DOUBLE:
 		useDoubles = 1;
+		break;
+	    case TCL_NUMBER_NAN:
+		failure = step;
+		goto handleLseqNan;
+	    }
+	}
+
+	// Convert count to integer if not already
+	if (count && GetNumberFromObj(NULL, count, &ptr, &type) == TCL_OK) {
+	    switch(type) {
+	    case TCL_NUMBER_DOUBLE:
+		dcount = *((const double *)ptr);
+		if (dcount - (int)dcount == 0.0) {
+		    TclNewIntObj(count, (int)dcount);
+		}
+		break;
+	    case TCL_NUMBER_NAN:
+		goto handleLseqNanCount;
 	    }
 	}
 
@@ -5432,12 +5460,34 @@ TEBCresume(
 	objResultPtr = TclNewArithSeriesObj(interp, useDoubles, from, to, step,
 		count);
 	CACHE_STACK_INFO();
+	Tcl_BounceRefCount(count);
 	if (objResultPtr == NULL) {
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
 	TRACE_APPEND_OBJ(objResultPtr);
 	NEXT_INST_V(2, 4, 1);
+    handleLseqNan:
+	DECACHE_STACK_INFO();
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"cannot use non-numeric floating-point value \"%s\" to "
+		"estimate length of arith-series",
+		TclGetString(count)));
+	Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
+		"domain error: argument not in valid range", NULL);
+	CACHE_STACK_INFO();
+	TRACE_ERROR(interp);
+	goto gotError;
+    handleLseqNanCount:
+	DECACHE_STACK_INFO();
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"expected integer but got \"%s\"",
+		TclGetString(failure)));
+	Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
+		"domain error: argument not in valid range", NULL);
+	CACHE_STACK_INFO();
+	TRACE_ERROR(interp);
+	goto gotError;
     }
 
 	/*
