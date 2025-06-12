@@ -747,7 +747,7 @@ TclNewArithSeriesObj(
 
     /*
      * todo: check whether the boundary must be rather LIST_MAX, to be more
-     * similar to plain lists, otherwise it'd generare an error or panic later
+     * similar to plain lists, otherwise it'd generate an error or panic later
      * (0x0ffffffffffffffa instead of 0x7fffffffffffffff by 64bit)
      */
     if (len > TCL_SIZE_MAX) {
