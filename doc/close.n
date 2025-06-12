@@ -12,7 +12,7 @@
 .SH NAME
 close \- Close an open channel
 .SH SYNOPSIS
-\fBclose \fIchannel\fR ?\fBr\fR(\fBead\fR)|\fBw\fR(\fBrite\fR)?
+\fBclose \fIchannel\fR ?\fIdirection\fR?
 .BE
 .SH DESCRIPTION
 .PP
