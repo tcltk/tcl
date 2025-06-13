@@ -1048,7 +1048,7 @@ TclAssembleCode(
 
 #ifdef TCL_COMPILE_DEBUG
 	    if ((tclTraceCompile >= TCL_TRACE_BYTECODE_COMPILE_DETAIL)
-		    && (envPtr->procPtr == NULL)) {
+		    && !EnvIsProc(envPtr)) {
 		printf("  %4" TCL_Z_MODIFIER "d Assembling: ",
 			CurrentOffset(envPtr));
 		TclPrintSource(stdout, parsePtr->commandStart,

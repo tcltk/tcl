@@ -2690,7 +2690,7 @@ TclCompileTailcallCmd(
     Tcl_Size i, numWords = parsePtr->numWords;
     /* TODO: Consider support for compiling expanded args. */
 
-    if (numWords < 2 || numWords > UINT_MAX || envPtr->procPtr == NULL) {
+    if (numWords < 2 || numWords > UINT_MAX || !EnvIsProc(envPtr)) {
 	return TCL_ERROR;
     }
 
@@ -4660,7 +4660,7 @@ CompileComparisonOpCmd(
 	tokenPtr = TokenAfter(tokenPtr);
 	PUSH_TOKEN(		tokenPtr, 2);
 	TclEmitOpcode(instruction, envPtr);
-    } else if (!EnvHasLVT(envPtr)) {
+    } else if (!EnvIsProc(envPtr)) {
 	/*
 	 * No local variable space!
 	 */

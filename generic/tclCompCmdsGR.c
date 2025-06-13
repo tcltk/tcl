@@ -106,7 +106,7 @@ TclCompileGlobalCmd(
      * 'global' has no effect outside of proc bodies; handle that at runtime
      */
 
-    if (envPtr->procPtr == NULL) {
+    if (!EnvIsProc(envPtr)) {
 	return TCL_ERROR;
     }
 
@@ -1838,7 +1838,7 @@ TclCompileNamespaceUpvarCmd(
     Tcl_LVTIndex localIndex;
     Tcl_Size numWords = parsePtr->numWords, i;
 
-    if (envPtr->procPtr == NULL) {
+    if (!EnvIsProc(envPtr)) {
 	return TCL_ERROR;
     }
 
@@ -2384,7 +2384,7 @@ TclCompileReturnCmd(
      * instruction is equivalent, and may be more efficient.
      */
 
-    if (numOptionWords == 0 && envPtr->procPtr != NULL) {
+    if (numOptionWords == 0 && EnvIsProc(envPtr)) {
 	/*
 	 * We have default return options and we're in a proc ...
 	 */
@@ -2537,7 +2537,7 @@ TclCompileUpvarCmd(
     Tcl_Size numWords = parsePtr->numWords, i;
     Tcl_Obj *objPtr;
 
-    if (envPtr->procPtr == NULL) {
+    if (!EnvIsProc(envPtr)) {
 	return TCL_ERROR;
     }
 
@@ -2650,7 +2650,7 @@ TclCompileVariableCmd(
      * Bail out if not compiling a proc body
      */
 
-    if (envPtr->procPtr == NULL) {
+    if (!EnvIsProc(envPtr)) {
 	return TCL_ERROR;
     }
 

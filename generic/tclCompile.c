@@ -1464,12 +1464,11 @@ IsCompactibleCompileEnv(
      * if it would otherwise be invalid.
      */
 
-    if (envPtr->procPtr != NULL && envPtr->procPtr->cmdPtr != NULL
-	    && envPtr->procPtr->cmdPtr->nsPtr != NULL) {
+    if (EnvIsProc(envPtr) && envPtr->procPtr->cmdPtr) {
 	Namespace *nsPtr = envPtr->procPtr->cmdPtr->nsPtr;
 
-	if (strcmp(nsPtr->fullName, "::tcl") == 0
-		|| strncmp(nsPtr->fullName, "::tcl::", 7) == 0) {
+	if (nsPtr && (strcmp(nsPtr->fullName, "::tcl") == 0
+		|| strncmp(nsPtr->fullName, "::tcl::", 7) == 0)) {
 	    return 1;
 	}
     }
@@ -1823,7 +1822,7 @@ TclInitCompileEnv(
 	    Tcl_IncrRefCount(envPtr->extCmdMapPtr->path);
 	} else {
 	    envPtr->extCmdMapPtr->type =
-		(envPtr->procPtr ? TCL_LOCATION_PROC : TCL_LOCATION_BC);
+		(EnvIsProc(envPtr) ? TCL_LOCATION_PROC : TCL_LOCATION_BC);
 	}
     } else {
 	/*
@@ -1854,7 +1853,7 @@ TclInitCompileEnv(
 
 	    envPtr->line = 1;
 	    envPtr->extCmdMapPtr->type =
-		    (envPtr->procPtr ? TCL_LOCATION_PROC : TCL_LOCATION_BC);
+		    (EnvIsProc(envPtr) ? TCL_LOCATION_PROC : TCL_LOCATION_BC);
 
 	    if (pc && (ctxPtr->type == TCL_LOCATION_SOURCE)) {
 		/*
@@ -2519,7 +2518,7 @@ TclCompileScript(
 	     */
 
 	    if ((tclTraceCompile >= TCL_TRACE_BYTECODE_COMPILE_SUMMARY)
-		    && (envPtr->procPtr == NULL)) {
+		    && !EnvIsProc(envPtr)) {
 		int commandLength = parsePtr->term - parsePtr->commandStart;
 		fprintf(stdout, "  Compiling: ");
 		TclPrintSource(stdout, parsePtr->commandStart,

@@ -1909,6 +1909,9 @@ ExceptionRangeEnds(
 
 #define EnvHasLVT(envPtr) \
     (envPtr->procPtr || envPtr->iPtr->varFramePtr->localCachePtr)
+// Stricter than EnvHasLVT; guarantees AnonymousLocal won't fail
+#define EnvIsProc(envPtr) \
+    (envPtr->procPtr != NULL)
 
 /*
  * Macros for making it easier to deal with tokens and DStrings.
