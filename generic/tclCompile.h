@@ -931,6 +931,7 @@ enum TclInstruction {
     INST_DICT_REMOVE,
     INST_IS_EMPTY,
     INST_JUMP_TABLE_NUM,
+    INST_TAILCALL_LIST,
 
     /* The last opcode */
     LAST_INST_OPCODE
@@ -2080,6 +2081,11 @@ typedef Tcl_Size Tcl_BytecodeLabel;
 // Push a string from a TCL_TOKEN_SIMPLE_WORD token.
 #define PUSH_SIMPLE_TOKEN(tokenPtr) \
     PushLiteral(envPtr, (tokenPtr)[1].start, (tokenPtr)[1].size)
+// Push a string from a TCL_TOKEN_SIMPLE_WORD token where that is a command.
+#define PUSH_COMMAND_TOKEN(tokenPtr) \
+    TclEmitPush(TclRegisterLiteral(envPtr,				\
+	    (tokenPtr)[1].start, (tokenPtr)[1].size, LITERAL_CMD_NAME),	\
+	    envPtr)
 // Take a reference to a Tcl_Obj and arrange for it to be pushed.
 #define PUSH_OBJ(objPtr) \
     TclEmitPush(TclAddLiteralObj(envPtr, (objPtr), NULL), envPtr)
