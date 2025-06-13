@@ -14,7 +14,7 @@
 mathfunc \- Mathematical functions for Tcl expressions
 .SH SYNOPSIS
 .nf
-package require \fBTcl 8.5-\fR
+\fBpackage require Tcl 8.5-\fR
 
 \fB::tcl::mathfunc::abs\fI arg\fR
 \fB::tcl::mathfunc::acos\fI arg\fR

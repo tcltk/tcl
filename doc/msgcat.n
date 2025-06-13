@@ -15,15 +15,15 @@ msgcat \- Tcl message catalog
 \fBpackage require tcl 9.0\fR
 \fBpackage require msgcat 1.7\fR
 
-\fB::msgcat::mc \fIsrc-string\fR ?\fIarg arg ...\fR?
-\fB::msgcat::mcmax ?\fIsrc-string src-string ...\fR?
+\fB::msgcat::mc \fIsrc-string\fR ?\fIarg ...\fR?
+\fB::msgcat::mcmax ?\fIsrc-string ...\fR?
 \fB::msgcat::mcexists\fR ?\fB\-exactnamespace\fR? ?\fB\-exactlocale\fR? \fIsrc-string\fR
 .VS TIP490
 \fB::msgcat::mcpackagenamespaceget\fR
 .VE TIP490
 \fB::msgcat::mclocale \fR?\fInewLocale\fR?
 .VS TIP499
-\fB::msgcat::mcpreferences\fR ?\fIlocale preference\fR? ...
+\fB::msgcat::mcpreferences\fR ?\fIlocale preference  ...\fR?
 .VE TIP499
 \fB::msgcat::mcloadedlocales subcommand\fR
 \fB::msgcat::mcload \fIdirname\fR
@@ -70,7 +70,7 @@ Object oriented programming is supported by the use of a package namespace.
 .SH COMMANDS
 .\" COMMAND: mc
 .TP
-\fB::msgcat::mc \fIsrc-string\fR ?\fIarg arg ...\fR?
+\fB::msgcat::mc \fIsrc-string\fR ?\fIarg ...\fR?
 .
 Returns a translation of \fIsrc-string\fR according to the
 current locale.  If additional arguments past \fIsrc-string\fR
@@ -107,7 +107,7 @@ command \fB::msgcat::mcpackagenamespaceget\fR below.
 .VE
 .\" COMMAND: mcmax
 .TP
-\fB::msgcat::mcmax ?\fIsrc-string src-string ...\fR?
+\fB::msgcat::mcmax ?\fIsrc-string ...\fR?
 .
 Given several source strings, \fB::msgcat::mcmax\fR returns the length
 of the longest translated string.  This is useful when designing
@@ -189,7 +189,7 @@ Locales in this list are loaded now, if not jet loaded.
 .RE
 .\" COMMAND: mcpreferences
 .TP
-\fB::msgcat::mcpreferences\fR ?\fIlocale preference\fR? ...
+\fB::msgcat::mcpreferences\fR ?\fIlocale preference ...\fR?
 .
 Without arguments, returns an ordered list of the locales preferred by
 the user.

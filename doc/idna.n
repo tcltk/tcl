@@ -12,7 +12,7 @@
 tcl::idna \- Support for normalization of Internationalized Domain Names
 .SH SYNOPSIS
 .nf
-package require tcl::idna 1.0
+\fBpackage require tcl::idna 1.0\fR
 
 \fBtcl::idna decode\fI hostname\fR
 \fBtcl::idna encode\fI hostname\fR

@@ -18,7 +18,7 @@ zipfs \- Mount and work with ZIP files within Tcl
 \fBzipfs exists\fI filename\fR
 \fBzipfs find\fI directoryName\fR
 \fBzipfs info\fI filename\fR
-\fBzipfs list\fR ?(\fB\-glob\fR|\fB\-regexp\fR)? ?\fIpattern\fR?
+\fBzipfs list\fR ?\fImatchingType\fR? ?\fIpattern\fR?
 \fBzipfs lmkimg\fI outfile inlist\fR ?\fIpassword\fR? ?\fIinfile\fR?
 \fBzipfs lmkzip\fI outfile inlist\fR ?\fIpassword\fR?
 \fBzipfs mkimg\fI outfile indir\fR ?\fIstrip\fR? ?\fIpassword\fR? ?\fIinfile\fR?
@@ -89,14 +89,15 @@ an executable. Querying an ancestor of a mount point will raise an error.
 .RE
 .\" METHOD: list
 .TP
-\fBzipfs list\fR ?(\fB\-glob\fR|\fB\-regexp\fR)? ?\fIpattern\fR?
+\fBzipfs list\fR ?\fImatchingType\fR? ?\fIpattern\fR?
 .
 If \fIpattern\fR is not specified, the command returns a list of files across
 all zipfs mounted archives. If \fIpattern\fR is specified, only those paths
-matching the pattern are returned. By default, or with the \fB\-glob\fR option,
-the pattern is treated as a glob pattern and matching is done as described for
-the \fBstring match\fR command. Alternatively, the \fB\-regexp\fR option may be
-used to specify matching \fBpattern\fR as a regular expression. The file names
+matching the pattern are returned. By default, or with \fImatchingType\fR
+specified as \fB\-glob\fR, the pattern is treated as a glob pattern and
+matching is done as described for the \fBstring match\fR command. Alternatively,
+the \fImatchingType\fR \fB\-regexp\fR may be used to specify a matching
+\fBpattern\fR as a regular expression. The file names
 are returned in arbitrary order. Note that path separators are treated as
 ordinary characters in the matching. Thus forward slashes should be used
 as path separators in the pattern. The returned paths only include those
