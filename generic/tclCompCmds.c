@@ -340,7 +340,7 @@ TclCompileArraySetCmd(
      */
 
     if ((varTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) ||
-	    (envPtr->procPtr == NULL && !(isDataEven && len == 0))) {
+	    (!EnvIsProc(envPtr) && !(isDataEven && len == 0))) {
 	code = TclCompileBasic2ArgCmd(interp, parsePtr, cmdPtr, envPtr);
 	goto done;
     }
@@ -1520,7 +1520,7 @@ TclCompileDictMergeCmd(
      * command when there's an LVT present.
      */
 
-    if (!EnvHasLVT(envPtr)) {
+    if (!EnvIsProc(envPtr)) {
 	return TclCompileBasicMin2ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     }
     infoIndex = AnonymousLocal(envPtr);
@@ -1643,7 +1643,7 @@ CompileDictEachCmd(
     if (parsePtr->numWords != 4) {
 	return TclCompileBasic3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     }
-    if (!EnvHasLVT(envPtr)) {
+    if (!EnvIsProc(envPtr)) {
 	return TclCompileBasic3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     }
 
@@ -2122,7 +2122,7 @@ TclCompileDictWithCmd(
      */
 
     if (!TclIsEmptyToken(tokenPtr)) {
-	if (!EnvHasLVT(envPtr)) {
+	if (!EnvIsProc(envPtr)) {
 	    return TclCompileBasicMin2ArgCmd(interp, parsePtr, cmdPtr,
 		    envPtr);
 	}
@@ -2827,7 +2827,7 @@ CompileEachloopCmd(
      * the payoff is too small.
      */
 
-    if (envPtr->procPtr == NULL) {
+    if (!EnvIsProc(envPtr)) {
 	return TCL_ERROR;
     }
 
