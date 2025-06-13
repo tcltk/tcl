@@ -2483,9 +2483,9 @@ TEBCresume(
     case INST_YIELD_TO_INVOKE:
 	corPtr = iPtr->execEnvPtr->corPtr;
 	valuePtr = OBJ_AT_TOS;
+	TRACE(("[%.30s] => ", O2S(valuePtr)));
 	if (!corPtr) {
-	    TRACE(("[%.30s] => ERROR: yield outside coroutine\n",
-		    O2S(valuePtr)));
+	    TRACE_APPEND(("ERROR: yield outside coroutine\n"));
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "yieldto can only be called in a coroutine", -1));
 	    DECACHE_STACK_INFO();
@@ -2495,8 +2495,7 @@ TEBCresume(
 	    goto gotError;
 	}
 	if (((Namespace *)TclGetCurrentNamespace(interp))->flags & NS_DYING) {
-	    TRACE(("[%.30s] => ERROR: yield in deleted\n",
-		    O2S(valuePtr)));
+	    TRACE_APPEND(("ERROR: yield in deleted\n"));
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "yieldto called in deleted namespace", -1));
 	    DECACHE_STACK_INFO();
@@ -2509,13 +2508,13 @@ TEBCresume(
 #ifdef TCL_COMPILE_DEBUG
 	if (tclTraceExec >= TCL_TRACE_BYTECODE_EXEC_COMMANDS) {
 	    if (traceInstructions) {
-		TRACE(("[%.30s] => YIELD...\n", O2S(valuePtr)));
+		TRACE_APPEND(("YIELD...\n"));
 	    } else {
 		/* FIXME: What is the right thing to trace? */
 		fprintf(stdout, "%" SIZEd ": (%" SIZEd ") yielding to [%.30s]\n",
 			iPtr->numLevels, PC_REL, TclGetString(valuePtr));
+		fflush(stdout);
 	    }
-	    fflush(stdout);
 	}
 #endif
 
@@ -2552,21 +2551,75 @@ TEBCresume(
 	return TCL_OK;
     }
 
+    {
+	Tcl_Obj *listPtr;
+	Tcl_Size i;
+
 #ifndef REMOVE_DEPRECATED_OPCODES
     case INST_TAILCALL1:
 	DEPRECATED_OPCODE_MARK(INST_TAILCALL1);
 	numArgs = TclGetUInt1AtPtr(pc + 1);
 	goto doTailcall;
-#endif
+#endif // REMOVE_DEPRECATED_OPCODES
 
     case INST_TAILCALL:
 	numArgs = TclGetUInt4AtPtr(pc + 1);
 
 #ifndef REMOVE_DEPRECATED_OPCODES
     doTailcall:
-#endif
+#endif // REMOVE_DEPRECATED_OPCODES
+	TRACE(("%u ", (unsigned) numArgs));
 	if (!(iPtr->varFramePtr->isProcCallFrame & 1)) {
-	    TRACE(("%u => ERROR: tailcall in non-proc context\n", (unsigned) numArgs));
+	    TRACE_APPEND(("=> ERROR: tailcall in non-proc context\n"));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "tailcall can only be called from a proc or lambda", -1));
+	    DECACHE_STACK_INFO();
+	    Tcl_SetErrorCode(interp, "TCL", "TAILCALL", "ILLEGAL", (char *)NULL);
+	    CACHE_STACK_INFO();
+	    goto gotError;
+	}
+	if (numArgs < 2) {
+	    Tcl_Panic("must be at least one command word argument to INST_TAILCALL");
+	}
+
+#ifdef TCL_COMPILE_DEBUG
+	if (tclTraceExec >= TCL_TRACE_BYTECODE_EXEC_COMMANDS) {
+	    if (traceInstructions) {
+		TRACE_APPEND(("["));
+		for (i=numArgs-1 ; i>=0 ; i--) {
+		    TRACE_APPEND(("\"%.30s\"", O2S(OBJ_AT_DEPTH(i))));
+		    if (i > 0) {
+			TRACE_APPEND((" "));
+		    }
+		}
+		TRACE_APPEND(("] => REGISTERED TAILCALL...\n"));
+	    } else {
+		fprintf(stdout, "%" SIZEd ": (%" SIZEd ") tailcalling [%.30s]\n",
+			iPtr->numLevels, PC_REL,
+			TclGetString(OBJ_AT_DEPTH(numArgs - 2)));
+		fflush(stdout);
+	    }
+	}
+#endif // TCL_COMPILE_DEBUG
+
+	/*
+	 * Push the evaluation of the called command into the NR callback
+	 * stack.
+	 */
+
+	listPtr = Tcl_NewListObj(numArgs, &OBJ_AT_DEPTH(numArgs - 1));
+#ifndef REMOVE_DEPRECATED_OPCODES
+	/* New instruction sequence just gets this right. */
+	if (inst == INST_TAILCALL1) {
+	    TclListObjSetElement(NULL, listPtr, 0, TclNewNamespaceObj(
+		    TclGetCurrentNamespace(interp)));
+	}
+#endif // REMOVE_DEPRECATED_OPCODES
+	goto setTailcall;
+
+    case INST_TAILCALL_LIST:
+	if (!(iPtr->varFramePtr->isProcCallFrame & 1)) {
+	    TRACE((" => ERROR: tailcall in non-proc context\n"));
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "tailcall can only be called from a proc or lambda", -1));
 	    DECACHE_STACK_INFO();
@@ -2575,49 +2628,53 @@ TEBCresume(
 	    goto gotError;
 	}
 
-#ifdef TCL_COMPILE_DEBUG
-	/* FIXME: What is the right thing to trace? */
-	{
-	    Tcl_Size i;
+	listPtr = OBJ_AT_TOS;
 
-	    TRACE(("%u [", (unsigned) numArgs));
-	    for (i=numArgs-1 ; i>=0 ; i--) {
-		TRACE_APPEND(("\"%.30s\"", O2S(OBJ_AT_DEPTH(i))));
-		if (i > 0) {
-		    TRACE_APPEND((" "));
+#ifdef TCL_COMPILE_DEBUG
+	if (tclTraceExec >= TCL_TRACE_BYTECODE_EXEC_COMMANDS) {
+	    if (traceInstructions) {
+		TRACE(("["));
+		TclPrintObject(stdout, listPtr, 40);
+		TRACE_APPEND(("] => REGISTERED TAILCALL...\n"));
+	    } else {
+		Tcl_Obj *cmdNameObj;
+		Tcl_ListObjIndex(NULL, listPtr, 1, &cmdNameObj);
+		if (cmdNameObj) {
+		    fprintf(stdout, "%" SIZEd ": (%" SIZEd ") tailcalling [%.30s]\n",
+			    iPtr->numLevels, PC_REL, TclGetString(cmdNameObj));
+		} else {
+		    fprintf(stdout, "cancelling tailcall\n");
 		}
+		fflush(stdout);
 	    }
-	    TRACE_APPEND(("] => RETURN...\n"));
 	}
-#endif
+#endif // TCL_COMPILE_DEBUG
 
 	/*
 	 * Push the evaluation of the called command into the NR callback
-	 * stack.
+	 * stack, or cancel it if there's no command words.
 	 */
 
-    {
-	Tcl_Obj *listPtr = Tcl_NewListObj(numArgs, &OBJ_AT_DEPTH(numArgs - 1));
-#ifndef REMOVE_DEPRECATED_OPCODES
-	/* New instruction sequence just gets this right. */
-	if (inst == INST_TAILCALL1) {
-	    TclListObjSetElement(NULL, listPtr, 0, TclNewNamespaceObj(
-		    TclGetCurrentNamespace(interp)));
-	}
-#endif
+    setTailcall:
 	if (iPtr->varFramePtr->tailcallPtr) {
 	    Tcl_DecrRefCount(iPtr->varFramePtr->tailcallPtr);
 	}
-	iPtr->varFramePtr->tailcallPtr = listPtr;
+	// Always at least one word: the namespace name.
+	ListObjLength(listPtr, i);
+	if (i > 1) {
+	    Tcl_IncrRefCount(listPtr);
+	    iPtr->varFramePtr->tailcallPtr = listPtr;
+	} else {
+	    iPtr->varFramePtr->tailcallPtr = NULL;
+	}
 
 	result = TCL_RETURN;
-	cleanup = numArgs;
+	cleanup = 2;
 	goto processExceptionReturn;
     }
 
     case INST_DONE:
 	if (tosPtr > initTosPtr) {
-
 	    if ((curEvalFlags & TCL_EVAL_DISCARD_RESULT) && (result == TCL_OK)) {
 		/* simulate pop & fast done (like it does continue in loop) */
 		TRACE_WITH_OBJ(("=> discarding "), OBJ_AT_TOS);
