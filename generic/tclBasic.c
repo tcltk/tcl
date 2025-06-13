@@ -251,9 +251,6 @@ MODULE_SCOPE const TclStubs tclStubs;
  * after particular kinds of [yield].
  */
 
-#define CORO_ACTIVATE_YIELD	NULL
-#define CORO_ACTIVATE_YIELDM	INT2PTR(1)
-
 #define COROUTINE_ARGUMENTS_SINGLE_OPTIONAL	(-1)
 #define COROUTINE_ARGUMENTS_ARBITRARY		(-2)
 
