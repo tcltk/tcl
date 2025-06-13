@@ -1667,6 +1667,10 @@ typedef struct ExecEnv {
 #define COR_IS_SUSPENDED(corPtr) \
     ((corPtr)->stackLevel == NULL)
 
+// The different types of yielded coroutine we have.
+#define CORO_ACTIVATE_YIELD	NULL		// 0 or 1 argument expected
+#define CORO_ACTIVATE_YIELDM	INT2PTR(1)	// Arbitrary arguments expected
+
 /*
  * The definitions for the LiteralTable and LiteralEntry structures. Each
  * interpreter contains a LiteralTable. It is used to reduce the storage

@@ -2476,7 +2476,7 @@ TEBCresume(
 	    fflush(stdout);
 	}
 #endif
-	yieldParameter = NULL;	/*==CORO_ACTIVATE_YIELD*/
+	yieldParameter = CORO_ACTIVATE_YIELD;
 	Tcl_SetObjResult(interp, OBJ_AT_TOS);
 	goto doYield;
 
@@ -2530,7 +2530,7 @@ TEBCresume(
 	TclSetTailcall(interp, valuePtr);
 	corPtr->yieldPtr = valuePtr;
 	iPtr->execEnvPtr = corPtr->eePtr;
-	yieldParameter = INT2PTR(1);	/*==CORO_ACTIVATE_YIELDM*/
+	yieldParameter = CORO_ACTIVATE_YIELDM;
 
     doYield:
 	/* TIP #280: Record the last piece of info needed by
