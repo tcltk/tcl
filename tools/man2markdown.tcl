@@ -276,13 +276,16 @@ proc ::ndoc::BIRPclean {text} {
 		set lookahead [string range $text [expr {$i+1}] [expr {$i+2}]]
 		set lookfurther [string index $text [expr {$i+3}]]
 		set lookback [string index $text [expr {$i-1}]]
+		set lookback2 [string range $text [expr {$i-2}] [expr {$i-1}]]
 		if {$char ne "\\"} {
 			append out $char
 		} else {
+			# command found with backslash as first character:
 			if {$lookahead ni {fB fI fR fP}} {
 				# no BIRP, keep backslash:
 				append out $char
 			} else {
+				# BIRP found (current char is the backslash in front):
 				switch $state {
 					N - R - P {
 						switch $lookahead {
@@ -308,6 +311,9 @@ proc ::ndoc::BIRPclean {text} {
 								if {$lookback eq { }} {
 									set out [string range $out 0 end-1]
 									append out \\fR { }
+								} elseif {$lookback2 eq " ?"} {
+									set out [string range $out 0 end-2]
+									append out \\fR { ?}
 								} else {
 									append out \\fR
 								}

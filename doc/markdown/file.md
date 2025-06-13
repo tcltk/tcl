@@ -111,7 +111,7 @@ Other attributes may be present in the returned list. These should be ignored.
 **file extension** *name*
 : Returns all of the characters in *name* after and including the last dot in the last element of *name*.  If there is no dot in the last element of *name* then returns the empty string.
 
-**file home ?***username*?
+**file home** ?*username*?
 : If no argument is specified, the command returns the home directory of the current user. This is generally the value of the **$HOME** environment variable except that on Windows platforms backslashes in the path are replaced by forward slashes. An error is raised if the **$HOME** environment variable is not set.
     If *username* is specified, the command returns the home directory configured in the system for the specified user. Note this may be different than the value of the **$HOME** environment variable even when *username* corresponds to the current user. An error is raised if the *username* does not correspond to a user account on the system.
 
