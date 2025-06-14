@@ -2533,23 +2533,11 @@ typedef enum TclEolTranslation {
 } TclEolTranslation;
 
 /*
- * Flags for TclInvoke:
- *
- * TCL_INVOKE_HIDDEN		Invoke a hidden command; if not set, invokes
- *				an exposed command.
- * TCL_INVOKE_NO_UNKNOWN	If set, "unknown" is not invoked if the
- *				command to be invoked is not found. Only has
- *				an effect if invoking an exposed command,
- *				i.e. if TCL_INVOKE_HIDDEN is not also set.
- * TCL_INVOKE_NO_TRACEBACK	Does not record traceback information if the
- *				invoked command returns an error. Used if the
- *				caller plans on recording its own traceback
- *				information.
+ * Flags for TclObjInvoke and TclObjInvokeNamespace:
  */
-
-#define	TCL_INVOKE_HIDDEN	(1<<0)
-#define TCL_INVOKE_NO_UNKNOWN	(1<<1)
-#define TCL_INVOKE_NO_TRACEBACK	(1<<2)
+enum TclInvokeFlags {
+    TCL_INVOKE_HIDDEN = 1 << 0	/* Invoke a hidden command. Must be set. */
+};
 
 /*
  * ListStore --
