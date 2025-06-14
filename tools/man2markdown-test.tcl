@@ -6,15 +6,19 @@ source man2markdown.tcl
 tcltest::configure -verbose {pass error}
 
 
-tcltest::test BIRPclean-0.0 {...} {
-	::ndoc::BIRPclean {\fB::pkg::create\fR \fB\-name \fIpackageName \fB\-version \fIpackageVersion\fR ?\fB\-load \fIfilespec\fR? ... ?\fB\-source \fIfilespec\fR? ...}
-} {\fB::pkg::create\fR \fB\-name\fR \fIpackageName\fR \fB\-version\fR \fIpackageVersion\fR ?\fB\-load\fR \fIfilespec\fR? ... ?\fB\-source\fR \fIfilespec\fR? ...}
+foreach {num before after} {
+	1
+	{\fB::pkg::create\fR \fB\-name \fIpackageName \fB\-version \fIpackageVersion\fR ?\fB\-load \fIfilespec\fR? ... ?\fB\-source \fIfilespec\fR? ...}
+	{\fB::pkg::create\fR \fB\-name\fR \fIpackageName\fR \fB\-version\fR \fIpackageVersion\fR ?\fB\-load\fR \fIfilespec\fR? ... ?\fB\-source\fR \fIfilespec\fR? ...}
+	
+	2
+	{\fB::msgcat::mcmax ?\fIsrc-string src-string ...\fR?}
+	{\fB::msgcat::mcmax\fR ?\fIsrc-string src-string ...\fR?}
+} {
+	tcltest::test BIRPclean-0.$num {...} [list ::ndoc::BIRPclean $before] $after
+} 
 
-tcltest::test BIRPclean-0.1 {...} {
-	::ndoc::BIRPclean {\fB::msgcat::mcmax ?\fIsrc-string src-string ...\fR?}
-} {\fB::msgcat::mcmax\fR ?\fIsrc-string src-string ...\fR?}
 
-exit
 foreach {num before after md ast} {
 	1
 	{\fBappend \fIvarName \fR?\fIvalue value value ...\fR?}
@@ -213,13 +217,25 @@ foreach {num nroff internal ast markdown} {
 	{§trace add command= +name ops commandPrefix=}
 	{{Span .cmd {{Text {} trace}}} {Space {} {}} {Span .sub {{Text {} add}}} {Space {} {}} {Span .lit {{Text {} command}}} {Space {} {}} {Span .arg {{Text {} name}}} {Space {} {}} {Span .arg {{Text {} ops}}} {Space {} {}} {Span .arg {{Text {} commandPrefix}}}}
 	{[trace]{.cmd} [add]{.sub} [command]{.lit} [name]{.arg} [ops]{.arg} [commandPrefix]{.arg}}
+	
+	cmd-7
+	{\fB::tcl::mathfunc::atan2\fI y x\fR}
+	{§::tcl::mathfunc::atan2= +y x=}
+	{{Span .cmd {{Text {} ::tcl::mathfunc::atan2}}} {Space {} {}} {Span .arg {{Text {} y}}} {Space {} {}} {Span .arg {{Text {} x}}}}
+	{[::tcl::mathfunc::atan2]{.cmd} [y]{.arg} [x]{.arg}}
 } {
-	tcltest::test parseCommandInternal-$num {...} [list ::ndoc::parseCommand -internal $nroff] $internal
-	tcltest::test parseCommandAST-$num {...} [list ::ndoc::parseCommand -ast $nroff] $ast
+	tcltest::test parseCommand_Internal-$num {...} [list ::ndoc::parseCommand -internal $nroff] $internal
+	tcltest::test parseCommand_AST-$num {...}      [list ::ndoc::parseCommand -ast $nroff] $ast
+	set out {}
+	foreach el $ast {append out [::ndoc::AST2Markdown_Element Inline 0 $el]}
+	tcltest::test parseCommand_Markdown-$num {...} [list set out] $markdown
 }
+
+
 
 # here are some tests with snipptes from man files to test the overall working, especially newlines and spaces:
 tcltest::test doc1 {...} {
+dict set ::ndoc::manual name ???
 ::ndoc::man2markdown {'\"
 '\" Copyright (c) 1998-2000 Scriptics Corporation.
 '\" All rights reserved.
@@ -231,7 +247,7 @@ tcltest::test doc1 {...} {
 .SH NAME
 pkg::create \- Construct an appropriate 'package ifneeded' command for a given package specification
 .SH SYNOPSIS
-\fB::pkg::create\fR \fB\-name \fIpackageName \fB\-version \fIpackageVersion\fR ?\fB\-load \fIfilespec\fR? ... ?\fB\-source \fIfilespec\fR? ...
+\fB::pkg::create\fR \fB\-name \fIpackageName \fB\-version \fIpackageVersion\fR ?\fB\-load \fIfilespec ...\fR? ?\fB\-source \fIfilespec ...\fR?
 .BE
 .SH DESCRIPTION
 .PP
@@ -256,7 +272,7 @@ pkg::create - Construct an appropriate 'package ifneeded' command for a given pa
 # Synopsis
 
 ::: {.synopsis} :::
-[::pkg::create]{.cmd} [-name]{.lit} [packageName]{.arg} [-version]{.lit} [packageVersion]{.arg} [[-load]{.lit} [filespec]{.arg}]{.optarg} [[-source]{.lit} [filespec]{.arg}]{.optarg}
+[::pkg::create]{.cmd} [-name]{.lit} [packageName]{.arg} [-version]{.lit} [packageVersion]{.arg} [[-load]{.lit} [filespec]{.arg}]{.optdot} [[-source]{.lit} [filespec]{.arg}]{.optdot}
 :::
 
 # Description

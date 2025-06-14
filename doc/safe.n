@@ -12,24 +12,14 @@
 safe \- Creating and manipulating safe interpreters
 .SH SYNOPSIS
 .nf
-\fB::safe::interpCreate\fR ?\fIchild\fR? ?\fIoptions...\fR?
-\fB::safe::interpInit\fI child\fR ?\fIoptions...\fR?
-\fB::safe::interpConfigure\fI child\fR ?\fIoptions...\fR?
+\fB::safe::interpCreate\fR ?\fIchild\fR? ?\fIoptions ...\fR?
+\fB::safe::interpInit\fI child\fR ?\fIoptions ...\fR?
+\fB::safe::interpConfigure\fI child\fR ?\fIoptions ...\fR?
 \fB::safe::interpDelete\fI child\fR
 \fB::safe::interpAddToAccessPath\fI child directory\fR
 \fB::safe::interpFindInAccessPath\fI child directory\fR
 \fB::safe::setSyncMode\fR ?\fInewValue\fR?
-\fB::safe::setLogCmd\fR ?\fIcmd arg...\fR?
-.fi
-.SS OPTIONS
-.nf
-?\fB\-accessPath\fI pathList\fR?
-?\fB\-autoPath\fI pathList\fR?
-?\fB\-statics\fI boolean\fR?
-?\fB\-noStatics\fR?
-?\fB\-nested\fI boolean\fR?
-?\fB\-nestedLoadOk\fR?
-?\fB\-deleteHook\fI script\fR?
+\fB::safe::setLogCmd\fR ?\fIcmd arg ...\fR?
 .fi
 .BE
 .SH DESCRIPTION
