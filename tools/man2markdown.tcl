@@ -972,7 +972,7 @@ proc ::ndoc::parseCommand {mode line} {
 			}
 		}
 	}]
-	if $DEBUG {puts "parseCommand: $line"}
+	if $DEBUG {puts "-------\nparseCommand: $line"}
 	# treat the line as a list so that we easily can detect the individual elements:
 	for {set i 0} {$i < [llength $line]} {incr i} {
 		set word [lindex $line $i]
@@ -1039,7 +1039,7 @@ proc ::ndoc::parseCommand {mode line} {
 					lappend spanList [list Space {} {}] {*}[apply $expandSpan $sublist]
 					if $DEBUG {puts "single mandatory .arg: $spanList"}
 				}
-				{^\+.+[^=]$} {
+				{^\+.+[^=]?$} {
 					# multiple mandatory args: .arg
 					lappend sublist [list Space {} {}] [list Span .arg [string range $word 1 end]]
 					# also get all other members of this group:
@@ -1084,7 +1084,6 @@ proc ::ndoc::parseCommand {mode line} {
 				{^\?§.+=$} {
 					# multiple optional arg group (first arg is mandatory literal):
 					lappend sublist [list Span .lit [string range $word 2 end-1]]
-#puts a:[string range $word 2 end-1]
 					set grouptype .optarg
 					# also get all other members of this group and put them into the first span
 					while 1 {
@@ -1094,22 +1093,18 @@ proc ::ndoc::parseCommand {mode line} {
 						if {[string index $word 0] eq "+"} {
 							if {[string index $word end] eq "?"} {
 								# end of group
-#puts b:[string range $word 1 end-2]
 								lappend sublist [list Space {} {}] [list Span .arg [string range $word 1 end-2]]
 								break
 							} else {
 								# middle of group
 
 								if {[lindex $word end] eq "="} {
-#puts c:[string range $word 1 end-1]
 									lappend sublist [list Space {} {}] [list Span .arg [string range $word 1 end-1]]
 								} else {
-#puts c:[string range $word 1 end]
 									lappend sublist [list Space {} {}] [list Span .arg [string range $word 1 end]]
 								}
 							}
 						} elseif {[string range $word 0 2] eq "..."} {
-#puts d:...
 							set grouptype .optdot
 							break
 						} else {
@@ -1288,7 +1283,7 @@ proc ::ndoc::AST2Markdown {} {
 
 proc ::ndoc::AST2Markdown_Element {parentType indent ASTelement} {
 	#
-	# convert a (possibly nested) individual AST element into Markdown
+	# convert a (possibly nested) single AST element into Markdown
 	# and return the conversion result
 	#
 	# parentType - the AST type of the parent element (needed in some context to modify the formatting of the child element)
@@ -1363,7 +1358,7 @@ proc ::ndoc::AST2Markdown_Element {parentType indent ASTelement} {
 		Quoted    {append output \"}
 		Link      {}
 		Inline    {}
-		default {return -code error "no such AST element '$type'"}
+		default {return -code error "no such AST element type '$type'"}
 	}
 	### content: ###
 	switch $type {

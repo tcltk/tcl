@@ -36,7 +36,7 @@ section | number of documents | initial conversion | final conversion
 --------|---------------------|--------------------|-----------------
 1       | 1                   | 0                  | 0
 3       | 108                 | 0                  | 0
-n       | 139                 | 83                 | 0
+n       | 139                 | 101                | 0
 
 
 The tk/doc directory comes next, after finishing Tcl.

@@ -12,34 +12,34 @@
 mathop \- Mathematical operators as Tcl commands
 .SH SYNOPSIS
 .nf
-package require \fBTcl 8.5-\fR
+\fBpackage require Tcl 8.5-\fR
 
 \fB::tcl::mathop::!\fI number\fR
 \fB::tcl::mathop::~\fI number\fR
-\fB::tcl::mathop::+\fR ?\fInumber\fR ...?
-\fB::tcl::mathop::\-\fI number\fR ?\fInumber\fR ...?
-\fB::tcl::mathop::*\fR ?\fInumber\fR ...?
-\fB::tcl::mathop::/\fI number\fR ?\fInumber\fR ...?
+\fB::tcl::mathop::+\fR ?\fInumber ...\fR?
+\fB::tcl::mathop::\-\fI number\fR ?\fInumber ...\fR?
+\fB::tcl::mathop::*\fR ?\fInumber ...\fR?
+\fB::tcl::mathop::/\fI number\fR ?\fInumber ...\fR?
 \fB::tcl::mathop::%\fI number number\fR
-\fB::tcl::mathop::**\fR ?\fInumber\fR ...?
-\fB::tcl::mathop::&\fR ?\fInumber\fR ...?
-\fB::tcl::mathop::|\fR ?\fInumber\fR ...?
-\fB::tcl::mathop::^\fR ?\fInumber\fR ...?
+\fB::tcl::mathop::**\fR ?\fInumber ...\fR?
+\fB::tcl::mathop::&\fR ?\fInumber ...\fR?
+\fB::tcl::mathop::|\fR ?\fInumber ...\fR?
+\fB::tcl::mathop::^\fR ?\fInumber ...\fR?
 \fB::tcl::mathop::<<\fI number number\fR
 \fB::tcl::mathop::>>\fI number number\fR
-\fB::tcl::mathop::==\fR ?\fIarg\fR ...?
+\fB::tcl::mathop::==\fR ?\fIarg ...\fR?
 \fB::tcl::mathop::!=\fI arg arg\fR
-\fB::tcl::mathop::<\fR ?\fIarg\fR ...?
-\fB::tcl::mathop::<=\fR ?\fIarg\fR ...?
-\fB::tcl::mathop::>=\fR ?\fIarg\fR ...?
-\fB::tcl::mathop::>\fR ?\fIarg\fR ...?
-\fB::tcl::mathop::eq\fR ?\fIarg\fR ...?
+\fB::tcl::mathop::<\fR ?\fIarg ...\fR?
+\fB::tcl::mathop::<=\fR ?\fIarg ...\fR?
+\fB::tcl::mathop::>=\fR ?\fIarg ...\fR?
+\fB::tcl::mathop::>\fR ?\fIarg ...\fR?
+\fB::tcl::mathop::eq\fR ?\fIarg ...\fR?
 \fB::tcl::mathop::ne\fI arg arg\fR
 .VS TIP461
-\fB::tcl::mathop::lt\fR ?\fIarg\fR ...?
-\fB::tcl::mathop::le\fR ?\fIarg\fR ...?
-\fB::tcl::mathop::gt\fR ?\fIarg\fR ...?
-\fB::tcl::mathop::ge\fR ?\fIarg\fR ...?
+\fB::tcl::mathop::lt\fR ?\fIarg ...\fR?
+\fB::tcl::mathop::le\fR ?\fIarg ...\fR?
+\fB::tcl::mathop::gt\fR ?\fIarg ...\fR?
+\fB::tcl::mathop::ge\fR ?\fIarg ...\fR?
 .VE TIP461
 \fB::tcl::mathop::in\fI arg list\fR
 \fB::tcl::mathop::ni\fI arg list\fR

@@ -45,8 +45,8 @@ mathfunc \- Mathematical functions for Tcl expressions
 .VE TIP521
 \fB::tcl::mathfunc::log\fI arg\fR
 \fB::tcl::mathfunc::log10\fI arg\fR
-\fB::tcl::mathfunc::max\fI arg\fR ?\fIarg\fR ...?
-\fB::tcl::mathfunc::min\fI arg\fR ?\fIarg\fR ...?
+\fB::tcl::mathfunc::max\fI arg\fR ?\fIarg  ...\fR?
+\fB::tcl::mathfunc::min\fI arg\fR ?\fIarg ...\fR?
 \fB::tcl::mathfunc::pow\fI x y\fR
 \fB::tcl::mathfunc::rand\fR
 \fB::tcl::mathfunc::round\fI arg\fR

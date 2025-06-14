@@ -12,9 +12,9 @@
 .SH NAME
 switch \- Evaluate one of several scripts, depending on a given value
 .SH SYNOPSIS
-\fBswitch \fR?\fIoptions\fR?\fI string pattern body \fR?\fIpattern body \fR...?
+\fBswitch \fR?\fIoptions\fR?\fI string pattern body \fR?\fIpattern body ...\fR?
 .sp
-\fBswitch \fR?\fIoptions\fR?\fI string \fR{\fIpattern body \fR?\fIpattern body \fR...?}
+\fBswitch \fR?\fIoptions\fR?\fI string \fR{\fIpattern body \fR?\fIpattern body ...\fR?}
 .BE
 .SH DESCRIPTION
 .PP
