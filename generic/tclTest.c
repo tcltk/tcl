@@ -334,6 +334,9 @@ static Tcl_ObjCmdProc	TestInterpResolverCmd;
 static Tcl_ObjCmdProc	TestcpuidCmd;
 #endif
 static Tcl_ObjCmdProc	TestApplyLambdaCmd;
+#ifdef _WIN32
+static Tcl_ObjCmdProc	TestHandleCountCmd;
+#endif
 
 static const Tcl_Filesystem testReportingFilesystem = {
     "reporting",
@@ -725,6 +728,10 @@ Tcltest_Init(
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testlutil", TestLutilCmd,
 	    NULL, NULL);
+#if defined(_WIN32)
+    Tcl_CreateObjCommand(interp, "testhandlecount", TestHandleCountCmd,
+	    NULL, NULL);
+#endif
 
     if (TclObjTest_Init(interp) != TCL_OK) {
 	return TCL_ERROR;
@@ -8791,6 +8798,46 @@ vamoose:
     }
     return ret;
 }
+
+#ifdef _WIN32
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestHandleCountCmd --
+ *
+ *	This procedure implements the "testhandlecount" command. It returns
+ *	the number of open handles in the process.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestHandleCountCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Arguments. */
+{
+    DWORD count;
+    if (objc != 1) {
+	Tcl_WrongNumArgs(interp, 1, objv, "");
+	return TCL_ERROR;
+    }
+    if (GetProcessHandleCount(GetCurrentProcess(), &count)) {
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(count));
+	return TCL_OK;
+    }
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+	    "GetProcessHandleCount failed", -1));
+    return TCL_ERROR;
+}
+#endif /* _WIN32 */
 
 /*
  * Local Variables:
