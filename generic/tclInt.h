@@ -2533,10 +2533,10 @@ typedef enum TclEolTranslation {
 } TclEolTranslation;
 
 /*
- * Flags for TclObjInvoke and TclObjInvokeNamespace:
+ * Obsolete: flags for TclObjInvoke:
  */
 enum TclInvokeFlags {
-    TCL_INVOKE_HIDDEN = 1 << 0	/* Invoke a hidden command. Must be set. */
+    TCL_INVOKE_HIDDEN = 1 << 0	/* Invoke a hidden command. Ignored. */
 };
 
 /*
@@ -3489,9 +3489,6 @@ MODULE_SCOPE int	TclNamespaceDeleted(Namespace *nsPtr);
 MODULE_SCOPE void	TclObjVarErrMsg(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
 			    Tcl_Obj *part2Ptr, const char *operation,
 			    const char *reason, Tcl_Size index);
-MODULE_SCOPE int	TclObjInvokeNamespace(Tcl_Interp *interp,
-			    Tcl_Size objc, Tcl_Obj *const objv[],
-			    Tcl_Namespace *nsPtr, int flags);
 MODULE_SCOPE int	TclObjUnsetVar2(Tcl_Interp *interp,
 			    Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, int flags);
 MODULE_SCOPE Tcl_Size TclParseBackslash(const char *src,

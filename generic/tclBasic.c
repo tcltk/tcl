@@ -6618,69 +6618,10 @@ Tcl_ExprBooleanObj(
 /*
  *----------------------------------------------------------------------
  *
- * TclObjInvokeNamespace --
- *
- *	Object version: Invokes a Tcl command, given an objv/objc, from the
- *	hidden set of commands in the given interpreter.
- *
- *	NOTE: The command is invoked in the global stack frame of the
- *	interpreter or namespace, thus it cannot see any current state on the
- *	stack of that interpreter.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	Whatever the command does.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclObjInvokeNamespace(
-    Tcl_Interp *interp,		/* Interpreter in which command is to be
-				 * invoked. */
-    Tcl_Size objc,		/* Count of arguments. */
-    Tcl_Obj *const objv[],	/* Argument objects; objv[0] points to the
-				 * name of the command to invoke. */
-    Tcl_Namespace *nsPtr,	/* The namespace to use. */
-    int flags)			/* Combination of flags controlling the call:
-				 * TCL_INVOKE_HIDDEN must be specified. */
-{
-    int result;
-    Tcl_CallFrame *framePtr;
-
-    if (interp == NULL) {
-	return TCL_ERROR;
-    }
-    if ((objc < 1) || (objv == NULL)) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"illegal argument vector", TCL_INDEX_NONE));
-	return TCL_ERROR;
-    }
-    if ((flags & TCL_INVOKE_HIDDEN) == 0) {
-	Tcl_Panic("TclObjInvokeNamespace: called without TCL_INVOKE_HIDDEN");
-    }
-
-    /*
-     * Make the specified namespace the current namespace and invoke the
-     * command.
-     */
-
-    (void) TclPushStackFrame(interp, &framePtr, nsPtr, /*isProcFrame*/0);
-    result = Tcl_NRCallObjProc(interp, TclNRInvoke, NULL, objc, objv);
-
-    TclPopStackFrame(interp);
-    return result;
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * TclObjInvoke --
  *
- *	Invokes a Tcl command, given an objv/objc, from either the
- *	hidden set of commands in the given interpreter.
+ *	Invokes a Tcl command, given an objv/objc, from the hidden set of
+ *	commands in the given interpreter.
  *
  * Results:
  *	A standard Tcl object result.
@@ -6698,8 +6639,7 @@ TclObjInvoke(
     Tcl_Size objc,		/* Count of arguments. */
     Tcl_Obj *const objv[],	/* Argument objects; objv[0] points to the
 				 * name of the command to invoke. */
-    int flags)			/* Combination of flags controlling the call:
-				 * TCL_INVOKE_HIDDEN must be specified. */
+    int flags)			/* Ignored. */
 {
     if (interp == NULL) {
 	return TCL_ERROR;
@@ -6708,9 +6648,6 @@ TclObjInvoke(
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"illegal argument vector", TCL_INDEX_NONE));
 	return TCL_ERROR;
-    }
-    if ((flags & TCL_INVOKE_HIDDEN) == 0) {
-	Tcl_Panic("TclObjInvoke: called without TCL_INVOKE_HIDDEN");
     }
     return Tcl_NRCallObjProc(interp, TclNRInvoke, NULL, objc, objv);
 }
