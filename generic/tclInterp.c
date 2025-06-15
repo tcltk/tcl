@@ -3113,33 +3113,28 @@ ChildInvokeHidden(
     Tcl_Preserve(childInterp);
     Tcl_AllowExceptions(childInterp);
 
-    if (namespaceName == NULL) {
-	NRE_callback *rootPtr = TOP_CB(childInterp);
+    // Push the namespace if one has been requested. 
+    Tcl_CallFrame *framePtr = NULL;
+    if (namespaceName != NULL) {
+	Namespace *nsPtr, *dummy1, *dummy2;
+	const char *tail;
 
-	Tcl_NRAddCallback(interp, NRPostInvokeHidden, childInterp,
-		rootPtr, NULL, NULL);
-	return TclNRInvoke(NULL, childInterp, objc, objv);
-    }
+	int result = TclGetNamespaceForQualName(childInterp, namespaceName, NULL,
+		TCL_FIND_ONLY_NS | TCL_GLOBAL_ONLY | TCL_LEAVE_ERR_MSG
+		| TCL_CREATE_NS_IF_UNKNOWN, &nsPtr, &dummy1, &dummy2, &tail);
+	if (result != TCL_OK) {
+	    Tcl_TransferResult(childInterp, result, interp);
+	    Tcl_Release(childInterp);
+	    return result;
+	}
 
-    Namespace *nsPtr, *dummy1, *dummy2;
-    const char *tail;
-
-    int result = TclGetNamespaceForQualName(childInterp, namespaceName, NULL,
-	    TCL_FIND_ONLY_NS | TCL_GLOBAL_ONLY | TCL_LEAVE_ERR_MSG
-	    | TCL_CREATE_NS_IF_UNKNOWN, &nsPtr, &dummy1, &dummy2, &tail);
-    if (result == TCL_OK) {
-	Tcl_CallFrame *framePtr;
 	(void) TclPushStackFrame(childInterp, &framePtr, (Tcl_Namespace *) nsPtr,
-		/*isProcFrame*/0);
-	// TODO: Weave the post-call into the NRPostInvokeHidden callback.
-	result = Tcl_NRCallObjProc(childInterp, TclNRInvoke, NULL, objc, objv);
-	TclPopStackFrame(childInterp);
+		/*isProcFrame*/ 0);
     }
 
-    Tcl_TransferResult(childInterp, result, interp);
-
-    Tcl_Release(childInterp);
-    return result;
+    Tcl_NRAddCallback(interp, NRPostInvokeHidden, childInterp,
+	    TOP_CB(childInterp), framePtr, NULL);
+    return TclNRInvoke(NULL, childInterp, objc, objv);
 }
 
 static int
@@ -3150,10 +3145,14 @@ NRPostInvokeHidden(
 {
     Tcl_Interp *childInterp = (Tcl_Interp *) data[0];
     NRE_callback *rootPtr = (NRE_callback *) data[1];
+    CallFrame *framePtr = (CallFrame *) data[2];
 
     if (interp != childInterp) {
 	result = TclNRRunCallbacks(childInterp, result, rootPtr);
 	Tcl_TransferResult(childInterp, result, interp);
+    }
+    if (framePtr) {
+	TclPopStackFrame(childInterp);
     }
     Tcl_Release(childInterp);
     return result;

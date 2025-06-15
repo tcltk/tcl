@@ -6639,7 +6639,7 @@ TclObjInvoke(
     Tcl_Size objc,		/* Count of arguments. */
     Tcl_Obj *const objv[],	/* Argument objects; objv[0] points to the
 				 * name of the command to invoke. */
-    int flags)			/* Ignored. */
+    TCL_UNUSED(int) /*flags*/)
 {
     if (interp == NULL) {
 	return TCL_ERROR;
