@@ -2202,7 +2202,7 @@ test chan-io-28.6 {Tcl_CloseEx (half-close) pipe} -setup {
 	exit 0
     } cat.tcl]
     variable done
-} constraints noappverifier -body {
+} -constraints noappverifier -body {
     set ff [openpipe r+ $cat]
     puts $ff Hey
     close $ff w
