@@ -4736,14 +4736,12 @@ TEBCresume(
     {
 	Object *oPtr;
 	Class *clsPtr;
-	CallFrame *framePtr;
 	CallContext *contextPtr;
 	Tcl_Size skip, newDepth;
 
     case INST_TCLOO_SELF:
-	framePtr = iPtr->varFramePtr;
-	if (framePtr == NULL ||
-		!(framePtr->isProcCallFrame & FRAME_IS_METHOD)) {
+	contextPtr = GetTclOOCallContext(iPtr);
+	if (!contextPtr) {
 	    TRACE(("=> ERROR: no TclOO call context\n"));
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "self may only be called from inside a method",
@@ -4753,7 +4751,6 @@ TEBCresume(
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
-	contextPtr = (CallContext *)framePtr->clientData;
 
 	/*
 	 * Call out to get the name; it's expensive to compute but cached.
@@ -4881,17 +4878,16 @@ TEBCresume(
 	    ArgumentBCEnter(interp, codePtr, TD, pc, numArgs, objv);
 	}
 
-	// [next] and [nextto] are uplevel-like
-	framePtr = iPtr->varFramePtr;
-	iPtr->varFramePtr = framePtr->callerVarPtr;
-
 	// Arrange for where to go after [next] returns
 	pc += pcAdjustment;
 	TEBC_YIELD();
 
-	// Do the actual start of processing the next method
 	{
+	    // [next] and [nextto] are uplevel-like
+	    CallFrame *framePtr = iPtr->varFramePtr;
+	    iPtr->varFramePtr = framePtr->callerVarPtr;
 	    oPtr = contextPtr->oPtr;
+
 	    // Adjust filter flags
 	    Tcl_NRPostProc *callback = (oPtr->flags & FILTER_HANDLING)
 		    ? FinalizeOONextFilter : FinalizeOONext;
@@ -4912,7 +4908,7 @@ TEBCresume(
 	    contextPtr->skip = skip;
 	    contextPtr->index = newDepth;
 
-	    // Call the method non-recursively
+	    // Call the selected next method non-recursively
 	    const Method *mPtr = contextPtr->callPtr->chain[newDepth].mPtr;
 	    if (mPtr->typePtr->version < TCL_OO_METHOD_VERSION_2) {
 		return mPtr->typePtr->callProc(mPtr->clientData, interp,
