@@ -15,26 +15,25 @@ link \- create link from command to method of object
 .nf
 \fBpackage require tcl::oo\fR
 
-\fBlink\fI methodName\fR ?\fI...\fR?
-\fBlink\fR \fB{\fIcommandName methodName\fB}\fR ?\fI...\fR?
+\fBlink\fI method\fR ?\fImethod ...\fR?
 .fi
 .BE
 .SH DESCRIPTION
 The \fBlink\fR command is available within methods. It takes a series of one
-or more method names (\fImethodName ...\fR) and/or pairs of command- and
-method-name (\fB{\fIcommandName methodName\fB}\fR) and makes the named methods
-available as commands without requiring the explicit use of the name of the
-object or the \fBmy\fR command. The method does not need to exist at the time
-that the link is made; if the link command is invoked when the method does not
-exist, the standard \fBunknown\fR method handling system is used.
+or more method names and makes the named methods available as commands without
+requiring the explicit use of the name of the object or the \fBmy\fR command.
+The method does not need to exist at the time that the link is made. If the
+link command is invoked when the method does not exist, the standard
+\fBunknown\fR method handling system is used.
 .PP
-The command name under which the method becomes available defaults to the
-method name, except where explicitly specified through an alias/method pair.
-Formally, every argument must be a list; if the list has two elements, the
-first element is the name of the command to create and the second element is
-the name of the method of the current object to which the command links;
-otherwise, the name of the command and the name of the method are the same
-string (the first element of the list).
+Each \fImethod\fR argument of the command is treated as a list. If the list
+has two elements, the first element is the name of the command to be linked
+and the second element is the name of the method of the current object to which
+the command links, i.e. the alias for the command in the current context.
+If the list has only one element, both the linked command and the method alias
+are the same string. Thus, the command name under which the method becomes
+available defaults to the method name, except where explicitly specified
+through an alias/method pair.
 .PP
 If the name of the command is not a fully-qualified command name, it will be
 resolved with respect to the current namespace (i.e., the object namespace).
