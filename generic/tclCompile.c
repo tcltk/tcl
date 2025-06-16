@@ -4389,6 +4389,8 @@ TclEmitInvoke(
     case INST_YIELD:
     case INST_YIELD_TO_INVOKE:
     case INST_EVAL_STK:
+    case INST_TCLOO_NEXT_LIST:
+    case INST_TCLOO_NEXT_CLASS_LIST:
 	wordCount = cleanup = 1;
 	arg1 = arg2 = 0;
 	break;
@@ -4480,8 +4482,14 @@ TclEmitInvoke(
     case INST_TCLOO_NEXT:
 	OP4(			TCLOO_NEXT, arg1);
 	break;
+    case INST_TCLOO_NEXT_LIST:
+	OP(			TCLOO_NEXT_LIST);
+	break;
     case INST_TCLOO_NEXT_CLASS:
 	OP4(			TCLOO_NEXT_CLASS, arg1);
+	break;
+    case INST_TCLOO_NEXT_CLASS_LIST:
+	OP(			TCLOO_NEXT_CLASS_LIST);
 	break;
     case INST_YIELD:
 	OP(			YIELD);
