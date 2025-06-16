@@ -4870,7 +4870,7 @@ TEBCresume(
 	    fprintf(stdout, "\n");
 	    fflush(stdout);
 	}
-#endif /*TCL_COMPILE_DEBUG*/
+#endif // TCL_COMPILE_DEBUG
 	bcFramePtr->data.tebc.pc = (char *) pc;
 	iPtr->cmdFramePtr = bcFramePtr;
 
