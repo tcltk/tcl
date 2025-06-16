@@ -1941,6 +1941,65 @@ PrintArgumentWords(
 /*
  *----------------------------------------------------------------------
  *
+ * FindTclOOMethodIndex --
+ *
+ *	A helper for INST_TCLOO_NEXT_CLASS in TEBC. Returns the index of a
+ *	class (following the current method) in a call chain.
+ *
+ * Results:
+ *	An index, or TCL_INDEX_NONE if not found.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static inline Tcl_Size
+FindTclOOMethodIndex(
+    CallContext *contextPtr,
+    Class *classPtr)
+{
+    Tcl_Size i;
+    for (i=contextPtr->index+1 ; i<contextPtr->callPtr->numChain ; i++) {
+	MInvoke *miPtr = contextPtr->callPtr->chain + i;
+	if (!miPtr->isFilter &&
+		miPtr->mPtr->declaringClassPtr == classPtr) {
+	    return i;
+	}
+    }
+    return TCL_INDEX_NONE;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetTclOOCallContext --
+ *
+ *	A helper for INST_TCLOO_NEXT in TEBC. Returns the call context if one
+ *	exists.
+ *
+ * Results:
+ *	The call context, or NULL if not found.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static inline CallContext *
+GetTclOOCallContext(
+    Interp *iPtr)
+{
+    CallFrame *framePtr = iPtr->varFramePtr;
+    if (!framePtr || !(framePtr->isProcCallFrame & FRAME_IS_METHOD)) {
+	return NULL;
+    }
+    return (CallContext *) framePtr->clientData;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclNRExecuteByteCode --
  *
  *	This procedure executes the instructions of a ByteCode structure. It
@@ -4704,111 +4763,84 @@ TEBCresume(
 	TRACE_WITH_OBJ(("=> "), objResultPtr);
 	NEXT_INST_F(1, 0, 1);
 
+    case INST_TCLOO_NEXT_CLASS_LIST:
+	TclListObjGetElements(NULL, OBJ_AT_TOS, &numArgs, &objv);
+	cleanup = 1;
+	pcAdjustment = 1;
+	valuePtr = objv[1];
+	TRACE(("=> "));
+	goto invokeNextClass;
 #ifndef REMOVE_DEPRECATED_OPCODES
     case INST_TCLOO_NEXT_CLASS1:
 	DEPRECATED_OPCODE_MARK(INST_TCLOO_NEXT_CLASS1);
 	numArgs = TclGetUInt1AtPtr(pc + 1);
+	cleanup = numArgs;
 	pcAdjustment = 2;
+	valuePtr = OBJ_AT_DEPTH(numArgs - 2);
+	objv = &OBJ_AT_DEPTH(numArgs - 1);
+	TRACE(("%u => ", (unsigned)numArgs));
 	goto invokeNextClass;
 #endif
     case INST_TCLOO_NEXT_CLASS:
 	numArgs = TclGetUInt4AtPtr(pc + 1);
+	cleanup = numArgs;
 	pcAdjustment = 5;
-#ifndef REMOVE_DEPRECATED_OPCODES
-    invokeNextClass:
-#endif
-	framePtr = iPtr->varFramePtr;
 	valuePtr = OBJ_AT_DEPTH(numArgs - 2);
 	objv = &OBJ_AT_DEPTH(numArgs - 1);
-	skip = 2;
 	TRACE(("%u => ", (unsigned)numArgs));
-	if (framePtr == NULL ||
-		!(framePtr->isProcCallFrame & FRAME_IS_METHOD)) {
-	    TRACE_APPEND(("ERROR: no TclOO call context\n"));
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "nextto may only be called from inside a method",
-		    -1));
-	    DECACHE_STACK_INFO();
-	    OO_ERROR(interp, CONTEXT_REQUIRED);
-	    CACHE_STACK_INFO();
-	    goto gotError;
+    invokeNextClass:
+	skip = 2;
+	framePtr = iPtr->varFramePtr;
+	if (!framePtr || !(framePtr->isProcCallFrame & FRAME_IS_METHOD)) {
+	    goto tclooFrameRequired;
 	}
 	contextPtr = (CallContext *)framePtr->clientData;
 
 	DECACHE_STACK_INFO();
 	classPtr = TclOOGetClassFromObj(interp, valuePtr);
-	CACHE_STACK_INFO();
 	if (classPtr == NULL) {
 	    TRACE_APPEND(("ERROR: \"%.30s\" not class\n", O2S(valuePtr)));
-	    goto gotError;
-	} else {
-	    Tcl_Size i;
-
-	    for (i=contextPtr->index+1 ; i<contextPtr->callPtr->numChain ; i++) {
-		MInvoke *miPtr = contextPtr->callPtr->chain + i;
-		if (!miPtr->isFilter &&
-			miPtr->mPtr->declaringClassPtr == classPtr) {
-		    newDepth = i;
-		    goto doInvokeNext;
-		}
-	    }
-	    // Unlikely; cold path
-
-	    TRACE_APPEND(("ERROR: \"%.30s\" not on reachable chain\n",
-		    O2S(valuePtr)));
-	    for (i = contextPtr->index ; i != TCL_INDEX_NONE ; i--) {
-		MInvoke *miPtr = contextPtr->callPtr->chain + i;
-		if (!miPtr->isFilter
-			&& miPtr->mPtr->declaringClassPtr == classPtr) {
-		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			    "%s implementation by \"%s\" not reachable from here",
-			    TclOOContextTypeName(contextPtr),
-			    TclGetString(valuePtr)));
-		    DECACHE_STACK_INFO();
-		    OO_ERROR(interp, CLASS_NOT_REACHABLE);
-		    CACHE_STACK_INFO();
-		    goto gotError;
-		}
-	    }
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "%s has no non-filter implementation by \"%s\"",
-		    TclOOContextTypeName(contextPtr), TclGetString(valuePtr)));
-	    DECACHE_STACK_INFO();
-	    OO_ERROR(interp, CLASS_NOT_THERE);
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
+	newDepth = FindTclOOMethodIndex(contextPtr, classPtr);
+	if (newDepth == TCL_INDEX_NONE) {
+	    goto tclooNoTargetClass;
+	}
+	goto doInvokeNext;
 
+    case INST_TCLOO_NEXT_LIST:
+	valuePtr = OBJ_AT_TOS;
+	TclListObjGetElements(NULL, valuePtr, &numArgs, &objv);
+	pcAdjustment = 1;
+	cleanup = 1;
+	TRACE(("=> "));
+	goto invokeNext;
 #ifndef REMOVE_DEPRECATED_OPCODES
     case INST_TCLOO_NEXT1:
 	DEPRECATED_OPCODE_MARK(INST_TCLOO_NEXT1);
 	numArgs = TclGetUInt1AtPtr(pc + 1);
 	pcAdjustment = 2;
+	cleanup = numArgs;
+	objv = &OBJ_AT_DEPTH(numArgs - 1);
+	TRACE(("%u => ", (unsigned)numArgs));
 	goto invokeNext;
 #endif
     case INST_TCLOO_NEXT:
 	numArgs = TclGetUInt4AtPtr(pc + 1);
 	pcAdjustment = 5;
-#ifndef REMOVE_DEPRECATED_OPCODES
-    invokeNext:
-#endif
+	cleanup = numArgs;
 	objv = &OBJ_AT_DEPTH(numArgs - 1);
-	framePtr = iPtr->varFramePtr;
-	skip = 1;
 	TRACE(("%u => ", (unsigned)numArgs));
-	if (framePtr == NULL ||
-		!(framePtr->isProcCallFrame & FRAME_IS_METHOD)) {
-	    TRACE_APPEND(("ERROR: no TclOO call context\n"));
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "next may only be called from inside a method",
-		    -1));
-	    DECACHE_STACK_INFO();
-	    OO_ERROR(interp, CONTEXT_REQUIRED);
-	    CACHE_STACK_INFO();
-	    goto gotError;
+    invokeNext:
+	skip = 1;
+	framePtr = iPtr->varFramePtr;
+	if (!framePtr || !(framePtr->isProcCallFrame & FRAME_IS_METHOD)) {
+	    goto tclooFrameRequired;
 	}
 	contextPtr = (CallContext *)framePtr->clientData;
 
+	DECACHE_STACK_INFO();
 	newDepth = contextPtr->index + 1;
 	if (newDepth >= contextPtr->callPtr->numChain) {
 	    /*
@@ -4817,14 +4849,7 @@ TEBCresume(
 	     * getting here because of methods/destructors doing a [next] (or
 	     * equivalent) unexpectedly.
 	     */
-
-	    TRACE_APPEND(("ERROR: no TclOO next impl\n"));
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "no next %s implementation", TclOOContextTypeName(contextPtr)));
-	    DECACHE_STACK_INFO();
-	    OO_ERROR(interp, NOTHING_NEXT);
-	    CACHE_STACK_INFO();
-	    goto gotError;
+	    goto tclooNoNext;
 	}
 
     doInvokeNext:
@@ -4848,8 +4873,6 @@ TEBCresume(
 	    ArgumentBCEnter(interp, codePtr, TD, pc, numArgs, objv);
 	}
 
-	cleanup = numArgs;
-	DECACHE_STACK_INFO();
 	iPtr->varFramePtr = framePtr->callerVarPtr;
 	pc += pcAdjustment;
 	TEBC_YIELD();
@@ -4887,6 +4910,44 @@ TEBCresume(
 	    return call2Proc(mPtr->clientData, interp,
 		    (Tcl_ObjectContext) contextPtr, numArgs, objv);
 	}
+
+    tclooFrameRequired:
+	TRACE_APPEND(("ERROR: no TclOO call context\n"));
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"%s may only be called from inside a method", objv[0]));
+	DECACHE_STACK_INFO();
+	OO_ERROR(interp, CONTEXT_REQUIRED);
+	CACHE_STACK_INFO();
+	goto gotError;
+    tclooNoNext:
+	TRACE_APPEND(("ERROR: no TclOO next impl\n"));
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"no next %s implementation", TclOOContextTypeName(contextPtr)));
+	OO_ERROR(interp, NOTHING_NEXT);
+	CACHE_STACK_INFO();
+	goto gotError;
+    tclooNoTargetClass:
+	TRACE_APPEND(("ERROR: \"%.30s\" not on reachable chain\n",
+		O2S(valuePtr)));
+	// Decide what error message to issue
+	for (Tcl_Size i = contextPtr->index ; i != TCL_INDEX_NONE ; i--) {
+	    MInvoke *miPtr = contextPtr->callPtr->chain + i;
+	    if (!miPtr->isFilter && miPtr->mPtr->declaringClassPtr == classPtr) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"%s implementation by \"%s\" not reachable from here",
+			TclOOContextTypeName(contextPtr),
+			TclGetString(valuePtr)));
+		OO_ERROR(interp, CLASS_NOT_REACHABLE);
+		CACHE_STACK_INFO();
+		goto gotError;
+	    }
+	}
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"%s has no non-filter implementation by \"%s\"",
+		TclOOContextTypeName(contextPtr), TclGetString(valuePtr)));
+	OO_ERROR(interp, CLASS_NOT_THERE);
+	CACHE_STACK_INFO();
+	goto gotError;
 
     case INST_TCLOO_IS_OBJECT:
 	DECACHE_STACK_INFO();

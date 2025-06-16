@@ -960,6 +960,21 @@ InstructionDesc const tclInstructionTable[] = {
 	/* Do a tailcall with the words from the argument as the thing to
 	 * tailcall to, and currNs is the namespace scope.
 	 * Stack: ... {currNs words...} => ...[NOT REACHED] */
+    TCL_INSTRUCTION_ENTRY(
+	"tclooNextList",	0),
+	/* Call the next item on the TclOO call chain, passing the arguments
+	 * from argumentList (min 1, *includes* "next"). The result of the
+	 * invoked method implementation will be pushed on the stack after the
+	 * target returns.
+	 * Stack:  ... argumentList => ... result */
+    TCL_INSTRUCTION_ENTRY(
+	"tclooNextClassList",	0),
+	/* Call the following item on the TclOO call chain defined by class
+	 * className, passing the arguments from argumentList (min 2,
+	 * *includes* "nextto" and the class name). The result of the invoked
+	 * method implementation will be pushed on the stack after the target
+	 * returns.
+	 * Stack:  ... argumentList => ... result */
 
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };
