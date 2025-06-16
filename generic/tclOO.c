@@ -304,7 +304,8 @@ CreateCmdInNS(
     const char *name,
     Tcl_ObjCmdProc *cmdProc,
     Tcl_ObjCmdProc *nreProc,
-    CompileProc *compileProc)
+    CompileProc *compileProc,
+    int flags)
 {
     Command *cmdPtr;
 
@@ -315,6 +316,7 @@ CreateCmdInNS(
 	    namespacePtr, cmdProc, NULL, NULL);
     cmdPtr->nreProc = nreProc;
     cmdPtr->compileProc = compileProc;
+    cmdPtr->flags |= flags;
 }
 
 /*
@@ -429,15 +431,15 @@ InitFoundation(
      */
 
     CreateCmdInNS(interp, fPtr->helpersNs, "next",
-	    NULL, TclOONextObjCmd, TclCompileObjectNextCmd);
+	    NULL, TclOONextObjCmd, TclCompileObjectNextCmd, CMD_COMPILES_EXPANDED);
     CreateCmdInNS(interp, fPtr->helpersNs, "nextto",
-	    NULL, TclOONextToObjCmd, TclCompileObjectNextToCmd);
+	    NULL, TclOONextToObjCmd, TclCompileObjectNextToCmd, CMD_COMPILES_EXPANDED);
     CreateCmdInNS(interp, fPtr->helpersNs, "self",
-	    TclOOSelfObjCmd, NULL, TclCompileObjectSelfCmd);
+	    TclOOSelfObjCmd, NULL, TclCompileObjectSelfCmd, 0);
 
-    CreateCmdInNS(interp, fPtr->ooNs, "define", TclOODefineObjCmd, NULL, NULL);
-    CreateCmdInNS(interp, fPtr->ooNs, "objdefine", TclOOObjDefObjCmd, NULL, NULL);
-    CreateCmdInNS(interp, fPtr->ooNs, "copy", TclOOCopyObjectCmd, NULL, NULL);
+    CreateCmdInNS(interp, fPtr->ooNs, "define", TclOODefineObjCmd, NULL, NULL, 0);
+    CreateCmdInNS(interp, fPtr->ooNs, "objdefine", TclOOObjDefObjCmd, NULL, NULL, 0);
+    CreateCmdInNS(interp, fPtr->ooNs, "copy", TclOOCopyObjectCmd, NULL, NULL, 0);
 
     TclOOInitInfo(interp);
 
