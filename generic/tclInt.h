@@ -1870,35 +1870,39 @@ typedef struct Command {
 
 /*
  * Flag bits for commands.
- *
- * CMD_DYING -			If 1 the command is in the process of
- *				being deleted (its deleteProc is currently
- *				executing). Other attempts to delete the
- *				command should be ignored.
- * CMD_TRACE_ACTIVE -		If 1 the trace processing is currently
- *				underway for a rename/delete change. See the
- *				two flags below for which is currently being
- *				processed.
- * CMD_HAS_EXEC_TRACES -	If 1 means that this command has at least one
- *				execution trace (as opposed to simple
- *				delete/rename traces) in its tracePtr list.
- * CMD_COMPILES_EXPANDED -	If 1 this command has a compiler that
- *				can handle expansion (provided it is not the
- *				first word).
- * TCL_TRACE_RENAME -		A rename trace is in progress. Further
- *				recursive renames will not be traced.
- * TCL_TRACE_DELETE -		A delete trace is in progress. Further
- *				recursive deletes will not be traced.
- * (these last two flags are defined in tcl.h)
  */
-
-#define CMD_DYING		0x01
-#define CMD_TRACE_ACTIVE	0x02
-#define CMD_HAS_EXEC_TRACES	0x04
-#define CMD_COMPILES_EXPANDED	0x08
-#define CMD_REDEF_IN_PROGRESS	0x10
-#define CMD_VIA_RESOLVER	0x20
-#define CMD_DEAD		0x40
+enum CommandFlags {
+    CMD_DYING = 0x01,		/* The command is in the process of being
+				 * deleted (its deleteProc is currently
+				 * executing). Other attempts to delete the
+				 * command should be ignored.*/
+    CMD_TRACE_ACTIVE = 0x02,	/* The trace processing is currently underway
+				 * for a rename/delete change. See the flags
+				 * CMD_TRACE_RENAMING, CMD_TRACE_DELETING for
+				 * which is currently being processed. */
+    CMD_HAS_EXEC_TRACES = 0x04,	/* This command has at least one execution
+				 * trace (as opposed to simple delete/rename
+				 * traces) in its tracePtr list. */
+    CMD_COMPILES_EXPANDED = 0x08,
+				/* This command has a compiler that can handle
+				 * expansion (provided it is not the first
+				 * word). */
+    CMD_REDEF_IN_PROGRESS = 0x10,
+				/* Command is currently being redefined. It
+				 * should not be deleted, though its ClientData
+				 * may be purged. */
+    CMD_VIA_RESOLVER = 0x20,	/* Command was located by resolver. Its literal
+				 * should be marked unshared by the compiler. */
+    CMD_DEAD = 0x40,		/* Command is at an advanced stage of being
+				 * deleted, and is no longer in any hash tables
+				 * but stale references may exist elsewhere. */
+    CMD_TRACE_RENAMING = TCL_TRACE_RENAME,
+				/* A rename trace is in progress. Further
+				 * recursive renames will not be traced. */
+    CMD_TRACE_DELETING = TCL_TRACE_DELETE
+				/* A delete trace is in progress. Further
+				 * recursive deletes will not be traced. */
+};
 
 /*
  *----------------------------------------------------------------

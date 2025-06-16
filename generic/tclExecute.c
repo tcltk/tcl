@@ -4937,9 +4937,14 @@ TEBCresume(
 	TRACE_APPEND(("ERROR: \"%.30s\" not on reachable chain\n",
 		O2S(valuePtr)));
 	// Decide what error message to issue
-	for (Tcl_Size i = contextPtr->index ; i != TCL_INDEX_NONE ; i--) {
+	for (Tcl_Size i = contextPtr->index ; i >= 0 ; i--) {
 	    MInvoke *miPtr = contextPtr->callPtr->chain + i;
-	    if (!miPtr->isFilter && miPtr->mPtr->declaringClassPtr == clsPtr) {
+	    if (miPtr->isFilter) {
+		/* Filters are always at the head of the chain, and we never
+		 * want them at this point. */
+		break;
+	    }
+	    if (miPtr->mPtr->declaringClassPtr == clsPtr) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"%s implementation by \"%s\" not reachable from here",
 			TclOOContextTypeName(contextPtr),
@@ -4957,12 +4962,13 @@ TEBCresume(
 	goto gotError;
 
     case INST_TCLOO_IS_OBJECT:
+	TRACE(("\"%.30s\" => ", O2S(OBJ_AT_TOS)));
 	DECACHE_STACK_INFO();
 	oPtr = (Object *) Tcl_GetObjectFromObj(interp, OBJ_AT_TOS);
 	CACHE_STACK_INFO();
-	objResultPtr = TCONST(oPtr != NULL ? 1 : 0);
-	TRACE_WITH_OBJ(("%.30s => ", O2S(OBJ_AT_TOS)), objResultPtr);
-	NEXT_INST_F(1, 1, 1);
+	int match = oPtr != NULL;
+	TRACE_APPEND(("%d\n", match));
+	JUMP_PEEPHOLE_F(match, 1, 1);
     case INST_TCLOO_CLASS:
     case INST_TCLOO_NS:
     case INST_TCLOO_ID:
@@ -4970,7 +4976,7 @@ TEBCresume(
 	oPtr = (Object *) Tcl_GetObjectFromObj(interp, OBJ_AT_TOS);
 	CACHE_STACK_INFO();
 	if (oPtr == NULL) {
-	    TRACE(("%.30s => ERROR: not object\n", O2S(OBJ_AT_TOS)));
+	    TRACE(("\"%.30s\" => ERROR: not object\n", O2S(OBJ_AT_TOS)));
 	    goto gotError;
 	}
 	switch (inst) {
@@ -4986,7 +4992,7 @@ TEBCresume(
 	default:
 	    TCL_UNREACHABLE();
 	}
-	TRACE_WITH_OBJ(("%.30s => ", O2S(OBJ_AT_TOS)), objResultPtr);
+	TRACE_WITH_OBJ(("\"%.30s\" => ", O2S(OBJ_AT_TOS)), objResultPtr);
 	NEXT_INST_F(1, 1, 1);
     }
 
