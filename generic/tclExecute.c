@@ -1944,7 +1944,8 @@ PrintArgumentWords(
  * FindTclOOMethodIndex --
  *
  *	A helper for INST_TCLOO_NEXT_CLASS in TEBC. Returns the index of a
- *	class (following the current method) in a call chain.
+ *	class (following the current method) in a call chain. Does not find
+ *	filters (per definition of [nextto]).
  *
  * Results:
  *	An index, or TCL_INDEX_NONE if not found.
@@ -1957,13 +1958,12 @@ PrintArgumentWords(
 static inline Tcl_Size
 FindTclOOMethodIndex(
     CallContext *contextPtr,
-    Class *classPtr)
+    Class *clsPtr)
 {
     Tcl_Size i;
     for (i=contextPtr->index+1 ; i<contextPtr->callPtr->numChain ; i++) {
 	MInvoke *miPtr = contextPtr->callPtr->chain + i;
-	if (!miPtr->isFilter &&
-		miPtr->mPtr->declaringClassPtr == classPtr) {
+	if (!miPtr->isFilter && miPtr->mPtr->declaringClassPtr == clsPtr) {
 	    return i;
 	}
     }
@@ -4735,7 +4735,7 @@ TEBCresume(
 
     {
 	Object *oPtr;
-	Class *classPtr;
+	Class *clsPtr;
 	CallFrame *framePtr;
 	CallContext *contextPtr;
 	Tcl_Size skip, newDepth;
@@ -4764,7 +4764,12 @@ TEBCresume(
 	NEXT_INST_F(1, 0, 1);
 
     case INST_TCLOO_NEXT_CLASS_LIST:
-	TclListObjGetElements(NULL, OBJ_AT_TOS, &numArgs, &objv);
+	if (TclListObjGetElements(NULL, valuePtr, &numArgs, &objv) != TCL_OK) {
+	    Tcl_Panic("ill-formed call to [nextto]");
+	}
+	if (numArgs < 2) {
+	    Tcl_Panic("insufficient words to [nextto]");
+	}
 	cleanup = 1;
 	pcAdjustment = 1;
 	valuePtr = objv[1];
@@ -4790,20 +4795,19 @@ TEBCresume(
 	TRACE(("%u => ", (unsigned)numArgs));
     invokeNextClass:
 	skip = 2;
-	framePtr = iPtr->varFramePtr;
-	if (!framePtr || !(framePtr->isProcCallFrame & FRAME_IS_METHOD)) {
+	contextPtr = GetTclOOCallContext(iPtr);
+	if (!contextPtr) {
 	    goto tclooFrameRequired;
 	}
-	contextPtr = (CallContext *)framePtr->clientData;
 
 	DECACHE_STACK_INFO();
-	classPtr = TclOOGetClassFromObj(interp, valuePtr);
-	if (classPtr == NULL) {
+	clsPtr = TclOOGetClassFromObj(interp, valuePtr);
+	if (clsPtr == NULL) {
 	    TRACE_APPEND(("ERROR: \"%.30s\" not class\n", O2S(valuePtr)));
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
-	newDepth = FindTclOOMethodIndex(contextPtr, classPtr);
+	newDepth = FindTclOOMethodIndex(contextPtr, clsPtr);
 	if (newDepth == TCL_INDEX_NONE) {
 	    goto tclooNoTargetClass;
 	}
@@ -4811,7 +4815,12 @@ TEBCresume(
 
     case INST_TCLOO_NEXT_LIST:
 	valuePtr = OBJ_AT_TOS;
-	TclListObjGetElements(NULL, valuePtr, &numArgs, &objv);
+	if (TclListObjGetElements(NULL, valuePtr, &numArgs, &objv) != TCL_OK) {
+	    Tcl_Panic("ill-formed call to [next]");
+	}
+	if (numArgs < 1) {
+	    Tcl_Panic("insufficient words to [next]");
+	}
 	pcAdjustment = 1;
 	cleanup = 1;
 	TRACE(("=> "));
@@ -4834,11 +4843,10 @@ TEBCresume(
 	TRACE(("%u => ", (unsigned)numArgs));
     invokeNext:
 	skip = 1;
-	framePtr = iPtr->varFramePtr;
-	if (!framePtr || !(framePtr->isProcCallFrame & FRAME_IS_METHOD)) {
+	contextPtr = GetTclOOCallContext(iPtr);
+	if (!contextPtr) {
 	    goto tclooFrameRequired;
 	}
-	contextPtr = (CallContext *)framePtr->clientData;
 
 	DECACHE_STACK_INFO();
 	newDepth = contextPtr->index + 1;
@@ -4873,41 +4881,44 @@ TEBCresume(
 	    ArgumentBCEnter(interp, codePtr, TD, pc, numArgs, objv);
 	}
 
+	// [next] and [nextto] are uplevel-like
+	framePtr = iPtr->varFramePtr;
 	iPtr->varFramePtr = framePtr->callerVarPtr;
+
+	// Arrange for where to go after [next] returns
 	pc += pcAdjustment;
 	TEBC_YIELD();
 
-	TclPushTailcallPoint(interp);
-	oPtr = contextPtr->oPtr;
-	if (oPtr->flags & FILTER_HANDLING) {
-	    TclNRAddCallback(interp, FinalizeOONextFilter,
-		    framePtr, contextPtr, INT2PTR(contextPtr->index),
-		    INT2PTR(contextPtr->skip));
-	} else {
-	    TclNRAddCallback(interp, FinalizeOONext,
-		    framePtr, contextPtr, INT2PTR(contextPtr->index),
-		    INT2PTR(contextPtr->skip));
-	}
-	contextPtr->skip = skip;
-	contextPtr->index = newDepth;
-	if (contextPtr->callPtr->chain[newDepth].isFilter
-		|| contextPtr->callPtr->flags & FILTER_HANDLING) {
-	    oPtr->flags |= FILTER_HANDLING;
-	} else {
-	    oPtr->flags &= ~FILTER_HANDLING;
-	}
-
+	// Do the actual start of processing the next method
 	{
-	    const Method *mPtr = contextPtr->callPtr->chain[newDepth].mPtr;
+	    oPtr = contextPtr->oPtr;
+	    // Adjust filter flags
+	    Tcl_NRPostProc *callback = (oPtr->flags & FILTER_HANDLING)
+		    ? FinalizeOONextFilter : FinalizeOONext;
+	    if (contextPtr->callPtr->chain[newDepth].isFilter
+		    || contextPtr->callPtr->flags & FILTER_HANDLING) {
+		oPtr->flags |= FILTER_HANDLING;
+	    } else {
+		oPtr->flags &= ~FILTER_HANDLING;
+	    }
 
+	    // Arrange for things to be restored in the object
+	    TclPushTailcallPoint(interp);
+	    TclNRAddCallback(interp, callback,
+		    framePtr, contextPtr, INT2PTR(contextPtr->index),
+		    INT2PTR(contextPtr->skip));
+
+	    // Update the context fields to point to the next impl
+	    contextPtr->skip = skip;
+	    contextPtr->index = newDepth;
+
+	    // Call the method non-recursively
+	    const Method *mPtr = contextPtr->callPtr->chain[newDepth].mPtr;
 	    if (mPtr->typePtr->version < TCL_OO_METHOD_VERSION_2) {
 		return mPtr->typePtr->callProc(mPtr->clientData, interp,
 			(Tcl_ObjectContext) contextPtr, (int)numArgs, objv);
 	    }
-	    // Ugly indirect cast
-	    Tcl_MethodCallProc2 *call2Proc = (Tcl_MethodCallProc2 *)
-		    (void *)mPtr->typePtr->callProc;
-	    return call2Proc(mPtr->clientData, interp,
+	    return mPtr->type2Ptr->callProc(mPtr->clientData, interp,
 		    (Tcl_ObjectContext) contextPtr, numArgs, objv);
 	}
 
@@ -4932,7 +4943,7 @@ TEBCresume(
 	// Decide what error message to issue
 	for (Tcl_Size i = contextPtr->index ; i != TCL_INDEX_NONE ; i--) {
 	    MInvoke *miPtr = contextPtr->callPtr->chain + i;
-	    if (!miPtr->isFilter && miPtr->mPtr->declaringClassPtr == classPtr) {
+	    if (!miPtr->isFilter && miPtr->mPtr->declaringClassPtr == clsPtr) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"%s implementation by \"%s\" not reachable from here",
 			TclOOContextTypeName(contextPtr),
