@@ -12,7 +12,7 @@
 self \- method call internal introspection
 .SH SYNOPSIS
 .nf
-package require tcl::oo
+\fBpackage require tcl::oo\fR
 
 \fBself\fR ?\fIsubcommand\fR?
 .fi
