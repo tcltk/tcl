@@ -670,7 +670,7 @@ TclContinuationsEnterDerived(
 	     * during compilation.
 	     */
 
-	    if (clLocPtr->loc[i] < 0) {
+	    if (clLocPtr->loc[i] <= CLL_END) {
 		Tcl_Panic("Derived ICL data for object using offsets from before the script");
 	    }
 	}
