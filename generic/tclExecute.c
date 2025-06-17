@@ -9224,21 +9224,21 @@ TclCompareTwoNumbers(
  */
 static inline int
 ParseArithSeriesArgument(
-    Tcl_Interp *interp,
-    Tcl_Obj **valuePtr,
-    void **ptrPtr,
-    int *typePtr)
+    Tcl_Interp *interp,		// The interpreter.
+    Tcl_Obj **valuePtr,		// Var holding object reference to parse/update [IN/OUT]
+    void **ptrPtr,		// Var to receive ref to number contents [OUT]
+    int *typePtr)		// Var to receive number type [OUT]
 {
-    Tcl_Obj *tmp;
-    if (TclHasInternalRep(*valuePtr, &tclExprCodeType)
-	    || GetNumberFromObj(NULL, *valuePtr, ptrPtr, typePtr) != TCL_OK) {
-	if (Tcl_ExprObj(interp, *valuePtr, &tmp) != TCL_OK) {
+    Tcl_Obj *value = *valuePtr, *tmp;
+    if (TclHasInternalRep(value, &tclExprCodeType)
+	    || GetNumberFromObj(NULL, value, ptrPtr, typePtr) != TCL_OK) {
+	if (Tcl_ExprObj(interp, value, &tmp) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	// Switch to the object out of the expression.
-	Tcl_DecrRefCount(*valuePtr);
-	*valuePtr = tmp;
-	if (GetNumberFromObj(interp, *valuePtr, ptrPtr, typePtr) != TCL_OK) {
+	Tcl_DecrRefCount(value);
+	*valuePtr = value = tmp;
+	if (GetNumberFromObj(interp, value, ptrPtr, typePtr) != TCL_OK) {
 	    return TCL_ERROR;
 	}
     }
