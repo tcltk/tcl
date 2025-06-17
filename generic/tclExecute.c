@@ -709,6 +709,8 @@ static Tcl_Obj *	ExecuteExtendedBinaryMathOp(Tcl_Interp *interp,
 static Tcl_Obj *	ExecuteExtendedUnaryMathOp(int opcode,
 			    Tcl_Obj *valuePtr);
 static void		FreeExprCodeInternalRep(Tcl_Obj *objPtr);
+static Tcl_Obj *	GenerateArithSeries(Tcl_Interp *interp, Tcl_Obj *from,
+			    Tcl_Obj *to, Tcl_Obj *step, Tcl_Obj *count);
 static ExceptionRange *	GetExceptRangeForPc(const unsigned char *pc,
 			    int searchMode, ByteCode *codePtr);
 static const char *	GetSrcInfoForPc(const unsigned char *pc,
@@ -5449,174 +5451,24 @@ TEBCresume(
 	}
     }
 
-    {
-	Tcl_Obj *from, *to, *step, *count, *tmp, *failure;
-	unsigned opnd;
-	int useDoubles, type;
-	double dcount;
-	void *ptr;
-	
-    case INST_ARITH_SERIES:
-	opnd = TclGetUInt1AtPtr(pc + 1);
-	count = (opnd & TCL_ARITHSERIES_COUNT) ? OBJ_AT_DEPTH(0) : NULL;
-	step =  (opnd & TCL_ARITHSERIES_STEP)  ? OBJ_AT_DEPTH(1) : NULL;
-	to =    (opnd & TCL_ARITHSERIES_TO)    ? OBJ_AT_DEPTH(2) : NULL;
-	from =  (opnd & TCL_ARITHSERIES_FROM)  ? OBJ_AT_DEPTH(3) : NULL;
-	if (count) Tcl_IncrRefCount(count);
-	if (step)  Tcl_IncrRefCount(step);
-	if (to)    Tcl_IncrRefCount(to);
-	if (from)  Tcl_IncrRefCount(from);
+    case INST_ARITH_SERIES: {
+	unsigned mask = TclGetUInt1AtPtr(pc + 1);
+	Tcl_Obj *count = (mask & TCL_ARITHSERIES_COUNT) ? OBJ_AT_DEPTH(0) : NULL;
+	Tcl_Obj *step =  (mask & TCL_ARITHSERIES_STEP)  ? OBJ_AT_DEPTH(1) : NULL;
+	Tcl_Obj *to =    (mask & TCL_ARITHSERIES_TO)    ? OBJ_AT_DEPTH(2) : NULL;
+	Tcl_Obj *from =  (mask & TCL_ARITHSERIES_FROM)  ? OBJ_AT_DEPTH(3) : NULL;
 	TRACE(("0x%x \"%s\" \"%s\" \"%s\" \"%s\" => ",
-		opnd, O2S(from), O2S(to), O2S(step), O2S(count)));
+		mask, O2S(from), O2S(to), O2S(step), O2S(count)));
 	DECACHE_STACK_INFO();
-
-	// Decide whether to request a double series or an int series.
-	// Note the call to Tcl_ExprObj. UGH!
-	useDoubles = 0;
-	if (from) {
-	    if (!TclHasInternalRep(from, &tclExprCodeType)
-		    && GetNumberFromObj(NULL, from, &ptr, &type) == TCL_OK) {
-		goto lseqFromComprehend;
-	    }
-	    if (Tcl_ExprObj(interp, from, &tmp) != TCL_OK) {
-		goto handleLseqError;
-	    }
-	    Tcl_DecrRefCount(from);
-	    from = tmp;
-	    if (GetNumberFromObj(interp, from, &ptr, &type) != TCL_OK) {
-		goto handleLseqError;
-	    }
-	lseqFromComprehend:
-	    switch (type) {
-	    case TCL_NUMBER_DOUBLE:
-		useDoubles = 1;
-		break;
-	    case TCL_NUMBER_NAN:
-		failure = from;
-		goto handleLseqNan;
-	    }
-	}
-	if (to) {
-	    if (!TclHasInternalRep(to, &tclExprCodeType)
-		    && GetNumberFromObj(NULL, to, &ptr, &type) == TCL_OK) {
-		goto lseqToComprehend;
-	    }
-	    if (Tcl_ExprObj(interp, to, &tmp) != TCL_OK) {
-		goto handleLseqError;
-	    }
-	    Tcl_DecrRefCount(to);
-	    to = tmp;
-	    if (GetNumberFromObj(interp, to, &ptr, &type) != TCL_OK) {
-		goto handleLseqError;
-	    }
-	lseqToComprehend:
-	    switch (type) {
-	    case TCL_NUMBER_DOUBLE:
-		useDoubles = 1;
-		break;
-	    case TCL_NUMBER_NAN:
-		failure = to;
-		goto handleLseqNanTo;
-	    }
-	}
-	if (step) {
-	    if (!TclHasInternalRep(step, &tclExprCodeType)
-		    && GetNumberFromObj(NULL, step, &ptr, &type) == TCL_OK) {
-		goto lseqStepComprehend;
-	    }
-	    if (Tcl_ExprObj(interp, step, &tmp) != TCL_OK) {
-		goto handleLseqError;
-	    }
-	    Tcl_DecrRefCount(step);
-	    step = tmp;
-	    if (GetNumberFromObj(interp, step, &ptr, &type) != TCL_OK) {
-		goto handleLseqError;
-	    }
-	lseqStepComprehend:
-	    switch (type) {
-	    case TCL_NUMBER_DOUBLE:
-		useDoubles = 1;
-		break;
-	    case TCL_NUMBER_NAN:
-		failure = step;
-		goto handleLseqNan;
-	    }
-	}
-
-	// Convert count to integer if not already
-	// Almost the same as above except how floats are really handled.
-	if (count) {
-	    if (!TclHasInternalRep(count, &tclExprCodeType)
-		    && GetNumberFromObj(NULL, count, &ptr, &type) == TCL_OK) {
-		goto lseqCountComprehend;
-	    }
-	    if (Tcl_ExprObj(interp, count, &tmp) != TCL_OK) {
-		goto handleLseqError;
-	    }
-	    Tcl_DecrRefCount(count);
-	    count = tmp;
-	    if (GetNumberFromObj(interp, count, &ptr, &type) != TCL_OK) {
-		goto handleLseqError;
-	    }
-	lseqCountComprehend:
-	    switch (type) {
-	    case TCL_NUMBER_DOUBLE:
-		dcount = *((const double *)ptr);
-		if (dcount - (int)dcount == 0.0) {
-		    Tcl_DecrRefCount(count);
-		    TclNewIntObj(count, (int)dcount);
-		    Tcl_IncrRefCount(count);
-		}
-		break;
-	    case TCL_NUMBER_NAN:
-		failure = count;
-		goto handleLseqNanCount;
-	    }
-	}
-
-	// Construct the series.
-	objResultPtr = TclNewArithSeriesObj(interp, useDoubles, from, to, step,
-		count);
-	if (objResultPtr == NULL) {
-	    goto handleLseqError;
-	}
+	// Decode arguments and construct the series.
+	objResultPtr = GenerateArithSeries(interp, from, to, step, count);
 	CACHE_STACK_INFO();
-	if (count) Tcl_DecrRefCount(count);
-	if (step)  Tcl_DecrRefCount(step);
-	if (to)    Tcl_DecrRefCount(to);
-	if (from)  Tcl_DecrRefCount(from);
+	if (objResultPtr == NULL) {
+	    TRACE_ERROR(interp);
+	    goto gotError;
+	}
 	TRACE_APPEND_OBJ(objResultPtr);
 	NEXT_INST_V(2, 4, 1);
-
-	// Why does lseq have these extra squirrelly cases?
-    handleLseqNan:
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"domain error: argument not in valid range"));
-	Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
-		"domain error: argument not in valid range", NULL);
-	goto handleLseqError;
-    handleLseqNanTo:
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"cannot use non-numeric floating-point value \"%s\" to "
-		"estimate length of arith-series",
-		TclGetString(failure)));
-	Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
-		"domain error: argument not in valid range", NULL);
-	goto handleLseqError;
-    handleLseqNanCount:
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"expected integer but got \"%s\"",
-		TclGetString(failure)));
-	Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
-		"domain error: argument not in valid range", NULL);
-    handleLseqError:
-	CACHE_STACK_INFO();
-	if (count) Tcl_DecrRefCount(count);
-	if (step)  Tcl_DecrRefCount(step);
-	if (to)    Tcl_DecrRefCount(to);
-	if (from)  Tcl_DecrRefCount(from);
-	TRACE_ERROR(interp);
-	goto gotError;
     }
 
 	/*
@@ -9348,6 +9200,209 @@ TclCompareTwoNumbers(
 	TCL_UNREACHABLE();
     }
     return TCL_ERROR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GenerateArithSeries --
+ *
+ *	This is the core of the implementation of the INST_ARITH_SERIES opcode,
+ *	handling the decoding of the arguments (applying Tcl_ExprObj() if
+ *	necessary) before handing off to TclNewArithSeriesObj() to build the
+ *	series.
+ *
+ * Results:
+ *	The arithmetic series object (zero refcount) or NULL on error, when a
+ *	message will be left in the interpreter result.
+ *
+ * Side effects:
+ *	Can call Tcl_ExprObj() which can call commands, so arbitrary side
+ *	effects are possible.
+ *
+ *----------------------------------------------------------------------
+ */
+static Tcl_Obj *
+GenerateArithSeries(
+    Tcl_Interp *interp,		// The interpreter.
+    Tcl_Obj *from,		// The from value, or NULL if not supplied.
+    Tcl_Obj *to,		// The to value, or NULL if not supplied.
+    Tcl_Obj *step,		// The step value, or NULL if not supplied.
+    Tcl_Obj *count)		// The count value, or NULL if not supplied.
+{
+    Tcl_Obj  *tmp, *failure, *result = NULL;
+    int type, useDoubles = 0;
+    double dcount;
+    void *ptr;
+
+    // Hold explicit references.
+    if (from)  {
+	Tcl_IncrRefCount(from);
+    }
+    if (to)    {
+	Tcl_IncrRefCount(to);
+    }
+    if (step)  {
+	Tcl_IncrRefCount(step);
+    }
+    if (count) {
+	Tcl_IncrRefCount(count);
+    }
+
+    /*
+     * Decide whether to request a double series or an int series.
+     * Note the calls to Tcl_ExprObj. UGH!
+     */
+
+    if (from) {
+	if (!TclHasInternalRep(from, &tclExprCodeType)
+		&& GetNumberFromObj(NULL, from, &ptr, &type) == TCL_OK) {
+	    goto lseqFromComprehend;
+	}
+	if (Tcl_ExprObj(interp, from, &tmp) != TCL_OK) {
+	    goto handleLseqError;
+	}
+	// Switch to the object out of the expression.
+	Tcl_DecrRefCount(from);
+	from = tmp;
+	if (GetNumberFromObj(interp, from, &ptr, &type) != TCL_OK) {
+	    goto handleLseqError;
+	}
+    lseqFromComprehend:
+	switch (type) {
+	case TCL_NUMBER_DOUBLE:
+	    useDoubles = 1;
+	    break;
+	case TCL_NUMBER_NAN:
+	    failure = from;
+	    goto nanFromStep;
+	}
+    }
+
+    if (to) {
+	if (!TclHasInternalRep(to, &tclExprCodeType)
+		&& GetNumberFromObj(NULL, to, &ptr, &type) == TCL_OK) {
+	    goto lseqToComprehend;
+	}
+	if (Tcl_ExprObj(interp, to, &tmp) != TCL_OK) {
+	    goto handleLseqError;
+	}
+	// Switch to the object out of the expression.
+	Tcl_DecrRefCount(to);
+	to = tmp;
+	if (GetNumberFromObj(interp, to, &ptr, &type) != TCL_OK) {
+	    goto handleLseqError;
+	}
+    lseqToComprehend:
+	switch (type) {
+	case TCL_NUMBER_DOUBLE:
+	    useDoubles = 1;
+	    break;
+	case TCL_NUMBER_NAN:
+	    failure = to;
+	    goto nanTo;
+	}
+    }
+
+    if (step) {
+	if (!TclHasInternalRep(step, &tclExprCodeType)
+		&& GetNumberFromObj(NULL, step, &ptr, &type) == TCL_OK) {
+	    goto lseqStepComprehend;
+	}
+	if (Tcl_ExprObj(interp, step, &tmp) != TCL_OK) {
+	    goto handleLseqError;
+	}
+	// Switch to the object out of the expression.
+	Tcl_DecrRefCount(step);
+	step = tmp;
+	if (GetNumberFromObj(interp, step, &ptr, &type) != TCL_OK) {
+	    goto handleLseqError;
+	}
+    lseqStepComprehend:
+	switch (type) {
+	case TCL_NUMBER_DOUBLE:
+	    useDoubles = 1;
+	    break;
+	case TCL_NUMBER_NAN:
+	    failure = step;
+	    goto nanFromStep;
+	}
+    }
+
+    // Convert count to integer if not already
+    // Almost the same as above cases except how floats are really handled.
+    if (count) {
+	if (!TclHasInternalRep(count, &tclExprCodeType)
+		&& GetNumberFromObj(NULL, count, &ptr, &type) == TCL_OK) {
+	    goto lseqCountComprehend;
+	}
+	if (Tcl_ExprObj(interp, count, &tmp) != TCL_OK) {
+	    goto handleLseqError;
+	}
+	// Switch to the object out of the expression.
+	Tcl_DecrRefCount(count);
+	count = tmp;
+	if (GetNumberFromObj(interp, count, &ptr, &type) != TCL_OK) {
+	    goto handleLseqError;
+	}
+    lseqCountComprehend:
+	switch (type) {
+	case TCL_NUMBER_DOUBLE:
+	    dcount = *((const double *)ptr);
+	    if (dcount - (int)dcount == 0.0) {
+		Tcl_DecrRefCount(count);
+		// Switch to the object holding integer version of the count.
+		TclNewIntObj(count, (int)dcount);
+		Tcl_IncrRefCount(count);
+	    }
+	    break;
+	case TCL_NUMBER_NAN:
+	    failure = count;
+	    goto nanCount;
+	}
+    }
+
+    // Parameters comprehended and normalised. Now construct the series.
+    result = TclNewArithSeriesObj(interp, useDoubles, from, to, step, count);
+
+    // Clean up.
+  handleLseqError:
+    if (count) {
+	Tcl_DecrRefCount(count);
+    }
+    if (step)  {
+	Tcl_DecrRefCount(step);
+    }
+    if (to)    {
+	Tcl_DecrRefCount(to);
+    }
+    if (from)  {
+	Tcl_DecrRefCount(from);
+    }
+    return result;
+
+    // Why does [lseq] have these extra squirrelly error cases?
+  nanFromStep:
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    "domain error: argument not in valid range"));
+    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
+	    "domain error: argument not in valid range", NULL);
+    goto handleLseqError;
+  nanTo:
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    "cannot use non-numeric floating-point value \"%s\" to "
+	    "estimate length of arith-series",
+	    TclGetString(failure)));
+    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
+	    "domain error: argument not in valid range", NULL);
+    goto handleLseqError;
+  nanCount:
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    "expected integer but got \"%s\"",
+	    TclGetString(failure)));
+    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
+	    "domain error: argument not in valid range", NULL);
+    goto handleLseqError;
 }
 
 #ifdef TCL_COMPILE_DEBUG
