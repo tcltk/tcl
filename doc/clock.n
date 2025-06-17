@@ -9,14 +9,15 @@
 clock \- Obtain and manipulate dates and times
 .SH "SYNOPSIS"
 .nf
-package require \fBTcl 8.5-\fR
+\fBpackage require Tcl 8.5-\fR
 
-\fBclock add\fI timeVal\fR ?\fIcount unit...\fR? ?\fI\-option value\fR?
+\fBclock add\fI timeVal\fR ?\fIcount unit ...\fR? ?\fI\-option value\fR?
 \fBclock clicks\fR ?\fI\-option\fR?
-\fBclock format\fI timeVal\fR ?\fI\-option value\fR...?
+\fBclock format\fI timeVal\fR ?\fI\-option value ...\fR?
 \fBclock microseconds\fR
 \fBclock milliseconds\fR
-\fBclock scan\fI inputString\fR ?\fI\-option value\fR...?
+\fBclock scan\fI inputString\fR ?\fI\-option value ...\fR?
+\fBclock scan\fI inputString\fR ?\fI\-option value ...\fR?
 \fBclock seconds\fR
 .fi
 .BE

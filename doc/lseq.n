@@ -12,25 +12,38 @@
 lseq \- Build a numeric sequence returned as a list
 .SH SYNOPSIS
 .nf
-\fBlseq \fIstart \fR?(\fB..\fR|\fBto\fR)? \fIend\fR ??\fBby\fR? \fIstep\fR?
-\fBlseq \fIstart \fBcount\fI count\fR ??\fBby\fR? \fIstep\fR?
-\fBlseq \fIcount\fR ?\fBby \fIstep\fR?
+\fBlseq \fIstart end\fR
+\fBlseq \fIstart\fR ?\fBto\fR? \fIend\fR ?\fIstepSpec\fR?
+\fBlseq \fIstart\fR ?\fB..\fR? \fIend\fR ?\fIstepSpec\fR?
+\fBlseq \fIstart \fBcount\fI count\fR ?\fIstepSpec\fR?
+
+\fBlseq \fIcount\fR ?\fBby \fIstepValue\fR?
 .fi
 .BE
 .SH DESCRIPTION
 .PP
-The \fBlseq\fR command creates a sequence of numeric values using the given
-parameters \fIstart\fR, \fIend\fR, and \fIstep\fR. The \fIoperation\fR
-argument "\fB..\fR" or "\fBto\fR" defines the range. The "\fBcount\fR" option
-is used to define a count of the number of elements in the list. A short form
-use of the command, with a single count value, will create a range from 0 to
-\fIcount\fR-1.
+The \fBlseq\fR command creates a sequence of numeric values using the arguments
+\fIstart\fR, \fIend\fR, \fIcount\fR, and optionally
+\fIstepSpec\fR/\fIstepValue\fR. 
+.PP
+If a \fIstart\fR value is specified as the first argument, the \fIend\fR value
+of the sequence can be specified as the next argument, optionally preceeded by
+the literal word "\fBto\fR" or "\fB..\fR". Alternatively, the \fIcount\fR
+(number of elements in the sequence) can be defined instead when preceeded by
+the word \fBcount\fR. In both cases, the interval between the subsequent
+numbers of the sequence can be specified using the optional \fIstepSpec\fR
+argument. It is defined as "?\fBby\fR? \fIstepValue\fR", i.e. the optional word
+\fBby\fR followed by the step value.
+.PP
+A short form use of the command with a single argument \fIcount\fR will create a
+sequence from 0 to \fIcount\fR-1. It can optioanlly be followed by a step value
+preceeded by the word \fBby\fR.
 .PP
 The \fBlseq\fR command can produce both increasing and decreasing
 sequences. When both \fIstart\fR and \fIend\fR are provided without a
-\fIstep\fR value, then if \fIstart\fR <= \fIend\fR, the sequence will be
-increasing and if \fIstart\fR > \fIend\fR it will be decreasing. If a
-\fIstep\fR vale is included, it's sign should agree with the direction of the
+\fIstepValue\fR, then if \fIstart\fR <= \fIend\fR, the sequence will be
+increasing and if \fIstart\fR > \fIend\fR it will be decreasing. If the
+\fIstepValue\fR is included, it's sign should agree with the direction of the
 sequence (descending \(-> negative and ascending \(-> positive), otherwise an
 empty list is returned.  For example:
 .RS
@@ -49,8 +62,8 @@ empty list is returned.  For example:
 .CE
 .RE
 .PP
-The numeric arguments, \fIstart\fR, \fIend\fR, \fIstep\fR, and \fIcount\fR,
-may also be a valid expression. The expression will be evaluated and the
+The numeric arguments in \fIstart\fR, \fIend\fR, \fIstepValue\fR and \fIcount\fR
+may also be valid expressions. The expression will be evaluated and the
 numeric result will be used.  An expression that does not evaluate to a number
 will produce an invalid argument error.
 .PP
@@ -60,7 +73,7 @@ elements, and if \fIcount\fR is not supplied, it is computed as:
 .RS
 .PP
 .CS
-\fIcount\fR = int( (\fIend\fR - \fIstart\fR + \fIstep\fR) / \fIstep\fR )
+\fIcount\fR = int( (\fIend\fR - \fIstart\fR + \fIstepValue\fR) / \fIstepValueq\fR )
 .CE
 .RE
 .SH EXAMPLES
