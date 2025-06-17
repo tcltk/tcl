@@ -948,8 +948,16 @@ Tcl_ExecObjCmd(
 		Tcl_SetResult(interp, "No value given for option -encoding.",
 			TCL_STATIC);
 		return TCL_ERROR;
+	    } else {
+		Tcl_Encoding encoding;
+		encodingObj = objv[skip];
+		/* Verify validity - bug [da5e1bc7bc] */
+		if (Tcl_GetEncodingFromObj(interp, encodingObj, &encoding)
+			!= TCL_OK) {
+		    return TCL_ERROR;
+		}
+		Tcl_FreeEncoding(encoding);
 	    }
-	    encodingObj = objv[skip];
 	    break;
 	}
     }
@@ -1014,16 +1022,14 @@ Tcl_ExecObjCmd(
 
     /* Bug [0f1ddc0df7] - encoding errors - use replace profile */
     if (Tcl_SetChannelOption(interp, chan, "-profile", "replace") != TCL_OK) {
-	return TCL_ERROR;
+	goto errorWithOpenChannel;
     }
 
     /* TIP 716 */
-    if (encodingObj) {
-	if (Tcl_SetChannelOption(
-		interp, chan, "-encoding", Tcl_GetString(encodingObj)) !=
-	    TCL_OK) {
-	    return TCL_ERROR;
-	}
+    if (encodingObj &&
+	Tcl_SetChannelOption(interp, chan, "-encoding", 
+	    Tcl_GetString(encodingObj)) != TCL_OK) {
+	goto errorWithOpenChannel;
     }
 
     TclNewObj(resultPtr);
@@ -1042,7 +1048,7 @@ Tcl_ExecObjCmd(
 			Tcl_PosixError(interp)));
 		Tcl_DecrRefCount(resultPtr);
 	    }
-	    return TCL_ERROR;
+	    goto errorWithOpenChannel;
 	}
     }
 
@@ -1069,6 +1075,11 @@ Tcl_ExecObjCmd(
     Tcl_SetObjResult(interp, resultPtr);
 
     return result;
+
+errorWithOpenChannel:
+    /* Interpreter should already contain error. Pass NULL to not overwrite */
+    (void)Tcl_CloseEx(NULL, chan, 0);
+    return TCL_ERROR;
 }
 
 /*
