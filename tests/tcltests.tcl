@@ -116,6 +116,25 @@ namespace eval ::tcltests {
 		-result $message -returnCodes error \
 		{*}$args
 	}
+
+	# Return Windows version as FULLVERSION MAJOR MINOR BUILD REVISION
+	if {$::tcl_platform(platform) eq "windows"} {
+	    proc windowsversion {} {
+		set ver [regexp -inline {(\d+).(\d+).(\d+).(\d+)} [exec {*}[auto_execok ver]]]
+		proc windowsversion {} [list return $ver]
+		return [windowsversion]
+	    }
+	    proc windowsbuildnumber {} {
+		return [lindex [windowsversion] 3]
+	    }
+	    proc windowscodepage {} {
+		# Note we cannot use result of chcp because that returns OEM code page.
+		package require registry
+		set cp [registry get HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Nls\\CodePage ACP]
+		proc windowscodepage {} "return cp$cp"
+		return [windowscodepage]
+	    }
+	}
     }
 
     init

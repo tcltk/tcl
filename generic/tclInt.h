@@ -141,6 +141,32 @@
 #   define Tcl_ConditionFinalize(condPtr)
 #endif
 
+// A way to mark a code path as unreachable.
+#ifndef TCL_UNREACHABLE
+#if defined(__STDC__) && __STDC__ >= 202311L
+#include <stddef.h>
+#define TCL_UNREACHABLE()	unreachable()
+#elif defined(__GNUC__)
+#define TCL_UNREACHABLE()	__builtin_unreachable()
+#elif defined(_MSC_VER)
+#include <stdbool.h>
+#define TCL_UNREACHABLE()	__assume(false)
+#else
+#define TCL_UNREACHABLE()	((void) 0)
+#endif
+#endif // TCL_UNREACHABLE
+
+#ifndef TCL_FALLTHROUGH
+#if defined(__STDC__) && __STDC__ >= 202311L
+#define TCL_FALLTHROUGH()	[[fallthrough]]
+#elif defined(__GNUC__)
+#define TCL_FALLTHROUGH()	__attribute__((fallthrough))
+#else
+// Nothing documented as an alternative to the standard [[fallthrough]].
+#define TCL_FALLTHROUGH()	((void) 0)
+#endif
+#endif // TCL_FALLTHROUGH
+
 /*
  * The following procedures allow namespaces to be customized to support
  * special name resolution rules for commands/variables.
@@ -1641,6 +1667,10 @@ typedef struct ExecEnv {
 #define COR_IS_SUSPENDED(corPtr) \
     ((corPtr)->stackLevel == NULL)
 
+// The different types of yielded coroutine we have.
+#define CORO_ACTIVATE_YIELD	NULL		// 0 or 1 argument expected
+#define CORO_ACTIVATE_YIELDM	INT2PTR(1)	// Arbitrary arguments expected
+
 /*
  * The definitions for the LiteralTable and LiteralEntry structures. Each
  * interpreter contains a LiteralTable. It is used to reduce the storage
@@ -2555,10 +2585,11 @@ typedef struct ListStore {
     Tcl_Obj *slots[TCLFLEXARRAY];
 				/* Variable size array. Grown as needed */
 } ListStore;
-
-#define LISTSTORE_CANONICAL 0x1 /* All Tcl_Obj's referencing this
+enum ListStoreFlags {
+    LISTSTORE_CANONICAL = 1	/* All Tcl_Obj's referencing this
 				 * store have their string representation
 				 * derived from the list representation */
+};
 
 /* Max number of elements that can be contained in a list */
 #define LIST_MAX \

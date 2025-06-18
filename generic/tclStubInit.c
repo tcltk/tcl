@@ -1498,7 +1498,8 @@ const TclStubs tclStubs = {
     Tcl_NewWideUIntObj, /* 688 */
     Tcl_SetWideUIntObj, /* 689 */
     Tcl_IsEmpty, /* 690 */
-    TclUnusedStubEntry, /* 691 */
+    Tcl_GetEncodingNameForUser, /* 691 */
+    TclUnusedStubEntry, /* 692 */
 };
 
 /* !END!: Do not edit above this line. */

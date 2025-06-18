@@ -694,6 +694,12 @@ Tcl_GetEncodingNameFromEnvironment(
     return Tcl_DStringAppend(bufPtr, TCL_DEFAULT_ENCODING, TCL_INDEX_NONE);
 }
 
+const char *
+Tcl_GetEncodingNameForUser(Tcl_DString *bufPtr)
+{
+    return Tcl_GetEncodingNameFromEnvironment(bufPtr);
+}
+
 /*
  *---------------------------------------------------------------------------
  *
