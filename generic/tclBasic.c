@@ -251,9 +251,6 @@ MODULE_SCOPE const TclStubs tclStubs;
  * after particular kinds of [yield].
  */
 
-#define CORO_ACTIVATE_YIELD	NULL
-#define CORO_ACTIVATE_YIELDM	INT2PTR(1)
-
 #define COROUTINE_ARGUMENTS_SINGLE_OPTIONAL	(-1)
 #define COROUTINE_ARGUMENTS_ARBITRARY		(-2)
 
@@ -334,7 +331,7 @@ static const CmdInfo builtInCmds[] = {
     {"if",		Tcl_IfObjCmd,		TclCompileIfCmd,	TclNRIfObjCmd,	CMD_IS_SAFE},
     {"incr",		Tcl_IncrObjCmd,		TclCompileIncrCmd,	NULL,	CMD_IS_SAFE},
     {"join",		Tcl_JoinObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
-    {"lappend",		Tcl_LappendObjCmd,	TclCompileLappendCmd,	NULL,	CMD_IS_SAFE},
+    {"lappend",		Tcl_LappendObjCmd,	TclCompileLappendCmd,	NULL,	CMD_IS_SAFE|CMD_COMPILES_EXPANDED},
     {"lassign",		Tcl_LassignObjCmd,	TclCompileLassignCmd,	NULL,	CMD_IS_SAFE},
     {"ledit",		Tcl_LeditObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
     {"lindex",		Tcl_LindexObjCmd,	TclCompileLindexCmd,	NULL,	CMD_IS_SAFE},
@@ -363,7 +360,7 @@ static const CmdInfo builtInCmds[] = {
     {"split",		Tcl_SplitObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
     {"subst",		Tcl_SubstObjCmd,	TclCompileSubstCmd,	TclNRSubstObjCmd,	CMD_IS_SAFE},
     {"switch",		Tcl_SwitchObjCmd,	TclCompileSwitchCmd,	TclNRSwitchObjCmd, CMD_IS_SAFE},
-    {"tailcall",	NULL,			TclCompileTailcallCmd,	TclNRTailcallObjCmd,	CMD_IS_SAFE},
+    {"tailcall",	NULL,			TclCompileTailcallCmd,	TclNRTailcallObjCmd,	CMD_IS_SAFE|CMD_COMPILES_EXPANDED},
     {"throw",		Tcl_ThrowObjCmd,	TclCompileThrowCmd,	NULL,	CMD_IS_SAFE},
     {"trace",		Tcl_TraceObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
     {"try",		Tcl_TryObjCmd,		TclCompileTryCmd,	TclNRTryObjCmd,	CMD_IS_SAFE},
@@ -4619,7 +4616,8 @@ Dispatch(
     }
     if (TCL_DTRACE_CMD_INFO_ENABLED() && iPtr->cmdFramePtr) {
 	Tcl_Obj *info = TclInfoFrame(interp, iPtr->cmdFramePtr);
-	const char *a[6]; Tcl_Size i[2];
+	const char *a[6];
+	Tcl_Size i[2];
 
 	TclDTraceInfo(info, a, i);
 	TCL_DTRACE_CMD_INFO(a[0], a[1], a[2], a[3], i[0], i[1], a[4], a[5]);
@@ -6547,7 +6545,7 @@ Tcl_ExprLongObj(
 	}
 	resultPtr = Tcl_NewBignumObj(&big);
     }
-    /* FALLTHRU */
+	TCL_FALLTHROUGH();
     case TCL_NUMBER_INT:
     case TCL_NUMBER_BIG:
 	result = TclGetLongFromObj(interp, resultPtr, ptr);
@@ -8816,6 +8814,7 @@ TclNRTailcallObjCmd(
 
 	listPtr = Tcl_NewListObj(objc, objv);
 	TclListObjSetElement(NULL, listPtr, 0, TclNewNamespaceObj(nsPtr));
+	Tcl_IncrRefCount(listPtr);
 
 	iPtr->varFramePtr->tailcallPtr = listPtr;
     }
@@ -9613,7 +9612,7 @@ TclNRInterpCoroutine(
 	    Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", (char *)NULL);
 	    return TCL_ERROR;
 	}
-	/* fallthrough */
+	TCL_FALLTHROUGH();
     case COROUTINE_ARGUMENTS_ARBITRARY:
 	if (objc > 1) {
 	    Tcl_SetObjResult(interp, Tcl_NewListObj(objc - 1, objv + 1));

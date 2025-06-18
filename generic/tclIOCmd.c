@@ -135,7 +135,7 @@ Tcl_PutsObjCmd(
 	    string = objv[3];
 	    break;
 	}
-	/* Fall through */
+	TCL_FALLTHROUGH();
     default:			/* [puts] or
 				 * [puts some bad number of arguments...] */
 	Tcl_WrongNumArgs(interp, 1, objv, "?-nonewline? ?channel? string");
@@ -910,11 +910,12 @@ Tcl_ExecObjCmd(
     int argc, background, i, index, keepNewline, result, skip, ignoreStderr;
     Tcl_Size length;
     static const char *const options[] = {
-	"-ignorestderr", "-keepnewline", "--", NULL
+	"-ignorestderr", "-keepnewline", "-encoding", "--", NULL
     };
     enum execOptionsEnum {
-	EXEC_IGNORESTDERR, EXEC_KEEPNEWLINE, EXEC_LAST
+	EXEC_IGNORESTDERR, EXEC_KEEPNEWLINE, EXEC_ENCODING, EXEC_LAST
     };
+    Tcl_Obj *encodingObj = NULL;
 
     /*
      * Check for any leading option arguments.
@@ -931,12 +932,32 @@ Tcl_ExecObjCmd(
 		TCL_EXACT, &index) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	if (index == EXEC_KEEPNEWLINE) {
-	    keepNewline = 1;
-	} else if (index == EXEC_IGNORESTDERR) {
-	    ignoreStderr = 1;
-	} else {
+	if (index == EXEC_LAST) {
 	    skip++;
+	    break;
+	}
+	switch (index) {
+	case EXEC_KEEPNEWLINE:
+	    keepNewline = 1;
+	    break;
+	case EXEC_IGNORESTDERR:
+	    ignoreStderr = 1;
+	    break;
+	case EXEC_ENCODING:
+	    if (++skip >= objc) {
+		Tcl_SetResult(interp, "No value given for option -encoding.",
+			TCL_STATIC);
+		return TCL_ERROR;
+	    } else {
+		Tcl_Encoding encoding;
+		encodingObj = objv[skip];
+		/* Verify validity - bug [da5e1bc7bc] */
+		if (Tcl_GetEncodingFromObj(interp, encodingObj, &encoding)
+			!= TCL_OK) {
+		    return TCL_ERROR;
+		}
+		Tcl_FreeEncoding(encoding);
+	    }
 	    break;
 	}
     }
@@ -986,11 +1007,6 @@ Tcl_ExecObjCmd(
 	return TCL_ERROR;
     }
 
-    /* Bug [0f1ddc0df7] - encoding errors - use replace profile */
-    if (Tcl_SetChannelOption(NULL, chan, "-profile", "replace") != TCL_OK) {
-	return TCL_ERROR;
-    }
-
     if (background) {
 	/*
 	 * Store the list of PIDs from the pipeline in interp's result and
@@ -1002,6 +1018,18 @@ Tcl_ExecObjCmd(
 	    return TCL_ERROR;
 	}
 	return TCL_OK;
+    }
+
+    /* Bug [0f1ddc0df7] - encoding errors - use replace profile */
+    if (Tcl_SetChannelOption(interp, chan, "-profile", "replace") != TCL_OK) {
+	goto errorWithOpenChannel;
+    }
+
+    /* TIP 716 */
+    if (encodingObj &&
+	Tcl_SetChannelOption(interp, chan, "-encoding",
+	    Tcl_GetString(encodingObj)) != TCL_OK) {
+	goto errorWithOpenChannel;
     }
 
     TclNewObj(resultPtr);
@@ -1020,7 +1048,7 @@ Tcl_ExecObjCmd(
 			Tcl_PosixError(interp)));
 		Tcl_DecrRefCount(resultPtr);
 	    }
-	    return TCL_ERROR;
+	    goto errorWithOpenChannel;
 	}
     }
 
@@ -1047,6 +1075,11 @@ Tcl_ExecObjCmd(
     Tcl_SetObjResult(interp, resultPtr);
 
     return result;
+
+errorWithOpenChannel:
+    /* Interpreter should already contain error. Pass NULL to not overwrite */
+    (void)Tcl_CloseEx(NULL, chan, 0);
+    return TCL_ERROR;
 }
 
 /*
@@ -1605,7 +1638,7 @@ Tcl_SocketObjCmd(
 	    }
 	    break;
 	default:
-	    Tcl_Panic("Tcl_SocketObjCmd: bad option index to SocketOptions");
+	    TCL_UNREACHABLE();
 	}
     }
     if (server) {
@@ -1810,6 +1843,8 @@ Tcl_FcopyObjCmd(
 	case FcopyCommand:
 	    cmdPtr = objv[i+1];
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
 
@@ -1876,6 +1911,8 @@ ChanPendingObjCmd(
 	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(Tcl_OutputBuffered(chan)));
 	}
 	break;
+    default:
+	TCL_UNREACHABLE();
     }
     return TCL_OK;
 }

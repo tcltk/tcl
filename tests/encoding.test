@@ -12,7 +12,7 @@ if {"::tcltest" ni [namespace children]} {
     package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
-
+source [file join [file dirname [info script]] tcltests.tcl]
 
 namespace eval ::tcl::test::encoding {
     variable x
@@ -1149,6 +1149,42 @@ test encoding-30.3 {encoding convertfrom large strings > 4GB} -constraints {
 } -body {
     list [string length [set s [string repeat A 0x100000000]]] [string equal $s [encoding convertfrom ascii $s]]
 } -result {4294967296 1}
+
+# TIP 716 tests
+tcltests::testnumargs "encoding user" "" ""
+test encoding-31.0 {encoding user} -body {
+    encoding user
+} -result [expr {$::tcl_platform(platform) eq "windows" ? [tcltests::windowscodepage] : [encoding system]}]
+
+test encoding-31.1 {encoding system does not change encoding user} -setup {
+    set system [encoding system]
+    set user [encoding user]
+} -body {
+    encoding system ascii
+    list [encoding system] [string equal [encoding user] $user]
+} -cleanup {
+    encoding system $system
+    unset system
+    unset user
+} -result {ascii 1}
+
+test encoding-31.2 {encoding system on newer Windows always returns utf-8} -body {
+    string equal [encoding system] \
+	[expr {
+	       [tcltests::windowsbuildnumber] > 18362 ?
+	       "utf-8" : [tcltests::windowscodepage]
+	   }]
+} -constraints win -result 1
+
+test encoding-31.3 {Tcl_GetEncodingNameFromEnvironment} -constraints testencoding -body {
+    # Primarily tests that stub is callable from outside tcl.{so,dll} via stubs
+    testencoding Tcl_GetEncodingNameFromEnvironment
+} -result [encoding system]
+
+test encoding-31.4 {Tcl_GetEncodingNameForUser} -constraints testencoding -body {
+    # Primarily tests that stub is callable from outside tcl.{so,dll} via stubs
+    testencoding Tcl_GetEncodingNameForUser
+} -result [encoding user]
 
 test encoding-bug-6a3e2cb0f0-1 {Bug [6a3e2cb0f0] - invalid bytes in escape encodings} -body {
     encoding convertfrom -profile tcl8 iso2022-jp x\x1B\x7Aaby
