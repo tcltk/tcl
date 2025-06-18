@@ -3117,12 +3117,12 @@ TclCompileTryCmd(
      * Delete any temporary state and finish off.
      */
 
-  failedToCompile:
-      for (handlerIdx = 0; handlerIdx < numHandlers; ++handlerIdx) {
-	  if (handlers[handlerIdx].matchClause) {
-	      TclDecrRefCount(handlers[handlerIdx].matchClause);
-	  }
-      }
+failedToCompile:
+    for (handlerIdx = 0; handlerIdx < numHandlers; ++handlerIdx) {
+	if (handlers[handlerIdx].matchClause) {
+	    TclDecrRefCount(handlers[handlerIdx].matchClause);
+	}
+    }
     if (handlers != &staticHandler) {
 	TclStackFree(interp, handlers);
     }
