@@ -4256,6 +4256,8 @@ ZipFSListObjCmd(
 		return TCL_ERROR;
 	    }
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
     } else if (objc == 2) {
 	pattern = TclGetString(objv[1]);

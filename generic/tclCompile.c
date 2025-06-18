@@ -955,6 +955,11 @@ InstructionDesc const tclInstructionTable[] = {
 	 * Stack:  ... value => ...
 	 * Note that the jump table contains offsets relative to the PC when
 	 * it points to this instruction; the code is relocatable. */
+    TCL_INSTRUCTION_ENTRY(
+	"tailcallList",		0),
+	/* Do a tailcall with the words from the argument as the thing to
+	 * tailcall to, and currNs is the namespace scope.
+	 * Stack: ... {currNs words...} => ...[NOT REACHED] */
 
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };
@@ -1464,12 +1469,11 @@ IsCompactibleCompileEnv(
      * if it would otherwise be invalid.
      */
 
-    if (envPtr->procPtr != NULL && envPtr->procPtr->cmdPtr != NULL
-	    && envPtr->procPtr->cmdPtr->nsPtr != NULL) {
+    if (EnvIsProc(envPtr) && envPtr->procPtr->cmdPtr) {
 	Namespace *nsPtr = envPtr->procPtr->cmdPtr->nsPtr;
 
-	if (strcmp(nsPtr->fullName, "::tcl") == 0
-		|| strncmp(nsPtr->fullName, "::tcl::", 7) == 0) {
+	if (nsPtr && (strcmp(nsPtr->fullName, "::tcl") == 0
+		|| strncmp(nsPtr->fullName, "::tcl::", 7) == 0)) {
 	    return 1;
 	}
     }
@@ -1494,12 +1498,18 @@ IsCompactibleCompileEnv(
 	case INST_EVAL_STK:
 	case INST_EXPR_STK:
 	case INST_YIELD:
+	case INST_YIELD_TO_INVOKE:
 	    return 0;
 	    /* Upvars */
 	case INST_UPVAR:
 	case INST_NSUPVAR:
 	case INST_VARIABLE:
 	    return 0;
+	    /* TclOO::next is NOT a problem: puts stack frame out of way.
+	     * There's a way to do it, but it's beneath the threshold of
+	     * likelihood. */
+	case INST_TCLOO_NEXT:
+	case INST_TCLOO_NEXT_CLASS:
 	default:
 	    size = tclInstructionTable[*pc].numBytes;
 	    assert (size > 0);
@@ -1817,7 +1827,7 @@ TclInitCompileEnv(
 	    Tcl_IncrRefCount(envPtr->extCmdMapPtr->path);
 	} else {
 	    envPtr->extCmdMapPtr->type =
-		(envPtr->procPtr ? TCL_LOCATION_PROC : TCL_LOCATION_BC);
+		(EnvIsProc(envPtr) ? TCL_LOCATION_PROC : TCL_LOCATION_BC);
 	}
     } else {
 	/*
@@ -1848,7 +1858,7 @@ TclInitCompileEnv(
 
 	    envPtr->line = 1;
 	    envPtr->extCmdMapPtr->type =
-		    (envPtr->procPtr ? TCL_LOCATION_PROC : TCL_LOCATION_BC);
+		    (EnvIsProc(envPtr) ? TCL_LOCATION_PROC : TCL_LOCATION_BC);
 
 	    if (pc && (ctxPtr->type == TCL_LOCATION_SOURCE)) {
 		/*
@@ -2513,7 +2523,7 @@ TclCompileScript(
 	     */
 
 	    if ((tclTraceCompile >= TCL_TRACE_BYTECODE_COMPILE_SUMMARY)
-		    && (envPtr->procPtr == NULL)) {
+		    && !EnvIsProc(envPtr)) {
 		int commandLength = parsePtr->term - parsePtr->commandStart;
 		fprintf(stdout, "  Compiling: ");
 		TclPrintSource(stdout, parsePtr->commandStart,
@@ -3777,7 +3787,8 @@ TclGetInnermostExceptionRange(
     ExceptionRange *rangePtr = envPtr->exceptArrayPtr + i;
 
     while (i > 0) {
-	rangePtr--; i--;
+	rangePtr--;
+	i--;
 
 	if (CurrentOffset(envPtr) >= rangePtr->codeOffset &&
 		(rangePtr->numCodeBytes == TCL_INDEX_NONE || CurrentOffset(envPtr) <

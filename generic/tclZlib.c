@@ -395,9 +395,7 @@ ConvertErrorToList(
 	 */
 
     default:
-	TclNewLiteralStringObj(objv[2], "UNKNOWN");
-	TclNewIntObj(objv[3], code);
-	return Tcl_NewListObj(4, objv);
+	TCL_UNREACHABLE();
     }
 }
 
@@ -2105,10 +2103,10 @@ ZlibCmd(
 		return TCL_ERROR;
 	    }
 	    switch (option) {
-	    case 0:
+	    case 0:		// -header
 		headerDictObj = objv[i + 1];
 		break;
-	    case 1:
+	    case 1:		// -level
 		if (Tcl_GetIntFromObj(interp, objv[i + 1],
 			&level) != TCL_OK) {
 		    return TCL_ERROR;
@@ -2118,6 +2116,8 @@ ZlibCmd(
 		    goto badLevel;
 		}
 		break;
+	    default:
+		TCL_UNREACHABLE();
 	    }
 	}
 	return Tcl_ZlibDeflate(interp, TCL_ZLIB_FORMAT_GZIP, objv[2], level,
@@ -2179,7 +2179,7 @@ ZlibCmd(
 		return TCL_ERROR;
 	    }
 	    switch (option) {
-	    case 0:
+	    case 0:		// -buffersize
 		if (TclGetWideIntFromObj(interp, objv[i + 1],
 			&wideLen) != TCL_OK) {
 		    return TCL_ERROR;
@@ -2190,10 +2190,12 @@ ZlibCmd(
 		}
 		buffersize = wideLen;
 		break;
-	    case 1:
+	    case 1:		// -headerVar
 		headerVarObj = objv[i + 1];
 		TclNewObj(headerDictObj);
 		break;
+	    default:
+		TCL_UNREACHABLE();
 	    }
 	}
 	if (Tcl_ZlibInflate(interp, TCL_ZLIB_FORMAT_GZIP, objv[2],
@@ -2215,9 +2217,10 @@ ZlibCmd(
     case CMD_PUSH:		/* push mode channel options...
 				 *	-> channel */
 	return ZlibPushSubcmd(interp, objc, objv);
-    }
 
-    return TCL_ERROR;
+    default:			// Should be no other options
+	TCL_UNREACHABLE();
+    }
 
   badLevel:
     Tcl_SetObjResult(interp, Tcl_NewStringObj(
@@ -2340,7 +2343,7 @@ ZlibStreamSubcmd(
 	format = TCL_ZLIB_FORMAT_GZIP;
 	break;
     default:
-	Tcl_Panic("should be unreachable");
+	TCL_UNREACHABLE();
     }
 
     /*
@@ -2472,7 +2475,7 @@ ZlibPushSubcmd(
 	format = TCL_ZLIB_FORMAT_GZIP;
 	break;
     default:
-	Tcl_Panic("should be unreachable");
+	TCL_UNREACHABLE();
     }
 
     if (TclGetChannelFromObj(interp, objv[3], &chan, &chanMode, 0) != TCL_OK) {
@@ -2555,6 +2558,8 @@ ZlibPushSubcmd(
 	    }
 	    compDictObj = objv[i];
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
 
@@ -2708,9 +2713,9 @@ ZlibStreamCmd(
 	    return TCL_ERROR;
 	}
 	return Tcl_ZlibStreamReset(zstream);
+    default:
+	TCL_UNREACHABLE();
     }
-
-    return TCL_OK;
 }
 
 static int
@@ -2787,6 +2792,8 @@ ZlibStreamAddCmd(
 	    }
 	    compDictObj = objv[++i];
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
 
 	if (flush == -2) {
@@ -2895,6 +2902,8 @@ ZlibStreamPutCmd(
 	    }
 	    compDictObj = objv[++i];
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
 	if (flush == -2) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
