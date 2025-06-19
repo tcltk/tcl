@@ -35,6 +35,13 @@ typedef struct {
 static Tcl_ThreadDataKey dataKey;
 
 /*
+ * Key for looking up the table of registered TCP accept callbacks, a hash
+ * table indexed by AcceptCallback references, used as a set (values are
+ * meaningless).
+ */
+#define ASSOC_KEY "tclTCPAcceptCallbacks"
+
+/*
  * Static functions for this file:
  */
 
@@ -1324,12 +1331,12 @@ RegisterTcpServerInterpCleanup(
     Tcl_HashEntry *hPtr;	/* Entry for this record. */
     int isNew;			/* Is the entry new? */
 
-    hTblPtr = (Tcl_HashTable *)Tcl_GetAssocData(interp, "tclTCPAcceptCallbacks", NULL);
+    hTblPtr = (Tcl_HashTable *)Tcl_GetAssocData(interp, ASSOC_KEY, NULL);
 
     if (hTblPtr == NULL) {
 	hTblPtr = (Tcl_HashTable *)Tcl_Alloc(sizeof(Tcl_HashTable));
 	Tcl_InitHashTable(hTblPtr, TCL_ONE_WORD_KEYS);
-	Tcl_SetAssocData(interp, "tclTCPAcceptCallbacks",
+	Tcl_SetAssocData(interp, ASSOC_KEY,
 		TcpAcceptCallbacksDeleteProc, hTblPtr);
     }
 
@@ -1370,7 +1377,7 @@ UnregisterTcpServerInterpCleanupProc(
     Tcl_HashTable *hTblPtr;
     Tcl_HashEntry *hPtr;
 
-    hTblPtr = (Tcl_HashTable *)Tcl_GetAssocData(interp, "tclTCPAcceptCallbacks", NULL);
+    hTblPtr = (Tcl_HashTable *)Tcl_GetAssocData(interp, ASSOC_KEY, NULL);
     if (hTblPtr == NULL) {
 	return;
     }
