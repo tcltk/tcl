@@ -950,7 +950,15 @@ TclCompileAssembleCmd(
 	envPtr->codeNext = envPtr->codeStart + offset;
 	envPtr->currStackDepth = depth;
 	envPtr->exceptArrayNext = numExnRanges;
-	envPtr->auxDataArrayNext = numAuxRanges;
+	while (envPtr->auxDataArrayNext > numAuxRanges) {
+	    Tcl_Size auxIdx = --envPtr->auxDataArrayNext;
+	    AuxData *auxDataPtr = &envPtr->auxDataArrayPtr[auxIdx];
+	    if (auxDataPtr->type && auxDataPtr->type->freeProc) {
+		auxDataPtr->type->freeProc(auxDataPtr->clientData);
+	    }
+	    auxDataPtr->clientData = NULL;
+	    auxDataPtr->type = NULL;
+	}
 	envPtr->exceptDepth = exceptDepth;
 	TclCompileSyntaxError(interp, envPtr);
     }
