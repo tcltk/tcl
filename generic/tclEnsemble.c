@@ -1959,7 +1959,7 @@ NsEnsembleImplementationCmdNR(
 		    objv + 2 + ensemblePtr->numParameters);
 	}
 	Tcl_IncrRefCount(copyPtr);
-	TclNRAddCallback(interp, TclNRReleaseValues, copyPtr, NULL, NULL, NULL);
+	TclNRAddCallback(interp, TclNRReleaseValues, copyPtr);
 	TclDecrRefCount(prefixObj);
 
 	/*
@@ -1970,8 +1970,7 @@ NsEnsembleImplementationCmdNR(
 
 	if (TclInitRewriteEnsemble(interp, 2 + ensemblePtr->numParameters,
 		prefixObjc + ensemblePtr->numParameters, objv)) {
-	    TclNRAddCallback(interp, TclClearRootEnsemble, NULL, NULL, NULL,
-		    NULL);
+	    TclNRAddCallback(interp, TclClearRootEnsemble);
 	}
 
 	/*
@@ -2249,12 +2248,12 @@ TclSpellFix(
 	tmp[2] = (Tcl_Obj *) store;
 	iPtr->ensembleRewrite.sourceObjs = (Tcl_Obj *const *) tmp;
 
-	TclNRAddCallback(interp, FreeER, tmp, store, NULL, NULL);
+	TclNRAddCallback(interp, FreeER, tmp, store);
     }
 
     store[idx] = fix;
     Tcl_IncrRefCount(fix);
-    TclNRAddCallback(interp, TclNRReleaseValues, fix, NULL, NULL, NULL);
+    TclNRAddCallback(interp, TclNRReleaseValues, fix);
 }
 
 /*

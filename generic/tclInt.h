@@ -143,7 +143,7 @@
 
 // A way to mark a code path as unreachable.
 #ifndef TCL_UNREACHABLE
-#if defined(__STDC__) && __STDC__ >= 202311L
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L
 #include <stddef.h>
 #define TCL_UNREACHABLE()	unreachable()
 #elif defined(__GNUC__)
@@ -157,7 +157,7 @@
 #endif // TCL_UNREACHABLE
 
 #ifndef TCL_FALLTHROUGH
-#if defined(__STDC__) && __STDC__ >= 202311L
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L
 #define TCL_FALLTHROUGH()	[[fallthrough]]
 #elif defined(__GNUC__)
 #define TCL_FALLTHROUGH()	__attribute__((fallthrough))
@@ -166,6 +166,24 @@
 #define TCL_FALLTHROUGH()	((void) 0)
 #endif
 #endif // TCL_FALLTHROUGH
+
+/*
+ * Compile-time assertions: these produce a compile time error if the
+ * expression is not known to be true at compile time. If the assertion is
+ * known to be false, the compiler (or optimizer?) will error out with
+ * "division by zero". If the assertion cannot be evaluated at compile time,
+ * the compiler will error out with "non-static initializer".
+ *
+ * Adapted with permission from
+ * http://www.pixelbeat.org/programming/gcc/static_assert.html
+ */
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L
+#define TCL_CT_ASSERT(e) \
+    static_assert(e)
+#else
+#define TCL_CT_ASSERT(e) \
+    {enum { ct_assert_value = 1/(!!(e)) };}
+#endif
 
 /*
  * The following procedures allow namespaces to be customized to support
@@ -4959,20 +4977,6 @@ MODULE_SCOPE Tcl_LibraryInitProc Tcl_ABSListTest_Init;
 	    ? 1 : 0)))
 
 /*
- * Compile-time assertions: these produce a compile time error if the
- * expression is not known to be true at compile time. If the assertion is
- * known to be false, the compiler (or optimizer?) will error out with
- * "division by zero". If the assertion cannot be evaluated at compile time,
- * the compiler will error out with "non-static initializer".
- *
- * Adapted with permission from
- * http://www.pixelbeat.org/programming/gcc/static_assert.html
- */
-
-#define TCL_CT_ASSERT(e) \
-    {enum { ct_assert_value = 1/(!!(e)) };}
-
-/*
  *----------------------------------------------------------------
  * Allocator for small structs (<=sizeof(Tcl_Obj)) using the Tcl_Obj pool.
  * Only checked at compile time.
@@ -5069,9 +5073,21 @@ typedef struct NRE_callback {
 
 /*
  * Inline version of Tcl_NRAddCallback.
+ * This checks a non-NULL postProcPtr is present, and that there are between
+ * zero and four data* arguments; unsupplied arguments will be NULL.
+ *
+ * If postProcPtr is non-constant, use Tcl_NRAddCallback to get a runtime check
+ * for sanity.
  */
-
-#define TclNRAddCallback(interp,postProcPtr,data0,data1,data2,data3) \
+#define TclNRAddCallback(interp,...) \
+	TclNRAddCallback_1(interp, __VA_ARGS__, NULL,NULL,NULL,NULL,NULL,NULL)
+#define TclNRAddCallback_1(interp,postProcPtr,data0,data1,data2,data3,dummy,...) \
+    do {								\
+	TCL_CT_ASSERT((postProcPtr) != NULL);				\
+	TCL_CT_ASSERT((dummy) == NULL);					\
+	TclNRAddCallback_2(interp,postProcPtr,data0,data1,data2,data3);	\
+    } while (0)
+#define TclNRAddCallback_2(interp,postProcPtr,data0,data1,data2,data3) \
     do {								\
 	NRE_callback *_callbackPtr;					\
 	TCLNR_ALLOC((interp), (_callbackPtr));				\

@@ -46,7 +46,7 @@ static inline Tcl_Object *
 AddConstructionFinalizer(
     Tcl_Interp *interp)
 {
-    TclNRAddCallback(interp, FinalizeConstruction, NULL, NULL, NULL, NULL);
+    TclNRAddCallback(interp, FinalizeConstruction, NULL);
     return (Tcl_Object *) &(TOP_CB(interp)->data[0]);
 }
 
@@ -132,8 +132,7 @@ TclOO_Class_Constructor(
     Tcl_IncrRefCount(invoke[0]);
     Tcl_IncrRefCount(invoke[1]);
     Tcl_IncrRefCount(invoke[2]);
-    TclNRAddCallback(interp, DecrRefsPostClassConstructor,
-	    invoke, oPtr, NULL, NULL);
+    TclNRAddCallback(interp, DecrRefsPostClassConstructor, invoke, oPtr);
 
     /*
      * Tricky point: do not want the extra reported level in the Tcl stack
@@ -389,8 +388,7 @@ TclOO_Object_Destroy(
 	if (contextPtr != NULL) {
 	    contextPtr->callPtr->flags |= DESTRUCTOR;
 	    contextPtr->skip = 0;
-	    TclNRAddCallback(interp, AfterNRDestructor, contextPtr,
-		    NULL, NULL, NULL);
+	    TclNRAddCallback(interp, AfterNRDestructor, contextPtr);
 	    TclPushTailcallPoint(interp);
 	    return TclOOInvokeContext(contextPtr, interp, 0, NULL);
 	}
@@ -484,7 +482,7 @@ TclOO_Object_Eval(
      * the script completes.
      */
 
-    TclNRAddCallback(interp, FinalizeEval, object, NULL, NULL, NULL);
+    TclNRAddCallback(interp, FinalizeEval, object);
     return TclNREvalObjEx(interp, scriptPtr, 0, invoker, skip);
 }
 
@@ -944,7 +942,7 @@ TclOONextObjCmd(
      * that this is like [uplevel 1] and not [eval].
      */
 
-    TclNRAddCallback(interp, NextRestoreFrame, framePtr, NULL,NULL,NULL);
+    TclNRAddCallback(interp, NextRestoreFrame, framePtr);
     iPtr->varFramePtr = framePtr->callerVarPtr;
     return TclNRObjectContextInvokeNext(interp, context, objc, objv, 1);
 }
@@ -1004,7 +1002,7 @@ TclOONextToObjCmd(
 	     */
 
 	    TclNRAddCallback(interp, NextRestoreFrame, framePtr,
-		    contextPtr, INT2PTR(contextPtr->index), NULL);
+		    contextPtr, INT2PTR(contextPtr->index));
 	    contextPtr->index = i - 1;
 	    iPtr->varFramePtr = framePtr->callerVarPtr;
 	    return TclNRObjectContextInvokeNext(interp,
