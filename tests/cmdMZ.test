@@ -193,6 +193,9 @@ test cmdMZ-return-2.18 {return option handling} {
 	return -code error -errorstack [list CALL a CALL b] yo
     } -> foo] [dictSort $foo] [info errorstack]
 } {2 {-code 1 -errorcode NONE -errorstack {CALL a CALL b} -level 1} {CALL a CALL b}}
+test cmdMZ-return-2.19 {return option handling} -body {
+    return -level 0 -code error -options {-options {-code break} -code continue}
+} -returnCodes continue -result {}
 
 # Check that the result of a [return -options $opts $result] is
 # indistinguishable from that of the originally caught script, no matter what
