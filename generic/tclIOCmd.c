@@ -27,7 +27,7 @@ typedef struct {
  * It must be per-thread because of std channel limitations.
  */
 
-typedef struct {
+typedef struct ThreadSpecificData_IOCommands {
     int initialized;		/* Set to 1 when the module is initialized. */
     Tcl_Obj *stdoutObjPtr;	/* Cached stdout channel Tcl_Obj */
 } ThreadSpecificData;

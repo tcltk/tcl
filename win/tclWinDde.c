@@ -59,7 +59,7 @@ typedef struct {
     HWND hwnd;
 } DdeEnumServices;
 
-typedef struct {
+typedef struct ThreadSpecificData_WindowsDde {
     Conversation *currentConversations;
 				/* A list of conversations currently being
 				 * processed. */

@@ -196,8 +196,8 @@ typedef struct {
  * select based implementation of the Tcl notifier. One of these structures is
  * created for each thread that is using the notifier.
  */
-
-typedef struct ThreadSpecificData {
+typedef struct ThreadSpecificData_Notifier_macOS ThreadSpecificData;
+struct ThreadSpecificData_Notifier_macOS {
     FileHandler *firstFileHandlerPtr;
 				/* Pointer to head of file handler list. */
     int polled;			/* True if the notifier thread has polled for
@@ -213,7 +213,7 @@ typedef struct ThreadSpecificData {
     /* Start notifierLock section */
     int onList;			/* True if this thread is on the
 				 * waitingList */
-    struct ThreadSpecificData *nextPtr, *prevPtr;
+    ThreadSpecificData *nextPtr, *prevPtr;
 				/* All threads that are currently waiting on
 				 * an event have their ThreadSpecificData
 				 * structure on a doubly-linked listed formed
@@ -258,7 +258,7 @@ typedef struct ThreadSpecificData {
 
     CFTimeInterval waitTime;	/* runLoopTimer wait time when running
 				 * embedded. */
-} ThreadSpecificData;
+};
 
 static Tcl_ThreadDataKey dataKey;
 

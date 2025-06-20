@@ -14,8 +14,7 @@
 
 #include "tclInt.h"
 
-/* Forward declaration */
-struct ThreadSpecificData;
+typedef struct ThreadSpecificData_Async ThreadSpecificData;
 
 /*
  * One of the following structures exists for each asynchronous handler:
@@ -32,7 +31,7 @@ typedef struct AsyncHandler {
 				 * invoked. */
     void *clientData;		/* Value to pass to handler when it is
 				 * invoked. */
-    struct ThreadSpecificData *originTsd;
+    ThreadSpecificData *originTsd;
 				/* Used in Tcl_AsyncMark to modify thread-
 				 * specific data from outside the thread it is
 				 * associated to. */
@@ -41,7 +40,7 @@ typedef struct AsyncHandler {
     void *notifierData;		/* Platform notifier data or NULL. */
 } AsyncHandler;
 
-typedef struct ThreadSpecificData {
+struct ThreadSpecificData_Async {
     int asyncReady;		/* This is set to 1 whenever a handler becomes
 				 * ready and it is cleared to zero whenever
 				 * Tcl_AsyncInvoke is called. It can be
@@ -52,7 +51,7 @@ typedef struct ThreadSpecificData {
 				 * currently working. If so then we won't set
 				 * asyncReady again until Tcl_AsyncInvoke
 				 * returns. */
-} ThreadSpecificData;
+};
 static Tcl_ThreadDataKey dataKey;
 
 /* Mutex to protect linked-list of AsyncHandlers in the process. */

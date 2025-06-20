@@ -355,7 +355,7 @@ struct ForwardingResult {
 				 * results. */
 };
 
-typedef struct {
+typedef struct ThreadSpecificData_ReflectedChannel {
     /*
      * Table of all reflected channels owned by this thread. This is the
      * per-thread version of the per-interpreter map.

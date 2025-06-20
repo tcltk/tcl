@@ -274,7 +274,7 @@ static int		RingBufferCheck(const RingBuffer *ringPtr);
  * Static data.
  */
 
-typedef struct {
+typedef struct ThreadSpecificData_WindowsConsole {
     /* Currently this struct is only used to detect thread initialization */
     int notUsed;		/* Dummy field */
 } ThreadSpecificData;

@@ -69,7 +69,7 @@ NewNativeObj(
  * The thread-local variables for this file's functions.
  */
 
-typedef struct {
+typedef struct ThreadSpecificData_MainLoop {
     Tcl_Obj *path;		/* The filename of the script for *_Main()
 				 * routines to [source] as a startup script,
 				 * or NULL for none set, meaning enter

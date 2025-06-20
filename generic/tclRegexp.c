@@ -66,7 +66,7 @@
 
 #define NUM_REGEXPS 30
 
-typedef struct {
+typedef struct ThreadSpecificData_RegularExpressions {
     int initialized;		/* Set to 1 when the module is initialized. */
     char *patterns[NUM_REGEXPS];/* Strings corresponding to compiled regular
 				 * expression patterns. NULL means that this

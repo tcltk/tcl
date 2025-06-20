@@ -30,7 +30,7 @@ enum TclWinNotifyMessages {
  * created for each thread that is using the notifier.
  */
 
-typedef struct {
+typedef struct ThreadSpecificData_Notifier_Windows {
     CRITICAL_SECTION crit;	/* Monitor for this notifier. */
     DWORD thread;		/* Identifier for thread associated with this
 				 * notifier. */

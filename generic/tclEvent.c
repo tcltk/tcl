@@ -117,7 +117,7 @@ static const char ENCODING_ERROR[] = "\n\t(encoding error in stderr)";
 
 static Tcl_ExitProc *appExitPtr = NULL;
 
-typedef struct ThreadSpecificData {
+typedef struct ThreadSpecificData_Event {
     ExitHandler *firstExitPtr;	/* First in list of all exit handlers for this
 				 * thread. */
     int inExit;			/* True when this thread is exiting. This is
