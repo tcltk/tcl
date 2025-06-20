@@ -59,10 +59,10 @@ typedef struct FileHandler {
  * epoll_ctl(2) and their corresponding event(s) returned by epoll_wait(2).
  */
 
-struct ThreadSpecificData;
+typedef struct ThreadSpecificData_Notifier_epoll ThreadSpecificData;
 struct PlatformEventData {
     FileHandler *filePtr;
-    struct ThreadSpecificData *tsdPtr;
+    ThreadSpecificData *tsdPtr;
 };
 
 /*
@@ -87,7 +87,7 @@ typedef struct {
  */
 
 LIST_HEAD(PlatformReadyFileHandlerList, FileHandler);
-typedef struct ThreadSpecificData {
+struct ThreadSpecificData_Notifier_epoll {
     FileHandler *triggerFilePtr;
     FileHandler *firstFileHandlerPtr;
 				/* Pointer to head of file handler list. */
@@ -112,7 +112,7 @@ typedef struct ThreadSpecificData {
 				 * returned by epoll_wait(2). */
     size_t maxReadyEvents;	/* Count of epoll_events in readyEvents. */
     int asyncPending;		/* True when signal triggered thread. */
-} ThreadSpecificData;
+};
 
 static Tcl_ThreadDataKey dataKey;
 

@@ -57,10 +57,10 @@ typedef struct FileHandler {
  * kevent(2) and their corresponding event(s) returned by kevent(2).
  */
 
-struct ThreadSpecificData;
+typedef struct ThreadSpecificData_Notifier_kqueue ThreadSpecificData;
 struct PlatformEventData {
     FileHandler *filePtr;
-    struct ThreadSpecificData *tsdPtr;
+    ThreadSpecificData *tsdPtr;
 };
 
 /*
@@ -85,7 +85,7 @@ typedef struct {
  */
 
 LIST_HEAD(PlatformReadyFileHandlerList, FileHandler);
-typedef struct ThreadSpecificData {
+struct ThreadSpecificData_Notifier_kqueue {
     FileHandler *firstFileHandlerPtr;
 				/* Pointer to head of file handler list. */
     struct PlatformReadyFileHandlerList firstReadyFileHandlerPtr;
@@ -103,7 +103,7 @@ typedef struct ThreadSpecificData {
 				 * returned by kevent(2). */
     size_t maxReadyEvents;	/* Count of kevents in readyEvents. */
     int asyncPending;		/* True when signal triggered thread. */
-} ThreadSpecificData;
+};
 
 static Tcl_ThreadDataKey dataKey;
 

@@ -138,7 +138,7 @@ typedef struct PipeInfo {
 				 * synchronized with the readable object. */
 } PipeInfo;
 
-typedef struct {
+typedef struct ThreadSpecificData_WindowsPipelines {
     /*
      * The following pointer refers to the head of the list of pipes that are
      * being watched for file events.

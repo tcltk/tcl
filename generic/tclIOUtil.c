@@ -49,7 +49,7 @@ typedef struct FilesystemRecord {
 /*
  */
 
-typedef struct {
+typedef struct ThreadSpecificData_IOUtilities {
     int initialized;
     size_t cwdPathEpoch;	/* Compared with the global cwdPathEpoch to
 				 * determine whether cwdPathPtr is stale. */

@@ -68,7 +68,8 @@ typedef struct {
  * created for each thread that is using the notifier.
  */
 
-typedef struct ThreadSpecificData {
+typedef struct ThreadSpecificData_Notifier_select ThreadSpecificData;
+struct ThreadSpecificData_Notifier_select {
     FileHandler *firstFileHandlerPtr;
 				/* Pointer to head of file handler list. */
     SelectMasks checkMasks;	/* This structure is used to build up the
@@ -86,7 +87,7 @@ typedef struct ThreadSpecificData {
     unsigned int pollState;	/* pollState is used to implement a polling
 				 * handshake between each thread and the
 				 * notifier thread. Bits defined below. */
-    struct ThreadSpecificData *nextPtr, *prevPtr;
+    ThreadSpecificData *nextPtr, *prevPtr;
 				/* All threads that are currently waiting on
 				 * an event have their ThreadSpecificData
 				 * structure on a doubly-linked listed formed
@@ -109,7 +110,7 @@ typedef struct ThreadSpecificData {
 				 * Used as condition flag together with waitCV
 				 * above. */
 #endif /* TCL_THREADS */
-} ThreadSpecificData;
+};
 
 static Tcl_ThreadDataKey dataKey;
 

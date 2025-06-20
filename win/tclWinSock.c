@@ -211,7 +211,7 @@ typedef struct {
  * Per (main) thread data, holding list of things being waited upon and the
  * various handles to things doing the waiting/notification.
  */
-typedef struct {
+typedef struct ThreadSpecificData_WindowsSockets {
     HWND hwnd;			/* Handle to window for socket messages. */
     HANDLE socketThread;	/* Thread handling the window */
     Tcl_ThreadId threadId;	/* Parent thread. */

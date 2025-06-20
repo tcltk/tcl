@@ -118,7 +118,7 @@ typedef struct CopyState {
  * The structure defined below is used in this file only.
  */
 
-typedef struct {
+typedef struct ThreadSpecificData_IO {
     NextChannelHandler *nestedHandlerPtr;
 				/* This variable holds the list of nested
 				 * Tcl_NotifyChannel invocations. */

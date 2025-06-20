@@ -128,7 +128,7 @@ typedef struct SerialInfo {
 				 * [fconfigure -queue] */
 } SerialInfo;
 
-typedef struct {
+typedef struct ThreadSpecificData_WindowsSerial {
     /*
      * The following pointer refers to the head of the list of serials that
      * are being watched for file events.

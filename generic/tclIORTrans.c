@@ -322,7 +322,7 @@ struct ForwardingResult {
 				 * results. */
 };
 
-typedef struct {
+typedef struct ThreadSpecificData_ReflectedTransform {
     /*
      * Table of all reflected transformations owned by this thread.
      */

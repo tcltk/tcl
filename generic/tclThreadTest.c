@@ -31,16 +31,14 @@
  * a thread. Any thread can send messages but only the main interpreter can
  * receive them.
  */
-
-typedef struct ThreadSpecificData {
+typedef struct ThreadSpecificData_TestThread ThreadSpecificData;
+struct ThreadSpecificData_TestThread {
     Tcl_ThreadId threadId;	/* Tcl ID for this thread */
     Tcl_Interp *interp;		/* Main interpreter for this thread */
     int flags;			/* See the TP_ defines below... */
-    struct ThreadSpecificData *nextPtr;
-				/* List for "thread names" */
-    struct ThreadSpecificData *prevPtr;
-				/* List for "thread names" */
-} ThreadSpecificData;
+    ThreadSpecificData *nextPtr;/* List for "thread names" */
+    ThreadSpecificData *prevPtr;/* List for "thread names" */
+};
 static Tcl_ThreadDataKey dataKey;
 
 /*

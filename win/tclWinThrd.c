@@ -77,13 +77,13 @@ static CRITICAL_SECTION joinLock;
  */
 
 #if TCL_THREADS
-
-typedef struct ThreadSpecificData {
+typedef struct ThreadSpecificData_WindowsThreads ThreadSpecificData;
+struct ThreadSpecificData_WindowsThreads {
     HANDLE condEvent;		/* Per-thread condition event */
-    struct ThreadSpecificData *nextPtr;	/* Queue pointers */
-    struct ThreadSpecificData *prevPtr;
+    ThreadSpecificData *nextPtr;/* Queue pointers */
+    ThreadSpecificData *prevPtr;
     int flags;			/* See ThreadStateFlags below */
-} ThreadSpecificData;
+};
 static Tcl_ThreadDataKey dataKey;
 
 #endif /* TCL_THREADS */

@@ -48,7 +48,7 @@ typedef struct FileInfo {
 				 * pending on the channel. */
 } FileInfo;
 
-typedef struct {
+typedef struct ThreadSpecificData_WindowsChannels {
     /*
      * List of all file channels currently open.
      */

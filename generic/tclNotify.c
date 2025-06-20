@@ -51,8 +51,8 @@ typedef struct EventSource {
  * thread can queue an event on any notifier. Note that all of the values in
  * this structure will be initialized to 0.
  */
-
-typedef struct ThreadSpecificData {
+typedef struct ThreadSpecificData_Notifier ThreadSpecificData;
+struct ThreadSpecificData_Notifier {
     Tcl_Event *firstEventPtr;	/* First pending event, or NULL if none. */
     Tcl_Event *lastEventPtr;	/* Last pending event, or NULL if none. */
     Tcl_Event *markerEventPtr;	/* Last high-priority event in queue, or NULL
@@ -76,11 +76,10 @@ typedef struct ThreadSpecificData {
     Tcl_ThreadId threadId;	/* Thread that owns this notifier instance. */
     void *clientData;		/* Opaque handle for platform specific
 				 * notifier. */
-    struct ThreadSpecificData *nextPtr;
-				/* Next notifier in global list of notifiers.
+    ThreadSpecificData *nextPtr;/* Next notifier in global list of notifiers.
 				 * Access is controlled by the listLock global
 				 * mutex. */
-} ThreadSpecificData;
+};
 
 static Tcl_ThreadDataKey dataKey;
 
