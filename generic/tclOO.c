@@ -1852,7 +1852,7 @@ TclNRNewObjectInstance(
      */
 
     if (TclInitRewriteEnsemble(interp, skip, skip, objv)) {
-	TclNRAddCallback(interp, TclClearRootEnsemble, NULL, NULL, NULL, NULL);
+	TclNRAddCallback(interp, TclClearRootEnsemble);
     }
 
     /*
@@ -2841,7 +2841,7 @@ TclOOObjectCmdCore(
      * for the duration.
      */
 
-    TclNRAddCallback(interp, FinalizeObjectCall, contextPtr, NULL,NULL,NULL);
+    TclNRAddCallback(interp, FinalizeObjectCall, contextPtr);
     return TclOOInvokeContext(contextPtr, interp, objc, objv);
 }
 
@@ -2972,7 +2972,7 @@ TclNRObjectContextInvokeNext(
      */
 
     TclNRAddCallback(interp, FinalizeNext, contextPtr,
-	    INT2PTR(contextPtr->index), INT2PTR(contextPtr->skip), NULL);
+	    INT2PTR(contextPtr->index), INT2PTR(contextPtr->skip));
     contextPtr->index++;
     contextPtr->skip = skip;
 
