@@ -1509,13 +1509,16 @@ proc ::ndoc::main {} {
 		} elseif {! [file exists $outDir]} {
 			file mkdir $outDir
 		}
-		foreach file [glob [file join $inDir *.n]] {
-			puts "converting $file ..."
-			set md [man2markdown [readFile $file]]
-			set stem [file rootname [file tail $file]]
-			set fh [open [file join $outDir ${stem}.md] w]
-			puts $fh $md
-			close $fh
+		# first the files in section "n", then in section "1", finally in section "3":
+		foreach section {n 1 3} {
+			foreach file [glob [file join $inDir *.$section]] {
+				puts "converting $file ..."
+				set md [man2markdown [readFile $file]]
+				set stem [file rootname [file tail $file]]
+				set fh [open [file join $outDir ${stem}.md] w]
+				puts $fh $md
+				close $fh
+			}
 		}
 	} else {
 		# convert single file (to stdout):
