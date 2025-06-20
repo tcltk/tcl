@@ -919,9 +919,9 @@ TclCompileAssembleCmd(
     Tcl_Size numCommands = envPtr->numCommands;
     Tcl_Size offset = CurrentOffset(envPtr);
     Tcl_Size depth = envPtr->currStackDepth;
-    size_t numExnRanges = envPtr->exceptArrayNext;
-    size_t numAuxRanges = envPtr->auxDataArrayNext;
-    size_t exceptDepth = envPtr->exceptDepth;
+    Tcl_Size numExnRanges = envPtr->exceptArrayNext;
+    Tcl_Size numAuxRanges = envPtr->auxDataArrayNext;
+    Tcl_Size exceptDepth = envPtr->exceptDepth;
 
     /*
      * Make sure that the command has a single arg that is a simple word.
