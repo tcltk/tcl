@@ -571,8 +571,6 @@ InstallStandardVariableMapping(
 {
     Tcl_Obj *variableObj;
     Tcl_Size i, n;
-    int created;
-    Tcl_HashTable uniqueTable;
 
     for (i=0 ; i<varc ; i++) {
 	Tcl_IncrRefCount(varv[i]);
@@ -592,10 +590,10 @@ InstallStandardVariableMapping(
     }
     vnlPtr->num = 0;
     if (varc > 0) {
-	Tcl_InitObjHashTable(&uniqueTable);
+	Tcl_HashTable uniqueTable;
+	TclInitObjSet(&uniqueTable);
 	for (i=n=0 ; i<varc ; i++) {
-	    Tcl_CreateHashEntry(&uniqueTable, varv[i], &created);
-	    if (created) {
+	    if (TclSetAdd(&uniqueTable, varv[i])) {
 		vnlPtr->list[n++] = varv[i];
 	    } else {
 		Tcl_DecrRefCount(varv[i]);
@@ -624,8 +622,6 @@ InstallPrivateVariableMapping(
 {
     PrivateVariableMapping *privatePtr;
     Tcl_Size i, n;
-    int created;
-    Tcl_HashTable uniqueTable;
 
     for (i=0 ; i<varc ; i++) {
 	Tcl_IncrRefCount(varv[i]);
@@ -649,10 +645,10 @@ InstallPrivateVariableMapping(
 
     pvlPtr->num = 0;
     if (varc > 0) {
-	Tcl_InitObjHashTable(&uniqueTable);
+	Tcl_HashTable uniqueTable;
+	TclInitObjSet(&uniqueTable);
 	for (i=n=0 ; i<varc ; i++) {
-	    Tcl_CreateHashEntry(&uniqueTable, varv[i], &created);
-	    if (created) {
+	    if (TclSetAdd(&uniqueTable, varv[i])) {
 		privatePtr = &(pvlPtr->list[n++]);
 		privatePtr->variableObj = varv[i];
 		privatePtr->fullNameObj = Tcl_ObjPrintf(
@@ -2517,7 +2513,6 @@ ClassMixin_Set(
     Tcl_HashTable uniqueCheck;	/* Note that this hash table is just used as a
 				 * set of class references; it has no payload
 				 * values and keys are always pointers. */
-    int isNew;
 
     if (clsPtr == NULL) {
 	return TCL_ERROR;
@@ -2533,7 +2528,7 @@ ClassMixin_Set(
     }
 
     mixins = (Class **) TclStackAlloc(interp, sizeof(Class *) * mixinc);
-    Tcl_InitHashTable(&uniqueCheck, TCL_ONE_WORD_KEYS);
+    TclInitPtrSet(&uniqueCheck);
 
     for (i = 0; i < mixinc; i++) {
 	mixins[i] = GetClassInOuterContext(interp, mixinv[i],
@@ -2542,8 +2537,7 @@ ClassMixin_Set(
 	    i--;
 	    goto freeAndError;
 	}
-	(void) Tcl_CreateHashEntry(&uniqueCheck, (void *) mixins[i], &isNew);
-	if (!isNew) {
+	if (!TclSetAdd(&uniqueCheck, mixins[i])) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "class should only be a direct mixin once",
 		    TCL_AUTO_LENGTH));
@@ -2958,7 +2952,6 @@ ObjMixin_Set(
     Tcl_HashTable uniqueCheck;	/* Note that this hash table is just used as a
 				 * set of class references; it has no payload
 				 * values and keys are always pointers. */
-    int isNew;
 
     if (Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
@@ -2973,7 +2966,7 @@ ObjMixin_Set(
     }
 
     mixins = (Class **) TclStackAlloc(interp, sizeof(Class *) * mixinc);
-    Tcl_InitHashTable(&uniqueCheck, TCL_ONE_WORD_KEYS);
+    TclInitPtrSet(&uniqueCheck);
 
     for (i = 0; i < mixinc; i++) {
 	mixins[i] = GetClassInOuterContext(interp, mixinv[i],
@@ -2981,8 +2974,7 @@ ObjMixin_Set(
 	if (mixins[i] == NULL) {
 	    goto freeAndError;
 	}
-	(void) Tcl_CreateHashEntry(&uniqueCheck, (void *) mixins[i], &isNew);
-	if (!isNew) {
+	if (!TclSetAdd(&uniqueCheck, mixins[i])) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "class should only be a direct mixin once",
 		    TCL_AUTO_LENGTH));

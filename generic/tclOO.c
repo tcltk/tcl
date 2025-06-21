@@ -1872,9 +1872,7 @@ TclNewObjectInstanceCommon(
     const char *nameStr,
     const char *nsNameStr)
 {
-    Tcl_HashEntry *hPtr;
     Foundation *fPtr = GetFoundation(interp);
-    Object *oPtr;
     const char *simpleName = NULL;
     Namespace *nsPtr = NULL, *dummy;
     Namespace *inNsPtr = (Namespace *) TclGetCurrentNamespace(interp);
@@ -1887,8 +1885,7 @@ TclNewObjectInstanceCommon(
 	 * Disallow creation of an object over an existing command.
 	 */
 
-	hPtr = Tcl_FindHashEntry(&nsPtr->cmdTable, simpleName);
-	if (hPtr) {
+	if (Tcl_FindHashEntry(&nsPtr->cmdTable, simpleName)) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "can't create object \"%s\": command already exists with"
 		    " that name", nameStr));
@@ -1901,7 +1898,7 @@ TclNewObjectInstanceCommon(
      * Create the object.
      */
 
-    oPtr = AllocObject(interp, simpleName, nsPtr, nsNameStr);
+    Object *oPtr = AllocObject(interp, simpleName, nsPtr, nsNameStr);
     if (oPtr == NULL) {
 	return NULL;
     }

@@ -570,7 +570,7 @@ TclOOGetSortedClassMethodList(
     size_t numStrings;
 
     Tcl_InitObjHashTable(&names);
-    Tcl_InitHashTable(&examinedClasses, TCL_ONE_WORD_KEYS);
+    TclInitPtrSet(&examinedClasses);
 
     /*
      * Process method names from the class hierarchy and the mixin hierarchy.
@@ -725,7 +725,7 @@ AddClassMethodNames(
      * to prevent repeated work.
      */
 
-    if (Tcl_FindHashEntry(examinedClassesPtr, clsPtr)) {
+    if (TclSetContains(examinedClassesPtr, clsPtr)) {
 	return;
     }
 
@@ -740,11 +740,8 @@ AddClassMethodNames(
 	FOREACH_HASH_DECLS;
 	Tcl_Obj *namePtr;
 	Method *mPtr;
-	int isNew;
 
-	(void) Tcl_CreateHashEntry(examinedClassesPtr, clsPtr,
-		&isNew);
-	if (!isNew) {
+	if (!TclSetAdd(examinedClassesPtr, clsPtr)) {
 	    break;
 	}
 
@@ -1540,7 +1537,7 @@ TclOOGetStereotypeCallChain(
      * in the middle of processing a filter).
      */
 
-    Tcl_InitObjHashTable(&doneFilters);
+    TclInitObjSet(&doneFilters);
     AddClassFiltersToCallContext(&obj, clsPtr, &cb, &doneFilters,
 	    BUILDING_MIXINS);
     AddClassFiltersToCallContext(&obj, clsPtr, &cb, &doneFilters, 0);
@@ -1642,10 +1639,7 @@ AddClassFiltersToCallContext(
 
     if (MIXIN_CONSISTENT(flags)) {
 	FOREACH(filterObj, clsPtr->filters) {
-	    int isNew;
-
-	    (void) Tcl_CreateHashEntry(doneFilters, filterObj, &isNew);
-	    if (isNew) {
+	    if (TclSetAdd(doneFilters, filterObj)) {
 		AddSimpleChainToCallContext(oPtr, NULL, filterObj, cbPtr,
 			doneFilters, clearedFlags|BUILDING_MIXINS, clsPtr);
 		AddSimpleChainToCallContext(oPtr, NULL, filterObj, cbPtr,
