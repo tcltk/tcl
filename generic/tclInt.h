@@ -2585,10 +2585,11 @@ typedef struct ListStore {
     Tcl_Obj *slots[TCLFLEXARRAY];
 				/* Variable size array. Grown as needed */
 } ListStore;
-
-#define LISTSTORE_CANONICAL 0x1 /* All Tcl_Obj's referencing this
+enum ListStoreFlags {
+    LISTSTORE_CANONICAL = 1	/* All Tcl_Obj's referencing this
 				 * store have their string representation
 				 * derived from the list representation */
+};
 
 /* Max number of elements that can be contained in a list */
 #define LIST_MAX \
