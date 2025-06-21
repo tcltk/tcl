@@ -1134,6 +1134,14 @@ test lseq-bug-452b103a74-5 {Bug 452b103a74 - crash on nested indices} -body {
     lindex [lseq 10] {end 0}
 } -result 9
 
+test lseq-bug-0ee626dfb2-0 {Bug 0ee626dfb2 - integer overflow} -body {
+    lseq 0x7fffffffffffffff count 2
+} -result {invalid arithmetic series parameter values} -returnCodes error
+
+test lseq-bug-0ee626dfb2-1 {Bug 0ee626dfb2 - integer overflow} -body {
+    lseq 0x7fffffffffffffff count 3 by -0x8000000000000000
+} -result {invalid arithmetic series parameter values} -returnCodes error
+
 # cleanup
 ::tcltest::cleanupTests
 

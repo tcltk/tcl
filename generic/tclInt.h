@@ -1659,6 +1659,10 @@ typedef struct ExecEnv {
 #define COR_IS_SUSPENDED(corPtr) \
     ((corPtr)->stackLevel == NULL)
 
+// The different types of yielded coroutine we have.
+#define CORO_ACTIVATE_YIELD	NULL		// 0 or 1 argument expected
+#define CORO_ACTIVATE_YIELDM	INT2PTR(1)	// Arbitrary arguments expected
+
 /*
  * The definitions for the LiteralTable and LiteralEntry structures. Each
  * interpreter contains a LiteralTable. It is used to reduce the storage
@@ -2573,10 +2577,11 @@ typedef struct ListStore {
     Tcl_Obj *slots[TCLFLEXARRAY];
 				/* Variable size array. Grown as needed */
 } ListStore;
-
-#define LISTSTORE_CANONICAL 0x1 /* All Tcl_Obj's referencing this
+enum ListStoreFlags {
+    LISTSTORE_CANONICAL = 1	/* All Tcl_Obj's referencing this
 				 * store have their string representation
 				 * derived from the list representation */
+};
 
 /* Max number of elements that can be contained in a list */
 #define LIST_MAX \

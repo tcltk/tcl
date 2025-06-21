@@ -335,6 +335,10 @@ static Tcl_ObjCmdProc	TestInterpResolverCmd;
 static Tcl_ObjCmdProc	TestcpuidCmd;
 #endif
 static Tcl_ObjCmdProc	TestApplyLambdaCmd;
+#ifdef _WIN32
+static Tcl_ObjCmdProc	TestHandleCountCmd;
+static Tcl_ObjCmdProc	TestAppVerifierPresentCmd;
+#endif
 
 static const Tcl_Filesystem testReportingFilesystem = {
     "reporting",
@@ -727,6 +731,12 @@ Tcltest_Init(
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testlutil", TestLutilCmd,
 	    NULL, NULL);
+#if defined(_WIN32)
+    Tcl_CreateObjCommand(interp, "testhandlecount", TestHandleCountCmd,
+	    NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testappverifierpresent",
+	    TestAppVerifierPresentCmd, NULL, NULL);
+#endif
 
     if (TclObjTest_Init(interp) != TCL_OK) {
 	return TCL_ERROR;
@@ -9009,6 +9019,88 @@ vamoose:
     }
     return ret;
 }
+
+#ifdef _WIN32
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestHandleCountCmd --
+ *
+ *	This procedure implements the "testhandlecount" command. It returns
+ *	the number of open handles in the process.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+TestHandleCountCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Arguments. */
+{
+    DWORD count;
+    if (objc != 1) {
+	Tcl_WrongNumArgs(interp, 1, objv, "");
+	return TCL_ERROR;
+    }
+    if (GetProcessHandleCount(GetCurrentProcess(), &count)) {
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(count));
+	return TCL_OK;
+    }
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+	    "GetProcessHandleCount failed", -1));
+    return TCL_ERROR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestAppVerifierPresentCmd --
+ *
+ *	This procedure implements the "testappverifierpresent" command.
+ *	Result is 1 if the process is running under the Application Verifier,
+ *	0 otherwise.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+TestAppVerifierPresentCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Arguments. */
+{
+    if (objc != 1) {
+	Tcl_WrongNumArgs(interp, 1, objv, "");
+	return TCL_ERROR;
+    }
+    const char *dlls[] = {
+	"verifier.dll", "vfbasics.dll", "vfcompat.dll", "vfnet.dll", NULL
+    };
+    const char **dll;
+    for (dll = dlls; dll; ++dll) {
+	if (GetModuleHandleA(*dll) != NULL) {
+	    break;
+	}
+    }
+    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(*dll != NULL));
+    return TCL_OK;
+}
+
+
+#endif /* _WIN32 */
 
 /*
  * Local Variables:

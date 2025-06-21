@@ -955,6 +955,11 @@ InstructionDesc const tclInstructionTable[] = {
 	 * Stack:  ... value => ...
 	 * Note that the jump table contains offsets relative to the PC when
 	 * it points to this instruction; the code is relocatable. */
+    TCL_INSTRUCTION_ENTRY(
+	"tailcallList",		0),
+	/* Do a tailcall with the words from the argument as the thing to
+	 * tailcall to, and currNs is the namespace scope.
+	 * Stack: ... {currNs words...} => ...[NOT REACHED] */
 
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };
@@ -1464,12 +1469,11 @@ IsCompactibleCompileEnv(
      * if it would otherwise be invalid.
      */
 
-    if (envPtr->procPtr != NULL && envPtr->procPtr->cmdPtr != NULL
-	    && envPtr->procPtr->cmdPtr->nsPtr != NULL) {
+    if (EnvIsProc(envPtr) && envPtr->procPtr->cmdPtr) {
 	Namespace *nsPtr = envPtr->procPtr->cmdPtr->nsPtr;
 
-	if (strcmp(nsPtr->fullName, "::tcl") == 0
-		|| strncmp(nsPtr->fullName, "::tcl::", 7) == 0) {
+	if (nsPtr && (strcmp(nsPtr->fullName, "::tcl") == 0
+		|| strncmp(nsPtr->fullName, "::tcl::", 7) == 0)) {
 	    return 1;
 	}
     }
@@ -1823,7 +1827,7 @@ TclInitCompileEnv(
 	    Tcl_IncrRefCount(envPtr->extCmdMapPtr->path);
 	} else {
 	    envPtr->extCmdMapPtr->type =
-		(envPtr->procPtr ? TCL_LOCATION_PROC : TCL_LOCATION_BC);
+		(EnvIsProc(envPtr) ? TCL_LOCATION_PROC : TCL_LOCATION_BC);
 	}
     } else {
 	/*
@@ -1854,7 +1858,7 @@ TclInitCompileEnv(
 
 	    envPtr->line = 1;
 	    envPtr->extCmdMapPtr->type =
-		    (envPtr->procPtr ? TCL_LOCATION_PROC : TCL_LOCATION_BC);
+		    (EnvIsProc(envPtr) ? TCL_LOCATION_PROC : TCL_LOCATION_BC);
 
 	    if (pc && (ctxPtr->type == TCL_LOCATION_SOURCE)) {
 		/*
@@ -2519,7 +2523,7 @@ TclCompileScript(
 	     */
 
 	    if ((tclTraceCompile >= TCL_TRACE_BYTECODE_COMPILE_SUMMARY)
-		    && (envPtr->procPtr == NULL)) {
+		    && !EnvIsProc(envPtr)) {
 		int commandLength = parsePtr->term - parsePtr->commandStart;
 		fprintf(stdout, "  Compiling: ");
 		TclPrintSource(stdout, parsePtr->commandStart,
@@ -4789,6 +4793,287 @@ TclIsEmptyToken(
 	}
     }
     return 1;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclLocalScalarFromToken --
+ *
+ *	Get the index into the table of compiled locals that corresponds
+ *	to a local scalar variable name.
+ *
+ * Results:
+ *	Returns the non-negative integer index value into the table of
+ *	compiled locals corresponding to a local scalar variable name.
+ *	If the arguments passed in do not identify a local scalar variable
+ *	then return TCL_INDEX_NONE.
+ *
+ * Side effects:
+ *	May add an entry into the table of compiled locals.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Size
+TclLocalScalarFromToken(
+    Tcl_Token *tokenPtr,
+    CompileEnv *envPtr)
+{
+    int isScalar;
+    Tcl_LVTIndex index;
+
+    TclPushVarName(NULL, tokenPtr, envPtr, TCL_NO_ELEMENT, &index, &isScalar);
+    if (!isScalar) {
+	index = TCL_INDEX_NONE;
+    }
+    return index;
+}
+
+Tcl_Size
+TclLocalScalar(
+    const char *bytes,
+    size_t numBytes,
+    CompileEnv *envPtr)
+{
+    Tcl_Token token[2] = {
+	{TCL_TOKEN_SIMPLE_WORD, NULL, 0, 1},
+	{TCL_TOKEN_TEXT, NULL, 0, 0}
+    };
+
+    token[1].start = bytes;
+    token[1].size = numBytes;
+    return TclLocalScalarFromToken(token, envPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclPushVarName --
+ *
+ *	Procedure used in the compiling where pushing a variable name is
+ *	necessary (append, lappend, set).
+ *
+ * Results:
+ *	The values written to *localIndexPtr and *isScalarPtr signal to
+ *	the caller what the instructions emitted by this routine will do:
+ *
+ *	*isScalarPtr	(*localIndexPtr < 0)
+ *	1		1	Push the varname on the stack. (Stack +1)
+ *	1		0	*localIndexPtr is the index of the compiled
+ *				local for this varname.  No instructions
+ *				emitted.	(Stack +0)
+ *	0		1	Push part1 and part2 names of array element
+ *				on the stack.	(Stack +2)
+ *	0		0	*localIndexPtr is the index of the compiled
+ *				local for this array.  Element name is pushed
+ *				on the stack.	(Stack +1)
+ *
+ * Side effects:
+ *	Instructions are added to envPtr.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclPushVarName(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Token *varTokenPtr,	/* Points to a variable token. */
+    CompileEnv *envPtr,		/* Holds resulting instructions. */
+    int flags,			/* TCL_NO_ELEMENT. */
+    Tcl_Size *localIndexPtr,	/* Must not be NULL. */
+    int *isScalarPtr)		/* Must not be NULL. */
+{
+    const char *p;
+    const char *last, *name, *elName;
+    Tcl_Token *elemTokenPtr = NULL;
+    Tcl_Size nameLen, elNameLen, n;
+    int simpleVarName = 0, allocedTokens = 0;
+    Tcl_Size elemTokenCount = 0, removedParen = 0;
+    Tcl_LVTIndex localIndex;
+
+    /*
+     * Decide if we can use a frame slot for the var/array name or if we need
+     * to emit code to compute and push the name at runtime. We use a frame
+     * slot (entry in the array of local vars) if we are compiling a procedure
+     * body and if the name is simple text that does not include namespace
+     * qualifiers.
+     */
+
+    name = elName = NULL;
+    nameLen = elNameLen = 0;
+    localIndex = TCL_INDEX_NONE;
+
+    if (varTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
+	/*
+	 * A simple variable name. Divide it up into "name" and "elName"
+	 * strings. If it is not a local variable, look it up at runtime.
+	 */
+
+	simpleVarName = 1;
+
+	name = varTokenPtr[1].start;
+	nameLen = varTokenPtr[1].size;
+	if (name[nameLen - 1] == ')') {
+	    /*
+	     * last char is ')' => potential array reference.
+	     */
+	    last = &name[nameLen - 1];
+
+	    if (*last == ')') {
+		for (p = name;  p < last;  p++) {
+		    if (*p == '(') {
+			elName = p + 1;
+			elNameLen = last - elName;
+			nameLen = p - name;
+			break;
+		    }
+		}
+	    }
+
+	    if (!(flags & TCL_NO_ELEMENT) && elNameLen) {
+		/*
+		 * An array element, the element name is a simple string:
+		 * assemble the corresponding token.
+		 */
+
+		elemTokenPtr = (Tcl_Token *)TclStackAlloc(interp, sizeof(Tcl_Token));
+		allocedTokens = 1;
+		elemTokenPtr->type = TCL_TOKEN_TEXT;
+		elemTokenPtr->start = elName;
+		elemTokenPtr->size = elNameLen;
+		elemTokenPtr->numComponents = 0;
+		elemTokenCount = 1;
+	    }
+	}
+    } else if (interp && ((n = varTokenPtr->numComponents) > 1)
+	    && (varTokenPtr[1].type == TCL_TOKEN_TEXT)
+	    && (varTokenPtr[n].type == TCL_TOKEN_TEXT)
+	    && (varTokenPtr[n].start[varTokenPtr[n].size - 1] == ')')) {
+	/*
+	 * Check for parentheses inside first token.
+	 */
+
+	simpleVarName = 0;
+	for (p = varTokenPtr[1].start, last = p + varTokenPtr[1].size;
+		p < last;  p++) {
+	    if (*p == '(') {
+		simpleVarName = 1;
+		break;
+	    }
+	}
+	if (simpleVarName) {
+	    size_t remainingLen;
+
+	    /*
+	     * Check the last token: if it is just ')', do not count it.
+	     * Otherwise, remove the ')' and flag so that it is restored at
+	     * the end.
+	     */
+
+	    if (varTokenPtr[n].size == 1) {
+		n--;
+	    } else {
+		varTokenPtr[n].size--;
+		removedParen = n;
+	    }
+
+	    name = varTokenPtr[1].start;
+	    nameLen = p - varTokenPtr[1].start;
+	    elName = p + 1;
+	    remainingLen = (varTokenPtr[2].start - p) - 1;
+	    elNameLen = (varTokenPtr[n].start-p) + varTokenPtr[n].size - 1;
+
+	    if (!(flags & TCL_NO_ELEMENT)) {
+		if (remainingLen) {
+		    /*
+		     * Make a first token with the extra characters in the
+		     * first token.
+		     */
+
+		    elemTokenPtr = (Tcl_Token *)TclStackAlloc(interp,
+			    n * sizeof(Tcl_Token));
+		    allocedTokens = 1;
+		    elemTokenPtr->type = TCL_TOKEN_TEXT;
+		    elemTokenPtr->start = elName;
+		    elemTokenPtr->size = remainingLen;
+		    elemTokenPtr->numComponents = 0;
+		    elemTokenCount = n;
+
+		    /*
+		     * Copy the remaining tokens.
+		     */
+
+		    memcpy(elemTokenPtr + 1, varTokenPtr + 2,
+			    (n - 1) * sizeof(Tcl_Token));
+		} else {
+		    /*
+		     * Use the already available tokens.
+		     */
+
+		    elemTokenPtr = &varTokenPtr[2];
+		    elemTokenCount = n - 1;
+		}
+	    }
+	}
+    }
+
+    if (simpleVarName) {
+	/*
+	 * See whether name has any namespace separators (::'s).
+	 */
+
+	int hasNsQualifiers = 0;
+
+	for (p = name, last = p + nameLen-1;  p < last;  p++) {
+	    if ((p[0] == ':') && (p[1] == ':')) {
+		hasNsQualifiers = 1;
+		break;
+	    }
+	}
+
+	/*
+	 * Look up the var name's index in the array of local vars in the proc
+	 * frame. If retrieving the var's value and it doesn't already exist,
+	 * push its name and look it up at runtime.
+	 */
+
+	if (!hasNsQualifiers) {
+	    localIndex = TclFindCompiledLocal(name, nameLen, 1, envPtr);
+	}
+	if (interp && localIndex < 0) {
+	    PushLiteral(envPtr, name, nameLen);
+	}
+
+	/*
+	 * Compile the element script, if any, and only if not inhibited. [Bug
+	 * 3600328]
+	 */
+
+	if (elName != NULL && !(flags & TCL_NO_ELEMENT)) {
+	    if (elNameLen) {
+		TclCompileTokens(interp, elemTokenPtr, elemTokenCount,
+			envPtr);
+	    } else {
+		PUSH(		"");
+	    }
+	}
+    } else if (interp) {
+	/*
+	 * The var name isn't simple: compile and push it.
+	 */
+
+	CompileTokens(envPtr, varTokenPtr, interp);
+    }
+
+    if (removedParen) {
+	varTokenPtr[removedParen].size++;
+    }
+    if (allocedTokens) {
+	TclStackFree(interp, elemTokenPtr);
+    }
+    *localIndexPtr = localIndex;
+    *isScalarPtr = (elName == NULL);
 }
 
 #ifdef TCL_COMPILE_STATS

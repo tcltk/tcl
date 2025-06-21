@@ -16,6 +16,10 @@ namespace eval ::tcl::test::main {
 	[llength [package provide tcl::test]]
 	&& [package vsatisfies [package provide tcl::test] 8.5-]}]
 
+    testConstraint noappverifier [expr {
+        [llength [info commands testappverifierpresent]] == 0
+        || ![testappverifierpresent]}]
+
     # Procedure to simulate interactive typing of commands, line by line
     proc type {chan script} {
 	foreach line [split $script \n] {
@@ -548,7 +552,7 @@ namespace eval ::tcl::test::main {
     test Tcl_Main-4.5 {
 	Tcl_Main: Bug 1481986
     } -constraints {
-	exec tcl::test
+	exec tcl::test noappverifier
     } -setup {
 	set rc [makeFile {
 		testsetmainloop
@@ -1154,7 +1158,7 @@ namespace eval ::tcl::test::main {
     test Tcl_Main-8.10 {
 	StdinProc: interactive output, closed stdout
     } -constraints {
-	exec tcl::test
+	exec tcl::test noappverifier
     } -body {
 	exec [interpreter] << {
 		testsetmainloop
