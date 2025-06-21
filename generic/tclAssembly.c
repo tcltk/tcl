@@ -919,9 +919,9 @@ TclCompileAssembleCmd(
     Tcl_Size numCommands = envPtr->numCommands;
     Tcl_Size offset = CurrentOffset(envPtr);
     Tcl_Size depth = envPtr->currStackDepth;
-    size_t numExnRanges = envPtr->exceptArrayNext;
-    size_t numAuxRanges = envPtr->auxDataArrayNext;
-    size_t exceptDepth = envPtr->exceptDepth;
+    Tcl_Size numExnRanges = envPtr->exceptArrayNext;
+    Tcl_Size numAuxRanges = envPtr->auxDataArrayNext;
+    Tcl_Size exceptDepth = envPtr->exceptDepth;
 
     /*
      * Make sure that the command has a single arg that is a simple word.
@@ -950,7 +950,15 @@ TclCompileAssembleCmd(
 	envPtr->codeNext = envPtr->codeStart + offset;
 	envPtr->currStackDepth = depth;
 	envPtr->exceptArrayNext = numExnRanges;
-	envPtr->auxDataArrayNext = numAuxRanges;
+	while (envPtr->auxDataArrayNext > numAuxRanges) {
+	    Tcl_Size auxIdx = --envPtr->auxDataArrayNext;
+	    AuxData *auxDataPtr = &envPtr->auxDataArrayPtr[auxIdx];
+	    if (auxDataPtr->type && auxDataPtr->type->freeProc) {
+		auxDataPtr->type->freeProc(auxDataPtr->clientData);
+	    }
+	    auxDataPtr->clientData = NULL;
+	    auxDataPtr->type = NULL;
+	}
 	envPtr->exceptDepth = exceptDepth;
 	TclCompileSyntaxError(interp, envPtr);
     }
@@ -1048,7 +1056,7 @@ TclAssembleCode(
 
 #ifdef TCL_COMPILE_DEBUG
 	    if ((tclTraceCompile >= TCL_TRACE_BYTECODE_COMPILE_DETAIL)
-		    && (envPtr->procPtr == NULL)) {
+		    && !EnvIsProc(envPtr)) {
 		printf("  %4" TCL_Z_MODIFIER "d Assembling: ",
 			CurrentOffset(envPtr));
 		TclPrintSource(stdout, parsePtr->commandStart,

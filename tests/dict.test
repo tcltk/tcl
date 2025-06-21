@@ -1674,6 +1674,18 @@ test dict-22.24 {dict with: unicode space body} -setup {
 } -cleanup {
     rename \u3000 {}
 } -result {IDEOGRAPHICSPACE}
+test dict-22.25 {dict with in uplevel: bug fa7995bdf2} {
+    apply {{} {
+	set d {p {q {a 1 b 2}}}
+	apply {{} {
+	    uplevel 1 {
+		dict with d p q {
+		    string cat "$a,$b"
+		}
+	    }
+	}} 
+    }}
+} 1,2
 
 proc linenumber {} {
     dict get [info frame -1] line
