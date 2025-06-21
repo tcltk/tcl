@@ -549,11 +549,11 @@ FindClassProps(
   tailRecurse:
     if (writable) {
 	FOREACH(propName, clsPtr->properties.writable) {
-	    Tcl_CreateHashEntry(accumulator, (void *) propName, NULL);
+	    TclSetAdd(accumulator, propName);
 	}
     } else {
 	FOREACH(propName, clsPtr->properties.readable) {
-	    Tcl_CreateHashEntry(accumulator, (void *) propName, NULL);
+	    TclSetAdd(accumulator, propName);
 	}
     }
     if (clsPtr->thisPtr->flags & ROOT_OBJECT) {
@@ -599,11 +599,11 @@ FindObjectProps(
 
     if (writable) {
 	FOREACH(propName, oPtr->properties.writable) {
-	    Tcl_CreateHashEntry(accumulator, (void *) propName, NULL);
+	    TclSetAdd(accumulator, propName);
 	}
     } else {
 	FOREACH(propName, oPtr->properties.readable) {
-	    Tcl_CreateHashEntry(accumulator, (void *) propName, NULL);
+	    TclSetAdd(accumulator, propName);
 	}
     }
     FOREACH(mixin, oPtr->mixins) {
@@ -661,7 +661,7 @@ GetAllClassProperties(
      */
 
     *allocated = 1;
-    Tcl_InitObjHashTable(&hashTable);
+    TclInitObjSet(&hashTable);
     FindClassProps(clsPtr, writable, &hashTable);
     TclNewObj(result);
     FOREACH_HASH_KEY(propName, &hashTable) {
@@ -748,7 +748,6 @@ TclOOGetAllObjectProperties(
 				 * false, readable properties will be returned
 				 * instead. */
 {
-    Tcl_HashTable hashTable;
     FOREACH_HASH_DECLS;
     Tcl_Obj *propName, *result;
 
@@ -772,7 +771,8 @@ TclOOGetAllObjectProperties(
      * Gather the information. Unsorted! (Caller will sort.)
      */
 
-    Tcl_InitObjHashTable(&hashTable);
+    Tcl_HashTable hashTable;
+    TclInitObjSet(&hashTable);
     FindObjectProps(oPtr, writable, &hashTable);
     TclNewObj(result);
     FOREACH_HASH_KEY(propName, &hashTable) {
@@ -823,8 +823,6 @@ SetPropertyList(
 {
     Tcl_Size i, n;
     Tcl_Obj *propObj;
-    int created;
-    Tcl_HashTable uniqueTable;
 
     for (i=0 ; i<objc ; i++) {
 	Tcl_IncrRefCount(objv[i]);
@@ -845,10 +843,10 @@ SetPropertyList(
     }
     propList->num = 0;
     if (objc > 0) {
-	Tcl_InitObjHashTable(&uniqueTable);
+	Tcl_HashTable uniqueTable;
+	TclInitObjSet(&uniqueTable);
 	for (i=n=0 ; i<objc ; i++) {
-	    Tcl_CreateHashEntry(&uniqueTable, objv[i], &created);
-	    if (created) {
+	    if (TclSetAdd(&uniqueTable, objv[i])) {
 		propList->list[n++] = objv[i];
 	    } else {
 		Tcl_DecrRefCount(objv[i]);

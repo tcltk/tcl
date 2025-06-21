@@ -490,6 +490,53 @@ struct DeclaredClassMethod {
 };
 
 /*
+ * Utilities for treating a hash table as a (mathematical) set.
+ * Values are ignored.
+ */
+
+/*
+ *----------------------------------------------------------------
+ *
+ * TclSetAdd --
+ *	Add key to the set and report if the key was added. If not added,
+ *	it is because the key was already present.
+ *
+ *----------------------------------------------------------------
+ */
+static inline int
+TclSetAdd(
+    Tcl_HashTable *hashTablePtr,
+    void *key)
+{
+    int isNew;
+    (void) Tcl_CreateHashEntry(hashTablePtr, key, &isNew);
+    return isNew;
+}
+
+/*
+ *----------------------------------------------------------------
+ *
+ * TclSetContains --
+ *	Test if key is present in the set.
+ *
+ *----------------------------------------------------------------
+ */
+static inline int
+TclSetContains(
+    Tcl_HashTable *hashTablePtr,
+    void *key)
+{
+    return Tcl_FindHashEntry(hashTablePtr, key) != NULL;
+}
+
+/* Initialise a set of unique pointers. */
+#define TclInitPtrSet(hashTablePtr) \
+    Tcl_InitHashTable((hashTablePtr), TCL_ONE_WORD_KEYS)
+/* Initialise a set of Tcl_Obj* strings. */
+#define TclInitObjSet(hashTablePtr) \
+    Tcl_InitObjHashTable(hashTablePtr)
+
+/*
  *----------------------------------------------------------------
  * Commands relating to OO support.
  *----------------------------------------------------------------
