@@ -418,7 +418,7 @@ InitFoundation(
 
     TclNewLiteralStringObj(namePtr, "new");
     TclNewInstanceMethod(interp, (Tcl_Object) fPtr->classCls->thisPtr,
-	    namePtr /* keeps ref */, 0 /* private */, NULL, NULL);
+	    namePtr /*keeps ref*/, 0 /*private*/, NULL, NULL);
     Tcl_BounceRefCount(namePtr);
     fPtr->classCls->constructorPtr = (Method *) TclNewMethod(
 	    (Tcl_Class) fPtr->classCls, NULL, 0, &classConstructor, NULL);
@@ -464,10 +464,10 @@ InitFoundation(
 
     Tcl_CreateObjCommand(interp,
 	    "::oo::configuresupport::configurableobject::property",
-	    TclOODefinePropertyCmd, (void *) 1, NULL);
+	    TclOODefinePropertyCmd, INT2PTR(1) /*useInstance*/, NULL);
     Tcl_CreateObjCommand(interp,
 	    "::oo::configuresupport::configurableclass::property",
-	    TclOODefinePropertyCmd, (void *) 0, NULL);
+	    TclOODefinePropertyCmd, INT2PTR(0) /*useInstance*/, NULL);
 
     /*
      * Evaluate the remaining definitions, which are a compiled-in Tcl script.
