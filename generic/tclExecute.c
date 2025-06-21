@@ -4589,12 +4589,12 @@ TEBCresume(
 
     {
 	Tcl_HashEntry *hPtr;
-	    
+
 	/*
 	 * Jump to location looked up in a hashtable; fall through to next
 	 * instr if lookup fails. Lookup by string.
 	 */
-	   
+
    case INST_JUMP_TABLE:
 	tblIdx = TclGetInt4AtPtr(pc + 1);
 	JumptableInfo *jtPtr = (JumptableInfo *)
@@ -4866,7 +4866,7 @@ TEBCresume(
 		fprintf(stdout, "%" SIZEd ": (%" SIZEd ") invoking ",
 			iPtr->numLevels, PC_REL);
 	    }
-    	    PrintArgumentWords(numArgs, objv);
+	    PrintArgumentWords(numArgs, objv);
 	    fprintf(stdout, "\n");
 	    fflush(stdout);
 	}
