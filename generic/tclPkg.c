@@ -50,6 +50,9 @@ typedef struct PkgFiles {
 				 * package. */
 } PkgFiles;
 
+/* Associated data key used to look up the PkgFiles for an interpreter. */
+#define ASSOC_KEY "tclPkgFiles"
+
 /*
  * For each package that is known in any way to an interpreter, there is one
  * record of the following type. These records are stored in the
@@ -259,13 +262,13 @@ TclInitPkgFiles(
      * If assocdata "tclPkgFiles" doesn't exist yet, create it.
      */
 
-    PkgFiles *pkgFiles = (PkgFiles *)Tcl_GetAssocData(interp, "tclPkgFiles", NULL);
+    PkgFiles *pkgFiles = (PkgFiles *)Tcl_GetAssocData(interp, ASSOC_KEY, NULL);
 
     if (!pkgFiles) {
 	pkgFiles = (PkgFiles *)Tcl_Alloc(sizeof(PkgFiles));
 	pkgFiles->names = NULL;
 	Tcl_InitHashTable(&pkgFiles->table, TCL_STRING_KEYS);
-	Tcl_SetAssocData(interp, "tclPkgFiles", PkgFilesCleanupProc, pkgFiles);
+	Tcl_SetAssocData(interp, ASSOC_KEY, PkgFilesCleanupProc, pkgFiles);
     }
     return pkgFiles;
 }
@@ -275,8 +278,7 @@ TclPkgFileSeen(
     Tcl_Interp *interp,
     const char *fileName)
 {
-    PkgFiles *pkgFiles = (PkgFiles *)
-	    Tcl_GetAssocData(interp, "tclPkgFiles", NULL);
+    PkgFiles *pkgFiles = (PkgFiles *) Tcl_GetAssocData(interp, ASSOC_KEY, NULL);
 
     if (pkgFiles && pkgFiles->names) {
 	const char *name = pkgFiles->names->name;
@@ -858,7 +860,7 @@ SelectPackageFinal(
      * Pop the "ifneeded" package name from "tclPkgFiles" assocdata
      */
 
-    PkgFiles *pkgFiles = (PkgFiles *)Tcl_GetAssocData(interp, "tclPkgFiles", NULL);
+    PkgFiles *pkgFiles = (PkgFiles *)Tcl_GetAssocData(interp, ASSOC_KEY, NULL);
     PkgName *pkgName = pkgFiles->names;
     pkgFiles->names = pkgName->nextPtr;
     Tcl_Free(pkgName);
@@ -1104,7 +1106,7 @@ TclNRPackageObjCmd(
 	    return TCL_ERROR;
 	}
 	PkgFiles *pkgFiles = (PkgFiles *)
-		Tcl_GetAssocData(interp, "tclPkgFiles", NULL);
+		Tcl_GetAssocData(interp, ASSOC_KEY, NULL);
 	if (pkgFiles) {
 	    Tcl_HashEntry *entry = Tcl_FindHashEntry(&pkgFiles->table,
 		    TclGetString(objv[2]));
@@ -1117,7 +1119,7 @@ TclNRPackageObjCmd(
     }
     case PKG_FORGET: {
 	PkgFiles *pkgFiles = (PkgFiles *)
-		Tcl_GetAssocData(interp, "tclPkgFiles", NULL);
+		Tcl_GetAssocData(interp, ASSOC_KEY, NULL);
 
 	for (i = 2; i < objc; i++) {
 	    const char *keyString = TclGetString(objv[i]);
