@@ -3010,18 +3010,72 @@ TclCompileObjectNextCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr = parsePtr->tokenPtr;
-    Tcl_Size i;
-    /* TODO: Consider support for compiling expanded args. */
+    Tcl_Size i, numWords = parsePtr->numWords;
 
     if (parsePtr->numWords > UINT_MAX) {
-	return TCL_ERROR;
+	goto issueExpanded;
     }
 
-    for (i=0 ; i<parsePtr->numWords ; i++) {
+    // Check for expansion
+    for (i=0 ; i<numWords ; i++) {
+	if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
+	    goto issueExpanded;
+	}
+	tokenPtr = TokenAfter(tokenPtr);
+    }
+
+    // Simple instruction issue
+    tokenPtr = parsePtr->tokenPtr;
+    for (i=0 ; i<numWords ; i++) {
 	PUSH_TOKEN(		tokenPtr, i);
 	tokenPtr = TokenAfter(tokenPtr);
     }
     INVOKE4(			TCLOO_NEXT, i);
+    return TCL_OK;
+
+  issueExpanded:
+    // Concatenate all arguments into a list; handles expansion
+    tokenPtr = parsePtr->tokenPtr;
+    Tcl_Size build;
+    int concat;
+    for (concat = 0, build = 0, i = 0; i < numWords; i++) {
+	if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD && build > 0) {
+	    OP4(		LIST, build);
+	    if (concat) {
+		OP(		LIST_CONCAT);
+	    }
+	    build = 0;
+	    concat = 1;
+	}
+	PUSH_TOKEN(		tokenPtr, i);
+	if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
+	    if (concat) {
+		OP(		LIST_CONCAT);
+	    } else {
+		concat = 1;
+	    }
+	} else {
+	    build++;
+	}
+	if (build > MAX_LIST_CONCAT) {
+	    OP4(		LIST, build);
+	    if (concat) {
+		OP(		LIST_CONCAT);
+	    }
+	    build = 0;
+	    concat = 1;
+	}
+	tokenPtr = TokenAfter(tokenPtr);
+    }
+    if (build > 0) {
+	OP4(			LIST, build);
+	if (concat) {
+	    OP(			LIST_CONCAT);
+	}
+    }
+
+    // Invoke the underlying [next] implementation
+    INVOKE(			TCLOO_NEXT_LIST);
     return TCL_OK;
 }
 
@@ -3036,17 +3090,74 @@ TclCompileObjectNextToCmd(
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr = parsePtr->tokenPtr;
     Tcl_Size i, numWords = parsePtr->numWords;
-    /* TODO: Consider support for compiling expanded args. */
 
-    if (numWords < 2 || numWords > UINT_MAX) {
+    if (numWords < 2) {
 	return TCL_ERROR;
+    } else if (numWords > UINT_MAX) {
+	// Very large number of words anyway
+	goto issueExpanded;
     }
 
+    // Check for expansion
+    for (i=0 ; i<numWords ; i++) {
+	if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
+	    goto issueExpanded;
+	}
+	tokenPtr = TokenAfter(tokenPtr);
+    }
+
+    // Simple instruction issue
+    tokenPtr = parsePtr->tokenPtr;
     for (i=0 ; i<numWords ; i++) {
 	PUSH_TOKEN(		tokenPtr, i);
 	tokenPtr = TokenAfter(tokenPtr);
     }
     INVOKE4(			TCLOO_NEXT_CLASS, i);
+    return TCL_OK;
+
+  issueExpanded:
+    // Concatenate all arguments into a list; handles expansion
+    tokenPtr = parsePtr->tokenPtr;
+    Tcl_Size build;
+    int concat;
+    for (concat = 0, build = 0, i = 0; i < numWords; i++) {
+	if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD && build > 0) {
+	    OP4(		LIST, build);
+	    if (concat) {
+		OP(		LIST_CONCAT);
+	    }
+	    build = 0;
+	    concat = 1;
+	}
+	PUSH_TOKEN(		tokenPtr, i);
+	if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
+	    if (concat) {
+		OP(		LIST_CONCAT);
+	    } else {
+		concat = 1;
+	    }
+	} else {
+	    build++;
+	}
+	if (build > MAX_LIST_CONCAT) {
+	    OP4(		LIST, build);
+	    if (concat) {
+		OP(		LIST_CONCAT);
+	    }
+	    build = 0;
+	    concat = 1;
+	}
+	tokenPtr = TokenAfter(tokenPtr);
+    }
+    if (build > 0) {
+	OP4(			LIST, build);
+	if (concat) {
+	    OP(			LIST_CONCAT);
+	}
+    }
+
+    // Invoke the underlying [nextto] implementation
+    INVOKE(			TCLOO_NEXT_CLASS_LIST);
     return TCL_OK;
 }
 
