@@ -27,9 +27,6 @@ static void		CompileReturnInternal(CompileEnv *envPtr,
 			    Tcl_Obj *returnOpts);
 static Tcl_LVTIndex	IndexTailVarIfKnown(Tcl_Interp *interp,
 			    Tcl_Token *varTokenPtr, CompileEnv *envPtr);
-
-// Maximum number of items to concatenate in one go.
-#define MAX_LIST_CONCAT	0x7FFFFFFE
 
 /*
  *----------------------------------------------------------------------
@@ -928,7 +925,7 @@ TclCompileLappendCmd(
 	    } else {
 		build++;
 	    }
-	    if (build > MAX_LIST_CONCAT) {
+	    if (build > LIST_CONCAT_THRESHOLD) {
 		OP4(		LIST, build);
 		if (concat) {
 		    OP(		LIST_CONCAT);
@@ -1252,7 +1249,7 @@ TclCompileListCmd(
 	} else {
 	    build++;
 	}
-	if (build > MAX_LIST_CONCAT) {
+	if (build > LIST_CONCAT_THRESHOLD) {
 	    OP4(		LIST, build);
 	    if (concat) {
 		OP(		LIST_CONCAT);
@@ -2860,7 +2857,7 @@ TclCompileObjectNextCmd(
 	} else {
 	    build++;
 	}
-	if (build > MAX_LIST_CONCAT) {
+	if (build > LIST_CONCAT_THRESHOLD) {
 	    OP4(		LIST, build);
 	    if (concat) {
 		OP(		LIST_CONCAT);
@@ -2942,7 +2939,7 @@ TclCompileObjectNextToCmd(
 	} else {
 	    build++;
 	}
-	if (build > MAX_LIST_CONCAT) {
+	if (build > LIST_CONCAT_THRESHOLD) {
 	    OP4(		LIST, build);
 	    if (concat) {
 		OP(		LIST_CONCAT);
