@@ -960,6 +960,21 @@ InstructionDesc const tclInstructionTable[] = {
 	/* Do a tailcall with the words from the argument as the thing to
 	 * tailcall to, and currNs is the namespace scope.
 	 * Stack: ... {currNs words...} => ...[NOT REACHED] */
+    TCL_INSTRUCTION_ENTRY(
+	"tclooNextList",	0),
+	/* Call the next item on the TclOO call chain, passing the arguments
+	 * from argumentList (min 1, *includes* "next"). The result of the
+	 * invoked method implementation will be pushed on the stack after the
+	 * target returns.
+	 * Stack:  ... argumentList => ... result */
+    TCL_INSTRUCTION_ENTRY(
+	"tclooNextClassList",	0),
+	/* Call the following item on the TclOO call chain defined by class
+	 * className, passing the arguments from argumentList (min 2,
+	 * *includes* "nextto" and the class name). The result of the invoked
+	 * method implementation will be pushed on the stack after the target
+	 * returns.
+	 * Stack:  ... argumentList => ... result */
 
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };
@@ -4374,6 +4389,8 @@ TclEmitInvoke(
     case INST_YIELD:
     case INST_YIELD_TO_INVOKE:
     case INST_EVAL_STK:
+    case INST_TCLOO_NEXT_LIST:
+    case INST_TCLOO_NEXT_CLASS_LIST:
 	wordCount = cleanup = 1;
 	arg1 = arg2 = 0;
 	break;
@@ -4465,8 +4482,14 @@ TclEmitInvoke(
     case INST_TCLOO_NEXT:
 	OP4(			TCLOO_NEXT, arg1);
 	break;
+    case INST_TCLOO_NEXT_LIST:
+	OP(			TCLOO_NEXT_LIST);
+	break;
     case INST_TCLOO_NEXT_CLASS:
 	OP4(			TCLOO_NEXT_CLASS, arg1);
+	break;
+    case INST_TCLOO_NEXT_CLASS_LIST:
+	OP(			TCLOO_NEXT_CLASS_LIST);
 	break;
     case INST_YIELD:
 	OP(			YIELD);
