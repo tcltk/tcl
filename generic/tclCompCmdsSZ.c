@@ -109,9 +109,6 @@ const AuxDataType tclJumptableNumericInfoType = {
     PrintJumptableNumInfo,	/* printProc */
     DisassembleJumptableNumInfo	/* disassembleProc */
 };
-
-// Point at which we issue a LIST_CONCAT anyway
-#define LIST_CONCAT_THRESHOLD	(1 << 15)
 
 /*
  *----------------------------------------------------------------------
@@ -4558,19 +4555,45 @@ TclCompileYieldToCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr = TokenAfter(parsePtr->tokenPtr);
-    Tcl_Size i;
-
-    /* TODO: Consider support for compiling expanded args. */
-    if (parsePtr->numWords < 2 || parsePtr->numWords > UINT_MAX) {
-	return TCL_ERROR;
-    }
+    Tcl_Size i, numWords = parsePtr->numWords, build;
+    int concat = 0;
 
     OP(				NS_CURRENT);
-    for (i = 1 ; i < parsePtr->numWords ; i++) {
+    for (build = i = 1; i < numWords; i++) {
+	if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD && build > 0) {
+	    OP4(		LIST, build);
+	    if (concat) {
+		OP(		LIST_CONCAT);
+	    }
+	    build = 0;
+	    concat = 1;
+	}
 	PUSH_TOKEN(		tokenPtr, i);
+	if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
+	    if (concat) {
+		OP(		LIST_CONCAT);
+	    } else {
+		concat = 1;
+	    }
+	} else {
+	    build++;
+	}
+	if (build > LIST_CONCAT_THRESHOLD) {
+	    OP4(		LIST, build);
+	    if (concat) {
+		OP(		LIST_CONCAT);
+	    }
+	    build = 0;
+	    concat = 1;
+	}
 	tokenPtr = TokenAfter(tokenPtr);
     }
-    OP4(			LIST, i);
+    if (build > 0) {
+	OP4(			LIST, build);
+	if (concat) {
+	    OP(			LIST_CONCAT);
+	}
+    }
     INVOKE(			YIELD_TO_INVOKE);
     return TCL_OK;
 }
