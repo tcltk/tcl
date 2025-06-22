@@ -497,9 +497,15 @@ int
 TclListLimitExceededError(
     Tcl_Interp *interp)
 {
+    /*
+     * As an aside, note there is no parameter passed for the bad length
+     * because the cverflow is computationally detected and does not fit
+     * in Tcl_Size.
+     */
     if (interp != NULL) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"max length of a Tcl list exceeded", -1));
+	Tcl_SetObjResult(interp,
+	    Tcl_ObjPrintf("max length (%" TCL_SIZE_MODIFIER
+		"d) of a Tcl list exceeded", (Tcl_Size)LIST_MAX));
 	Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
     }
     return TCL_ERROR;
