@@ -4141,7 +4141,7 @@ MODULE_SCOPE Tcl_Size	TclIndexDecode(int encoded, Tcl_Size endValue);
  */
 MODULE_SCOPE int	TclCommandWordLimitError(Tcl_Interp *interp,
 			    Tcl_Size count);
-
+MODULE_SCOPE int	TclListLimitExceededError(Tcl_Interp *interp);
 
 /* Constants used in index value encoding routines. */
 #define TCL_INDEX_END	((Tcl_Size)-2)
