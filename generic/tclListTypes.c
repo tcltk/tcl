@@ -146,7 +146,15 @@ TclObjArrayFind(
     return FindInArrayOfObjs(arrayPtr->nelems, arrayPtr->elemPtrs, needlePtr);
 }
 
-/* FUTURES - move to tclInt.h and use in other list implementations as well */
+/*
+ * Compute the length of a range given start and end indices after normalizing
+ * the indices as follows:
+ * - the start index is bounded to 0 at the low end
+ * - the end index is bounded to one less than the length of the list at the
+ *   high end and one less than the start index at the low end
+ * - the length of the normalized range is returned
+ * FUTURES - move to tclInt.h and use in other list implementations as well
+ */
 static inline Tcl_Size
 TclNormalizeRangeLimits(
     Tcl_Size *startPtr,
@@ -971,10 +979,7 @@ LrangeSlice(
 	return *resultPtrPtr ? TCL_OK : TCL_ERROR;
     }
 
-    /* TODO
-     * - since Tcl_ListObjRange will dup if returned object is same as source,
-     *   change below to always return a new object if TIP 649 is adopted.
-     */
+    /* Modify in place if both Tcl_Obj and internal rep are unshared. */
     if (!Tcl_IsShared(objPtr) && repPtr->refCount < 2) {
 	/* Reuse this objPtr */
 	repPtr->srcIndex = newSrcIndex;
