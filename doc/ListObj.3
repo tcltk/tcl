@@ -276,24 +276,16 @@ result = \fBTcl_ListObjReplace\fR(interp, listPtr, first, count,
 containing all elements in the passed input list \fIlistPtr\fR at indices
 between \fIfirst\fR and \fIlast\fR, both inclusive. An empty
 list is returned in the case of \fIfirst\fR being greater than \fIlast\fR.
-The value passed in \fIlistPtr\fR need not be unshared.
-The pointer stored at \fIobjPtrPtr\fR is guaranteed to be different from
-\fIlistPtr\fR but no assumptions should be made about its reference count.
-In case of errors, the location addressed by \fIobjPtrPtr\fR may have been
-modified and should be treated by the caller as undefined.
 .PP
 \fBTcl_ListObjRepeat\fR stores in \fIobjPtrPtr\fR a pointer to a list value
 whose elements are the \fIobjc\fR elements passed in \fIobjv\fR, repeated
 \fIcount\fR number of times. An error is raised if \fIcount\fR is negative.
-The value passed in \fIlistPtr\fR need not be unshared.
-The pointer stored at \fIobjPtrPtr\fR is guaranteed to be different from
-\fIlistPtr\fR but no assumptions should be made about its reference count.
-In case of errors, the location addressed by \fIobjPtrPtr\fR may have been
-modified and should be treated by the caller as undefined.
 .PP
 \fBTcl_ListObjReverse\fR stores in \fIobjPtrPtr\fR a pointer to a list value
 containing all elements of the input list \fIlistPtr\fR in reverse order.
-The value passed in \fIlistPtr\fR need not be unshared.
+.PP
+For all three functions, \fBTcl_ListObjRange\fR, \fBTcl_ListObjRepeat\fR and
+\fBTcl_ListObjReverse\fR, the value passed in \fIlistPtr\fR need not be unshared.
 The pointer stored at \fIobjPtrPtr\fR is guaranteed to be different from
 \fIlistPtr\fR but no assumptions should be made about its reference count.
 In case of errors, the location addressed by \fIobjPtrPtr\fR may have been
@@ -317,8 +309,7 @@ the call and release them with \fBTcl_DecrRefCount\fR when the call
 returns. However, this may preclude certain optimizations based on
 modifying unshared values in-place.
 .PP
-Again, unless specified otherwise below,
-the pointer to a result value returned in \fIobjPtrPtr\fR by the
+The pointer to a result value returned in \fIobjPtrPtr\fR by the
 functions \fBTcl_ListObjIndex\fR, \fBTcl_ListObjRange\fR,
 \fBTcl_ListObjRepeat\fR and \fBTcl_ListObjReverse\fR is guaranteed
 to be different from the \fBlistPtr\fR passed in. It is therefore
