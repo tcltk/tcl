@@ -18,9 +18,9 @@
  * threshold to decide when to use the abstract list type. This is
  * a tradeoff between memory usage and speed.
  */
-#define LREVERSE_LENGTH_THRESHOLD 100
-#define LREPEAT_LENGTH_THRESHOLD 100
-#define LRANGE_LENGTH_THRESHOLD 100
+#define LREVERSE_LENGTH_THRESHOLD	100
+#define LREPEAT_LENGTH_THRESHOLD	100
+#define LRANGE_LENGTH_THRESHOLD		100
 
 /*
  * We want the caller of the function that is operating on a list to be
@@ -63,7 +63,7 @@ FindInArrayOfObjs(
 
 /*
  * TclObjArray stores a reference counted Tcl_Obj array. Basically, a
- * cheaper, less functional version of Tcl lists.
+ * cheaper, but less functional version of Tcl lists.
  */
 typedef struct TclObjArray {
     Tcl_Size refCount;		/* Reference count */
@@ -692,8 +692,7 @@ Tcl_ListObjRepeat(
 	return TCL_ERROR;
     }
 
-    Tcl_Size totalElems = objc * repeatCount;
-    if (totalElems == 0) {
+    if (objc == 0 || repeatCount == 0) {
 	TclNewObj(*resultPtrPtr);
 	return TCL_OK;
     }
@@ -701,12 +700,9 @@ Tcl_ListObjRepeat(
     /* Final sanity check. Do not exceed limits on max list length. */
     if (objc > LIST_MAX/repeatCount) {
 	*resultPtrPtr = NULL;
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"max length of a Tcl list (%" TCL_SIZE_MODIFIER "d elements) exceeded",
-		LIST_MAX));
-	Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
-	return TCL_ERROR;
+	return TclListLimitExceededError(interp);
     }
+    Tcl_Size totalElems = objc * repeatCount;
 
     Tcl_Obj *resultPtr;
     if (totalElems >= LREPEAT_LENGTH_THRESHOLD) {
