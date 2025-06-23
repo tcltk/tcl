@@ -5488,6 +5488,17 @@ TEBCresume(
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
+	if (flags & TCL_LREPLACE4_NEED_IN_RANGE) {
+	    if (fromIdx < 0 || fromIdx >= length) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"index \"%s\" out of range", Tcl_GetString(fromIdxObj)));
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", "OUTOFRANGE",
+			(char *)NULL);
+		CACHE_STACK_INFO();
+		TRACE_ERROR(interp);
+		goto gotError;
+	    }
+	}
 	if (fromIdx == TCL_INDEX_NONE) {
 	    fromIdx = 0;
 	} else if (fromIdx > length) {
