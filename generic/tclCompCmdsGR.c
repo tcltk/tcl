@@ -1525,6 +1525,26 @@ TclCompileLpopCmd(
     // Shouldn't have pushed any words
 
     OP4(			LOAD_SCALAR, varIdx);
+
+    // FIXME: Better test for index-in-range; new opcode?
+    OP(				DUP);
+    OP(				LIST_LENGTH);
+    Tcl_BytecodeLabel doPop;
+    FWDJUMP(			JUMP_TRUE, doPop);
+    if (idxTokenPtr) {
+	PUSH(			"index \"");
+	PUSH_SIMPLE_TOKEN(	idxTokenPtr);
+	PUSH(			"\" out of range");
+	OP1(			STR_CONCAT1, 3);
+    } else {
+	PUSH(			"index \"end\" out of range");
+    }
+    PUSH(			"-errorcode {TCL VALUE INDEX OUTOFRANGE}");
+    OP44(			RETURN_IMM, TCL_ERROR, 0);
+    // Unreachable
+    OP(				POP);
+
+    FWDLABEL(		doPop);
     OP(				DUP);
     OP4(			LIST_INDEX_IMM, idx);
     OP(				SWAP);
