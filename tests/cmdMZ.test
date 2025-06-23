@@ -194,8 +194,18 @@ test cmdMZ-return-2.18 {return option handling} {
     } -> foo] [dictSort $foo] [info errorstack]
 } {2 {-code 1 -errorcode NONE -errorstack {CALL a CALL b} -level 1} {CALL a CALL b}}
 test cmdMZ-return-2.19 {return option handling} -body {
-    return -level 0 -code error -options {-options {-code break} -code continue}
+    return -level 0 -options {-options {-code break} -code continue}
 } -returnCodes continue -result {}
+test cmdMZ-return-2.20 {return option handling} {
+    list [catch {
+	return -level 0 -options {-foo 1} -options {-bar 2} 
+    } -> foo] $foo
+} {0 {-foo 1 -bar 2 -code 0 -level 0}}
+test cmdMZ-return-2.21 {return option handling} {
+    list [catch {
+	return -level 0 -options {-options {-foo 1} -options {-bar 2}}
+    } -> foo] $foo
+} {0 {-foo 1 -bar 2 -code 0 -level 0}}
 
 # Check that the result of a [return -options $opts $result] is
 # indistinguishable from that of the originally caught script, no matter what
