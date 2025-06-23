@@ -1484,6 +1484,66 @@ TclCompileLreplaceCmd(
 /*
  *----------------------------------------------------------------------
  *
+ * TclCompileLpopCmd --
+ *
+ *	How to compile the "lpop" command. We only bother with the case
+ *	where there is a single constant index (or no index) and we're inside
+ *	a procedure-like context.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+TclCompileLpopCmd(
+    Tcl_Interp *interp,		/* Tcl interpreter for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the
+				 * command. */
+    TCL_UNUSED(Command *),
+    CompileEnv *envPtr)		/* Holds the resulting instructions. */
+{
+    DefineLineInformation;	/* TIP #280 */
+    Tcl_Size numWords = parsePtr->numWords, varIdx;
+    Tcl_Token *varTokenPtr, *idxTokenPtr = NULL;
+    int idx = TCL_INDEX_END, dummy;
+
+    if (numWords < 2 || numWords > 3 || !EnvIsProc(envPtr)) {
+	return TCL_ERROR;
+    }
+
+    varTokenPtr = TokenAfter(parsePtr->tokenPtr);
+    if (varTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+	return TCL_ERROR;
+    }
+    if (numWords == 3) {
+	idxTokenPtr = TokenAfter(varTokenPtr);
+	if (TclGetIndexFromToken(idxTokenPtr, TCL_INDEX_NONE,
+		TCL_INDEX_NONE, &idx) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+    }
+
+    PushVarNameWord(varTokenPtr, TCL_NO_ELEMENT, &varIdx, &dummy, 1);
+    // Shouldn't have pushed any words
+
+    OP4(			LOAD_SCALAR, varIdx);
+    OP(				DUP);
+    OP4(			LIST_INDEX_IMM, idx);
+    OP(				SWAP);
+    if (idxTokenPtr) {
+	PUSH_SIMPLE_TOKEN(	idxTokenPtr);
+    } else {
+	PUSH(			"end");
+    }
+    OP(				DUP);
+    OP41(			LREPLACE, 3, TCL_LREPLACE4_END_IS_LAST);
+    OP4(			STORE_SCALAR, varIdx);
+    OP(				POP);
+
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclCompileLsetCmd --
  *
  *	Procedure called to compile the "lset" command.
