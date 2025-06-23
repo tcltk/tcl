@@ -3894,6 +3894,7 @@ MODULE_SCOPE CompileProc TclCompileLinsertCmd;
 MODULE_SCOPE CompileProc TclCompileListCmd;
 MODULE_SCOPE CompileProc TclCompileLlengthCmd;
 MODULE_SCOPE CompileProc TclCompileLmapCmd;
+MODULE_SCOPE CompileProc TclCompileLpopCmd;
 MODULE_SCOPE CompileProc TclCompileLrangeCmd;
 MODULE_SCOPE CompileProc TclCompileLreplaceCmd;
 MODULE_SCOPE CompileProc TclCompileLsetCmd;
