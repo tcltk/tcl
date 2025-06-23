@@ -695,7 +695,7 @@ TclChanPushObjCmd(
     Tcl_SetHashValue(hPtr, rtPtr);
 #if TCL_THREADS
     rtmPtr = GetThreadReflectedTransformMap();
-    hPtr = Tcl_CreateHashEntry(&rtmPtr->map, TclGetString(rtId), &isNew);
+    hPtr = Tcl_CreateHashEntry(&rtmPtr->map, TclGetString(rtId), NULL);
     Tcl_SetHashValue(hPtr, rtPtr);
 #endif /* TCL_THREADS */
 
@@ -1211,7 +1211,7 @@ ReflectInput(
 	Tcl_SetByteArrayLength(bufObj, 0);
     } /* while toRead > 0 */
 
- stop:
+  stop:
     if (gotBytes == 0) {
 	rtPtr->eofPending = 0;
     }
@@ -1219,7 +1219,7 @@ ReflectInput(
     Tcl_Release(rtPtr);
     return gotBytes;
 
- error:
+  error:
     gotBytes = -1;
     goto stop;
 }
@@ -2106,8 +2106,8 @@ DeleteReflectedTransformMap(
     Tcl_Interp *interp)		/* The interpreter being deleted. */
 {
     ReflectedTransformMap *rtmPtr; /* The map */
-    Tcl_HashSearch hSearch;	 /* Search variable. */
-    Tcl_HashEntry *hPtr;	 /* Search variable. */
+    Tcl_HashSearch hSearch;	/* Search variable. */
+    Tcl_HashEntry *hPtr;	/* Search variable. */
     ReflectedTransform *rtPtr;
 #if TCL_THREADS
     ForwardingResult *resultPtr;
@@ -2268,8 +2268,8 @@ static void
 DeleteThreadReflectedTransformMap(
     TCL_UNUSED(void *))
 {
-    Tcl_HashSearch hSearch;	 /* Search variable. */
-    Tcl_HashEntry *hPtr;	 /* Search variable. */
+    Tcl_HashSearch hSearch;	   /* Search variable. */
+    Tcl_HashEntry *hPtr;	   /* Search variable. */
     Tcl_ThreadId self = Tcl_GetCurrentThread();
     ReflectedTransformMap *rtmPtr; /* The map */
     ForwardingResult *resultPtr;

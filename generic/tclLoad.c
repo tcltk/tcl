@@ -86,6 +86,12 @@ typedef struct InterpLibrary {
 } InterpLibrary;
 
 /*
+ * Associated data key used to look up the linked list of libraries registered
+ * in the interpreter.
+ */
+#define ASSOC_KEY "tclLoad"
+
+/*
  * Prototypes for functions that are private to this file:
  */
 
@@ -132,7 +138,8 @@ Tcl_LoadObjCmd(
     Tcl_DString pfx, tmp, initName, safeInitName;
     Tcl_DString unloadName, safeUnloadName;
     InterpLibrary *ipFirstPtr, *ipPtr;
-    int code, namesMatch, filesMatch, offset;
+    int code, namesMatch, filesMatch;
+    Tcl_Size offset;
     const char *symbols[2];
     Tcl_LibraryInitProc *initProc;
     const char *p, *fullFileName, *prefix;
@@ -156,13 +163,14 @@ Tcl_LoadObjCmd(
 		&index) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	++objv; --objc;
+	++objv;
+	--objc;
 	if (LOAD_GLOBAL == index) {
 	    flags |= TCL_LOAD_GLOBAL;
 	} else if (LOAD_LAZY == index) {
 	    flags |= TCL_LOAD_LAZY;
 	} else {
-		break;
+	    break;
 	}
     }
     if ((objc < 2) || (objc > 4)) {
@@ -277,7 +285,7 @@ Tcl_LoadObjCmd(
      */
 
     if (libraryPtr != NULL) {
-	ipFirstPtr = (InterpLibrary *)Tcl_GetAssocData(target, "tclLoad", NULL);
+	ipFirstPtr = (InterpLibrary *)Tcl_GetAssocData(target, ASSOC_KEY, NULL);
 	for (ipPtr = ipFirstPtr; ipPtr != NULL; ipPtr = ipPtr->nextPtr) {
 	    if (ipPtr->libraryPtr == libraryPtr) {
 		code = TCL_OK;
@@ -482,11 +490,10 @@ Tcl_LoadObjCmd(
 	Interp *iPtr = (Interp *) target;
 	if (iPtr->legacyResult && *(iPtr->legacyResult) && !iPtr->legacyFreeProc) {
 	    /*
-	     * A call to Tcl_InitStubs() determined the caller extension and
-	     * this interp are incompatible in their stubs mechanisms, and
-	     * recorded the error in the oldest legacy place we have to do so.
+	     * A call to Tcl_InitStubs() determined the caller extension
+	     * Stubs were introduced in Tcl 8.1, so there's only one possible reason.
 	     */
-	    Tcl_SetObjResult(target, Tcl_NewStringObj(iPtr->legacyResult, -1));
+	    Tcl_SetObjResult(target, Tcl_NewStringObj("this extension is compiled for Tcl 8.x", -1));
 	    iPtr->legacyResult = NULL;
 	    iPtr->legacyFreeProc = (void (*) (void))-1;
 	}
@@ -514,11 +521,11 @@ Tcl_LoadObjCmd(
      * static libraries at the head of the linked list!
      */
 
-    ipFirstPtr = (InterpLibrary *)Tcl_GetAssocData(target, "tclLoad", NULL);
+    ipFirstPtr = (InterpLibrary *)Tcl_GetAssocData(target, ASSOC_KEY, NULL);
     ipPtr = (InterpLibrary *)Tcl_Alloc(sizeof(InterpLibrary));
     ipPtr->libraryPtr = libraryPtr;
     ipPtr->nextPtr = ipFirstPtr;
-    Tcl_SetAssocData(target, "tclLoad", LoadCleanupProc, ipPtr);
+    Tcl_SetAssocData(target, ASSOC_KEY, LoadCleanupProc, ipPtr);
 
   done:
     Tcl_DStringFree(&pfx);
@@ -599,6 +606,8 @@ Tcl_UnloadObjCmd(
 	case UNLOAD_LAST:		/* -- */
 	    i++;
 	    goto endOfForLoop;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
   endOfForLoop:
@@ -719,7 +728,7 @@ Tcl_UnloadObjCmd(
 
     code = TCL_ERROR;
     if (libraryPtr != NULL) {
-	ipFirstPtr = (InterpLibrary *)Tcl_GetAssocData(target, "tclLoad", NULL);
+	ipFirstPtr = (InterpLibrary *)Tcl_GetAssocData(target, ASSOC_KEY, NULL);
 	for (ipPtr = ipFirstPtr; ipPtr != NULL; ipPtr = ipPtr->nextPtr) {
 	    if (ipPtr->libraryPtr == libraryPtr) {
 		code = TCL_OK;
@@ -861,7 +870,7 @@ UnloadLibrary(
      */
 
     if (!interpExiting) {
-	ipFirstPtr = (InterpLibrary *)Tcl_GetAssocData(target, "tclLoad", NULL);
+	ipFirstPtr = (InterpLibrary *)Tcl_GetAssocData(target, ASSOC_KEY, NULL);
 	if (ipFirstPtr) {
 	    ipPtr = ipFirstPtr;
 	    if (ipPtr->libraryPtr == libraryPtr) {
@@ -878,7 +887,7 @@ UnloadLibrary(
 		}
 	    }
 	    Tcl_Free(ipPtr);
-	    Tcl_SetAssocData(target, "tclLoad", LoadCleanupProc, ipFirstPtr);
+	    Tcl_SetAssocData(target, ASSOC_KEY, LoadCleanupProc, ipFirstPtr);
 	}
     }
 
@@ -1055,7 +1064,7 @@ Tcl_StaticLibrary(
 	 * it's already loaded.
 	 */
 
-	ipFirstPtr = (InterpLibrary *)Tcl_GetAssocData(interp, "tclLoad", NULL);
+	ipFirstPtr = (InterpLibrary *)Tcl_GetAssocData(interp, ASSOC_KEY, NULL);
 	for (ipPtr = ipFirstPtr; ipPtr != NULL; ipPtr = ipPtr->nextPtr) {
 	    if (ipPtr->libraryPtr == libraryPtr) {
 		return;
@@ -1070,7 +1079,7 @@ Tcl_StaticLibrary(
 	ipPtr = (InterpLibrary *)Tcl_Alloc(sizeof(InterpLibrary));
 	ipPtr->libraryPtr = libraryPtr;
 	ipPtr->nextPtr = ipFirstPtr;
-	Tcl_SetAssocData(interp, "tclLoad", LoadCleanupProc, ipPtr);
+	Tcl_SetAssocData(interp, ASSOC_KEY, LoadCleanupProc, ipPtr);
     }
 }
 
@@ -1130,7 +1139,7 @@ TclGetLoadedLibraries(
     if (target == NULL) {
 	return TCL_ERROR;
     }
-    ipPtr = (InterpLibrary *)Tcl_GetAssocData(target, "tclLoad", NULL);
+    ipPtr = (InterpLibrary *)Tcl_GetAssocData(target, ASSOC_KEY, NULL);
 
     /*
      * Return information about all of the available libraries.

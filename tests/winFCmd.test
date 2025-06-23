@@ -29,7 +29,7 @@ testConstraint longFileNames 0
 # Some things fail under all Continuous Integration systems for subtle reasons
 # such as CI often running with elevated privileges in a container.
 testConstraint notInCIenv     [expr {![info exists ::env(CI)]}]
-testConstraint knownMsvcBug [expr {![string match msvc-* [tcl::build-info compiler]]}]
+testConstraint knownMsvcBug [expr {[tcl::build-info msvc] eq 0}]
 
 proc createfile {file {string a}} {
     set f [open $file w]
@@ -206,7 +206,7 @@ test winFCmd-1.15 {TclpRenameFile: errno: EEXIST} -setup {
 } -constraints {win testfile} -body {
     createfile tf1
     testfile mv tf1 nul
-} -returnCodes error -result EEXIST
+} -returnCodes error -result {^(ENODEV|EEXIST)$} -match regexp
 test winFCmd-1.16 {TclpRenameFile: MoveFile() != FALSE} -setup {
     cleanup
 } -constraints {win testfile} -body {
@@ -250,9 +250,9 @@ test winFCmd-1.23 {TclpRenameFile: move dir into self} -setup {
 test winFCmd-1.24 {TclpRenameFile: move a root dir} -setup {
     cleanup
 } -constraints {win testfile} -body {
-    # Error code depends on Windows version
+    # Error code depends on Windows/WINE version
     testfile mv / c:/
-} -returnCodes error -result {^(EINVAL|ENOENT)$} -match regexp
+} -returnCodes error -result {^(EINVAL|ENOENT|EEXIST)$} -match regexp
 test winFCmd-1.25 {TclpRenameFile: cross file systems} -setup {
     cleanup
 } -constraints {win cdrom testfile} -body {
@@ -681,9 +681,9 @@ test winFCmd-6.11 {TclpRemoveDirectory: attr == -1} -setup {
     cleanup
 } -constraints {win testfile notInCIenv} -body {
     testfile rmdir /
-    # WinXP returns EEXIST, WinNT seems to return EACCES.  No policy
-    # decision has been made as to which is correct.
-} -returnCodes error -match regexp -result {^/ E(ACCES|EXIST)$}
+    # WinXP returns EEXIST, WinNT seems to return EACCES, WINE returns
+    # ENODEV.  No policy decision has been made as to which is correct.
+} -returnCodes error -match regexp -result {^/ E(ACCES|EXIST|NODEV)$}
 test winFCmd-6.13 {TclpRemoveDirectory: write-protected} -setup {
     cleanup
 } -constraints {win testfile testchmod notInCIenv} -body {

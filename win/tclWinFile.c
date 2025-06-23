@@ -380,7 +380,7 @@ WinSymLinkDirectory(
 {
     DUMMY_REPARSE_BUFFER dummy;
     REPARSE_DATA_BUFFER *reparseBuffer = (REPARSE_DATA_BUFFER *) &dummy;
-    int len;
+    size_t len;
     WCHAR nativeTarget[MAX_PATH];
     WCHAR *loop;
 
@@ -390,7 +390,7 @@ WinSymLinkDirectory(
 
     memcpy(nativeTarget, L"\\??\\", 4 * sizeof(WCHAR));
     memcpy(nativeTarget + 4, linkTargetPath,
-	   sizeof(WCHAR) * (1+wcslen((WCHAR *) linkTargetPath)));
+	    sizeof(WCHAR) * (1+wcslen((WCHAR *) linkTargetPath)));
     len = wcslen(nativeTarget);
 
     /*
@@ -415,7 +415,7 @@ WinSymLinkDirectory(
     memset(reparseBuffer, 0, sizeof(DUMMY_REPARSE_BUFFER));
     reparseBuffer->ReparseTag = IO_REPARSE_TAG_MOUNT_POINT;
     reparseBuffer->MountPointReparseBuffer.SubstituteNameLength =
-	    wcslen(nativeTarget) * sizeof(WCHAR);
+	    (WORD)(wcslen(nativeTarget) * sizeof(WCHAR));
     reparseBuffer->Reserved = 0;
     reparseBuffer->MountPointReparseBuffer.PrintNameLength = 0;
     reparseBuffer->MountPointReparseBuffer.PrintNameOffset =
@@ -545,7 +545,8 @@ static Tcl_Obj *
 WinReadLinkDirectory(
     const WCHAR *linkDirPath)
 {
-    int attr, len, offset;
+    int attr, offset;
+    Tcl_Size len;
     DUMMY_REPARSE_BUFFER dummy;
     REPARSE_DATA_BUFFER *reparseBuffer = (REPARSE_DATA_BUFFER *) &dummy;
     Tcl_Obj *retVal;
@@ -1424,7 +1425,7 @@ TclpGetUserHome(
     char *result = NULL;
     USER_INFO_1 *uiPtr;
     Tcl_DString ds;
-    int nameLen = -1;
+    Tcl_Size nameLen = -1;
     int rc = 0;
     const char *domain;
     WCHAR *wName, *wHomeDir, *wDomain;
@@ -1747,9 +1748,9 @@ NativeAccess(
 	 * go).
 	 */
 
-	if(!GetSecurityDescriptorOwner(sdPtr,&pSid,&SidDefaulted) ||
-	   memcmp(GetSidIdentifierAuthority(pSid),&samba_unmapped,
-		  sizeof(SID_IDENTIFIER_AUTHORITY))==0) {
+	if (!GetSecurityDescriptorOwner(sdPtr,&pSid,&SidDefaulted) ||
+	    memcmp(GetSidIdentifierAuthority(pSid),&samba_unmapped,
+		    sizeof(SID_IDENTIFIER_AUTHORITY))==0) {
 	    HeapFree(GetProcessHeap(), 0, sdPtr);
 	    return 0; /* Attrib tests say access allowed. */
 	}
@@ -1853,7 +1854,7 @@ static int
 NativeIsExec(
     const WCHAR *path)
 {
-    int len = wcslen(path);
+    size_t len = wcslen(path);
 
     if (len < 5) {
 	return 0;
@@ -2132,17 +2133,17 @@ NativeStat(
     dev = NativeDev(nativePath);
     mode = NativeStatMode(attr, checkLinks, NativeIsExec(nativePath));
     if (fileType == FILE_TYPE_CHAR) {
-	mode &= ~S_IFMT;
+	mode &= (unsigned short)~S_IFMT;
 	mode |= S_IFCHR;
     } else if (fileType == FILE_TYPE_DISK) {
-	mode &= ~S_IFMT;
+	mode &= (unsigned short)~S_IFMT;
 	mode |= S_IFBLK;
     }
 
     statPtr->st_dev	= (dev_t) dev;
-    statPtr->st_ino	= inode;
+    statPtr->st_ino	= (_ino_t)inode;
     statPtr->st_mode	= mode;
-    statPtr->st_nlink	= nlink;
+    statPtr->st_nlink	= (short)nlink;
     statPtr->st_uid	= 0;
     statPtr->st_gid	= 0;
     statPtr->st_rdev	= (dev_t) dev;
@@ -2518,9 +2519,9 @@ TclpFilesystemPathType(
 int
 TclpObjNormalizePath(
     TCL_UNUSED(Tcl_Interp *),
-    Tcl_Obj *pathPtr,	        /* An unshared object containing the path to
+    Tcl_Obj *pathPtr,		/* An unshared object containing the path to
 				 * normalize */
-    int nextCheckpoint)	        /* offset to start at in pathPtr */
+    int nextCheckpoint1)		/* offset to start at in pathPtr */
 {
     char *lastValidPathEnd = NULL;
     Tcl_DString dsNorm;		/* This will hold the normalized string. */
@@ -2528,6 +2529,7 @@ TclpObjNormalizePath(
     Tcl_Obj *temp = NULL;
     int isDrive = 1;
     Tcl_DString ds;		/* Some workspace. */
+    Tcl_Size nextCheckpoint = nextCheckpoint1;
 
     Tcl_DStringInit(&dsNorm);
     path = TclGetString(pathPtr);
@@ -2681,7 +2683,7 @@ TclpObjNormalizePath(
 		    }
 		}
 		if (checkDots != NULL) {
-		    int dotLen = currentPathEndPosition-lastValidPathEnd;
+		    Tcl_Size dotLen = currentPathEndPosition-lastValidPathEnd;
 
 		    /*
 		     * Path is just dots. We shouldn't really ever see a path
@@ -2820,7 +2822,7 @@ TclpObjNormalizePath(
 	Tcl_DecrRefCount(temp);
     }
 
-    return nextCheckpoint;
+    return (int)nextCheckpoint;
 }
 
 /*
@@ -3091,7 +3093,7 @@ TclNativeCreateNativeRep(
 	goto done;
     }
     MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, str, -1, nativePathPtr,
-	    len + 2);
+	    (DWORD)len + 2);
     nativePathPtr[len] = 0;
 
     /*

@@ -304,7 +304,8 @@ CreateCmdInNS(
     const char *name,
     Tcl_ObjCmdProc *cmdProc,
     Tcl_ObjCmdProc *nreProc,
-    CompileProc *compileProc)
+    CompileProc *compileProc,
+    int flags)
 {
     Command *cmdPtr;
 
@@ -315,6 +316,7 @@ CreateCmdInNS(
 	    namespacePtr, cmdProc, NULL, NULL);
     cmdPtr->nreProc = nreProc;
     cmdPtr->compileProc = compileProc;
+    cmdPtr->flags |= flags;
 }
 
 /*
@@ -418,7 +420,7 @@ InitFoundation(
 
     TclNewLiteralStringObj(namePtr, "new");
     TclNewInstanceMethod(interp, (Tcl_Object) fPtr->classCls->thisPtr,
-	    namePtr /* keeps ref */, 0 /* private */, NULL, NULL);
+	    namePtr /*keeps ref*/, 0 /*private*/, NULL, NULL);
     Tcl_BounceRefCount(namePtr);
     fPtr->classCls->constructorPtr = (Method *) TclNewMethod(
 	    (Tcl_Class) fPtr->classCls, NULL, 0, &classConstructor, NULL);
@@ -429,15 +431,15 @@ InitFoundation(
      */
 
     CreateCmdInNS(interp, fPtr->helpersNs, "next",
-	    NULL, TclOONextObjCmd, TclCompileObjectNextCmd);
+	    NULL, TclOONextObjCmd, TclCompileObjectNextCmd, CMD_COMPILES_EXPANDED);
     CreateCmdInNS(interp, fPtr->helpersNs, "nextto",
-	    NULL, TclOONextToObjCmd, TclCompileObjectNextToCmd);
+	    NULL, TclOONextToObjCmd, TclCompileObjectNextToCmd, CMD_COMPILES_EXPANDED);
     CreateCmdInNS(interp, fPtr->helpersNs, "self",
-	    TclOOSelfObjCmd, NULL, TclCompileObjectSelfCmd);
+	    TclOOSelfObjCmd, NULL, TclCompileObjectSelfCmd, 0);
 
-    CreateCmdInNS(interp, fPtr->ooNs, "define", TclOODefineObjCmd, NULL, NULL);
-    CreateCmdInNS(interp, fPtr->ooNs, "objdefine", TclOOObjDefObjCmd, NULL, NULL);
-    CreateCmdInNS(interp, fPtr->ooNs, "copy", TclOOCopyObjectCmd, NULL, NULL);
+    CreateCmdInNS(interp, fPtr->ooNs, "define", TclOODefineObjCmd, NULL, NULL, 0);
+    CreateCmdInNS(interp, fPtr->ooNs, "objdefine", TclOOObjDefObjCmd, NULL, NULL, 0);
+    CreateCmdInNS(interp, fPtr->ooNs, "copy", TclOOCopyObjectCmd, NULL, NULL, 0);
 
     TclOOInitInfo(interp);
 
@@ -464,10 +466,10 @@ InitFoundation(
 
     Tcl_CreateObjCommand(interp,
 	    "::oo::configuresupport::configurableobject::property",
-	    TclOODefinePropertyCmd, (void *) 1, NULL);
+	    TclOODefinePropertyCmd, INT2PTR(1) /*useInstance*/, NULL);
     Tcl_CreateObjCommand(interp,
 	    "::oo::configuresupport::configurableclass::property",
-	    TclOODefinePropertyCmd, (void *) 0, NULL);
+	    TclOODefinePropertyCmd, INT2PTR(0) /*useInstance*/, NULL);
 
     /*
      * Evaluate the remaining definitions, which are a compiled-in Tcl script.
@@ -2885,7 +2887,6 @@ Tcl_ObjectContextInvokeNext(
     CallContext *contextPtr = (CallContext *) context;
     size_t savedIndex = contextPtr->index;
     size_t savedSkip = contextPtr->skip;
-    int result;
 
     if (contextPtr->index + 1 >= contextPtr->callPtr->numChain) {
 	/*
@@ -2895,22 +2896,11 @@ Tcl_ObjectContextInvokeNext(
 	 * unexpectedly.
 	 */
 
-	const char *methodType;
-
 	if (Tcl_InterpDeleted(interp)) {
 	    return TCL_OK;
 	}
-
-	if (contextPtr->callPtr->flags & CONSTRUCTOR) {
-	    methodType = "constructor";
-	} else if (contextPtr->callPtr->flags & DESTRUCTOR) {
-	    methodType = "destructor";
-	} else {
-	    methodType = "method";
-	}
-
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"no next %s implementation", methodType));
+		"no next %s implementation", TclOOContextTypeName(contextPtr)));
 	OO_ERROR(interp, NOTHING_NEXT);
 	return TCL_ERROR;
     }
@@ -2932,8 +2922,8 @@ Tcl_ObjectContextInvokeNext(
      * Invoke the (advanced) method call context in the caller context.
      */
 
-    result = Tcl_NRCallObjProc(interp, TclOOInvokeContext, contextPtr, objc,
-	    objv);
+    int result = Tcl_NRCallObjProc(interp, TclOOInvokeContext, contextPtr,
+	    objc, objv);
 
     /*
      * Restore the call chain context index as we've finished the inner invoke
@@ -2964,22 +2954,11 @@ TclNRObjectContextInvokeNext(
 	 * unexpectedly.
 	 */
 
-	const char *methodType;
-
 	if (Tcl_InterpDeleted(interp)) {
 	    return TCL_OK;
 	}
-
-	if (contextPtr->callPtr->flags & CONSTRUCTOR) {
-	    methodType = "constructor";
-	} else if (contextPtr->callPtr->flags & DESTRUCTOR) {
-	    methodType = "destructor";
-	} else {
-	    methodType = "method";
-	}
-
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"no next %s implementation", methodType));
+		"no next %s implementation", TclOOContextTypeName(contextPtr)));
 	OO_ERROR(interp, NOTHING_NEXT);
 	return TCL_ERROR;
     }

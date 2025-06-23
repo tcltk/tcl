@@ -79,32 +79,18 @@ static DWORD ddeInstance;	/* The application instance handle given to us
 				 * by DdeInitialize. */
 static int ddeIsServer = 0;
 
-#define TCL_DDE_VERSION		"1.4.5"
+#define TCL_DDE_VERSION		"1.5a0"
 #define TCL_DDE_PACKAGE_NAME	"dde"
 #define TCL_DDE_SERVICE_NAME	L"TclEval"
 #define TCL_DDE_EXECUTE_RESULT	L"$TCLEVAL$EXECUTE$RESULT"
 
-#define DDE_FLAG_ASYNC 1
-#define DDE_FLAG_BINARY 2
-#define DDE_FLAG_FORCE 4
+enum TclDdeFlags {
+    DDE_FLAG_ASYNC = 1,
+    DDE_FLAG_BINARY = 2,
+    DDE_FLAG_FORCE = 4
+};
 
 TCL_DECLARE_MUTEX(ddeMutex)
-
-#if (TCL_MAJOR_VERSION < 9) && defined(TCL_MINOR_VERSION) && (TCL_MINOR_VERSION < 7)
-# if TCL_UTF_MAX > 3
-#   define Tcl_WCharToUtfDString(a,b,c) Tcl_WinTCharToUtf((TCHAR *)(a),(b)*sizeof(WCHAR),c)
-#   define Tcl_UtfToWCharDString(a,b,c) (WCHAR *)Tcl_WinUtfToTChar(a,b,c)
-# else
-#   define Tcl_WCharToUtfDString Tcl_UniCharToUtfDString
-#   define Tcl_UtfToWCharDString Tcl_UtfToUniCharDString
-# endif
-#ifndef Tcl_Size
-#   define Tcl_Size int
-#endif
-#ifndef Tcl_CreateObjCommand2
-#   define Tcl_CreateObjCommand2 Tcl_CreateObjCommand
-#endif
-#endif
 
 /*
  * Declarations for functions defined in this file.
@@ -138,11 +124,6 @@ extern "C" {
 #endif
 DLLEXPORT int		Dde_Init(Tcl_Interp *interp);
 DLLEXPORT int		Dde_SafeInit(Tcl_Interp *interp);
-#if TCL_MAJOR_VERSION < 9
-/* With those additional entries, "load tcldde14.dll" works without 3th argument */
-DLLEXPORT int		Tcldde_Init(Tcl_Interp *interp);
-DLLEXPORT int		Tcldde_SafeInit(Tcl_Interp *interp);
-#endif
 #ifdef __cplusplus
 }
 #endif
@@ -175,14 +156,6 @@ Dde_Init(
     Tcl_CreateExitHandler(DdeExitProc, NULL);
     return Tcl_PkgProvideEx(interp, TCL_DDE_PACKAGE_NAME, TCL_DDE_VERSION, NULL);
 }
-#if TCL_MAJOR_VERSION < 9
-int
-Tcldde_Init(
-    Tcl_Interp *interp)
-{
-    return Dde_Init(interp);
-}
-#endif
 
 /*
  *----------------------------------------------------------------------
@@ -210,14 +183,6 @@ Dde_SafeInit(
     }
     return result;
 }
-#if TCL_MAJOR_VERSION < 9
-int
-Tcldde_SafeInit(
-    Tcl_Interp *interp)
-{
-    return Dde_SafeInit(interp);
-}
-#endif
 
 /*
  *----------------------------------------------------------------------
@@ -310,10 +275,10 @@ Initialize(void)
 static const WCHAR *
 DdeSetServerName(
     Tcl_Interp *interp,
-    const WCHAR *name, /* The name that will be used to refer to the
+    const WCHAR *name,		/* The name that will be used to refer to the
 				 * interpreter in later "send" commands. Must
 				 * be globally unique. */
-    int flags,		/* DDE_FLAG_FORCE or 0 */
+    int flags,			/* DDE_FLAG_FORCE or 0 */
     Tcl_Obj *handlerPtr)	/* Name of the optional proc/command to handle
 				 * incoming Dde eval's */
 {
@@ -381,7 +346,8 @@ DdeSetServerName(
 	}
 	if (r != TCL_OK) {
 	    Tcl_DStringInit(&dString);
-	    OutputDebugStringW(Tcl_UtfToWCharDString(Tcl_GetString(Tcl_GetObjResult(interp)), -1, &dString));
+	    OutputDebugStringW(Tcl_UtfToWCharDString(
+		    Tcl_GetString(Tcl_GetObjResult(interp)), -1, &dString));
 	    Tcl_DStringFree(&dString);
 	    return NULL;
 	}
@@ -515,7 +481,7 @@ DdeGetRegistrationPtr(
 
 static void
 DeleteProc(
-    void *clientData)	/* The interp we are deleting. */
+    void *clientData)		/* The interp we are deleting. */
 {
     RegisteredInterp *riPtr = (RegisteredInterp *) clientData;
     RegisteredInterp *searchPtr, *prevPtr;
@@ -568,8 +534,8 @@ DeleteProc(
 
 static Tcl_Obj *
 ExecuteRemoteObject(
-    RegisteredInterp *riPtr,	    /* Info about this server. */
-    Tcl_Obj *ddeObjectPtr)	    /* The object to execute. */
+    RegisteredInterp *riPtr,	/* Info about this server. */
+    Tcl_Obj *ddeObjectPtr)	/* The object to execute. */
 {
     Tcl_Obj *returnPackagePtr;
     int result = TCL_OK;
@@ -1256,7 +1222,7 @@ DdeGetServicesList(
 
 static void
 SetDdeError(
-    Tcl_Interp *interp)	    /* The interp to put the message in. */
+    Tcl_Interp *interp)		/* The interp to put the message in. */
 {
     const char *errorMessage, *errorCode;
 
@@ -1303,9 +1269,9 @@ SetDdeError(
 
 static int
 DdeObjCmd(
-    void *dummy,	/* Not used. */
+    void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* The interp we are sending from */
-    Tcl_Size objc,			/* Number of arguments */
+    Tcl_Size objc,		/* Number of arguments */
     Tcl_Obj *const *objv)	/* The arguments */
 {
     static const char *const ddeCommands[] = {
@@ -1334,8 +1300,8 @@ DdeObjCmd(
     };
 
     int index, argIndex;
-    Tcl_Size length, i;
-    int flags = 0, result = TCL_OK, firstArg = 0;
+    Tcl_Size length, i, firstArg = 0;
+    int flags = 0, result = TCL_OK;
     HSZ ddeService = NULL, ddeTopic = NULL, ddeItem = NULL, ddeCookie = NULL;
     HDDEDATA ddeData = NULL, ddeItemData = NULL, ddeReturn;
     HCONV hConv = NULL;
@@ -1565,8 +1531,8 @@ DdeObjCmd(
 	}
 
 	if (dataLength + 1 < 2) {
-	    Tcl_SetObjResult(interp,
-		    Tcl_NewStringObj("cannot execute null data", -1));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "cannot execute null data", -1));
 	    Tcl_DStringFree(&dsBuf);
 	    Tcl_SetErrorCode(interp, "TCL", "DDE", "NULL", (char *)NULL);
 	    result = TCL_ERROR;
@@ -1616,8 +1582,8 @@ DdeObjCmd(
 	length = Tcl_DStringLength(&itemBuf) / sizeof(WCHAR);
 
 	if (length == 0) {
-	    Tcl_SetObjResult(interp,
-		    Tcl_NewStringObj("cannot request value of null data", -1));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "cannot request value of null data", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "DDE", "NULL", (char *)NULL);
 	    result = TCL_ERROR;
 	    goto cleanup;
@@ -1682,8 +1648,8 @@ DdeObjCmd(
 	itemString = Tcl_UtfToWCharDString(src, length, &itemBuf);
 	length = Tcl_DStringLength(&itemBuf) / sizeof(WCHAR);
 	if (length == 0) {
-	    Tcl_SetObjResult(interp,
-		    Tcl_NewStringObj("cannot have a null item", -1));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "cannot have a null item", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "DDE", "NULL", (char *)NULL);
 	    result = TCL_ERROR;
 	    goto cleanup;
@@ -1736,8 +1702,8 @@ DdeObjCmd(
 	ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
 	if (serviceName == NULL) {
-	    Tcl_SetObjResult(interp,
-		    Tcl_NewStringObj("invalid service name \"\"", -1));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "invalid service name \"\"", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "DDE", "NO_SERVER", (char *)NULL);
 	    result = TCL_ERROR;
 	    goto cleanup;
@@ -1850,8 +1816,8 @@ DdeObjCmd(
 
 	    if (MakeDdeConnection(interp, serviceName, &hConv) != TCL_OK) {
 	    invalidServerResponse:
-		Tcl_SetObjResult(interp,
-			Tcl_NewStringObj("invalid data returned from server", -1));
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"invalid data returned from server", -1));
 		Tcl_SetErrorCode(interp, "TCL", "DDE", "BAD_RESPONSE", (char *)NULL);
 		result = TCL_ERROR;
 		goto cleanup;

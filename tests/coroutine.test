@@ -825,6 +825,51 @@ test coroutine-7.14 {
 	return [list $done0 $done1]
 } -result {failure failure}
 
+test coroutine-7.15 {yieldto and expansion} {
+    coroutine c apply {{{yieldto yieldto}} {
+	yield
+	set abc [list 1 2 3]
+	set abc [list $abc $abc $abc]
+	$yieldto string cat {*}$abc
+	return $abc
+    }}
+    list [c] [c]
+} {{1 2 31 2 31 2 3} {{1 2 3} {1 2 3} {1 2 3}}}
+test coroutine-7.16 {yieldto and expansion} {
+    coroutine c apply {{} {
+	yield
+	set abc [list 1 2 3]
+	set abc [list $abc $abc $abc]
+	yieldto string cat {*}$abc
+	return $abc
+    }}
+    list [c] [c]
+} {{1 2 31 2 31 2 3} {{1 2 3} {1 2 3} {1 2 3}}}
+test coroutine-7.17 {yieldto and expansion} {
+    coroutine c apply {target {
+	yield
+	yieldto {*}$target
+	return done
+    }} {list 1 2 "3 4"}
+    list [c] [c]
+} {{1 2 {3 4}} done}
+test coroutine-7.18 {yieldto and expansion} -body {
+    coroutine c apply {{target {yieldto yieldto}} {
+	yield
+	$yieldto {*}$target
+	return done
+    }} {}
+    list [c] [c]
+} -returnCodes error -result {wrong # args: should be "yieldto command ?arg ...?"}
+test coroutine-7.19 {yieldto and expansion} -body {
+    coroutine c apply {target {
+	yield
+	yieldto {*}$target
+	return done
+    }} {}
+    list [c] [c]
+} -returnCodes error -result {wrong # args: should be "yieldto command ?arg ...?"}
+
 test coroutine-8.1.1 {coro inject, ticket 42202ba1e5ff566e} -body {
     interp create child
     child eval {

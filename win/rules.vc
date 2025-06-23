@@ -24,7 +24,7 @@ _RULES_VC = 1
 # For modifications that are not backward-compatible, you *must* change
 # the major version.
 RULES_VERSION_MAJOR = 1
-RULES_VERSION_MINOR = 13
+RULES_VERSION_MINOR = 15
 
 # The PROJECT macro must be defined by parent makefile.
 !if "$(PROJECT)" == ""
@@ -697,7 +697,7 @@ LINKERFLAGS     = $(LINKERFLAGS) -ltcg
    && [nmakehlp -V "$(_TCL_H)" "define TCL_MAJOR_VERSION" >> versions.vc]
 !endif
 !if [echo TCL_MINOR_VERSION = \>> versions.vc] \
-   && [nmakehlp -V "$(_TCL_H)" TCL_MINOR_VERSION >> versions.vc]
+   && [nmakehlp -V "$(_TCL_H)" "define TCL_MINOR_VERSION" >> versions.vc]
 !endif
 !if [echo TCL_RELEASE_SERIAL = \>> versions.vc] \
    && [nmakehlp -V "$(_TCL_H)" TCL_RELEASE_SERIAL >> versions.vc]
@@ -880,10 +880,6 @@ USE_THREAD_ALLOC= 0
 !if [nmakehlp -f $(OPTS) "tcl8"]
 !message *** Build for Tcl8
 TCL_BUILD_FOR = 8
-!endif
-!if [nmakehlp -f $(OPTS) "tk8"]
-!message *** Build for Tk8
-TK_BUILD_FOR = 8
 !endif
 
 !if $(TCL_MAJOR_VERSION) == 8
@@ -1297,7 +1293,8 @@ tklibs = "$(TKSTUBLIB)" "$(TKIMPLIB)"
 
 # Various output paths
 PRJIMPLIB	= $(OUT_DIR)\$(PROJECT)$(VERSION)$(SUFX).lib
-PRJLIBNAME8	= $(PROJECT)$(VERSION)$(SUFX).$(EXT)
+# Even when building against Tcl 9, PRJLIBNAME8 must have "t"
+PRJLIBNAME8	= $(PROJECT)$(VERSION)t$(SUFX:t=).$(EXT)
 # Even when building against Tcl 8, PRJLIBNAME9 must not have "t"
 PRJLIBNAME9	= tcl9$(PROJECT)$(VERSION)$(SUFX:t=).$(EXT)
 !if $(TCL_MAJOR_VERSION) == 8 || "$(TCL_BUILD_FOR)" == "8"
@@ -1453,10 +1450,7 @@ OPTDEFINES	= $(OPTDEFINES) /D_USE_64BIT_TIME_T=1
 !endif
 !endif
 !if "$(TCL_BUILD_FOR)" == "8"
-OPTDEFINES	= $(OPTDEFINES) /DTCL_MAJOR_VERSION=8
-!endif
-!if "$(TK_BUILD_FOR)" == "8"
-OPTDEFINES	= $(OPTDEFINES) /DTK_MAJOR_VERSION=8
+OPTDEFINES	= $(OPTDEFINES) /DTCL_MAJOR_VERSION=8 /DTK_MAJOR_VERSION=8
 !endif
 
 # Like the TEA system only set this non empty for non-Tk extensions
@@ -1588,7 +1582,7 @@ ldebug= $(ldebug) -profile
 lflags	= -nologo -machine:$(MACHINE) $(LINKERFLAGS) $(ldebug)
 
 !if $(MSVCRT) && !($(DEBUG) && !$(UNCHECKED)) && $(VCVERSION) >= 1900
-lflags	= $(lflags) -nodefaultlib:libucrt.lib
+lflags	= $(lflags) -nodefaultlib:ucrt.lib
 !endif
 
 dlllflags = $(lflags) -dll
@@ -1647,7 +1641,7 @@ default-target: $(DEFAULT_BUILD_TARGET)
 
 !if $(MULTIPLATFORM_INSTALL)
 default-pkgindex:
-	@echo if {[package vsatisfies [package provide Tcl] 9.0-]} { > $(OUT_DIR)\pkgIndex.tcl
+	@echo if {[package vsatisfies [package provide Tcl] 9.0]} { > $(OUT_DIR)\pkgIndex.tcl
 	@echo package ifneeded $(PRJ_PACKAGE_TCLNAME) $(DOTVERSION) \
 	    [list load [file join $$dir $(PLATFORM_IDENTIFY) $(PRJLIBNAME9)]] >> $(OUT_DIR)\pkgIndex.tcl
 	@echo } else { >> $(OUT_DIR)\pkgIndex.tcl
@@ -1656,7 +1650,7 @@ default-pkgindex:
 	@echo } >> $(OUT_DIR)\pkgIndex.tcl
 !else
 default-pkgindex:
-	@echo if {[package vsatisfies [package provide Tcl] 9.0-]} { > $(OUT_DIR)\pkgIndex.tcl
+	@echo if {[package vsatisfies [package provide Tcl] 9.0]} { > $(OUT_DIR)\pkgIndex.tcl
 	@echo package ifneeded $(PRJ_PACKAGE_TCLNAME) $(DOTVERSION) \
 	    [list load [file join $$dir $(PRJLIBNAME9)]] >> $(OUT_DIR)\pkgIndex.tcl
 	@echo } else { >> $(OUT_DIR)\pkgIndex.tcl
@@ -1696,6 +1690,7 @@ default-install-libraries: default-install-scripts
 
 default-install-scripts: $(OUT_DIR)\pkgIndex.tcl
 	@echo Installing libraries to '$(SCRIPT_INSTALL_DIR)'
+	@if not exist "$(SCRIPT_INSTALL_DIR)" mkdir "$(SCRIPT_INSTALL_DIR)"
 	@if exist $(LIBDIR) $(CPY) $(LIBDIR)\*.tcl "$(SCRIPT_INSTALL_DIR)"
 	@echo Installing package index in '$(SCRIPT_INSTALL_DIR)'
 	@$(CPY) $(OUT_DIR)\pkgIndex.tcl $(SCRIPT_INSTALL_DIR)

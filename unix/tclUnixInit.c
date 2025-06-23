@@ -441,7 +441,8 @@ TclpInitLibraryPath(
      */
 
     str = getenv("TCL_LIBRARY");			/* INTL: Native. */
-    Tcl_ExternalToUtfDStringEx(NULL, NULL, str, TCL_INDEX_NONE, TCL_ENCODING_PROFILE_TCL8, &buffer, NULL);
+    Tcl_ExternalToUtfDStringEx(NULL, NULL, str, TCL_INDEX_NONE,
+	    TCL_ENCODING_PROFILE_TCL8, &buffer, NULL);
     str = Tcl_DStringValue(&buffer);
 
     if ((str != NULL) && (str[0] != '\0')) {
@@ -572,7 +573,7 @@ SearchKnownEncodings(
 	int code = strcmp(localeTable[test].lang, encoding);
 
 	if (code == 0) {
-	    /* Found it at i == test.  */
+	    /* Found it at i == test. */
 	    return localeTable[test].encoding;
 	}
 	if (code < 0) {
@@ -691,6 +692,12 @@ Tcl_GetEncodingNameFromEnvironment(
 	}
     }
     return Tcl_DStringAppend(bufPtr, TCL_DEFAULT_ENCODING, TCL_INDEX_NONE);
+}
+
+const char *
+Tcl_GetEncodingNameForUser(Tcl_DString *bufPtr)
+{
+    return Tcl_GetEncodingNameFromEnvironment(bufPtr);
 }
 
 /*

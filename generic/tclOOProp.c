@@ -211,10 +211,10 @@ GetPropertyName(
 	 * We use a recursive call to look this up.
 	 */
 
-	Tcl_InterpState foo = Tcl_SaveInterpState(interp, result);
+	Tcl_InterpState state = Tcl_SaveInterpState(interp, result);
 	Tcl_Obj *otherName = GetPropertyName(interp, oPtr,
 		flags ^ (GPN_WRITABLE | GPN_FALLING_BACK), namePtr, NULL);
-	result = Tcl_RestoreInterpState(interp, foo);
+	result = Tcl_RestoreInterpState(interp, state);
 	if (otherName != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "property \"%s\" is %s only",
@@ -542,18 +542,18 @@ FindClassProps(
 				 * property set. */
     Tcl_HashTable *accumulator)	/* Where to gather the names. */
 {
-    int i, dummy;
+    int i;
     Tcl_Obj *propName;
     Class *mixin, *sup;
 
   tailRecurse:
     if (writable) {
 	FOREACH(propName, clsPtr->properties.writable) {
-	    Tcl_CreateHashEntry(accumulator, (void *) propName, &dummy);
+	    Tcl_CreateHashEntry(accumulator, (void *) propName, NULL);
 	}
     } else {
 	FOREACH(propName, clsPtr->properties.readable) {
-	    Tcl_CreateHashEntry(accumulator, (void *) propName, &dummy);
+	    Tcl_CreateHashEntry(accumulator, (void *) propName, NULL);
 	}
     }
     if (clsPtr->thisPtr->flags & ROOT_OBJECT) {
@@ -593,17 +593,17 @@ FindObjectProps(
 				 * property set. */
     Tcl_HashTable *accumulator)	/* Where to gather the names. */
 {
-    int i, dummy;
+    int i;
     Tcl_Obj *propName;
     Class *mixin;
 
     if (writable) {
 	FOREACH(propName, oPtr->properties.writable) {
-	    Tcl_CreateHashEntry(accumulator, (void *) propName, &dummy);
+	    Tcl_CreateHashEntry(accumulator, (void *) propName, NULL);
 	}
     } else {
 	FOREACH(propName, oPtr->properties.readable) {
-	    Tcl_CreateHashEntry(accumulator, (void *) propName, &dummy);
+	    Tcl_CreateHashEntry(accumulator, (void *) propName, NULL);
 	}
     }
     FOREACH(mixin, oPtr->mixins) {
@@ -1099,6 +1099,8 @@ TclOODefinePropertyCmd(
 		    return TCL_ERROR;
 		}
 		break;
+	    default:
+		TCL_UNREACHABLE();
 	    }
 	}
 
@@ -1221,6 +1223,8 @@ TclOOInfoClassPropCmd(
 	case PROP_WRITABLE:
 	    writable = 1;
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
 
@@ -1279,6 +1283,8 @@ TclOOInfoObjectPropCmd(
 	case PROP_WRITABLE:
 	    writable = 1;
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
 

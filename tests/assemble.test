@@ -1191,8 +1191,8 @@ test assemble-10.7 {expr - noncompilable} {
     -result {1 {assembly code may not contain substitutions} {TCL ASSEM NOSUBST}}
 }
 
-# assemble-11 - ASSEM_LVT4 (exist, existArray, dictAppend, dictLappend,
-#			    nsupvar, variable, upvar)
+# assemble-11 - ASSEM_LVT (exist, existArray, dictAppend, dictLappend,
+#			   nsupvar, variable, upvar)
 
 test assemble-11.1 {exist - wrong # args} {
     -body {
@@ -1301,7 +1301,7 @@ test assemble-11.10 {variable} {
     -cleanup {namespace delete q; rename x {}}
 }
 
-# assemble-12 - ASSEM_LVT1 (incr and incrArray)
+# assemble-12 - ASSEM_LVT (incr and incrArray)
 
 test assemble-12.1 {incr - wrong # args} {
     -body {
@@ -1348,20 +1348,8 @@ test assemble-12.5 {incrArray} {
     -result 8
     -cleanup {rename x {}}
 }
-test assemble-12.6 {incr, stupid stack restriction} {
-    -body {
-	proc x {} "
-	    [fillTables]
-	    set y 5
-	    assemble {push 3; incr y}
-	"
-	list [catch {x} result] $result $errorCode
-    }
-    -result {1 {operand does not fit in one byte} {TCL ASSEM 1BYTE}}
-    -cleanup {unset result; rename x {}}
-}
 
-# assemble-13 -- ASSEM_LVT1_SINT1 - incrImm and incrArrayImm
+# assemble-13 -- ASSEM_LVT_SINT1 - incrImm and incrArrayImm
 
 test assemble-13.1 {incrImm - wrong # args} {
     -body {
@@ -1438,18 +1426,6 @@ test assemble-13.8 {incrArrayImm} {
     }
     -result 8
     -cleanup {rename x {}}
-}
-test assemble-13.9 {incrImm, stupid stack restriction} {
-    -body {
-	proc x {} "
-	    [fillTables]
-	    set y 5
-	    assemble {incrImm y 3}
-	"
-	list [catch {x} result] $result $errorCode
-    }
-    -result {1 {operand does not fit in one byte} {TCL ASSEM 1BYTE}}
-    -cleanup {unset result; rename x {}}
 }
 
 # assemble-14 -- ASSEM_SINT1 (incrArrayStkImm and incrStkImm)
@@ -2371,7 +2347,7 @@ test assemble-23.11 {unsetArrayStk} {
     -cleanup {rename x {}}
 }
 
-# assemble-24 -- ASSEM_BOOL_LVT4 (unset; unsetArray)
+# assemble-24 -- ASSEM_BOOL_LVT (unset; unsetArray)
 
 test assemble-24.1 {unset - wrong # args} {
     -body {
@@ -2900,7 +2876,7 @@ test assemble-30.4 {throw in wrong context} {
 	x
     }
     -match glob
-    -result {1 {"loadScalar1" instruction may not appear in a context where an exception has been caught and not disposed of.} {TCL ASSEM BADTHROW} {{"loadScalar1" instruction may not appear in a context where an exception has been caught and not disposed of.} {    in assembly code between lines 10 and 15}*}}
+    -result {1 {"loadScalar" instruction may not appear in a context where an exception has been caught and not disposed of.} {TCL ASSEM BADTHROW} {{"loadScalar" instruction may not appear in a context where an exception has been caught and not disposed of.} {    in assembly code between lines 10 and 15}*}}
     -cleanup {rename x {}}
 }
 test assemble-30.5 {unclosed catch} {
@@ -3049,7 +3025,7 @@ test assemble-40.1 {unbalanced stack} {
 	    } result] $result $::errorInfo
     }
     -result {1 {stack underflow} {stack underflow
-    in assembly code between lines 1 and end of assembly code*}}
+    in assembly code between line 1 and end of assembly code*}}
     -match glob
    -returnCodes ok
 }

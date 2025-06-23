@@ -8,7 +8,7 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_NewStringObj, Tcl_NewUnicodeObj, Tcl_SetStringObj, Tcl_SetUnicodeObj, Tcl_GetStringFromObj, Tcl_GetString, Tcl_GetUnicodeFromObj, Tcl_GetUnicode, Tcl_GetUniChar, Tcl_GetCharLength, Tcl_GetRange, Tcl_AppendToObj, Tcl_AppendUnicodeToObj, Tcl_AppendObjToObj, Tcl_AppendStringsToObj, Tcl_AppendLimitedToObj, Tcl_Format, Tcl_AppendFormatToObj, Tcl_ObjPrintf, Tcl_AppendPrintfToObj, Tcl_SetObjLength, Tcl_AttemptSetObjLength, Tcl_ConcatObj \- manipulate Tcl values as strings
+Tcl_NewStringObj, Tcl_NewUnicodeObj, Tcl_SetStringObj, Tcl_SetUnicodeObj, Tcl_GetStringFromObj, Tcl_GetString, Tcl_GetUnicodeFromObj, Tcl_GetUnicode, Tcl_GetUniChar, Tcl_GetCharLength, Tcl_GetRange, Tcl_AppendToObj, Tcl_AppendUnicodeToObj, Tcl_AppendObjToObj, Tcl_AppendStringsToObj, Tcl_AppendLimitedToObj, Tcl_Format, Tcl_AppendFormatToObj, Tcl_ObjPrintf, Tcl_AppendPrintfToObj, Tcl_SetObjLength, Tcl_AttemptSetObjLength, Tcl_ConcatObj, Tcl_IsEmpty \- manipulate Tcl values as strings
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -81,6 +81,9 @@ int
 .sp
 Tcl_Obj *
 \fBTcl_ConcatObj\fR(\fIobjc, objv\fR)
+.sp
+int
+\fBTcl_IsEmpty\fR(\fIfIobjPtr\fR)
 .fi
 .SH ARGUMENTS
 .AS "const Tcl_UniChar" *appendObjPtr in/out
@@ -210,12 +213,13 @@ value's Unicode representation. If the index is out of range
 it returns -1;
 .PP
 \fBTcl_GetRange\fR returns a newly created value comprised of the
-characters between \fIfirst\fR and \fIlast\fR (inclusive) in the value's
-Unicode representation.  If the value's Unicode representation
-is invalid, the Unicode representation is regenerated from the value's
-string representation.  If \fIfirst\fR is negative, then the returned
-string starts at the beginning of the value. If \fIlast\fR is negative,
-then the returned string ends at the end of the value.
+characters between \fIfirst\fR and \fIlast\fR (inclusive) in the
+value's Unicode or byte-array representation.  If the value is not
+a byte-array and the values Unicode representation is invalid, the
+Unicode representation is regenerated from the value's string
+representation.  If \fIfirst\fR is negative, then the returned
+string starts at the beginning of the value. If \fIlast\fR is
+negative, then the returned string ends at the end of the value.
 .PP
 \fBTcl_GetCharLength\fR returns the number of characters (as opposed
 to bytes) in the string value.
@@ -402,6 +406,13 @@ white space, then that value is ignored entirely. This white-space
 removal was added to make the output of the \fBconcat\fR command
 cleaner-looking. \fBTcl_ConcatObj\fR returns a pointer to a
 newly-created value whose ref count is zero.
+.PP
+The \fBTcl_IsEmpty\fR function returns 1 if \fIobjPtr\fR is the empty
+string, 0 otherwise.
+It doesn't generate the string representation (unless there
+is no other way to do it), so it can safely be called on lists with
+billions of elements, or any other data structure for which
+it is impossible or expensive to construct the string representation.
 .SH "REFERENCE COUNT MANAGEMENT"
 .PP
 \fBTcl_NewStringObj\fR, \fBTcl_NewUnicodeObj\fR, \fBTcl_Format\fR,

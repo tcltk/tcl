@@ -552,7 +552,7 @@ Tcl_UtfToChar16(
 		&& ((src[1] & 0xC0) == 0x80) && ((src[2] & 0xC0) == 0x80)
 		&& (((((byte - 0x10) << 2) & 0xFC) | 0xD800) == (*chPtr & 0xFCFC))
 		&& ((src[1] & 0xF0) == (((*chPtr << 4) & 0x30) | 0x80))) {
-	    *chPtr = ((src[1] & 0x0F) << 6) + (src[2] & 0x3F) + 0xDC00;
+	    *chPtr = (unsigned short)(((src[1] & 0x0F) << 6) + (src[2] & 0x3F) + 0xDC00);
 	    return 3;
 	}
 	if ((unsigned)(byte-0x80) < (unsigned)0x20) {
@@ -604,7 +604,7 @@ Tcl_UtfToChar16(
 		    | ((src[2] & 0x3F) >> 4)) - 0x40;
 	    if (high < 0x400) {
 		/* produce high surrogate, advance source pointer */
-		*chPtr = 0xD800 + high;
+		*chPtr = (unsigned short)(0xD800 + high);
 		return 1;
 	    }
 	    /* out of range, < 0x10000 or > 0x10FFFF */
@@ -801,9 +801,9 @@ Tcl_UtfCharComplete(
 
 Tcl_Size
 Tcl_NumUtfChars(
-    const char *src,	/* The UTF-8 string to measure. */
-    Tcl_Size length)	/* The length of the string in bytes, or
-			 * negative value for strlen(src). */
+    const char *src,		/* The UTF-8 string to measure. */
+    Tcl_Size length)		/* The length of the string in bytes, or
+				 * negative value for strlen(src). */
 {
     Tcl_UniChar ch = 0;
     Tcl_Size i = 0;
@@ -853,9 +853,9 @@ Tcl_NumUtfChars(
 
 Tcl_Size
 TclNumUtfChars(
-    const char *src,	/* The UTF-8 string to measure. */
-    Tcl_Size length)	/* The length of the string in bytes, or
-			 * negative for strlen(src). */
+    const char *src,		/* The UTF-8 string to measure. */
+    Tcl_Size length)		/* The length of the string in bytes, or
+				 * negative for strlen(src). */
 {
     unsigned short ch = 0;
     Tcl_Size i = 0;
@@ -1177,8 +1177,8 @@ Tcl_UtfPrev(
 
 int
 Tcl_UniCharAtIndex(
-    const char *src,	/* The UTF-8 string to dereference. */
-    Tcl_Size index)	/* The position of the desired character. */
+    const char *src,		/* The UTF-8 string to dereference. */
+    Tcl_Size index)		/* The position of the desired character. */
 {
     Tcl_UniChar ch = 0;
     int i = 0;
@@ -1213,8 +1213,8 @@ Tcl_UniCharAtIndex(
 
 const char *
 Tcl_UtfAtIndex(
-    const char *src,	/* The UTF-8 string. */
-    Tcl_Size index)	/* The position of the desired character. */
+    const char *src,		/* The UTF-8 string. */
+    Tcl_Size index)		/* The position of the desired character. */
 {
     Tcl_UniChar ch = 0;
 
@@ -1226,8 +1226,8 @@ Tcl_UtfAtIndex(
 
 const char *
 TclUtfAtIndex(
-    const char *src,	/* The UTF-8 string. */
-    Tcl_Size index)	/* The position of the desired character. */
+    const char *src,		/* The UTF-8 string. */
+    Tcl_Size index)		/* The position of the desired character. */
 {
     unsigned short ch = 0;
     Tcl_Size len = 0;
@@ -1646,8 +1646,8 @@ TclUtfNcasecmp(
 	    } else if ((ch2 & 0xFC00) == 0xD800) {
 		return -ch2;
 	    }
-	    ch1 = Tcl_UniCharToLower(ch1);
-	    ch2 = Tcl_UniCharToLower(ch2);
+	    ch1 = (unsigned short)Tcl_UniCharToLower(ch1);
+	    ch2 = (unsigned short)Tcl_UniCharToLower(ch2);
 	    if (ch1 != ch2) {
 		return (ch1 - ch2);
 	    }

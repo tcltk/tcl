@@ -180,7 +180,7 @@ static const DeclaredSlot slots[] = {
  * used with Tcl_ObjPrintf().
  */
 
-#define PRIVATE_VARIABLE_PATTERN "%d : %s"
+#define PRIVATE_VARIABLE_PATTERN "%" TCL_Z_MODIFIER "d : %s"
 
 /*
  * ----------------------------------------------------------------------
@@ -620,7 +620,7 @@ InstallPrivateVariableMapping(
     PrivateVariableList *pvlPtr,
     Tcl_Size varc,
     Tcl_Obj *const *varv,
-    int creationEpoch)
+    Tcl_Size creationEpoch)
 {
     PrivateVariableMapping *privatePtr;
     Tcl_Size i, n;
@@ -1738,9 +1738,9 @@ TclOODefineDefnNsObjCmd(
      * Update the correct field of the class definition.
      */
 
-    if (kind) {
+    if (kind) {			// -instance
 	storagePtr = &clsPtr->objDefinitionNs;
-    } else {
+    } else {			// -class
 	storagePtr = &clsPtr->clsDefinitionNs;
     }
     if (*storagePtr != NULL) {
@@ -2097,6 +2097,8 @@ TclOODefineMethodObjCmd(
 	case MODE_UNEXPORT:
 	    isPublic = 0;
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
     } else {
 	if (IsPrivateDefine(interp)) {
@@ -2497,7 +2499,6 @@ ClassMixin_Get(
     }
     Tcl_SetObjResult(interp, resultObj);
     return TCL_OK;
-
 }
 
 static int
@@ -3122,7 +3123,7 @@ ResolveClass(
     int objc,
     Tcl_Obj *const *objv)
 {
-    int idx = Tcl_ObjectContextSkippedArgs(context);
+    Tcl_Size idx = Tcl_ObjectContextSkippedArgs(context);
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
     Class *clsPtr;
 

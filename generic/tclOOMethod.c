@@ -555,13 +555,12 @@ InitCmdFrame(
 
 	    if (context.line && context.nline > 1
 		    && (context.line[context.nline - 1] >= 0)) {
-		int isNew;
 		CmdFrame *cfPtr = (CmdFrame *) Tcl_Alloc(sizeof(CmdFrame));
 		Tcl_HashEntry *hPtr;
 
 		cfPtr->level = -1;
 		cfPtr->type = context.type;
-		cfPtr->line = (Tcl_Size *) Tcl_Alloc(sizeof(Tcl_Size));
+		cfPtr->line = (int *) Tcl_Alloc(sizeof(int));
 		cfPtr->line[0] = context.line[context.nline - 1];
 		cfPtr->nline = 1;
 		cfPtr->framePtr = NULL;
@@ -574,7 +573,7 @@ InitCmdFrame(
 		cfPtr->len = 0;
 
 		hPtr = Tcl_CreateHashEntry(iPtr->linePBodyPtr,
-			procPtr, &isNew);
+			procPtr, NULL);
 		Tcl_SetHashValue(hPtr, cfPtr);
 	    }
 
@@ -774,8 +773,8 @@ TclOOMakeProcMethod2(
 
     InitCmdFrame(iPtr, procPtr);
 
-    return TclNewMethod(
-	    (Tcl_Class) clsPtr, nameObj, flags, (const Tcl_MethodType *)typePtr, clientData);
+    return TclNewMethod((Tcl_Class) clsPtr, nameObj, flags,
+	    (const Tcl_MethodType *)typePtr, clientData);
 }
 
 /*

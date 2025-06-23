@@ -129,7 +129,7 @@ static Tcl_Size		ParseWhiteSpace(const char *src, Tcl_Size numBytes,
 			    int *incompletePtr, char *typePtr);
 static Tcl_Size		ParseAllWhiteSpace(const char *src, Tcl_Size numBytes,
 			    int *incompletePtr);
-static int		ParseHex(const char *src, Tcl_Size numBytes,
+static Tcl_Size		ParseHex(const char *src, Tcl_Size numBytes,
 			    int *resultPtr);
 
 /*
@@ -205,8 +205,7 @@ Tcl_ParseCommand(
 				 * close bracket should be considered a
 				 * command terminator. If zero, then close
 				 * bracket has no special meaning. */
-    Tcl_Parse *parsePtr)
-				/* Structure to fill in with information about
+    Tcl_Parse *parsePtr)	/* Structure to fill in with information about
 				 * the parsed command; any previous
 				 * information in the structure is ignored. */
 {
@@ -725,7 +724,7 @@ TclParseAllWhiteSpace(
  *----------------------------------------------------------------------
  */
 
-int
+Tcl_Size
 ParseHex(
     const char *src,		/* First character to parse. */
     Tcl_Size numBytes,		/* Max number of byes to scan */
@@ -780,7 +779,7 @@ ParseHex(
  *----------------------------------------------------------------------
  */
 
-int
+Tcl_Size
 TclParseBackslash(
     const char *src,		/* Points to the backslash character of a
 				 * backslash sequence. */
@@ -1330,7 +1329,7 @@ Tcl_ParseVarName(
 {
     Tcl_Token *tokenPtr;
     const char *src;
-    int varIndex;
+    Tcl_Size varIndex;
     unsigned array;
 
     if (numBytes < 0 && start) {
@@ -1382,7 +1381,8 @@ Tcl_ParseVarName(
      */
 
     if (*src == '{') {
-	char ch; int braceCount = 0;
+	char ch;
+	int braceCount = 0;
 	src++;
 	numBytes--;
 	tokenPtr->type = TCL_TOKEN_TEXT;
@@ -1392,13 +1392,18 @@ Tcl_ParseVarName(
 	ch = *src;
 	while (numBytes && (braceCount>0 || ch != '}')) {
 	    switch (ch) {
-	    case '{': braceCount++; break;
-	    case '}': braceCount--; break;
+	    case '{':
+		braceCount++;
+		break;
+	    case '}':
+		braceCount--;
+		break;
 	    case '\\':
 		/* if 2 or more left, consume 2, else consume
 		 * just the \ and let it run into the end */
 		if (numBytes > 1) {
-		   src++; numBytes--;
+		    src++;
+		    numBytes--;
 		}
 	    }
 	    numBytes--;
@@ -1619,8 +1624,7 @@ Tcl_ParseBraces(
     Tcl_Size numBytes,		/* Total number of bytes in string. If -1,
 				 * the string consists of all bytes up to the
 				 * first null character. */
-    Tcl_Parse *parsePtr,
-				/* Structure to fill in with information about
+    Tcl_Parse *parsePtr,	/* Structure to fill in with information about
 				 * the string. */
     int append,			/* Non-zero means append tokens to existing
 				 * information in parsePtr; zero means ignore
@@ -1820,8 +1824,7 @@ Tcl_ParseQuotedString(
     Tcl_Size numBytes,		/* Total number of bytes in string. If -1,
 				 * the string consists of all bytes up to the
 				 * first null character. */
-    Tcl_Parse *parsePtr,
-				/* Structure to fill in with information about
+    Tcl_Parse *parsePtr,	/* Structure to fill in with information about
 				 * the string. */
     int append,			/* Non-zero means append tokens to existing
 				 * information in parsePtr; zero means ignore
@@ -2099,10 +2102,10 @@ TclSubstTokens(
 				 * evaluate and concatenate. */
     Tcl_Size count,		/* Number of tokens to consider at tokenPtr.
 				 * Must be at least 1. */
-    int *tokensLeftPtr,		/* If not NULL, points to memory where an
+    Tcl_Size *tokensLeftPtr,	/* If not NULL, points to memory where an
 				 * integer representing the number of tokens
 				 * left to be substituted will be written */
-    Tcl_Size line,		/* The line the script starts on. */
+    int line,		/* The line the script starts on. */
     Tcl_Size *clNextOuter,	/* Information about an outer context for */
     const char *outerScript)	/* continuation line data. This is set by
 				 * EvalEx() to properly handle [...]-nested
@@ -2169,7 +2172,7 @@ TclSubstTokens(
     for (; count>0 && code==TCL_OK ; count--, tokenPtr++) {
 	Tcl_Obj *appendObj = NULL;
 	const char *append = NULL;
-	int appendByteLength = 0;
+	Tcl_Size appendByteLength = 0;
 	char utfCharBytes[4] = "";
 
 	switch (tokenPtr->type) {

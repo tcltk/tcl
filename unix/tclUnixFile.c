@@ -154,7 +154,8 @@ TclpFindExecutable(
     if (name[0] == '/')
 #endif
     {
-	Tcl_ExternalToUtfDStringEx(NULL, NULL, name, TCL_INDEX_NONE, TCL_ENCODING_PROFILE_TCL8, &utfName, NULL);
+	Tcl_ExternalToUtfDStringEx(NULL, NULL, name, TCL_INDEX_NONE,
+		TCL_ENCODING_PROFILE_TCL8, &utfName, NULL);
 	TclSetObjNameOfExecutable(Tcl_DStringToObj(&utfName), NULL);
 	goto done;
     }
@@ -317,7 +318,7 @@ TclpMatchInDirectory(
 	    return TCL_OK;
 	}
 
-	d = TclOSopendir(native);				/* INTL: Native. */
+	d = TclOSopendir(native);			/* INTL: Native. */
 	if (d == NULL) {
 	    Tcl_DStringFree(&ds);
 	    if (interp != NULL) {
@@ -431,10 +432,10 @@ TclpMatchInDirectory(
 
 static int
 NativeMatchType(
-    Tcl_Interp *interp,       /* Interpreter to receive errors. */
-    const char *nativeEntry,  /* Native path to check. */
-    const char *nativeName,   /* Native filename to check. */
-    Tcl_GlobTypeData *types)  /* Type description to match against. */
+    Tcl_Interp *interp,		/* Interpreter to receive errors. */
+    const char *nativeEntry,	/* Native path to check. */
+    const char *nativeName,	/* Native filename to check. */
+    Tcl_GlobTypeData *types)	/* Type description to match against. */
 {
     Tcl_StatBuf buf;
 
@@ -604,7 +605,8 @@ TclpGetUserHome(
     Tcl_DString ds;
     const char *native;
 
-    if (Tcl_UtfToExternalDStringEx(NULL, NULL, name, TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
+    if (Tcl_UtfToExternalDStringEx(NULL, NULL, name, TCL_INDEX_NONE, 0, &ds,
+	    NULL) != TCL_OK) {
 	Tcl_DStringFree(&ds);
 	return NULL;
     }
@@ -616,7 +618,8 @@ TclpGetUserHome(
     if (pwPtr == NULL) {
 	return NULL;
     }
-    if (Tcl_ExternalToUtfDStringEx(NULL, NULL, pwPtr->pw_dir, TCL_INDEX_NONE, 0, bufferPtr, NULL) != TCL_OK) {
+    if (Tcl_ExternalToUtfDStringEx(NULL, NULL, pwPtr->pw_dir, TCL_INDEX_NONE,
+	    0, bufferPtr, NULL) != TCL_OK) {
 	return NULL;
     } else {
 	return Tcl_DStringValue(bufferPtr);
@@ -798,7 +801,8 @@ TclpGetCwd(
 	}
 	return NULL;
     }
-    if (Tcl_ExternalToUtfDStringEx(interp, NULL, buffer, TCL_INDEX_NONE, 0, bufferPtr, NULL) != TCL_OK) {
+    if (Tcl_ExternalToUtfDStringEx(interp, NULL, buffer, TCL_INDEX_NONE, 0,
+	    bufferPtr, NULL) != TCL_OK) {
 	return NULL;
     }
     return Tcl_DStringValue(bufferPtr);
@@ -1089,7 +1093,8 @@ TclpNativeToNormalized(
 {
     Tcl_DString ds;
 
-    Tcl_ExternalToUtfDStringEx(NULL, NULL, (const char *) clientData, TCL_INDEX_NONE, TCL_ENCODING_PROFILE_TCL8, &ds, NULL);
+    Tcl_ExternalToUtfDStringEx(NULL, NULL, (const char *) clientData,
+	    TCL_INDEX_NONE, TCL_ENCODING_PROFILE_TCL8, &ds, NULL);
     return Tcl_DStringToObj(&ds);
 }
 
@@ -1237,13 +1242,13 @@ TclOSfstat(
     Tcl_StatBuf *statBuf = (Tcl_StatBuf *)cygstat;
     int result = fstat(fd, &buf);
 
-    statBuf->st_mode = buf.st_mode;
-    statBuf->st_ino = buf.st_ino;
+    statBuf->st_mode = (unsigned short)buf.st_mode;
+    statBuf->st_ino = (unsigned short)buf.st_ino;
     statBuf->st_dev = buf.st_dev;
     statBuf->st_rdev = buf.st_rdev;
     statBuf->st_nlink = buf.st_nlink;
-    statBuf->st_uid = buf.st_uid;
-    statBuf->st_gid = buf.st_gid;
+    statBuf->st_uid = (short)buf.st_uid;
+    statBuf->st_gid = (short)buf.st_gid;
     statBuf->st_size = buf.st_size;
     statBuf->st_atime = buf.st_atime;
     statBuf->st_mtime = buf.st_mtime;
@@ -1260,13 +1265,13 @@ TclOSstat(
     Tcl_StatBuf *statBuf = (Tcl_StatBuf *)cygstat;
     int result = stat(name, &buf);
 
-    statBuf->st_mode = buf.st_mode;
-    statBuf->st_ino = buf.st_ino;
+    statBuf->st_mode = (unsigned short)buf.st_mode;
+    statBuf->st_ino = (unsigned short)buf.st_ino;
     statBuf->st_dev = buf.st_dev;
     statBuf->st_rdev = buf.st_rdev;
     statBuf->st_nlink = buf.st_nlink;
-    statBuf->st_uid = buf.st_uid;
-    statBuf->st_gid = buf.st_gid;
+    statBuf->st_uid = (short)buf.st_uid;
+    statBuf->st_gid = (short)buf.st_gid;
     statBuf->st_size = buf.st_size;
     statBuf->st_atime = buf.st_atime;
     statBuf->st_mtime = buf.st_mtime;
@@ -1283,13 +1288,13 @@ TclOSlstat(
     Tcl_StatBuf *statBuf = (Tcl_StatBuf *)cygstat;
     int result = lstat(name, &buf);
 
-    statBuf->st_mode = buf.st_mode;
-    statBuf->st_ino = buf.st_ino;
+    statBuf->st_mode = (unsigned short)buf.st_mode;
+    statBuf->st_ino = (unsigned short)buf.st_ino;
     statBuf->st_dev = buf.st_dev;
     statBuf->st_rdev = buf.st_rdev;
     statBuf->st_nlink = buf.st_nlink;
-    statBuf->st_uid = buf.st_uid;
-    statBuf->st_gid = buf.st_gid;
+    statBuf->st_uid = (short)buf.st_uid;
+    statBuf->st_gid = (short)buf.st_gid;
     statBuf->st_size = buf.st_size;
     statBuf->st_atime = buf.st_atime;
     statBuf->st_mtime = buf.st_mtime;

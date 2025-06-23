@@ -299,8 +299,7 @@ QueryConfigObjCmd(
 	return TCL_OK;
 
     default:
-	Tcl_Panic("QueryConfigObjCmd: Unknown subcommand to 'pkgconfig'. This can't happen");
-	break;
+	TCL_UNREACHABLE();
     }
     return TCL_ERROR;
 }
@@ -391,7 +390,7 @@ GetConfigDict(
 
 static void
 ConfigDictDeleteProc(
-    void *clientData,	/* Pointer to Tcl_Obj. */
+    void *clientData,		/* Pointer to Tcl_Obj. */
     TCL_UNUSED(Tcl_Interp *))
 {
     Tcl_DecrRefCount((Tcl_Obj *)clientData);

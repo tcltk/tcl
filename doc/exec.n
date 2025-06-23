@@ -31,6 +31,12 @@ If the initial arguments to \fBexec\fR start with \fB\-\fR then
 they are treated as command-line switches and are not part
 of the pipeline specification.  The following switches are
 currently supported:
+.\" OPTION: -encoding
+.TP 13
+\fB\-encoding \fIencodingName\fR
+.
+Specifies the name of the encoding to use to decode the output of the first
+subprocess. Defaults to that returned by the \fBencoding system\fR command.
 .\" OPTION: -ignorestderr
 .TP 13
 \fB\-ignorestderr\fR
@@ -88,7 +94,9 @@ It is used as the standard input for the first command in the pipeline.
 .TP 15
 \fB<<\0\fIvalue\fR
 .
-\fIValue\fR is passed to the first command as its standard input.
+\fIValue\fR is encoded using the system encoding, newlines
+replaced by platform-specific line ending sequences, and then
+passed to the first command as its standard input.
 .TP 15
 \fB>\0\fIfileName\fR
 .

@@ -35521,6 +35521,18 @@ test clock-29.1812 {parsing of several localized formats} {
     }
     set res
 } [lrepeat 12 0]
+
+test clock-29.1813 {cache consistency when deriving localized formats, bug [2c0f49e26c27847a]} {
+    # ensure localized formats are not affected by mistaken merge of mc
+    # from parent locale, so such formats got invalidated in child cache:
+    namespace inscope ::tcl::clock {
+	::msgcat::mcset en_US_roman_xx    DATE_FORMAT "%d.%m.%Y"
+	::msgcat::mcset en_US_roman_xx_yy DATE_FORMAT "%Y|%m|%d"
+    }
+    list [clock format 86400 -format %x -gmt 1 -locale en_US_roman] \
+	 [clock format 86400 -format %x -gmt 1 -locale en_US_roman_xx] \
+	 [clock format 86400 -format %x -gmt 1 -locale en_US_roman_xx_yy]
+} {01/02/1970 02.01.1970 1970|01|02}
 # END testcases29
 
 
@@ -35857,6 +35869,75 @@ test clock-30.32 {regression test - add no int overflow} {
 	[clock add 2177452800 -0x7fffffff seconds -gmt 1]
       ]
 } [lrepeat 2 {29894400 34214400 0 29966400 29969100 29969153}]
+test clock-30.33 {regression test - add with negative base (local seconds of the day, bug [482db1d796540e68])} {
+    list \
+      [list \
+	[clock add -631152000 27463 days 3000 seconds -timezone :CET] \
+	[clock add -631152000 902 months 10 days 3000 seconds -timezone :CET] \
+	[clock add -631152000 75 years 69 days 3000 seconds -timezone :CET] \
+	[clock add -631152000 659112 hours 3000 seconds -timezone :CET] \
+	[clock add -631152000 39546720 minutes 3000 seconds -timezone :CET] \
+	[clock add -631152000 2372806200 seconds -timezone :CET]
+      ] \
+      [list \
+	[clock add -631152000 27463 days 3000 seconds -gmt 1] \
+	[clock add -631152000 902 months 10 days 3000 seconds -gmt 1] \
+	[clock add -631152000 75 years 69 days 3000 seconds -gmt 1] \
+	[clock add -631152000 659112 hours 3000 seconds -gmt 1] \
+	[clock add -631152000 39546720 minutes 3000 seconds -gmt 1] \
+	[clock add -631152000 2372806200 seconds -gmt 1]
+      ]
+} [lrepeat 2 [lrepeat 6 [expr {-631152000 + 2372806200}]]]
+test clock-30.34 {regression test - clock add jump over DST hole with TZ (1 day != 24 hours, etc)} -body {
+    # time units (in opposite to date units) have to ignore DST hole (affects UTC only, so remain relative time),
+    # however date units have to jump over the DST hole with retaining of current local time.
+    proc test_add_dst {t args} {
+	set exp [lindex $args end]; set args [lreplace $args end end]
+	set tz [lindex $args end]
+	set v [clock format [clock add $t {*}$args] -format "%Y-%m-%d %H:%M:%S %Z" -timezone $tz]
+	if {$v ne $exp} {
+	    list "\"$v\" ne \"$exp\"" "    while testing \[clock format \[clock add $t $args\] -format \"%Y-%m-%d %H:%M:%S %Z\" -timezone $tz\]"
+	}
+    }
+    set t [clock scan "2024-03-31 01:59:59" -timezone :CET]; # 1 second before time switch CET/CEST
+    join [list \
+	{*}[test_add_dst $t -timezone :CET                         {2024-03-31 01:59:59 CET}] \
+	{*}[test_add_dst $t -1 month -timezone :CET                {2024-02-29 01:59:59 CET}] \
+	{*}[test_add_dst $t 1 second -1 month -timezone :CET       {2024-02-29 03:00:00 CET}] \
+	{*}[test_add_dst $t -1 day -timezone :CET                  {2024-03-30 01:59:59 CET}] \
+	{*}[test_add_dst $t 1 second -1 day -timezone :CET         {2024-03-30 03:00:00 CET}] \
+	{*}[test_add_dst $t 1 second -timezone :CET                {2024-03-31 03:00:00 CEST}] \
+	{*}[test_add_dst $t 1 day -timezone :CET                   {2024-04-01 01:59:59 CEST}] \
+	{*}[test_add_dst $t 24 hours -timezone :CET                {2024-04-01 02:59:59 CEST}] \
+	{*}[test_add_dst $t 1440 minutes -timezone :CET            {2024-04-01 02:59:59 CEST}] \
+	{*}[test_add_dst $t 86400 seconds -timezone :CET           {2024-04-01 02:59:59 CEST}] \
+	{*}[test_add_dst $t 1 second 1 day -timezone :CET          {2024-04-01 03:00:00 CEST}] \
+	{*}[test_add_dst $t 1 second 24 hours -timezone :CET       {2024-04-01 03:00:00 CEST}] \
+	{*}[test_add_dst $t 1 second 1440 minutes -timezone :CET   {2024-04-01 03:00:00 CEST}] \
+	{*}[test_add_dst $t 1 second 86400 seconds -timezone :CET  {2024-04-01 03:00:00 CEST}] \
+	{*}[test_add_dst $t 1 month -timezone :CET                 {2024-04-30 01:59:59 CEST}] \
+	{*}[test_add_dst $t 1 second 1 month -timezone :CET        {2024-04-30 03:00:00 CEST}] \
+	\
+	{*}[test_add_dst $t -timezone :GMT                         {2024-03-31 00:59:59 GMT}] \
+	{*}[test_add_dst $t -1 month -timezone :GMT                {2024-02-29 00:59:59 GMT}] \
+	{*}[test_add_dst $t 1 second -1 month -timezone :GMT       {2024-02-29 01:00:00 GMT}] \
+	{*}[test_add_dst $t -1 day -timezone :GMT                  {2024-03-30 00:59:59 GMT}] \
+	{*}[test_add_dst $t 1 second -1 day -timezone :GMT         {2024-03-30 01:00:00 GMT}] \
+	{*}[test_add_dst $t 1 second -timezone :GMT                {2024-03-31 01:00:00 GMT}] \
+	{*}[test_add_dst $t 1 day -timezone :GMT                   {2024-04-01 00:59:59 GMT}] \
+	{*}[test_add_dst $t 24 hours -timezone :GMT                {2024-04-01 00:59:59 GMT}] \
+	{*}[test_add_dst $t 1440 minutes -timezone :GMT            {2024-04-01 00:59:59 GMT}] \
+	{*}[test_add_dst $t 86400 seconds -timezone :GMT           {2024-04-01 00:59:59 GMT}] \
+	{*}[test_add_dst $t 1 second 1 day -timezone :GMT          {2024-04-01 01:00:00 GMT}] \
+	{*}[test_add_dst $t 1 second 24 hours -timezone :GMT       {2024-04-01 01:00:00 GMT}] \
+	{*}[test_add_dst $t 1 second 1440 minutes -timezone :GMT   {2024-04-01 01:00:00 GMT}] \
+	{*}[test_add_dst $t 1 second 86400 seconds -timezone :GMT  {2024-04-01 01:00:00 GMT}] \
+	{*}[test_add_dst $t 1 month -timezone :GMT                 {2024-04-30 00:59:59 GMT}] \
+	{*}[test_add_dst $t 1 second 1 month -timezone :GMT        {2024-04-30 01:00:00 GMT}] \
+      ] \n
+} -cleanup {
+    rename test_add_dst {}
+} -result {}
 
 # END testcases30
 

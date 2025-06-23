@@ -3847,7 +3847,7 @@ SerializeCentralDirectoryEntry(
     unsigned char *buf,		/* Where to serialize to */
     ZipEntry *z,		/* The description of what to serialize. */
     size_t nameLength,		/* The length of the name. */
-    long long dataStartOffset)	/* The overall file offset of the start of the 
+    long long dataStartOffset)	/* The overall file offset of the start of the
 				 * data section of the file. */
 {
     ZipWriteInt(start, end, buf + ZIP_CENTRAL_SIG_OFFS,
@@ -3883,8 +3883,7 @@ SerializeCentralDirectorySuffix(
     const unsigned char *end,	/* The end of writable memory. */
     unsigned char *buf,		/* Where to serialize to */
     int entryCount,		/* The number of entries in the directory */
-    long long dataStartOffset,
-				/* The overall file offset of the start of the
+    long long dataStartOffset,	/* The overall file offset of the start of the
 				 * data file. */
     long long directoryStartOffset,
 				/* The overall file offset of the start of the
@@ -4257,6 +4256,8 @@ ZipFSListObjCmd(
 		return TCL_ERROR;
 	    }
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
     } else if (objc == 2) {
 	pattern = TclGetString(objv[1]);
@@ -5634,7 +5635,7 @@ ZipFSMatchInDirectoryProc(
     Tcl_DString dsPref, *prefixBuf = NULL;
     int foundInHash, notDuplicate;
     ZipEntry *z;
-    int wanted; /* TCL_GLOB_TYPE* */
+    int wanted;			/* TCL_GLOB_TYPE* */
 
     if (!normPathPtr) {
 	return -1;

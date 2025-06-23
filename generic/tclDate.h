@@ -63,6 +63,7 @@ enum DateInfoFlags {
 
     CLF_RELCONV = 1 << 17,
     CLF_ORDINALMONTH = 1 << 18,
+    CLF_TREK = 1 << 19,
 
     /* On demand (lazy) assemble flags */
 
@@ -392,7 +393,7 @@ typedef struct ClockScanToken ClockScanToken;
 typedef int ClockScanTokenProc(
 	ClockFmtScnCmdArgs *opts,
 	DateInfo *info,
-	ClockScanToken *tok);
+	const ClockScanToken *tok);
 
 typedef enum _CLCKTOK_TYPE {
    CTOKT_INT = 1, CTOKT_WIDE, CTOKT_PARSER, CTOKT_SPACE, CTOKT_WORD, CTOKT_CHAR,

@@ -332,9 +332,28 @@ Tcl_OpenTcpServer(
     char portbuf[TCL_INTEGER_SPACE];
 
     TclFormatInt(portbuf, port);
-    return Tcl_OpenTcpServerEx(interp, portbuf, host, -1,
-	    TCL_TCPSERVER_REUSEADDR, acceptProc, callbackData);
+    return Tcl_OpenTcpServerEx(interp, portbuf, host, TCL_TCPSERVER_REUSEADDR,
+	    -1, acceptProc, callbackData);
 }
+
+#ifdef TCL_SOCK_PRINTF_DEBUGGING
+/* printf debugging */
+void
+printaddrinfo(
+    struct addrinfo *addrlist,
+    char *prefix)
+{
+    char host[NI_MAXHOST], port[NI_MAXSERV];
+    struct addrinfo *ai;
+
+    for (ai = addrlist; ai != NULL; ai = ai->ai_next) {
+	getnameinfo(ai->ai_addr, ai->ai_addrlen,
+		host, sizeof(host), port, sizeof(port),
+		NI_NUMERICHOST|NI_NUMERICSERV);
+	fprintf(stderr,"%s: %s:%s\n", prefix, host, port);
+    }
+}
+#endif
 
 /*
  * Local Variables:

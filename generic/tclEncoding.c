@@ -881,7 +881,7 @@ Tcl_GetEncodingNames(
     Tcl_HashEntry *hPtr;
     Tcl_Obj *map, *name, *result;
     Tcl_DictSearch mapSearch;
-    int dummy, done = 0;
+    int done = 0;
 
     TclNewObj(result);
     Tcl_InitObjHashTable(&table);
@@ -896,7 +896,7 @@ Tcl_GetEncodingNames(
 	Encoding *encodingPtr = (Encoding *)Tcl_GetHashValue(hPtr);
 
 	Tcl_CreateHashEntry(&table,
-		Tcl_NewStringObj(encodingPtr->name, TCL_INDEX_NONE), &dummy);
+		Tcl_NewStringObj(encodingPtr->name, TCL_INDEX_NONE), NULL);
     }
     Tcl_MutexUnlock(&encodingMutex);
 
@@ -909,7 +909,7 @@ Tcl_GetEncodingNames(
 
     Tcl_DictObjFirst(NULL, map, &mapSearch, &name, NULL, &done);
     for (; !done; Tcl_DictObjNext(&mapSearch, &name, NULL, &done)) {
-	Tcl_CreateHashEntry(&table, name, &dummy);
+	Tcl_CreateHashEntry(&table, name, NULL);
     }
 
     /*
@@ -1228,7 +1228,7 @@ Tcl_ExternalToUtfDStringEx(
 	 * and loop. Otherwise, return the result we got.
 	 */
 	if ((result != TCL_CONVERT_NOSPACE) &&
-		!(result == TCL_CONVERT_MULTIBYTE && (flags & TCL_ENCODING_END))) {
+		(result != TCL_CONVERT_MULTIBYTE || (flags & TCL_ENCODING_END))) {
 	    Tcl_Size nBytesProcessed = (src - srcStart);
 
 	    Tcl_DStringSetLength(dstPtr, soFar);
@@ -1544,7 +1544,7 @@ Tcl_UtfToExternalDStringEx(
 	 * and loop. Otherwise, return the result we got.
 	 */
 	if ((result != TCL_CONVERT_NOSPACE) &&
-		!(result == TCL_CONVERT_MULTIBYTE && (flags & TCL_ENCODING_END))) {
+		(result != TCL_CONVERT_MULTIBYTE || (flags & TCL_ENCODING_END))) {
 	    Tcl_Size nBytesProcessed = (src - srcStart);
 	    Tcl_Size i = soFar + encodingPtr->nullSize - 1;
 	    /* Loop as DStringSetLength only stores one nul byte at a time */
@@ -1953,22 +1953,22 @@ LoadTableEncoding(
      */
 
     static const char staticHex[] = {
-      0,  0,  0,  0,  0,  0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /*   0 ...  15 */
-      0,  0,  0,  0,  0,  0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /*  16 ...  31 */
-      0,  0,  0,  0,  0,  0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /*  32 ...  47 */
-      0,  1,  2,  3,  4,  5,  6, 7, 8, 9, 0, 0, 0, 0, 0, 0, /*  48 ...  63 */
-      0, 10, 11, 12, 13, 14, 15, 0, 0, 0, 0, 0, 0, 0, 0, 0, /*  64 ...  79 */
-      0,  0,  0,  0,  0,  0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /*  80 ...  95 */
-      0, 10, 11, 12, 13, 14, 15, 0, 0, 0, 0, 0, 0, 0, 0, 0, /*  96 ... 111 */
-      0,  1,  2,  3,  4,  5,  6, 7, 8, 9, 0, 0, 0, 0, 0, 0, /* 112 ... 127 */
-      0,  0,  0,  0,  0,  0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /* 128 ... 143 */
-      0,  0,  0,  0,  0,  0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /* 144 ... 159 */
-      0,  0,  0,  0,  0,  0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /* 160 ... 175 */
-      0,  0,  0,  0,  0,  0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /* 176 ... 191 */
-      0,  0,  0,  0,  0,  0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /* 192 ... 207 */
-      0,  0,  0,  0,  0,  0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /* 208 ... 223 */
-      0,  0,  0,  0,  0,  0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /* 224 ... 239 */
-      0,  0,  0,  0,  0,  0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /* 240 ... 255 */
+	0,  0,  0,  0,  0,  0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /*   0 ...  15 */
+	0,  0,  0,  0,  0,  0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /*  16 ...  31 */
+	0,  0,  0,  0,  0,  0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /*  32 ...  47 */
+	0,  1,  2,  3,  4,  5,  6, 7, 8, 9, 0, 0, 0, 0, 0, 0, /*  48 ...  63 */
+	0, 10, 11, 12, 13, 14, 15, 0, 0, 0, 0, 0, 0, 0, 0, 0, /*  64 ...  79 */
+	0,  0,  0,  0,  0,  0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /*  80 ...  95 */
+	0, 10, 11, 12, 13, 14, 15, 0, 0, 0, 0, 0, 0, 0, 0, 0, /*  96 ... 111 */
+	0,  1,  2,  3,  4,  5,  6, 7, 8, 9, 0, 0, 0, 0, 0, 0, /* 112 ... 127 */
+	0,  0,  0,  0,  0,  0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /* 128 ... 143 */
+	0,  0,  0,  0,  0,  0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /* 144 ... 159 */
+	0,  0,  0,  0,  0,  0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /* 160 ... 175 */
+	0,  0,  0,  0,  0,  0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /* 176 ... 191 */
+	0,  0,  0,  0,  0,  0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /* 192 ... 207 */
+	0,  0,  0,  0,  0,  0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /* 208 ... 223 */
+	0,  0,  0,  0,  0,  0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /* 224 ... 239 */
+	0,  0,  0,  0,  0,  0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /* 240 ... 255 */
     };
 
     Tcl_DStringInit(&lineString);
@@ -2481,19 +2481,19 @@ UtfToUtfProc(
      * by a low surrogate. NOT to be called for strict profile since
      * that should raise an error.
      */
-#define OUTPUT_ISOLATEDSURROGATE                                \
-    do {                                                        \
-	Tcl_UniChar high;                                       \
-	if (PROFILE_REPLACE(profile)) {                         \
-	    high = UNICODE_REPLACE_CHAR;                        \
-	} else {                                                \
-	    high = (Tcl_UniChar)(ptrdiff_t) *statePtr;          \
-	}                                                       \
-	assert(!(flags & ENCODING_UTF)); /* Must be CESU-8 */   \
-	assert(HIGH_SURROGATE(high));                           \
-	assert(!PROFILE_STRICT(profile));                       \
-	dst += Tcl_UniCharToUtf(high, dst);                     \
-	*statePtr = 0; /* Reset state */                        \
+#define OUTPUT_ISOLATEDSURROGATE() \
+    do {								\
+	Tcl_UniChar high;						\
+	if (PROFILE_REPLACE(profile)) {					\
+	    high = UNICODE_REPLACE_CHAR;				\
+	} else {							\
+	    high = (Tcl_UniChar)(ptrdiff_t) *statePtr;			\
+	}								\
+	assert(!(flags & ENCODING_UTF)); /* Must be CESU-8 */		\
+	assert(HIGH_SURROGATE(high));					\
+	assert(!PROFILE_STRICT(profile));				\
+	dst += Tcl_UniCharToUtf(high, dst);				\
+	*statePtr = 0; /* Reset state */				\
     } while (0)
 
     /*
@@ -2501,20 +2501,19 @@ UtfToUtfProc(
      * an error if profile is strict, or output an appropriate
      * character for replace and tcl8 profiles and continue.
      */
-#define CHECK_ISOLATEDSURROGATE                                         \
-    if (*statePtr) {                                                    \
-	if (PROFILE_STRICT(profile)) {                                  \
-	    result = TCL_CONVERT_SYNTAX;                                \
-	    break;                                                      \
-	}                                                               \
-	OUTPUT_ISOLATEDSURROGATE;                                       \
-	continue; /* Rerun loop so length checks etc. repeated */       \
-    } else                                                              \
+#define CHECK_ISOLATEDSURROGATE() \
+    if (*statePtr) {							\
+	if (PROFILE_STRICT(profile)) {					\
+	    result = TCL_CONVERT_SYNTAX;				\
+	    break;							\
+	}								\
+	OUTPUT_ISOLATEDSURROGATE();					\
+	continue; /* Rerun loop so length checks etc. repeated */	\
+    } else								\
 	(void) 0
 
     profile = ENCODING_PROFILE_GET(flags);
     for (numChars = 0; src < srcEnd && numChars <= charLimit; numChars++) {
-
 	if ((src > srcClose) && (!Tcl_UtfCharComplete(src, srcEnd - src))) {
 	    /*
 	     * If there is more string to follow, this will ensure that the
@@ -2529,19 +2528,18 @@ UtfToUtfProc(
 	    break;
 	}
 	if (UCHAR(*src) < 0x80 && !((UCHAR(*src) == 0) && (flags & ENCODING_INPUT))) {
-
-	    CHECK_ISOLATEDSURROGATE;
+	    CHECK_ISOLATEDSURROGATE();
 	    /*
 	     * Copy 7bit characters, but skip null-bytes when we are in input
 	     * mode, so that they get converted to \xC0\x80.
 	     */
 	    *dst++ = *src++;
 	} else if ((UCHAR(*src) == 0xC0) && (src + 1 < srcEnd) &&
-		 (UCHAR(src[1]) == 0x80) &&
-		 (!(flags & ENCODING_INPUT) || !PROFILE_TCL8(profile))) {
+		(UCHAR(src[1]) == 0x80) &&
+		(!(flags & ENCODING_INPUT) || !PROFILE_TCL8(profile))) {
 	    /* Special sequence \xC0\x80 */
 
-	    CHECK_ISOLATEDSURROGATE;
+	    CHECK_ISOLATEDSURROGATE();
 	    if (!PROFILE_TCL8(profile) && (flags & ENCODING_INPUT)) {
 		if (PROFILE_REPLACE(profile)) {
 		    dst += Tcl_UniCharToUtf(UNICODE_REPLACE_CHAR, dst);
@@ -2567,7 +2565,7 @@ UtfToUtfProc(
 	     * because the UTF-8 sequence is truncated.
 	     */
 
-	    CHECK_ISOLATEDSURROGATE;
+	    CHECK_ISOLATEDSURROGATE();
 
 	    if (flags & ENCODING_INPUT) {
 		/* Incomplete bytes for modified UTF-8 target */
@@ -2584,7 +2582,8 @@ UtfToUtfProc(
 	    } else {
 		/* TCL_ENCODING_PROFILE_TCL8 */
 		char chbuf[2];
-		chbuf[0] = UCHAR(*src++); chbuf[1] = 0;
+		chbuf[0] = UCHAR(*src++);
+		chbuf[1] = 0;
 		TclUtfToUniChar(chbuf, &ch);
 	    }
 	    dst += Tcl_UniCharToUtf(ch, dst);
@@ -2610,8 +2609,8 @@ UtfToUtfProc(
 	    src += len;
 	    if (!(flags & ENCODING_UTF) && !(flags & ENCODING_INPUT)
 		    && (ch > 0x7FF)) {
-		assert(savedSurrogate == 0); /* Since this flag combo
-						will never set *statePtr */
+		assert(savedSurrogate == 0);	/* Since this flag combo
+						 * will never set *statePtr */
 		if (ch > 0xFFFF) {
 		    /* CESU-8 6-byte sequence for chars > U+FFFF */
 		    ch -= 0x10000;
@@ -2629,7 +2628,7 @@ UtfToUtfProc(
 		    /* UTF-8, not CESU-8, so surrogates should not appear */
 		    if (PROFILE_STRICT(profile)) {
 			result = (flags & ENCODING_INPUT)
-			    ? TCL_CONVERT_SYNTAX : TCL_CONVERT_UNKNOWN;
+				? TCL_CONVERT_SYNTAX : TCL_CONVERT_UNKNOWN;
 			src = saveSrc;
 			break;
 		    } else if (PROFILE_REPLACE(profile)) {
@@ -2647,7 +2646,7 @@ UtfToUtfProc(
 			    /* Isolated low surrogate */
 			    if (PROFILE_STRICT(profile)) {
 				result = (flags & ENCODING_INPUT)
-				    ? TCL_CONVERT_SYNTAX : TCL_CONVERT_UNKNOWN;
+					? TCL_CONVERT_SYNTAX : TCL_CONVERT_UNKNOWN;
 				src = saveSrc;
 				break;
 			    } else if (PROFILE_REPLACE(profile)) {
@@ -2664,7 +2663,7 @@ UtfToUtfProc(
 			    assert(HIGH_SURROGATE(savedSurrogate));
 			    if (PROFILE_STRICT(profile)) {
 				result = (flags & ENCODING_INPUT)
-				    ? TCL_CONVERT_SYNTAX : TCL_CONVERT_UNKNOWN;
+					? TCL_CONVERT_SYNTAX : TCL_CONVERT_UNKNOWN;
 				src = saveSrc;
 				break;
 			    } else if (PROFILE_REPLACE(profile)) {
@@ -2682,7 +2681,7 @@ UtfToUtfProc(
 		}
 	    } else {
 		/* Normal character */
-		CHECK_ISOLATEDSURROGATE;
+		CHECK_ISOLATEDSURROGATE();
 	    }
 
 	    dst += Tcl_UniCharToUtf(ch, dst);
@@ -2698,7 +2697,7 @@ UtfToUtfProc(
 	    /* No more data coming */
 	    if (PROFILE_STRICT(profile)) {
 		result = (flags & ENCODING_INPUT)
-		    ? TCL_CONVERT_SYNTAX : TCL_CONVERT_UNKNOWN;
+			? TCL_CONVERT_SYNTAX : TCL_CONVERT_UNKNOWN;
 	    } else {
 		if (PROFILE_REPLACE(profile)) {
 		    ch = UNICODE_REPLACE_CHAR;
@@ -3057,7 +3056,7 @@ Utf16ToUtfProc(
 		if (PROFILE_STRICT(flags)) {
 		    result = TCL_CONVERT_SYNTAX;
 		    src -= 2;	/* Go back to beginning of high surrogate */
-		    dst--;		/* Also undo writing a single byte too much */
+		    dst--;	/* Also undo writing a single byte too much */
 		    break;
 		}
 		if (PROFILE_REPLACE(flags)) {
@@ -3510,7 +3509,8 @@ TableToUtfProc(
 		ch = UNICODE_REPLACE_CHAR;
 	    } else {
 		char chbuf[2];
-		chbuf[0] = byte; chbuf[1] = 0;
+		chbuf[0] = byte;
+		chbuf[1] = 0;
 		TclUtfToUniChar(chbuf, &ch);
 	    }
 	}
@@ -4065,6 +4065,30 @@ EscapeToUtfProc(
 	dst += Tcl_UniCharToUtf(ch, dst);
 	src++;
 	numChars++;
+    }
+
+    if ((flags & TCL_ENCODING_END) && (result == TCL_CONVERT_MULTIBYTE)) {
+	/* We have a code fragment left-over at the end */
+	if (dst > dstEnd) {
+	    result = TCL_CONVERT_NOSPACE;
+	} else {
+	    /* destination is not full, so we really are at the end now */
+	    if (PROFILE_STRICT(flags)) {
+		result = TCL_CONVERT_SYNTAX;
+	    } else {
+		/*
+		 * PROFILE_REPLACE or PROFILE_TCL8. The latter is treated
+		 * similar to former because Tcl8 was broken in this regard
+		 * as it just ignored the byte and truncated which is really
+		 * a no-no as per Unicode recommendations.
+		 */
+		result = TCL_OK;
+		dst += Tcl_UniCharToUtf(UNICODE_REPLACE_CHAR, dst);
+		numChars++;
+		/* TCL_CONVERT_MULTIBYTE means all source consumed */
+		src = srcEnd;
+	    }
+	}
     }
 
     *statePtr = (Tcl_EncodingState) INT2PTR(state);

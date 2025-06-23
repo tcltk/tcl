@@ -318,35 +318,6 @@ SendSelectMessage(
 }
 
 /*
- * Address print debug functions
- */
-#if 0
-static inline void
-printaddrinfo(
-    struct addrinfo *ai,
-    char *prefix)
-{
-    char host[NI_MAXHOST], port[NI_MAXSERV];
-
-    getnameinfo(ai->ai_addr, ai->ai_addrlen,
-	    host, sizeof(host), port, sizeof(port),
-	    NI_NUMERICHOST | NI_NUMERICSERV);
-}
-
-static void
-printaddrinfolist(
-    struct addrinfo *addrlist,
-    char *prefix)
-{
-    struct addrinfo *ai;
-
-    for (ai = addrlist; ai != NULL; ai = ai->ai_next) {
-	printaddrinfo(ai, prefix);
-    }
-}
-#endif
-
-/*
  *----------------------------------------------------------------------
  *
  * InitializeHostName --
@@ -392,7 +363,7 @@ InitializeHostName(
 
 	Tcl_DStringInit(&ds);
 	Tcl_DStringSetLength(&ds, 256);
-	gethostname(Tcl_DStringValue(&ds), Tcl_DStringLength(&ds));
+	gethostname(Tcl_DStringValue(&ds), (int)Tcl_DStringLength(&ds));
 	Tcl_DStringSetLength(&ds, strlen(Tcl_DStringValue(&ds)));
     }
 
@@ -1762,7 +1733,7 @@ TcpConnect(
 	     */
 
 	    if (bind(statePtr->sockets->fd, statePtr->myaddr->ai_addr,
-		    statePtr->myaddr->ai_addrlen) == SOCKET_ERROR) {
+		    (socklen_t)statePtr->myaddr->ai_addrlen) == SOCKET_ERROR) {
 		Tcl_WinConvertError((DWORD) WSAGetLastError());
 		continue;
 	    }
@@ -1831,7 +1802,7 @@ TcpConnect(
 	     */
 
 	    connect(statePtr->sockets->fd, statePtr->addr->ai_addr,
-		    statePtr->addr->ai_addrlen);
+		    (socklen_t)statePtr->addr->ai_addrlen);
 
 	    error = WSAGetLastError();
 	    Tcl_WinConvertError(error);
@@ -2218,7 +2189,7 @@ Tcl_OpenTcpServerEx(
 	 */
 
 	if (bind(sock, addrPtr->ai_addr,
-		addrPtr->ai_addrlen) == SOCKET_ERROR) {
+		(socklen_t)addrPtr->ai_addrlen) == SOCKET_ERROR) {
 	    Tcl_WinConvertError((DWORD) WSAGetLastError());
 	    closesocket(sock);
 	    continue;
@@ -3054,7 +3025,7 @@ SocketThread(
 
     SetEvent(tsdPtr->readyEvent);
 
-    return msg.wParam;
+    return (DWORD)msg.wParam;
 }
 
 /*

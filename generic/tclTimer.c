@@ -21,7 +21,7 @@
 typedef struct TimerHandler {
     Tcl_Time time;		/* When timer is to fire. */
     Tcl_TimerProc *proc;	/* Function to call. */
-    void *clientData;	/* Argument to pass to proc. */
+    void *clientData;		/* Argument to pass to proc. */
     Tcl_TimerToken token;	/* Identifies handler so it can be deleted. */
     struct TimerHandler *nextPtr;
 				/* Next event in queue, or NULL for end of
@@ -65,6 +65,9 @@ typedef struct AfterAssocData {
 				 * none. */
 } AfterAssocData;
 
+/* Associated data key used to look up the AfterAssocData for an interp. */
+#define ASSOC_KEY "tclAfter"
+
 /*
  * There is one of the following structures for each of the handlers declared
  * in a call to Tcl_DoWhenIdle. All of the currently-active handlers are
@@ -73,7 +76,7 @@ typedef struct AfterAssocData {
 
 typedef struct IdleHandler {
     Tcl_IdleProc *proc;		/* Function to call. */
-    void *clientData;	/* Value to pass to proc. */
+    void *clientData;		/* Value to pass to proc. */
     int generation;		/* Used to distinguish older handlers from
 				 * recently-created ones. */
     struct IdleHandler *nextPtr;/* Next in list of active handlers. */
@@ -251,7 +254,7 @@ Tcl_CreateTimerHandler(
     int milliseconds,		/* How many milliseconds to wait before
 				 * invoking proc. */
     Tcl_TimerProc *proc,	/* Function to invoke. */
-    void *clientData)	/* Arbitrary data to pass to proc. */
+    void *clientData)		/* Arbitrary data to pass to proc. */
 {
     Tcl_Time time;
 
@@ -619,7 +622,7 @@ TimerHandlerEventProc(
 void
 Tcl_DoWhenIdle(
     Tcl_IdleProc *proc,		/* Function to invoke. */
-    void *clientData)	/* Arbitrary value to pass to proc. */
+    void *clientData)		/* Arbitrary value to pass to proc. */
 {
     IdleHandler *idlePtr;
     Tcl_Time blockTime;
@@ -663,7 +666,7 @@ Tcl_DoWhenIdle(
 void
 Tcl_CancelIdleCall(
     Tcl_IdleProc *proc,		/* Function that was previously registered. */
-    void *clientData)	/* Arbitrary value to pass to proc. */
+    void *clientData)		/* Arbitrary value to pass to proc. */
 {
     IdleHandler *idlePtr, *prevPtr;
     IdleHandler *nextPtr;
@@ -805,12 +808,12 @@ Tcl_AfterObjCmd(
      * doesn't already exist.
      */
 
-    assocPtr = (AfterAssocData *)Tcl_GetAssocData(interp, "tclAfter", NULL);
+    assocPtr = (AfterAssocData *)Tcl_GetAssocData(interp, ASSOC_KEY, NULL);
     if (assocPtr == NULL) {
 	assocPtr = (AfterAssocData *)Tcl_Alloc(sizeof(AfterAssocData));
 	assocPtr->interp = interp;
 	assocPtr->firstAfterPtr = NULL;
-	Tcl_SetAssocData(interp, "tclAfter", AfterCleanupProc, assocPtr);
+	Tcl_SetAssocData(interp, ASSOC_KEY, AfterCleanupProc, assocPtr);
     }
 
     /*
@@ -979,7 +982,7 @@ Tcl_AfterObjCmd(
 	}
 	break;
     default:
-	Tcl_Panic("Tcl_AfterObjCmd: bad subcommand index to afterSubCmds");
+	TCL_UNREACHABLE();
     }
     return TCL_OK;
 }
@@ -1115,7 +1118,7 @@ GetAfterEvent(
 	return NULL;
     }
     cmdString += 6;
-    id = strtoul(cmdString, &end, 10);
+    id = (int)strtoul(cmdString, &end, 10);
     if ((end == cmdString) || (*end != 0)) {
 	return NULL;
     }
@@ -1149,7 +1152,7 @@ GetAfterEvent(
 
 static void
 AfterProc(
-    void *clientData)	/* Describes command to execute. */
+    void *clientData)		/* Describes command to execute. */
 {
     AfterInfo *afterPtr = (AfterInfo *)clientData;
     AfterAssocData *assocPtr = afterPtr->assocPtr;
@@ -1214,7 +1217,7 @@ AfterProc(
 
 static void
 FreeAfterPtr(
-    AfterInfo *afterPtr)		/* Command to be deleted. */
+    AfterInfo *afterPtr)	/* Command to be deleted. */
 {
     AfterInfo *prevPtr;
     AfterAssocData *assocPtr = afterPtr->assocPtr;
@@ -1251,7 +1254,7 @@ FreeAfterPtr(
 
 static void
 AfterCleanupProc(
-    void *clientData,	/* Points to AfterAssocData for the
+    void *clientData,		/* Points to AfterAssocData for the
 				 * interpreter. */
     TCL_UNUSED(Tcl_Interp *))
 {
