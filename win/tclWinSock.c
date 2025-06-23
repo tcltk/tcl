@@ -318,35 +318,6 @@ SendSelectMessage(
 }
 
 /*
- * Address print debug functions
- */
-#if 0
-static inline void
-printaddrinfo(
-    struct addrinfo *ai,
-    char *prefix)
-{
-    char host[NI_MAXHOST], port[NI_MAXSERV];
-
-    getnameinfo(ai->ai_addr, ai->ai_addrlen,
-	    host, sizeof(host), port, sizeof(port),
-	    NI_NUMERICHOST | NI_NUMERICSERV);
-}
-
-static void
-printaddrinfolist(
-    struct addrinfo *addrlist,
-    char *prefix)
-{
-    struct addrinfo *ai;
-
-    for (ai = addrlist; ai != NULL; ai = ai->ai_next) {
-	printaddrinfo(ai, prefix);
-    }
-}
-#endif
-
-/*
  *----------------------------------------------------------------------
  *
  * InitializeHostName --
