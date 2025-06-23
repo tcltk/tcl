@@ -55,7 +55,7 @@ const Tcl_ObjType tclIndexType = {
 
 typedef struct {
     void *tablePtr;		/* Pointer to the table of strings */
-    Tcl_Size offset;	/* Offset between table entries */
+    Tcl_Size offset;		/* Offset between table entries */
     Tcl_Size index;		/* Selected index into table. */
 } IndexRep;
 
@@ -68,7 +68,9 @@ typedef struct {
 #define NEXT_ENTRY(table, offset) \
 	(&(STRING_AT(table, offset)))
 #define EXPAND_OF(indexRep) \
-	(((indexRep)->index != TCL_INDEX_NONE) ? STRING_AT((indexRep)->tablePtr, (indexRep)->offset*(indexRep)->index) : "")
+	(((indexRep)->index != TCL_INDEX_NONE) ?			\
+		STRING_AT((indexRep)->tablePtr, (indexRep)->offset*(indexRep)->index) : \
+		"")
 
 /*
  *----------------------------------------------------------------------
@@ -303,20 +305,20 @@ Tcl_GetIndexFromObjStruct(
 	flags &= (30-(int)(sizeof(int)<<1));
 	if (flags) {
 	    if (flags == sizeof(uint16_t)<<1) {
-		*(uint16_t *)indexPtr = index;
+		*(uint16_t *)indexPtr = (uint16_t)index;
 		return TCL_OK;
 	    } else if (flags == (int)(sizeof(uint8_t)<<1)) {
-		*(uint8_t *)indexPtr = index;
+		*(uint8_t *)indexPtr = (uint8_t)index;
 		return TCL_OK;
 	    } else if (flags == (int)(sizeof(int64_t)<<1)) {
 		*(int64_t *)indexPtr = index;
 		return TCL_OK;
 	    } else if (flags == (int)(sizeof(int32_t)<<1)) {
-		*(int32_t *)indexPtr = index;
+		*(int32_t *)indexPtr = (int32_t)index;
 		return TCL_OK;
 	    }
 	}
-	*(int *)indexPtr = index;
+	*(int *)indexPtr = (int)index;
     }
     return TCL_OK;
 
@@ -363,7 +365,8 @@ Tcl_GetIndexFromObjStruct(
 }
 /* #define again, needed below */
 #define Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, offset, msg, flags, indexPtr) \
-	((Tcl_GetIndexFromObjStruct)((interp), (objPtr), (tablePtr), (offset), (msg), (flags)|(int)(sizeof(*(indexPtr))<<1), (indexPtr)))
+	((Tcl_GetIndexFromObjStruct)((interp), (objPtr), (tablePtr), (offset), \
+		(msg), (flags)|(int)(sizeof(*(indexPtr))<<1), (indexPtr)))
 
 /*
  *----------------------------------------------------------------------
@@ -386,10 +389,12 @@ static void
 UpdateStringOfIndex(
     Tcl_Obj *objPtr)
 {
-    IndexRep *indexRep = (IndexRep *)TclFetchInternalRep(objPtr, &tclIndexType)->twoPtrValue.ptr1;
+    IndexRep *indexRep = (IndexRep *)
+	    TclFetchInternalRep(objPtr, &tclIndexType)->twoPtrValue.ptr1;
     const char *indexStr = EXPAND_OF(indexRep);
+    size_t len = strlen(indexStr);
 
-    Tcl_InitStringRep(objPtr, indexStr, strlen(indexStr));
+    TclOOM(Tcl_InitStringRep(objPtr, indexStr, len), len+1);
 }
 
 /*
@@ -806,7 +811,7 @@ PrefixLongestObjCmd(
 void
 Tcl_WrongNumArgs(
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments to print from objv. */
+    Tcl_Size objc,		/* Number of arguments to print from objv. */
     Tcl_Obj *const objv[],	/* Initial argument objects, which should be
 				 * included in the error message. */
     const char *message)	/* Error message to print after the leading
@@ -1009,13 +1014,13 @@ Tcl_ParseArgsObjv(
 				/* Descriptor that matches current argument */
     Tcl_Obj *curArg;		/* Current argument */
     const char *str = NULL;
-    char c;		/* Second character of current arg (used for
+    char c;			/* Second character of current arg (used for
 				 * quick check for matching; use 2nd char.
 				 * because first char. will almost always be
 				 * '-'). */
-    Tcl_Size srcIndex;	/* Location from which to read next argument
+    Tcl_Size srcIndex;		/* Location from which to read next argument
 				 * from objv. */
-    Tcl_Size dstIndex;	/* Used to keep track of current arguments
+    Tcl_Size dstIndex;		/* Used to keep track of current arguments
 				 * being processed, primarily for error
 				 * reporting. */
     Tcl_Size objc;		/* # arguments in objv still to process. */
@@ -1107,7 +1112,7 @@ Tcl_ParseArgsObjv(
 	infoPtr = matchPtr;
 	switch (infoPtr->type) {
 	case TCL_ARGV_CONSTANT:
-	    *((int *) infoPtr->dstPtr) = PTR2INT(infoPtr->srcPtr);
+	    *((int *)infoPtr->dstPtr) = (int)PTR2INT(infoPtr->srcPtr);
 	    break;
 	case TCL_ARGV_INT:
 	    if (objc == 0) {
@@ -1139,7 +1144,7 @@ Tcl_ParseArgsObjv(
 	     */
 
 	    if (infoPtr->dstPtr != NULL) {
-		*((int *) infoPtr->dstPtr) = dstIndex;
+		*((int *)infoPtr->dstPtr) = (int)dstIndex;
 	    }
 	    goto argsDone;
 	case TCL_ARGV_FLOAT:
@@ -1147,7 +1152,7 @@ Tcl_ParseArgsObjv(
 		goto missingArg;
 	    }
 	    if (Tcl_GetDoubleFromObj(interp, objv[srcIndex],
-		    (double *) infoPtr->dstPtr) == TCL_ERROR) {
+		    (double *)infoPtr->dstPtr) == TCL_ERROR) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"expected floating-point argument for \"%s\" but got \"%s\"",
 			infoPtr->keyStr, TclGetString(objv[srcIndex])));
@@ -1268,7 +1273,7 @@ PrintUsage(
 				 * descriptions. */
 {
     const Tcl_ArgvInfo *infoPtr;
-    int width, numSpaces;
+    Tcl_Size width, numSpaces;
 #define NUM_SPACES 20
     static const char spaces[] = "                    ";
     Tcl_Obj *msg;

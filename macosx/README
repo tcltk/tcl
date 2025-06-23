@@ -1,7 +1,7 @@
-Tcl Mac OS X README
+Tcl macOS README
 -------------------
 
-This is the README file for the Mac OS X/Darwin version of Tcl.
+This is the README file for the macOS/Darwin version of Tcl.
 
 
 1. Where to go for support
@@ -63,14 +63,15 @@ framework directories:
 3. Building Tcl on Mac OS X
 ---------------------------
 
-- At least Mac OS X 10.3 is required to build Tcl.
-Apple's Xcode Developer Tools need to be installed (only the most recent version
-matching your OS release is supported), the Xcode installer is available on Mac
-OS X install media or may be present in /Applications/Installers on Macs that
-came with OS X preinstalled. The most recent version can always be downloaded
-from the ADC website http://connect.apple.com (free ADC membership required).
+- Tcl supports macOS 10.13 and newer.
+While Tcl may build on earlier versions of the OS, it is not tested on versions
+older than 10.13.  You will need to install an  Apple clang toolchain either by
+downloading the Xcode app from Apple's App Store, or by installing the Command
+Line Tools. The Command Line Tools can be installed by running the command:
+    xcode-select --install
+in the Terminal.
 
-- Tcl is most easily built as a Mac OS X framework via GNUmakefile in tcl/macosx
+- Tcl is most easily built as a macOS framework via the GNUmakefile in tcl/macosx
 (see below for details), but can also be built with the standard unix configure
 and make buildsystem in tcl/unix as on any other unix platform (indeed, the
 GNUmakefile is just a wrapper around the unix buildsystem).
@@ -78,11 +79,10 @@ The Mac OS X specific configure flags are --enable-framework and
 --disable-corefoundation (which disables CF and notably reverts to the standard
 select based notifier).
 
-- To build universal binaries outside of the Xcode IDE, set CFLAGS as follows:
-	export CFLAGS="-arch x86_64 -arch arm64"
-This requires Mac OS X 10.6 and Xcode 10.2 and will work on any architecture.
-Note that configure requires CFLAGS to contain a least one architecture that can
-be run on the build machine (i.e. x86_64 on Core2/Xeon).
+- To build universal binaries for macOS 10.13 and newer set CFLAGS as follows:
+	export CFLAGS="-arch x86_64 -arch arm64 -mmacosx-version-min=10.13"
+(This will cause clang to set macOS 11 as the target OS for the arm64 architecture
+since Apple Silicon was not supported until macOS 11.)
 Universal builds of Tcl TEA extensions are also possible with CFLAGS set as
 above, they will be [load]able by universal as well as thin binaries of Tcl.
 
@@ -92,12 +92,12 @@ Detailed Instructions for building with macosx/GNUmakefile
 - Unpack the Tcl source release archive.
 
 - The following instructions assume the Tcl source tree is named "tcl${ver}",
-(where ${ver} is a shell variable containing the Tcl version number e.g. '9.0').
+(where ${ver} is a shell variable containing the Tcl version number e.g. '9.1').
 Setup this shell variable as follows:
-	ver="9.0"
+	ver="9.1"
 
-- Setup environment variables as desired, e.g. for a universal build on 10.9:
-	CFLAGS="-arch x86_64 -arch arm64 -mmacosx-version-min=10.9"
+- Setup environment variables as desired, for example:
+	CFLAGS="-arch x86_64 -arch arm64 -mmacosx-version-min=10.13"
 	export CFLAGS
 
 - Change to the directory containing the Tcl source tree and build:

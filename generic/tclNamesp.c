@@ -199,18 +199,17 @@ static const EnsembleImplMap defaultNamespaceMap[] = {
 static inline Tcl_HashEntry *
 CreateChildEntry(
     Namespace *nsPtr,		/* Parent namespace. */
-    const char *name,		/* Simple name to look for. */
-    int *isNewPtr)		/* Pointer to var with whether this is new. */
+    const char *name)		/* Simple name to look for. */
 {
 #ifndef BREAK_NAMESPACE_COMPAT
-    return Tcl_CreateHashEntry(&nsPtr->childTable, name, isNewPtr);
+    return Tcl_CreateHashEntry(&nsPtr->childTable, name, NULL);
 #else
-    if )nsPtr->childTablePtr == NULL) {
+    if (nsPtr->childTablePtr == NULL) {
 	nsPtr->childTablePtr = (Tcl_HashTable *)
 		Tcl_Alloc(sizeof(Tcl_HashTable));
 	Tcl_InitHashTable(nsPtr->childTablePtr, TCL_STRING_KEYS);
     }
-    return Tcl_CreateHashEntry(nsPtr->childTablePtr, name, isNewPtr);
+    return Tcl_CreateHashEntry(nsPtr->childTablePtr, name, NULL);
 #endif
 }
 
@@ -786,7 +785,6 @@ Tcl_CreateNamespace(
     Tcl_HashEntry *entryPtr;
     Tcl_DString buffer1, buffer2;
     Tcl_DString *namePtr, *buffPtr;
-    int newEntry;
     size_t nameLen;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     const char *nameStr;
@@ -916,7 +914,7 @@ Tcl_CreateNamespace(
     nsPtr->earlyDeleteProc = NULL;
 
     if (parentPtr != NULL) {
-	entryPtr = CreateChildEntry(parentPtr, simpleName, &newEntry);
+	entryPtr = CreateChildEntry(parentPtr, simpleName);
 	Tcl_SetHashValue(entryPtr, nsPtr);
     } else {
 	/*
@@ -2029,8 +2027,7 @@ Tcl_ForgetImport(
 	     */
 
 	    Command *cmdPtr = (Command *) token;
-	    ImportedCmdData *dataPtr = (ImportedCmdData *)
-		    cmdPtr->objClientData;
+	    ImportedCmdData *dataPtr = (ImportedCmdData *)cmdPtr->objClientData;
 	    Tcl_Command firstToken = (Tcl_Command) dataPtr->realCmdPtr;
 
 	    if (firstToken == origin) {
@@ -2303,7 +2300,7 @@ TclGetNamespaceForQualName(
 				 * namespace if TCL_GLOBAL_ONLY was specified,
 				 * or the current namespace if cxtNsPtr was
 				 * NULL. */
-    const char **simpleNamePtr) /* Address where function stores the simple
+    const char **simpleNamePtr)	/* Address where function stores the simple
 				 * name at end of the qualName, or NULL if
 				 * qualName is "::" or the flag
 				 * TCL_FIND_ONLY_NS was specified. */
@@ -3745,7 +3742,8 @@ NamespaceForgetCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     const char *pattern;
-    int i, result;
+    int i;
+    int result;
 
     if (objc < 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?pattern pattern...?");
@@ -3811,8 +3809,8 @@ NamespaceImportCmd(
 {
     int allowOverwrite = 0;
     const char *string, *pattern;
-    int i, result;
-    int firstArg;
+    int i, firstArg;
+    int result;
 
     if (objc < 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?-force? ?pattern pattern...?");
@@ -4771,15 +4769,14 @@ NamespaceWhichCmd(
 
     TclNewObj(resultPtr);
     switch (lookupType) {
-    case 0: {				/* -command */
+    case 0:;				/* -command */
 	Tcl_Command cmd = Tcl_GetCommandFromObj(interp, objv[objc-1]);
 
 	if (cmd != NULL) {
 	    Tcl_GetCommandFullName(interp, cmd, resultPtr);
 	}
 	break;
-    }
-    case 1: {				/* -variable */
+    case 1:;				/* -variable */
 	Tcl_Var var = Tcl_FindNamespaceVar(interp,
 		TclGetString(objv[objc-1]), NULL, /*flags*/ 0);
 
@@ -4787,7 +4784,8 @@ NamespaceWhichCmd(
 	    Tcl_GetVariableFullName(interp, var, resultPtr);
 	}
 	break;
-    }
+    default:
+	TCL_UNREACHABLE();
     }
     Tcl_SetObjResult(interp, resultPtr);
     return TCL_OK;
@@ -5021,7 +5019,7 @@ TclLogCommandInfo(
 				 * the error. */
     Tcl_Size length,		/* Number of bytes in command (< 0 means use
 				 * all bytes up to first null byte). */
-    const unsigned char *pc,    /* Current pc of bytecode execution context */
+    const unsigned char *pc,	/* Current pc of bytecode execution context */
     Tcl_Obj **tosPtr)		/* Current stack of bytecode execution
 				 * context */
 {

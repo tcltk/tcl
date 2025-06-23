@@ -524,12 +524,12 @@ TclStrIdxTreeTestObjCmd(
 
     case O_INDEX:
     case O_PUTS_INDEX: {
-	Tcl_Obj **lstv;
-	Tcl_Size i, lstc;
 	TclStrIdxTree idxTree = {NULL, NULL};
 
-	i = 1;
+	Tcl_Size i = 1;
 	while (++i < objc) {
+	    Tcl_Obj **lstv;
+	    Tcl_Size lstc;
 	    if (TclListObjGetElements(interp, objv[i],
 		    &lstc, &lstv) != TCL_OK) {
 		return TCL_ERROR;
@@ -542,6 +542,8 @@ TclStrIdxTreeTestObjCmd(
 	TclStrIdxTreeFree(idxTree.firstPtr);
 	break;
     }
+    default:
+	TCL_UNREACHABLE();
     }
 
     return TCL_OK;

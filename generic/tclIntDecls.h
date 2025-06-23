@@ -171,7 +171,7 @@ EXTERN int		TclObjInvoke(Tcl_Interp *interp, Tcl_Size objc,
 /* Slot 67 is reserved */
 /* Slot 68 is reserved */
 /* 69 */
-EXTERN void *		TclpAlloc(TCL_HASH_TYPE size);
+EXTERN void *		TclpAlloc(size_t size);
 /* Slot 70 is reserved */
 /* Slot 71 is reserved */
 /* Slot 72 is reserved */
@@ -187,7 +187,7 @@ EXTERN unsigned long long TclpGetSeconds(void);
 /* Slot 79 is reserved */
 /* Slot 80 is reserved */
 /* 81 */
-EXTERN void *		TclpRealloc(void *ptr, TCL_HASH_TYPE size);
+EXTERN void *		TclpRealloc(void *ptr, size_t size);
 /* Slot 82 is reserved */
 /* Slot 83 is reserved */
 /* Slot 84 is reserved */
@@ -440,8 +440,7 @@ EXTERN Tcl_Obj *	TclGetObjNameOfExecutable(void);
 EXTERN void		TclSetObjNameOfExecutable(Tcl_Obj *name,
 				Tcl_Encoding encoding);
 /* 215 */
-EXTERN void *		TclStackAlloc(Tcl_Interp *interp,
-				TCL_HASH_TYPE numBytes);
+EXTERN void *		TclStackAlloc(Tcl_Interp *interp, size_t numBytes);
 /* 216 */
 EXTERN void		TclStackFree(Tcl_Interp *interp, void *freePtr);
 /* 217 */
@@ -492,7 +491,8 @@ EXTERN int		TclEvalObjEx(Tcl_Interp *interp, Tcl_Obj *objPtr,
 /* 233 */
 EXTERN void		TclGetSrcInfoForPc(CmdFrame *contextPtr);
 /* 234 */
-EXTERN Var *		TclVarHashCreateVar(TclVarHashTable *tablePtr,
+TCL_DEPRECATED("Not used in Tcl, not in any extension any more")
+Var *			TclVarHashCreateVar(TclVarHashTable *tablePtr,
 				const char *key, int *newPtr);
 /* 235 */
 EXTERN void		TclInitVarHashTable(TclVarHashTable *tablePtr,
@@ -570,7 +570,8 @@ EXTERN void		TclStaticLibrary(Tcl_Interp *interp,
 				const char *prefix,
 				Tcl_LibraryInitProc *initProc,
 				Tcl_LibraryInitProc *safeInitProc);
-/* Slot 258 is reserved */
+/* 258 */
+EXTERN int		TclMSB(unsigned long long n);
 /* Slot 259 is reserved */
 /* Slot 260 is reserved */
 /* 261 */
@@ -649,7 +650,7 @@ typedef struct TclIntStubs {
     void (*reserved66)(void);
     void (*reserved67)(void);
     void (*reserved68)(void);
-    void * (*tclpAlloc) (TCL_HASH_TYPE size); /* 69 */
+    void * (*tclpAlloc) (size_t size); /* 69 */
     void (*reserved70)(void);
     void (*reserved71)(void);
     void (*reserved72)(void);
@@ -661,7 +662,7 @@ typedef struct TclIntStubs {
     void (*reserved78)(void);
     void (*reserved79)(void);
     void (*reserved80)(void);
-    void * (*tclpRealloc) (void *ptr, TCL_HASH_TYPE size); /* 81 */
+    void * (*tclpRealloc) (void *ptr, size_t size); /* 81 */
     void (*reserved82)(void);
     void (*reserved83)(void);
     void (*reserved84)(void);
@@ -795,7 +796,7 @@ typedef struct TclIntStubs {
     void (*tclpFindExecutable) (const char *argv0); /* 212 */
     Tcl_Obj * (*tclGetObjNameOfExecutable) (void); /* 213 */
     void (*tclSetObjNameOfExecutable) (Tcl_Obj *name, Tcl_Encoding encoding); /* 214 */
-    void * (*tclStackAlloc) (Tcl_Interp *interp, TCL_HASH_TYPE numBytes); /* 215 */
+    void * (*tclStackAlloc) (Tcl_Interp *interp, size_t numBytes); /* 215 */
     void (*tclStackFree) (Tcl_Interp *interp, void *freePtr); /* 216 */
     int (*tclPushStackFrame) (Tcl_Interp *interp, Tcl_CallFrame **framePtrPtr, Tcl_Namespace *namespacePtr, int isProcCallFrame); /* 217 */
     void (*tclPopStackFrame) (Tcl_Interp *interp); /* 218 */
@@ -814,7 +815,7 @@ typedef struct TclIntStubs {
     int (*tclGetNamespaceFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Namespace **nsPtrPtr); /* 231 */
     int (*tclEvalObjEx) (Tcl_Interp *interp, Tcl_Obj *objPtr, int flags, const CmdFrame *invoker, int word); /* 232 */
     void (*tclGetSrcInfoForPc) (CmdFrame *contextPtr); /* 233 */
-    Var * (*tclVarHashCreateVar) (TclVarHashTable *tablePtr, const char *key, int *newPtr); /* 234 */
+    TCL_DEPRECATED_API("Not used in Tcl, not in any extension any more") Var * (*tclVarHashCreateVar) (TclVarHashTable *tablePtr, const char *key, int *newPtr); /* 234 */
     void (*tclInitVarHashTable) (TclVarHashTable *tablePtr, Namespace *nsPtr); /* 235 */
     void (*reserved236)(void);
     int (*tclResetCancellation) (Tcl_Interp *interp, int force); /* 237 */
@@ -838,7 +839,7 @@ typedef struct TclIntStubs {
     int (*tclPtrObjMakeUpvar) (Tcl_Interp *interp, Tcl_Var otherPtr, Tcl_Obj *myNamePtr, int myFlags); /* 255 */
     int (*tclPtrUnsetVar) (Tcl_Interp *interp, Tcl_Var varPtr, Tcl_Var arrayPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, int flags); /* 256 */
     void (*tclStaticLibrary) (Tcl_Interp *interp, const char *prefix, Tcl_LibraryInitProc *initProc, Tcl_LibraryInitProc *safeInitProc); /* 257 */
-    void (*reserved258)(void);
+    int (*tclMSB) (unsigned long long n); /* 258 */
     void (*reserved259)(void);
     void (*reserved260)(void);
     void (*tclUnusedStubEntry) (void); /* 261 */
@@ -1253,7 +1254,8 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclPtrUnsetVar) /* 256 */
 #define TclStaticLibrary \
 	(tclIntStubsPtr->tclStaticLibrary) /* 257 */
-/* Slot 258 is reserved */
+#define TclMSB \
+	(tclIntStubsPtr->tclMSB) /* 258 */
 /* Slot 259 is reserved */
 /* Slot 260 is reserved */
 #define TclUnusedStubEntry \
@@ -1269,20 +1271,13 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclStaticLibrary)
 #endif /* defined(USE_TCL_STUBS) */
 
-#if (TCL_MAJOR_VERSION < 9) && defined(USE_TCL_STUBS)
-#undef TclpGetClicks
-#define TclpGetClicks() \
-		((unsigned long)tclIntStubsPtr->tclpGetClicks())
-#undef TclpGetSeconds
-#define TclpGetSeconds() \
-		((unsigned long)tclIntStubsPtr->tclpGetSeconds())
-#undef TclGetObjInterpProc2
-#define TclGetObjInterpProc2 TclGetObjInterpProc
-#endif
-
 #undef TclUnusedStubEntry
 #define TclObjInterpProc TclGetObjInterpProc()
 #define TclObjInterpProc2 TclGetObjInterpProc2()
+
+#ifdef TCL_NO_DEPRECATED
+#   undef TclVarHashCreateVar
+#endif
 
 #undef TCL_STORAGE_CLASS
 #define TCL_STORAGE_CLASS DLLIMPORT

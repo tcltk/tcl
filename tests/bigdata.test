@@ -139,7 +139,7 @@ test script-bytecode-length-bigdata-1 {Test bytecode length limit} -body {
     catch $s r e
 } -cleanup {
     bigClean
-} -constraints panic-in-EnterCmdStartData
+} -constraints panicInEnterCmdStartData
 
 #
 # string cat
@@ -321,7 +321,7 @@ bigtestRO string-map-bigdata-1 {string map} {5 0 0 5} -body {
     set s [bigString 0x100000000]
 } -cleanup {
     bigClean
-} -constraints bug-takesTooLong
+} -constraints bugTakesTooLong
 
 #
 # string match
@@ -681,7 +681,7 @@ bigtestRO regexp-bigdata-2 "regexp with capture" 1 -body {
     set s [bigString 0x10000000a 0x100000009]
 } -cleanup {
     bigClean digits match
-} -constraints bug-takesTooLong
+} -constraints bugTakesTooLong
 
 #
 # regsub
@@ -691,14 +691,14 @@ bigtestRO regsub-bigdata-1 "regsub" X -body {
     set s [bigString 0x100000001 0x100000000]
 } -cleanup {
     bigClean
-} -constraints bug-takesTooLong
+} -constraints bugTakesTooLong
 bigtestRO regsub-bigdata-2 "regsub" 1 -body {
     string equal [regsub -all \\d $s x] [string cat [string repeat x 0x100000000] X]
 } -setup {
     set s [bigString 0x100000001 0x100000000]
 } -cleanup {
     bigClean
-} -constraints bug-takesTooLong
+} -constraints bugTakesTooLong
 
 #
 # subst
@@ -869,7 +869,7 @@ bigtest ledit-bigdata-3 "ledit - small -> large result" {2147483650 2147483650 {
     set l [bigList 2147483642]
 } -cleanup {
     bigClean
-} -constraints memory-allocation-panic
+} -constraints memoryAllocationPanic
 
 #
 # lindex
@@ -1027,7 +1027,7 @@ bigtest lreplace-bigdata-2 "lreplace - large result" {4294967301 {a b c d e 0 1 
     #set l [bigList 4294967296]
 } -cleanup {
     bigClean
-} -constraints bug-outofmemorypanic
+} -constraints bugOutOfMemoryPanic
 
 #
 # lsearch
@@ -1058,7 +1058,7 @@ bigtest lseq-bigdata-2 "lseq" {9223372036854775807 9223372036854775799} -body {
     set l [lseq 0x7fffffffffffffff]; llength $l
 } -cleanup {
     bigClean
-} -constraints bug-fa00fbbbab
+} -constraints bug_fa00fbbbab
 
 #
 # lset
@@ -1103,7 +1103,7 @@ bigtest split-bigdata-1 "split" {4294967296 {0 1 2 3 4} {1 2 3 4 5}} -body {
     set s [bigString 0x100000000]
 } -cleanup {
     bigClean
-} -constraints bug-takesTooLong
+} -constraints bugTakesTooLong
 
 bigtestRO concat-bigdata-1 "concat" {4294967296 {0 1 2 3 4} {6 7 0 1 2} {3 4 5 6 7}} -body {
     unset -nocomplain l2

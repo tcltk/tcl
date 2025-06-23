@@ -3,8 +3,8 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 
-AC_INIT([tcl],[9.0])
-AC_PREREQ([2.69])
+AC_INIT([tcl],[9.1])
+AC_PREREQ([2.72])
 
 dnl This is only used when included from macosx/configure.ac
 m4_ifdef([SC_USE_CONFIG_HEADERS], [
@@ -23,10 +23,10 @@ m4_ifdef([SC_USE_CONFIG_HEADERS], [
     #endif /* _TCLCONFIG */])
 ])
 
-TCL_VERSION=9.0
+TCL_VERSION=9.1
 TCL_MAJOR_VERSION=9
-TCL_MINOR_VERSION=0
-TCL_PATCH_LEVEL=".2"
+TCL_MINOR_VERSION=1
+TCL_PATCH_LEVEL="a0"
 VERSION=${TCL_VERSION}
 
 EXTRA_INSTALL_BINARIES=${EXTRA_INSTALL_BINARIES:-"@:"}
@@ -717,7 +717,12 @@ fi
 
 TCL_UNSHARED_LIB_SUFFIX=${UNSHARED_LIB_SUFFIX}
 TCL_SHARED_LIB_SUFFIX=${SHARED_LIB_SUFFIX}
+if test "$ac_cv_cygwin" = "yes" -a "$SHARED_BUILD" != "0"; then
+eval "TCL_LIB_FILE=cygtcl${LIB_SUFFIX}"
+EXTRA_INSTALL_BINARIES='$(INSTALL_LIBRARY) $(patsubst cyg%.dll,lib%.dll.a,${LIB_FILE}) "$(LIB_INSTALL_DIR)"'
+else
 eval "TCL_LIB_FILE=libtcl${LIB_SUFFIX}"
+fi
 
 # tclConfig.sh needs a version of the _LIB_SUFFIX that has been eval'ed
 # since on some platforms TCL_LIB_FILE contains shell escapes.
@@ -863,10 +868,8 @@ AC_SUBST(TCL_BUILDTIME_LIBRARY)
 if test "$FRAMEWORK_BUILD" = "1" ; then
     test -z "$TCL_PACKAGE_PATH" && \
 	TCL_PACKAGE_PATH="~/Library/Tcl:/Library/Tcl:~/Library/Frameworks:/Library/Frameworks"
-	# Allow tclsh to find Tk when multiple versions are installed. See Tk [1562e10c58].
-	TCL_PACKAGE_PATH="$TCL_PACKAGE_PATH:/Library/Frameworks/Tk.framework/Versions"
     test -z "$TCL_MODULE_PATH"  && \
-	TCL_MODULE_PATH="~/Library/Tcl /Library/Tcl"
+	TCL_MODULE_PATH="~/Library/Tcl:/Library/Tcl"
 elif test "$prefix/lib" != "$libdir"; then
     test -z "$TCL_PACKAGE_PATH" && TCL_PACKAGE_PATH="${libdir}:${prefix}/lib"
 else

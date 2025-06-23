@@ -3,30 +3,67 @@ on:
   push:
     branches:
     - "main"
-    - "core-8-branch"
-    - "core-8-6-branch"
+    - "core-9-0-branch"
     tags:
-    - "core-**"
+    - "core-*"
 permissions:
   contents: read
-env:
-  ERROR_ON_FAILURES: 1
 jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      msvc: ${{ steps.matrix.outputs.msvc }}
+      gcc: ${{ steps.matrix.outputs.gcc }}
+    steps:
+      - name: Select build matrix based on branch name
+        id: matrix
+        run: |
+          (
+            echo msvc=$(jq -nc '{config: (if env.IsMatched == "true" then env.MSVC_FULL else env.MSVC_PARTIAL end) | fromjson }' )
+            echo gcc=$(jq -nc '{config: (if env.IsMatched == "true" then env.GCC_FULL else env.GCC_PARTIAL end) | fromjson }' )
+          ) | tee -a $GITHUB_OUTPUT
+        env:
+          IsMatched: ${{ github.ref_name == 'main' || github.ref_name == 'core-9-0-branch' }}
+          # DO NOT CHANGE THESE MATRIX SPECS; IT AFFECTS OUR COST CONTROLS
+          MSVC_FULL: >
+            [
+              "",
+              "CHECKS=nodep",
+              "OPTS=static",
+              "OPTS=noembed",
+              "OPTS=symbols",
+              "OPTS=symbols STATS=compdbg,memdbg"
+            ]
+          MSVC_PARTIAL: >
+            [
+              "",
+              "OPTS=symbols STATS=compdbg,memdbg"
+            ]
+          GCC_FULL: >
+            [
+              "",
+              "CFLAGS=-DTCL_NO_DEPRECATED=1",
+              "--disable-shared",
+              "--disable-zipfs",
+              "--enable-symbols",
+              "--enable-symbols=mem",
+              "--enable-symbols=all"
+            ]
+          GCC_PARTIAL: >
+            [
+              "",
+              "--disable-shared",
+              "--enable-symbols=all"
+            ]
   msvc:
-    runs-on: windows-2022
+    runs-on: windows-2025
+    needs: plan
     defaults:
       run:
         shell: powershell
         working-directory: win
     strategy:
-      matrix:
-        config:
-          - ""
-          - "CHECKS=nodep"
-          - "OPTS=static"
-          - "OPTS=noembed"
-          - "OPTS=symbols"
-          - "OPTS=symbols STATS=compdbg,memdbg"
+      matrix: ${{ fromJson(needs.plan.outputs.msvc) }}
     # Using powershell means we need to explicitly stop on failure
     steps:
       - name: Checkout
@@ -56,23 +93,17 @@ jobs:
              throw "nmake exit code: $lastexitcode"
           }
         timeout-minutes: 30
+        env:
+          ERROR_ON_FAILURES: 1
   gcc:
-    runs-on: windows-2022
+    runs-on: windows-2025
+    needs: plan
     defaults:
       run:
         shell: msys2 {0}
         working-directory: win
     strategy:
-      matrix:
-        config:
-          - ""
-          - "CFLAGS=-DTCL_NO_DEPRECATED=1"
-          - "--disable-shared"
-          - "--disable-zipfs"
-          - "--enable-symbols"
-          - "--enable-symbols=mem"
-          - "--enable-symbols=all"
-    # Using powershell means we need to explicitly stop on failure
+      matrix: ${{ fromJson(needs.plan.outputs.gcc) }}
     steps:
       - name: Install MSYS2
         uses: msys2/setup-msys2@v2
@@ -103,10 +134,12 @@ jobs:
       - name: Info
         run: |
           ulimit -a || echo 'get limit failed'
-          echo 'puts exe:\t[info nameofexecutable]\nver:\t[info patchlevel]\t[if {![catch tcl::build-info ret]} {set ret}]\nlib:\t[info library]\nplat:\t[lsort -dictionary -stride 2 [array get tcl_platform]]' | make runtest || echo 'get info failed'
+          make runtest SCRIPT=../.github/workflows/info.tcl || echo 'get info failed'
       - name: Run Tests
         run: make test
         timeout-minutes: 30
+        env:
+          ERROR_ON_FAILURES: 1
 
 # If you add builds with Wine, be sure to define the environment variable
 # CI_USING_WINE when running them so that broken tests know not to run.

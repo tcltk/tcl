@@ -323,7 +323,7 @@ test cmdAH-4.1.1 {encoding} -returnCodes error -body {
 } -result {wrong # args: should be "encoding subcommand ?arg ...?"}
 test cmdAH-4.1.2 {Tcl_EncodingObjCmd} -returnCodes error -body {
     encoding foo
-} -result {unknown or ambiguous subcommand "foo": must be convertfrom, convertto, dirs, names, profiles, or system}
+} -result {unknown or ambiguous subcommand "foo": must be convertfrom, convertto, dirs, names, profiles, system, or user}
 
 #
 # encoding system 4.2.*
@@ -1268,7 +1268,7 @@ test cmdAH-15.1 {Tcl_FileObjCmd} -constraints testsetplatform -body {
 catch {testsetplatform $platform}
 
 # readable
-set gorpfile [makeFile abcde gorp.file]
+set gorpfile [makeFile abcde górp.file]
 set dirfile [makeDirectory dir.file]
 test cmdAH-16.1 {Tcl_FileObjCmd: readable} {
     -returnCodes error
@@ -1311,7 +1311,7 @@ test cmdAH-17.3 {Tcl_FileObjCmd: writable} {
 removeFile $gorpfile
 removeDirectory $dirfile
 set dirfile [makeDirectory dir.file]
-set gorpfile [makeFile abcde gorp.file]
+set gorpfile [makeFile abcde górp.file]
 test cmdAH-18.1 {Tcl_FileObjCmd: executable} -returnCodes error -body {
     file executable a b
 } -result {wrong # args: should be "file executable name"}
@@ -1356,12 +1356,12 @@ test cmdAH-19.1 {Tcl_FileObjCmd: exists} -returnCodes error -body {
 } -result {wrong # args: should be "file exists name"}
 test cmdAH-19.2 {Tcl_FileObjCmd: exists} {file exists $gorpfile} 0
 test cmdAH-19.3 {Tcl_FileObjCmd: exists} {
-    file exists [file join [temporaryDirectory] dir.file gorp.file]
+    file exists [file join [temporaryDirectory] dir.file górp.file]
 } 0
 catch {
-    set gorpfile [makeFile abcde gorp.file]
+    set gorpfile [makeFile abcde górp.file]
     set dirfile [makeDirectory dir.file]
-    set subgorp [makeFile 12345 [file join $dirfile gorp.file]]
+    set subgorp [makeFile 12345 [file join $dirfile górp.file]]
 }
 test cmdAH-19.4 {Tcl_FileObjCmd: exists} {
     file exists $gorpfile
@@ -1422,7 +1422,7 @@ test cmdAH-19.12 {Bug 3608360: [file exists] mustn't do globbing} -setup {
 
 catch {testsetplatform $platform}
 removeFile $gorpfile
-set gorpfile [makeFile "Test string" gorp.file]
+set gorpfile [makeFile "Test string" górp.file]
 catch {file attributes $gorpfile -permissions 0o765}
 
 # avoid problems with non-local filesystems
@@ -1842,7 +1842,7 @@ test cmdAH-27.4.1 {
 
 catch {testsetplatform $platform}
 removeFile $gorpfile
-set gorpfile [makeFile "Test string" gorp.file]
+set gorpfile [makeFile "Test string" górp.file]
 catch {file attributes $gorpfile -permissions 0o765}
 
 # stat

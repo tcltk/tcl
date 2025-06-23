@@ -39,26 +39,13 @@
 #undef Tcl_DbNewLongObj
 #undef Tcl_NewObj
 #undef Tcl_NewStringObj
-#undef Tcl_GetUnicode
-#undef Tcl_GetUnicodeFromObj
-#undef Tcl_NewUnicodeObj
-#undef Tcl_SetUnicodeObj
 #undef Tcl_DumpActiveMemory
 #undef Tcl_ValidateAllMemory
-#undef Tcl_FindHashEntry
-#undef Tcl_CreateHashEntry
-#undef Tcl_Panic
 #undef Tcl_FindExecutable
-#undef Tcl_SetExitProc
-#undef Tcl_SetPanicProc
 #undef TclpGetPid
 #undef TclSockMinimumBuffers
 #undef Tcl_SetIntObj
 #undef Tcl_SetLongObj
-#undef Tcl_ListObjGetElements
-#undef Tcl_ListObjLength
-#undef Tcl_DictObjSize
-#undef Tcl_SplitList
 #undef Tcl_SplitPath
 #undef Tcl_FSSplitPath
 #undef Tcl_ParseArgsObjv
@@ -70,10 +57,11 @@
 # define Tcl_WinConvertError 0
 #endif
 #undef TclGetStringFromObj
-#if defined(TCL_NO_DEPRECATED)
+#ifdef TCL_NO_DEPRECATED
 # define TclGetStringFromObj 0
 # define TclGetBytesFromObj 0
 # define TclGetUnicodeFromObj 0
+# define TclVarHashCreateVar 0
 #endif
 #undef Tcl_Close
 #define Tcl_Close 0
@@ -86,7 +74,7 @@
 #undef TclListObjGetElements
 #undef TclListObjLength
 
-#if defined(TCL_NO_DEPRECATED)
+#ifdef TCL_NO_DEPRECATED
 # define TclListObjGetElements 0
 # define TclListObjLength 0
 # define TclDictObjSize 0
@@ -95,7 +83,7 @@
 # define TclFSSplitPath 0
 # define TclParseArgsObjv 0
 # define TclGetAliasObj 0
-#else /* !defined(TCL_NO_DEPRECATED) */
+#else /* !TCL_NO_DEPRECATED */
 int TclListObjGetElements(Tcl_Interp *interp, Tcl_Obj *listPtr,
     void *objcPtr, Tcl_Obj ***objvPtr) {
     Tcl_Size n = TCL_INDEX_NONE;
@@ -205,7 +193,7 @@ int TclGetAliasObj(Tcl_Interp *interp, const char *childCmd,
     }
     return result;
 }
-#endif /* !defined(TCL_NO_DEPRECATED) */
+#endif /* !TCL_NO_DEPRECATED */
 
 #define TclBN_mp_add mp_add
 #define TclBN_mp_add_d mp_add_d
@@ -673,7 +661,7 @@ static const TclIntStubs tclIntStubs = {
     TclPtrObjMakeUpvar, /* 255 */
     TclPtrUnsetVar, /* 256 */
     TclStaticLibrary, /* 257 */
-    0, /* 258 */
+    TclMSB, /* 258 */
     0, /* 259 */
     0, /* 260 */
     TclUnusedStubEntry, /* 261 */
@@ -850,9 +838,9 @@ const TclStubs tclStubs = {
     Tcl_DbNewStringObj, /* 28 */
     Tcl_DuplicateObj, /* 29 */
     TclFreeObj, /* 30 */
-    Tcl_GetBoolean, /* 31 */
-    Tcl_GetBooleanFromObj, /* 32 */
-    Tcl_GetByteArrayFromObj, /* 33 */
+    0, /* 31 */
+    0, /* 32 */
+    0, /* 33 */
     Tcl_GetDouble, /* 34 */
     Tcl_GetDoubleFromObj, /* 35 */
     0, /* 36 */
@@ -900,7 +888,7 @@ const TclStubs tclStubs = {
     Tcl_BadChannelOption, /* 78 */
     Tcl_CallWhenDeleted, /* 79 */
     Tcl_CancelIdleCall, /* 80 */
-    Tcl_Close, /* 81 */
+    0, /* 81 */
     Tcl_CommandComplete, /* 82 */
     Tcl_Concat, /* 83 */
     Tcl_ConvertElement, /* 84 */
@@ -1159,7 +1147,7 @@ const TclStubs tclStubs = {
     Tcl_UtfToUpper, /* 337 */
     Tcl_WriteChars, /* 338 */
     Tcl_WriteObj, /* 339 */
-    Tcl_GetString, /* 340 */
+    0, /* 340 */
     0, /* 341 */
     0, /* 342 */
     Tcl_AlertNotifier, /* 343 */
@@ -1240,8 +1228,8 @@ const TclStubs tclStubs = {
     Tcl_IsChannelExisting, /* 418 */
     0, /* 419 */
     0, /* 420 */
-    0, /* 421 */
-    0, /* 422 */
+    Tcl_DbCreateHashEntry, /* 421 */
+    Tcl_CreateHashEntry, /* 422 */
     Tcl_InitCustomHashTable, /* 423 */
     Tcl_InitObjHashTable, /* 424 */
     Tcl_CommandTraceInfo, /* 425 */
@@ -1509,7 +1497,9 @@ const TclStubs tclStubs = {
     Tcl_UtfNcasecmp, /* 687 */
     Tcl_NewWideUIntObj, /* 688 */
     Tcl_SetWideUIntObj, /* 689 */
-    TclUnusedStubEntry, /* 690 */
+    Tcl_IsEmpty, /* 690 */
+    Tcl_GetEncodingNameForUser, /* 691 */
+    TclUnusedStubEntry, /* 692 */
 };
 
 /* !END!: Do not edit above this line. */

@@ -185,7 +185,7 @@ namespace eval utftest {
 	set out [binary decode hex $hexout]
 	set dstlen 40 ;# Should be enough for all encoding tests
 
-	test $cmd-$enc-$id "$cmd - $enc - $hexin - frag" -constraints testencoding -body {
+	test $cmd-$enc-$id-0 "$cmd - $enc - $hexin - frag=$fragindex" -constraints testencoding -body {
 	    set frag1Result [testencoding $cmd $enc [string range $in 0 $fragindex-1] {start} 0 $dstlen frag1Read frag1Written]
 	    lassign $frag1Result frag1Status frag1State frag1Decoded
 	    set frag2Result [testencoding $cmd $enc [string range $in $frag1Read end] {end} $frag1State $dstlen frag2Read frag2Written]
@@ -195,6 +195,16 @@ namespace eval utftest {
 		$frag2Status [expr {$frag1Read+$frag2Read}] \
 		[expr {$frag1Written+$frag2Written}] $decoded
 	} -result [list $status1 1 ok [string length $in] [string length $out] $out]
+
+	if {$direction eq "toutf"} {
+	    # Fragmentation but with no more data.
+	    # Only check status. Content output is already checked in above test.
+	    test $cmd-$enc-$id-1 "$cmd - $enc - $hexin - frag=$fragindex - no more data" -constraints testencoding -body {
+		set frag1Result [testencoding $cmd $enc [string range $in 0 $fragindex-1] {start end} 0 $dstlen frag1Read frag1Written]
+		lassign $frag1Result frag1Status frag1State frag1Decoded
+		set frag1Status
+	    } -result syntax
+	}
     }
 
     proc testcharlimit {direction enc comment hexin hexout} {
@@ -320,6 +330,48 @@ namespace eval utftest {
 	set result [list [testencoding Tcl_ExternalToUtf shiftjis $src {start tcl8} 0 16 srcRead dstWritten charsWritten] $srcRead $dstWritten $charsWritten]
 	lappend result {*}[list [testencoding Tcl_ExternalToUtf shiftjis [string range $src $srcRead end] {end tcl8} 0 10 srcRead dstWritten charsWritten] $srcRead $dstWritten $charsWritten]
     } -result [list [list multibyte 0 \xEF\xBC\x90\xEF\xBC\x91\x00\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF] 4 6 2 [list ok 0 \xC2\x82\x00\xFF\xFF\xFF\xFF\xFF\xFF\xFF] 1 2 1] -constraints testencoding
+
+    test Tcl_ExternalToUtf-bug-7346adc50f-strict-0 {
+	truncated input in escape encoding (strict)
+    } -body {
+	set src [binary decode hex 1b2442242a3b6e24]
+	list {*}[testencoding Tcl_ExternalToUtf iso2022-jp $src {start end strict} 0 16 srcRead dstWritten charsWritten] $srcRead $dstWritten $charsWritten
+    } -result [list syntax 2 [binary decode hex e3818ae8a9a600ffffffffffffffffff] 7 6 2]
+
+    test Tcl_ExternalToUtf-bug-7346adc50f-strict-1 {
+	truncated input in escape encoding (strict, partial)
+    } -body {
+	set src [binary decode hex 1b2442242a3b6e24]
+	list {*}[testencoding Tcl_ExternalToUtf iso2022-jp $src {start strict} 0 16 srcRead dstWritten charsWritten] $srcRead $dstWritten $charsWritten
+    } -result [list multibyte 2 [binary decode hex e3818ae8a9a600ffffffffffffffffff] 7 6 2]
+
+    test Tcl_ExternalToUtf-bug-7346adc50f-replace-0 {
+	truncated input in escape encoding (replace)
+    } -body {
+	set src [binary decode hex 1b2442242a3b6e24]
+	list {*}[testencoding Tcl_ExternalToUtf iso2022-jp $src {start end replace} 0 16 srcRead dstWritten charsWritten] $srcRead $dstWritten $charsWritten
+    } -result [list ok 2 [binary decode hex e3818ae8a9a6efbfbd00ffffffffffff] 8 9 3]
+
+    test Tcl_ExternalToUtf-bug-7346adc50f-replace-1 {
+	truncated input in escape encoding (replace, partial)
+    } -body {
+	set src [binary decode hex 1b2442242a3b6e24]
+	list {*}[testencoding Tcl_ExternalToUtf iso2022-jp $src {start replace} 0 16 srcRead dstWritten charsWritten] $srcRead $dstWritten $charsWritten
+    } -result [list multibyte 2 [binary decode hex e3818ae8a9a600ffffffffffffffffff] 7 6 2]
+
+    test Tcl_ExternalToUtf-bug-7346adc50f-tcl8-0 {
+	truncated input in escape encoding (tcl8)
+    } -body {
+	set src [binary decode hex 1b2442242a3b6e24]
+	list {*}[testencoding Tcl_ExternalToUtf iso2022-jp $src {start end tcl8} 0 16 srcRead dstWritten charsWritten] $srcRead $dstWritten $charsWritten
+    } -result [list ok 2 [binary decode hex e3818ae8a9a6efbfbd00ffffffffffff] 8 9 3]
+
+    test Tcl_ExternalToUtf-bug-7346adc50f-tcl8-1 {
+	truncated input in escape encoding (tcl8, partial)
+    } -body {
+	set src [binary decode hex 1b2442242a3b6e24]
+	list {*}[testencoding Tcl_ExternalToUtf iso2022-jp $src {start tcl8} 0 16 srcRead dstWritten charsWritten] $srcRead $dstWritten $charsWritten
+    } -result [list multibyte 2 [binary decode hex e3818ae8a9a600ffffffffffffffffff] 7 6 2]
 }
 
 namespace delete utftest

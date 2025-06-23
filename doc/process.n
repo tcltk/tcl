@@ -41,17 +41,19 @@ corresponding process table entries purged.
 \fB::tcl::process purge\fR ?\fIpids\fR?
 .
 Cleans up all data associated with terminated subprocesses. If \fIpids\fR is
-specified as a list of PIDs then the command only cleanup data for the matching
-subprocesses if they exist, and raises an error otherwise. If a process listed is
+specified as a list of PIDs then the command only cleans up data for the matching
+subprocesses if they exist. If a process listed is
 still active, this command does nothing to that process.
+Any PID that does not correspond to a subprocess is ignored.
 .\" METHOD: status
 .TP
 \fB::tcl::process status\fR ?\fIswitches\fR? ?\fIpids\fR?
 .
 Returns a dictionary mapping subprocess PIDs to their respective status. If
 \fIpids\fR is specified as a list of PIDs then the command only returns the
-status of the matching subprocesses if they exist, and raises an error
-otherwise. For active processes, the status is an empty value. For terminated
+status of the matching subprocesses if they exist.
+Any PID that does not correspond to a subprocess is ignored.
+For active processes, the status is an empty value. For terminated
 processes, the status is a list with the following format:
 .QW "\fB{\fIcode\fR ?\fImsg errorCode\fR?\fB}\fR" ,
 where:

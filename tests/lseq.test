@@ -19,6 +19,8 @@ testConstraint arithSeriesShimmer 1
 testConstraint arithSeriesShimmerOk 1
 testConstraint has64BitLengths [expr {$tcl_platform(pointerSize) == 8}]
 testConstraint has32BitLengths [expr {$tcl_platform(pointerSize) == 4}]
+testConstraint exec [llength [info commands exec]]
+testConstraint memory [llength [info commands memory]]
 
 proc memusage {} {
     set fd [open /proc/[pid]/statm]
@@ -26,9 +28,11 @@ proc memusage {} {
     if {[llength $line] != 7} {
 	error "Unexpected /proc/pid/statm format"
     }
+    close $fd
     return [lindex $line 5]
 }
 testConstraint hasMemUsage [expr {![catch {memusage}]}]
+testConstraint notPurify [expr {![tcl::build-info purify]}]
 
 # Arg errors
 test lseq-1.1 {error cases} -body {
@@ -1024,15 +1028,38 @@ test lseq-convertToList {does not result in a memory error} -body {
 } -cleanup {unset var1 cres} -result {1 {can't set "var1": this is an error}}
 
 test lseq-bug-54329e39c7 {does not cause memory bloat} -constraints {
-    hasMemUsage
+    nonPortable hasMemUsage notPurify
 } -body {
-    set l [lseq 1000000]
     proc p l {foreach x $l {}}
+    p {1 2}
+    set l [lseq 1000000]
     set premem [memusage]
     p $l
     set postmem [memusage]
-    expr {[string match *purify* [tcl::build-info]] || ($postmem - $premem < 10) ? 1 : ($postmem - $premem)}
-} -result 1
+    expr {abs($postmem - $premem) < 10 ? "ok" : ($postmem - $premem)}
+} -cleanup {
+    rename p {}
+    unset -nocomplain l
+} -result ok
+test lseq-bug-54329e39c7-bis {does not cause memory bloat} -constraints {
+    exec memory
+} -body {
+    exec [interpreter] << {
+	# No change to PEAK memory usage in a fresh interpreter
+	proc memtest script {
+	    set start [lindex [split [memory info] \n] 5 end]
+	    uplevel 1 $script
+	    set end [lindex [split [memory info] \n] 5 end]
+	    expr {$end - $start}
+	}
+	proc p l {foreach x $l {}}
+	p {1 2}
+	puts [memtest {
+	    set l [lseq 1000000]
+	    p $l
+	}]
+    }
+} -result 0
 
 test lseq-bug-578b7e273c03-1 {Arithmetic Series Objects get wrong precision when end value is not specified} -body {
     set bl [expr {2.8 in [lseq 0 count 100 by .1]}]
@@ -1052,7 +1079,7 @@ test lseq-bug-578b7e273c03-2 {Arithmetic Series Objects get wrong precision when
     lappend ll [llength [lseq 0 count 200 by .011]]
 } -result {100 200 100 200 100 200}
 
-test lseq-bug-f4a4bd7f1070-1 {} -body {
+test lseq-bug-f4a4bd7f1070-1 {semantics of count parameter} -body {
     set result {}
     lappend result [catch {lseq 3.1} msg]
     lappend result $msg
@@ -1064,6 +1091,56 @@ test lseq-bug-f4a4bd7f1070-1 {} -body {
     lappend result [string compare [lseq 3] [lseq 3.0]]
     set result
 } -result {1 {expected integer but got "3.1"} 0 {5 6 7} {0 1 2} {0 1 2} {0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50} 0}
+
+test lseq-bug-7d3101bf28-0 {Bug 7d3101bf28 - crash on negative index} -body {
+    list \
+	[try [list lindex [lseq 10] -1]] \
+	[eval [list lindex [lseq 10] -1]]
+} -result {{} {}}
+
+test lseq-bug-7d3101bf28-1 {Bug 7d3101bf28 - crash on out of bounds index} -body {
+    list \
+	[try [list lindex [lseq 10] 10]] \
+	[eval [list lindex [lseq 10] 10]]
+} -result {{} {}}
+
+test lseq-bug-7d3101bf28-2 {Bug 7d3101bf28 - crash on error in index syntax} -body {
+    list \
+	[try [list lindex [lseq 10] foo]] \
+	[eval [list lindex [lseq 10] foo]]
+} -result {bad index "foo": must be integer?[+-]integer? or end?[+-]integer?} -returnCodes error
+
+test lseq-bug-452b103a74-0 {Bug 452b103a74 - crash on nested indices} -body {
+    lindex [lseq 10] 0 1
+} -result {}
+
+test lseq-bug-452b103a74-1 {Bug 452b103a74 - crash on nested indices} -body {
+    lindex [lseq 10] 0 end
+} -result 0
+
+test lseq-bug-452b103a74-2 {Bug 452b103a74 - crash on nested indices} -body {
+    lindex [lseq 10] {0 1}
+} -result {}
+
+test lseq-bug-452b103a74-3 {Bug 452b103a74 - crash on nested indices} -body {
+    lindex [lseq 10] {0 end}
+} -result 0
+
+test lseq-bug-452b103a74-4 {Bug 452b103a74 - crash on nested indices} -body {
+    lindex [lseq 10] 1 0
+} -result 1
+
+test lseq-bug-452b103a74-5 {Bug 452b103a74 - crash on nested indices} -body {
+    lindex [lseq 10] {end 0}
+} -result 9
+
+test lseq-bug-0ee626dfb2-0 {Bug 0ee626dfb2 - integer overflow} -body {
+    lseq 0x7fffffffffffffff count 2
+} -result {invalid arithmetic series parameter values} -returnCodes error
+
+test lseq-bug-0ee626dfb2-1 {Bug 0ee626dfb2 - integer overflow} -body {
+    lseq 0x7fffffffffffffff count 3 by -0x8000000000000000
+} -result {invalid arithmetic series parameter values} -returnCodes error
 
 # cleanup
 ::tcltest::cleanupTests

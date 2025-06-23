@@ -49,6 +49,24 @@ if {[testConstraint testnrelevels]} {
 proc errorcode options {
     dict get [dict merge {-errorcode NONE} $options] -errorcode
 }
+
+# Used for constraining memory leak tests
+testConstraint memory [llength [info commands memory]]
+if {[testConstraint memory]} {
+    proc getbytes {} {
+	set lines [split [memory info] \n]
+	return [lindex $lines 3 3]
+    }
+    proc leaktest {script {iterations 3}} {
+	set end [getbytes]
+	for {set i 0} {$i < $iterations} {incr i} {
+	    uplevel 1 $script
+	    set tmp $end
+	    set end [getbytes]
+	}
+	return [expr {$end - $tmp}]
+    }
+}
 
 test tailcall-0.1 {tailcall is constant space} -constraints testnrelevels -setup {
     proc a i {
@@ -707,6 +725,58 @@ test tailcall-14.1-bc {{in a deleted namespace} {byte compiled}} -body {
 	p
     }
 } -returnCodes 1 -result {namespace "::ns" not found}
+
+test tailcall-15.1 {tailcall memory leak check} -constraints memory -setup {
+    proc foo {args} {llength $args}
+} -body {
+    list [
+	apply {cmd {
+	    $cmd foo 1 2 3 4 5
+	}} tailcall
+    ] [
+	leaktest {
+	    apply {cmd {
+		$cmd foo 1 2 3 4 5
+	    }} tailcall
+	}
+    ]
+} -cleanup {
+    rename foo {}
+} -result {5 0}
+test tailcall-15.2 {tailcall memory leak check} -constraints memory -setup {
+    proc foo {args} {llength $args}
+} -body {
+    list [
+	apply {{} {
+	    tailcall foo 1 2 3 4 5
+	}}
+    ] [
+	leaktest {
+	    apply {{} {
+		tailcall foo 1 2 3 4 5
+	    }}
+	}
+    ]
+} -cleanup {
+    rename foo {}
+} -result {5 0}
+test tailcall-15.3 {tailcall memory leak check} -constraints memory -setup {
+    proc foo {args} {llength $args}
+} -body {
+    list [
+	apply {args {
+	    tailcall foo 1 2 {*}$args 3 4 {*}$args 5 
+	}} a b c
+    ] [
+	leaktest {
+	    apply {args {
+		tailcall foo 1 2 {*}$args 3 4 {*}$args 5 
+	    }} a b c
+	}
+    ]
+} -cleanup {
+    rename foo {}
+} -result {11 0}
 
 test tailcall-bug-784befb0ba {tailcall crash with 254 args} -body {
     proc tccrash args {llength $args}

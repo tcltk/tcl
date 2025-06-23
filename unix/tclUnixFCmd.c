@@ -452,11 +452,11 @@ DoCopyFile(
 	}
     }
 
-    switch ((int) (statBufPtr->st_mode & S_IFMT)) {
+    switch ((int)(statBufPtr->st_mode & S_IFMT)) {
 #ifndef DJGPP
     case S_IFLNK: {
 	char linkBuf[MAXPATHLEN+1];
-	int length;
+	ssize_t length;
 
 	length = readlink(src, linkBuf, MAXPATHLEN);	/* INTL: Native. */
 	if (length == -1) {
@@ -1069,7 +1069,7 @@ TraverseUnixTree(
     while ((ent = fts_read(fts)) != NULL) {
 	unsigned short info = ent->fts_info;
 	char *path = ent->fts_path + sourceLen;
-	unsigned short pathlen = ent->fts_pathlen - sourceLen;
+	Tcl_Size pathlen = ent->fts_pathlen - sourceLen;
 	int type;
 	Tcl_StatBuf *statBufPtr = NULL;
 
@@ -1432,10 +1432,10 @@ GetOwnerAttribute(
 
 static int
 GetPermissionsAttribute(
-    Tcl_Interp *interp,		    /* The interp we are using for errors. */
+    Tcl_Interp *interp,		/* The interp we are using for errors. */
     TCL_UNUSED(int) /*objIndex*/,
-    Tcl_Obj *fileName,		    /* The name of the file (UTF-8). */
-    Tcl_Obj **attributePtrPtr)	    /* A pointer to return the object with. */
+    Tcl_Obj *fileName,		/* The name of the file (UTF-8). */
+    Tcl_Obj **attributePtrPtr)	/* A pointer to return the object with. */
 {
     Tcl_StatBuf statBuf;
     int result;
@@ -1626,7 +1626,7 @@ SetPermissionsAttribute(
     int result = TCL_ERROR;
     const char *native;
     const char *modeStringPtr = TclGetString(attributePtr);
-    int scanned = TclParseAllWhiteSpace(modeStringPtr, -1);
+    Tcl_Size scanned = TclParseAllWhiteSpace(modeStringPtr, -1);
 
     /*
      * First supply support for octal number format
@@ -1740,7 +1740,7 @@ TclpObjListVolumes(void)
 static int
 GetModeFromPermString(
     TCL_UNUSED(Tcl_Interp *),
-    const char *modeStringPtr, /* Permissions string */
+    const char *modeStringPtr,	/* Permissions string */
     mode_t *modePtr)		/* pointer to the mode value */
 {
     mode_t newMode;
@@ -1933,8 +1933,7 @@ TclpObjNormalizePath(
 				 * be 0 or the offset of a directory separator
 				 * at the end of a path part that is already
 				 * normalized.  I.e. this is not the index of
-				 * the byte just after the separator.  */
-
+				 * the byte just after the separator. */
 {
     const char *currentPathEndPosition;
     char cur;
@@ -1978,7 +1977,7 @@ TclpObjNormalizePath(
 		     * routine should be reviewed and cleaed up.
 		     */
 		} else {
-		    nextCheckpoint = lastDir - path;
+		    nextCheckpoint = (int)(lastDir - path);
 		    goto wholeStringOk;
 		}
 	    }
@@ -2021,7 +2020,7 @@ TclpObjNormalizePath(
 	     * Assign the end of the current component to nextCheckpoint
 	     */
 
-	    nextCheckpoint = currentPathEndPosition - path;
+	    nextCheckpoint = (int)(currentPathEndPosition - path);
 	} else if (cur == 0) {
 	    /*
 	     * The end of the string.
@@ -2096,7 +2095,7 @@ TclpObjNormalizePath(
 		 * Append the remaining path components.
 		 */
 
-		int normLen = Tcl_DStringLength(&ds);
+		Tcl_Size normLen = Tcl_DStringLength(&ds);
 
 		Tcl_DStringAppend(&ds, path + nextCheckpoint,
 			pathLen - nextCheckpoint);
@@ -2106,13 +2105,13 @@ TclpObjNormalizePath(
 		 * been processed
 		 */
 
-		nextCheckpoint = normLen + 1;
+		nextCheckpoint = (int)normLen + 1;
 	    } else {
 		/*
 		 * We recognise the whole string.
 		 */
 
-		nextCheckpoint = Tcl_DStringLength(&ds);
+		nextCheckpoint = (int)Tcl_DStringLength(&ds);
 	    }
 
 	    Tcl_SetStringObj(pathPtr, Tcl_DStringValue(&ds),
@@ -2214,7 +2213,7 @@ TclUnixOpenTemporaryFile(
 	    return -1;
 	}
 	TclDStringAppendDString(&templ, &tmp);
-	fd = mkstemps(Tcl_DStringValue(&templ), Tcl_DStringLength(&tmp));
+	fd = mkstemps(Tcl_DStringValue(&templ), (int)Tcl_DStringLength(&tmp));
 	Tcl_DStringFree(&tmp);
     } else
 #endif
@@ -2318,7 +2317,8 @@ TclpCreateTemporaryDirectory(
 
     if (dirObj) {
 	string = TclGetString(dirObj);
-	if (Tcl_UtfToExternalDStringEx(NULL, NULL, string, dirObj->length, 0, &templ, NULL) != TCL_OK) {
+	if (Tcl_UtfToExternalDStringEx(NULL, NULL, string, dirObj->length, 0,
+		&templ, NULL) != TCL_OK) {
 	    return NULL;
 	}
     } else {
@@ -2333,7 +2333,8 @@ TclpCreateTemporaryDirectory(
     if (basenameObj) {
 	string = TclGetString(basenameObj);
 	if (basenameObj->length) {
-	    if (Tcl_UtfToExternalDStringEx(NULL, NULL, string, basenameObj->length, 0, &tmp, NULL) != TCL_OK) {
+	    if (Tcl_UtfToExternalDStringEx(NULL, NULL, string, basenameObj->length,
+		    0, &tmp, NULL) != TCL_OK) {
 		Tcl_DStringFree(&templ);
 		return NULL;
 	    }
@@ -2387,7 +2388,7 @@ static WCHAR *
 winPathFromObj(
     Tcl_Obj *fileName)
 {
-    size_t size;
+    int size;
     const char *native =  (const char *)Tcl_FSGetNativePath(fileName);
     WCHAR *winPath;
 
@@ -2462,10 +2463,10 @@ GetUnixFileAttributes(
 
 static int
 SetUnixFileAttributes(
-    Tcl_Interp *interp,	    /* The interp we are using for errors. */
-    int objIndex,           /* The index of the attribute. */
-    Tcl_Obj *fileName,      /* The name of the file (UTF-8). */
-    Tcl_Obj *attributePtr)  /* The attribute to set. */
+    Tcl_Interp *interp,		/* The interp we are using for errors. */
+    int objIndex,		/* The index of the attribute. */
+    Tcl_Obj *fileName,		/* The name of the file (UTF-8). */
+    Tcl_Obj *attributePtr)	/* The attribute to set. */
 {
     int yesNo, fileAttributes, old;
     WCHAR *winPath;

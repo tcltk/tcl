@@ -276,7 +276,6 @@ ValidateMemory(
 	memset(memHeaderP->low_guard, 0, LOW_GUARD_SIZE);
 	memset(hiPtr, 0, HIGH_GUARD_SIZE);
     }
-
 }
 
 /*
@@ -813,7 +812,8 @@ MemoryCmd(
 	return TCL_ERROR;
     }
 
-    if (strcmp(TclGetString(objv[1]), "active") == 0 || strcmp(TclGetString(objv[1]), "display") == 0) {
+    if (strcmp(TclGetString(objv[1]), "active") == 0 ||
+	    strcmp(TclGetString(objv[1]), "display") == 0) {
 	if (objc != 3) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "file");
 	    return TCL_ERROR;
@@ -1257,12 +1257,11 @@ TclAllocElemsEx(
 				 * non-NULL. Only modified on success */
 {
     void *ptr = TclAttemptReallocElemsEx(
-	NULL, elemCount, elemSize, leadSize, capacityPtr);
+	    NULL, elemCount, elemSize, leadSize, capacityPtr);
     if (ptr == NULL) {
 	Tcl_Panic("Failed to allocate %" TCL_SIZE_MODIFIER
-		  "d elements of size %" TCL_SIZE_MODIFIER "d bytes.",
-		  elemCount,
-		  elemSize);
+		"d elements of size %" TCL_SIZE_MODIFIER "d bytes.",
+		elemCount, elemSize);
     }
     return ptr;
 }
@@ -1363,12 +1362,11 @@ TclReallocElemsEx(
 				 * non-NULL. Only modified on success */
 {
     void *ptr = TclAttemptReallocElemsEx(
-	oldPtr, elemCount, elemSize, leadSize, capacityPtr);
+	    oldPtr, elemCount, elemSize, leadSize, capacityPtr);
     if (ptr == NULL) {
 	Tcl_Panic("Failed to reallocate %" TCL_SIZE_MODIFIER
-		  "d elements of size %" TCL_SIZE_MODIFIER "d bytes.",
-		  elemCount,
-		  elemSize);
+		"d elements of size %" TCL_SIZE_MODIFIER "d bytes.",
+		elemCount, elemSize);
     }
     return ptr;
 }

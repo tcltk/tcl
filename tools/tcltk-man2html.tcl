@@ -760,6 +760,9 @@ try {
 			break
 		    }
 		}
+	    } on error {} {
+		puts "package folder without package ignored: $dir"
+		continue
 	    } finally {
 		catch {close $f; unset f}
 	    }

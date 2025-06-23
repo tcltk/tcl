@@ -340,8 +340,8 @@ Tcl_Init(
      * pre-init and init scripts are running. The real version of this struct
      * is in tclPkg.c.
      */
-    typedef struct PkgName {
-	struct PkgName *nextPtr;/* Next in list of package names being
+    typedef struct PkgNameStruct {
+	struct PkgNameStruct *nextPtr;/* Next in list of package names being
 				 * initialized. */
 	char name[4];		/* Enough space for "tcl". The *real* version
 				 * of this structure uses a flex array. */
@@ -756,6 +756,8 @@ NRInterpCmd(
 	    case OPT_LAST:
 		i++;
 		goto endOfForLoop;
+	    default:
+		TCL_UNREACHABLE();
 	    }
 	}
 
@@ -1022,8 +1024,7 @@ NRInterpCmd(
 	case LIMIT_TYPE_TIME:
 	    return ChildTimeLimitCmd(interp, childInterp, 4, objc, objv);
 	default:
-	    Tcl_Panic("unreachable");
-	    return TCL_ERROR;
+	    TCL_UNREACHABLE();
 	}
     }
     case OPT_MARKTRUSTED:
@@ -1147,8 +1148,7 @@ NRInterpCmd(
 	return TCL_OK;
     }
     default:
-	Tcl_Panic("unreachable");
-	return TCL_ERROR;
+	TCL_UNREACHABLE();
     }
 }
 
@@ -2677,9 +2677,10 @@ NRChildCmd(
 	    return ChildCommandLimitCmd(interp, childInterp, 3, objc,objv);
 	case LIMIT_TYPE_TIME:
 	    return ChildTimeLimitCmd(interp, childInterp, 3, objc, objv);
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
-    break;
     case OPT_MARKTRUSTED:
 	if (objc != 2) {
 	    Tcl_WrongNumArgs(interp, 2, objv, NULL);
@@ -2692,6 +2693,8 @@ NRChildCmd(
 	    return TCL_ERROR;
 	}
 	return ChildRecursionLimit(interp, childInterp, objc - 2, objv + 2);
+    default:
+	TCL_UNREACHABLE();
     }
 
     return TCL_ERROR;
@@ -3962,7 +3965,7 @@ Tcl_LimitSetCommands(
  *----------------------------------------------------------------------
  */
 
-int
+Tcl_Size
 Tcl_LimitGetCommands(
     Tcl_Interp *interp)
 {
@@ -4329,7 +4332,7 @@ TclRemoveScriptLimitCallbacks(
     while (hashPtr != NULL) {
 	keyPtr = (ScriptLimitCallbackKey *)
 		Tcl_GetHashKey(&iPtr->limit.callbacks, hashPtr);
-	Tcl_LimitRemoveHandler(keyPtr->interp, keyPtr->type,
+	Tcl_LimitRemoveHandler(keyPtr->interp, (int)keyPtr->type,
 		CallScriptLimitCallback, Tcl_GetHashValue(hashPtr));
 	hashPtr = Tcl_NextHashEntry(&search);
     }
@@ -4529,6 +4532,8 @@ ChildCommandLimitCmd(
 			Tcl_NewWideIntObj(Tcl_LimitGetCommands(childInterp)));
 	    }
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
 	return TCL_OK;
     } else if ((objc-consumedObjc) & 1 /* isOdd(objc-consumedObjc) */) {
@@ -4579,6 +4584,8 @@ ChildCommandLimitCmd(
 		    return TCL_ERROR;
 		}
 		break;
+	    default:
+		TCL_UNREACHABLE();
 	    }
 	}
 	if (scriptObj != NULL) {
@@ -4729,6 +4736,8 @@ ChildTimeLimitCmd(
 		Tcl_SetObjResult(interp, Tcl_NewWideIntObj(limitMoment.sec));
 	    }
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
 	return TCL_OK;
     } else if ((objc-consumedObjc) & 1 /* isOdd(objc-consumedObjc) */) {
@@ -4802,6 +4811,8 @@ ChildTimeLimitCmd(
 		}
 		limitMoment.sec = (long long) tmp;
 		break;
+	    default:
+		TCL_UNREACHABLE();
 	    }
 	}
 	if (milliObj != NULL || secObj != NULL) {

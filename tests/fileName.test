@@ -1443,7 +1443,7 @@ test filename-16.13 {windows specific globbing} {win sharedCdrive} {
     cd //[info hostname]/c
     glob "\\\\\\\\[info hostname]\\\\c\\\\*Test"
 } //[info hostname]/c/globTest
-test filename-16.14 {windows specific globbing} {win} {
+test filename-16.14 {windows specific globbing} {win sharedCdrive} {
     cd [lindex [glob -types d -dir C:/ *] 0]
     expr {".." in [glob {{.,*}*}]}
 } {1}

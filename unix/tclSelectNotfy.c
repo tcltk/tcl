@@ -32,7 +32,7 @@ typedef struct FileHandler {
 				 * for this file. */
     Tcl_FileProc *proc;		/* Function to call, in the style of
 				 * Tcl_CreateFileHandler. */
-    void *clientData;	/* Argument to pass to proc. */
+    void *clientData;		/* Argument to pass to proc. */
     struct FileHandler *nextPtr;/* Next in list of all files we care about. */
 } FileHandler;
 
@@ -480,7 +480,7 @@ TclpCreateFileHandler(
 				 * called. */
     Tcl_FileProc *proc,		/* Function to call for each selected
 				 * event. */
-    void *clientData)	/* Arbitrary data to pass to proc. */
+    void *clientData)		/* Arbitrary data to pass to proc. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     FileHandler *filePtr = LookUpFileHandler(tsdPtr, fd, NULL);
@@ -643,7 +643,7 @@ NotifierProc(
 
 int
 TclpWaitForEvent(
-    const Tcl_Time *timePtr)		/* Maximum block time, or NULL. */
+    const Tcl_Time *timePtr)	/* Maximum block time, or NULL. */
 {
     FileHandler *filePtr;
     int mask;
@@ -768,15 +768,18 @@ TclpWaitForEvent(
     if (!tsdPtr->eventReady) {
 #ifdef __CYGWIN__
 	if (!PeekMessageW(&msg, NULL, 0, 0, 0)) {
-	    unsigned int timeout;
+	    long long timeout;
 
 	    if (timePtr) {
 		timeout = timePtr->sec * 1000 + timePtr->usec / 1000;
+		if (timeout > UINT_MAX) {
+		    timeout = UINT_MAX;
+		}
 	    } else {
-		timeout = 0xFFFFFFFF;
+		timeout = UINT_MAX;
 	    }
 	    pthread_mutex_unlock(&notifierMutex);
-	    MsgWaitForMultipleObjects(1, &tsdPtr->event, 0, timeout, 1279);
+	    MsgWaitForMultipleObjects(1, &tsdPtr->event, 0, (unsigned int)timeout, 1279);
 	    pthread_mutex_lock(&notifierMutex);
 	}
 #else /* !__CYGWIN__ */
@@ -806,7 +809,7 @@ TclpWaitForEvent(
 	unsigned int result = GetMessageW(&msg, NULL, 0, 0);
 
 	if (result == 0) {
-	    PostQuitMessage(msg.wParam);
+	    PostQuitMessage((int)msg.wParam);
 	    /* What to do here? */
 	} else if (result != (unsigned int) -1) {
 	    TranslateMessage(&msg);

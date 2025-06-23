@@ -211,6 +211,8 @@ Tcl_RegexpObjCmd(
 	case REGEXP_LAST:
 	    i++;
 	    goto endOfForLoop;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
 
@@ -566,6 +568,8 @@ Tcl_RegsubObjCmd(
 	case REGSUB_LAST:
 	    idx++;
 	    goto endOfForLoop;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
 
@@ -1580,6 +1584,8 @@ StringIsCmd(
 		}
 		failVarObj = objv[++i];
 		break;
+	    default:
+		TCL_UNREACHABLE();
 	    }
 	}
     }
@@ -1877,6 +1883,8 @@ StringIsCmd(
     case STR_IS_XDIGIT:
 	chcomp = UniCharIsHexDigit;
 	break;
+    default:
+	TCL_UNREACHABLE();
     }
 
     if (chcomp != NULL) {
@@ -1904,7 +1912,7 @@ StringIsCmd(
      * valid fail index (>= 0).
      */
 
- str_is_done:
+  str_is_done:
     if ((result == 0) && (failVarObj != NULL)) {
 	TclNewIndexObj(objPtr, failat);
 	if (Tcl_ObjSetVar2(interp, failVarObj, NULL, objPtr, TCL_LEAVE_ERR_MSG) == NULL) {
@@ -2040,8 +2048,8 @@ StringMapCmd(
 	     * The charMap must be an even number of key/value items.
 	     */
 
-	    Tcl_SetObjResult(interp,
-		    Tcl_NewStringObj("char map list unbalanced", -1));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "char map list unbalanced", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "MAP",
 		    "UNBALANCED", (char *)NULL);
 	    return TCL_ERROR;
@@ -3337,33 +3345,38 @@ TclSubstOptions(
     int *flagPtr)
 {
     static const char *const substOptions[] = {
+	"-backslashes", "-commands", "-variables",
 	"-nobackslashes", "-nocommands", "-novariables", NULL
     };
-    enum {
-	SUBST_NOBACKSLASHES, SUBST_NOCOMMANDS, SUBST_NOVARS
+    static const int optionFlags[] = {
+	TCL_SUBST_BACKSLASHES,		/* -backslashes */
+	TCL_SUBST_COMMANDS,		/* -commands */
+	TCL_SUBST_VARIABLES,		/* -variables */
+	TCL_SUBST_BACKSLASHES << 16,	/* -nobackslashes */
+	TCL_SUBST_COMMANDS    << 16,	/* -nocommands */
+	TCL_SUBST_VARIABLES   << 16	/* -novariables */
     };
-    int i, flags = TCL_SUBST_ALL;
+    int flags = numOpts ? 0 : TCL_SUBST_ALL;
 
-    for (i = 0; i < numOpts; i++) {
+    for (Tcl_Size i = 0; i < numOpts; i++) {
 	int optionIndex;
 
 	if (Tcl_GetIndexFromObj(interp, opts[i], substOptions, "option", 0,
 		&optionIndex) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	switch (optionIndex) {
-	case SUBST_NOBACKSLASHES:
-	    flags &= ~TCL_SUBST_BACKSLASHES;
-	    break;
-	case SUBST_NOCOMMANDS:
-	    flags &= ~TCL_SUBST_COMMANDS;
-	    break;
-	case SUBST_NOVARS:
-	    flags &= ~TCL_SUBST_VARIABLES;
-	    break;
-	default:
-	    Tcl_Panic("Tcl_SubstObjCmd: bad option index to SubstOptions");
+	flags |= optionFlags[optionIndex];
+    }
+    if (flags >> 16) {			/* negative options specified */
+	if (flags & 0xFFFF) {		/* positive options specified too */
+	    if (interp) {
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "cannot combine positive and negative options", -1));
+	    }
+	    return TCL_ERROR;
 	}
+	/* mask default flags using negative options */
+	flags = TCL_SUBST_ALL & ~(flags >> 16);
     }
     *flagPtr = flags;
     return TCL_OK;
@@ -3390,6 +3403,7 @@ TclNRSubstObjCmd(
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv,
+		"?-backslashes? ?-commands? ?-variables? "
 		"?-nobackslashes? ?-nocommands? ?-novariables? string");
 	return TCL_ERROR;
     }
@@ -3852,7 +3866,7 @@ TclNRSwitchObjCmd(
 	if (ctxPtr->type == TCL_LOCATION_SOURCE && ctxPtr->line[bidx] >= 0) {
 	    int bline = ctxPtr->line[bidx];
 
-	    ctxPtr->line = (Tcl_Size *)Tcl_Alloc(objc * sizeof(Tcl_Size));
+	    ctxPtr->line = (int *)Tcl_Alloc(objc * sizeof(int));
 	    ctxPtr->nline = objc;
 	    TclListLines(blist, bline, objc, ctxPtr->line, objv);
 	} else {
@@ -3866,7 +3880,7 @@ TclNRSwitchObjCmd(
 
 	    int k;
 
-	    ctxPtr->line = (Tcl_Size *)Tcl_Alloc(objc * sizeof(Tcl_Size));
+	    ctxPtr->line = (int *)Tcl_Alloc(objc * sizeof(int));
 	    ctxPtr->nline = objc;
 	    for (k=0; k < objc; k++) {
 		ctxPtr->line[k] = -1;
@@ -4134,18 +4148,30 @@ Tcl_TimeRateObjCmd(
     int result, i;
     Tcl_Obj *calibrate = NULL, *direct = NULL;
     Tcl_WideUInt count = 0;	/* Holds repetition count */
+    Tcl_WideUInt lastCount = 0;	/* Repetition count since last calculation. */
     Tcl_WideInt maxms = WIDE_MIN;
 				/* Maximal running time (in milliseconds) */
-    Tcl_WideUInt maxcnt = WIDE_MAX;
+    Tcl_WideUInt maxcnt = UWIDE_MAX;
 				/* Maximal count of iterations. */
     Tcl_WideUInt threshold = 1;	/* Current threshold for check time (faster
 				 * repeat count without time check) */
-    Tcl_WideUInt maxIterTm = 1;	/* Max time of some iteration as max
-				 * threshold, additionally avoiding divide to
-				 * zero (i.e., never < 1) */
-    unsigned short factor = 50;	/* Factor (4..50) limiting threshold to avoid
+    Tcl_WideUInt avgIterTm = 1;	/* Average time of all processed iterations. */
+    Tcl_WideUInt lastIterTm = 1;/* Average time of last block of iterations. */
+    double estIterTm = 1.0;	/* Estimated time of next iteration,
+				 * considering the growth of lastIterTm. */
+#ifdef TCL_WIDE_CLICKS
+#   define TR_SCALE 10		/* Fraction is 10ns (from wide click 100ns). */
+#else
+#   define TR_SCALE 100		/* Fraction is 10ns (from 1us = 1000ns). */
+#endif
+#define TR_MIN_FACTOR 2		/* Min allowed factor calculating threshold. */
+#define TR_MAX_FACTOR 50	/* Max allowed factor calculating threshold. */
+#define TR_FACT_SINGLE_ITER 25  /* This or larger factor value will force the
+				 * threshold 1, to avoid drastic growth of
+				 * execution time by quadratic O() complexity. */
+    unsigned short factor = 16;	/* Factor (2..50) limiting threshold to avoid
 				 * growth of execution time. */
-    Tcl_WideInt start, middle, stop;
+    Tcl_WideInt start, last, middle, stop;
 #ifndef TCL_WIDE_CLICKS
     Tcl_Time now;
 #endif /* !TCL_WIDE_CLICKS */
@@ -4186,6 +4212,8 @@ Tcl_TimeRateObjCmd(
 	    break;
 	case TMRT_LAST:
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
 
@@ -4351,7 +4379,7 @@ Tcl_TimeRateObjCmd(
      */
 
 #ifdef TCL_WIDE_CLICKS
-    start = middle = TclpGetWideClicks();
+    start = last = middle = TclpGetWideClicks();
 
     /*
      * Time to stop execution (in wide clicks).
@@ -4363,7 +4391,7 @@ Tcl_TimeRateObjCmd(
     start = now.sec;
     start *= 1000000;
     start += now.usec;
-    middle = start;
+    last = middle = start;
 
     /*
      * Time to stop execution (in microsecs).
@@ -4410,7 +4438,7 @@ Tcl_TimeRateObjCmd(
 		     */
 		    threshold = 1;
 		    maxcnt = 0;
-		    /* FALLTHRU */
+		    TCL_FALLTHROUGH();
 		case TCL_CONTINUE:
 		    result = TCL_OK;
 		    break;
@@ -4444,61 +4472,94 @@ Tcl_TimeRateObjCmd(
 	    }
 
 	    /*
-	     * Don't calculate threshold by few iterations, because sometimes
-	     * first iteration(s) can be too fast or slow (cached, delayed
-	     * clean up, etc).
+	     * Average iteration time (scaled) in fractions of wide clicks
+	     * or microseconds.
 	     */
 
-	    if (count < 10) {
-		threshold = 1;
-		continue;
-	    }
-
-	    /*
-	     * Average iteration time in microsecs.
-	     */
-
-	    threshold = (middle - start) / count;
-	    if (threshold > maxIterTm) {
-		maxIterTm = threshold;
+	    threshold = (Tcl_WideUInt)(middle - start) * TR_SCALE / count;
+	    if (threshold > avgIterTm) {
 
 		/*
 		 * Iterations seem to be longer.
 		 */
 
-		if (threshold > maxIterTm * 2) {
+		if (threshold > avgIterTm * 2) {
 		    factor *= 2;
-		    if (factor > 50) {
-			factor = 50;
-		    }
 		} else {
-		    if (factor < 50) {
-			factor++;
-		    }
+		    factor++;
 		}
-	    } else if (factor > 4) {
+		if (factor > TR_MAX_FACTOR) {
+		    factor = TR_MAX_FACTOR;
+		}
+	    } else if (factor > TR_MIN_FACTOR) {
 		/*
 		 * Iterations seem to be shorter.
 		 */
 
-		if (threshold < (maxIterTm / 2)) {
+		if (threshold < (avgIterTm / 2)) {
 		    factor /= 2;
-		    if (factor < 4) {
-			factor = 4;
+		    if (factor < TR_MIN_FACTOR) {
+			factor = TR_MIN_FACTOR;
 		    }
 		} else {
 		    factor--;
 		}
 	    }
 
-	    /*
-	     * As relation between remaining time and time since last check,
-	     * maximal some % of time (by factor), so avoid growing of the
-	     * execution time if iterations are not consistent, e.g. was
-	     * continuously on time).
-	     */
+	    if (!threshold) {
+		/* too short and too few iterations */
+		threshold = 1;
+		continue;
+	    }
+	    avgIterTm = threshold;
 
-	    threshold = ((stop - middle) / maxIterTm) / factor + 1;
+	    /*
+	     * Estimate last iteration time growth and time of next iteration.
+	     */
+	    lastCount = count - lastCount;
+	    if (last != start && lastCount) {
+		Tcl_WideUInt lastTm;
+
+		lastTm = (Tcl_WideUInt)(middle - last) * TR_SCALE / lastCount;
+		estIterTm = (double)lastTm / (lastIterTm ? lastIterTm : avgIterTm);
+		lastIterTm = lastTm > avgIterTm ? lastTm : avgIterTm;
+	    } else {
+		lastIterTm = avgIterTm;
+	    }
+	    estIterTm *= lastIterTm;
+	    last = middle;
+	    lastCount = count;
+
+	    /*
+	     * Calculate next threshold to check.
+	     * Firstly check iteration time is not larger than remaining time,
+	     * considering last known iteration growth factor.
+	     */
+	    threshold = (Tcl_WideUInt)(stop - middle) * TR_SCALE;
+	    /*
+	     * Estimated count of iteration til the end of execution.
+	     * Thereby 2.5% longer execution time would be OK.
+	     */
+	    if (threshold / estIterTm < 0.975) {
+		/* estimated time for next iteration is too large */
+		break;
+	    }
+	    threshold /= estIterTm;
+	    /*
+	     * Don't use threshold by few iterations, because sometimes
+	     * first iteration(s) can be too fast or slow (cached, delayed
+	     * clean up, etc). Also avoid unexpected execution time growth,
+	     * so if iterations continuously grow, stay by single iteration.
+	     */
+	    if (count < 10 || factor >= TR_FACT_SINGLE_ITER) {
+		threshold = 1;
+		continue;
+	    }
+	    /*
+	     * Reduce it by last known factor, to avoid unexpected execution
+	     * time growth if iterations are not consistent (may be longer).
+	     */
+	    threshold = threshold / factor + 1;
 	    if (threshold > 100000) {	/* fix for too large threshold */
 		threshold = 100000;
 	    }
@@ -4648,6 +4709,10 @@ Tcl_TimeRateObjCmd(
 	TclReleaseByteCode(codePtr);
     }
     return result;
+#undef TR_SCALE
+#undef TR_MIN_FACTOR
+#undef TR_MAX_FACTOR
+#undef TR_FACT_SINGLE_ITER
 }
 
 /*
@@ -4800,6 +4865,8 @@ TclNRTryObjCmd(
 	    haveHandlers = 1;
 	    i += 3;
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
     if (bodyShared) {
@@ -5301,10 +5368,10 @@ TclListLines(
     Tcl_Obj *listObj,		/* Pointer to obj holding a string with list
 				 * structure. Assumed to be valid. Assumed to
 				 * contain n elements. */
-    Tcl_Size line,		/* Line the list as a whole starts on. */
+    int line,		/* Line the list as a whole starts on. */
     Tcl_Size n,			/* #elements in lines */
-    Tcl_Size *lines,		/* Array of line numbers, to fill. */
-    Tcl_Obj *const *elems)      /* The list elems as Tcl_Obj*, in need of
+    int *lines,		/* Array of line numbers, to fill. */
+    Tcl_Obj *const *elems)	/* The list elems as Tcl_Obj*, in need of
 				 * derived continuation data */
 {
     const char *listStr = TclGetString(listObj);

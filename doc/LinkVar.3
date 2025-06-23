@@ -17,10 +17,10 @@ Tcl_LinkArray, Tcl_LinkVar, Tcl_UnlinkVar, Tcl_UpdateLinkedVar \- link Tcl varia
 int
 \fBTcl_LinkVar\fR(\fIinterp, varName, addr, type\fR)
 .sp
-.VS "TIP 312"
+.VS TIP312
 int
 \fBTcl_LinkArray\fR(\fIinterp, varName, addr, type, size\fR)
-.VE "TIP 312"
+.VE TIP312
 .sp
 \fBTcl_UnlinkVar\fR(\fIinterp, varName\fR)
 .sp
@@ -36,10 +36,10 @@ Name of global variable.
 .AP void *addr in
 Address of C variable that is to be linked to \fIvarName\fR.
 .sp
-.VS "TIP 312"
+.VS TIP312
 In \fBTcl_LinkArray\fR, may be NULL to tell Tcl to create the storage
 for the array in the variable.
-.VE "TIP 312"
+.VE TIP312
 .AP int type in
 Type of C variable for \fBTcl_LinkVar\fR or type of array element for
 \fBTcl_LinkArray\fR.  Must be one of \fBTCL_LINK_INT\fR,
@@ -52,18 +52,18 @@ Type of C variable for \fBTcl_LinkVar\fR or type of array element for
 In \fBTcl_LinkVar\fR, the additional linked type \fBTCL_LINK_STRING\fR may be
 used.
 .sp
-.VS "TIP 312"
+.VS TIP312
 In \fBTcl_LinkArray\fR, the additional linked types \fBTCL_LINK_CHARS\fR and
 \fBTCL_LINK_BINARY\fR may be used.
-.VE "TIP 312"
+.VE TIP312
 .sp
 All the above for both functions may be
 optionally OR'ed with \fBTCL_LINK_READ_ONLY\fR to make the Tcl
 variable read-only.
 .AP Tcl_Size size in
-.VS "TIP 312"
+.VS TIP312
 The number of elements in the C array. Must be greater than zero.
-.VE "TIP 312"
+.VE TIP312
 .BE
 .SH DESCRIPTION
 .PP
@@ -78,12 +78,12 @@ while setting up the link (e.g. because \fIvarName\fR is the
 name of array) then \fBTCL_ERROR\fR is returned and the interpreter's result
 contains an error message.
 .PP
-.VS "TIP 312"
+.VS TIP312
 \fBTcl_LinkArray\fR is similar, but for arrays of fixed size (given by
 the \fIsize\fR argument). When asked to allocate the backing C array
 storage (via the \fIaddr\fR argument being NULL), it writes the
 address that it allocated to the Tcl interpreter result.
-.VE "TIP 312"
+.VE TIP312
 .PP
 The \fItype\fR argument specifies the type of the C variable,
 or the type of the elements of the C array,
@@ -122,17 +122,17 @@ integer representations (like the empty string, '+', '-' or the
 hex/octal/decimal/binary prefix) are accepted as if they are valid too.
 .RS
 .PP
-.VS "TIP 312"
+.VS TIP312
 If using an array of these, consider using \fBTCL_LINK_CHARS\fR instead.
-.VE "TIP 312"
+.VE TIP312
 .RE
 .TP
 \fBTCL_LINK_CHARS\fR
-.VS "TIP 312"
+.VS TIP312
 The C array is of type \fBchar *\fR and is mapped into Tcl as a string.
 Any value written into the Tcl variable must have the same length as
 the underlying storage. Only supported with \fBTcl_LinkArray\fR.
-.VE "TIP 312"
+.VE TIP312
 .TP
 \fBTCL_LINK_UCHAR\fR
 .
@@ -146,18 +146,18 @@ representations (like the empty string, '+', '-' or the hex/octal/decimal/binary
 prefix) are accepted as if they are valid too.
 .RS
 .PP
-.VS "TIP 312"
+.VS TIP312
 If using an array of these, consider using \fBTCL_LINK_BINARY\fR instead.
-.VE "TIP 312"
+.VE TIP312
 .RE
 .TP
 \fBTCL_LINK_BINARY\fR
-.VS "TIP 312"
+.VS TIP312
 The C array is of type \fBunsigned char *\fR and is mapped into Tcl
 as a bytearray.
 Any value written into the Tcl variable must have the same length as
 the underlying storage. Only supported with \fBTcl_LinkArray\fR.
-.VE "TIP 312"
+.VE TIP312
 .TP
 \fBTCL_LINK_SHORT\fR
 .

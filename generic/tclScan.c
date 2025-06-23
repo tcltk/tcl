@@ -396,11 +396,11 @@ ValidateFormat(
 		format += TclUtfToUniChar(format, &ch);
 		break;
 	    }
-	    /* FALLTHRU */
+	    TCL_FALLTHROUGH();
 	case 'j':
 	case 'q':
 	    flags |= SCAN_LONGER;
-	    /* FALLTHRU */
+	    TCL_FALLTHROUGH();
 	case 'h':
 	    format += TclUtfToUniChar(format, &ch);
 	}
@@ -422,7 +422,7 @@ ValidateFormat(
 		Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BADWIDTH", (char *)NULL);
 		goto error;
 	    }
-	    /* FALLTHRU */
+	    TCL_FALLTHROUGH();
 	case 'n':
 	case 's':
 	    if (flags & (SCAN_LONGER|SCAN_BIG)) {
@@ -436,9 +436,7 @@ ValidateFormat(
 		Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BADSIZE", (char *)NULL);
 		goto error;
 	    }
-	    /*
-	     * Fall through!
-	     */
+	    TCL_FALLTHROUGH();
 	case 'd':
 	case 'e':
 	case 'E':
@@ -749,11 +747,11 @@ Tcl_ScanObjCmd(
 		format += TclUtfToUniChar(format, &ch);
 		break;
 	    }
-	    /* FALLTHRU */
+	    TCL_FALLTHROUGH();
 	case 'j':
 	case 'q':
 	    flags |= SCAN_LONGER;
-	    /* FALLTHRU */
+	    TCL_FALLTHROUGH();
 	case 'h':
 	    format += TclUtfToUniChar(format, &ch);
 	}

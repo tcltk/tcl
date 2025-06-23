@@ -3,15 +3,15 @@ on:
   push:
     branches:
     - "main"
-    - "core-8-branch"
+    - "core-9-0-branch"
     tags:
-    - "core-**"
+    - "core-*"
 permissions:
   contents: read
 jobs:
   linux:
     name: Linux
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     defaults:
       run:
         shell: bash
@@ -72,7 +72,7 @@ jobs:
         run: |
           mkdir 1dist
           touch generic/tclStubInit.c generic/tclOOStubInit.c || true
-          wget https://github.com/culler/macher/releases/download/v1.3/macher
+          wget https://github.com/culler/macher/releases/download/v1.7/macher
           sudo cp macher /usr/local/bin
           sudo chmod a+x /usr/local/bin/macher
           echo "VER_PATH=$(cd tools; pwd)/addVerToFile.tcl" >> $GITHUB_ENV
@@ -124,7 +124,7 @@ jobs:
       url: ${{ steps.upload.outputs.artifact-url }}
   win:
     name: Windows
-    runs-on: windows-2019
+    runs-on: windows-2025
     defaults:
       run:
         shell: msys2 {0}
@@ -205,7 +205,7 @@ jobs:
         working-directory: data
       - name: Transfer built files
         # https://github.com/marketplace/actions/rsync-deployments-action
-        uses: burnett01/rsync-deployments@7.0.1
+        uses: burnett01/rsync-deployments@7.0.2
         id: rsync
         if: false  # Disabled... for now
         with:
@@ -219,7 +219,7 @@ jobs:
           # MUST be a literal passwordless key
       - name: Publish files
         # https://github.com/marketplace/actions/ssh-remote-commands
-        uses: appleboy/ssh-action@v1.2.0
+        uses: appleboy/ssh-action@v1.2.2
         id: ssh
         if: steps.rsync.outcome == 'success'
         with:

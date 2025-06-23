@@ -272,7 +272,7 @@ Tcl_ProcObjCmd(
 
 		cfPtr->level = -1;
 		cfPtr->type = contextPtr->type;
-		cfPtr->line = (Tcl_Size *)Tcl_Alloc(sizeof(Tcl_Size));
+		cfPtr->line = (int *)Tcl_Alloc(sizeof(int));
 		cfPtr->line[0] = contextPtr->line[3];
 		cfPtr->nline = 1;
 		cfPtr->framePtr = NULL;
@@ -399,6 +399,8 @@ Tcl_ProcObjCmd(
  *----------------------------------------------------------------------
  */
 
+static const char TOOMANYARGS[] = "TOOMANYARGS";
+
 int
 TclCreateProc(
     Tcl_Interp *interp,		/* Interpreter containing proc. */
@@ -415,6 +417,7 @@ TclCreateProc(
     CompiledLocal *localPtr = NULL;
     Tcl_Obj **argArray;
     int precompiled = 0, result;
+    const char *errorCode = NULL;
 
     ProcGetInternalRep(bodyPtr, procPtr);
     if (procPtr != NULL) {
@@ -502,8 +505,7 @@ TclCreateProc(
 		    "procedure \"%s\": arg list contains %" TCL_SIZE_MODIFIER "d entries, "
 		    "precompiled header expects %" TCL_SIZE_MODIFIER "d", procName, numArgs,
 		    procPtr->numArgs));
-	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
-		    "BYTECODELIES", (char *)NULL);
+	    errorCode = "BYTECODELIES";
 	    goto procError;
 	}
 	localPtr = procPtr->firstLocalPtr;
@@ -532,15 +534,13 @@ TclCreateProc(
 	    Tcl_AppendObjToObj(errorObj, argArray[i]);
 	    Tcl_AppendToObj(errorObj, "\"", -1);
 	    Tcl_SetObjResult(interp, errorObj);
-	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
-		    "FORMALARGUMENTFORMAT", (char *)NULL);
+	    errorCode = "FORMALARGUMENTFORMAT";
 	    goto procError;
 	}
 	if ((fieldCount == 0) || (Tcl_GetCharLength(fieldValues[0]) == 0)) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "argument with no name", -1));
-	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
-		    "FORMALARGUMENTFORMAT", (char *)NULL);
+	    errorCode = "FORMALARGUMENTFORMAT";
 	    goto procError;
 	}
 
@@ -558,8 +558,7 @@ TclCreateProc(
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			    "formal parameter \"%s\" is an array element",
 			    TclGetString(fieldValues[0])));
-		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
-			    "FORMALARGUMENTFORMAT", (char *)NULL);
+		    errorCode = "FORMALARGUMENTFORMAT";
 		    goto procError;
 		}
 	    } else if (argnamei[0] == ':' && argnamei[1] == ':') {
@@ -568,8 +567,7 @@ TclCreateProc(
 		Tcl_AppendObjToObj(errorObj, fieldValues[0]);
 		Tcl_AppendToObj(errorObj, "\" is not a simple name", -1);
 		Tcl_SetObjResult(interp, errorObj);
-		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
-			"FORMALARGUMENTFORMAT", (char *)NULL);
+		errorCode = "FORMALARGUMENTFORMAT";
 		goto procError;
 	    }
 	    argnamei++;
@@ -596,8 +594,7 @@ TclCreateProc(
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"procedure \"%s\": formal parameter %" TCL_SIZE_MODIFIER "d is "
 			"inconsistent with precompiled body", procName, i));
-		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
-			"BYTECODELIES", (char *)NULL);
+		errorCode = "BYTECODELIES";
 		goto procError;
 	    }
 
@@ -618,8 +615,7 @@ TclCreateProc(
 		    Tcl_AppendToObj(errorObj, "\" has "
 			"default value inconsistent with precompiled body", -1);
 		    Tcl_SetObjResult(interp, errorObj);
-		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
-			    "BYTECODELIES", (char *)NULL);
+		    errorCode = "BYTECODELIES";
 		    goto procError;
 		}
 	    }
@@ -637,8 +633,14 @@ TclCreateProc(
 	     * local variables for the argument.
 	     */
 
-	    localPtr = (CompiledLocal *)Tcl_Alloc(
+	    localPtr = (CompiledLocal *)Tcl_AttemptAlloc(
 		    offsetof(CompiledLocal, name) + 1U + fieldValues[0]->length);
+	    if (!localPtr) {
+		/* Don't set the interp result here. Since a malloc just failed,
+		 * first clean up some memory before doing that */
+		errorCode = TOOMANYARGS;
+		goto procError;
+	    }
 	    if (procPtr->firstLocalPtr == NULL) {
 		procPtr->firstLocalPtr = procPtr->lastLocalPtr = localPtr;
 	    } else {
@@ -686,6 +688,15 @@ TclCreateProc(
 	    Tcl_Free(localPtr);
 	}
 	Tcl_Free(procPtr);
+    }
+    if (errorCode) {
+	if (errorCode == TOOMANYARGS) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "procedure \"%s\": arg list contains too many (%"
+		    TCL_SIZE_MODIFIER "d) entries", procName, numArgs));
+	}
+	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
+		errorCode, (char *)NULL);
     }
     return TCL_ERROR;
 }
@@ -766,7 +777,8 @@ TclObjGetFrame(
 				 * global frame indicated). */
 {
     Interp *iPtr = (Interp *) interp;
-    int curLevel, level, result;
+    int curLevel;
+    int result, level;
     const Tcl_ObjInternalRep *irPtr;
     const char *name = NULL;
     Tcl_WideInt w;
@@ -1634,7 +1646,7 @@ TclNRInterpProc(
     }
     return TclNRInterpProcCore(interp, objv[0], 1, &MakeProcError);
 }
-
+
 static int
 NRInterpProc(
     void *clientData,		/* Record describing procedure to be
@@ -1716,7 +1728,7 @@ TclNRInterpProcCore(
     }
 
 #if defined(TCL_COMPILE_DEBUG)
-    if (tclTraceExec >= 1) {
+    if (tclTraceExec >= TCL_TRACE_BYTECODE_EXEC_PROCS) {
 	CallFrame *framePtr = iPtr->varFramePtr;
 	Tcl_Size i;
 
@@ -1750,7 +1762,8 @@ TclNRInterpProcCore(
     }
     if (TCL_DTRACE_PROC_INFO_ENABLED() && iPtr->cmdFramePtr) {
 	Tcl_Obj *info = TclInfoFrame(interp, iPtr->cmdFramePtr);
-	const char *a[6]; Tcl_Size i[2];
+	const char *a[6];
+	Tcl_Size i[2];
 
 	TclDTraceInfo(info, a, i);
 	TCL_DTRACE_PROC_INFO(a[0], a[1], a[2], a[3], i[0], i[1], a[4], a[5]);
@@ -1863,8 +1876,7 @@ InterpProcNR2(
 		((result == TCL_BREAK) ? "break" : "continue")));
 	Tcl_SetErrorCode(interp, "TCL", "RESULT", "UNEXPECTED", (char *)NULL);
 	result = TCL_ERROR;
-
-	/* FALLTHRU */
+	TCL_FALLTHROUGH();
 
     case TCL_ERROR:
 	/*
@@ -1959,7 +1971,7 @@ TclProcCompileProc(
 	Tcl_HashEntry *hePtr;
 
 #ifdef TCL_COMPILE_DEBUG
-	if (tclTraceCompile >= 1) {
+	if (tclTraceCompile >= TCL_TRACE_BYTECODE_COMPILE_SUMMARY) {
 	    /*
 	     * Display a line summarizing the top level command we are about
 	     * to compile.
@@ -2443,7 +2455,7 @@ SetLambdaFromAny(
     Interp *iPtr = (Interp *) interp;
     const char *name;
     Tcl_Obj *argsPtr, *bodyPtr, *nsObjPtr, **objv;
-    int isNew, result;
+    int result;
     Tcl_Size objc;
     CmdFrame *cfPtr = NULL;
     Proc *procPtr;
@@ -2548,7 +2560,7 @@ SetLambdaFromAny(
 
 	    if (contextPtr->line
 		    && (contextPtr->nline >= 2) && (contextPtr->line[1] >= 0)) {
-		Tcl_Size buf[2];
+		int buf[2];
 
 		/*
 		 * Move from approximation (line of list cmd word) to actual
@@ -2560,7 +2572,7 @@ SetLambdaFromAny(
 
 		cfPtr->level = -1;
 		cfPtr->type = contextPtr->type;
-		cfPtr->line = (Tcl_Size *)Tcl_Alloc(sizeof(Tcl_Size));
+		cfPtr->line = (int *)Tcl_Alloc(sizeof(int));
 		cfPtr->line[0] = buf[1];
 		cfPtr->nline = 1;
 		cfPtr->framePtr = NULL;
@@ -2583,7 +2595,7 @@ SetLambdaFromAny(
 	TclStackFree(interp, contextPtr);
     }
     Tcl_SetHashValue(Tcl_CreateHashEntry(iPtr->linePBodyPtr, procPtr,
-	    &isNew), cfPtr);
+	    NULL), cfPtr);
 
     /*
      * Set the namespace for this lambda: given by objv[2] understood as a

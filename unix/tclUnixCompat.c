@@ -107,11 +107,11 @@ static int		CopyGrp(struct group *tgtPtr, char *buf, int buflen);
 static int		CopyPwd(struct passwd *tgtPtr, char *buf, int buflen);
 #endif
 
-static int		CopyArray(char **src, int elsize, char *buf,
-			    int buflen);
+static size_t	CopyArray(char **src, int elsize, char *buf,
+			    size_t buflen);
 static int		CopyHostent(struct hostent *tgtPtr, char *buf,
-			    int buflen);
-static int		CopyString(const char *src, char *buf, int buflen);
+			    size_t buflen);
+static size_t	CopyString(const char *src, char *buf, size_t buflen);
 
 #endif
 
@@ -555,7 +555,7 @@ TclpGetHostByName(
     int local_errno;
 
     return gethostbyname_r(name, &tsdPtr->hent, tsdPtr->hbuf,
-			   sizeof(tsdPtr->hbuf), &local_errno);
+	    sizeof(tsdPtr->hbuf), &local_errno);
 
 #elif defined(HAVE_GETHOSTBYNAME_R_6)
     struct hostent *hePtr = NULL;
@@ -754,10 +754,10 @@ static int
 CopyHostent(
     struct hostent *tgtPtr,
     char *buf,
-    int buflen)
+    size_t buflen)
 {
     char *p = buf;
-    int copied, len = 0;
+    Tcl_Size copied, len = 0;
 
     copied = CopyString(tgtPtr->h_name, p, buflen - len);
     if (copied == -1) {
@@ -875,16 +875,16 @@ CopyPwd(
  */
 
 #ifdef NEED_COPYARRAY
-static int
+static size_t
 CopyArray(
     char **src,			/* Array of elements to copy. */
     int elsize,			/* Size of each element, or -1 to indicate
 				 * that they are C strings of dynamic
 				 * length. */
     char *buf,			/* Buffer to copy into. */
-    int buflen)			/* Size of buffer. */
+    size_t buflen)			/* Size of buffer. */
 {
-    int i, j, len = 0;
+    size_t i, j, len = 0;
     char *p, **newBuffer;
 
     if (src == NULL) {
@@ -905,7 +905,7 @@ CopyArray(
     p = buf + len;
 
     for (j = 0; j < i; j++) {
-	int sz = (elsize<0 ? (int) strlen(src[j]) + 1 : elsize);
+	size_t sz = (elsize<0 ? strlen(src[j]) + 1 : (size_t)elsize);
 
 	len += sz;
 	if (len > buflen) {
@@ -939,13 +939,13 @@ CopyArray(
  */
 
 #ifdef NEED_COPYSTRING
-static int
+static size_t
 CopyString(
     const char *src,		/* String to copy. */
     char *buf,			/* Buffer to copy into. */
-    int buflen)			/* Size of buffer. */
+    size_t buflen)			/* Size of buffer. */
 {
-    int len = 0;
+    size_t len = 0;
 
     if (src != NULL) {
 	len = strlen(src) + 1;
@@ -986,8 +986,8 @@ CopyString(
 
 int
 TclWinCPUID(
-    int index,		/* Which CPUID value to retrieve. */
-    int *regsPtr)	/* Registers after the CPUID. */
+    int index,			/* Which CPUID value to retrieve. */
+    int *regsPtr)		/* Registers after the CPUID. */
 {
     int status = TCL_ERROR;
 

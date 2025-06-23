@@ -304,9 +304,9 @@ fails because the user is unknown will be omitted from search paths.
 .SH "SEE ALSO"
 package(n), Tcl Improvement Proposal #189
 .QW "\fITcl Modules\fR"
-(online at https://tip.tcl-lang.org/189.html), Tcl Improvement Proposal #190
+(online at https://core.tcl-lang.org/tips/doc/trunk/tip/189.md), Tcl Improvement Proposal #190
 .QW "\fIImplementation Choices for Tcl Modules\fR"
-(online at https://tip.tcl-lang.org/190.html)
+(online at https://core.tcl-lang.org/tips/doc/trunk/tip/190.md)
 .SH "KEYWORDS"
 modules, package
 .\" Local Variables:

@@ -21,6 +21,7 @@ if {"::tcltest" ni [namespace children]} {
 catch [list package require -exact tcl::test [info patchlevel]]
 
 testConstraint testobj [llength [info commands testobj]]
+testConstraint testisempty [llength [info commands testisempty]]
 testConstraint testbytestring [llength [info commands testbytestring]]
 testConstraint testdstring [llength [info commands testdstring]]
 
@@ -527,6 +528,26 @@ test stringObj-16.12 {Tcl_GetRange: first = last = SIZE_MAX-1} testobj {
     set i [expr {$SIZE_MAX - 1}]
     teststringobj range 1 $i $i
 } {}
+
+test stringObj-17.1 {Tcl_StringIsEmpty, handle list} testisempty {
+    set x "abc"
+    lappend x "def"
+    testisempty $x
+} {0 pure list}
+test stringObj-17.2 {Tcl_StringIsEmpty, handle empty list} testisempty {
+    set x "abc"
+    set x  [lreplace x 0 end]
+    list $x {*}[testisempty $x]
+} {{} 1 pure list}
+test stringObj-17.3 {Tcl_StringIsEmpty, handle dict} testisempty {
+    set x "1 abc"
+    set x [dict set $x 2 "def"]
+    testisempty $x
+} {0 pure dict}
+test stringObj-17.4 {Tcl_StringIsEmpty, handle integer} testisempty {
+    testisempty [expr {3+4}]
+} {0 pure int}
+
 
 if {[testConstraint testobj]} {
     testobj freeallvars

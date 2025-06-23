@@ -115,7 +115,7 @@ test ooUtil-1.6 {TIP 478: classmethod and instances} -setup {
 } -returnCodes error -cleanup {
     parent destroy
 } -match glob -result {unknown method "find": must be *}
-test ooUtil-1.7 {} -setup {
+test ooUtil-1.7 {classmethod and subclasses} -setup {
     oo::class create parent
 } -body {
     oo::class create Foo {

@@ -36,6 +36,13 @@ typedef struct BgError {
 } BgError;
 
 /*
+ * The assoc data key used in this file. The data associated with it is a
+ * reference to an ErrAssocData structure, and will be deallocated with
+ * BgErrorDeleteProc at the appropriate time.
+ */
+#define ASSOC_KEY "tclBgError"
+
+/*
  * One of the structures below is associated with the "tclBgError" assoc data
  * for each interpreter. It keeps track of the head and tail of the list of
  * pending background errors for the interpreter.
@@ -72,7 +79,7 @@ typedef struct {
 
 typedef struct ExitHandler {
     Tcl_ExitProc *proc;		/* Function to call when process exits. */
-    void *clientData;	/* One word of information to pass to proc. */
+    void *clientData;		/* One word of information to pass to proc. */
     struct ExitHandler *nextPtr;/* Next in list of all exit handlers for this
 				 * application, or NULL for end of list. */
 } ExitHandler;
@@ -122,7 +129,7 @@ static Tcl_ThreadDataKey dataKey;
 #if TCL_THREADS
 typedef struct {
     Tcl_ThreadCreateProc *proc;	/* Main() function of the thread */
-    void *clientData;	/* The one argument to Main() */
+    void *clientData;		/* The one argument to Main() */
 } ThreadClientData;
 static Tcl_ThreadCreateType NewThreadProc(void *clientData);
 #endif /* TCL_THREADS */
@@ -182,7 +189,7 @@ Tcl_BackgroundException(
     errPtr->nextPtr = NULL;
 
     (void) TclGetBgErrorHandler(interp);
-    assocPtr = (ErrAssocData *)Tcl_GetAssocData(interp, "tclBgError", NULL);
+    assocPtr = (ErrAssocData *)Tcl_GetAssocData(interp, ASSOC_KEY, NULL);
     if (assocPtr->firstBgPtr == NULL) {
 	assocPtr->firstBgPtr = errPtr;
 	Tcl_DoWhenIdle(HandleBgErrors, assocPtr);
@@ -212,7 +219,7 @@ Tcl_BackgroundException(
 
 static void
 HandleBgErrors(
-    void *clientData)	/* Pointer to ErrAssocData structure. */
+    void *clientData)		/* Pointer to ErrAssocData structure. */
 {
     ErrAssocData *assocPtr = (ErrAssocData *)clientData;
     Tcl_Interp *interp = assocPtr->interp;
@@ -522,7 +529,7 @@ TclSetBgErrorHandler(
     Tcl_Interp *interp,
     Tcl_Obj *cmdPrefix)
 {
-    ErrAssocData *assocPtr = (ErrAssocData *)Tcl_GetAssocData(interp, "tclBgError", NULL);
+    ErrAssocData *assocPtr = (ErrAssocData *)Tcl_GetAssocData(interp, ASSOC_KEY, NULL);
 
     if (cmdPrefix == NULL) {
 	Tcl_Panic("TclSetBgErrorHandler: NULL cmdPrefix argument");
@@ -537,7 +544,7 @@ TclSetBgErrorHandler(
 	assocPtr->cmdPrefix = NULL;
 	assocPtr->firstBgPtr = NULL;
 	assocPtr->lastBgPtr = NULL;
-	Tcl_SetAssocData(interp, "tclBgError", BgErrorDeleteProc, assocPtr);
+	Tcl_SetAssocData(interp, ASSOC_KEY, BgErrorDeleteProc, assocPtr);
     }
     if (assocPtr->cmdPrefix) {
 	Tcl_DecrRefCount(assocPtr->cmdPrefix);
@@ -567,14 +574,14 @@ Tcl_Obj *
 TclGetBgErrorHandler(
     Tcl_Interp *interp)
 {
-    ErrAssocData *assocPtr = (ErrAssocData *)Tcl_GetAssocData(interp, "tclBgError", NULL);
+    ErrAssocData *assocPtr = (ErrAssocData *)Tcl_GetAssocData(interp, ASSOC_KEY, NULL);
 
     if (assocPtr == NULL) {
 	Tcl_Obj *bgerrorObj;
 
 	TclNewLiteralStringObj(bgerrorObj, "::tcl::Bgerror");
 	TclSetBgErrorHandler(interp, bgerrorObj);
-	assocPtr = (ErrAssocData *)Tcl_GetAssocData(interp, "tclBgError", NULL);
+	assocPtr = (ErrAssocData *)Tcl_GetAssocData(interp, ASSOC_KEY, NULL);
     }
     return assocPtr->cmdPrefix;
 }
@@ -600,7 +607,7 @@ TclGetBgErrorHandler(
 
 static void
 BgErrorDeleteProc(
-    void *clientData,	/* Pointer to ErrAssocData structure. */
+    void *clientData,		/* Pointer to ErrAssocData structure. */
     TCL_UNUSED(Tcl_Interp *))
 {
     ErrAssocData *assocPtr = (ErrAssocData *)clientData;
@@ -639,7 +646,7 @@ BgErrorDeleteProc(
 void
 Tcl_CreateExitHandler(
     Tcl_ExitProc *proc,		/* Function to invoke. */
-    void *clientData)	/* Arbitrary value to pass to proc. */
+    void *clientData)		/* Arbitrary value to pass to proc. */
 {
     ExitHandler *exitPtr = (ExitHandler*)Tcl_Alloc(sizeof(ExitHandler));
 
@@ -672,7 +679,7 @@ Tcl_CreateExitHandler(
 void
 TclCreateLateExitHandler(
     Tcl_ExitProc *proc,		/* Function to invoke. */
-    void *clientData)	/* Arbitrary value to pass to proc. */
+    void *clientData)		/* Arbitrary value to pass to proc. */
 {
     ExitHandler *exitPtr = (ExitHandler*)Tcl_Alloc(sizeof(ExitHandler));
 
@@ -705,7 +712,7 @@ TclCreateLateExitHandler(
 void
 Tcl_DeleteExitHandler(
     Tcl_ExitProc *proc,		/* Function that was previously registered. */
-    void *clientData)	/* Arbitrary value to pass to proc. */
+    void *clientData)		/* Arbitrary value to pass to proc. */
 {
     ExitHandler *exitPtr, *prevPtr;
 
@@ -748,7 +755,7 @@ Tcl_DeleteExitHandler(
 void
 TclDeleteLateExitHandler(
     Tcl_ExitProc *proc,		/* Function that was previously registered. */
-    void *clientData)	/* Arbitrary value to pass to proc. */
+    void *clientData)		/* Arbitrary value to pass to proc. */
 {
     ExitHandler *exitPtr, *prevPtr;
 
@@ -791,7 +798,7 @@ TclDeleteLateExitHandler(
 void
 Tcl_CreateThreadExitHandler(
     Tcl_ExitProc *proc,		/* Function to invoke. */
-    void *clientData)	/* Arbitrary value to pass to proc. */
+    void *clientData)		/* Arbitrary value to pass to proc. */
 {
     ExitHandler *exitPtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -824,7 +831,7 @@ Tcl_CreateThreadExitHandler(
 void
 Tcl_DeleteThreadExitHandler(
     Tcl_ExitProc *proc,		/* Function that was previously registered. */
-    void *clientData)	/* Arbitrary value to pass to proc. */
+    void *clientData)		/* Arbitrary value to pass to proc. */
 {
     ExitHandler *exitPtr, *prevPtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -1650,6 +1657,8 @@ Tcl_VwaitObjCmd(
 	    vwaitItems[numItems].sourceObj = objv[i];
 	    numItems++;
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
 
@@ -1725,7 +1734,7 @@ Tcl_VwaitObjCmd(
 
     foundEvent = 1;
     while (!timedOut && foundEvent &&
-	   ((!any && (done < numItems)) || (any && !done))) {
+	    ((!any && (done < numItems)) || (any && !done))) {
 	foundEvent = Tcl_DoOneEvent(mask);
 	if (Tcl_Canceled(interp, TCL_LEAVE_ERR_MSG) == TCL_ERROR) {
 	    break;
@@ -1967,7 +1976,7 @@ Tcl_UpdateObjCmd(
 	    flags = TCL_IDLE_EVENTS|TCL_DONT_WAIT;
 	    break;
 	default:
-	    Tcl_Panic("Tcl_UpdateObjCmd: bad option index to UpdateOptions");
+	    TCL_UNREACHABLE();
 	}
     } else {
 	Tcl_WrongNumArgs(interp, 1, objv, "?idletasks?");

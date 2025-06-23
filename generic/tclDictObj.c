@@ -82,8 +82,8 @@ static const EnsembleImplMap implementationMap[] = {
     {"lappend",	DictLappendCmd,	TclCompileDictLappendCmd, NULL, NULL, 0 },
     {"map",	NULL,		TclCompileDictMapCmd, DictMapNRCmd, NULL, 0 },
     {"merge",	DictMergeCmd,	TclCompileDictMergeCmd, NULL, NULL, 0 },
-    {"remove",	DictRemoveCmd,	TclCompileBasicMin1ArgCmd, NULL, NULL, 0 },
-    {"replace",	DictReplaceCmd, NULL, NULL, NULL, 0 },
+    {"remove",	DictRemoveCmd,	TclCompileDictRemoveCmd, NULL, NULL, 0 },
+    {"replace",	DictReplaceCmd, TclCompileDictReplaceCmd, NULL, NULL, 0 },
     {"set",	DictSetCmd,	TclCompileDictSetCmd, NULL, NULL, 0 },
     {"size",	DictSizeCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0 },
     {"unset",	DictUnsetCmd,	TclCompileDictUnsetCmd, NULL, NULL, 0 },
@@ -177,7 +177,7 @@ const Tcl_ObjType tclDictType = {
 
 static const Tcl_HashKeyType chainHashType = {
     TCL_HASH_KEY_TYPE_VERSION,
-    TCL_HASH_KEY_DIRECT_COMPARE,        /* allows compare keys by pointers */
+    TCL_HASH_KEY_DIRECT_COMPARE,	/* allows compare keys by pointers */
     TclHashObjKey,
     TclCompareObjKeys,
     AllocChainEntry,
@@ -546,7 +546,9 @@ UpdateStringOfDict(
     dst = Tcl_InitStringRep(dictPtr, NULL, bytesNeeded - 1);
     TclOOM(dst, bytesNeeded);
     for (i=0,cPtr=dict->entryChainHead; i<numElems; i+=2,cPtr=cPtr->nextPtr) {
-	flagPtr[i] |= ( i ? TCL_DONT_QUOTE_HASH : 0 );
+	if (i) {
+	    flagPtr[i] |= TCL_DONT_QUOTE_HASH;
+	}
 	keyPtr = (Tcl_Obj *)Tcl_GetHashKey(&dict->table, &cPtr->entry);
 	elem = TclGetStringFromObj(keyPtr, &length);
 	dst += TclConvertElement(elem, length, dst, flagPtr[i]);
@@ -1265,7 +1267,7 @@ Tcl_DictObjNext(
 
 void
 Tcl_DictObjDone(
-    Tcl_DictSearch *searchPtr)		/* Pointer to a hash search context. */
+    Tcl_DictSearch *searchPtr)	/* Pointer to a hash search context. */
 {
     Dict *dict;
 
@@ -1470,7 +1472,7 @@ Tcl_DbNewDictObj(
 
     TclDbNewObj(dictPtr, file, line);
     TclInvalidateStringRep(dictPtr);
-    dict = (Dict *)Tcl_Alloc(sizeof(Dict));
+    dict = (Dict *)Tcl_DbCkalloc(sizeof(Dict), file, line);
     InitChainTable(dict);
     dict->epoch = 1;
     dict->chain = NULL;
@@ -1967,8 +1969,8 @@ DictMergeCmd(
     Tcl_Obj *const *objv)
 {
     Tcl_Obj *targetObj, *keyObj = NULL, *valueObj = NULL;
-    int allocatedDict = 0;
-    int i, done;
+    int done, allocatedDict = 0;
+    int i;
     Tcl_DictSearch search;
 
     if (objc == 1) {
@@ -2493,7 +2495,8 @@ DictLappendCmd(
     Tcl_Obj *const *objv)
 {
     Tcl_Obj *dictPtr, *valuePtr, *resultPtr;
-    int i, allocatedDict = 0, allocatedValue = 0;
+    int allocatedDict = 0, allocatedValue = 0;
+    int i;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictVarName key ?value ...?");
@@ -3421,7 +3424,7 @@ DictFilterCmd(
 
 		Tcl_ResetResult(interp);
 		Tcl_DictObjDone(&search);
-	    /* FALLTHRU */
+		TCL_FALLTHROUGH();
 	    case TCL_CONTINUE:
 		result = TCL_OK;
 		break;
@@ -3429,6 +3432,7 @@ DictFilterCmd(
 		Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 			"\n    (\"dict filter\" script line %d)",
 			Tcl_GetErrorLine(interp)));
+		TCL_FALLTHROUGH();
 	    default:
 		goto abnormalResult;
 	    }
@@ -3454,20 +3458,18 @@ DictFilterCmd(
 	    TclDecrRefCount(resultObj);
 	}
 	return result;
-
-    abnormalResult:
-	Tcl_DictObjDone(&search);
-	TclDecrRefCount(keyObj);
-	TclDecrRefCount(valueObj);
-	TclDecrRefCount(keyVarObj);
-	TclDecrRefCount(valueVarObj);
-	TclDecrRefCount(scriptObj);
-	TclDecrRefCount(resultObj);
-	return result;
     }
-    Tcl_Panic("unexpected fallthrough");
-    /* Control never reaches this point. */
-    return TCL_ERROR;
+    TCL_UNREACHABLE();
+
+  abnormalResult:
+    Tcl_DictObjDone(&search);
+    TclDecrRefCount(keyObj);
+    TclDecrRefCount(valueObj);
+    TclDecrRefCount(keyVarObj);
+    TclDecrRefCount(valueVarObj);
+    TclDecrRefCount(scriptObj);
+    TclDecrRefCount(resultObj);
+    return result;
 }
 
 /*
@@ -3855,10 +3857,10 @@ TclDictWithFinish(
 				 * parameter is >= 0 */
     Tcl_Obj *part2Ptr,		/* If non-NULL, gives the name of an element
 				 * in the array part1. */
-    int index,			/* Index into the local variable table of the
+    Tcl_Size index,			/* Index into the local variable table of the
 				 * variable, or -1. Only used when part1Ptr is
 				 * NULL. */
-    int pathc,			/* The number of elements in the path into the
+    Tcl_Size pathc,			/* The number of elements in the path into the
 				 * dictionary. */
     Tcl_Obj *const pathv[],	/* The elements of the path to the subdict. */
     Tcl_Obj *keysPtr)		/* List of keys to be synchronized. This is

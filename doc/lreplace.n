@@ -31,12 +31,10 @@ list, and \fBend\fR refers to the last element of the list.
 If either \fIfirst\fR or \fIlast\fR is less than zero, it is considered
 to refer to before the first element of the list. This allows \fBlreplace\fR
 to prepend elements to \fIlist\fR.
-.VS TIP505
 If either \fIfirst\fR or \fIlast\fR indicates a position greater than the
 index of the last element of the list, it is treated as if it is an
 index one greater than the last element. This allows \fBlreplace\fR to
 append elements to \fIlist\fR.
-.VE TIP505
 .PP
 If \fIlast\fR is less than \fIfirst\fR, then any specified elements
 will be inserted into the list before the element specified by \fIfirst\fR
@@ -82,7 +80,6 @@ proc lremove {listVariable value} {
 }
 .CE
 .PP
-.VS TIP505
 Appending elements to the list; note that \fBend+2\fR will initially
 be treated as if it is \fB6\fR here, but both that and \fB12345\fR are greater
 than the index of the final item so they behave identically:
@@ -93,7 +90,6 @@ a b c d e
 % set var [\fBlreplace\fR $var 12345 end+2 f g h i]
 a b c d e f g h i
 .CE
-.VE TIP505
 .SH "SEE ALSO"
 list(n), lappend(n), lassign(n), ledit(n), lindex(n), linsert(n), llength(n),
 lmap(n), lpop(n), lrange(n), lremove(n), lrepeat(n),

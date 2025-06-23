@@ -2828,7 +2828,7 @@ proc tcltest::GetMatchingDirectories {rootdir} {
     foreach pattern [matchDirectories] {
 	foreach path [glob -directory $rootdir -types d -nocomplain -- \
 		$pattern] {
-	    if {$path ni $skipDirs} {
+	    if {$path ni $skipDirs && [file readable $path]} {
 		set matchDirs [concat $matchDirs [GetMatchingDirectories $path]]
 		if {[file exists [file join $path all.tcl]]} {
 		    lappend matchDirs $path

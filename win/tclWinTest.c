@@ -110,8 +110,8 @@ TesteventloopCmd(
 				 * innermost invocation of the "wait"
 				 * subcommand. */
 
-    if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "option ...");
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "done|wait");
 	return TCL_ERROR;
     }
     if (strcmp(Tcl_GetString(objv[1]), "done") == 0) {
@@ -336,9 +336,9 @@ TestwinsleepCmd(
 static int
 TestExceptionCmd(
     TCL_UNUSED(void *),
-    Tcl_Interp* interp,			/* Tcl interpreter */
-    int objc,				/* Argument count */
-    Tcl_Obj *const objv[])		/* Argument vector */
+    Tcl_Interp* interp,		/* Tcl interpreter */
+    int objc,			/* Argument count */
+    Tcl_Obj *const objv[])	/* Argument vector */
 {
     static const char *const cmds[] = {
 	"access_violation", "datatype_misalignment", "array_bounds",
@@ -439,10 +439,14 @@ TestplatformChmod(
     DWORD dw;
     int isDir;
     TOKEN_USER *pTokenUser = NULL;
+    Tcl_DString ds;
 
     res = -1; /* Assume failure */
 
-    attr = GetFileAttributesA(nativePath);
+    Tcl_DStringInit(&ds);
+    Tcl_UtfToChar16DString(nativePath, -1, &ds);
+
+    attr = GetFileAttributesW((WCHAR *)Tcl_DStringValue(&ds));
     if (attr == 0xFFFFFFFF) {
 	goto done; /* Not found */
     }
@@ -473,7 +477,7 @@ TestplatformChmod(
      * Always include DACL modify rights so we don't get locked out
      */
     aceEntry[nSids].mask = READ_CONTROL | WRITE_DAC | WRITE_OWNER | SYNCHRONIZE |
-			   FILE_READ_ATTRIBUTES | FILE_WRITE_ATTRIBUTES;
+	    FILE_READ_ATTRIBUTES | FILE_WRITE_ATTRIBUTES;
     if (pmode & 0700) {
 	/* Owner permissions. Assumes current process is owner */
 	if (pmode & 0400) {
@@ -506,7 +510,8 @@ TestplatformChmod(
 	}
 	aceEntry[nSids].sidLen = GetLengthSid(pTokenGroup->PrimaryGroup);
 	aceEntry[nSids].pSid = (PSID)Tcl_Alloc(aceEntry[nSids].sidLen);
-	if (!CopySid(aceEntry[nSids].sidLen, aceEntry[nSids].pSid, pTokenGroup->PrimaryGroup)) {
+	if (!CopySid(aceEntry[nSids].sidLen, aceEntry[nSids].pSid,
+		pTokenGroup->PrimaryGroup)) {
 	    Tcl_Free(pTokenGroup);
 	    Tcl_Free(aceEntry[nSids].pSid); /* Since we have not ++'ed nSids */
 	    goto done;
@@ -564,7 +569,7 @@ TestplatformChmod(
     /* Add in size required for each ACE entry in the ACL */
     for (i = 0; i < nSids; ++i) {
 	newAclSize +=
-	    offsetof(ACCESS_ALLOWED_ACE, SidStart) + aceEntry[i].sidLen;
+	    (DWORD)offsetof(ACCESS_ALLOWED_ACE, SidStart) + aceEntry[i].sidLen;
     }
     newAcl = (PACL)Tcl_Alloc(newAclSize);
     if (!InitializeAcl(newAcl, newAclSize, ACL_REVISION)) {
@@ -582,7 +587,7 @@ TestplatformChmod(
      * to remove inherited ACL (we need to overwrite the default ACL's in this case)
      */
 
-    if (SetNamedSecurityInfoA((LPSTR)nativePath, SE_FILE_OBJECT,
+    if (SetNamedSecurityInfoW((LPWSTR)Tcl_DStringValue(&ds), SE_FILE_OBJECT,
 	    DACL_SECURITY_INFORMATION | PROTECTED_DACL_SECURITY_INFORMATION,
 	    NULL, NULL, newAcl, NULL) == ERROR_SUCCESS) {
 	res = 0;
@@ -602,12 +607,12 @@ TestplatformChmod(
 	Tcl_Free(aceEntry[i].pSid);
     }
 
-    if (res != 0) {
-	return res;
+    if (res == 0) {
+	/* Run normal chmod command */
+	res = _wchmod((WCHAR*)Tcl_DStringValue(&ds), pmode);
     }
-
-    /* Run normal chmod command */
-    return chmod(nativePath, pmode);
+    Tcl_DStringFree(&ds);
+    return res;
 }
 
 /*

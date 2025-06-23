@@ -168,7 +168,7 @@ ArithSeriesEndDbl(
     if (!dblRepPtr->base.len) {
 	return dblRepPtr->start;
     }
-    d = dblRepPtr->start + ((dblRepPtr->base.len-1) * dblRepPtr->step);
+    d = dblRepPtr->start + ((double)(dblRepPtr->base.len-1) * dblRepPtr->step);
     return ArithRound(d, dblRepPtr->precision);
 }
 
@@ -191,9 +191,9 @@ ArithSeriesIndexDbl(
     assert(arithSeriesRepPtr->isDouble);
     double d = dblRepPtr->start;
     if (index) {
-	d += (index * dblRepPtr->step);
+	d += ((double)index * dblRepPtr->step);
     }
-    
+
     return ArithRound(d, dblRepPtr->precision);
 }
 
@@ -227,15 +227,14 @@ ObjPrecision(
     int type;
 
     if (TclHasInternalRep(numObj, &tclDoubleType) || (
-	  Tcl_GetNumberFromObj(NULL, numObj, &ptr, &type) == TCL_OK &&
-	  type == TCL_NUMBER_DOUBLE
-	)
+	    Tcl_GetNumberFromObj(NULL, numObj, &ptr, &type) == TCL_OK
+	    && type == TCL_NUMBER_DOUBLE)
     ) { /* TCL_NUMBER_DOUBLE */
 	const char *str = TclGetString(numObj);
 
 	if (strchr(str, 'e') == NULL && strchr(str, 'E') == NULL) {
 	    str = strchr(str, '.');
-	    return (str ? strlen(str + 1) : 0);
+	    return (str ? (unsigned)strlen(str + 1) : 0);
 	}
 	/* don't calculate precision for e-notation */
     }
@@ -334,14 +333,12 @@ ArithSeriesLenDbl(
     }
     /* distance */
     end -= start;
-    /* 
+    /*
      * To improve numerical stability use wide arithmetic instead of IEEE-754
      * when distance and step do not exceed wide-integers.
      */
-    if (
-	((double)WIDE_MIN <= end && end <= (double)WIDE_MAX) &&
-	((double)WIDE_MIN <= step && step <= (double)WIDE_MAX)
-    ) {
+    if (((double)WIDE_MIN <= end && end <= (double)WIDE_MAX) &&
+	    ((double)WIDE_MIN <= step && step <= (double)WIDE_MAX)) {
 	Tcl_WideInt iend = end < 0 ? end - 0.5 : end + 0.5;
 	Tcl_WideInt istep = step < 0 ? step - 0.5 : step + 0.5;
 	if (istep) { /* avoid div by zero, steps like 0.1, precision 0 */
@@ -459,21 +456,61 @@ static Tcl_Obj *
 NewArithSeriesInt(
     Tcl_WideInt start,
     Tcl_WideInt step,
-    Tcl_WideInt len)
+    Tcl_WideInt length)
 {
-    Tcl_WideInt length;
-    Tcl_Obj *arithSeriesObj;
+    Tcl_Obj *arithSeriesObj = NULL;
     ArithSeriesInt *arithSeriesRepPtr;
-
-    length = len>=0 ? len : -1;
-    if (length < 0) {
-	length = -1;
-    }
 
     TclNewObj(arithSeriesObj);
 
     if (length <= 0) {
+	/* TODO - should negative lengths be an error? */
 	return arithSeriesObj;
+    } else if (length > 1) {
+	/* Check for numeric overflow. Not needed for single element lists */
+	Tcl_WideUInt absoluteStep;
+	Tcl_WideInt numIntervals = length - 1;
+	/*
+	 * The checks below can probably be condensed but it is very easy to
+	 * either inadvertently use undefined C behavior or unintended type
+	 * promotion. Separating the cases helps me think more clearly.
+	 */
+	if (step >= 0) {
+	    absoluteStep = step;
+	} else if (step == WIDE_MIN) {
+	    /* -step and abs(step) are both undefined behavior */
+	    absoluteStep = 1 + (Tcl_WideUInt)WIDE_MAX;
+	} else {
+	    absoluteStep = -step;
+	}
+	/* First, step*number of intervals should not overflow */
+	if ((UWIDE_MAX / absoluteStep) < (Tcl_WideUInt) numIntervals) {
+	    goto invalid_range;
+	}
+	if (step > 0) {
+	    /*
+	     * Because of check above and UWIDE_MAX=2*WIDE_MAX+1,
+	     * second term will not underflow a Tcl_WideInt
+	     */
+	    if (start > (WIDE_MAX - (step * numIntervals))) {
+		goto invalid_range;
+	    }
+	} else if (step == WIDE_MIN) {
+	    if (numIntervals > 0 || start < 0) {
+		goto invalid_range;
+	    }
+	} else if (step < 0) {
+	    /*
+	     * Because of check above and UWIDE_MAX=2*WIDE_MAX+1 and
+	     * step != WIDE_MIN second term will not underflow a Tcl_WideInt.
+	     * DON'T use absoluteStep here because of unsigned type promotion
+	     */
+	    if (start < (WIDE_MIN + ((-step) * numIntervals))) {
+		goto invalid_range;
+	    }
+	} else /* step == 0 */ {
+	    /* TODO - step == 0 && length > 1 should be error? */
+	}
     }
 
     arithSeriesRepPtr = (ArithSeriesInt *) Tcl_Alloc(sizeof(ArithSeriesInt));
@@ -486,11 +523,13 @@ NewArithSeriesInt(
     arithSeriesObj->internalRep.twoPtrValue.ptr1 = arithSeriesRepPtr;
     arithSeriesObj->internalRep.twoPtrValue.ptr2 = NULL;
     arithSeriesObj->typePtr = &arithSeriesType;
-    if (length > 0) {
-	Tcl_InvalidateStringRep(arithSeriesObj);
-    }
+    Tcl_InvalidateStringRep(arithSeriesObj);
 
     return arithSeriesObj;
+
+invalid_range:
+    Tcl_BounceRefCount(arithSeriesObj);
+    return NULL;
 }
 
 /*
@@ -629,13 +668,13 @@ assignNumber(
  */
 Tcl_Obj *
 TclNewArithSeriesObj(
-    Tcl_Interp *interp,       /* For error reporting */
-    int useDoubles,           /* Flag indicates values start,
-			      ** end, step, are treated as doubles */
-    Tcl_Obj *startObj,        /* Starting value */
-    Tcl_Obj *endObj,          /* Ending limit */
-    Tcl_Obj *stepObj,         /* increment value */
-    Tcl_Obj *lenObj)          /* Number of elements */
+    Tcl_Interp *interp,		/* For error reporting */
+    int useDoubles,		/* Flag indicates values start,
+				 * end, step, are treated as doubles */
+    Tcl_Obj *startObj,		/* Starting value */
+    Tcl_Obj *endObj,		/* Ending limit */
+    Tcl_Obj *stepObj,		/* increment value */
+    Tcl_Obj *lenObj)		/* Number of elements */
 {
     double dstart, dend, dstep = 1.0;
     Tcl_WideInt start, end, step = 1;
@@ -715,23 +754,20 @@ TclNewArithSeriesObj(
 	    // Compute precision based on given command argument values
 	    precision = maxObjPrecision(startObj, NULL, stepObj);
 
-	    dend = dstart + (dstep * (len-1));
+	    dend = dstart + (dstep * (double)(len-1));
 	    // Make computed end value match argument(s) precision
 	    dend = ArithRound(dend, precision);
 	    end = dend;
-	} else {
-	    end = start + (step * (len - 1));
-	    dend = end;
 	}
     }
 
     /*
      * todo: check whether the boundary must be rather LIST_MAX, to be more
-     * similar to plain lists, otherwise it'd generare an error or panic later
+     * similar to plain lists, otherwise it'd generate an error or panic later
      * (0x0ffffffffffffffa instead of 0x7fffffffffffffff by 64bit)
      */
     if (len > TCL_SIZE_MAX) {
-      exceeded:
+    exceeded:
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"max length of a Tcl list exceeded", TCL_AUTO_LENGTH));
 	Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
@@ -741,7 +777,7 @@ TclNewArithSeriesObj(
     if (useDoubles) {
 	/* ensure we'll not get NaN somewhere in the arith-series,
 	 * so simply check the end of it and behave like [expr {Inf - Inf}] */
-	double d = dstart + (len - 1) * dstep;
+	double d = dstart + (double)(len - 1) * dstep;
 	if (isnan(d)) {
 	    const char *s = "domain error: argument not in valid range";
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
@@ -758,6 +794,11 @@ TclNewArithSeriesObj(
 	objPtr = NewArithSeriesInt(start, step, len);
     }
 
+    if (objPtr == NULL && interp) {
+	const char *description = "invalid arithmetic series parameter values";
+	Tcl_SetResult(interp, description, TCL_STATIC);
+	Tcl_SetErrorCode(interp, "ARITH", "DOMAIN", description, (char *)NULL);
+    }
     return objPtr;
 }
 
@@ -876,11 +917,11 @@ SetArithSeriesFromAny(
 
 int
 TclArithSeriesObjRange(
-    Tcl_Interp *interp,         /* For error message(s) */
+    Tcl_Interp *interp,		/* For error message(s) */
     Tcl_Obj *arithSeriesObj,	/* List object to take a range from. */
     Tcl_Size fromIdx,		/* Index of first element to include. */
     Tcl_Size toIdx,		/* Index of last element to include. */
-    Tcl_Obj **newObjPtr)        /* return value */
+    Tcl_Obj **newObjPtr)	/* return value */
 {
     ArithSeries *arithSeriesRepPtr;
     Tcl_WideInt len;
@@ -1066,7 +1107,7 @@ TclArithSeriesGetElements(
  */
 int
 TclArithSeriesObjReverse(
-    Tcl_Interp *interp,         /* For error message(s) */
+    Tcl_Interp *interp,		/* For error message(s) */
     Tcl_Obj *arithSeriesObj,	/* List object to reverse. */
     Tcl_Obj **newObjPtr)
 {
@@ -1086,7 +1127,7 @@ TclArithSeriesObjReverse(
 		-dblRepPtr->step, arithSeriesRepPtr->len, dblRepPtr->precision);
 	} else {
 	    ArithSeriesInt *intRepPtr = (ArithSeriesInt *)arithSeriesRepPtr;
-	    resultObj = NewArithSeriesInt(ArithSeriesEndInt(intRepPtr), 
+	    resultObj = NewArithSeriesInt(ArithSeriesEndInt(intRepPtr),
 		-intRepPtr->step, arithSeriesRepPtr->len);
 	}
     } else {
@@ -1150,11 +1191,11 @@ UpdateStringOfArithSeries(
 {
     ArithSeries *arithSeriesRepPtr = (ArithSeries *)
 	    arithSeriesObjPtr->internalRep.twoPtrValue.ptr1;
-    char *p;
+    char *p, *srep;
     Tcl_Size i, bytlen = 0;
 
-    if (!arithSeriesRepPtr->len) {
-	TclInitEmptyStringRep(arithSeriesObjPtr);
+    if (arithSeriesRepPtr->len == 0) {
+	(void)Tcl_InitStringRep(arithSeriesObjPtr, NULL, 0);
 	return;
     }
 
@@ -1172,15 +1213,17 @@ UpdateStringOfArithSeries(
 	char tmp[TCL_DOUBLE_SPACE + 2];
 	for (i = 0; i < arithSeriesRepPtr->len; i++) {
 	    double d = ArithSeriesIndexDbl(arithSeriesRepPtr, i);
+	    Tcl_Size elen;
 
 	    tmp[0] = '\0';
 	    Tcl_PrintDouble(NULL,d,tmp);
-	    bytlen += strlen(tmp);
-	    if (bytlen > TCL_SIZE_MAX) {
+	    elen = strlen(tmp);
+	    if (bytlen > TCL_SIZE_MAX - elen) {
 		/* overflow, todo: check we could use some representation instead of the panic
 		 * to signal it is too large for string representation, because too heavy */
 		Tcl_Panic("UpdateStringOfArithSeries: too large to represent");
 	    }
+	    bytlen += elen;
 	}
     }
     bytlen += arithSeriesRepPtr->len; // Space for each separator
@@ -1189,7 +1232,9 @@ UpdateStringOfArithSeries(
      * Pass 2: generate the string repr.
      */
 
-    p = Tcl_InitStringRep(arithSeriesObjPtr, NULL, bytlen);
+    p = srep = Tcl_InitStringRep(arithSeriesObjPtr, NULL, bytlen);
+    TclOOM(p, bytlen+1);
+
     if (!arithSeriesRepPtr->isDouble) {
 	for (i = 0; i < arithSeriesRepPtr->len; i++) {
 	    Tcl_WideInt d = ArithSeriesIndexInt(arithSeriesRepPtr, i);
@@ -1208,8 +1253,7 @@ UpdateStringOfArithSeries(
 	    *p++ = ' ';
 	}
     }
-    *(--p) = '\0';
-    arithSeriesObjPtr->length = p - arithSeriesObjPtr->bytes;
+    (void) Tcl_InitStringRep(arithSeriesObjPtr, NULL, (--p - srep));
 }
 
 /*

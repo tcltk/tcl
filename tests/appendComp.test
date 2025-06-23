@@ -271,7 +271,7 @@ test appendComp-7.2 {lappend var triggers read trace, index var} -setup {
 	return $::result
     }
     bar
-} -result {myvar {} read} -constraints {bug-3057639}
+} -result {myvar {} read} -constraints {bug_3057639}
 test appendComp-7.3 {lappend var triggers read trace, stack var} -setup {
     unset -nocomplain ::result
     unset -nocomplain ::myvar
@@ -283,7 +283,7 @@ test appendComp-7.3 {lappend var triggers read trace, stack var} -setup {
 	return $::result
     }
     bar
-} -result {::myvar {} r} -constraints {bug-3057639}
+} -result {::myvar {} r} -constraints {bug_3057639}
 test appendComp-7.4 {lappend var triggers read trace, array var} -setup {
     unset -nocomplain ::result
 } -body {
@@ -296,7 +296,7 @@ test appendComp-7.4 {lappend var triggers read trace, array var} -setup {
 	return $::result
     }
     bar
-} -result {myvar b read} -constraints {bug-3057639}
+} -result {myvar b read} -constraints {bug_3057639}
 test appendComp-7.5 {lappend var triggers read trace, array var} -setup {
     unset -nocomplain ::result
 } -body {
@@ -321,7 +321,7 @@ test appendComp-7.6 {lappend var triggers read trace, array var exists} -setup {
 	return $::result
     }
     bar
-} -result {myvar b read} -constraints {bug-3057639}
+} -result {myvar b read} -constraints {bug_3057639}
 test appendComp-7.7 {lappend var triggers read trace, array stack var} -setup {
     unset -nocomplain ::myvar
     unset -nocomplain ::result
@@ -333,7 +333,7 @@ test appendComp-7.7 {lappend var triggers read trace, array stack var} -setup {
 	return $::result
     }
     bar
-} -result {::myvar b read} -constraints {bug-3057639}
+} -result {::myvar b read} -constraints {bug_3057639}
 test appendComp-7.8 {lappend var triggers read trace, array stack var} -setup {
     unset -nocomplain ::myvar
     unset -nocomplain ::result

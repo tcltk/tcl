@@ -90,14 +90,12 @@ the Tcl program.
 .PP
 Channels are automatically closed when an interpreter is destroyed and
 when the process exits.
-From 8.6 on (TIP#398), nonblocking channels are no longer switched to
+Nonblocking channels are not switched to
 blocking mode when exiting; this guarantees a timely exit even when the
 peer or a communication channel is stalled. To ensure proper flushing of
-stalled nonblocking channels on exit, one must now either (a) actively
+stalled nonblocking channels on exit, one must either (a) actively
 switch them back to blocking or (b) use the environment variable
-\fBTCL_FLUSH_NONBLOCKING_ON_EXIT\fR, which when set and not equal to
-.QW \fB0\fR
-restores the previous behavior.
+\fBTCL_FLUSH_NONBLOCKING_ON_EXIT\fR.
 .RE
 .\" METHOD: configure
 .TP
@@ -200,7 +198,7 @@ Otherwise (the default) there is no special end of file character marker.
 The acceptable range for \fB\-eofchar\fR values is \ex01 - \ex7f;
 attempting to set \fB\-eofchar\fR to a value outside of this range will
 generate an error.
-.VS "TCL8.7 TIP656"
+.VS TIP656
 .\" OPTION: -profile
 .TP
 \fB\-profile\fI profile\fR
@@ -210,7 +208,7 @@ transforms in use for the channel's input and output will then be subject to the
 rules of that profile. Any failures will result in a channel error. See
 \fBPROFILES\fR in the \fBencoding(n)\fR documentation for details about encoding
 profiles.
-.VE "TCL8.7 TIP656"
+.VE TIP656
 .\" OPTION: -translation
 .TP
 \fB\-translation\fI translation\fR

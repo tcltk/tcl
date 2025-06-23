@@ -430,6 +430,29 @@ FinalizeMethodRefs(
 /*
  * ----------------------------------------------------------------------
  *
+ * TclOOContextTypeName --
+ *
+ *	Get the name of the (high-level) type of method that a context is
+ *	processing. Used for error message generation.
+ *
+ * ----------------------------------------------------------------------
+ */
+const char *
+TclOOContextTypeName(
+    CallContext *contextPtr)
+{
+    if (contextPtr->callPtr->flags & CONSTRUCTOR) {
+	return "constructor";
+    } else if (contextPtr->callPtr->flags & DESTRUCTOR) {
+	return "destructor";
+    } else {
+	return "method";
+    }
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
  * TclOOGetSortedMethodList, TclOOGetSortedClassMethodList --
  *
  *	Discovers the list of method names supported by an object or class.
@@ -437,7 +460,7 @@ FinalizeMethodRefs(
  * ----------------------------------------------------------------------
  */
 
-int
+Tcl_Size
 TclOOGetSortedMethodList(
     Object *oPtr,		/* The object to get the method names for. */
     Object *contextObj,		/* From what context object we are inquiring.
@@ -776,9 +799,7 @@ AddPrivateMethodNames(
 
     FOREACH_HASH(namePtr, mPtr, methodsTablePtr) {
 	if (IS_PRIVATE(mPtr)) {
-	    int isNew;
-
-	    hPtr = Tcl_CreateHashEntry(namesPtr, namePtr, &isNew);
+	    hPtr = Tcl_CreateHashEntry(namesPtr, namePtr, NULL);
 	    Tcl_SetHashValue(hPtr, INT2PTR(IN_LIST));
 	}
     }
@@ -804,7 +825,7 @@ AddStandardMethodName(
 	    Tcl_SetHashValue(hPtr, INT2PTR(isWanted));
 	} else if ((PTR2INT(Tcl_GetHashValue(hPtr)) & NO_IMPLEMENTATION)
 		&& mPtr->typePtr != NULL) {
-	    int isWanted = PTR2INT(Tcl_GetHashValue(hPtr));
+	    Tcl_Size isWanted = PTR2INT(Tcl_GetHashValue(hPtr));
 
 	    isWanted &= ~NO_IMPLEMENTATION;
 	    Tcl_SetHashValue(hPtr, INT2PTR(isWanted));
@@ -1554,14 +1575,13 @@ TclOOGetStereotypeCallChain(
 	}
     } else {
 	if (hPtr == NULL) {
-	    int isNew;
 	    if (clsPtr->classChainCache == NULL) {
 		clsPtr->classChainCache = (Tcl_HashTable *)
 			Tcl_Alloc(sizeof(Tcl_HashTable));
 		Tcl_InitObjHashTable(clsPtr->classChainCache);
 	    }
 	    hPtr = Tcl_CreateHashEntry(clsPtr->classChainCache,
-		    methodNameObj, &isNew);
+		    methodNameObj, NULL);
 	}
 	callPtr->refCount++;
 	Tcl_SetHashValue(hPtr, callPtr);
@@ -1647,6 +1667,7 @@ AddClassFiltersToCallContext(
 	    AddClassFiltersToCallContext(oPtr, superPtr, cbPtr, doneFilters,
 		    flags);
 	}
+	TCL_FALLTHROUGH();
     case 0:
 	return;
     }
@@ -1734,7 +1755,7 @@ AddPrivatesFromClassChainToCallContext(
 		return 1;
 	    }
 	}
-	/* FALLTHRU */
+	TCL_FALLTHROUGH();
     case 0:
 	return 0;
     }
@@ -1829,7 +1850,7 @@ AddSimpleClassChainToCallContext(
 	    privateDanger |= AddSimpleClassChainToCallContext(superPtr,
 		    methodNameObj, cbPtr, doneFilters, flags, filterDecl);
 	}
-	/* FALLTHRU */
+	TCL_FALLTHROUGH();
     case 0:
 	return privateDanger;
     }
@@ -2067,6 +2088,7 @@ AddSimpleClassDefineNamespaces(
 	FOREACH(superPtr, classPtr->superclasses) {
 	    AddSimpleClassDefineNamespaces(superPtr, definePtr, flags);
 	}
+	TCL_FALLTHROUGH();
     case 0:
 	return;
     }

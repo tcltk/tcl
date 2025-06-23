@@ -309,7 +309,7 @@ GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
 	tclHash.o tclHistory.o \
 	tclIcu.o tclIndexObj.o tclInterp.o tclIO.o tclIOCmd.o \
 	tclIORChan.o tclIORTrans.o tclIOGT.o tclIOSock.o tclIOUtil.o \
-	tclLink.o tclListObj.o \
+	tclLink.o tclListObj.o tclListTypes.o \
 	tclLiteral.o tclLoad.o tclMain.o tclNamesp.o tclNotify.o \
 	tclObj.o tclOptimize.o tclPanic.o tclParse.o tclPathObj.o tclPipe.o \
 	tclPkg.o tclPkgConfig.o tclPosixStr.o \
@@ -447,6 +447,7 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/tclIORTrans.c \
 	$(GENERIC_DIR)/tclLink.c \
 	$(GENERIC_DIR)/tclListObj.c \
+	$(GENERIC_DIR)/tclListTypes.c \
 	$(GENERIC_DIR)/tclLiteral.c \
 	$(GENERIC_DIR)/tclLoad.c \
 	$(GENERIC_DIR)/tclMain.c \
@@ -812,7 +813,7 @@ ${LIB_FILE}: ${STUB_LIB_FILE} ${OBJS} ${TCL_ZIP_FILE}
 	fi
 
 ${STUB_LIB_FILE}: ${STUB_LIB_OBJS}
-	@if [ "x${LIB_FILE}" = "xlibtcl${MAJOR_VERSION}.${MINOR_VERSION}.dll" ] ; then \
+	@if [ "x${LIB_FILE}" = "xcygtcl${MAJOR_VERSION}.${MINOR_VERSION}.dll" ] ; then \
 	    ( cd ${TOP_DIR}/win; ${MAKE} winextensions ); \
 	fi
 	rm -f $@
@@ -1001,7 +1002,7 @@ INSTALL_DOC_TARGETS = install-doc
 INSTALL_PACKAGE_TARGETS = install-packages
 INSTALL_DEV_TARGETS = install-headers
 INSTALL_EXTRA_TARGETS = @EXTRA_INSTALL@
-INSTALL_TARGETS = $(INSTALL_BASE_TARGETS) $(INSTALL_DOC_TARGETS) $(INSTALL_DEV_TARGETS) \
+INSTALL_TARGETS = $(INSTALL_BASE_TARGETS) $(INSTALL_DEV_TARGETS) $(INSTALL_DOC_TARGETS) \
 		  $(INSTALL_PACKAGE_TARGETS) $(INSTALL_EXTRA_TARGETS)
 
 install: $(INSTALL_TARGETS)
@@ -1097,7 +1098,17 @@ install-libraries: libraries
 	done
 	@if [ -n "$(TCL_MODULE_PATH)" -a -f $(TOP_DIR)/library/tm.tcl ] ; then \
 	    echo "Customizing tcl module path"; \
-	    echo "if {![interp issafe]} { ::tcl::tm::roots [list $(TCL_MODULE_PATH)] }" >> \
+	    echo "if {![interp issafe]} {" >> \
+		"$(SCRIPT_INSTALL_DIR)/tm.tcl"; \
+	    echo "    ::tcl::tm::roots [lmap p [split {$(TCL_MODULE_PATH)} :] {" >> \
+		"$(SCRIPT_INSTALL_DIR)/tm.tcl"; \
+	    echo "	if {[catch {file tildeexpand [set p]} p]} continue" >> \
+		"$(SCRIPT_INSTALL_DIR)/tm.tcl"; \
+	    echo "	set p" >> \
+		"$(SCRIPT_INSTALL_DIR)/tm.tcl"; \
+	    echo "    }]" >> \
+		"$(SCRIPT_INSTALL_DIR)/tm.tcl"; \
+	    echo "}" >> \
 		"$(SCRIPT_INSTALL_DIR)/tm.tcl"; \
 	fi
 
@@ -1409,6 +1420,9 @@ tclLink.o: $(GENERIC_DIR)/tclLink.c
 
 tclListObj.o: $(GENERIC_DIR)/tclListObj.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclListObj.c
+
+tclListTypes.o: $(GENERIC_DIR)/tclListTypes.c
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclListTypes.c
 
 tclLiteral.o: $(GENERIC_DIR)/tclLiteral.c $(COMPILEHDR)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclLiteral.c
@@ -2032,7 +2046,6 @@ PKG_CFG_ARGS		= @PKG_CFG_ARGS@
 # cannot use absolute paths due to issues in nested configure when path to
 # build dir contains spaces).
 PKG_DIR			= ./pkgs
-PKG8_DIR			= ./pkgs8
 
 configure-packages:
 	@for i in $(PKGS_DIR)/*; do \
@@ -2040,14 +2053,6 @@ configure-packages:
 		if [ -x $$i/configure ] ; then \
 		    pkg=`basename $$i`; \
 		    echo "Configuring package '$$pkg'"; \
-		    mkdir -p $(PKG8_DIR)/$$pkg; \
-		    if [ ! -f $(PKG8_DIR)/$$pkg/Makefile ] ; then \
-			( cd $(PKG8_DIR)/$$pkg; \
-			  $$i/configure --with-tcl8 --with-tcl=../.. \
-			      --with-tclinclude=$(GENERIC_DIR) \
-			      $(PKG_CFG_ARGS) --libdir=$(PACKAGE_DIR) \
-			      --enable-shared; ) || exit $$?; \
-		    fi; \
 		    mkdir -p $(PKG_DIR)/$$pkg; \
 		    if [ ! -f $(PKG_DIR)/$$pkg/Makefile ] ; then \
 			( cd $(PKG_DIR)/$$pkg; \
@@ -2064,10 +2069,6 @@ packages: configure-packages ${STUB_LIB_FILE}
 	@for i in $(PKGS_DIR)/*; do \
 	    if [ -d $$i ] ; then \
 		pkg=`basename $$i`; \
-		if [ -f $(PKG8_DIR)/$$pkg/Makefile ] ; then \
-		    echo "Building package '$$pkg' for Tcl 8"; \
-		    ( cd $(PKG8_DIR)/$$pkg; $(MAKE); ) || exit $$?; \
-		fi; \
 		if [ -f $(PKG_DIR)/$$pkg/Makefile ] ; then \
 		    echo "Building package '$$pkg'"; \
 		    ( cd $(PKG_DIR)/$$pkg; $(MAKE); ) || exit $$?; \
@@ -2079,11 +2080,6 @@ install-packages: packages
 	@for i in $(PKGS_DIR)/*; do \
 	    if [ -d $$i ] ; then \
 		pkg=`basename $$i`; \
-		if [ -f $(PKG8_DIR)/$$pkg/Makefile ] ; then \
-		    echo "Installing package '$$pkg' for Tcl 8"; \
-		    ( cd $(PKG8_DIR)/$$pkg; $(MAKE) install \
-			  "DESTDIR=$(INSTALL_ROOT)"; ) || exit $$?; \
-		fi; \
 		if [ -f $(PKG_DIR)/$$pkg/Makefile ] ; then \
 		    echo "Installing package '$$pkg'"; \
 		    ( cd $(PKG_DIR)/$$pkg; $(MAKE) install \
@@ -2111,9 +2107,6 @@ clean-packages:
 	@for i in $(PKGS_DIR)/*; do \
 	    if [ -d $$i ] ; then \
 		pkg=`basename $$i`; \
-		if [ -f $(PKG8_DIR)/$$pkg/Makefile ] ; then \
-		    ( cd $(PKG8_DIR)/$$pkg; $(MAKE) clean; ) \
-		fi; \
 		if [ -f $(PKG_DIR)/$$pkg/Makefile ] ; then \
 		    ( cd $(PKG_DIR)/$$pkg; $(MAKE) clean; ) \
 		fi; \
@@ -2124,17 +2117,12 @@ distclean-packages:
 	@for i in $(PKGS_DIR)/*; do \
 	    if [ -d $$i ] ; then \
 		pkg=`basename $$i`; \
-		if [ -f $(PKG8_DIR)/$$pkg/Makefile ] ; then \
-		    ( cd $(PKG8_DIR)/$$pkg; $(MAKE) distclean; ) \
-		fi; \
-		rm -rf $(PKG8_DIR)/$$pkg; \
 		if [ -f $(PKG_DIR)/$$pkg/Makefile ] ; then \
 		    ( cd $(PKG_DIR)/$$pkg; $(MAKE) distclean; ) \
 		fi; \
 		rm -rf $(PKG_DIR)/$$pkg; \
 	    fi; \
 	done; \
-	rm -rf $(PKG8_DIR)
 	rm -rf $(PKG_DIR)
 
 dist-packages: configure-packages
@@ -2304,11 +2292,10 @@ BUILTIN_PACKAGE_LIST = cookiejar http opt msgcat registry dde tcltest platform
 
 $(UNIX_DIR)/configure: $(UNIX_DIR)/configure.ac $(UNIX_DIR)/tcl.m4 \
 		$(UNIX_DIR)/aclocal.m4
-	cd $(UNIX_DIR); autoconf
-$(MAC_OSX_DIR)/configure: $(MAC_OSX_DIR)/configure.ac $(UNIX_DIR)/configure
-	cd $(MAC_OSX_DIR); autoconf
-$(UNIX_DIR)/tclConfig.h.in: $(MAC_OSX_DIR)/configure
-	cd $(MAC_OSX_DIR); autoheader; touch $@
+	@cd $(UNIX_DIR); autoconf || \
+		echo "WARNING: Unable to rebuild $(UNIX_DIR)/configure. Please upgrade autoconf."
+$(UNIX_DIR)/tclConfig.h.in: $(MAC_OSX_DIR)/configure.ac
+	@cd $(MAC_OSX_DIR); autoheader || touch $@
 
 tclUuid.h: $(TOP_DIR)/manifest.uuid
 	echo "#define TCL_VERSION_UUID \\" >$@
@@ -2323,7 +2310,7 @@ $(TOP_DIR)/manifest.uuid:
 	    printf "unknown" >$(TOP_DIR)/manifest.uuid)
 
 dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in genstubs \
-		$(MAC_OSX_DIR)/configure $(TOP_DIR)/manifest.uuid dist-packages ${NATIVE_TCLSH}
+		$(TOP_DIR)/manifest.uuid dist-packages ${NATIVE_TCLSH}
 	rm -rf $(DISTDIR)
 	$(INSTALL_DATA_DIR) $(DISTDIR)/unix
 	$(DIST_INSTALL_DATA) $(TOP_DIR)/manifest.uuid $(DISTDIR)
@@ -2429,7 +2416,6 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in gen
 		$(MAC_OSX_DIR)/*.c $(MAC_OSX_DIR)/*.in \
 		$(MAC_OSX_DIR)/*.ac \
 		$(DISTDIR)/macosx
-	$(DIST_INSTALL_SCRIPT) $(MAC_OSX_DIR)/configure $(DISTDIR)/macosx
 	$(DIST_INSTALL_DATA) $(TOP_DIR)/license.terms $(DISTDIR)/macosx
 	$(INSTALL_DATA_DIR) $(DISTDIR)/unix/dltest
 	$(DIST_INSTALL_DATA) $(UNIX_DIR)/dltest/*.c $(UNIX_DIR)/dltest/Makefile.in \

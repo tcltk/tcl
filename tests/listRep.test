@@ -34,6 +34,7 @@ testConstraint testlistrep [llength [info commands testlistrep]]
 proc describe {l args} {dict get [testlistrep describe $l] {*}$args}
 
 proc irange {first last} {
+    # Do NOT replace this with lseq. Need a non-abstract list.
     set l {}
     while {$first <= $last} {
 	lappend l $first
