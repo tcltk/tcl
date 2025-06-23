@@ -1383,6 +1383,9 @@ MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
  *----------------------------------------------------------------
  */
 
+// Point at which we issue a LIST_CONCAT anyway when doing an expansion sequence
+#define LIST_CONCAT_THRESHOLD	(1 << 15)
+
 /*
  * Simplified form to access AuxData.
  *
