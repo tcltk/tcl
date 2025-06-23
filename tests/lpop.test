@@ -99,98 +99,83 @@ test lpop-4.2 {compiled: error conditions} -returnCodes error -body {
     }}
 } -result {can't read "no": no such variable}
 test lpop-4.3 {compiled: error conditions} -returnCodes error -body {
-    apply {"" {
-	set l "x {}x"
+    apply {l {
 	lpop l
-    }}
+    }} "x {}x"
 } -result {list element in braces followed by "x" instead of space}
 test lpop-4.4 {compiled: error conditions} -returnCodes error -body {
-    apply {"" {
-	set l "x y"
+    apply {l {
 	lpop l -1
-    }}
+    }} "x y"
 } -result {index "-1" out of range}
 test lpop-4.4b {compiled: error conditions (also check SF on empty list variable, bug [234d6c811d])} -body {
-    apply {"" {
-	set l "x y"
+    apply {l {
 	list [lpop l] [lpop l] [catch {lpop l} v] $v [catch {lpop l 0} v] $v $l
-    }}
+    }} "x y"
 } -result {y x 1 {index "end" out of range} 1 {index "0" out of range} {}}
 test lpop-4.5 {compiled: error conditions} -returnCodes error -body {
-    apply {"" {
-	set l "x y z"
+    apply {l {
 	lpop l 3
-    }}
+    }} "x y z"
 } -result {index "3" out of range} ;#-errorCode {TCL OPERATION LPOP BADINDEX}
 test lpop-4.6 {compiled: error conditions} -returnCodes error -body {
-    apply {"" {
-	set l "x y"
+    apply {l {
 	lpop l end+1
-    }}
+    }} "x y"
 } -result {index "end+1" out of range}
 test lpop-4.7 {compiled: error conditions} -returnCodes error -body {
-    apply {"" {
-	set l "x y"
+    apply {l {
 	lpop l {}
-    }}
+    }} "x y"
 } -match glob -result {bad index *}
 test lpop-4.8 {compiled: error conditions} -returnCodes error -body {
-    apply {"" {
-	set l "x y"
+    apply {l {
 	lpop l 0 0 0 0 1
-    }}
+    }} "x y"
 } -result {index "1" out of range}
 test lpop-4.9 {compiled: error conditions} -returnCodes error -body {
-    apply {"" {
-	set l "x y"
+    apply {l {
 	lpop l {1 0}
-    }}
+    }} "x y"
 } -match glob -result {bad index *}
 
 test lpop-5.1 {compiled: basic functionality} -body {
-    apply {"" {
-	set l "x y z"
+    apply {l {
 	list [lpop l 0] $l
-    }}
+    }} "x y z"
 } -result {x {y z}}
 test lpop-5.2 {compiled: basic functionality} -body {
-    apply {"" {
-	set l "x y z"
+    apply {l {
 	list [lpop l 1] $l
-    }}
+    }} "x y z"
 } -result {y {x z}}
 test lpop-5.3 {compiled: basic functionality} -body {
-    apply {"" {
-	set l "x y z"
+    apply {l {
 	list [lpop l] $l
-    }}
+    }} "x y z"
 } -result {z {x y}}
 test lpop-5.4 {compiled: basic functionality} -body {
-    apply {"" {
-	set l "x y z"
+    apply {l {
 	set l2 $l
 	list [lpop l] $l $l2
-    }}
+    }} "x y z"
 } -result {z {x y} {x y z}}
 
 test lpop-6.1 {compiled: nested} -body {
-    apply {"" {
-	set l "x y"
+    apply {l {
 	set l2 $l
 	list [lpop l 0 0 0 0] $l $l2
-    }}
+    }} "x y"
 } -result {x {{{{}}} y} {x y}}
 test lpop-6.2 {compiled: nested} -body {
-    apply {"" {
-	set l "{x y} {a b}"
+    apply {l {
 	list [lpop l 0 1] $l
-    }}
+    }} "{x y} {a b}"
 } -result {y {x {a b}}}
 test lpop-6.3 {compiled: nested} -body {
-    apply {"" {
-	set l "{x y} {a b}"
+    apply {l {
 	list [lpop l 1 0] $l
-    }}
+    }} "{x y} {a b}"
 } -result {a {{x y} b}}
 
 test lpop-99.1 {performance} -constraints perf -body {
