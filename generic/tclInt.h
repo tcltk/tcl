@@ -3889,6 +3889,7 @@ MODULE_SCOPE CompileProc TclCompileInfoObjectNamespaceCmd;
 MODULE_SCOPE CompileProc TclCompileIncrCmd;
 MODULE_SCOPE CompileProc TclCompileLappendCmd;
 MODULE_SCOPE CompileProc TclCompileLassignCmd;
+MODULE_SCOPE CompileProc TclCompileLeditCmd;
 MODULE_SCOPE CompileProc TclCompileLindexCmd;
 MODULE_SCOPE CompileProc TclCompileLinsertCmd;
 MODULE_SCOPE CompileProc TclCompileListCmd;
