@@ -4932,7 +4932,8 @@ TEBCresume(
     tclooFrameRequired:
 	TRACE_APPEND(("ERROR: no TclOO call context\n"));
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"%s may only be called from inside a method", objv[0]));
+		"%s may only be called from inside a method",
+		TclGetString(objv[0])));
 	DECACHE_STACK_INFO();
 	OO_ERROR(interp, CONTEXT_REQUIRED);
 	CACHE_STACK_INFO();
