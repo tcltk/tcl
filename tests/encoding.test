@@ -310,6 +310,12 @@ test encoding-12.5 {LoadTableEncoding: symbol encoding} {
 test encoding-12.6 {LoadTableEncoding: overflow in char value} ucs2 {
     encoding convertto iso8859-3 \U010000
 } ?
+test encoding-12.7 {cp864 [ecafd8611d]} {
+    scan [encoding convertfrom cp864 \xA7] %c
+} 8364
+test encoding-12.8 {cp165 [ecafd8611d]} {
+    scan [encoding convertfrom cp165 \xA7] %c
+} 65160
 
 test encoding-13.1 {LoadEscapeTable} {
     viewable [set x [encoding convertto iso2022 ab\u4E4E\u68D9g]]
