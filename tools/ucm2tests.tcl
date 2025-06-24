@@ -80,6 +80,7 @@ namespace eval ucm {
         macDingbats {Current encoding is from 1995. Needs update to https://www.unicode.org/Public/MAPPINGS/VENDORS/APPLE/DINGBATS.TXT}
         macGreek    {Current encoding is from 1995. Needs update to https://www.unicode.org/Public/MAPPINGS/VENDORS/APPLE/GREEK.TXT}
         macRomania  {Current encoding is from 1995. Needs update to https://www.unicode.org/Public/MAPPINGS/VENDORS/APPLE/ROMANIAN.TXT}
+        macThai     {Current encoding is from 1995. https://www.unicode.org/Public/MAPPINGS/VENDORS/APPLE/THAI.TXT}
     }
 
     # Array keyed by Tcl encoding name. Each element contains mapping of
@@ -288,33 +289,36 @@ proc ucm::generate_tests {} {
             print "\}; # $encName"
         }
 
-        # Generate the invalidity checks
-        print "\n# $encName - invalid byte sequences"
-        print "lappend encInvalidBytes \{*\}\{"
-        foreach hex $invalidCodeSequences($encName) {
-            # Map XXXX... to \xXX\xXX...
-            set uhex [regsub -all .. $hex {\\x\0}]
-            set uhex \\U[string range 00000000$hex end-7 end]
-            print "    $encName $hex tcl8    $uhex -1 {} {}"
-            print "    $encName $hex replace \\uFFFD -1 {} {}"
-            print "    $encName $hex strict  {}       0 {} {}"
-        }
-        print "\}; # $encName"
 
-        print "\n# $encName - invalid byte sequences"
-        print "lappend encUnencodableStrings \{*\}\{"
-        if {[info exists encSubchar($encName)]} {
-            set subchar $encSubchar($encName)
-        } else {
-            set subchar "3F"; # Tcl uses ? by default
+        # Generate the invalidity checks
+        if {![info exists brokenEncodings($encName)]} {
+            print "\n# $encName - invalid byte sequences"
+            print "lappend encInvalidBytes \{*\}\{"
+            foreach hex $invalidCodeSequences($encName) {
+                # Map XXXX... to \xXX\xXX...
+                set uhex [regsub -all .. $hex {\\x\0}]
+                set uhex \\U[string range 00000000$hex end-7 end]
+                print "    $encName $hex tcl8    $uhex -1 {} {}"
+                print "    $encName $hex replace \\uFFFD -1 {} {}"
+                print "    $encName $hex strict  {}       0 {} {}"
+            }
+            print "\}; # $encName"
+
+            print "\n# $encName - invalid byte sequences"
+            print "lappend encUnencodableStrings \{*\}\{"
+            if {[info exists encSubchar($encName)]} {
+                set subchar $encSubchar($encName)
+            } else {
+                set subchar "3F"; # Tcl uses ? by default
+            }
+            foreach hex $unmappedCodePoints($encName) {
+                set uhex \\U[string range 00000000$hex end-7 end]
+                print "    $encName $uhex tcl8    $subchar -1 {} {}"
+                print "    $encName $uhex replace $subchar -1 {} {}"
+                print "    $encName $uhex strict  {}                      0 {} {}"
+            }
+            print "\}; # $encName"
         }
-        foreach hex $unmappedCodePoints($encName) {
-            set uhex \\U[string range 00000000$hex end-7 end]
-            print "    $encName $uhex tcl8    $subchar -1 {} {}"
-            print "    $encName $uhex replace $subchar -1 {} {}"
-            print "    $encName $uhex strict  {}                      0 {} {}"
-        }
-        print "\}; # $encName"
     }
 
     if {[array size tclNames]} {
