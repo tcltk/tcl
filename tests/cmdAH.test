@@ -280,7 +280,7 @@ proc testconvert {id body result args} {
 # Also generates utf-{16,32} tests if passed encoding is utf-{16,32}{le,be}
 # The enc and profile are appended to id to generate the test id
 proc testprofile {id converter enc profile data result args} {
-    testconvert $id.$enc.$profile [list encoding $converter -profile $profile $enc $data] $result {*}$args
+    testconvert $id.$converter.$enc.$profile [list encoding $converter -profile $profile $enc $data] $result {*}$args
     if {[set enc2 [endianUtf $enc]] ne ""} {
 	# If utf{16,32}-{le,be}, also do utf{16,32}
 	testconvert $id.$enc2.$profile [list encoding $converter -profile $profile $enc2 $data] $result {*}$args
