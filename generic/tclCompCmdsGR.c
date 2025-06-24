@@ -1484,6 +1484,92 @@ TclCompileLreplaceCmd(
 /*
  *----------------------------------------------------------------------
  *
+ * TclCompileLeditCmd --
+ *
+ *	How to compile the "ledit" command.  Generally very similar in concept
+ *	to TclCompileLreplaceCmd, except for the variable handling.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+TclCompileLeditCmd(
+    Tcl_Interp *interp,		/* Tcl interpreter for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the
+				 * command. */
+    TCL_UNUSED(Command *),
+    CompileEnv *envPtr)		/* Holds the resulting instructions. */
+{
+    DefineLineInformation;	/* TIP #280 */
+    Tcl_Size numWords = parsePtr->numWords, i;
+    Tcl_Token *varTokenPtr, *tokenPtr;
+    Tcl_LVTIndex varIdx;
+    int isScalar;
+
+    if (numWords < 4) {
+	return TCL_ERROR;
+    }
+    varTokenPtr = TokenAfter(parsePtr->tokenPtr);
+    if (varTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+	return TCL_ERROR;
+    }
+    tokenPtr = TokenAfter(varTokenPtr);
+
+    // Parse/push the variable name
+    PushVarNameWord(varTokenPtr, 0, &varIdx, &isScalar, 1);
+
+    // Read the variable, saving any pushed name words for later
+    if (isScalar) {
+	if (varIdx < 0) {
+	    OP(			DUP);
+	    OP(			LOAD_STK);
+	} else {
+	    OP4(		LOAD_SCALAR, varIdx);
+	}
+    } else {
+	if (varIdx < 0) {
+	    OP(			DUP);
+	    OP4(		OVER, 2);
+	    OP(			SWAP);
+	    OP(			LOAD_ARRAY_STK);
+	} else {
+	    OP(			DUP);
+	    OP4(		LOAD_ARRAY, varIdx);
+	}
+    }
+
+    // Push all remaining words, at least two
+    for (i=2; i<numWords; i++, tokenPtr=TokenAfter(tokenPtr)) {
+    	PUSH_TOKEN(		tokenPtr, i);
+    }
+
+    /*
+     * First operand is count of arguments.
+     * Second operand is bitmask
+     *  TCL_LREPLACE4_END_IS_LAST - end refers to last element
+     */
+    OP41(			LREPLACE, numWords - 1,
+					TCL_LREPLACE4_END_IS_LAST);
+
+    if (isScalar) {
+	if (varIdx < 0) {
+	    OP(			STORE_STK);
+	} else {
+	    OP4(		STORE_SCALAR, varIdx);
+	}
+    } else {
+	if (varIdx < 0) {
+	    OP(			STORE_ARRAY_STK);
+	} else {
+	    OP4(		STORE_ARRAY, varIdx);
+	}
+    }
+
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclCompileLpopCmd --
  *
  *	How to compile the "lpop" command. We only bother with the case
@@ -1501,9 +1587,14 @@ TclCompileLpopCmd(
     CompileEnv *envPtr)		/* Holds the resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
-    Tcl_Size numWords = parsePtr->numWords, varIdx;
+    Tcl_Size numWords = parsePtr->numWords;
     Tcl_Token *varTokenPtr, *idxTokenPtr = NULL;
-    int idx = TCL_INDEX_END, dummy;
+    Tcl_LVTIndex varIdx;
+    int idx = TCL_INDEX_END, isScalar;
+
+    // TODO: Figure out all the stack cases here to allow full variable access
+    // TODO: Find way to handle complex indices
+    // (extra opcode for TclLsetFlat with NULL value?)
 
     if (numWords < 2 || numWords > 3 || !EnvIsProc(envPtr)) {
 	return TCL_ERROR;
@@ -1519,10 +1610,14 @@ TclCompileLpopCmd(
 		TCL_INDEX_NONE, &idx) != TCL_OK) {
 	    return TCL_ERROR;
 	}
+	// The index, if present, must now be simple.
     }
 
-    PushVarNameWord(varTokenPtr, TCL_NO_ELEMENT, &varIdx, &dummy, 1);
-    // Shouldn't have pushed any words
+    PushVarNameWord(varTokenPtr, 0, &varIdx, &isScalar, 1);
+    if (varIdx < 0 || !isScalar) {
+	// Give up if we pushed any words; makes stack computations tractable
+	return TCL_ERROR;
+    }
 
     OP4(			LOAD_SCALAR, varIdx);
     OP(				DUP);
@@ -1536,6 +1631,7 @@ TclCompileLpopCmd(
     OP(				DUP);
     OP41(			LREPLACE, 3, TCL_LREPLACE4_END_IS_LAST
 					| TCL_LREPLACE4_NEED_IN_RANGE);
+    // This is where the stack gets complicated
     OP4(			STORE_SCALAR, varIdx);
     OP(				POP);
 
