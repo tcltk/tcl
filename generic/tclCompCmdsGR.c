@@ -1537,6 +1537,8 @@ TclCompileLeditCmd(
 	}
     }
 
+    // FIXME: Order of evaluation of arguments w.r.t. variable read is wrong
+
     // Push all remaining words, at least two
     for (i=2; i<numWords; i++, tokenPtr=TokenAfter(tokenPtr)) {
     	PUSH_TOKEN(		tokenPtr, i);
