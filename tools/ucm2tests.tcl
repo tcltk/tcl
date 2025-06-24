@@ -40,7 +40,7 @@ namespace eval ucm {
         cp1255    glibc-CP1255-2.1.2
         cp1256    glibc-CP1256-2.1.2
         cp1257    glibc-CP1257-2.1.2
-        cp1258    glibc-CP1258-2.1.2
+        cp1258    windows-1258-2000
         gb1988    glibc-GB_1988_80-2.3.3
         iso8859-1 glibc-ISO_8859_1-2.1.2
         iso8859-2 glibc-ISO_8859_2-2.1.2
@@ -75,10 +75,11 @@ namespace eval ucm {
     # Encodings known to be broken
     variable brokenEncodings
     array set brokenEncodings {
-        koi8-u     {0xb4->0403, should be 0404. Typo in original RFC}
+        gb1988      {Tcl defines \x80-\xFF that are not in original spec or ICU}
+        koi8-u      {0xb4->0403, should be 0404. Typo in original RFC}
         macDingbats {Current encoding is from 1995. Needs update to https://www.unicode.org/Public/MAPPINGS/VENDORS/APPLE/DINGBATS.TXT}
-        macGreek {Current encoding is from 1995. Needs update to https://www.unicode.org/Public/MAPPINGS/VENDORS/APPLE/GREEK.TXT}
-        macRomania {Current encoding is from 1995. Needs update to https://www.unicode.org/Public/MAPPINGS/VENDORS/APPLE/ROMANIAN.TXT}
+        macGreek    {Current encoding is from 1995. Needs update to https://www.unicode.org/Public/MAPPINGS/VENDORS/APPLE/GREEK.TXT}
+        macRomania  {Current encoding is from 1995. Needs update to https://www.unicode.org/Public/MAPPINGS/VENDORS/APPLE/ROMANIAN.TXT}
     }
 
     # Array keyed by Tcl encoding name. Each element contains mapping of
@@ -317,7 +318,7 @@ proc ucm::generate_tests {} {
     }
 
     if {[array size tclNames]} {
-        warn "Missing encoding: [lsort [array names tclNames]]"
+        warn "Missing encoding (either no matching UCM file or no support for parsing):\n[lsort [array names tclNames]]"
     }
     if {[info exists outputPath]} {
         close $outputChan

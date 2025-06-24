@@ -2249,10 +2249,10 @@ proc tcltest::test {name description args} {
 	}
     }
     puts [outputChannel] "==== $name\
-	    [string trim $description] FAILED"
+	    [string trim [Asciify $description]] FAILED"
     if {[string length $body]} {
 	puts [outputChannel] "==== Contents of test case:"
-	puts [outputChannel] $body
+	puts [outputChannel] [Asciify $body]
     }
     if {$setupFailure} {
 	puts [outputChannel] "---- Test setup\
