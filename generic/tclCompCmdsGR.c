@@ -1501,48 +1501,70 @@ TclCompileLeditCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Size numWords = parsePtr->numWords, i;
-    Tcl_Token *varTokenPtr, *tokenPtr;
-    Tcl_LVTIndex varIdx;
-    int isScalar;
-
     if (numWords < 4) {
 	return TCL_ERROR;
     }
-    varTokenPtr = TokenAfter(parsePtr->tokenPtr);
-    if (varTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
-	return TCL_ERROR;
-    }
-    tokenPtr = TokenAfter(varTokenPtr);
+    Tcl_Token *varTokenPtr = TokenAfter(parsePtr->tokenPtr);
 
-    // Parse/push the variable name
+    /*
+     * Parse/push the variable name. Pushes 0, 1 or 2 words.
+     */
+
+    Tcl_LVTIndex varIdx;
+    int isScalar;
     PushVarNameWord(varTokenPtr, 0, &varIdx, &isScalar, 1);
+    // Stack: varWords...
 
-    // Read the variable, saving any pushed name words for later
+    /*
+     * Push all remaining words; there's definitely at least two.
+     */
+
+    Tcl_Token *tokenPtr = TokenAfter(varTokenPtr);
+    for (i=2; i<numWords; i++, tokenPtr=TokenAfter(tokenPtr)) {
+    	PUSH_TOKEN(		tokenPtr, i);
+    }
+
+    // Stack: varWords... idx1 idx2 values...
+    //        {len=[0-2]} { len=numWords-2  }
+
+    /*
+     * Read the variable. This requires us to copy the varWords first (if there
+     * are any).
+     */
+
     if (isScalar) {
 	if (varIdx < 0) {
-	    OP(			DUP);
+	    OP4(		OVER, numWords - 2);
 	    OP(			LOAD_STK);
 	} else {
 	    OP4(		LOAD_SCALAR, varIdx);
 	}
     } else {
 	if (varIdx < 0) {
-	    OP(			DUP);
-	    OP4(		OVER, 2);
-	    OP(			SWAP);
+	    OP4(		OVER, numWords - 1);
+	    OP4(		OVER, numWords - 1);
 	    OP(			LOAD_ARRAY_STK);
 	} else {
-	    OP(			DUP);
+	    OP4(		OVER, numWords - 2);
 	    OP4(		LOAD_ARRAY, varIdx);
 	}
     }
 
-    // FIXME: Order of evaluation of arguments w.r.t. variable read is wrong
+    /*
+     * Move the value read from the variable to the correct stack location for
+     * the LREPLACE instruction.
+     */
 
-    // Push all remaining words, at least two
-    for (i=2; i<numWords; i++, tokenPtr=TokenAfter(tokenPtr)) {
-    	PUSH_TOKEN(		tokenPtr, i);
+    // TODO: Consider a ROLL operation, as in Postscript
+    // Stack: varWords... idx1 idx2 values... listValue
+    OP4(			REVERSE, numWords - 1);
+    // Stack: varWords... listValue values... idx2 idx1
+    if (numWords > 4) {
+	OP4(			REVERSE, numWords - 2);
+    } else {
+	OP(			SWAP);
     }
+    // Stack: varWords... listValue idx1 idx2 values...
 
     /*
      * First operand is count of arguments.
@@ -1551,6 +1573,12 @@ TclCompileLeditCmd(
      */
     OP41(			LREPLACE, numWords - 1,
 					TCL_LREPLACE4_END_IS_LAST);
+    // Stack: varWords... listValue
+
+    /*
+     * Write back the updated value. We've prepped the stack exactly right for
+     * this to be something we can Just Do at this point.
+     */
 
     if (isScalar) {
 	if (varIdx < 0) {
@@ -1566,6 +1594,7 @@ TclCompileLeditCmd(
 	}
     }
 
+    // Stack: listValue
     return TCL_OK;
 }
 
