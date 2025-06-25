@@ -36,6 +36,8 @@ to the userbase.
  - [Missing include dir for extensions in non-default locations](https://core.tcl-lang.org/tcl/tktview/333512)
  - [tcl::tm::path doesn't handle tilde expand](https://core.tcl-lang.org/tcl/tktview/b87673)
  - [lseq numeric overflow](https://core.tcl-lang.org/tcl/tktview/0ee626)
+ - ["return": broken ordering of nested -options](https://core.tcl-lang.org/tcl/tktview/ecf35c)
+ - [Euro/Tail-sign missing from cp864 encoding](https://core.tcl-lang.org/tcl/tktview/ecafd8)
 
 # Incompatibilities
  - [The ActiveCodePage element has been removed from the Windows executable manifest for tclsh](https://core.tcl-lang.org/tips/doc/trunk/tip/716.md)
