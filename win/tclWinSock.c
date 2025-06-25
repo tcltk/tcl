@@ -517,7 +517,7 @@ TclpFinalizeSockets(void)
 	     * completely cleaned up before we leave this function.
 	     */
 
-	    WaitForSingleObject(tsdPtr->readyEvent, INFINITE);
+	    WaitForSingleObject(tsdPtr->socketThread, INFINITE);
 	    tsdPtr->hwnd = NULL;
 	}
 	CloseHandle(tsdPtr->socketThread);
@@ -2192,6 +2192,7 @@ Tcl_OpenTcpServerEx(
 		(socklen_t)addrPtr->ai_addrlen) == SOCKET_ERROR) {
 	    Tcl_WinConvertError((DWORD) WSAGetLastError());
 	    closesocket(sock);
+	    sock = INVALID_SOCKET; /* Bug [40b1814b93] */
 	    continue;
 	}
 	if (port == 0 && chosenport == 0) {
@@ -2220,6 +2221,7 @@ Tcl_OpenTcpServerEx(
 	if (listen(sock, backlog) == SOCKET_ERROR) {
 	    Tcl_WinConvertError((DWORD) WSAGetLastError());
 	    closesocket(sock);
+	    sock = INVALID_SOCKET; /* Bug [40b1814b93] */
 	    continue;
 	}
 
