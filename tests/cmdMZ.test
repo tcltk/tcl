@@ -16,6 +16,10 @@ if {"::tcltest" ni [namespace children]} {
     namespace import -force ::tcltest::*
 }
 
+testConstraint noappverifier [expr {
+        [llength [info commands testappverifierpresent]] == 0
+        || ![testappverifierpresent]}]
+
 namespace eval ::tcl::test::cmdMZ {
     namespace import ::tcltest::cleanupTests
     namespace import ::tcltest::customMatch
@@ -420,7 +424,10 @@ test cmdMZ-6.5a {Tcl_TimeRateObjCmd: result format and one iteration} {
 test cmdMZ-6.5b {Tcl_TimeRateObjCmd: result format without iterations} {
     regexp {^0 \ws/# 0 # 0 #/sec 0 net-ms$} [timerate {} 0 0]
 } 1
-test cmdMZ-6.6 {Tcl_TimeRateObjCmd: slower commands take longer, but it remains almost the same time of measurement} -body {
+test cmdMZ-6.6 {
+    Tcl_TimeRateObjCmd: slower commands take longer, but it
+    remains almost the same time of measurement
+} -constraints noappverifier -body {
     set m1 [timerate {_nrt_sleep 0.01} 50]
     set m2 [timerate {_nrt_sleep 1.00} 50]
     if {[testConstraint valgrind] && ([lindex $m1 0] >= 100 || [lindex $m1 2] <= 500)} {
