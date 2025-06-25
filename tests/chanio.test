@@ -18,6 +18,10 @@ if {"::tcltest" ni [namespace children]} {
     namespace import -force ::tcltest::*
 }
 
+testConstraint noappverifier [expr {
+        [llength [info commands testappverifierpresent]] == 0
+        || ![testappverifierpresent]}]
+
 namespace eval ::tcl::test::io {
 
     if {"::tcltest" ni [namespace children]} {
@@ -1039,7 +1043,7 @@ test chan-io-6.55 {Tcl_GetsObj: overconverted} -body {
 test chan-io-6.56 {Tcl_GetsObj: incomplete lines should disable file events} -setup {
     update
     variable x {}
-} -constraints {stdio fileevent} -body {
+} -constraints {stdio fileevent noappverifier} -body {
     set f [openpipe w+ $path(cat)]
     chan configure $f -buffering none
     chan puts -nonewline $f "foobar"
@@ -1476,7 +1480,7 @@ test chan-io-13.5 {TranslateInputEOL: crlf mode: naked lf} -body {
 test chan-io-13.6 {TranslateInputEOL: auto mode: saw cr in last segment} -setup {
     variable x {}
     variable y {}
-} -constraints {stdio testchannel fileevent} -body {
+} -constraints {stdio testchannel fileevent noappverifier} -body {
     # (chanPtr->flags & INPUT_SAW_CR)
     # This test may fail on slower machines.
     set f [openpipe w+ $path(cat)]
@@ -2198,7 +2202,7 @@ test chan-io-28.6 {Tcl_CloseEx (half-close) pipe} -setup {
 	exit 0
     } cat.tcl]
     variable done
-} -body {
+} -constraints noappverifier -body {
     set ff [openpipe r+ $cat]
     puts $ff Hey
     close $ff w
