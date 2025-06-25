@@ -9391,6 +9391,12 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 
 2025-03-23 tzdata updated to Olson's tzdata2025b (nijtmans)
 
-2025-04-1 (bug) [fd8341] Tcl_InitStubs compatibility for 9.1, better error-handling (nijtmans)
+2025-04-01 (bug) [fd8341] Tcl_InitStubs compatibility for 9.1, better error-handling (nijtmans)
 
 2025-05-05 (bug) [42d14c] Fix scan with long mantissa. Ex.: scan "1.[string repeat 1 191]e-321" %g
+
+2025-06-18 (bug) [4f338b] add missing Tcl_CloseEx docs (nadkarni)
+
+2025-06-24 (bug) [ecf35c] Correct nested handling of return option -options (porter)
+
+2025-06-25 (bug) [ecafd8] Euro-sign missing from cp864 encoding (nijtmans)
