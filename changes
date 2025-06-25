@@ -9399,4 +9399,4 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 
 2025-06-24 (bug) [ecf35c] Correct nested handling of return option -options (porter)
 
-2025-06-25 (bug) [ecafd8] Euro-sign missing from cp864 encoding (nijtmans)
+2025-06-25 (bug) [ecafd8] Euro/Tail-sign missing from cp864 encoding (nijtmans)
