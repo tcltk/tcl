@@ -1620,51 +1620,87 @@ TclCompileLpopCmd(
     DefineLineInformation;	/* TIP #280 */
     Tcl_Size numWords = parsePtr->numWords;
     Tcl_Token *varTokenPtr, *idxTokenPtr = NULL;
-    Tcl_LVTIndex varIdx;
-    int idx = TCL_INDEX_END, isScalar;
+    int idx = TCL_INDEX_END, isSimpleIndex = 1;
 
     // TODO: Figure out all the stack cases here to allow full variable access
-    // TODO: Find way to handle complex indices
+    // TODO: Find way to handle multiple indices
     // (extra opcode for TclLsetFlat with NULL value?)
 
-    if (numWords < 2 || numWords > 3 || !EnvIsProc(envPtr)) {
+    if (numWords < 2 || numWords > 3) {
 	return TCL_ERROR;
     }
 
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
-    if (varTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
-	return TCL_ERROR;
-    }
     if (numWords == 3) {
 	idxTokenPtr = TokenAfter(varTokenPtr);
 	if (TclGetIndexFromToken(idxTokenPtr, TCL_INDEX_NONE,
 		TCL_INDEX_NONE, &idx) != TCL_OK) {
-	    return TCL_ERROR;
+	    /*
+	     * Index isn't simple (e.g., it's a variable read) and could have
+	     * side effects. Need a much more conservative instruction sequence
+	     * to get order of trace-observable operations right.
+	     */
+	    isSimpleIndex = 0;
 	}
-	// The index, if present, must now be simple.
     }
 
+    Tcl_LVTIndex varIdx;
+    int isScalar;
     PushVarNameWord(varTokenPtr, 0, &varIdx, &isScalar, 1);
     if (varIdx < 0 || !isScalar) {
 	// Give up if we pushed any words; makes stack computations tractable
 	return TCL_ERROR;
     }
 
-    OP4(			LOAD_SCALAR, varIdx);
-    OP(				DUP);
-    OP4(			LIST_INDEX_IMM, idx);
-    OP(				SWAP);
-    if (idxTokenPtr) {
-	PUSH_SIMPLE_TOKEN(	idxTokenPtr);
+    if (!isSimpleIndex) {
+	/*
+	 * Push the index token (which may have side effects!) before reading
+	 * the variable, which is "internal" to [lpop].
+	 */
+
+	PUSH_TOKEN(		idxTokenPtr, 2);
+	OP4(			LOAD_SCALAR, varIdx);
+	// Stack: index list
+	OP(			SWAP);
+	// Stack: list index
+	OP(			DUP);
+	// Stack: list index index
+	OP4(			OVER, 2);
+	// Stack: list index index list
+	OP(			SWAP);
+	// Stack: list index list index
+	OP(			LIST_INDEX);
+	// Stack: list index value
+	OP4(			REVERSE, 3);
+	// Stack: value index list
+	OP(			SWAP);
     } else {
-	PUSH(			"end");
+	/*
+	 * Can use this much abbreviated form here. In particular, we have a
+	 * parsed index and we can push its value at any time we want,
+	 * including exactly once after reading the variable...
+	 */
+
+	OP4(			LOAD_SCALAR, varIdx);
+	OP(			DUP);
+	OP4(			LIST_INDEX_IMM, idx);
+	// Stack: list value
+	OP(			SWAP);
+	if (idxTokenPtr) {
+	    PUSH_SIMPLE_TOKEN(	idxTokenPtr);
+	} else {
+	    PUSH(		"end");
+	}
     }
+    // Stack: value list index
     OP(				DUP);
+    // Stack: value list index index
     OP41(			LREPLACE, 3, TCL_LREPLACE4_END_IS_LAST
 					| TCL_LREPLACE4_NEED_IN_RANGE);
-    // This is where the stack gets complicated
+    // Stack: value newList
     OP4(			STORE_SCALAR, varIdx);
     OP(				POP);
+    // Stack: value
 
     return TCL_OK;
 }
