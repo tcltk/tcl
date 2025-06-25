@@ -5,6 +5,8 @@
 #
 #  tclsh ucm2tests.tcl PATH_TO_ICU_UCM_DIRECTORY ?OUTPUTPATH?
 #
+# Does not generate tests for tcl8 profiles as they cannot be
+# matched with ICU for invalid sequences.
 
 namespace eval ucm {
     # No means to change these currently but ...
@@ -72,9 +74,10 @@ namespace eval ucm {
         macUkraine macos-7_2-10.2
     }
 
-    # Encodings known to be broken
-    variable brokenEncodings
-    array set brokenEncodings {
+    # Encodings known to be mismatches
+    variable knownMismatchedEncodings
+    array set knownMismatchedEncodings {
+        cp1258      {Could not find a matching ICU encoding amongst its 1258 variants}
         gb1988      {Tcl defines \x80-\xFF that are not in original spec or ICU}
         koi8-u      {0xb4->0403, should be 0404. Typo in original RFC}
         macDingbats {Current encoding is from 1995. Needs update to https://www.unicode.org/Public/MAPPINGS/VENDORS/APPLE/DINGBATS.TXT}
@@ -107,7 +110,7 @@ proc ucm::abort {msg} {
 }
 proc ucm::warn {msg} {
     variable errorChan
-    puts $errorChan $msg
+    puts $errorChan [string cat {[WARNING] } $msg]
 }
 proc ucm::log {msg} {
     variable verbose
@@ -241,7 +244,7 @@ proc ucm::generate_tests {} {
     variable outputPath
     variable outputChan
     variable encSubchar
-    variable brokenEncodings
+    variable knownMismatchedEncodings
 
     if {[info exists outputPath]} {
         set outputChan [open $outputPath w]
@@ -263,7 +266,7 @@ proc ucm::generate_tests {} {
         }
         unset tclNames($encName)
 
-        if {[info exists brokenEncodings($encName)]} {
+        if {[info exists knownMismatchedEncodings($encName)]} {
             set constraints " -constraints icuMismatch "
         } else {
             set constraints ""
@@ -291,14 +294,14 @@ proc ucm::generate_tests {} {
 
 
         # Generate the invalidity checks
-        if {![info exists brokenEncodings($encName)]} {
+        if {![info exists knownMismatchedEncodings($encName)]} {
             print "\n# $encName - invalid byte sequences"
             print "lappend encInvalidBytes \{*\}\{"
             foreach hex $invalidCodeSequences($encName) {
                 # Map XXXX... to \xXX\xXX...
                 set uhex [regsub -all .. $hex {\\x\0}]
                 set uhex \\U[string range 00000000$hex end-7 end]
-                print "    $encName $hex tcl8    $uhex -1 {} {}"
+                #print "    $encName $hex tcl8    $uhex -1 {} {}"
                 print "    $encName $hex replace \\uFFFD -1 {} {}"
                 print "    $encName $hex strict  {}       0 {} {}"
             }
@@ -306,14 +309,15 @@ proc ucm::generate_tests {} {
 
             print "\n# $encName - invalid byte sequences"
             print "lappend encUnencodableStrings \{*\}\{"
+            set subchar "3F"; # Tcl uses ? by default
             if {[info exists encSubchar($encName)]} {
-                set subchar $encSubchar($encName)
-            } else {
-                set subchar "3F"; # Tcl uses ? by default
+                if {$subchar ne $encSubchar($encName)} {
+                    warn "Replacing substitution character for $encName with Tcl's ? character."
+                }
             }
             foreach hex $unmappedCodePoints($encName) {
                 set uhex \\U[string range 00000000$hex end-7 end]
-                print "    $encName $uhex tcl8    $subchar -1 {} {}"
+                #print "    $encName $uhex tcl8    $subchar -1 {} {}"
                 print "    $encName $uhex replace $subchar -1 {} {}"
                 print "    $encName $uhex strict  {}                      0 {} {}"
             }
@@ -322,8 +326,13 @@ proc ucm::generate_tests {} {
     }
 
     if {[array size tclNames]} {
-        warn "Missing encoding (either no matching UCM file or no support for parsing):\n[lsort [array names tclNames]]"
+        warn "Missing encodings (no UCM file or no support for format):\n[lsort [array names tclNames]]"
     }
+    if {[array size knownMismatchedEncodings]} {
+        warn "The following encodings have no matching ICU variants:\n[lsort [array names knownMismatchedEncodings]]"
+        
+    }
+
     if {[info exists outputPath]} {
         close $outputChan
         unset outputChan

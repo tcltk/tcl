@@ -64,22 +64,16 @@ lappend encInvalidBytes {*}{
 
 # cp437 - invalid byte sequences
 lappend encUnencodableStrings {*}{
-    cp437 \U00000080 tcl8    3F -1 {} {}
     cp437 \U00000080 replace 3F -1 {} {}
     cp437 \U00000080 strict  {}                      0 {} {}
-    cp437 \U00000400 tcl8    3F -1 {} {}
     cp437 \U00000400 replace 3F -1 {} {}
     cp437 \U00000400 strict  {}                      0 {} {}
-    cp437 \U0000D800 tcl8    3F -1 {} {}
     cp437 \U0000D800 replace 3F -1 {} {}
     cp437 \U0000D800 strict  {}                      0 {} {}
-    cp437 \U0000DC00 tcl8    3F -1 {} {}
     cp437 \U0000DC00 replace 3F -1 {} {}
     cp437 \U0000DC00 strict  {}                      0 {} {}
-    cp437 \U00010000 tcl8    3F -1 {} {}
     cp437 \U00010000 replace 3F -1 {} {}
     cp437 \U00010000 strict  {}                      0 {} {}
-    cp437 \U0010FFFF tcl8    3F -1 {} {}
     cp437 \U0010FFFF replace 3F -1 {} {}
     cp437 \U0010FFFF strict  {}                      0 {} {}
 }; # cp437
@@ -101,23 +95,17 @@ lappend encInvalidBytes {*}{
 
 # cp737 - invalid byte sequences
 lappend encUnencodableStrings {*}{
-    cp737 \U00000080 tcl8    1A -1 {} {}
-    cp737 \U00000080 replace 1A -1 {} {}
+    cp737 \U00000080 replace 3F -1 {} {}
     cp737 \U00000080 strict  {}                      0 {} {}
-    cp737 \U00000400 tcl8    1A -1 {} {}
-    cp737 \U00000400 replace 1A -1 {} {}
+    cp737 \U00000400 replace 3F -1 {} {}
     cp737 \U00000400 strict  {}                      0 {} {}
-    cp737 \U0000D800 tcl8    1A -1 {} {}
-    cp737 \U0000D800 replace 1A -1 {} {}
+    cp737 \U0000D800 replace 3F -1 {} {}
     cp737 \U0000D800 strict  {}                      0 {} {}
-    cp737 \U0000DC00 tcl8    1A -1 {} {}
-    cp737 \U0000DC00 replace 1A -1 {} {}
+    cp737 \U0000DC00 replace 3F -1 {} {}
     cp737 \U0000DC00 strict  {}                      0 {} {}
-    cp737 \U00010000 tcl8    1A -1 {} {}
-    cp737 \U00010000 replace 1A -1 {} {}
+    cp737 \U00010000 replace 3F -1 {} {}
     cp737 \U00010000 strict  {}                      0 {} {}
-    cp737 \U0010FFFF tcl8    1A -1 {} {}
-    cp737 \U0010FFFF replace 1A -1 {} {}
+    cp737 \U0010FFFF replace 3F -1 {} {}
     cp737 \U0010FFFF strict  {}                      0 {} {}
 }; # cp737
 
@@ -138,23 +126,17 @@ lappend encInvalidBytes {*}{
 
 # cp775 - invalid byte sequences
 lappend encUnencodableStrings {*}{
-    cp775 \U00000080 tcl8    1A -1 {} {}
-    cp775 \U00000080 replace 1A -1 {} {}
+    cp775 \U00000080 replace 3F -1 {} {}
     cp775 \U00000080 strict  {}                      0 {} {}
-    cp775 \U00000400 tcl8    1A -1 {} {}
-    cp775 \U00000400 replace 1A -1 {} {}
+    cp775 \U00000400 replace 3F -1 {} {}
     cp775 \U00000400 strict  {}                      0 {} {}
-    cp775 \U0000D800 tcl8    1A -1 {} {}
-    cp775 \U0000D800 replace 1A -1 {} {}
+    cp775 \U0000D800 replace 3F -1 {} {}
     cp775 \U0000D800 strict  {}                      0 {} {}
-    cp775 \U0000DC00 tcl8    1A -1 {} {}
-    cp775 \U0000DC00 replace 1A -1 {} {}
+    cp775 \U0000DC00 replace 3F -1 {} {}
     cp775 \U0000DC00 strict  {}                      0 {} {}
-    cp775 \U00010000 tcl8    1A -1 {} {}
-    cp775 \U00010000 replace 1A -1 {} {}
+    cp775 \U00010000 replace 3F -1 {} {}
     cp775 \U00010000 strict  {}                      0 {} {}
-    cp775 \U0010FFFF tcl8    1A -1 {} {}
-    cp775 \U0010FFFF replace 1A -1 {} {}
+    cp775 \U0010FFFF replace 3F -1 {} {}
     cp775 \U0010FFFF strict  {}                      0 {} {}
 }; # cp775
 
@@ -175,22 +157,16 @@ lappend encInvalidBytes {*}{
 
 # cp850 - invalid byte sequences
 lappend encUnencodableStrings {*}{
-    cp850 \U00000080 tcl8    3F -1 {} {}
     cp850 \U00000080 replace 3F -1 {} {}
     cp850 \U00000080 strict  {}                      0 {} {}
-    cp850 \U00000400 tcl8    3F -1 {} {}
     cp850 \U00000400 replace 3F -1 {} {}
     cp850 \U00000400 strict  {}                      0 {} {}
-    cp850 \U0000D800 tcl8    3F -1 {} {}
     cp850 \U0000D800 replace 3F -1 {} {}
     cp850 \U0000D800 strict  {}                      0 {} {}
-    cp850 \U0000DC00 tcl8    3F -1 {} {}
     cp850 \U0000DC00 replace 3F -1 {} {}
     cp850 \U0000DC00 strict  {}                      0 {} {}
-    cp850 \U00010000 tcl8    3F -1 {} {}
     cp850 \U00010000 replace 3F -1 {} {}
     cp850 \U00010000 strict  {}                      0 {} {}
-    cp850 \U0010FFFF tcl8    3F -1 {} {}
     cp850 \U0010FFFF replace 3F -1 {} {}
     cp850 \U0010FFFF strict  {}                      0 {} {}
 }; # cp850
@@ -212,22 +188,16 @@ lappend encInvalidBytes {*}{
 
 # cp852 - invalid byte sequences
 lappend encUnencodableStrings {*}{
-    cp852 \U00000080 tcl8    3F -1 {} {}
     cp852 \U00000080 replace 3F -1 {} {}
     cp852 \U00000080 strict  {}                      0 {} {}
-    cp852 \U00000400 tcl8    3F -1 {} {}
     cp852 \U00000400 replace 3F -1 {} {}
     cp852 \U00000400 strict  {}                      0 {} {}
-    cp852 \U0000D800 tcl8    3F -1 {} {}
     cp852 \U0000D800 replace 3F -1 {} {}
     cp852 \U0000D800 strict  {}                      0 {} {}
-    cp852 \U0000DC00 tcl8    3F -1 {} {}
     cp852 \U0000DC00 replace 3F -1 {} {}
     cp852 \U0000DC00 strict  {}                      0 {} {}
-    cp852 \U00010000 tcl8    3F -1 {} {}
     cp852 \U00010000 replace 3F -1 {} {}
     cp852 \U00010000 strict  {}                      0 {} {}
-    cp852 \U0010FFFF tcl8    3F -1 {} {}
     cp852 \U0010FFFF replace 3F -1 {} {}
     cp852 \U0010FFFF strict  {}                      0 {} {}
 }; # cp852
@@ -249,22 +219,16 @@ lappend encInvalidBytes {*}{
 
 # cp855 - invalid byte sequences
 lappend encUnencodableStrings {*}{
-    cp855 \U00000080 tcl8    3F -1 {} {}
     cp855 \U00000080 replace 3F -1 {} {}
     cp855 \U00000080 strict  {}                      0 {} {}
-    cp855 \U00000400 tcl8    3F -1 {} {}
     cp855 \U00000400 replace 3F -1 {} {}
     cp855 \U00000400 strict  {}                      0 {} {}
-    cp855 \U0000D800 tcl8    3F -1 {} {}
     cp855 \U0000D800 replace 3F -1 {} {}
     cp855 \U0000D800 strict  {}                      0 {} {}
-    cp855 \U0000DC00 tcl8    3F -1 {} {}
     cp855 \U0000DC00 replace 3F -1 {} {}
     cp855 \U0000DC00 strict  {}                      0 {} {}
-    cp855 \U00010000 tcl8    3F -1 {} {}
     cp855 \U00010000 replace 3F -1 {} {}
     cp855 \U00010000 strict  {}                      0 {} {}
-    cp855 \U0010FFFF tcl8    3F -1 {} {}
     cp855 \U0010FFFF replace 3F -1 {} {}
     cp855 \U0010FFFF strict  {}                      0 {} {}
 }; # cp855
@@ -282,35 +246,26 @@ test encoding-convertto-ucmCompare-cp857 {Compare against ICU UCM}  -body {
 
 # cp857 - invalid byte sequences
 lappend encInvalidBytes {*}{
-    cp857 D5 tcl8    \U000000D5 -1 {} {}
     cp857 D5 replace \uFFFD -1 {} {}
     cp857 D5 strict  {}       0 {} {}
-    cp857 E7 tcl8    \U000000E7 -1 {} {}
     cp857 E7 replace \uFFFD -1 {} {}
     cp857 E7 strict  {}       0 {} {}
-    cp857 F2 tcl8    \U000000F2 -1 {} {}
     cp857 F2 replace \uFFFD -1 {} {}
     cp857 F2 strict  {}       0 {} {}
 }; # cp857
 
 # cp857 - invalid byte sequences
 lappend encUnencodableStrings {*}{
-    cp857 \U00000080 tcl8    3F -1 {} {}
     cp857 \U00000080 replace 3F -1 {} {}
     cp857 \U00000080 strict  {}                      0 {} {}
-    cp857 \U00000400 tcl8    3F -1 {} {}
     cp857 \U00000400 replace 3F -1 {} {}
     cp857 \U00000400 strict  {}                      0 {} {}
-    cp857 \U0000D800 tcl8    3F -1 {} {}
     cp857 \U0000D800 replace 3F -1 {} {}
     cp857 \U0000D800 strict  {}                      0 {} {}
-    cp857 \U0000DC00 tcl8    3F -1 {} {}
     cp857 \U0000DC00 replace 3F -1 {} {}
     cp857 \U0000DC00 strict  {}                      0 {} {}
-    cp857 \U00010000 tcl8    3F -1 {} {}
     cp857 \U00010000 replace 3F -1 {} {}
     cp857 \U00010000 strict  {}                      0 {} {}
-    cp857 \U0010FFFF tcl8    3F -1 {} {}
     cp857 \U0010FFFF replace 3F -1 {} {}
     cp857 \U0010FFFF strict  {}                      0 {} {}
 }; # cp857
@@ -332,22 +287,16 @@ lappend encInvalidBytes {*}{
 
 # cp860 - invalid byte sequences
 lappend encUnencodableStrings {*}{
-    cp860 \U00000080 tcl8    3F -1 {} {}
     cp860 \U00000080 replace 3F -1 {} {}
     cp860 \U00000080 strict  {}                      0 {} {}
-    cp860 \U00000400 tcl8    3F -1 {} {}
     cp860 \U00000400 replace 3F -1 {} {}
     cp860 \U00000400 strict  {}                      0 {} {}
-    cp860 \U0000D800 tcl8    3F -1 {} {}
     cp860 \U0000D800 replace 3F -1 {} {}
     cp860 \U0000D800 strict  {}                      0 {} {}
-    cp860 \U0000DC00 tcl8    3F -1 {} {}
     cp860 \U0000DC00 replace 3F -1 {} {}
     cp860 \U0000DC00 strict  {}                      0 {} {}
-    cp860 \U00010000 tcl8    3F -1 {} {}
     cp860 \U00010000 replace 3F -1 {} {}
     cp860 \U00010000 strict  {}                      0 {} {}
-    cp860 \U0010FFFF tcl8    3F -1 {} {}
     cp860 \U0010FFFF replace 3F -1 {} {}
     cp860 \U0010FFFF strict  {}                      0 {} {}
 }; # cp860
@@ -369,22 +318,16 @@ lappend encInvalidBytes {*}{
 
 # cp861 - invalid byte sequences
 lappend encUnencodableStrings {*}{
-    cp861 \U00000080 tcl8    3F -1 {} {}
     cp861 \U00000080 replace 3F -1 {} {}
     cp861 \U00000080 strict  {}                      0 {} {}
-    cp861 \U00000400 tcl8    3F -1 {} {}
     cp861 \U00000400 replace 3F -1 {} {}
     cp861 \U00000400 strict  {}                      0 {} {}
-    cp861 \U0000D800 tcl8    3F -1 {} {}
     cp861 \U0000D800 replace 3F -1 {} {}
     cp861 \U0000D800 strict  {}                      0 {} {}
-    cp861 \U0000DC00 tcl8    3F -1 {} {}
     cp861 \U0000DC00 replace 3F -1 {} {}
     cp861 \U0000DC00 strict  {}                      0 {} {}
-    cp861 \U00010000 tcl8    3F -1 {} {}
     cp861 \U00010000 replace 3F -1 {} {}
     cp861 \U00010000 strict  {}                      0 {} {}
-    cp861 \U0010FFFF tcl8    3F -1 {} {}
     cp861 \U0010FFFF replace 3F -1 {} {}
     cp861 \U0010FFFF strict  {}                      0 {} {}
 }; # cp861
@@ -406,22 +349,16 @@ lappend encInvalidBytes {*}{
 
 # cp862 - invalid byte sequences
 lappend encUnencodableStrings {*}{
-    cp862 \U00000080 tcl8    3F -1 {} {}
     cp862 \U00000080 replace 3F -1 {} {}
     cp862 \U00000080 strict  {}                      0 {} {}
-    cp862 \U00000400 tcl8    3F -1 {} {}
     cp862 \U00000400 replace 3F -1 {} {}
     cp862 \U00000400 strict  {}                      0 {} {}
-    cp862 \U0000D800 tcl8    3F -1 {} {}
     cp862 \U0000D800 replace 3F -1 {} {}
     cp862 \U0000D800 strict  {}                      0 {} {}
-    cp862 \U0000DC00 tcl8    3F -1 {} {}
     cp862 \U0000DC00 replace 3F -1 {} {}
     cp862 \U0000DC00 strict  {}                      0 {} {}
-    cp862 \U00010000 tcl8    3F -1 {} {}
     cp862 \U00010000 replace 3F -1 {} {}
     cp862 \U00010000 strict  {}                      0 {} {}
-    cp862 \U0010FFFF tcl8    3F -1 {} {}
     cp862 \U0010FFFF replace 3F -1 {} {}
     cp862 \U0010FFFF strict  {}                      0 {} {}
 }; # cp862
@@ -443,22 +380,16 @@ lappend encInvalidBytes {*}{
 
 # cp863 - invalid byte sequences
 lappend encUnencodableStrings {*}{
-    cp863 \U00000080 tcl8    3F -1 {} {}
     cp863 \U00000080 replace 3F -1 {} {}
     cp863 \U00000080 strict  {}                      0 {} {}
-    cp863 \U00000400 tcl8    3F -1 {} {}
     cp863 \U00000400 replace 3F -1 {} {}
     cp863 \U00000400 strict  {}                      0 {} {}
-    cp863 \U0000D800 tcl8    3F -1 {} {}
     cp863 \U0000D800 replace 3F -1 {} {}
     cp863 \U0000D800 strict  {}                      0 {} {}
-    cp863 \U0000DC00 tcl8    3F -1 {} {}
     cp863 \U0000DC00 replace 3F -1 {} {}
     cp863 \U0000DC00 strict  {}                      0 {} {}
-    cp863 \U00010000 tcl8    3F -1 {} {}
     cp863 \U00010000 replace 3F -1 {} {}
     cp863 \U00010000 strict  {}                      0 {} {}
-    cp863 \U0010FFFF tcl8    3F -1 {} {}
     cp863 \U0010FFFF replace 3F -1 {} {}
     cp863 \U0010FFFF strict  {}                      0 {} {}
 }; # cp863
@@ -476,44 +407,32 @@ test encoding-convertto-ucmCompare-cp864 {Compare against ICU UCM}  -body {
 
 # cp864 - invalid byte sequences
 lappend encInvalidBytes {*}{
-    cp864 9B tcl8    \U0000009B -1 {} {}
     cp864 9B replace \uFFFD -1 {} {}
     cp864 9B strict  {}       0 {} {}
-    cp864 9C tcl8    \U0000009C -1 {} {}
     cp864 9C replace \uFFFD -1 {} {}
     cp864 9C strict  {}       0 {} {}
-    cp864 9F tcl8    \U0000009F -1 {} {}
     cp864 9F replace \uFFFD -1 {} {}
     cp864 9F strict  {}       0 {} {}
-    cp864 A6 tcl8    \U000000A6 -1 {} {}
     cp864 A6 replace \uFFFD -1 {} {}
     cp864 A6 strict  {}       0 {} {}
-    cp864 A7 tcl8    \U000000A7 -1 {} {}
     cp864 A7 replace \uFFFD -1 {} {}
     cp864 A7 strict  {}       0 {} {}
-    cp864 FF tcl8    \U000000FF -1 {} {}
     cp864 FF replace \uFFFD -1 {} {}
     cp864 FF strict  {}       0 {} {}
 }; # cp864
 
 # cp864 - invalid byte sequences
 lappend encUnencodableStrings {*}{
-    cp864 \U00000025 tcl8    3F -1 {} {}
     cp864 \U00000025 replace 3F -1 {} {}
     cp864 \U00000025 strict  {}                      0 {} {}
-    cp864 \U00000400 tcl8    3F -1 {} {}
     cp864 \U00000400 replace 3F -1 {} {}
     cp864 \U00000400 strict  {}                      0 {} {}
-    cp864 \U0000D800 tcl8    3F -1 {} {}
     cp864 \U0000D800 replace 3F -1 {} {}
     cp864 \U0000D800 strict  {}                      0 {} {}
-    cp864 \U0000DC00 tcl8    3F -1 {} {}
     cp864 \U0000DC00 replace 3F -1 {} {}
     cp864 \U0000DC00 strict  {}                      0 {} {}
-    cp864 \U00010000 tcl8    3F -1 {} {}
     cp864 \U00010000 replace 3F -1 {} {}
     cp864 \U00010000 strict  {}                      0 {} {}
-    cp864 \U0010FFFF tcl8    3F -1 {} {}
     cp864 \U0010FFFF replace 3F -1 {} {}
     cp864 \U0010FFFF strict  {}                      0 {} {}
 }; # cp864
@@ -535,22 +454,16 @@ lappend encInvalidBytes {*}{
 
 # cp865 - invalid byte sequences
 lappend encUnencodableStrings {*}{
-    cp865 \U00000080 tcl8    3F -1 {} {}
     cp865 \U00000080 replace 3F -1 {} {}
     cp865 \U00000080 strict  {}                      0 {} {}
-    cp865 \U00000400 tcl8    3F -1 {} {}
     cp865 \U00000400 replace 3F -1 {} {}
     cp865 \U00000400 strict  {}                      0 {} {}
-    cp865 \U0000D800 tcl8    3F -1 {} {}
     cp865 \U0000D800 replace 3F -1 {} {}
     cp865 \U0000D800 strict  {}                      0 {} {}
-    cp865 \U0000DC00 tcl8    3F -1 {} {}
     cp865 \U0000DC00 replace 3F -1 {} {}
     cp865 \U0000DC00 strict  {}                      0 {} {}
-    cp865 \U00010000 tcl8    3F -1 {} {}
     cp865 \U00010000 replace 3F -1 {} {}
     cp865 \U00010000 strict  {}                      0 {} {}
-    cp865 \U0010FFFF tcl8    3F -1 {} {}
     cp865 \U0010FFFF replace 3F -1 {} {}
     cp865 \U0010FFFF strict  {}                      0 {} {}
 }; # cp865
@@ -572,22 +485,16 @@ lappend encInvalidBytes {*}{
 
 # cp866 - invalid byte sequences
 lappend encUnencodableStrings {*}{
-    cp866 \U00000080 tcl8    3F -1 {} {}
     cp866 \U00000080 replace 3F -1 {} {}
     cp866 \U00000080 strict  {}                      0 {} {}
-    cp866 \U00000400 tcl8    3F -1 {} {}
     cp866 \U00000400 replace 3F -1 {} {}
     cp866 \U00000400 strict  {}                      0 {} {}
-    cp866 \U0000D800 tcl8    3F -1 {} {}
     cp866 \U0000D800 replace 3F -1 {} {}
     cp866 \U0000D800 strict  {}                      0 {} {}
-    cp866 \U0000DC00 tcl8    3F -1 {} {}
     cp866 \U0000DC00 replace 3F -1 {} {}
     cp866 \U0000DC00 strict  {}                      0 {} {}
-    cp866 \U00010000 tcl8    3F -1 {} {}
     cp866 \U00010000 replace 3F -1 {} {}
     cp866 \U00010000 strict  {}                      0 {} {}
-    cp866 \U0010FFFF tcl8    3F -1 {} {}
     cp866 \U0010FFFF replace 3F -1 {} {}
     cp866 \U0010FFFF strict  {}                      0 {} {}
 }; # cp866
@@ -605,53 +512,38 @@ test encoding-convertto-ucmCompare-cp869 {Compare against ICU UCM}  -body {
 
 # cp869 - invalid byte sequences
 lappend encInvalidBytes {*}{
-    cp869 80 tcl8    \U00000080 -1 {} {}
     cp869 80 replace \uFFFD -1 {} {}
     cp869 80 strict  {}       0 {} {}
-    cp869 81 tcl8    \U00000081 -1 {} {}
     cp869 81 replace \uFFFD -1 {} {}
     cp869 81 strict  {}       0 {} {}
-    cp869 82 tcl8    \U00000082 -1 {} {}
     cp869 82 replace \uFFFD -1 {} {}
     cp869 82 strict  {}       0 {} {}
-    cp869 83 tcl8    \U00000083 -1 {} {}
     cp869 83 replace \uFFFD -1 {} {}
     cp869 83 strict  {}       0 {} {}
-    cp869 84 tcl8    \U00000084 -1 {} {}
     cp869 84 replace \uFFFD -1 {} {}
     cp869 84 strict  {}       0 {} {}
-    cp869 85 tcl8    \U00000085 -1 {} {}
     cp869 85 replace \uFFFD -1 {} {}
     cp869 85 strict  {}       0 {} {}
-    cp869 87 tcl8    \U00000087 -1 {} {}
     cp869 87 replace \uFFFD -1 {} {}
     cp869 87 strict  {}       0 {} {}
-    cp869 93 tcl8    \U00000093 -1 {} {}
     cp869 93 replace \uFFFD -1 {} {}
     cp869 93 strict  {}       0 {} {}
-    cp869 94 tcl8    \U00000094 -1 {} {}
     cp869 94 replace \uFFFD -1 {} {}
     cp869 94 strict  {}       0 {} {}
 }; # cp869
 
 # cp869 - invalid byte sequences
 lappend encUnencodableStrings {*}{
-    cp869 \U00000080 tcl8    3F -1 {} {}
     cp869 \U00000080 replace 3F -1 {} {}
     cp869 \U00000080 strict  {}                      0 {} {}
-    cp869 \U00000400 tcl8    3F -1 {} {}
     cp869 \U00000400 replace 3F -1 {} {}
     cp869 \U00000400 strict  {}                      0 {} {}
-    cp869 \U0000D800 tcl8    3F -1 {} {}
     cp869 \U0000D800 replace 3F -1 {} {}
     cp869 \U0000D800 strict  {}                      0 {} {}
-    cp869 \U0000DC00 tcl8    3F -1 {} {}
     cp869 \U0000DC00 replace 3F -1 {} {}
     cp869 \U0000DC00 strict  {}                      0 {} {}
-    cp869 \U00010000 tcl8    3F -1 {} {}
     cp869 \U00010000 replace 3F -1 {} {}
     cp869 \U00010000 strict  {}                      0 {} {}
-    cp869 \U0010FFFF tcl8    3F -1 {} {}
     cp869 \U0010FFFF replace 3F -1 {} {}
     cp869 \U0010FFFF strict  {}                      0 {} {}
 }; # cp869
@@ -669,120 +561,83 @@ test encoding-convertto-ucmCompare-cp874 {Compare against ICU UCM}  -body {
 
 # cp874 - invalid byte sequences
 lappend encInvalidBytes {*}{
-    cp874 81 tcl8    \U00000081 -1 {} {}
     cp874 81 replace \uFFFD -1 {} {}
     cp874 81 strict  {}       0 {} {}
-    cp874 82 tcl8    \U00000082 -1 {} {}
     cp874 82 replace \uFFFD -1 {} {}
     cp874 82 strict  {}       0 {} {}
-    cp874 83 tcl8    \U00000083 -1 {} {}
     cp874 83 replace \uFFFD -1 {} {}
     cp874 83 strict  {}       0 {} {}
-    cp874 84 tcl8    \U00000084 -1 {} {}
     cp874 84 replace \uFFFD -1 {} {}
     cp874 84 strict  {}       0 {} {}
-    cp874 86 tcl8    \U00000086 -1 {} {}
     cp874 86 replace \uFFFD -1 {} {}
     cp874 86 strict  {}       0 {} {}
-    cp874 87 tcl8    \U00000087 -1 {} {}
     cp874 87 replace \uFFFD -1 {} {}
     cp874 87 strict  {}       0 {} {}
-    cp874 88 tcl8    \U00000088 -1 {} {}
     cp874 88 replace \uFFFD -1 {} {}
     cp874 88 strict  {}       0 {} {}
-    cp874 89 tcl8    \U00000089 -1 {} {}
     cp874 89 replace \uFFFD -1 {} {}
     cp874 89 strict  {}       0 {} {}
-    cp874 8A tcl8    \U0000008A -1 {} {}
     cp874 8A replace \uFFFD -1 {} {}
     cp874 8A strict  {}       0 {} {}
-    cp874 8B tcl8    \U0000008B -1 {} {}
     cp874 8B replace \uFFFD -1 {} {}
     cp874 8B strict  {}       0 {} {}
-    cp874 8C tcl8    \U0000008C -1 {} {}
     cp874 8C replace \uFFFD -1 {} {}
     cp874 8C strict  {}       0 {} {}
-    cp874 8D tcl8    \U0000008D -1 {} {}
     cp874 8D replace \uFFFD -1 {} {}
     cp874 8D strict  {}       0 {} {}
-    cp874 8E tcl8    \U0000008E -1 {} {}
     cp874 8E replace \uFFFD -1 {} {}
     cp874 8E strict  {}       0 {} {}
-    cp874 8F tcl8    \U0000008F -1 {} {}
     cp874 8F replace \uFFFD -1 {} {}
     cp874 8F strict  {}       0 {} {}
-    cp874 90 tcl8    \U00000090 -1 {} {}
     cp874 90 replace \uFFFD -1 {} {}
     cp874 90 strict  {}       0 {} {}
-    cp874 98 tcl8    \U00000098 -1 {} {}
     cp874 98 replace \uFFFD -1 {} {}
     cp874 98 strict  {}       0 {} {}
-    cp874 99 tcl8    \U00000099 -1 {} {}
     cp874 99 replace \uFFFD -1 {} {}
     cp874 99 strict  {}       0 {} {}
-    cp874 9A tcl8    \U0000009A -1 {} {}
     cp874 9A replace \uFFFD -1 {} {}
     cp874 9A strict  {}       0 {} {}
-    cp874 9B tcl8    \U0000009B -1 {} {}
     cp874 9B replace \uFFFD -1 {} {}
     cp874 9B strict  {}       0 {} {}
-    cp874 9C tcl8    \U0000009C -1 {} {}
     cp874 9C replace \uFFFD -1 {} {}
     cp874 9C strict  {}       0 {} {}
-    cp874 9D tcl8    \U0000009D -1 {} {}
     cp874 9D replace \uFFFD -1 {} {}
     cp874 9D strict  {}       0 {} {}
-    cp874 9E tcl8    \U0000009E -1 {} {}
     cp874 9E replace \uFFFD -1 {} {}
     cp874 9E strict  {}       0 {} {}
-    cp874 9F tcl8    \U0000009F -1 {} {}
     cp874 9F replace \uFFFD -1 {} {}
     cp874 9F strict  {}       0 {} {}
-    cp874 DB tcl8    \U000000DB -1 {} {}
     cp874 DB replace \uFFFD -1 {} {}
     cp874 DB strict  {}       0 {} {}
-    cp874 DC tcl8    \U000000DC -1 {} {}
     cp874 DC replace \uFFFD -1 {} {}
     cp874 DC strict  {}       0 {} {}
-    cp874 DD tcl8    \U000000DD -1 {} {}
     cp874 DD replace \uFFFD -1 {} {}
     cp874 DD strict  {}       0 {} {}
-    cp874 DE tcl8    \U000000DE -1 {} {}
     cp874 DE replace \uFFFD -1 {} {}
     cp874 DE strict  {}       0 {} {}
-    cp874 FC tcl8    \U000000FC -1 {} {}
     cp874 FC replace \uFFFD -1 {} {}
     cp874 FC strict  {}       0 {} {}
-    cp874 FD tcl8    \U000000FD -1 {} {}
     cp874 FD replace \uFFFD -1 {} {}
     cp874 FD strict  {}       0 {} {}
-    cp874 FE tcl8    \U000000FE -1 {} {}
     cp874 FE replace \uFFFD -1 {} {}
     cp874 FE strict  {}       0 {} {}
-    cp874 FF tcl8    \U000000FF -1 {} {}
     cp874 FF replace \uFFFD -1 {} {}
     cp874 FF strict  {}       0 {} {}
 }; # cp874
 
 # cp874 - invalid byte sequences
 lappend encUnencodableStrings {*}{
-    cp874 \U00000080 tcl8    1A -1 {} {}
-    cp874 \U00000080 replace 1A -1 {} {}
+    cp874 \U00000080 replace 3F -1 {} {}
     cp874 \U00000080 strict  {}                      0 {} {}
-    cp874 \U00000400 tcl8    1A -1 {} {}
-    cp874 \U00000400 replace 1A -1 {} {}
+    cp874 \U00000400 replace 3F -1 {} {}
     cp874 \U00000400 strict  {}                      0 {} {}
-    cp874 \U0000D800 tcl8    1A -1 {} {}
-    cp874 \U0000D800 replace 1A -1 {} {}
+    cp874 \U0000D800 replace 3F -1 {} {}
     cp874 \U0000D800 strict  {}                      0 {} {}
-    cp874 \U0000DC00 tcl8    1A -1 {} {}
-    cp874 \U0000DC00 replace 1A -1 {} {}
+    cp874 \U0000DC00 replace 3F -1 {} {}
     cp874 \U0000DC00 strict  {}                      0 {} {}
-    cp874 \U00010000 tcl8    1A -1 {} {}
-    cp874 \U00010000 replace 1A -1 {} {}
+    cp874 \U00010000 replace 3F -1 {} {}
     cp874 \U00010000 strict  {}                      0 {} {}
-    cp874 \U0010FFFF tcl8    1A -1 {} {}
-    cp874 \U0010FFFF replace 1A -1 {} {}
+    cp874 \U0010FFFF replace 3F -1 {} {}
     cp874 \U0010FFFF strict  {}                      0 {} {}
 }; # cp874
 
@@ -799,42 +654,31 @@ test encoding-convertto-ucmCompare-cp1250 {Compare against ICU UCM}  -body {
 
 # cp1250 - invalid byte sequences
 lappend encInvalidBytes {*}{
-    cp1250 81 tcl8    \U00000081 -1 {} {}
     cp1250 81 replace \uFFFD -1 {} {}
     cp1250 81 strict  {}       0 {} {}
-    cp1250 83 tcl8    \U00000083 -1 {} {}
     cp1250 83 replace \uFFFD -1 {} {}
     cp1250 83 strict  {}       0 {} {}
-    cp1250 88 tcl8    \U00000088 -1 {} {}
     cp1250 88 replace \uFFFD -1 {} {}
     cp1250 88 strict  {}       0 {} {}
-    cp1250 90 tcl8    \U00000090 -1 {} {}
     cp1250 90 replace \uFFFD -1 {} {}
     cp1250 90 strict  {}       0 {} {}
-    cp1250 98 tcl8    \U00000098 -1 {} {}
     cp1250 98 replace \uFFFD -1 {} {}
     cp1250 98 strict  {}       0 {} {}
 }; # cp1250
 
 # cp1250 - invalid byte sequences
 lappend encUnencodableStrings {*}{
-    cp1250 \U00000080 tcl8    1A -1 {} {}
-    cp1250 \U00000080 replace 1A -1 {} {}
+    cp1250 \U00000080 replace 3F -1 {} {}
     cp1250 \U00000080 strict  {}                      0 {} {}
-    cp1250 \U00000400 tcl8    1A -1 {} {}
-    cp1250 \U00000400 replace 1A -1 {} {}
+    cp1250 \U00000400 replace 3F -1 {} {}
     cp1250 \U00000400 strict  {}                      0 {} {}
-    cp1250 \U0000D800 tcl8    1A -1 {} {}
-    cp1250 \U0000D800 replace 1A -1 {} {}
+    cp1250 \U0000D800 replace 3F -1 {} {}
     cp1250 \U0000D800 strict  {}                      0 {} {}
-    cp1250 \U0000DC00 tcl8    1A -1 {} {}
-    cp1250 \U0000DC00 replace 1A -1 {} {}
+    cp1250 \U0000DC00 replace 3F -1 {} {}
     cp1250 \U0000DC00 strict  {}                      0 {} {}
-    cp1250 \U00010000 tcl8    1A -1 {} {}
-    cp1250 \U00010000 replace 1A -1 {} {}
+    cp1250 \U00010000 replace 3F -1 {} {}
     cp1250 \U00010000 strict  {}                      0 {} {}
-    cp1250 \U0010FFFF tcl8    1A -1 {} {}
-    cp1250 \U0010FFFF replace 1A -1 {} {}
+    cp1250 \U0010FFFF replace 3F -1 {} {}
     cp1250 \U0010FFFF strict  {}                      0 {} {}
 }; # cp1250
 
@@ -851,30 +695,23 @@ test encoding-convertto-ucmCompare-cp1251 {Compare against ICU UCM}  -body {
 
 # cp1251 - invalid byte sequences
 lappend encInvalidBytes {*}{
-    cp1251 98 tcl8    \U00000098 -1 {} {}
     cp1251 98 replace \uFFFD -1 {} {}
     cp1251 98 strict  {}       0 {} {}
 }; # cp1251
 
 # cp1251 - invalid byte sequences
 lappend encUnencodableStrings {*}{
-    cp1251 \U00000080 tcl8    1A -1 {} {}
-    cp1251 \U00000080 replace 1A -1 {} {}
+    cp1251 \U00000080 replace 3F -1 {} {}
     cp1251 \U00000080 strict  {}                      0 {} {}
-    cp1251 \U00000400 tcl8    1A -1 {} {}
-    cp1251 \U00000400 replace 1A -1 {} {}
+    cp1251 \U00000400 replace 3F -1 {} {}
     cp1251 \U00000400 strict  {}                      0 {} {}
-    cp1251 \U0000D800 tcl8    1A -1 {} {}
-    cp1251 \U0000D800 replace 1A -1 {} {}
+    cp1251 \U0000D800 replace 3F -1 {} {}
     cp1251 \U0000D800 strict  {}                      0 {} {}
-    cp1251 \U0000DC00 tcl8    1A -1 {} {}
-    cp1251 \U0000DC00 replace 1A -1 {} {}
+    cp1251 \U0000DC00 replace 3F -1 {} {}
     cp1251 \U0000DC00 strict  {}                      0 {} {}
-    cp1251 \U00010000 tcl8    1A -1 {} {}
-    cp1251 \U00010000 replace 1A -1 {} {}
+    cp1251 \U00010000 replace 3F -1 {} {}
     cp1251 \U00010000 strict  {}                      0 {} {}
-    cp1251 \U0010FFFF tcl8    1A -1 {} {}
-    cp1251 \U0010FFFF replace 1A -1 {} {}
+    cp1251 \U0010FFFF replace 3F -1 {} {}
     cp1251 \U0010FFFF strict  {}                      0 {} {}
 }; # cp1251
 
@@ -891,42 +728,31 @@ test encoding-convertto-ucmCompare-cp1252 {Compare against ICU UCM}  -body {
 
 # cp1252 - invalid byte sequences
 lappend encInvalidBytes {*}{
-    cp1252 81 tcl8    \U00000081 -1 {} {}
     cp1252 81 replace \uFFFD -1 {} {}
     cp1252 81 strict  {}       0 {} {}
-    cp1252 8D tcl8    \U0000008D -1 {} {}
     cp1252 8D replace \uFFFD -1 {} {}
     cp1252 8D strict  {}       0 {} {}
-    cp1252 8F tcl8    \U0000008F -1 {} {}
     cp1252 8F replace \uFFFD -1 {} {}
     cp1252 8F strict  {}       0 {} {}
-    cp1252 90 tcl8    \U00000090 -1 {} {}
     cp1252 90 replace \uFFFD -1 {} {}
     cp1252 90 strict  {}       0 {} {}
-    cp1252 9D tcl8    \U0000009D -1 {} {}
     cp1252 9D replace \uFFFD -1 {} {}
     cp1252 9D strict  {}       0 {} {}
 }; # cp1252
 
 # cp1252 - invalid byte sequences
 lappend encUnencodableStrings {*}{
-    cp1252 \U00000080 tcl8    1A -1 {} {}
-    cp1252 \U00000080 replace 1A -1 {} {}
+    cp1252 \U00000080 replace 3F -1 {} {}
     cp1252 \U00000080 strict  {}                      0 {} {}
-    cp1252 \U00000400 tcl8    1A -1 {} {}
-    cp1252 \U00000400 replace 1A -1 {} {}
+    cp1252 \U00000400 replace 3F -1 {} {}
     cp1252 \U00000400 strict  {}                      0 {} {}
-    cp1252 \U0000D800 tcl8    1A -1 {} {}
-    cp1252 \U0000D800 replace 1A -1 {} {}
+    cp1252 \U0000D800 replace 3F -1 {} {}
     cp1252 \U0000D800 strict  {}                      0 {} {}
-    cp1252 \U0000DC00 tcl8    1A -1 {} {}
-    cp1252 \U0000DC00 replace 1A -1 {} {}
+    cp1252 \U0000DC00 replace 3F -1 {} {}
     cp1252 \U0000DC00 strict  {}                      0 {} {}
-    cp1252 \U00010000 tcl8    1A -1 {} {}
-    cp1252 \U00010000 replace 1A -1 {} {}
+    cp1252 \U00010000 replace 3F -1 {} {}
     cp1252 \U00010000 strict  {}                      0 {} {}
-    cp1252 \U0010FFFF tcl8    1A -1 {} {}
-    cp1252 \U0010FFFF replace 1A -1 {} {}
+    cp1252 \U0010FFFF replace 3F -1 {} {}
     cp1252 \U0010FFFF strict  {}                      0 {} {}
 }; # cp1252
 
@@ -943,78 +769,55 @@ test encoding-convertto-ucmCompare-cp1253 {Compare against ICU UCM}  -body {
 
 # cp1253 - invalid byte sequences
 lappend encInvalidBytes {*}{
-    cp1253 81 tcl8    \U00000081 -1 {} {}
     cp1253 81 replace \uFFFD -1 {} {}
     cp1253 81 strict  {}       0 {} {}
-    cp1253 88 tcl8    \U00000088 -1 {} {}
     cp1253 88 replace \uFFFD -1 {} {}
     cp1253 88 strict  {}       0 {} {}
-    cp1253 8A tcl8    \U0000008A -1 {} {}
     cp1253 8A replace \uFFFD -1 {} {}
     cp1253 8A strict  {}       0 {} {}
-    cp1253 8C tcl8    \U0000008C -1 {} {}
     cp1253 8C replace \uFFFD -1 {} {}
     cp1253 8C strict  {}       0 {} {}
-    cp1253 8D tcl8    \U0000008D -1 {} {}
     cp1253 8D replace \uFFFD -1 {} {}
     cp1253 8D strict  {}       0 {} {}
-    cp1253 8E tcl8    \U0000008E -1 {} {}
     cp1253 8E replace \uFFFD -1 {} {}
     cp1253 8E strict  {}       0 {} {}
-    cp1253 8F tcl8    \U0000008F -1 {} {}
     cp1253 8F replace \uFFFD -1 {} {}
     cp1253 8F strict  {}       0 {} {}
-    cp1253 90 tcl8    \U00000090 -1 {} {}
     cp1253 90 replace \uFFFD -1 {} {}
     cp1253 90 strict  {}       0 {} {}
-    cp1253 98 tcl8    \U00000098 -1 {} {}
     cp1253 98 replace \uFFFD -1 {} {}
     cp1253 98 strict  {}       0 {} {}
-    cp1253 9A tcl8    \U0000009A -1 {} {}
     cp1253 9A replace \uFFFD -1 {} {}
     cp1253 9A strict  {}       0 {} {}
-    cp1253 9C tcl8    \U0000009C -1 {} {}
     cp1253 9C replace \uFFFD -1 {} {}
     cp1253 9C strict  {}       0 {} {}
-    cp1253 9D tcl8    \U0000009D -1 {} {}
     cp1253 9D replace \uFFFD -1 {} {}
     cp1253 9D strict  {}       0 {} {}
-    cp1253 9E tcl8    \U0000009E -1 {} {}
     cp1253 9E replace \uFFFD -1 {} {}
     cp1253 9E strict  {}       0 {} {}
-    cp1253 9F tcl8    \U0000009F -1 {} {}
     cp1253 9F replace \uFFFD -1 {} {}
     cp1253 9F strict  {}       0 {} {}
-    cp1253 AA tcl8    \U000000AA -1 {} {}
     cp1253 AA replace \uFFFD -1 {} {}
     cp1253 AA strict  {}       0 {} {}
-    cp1253 D2 tcl8    \U000000D2 -1 {} {}
     cp1253 D2 replace \uFFFD -1 {} {}
     cp1253 D2 strict  {}       0 {} {}
-    cp1253 FF tcl8    \U000000FF -1 {} {}
     cp1253 FF replace \uFFFD -1 {} {}
     cp1253 FF strict  {}       0 {} {}
 }; # cp1253
 
 # cp1253 - invalid byte sequences
 lappend encUnencodableStrings {*}{
-    cp1253 \U00000080 tcl8    1A -1 {} {}
-    cp1253 \U00000080 replace 1A -1 {} {}
+    cp1253 \U00000080 replace 3F -1 {} {}
     cp1253 \U00000080 strict  {}                      0 {} {}
-    cp1253 \U00000400 tcl8    1A -1 {} {}
-    cp1253 \U00000400 replace 1A -1 {} {}
+    cp1253 \U00000400 replace 3F -1 {} {}
     cp1253 \U00000400 strict  {}                      0 {} {}
-    cp1253 \U0000D800 tcl8    1A -1 {} {}
-    cp1253 \U0000D800 replace 1A -1 {} {}
+    cp1253 \U0000D800 replace 3F -1 {} {}
     cp1253 \U0000D800 strict  {}                      0 {} {}
-    cp1253 \U0000DC00 tcl8    1A -1 {} {}
-    cp1253 \U0000DC00 replace 1A -1 {} {}
+    cp1253 \U0000DC00 replace 3F -1 {} {}
     cp1253 \U0000DC00 strict  {}                      0 {} {}
-    cp1253 \U00010000 tcl8    1A -1 {} {}
-    cp1253 \U00010000 replace 1A -1 {} {}
+    cp1253 \U00010000 replace 3F -1 {} {}
     cp1253 \U00010000 strict  {}                      0 {} {}
-    cp1253 \U0010FFFF tcl8    1A -1 {} {}
-    cp1253 \U0010FFFF replace 1A -1 {} {}
+    cp1253 \U0010FFFF replace 3F -1 {} {}
     cp1253 \U0010FFFF strict  {}                      0 {} {}
 }; # cp1253
 
@@ -1031,48 +834,35 @@ test encoding-convertto-ucmCompare-cp1254 {Compare against ICU UCM}  -body {
 
 # cp1254 - invalid byte sequences
 lappend encInvalidBytes {*}{
-    cp1254 81 tcl8    \U00000081 -1 {} {}
     cp1254 81 replace \uFFFD -1 {} {}
     cp1254 81 strict  {}       0 {} {}
-    cp1254 8D tcl8    \U0000008D -1 {} {}
     cp1254 8D replace \uFFFD -1 {} {}
     cp1254 8D strict  {}       0 {} {}
-    cp1254 8E tcl8    \U0000008E -1 {} {}
     cp1254 8E replace \uFFFD -1 {} {}
     cp1254 8E strict  {}       0 {} {}
-    cp1254 8F tcl8    \U0000008F -1 {} {}
     cp1254 8F replace \uFFFD -1 {} {}
     cp1254 8F strict  {}       0 {} {}
-    cp1254 90 tcl8    \U00000090 -1 {} {}
     cp1254 90 replace \uFFFD -1 {} {}
     cp1254 90 strict  {}       0 {} {}
-    cp1254 9D tcl8    \U0000009D -1 {} {}
     cp1254 9D replace \uFFFD -1 {} {}
     cp1254 9D strict  {}       0 {} {}
-    cp1254 9E tcl8    \U0000009E -1 {} {}
     cp1254 9E replace \uFFFD -1 {} {}
     cp1254 9E strict  {}       0 {} {}
 }; # cp1254
 
 # cp1254 - invalid byte sequences
 lappend encUnencodableStrings {*}{
-    cp1254 \U00000080 tcl8    1A -1 {} {}
-    cp1254 \U00000080 replace 1A -1 {} {}
+    cp1254 \U00000080 replace 3F -1 {} {}
     cp1254 \U00000080 strict  {}                      0 {} {}
-    cp1254 \U00000400 tcl8    1A -1 {} {}
-    cp1254 \U00000400 replace 1A -1 {} {}
+    cp1254 \U00000400 replace 3F -1 {} {}
     cp1254 \U00000400 strict  {}                      0 {} {}
-    cp1254 \U0000D800 tcl8    1A -1 {} {}
-    cp1254 \U0000D800 replace 1A -1 {} {}
+    cp1254 \U0000D800 replace 3F -1 {} {}
     cp1254 \U0000D800 strict  {}                      0 {} {}
-    cp1254 \U0000DC00 tcl8    1A -1 {} {}
-    cp1254 \U0000DC00 replace 1A -1 {} {}
+    cp1254 \U0000DC00 replace 3F -1 {} {}
     cp1254 \U0000DC00 strict  {}                      0 {} {}
-    cp1254 \U00010000 tcl8    1A -1 {} {}
-    cp1254 \U00010000 replace 1A -1 {} {}
+    cp1254 \U00010000 replace 3F -1 {} {}
     cp1254 \U00010000 strict  {}                      0 {} {}
-    cp1254 \U0010FFFF tcl8    1A -1 {} {}
-    cp1254 \U0010FFFF replace 1A -1 {} {}
+    cp1254 \U0010FFFF replace 3F -1 {} {}
     cp1254 \U0010FFFF strict  {}                      0 {} {}
 }; # cp1254
 
@@ -1089,96 +879,67 @@ test encoding-convertto-ucmCompare-cp1255 {Compare against ICU UCM}  -body {
 
 # cp1255 - invalid byte sequences
 lappend encInvalidBytes {*}{
-    cp1255 81 tcl8    \U00000081 -1 {} {}
     cp1255 81 replace \uFFFD -1 {} {}
     cp1255 81 strict  {}       0 {} {}
-    cp1255 8A tcl8    \U0000008A -1 {} {}
     cp1255 8A replace \uFFFD -1 {} {}
     cp1255 8A strict  {}       0 {} {}
-    cp1255 8C tcl8    \U0000008C -1 {} {}
     cp1255 8C replace \uFFFD -1 {} {}
     cp1255 8C strict  {}       0 {} {}
-    cp1255 8D tcl8    \U0000008D -1 {} {}
     cp1255 8D replace \uFFFD -1 {} {}
     cp1255 8D strict  {}       0 {} {}
-    cp1255 8E tcl8    \U0000008E -1 {} {}
     cp1255 8E replace \uFFFD -1 {} {}
     cp1255 8E strict  {}       0 {} {}
-    cp1255 8F tcl8    \U0000008F -1 {} {}
     cp1255 8F replace \uFFFD -1 {} {}
     cp1255 8F strict  {}       0 {} {}
-    cp1255 90 tcl8    \U00000090 -1 {} {}
     cp1255 90 replace \uFFFD -1 {} {}
     cp1255 90 strict  {}       0 {} {}
-    cp1255 9A tcl8    \U0000009A -1 {} {}
     cp1255 9A replace \uFFFD -1 {} {}
     cp1255 9A strict  {}       0 {} {}
-    cp1255 9C tcl8    \U0000009C -1 {} {}
     cp1255 9C replace \uFFFD -1 {} {}
     cp1255 9C strict  {}       0 {} {}
-    cp1255 9D tcl8    \U0000009D -1 {} {}
     cp1255 9D replace \uFFFD -1 {} {}
     cp1255 9D strict  {}       0 {} {}
-    cp1255 9E tcl8    \U0000009E -1 {} {}
     cp1255 9E replace \uFFFD -1 {} {}
     cp1255 9E strict  {}       0 {} {}
-    cp1255 9F tcl8    \U0000009F -1 {} {}
     cp1255 9F replace \uFFFD -1 {} {}
     cp1255 9F strict  {}       0 {} {}
-    cp1255 CA tcl8    \U000000CA -1 {} {}
     cp1255 CA replace \uFFFD -1 {} {}
     cp1255 CA strict  {}       0 {} {}
-    cp1255 D9 tcl8    \U000000D9 -1 {} {}
     cp1255 D9 replace \uFFFD -1 {} {}
     cp1255 D9 strict  {}       0 {} {}
-    cp1255 DA tcl8    \U000000DA -1 {} {}
     cp1255 DA replace \uFFFD -1 {} {}
     cp1255 DA strict  {}       0 {} {}
-    cp1255 DB tcl8    \U000000DB -1 {} {}
     cp1255 DB replace \uFFFD -1 {} {}
     cp1255 DB strict  {}       0 {} {}
-    cp1255 DC tcl8    \U000000DC -1 {} {}
     cp1255 DC replace \uFFFD -1 {} {}
     cp1255 DC strict  {}       0 {} {}
-    cp1255 DD tcl8    \U000000DD -1 {} {}
     cp1255 DD replace \uFFFD -1 {} {}
     cp1255 DD strict  {}       0 {} {}
-    cp1255 DE tcl8    \U000000DE -1 {} {}
     cp1255 DE replace \uFFFD -1 {} {}
     cp1255 DE strict  {}       0 {} {}
-    cp1255 DF tcl8    \U000000DF -1 {} {}
     cp1255 DF replace \uFFFD -1 {} {}
     cp1255 DF strict  {}       0 {} {}
-    cp1255 FB tcl8    \U000000FB -1 {} {}
     cp1255 FB replace \uFFFD -1 {} {}
     cp1255 FB strict  {}       0 {} {}
-    cp1255 FC tcl8    \U000000FC -1 {} {}
     cp1255 FC replace \uFFFD -1 {} {}
     cp1255 FC strict  {}       0 {} {}
-    cp1255 FF tcl8    \U000000FF -1 {} {}
     cp1255 FF replace \uFFFD -1 {} {}
     cp1255 FF strict  {}       0 {} {}
 }; # cp1255
 
 # cp1255 - invalid byte sequences
 lappend encUnencodableStrings {*}{
-    cp1255 \U00000080 tcl8    1A -1 {} {}
-    cp1255 \U00000080 replace 1A -1 {} {}
+    cp1255 \U00000080 replace 3F -1 {} {}
     cp1255 \U00000080 strict  {}                      0 {} {}
-    cp1255 \U00000400 tcl8    1A -1 {} {}
-    cp1255 \U00000400 replace 1A -1 {} {}
+    cp1255 \U00000400 replace 3F -1 {} {}
     cp1255 \U00000400 strict  {}                      0 {} {}
-    cp1255 \U0000D800 tcl8    1A -1 {} {}
-    cp1255 \U0000D800 replace 1A -1 {} {}
+    cp1255 \U0000D800 replace 3F -1 {} {}
     cp1255 \U0000D800 strict  {}                      0 {} {}
-    cp1255 \U0000DC00 tcl8    1A -1 {} {}
-    cp1255 \U0000DC00 replace 1A -1 {} {}
+    cp1255 \U0000DC00 replace 3F -1 {} {}
     cp1255 \U0000DC00 strict  {}                      0 {} {}
-    cp1255 \U00010000 tcl8    1A -1 {} {}
-    cp1255 \U00010000 replace 1A -1 {} {}
+    cp1255 \U00010000 replace 3F -1 {} {}
     cp1255 \U00010000 strict  {}                      0 {} {}
-    cp1255 \U0010FFFF tcl8    1A -1 {} {}
-    cp1255 \U0010FFFF replace 1A -1 {} {}
+    cp1255 \U0010FFFF replace 3F -1 {} {}
     cp1255 \U0010FFFF strict  {}                      0 {} {}
 }; # cp1255
 
@@ -1199,23 +960,17 @@ lappend encInvalidBytes {*}{
 
 # cp1256 - invalid byte sequences
 lappend encUnencodableStrings {*}{
-    cp1256 \U00000080 tcl8    1A -1 {} {}
-    cp1256 \U00000080 replace 1A -1 {} {}
+    cp1256 \U00000080 replace 3F -1 {} {}
     cp1256 \U00000080 strict  {}                      0 {} {}
-    cp1256 \U00000400 tcl8    1A -1 {} {}
-    cp1256 \U00000400 replace 1A -1 {} {}
+    cp1256 \U00000400 replace 3F -1 {} {}
     cp1256 \U00000400 strict  {}                      0 {} {}
-    cp1256 \U0000D800 tcl8    1A -1 {} {}
-    cp1256 \U0000D800 replace 1A -1 {} {}
+    cp1256 \U0000D800 replace 3F -1 {} {}
     cp1256 \U0000D800 strict  {}                      0 {} {}
-    cp1256 \U0000DC00 tcl8    1A -1 {} {}
-    cp1256 \U0000DC00 replace 1A -1 {} {}
+    cp1256 \U0000DC00 replace 3F -1 {} {}
     cp1256 \U0000DC00 strict  {}                      0 {} {}
-    cp1256 \U00010000 tcl8    1A -1 {} {}
-    cp1256 \U00010000 replace 1A -1 {} {}
+    cp1256 \U00010000 replace 3F -1 {} {}
     cp1256 \U00010000 strict  {}                      0 {} {}
-    cp1256 \U0010FFFF tcl8    1A -1 {} {}
-    cp1256 \U0010FFFF replace 1A -1 {} {}
+    cp1256 \U0010FFFF replace 3F -1 {} {}
     cp1256 \U0010FFFF strict  {}                      0 {} {}
 }; # cp1256
 
@@ -1232,102 +987,58 @@ test encoding-convertto-ucmCompare-cp1257 {Compare against ICU UCM}  -body {
 
 # cp1257 - invalid byte sequences
 lappend encInvalidBytes {*}{
-    cp1257 81 tcl8    \U00000081 -1 {} {}
     cp1257 81 replace \uFFFD -1 {} {}
     cp1257 81 strict  {}       0 {} {}
-    cp1257 83 tcl8    \U00000083 -1 {} {}
     cp1257 83 replace \uFFFD -1 {} {}
     cp1257 83 strict  {}       0 {} {}
-    cp1257 88 tcl8    \U00000088 -1 {} {}
     cp1257 88 replace \uFFFD -1 {} {}
     cp1257 88 strict  {}       0 {} {}
-    cp1257 8A tcl8    \U0000008A -1 {} {}
     cp1257 8A replace \uFFFD -1 {} {}
     cp1257 8A strict  {}       0 {} {}
-    cp1257 8C tcl8    \U0000008C -1 {} {}
     cp1257 8C replace \uFFFD -1 {} {}
     cp1257 8C strict  {}       0 {} {}
-    cp1257 90 tcl8    \U00000090 -1 {} {}
     cp1257 90 replace \uFFFD -1 {} {}
     cp1257 90 strict  {}       0 {} {}
-    cp1257 98 tcl8    \U00000098 -1 {} {}
     cp1257 98 replace \uFFFD -1 {} {}
     cp1257 98 strict  {}       0 {} {}
-    cp1257 9A tcl8    \U0000009A -1 {} {}
     cp1257 9A replace \uFFFD -1 {} {}
     cp1257 9A strict  {}       0 {} {}
-    cp1257 9C tcl8    \U0000009C -1 {} {}
     cp1257 9C replace \uFFFD -1 {} {}
     cp1257 9C strict  {}       0 {} {}
-    cp1257 9F tcl8    \U0000009F -1 {} {}
     cp1257 9F replace \uFFFD -1 {} {}
     cp1257 9F strict  {}       0 {} {}
-    cp1257 A1 tcl8    \U000000A1 -1 {} {}
     cp1257 A1 replace \uFFFD -1 {} {}
     cp1257 A1 strict  {}       0 {} {}
-    cp1257 A5 tcl8    \U000000A5 -1 {} {}
     cp1257 A5 replace \uFFFD -1 {} {}
     cp1257 A5 strict  {}       0 {} {}
 }; # cp1257
 
 # cp1257 - invalid byte sequences
 lappend encUnencodableStrings {*}{
-    cp1257 \U00000080 tcl8    1A -1 {} {}
-    cp1257 \U00000080 replace 1A -1 {} {}
+    cp1257 \U00000080 replace 3F -1 {} {}
     cp1257 \U00000080 strict  {}                      0 {} {}
-    cp1257 \U00000400 tcl8    1A -1 {} {}
-    cp1257 \U00000400 replace 1A -1 {} {}
+    cp1257 \U00000400 replace 3F -1 {} {}
     cp1257 \U00000400 strict  {}                      0 {} {}
-    cp1257 \U0000D800 tcl8    1A -1 {} {}
-    cp1257 \U0000D800 replace 1A -1 {} {}
+    cp1257 \U0000D800 replace 3F -1 {} {}
     cp1257 \U0000D800 strict  {}                      0 {} {}
-    cp1257 \U0000DC00 tcl8    1A -1 {} {}
-    cp1257 \U0000DC00 replace 1A -1 {} {}
+    cp1257 \U0000DC00 replace 3F -1 {} {}
     cp1257 \U0000DC00 strict  {}                      0 {} {}
-    cp1257 \U00010000 tcl8    1A -1 {} {}
-    cp1257 \U00010000 replace 1A -1 {} {}
+    cp1257 \U00010000 replace 3F -1 {} {}
     cp1257 \U00010000 strict  {}                      0 {} {}
-    cp1257 \U0010FFFF tcl8    1A -1 {} {}
-    cp1257 \U0010FFFF replace 1A -1 {} {}
+    cp1257 \U0010FFFF replace 3F -1 {} {}
     cp1257 \U0010FFFF strict  {}                      0 {} {}
 }; # cp1257
 
 #
 # cp1258 (generated from windows-1258-2000)
 
-test encoding-convertfrom-ucmCompare-cp1258 {Compare against ICU UCM}  -body {
+test encoding-convertfrom-ucmCompare-cp1258 {Compare against ICU UCM}  -constraints icuMismatch  -body {
     ucmConvertfromMismatches cp1258 {0000 00 0001 01 0002 02 0003 03 0004 04 0005 05 0006 06 0007 07 0008 08 0009 09 000A 0A 000B 0B 000C 0C 000D 0D 000E 0E 000F 0F 0010 10 0011 11 0012 12 0013 13 0014 14 0015 15 0016 16 0017 17 0018 18 0019 19 001A 1A 001B 1B 001C 1C 001D 1D 001E 1E 001F 1F 0020 20 0021 21 0022 22 0023 23 0024 24 0025 25 0026 26 0027 27 0028 28 0029 29 002A 2A 002B 2B 002C 2C 002D 2D 002E 2E 002F 2F 0030 30 0031 31 0032 32 0033 33 0034 34 0035 35 0036 36 0037 37 0038 38 0039 39 003A 3A 003B 3B 003C 3C 003D 3D 003E 3E 003F 3F 0040 40 0041 41 0042 42 0043 43 0044 44 0045 45 0046 46 0047 47 0048 48 0049 49 004A 4A 004B 4B 004C 4C 004D 4D 004E 4E 004F 4F 0050 50 0051 51 0052 52 0053 53 0054 54 0055 55 0056 56 0057 57 0058 58 0059 59 005A 5A 005B 5B 005C 5C 005D 5D 005E 5E 005F 5F 0060 60 0061 61 0062 62 0063 63 0064 64 0065 65 0066 66 0067 67 0068 68 0069 69 006A 6A 006B 6B 006C 6C 006D 6D 006E 6E 006F 6F 0070 70 0071 71 0072 72 0073 73 0074 74 0075 75 0076 76 0077 77 0078 78 0079 79 007A 7A 007B 7B 007C 7C 007D 7D 007E 7E 007F 7F 0081 81 008A 8A 008D 8D 008E 8E 008F 8F 0090 90 009A 9A 009D 9D 009E 9E 00A0 A0 00A1 A1 00A2 A2 00A3 A3 00A4 A4 00A5 A5 00A6 A6 00A7 A7 00A8 A8 00A9 A9 00AA AA 00AB AB 00AC AC 00AD AD 00AE AE 00AF AF 00B0 B0 00B1 B1 00B2 B2 00B3 B3 00B4 B4 00B5 B5 00B6 B6 00B7 B7 00B8 B8 00B9 B9 00BA BA 00BB BB 00BC BC 00BD BD 00BE BE 00BF BF 00C0 C0 00C1 C1 00C2 C2 00C4 C4 00C5 C5 00C6 C6 00C7 C7 00C8 C8 00C9 C9 00CA CA 00CB CB 00CD CD 00CE CE 00CF CF 00D1 D1 00D3 D3 00D4 D4 00D6 D6 00D7 D7 00D8 D8 00D9 D9 00DA DA 00DB DB 00DC DC 00DF DF 00E0 E0 00E1 E1 00E2 E2 00E4 E4 00E5 E5 00E6 E6 00E7 E7 00E8 E8 00E9 E9 00EA EA 00EB EB 00ED ED 00EE EE 00EF EF 00F1 F1 00F3 F3 00F4 F4 00F6 F6 00F7 F7 00F8 F8 00F9 F9 00FA FA 00FB FB 00FC FC 00FF FF 0102 C3 0103 E3 0110 D0 0111 F0 0152 8C 0153 9C 0178 9F 0192 83 01A0 D5 01A1 F5 01AF DD 01B0 FD 02C6 88 02DC 98 0300 CC 0301 EC 0303 DE 0309 D2 0323 F2 2013 96 2014 97 2018 91 2019 92 201A 82 201C 93 201D 94 201E 84 2020 86 2021 87 2022 95 2026 85 2030 89 2039 8B 203A 9B 20AB FE 20AC 80 2122 99}
 } -result {}
 
-test encoding-convertto-ucmCompare-cp1258 {Compare against ICU UCM}  -body {
+test encoding-convertto-ucmCompare-cp1258 {Compare against ICU UCM}  -constraints icuMismatch  -body {
     ucmConverttoMismatches cp1258 {0000 00 0001 01 0002 02 0003 03 0004 04 0005 05 0006 06 0007 07 0008 08 0009 09 000A 0A 000B 0B 000C 0C 000D 0D 000E 0E 000F 0F 0010 10 0011 11 0012 12 0013 13 0014 14 0015 15 0016 16 0017 17 0018 18 0019 19 001A 1A 001B 1B 001C 1C 001D 1D 001E 1E 001F 1F 0020 20 0021 21 0022 22 0023 23 0024 24 0025 25 0026 26 0027 27 0028 28 0029 29 002A 2A 002B 2B 002C 2C 002D 2D 002E 2E 002F 2F 0030 30 0031 31 0032 32 0033 33 0034 34 0035 35 0036 36 0037 37 0038 38 0039 39 003A 3A 003B 3B 003C 3C 003D 3D 003E 3E 003F 3F 0040 40 0041 41 0042 42 0043 43 0044 44 0045 45 0046 46 0047 47 0048 48 0049 49 004A 4A 004B 4B 004C 4C 004D 4D 004E 4E 004F 4F 0050 50 0051 51 0052 52 0053 53 0054 54 0055 55 0056 56 0057 57 0058 58 0059 59 005A 5A 005B 5B 005C 5C 005D 5D 005E 5E 005F 5F 0060 60 0061 61 0062 62 0063 63 0064 64 0065 65 0066 66 0067 67 0068 68 0069 69 006A 6A 006B 6B 006C 6C 006D 6D 006E 6E 006F 6F 0070 70 0071 71 0072 72 0073 73 0074 74 0075 75 0076 76 0077 77 0078 78 0079 79 007A 7A 007B 7B 007C 7C 007D 7D 007E 7E 007F 7F 0081 81 008A 8A 008D 8D 008E 8E 008F 8F 0090 90 009A 9A 009D 9D 009E 9E 00A0 A0 00A1 A1 00A2 A2 00A3 A3 00A4 A4 00A5 A5 00A6 A6 00A7 A7 00A8 A8 00A9 A9 00AA AA 00AB AB 00AC AC 00AD AD 00AE AE 00AF AF 00B0 B0 00B1 B1 00B2 B2 00B3 B3 00B4 B4 00B5 B5 00B6 B6 00B7 B7 00B8 B8 00B9 B9 00BA BA 00BB BB 00BC BC 00BD BD 00BE BE 00BF BF 00C0 C0 00C1 C1 00C2 C2 00C4 C4 00C5 C5 00C6 C6 00C7 C7 00C8 C8 00C9 C9 00CA CA 00CB CB 00CD CD 00CE CE 00CF CF 00D1 D1 00D3 D3 00D4 D4 00D6 D6 00D7 D7 00D8 D8 00D9 D9 00DA DA 00DB DB 00DC DC 00DF DF 00E0 E0 00E1 E1 00E2 E2 00E4 E4 00E5 E5 00E6 E6 00E7 E7 00E8 E8 00E9 E9 00EA EA 00EB EB 00ED ED 00EE EE 00EF EF 00F1 F1 00F3 F3 00F4 F4 00F6 F6 00F7 F7 00F8 F8 00F9 F9 00FA FA 00FB FB 00FC FC 00FF FF 0102 C3 0103 E3 0110 D0 0111 F0 0152 8C 0153 9C 0178 9F 0192 83 01A0 D5 01A1 F5 01AF DD 01B0 FD 02C6 88 02DC 98 0300 CC 0301 EC 0303 DE 0309 D2 0323 F2 2013 96 2014 97 2018 91 2019 92 201A 82 201C 93 201D 94 201E 84 2020 86 2021 87 2022 95 2026 85 2030 89 2039 8B 203A 9B 20AB FE 20AC 80 2122 99}
 } -result {}
-
-# cp1258 - invalid byte sequences
-lappend encInvalidBytes {*}{
-}; # cp1258
-
-# cp1258 - invalid byte sequences
-lappend encUnencodableStrings {*}{
-    cp1258 \U00000080 tcl8    3F -1 {} {}
-    cp1258 \U00000080 replace 3F -1 {} {}
-    cp1258 \U00000080 strict  {}                      0 {} {}
-    cp1258 \U00000400 tcl8    3F -1 {} {}
-    cp1258 \U00000400 replace 3F -1 {} {}
-    cp1258 \U00000400 strict  {}                      0 {} {}
-    cp1258 \U0000D800 tcl8    3F -1 {} {}
-    cp1258 \U0000D800 replace 3F -1 {} {}
-    cp1258 \U0000D800 strict  {}                      0 {} {}
-    cp1258 \U0000DC00 tcl8    3F -1 {} {}
-    cp1258 \U0000DC00 replace 3F -1 {} {}
-    cp1258 \U0000DC00 strict  {}                      0 {} {}
-    cp1258 \U00010000 tcl8    3F -1 {} {}
-    cp1258 \U00010000 replace 3F -1 {} {}
-    cp1258 \U00010000 strict  {}                      0 {} {}
-    cp1258 \U0010FFFF tcl8    3F -1 {} {}
-    cp1258 \U0010FFFF replace 3F -1 {} {}
-    cp1258 \U0010FFFF strict  {}                      0 {} {}
-}; # cp1258
 
 #
 # gb1988 (generated from glibc-GB_1988_80-2.3.3)
@@ -1357,20 +1068,15 @@ lappend encInvalidBytes {*}{
 
 # iso8859-1 - invalid byte sequences
 lappend encUnencodableStrings {*}{
-    iso8859-1 \U00000400 tcl8    1A -1 {} {}
-    iso8859-1 \U00000400 replace 1A -1 {} {}
+    iso8859-1 \U00000400 replace 3F -1 {} {}
     iso8859-1 \U00000400 strict  {}                      0 {} {}
-    iso8859-1 \U0000D800 tcl8    1A -1 {} {}
-    iso8859-1 \U0000D800 replace 1A -1 {} {}
+    iso8859-1 \U0000D800 replace 3F -1 {} {}
     iso8859-1 \U0000D800 strict  {}                      0 {} {}
-    iso8859-1 \U0000DC00 tcl8    1A -1 {} {}
-    iso8859-1 \U0000DC00 replace 1A -1 {} {}
+    iso8859-1 \U0000DC00 replace 3F -1 {} {}
     iso8859-1 \U0000DC00 strict  {}                      0 {} {}
-    iso8859-1 \U00010000 tcl8    1A -1 {} {}
-    iso8859-1 \U00010000 replace 1A -1 {} {}
+    iso8859-1 \U00010000 replace 3F -1 {} {}
     iso8859-1 \U00010000 strict  {}                      0 {} {}
-    iso8859-1 \U0010FFFF tcl8    1A -1 {} {}
-    iso8859-1 \U0010FFFF replace 1A -1 {} {}
+    iso8859-1 \U0010FFFF replace 3F -1 {} {}
     iso8859-1 \U0010FFFF strict  {}                      0 {} {}
 }; # iso8859-1
 
@@ -1391,23 +1097,17 @@ lappend encInvalidBytes {*}{
 
 # iso8859-2 - invalid byte sequences
 lappend encUnencodableStrings {*}{
-    iso8859-2 \U000000A1 tcl8    1A -1 {} {}
-    iso8859-2 \U000000A1 replace 1A -1 {} {}
+    iso8859-2 \U000000A1 replace 3F -1 {} {}
     iso8859-2 \U000000A1 strict  {}                      0 {} {}
-    iso8859-2 \U00000400 tcl8    1A -1 {} {}
-    iso8859-2 \U00000400 replace 1A -1 {} {}
+    iso8859-2 \U00000400 replace 3F -1 {} {}
     iso8859-2 \U00000400 strict  {}                      0 {} {}
-    iso8859-2 \U0000D800 tcl8    1A -1 {} {}
-    iso8859-2 \U0000D800 replace 1A -1 {} {}
+    iso8859-2 \U0000D800 replace 3F -1 {} {}
     iso8859-2 \U0000D800 strict  {}                      0 {} {}
-    iso8859-2 \U0000DC00 tcl8    1A -1 {} {}
-    iso8859-2 \U0000DC00 replace 1A -1 {} {}
+    iso8859-2 \U0000DC00 replace 3F -1 {} {}
     iso8859-2 \U0000DC00 strict  {}                      0 {} {}
-    iso8859-2 \U00010000 tcl8    1A -1 {} {}
-    iso8859-2 \U00010000 replace 1A -1 {} {}
+    iso8859-2 \U00010000 replace 3F -1 {} {}
     iso8859-2 \U00010000 strict  {}                      0 {} {}
-    iso8859-2 \U0010FFFF tcl8    1A -1 {} {}
-    iso8859-2 \U0010FFFF replace 1A -1 {} {}
+    iso8859-2 \U0010FFFF replace 3F -1 {} {}
     iso8859-2 \U0010FFFF strict  {}                      0 {} {}
 }; # iso8859-2
 
@@ -1424,48 +1124,35 @@ test encoding-convertto-ucmCompare-iso8859-3 {Compare against ICU UCM}  -body {
 
 # iso8859-3 - invalid byte sequences
 lappend encInvalidBytes {*}{
-    iso8859-3 A5 tcl8    \U000000A5 -1 {} {}
     iso8859-3 A5 replace \uFFFD -1 {} {}
     iso8859-3 A5 strict  {}       0 {} {}
-    iso8859-3 AE tcl8    \U000000AE -1 {} {}
     iso8859-3 AE replace \uFFFD -1 {} {}
     iso8859-3 AE strict  {}       0 {} {}
-    iso8859-3 BE tcl8    \U000000BE -1 {} {}
     iso8859-3 BE replace \uFFFD -1 {} {}
     iso8859-3 BE strict  {}       0 {} {}
-    iso8859-3 C3 tcl8    \U000000C3 -1 {} {}
     iso8859-3 C3 replace \uFFFD -1 {} {}
     iso8859-3 C3 strict  {}       0 {} {}
-    iso8859-3 D0 tcl8    \U000000D0 -1 {} {}
     iso8859-3 D0 replace \uFFFD -1 {} {}
     iso8859-3 D0 strict  {}       0 {} {}
-    iso8859-3 E3 tcl8    \U000000E3 -1 {} {}
     iso8859-3 E3 replace \uFFFD -1 {} {}
     iso8859-3 E3 strict  {}       0 {} {}
-    iso8859-3 F0 tcl8    \U000000F0 -1 {} {}
     iso8859-3 F0 replace \uFFFD -1 {} {}
     iso8859-3 F0 strict  {}       0 {} {}
 }; # iso8859-3
 
 # iso8859-3 - invalid byte sequences
 lappend encUnencodableStrings {*}{
-    iso8859-3 \U000000A1 tcl8    1A -1 {} {}
-    iso8859-3 \U000000A1 replace 1A -1 {} {}
+    iso8859-3 \U000000A1 replace 3F -1 {} {}
     iso8859-3 \U000000A1 strict  {}                      0 {} {}
-    iso8859-3 \U00000400 tcl8    1A -1 {} {}
-    iso8859-3 \U00000400 replace 1A -1 {} {}
+    iso8859-3 \U00000400 replace 3F -1 {} {}
     iso8859-3 \U00000400 strict  {}                      0 {} {}
-    iso8859-3 \U0000D800 tcl8    1A -1 {} {}
-    iso8859-3 \U0000D800 replace 1A -1 {} {}
+    iso8859-3 \U0000D800 replace 3F -1 {} {}
     iso8859-3 \U0000D800 strict  {}                      0 {} {}
-    iso8859-3 \U0000DC00 tcl8    1A -1 {} {}
-    iso8859-3 \U0000DC00 replace 1A -1 {} {}
+    iso8859-3 \U0000DC00 replace 3F -1 {} {}
     iso8859-3 \U0000DC00 strict  {}                      0 {} {}
-    iso8859-3 \U00010000 tcl8    1A -1 {} {}
-    iso8859-3 \U00010000 replace 1A -1 {} {}
+    iso8859-3 \U00010000 replace 3F -1 {} {}
     iso8859-3 \U00010000 strict  {}                      0 {} {}
-    iso8859-3 \U0010FFFF tcl8    1A -1 {} {}
-    iso8859-3 \U0010FFFF replace 1A -1 {} {}
+    iso8859-3 \U0010FFFF replace 3F -1 {} {}
     iso8859-3 \U0010FFFF strict  {}                      0 {} {}
 }; # iso8859-3
 
@@ -1486,23 +1173,17 @@ lappend encInvalidBytes {*}{
 
 # iso8859-4 - invalid byte sequences
 lappend encUnencodableStrings {*}{
-    iso8859-4 \U000000A1 tcl8    1A -1 {} {}
-    iso8859-4 \U000000A1 replace 1A -1 {} {}
+    iso8859-4 \U000000A1 replace 3F -1 {} {}
     iso8859-4 \U000000A1 strict  {}                      0 {} {}
-    iso8859-4 \U00000400 tcl8    1A -1 {} {}
-    iso8859-4 \U00000400 replace 1A -1 {} {}
+    iso8859-4 \U00000400 replace 3F -1 {} {}
     iso8859-4 \U00000400 strict  {}                      0 {} {}
-    iso8859-4 \U0000D800 tcl8    1A -1 {} {}
-    iso8859-4 \U0000D800 replace 1A -1 {} {}
+    iso8859-4 \U0000D800 replace 3F -1 {} {}
     iso8859-4 \U0000D800 strict  {}                      0 {} {}
-    iso8859-4 \U0000DC00 tcl8    1A -1 {} {}
-    iso8859-4 \U0000DC00 replace 1A -1 {} {}
+    iso8859-4 \U0000DC00 replace 3F -1 {} {}
     iso8859-4 \U0000DC00 strict  {}                      0 {} {}
-    iso8859-4 \U00010000 tcl8    1A -1 {} {}
-    iso8859-4 \U00010000 replace 1A -1 {} {}
+    iso8859-4 \U00010000 replace 3F -1 {} {}
     iso8859-4 \U00010000 strict  {}                      0 {} {}
-    iso8859-4 \U0010FFFF tcl8    1A -1 {} {}
-    iso8859-4 \U0010FFFF replace 1A -1 {} {}
+    iso8859-4 \U0010FFFF replace 3F -1 {} {}
     iso8859-4 \U0010FFFF strict  {}                      0 {} {}
 }; # iso8859-4
 
@@ -1523,23 +1204,17 @@ lappend encInvalidBytes {*}{
 
 # iso8859-5 - invalid byte sequences
 lappend encUnencodableStrings {*}{
-    iso8859-5 \U000000A1 tcl8    1A -1 {} {}
-    iso8859-5 \U000000A1 replace 1A -1 {} {}
+    iso8859-5 \U000000A1 replace 3F -1 {} {}
     iso8859-5 \U000000A1 strict  {}                      0 {} {}
-    iso8859-5 \U00000400 tcl8    1A -1 {} {}
-    iso8859-5 \U00000400 replace 1A -1 {} {}
+    iso8859-5 \U00000400 replace 3F -1 {} {}
     iso8859-5 \U00000400 strict  {}                      0 {} {}
-    iso8859-5 \U0000D800 tcl8    1A -1 {} {}
-    iso8859-5 \U0000D800 replace 1A -1 {} {}
+    iso8859-5 \U0000D800 replace 3F -1 {} {}
     iso8859-5 \U0000D800 strict  {}                      0 {} {}
-    iso8859-5 \U0000DC00 tcl8    1A -1 {} {}
-    iso8859-5 \U0000DC00 replace 1A -1 {} {}
+    iso8859-5 \U0000DC00 replace 3F -1 {} {}
     iso8859-5 \U0000DC00 strict  {}                      0 {} {}
-    iso8859-5 \U00010000 tcl8    1A -1 {} {}
-    iso8859-5 \U00010000 replace 1A -1 {} {}
+    iso8859-5 \U00010000 replace 3F -1 {} {}
     iso8859-5 \U00010000 strict  {}                      0 {} {}
-    iso8859-5 \U0010FFFF tcl8    1A -1 {} {}
-    iso8859-5 \U0010FFFF replace 1A -1 {} {}
+    iso8859-5 \U0010FFFF replace 3F -1 {} {}
     iso8859-5 \U0010FFFF strict  {}                      0 {} {}
 }; # iso8859-5
 
@@ -1556,162 +1231,111 @@ test encoding-convertto-ucmCompare-iso8859-6 {Compare against ICU UCM}  -body {
 
 # iso8859-6 - invalid byte sequences
 lappend encInvalidBytes {*}{
-    iso8859-6 A1 tcl8    \U000000A1 -1 {} {}
     iso8859-6 A1 replace \uFFFD -1 {} {}
     iso8859-6 A1 strict  {}       0 {} {}
-    iso8859-6 A2 tcl8    \U000000A2 -1 {} {}
     iso8859-6 A2 replace \uFFFD -1 {} {}
     iso8859-6 A2 strict  {}       0 {} {}
-    iso8859-6 A3 tcl8    \U000000A3 -1 {} {}
     iso8859-6 A3 replace \uFFFD -1 {} {}
     iso8859-6 A3 strict  {}       0 {} {}
-    iso8859-6 A5 tcl8    \U000000A5 -1 {} {}
     iso8859-6 A5 replace \uFFFD -1 {} {}
     iso8859-6 A5 strict  {}       0 {} {}
-    iso8859-6 A6 tcl8    \U000000A6 -1 {} {}
     iso8859-6 A6 replace \uFFFD -1 {} {}
     iso8859-6 A6 strict  {}       0 {} {}
-    iso8859-6 A7 tcl8    \U000000A7 -1 {} {}
     iso8859-6 A7 replace \uFFFD -1 {} {}
     iso8859-6 A7 strict  {}       0 {} {}
-    iso8859-6 A8 tcl8    \U000000A8 -1 {} {}
     iso8859-6 A8 replace \uFFFD -1 {} {}
     iso8859-6 A8 strict  {}       0 {} {}
-    iso8859-6 A9 tcl8    \U000000A9 -1 {} {}
     iso8859-6 A9 replace \uFFFD -1 {} {}
     iso8859-6 A9 strict  {}       0 {} {}
-    iso8859-6 AA tcl8    \U000000AA -1 {} {}
     iso8859-6 AA replace \uFFFD -1 {} {}
     iso8859-6 AA strict  {}       0 {} {}
-    iso8859-6 AB tcl8    \U000000AB -1 {} {}
     iso8859-6 AB replace \uFFFD -1 {} {}
     iso8859-6 AB strict  {}       0 {} {}
-    iso8859-6 AE tcl8    \U000000AE -1 {} {}
     iso8859-6 AE replace \uFFFD -1 {} {}
     iso8859-6 AE strict  {}       0 {} {}
-    iso8859-6 AF tcl8    \U000000AF -1 {} {}
     iso8859-6 AF replace \uFFFD -1 {} {}
     iso8859-6 AF strict  {}       0 {} {}
-    iso8859-6 B0 tcl8    \U000000B0 -1 {} {}
     iso8859-6 B0 replace \uFFFD -1 {} {}
     iso8859-6 B0 strict  {}       0 {} {}
-    iso8859-6 B1 tcl8    \U000000B1 -1 {} {}
     iso8859-6 B1 replace \uFFFD -1 {} {}
     iso8859-6 B1 strict  {}       0 {} {}
-    iso8859-6 B2 tcl8    \U000000B2 -1 {} {}
     iso8859-6 B2 replace \uFFFD -1 {} {}
     iso8859-6 B2 strict  {}       0 {} {}
-    iso8859-6 B3 tcl8    \U000000B3 -1 {} {}
     iso8859-6 B3 replace \uFFFD -1 {} {}
     iso8859-6 B3 strict  {}       0 {} {}
-    iso8859-6 B4 tcl8    \U000000B4 -1 {} {}
     iso8859-6 B4 replace \uFFFD -1 {} {}
     iso8859-6 B4 strict  {}       0 {} {}
-    iso8859-6 B5 tcl8    \U000000B5 -1 {} {}
     iso8859-6 B5 replace \uFFFD -1 {} {}
     iso8859-6 B5 strict  {}       0 {} {}
-    iso8859-6 B6 tcl8    \U000000B6 -1 {} {}
     iso8859-6 B6 replace \uFFFD -1 {} {}
     iso8859-6 B6 strict  {}       0 {} {}
-    iso8859-6 B7 tcl8    \U000000B7 -1 {} {}
     iso8859-6 B7 replace \uFFFD -1 {} {}
     iso8859-6 B7 strict  {}       0 {} {}
-    iso8859-6 B8 tcl8    \U000000B8 -1 {} {}
     iso8859-6 B8 replace \uFFFD -1 {} {}
     iso8859-6 B8 strict  {}       0 {} {}
-    iso8859-6 B9 tcl8    \U000000B9 -1 {} {}
     iso8859-6 B9 replace \uFFFD -1 {} {}
     iso8859-6 B9 strict  {}       0 {} {}
-    iso8859-6 BA tcl8    \U000000BA -1 {} {}
     iso8859-6 BA replace \uFFFD -1 {} {}
     iso8859-6 BA strict  {}       0 {} {}
-    iso8859-6 BC tcl8    \U000000BC -1 {} {}
     iso8859-6 BC replace \uFFFD -1 {} {}
     iso8859-6 BC strict  {}       0 {} {}
-    iso8859-6 BD tcl8    \U000000BD -1 {} {}
     iso8859-6 BD replace \uFFFD -1 {} {}
     iso8859-6 BD strict  {}       0 {} {}
-    iso8859-6 BE tcl8    \U000000BE -1 {} {}
     iso8859-6 BE replace \uFFFD -1 {} {}
     iso8859-6 BE strict  {}       0 {} {}
-    iso8859-6 C0 tcl8    \U000000C0 -1 {} {}
     iso8859-6 C0 replace \uFFFD -1 {} {}
     iso8859-6 C0 strict  {}       0 {} {}
-    iso8859-6 DB tcl8    \U000000DB -1 {} {}
     iso8859-6 DB replace \uFFFD -1 {} {}
     iso8859-6 DB strict  {}       0 {} {}
-    iso8859-6 DC tcl8    \U000000DC -1 {} {}
     iso8859-6 DC replace \uFFFD -1 {} {}
     iso8859-6 DC strict  {}       0 {} {}
-    iso8859-6 DD tcl8    \U000000DD -1 {} {}
     iso8859-6 DD replace \uFFFD -1 {} {}
     iso8859-6 DD strict  {}       0 {} {}
-    iso8859-6 DE tcl8    \U000000DE -1 {} {}
     iso8859-6 DE replace \uFFFD -1 {} {}
     iso8859-6 DE strict  {}       0 {} {}
-    iso8859-6 DF tcl8    \U000000DF -1 {} {}
     iso8859-6 DF replace \uFFFD -1 {} {}
     iso8859-6 DF strict  {}       0 {} {}
-    iso8859-6 F3 tcl8    \U000000F3 -1 {} {}
     iso8859-6 F3 replace \uFFFD -1 {} {}
     iso8859-6 F3 strict  {}       0 {} {}
-    iso8859-6 F4 tcl8    \U000000F4 -1 {} {}
     iso8859-6 F4 replace \uFFFD -1 {} {}
     iso8859-6 F4 strict  {}       0 {} {}
-    iso8859-6 F5 tcl8    \U000000F5 -1 {} {}
     iso8859-6 F5 replace \uFFFD -1 {} {}
     iso8859-6 F5 strict  {}       0 {} {}
-    iso8859-6 F6 tcl8    \U000000F6 -1 {} {}
     iso8859-6 F6 replace \uFFFD -1 {} {}
     iso8859-6 F6 strict  {}       0 {} {}
-    iso8859-6 F7 tcl8    \U000000F7 -1 {} {}
     iso8859-6 F7 replace \uFFFD -1 {} {}
     iso8859-6 F7 strict  {}       0 {} {}
-    iso8859-6 F8 tcl8    \U000000F8 -1 {} {}
     iso8859-6 F8 replace \uFFFD -1 {} {}
     iso8859-6 F8 strict  {}       0 {} {}
-    iso8859-6 F9 tcl8    \U000000F9 -1 {} {}
     iso8859-6 F9 replace \uFFFD -1 {} {}
     iso8859-6 F9 strict  {}       0 {} {}
-    iso8859-6 FA tcl8    \U000000FA -1 {} {}
     iso8859-6 FA replace \uFFFD -1 {} {}
     iso8859-6 FA strict  {}       0 {} {}
-    iso8859-6 FB tcl8    \U000000FB -1 {} {}
     iso8859-6 FB replace \uFFFD -1 {} {}
     iso8859-6 FB strict  {}       0 {} {}
-    iso8859-6 FC tcl8    \U000000FC -1 {} {}
     iso8859-6 FC replace \uFFFD -1 {} {}
     iso8859-6 FC strict  {}       0 {} {}
-    iso8859-6 FD tcl8    \U000000FD -1 {} {}
     iso8859-6 FD replace \uFFFD -1 {} {}
     iso8859-6 FD strict  {}       0 {} {}
-    iso8859-6 FE tcl8    \U000000FE -1 {} {}
     iso8859-6 FE replace \uFFFD -1 {} {}
     iso8859-6 FE strict  {}       0 {} {}
-    iso8859-6 FF tcl8    \U000000FF -1 {} {}
     iso8859-6 FF replace \uFFFD -1 {} {}
     iso8859-6 FF strict  {}       0 {} {}
 }; # iso8859-6
 
 # iso8859-6 - invalid byte sequences
 lappend encUnencodableStrings {*}{
-    iso8859-6 \U000000A1 tcl8    1A -1 {} {}
-    iso8859-6 \U000000A1 replace 1A -1 {} {}
+    iso8859-6 \U000000A1 replace 3F -1 {} {}
     iso8859-6 \U000000A1 strict  {}                      0 {} {}
-    iso8859-6 \U00000400 tcl8    1A -1 {} {}
-    iso8859-6 \U00000400 replace 1A -1 {} {}
+    iso8859-6 \U00000400 replace 3F -1 {} {}
     iso8859-6 \U00000400 strict  {}                      0 {} {}
-    iso8859-6 \U0000D800 tcl8    1A -1 {} {}
-    iso8859-6 \U0000D800 replace 1A -1 {} {}
+    iso8859-6 \U0000D800 replace 3F -1 {} {}
     iso8859-6 \U0000D800 strict  {}                      0 {} {}
-    iso8859-6 \U0000DC00 tcl8    1A -1 {} {}
-    iso8859-6 \U0000DC00 replace 1A -1 {} {}
+    iso8859-6 \U0000DC00 replace 3F -1 {} {}
     iso8859-6 \U0000DC00 strict  {}                      0 {} {}
-    iso8859-6 \U00010000 tcl8    1A -1 {} {}
-    iso8859-6 \U00010000 replace 1A -1 {} {}
+    iso8859-6 \U00010000 replace 3F -1 {} {}
     iso8859-6 \U00010000 strict  {}                      0 {} {}
-    iso8859-6 \U0010FFFF tcl8    1A -1 {} {}
-    iso8859-6 \U0010FFFF replace 1A -1 {} {}
+    iso8859-6 \U0010FFFF replace 3F -1 {} {}
     iso8859-6 \U0010FFFF strict  {}                      0 {} {}
 }; # iso8859-6
 
@@ -1728,36 +1352,27 @@ test encoding-convertto-ucmCompare-iso8859-7 {Compare against ICU UCM}  -body {
 
 # iso8859-7 - invalid byte sequences
 lappend encInvalidBytes {*}{
-    iso8859-7 AE tcl8    \U000000AE -1 {} {}
     iso8859-7 AE replace \uFFFD -1 {} {}
     iso8859-7 AE strict  {}       0 {} {}
-    iso8859-7 D2 tcl8    \U000000D2 -1 {} {}
     iso8859-7 D2 replace \uFFFD -1 {} {}
     iso8859-7 D2 strict  {}       0 {} {}
-    iso8859-7 FF tcl8    \U000000FF -1 {} {}
     iso8859-7 FF replace \uFFFD -1 {} {}
     iso8859-7 FF strict  {}       0 {} {}
 }; # iso8859-7
 
 # iso8859-7 - invalid byte sequences
 lappend encUnencodableStrings {*}{
-    iso8859-7 \U000000A1 tcl8    1A -1 {} {}
-    iso8859-7 \U000000A1 replace 1A -1 {} {}
+    iso8859-7 \U000000A1 replace 3F -1 {} {}
     iso8859-7 \U000000A1 strict  {}                      0 {} {}
-    iso8859-7 \U00000400 tcl8    1A -1 {} {}
-    iso8859-7 \U00000400 replace 1A -1 {} {}
+    iso8859-7 \U00000400 replace 3F -1 {} {}
     iso8859-7 \U00000400 strict  {}                      0 {} {}
-    iso8859-7 \U0000D800 tcl8    1A -1 {} {}
-    iso8859-7 \U0000D800 replace 1A -1 {} {}
+    iso8859-7 \U0000D800 replace 3F -1 {} {}
     iso8859-7 \U0000D800 strict  {}                      0 {} {}
-    iso8859-7 \U0000DC00 tcl8    1A -1 {} {}
-    iso8859-7 \U0000DC00 replace 1A -1 {} {}
+    iso8859-7 \U0000DC00 replace 3F -1 {} {}
     iso8859-7 \U0000DC00 strict  {}                      0 {} {}
-    iso8859-7 \U00010000 tcl8    1A -1 {} {}
-    iso8859-7 \U00010000 replace 1A -1 {} {}
+    iso8859-7 \U00010000 replace 3F -1 {} {}
     iso8859-7 \U00010000 strict  {}                      0 {} {}
-    iso8859-7 \U0010FFFF tcl8    1A -1 {} {}
-    iso8859-7 \U0010FFFF replace 1A -1 {} {}
+    iso8859-7 \U0010FFFF replace 3F -1 {} {}
     iso8859-7 \U0010FFFF strict  {}                      0 {} {}
 }; # iso8859-7
 
@@ -1774,135 +1389,93 @@ test encoding-convertto-ucmCompare-iso8859-8 {Compare against ICU UCM}  -body {
 
 # iso8859-8 - invalid byte sequences
 lappend encInvalidBytes {*}{
-    iso8859-8 A1 tcl8    \U000000A1 -1 {} {}
     iso8859-8 A1 replace \uFFFD -1 {} {}
     iso8859-8 A1 strict  {}       0 {} {}
-    iso8859-8 BF tcl8    \U000000BF -1 {} {}
     iso8859-8 BF replace \uFFFD -1 {} {}
     iso8859-8 BF strict  {}       0 {} {}
-    iso8859-8 C0 tcl8    \U000000C0 -1 {} {}
     iso8859-8 C0 replace \uFFFD -1 {} {}
     iso8859-8 C0 strict  {}       0 {} {}
-    iso8859-8 C1 tcl8    \U000000C1 -1 {} {}
     iso8859-8 C1 replace \uFFFD -1 {} {}
     iso8859-8 C1 strict  {}       0 {} {}
-    iso8859-8 C2 tcl8    \U000000C2 -1 {} {}
     iso8859-8 C2 replace \uFFFD -1 {} {}
     iso8859-8 C2 strict  {}       0 {} {}
-    iso8859-8 C3 tcl8    \U000000C3 -1 {} {}
     iso8859-8 C3 replace \uFFFD -1 {} {}
     iso8859-8 C3 strict  {}       0 {} {}
-    iso8859-8 C4 tcl8    \U000000C4 -1 {} {}
     iso8859-8 C4 replace \uFFFD -1 {} {}
     iso8859-8 C4 strict  {}       0 {} {}
-    iso8859-8 C5 tcl8    \U000000C5 -1 {} {}
     iso8859-8 C5 replace \uFFFD -1 {} {}
     iso8859-8 C5 strict  {}       0 {} {}
-    iso8859-8 C6 tcl8    \U000000C6 -1 {} {}
     iso8859-8 C6 replace \uFFFD -1 {} {}
     iso8859-8 C6 strict  {}       0 {} {}
-    iso8859-8 C7 tcl8    \U000000C7 -1 {} {}
     iso8859-8 C7 replace \uFFFD -1 {} {}
     iso8859-8 C7 strict  {}       0 {} {}
-    iso8859-8 C8 tcl8    \U000000C8 -1 {} {}
     iso8859-8 C8 replace \uFFFD -1 {} {}
     iso8859-8 C8 strict  {}       0 {} {}
-    iso8859-8 C9 tcl8    \U000000C9 -1 {} {}
     iso8859-8 C9 replace \uFFFD -1 {} {}
     iso8859-8 C9 strict  {}       0 {} {}
-    iso8859-8 CA tcl8    \U000000CA -1 {} {}
     iso8859-8 CA replace \uFFFD -1 {} {}
     iso8859-8 CA strict  {}       0 {} {}
-    iso8859-8 CB tcl8    \U000000CB -1 {} {}
     iso8859-8 CB replace \uFFFD -1 {} {}
     iso8859-8 CB strict  {}       0 {} {}
-    iso8859-8 CC tcl8    \U000000CC -1 {} {}
     iso8859-8 CC replace \uFFFD -1 {} {}
     iso8859-8 CC strict  {}       0 {} {}
-    iso8859-8 CD tcl8    \U000000CD -1 {} {}
     iso8859-8 CD replace \uFFFD -1 {} {}
     iso8859-8 CD strict  {}       0 {} {}
-    iso8859-8 CE tcl8    \U000000CE -1 {} {}
     iso8859-8 CE replace \uFFFD -1 {} {}
     iso8859-8 CE strict  {}       0 {} {}
-    iso8859-8 CF tcl8    \U000000CF -1 {} {}
     iso8859-8 CF replace \uFFFD -1 {} {}
     iso8859-8 CF strict  {}       0 {} {}
-    iso8859-8 D0 tcl8    \U000000D0 -1 {} {}
     iso8859-8 D0 replace \uFFFD -1 {} {}
     iso8859-8 D0 strict  {}       0 {} {}
-    iso8859-8 D1 tcl8    \U000000D1 -1 {} {}
     iso8859-8 D1 replace \uFFFD -1 {} {}
     iso8859-8 D1 strict  {}       0 {} {}
-    iso8859-8 D2 tcl8    \U000000D2 -1 {} {}
     iso8859-8 D2 replace \uFFFD -1 {} {}
     iso8859-8 D2 strict  {}       0 {} {}
-    iso8859-8 D3 tcl8    \U000000D3 -1 {} {}
     iso8859-8 D3 replace \uFFFD -1 {} {}
     iso8859-8 D3 strict  {}       0 {} {}
-    iso8859-8 D4 tcl8    \U000000D4 -1 {} {}
     iso8859-8 D4 replace \uFFFD -1 {} {}
     iso8859-8 D4 strict  {}       0 {} {}
-    iso8859-8 D5 tcl8    \U000000D5 -1 {} {}
     iso8859-8 D5 replace \uFFFD -1 {} {}
     iso8859-8 D5 strict  {}       0 {} {}
-    iso8859-8 D6 tcl8    \U000000D6 -1 {} {}
     iso8859-8 D6 replace \uFFFD -1 {} {}
     iso8859-8 D6 strict  {}       0 {} {}
-    iso8859-8 D7 tcl8    \U000000D7 -1 {} {}
     iso8859-8 D7 replace \uFFFD -1 {} {}
     iso8859-8 D7 strict  {}       0 {} {}
-    iso8859-8 D8 tcl8    \U000000D8 -1 {} {}
     iso8859-8 D8 replace \uFFFD -1 {} {}
     iso8859-8 D8 strict  {}       0 {} {}
-    iso8859-8 D9 tcl8    \U000000D9 -1 {} {}
     iso8859-8 D9 replace \uFFFD -1 {} {}
     iso8859-8 D9 strict  {}       0 {} {}
-    iso8859-8 DA tcl8    \U000000DA -1 {} {}
     iso8859-8 DA replace \uFFFD -1 {} {}
     iso8859-8 DA strict  {}       0 {} {}
-    iso8859-8 DB tcl8    \U000000DB -1 {} {}
     iso8859-8 DB replace \uFFFD -1 {} {}
     iso8859-8 DB strict  {}       0 {} {}
-    iso8859-8 DC tcl8    \U000000DC -1 {} {}
     iso8859-8 DC replace \uFFFD -1 {} {}
     iso8859-8 DC strict  {}       0 {} {}
-    iso8859-8 DD tcl8    \U000000DD -1 {} {}
     iso8859-8 DD replace \uFFFD -1 {} {}
     iso8859-8 DD strict  {}       0 {} {}
-    iso8859-8 DE tcl8    \U000000DE -1 {} {}
     iso8859-8 DE replace \uFFFD -1 {} {}
     iso8859-8 DE strict  {}       0 {} {}
-    iso8859-8 FB tcl8    \U000000FB -1 {} {}
     iso8859-8 FB replace \uFFFD -1 {} {}
     iso8859-8 FB strict  {}       0 {} {}
-    iso8859-8 FC tcl8    \U000000FC -1 {} {}
     iso8859-8 FC replace \uFFFD -1 {} {}
     iso8859-8 FC strict  {}       0 {} {}
-    iso8859-8 FF tcl8    \U000000FF -1 {} {}
     iso8859-8 FF replace \uFFFD -1 {} {}
     iso8859-8 FF strict  {}       0 {} {}
 }; # iso8859-8
 
 # iso8859-8 - invalid byte sequences
 lappend encUnencodableStrings {*}{
-    iso8859-8 \U000000A1 tcl8    1A -1 {} {}
-    iso8859-8 \U000000A1 replace 1A -1 {} {}
+    iso8859-8 \U000000A1 replace 3F -1 {} {}
     iso8859-8 \U000000A1 strict  {}                      0 {} {}
-    iso8859-8 \U00000400 tcl8    1A -1 {} {}
-    iso8859-8 \U00000400 replace 1A -1 {} {}
+    iso8859-8 \U00000400 replace 3F -1 {} {}
     iso8859-8 \U00000400 strict  {}                      0 {} {}
-    iso8859-8 \U0000D800 tcl8    1A -1 {} {}
-    iso8859-8 \U0000D800 replace 1A -1 {} {}
+    iso8859-8 \U0000D800 replace 3F -1 {} {}
     iso8859-8 \U0000D800 strict  {}                      0 {} {}
-    iso8859-8 \U0000DC00 tcl8    1A -1 {} {}
-    iso8859-8 \U0000DC00 replace 1A -1 {} {}
+    iso8859-8 \U0000DC00 replace 3F -1 {} {}
     iso8859-8 \U0000DC00 strict  {}                      0 {} {}
-    iso8859-8 \U00010000 tcl8    1A -1 {} {}
-    iso8859-8 \U00010000 replace 1A -1 {} {}
+    iso8859-8 \U00010000 replace 3F -1 {} {}
     iso8859-8 \U00010000 strict  {}                      0 {} {}
-    iso8859-8 \U0010FFFF tcl8    1A -1 {} {}
-    iso8859-8 \U0010FFFF replace 1A -1 {} {}
+    iso8859-8 \U0010FFFF replace 3F -1 {} {}
     iso8859-8 \U0010FFFF strict  {}                      0 {} {}
 }; # iso8859-8
 
@@ -1923,23 +1496,17 @@ lappend encInvalidBytes {*}{
 
 # iso8859-9 - invalid byte sequences
 lappend encUnencodableStrings {*}{
-    iso8859-9 \U000000D0 tcl8    1A -1 {} {}
-    iso8859-9 \U000000D0 replace 1A -1 {} {}
+    iso8859-9 \U000000D0 replace 3F -1 {} {}
     iso8859-9 \U000000D0 strict  {}                      0 {} {}
-    iso8859-9 \U00000400 tcl8    1A -1 {} {}
-    iso8859-9 \U00000400 replace 1A -1 {} {}
+    iso8859-9 \U00000400 replace 3F -1 {} {}
     iso8859-9 \U00000400 strict  {}                      0 {} {}
-    iso8859-9 \U0000D800 tcl8    1A -1 {} {}
-    iso8859-9 \U0000D800 replace 1A -1 {} {}
+    iso8859-9 \U0000D800 replace 3F -1 {} {}
     iso8859-9 \U0000D800 strict  {}                      0 {} {}
-    iso8859-9 \U0000DC00 tcl8    1A -1 {} {}
-    iso8859-9 \U0000DC00 replace 1A -1 {} {}
+    iso8859-9 \U0000DC00 replace 3F -1 {} {}
     iso8859-9 \U0000DC00 strict  {}                      0 {} {}
-    iso8859-9 \U00010000 tcl8    1A -1 {} {}
-    iso8859-9 \U00010000 replace 1A -1 {} {}
+    iso8859-9 \U00010000 replace 3F -1 {} {}
     iso8859-9 \U00010000 strict  {}                      0 {} {}
-    iso8859-9 \U0010FFFF tcl8    1A -1 {} {}
-    iso8859-9 \U0010FFFF replace 1A -1 {} {}
+    iso8859-9 \U0010FFFF replace 3F -1 {} {}
     iso8859-9 \U0010FFFF strict  {}                      0 {} {}
 }; # iso8859-9
 
@@ -1960,23 +1527,17 @@ lappend encInvalidBytes {*}{
 
 # iso8859-10 - invalid byte sequences
 lappend encUnencodableStrings {*}{
-    iso8859-10 \U000000A1 tcl8    1A -1 {} {}
-    iso8859-10 \U000000A1 replace 1A -1 {} {}
+    iso8859-10 \U000000A1 replace 3F -1 {} {}
     iso8859-10 \U000000A1 strict  {}                      0 {} {}
-    iso8859-10 \U00000400 tcl8    1A -1 {} {}
-    iso8859-10 \U00000400 replace 1A -1 {} {}
+    iso8859-10 \U00000400 replace 3F -1 {} {}
     iso8859-10 \U00000400 strict  {}                      0 {} {}
-    iso8859-10 \U0000D800 tcl8    1A -1 {} {}
-    iso8859-10 \U0000D800 replace 1A -1 {} {}
+    iso8859-10 \U0000D800 replace 3F -1 {} {}
     iso8859-10 \U0000D800 strict  {}                      0 {} {}
-    iso8859-10 \U0000DC00 tcl8    1A -1 {} {}
-    iso8859-10 \U0000DC00 replace 1A -1 {} {}
+    iso8859-10 \U0000DC00 replace 3F -1 {} {}
     iso8859-10 \U0000DC00 strict  {}                      0 {} {}
-    iso8859-10 \U00010000 tcl8    1A -1 {} {}
-    iso8859-10 \U00010000 replace 1A -1 {} {}
+    iso8859-10 \U00010000 replace 3F -1 {} {}
     iso8859-10 \U00010000 strict  {}                      0 {} {}
-    iso8859-10 \U0010FFFF tcl8    1A -1 {} {}
-    iso8859-10 \U0010FFFF replace 1A -1 {} {}
+    iso8859-10 \U0010FFFF replace 3F -1 {} {}
     iso8859-10 \U0010FFFF strict  {}                      0 {} {}
 }; # iso8859-10
 
@@ -1993,51 +1554,37 @@ test encoding-convertto-ucmCompare-iso8859-11 {Compare against ICU UCM}  -body {
 
 # iso8859-11 - invalid byte sequences
 lappend encInvalidBytes {*}{
-    iso8859-11 DB tcl8    \U000000DB -1 {} {}
     iso8859-11 DB replace \uFFFD -1 {} {}
     iso8859-11 DB strict  {}       0 {} {}
-    iso8859-11 DC tcl8    \U000000DC -1 {} {}
     iso8859-11 DC replace \uFFFD -1 {} {}
     iso8859-11 DC strict  {}       0 {} {}
-    iso8859-11 DD tcl8    \U000000DD -1 {} {}
     iso8859-11 DD replace \uFFFD -1 {} {}
     iso8859-11 DD strict  {}       0 {} {}
-    iso8859-11 DE tcl8    \U000000DE -1 {} {}
     iso8859-11 DE replace \uFFFD -1 {} {}
     iso8859-11 DE strict  {}       0 {} {}
-    iso8859-11 FC tcl8    \U000000FC -1 {} {}
     iso8859-11 FC replace \uFFFD -1 {} {}
     iso8859-11 FC strict  {}       0 {} {}
-    iso8859-11 FD tcl8    \U000000FD -1 {} {}
     iso8859-11 FD replace \uFFFD -1 {} {}
     iso8859-11 FD strict  {}       0 {} {}
-    iso8859-11 FE tcl8    \U000000FE -1 {} {}
     iso8859-11 FE replace \uFFFD -1 {} {}
     iso8859-11 FE strict  {}       0 {} {}
-    iso8859-11 FF tcl8    \U000000FF -1 {} {}
     iso8859-11 FF replace \uFFFD -1 {} {}
     iso8859-11 FF strict  {}       0 {} {}
 }; # iso8859-11
 
 # iso8859-11 - invalid byte sequences
 lappend encUnencodableStrings {*}{
-    iso8859-11 \U000000A1 tcl8    1A -1 {} {}
-    iso8859-11 \U000000A1 replace 1A -1 {} {}
+    iso8859-11 \U000000A1 replace 3F -1 {} {}
     iso8859-11 \U000000A1 strict  {}                      0 {} {}
-    iso8859-11 \U00000400 tcl8    1A -1 {} {}
-    iso8859-11 \U00000400 replace 1A -1 {} {}
+    iso8859-11 \U00000400 replace 3F -1 {} {}
     iso8859-11 \U00000400 strict  {}                      0 {} {}
-    iso8859-11 \U0000D800 tcl8    1A -1 {} {}
-    iso8859-11 \U0000D800 replace 1A -1 {} {}
+    iso8859-11 \U0000D800 replace 3F -1 {} {}
     iso8859-11 \U0000D800 strict  {}                      0 {} {}
-    iso8859-11 \U0000DC00 tcl8    1A -1 {} {}
-    iso8859-11 \U0000DC00 replace 1A -1 {} {}
+    iso8859-11 \U0000DC00 replace 3F -1 {} {}
     iso8859-11 \U0000DC00 strict  {}                      0 {} {}
-    iso8859-11 \U00010000 tcl8    1A -1 {} {}
-    iso8859-11 \U00010000 replace 1A -1 {} {}
+    iso8859-11 \U00010000 replace 3F -1 {} {}
     iso8859-11 \U00010000 strict  {}                      0 {} {}
-    iso8859-11 \U0010FFFF tcl8    1A -1 {} {}
-    iso8859-11 \U0010FFFF replace 1A -1 {} {}
+    iso8859-11 \U0010FFFF replace 3F -1 {} {}
     iso8859-11 \U0010FFFF strict  {}                      0 {} {}
 }; # iso8859-11
 
@@ -2058,23 +1605,17 @@ lappend encInvalidBytes {*}{
 
 # iso8859-13 - invalid byte sequences
 lappend encUnencodableStrings {*}{
-    iso8859-13 \U000000A1 tcl8    1A -1 {} {}
-    iso8859-13 \U000000A1 replace 1A -1 {} {}
+    iso8859-13 \U000000A1 replace 3F -1 {} {}
     iso8859-13 \U000000A1 strict  {}                      0 {} {}
-    iso8859-13 \U00000400 tcl8    1A -1 {} {}
-    iso8859-13 \U00000400 replace 1A -1 {} {}
+    iso8859-13 \U00000400 replace 3F -1 {} {}
     iso8859-13 \U00000400 strict  {}                      0 {} {}
-    iso8859-13 \U0000D800 tcl8    1A -1 {} {}
-    iso8859-13 \U0000D800 replace 1A -1 {} {}
+    iso8859-13 \U0000D800 replace 3F -1 {} {}
     iso8859-13 \U0000D800 strict  {}                      0 {} {}
-    iso8859-13 \U0000DC00 tcl8    1A -1 {} {}
-    iso8859-13 \U0000DC00 replace 1A -1 {} {}
+    iso8859-13 \U0000DC00 replace 3F -1 {} {}
     iso8859-13 \U0000DC00 strict  {}                      0 {} {}
-    iso8859-13 \U00010000 tcl8    1A -1 {} {}
-    iso8859-13 \U00010000 replace 1A -1 {} {}
+    iso8859-13 \U00010000 replace 3F -1 {} {}
     iso8859-13 \U00010000 strict  {}                      0 {} {}
-    iso8859-13 \U0010FFFF tcl8    1A -1 {} {}
-    iso8859-13 \U0010FFFF replace 1A -1 {} {}
+    iso8859-13 \U0010FFFF replace 3F -1 {} {}
     iso8859-13 \U0010FFFF strict  {}                      0 {} {}
 }; # iso8859-13
 
@@ -2095,23 +1636,17 @@ lappend encInvalidBytes {*}{
 
 # iso8859-14 - invalid byte sequences
 lappend encUnencodableStrings {*}{
-    iso8859-14 \U000000A1 tcl8    1A -1 {} {}
-    iso8859-14 \U000000A1 replace 1A -1 {} {}
+    iso8859-14 \U000000A1 replace 3F -1 {} {}
     iso8859-14 \U000000A1 strict  {}                      0 {} {}
-    iso8859-14 \U00000400 tcl8    1A -1 {} {}
-    iso8859-14 \U00000400 replace 1A -1 {} {}
+    iso8859-14 \U00000400 replace 3F -1 {} {}
     iso8859-14 \U00000400 strict  {}                      0 {} {}
-    iso8859-14 \U0000D800 tcl8    1A -1 {} {}
-    iso8859-14 \U0000D800 replace 1A -1 {} {}
+    iso8859-14 \U0000D800 replace 3F -1 {} {}
     iso8859-14 \U0000D800 strict  {}                      0 {} {}
-    iso8859-14 \U0000DC00 tcl8    1A -1 {} {}
-    iso8859-14 \U0000DC00 replace 1A -1 {} {}
+    iso8859-14 \U0000DC00 replace 3F -1 {} {}
     iso8859-14 \U0000DC00 strict  {}                      0 {} {}
-    iso8859-14 \U00010000 tcl8    1A -1 {} {}
-    iso8859-14 \U00010000 replace 1A -1 {} {}
+    iso8859-14 \U00010000 replace 3F -1 {} {}
     iso8859-14 \U00010000 strict  {}                      0 {} {}
-    iso8859-14 \U0010FFFF tcl8    1A -1 {} {}
-    iso8859-14 \U0010FFFF replace 1A -1 {} {}
+    iso8859-14 \U0010FFFF replace 3F -1 {} {}
     iso8859-14 \U0010FFFF strict  {}                      0 {} {}
 }; # iso8859-14
 
@@ -2132,23 +1667,17 @@ lappend encInvalidBytes {*}{
 
 # iso8859-15 - invalid byte sequences
 lappend encUnencodableStrings {*}{
-    iso8859-15 \U000000A4 tcl8    1A -1 {} {}
-    iso8859-15 \U000000A4 replace 1A -1 {} {}
+    iso8859-15 \U000000A4 replace 3F -1 {} {}
     iso8859-15 \U000000A4 strict  {}                      0 {} {}
-    iso8859-15 \U00000400 tcl8    1A -1 {} {}
-    iso8859-15 \U00000400 replace 1A -1 {} {}
+    iso8859-15 \U00000400 replace 3F -1 {} {}
     iso8859-15 \U00000400 strict  {}                      0 {} {}
-    iso8859-15 \U0000D800 tcl8    1A -1 {} {}
-    iso8859-15 \U0000D800 replace 1A -1 {} {}
+    iso8859-15 \U0000D800 replace 3F -1 {} {}
     iso8859-15 \U0000D800 strict  {}                      0 {} {}
-    iso8859-15 \U0000DC00 tcl8    1A -1 {} {}
-    iso8859-15 \U0000DC00 replace 1A -1 {} {}
+    iso8859-15 \U0000DC00 replace 3F -1 {} {}
     iso8859-15 \U0000DC00 strict  {}                      0 {} {}
-    iso8859-15 \U00010000 tcl8    1A -1 {} {}
-    iso8859-15 \U00010000 replace 1A -1 {} {}
+    iso8859-15 \U00010000 replace 3F -1 {} {}
     iso8859-15 \U00010000 strict  {}                      0 {} {}
-    iso8859-15 \U0010FFFF tcl8    1A -1 {} {}
-    iso8859-15 \U0010FFFF replace 1A -1 {} {}
+    iso8859-15 \U0010FFFF replace 3F -1 {} {}
     iso8859-15 \U0010FFFF strict  {}                      0 {} {}
 }; # iso8859-15
 
@@ -2169,23 +1698,17 @@ lappend encInvalidBytes {*}{
 
 # iso8859-16 - invalid byte sequences
 lappend encUnencodableStrings {*}{
-    iso8859-16 \U000000A1 tcl8    1A -1 {} {}
-    iso8859-16 \U000000A1 replace 1A -1 {} {}
+    iso8859-16 \U000000A1 replace 3F -1 {} {}
     iso8859-16 \U000000A1 strict  {}                      0 {} {}
-    iso8859-16 \U00000400 tcl8    1A -1 {} {}
-    iso8859-16 \U00000400 replace 1A -1 {} {}
+    iso8859-16 \U00000400 replace 3F -1 {} {}
     iso8859-16 \U00000400 strict  {}                      0 {} {}
-    iso8859-16 \U0000D800 tcl8    1A -1 {} {}
-    iso8859-16 \U0000D800 replace 1A -1 {} {}
+    iso8859-16 \U0000D800 replace 3F -1 {} {}
     iso8859-16 \U0000D800 strict  {}                      0 {} {}
-    iso8859-16 \U0000DC00 tcl8    1A -1 {} {}
-    iso8859-16 \U0000DC00 replace 1A -1 {} {}
+    iso8859-16 \U0000DC00 replace 3F -1 {} {}
     iso8859-16 \U0000DC00 strict  {}                      0 {} {}
-    iso8859-16 \U00010000 tcl8    1A -1 {} {}
-    iso8859-16 \U00010000 replace 1A -1 {} {}
+    iso8859-16 \U00010000 replace 3F -1 {} {}
     iso8859-16 \U00010000 strict  {}                      0 {} {}
-    iso8859-16 \U0010FFFF tcl8    1A -1 {} {}
-    iso8859-16 \U0010FFFF replace 1A -1 {} {}
+    iso8859-16 \U0010FFFF replace 3F -1 {} {}
     iso8859-16 \U0010FFFF strict  {}                      0 {} {}
 }; # iso8859-16
 
@@ -2206,23 +1729,17 @@ lappend encInvalidBytes {*}{
 
 # koi8-r - invalid byte sequences
 lappend encUnencodableStrings {*}{
-    koi8-r \U00000080 tcl8    1A -1 {} {}
-    koi8-r \U00000080 replace 1A -1 {} {}
+    koi8-r \U00000080 replace 3F -1 {} {}
     koi8-r \U00000080 strict  {}                      0 {} {}
-    koi8-r \U00000400 tcl8    1A -1 {} {}
-    koi8-r \U00000400 replace 1A -1 {} {}
+    koi8-r \U00000400 replace 3F -1 {} {}
     koi8-r \U00000400 strict  {}                      0 {} {}
-    koi8-r \U0000D800 tcl8    1A -1 {} {}
-    koi8-r \U0000D800 replace 1A -1 {} {}
+    koi8-r \U0000D800 replace 3F -1 {} {}
     koi8-r \U0000D800 strict  {}                      0 {} {}
-    koi8-r \U0000DC00 tcl8    1A -1 {} {}
-    koi8-r \U0000DC00 replace 1A -1 {} {}
+    koi8-r \U0000DC00 replace 3F -1 {} {}
     koi8-r \U0000DC00 strict  {}                      0 {} {}
-    koi8-r \U00010000 tcl8    1A -1 {} {}
-    koi8-r \U00010000 replace 1A -1 {} {}
+    koi8-r \U00010000 replace 3F -1 {} {}
     koi8-r \U00010000 strict  {}                      0 {} {}
-    koi8-r \U0010FFFF tcl8    1A -1 {} {}
-    koi8-r \U0010FFFF replace 1A -1 {} {}
+    koi8-r \U0010FFFF replace 3F -1 {} {}
     koi8-r \U0010FFFF strict  {}                      0 {} {}
 }; # koi8-r
 
@@ -2254,22 +1771,16 @@ lappend encInvalidBytes {*}{
 
 # macCentEuro - invalid byte sequences
 lappend encUnencodableStrings {*}{
-    macCentEuro \U00000080 tcl8    3F -1 {} {}
     macCentEuro \U00000080 replace 3F -1 {} {}
     macCentEuro \U00000080 strict  {}                      0 {} {}
-    macCentEuro \U00000400 tcl8    3F -1 {} {}
     macCentEuro \U00000400 replace 3F -1 {} {}
     macCentEuro \U00000400 strict  {}                      0 {} {}
-    macCentEuro \U0000D800 tcl8    3F -1 {} {}
     macCentEuro \U0000D800 replace 3F -1 {} {}
     macCentEuro \U0000D800 strict  {}                      0 {} {}
-    macCentEuro \U0000DC00 tcl8    3F -1 {} {}
     macCentEuro \U0000DC00 replace 3F -1 {} {}
     macCentEuro \U0000DC00 strict  {}                      0 {} {}
-    macCentEuro \U00010000 tcl8    3F -1 {} {}
     macCentEuro \U00010000 replace 3F -1 {} {}
     macCentEuro \U00010000 strict  {}                      0 {} {}
-    macCentEuro \U0010FFFF tcl8    3F -1 {} {}
     macCentEuro \U0010FFFF replace 3F -1 {} {}
     macCentEuro \U0010FFFF strict  {}                      0 {} {}
 }; # macCentEuro
@@ -2291,22 +1802,16 @@ lappend encInvalidBytes {*}{
 
 # macCroatian - invalid byte sequences
 lappend encUnencodableStrings {*}{
-    macCroatian \U00000080 tcl8    3F -1 {} {}
     macCroatian \U00000080 replace 3F -1 {} {}
     macCroatian \U00000080 strict  {}                      0 {} {}
-    macCroatian \U00000400 tcl8    3F -1 {} {}
     macCroatian \U00000400 replace 3F -1 {} {}
     macCroatian \U00000400 strict  {}                      0 {} {}
-    macCroatian \U0000D800 tcl8    3F -1 {} {}
     macCroatian \U0000D800 replace 3F -1 {} {}
     macCroatian \U0000D800 strict  {}                      0 {} {}
-    macCroatian \U0000DC00 tcl8    3F -1 {} {}
     macCroatian \U0000DC00 replace 3F -1 {} {}
     macCroatian \U0000DC00 strict  {}                      0 {} {}
-    macCroatian \U00010000 tcl8    3F -1 {} {}
     macCroatian \U00010000 replace 3F -1 {} {}
     macCroatian \U00010000 strict  {}                      0 {} {}
-    macCroatian \U0010FFFF tcl8    3F -1 {} {}
     macCroatian \U0010FFFF replace 3F -1 {} {}
     macCroatian \U0010FFFF strict  {}                      0 {} {}
 }; # macCroatian
@@ -2328,22 +1833,16 @@ lappend encInvalidBytes {*}{
 
 # macCyrillic - invalid byte sequences
 lappend encUnencodableStrings {*}{
-    macCyrillic \U00000080 tcl8    3F -1 {} {}
     macCyrillic \U00000080 replace 3F -1 {} {}
     macCyrillic \U00000080 strict  {}                      0 {} {}
-    macCyrillic \U00000400 tcl8    3F -1 {} {}
     macCyrillic \U00000400 replace 3F -1 {} {}
     macCyrillic \U00000400 strict  {}                      0 {} {}
-    macCyrillic \U0000D800 tcl8    3F -1 {} {}
     macCyrillic \U0000D800 replace 3F -1 {} {}
     macCyrillic \U0000D800 strict  {}                      0 {} {}
-    macCyrillic \U0000DC00 tcl8    3F -1 {} {}
     macCyrillic \U0000DC00 replace 3F -1 {} {}
     macCyrillic \U0000DC00 strict  {}                      0 {} {}
-    macCyrillic \U00010000 tcl8    3F -1 {} {}
     macCyrillic \U00010000 replace 3F -1 {} {}
     macCyrillic \U00010000 strict  {}                      0 {} {}
-    macCyrillic \U0010FFFF tcl8    3F -1 {} {}
     macCyrillic \U0010FFFF replace 3F -1 {} {}
     macCyrillic \U0010FFFF strict  {}                      0 {} {}
 }; # macCyrillic
@@ -2387,22 +1886,16 @@ lappend encInvalidBytes {*}{
 
 # macIceland - invalid byte sequences
 lappend encUnencodableStrings {*}{
-    macIceland \U00000080 tcl8    3F -1 {} {}
     macIceland \U00000080 replace 3F -1 {} {}
     macIceland \U00000080 strict  {}                      0 {} {}
-    macIceland \U00000400 tcl8    3F -1 {} {}
     macIceland \U00000400 replace 3F -1 {} {}
     macIceland \U00000400 strict  {}                      0 {} {}
-    macIceland \U0000D800 tcl8    3F -1 {} {}
     macIceland \U0000D800 replace 3F -1 {} {}
     macIceland \U0000D800 strict  {}                      0 {} {}
-    macIceland \U0000DC00 tcl8    3F -1 {} {}
     macIceland \U0000DC00 replace 3F -1 {} {}
     macIceland \U0000DC00 strict  {}                      0 {} {}
-    macIceland \U00010000 tcl8    3F -1 {} {}
     macIceland \U00010000 replace 3F -1 {} {}
     macIceland \U00010000 strict  {}                      0 {} {}
-    macIceland \U0010FFFF tcl8    3F -1 {} {}
     macIceland \U0010FFFF replace 3F -1 {} {}
     macIceland \U0010FFFF strict  {}                      0 {} {}
 }; # macIceland
@@ -2424,22 +1917,16 @@ lappend encInvalidBytes {*}{
 
 # macRoman - invalid byte sequences
 lappend encUnencodableStrings {*}{
-    macRoman \U00000080 tcl8    3F -1 {} {}
     macRoman \U00000080 replace 3F -1 {} {}
     macRoman \U00000080 strict  {}                      0 {} {}
-    macRoman \U00000400 tcl8    3F -1 {} {}
     macRoman \U00000400 replace 3F -1 {} {}
     macRoman \U00000400 strict  {}                      0 {} {}
-    macRoman \U0000D800 tcl8    3F -1 {} {}
     macRoman \U0000D800 replace 3F -1 {} {}
     macRoman \U0000D800 strict  {}                      0 {} {}
-    macRoman \U0000DC00 tcl8    3F -1 {} {}
     macRoman \U0000DC00 replace 3F -1 {} {}
     macRoman \U0000DC00 strict  {}                      0 {} {}
-    macRoman \U00010000 tcl8    3F -1 {} {}
     macRoman \U00010000 replace 3F -1 {} {}
     macRoman \U00010000 strict  {}                      0 {} {}
-    macRoman \U0010FFFF tcl8    3F -1 {} {}
     macRoman \U0010FFFF replace 3F -1 {} {}
     macRoman \U0010FFFF strict  {}                      0 {} {}
 }; # macRoman
@@ -2483,22 +1970,16 @@ lappend encInvalidBytes {*}{
 
 # macTurkish - invalid byte sequences
 lappend encUnencodableStrings {*}{
-    macTurkish \U00000080 tcl8    3F -1 {} {}
     macTurkish \U00000080 replace 3F -1 {} {}
     macTurkish \U00000080 strict  {}                      0 {} {}
-    macTurkish \U00000400 tcl8    3F -1 {} {}
     macTurkish \U00000400 replace 3F -1 {} {}
     macTurkish \U00000400 strict  {}                      0 {} {}
-    macTurkish \U0000D800 tcl8    3F -1 {} {}
     macTurkish \U0000D800 replace 3F -1 {} {}
     macTurkish \U0000D800 strict  {}                      0 {} {}
-    macTurkish \U0000DC00 tcl8    3F -1 {} {}
     macTurkish \U0000DC00 replace 3F -1 {} {}
     macTurkish \U0000DC00 strict  {}                      0 {} {}
-    macTurkish \U00010000 tcl8    3F -1 {} {}
     macTurkish \U00010000 replace 3F -1 {} {}
     macTurkish \U00010000 strict  {}                      0 {} {}
-    macTurkish \U0010FFFF tcl8    3F -1 {} {}
     macTurkish \U0010FFFF replace 3F -1 {} {}
     macTurkish \U0010FFFF strict  {}                      0 {} {}
 }; # macTurkish
@@ -2520,22 +2001,16 @@ lappend encInvalidBytes {*}{
 
 # macUkraine - invalid byte sequences
 lappend encUnencodableStrings {*}{
-    macUkraine \U00000080 tcl8    3F -1 {} {}
     macUkraine \U00000080 replace 3F -1 {} {}
     macUkraine \U00000080 strict  {}                      0 {} {}
-    macUkraine \U00000400 tcl8    3F -1 {} {}
     macUkraine \U00000400 replace 3F -1 {} {}
     macUkraine \U00000400 strict  {}                      0 {} {}
-    macUkraine \U0000D800 tcl8    3F -1 {} {}
     macUkraine \U0000D800 replace 3F -1 {} {}
     macUkraine \U0000D800 strict  {}                      0 {} {}
-    macUkraine \U0000DC00 tcl8    3F -1 {} {}
     macUkraine \U0000DC00 replace 3F -1 {} {}
     macUkraine \U0000DC00 strict  {}                      0 {} {}
-    macUkraine \U00010000 tcl8    3F -1 {} {}
     macUkraine \U00010000 replace 3F -1 {} {}
     macUkraine \U00010000 strict  {}                      0 {} {}
-    macUkraine \U0010FFFF tcl8    3F -1 {} {}
     macUkraine \U0010FFFF replace 3F -1 {} {}
     macUkraine \U0010FFFF strict  {}                      0 {} {}
 }; # macUkraine
