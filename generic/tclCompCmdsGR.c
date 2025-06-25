@@ -1619,8 +1619,6 @@ TclCompileLpopCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Size numWords = parsePtr->numWords;
-    Tcl_Token *varTokenPtr, *idxTokenPtr = NULL;
-    int idx = TCL_INDEX_END, isSimpleIndex = 1;
 
     // TODO: Figure out all the stack cases here to allow full variable access
     // TODO: Find way to handle multiple indices
@@ -1630,7 +1628,15 @@ TclCompileLpopCmd(
 	return TCL_ERROR;
     }
 
-    varTokenPtr = TokenAfter(parsePtr->tokenPtr);
+    Tcl_Token *varTokenPtr = TokenAfter(parsePtr->tokenPtr);
+    Tcl_LVTIndex varIdx = LocalScalarFromToken(varTokenPtr, envPtr);
+    if (varIdx < 0) {
+	// Give up if we pushed any words; makes stack computations tractable
+	return TCL_ERROR;
+    }
+
+    Tcl_Token *idxTokenPtr = NULL;
+    int idx = TCL_INDEX_END, isSimpleIndex = 1;
     if (numWords == 3) {
 	idxTokenPtr = TokenAfter(varTokenPtr);
 	if (TclGetIndexFromToken(idxTokenPtr, TCL_INDEX_NONE,
@@ -1642,14 +1648,6 @@ TclCompileLpopCmd(
 	     */
 	    isSimpleIndex = 0;
 	}
-    }
-
-    Tcl_LVTIndex varIdx;
-    int isScalar;
-    PushVarNameWord(varTokenPtr, 0, &varIdx, &isScalar, 1);
-    if (varIdx < 0 || !isScalar) {
-	// Give up if we pushed any words; makes stack computations tractable
-	return TCL_ERROR;
     }
 
     if (!isSimpleIndex) {
