@@ -793,6 +793,9 @@ TclProcessReturn(
  *
  *	Parses, checks, and stores the options to the [return] command.
  *
+ *	The number of arguments (objc) must be even, with the corresponding
+ *	objv holding values to be processed as key value .... key value.
+ *
  * Results:
  *	Returns TCL_ERROR if any of the option values are invalid. Otherwise,
  *	returns TCL_OK, and writes the returnOpts, code, and level values to
@@ -803,6 +806,49 @@ TclProcessReturn(
  *
  *----------------------------------------------------------------------
  */
+
+static int
+ExpandedOptions(
+    Tcl_Interp *interp,		/* Current interpreter. */
+    Tcl_Obj **keys,		/* Built-in keys (per thread) */
+    Tcl_Obj *returnOpts,	/* Options dict we are building */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    for (;  objc > 1;  objv += 2, objc -= 2) {
+	const char *opt = TclGetString(objv[0]);
+	const char *compare = TclGetString(keys[KEY_OPTIONS]);
+
+	if ((objv[0]->length == keys[KEY_OPTIONS]->length)
+		&& (memcmp(opt, compare, objv[0]->length) == 0)) {
+	    /* Process the -options switch to emulate {*} expansion.
+	     *
+	     * Use lists so duplicate keys are not lost.
+	     */
+
+	    Tcl_Size nestc;
+	    Tcl_Obj **nestv;
+
+	    if (TCL_ERROR == TclListObjGetElements(interp, objv[1],
+		    &nestc, &nestv) || (nestc % 2)) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"bad -options value: expected dictionary but got"
+			" \"%s\"", TclGetString(objv[1])));
+		Tcl_SetErrorCode(interp, "TCL", "RESULT", "ILLEGAL_OPTIONS",
+			(char *)NULL);
+		return TCL_ERROR;
+	    }
+
+	    if (TCL_ERROR ==
+		    ExpandedOptions(interp, keys, returnOpts, nestc, nestv)) {
+		return TCL_ERROR;
+	    }
+	} else {
+	    Tcl_DictObjPut(NULL, returnOpts, objv[0], objv[1]);
+	}
+    }
+    return TCL_OK;
+}
 
 int
 TclMergeReturnOptions(
@@ -823,48 +869,11 @@ TclMergeReturnOptions(
     Tcl_Obj *returnOpts;
     Tcl_Obj **keys = GetKeys();
 
+    /* All callers are expected to pass an even value for objc. */
+
     TclNewObj(returnOpts);
-    for (;  objc > 1;  objv += 2, objc -= 2) {
-	const char *opt = TclGetString(objv[0]);
-	const char *compare = TclGetString(keys[KEY_OPTIONS]);
-
-	if ((objv[0]->length == keys[KEY_OPTIONS]->length)
-		&& (memcmp(opt, compare, objv[0]->length) == 0)) {
-	    Tcl_DictSearch search;
-	    int done = 0;
-	    Tcl_Obj *keyPtr;
-	    Tcl_Obj *dict = objv[1];
-
-	nestedOptions:
-	    if (TCL_ERROR == Tcl_DictObjFirst(NULL, dict, &search,
-		    &keyPtr, &valuePtr, &done)) {
-		/*
-		 * Value is not a legal dictionary.
-		 */
-
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"bad %s value: expected dictionary but got \"%s\"",
-			compare, TclGetString(objv[1])));
-		Tcl_SetErrorCode(interp, "TCL", "RESULT", "ILLEGAL_OPTIONS",
-			(char *)NULL);
-		goto error;
-	    }
-
-	    while (!done) {
-		Tcl_DictObjPut(NULL, returnOpts, keyPtr, valuePtr);
-		Tcl_DictObjNext(&search, &keyPtr, &valuePtr, &done);
-	    }
-
-	    Tcl_DictObjGet(NULL, returnOpts, keys[KEY_OPTIONS], &valuePtr);
-	    if (valuePtr != NULL) {
-		dict = valuePtr;
-		Tcl_DictObjRemove(NULL, returnOpts, keys[KEY_OPTIONS]);
-		goto nestedOptions;
-	    }
-
-	} else {
-	    Tcl_DictObjPut(NULL, returnOpts, objv[0], objv[1]);
-	}
+    if (TCL_ERROR == ExpandedOptions(interp, keys, returnOpts, objc, objv)) {
+	goto error;
     }
 
     /*
