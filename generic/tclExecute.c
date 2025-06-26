@@ -2743,6 +2743,27 @@ TEBCresume(
 	goto processExceptionReturn;
     }
 
+    case INST_UPLEVEL: {
+	Tcl_Obj *levelObj = OBJ_UNDER_TOS;
+	Tcl_Obj *scriptObj = OBJ_AT_TOS;
+	CallFrame *framePtr, *savedFramePtr;
+
+	TRACE(("\"%.30s\" \"%.30s\" => ", O2S(levelObj), O2S(scriptObj)));
+	if (TclObjGetFrame(interp, levelObj, &framePtr) == -1) {
+	    TRACE_ERROR(interp);
+	    goto gotError;
+	}
+	savedFramePtr = iPtr->varFramePtr;
+	iPtr->varFramePtr = framePtr;
+	pc++;
+	cleanup = 1;
+	TEBC_YIELD();
+	TclNRAddCallback(interp, TclUplevelCallback, savedFramePtr, NULL, NULL,
+		NULL);
+	fprintf(stderr, "DO UPLEVEL\n");
+	return TclNREvalObjEx(interp, scriptObj, 0, NULL, 0); // FIXME: invoker/wordIdx
+    }
+
     case INST_DONE:
 	if (tosPtr > initTosPtr) {
 	    if ((curEvalFlags & TCL_EVAL_DISCARD_RESULT) && (result == TCL_OK)) {
