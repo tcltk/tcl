@@ -19,7 +19,8 @@ This command provides a way to retrieve information about how Tcl was built.
 Without any options, the command returns the Tcl patchlevel, followed
 by the '+'-sign, followed by the fossil commit-id followed by a list of
 dot-separated tags. If a \fIfield\fR is given, this command extracts that
-field as described below. For official Tcl releases, the \fIfield\fRs are:
+field as described below. Any other \fIfield\fR value not mentioned
+below will always return "0". For official Tcl releases, the \fIfield\fRs are:
 .\" METHOD: clang
 .TP
 \fB::tcl::build-info clang\fR
