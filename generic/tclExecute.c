@@ -5470,11 +5470,11 @@ TEBCresume(
 	valuePtr = OBJ_AT_DEPTH(numArgs - 1);
 
 	/* haveSecondIndex==0 => pure insert */
-	int haveSecondIndex = (flags & TCL_LREPLACE4_SINGLE_INDEX) == 0;
+	int haveSecondIndex = (flags & TCL_LREPLACE_SINGLE_INDEX) == 0;
 	size_t numNewElems = numArgs - 2 - haveSecondIndex;
 
 	/* end_indicator==1 => "end" is last element's index, 0=>index beyond */
-	int endIndicator = (flags & TCL_LREPLACE4_END_IS_LAST) != 0;
+	int endIndicator = (flags & TCL_LREPLACE_END_IS_LAST) != 0;
 	Tcl_Obj *fromIdxObj = OBJ_AT_DEPTH(numArgs - 2);
 	Tcl_Obj *toIdxObj = haveSecondIndex ? OBJ_AT_DEPTH(numArgs - 3) : NULL;
 	if (Tcl_ListObjLength(interp, valuePtr, &length) != TCL_OK) {
@@ -5489,7 +5489,7 @@ TEBCresume(
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
-	if (flags & TCL_LREPLACE4_NEED_IN_RANGE) {
+	if (flags & TCL_LREPLACE_NEED_IN_RANGE) {
 	    if (fromIdx < 0 || fromIdx >= length) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"index \"%s\" out of range", Tcl_GetString(fromIdxObj)));

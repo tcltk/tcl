@@ -714,13 +714,13 @@ FormatInstruction(
 	    case 0:
 		Tcl_AppendPrintfToObj(bufferObj, "0 ");
 		break;
-	    case TCL_LREPLACE4_END_IS_LAST:
+	    case TCL_LREPLACE_END_IS_LAST:
 		Tcl_AppendPrintfToObj(bufferObj, "endLast ");
 		break;
-	    case TCL_LREPLACE4_SINGLE_INDEX:
+	    case TCL_LREPLACE_SINGLE_INDEX:
 		Tcl_AppendPrintfToObj(bufferObj, "singleIdx ");
 		break;
-	    case TCL_LREPLACE4_END_IS_LAST | TCL_LREPLACE4_NEED_IN_RANGE:
+	    case TCL_LREPLACE_END_IS_LAST | TCL_LREPLACE_NEED_IN_RANGE:
 		Tcl_AppendPrintfToObj(bufferObj, "endLast,indexTest ");
 		break;
 	    default:
