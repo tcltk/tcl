@@ -50,7 +50,7 @@ static int		SetLambdaFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 
 static Tcl_NRPostProc ApplyNR2;
 static Tcl_NRPostProc InterpProcNR2;
-static Tcl_NRPostProc Uplevel_Callback;
+static Tcl_NRPostProc TclUplevelCallback;
 static Tcl_ObjCmdProc NRInterpProc;
 
 /*
@@ -880,8 +880,8 @@ badLevel:
  *----------------------------------------------------------------------
  */
 
-static int
-Uplevel_Callback(
+int
+TclUplevelCallback(
     void *data[],
     Tcl_Interp *interp,
     int result)
@@ -932,9 +932,7 @@ TclNRUplevelObjCmd(
     *    is only one argument.  This requires a TIP since currently a single
     *    argument is interpreted as a level indicator if possible.
     */
-    uplevelSyntax:
-	Tcl_WrongNumArgs(interp, 1, objv, "?level? command ?arg ...?");
-	return TCL_ERROR;
+	goto uplevelSyntax;
     } else if (!TclHasStringRep(objv[1]) && objc == 2) {
 	int status;
 	Tcl_Size llength;
@@ -966,7 +964,7 @@ TclNRUplevelObjCmd(
     }
     objv += result + 1;
 
-    havelevel:
+  havelevel:
 
     /*
      * Modify the interpreter state to execute in the given frame.
@@ -986,7 +984,6 @@ TclNRUplevelObjCmd(
 
 	TclArgumentGet(interp, objv[0], &invoker, &word);
 	objPtr = objv[0];
-
     } else {
 	/*
 	 * More than one argument: concatenate them together with spaces
@@ -997,9 +994,12 @@ TclNRUplevelObjCmd(
 	objPtr = Tcl_ConcatObj(objc, objv);
     }
 
-    TclNRAddCallback(interp, Uplevel_Callback, savedVarFramePtr, NULL, NULL,
+    TclNRAddCallback(interp, TclUplevelCallback, savedVarFramePtr, NULL, NULL,
 	    NULL);
     return TclNREvalObjEx(interp, objPtr, 0, invoker, word);
+  uplevelSyntax:
+    Tcl_WrongNumArgs(interp, 1, objv, "?level? command ?arg ...?");
+    return TCL_ERROR;
 }
 
 /*
