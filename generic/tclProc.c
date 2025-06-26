@@ -732,15 +732,15 @@ TclGetFrame(
     CallFrame **framePtrPtr)	/* Store pointer to frame here (or NULL if
 				 * global frame indicated). */
 {
-	int result;
-	Tcl_Obj obj;
+    int result;
+    Tcl_Obj obj;
 
-	obj.bytes = (char *) name;
-	obj.length = strlen(name);
-	obj.typePtr = NULL;
-	result = TclObjGetFrame(interp, &obj, framePtrPtr);
-	TclFreeInternalRep(&obj);
-	return result;
+    obj.bytes = (char *) name;
+    obj.length = strlen(name);
+    obj.typePtr = NULL;
+    result = TclObjGetFrame(interp, &obj, framePtrPtr);
+    TclFreeInternalRep(&obj);
+    return result;
 }
 
 /*
@@ -760,7 +760,12 @@ TclGetFrame(
  *	two things above (in this case, the lookup acts as if objPtr were
  *	"1"). The variable pointed to by framePtrPtr is filled in with the
  *	address of the desired frame (unless an error occurs, in which case it
- *	isn't modified).
+ *	isn't modified); if passed in as NULL, it indicates that resolution of
+ *	the frame is uninteresting; only parsing of the frame identifier is
+ *	desired (and no write of the frame ref will be done).
+ *
+ *	The parse-only mode is used by the bytecode compiler, which saves
+ *	resolution of the frame to bytecode execution time.
  *
  * Side effects:
  *	None.
@@ -773,7 +778,8 @@ TclObjGetFrame(
     Tcl_Interp *interp,		/* Interpreter in which to find frame. */
     Tcl_Obj *objPtr,		/* Object describing frame. */
     CallFrame **framePtrPtr)	/* Store pointer to frame here (or NULL if
-				 * global frame indicated). */
+				 * global frame indicated); when NULL itself,
+				 * no frame resolution is wanted. */
 {
     Interp *iPtr = (Interp *) interp;
     int curLevel;
@@ -833,6 +839,10 @@ TclObjGetFrame(
     }
 
     if (result != -1) {
+	if (framePtrPtr == NULL) {
+	    // Not interested in resolving to an actual level yet.
+	    return result;
+	}
 	/* if relative current level */
 	if (result == 0) {
 	    if (!curLevel) {

@@ -2549,19 +2549,14 @@ TclCompileUpvarCmd(
     TclNewObj(objPtr);
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
     if (TclWordKnownAtCompileTime(tokenPtr, objPtr)) {
-	CallFrame *framePtr;
-	const Tcl_ObjType *newTypePtr, *typePtr = objPtr->typePtr;
-
 	/*
-	 * Attempt to convert to a level reference. Note that TclObjGetFrame
-	 * only changes the obj type when a conversion was successful.
+	 * Attempt to convert to a level reference.
 	 */
 
-	TclObjGetFrame(interp, objPtr, &framePtr);
-	newTypePtr = objPtr->typePtr;
+	int numFrameWords = TclObjGetFrame(interp, objPtr, NULL);
 	Tcl_DecrRefCount(objPtr);
 
-	if (newTypePtr != typePtr) {
+	if (numFrameWords) {
 	    if (numWords % 2) {
 		return TCL_ERROR;
 	    }
