@@ -1399,6 +1399,7 @@ TclCompileLinsertCmd(
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *listToken, *indexToken, *tokenPtr;
     Tcl_Size i, numWords = parsePtr->numWords;
+    /* TODO: Consider support for compiling expanded args. */
 
     if (numWords < 3 || numWords > UINT_MAX) {
 	return TCL_ERROR;
@@ -1451,6 +1452,7 @@ TclCompileLreplaceCmd(
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *listToken, *firstToken, *lastToken, *tokenPtr;
     Tcl_Size i, numWords = parsePtr->numWords;
+    /* TODO: Consider support for compiling expanded args. */
 
     if (numWords < 4 || numWords > UINT_MAX) {
 	return TCL_ERROR;
@@ -1501,6 +1503,7 @@ TclCompileLeditCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Size numWords = parsePtr->numWords, i;
+    /* TODO: Consider support for compiling expanded args. */
     if (numWords < 4) {
 	return TCL_ERROR;
     }
@@ -1619,6 +1622,7 @@ TclCompileLpopCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Size numWords = parsePtr->numWords;
+    /* TODO: Consider support for compiling expanded args. */
 
     // TODO: Figure out all the stack cases here to allow full variable access
     // TODO: Find way to handle multiple indices
