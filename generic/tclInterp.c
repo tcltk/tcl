@@ -3965,7 +3965,7 @@ Tcl_LimitSetCommands(
  *----------------------------------------------------------------------
  */
 
-int
+Tcl_Size
 Tcl_LimitGetCommands(
     Tcl_Interp *interp)
 {
