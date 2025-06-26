@@ -11,39 +11,15 @@
 .SH NAME
 tcl::build-info \- Build info
 .SH SYNOPSIS
-\fB::tcl::build-info\fR?
-\fB::tcl::build-info clang\fR?
-\fB::tcl::build-info commit\fR?
-\fB::tcl::build-info compiledebug\fR?
-\fB::tcl::build-info compiler\fR?
-\fB::tcl::build-info compilestats\fR?
-\fB::tcl::build-info cplusplus\fR?
-\fB::tcl::build-info debug\fR?
-\fB::tcl::build-info gcc\fR?
-\fB::tcl::build-info icc\fR?
-\fB::tcl::build-info ipl32\fR?
-\fB::tcl::build-info memdebug\fR?
-\fB::tcl::build-info msvc\fR?
-\fB::tcl::build-info nmake\fR?
-\fB::tcl::build-info no-deprecate\fR?
-\fB::tcl::build-info no-thread\fR?
-\fB::tcl::build-info no-optimize\fR?
-\fB::tcl::build-info objective-c\fR?
-\fB::tcl::build-info objective-cplusplus\fR?
-\fB::tcl::build-info patchlevel\fR?
-\fB::tcl::build-info profile\fR?
-\fB::tcl::build-info purify\fR?
-\fB::tcl::build-info static\fR?
-\fB::tcl::build-info tommath\fR?
-\fB::tcl::build-info version\fR?
-\fB::tcl::build-info zlib\fR?
+\fB::tcl::build-info\fR ?\fIfield\fR?
 .BE
 .SH DESCRIPTION
 .PP
 This command provides a way to retrieve information about how Tcl was built.
 Without any options, the command returns the Tcl patchlevel, followed
 by the '+'-sign, followed by the fossil commit-id followed by a list of
-dot-separated tags. The \fIoptions\fR for official Tcl releases are:
+dot-separated tags. If a \fIfield\fR is given, this command extracts that
+field as described below. For official Tcl releases, the \fIfield\fRs are:
 .\" METHOD: clang
 .TP
 \fB::tcl::build-info clang\fR
