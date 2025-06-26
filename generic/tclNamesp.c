@@ -4745,7 +4745,7 @@ NamespaceWhichCmd(
     static const char *const opts[] = {
 	"-command", "-variable", NULL
     };
-    enum { OPT_COMMAND, OPT_VARIABLE } lookupType;
+    enum { OPT_COMMAND, OPT_VARIABLE } lookupType = OPT_COMMAND;
     Tcl_Obj *resultPtr;
 
     if (objc < 2 || objc > 3) {
