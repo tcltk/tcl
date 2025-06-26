@@ -25,6 +25,13 @@ if {[testConstraint win]} {
     }
 }
 
+# Application Verifier hooks system calls in a way that locale
+# detection fails. Disable tests that depend on that if
+# it is running.
+testConstraint noappverifier [expr {
+        [llength [info commands testappverifierpresent]] == 0
+        || ![testappverifierpresent]}]
+
 package require msgcat 1.4
 
 testConstraint detroit \
@@ -35943,7 +35950,7 @@ test clock-30.34 {regression test - clock add jump over DST hole with TZ (1 day 
 
 
 test clock-31.1 {system locale} \
-    -constraints win \
+    -constraints {win noappverifier} \
     -setup {
 	namespace eval ::tcl::clock {
 	    namespace import -force ::testClock::registry
@@ -35966,7 +35973,7 @@ test clock-31.1 {system locale} \
 		 -format {%d-%b-%Y}]
 
 test clock-31.2 {system locale} \
-    -constraints win \
+    -constraints {win noappverifier} \
     -setup {
 	namespace eval ::tcl::clock {
 	    namespace import -force ::testClock::registry
@@ -35989,7 +35996,7 @@ test clock-31.2 {system locale} \
 		 -format {the %d' day of %B %Y}]
 
 test clock-31.3 {system locale} \
-    -constraints win \
+    -constraints {win noappverifier} \
     -setup {
 	namespace eval ::tcl::clock {
 	    namespace import -force ::testClock::registry
@@ -36012,7 +36019,7 @@ test clock-31.3 {system locale} \
 		 -format {%l:%M:%S %p}]
 
 test clock-31.4 {system locale} \
-    -constraints win \
+    -constraints {win noappverifier} \
     -setup {
 	namespace eval ::tcl::clock {
 	    namespace import -force ::testClock::registry
@@ -36049,7 +36056,7 @@ test clock-31.4 {system locale} \
 		 -format {%d-%b-%Y}]
 
 test clock-31.5 {system locale} \
-    -constraints win \
+    -constraints {win noappverifier} \
     -setup {
 	namespace eval ::tcl::clock {
 	    namespace import -force ::testClock::registry
@@ -36086,7 +36093,7 @@ test clock-31.5 {system locale} \
 		 -format {the %d' day of %B %Y}]
 
 test clock-31.6 {system locale} \
-    -constraints win \
+    -constraints {win noappverifier} \
     -setup {
 	namespace eval ::tcl::clock {
 	    namespace import -force ::testClock::registry
@@ -37548,7 +37555,7 @@ test clock-49.1 {regression test - localtime with negative arg (Bug 1237907)} \
     -result {0 1969|1 {localtime failed \(clock value may be too large/small to represent\)}}
 
 test clock-49.2 {regression test - missing time zone file (Bug 1237907)} \
-    -constraints win \
+    -constraints {win noappverifier} \
     -setup {
 	# override the registry so that the test takes place in New York time
 	namespace eval ::tcl::clock {
