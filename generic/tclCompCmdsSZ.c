@@ -4331,6 +4331,43 @@ TclCompileUnsetCmd(
 /*
  *----------------------------------------------------------------------
  *
+ * TclCompileUplevelCmd --
+ *
+ *	Procedure called to compile the "uplevel" command.
+ *
+ * Results:
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to runtime.
+ *
+ * Side effects:
+ *	Instructions are added to envPtr to execute the "uplevel" command at
+ *	runtime.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclCompileUplevelCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    TCL_UNUSED(Command *),
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    DefineLineInformation;	/* TIP #280 */
+    Tcl_Size numWords = parsePtr->numWords;
+    /* TODO: Consider support for compiling expanded args. */
+    if (numWords != 3 || !EnvIsProc(envPtr)) {
+	return TCL_ERROR;
+    }
+
+    // FIXME: Implement this!
+    return TCL_ERROR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclCompileWhileCmd --
  *
  *	Procedure called to compile the "while" command.
