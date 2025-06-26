@@ -973,7 +973,7 @@ typedef enum InstOperandType {
     OPERAND_SCLS1,		/* Index into tclStringClassTable. */
     OPERAND_UNSF1,		/* Flags for [unset] */
     OPERAND_CLK1,		/* Index into [clock] types. */
-    OPERAND_LRPL1		/* Combination of TCL_LREPLACE4_* flags. */
+    OPERAND_LRPL1		/* Combination of TCL_LREPLACE_* flags. */
 } InstOperandType;
 
 typedef struct InstructionDesc {
@@ -2009,8 +2009,8 @@ enum PushVarNameFlags {
  * Flags bits used by lreplace4 instruction
  */
 enum Lreplace4Flags {
-    TCL_LREPLACE4_END_IS_LAST = 1,	/* "end" refers to last element */
-    TCL_LREPLACE4_SINGLE_INDEX = 2	/* Second index absent (pure insert) */
+    TCL_LREPLACE_END_IS_LAST = 1,	/* "end" refers to last element */
+    TCL_LREPLACE_SINGLE_INDEX = 2	/* Second index absent (pure insert) */
 };
 
 /*
