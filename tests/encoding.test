@@ -312,6 +312,12 @@ test encoding-12.5 {LoadTableEncoding: symbol encoding} {
     append x [encoding convertto symbol g]
     append x [encoding convertfrom symbol g]
 } "ggγ"
+test encoding-12.7 {cp864 [ecafd8611d]} {
+    encoding convertfrom cp864 \xA7
+} €
+test encoding-12.8 {cp165 [ecafd8611d]} {
+    encoding convertfrom cp165 \xA7
+} ﺈ
 
 test encoding-13.1 {LoadEscapeTable} {
     encoding convertto iso2022 ab乎棙g
@@ -1073,7 +1079,7 @@ test encoding-28.0 {all encodings load} -body {
 		llength $name
 	}
 	return $count
-} -result 93
+} -result 94
 
 runtests
 
