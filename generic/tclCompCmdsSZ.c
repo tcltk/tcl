@@ -4356,13 +4356,56 @@ TclCompileUplevelCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Size numWords = parsePtr->numWords;
+    Tcl_Token *tokenPtr;
+
     /* TODO: Consider support for compiling expanded args. */
-    if (numWords != 3 || !EnvIsProc(envPtr)) {
+    if (numWords < 2 || numWords > 1<<8 || !EnvIsProc(envPtr)) {
 	return TCL_ERROR;
     }
 
-    // FIXME: Implement this!
-    return TCL_ERROR;
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    if (numWords == 2) {
+	PUSH(			"1");
+	PUSH_TOKEN(		tokenPtr, 1);
+    } else {
+	Tcl_Obj *objPtr;
+	TclNewObj(objPtr);
+	if (!TclWordKnownAtCompileTime(tokenPtr, objPtr)) {
+	    Tcl_DecrRefCount(objPtr);
+	    return TCL_ERROR;
+	}
+	CallFrame *framePtr;
+	const Tcl_ObjType *newTypePtr, *typePtr = objPtr->typePtr;
+	Tcl_Size i, first;
+
+	/*
+	 * Attempt to convert to a level reference. Note that TclObjGetFrame
+	 * only changes the obj type when a conversion was successful.
+	 */
+
+	TclObjGetFrame(interp, objPtr, &framePtr);
+	newTypePtr = objPtr->typePtr;
+	Tcl_DecrRefCount(objPtr);
+
+	if (newTypePtr != typePtr) {
+	    /* TODO: Push the known value instead? */
+	    PUSH_TOKEN(		tokenPtr, 1);
+	    tokenPtr = TokenAfter(tokenPtr);
+	    first = 2;
+	} else {
+	    PUSH(		"1");
+	    first = 1;
+	}
+	for (i=first; i<numWords; i++, tokenPtr=TokenAfter(tokenPtr)) {
+	    PUSH_TOKEN(		tokenPtr, i);
+	}
+	if (numWords - first > 1) {
+	    OP4(		CONCAT_STK, numWords - first);
+	}
+    }
+
+    INVOKE(				UPLEVEL);
+    return TCL_OK;
 }
 
 /*
