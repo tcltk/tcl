@@ -50,7 +50,6 @@ static int		SetLambdaFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 
 static Tcl_NRPostProc ApplyNR2;
 static Tcl_NRPostProc InterpProcNR2;
-static Tcl_NRPostProc TclUplevelCallback;
 static Tcl_ObjCmdProc NRInterpProc;
 
 /*
