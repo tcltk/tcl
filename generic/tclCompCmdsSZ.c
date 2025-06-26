@@ -4357,54 +4357,63 @@ TclCompileUplevelCmd(
     DefineLineInformation;	/* TIP #280 */
     Tcl_Size numWords = parsePtr->numWords;
     Tcl_Token *tokenPtr;
+    Tcl_Obj *objPtr;
+    Tcl_Size i, first;
 
     /* TODO: Consider support for compiling expanded args. */
     if (numWords < 2 || numWords > 1<<8 || !EnvIsProc(envPtr)) {
+	/*
+	 * The limit on the max number of words is arbitrary; could be higher,
+	 * but I doubt we'll ever hit it anyway.
+	 */
 	return TCL_ERROR;
     }
 
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
-    if (numWords == 2) {
-	PUSH(			"1");
-	PUSH_TOKEN(		tokenPtr, 1);
-    } else {
-	Tcl_Obj *objPtr;
-	TclNewObj(objPtr);
-	if (!TclWordKnownAtCompileTime(tokenPtr, objPtr)) {
-	    Tcl_DecrRefCount(objPtr);
-	    return TCL_ERROR;
-	}
-	CallFrame *framePtr;
-	const Tcl_ObjType *newTypePtr, *typePtr = objPtr->typePtr;
-	Tcl_Size i, first;
-
+    TclNewObj(objPtr);
+    if (!TclWordKnownAtCompileTime(tokenPtr, objPtr)) {
 	/*
-	 * Attempt to convert to a level reference. Note that TclObjGetFrame
-	 * only changes the obj type when a conversion was successful.
+	 * If the first argument isn't known at compile time, we can't know if
+	 * it is a script fragment or a level descriptor. Punt. 
 	 */
-
-	TclObjGetFrame(interp, objPtr, &framePtr);
-	newTypePtr = objPtr->typePtr;
 	Tcl_DecrRefCount(objPtr);
-
-	if (newTypePtr != typePtr) {
-	    /* TODO: Push the known value instead? */
-	    PUSH_TOKEN(		tokenPtr, 1);
-	    tokenPtr = TokenAfter(tokenPtr);
-	    first = 2;
-	} else {
-	    PUSH(		"1");
-	    first = 1;
-	}
-	for (i=first; i<numWords; i++, tokenPtr=TokenAfter(tokenPtr)) {
-	    PUSH_TOKEN(		tokenPtr, i);
-	}
-	if (numWords - first > 1) {
-	    OP4(		CONCAT_STK, numWords - first);
-	}
+	return TCL_ERROR;
     }
 
-    INVOKE(				UPLEVEL);
+    /*
+     * Attempt to convert to a level reference. Note that TclObjGetFrame
+     * only changes the obj type when a conversion was successful.
+     */
+
+    int numFrameWords = TclObjGetFrame(interp, objPtr, NULL);
+    if (numFrameWords < 0) {
+	return TCL_ERROR;
+    }
+    Tcl_DecrRefCount(objPtr);
+
+    if (numFrameWords) {
+	PUSH_TOKEN(		tokenPtr, 1);
+	tokenPtr = TokenAfter(tokenPtr);
+	first = 2;
+    } else {
+	PUSH(			"1");
+	first = 1;
+    }
+    if (first >= numWords) {
+	// In this case, there's ambiguity about sole argument meaning.
+	return TCL_ERROR;
+    }
+
+    // Push all remaining words and concatenate them to make a single script word
+    for (i=first; i<numWords; i++, tokenPtr=TokenAfter(tokenPtr)) {
+	PUSH_TOKEN(		tokenPtr, i);
+    }
+    if (numWords - first > 1) {
+	OP4(			CONCAT_STK, numWords - first);
+    }
+
+    // Do the actual uplevel operation.
+    INVOKE(			UPLEVEL);
     return TCL_OK;
 }
 
