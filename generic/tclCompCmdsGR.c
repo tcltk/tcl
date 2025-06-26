@@ -1420,12 +1420,12 @@ TclCompileLinsertCmd(
     /*
      * First operand is count of arguments.
      * Second operand is bitmask
-     *  TCL_LREPLACE4_END_IS_LAST - end refers to last element
-     *  TCL_LREPLACE4_SINGLE_INDEX - second index is not present
+     *  TCL_LREPLACE_END_IS_LAST - end refers to last element
+     *  TCL_LREPLACE_SINGLE_INDEX - second index is not present
      *     indicating this is a pure insert
      */
     OP41(			LREPLACE, numWords - 1,
-					TCL_LREPLACE4_SINGLE_INDEX);
+					TCL_LREPLACE_SINGLE_INDEX);
     return TCL_OK;
 }
 
@@ -1474,10 +1474,10 @@ TclCompileLreplaceCmd(
     /*
      * First operand is count of arguments.
      * Second operand is bitmask
-     *  TCL_LREPLACE4_END_IS_LAST - end refers to last element
+     *  TCL_LREPLACE_END_IS_LAST - end refers to last element
      */
     OP41(			LREPLACE, numWords - 1,
-					TCL_LREPLACE4_END_IS_LAST);
+					TCL_LREPLACE_END_IS_LAST);
     return TCL_OK;
 }
 
