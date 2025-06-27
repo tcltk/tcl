@@ -4744,7 +4744,7 @@ NamespaceWhichCmd(
     static const char *const opts[] = {
 	"-command", "-variable", NULL
     };
-    int lookupType = 0;
+    enum { OPT_COMMAND, OPT_VARIABLE } lookupType = OPT_COMMAND;
     Tcl_Obj *resultPtr;
 
     if (objc < 2 || objc > 3) {
@@ -4769,14 +4769,15 @@ NamespaceWhichCmd(
 
     TclNewObj(resultPtr);
     switch (lookupType) {
-    case 0:;				/* -command */
+    case OPT_COMMAND: {
 	Tcl_Command cmd = Tcl_GetCommandFromObj(interp, objv[objc-1]);
 
 	if (cmd != NULL) {
 	    Tcl_GetCommandFullName(interp, cmd, resultPtr);
 	}
 	break;
-    case 1:;				/* -variable */
+    }
+    case OPT_VARIABLE: {
 	Tcl_Var var = Tcl_FindNamespaceVar(interp,
 		TclGetString(objv[objc-1]), NULL, /*flags*/ 0);
 
@@ -4784,8 +4785,7 @@ NamespaceWhichCmd(
 	    Tcl_GetVariableFullName(interp, var, resultPtr);
 	}
 	break;
-    default:
-	TCL_UNREACHABLE();
+    }
     }
     Tcl_SetObjResult(interp, resultPtr);
     return TCL_OK;
