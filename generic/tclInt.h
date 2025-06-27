@@ -3165,6 +3165,7 @@ MODULE_SCOPE const EnsembleImplMap tclInfoImplMap[];
 MODULE_SCOPE const EnsembleImplMap tclNamespaceImplMap[];
 MODULE_SCOPE const EnsembleImplMap tclStringImplMap[];
 MODULE_SCOPE const EnsembleImplMap tclZipfsImplMap[];
+MODULE_SCOPE const EnsembleImplMap tclZlibImplMap[];
 
 /*
  * The head of the list of free Tcl objects, and the total number of Tcl
