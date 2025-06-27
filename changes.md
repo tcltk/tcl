@@ -38,6 +38,9 @@ to the userbase.
  - [lseq numeric overflow](https://core.tcl-lang.org/tcl/tktview/0ee626)
  - ["return": broken ordering of nested -options](https://core.tcl-lang.org/tcl/tktview/ecf35c)
  - [Euro/Tail-sign missing from cp864 encoding](https://core.tcl-lang.org/tcl/tktview/ecafd8)
+ - [use after free on TSD in Winsock](https://core.tcl-lang.org/tcl/tktview/40b181)
+ - [use after free on Windows pipe handles](https://core.tcl-lang.org/tcl/tktview/7c2716)
+ - [tcl::build-info not documented](https://core.tcl-lang.org/tcl/tktview/ef7042)
 
 # Incompatibilities
  - [The ActiveCodePage element has been removed from the Windows executable manifest for tclsh](https://core.tcl-lang.org/tips/doc/trunk/tip/716.md)
