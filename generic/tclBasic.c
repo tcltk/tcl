@@ -237,7 +237,6 @@ static Tcl_NRPostProc	TEOV_RunLeaveTraces;
 static Tcl_NRPostProc	EvalObjvCore;
 static Tcl_NRPostProc	Dispatch;
 
-static Tcl_NRPostProc NRPostInvoke;
 static Tcl_ObjCmdProc CoroTypeObjCmd;
 static Tcl_ObjCmdProc TclNRCoroInjectObjCmd;
 static Tcl_ObjCmdProc TclNRCoroProbeObjCmd;
@@ -6737,7 +6736,7 @@ TclNRInvoke(
      */
 
     iPtr->numLevels++;
-    Tcl_NRAddCallback(interp, NRPostInvoke, NULL, NULL, NULL, NULL);
+    Tcl_NRAddCallback(interp, TclNRPostInvoke, NULL, NULL, NULL, NULL);
 
     /*
      * Normal command resolution of objv[0] isn't going to find cmdPtr.
@@ -6748,8 +6747,8 @@ TclNRInvoke(
     return TclNREvalObjv(interp, objc, objv, TCL_EVAL_NORESOLVE, cmdPtr);
 }
 
-static int
-NRPostInvoke(
+int
+TclNRPostInvoke(
     TCL_UNUSED(void **),
     Tcl_Interp *interp,
     int result)
