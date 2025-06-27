@@ -2755,7 +2755,10 @@ TEBCresume(
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
+	bcFramePtr->data.tebc.pc = (char *) pc;
+	iPtr->cmdFramePtr = bcFramePtr;
 	TclArgumentGet(interp, scriptObj, &invoker, &word);
+	DECACHE_STACK_INFO();
 	pc++;
 	cleanup = 2;
 	TEBC_YIELD();
