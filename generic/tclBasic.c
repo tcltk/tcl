@@ -1165,6 +1165,7 @@ Tcl_CreateInterp(void)
     TclInitPrefixCmd(interp);
     TclInitProcessCmd(interp);
     TclMakeEnsemble(interp, "zipfs", tclZipfsImplMap);
+    TclMakeEnsemble(interp, "zlib", tclZlibImplMap);
 
     /*
      * Register "clock" subcommands. These *do* go through
