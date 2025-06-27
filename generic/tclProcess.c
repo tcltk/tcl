@@ -40,7 +40,7 @@ static Tcl_HashTable infoTablePerResolvedPid;
 static int infoTablesInitialized = 0;	/* 0 means not yet initialized. */
 TCL_DECLARE_MUTEX(infoTablesMutex)
 
- /*
+/*
  * Prototypes for functions defined later in this file:
  */
 
@@ -52,11 +52,19 @@ static TclProcessWaitStatus WaitProcessStatus(Tcl_Pid pid, Tcl_Size resolvedPid,
 			    int options, int *codePtr, Tcl_Obj **msgPtr,
 			    Tcl_Obj **errorObjPtr);
 static Tcl_Obj *	BuildProcessStatusObj(ProcessInfo *info);
-static Tcl_ObjCmdProc ProcessListObjCmd;
-static Tcl_ObjCmdProc ProcessStatusObjCmd;
-static Tcl_ObjCmdProc ProcessPurgeObjCmd;
-static Tcl_ObjCmdProc ProcessAutopurgeObjCmd;
+static Tcl_ObjCmdProc	ProcessListObjCmd;
+static Tcl_ObjCmdProc	ProcessStatusObjCmd;
+static Tcl_ObjCmdProc	ProcessPurgeObjCmd;
+static Tcl_ObjCmdProc	ProcessAutopurgeObjCmd;
 
+static const EnsembleImplMap processImplMap[] = {
+    {"list",		ProcessListObjCmd,	TclCompileBasic0ArgCmd, NULL, NULL, 1},
+    {"status",		ProcessStatusObjCmd,	TclCompileBasicMin0ArgCmd, NULL, NULL, 1},
+    {"purge",		ProcessPurgeObjCmd,	TclCompileBasic0Or1ArgCmd, NULL, NULL, 1},
+    {"autopurge",	ProcessAutopurgeObjCmd,	TclCompileBasic0Or1ArgCmd, NULL, NULL, 1},
+    {NULL, NULL, NULL, NULL, NULL, 0}
+};
+
 /*
  *----------------------------------------------------------------------
  *
@@ -757,7 +765,7 @@ ProcessAutopurgeObjCmd(
  *	documentation for details on what it does.
  *
  * Results:
- *	A standard Tcl result.
+ *	None.
  *
  * Side effects:
  *	See the user documentation.
@@ -765,19 +773,10 @@ ProcessAutopurgeObjCmd(
  *----------------------------------------------------------------------
  */
 
-Tcl_Command
+void
 TclInitProcessCmd(
     Tcl_Interp *interp)		/* Current interpreter. */
 {
-    static const EnsembleImplMap processImplMap[] = {
-	{"list", ProcessListObjCmd, TclCompileBasic0ArgCmd, NULL, NULL, 1},
-	{"status", ProcessStatusObjCmd, TclCompileBasicMin0ArgCmd, NULL, NULL, 1},
-	{"purge", ProcessPurgeObjCmd, TclCompileBasic0Or1ArgCmd, NULL, NULL, 1},
-	{"autopurge", ProcessAutopurgeObjCmd, TclCompileBasic0Or1ArgCmd, NULL, NULL, 1},
-	{NULL, NULL, NULL, NULL, NULL, 0}
-    };
-    Tcl_Command processCmd;
-
     if (infoTablesInitialized == 0) {
 	Tcl_MutexLock(&infoTablesMutex);
 	if (infoTablesInitialized == 0) {
@@ -788,10 +787,9 @@ TclInitProcessCmd(
 	Tcl_MutexUnlock(&infoTablesMutex);
     }
 
-    processCmd = TclMakeEnsemble(interp, "::tcl::process", processImplMap);
+    TclMakeEnsemble(interp, "::tcl::process", processImplMap);
     Tcl_Export(interp, Tcl_FindNamespace(interp, "::tcl", NULL, 0),
 	    "process", 0);
-    return processCmd;
 }
 
 /*
