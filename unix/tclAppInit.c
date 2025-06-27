@@ -24,8 +24,14 @@
 #endif
 
 #ifdef TCL_TEST
+#ifdef __cplusplus
+extern "C" {
+#endif
 extern Tcl_LibraryInitProc Tcltest_Init;
 extern Tcl_LibraryInitProc Tcltest_SafeInit;
+#ifdef __cplusplus
+}
+#endif
 #endif /* TCL_TEST */
 
 #ifdef TCL_XT_TEST
