@@ -41,6 +41,7 @@ to the userbase.
  - [use after free on TSD in Winsock](https://core.tcl-lang.org/tcl/tktview/40b181)
  - [use after free on Windows pipe handles](https://core.tcl-lang.org/tcl/tktview/7c2716)
  - [tcl::build-info not documented](https://core.tcl-lang.org/tcl/tktview/ef7042)
+ - [interp limit commands still seems to be 32 bits](https://core.tcl-lang.org/tcl/tktview/9dfae3)
 
 # Incompatibilities
  - [The ActiveCodePage element has been removed from the Windows executable manifest for tclsh](https://core.tcl-lang.org/tips/doc/trunk/tip/716.md)
