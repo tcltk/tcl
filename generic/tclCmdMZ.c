@@ -33,6 +33,59 @@ static int		UniCharIsHexDigit(int character);
 static int		StringCmpOpts(Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[], int *nocase,
 			    Tcl_Size *reqlength);
+static Tcl_ObjCmdProc	StringCatCmd;
+static Tcl_ObjCmdProc	StringCmpCmd;
+static Tcl_ObjCmdProc	StringEqualCmd;
+static Tcl_ObjCmdProc	StringFirstCmd;
+static Tcl_ObjCmdProc	StringIndexCmd;
+static Tcl_ObjCmdProc	StringInsertCmd;
+static Tcl_ObjCmdProc	StringIsCmd;
+static Tcl_ObjCmdProc	StringLastCmd;
+static Tcl_ObjCmdProc	StringLenCmd;
+static Tcl_ObjCmdProc	StringMapCmd;
+static Tcl_ObjCmdProc	StringMatchCmd;
+static Tcl_ObjCmdProc	StringRangeCmd;
+static Tcl_ObjCmdProc	StringReptCmd;
+static Tcl_ObjCmdProc	StringRplcCmd;
+static Tcl_ObjCmdProc	StringRevCmd;
+static Tcl_ObjCmdProc	StringLowerCmd;
+static Tcl_ObjCmdProc	StringUpperCmd;
+static Tcl_ObjCmdProc	StringTitleCmd;
+static Tcl_ObjCmdProc	StringTrimCmd;
+static Tcl_ObjCmdProc	StringTrimLCmd;
+static Tcl_ObjCmdProc	StringTrimRCmd;
+static Tcl_ObjCmdProc	StringEndCmd;
+static Tcl_ObjCmdProc	StringStartCmd;
+
+/*
+ * Definition of the contents of the [string] ensemble.
+ */
+const EnsembleImplMap tclStringImplMap[] = {
+    {"cat",		StringCatCmd,	TclCompileStringCatCmd,		NULL, NULL, 0},
+    {"compare",		StringCmpCmd,	TclCompileStringCmpCmd,		NULL, NULL, 0},
+    {"equal",		StringEqualCmd,	TclCompileStringEqualCmd,	NULL, NULL, 0},
+    {"first",		StringFirstCmd,	TclCompileStringFirstCmd,	NULL, NULL, 0},
+    {"index",		StringIndexCmd,	TclCompileStringIndexCmd,	NULL, NULL, 0},
+    {"insert",		StringInsertCmd, TclCompileStringInsertCmd,	NULL, NULL, 0},
+    {"is",		StringIsCmd,	TclCompileStringIsCmd,		NULL, NULL, 0},
+    {"last",		StringLastCmd,	TclCompileStringLastCmd,	NULL, NULL, 0},
+    {"length",		StringLenCmd,	TclCompileStringLenCmd,		NULL, NULL, 0},
+    {"map",		StringMapCmd,	TclCompileStringMapCmd,		NULL, NULL, 0},
+    {"match",		StringMatchCmd,	TclCompileStringMatchCmd,	NULL, NULL, 0},
+    {"range",		StringRangeCmd,	TclCompileStringRangeCmd,	NULL, NULL, 0},
+    {"repeat",		StringReptCmd,	TclCompileBasic2ArgCmd,		NULL, NULL, 0},
+    {"replace",		StringRplcCmd,	TclCompileStringReplaceCmd,	NULL, NULL, 0},
+    {"reverse",		StringRevCmd,	TclCompileBasic1ArgCmd,		NULL, NULL, 0},
+    {"tolower",		StringLowerCmd,	TclCompileStringToLowerCmd,	NULL, NULL, 0},
+    {"toupper",		StringUpperCmd,	TclCompileStringToUpperCmd,	NULL, NULL, 0},
+    {"totitle",		StringTitleCmd,	TclCompileStringToTitleCmd,	NULL, NULL, 0},
+    {"trim",		StringTrimCmd,	TclCompileStringTrimCmd,	NULL, NULL, 0},
+    {"trimleft",	StringTrimLCmd,	TclCompileStringTrimLCmd,	NULL, NULL, 0},
+    {"trimright",	StringTrimRCmd,	TclCompileStringTrimRCmd,	NULL, NULL, 0},
+    {"wordend",		StringEndCmd,	TclCompileBasic2ArgCmd,		NULL, NULL, 0},
+    {"wordstart",	StringStartCmd,	TclCompileBasic2ArgCmd,		NULL, NULL, 0},
+    {NULL, NULL, NULL, NULL, NULL, 0}
+};
 
 /*
  * Default set of characters to trim in [string trim] and friends. This is a
@@ -3260,63 +3313,6 @@ StringTrimRCmd(
 
     Tcl_SetObjResult(interp, Tcl_NewStringObj(string1, length1-trim));
     return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclInitStringCmd --
- *
- *	This procedure creates the "string" Tcl command. See the user
- *	documentation for details on what it does. Note that this command only
- *	functions correctly on properly formed Tcl UTF strings.
- *
- *	Also note that the primary methods here (equal, compare, match, ...)
- *	have bytecode equivalents. You will find the code for those in
- *	tclExecute.c. The code here will only be used in the non-bc case (like
- *	in an 'eval').
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	See the user documentation.
- *
- *----------------------------------------------------------------------
- */
-
-Tcl_Command
-TclInitStringCmd(
-    Tcl_Interp *interp)		/* Current interpreter. */
-{
-    static const EnsembleImplMap stringImplMap[] = {
-	{"cat",		StringCatCmd,	TclCompileStringCatCmd, NULL, NULL, 0},
-	{"compare",	StringCmpCmd,	TclCompileStringCmpCmd, NULL, NULL, 0},
-	{"equal",	StringEqualCmd,	TclCompileStringEqualCmd, NULL, NULL, 0},
-	{"first",	StringFirstCmd,	TclCompileStringFirstCmd, NULL, NULL, 0},
-	{"index",	StringIndexCmd,	TclCompileStringIndexCmd, NULL, NULL, 0},
-	{"insert",	StringInsertCmd, TclCompileStringInsertCmd, NULL, NULL, 0},
-	{"is",		StringIsCmd,	TclCompileStringIsCmd, NULL, NULL, 0},
-	{"last",	StringLastCmd,	TclCompileStringLastCmd, NULL, NULL, 0},
-	{"length",	StringLenCmd,	TclCompileStringLenCmd, NULL, NULL, 0},
-	{"map",		StringMapCmd,	TclCompileStringMapCmd, NULL, NULL, 0},
-	{"match",	StringMatchCmd,	TclCompileStringMatchCmd, NULL, NULL, 0},
-	{"range",	StringRangeCmd,	TclCompileStringRangeCmd, NULL, NULL, 0},
-	{"repeat",	StringReptCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
-	{"replace",	StringRplcCmd,	TclCompileStringReplaceCmd, NULL, NULL, 0},
-	{"reverse",	StringRevCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
-	{"tolower",	StringLowerCmd,	TclCompileStringToLowerCmd, NULL, NULL, 0},
-	{"toupper",	StringUpperCmd,	TclCompileStringToUpperCmd, NULL, NULL, 0},
-	{"totitle",	StringTitleCmd,	TclCompileStringToTitleCmd, NULL, NULL, 0},
-	{"trim",	StringTrimCmd,	TclCompileStringTrimCmd, NULL, NULL, 0},
-	{"trimleft",	StringTrimLCmd,	TclCompileStringTrimLCmd, NULL, NULL, 0},
-	{"trimright",	StringTrimRCmd,	TclCompileStringTrimRCmd, NULL, NULL, 0},
-	{"wordend",	StringEndCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
-	{"wordstart",	StringStartCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
-	{NULL, NULL, NULL, NULL, NULL, 0}
-    };
-
-    return TclMakeEnsemble(interp, "string", stringImplMap);
 }
 
 /*

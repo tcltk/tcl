@@ -1151,17 +1151,20 @@ Tcl_CreateInterp(void)
      * namespace) are wholly safe *except* for "clock", "encoding" and "file".
      */
 
-    TclInitArrayCmd(interp);
-    TclInitBinaryCmd(interp);
+    TclMakeEnsemble(interp, "array", tclArrayImplMap);
+    TclMakeEnsemble(interp, "binary", tclBinaryImplMap);
+    TclMakeEnsemble(interp, "binary encode", tclBinaryEncodeImplMap);
+    TclMakeEnsemble(interp, "binary decode", tclBinaryDecodeImplMap);
     TclInitChanCmd(interp);
-    TclInitDictCmd(interp);
-    TclInitEncodingCmd(interp);
-    TclInitFileCmd(interp);
-    TclInitInfoCmd(interp);
-    TclInitNamespaceCmd(interp);
-    TclInitStringCmd(interp);
+    TclMakeEnsemble(interp, "dict", tclDictImplMap);
+    TclMakeEnsemble(interp, "encoding", tclEncodingImplMap);
+    TclMakeEnsemble(interp, "file", tclFileImplMap);
+    TclMakeEnsemble(interp, "info", tclInfoImplMap);
+    TclMakeEnsemble(interp, "namespace", tclNamespaceImplMap);
+    TclMakeEnsemble(interp, "string", tclStringImplMap);
     TclInitPrefixCmd(interp);
     TclInitProcessCmd(interp);
+    TclMakeEnsemble(interp, "zipfs", tclZipfsImplMap);
 
     /*
      * Register "clock" subcommands. These *do* go through

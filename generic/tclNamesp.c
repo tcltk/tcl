@@ -157,7 +157,7 @@ static const Tcl_ObjType nsNameType = {
  * "namespace" command.
  */
 
-static const EnsembleImplMap defaultNamespaceMap[] = {
+const EnsembleImplMap tclNamespaceImplMap[] = {
     {"children",   NamespaceChildrenCmd, TclCompileBasic0To2ArgCmd, NULL, NULL, 0},
     {"code",	   NamespaceCodeCmd,	TclCompileNamespaceCodeCmd, NULL, NULL, 0},
     {"current",	   NamespaceCurrentCmd,	TclCompileNamespaceCurrentCmd, NULL, NULL, 0},
@@ -3078,30 +3078,6 @@ TclNewNamespaceObj(
 	NsNameSetInternalRep(objPtr, resNamePtr);
     }
     return objPtr;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclInitNamespaceCmd --
- *
- *	This function is called to create the "namespace" Tcl command. See the
- *	user documentation for details on what it does.
- *
- * Results:
- *	Handle for the namespace command, or NULL on failure.
- *
- * Side effects:
- *	none
- *
- *----------------------------------------------------------------------
- */
-
-Tcl_Command
-TclInitNamespaceCmd(
-    Tcl_Interp *interp)		/* Current interpreter. */
-{
-    return TclMakeEnsemble(interp, "namespace", defaultNamespaceMap);
 }
 
 /*
