@@ -2746,7 +2746,7 @@ TEBCresume(
     case INST_UPLEVEL: {
 	Tcl_Obj *levelObj = OBJ_UNDER_TOS;
 	Tcl_Obj *scriptObj = OBJ_AT_TOS;
-	CallFrame *framePtr, *savedFramePtr;
+	CallFrame *framePtr;
 	CmdFrame *invoker = NULL;
 	int word = 0;
 
@@ -2770,10 +2770,11 @@ TEBCresume(
 	    fflush(stdout);
 	}
 #endif // TCL_COMPILE_DEBUG
-	savedFramePtr = iPtr->varFramePtr;
+	TclNRAddCallback(interp, TclUplevelCallback, iPtr->varFramePtr,
+		NULL, NULL, NULL);
+	TclNRAddCallback(interp, TclNRPostInvoke, NULL, NULL, NULL, NULL);
 	iPtr->varFramePtr = framePtr;
-	TclNRAddCallback(interp, TclUplevelCallback, savedFramePtr, NULL, NULL,
-		NULL);
+	iPtr->numLevels++;
 	return TclNREvalObjEx(interp, scriptObj, 0, invoker, word);
     }
 
