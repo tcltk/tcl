@@ -3742,7 +3742,7 @@ MODULE_SCOPE Tcl_ObjCmdProc Tcl_ApplyObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_BreakObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_CatchObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_CdObjCmd;
-MODULE_SCOPE Tcl_Command TclInitChanCmd(Tcl_Interp *interp);
+MODULE_SCOPE void	TclInitChanCmd(Tcl_Interp *interp);
 MODULE_SCOPE Tcl_ObjCmdProc TclChanCreateObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclChanPostEventObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclChanPopObjCmd;
