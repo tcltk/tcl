@@ -408,7 +408,7 @@ static const EnsembleSetup ensembleCommands[] = {
     {"binary decode",	tclBinaryDecodeImplMap, NULL, 0},
     {"chan",		tclChanImplMap,		TclSetUpChanCmd, 0},
     // TODO: Sort out why setup of [clock] is so weird
-    // {"clock",	tclClockImplMap,	NULL, 1},
+    {"clock",		tclClockImplMap,	NULL, 1},
     {"dict",		tclDictImplMap,		NULL, 0},
     {"encoding",	tclEncodingImplMap,	NULL, 1},
     {"file",		tclFileImplMap,		NULL, 1},
