@@ -107,7 +107,7 @@ const EnsembleImplMap tclEncodingImplMap[] = {
     {"names",		EncodingNamesObjCmd,       TclCompileBasic0ArgCmd,    NULL, NULL, 0},
     {"profiles",	EncodingProfilesObjCmd,    TclCompileBasic0ArgCmd,    NULL, NULL, 0},
     {"system",		EncodingSystemObjCmd,      TclCompileBasic0Or1ArgCmd, NULL, NULL, 1},
-    {"user",		EncodingUserObjCmd,        TclCompileBasic0ArgCmd,    NULL, NULL, 1},
+    {"user",		EncodingUserObjCmd,        TclCompileBasic0ArgCmd,    NULL, NULL, 0},
     {NULL, NULL, NULL, NULL, NULL, 0}
 };
 
