@@ -28,7 +28,7 @@ testConstraint noosxCI [expr {![info exists ::env(MAC_CI)]}]
 # no idea how to check it in GHA programmatically, so simply disable it (todo: rewrite with better check later)
 if {[testConstraint win] && ![info exists ::env(CI)] &&
     [info exists ::env(LOCALAPPDATA)] &&
-    [file exists [file join $::env(LOCALAPPDATA) "Microsoft" "WindowsApps" "winget.exe"]]} {
+    [auto_execok winget] ne {}} {
 	testConstraint haveWinget 1
 }
 
