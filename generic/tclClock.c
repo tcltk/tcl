@@ -142,6 +142,18 @@ static const struct ClockCommand clockCommands[] = {
     {"catch",		ClockSafeCatchCmd,	TclCompileBasicMin1ArgCmd, NULL},
     {NULL, NULL, NULL, NULL}
 };
+
+// Definition of the [clock] ensemble.
+const EnsembleImplMap tclClockImplMap[] = {
+    {"add",		NULL, NULL, NULL, NULL, 0},
+    {"clicks",		NULL, NULL, NULL, NULL, 0},
+    {"format",		NULL, NULL, NULL, NULL, 0},
+    {"microseconds",	NULL, NULL, NULL, NULL, 0},
+    {"milliseconds",	NULL, NULL, NULL, NULL, 0},
+    {"scan",		NULL, NULL, NULL, NULL, 0},
+    {"seconds",		NULL, NULL, NULL, NULL, 0},
+    {NULL, NULL, NULL, NULL, NULL, 0}
+};
 
 /*
  *----------------------------------------------------------------------

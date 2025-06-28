@@ -57,7 +57,7 @@ static Tcl_ObjCmdProc	ProcessStatusObjCmd;
 static Tcl_ObjCmdProc	ProcessPurgeObjCmd;
 static Tcl_ObjCmdProc	ProcessAutopurgeObjCmd;
 
-static const EnsembleImplMap processImplMap[] = {
+const EnsembleImplMap tclProcessImplMap[] = {
     {"list",		ProcessListObjCmd,	TclCompileBasic0ArgCmd, NULL, NULL, 1},
     {"status",		ProcessStatusObjCmd,	TclCompileBasicMin0ArgCmd, NULL, NULL, 1},
     {"purge",		ProcessPurgeObjCmd,	TclCompileBasic0Or1ArgCmd, NULL, NULL, 1},
@@ -759,13 +759,13 @@ ProcessAutopurgeObjCmd(
 /*
  *----------------------------------------------------------------------
  *
- * TclInitProcessCmd --
+ * TclSetUpProcessCmd --
  *
- *	This procedure creates the "tcl::process" Tcl command. See the user
+ *	This procedure sets up the "tcl::process" Tcl command. See the user
  *	documentation for details on what it does.
  *
  * Results:
- *	None.
+ *	Tcl result code.
  *
  * Side effects:
  *	See the user documentation.
@@ -773,9 +773,10 @@ ProcessAutopurgeObjCmd(
  *----------------------------------------------------------------------
  */
 
-void
-TclInitProcessCmd(
-    Tcl_Interp *interp)		/* Current interpreter. */
+int
+TclSetUpProcessCmd(
+    Tcl_Interp *interp,		/* Current interpreter. */
+    Tcl_Command ensemble)	/* The ensemble to set up. */
 {
     if (infoTablesInitialized == 0) {
 	Tcl_MutexLock(&infoTablesMutex);
@@ -787,8 +788,7 @@ TclInitProcessCmd(
 	Tcl_MutexUnlock(&infoTablesMutex);
     }
 
-    TclMakeEnsemble(interp, "::tcl::process", processImplMap);
-    Tcl_Export(interp, Tcl_FindNamespace(interp, "::tcl", NULL, 0),
+    return Tcl_Export(interp, (Tcl_Namespace*)((Command *)ensemble)->nsPtr,
 	    "process", 0);
 }
 
