@@ -3158,11 +3158,15 @@ MODULE_SCOPE const EnsembleImplMap tclArrayImplMap[];
 MODULE_SCOPE const EnsembleImplMap tclBinaryImplMap[];
 MODULE_SCOPE const EnsembleImplMap tclBinaryEncodeImplMap[];
 MODULE_SCOPE const EnsembleImplMap tclBinaryDecodeImplMap[];
+MODULE_SCOPE const EnsembleImplMap tclChanImplMap[];
+MODULE_SCOPE const EnsembleImplMap tclClockImplMap[];
 MODULE_SCOPE const EnsembleImplMap tclDictImplMap[];
 MODULE_SCOPE const EnsembleImplMap tclEncodingImplMap[];
 MODULE_SCOPE const EnsembleImplMap tclFileImplMap[];
 MODULE_SCOPE const EnsembleImplMap tclInfoImplMap[];
 MODULE_SCOPE const EnsembleImplMap tclNamespaceImplMap[];
+MODULE_SCOPE const EnsembleImplMap tclPrefixImplMap[];
+MODULE_SCOPE const EnsembleImplMap tclProcessImplMap[];
 MODULE_SCOPE const EnsembleImplMap tclStringImplMap[];
 MODULE_SCOPE const EnsembleImplMap tclZipfsImplMap[];
 MODULE_SCOPE const EnsembleImplMap tclZlibImplMap[];
@@ -3743,7 +3747,8 @@ MODULE_SCOPE Tcl_ObjCmdProc Tcl_ApplyObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_BreakObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_CatchObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_CdObjCmd;
-MODULE_SCOPE void	TclInitChanCmd(Tcl_Interp *interp);
+MODULE_SCOPE int	TclSetUpChanCmd(Tcl_Interp *interp,
+			    Tcl_Command chanEnsemble);
 MODULE_SCOPE Tcl_ObjCmdProc TclChanCreateObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclChanPostEventObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclChanPopObjCmd;
@@ -3815,7 +3820,8 @@ MODULE_SCOPE Tcl_ObjCmdProc TclNamespaceEnsembleCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_OpenObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_PackageObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_PidObjCmd;
-MODULE_SCOPE void	TclInitPrefixCmd(Tcl_Interp *interp);
+MODULE_SCOPE int	TclSetUpPrefixCmd(Tcl_Interp *interp,
+				Tcl_Command prefixEnsemble);
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_PutsObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_PwdObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_ReadObjCmd;
@@ -4135,7 +4141,8 @@ typedef enum TclProcessWaitStatus {
 				/* Child wait status didn't make sense. */
 } TclProcessWaitStatus;
 
-MODULE_SCOPE void	TclInitProcessCmd(Tcl_Interp *interp);
+MODULE_SCOPE int	TclSetUpProcessCmd(Tcl_Interp *interp,
+			    Tcl_Command processEnsemble);
 MODULE_SCOPE void	TclProcessCreated(Tcl_Pid pid);
 MODULE_SCOPE TclProcessWaitStatus TclProcessWait(Tcl_Pid pid, int options,
 			    int *codePtr, Tcl_Obj **msgObjPtr,

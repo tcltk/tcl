@@ -64,7 +64,7 @@ static void		UnregisterTcpServerInterpCleanupProc(
  * The basic description of the parts of the [chan] ensemble.
  * Also contains [chan configure], which is [fconfigure].
  */
-static const EnsembleImplMap tclChanImplMap[] = {
+const EnsembleImplMap tclChanImplMap[] = {
     {"blocked",		Tcl_FblockedObjCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
     {"close",		Tcl_CloseObjCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
     {"copy",		Tcl_FcopyObjCmd,	NULL,			NULL, NULL, 0},
@@ -2113,23 +2113,24 @@ TclChannelNamesCmd(
 /*
  *----------------------------------------------------------------------
  *
- * TclInitChanCmd --
+ * TclSetUpChanCmd --
  *
- *	This function is invoked to create the "chan" Tcl command. See the
+ *	This function is invoked to set up the "chan" Tcl command. See the
  *	user documentation for details on what it does.
  *
  * Results:
- *	None.
+ *	Tcl result code.
  *
  * Side effects:
- *	None (since nothing is byte-compiled).
+ *	None.
  *
  *----------------------------------------------------------------------
  */
 
-void
-TclInitChanCmd(
-    Tcl_Interp *interp)
+int
+TclSetUpChanCmd(
+    Tcl_Interp *interp,
+    Tcl_Command ensemble)
 {
     /*
      * Most commands are plugged directly together, but some are done via
@@ -2137,11 +2138,10 @@ TclInitChanCmd(
      * (want overwriting of [fconfigure] to control that nicely).
      */
 
-    Tcl_Command ensemble = TclMakeEnsemble(interp, "chan", tclChanImplMap);
     Tcl_Obj *mapObj;
     Tcl_GetEnsembleMappingDict(NULL, ensemble, &mapObj);
     TclDictPutString(NULL, mapObj, "configure", "::fconfigure");
-    Tcl_SetEnsembleMappingDict(interp, ensemble, mapObj);
+    return Tcl_SetEnsembleMappingDict(interp, ensemble, mapObj);
 }
 
 /*
