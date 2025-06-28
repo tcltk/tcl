@@ -168,6 +168,7 @@ TCL_DECLARE_MUTEX(commandTypeLock);
  */
 
 static Tcl_ObjCmdProc	BadEnsembleSubcommand;
+static Tcl_CmdDeleteProc BadEnsembleSubcommandCleanup;
 static char *		CallCommandTraces(Interp *iPtr, Command *cmdPtr,
 			    const char *oldName, const char *newName,
 			    int flags);
@@ -272,24 +273,6 @@ typedef struct {
 /* CMD_COMPILES_EXPANDED - Whether the compiler for this command can handle
  * expansion for itself rather than needing the generic layer to take care of
  * it for it. Defined in tclInt.h. */
-
-/*
- * The following struct states that the command it talks about (a subcommand
- * of one of Tcl's built-in ensembles) is unsafe and must be hidden when an
- * interpreter is made safe. (TclHideUnsafeCommands accesses an array of these
- * structs.) Alas, we can't sensibly just store the information directly in
- * the commands.
- */
-
-typedef struct {
-    const char *ensembleNsName;	/* The ensemble's name within ::tcl. NULL for
-				 * the end of the list of commands to hide. */
-    const char *commandName;	/* The name of the command within the
-				 * ensemble. If this is NULL, we want to also
-				 * make the overall command be hidden, an ugly
-				 * hack because it is expected by security
-				 * policies in the wild. */
-} UnsafeEnsembleInfo;
 
 /*
  * The built-in commands, and the functions that implement them:
@@ -407,78 +390,36 @@ static const CmdInfo builtInCmds[] = {
     {NULL,		NULL,			NULL,			NULL,	0}
 };
 
-/*
- * Information about which pieces of ensembles to hide when making an
- * interpreter safe:
- */
+typedef struct EnsembleSetup {
+    const char *name;
+    const EnsembleImplMap *implMap;
+    int (*configurer)(Tcl_Interp *interp, Tcl_Command ensemble);
+    int overallUnsafe;		/* Ensemble commands are never technically
+				 * unsafe (though their subcommands may well
+				 * be so), but some code expects them to be
+				 * so. This flag lets us mark those cases. */
+} EnsembleSetup;
 
-static const UnsafeEnsembleInfo unsafeEnsembleCommands[] = {
-    /* [encoding] has two unsafe commands. Assumed by older security policies
-     * to be overall unsafe; it isn't but... */
-    {"encoding", NULL},
-    {"encoding", "dirs"},
-    {"encoding", "system"},
-    /* [file] has MANY unsafe commands! Assumed by older security policies to
-     * be overall unsafe; it isn't but... */
-    {"file", NULL},
-    {"file", "atime"},
-    {"file", "attributes"},
-    {"file", "copy"},
-    {"file", "delete"},
-    {"file", "dirname"},
-    {"file", "executable"},
-    {"file", "exists"},
-    {"file", "extension"},
-    {"file", "home"},
-    {"file", "isdirectory"},
-    {"file", "isfile"},
-    {"file", "link"},
-    {"file", "lstat"},
-    {"file", "mtime"},
-    {"file", "mkdir"},
-    {"file", "nativename"},
-    {"file", "normalize"},
-    {"file", "owned"},
-    {"file", "readable"},
-    {"file", "readlink"},
-    {"file", "rename"},
-    {"file", "rootname"},
-    {"file", "size"},
-    {"file", "stat"},
-    {"file", "tail"},
-    {"file", "tempdir"},
-    {"file", "tempfile"},
-    {"file", "tildeexpand"},
-    {"file", "type"},
-    {"file", "volumes"},
-    {"file", "writable"},
-    /* [info] has two unsafe commands */
-    {"info", "cmdtype"},
-    {"info", "nameofexecutable"},
-    /* [tcl::process] has ONLY unsafe commands! */
-    {"process", "list"},
-    {"process", "status"},
-    {"process", "purge"},
-    {"process", "autopurge"},
-    /*
-     * [zipfs] perhaps has some safe commands. But like file make it inaccessible
-     * until they are analyzed to be safe.
-     */
-    {"zipfs", NULL},
-    {"zipfs", "canonical"},
-    {"zipfs", "exists"},
-    {"zipfs", "info"},
-    {"zipfs", "list"},
-    {"zipfs", "lmkimg"},
-    {"zipfs", "lmkzip"},
-    {"zipfs", "mkimg"},
-    {"zipfs", "mkkey"},
-    {"zipfs", "mkzip"},
-    {"zipfs", "mount"},
-    {"zipfs", "mountdata"},
-    {"zipfs", "root"},
-    {"zipfs", "unmount"},
-    {NULL, NULL}
+// Table of definitions of ensemble commands.
+static const EnsembleSetup ensembleCommands[] = {
+    {"array",		tclArrayImplMap,	NULL, 0},
+    {"binary",		tclBinaryImplMap,	NULL, 0},
+    {"binary encode",	tclBinaryEncodeImplMap, NULL, 0},
+    {"binary decode",	tclBinaryDecodeImplMap, NULL, 0},
+    {"chan",		tclChanImplMap,		TclSetUpChanCmd, 0},
+    // TODO: Sort out why setup of [clock] is so weird
+    // {"clock",	tclClockImplMap,	NULL, 1},
+    {"dict",		tclDictImplMap,		NULL, 0},
+    {"encoding",	tclEncodingImplMap,	NULL, 1},
+    {"file",		tclFileImplMap,		NULL, 1},
+    {"info",		tclInfoImplMap,		NULL, 0},
+    {"namespace",	tclNamespaceImplMap,	NULL, 0},
+    {"string",		tclStringImplMap,	NULL, 0},
+    {"::tcl::prefix",	tclPrefixImplMap,	TclSetUpPrefixCmd, 0},
+    {"::tcl::process",	tclProcessImplMap,	TclSetUpProcessCmd, 0},
+    {"zipfs",		tclZipfsImplMap,	NULL, 1},
+    {"zlib",		tclZlibImplMap,		NULL, 0},
+    {NULL, NULL, NULL, 0}
 };
 
 /*
@@ -1151,21 +1092,17 @@ Tcl_CreateInterp(void)
      * namespace) are wholly safe *except* for "clock", "encoding" and "file".
      */
 
-    TclMakeEnsemble(interp, "array", tclArrayImplMap);
-    TclMakeEnsemble(interp, "binary", tclBinaryImplMap);
-    TclMakeEnsemble(interp, "binary encode", tclBinaryEncodeImplMap);
-    TclMakeEnsemble(interp, "binary decode", tclBinaryDecodeImplMap);
-    TclInitChanCmd(interp);
-    TclMakeEnsemble(interp, "dict", tclDictImplMap);
-    TclMakeEnsemble(interp, "encoding", tclEncodingImplMap);
-    TclMakeEnsemble(interp, "file", tclFileImplMap);
-    TclMakeEnsemble(interp, "info", tclInfoImplMap);
-    TclMakeEnsemble(interp, "namespace", tclNamespaceImplMap);
-    TclMakeEnsemble(interp, "string", tclStringImplMap);
-    TclInitPrefixCmd(interp);
-    TclInitProcessCmd(interp);
-    TclMakeEnsemble(interp, "zipfs", tclZipfsImplMap);
-    TclMakeEnsemble(interp, "zlib", tclZlibImplMap);
+    const EnsembleSetup *ensSetupPtr;
+    for (ensSetupPtr=ensembleCommands; ensSetupPtr->name; ensSetupPtr++) {
+	Tcl_Command ensemble = TclMakeEnsemble(interp, ensSetupPtr->name,
+		ensSetupPtr->implMap);
+	if (ensSetupPtr->configurer) {
+	    if (ensSetupPtr->configurer(interp, ensemble) != TCL_OK) {
+		Tcl_Panic("failed to set up %s: %s", ensSetupPtr->name,
+			Tcl_GetStringResult(interp));
+	    }
+	}
+    }
 
     /*
      * Register "clock" subcommands. These *do* go through
@@ -1443,7 +1380,8 @@ TclHideUnsafeCommands(
     Tcl_Interp *interp)		/* Hide commands in this interpreter. */
 {
     const CmdInfo *cmdInfoPtr;
-    const UnsafeEnsembleInfo *unsafePtr;
+    const EnsembleSetup *ensSetupPtr;
+    const EnsembleImplMap *implMapPtr;
 
     if (interp == NULL) {
 	return TCL_ERROR;
@@ -1454,17 +1392,27 @@ TclHideUnsafeCommands(
 	}
     }
 
-    for (unsafePtr = unsafeEnsembleCommands;
-	    unsafePtr->ensembleNsName; unsafePtr++) {
-	if (unsafePtr->commandName) {
+    for (ensSetupPtr = ensembleCommands; ensSetupPtr->name; ensSetupPtr++) {
+	for (implMapPtr=ensSetupPtr->implMap; implMapPtr->name; implMapPtr++) {
+	    if (!implMapPtr->unsafe) {
+		continue;
+	    }
 	    /*
 	     * Hide an ensemble subcommand.
 	     */
 
+	    const char *ensembleNsName = ensSetupPtr->name, *sub;
+	    while ((sub = strstr(ensembleNsName, "::")) != NULL) {
+		ensembleNsName = sub + 2;
+	    }
 	    Tcl_Obj *cmdName = Tcl_ObjPrintf("::tcl::%s::%s",
-		    unsafePtr->ensembleNsName, unsafePtr->commandName);
+		    ensembleNsName, implMapPtr->name);
 	    Tcl_Obj *hideName = Tcl_ObjPrintf("tcl:%s:%s",
-		    unsafePtr->ensembleNsName, unsafePtr->commandName);
+		    ensembleNsName, implMapPtr->name);
+	    Tcl_Obj *publicNameTuple = Tcl_NewListObj(2, ((Tcl_Obj*[]){
+		Tcl_NewStringObj(ensSetupPtr->name, TCL_AUTO_LENGTH),
+		Tcl_NewStringObj(implMapPtr->name, TCL_AUTO_LENGTH)
+	    }));
 
 #define INTERIM_HACK_NAME "___tmp"
 
@@ -1473,24 +1421,22 @@ TclHideUnsafeCommands(
 		    || Tcl_HideCommand(interp, INTERIM_HACK_NAME,
 			    TclGetString(hideName)) != TCL_OK) {
 		Tcl_Panic("problem making '%s %s' safe: %s",
-			unsafePtr->ensembleNsName, unsafePtr->commandName,
+			ensSetupPtr->name, implMapPtr->name,
 			Tcl_GetStringResult(interp));
 	    }
+	    Tcl_IncrRefCount(publicNameTuple);
 	    Tcl_CreateObjCommand(interp, TclGetString(cmdName),
-		    BadEnsembleSubcommand, (void *)unsafePtr, NULL);
+		    BadEnsembleSubcommand, (void *)publicNameTuple,
+		    BadEnsembleSubcommandCleanup);
 	    TclDecrRefCount(cmdName);
 	    TclDecrRefCount(hideName);
-	} else {
-	    /*
-	     * Hide an ensemble main command (for compatibility).
-	     */
+	}
 
-	    if (Tcl_HideCommand(interp, unsafePtr->ensembleNsName,
-		    unsafePtr->ensembleNsName) != TCL_OK) {
-		Tcl_Panic("problem making '%s' safe: %s",
-			unsafePtr->ensembleNsName,
-			Tcl_GetStringResult(interp));
-	    }
+	if (ensSetupPtr->overallUnsafe) {
+	    /*
+	     * Hide a main command (for compatibility).
+	     */
+	    Tcl_HideCommand(interp, ensSetupPtr->name, ensSetupPtr->name);
 	}
     }
 
@@ -1522,13 +1468,40 @@ BadEnsembleSubcommand(
     TCL_UNUSED(int) /*objc*/,
     TCL_UNUSED(Tcl_Obj *const *) /* objv */)
 {
-    const UnsafeEnsembleInfo *infoPtr = (const UnsafeEnsembleInfo *)clientData;
+    Tcl_Obj *publicNameTuple = (Tcl_Obj *)clientData;
+    Tcl_Obj *ensembleName = TclListObjGetElement(publicNameTuple, 0);
+    Tcl_Obj *commandName = TclListObjGetElement(publicNameTuple, 1);
 
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "not allowed to invoke subcommand %s of %s",
-	    infoPtr->commandName, infoPtr->ensembleNsName));
+	    TclGetString(commandName), TclGetString(ensembleName)));
     Tcl_SetErrorCode(interp, "TCL", "SAFE", "SUBCOMMAND", (char *)NULL);
     return TCL_ERROR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * BadEnsembleSubcommandCleanup --
+ *
+ *	Cleans up data used by BadEnsembleSubcommand() when an instance of it
+ *	is deleted.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Releases a memory reference.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+BadEnsembleSubcommandCleanup(
+    void *clientData)
+{
+    Tcl_Obj *publicNameTuple = (Tcl_Obj *)clientData;
+    Tcl_DecrRefCount(publicNameTuple);
 }
 
 /*

@@ -31,7 +31,7 @@ static Tcl_ObjCmdProc PrefixMatchObjCmd;
 static void		PrintUsage(Tcl_Interp *interp,
 			    const Tcl_ArgvInfo *argTable);
 
-static const EnsembleImplMap tclPrefixImplMap[] = {
+const EnsembleImplMap tclPrefixImplMap[] = {
     {"all",	PrefixAllObjCmd,	TclCompileBasic2ArgCmd,    NULL, NULL, 0},
     {"longest",	PrefixLongestObjCmd,	TclCompileBasic2ArgCmd,    NULL, NULL, 0},
     {"match",	PrefixMatchObjCmd,	TclCompileBasicMin2ArgCmd, NULL, NULL, 0},
@@ -465,13 +465,13 @@ FreeIndex(
 /*
  *----------------------------------------------------------------------
  *
- * TclInitPrefixCmd --
+ * TclSetUpPrefixCmd --
  *
- *	This procedure creates the "prefix" Tcl command. See the user
+ *	This procedure sets up the "prefix" Tcl command. See the user
  *	documentation for details on what it does.
  *
  * Results:
- *	None.
+ *	Tcl result code.
  *
  * Side effects:
  *	See the user documentation.
@@ -479,12 +479,12 @@ FreeIndex(
  *----------------------------------------------------------------------
  */
 
-void
-TclInitPrefixCmd(
-    Tcl_Interp *interp)		/* Current interpreter. */
+int
+TclSetUpPrefixCmd(
+    Tcl_Interp *interp,		/* Current interpreter. */
+    Tcl_Command ensemble)	/* The prefix ensemble. */ 
 {
-    TclMakeEnsemble(interp, "::tcl::prefix", tclPrefixImplMap);
-    Tcl_Export(interp, Tcl_FindNamespace(interp, "::tcl", NULL, 0),
+    return Tcl_Export(interp, (Tcl_Namespace*)((Command *)ensemble)->nsPtr,
 	    "prefix", 0);
 }
 
