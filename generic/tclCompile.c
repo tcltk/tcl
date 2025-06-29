@@ -983,6 +983,10 @@ InstructionDesc const tclInstructionTable[] = {
 	 * TclNewArithSeriesObj() as NULL (and the corresponding values on the
 	 * stack simply are ignored).
 	 * Stack:  ... from to step count => ... series */
+    TCL_INSTRUCTION_ENTRY(
+	"uplevel",		-1),
+	/* Call the script in the given stack level, and stack the result.
+	 * Stack:  ... level script => ... result */
 
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };
@@ -4403,6 +4407,7 @@ TclEmitInvoke(
 	arg1 = arg2 = 0;
 	break;
     case INST_RETURN_STK:
+    case INST_UPLEVEL:
 	wordCount = cleanup = 2;
 	arg1 = arg2 = 0;
 	break;
@@ -4498,6 +4503,9 @@ TclEmitInvoke(
 	break;
     case INST_TCLOO_NEXT_CLASS_LIST:
 	OP(			TCLOO_NEXT_CLASS_LIST);
+	break;
+    case INST_UPLEVEL:
+	OP(			UPLEVEL);
 	break;
     case INST_YIELD:
 	OP(			YIELD);
