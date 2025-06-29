@@ -682,6 +682,7 @@ TclNewArithSeriesObj(
     Tcl_Obj *objPtr;
     unsigned precision = (unsigned)-1; /* unknown precision */
     const char *description;
+    char tmp[TCL_DOUBLE_SPACE + 2] = {0};
 
     if (startObj) {
 	if (assignNumber(interp, useDoubles, &start, &dstart, startObj) != TCL_OK) {
@@ -790,8 +791,6 @@ TclNewArithSeriesObj(
     return NULL;
 
   notANumber:
-    char tmp[TCL_DOUBLE_SPACE + 2] = {0};
-
     description = "non-numeric floating-point value";
     Tcl_PrintDouble(NULL, isnan(dstart) ? dstart : dend, tmp);
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
