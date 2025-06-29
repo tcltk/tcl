@@ -427,8 +427,8 @@ DeleteKey(
     }
 
     if (*keyName == '\0') {
-	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("bad key: cannot delete root keys", -1));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"bad key: cannot delete root keys", -1));
 	Tcl_SetErrorCode(interp, "WIN_REG", "DEL_ROOT_KEY", (char *)NULL);
 	Tcl_Free(buffer);
 	return TCL_ERROR;
@@ -449,8 +449,8 @@ DeleteKey(
 	if (result == ERROR_FILE_NOT_FOUND) {
 	    return TCL_OK;
 	}
-	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("unable to delete key: ", -1));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"unable to delete key: ", -1));
 	AppendSystemError(interp, result);
 	return TCL_ERROR;
     }
@@ -465,8 +465,8 @@ DeleteKey(
     Tcl_DStringFree(&buf);
 
     if (result != ERROR_SUCCESS && result != ERROR_FILE_NOT_FOUND) {
-	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("unable to delete key: ", -1));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"unable to delete key: ", -1));
 	AppendSystemError(interp, result);
 	result = TCL_ERROR;
     } else {
@@ -960,8 +960,8 @@ OpenKey(
     if (result == TCL_OK) {
 	result = OpenSubKey(hostName, rootKey, keyName, mode, flags, keyPtr);
 	if (result != ERROR_SUCCESS) {
-	    Tcl_SetObjResult(interp,
-		    Tcl_NewStringObj("unable to open key: ", -1));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "unable to open key: ", -1));
 	    AppendSystemError(interp, result);
 	    result = TCL_ERROR;
 	} else {
@@ -1348,8 +1348,8 @@ SetValue(
     RegCloseKey(key);
 
     if (result != ERROR_SUCCESS) {
-	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("unable to set value: ", -1));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"unable to set value: ", -1));
 	AppendSystemError(interp, result);
 	return TCL_ERROR;
     }

@@ -250,8 +250,9 @@ TclCreateLiteral(
     if ((flags & LITERAL_ON_HEAP)) {
 	objPtr->bytes = (char *) bytes;
 	objPtr->length = length;
-    } else {
-	TclInitStringRep(objPtr, bytes, length);
+    } else if (!TclAttemptInitStringRep(objPtr, bytes, length)) {
+	Tcl_DecrRefCount(objPtr);
+	return NULL;
     }
 
     /* Should the new literal be shared globally? */

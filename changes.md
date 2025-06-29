@@ -10,6 +10,17 @@ Highlighted differences between Tcl 9.1 and Tcl 9.0 are summarized below,
 with focus on changes important to programmers using the Tcl library and
 writing Tcl scripts.
 
+# New public C API
+
+- [Tcl\_IsEmpty checks if the string representation of a value would be the empty string](https://core.tcl-lang.org/tips/doc/trunk/tip/711.md)
+- [Tcl\_GetEncodingNameForUser returns name of encoding from user settings](https://core.tcl-lang.org/tips/doc/trunk/tip/716.md)
+- [Tcl\_AttemptCreateHashEntry - version of Tcl\_CreateHashEntry that returns NULL instead of panic'ing on memory allocation errors](https://core.tcl-lang.org/tips/doc/trunk/tip/717.md)
+
+# Performance
+
+- [Memory efficient internal representations](https://core.tcl-lang.org/tcl/wiki?name=New+abstract+list+representations)
+for list operations on large lists.
+
 # Bug fixes
  - [tclEpollNotfy PlatformEventsControl panics if websocket disconnected](https://core.tcl-lang.org/tcl/tktview/010d8f38)
 

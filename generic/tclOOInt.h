@@ -567,6 +567,7 @@ MODULE_SCOPE Object *	TclNewObjectInstanceCommon(Tcl_Interp *interp,
 			    const char *nsNameStr);
 MODULE_SCOPE int	TclOODecrRefCount(Object *oPtr);
 MODULE_SCOPE int	TclOOObjectDestroyed(Object *oPtr);
+MODULE_SCOPE const char *TclOOContextTypeName(CallContext *contextPtr);
 MODULE_SCOPE int	TclOODefineSlots(Foundation *fPtr);
 MODULE_SCOPE void	TclOODeleteChain(CallChain *callPtr);
 MODULE_SCOPE void	TclOODeleteChainCache(Tcl_HashTable *tablePtr);

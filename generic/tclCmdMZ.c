@@ -211,6 +211,8 @@ Tcl_RegexpObjCmd(
 	case REGEXP_LAST:
 	    i++;
 	    goto endOfForLoop;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
 
@@ -566,6 +568,8 @@ Tcl_RegsubObjCmd(
 	case REGSUB_LAST:
 	    idx++;
 	    goto endOfForLoop;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
 
@@ -1580,6 +1584,8 @@ StringIsCmd(
 		}
 		failVarObj = objv[++i];
 		break;
+	    default:
+		TCL_UNREACHABLE();
 	    }
 	}
     }
@@ -1877,6 +1883,8 @@ StringIsCmd(
     case STR_IS_XDIGIT:
 	chcomp = UniCharIsHexDigit;
 	break;
+    default:
+	TCL_UNREACHABLE();
     }
 
     if (chcomp != NULL) {
@@ -1904,7 +1912,7 @@ StringIsCmd(
      * valid fail index (>= 0).
      */
 
- str_is_done:
+  str_is_done:
     if ((result == 0) && (failVarObj != NULL)) {
 	TclNewIndexObj(objPtr, failat);
 	if (Tcl_ObjSetVar2(interp, failVarObj, NULL, objPtr, TCL_LEAVE_ERR_MSG) == NULL) {
@@ -2040,8 +2048,8 @@ StringMapCmd(
 	     * The charMap must be an even number of key/value items.
 	     */
 
-	    Tcl_SetObjResult(interp,
-		    Tcl_NewStringObj("char map list unbalanced", -1));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "char map list unbalanced", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "MAP",
 		    "UNBALANCED", (char *)NULL);
 	    return TCL_ERROR;
@@ -3337,12 +3345,18 @@ TclSubstOptions(
     int *flagPtr)
 {
     static const char *const substOptions[] = {
+	"-backslashes", "-commands", "-variables",
 	"-nobackslashes", "-nocommands", "-novariables", NULL
     };
     static const int optionFlags[] = {
-	TCL_SUBST_BACKSLASHES, TCL_SUBST_COMMANDS, TCL_SUBST_VARIABLES
+	TCL_SUBST_BACKSLASHES,		/* -backslashes */
+	TCL_SUBST_COMMANDS,		/* -commands */
+	TCL_SUBST_VARIABLES,		/* -variables */
+	TCL_SUBST_BACKSLASHES << 16,	/* -nobackslashes */
+	TCL_SUBST_COMMANDS    << 16,	/* -nocommands */
+	TCL_SUBST_VARIABLES   << 16	/* -novariables */
     };
-    int flags = TCL_SUBST_ALL;
+    int flags = numOpts ? 0 : TCL_SUBST_ALL;
 
     for (Tcl_Size i = 0; i < numOpts; i++) {
 	int optionIndex;
@@ -3351,7 +3365,18 @@ TclSubstOptions(
 		&optionIndex) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	flags &= ~optionFlags[optionIndex];
+	flags |= optionFlags[optionIndex];
+    }
+    if (flags >> 16) {			/* negative options specified */
+	if (flags & 0xFFFF) {		/* positive options specified too */
+	    if (interp) {
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "cannot combine positive and negative options", -1));
+	    }
+	    return TCL_ERROR;
+	}
+	/* mask default flags using negative options */
+	flags = TCL_SUBST_ALL & ~(flags >> 16);
     }
     *flagPtr = flags;
     return TCL_OK;
@@ -3378,6 +3403,7 @@ TclNRSubstObjCmd(
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv,
+		"?-backslashes? ?-commands? ?-variables? "
 		"?-nobackslashes? ?-nocommands? ?-novariables? string");
 	return TCL_ERROR;
     }
@@ -4186,6 +4212,8 @@ Tcl_TimeRateObjCmd(
 	    break;
 	case TMRT_LAST:
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
 
@@ -4410,7 +4438,7 @@ Tcl_TimeRateObjCmd(
 		     */
 		    threshold = 1;
 		    maxcnt = 0;
-		    /* FALLTHRU */
+		    TCL_FALLTHROUGH();
 		case TCL_CONTINUE:
 		    result = TCL_OK;
 		    break;
@@ -4499,7 +4527,8 @@ Tcl_TimeRateObjCmd(
 		lastIterTm = avgIterTm;
 	    }
 	    estIterTm *= lastIterTm;
-	    last = middle; lastCount = count;
+	    last = middle;
+	    lastCount = count;
 
 	    /*
 	     * Calculate next threshold to check.
@@ -4507,10 +4536,10 @@ Tcl_TimeRateObjCmd(
 	     * considering last known iteration growth factor.
 	     */
 	    threshold = (Tcl_WideUInt)(stop - middle) * TR_SCALE;
-	     /*
-	      * Estimated count of iteration til the end of execution.
-	      * Thereby 2.5% longer execution time would be OK.
-	      */
+	    /*
+	     * Estimated count of iteration til the end of execution.
+	     * Thereby 2.5% longer execution time would be OK.
+	     */
 	    if (threshold / estIterTm < 0.975) {
 		/* estimated time for next iteration is too large */
 		break;
@@ -4836,6 +4865,8 @@ TclNRTryObjCmd(
 	    haveHandlers = 1;
 	    i += 3;
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
     if (bodyShared) {

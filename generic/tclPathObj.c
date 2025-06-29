@@ -89,14 +89,15 @@ typedef struct {
  * fields.
  */
 
-#define PATHOBJ(pathPtr) ((FsPath *) (TclFetchInternalRep((pathPtr), &fsPathType)->twoPtrValue.ptr1))
+#define PATHOBJ(pathPtr) \
+	((FsPath *) (TclFetchInternalRep((pathPtr), &fsPathType)->twoPtrValue.ptr1))
 #define SETPATHOBJ(pathPtr,fsPathPtr) \
-	do {							\
-		Tcl_ObjInternalRep ir;				\
-		ir.twoPtrValue.ptr1 = (void *) (fsPathPtr);	\
-		ir.twoPtrValue.ptr2 = NULL;			\
-		Tcl_StoreInternalRep((pathPtr), &fsPathType, &ir);	\
-	} while (0)
+    do {								\
+	Tcl_ObjInternalRep ir;						\
+	ir.twoPtrValue.ptr1 = (void *) (fsPathPtr);			\
+	ir.twoPtrValue.ptr2 = NULL;					\
+	Tcl_StoreInternalRep((pathPtr), &fsPathType, &ir);		\
+    } while (0)
 #define PATHFLAGS(pathPtr) (PATHOBJ(pathPtr)->flags)
 
 /*
@@ -679,10 +680,7 @@ TclPathPart(
 		}
 	    }
 	    default:
-		/* We should never get here */
-		Tcl_Panic("Bad portion to TclPathPart");
-		/* For less clever compilers */
-		return NULL;
+		TCL_UNREACHABLE();
 	    }
 	} else if (fsPathPtr->cwdPtr != NULL) {
 	    /* Relative path */
@@ -2606,7 +2604,7 @@ Tcl_FSTildeExpand(
 
 	/* path[split] is / for ~user/... or \0 for ~user */
 	result = MakeTildeRelativePath(interp, user,
-		  path[split] ? &path[split + 1] : NULL, dsPtr);
+		path[split] ? &path[split + 1] : NULL, dsPtr);
 	Tcl_DStringFree(&dsUser);
     }
     if (result != TCL_OK) {

@@ -461,8 +461,9 @@ static const char *msg_seek_beforestart = "{Tried to seek before origin}";
 #if TCL_THREADS
 static const char *msg_send_originlost = "{Channel thread lost}";
 #endif /* TCL_THREADS */
-static const char *msg_send_dstlost    = "{Owner lost}";
-static const char *msg_dstlost    = "-code 1 -level 0 -errorcode NONE -errorinfo {} -errorline 1 {Owner lost}";
+static const char *msg_send_dstlost = "{Owner lost}";
+static const char *msg_dstlost =
+	"-code 1 -level 0 -errorcode NONE -errorinfo {} -errorline 1 {Owner lost}";
 
 /*
  * Main methods to plug into the 'chan' ensemble'. ==================
@@ -913,8 +914,8 @@ TclChanPostEventObjCmd(
 	return TCL_ERROR;
     }
     if (events == 0) {
-	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("bad event list: is empty", -1));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"bad event list: is empty", -1));
 	return TCL_ERROR;
     }
 
@@ -1350,14 +1351,14 @@ ReflectInput(
 	memcpy(buf, bytev, bytec);
     }
 
- stop:
+  stop:
     Tcl_DecrRefCount(toReadObj);
     Tcl_DecrRefCount(resObj);		/* Remove reference held from invoke */
     Tcl_Release(rcPtr);
     return bytec;
- invalid:
+  invalid:
     *errorCodePtr = EINVAL;
- error:
+  error:
     bytec = -1;
     goto stop;
 }
@@ -1478,15 +1479,15 @@ ReflectOutput(
     }
 
     *errorCodePtr = EOK;
- stop:
+  stop:
     Tcl_DecrRefCount(bufObj);
     Tcl_DecrRefCount(resObj);		/* Remove reference held from invoke */
     Tcl_Release(rcPtr->interp);
     Tcl_Release(rcPtr);
     return written;
- invalid:
+  invalid:
     *errorCodePtr = EINVAL;
- error:
+  error:
     written = -1;
     goto stop;
 }
@@ -1571,13 +1572,13 @@ ReflectSeekWide(
     }
 
     *errorCodePtr = EOK;
- stop:
+  stop:
     Tcl_DecrRefCount(offObj);
     Tcl_DecrRefCount(baseObj);
     Tcl_DecrRefCount(resObj);		/* Remove reference held from invoke */
     Tcl_Release(rcPtr);
     return newLoc;
- invalid:
+  invalid:
     *errorCodePtr = EINVAL;
     newLoc = -1;
     goto stop;
@@ -1971,16 +1972,16 @@ ReflectGetOption(
 	goto ok;
     }
 
- ok:
+  ok:
     result = TCL_OK;
- stop:
+  stop:
     if (optionObj) {
 	Tcl_DecrRefCount(optionObj);
     }
     Tcl_DecrRefCount(resObj);	/* Remove reference held from invoke */
     Tcl_Release(rcPtr);
     return result;
- error:
+  error:
     result = TCL_ERROR;
     goto stop;
 }
@@ -2108,6 +2109,8 @@ EncodeEventMask(
 	case EVENT_WRITE:
 	    events |= TCL_WRITABLE;
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
 	listc --;
     }

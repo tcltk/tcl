@@ -28,22 +28,24 @@ static int initialized = 0;
 TCL_DECLARE_MUTEX(pipeMutex)
 
 /*
- * The following defines identify the various types of applications that run
- * under windows. There is special case code for the various types.
+ * The following values identify the various types of applications that run
+ * under Windows. There is special case code for the various types.
  */
-
-#define APPL_NONE	0
-#define APPL_DOS	1
-#define APPL_WIN3X	2
-#define APPL_WIN32	3
+enum TclWinApplicationTypes {
+    APPL_NONE = 0,
+    APPL_DOS = 1,
+    APPL_WIN3X = 2,
+    APPL_WIN32 = 3
+};
 
 /*
  * The following constants and structures are used to encapsulate the state of
  * various types of files used in a pipeline. This used to have a 1 && 2 that
  * supported Win32s.
  */
-
-#define WIN_FILE	3	/* Basic Win32 file. */
+enum PipeStageIds {
+    WIN_FILE = 3		/* Basic Win32 file. */
+};
 
 /*
  * This structure encapsulates the common state associated with all file types
@@ -68,18 +70,14 @@ typedef struct ProcInfo {
 static ProcInfo *procList;
 
 /*
- * Bit masks used in the flags field of the PipeInfo structure below.
+ * Bit masks used in the flags/readFlags fields of the PipeInfo structure below.
  */
-
-#define PIPE_PENDING	(1<<0)	/* Message is pending in the queue. */
-#define PIPE_ASYNC	(1<<1)	/* Channel is non-blocking. */
-
-/*
- * Bit masks used in the sharedFlags field of the PipeInfo structure below.
- */
-
-#define PIPE_EOF	(1<<2)	/* Pipe has reached EOF. */
-#define PIPE_EXTRABYTE	(1<<3)	/* The reader thread has consumed one byte. */
+enum TclWinPipeInfoFlags {
+    PIPE_PENDING = 1<<0,	/* Message is pending in the queue. */
+    PIPE_ASYNC = 1<<1,		/* Channel is non-blocking. */
+    PIPE_EOF = 1<<2,		/* Pipe has reached EOF. */
+    PIPE_EXTRABYTE = 1<<3	/* The reader thread has consumed one byte. */
+};
 
 /*
  * TODO: It appears the whole EXTRABYTE machinery is in place to support
@@ -680,8 +678,9 @@ TclpCreateTempFile(
 	 * Convert the contents from UTF to native encoding
 	 */
 
-	if (Tcl_UtfToExternalDStringEx(NULL, NULL, contents, TCL_INDEX_NONE, 0, &dstring, NULL) != TCL_OK) {
-	   goto error;
+	if (Tcl_UtfToExternalDStringEx(NULL, NULL, contents, TCL_INDEX_NONE, 0,
+		&dstring, NULL) != TCL_OK) {
+	    goto error;
 	}
 	native = Tcl_DStringValue(&dstring);
 
@@ -1819,8 +1818,7 @@ TclpCreateCommandChannel(
 
 	infoPtr->readable = CreateEventW(NULL, TRUE, TRUE, NULL);
 	infoPtr->readThread = CreateThread(NULL, 256, PipeReaderThread,
-	    TclPipeThreadCreateTI(&infoPtr->readTI, infoPtr, infoPtr->readable),
-	    0, NULL);
+	    TclPipeThreadCreateTI(&infoPtr->readTI, infoPtr), 0, NULL);
 	SetThreadPriority(infoPtr->readThread, THREAD_PRIORITY_HIGHEST);
 	infoPtr->validMask |= TCL_READABLE;
     } else {
@@ -1834,8 +1832,7 @@ TclpCreateCommandChannel(
 
 	infoPtr->writable = CreateEventW(NULL, TRUE, TRUE, NULL);
 	infoPtr->writeThread = CreateThread(NULL, 256, PipeWriterThread,
-	    TclPipeThreadCreateTI(&infoPtr->writeTI, infoPtr, infoPtr->writable),
-	    0, NULL);
+	    TclPipeThreadCreateTI(&infoPtr->writeTI, infoPtr), 0, NULL);
 	SetThreadPriority(infoPtr->writeThread, THREAD_PRIORITY_HIGHEST);
 	infoPtr->validMask |= TCL_WRITABLE;
     } else {
@@ -2056,7 +2053,7 @@ PipeClose2Proc(
 	    if ((pipePtr->flags & PIPE_ASYNC) && inExit) {
 
 		/* give it a chance to leave honorably */
-		TclPipeThreadStopSignal(&pipePtr->writeTI, pipePtr->writable);
+		TclPipeThreadStopSignal(&pipePtr->writeTI);
 
 		if (WaitForSingleObject(pipePtr->writable, 20) == WAIT_TIMEOUT) {
 		    return EWOULDBLOCK;
@@ -2586,7 +2583,7 @@ Tcl_WaitPid(
     prevPtrPtr = &procList;
     for (infoPtr = procList; infoPtr != NULL;
 	    prevPtrPtr = &infoPtr->nextPtr, infoPtr = infoPtr->nextPtr) {
-	 if (infoPtr->dwProcessId == (Tcl_Size)pid) {
+	if (infoPtr->dwProcessId == (Tcl_Size)pid) {
 	    *prevPtrPtr = infoPtr->nextPtr;
 	    break;
 	}
@@ -3302,8 +3299,7 @@ TclpOpenTemporaryFile(
 TclPipeThreadInfo *
 TclPipeThreadCreateTI(
     TclPipeThreadInfo **pipeTIPtr,
-    void *clientData,
-    HANDLE wakeEvent)
+    void *clientData)
 {
     TclPipeThreadInfo *pipeTI;
 #ifndef _PTI_USE_CKALLOC
@@ -3314,7 +3310,6 @@ TclPipeThreadCreateTI(
     pipeTI->evControl = CreateEventW(NULL, FALSE, FALSE, NULL);
     pipeTI->state = PTI_STATE_IDLE;
     pipeTI->clientData = clientData;
-    pipeTI->evWakeUp = wakeEvent;
     return (*pipeTIPtr = pipeTI);
 }
 
@@ -3342,13 +3337,10 @@ TclPipeThreadWaitForSignal(
     TclPipeThreadInfo *pipeTI = *pipeTIPtr;
     LONG state;
     DWORD waitResult;
-    HANDLE wakeEvent;
 
     if (!pipeTI) {
 	return 0;
     }
-
-    wakeEvent = pipeTI->evWakeUp;
 
     /*
      * Wait for the main thread to signal before attempting to do the work.
@@ -3409,11 +3401,6 @@ TclPipeThreadWaitForSignal(
 
     if (state != PTI_STATE_STOP) {
 	*pipeTIPtr = NULL;
-    } else {
-	pipeTI->evWakeUp = NULL;
-    }
-    if (wakeEvent) {
-	SetEvent(wakeEvent);
     }
     return 0;
 }
@@ -3436,8 +3423,7 @@ TclPipeThreadWaitForSignal(
 
 int
 TclPipeThreadStopSignal(
-    TclPipeThreadInfo **pipeTIPtr,
-    HANDLE wakeEvent)
+    TclPipeThreadInfo **pipeTIPtr)
 {
     TclPipeThreadInfo *pipeTI = *pipeTIPtr;
     HANDLE evControl;
@@ -3447,7 +3433,6 @@ TclPipeThreadStopSignal(
 	return 1;
     }
     evControl = pipeTI->evControl;
-    pipeTI->evWakeUp = wakeEvent;
     state = InterlockedCompareExchange(&pipeTI->state, PTI_STATE_STOP,
 	    PTI_STATE_IDLE);
     switch (state) {
@@ -3458,7 +3443,7 @@ TclPipeThreadStopSignal(
 
 	SetEvent(evControl);
 	*pipeTIPtr = NULL;
-	/* FALLTHRU */
+	TCL_FALLTHROUGH();
     case PTI_STATE_DOWN:
 	return 1;
 
@@ -3511,7 +3496,6 @@ TclPipeThreadStop(
     }
     pipeTI = *pipeTIPtr;
     evControl = pipeTI->evControl;
-    pipeTI->evWakeUp = NULL;
 
     /*
      * Try to sane stop the pipe worker, corresponding its current state
@@ -3663,9 +3647,6 @@ TclPipeThreadStop(
 
     *pipeTIPtr = NULL;
     if (pipeTI) {
-	if (pipeTI->evWakeUp) {
-	    SetEvent(pipeTI->evWakeUp);
-	}
 	CloseHandle(pipeTI->evControl);
 #ifndef _PTI_USE_CKALLOC
 	free(pipeTI);
@@ -3714,9 +3695,6 @@ TclPipeThreadExit(
     state = InterlockedExchange(&pipeTI->state, PTI_STATE_DOWN);
     if (state == PTI_STATE_STOP) {
 	CloseHandle(pipeTI->evControl);
-	if (pipeTI->evWakeUp) {
-	    SetEvent(pipeTI->evWakeUp);
-	}
 #ifndef _PTI_USE_CKALLOC
 	free(pipeTI);
 #else

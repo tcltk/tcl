@@ -177,7 +177,7 @@ GrowUnicodeBuffer(
     /* Note STRING_MAXCHARS already takes into account space for nul */
     if (needed > STRING_MAXCHARS) {
 	Tcl_Panic("max size for a Tcl unicode rep (%" TCL_Z_MODIFIER "d bytes) exceeded",
-		  STRING_MAXCHARS);
+		STRING_MAXCHARS);
     }
     if (stringPtr->maxChars > 0) {
 	/* Expansion - try allocating extra space */
@@ -302,7 +302,10 @@ Tcl_DbNewStringObj(
 	length = (bytes? strlen(bytes) : 0);
     }
     TclDbNewObj(objPtr, file, line);
-    TclInitStringRep(objPtr, bytes, length);
+    if (!TclAttemptInitStringRep(objPtr, bytes, length)) {
+	Tcl_Panic("Failed to allocate %" TCL_SIZE_MODIFIER
+		"d bytes. %s:%d", length, file, line);
+    }
     return objPtr;
 }
 #else /* if not TCL_MEM_DEBUG */
@@ -2165,7 +2168,6 @@ Tcl_AppendFormatToObj(
 	}
 
 	case 'u':
-	    /* FALLTHRU */
 	case 'd':
 	case 'o':
 	case 'p':
@@ -2562,8 +2564,8 @@ Tcl_AppendFormatToObj(
 	}
 	default:
 	    if (interp != NULL) {
-		Tcl_SetObjResult(interp,
-			Tcl_ObjPrintf("bad field specifier \"%c\"", ch));
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"bad field specifier \"%c\"", ch));
 		Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BADTYPE", (char *)NULL);
 	    }
 	    goto error;
@@ -2773,7 +2775,7 @@ AppendPrintfToObjVA(
 		if (sizeof(size_t) == sizeof(Tcl_WideInt)) {
 		    size = 2;
 		}
-		/* FALLTHRU */
+		TCL_FALLTHROUGH();
 	    case 'c':
 	    case 'i':
 	    case 'u':
@@ -2868,7 +2870,7 @@ AppendPrintfToObjVA(
 		break;
 	    case 'h':
 		size = -1;
-		/* FALLTHRU */
+		TCL_FALLTHROUGH();
 	    default:
 		p++;
 	    }
@@ -3272,7 +3274,8 @@ TclStringCat(
 	} while (--oc);
     } else {
 	/* Result will be concat of string reps. Pre-size it. */
-	ov = objv; oc = objc;
+	ov = objv;
+	oc = objc;
 	do {
 	    Tcl_Obj *pendingPtr = NULL;
 
@@ -3356,7 +3359,8 @@ TclStringCat(
 	return objv[first];
     }
 
-    objv += first; objc = (last - first + 1);
+    objv += first;
+    objc = (last - first + 1);
     inPlace = (flags & TCL_STRING_IN_PLACE) && !Tcl_IsShared(*objv);
 
     if (binary) {
@@ -3371,7 +3375,8 @@ TclStringCat(
 	if (inPlace) {
 	    Tcl_Size start = 0;
 
-	    objResultPtr = *objv++; objc--;
+	    objResultPtr = *objv++;
+	    objc--;
 	    (void)Tcl_GetBytesFromObj(NULL, objResultPtr, &start);
 	    dst = Tcl_SetByteArrayLength(objResultPtr, length) + start;
 	} else {
@@ -3401,7 +3406,8 @@ TclStringCat(
 	if (inPlace) {
 	    Tcl_Size start;
 
-	    objResultPtr = *objv++; objc--;
+	    objResultPtr = *objv++;
+	    objc--;
 
 	    /* Ugly interface! Force resize of the unicode array. */
 	    (void)Tcl_GetUnicodeFromObj(objResultPtr, &start);
@@ -3452,7 +3458,8 @@ TclStringCat(
 	if (inPlace) {
 	    Tcl_Size start;
 
-	    objResultPtr = *objv++; objc--;
+	    objResultPtr = *objv++;
+	    objc--;
 
 	    (void)TclGetStringFromObj(objResultPtr, &start);
 	    if (0 == Tcl_AttemptSetObjLength(objResultPtr, length)) {

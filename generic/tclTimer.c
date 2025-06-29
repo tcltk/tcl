@@ -65,6 +65,9 @@ typedef struct AfterAssocData {
 				 * none. */
 } AfterAssocData;
 
+/* Associated data key used to look up the AfterAssocData for an interp. */
+#define ASSOC_KEY "tclAfter"
+
 /*
  * There is one of the following structures for each of the handlers declared
  * in a call to Tcl_DoWhenIdle. All of the currently-active handlers are
@@ -805,12 +808,12 @@ Tcl_AfterObjCmd(
      * doesn't already exist.
      */
 
-    assocPtr = (AfterAssocData *)Tcl_GetAssocData(interp, "tclAfter", NULL);
+    assocPtr = (AfterAssocData *)Tcl_GetAssocData(interp, ASSOC_KEY, NULL);
     if (assocPtr == NULL) {
 	assocPtr = (AfterAssocData *)Tcl_Alloc(sizeof(AfterAssocData));
 	assocPtr->interp = interp;
 	assocPtr->firstAfterPtr = NULL;
-	Tcl_SetAssocData(interp, "tclAfter", AfterCleanupProc, assocPtr);
+	Tcl_SetAssocData(interp, ASSOC_KEY, AfterCleanupProc, assocPtr);
     }
 
     /*
@@ -979,7 +982,7 @@ Tcl_AfterObjCmd(
 	}
 	break;
     default:
-	Tcl_Panic("Tcl_AfterObjCmd: bad subcommand index to afterSubCmds");
+	TCL_UNREACHABLE();
     }
     return TCL_OK;
 }

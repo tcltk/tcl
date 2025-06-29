@@ -1738,9 +1738,9 @@ TclOODefineDefnNsObjCmd(
      * Update the correct field of the class definition.
      */
 
-    if (kind) {
+    if (kind) {			// -instance
 	storagePtr = &clsPtr->objDefinitionNs;
-    } else {
+    } else {			// -class
 	storagePtr = &clsPtr->clsDefinitionNs;
     }
     if (*storagePtr != NULL) {
@@ -2097,6 +2097,8 @@ TclOODefineMethodObjCmd(
 	case MODE_UNEXPORT:
 	    isPublic = 0;
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
     } else {
 	if (IsPrivateDefine(interp)) {

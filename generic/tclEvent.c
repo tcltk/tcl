@@ -36,6 +36,13 @@ typedef struct BgError {
 } BgError;
 
 /*
+ * The assoc data key used in this file. The data associated with it is a
+ * reference to an ErrAssocData structure, and will be deallocated with
+ * BgErrorDeleteProc at the appropriate time.
+ */
+#define ASSOC_KEY "tclBgError"
+
+/*
  * One of the structures below is associated with the "tclBgError" assoc data
  * for each interpreter. It keeps track of the head and tail of the list of
  * pending background errors for the interpreter.
@@ -182,7 +189,7 @@ Tcl_BackgroundException(
     errPtr->nextPtr = NULL;
 
     (void) TclGetBgErrorHandler(interp);
-    assocPtr = (ErrAssocData *)Tcl_GetAssocData(interp, "tclBgError", NULL);
+    assocPtr = (ErrAssocData *)Tcl_GetAssocData(interp, ASSOC_KEY, NULL);
     if (assocPtr->firstBgPtr == NULL) {
 	assocPtr->firstBgPtr = errPtr;
 	Tcl_DoWhenIdle(HandleBgErrors, assocPtr);
@@ -522,7 +529,7 @@ TclSetBgErrorHandler(
     Tcl_Interp *interp,
     Tcl_Obj *cmdPrefix)
 {
-    ErrAssocData *assocPtr = (ErrAssocData *)Tcl_GetAssocData(interp, "tclBgError", NULL);
+    ErrAssocData *assocPtr = (ErrAssocData *)Tcl_GetAssocData(interp, ASSOC_KEY, NULL);
 
     if (cmdPrefix == NULL) {
 	Tcl_Panic("TclSetBgErrorHandler: NULL cmdPrefix argument");
@@ -537,7 +544,7 @@ TclSetBgErrorHandler(
 	assocPtr->cmdPrefix = NULL;
 	assocPtr->firstBgPtr = NULL;
 	assocPtr->lastBgPtr = NULL;
-	Tcl_SetAssocData(interp, "tclBgError", BgErrorDeleteProc, assocPtr);
+	Tcl_SetAssocData(interp, ASSOC_KEY, BgErrorDeleteProc, assocPtr);
     }
     if (assocPtr->cmdPrefix) {
 	Tcl_DecrRefCount(assocPtr->cmdPrefix);
@@ -567,14 +574,14 @@ Tcl_Obj *
 TclGetBgErrorHandler(
     Tcl_Interp *interp)
 {
-    ErrAssocData *assocPtr = (ErrAssocData *)Tcl_GetAssocData(interp, "tclBgError", NULL);
+    ErrAssocData *assocPtr = (ErrAssocData *)Tcl_GetAssocData(interp, ASSOC_KEY, NULL);
 
     if (assocPtr == NULL) {
 	Tcl_Obj *bgerrorObj;
 
 	TclNewLiteralStringObj(bgerrorObj, "::tcl::Bgerror");
 	TclSetBgErrorHandler(interp, bgerrorObj);
-	assocPtr = (ErrAssocData *)Tcl_GetAssocData(interp, "tclBgError", NULL);
+	assocPtr = (ErrAssocData *)Tcl_GetAssocData(interp, ASSOC_KEY, NULL);
     }
     return assocPtr->cmdPrefix;
 }
@@ -1650,6 +1657,8 @@ Tcl_VwaitObjCmd(
 	    vwaitItems[numItems].sourceObj = objv[i];
 	    numItems++;
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
 
@@ -1725,7 +1734,7 @@ Tcl_VwaitObjCmd(
 
     foundEvent = 1;
     while (!timedOut && foundEvent &&
-	   ((!any && (done < numItems)) || (any && !done))) {
+	    ((!any && (done < numItems)) || (any && !done))) {
 	foundEvent = Tcl_DoOneEvent(mask);
 	if (Tcl_Canceled(interp, TCL_LEAVE_ERR_MSG) == TCL_ERROR) {
 	    break;
@@ -1967,7 +1976,7 @@ Tcl_UpdateObjCmd(
 	    flags = TCL_IDLE_EVENTS|TCL_DONT_WAIT;
 	    break;
 	default:
-	    Tcl_Panic("Tcl_UpdateObjCmd: bad option index to UpdateOptions");
+	    TCL_UNREACHABLE();
 	}
     } else {
 	Tcl_WrongNumArgs(interp, 1, objv, "?idletasks?");

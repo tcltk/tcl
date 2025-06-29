@@ -309,7 +309,7 @@ GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
 	tclHash.o tclHistory.o \
 	tclIcu.o tclIndexObj.o tclInterp.o tclIO.o tclIOCmd.o \
 	tclIORChan.o tclIORTrans.o tclIOGT.o tclIOSock.o tclIOUtil.o \
-	tclLink.o tclListObj.o \
+	tclLink.o tclListObj.o tclListTypes.o \
 	tclLiteral.o tclLoad.o tclMain.o tclNamesp.o tclNotify.o \
 	tclObj.o tclOptimize.o tclPanic.o tclParse.o tclPathObj.o tclPipe.o \
 	tclPkg.o tclPkgConfig.o tclPosixStr.o \
@@ -447,6 +447,7 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/tclIORTrans.c \
 	$(GENERIC_DIR)/tclLink.c \
 	$(GENERIC_DIR)/tclListObj.c \
+	$(GENERIC_DIR)/tclListTypes.c \
 	$(GENERIC_DIR)/tclLiteral.c \
 	$(GENERIC_DIR)/tclLoad.c \
 	$(GENERIC_DIR)/tclMain.c \
@@ -1097,7 +1098,17 @@ install-libraries: libraries
 	done
 	@if [ -n "$(TCL_MODULE_PATH)" -a -f $(TOP_DIR)/library/tm.tcl ] ; then \
 	    echo "Customizing tcl module path"; \
-	    echo "if {![interp issafe]} { ::tcl::tm::roots [list $(TCL_MODULE_PATH)] }" >> \
+	    echo "if {![interp issafe]} {" >> \
+		"$(SCRIPT_INSTALL_DIR)/tm.tcl"; \
+	    echo "    ::tcl::tm::roots [lmap p [split {$(TCL_MODULE_PATH)} :] {" >> \
+		"$(SCRIPT_INSTALL_DIR)/tm.tcl"; \
+	    echo "	if {[catch {file tildeexpand [set p]} p]} continue" >> \
+		"$(SCRIPT_INSTALL_DIR)/tm.tcl"; \
+	    echo "	set p" >> \
+		"$(SCRIPT_INSTALL_DIR)/tm.tcl"; \
+	    echo "    }]" >> \
+		"$(SCRIPT_INSTALL_DIR)/tm.tcl"; \
+	    echo "}" >> \
 		"$(SCRIPT_INSTALL_DIR)/tm.tcl"; \
 	fi
 
@@ -1409,6 +1420,9 @@ tclLink.o: $(GENERIC_DIR)/tclLink.c
 
 tclListObj.o: $(GENERIC_DIR)/tclListObj.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclListObj.c
+
+tclListTypes.o: $(GENERIC_DIR)/tclListTypes.c
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclListTypes.c
 
 tclLiteral.o: $(GENERIC_DIR)/tclLiteral.c $(COMPILEHDR)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclLiteral.c

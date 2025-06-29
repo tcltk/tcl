@@ -357,8 +357,8 @@ NotArrayError(
 {
     const char *nameStr = TclGetString(name);
 
-    Tcl_SetObjResult(interp,
-	    Tcl_ObjPrintf("\"%s\" isn't an array", nameStr));
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    "\"%s\" isn't an array", nameStr));
     Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ARRAY", nameStr, (char *)NULL);
     return TCL_ERROR;
 }
@@ -2533,7 +2533,8 @@ TclPtrUnsetVarIdx(
     if (result != TCL_OK) {
 	if (flags & TCL_LEAVE_ERR_MSG) {
 	    TclObjVarErrMsg(interp, part1Ptr, part2Ptr, "unset",
-	      ((initialArrayPtr == NULL) ? NOSUCHVAR : NOSUCHELEMENT), index);
+		    ((initialArrayPtr == NULL) ? NOSUCHVAR : NOSUCHELEMENT),
+		    index);
 	    Tcl_SetErrorCode(interp, "TCL", "UNSET", "VARNAME", (char *)NULL);
 	}
     }
@@ -2655,7 +2656,7 @@ UnsetVarStruct(
 
 	    dummyVar.flags &= ~VAR_TRACE_ACTIVE;
 	    TclObjCallVarTraces(iPtr, arrayPtr, &dummyVar, part1Ptr, part2Ptr,
-	      (flags & (TCL_GLOBAL_ONLY|TCL_NAMESPACE_ONLY|VAR_ARRAY_ELEMENT))
+		    (flags & (TCL_GLOBAL_ONLY|TCL_NAMESPACE_ONLY|VAR_ARRAY_ELEMENT))
 			    | TCL_TRACE_UNSETS,
 		    /* leaveErrMsg */ 0, index);
 
@@ -3944,6 +3945,8 @@ ArrayNamesCmd(
 		    return TCL_ERROR;
 		}
 		break;
+	    default:
+		TCL_UNREACHABLE();
 	    }
 	    if (matched == 0) {
 		continue;
@@ -6979,10 +6982,10 @@ ArrayDefaultCmd(
 	    SetArrayDefault(varPtr, NULL);
 	}
 	return TCL_OK;
-    }
 
-    /* Unreached */
-    return TCL_ERROR;
+    default:
+	TCL_UNREACHABLE();
+    }
 }
 
 /*

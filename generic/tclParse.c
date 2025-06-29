@@ -1381,7 +1381,8 @@ Tcl_ParseVarName(
      */
 
     if (*src == '{') {
-	char ch; int braceCount = 0;
+	char ch;
+	int braceCount = 0;
 	src++;
 	numBytes--;
 	tokenPtr->type = TCL_TOKEN_TEXT;
@@ -1391,13 +1392,18 @@ Tcl_ParseVarName(
 	ch = *src;
 	while (numBytes && (braceCount>0 || ch != '}')) {
 	    switch (ch) {
-	    case '{': braceCount++; break;
-	    case '}': braceCount--; break;
+	    case '{':
+		braceCount++;
+		break;
+	    case '}':
+		braceCount--;
+		break;
 	    case '\\':
 		/* if 2 or more left, consume 2, else consume
 		 * just the \ and let it run into the end */
 		if (numBytes > 1) {
-		   src++; numBytes--;
+		    src++;
+		    numBytes--;
 		}
 	    }
 	    numBytes--;

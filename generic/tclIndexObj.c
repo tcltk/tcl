@@ -68,7 +68,9 @@ typedef struct {
 #define NEXT_ENTRY(table, offset) \
 	(&(STRING_AT(table, offset)))
 #define EXPAND_OF(indexRep) \
-	(((indexRep)->index != TCL_INDEX_NONE) ? STRING_AT((indexRep)->tablePtr, (indexRep)->offset*(indexRep)->index) : "")
+	(((indexRep)->index != TCL_INDEX_NONE) ?			\
+		STRING_AT((indexRep)->tablePtr, (indexRep)->offset*(indexRep)->index) : \
+		"")
 
 /*
  *----------------------------------------------------------------------
@@ -363,7 +365,8 @@ Tcl_GetIndexFromObjStruct(
 }
 /* #define again, needed below */
 #define Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, offset, msg, flags, indexPtr) \
-	((Tcl_GetIndexFromObjStruct)((interp), (objPtr), (tablePtr), (offset), (msg), (flags)|(int)(sizeof(*(indexPtr))<<1), (indexPtr)))
+	((Tcl_GetIndexFromObjStruct)((interp), (objPtr), (tablePtr), (offset), \
+		(msg), (flags)|(int)(sizeof(*(indexPtr))<<1), (indexPtr)))
 
 /*
  *----------------------------------------------------------------------
@@ -386,7 +389,8 @@ static void
 UpdateStringOfIndex(
     Tcl_Obj *objPtr)
 {
-    IndexRep *indexRep = (IndexRep *)TclFetchInternalRep(objPtr, &tclIndexType)->twoPtrValue.ptr1;
+    IndexRep *indexRep = (IndexRep *)
+	    TclFetchInternalRep(objPtr, &tclIndexType)->twoPtrValue.ptr1;
     const char *indexStr = EXPAND_OF(indexRep);
     size_t len = strlen(indexStr);
 

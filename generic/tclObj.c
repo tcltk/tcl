@@ -145,13 +145,13 @@ typedef struct PendingObjData {
 #define ObjDeletionUnlock(contextPtr)	((contextPtr)->deletionCount--)
 #define ObjDeletePending(contextPtr)	((contextPtr)->deletionCount > 0)
 #define ObjOnStack(contextPtr)		((contextPtr)->deletionStack != NULL)
-#define PushObjToDelete(contextPtr,objPtr)                              \
+#define PushObjToDelete(contextPtr, objPtr) \
     /* The string rep is already invalidated so we can use the bytes value \
-     * for our pointer chain: push onto the head of the stack. */       \
-    (objPtr)->bytes = (char *) ((contextPtr)->deletionStack);           \
+     * for our pointer chain: push onto the head of the stack. */	\
+    (objPtr)->bytes = (char *) ((contextPtr)->deletionStack);		\
     (contextPtr)->deletionStack = (objPtr)
-#define PopObjToDelete(contextPtr,objPtrVar)                            \
-    (objPtrVar) = (contextPtr)->deletionStack;                          \
+#define PopObjToDelete(contextPtr, objPtrVar) \
+    (objPtrVar) = (contextPtr)->deletionStack;				\
     (contextPtr)->deletionStack = (Tcl_Obj *) (objPtrVar)->bytes
 
 /*
@@ -168,8 +168,8 @@ static __thread PendingObjData pendingObjData;
 #else
 static Tcl_ThreadDataKey pendingObjDataKey;
 #define ObjInitDeletionContext(contextPtr) \
-    PendingObjData *const contextPtr =     \
-	    (PendingObjData *)Tcl_GetThreadData(&pendingObjDataKey, sizeof(PendingObjData))
+    PendingObjData *const contextPtr = (PendingObjData *)		\
+	    Tcl_GetThreadData(&pendingObjDataKey, sizeof(PendingObjData))
 #endif
 
 /*
@@ -177,15 +177,15 @@ static Tcl_ThreadDataKey pendingObjDataKey;
  */
 
 #define PACK_BIGNUM(bignum, objPtr) \
-    if ((bignum).used > 0x7FFF) {                                   \
-	mp_int *temp = (mp_int *)Tcl_Alloc(sizeof(mp_int));             \
-	*temp = bignum;                                                 \
-	(objPtr)->internalRep.twoPtrValue.ptr1 = temp;                  \
-	(objPtr)->internalRep.twoPtrValue.ptr2 = INT2PTR(-1);           \
+    if ((bignum).used > 0x7FFF) {					\
+	mp_int *temp = (mp_int *)Tcl_Alloc(sizeof(mp_int));		\
+	*temp = bignum;							\
+	(objPtr)->internalRep.twoPtrValue.ptr1 = temp;			\
+	(objPtr)->internalRep.twoPtrValue.ptr2 = INT2PTR(-1);		\
     } else if (((bignum).alloc <= 0x7FFF) || (mp_shrink(&(bignum))) == MP_OKAY) { \
-	(objPtr)->internalRep.twoPtrValue.ptr1 = (bignum).dp;           \
+	(objPtr)->internalRep.twoPtrValue.ptr1 = (bignum).dp;		\
 	(objPtr)->internalRep.twoPtrValue.ptr2 = INT2PTR(((bignum).sign << 30) \
-		| ((bignum).alloc << 15) | ((bignum).used));                \
+		| ((bignum).alloc << 15) | ((bignum).used));		\
     }
 
 /*
@@ -548,7 +548,8 @@ TclContinuationsEnter(
     ThreadSpecificData *tsdPtr = TclGetContLineTable();
     Tcl_HashEntry *hPtr =
 	    Tcl_CreateHashEntry(tsdPtr->lineCLPtr, objPtr, &newEntry);
-    ContLineLoc *clLocPtr = (ContLineLoc *)Tcl_Alloc(offsetof(ContLineLoc, loc) + (num + 1U) *sizeof(Tcl_Size));
+    ContLineLoc *clLocPtr = (ContLineLoc *)
+	    Tcl_Alloc(offsetof(ContLineLoc, loc) + (num + 1U) *sizeof(Tcl_Size));
 
     if (!newEntry) {
 	/*
@@ -1958,13 +1959,15 @@ Tcl_GetBoolFromObj(
 	if (interp) {
 	    TclNewObj(objPtr);
 	    TclParseNumber(interp, objPtr, (flags & TCL_NULL_OK)
-		    ? "boolean value or \"\"" : "boolean value", NULL, TCL_INDEX_NONE, NULL, 0);
+		    ? "boolean value or \"\"" : "boolean value", NULL,
+		    TCL_INDEX_NONE, NULL, 0);
 	    Tcl_DecrRefCount(objPtr);
 	}
 	return TCL_ERROR;
     }
     do {
-	if (TclHasInternalRep(objPtr, &tclIntType) || TclHasInternalRep(objPtr, &tclBooleanType)) {
+	if (TclHasInternalRep(objPtr, &tclIntType)
+		|| TclHasInternalRep(objPtr, &tclBooleanType)) {
 	    result = (objPtr->internalRep.wideValue != 0);
 	    goto boolEnd;
 	}
@@ -2011,7 +2014,8 @@ Tcl_GetBoolFromObj(
 	    if (length > 0) {
 	    listRep:
 		if (interp) {
-		    Tcl_SetObjResult(interp, Tcl_ObjPrintf("expected boolean value%s but got a list",
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			    "expected boolean value%s but got a list",
 			    (flags & TCL_NULL_OK) ? " or \"\"" : ""));
 		}
 		return TCL_ERROR;
@@ -2034,7 +2038,8 @@ Tcl_GetBooleanFromObj(
     Tcl_Obj *objPtr,		/* The object from which to get boolean. */
     int *intPtr)		/* Place to store resulting boolean. */
 {
-    return Tcl_GetBoolFromObj(interp, objPtr, (TCL_NULL_OK-2)&(int)sizeof(int), (char *)(void *)intPtr);
+    return Tcl_GetBoolFromObj(interp, objPtr, (TCL_NULL_OK-2)&(int)sizeof(int),
+	    (char *)(void *)intPtr);
 }
 
 /*
@@ -2413,8 +2418,9 @@ Tcl_GetDoubleFromObj(
 	    if (length > 0) {
 	    listRep:
 		if (interp) {
-		    Tcl_SetObjResult(interp,
-			    Tcl_NewStringObj("expected floating-point number but got a list", TCL_INDEX_NONE));
+		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			    "expected floating-point number but got a list",
+			    TCL_INDEX_NONE));
 		}
 		return TCL_ERROR;
 	    }
@@ -4171,10 +4177,10 @@ TclCompareObjKeys(
      * If the object pointers are the same then they match.
      * OPT: this comparison was moved to the caller
 
-       if (objPtr1 == objPtr2) {
-	   return 1;
-       }
-    */
+	if (objPtr1 == objPtr2) {
+	    return 1;
+	}
+     */
 
     /*
      * Don't use Tcl_GetStringFromObj as it would prevent l1 and l2 being

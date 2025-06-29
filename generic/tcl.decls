@@ -2367,13 +2367,19 @@ declare 689 {
 
 # ----- BASELINE -- FOR -- 9.0.0 ----- #
 
+# TIP 711
 declare 690 {
     int Tcl_IsEmpty(Tcl_Obj *obj)
 }
 
+# TIP 716
+declare 691 {
+    const char *Tcl_GetEncodingNameForUser(Tcl_DString *bufPtr)
+}
+
 # ----- BASELINE -- FOR -- 9.1.0 ----- #
 
-declare 691 {
+declare 692 {
     void TclUnusedStubEntry(void)
 }
 

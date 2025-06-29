@@ -5,7 +5,7 @@ on:
     - "main"
     - "core-9-0-branch"
     tags:
-    - "core-**"
+    - "core-*"
 permissions:
   contents: read
 jobs:

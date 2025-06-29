@@ -349,8 +349,9 @@ without converting the value to a List type. This requires the custom
 type to provide functions that will perform the given operation on the
 custom data representation.  Not all functions are required. In the
 absence of a particular function (set to NULL), the fallback is to
-allow the internal List operation to perform the operation, most
-likely causing the value type to be converted to a traditional list.
+allow the internal List operation to perform the operation, which
+may possibly cause the value type to be converted to a traditional
+list.
 .SS "SCALAR VALUE TYPES"
 .PP
 For a custom value type that is scalar or atomic in nature, i.e., not
@@ -364,6 +365,13 @@ Version 2, \fBTCL_OBJTYPE_V2\fR, allows full List support when the
 functions described below are provided.  This allows for script level
 use of the List commands without causing the type of the Tcl_Obj value
 to be converted to a list.
+
+Unless specified otherwise, all functions specific to Version 2 should return
+\fBTCL_OK\fR on success and \fBTCL_ERROR\fR on failure. Further, in the case
+that a \fBTcl_Obj*\fR is also returned, the reference count of the returned
+\fBTcl_Obj\fR should not be incremented so, for example, if a new \fBTcl_Obj\fR
+value is returned it should have a reference count of zero.
+
 .SS "THE LENGTHPROC FIELD"
 .PP
 The \fBLengthProc\fR function correlates with the \fBTcl_ListObjLength\fR
@@ -378,8 +386,11 @@ typedef Tcl_Size
 .SS "THE INDEXPROC FIELD"
 .PP
 The \fBIndexProc\fR function correlates with with the
-\fBTcl_ListObjIndex\fR C API. The function returns a Tcl_Obj value for
-the element at the specified index.
+\fBTcl_ListObjIndex\fR C API. The function should store a pointer to
+the element at the specified \fBindex\fR in \fB*elemObj\fR.
+Indices that are out of bounds should not be treated as errors;
+rather, the function should store a null pointer and
+return TCL_OK.
 .CS
 typedef int (\fBTcl_ObjTypeIndexProc\fR) (
     Tcl_Interp *interp,
@@ -404,7 +415,7 @@ typedef int (\fBTcl_ObjTypeSliceProc\fR) (
 .PP
 The \fBReverseProc\fR correlates with the \fBlreverse\fR command,
 returning a List or Abstract List that has the same elements as the
-input Abstract List, with the elements in the reverse order.
+input Abstract List, but in reverse order.
 .CS
 typedef int (\fBTcl_ObjTypeReverseProc\fR) (
     Tcl_Interp *interp,

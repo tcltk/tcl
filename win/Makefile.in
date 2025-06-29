@@ -332,6 +332,7 @@ GENERIC_OBJS = \
 	tclLink.$(OBJEXT) \
 	tclLiteral.$(OBJEXT) \
 	tclListObj.$(OBJEXT) \
+	tclListTypes.$(OBJEXT) \
 	tclLoad.$(OBJEXT) \
 	tclMainW.$(OBJEXT) \
 	tclMain.$(OBJEXT) \
@@ -1005,7 +1006,7 @@ test-tcl: tcltest
 # Useful target to launch a built tclsh with the proper path,...
 runtest: tcltest
 	@TCL_LIBRARY="$(LIBRARY_DIR)"; export TCL_LIBRARY; \
-	$(WINE) ./$(TCLSH) $(TESTFLAGS) -load "$(TEST_LOAD_FACILITIES)" $(SCRIPT)
+	$(WINE) ./$(TCLSH) $(SCRIPT) $(TESTFLAGS) -load "$(TEST_LOAD_FACILITIES)"
 
 # This target can be used to run tclsh from the build directory via
 # `make shell SCRIPT=foo.tcl`

@@ -1316,7 +1316,7 @@ ObjValue(
 	Tcl_Obj *uwObj;
 	TclNewUIntObj(uwObj, linkPtr->lastValue.uw);
 	return uwObj;
-	}
+    }
 
     case TCL_LINK_STRING:
 	p = LinkedVar(char *);

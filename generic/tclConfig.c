@@ -299,8 +299,7 @@ QueryConfigObjCmd(
 	return TCL_OK;
 
     default:
-	Tcl_Panic("QueryConfigObjCmd: Unknown subcommand to 'pkgconfig'. This can't happen");
-	break;
+	TCL_UNREACHABLE();
     }
     return TCL_ERROR;
 }

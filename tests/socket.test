@@ -701,7 +701,7 @@ test socket_$af-2.11 {detecting new data} -constraints [list socket supported_$a
     close $s
     close $sock
 } -result {a:one b: c:two}
-test socket_$af-2.12 {} [list socket stdio supported_$af] {
+test socket_$af-2.12 {Bug 1758a0b603?} [list socket stdio supported_$af] {
     file delete $path(script)
     set f [open $path(script) w]
     puts $f {

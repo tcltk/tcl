@@ -1154,6 +1154,8 @@ ClockConfigureObjCmd(
 	    }
 	    break;
 	}
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
 
@@ -3159,6 +3161,8 @@ ClockClicksObjCmd(
     case CLICKS_MICROS:
 	clicks = TclpGetMicroseconds();
 	break;
+    default:
+	TCL_UNREACHABLE();
     }
 
     Tcl_SetObjResult(interp, Tcl_NewWideIntObj(clicks));
@@ -3371,6 +3375,8 @@ ClockParseFmtScnArgs(
 		}
 	    }
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
 	saw |= 1 << optionIndex;
     }
@@ -3431,8 +3437,8 @@ ClockParseFmtScnArgs(
 	    }
 
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"bad seconds \"%s\": must be now or integer",
-		TclGetString(baseObj)));
+		    "bad seconds \"%s\": must be now or integer",
+		    TclGetString(baseObj)));
 	    i = baseIdx;
 	    goto badOption;
 	}
@@ -3474,7 +3480,7 @@ ClockParseFmtScnArgs(
 	/* extact fields from base */
 	date->seconds = baseVal;
 	if (ClockGetDateFields(dataPtr, interp, date, opts->timezoneObj,
-	      GREGORIAN_CHANGE_DATE) != TCL_OK) {
+		GREGORIAN_CHANGE_DATE) != TCL_OK) {
 	    /* TODO - GREGORIAN_CHANGE_DATE should be locale-dependent */
 	    return TCL_ERROR;
 	}
@@ -3624,7 +3630,8 @@ ClockScanObjCmd(
     }
 
     /* seconds are in localSeconds (relative base date), so reset time here */
-    yyHour = yyMinutes = yySeconds = yySecondOfDay = 0; yyMeridian = MER24;
+    yyHour = yyMinutes = yySeconds = yySecondOfDay = 0;
+    yyMeridian = MER24;
 
     /* If free scan */
     if (opts.formatObj == NULL) {
@@ -4265,7 +4272,7 @@ ClockCalcRelTime(
 	    yyRelSeconds = 0;
 	    /* Convert it back */
 	    if (ClockGetDateFields(opts->dataPtr, opts->interp, &yydate,
-		  opts->timezoneObj, GREGORIAN_CHANGE_DATE) != TCL_OK) {
+		    opts->timezoneObj, GREGORIAN_CHANGE_DATE) != TCL_OK) {
 		/* TODO - GREGORIAN_CHANGE_DATE should be locale-dependent */
 		return TCL_ERROR;
 	    }
@@ -4537,6 +4544,8 @@ ClockAddObjCmd(
 	case CLC_ADD_SECONDS:
 	    yyRelSeconds += offs;
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
 	if (unitIndex < CLC_ADD_HOURS) { /* date units only */
 	    info->flags |= CLF_RELCONV;

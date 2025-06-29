@@ -1103,96 +1103,97 @@ TclScanElement(
     }
 
     while (length) {
-      if (CHAR_TYPE(*p) != TYPE_NORMAL) {
-	switch (*p) {
-	case '{':	/* TYPE_BRACE */
+	if (CHAR_TYPE(*p) != TYPE_NORMAL) {
+	    switch (*p) {
+	    case '{':	/* TYPE_BRACE */
 #if COMPAT
-	    braceCount++;
+		braceCount++;
 #endif /* COMPAT */
-	    extra++;				/* Escape '{' => '\{' */
-	    nestingLevel++;
-	    break;
-	case '}':	/* TYPE_BRACE */
+		extra++;			/* Escape '{' => '\{' */
+		nestingLevel++;
+		break;
+	    case '}':	/* TYPE_BRACE */
 #if COMPAT
-	    braceCount++;
+		braceCount++;
 #endif /* COMPAT */
-	    extra++;				/* Escape '}' => '\}' */
-	    if (nestingLevel-- < 1) {
-		/*
-		 * Unbalanced braces!  Cannot format with brace quoting.
-		 */
+		extra++;			/* Escape '}' => '\}' */
+		if (nestingLevel-- < 1) {
+		    /*
+		     * Unbalanced braces!  Cannot format with brace quoting.
+		     */
 
-		requireEscape = 1;
-	    }
-	    break;
-	case ']':	/* TYPE_CLOSE_BRACK */
-	case '"':	/* TYPE_SPACE */
+		    requireEscape = 1;
+		}
+		break;
+	    case ']':	/* TYPE_CLOSE_BRACK */
+	    case '"':	/* TYPE_SPACE */
 #if COMPAT
-	    forbidNone = 1;
-	    extra++;		/* Escapes all just prepend a backslash */
-	    preferEscape = 1;
-	    break;
+		forbidNone = 1;
+		extra++;	/* Escapes all just prepend a backslash */
+		preferEscape = 1;
+		break;
 #else
-	    /* FLOW THROUGH */
+		TCL_FALLTHROUGH();
 #endif /* COMPAT */
-	case '[':	/* TYPE_SUBS */
-	case '$':	/* TYPE_SUBS */
-	case ';':	/* TYPE_COMMAND_END */
-	    forbidNone = 1;
-	    extra++;		/* Escape sequences all one byte longer. */
-#if COMPAT
-	    preferBrace = 1;
-#endif /* COMPAT */
-	    break;
-	case '\\':	/* TYPE_SUBS */
-	    extra++;				/* Escape '\' => '\\' */
-	    if ((length == 1) || ((length == TCL_INDEX_NONE) && (p[1] == '\0'))) {
-		/*
-		 * Final backslash. Cannot format with brace quoting.
-		 */
-
-		requireEscape = 1;
-		break;
-	    }
-	    if (p[1] == '\n') {
-		extra++;	/* Escape newline => '\n', one byte longer */
-
-		/*
-		 * Backslash newline sequence.  Brace quoting not permitted.
-		 */
-
-		requireEscape = 1;
-		length -= (length > 0);
-		p++;
-		break;
-	    }
-	    if ((p[1] == '{') || (p[1] == '}') || (p[1] == '\\')) {
-		extra++;	/* Escape sequences all one byte longer. */
-		length -= (length > 0);
-		p++;
-	    }
-	    forbidNone = 1;
-#if COMPAT
-	    preferBrace = 1;
-#endif /* COMPAT */
-	    break;
-	case '\0':	/* TYPE_SUBS */
-	    if (length == TCL_INDEX_NONE) {
-		goto endOfString;
-	    }
-	    /* TODO: Panic on improper encoding? */
-	    break;
-	default:
-	    if (TclIsSpaceProcM(*p)) {
+	    case '[':	/* TYPE_SUBS */
+	    case '$':	/* TYPE_SUBS */
+	    case ';':	/* TYPE_COMMAND_END */
 		forbidNone = 1;
 		extra++;	/* Escape sequences all one byte longer. */
 #if COMPAT
 		preferBrace = 1;
+#endif /* COMPAT */
+		break;
+	    case '\\':	/* TYPE_SUBS */
+		extra++;			/* Escape '\' => '\\' */
+		if ((length == 1) ||
+			((length == TCL_INDEX_NONE) && (p[1] == '\0'))) {
+		    /*
+		     * Final backslash. Cannot format with brace quoting.
+		     */
+
+		    requireEscape = 1;
+		    break;
+		}
+		if (p[1] == '\n') {
+		    extra++;	/* Escape newline => '\n', one byte longer */
+
+		    /*
+		     * Backslash newline sequence.  Brace quoting not permitted.
+		     */
+
+		    requireEscape = 1;
+		    length -= (length > 0);
+		    p++;
+		    break;
+		}
+		if ((p[1] == '{') || (p[1] == '}') || (p[1] == '\\')) {
+		    extra++;	/* Escape sequences all one byte longer. */
+		    length -= (length > 0);
+		    p++;
+		}
+		forbidNone = 1;
+#if COMPAT
+		preferBrace = 1;
+#endif /* COMPAT */
+		break;
+	    case '\0':	/* TYPE_SUBS */
+		if (length == TCL_INDEX_NONE) {
+		    goto endOfString;
+		}
+		/* TODO: Panic on improper encoding? */
+		break;
+	    default:
+		if (TclIsSpaceProcM(*p)) {
+		    forbidNone = 1;
+		    extra++;	/* Escape sequences all one byte longer. */
+#if COMPAT
+		    preferBrace = 1;
 #endif
+		}
+		break;
 	    }
-	    break;
 	}
-      }
 	length -= (length > 0);
 	p++;
     }
@@ -2634,8 +2635,8 @@ Tcl_DStringAppend(
 
     if (length > (TCL_SIZE_MAX - dsPtr->length - 1)) {
 	Tcl_Panic("max size for a Tcl value (%" TCL_SIZE_MODIFIER
-		  "d bytes) exceeded",
-		  TCL_SIZE_MAX);
+		"d bytes) exceeded",
+		TCL_SIZE_MAX);
 	return NULL; /* NOTREACHED */
     }
     newSize = length + dsPtr->length + 1;
@@ -4448,7 +4449,7 @@ TclReToGlob(
 	    case '\\': case '*': case '[': case ']': case '?':
 		/* Only add \ where necessary for glob */
 		*dsStr++ = '\\';
-		/* fall through */
+		TCL_FALLTHROUGH();
 	    default:
 		*dsStr++ = *p;
 		break;
@@ -4529,7 +4530,7 @@ TclReToGlob(
 		/* Only add \ where necessary for glob */
 		*dsStr++ = '\\';
 		anchorLeft = 0; /* prevent exact match */
-		/* fall through */
+		TCL_FALLTHROUGH();
 	    case '{': case '}': case '(': case ')': case '+':
 	    case '.': case '|': case '^': case '$':
 		*dsStr++ = *p;
@@ -4670,9 +4671,9 @@ TclMSB(
 	 * clzll() = Count of Leading Zeroes in a Long Long
 	 * NOTE: we rely on input constraint (n != 0).
 	 */
-	
+
 	return 63 - __builtin_clzll(n);
-	
+
 #else
 
 	/*

@@ -84,9 +84,11 @@ static int ddeIsServer = 0;
 #define TCL_DDE_SERVICE_NAME	L"TclEval"
 #define TCL_DDE_EXECUTE_RESULT	L"$TCLEVAL$EXECUTE$RESULT"
 
-#define DDE_FLAG_ASYNC 1
-#define DDE_FLAG_BINARY 2
-#define DDE_FLAG_FORCE 4
+enum TclDdeFlags {
+    DDE_FLAG_ASYNC = 1,
+    DDE_FLAG_BINARY = 2,
+    DDE_FLAG_FORCE = 4
+};
 
 TCL_DECLARE_MUTEX(ddeMutex)
 
@@ -344,7 +346,8 @@ DdeSetServerName(
 	}
 	if (r != TCL_OK) {
 	    Tcl_DStringInit(&dString);
-	    OutputDebugStringW(Tcl_UtfToWCharDString(Tcl_GetString(Tcl_GetObjResult(interp)), -1, &dString));
+	    OutputDebugStringW(Tcl_UtfToWCharDString(
+		    Tcl_GetString(Tcl_GetObjResult(interp)), -1, &dString));
 	    Tcl_DStringFree(&dString);
 	    return NULL;
 	}
@@ -1528,8 +1531,8 @@ DdeObjCmd(
 	}
 
 	if (dataLength + 1 < 2) {
-	    Tcl_SetObjResult(interp,
-		    Tcl_NewStringObj("cannot execute null data", -1));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "cannot execute null data", -1));
 	    Tcl_DStringFree(&dsBuf);
 	    Tcl_SetErrorCode(interp, "TCL", "DDE", "NULL", (char *)NULL);
 	    result = TCL_ERROR;
@@ -1579,8 +1582,8 @@ DdeObjCmd(
 	length = Tcl_DStringLength(&itemBuf) / sizeof(WCHAR);
 
 	if (length == 0) {
-	    Tcl_SetObjResult(interp,
-		    Tcl_NewStringObj("cannot request value of null data", -1));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "cannot request value of null data", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "DDE", "NULL", (char *)NULL);
 	    result = TCL_ERROR;
 	    goto cleanup;
@@ -1645,8 +1648,8 @@ DdeObjCmd(
 	itemString = Tcl_UtfToWCharDString(src, length, &itemBuf);
 	length = Tcl_DStringLength(&itemBuf) / sizeof(WCHAR);
 	if (length == 0) {
-	    Tcl_SetObjResult(interp,
-		    Tcl_NewStringObj("cannot have a null item", -1));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "cannot have a null item", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "DDE", "NULL", (char *)NULL);
 	    result = TCL_ERROR;
 	    goto cleanup;
@@ -1699,8 +1702,8 @@ DdeObjCmd(
 	ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
 	if (serviceName == NULL) {
-	    Tcl_SetObjResult(interp,
-		    Tcl_NewStringObj("invalid service name \"\"", -1));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "invalid service name \"\"", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "DDE", "NO_SERVER", (char *)NULL);
 	    result = TCL_ERROR;
 	    goto cleanup;
@@ -1813,8 +1816,8 @@ DdeObjCmd(
 
 	    if (MakeDdeConnection(interp, serviceName, &hConv) != TCL_OK) {
 	    invalidServerResponse:
-		Tcl_SetObjResult(interp,
-			Tcl_NewStringObj("invalid data returned from server", -1));
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"invalid data returned from server", -1));
 		Tcl_SetErrorCode(interp, "TCL", "DDE", "BAD_RESPONSE", (char *)NULL);
 		result = TCL_ERROR;
 		goto cleanup;
