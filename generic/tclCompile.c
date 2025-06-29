@@ -5100,7 +5100,7 @@ TclPushVarName(
 		TclCompileTokens(interp, elemTokenPtr, elemTokenCount,
 			envPtr);
 	    } else {
-		PUSH(		"");
+		OP(		PUSH_EMPTY);
 	    }
 	}
     } else if (interp) {

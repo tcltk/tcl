@@ -4396,7 +4396,7 @@ TclCompileUplevelCmd(
 	tokenPtr = TokenAfter(tokenPtr);
 	first = 2;
     } else {
-	PUSH(			"1");
+	OP1(			PUSH_CONST, 1);
 	first = 1;
     }
     if (first >= numWords) {
