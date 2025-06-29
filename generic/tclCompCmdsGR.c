@@ -1399,6 +1399,7 @@ TclCompileLinsertCmd(
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *listToken, *indexToken, *tokenPtr;
     Tcl_Size i, numWords = parsePtr->numWords;
+    /* TODO: Consider support for compiling expanded args. */
 
     if (numWords < 3 || numWords > UINT_MAX) {
 	return TCL_ERROR;
@@ -1451,6 +1452,7 @@ TclCompileLreplaceCmd(
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *listToken, *firstToken, *lastToken, *tokenPtr;
     Tcl_Size i, numWords = parsePtr->numWords;
+    /* TODO: Consider support for compiling expanded args. */
 
     if (numWords < 4 || numWords > UINT_MAX) {
 	return TCL_ERROR;
@@ -1478,6 +1480,230 @@ TclCompileLreplaceCmd(
      */
     OP41(			LREPLACE, numWords - 1,
 					TCL_LREPLACE_END_IS_LAST);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclCompileLeditCmd --
+ *
+ *	How to compile the "ledit" command.  Generally very similar in concept
+ *	to TclCompileLreplaceCmd, except for the variable handling.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+TclCompileLeditCmd(
+    Tcl_Interp *interp,		/* Tcl interpreter for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the
+				 * command. */
+    TCL_UNUSED(Command *),
+    CompileEnv *envPtr)		/* Holds the resulting instructions. */
+{
+    DefineLineInformation;	/* TIP #280 */
+    Tcl_Size numWords = parsePtr->numWords, i;
+    /* TODO: Consider support for compiling expanded args. */
+    if (numWords < 4) {
+	return TCL_ERROR;
+    }
+    Tcl_Token *varTokenPtr = TokenAfter(parsePtr->tokenPtr);
+
+    /*
+     * Parse/push the variable name. Pushes 0, 1 or 2 words.
+     */
+
+    Tcl_LVTIndex varIdx;
+    int isScalar;
+    PushVarNameWord(varTokenPtr, 0, &varIdx, &isScalar, 1);
+    // Stack: varWords...
+
+    /*
+     * Push all remaining words; there's definitely at least two.
+     */
+
+    Tcl_Token *tokenPtr = TokenAfter(varTokenPtr);
+    for (i=2; i<numWords; i++, tokenPtr=TokenAfter(tokenPtr)) {
+    	PUSH_TOKEN(		tokenPtr, i);
+    }
+
+    // Stack: varWords... idx1 idx2 values...
+    //        {len=[0-2]} { len=numWords-2  }
+
+    /*
+     * Read the variable. This requires us to copy the varWords first (if there
+     * are any).
+     */
+
+    if (isScalar) {
+	if (varIdx < 0) {
+	    OP4(		OVER, numWords - 2);
+	    OP(			LOAD_STK);
+	} else {
+	    OP4(		LOAD_SCALAR, varIdx);
+	}
+    } else {
+	if (varIdx < 0) {
+	    OP4(		OVER, numWords - 1);
+	    OP4(		OVER, numWords - 1);
+	    OP(			LOAD_ARRAY_STK);
+	} else {
+	    OP4(		OVER, numWords - 2);
+	    OP4(		LOAD_ARRAY, varIdx);
+	}
+    }
+
+    /*
+     * Move the value read from the variable to the correct stack location for
+     * the LREPLACE instruction.
+     */
+
+    // TODO: Consider a ROLL operation, as in Postscript
+    // Stack: varWords... idx1 idx2 values... listValue
+    OP4(			REVERSE, numWords - 1);
+    // Stack: varWords... listValue values... idx2 idx1
+    if (numWords > 4) {
+	OP4(			REVERSE, numWords - 2);
+    } else {
+	OP(			SWAP);
+    }
+    // Stack: varWords... listValue idx1 idx2 values...
+
+    /*
+     * First operand is count of arguments.
+     * Second operand is bitmask
+     *  TCL_LREPLACE_END_IS_LAST - end refers to last element
+     */
+    OP41(			LREPLACE, numWords - 1,
+					TCL_LREPLACE_END_IS_LAST);
+    // Stack: varWords... listValue
+
+    /*
+     * Write back the updated value. We've prepped the stack exactly right for
+     * this to be something we can Just Do at this point.
+     */
+
+    if (isScalar) {
+	if (varIdx < 0) {
+	    OP(			STORE_STK);
+	} else {
+	    OP4(		STORE_SCALAR, varIdx);
+	}
+    } else {
+	if (varIdx < 0) {
+	    OP(			STORE_ARRAY_STK);
+	} else {
+	    OP4(		STORE_ARRAY, varIdx);
+	}
+    }
+
+    // Stack: listValue
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclCompileLpopCmd --
+ *
+ *	How to compile the "lpop" command. We only bother with the case
+ *	where there is a single constant index (or no index) and we're inside
+ *	a procedure-like context.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+TclCompileLpopCmd(
+    Tcl_Interp *interp,		/* Tcl interpreter for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the
+				 * command. */
+    TCL_UNUSED(Command *),
+    CompileEnv *envPtr)		/* Holds the resulting instructions. */
+{
+    DefineLineInformation;	/* TIP #280 */
+    Tcl_Size numWords = parsePtr->numWords;
+    /* TODO: Consider support for compiling expanded args. */
+
+    // TODO: Figure out all the stack cases here to allow full variable access
+    // TODO: Find way to handle multiple indices
+    // (extra opcode for TclLsetFlat with NULL value?)
+
+    if (numWords < 2 || numWords > 3) {
+	return TCL_ERROR;
+    }
+
+    Tcl_Token *varTokenPtr = TokenAfter(parsePtr->tokenPtr);
+    Tcl_LVTIndex varIdx = LocalScalarFromToken(varTokenPtr, envPtr);
+    if (varIdx < 0) {
+	// Give up if we pushed any words; makes stack computations tractable
+	return TCL_ERROR;
+    }
+
+    Tcl_Token *idxTokenPtr = NULL;
+    int idx = TCL_INDEX_END, isSimpleIndex = 1;
+    if (numWords == 3) {
+	idxTokenPtr = TokenAfter(varTokenPtr);
+	if (TclGetIndexFromToken(idxTokenPtr, TCL_INDEX_NONE,
+		TCL_INDEX_NONE, &idx) != TCL_OK) {
+	    /*
+	     * Index isn't simple (e.g., it's a variable read) and could have
+	     * side effects. Need a much more conservative instruction sequence
+	     * to get order of trace-observable operations right.
+	     */
+	    isSimpleIndex = 0;
+	}
+    }
+
+    if (!isSimpleIndex) {
+	/*
+	 * Push the index token (which may have side effects!) before reading
+	 * the variable, which is "internal" to [lpop].
+	 */
+
+	PUSH_TOKEN(		idxTokenPtr, 2);
+	OP4(			LOAD_SCALAR, varIdx);
+	// Stack: index list
+	OP(			SWAP);
+	// Stack: list index
+	OP(			DUP);
+	// Stack: list index index
+	OP4(			OVER, 2);
+	// Stack: list index index list
+	OP(			SWAP);
+	// Stack: list index list index
+	OP(			LIST_INDEX);
+	// Stack: list index value
+	OP4(			REVERSE, 3);
+	// Stack: value index list
+	OP(			SWAP);
+    } else {
+	/*
+	 * Can use this much abbreviated form here. In particular, we have a
+	 * parsed index and we can push its value at any time we want,
+	 * including exactly once after reading the variable...
+	 */
+
+	OP4(			LOAD_SCALAR, varIdx);
+	OP(			DUP);
+	OP4(			LIST_INDEX_IMM, idx);
+	// Stack: list value
+	OP(			SWAP);
+	if (idxTokenPtr) {
+	    PUSH_SIMPLE_TOKEN(	idxTokenPtr);
+	} else {
+	    PUSH(		"end");
+	}
+    }
+    // Stack: value list index
+    OP(				DUP);
+    // Stack: value list index index
+    OP41(			LREPLACE, 3, TCL_LREPLACE_END_IS_LAST
+					| TCL_LREPLACE_NEED_IN_RANGE);
+    // Stack: value newList
+    OP4(			STORE_SCALAR, varIdx);
+    OP(				POP);
+    // Stack: value
+
     return TCL_OK;
 }
 
