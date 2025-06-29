@@ -92,8 +92,6 @@ namespace eval tcl::Pkg {}
 
 
 # Setup the unknown package handler
-
-
 if {[interp issafe]} {
     package unknown {::tcl::tm::UnknownHandler ::tclPkgUnknown}
 } else {
@@ -106,18 +104,6 @@ if {[interp issafe]} {
     } else {
 	package unknown {::tcl::tm::UnknownHandler ::tclPkgUnknown}
     }
-
-    # Set up the 'clock' ensemble
-
-    apply {{} {
-	set cmdmap [dict create]
-	foreach cmd {add clicks format microseconds milliseconds scan seconds} {
-	    dict set cmdmap $cmd ::tcl::clock::$cmd
-	}
-	namespace inscope ::tcl::clock [list namespace ensemble create -command \
-	    ::clock -map $cmdmap]
-	::tcl::unsupported::clock::configure -init-complete
-    }}
 }
 
 # Conditionalize for presence of exec.
