@@ -3197,6 +3197,7 @@ MODULE_SCOPE Tcl_ObjCmdProc TclNRSubstObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRSwitchObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRTryObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRUplevelObjCmd;
+MODULE_SCOPE Tcl_NRPostProc TclUplevelCallback;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRWhileObjCmd;
 
 MODULE_SCOPE Tcl_NRPostProc TclNRForIterCallback;
@@ -3208,6 +3209,7 @@ MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldmObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldToObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRInvoke;
+MODULE_SCOPE Tcl_NRPostProc TclNRPostInvoke;
 MODULE_SCOPE Tcl_NRPostProc TclNRReleaseValues;
 
 MODULE_SCOPE void	TclSetTailcall(Tcl_Interp *interp,
@@ -3940,6 +3942,7 @@ MODULE_SCOPE CompileProc TclCompileTailcallCmd;
 MODULE_SCOPE CompileProc TclCompileThrowCmd;
 MODULE_SCOPE CompileProc TclCompileTryCmd;
 MODULE_SCOPE CompileProc TclCompileUnsetCmd;
+MODULE_SCOPE CompileProc TclCompileUplevelCmd;
 MODULE_SCOPE CompileProc TclCompileUpvarCmd;
 MODULE_SCOPE CompileProc TclCompileVariableCmd;
 MODULE_SCOPE CompileProc TclCompileWhileCmd;
