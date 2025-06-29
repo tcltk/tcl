@@ -2010,7 +2010,8 @@ enum PushVarNameFlags {
  */
 enum Lreplace4Flags {
     TCL_LREPLACE_END_IS_LAST = 1,	/* "end" refers to last element */
-    TCL_LREPLACE_SINGLE_INDEX = 2	/* Second index absent (pure insert) */
+    TCL_LREPLACE_SINGLE_INDEX = 2,	/* Second index absent (pure insert) */
+    TCL_LREPLACE_NEED_IN_RANGE = 4	/* First index must resolve to real list index */
 };
 
 /*
