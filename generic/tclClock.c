@@ -19,6 +19,9 @@
 #include "tclStrIdxTree.h"
 #include "tclDate.h"
 
+/* The namespace containing the [clock] internals. */
+#define TCL_CLOCK_NS	"::tcl::clock"
+
 /*
  * Table of the days in each month, leap and common years
  */
@@ -183,15 +186,8 @@ void
 TclClockInit(
     Tcl_Interp *interp)		/* Tcl interpreter */
 {
-    const struct ClockCommand *clockCmdPtr;
-    char cmdName[50];		/* Buffer large enough to hold the string
-				 *::tcl::clock::GetJulianDayFromEraYearMonthDay
-				 * plus a terminating NUL. */
-    Command *cmdPtr;
-    ClockClientData *data;
-    int i;
-
     static int initialized = 0;	/* global clock engine initialized (in process) */
+
     /*
      * Register handler to finalize clock on exit.
      */
@@ -213,9 +209,10 @@ TclClockInit(
      * Create the client data, which is a refcounted literal pool.
      */
 
-    data = (ClockClientData *)Tcl_Alloc(sizeof(ClockClientData));
+    ClockClientData *data = (ClockClientData *)Tcl_Alloc(sizeof(ClockClientData));
     data->refCount = 0;
     data->literals = (Tcl_Obj **)Tcl_Alloc(LIT__END * sizeof(Tcl_Obj*));
+    int i;
     for (i = 0; i < LIT__END; ++i) {
 	TclInitObjRef(data->literals[i], Tcl_NewStringObj(
 		Literals[i], TCL_AUTO_LENGTH));
@@ -265,25 +262,20 @@ TclClockInit(
      * Install the commands.
      */
 
-#define TCL_CLOCK_PREFIX	"::tcl::clock::"
-#define TCL_CLOCK_PREFIX_LEN	(sizeof(TCL_CLOCK_PREFIX) - 1)
-
-    memcpy(cmdName, TCL_CLOCK_PREFIX, TCL_CLOCK_PREFIX_LEN);
+    Tcl_Namespace *nsPtr = Tcl_FindNamespace(interp, TCL_CLOCK_NS, NULL, 0);
+    const struct ClockCommand *clockCmdPtr;
     for (clockCmdPtr=clockCommands ; clockCmdPtr->name!=NULL ; clockCmdPtr++) {
 	void *clientData = NULL;
-
-	strcpy(cmdName + TCL_CLOCK_PREFIX_LEN, clockCmdPtr->name);
 	if (clockCmdPtr->useClientData) {
 	    clientData = data;
 	    data->refCount++;
 	}
-	cmdPtr = (Command *)Tcl_CreateObjCommand(interp, cmdName,
-		clockCmdPtr->objCmdProc, clientData,
+	Command *cmdPtr = (Command *)TclCreateObjCommandInNs(interp,
+		clockCmdPtr->name, nsPtr, clockCmdPtr->objCmdProc, clientData,
 		clientData ? ClockDeleteCmdProc : NULL);
 	cmdPtr->compileProc = clockCmdPtr->compileProc;
     }
-    cmdPtr = (Command *) Tcl_CreateObjCommand(interp,
-	    "::tcl::unsupported::clock::configure",
+    Tcl_CreateObjCommand(interp, "::tcl::unsupported::clock::configure",
 	    ClockConfigureObjCmd, data, ClockDeleteCmdProc);
     data->refCount++;
 }
