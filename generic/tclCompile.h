@@ -935,6 +935,7 @@ enum TclInstruction {
     INST_TCLOO_NEXT_LIST,
     INST_TCLOO_NEXT_CLASS_LIST,
     INST_ARITH_SERIES,
+    INST_UPLEVEL,
 
     /* The last opcode */
     LAST_INST_OPCODE

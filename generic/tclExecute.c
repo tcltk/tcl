@@ -2745,6 +2745,41 @@ TEBCresume(
 	goto processExceptionReturn;
     }
 
+    case INST_UPLEVEL: {
+	Tcl_Obj *levelObj = OBJ_UNDER_TOS;
+	Tcl_Obj *scriptObj = OBJ_AT_TOS;
+	CallFrame *framePtr;
+	CmdFrame *invoker = NULL;
+	int word = 0;
+
+	TRACE(("\"%.30s\" \"%.30s\" => ", O2S(levelObj), O2S(scriptObj)));
+	if (TclObjGetFrame(interp, levelObj, &framePtr) == -1) {
+	    TRACE_ERROR(interp);
+	    goto gotError;
+	}
+	bcFramePtr->data.tebc.pc = (char *) pc;
+	iPtr->cmdFramePtr = bcFramePtr;
+	TclArgumentGet(interp, scriptObj, &invoker, &word);
+	DECACHE_STACK_INFO();
+	pc++;
+	cleanup = 2;
+	TEBC_YIELD();
+#ifdef TCL_COMPILE_DEBUG
+	TRACE_APPEND(("INVOKING...\n"));
+	if (tclTraceExec >= TCL_TRACE_BYTECODE_EXEC_COMMANDS && !traceInstructions) {
+	    fprintf(stdout, "%" SIZEd ": (%" SIZEd ") invoking [%.30s] in frame \"%.30s\"\n",
+		    iPtr->numLevels, PC_REL, TclGetString(scriptObj), TclGetString(levelObj));
+	    fflush(stdout);
+	}
+#endif // TCL_COMPILE_DEBUG
+	TclNRAddCallback(interp, TclUplevelCallback, iPtr->varFramePtr,
+		NULL, NULL, NULL);
+	TclNRAddCallback(interp, TclNRPostInvoke, NULL, NULL, NULL, NULL);
+	iPtr->varFramePtr = framePtr;
+	iPtr->numLevels++;
+	return TclNREvalObjEx(interp, scriptObj, 0, invoker, word);
+    }
+
     case INST_DONE:
 	if (tosPtr > initTosPtr) {
 	    if ((curEvalFlags & TCL_EVAL_DISCARD_RESULT) && (result == TCL_OK)) {
