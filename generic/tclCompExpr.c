@@ -721,7 +721,7 @@ ParseExpr(
 		 * is a legal literal boolean value, we accept that as well.
 		 */
 
-		if (start[scanned+TclParseAllWhiteSpace(
+		if (literal && start[scanned+TclParseAllWhiteSpace(
 			start+scanned, numBytes-scanned)] == '(') {
 		    lexeme = FUNCTION;
 
@@ -733,7 +733,7 @@ ParseExpr(
 		     */
 
 		    Tcl_ListObjAppendElement(NULL, funcList, literal);
-		} else if (Tcl_GetBooleanFromObj(NULL,literal,&b) == TCL_OK) {
+		} else if (literal && Tcl_GetBooleanFromObj(NULL,literal,&b) == TCL_OK) {
 		    lexeme = BOOL_LIT;
 		} else {
 		    /*
@@ -748,7 +748,7 @@ ParseExpr(
 				start + scanned2, numBytes - scanned2, &lexeme,
 				NULL);
 		    } while (lexeme == COMMENT);
-		    if (lexeme == OPEN_PAREN) {
+		    if (literal && lexeme == OPEN_PAREN) {
 			/*
 			 * Actually a function call, but with obscuring
 			 * comments.  Skip to the start of the parentheses.
@@ -762,7 +762,9 @@ ParseExpr(
 			break;
 		    }
 
-		    Tcl_DecrRefCount(literal);
+		    if (literal) {
+			Tcl_DecrRefCount(literal);
+		    }
 		    msg = Tcl_ObjPrintf("invalid bareword \"%.*s%s\"",
 			    (int)((scanned < limit) ? scanned : limit - 3), start,
 			    (scanned < limit) ? "" : "...");
@@ -2085,7 +2087,10 @@ ParseLexeme(
 	number:
 	    *lexemePtr = NUMBER;
 	    if (literalPtr) {
-		TclInitStringRep(literal, start, end-start);
+		if(!TclAttemptInitStringRep(literal, start, end-start)) {
+		    Tcl_DecrRefCount(literal);
+		    literal = NULL;
+		}
 		*literalPtr = literal;
 	    } else {
 		Tcl_DecrRefCount(literal);

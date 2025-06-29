@@ -592,11 +592,11 @@ TclParseNumber(
 	     *   example: 5___6
 	     */
 	    for (before = (p - 1);
-		 (before && *before == '_');
-		 before = (before > p ? (before - 1) : NULL));
+		    (before && *before == '_');
+		    before = (before > p ? (before - 1) : NULL));
 	    for (after = (p + 1);
-		 (after && *after && *after == '_');
-		 after = (*after && *after == '_') ? (after + 1) : NULL);
+		    (after && *after && *after == '_');
+		    after = (*after && *after == '_') ? (after + 1) : NULL);
 
 	    switch (state) {
 	    case ZERO_B:
@@ -672,7 +672,7 @@ TclParseNumber(
 		state = SIGNUM;
 		break;
 	    }
-	    /* FALLTHROUGH */
+	    TCL_FALLTHROUGH();
 
 	case SIGNUM:
 	    /*
@@ -768,7 +768,7 @@ TclParseNumber(
 	    acceptState = state;
 	    acceptPoint = p;
 	    acceptLen = len;
-	    /* FALLTHROUGH */
+	    TCL_FALLTHROUGH();
 	case ZERO_O:
 	zeroo:
 	    if (c == '0') {
@@ -847,7 +847,7 @@ TclParseNumber(
 	    acceptState = state;
 	    acceptPoint = p;
 	    acceptLen = len;
-	    /* FALLTHROUGH */
+	    TCL_FALLTHROUGH();
 
 	case ZERO_X:
 	zerox:
@@ -911,7 +911,7 @@ TclParseNumber(
 	    acceptState = state;
 	    acceptPoint = p;
 	    acceptLen = len;
-	    /* FALLTHRU */
+	    TCL_FALLTHROUGH();
 	case ZERO_B:
 	zerob:
 	    if (c == '0') {
@@ -972,7 +972,7 @@ TclParseNumber(
 	    }
 	    state = DECIMAL;
 	    flags |= TCL_PARSE_INTEGER_ONLY;
-	    /* FALLTHROUGH */
+	    TCL_FALLTHROUGH();
 
 	case DECIMAL:
 	    /*
@@ -1024,7 +1024,7 @@ TclParseNumber(
 		state = EXPONENT_START;
 		break;
 	    }
-	    /* FALLTHROUGH */
+	    TCL_FALLTHROUGH();
 
 	case LEADING_RADIX_POINT:
 	    if (c == '0') {
@@ -1066,7 +1066,7 @@ TclParseNumber(
 		state = EXPONENT_SIGNUM;
 		break;
 	    }
-	    /* FALLTHROUGH */
+	    TCL_FALLTHROUGH();
 
 	case EXPONENT_SIGNUM:
 	    /*
@@ -1186,7 +1186,7 @@ TclParseNumber(
 		state = sNANFINISH;
 		break;
 	    }
-	    /* FALLTHROUGH */
+	    TCL_FALLTHROUGH();
 	case sNANPAREN:
 	    if (TclIsSpaceProcM(c)) {
 		break;
@@ -1515,7 +1515,7 @@ TclParseNumber(
 #endif
 	case INITIAL:
 	    /* This case only to silence compiler warning. */
-	    Tcl_Panic("TclParseNumber: state INITIAL can't happen here");
+	    TCL_UNREACHABLE();
 	}
     }
 
@@ -2312,22 +2312,28 @@ NormalizeRightward(
     Tcl_WideUInt w = *wPtr;
 
     if (!(w & (Tcl_WideUInt) 0xFFFFFFFF)) {
-	w >>= 32; rv += 32;
+	w >>= 32;
+	rv += 32;
     }
     if (!(w & (Tcl_WideUInt) 0xFFFF)) {
-	w >>= 16; rv += 16;
+	w >>= 16;
+	rv += 16;
     }
     if (!(w & (Tcl_WideUInt) 0xFF)) {
-	w >>= 8; rv += 8;
+	w >>= 8;
+	rv += 8;
     }
     if (!(w & (Tcl_WideUInt) 0xF)) {
-	w >>= 4; rv += 4;
+	w >>= 4;
+	rv += 4;
     }
     if (!(w & 0x3)) {
-	w >>= 2; rv += 2;
+	w >>= 2;
+	rv += 2;
     }
     if (!(w & 0x1)) {
-	w >>= 1; ++rv;
+	w >>= 1;
+	++rv;
     }
     *wPtr = w;
     return rv;
@@ -3175,7 +3181,9 @@ ShorteningInt64Conversion(
 
     if (b < S) {
 	b = 10 * b;
-	++m2plus; ++m2minus; ++m5;
+	++m2plus;
+	++m2minus;
+	++m5;
 	ilim = ilim1;
 	--k;
     }
@@ -3554,7 +3562,9 @@ ShorteningBignumConversionPowD(
 
     if ((err == MP_OKAY) && (b.used <= sd)) {
 	err = mp_mul_d(&b, 10, &b);
-	++m2plus; ++m2minus; ++m5;
+	++m2plus;
+	++m2minus;
+	++m5;
 	ilim = ilim1;
 	--k;
     }
@@ -3594,7 +3604,8 @@ ShorteningBignumConversionPowD(
 	    if (b.used > sd+1 || digit >= 10) {
 		Tcl_Panic("wrong digit!");
 	    }
-	    --b.used; mp_clamp(&b);
+	    --b.used;
+	    mp_clamp(&b);
 	}
 
 	/*
@@ -4570,9 +4581,11 @@ TclDoubleDigits(
 	 */
 
 	if (b2 >= s2 && s2 > 0) {
-	    b2 -= s2; s2 = 0;
+	    b2 -= s2;
+	    s2 = 0;
 	} else if (s2 >= b2 && b2 > 0) {
-	    s2 -= b2; b2 = 0;
+	    s2 -= b2;
+	    b2 = 0;
 	}
 
 	if (s5+1 < N_LOG2POW5 && s2+1 + log2pow5[s5+1] < 64) {

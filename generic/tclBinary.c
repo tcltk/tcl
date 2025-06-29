@@ -770,12 +770,9 @@ TclAppendBytesToByteArray(
     needed = byteArrayPtr->used + len;
     if (needed > byteArrayPtr->allocated) {
 	Tcl_Size newCapacity;
-	byteArrayPtr =
-	    (ByteArray *)TclReallocElemsEx(byteArrayPtr,
-					   needed,
-					   1,
-					   offsetof(ByteArray, bytes),
-					   &newCapacity);
+	byteArrayPtr = (ByteArray *)
+		TclReallocElemsEx(byteArrayPtr, needed, 1,
+		offsetof(ByteArray, bytes), &newCapacity);
 	byteArrayPtr->allocated = newCapacity;
 	SET_BYTEARRAY(irPtr, byteArrayPtr);
     }
@@ -1296,22 +1293,22 @@ BinaryFormatCmd(
     Tcl_SetObjResult(interp, resultPtr);
     return TCL_OK;
 
- badValue:
+  badValue:
     Tcl_ResetResult(interp);
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "expected %s string but got \"%s\" instead",
 	    errorString, errorValue));
     return TCL_ERROR;
 
- badCount:
+  badCount:
     errorString = "missing count for \"@\" field specifier";
     goto error;
 
- badIndex:
+  badIndex:
     errorString = "not enough arguments for all format specifiers";
     goto error;
 
- badField:
+  badField:
     {
 	Tcl_UniChar ch = 0;
 	char buf[5] = "";
@@ -1323,7 +1320,7 @@ BinaryFormatCmd(
 	return TCL_ERROR;
     }
 
- error:
+  error:
     Tcl_SetObjResult(interp, Tcl_NewStringObj(errorString, -1));
     return TCL_ERROR;
 }
@@ -1678,21 +1675,21 @@ BinaryScanCmd(
      * Set the result to the last position of the cursor.
      */
 
- done:
+  done:
     Tcl_SetObjResult(interp, Tcl_NewWideIntObj(arg - 3));
     DeleteScanNumberCache(numberCachePtr);
 
     return TCL_OK;
 
- badCount:
+  badCount:
     errorString = "missing count for \"@\" field specifier";
     goto error;
 
- badIndex:
+  badIndex:
     errorString = "not enough arguments for all format specifiers";
     goto error;
 
- badField:
+  badField:
     {
 	Tcl_UniChar ch = 0;
 	char buf[5] = "";
@@ -1704,7 +1701,7 @@ BinaryScanCmd(
 	return TCL_ERROR;
     }
 
- error:
+  error:
     Tcl_SetObjResult(interp, Tcl_NewStringObj(errorString, -1));
     return TCL_ERROR;
 }
@@ -2505,6 +2502,8 @@ BinaryDecodeHex(
 	case OPT_STRICT:
 	    strict = 1;
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
 
@@ -2649,6 +2648,8 @@ BinaryEncode64(
 		wrapchar = TclGetStringFromObj(objv[i + 1], &wrapcharlen);
 	    }
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
     if (wrapcharlen == 0) {
@@ -2736,13 +2737,13 @@ BinaryEncodeUu(
 {
     Tcl_Obj *resultObj;
     unsigned char *data, *start, *cursor;
-    int i, bits, index;
+    int i, bits;
     unsigned int n;
     int lineLength = 61;
     const unsigned char SingleNewline[] = { UCHAR('\n') };
     const unsigned char *wrapchar = SingleNewline;
     Tcl_Size j, rawLength, offset, count = 0, wrapcharlen = sizeof(SingleNewline);
-    enum { OPT_MAXLEN, OPT_WRAPCHAR };
+    enum { OPT_MAXLEN, OPT_WRAPCHAR } index;
     static const char *const optStrings[] = { "-maxlen", "-wrapchar", NULL };
 
     if (objc < 2 || objc % 2 != 0) {
@@ -2773,34 +2774,32 @@ BinaryEncodeUu(
 	case OPT_WRAPCHAR:
 	    wrapchar = (const unsigned char *)TclGetStringFromObj(
 		    objv[i + 1], &wrapcharlen);
-	    {
-		const unsigned char *p = wrapchar;
-		Tcl_Size numBytes = wrapcharlen;
+	    const unsigned char *p = wrapchar;
+	    Tcl_Size numBytes = wrapcharlen;
 
-		while (numBytes) {
-		    switch (*p) {
-			case '\t':
-			case '\v':
-			case '\f':
-			case '\r':
-			    p++; numBytes--;
-			    continue;
-			case '\n':
-			    numBytes--;
-			    break;
-			default:
-			badwrap:
-			    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-				    "invalid wrapchar; will defeat decoding",
-				    -1));
-			    Tcl_SetErrorCode(interp, "TCL", "BINARY",
-				    "ENCODE", "WRAPCHAR", (char *)NULL);
-			    return TCL_ERROR;
-		    }
-		}
-		if (numBytes) {
+	    while (numBytes) {
+		switch (*p) {
+		case '\t':
+		case '\v':
+		case '\f':
+		case '\r':
+		    p++;
+		    numBytes--;
+		    continue;
+		case '\n':
+		    numBytes--;
+		    break;
+		default:
 		    goto badwrap;
 		}
+	    }
+	    if (numBytes) {
+	    badwrap:
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"invalid wrapchar; will defeat decoding", -1));
+		Tcl_SetErrorCode(interp, "TCL", "BINARY",
+			"ENCODE", "WRAPCHAR", (char *)NULL);
+		return TCL_ERROR;
 	    }
 	    break;
 	}
@@ -2909,6 +2908,8 @@ BinaryDecodeUu(
 	case OPT_STRICT:
 	    strict = 1;
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
 
@@ -3084,6 +3085,8 @@ BinaryDecode64(
 	case OPT_STRICT:
 	    strict = 1;
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
 

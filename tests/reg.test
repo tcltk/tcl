@@ -1195,25 +1195,25 @@ test reg-33.22 {constraint fixes} {
     regexp {(^(?!aa)(?!bb)(?!cc))+} {dd x}
 } 1
 
-test reg-33.23 {} {
+test reg-33.23 {constraint edge cases} {
     regexp {abcd(\m)+xyz} x
 } 0
-test reg-33.24 {} {
+test reg-33.24 {constraint edge cases} {
     regexp {abcd(\m)+xyz} a
 } 0
-test reg-33.25 {} {
+test reg-33.25 {constraint edge cases} {
     regexp {^abcd*(((((^(a c(e?d)a+|)+|)+|)+|)+|a)+|)} x
 } 0
-test reg-33.26 {} {
+test reg-33.26 {constraint edge cases} {
     regexp {a^(^)bcd*xy(((((($a+|)+|)+|)+$|)+|)+|)^$} x
 } 0
-test reg-33.27 {} {
+test reg-33.27 {constraint edge cases} {
     regexp {xyz(\Y\Y)+} x
 } 0
-test reg-33.28 {} {
+test reg-33.28 {constraint edge cases} {
     regexp {x|(?:\M)+} x
 } 1
-test reg-33.29 {} {
+test reg-33.29 {constraint edge cases} {
     # This is near the limits of the RE engine
     regexp [string repeat x*y*z* 480] x
 } 1

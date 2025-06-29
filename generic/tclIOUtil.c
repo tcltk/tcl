@@ -255,8 +255,7 @@ Tcl_Stat(
 	Tcl_WideInt tmp1, tmp2, tmp3 = 0;
 
 # define OUT_OF_RANGE(x) \
-	(((Tcl_WideInt)(x)) < LONG_MIN || \
-	 ((Tcl_WideInt)(x)) > LONG_MAX)
+	(((Tcl_WideInt)(x)) < LONG_MIN || ((Tcl_WideInt)(x)) > LONG_MAX)
 # define OUT_OF_URANGE(x) \
 	(((Tcl_WideUInt)(x)) > ((Tcl_WideUInt)ULONG_MAX))
 
@@ -3094,7 +3093,7 @@ Tcl_FSLoadFile(
 #endif
 
 static int
-skipUnlink(
+SkipUnlink(
     Tcl_Obj *shlibFile)
 {
     /*
@@ -3345,7 +3344,7 @@ Tcl_LoadFile(
      * and it avoids leaving the copy laying around after exit.
      */
 
-    if (!skipUnlink(copyToPtr) &&
+    if (!SkipUnlink(copyToPtr) &&
 	    (Tcl_FSDeleteFile(copyToPtr) == TCL_OK)) {
 	Tcl_DecrRefCount(copyToPtr);
 

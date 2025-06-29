@@ -81,21 +81,22 @@ typedef struct {
  *				  an internal trace.
  * The flag 'TCL_TRACE_DESTROYED' may also be used in command execution traces.
  */
-
-#define TCL_TRACE_ENTER_DURING_EXEC	4
-#define TCL_TRACE_LEAVE_DURING_EXEC	8
-#define TCL_TRACE_ANY_EXEC		15
-#define TCL_TRACE_EXEC_IN_PROGRESS	0x10
-#define TCL_TRACE_EXEC_DIRECT		0x20
+enum TraceCommandInfoFlags {
+    TCL_TRACE_ENTER_DURING_EXEC = TCL_TRACE_ENTER_EXEC << 2,
+    TCL_TRACE_LEAVE_DURING_EXEC = TCL_TRACE_LEAVE_EXEC << 2,
+    TCL_TRACE_ANY_EXEC = 15,
+    TCL_TRACE_EXEC_IN_PROGRESS = 0x10,
+    TCL_TRACE_EXEC_DIRECT = 0x20
+};
 
 /*
  * Forward declarations for functions defined in this file:
  */
 
-enum traceOptionsEnum {
+typedef enum TraceOptions {
     TRACE_ADD, TRACE_INFO, TRACE_REMOVE
-};
-typedef int (Tcl_TraceTypeObjCmd)(Tcl_Interp *interp, enum traceOptionsEnum optionIndex,
+} TraceOptions;
+typedef int (Tcl_TraceTypeObjCmd)(Tcl_Interp *interp, TraceOptions optionIndex,
 	Tcl_Size objc, Tcl_Obj *const objv[]);
 
 static Tcl_TraceTypeObjCmd TraceVariableObjCmd;
@@ -196,7 +197,7 @@ Tcl_TraceObjCmd(
 	"add", "info", "remove",
 	NULL
     };
-    enum traceOptionsEnum optionIndex;
+    TraceOptions optionIndex;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "option ?arg ...?");
@@ -250,9 +251,9 @@ Tcl_TraceObjCmd(
 	    return TCL_ERROR;
 	}
 	return traceSubCmds[typeIndex](interp, optionIndex, objc, objv);
-	break;
     }
-
+    default:
+	TCL_UNREACHABLE();
     }
     return TCL_OK;
 }
@@ -279,7 +280,7 @@ Tcl_TraceObjCmd(
 static int
 TraceExecutionObjCmd(
     Tcl_Interp *interp,		/* Current interpreter. */
-    enum traceOptionsEnum optionIndex, /* Add, info or remove */
+    TraceOptions optionIndex,	/* Add, info or remove */
     Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
@@ -344,6 +345,8 @@ TraceExecutionObjCmd(
 	    case TRACE_EXEC_LEAVE_STEP:
 		flags |= TCL_TRACE_LEAVE_DURING_EXEC;
 		break;
+	    default:
+		TCL_UNREACHABLE();
 	    }
 	}
 	command = TclGetStringFromObj(objv[5], &length);
@@ -500,6 +503,8 @@ TraceExecutionObjCmd(
 	Tcl_SetObjResult(interp, resultListPtr);
 	break;
     }
+    default:
+	TCL_UNREACHABLE();
     }
     return TCL_OK;
 }
@@ -526,7 +531,7 @@ TraceExecutionObjCmd(
 static int
 TraceCommandObjCmd(
     Tcl_Interp *interp,		/* Current interpreter. */
-    enum traceOptionsEnum optionIndex, /* Add, info or remove */
+    TraceOptions optionIndex,	/* Add, info or remove */
     Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
@@ -580,6 +585,8 @@ TraceCommandObjCmd(
 	    case TRACE_CMD_DELETE:
 		flags |= TCL_TRACE_DELETE;
 		break;
+	    default:
+		TCL_UNREACHABLE();
 	    }
 	}
 
@@ -694,6 +701,8 @@ TraceCommandObjCmd(
 	Tcl_SetObjResult(interp, resultListPtr);
 	break;
     }
+    default:
+	TCL_UNREACHABLE();
     }
     return TCL_OK;
 }
@@ -720,7 +729,7 @@ TraceCommandObjCmd(
 static int
 TraceVariableObjCmd(
     Tcl_Interp *interp,		/* Current interpreter. */
-    enum traceOptionsEnum optionIndex, /* Add, info or remove */
+    TraceOptions optionIndex,	/* Add, info or remove */
     Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
@@ -785,6 +794,8 @@ TraceVariableObjCmd(
 	    case TRACE_VAR_WRITE:
 		flags |= TCL_TRACE_WRITES;
 		break;
+	    default:
+		TCL_UNREACHABLE();
 	    }
 	}
 	command = TclGetStringFromObj(objv[5], &length);
@@ -878,6 +889,8 @@ TraceVariableObjCmd(
 	Tcl_SetObjResult(interp, resultListPtr);
 	break;
     }
+    default:
+	TCL_UNREACHABLE();
     }
     return TCL_OK;
 }
@@ -1794,8 +1807,8 @@ TraceExecutionProc(
 	    memcpy(tcmdPtr->startCmd, command, len);
 	    tcmdPtr->refCount++;
 	    tcmdPtr->stepTrace = Tcl_CreateObjTrace2(interp, 0,
-		   (tcmdPtr->flags & TCL_TRACE_ANY_EXEC) >> 2,
-		   TraceExecutionProc, tcmdPtr, CommandObjTraceDeleted);
+		    (tcmdPtr->flags & TCL_TRACE_ANY_EXEC) >> 2,
+		    TraceExecutionProc, tcmdPtr, CommandObjTraceDeleted);
 	}
     }
     if (flags & TCL_TRACE_DESTROYED) {
@@ -1985,7 +1998,7 @@ typedef struct {
 } TraceWrapperInfo;
 
 static int
-traceWrapperProc(
+TraceWrapperProc(
     void *clientData,
     Tcl_Interp *interp,
     Tcl_Size level,
@@ -1998,11 +2011,12 @@ traceWrapperProc(
     if (objc > INT_MAX || objc < 0) {
 	objc = -1; /* Signal Tcl_CmdObjTraceProc that objc is out of range */
     }
-    return info->proc(info->clientData, interp, (int)level, command, commandInfo, (int)objc, objv);
+    return info->proc(info->clientData, interp, (int)level, command, commandInfo,
+	    (int)objc, objv);
 }
 
 static void
-traceWrapperDelProc(
+TraceWrapperDelProc(
     void *clientData)
 {
     TraceWrapperInfo *info = (TraceWrapperInfo *)clientData;
@@ -2028,8 +2042,8 @@ Tcl_CreateObjTrace(
     info->delProc = delProc;
     info->clientData = clientData;
     return Tcl_CreateObjTrace2(interp, level, flags,
-	    (proc ? traceWrapperProc : NULL),
-	    info, traceWrapperDelProc);
+	    (proc ? TraceWrapperProc : NULL),
+	    info, TraceWrapperDelProc);
 }
 
 Tcl_Trace
@@ -2804,7 +2818,7 @@ Tcl_UntraceVar2(
      */
 
     flagMask = TCL_TRACE_READS | TCL_TRACE_WRITES | TCL_TRACE_UNSETS |
-	  TCL_TRACE_ARRAY | TCL_TRACE_RESULT_DYNAMIC | TCL_TRACE_RESULT_OBJECT;
+	    TCL_TRACE_ARRAY | TCL_TRACE_RESULT_DYNAMIC | TCL_TRACE_RESULT_OBJECT;
     flags &= flagMask;
 
     hPtr = Tcl_FindHashEntry(&iPtr->varTraces, varPtr);
@@ -3068,7 +3082,7 @@ TraceVarEx(
      */
 
     flagMask = TCL_TRACE_READS | TCL_TRACE_WRITES | TCL_TRACE_UNSETS |
-	  TCL_TRACE_ARRAY | TCL_TRACE_RESULT_DYNAMIC | TCL_TRACE_RESULT_OBJECT;
+	    TCL_TRACE_ARRAY | TCL_TRACE_RESULT_DYNAMIC | TCL_TRACE_RESULT_OBJECT;
     tracePtr->flags = tracePtr->flags & flagMask;
 
     hPtr = Tcl_CreateHashEntry(&iPtr->varTraces, varPtr, &isNew);

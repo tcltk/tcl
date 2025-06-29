@@ -393,7 +393,7 @@ typedef struct ClockScanToken ClockScanToken;
 typedef int ClockScanTokenProc(
 	ClockFmtScnCmdArgs *opts,
 	DateInfo *info,
-	ClockScanToken *tok);
+	const ClockScanToken *tok);
 
 typedef enum _CLCKTOK_TYPE {
    CTOKT_INT = 1, CTOKT_WIDE, CTOKT_PARSER, CTOKT_SPACE, CTOKT_WORD, CTOKT_CHAR,

@@ -202,14 +202,14 @@ TestbignumobjCmd(
 	}
 	string = Tcl_GetString(objv[3]);
 	if (mp_init(&bignumValue) != MP_OKAY) {
-	    Tcl_SetObjResult(interp,
-		    Tcl_NewStringObj("error in mp_init", -1));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "error in mp_init", -1));
 	    return TCL_ERROR;
 	}
 	if (mp_read_radix(&bignumValue, string, 10) != MP_OKAY) {
 	    mp_clear(&bignumValue);
-	    Tcl_SetObjResult(interp,
-		    Tcl_NewStringObj("error in mp_read_radix", -1));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "error in mp_read_radix", -1));
 	    return TCL_ERROR;
 	}
 
@@ -252,8 +252,8 @@ TestbignumobjCmd(
 	}
 	if (mp_mul_d(&bignumValue, 10, &bignumValue) != MP_OKAY) {
 	    mp_clear(&bignumValue);
-	    Tcl_SetObjResult(interp,
-		    Tcl_NewStringObj("error in mp_mul_d", -1));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "error in mp_mul_d", -1));
 	    return TCL_ERROR;
 	}
 	if (!Tcl_IsShared(varPtr[varIndex])) {
@@ -277,8 +277,8 @@ TestbignumobjCmd(
 	}
 	if (mp_div_d(&bignumValue, 10, &bignumValue, NULL) != MP_OKAY) {
 	    mp_clear(&bignumValue);
-	    Tcl_SetObjResult(interp,
-		    Tcl_NewStringObj("error in mp_div_d", -1));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "error in mp_div_d", -1));
 	    return TCL_ERROR;
 	}
 	if (!Tcl_IsShared(varPtr[varIndex])) {
@@ -302,8 +302,8 @@ TestbignumobjCmd(
 	}
 	if (mp_mod_2d(&bignumValue, 1, &bignumValue) != MP_OKAY) {
 	    mp_clear(&bignumValue);
-	    Tcl_SetObjResult(interp,
-		    Tcl_NewStringObj("error in mp_mod_2d", -1));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "error in mp_mod_2d", -1));
 	    return TCL_ERROR;
 	}
 	if (!Tcl_IsShared(varPtr[varIndex])) {
@@ -1107,6 +1107,7 @@ TestobjCmd(
     static const char *const subcommands[] = {
 	"freeallvars", "bug3598580", "buge58d7e19e9",
 	"types", "objtype", "newobj", "set",
+	"objrefcount",
 	"assign", "convert", "duplicate",
 	"invalidateStringRep", "refcount", "type",
 	NULL
@@ -1114,6 +1115,7 @@ TestobjCmd(
     enum testobjCmdIndex {
 	TESTOBJ_FREEALLVARS, TESTOBJ_BUG3598580, TESTOBJ_BUGE58D7E19E9,
 	TESTOBJ_TYPES, TESTOBJ_OBJTYPE, TESTOBJ_NEWOBJ, TESTOBJ_SET,
+	TESTOBJ_OBJREFCOUNT,
 	TESTOBJ_ASSIGN, TESTOBJ_CONVERT, TESTOBJ_DUPLICATE,
 	TESTOBJ_INVALIDATESTRINGREP, TESTOBJ_REFCOUNT, TESTOBJ_TYPE,
     } cmdIndex;
@@ -1210,6 +1212,13 @@ TestobjCmd(
 	    return TCL_ERROR;
 	}
 	SetVarToObj(varPtr, varIndex, objv[3]);
+	return TCL_OK;
+    case TESTOBJ_OBJREFCOUNT:
+	if (objc != 3) {
+	    goto wrongNumArgs;
+	} else {
+	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(objv[2]->refCount));
+	}
 	return TCL_OK;
 
     default:
@@ -1618,10 +1627,10 @@ TestbigdataCmd (
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     static const char *const subcmds[] = {
-	   "string", "bytearray", "list", "dict", NULL
+	"string", "bytearray", "list", "dict", NULL
     };
     enum options {
-	   BIGDATA_STRING, BIGDATA_BYTEARRAY, BIGDATA_LIST, BIGDATA_DICT
+	BIGDATA_STRING, BIGDATA_BYTEARRAY, BIGDATA_LIST, BIGDATA_DICT
     } idx;
     char *s;
     unsigned char *p;

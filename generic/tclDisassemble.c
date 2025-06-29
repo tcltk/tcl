@@ -578,19 +578,23 @@ FormatInstruction(
     for (i = 0;  i < instDesc->numOperands;  i++) {
 	switch (instDesc->opTypes[i]) {
 	case OPERAND_INT1:
-	    opnd = TclGetInt1AtPtr(pc+numBytes); numBytes++;
+	    opnd = TclGetInt1AtPtr(pc+numBytes);
+	    numBytes++;
 	    Tcl_AppendPrintfToObj(bufferObj, "%+d ", opnd);
 	    break;
 	case OPERAND_INT4:
-	    opnd = TclGetInt4AtPtr(pc+numBytes); numBytes += 4;
+	    opnd = TclGetInt4AtPtr(pc+numBytes);
+	    numBytes += 4;
 	    Tcl_AppendPrintfToObj(bufferObj, "%+d ", opnd);
 	    break;
 	case OPERAND_UINT1:
-	    opnd = TclGetUInt1AtPtr(pc+numBytes); numBytes++;
+	    opnd = TclGetUInt1AtPtr(pc+numBytes);
+	    numBytes++;
 	    Tcl_AppendPrintfToObj(bufferObj, "%u ", opnd);
 	    break;
 	case OPERAND_UINT4:
-	    opnd = TclGetUInt4AtPtr(pc+numBytes); numBytes += 4;
+	    opnd = TclGetUInt4AtPtr(pc+numBytes);
+	    numBytes += 4;
 	    if (opCode == INST_START_CMD) {
 		snprintf(suffixBuffer+strlen(suffixBuffer),
 			sizeof(suffixBuffer) - strlen(suffixBuffer),
@@ -599,12 +603,14 @@ FormatInstruction(
 	    Tcl_AppendPrintfToObj(bufferObj, "%u ", opnd);
 	    break;
 	case OPERAND_OFFSET1:
-	    opnd = TclGetInt1AtPtr(pc+numBytes); numBytes++;
+	    opnd = TclGetInt1AtPtr(pc+numBytes);
+	    numBytes++;
 	    snprintf(suffixBuffer, sizeof(suffixBuffer), "pc %u", pcOffset+opnd);
 	    Tcl_AppendPrintfToObj(bufferObj, "%+d ", opnd);
 	    break;
 	case OPERAND_OFFSET4:
-	    opnd = TclGetInt4AtPtr(pc+numBytes); numBytes += 4;
+	    opnd = TclGetInt4AtPtr(pc+numBytes);
+	    numBytes += 4;
 	    if (opCode == INST_START_CMD) {
 		snprintf(suffixBuffer, sizeof(suffixBuffer),
 			"next cmd at pc %u", pcOffset+opnd);
@@ -615,22 +621,26 @@ FormatInstruction(
 	    Tcl_AppendPrintfToObj(bufferObj, "%+d ", opnd);
 	    break;
 	case OPERAND_LIT1:
-	    opnd = TclGetUInt1AtPtr(pc+numBytes); numBytes++;
+	    opnd = TclGetUInt1AtPtr(pc+numBytes);
+	    numBytes++;
 	    suffixObj = codePtr->objArrayPtr[opnd];
 	    Tcl_AppendPrintfToObj(bufferObj, "%u ", opnd);
 	    break;
 	case OPERAND_LIT4:
-	    opnd = TclGetUInt4AtPtr(pc+numBytes); numBytes += 4;
+	    opnd = TclGetUInt4AtPtr(pc+numBytes);
+	    numBytes += 4;
 	    suffixObj = codePtr->objArrayPtr[opnd];
 	    Tcl_AppendPrintfToObj(bufferObj, "%u ", opnd);
 	    break;
 	case OPERAND_AUX4:
-	    opnd = TclGetUInt4AtPtr(pc+numBytes); numBytes += 4;
+	    opnd = TclGetUInt4AtPtr(pc+numBytes);
+	    numBytes += 4;
 	    Tcl_AppendPrintfToObj(bufferObj, "%u ", opnd);
 	    auxPtr = &codePtr->auxDataArrayPtr[opnd];
 	    break;
 	case OPERAND_IDX4:
-	    opnd = TclGetInt4AtPtr(pc+numBytes); numBytes += 4;
+	    opnd = TclGetInt4AtPtr(pc+numBytes);
+	    numBytes += 4;
 	    if (opnd >= -1) {
 		Tcl_AppendPrintfToObj(bufferObj, "%d ", opnd);
 	    } else if (opnd == -2) {
@@ -667,27 +677,30 @@ FormatInstruction(
 	    Tcl_AppendPrintfToObj(bufferObj, "%%v%u ", opnd);
 	    break;
 	case OPERAND_SCLS1:
-	    opnd = TclGetUInt1AtPtr(pc+numBytes); numBytes++;
+	    opnd = TclGetUInt1AtPtr(pc+numBytes);
+	    numBytes++;
 	    Tcl_AppendPrintfToObj(bufferObj, "%s ",
 		    tclStringClassTable[opnd].name);
 	    break;
 	case OPERAND_UNSF1:
-	    opnd = TclGetUInt1AtPtr(pc+numBytes); numBytes++;
+	    opnd = TclGetUInt1AtPtr(pc+numBytes);
+	    numBytes++;
 	    Tcl_AppendPrintfToObj(bufferObj, "silent=%s ", opnd?"no":"yes");
 	    break;
 	case OPERAND_CLK1:
-	    opnd = TclGetUInt1AtPtr(pc+numBytes); numBytes++;
+	    opnd = TclGetUInt1AtPtr(pc+numBytes);
+	    numBytes++;
 	    switch (opnd) {
-	    case 0:
+	    case CLOCK_READ_CLICKS:
 		Tcl_AppendPrintfToObj(bufferObj, "clicks " );
 		break;
-	    case 1:
+	    case CLOCK_READ_MICROS:
 		Tcl_AppendPrintfToObj(bufferObj, "micros " );
 		break;
-	    case 2:
+	    case CLOCK_READ_MILLIS:
 		Tcl_AppendPrintfToObj(bufferObj, "millis " );
 		break;
-	    case 3:
+	    case CLOCK_READ_SECS:
 		Tcl_AppendPrintfToObj(bufferObj, "secs " );
 		break;
 	    default:
@@ -695,16 +708,20 @@ FormatInstruction(
 	    }
 	    break;
 	case OPERAND_LRPL1:
-	    opnd = TclGetUInt1AtPtr(pc+numBytes); numBytes++;
+	    opnd = TclGetUInt1AtPtr(pc+numBytes);
+	    numBytes++;
 	    switch (opnd) {
 	    case 0:
 		Tcl_AppendPrintfToObj(bufferObj, "0 ");
 		break;
-	    case TCL_LREPLACE4_END_IS_LAST:
+	    case TCL_LREPLACE_END_IS_LAST:
 		Tcl_AppendPrintfToObj(bufferObj, "endLast ");
 		break;
-	    case TCL_LREPLACE4_SINGLE_INDEX:
+	    case TCL_LREPLACE_SINGLE_INDEX:
 		Tcl_AppendPrintfToObj(bufferObj, "singleIdx ");
+		break;
+	    case TCL_LREPLACE_END_IS_LAST | TCL_LREPLACE_NEED_IN_RANGE:
+		Tcl_AppendPrintfToObj(bufferObj, "endLast,indexTest ");
 		break;
 	    default:
 		Tcl_AppendPrintfToObj(bufferObj, "endLast,singleIdx ");
@@ -1353,9 +1370,12 @@ Tcl_DisassembleObjCmd(
     Tcl_Obj *codeObjPtr = NULL;
     Proc *procPtr = NULL;
     Tcl_HashEntry *hPtr;
+    Tcl_Obj *ooWhat = NULL;
     Object *oPtr;
+    Class *classPtr;
     ByteCode *codePtr;
     Method *methodPtr;
+    const char *bodyType;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "type ...");
@@ -1453,23 +1473,17 @@ Tcl_DisassembleObjCmd(
 	 * Look up the body of a constructor.
 	 */
 
-	oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[2]);
-	if (oPtr == NULL) {
-	    return TCL_ERROR;
-	}
-	if (oPtr->classPtr == NULL) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "\"%s\" is not a class", TclGetString(objv[2])));
-	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CLASS",
-		    TclGetString(objv[2]), (char *)NULL);
+	ooWhat = objv[2];
+	classPtr = TclOOGetClassFromObj(interp, ooWhat);
+	if (classPtr == NULL) {
 	    return TCL_ERROR;
 	}
 
-	methodPtr = oPtr->classPtr->constructorPtr;
+	methodPtr = classPtr->constructorPtr;
 	if (methodPtr == NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "\"%s\" has no defined constructor",
-		    TclGetString(objv[2])));
+		    TclGetString(ooWhat)));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "DISASSEMBLE",
 		    "CONSRUCTOR", (char *)NULL);
 	    return TCL_ERROR;
@@ -1483,30 +1497,9 @@ Tcl_DisassembleObjCmd(
 	    return TCL_ERROR;
 	}
 
-	/*
-	 * Compile if necessary.
-	 */
-
-	if (!TclHasInternalRep(procPtr->bodyPtr, &tclByteCodeType)) {
-	    Command cmd;
-
-	    /*
-	     * Yes, this is ugly, but we need to pass the namespace in to the
-	     * compiler in two places.
-	     */
-
-	    cmd.nsPtr = (Namespace *) oPtr->namespacePtr;
-	    procPtr->cmdPtr = &cmd;
-	    result = TclProcCompileProc(interp, procPtr, procPtr->bodyPtr,
-		    (Namespace *) oPtr->namespacePtr, "body of constructor",
-		    TclGetString(objv[2]));
-	    procPtr->cmdPtr = NULL;
-	    if (result != TCL_OK) {
-		return result;
-	    }
-	}
-	codeObjPtr = procPtr->bodyPtr;
-	break;
+	oPtr = classPtr->thisPtr;
+	bodyType = "body of constructor";
+	goto compileMethodIfNeeded;
 
     case DISAS_CLASS_DESTRUCTOR:
 	if (objc != 3) {
@@ -1518,23 +1511,17 @@ Tcl_DisassembleObjCmd(
 	 * Look up the body of a destructor.
 	 */
 
-	oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[2]);
-	if (oPtr == NULL) {
-	    return TCL_ERROR;
-	}
-	if (oPtr->classPtr == NULL) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "\"%s\" is not a class", TclGetString(objv[2])));
-	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CLASS",
-		    TclGetString(objv[2]), (char *)NULL);
+	ooWhat = objv[2];
+	classPtr = TclOOGetClassFromObj(interp, ooWhat);
+	if (classPtr == NULL) {
 	    return TCL_ERROR;
 	}
 
-	methodPtr = oPtr->classPtr->destructorPtr;
+	methodPtr = classPtr->destructorPtr;
 	if (methodPtr == NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "\"%s\" has no defined destructor",
-		    TclGetString(objv[2])));
+		    TclGetString(ooWhat)));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "DISASSEMBLE",
 		    "DESRUCTOR", (char *)NULL);
 	    return TCL_ERROR;
@@ -1548,30 +1535,9 @@ Tcl_DisassembleObjCmd(
 	    return TCL_ERROR;
 	}
 
-	/*
-	 * Compile if necessary.
-	 */
-
-	if (!TclHasInternalRep(procPtr->bodyPtr, &tclByteCodeType)) {
-	    Command cmd;
-
-	    /*
-	     * Yes, this is ugly, but we need to pass the namespace in to the
-	     * compiler in two places.
-	     */
-
-	    cmd.nsPtr = (Namespace *) oPtr->namespacePtr;
-	    procPtr->cmdPtr = &cmd;
-	    result = TclProcCompileProc(interp, procPtr, procPtr->bodyPtr,
-		    (Namespace *) oPtr->namespacePtr, "body of destructor",
-		    TclGetString(objv[2]));
-	    procPtr->cmdPtr = NULL;
-	    if (result != TCL_OK) {
-		return result;
-	    }
-	}
-	codeObjPtr = procPtr->bodyPtr;
-	break;
+	oPtr = classPtr->thisPtr;
+	bodyType = "body of destructor";
+	goto compileMethodIfNeeded;
 
     case DISAS_CLASS_METHOD:
 	if (objc != 4) {
@@ -1583,19 +1549,13 @@ Tcl_DisassembleObjCmd(
 	 * Look up the body of a class method.
 	 */
 
-	oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[2]);
-	if (oPtr == NULL) {
+	ooWhat = objv[3];
+	classPtr = TclOOGetClassFromObj(interp, objv[2]);
+	if (classPtr == NULL) {
 	    return TCL_ERROR;
 	}
-	if (oPtr->classPtr == NULL) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "\"%s\" is not a class", TclGetString(objv[2])));
-	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CLASS",
-		    TclGetString(objv[2]), (char *)NULL);
-	    return TCL_ERROR;
-	}
-	hPtr = Tcl_FindHashEntry(&oPtr->classPtr->classMethods,
-		objv[3]);
+	oPtr = classPtr->thisPtr;
+	hPtr = Tcl_FindHashEntry(&classPtr->classMethods, ooWhat);
 	goto methodBody;
     case DISAS_OBJECT_METHOD:
 	if (objc != 4) {
@@ -1607,14 +1567,16 @@ Tcl_DisassembleObjCmd(
 	 * Look up the body of an instance method.
 	 */
 
+	ooWhat = objv[3];
 	oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[2]);
 	if (oPtr == NULL) {
 	    return TCL_ERROR;
 	}
+	ooWhat = objv[3];
 	if (oPtr->methodsPtr == NULL) {
 	    goto unknownMethod;
 	}
-	hPtr = Tcl_FindHashEntry(oPtr->methodsPtr, objv[3]);
+	hPtr = Tcl_FindHashEntry(oPtr->methodsPtr, ooWhat);
 
 	/*
 	 * Compile (if necessary) and disassemble a method body.
@@ -1624,9 +1586,9 @@ Tcl_DisassembleObjCmd(
 	if (hPtr == NULL) {
 	unknownMethod:
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "unknown method \"%s\"", TclGetString(objv[3])));
+		    "unknown method \"%s\"", TclGetString(ooWhat)));
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
-		    TclGetString(objv[3]), (char *)NULL);
+		    TclGetString(ooWhat), (char *)NULL);
 	    return TCL_ERROR;
 	}
 	procPtr = TclOOGetProcFromMethod((Method *)Tcl_GetHashValue(hPtr));
@@ -1637,6 +1599,9 @@ Tcl_DisassembleObjCmd(
 		    "METHODTYPE", (char *)NULL);
 	    return TCL_ERROR;
 	}
+	bodyType = "body of method";
+
+    compileMethodIfNeeded:
 	if (!TclHasInternalRep(procPtr->bodyPtr, &tclByteCodeType)) {
 	    Command cmd;
 
@@ -1648,8 +1613,8 @@ Tcl_DisassembleObjCmd(
 	    cmd.nsPtr = (Namespace *) oPtr->namespacePtr;
 	    procPtr->cmdPtr = &cmd;
 	    result = TclProcCompileProc(interp, procPtr, procPtr->bodyPtr,
-		    (Namespace *) oPtr->namespacePtr, "body of method",
-		    TclGetString(objv[3]));
+		    (Namespace *) oPtr->namespacePtr, bodyType,
+		    TclGetString(ooWhat));
 	    procPtr->cmdPtr = NULL;
 	    if (result != TCL_OK) {
 		return result;
@@ -1658,7 +1623,7 @@ Tcl_DisassembleObjCmd(
 	codeObjPtr = procPtr->bodyPtr;
 	break;
     default:
-	CLANG_ASSERT(0);
+	TCL_UNREACHABLE();
     }
 
     /*

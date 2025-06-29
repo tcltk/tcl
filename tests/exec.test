@@ -28,9 +28,11 @@ testConstraint noosxCI [expr {![info exists ::env(MAC_CI)]}]
 # no idea how to check it in GHA programmatically, so simply disable it (todo: rewrite with better check later)
 if {[testConstraint win] && ![info exists ::env(CI)] &&
     [info exists ::env(LOCALAPPDATA)] &&
-    [file exists [file join $::env(LOCALAPPDATA) "Microsoft" "WindowsApps" "winget.exe"]]} {
+    [auto_execok winget] ne {}} {
 	testConstraint haveWinget 1
 }
+
+testConstraint testhandlecount [expr {[llength [info commands testhandlecount]] != 0}]
 
 unset -nocomplain path
 
@@ -48,6 +50,11 @@ set path(echo2) [makeFile {
     puts stderr [lindex $argv 1]
     exit
 } echo2]
+set path(echobin) [makeFile {
+    fconfigure stdout -translation binary
+    puts -nonewline [binary decode hex [join $argv ""]]
+    exit
+} echobin]
 set path(cat) [makeFile {
     if {$argv eq ""} {
 	set argv -
@@ -149,6 +156,12 @@ test exec-1.4 {long command lines} {exec} {
     exec [interpreter] $path(echo) $arg
 } $arg
 set arg {}
+test exec-1.5 {pipelining - handle leaks} -constraints {exec stdio testhandlecount} -body {
+    set numHandles [testhandlecount]
+    set a [exec [interpreter] $path(echo) a b c d | [interpreter] $path(cat) | [interpreter] $path(wc)]
+    list [scan $a "%d %d %d" b c d] $b $c [expr {[testhandlecount] - $numHandles}]
+} -result {3 1 4 0}
+
 
 # I/O redirection: input from Tcl command.
 
@@ -185,6 +198,13 @@ test exec-2.6 {redirecting input from immediate source, with UTF} -setup {
     encoding system $sysenc
     rename quotenonascii {}
 } -result {\xE9\xE0\xFC\xF1}
+test exec-2.7 {handle count redirecting input from immediate source} -constraints {
+    exec stdio testhandlecount
+} -body {
+    set numHandles [testhandlecount]
+    list [exec [interpreter] $path(cat) | [interpreter] $path(cat) << "Sample text"] \
+        [expr {[testhandlecount] - $numHandles}]
+} -result [list {Sample text} 0]
 
 # I/O redirection: output to file.
 
@@ -227,6 +247,14 @@ test exec-3.7 {redirecting output to file} {exec} {
     close $f
     exec [interpreter] $path(cat) $path(gorp.file)
 } "Line 1\nMore text\nEven more\nLine 3"
+test exec-3.8 {handle count redirecting output to file} -constraints {
+    exec stdio testhandlecount
+} -body {
+    set numHandles [testhandlecount]
+    exec > $path(gorp.file) [interpreter] $path(echo) "Different simple words" | [interpreter] $path(cat) | [interpreter] $path(cat)
+    list [exec [interpreter] $path(cat) $path(gorp.file)] \
+        [expr {[testhandlecount] - $numHandles}]
+} -result [list "Different simple words" 0]
 
 # I/O redirection: output and stderr to file.
 
@@ -298,6 +326,13 @@ test exec-5.7 {redirecting input from file} -constraints {exec} -body {
 } -cleanup {
     close $f
 } -result {Just a few thoughts}
+test exec-5.8 {handle count redirecting input from file} -constraints {
+    exec stdio testhandlecount
+} -body {
+    set numHandles [testhandlecount]
+    list [exec [interpreter] $path(cat) | [interpreter] $path(cat) < $path(gorp.file)] \
+        [expr {[testhandlecount] - $numHandles}]
+} -result [list {Just a few thoughts} 0]
 
 # I/O redirection: standard error through a pipeline.
 
@@ -479,6 +514,15 @@ test exec-11.5 {commands in background} {exec} {
     close $f
     exec [interpreter] $path(gorp.file)
 } foo
+test exec-11.6 {commands in background} -constraints {
+    exec stdio testhandlecount
+} -body {
+    set numHandles [testhandlecount]
+    set n [llength [exec [interpreter] $path(sleep) 1 | [interpreter] $path(sleep) 1 | [interpreter] $path(sleep) 1 &]]
+    after 1100
+    tcl::process::purge
+    list $n [expr {([testhandlecount] - $numHandles) <= 0}]; # Could be < 0 if prior processes were reaped
+} -result {3 1}
 
 # Make sure that background commands are properly reaped when they
 # eventually die.
@@ -568,7 +612,7 @@ test exec-14.2 {-keepnewline switch} -constraints {exec} -body {
 } -returnCodes error -result {wrong # args: should be "exec ?-option ...? arg ?arg ...?"}
 test exec-14.3 {unknown switch} -constraints {exec} -body {
     exec -gorp
-} -returnCodes error -result {bad option "-gorp": must be -ignorestderr, -keepnewline, or --}
+} -returnCodes error -result {bad option "-gorp": must be -ignorestderr, -keepnewline, -encoding, or --}
 test exec-14.4 {-- switch} -constraints {exec notValgrind} -body {
     exec -- -gorp
 } -returnCodes error -result {couldn't execute "-gorp": no such file or directory}
@@ -750,9 +794,18 @@ test exec-21.2 {exec encoding mismatch on stderr} -setup {
     list [catch {exec [info nameofexecutable] $path(script)} r] $r
 } -result [list 1 a\uFFFDb]
 
+# TIP 716 -encoding option
+test exec-22.0 {exec -encoding} -body {
+    set enc [expr {[encoding system] eq "utf-8" ? "iso2022-jp" : "utf-8"}]
+    exec -encoding $enc -- [interpreter] $path(echobin) [binary encode hex [encoding convertto $enc \u4e4e\u68d9]]
+} -result \u4e4e\u68d9
+test exec-22.1 {exec -encoding invalid encoding} -body {
+    exec -encoding nosuchencoding -- [interpreter] $path(echobin) abc
+} -result {unknown encoding "nosuchencoding"} -returnCodes error
+
 test exec-bug-4f0b5767ac {exec App Execution Alias} -constraints haveWinget -body {
     exec winget --info
-} -result "Windows Package Manager*" -match glob
+} -result "Windows*" -match glob
 
 foreach cmdBuiltin {
     assoc call cd cls color copy date del dir echo

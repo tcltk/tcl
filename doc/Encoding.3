@@ -8,7 +8,7 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_GetEncoding, Tcl_FreeEncoding, Tcl_GetEncodingFromObj, Tcl_ExternalToUtfDString, Tcl_ExternalToUtfDStringEx, Tcl_ExternalToUtf, Tcl_UtfToExternalDString, Tcl_UtfToExternalDStringEx, Tcl_UtfToExternal, Tcl_GetEncodingName, Tcl_SetSystemEncoding, Tcl_GetEncodingNameFromEnvironment, Tcl_GetEncodingNames, Tcl_CreateEncoding, Tcl_GetEncodingSearchPath, Tcl_SetEncodingSearchPath \- procedures for creating and using encodings
+Tcl_GetEncoding, Tcl_FreeEncoding, Tcl_GetEncodingFromObj, Tcl_ExternalToUtfDString, Tcl_ExternalToUtfDStringEx, Tcl_ExternalToUtf, Tcl_UtfToExternalDString, Tcl_UtfToExternalDStringEx, Tcl_UtfToExternal, Tcl_GetEncodingName, Tcl_SetSystemEncoding, Tcl_GetEncodingNameFromEnvironment, Tcl_GetEncodingNameForUser, Tcl_GetEncodingNames, Tcl_CreateEncoding, Tcl_GetEncodingSearchPath, Tcl_SetEncodingSearchPath \- procedures for creating and using encodings
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -52,6 +52,9 @@ int
 .sp
 const char *
 \fBTcl_GetEncodingNameFromEnvironment\fR(\fIbufPtr\fR)
+.sp
+const char *
+\fBTcl_GetEncodingNameForUser\fR(\fIbufPtr\fR)
 .sp
 \fBTcl_GetEncodingNames\fR(\fIinterp\fR)
 .sp
@@ -308,12 +311,22 @@ procedure increments the reference count of the new system encoding,
 decrements the reference count of the old system encoding, and returns
 \fBTCL_OK\fR.
 .PP
-\fBTcl_GetEncodingNameFromEnvironment\fR provides a means for the Tcl
-library to report the encoding name it believes to be the correct one
-to use as the system encoding, based on system calls and examination of
-the environment suitable for the platform.  It accepts \fIbufPtr\fR,
-a pointer to an uninitialized or freed \fBTcl_DString\fR and writes
-the encoding name to it.  The \fBTcl_DStringValue\fR is returned.
+\fBTcl_GetEncodingNameFromEnvironment\fR retrieves the encoding name to
+use as the system encoding. On non-Windows platforms, this is derived
+from the \fBnl_langinfo\fR system call if available, and environment
+variables \fBLC_ALL\fR, \fBLC_CTYPE\fR or \fBLANG\fR otherwise. On
+Windows versions Windows 10 Build 18362 and later the returned value is
+always \fButf-8\fR. On earlier Windows versions, it is derived from the
+user settings in the Windows registry. \fBTcl_GetEncodingNameForUser\fR
+retrieves the encoding name based on the user settings for the current
+user and is derived in the same manner as
+\fBTcl_GetEncodingNameFromEnvironment\fR on non-Windows platforms. On
+Windows, unlike \fBTcl_GetEncodingNameFromEnvironment\fR, it returns the
+encoding name as per the Windows registry settings irrespective of the
+Windows version. Both functions accept \fIbufPtr\fR, a pointer to an
+uninitialized or freed \fBTcl_DString\fR and write the encoding name to
+it. They return \fBTcl_DStringValue(bufPtr)\fR which points to the stored
+name.
 .PP
 \fBTcl_GetEncodingNames\fR sets the \fIinterp\fR result to a list
 consisting of the names of all the encodings that are currently defined

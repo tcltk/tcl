@@ -50,7 +50,6 @@ static int		SetLambdaFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 
 static Tcl_NRPostProc ApplyNR2;
 static Tcl_NRPostProc InterpProcNR2;
-static Tcl_NRPostProc Uplevel_Callback;
 static Tcl_ObjCmdProc NRInterpProc;
 
 /*
@@ -733,15 +732,15 @@ TclGetFrame(
     CallFrame **framePtrPtr)	/* Store pointer to frame here (or NULL if
 				 * global frame indicated). */
 {
-	int result;
-	Tcl_Obj obj;
+    int result;
+    Tcl_Obj obj;
 
-	obj.bytes = (char *) name;
-	obj.length = strlen(name);
-	obj.typePtr = NULL;
-	result = TclObjGetFrame(interp, &obj, framePtrPtr);
-	TclFreeInternalRep(&obj);
-	return result;
+    obj.bytes = (char *) name;
+    obj.length = strlen(name);
+    obj.typePtr = NULL;
+    result = TclObjGetFrame(interp, &obj, framePtrPtr);
+    TclFreeInternalRep(&obj);
+    return result;
 }
 
 /*
@@ -761,7 +760,12 @@ TclGetFrame(
  *	two things above (in this case, the lookup acts as if objPtr were
  *	"1"). The variable pointed to by framePtrPtr is filled in with the
  *	address of the desired frame (unless an error occurs, in which case it
- *	isn't modified).
+ *	isn't modified); if passed in as NULL, it indicates that resolution of
+ *	the frame is uninteresting; only parsing of the frame identifier is
+ *	desired (and no write of the frame ref will be done).
+ *
+ *	The parse-only mode is used by the bytecode compiler, which saves
+ *	resolution of the frame to bytecode execution time.
  *
  * Side effects:
  *	None.
@@ -774,7 +778,8 @@ TclObjGetFrame(
     Tcl_Interp *interp,		/* Interpreter in which to find frame. */
     Tcl_Obj *objPtr,		/* Object describing frame. */
     CallFrame **framePtrPtr)	/* Store pointer to frame here (or NULL if
-				 * global frame indicated). */
+				 * global frame indicated); when NULL itself,
+				 * no frame resolution is wanted. */
 {
     Interp *iPtr = (Interp *) interp;
     int curLevel;
@@ -834,6 +839,10 @@ TclObjGetFrame(
     }
 
     if (result != -1) {
+	if (framePtrPtr == NULL) {
+	    // Not interested in resolving to an actual level yet.
+	    return result;
+	}
 	/* if relative current level */
 	if (result == 0) {
 	    if (!curLevel) {
@@ -880,8 +889,8 @@ badLevel:
  *----------------------------------------------------------------------
  */
 
-static int
-Uplevel_Callback(
+int
+TclUplevelCallback(
     void *data[],
     Tcl_Interp *interp,
     int result)
@@ -932,9 +941,7 @@ TclNRUplevelObjCmd(
     *    is only one argument.  This requires a TIP since currently a single
     *    argument is interpreted as a level indicator if possible.
     */
-    uplevelSyntax:
-	Tcl_WrongNumArgs(interp, 1, objv, "?level? command ?arg ...?");
-	return TCL_ERROR;
+	goto uplevelSyntax;
     } else if (!TclHasStringRep(objv[1]) && objc == 2) {
 	int status;
 	Tcl_Size llength;
@@ -966,7 +973,7 @@ TclNRUplevelObjCmd(
     }
     objv += result + 1;
 
-    havelevel:
+  havelevel:
 
     /*
      * Modify the interpreter state to execute in the given frame.
@@ -986,7 +993,6 @@ TclNRUplevelObjCmd(
 
 	TclArgumentGet(interp, objv[0], &invoker, &word);
 	objPtr = objv[0];
-
     } else {
 	/*
 	 * More than one argument: concatenate them together with spaces
@@ -997,9 +1003,12 @@ TclNRUplevelObjCmd(
 	objPtr = Tcl_ConcatObj(objc, objv);
     }
 
-    TclNRAddCallback(interp, Uplevel_Callback, savedVarFramePtr, NULL, NULL,
+    TclNRAddCallback(interp, TclUplevelCallback, savedVarFramePtr, NULL, NULL,
 	    NULL);
     return TclNREvalObjEx(interp, objPtr, 0, invoker, word);
+  uplevelSyntax:
+    Tcl_WrongNumArgs(interp, 1, objv, "?level? command ?arg ...?");
+    return TCL_ERROR;
 }
 
 /*
@@ -1762,7 +1771,8 @@ TclNRInterpProcCore(
     }
     if (TCL_DTRACE_PROC_INFO_ENABLED() && iPtr->cmdFramePtr) {
 	Tcl_Obj *info = TclInfoFrame(interp, iPtr->cmdFramePtr);
-	const char *a[6]; Tcl_Size i[2];
+	const char *a[6];
+	Tcl_Size i[2];
 
 	TclDTraceInfo(info, a, i);
 	TCL_DTRACE_PROC_INFO(a[0], a[1], a[2], a[3], i[0], i[1], a[4], a[5]);
@@ -1875,8 +1885,7 @@ InterpProcNR2(
 		((result == TCL_BREAK) ? "break" : "continue")));
 	Tcl_SetErrorCode(interp, "TCL", "RESULT", "UNEXPECTED", (char *)NULL);
 	result = TCL_ERROR;
-
-	/* FALLTHRU */
+	TCL_FALLTHROUGH();
 
     case TCL_ERROR:
 	/*

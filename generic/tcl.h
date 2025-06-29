@@ -2413,12 +2413,12 @@ EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
 static inline void
 TclBounceRefCount(
     Tcl_Obj* objPtr,
-    const char* fn,
+    const char* file,
     int line)
 {
     if (objPtr) {
 	if ((objPtr)->refCount == 0) {
-	    Tcl_DbDecrRefCount(objPtr, fn, line);
+	    Tcl_DbDecrRefCount(objPtr, file, line);
 	}
     }
 }

@@ -532,7 +532,7 @@ TclOptimizeBytecode(
 {
     CompileEnv *realEnvPtr = (CompileEnv *) envPtr;
     ConvertZeroEffectToNOP(realEnvPtr);
-    BetterEqualityTesting(realEnvPtr);    
+    BetterEqualityTesting(realEnvPtr);
     AdvanceJumps(realEnvPtr);
     TrimUnreachable(realEnvPtr);
 }

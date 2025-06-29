@@ -180,24 +180,6 @@ static TclInitProcessGlobalValueProc InitializeHostName;
 static ProcessGlobalValue hostName =
 	{0, 0, NULL, NULL, InitializeHostName, NULL, NULL};
 
-#if 0
-/* printf debugging */
-void
-printaddrinfo(
-    struct addrinfo *addrlist,
-    char *prefix)
-{
-    char host[NI_MAXHOST], port[NI_MAXSERV];
-    struct addrinfo *ai;
-
-    for (ai = addrlist; ai != NULL; ai = ai->ai_next) {
-	getnameinfo(ai->ai_addr, ai->ai_addrlen,
-		host, sizeof(host), port, sizeof(port),
-		NI_NUMERICHOST|NI_NUMERICSERV);
-	fprintf(stderr,"%s: %s:%s\n", prefix, host, port);
-    }
-}
-#endif
 /*
  * ----------------------------------------------------------------------
  *
@@ -1107,15 +1089,15 @@ TcpThreadActionProc(
 	 * so the callback will run in the correct thread, bug [f583715154].
 	 */
 	switch (action) {
-	  case TCL_CHANNEL_THREAD_REMOVE:
+	case TCL_CHANNEL_THREAD_REMOVE:
 	    CLEAR_BITS(statePtr->flags, TCP_ASYNC_PENDING);
 	    Tcl_DeleteFileHandler(statePtr->fds.fd);
-	  break;
-	  case TCL_CHANNEL_THREAD_INSERT:
+	    break;
+	case TCL_CHANNEL_THREAD_INSERT:
 	    Tcl_CreateFileHandler(statePtr->fds.fd,
-		TCL_WRITABLE | TCL_EXCEPTION, TcpAsyncCallback, statePtr);
+		    TCL_WRITABLE | TCL_EXCEPTION, TcpAsyncCallback, statePtr);
 	    SET_BITS(statePtr->flags, TCP_ASYNC_PENDING);
-	  break;
+	    break;
 	}
     }
 }
@@ -1681,7 +1663,7 @@ Tcl_OpenTcpServerEx(
     int retry = 0;
 #define MAXRETRY 10
 
- repeat:
+  repeat:
     if (retry > 0) {
 	if (statePtr != NULL) {
 	    TcpCloseProc(statePtr, NULL);

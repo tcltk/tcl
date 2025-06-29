@@ -919,9 +919,9 @@ TclCompileAssembleCmd(
     Tcl_Size numCommands = envPtr->numCommands;
     Tcl_Size offset = CurrentOffset(envPtr);
     Tcl_Size depth = envPtr->currStackDepth;
-    size_t numExnRanges = envPtr->exceptArrayNext;
-    size_t numAuxRanges = envPtr->auxDataArrayNext;
-    size_t exceptDepth = envPtr->exceptDepth;
+    Tcl_Size numExnRanges = envPtr->exceptArrayNext;
+    Tcl_Size numAuxRanges = envPtr->auxDataArrayNext;
+    Tcl_Size exceptDepth = envPtr->exceptDepth;
 
     /*
      * Make sure that the command has a single arg that is a simple word.
@@ -950,7 +950,15 @@ TclCompileAssembleCmd(
 	envPtr->codeNext = envPtr->codeStart + offset;
 	envPtr->currStackDepth = depth;
 	envPtr->exceptArrayNext = numExnRanges;
-	envPtr->auxDataArrayNext = numAuxRanges;
+	while (envPtr->auxDataArrayNext > numAuxRanges) {
+	    Tcl_Size auxIdx = --envPtr->auxDataArrayNext;
+	    AuxData *auxDataPtr = &envPtr->auxDataArrayPtr[auxIdx];
+	    if (auxDataPtr->type && auxDataPtr->type->freeProc) {
+		auxDataPtr->type->freeProc(auxDataPtr->clientData);
+	    }
+	    auxDataPtr->clientData = NULL;
+	    auxDataPtr->type = NULL;
+	}
 	envPtr->exceptDepth = exceptDepth;
 	TclCompileSyntaxError(interp, envPtr);
     }
@@ -1048,7 +1056,7 @@ TclAssembleCode(
 
 #ifdef TCL_COMPILE_DEBUG
 	    if ((tclTraceCompile >= TCL_TRACE_BYTECODE_COMPILE_DETAIL)
-		    && (envPtr->procPtr == NULL)) {
+		    && !EnvIsProc(envPtr)) {
 		printf("  %4" TCL_Z_MODIFIER "d Assembling: ",
 			CurrentOffset(envPtr));
 		TclPrintSource(stdout, parsePtr->commandStart,
@@ -1509,7 +1517,7 @@ AssembleOneLine(
 	    Tcl_SetErrorCode(interp, "TCL", "ASSEM", "BADJUMPTABLE", (char *)NULL);
 	    goto cleanup;
 	}
-	
+
 	if (TalInstructionTable[tblIdx].tclInstCode == INST_JUMP_TABLE) {
 	    JumptableInfo* jtPtr = AllocJumptable();
 
@@ -1718,7 +1726,7 @@ AssembleOneLine(
     }
 
     status = TCL_OK;
- cleanup:
+  cleanup:
     Tcl_DecrRefCount(instNameObj);
     if (operand1Obj) {
 	Tcl_DecrRefCount(operand1Obj);
@@ -3092,11 +3100,11 @@ ResolveJumpTableTargets(
 		symEntryPtr = Tcl_NextHashEntry(&search)) {
 	    symbolObj = (Tcl_Obj*)Tcl_GetHashValue(symEntryPtr);
 	    DEBUG_PRINT("     symbol %s\n", TclGetString(symbolObj));
- 
+
 	    valEntryPtr = Tcl_FindHashEntry(&assemEnvPtr->labelHash,
 		    TclGetString(symbolObj));
 	    jumpTargetBBPtr = (BasicBlock*)Tcl_GetHashValue(valEntryPtr);
- 
+
 	    realJumpEntryPtr = Tcl_CreateHashEntry(realJumpHashPtr,
 		    Tcl_GetHashKey(symHash, symEntryPtr), NULL);
 	    DEBUG_PRINT(
@@ -3105,7 +3113,7 @@ ResolveJumpTableTargets(
 		    (Tcl_Size) Tcl_GetHashKey(symHash, symEntryPtr),
 		    TclGetString(symbolObj), jumpTargetBBPtr,
 		    jumpTargetBBPtr->startOffset, realJumpEntryPtr);
- 
+
 	    Tcl_SetHashValue(realJumpEntryPtr,
 		    INT2PTR(jumpTargetBBPtr->startOffset - bbPtr->jumpOffset));
 	}

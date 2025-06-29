@@ -1199,11 +1199,13 @@ TtyGetOptionProc(
 	tcgetattr(fsPtr->fileState.fd, &iostate);
 	Tcl_DStringInit(&ds);
 
-	Tcl_ExternalToUtfDStringEx(NULL, NULL, (char *) &iostate.c_cc[VSTART], 1, TCL_ENCODING_PROFILE_TCL8, &ds, NULL);
+	Tcl_ExternalToUtfDStringEx(NULL, NULL, (char *) &iostate.c_cc[VSTART],
+		1, TCL_ENCODING_PROFILE_TCL8, &ds, NULL);
 	Tcl_DStringAppendElement(dsPtr, Tcl_DStringValue(&ds));
 	TclDStringClear(&ds);
 
-	Tcl_ExternalToUtfDStringEx(NULL, NULL, (char *) &iostate.c_cc[VSTOP], 1, TCL_ENCODING_PROFILE_TCL8, &ds, NULL);
+	Tcl_ExternalToUtfDStringEx(NULL, NULL, (char *) &iostate.c_cc[VSTOP],
+		1, TCL_ENCODING_PROFILE_TCL8, &ds, NULL);
 	Tcl_DStringAppendElement(dsPtr, Tcl_DStringValue(&ds));
 	Tcl_DStringFree(&ds);
     }
@@ -1507,15 +1509,15 @@ TtyGetAttributes(
     parity = 'n';
 #ifdef PAREXT
     switch ((int) (iostate.c_cflag & (PARENB | PARODD | PAREXT))) {
-    case PARENB			  : parity = 'e'; break;
-    case PARENB | PARODD	  : parity = 'o'; break;
-    case PARENB |	   PAREXT : parity = 's'; break;
-    case PARENB | PARODD | PAREXT : parity = 'm'; break;
+    case PARENB			  :	parity = 'e'; break;
+    case PARENB | PARODD	  :	parity = 'o'; break;
+    case PARENB |	   PAREXT :	parity = 's'; break;
+    case PARENB | PARODD | PAREXT :	parity = 'm'; break;
     }
 #else /* !PAREXT */
     switch ((int) (iostate.c_cflag & (PARENB | PARODD))) {
-    case PARENB		 : parity = 'e'; break;
-    case PARENB | PARODD : parity = 'o'; break;
+    case PARENB		 :		parity = 'e'; break;
+    case PARENB | PARODD :		parity = 'o'; break;
     }
 #endif /* PAREXT */
 

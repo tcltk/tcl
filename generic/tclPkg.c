@@ -50,6 +50,9 @@ typedef struct PkgFiles {
 				 * package. */
 } PkgFiles;
 
+/* Associated data key used to look up the PkgFiles for an interpreter. */
+#define ASSOC_KEY "tclPkgFiles"
+
 /*
  * For each package that is known in any way to an interpreter, there is one
  * record of the following type. These records are stored in the
@@ -101,7 +104,8 @@ static int		PkgRequireCoreFinal(void *data[], Tcl_Interp *interp, int result);
 static int		PkgRequireCoreCleanup(void *data[], Tcl_Interp *interp, int result);
 static int		PkgRequireCoreStep1(void *data[], Tcl_Interp *interp, int result);
 static int		PkgRequireCoreStep2(void *data[], Tcl_Interp *interp, int result);
-static int		TclNRPkgRequireProc(void *clientData, Tcl_Interp *interp, int reqc, Tcl_Obj *const reqv[]);
+static int		TclNRPkgRequireProc(void *clientData, Tcl_Interp *interp,
+			    int reqc, Tcl_Obj *const reqv[]);
 static int		SelectPackage(void *data[], Tcl_Interp *interp, int result);
 static int		SelectPackageFinal(void *data[], Tcl_Interp *interp, int result);
 static int		TclNRPackageObjCmdCleanup(void *data[], Tcl_Interp *interp, int result);
@@ -258,13 +262,13 @@ TclInitPkgFiles(
      * If assocdata "tclPkgFiles" doesn't exist yet, create it.
      */
 
-    PkgFiles *pkgFiles = (PkgFiles *)Tcl_GetAssocData(interp, "tclPkgFiles", NULL);
+    PkgFiles *pkgFiles = (PkgFiles *)Tcl_GetAssocData(interp, ASSOC_KEY, NULL);
 
     if (!pkgFiles) {
 	pkgFiles = (PkgFiles *)Tcl_Alloc(sizeof(PkgFiles));
 	pkgFiles->names = NULL;
 	Tcl_InitHashTable(&pkgFiles->table, TCL_STRING_KEYS);
-	Tcl_SetAssocData(interp, "tclPkgFiles", PkgFilesCleanupProc, pkgFiles);
+	Tcl_SetAssocData(interp, ASSOC_KEY, PkgFilesCleanupProc, pkgFiles);
     }
     return pkgFiles;
 }
@@ -274,8 +278,7 @@ TclPkgFileSeen(
     Tcl_Interp *interp,
     const char *fileName)
 {
-    PkgFiles *pkgFiles = (PkgFiles *)
-	    Tcl_GetAssocData(interp, "tclPkgFiles", NULL);
+    PkgFiles *pkgFiles = (PkgFiles *) Tcl_GetAssocData(interp, ASSOC_KEY, NULL);
 
     if (pkgFiles && pkgFiles->names) {
 	const char *name = pkgFiles->names->name;
@@ -857,7 +860,7 @@ SelectPackageFinal(
      * Pop the "ifneeded" package name from "tclPkgFiles" assocdata
      */
 
-    PkgFiles *pkgFiles = (PkgFiles *)Tcl_GetAssocData(interp, "tclPkgFiles", NULL);
+    PkgFiles *pkgFiles = (PkgFiles *)Tcl_GetAssocData(interp, ASSOC_KEY, NULL);
     PkgName *pkgName = pkgFiles->names;
     pkgFiles->names = pkgName->nextPtr;
     Tcl_Free(pkgName);
@@ -1098,13 +1101,12 @@ TclNRPackageObjCmd(
     }
     switch (optionIndex) {
     case PKG_FILES: {
-	PkgFiles *pkgFiles;
-
 	if (objc != 3) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "package");
 	    return TCL_ERROR;
 	}
-	pkgFiles = (PkgFiles *) Tcl_GetAssocData(interp, "tclPkgFiles", NULL);
+	PkgFiles *pkgFiles = (PkgFiles *)
+		Tcl_GetAssocData(interp, ASSOC_KEY, NULL);
 	if (pkgFiles) {
 	    Tcl_HashEntry *entry = Tcl_FindHashEntry(&pkgFiles->table,
 		    TclGetString(objv[2]));
@@ -1116,12 +1118,11 @@ TclNRPackageObjCmd(
 	break;
     }
     case PKG_FORGET: {
-	const char *keyString;
 	PkgFiles *pkgFiles = (PkgFiles *)
-		Tcl_GetAssocData(interp, "tclPkgFiles", NULL);
+		Tcl_GetAssocData(interp, ASSOC_KEY, NULL);
 
 	for (i = 2; i < objc; i++) {
-	    keyString = TclGetString(objv[i]);
+	    const char *keyString = TclGetString(objv[i]);
 	    if (pkgFiles) {
 		hPtr = Tcl_FindHashEntry(&pkgFiles->table, keyString);
 		if (hPtr) {
@@ -1157,8 +1158,7 @@ TclNRPackageObjCmd(
     }
     case PKG_IFNEEDED: {
 	Tcl_Size length;
-	int res;
-	char *argv3i, *avi;
+	char *argv3i;
 
 	if ((objc != 4) && (objc != 5)) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "package version ?script?");
@@ -1183,13 +1183,14 @@ TclNRPackageObjCmd(
 
 	for (availPtr = pkgPtr->availPtr, prevPtr = NULL; availPtr != NULL;
 		prevPtr = availPtr, availPtr = availPtr->nextPtr) {
+	    char *avi;
 	    if (CheckVersionAndConvert(interp, availPtr->version, &avi,
 		    NULL) != TCL_OK) {
 		Tcl_Free(argv3i);
 		return TCL_ERROR;
 	    }
 
-	    res = CompareVersions(avi, argv3i, NULL);
+	    int res = CompareVersions(avi, argv3i, NULL);
 	    Tcl_Free(avi);
 
 	    if (res == 0) {
@@ -1394,9 +1395,7 @@ TclNRPackageObjCmd(
 	    return TCL_OK;
 	}
 	break;
-    case PKG_UNKNOWN: {
-	Tcl_Size length;
-
+    case PKG_UNKNOWN:
 	if (objc == 2) {
 	    if (iPtr->packageUnknown != NULL) {
 		Tcl_SetObjResult(interp,
@@ -1406,6 +1405,7 @@ TclNRPackageObjCmd(
 	    if (iPtr->packageUnknown != NULL) {
 		Tcl_Free(iPtr->packageUnknown);
 	    }
+	    Tcl_Size length;
 	    argv2 = TclGetStringFromObj(objv[2], &length);
 	    if (argv2[0] == 0) {
 		iPtr->packageUnknown = NULL;
@@ -1417,7 +1417,6 @@ TclNRPackageObjCmd(
 	    return TCL_ERROR;
 	}
 	break;
-    }
     case PKG_PREFER: {
 	static const char *const pkgPreferOptions[] = {
 	    "latest", "stable", NULL
@@ -1528,7 +1527,7 @@ TclNRPackageObjCmd(
 	break;
     }
     default:
-	Tcl_Panic("Tcl_PackageObjCmd: bad option index to pkgOptions");
+	TCL_UNREACHABLE();
     }
     return TCL_OK;
 }

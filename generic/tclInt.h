@@ -141,6 +141,32 @@
 #   define Tcl_ConditionFinalize(condPtr)
 #endif
 
+// A way to mark a code path as unreachable.
+#ifndef TCL_UNREACHABLE
+#if defined(__STDC__) && __STDC__ >= 202311L
+#include <stddef.h>
+#define TCL_UNREACHABLE()	unreachable()
+#elif defined(__GNUC__)
+#define TCL_UNREACHABLE()	__builtin_unreachable()
+#elif defined(_MSC_VER)
+#include <stdbool.h>
+#define TCL_UNREACHABLE()	__assume(false)
+#else
+#define TCL_UNREACHABLE()	((void) 0)
+#endif
+#endif // TCL_UNREACHABLE
+
+#ifndef TCL_FALLTHROUGH
+#if defined(__STDC__) && __STDC__ >= 202311L
+#define TCL_FALLTHROUGH()	[[fallthrough]]
+#elif defined(__GNUC__)
+#define TCL_FALLTHROUGH()	__attribute__((fallthrough))
+#else
+// Nothing documented as an alternative to the standard [[fallthrough]].
+#define TCL_FALLTHROUGH()	((void) 0)
+#endif
+#endif // TCL_FALLTHROUGH
+
 /*
  * The following procedures allow namespaces to be customized to support
  * special name resolution rules for commands/variables.
@@ -1180,6 +1206,14 @@ TclObjTypeInOperator(
     return proc(interp, valueObj, listObj, boolResult);
 }
 
+/* Functions related to abstract list implementations */
+MODULE_SCOPE int
+Tcl_ListObjReverse(Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Obj **resultPtrPtr);
+MODULE_SCOPE int Tcl_ListObjRepeat(Tcl_Interp *interp, Tcl_Size repeatCount,
+    Tcl_Size objc, Tcl_Obj *const objv[], Tcl_Obj **resultPtrPtr);
+MODULE_SCOPE int Tcl_ListObjRange(Tcl_Interp *interp, Tcl_Obj *objPtr,
+    Tcl_Size start, Tcl_Size end, Tcl_Obj **resultPtrPtr);
+
 /*
  * The structure below defines an entry in the assocData hash table which is
  * associated with an interpreter. The entry contains a pointer to a function
@@ -1633,6 +1667,10 @@ typedef struct ExecEnv {
 #define COR_IS_SUSPENDED(corPtr) \
     ((corPtr)->stackLevel == NULL)
 
+// The different types of yielded coroutine we have.
+#define CORO_ACTIVATE_YIELD	NULL		// 0 or 1 argument expected
+#define CORO_ACTIVATE_YIELDM	INT2PTR(1)	// Arbitrary arguments expected
+
 /*
  * The definitions for the LiteralTable and LiteralEntry structures. Each
  * interpreter contains a LiteralTable. It is used to reduce the storage
@@ -1832,35 +1870,39 @@ typedef struct Command {
 
 /*
  * Flag bits for commands.
- *
- * CMD_DYING -			If 1 the command is in the process of
- *				being deleted (its deleteProc is currently
- *				executing). Other attempts to delete the
- *				command should be ignored.
- * CMD_TRACE_ACTIVE -		If 1 the trace processing is currently
- *				underway for a rename/delete change. See the
- *				two flags below for which is currently being
- *				processed.
- * CMD_HAS_EXEC_TRACES -	If 1 means that this command has at least one
- *				execution trace (as opposed to simple
- *				delete/rename traces) in its tracePtr list.
- * CMD_COMPILES_EXPANDED -	If 1 this command has a compiler that
- *				can handle expansion (provided it is not the
- *				first word).
- * TCL_TRACE_RENAME -		A rename trace is in progress. Further
- *				recursive renames will not be traced.
- * TCL_TRACE_DELETE -		A delete trace is in progress. Further
- *				recursive deletes will not be traced.
- * (these last two flags are defined in tcl.h)
  */
-
-#define CMD_DYING		0x01
-#define CMD_TRACE_ACTIVE	0x02
-#define CMD_HAS_EXEC_TRACES	0x04
-#define CMD_COMPILES_EXPANDED	0x08
-#define CMD_REDEF_IN_PROGRESS	0x10
-#define CMD_VIA_RESOLVER	0x20
-#define CMD_DEAD		0x40
+enum CommandFlags {
+    CMD_DYING = 0x01,		/* The command is in the process of being
+				 * deleted (its deleteProc is currently
+				 * executing). Other attempts to delete the
+				 * command should be ignored.*/
+    CMD_TRACE_ACTIVE = 0x02,	/* The trace processing is currently underway
+				 * for a rename/delete change. See the flags
+				 * CMD_TRACE_RENAMING, CMD_TRACE_DELETING for
+				 * which is currently being processed. */
+    CMD_HAS_EXEC_TRACES = 0x04,	/* This command has at least one execution
+				 * trace (as opposed to simple delete/rename
+				 * traces) in its tracePtr list. */
+    CMD_COMPILES_EXPANDED = 0x08,
+				/* This command has a compiler that can handle
+				 * expansion (provided it is not the first
+				 * word). */
+    CMD_REDEF_IN_PROGRESS = 0x10,
+				/* Command is currently being redefined. It
+				 * should not be deleted, though its ClientData
+				 * may be purged. */
+    CMD_VIA_RESOLVER = 0x20,	/* Command was located by resolver. Its literal
+				 * should be marked unshared by the compiler. */
+    CMD_DEAD = 0x40,		/* Command is at an advanced stage of being
+				 * deleted, and is no longer in any hash tables
+				 * but stale references may exist elsewhere. */
+    CMD_TRACE_RENAMING = TCL_TRACE_RENAME,
+				/* A rename trace is in progress. Further
+				 * recursive renames will not be traced. */
+    CMD_TRACE_DELETING = TCL_TRACE_DELETE
+				/* A delete trace is in progress. Further
+				 * recursive deletes will not be traced. */
+};
 
 /*
  *----------------------------------------------------------------
@@ -2547,10 +2589,11 @@ typedef struct ListStore {
     Tcl_Obj *slots[TCLFLEXARRAY];
 				/* Variable size array. Grown as needed */
 } ListStore;
-
-#define LISTSTORE_CANONICAL 0x1 /* All Tcl_Obj's referencing this
+enum ListStoreFlags {
+    LISTSTORE_CANONICAL = 1	/* All Tcl_Obj's referencing this
 				 * store have their string representation
 				 * derived from the list representation */
+};
 
 /* Max number of elements that can be contained in a list */
 #define LIST_MAX \
@@ -3154,6 +3197,7 @@ MODULE_SCOPE Tcl_ObjCmdProc TclNRSubstObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRSwitchObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRTryObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRUplevelObjCmd;
+MODULE_SCOPE Tcl_NRPostProc TclUplevelCallback;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRWhileObjCmd;
 
 MODULE_SCOPE Tcl_NRPostProc TclNRForIterCallback;
@@ -3165,6 +3209,7 @@ MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldmObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldToObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRInvoke;
+MODULE_SCOPE Tcl_NRPostProc TclNRPostInvoke;
 MODULE_SCOPE Tcl_NRPostProc TclNRReleaseValues;
 
 MODULE_SCOPE void	TclSetTailcall(Tcl_Interp *interp,
@@ -3669,7 +3714,7 @@ MODULE_SCOPE void	TclZipfsFinalize(void);
 
 MODULE_SCOPE int	TclIsSpaceProc(int byte);
 #define TclIsSpaceProcM(byte) \
-    (((byte) > 0x20) ? 0 : TclIsSpaceProc(byte))
+    (((unsigned)(byte) > 0x20) ? 0 : TclIsSpaceProc(byte))
 
 /*
  *----------------------------------------------------------------
@@ -3846,13 +3891,16 @@ MODULE_SCOPE CompileProc TclCompileInfoObjectNamespaceCmd;
 MODULE_SCOPE CompileProc TclCompileIncrCmd;
 MODULE_SCOPE CompileProc TclCompileLappendCmd;
 MODULE_SCOPE CompileProc TclCompileLassignCmd;
+MODULE_SCOPE CompileProc TclCompileLeditCmd;
 MODULE_SCOPE CompileProc TclCompileLindexCmd;
 MODULE_SCOPE CompileProc TclCompileLinsertCmd;
 MODULE_SCOPE CompileProc TclCompileListCmd;
 MODULE_SCOPE CompileProc TclCompileLlengthCmd;
 MODULE_SCOPE CompileProc TclCompileLmapCmd;
+MODULE_SCOPE CompileProc TclCompileLpopCmd;
 MODULE_SCOPE CompileProc TclCompileLrangeCmd;
 MODULE_SCOPE CompileProc TclCompileLreplaceCmd;
+MODULE_SCOPE CompileProc TclCompileLseqCmd;
 MODULE_SCOPE CompileProc TclCompileLsetCmd;
 MODULE_SCOPE CompileProc TclCompileNamespaceCodeCmd;
 MODULE_SCOPE CompileProc TclCompileNamespaceCurrentCmd;
@@ -3894,6 +3942,7 @@ MODULE_SCOPE CompileProc TclCompileTailcallCmd;
 MODULE_SCOPE CompileProc TclCompileThrowCmd;
 MODULE_SCOPE CompileProc TclCompileTryCmd;
 MODULE_SCOPE CompileProc TclCompileUnsetCmd;
+MODULE_SCOPE CompileProc TclCompileUplevelCmd;
 MODULE_SCOPE CompileProc TclCompileUpvarCmd;
 MODULE_SCOPE CompileProc TclCompileVariableCmd;
 MODULE_SCOPE CompileProc TclCompileWhileCmd;
@@ -4385,7 +4434,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
  *
  * MODULE_SCOPE void TclInitEmptyStringRep(Tcl_Obj *objPtr);
  * MODULE_SCOPE void TclInitStringRep(Tcl_Obj *objPtr, char *bytePtr, size_t len);
- * MODULE_SCOPE void TclAttemptInitStringRep(Tcl_Obj *objPtr, char *bytePtr, size_t len);
+ * MODULE_SCOPE const char *TclAttemptInitStringRep(Tcl_Obj *objPtr, char *bytePtr, size_t len);
  *
  *----------------------------------------------------------------
  */
@@ -4410,7 +4459,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 	(objPtr)->bytes = (char *)Tcl_AttemptAlloc((len) + 1U),		\
 	(objPtr)->length = ((objPtr)->bytes) ?				\
 		(memcpy((objPtr)->bytes, (bytePtr) ? (bytePtr) : &tclEmptyString, (len)), \
-		(objPtr)->bytes[len] = '\0', (len)) : (-1)		\
+		(objPtr)->bytes[len] = '\0', (Tcl_Size)(len)) : (-1)		\
     )), (objPtr)->bytes)
 
 /*
