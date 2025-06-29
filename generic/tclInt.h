@@ -3898,6 +3898,7 @@ MODULE_SCOPE CompileProc TclCompileLmapCmd;
 MODULE_SCOPE CompileProc TclCompileLpopCmd;
 MODULE_SCOPE CompileProc TclCompileLrangeCmd;
 MODULE_SCOPE CompileProc TclCompileLreplaceCmd;
+MODULE_SCOPE CompileProc TclCompileLseqCmd;
 MODULE_SCOPE CompileProc TclCompileLsetCmd;
 MODULE_SCOPE CompileProc TclCompileNamespaceCodeCmd;
 MODULE_SCOPE CompileProc TclCompileNamespaceCurrentCmd;
