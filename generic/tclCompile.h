@@ -934,6 +934,7 @@ enum TclInstruction {
     INST_TAILCALL_LIST,
     INST_TCLOO_NEXT_LIST,
     INST_TCLOO_NEXT_CLASS_LIST,
+    INST_ARITH_SERIES,
     INST_UPLEVEL,
 
     /* The last opcode */
@@ -2011,7 +2012,16 @@ enum PushVarNameFlags {
  */
 enum Lreplace4Flags {
     TCL_LREPLACE_END_IS_LAST = 1,	/* "end" refers to last element */
-    TCL_LREPLACE_SINGLE_INDEX = 2	/* Second index absent (pure insert) */
+    TCL_LREPLACE_SINGLE_INDEX = 2,	/* Second index absent (pure insert) */
+    TCL_LREPLACE_NEED_IN_RANGE = 4	/* First index must resolve to real list index */
+};
+
+/* Flags bits used by arithSeries instruction */
+enum ArithSeqriesFlags {
+    TCL_ARITHSERIES_FROM = 1 << 0,	// from is defined (conventionally empty otherwise)
+    TCL_ARITHSERIES_TO = 1 << 1,	// to is defined (conventionally empty otherwise)
+    TCL_ARITHSERIES_STEP = 1 << 2,	// step is defined (conventionally empty otherwise)
+    TCL_ARITHSERIES_COUNT = 1 << 3,	// count is defined (conventionally empty otherwise)
 };
 
 /*
