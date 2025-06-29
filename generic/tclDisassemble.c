@@ -720,6 +720,9 @@ FormatInstruction(
 	    case TCL_LREPLACE_SINGLE_INDEX:
 		Tcl_AppendPrintfToObj(bufferObj, "singleIdx ");
 		break;
+	    case TCL_LREPLACE_END_IS_LAST | TCL_LREPLACE_NEED_IN_RANGE:
+		Tcl_AppendPrintfToObj(bufferObj, "endLast,indexTest ");
+		break;
 	    default:
 		Tcl_AppendPrintfToObj(bufferObj, "endLast,singleIdx ");
 		break;
