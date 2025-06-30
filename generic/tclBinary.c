@@ -121,7 +121,7 @@ static const char B64Digits[65] = {
 
 const EnsembleImplMap tclBinaryImplMap[] = {
     { "format", BinaryFormatCmd, TclCompileBasicMin1ArgCmd, NULL, NULL, 0 },
-    { "scan",   BinaryScanCmd, TclCompileBasicMin2ArgCmd, NULL, NULL, 0 },
+    { "scan",   BinaryScanCmd, TclCompileBasicMin2ArgCmd, NULL, NULL, 0 }, // TODO: compile?
     { "encode", NULL, NULL, NULL, NULL, 0 },
     { "decode", NULL, NULL, NULL, NULL, 0 },
     { NULL, NULL, NULL, NULL, NULL, 0 }

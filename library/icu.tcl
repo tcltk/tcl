@@ -20,6 +20,7 @@ namespace eval ::tcl::unsupported::icu {
     # for the same encoding.
     variable tclToIcu
     variable icuToTcl
+    variable Initialised 0
 
     proc LogError {message} {
 	puts stderr $message
@@ -28,6 +29,12 @@ namespace eval ::tcl::unsupported::icu {
     proc Init {} {
 	variable tclToIcu
 	variable icuToTcl
+	variable Initialised
+	if {$Initialised} {
+	    return
+	} else {
+	    set initialised 1
+	}
 	# There are some special cases where names do not line up
 	# at all. Map Tcl -> ICU
 	array set specialCases {
@@ -40,12 +47,12 @@ namespace eval ::tcl::unsupported::icu {
 	}
 	# Ignore all errors. Do not want to hold up Tcl
 	# if ICU not available
-	if {[catch {
+	try {
 	    foreach tclName [encoding names] {
-		if {[catch {
+		try {
 		    set icuNames [aliases $tclName]
-		} erMsg]} {
-		    LogError "Could not get aliases for $tclName: $erMsg"
+		} on error errMsg {
+		    LogError "Could not get aliases for $tclName: $errMsg"
 		    continue
 		}
 		if {[llength $icuNames] == 0} {
@@ -62,7 +69,8 @@ namespace eval ::tcl::unsupported::icu {
 		# the first name which is the canonical ICU name
 		set pos [lsearch -exact -nocase $icuNames $tclName]
 		if {$pos >= 0} {
-		    lappend tclToIcu($tclName) [lindex $icuNames $pos] {*}[lreplace $icuNames $pos $pos]
+		    lappend tclToIcu($tclName) [lindex $icuNames $pos] \
+			    {*}[lreplace $icuNames $pos $pos]
 		} else {
 		    set tclToIcu($tclName) $icuNames
 		}
@@ -70,14 +78,11 @@ namespace eval ::tcl::unsupported::icu {
 		    lappend icuToTcl($icuName) $tclName
 		}
 	    }
-	} errMsg]} {
+	} on error errMsg {
 	    LogError $errMsg
 	}
 	array default set tclToIcu ""
 	array default set icuToTcl ""
-
-	# Redefine ourselves to no-op.
-	proc Init {} {}
     }
     # Primarily used during development
     proc MappedIcuNames {{pat *}} {
@@ -125,7 +130,7 @@ namespace eval ::tcl::unsupported::icu {
 	    variable icuToTcl
 	    return [lindex $icuToTcl($icuName) 0]
 	}
-	icuToTcl $icuName
+	tailcall icuToTcl $icuName
     }
 
     # Returns the ICU equivalent of an Tcl encoding name or
@@ -136,9 +141,8 @@ namespace eval ::tcl::unsupported::icu {
 	    variable tclToIcu
 	    return [lindex $tclToIcu($tclName) 0]
 	}
-	tclToIcu $tclName
+	tailcall tclToIcu $tclName
     }
-
 
     namespace export {[a-z]*}
     namespace ensemble create

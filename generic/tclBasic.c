@@ -259,19 +259,47 @@ MODULE_SCOPE const TclStubs tclStubs;
  */
 
 typedef struct {
-    const char *name;		/* Name of object-based command. */
-    Tcl_ObjCmdProc *objProc;	/* Object-based function for command. */
-    CompileProc *compileProc;	/* Function called to compile command. */
-    Tcl_ObjCmdProc *nreProc;	/* NR-based function for command */
-    int flags;			/* Various flag bits, as defined below. */
+    const char *name;		// Name of object-based command.
+    Tcl_ObjCmdProc *objProc;	// Object-based function for command.
+    CompileProc *compileProc;	// Function called to compile command.
+    Tcl_ObjCmdProc *nreProc;	// NR-based function for command.
+    int flags;			// Various flag bits, as defined below.
 } CmdInfo;
 
-#define CMD_IS_SAFE 1		/* Whether this command is part of the set of
+enum CmdInfoFlags {
+    CMD_IS_SAFE = 1		/* Whether this command is part of the set of
 				 * commands present by default in a safe
 				 * interpreter. */
 /* CMD_COMPILES_EXPANDED - Whether the compiler for this command can handle
  * expansion for itself rather than needing the generic layer to take care of
  * it for it. Defined in tclInt.h. */
+};
+
+/*
+ * Description of commands in ::tcl::unsupported.
+ *
+ */
+typedef struct UnsupportedCmdInfo {
+    const char *name;		// Name of command in ::tcl::unsupported.
+    Tcl_ObjCmdProc *objProc;	// Object-based function for command.
+    CompileProc *compileProc;	// Function called to compile command.
+    Tcl_ObjCmdProc *nreProc;	// NR-based function for command.
+    void *clientData;		// ClientData to use for the command.
+    int flags;			// Various flag bits, as defined for CmdInfo.
+} UnsupportedCmdInfo;
+
+// A function that can configure an ensemble after it is created.
+typedef int (EnsembleConfigurer)(Tcl_Interp *interp, Tcl_Command ensemble);
+
+typedef struct EnsembleSetup {
+    const char *name;		// Name of ensemble.
+    const EnsembleImplMap *implMap; // Ensemble contents descriptor.
+    EnsembleConfigurer *configurerProc; // Optional callback for customisation.
+    int flags;			/* Ensemble commands are never technically
+				 * unsafe (though their subcommands may well
+				 * be so), but some code expects them to be
+				 * so. This flag lets us mark those cases. */
+} EnsembleSetup;
 
 /*
  * The built-in commands, and the functions that implement them:
@@ -389,35 +417,35 @@ static const CmdInfo builtInCmds[] = {
     {NULL,		NULL,			NULL,			NULL,	0}
 };
 
-typedef struct EnsembleSetup {
-    const char *name;
-    const EnsembleImplMap *implMap;
-    int (*configurer)(Tcl_Interp *interp, Tcl_Command ensemble);
-    int overallUnsafe;		/* Ensemble commands are never technically
-				 * unsafe (though their subcommands may well
-				 * be so), but some code expects them to be
-				 * so. This flag lets us mark those cases. */
-} EnsembleSetup;
+static const UnsupportedCmdInfo unsupportedCmds[] = {
+    {"disassemble",	Tcl_DisassembleObjCmd,	NULL,			NULL,	INT2PTR(0), 0},
+    {"getbytecode",	Tcl_DisassembleObjCmd,	NULL,			NULL,	INT2PTR(1), 0},
+    {"representation",	Tcl_RepresentationCmd,	NULL,			NULL,	NULL, 0},
+    {"assemble",	Tcl_AssembleObjCmd,	TclCompileAssembleCmd,	TclNRAssembleObjCmd, NULL, CMD_IS_SAFE},
+    {"corotype",	CoroTypeObjCmd,		NULL,			NULL,	NULL, CMD_IS_SAFE},
+    {"loadIcu",		TclLoadIcuObjCmd,	NULL,			NULL,	NULL, 0}, // TODO: Is this supposed to be callable from safe interps?
+    {NULL, NULL, NULL, NULL, NULL, 0}
+};
 
 // Table of definitions of ensemble commands.
 static const EnsembleSetup ensembleCommands[] = {
-    {"array",		tclArrayImplMap,	NULL, 0},
-    {"binary",		tclBinaryImplMap,	NULL, 0},
-    {"binary encode",	tclBinaryEncodeImplMap, NULL, 0},
-    {"binary decode",	tclBinaryDecodeImplMap, NULL, 0},
-    {"chan",		tclChanImplMap,		TclSetUpChanCmd, 0},
+    {"array",		tclArrayImplMap,	NULL, CMD_IS_SAFE},
+    {"binary",		tclBinaryImplMap,	NULL, CMD_IS_SAFE},
+    {"binary encode",	tclBinaryEncodeImplMap, NULL, CMD_IS_SAFE},
+    {"binary decode",	tclBinaryDecodeImplMap, NULL, CMD_IS_SAFE},
+    {"chan",		tclChanImplMap,		TclSetUpChanCmd, CMD_IS_SAFE},
     // TODO: Sort out why setup of [clock] is so weird
-    {"clock",		tclClockImplMap,	NULL, 1},
-    {"dict",		tclDictImplMap,		NULL, 0},
-    {"encoding",	tclEncodingImplMap,	NULL, 1},
-    {"file",		tclFileImplMap,		NULL, 1},
-    {"info",		tclInfoImplMap,		NULL, 0},
-    {"namespace",	tclNamespaceImplMap,	NULL, 0},
-    {"string",		tclStringImplMap,	NULL, 0},
-    {"::tcl::prefix",	tclPrefixImplMap,	TclSetUpPrefixCmd, 0},
-    {"::tcl::process",	tclProcessImplMap,	TclSetUpProcessCmd, 0},
-    {"zipfs",		tclZipfsImplMap,	NULL, 1},
-    {"zlib",		tclZlibImplMap,		NULL, 0},
+    {"clock",		tclClockImplMap,	NULL, 0},
+    {"dict",		tclDictImplMap,		NULL, CMD_IS_SAFE},
+    {"encoding",	tclEncodingImplMap,	NULL, 0},
+    {"file",		tclFileImplMap,		NULL, 0},
+    {"info",		tclInfoImplMap,		NULL, CMD_IS_SAFE},
+    {"namespace",	tclNamespaceImplMap,	NULL, CMD_IS_SAFE},
+    {"string",		tclStringImplMap,	NULL, CMD_IS_SAFE},
+    {"::tcl::prefix",	tclPrefixImplMap,	TclSetUpPrefixCmd, CMD_IS_SAFE},
+    {"::tcl::process",	tclProcessImplMap,	TclSetUpProcessCmd, CMD_IS_SAFE},
+    {"zipfs",		tclZipfsImplMap,	NULL, 0},
+    {"zlib",		tclZlibImplMap,		NULL, CMD_IS_SAFE},
     {NULL, NULL, NULL, 0}
 };
 
@@ -1045,6 +1073,13 @@ Tcl_CreateInterp(void)
     iPtr->asyncReadyPtr = TclGetAsyncReadyPtr();
     iPtr->deferredCallbacks = NULL;
 
+    // Create the namespace for unsupported bits and pieces.
+    Tcl_Namespace *unsupportedNs = Tcl_CreateNamespace(interp,
+	    "::tcl::unsupported", NULL, NULL);
+    if (unsupportedNs == NULL) {
+	Tcl_Panic("couldn't find ::tcl::unsupported");
+    }
+
     /*
      * Create the core commands. Do it here, rather than calling Tcl_CreateObjCommand,
      * because it's faster (there's no need to check for a preexisting command
@@ -1095,8 +1130,8 @@ Tcl_CreateInterp(void)
     for (ensSetupPtr=ensembleCommands; ensSetupPtr->name; ensSetupPtr++) {
 	Tcl_Command ensemble = TclMakeEnsemble(interp, ensSetupPtr->name,
 		ensSetupPtr->implMap);
-	if (ensSetupPtr->configurer) {
-	    if (ensSetupPtr->configurer(interp, ensemble) != TCL_OK) {
+	if (ensSetupPtr->configurerProc) {
+	    if (ensSetupPtr->configurerProc(interp, ensemble) != TCL_OK) {
 		Tcl_Panic("failed to set up %s: %s", ensSetupPtr->name,
 			Tcl_GetStringResult(interp));
 	    }
@@ -1127,32 +1162,15 @@ Tcl_CreateInterp(void)
      * Create unsupported commands for debugging bytecode and objects.
      */
 
-    Tcl_CreateObjCommand(interp, "::tcl::unsupported::disassemble",
-	    Tcl_DisassembleObjCmd, INT2PTR(0), NULL);
-    Tcl_CreateObjCommand(interp, "::tcl::unsupported::getbytecode",
-	    Tcl_DisassembleObjCmd, INT2PTR(1), NULL);
-    Tcl_CreateObjCommand(interp, "::tcl::unsupported::representation",
-	    Tcl_RepresentationCmd, NULL, NULL);
-
-    /* Adding the bytecode assembler command */
-    cmdPtr = (Command *) Tcl_NRCreateCommand(interp,
-	    "::tcl::unsupported::assemble", Tcl_AssembleObjCmd,
-	    TclNRAssembleObjCmd, NULL, NULL);
-    cmdPtr->compileProc = &TclCompileAssembleCmd;
-
-    /* Coroutine monkeybusiness */
-    Tcl_CreateObjCommand(interp, "::tcl::unsupported::corotype",
-	    CoroTypeObjCmd, NULL, NULL);
-
-    /* Load and intialize ICU */
-    Tcl_CreateObjCommand(interp, "::tcl::unsupported::loadIcu",
-	    TclLoadIcuObjCmd, NULL, NULL);
-
-    /* Export unsupported commands */
-    nsPtr = Tcl_FindNamespace(interp, "::tcl::unsupported", NULL, 0);
-    if (nsPtr) {
-	Tcl_Export(interp, nsPtr, "*", 1);
+    const UnsupportedCmdInfo *unsCmdInfoPtr;
+    for (unsCmdInfoPtr=unsupportedCmds; unsCmdInfoPtr->name; unsCmdInfoPtr++) {
+	cmdPtr = (Command *) TclCreateObjCommandInNs(interp,
+		unsCmdInfoPtr->name, unsupportedNs, unsCmdInfoPtr->objProc,
+		unsCmdInfoPtr->clientData, NULL);
+	cmdPtr->nreProc = unsCmdInfoPtr->nreProc;
+	cmdPtr->compileProc = unsCmdInfoPtr->compileProc;
     }
+    Tcl_Export(interp, unsupportedNs, "*", 1);
 
 #ifdef USE_DTRACE
     /*
@@ -1166,7 +1184,7 @@ Tcl_CreateInterp(void)
      * Register the builtin math functions.
      */
 
-    nsPtr = Tcl_CreateNamespace(interp, "::tcl::mathfunc", NULL,NULL);
+    nsPtr = Tcl_CreateNamespace(interp, "::tcl::mathfunc", NULL, NULL);
     if (nsPtr == NULL) {
 	Tcl_Panic("Can't create math function namespace");
     }
@@ -1374,6 +1392,36 @@ TclGetCommandTypeName(
  *----------------------------------------------------------------------
  */
 
+static void
+HideCommandInTclNs(
+    Tcl_Interp *interp,
+    const char *nsName,
+    const char *name,
+    Tcl_Obj *publicNameTuple)
+{
+    Tcl_Obj *cmdName = Tcl_ObjPrintf("::tcl::%s::%s", nsName, name);
+    Tcl_Obj *hideName = Tcl_ObjPrintf("tcl:%s:%s", nsName, name);
+
+#define INTERIM_HACK_NAME "___tmp"
+    // TODO: Fix the hiding machinery to handle namespaced commands.
+
+    if (TclRenameCommand(interp, TclGetString(cmdName),
+		INTERIM_HACK_NAME) != TCL_OK
+	    || Tcl_HideCommand(interp, INTERIM_HACK_NAME,
+		    TclGetString(hideName)) != TCL_OK) {
+	Tcl_Panic("problem making '%s %s' safe: %s",
+		nsName, name, Tcl_GetStringResult(interp));
+    }
+    if (publicNameTuple) {
+	Tcl_IncrRefCount(publicNameTuple);
+	Tcl_CreateObjCommand(interp, TclGetString(cmdName),
+		BadEnsembleSubcommand, (void *)publicNameTuple,
+		BadEnsembleSubcommandCleanup);
+    }
+    TclDecrRefCount(cmdName);
+    TclDecrRefCount(hideName);
+}
+
 int
 TclHideUnsafeCommands(
     Tcl_Interp *interp)		/* Hide commands in this interpreter. */
@@ -1381,6 +1429,7 @@ TclHideUnsafeCommands(
     const CmdInfo *cmdInfoPtr;
     const EnsembleSetup *ensSetupPtr;
     const EnsembleImplMap *implMapPtr;
+    const UnsupportedCmdInfo *unsCmdInfoPtr;
 
     if (interp == NULL) {
 	return TCL_ERROR;
@@ -1404,38 +1453,24 @@ TclHideUnsafeCommands(
 	    while ((sub = strstr(ensembleNsName, "::")) != NULL) {
 		ensembleNsName = sub + 2;
 	    }
-	    Tcl_Obj *cmdName = Tcl_ObjPrintf("::tcl::%s::%s",
-		    ensembleNsName, implMapPtr->name);
-	    Tcl_Obj *hideName = Tcl_ObjPrintf("tcl:%s:%s",
-		    ensembleNsName, implMapPtr->name);
-	    Tcl_Obj *publicNameTuple = Tcl_NewListObj(2, ((Tcl_Obj*[]){
-		Tcl_NewStringObj(ensSetupPtr->name, TCL_AUTO_LENGTH),
-		Tcl_NewStringObj(implMapPtr->name, TCL_AUTO_LENGTH)
-	    }));
-
-#define INTERIM_HACK_NAME "___tmp"
-
-	    if (TclRenameCommand(interp, TclGetString(cmdName),
-			INTERIM_HACK_NAME) != TCL_OK
-		    || Tcl_HideCommand(interp, INTERIM_HACK_NAME,
-			    TclGetString(hideName)) != TCL_OK) {
-		Tcl_Panic("problem making '%s %s' safe: %s",
-			ensSetupPtr->name, implMapPtr->name,
-			Tcl_GetStringResult(interp));
-	    }
-	    Tcl_IncrRefCount(publicNameTuple);
-	    Tcl_CreateObjCommand(interp, TclGetString(cmdName),
-		    BadEnsembleSubcommand, (void *)publicNameTuple,
-		    BadEnsembleSubcommandCleanup);
-	    TclDecrRefCount(cmdName);
-	    TclDecrRefCount(hideName);
+	    HideCommandInTclNs(interp, ensembleNsName, implMapPtr->name,
+		    Tcl_NewListObj(2, ((Tcl_Obj*[]) {
+			Tcl_NewStringObj(ensSetupPtr->name, TCL_AUTO_LENGTH),
+			Tcl_NewStringObj(implMapPtr->name, TCL_AUTO_LENGTH)
+		    })));
 	}
 
-	if (ensSetupPtr->overallUnsafe) {
+	if (!(ensSetupPtr->flags & CMD_IS_SAFE)) {
 	    /*
 	     * Hide a main command (for compatibility).
 	     */
 	    Tcl_HideCommand(interp, ensSetupPtr->name, ensSetupPtr->name);
+	}
+    }
+
+    for (unsCmdInfoPtr=unsupportedCmds; unsCmdInfoPtr->name; unsCmdInfoPtr++) {
+	if (!(unsCmdInfoPtr->flags & CMD_IS_SAFE)) {
+	    HideCommandInTclNs(interp, "unsupported", unsCmdInfoPtr->name, NULL);
 	}
     }
 
