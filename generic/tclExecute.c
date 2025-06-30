@@ -9488,7 +9488,7 @@ GenerateArithSeries(
 	    goto cleanupOnError;
 	}
 	switch (type) {
-	case TCL_NUMBER_DOUBLE:
+	case TCL_NUMBER_DOUBLE: {
 	    double dCount = *((const double *) ptr);
 	    Tcl_WideInt wCount = (Tcl_WideInt) dCount;
 	    if (dCount - wCount == 0.0) {
@@ -9498,6 +9498,7 @@ GenerateArithSeries(
 		Tcl_IncrRefCount(count);
 	    }
 	    break;
+	}
 	case TCL_NUMBER_NAN:
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "expected integer but got \"%s\"",
