@@ -259,7 +259,7 @@ const EnsembleImplMap tclArrayImplMap[] = {
     {"default",		ArrayDefaultCmd,	TclCompileBasic2Or3ArgCmd,	NULL,		NULL, 0},
     {"donesearch",	ArrayDoneSearchCmd,	TclCompileBasic2ArgCmd,		NULL,		NULL, 0},
     {"exists",		ArrayExistsCmd,		TclCompileArrayExistsCmd,	NULL,		NULL, 0},
-    {"for",		ArrayForObjCmd,		TclCompileBasic3ArgCmd,		ArrayForNRCmd,	NULL, 0},
+    {"for",		ArrayForObjCmd,		TclCompileBasic3ArgCmd,		ArrayForNRCmd,	NULL, 0}, // TODO: compile?
     {"get",		ArrayGetCmd,		TclCompileBasic1Or2ArgCmd,	NULL,		NULL, 0},
     {"names",		ArrayNamesCmd,		TclCompileBasic1To3ArgCmd,	NULL,		NULL, 0},
     {"nextelement",	ArrayNextElementCmd,	TclCompileBasic2ArgCmd,		NULL,		NULL, 0},
