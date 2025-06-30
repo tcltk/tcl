@@ -249,9 +249,10 @@ MODULE_SCOPE const TclStubs tclStubs;
  * Magical counts for the number of arguments accepted by a coroutine command
  * after particular kinds of [yield].
  */
-
-#define COROUTINE_ARGUMENTS_SINGLE_OPTIONAL	(-1)
-#define COROUTINE_ARGUMENTS_ARBITRARY		(-2)
+enum CoroutineArgumentTypes {
+    COROUTINE_ARGUMENTS_SINGLE_OPTIONAL = -1,
+    COROUTINE_ARGUMENTS_ARBITRARY = -2
+};
 
 /*
  * The following structure define the commands in the Tcl core.
