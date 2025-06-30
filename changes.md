@@ -47,7 +47,10 @@ to the userbase.
  - [The ActiveCodePage element has been removed from the Windows executable manifest for tclsh](https://core.tcl-lang.org/tips/doc/trunk/tip/716.md)
 
 # Updated bundled packages, libraries, standards, data
+ - Itcl 4.3.3
  - sqlite3 3.49.1
+ - Thread 3.0.2
+ - TDBC\* 1.1.11
  - tzdata 2025b
 
 Release Tcl 9.0.1 arises from the check-in with tag `core-9-0-1`.
