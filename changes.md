@@ -41,7 +41,7 @@ to the userbase.
  - [use after free on TSD in Winsock](https://core.tcl-lang.org/tcl/tktview/40b181)
  - [use after free on Windows pipe handles](https://core.tcl-lang.org/tcl/tktview/7c2716)
  - [tcl::build-info not documented](https://core.tcl-lang.org/tcl/tktview/ef7042)
- - [interp limit commands still seems to be 32 bits](https://core.tcl-lang.org/tcl/tktview/9dfae3)
+ - [Fix 32 bit overflow in interp limit](https://core.tcl-lang.org/tcl/tktview/9dfae3)
 
 # Incompatibilities
  - [The ActiveCodePage element has been removed from the Windows executable manifest for tclsh](https://core.tcl-lang.org/tips/doc/trunk/tip/716.md)
@@ -228,5 +228,5 @@ writing Tcl scripts.
  - [windows dos device paths inconsistencies and missing functionality](https://core.tcl-lang.org/tcl/tktview/d8f121)
  - [load library (dll) from zipfs-library causes a leak in temporary folder](https://core.tcl-lang.org/tcl/tktview/a8e4f7)
  - [lsearch -sorted -inline -subindices incorrect result](https://core.tcl-lang.org/tcl/tktview/bc4ac0)
- - ["No error" when load fails due to a missing secondary DLL](https://core.tcl-lang.org/tcl/tktview/bc4ac0)
+ - ["No error" when load fails due to a missing secondary DLL](https://core.tcl-lang.org/tcl/tktview/66aa81c90a)
 
