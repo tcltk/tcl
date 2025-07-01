@@ -109,7 +109,7 @@ oo::class create Ex {
 }
 
 set o [Ex new]
-$o 3 5 7
+$o call 3 5 7
         \fI\(-> This is a\fR
         \fI\(-> This is b(3)\fR
         \fI\(-> This is c(5,7)\fR
