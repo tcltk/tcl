@@ -266,12 +266,14 @@ typedef struct {
     int flags;			/* Various flag bits, as defined below. */
 } CmdInfo;
 
-#define CMD_IS_SAFE 1		/* Whether this command is part of the set of
+enum CmdInfoFlags {
+    CMD_IS_SAFE = 1		/* Whether this command is part of the set of
 				 * commands present by default in a safe
 				 * interpreter. */
 /* CMD_COMPILES_EXPANDED - Whether the compiler for this command can handle
  * expansion for itself rather than needing the generic layer to take care of
  * it for it. Defined in tclInt.h. */
+};
 
 /*
  * The following struct states that the command it talks about (a subcommand

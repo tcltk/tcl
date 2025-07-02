@@ -85,11 +85,12 @@ typedef struct {
  * LINK_ALLOC_LAST -		1 means linkPtr->valueLast.p was allocated on
  *				the heap.
  */
-
-#define LINK_READ_ONLY		1
-#define LINK_BEING_UPDATED	2
-#define LINK_ALLOC_ADDR		4
-#define LINK_ALLOC_LAST		8
+enum LinkFlags {
+    LINK_READ_ONLY = 1,
+    LINK_BEING_UPDATED = 2,
+    LINK_ALLOC_ADDR = 4,
+    LINK_ALLOC_LAST = 8
+};
 
 /*
  * Forward references to functions defined later in this file:

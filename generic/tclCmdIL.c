@@ -88,13 +88,14 @@ typedef struct {
  * The "sortMode" field of the SortInfo structure can take on any of the
  * following values.
  */
-
-#define SORTMODE_ASCII		0
-#define SORTMODE_INTEGER	1
-#define SORTMODE_REAL		2
-#define SORTMODE_COMMAND	3
-#define SORTMODE_DICTIONARY	4
-#define SORTMODE_ASCII_NC	8
+enum SortModes {
+    SORTMODE_ASCII = 0,
+    SORTMODE_INTEGER = 1,
+    SORTMODE_REAL = 2,
+    SORTMODE_COMMAND = 3,
+    SORTMODE_DICTIONARY = 4,
+    SORTMODE_ASCII_NC = 8
+};
 
 /*
  * Definitions for [lseq] command

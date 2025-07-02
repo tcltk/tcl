@@ -21,16 +21,18 @@
  * The following constants are used by GetFormatSpec to indicate various
  * special conditions in the parsing of a format specifier.
  */
-
-#define BINARY_ALL -1		/* Use all elements in the argument. */
-#define BINARY_NOCOUNT -2	/* No count was specified in format. */
+enum GetFormatSpecSpecialCounts {
+    BINARY_ALL = -1,		/* Use all elements in the argument. */
+    BINARY_NOCOUNT = -2		/* No count was specified in format. */
+};
 
 /*
  * The following flags may be OR'ed together and returned by GetFormatSpec
  */
-
-#define BINARY_SIGNED 0		/* Field to be read as signed data */
-#define BINARY_UNSIGNED 1	/* Field to be read as unsigned data */
+enum GetFormatSpecSignedness {
+    BINARY_SIGNED = 0,		/* Field to be read as signed data */
+    BINARY_UNSIGNED = 1		/* Field to be read as unsigned data */
+};
 
 /*
  * The following defines the maximum number of different (integer) numbers
