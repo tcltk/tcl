@@ -2566,10 +2566,11 @@ typedef enum TclEolTranslation {
  *				caller plans on recording its own traceback
  *				information.
  */
-
-#define	TCL_INVOKE_HIDDEN	(1<<0)
-#define TCL_INVOKE_NO_UNKNOWN	(1<<1)
-#define TCL_INVOKE_NO_TRACEBACK	(1<<2)
+enum TclInvokeFlags {
+    TCL_INVOKE_HIDDEN = 1 << 0,
+    TCL_INVOKE_NO_UNKNOWN = 1 << 1,
+    TCL_INVOKE_NO_TRACEBACK = 1 << 2
+};
 
 /*
  * ListStore --

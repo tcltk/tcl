@@ -188,9 +188,10 @@ static pthread_cond_t notifierCV = PTHREAD_COND_INITIALIZER;
  *	POLL_WANT. The idea is to ensure it tries a select with the same bits
  *	the initial thread had set.
  */
-
-#define POLL_WANT	0x1
-#define POLL_DONE	0x2
+enum SelectPollStateFlags {
+    POLL_WANT = 0x1,
+    POLL_DONE = 0x2
+};
 
 /*
  * This is the thread ID of the notifier thread that does select.

@@ -64,18 +64,21 @@ static int		ExecuteCallback(TransformChannelData *ctrl,
  * the procedure what to do with the result of the script it calls.
  */
 
-#define TRANSMIT_DONT	0	/* No transfer to do. */
-#define TRANSMIT_DOWN	1	/* Transfer to the underlying channel. */
-#define TRANSMIT_SELF	2	/* Transfer into our channel. */
-#define TRANSMIT_IBUF	3	/* Transfer to internal input buffer. */
-#define TRANSMIT_NUM	4	/* Transfer number to 'maxRead'. */
+enum TransmitParameter {
+    TRANSMIT_DONT = 0,		/* No transfer to do. */
+    TRANSMIT_DOWN = 1,		/* Transfer to the underlying channel. */
+    TRANSMIT_SELF = 2,		/* Transfer into our channel. */
+    TRANSMIT_IBUF = 3,		/* Transfer to internal input buffer. */
+    TRANSMIT_NUM = 4,		/* Transfer number to 'maxRead'. */
+};
 
 /*
  * Codes for 'preserve' of 'ExecuteCallback'.
  */
-
-#define P_PRESERVE	1
-#define P_NO_PRESERVE	0
+enum PreserveParameter {
+    P_PRESERVE = 1,
+    P_NO_PRESERVE = 0
+};
 
 /*
  * Strings for the action codes delivered to the script implementing a
@@ -137,8 +140,9 @@ static const Tcl_ChannelType transformChannelType = {
 /*
  * Possible values for 'flags' field in control structure, see below.
  */
-
-#define CHANNEL_ASYNC (1<<0)	/* Non-blocking mode. */
+enum TransformChannelDataFlags {
+    CHANNEL_ASYNC = 1 << 0	/* Non-blocking mode. */
+};
 
 /*
  * Definition of the structure containing the information about the internal

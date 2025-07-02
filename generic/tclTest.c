@@ -6789,9 +6789,10 @@ TestChannelEventCmd(
  *----------------------------------------------------------------------
  */
 
-#define TCP_ASYNC_TEST_MODE	(1<<8)	/* Async testing activated.  Do not
-					 * automatically continue connection
-					 * process. */
+enum TclTcpTestFlags {
+    TCP_ASYNC_TEST_MODE = 1<<8	/* Async testing activated.  Do not
+				 * automatically continue connection process. */
+};
 
 static int
 TestSocketCmd(
