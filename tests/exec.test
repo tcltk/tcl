@@ -825,7 +825,7 @@ unset cmdBuiltin
 # ----------------------------------------------------------------------
 # cleanup
 
-foreach file {gorp.file gorp.file2 echo echo2 cat wc sh sh2 sleep exit err} {
+foreach file {gorp.file gorp.file2 echo echo2 echobin cat wc sh sh2 sleep exit err} {
     removeFile $file
 }
 unset -nocomplain path
