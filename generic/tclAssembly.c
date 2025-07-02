@@ -128,7 +128,7 @@ enum BasicBlockFlags {
  * Source instruction type recognized by the assembler.
  */
 
-typedef enum {
+typedef enum TalInstType {
     ASSEM_1BYTE,		/* Fixed arity, 1-byte instruction */
     ASSEM_BEGIN_CATCH,		/* Begin catch: one 4-byte jump offset to be
 				 * converted to appropriate exception

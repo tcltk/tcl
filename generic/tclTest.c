@@ -3836,7 +3836,7 @@ TestlistrepCmd(
 	"validate",
 	NULL
     };
-    enum {
+    enum Subcommand {
 	LISTREP_NEW,
 	LISTREP_DESCRIBE,
 	LISTREP_CONFIG,

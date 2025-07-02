@@ -2531,7 +2531,7 @@ struct TclMaxAlignment {
  * of the tclPlatform variable.
  */
 
-typedef enum {
+typedef enum TclPlatformType {
     TCL_PLATFORM_UNIX = 0,	/* Any Unix-like OS. */
     TCL_PLATFORM_WINDOWS = 2	/* Any Microsoft Windows OS. */
 } TclPlatformType;

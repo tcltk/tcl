@@ -35,7 +35,7 @@ typedef enum UErrorCodex {
 #define U_SUCCESS(x) ((x)<=U_ZERO_ERRORZ)
 #define U_FAILURE(x) ((x)>U_ZERO_ERRORZ)
 
-typedef enum {
+typedef enum UConverterCallbackReasonx {
     UCNV_UNASSIGNED = 0,
     UCNV_ILLEGAL = 1,
     UCNV_IRREGULAR = 2,
@@ -257,8 +257,9 @@ TCL_DECLARE_MUTEX(icu_mutex);
 
 /* Options used by multiple normalization functions */
 static const char *normalizationForms[] = {"nfc", "nfd", "nfkc", "nfkd", NULL};
-typedef enum { MODE_NFC, MODE_NFD, MODE_NFKC, MODE_NFKD } NormalizationMode;
-
+typedef enum NormalizationMode {
+    MODE_NFC, MODE_NFD, MODE_NFKC, MODE_NFKD
+} NormalizationMode;
 
 /* Error handlers. */
 
@@ -967,7 +968,7 @@ static int IcuParseConvertOptions(
     /* Use GetIndexFromObj for option parsing so -failindex can be added later */
 
     static const char *optNames[] = {"-profile", "-failindex", NULL};
-    enum { OPT_PROFILE, OPT_FAILINDEX } opt;
+    enum Option { OPT_PROFILE, OPT_FAILINDEX } opt;
     int i;
     int strict = 1;
     for (i = 1; i < objc; ++i) {
@@ -1130,7 +1131,7 @@ IcuNormalizeObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     static const char *optNames[] = {"-profile", "-mode", NULL};
-    enum { OPT_PROFILE, OPT_MODE } opt;
+    enum Option { OPT_PROFILE, OPT_MODE } opt;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?-profile PROFILE? ?-mode MODE? STRING");

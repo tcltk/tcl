@@ -192,7 +192,7 @@ static const char *const methodNames[] = {
     "write",		/* OPT */
     NULL
 };
-typedef enum {
+typedef enum MethodName {
     METH_CLEAR,
     METH_DRAIN,
     METH_FINAL,
@@ -225,7 +225,7 @@ typedef enum {
  * Enumeration of all operations which can be forwarded.
  */
 
-typedef enum {
+typedef enum ForwardedOperation {
     ForwardedClear,
     ForwardedClose,
     ForwardedDrain,

@@ -1792,7 +1792,7 @@ Tcl_FcopyObjCmd(
     Tcl_WideInt toRead;
     Tcl_Obj *cmdPtr;
     static const char *const switches[] = { "-size", "-command", NULL };
-    enum { FcopySize, FcopyCommand };
+    enum FcopySwitch { FcopySize, FcopyCommand };
 
     if ((objc < 3) || (objc > 7) || (objc == 4) || (objc == 6)) {
 	Tcl_WrongNumArgs(interp, 1, objv,

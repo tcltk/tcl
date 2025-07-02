@@ -1644,7 +1644,7 @@ Tcl_OpenTcpServerEx(
      * one from the first socket that went the farthest before it failed.
      */
 
-    enum { LOOKUP, SOCKET, BIND, LISTEN } howfar = LOOKUP;
+    enum Status { LOOKUP, SOCKET, BIND, LISTEN } howfar = LOOKUP;
     int my_errno = 0;
 
     /*
