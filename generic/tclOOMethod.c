@@ -773,8 +773,8 @@ TclOOMakeProcMethod2(
 
     InitCmdFrame(iPtr, procPtr);
 
-    return TclNewMethod(
-	    (Tcl_Class) clsPtr, nameObj, flags, (const Tcl_MethodType *)typePtr, clientData);
+    return TclNewMethod((Tcl_Class) clsPtr, nameObj, flags,
+	    (const Tcl_MethodType *)typePtr, clientData);
 }
 
 /*

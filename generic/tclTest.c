@@ -41,8 +41,14 @@
 /*
  * Declare external functions used in Windows tests.
  */
+#ifdef __cplusplus
+extern "C" {
+#endif
 DLLEXPORT int		Tcltest_Init(Tcl_Interp *interp);
 DLLEXPORT int		Tcltest_SafeInit(Tcl_Interp *interp);
+#ifdef __cplusplus
+}
+#endif
 
 /*
  * Dynamic string shared by TestdcallCmd and DelCallbackProc; used to collect

@@ -104,10 +104,12 @@
  * - Finally if LISTREP_SPACE_ONLY_BACK is present, ALL extra space is at
  *   the back.
  */
-#define LISTREP_PANIC_ON_FAIL         0x00000001
-#define LISTREP_SPACE_FAVOR_FRONT     0x00000002
-#define LISTREP_SPACE_FAVOR_BACK      0x00000004
-#define LISTREP_SPACE_ONLY_BACK       0x00000008
+enum ListRepresentationFlags {
+    LISTREP_PANIC_ON_FAIL = 1,
+    LISTREP_SPACE_FAVOR_FRONT = 2,
+    LISTREP_SPACE_FAVOR_BACK = 4,
+    LISTREP_SPACE_ONLY_BACK = 8
+};
 #define LISTREP_SPACE_FAVOR_NONE \
     (LISTREP_SPACE_FAVOR_FRONT | LISTREP_SPACE_FAVOR_BACK)
 #define LISTREP_SPACE_FLAGS \
@@ -3544,7 +3546,8 @@ UpdateStringOfList(
 	elem = TclGetStringFromObj(elemPtrs[i], &length);
 	bytesNeeded += TclScanElement(elem, length, flagPtr+i);
 	if (bytesNeeded > SIZE_MAX - numElems) {
-	    Tcl_Panic("max size for a Tcl value (%" TCL_Z_MODIFIER "u bytes) exceeded", SIZE_MAX);
+	    Tcl_Panic("max size for a Tcl value (%" TCL_Z_MODIFIER "u bytes) exceeded",
+		    SIZE_MAX);
 	}
     }
     bytesNeeded += numElems - 1;
@@ -3625,7 +3628,7 @@ TclListTestObj(
     ListObjReplaceRepAndInvalidate(listObj, &listRep);
     return listObj;
 }
-
+
 /*
  * Local Variables:
  * mode: c

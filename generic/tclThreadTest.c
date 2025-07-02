@@ -138,7 +138,13 @@ static void		ThreadFreeProc(void *clientData);
 static int		ThreadDeleteEvent(Tcl_Event *eventPtr,
 			    void *clientData);
 static void		ThreadExitProc(void *clientData);
+#ifdef __cplusplus
+extern "C" {
+#endif
 extern int		Tcltest_Init(Tcl_Interp *interp);
+#ifdef __cplusplus
+}
+#endif
 
 /*
  *----------------------------------------------------------------------

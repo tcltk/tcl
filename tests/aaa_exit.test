@@ -16,7 +16,11 @@ if {"::tcltest" ni [namespace children]} {
     namespace import -force ::tcltest::*
 }
 
-test exit-1.1 {normal, quick exit} {
+testConstraint noappverifier [expr {
+        [llength [info commands testappverifierpresent]] == 0
+        || ![testappverifierpresent]}]
+
+test exit-1.1 {normal, quick exit} -constraints noappverifier -body {
     set f [open "|[interpreter] << \"exec [interpreter] << {set ::env(TCL_FINALIZE_ON_EXIT) 0;exit}\"" r]
     set aft [after 1000 {set done "Quick exit hangs !!!"}]
     fileevent $f readable {after cancel $aft;set done OK}
@@ -30,9 +34,9 @@ test exit-1.1 {normal, quick exit} {
 	}
     }
     set done
-} OK
+} -result OK
 
-test exit-1.2 {full-finalized exit} {
+test exit-1.2 {full-finalized exit} -constraints noappverifier -body {
     set f [open "|[interpreter] << \"exec [interpreter] << {set ::env(TCL_FINALIZE_ON_EXIT) 1;exit}\"" r]
     set aft [after 1000 {set done "Full-finalized exit hangs !!!"}]
     fileevent $f readable {after cancel $aft;set done OK}
@@ -46,7 +50,7 @@ test exit-1.2 {full-finalized exit} {
 	}
     }
     set done
-} OK
+} -result OK
 
 
 # cleanup

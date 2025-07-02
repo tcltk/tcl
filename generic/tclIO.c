@@ -138,6 +138,12 @@ typedef struct {
 static Tcl_ThreadDataKey dataKey;
 
 /*
+ * Key for looking up the channel table (a Tcl_HashTable indexed by channel
+ * name) in the interpreter's associated data table.
+ */
+#define ASSOC_KEY "tclIO"
+
+/*
  * Structure to record a close callback. One such record exists for
  * each close callback registered for a channel.
  */
@@ -936,11 +942,11 @@ GetChannelTable(
     Tcl_HashTable *hTblPtr;	/* Hash table of channels. */
     Tcl_Channel stdinChan, stdoutChan, stderrChan;
 
-    hTblPtr = (Tcl_HashTable *)Tcl_GetAssocData(interp, "tclIO", NULL);
+    hTblPtr = (Tcl_HashTable *)Tcl_GetAssocData(interp, ASSOC_KEY, NULL);
     if (hTblPtr == NULL) {
 	hTblPtr = (Tcl_HashTable *)Tcl_Alloc(sizeof(Tcl_HashTable));
 	Tcl_InitHashTable(hTblPtr, TCL_STRING_KEYS);
-	Tcl_SetAssocData(interp, "tclIO",
+	Tcl_SetAssocData(interp, ASSOC_KEY,
 		(Tcl_InterpDeleteProc *) DeleteChannelTable, hTblPtr);
 
 	/*
@@ -1376,7 +1382,7 @@ DetachChannel(
     statePtr = chanPtr->state;
 
     if (interp != NULL) {
-	hTblPtr = (Tcl_HashTable *)Tcl_GetAssocData(interp, "tclIO", NULL);
+	hTblPtr = (Tcl_HashTable *)Tcl_GetAssocData(interp, ASSOC_KEY, NULL);
 	if (hTblPtr == NULL) {
 	    return TCL_ERROR;
 	}
@@ -10708,7 +10714,7 @@ Tcl_IsChannelRegistered(
     chanPtr = ((Channel *) chan)->state->bottomChanPtr;
     statePtr = chanPtr->state;
 
-    hTblPtr = (Tcl_HashTable *)Tcl_GetAssocData(interp, "tclIO", NULL);
+    hTblPtr = (Tcl_HashTable *)Tcl_GetAssocData(interp, ASSOC_KEY, NULL);
     if (hTblPtr == NULL) {
 	return 0;
     }

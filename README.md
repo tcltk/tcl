@@ -31,7 +31,7 @@ site](https://sourceforge.net/projects/tcl/files/Tcl/).
 Tcl provides a powerful platform for creating integration applications that
 tie together diverse applications, protocols, devices, and frameworks.
 When paired with the Tk toolkit, Tcl provides the fastest and most powerful
-way to create GUI applications that run on PCs, Unix, and Mac OS X.
+way to create GUI applications that run on PCs, Unix, and macOS.
 Tcl can also be used for a variety of web-related tasks and for creating
 powerful command languages for applications.
 
