@@ -109,9 +109,6 @@ const AuxDataType tclJumptableNumericInfoType = {
     PrintJumptableNumInfo,	/* printProc */
     DisassembleJumptableNumInfo	/* disassembleProc */
 };
-
-// Point at which we issue a LIST_CONCAT anyway
-#define LIST_CONCAT_THRESHOLD	(1 << 15)
 
 /*
  *----------------------------------------------------------------------
@@ -2944,7 +2941,12 @@ TclCompileTryCmd(
 	    handlers = &staticHandler;
 	}
 
-	for (; handlerIdx < numHandlers ; handlerIdx++) {
+	/* Bug [c587295271]. Initialize so they can be released on exit. */
+	for (handlerIdx = 0; handlerIdx < numHandlers ; handlerIdx++) {
+	    handlers[handlerIdx].matchClause = NULL;
+	}
+
+	for (handlerIdx = 0; handlerIdx < numHandlers ; handlerIdx++) {
 	    Tcl_Obj *tmpObj, **objv;
 	    Tcl_Size objc;
 
@@ -3112,8 +3114,8 @@ TclCompileTryCmd(
      * Delete any temporary state and finish off.
      */
 
-  failedToCompile:
-    while (handlerIdx-- > 0) {
+failedToCompile:
+    for (handlerIdx = 0; handlerIdx < numHandlers; ++handlerIdx) {
 	if (handlers[handlerIdx].matchClause) {
 	    TclDecrRefCount(handlers[handlerIdx].matchClause);
 	}
@@ -4329,6 +4331,95 @@ TclCompileUnsetCmd(
 /*
  *----------------------------------------------------------------------
  *
+ * TclCompileUplevelCmd --
+ *
+ *	Procedure called to compile the "uplevel" command.
+ *
+ * Results:
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to runtime.
+ *
+ * Side effects:
+ *	Instructions are added to envPtr to execute the "uplevel" command at
+ *	runtime.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclCompileUplevelCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    TCL_UNUSED(Command *),
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    DefineLineInformation;	/* TIP #280 */
+    Tcl_Size numWords = parsePtr->numWords;
+    Tcl_Token *tokenPtr;
+    Tcl_Obj *objPtr;
+    Tcl_Size i, first;
+
+    /* TODO: Consider support for compiling expanded args. */
+    if (numWords < 2 || numWords > 1<<8 || !EnvIsProc(envPtr)) {
+	/*
+	 * The limit on the max number of words is arbitrary; could be higher,
+	 * but I doubt we'll ever hit it anyway.
+	 */
+	return TCL_ERROR;
+    }
+
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    TclNewObj(objPtr);
+    if (!TclWordKnownAtCompileTime(tokenPtr, objPtr)) {
+	/*
+	 * If the first argument isn't known at compile time, we can't know if
+	 * it is a script fragment or a level descriptor. Punt. 
+	 */
+	Tcl_DecrRefCount(objPtr);
+	return TCL_ERROR;
+    }
+
+    /*
+     * Attempt to convert to a level reference. Note that TclObjGetFrame
+     * only changes the obj type when a conversion was successful.
+     */
+
+    int numFrameWords = TclObjGetFrame(interp, objPtr, NULL);
+    if (numFrameWords < 0) {
+	return TCL_ERROR;
+    }
+    Tcl_DecrRefCount(objPtr);
+
+    if (numFrameWords) {
+	PUSH_TOKEN(		tokenPtr, 1);
+	tokenPtr = TokenAfter(tokenPtr);
+	first = 2;
+    } else {
+	PUSH(			"1");
+	first = 1;
+    }
+    if (first >= numWords) {
+	// In this case, there's ambiguity about sole argument meaning.
+	return TCL_ERROR;
+    }
+
+    // Push all remaining words and concatenate them to make a single script word
+    for (i=first; i<numWords; i++, tokenPtr=TokenAfter(tokenPtr)) {
+	PUSH_TOKEN(		tokenPtr, i);
+    }
+    if (numWords - first > 1) {
+	OP4(			CONCAT_STK, numWords - first);
+    }
+
+    // Do the actual uplevel operation.
+    INVOKE(			UPLEVEL);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclCompileWhileCmd --
  *
  *	Procedure called to compile the "while" command.
@@ -4553,19 +4644,45 @@ TclCompileYieldToCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr = TokenAfter(parsePtr->tokenPtr);
-    Tcl_Size i;
-
-    /* TODO: Consider support for compiling expanded args. */
-    if (parsePtr->numWords < 2 || parsePtr->numWords > UINT_MAX) {
-	return TCL_ERROR;
-    }
+    Tcl_Size i, numWords = parsePtr->numWords, build;
+    int concat = 0;
 
     OP(				NS_CURRENT);
-    for (i = 1 ; i < parsePtr->numWords ; i++) {
+    for (build = i = 1; i < numWords; i++) {
+	if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD && build > 0) {
+	    OP4(		LIST, build);
+	    if (concat) {
+		OP(		LIST_CONCAT);
+	    }
+	    build = 0;
+	    concat = 1;
+	}
 	PUSH_TOKEN(		tokenPtr, i);
+	if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
+	    if (concat) {
+		OP(		LIST_CONCAT);
+	    } else {
+		concat = 1;
+	    }
+	} else {
+	    build++;
+	}
+	if (build > LIST_CONCAT_THRESHOLD) {
+	    OP4(		LIST, build);
+	    if (concat) {
+		OP(		LIST_CONCAT);
+	    }
+	    build = 0;
+	    concat = 1;
+	}
 	tokenPtr = TokenAfter(tokenPtr);
     }
-    OP4(			LIST, i);
+    if (build > 0) {
+	OP4(			LIST, build);
+	if (concat) {
+	    OP(			LIST_CONCAT);
+	}
+    }
     INVOKE(			YIELD_TO_INVOKE);
     return TCL_OK;
 }
