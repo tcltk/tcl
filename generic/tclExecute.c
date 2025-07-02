@@ -2770,9 +2770,8 @@ TEBCresume(
 	    fflush(stdout);
 	}
 #endif // TCL_COMPILE_DEBUG
-	TclNRAddCallback(interp, TclUplevelCallback, iPtr->varFramePtr,
-		NULL, NULL, NULL);
-	TclNRAddCallback(interp, TclNRPostInvoke, NULL, NULL, NULL, NULL);
+	TclNRAddCallback(interp, TclUplevelCallback, iPtr->varFramePtr);
+	TclNRAddCallback(interp, TclNRPostInvoke);
 	iPtr->varFramePtr = framePtr;
 	iPtr->numLevels++;
 	return TclNREvalObjEx(interp, scriptObj, 0, invoker, word);
@@ -4946,7 +4945,7 @@ TEBCresume(
 
 	    // Arrange for things to be restored in the object
 	    TclPushTailcallPoint(interp);
-	    TclNRAddCallback(interp, callback,
+	    TclNRAddCallback_2(interp, callback,
 		    framePtr, contextPtr, INT2PTR(contextPtr->index),
 		    INT2PTR(contextPtr->skip));
 
