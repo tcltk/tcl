@@ -3092,7 +3092,7 @@ Tcl_FSLoadFile(
 #endif
 
 static int
-skipUnlink(
+SkipUnlink(
     Tcl_Obj *shlibFile)
 {
     /*
@@ -3343,7 +3343,7 @@ Tcl_LoadFile(
      * and it avoids leaving the copy laying around after exit.
      */
 
-    if (!skipUnlink(copyToPtr) &&
+    if (!SkipUnlink(copyToPtr) &&
 	    (Tcl_FSDeleteFile(copyToPtr) == TCL_OK)) {
 	Tcl_DecrRefCount(copyToPtr);
 

@@ -2737,13 +2737,13 @@ BinaryEncodeUu(
 {
     Tcl_Obj *resultObj;
     unsigned char *data, *start, *cursor;
-    int i, bits, index;
+    int i, bits;
     unsigned int n;
     int lineLength = 61;
     const unsigned char SingleNewline[] = { UCHAR('\n') };
     const unsigned char *wrapchar = SingleNewline;
     Tcl_Size j, rawLength, offset, count = 0, wrapcharlen = sizeof(SingleNewline);
-    enum { OPT_MAXLEN, OPT_WRAPCHAR };
+    enum { OPT_MAXLEN, OPT_WRAPCHAR } index;
     static const char *const optStrings[] = { "-maxlen", "-wrapchar", NULL };
 
     if (objc < 2 || objc % 2 != 0) {
@@ -2802,8 +2802,6 @@ BinaryEncodeUu(
 		return TCL_ERROR;
 	    }
 	    break;
-	default:
-	    TCL_UNREACHABLE();
 	}
     }
 

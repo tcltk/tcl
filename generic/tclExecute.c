@@ -709,6 +709,8 @@ static Tcl_Obj *	ExecuteExtendedBinaryMathOp(Tcl_Interp *interp,
 static Tcl_Obj *	ExecuteExtendedUnaryMathOp(int opcode,
 			    Tcl_Obj *valuePtr);
 static void		FreeExprCodeInternalRep(Tcl_Obj *objPtr);
+static Tcl_Obj *	GenerateArithSeries(Tcl_Interp *interp, Tcl_Obj *from,
+			    Tcl_Obj *to, Tcl_Obj *step, Tcl_Obj *count);
 static ExceptionRange *	GetExceptRangeForPc(const unsigned char *pc,
 			    int searchMode, ByteCode *codePtr);
 static const char *	GetSrcInfoForPc(const unsigned char *pc,
@@ -719,7 +721,7 @@ static Tcl_Obj **	GrowEvaluationStack(ExecEnv *eePtr, size_t growth,
 static void		IllegalExprOperandType(Tcl_Interp *interp, const char *ord,
 			    const unsigned char *pc, Tcl_Obj *opndPtr);
 static void		InitByteCodeExecution(Tcl_Interp *interp);
-static inline int	wordSkip(void *ptr);
+static inline int	WordSkip(void *ptr);
 static void		ReleaseDictIterator(Tcl_Obj *objPtr);
 /* Useful elsewhere, make available in tclInt.h or stubs? */
 static Tcl_Obj **	StackAllocWords(Tcl_Interp *interp, size_t numWords);
@@ -1005,13 +1007,12 @@ TclFinalizeExecution(void)
     (TCL_ALLOCALIGN/sizeof(Tcl_Obj *))
 
 /*
- * wordSkip computes how many words have to be skipped until the next aligned
+ * WordSkip computes how many words have to be skipped until the next aligned
  * word. Note that we are only interested in the low order bits of ptr, so
  * that any possible information loss in PTR2INT is of no consequence.
  */
-
 static inline int
-wordSkip(
+WordSkip(
     void *ptr)
 {
     int mask = TCL_ALLOCALIGN - 1;
@@ -1024,7 +1025,7 @@ wordSkip(
  */
 
 #define MEMSTART(markerPtr) \
-    ((markerPtr) + wordSkip(markerPtr))
+    ((markerPtr) + WordSkip(markerPtr))
 
 /*
  *----------------------------------------------------------------------
@@ -1070,7 +1071,7 @@ GrowEvaluationStack(
 #ifndef PURIFY
     } else {
 	Tcl_Obj **tmpMarkerPtr = esPtr->tosPtr + 1;
-	int offset = wordSkip(tmpMarkerPtr);
+	int offset = WordSkip(tmpMarkerPtr);
 
 	if (needed + offset < 0) {
 	    /*
@@ -1939,6 +1940,65 @@ PrintArgumentWords(
 /*
  *----------------------------------------------------------------------
  *
+ * FindTclOOMethodIndex --
+ *
+ *	A helper for INST_TCLOO_NEXT_CLASS in TEBC. Returns the index of a
+ *	class (following the current method) in a call chain. Does not find
+ *	filters (per definition of [nextto]).
+ *
+ * Results:
+ *	An index, or TCL_INDEX_NONE if not found.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static inline Tcl_Size
+FindTclOOMethodIndex(
+    CallContext *contextPtr,
+    Class *clsPtr)
+{
+    Tcl_Size i;
+    for (i=contextPtr->index+1 ; i<contextPtr->callPtr->numChain ; i++) {
+	MInvoke *miPtr = contextPtr->callPtr->chain + i;
+	if (!miPtr->isFilter && miPtr->mPtr->declaringClassPtr == clsPtr) {
+	    return i;
+	}
+    }
+    return TCL_INDEX_NONE;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetTclOOCallContext --
+ *
+ *	A helper for INST_TCLOO_NEXT in TEBC. Returns the call context if one
+ *	exists.
+ *
+ * Results:
+ *	The call context, or NULL if not found.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static inline CallContext *
+GetTclOOCallContext(
+    Interp *iPtr)
+{
+    CallFrame *framePtr = iPtr->varFramePtr;
+    if (!framePtr || !(framePtr->isProcCallFrame & FRAME_IS_METHOD)) {
+	return NULL;
+    }
+    return (CallContext *) framePtr->clientData;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclNRExecuteByteCode --
  *
  *	This procedure executes the instructions of a ByteCode structure. It
@@ -2502,6 +2562,18 @@ TEBCresume(
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
+	Tcl_Size yieldTargetLength;
+	if (TclListObjLength(NULL, valuePtr, &yieldTargetLength) != TCL_OK
+		|| yieldTargetLength < 2) {
+	    TRACE_APPEND(("ERROR: no valid target list in yieldto"));
+	    // Weird case; pretend it's like no arguments given to scripts
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "wrong # args: should be \"yieldto command ?arg ...?\""));
+	    DECACHE_STACK_INFO();
+	    Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", (char *)NULL);
+	    CACHE_STACK_INFO();
+	    goto gotError;
+	}
 
 #ifdef TCL_COMPILE_DEBUG
 	if (tclTraceExec >= TCL_TRACE_BYTECODE_EXEC_COMMANDS) {
@@ -2669,6 +2741,41 @@ TEBCresume(
 	result = TCL_RETURN;
 	cleanup = 2;
 	goto processExceptionReturn;
+    }
+
+    case INST_UPLEVEL: {
+	Tcl_Obj *levelObj = OBJ_UNDER_TOS;
+	Tcl_Obj *scriptObj = OBJ_AT_TOS;
+	CallFrame *framePtr;
+	CmdFrame *invoker = NULL;
+	int word = 0;
+
+	TRACE(("\"%.30s\" \"%.30s\" => ", O2S(levelObj), O2S(scriptObj)));
+	if (TclObjGetFrame(interp, levelObj, &framePtr) == -1) {
+	    TRACE_ERROR(interp);
+	    goto gotError;
+	}
+	bcFramePtr->data.tebc.pc = (char *) pc;
+	iPtr->cmdFramePtr = bcFramePtr;
+	TclArgumentGet(interp, scriptObj, &invoker, &word);
+	DECACHE_STACK_INFO();
+	pc++;
+	cleanup = 2;
+	TEBC_YIELD();
+#ifdef TCL_COMPILE_DEBUG
+	TRACE_APPEND(("INVOKING...\n"));
+	if (tclTraceExec >= TCL_TRACE_BYTECODE_EXEC_COMMANDS && !traceInstructions) {
+	    fprintf(stdout, "%" SIZEd ": (%" SIZEd ") invoking [%.30s] in frame \"%.30s\"\n",
+		    iPtr->numLevels, PC_REL, TclGetString(scriptObj), TclGetString(levelObj));
+	    fflush(stdout);
+	}
+#endif // TCL_COMPILE_DEBUG
+	TclNRAddCallback(interp, TclUplevelCallback, iPtr->varFramePtr,
+		NULL, NULL, NULL);
+	TclNRAddCallback(interp, TclNRPostInvoke, NULL, NULL, NULL, NULL);
+	iPtr->varFramePtr = framePtr;
+	iPtr->numLevels++;
+	return TclNREvalObjEx(interp, scriptObj, 0, invoker, word);
     }
 
     case INST_DONE:
@@ -4674,15 +4781,13 @@ TEBCresume(
 
     {
 	Object *oPtr;
-	Class *classPtr;
-	CallFrame *framePtr;
+	Class *clsPtr;
 	CallContext *contextPtr;
 	Tcl_Size skip, newDepth;
 
     case INST_TCLOO_SELF:
-	framePtr = iPtr->varFramePtr;
-	if (framePtr == NULL ||
-		!(framePtr->isProcCallFrame & FRAME_IS_METHOD)) {
+	contextPtr = GetTclOOCallContext(iPtr);
+	if (!contextPtr) {
 	    TRACE(("=> ERROR: no TclOO call context\n"));
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "self may only be called from inside a method",
@@ -4692,7 +4797,6 @@ TEBCresume(
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
-	contextPtr = (CallContext *)framePtr->clientData;
 
 	/*
 	 * Call out to get the name; it's expensive to compute but cached.
@@ -4702,111 +4806,92 @@ TEBCresume(
 	TRACE_WITH_OBJ(("=> "), objResultPtr);
 	NEXT_INST_F(1, 0, 1);
 
+    case INST_TCLOO_NEXT_CLASS_LIST:
+	if (TclListObjGetElements(NULL, valuePtr, &numArgs, &objv) != TCL_OK) {
+	    Tcl_Panic("ill-formed call to [nextto]");
+	}
+	if (numArgs < 2) {
+	    Tcl_Panic("insufficient words to [nextto]");
+	}
+	cleanup = 1;
+	pcAdjustment = 1;
+	valuePtr = objv[1];
+	TRACE(("=> "));
+	goto invokeNextClass;
 #ifndef REMOVE_DEPRECATED_OPCODES
     case INST_TCLOO_NEXT_CLASS1:
 	DEPRECATED_OPCODE_MARK(INST_TCLOO_NEXT_CLASS1);
 	numArgs = TclGetUInt1AtPtr(pc + 1);
+	cleanup = numArgs;
 	pcAdjustment = 2;
+	valuePtr = OBJ_AT_DEPTH(numArgs - 2);
+	objv = &OBJ_AT_DEPTH(numArgs - 1);
+	TRACE(("%u => ", (unsigned)numArgs));
 	goto invokeNextClass;
 #endif
     case INST_TCLOO_NEXT_CLASS:
 	numArgs = TclGetUInt4AtPtr(pc + 1);
+	cleanup = numArgs;
 	pcAdjustment = 5;
-#ifndef REMOVE_DEPRECATED_OPCODES
-    invokeNextClass:
-#endif
-	framePtr = iPtr->varFramePtr;
 	valuePtr = OBJ_AT_DEPTH(numArgs - 2);
 	objv = &OBJ_AT_DEPTH(numArgs - 1);
-	skip = 2;
 	TRACE(("%u => ", (unsigned)numArgs));
-	if (framePtr == NULL ||
-		!(framePtr->isProcCallFrame & FRAME_IS_METHOD)) {
-	    TRACE_APPEND(("ERROR: no TclOO call context\n"));
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "nextto may only be called from inside a method",
-		    -1));
-	    DECACHE_STACK_INFO();
-	    OO_ERROR(interp, CONTEXT_REQUIRED);
-	    CACHE_STACK_INFO();
-	    goto gotError;
+    invokeNextClass:
+	skip = 2;
+	contextPtr = GetTclOOCallContext(iPtr);
+	if (!contextPtr) {
+	    goto tclooFrameRequired;
 	}
-	contextPtr = (CallContext *)framePtr->clientData;
 
 	DECACHE_STACK_INFO();
-	classPtr = TclOOGetClassFromObj(interp, valuePtr);
-	CACHE_STACK_INFO();
-	if (classPtr == NULL) {
+	clsPtr = TclOOGetClassFromObj(interp, valuePtr);
+	if (clsPtr == NULL) {
 	    TRACE_APPEND(("ERROR: \"%.30s\" not class\n", O2S(valuePtr)));
-	    goto gotError;
-	} else {
-	    Tcl_Size i;
-
-	    for (i=contextPtr->index+1 ; i<contextPtr->callPtr->numChain ; i++) {
-		MInvoke *miPtr = contextPtr->callPtr->chain + i;
-		if (!miPtr->isFilter &&
-			miPtr->mPtr->declaringClassPtr == classPtr) {
-		    newDepth = i;
-		    goto doInvokeNext;
-		}
-	    }
-	    // Unlikely; cold path
-
-	    TRACE_APPEND(("ERROR: \"%.30s\" not on reachable chain\n",
-		    O2S(valuePtr)));
-	    for (i = contextPtr->index ; i != TCL_INDEX_NONE ; i--) {
-		MInvoke *miPtr = contextPtr->callPtr->chain + i;
-		if (!miPtr->isFilter
-			&& miPtr->mPtr->declaringClassPtr == classPtr) {
-		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			    "%s implementation by \"%s\" not reachable from here",
-			    TclOOContextTypeName(contextPtr),
-			    TclGetString(valuePtr)));
-		    DECACHE_STACK_INFO();
-		    OO_ERROR(interp, CLASS_NOT_REACHABLE);
-		    CACHE_STACK_INFO();
-		    goto gotError;
-		}
-	    }
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "%s has no non-filter implementation by \"%s\"",
-		    TclOOContextTypeName(contextPtr), TclGetString(valuePtr)));
-	    DECACHE_STACK_INFO();
-	    OO_ERROR(interp, CLASS_NOT_THERE);
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
+	newDepth = FindTclOOMethodIndex(contextPtr, clsPtr);
+	if (newDepth == TCL_INDEX_NONE) {
+	    goto tclooNoTargetClass;
+	}
+	goto doInvokeNext;
 
+    case INST_TCLOO_NEXT_LIST:
+	valuePtr = OBJ_AT_TOS;
+	if (TclListObjGetElements(NULL, valuePtr, &numArgs, &objv) != TCL_OK) {
+	    Tcl_Panic("ill-formed call to [next]");
+	}
+	if (numArgs < 1) {
+	    Tcl_Panic("insufficient words to [next]");
+	}
+	pcAdjustment = 1;
+	cleanup = 1;
+	TRACE(("=> "));
+	goto invokeNext;
 #ifndef REMOVE_DEPRECATED_OPCODES
     case INST_TCLOO_NEXT1:
 	DEPRECATED_OPCODE_MARK(INST_TCLOO_NEXT1);
 	numArgs = TclGetUInt1AtPtr(pc + 1);
 	pcAdjustment = 2;
+	cleanup = numArgs;
+	objv = &OBJ_AT_DEPTH(numArgs - 1);
+	TRACE(("%u => ", (unsigned)numArgs));
 	goto invokeNext;
 #endif
     case INST_TCLOO_NEXT:
 	numArgs = TclGetUInt4AtPtr(pc + 1);
 	pcAdjustment = 5;
-#ifndef REMOVE_DEPRECATED_OPCODES
-    invokeNext:
-#endif
+	cleanup = numArgs;
 	objv = &OBJ_AT_DEPTH(numArgs - 1);
-	framePtr = iPtr->varFramePtr;
-	skip = 1;
 	TRACE(("%u => ", (unsigned)numArgs));
-	if (framePtr == NULL ||
-		!(framePtr->isProcCallFrame & FRAME_IS_METHOD)) {
-	    TRACE_APPEND(("ERROR: no TclOO call context\n"));
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "next may only be called from inside a method",
-		    -1));
-	    DECACHE_STACK_INFO();
-	    OO_ERROR(interp, CONTEXT_REQUIRED);
-	    CACHE_STACK_INFO();
-	    goto gotError;
+    invokeNext:
+	skip = 1;
+	contextPtr = GetTclOOCallContext(iPtr);
+	if (!contextPtr) {
+	    goto tclooFrameRequired;
 	}
-	contextPtr = (CallContext *)framePtr->clientData;
 
+	DECACHE_STACK_INFO();
 	newDepth = contextPtr->index + 1;
 	if (newDepth >= contextPtr->callPtr->numChain) {
 	    /*
@@ -4815,14 +4900,7 @@ TEBCresume(
 	     * getting here because of methods/destructors doing a [next] (or
 	     * equivalent) unexpectedly.
 	     */
-
-	    TRACE_APPEND(("ERROR: no TclOO next impl\n"));
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "no next %s implementation", TclOOContextTypeName(contextPtr)));
-	    DECACHE_STACK_INFO();
-	    OO_ERROR(interp, NOTHING_NEXT);
-	    CACHE_STACK_INFO();
-	    goto gotError;
+	    goto tclooNoNext;
 	}
 
     doInvokeNext:
@@ -4838,7 +4916,7 @@ TEBCresume(
 	    fprintf(stdout, "\n");
 	    fflush(stdout);
 	}
-#endif /*TCL_COMPILE_DEBUG*/
+#endif // TCL_COMPILE_DEBUG
 	bcFramePtr->data.tebc.pc = (char *) pc;
 	iPtr->cmdFramePtr = bcFramePtr;
 
@@ -4846,53 +4924,98 @@ TEBCresume(
 	    ArgumentBCEnter(interp, codePtr, TD, pc, numArgs, objv);
 	}
 
-	cleanup = numArgs;
-	DECACHE_STACK_INFO();
-	iPtr->varFramePtr = framePtr->callerVarPtr;
+	// Arrange for where to go after [next] returns
 	pc += pcAdjustment;
 	TEBC_YIELD();
 
-	TclPushTailcallPoint(interp);
-	oPtr = contextPtr->oPtr;
-	if (oPtr->flags & FILTER_HANDLING) {
-	    TclNRAddCallback(interp, FinalizeOONextFilter,
-		    framePtr, contextPtr, INT2PTR(contextPtr->index),
-		    INT2PTR(contextPtr->skip));
-	} else {
-	    TclNRAddCallback(interp, FinalizeOONext,
-		    framePtr, contextPtr, INT2PTR(contextPtr->index),
-		    INT2PTR(contextPtr->skip));
-	}
-	contextPtr->skip = skip;
-	contextPtr->index = newDepth;
-	if (contextPtr->callPtr->chain[newDepth].isFilter
-		|| contextPtr->callPtr->flags & FILTER_HANDLING) {
-	    oPtr->flags |= FILTER_HANDLING;
-	} else {
-	    oPtr->flags &= ~FILTER_HANDLING;
-	}
-
 	{
-	    const Method *mPtr = contextPtr->callPtr->chain[newDepth].mPtr;
+	    // [next] and [nextto] are uplevel-like
+	    CallFrame *framePtr = iPtr->varFramePtr;
+	    iPtr->varFramePtr = framePtr->callerVarPtr;
+	    oPtr = contextPtr->oPtr;
 
+	    // Adjust filter flags
+	    Tcl_NRPostProc *callback = (oPtr->flags & FILTER_HANDLING)
+		    ? FinalizeOONextFilter : FinalizeOONext;
+	    if (contextPtr->callPtr->chain[newDepth].isFilter
+		    || contextPtr->callPtr->flags & FILTER_HANDLING) {
+		oPtr->flags |= FILTER_HANDLING;
+	    } else {
+		oPtr->flags &= ~FILTER_HANDLING;
+	    }
+
+	    // Arrange for things to be restored in the object
+	    TclPushTailcallPoint(interp);
+	    TclNRAddCallback(interp, callback,
+		    framePtr, contextPtr, INT2PTR(contextPtr->index),
+		    INT2PTR(contextPtr->skip));
+
+	    // Update the context fields to point to the next impl
+	    contextPtr->skip = skip;
+	    contextPtr->index = newDepth;
+
+	    // Call the selected next method non-recursively
+	    const Method *mPtr = contextPtr->callPtr->chain[newDepth].mPtr;
 	    if (mPtr->typePtr->version < TCL_OO_METHOD_VERSION_2) {
 		return mPtr->typePtr->callProc(mPtr->clientData, interp,
 			(Tcl_ObjectContext) contextPtr, (int)numArgs, objv);
 	    }
-	    // Ugly indirect cast
-	    Tcl_MethodCallProc2 *call2Proc = (Tcl_MethodCallProc2 *)
-		    (void *)mPtr->typePtr->callProc;
-	    return call2Proc(mPtr->clientData, interp,
+	    return mPtr->type2Ptr->callProc(mPtr->clientData, interp,
 		    (Tcl_ObjectContext) contextPtr, numArgs, objv);
 	}
 
+    tclooFrameRequired:
+	TRACE_APPEND(("ERROR: no TclOO call context\n"));
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"%s may only be called from inside a method",
+		TclGetString(objv[0])));
+	DECACHE_STACK_INFO();
+	OO_ERROR(interp, CONTEXT_REQUIRED);
+	CACHE_STACK_INFO();
+	goto gotError;
+    tclooNoNext:
+	TRACE_APPEND(("ERROR: no TclOO next impl\n"));
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"no next %s implementation", TclOOContextTypeName(contextPtr)));
+	OO_ERROR(interp, NOTHING_NEXT);
+	CACHE_STACK_INFO();
+	goto gotError;
+    tclooNoTargetClass:
+	TRACE_APPEND(("ERROR: \"%.30s\" not on reachable chain\n",
+		O2S(valuePtr)));
+	// Decide what error message to issue
+	for (Tcl_Size i = contextPtr->index ; i >= 0 ; i--) {
+	    MInvoke *miPtr = contextPtr->callPtr->chain + i;
+	    if (miPtr->isFilter) {
+		/* Filters are always at the head of the chain, and we never
+		 * want them at this point. */
+		break;
+	    }
+	    if (miPtr->mPtr->declaringClassPtr == clsPtr) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"%s implementation by \"%s\" not reachable from here",
+			TclOOContextTypeName(contextPtr),
+			TclGetString(valuePtr)));
+		OO_ERROR(interp, CLASS_NOT_REACHABLE);
+		CACHE_STACK_INFO();
+		goto gotError;
+	    }
+	}
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"%s has no non-filter implementation by \"%s\"",
+		TclOOContextTypeName(contextPtr), TclGetString(valuePtr)));
+	OO_ERROR(interp, CLASS_NOT_THERE);
+	CACHE_STACK_INFO();
+	goto gotError;
+
     case INST_TCLOO_IS_OBJECT:
+	TRACE(("\"%.30s\" => ", O2S(OBJ_AT_TOS)));
 	DECACHE_STACK_INFO();
 	oPtr = (Object *) Tcl_GetObjectFromObj(interp, OBJ_AT_TOS);
 	CACHE_STACK_INFO();
-	objResultPtr = TCONST(oPtr != NULL ? 1 : 0);
-	TRACE_WITH_OBJ(("%.30s => ", O2S(OBJ_AT_TOS)), objResultPtr);
-	NEXT_INST_F(1, 1, 1);
+	int match = oPtr != NULL;
+	TRACE_APPEND(("%d\n", match));
+	JUMP_PEEPHOLE_F(match, 1, 1);
     case INST_TCLOO_CLASS:
     case INST_TCLOO_NS:
     case INST_TCLOO_ID:
@@ -4900,7 +5023,7 @@ TEBCresume(
 	oPtr = (Object *) Tcl_GetObjectFromObj(interp, OBJ_AT_TOS);
 	CACHE_STACK_INFO();
 	if (oPtr == NULL) {
-	    TRACE(("%.30s => ERROR: not object\n", O2S(OBJ_AT_TOS)));
+	    TRACE(("\"%.30s\" => ERROR: not object\n", O2S(OBJ_AT_TOS)));
 	    goto gotError;
 	}
 	switch (inst) {
@@ -4916,7 +5039,7 @@ TEBCresume(
 	default:
 	    TCL_UNREACHABLE();
 	}
-	TRACE_WITH_OBJ(("%.30s => ", O2S(OBJ_AT_TOS)), objResultPtr);
+	TRACE_WITH_OBJ(("\"%.30s\" => ", O2S(OBJ_AT_TOS)), objResultPtr);
 	NEXT_INST_F(1, 1, 1);
     }
 
@@ -5382,11 +5505,11 @@ TEBCresume(
 	valuePtr = OBJ_AT_DEPTH(numArgs - 1);
 
 	/* haveSecondIndex==0 => pure insert */
-	int haveSecondIndex = (flags & TCL_LREPLACE4_SINGLE_INDEX) == 0;
+	int haveSecondIndex = (flags & TCL_LREPLACE_SINGLE_INDEX) == 0;
 	size_t numNewElems = numArgs - 2 - haveSecondIndex;
 
 	/* end_indicator==1 => "end" is last element's index, 0=>index beyond */
-	int endIndicator = (flags & TCL_LREPLACE4_END_IS_LAST) != 0;
+	int endIndicator = (flags & TCL_LREPLACE_END_IS_LAST) != 0;
 	Tcl_Obj *fromIdxObj = OBJ_AT_DEPTH(numArgs - 2);
 	Tcl_Obj *toIdxObj = haveSecondIndex ? OBJ_AT_DEPTH(numArgs - 3) : NULL;
 	if (Tcl_ListObjLength(interp, valuePtr, &length) != TCL_OK) {
@@ -5400,6 +5523,17 @@ TEBCresume(
 	    CACHE_STACK_INFO();
 	    TRACE_ERROR(interp);
 	    goto gotError;
+	}
+	if (flags & TCL_LREPLACE_NEED_IN_RANGE) {
+	    if (fromIdx < 0 || fromIdx >= length) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"index \"%s\" out of range", Tcl_GetString(fromIdxObj)));
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", "OUTOFRANGE",
+			(char *)NULL);
+		CACHE_STACK_INFO();
+		TRACE_ERROR(interp);
+		goto gotError;
+	    }
 	}
 	if (fromIdx == TCL_INDEX_NONE) {
 	    fromIdx = 0;
@@ -5445,6 +5579,26 @@ TEBCresume(
 	    TRACE_APPEND_OBJ(valuePtr);
 	    NEXT_INST_V(6, numArgs - 1, 0);
 	}
+    }
+
+    case INST_ARITH_SERIES: {
+	unsigned mask = TclGetUInt1AtPtr(pc + 1);
+	Tcl_Obj *count = (mask & TCL_ARITHSERIES_COUNT) ? OBJ_AT_DEPTH(0) : NULL;
+	Tcl_Obj *step =  (mask & TCL_ARITHSERIES_STEP)  ? OBJ_AT_DEPTH(1) : NULL;
+	Tcl_Obj *to =    (mask & TCL_ARITHSERIES_TO)    ? OBJ_AT_DEPTH(2) : NULL;
+	Tcl_Obj *from =  (mask & TCL_ARITHSERIES_FROM)  ? OBJ_AT_DEPTH(3) : NULL;
+	TRACE(("0x%x \"%s\" \"%s\" \"%s\" \"%s\" => ",
+		mask, O2S(from), O2S(to), O2S(step), O2S(count)));
+	DECACHE_STACK_INFO();
+	// Decode arguments and construct the series.
+	objResultPtr = GenerateArithSeries(interp, from, to, step, count);
+	CACHE_STACK_INFO();
+	if (objResultPtr == NULL) {
+	    TRACE_ERROR(interp);
+	    goto gotError;
+	}
+	TRACE_APPEND_OBJ(objResultPtr);
+	NEXT_INST_V(2, 4, 1);
     }
 
 	/*
@@ -9176,6 +9330,201 @@ TclCompareTwoNumbers(
 	TCL_UNREACHABLE();
     }
     return TCL_ERROR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ParseArithSeriesArgument --
+ *
+ *	Helper for GenerateArithSeries() that encapsulates the weird calling of
+ *	Tcl_ExprObj() if the value isn't numeric.
+ *
+ * Results:
+ *	TCL_OK if the value was numeric or a numeric-yielding expression, or
+ *	TCL_ERROR if not. The variables pointed at by ptrPtr and typePtr will
+ *	be updated on OK, the interpreter result on ERROR.
+ *
+ * Side effects:
+ *	Can call Tcl_ExprObj() which can call commands, so arbitrary side
+ *	effects are possible. May update the variable pointed at by valuePtr
+ *	to contain the expression result.
+ *
+ *----------------------------------------------------------------------
+ */
+static inline int
+ParseArithSeriesArgument(
+    Tcl_Interp *interp,		// The interpreter.
+    Tcl_Obj **valuePtr,		// Var holding object reference to parse/update [IN/OUT]
+    void **ptrPtr,		// Var to receive ref to number contents [OUT]
+    int *typePtr)		// Var to receive number type [OUT]
+{
+    Tcl_Obj *value = *valuePtr, *tmp;
+    if (TclHasInternalRep(value, &tclExprCodeType)
+	    || GetNumberFromObj(NULL, value, ptrPtr, typePtr) != TCL_OK) {
+	if (Tcl_ExprObj(interp, value, &tmp) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	// Switch to the object out of the expression.
+	Tcl_DecrRefCount(value);
+	*valuePtr = value = tmp;
+	if (GetNumberFromObj(interp, value, ptrPtr, typePtr) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+    }
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GenerateArithSeries --
+ *
+ *	This is the core of the implementation of the INST_ARITH_SERIES opcode,
+ *	handling the decoding of the arguments (applying Tcl_ExprObj() if
+ *	necessary) before handing off to TclNewArithSeriesObj() to build the
+ *	series.
+ *
+ * Results:
+ *	The arithmetic series object (zero refcount) or NULL on error, when a
+ *	message will be left in the interpreter result.
+ *
+ * Side effects:
+ *	Can call Tcl_ExprObj() which can call commands, so arbitrary side
+ *	effects are possible.
+ *
+ *----------------------------------------------------------------------
+ */
+static Tcl_Obj *
+GenerateArithSeries(
+    Tcl_Interp *interp,		// The interpreter.
+    Tcl_Obj *from,		// The from value, or NULL if not supplied.
+    Tcl_Obj *to,		// The to value, or NULL if not supplied.
+    Tcl_Obj *step,		// The step value, or NULL if not supplied.
+    Tcl_Obj *count)		// The count value, or NULL if not supplied.
+{
+    Tcl_Obj *result = NULL;
+    int type, useDoubles = 0;
+    void *ptr;
+
+    // Hold explicit references.
+    if (from)  {
+	Tcl_IncrRefCount(from);
+    }
+    if (to)    {
+	Tcl_IncrRefCount(to);
+    }
+    if (step)  {
+	Tcl_IncrRefCount(step);
+    }
+    if (count) {
+	Tcl_IncrRefCount(count);
+    }
+
+    /*
+     * Decide whether to request a double series or an int series.
+     * Note the calls to Tcl_ExprObj. UGH!
+     */
+
+    if (from) {
+	if (ParseArithSeriesArgument(interp, &from, &ptr, &type) != TCL_OK) {
+	    goto cleanupOnError;
+	}
+	switch (type) {
+	case TCL_NUMBER_DOUBLE:
+	    useDoubles = 1;
+	    break;
+	case TCL_NUMBER_NAN:
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "domain error: argument not in valid range"));
+	    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
+		    "domain error: argument not in valid range", NULL);
+	    goto cleanupOnError;
+	}
+    }
+
+    if (to) {
+	if (ParseArithSeriesArgument(interp, &to, &ptr, &type) != TCL_OK) {
+	    goto cleanupOnError;
+	}
+	switch (type) {
+	case TCL_NUMBER_DOUBLE:
+	    useDoubles = 1;
+	    break;
+	case TCL_NUMBER_NAN:
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "cannot use non-numeric floating-point value \"%s\" to "
+		    "estimate length of arith-series",
+		    TclGetString(to)));
+	    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
+		    "domain error: argument not in valid range", NULL);
+	    goto cleanupOnError;
+	}
+    }
+
+    if (step) {
+	if (ParseArithSeriesArgument(interp, &step, &ptr, &type) != TCL_OK) {
+	    goto cleanupOnError;
+	}
+	switch (type) {
+	case TCL_NUMBER_DOUBLE:
+	    useDoubles = 1;
+	    break;
+	case TCL_NUMBER_NAN:
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "domain error: argument not in valid range"));
+	    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
+		    "domain error: argument not in valid range", NULL);
+	    goto cleanupOnError;
+	}
+    }
+
+    // Convert count to integer if not already
+    // Almost the same as above cases except how floats are really handled.
+    if (count) {
+	if (ParseArithSeriesArgument(interp, &count, &ptr, &type) != TCL_OK) {
+	    goto cleanupOnError;
+	}
+	switch (type) {
+	case TCL_NUMBER_DOUBLE: {
+	    double dCount = *((const double *) ptr);
+	    Tcl_WideInt wCount = (Tcl_WideInt) dCount;
+	    if (dCount - wCount == 0.0) {
+		Tcl_DecrRefCount(count);
+		// Switch to the object holding integer version of the count.
+		TclNewIntObj(count, wCount);
+		Tcl_IncrRefCount(count);
+	    }
+	    break;
+	}
+	case TCL_NUMBER_NAN:
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "expected integer but got \"%s\"",
+		    TclGetString(count)));
+	    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
+		    "domain error: argument not in valid range", NULL);
+	    goto cleanupOnError;
+	}
+    }
+
+    // Parameters comprehended and normalised. Now construct the series.
+    result = TclNewArithSeriesObj(interp, useDoubles, from, to, step, count);
+
+    // Clean up and return.
+  cleanupOnError:
+    if (count) {
+	Tcl_DecrRefCount(count);
+    }
+    if (step)  {
+	Tcl_DecrRefCount(step);
+    }
+    if (to)    {
+	Tcl_DecrRefCount(to);
+    }
+    if (from)  {
+	Tcl_DecrRefCount(from);
+    }
+    return result;
 }
 
 #ifdef TCL_COMPILE_DEBUG
