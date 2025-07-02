@@ -114,7 +114,7 @@ typedef int (TraversalProc)(Tcl_DString *srcPtr, Tcl_DString *dstPtr,
 
 #ifndef DJGPP
 
-enum {
+enum UnixFcmdAttributes {
 #if defined(__CYGWIN__)
     UNIX_ARCHIVE_ATTRIBUTE,
 #endif

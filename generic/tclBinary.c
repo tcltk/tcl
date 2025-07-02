@@ -2488,7 +2488,7 @@ BinaryDecodeHex(
     int i, index, value, pure = 1, strict = 0;
     Tcl_Size size, cut = 0, count = 0;
     int ucs4;
-    enum {OPT_STRICT };
+    enum Option { OPT_STRICT };
     static const char *const optStrings[] = { "-strict", NULL };
 
     if (objc < 2 || objc > 3) {
@@ -2616,7 +2616,7 @@ BinaryEncode64(
     Tcl_Size wrapcharlen = 1;
     int index, purewrap = 1;
     Tcl_Size i, offset, size, outindex = 0, count = 0;
-    enum { OPT_MAXLEN, OPT_WRAPCHAR };
+    enum Option { OPT_MAXLEN, OPT_WRAPCHAR };
     static const char *const optStrings[] = { "-maxlen", "-wrapchar", NULL };
 
     if (objc < 2 || objc % 2 != 0) {
@@ -2745,7 +2745,7 @@ BinaryEncodeUu(
     const unsigned char SingleNewline[] = { UCHAR('\n') };
     const unsigned char *wrapchar = SingleNewline;
     Tcl_Size j, rawLength, offset, count = 0, wrapcharlen = sizeof(SingleNewline);
-    enum { OPT_MAXLEN, OPT_WRAPCHAR } index;
+    enum Option { OPT_MAXLEN, OPT_WRAPCHAR } index;
     static const char *const optStrings[] = { "-maxlen", "-wrapchar", NULL };
 
     if (objc < 2 || objc % 2 != 0) {
@@ -2894,7 +2894,7 @@ BinaryDecodeUu(
     Tcl_Size size, count = 0;
     unsigned char c;
     int ucs4;
-    enum { OPT_STRICT };
+    enum Option { OPT_STRICT };
     static const char *const optStrings[] = { "-strict", NULL };
 
     if (objc < 2 || objc > 3) {
@@ -3071,7 +3071,7 @@ BinaryDecode64(
     int i, index, cut = 0;
     Tcl_Size size, count = 0;
     int ucs4;
-    enum { OPT_STRICT };
+    enum Option { OPT_STRICT };
     static const char *const optStrings[] = { "-strict", NULL };
 
     if (objc < 2 || objc > 3) {

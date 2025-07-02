@@ -107,7 +107,7 @@ typedef Tcl_Size Tcl_ExceptionRange;
  * structures.
  */
 
-typedef enum {
+typedef enum ExceptionRangeType {
     LOOP_EXCEPTION_RANGE,	/* Exception's range is part of a loop. Break
 				 * and continue "exceptions" cause jumps to
 				 * appropriate PC offsets. */
@@ -1040,7 +1040,7 @@ MODULE_SCOPE StringClassDesc const tclStringClassTable[];
  * commands between the jump and the target.
  */
 
-typedef enum {
+typedef enum TclJumpType {
     TCL_UNCONDITIONAL_JUMP,
     TCL_TRUE_JUMP,
     TCL_FALSE_JUMP

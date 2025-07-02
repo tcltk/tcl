@@ -353,7 +353,7 @@ static const int groups\[\] = {"
  * Unicode character.
  */
 
-enum {
+enum TclUnicodeCharacterCategories {
     UNASSIGNED,
     UPPERCASE_LETTER,
     LOWERCASE_LETTER,

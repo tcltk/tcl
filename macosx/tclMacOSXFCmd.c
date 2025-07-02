@@ -46,7 +46,7 @@ int			copyfile(const char *from, const char *to,
  * tclUnixFCmd.c !
  */
 
-enum {
+enum FCmdAttributes {
     UNIX_GROUP_ATTRIBUTE,
     UNIX_OWNER_ATTRIBUTE,
     UNIX_PERMISSIONS_ATTRIBUTE,
@@ -78,7 +78,7 @@ static const Tcl_ObjType tclOSTypeType = {
     TCL_OBJTYPE_V0
 };
 
-enum {
+enum TclMacosxMagicConstants {
     kIsInvisible = 0x4000,
 };
 

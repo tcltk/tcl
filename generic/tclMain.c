@@ -86,7 +86,7 @@ typedef struct {
  * writes prompts and results to standard output.
  */
 
-typedef enum {
+typedef enum PromptType {
     PROMPT_NONE,		/* Print no prompt */
     PROMPT_START,		/* Print prompt for command start */
     PROMPT_CONTINUE		/* Print prompt for command continuation */

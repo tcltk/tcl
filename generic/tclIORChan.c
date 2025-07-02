@@ -151,7 +151,7 @@ typedef struct {
 static const char *const eventOptions[] = {
     "read", "write", NULL
 };
-typedef enum {
+typedef enum EventOption {
     EVENT_READ, EVENT_WRITE
 } EventOption;
 
@@ -173,7 +173,7 @@ static const char *const methodNames[] = {
     "write",		/* OPT */
     NULL
 };
-typedef enum {
+typedef enum MethodName {
     METH_BLOCKING,
     METH_CGET,
     METH_CGETALL,
@@ -214,7 +214,7 @@ typedef enum {
  * Enumeration of all operations which can be forwarded.
  */
 
-typedef enum {
+typedef enum ForwardedOperation {
     ForwardedClose,
     ForwardedInput,
     ForwardedOutput,

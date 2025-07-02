@@ -42,7 +42,7 @@ static int		CannotSetAttribute(Tcl_Interp *interp, int objIndex,
  * Constants and variables necessary for file attributes subcommand.
  */
 
-enum {
+enum WinFCmdAttributes {
     WIN_ARCHIVE_ATTRIBUTE,
     WIN_HIDDEN_ATTRIBUTE,
     WIN_LONGNAME_ATTRIBUTE,

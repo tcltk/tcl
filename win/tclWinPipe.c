@@ -1582,7 +1582,7 @@ BuildCommandLine(
      *   CL_QUOTE    - enclose in quotes;
      *   CL_UNPAIRED - previous arguments chain contains unpaired quote-char;
      */
-    enum {CL_ESCAPE = 1, CL_QUOTE = 2, CL_UNPAIRED = 4};
+    enum QuoteFlags {CL_ESCAPE = 1, CL_QUOTE = 2, CL_UNPAIRED = 4};
 
     Tcl_DStringInit(&ds);
 

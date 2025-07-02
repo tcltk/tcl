@@ -1763,7 +1763,7 @@ TclCompileSwitchCmd(
     Tcl_Size numWords;		/* Number of words in command. */
 
     Tcl_Token *valueTokenPtr;	/* Token for the value to switch on. */
-    enum {Switch_Exact, Switch_Glob, Switch_Regexp} mode;
+    enum SwitchMode {Switch_Exact, Switch_Glob, Switch_Regexp} mode;
 				/* What kind of switch are we doing? */
 
     Tcl_Token *bodyTokenArray;	/* Array of real pattern list items. */
@@ -2093,7 +2093,7 @@ IssueSwitchChainedTests(
     Tcl_Size numArms,		/* Number of arms of the switch. */
     SwitchArmInfo *arms)	/* Array of arm descriptors. */
 {
-    enum {Switch_Exact, Switch_Glob, Switch_Regexp};
+    enum SwitchMode {Switch_Exact, Switch_Glob, Switch_Regexp};
     int foundDefault;		/* Flag to indicate whether a "default" clause
 				 * is present. */
     Tcl_BytecodeLabel *fwdJumps;/* Array of forward-jump fixup locations. */

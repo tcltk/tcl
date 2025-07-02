@@ -103,10 +103,10 @@ enum SortModes {
 static const char *const seq_operations[] = {
     "..", "to", "count", "by", NULL
 };
-typedef enum {
+typedef enum SequenceOperators {
     LSEQ_DOTS, LSEQ_TO, LSEQ_COUNT, LSEQ_BY
 } SequenceOperators;
-typedef enum {
+typedef enum SequenceDecoded {
      NoneArg, NumericArg, RangeKeywordArg, ErrArg, LastArg = 8
 } SequenceDecoded;
 
