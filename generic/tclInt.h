@@ -434,15 +434,13 @@ enum TclNamespaceFlags {
  *
  * TCL_GLOBAL_ONLY		- (see tcl.h) Look only in the global ns.
  * TCL_NAMESPACE_ONLY		- (see tcl.h) Look only in the context ns.
- * TCL_CREATE_NS_IF_UNKNOWN	- Create unknown namespaces.
- * TCL_FIND_ONLY_NS		- The name sought is a namespace name.
- * TCL_FIND_IF_NOT_SIMPLE	- Retrieve last namespace even if the rest of
- *				  name is not simple name (contains ::).
  */
 enum TclFindNamespaceFlags {
-    TCL_CREATE_NS_IF_UNKNOWN = 0x800,
-    TCL_FIND_ONLY_NS = 0x1000,
+    TCL_CREATE_NS_IF_UNKNOWN = 0x800,	// Create unknown namespaces.
+    TCL_FIND_ONLY_NS = 0x1000,		// The name sought is a namespace name.
     TCL_FIND_IF_NOT_SIMPLE = 0x2000
+				/* Retrieve last namespace even if the rest of
+				 * name is not simple name (contains ::). */
 };
 
 /*
@@ -1960,7 +1958,8 @@ typedef struct LimitHandler LimitHandler;
  */
 
 enum PkgPreferOptions {
-    PKG_PREFER_LATEST, PKG_PREFER_STABLE
+    PKG_PREFER_LATEST,
+    PKG_PREFER_STABLE
 };
 
 /*
@@ -2411,57 +2410,55 @@ enum InterpEvalFlags {
 
 /*
  * Flag bits for Interp structures:
- *
- * DELETED:		Non-zero means the interpreter has been deleted:
- *			don't process any more commands for it, and destroy
- *			the structure as soon as all nested invocations of
- *			Tcl_Eval are done.
- * ERR_ALREADY_LOGGED:	Non-zero means information has already been logged in
- *			iPtr->errorInfo for the current Tcl_Eval instance, so
- *			Tcl_Eval needn't log it (used to implement the "error
- *			message log" command).
- * DONT_COMPILE_CMDS_INLINE: Non-zero means that the bytecode compiler should
- *			not compile any commands into an inline sequence of
- *			instructions. This is set 1, for example, when command
- *			traces are requested.
- * RAND_SEED_INITIALIZED: Non-zero means that the randSeed value of the interp
- *			has not be initialized. This is set 1 when we first
- *			use the rand() or srand() functions.
- * SAFE_INTERP:		Non zero means that the current interp is a safe
- *			interp (i.e. it has only the safe commands installed,
- *			less privilege than a regular interp).
- * INTERP_DEBUG_FRAME:	Used for switching on various extra interpreter
- *			debug/info mechanisms (e.g. info frame eval/uplevel
- *			tracing) which are performance intensive.
- * INTERP_TRACE_IN_PROGRESS: Non-zero means that an interp trace is currently
- *			active; so no further trace callbacks should be
- *			invoked.
- * INTERP_ALTERNATE_WRONG_ARGS: Used for listing second and subsequent forms
- *			of the wrong-num-args string in Tcl_WrongNumArgs.
- *			Makes it append instead of replacing and uses
- *			different intermediate text.
- * CANCELED:		Non-zero means that the script in progress should be
- *			canceled as soon as possible. This can be checked by
- *			extensions (and the core itself) by calling
- *			Tcl_Canceled and checking if TCL_ERROR is returned.
- *			This is a one-shot flag that is reset immediately upon
- *			being detected; however, if the TCL_CANCEL_UNWIND flag
- *			is set Tcl_Canceled will continue to report that the
- *			script in progress has been canceled thereby allowing
- *			the evaluation stack for the interp to be fully
- *			unwound.
  */
 enum InterpFlags {
-    DELETED = 1,
-    ERR_ALREADY_LOGGED = 4,
-    INTERP_DEBUG_FRAME = 0x10,
+    DELETED = 1,		/* The interpreter has been deleted: don't
+				 * process any more commands for it, and
+				 * destroy the structure as soon as all nested
+				 * invocations of Tcl_Eval are done. */
+    ERR_ALREADY_LOGGED = 4,	/* Information has already been logged in
+				 * iPtr->errorInfo for the current Tcl_Eval
+				 * instance, so Tcl_Eval needn't log it (used
+				 * to implement the "error message log"
+				 * command). */
+    INTERP_DEBUG_FRAME = 0x10,	/* Used for switching on various extra
+				 * interpreter debug/info mechanisms (e.g.,
+				 * info frame eval/uplevel tracing) which are
+				 * performance intensive. */
     DONT_COMPILE_CMDS_INLINE = 0x20,
+				/* The bytecode compiler should not compile any
+				 * commands into an inline sequence of
+				 * instructions. This is set, for example, when
+				 * command traces are requested.*/
     RAND_SEED_INITIALIZED = 0x40,
-    SAFE_INTERP = 0x80,
+				/* The randSeed value of the interp has been
+				* initialized. This is set when we first use
+				* the rand() or srand() functions. */
+    SAFE_INTERP = 0x80,		/* The current interp is a safe interp (i.e. it
+				 * has only the safe commands installed, less
+				 * privilege than a regular interp). */
     INTERP_TRACE_IN_PROGRESS = 0x200,
+				/* An interp trace is currently active; so no
+				 * further trace callbacks should be invoked. */
     INTERP_ALTERNATE_WRONG_ARGS = 0x400,
-    ERR_LEGACY_COPY = 0x800,
-    CANCELED = 0x1000
+				/* Used (e.g., by [read]) for listing second
+				 * and subsequent forms of the wrong-num-args
+				 * string in Tcl_WrongNumArgs. Makes it append
+				 * instead of replacing and uses different
+				 * intermediate text. */
+    ERR_LEGACY_COPY = 0x800,	/* Whether to initialise the errorInfo stack
+				 * trace from the interpreter result. */
+    CANCELED = 0x1000		/* The script in progress should be canceled as
+				 * soon as possible. This can be checked by
+				 * extensions (and the core itself) by calling
+				 * Tcl_Canceled and checking if TCL_ERROR is
+				 * returned. This is a one-shot flag that is
+				 * reset immediately upon being detected;
+				 * however, if the TCL_CANCEL_UNWIND flag
+				 * is set, Tcl_Canceled will continue to report
+				 * that the script in progress has been
+				 * canceled thereby allowing the evaluation
+				 * stack for the interp to be fully unwound. */
 };
 
 /*
@@ -2554,22 +2551,20 @@ typedef enum TclEolTranslation {
 
 /*
  * Flags for TclInvoke:
- *
- * TCL_INVOKE_HIDDEN		Invoke a hidden command; if not set, invokes
- *				an exposed command.
- * TCL_INVOKE_NO_UNKNOWN	If set, "unknown" is not invoked if the
- *				command to be invoked is not found. Only has
- *				an effect if invoking an exposed command,
- *				i.e. if TCL_INVOKE_HIDDEN is not also set.
- * TCL_INVOKE_NO_TRACEBACK	Does not record traceback information if the
- *				invoked command returns an error. Used if the
- *				caller plans on recording its own traceback
- *				information.
  */
 enum TclInvokeFlags {
-    TCL_INVOKE_HIDDEN = 1 << 0,
+    TCL_INVOKE_HIDDEN = 1 << 0,	/* Invoke a hidden command; if not set, invokes
+				 * an exposed command. */
     TCL_INVOKE_NO_UNKNOWN = 1 << 1,
+				/* If set, "unknown" is not invoked if the
+				 * command to be invoked is not found. Only has
+				 * an effect if invoking an exposed command,
+				 * i.e. if TCL_INVOKE_HIDDEN is not also set. */
     TCL_INVOKE_NO_TRACEBACK = 1 << 2
+				/* Does not record traceback information if the
+				 * invoked command returns an error. Used if the
+				 * caller plans on recording its own traceback
+				 * information. */
 };
 
 /*
@@ -3184,7 +3179,9 @@ MODULE_SCOPE size_t	tclObjsShared[TCL_MAX_SHARED_OBJ_STATS];
 MODULE_SCOPE char	tclEmptyString;
 
 enum CheckEmptyStringResult {
-	TCL_EMPTYSTRING_UNKNOWN = -1, TCL_EMPTYSTRING_NO, TCL_EMPTYSTRING_YES
+    TCL_EMPTYSTRING_UNKNOWN = -1,
+    TCL_EMPTYSTRING_NO,
+    TCL_EMPTYSTRING_YES
 };
 
 /*
