@@ -4541,7 +4541,8 @@ ChildCommandLimitCmd(
     } else {
 	Tcl_Size i, scriptLen = 0, limitLen = 0;
 	Tcl_Obj *scriptObj = NULL, *granObj = NULL, *limitObj = NULL;
-	int gran = 0, limit = 0;
+	int gran = 0;
+	Tcl_Size limit = 0;
 
 	for (i=consumedObjc ; i<objc ; i+=2) {
 	    if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0,
@@ -4572,7 +4573,7 @@ ChildCommandLimitCmd(
 		if (limitLen == 0) {
 		    break;
 		}
-		if (TclGetIntFromObj(interp, objv[i+1], &limit) != TCL_OK) {
+		if (Tcl_GetSizeIntFromObj(interp, objv[i+1], &limit) != TCL_OK) {
 		    return TCL_ERROR;
 		}
 		if (limit < 0) {

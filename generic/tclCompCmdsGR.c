@@ -27,9 +27,6 @@ static void		CompileReturnInternal(CompileEnv *envPtr,
 			    Tcl_Obj *returnOpts);
 static Tcl_LVTIndex	IndexTailVarIfKnown(Tcl_Interp *interp,
 			    Tcl_Token *varTokenPtr, CompileEnv *envPtr);
-
-// Maximum number of items to concatenate in one go.
-#define MAX_LIST_CONCAT	0x7FFFFFFE
 
 /*
  *----------------------------------------------------------------------
@@ -928,7 +925,7 @@ TclCompileLappendCmd(
 	    } else {
 		build++;
 	    }
-	    if (build > MAX_LIST_CONCAT) {
+	    if (build > LIST_CONCAT_THRESHOLD) {
 		OP4(		LIST, build);
 		if (concat) {
 		    OP(		LIST_CONCAT);
@@ -1252,7 +1249,7 @@ TclCompileListCmd(
 	} else {
 	    build++;
 	}
-	if (build > MAX_LIST_CONCAT) {
+	if (build > LIST_CONCAT_THRESHOLD) {
 	    OP4(		LIST, build);
 	    if (concat) {
 		OP(		LIST_CONCAT);
@@ -1402,6 +1399,7 @@ TclCompileLinsertCmd(
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *listToken, *indexToken, *tokenPtr;
     Tcl_Size i, numWords = parsePtr->numWords;
+    /* TODO: Consider support for compiling expanded args. */
 
     if (numWords < 3 || numWords > UINT_MAX) {
 	return TCL_ERROR;
@@ -1423,12 +1421,12 @@ TclCompileLinsertCmd(
     /*
      * First operand is count of arguments.
      * Second operand is bitmask
-     *  TCL_LREPLACE4_END_IS_LAST - end refers to last element
-     *  TCL_LREPLACE4_SINGLE_INDEX - second index is not present
+     *  TCL_LREPLACE_END_IS_LAST - end refers to last element
+     *  TCL_LREPLACE_SINGLE_INDEX - second index is not present
      *     indicating this is a pure insert
      */
     OP41(			LREPLACE, numWords - 1,
-					TCL_LREPLACE4_SINGLE_INDEX);
+					TCL_LREPLACE_SINGLE_INDEX);
     return TCL_OK;
 }
 
@@ -1454,6 +1452,7 @@ TclCompileLreplaceCmd(
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *listToken, *firstToken, *lastToken, *tokenPtr;
     Tcl_Size i, numWords = parsePtr->numWords;
+    /* TODO: Consider support for compiling expanded args. */
 
     if (numWords < 4 || numWords > UINT_MAX) {
 	return TCL_ERROR;
@@ -1477,11 +1476,432 @@ TclCompileLreplaceCmd(
     /*
      * First operand is count of arguments.
      * Second operand is bitmask
-     *  TCL_LREPLACE4_END_IS_LAST - end refers to last element
+     *  TCL_LREPLACE_END_IS_LAST - end refers to last element
      */
     OP41(			LREPLACE, numWords - 1,
-					TCL_LREPLACE4_END_IS_LAST);
+					TCL_LREPLACE_END_IS_LAST);
     return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclCompileLeditCmd --
+ *
+ *	How to compile the "ledit" command.  Generally very similar in concept
+ *	to TclCompileLreplaceCmd, except for the variable handling.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+TclCompileLeditCmd(
+    Tcl_Interp *interp,		/* Tcl interpreter for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the
+				 * command. */
+    TCL_UNUSED(Command *),
+    CompileEnv *envPtr)		/* Holds the resulting instructions. */
+{
+    DefineLineInformation;	/* TIP #280 */
+    Tcl_Size numWords = parsePtr->numWords, i;
+    /* TODO: Consider support for compiling expanded args. */
+    if (numWords < 4) {
+	return TCL_ERROR;
+    }
+    Tcl_Token *varTokenPtr = TokenAfter(parsePtr->tokenPtr);
+
+    /*
+     * Parse/push the variable name. Pushes 0, 1 or 2 words.
+     */
+
+    Tcl_LVTIndex varIdx;
+    int isScalar;
+    PushVarNameWord(varTokenPtr, 0, &varIdx, &isScalar, 1);
+    // Stack: varWords...
+
+    /*
+     * Push all remaining words; there's definitely at least two.
+     */
+
+    Tcl_Token *tokenPtr = TokenAfter(varTokenPtr);
+    for (i=2; i<numWords; i++, tokenPtr=TokenAfter(tokenPtr)) {
+    	PUSH_TOKEN(		tokenPtr, i);
+    }
+
+    // Stack: varWords... idx1 idx2 values...
+    //        {len=[0-2]} { len=numWords-2  }
+
+    /*
+     * Read the variable. This requires us to copy the varWords first (if there
+     * are any).
+     */
+
+    if (isScalar) {
+	if (varIdx < 0) {
+	    OP4(		OVER, numWords - 2);
+	    OP(			LOAD_STK);
+	} else {
+	    OP4(		LOAD_SCALAR, varIdx);
+	}
+    } else {
+	if (varIdx < 0) {
+	    OP4(		OVER, numWords - 1);
+	    OP4(		OVER, numWords - 1);
+	    OP(			LOAD_ARRAY_STK);
+	} else {
+	    OP4(		OVER, numWords - 2);
+	    OP4(		LOAD_ARRAY, varIdx);
+	}
+    }
+
+    /*
+     * Move the value read from the variable to the correct stack location for
+     * the LREPLACE instruction.
+     */
+
+    // TODO: Consider a ROLL operation, as in Postscript
+    // Stack: varWords... idx1 idx2 values... listValue
+    OP4(			REVERSE, numWords - 1);
+    // Stack: varWords... listValue values... idx2 idx1
+    if (numWords > 4) {
+	OP4(			REVERSE, numWords - 2);
+    } else {
+	OP(			SWAP);
+    }
+    // Stack: varWords... listValue idx1 idx2 values...
+
+    /*
+     * First operand is count of arguments.
+     * Second operand is bitmask
+     *  TCL_LREPLACE_END_IS_LAST - end refers to last element
+     */
+    OP41(			LREPLACE, numWords - 1,
+					TCL_LREPLACE_END_IS_LAST);
+    // Stack: varWords... listValue
+
+    /*
+     * Write back the updated value. We've prepped the stack exactly right for
+     * this to be something we can Just Do at this point.
+     */
+
+    if (isScalar) {
+	if (varIdx < 0) {
+	    OP(			STORE_STK);
+	} else {
+	    OP4(		STORE_SCALAR, varIdx);
+	}
+    } else {
+	if (varIdx < 0) {
+	    OP(			STORE_ARRAY_STK);
+	} else {
+	    OP4(		STORE_ARRAY, varIdx);
+	}
+    }
+
+    // Stack: listValue
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclCompileLpopCmd --
+ *
+ *	How to compile the "lpop" command. We only bother with the case
+ *	where there is a single constant index (or no index) and we're inside
+ *	a procedure-like context.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+TclCompileLpopCmd(
+    Tcl_Interp *interp,		/* Tcl interpreter for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the
+				 * command. */
+    TCL_UNUSED(Command *),
+    CompileEnv *envPtr)		/* Holds the resulting instructions. */
+{
+    DefineLineInformation;	/* TIP #280 */
+    Tcl_Size numWords = parsePtr->numWords;
+    /* TODO: Consider support for compiling expanded args. */
+
+    // TODO: Figure out all the stack cases here to allow full variable access
+    // TODO: Find way to handle multiple indices
+    // (extra opcode for TclLsetFlat with NULL value?)
+
+    if (numWords < 2 || numWords > 3) {
+	return TCL_ERROR;
+    }
+
+    Tcl_Token *varTokenPtr = TokenAfter(parsePtr->tokenPtr);
+    Tcl_LVTIndex varIdx = LocalScalarFromToken(varTokenPtr, envPtr);
+    if (varIdx < 0) {
+	// Give up if we pushed any words; makes stack computations tractable
+	return TCL_ERROR;
+    }
+
+    Tcl_Token *idxTokenPtr = NULL;
+    int idx = TCL_INDEX_END, isSimpleIndex = 1;
+    if (numWords == 3) {
+	idxTokenPtr = TokenAfter(varTokenPtr);
+	if (TclGetIndexFromToken(idxTokenPtr, TCL_INDEX_NONE,
+		TCL_INDEX_NONE, &idx) != TCL_OK) {
+	    /*
+	     * Index isn't simple (e.g., it's a variable read) and could have
+	     * side effects. Need a much more conservative instruction sequence
+	     * to get order of trace-observable operations right.
+	     */
+	    isSimpleIndex = 0;
+	}
+    }
+
+    if (!isSimpleIndex) {
+	/*
+	 * Push the index token (which may have side effects!) before reading
+	 * the variable, which is "internal" to [lpop].
+	 */
+
+	PUSH_TOKEN(		idxTokenPtr, 2);
+	OP4(			LOAD_SCALAR, varIdx);
+	// Stack: index list
+	OP(			SWAP);
+	// Stack: list index
+	OP(			DUP);
+	// Stack: list index index
+	OP4(			OVER, 2);
+	// Stack: list index index list
+	OP(			SWAP);
+	// Stack: list index list index
+	OP(			LIST_INDEX);
+	// Stack: list index value
+	OP4(			REVERSE, 3);
+	// Stack: value index list
+	OP(			SWAP);
+    } else {
+	/*
+	 * Can use this much abbreviated form here. In particular, we have a
+	 * parsed index and we can push its value at any time we want,
+	 * including exactly once after reading the variable...
+	 */
+
+	OP4(			LOAD_SCALAR, varIdx);
+	OP(			DUP);
+	OP4(			LIST_INDEX_IMM, idx);
+	// Stack: list value
+	OP(			SWAP);
+	if (idxTokenPtr) {
+	    PUSH_SIMPLE_TOKEN(	idxTokenPtr);
+	} else {
+	    PUSH(		"end");
+	}
+    }
+    // Stack: value list index
+    OP(				DUP);
+    // Stack: value list index index
+    OP41(			LREPLACE, 3, TCL_LREPLACE_END_IS_LAST
+					| TCL_LREPLACE_NEED_IN_RANGE);
+    // Stack: value newList
+    OP4(			STORE_SCALAR, varIdx);
+    OP(				POP);
+    // Stack: value
+
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclCompileLseqCmd --
+ *
+ *	Procedure called to compile the "lseq" command.
+ *
+ * Results:
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to runtime.
+ *
+ * Side effects:
+ *	Instructions are added to envPtr to execute the "lseq" command at
+ *	runtime.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclCompileLseqCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    TCL_UNUSED(Command *),
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    DefineLineInformation;	// TIP #280
+    Tcl_Token *tokenPtr, *token2Ptr, *token3Ptr, *token4Ptr, *token5Ptr;
+    int flags;
+
+    if (parsePtr->numWords == 2) {
+	goto oneArg;
+    } else if (parsePtr->numWords == 3) {
+	goto twoArgs;
+    } else if (parsePtr->numWords == 4) {
+	goto threeArgs;
+    } else if (parsePtr->numWords == 5) {
+	goto fourArgs;
+    } else if (parsePtr->numWords == 6) {
+	goto fiveArgs;
+    } else {
+	// This is a syntax error case.
+	return TCL_ERROR;
+    }
+
+#define IS_ANY_LSEQ_KEYWORD(tokenPtr) \
+	(IS_TOKEN_LITERALLY(tokenPtr, "to") \
+	|| IS_TOKEN_LITERALLY(tokenPtr, "..") \
+	|| IS_TOKEN_LITERALLY(tokenPtr, "count") \
+	|| IS_TOKEN_LITERALLY(tokenPtr, "by"))
+
+    // Handle [lseq $n]
+  oneArg:
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    flags = (TCL_ARITHSERIES_FROM | TCL_ARITHSERIES_STEP |
+	    TCL_ARITHSERIES_COUNT);
+    if (IS_ANY_LSEQ_KEYWORD(tokenPtr)) {
+	return TCL_ERROR;
+    }
+    PUSH(			"0");		// from
+    PUSH(			"");		// to
+    PUSH(			"1");		// step
+    PUSH_TOKEN(			tokenPtr, 1);	// count
+    OP1(			ARITH_SERIES, flags);
+    return TCL_OK;
+
+    // Handle [lseq $m $n]
+  twoArgs:
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    token2Ptr = TokenAfter(tokenPtr);
+    flags = (TCL_ARITHSERIES_FROM | TCL_ARITHSERIES_TO);
+    if (IS_ANY_LSEQ_KEYWORD(tokenPtr) || IS_ANY_LSEQ_KEYWORD(token2Ptr)) {
+	return TCL_ERROR;
+    }
+    PUSH_TOKEN(			tokenPtr, 1);	// from
+    PUSH_TOKEN(			token2Ptr, 2);	// to
+    PUSH(			"");		// step
+    PUSH(			"");		// count
+    OP1(			ARITH_SERIES, flags);
+    return TCL_OK;
+
+    // Handle [lseq $x $y $z], [lseq $x to $y], [lseq $x count $y], [lseq $x by $y]
+  threeArgs:
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    token2Ptr = TokenAfter(tokenPtr);
+    token3Ptr = TokenAfter(token2Ptr);
+    if (IS_ANY_LSEQ_KEYWORD(tokenPtr) || IS_ANY_LSEQ_KEYWORD(token3Ptr)) {
+	return TCL_ERROR;
+    }
+    if (IS_TOKEN_LITERALLY(token2Ptr, "to") || IS_TOKEN_LITERALLY(token2Ptr, "..")) {
+	flags = (TCL_ARITHSERIES_FROM | TCL_ARITHSERIES_TO);
+	PUSH_TOKEN(		tokenPtr, 1);	// from
+	PUSH_TOKEN(		token3Ptr, 3);	// to
+	PUSH(			"");		// step
+	PUSH(			"");		// count
+    } else if (IS_TOKEN_LITERALLY(token2Ptr, "count")) {
+	flags = (TCL_ARITHSERIES_FROM | TCL_ARITHSERIES_STEP | TCL_ARITHSERIES_COUNT);
+	PUSH_TOKEN(		tokenPtr, 1);	// from
+	PUSH(			"");		// to
+	PUSH(			"1");		// step
+	PUSH_TOKEN(		token3Ptr, 3);	// count
+    } else if (IS_TOKEN_LITERALLY(token2Ptr, "by")) {
+	flags = (TCL_ARITHSERIES_FROM | TCL_ARITHSERIES_STEP | TCL_ARITHSERIES_COUNT);
+	PUSH(			"0");		// from
+	PUSH(			"");		// to
+	PUSH_TOKEN(		tokenPtr, 1);	// count
+	PUSH_TOKEN(		token3Ptr, 3);	// step
+	OP(			SWAP);
+    } else {
+	flags = (TCL_ARITHSERIES_FROM | TCL_ARITHSERIES_TO | TCL_ARITHSERIES_STEP);
+	PUSH_TOKEN(		tokenPtr, 1);	// from
+	PUSH_TOKEN(		token2Ptr, 2);	// to
+	PUSH_TOKEN(		token3Ptr, 3);	// step
+	PUSH(			"");		// count
+    }
+    OP1(			ARITH_SERIES, flags);
+    return TCL_OK;
+
+    // Handle [lseq $x to $y $z], [lseq $x $y by $z], [lseq $x count $y $z]
+  fourArgs:
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    token2Ptr = TokenAfter(tokenPtr);
+    token3Ptr = TokenAfter(token2Ptr);
+    token4Ptr = TokenAfter(token3Ptr);
+    if (IS_ANY_LSEQ_KEYWORD(tokenPtr) || IS_ANY_LSEQ_KEYWORD(token4Ptr)) {
+	return TCL_ERROR;
+    }
+    if (IS_TOKEN_LITERALLY(token2Ptr, "to") || IS_TOKEN_LITERALLY(token2Ptr, "..")) {
+	flags = (TCL_ARITHSERIES_FROM | TCL_ARITHSERIES_TO | TCL_ARITHSERIES_STEP);
+	if (IS_ANY_LSEQ_KEYWORD(token3Ptr)) {
+	    return TCL_ERROR;
+	}
+	PUSH_TOKEN(		tokenPtr, 1);	// from
+	PUSH_TOKEN(		token3Ptr, 3);	// to
+	PUSH_TOKEN(		token4Ptr, 4);	// step
+	PUSH(			"");		// count
+    } else if (IS_TOKEN_LITERALLY(token2Ptr, "count")) {
+	flags = (TCL_ARITHSERIES_FROM | TCL_ARITHSERIES_STEP | TCL_ARITHSERIES_COUNT);
+	if (IS_ANY_LSEQ_KEYWORD(token3Ptr)) {
+	    return TCL_ERROR;
+	}
+	PUSH_TOKEN(		tokenPtr, 1);	// from
+	PUSH(			"");		// to
+	PUSH_TOKEN(		token3Ptr, 3);	// count
+	PUSH_TOKEN(		token4Ptr, 4);	// step
+	OP(			SWAP);
+    } else if (IS_TOKEN_LITERALLY(token3Ptr, "by")) {
+	flags = (TCL_ARITHSERIES_FROM | TCL_ARITHSERIES_TO | TCL_ARITHSERIES_STEP);
+	if (IS_ANY_LSEQ_KEYWORD(token3Ptr)) {
+	    return TCL_ERROR;
+	}
+	PUSH_TOKEN(		tokenPtr, 1);	// from
+	PUSH_TOKEN(		token2Ptr, 2);	// to
+	PUSH_TOKEN(		token4Ptr, 4);	// step
+	PUSH(			"");		// count
+    } else {
+	return TCL_ERROR;
+    }
+    OP1(			ARITH_SERIES, flags);
+    return TCL_OK;
+
+    // Handle [lseq $x to $y by $z], [lseq $x count $y by $z]
+  fiveArgs:
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    token2Ptr = TokenAfter(tokenPtr);
+    token3Ptr = TokenAfter(token2Ptr);
+    token4Ptr = TokenAfter(token3Ptr);
+    token5Ptr = TokenAfter(token4Ptr);
+    if (IS_ANY_LSEQ_KEYWORD(tokenPtr) || IS_ANY_LSEQ_KEYWORD(token3Ptr)
+	    || IS_ANY_LSEQ_KEYWORD(token5Ptr)) {
+	return TCL_ERROR;
+    }
+    if (!IS_TOKEN_LITERALLY(token4Ptr, "by")) {
+	return TCL_ERROR;
+    }
+    if (IS_TOKEN_LITERALLY(token2Ptr, "to") || IS_TOKEN_LITERALLY(token2Ptr, "..")) {
+	flags = (TCL_ARITHSERIES_FROM | TCL_ARITHSERIES_TO | TCL_ARITHSERIES_STEP);
+	PUSH_TOKEN(		tokenPtr, 1);	// from
+	PUSH_TOKEN(		token3Ptr, 3);	// to
+	PUSH_TOKEN(		token5Ptr, 5);	// step
+	PUSH(			"");		// count
+    } else if (IS_TOKEN_LITERALLY(token2Ptr, "count")) {
+	flags = (TCL_ARITHSERIES_FROM | TCL_ARITHSERIES_STEP | TCL_ARITHSERIES_COUNT);
+	PUSH_TOKEN(		tokenPtr, 1);	// from
+	PUSH(			"");		// to
+	PUSH_TOKEN(		token3Ptr, 3);	// count
+	PUSH_TOKEN(		token5Ptr, 5);	// step
+	OP(			SWAP);
+    } else {
+	return TCL_ERROR;
+    }
+    OP1(			ARITH_SERIES, flags);
+    return TCL_OK;
+
+#undef IS_ANY_LSEQ_KEYWORD
 }
 
 /*
@@ -2552,19 +2972,14 @@ TclCompileUpvarCmd(
     TclNewObj(objPtr);
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
     if (TclWordKnownAtCompileTime(tokenPtr, objPtr)) {
-	CallFrame *framePtr;
-	const Tcl_ObjType *newTypePtr, *typePtr = objPtr->typePtr;
-
 	/*
-	 * Attempt to convert to a level reference. Note that TclObjGetFrame
-	 * only changes the obj type when a conversion was successful.
+	 * Attempt to convert to a level reference.
 	 */
 
-	TclObjGetFrame(interp, objPtr, &framePtr);
-	newTypePtr = objPtr->typePtr;
+	int numFrameWords = TclObjGetFrame(interp, objPtr, NULL);
 	Tcl_DecrRefCount(objPtr);
 
-	if (newTypePtr != typePtr) {
+	if (numFrameWords) {
 	    if (numWords % 2) {
 		return TCL_ERROR;
 	    }
@@ -2813,18 +3228,72 @@ TclCompileObjectNextCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr = parsePtr->tokenPtr;
-    Tcl_Size i;
-    /* TODO: Consider support for compiling expanded args. */
+    Tcl_Size i, numWords = parsePtr->numWords;
 
     if (parsePtr->numWords > UINT_MAX) {
-	return TCL_ERROR;
+	goto issueExpanded;
     }
 
-    for (i=0 ; i<parsePtr->numWords ; i++) {
+    // Check for expansion
+    for (i=0 ; i<numWords ; i++) {
+	if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
+	    goto issueExpanded;
+	}
+	tokenPtr = TokenAfter(tokenPtr);
+    }
+
+    // Simple instruction issue
+    tokenPtr = parsePtr->tokenPtr;
+    for (i=0 ; i<numWords ; i++) {
 	PUSH_TOKEN(		tokenPtr, i);
 	tokenPtr = TokenAfter(tokenPtr);
     }
     INVOKE4(			TCLOO_NEXT, i);
+    return TCL_OK;
+
+  issueExpanded:
+    // Concatenate all arguments into a list; handles expansion
+    tokenPtr = parsePtr->tokenPtr;
+    Tcl_Size build;
+    int concat;
+    for (concat = 0, build = 0, i = 0; i < numWords; i++) {
+	if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD && build > 0) {
+	    OP4(		LIST, build);
+	    if (concat) {
+		OP(		LIST_CONCAT);
+	    }
+	    build = 0;
+	    concat = 1;
+	}
+	PUSH_TOKEN(		tokenPtr, i);
+	if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
+	    if (concat) {
+		OP(		LIST_CONCAT);
+	    } else {
+		concat = 1;
+	    }
+	} else {
+	    build++;
+	}
+	if (build > LIST_CONCAT_THRESHOLD) {
+	    OP4(		LIST, build);
+	    if (concat) {
+		OP(		LIST_CONCAT);
+	    }
+	    build = 0;
+	    concat = 1;
+	}
+	tokenPtr = TokenAfter(tokenPtr);
+    }
+    if (build > 0) {
+	OP4(			LIST, build);
+	if (concat) {
+	    OP(			LIST_CONCAT);
+	}
+    }
+
+    // Invoke the underlying [next] implementation
+    INVOKE(			TCLOO_NEXT_LIST);
     return TCL_OK;
 }
 
@@ -2839,17 +3308,74 @@ TclCompileObjectNextToCmd(
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr = parsePtr->tokenPtr;
     Tcl_Size i, numWords = parsePtr->numWords;
-    /* TODO: Consider support for compiling expanded args. */
 
-    if (numWords < 2 || numWords > UINT_MAX) {
+    if (numWords < 2) {
 	return TCL_ERROR;
+    } else if (numWords > UINT_MAX) {
+	// Very large number of words anyway
+	goto issueExpanded;
     }
 
+    // Check for expansion
+    for (i=0 ; i<numWords ; i++) {
+	if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
+	    goto issueExpanded;
+	}
+	tokenPtr = TokenAfter(tokenPtr);
+    }
+
+    // Simple instruction issue
+    tokenPtr = parsePtr->tokenPtr;
     for (i=0 ; i<numWords ; i++) {
 	PUSH_TOKEN(		tokenPtr, i);
 	tokenPtr = TokenAfter(tokenPtr);
     }
     INVOKE4(			TCLOO_NEXT_CLASS, i);
+    return TCL_OK;
+
+  issueExpanded:
+    // Concatenate all arguments into a list; handles expansion
+    tokenPtr = parsePtr->tokenPtr;
+    Tcl_Size build;
+    int concat;
+    for (concat = 0, build = 0, i = 0; i < numWords; i++) {
+	if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD && build > 0) {
+	    OP4(		LIST, build);
+	    if (concat) {
+		OP(		LIST_CONCAT);
+	    }
+	    build = 0;
+	    concat = 1;
+	}
+	PUSH_TOKEN(		tokenPtr, i);
+	if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
+	    if (concat) {
+		OP(		LIST_CONCAT);
+	    } else {
+		concat = 1;
+	    }
+	} else {
+	    build++;
+	}
+	if (build > LIST_CONCAT_THRESHOLD) {
+	    OP4(		LIST, build);
+	    if (concat) {
+		OP(		LIST_CONCAT);
+	    }
+	    build = 0;
+	    concat = 1;
+	}
+	tokenPtr = TokenAfter(tokenPtr);
+    }
+    if (build > 0) {
+	OP4(			LIST, build);
+	if (concat) {
+	    OP(			LIST_CONCAT);
+	}
+    }
+
+    // Invoke the underlying [nextto] implementation
+    INVOKE(			TCLOO_NEXT_CLASS_LIST);
     return TCL_OK;
 }
 

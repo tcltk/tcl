@@ -1506,8 +1506,7 @@ TclWinOpenSerialChannel(
 	infoPtr->osWrite.hEvent = CreateEventW(NULL, TRUE, FALSE, NULL);
 	infoPtr->evWritable = CreateEventW(NULL, TRUE, TRUE, NULL);
 	infoPtr->writeThread = CreateThread(NULL, 256, SerialWriterThread,
-		TclPipeThreadCreateTI(&infoPtr->writeTI, infoPtr,
-			infoPtr->evWritable), 0, NULL);
+		TclPipeThreadCreateTI(&infoPtr->writeTI, infoPtr), 0, NULL);
     }
 
     Tcl_SetChannelOption(NULL, infoPtr->channel, "-translation", "auto");

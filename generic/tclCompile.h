@@ -932,6 +932,10 @@ enum TclInstruction {
     INST_IS_EMPTY,
     INST_JUMP_TABLE_NUM,
     INST_TAILCALL_LIST,
+    INST_TCLOO_NEXT_LIST,
+    INST_TCLOO_NEXT_CLASS_LIST,
+    INST_ARITH_SERIES,
+    INST_UPLEVEL,
 
     /* The last opcode */
     LAST_INST_OPCODE
@@ -971,7 +975,7 @@ typedef enum InstOperandType {
     OPERAND_SCLS1,		/* Index into tclStringClassTable. */
     OPERAND_UNSF1,		/* Flags for [unset] */
     OPERAND_CLK1,		/* Index into [clock] types. */
-    OPERAND_LRPL1		/* Combination of TCL_LREPLACE4_* flags. */
+    OPERAND_LRPL1		/* Combination of TCL_LREPLACE_* flags. */
 } InstOperandType;
 
 typedef struct InstructionDesc {
@@ -1379,6 +1383,9 @@ MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
  * modules inside the Tcl core but not used outside.
  *----------------------------------------------------------------
  */
+
+// Point at which we issue a LIST_CONCAT anyway when doing an expansion sequence
+#define LIST_CONCAT_THRESHOLD	(1 << 15)
 
 /*
  * Simplified form to access AuxData.
@@ -2004,8 +2011,17 @@ enum PushVarNameFlags {
  * Flags bits used by lreplace4 instruction
  */
 enum Lreplace4Flags {
-    TCL_LREPLACE4_END_IS_LAST = 1,	/* "end" refers to last element */
-    TCL_LREPLACE4_SINGLE_INDEX = 2	/* Second index absent (pure insert) */
+    TCL_LREPLACE_END_IS_LAST = 1,	/* "end" refers to last element */
+    TCL_LREPLACE_SINGLE_INDEX = 2,	/* Second index absent (pure insert) */
+    TCL_LREPLACE_NEED_IN_RANGE = 4	/* First index must resolve to real list index */
+};
+
+/* Flags bits used by arithSeries instruction */
+enum ArithSeqriesFlags {
+    TCL_ARITHSERIES_FROM = 1 << 0,	// from is defined (conventionally empty otherwise)
+    TCL_ARITHSERIES_TO = 1 << 1,	// to is defined (conventionally empty otherwise)
+    TCL_ARITHSERIES_STEP = 1 << 2,	// step is defined (conventionally empty otherwise)
+    TCL_ARITHSERIES_COUNT = 1 << 3,	// count is defined (conventionally empty otherwise)
 };
 
 /*

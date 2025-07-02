@@ -868,7 +868,7 @@ InstructionDesc const tclInstructionTable[] = {
     TCL_INSTRUCTION_ENTRY2(
 	"lreplace",	  6,	INT_MIN,  OPERAND_UINT4, OPERAND_LRPL1),
 	/* Operands: number of arguments, flags
-	 * flags: Combination of TCL_LREPLACE4_* flags
+	 * flags: Combination of TCL_LREPLACE_* flags
 	 * Stack: ... listobj index1 ?index2? new1 ... newN => ... newlistobj
 	 * where index2 is present only if TCL_LREPLACE_SINGLE_INDEX is not
 	 * set in flags. */
@@ -960,6 +960,33 @@ InstructionDesc const tclInstructionTable[] = {
 	/* Do a tailcall with the words from the argument as the thing to
 	 * tailcall to, and currNs is the namespace scope.
 	 * Stack: ... {currNs words...} => ...[NOT REACHED] */
+    TCL_INSTRUCTION_ENTRY(
+	"tclooNextList",	0),
+	/* Call the next item on the TclOO call chain, passing the arguments
+	 * from argumentList (min 1, *includes* "next"). The result of the
+	 * invoked method implementation will be pushed on the stack after the
+	 * target returns.
+	 * Stack:  ... argumentList => ... result */
+    TCL_INSTRUCTION_ENTRY(
+	"tclooNextClassList",	0),
+	/* Call the following item on the TclOO call chain defined by class
+	 * className, passing the arguments from argumentList (min 2,
+	 * *includes* "nextto" and the class name). The result of the invoked
+	 * method implementation will be pushed on the stack after the target
+	 * returns.
+	 * Stack:  ... argumentList => ... result */
+    TCL_INSTRUCTION_ENTRY1(
+	"arithSeries",	  2,	-3,	  OPERAND_UINT1),
+	/* Push a new arithSeries object on the stack. The opnd is a bit mask
+	 * stating which values are valid; bit 0 -> from, bit 1 -> to,
+	 * bit 2 -> step, bit 3 -> count. Invalid values are passed to
+	 * TclNewArithSeriesObj() as NULL (and the corresponding values on the
+	 * stack simply are ignored).
+	 * Stack:  ... from to step count => ... series */
+    TCL_INSTRUCTION_ENTRY(
+	"uplevel",		-1),
+	/* Call the script in the given stack level, and stack the result.
+	 * Stack:  ... level script => ... result */
 
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };
@@ -4374,10 +4401,13 @@ TclEmitInvoke(
     case INST_YIELD:
     case INST_YIELD_TO_INVOKE:
     case INST_EVAL_STK:
+    case INST_TCLOO_NEXT_LIST:
+    case INST_TCLOO_NEXT_CLASS_LIST:
 	wordCount = cleanup = 1;
 	arg1 = arg2 = 0;
 	break;
     case INST_RETURN_STK:
+    case INST_UPLEVEL:
 	wordCount = cleanup = 2;
 	arg1 = arg2 = 0;
 	break;
@@ -4465,8 +4495,17 @@ TclEmitInvoke(
     case INST_TCLOO_NEXT:
 	OP4(			TCLOO_NEXT, arg1);
 	break;
+    case INST_TCLOO_NEXT_LIST:
+	OP(			TCLOO_NEXT_LIST);
+	break;
     case INST_TCLOO_NEXT_CLASS:
 	OP4(			TCLOO_NEXT_CLASS, arg1);
+	break;
+    case INST_TCLOO_NEXT_CLASS_LIST:
+	OP(			TCLOO_NEXT_CLASS_LIST);
+	break;
+    case INST_UPLEVEL:
+	OP(			UPLEVEL);
 	break;
     case INST_YIELD:
 	OP(			YIELD);
