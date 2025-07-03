@@ -10101,7 +10101,7 @@ main ()
     char c[sizeof (long)];
   } u;
   u.l = 1;
-  exit (u.c[sizeof (long) - 1] == 1);
+  return (u.c[sizeof (long) - 1] == 1);
 }
 _ACEOF
 rm -f conftest$ac_exeext
