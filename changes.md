@@ -4,6 +4,17 @@ changes to the Tcl source code at
 
 > [Tcl Source Code](https://core.tcl-lang.org/tcl/timeline)
 
+Release Tcl 9.0.3 arises from the check-in with tag `core-9-0-3`.
+
+Tcl patch releases have the primary purpose of delivering bug fixes
+to the userbase.
+
+# Bug fixes
+ - [On Unix, IsTimeNative() always defined but not always used](https://core.tcl-lang.org/tcl/tktview/6b8e3)
+
+# Updated bundled packages, libraries, standards, data
+ - sqlite3 3.50.2
+
 Release Tcl 9.0.2 arises from the check-in with tag `core-9-0-2`.
 
 Tcl patch releases have the primary purpose of delivering bug fixes
