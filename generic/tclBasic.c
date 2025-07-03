@@ -8896,7 +8896,7 @@ Tcl_NRAddCallback(
     if (!(postProcPtr)) {
 	Tcl_Panic("Adding a callback without an objProc?!");
     }
-    TclNRAddCallback_2(interp, postProcPtr, data0, data1, data2, data3);
+    TclNRAddCallback(interp, postProcPtr, data0, data1, data2, data3);
 }
 
 /*
