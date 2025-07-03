@@ -43,11 +43,13 @@ GetTime(
     tclGetTimeProcPtr(timePtr, tclTimeClientData);
 }
 
+#if defined(NO_GETTOD) || defined(TCL_WIDE_CLICKS)
 static inline int
 IsTimeNative(void)
 {
     return tclGetTimeProcPtr == NativeGetTime;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
