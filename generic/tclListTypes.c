@@ -21,7 +21,23 @@
 #define LREVERSE_LENGTH_THRESHOLD	100
 #define LREPEAT_LENGTH_THRESHOLD	100
 #define LRANGE_LENGTH_THRESHOLD		100
-
+
+/*
+ * We want the caller of the function that is operating on a list to be
+ * able to treat the passed in srcPtr and resultPtr independently when
+ * it comes to managing reference counts. Otherwise, it is very easy for
+ * the caller to mess up the reference counts of the two objects by not
+ * checking the result object is the same as the source object before
+ * decrementing reference counts for both, or incrementing and
+ * decrementing in the wrong order. To avoid this, we always return a
+ * new object. Note there is no guarantee the returned object is unshared.
+ */
+static inline Tcl_Obj *
+TclMakeResultObj(Tcl_Obj *srcPtr, Tcl_Obj *resultPtr)
+{
+    return srcPtr == resultPtr ?  Tcl_DuplicateObj(resultPtr) : resultPtr;
+}
+
 /*
  * Returns index of first matching entry in an array of Tcl_Obj,
  * TCL_INDEX_NONE if not found.
@@ -47,7 +63,7 @@ FindInArrayOfObjs(
 
 /*
  * TclObjArray stores a reference counted Tcl_Obj array. Basically, a
- * cheaper, less functional version of Tcl lists.
+ * cheaper, but less functional version of Tcl lists.
  */
 typedef struct TclObjArray {
     Tcl_Size refCount;		/* Reference count */
@@ -130,7 +146,15 @@ TclObjArrayFind(
     return FindInArrayOfObjs(arrayPtr->nelems, arrayPtr->elemPtrs, needlePtr);
 }
 
-/* FUTURES - move to tclInt.h and use in other list implementations as well */
+/*
+ * Compute the length of a range given start and end indices after normalizing
+ * the indices as follows:
+ * - the start index is bounded to 0 at the low end
+ * - the end index is bounded to one less than the length of the list at the
+ *   high end and one less than the start index at the low end
+ * - the length of the normalized range is returned
+ * FUTURES - move to tclInt.h and use in other list implementations as well
+ */
 static inline Tcl_Size
 TclNormalizeRangeLimits(
     Tcl_Size *startPtr,
@@ -449,10 +473,12 @@ LreverseTypeInOper(
  *    Standard Tcl result.
  *
  * Side effects:
- *    Stores the result in *reversedPtrPtr. This may be the same as objPtr,
- *    a new allocation, or a pointer to an internally stored object. In
- *    all cases, the reference count of the returned object is not
- *    incremented to account for the returned reference to it.
+ *    Stores the result in *resultPtrPtr. This will be different from
+ *    objPtr, even if the latter is unshared and may be a new allocation, or
+ *    a pointer to an internally stored object. In all cases, the reference
+ *    count of the returned object is not incremented to account for the
+ *    returned reference to it so caller should not decrement its reference
+ *    count without incrementing (alternatively, use Tcl_BounceRefCount).
  *
  *------------------------------------------------------------------------
  */
@@ -462,9 +488,12 @@ Tcl_ListObjReverse(
     Tcl_Obj *objPtr,		/* Source whose elements are to be reversed */
     Tcl_Obj **reversedPtrPtr)	/* Location to store result object */
 {
+    Tcl_Obj *resultPtr;
+
     /* If the list is an AbstractList with a specialized reverse, use it. */
     if (TclObjTypeHasProc(objPtr, reverseProc)) {
-	if (TclObjTypeReverse(interp, objPtr, reversedPtrPtr) == TCL_OK) {
+	if (TclObjTypeReverse(interp, objPtr, &resultPtr) == TCL_OK) {
+	    *reversedPtrPtr = TclMakeResultObj(objPtr, resultPtr);
 	    return TCL_OK;
 	}
 	/* Specialization does not work for this case. Try default path */
@@ -477,17 +506,17 @@ Tcl_ListObjReverse(
 	elemc = TclObjTypeLength(objPtr);
     } else {
 	if (TclListObjLength(interp, objPtr, &elemc) != TCL_OK) {
+	    *reversedPtrPtr = NULL;
 	    return TCL_ERROR;
 	}
     }
 
-    /* If the list is empty, just return it. [Bug 1876793] */
-    if (elemc == 0) {
-	*reversedPtrPtr = objPtr;
+    if (elemc < 2) {
+	/* Cannot return the same list as returned Tcl_Obj must be different */
+	*reversedPtrPtr = Tcl_DuplicateObj(objPtr);
 	return TCL_OK;
     }
 
-    Tcl_Obj *resultPtr;
     if (elemc >= LREVERSE_LENGTH_THRESHOLD || objPtr->typePtr != &tclListType) {
 	TclNewObj(resultPtr);
 	TclInvalidateStringRep(resultPtr);
@@ -505,6 +534,7 @@ Tcl_ListObjReverse(
     Tcl_Obj **elemv;
 
     if (TclListObjGetElements(interp, objPtr, &elemc, &elemv) != TCL_OK) {
+	*reversedPtrPtr = NULL;
 	return TCL_ERROR;
     }
     resultPtr = Tcl_NewListObj(elemc, NULL);
@@ -643,10 +673,12 @@ LrepeatTypeInOper(
  *    Standard Tcl result.
  *
  * Side effects:
- *    Stores the result in *reversedPtrPtr. This may be the same as objPtr,
- *    a new allocation, or a pointer to an internally stored object. In
- *    all cases, the reference count of the returned object is not
- *    incremented to account for the returned reference to it.
+ *    Stores the result in *reversedPtrPtr. This may be a new allocation, or
+ *    a pointer to an internally stored object. In all cases, the reference
+ *    count of the returned object is not incremented to account for the
+ *    returned reference to it so caller should not decrement its reference
+ *    count without incrementing (alternatively, use Tcl_BounceRefCount).
+.
  *
  *------------------------------------------------------------------------
  */
@@ -659,6 +691,7 @@ Tcl_ListObjRepeat(
     Tcl_Obj **resultPtrPtr)	/* Location to store result object */
 {
     if (repeatCount < 0) {
+	*resultPtrPtr = NULL;
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"bad count \"%" TCL_SIZE_MODIFIER "d\": must be integer >= 0",
 		repeatCount));
@@ -667,20 +700,17 @@ Tcl_ListObjRepeat(
 	return TCL_ERROR;
     }
 
-    Tcl_Size totalElems = objc * repeatCount;
-    if (totalElems == 0) {
+    if (objc == 0 || repeatCount == 0) {
 	TclNewObj(*resultPtrPtr);
 	return TCL_OK;
     }
 
     /* Final sanity check. Do not exceed limits on max list length. */
     if (objc > LIST_MAX/repeatCount) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"max length of a Tcl list (%" TCL_SIZE_MODIFIER "d elements) exceeded",
-		LIST_MAX));
-	Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
-	return TCL_ERROR;
+	*resultPtrPtr = NULL;
+	return TclListLimitExceededError(interp);
     }
+    Tcl_Size totalElems = objc * repeatCount;
 
     Tcl_Obj *resultPtr;
     if (totalElems >= LREPEAT_LENGTH_THRESHOLD) {
@@ -695,19 +725,19 @@ Tcl_ListObjRepeat(
 	return TCL_OK;
     }
 
+    assert(totalElems > 0);
+
     /* For small lists, create a copy as indexing is slightly faster */
     resultPtr = Tcl_NewListObj(totalElems, NULL);
     Tcl_Obj **dataArray = NULL;
-    if (totalElems) {
-	ListRep listRep;
-	ListObjGetRep(resultPtr, &listRep);
-	dataArray = ListRepElementsBase(&listRep);
-	listRep.storePtr->numUsed = totalElems;
-	if (listRep.spanPtr) {
-	    /* Future proofing in case Tcl_NewListObj returns a span */
-	    listRep.spanPtr->spanStart = listRep.storePtr->firstUsed;
-	    listRep.spanPtr->spanLength = listRep.storePtr->numUsed;
-	}
+    ListRep listRep;
+    ListObjGetRep(resultPtr, &listRep);
+    dataArray = ListRepElementsBase(&listRep);
+    listRep.storePtr->numUsed = totalElems;
+    if (listRep.spanPtr) {
+	/* Future proofing in case Tcl_NewListObj returns a span */
+	listRep.spanPtr->spanStart = listRep.storePtr->firstUsed;
+	listRep.spanPtr->spanLength = listRep.storePtr->numUsed;
     }
 
     /*
@@ -717,7 +747,6 @@ Tcl_ListObjRepeat(
      * number of times.
      */
 
-    assert(dataArray || totalElems == 0);
     if (objc == 1) {
 	Tcl_Obj *tmpPtr = objv[0];
 
@@ -950,6 +979,7 @@ LrangeSlice(
 	return *resultPtrPtr ? TCL_OK : TCL_ERROR;
     }
 
+    /* Modify in place if both Tcl_Obj and internal rep are unshared. */
     if (!Tcl_IsShared(objPtr) && repPtr->refCount < 2) {
 	/* Reuse this objPtr */
 	repPtr->srcIndex = newSrcIndex;
@@ -977,10 +1007,12 @@ LrangeSlice(
  *    Standard Tcl result.
  *
  * Side effects:
- *    Stores the result in *resultPtrPtr. This may be the same as objPtr,
- *    a new allocation, or a pointer to an internally stored object. In
- *    all cases, the reference count of the returned object is not
- *    incremented to account for the returned reference to it.
+ *    Stores the result in *resultPtrPtr. This will be different from
+ *    objPtr, even if the latter is unshared and may be a new allocation, or
+ *    a pointer to an internally stored object. In all cases, the reference
+ *    count of the returned object is not incremented to account for the
+ *    returned reference to it so caller should not decrement its reference
+ *    count without incrementing (alternatively, use Tcl_BounceRefCount).
  *
  *------------------------------------------------------------------------
  */
@@ -994,9 +1026,11 @@ Tcl_ListObjRange(
 {
     int result;
     Tcl_Size srcLen;
+    Tcl_Obj *resultPtr;
 
     result = TclListObjLength(interp, objPtr, &srcLen);
     if (result != TCL_OK) {
+	*resultPtrPtr = NULL;
 	return result;
     }
 
@@ -1008,28 +1042,39 @@ Tcl_ListObjRange(
 
     /*
      * If the list is an AbstractList with a specialized slice, use it.
-     * Note this includes rangeType itself.
+     * Note this includes rangeType itself. Non-abstract lists already
+     * implement their own efficient range operation.
      */
     if (TclObjTypeHasProc(objPtr, sliceProc)) {
-	return TclObjTypeSlice(interp, objPtr, start, end, resultPtrPtr);
+	result = TclObjTypeSlice(interp, objPtr, start, end, &resultPtr);
+    } else if (objPtr->typePtr == &tclListType) {
+	/* Do not use TclListObjRange for abstract lists as it will shimmer */
+	resultPtr = TclListObjRange(interp, objPtr, start, end);
+	result = resultPtr ? TCL_OK : TCL_ERROR;
+    } else if (!LrangeMeetsLengthCriteria(rangeLen, srcLen)) {
+	/* Range is too small, create a non-abstract list */
+	resultPtr = Tcl_NewListObj(rangeLen, NULL);
+	for (Tcl_Size i = 0; i < rangeLen; i++) {
+	    Tcl_Obj *elemPtr;
+	    result = Tcl_ListObjIndex(interp, objPtr, start + i, &elemPtr);
+	    if (result != TCL_OK) {
+		break;
+	    }
+	    assert(elemPtr);
+	    Tcl_ListObjAppendElement(interp, resultPtr, elemPtr);
+	}
+    }
+    else {
+	/* Create a lrangeType referencing the original source list */
+	result = LrangeNew(objPtr, start, rangeLen, &resultPtr);
     }
 
-    /*
-     * We will only use the lrangeType abstract list if the following
-     * conditions are met:
-     *  1. The source list is not a non-abstract list since that has its
-     *     own range operation with better performance and additional features.
-     *  2. The length criteria for using rangeType are met.
-     */
-    if (objPtr->typePtr == &tclListType ||
-	    !LrangeMeetsLengthCriteria(rangeLen, srcLen)) {
-	/* Conditions not met, create non-abstract list */
-	*resultPtrPtr = TclListObjRange(interp, objPtr, start, end);
-	return *resultPtrPtr ? TCL_OK : TCL_ERROR;
+    if (result == TCL_OK) {
+	*resultPtrPtr = TclMakeResultObj(objPtr, resultPtr);
+    } else {
+	*resultPtrPtr = NULL;
     }
-
-    /* Create a lrangeType referencing the original source list */
-    return LrangeNew(objPtr, start, rangeLen, resultPtrPtr);
+    return result;
 }
 
 /*

@@ -1499,7 +1499,10 @@ const TclStubs tclStubs = {
     Tcl_SetWideUIntObj, /* 689 */
     Tcl_IsEmpty, /* 690 */
     Tcl_GetEncodingNameForUser, /* 691 */
-    TclUnusedStubEntry, /* 692 */
+    Tcl_ListObjReverse, /* 692 */
+    Tcl_ListObjRepeat, /* 693 */
+    Tcl_ListObjRange, /* 694 */
+    TclUnusedStubEntry, /* 695 */
 };
 
 /* !END!: Do not edit above this line. */
