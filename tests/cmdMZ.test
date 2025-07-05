@@ -16,6 +16,10 @@ if {"::tcltest" ni [namespace children]} {
     namespace import -force ::tcltest::*
 }
 
+testConstraint noappverifier [expr {
+        [llength [info commands testappverifierpresent]] == 0
+        || ![testappverifierpresent]}]
+
 namespace eval ::tcl::test::cmdMZ {
     namespace import ::tcltest::cleanupTests
     namespace import ::tcltest::customMatch
@@ -193,6 +197,19 @@ test cmdMZ-return-2.18 {return option handling} {
 	return -code error -errorstack [list CALL a CALL b] yo
     } -> foo] [dictSort $foo] [info errorstack]
 } {2 {-code 1 -errorcode NONE -errorstack {CALL a CALL b} -level 1} {CALL a CALL b}}
+test cmdMZ-return-2.19 {return option handling} -body {
+    return -level 0 -options {-options {-code break} -code continue}
+} -returnCodes continue -result {}
+test cmdMZ-return-2.20 {return option handling} {
+    list [catch {
+	return -level 0 -options {-foo 1} -options {-bar 2} 
+    } -> foo] $foo
+} {0 {-foo 1 -bar 2 -code 0 -level 0}}
+test cmdMZ-return-2.21 {return option handling} {
+    list [catch {
+	return -level 0 -options {-options {-foo 1} -options {-bar 2}}
+    } -> foo] $foo
+} {0 {-foo 1 -bar 2 -code 0 -level 0}}
 
 # Check that the result of a [return -options $opts $result] is
 # indistinguishable from that of the originally caught script, no matter what
@@ -407,7 +424,10 @@ test cmdMZ-6.5a {Tcl_TimeRateObjCmd: result format and one iteration} {
 test cmdMZ-6.5b {Tcl_TimeRateObjCmd: result format without iterations} {
     regexp {^0 \ws/# 0 # 0 #/sec 0 net-ms$} [timerate {} 0 0]
 } 1
-test cmdMZ-6.6 {Tcl_TimeRateObjCmd: slower commands take longer, but it remains almost the same time of measurement} -body {
+test cmdMZ-6.6 {
+    Tcl_TimeRateObjCmd: slower commands take longer, but it
+    remains almost the same time of measurement
+} -constraints noappverifier -body {
     set m1 [timerate {_nrt_sleep 0.01} 50]
     set m2 [timerate {_nrt_sleep 1.00} 50]
     if {[testConstraint valgrind] && ([lindex $m1 0] >= 100 || [lindex $m1 2] <= 500)} {
