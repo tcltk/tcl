@@ -709,6 +709,8 @@ static Tcl_Obj *	ExecuteExtendedBinaryMathOp(Tcl_Interp *interp,
 static Tcl_Obj *	ExecuteExtendedUnaryMathOp(int opcode,
 			    Tcl_Obj *valuePtr);
 static void		FreeExprCodeInternalRep(Tcl_Obj *objPtr);
+static Tcl_Obj *	GenerateArithSeries(Tcl_Interp *interp, Tcl_Obj *from,
+			    Tcl_Obj *to, Tcl_Obj *step, Tcl_Obj *count);
 static ExceptionRange *	GetExceptRangeForPc(const unsigned char *pc,
 			    int searchMode, ByteCode *codePtr);
 static const char *	GetSrcInfoForPc(const unsigned char *pc,
@@ -719,7 +721,7 @@ static Tcl_Obj **	GrowEvaluationStack(ExecEnv *eePtr, size_t growth,
 static void		IllegalExprOperandType(Tcl_Interp *interp, const char *ord,
 			    const unsigned char *pc, Tcl_Obj *opndPtr);
 static void		InitByteCodeExecution(Tcl_Interp *interp);
-static inline int	wordSkip(void *ptr);
+static inline int	WordSkip(void *ptr);
 static void		ReleaseDictIterator(Tcl_Obj *objPtr);
 /* Useful elsewhere, make available in tclInt.h or stubs? */
 static Tcl_Obj **	StackAllocWords(Tcl_Interp *interp, size_t numWords);
@@ -1005,13 +1007,12 @@ TclFinalizeExecution(void)
     (TCL_ALLOCALIGN/sizeof(Tcl_Obj *))
 
 /*
- * wordSkip computes how many words have to be skipped until the next aligned
+ * WordSkip computes how many words have to be skipped until the next aligned
  * word. Note that we are only interested in the low order bits of ptr, so
  * that any possible information loss in PTR2INT is of no consequence.
  */
-
 static inline int
-wordSkip(
+WordSkip(
     void *ptr)
 {
     int mask = TCL_ALLOCALIGN - 1;
@@ -1024,7 +1025,7 @@ wordSkip(
  */
 
 #define MEMSTART(markerPtr) \
-    ((markerPtr) + wordSkip(markerPtr))
+    ((markerPtr) + WordSkip(markerPtr))
 
 /*
  *----------------------------------------------------------------------
@@ -1070,7 +1071,7 @@ GrowEvaluationStack(
 #ifndef PURIFY
     } else {
 	Tcl_Obj **tmpMarkerPtr = esPtr->tosPtr + 1;
-	int offset = wordSkip(tmpMarkerPtr);
+	int offset = WordSkip(tmpMarkerPtr);
 
 	if (needed + offset < 0) {
 	    /*
@@ -2563,6 +2564,18 @@ TEBCresume(
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
+	Tcl_Size yieldTargetLength;
+	if (TclListObjLength(NULL, valuePtr, &yieldTargetLength) != TCL_OK
+		|| yieldTargetLength < 2) {
+	    TRACE_APPEND(("ERROR: no valid target list in yieldto"));
+	    // Weird case; pretend it's like no arguments given to scripts
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "wrong # args: should be \"yieldto command ?arg ...?\""));
+	    DECACHE_STACK_INFO();
+	    Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", (char *)NULL);
+	    CACHE_STACK_INFO();
+	    goto gotError;
+	}
 
 #ifdef TCL_COMPILE_DEBUG
 	if (tclTraceExec >= TCL_TRACE_BYTECODE_EXEC_COMMANDS) {
@@ -2730,6 +2743,41 @@ TEBCresume(
 	result = TCL_RETURN;
 	cleanup = 2;
 	goto processExceptionReturn;
+    }
+
+    case INST_UPLEVEL: {
+	Tcl_Obj *levelObj = OBJ_UNDER_TOS;
+	Tcl_Obj *scriptObj = OBJ_AT_TOS;
+	CallFrame *framePtr;
+	CmdFrame *invoker = NULL;
+	int word = 0;
+
+	TRACE(("\"%.30s\" \"%.30s\" => ", O2S(levelObj), O2S(scriptObj)));
+	if (TclObjGetFrame(interp, levelObj, &framePtr) == -1) {
+	    TRACE_ERROR(interp);
+	    goto gotError;
+	}
+	bcFramePtr->data.tebc.pc = (char *) pc;
+	iPtr->cmdFramePtr = bcFramePtr;
+	TclArgumentGet(interp, scriptObj, &invoker, &word);
+	DECACHE_STACK_INFO();
+	pc++;
+	cleanup = 2;
+	TEBC_YIELD();
+#ifdef TCL_COMPILE_DEBUG
+	TRACE_APPEND(("INVOKING...\n"));
+	if (tclTraceExec >= TCL_TRACE_BYTECODE_EXEC_COMMANDS && !traceInstructions) {
+	    fprintf(stdout, "%" SIZEd ": (%" SIZEd ") invoking [%.30s] in frame \"%.30s\"\n",
+		    iPtr->numLevels, PC_REL, TclGetString(scriptObj), TclGetString(levelObj));
+	    fflush(stdout);
+	}
+#endif // TCL_COMPILE_DEBUG
+	TclNRAddCallback(interp, TclUplevelCallback, iPtr->varFramePtr,
+		NULL, NULL, NULL);
+	TclNRAddCallback(interp, TclNRPostInvoke, NULL, NULL, NULL, NULL);
+	iPtr->varFramePtr = framePtr;
+	iPtr->numLevels++;
+	return TclNREvalObjEx(interp, scriptObj, 0, invoker, word);
     }
 
     case INST_DONE:
@@ -4921,7 +4969,8 @@ TEBCresume(
     tclooFrameRequired:
 	TRACE_APPEND(("ERROR: no TclOO call context\n"));
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"%s may only be called from inside a method", objv[0]));
+		"%s may only be called from inside a method",
+		TclGetString(objv[0])));
 	DECACHE_STACK_INFO();
 	OO_ERROR(interp, CONTEXT_REQUIRED);
 	CACHE_STACK_INFO();
@@ -5458,11 +5507,11 @@ TEBCresume(
 	valuePtr = OBJ_AT_DEPTH(numArgs - 1);
 
 	/* haveSecondIndex==0 => pure insert */
-	int haveSecondIndex = (flags & TCL_LREPLACE4_SINGLE_INDEX) == 0;
+	int haveSecondIndex = (flags & TCL_LREPLACE_SINGLE_INDEX) == 0;
 	size_t numNewElems = numArgs - 2 - haveSecondIndex;
 
 	/* end_indicator==1 => "end" is last element's index, 0=>index beyond */
-	int endIndicator = (flags & TCL_LREPLACE4_END_IS_LAST) != 0;
+	int endIndicator = (flags & TCL_LREPLACE_END_IS_LAST) != 0;
 	Tcl_Obj *fromIdxObj = OBJ_AT_DEPTH(numArgs - 2);
 	Tcl_Obj *toIdxObj = haveSecondIndex ? OBJ_AT_DEPTH(numArgs - 3) : NULL;
 	if (Tcl_ListObjLength(interp, valuePtr, &length) != TCL_OK) {
@@ -5476,6 +5525,17 @@ TEBCresume(
 	    CACHE_STACK_INFO();
 	    TRACE_ERROR(interp);
 	    goto gotError;
+	}
+	if (flags & TCL_LREPLACE_NEED_IN_RANGE) {
+	    if (fromIdx < 0 || fromIdx >= length) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"index \"%s\" out of range", Tcl_GetString(fromIdxObj)));
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", "OUTOFRANGE",
+			(char *)NULL);
+		CACHE_STACK_INFO();
+		TRACE_ERROR(interp);
+		goto gotError;
+	    }
 	}
 	if (fromIdx == TCL_INDEX_NONE) {
 	    fromIdx = 0;
@@ -5521,6 +5581,26 @@ TEBCresume(
 	    TRACE_APPEND_OBJ(valuePtr);
 	    NEXT_INST_V(6, numArgs - 1, 0);
 	}
+    }
+
+    case INST_ARITH_SERIES: {
+	unsigned mask = TclGetUInt1AtPtr(pc + 1);
+	Tcl_Obj *count = (mask & TCL_ARITHSERIES_COUNT) ? OBJ_AT_DEPTH(0) : NULL;
+	Tcl_Obj *step =  (mask & TCL_ARITHSERIES_STEP)  ? OBJ_AT_DEPTH(1) : NULL;
+	Tcl_Obj *to =    (mask & TCL_ARITHSERIES_TO)    ? OBJ_AT_DEPTH(2) : NULL;
+	Tcl_Obj *from =  (mask & TCL_ARITHSERIES_FROM)  ? OBJ_AT_DEPTH(3) : NULL;
+	TRACE(("0x%x \"%s\" \"%s\" \"%s\" \"%s\" => ",
+		mask, O2S(from), O2S(to), O2S(step), O2S(count)));
+	DECACHE_STACK_INFO();
+	// Decode arguments and construct the series.
+	objResultPtr = GenerateArithSeries(interp, from, to, step, count);
+	CACHE_STACK_INFO();
+	if (objResultPtr == NULL) {
+	    TRACE_ERROR(interp);
+	    goto gotError;
+	}
+	TRACE_APPEND_OBJ(objResultPtr);
+	NEXT_INST_V(2, 4, 1);
     }
 
 	/*
@@ -9252,6 +9332,201 @@ TclCompareTwoNumbers(
 	TCL_UNREACHABLE();
     }
     return TCL_ERROR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ParseArithSeriesArgument --
+ *
+ *	Helper for GenerateArithSeries() that encapsulates the weird calling of
+ *	Tcl_ExprObj() if the value isn't numeric.
+ *
+ * Results:
+ *	TCL_OK if the value was numeric or a numeric-yielding expression, or
+ *	TCL_ERROR if not. The variables pointed at by ptrPtr and typePtr will
+ *	be updated on OK, the interpreter result on ERROR.
+ *
+ * Side effects:
+ *	Can call Tcl_ExprObj() which can call commands, so arbitrary side
+ *	effects are possible. May update the variable pointed at by valuePtr
+ *	to contain the expression result.
+ *
+ *----------------------------------------------------------------------
+ */
+static inline int
+ParseArithSeriesArgument(
+    Tcl_Interp *interp,		// The interpreter.
+    Tcl_Obj **valuePtr,		// Var holding object reference to parse/update [IN/OUT]
+    void **ptrPtr,		// Var to receive ref to number contents [OUT]
+    int *typePtr)		// Var to receive number type [OUT]
+{
+    Tcl_Obj *value = *valuePtr, *tmp;
+    if (TclHasInternalRep(value, &tclExprCodeType)
+	    || GetNumberFromObj(NULL, value, ptrPtr, typePtr) != TCL_OK) {
+	if (Tcl_ExprObj(interp, value, &tmp) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	// Switch to the object out of the expression.
+	Tcl_DecrRefCount(value);
+	*valuePtr = value = tmp;
+	if (GetNumberFromObj(interp, value, ptrPtr, typePtr) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+    }
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GenerateArithSeries --
+ *
+ *	This is the core of the implementation of the INST_ARITH_SERIES opcode,
+ *	handling the decoding of the arguments (applying Tcl_ExprObj() if
+ *	necessary) before handing off to TclNewArithSeriesObj() to build the
+ *	series.
+ *
+ * Results:
+ *	The arithmetic series object (zero refcount) or NULL on error, when a
+ *	message will be left in the interpreter result.
+ *
+ * Side effects:
+ *	Can call Tcl_ExprObj() which can call commands, so arbitrary side
+ *	effects are possible.
+ *
+ *----------------------------------------------------------------------
+ */
+static Tcl_Obj *
+GenerateArithSeries(
+    Tcl_Interp *interp,		// The interpreter.
+    Tcl_Obj *from,		// The from value, or NULL if not supplied.
+    Tcl_Obj *to,		// The to value, or NULL if not supplied.
+    Tcl_Obj *step,		// The step value, or NULL if not supplied.
+    Tcl_Obj *count)		// The count value, or NULL if not supplied.
+{
+    Tcl_Obj *result = NULL;
+    int type, useDoubles = 0;
+    void *ptr;
+
+    // Hold explicit references.
+    if (from)  {
+	Tcl_IncrRefCount(from);
+    }
+    if (to)    {
+	Tcl_IncrRefCount(to);
+    }
+    if (step)  {
+	Tcl_IncrRefCount(step);
+    }
+    if (count) {
+	Tcl_IncrRefCount(count);
+    }
+
+    /*
+     * Decide whether to request a double series or an int series.
+     * Note the calls to Tcl_ExprObj. UGH!
+     */
+
+    if (from) {
+	if (ParseArithSeriesArgument(interp, &from, &ptr, &type) != TCL_OK) {
+	    goto cleanupOnError;
+	}
+	switch (type) {
+	case TCL_NUMBER_DOUBLE:
+	    useDoubles = 1;
+	    break;
+	case TCL_NUMBER_NAN:
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "domain error: argument not in valid range"));
+	    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
+		    "domain error: argument not in valid range", NULL);
+	    goto cleanupOnError;
+	}
+    }
+
+    if (to) {
+	if (ParseArithSeriesArgument(interp, &to, &ptr, &type) != TCL_OK) {
+	    goto cleanupOnError;
+	}
+	switch (type) {
+	case TCL_NUMBER_DOUBLE:
+	    useDoubles = 1;
+	    break;
+	case TCL_NUMBER_NAN:
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "cannot use non-numeric floating-point value \"%s\" to "
+		    "estimate length of arith-series",
+		    TclGetString(to)));
+	    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
+		    "domain error: argument not in valid range", NULL);
+	    goto cleanupOnError;
+	}
+    }
+
+    if (step) {
+	if (ParseArithSeriesArgument(interp, &step, &ptr, &type) != TCL_OK) {
+	    goto cleanupOnError;
+	}
+	switch (type) {
+	case TCL_NUMBER_DOUBLE:
+	    useDoubles = 1;
+	    break;
+	case TCL_NUMBER_NAN:
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "domain error: argument not in valid range"));
+	    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
+		    "domain error: argument not in valid range", NULL);
+	    goto cleanupOnError;
+	}
+    }
+
+    // Convert count to integer if not already
+    // Almost the same as above cases except how floats are really handled.
+    if (count) {
+	if (ParseArithSeriesArgument(interp, &count, &ptr, &type) != TCL_OK) {
+	    goto cleanupOnError;
+	}
+	switch (type) {
+	case TCL_NUMBER_DOUBLE: {
+	    double dCount = *((const double *) ptr);
+	    Tcl_WideInt wCount = (Tcl_WideInt) dCount;
+	    if (dCount - wCount == 0.0) {
+		Tcl_DecrRefCount(count);
+		// Switch to the object holding integer version of the count.
+		TclNewIntObj(count, wCount);
+		Tcl_IncrRefCount(count);
+	    }
+	    break;
+	}
+	case TCL_NUMBER_NAN:
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "expected integer but got \"%s\"",
+		    TclGetString(count)));
+	    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
+		    "domain error: argument not in valid range", NULL);
+	    goto cleanupOnError;
+	}
+    }
+
+    // Parameters comprehended and normalised. Now construct the series.
+    result = TclNewArithSeriesObj(interp, useDoubles, from, to, step, count);
+
+    // Clean up and return.
+  cleanupOnError:
+    if (count) {
+	Tcl_DecrRefCount(count);
+    }
+    if (step)  {
+	Tcl_DecrRefCount(step);
+    }
+    if (to)    {
+	Tcl_DecrRefCount(to);
+    }
+    if (from)  {
+	Tcl_DecrRefCount(from);
+    }
+    return result;
 }
 
 #ifdef TCL_COMPILE_DEBUG
