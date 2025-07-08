@@ -4386,10 +4386,10 @@ TclCompileUplevelCmd(
      */
 
     int numFrameWords = TclObjGetFrame(interp, objPtr, NULL);
+    Tcl_DecrRefCount(objPtr);
     if (numFrameWords < 0) {
 	return TCL_ERROR;
     }
-    Tcl_DecrRefCount(objPtr);
 
     if (numFrameWords) {
 	PUSH_TOKEN(		tokenPtr, 1);
