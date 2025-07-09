@@ -849,11 +849,19 @@ proc ::ndoc::parseBlock {parent manContent} {
 						set contentList [list]
 						set lineCount 0
 						while {$cmd ne ".SH"} {
-							incr lineCount
 							if {! [string match ".*" $cmd]} {
+								# in the synopsis of section 3 pages there are lines of their own with
+								# the return type of the Tcl API function. We want to get them onto the same
+								# line as the command for processing:
+								if {[dict get $manual meta ManualSection] == 3 && [string range $line 0 2] ne "\\fB"} {
+									set line "#$line "
+									incr lineCount
+									append line [lindex $manContent $lineCount]
+								}
 								lappend contentList [list Syntax {} [parseCommand -ast $line]]
 							}
 							# go to next line:
+							incr lineCount
 							set line [lindex $manContent $lineCount]
 							set cmd [string range $line 0 2]
 						}
@@ -957,10 +965,29 @@ proc ::ndoc::parseCommand {mode line} {
 	set line [string map {{\fB} § {\fI} + {\fR} = {\fP} =} $line]
 	set line [string map {\\ {}} $line]
 	if {$mode eq "-internal"} {return $line}
-	# translate line to Span elements with Space elements in between:
 	set spanList [list]
 	set state =
 	set chunk {}
+	# some more processing is needed for section 3 pages:
+	if {[regexp {^.+\(.+\)$} $line]} {
+puts line=$line
+		set l0 {}
+		set startIndex 0
+		if {[string index $line 0] eq "#"} {
+			# return code at the beginning, split into own word:
+			set startIndex [string first "§" $line]
+			set l0 [string range $line 0 [expr {$startIndex - 1}]]
+		}
+		set openParens [string first ( $line $startIndex]
+		# the API function name:
+		set l1 [string range $line $startIndex [expr {$openParens - 1}]]
+		# the arguments to the function:
+		set l2 [string range $line [expr {$openParens + 1}] end-1]
+puts L0=$l0
+puts L1=$l1
+puts L2=$l2
+	if {$l0 eq ""} {set line [list $l1 $l2]} else {set line [list $l0 $l1 $l2]}
+	}
 	# [apply] code to expand the content of a Span (except Space) to contain a correct AST Text element:
 	set expandSpan	[list spanList {
 		lmap el $spanList {
@@ -972,6 +999,7 @@ proc ::ndoc::parseCommand {mode line} {
 			}
 		}
 	}]
+	# translate line to Span elements with Space elements in between:
 	if $DEBUG {puts "-------\nparseCommand: $line"}
 	# treat the line as a list so that we easily can detect the individual elements:
 	for {set i 0} {$i < [llength $line]} {incr i} {
@@ -1017,6 +1045,16 @@ proc ::ndoc::parseCommand {mode line} {
 						[list Space {} {}] \
 						[list Span .sub [string range $sub 1 end-1]]
 					if $DEBUG {puts "instance command .ins: $spanList"}
+				}
+				{^#.+$} {
+					# the return type of a Tcl C API function
+					# (the '#' was prefixed in parseBlock so we can detect it here ...)
+					lappend spanList [list Span .ret [string range $word 1 end]]
+				}
+				default {
+					puts "emergencyStop 0 in parseCommand"
+							puts "Line: $line"
+							exit
 				}
 			}
 			set spanList [apply $expandSpan $spanList]
