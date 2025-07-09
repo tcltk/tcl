@@ -740,7 +740,7 @@ ParseExpr(
 		     * Tricky case: see test expr-62.10
 		     */
 
-		    int scanned2 = scanned;
+		    Tcl_Size scanned2 = scanned;
 		    do {
 			scanned2 += TclParseAllWhiteSpace(
 				start + scanned2, numBytes - scanned2);
@@ -1510,7 +1510,8 @@ ConvertTreeToTokens(
 
     while (1) {
 	Tcl_Token *subExprTokenPtr;
-	int scanned, parentIdx;
+	Tcl_Size scanned;
+	int parentIdx;
 	unsigned char lexeme;
 
 	/*
