@@ -2092,6 +2092,7 @@ test string-23.2.$noComp {string is command with empty string} {
 	[run {string is double -strict $s}] \
 	[run {string is false -strict $s}] \
 	[run {string is graph -strict $s}] \
+	[run {string is index -strict $s}] \
 	[run {string is integer -strict $s}] \
 	[run {string is lower -strict $s}] \
 	[run {string is print -strict $s}] \
@@ -2102,7 +2103,7 @@ test string-23.2.$noComp {string is command with empty string} {
 	[run {string is wordchar -strict $s}] \
 	[run {string is xdigit -strict $s}] \
 
-} {0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}
+} {0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}
 
 test string-24.1.$noComp {string reverse command} -body {
     run {string reverse}
