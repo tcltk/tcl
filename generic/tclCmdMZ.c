@@ -370,7 +370,6 @@ Tcl_RegexpObjCmd(
 
 	    if (indices) {
 		Tcl_Size start, end;
-		Tcl_Obj *objs[2];
 
 		/*
 		 * Only adjust the match area if there was a match for that
@@ -394,9 +393,10 @@ Tcl_RegexpObjCmd(
 		    end = TCL_INDEX_NONE;
 		}
 
-		TclNewIndexObj(objs[0], start);
-		TclNewIndexObj(objs[1], end);
-
+		Tcl_Obj *objs[] = {
+		    Tcl_NewWideIntObj(start),
+		    Tcl_NewWideIntObj(end)
+		};
 		newPtr = Tcl_NewListObj(2, objs);
 	    } else {
 		if ((i <= (int)info.nsubs) && (info.matches[i].end > 0)) {
@@ -3763,15 +3763,11 @@ TclNRSwitchObjCmd(
 
 	for (j=0 ; j<=info.nsubs ; j++) {
 	    if (indexVarObj != NULL) {
-		Tcl_Obj *rangeObjAry[2];
-
-		if (info.matches[j].end > 0) {
-		    TclNewIndexObj(rangeObjAry[0], info.matches[j].start);
-		    TclNewIndexObj(rangeObjAry[1], info.matches[j].end-1);
-		} else {
-		    TclNewIntObj(rangeObjAry[1], -1);
-		    rangeObjAry[0] = rangeObjAry[1];
-		}
+		int have = info.matches[j].end > 0;
+		Tcl_Obj *rangeObjAry[] = {
+		    Tcl_NewWideIntObj(have ? info.matches[j].start : -1),
+		    Tcl_NewWideIntObj(have ? info.matches[j].end-1 : -1)
+		};
 
 		/*
 		 * Never fails; the object is always clean at this point.
@@ -4044,7 +4040,6 @@ Tcl_TimeObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *objPtr;
-    Tcl_Obj *objs[4];
     int i, result;
     int count;
     double totalMicroSec;
@@ -4088,6 +4083,7 @@ Tcl_TimeObjCmd(
     totalMicroSec = ((double) TclpWideClicksToNanoseconds(stop - start))/1.0e3;
 #endif
 
+    Tcl_Obj *objs[4];
     if (count <= 1) {
 	/*
 	 * Use int obj since we know time is not fractional. [Bug 1202178]
@@ -4776,7 +4772,7 @@ TclNRTryObjCmd(
     haveHandlers = 0;
     for (i=2 ; i<objc ; i++) {
 	enum Handlers type;
-	Tcl_Obj *info[5];
+	Tcl_Obj *ecPrefix;
 
 	if (Tcl_GetIndexFromObj(interp, objv[i], handlerNames, "handler type",
 		0, &type) != TCL_OK) {
@@ -4819,7 +4815,7 @@ TclNRTryObjCmd(
 		Tcl_DecrRefCount(handlersObj);
 		return TCL_ERROR;
 	    }
-	    info[2] = NULL;
+	    ecPrefix = NULL;
 	    goto commonHandler;
 
 	case TryTrap:		/* trap pattern variableList script */
@@ -4843,7 +4839,7 @@ TclNRTryObjCmd(
 			"EXNFORMAT", (char *)NULL);
 		return TCL_ERROR;
 	    }
-	    info[2] = objv[i+1];
+	    ecPrefix = objv[i+1];
 
 	commonHandler:
 	    if (TclListObjLength(interp, objv[i+2], &dummy) != TCL_OK) {
@@ -4851,13 +4847,14 @@ TclNRTryObjCmd(
 		return TCL_ERROR;
 	    }
 
-	    info[0] = objv[i];			/* type */
-	    TclNewIntObj(info[1], code);	/* returnCode */
-	    if (info[2] == NULL) {		/* errorCodePrefix */
-		TclNewObj(info[2]);
-	    }
-	    info[3] = objv[i+2];		/* bindVariables */
-	    info[4] = objv[i+3];		/* script */
+	    Tcl_Obj *info[] = {
+		objv[i],			/* type */
+		Tcl_NewIntObj(code),		/* returnCode */
+		ecPrefix ? ecPrefix		/* errorCodePrefix */
+		    : ((Interp *)interp)->emptyObjPtr,
+		objv[i+2],			/* bindVariables */
+		objv[i+3]			/* script */
+	    };
 
 	    bodyShared = !strcmp(TclGetString(objv[i+3]), "-");
 	    Tcl_ListObjAppendElement(NULL, handlersObj,

@@ -1690,15 +1690,14 @@ Tcl_Import(
      */
 
     if (Tcl_FindCommand(interp, "auto_import", NULL, TCL_GLOBAL_ONLY) != NULL) {
-	Tcl_Obj *objv[2];
-	int result;
-
-	TclNewLiteralStringObj(objv[0], "auto_import");
-	objv[1] = Tcl_NewStringObj(pattern, -1);
+	Tcl_Obj *objv[] = {
+	    Tcl_NewStringObj("auto_import", -1),
+	    Tcl_NewStringObj(pattern, -1)
+	};
 
 	Tcl_IncrRefCount(objv[0]);
 	Tcl_IncrRefCount(objv[1]);
-	result = Tcl_EvalObjv(interp, 2, objv, TCL_GLOBAL_ONLY);
+	int result = Tcl_EvalObjv(interp, 2, objv, TCL_GLOBAL_ONLY);
 	Tcl_DecrRefCount(objv[0]);
 	Tcl_DecrRefCount(objv[1]);
 
@@ -3959,10 +3958,10 @@ NRNamespaceInscopeCmd(
     if (objc == 3) {
 	cmdObjPtr = objv[2];
     } else {
-	Tcl_Obj *concatObjv[2];
-
-	concatObjv[0] = objv[2];
-	concatObjv[1] = Tcl_NewListObj(objc - 3, objv + 3);
+	Tcl_Obj *concatObjv[] = {
+	    objv[2],
+	    Tcl_NewListObj(objc - 3, objv + 3)
+	};
 	cmdObjPtr = Tcl_ConcatObj(2, concatObjv);
 	Tcl_DecrRefCount(concatObjv[1]); /* We're done with the list object. */
     }

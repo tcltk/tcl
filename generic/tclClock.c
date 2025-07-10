@@ -737,10 +737,10 @@ ClockMCDict(
 
 	    if (opts->mcDictObj == NULL) {
 		/* get msgcat dictionary - ::tcl::clock::mcget locale */
-		Tcl_Obj *callargs[2];
-
-		callargs[0] = dataPtr->literals[LIT_MCGET];
-		callargs[1] = opts->localeObj;
+		Tcl_Obj *callargs[] = {
+		    dataPtr->literals[LIT_MCGET],
+		    opts->localeObj
+		};
 
 		if (Tcl_EvalObjv(opts->interp, 2, callargs, 0) != TCL_OK) {
 		    return NULL;
@@ -1291,7 +1291,7 @@ ClockSetupTimeZone(
     Tcl_Obj *timezoneObj)
 {
     int loaded;
-    Tcl_Obj *callargs[2];
+    Tcl_Obj *normTzObj;
 
     /* if cached (if already setup this one) */
     if (timezoneObj == dataPtr->literals[LIT_GMT]
@@ -1310,20 +1310,23 @@ ClockSetupTimeZone(
     }
 
     /* differentiate normalized (last, GMT and system) zones, because used often and already set */
-    callargs[1] = NormTimezoneObj(dataPtr, timezoneObj, &loaded);
+    normTzObj = NormTimezoneObj(dataPtr, timezoneObj, &loaded);
     /* if loaded (setup already called for this TZ) */
     if (loaded) {
-	return callargs[1];
+	return normTzObj;
     }
 
     /* before setup just take a look in TZData variable */
     if (Tcl_ObjGetVar2(interp, dataPtr->literals[LIT_TZDATA], timezoneObj, 0)) {
 	/* put it to last slot and return normalized */
-	TimezoneLoaded(dataPtr, callargs[1], timezoneObj);
-	return callargs[1];
+	TimezoneLoaded(dataPtr, normTzObj, timezoneObj);
+	return normTzObj;
     }
     /* setup now */
-    callargs[0] = dataPtr->literals[LIT_SETUPTIMEZONE];
+    Tcl_Obj *callargs[] = {
+	dataPtr->literals[LIT_SETUPTIMEZONE],
+	normTzObj
+    };
     if (Tcl_EvalObjv(interp, 2, callargs, 0) == TCL_OK) {
 	/* save unnormalized last used */
 	TclSetObjRef(dataPtr->lastSetupTimeZoneUnnorm, timezoneObj);

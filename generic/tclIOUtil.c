@@ -3024,15 +3024,13 @@ Tcl_FSLoadFile(
 				 * (*unloadProcPtr)() to unload the file. */
     TCL_UNUSED(Tcl_FSUnloadFileProc **))
 {
-    const char *symbols[3];
+    const char *symbols[] = {
+	sym1,
+	sym2,
+	NULL
+    };
     void *procPtrs[2];
-    int res;
-
-    symbols[0] = sym1;
-    symbols[1] = sym2;
-    symbols[2] = NULL;
-
-    res = Tcl_LoadFile(interp, pathPtr, symbols, 0, procPtrs, handlePtr);
+    int res = Tcl_LoadFile(interp, pathPtr, symbols, 0, procPtrs, handlePtr);
     if (res == TCL_OK) {
 	*proc1Ptr = (Tcl_LibraryInitProc *) procPtrs[0];
 	*proc2Ptr = (Tcl_LibraryInitProc *) procPtrs[1];

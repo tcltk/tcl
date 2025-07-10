@@ -5112,10 +5112,6 @@ SortCompare(
 	b = elemPtr2->collationKey.doubleValue;
 	order = ((a >= b) - (a <= b));
     } else {
-	Tcl_Obj **objv, *paramObjv[2];
-	Tcl_Size objc;
-	Tcl_Obj *objPtr1, *objPtr2;
-
 	if (infoPtr->resultCode != TCL_OK) {
 	    /*
 	     * Once an error has occurred, skip any future comparisons so as
@@ -5125,20 +5121,21 @@ SortCompare(
 	    return 0;
 	}
 
-	objPtr1 = elemPtr1->collationKey.objValuePtr;
-	objPtr2 = elemPtr2->collationKey.objValuePtr;
-
-	paramObjv[0] = objPtr1;
-	paramObjv[1] = objPtr2;
+	Tcl_Obj *paramObjv[] = {
+	    elemPtr1->collationKey.objValuePtr,
+	    elemPtr2->collationKey.objValuePtr
+	};
 
 	/*
 	 * We made space in the command list for the two things to compare.
 	 * Replace them and evaluate the result.
 	 */
 
+	Tcl_Size objc;
 	TclListObjLength(infoPtr->interp, infoPtr->compareCmdPtr, &objc);
 	Tcl_ListObjReplace(infoPtr->interp, infoPtr->compareCmdPtr, objc - 2,
 		2, 2, paramObjv);
+	Tcl_Obj **objv;
 	TclListObjGetElements(infoPtr->interp, infoPtr->compareCmdPtr,
 		&objc, &objv);
 

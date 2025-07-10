@@ -964,12 +964,12 @@ ClockLocalizeFormat(
 
     /* call LocalizeFormat locale format fmtkey */
     if (valObj == NULL) {
-	Tcl_Obj *callargs[4];
-
-	callargs[0] = dataPtr->literals[LIT_LOCALIZE_FORMAT];
-	callargs[1] = opts->localeObj;
-	callargs[2] = opts->formatObj;
-	callargs[3] = opts->mcDictObj;
+	Tcl_Obj *callargs[] = {
+	    dataPtr->literals[LIT_LOCALIZE_FORMAT],
+	    opts->localeObj,
+	    opts->formatObj,
+	    opts->mcDictObj
+	};
 	if (Tcl_EvalObjv(opts->interp, 4, callargs, 0) == TCL_OK) {
 	    valObj = Tcl_GetObjResult(opts->interp);
 	}
@@ -1657,12 +1657,13 @@ ClockScnToken_amPmInd_Proc(
 {
     int ret, val;
     int minLen, maxLen;
-    Tcl_Obj *amPmObj[2];
 
     DetermineGreedySearchLen(opts, info, tok, &minLen, &maxLen);
 
-    amPmObj[0] = ClockMCGet(opts, MCLIT_AM);
-    amPmObj[1] = ClockMCGet(opts, MCLIT_PM);
+    Tcl_Obj *amPmObj[] = {
+	ClockMCGet(opts, MCLIT_AM),
+	ClockMCGet(opts, MCLIT_PM)
+    };
 
     if (amPmObj[0] == NULL || amPmObj[1] == NULL) {
 	return TCL_ERROR;
@@ -1692,16 +1693,17 @@ ClockScnToken_LocaleERA_Proc(
 
     int ret, val;
     int minLen, maxLen;
-    Tcl_Obj *eraObj[6];
 
     DetermineGreedySearchLen(opts, info, tok, &minLen, &maxLen);
 
-    eraObj[0] = ClockMCGet(opts, MCLIT_BCE);
-    eraObj[1] = ClockMCGet(opts, MCLIT_CE);
-    eraObj[2] = dataPtr->mcLiterals[MCLIT_BCE2];
-    eraObj[3] = dataPtr->mcLiterals[MCLIT_CE2];
-    eraObj[4] = dataPtr->mcLiterals[MCLIT_BCE3];
-    eraObj[5] = dataPtr->mcLiterals[MCLIT_CE3];
+    Tcl_Obj *eraObj[] = {
+	ClockMCGet(opts, MCLIT_BCE),
+	ClockMCGet(opts, MCLIT_CE),
+	dataPtr->mcLiterals[MCLIT_BCE2],
+	dataPtr->mcLiterals[MCLIT_CE2],
+	dataPtr->mcLiterals[MCLIT_BCE3],
+	dataPtr->mcLiterals[MCLIT_CE3]
+    };
 
     if (eraObj[0] == NULL || eraObj[1] == NULL) {
 	return TCL_ERROR;

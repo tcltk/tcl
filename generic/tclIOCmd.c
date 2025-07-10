@@ -1425,15 +1425,15 @@ AcceptCallbackProc(
 
     if (acceptCallbackPtr->interp != NULL) {
 	Tcl_Interp *interp = acceptCallbackPtr->interp;
-	Tcl_Obj *script, *objv[2];
 	int result = TCL_OK;
-
-	objv[0] = acceptCallbackPtr->script;
-	objv[1] = Tcl_NewListObj(3, NULL);
-	Tcl_ListObjAppendElement(NULL, objv[1], Tcl_NewStringObj(
-		Tcl_GetChannelName(chan), -1));
-	Tcl_ListObjAppendElement(NULL, objv[1], Tcl_NewStringObj(address, -1));
-	Tcl_ListObjAppendElement(NULL, objv[1], Tcl_NewWideIntObj(port));
+	Tcl_Obj *script, *objv[] = {
+	    acceptCallbackPtr->script,
+	    Tcl_NewListObj(3, ((Tcl_Obj*[]) {
+		Tcl_NewStringObj(Tcl_GetChannelName(chan), -1),
+		Tcl_NewStringObj(address, -1),
+		Tcl_NewWideIntObj(port)
+	    }))
+	};
 
 	script = Tcl_ConcatObj(2, objv);
 	Tcl_IncrRefCount(script);

@@ -1052,38 +1052,40 @@ DisassembleByteCodeAsDicts(
 	CompiledLocal *localPtr = codePtr->procPtr->firstLocalPtr;
 
 	for (i=0 ; i<localCount ; i++,localPtr=localPtr->nextPtr) {
-	    Tcl_Obj *descriptor[2];
+	    Tcl_Obj *flagsObj = Tcl_NewListObj(0, NULL);
 
-	    TclNewObj(descriptor[0]);
 	    if (!(localPtr->flags & (VAR_ARRAY|VAR_LINK))) {
-		Tcl_ListObjAppendElement(NULL, descriptor[0],
+		Tcl_ListObjAppendElement(NULL, flagsObj,
 			Tcl_NewStringObj("scalar", -1));
 	    }
 	    if (localPtr->flags & VAR_ARRAY) {
-		Tcl_ListObjAppendElement(NULL, descriptor[0],
+		Tcl_ListObjAppendElement(NULL, flagsObj,
 			Tcl_NewStringObj("array", -1));
 	    }
 	    if (localPtr->flags & VAR_LINK) {
-		Tcl_ListObjAppendElement(NULL, descriptor[0],
+		Tcl_ListObjAppendElement(NULL, flagsObj,
 			Tcl_NewStringObj("link", -1));
 	    }
 	    if (localPtr->flags & VAR_ARGUMENT) {
-		Tcl_ListObjAppendElement(NULL, descriptor[0],
+		Tcl_ListObjAppendElement(NULL, flagsObj,
 			Tcl_NewStringObj("arg", -1));
 	    }
 	    if (localPtr->flags & VAR_TEMPORARY) {
-		Tcl_ListObjAppendElement(NULL, descriptor[0],
+		Tcl_ListObjAppendElement(NULL, flagsObj,
 			Tcl_NewStringObj("temp", -1));
 	    }
 	    if (localPtr->flags & VAR_RESOLVED) {
-		Tcl_ListObjAppendElement(NULL, descriptor[0],
+		Tcl_ListObjAppendElement(NULL, flagsObj,
 			Tcl_NewStringObj("resolved", -1));
 	    }
 	    if (localPtr->flags & VAR_TEMPORARY) {
 		Tcl_ListObjAppendElement(NULL, variables,
-			Tcl_NewListObj(1, descriptor));
+			Tcl_NewListObj(1, &flagsObj));
 	    } else {
-		descriptor[1] = Tcl_NewStringObj(localPtr->name, -1);
+		Tcl_Obj *descriptor[] = {
+		    flagsObj,
+		    Tcl_NewStringObj(localPtr->name, -1)
+		};
 		Tcl_ListObjAppendElement(NULL, variables,
 			Tcl_NewListObj(2, descriptor));
 	    }

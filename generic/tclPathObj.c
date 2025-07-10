@@ -2507,9 +2507,10 @@ MakeTildeRelativePath(
 	}
     }
     if (subPath) {
-	const char *parts[2];
-	parts[0] = dir;
-	parts[1] = subPath;
+	const char *parts[] = {
+	    dir,
+	    subPath
+	};
 	Tcl_JoinPath(2, parts, dsPtr);
     } else {
 	Tcl_JoinPath(1, &dir, dsPtr);

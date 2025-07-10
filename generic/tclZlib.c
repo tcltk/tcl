@@ -2269,7 +2269,7 @@ ZlibStreamSubcmd(
 	OPT_COMPRESSION_LEVEL = 2,
 	OPT_END = -1
     };
-    Tcl_Obj *obj[3] = { NULL, NULL, NULL };
+    Tcl_Obj *obj[] = { NULL, NULL, NULL };
 #define compDictObj	obj[OPT_COMPRESSION_DICTIONARY]
 #define gzipHeaderObj	obj[OPT_GZIP_HEADER]
 #define levelObj	obj[OPT_COMPRESSION_LEVEL]
