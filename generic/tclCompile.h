@@ -1878,12 +1878,12 @@ TokenAfter(
  * of LOOP ranges is an interesting datum for debugging purposes, and that is
  * what we compute now.
  *
- * static int	ExceptionRangeStarts(CompileEnv *envPtr, Tcl_Size index);
+ * static Tcl_Size	ExceptionRangeStarts(CompileEnv *envPtr, Tcl_Size index);
  * static void	ExceptionRangeEnds(CompileEnv *envPtr, Tcl_Size index);
  * static void	ExceptionRangeTarget(CompileEnv *envPtr, Tcl_Size index, LABEL);
  */
 
-static inline int
+static inline Tcl_Size
 ExceptionRangeStarts(
     CompileEnv *envPtr,
     Tcl_ExceptionRange index)
@@ -1895,7 +1895,7 @@ ExceptionRangeStarts(
 	    envPtr->maxExceptDepth);
     offset = CurrentOffset(envPtr);
     envPtr->exceptArrayPtr[index].codeOffset = offset;
-    return (int) offset;
+    return offset;
 }
 
 static inline void
