@@ -1721,7 +1721,7 @@ StringIsCmd(
 		|| (!TclHasInternalRep(objPtr, &tclIntType)
 		&& !TclHasInternalRep(objPtr, &tclEndOffsetType)
 		&& !TclHasInternalRep(objPtr, &tclBignumType)
-		&& Tcl_GetIntForIndex(NULL, objPtr, 0, &idx) != TCL_OK)) {
+		&& TclGetIntForIndexM(NULL, objPtr, 0, &idx) != TCL_OK)) {
 	    result = 0;
 	}
 	break;
@@ -2942,10 +2942,18 @@ StringLowerCmd(
 	    first = 0;
 	}
 	last = first;
+	if (Tcl_IsEmpty(objv[2])) {
+	    /* TIP #615: empty string for 'first' means until 'end' */
+	    last = length1;
+	}
 
 	if ((objc == 4) && (TclGetIntForIndexM(interp, objv[3], length1,
 		&last) != TCL_OK)) {
 	    return TCL_ERROR;
+	}
+	if ((last == -1) && Tcl_IsEmpty(objv[3])) {
+	    /* TIP #615: empty string for 'last' means 'end' */
+	    last = length1;
 	}
 
 	if (last >= length1) {
@@ -3027,10 +3035,18 @@ StringUpperCmd(
 	    first = 0;
 	}
 	last = first;
+	if (Tcl_IsEmpty(objv[2])) {
+	    /* TIP #615: empty string for 'first' means until 'end' */
+	    last = length1;
+	}
 
 	if ((objc == 4) && (TclGetIntForIndexM(interp, objv[3], length1,
 		&last) != TCL_OK)) {
 	    return TCL_ERROR;
+	}
+	if ((last == -1) && Tcl_IsEmpty(objv[3])) {
+	    /* TIP #615: empty string for 'last' means 'end' */
+	    last = length1;
 	}
 
 	if (last >= length1) {
@@ -3112,10 +3128,18 @@ StringTitleCmd(
 	    first = 0;
 	}
 	last = first;
+	if (Tcl_IsEmpty(objv[2])) {
+	    /* TIP #615: empty string for 'first' means until 'end' */
+	    last = length1;
+	}
 
 	if ((objc == 4) && (TclGetIntForIndexM(interp, objv[3], length1,
 		&last) != TCL_OK)) {
 	    return TCL_ERROR;
+	}
+	if ((last == -1) && Tcl_IsEmpty(objv[3])) {
+	    /* TIP #615: empty string for 'last' means 'end' */
+	    last = length1;
 	}
 
 	if (last >= length1) {

@@ -2740,8 +2740,8 @@ Tcl_LrangeObjCmd(
 	return result;
     }
     if ((last == -1) && Tcl_IsEmpty(objv[3])) {
-       /* TIP #615: empty string for 'last' means 'end' */
-       last = listLen - 1;
+	/* TIP #615: empty string for 'last' means 'end' */
+	last = listLen - 1;
     }
 
     Tcl_Obj *resultObj;
@@ -2997,6 +2997,10 @@ Tcl_LreplaceObjCmd(
     result = TclGetIntForIndexM(interp, objv[3], /*end*/ listLen-1, &last);
     if (result != TCL_OK) {
 	return result;
+    }
+    if ((last == -1) && Tcl_IsEmpty(objv[3])) {
+	/* TIP #615: empty string for 'last' means 'end' */
+	last = listLen - 1;
     }
 
     if (first < 0) {
@@ -4918,6 +4922,10 @@ Tcl_LeditObjCmd(
     result = TclGetIntForIndexM(interp, objv[3], /*end*/ listLen-1, &last);
     if (result != TCL_OK) {
 	return result;
+    }
+    if ((last == -1) && Tcl_IsEmpty(objv[3])) {
+	/* TIP #615: empty string for 'last' means 'end' */
+	last = listLen - 1;
     }
 
     if (first < 0) {
