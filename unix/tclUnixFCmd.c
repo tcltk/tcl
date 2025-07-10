@@ -943,7 +943,7 @@ TraverseUnixTree(
     Tcl_DirEntry *dirEntPtr;
     TclDIR *dirPtr;
 #else
-    const char *paths[2] = {NULL, NULL};
+    const char *paths[] = {NULL, NULL};
     FTS *fts = NULL;
     FTSENT *ent;
 #endif

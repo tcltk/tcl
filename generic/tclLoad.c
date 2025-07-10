@@ -140,7 +140,6 @@ Tcl_LoadObjCmd(
     InterpLibrary *ipFirstPtr, *ipPtr;
     int code, namesMatch, filesMatch;
     Tcl_Size offset;
-    const char *symbols[2];
     Tcl_LibraryInitProc *initProc;
     const char *p, *fullFileName, *prefix;
     Tcl_LoadHandle loadHandle;
@@ -403,8 +402,10 @@ Tcl_LoadObjCmd(
 	 * initialization functions.
 	 */
 
-	symbols[0] = Tcl_DStringValue(&initName);
-	symbols[1] = NULL;
+	const char *symbols[] = {
+	    Tcl_DStringValue(&initName),
+	    NULL
+	};
 
 	Tcl_MutexLock(&libraryMutex);
 	code = Tcl_LoadFile(interp, objv[1], symbols, flags, &initProc,
@@ -1118,15 +1119,17 @@ TclGetLoadedLibraries(
     Tcl_Interp *target;
     LoadedLibrary *libraryPtr;
     InterpLibrary *ipPtr;
-    Tcl_Obj *resultObj, *pkgDesc[2];
+    Tcl_Obj *resultObj;
 
     if (targetName == NULL) {
 	TclNewObj(resultObj);
 	Tcl_MutexLock(&libraryMutex);
 	for (libraryPtr = firstLibraryPtr; libraryPtr != NULL;
 		libraryPtr = libraryPtr->nextPtr) {
-	    pkgDesc[0] = Tcl_NewStringObj(libraryPtr->fileName, -1);
-	    pkgDesc[1] = Tcl_NewStringObj(libraryPtr->prefix, -1);
+	    Tcl_Obj *pkgDesc[] = {
+		Tcl_NewStringObj(libraryPtr->fileName, -1),
+		Tcl_NewStringObj(libraryPtr->prefix, -1)
+	    };
 	    Tcl_ListObjAppendElement(NULL, resultObj,
 		    Tcl_NewListObj(2, pkgDesc));
 	}
@@ -1170,8 +1173,10 @@ TclGetLoadedLibraries(
     TclNewObj(resultObj);
     for (; ipPtr != NULL; ipPtr = ipPtr->nextPtr) {
 	libraryPtr = ipPtr->libraryPtr;
-	pkgDesc[0] = Tcl_NewStringObj(libraryPtr->fileName, -1);
-	pkgDesc[1] = Tcl_NewStringObj(libraryPtr->prefix, -1);
+	Tcl_Obj *pkgDesc[] = {
+	    Tcl_NewStringObj(libraryPtr->fileName, -1),
+	    Tcl_NewStringObj(libraryPtr->prefix, -1)
+	};
 	Tcl_ListObjAppendElement(NULL, resultObj, Tcl_NewListObj(2, pkgDesc));
     }
     Tcl_SetObjResult(interp, resultObj);

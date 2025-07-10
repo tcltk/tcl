@@ -768,10 +768,10 @@ Tcl_FSJoinToPath(
 	return TclJoinPath(1, &pathPtr, 0);
     }
     if (objc == 1) {
-	Tcl_Obj *pair[2];
-
-	pair[0] = pathPtr;
-	pair[1] = objv[0];
+	Tcl_Obj *pair[] = {
+	    pathPtr,
+	    objv[0]
+	};
 	return TclJoinPath(2, pair, 0);
     } else {
 	Tcl_Size elemc = objc + 1;

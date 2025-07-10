@@ -1067,7 +1067,6 @@ NormalizeMountPoint(
     const char *mountPath,
     Tcl_DString *dsPtr)		/* Must be initialized by caller! */
 {
-    const char *joiner[2];
     char *joinedPath;
     Tcl_Obj *unnormalizedObj;
     Tcl_Obj *normalizedObj;
@@ -1086,8 +1085,10 @@ NormalizeMountPoint(
      * and not performance sensitive anyways.
      */
 
-    joiner[0] = ZIPFS_VOLUME;
-    joiner[1] = mountPath;
+    const char *joiner[] = {
+	ZIPFS_VOLUME,
+	mountPath
+    };
     Tcl_DStringInit(&dsJoin);
     joinedPath = Tcl_JoinPath(2, joiner, &dsJoin);
 
@@ -1157,7 +1158,6 @@ MapPathToZipfs(
     Tcl_DString *dsPtr)		/* Must be initialized and cleared
 				 * by caller */
 {
-    const char *joiner[2];
     char *joinedPath;
     Tcl_Obj *unnormalizedObj;
     Tcl_Obj *normalizedObj;
@@ -1167,8 +1167,10 @@ MapPathToZipfs(
 
     assert(TclIsZipfsPath(mountPath));
 
-    joiner[0] = mountPath;
-    joiner[1] = path;
+    const char *joiner[] = {
+	mountPath,
+	path
+    };
 #ifndef _WIN32
     /* On Unix C:/foo/bat is not treated as absolute by JoinPath so check ourself */
     if (path[0] && path[1] == ':') {
@@ -3323,13 +3325,12 @@ ZipFSFind(
     Tcl_Interp *interp,
     Tcl_Obj *dirRoot)
 {
-    Tcl_Obj *cmd[2];
-    int result;
-
-    cmd[0] = Tcl_NewStringObj("::tcl::zipfs::find", -1);
-    cmd[1] = dirRoot;
+    Tcl_Obj *cmd[] = {
+	Tcl_NewStringObj("::tcl::zipfs::find", -1),
+	dirRoot
+    };
     Tcl_IncrRefCount(cmd[0]);
-    result = Tcl_EvalObjv(interp, 2, cmd, 0);
+    int result = Tcl_EvalObjv(interp, 2, cmd, 0);
     Tcl_DecrRefCount(cmd[0]);
     if (result != TCL_OK) {
 	return NULL;
@@ -6226,7 +6227,7 @@ ZipFSLoadFile(
 #else /* !ANDROID */
     Tcl_Obj *altPath = NULL;
     int ret = TCL_ERROR;
-    Tcl_Obj *objs[2] = { NULL, NULL };
+    Tcl_Obj *objs[] = { NULL, NULL };
 
     if (Tcl_FSAccess(path, R_OK) == 0) {
 	/*

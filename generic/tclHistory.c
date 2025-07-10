@@ -150,16 +150,15 @@ Tcl_RecordAndEvalObj(
     }
 
     if (call) {
-	Tcl_Obj *list[3];
-
 	/*
 	 * Do recording by eval'ing a tcl history command: history add $cmd.
 	 */
 
-	list[0] = histObjsPtr->historyObj;
-	list[1] = histObjsPtr->addObj;
-	list[2] = cmdPtr;
-
+	Tcl_Obj *list[] = {
+	    histObjsPtr->historyObj,
+	    histObjsPtr->addObj,
+	    cmdPtr
+	};
 	Tcl_IncrRefCount(cmdPtr);
 	(void) Tcl_EvalObjv(interp, 3, list, TCL_EVAL_GLOBAL);
 	Tcl_DecrRefCount(cmdPtr);
