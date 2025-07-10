@@ -238,7 +238,6 @@ ProcBodyTestProcCmd(
     Command *cmdPtr;
     Proc *procPtr = NULL;
     Tcl_Obj *bodyObjPtr;
-    Tcl_Obj *myobjv[5];
     int result;
 
     if (objc != 4) {
@@ -293,11 +292,13 @@ ProcBodyTestProcCmd(
     }
     Tcl_IncrRefCount(bodyObjPtr);
 
-    myobjv[0] = objv[0];
-    myobjv[1] = objv[1];
-    myobjv[2] = objv[2];
-    myobjv[3] = bodyObjPtr;
-    myobjv[4] = NULL;
+    Tcl_Obj *myobjv[] = {
+	objv[0],
+	objv[1],
+	objv[2],
+	bodyObjPtr,
+	NULL
+    };
 
     result = Tcl_ProcObjCmd(NULL, interp, objc, myobjv);
     Tcl_DecrRefCount(bodyObjPtr);
