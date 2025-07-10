@@ -1716,12 +1716,11 @@ StringIsCmd(
 	break;
     case STR_IS_INDEX: {
 	Tcl_Size idx;
-	if (TclHasInternalRep(objPtr, &tclIntType) ||
-		TclHasInternalRep(objPtr, &tclEndOffsetType) ||
-		TclHasInternalRep(objPtr, &tclBignumType)) {
-	    break;
-	}
-	if (Tcl_GetIntForIndex(NULL, objPtr, 0, &idx) != TCL_OK) {
+	if ((strict && Tcl_IsEmpty(objPtr))
+		|| (!TclHasInternalRep(objPtr, &tclIntType)
+		&& !TclHasInternalRep(objPtr, &tclEndOffsetType)
+		&& !TclHasInternalRep(objPtr, &tclBignumType)
+		&& Tcl_GetIntForIndex(NULL, objPtr, 0, &idx) != TCL_OK)) {
 	    result = 0;
 	}
 	break;
