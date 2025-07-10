@@ -1766,6 +1766,12 @@ test string-15.10.$noComp {string tolower, unicode} {
 test string-15.11.$noComp {string tolower, compiled} {
     lindex [run {string tolower [list A B [list C]]}] 1
 } b
+test string-15.12.$noComp {string tolower} {
+    run {string tolower ABC {}}
+} abc
+test string-15.13.$noComp {string tolower} {
+    run {string tolower ABC {} {}}
+} abc
 
 test string-16.1.$noComp {string toupper} {
     list [catch {run {string toupper}} msg] $msg
@@ -1800,6 +1806,12 @@ test string-16.10.$noComp {string toupper, unicode} {
 test string-16.11.$noComp {string toupper, compiled} {
     lindex [run {string toupper [list a b [list c]]}] 1
 } B
+test string-16.12.$noComp {string toupper} {
+    run {string toupper abc {}}
+} ABC
+test string-16.13.$noComp {string toupper} {
+    run {string toupper abc {} {}}
+} ABC
 
 test string-17.1.$noComp {string totitle} {
     list [catch {run {string totitle}} msg] $msg
@@ -1829,6 +1841,12 @@ test string-17.9.$noComp {string totitle, surrogates, bug [11ae2be95dac9417]} {
     run {list [string totitle a\U118c0c 1 1] [string totitle a\U118c0c 2 2] \
 	[string totitle a\U118c0c 3 3]}
 } [list a\U118a0c a\U118c0C a\U118c0c]
+test string-17.10.$noComp {string totitle} {
+    run {string totitle "abc xYz" {}}
+} {Abc xyz}
+test string-17.11.$noComp {string totitle} {
+    run {string totitle "abc xYz" {} {}}
+} {Abc xyz}
 
 test string-18.1.$noComp {string trim} {
     list [catch {run {string trim}} msg] $msg
