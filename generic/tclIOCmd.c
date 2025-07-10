@@ -2021,29 +2021,21 @@ ChanPipeObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_Channel rchan, wchan;
-    const char *channelNames[2];
-    Tcl_Obj *resultPtr;
-
     if (objc != 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, "");
 	return TCL_ERROR;
     }
 
+    Tcl_Channel rchan, wchan;
     if (Tcl_CreatePipe(interp, &rchan, &wchan, 0) != TCL_OK) {
 	return TCL_ERROR;
     }
 
-    channelNames[0] = Tcl_GetChannelName(rchan);
-    channelNames[1] = Tcl_GetChannelName(wchan);
-
-    TclNewObj(resultPtr);
-    Tcl_ListObjAppendElement(NULL, resultPtr,
-	    Tcl_NewStringObj(channelNames[0], -1));
-    Tcl_ListObjAppendElement(NULL, resultPtr,
-	    Tcl_NewStringObj(channelNames[1], -1));
-    Tcl_SetObjResult(interp, resultPtr);
-
+    Tcl_Obj *channelNames[] = {
+	Tcl_NewStringObj(Tcl_GetChannelName(rchan), -1),
+	Tcl_NewStringObj(Tcl_GetChannelName(wchan), -1)
+    };
+    Tcl_SetObjResult(interp, Tcl_NewListObj(2, channelNames));
     return TCL_OK;
 }
 

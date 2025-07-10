@@ -1061,6 +1061,20 @@ NextRestoreFrame(
  * ----------------------------------------------------------------------
  */
 
+static inline Tcl_Obj *
+RenderMethodName(
+    CallContext *contextPtr,
+    Method *mPtr)
+{
+    if (contextPtr->callPtr->flags & CONSTRUCTOR) {
+	return contextPtr->oPtr->fPtr->constructorName;
+    } else if (contextPtr->callPtr->flags & DESTRUCTOR) {
+	return contextPtr->oPtr->fPtr->destructorName;
+    } else {
+	return mPtr->namePtr;
+    }
+}
+
 int
 TclOOSelfObjCmd(
     TCL_UNUSED(void *),
@@ -1079,7 +1093,6 @@ TclOOSelfObjCmd(
     Interp *iPtr = (Interp *) interp;
     CallFrame *framePtr = iPtr->varFramePtr;
     CallContext *contextPtr;
-    Tcl_Obj *result[3];
 
 #define CurrentlyInvoked(contextPtr) \
     ((contextPtr)->callPtr->chain[(contextPtr)->index])
@@ -1135,14 +1148,8 @@ TclOOSelfObjCmd(
 	return TCL_OK;
     }
     case SELF_METHOD:
-	if (contextPtr->callPtr->flags & CONSTRUCTOR) {
-	    Tcl_SetObjResult(interp, contextPtr->oPtr->fPtr->constructorName);
-	} else if (contextPtr->callPtr->flags & DESTRUCTOR) {
-	    Tcl_SetObjResult(interp, contextPtr->oPtr->fPtr->destructorName);
-	} else {
-	    Tcl_SetObjResult(interp,
-		    CurrentlyInvoked(contextPtr).mPtr->namePtr);
-	}
+	Tcl_SetObjResult(interp, RenderMethodName(contextPtr,
+		CurrentlyInvoked(contextPtr).mPtr));
 	return TCL_OK;
     case SELF_FILTER:
 	if (!CurrentlyInvoked(contextPtr).isFilter) {
@@ -1163,9 +1170,11 @@ TclOOSelfObjCmd(
 		type = "object";
 	    }
 
-	    result[0] = TclOOObjectName(interp, oPtr);
-	    result[1] = Tcl_NewStringObj(type, TCL_AUTO_LENGTH);
-	    result[2] = miPtr->mPtr->namePtr;
+	    Tcl_Obj *result[] = {
+		TclOOObjectName(interp, oPtr),
+		Tcl_NewStringObj(type, TCL_AUTO_LENGTH),
+		miPtr->mPtr->namePtr
+	    };
 	    Tcl_SetObjResult(interp, Tcl_NewListObj(3, result));
 	    return TCL_OK;
 	}
@@ -1190,15 +1199,11 @@ TclOOSelfObjCmd(
 		TCL_UNREACHABLE();
 	    }
 
-	    result[0] = TclOOObjectName(interp, declarerPtr);
-	    result[1] = TclOOObjectName(interp, callerPtr->oPtr);
-	    if (callerPtr->callPtr->flags & CONSTRUCTOR) {
-		result[2] = declarerPtr->fPtr->constructorName;
-	    } else if (callerPtr->callPtr->flags & DESTRUCTOR) {
-		result[2] = declarerPtr->fPtr->destructorName;
-	    } else {
-		result[2] = mPtr->namePtr;
-	    }
+	    Tcl_Obj *result[] = {
+		TclOOObjectName(interp, declarerPtr),
+		TclOOObjectName(interp, callerPtr->oPtr),
+		RenderMethodName(callerPtr, mPtr)
+	    };
 	    Tcl_SetObjResult(interp, Tcl_NewListObj(3, result));
 	    return TCL_OK;
 	}
@@ -1216,14 +1221,10 @@ TclOOSelfObjCmd(
 		TCL_UNREACHABLE();
 	    }
 
-	    result[0] = TclOOObjectName(interp, declarerPtr);
-	    if (contextPtr->callPtr->flags & CONSTRUCTOR) {
-		result[1] = declarerPtr->fPtr->constructorName;
-	    } else if (contextPtr->callPtr->flags & DESTRUCTOR) {
-		result[1] = declarerPtr->fPtr->destructorName;
-	    } else {
-		result[1] = mPtr->namePtr;
-	    }
+	    Tcl_Obj *result[] = {
+		TclOOObjectName(interp, declarerPtr),
+		RenderMethodName(contextPtr, mPtr)
+	    };
 	    Tcl_SetObjResult(interp, Tcl_NewListObj(2, result));
 	}
 	return TCL_OK;
@@ -1234,8 +1235,6 @@ TclOOSelfObjCmd(
 	    OO_ERROR(interp, UNMATCHED_CONTEXT);
 	    return TCL_ERROR;
 	} else {
-	    Method *mPtr;
-	    Object *declarerPtr;
 	    Tcl_Size i;
 
 	    for (i=contextPtr->index ; i<contextPtr->callPtr->numChain ; i++) {
@@ -1246,7 +1245,8 @@ TclOOSelfObjCmd(
 	    if (i == contextPtr->callPtr->numChain) {
 		Tcl_Panic("filtering call chain without terminal non-filter");
 	    }
-	    mPtr = contextPtr->callPtr->chain[i].mPtr;
+	    Method *mPtr = contextPtr->callPtr->chain[i].mPtr;
+	    Object *declarerPtr;
 	    if (mPtr->declaringClassPtr != NULL) {
 		declarerPtr = mPtr->declaringClassPtr->thisPtr;
 	    } else if (mPtr->declaringObjectPtr != NULL) {
@@ -1254,14 +1254,18 @@ TclOOSelfObjCmd(
 	    } else {
 		TCL_UNREACHABLE();
 	    }
-	    result[0] = TclOOObjectName(interp, declarerPtr);
-	    result[1] = mPtr->namePtr;
+	    Tcl_Obj *result[] = {
+		TclOOObjectName(interp, declarerPtr),
+		mPtr->namePtr
+	    };
 	    Tcl_SetObjResult(interp, Tcl_NewListObj(2, result));
 	    return TCL_OK;
 	}
     case SELF_CALL:
-	result[0] = TclOORenderCallChain(interp, contextPtr->callPtr);
-	TclNewIndexObj(result[1], contextPtr->index);
+	Tcl_Obj *result[] = {
+	    TclOORenderCallChain(interp, contextPtr->callPtr),
+	    Tcl_NewWideIntObj(contextPtr->index)
+	};
 	Tcl_SetObjResult(interp, Tcl_NewListObj(2, result));
 	return TCL_OK;
     default:
