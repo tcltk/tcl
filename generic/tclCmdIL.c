@@ -1607,7 +1607,7 @@ InfoLevelCmd(
 	}
 	for (framePtr=iPtr->varFramePtr ; framePtr!=rootFramePtr;
 		framePtr=framePtr->callerVarPtr) {
-	    if ((int)framePtr->level == level) {
+	    if (framePtr->level == level) {
 		break;
 	    }
 	}

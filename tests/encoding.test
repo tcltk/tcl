@@ -1246,7 +1246,7 @@ test encoding-bug-7346adc50f-failindex {OOM on convertfrom truncated iso2022 - f
     unset -nocomplain failix
 } -result [list \u304A\u8A66 7]
 
-test encoding-bug-7346adc50f-strict {OOM on convertfrom truncated iso2022 - replace} -body {
+test encoding-bug-7346adc50f-replace {OOM on convertfrom truncated iso2022 - replace} -body {
     encoding convertfrom -profile replace iso2022-jp "\x1b\$B\$*;n\$"
 } -result \u304A\u8A66\uFFFD
 

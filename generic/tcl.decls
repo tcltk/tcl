@@ -2377,9 +2377,23 @@ declare 691 {
     const char *Tcl_GetEncodingNameForUser(Tcl_DString *bufPtr)
 }
 
+# TIP 649
+declare 692 {
+    int Tcl_ListObjReverse(Tcl_Interp *interp, Tcl_Obj *objPtr,
+	    Tcl_Obj **resultPtrPtr)
+}
+declare 693 {
+    int Tcl_ListObjRepeat(Tcl_Interp *interp, Tcl_Size repeatCount,
+	    Tcl_Size objc, Tcl_Obj *const objv[], Tcl_Obj **resultPtrPtr)
+}
+declare 694 {
+    int Tcl_ListObjRange(Tcl_Interp *interp, Tcl_Obj *objPtr,
+	    Tcl_Size start, Tcl_Size end, Tcl_Obj **resultPtrPtr)
+}
+
 # ----- BASELINE -- FOR -- 9.1.0 ----- #
 
-declare 692 {
+declare 695 {
     void TclUnusedStubEntry(void)
 }
 

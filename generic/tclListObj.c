@@ -120,7 +120,6 @@ enum ListRepresentationFlags {
  * Prototypes for non-inline static functions defined later in this file:
  */
 static int	MemoryAllocationError(Tcl_Interp *, size_t size);
-static int	ListLimitExceededError(Tcl_Interp *);
 static ListStore *ListStoreNew(Tcl_Size objc, Tcl_Obj *const objv[], int flags);
 static int	ListRepInit(Tcl_Size objc, Tcl_Obj *const objv[], int flags, ListRep *);
 static int	ListRepInitAttempt(Tcl_Interp *,
@@ -482,7 +481,7 @@ MemoryAllocationError(
 /*
  *------------------------------------------------------------------------
  *
- * ListLimitExceeded --
+ * TclListLimitExceededError --
  *
  *    Generates an error for exceeding maximum list size.
  *
@@ -494,13 +493,19 @@ MemoryAllocationError(
  *
  *------------------------------------------------------------------------
  */
-static int
-ListLimitExceededError(
+int
+TclListLimitExceededError(
     Tcl_Interp *interp)
 {
+    /*
+     * As an aside, note there is no parameter passed for the bad length
+     * because the cverflow is computationally detected and does not fit
+     * in Tcl_Size.
+     */
     if (interp != NULL) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"max length of a Tcl list exceeded", -1));
+	Tcl_SetObjResult(interp,
+	    Tcl_ObjPrintf("max length (%" TCL_SIZE_MODIFIER
+		"d) of a Tcl list exceeded", (Tcl_Size)LIST_MAX));
 	Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
     }
     return TCL_ERROR;
@@ -940,7 +945,7 @@ ListRepInitAttempt(
 
     if (result != TCL_OK && interp != NULL) {
 	if (objc > LIST_MAX) {
-	    ListLimitExceededError(interp);
+	    TclListLimitExceededError(interp);
 	} else {
 	    MemoryAllocationError(interp, LIST_SIZE(objc));
 	}
@@ -1792,7 +1797,7 @@ TclListObjAppendElements(
 
     ListRepElements(&listRep, toLen, toObjv);
     if (elemCount > LIST_MAX || toLen > (LIST_MAX - elemCount)) {
-	return ListLimitExceededError(interp);
+	return TclListLimitExceededError(interp);
     }
 
     finalLen = toLen + elemCount;
@@ -2138,7 +2143,7 @@ Tcl_ListObjReplace(
     }
 
     if (numToInsert > LIST_MAX - (origListLen - numToDelete)) {
-	return ListLimitExceededError(interp);
+	return TclListLimitExceededError(interp);
     }
 
     if ((first+numToDelete) >= origListLen) {

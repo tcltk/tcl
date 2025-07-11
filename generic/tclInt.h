@@ -1224,14 +1224,6 @@ TclObjTypeInOperator(
     return proc(interp, valueObj, listObj, boolResult);
 }
 
-/* Functions related to abstract list implementations */
-MODULE_SCOPE int
-Tcl_ListObjReverse(Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Obj **resultPtrPtr);
-MODULE_SCOPE int Tcl_ListObjRepeat(Tcl_Interp *interp, Tcl_Size repeatCount,
-    Tcl_Size objc, Tcl_Obj *const objv[], Tcl_Obj **resultPtrPtr);
-MODULE_SCOPE int Tcl_ListObjRange(Tcl_Interp *interp, Tcl_Obj *objPtr,
-    Tcl_Size start, Tcl_Size end, Tcl_Obj **resultPtrPtr);
-
 /*
  * The structure below defines an entry in the assocData hash table which is
  * associated with an interpreter. The entry contains a pointer to a function
@@ -4177,7 +4169,7 @@ MODULE_SCOPE Tcl_Size	TclIndexDecode(int encoded, Tcl_Size endValue);
  */
 MODULE_SCOPE int	TclCommandWordLimitError(Tcl_Interp *interp,
 			    Tcl_Size count);
-
+MODULE_SCOPE int	TclListLimitExceededError(Tcl_Interp *interp);
 
 /* Constants used in index value encoding routines. */
 #define TCL_INDEX_END	((Tcl_Size)-2)
