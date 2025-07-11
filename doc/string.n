@@ -298,7 +298,7 @@ the special interpretation of the characters \fB*?[]\e\fR in
 .RE
 .\" METHOD: range
 .TP
-\fBstring range \fIstring first last\fR
+\fBstring range \fIstring\fR ?\fIfirst\fR? ?\fIlast\fR?
 .
 Returns a range of consecutive characters from \fIstring\fR, starting
 with the character whose index is \fIfirst\fR and ending with the
@@ -306,8 +306,8 @@ character whose index is \fIlast\fR (using the forms described in
 \fBSTRING INDICES\fR). An index of \fB0\fR refers to the first
 character of the string; an index of \fBend\fR refers to last
 character of the string.  \fIfirst\fR and \fIlast\fR may be specified
-as for the \fBindex\fR method.  If \fIfirst\fR is less than zero then
-it is treated as if it were zero, and if \fIlast\fR is greater than or
+as for the \fBindex\fR method.  If \fIfirst\fR is missing or less than zero then
+it is treated as if it were zero, and if \fIlast\fR is missing or greater than or
 equal to the length of the string then it is treated as if it were
 \fBend\fR.  If \fIfirst\fR is greater than \fIlast\fR then an empty
 string is returned.
@@ -320,7 +320,7 @@ Returns a string consisting of \fIstring\fR concatenated with itself
 returned.
 .\" METHOD: replace
 .TP
-\fBstring replace \fIstring first last\fR ?\fInewstring\fR?
+\fBstring replace \fIstring\fR ?\fIfirst\fR? ?\fIlast\fR? ?\fInewstring\fR?
 .
 Removes a range of consecutive characters from \fIstring\fR, starting
 with the character whose index is \fIfirst\fR and ending with the

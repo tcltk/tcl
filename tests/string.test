@@ -1473,13 +1473,13 @@ test stringComp-12.1.0.$noComp {Bug 3588366: end-offsets before start} {
 } {}
 test string-12.1.$noComp {string range} {
     list [catch {run {string range}} msg] $msg
-} {1 {wrong # args: should be "string range string first last"}}
+} {1 {wrong # args: should be "string range string ?first? ?last?"}}
 test string-12.2.$noComp {string range} {
     list [catch {run {string range a 1}} msg] $msg
-} {1 {wrong # args: should be "string range string first last"}}
+} {0 {}}
 test string-12.3.$noComp {string range} {
     list [catch {run {string range a 1 2 3}} msg] $msg
-} {1 {wrong # args: should be "string range string first last"}}
+} {1 {wrong # args: should be "string range string ?first? ?last?"}}
 test string-12.4.$noComp {string range} {
     run {string range abcdefghijklmnop 2 14}
 } {cdefghijklmno}
@@ -1619,13 +1619,13 @@ test string-13.14.$noComp {string repeat} {
 
 test string-14.1.$noComp {string replace} {
     list [catch {run {string replace}} msg] $msg
-} {1 {wrong # args: should be "string replace string first last ?string?"}}
+} {1 {wrong # args: should be "string replace string ?first? ?last? ?string?"}}
 test string-14.2.$noComp {string replace} {
     list [catch {run {string replace a 1}} msg] $msg
-} {1 {wrong # args: should be "string replace string first last ?string?"}}
+} {0 a}
 test string-14.3.$noComp {string replace} {
     list [catch {run {string replace a 1 2 3 4}} msg] $msg
-} {1 {wrong # args: should be "string replace string first last ?string?"}}
+} {1 {wrong # args: should be "string replace string ?first? ?last? ?string?"}}
 test string-14.4.$noComp {string replace} {
 } {}
 test string-14.5.$noComp {string replace} {
