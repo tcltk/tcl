@@ -254,6 +254,7 @@ static Tcl_ObjCmdProc	TestgetvarfullnameCmd;
 static Tcl_ObjCmdProc	TestinterpdeleteCmd;
 static Tcl_ObjCmdProc	TestlinkCmd;
 static Tcl_ObjCmdProc	TestlinkarrayCmd;
+static Tcl_ObjCmdProc	TestlistapiCmd;
 static Tcl_ObjCmdProc	TestlistrepCmd;
 static Tcl_ObjCmdProc	TestlocaleCmd;
 static Tcl_ObjCmdProc	TestmainthreadCmd;
@@ -655,6 +656,7 @@ Tcltest_Init(
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testlink", TestlinkCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testlinkarray", TestlinkarrayCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testlistapi", TestlistapiCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testlistrep", TestlistrepCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testlocale", TestlocaleCmd, NULL,
 	    NULL);
@@ -3958,6 +3960,190 @@ TestlistrepCmd(
     return TCL_OK;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestlistapiCmd --
+ *
+ *      This function is invoked to test various public C API's to cover
+ *	paths that are not exercisable via the script level commands.
+ *	The general format is:
+ *	    testlistapi api refcount listoperand ?args ...?
+ *      where api identifies the C function, refcount is the reference count
+ *	to be set for the value listoperand passed into the list API.
+ *
+ *	The result of the command is a dictionary of with the following
+ *	elements (not all may be present, depending on the API called):
+ *	    status - the status returned by the API
+ *	    srcPtr - address of the Tcl_Obj passed into the API
+ *	    srcType - the Tcl_ObjType name of srcPtr
+ *	    srcRefCount - reference count of srcPtr *after* the API call
+ *	    resultPtr - address of the Tcl_Obj passed into the API
+ *	    resultType - the Tcl_ObjType name of resultPtr
+ *	    resultRefCount - reference count of resultPtr *after* the API call
+ *	    result - the resultPtr value
+ * Results:
+ *      A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestlistapiCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    static const char* const subcommands[] = {
+	"Tcl_ListObjRange",
+	"Tcl_ListObjRepeat",
+	"Tcl_ListObjReverse",
+	NULL
+    };
+    enum listapiCmdIndex {
+	LISTAPI_RANGE,
+	LISTAPI_REPEAT,
+	LISTAPI_REVERSE,
+    } cmdIndex;
+    Tcl_Size srcRefCount;
+    Tcl_Obj *srcPtr;
+    Tcl_Obj *resultPtr = NULL;
+    int status;
+
+    if (objc < 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "option ?arg...?");
+	return TCL_ERROR;
+    }
+    if (Tcl_GetIndexFromObj(interp, objv[1], subcommands, "command",
+			    0, &cmdIndex) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (cmdIndex == LISTAPI_REPEAT) {
+	srcRefCount = -1; /* Not relevant */
+	srcPtr = NULL;
+	Tcl_Size repeatCount;
+	if (objc < 3) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "repeatcount ?arg...?");
+	    return TCL_ERROR;
+	}
+	if (Tcl_GetSizeIntFromObj(interp, objv[2], &repeatCount) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	status = Tcl_ListObjRepeat(
+	    interp, repeatCount, objc - 3, objv + 3, &resultPtr);
+    } else {
+	if (objc < 4) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "refcount list ?arg...?");
+	    return TCL_ERROR;
+	}
+	if (Tcl_GetSizeIntFromObj(interp, objv[2], &srcRefCount) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	srcPtr = Tcl_DuplicateObj(objv[3]);
+	for (Tcl_Size i = 0; i < srcRefCount; i++) {
+	    Tcl_IncrRefCount(srcPtr);
+	}
+	switch (cmdIndex) {
+	case LISTAPI_RANGE:
+	    if (objc != 6) {
+		Tcl_WrongNumArgs(interp, 2, objv, "refcount list start end");
+		status = TCL_ERROR;
+		goto vamoose; /* To free up srcPtr */
+	    }
+	    else {
+		Tcl_Size start, end;
+		if (Tcl_GetSizeIntFromObj(interp, objv[4], &start) != TCL_OK ||
+		    Tcl_GetSizeIntFromObj(interp, objv[5], &end) != TCL_OK) {
+		    status = TCL_ERROR;
+		    goto vamoose; /* To free up srcPtr */
+		}
+		status =
+		    Tcl_ListObjRange(interp, srcPtr, start, end, &resultPtr);
+	    }
+	    break;
+	case LISTAPI_REVERSE:
+	    if (objc != 4) {
+		Tcl_WrongNumArgs(interp, 2, objv, "refcount list");
+		status = TCL_ERROR;
+		goto vamoose; /* To free up srcPtr */
+	    }
+	    status = Tcl_ListObjReverse(interp, srcPtr, &resultPtr);
+	    break;
+	default: /* Keep gcc happy */
+	    Tcl_Panic("Unknown list API command %d", cmdIndex);
+	    return TCL_ERROR; /* Not reached */
+	}
+    }
+
+#define APPENDINT(name_, var_)                                    \
+    do {                                                           \
+	Tcl_ListObjAppendElement(                                  \
+	    NULL, objPtr, Tcl_NewStringObj((#name_), -1));      \
+	Tcl_ListObjAppendElement(                                  \
+	    NULL, objPtr, Tcl_NewWideIntObj((intptr_t)(var_))); \
+    } while (0)
+#define APPENDSTR(name_, var_)                                    \
+    do {                                                           \
+	Tcl_ListObjAppendElement(                                  \
+	    NULL, objPtr, Tcl_NewStringObj((#name_), -1));      \
+	Tcl_ListObjAppendElement(                                  \
+	    NULL, objPtr, Tcl_NewStringObj((var_), -1)); \
+    } while (0)
+
+    Tcl_Obj *objPtr = Tcl_NewListObj(0, NULL);
+    APPENDINT(status, status);
+    APPENDINT(srcPtr, srcPtr);
+    if (srcPtr) {
+	APPENDINT(srcRefCount, srcPtr->refCount);
+	if (srcPtr->typePtr && srcPtr->typePtr->name) {
+	    APPENDSTR(srcType, srcPtr->typePtr->name);
+	}
+	else {
+	    APPENDSTR(srcType, "");
+	}
+    }
+    APPENDINT(resultPtr, resultPtr);
+    if (status == TCL_OK) {
+	if (resultPtr) {
+	    APPENDINT(resultRefCount, resultPtr->refCount);
+	    if (resultPtr->typePtr && resultPtr->typePtr->name) {
+		APPENDSTR(resultType, resultPtr->typePtr->name);
+	    }
+	    else {
+		APPENDSTR(resultType, "");
+	    }
+	   Tcl_ListObjAppendElement(NULL, objPtr, Tcl_NewStringObj("result", -1));
+	   Tcl_ListObjAppendElement(NULL, objPtr, resultPtr);
+	}
+    } else {
+	Tcl_ListObjAppendElement(NULL, objPtr, Tcl_NewStringObj("result", -1));
+	Tcl_ListObjAppendElement(NULL, objPtr, Tcl_GetObjResult(interp));
+	status = TCL_OK; /* Irrespective of what Tcl_ListObj*() returned */
+    }
+    Tcl_SetObjResult(interp, objPtr);
+
+vamoose:
+    if (srcPtr) {
+	if (srcRefCount == 0) {
+	    /* The call made store internal refs so don't call Tcl_DecrRefCount  */
+	    Tcl_BounceRefCount(srcPtr);
+	} else {
+	    /* Decrement as many as we added */
+	    while (srcRefCount--) {
+		Tcl_DecrRefCount(srcPtr);
+	    }
+	}
+    }
+    if (resultPtr) {
+	Tcl_BounceRefCount(resultPtr);
+    }
+    return status;
+}
+
 /*
  *----------------------------------------------------------------------
  *

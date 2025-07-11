@@ -1382,8 +1382,8 @@ TclRegisterCommandTypeName(
 	int isNew;
 
 	hPtr = Tcl_CreateHashEntry(&commandTypeTable,
-		implementationProc, &isNew);
-	Tcl_SetHashValue(hPtr, (void *) nameStr);
+		(void *)implementationProc, &isNew);
+	Tcl_SetHashValue(hPtr, nameStr);
     } else {
 	hPtr = Tcl_FindHashEntry(&commandTypeTable,
 		implementationProc);
