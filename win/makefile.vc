@@ -224,6 +224,8 @@ TCLDDELIB	= $(OUT_DIR)\$(TCLDDELIBNAME)
 TCLTEST		= $(OUT_DIR)\$(PROJECT)test$(VERSION)$(SUFX:t=).exe
 TCLTESTRAW	= $(TCLTEST:.exe=-raw.exe)
 
+UTF8PROCDIR	= $(ROOT)\utf8proc
+
 TCLSHOBJS = \
 	$(TMP_DIR)\tclAppInit.obj \
 	$(TMP_DIR)\tclsh.res
@@ -335,7 +337,8 @@ COREOBJS = \
 	$(TMP_DIR)\tclUtil.obj \
 	$(TMP_DIR)\tclVar.obj \
 	$(TMP_DIR)\tclZipfs.obj \
-	$(TMP_DIR)\tclZlib.obj
+	$(TMP_DIR)\tclZlib.obj \
+	$(TMP_DIR)\utf8proc.obj \
 
 !if $(STATIC_BUILD)
 ZLIBOBJS = \
@@ -1024,6 +1027,15 @@ $(TCLOBJS)
 # absolute.
 #---------------------------------------------------------------------
 
+{$(UTF8PROCDIR)}.c{$(TMP_DIR)}.obj::
+	$(cc32) $(pkgcflags) -DUTF8PROC_EXPORTS -Fo$(TMP_DIR)\ @<<
+$<
+<<
+
+{$(COMPATDIR)\zlib}.c{$(TMP_DIR)}.obj::
+	$(cc32) $(pkgcflags) -Fo$(TMP_DIR)\ @<<
+$<
+<<
 {$(TOMMATHDIR)}.c{$(TMP_DIR)}.obj::
 	$(cc32) $(pkgcflags) -Fo$(TMP_DIR)\ @<<
 $<
