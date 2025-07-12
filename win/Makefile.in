@@ -110,6 +110,7 @@ TOOL_DIR		= $(TOP_DIR)/tools
 ZLIB_DIR		= $(COMPAT_DIR)/zlib
 MINIZIP_DIR		= $(ZLIB_DIR)/contrib/minizip
 TOMMATH_DIR		= $(TOP_DIR)/libtommath
+UTF8PROC_DIR		= $(TOP_DIR)/utf8proc
 
 # Converts a POSIX path to a Windows native path.
 CYGPATH			= @CYGPATH@
@@ -450,6 +451,7 @@ TOMMATH_OBJS = \
 	bn_s_mp_toom_mul.${OBJEXT} \
 	bn_s_mp_toom_sqr.${OBJEXT}
 
+UTF8PROC_OBJS = utf8proc.${OBJEXT}
 
 WIN_OBJS = \
 	tclWin32Dll.$(OBJEXT) \
@@ -494,7 +496,7 @@ ZLIB_OBJS = \
 	uncompr.$(OBJEXT) \
 	zutil.$(OBJEXT)
 
-TCL_OBJS = ${GENERIC_OBJS} ${WIN_OBJS} @ZLIB_OBJS@ @TOMMATH_OBJS@
+TCL_OBJS = ${GENERIC_OBJS} ${UTF8PROC_OBJS} ${WIN_OBJS} @ZLIB_OBJS@ @TOMMATH_OBJS@
 
 TCL_DOCS = "$(ROOT_DIR_NATIVE)"/doc/*.[13n]
 
@@ -684,6 +686,8 @@ tclZipfs.${OBJEXT}: $(GENERIC_DIR)/tclZipfs.c
 	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl \
 	$(ZLIB_INCLUDE) -I$(MINIZIP_DIR_NATIVE)  @DEPARG@ $(CC_OBJNAME)
 
+utf8proc.${OBJEXT}: $(UTF8PROC_DIR)/utf8proc.c
+	$(CC) -c $(CC_SWITCHES) -DUNICODE -D_UNICODE -DUTF8PROC_EXPORTS @DEPARG@ $(CC_OBJNAME)
 
 # TIP #59, embedding of configuration information into the binary library.
 #
