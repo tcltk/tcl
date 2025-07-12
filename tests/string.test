@@ -1753,7 +1753,7 @@ test string-15.6.$noComp {string tolower} {
 } {123#$&*()}
 test string-15.7.$noComp {string tolower} {
     run {string tolower ABC 1}
-} AbC
+} Abc
 test string-15.8.$noComp {string tolower} {
     run {string tolower ABC 1 end}
 } Abc
@@ -1787,7 +1787,7 @@ test string-16.6.$noComp {string toupper} {
 } {123#$&*()}
 test string-16.7.$noComp {string toupper} {
     run {string toupper abc 1}
-} aBc
+} aBC
 test string-16.8.$noComp {string toupper} {
     run {string toupper abc 1 end}
 } aBC

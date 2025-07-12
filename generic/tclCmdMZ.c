@@ -2922,7 +2922,7 @@ StringLowerCmd(
 	if (first < 0) {
 	    first = 0;
 	}
-	last = first;
+	last = length1;
 
 	if ((objc == 4) && (TclGetIntForIndexM(interp, objv[3], length1,
 		&last) != TCL_OK)) {
@@ -3007,7 +3007,7 @@ StringUpperCmd(
 	if (first < 0) {
 	    first = 0;
 	}
-	last = first;
+	last = length1;
 
 	if ((objc == 4) && (TclGetIntForIndexM(interp, objv[3], length1,
 		&last) != TCL_OK)) {
@@ -3092,7 +3092,7 @@ StringTitleCmd(
 	if (first < 0) {
 	    first = 0;
 	}
-	last = first;
+	last = length1;
 
 	if ((objc == 4) && (TclGetIntForIndexM(interp, objv[3], length1,
 		&last) != TCL_OK)) {
