@@ -946,8 +946,8 @@ Tcl_ConvertToType(
 
     if (typePtr->setFromAnyProc == NULL) {
 	if (interp) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "can't convert value to type %s", typePtr->name));
+	    TclPrintfResult(interp,
+		    "can't convert value to type %s", typePtr->name);
 	    Tcl_SetErrorCode(interp, "TCL", "API_ABUSE", (char *)NULL);
 	}
 	return TCL_ERROR;
@@ -2014,9 +2014,9 @@ Tcl_GetBoolFromObj(
 	    if (length > 0) {
 	    listRep:
 		if (interp) {
-		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    TclPrintfResult(interp,
 			    "expected boolean value%s but got a list",
-			    (flags & TCL_NULL_OK) ? " or \"\"" : ""));
+			    (flags & TCL_NULL_OK) ? " or \"\"" : "");
 		}
 		return TCL_ERROR;
 	    }
@@ -2391,8 +2391,8 @@ Tcl_GetDoubleFromObj(
 	if (TclHasInternalRep(objPtr, &tclDoubleType)) {
 	    if (isnan(objPtr->internalRep.doubleValue)) {
 		if (interp != NULL) {
-		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			    "floating point value is Not a Number", -1));
+		    TclPrintfResult(interp,
+			    "floating point value is Not a Number");
 		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "DOUBLE", "NAN",
 			    (char *)NULL);
 		}
@@ -2418,9 +2418,8 @@ Tcl_GetDoubleFromObj(
 	    if (length > 0) {
 	    listRep:
 		if (interp) {
-		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			    "expected floating-point number but got a list",
-			    TCL_INDEX_NONE));
+		    TclPrintfResult(interp,
+			    "expected floating-point number but got a list");
 		}
 		return TCL_ERROR;
 	    }
@@ -2539,9 +2538,8 @@ Tcl_GetIntFromObj(
     }
     if ((ULONG_MAX > UINT_MAX) && ((l > UINT_MAX) || (l < INT_MIN))) {
 	if (interp != NULL) {
-	    const char *s =
-		    "integer value too large to represent";
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
+	    const char *s = "integer value too large to represent";
+	    TclPrintfResult(interp, "%s", s);
 	    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, (char *)NULL);
 	}
 	return TCL_ERROR;
@@ -2662,9 +2660,8 @@ Tcl_GetLongFromObj(
 #endif
 	if (TclHasInternalRep(objPtr, &tclDoubleType)) {
 	    if (interp != NULL) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"expected integer but got \"%s\"",
-			TclGetString(objPtr)));
+		TclPrintfResult(interp, "expected integer but got \"%s\"",
+			TclGetString(objPtr));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", (char *)NULL);
 	    }
 	    return TCL_ERROR;
@@ -2706,9 +2703,8 @@ Tcl_GetLongFromObj(
 #endif
 	    if (interp != NULL) {
 		const char *s = "integer value too large to represent";
-		Tcl_Obj *msg = Tcl_NewStringObj(s, -1);
 
-		Tcl_SetObjResult(interp, msg);
+		TclPrintfResult(interp, "%s", s);
 		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, (char *)NULL);
 	    }
 	    return TCL_ERROR;
@@ -2719,7 +2715,7 @@ Tcl_GetLongFromObj(
 	    if (length > 0) {
 	    listRep:
 		if (interp) {
-		    Tcl_SetObjResult(interp, Tcl_NewStringObj("expected integer but got a list", -1));
+		    TclPrintfResult(interp, "expected integer but got a list");
 		}
 		return TCL_ERROR;
 	    }
@@ -2978,9 +2974,8 @@ Tcl_GetWideIntFromObj(
 	}
 	if (TclHasInternalRep(objPtr, &tclDoubleType)) {
 	    if (interp != NULL) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"expected integer but got \"%s\"",
-			TclGetString(objPtr)));
+		TclPrintfResult(interp, "expected integer but got \"%s\"",
+			TclGetString(objPtr));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", (char *)NULL);
 	    }
 	    return TCL_ERROR;
@@ -3016,9 +3011,8 @@ Tcl_GetWideIntFromObj(
 	    }
 	    if (interp != NULL) {
 		const char *s = "integer value too large to represent";
-		Tcl_Obj *msg = Tcl_NewStringObj(s, -1);
 
-		Tcl_SetObjResult(interp, msg);
+		TclPrintfResult(interp, "%s", s);
 		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, (char *)NULL);
 	    }
 	    return TCL_ERROR;
@@ -3029,7 +3023,7 @@ Tcl_GetWideIntFromObj(
 	    if (length > 0) {
 	    listRep:
 		if (interp) {
-		    Tcl_SetObjResult(interp, Tcl_NewStringObj("expected integer but got a list", -1));
+		    TclPrintfResult(interp, "expected integer but got a list");
 		}
 		return TCL_ERROR;
 	    }
@@ -3073,11 +3067,11 @@ Tcl_GetWideUIntFromObj(
     do {
 	if (TclHasInternalRep(objPtr, &tclIntType)) {
 	    if (objPtr->internalRep.wideValue < 0) {
-	wideUIntOutOfRange:
+	    wideUIntOutOfRange:
 		if (interp != NULL) {
-		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    TclPrintfResult(interp,
 			    "expected unsigned integer but got \"%s\"",
-			    TclGetString(objPtr)));
+			    TclGetString(objPtr));
 		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", (char *)NULL);
 		}
 		return TCL_ERROR;
@@ -3114,9 +3108,7 @@ Tcl_GetWideUIntFromObj(
 
 	    if (interp != NULL) {
 		const char *s = "integer value too large to represent";
-		Tcl_Obj *msg = Tcl_NewStringObj(s, -1);
-
-		Tcl_SetObjResult(interp, msg);
+		TclPrintfResult(interp, "%s", s);
 		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, (char *)NULL);
 	    }
 	    return TCL_ERROR;
@@ -3161,9 +3153,8 @@ TclGetWideBitsFromObj(
 	}
 	if (TclHasInternalRep(objPtr, &tclDoubleType)) {
 	    if (interp != NULL) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"expected integer but got \"%s\"",
-			TclGetString(objPtr)));
+		TclPrintfResult(interp, "expected integer but got \"%s\"",
+			TclGetString(objPtr));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", (char *)NULL);
 	    }
 	    return TCL_ERROR;
@@ -3485,9 +3476,8 @@ GetBignumFromObj(
 	}
 	if (TclHasInternalRep(objPtr, &tclDoubleType)) {
 	    if (interp != NULL) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"expected integer but got \"%s\"",
-			TclGetString(objPtr)));
+		TclPrintfResult(interp, "expected integer but got \"%s\"",
+			TclGetString(objPtr));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", (char *)NULL);
 	    }
 	    return TCL_ERROR;
@@ -3717,7 +3707,7 @@ Tcl_GetNumberFromObj(
 	    if (length > 0) {
 	    listRep:
 		if (interp) {
-		    Tcl_SetObjResult(interp, Tcl_NewStringObj("expected number but got a list", -1));
+		    TclPrintfResult(interp, "expected number but got a list");
 		}
 		return TCL_ERROR;
 	    }
@@ -3754,8 +3744,8 @@ Tcl_GetNumber(
     }
     if (numBytes > INT_MAX) {
 	if (interp) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "max size for a Tcl value (%d bytes) exceeded", INT_MAX));
+	    TclPrintfResult(interp,
+		    "max size for a Tcl value (%d bytes) exceeded", INT_MAX);
 	    Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
 	}
 	return TCL_ERROR;

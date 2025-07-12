@@ -1170,17 +1170,15 @@ Tcl_GlobObjCmd(
 	    break;
 	case GLOB_DIR:				/* -dir */
 	    if (i == (objc-1)) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"missing argument to \"-directory\"", -1));
+		TclPrintfResult(interp, "missing argument to \"-directory\"");
 		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", (char *)NULL);
 		return TCL_ERROR;
 	    }
 	    if (dir != PATH_NONE) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		TclPrintfResult(interp, "\"-directory\" %s",
 			dir == PATH_DIR
-			    ? "\"-directory\" may only be used once"
-			    : "\"-directory\" cannot be used with \"-path\"",
-			-1));
+			    ? "may only be used once"
+			    : "cannot be used with \"-path\"");
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "GLOB",
 			"BADOPTIONCOMBINATION", (char *)NULL);
 		return TCL_ERROR;
@@ -1198,17 +1196,15 @@ Tcl_GlobObjCmd(
 	    break;
 	case GLOB_PATH:				/* -path */
 	    if (i == (objc-1)) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"missing argument to \"-path\"", -1));
+		TclPrintfResult(interp, "missing argument to \"-path\"");
 		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", (char *)NULL);
 		return TCL_ERROR;
 	    }
 	    if (dir != PATH_NONE) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		TclPrintfResult(interp, "\"-path\" %s",
 			dir == PATH_GENERAL
-			    ? "\"-path\" may only be used once"
-			    : "\"-path\" cannot be used with \"-dictionary\"",
-			-1));
+			    ? "may only be used once"
+			    : "cannot be used with \"-dictionary\"");
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "GLOB",
 			"BADOPTIONCOMBINATION", (char *)NULL);
 		return TCL_ERROR;
@@ -1219,8 +1215,7 @@ Tcl_GlobObjCmd(
 	    break;
 	case GLOB_TYPE:				/* -types */
 	    if (i == (objc-1)) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"missing argument to \"-types\"", -1));
+		TclPrintfResult(interp, "missing argument to \"-types\"");
 		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", (char *)NULL);
 		return TCL_ERROR;
 	    }
@@ -1240,9 +1235,9 @@ Tcl_GlobObjCmd(
 
   endOfForLoop:
     if ((globFlags & TCL_GLOBMODE_TAILS) && (pathOrDir == NULL)) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+	TclPrintfResult(interp,
 		"\"-tails\" must be used with either "
-		"\"-directory\" or \"-path\"", -1));
+		"\"-directory\" or \"-path\"");
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "GLOB",
 		"BADOPTIONCOMBINATION", (char *)NULL);
 	return TCL_ERROR;
@@ -1455,18 +1450,17 @@ Tcl_GlobObjCmd(
 		 */
 
 	    badTypesArg:
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"bad argument to \"-types\": %s",
-			TclGetString(look)));
+		TclPrintfResult(interp,
+			"bad argument to \"-types\": %s", TclGetString(look));
 		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "BAD", (char *)NULL);
 		result = TCL_ERROR;
 		join = 0;
 		goto endOfGlob;
 
 	    badMacTypesArg:
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		TclPrintfResult(interp,
 			"only one MacOS type or creator argument"
-			" to \"-types\" allowed", -1));
+			" to \"-types\" allowed");
 		result = TCL_ERROR;
 		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "BAD", (char *)NULL);
 		join = 0;
@@ -2036,15 +2030,13 @@ DoGlob(
 		closeBrace = p;
 		break;
 	    }
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "unmatched open-brace in file name", -1));
+	    TclPrintfResult(interp, "unmatched open-brace in file name");
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "GLOB", "BALANCE",
 		    (char *)NULL);
 	    return TCL_ERROR;
 
 	} else if (*p == '}') {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "unmatched close-brace in file name", -1));
+	    TclPrintfResult(interp, "unmatched close-brace in file name");
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "GLOB", "BALANCE",
 		    (char *)NULL);
 	    return TCL_ERROR;

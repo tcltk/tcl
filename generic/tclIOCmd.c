@@ -164,9 +164,9 @@ Tcl_PutsObjCmd(
 	return TCL_ERROR;
     }
     if (!(mode & TCL_WRITABLE)) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	TclPrintfResult(interp,
 		"channel \"%s\" wasn't opened for writing",
-		TclGetString(chanObjPtr)));
+		TclGetString(chanObjPtr));
 	return TCL_ERROR;
     }
 
@@ -193,8 +193,8 @@ Tcl_PutsObjCmd(
 
   error:
     if (!TclChanCaughtErrorBypass(interp, chan)) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf("error writing \"%s\": %s",
-		TclGetString(chanObjPtr), Tcl_PosixError(interp)));
+	TclPrintfResult(interp, "error writing \"%s\": %s",
+		TclGetString(chanObjPtr), Tcl_PosixError(interp));
     }
     TclChannelRelease(chan);
     return TCL_ERROR;
@@ -237,9 +237,9 @@ Tcl_FlushObjCmd(
 	return TCL_ERROR;
     }
     if (!(mode & TCL_WRITABLE)) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	TclPrintfResult(interp,
 		"channel \"%s\" wasn't opened for writing",
-		TclGetString(chanObjPtr)));
+		TclGetString(chanObjPtr));
 	return TCL_ERROR;
     }
 
@@ -253,9 +253,8 @@ Tcl_FlushObjCmd(
 	 */
 
 	if (!TclChanCaughtErrorBypass(interp, chan)) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "error flushing \"%s\": %s",
-		    TclGetString(chanObjPtr), Tcl_PosixError(interp)));
+	    TclPrintfResult(interp, "error flushing \"%s\": %s",
+		    TclGetString(chanObjPtr), Tcl_PosixError(interp));
 	}
 	TclChannelRelease(chan);
 	return TCL_ERROR;
@@ -303,9 +302,9 @@ Tcl_GetsObjCmd(
 	return TCL_ERROR;
     }
     if (!(mode & TCL_READABLE)) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	TclPrintfResult(interp,
 		"channel \"%s\" wasn't opened for reading",
-		TclGetString(chanObjPtr)));
+		TclGetString(chanObjPtr));
 	return TCL_ERROR;
     }
 
@@ -324,9 +323,8 @@ Tcl_GetsObjCmd(
 	     */
 
 	    if (!TclChanCaughtErrorBypass(interp, chan)) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"error reading \"%s\": %s",
-			TclGetString(chanObjPtr), Tcl_PosixError(interp)));
+		TclPrintfResult(interp, "error reading \"%s\": %s",
+			TclGetString(chanObjPtr), Tcl_PosixError(interp));
 	    }
 	    code = TCL_ERROR;
 	    goto done;
@@ -414,9 +412,8 @@ Tcl_ReadObjCmd(
 	return TCL_ERROR;
     }
     if (!(mode & TCL_READABLE)) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"channel \"%s\" wasn't opened for reading",
-		TclGetString(chanObjPtr)));
+	TclPrintfResult(interp, "channel \"%s\" wasn't opened for reading",
+		TclGetString(chanObjPtr));
 	return TCL_ERROR;
     }
     i++;			/* Consumed channel name. */
@@ -429,9 +426,9 @@ Tcl_ReadObjCmd(
     if (i < objc) {
 	if ((TclGetWideIntFromObj(NULL, objv[i], &toRead) != TCL_OK)
 		|| (toRead < 0)) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    TclPrintfResult(interp,
 		    "expected non-negative integer but got \"%s\"",
-		    TclGetString(objv[i])));
+		    TclGetString(objv[i]));
 	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "NUMBER", (char *)NULL);
 	    return TCL_ERROR;
 	}
@@ -457,9 +454,8 @@ Tcl_ReadObjCmd(
 	 */
 
 	if (!TclChanCaughtErrorBypass(interp, chan)) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "error reading \"%s\": %s",
-		    TclGetString(chanObjPtr), Tcl_PosixError(interp)));
+	    TclPrintfResult(interp, "error reading \"%s\": %s",
+		    TclGetString(chanObjPtr), Tcl_PosixError(interp));
 	}
 	TclChannelRelease(chan);
 	if (returnOptsPtr) {
@@ -551,9 +547,8 @@ Tcl_SeekObjCmd(
 	 */
 
 	if (!TclChanCaughtErrorBypass(interp, chan)) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "error during seek on \"%s\": %s",
-		    TclGetString(objv[1]), Tcl_PosixError(interp)));
+	    TclPrintfResult(interp, "error during seek on \"%s\": %s",
+		    TclGetString(objv[1]), Tcl_PosixError(interp));
 	}
 	TclChannelRelease(chan);
 	return TCL_ERROR;
@@ -682,9 +677,9 @@ Tcl_CloseObjCmd(
 	 */
 
 	if (!(dir & Tcl_GetChannelMode(chan))) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    TclPrintfResult(interp,
 		    "Half-close of %s-side not possible, side not opened"
-		    " or already closed", dirOptions[index]));
+		    " or already closed", dirOptions[index]);
 	    return TCL_ERROR;
 	}
 
@@ -1050,9 +1045,9 @@ Tcl_ExecObjCmd(
 	     */
 
 	    if (!TclChanCaughtErrorBypass(interp, chan)) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		TclPrintfResult(interp,
 			"error reading output from command: %s",
-			Tcl_PosixError(interp)));
+			Tcl_PosixError(interp));
 		Tcl_DecrRefCount(resultPtr);
 	    }
 	    goto errorWithOpenChannel;
@@ -1126,9 +1121,8 @@ Tcl_FblockedObjCmd(
 	return TCL_ERROR;
     }
     if (!(mode & TCL_READABLE)) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"channel \"%s\" wasn't opened for reading",
-		TclGetString(objv[1])));
+	TclPrintfResult(interp, "channel \"%s\" wasn't opened for reading",
+		TclGetString(objv[1]));
 	return TCL_ERROR;
     }
 
@@ -1566,8 +1560,8 @@ Tcl_SocketObjCmd(
 	switch (optionIndex) {
 	case SKT_ASYNC:
 	    if (server == 1) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"cannot set -async option for server sockets", -1));
+		TclPrintfResult(interp,
+			"cannot set -async option for server sockets");
 		return TCL_ERROR;
 	    }
 	    async = 1;
@@ -1575,8 +1569,7 @@ Tcl_SocketObjCmd(
 	case SKT_MYADDR:
 	    a++;
 	    if (a >= objc) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"no argument given for -myaddr option", -1));
+		TclPrintfResult(interp, "no argument given for -myaddr option");
 		return TCL_ERROR;
 	    }
 	    myaddr = TclGetString(objv[a]);
@@ -1586,8 +1579,8 @@ Tcl_SocketObjCmd(
 
 	    a++;
 	    if (a >= objc) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"no argument given for -myport option", -1));
+		TclPrintfResult(interp,
+			"no argument given for -myport option");
 		return TCL_ERROR;
 	    }
 	    myPortName = TclGetString(objv[a]);
@@ -1598,15 +1591,15 @@ Tcl_SocketObjCmd(
 	}
 	case SKT_SERVER:
 	    if (async == 1) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"cannot set -async option for server sockets", -1));
+		TclPrintfResult(interp,
+			"cannot set -async option for server sockets");
 		return TCL_ERROR;
 	    }
 	    server = 1;
 	    a++;
 	    if (a >= objc) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"no argument given for -server option", -1));
+		TclPrintfResult(interp,
+			"no argument given for -server option");
 		return TCL_ERROR;
 	    }
 	    script = objv[a];
@@ -1614,8 +1607,8 @@ Tcl_SocketObjCmd(
 	case SKT_REUSEADDR:
 	    a++;
 	    if (a >= objc) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"no argument given for -reuseaddr option", -1));
+		TclPrintfResult(interp,
+			"no argument given for -reuseaddr option");
 		return TCL_ERROR;
 	    }
 	    if (Tcl_GetBooleanFromObj(interp, objv[a], &reusea) != TCL_OK) {
@@ -1625,8 +1618,8 @@ Tcl_SocketObjCmd(
 	case SKT_REUSEPORT:
 	    a++;
 	    if (a >= objc) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"no argument given for -reuseport option", -1));
+		TclPrintfResult(interp,
+			"no argument given for -reuseport option");
 		return TCL_ERROR;
 	    }
 	    if (Tcl_GetBooleanFromObj(interp, objv[a], &reusep) != TCL_OK) {
@@ -1636,8 +1629,8 @@ Tcl_SocketObjCmd(
 	case SKT_BACKLOG:
 	    a++;
 	    if (a >= objc) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"no argument given for -backlog option", -1));
+		TclPrintfResult(interp,
+			"no argument given for -backlog option");
 		return TCL_ERROR;
 	    }
 	    if (Tcl_GetIntFromObj(interp, objv[a], &backlog) != TCL_OK) {
@@ -1651,8 +1644,7 @@ Tcl_SocketObjCmd(
     if (server) {
 	host = myaddr;		/* NULL implies INADDR_ANY */
 	if (myport != 0) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "option -myport is not valid for servers", -1));
+	    TclPrintfResult(interp, "option -myport is not valid for servers");
 	    return TCL_ERROR;
 	}
     } else if (a < objc) {
@@ -1673,9 +1665,9 @@ Tcl_SocketObjCmd(
     }
 
     if (!server && (reusea != -1 || reusep != -1 || backlog != -1)) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+	TclPrintfResult(interp,
 		"options -backlog, -reuseaddr, and -reuseport are only valid "
-		"for servers", -1));
+		"for servers");
 	return TCL_ERROR;
     }
 
@@ -1809,18 +1801,18 @@ Tcl_FcopyObjCmd(
 	return TCL_ERROR;
     }
     if (!(mode & TCL_READABLE)) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	TclPrintfResult(interp,
 		"channel \"%s\" wasn't opened for reading",
-		TclGetString(objv[1])));
+		TclGetString(objv[1]));
 	return TCL_ERROR;
     }
     if (TclGetChannelFromObj(interp, objv[2], &outChan, &mode, 0) != TCL_OK) {
 	return TCL_ERROR;
     }
     if (!(mode & TCL_WRITABLE)) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	TclPrintfResult(interp,
 		"channel \"%s\" wasn't opened for writing",
-		TclGetString(objv[2])));
+		TclGetString(objv[2]));
 	return TCL_ERROR;
     }
 
@@ -1968,8 +1960,8 @@ ChanTruncateObjCmd(
 	    return TCL_ERROR;
 	}
 	if (length < 0) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "cannot truncate to negative length of file", -1));
+	    TclPrintfResult(interp,
+		    "cannot truncate to negative length of file");
 	    return TCL_ERROR;
 	}
     } else {
@@ -1979,17 +1971,17 @@ ChanTruncateObjCmd(
 
 	length = Tcl_Tell(chan);
 	if (length == -1) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    TclPrintfResult(interp,
 		    "could not determine current location in \"%s\": %s",
-		    TclGetString(objv[1]), Tcl_PosixError(interp)));
+		    TclGetString(objv[1]), Tcl_PosixError(interp));
 	    return TCL_ERROR;
 	}
     }
 
     if (Tcl_TruncateChannel(chan, length) != TCL_OK) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	TclPrintfResult(interp,
 		"error during truncate on \"%s\": %s",
-		TclGetString(objv[1]), Tcl_PosixError(interp)));
+		TclGetString(objv[1]), Tcl_PosixError(interp));
 	return TCL_ERROR;
     }
 

@@ -357,8 +357,7 @@ NotArrayError(
 {
     const char *nameStr = TclGetString(name);
 
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "\"%s\" isn't an array", nameStr));
+    TclPrintfResult(interp, "\"%s\" isn't an array", nameStr);
     Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ARRAY", nameStr, (char *)NULL);
     return TCL_ERROR;
 }
@@ -3135,8 +3134,7 @@ ArrayForNRCmd(
     }
 
     if (numVars != 2) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"must have two variable names", -1));
+	TclPrintfResult(interp, "must have two variable names");
 	Tcl_SetErrorCode(interp, "TCL", "SYNTAX", "array", "for", (char *)NULL);
 	return TCL_ERROR;
     }
@@ -3236,8 +3234,7 @@ ArrayForLoopCallback(
     if (done != TCL_CONTINUE) {
 	Tcl_ResetResult(interp);
 	if (done == TCL_ERROR) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "array changed during iteration", -1));
+	    TclPrintfResult(interp, "array changed during iteration");
 	    Tcl_SetErrorCode(interp, "TCL", "READ", "array", "for", (char *)NULL);
 	    varPtr->flags |= TCL_LEAVE_ERR_MSG;
 	    result = done;
@@ -4120,8 +4117,8 @@ ArraySetCmd(
 	    return result;
 	}
 	if (elemLen & 1) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "list must have an even number of elements", -1));
+	    TclPrintfResult(interp,
+		    "list must have an even number of elements");
 	    Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "FORMAT", (char *)NULL);
 	    return TCL_ERROR;
 	}
@@ -4293,8 +4290,7 @@ ArrayStatsCmd(
 
     stats = Tcl_HashStats((Tcl_HashTable *) varPtr->value.tablePtr);
     if (stats == NULL) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"error reading array statistics", -1));
+	TclPrintfResult(interp, "error reading array statistics");
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, Tcl_NewStringObj(stats, -1));
@@ -4561,10 +4557,10 @@ ObjMakeUpvar(
 			|| (varFramePtr == NULL)
 			|| !HasLocalVars(varFramePtr)
 			|| (strstr(TclGetString(myNamePtr), "::") != NULL))) {
-	    Tcl_SetObjResult((Tcl_Interp *) iPtr, Tcl_ObjPrintf(
+	    TclPrintfResult((Tcl_Interp *) iPtr,
 		    "bad variable name \"%s\": can't create namespace "
 		    "variable that refers to procedure variable",
-		    TclGetString(myNamePtr)));
+		    TclGetString(myNamePtr));
 	    Tcl_SetErrorCode(interp, "TCL", "UPVAR", "INVERTED", (char *)NULL);
 	    return TCL_ERROR;
 	}
@@ -4677,9 +4673,9 @@ TclPtrObjMakeUpvarIdx(
 		 * myName looks like an array reference.
 		 */
 
-		Tcl_SetObjResult((Tcl_Interp *) iPtr, Tcl_ObjPrintf(
+		TclPrintfResult((Tcl_Interp *) iPtr,
 			"bad variable name \"%s\": can't create a scalar "
-			"variable that looks like an array element", myName));
+			"variable that looks like an array element", myName);
 		Tcl_SetErrorCode(interp, "TCL", "UPVAR", "LOCAL_ELEMENT",
 			(char *)NULL);
 		return TCL_ERROR;
@@ -4706,15 +4702,15 @@ TclPtrObjMakeUpvarIdx(
     }
 
     if (varPtr == otherPtr) {
-	Tcl_SetObjResult((Tcl_Interp *) iPtr, Tcl_NewStringObj(
-		"can't upvar from variable to itself", -1));
+	TclPrintfResult((Tcl_Interp *) iPtr,
+		"can't upvar from variable to itself");
 	Tcl_SetErrorCode(interp, "TCL", "UPVAR", "SELF", (char *)NULL);
 	return TCL_ERROR;
     }
 
     if (TclIsVarTraced(varPtr)) {
-	Tcl_SetObjResult((Tcl_Interp *) iPtr, Tcl_ObjPrintf(
-		"variable \"%s\" has traces: can't use for upvar", myName));
+	TclPrintfResult((Tcl_Interp *) iPtr,
+		"variable \"%s\" has traces: can't use for upvar", myName);
 	Tcl_SetErrorCode(interp, "TCL", "UPVAR", "TRACED", (char *)NULL);
 	return TCL_ERROR;
     } else if (!TclIsVarUndefined(varPtr)) {
@@ -4728,8 +4724,8 @@ TclPtrObjMakeUpvarIdx(
 	 */
 
 	if (!TclIsVarLink(varPtr)) {
-	    Tcl_SetObjResult((Tcl_Interp *) iPtr, Tcl_ObjPrintf(
-		    "variable \"%s\" already exists", myName));
+	    TclPrintfResult((Tcl_Interp *) iPtr,
+		    "variable \"%s\" already exists", myName);
 	    Tcl_SetErrorCode(interp, "TCL", "UPVAR", "EXISTS", (char *)NULL);
 	    return TCL_ERROR;
 	}
@@ -5250,8 +5246,7 @@ Tcl_UpvarObjCmd(
 	 * for this particular case.
 	 */
 
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"bad level \"%s\"", TclGetString(levelObj)));
+	TclPrintfResult(interp, "bad level \"%s\"", TclGetString(levelObj));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LEVEL",
 		TclGetString(levelObj), (char *)NULL);
 	return TCL_ERROR;
@@ -5334,15 +5329,13 @@ ParseSearchId(
     if ((handle[0] != 's') || (handle[1] != '-')
 	    || (strtoul(handle + 2, &end, 10), end == (handle + 2))
 	    || (*end != '-')) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"illegal search identifier \"%s\"", handle));
+	TclPrintfResult(interp, "illegal search identifier \"%s\"", handle);
     } else if (strcmp(end + 1, TclGetString(varNamePtr)) != 0) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	TclPrintfResult(interp,
 		"search identifier \"%s\" isn't for variable \"%s\"",
-		handle, TclGetString(varNamePtr)));
+		handle, TclGetString(varNamePtr));
     } else {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"couldn't find search \"%s\"", handle));
+	TclPrintfResult(interp, "couldn't find search \"%s\"", handle);
     }
     Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ARRAYSEARCH", handle, (char *)NULL);
     return NULL;
@@ -5735,10 +5728,10 @@ TclObjVarErrMsg(
 	}
 	part1Ptr = localName(((Interp *)interp)->varFramePtr, index);
     }
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf("can't %s \"%s%s%s%s\": %s",
+    TclPrintfResult(interp, "can't %s \"%s%s%s%s\": %s",
 	    operation, TclGetString(part1Ptr), (part2Ptr ? "(" : ""),
 	    (part2Ptr ? TclGetString(part2Ptr) : ""), (part2Ptr ? ")" : ""),
-	    reason));
+	    reason);
 }
 
 /*
@@ -5986,8 +5979,7 @@ ObjFindNamespaceVar(
 	Tcl_DecrRefCount(simpleNamePtr);
     }
     if ((varPtr == NULL) && (flags & TCL_LEAVE_ERR_MSG)) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"unknown variable \"%s\"", name));
+	TclPrintfResult(interp, "unknown variable \"%s\"", name);
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARIABLE", name, (char *)NULL);
     }
     return (Tcl_Var) varPtr;
@@ -6895,8 +6887,7 @@ ArrayDefaultCmd(
 	defaultValueObj = TclGetArrayDefault(varPtr);
 	if (!defaultValueObj) {
 	    /* Array default must exist. */
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "array has no default value", -1));
+	    TclPrintfResult(interp, "array has no default value");
 	    Tcl_SetErrorCode(interp, "TCL", "READ", "ARRAY", "DEFAULT", (char *)NULL);
 	    return TCL_ERROR;
 	}

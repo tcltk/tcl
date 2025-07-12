@@ -4899,6 +4899,9 @@ MODULE_SCOPE Tcl_LibraryInitProc Tcl_ABSListTest_Init;
 #define TclNewLiteralStringObj(objPtr, sLiteral) \
     TclNewStringObj((objPtr), (sLiteral), sizeof(sLiteral "") - 1)
 
+#define TclPrintfResult(interp, ...) \
+    Tcl_SetObjResult((interp), Tcl_ObjPrintf("" __VA_ARGS__))
+
 /*
  *----------------------------------------------------------------
  * Convenience macros for DStrings.

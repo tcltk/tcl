@@ -674,9 +674,9 @@ FindElement(
 			    && (p2 < p+20)) {
 			p2++;
 		    }
-		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    TclPrintfResult(interp,
 			    "%s element in braces followed by \"%.*s\" "
-			    "instead of space", typeStr, (int) (p2-p), p));
+			    "instead of space", typeStr, (int) (p2-p), p);
 		    Tcl_SetErrorCode(interp, "TCL", "VALUE", typeCode, "JUNK",
 			    (char *)NULL);
 		}
@@ -726,9 +726,9 @@ FindElement(
 			    && (p2 < p+20)) {
 			p2++;
 		    }
-		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    TclPrintfResult(interp,
 			    "%s element in quotes followed by \"%.*s\" "
-			    "instead of space", typeStr, (int) (p2-p), p));
+			    "instead of space", typeStr, (int) (p2-p), p);
 		    Tcl_SetErrorCode(interp, "TCL", "VALUE", typeCode, "JUNK",
 			    (char *)NULL);
 		}
@@ -760,16 +760,16 @@ FindElement(
     if (p == limit) {
 	if (openBraces != 0) {
 	    if (interp != NULL) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"unmatched open brace in %s", typeStr));
+		TclPrintfResult(interp,
+			"unmatched open brace in %s", typeStr);
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", typeCode, "BRACE",
 			(char *)NULL);
 	    }
 	    return TCL_ERROR;
 	} else if (inQuotes) {
 	    if (interp != NULL) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"unmatched open quote in %s", typeStr));
+		TclPrintfResult(interp,
+			"unmatched open quote in %s", typeStr);
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", typeCode, "QUOTE",
 			(char *)NULL);
 	    }
@@ -919,8 +919,7 @@ Tcl_SplitList(
 	if (i >= size) {
 	    Tcl_Free((void *)argv);
 	    if (interp != NULL) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"internal error in Tcl_SplitList", -1));
+		TclPrintfResult(interp, "internal error in Tcl_SplitList");
 		Tcl_SetErrorCode(interp, "TCL", "INTERNAL", "Tcl_SplitList",
 			(char *)NULL);
 	    }
@@ -3744,9 +3743,9 @@ GetEndOffsetFromObj(
   parseError:
     if (interp != NULL) {
 	char * bytes = TclGetString(objPtr);
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	TclPrintfResult(interp,
 		"bad index \"%s\": must be integer?[+-]integer? or"
-		" end?[+-]integer?", bytes));
+		" end?[+-]integer?", bytes);
 	if (!strncmp(bytes, "end-", 4)) {
 	    bytes += 4;
 	}
@@ -3940,7 +3939,7 @@ TclIndexEncode(
 
 rangeerror:
     if (interp) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf("index \"%s\" out of range", TclGetString(objPtr)));
+	TclPrintfResult(interp, "index \"%s\" out of range", TclGetString(objPtr));
 	Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", "OUTOFRANGE", (char *)NULL);
     }
     return TCL_ERROR;
@@ -3998,15 +3997,15 @@ TclCommandWordLimitError(
 {
     if (interp) {
 	if (count > 0) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    TclPrintfResult(interp,
 		    "Number of words (%" TCL_SIZE_MODIFIER
 		    "d) in command exceeds limit %" TCL_SIZE_MODIFIER "d.",
-		    count, (Tcl_Size)INT_MAX));
+		    count, (Tcl_Size)INT_MAX);
 	} else {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    TclPrintfResult(interp,
 		    "Number of words in command exceeds limit %"
 		    TCL_SIZE_MODIFIER "d.",
-		    (Tcl_Size)INT_MAX));
+		    (Tcl_Size)INT_MAX);
 	}
     }
     return TCL_ERROR; /* Always */
@@ -4609,7 +4608,7 @@ TclReToGlob(
 
   invalidGlob:
     if (interp != NULL) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(msg, -1));
+	TclPrintfResult(interp, "%s", msg);
 	Tcl_SetErrorCode(interp, "TCL", "RE2GLOB", code, (char *)NULL);
     }
     Tcl_DStringFree(dsPtr);

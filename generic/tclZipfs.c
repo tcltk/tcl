@@ -48,22 +48,21 @@
 #define ZIPFS_ERROR(interp,errstr) \
     do {								\
 	if (interp) {							\
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(errstr, -1));	\
+	    TclPrintfResult(interp, "%s", errstr);			\
 	}								\
     } while (0)
 #define ZIPFS_MEM_ERROR(interp) \
     do {								\
 	if (interp) {							\
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(			\
-		    "out of memory", -1));				\
+	    TclPrintfResult(interp, "out of memory");			\
 	    Tcl_SetErrorCode(interp, "TCL", "MALLOC", (char *)NULL);	\
 	}								\
     } while (0)
 #define ZIPFS_POSIX_ERROR(interp,errstr) \
     do {								\
 	if (interp) {							\
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(			\
-		    "%s: %s", errstr, Tcl_PosixError(interp)));		\
+	    TclPrintfResult(interp, "%s: %s",				\
+		    errstr, Tcl_PosixError(interp));			\
 	}								\
     } while (0)
 #define ZIPFS_ERROR_CODE(interp,errcode) \
@@ -1121,8 +1120,7 @@ NormalizeMountPoint(
 
 invalidMountPath:
     if (interp) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"Invalid mount path \"%s\"", mountPath));
+	TclPrintfResult(interp, "Invalid mount path \"%s\"", mountPath);
 	ZIPFS_ERROR_CODE(interp, "MOUNT_PATH");
     }
 
@@ -1977,8 +1975,8 @@ ZipFSCatalogFilesystem(
     if (!isNew) {
 	if (interp) {
 	    zf0 = (ZipFile *) Tcl_GetHashValue(hPtr);
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "%s is already mounted on %s", zf0->name, mountPoint));
+	    TclPrintfResult(interp,
+		    "%s is already mounted on %s", zf0->name, mountPoint);
 	    ZIPFS_ERROR_CODE(interp, "MOUNTED");
 	}
 	Unlock();
@@ -2442,8 +2440,8 @@ TclZipfs_Mount(
 	Tcl_IncrRefCount(zipPathObj);
 	normZipPathObj = Tcl_FSGetNormalizedPath(interp, zipPathObj);
 	if (normZipPathObj == NULL) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "could not normalize zip filename \"%s\"", zipname));
+	    TclPrintfResult(interp,
+		    "could not normalize zip filename \"%s\"", zipname);
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "NORMALIZE", (char *)NULL);
 	    ret = TCL_ERROR;
 	} else {
@@ -2990,8 +2988,8 @@ ZipAddFile(
     zpathExt = Tcl_DStringValue(&zpathDs);
     zpathlen = strlen(zpathExt);
     if (zpathlen + ZIP_CENTRAL_HEADER_LEN > bufsize) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"path too long for \"%s\"", TclGetString(pathObj)));
+	TclPrintfResult(interp,
+		"path too long for \"%s\"", TclGetString(pathObj));
 	ZIPFS_ERROR_CODE(interp, "PATH_LEN");
 	Tcl_DStringFree(&zpathDs);
 	return TCL_ERROR;
@@ -3032,8 +3030,8 @@ ZipAddFile(
 		return TCL_OK;
 	    }
 	readErrorWithChannelOpen:
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("read error on \"%s\": %s",
-		    TclGetString(pathObj), Tcl_PosixError(interp)));
+	    TclPrintfResult(interp, "read error on \"%s\": %s",
+		    TclGetString(pathObj), Tcl_PosixError(interp));
 	    Tcl_Close(interp, in);
 	    return TCL_ERROR;
 	}
@@ -3044,8 +3042,8 @@ ZipAddFile(
 	nbyte += len;
     }
     if (Tcl_Seek(in, 0, SEEK_SET) == -1) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf("seek error on \"%s\": %s",
-		TclGetString(pathObj), Tcl_PosixError(interp)));
+	TclPrintfResult(interp, "seek error on \"%s\": %s",
+		TclGetString(pathObj), Tcl_PosixError(interp));
 	Tcl_Close(interp, in);
 	Tcl_DStringFree(&zpathDs);
 	return TCL_ERROR;
@@ -3068,9 +3066,8 @@ ZipAddFile(
     len = zpathlen + ZIP_LOCAL_HEADER_LEN;
     if (Tcl_Write(out, buf, len) != len) {
     writeErrorWithChannelOpen:
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"write error on \"%s\": %s",
-		TclGetString(pathObj), Tcl_PosixError(interp)));
+	TclPrintfResult(interp, "write error on \"%s\": %s",
+		TclGetString(pathObj), Tcl_PosixError(interp));
 	Tcl_Close(interp, in);
 	Tcl_DStringFree(&zpathDs);
 	return TCL_ERROR;
@@ -3146,8 +3143,8 @@ ZipAddFile(
     stream.opaque = Z_NULL;
     if (deflateInit2(&stream, 9, Z_DEFLATED, -15, 8,
 	    Z_DEFAULT_STRATEGY) != Z_OK) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"compression init error on \"%s\"", TclGetString(pathObj)));
+	TclPrintfResult(interp, "compression init error on \"%s\"",
+		TclGetString(pathObj));
 	ZIPFS_ERROR_CODE(interp, "DEFLATE_INIT");
 	Tcl_Close(interp, in);
 	Tcl_DStringFree(&zpathDs);
@@ -3168,8 +3165,8 @@ ZipAddFile(
 	    stream.next_out = (unsigned char *) obuf;
 	    len = deflate(&stream, flush);
 	    if (len == Z_STREAM_ERROR) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"deflate error on \"%s\"", TclGetString(pathObj)));
+		TclPrintfResult(interp, "deflate error on \"%s\"",
+			TclGetString(pathObj));
 		ZIPFS_ERROR_CODE(interp, "DEFLATE");
 		deflateEnd(&stream);
 		Tcl_Close(interp, in);
@@ -3211,8 +3208,7 @@ ZipAddFile(
 	}
 	if (Tcl_Seek(out, dataStartOffset, SEEK_SET) != dataStartOffset) {
 	seekErr:
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "seek error: %s", Tcl_PosixError(interp)));
+	    TclPrintfResult(interp, "seek error: %s", Tcl_PosixError(interp));
 	    Tcl_Close(interp, in);
 	    Tcl_DStringFree(&zpathDs);
 	    return TCL_ERROR;
@@ -3255,8 +3251,8 @@ ZipAddFile(
 
     hPtr = Tcl_CreateHashEntry(fileHash, zpathTcl, &isNew);
     if (!isNew) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"non-unique path name \"%s\"", TclGetString(pathObj)));
+	TclPrintfResult(interp, "non-unique path name \"%s\"",
+		TclGetString(pathObj));
 	ZIPFS_ERROR_CODE(interp, "DUPLICATE_PATH");
 	return TCL_ERROR;
     }
@@ -3287,23 +3283,20 @@ ZipAddFile(
     if (Tcl_Seek(out, headerStartOffset, SEEK_SET) != headerStartOffset) {
 	Tcl_DeleteHashEntry(hPtr);
 	Tcl_Free(z);
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"seek error: %s", Tcl_PosixError(interp)));
+	TclPrintfResult(interp, "seek error: %s", Tcl_PosixError(interp));
 	return TCL_ERROR;
     }
     if (Tcl_Write(out, buf, ZIP_LOCAL_HEADER_LEN) != ZIP_LOCAL_HEADER_LEN) {
 	Tcl_DeleteHashEntry(hPtr);
 	Tcl_Free(z);
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"write error: %s", Tcl_PosixError(interp)));
+	TclPrintfResult(interp, "write error: %s", Tcl_PosixError(interp));
 	return TCL_ERROR;
     }
     Tcl_Flush(out);
     if (Tcl_Seek(out, dataEndOffset, SEEK_SET) != dataEndOffset) {
 	Tcl_DeleteHashEntry(hPtr);
 	Tcl_Free(z);
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"seek error: %s", Tcl_PosixError(interp)));
+	TclPrintfResult(interp, "seek error: %s", Tcl_PosixError(interp));
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -3564,8 +3557,8 @@ ZipFSMkZipOrImg(
 		    zf->passOffset) != zf->passOffset) {
 		memset(passBuf, 0, sizeof(passBuf));
 		Tcl_DecrRefCount(list);
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"write error: %s", Tcl_PosixError(interp)));
+		TclPrintfResult(interp, "write error: %s",
+			Tcl_PosixError(interp));
 		Tcl_Close(interp, out);
 		if (zf == &zf0) {
 		    ZipFSCloseArchive(interp, zf);
@@ -3606,8 +3599,8 @@ ZipFSMkZipOrImg(
 	    i = Tcl_Write(out, passBuf, len);
 	    if (i != len) {
 		Tcl_DecrRefCount(list);
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"write error: %s", Tcl_PosixError(interp)));
+		TclPrintfResult(interp, "write error: %s",
+			Tcl_PosixError(interp));
 		Tcl_Close(interp, out);
 		return TCL_ERROR;
 	    }
@@ -3673,8 +3666,7 @@ ZipFSMkZipOrImg(
 	if ((Tcl_Write(out, buf, ZIP_CENTRAL_HEADER_LEN)
 		!= ZIP_CENTRAL_HEADER_LEN)
 		|| (Tcl_Write(out, name, len) != len)) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "write error: %s", Tcl_PosixError(interp)));
+	    TclPrintfResult(interp, "write error: %s", Tcl_PosixError(interp));
 	    Tcl_DStringFree(&ds);
 	    goto done;
 	}
@@ -3691,8 +3683,7 @@ ZipFSMkZipOrImg(
     SerializeCentralDirectorySuffix(start, end, (unsigned char *) buf,
 	    count, dataStartOffset, directoryStartOffset, suffixStartOffset);
     if (Tcl_Write(out, buf, ZIP_CENTRAL_END_LEN) != ZIP_CENTRAL_END_LEN) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"write error: %s", Tcl_PosixError(interp)));
+	TclPrintfResult(interp, "write error: %s", Tcl_PosixError(interp));
 	goto done;
     }
     Tcl_Flush(out);
@@ -3789,8 +3780,7 @@ CopyImageFile(
     return TCL_OK;
 
   copyError:
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "%s: %s", errMsg, Tcl_PosixError(interp)));
+    TclPrintfResult(interp, "%s: %s", errMsg, Tcl_PosixError(interp));
     Tcl_Close(interp, in);
     return TCL_ERROR;
 }
@@ -4189,9 +4179,8 @@ ZipFSInfoObjCmd(
     } else {
 	Tcl_SetErrno(ENOENT);
 	if (interp) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "path \"%s\" not found in any zipfs volume",
-		    filename));
+	    TclPrintfResult(interp,
+		    "path \"%s\" not found in any zipfs volume", filename);
 	}
 	ret = TCL_ERROR;
     }
@@ -4852,9 +4841,8 @@ ZipChannelOpen(
     if ((ZipFS.wrmax <= 0) && wr) {
 	Tcl_SetErrno(EACCES);
 	if (interp) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "writes not permitted: %s",
-		    Tcl_PosixError(interp)));
+	    TclPrintfResult(interp, "writes not permitted: %s",
+		    Tcl_PosixError(interp));
 	}
 	return NULL;
     }
@@ -4862,10 +4850,10 @@ ZipChannelOpen(
     if ((mode & (O_APPEND|O_TRUNC)) && !wr) {
 	Tcl_SetErrno(EINVAL);
 	if (interp) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    TclPrintfResult(interp,
 		    "Invalid flags 0x%x. O_APPEND and "
 		    "O_TRUNC require write access: %s",
-		    mode, Tcl_PosixError(interp)));
+		    mode, Tcl_PosixError(interp));
 	}
 	return NULL;
     }
@@ -4879,10 +4867,9 @@ ZipChannelOpen(
     if (!z) {
 	Tcl_SetErrno(wr ? ENOTSUP : ENOENT);
 	if (interp) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "file \"%s\" not %s: %s",
+	    TclPrintfResult(interp, "file \"%s\" not %s: %s",
 		    filename, wr ? "created" : "found",
-		    Tcl_PosixError(interp)));
+		    Tcl_PosixError(interp));
 	}
 	goto error;
     }
@@ -4900,9 +4887,8 @@ ZipChannelOpen(
     if (wr && z->isDirectory) {
 	Tcl_SetErrno(EISDIR);
 	if (interp) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "unsupported file type: %s",
-		    Tcl_PosixError(interp)));
+	    TclPrintfResult(interp, "unsupported file type: %s",
+		    Tcl_PosixError(interp));
 	}
 	goto error;
     }
@@ -4930,7 +4916,7 @@ ZipChannelOpen(
     if (z->isEncrypted) {
 	if (z->numCompressedBytes < ZIP_CRYPT_HDR_LEN) {
 	    ZIPFS_ERROR(interp,
-			"decryption failed: truncated decryption header");
+		    "decryption failed: truncated decryption header");
 	    ZIPFS_ERROR_CODE(interp, "DECRYPT");
 	    goto error;
 	}

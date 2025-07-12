@@ -428,8 +428,8 @@ DeleteKey(
     }
 
     if (*keyName == '\0') {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"bad key: cannot delete root keys", -1));
+	TclPrintfResult(interp,
+		"bad key: cannot delete root keys");
 	Tcl_SetErrorCode(interp, "WIN_REG", "DEL_ROOT_KEY", (char *)NULL);
 	Tcl_Free(buffer);
 	return TCL_ERROR;
@@ -450,8 +450,7 @@ DeleteKey(
 	if (result == ERROR_FILE_NOT_FOUND) {
 	    return TCL_OK;
 	}
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"unable to delete key: ", -1));
+	TclPrintfResult(interp, "unable to delete key: ");
 	AppendSystemError(interp, result);
 	return TCL_ERROR;
     }
@@ -466,8 +465,7 @@ DeleteKey(
     Tcl_DStringFree(&buf);
 
     if (result != ERROR_SUCCESS && result != ERROR_FILE_NOT_FOUND) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"unable to delete key: ", -1));
+	TclPrintfResult(interp, "unable to delete key: ");
 	AppendSystemError(interp, result);
 	result = TCL_ERROR;
     } else {
@@ -523,9 +521,9 @@ DeleteValue(
     result = RegDeleteValueW(key, (const WCHAR *)Tcl_DStringValue(&ds));
     Tcl_DStringFree(&ds);
     if (result != ERROR_SUCCESS) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	TclPrintfResult(interp,
 		"unable to delete value \"%s\" from key \"%s\": ",
-		Tcl_GetString(valueNameObj), Tcl_GetString(keyNameObj)));
+		Tcl_GetString(valueNameObj), Tcl_GetString(keyNameObj));
 	AppendSystemError(interp, result);
 	result = TCL_ERROR;
     } else {
@@ -600,9 +598,9 @@ GetKeyNames(
 	    if (result == ERROR_NO_MORE_ITEMS) {
 		result = TCL_OK;
 	    } else {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		TclPrintfResult(interp,
 			"unable to enumerate subkeys of \"%s\": ",
-			Tcl_GetString(keyNameObj)));
+			Tcl_GetString(keyNameObj));
 		AppendSystemError(interp, result);
 		result = TCL_ERROR;
 	    }
@@ -684,9 +682,9 @@ GetType(
     RegCloseKey(key);
 
     if (result != ERROR_SUCCESS) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	TclPrintfResult(interp,
 		"unable to get type of value \"%s\" from key \"%s\": ",
-		Tcl_GetString(valueNameObj), Tcl_GetString(keyNameObj)));
+		Tcl_GetString(valueNameObj), Tcl_GetString(keyNameObj));
 	AppendSystemError(interp, result);
 	return TCL_ERROR;
     }
@@ -779,9 +777,9 @@ GetValue(
     Tcl_DStringFree(&buf);
     RegCloseKey(key);
     if (result != ERROR_SUCCESS) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	TclPrintfResult(interp,
 		"unable to get value \"%s\" from key \"%s\": ",
-		Tcl_GetString(valueNameObj), Tcl_GetString(keyNameObj)));
+		Tcl_GetString(valueNameObj), Tcl_GetString(keyNameObj));
 	AppendSystemError(interp, result);
 	Tcl_DStringFree(&data);
 	return TCL_ERROR;
@@ -961,8 +959,7 @@ OpenKey(
     if (result == TCL_OK) {
 	result = OpenSubKey(hostName, rootKey, keyName, mode, flags, keyPtr);
 	if (result != ERROR_SUCCESS) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "unable to open key: ", -1));
+	    TclPrintfResult(interp, "unable to open key: ");
 	    AppendSystemError(interp, result);
 	    result = TCL_ERROR;
 	} else {
@@ -1108,8 +1105,8 @@ ParseKeyName(
 	rootName = name;
     }
     if (!rootName) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"bad key \"%s\": must start with a valid root", name));
+	TclPrintfResult(interp,
+		"bad key \"%s\": must start with a valid root", name);
 	Tcl_SetErrorCode(interp, "WIN_REG", "NO_ROOT_KEY", (char *)NULL);
 	return TCL_ERROR;
     }
@@ -1349,8 +1346,7 @@ SetValue(
     RegCloseKey(key);
 
     if (result != ERROR_SUCCESS) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"unable to set value: ", -1));
+	TclPrintfResult(interp, "unable to set value: ");
 	AppendSystemError(interp, result);
 	return TCL_ERROR;
     }

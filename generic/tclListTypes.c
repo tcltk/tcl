@@ -692,9 +692,9 @@ Tcl_ListObjRepeat(
 {
     if (repeatCount < 0) {
 	*resultPtrPtr = NULL;
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	TclPrintfResult(interp,
 		"bad count \"%" TCL_SIZE_MODIFIER "d\": must be integer >= 0",
-		repeatCount));
+		repeatCount);
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LREPEAT", "NEGARG",
 		(char *)NULL);
 	return TCL_ERROR;

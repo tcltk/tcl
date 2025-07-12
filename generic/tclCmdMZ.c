@@ -246,8 +246,8 @@ Tcl_RegexpObjCmd(
      */
 
     if (doinline && ((objc - 2) != 0)) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"regexp match variables not allowed when using -inline", -1));
+	TclPrintfResult(interp,
+		"regexp match variables not allowed when using -inline");
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "REGEXP",
 		"MIX_VAR_INLINE", (char *)NULL);
 	goto optionError;
@@ -700,9 +700,8 @@ Tcl_RegsubObjCmd(
 	    return TCL_ERROR;
 	}
 	if (numParts < 1) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "command prefix must be a list of at least one element",
-		    -1));
+	    TclPrintfResult(interp,
+		    "command prefix must be a list of at least one element");
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "REGSUB",
 		    "CMDEMPTY", (char *)NULL);
 	    return TCL_ERROR;
@@ -1995,8 +1994,8 @@ StringMapCmd(
 		strncmp(string, "-nocase", length2) == 0) {
 	    nocase = 1;
 	} else {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "bad option \"%s\": must be -nocase", string));
+	    TclPrintfResult(interp,
+		    "bad option \"%s\": must be -nocase", string);
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "INDEX", "option",
 		    string, (char *)NULL);
 	    return TCL_ERROR;
@@ -2063,8 +2062,7 @@ StringMapCmd(
 	     * The charMap must be an even number of key/value items.
 	     */
 
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "char map list unbalanced", -1));
+	    TclPrintfResult(interp, "char map list unbalanced");
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "MAP",
 		    "UNBALANCED", (char *)NULL);
 	    return TCL_ERROR;
@@ -2267,8 +2265,8 @@ StringMatchCmd(
 	if ((length > 1) && strncmp(string, "-nocase", length) == 0) {
 	    nocase = TCL_MATCH_NOCASE;
 	} else {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "bad option \"%s\": must be -nocase", string));
+	    TclPrintfResult(interp,
+		    "bad option \"%s\": must be -nocase", string);
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "INDEX", "option",
 		    string, (char *)NULL);
 	    return TCL_ERROR;
@@ -2688,9 +2686,8 @@ StringEqualCmd(
 		reqlength = -1;
 	    }
 	} else {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "bad option \"%s\": must be -nocase or -length",
-		    string2));
+	    TclPrintfResult(interp,
+		    "bad option \"%s\": must be -nocase or -length", string2);
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "INDEX", "option",
 		    string2, (char *)NULL);
 	    return TCL_ERROR;
@@ -2793,9 +2790,8 @@ StringCmpOpts(
 		*reqlength = wreqlength;
 	    }
 	} else {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "bad option \"%s\": must be -nocase or -length",
-		    string));
+	    TclPrintfResult(interp,
+		    "bad option \"%s\": must be -nocase or -length", string);
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "INDEX", "option",
 		    string, (char *)NULL);
 	    return TCL_ERROR;
@@ -3385,8 +3381,8 @@ TclSubstOptions(
     if (flags >> 16) {			/* negative options specified */
 	if (flags & 0xFFFF) {		/* positive options specified too */
 	    if (interp) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "cannot combine positive and negative options", -1));
+		TclPrintfResult(interp,
+			"cannot combine positive and negative options");
 	    }
 	    return TCL_ERROR;
 	}
@@ -3529,9 +3525,9 @@ TclNRSwitchObjCmd(
 		 * Mode already set via -exact, -glob, or -regexp.
 		 */
 
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		TclPrintfResult(interp,
 			"bad option \"%s\": %s option already found",
-			TclGetString(objv[i]), options[mode]));
+			TclGetString(objv[i]), options[mode]);
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "SWITCH",
 			"DOUBLEOPT", (char *)NULL);
 		return TCL_ERROR;
@@ -3548,9 +3544,9 @@ TclNRSwitchObjCmd(
 	case OPT_INDEXV:
 	    i++;
 	    if (i >= objc-2) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		TclPrintfResult(interp,
 			"missing variable name argument to %s option",
-			"-indexvar"));
+			"-indexvar");
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "SWITCH",
 			"NOVAR", (char *)NULL);
 		return TCL_ERROR;
@@ -3561,9 +3557,9 @@ TclNRSwitchObjCmd(
 	case OPT_MATCHV:
 	    i++;
 	    if (i >= objc-2) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		TclPrintfResult(interp,
 			"missing variable name argument to %s option",
-			"-matchvar"));
+			"-matchvar");
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "SWITCH",
 			"NOVAR", (char *)NULL);
 		return TCL_ERROR;
@@ -3581,15 +3577,15 @@ TclNRSwitchObjCmd(
 	return TCL_ERROR;
     }
     if (indexVarObj != NULL && mode != OPT_REGEXP) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"%s option requires -regexp option", "-indexvar"));
+	TclPrintfResult(interp,
+		"%s option requires -regexp option", "-indexvar");
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "SWITCH",
 		"MODERESTRICTION", (char *)NULL);
 	return TCL_ERROR;
     }
     if (matchVarObj != NULL && mode != OPT_REGEXP) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"%s option requires -regexp option", "-matchvar"));
+	TclPrintfResult(interp,
+		"%s option requires -regexp option", "-matchvar");
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "SWITCH",
 		"MODERESTRICTION", (char *)NULL);
 	return TCL_ERROR;
@@ -3643,8 +3639,7 @@ TclNRSwitchObjCmd(
 
     if (objc % 2) {
 	Tcl_ResetResult(interp);
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"extra switch pattern with no body", -1));
+	TclPrintfResult(interp, "extra switch pattern with no body");
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "SWITCH", "BADARM",
 		(char *)NULL);
 
@@ -3679,9 +3674,9 @@ TclNRSwitchObjCmd(
      */
 
     if (strcmp(TclGetString(objv[objc-1]), "-") == 0) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	TclPrintfResult(interp,
 		"no body specified for pattern \"%s\"",
-		TclGetString(objv[objc-2])));
+		TclGetString(objv[objc-2]));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "SWITCH", "BADARM",
 		"FALLTHROUGH", (char *)NULL);
 	return TCL_ERROR;
@@ -4007,8 +4002,7 @@ Tcl_ThrowObjCmd(
     if (TclListObjLength(interp, objv[1], &len) != TCL_OK) {
 	return TCL_ERROR;
     } else if (len < 1) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"type must be non-empty list", -1));
+	TclPrintfResult(interp, "type must be non-empty list");
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "THROW", "BADEXCEPTION",
 		(char *)NULL);
 	return TCL_ERROR;
@@ -4794,15 +4788,14 @@ TclNRTryObjCmd(
 	switch (type) {
 	case TryFinally:	/* finally script */
 	    if (i < objc-2) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"finally clause must be last", -1));
+		TclPrintfResult(interp, "finally clause must be last");
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "TRY", "FINALLY",
 			"NONTERMINAL", (char *)NULL);
 		goto freeHandlersOnError;
 	    } else if (i == objc-1) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		TclPrintfResult(interp,
 			"wrong # args to finally clause: must be"
-			" \"... finally script\"", -1));
+			" \"... finally script\"");
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "TRY", "FINALLY",
 			"ARGUMENT", (char *)NULL);
 		goto freeHandlersOnError;
@@ -4812,9 +4805,9 @@ TclNRTryObjCmd(
 
 	case TryOn:		/* on code variableList script */
 	    if (i > objc-4) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		TclPrintfResult(interp,
 			"wrong # args to on clause: must be \"... on code"
-			" variableList script\"", -1));
+			" variableList script\"");
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "TRY", "ON",
 			"ARGUMENT", (char *)NULL);
 		goto freeHandlersOnError;
@@ -4828,10 +4821,9 @@ TclNRTryObjCmd(
 
 	case TryTrap:		/* trap pattern variableList script */
 	    if (i > objc-4) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		TclPrintfResult(interp,
 			"wrong # args to trap clause: "
-			"must be \"... trap pattern variableList script\"",
-			-1));
+			"must be \"... trap pattern variableList script\"");
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "TRY", "TRAP",
 			"ARGUMENT", (char *)NULL);
 		goto freeHandlersOnError;
@@ -4839,9 +4831,9 @@ TclNRTryObjCmd(
 	    code = TCL_ERROR;
 	    Tcl_Size dummy;
 	    if (TclListObjLength(NULL, objv[i+1], &dummy) != TCL_OK) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		TclPrintfResult(interp,
 			"bad prefix '%s': must be a list",
-			TclGetString(objv[i+1])));
+			TclGetString(objv[i+1]));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "TRY", "TRAP",
 			"EXNFORMAT", (char *)NULL);
 		goto freeHandlersOnError;
@@ -4879,8 +4871,8 @@ TclNRTryObjCmd(
 	}
     }
     if (bodyShared) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"last non-finally clause must not have a body of \"-\"", -1));
+	TclPrintfResult(interp,
+		"last non-finally clause must not have a body of \"-\"");
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "TRY", "BADFALLTHROUGH",
 		(char *)NULL);
 	goto freeHandlersOnError;

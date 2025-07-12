@@ -135,9 +135,8 @@ TclMacOSXGetFileAttribute(
     result = TclpObjStat(fileName, &statBuf);
 
     if (result != 0) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"could not read \"%s\": %s",
-		TclGetString(fileName), Tcl_PosixError(interp)));
+	TclPrintfResult(interp, "could not read \"%s\": %s",
+		TclGetString(fileName), Tcl_PosixError(interp));
 	return TCL_ERROR;
     }
 
@@ -147,8 +146,8 @@ TclMacOSXGetFileAttribute(
 	 */
 
 	errno = EISDIR;
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"invalid attribute: %s", Tcl_PosixError(interp)));
+	TclPrintfResult(interp, "invalid attribute: %s",
+		Tcl_PosixError(interp));
 	return TCL_ERROR;
     }
 
@@ -163,9 +162,8 @@ TclMacOSXGetFileAttribute(
     result = getattrlist(native, &alist, &finfo, sizeof(fileinfobuf), 0);
 
     if (result != 0) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"could not read attributes of \"%s\": %s",
-		TclGetString(fileName), Tcl_PosixError(interp)));
+	TclPrintfResult(interp, "could not read attributes of \"%s\": %s",
+		TclGetString(fileName), Tcl_PosixError(interp));
 	return TCL_ERROR;
     }
 
@@ -188,8 +186,7 @@ TclMacOSXGetFileAttribute(
     }
     return TCL_OK;
 #else
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-	    "Mac OS X file attributes not supported", TCL_INDEX_NONE));
+    TclPrintfResult(interp, "Mac OS X file attributes not supported");
     Tcl_SetErrorCode(interp, "TCL", "UNSUPPORTED", (char *)NULL);
     return TCL_ERROR;
 #endif /* HAVE_GETATTRLIST */
@@ -231,9 +228,8 @@ TclMacOSXSetFileAttribute(
     result = TclpObjStat(fileName, &statBuf);
 
     if (result != 0) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"could not read \"%s\": %s",
-		TclGetString(fileName), Tcl_PosixError(interp)));
+	TclPrintfResult(interp, "could not read \"%s\": %s",
+		TclGetString(fileName), Tcl_PosixError(interp));
 	return TCL_ERROR;
     }
 
@@ -243,8 +239,8 @@ TclMacOSXSetFileAttribute(
 	 */
 
 	errno = EISDIR;
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"invalid attribute: %s", Tcl_PosixError(interp)));
+	TclPrintfResult(interp, "invalid attribute: %s",
+		Tcl_PosixError(interp));
 	return TCL_ERROR;
     }
 
@@ -259,9 +255,8 @@ TclMacOSXSetFileAttribute(
     result = getattrlist(native, &alist, &finfo, sizeof(fileinfobuf), 0);
 
     if (result != 0) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"could not read attributes of \"%s\": %s",
-		TclGetString(fileName), Tcl_PosixError(interp)));
+	TclPrintfResult(interp, "could not read attributes of \"%s\": %s",
+		TclGetString(fileName), Tcl_PosixError(interp));
 	return TCL_ERROR;
     }
 
@@ -298,9 +293,8 @@ TclMacOSXSetFileAttribute(
 		&finfo.data, sizeof(finfo.data), 0);
 
 	if (result != 0) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "could not set attributes of \"%s\": %s",
-		    TclGetString(fileName), Tcl_PosixError(interp)));
+	    TclPrintfResult(interp, "could not set attributes of \"%s\": %s",
+		    TclGetString(fileName), Tcl_PosixError(interp));
 	    return TCL_ERROR;
 	}
     } else {
@@ -320,8 +314,8 @@ TclMacOSXSetFileAttribute(
 	     */
 
 	    if (newRsrcForkSize != 0) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"setting nonzero rsrclength not supported", TCL_INDEX_NONE));
+		TclPrintfResult(interp,
+			"setting nonzero rsrclength not supported");
 		Tcl_SetErrorCode(interp, "TCL", "UNSUPPORTED", (char *)NULL);
 		return TCL_ERROR;
 	    }
@@ -352,17 +346,16 @@ TclMacOSXSetFileAttribute(
 	    Tcl_DStringFree(&ds);
 
 	    if (result != 0) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		TclPrintfResult(interp,
 			"could not truncate resource fork of \"%s\": %s",
-			TclGetString(fileName), Tcl_PosixError(interp)));
+			TclGetString(fileName), Tcl_PosixError(interp));
 		return TCL_ERROR;
 	    }
 	}
     }
     return TCL_OK;
 #else
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-	    "Mac OS X file attributes not supported", TCL_INDEX_NONE));
+    TclPrintfResult(interp, "Mac OS X file attributes not supported");
     Tcl_SetErrorCode(interp, "TCL", "UNSUPPORTED", (char *)NULL);
     return TCL_ERROR;
 #endif
@@ -634,8 +627,8 @@ SetOSTypeFromAny(
 
     if (Tcl_DStringLength(&ds) > 4) {
 	if (interp) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "expected Macintosh OS type but got \"%s\": ", string));
+	    TclPrintfResult(interp,
+		    "expected Macintosh OS type but got \"%s\": ", string);
 	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "MAC_OSTYPE", (char *)NULL);
 	}
 	result = TCL_ERROR;

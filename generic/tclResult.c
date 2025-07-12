@@ -831,9 +831,9 @@ ExpandedOptions(
 
 	    if (TCL_ERROR == TclListObjGetElements(interp, objv[1],
 		    &nestc, &nestv) || (nestc % 2)) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		TclPrintfResult(interp,
 			"bad -options value: expected dictionary but got"
-			" \"%s\"", TclGetString(objv[1])));
+			" \"%s\"", TclGetString(objv[1]));
 		Tcl_SetErrorCode(interp, "TCL", "RESULT", "ILLEGAL_OPTIONS",
 			(char *)NULL);
 		return TCL_ERROR;
@@ -901,9 +901,9 @@ TclMergeReturnOptions(
 	     * Value is not a legal level.
 	     */
 
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    TclPrintfResult(interp,
 		    "bad -level value: expected non-negative integer but got"
-		    " \"%s\"", TclGetString(valuePtr)));
+		    " \"%s\"", TclGetString(valuePtr));
 	    Tcl_SetErrorCode(interp, "TCL", "RESULT", "ILLEGAL_LEVEL", (char *)NULL);
 	    goto error;
 	}
@@ -923,9 +923,9 @@ TclMergeReturnOptions(
 	     * Value is not a list, which is illegal for -errorcode.
 	     */
 
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    TclPrintfResult(interp,
 		    "bad -errorcode value: expected a list but got \"%s\"",
-		    TclGetString(valuePtr)));
+		    TclGetString(valuePtr));
 	    Tcl_SetErrorCode(interp, "TCL", "RESULT", "ILLEGAL_ERRORCODE",
 		    (char *)NULL);
 	    goto error;
@@ -945,9 +945,9 @@ TclMergeReturnOptions(
 	     * Value is not a list, which is illegal for -errorstack.
 	     */
 
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    TclPrintfResult(interp,
 		    "bad -errorstack value: expected a list but got \"%s\"",
-		    TclGetString(valuePtr)));
+		    TclGetString(valuePtr));
 	    Tcl_SetErrorCode(interp, "TCL", "RESULT", "NONLIST_ERRORSTACK",
 		    (char *)NULL);
 	    goto error;
@@ -957,9 +957,9 @@ TclMergeReturnOptions(
 	     * Errorstack must always be an even-sized list
 	     */
 
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    TclPrintfResult(interp,
 		    "forbidden odd-sized list for -errorstack: \"%s\"",
-		    TclGetString(valuePtr)));
+		    TclGetString(valuePtr));
 	    Tcl_SetErrorCode(interp, "TCL", "RESULT",
 		    "ODDSIZEDLIST_ERRORSTACK", (char *)NULL);
 	    goto error;
@@ -1122,8 +1122,8 @@ Tcl_SetReturnOptions(
     Tcl_IncrRefCount(options);
     if (TCL_ERROR == TclListObjGetElements(interp, options, &objc, &objv)
 	    || (objc % 2)) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"expected dict but got \"%s\"", TclGetString(options)));
+	TclPrintfResult(interp,
+		"expected dict but got \"%s\"", TclGetString(options));
 	Tcl_SetErrorCode(interp, "TCL", "RESULT", "ILLEGAL_OPTIONS", (char *)NULL);
 	code = TCL_ERROR;
     } else if (TCL_ERROR == TclMergeReturnOptions(interp, objc, objv,

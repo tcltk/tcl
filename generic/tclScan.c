@@ -265,10 +265,6 @@ ValidateFormat(
     Tcl_UniChar ch = 0;
     int objIndex, xpgSize, nspace = numVars;
     int *nassign = (int *)TclStackAlloc(interp, nspace * sizeof(int));
-    Tcl_Obj *errorMsg;		/* Place to build an error messages. Note that
-				 * these are messy operations because we do
-				 * not want to use the formatting engine;
-				 * we're inside there! */
     char buf[5] = "";
 
     /*
@@ -342,9 +338,8 @@ ValidateFormat(
 	gotSequential = 1;
 	if (gotXpg) {
 	mixedXPG:
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "cannot mix \"%\" and \"%n$\" conversion specifiers",
-		    -1));
+	    TclPrintfResult(interp,
+		    "cannot mix \"%%\" and \"%%n$\" conversion specifiers");
 	    Tcl_SetErrorCode(interp, "TCL", "FORMAT", "MIXEDSPECTYPES", (char *)NULL);
 	    goto error;
 	}
@@ -361,10 +356,10 @@ ValidateFormat(
 		    format - 1, (char **)&format, 10);	/* INTL: "C" locale. */
 	    /* Note >=, not >, to leave room for a nul */
 	    if (ull >= TCL_SIZE_MAX) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		TclPrintfResult(interp,
 			"specified field width %" TCL_LL_MODIFIER
 			"u exceeds limit %" TCL_SIZE_MODIFIER "d.",
-			ull, (Tcl_Size)TCL_SIZE_MAX-1));
+			ull, (Tcl_Size)TCL_SIZE_MAX-1);
 		Tcl_SetErrorCode(
 			interp, "TCL", "FORMAT", "WIDTHLIMIT", (char *)NULL);
 		goto error;
@@ -416,9 +411,8 @@ ValidateFormat(
 	switch (ch) {
 	case 'c':
 	    if (flags & SCAN_WIDTH) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"field width may not be specified in %c conversion",
-			-1));
+		TclPrintfResult(interp,
+			"field width may not be specified in %%c conversion");
 		Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BADWIDTH", (char *)NULL);
 		goto error;
 	    }
@@ -428,11 +422,9 @@ ValidateFormat(
 	    if (flags & (SCAN_LONGER|SCAN_BIG)) {
 	    invalidFieldSize:
 		buf[Tcl_UniCharToUtf(ch, buf)] = '\0';
-		errorMsg = Tcl_NewStringObj(
-			"field size modifier may not be specified in %", -1);
-		Tcl_AppendToObj(errorMsg, buf, -1);
-		Tcl_AppendToObj(errorMsg, " conversion", -1);
-		Tcl_SetObjResult(interp, errorMsg);
+		TclPrintfResult(interp,
+			"field size modifier may not be specified in %%%s conversion",
+			buf);
 		Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BADSIZE", (char *)NULL);
 		goto error;
 	    }
@@ -481,17 +473,13 @@ ValidateFormat(
 	    }
 	    break;
 	badSet:
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "unmatched [ in format string", -1));
+	    TclPrintfResult(interp, "unmatched [ in format string");
 	    Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BRACKET", (char *)NULL);
 	    goto error;
 	default:
 	    buf[Tcl_UniCharToUtf(ch, buf)] = '\0';
-	    errorMsg = Tcl_NewStringObj(
-		    "bad scan conversion character \"", -1);
-	    Tcl_AppendToObj(errorMsg, buf, -1);
-	    Tcl_AppendToObj(errorMsg, "\"", -1);
-	    Tcl_SetObjResult(interp, errorMsg);
+	    TclPrintfResult(interp,
+		    "bad scan conversion character \"%s\"", buf);
 	    Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BADTYPE", (char *)NULL);
 	    goto error;
 	}
@@ -536,9 +524,8 @@ ValidateFormat(
     }
     for (i = 0; i < numVars; i++) {
 	if (nassign[i] > 1) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "variable is assigned by multiple \"%n$\" conversion specifiers",
-		    -1));
+	    TclPrintfResult(interp,
+		    "variable is assigned by multiple \"%%n$\" conversion specifiers");
 	    Tcl_SetErrorCode(interp, "TCL", "FORMAT", "POLYASSIGNED", (char *)NULL);
 	    goto error;
 	} else if (!xpgSize && (nassign[i] == 0)) {
@@ -547,9 +534,8 @@ ValidateFormat(
 	     * and/or numVars != 0), then too many vars were given
 	     */
 
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "variable is not assigned by any conversion specifiers",
-		    -1));
+	    TclPrintfResult(interp,
+		    "variable is not assigned by any conversion specifiers");
 	    Tcl_SetErrorCode(interp, "TCL", "FORMAT", "UNASSIGNED", (char *)NULL);
 	    goto error;
 	}
@@ -560,13 +546,11 @@ ValidateFormat(
 
   badIndex:
     if (gotXpg) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"\"%n$\" argument index out of range", -1));
+	TclPrintfResult(interp, "\"%%n$\" argument index out of range");
 	Tcl_SetErrorCode(interp, "TCL", "FORMAT", "INDEXRANGE", (char *)NULL);
     } else {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"different numbers of variable names and field specifiers",
-		-1));
+	TclPrintfResult(interp,
+		"different numbers of variable names and field specifiers");
 	Tcl_SetErrorCode(interp, "TCL", "FORMAT", "FIELDVARMISMATCH", (char *)NULL);
     }
 
@@ -972,8 +956,8 @@ Tcl_ScanObjCmd(
 		if ((flags & SCAN_UNSIGNED) && (wideValue < 0)) {
 		    mp_int big;
 		    if (mp_init_u64(&big, (Tcl_WideUInt)wideValue) != MP_OKAY) {
-			Tcl_SetObjResult(interp, Tcl_NewStringObj(
-				"insufficient memory to create bignum", -1));
+			TclPrintfResult(interp,
+				"insufficient memory to create bignum");
 			Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
 			return TCL_ERROR;
 		    } else {
@@ -999,8 +983,8 @@ Tcl_ScanObjCmd(
 			    Tcl_Free(objs);
 			}
 			Tcl_DecrRefCount(objPtr);
-			Tcl_SetObjResult(interp, Tcl_NewStringObj(
-				"unsigned bignum scans are invalid", -1));
+			TclPrintfResult(interp,
+				"unsigned bignum scans are invalid");
 			Tcl_SetErrorCode(interp, "TCL", "FORMAT",
 				"BADUNSIGNED", (char *)NULL);
 			return TCL_ERROR;
@@ -1018,8 +1002,8 @@ Tcl_ScanObjCmd(
 #ifdef TCL_WIDE_INT_IS_LONG
 		    mp_int big;
 		    if (mp_init_u64(&big, (unsigned long)value) != MP_OKAY) {
-			Tcl_SetObjResult(interp, Tcl_NewStringObj(
-				"insufficient memory to create bignum", -1));
+			TclPrintfResult(interp,
+				"insufficient memory to create bignum");
 			Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
 			return TCL_ERROR;
 		    } else {

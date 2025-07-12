@@ -295,9 +295,8 @@ TclpTempFileNameForLibrary(
     Tcl_Obj *retval = TclpTempFileName();
 
     if (retval == NULL) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"couldn't create temporary file: %s",
-		Tcl_PosixError(interp)));
+	TclPrintfResult(interp, "couldn't create temporary file: %s",
+		Tcl_PosixError(interp));
     }
     return retval;
 }
@@ -449,8 +448,8 @@ TclpCreateProcess(
      */
 
     if (TclpCreatePipe(&errPipeIn, &errPipeOut) == 0) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"couldn't create pipe: %s", Tcl_PosixError(interp)));
+	TclPrintfResult(interp, "couldn't create pipe: %s",
+		Tcl_PosixError(interp));
 	goto error;
     }
 
@@ -613,8 +612,8 @@ TclpCreateProcess(
 #ifdef HAVE_POSIX_SPAWNP
 	errno = childErrno;
 #endif
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"couldn't fork child process: %s", Tcl_PosixError(interp)));
+	TclPrintfResult(interp, "couldn't fork child process: %s",
+		Tcl_PosixError(interp));
 	goto error;
     }
 
@@ -634,8 +633,7 @@ TclpCreateProcess(
 
 	errSpace[count] = 0;
 	errno = (int)strtol(errSpace, &end, 10);
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf("%s: %s",
-		end, Tcl_PosixError(interp)));
+	TclPrintfResult(interp, "%s: %s", end, Tcl_PosixError(interp));
 	goto error;
     }
 
@@ -919,8 +917,8 @@ Tcl_CreatePipe(
     int fileNums[2];
 
     if (pipe(fileNums) < 0) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf("pipe creation failed: %s",
-		Tcl_PosixError(interp)));
+	TclPrintfResult(interp, "pipe creation failed: %s",
+		Tcl_PosixError(interp));
 	return TCL_ERROR;
     }
 

@@ -205,9 +205,9 @@ Tcl_GetIndexFromObjStruct(
 
     if (offset < (Tcl_Size)sizeof(char *)) {
 	if (interp) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    TclPrintfResult(interp,
 		    "Invalid %s value %" TCL_SIZE_MODIFIER "d.",
-		    "struct offset", offset));
+		    "struct offset", offset);
 	}
 	return TCL_ERROR;
     }
@@ -541,8 +541,7 @@ PrefixMatchObjCmd(
 	    break;
 	case PRFMATCH_MESSAGE:
 	    if (i > objc-4) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"missing value for -message", TCL_INDEX_NONE));
+		TclPrintfResult(interp, "missing value for -message");
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "NOARG", (char *)NULL);
 		return TCL_ERROR;
 	    }
@@ -551,8 +550,7 @@ PrefixMatchObjCmd(
 	    break;
 	case PRFMATCH_ERROR:
 	    if (i > objc-4) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"missing value for -error", TCL_INDEX_NONE));
+		TclPrintfResult(interp, "missing value for -error");
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "NOARG", (char *)NULL);
 		return TCL_ERROR;
 	    }
@@ -562,9 +560,8 @@ PrefixMatchObjCmd(
 		return TCL_ERROR;
 	    }
 	    if ((errorLength % 2) != 0) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"error options must have an even number of elements",
-			-1));
+		TclPrintfResult(interp,
+			"error options must have an even number of elements");
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "DICTIONARY", (char *)NULL);
 		return TCL_ERROR;
 	    }
@@ -1081,8 +1078,7 @@ Tcl_ParseArgsObjv(
 		goto gotMatch;
 	    }
 	    if (matchPtr != NULL) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"ambiguous option \"%s\"", str));
+		TclPrintfResult(interp, "ambiguous option \"%s\"", str);
 		goto error;
 	    }
 	    matchPtr = infoPtr;
@@ -1094,8 +1090,7 @@ Tcl_ParseArgsObjv(
 	     */
 
 	    if (remObjv == NULL) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"unrecognized argument \"%s\"", str));
+		TclPrintfResult(interp, "unrecognized argument \"%s\"", str);
 		goto error;
 	    }
 
@@ -1120,9 +1115,9 @@ Tcl_ParseArgsObjv(
 	    }
 	    if (Tcl_GetIntFromObj(interp, objv[srcIndex],
 		    (int *) infoPtr->dstPtr) == TCL_ERROR) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		TclPrintfResult(interp,
 			"expected integer argument for \"%s\" but got \"%s\"",
-			infoPtr->keyStr, TclGetString(objv[srcIndex])));
+			infoPtr->keyStr, TclGetString(objv[srcIndex]));
 		goto error;
 	    }
 	    srcIndex++;
@@ -1153,9 +1148,9 @@ Tcl_ParseArgsObjv(
 	    }
 	    if (Tcl_GetDoubleFromObj(interp, objv[srcIndex],
 		    (double *)infoPtr->dstPtr) == TCL_ERROR) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		TclPrintfResult(interp,
 			"expected floating-point argument for \"%s\" but got \"%s\"",
-			infoPtr->keyStr, TclGetString(objv[srcIndex])));
+			infoPtr->keyStr, TclGetString(objv[srcIndex]));
 		goto error;
 	    }
 	    srcIndex++;
@@ -1178,10 +1173,10 @@ Tcl_ParseArgsObjv(
 	    break;
 	}
 	case TCL_ARGV_GENFUNC: {
-
 	    if (objc > INT_MAX) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"too many (%" TCL_SIZE_MODIFIER "d) arguments for TCL_ARGV_GENFUNC", objc));
+		TclPrintfResult(interp,
+			"too many (%" TCL_SIZE_MODIFIER "d) arguments for TCL_ARGV_GENFUNC",
+			objc);
 		goto error;
 	    }
 	    Tcl_ArgvGenFuncProc *handlerProc = (Tcl_ArgvGenFuncProc *)
@@ -1201,8 +1196,8 @@ Tcl_ParseArgsObjv(
 	    PrintUsage(interp, argTable);
 	    goto error;
 	default:
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "bad argument type %d in Tcl_ArgvInfo", infoPtr->type));
+	    TclPrintfResult(interp,
+		    "bad argument type %d in Tcl_ArgvInfo", infoPtr->type);
 	    goto error;
 	}
     }
@@ -1238,8 +1233,8 @@ Tcl_ParseArgsObjv(
      */
 
   missingArg:
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "\"%s\" option requires an additional argument", str));
+    TclPrintfResult(interp,
+	    "\"%s\" option requires an additional argument", str);
   error:
     if (leftovers != NULL) {
 	Tcl_Free(leftovers);
@@ -1384,10 +1379,10 @@ TclGetCompletionCodeFromObj(
      */
 
     if (interp != NULL) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	TclPrintfResult(interp,
 		"bad completion code \"%s\": must be"
 		" ok, error, return, break, continue, or an integer",
-		TclGetString(value)));
+		TclGetString(value));
 	Tcl_SetErrorCode(interp, "TCL", "RESULT", "ILLEGAL_CODE", (char *)NULL);
     }
     return TCL_ERROR;
