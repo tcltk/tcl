@@ -12,12 +12,13 @@
 .SH NAME
 string \- Manipulate strings
 .SH SYNOPSIS
-\fBstring \fIoption arg \fR?\fIarg ...?\fR
+\fBstring \fIoption arg \fR?\fIarg ...\fR?
 .BE
 .SH DESCRIPTION
 .PP
 Performs one of several string operations, depending on \fIoption\fR.
 The legal \fIoption\fRs (which may be abbreviated) are:
+.\" METHOD: cat
 .TP
 \fBstring cat\fR ?\fIstring1\fR? ?\fIstring2...\fR?
 .VS 8.6.2
@@ -33,6 +34,7 @@ and is more efficient than building a list of arguments and using
 \fBjoin\fR with an empty join string.
 .RE
 .VE
+.\" METHOD: compare
 .TP
 \fBstring compare\fR ?\fB\-nocase\fR? ?\fB\-length\fI length\fR? \fIstring1 string2\fR
 .
@@ -43,6 +45,7 @@ than \fIstring2\fR.  If \fB\-length\fR is specified, then only the
 first \fIlength\fR characters are used in the comparison.  If
 \fB\-length\fR is negative, it is ignored.  If \fB\-nocase\fR is
 specified, then the strings are compared in a case-insensitive manner.
+.\" METHOD: equal
 .TP
 \fBstring equal\fR ?\fB\-nocase\fR? ?\fB\-length\fI length\fR? \fIstring1 string2\fR
 .
@@ -52,6 +55,7 @@ identical, or 0 when not.  If \fB\-length\fR is specified, then only
 the first \fIlength\fR characters are used in the comparison.  If
 \fB\-length\fR is negative, it is ignored.  If \fB\-nocase\fR is
 specified, then the strings are compared in a case-insensitive manner.
+.\" METHOD: first
 .TP
 \fBstring first \fIneedleString haystackString\fR ?\fIstartIndex\fR?
 .
@@ -76,6 +80,7 @@ will return \fB10\fR, but
 .PP
 will return \fB\-1\fR.
 .RE
+.\" METHOD: index
 .TP
 \fBstring index \fIstring charIndex\fR
 .
@@ -166,6 +171,7 @@ In the case of \fBboolean\fR, \fBtrue\fR and \fBfalse\fR, if the
 function will return 0, then the \fIvarname\fR will always be set to
 0, due to the varied nature of a valid boolean value.
 .RE
+.\" METHOD: last
 .TP
 \fBstring last \fIneedleString haystackString\fR ?\fIlastIndex\fR?
 .
@@ -190,6 +196,7 @@ will return \fB10\fR, but
 .PP
 will return \fB1\fR.
 .RE
+.\" METHOD: length
 .TP
 \fBstring length \fIstring\fR
 .
@@ -198,6 +205,7 @@ Returns a decimal string giving the number of characters in
 number of bytes used to store the string.  If the value is a
 byte array value (such as those returned from reading a binary encoded
 channel), then this will return the actual byte length of the value.
+.\" METHOD: map
 .TP
 \fBstring map\fR ?\fB\-nocase\fR? \fImapping string\fR
 .
@@ -229,8 +237,9 @@ reordered like this,
 .PP
 it will return the string \fB02c322c222c\fR.
 .RE
+.\" METHOD: match
 .TP
-\fBstring match\fR ?\fB\-nocase\fR? \fIpattern\fR \fIstring\fR
+\fBstring match\fR ?\fB\-nocase\fR? \fIpattern string\fR
 .
 See if \fIpattern\fR matches \fIstring\fR; return 1 if it does, 0 if
 it does not.  If \fB\-nocase\fR is specified, then the pattern attempts
@@ -263,28 +272,36 @@ Matches the single character \fIx\fR.  This provides a way of avoiding
 the special interpretation of the characters \fB*?[]\e\fR in
 \fIpattern\fR.
 .RE
+.\" METHOD: range
 .TP
 \fBstring range \fIstring first last\fR
 .
 Returns a range of consecutive characters from \fIstring\fR, starting
 with the character whose index is \fIfirst\fR and ending with the
-character whose index is \fIlast\fR. An index of 0 refers to the first
+character whose index is \fIlast\fR (using the forms described in
+\fBSTRING INDICES\fR). An index of \fB0\fR refers to the first
+character of the string; an index of \fBend\fR refers to last
 character of the string.  \fIfirst\fR and \fIlast\fR may be specified
 as for the \fBindex\fR method.  If \fIfirst\fR is less than zero then
 it is treated as if it were zero, and if \fIlast\fR is greater than or
 equal to the length of the string then it is treated as if it were
 \fBend\fR.  If \fIfirst\fR is greater than \fIlast\fR then an empty
 string is returned.
+.\" METHOD: repeat
 .TP
 \fBstring repeat \fIstring count\fR
 .
-Returns \fIstring\fR repeated \fIcount\fR number of times.
+Returns a string consisting of \fIstring\fR concatenated with itself
+\fIcount\fR times. If \fIcount\fR is 0, the empty string will be
+returned.
+.\" METHOD: replace
 .TP
 \fBstring replace \fIstring first last\fR ?\fInewstring\fR?
 .
 Removes a range of consecutive characters from \fIstring\fR, starting
 with the character whose index is \fIfirst\fR and ending with the
-character whose index is \fIlast\fR.  An index of 0 refers to the
+character whose index is \fIlast\fR (using the forms described in
+\fBSTRING INDICES\fR).  An index of 0 refers to the
 first character of the string.  \fIFirst\fR and \fIlast\fR may be
 specified as for the \fBindex\fR method.  If \fInewstring\fR is
 specified, then it is placed in the removed character range.  If
@@ -294,20 +311,24 @@ then it is treated as if it were \fBend\fR.  The initial string is
 returned untouched, if \fIfirst\fR is greater than \fIlast\fR, or if
 \fIfirst\fR is equal to or greater than the length of the initial string,
 or \fIlast\fR is less than 0.
+.\" METHOD: reverse
 .TP
 \fBstring reverse \fIstring\fR
 .
 Returns a string that is the same length as \fIstring\fR but with its
 characters in the reverse order.
+.\" METHOD: tolower
 .TP
 \fBstring tolower \fIstring\fR ?\fIfirst\fR? ?\fIlast\fR?
 .
 Returns a value equal to \fIstring\fR except that all upper (or title)
 case letters have been converted to lower case.  If \fIfirst\fR is
 specified, it refers to the first char index in the string to start
-modifying.  If \fIlast\fR is specified, it refers to the char index in
-the string to stop at (inclusive).  \fIfirst\fR and \fIlast\fR may be
+modifying.  If \fIlast\fR is not specified, only the character at position
+\fIfirst\fR is converted, otherwise \fIlast\fR refers to the char index
+in the string to stop at (inclusive).  \fIfirst\fR and \fIlast\fR may be
 specified using the forms described in \fBSTRING INDICES\fR.
+.\" METHOD: totitle
 .TP
 \fBstring totitle \fIstring\fR ?\fIfirst\fR? ?\fIlast\fR?
 .
@@ -316,18 +337,22 @@ in \fIstring\fR is converted to its Unicode title case variant (or
 upper case if there is no title case variant) and the rest of the
 string is converted to lower case.  If \fIfirst\fR is specified, it
 refers to the first char index in the string to start modifying.  If
-\fIlast\fR is specified, it refers to the char index in the string to
-stop at (inclusive).  \fIfirst\fR and \fIlast\fR may be specified
-using the forms described in \fBSTRING INDICES\fR.
+\fIlast\fR is not specified, only the character at position \fIfirst\fR
+is converted, otherwise \fIlast\fR refers to the char index in
+the string to stop at (inclusive).  \fIfirst\fR and \fIlast\fR may be
+specified using the forms described in \fBSTRING INDICES\fR.
+.\" METHOD: toupper
 .TP
 \fBstring toupper \fIstring\fR ?\fIfirst\fR? ?\fIlast\fR?
 .
 Returns a value equal to \fIstring\fR except that all lower (or title)
 case letters have been converted to upper case.  If \fIfirst\fR is
 specified, it refers to the first char index in the string to start
-modifying.  If \fIlast\fR is specified, it refers to the char index in
-the string to stop at (inclusive).  \fIfirst\fR and \fIlast\fR may be
+modifying.  If \fIlast\fR is not specified, only the character at position
+\fIfirst\fR is converted, otherwise \fIlast\fR refers to the char index
+in the string to stop at (inclusive).  \fIfirst\fR and \fIlast\fR may be
 specified using the forms described in \fBSTRING INDICES\fR.
+.\" METHOD: trim
 .TP
 \fBstring trim \fIstring\fR ?\fIchars\fR?
 .
@@ -335,6 +360,7 @@ Returns a value equal to \fIstring\fR except that any leading or
 trailing characters present in the string given by \fIchars\fR are removed.  If
 \fIchars\fR is not specified then white space is removed (any character
 for which \fBstring is space\fR returns 1, and "\e0").
+.\" METHOD: trimleft
 .TP
 \fBstring trimleft \fIstring\fR ?\fIchars\fR?
 .
@@ -342,6 +368,7 @@ Returns a value equal to \fIstring\fR except that any leading
 characters present in the string given by \fIchars\fR are removed.  If
 \fIchars\fR is not specified then white space is removed (any character
 for which \fBstring is space\fR returns 1, and "\e0").
+.\" METHOD: trimright
 .TP
 \fBstring trimright \fIstring\fR ?\fIchars\fR?
 .
@@ -354,6 +381,7 @@ for which \fBstring is space\fR returns 1, and "\e0").
 These subcommands are currently supported, but are likely to go away in a
 future release as their functionality is either virtually never used or highly
 misleading.
+.\" METHOD: bytelength
 .TP
 \fBstring bytelength \fIstring\fR
 .
@@ -394,6 +422,7 @@ encoding and then apply \fBstring length\fR to that.
 \fBstring length\fR [encoding convertto utf-8 $theString]
 .CE
 .RE
+.\" METHOD: wordend
 .TP
 \fBstring wordend \fIstring charIndex\fR
 .
@@ -403,6 +432,7 @@ may be specified using the forms in \fBSTRING INDICES\fR.  A word is
 considered to be any contiguous range of alphanumeric (Unicode letters
 or decimal digits) or underscore (Unicode connector punctuation)
 characters, or any single character other than these.
+.\" METHOD: wordstart
 .TP
 \fBstring wordstart \fIstring charIndex\fR
 .
@@ -471,14 +501,14 @@ set length [\fBstring length\fR $string]
 if {$length == 0} {
     set isPrefix 0
 } else {
-    set isPrefix [\fBstring equal\fR \-length $length $string "foobar"]
+    set isPrefix [\fBstring equal\fR -length $length $string "foobar"]
 }
 .CE
 .SH "SEE ALSO"
 expr(n), list(n)
 .SH KEYWORDS
-case conversion, compare, index, match, pattern, string, word, equal,
-ctype, character, reverse
+case conversion, compare, index, integer value, match, pattern, string,
+word, equal, ctype, character, reverse
 .\" Local Variables:
 .\" mode: nroff
 .\" End:
