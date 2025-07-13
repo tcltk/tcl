@@ -832,9 +832,9 @@ Tcl_RegsubObjCmd(
 	    Tcl_Free(args);
 	    if (result != TCL_OK) {
 		if (result == TCL_ERROR) {
-		    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+		    TclAppendPrintfToErrorInfo(interp,
 			    "\n    (%s substitution computation script)",
-			    options[REGSUB_COMMAND]));
+			    options[REGSUB_COMMAND]);
 		}
 		goto done;
 	    }
@@ -3954,10 +3954,9 @@ SwitchPostProc(
 	int limit = 50;
 	int overflow = (patternLength > limit);
 
-	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		"\n    (\"%.*s%s\" arm line %d)",
+	TclAppendPrintfToErrorInfo(interp, "\n    (\"%.*s%s\" arm line %d)",
 		(int) (overflow ? limit : patternLength), pattern,
-		(overflow ? "..." : ""), Tcl_GetErrorLine(interp)));
+		(overflow ? "..." : ""), Tcl_GetErrorLine(interp));
     }
     TclStackFree(interp, ctxPtr);
     return result;
@@ -4982,9 +4981,8 @@ TryPostBody(
      */
 
     if (((Interp*) interp)->execEnvPtr->rewind || Tcl_LimitExceeded(interp)) {
-	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		"\n    (\"%s\" body line %d)", TclGetString(cmdObj),
-		Tcl_GetErrorLine(interp)));
+	TclAppendPrintfToErrorInfo(interp, "\n    (\"%s\" body line %d)",
+		TclGetString(cmdObj), Tcl_GetErrorLine(interp));
 	ReleaseHandlers(interp, handlers);
 	return TCL_ERROR;
     }
@@ -4995,9 +4993,8 @@ TryPostBody(
      */
 
     if (result == TCL_ERROR) {
-	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		"\n    (\"%s\" body line %d)", TclGetString(cmdObj),
-		Tcl_GetErrorLine(interp)));
+	TclAppendPrintfToErrorInfo(interp, "\n    (\"%s\" body line %d)",
+		TclGetString(cmdObj), Tcl_GetErrorLine(interp));
     }
     Tcl_Obj *resultObj = Tcl_GetObjResult(interp);
     Tcl_IncrRefCount(resultObj);

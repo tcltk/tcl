@@ -1667,9 +1667,9 @@ TestbigdataCmd (
     /* Need one byte for nul terminator */
     Tcl_Size limit = TCL_SIZE_MAX-1;
     if (len < 0 || len > limit) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	TclPrintfResult(interp,
 		"%s is greater than max permitted length %" TCL_SIZE_MODIFIER "d",
-		Tcl_GetString(objv[2]), limit));
+		Tcl_GetString(objv[2]), limit);
 	return TCL_ERROR;
     }
 

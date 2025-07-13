@@ -1196,12 +1196,11 @@ Tcl_TransferResult(
 	 * Add line number if needed: not in line 1 and info contains no number
 	 * yet at end of the stack (e. g. proc etc), to avoid double reporting
 	 */
-	if (tiPtr->errorLine > 1 && tiPtr->errorInfo &&
-	    tiPtr->errorInfo->length &&
-	    tiPtr->errorInfo->bytes[tiPtr->errorInfo->length-1] != ')'
-	) {
-	    Tcl_AppendObjToErrorInfo(targetInterp, Tcl_ObjPrintf(
-		    "\n    (\"interp eval\" body line %d)", tiPtr->errorLine));
+	if (tiPtr->errorLine > 1 && tiPtr->errorInfo
+		&& tiPtr->errorInfo->length
+		&& tiPtr->errorInfo->bytes[tiPtr->errorInfo->length-1] != ')') {
+	    TclAppendPrintfToErrorInfo(targetInterp,
+		    "\n    (\"interp eval\" body line %d)", tiPtr->errorLine);
 	}
 	tiPtr->flags &= ~(ERR_ALREADY_LOGGED);
     }

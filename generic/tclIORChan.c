@@ -615,8 +615,7 @@ TclChanCreateObjCmd(
 		"method", TCL_EXACT, &methIndex) != TCL_OK) {
 	    TclPrintfResult(interp,
 		    "chan handler \"%s initialise\" returned %s",
-		    TclGetString(cmdObj),
-		    TclGetString(Tcl_GetObjResult(interp)));
+		    TclGetString(cmdObj), Tcl_GetStringResult(interp));
 	    Tcl_DecrRefCount(resObj);
 	    goto error;
 	}
@@ -2420,9 +2419,9 @@ InvokeTclMethod(
 		Tcl_DecrRefCount(cmd);
 		result = TCL_ERROR;
 	    }
-	    Tcl_AppendObjToErrorInfo(rcPtr->interp, Tcl_ObjPrintf(
+	    TclAppendPrintfToErrorInfo(rcPtr->interp,
 		    "\n    (chan handler subcommand \"%s\")",
-		    methodNames[method]));
+		    methodNames[method]);
 	    resObj = MarshallError(rcPtr->interp);
 	}
 	Tcl_IncrRefCount(resObj);

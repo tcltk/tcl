@@ -1326,15 +1326,15 @@ CommonMethErrorHandler(
     if (!special) {
 	Tcl_Size nameLen;
 	const char *methodName = TclGetStringFromObj(mPtr->namePtr, &nameLen);
-	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+	TclAppendPrintfToErrorInfo(interp,
 		"\n    (%s \"%.*s%s\" method \"%.*s%s\" line %d)",
 		kindName, ELLIPSIFY(objectName, objectNameLen),
-		ELLIPSIFY(methodName, nameLen), Tcl_GetErrorLine(interp)));
+		ELLIPSIFY(methodName, nameLen), Tcl_GetErrorLine(interp));
     } else {
-	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+	TclAppendPrintfToErrorInfo(interp,
 		"\n    (%s \"%.*s%s\" %s line %d)",
 		kindName, ELLIPSIFY(objectName, objectNameLen), special,
-		Tcl_GetErrorLine(interp)));
+		Tcl_GetErrorLine(interp));
     }
 }
 

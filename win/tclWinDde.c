@@ -347,7 +347,7 @@ DdeSetServerName(
 	if (r != TCL_OK) {
 	    Tcl_DStringInit(&dString);
 	    OutputDebugStringW(Tcl_UtfToWCharDString(
-		    Tcl_GetString(Tcl_GetObjResult(interp)), -1, &dString));
+		    Tcl_GetStringResult(interp), -1, &dString));
 	    Tcl_DStringFree(&dString);
 	    return NULL;
 	}

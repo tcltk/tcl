@@ -499,9 +499,9 @@ FinalizeEval(
 	    namePtr = "my";
 	}
 
-	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+	TclAppendPrintfToErrorInfo(interp,
 		"\n    (in \"%s eval\" script line %d)",
-		namePtr, Tcl_GetErrorLine(interp)));
+		namePtr, Tcl_GetErrorLine(interp));
     }
 
     /*

@@ -1095,10 +1095,10 @@ GenerateErrorInfo(
     int limit = OBJNAME_LENGTH_IN_ERRORINFO_LIMIT;
     int overflow = (length > limit);
 
-    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+    TclAppendPrintfToErrorInfo(interp,
 	    "\n    (in definition script for %s \"%.*s%s\" line %d)",
 	    typeOfSubject, (overflow ? limit : (int) length), objName,
-	    (overflow ? "..." : ""), Tcl_GetErrorLine(interp)));
+	    (overflow ? "..." : ""), Tcl_GetErrorLine(interp));
 }
 
 /*

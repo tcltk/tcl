@@ -4009,7 +4009,7 @@ ClockFreeScan(
     if (TclClockFreeScan(interp, info) != TCL_OK) {
 	TclPrintfResult(interp,
 		"unable to convert date-time string \"%s\": %s",
-		TclGetString(strObj), Tcl_GetString(Tcl_GetObjResult(interp)));
+		TclGetString(strObj), Tcl_GetStringResult(interp));
 	return TCL_ERROR;
     }
 

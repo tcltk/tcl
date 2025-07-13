@@ -2796,9 +2796,9 @@ DictForLoopCallback(
 	    Tcl_ResetResult(interp);
 	    result = TCL_OK;
 	} else if (result == TCL_ERROR) {
-	    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+	    TclAppendPrintfToErrorInfo(interp,
 		    "\n    (\"dict for\" body line %d)",
-		    Tcl_GetErrorLine(interp)));
+		    Tcl_GetErrorLine(interp));
 	}
 	goto done;
     }
@@ -2997,9 +2997,9 @@ DictMapLoopCallback(
 	    Tcl_ResetResult(interp);
 	    result = TCL_OK;
 	} else if (result == TCL_ERROR) {
-	    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+	    TclAppendPrintfToErrorInfo(interp,
 		    "\n    (\"dict map\" body line %d)",
-		    Tcl_GetErrorLine(interp)));
+		    Tcl_GetErrorLine(interp));
 	}
 	goto done;
     } else {
@@ -3425,9 +3425,9 @@ DictFilterCmd(
 		result = TCL_OK;
 		break;
 	    case TCL_ERROR:
-		Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+		TclAppendPrintfToErrorInfo(interp,
 			"\n    (\"dict filter\" script line %d)",
-			Tcl_GetErrorLine(interp)));
+			Tcl_GetErrorLine(interp));
 		TCL_FALLTHROUGH();
 	    default:
 		goto abnormalResult;
@@ -3558,7 +3558,9 @@ FinalizeDictUpdate(
      */
 
     if (result == TCL_ERROR) {
-	Tcl_AddErrorInfo(interp, "\n    (body of \"dict update\")");
+	TclAppendPrintfToErrorInfo(interp,
+		"\n    (body of \"dict update\" line %d)",
+		Tcl_GetErrorLine(interp));
     }
 
     /*
@@ -3706,7 +3708,9 @@ FinalizeDictWith(
     Var *varPtr, *arrayPtr;
 
     if (result == TCL_ERROR) {
-	Tcl_AddErrorInfo(interp, "\n    (body of \"dict with\")");
+	TclAppendPrintfToErrorInfo(interp,
+		"\n    (body of \"dict with\" line %d)",
+		Tcl_GetErrorLine(interp));
     }
 
     /*

@@ -2402,8 +2402,8 @@ EnsembleUnknownCallback(
 
 	if (TclListObjLength(interp, *prefixObjPtr, &prefixObjc) != TCL_OK) {
 	    TclDecrRefCount(*prefixObjPtr);
-	    Tcl_AddErrorInfo(interp, "\n    while parsing result of "
-		    "ensemble unknown subcommand handler");
+	    Tcl_AddErrorInfo(interp, "\n    (while parsing result of "
+		    "ensemble unknown subcommand handler)");
 	    return TCL_ERROR;
 	}
 	if (prefixObjc > 0) {
@@ -2443,9 +2443,10 @@ EnsembleUnknownCallback(
 	    default:
 		Tcl_AppendPrintfToObj(Tcl_GetObjResult(interp), "%d", result);
 	    }
-	    Tcl_AddErrorInfo(interp, "\n    result of "
-		    "ensemble unknown subcommand handler: ");
-	    Tcl_AppendObjToErrorInfo(interp, unknownCmd);
+	    TclAppendPrintfToErrorInfo(interp, "\n    (result of "
+		    "ensemble unknown subcommand handler: %s)",
+		    TclGetString(unknownCmd));
+	    Tcl_DecrRefCount(unknownCmd);
 	    Tcl_SetErrorCode(interp, "TCL", "ENSEMBLE", "UNKNOWN_RESULT",
 		    (char *)NULL);
 	} else {

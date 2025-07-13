@@ -772,9 +772,9 @@ TclNRAssembleObjCmd(
      */
 
     if (codePtr == NULL) {
-	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+	TclAppendPrintfToErrorInfo(interp,
 		"\n    (\"%s\" body, line %d)",
-		Tcl_GetString(objv[0]), Tcl_GetErrorLine(interp)));
+		Tcl_GetString(objv[0]), Tcl_GetErrorLine(interp));
 	return TCL_ERROR;
     }
 
@@ -942,10 +942,10 @@ TclCompileAssembleCmd(
 
     if (TCL_ERROR == TclAssembleCode(envPtr, tokenPtr[1].start,
 	    tokenPtr[1].size, TCL_EVAL_DIRECT)) {
-	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+	TclAppendPrintfToErrorInfo(interp,
 		"\n    (\"%.*s\" body, line %d)",
 		(int)parsePtr->tokenPtr->size, parsePtr->tokenPtr->start,
-		Tcl_GetErrorLine(interp)));
+		Tcl_GetErrorLine(interp));
 	envPtr->numCommands = numCommands;
 	envPtr->codeNext = envPtr->codeStart + offset;
 	envPtr->currStackDepth = depth;
@@ -4256,14 +4256,14 @@ AddBasicBlockRangeToErrorInfo(
 				/* Tcl interpreter */
 
     if (bbPtr->successor1 != NULL) {
-	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		"\n    in assembly code between lines %d and %d",
-		bbPtr->startLine, bbPtr->successor1->startLine));
+	TclAppendPrintfToErrorInfo(interp,
+		"\n    (in assembly code between lines %d and %d)",
+		bbPtr->startLine, bbPtr->successor1->startLine);
 	return;
     }
-    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-	    "\n    in assembly code between line %d and end of assembly code",
-	    bbPtr->startLine));
+    TclAppendPrintfToErrorInfo(interp,
+	    "\n    (in assembly code between line %d and end of assembly code)",
+	    bbPtr->startLine);
 }
 
 /*

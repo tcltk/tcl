@@ -911,9 +911,9 @@ SelectPackageFinal(
     }
 
     if (result == TCL_ERROR) {
-	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+	TclAppendPrintfToErrorInfo(interp,
 		"\n    (\"package ifneeded %s %s\" script)",
-		name, versionToProvide));
+		name, versionToProvide);
     }
     Tcl_Release(versionToProvide);
 

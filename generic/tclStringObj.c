@@ -2564,8 +2564,7 @@ Tcl_AppendFormatToObj(
 	}
 	default:
 	    if (interp != NULL) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"bad field specifier \"%c\"", ch));
+		TclPrintfResult(interp, "bad field specifier \"%c\"", ch);
 		Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BADTYPE", (char *)NULL);
 	    }
 	    goto error;

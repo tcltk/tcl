@@ -5381,8 +5381,9 @@ TclEvalEx(
 			 * Attempt to expand a non-list.
 			 */
 
-			Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-				"\n    (expanding word %" TCL_SIZE_MODIFIER "d)", objectsUsed));
+			TclAppendPrintfToErrorInfo(interp,
+				"\n    (expanding word %" TCL_SIZE_MODIFIER "d)",
+				objectsUsed);
 			Tcl_DecrRefCount(objv[objectsUsed]);
 			break;
 		    }
