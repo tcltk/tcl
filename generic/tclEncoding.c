@@ -4555,11 +4555,10 @@ TclEncodingProfileNameToId(
 	Tcl_Obj *errorObj = Tcl_ObjPrintf("bad profile name \"%s\": must be",
 		profileName);
 	for (i = 0; i < (numProfiles - 1); ++i) {
-	    Tcl_AppendStringsToObj(
-		    errorObj, " ", encodingProfiles[i].name, ",", (char *)NULL);
+	    Tcl_AppendPrintfToObj(errorObj, " %s,", encodingProfiles[i].name);
 	}
-	Tcl_AppendStringsToObj(
-		errorObj, " or ", encodingProfiles[numProfiles-1].name, (char *)NULL);
+	Tcl_AppendPrintfToObj(errorObj, " or %s",
+		encodingProfiles[numProfiles-1].name);
 
 	Tcl_SetObjResult(interp, errorObj);
 	TclSetErrorCode(interp, "TCL", "ENCODING", "PROFILE", profileName);

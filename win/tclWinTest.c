@@ -210,7 +210,7 @@ TestvolumetypeCmd(
 	Tcl_WinConvertError(GetLastError());
 	return TCL_ERROR;
     }
-    Tcl_AppendResult(interp, volType, (char *)NULL);
+    TclAppendResult(interp, volType);
     return TCL_OK;
 #undef VOL_BUF_SIZE
 }

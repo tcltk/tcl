@@ -269,7 +269,7 @@ TestfilehandlerCmd(
 
 	memset(buffer, 'b', 10);
 	TclFormatInt(buf, write(GetFd(pipePtr->writeFile), buffer, 10));
-	Tcl_AppendResult(interp, buf, (char *)NULL);
+	TclAppendResult(interp, buf);
     } else if (strcmp(Tcl_GetString(objv[1]), "oneevent") == 0) {
 	Tcl_DoOneEvent(TCL_FILE_EVENTS|TCL_DONT_WAIT);
     } else if (strcmp(Tcl_GetString(objv[1]), "wait") == 0) {
@@ -584,7 +584,7 @@ TestgotsigCmd(
     TCL_UNUSED(int) /*objc*/,
     TCL_UNUSED(Tcl_Obj *const *))
 {
-    Tcl_AppendResult(interp, gotsig, (char *)NULL);
+    TclAppendResult(interp, gotsig);
     gotsig = "0";
     return TCL_OK;
 }

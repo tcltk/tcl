@@ -4920,10 +4920,22 @@ MODULE_SCOPE Tcl_LibraryInitProc Tcl_ABSListTest_Init;
     Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf("" __VA_ARGS__))
 
 /*
- * Convenience macro for error code generation.
+ * Convenience macro for error code generation. Ensures marker presence.
  */
 #define TclSetErrorCode(interp, ...) \
     Tcl_SetErrorCode((interp), __VA_ARGS__, (char *)NULL)
+
+/*
+ * Convenience macro for result generation. Ensures marker presence.
+ */
+#define TclAppendResult(interp, ...) \
+    Tcl_AppendResult((interp), __VA_ARGS__, (char *)NULL)
+
+/*
+ * Convenience macro for result generation. Ensures marker presence.
+ */
+#define TclAppendStringsToObj(objPtr, ...) \
+    Tcl_AppendStringsToObj((objPtr), __VA_ARGS__, (char *)NULL)
 
 /*
  *----------------------------------------------------------------

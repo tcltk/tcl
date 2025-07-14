@@ -923,7 +923,7 @@ ThreadSend(
 	    Tcl_Free(resultPtr->errorInfo);
 	}
     }
-    Tcl_AppendResult(interp, resultPtr->result, (char *)NULL);
+    TclAppendResult(interp, resultPtr->result);
     Tcl_ConditionFinalize(&resultPtr->done);
     code = resultPtr->code;
 

@@ -345,7 +345,7 @@ InitEnsembleFromOptions(
 			    (Tcl_Namespace *) nsPtr);
 
 		    if (nsPtr->parentPtr) {
-			Tcl_AppendStringsToObj(newCmd, "::", (char *)NULL);
+			TclAppendStringsToObj(newCmd, "::");
 		    }
 		    Tcl_AppendObjToObj(newCmd, listv[0]);
 		    Tcl_ListObjReplace(NULL, newList, 0, 1, 1, &newCmd);
@@ -653,7 +653,7 @@ SetEnsembleConfigOptions(
 			    (Tcl_Namespace*) nsPtr);
 
 		    if (nsPtr->parentPtr) {
-			Tcl_AppendStringsToObj(newCmd, "::", (char *)NULL);
+			TclAppendStringsToObj(newCmd, "::");
 		    }
 		    Tcl_AppendObjToObj(newCmd, listv[0]);
 		    Tcl_ListObjReplace(NULL, newList, 0, 1, 1, &newCmd);
@@ -2407,13 +2407,13 @@ EnsembleUnknownCallback(
 		    "unknown subcommand handler returned bad code: ");
 	    switch (result) {
 	    case TCL_RETURN:
-		Tcl_AppendResult(interp, "return", (char*)NULL);
+		TclAppendResult(interp, "return");
 		break;
 	    case TCL_BREAK:
-		Tcl_AppendResult(interp, "break", (char*)NULL);
+		TclAppendResult(interp, "break");
 		break;
 	    case TCL_CONTINUE:
-		Tcl_AppendResult(interp, "continue", (char*)NULL);
+		TclAppendResult(interp, "continue");
 		break;
 	    default:
 		Tcl_AppendPrintfToObj(Tcl_GetObjResult(interp), "%d", result);
@@ -2753,10 +2753,10 @@ BuildEnsembleConfig(
 			Tcl_Obj *cmdObj, *cmdPrefixObj;
 
 			TclNewObj(cmdObj);
-			Tcl_AppendStringsToObj(cmdObj,
+			TclAppendStringsToObj(cmdObj,
 				ensemblePtr->nsPtr->fullName,
 				(ensemblePtr->nsPtr->parentPtr ? "::" : ""),
-				nsCmdName, (char *)NULL);
+				nsCmdName);
 			cmdPrefixObj = Tcl_NewListObj(1, &cmdObj);
 			Tcl_SetHashValue(hPtr, cmdPrefixObj);
 			Tcl_IncrRefCount(cmdPrefixObj);

@@ -1107,8 +1107,7 @@ ProcWrongNumArgs(
 
 	    if (defPtr->value.objPtr != NULL) {
 		TclNewObj(argObj);
-		Tcl_AppendStringsToObj(argObj, "?", TclGetString(namePtr), "?",
-			(char *)NULL);
+		TclAppendStringsToObj(argObj, "?", TclGetString(namePtr), "?");
 	    } else if (defPtr->flags & VAR_IS_ARGS) {
 		numArgs--;
 		final = "?arg ...?";
@@ -1975,7 +1974,7 @@ TclProcCompileProc(
 
 	    TclNewLiteralStringObj(message, "Compiling ");
 	    Tcl_IncrRefCount(message);
-	    Tcl_AppendStringsToObj(message, description, " \"", (char *)NULL);
+	    TclAppendStringsToObj(message, description, " \"");
 	    Tcl_AppendLimitedToObj(message, procName, TCL_INDEX_NONE, 50, NULL);
 	    fprintf(stdout, "%s\"\n", TclGetString(message));
 	    Tcl_DecrRefCount(message);

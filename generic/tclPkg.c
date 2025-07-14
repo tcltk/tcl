@@ -412,7 +412,7 @@ Tcl_PkgRequireEx(
 	}
 	ov = Tcl_NewStringObj(version, -1);
 	if (exact) {
-	    Tcl_AppendStringsToObj(ov, "-", version, (char *)NULL);
+	    TclAppendStringsToObj(ov, "-", version);
 	}
 	Tcl_IncrRefCount(ov);
 	if (Tcl_PkgRequireProc(interp, name, 1, &ov, clientDataPtr) == TCL_OK) {
@@ -1336,7 +1336,7 @@ TclNRPackageObjCmd(
 	     */
 
 	    ov = Tcl_NewStringObj(version, -1);
-	    Tcl_AppendStringsToObj(ov, "-", version, (char *)NULL);
+	    TclAppendStringsToObj(ov, "-", version);
 	    version = NULL;
 	    argv3 = TclGetString(objv[3]);
 	    Tcl_IncrRefCount(objv[3]);

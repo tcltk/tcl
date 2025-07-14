@@ -1399,10 +1399,10 @@ TeststringobjCmd(
 	    for ( ; i < 12 + 3; i++) {
 		strings[i - 3] = NULL;
 	    }
-	    Tcl_AppendStringsToObj(varPtr[varIndex], strings[0], strings[1],
+	    TclAppendStringsToObj(varPtr[varIndex], strings[0], strings[1],
 		    strings[2], strings[3], strings[4], strings[5],
 		    strings[6], strings[7], strings[8], strings[9],
-		    strings[10], strings[11], (char *)NULL);
+		    strings[10], strings[11]);
 	    Tcl_SetObjResult(interp, varPtr[varIndex]);
 	    break;
 	case 2:				/* get */

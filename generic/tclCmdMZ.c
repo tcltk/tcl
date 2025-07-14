@@ -3650,10 +3650,10 @@ TclNRSwitchObjCmd(
 	if (splitObjs) {
 	    for (i=0 ; i<objc ; i+=2) {
 		if (TclGetString(objv[i])[0] == '#') {
-		    Tcl_AppendResult(interp,
+		    TclAppendResult(interp,
 			    ", this may be due to a comment incorrectly"
 			    " placed outside of a switch body - see the"
-			    " \"switch\" documentation", NULL);
+			    " \"switch\" documentation");
 		    TclSetErrorCode(interp, "TCL", "OPERATION", "SWITCH",
 			    "BADARM", "COMMENT?");
 		    break;
