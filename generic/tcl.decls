@@ -2391,9 +2391,17 @@ declare 694 {
 	    Tcl_Size start, Tcl_Size end, Tcl_Obj **resultPtrPtr)
 }
 
+# TIP 726
+declare 695 {
+    const char *Tcl_UtfToNormalizedDString(Tcl_Interp *interp,
+	    const char *bytes, Tcl_Size length,
+	    Tcl_UnicodeNormalizationForm normForm, int profile,
+	    Tcl_DString *dsPtr)
+}
+
 # ----- BASELINE -- FOR -- 9.1.0 ----- #
 
-declare 695 {
+declare 696 {
     void TclUnusedStubEntry(void)
 }
 

@@ -2046,6 +2046,13 @@ typedef unsigned short Tcl_UniChar;
 #else
 #   error "This TCL_UTF_MAX value is not supported"
 #endif
+
+/*
+ * Specifiers for Unicode normalization forms.
+ */
+typedef enum {
+    TCL_NFC, TCL_NFD, TCL_NFKC, TCL_NFKD
+} Tcl_UnicodeNormalizationForm;
 
 /*
  *----------------------------------------------------------------------------

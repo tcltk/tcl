@@ -1032,10 +1032,6 @@ $(TCLOBJS)
 $<
 <<
 
-{$(COMPATDIR)\zlib}.c{$(TMP_DIR)}.obj::
-	$(cc32) $(pkgcflags) -Fo$(TMP_DIR)\ @<<
-$<
-<<
 {$(TOMMATHDIR)}.c{$(TMP_DIR)}.obj::
 	$(cc32) $(pkgcflags) -Fo$(TMP_DIR)\ @<<
 $<
