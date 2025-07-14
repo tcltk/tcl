@@ -947,7 +947,7 @@ TestasyncCmd(
 		if (Tcl_CreateThread(&threadID, AsyncThreadProc,
 			INT2PTR(id), TCL_THREAD_STACK_DEFAULT,
 			TCL_THREAD_NOFLAGS) != TCL_OK) {
-		    Tcl_AppendResult(interp, "cannot create thread", (char *)NULL);
+		    TclPrintfResult(interp, "cannot create thread");
 		    Tcl_MutexUnlock(&asyncTestMutex);
 		    return TCL_ERROR;
 		}
@@ -956,8 +956,9 @@ TestasyncCmd(
 	}
 	Tcl_MutexUnlock(&asyncTestMutex);
     } else {
-	Tcl_AppendResult(interp, "bad option \"", Tcl_GetString(objv[1]),
-		"\": must be create, delete, int, mark, or marklater", (char *)NULL);
+	TclPrintfResult(interp, "bad option \"%s\": must be %s",
+		Tcl_GetString(objv[1]),
+		"create, delete, int, mark, or marklater");
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -1149,7 +1150,7 @@ TestcmdinfoCmd(
 	    return TCL_ERROR;
 	}
 	if (cmdObjc == 0) {
-	    Tcl_AppendResult(interp, "No command name given", NULL);
+	    TclPrintfResult(interp, "No command name given");
 	    return TCL_ERROR;
 	}
 	if (Tcl_GetCommandInfo(interp, Tcl_GetString(cmdObjv[0]), &info) == 0) {
@@ -1351,8 +1352,8 @@ TestcmdtokenCmd(
 	Tcl_AppendResult(interp, buf, (char *)NULL);
     } else {
 	if (sscanf(Tcl_GetString(objv[2]), "%d", &id) != 1) {
-	    Tcl_AppendResult(interp, "bad command token \"", Tcl_GetString(objv[2]),
-		    "\"", (char *)NULL);
+	    TclPrintfResult(interp, "bad command token \"%s\"",
+		    Tcl_GetString(objv[2]));
 	    return TCL_ERROR;
 	}
 
@@ -1364,8 +1365,8 @@ TestcmdtokenCmd(
 	}
 
 	if (refPtr == NULL) {
-	    Tcl_AppendResult(interp, "bad command token \"", Tcl_GetString(objv[2]),
-		    "\"", (char *)NULL);
+	    TclPrintfResult(interp, "bad command token \"%s\"",
+		    Tcl_GetString(objv[2]));
 	    return TCL_ERROR;
 	}
 
@@ -1380,8 +1381,8 @@ TestcmdtokenCmd(
 	    Tcl_AppendElement(interp, Tcl_GetString(objPtr));
 	    Tcl_DecrRefCount(objPtr);
 	} else {
-	    Tcl_AppendResult(interp, "bad option \"", Tcl_GetString(objv[1]),
-		    "\": must be create, name, or free", (char *)NULL);
+	    TclPrintfResult(interp, "bad option \"%s\": must be %s",
+		    Tcl_GetString(objv[1]), "create, name, or free");
 	    return TCL_ERROR;
 	}
     }
@@ -1428,7 +1429,7 @@ TestcmdtraceCmd(
 	result = Tcl_EvalEx(interp, Tcl_GetString(objv[2]), TCL_INDEX_NONE, 0);
 	if (result == TCL_OK) {
 	    Tcl_ResetResult(interp);
-	    Tcl_AppendResult(interp, Tcl_DStringValue(&buffer), (char *)NULL);
+	    Tcl_SetObjResult(interp, Tcl_DStringToObj(&buffer));
 	}
 	Tcl_DeleteTrace(interp, cmdTrace);
 	Tcl_DStringFree(&buffer);
@@ -1450,7 +1451,7 @@ TestcmdtraceCmd(
 	result = Tcl_EvalEx(interp, Tcl_GetString(objv[2]), TCL_INDEX_NONE, 0);
 	if (result == TCL_OK) {
 	    Tcl_ResetResult(interp);
-	    Tcl_AppendResult(interp, Tcl_DStringValue(&buffer), (char *)NULL);
+	    Tcl_SetObjResult(interp, Tcl_DStringToObj(&buffer));
 	}
 	Tcl_DeleteTrace(interp, cmdTrace);
 	Tcl_DStringFree(&buffer);
@@ -1468,7 +1469,7 @@ TestcmdtraceCmd(
 	result = Tcl_EvalEx(interp, Tcl_GetString(objv[2]), TCL_INDEX_NONE, 0);
 	Tcl_DeleteTrace(interp, cmdTrace);
 	if (!deleteCalled) {
-	    Tcl_AppendResult(interp, "Delete wasn't called", (char *)NULL);
+	    TclPrintfResult(interp, "Delete wasn't called");
 	    return TCL_ERROR;
 	} else {
 	    return result;
@@ -1482,14 +1483,15 @@ TestcmdtraceCmd(
 	result = Tcl_EvalEx(interp, Tcl_GetString(objv[2]), TCL_INDEX_NONE, 0);
 	if (result == TCL_OK) {
 	    Tcl_ResetResult(interp);
-	    Tcl_AppendResult(interp, Tcl_DStringValue(&buffer), (char *)NULL);
+	    Tcl_SetObjResult(interp, Tcl_DStringToObj(&buffer));
 	}
 	Tcl_DeleteTrace(interp, t2);
 	Tcl_DeleteTrace(interp, t1);
 	Tcl_DStringFree(&buffer);
     } else {
-	Tcl_AppendResult(interp, "bad option \"", Tcl_GetString(objv[1]),
-		"\": must be tracetest, deletetest, doubletest or resulttest", (char *)NULL);
+	TclPrintfResult(interp, "bad option \"%s\": must be %s",
+		Tcl_GetString(objv[1]),
+		"tracetest, deletetest, doubletest or resulttest");
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -1620,8 +1622,8 @@ TestcreatecommandCmd(
     } else if (strcmp(Tcl_GetString(objv[1]), "delete2") == 0) {
 	Tcl_DeleteCommand(interp, "value:at:");
     } else {
-	Tcl_AppendResult(interp, "bad option \"", Tcl_GetString(objv[1]),
-		"\": must be create, delete, create2, or delete2", (char *)NULL);
+	TclPrintfResult(interp, "bad option \"%s\": must be %s",
+		Tcl_GetString(objv[1]), "create, delete, create2, or delete2");
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -1640,9 +1642,9 @@ CreatedCommandProc(
     found = Tcl_GetCommandInfo(interp, "test_ns_basic::createdcommand",
 	    &info);
     if (!found) {
-	Tcl_AppendResult(interp,
-		"CreatedCommandProc could not get command info for test_ns_basic::createdcommand",
-		(char *)NULL);
+	TclPrintfResult(interp,
+		"CreatedCommandProc could not get command info for "
+		"test_ns_basic::createdcommand");
 	return TCL_ERROR;
     }
     Tcl_AppendResult(interp, "CreatedCommandProc in ",
@@ -1662,9 +1664,9 @@ CreatedCommandProc2(
 
     found = Tcl_GetCommandInfo(interp, "value:at:", &info);
     if (!found) {
-	Tcl_AppendResult(interp,
-		"CreatedCommandProc2 could not get command info for test_ns_basic::createdcommand",
-		(char *)NULL);
+	TclPrintfResult(interp,
+		"CreatedCommandProc2 could not get command info for "
+		"test_ns_basic::createdcommand");
 	return TCL_ERROR;
     }
     Tcl_AppendResult(interp, "CreatedCommandProc2 in ",
@@ -2019,9 +2021,9 @@ TestdstringCmd(
 	    strcpy(s, "This is a specially-allocated string");
 	    Tcl_SetResult(interp, s, SpecialFree);
 	} else {
-	    Tcl_AppendResult(interp, "bad gresult option \"", Tcl_GetString(objv[2]),
-		    "\": must be staticsmall, staticlarge, free, or special",
-		    (char *)NULL);
+	    TclPrintfResult(interp, "bad gresult option \"%s\": must be %s",
+		    Tcl_GetString(objv[2]),
+		    "staticsmall, staticlarge, free, or special");
 	    return TCL_ERROR;
 	}
 	Tcl_DStringGetResult(interp, &dstring);
@@ -2055,9 +2057,10 @@ TestdstringCmd(
 	}
 	Tcl_DStringStartSublist(&dstring);
     } else {
-	Tcl_AppendResult(interp, "bad option \"", Tcl_GetString(objv[1]),
-		"\": must be append, element, end, free, get, gresult, length, "
-		"result, start, toobj, or trunc", (char *)NULL);
+	TclPrintfResult(interp, "bad option \"%s\": must be %s",
+		Tcl_GetString(objv[1]),
+		"append, element, end, free, get, gresult, length, "
+		"result, start, toobj, or trunc");
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -2209,9 +2212,9 @@ static int UtfExtWrapper(
 	Tcl_Obj *valueObj;
 	if (dstCharsVar == NULL ||
 		(valueObj = Tcl_ObjGetVar2(interp, dstCharsVar, NULL, 0)) == NULL) {
-	    Tcl_SetResult(interp,
+	    TclPrintfResult(interp,
 		    "dstCharsVar must be specified with integer value if "
-		    "TCL_ENCODING_CHAR_LIMIT set in flags.", TCL_STATIC);
+		    "TCL_ENCODING_CHAR_LIMIT set in flags.");
 	    return TCL_ERROR;
 	}
 	if (Tcl_GetIntFromObj(interp, valueObj, &dstChars) != TCL_OK) {
@@ -2409,8 +2412,7 @@ TestencodingCmd(
 	/* Note not string compare, the actual pointer must be the same */
 	if (string != Tcl_DStringValue(&ds)) {
 	    Tcl_DStringFree(&ds);
-	    Tcl_SetResult(interp, "Returned pointer not same as DString value",
-		    TCL_STATIC);
+	    TclPrintfResult(interp, "Returned pointer not same as DString value");
 	    return TCL_ERROR;
 	}
 	Tcl_DStringResult(interp, &ds);
@@ -2526,8 +2528,8 @@ TestevalexCmd(
     if (objc == 3) {
 	const char *global = Tcl_GetString(objv[2]);
 	if (strcmp(global, "global") != 0) {
-	    Tcl_AppendResult(interp, "bad value \"", global,
-		    "\": must be global", (char *)NULL);
+	    TclPrintfResult(interp, "bad value \"%s\": must be global",
+		    global);
 	    return TCL_ERROR;
 	}
 	flags = TCL_EVAL_GLOBAL;
@@ -2808,8 +2810,8 @@ TestexithandlerCmd(
 	Tcl_DeleteExitHandler((value & 1) ? ExitProcOdd : ExitProcEven,
 		INT2PTR(value));
     } else {
-	Tcl_AppendResult(interp, "bad option \"", Tcl_GetString(objv[1]),
-		"\": must be create or delete", (char *)NULL);
+	TclPrintfResult(interp, "bad option \"%s\": must be %s",
+		Tcl_GetString(objv[1]), "create or delete");
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -3083,19 +3085,18 @@ TestfilelinkCmd(
 	contents = Tcl_FSLink(objv[1], objv[2],
 		TCL_CREATE_SYMBOLIC_LINK|TCL_CREATE_HARD_LINK);
 	if (contents == NULL) {
-	    Tcl_AppendResult(interp, "could not create link from \"",
-		    Tcl_GetString(objv[1]), "\" to \"",
-		    Tcl_GetString(objv[2]), "\": ",
-		    Tcl_PosixError(interp), (char *)NULL);
+	    TclPrintfResult(interp,
+		    "could not create link from \"%s\" to \"%s\": %s",
+		    Tcl_GetString(objv[1]), Tcl_GetString(objv[2]),
+		    Tcl_PosixError(interp));
 	    return TCL_ERROR;
 	}
     } else {
 	/* Read link */
 	contents = Tcl_FSLink(objv[1], NULL, 0);
 	if (contents == NULL) {
-	    Tcl_AppendResult(interp, "could not read link \"",
-		    Tcl_GetString(objv[1]), "\": ",
-		    Tcl_PosixError(interp), (char *)NULL);
+	    TclPrintfResult(interp, "could not read link \"%s\": %s",
+		    Tcl_GetString(objv[1]), Tcl_PosixError(interp));
 	    return TCL_ERROR;
 	}
     }
@@ -3679,8 +3680,8 @@ TestlinkCmd(
 	    Tcl_UpdateLinkedVar(interp, "uwide");
 	}
     } else {
-	Tcl_AppendResult(interp, "bad option \"", Tcl_GetString(objv[1]),
-		"\": should be create, delete, get, set, or update", (char *)NULL);
+	TclPrintfResult(interp, "bad option \"%s\": should be be %s",
+		Tcl_GetString(objv[1]), "create, delete, get, set, or update");
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -3879,7 +3880,7 @@ TestlistrepCmd(
 	    }
 	    resultObj = TclListTestObj(length, leadSpace, endSpace);
 	    if (resultObj == NULL) {
-		Tcl_AppendResult(interp, "List capacity exceeded", (char *)NULL);
+		TclPrintfResult(interp, "List capacity exceeded");
 		return TCL_ERROR;
 	    }
 	}
@@ -4796,8 +4797,8 @@ TestregexpCmd(
 	    snprintf(resinfo, sizeof(resinfo), "%" TCL_Z_MODIFIER "d %" TCL_Z_MODIFIER "d", start, end-1);
 	    value = Tcl_SetVar2(interp, varName, NULL, resinfo, 0);
 	    if (value == NULL) {
-		Tcl_AppendResult(interp, "couldn't set variable \"",
-			varName, "\"", (char *)NULL);
+		TclPrintfResult(interp, "couldn't set variable \"%s\"",
+			varName);
 		return TCL_ERROR;
 	    }
 	} else if (cflags & TCL_REG_CANMATCH) {
@@ -4810,8 +4811,8 @@ TestregexpCmd(
 	    snprintf(resinfo, sizeof(resinfo), "%" TCL_Z_MODIFIER "d", info.extendStart);
 	    value = Tcl_SetVar2(interp, varName, NULL, resinfo, 0);
 	    if (value == NULL) {
-		Tcl_AppendResult(interp, "couldn't set variable \"",
-			varName, "\"", (char *)NULL);
+		TclPrintfResult(interp, "couldn't set variable \"%s\"",
+			varName);
 		return TCL_ERROR;
 	    }
 	}
@@ -5092,8 +5093,8 @@ TestsetplatformCmd(
     } else if (strncmp(argv1, "windows", length) == 0) {
 	*platform = TCL_PLATFORM_WINDOWS;
     } else {
-	Tcl_AppendResult(interp, "unsupported platform: should be one of "
-		"unix, or windows", (char *)NULL);
+	TclPrintfResult(interp, "unsupported platform: should be one of "
+		"unix, or windows");
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -5327,7 +5328,7 @@ TestseterrorcodeCmd(
     Tcl_Obj *const *objv)	/* Arguments. */
 {
     if (objc > 6) {
-	Tcl_AppendResult(interp, "too many args", (char *)NULL);
+	TclPrintfResult(interp, "too many args");
 	return TCL_ERROR;
     }
     switch (objc) {
@@ -5428,9 +5429,8 @@ TestfeventCmd(
 	    Tcl_SetObjResult(interp, Tcl_GetObjResult(interp2));
 	    return code;
 	} else {
-	    Tcl_AppendResult(interp,
-		    "called \"testfevent code\" before \"testfevent create\"",
-		    (char *)NULL);
+	    TclPrintfResult(interp,
+		    "called \"testfevent code\" before \"testfevent create\"");
 	    return TCL_ERROR;
 	}
     } else if (strcmp(Tcl_GetString(objv[1]), "create") == 0) {
@@ -5992,7 +5992,7 @@ TestsetbytearraylengthCmd(
 	if (obj != objv[1]) {
 	    Tcl_DecrRefCount(obj);
 	}
-	Tcl_AppendResult(interp, "expected bytes", (char *)NULL);
+	TclPrintfResult(interp, "expected bytes");
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, obj);
@@ -6044,7 +6044,7 @@ TestbytestringCmd(
     }
 
     if (x.m != 1) {
-	Tcl_AppendResult(interp, "Tcl_GetBytesFromObj() overwrites variable", (char *)NULL);
+	TclPrintfResult(interp, "Tcl_GetBytesFromObj() overwrites variable");
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, Tcl_NewStringObj(p, x.n));
@@ -6493,7 +6493,7 @@ TestChannelCmd(
     if ((cmdName[0] == 'i') &&
 	    (strncmp(cmdName, "inputbuffered", len) == 0)) {
 	if (objc != 3) {
-	    Tcl_AppendResult(interp, "channel name required", (char *)NULL);
+	    TclPrintfResult(interp, "channel name required");
 	    return TCL_ERROR;
 	}
 	IOQueued = Tcl_InputBuffered(chan);
@@ -6504,7 +6504,7 @@ TestChannelCmd(
 
     if ((cmdName[0] == 'i') && (strncmp(cmdName, "isshared", len) == 0)) {
 	if (objc != 3) {
-	    Tcl_AppendResult(interp, "channel name required", (char *)NULL);
+	    TclPrintfResult(interp, "channel name required");
 	    return TCL_ERROR;
 	}
 
@@ -6515,7 +6515,7 @@ TestChannelCmd(
 
     if ((cmdName[0] == 'i') && (strncmp(cmdName, "isstandard", len) == 0)) {
 	if (objc != 3) {
-	    Tcl_AppendResult(interp, "channel name required", (char *)NULL);
+	    TclPrintfResult(interp, "channel name required");
 	    return TCL_ERROR;
 	}
 
@@ -6526,7 +6526,7 @@ TestChannelCmd(
 
     if ((cmdName[0] == 'm') && (strncmp(cmdName, "mode", len) == 0)) {
 	if (objc != 3) {
-	    Tcl_AppendResult(interp, "channel name required", (char *)NULL);
+	    TclPrintfResult(interp, "channel name required");
 	    return TCL_ERROR;
 	}
 
@@ -6545,7 +6545,7 @@ TestChannelCmd(
 
     if ((cmdName[0] == 'm') && (strncmp(cmdName, "maxmode", len) == 0)) {
 	if (objc != 3) {
-	    Tcl_AppendResult(interp, "channel name required", (char *)NULL);
+	    TclPrintfResult(interp, "channel name required");
 	    return TCL_ERROR;
 	}
 
@@ -6564,7 +6564,7 @@ TestChannelCmd(
 
     if ((cmdName[0] == 'm') && (strncmp(cmdName, "mremove-rd", len) == 0)) {
 	if (objc != 3) {
-	    Tcl_AppendResult(interp, "channel name required", (char *)NULL);
+	    TclPrintfResult(interp, "channel name required");
 	    return TCL_ERROR;
 	}
 
@@ -6573,7 +6573,7 @@ TestChannelCmd(
 
     if ((cmdName[0] == 'm') && (strncmp(cmdName, "mremove-wr", len) == 0)) {
 	if (objc != 3) {
-	    Tcl_AppendResult(interp, "channel name required", (char *)NULL);
+	    TclPrintfResult(interp, "channel name required");
 	    return TCL_ERROR;
 	}
 
@@ -6582,7 +6582,7 @@ TestChannelCmd(
 
     if ((cmdName[0] == 'm') && (strncmp(cmdName, "mthread", len) == 0)) {
 	if (objc != 3) {
-	    Tcl_AppendResult(interp, "channel name required", (char *)NULL);
+	    TclPrintfResult(interp, "channel name required");
 	    return TCL_ERROR;
 	}
 
@@ -6593,7 +6593,7 @@ TestChannelCmd(
 
     if ((cmdName[0] == 'n') && (strncmp(cmdName, "name", len) == 0)) {
 	if (objc != 3) {
-	    Tcl_AppendResult(interp, "channel name required", (char *)NULL);
+	    TclPrintfResult(interp, "channel name required");
 	    return TCL_ERROR;
 	}
 	Tcl_AppendResult(interp, statePtr->channelName, (char *)NULL);
@@ -6616,7 +6616,7 @@ TestChannelCmd(
     if ((cmdName[0] == 'o') &&
 	    (strncmp(cmdName, "outputbuffered", len) == 0)) {
 	if (objc != 3) {
-	    Tcl_AppendResult(interp, "channel name required", (char *)NULL);
+	    TclPrintfResult(interp, "channel name required");
 	    return TCL_ERROR;
 	}
 
@@ -6629,12 +6629,12 @@ TestChannelCmd(
     if ((cmdName[0] == 'q') &&
 	    (strncmp(cmdName, "queuedcr", len) == 0)) {
 	if (objc != 3) {
-	    Tcl_AppendResult(interp, "channel name required", (char *)NULL);
+	    TclPrintfResult(interp, "channel name required");
 	    return TCL_ERROR;
 	}
 
-	Tcl_AppendResult(interp,
-		(statePtr->flags & INPUT_SAW_CR) ? "1" : "0", (char *)NULL);
+	Tcl_SetObjResult(interp,
+		Tcl_NewBooleanObj(statePtr->flags & INPUT_SAW_CR));
 	return TCL_OK;
     }
 
@@ -6657,7 +6657,7 @@ TestChannelCmd(
 
     if ((cmdName[0] == 'r') && (strncmp(cmdName, "refcount", len) == 0)) {
 	if (objc != 3) {
-	    Tcl_AppendResult(interp, "channel name required", (char *)NULL);
+	    TclPrintfResult(interp, "channel name required");
 	    return TCL_ERROR;
 	}
 
@@ -6675,7 +6675,7 @@ TestChannelCmd(
 
     if ((cmdName[0] == 's') && (strncmp(cmdName, "splice", len) == 0)) {
 	if (objc != 3) {
-	    Tcl_AppendResult(interp, "channel name required", (char *)NULL);
+	    TclPrintfResult(interp, "channel name required");
 	    return TCL_ERROR;
 	}
 
@@ -6689,7 +6689,7 @@ TestChannelCmd(
 
     if ((cmdName[0] == 't') && (strncmp(cmdName, "type", len) == 0)) {
 	if (objc != 3) {
-	    Tcl_AppendResult(interp, "channel name required", (char *)NULL);
+	    TclPrintfResult(interp, "channel name required");
 	    return TCL_ERROR;
 	}
 	Tcl_AppendResult(interp, Tcl_ChannelName(chanPtr->typePtr), (char *)NULL);
@@ -6722,8 +6722,8 @@ TestChannelCmd(
 	    return TCL_ERROR;
 	}
 	if (strcmp(Tcl_GetString(objv[3]), "-command") != 0) {
-	    Tcl_AppendResult(interp, "bad argument \"", Tcl_GetString(objv[3]),
-		    "\": should be \"-command\"", (char *)NULL);
+	    TclPrintfResult(interp, "bad argument \"%s\": should be \"-command\"",
+		    Tcl_GetString(objv[3]));
 	    return TCL_ERROR;
 	}
 
@@ -6742,9 +6742,9 @@ TestChannelCmd(
 	return Tcl_UnstackChannel(interp, chan);
     }
 
-    Tcl_AppendResult(interp, "bad option \"", cmdName, "\": should be "
+    TclPrintfResult(interp, "bad option \"%s\": should be %s", cmdName,
 	    "cut, clearchannelhandlers, info, isshared, mode, open, "
-	    "readable, splice, writable, transform, unstack", (char *)NULL);
+	    "readable, splice, writable, transform, unstack");
     return TCL_ERROR;
 }
 
@@ -6803,8 +6803,8 @@ TestChannelEventCmd(
 	} else if (strcmp(Tcl_GetString(objv[3]), "none") == 0) {
 	    mask = 0;
 	} else {
-	    Tcl_AppendResult(interp, "bad event name \"", Tcl_GetString(objv[3]),
-		    "\": must be readable, writable, or none", (char *)NULL);
+	    TclPrintfResult(interp, "bad event name \"%s\": must be %s",
+		    Tcl_GetString(objv[3]), "readable, writable, or none");
 	    return TCL_ERROR;
 	}
 
@@ -6833,8 +6833,8 @@ TestChannelEventCmd(
 	    return TCL_ERROR;
 	}
 	if (index < 0) {
-	    Tcl_AppendResult(interp, "bad event index: ", Tcl_GetString(objv[3]),
-		    ": must be nonnegative", (char *)NULL);
+	    TclPrintfResult(interp, "bad event index %s: must be nonnegative",
+		    Tcl_GetString(objv[3]));
 	    return TCL_ERROR;
 	}
 	for (i = 0, esPtr = statePtr->scriptRecordPtr;
@@ -6843,8 +6843,8 @@ TestChannelEventCmd(
 	    /* Empty loop body. */
 	}
 	if (esPtr == NULL) {
-	    Tcl_AppendResult(interp, "bad event index ", Tcl_GetString(objv[3]),
-		    ": out of range", (char *)NULL);
+	    TclPrintfResult(interp, "bad event index %s: out of range",
+		    Tcl_GetString(objv[3]));
 	    return TCL_ERROR;
 	}
 	if (esPtr == statePtr->scriptRecordPtr) {
@@ -6917,8 +6917,8 @@ TestChannelEventCmd(
 	    return TCL_ERROR;
 	}
 	if (index < 0) {
-	    Tcl_AppendResult(interp, "bad event index: ", Tcl_GetString(objv[3]),
-		    ": must be nonnegative", (char *)NULL);
+	    TclPrintfResult(interp, "bad event index %s: must be nonnegative",
+		    Tcl_GetString(objv[3]));
 	    return TCL_ERROR;
 	}
 	for (i = 0, esPtr = statePtr->scriptRecordPtr;
@@ -6927,8 +6927,8 @@ TestChannelEventCmd(
 	    /* Empty loop body. */
 	}
 	if (esPtr == NULL) {
-	    Tcl_AppendResult(interp, "bad event index ", Tcl_GetString(objv[3]),
-		    ": out of range", (char *)NULL);
+	    TclPrintfResult(interp, "bad event index %s: out of range",
+		    Tcl_GetString(objv[3]));
 	    return TCL_ERROR;
 	}
 
@@ -6939,8 +6939,8 @@ TestChannelEventCmd(
 	} else if (strcmp(Tcl_GetString(objv[4]), "none") == 0) {
 	    mask = 0;
 	} else {
-	    Tcl_AppendResult(interp, "bad event name \"", Tcl_GetString(objv[4]),
-		    "\": must be readable, writable, or none", (char *)NULL);
+	    TclPrintfResult(interp, "bad event name \"%s\": must be %s",
+		    Tcl_GetString(objv[4]), "readable, writable, or none");
 	    return TCL_ERROR;
 	}
 	esPtr->mask = mask;
@@ -6948,8 +6948,8 @@ TestChannelEventCmd(
 		TclChannelEventScriptInvoker, esPtr);
 	return TCL_OK;
     }
-    Tcl_AppendResult(interp, "bad command ", cmd, ", must be one of "
-	    "add, delete, list, set, or removeall", (char *)NULL);
+    TclPrintfResult(interp, "bad command %s, must be one of %s",
+	    cmd, "add, delete, list, set, or removeall");
     return TCL_ERROR;
 }
 
@@ -7004,14 +7004,15 @@ TestSocketCmd(
 	    return TCL_ERROR;
 	}
 	hChannel = Tcl_GetChannel(interp, Tcl_GetString(objv[2]), &modePtr);
-	if ( NULL == hChannel ) {
-	    Tcl_AppendResult(interp, "unknown channel:", Tcl_GetString(objv[2]), (char *)NULL);
+	if (NULL == hChannel) {
+	    TclPrintfResult(interp, "unknown channel: %s",
+		    Tcl_GetString(objv[2]));
 	    return TCL_ERROR;
 	}
 	statePtr = (TcpState *)Tcl_GetChannelInstanceData(hChannel);
-	if ( NULL == statePtr) {
-	    Tcl_AppendResult(interp, "No channel instance data:", Tcl_GetString(objv[2]),
-		    (char *)NULL);
+	if (NULL == statePtr) {
+	    TclPrintfResult(interp, "No channel instance data: %s",
+		    Tcl_GetString(objv[2]));
 	    return TCL_ERROR;
 	}
 	if (Tcl_GetBooleanFromObj(interp, objv[3], &testMode) != TCL_OK) {
@@ -7025,8 +7026,7 @@ TestSocketCmd(
 	return TCL_OK;
     }
 
-    Tcl_AppendResult(interp, "bad option \"", cmdName, "\": should be "
-	    "testflags", (char *)NULL);
+    TclPrintfResult(interp, "bad option \"%s\": should be testflags", cmdName);
     return TCL_ERROR;
 }
 
@@ -7121,7 +7121,7 @@ TestWrongNumArgsCmd(
 	 * Asked for more arguments than were given.
 	 */
     insufArgs:
-	Tcl_AppendResult(interp, "insufficient arguments", (char *)NULL);
+	TclPrintfResult(interp, "insufficient arguments");
 	return TCL_ERROR;
     }
 
@@ -7174,17 +7174,13 @@ TestGetIndexFromObjStructCmd(
 	return TCL_ERROR;
     }
     if (idx[0] != 85 || idx[2] != 85) {
-	Tcl_AppendResult(interp,
-		"Tcl_GetIndexFromObjStruct overwrites bytes near index variable",
-		(char *)NULL);
+	TclPrintfResult(interp,
+		"Tcl_GetIndexFromObjStruct overwrites bytes near index variable");
 	return TCL_ERROR;
     } else if (idx[1] != target) {
-	char buffer[64];
-	snprintf(buffer, sizeof(buffer), "%d", idx[1]);
-	Tcl_AppendResult(interp, "index value comparison failed: got ",
-		buffer, (char *)NULL);
-	snprintf(buffer, sizeof(buffer), "%d", target);
-	Tcl_AppendResult(interp, " when ", buffer, " expected", (char *)NULL);
+	TclPrintfResult(interp,
+		"index value comparison failed: got %d when %d expected",
+		idx[1], target);
 	return TCL_ERROR;
     }
     Tcl_WrongNumArgs(interp, objc, objv, NULL);
@@ -7691,7 +7687,7 @@ SimpleOpenFileChannel(
     Tcl_Channel chan;
 
     if ((mode & O_ACCMODE) != O_RDONLY) {
-	Tcl_AppendResult(interp, "read-only", (char *)NULL);
+	TclPrintfResult(interp, "read-only");
 	return NULL;
     }
 
@@ -7777,7 +7773,7 @@ TestUtfNextCmd(
 	/* Run Tcl_UtfNext with many more possible bytes at src[-1], all should give the same result */
 	result = Tcl_UtfNext(buffer + 1);
 	if (first != result) {
-	    Tcl_AppendResult(interp, "Tcl_UtfNext is not supposed to read src[-1]", (char *)NULL);
+	    TclPrintfResult(interp, "Tcl_UtfNext is not supposed to read src[-1]");
 	    return TCL_ERROR;
 	}
     }
@@ -8048,7 +8044,7 @@ TestHashSystemHashCmd(
     Tcl_InitCustomHashTable(&hash, TCL_CUSTOM_TYPE_KEYS, &hkType);
 
     if (hash.numEntries != 0) {
-	Tcl_AppendResult(interp, "non-zero initial size", (char *)NULL);
+	TclPrintfResult(interp, "non-zero initial size");
 	Tcl_DeleteHashTable(&hash);
 	return TCL_ERROR;
     }
@@ -8056,8 +8052,7 @@ TestHashSystemHashCmd(
     for (i=0 ; i<limit ; i++) {
 	hPtr = Tcl_CreateHashEntry(&hash, INT2PTR(i), &isNew);
 	if (!isNew) {
-	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(i));
-	    Tcl_AppendToObj(Tcl_GetObjResult(interp)," creation problem", -1);
+	    TclPrintfResult(interp, "%d creation problem", i);
 	    Tcl_DeleteHashTable(&hash);
 	    return TCL_ERROR;
 	}
@@ -8065,7 +8060,7 @@ TestHashSystemHashCmd(
     }
 
     if (hash.numEntries != (Tcl_Size)limit) {
-	Tcl_AppendResult(interp, "unexpected maximal size", (char *)NULL);
+	TclPrintfResult(interp, "unexpected maximal size");
 	Tcl_DeleteHashTable(&hash);
 	return TCL_ERROR;
     }
@@ -8073,14 +8068,12 @@ TestHashSystemHashCmd(
     for (i=0 ; i<limit ; i++) {
 	hPtr = Tcl_FindHashEntry(&hash, (char *)INT2PTR(i));
 	if (hPtr == NULL) {
-	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(i));
-	    Tcl_AppendToObj(Tcl_GetObjResult(interp)," lookup problem", -1);
+	    TclPrintfResult(interp, "%d lookup problem", i);
 	    Tcl_DeleteHashTable(&hash);
 	    return TCL_ERROR;
 	}
 	if (PTR2INT(Tcl_GetHashValue(hPtr)) != i+42) {
-	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(i));
-	    Tcl_AppendToObj(Tcl_GetObjResult(interp)," value problem", -1);
+	    TclPrintfResult(interp, "%d value problem", i);
 	    Tcl_DeleteHashTable(&hash);
 	    return TCL_ERROR;
 	}
@@ -8088,7 +8081,7 @@ TestHashSystemHashCmd(
     }
 
     if (hash.numEntries != 0) {
-	Tcl_AppendResult(interp, "non-zero final size", (char *)NULL);
+	TclPrintfResult(interp, "non-zero final size");
 	Tcl_DeleteHashTable(&hash);
 	return TCL_ERROR;
     }
@@ -8827,7 +8820,7 @@ TestInterpResolverCmd(
     if (objc == 3) {
 	interp = Tcl_GetChild(interp, Tcl_GetString(objv[2]));
 	if (interp == NULL) {
-	    Tcl_AppendResult(interp, "provided interpreter not found", (char *)NULL);
+	    TclPrintfResult(interp, "provided interpreter not found");
 	    return TCL_ERROR;
 	}
     }
@@ -8842,8 +8835,7 @@ TestInterpResolverCmd(
 	break;
     case 0: /*down*/
 	if (!Tcl_RemoveInterpResolvers(interp, RESOLVER_KEY)) {
-	    Tcl_AppendResult(interp, "could not remove the resolver scheme",
-		    (char *)NULL);
+	    TclPrintfResult(interp, "could not remove the resolver scheme");
 	    return TCL_ERROR;
 	}
     }

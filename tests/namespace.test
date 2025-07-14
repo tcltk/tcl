@@ -2266,7 +2266,7 @@ test namespace-47.4 {ensemble: unknown handler} {
     }
     list [catch {ns spong} msg] $msg $::errorInfo [namespace delete ns]
 } {1 {unknown subcommand handler returned bad code: break} {unknown subcommand handler returned bad code: break
-    result of ensemble unknown subcommand handler: ::ns::Magic ::ns spong
+    (result of ensemble unknown subcommand handler: "::ns::Magic ::ns spong")
     invoked from within
 "ns spong"} {}}
 test namespace-47.5 {ensemble: unknown handler} {
@@ -2293,7 +2293,7 @@ test namespace-47.6 {ensemble: unknown handler} {
     rename foo {}
     set result
 } {1 {unmatched open brace in list} {unmatched open brace in list
-    while parsing result of ensemble unknown subcommand handler
+    (while parsing result of ensemble unknown subcommand handler: "bar ::foo bar")
     invoked from within
 "foo bar"}}
 test namespace-47.7 {ensemble: unknown handler, commands with spaces} {

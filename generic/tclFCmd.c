@@ -726,19 +726,21 @@ CopyRenameOneFile(
 		 * cross-filesystem copy. We do this through our Tcl library.
 		 */
 
-		Tcl_Obj *copyCommand, *cmdObj, *opObj;
+		Tcl_Obj *cmdObj, *opObj;
 
-		TclNewObj(copyCommand);
 		TclNewLiteralStringObj(cmdObj, "::tcl::CopyDirectory");
-		Tcl_ListObjAppendElement(interp, copyCommand, cmdObj);
 		if (copyFlag) {
 		    TclNewLiteralStringObj(opObj, "copying");
 		} else {
 		    TclNewLiteralStringObj(opObj, "renaming");
 		}
-		Tcl_ListObjAppendElement(interp, copyCommand, opObj);
-		Tcl_ListObjAppendElement(interp, copyCommand, source);
-		Tcl_ListObjAppendElement(interp, copyCommand, target);
+		Tcl_Obj *copyArgs[] = {
+		    cmdObj,
+		    opObj,
+		    source,
+		    target
+		};
+		Tcl_Obj *copyCommand = Tcl_NewListObj(4, copyArgs);
 		Tcl_IncrRefCount(copyCommand);
 		result = Tcl_EvalObjEx(interp, copyCommand,
 			TCL_EVAL_GLOBAL | TCL_EVAL_DIRECT);
@@ -1064,9 +1066,7 @@ TclFileAttrsCmd(
 	 */
 
 	int index, res = TCL_OK, nbAtts = 0;
-	Tcl_Obj *listPtr;
-
-	listPtr = Tcl_NewListObj(0, NULL);
+	Tcl_Obj *listPtr = Tcl_NewListObj(0, NULL);
 	for (index = 0; attributeStrings[index] != NULL; index++) {
 	    Tcl_Obj *objPtrAttr;
 
@@ -1080,11 +1080,11 @@ TclFileAttrsCmd(
 
 	    res = Tcl_FSFileAttrsGet(interp, index, filePtr, &objPtrAttr);
 	    if (res == TCL_OK) {
-		Tcl_Obj *objPtr =
-			Tcl_NewStringObj(attributeStrings[index], -1);
-
-		Tcl_ListObjAppendElement(interp, listPtr, objPtr);
-		Tcl_ListObjAppendElement(interp, listPtr, objPtrAttr);
+		Tcl_Obj *addrDesc[] = {
+		    Tcl_NewStringObj(attributeStrings[index], -1),
+		    objPtrAttr
+		};
+		TclListObjAppendElements(NULL, listPtr, 2, addrDesc);
 		nbAtts++;
 	    }
 	}

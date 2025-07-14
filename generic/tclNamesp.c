@@ -3246,10 +3246,6 @@ NamespaceCodeCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_Obj *listPtr, *objPtr;
-    const char *arg;
-    Tcl_Size length;
-
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "arg");
 	return TCL_ERROR;
@@ -3263,7 +3259,8 @@ NamespaceCodeCmd(
      " "namespace" command.  [Bug 3202171].
      */
 
-    arg = TclGetStringFromObj(objv[1], &length);
+    Tcl_Size length;
+    const char *arg = TclGetStringFromObj(objv[1], &length);
     if (*arg==':' && length > 20
 	    && strncmp(arg, "::namespace inscope ", 20) == 0) {
 	Tcl_SetObjResult(interp, objv[1]);
@@ -3278,18 +3275,13 @@ NamespaceCodeCmd(
      * "namespace inscope" command.
      */
 
-    TclNewObj(listPtr);
-    TclNewLiteralStringObj(objPtr, "::namespace");
-    Tcl_ListObjAppendElement(NULL, listPtr, objPtr);
-
-    TclNewLiteralStringObj(objPtr, "inscope");
-    Tcl_ListObjAppendElement(NULL, listPtr, objPtr);
-
-    Tcl_ListObjAppendElement(NULL, listPtr,
-	    TclNewNamespaceObj(TclGetCurrentNamespace(interp)));
-    Tcl_ListObjAppendElement(NULL, listPtr, objv[1]);
-
-    Tcl_SetObjResult(interp, listPtr);
+    Tcl_Obj *resultObjs[] = {
+	Tcl_NewStringObj("::namespace", TCL_AUTO_LENGTH),
+	Tcl_NewStringObj("inscope", TCL_AUTO_LENGTH),
+	TclNewNamespaceObj(TclGetCurrentNamespace(interp)),
+	objv[1]
+    };
+    Tcl_SetObjResult(interp, Tcl_NewListObj(4, resultObjs));
     return TCL_OK;
 }
 
@@ -5106,19 +5098,20 @@ TclLogCommandInfo(
 
 	Tcl_ListObjReplace(interp, iPtr->errorStack, 0, len, 0, NULL);
 	if (pc != NULL) {
-	    Tcl_Obj *innerContext;
-
-	    innerContext = TclGetInnerContext(interp, pc, tosPtr);
+	    Tcl_Obj *innerContext = TclGetInnerContext(interp, pc, tosPtr);
 	    if (innerContext != NULL) {
-		Tcl_ListObjAppendElement(NULL, iPtr->errorStack,
-			iPtr->innerLiteral);
-		Tcl_ListObjAppendElement(NULL, iPtr->errorStack, innerContext);
+		Tcl_Obj *vals[] = {
+		    iPtr->innerLiteral,
+		    innerContext
+		};
+		TclListObjAppendElements(NULL, iPtr->errorStack, 2, vals);
 	    }
 	} else if (command != NULL) {
-	    Tcl_ListObjAppendElement(NULL, iPtr->errorStack,
-		    iPtr->innerLiteral);
-	    Tcl_ListObjAppendElement(NULL, iPtr->errorStack,
-		    Tcl_NewStringObj(command, length));
+	    Tcl_Obj *vals[] = {
+		iPtr->innerLiteral,
+		Tcl_NewStringObj(command, length)
+	    };
+	    TclListObjAppendElements(NULL, iPtr->errorStack, 2, vals);
 	}
     }
 
@@ -5131,17 +5124,21 @@ TclLogCommandInfo(
 	 * uplevel case, [lappend errorstack UP $relativelevel]
 	 */
 
-	Tcl_ListObjAppendElement(NULL, iPtr->errorStack, iPtr->upLiteral);
-	Tcl_ListObjAppendElement(NULL, iPtr->errorStack, Tcl_NewWideIntObj(
-		(int)(iPtr->framePtr->level - iPtr->varFramePtr->level)));
+	Tcl_Obj *vals[] = {
+	    iPtr->upLiteral,
+	    Tcl_NewWideIntObj(iPtr->framePtr->level - iPtr->varFramePtr->level)
+	};
+	TclListObjAppendElements(NULL, iPtr->errorStack, 2, vals);
     } else if (iPtr->framePtr != iPtr->rootFramePtr) {
 	/*
 	 * normal case, [lappend errorstack CALL [info level 0]]
 	 */
 
-	Tcl_ListObjAppendElement(NULL, iPtr->errorStack, iPtr->callLiteral);
-	Tcl_ListObjAppendElement(NULL, iPtr->errorStack, Tcl_NewListObj(
-		iPtr->framePtr->objc, iPtr->framePtr->objv));
+	Tcl_Obj *vals[] = {
+	    iPtr->callLiteral,
+	    Tcl_NewListObj(iPtr->framePtr->objc, iPtr->framePtr->objv)
+	};
+	TclListObjAppendElements(NULL, iPtr->errorStack, 2, vals);
     }
 }
 
@@ -5190,9 +5187,11 @@ TclErrorStackResetIf(
 	 */
 
 	Tcl_ListObjReplace(interp, iPtr->errorStack, 0, len, 0, NULL);
-	Tcl_ListObjAppendElement(NULL, iPtr->errorStack, iPtr->innerLiteral);
-	Tcl_ListObjAppendElement(NULL, iPtr->errorStack,
-		Tcl_NewStringObj(msg, length));
+	Tcl_Obj *vals[] = {
+	    iPtr->innerLiteral,
+	    Tcl_NewStringObj(msg, length)
+	};
+	TclListObjAppendElements(NULL, iPtr->errorStack, 2, vals);
     }
 }
 

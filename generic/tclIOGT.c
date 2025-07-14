@@ -471,9 +471,8 @@ ExecuteCallback(
 	    ResultAdd(&dataPtr->result, resBuf, resLen);
 	    break;
 	}
-	nonBytes:
-	Tcl_AppendResult(interp, "chan transform callback received non-bytes",
-		(char *)NULL);
+    nonBytes:
+	TclPrintfResult(interp, "chan transform callback received non-bytes");
 	Tcl_Release(eval);
 	return TCL_ERROR;
 

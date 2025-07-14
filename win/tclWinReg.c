@@ -811,9 +811,7 @@ GetValue(
 
 	    Tcl_DStringInit(&buf);
 	    Tcl_WCharToUtfDString(wp, wcslen(wp), &buf);
-	    Tcl_ListObjAppendElement(interp, resultPtr,
-		    Tcl_NewStringObj(Tcl_DStringValue(&buf),
-			    Tcl_DStringLength(&buf)));
+	    Tcl_ListObjAppendElement(interp, resultPtr, Tcl_DStringToObj(&buf));
 
 	    while (*wp++ != 0); /* empty loop body */
 	    p = (char *) wp;
@@ -1381,7 +1379,6 @@ BroadcastValue(
     int timeout = 3000;
     Tcl_Size len;
     const char *str;
-    Tcl_Obj *objPtr;
     WCHAR *wstr;
     Tcl_DString ds;
 
@@ -1410,10 +1407,11 @@ BroadcastValue(
 	    (WPARAM) 0, (LPARAM) wstr, SMTO_ABORTIFHUNG, (UINT) timeout, &sendResult);
     Tcl_DStringFree(&ds);
 
-    objPtr = Tcl_NewObj();
-    Tcl_ListObjAppendElement(NULL, objPtr, Tcl_NewWideIntObj((Tcl_WideInt) result));
-    Tcl_ListObjAppendElement(NULL, objPtr, Tcl_NewWideIntObj((Tcl_WideInt) sendResult));
-    Tcl_SetObjResult(interp, objPtr);
+    Tcl_Obj *resultValues[] = {
+	Tcl_NewWideIntObj((Tcl_WideInt) result),
+	Tcl_NewWideIntObj((Tcl_WideInt) sendResult)
+    };
+    Tcl_SetObjResult(interp, Tcl_NewListObj(2, resultValues));
 
     return TCL_OK;
 }

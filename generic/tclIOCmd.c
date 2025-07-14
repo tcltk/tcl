@@ -947,8 +947,7 @@ Tcl_ExecObjCmd(
 	    break;
 	case EXEC_ENCODING:
 	    if (++skip >= objc) {
-		Tcl_SetResult(interp, "No value given for option -encoding.",
-			TCL_STATIC);
+		TclPrintfResult(interp, "No value given for option -encoding.");
 		return TCL_ERROR;
 	    } else {
 		Tcl_Encoding encoding;

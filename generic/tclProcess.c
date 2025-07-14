@@ -435,7 +435,6 @@ ProcessListObjCmd(
     Tcl_Obj *list;
     Tcl_HashEntry *entry;
     Tcl_HashSearch search;
-    ProcessInfo *info;
 
     if (objc != 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, NULL);
@@ -450,7 +449,7 @@ ProcessListObjCmd(
     Tcl_MutexLock(&infoTablesMutex);
     for (entry = Tcl_FirstHashEntry(&infoTablePerResolvedPid, &search);
 	    entry != NULL; entry = Tcl_NextHashEntry(&search)) {
-	info = (ProcessInfo *) Tcl_GetHashValue(entry);
+	const ProcessInfo *info = (ProcessInfo *) Tcl_GetHashValue(entry);
 	Tcl_ListObjAppendElement(interp, list,
 		Tcl_NewWideIntObj(info->resolvedPid));
     }

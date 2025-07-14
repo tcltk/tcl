@@ -9489,9 +9489,7 @@ InjectHandler(
 	    /*
 	     * I don't think this is reachable...
 	     */
-	    Tcl_Obj *nargsObj;
-	    TclNewIndexObj(nargsObj, nargs);
-	    Tcl_ListObjAppendElement(NULL, listPtr, nargsObj);
+	    Tcl_ListObjAppendElement(NULL, listPtr, Tcl_NewWideIntObj(nargs));
 	}
 	Tcl_ListObjAppendElement(NULL, listPtr, Tcl_GetObjResult(interp));
     }

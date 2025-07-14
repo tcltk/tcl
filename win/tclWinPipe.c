@@ -1935,9 +1935,8 @@ TclGetAndDetachPids(
     pipePtr = (PipeInfo *)Tcl_GetChannelInstanceData(chan);
     TclNewObj(pidsObj);
     for (i = 0; i < pipePtr->numPids; i++) {
-	Tcl_ListObjAppendElement(NULL, pidsObj,
-		Tcl_NewWideIntObj(
-			TclpGetPid(pipePtr->pidPtr[i])));
+	Tcl_ListObjAppendElement(NULL, pidsObj, Tcl_NewWideIntObj(
+		TclpGetPid(pipePtr->pidPtr[i])));
 	Tcl_DetachPids(1, &pipePtr->pidPtr[i]);
     }
     Tcl_SetObjResult(interp, pidsObj);
@@ -2762,38 +2761,31 @@ Tcl_PidObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument strings. */
 {
-    Tcl_Channel chan;
-    const Tcl_ChannelType *chanTypePtr;
-    PipeInfo *pipePtr;
-    size_t i;
-    Tcl_Obj *resultPtr;
-
     if (objc > 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?channel?");
 	return TCL_ERROR;
     }
     if (objc == 1) {
 	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(getpid()));
-    } else {
-	chan = Tcl_GetChannel(interp, TclGetString(objv[1]),
-		NULL);
-	if (chan == (Tcl_Channel) NULL) {
-	    return TCL_ERROR;
-	}
-	chanTypePtr = Tcl_GetChannelType(chan);
-	if (chanTypePtr != &pipeChannelType) {
-	    return TCL_OK;
-	}
-
-	pipePtr = (PipeInfo *) Tcl_GetChannelInstanceData(chan);
-	TclNewObj(resultPtr);
-	for (i = 0; i < pipePtr->numPids; i++) {
-	    Tcl_ListObjAppendElement(/*interp*/ NULL, resultPtr,
-		    Tcl_NewWideIntObj(
-			    TclpGetPid(pipePtr->pidPtr[i])));
-	}
-	Tcl_SetObjResult(interp, resultPtr);
+	return TCL_OK;
     }
+
+    Tcl_Channel chan = Tcl_GetChannel(interp, TclGetString(objv[1]), NULL);
+    if (chan == (Tcl_Channel) NULL) {
+	return TCL_ERROR;
+    }
+    const Tcl_ChannelType *chanTypePtr = Tcl_GetChannelType(chan);
+    if (chanTypePtr != &pipeChannelType) {
+	return TCL_OK;
+    }
+
+    const PipeInfo *pipePtr = (PipeInfo *) Tcl_GetChannelInstanceData(chan);
+    Tcl_Obj *resultPtr = Tcl_NewListObj(pipePtr->numPids, NULL);
+    for (size_t i = 0; i < pipePtr->numPids; i++) {
+	Tcl_ListObjAppendElement(NULL, resultPtr, Tcl_NewWideIntObj(
+		TclpGetPid(pipePtr->pidPtr[i])));
+    }
+    Tcl_SetObjResult(interp, resultPtr);
     return TCL_OK;
 }
 

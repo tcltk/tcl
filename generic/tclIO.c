@@ -7978,7 +7978,6 @@ Tcl_GetChannelOption(
     Tcl_DString *dsPtr)		/* Where to store value(s). */
 {
     size_t len;			/* Length of optionName string. */
-    char optionVal[128];	/* Buffer for snprintf. */
     Channel *chanPtr = (Channel *) chan;
     ChannelState *statePtr = chanPtr->state;
 				/* State info for channel */
@@ -8053,6 +8052,7 @@ Tcl_GetChannelOption(
 	if (len == 0) {
 	    Tcl_DStringAppendElement(dsPtr, "-buffersize");
 	}
+	char optionVal[TCL_INTEGER_SPACE];
 	TclFormatInt(optionVal, statePtr->bufSize);
 	Tcl_DStringAppendElement(dsPtr, optionVal);
 	if (len > 0) {
@@ -8064,7 +8064,7 @@ Tcl_GetChannelOption(
 	    Tcl_DStringAppendElement(dsPtr, "-encoding");
 	}
 	Tcl_DStringAppendElement(dsPtr,
-	    Tcl_GetEncodingName(statePtr->encoding));
+		Tcl_GetEncodingName(statePtr->encoding));
 	if (len > 0) {
 	    return TCL_OK;
 	}
@@ -10635,7 +10635,7 @@ Tcl_GetChannelNamesEx(
 	    && (pattern[2] == 'd'))) {
 	if ((Tcl_FindHashEntry(hTblPtr, pattern) != NULL)
 		&& (Tcl_ListObjAppendElement(interp, resultPtr,
-		Tcl_NewStringObj(pattern, -1)) != TCL_OK)) {
+			Tcl_NewStringObj(pattern, -1)) != TCL_OK)) {
 	    goto error;
 	}
 	goto done;

@@ -2811,11 +2811,11 @@ AppendPrintfToObjVA(
 	    case 'g':
 	    case 'G':
 		if (size > 0) {
-		Tcl_ListObjAppendElement(NULL, list, Tcl_NewDoubleObj(
-			(double)va_arg(argList, long double)));
+		    Tcl_ListObjAppendElement(NULL, list, Tcl_NewDoubleObj(
+			    (double)va_arg(argList, long double)));
 		} else {
-			Tcl_ListObjAppendElement(NULL, list, Tcl_NewDoubleObj(
-				va_arg(argList, double)));
+		    Tcl_ListObjAppendElement(NULL, list, Tcl_NewDoubleObj(
+			    va_arg(argList, double)));
 		}
 		seekingConversion = 0;
 		break;

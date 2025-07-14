@@ -883,7 +883,6 @@ Tcl_GetEncodingNames(
     Tcl_DictSearch mapSearch;
     int done = 0;
 
-    TclNewObj(result);
     Tcl_InitObjHashTable(&table);
 
     /*
@@ -916,6 +915,7 @@ Tcl_GetEncodingNames(
      * Pull all encoding names from table into the result list.
      */
 
+    TclNewObj(result);
     for (hPtr = Tcl_FirstHashEntry(&table, &search); hPtr != NULL;
 	    hPtr = Tcl_NextHashEntry(&search)) {
 	Tcl_ListObjAppendElement(NULL, result,
@@ -4624,11 +4624,9 @@ void
 TclGetEncodingProfiles(
     Tcl_Interp *interp)
 {
-    size_t i, n;
-    Tcl_Obj *objPtr;
-    n = sizeof(encodingProfiles) / sizeof(encodingProfiles[0]);
-    objPtr = Tcl_NewListObj(n, NULL);
-    for (i = 0; i < n; ++i) {
+    size_t n = sizeof(encodingProfiles) / sizeof(encodingProfiles[0]);
+    Tcl_Obj *objPtr = Tcl_NewListObj(n, NULL);
+    for (size_t i = 0; i < n; ++i) {
 	Tcl_ListObjAppendElement(interp, objPtr,
 		Tcl_NewStringObj(encodingProfiles[i].name, TCL_INDEX_NONE));
     }

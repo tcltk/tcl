@@ -13,7 +13,7 @@
 #   define USE_TCL_STUBS
 #endif
 #include <X11/Intrinsic.h>
-#include "tcl.h"
+#include "tclInt.h"
 
 static Tcl_ObjCmdProc TesteventloopCmd;
 
@@ -116,8 +116,8 @@ TesteventloopCmd(
 	(void) Tcl_SetServiceMode(oldMode);
 	framePtr = oldFramePtr;
     } else {
-	Tcl_AppendResult(interp, "bad option \"", Tcl_GetString(objv[1]),
-		"\": must be done or wait", (char *)NULL);
+	TclPrintfResult(interp, "bad option \"%s\": must be done or wait",
+		Tcl_GetString(objv[1]));
 	return TCL_ERROR;
     }
     return TCL_OK;

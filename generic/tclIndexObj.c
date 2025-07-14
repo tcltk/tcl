@@ -596,10 +596,11 @@ PrefixMatchObjCmd(
 	if (Tcl_IsShared(errorPtr)) {
 	    errorPtr = Tcl_DuplicateObj(errorPtr);
 	}
-	Tcl_ListObjAppendElement(interp, errorPtr,
-		Tcl_NewStringObj("-code", 5));
-	Tcl_ListObjAppendElement(interp, errorPtr, Tcl_NewWideIntObj(result));
-
+	Tcl_Obj *codeOption[] = {
+	    Tcl_NewStringObj("-code", 5),
+	    Tcl_NewWideIntObj(result)
+	};
+	TclListObjAppendElements(interp, errorPtr, 2, codeOption);
 	return Tcl_SetReturnOptions(interp, errorPtr);
     }
 

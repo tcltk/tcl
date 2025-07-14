@@ -1063,8 +1063,7 @@ Tcl_ListObjRange(
 	    assert(elemPtr);
 	    Tcl_ListObjAppendElement(interp, resultPtr, elemPtr);
 	}
-    }
-    else {
+    } else {
 	/* Create a lrangeType referencing the original source list */
 	result = LrangeNew(objPtr, start, rangeLen, &resultPtr);
     }

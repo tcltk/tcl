@@ -2231,8 +2231,6 @@ Tcl_GetInterpPath(
     Tcl_Interp *interp,		/* Interpreter to start search from. */
     Tcl_Interp *targetInterp)	/* Interpreter to find. */
 {
-    InterpInfo *iiPtr;
-
     if (targetInterp == interp) {
 	Tcl_SetObjResult(interp, Tcl_NewObj());
 	return TCL_OK;
@@ -2240,7 +2238,7 @@ Tcl_GetInterpPath(
     if (targetInterp == NULL) {
 	return TCL_ERROR;
     }
-    iiPtr = INTERP_INFO(targetInterp);
+    InterpInfo *iiPtr = INTERP_INFO(targetInterp);
     if (Tcl_GetInterpPath(interp, iiPtr->child.parentInterp) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -2777,24 +2775,22 @@ ChildDebugCmd(
     enum DebugTypes {
 	DEBUG_TYPE_FRAME
     };
-    int debugType;
-    Interp *iPtr;
-    Tcl_Obj *resultPtr;
+    Interp *iPtr = (Interp *) childInterp;
 
-    iPtr = (Interp *) childInterp;
     if (objc == 0) {
-	TclNewObj(resultPtr);
-	Tcl_ListObjAppendElement(NULL, resultPtr,
-		Tcl_NewStringObj("-frame", -1));
-	Tcl_ListObjAppendElement(NULL, resultPtr,
-		Tcl_NewBooleanObj(iPtr->flags & INTERP_DEBUG_FRAME));
-	Tcl_SetObjResult(interp, resultPtr);
+	Tcl_Obj *info[] = {
+	    Tcl_NewStringObj("-frame", -1),
+	    Tcl_NewBooleanObj(iPtr->flags & INTERP_DEBUG_FRAME)
+	};
+	Tcl_SetObjResult(interp, Tcl_NewListObj(2, info));
     } else {
+	int debugType;
 	if (Tcl_GetIndexFromObj(interp, objv[0], debugTypes, "debug option",
 		0, &debugType) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	if (debugType == DEBUG_TYPE_FRAME) {
+	switch (debugType) {
+	case DEBUG_TYPE_FRAME:
 	    if (objc == 2) { /* set */
 		if (Tcl_GetBooleanFromObj(interp, objv[1], &debugType)
 			!= TCL_OK) {
@@ -2813,6 +2809,9 @@ ChildDebugCmd(
 	    }
 	    Tcl_SetObjResult(interp,
 		    Tcl_NewBooleanObj(iPtr->flags & INTERP_DEBUG_FRAME));
+	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
     return TCL_OK;

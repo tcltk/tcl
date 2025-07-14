@@ -900,14 +900,14 @@ Tcl_ErrorObjCmd(
 
     if (objc >= 3) {		/* Process the optional info argument */
 	TclNewLiteralStringObj(optName, "-errorinfo");
-	Tcl_ListObjAppendElement(NULL, options, optName);
-	Tcl_ListObjAppendElement(NULL, options, objv[2]);
+	Tcl_Obj *items[] = {optName, objv[2]};
+	TclListObjAppendElements(NULL, options, 2, items);
     }
 
     if (objc >= 4) {		/* Process the optional code argument */
 	TclNewLiteralStringObj(optName, "-errorcode");
-	Tcl_ListObjAppendElement(NULL, options, optName);
-	Tcl_ListObjAppendElement(NULL, options, objv[3]);
+	Tcl_Obj *items[] = {optName, objv[3]};
+	TclListObjAppendElements(NULL, options, 2, items);
     }
 
     Tcl_SetObjResult(interp, objv[1]);

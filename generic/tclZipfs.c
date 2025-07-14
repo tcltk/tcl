@@ -2270,8 +2270,6 @@ ListMountPoints(
 {
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
-    ZipFile *zf;
-    Tcl_Obj *resultList;
 
     if (!interp) {
 	/*
@@ -2282,14 +2280,15 @@ ListMountPoints(
 	return (ZipFS.zipHash.numEntries ? TCL_OK : TCL_BREAK);
     }
 
-    TclNewObj(resultList);
+    Tcl_Obj *resultList = Tcl_NewListObj(0, NULL);
     for (hPtr = Tcl_FirstHashEntry(&ZipFS.zipHash, &search); hPtr;
 	    hPtr = Tcl_NextHashEntry(&search)) {
-	zf = (ZipFile *) Tcl_GetHashValue(hPtr);
-	Tcl_ListObjAppendElement(NULL, resultList, Tcl_NewStringObj(
-		zf->mountPoint, -1));
-	Tcl_ListObjAppendElement(NULL, resultList, Tcl_NewStringObj(
-		zf->name, -1));
+	const ZipFile *zf = (ZipFile *) Tcl_GetHashValue(hPtr);
+	Tcl_Obj *names[] = {
+	    Tcl_NewStringObj(zf->mountPoint, TCL_AUTO_LENGTH),
+	    Tcl_NewStringObj(zf->name, TCL_AUTO_LENGTH)
+	};
+	TclListObjAppendElements(NULL, resultList, 2, names);
     }
     Tcl_SetObjResult(interp, resultList);
     return TCL_OK;
@@ -4166,15 +4165,13 @@ ZipFSInfoObjCmd(
     ReadLock();
     z = ZipFSLookup(filename);
     if (z) {
-	Tcl_Obj *result = Tcl_GetObjResult(interp);
-
-	Tcl_ListObjAppendElement(interp, result,
-		Tcl_NewStringObj(z->zipFilePtr->name, -1));
-	Tcl_ListObjAppendElement(interp, result,
-		Tcl_NewWideIntObj(z->numBytes));
-	Tcl_ListObjAppendElement(interp, result,
-		Tcl_NewWideIntObj(z->numCompressedBytes));
-	Tcl_ListObjAppendElement(interp, result, Tcl_NewWideIntObj(z->offset));
+	Tcl_Obj *values[] = {
+	    Tcl_NewStringObj(z->zipFilePtr->name, -1),
+	    Tcl_NewWideIntObj(z->numBytes),
+	    Tcl_NewWideIntObj(z->numCompressedBytes),
+	    Tcl_NewWideIntObj(z->offset)
+	};
+	Tcl_SetObjResult(interp, Tcl_NewListObj(4, values));
 	ret = TCL_OK;
     } else {
 	Tcl_SetErrno(ENOENT);
@@ -5580,6 +5577,7 @@ AppendWithPrefix(
 	size_t prefixLength = Tcl_DStringLength(prefix);
 
 	Tcl_DStringAppend(prefix, name, nameLen);
+	// NB: Not Tcl_DStringToObj(); don't want to reset buffer.
 	Tcl_ListObjAppendElement(NULL, result, Tcl_NewStringObj(
 		Tcl_DStringValue(prefix), Tcl_DStringLength(prefix)));
 	Tcl_DStringSetLength(prefix, prefixLength);

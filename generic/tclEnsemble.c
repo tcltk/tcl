@@ -511,57 +511,40 @@ ReadAllEnsembleOptions(
     Tcl_Interp *interp,
     Tcl_Command token)		/* The ensemble to read from. */
 {
-    Tcl_Obj *resultObj, *tmpObj = NULL;	/* silence gcc 4 warning */
+    Tcl_Obj *tmpObj = NULL;		/* silence gcc 4 warning */
     int flags = 0;			/* silence gcc 4 warning */
     Tcl_Namespace *namespacePtr = NULL;	/* silence gcc 4 warning */
 
-    TclNewObj(resultObj);
+    Tcl_Obj *resultObj = Tcl_NewDictObj();
 
     /* -map option */
-    Tcl_ListObjAppendElement(NULL, resultObj,
-	    Tcl_NewStringObj(ensembleConfigOptions[CONF_MAP],
-		    TCL_AUTO_LENGTH));
     Tcl_GetEnsembleMappingDict(NULL, token, &tmpObj);
-    Tcl_ListObjAppendElement(NULL, resultObj,
+    TclDictPut(NULL, resultObj, ensembleConfigOptions[CONF_MAP],
 	    (tmpObj != NULL) ? tmpObj : Tcl_NewObj());
 
     /* -namespace option */
-    Tcl_ListObjAppendElement(NULL, resultObj,
-	    Tcl_NewStringObj(ensembleConfigOptions[CONF_NAMESPACE],
-		    TCL_AUTO_LENGTH));
     Tcl_GetEnsembleNamespace(NULL, token, &namespacePtr);
-    Tcl_ListObjAppendElement(NULL, resultObj, TclNewNamespaceObj(namespacePtr));
+    TclDictPut(NULL, resultObj, ensembleConfigOptions[CONF_NAMESPACE],
+	    TclNewNamespaceObj(namespacePtr));
 
     /* -parameters option */
-    Tcl_ListObjAppendElement(NULL, resultObj,
-	    Tcl_NewStringObj(ensembleConfigOptions[CONF_PARAM],
-		    TCL_AUTO_LENGTH));
     Tcl_GetEnsembleParameterList(NULL, token, &tmpObj);
-    Tcl_ListObjAppendElement(NULL, resultObj,
+    TclDictPut(NULL, resultObj, ensembleConfigOptions[CONF_PARAM],
 	    (tmpObj != NULL) ? tmpObj : Tcl_NewObj());
 
     /* -prefix option */
-    Tcl_ListObjAppendElement(NULL, resultObj,
-	    Tcl_NewStringObj(ensembleConfigOptions[CONF_PREFIX],
-		    TCL_AUTO_LENGTH));
     Tcl_GetEnsembleFlags(NULL, token, &flags);
-    Tcl_ListObjAppendElement(NULL, resultObj,
+    TclDictPut(NULL, resultObj, ensembleConfigOptions[CONF_PREFIX],
 	    Tcl_NewBooleanObj(flags & TCL_ENSEMBLE_PREFIX));
 
     /* -subcommands option */
-    Tcl_ListObjAppendElement(NULL, resultObj,
-	    Tcl_NewStringObj(ensembleConfigOptions[CONF_SUBCMDS],
-		    TCL_AUTO_LENGTH));
     Tcl_GetEnsembleSubcommandList(NULL, token, &tmpObj);
-    Tcl_ListObjAppendElement(NULL, resultObj,
+    TclDictPut(NULL, resultObj, ensembleConfigOptions[CONF_SUBCMDS],
 	    (tmpObj != NULL) ? tmpObj : Tcl_NewObj());
 
     /* -unknown option */
-    Tcl_ListObjAppendElement(NULL, resultObj,
-	    Tcl_NewStringObj(ensembleConfigOptions[CONF_UNKNOWN],
-		    TCL_AUTO_LENGTH));
     Tcl_GetEnsembleUnknownHandler(NULL, token, &tmpObj);
-    Tcl_ListObjAppendElement(NULL, resultObj,
+    TclDictPut(NULL, resultObj, ensembleConfigOptions[CONF_UNKNOWN],
 	    (tmpObj != NULL) ? tmpObj : Tcl_NewObj());
 
     Tcl_SetObjResult(interp, resultObj);
@@ -2395,17 +2378,19 @@ EnsembleUnknownCallback(
     if (result == TCL_OK) {
 	*prefixObjPtr = Tcl_GetObjResult(interp);
 	Tcl_IncrRefCount(*prefixObjPtr);
-	TclDecrRefCount(unknownCmd);
 	Tcl_ResetResult(interp);
 
 	/* A non-empty list is the replacement command. */
 
 	if (TclListObjLength(interp, *prefixObjPtr, &prefixObjc) != TCL_OK) {
 	    TclDecrRefCount(*prefixObjPtr);
-	    Tcl_AddErrorInfo(interp, "\n    (while parsing result of "
-		    "ensemble unknown subcommand handler)");
+	    TclAppendPrintfToErrorInfo(interp, "\n    (while parsing result of "
+		    "ensemble unknown subcommand handler: \"%s\")",
+		TclGetString(unknownCmd));
+	    TclDecrRefCount(unknownCmd);
 	    return TCL_ERROR;
 	}
+	TclDecrRefCount(unknownCmd);
 	if (prefixObjc > 0) {
 	    return TCL_OK;
 	}
@@ -2429,24 +2414,20 @@ EnsembleUnknownCallback(
 		    "unknown subcommand handler returned bad code: ");
 	    switch (result) {
 	    case TCL_RETURN:
-		Tcl_AppendToObj(Tcl_GetObjResult(interp), "return",
-			TCL_AUTO_LENGTH);
+		Tcl_AppendResult(interp, "return", (char*)NULL);
 		break;
 	    case TCL_BREAK:
-		Tcl_AppendToObj(Tcl_GetObjResult(interp), "break",
-			TCL_AUTO_LENGTH);
+		Tcl_AppendResult(interp, "break", (char*)NULL);
 		break;
 	    case TCL_CONTINUE:
-		Tcl_AppendToObj(Tcl_GetObjResult(interp), "continue",
-			TCL_AUTO_LENGTH);
+		Tcl_AppendResult(interp, "continue", (char*)NULL);
 		break;
 	    default:
 		Tcl_AppendPrintfToObj(Tcl_GetObjResult(interp), "%d", result);
 	    }
 	    TclAppendPrintfToErrorInfo(interp, "\n    (result of "
-		    "ensemble unknown subcommand handler: %s)",
+		    "ensemble unknown subcommand handler: \"%s\")",
 		    TclGetString(unknownCmd));
-	    Tcl_DecrRefCount(unknownCmd);
 	    Tcl_SetErrorCode(interp, "TCL", "ENSEMBLE", "UNKNOWN_RESULT",
 		    (char *)NULL);
 	} else {

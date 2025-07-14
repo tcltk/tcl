@@ -3654,10 +3654,10 @@ TclNRSwitchObjCmd(
 	if (splitObjs) {
 	    for (i=0 ; i<objc ; i+=2) {
 		if (TclGetString(objv[i])[0] == '#') {
-		    Tcl_AppendToObj(Tcl_GetObjResult(interp),
+		    Tcl_AppendResult(interp,
 			    ", this may be due to a comment incorrectly"
 			    " placed outside of a switch body - see the"
-			    " \"switch\" documentation", -1);
+			    " \"switch\" documentation", NULL);
 		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "SWITCH",
 			    "BADARM", "COMMENT?", (char *)NULL);
 		    break;
@@ -4896,7 +4896,7 @@ TclNRTryObjCmd(
 	    Tcl_IncrRefCount(handlers[i].optionsVar);
 	}
     }
-    Tcl_Free((void *) handlers);
+    TclStackFree(interp, (void *) handlers);
     return TCL_ERROR;
 }
 

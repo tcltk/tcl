@@ -433,9 +433,8 @@ TestbooleanobjCmd(
 	}
 	Tcl_SetObjResult(interp, varPtr[varIndex]);
     } else {
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		"bad option \"", Tcl_GetString(objv[1]),
-		"\": must be set, get, or not", (char *)NULL);
+	TclPrintfResult(interp, "bad option \"%s\": must be set, get, or not",
+		Tcl_GetString(objv[1]));
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -550,9 +549,9 @@ TestdoubleobjCmd(
 	}
 	Tcl_SetObjResult(interp, varPtr[varIndex]);
     } else {
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		"bad option \"", Tcl_GetString(objv[1]),
-		"\": must be set, get, mult10, or div10", (char *)NULL);
+	TclPrintfResult(interp,
+		"bad option \"%s\": must be set, get, mult10, or div10",
+		Tcl_GetString(objv[1]));
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -621,7 +620,7 @@ TestindexobjCmd(
     }
 
     if (objc < 5) {
-	Tcl_AppendToObj(Tcl_GetObjResult(interp), "wrong # args", -1);
+	TclPrintfResult(interp, "wrong # args");
 	return TCL_ERROR;
     }
 
@@ -839,9 +838,9 @@ TestintobjCmd(
 	}
 	Tcl_SetObjResult(interp, varPtr[varIndex]);
     } else {
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		"bad option \"", Tcl_GetString(objv[1]),
-		"\": must be set, get, get2, mult10, or div10", (char *)NULL);
+	TclPrintfResult(interp,
+		"bad option \"%s\": must be set, get, get2, mult10, or div10",
+		Tcl_GetString(objv[1]));
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -1253,8 +1252,7 @@ TestobjCmd(
 	    goto wrongNumArgs;
 	}
 	if ((targetType = Tcl_GetObjType(Tcl_GetString(objv[3]))) == NULL) {
-	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		    "no type ", Tcl_GetString(objv[3]), " found", (char *)NULL);
+	    TclPrintfResult(interp, "no type %s found", Tcl_GetString(objv[3]));
 	    return TCL_ERROR;
 	}
 	if (Tcl_ConvertToType(interp, varPtr[varIndex], targetType)
@@ -1797,7 +1795,7 @@ GetVariableIndex(
     }
     if (index == TCL_INDEX_NONE) {
 	Tcl_ResetResult(interp);
-	Tcl_AppendToObj(Tcl_GetObjResult(interp), "bad variable index", -1);
+	TclPrintfResult(interp, "bad variable index");
 	return TCL_ERROR;
     }
 
@@ -1830,18 +1828,16 @@ CheckIfVarUnset(
     Tcl_Size varIndex)		/* Index of the test variable to check. */
 {
     if (varIndex < 0 || varPtr[varIndex] == NULL) {
-	char buf[32 + TCL_INTEGER_SPACE];
-
-	snprintf(buf, sizeof(buf), "variable %" TCL_SIZE_MODIFIER "d is unset (NULL)", varIndex);
 	Tcl_ResetResult(interp);
-	Tcl_AppendToObj(Tcl_GetObjResult(interp), buf, -1);
+	TclPrintfResult(interp, "variable %" TCL_SIZE_MODIFIER "d is unset (NULL)",
+		varIndex);
 	return 1;
     }
     return 0;
 }
 
 static int
-TestisemptyCmd (
+TestisemptyCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
@@ -1854,11 +1850,11 @@ TestisemptyCmd (
     }
     result = Tcl_NewIntObj(Tcl_IsEmpty(objv[1]));
     if (!objv[1]->bytes) {
-    Tcl_AppendToObj(result, " pure", TCL_INDEX_NONE);
+	Tcl_AppendToObj(result, " pure", TCL_INDEX_NONE);
     }
     if (objv[1]->typePtr) {
-    Tcl_AppendToObj(result, " ", TCL_INDEX_NONE);
-    Tcl_AppendToObj(result, objv[1]->typePtr->name, TCL_INDEX_NONE);
+	Tcl_AppendToObj(result, " ", TCL_INDEX_NONE);
+	Tcl_AppendToObj(result, objv[1]->typePtr->name, TCL_INDEX_NONE);
     }
     Tcl_SetObjResult(interp, result);
     return TCL_OK;

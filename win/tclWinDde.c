@@ -875,9 +875,7 @@ DdeServerProc(
 
 	    Tcl_DStringInit(&dsBuf);
 	    Tcl_WCharToUtfDString(utilString, (dlen>>1) - 1, &dsBuf);
-	    ddeObjectPtr = Tcl_NewStringObj(Tcl_DStringValue(&dsBuf),
-		    Tcl_DStringLength(&dsBuf));
-	    Tcl_DStringFree(&dsBuf);
+	    ddeObjectPtr = Tcl_DStringToObj(&dsBuf);
 	}
 	Tcl_IncrRefCount(ddeObjectPtr);
 	DdeUnaccessData(hData);
@@ -1123,13 +1121,10 @@ DdeServicesOnAck(
 	GlobalGetAtomNameW(service, sz, 255);
 	Tcl_DStringInit(&dString);
 	Tcl_WCharToUtfDString(sz, wcslen(sz), &dString);
-	Tcl_ListObjAppendElement(NULL, matchPtr, Tcl_NewStringObj(Tcl_DStringValue(&dString), -1));
-	Tcl_DStringFree(&dString);
+	Tcl_ListObjAppendElement(NULL, matchPtr, Tcl_DStringToObj(&dString));
 	GlobalGetAtomNameW(topic, sz, 255);
-	Tcl_DStringInit(&dString);
 	Tcl_WCharToUtfDString(sz, wcslen(sz), &dString);
-	Tcl_ListObjAppendElement(NULL, matchPtr, Tcl_NewStringObj(Tcl_DStringValue(&dString), -1));
-	Tcl_DStringFree(&dString);
+	Tcl_ListObjAppendElement(NULL, matchPtr, Tcl_DStringToObj(&dString));
 
 	/*
 	 * Adding the hwnd as a third list element provides a unique
@@ -1503,9 +1498,7 @@ DdeObjCmd(
 
 	    Tcl_DStringInit(&dsBuf);
 	    Tcl_WCharToUtfDString(serviceName, wcslen(serviceName), &dsBuf);
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_DStringValue(&dsBuf),
-		    Tcl_DStringLength(&dsBuf)));
-	    Tcl_DStringFree(&dsBuf);
+	    Tcl_SetObjResult(interp, Tcl_DStringToObj(&dsBuf));
 	} else {
 	    Tcl_ResetResult(interp);
 	}
@@ -1619,10 +1612,7 @@ DdeObjCmd(
 			}
 			Tcl_DStringInit(&dsBuf);
 			Tcl_WCharToUtfDString(dataString, tmp>>1, &dsBuf);
-			returnObjPtr =
-			    Tcl_NewStringObj(Tcl_DStringValue(&dsBuf),
-				    Tcl_DStringLength(&dsBuf));
-			Tcl_DStringFree(&dsBuf);
+			returnObjPtr = Tcl_DStringToObj(&dsBuf);
 		    }
 		    DdeUnaccessData(ddeData);
 		    DdeFreeDataHandle(ddeData);
@@ -1874,9 +1864,7 @@ DdeObjCmd(
 		}
 		Tcl_DStringInit(&dsBuf);
 		Tcl_WCharToUtfDString(ddeDataString, length>>1, &dsBuf);
-		resultPtr = Tcl_NewStringObj(Tcl_DStringValue(&dsBuf),
-			Tcl_DStringLength(&dsBuf));
-		Tcl_DStringFree(&dsBuf);
+		resultPtr = Tcl_DStringToObj(&dsBuf);
 		Tcl_Free((char *) ddeDataString);
 
 		if (Tcl_ListObjIndex(NULL, resultPtr, 0, &objPtr) != TCL_OK) {

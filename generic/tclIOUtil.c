@@ -3837,8 +3837,8 @@ Tcl_FSSplitPath(
 	}
 	length = p - elementStart;
 	if (length > 0) {
-	    Tcl_Obj *nextElt = Tcl_NewStringObj(elementStart, length);
-	    Tcl_ListObjAppendElement(NULL, result, nextElt);
+	    Tcl_ListObjAppendElement(NULL, result,
+		    Tcl_NewStringObj(elementStart, length));
 	}
 	if (*p++ == '\0') {
 	    break;

@@ -2876,7 +2876,7 @@ test assemble-30.4 {throw in wrong context} {
 	x
     }
     -match glob
-    -result {1 {"loadScalar" instruction may not appear in a context where an exception has been caught and not disposed of.} {TCL ASSEM BADTHROW} {{"loadScalar" instruction may not appear in a context where an exception has been caught and not disposed of.} {    in assembly code between lines 10 and 15}*}}
+    -result {1 {"loadScalar" instruction may not appear in a context where an exception has been caught and not disposed of.} {TCL ASSEM BADTHROW} {{"loadScalar" instruction may not appear in a context where an exception has been caught and not disposed of.} {    (in assembly code between lines 10 and 15)}*}}
     -cleanup {rename x {}}
 }
 test assemble-30.5 {unclosed catch} {
@@ -3025,7 +3025,7 @@ test assemble-40.1 {unbalanced stack} {
 	    } result] $result $::errorInfo
     }
     -result {1 {stack underflow} {stack underflow
-    in assembly code between line 1 and end of assembly code*}}
+    (in assembly code between line 1 and end of assembly code)*}}
     -match glob
    -returnCodes ok
 }
@@ -3046,7 +3046,7 @@ test assemble-40.2 {unbalanced stack} {*}{
 	    } result] $result $::errorInfo
     }
     -result {1 {stack underflow} {stack underflow
-    in assembly code between lines 7 and 9*}}
+    (in assembly code between lines 7 and 9)*}}
     -match glob
    -returnCodes ok
 }

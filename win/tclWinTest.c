@@ -151,8 +151,8 @@ TesteventloopCmd(
 	(void) Tcl_SetServiceMode(oldMode);
 	framePtr = oldFramePtr;
     } else {
-	Tcl_AppendResult(interp, "bad option \"", Tcl_GetString(objv[1]),
-		"\": must be done or wait", (char *)NULL);
+	TclPrintfResult(interp, "bad option \"%s\": must be done or wait",
+		Tcl_GetString(objv[1]));
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -205,8 +205,8 @@ TestvolumetypeCmd(
 	    VOL_BUF_SIZE);
 
     if (found == 0) {
-	Tcl_AppendResult(interp, "could not get volume type for \"",
-		(path?path:""), "\"", (char *)NULL);
+	TclPrintfResult(interp, "could not get volume type for \"%s\"",
+		(path ? path : ""));
 	Tcl_WinConvertError(GetLastError());
 	return TCL_ERROR;
     }
@@ -253,7 +253,6 @@ TestwinclockCmd(
 				 * FILETIME */
     Tcl_Time tclTime;		/* Tcl clock */
     FILETIME sysTime;		/* System clock */
-    Tcl_Obj *result;		/* Result of the command */
     LARGE_INTEGER t1, t2;
     LARGE_INTEGER p1, p2;
 
@@ -274,18 +273,15 @@ TestwinclockCmd(
 
     QueryPerformanceCounter(&p2);
 
-    result = Tcl_NewObj();
-    Tcl_ListObjAppendElement(interp, result,
-	    Tcl_NewWideIntObj(t2.QuadPart / 10000000));
-    Tcl_ListObjAppendElement(interp, result,
-	    Tcl_NewWideIntObj((t2.QuadPart / 10) % 1000000));
-    Tcl_ListObjAppendElement(interp, result, Tcl_NewWideIntObj(tclTime.sec));
-    Tcl_ListObjAppendElement(interp, result, Tcl_NewWideIntObj(tclTime.usec));
-
-    Tcl_ListObjAppendElement(interp, result, Tcl_NewWideIntObj(p1.QuadPart));
-    Tcl_ListObjAppendElement(interp, result, Tcl_NewWideIntObj(p2.QuadPart));
-
-    Tcl_SetObjResult(interp, result);
+    Tcl_Obj *results[] = {
+	Tcl_NewWideIntObj(t2.QuadPart / 10000000),
+	Tcl_NewWideIntObj((t2.QuadPart / 10) % 1000000),
+	Tcl_NewWideIntObj(tclTime.sec),
+	Tcl_NewWideIntObj(tclTime.usec),
+	Tcl_NewWideIntObj(p1.QuadPart),
+	Tcl_NewWideIntObj(p2.QuadPart)
+    };
+    Tcl_SetObjResult(interp, Tcl_NewListObj(6, results));
 
     return TCL_OK;
 }
@@ -661,8 +657,8 @@ TestchmodCmd(
 	    return TCL_ERROR;
 	}
 	if (TestplatformChmod(translated, mode) != 0) {
-	    Tcl_AppendResult(interp, translated, ": ", Tcl_PosixError(interp),
-		    (char *)NULL);
+	    TclPrintfResult(interp, "%s: %s",
+		    translated, Tcl_PosixError(interp));
 	    return TCL_ERROR;
 	}
 	Tcl_DStringFree(&buffer);

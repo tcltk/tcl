@@ -1743,9 +1743,8 @@ DictGetCmd(
 	     * Assume these won't fail as we have complete control over the
 	     * types of things here.
 	     */
-
-	    Tcl_ListObjAppendElement(interp, listPtr, keyPtr);
-	    Tcl_ListObjAppendElement(interp, listPtr, valuePtr);
+	    Tcl_Obj *values[] = {keyPtr, valuePtr};
+	    TclListObjAppendElements(NULL, listPtr, 2, values);
 
 	    Tcl_DictObjNext(&search, &keyPtr, &valuePtr, &done);
 	}

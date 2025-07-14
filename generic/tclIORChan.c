@@ -3264,8 +3264,9 @@ ForwardProc(
 		 * Odd number of elements is wrong. [x].
 		 */
 
-		char *buf = (char *)Tcl_Alloc(200);
-		snprintf(buf, 200,
+#define ERROR_MESSAGE_SPACE 200
+		char *buf = (char *)Tcl_Alloc(ERROR_MESSAGE_SPACE);
+		snprintf(buf, ERROR_MESSAGE_SPACE,
 			"{Expected list with even number of elements, got %" TCL_SIZE_MODIFIER "d %s instead}",
 			listc, (listc == 1 ? "element" : "elements"));
 

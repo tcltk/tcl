@@ -1841,16 +1841,14 @@ Tcl_VwaitObjCmd(
 		    } else {
 			TclNewLiteralStringObj(keyObj, "variable");
 		    }
-		    Tcl_ListObjAppendElement(NULL, listObj, keyObj);
-		    Tcl_ListObjAppendElement(NULL, listObj,
-			    vwaitItems[i].sourceObj);
+		    Tcl_Obj *items[] = {keyObj, vwaitItems[i].sourceObj};
+		    TclListObjAppendElements(NULL, listObj, 2, items);
 		}
 	    }
 	    if (timeout > 0) {
 		TclNewLiteralStringObj(keyObj, "timeleft");
-		Tcl_ListObjAppendElement(NULL, listObj, keyObj);
-		Tcl_ListObjAppendElement(NULL, listObj,
-			Tcl_NewWideIntObj(diff));
+		Tcl_Obj *items[] = {keyObj, Tcl_NewWideIntObj(diff)};
+		TclListObjAppendElements(NULL, listObj, 2, items);
 	    }
 	    Tcl_SetObjResult(interp, listObj);
 	} else if (timeout > 0) {
