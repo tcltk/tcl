@@ -21,7 +21,6 @@
 #include "tclRegexp.h"
 #include "tclStringTrim.h"
 #include "tclTomMath.h"
-#include "../utf8proc/utf8proc.h" /* Relative path to ignore system include */
 
 static inline Tcl_Obj *	During(Tcl_Interp *interp, int resultCode,
 			    Tcl_Obj *oldOptions, Tcl_Obj *errorInfo);

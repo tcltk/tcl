@@ -1502,7 +1502,8 @@ const TclStubs tclStubs = {
     Tcl_ListObjReverse, /* 692 */
     Tcl_ListObjRepeat, /* 693 */
     Tcl_ListObjRange, /* 694 */
-    TclUnusedStubEntry, /* 695 */
+    Tcl_UtfToNormalizedDString, /* 695 */
+    TclUnusedStubEntry, /* 696 */
 };
 
 /* !END!: Do not edit above this line. */

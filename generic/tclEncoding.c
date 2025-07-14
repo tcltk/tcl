@@ -11,6 +11,7 @@
 
 #include "tclInt.h"
 #include <assert.h>
+#include "../utf8proc/utf8proc.h" /* Relative path to ignore system include */
 
 typedef size_t (LengthProc)(const char *src);
 
@@ -4637,6 +4638,90 @@ TclGetEncodingProfiles(
     Tcl_SetObjResult(interp, objPtr);
 }
 
+/*
+ * Tcl_UtfToNormalizedDString --
+ *
+ *	Converts the passed string to a Unicode normalization form storing
+ *	it in dsPtr.
+ *
+ * Results:
+ *	Pointer to content of dsPtr on success, and NULL on error.
+ *
+ */
+const char *
+Tcl_UtfToNormalizedDString(
+    Tcl_Interp *interp, /* Used for error messages. May be NULL */
+    const char *bytes,  /* Operand encoded in Tcl internal UTF8 */
+    Tcl_Size length,	/* Length bytes[], or -1 if NUL terminated */
+    Tcl_UnicodeNormalizationForm normForm, /* TCL_{NFC,NFD,NFKC,NFKC} */
+    int profile,        /* TCL_ENCODING_PROFILE_{STRICT,REPLACE} */
+    Tcl_DString *dsPtr) /* Converted output string in Tcl internal
+			   UTF8 encoding. Init'ed by function */
+{
+    Tcl_DStringInit(dsPtr);
+
+    if (profile != TCL_ENCODING_PROFILE_REPLACE &&
+	profile != TCL_ENCODING_PROFILE_STRICT) {
+	Tcl_SetObjResult(interp,
+	    Tcl_ObjPrintf("Invalid value %d passed for encoding profile",
+		profile));
+    }
+
+    Tcl_Encoding encoding = Tcl_GetEncoding(interp, "utf-8");
+    if (encoding == NULL) {
+	return NULL;
+    }
+
+    int result;
+    Tcl_DString dsExt;
+    result = Tcl_UtfToExternalDStringEx(interp, encoding, bytes, length,
+	profile, &dsExt, NULL);
+    /* !!! dsExt needs to be freed even in case of error returns */
+
+    if (result == TCL_OK) {
+	utf8proc_uint8_t *normUtf8;
+        utf8proc_ssize_t normLength;
+	Tcl_Size dsLength = Tcl_DStringLength(&dsExt);
+	const utf8proc_uint8_t *dsStr =
+	    (utf8proc_uint8_t *)Tcl_DStringValue(&dsExt);
+        utf8proc_option_t options = UTF8PROC_STABLE;
+        switch (normForm) {
+        case TCL_NFC:
+            options |= UTF8PROC_COMPOSE;
+            break;
+        case TCL_NFD:
+            options |= UTF8PROC_DECOMPOSE;
+            break;
+        case TCL_NFKC:
+            options |= UTF8PROC_COMPOSE|UTF8PROC_COMPAT;
+            break;
+        case TCL_NFKD:
+            options |= UTF8PROC_DECOMPOSE|UTF8PROC_COMPAT;
+            break;
+        }
+	normLength = utf8proc_map_custom(dsStr, dsLength, &normUtf8,
+	    options, NULL, NULL);
+
+	if (normLength < 0) {
+            const char *errorMsg = utf8proc_errmsg(normLength);
+            Tcl_SetObjResult(
+                interp, Tcl_NewStringObj(
+                    errorMsg ? errorMsg : "Unicode normalization failed.", -1));
+            result = TCL_ERROR;
+        } else {
+            /* Convert standard UTF8 to internal UTF8 */
+            assert(normUtf8);
+            result = Tcl_ExternalToUtfDStringEx(interp, encoding,
+                (const char *)normUtf8, normLength, profile, dsPtr, NULL);
+            free(normUtf8);
+        }
+    }
+
+    Tcl_DStringFree(&dsExt);
+    Tcl_FreeEncoding(encoding);
+    return result == TCL_OK ? Tcl_DStringValue(dsPtr) : NULL;
+}
+
 /*
  * Local Variables:
  * mode: c
