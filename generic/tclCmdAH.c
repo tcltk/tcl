@@ -732,11 +732,9 @@ EncodingDirsObjCmd(
 
     dirListObj = objv[1];
     if (Tcl_SetEncodingSearchPath(dirListObj) == TCL_ERROR) {
-	TclPrintfResult(interp,
-		"expected directory list but got \"%s\"",
+	TclPrintfResult(interp, "expected directory list but got \"%s\"",
 		TclGetString(dirListObj));
-	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "ENCODING", "BADPATH",
-		(char *)NULL);
+	TclSetErrorCode(interp, "TCL", "OPERATION", "ENCODING", "BADPATH");
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, dirListObj);
@@ -1228,8 +1226,7 @@ FileAttrAccessTimeCmd(
 #if defined(_WIN32)
     /* We use a value of 0 to indicate the access time not available */
     if (Tcl_GetAccessTimeFromStat(&buf) == 0) {
-	TclPrintfResult(interp,
-		"could not get access time for file \"%s\"",
+	TclPrintfResult(interp, "could not get access time for file \"%s\"",
 		TclGetString(objv[1]));
 	return TCL_ERROR;
     }
@@ -1958,8 +1955,8 @@ PathFilesystemCmd(
     fsInfo = Tcl_FSFileSystemInfo(objv[1]);
     if (fsInfo == NULL) {
 	TclPrintfResult(interp, "unrecognised path");
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "FILESYSTEM",
-		TclGetString(objv[1]), (char *)NULL);
+	TclSetErrorCode(interp, "TCL", "LOOKUP", "FILESYSTEM",
+		TclGetString(objv[1]));
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, fsInfo);
@@ -2108,8 +2105,7 @@ PathSplitCmd(
 	TclPrintfResult(interp,
 		"could not read \"%s\": no such file or directory",
 		TclGetString(objv[1]));
-	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PATHSPLIT", "NONESUCH",
-		(char *)NULL);
+	TclSetErrorCode(interp, "TCL", "OPERATION", "PATHSPLIT", "NONESUCH");
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, res);
@@ -2208,8 +2204,8 @@ FilesystemSeparatorCmd(
 
 	if (separatorObj == NULL) {
 	    TclPrintfResult(interp, "unrecognised path");
-	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "FILESYSTEM",
-		    TclGetString(objv[1]), (char *)NULL);
+	    TclSetErrorCode(interp, "TCL", "LOOKUP", "FILESYSTEM",
+		    TclGetString(objv[1]));
 	    return TCL_ERROR;
 	}
 	Tcl_SetObjResult(interp, separatorObj);
@@ -2339,8 +2335,7 @@ GetStatBuf(
 
     if (status < 0) {
 	if (interp != NULL) {
-	    TclPrintfResult(interp,
-		    "could not read \"%s\": %s",
+	    TclPrintfResult(interp, "could not read \"%s\": %s",
 		    TclGetString(pathPtr), Tcl_PosixError(interp));
 	}
 	return TCL_ERROR;
@@ -2847,12 +2842,11 @@ EachloopCmd(
 	    goto done;
 	}
 	if (statePtr->varcList[i] < 1) {
-	    TclPrintfResult(interp,
-		    "%s varlist is empty",
+	    TclPrintfResult(interp, "%s varlist is empty",
 		    (statePtr->resultList != NULL ? "lmap" : "foreach"));
-	    Tcl_SetErrorCode(interp, "TCL", "OPERATION",
+	    TclSetErrorCode(interp, "TCL", "OPERATION",
 		    (statePtr->resultList != NULL ? "LMAP" : "FOREACH"),
-		    "NEEDVARS", (char *)NULL);
+		    "NEEDVARS");
 	    result = TCL_ERROR;
 	    goto done;
 	}

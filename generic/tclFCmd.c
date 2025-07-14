@@ -320,8 +320,7 @@ TclFileMakeDirsCmd(
 
   done:
     if (errfile != NULL) {
-	TclPrintfResult(interp,
-		"can't create directory \"%s\": %s",
+	TclPrintfResult(interp, "can't create directory \"%s\": %s",
 		TclGetString(errfile), Tcl_PosixError(interp));
 	result = TCL_ERROR;
     }
@@ -1111,7 +1110,7 @@ TclFileAttrsCmd(
 	    TclPrintfResult(interp,
 		    "bad option \"%s\", there are no file attributes in this"
 		    " filesystem", TclGetString(objv[0]));
-	    Tcl_SetErrorCode(interp, "TCL","OPERATION","FATTR","NONE", (char *)NULL);
+	    TclSetErrorCode(interp, "TCL","OPERATION","FATTR","NONE");
 	    goto end;
 	}
 
@@ -1135,7 +1134,7 @@ TclFileAttrsCmd(
 	    TclPrintfResult(interp,
 		    "bad option \"%s\", there are no file attributes in this"
 		    " filesystem", TclGetString(objv[0]));
-	    Tcl_SetErrorCode(interp, "TCL","OPERATION","FATTR","NONE", (char *)NULL);
+	    TclSetErrorCode(interp, "TCL","OPERATION","FATTR","NONE");
 	    goto end;
 	}
 
@@ -1145,10 +1144,9 @@ TclFileAttrsCmd(
 		goto end;
 	    }
 	    if (i + 1 == objc) {
-		TclPrintfResult(interp,
-			"value for \"%s\" missing", TclGetString(objv[i]));
-		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "FATTR",
-			"NOVALUE", (char *)NULL);
+		TclPrintfResult(interp, "value for \"%s\" missing",
+			TclGetString(objv[i]));
+		TclSetErrorCode(interp, "TCL", "OPERATION", "FATTR", "NOVALUE");
 		goto end;
 	    }
 	    if (Tcl_FSFileAttrsSet(interp, index, filePtr,
@@ -1537,8 +1535,8 @@ TclFileTemporaryCmd(
 	if (nameVarObj) {
 	    TclDecrRefCount(nameObj);
 	}
-	TclPrintfResult(interp,
-		"can't create temporary file: %s", Tcl_PosixError(interp));
+	TclPrintfResult(interp, "can't create temporary file: %s",
+		Tcl_PosixError(interp));
 	return TCL_ERROR;
     }
     Tcl_RegisterChannel(interp, chan);

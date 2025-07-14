@@ -3680,7 +3680,7 @@ TestlinkCmd(
 	    Tcl_UpdateLinkedVar(interp, "uwide");
 	}
     } else {
-	TclPrintfResult(interp, "bad option \"%s\": should be be %s",
+	TclPrintfResult(interp, "bad option \"%s\": must be %s",
 		Tcl_GetString(objv[1]), "create, delete, get, set, or update");
 	return TCL_ERROR;
     }
@@ -5333,27 +5333,26 @@ TestseterrorcodeCmd(
     }
     switch (objc) {
     case 1:
-	Tcl_SetErrorCode(interp, "NONE", (char *)NULL);
+	TclSetErrorCode(interp, "NONE");
 	break;
     case 2:
-	Tcl_SetErrorCode(interp, Tcl_GetString(objv[1]), (char *)NULL);
+	TclSetErrorCode(interp, Tcl_GetString(objv[1]));
 	break;
     case 3:
-	Tcl_SetErrorCode(interp, Tcl_GetString(objv[1]), Tcl_GetString(objv[2]),
-		(char *)NULL);
+	TclSetErrorCode(interp, Tcl_GetString(objv[1]), Tcl_GetString(objv[2]));
 	break;
     case 4:
-	Tcl_SetErrorCode(interp, Tcl_GetString(objv[1]), Tcl_GetString(objv[2]),
-		Tcl_GetString(objv[3]), (char *)NULL);
+	TclSetErrorCode(interp, Tcl_GetString(objv[1]), Tcl_GetString(objv[2]),
+		Tcl_GetString(objv[3]));
 	break;
     case 5:
-	Tcl_SetErrorCode(interp, Tcl_GetString(objv[1]), Tcl_GetString(objv[2]),
-		Tcl_GetString(objv[3]), Tcl_GetString(objv[4]), (char *)NULL);
+	TclSetErrorCode(interp, Tcl_GetString(objv[1]), Tcl_GetString(objv[2]),
+		Tcl_GetString(objv[3]), Tcl_GetString(objv[4]));
 	break;
     case 6:
-	Tcl_SetErrorCode(interp, Tcl_GetString(objv[1]), Tcl_GetString(objv[2]),
+	TclSetErrorCode(interp, Tcl_GetString(objv[1]), Tcl_GetString(objv[2]),
 		Tcl_GetString(objv[3]), Tcl_GetString(objv[4]),
-		Tcl_GetString(objv[5]), (char *)NULL);
+		Tcl_GetString(objv[5]));
     }
     return TCL_ERROR;
 }
@@ -6742,7 +6741,7 @@ TestChannelCmd(
 	return Tcl_UnstackChannel(interp, chan);
     }
 
-    TclPrintfResult(interp, "bad option \"%s\": should be %s", cmdName,
+    TclPrintfResult(interp, "bad option \"%s\": must be %s", cmdName,
 	    "cut, clearchannelhandlers, info, isshared, mode, open, "
 	    "readable, splice, writable, transform, unstack");
     return TCL_ERROR;
@@ -7026,7 +7025,8 @@ TestSocketCmd(
 	return TCL_OK;
     }
 
-    TclPrintfResult(interp, "bad option \"%s\": should be testflags", cmdName);
+    TclPrintfResult(interp, "bad option \"%s\": must be %s",
+	    cmdName, "testflags");
     return TCL_ERROR;
 }
 

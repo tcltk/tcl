@@ -167,8 +167,7 @@ Tcl_LinkVar(
     linkPtr = (Link *) Tcl_VarTraceInfo2(interp, varName, NULL,
 	    TCL_GLOBAL_ONLY, LinkTraceProc, NULL);
     if (linkPtr != NULL) {
-	TclPrintfResult(interp,
-		"variable '%s' is already linked", varName);
+	TclPrintfResult(interp, "variable '%s' is already linked", varName);
 	return TCL_ERROR;
     }
 

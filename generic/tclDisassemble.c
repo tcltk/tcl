@@ -1430,10 +1430,10 @@ Tcl_DisassembleObjCmd(
 
 	procPtr = TclFindProc((Interp *) interp, TclGetString(objv[2]));
 	if (procPtr == NULL) {
-	    TclPrintfResult(interp,
-		    "\"%s\" isn't a procedure", TclGetString(objv[2]));
-	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "PROC",
-		    TclGetString(objv[2]), (char *)NULL);
+	    TclPrintfResult(interp, "\"%s\" isn't a procedure",
+		    TclGetString(objv[2]));
+	    TclSetErrorCode(interp, "TCL", "LOOKUP", "PROC",
+		    TclGetString(objv[2]));
 	    return TCL_ERROR;
 	}
 
@@ -1483,18 +1483,18 @@ Tcl_DisassembleObjCmd(
 
 	methodPtr = classPtr->constructorPtr;
 	if (methodPtr == NULL) {
-	    TclPrintfResult(interp,
-		    "\"%s\" has no defined constructor", TclGetString(ooWhat));
-	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "DISASSEMBLE",
-		    "CONSRUCTOR", (char *)NULL);
+	    TclPrintfResult(interp, "\"%s\" has no defined constructor",
+		    TclGetString(ooWhat));
+	    TclSetErrorCode(interp, "TCL", "OPERATION", "DISASSEMBLE",
+		    "CONSRUCTOR");
 	    return TCL_ERROR;
 	}
 	procPtr = TclOOGetProcFromMethod(methodPtr);
 	if (procPtr == NULL) {
 	    TclPrintfResult(interp,
 		    "body not available for this kind of constructor");
-	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "DISASSEMBLE",
-		    "METHODTYPE", (char *)NULL);
+	    TclSetErrorCode(interp, "TCL", "OPERATION", "DISASSEMBLE",
+		    "METHODTYPE");
 	    return TCL_ERROR;
 	}
 
@@ -1520,18 +1520,18 @@ Tcl_DisassembleObjCmd(
 
 	methodPtr = classPtr->destructorPtr;
 	if (methodPtr == NULL) {
-	    TclPrintfResult(interp,
-		    "\"%s\" has no defined destructor", TclGetString(ooWhat));
-	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "DISASSEMBLE",
-		    "DESRUCTOR", (char *)NULL);
+	    TclPrintfResult(interp, "\"%s\" has no defined destructor",
+		    TclGetString(ooWhat));
+	    TclSetErrorCode(interp, "TCL", "OPERATION", "DISASSEMBLE",
+		    "DESRUCTOR");
 	    return TCL_ERROR;
 	}
 	procPtr = TclOOGetProcFromMethod(methodPtr);
 	if (procPtr == NULL) {
 	    TclPrintfResult(interp,
 		    "body not available for this kind of destructor");
-	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "DISASSEMBLE",
-		    "METHODTYPE", (char *)NULL);
+	    TclSetErrorCode(interp, "TCL", "OPERATION", "DISASSEMBLE",
+		    "METHODTYPE");
 	    return TCL_ERROR;
 	}
 
@@ -1585,18 +1585,18 @@ Tcl_DisassembleObjCmd(
     methodBody:
 	if (hPtr == NULL) {
 	unknownMethod:
-	    TclPrintfResult(interp,
-		    "unknown method \"%s\"", TclGetString(ooWhat));
-	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
-		    TclGetString(ooWhat), (char *)NULL);
+	    TclPrintfResult(interp, "unknown method \"%s\"",
+		    TclGetString(ooWhat));
+	    TclSetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
+		    TclGetString(ooWhat));
 	    return TCL_ERROR;
 	}
 	procPtr = TclOOGetProcFromMethod((Method *)Tcl_GetHashValue(hPtr));
 	if (procPtr == NULL) {
 	    TclPrintfResult(interp,
 		    "body not available for this kind of method");
-	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "DISASSEMBLE",
-		    "METHODTYPE", (char *)NULL);
+	    TclSetErrorCode(interp, "TCL", "OPERATION", "DISASSEMBLE",
+		    "METHODTYPE");
 	    return TCL_ERROR;
 	}
 	bodyType = "body of method";
@@ -1634,8 +1634,7 @@ Tcl_DisassembleObjCmd(
 
     if (codePtr->flags & TCL_BYTECODE_PRECOMPILED) {
 	TclPrintfResult(interp, "may not disassemble prebuilt bytecode");
-	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "DISASSEMBLE",
-		"BYTECODE", (char *)NULL);
+	TclSetErrorCode(interp, "TCL", "OPERATION", "DISASSEMBLE", "BYTECODE");
 	return TCL_ERROR;
     }
     if (clientData) {

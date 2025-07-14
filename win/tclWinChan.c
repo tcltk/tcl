@@ -1012,8 +1012,8 @@ TclpOpenFileChannel(
 		return NULL;
 	    }
 
-	    TclPrintfResult(interp,
-		    "couldn't open \"%s\": filename is invalid on this platform",
+	    TclPrintfResult(interp, "couldn't open \"%s\": "
+		    "filename is invalid on this platform",
 		    TclGetString(pathPtr));
 	}
 	return NULL;
@@ -1189,8 +1189,7 @@ TclpOpenFileChannel(
 	channel = NULL;
 	TclPrintfResult(interp, "couldn't open \"%s\": bad file type",
 		TclGetString(pathPtr));
-	Tcl_SetErrorCode(interp, "TCL", "VALUE", "CHANNEL", "BAD_TYPE",
-		(char *)NULL);
+	TclSetErrorCode(interp, "TCL", "VALUE", "CHANNEL", "BAD_TYPE");
 	break;
     }
 

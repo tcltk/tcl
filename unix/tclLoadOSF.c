@@ -167,7 +167,7 @@ FindSymbol(
 
     if (proc == NULL && interp != NULL) {
 	TclPrintfResult(interp, "cannot find symbol \"%s\"", symbol);
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LOAD_SYMBOL", symbol, (char *)NULL);
+	TclSetErrorCode(interp, "TCL", "LOOKUP", "LOAD_SYMBOL", symbol);
     }
     return proc;
 }

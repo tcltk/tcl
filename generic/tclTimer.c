@@ -825,11 +825,9 @@ Tcl_AfterObjCmd(
 		!= TCL_OK) {
 	    const char *arg = TclGetString(objv[1]);
 
-	    TclPrintfResult(interp,
-		    "bad argument \"%s\": must be"
+	    TclPrintfResult(interp, "bad argument \"%s\": must be"
 		    " cancel, idle, info, or an integer", arg);
-	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "INDEX", "argument",
-		    arg, (char *)NULL);
+	    TclSetErrorCode(interp, "TCL", "LOOKUP", "INDEX", "argument", arg);
 	    return TCL_ERROR;
 	}
     }
@@ -967,7 +965,7 @@ Tcl_AfterObjCmd(
 	    const char *eventStr = TclGetString(objv[2]);
 
 	    TclPrintfResult(interp, "event \"%s\" doesn't exist", eventStr);
-	    Tcl_SetErrorCode(interp, "TCL","LOOKUP","EVENT", eventStr, (char *)NULL);
+	    TclSetErrorCode(interp, "TCL","LOOKUP","EVENT", eventStr);
 	    return TCL_ERROR;
 	} else {
 	    Tcl_Obj *resultList[] = {

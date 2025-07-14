@@ -870,8 +870,8 @@ MemoryCmd(
 	}
 	fileP = fopen(fileName, "w");
 	if (fileP == NULL) {
-	    TclPrintfResult(interp,
-		    "cannot open output file: %s", Tcl_PosixError(interp));
+	    TclPrintfResult(interp, "cannot open output file: %s",
+		    Tcl_PosixError(interp));
 	    return TCL_ERROR;
 	}
 	TclDbDumpActiveObjects(fileP);
@@ -934,10 +934,9 @@ MemoryCmd(
 	return TCL_OK;
     }
 
-    TclPrintfResult(interp,
-	    "bad option \"%s\": should be active, break_on_malloc, info, "
-	    "init, objs, onexit, tag, trace, trace_on_at_malloc, or validate",
-	    TclGetString(objv[1]));
+    TclPrintfResult(interp, "bad option \"%s\": must be %s",
+	    TclGetString(objv[1]), "active, break_on_malloc, info, "
+	    "init, objs, onexit, tag, trace, trace_on_at_malloc, or validate");
     return TCL_ERROR;
 
   argError:

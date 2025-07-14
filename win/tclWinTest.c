@@ -151,8 +151,8 @@ TesteventloopCmd(
 	(void) Tcl_SetServiceMode(oldMode);
 	framePtr = oldFramePtr;
     } else {
-	TclPrintfResult(interp, "bad option \"%s\": must be done or wait",
-		Tcl_GetString(objv[1]));
+	TclPrintfResult(interp, "bad option \"%s\": must be %s",
+		Tcl_GetString(objv[1]), "done or wait");
 	return TCL_ERROR;
     }
     return TCL_OK;

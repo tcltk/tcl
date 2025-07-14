@@ -467,7 +467,7 @@ test iocmd-12.6 {POSIX open access modes: errors} {
     concat [catch {open $path(test3) "FOO \{BAR BAZ"} msg] $msg\n$::errorInfo
 } "1 unmatched open brace in list
 unmatched open brace in list
-    while processing open access modes \"FOO {BAR BAZ\"
+    (while processing open access modes \"FOO {BAR BAZ\")
     invoked from within
 \"open \$path(test3) \"FOO \\{BAR BAZ\"\""
 test iocmd-12.7 {POSIX open access modes: errors} {

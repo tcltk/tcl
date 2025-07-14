@@ -946,9 +946,9 @@ Tcl_ConvertToType(
 
     if (typePtr->setFromAnyProc == NULL) {
 	if (interp) {
-	    TclPrintfResult(interp,
-		    "can't convert value to type %s", typePtr->name);
-	    Tcl_SetErrorCode(interp, "TCL", "API_ABUSE", (char *)NULL);
+	    TclPrintfResult(interp, "can't convert value to type %s",
+		    typePtr->name);
+	    TclSetErrorCode(interp, "TCL", "API_ABUSE");
 	}
 	return TCL_ERROR;
     }
@@ -2104,7 +2104,7 @@ TclSetBooleanFromAny(
 	Tcl_AppendLimitedToObj(msg, str, length, 50, "");
 	Tcl_AppendToObj(msg, "\"", -1);
 	Tcl_SetObjResult(interp, msg);
-	Tcl_SetErrorCode(interp, "TCL", "VALUE", "BOOLEAN", (char *)NULL);
+	TclSetErrorCode(interp, "TCL", "VALUE", "BOOLEAN");
     }
     return TCL_ERROR;
 }
@@ -2393,8 +2393,7 @@ Tcl_GetDoubleFromObj(
 		if (interp != NULL) {
 		    TclPrintfResult(interp,
 			    "floating point value is Not a Number");
-		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "DOUBLE", "NAN",
-			    (char *)NULL);
+		    TclSetErrorCode(interp, "TCL", "VALUE", "DOUBLE", "NAN");
 		}
 		return TCL_ERROR;
 	    }
@@ -2540,7 +2539,7 @@ Tcl_GetIntFromObj(
 	if (interp != NULL) {
 	    const char *s = "integer value too large to represent";
 	    TclPrintfResult(interp, "%s", s);
-	    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, (char *)NULL);
+	    TclSetErrorCode(interp, "ARITH", "IOVERFLOW", s);
 	}
 	return TCL_ERROR;
     }
@@ -2662,7 +2661,7 @@ Tcl_GetLongFromObj(
 	    if (interp != NULL) {
 		TclPrintfResult(interp, "expected integer but got \"%s\"",
 			TclGetString(objPtr));
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", (char *)NULL);
+		TclSetErrorCode(interp, "TCL", "VALUE", "INTEGER");
 	    }
 	    return TCL_ERROR;
 	}
@@ -2705,7 +2704,7 @@ Tcl_GetLongFromObj(
 		const char *s = "integer value too large to represent";
 
 		TclPrintfResult(interp, "%s", s);
-		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, (char *)NULL);
+		TclSetErrorCode(interp, "ARITH", "IOVERFLOW", s);
 	    }
 	    return TCL_ERROR;
 	}
@@ -2976,7 +2975,7 @@ Tcl_GetWideIntFromObj(
 	    if (interp != NULL) {
 		TclPrintfResult(interp, "expected integer but got \"%s\"",
 			TclGetString(objPtr));
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", (char *)NULL);
+		TclSetErrorCode(interp, "TCL", "VALUE", "INTEGER");
 	    }
 	    return TCL_ERROR;
 	}
@@ -3013,7 +3012,7 @@ Tcl_GetWideIntFromObj(
 		const char *s = "integer value too large to represent";
 
 		TclPrintfResult(interp, "%s", s);
-		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, (char *)NULL);
+		TclSetErrorCode(interp, "ARITH", "IOVERFLOW", s);
 	    }
 	    return TCL_ERROR;
 	}
@@ -3072,7 +3071,7 @@ Tcl_GetWideUIntFromObj(
 		    TclPrintfResult(interp,
 			    "expected unsigned integer but got \"%s\"",
 			    TclGetString(objPtr));
-		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", (char *)NULL);
+		    TclSetErrorCode(interp, "TCL", "VALUE", "INTEGER");
 		}
 		return TCL_ERROR;
 	    }
@@ -3109,7 +3108,7 @@ Tcl_GetWideUIntFromObj(
 	    if (interp != NULL) {
 		const char *s = "integer value too large to represent";
 		TclPrintfResult(interp, "%s", s);
-		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, (char *)NULL);
+		TclSetErrorCode(interp, "ARITH", "IOVERFLOW", s);
 	    }
 	    return TCL_ERROR;
 	}
@@ -3155,7 +3154,7 @@ TclGetWideBitsFromObj(
 	    if (interp != NULL) {
 		TclPrintfResult(interp, "expected integer but got \"%s\"",
 			TclGetString(objPtr));
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", (char *)NULL);
+		TclSetErrorCode(interp, "TCL", "VALUE", "INTEGER");
 	    }
 	    return TCL_ERROR;
 	}
@@ -3478,7 +3477,7 @@ GetBignumFromObj(
 	    if (interp != NULL) {
 		TclPrintfResult(interp, "expected integer but got \"%s\"",
 			TclGetString(objPtr));
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", (char *)NULL);
+		TclSetErrorCode(interp, "TCL", "VALUE", "INTEGER");
 	    }
 	    return TCL_ERROR;
 	}
@@ -3746,7 +3745,7 @@ Tcl_GetNumber(
 	if (interp) {
 	    TclPrintfResult(interp,
 		    "max size for a Tcl value (%d bytes) exceeded", INT_MAX);
-	    Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
+	    TclSetErrorCode(interp, "TCL", "MEMORY");
 	}
 	return TCL_ERROR;
     }

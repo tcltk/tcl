@@ -268,7 +268,7 @@ FunctionNotAvailableError(
 {
     if (interp) {
 	TclPrintfResult(interp, "ICU function not available");
-	Tcl_SetErrorCode(interp, "TCL", "ICU", "UNSUPPORTED_OP", NULL);
+	TclSetErrorCode(interp, "TCL", "ICU", "UNSUPPORTED_OP");
     }
     return TCL_ERROR;
 }
@@ -284,13 +284,12 @@ IcuError(
 	if (u_errorName) {
 	    codeMessage = u_errorName(code);
 	}
-	TclPrintfResult(interp,
-		"%s%sICU error (%d): %s",
+	TclPrintfResult(interp, "%s%sICU error (%d): %s",
 		message ? message : "",
 		message ? ". " : "",
 		code,
 		codeMessage ? codeMessage : "");
-	Tcl_SetErrorCode(interp, "TCL", "ICU", codeMessage, NULL);
+	TclSetErrorCode(interp, "TCL", "ICU", codeMessage);
     }
     return TCL_ERROR;
 }

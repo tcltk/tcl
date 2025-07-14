@@ -428,9 +428,8 @@ DeleteKey(
     }
 
     if (*keyName == '\0') {
-	TclPrintfResult(interp,
-		"bad key: cannot delete root keys");
-	Tcl_SetErrorCode(interp, "WIN_REG", "DEL_ROOT_KEY", (char *)NULL);
+	TclPrintfResult(interp, "bad key: cannot delete root keys");
+	TclSetErrorCode(interp, "WIN_REG", "DEL_ROOT_KEY");
 	Tcl_Free(buffer);
 	return TCL_ERROR;
     }
@@ -598,8 +597,7 @@ GetKeyNames(
 	    if (result == ERROR_NO_MORE_ITEMS) {
 		result = TCL_OK;
 	    } else {
-		TclPrintfResult(interp,
-			"unable to enumerate subkeys of \"%s\": ",
+		TclPrintfResult(interp, "unable to enumerate subkeys of \"%s\": ",
 			Tcl_GetString(keyNameObj));
 		AppendSystemError(interp, result);
 		result = TCL_ERROR;
@@ -1103,9 +1101,9 @@ ParseKeyName(
 	rootName = name;
     }
     if (!rootName) {
-	TclPrintfResult(interp,
-		"bad key \"%s\": must start with a valid root", name);
-	Tcl_SetErrorCode(interp, "WIN_REG", "NO_ROOT_KEY", (char *)NULL);
+	TclPrintfResult(interp, "bad key \"%s\": "
+		"must start with a valid root", name);
+	TclSetErrorCode(interp, "WIN_REG", "NO_ROOT_KEY");
 	return TCL_ERROR;
     }
 
@@ -1480,7 +1478,7 @@ AppendSystemError(
     }
 
     snprintf(id, sizeof(id), "%ld", error);
-    Tcl_SetErrorCode(interp, "WINDOWS", id, msg, (char *)NULL);
+    TclSetErrorCode(interp, "WINDOWS", id, msg);
     Tcl_AppendToObj(resultPtr, msg, length);
     Tcl_SetObjResult(interp, resultPtr);
 

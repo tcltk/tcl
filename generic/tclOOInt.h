@@ -715,7 +715,7 @@ MODULE_SCOPE void	TclOORegisterInstanceProperty(Object *oPtr,
  * Convenience macro for generating error codes.
  */
 #define OO_ERROR(interp, code) \
-    Tcl_SetErrorCode((interp), "TCL", "OO", #code, (char *)NULL)
+    TclSetErrorCode((interp), "TCL", "OO", #code)
 
 #endif /* TCL_OO_INTERNAL_H */
 

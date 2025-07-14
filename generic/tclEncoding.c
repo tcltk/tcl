@@ -1249,9 +1249,8 @@ Tcl_ExternalToUtfDStringEx(
 			    "unexpected byte sequence starting at index %"
 			    TCL_SIZE_MODIFIER "d: '\\x%02X'",
 			    nBytesProcessed, UCHAR(srcStart[nBytesProcessed]));
-		    Tcl_SetErrorCode(
-			    interp, "TCL", "ENCODING", "ILLEGALSEQUENCE", buf,
-			    (char *)NULL);
+		    TclSetErrorCode(interp, "TCL", "ENCODING",
+			    "ILLEGALSEQUENCE", buf);
 		}
 	    }
 	    if (result != TCL_OK) {
@@ -1572,8 +1571,8 @@ Tcl_UtfToExternalDStringEx(
 			    "unexpected character at index %" TCL_SIZE_MODIFIER
 			    "u: 'U+%06X'",
 			    pos, ucs4);
-		    Tcl_SetErrorCode(interp, "TCL", "ENCODING", "ILLEGALSEQUENCE",
-			    buf, (char *)NULL);
+		    TclSetErrorCode(interp, "TCL", "ENCODING", "ILLEGALSEQUENCE",
+			    buf);
 		}
 	    }
 	    if (result != TCL_OK) {
@@ -1826,7 +1825,7 @@ OpenEncodingFileChannel(
 
     if ((NULL == chan) && (interp != NULL)) {
 	TclPrintfResult(interp, "unknown encoding \"%s\"", name);
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ENCODING", name, (char *)NULL);
+	TclSetErrorCode(interp, "TCL", "LOOKUP", "ENCODING", name);
     }
     Tcl_DecrRefCount(fileNameObj);
     Tcl_DecrRefCount(searchPath);
@@ -1899,7 +1898,7 @@ LoadEncodingFile(
     }
     if ((encoding == NULL) && (interp != NULL)) {
 	TclPrintfResult(interp, "invalid encoding file \"%s\"", name);
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ENCODING", name, (char *)NULL);
+	TclSetErrorCode(interp, "TCL", "LOOKUP", "ENCODING", name);
     }
     Tcl_CloseEx(NULL, chan, 0);
 
@@ -4563,8 +4562,7 @@ TclEncodingProfileNameToId(
 		errorObj, " or ", encodingProfiles[numProfiles-1].name, (char *)NULL);
 
 	Tcl_SetObjResult(interp, errorObj);
-	Tcl_SetErrorCode(
-		interp, "TCL", "ENCODING", "PROFILE", profileName, (char *)NULL);
+	TclSetErrorCode(interp, "TCL", "ENCODING", "PROFILE", profileName);
     }
     return TCL_ERROR;
 }
@@ -4597,10 +4595,9 @@ TclEncodingProfileIdToName(
 	}
     }
     if (interp) {
-	TclPrintfResult(interp,
-		"Internal error. Bad profile id \"%d\".", profileValue);
-	Tcl_SetErrorCode(
-		interp, "TCL", "ENCODING", "PROFILEID", (char *)NULL);
+	TclPrintfResult(interp, "Internal error. Bad profile id \"%d\".",
+		profileValue);
+	TclSetErrorCode(interp, "TCL", "ENCODING", "PROFILEID");
     }
     return NULL;
 }

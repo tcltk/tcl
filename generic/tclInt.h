@@ -4902,16 +4902,28 @@ MODULE_SCOPE Tcl_LibraryInitProc Tcl_ABSListTest_Init;
 /*
  * Convenience macro for error generation. Note that a literal format must
  * always be supplied; the real declaration is:
- *    #define TclPrintfResult(interp, format, ...) \
- *        Tcl_SetObjResult((interp), Tcl_ObjPrintf("" format, __VA_ARGS__))
+ *    #define TclPrintfResult(interp, format, ...)
  * except that that doesn't handle the no-values-to-format case right, and
  * __VA_OPT__ is a C23 feature.
  */
 #define TclPrintfResult(interp, ...) \
     Tcl_SetObjResult((interp), Tcl_ObjPrintf("" __VA_ARGS__))
 
+/*
+ * Convenience macro for error info generation. Note that a literal format must
+ * always be supplied; the real declaration is:
+ *    #define TclAppendPrintfToErrorInfo(interp, format, ...)
+ * except that that doesn't handle the no-values-to-format case right, and
+ * __VA_OPT__ is a C23 feature.
+ */
 #define TclAppendPrintfToErrorInfo(interp, ...) \
     Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf("" __VA_ARGS__))
+
+/*
+ * Convenience macro for error code generation.
+ */
+#define TclSetErrorCode(interp, ...) \
+    Tcl_SetErrorCode((interp), __VA_ARGS__, (char *)NULL)
 
 /*
  *----------------------------------------------------------------

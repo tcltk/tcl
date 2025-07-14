@@ -109,12 +109,12 @@ ReadProperty(
     Tcl_DecrRefCount(args[1]);
     switch (code) {
     case TCL_BREAK:
-	TclPrintfResult(interp,
-		"property getter for %s did a break", propName);
+	TclPrintfResult(interp, "property getter for %s did a break",
+		propName);
 	return TCL_ERROR;
     case TCL_CONTINUE:
-	TclPrintfResult(interp,
-		"property getter for %s did a continue", propName);
+	TclPrintfResult(interp, "property getter for %s did a continue",
+		propName);
 	return TCL_ERROR;
     default:
 	return code;
@@ -144,12 +144,12 @@ WriteProperty(
     Tcl_DecrRefCount(args[2]);
     switch (code) {
     case TCL_BREAK:
-	TclPrintfResult(interp,
-		"property setter for %s did a break", propName);
+	TclPrintfResult(interp, "property setter for %s did a break",
+		propName);
 	return TCL_ERROR;
     case TCL_CONTINUE:
-	TclPrintfResult(interp,
-		"property setter for %s did a continue", propName);
+	TclPrintfResult(interp, "property setter for %s did a continue",
+		propName);
 	return TCL_ERROR;
     default:
 	return code;
@@ -1006,8 +1006,7 @@ TclOOInstallStdPropertyImpls(
     return TCL_OK;
 
   badProp:
-    TclPrintfResult(interp,
-	    "bad property name \"%s\": %s", name, reason);
+    TclPrintfResult(interp, "bad property name \"%s\": %s", name, reason);
     OO_ERROR(interp, PROPERTY_FORMAT);
     return TCL_ERROR;
 }
@@ -1078,7 +1077,7 @@ TclOODefinePropertyCmd(
 		TclPrintfResult(interp, "missing %s to go with %s option",
 			(option == OPT_KIND ? "kind value" : "body"),
 			options[option]);
-		Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", NULL);
+		TclSetErrorCode(interp, "TCL", "WRONGARGS");
 		return TCL_ERROR;
 	    }
 	    argObj = objv[i + 2];

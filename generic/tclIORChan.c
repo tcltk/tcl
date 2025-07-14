@@ -633,15 +633,13 @@ TclChanCreateObjCmd(
     }
 
     if ((mode & TCL_READABLE) && !HAS(methods, METH_READ)) {
-	TclPrintfResult(interp,
-		"chan handler \"%s\" lacks a \"read\" method",
+	TclPrintfResult(interp, "chan handler \"%s\" lacks a \"read\" method",
 		TclGetString(cmdObj));
 	goto error;
     }
 
     if ((mode & TCL_WRITABLE) && !HAS(methods, METH_WRITE)) {
-	TclPrintfResult(interp,
-		"chan handler \"%s\" lacks a \"write\" method",
+	TclPrintfResult(interp, "chan handler \"%s\" lacks a \"write\" method",
 		TclGetString(cmdObj));
 	goto error;
     }
@@ -859,7 +857,7 @@ TclChanPostEventObjCmd(
     if (hPtr == NULL) {
 	TclPrintfResult(interp,
 		"can not find reflected channel named \"%s\"", chanId);
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CHANNEL", chanId, (char *)NULL);
+	TclSetErrorCode(interp, "TCL", "LOOKUP", "CHANNEL", chanId);
 	return TCL_ERROR;
     }
 
@@ -1952,8 +1950,7 @@ ReflectGetOption(
 	 */
 
 	Tcl_ResetResult(interp);
-	TclPrintfResult(interp,
-		"Expected list with even number of "
+	TclPrintfResult(interp, "Expected list with even number of "
 		"elements, got %" TCL_SIZE_MODIFIER "d element%s instead", listc,
 		(listc == 1 ? "" : "s"));
 	goto error;

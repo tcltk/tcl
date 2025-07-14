@@ -371,8 +371,8 @@ TestfilewaitCmd(
     } else if (strcmp(Tcl_GetString(objv[2]), "both") == 0){
 	mask = TCL_WRITABLE|TCL_READABLE;
     } else {
-	TclPrintfResult(interp,
-		"bad argument \"%s\": must be readable, writable, or both",
+	TclPrintfResult(interp, "bad argument \"%s\": must be "
+		"readable, writable, or both",
 		Tcl_GetString(objv[2]));
 	return TCL_ERROR;
     }

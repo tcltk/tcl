@@ -183,10 +183,8 @@ TclOOGetClassFromObj(
 	return NULL;
     }
     if (oPtr->classPtr == NULL) {
-	TclPrintfResult(interp,
-		"\"%s\" is not a class", TclGetString(objPtr));
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CLASS",
-		TclGetString(objPtr), (char *)NULL);
+	TclPrintfResult(interp, "\"%s\" is not a class", TclGetString(objPtr));
+	TclSetErrorCode(interp, "TCL", "LOOKUP", "CLASS", TclGetString(objPtr));
 	return NULL;
     }
     return oPtr->classPtr;
@@ -308,17 +306,13 @@ InfoObjectDefnCmd(
      */
 
   unknownMethod:
-    TclPrintfResult(interp,
-	    "unknown method \"%s\"", TclGetString(objv[2]));
-    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
-	    TclGetString(objv[2]), (char *)NULL);
+    TclPrintfResult(interp, "unknown method \"%s\"", TclGetString(objv[2]));
+    TclSetErrorCode(interp, "TCL", "LOOKUP", "METHOD", TclGetString(objv[2]));
     return TCL_ERROR;
 
   wrongType:
-    TclPrintfResult(interp,
-	    "definition not available for this kind of method");
-    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
-	    TclGetString(objv[2]), (char *)NULL);
+    TclPrintfResult(interp, "definition not available for this kind of method");
+    TclSetErrorCode(interp, "TCL", "LOOKUP", "METHOD", TclGetString(objv[2]));
     return TCL_ERROR;
 }
 
@@ -416,17 +410,14 @@ InfoObjectForwardCmd(
      */
 
   unknownMethod:
-    TclPrintfResult(interp,
-	    "unknown method \"%s\"", TclGetString(objv[2]));
-    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
-	    TclGetString(objv[2]), (char *)NULL);
+    TclPrintfResult(interp, "unknown method \"%s\"", TclGetString(objv[2]));
+    TclSetErrorCode(interp, "TCL", "LOOKUP", "METHOD", TclGetString(objv[2]));
     return TCL_ERROR;
 
   wrongType:
     TclPrintfResult(interp,
 	    "prefix argument list not available for this kind of method");
-    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
-	    TclGetString(objv[2]), (char *)NULL);
+    TclSetErrorCode(interp, "TCL", "LOOKUP", "METHOD", TclGetString(objv[2]));
     return TCL_ERROR;
 }
 
@@ -624,8 +615,7 @@ InfoObjectMethodsCmd(
 	    case OPT_SCOPE:
 		if (++i >= objc) {
 		    TclPrintfResult(interp, "missing option for -scope");
-		    Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING",
-			    (char *)NULL);
+		    TclSetErrorCode(interp, "TCL", "ARGUMENT", "MISSING");
 		    return TCL_ERROR;
 		}
 		if (Tcl_GetIndexFromObj(interp, objv[i], scopes, "scope", 0,
@@ -750,10 +740,8 @@ InfoObjectMethodTypeCmd(
     return TCL_OK;
 
   unknownMethod:
-    TclPrintfResult(interp,
-	    "unknown method \"%s\"", TclGetString(objv[2]));
-    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
-	    TclGetString(objv[2]), (char *)NULL);
+    TclPrintfResult(interp, "unknown method \"%s\"", TclGetString(objv[2]));
+    TclSetErrorCode(interp, "TCL", "LOOKUP", "METHOD", TclGetString(objv[2]));
     return TCL_ERROR;
 }
 
@@ -892,8 +880,7 @@ InfoObjectVariablesCmd(
     }
     if (objc == 3) {
 	if (strcmp("-private", TclGetString(objv[2])) != 0) {
-	    TclPrintfResult(interp,
-		    "option \"%s\" is not exactly \"-private\"",
+	    TclPrintfResult(interp, "option \"%s\" is not exactly \"-private\"",
 		    TclGetString(objv[2]));
 	    OO_ERROR(interp, BAD_ARG);
 	    return TCL_ERROR;
@@ -1062,18 +1049,17 @@ InfoClassDefnCmd(
     }
     hPtr = Tcl_FindHashEntry(&clsPtr->classMethods, objv[2]);
     if (hPtr == NULL) {
-	TclPrintfResult(interp,
-		"unknown method \"%s\"", TclGetString(objv[2]));
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
-		TclGetString(objv[2]), (char *)NULL);
+	TclPrintfResult(interp, "unknown method \"%s\"", TclGetString(objv[2]));
+	TclSetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
+		TclGetString(objv[2]));
 	return TCL_ERROR;
     }
     procPtr = TclOOGetProcFromMethod((Method *) Tcl_GetHashValue(hPtr));
     if (procPtr == NULL) {
 	TclPrintfResult(interp,
 		"definition not available for this kind of method");
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
-		TclGetString(objv[2]), (char *)NULL);
+	TclSetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
+		TclGetString(objv[2]));
 	return TCL_ERROR;
     }
 
@@ -1248,18 +1234,17 @@ InfoClassForwardCmd(
     }
     hPtr = Tcl_FindHashEntry(&clsPtr->classMethods, objv[2]);
     if (hPtr == NULL) {
-	TclPrintfResult(interp,
-		"unknown method \"%s\"", TclGetString(objv[2]));
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
-		TclGetString(objv[2]), (char *)NULL);
+	TclPrintfResult(interp, "unknown method \"%s\"", TclGetString(objv[2]));
+	TclSetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
+		TclGetString(objv[2]));
 	return TCL_ERROR;
     }
     prefixObj = TclOOGetFwdFromMethod((Method *) Tcl_GetHashValue(hPtr));
     if (prefixObj == NULL) {
 	TclPrintfResult(interp,
 		"prefix argument list not available for this kind of method");
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
-		TclGetString(objv[2]), (char *)NULL);
+	TclSetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
+		TclGetString(objv[2]));
 	return TCL_ERROR;
     }
 
@@ -1379,8 +1364,7 @@ InfoClassMethodsCmd(
 	    case OPT_SCOPE:
 		if (++i >= objc) {
 		    TclPrintfResult(interp, "missing option for -scope");
-		    Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING",
-			    (char *)NULL);
+		    TclSetErrorCode(interp, "TCL", "ARGUMENT", "MISSING");
 		    return TCL_ERROR;
 		}
 		if (Tcl_GetIndexFromObj(interp, objv[i], scopes, "scope", 0,
@@ -1496,10 +1480,8 @@ InfoClassMethodTypeCmd(
     return TCL_OK;
 
   unknownMethod:
-    TclPrintfResult(interp,
-	    "unknown method \"%s\"", TclGetString(objv[2]));
-    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
-	    TclGetString(objv[2]), (char *)NULL);
+    TclPrintfResult(interp, "unknown method \"%s\"", TclGetString(objv[2]));
+    TclSetErrorCode(interp, "TCL", "LOOKUP", "METHOD", TclGetString(objv[2]));
     return TCL_ERROR;
 }
 
@@ -1667,8 +1649,7 @@ InfoClassVariablesCmd(
     }
     if (objc == 3) {
 	if (strcmp("-private", TclGetString(objv[2])) != 0) {
-	    TclPrintfResult(interp,
-		    "option \"%s\" is not exactly \"-private\"",
+	    TclPrintfResult(interp, "option \"%s\" is not exactly \"-private\"",
 		    TclGetString(objv[2]));
 	    OO_ERROR(interp, BAD_ARG);
 	    return TCL_ERROR;

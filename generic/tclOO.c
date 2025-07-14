@@ -2786,8 +2786,8 @@ TclOOObjectCmdCore(
 	    TclPrintfResult(interp,
 		    "impossible to invoke method \"%s\": no defined method or"
 		    " unknown method", TclGetString(methodNamePtr));
-	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD_MAPPED",
-		    TclGetString(methodNamePtr), (char *)NULL);
+	    TclSetErrorCode(interp, "TCL", "LOOKUP", "METHOD_MAPPED",
+		    TclGetString(methodNamePtr));
 	    return TCL_ERROR;
 	}
     } else {
@@ -2803,8 +2803,8 @@ TclOOObjectCmdCore(
 	    TclPrintfResult(interp,
 		    "impossible to invoke method \"%s\": no defined method or"
 		    " unknown method", TclGetString(methodNamePtr));
-	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
-		    TclGetString(methodNamePtr), (char *)NULL);
+	    TclSetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
+		    TclGetString(methodNamePtr));
 	    return TCL_ERROR;
 	}
     }
@@ -2828,8 +2828,8 @@ TclOOObjectCmdCore(
 	}
 	if (contextPtr->index >= contextPtr->callPtr->numChain) {
 	    TclPrintfResult(interp, "no valid method implementation");
-	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
-		    TclGetString(methodNamePtr), (char *)NULL);
+	    TclSetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
+		    TclGetString(methodNamePtr));
 	    TclOODeleteContext(contextPtr);
 	    return TCL_ERROR;
 	}
@@ -2896,8 +2896,8 @@ Tcl_ObjectContextInvokeNext(
 	if (Tcl_InterpDeleted(interp)) {
 	    return TCL_OK;
 	}
-	TclPrintfResult(interp,
-		"no next %s implementation", TclOOContextTypeName(contextPtr));
+	TclPrintfResult(interp, "no next %s implementation",
+		TclOOContextTypeName(contextPtr));
 	OO_ERROR(interp, NOTHING_NEXT);
 	return TCL_ERROR;
     }
@@ -2954,8 +2954,8 @@ TclNRObjectContextInvokeNext(
 	if (Tcl_InterpDeleted(interp)) {
 	    return TCL_OK;
 	}
-	TclPrintfResult(interp,
-		"no next %s implementation", TclOOContextTypeName(contextPtr));
+	TclPrintfResult(interp, "no next %s implementation",
+		TclOOContextTypeName(contextPtr));
 	OO_ERROR(interp, NOTHING_NEXT);
 	return TCL_ERROR;
     }
@@ -3032,10 +3032,9 @@ Tcl_GetObjectFromObj(
     return (Tcl_Object) cmdPtr->objClientData;
 
   notAnObject:
-    TclPrintfResult(interp,
-	    "%s does not refer to an object", TclGetString(objPtr));
-    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "OBJECT", TclGetString(objPtr),
-	    (char *)NULL);
+    TclPrintfResult(interp, "%s does not refer to an object",
+	    TclGetString(objPtr));
+    TclSetErrorCode(interp, "TCL", "LOOKUP", "OBJECT", TclGetString(objPtr));
     return NULL;
 }
 

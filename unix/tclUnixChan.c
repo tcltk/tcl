@@ -113,7 +113,7 @@ typedef struct {
     if (interp) {							\
 	TclPrintfResult(interp,						\
 		"%s not supported for this platform", (detail));	\
-	Tcl_SetErrorCode(interp, "TCL", "UNSUPPORTED", (char *)NULL);	\
+	TclSetErrorCode(interp, "TCL", "UNSUPPORTED");	\
     }
 
 /*
@@ -825,8 +825,8 @@ TtySetOptionProc(
 		TclPrintfResult(interp,
 			"bad value for -handshake: must be one of"
 			" xonxoff, rtscts, dtrdsr or none");
-		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "FCONFIGURE",
-			"VALUE", (char *)NULL);
+		TclSetErrorCode(interp, "TCL", "OPERATION", "FCONFIGURE",
+			"VALUE");
 	    }
 	    return TCL_ERROR;
 	}
@@ -847,7 +847,7 @@ TtySetOptionProc(
 		TclPrintfResult(interp,
 			"bad value for -xchar: should be a list of"
 			" two elements with each a single 8-bit character");
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "XCHAR", (char *)NULL);
+		TclSetErrorCode(interp, "TCL", "VALUE", "XCHAR");
 	    }
 	    Tcl_Free(argv);
 	    return TCL_ERROR;
@@ -912,8 +912,8 @@ TtySetOptionProc(
 		TclPrintfResult(interp,
 			"bad value for -ttycontrol: should be a list of"
 			" signal,value pairs");
-		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "FCONFIGURE",
-			"VALUE", (char *)NULL);
+		TclSetErrorCode(interp, "TCL", "OPERATION", "FCONFIGURE",
+			"VALUE");
 	    }
 	    Tcl_Free(argv);
 	    return TCL_ERROR;
@@ -954,8 +954,8 @@ TtySetOptionProc(
 		    TclPrintfResult(interp,
 			    "bad signal \"%s\" for -ttycontrol: must be"
 			    " DTR, RTS or BREAK", argv[i]);
-		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "FCONFIGURE",
-			"VALUE", (char *)NULL);
+		    TclSetErrorCode(interp, "TCL", "OPERATION", "FCONFIGURE",
+			    "VALUE");
 		}
 		Tcl_Free(argv);
 		return TCL_ERROR;
@@ -986,8 +986,8 @@ TtySetOptionProc(
 		TclPrintfResult(interp,
 			"bad mode \"%s\" for -closemode: must be"
 			" default, discard, or drain", value);
-		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "FCONFIGURE",
-			"VALUE", (char *)NULL);
+		TclSetErrorCode(interp, "TCL", "OPERATION", "FCONFIGURE",
+			"VALUE");
 	    }
 	    return TCL_ERROR;
 	}
@@ -1044,8 +1044,8 @@ TtySetOptionProc(
 		TclPrintfResult(interp,
 			"bad mode \"%s\" for -inputmode: must be"
 			" normal, password, raw, or reset", value);
-		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "FCONFIGURE",
-			"VALUE", (char *)NULL);
+		TclSetErrorCode(interp, "TCL", "OPERATION", "FCONFIGURE",
+			"VALUE");
 	    }
 	    return TCL_ERROR;
 	}
@@ -1624,7 +1624,7 @@ TtyParseMode(
 	if (interp != NULL) {
 	    TclPrintfResult(interp,
 		    "%s: should be baud,parity,data,stop", bad);
-	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "SERIALMODE", (char *)NULL);
+	    TclSetErrorCode(interp, "TCL", "VALUE", "SERIALMODE");
 	}
 	return TCL_ERROR;
     }
@@ -1650,7 +1650,7 @@ TtyParseMode(
 	if (interp != NULL) {
 	    TclPrintfResult(interp,
 		    "%s parity: should be %s", bad, PARITY_MSG);
-	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "SERIALMODE", (char *)NULL);
+	    TclSetErrorCode(interp, "TCL", "VALUE", "SERIALMODE");
 	}
 	return TCL_ERROR;
     }
@@ -1659,7 +1659,7 @@ TtyParseMode(
 	if (interp != NULL) {
 	    TclPrintfResult(interp,
 		    "%s data: should be 5, 6, 7, or 8", bad);
-	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "SERIALMODE", (char *)NULL);
+	    TclSetErrorCode(interp, "TCL", "VALUE", "SERIALMODE");
 	}
 	return TCL_ERROR;
     }
@@ -1667,7 +1667,7 @@ TtyParseMode(
 	if (interp != NULL) {
 	    TclPrintfResult(interp,
 		    "%s stop: should be 1 or 2", bad);
-	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "SERIALMODE", (char *)NULL);
+	    TclSetErrorCode(interp, "TCL", "VALUE", "SERIALMODE");
 	}
 	return TCL_ERROR;
     }
@@ -2078,13 +2078,11 @@ Tcl_GetOpenFile(
     }
     if (forWriting && !(chanMode & TCL_WRITABLE)) {
 	TclPrintfResult(interp, "\"%s\" wasn't opened for writing", chanID);
-	Tcl_SetErrorCode(interp, "TCL", "VALUE", "CHANNEL", "NOT_WRITABLE",
-		(char *)NULL);
+	TclSetErrorCode(interp, "TCL", "VALUE", "CHANNEL", "NOT_WRITABLE");
 	return TCL_ERROR;
     } else if (!forWriting && !(chanMode & TCL_READABLE)) {
 	TclPrintfResult(interp, "\"%s\" wasn't opened for reading", chanID);
-	Tcl_SetErrorCode(interp, "TCL", "VALUE", "CHANNEL", "NOT_READABLE",
-		(char *)NULL);
+	TclSetErrorCode(interp, "TCL", "VALUE", "CHANNEL", "NOT_READABLE");
 	return TCL_ERROR;
     }
 
@@ -2115,8 +2113,8 @@ Tcl_GetOpenFile(
 	    if (f == NULL) {
 		TclPrintfResult(interp, "cannot get a FILE * for \"%s\"",
 			chanID);
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "CHANNEL",
-			"FILE_FAILURE", (char *)NULL);
+		TclSetErrorCode(interp, "TCL", "VALUE", "CHANNEL",
+			"FILE_FAILURE");
 		return TCL_ERROR;
 	    }
 	    *filePtr = f;
@@ -2125,8 +2123,7 @@ Tcl_GetOpenFile(
     }
 
     TclPrintfResult(interp, "\"%s\" cannot be used to get a FILE *", chanID);
-    Tcl_SetErrorCode(interp, "TCL", "VALUE", "CHANNEL", "NO_DESCRIPTOR",
-	    (char *)NULL);
+    TclSetErrorCode(interp, "TCL", "VALUE", "CHANNEL", "NO_DESCRIPTOR");
     return TCL_ERROR;
 }
 

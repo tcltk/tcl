@@ -196,7 +196,7 @@ Tcl_PkgProvideEx(
     TclPrintfResult(interp,
 	    "conflicting versions provided for package \"%s\": %s, then %s",
 	    name, Tcl_GetString(pkgPtr->version), version);
-    Tcl_SetErrorCode(interp, "TCL", "PACKAGE", "VERSIONCONFLICT", (char *)NULL);
+    TclSetErrorCode(interp, "TCL", "PACKAGE", "VERSIONCONFLICT");
     return TCL_ERROR;
 }
 
@@ -392,7 +392,7 @@ Tcl_PkgRequireEx(
 	TclPrintfResult(interp,
 		"Cannot load package \"%s\" in standalone executable:"
 		" This package is not compiled with stub support", name);
-	Tcl_SetErrorCode(interp, "TCL", "PACKAGE", "UNSTUBBED", (char *)NULL);
+	TclSetErrorCode(interp, "TCL", "PACKAGE", "UNSTUBBED");
 	return NULL;
     }
 
@@ -555,7 +555,7 @@ PkgRequireCoreStep2(
 
     if ((result != TCL_OK) && (result != TCL_ERROR)) {
 	TclPrintfResult(interp, "bad return code: %d", result);
-	Tcl_SetErrorCode(interp, "TCL", "PACKAGE", "BADRESULT", (char *)NULL);
+	TclSetErrorCode(interp, "TCL", "PACKAGE", "BADRESULT");
 	result = TCL_ERROR;
     }
     if (result == TCL_ERROR) {
@@ -590,7 +590,7 @@ PkgRequireCoreFinal(
 
     if (reqPtr->pkgPtr->version == NULL) {
 	TclPrintfResult(interp, "can't find package %s", name);
-	Tcl_SetErrorCode(interp, "TCL", "PACKAGE", "UNFOUND", (char *)NULL);
+	TclSetErrorCode(interp, "TCL", "PACKAGE", "UNFOUND");
 	AddRequirementsToResult(interp, reqc, reqv);
 	return TCL_ERROR;
     }
@@ -610,8 +610,7 @@ PkgRequireCoreFinal(
 	    TclPrintfResult(interp,
 		    "version conflict for package \"%s\": have %s, need",
 		    name, Tcl_GetString(reqPtr->pkgPtr->version));
-	    Tcl_SetErrorCode(interp, "TCL", "PACKAGE", "VERSIONCONFLICT",
-		    (char *)NULL);
+	    TclSetErrorCode(interp, "TCL", "PACKAGE", "VERSIONCONFLICT");
 	    AddRequirementsToResult(interp, reqc, reqv);
 	    return TCL_ERROR;
 	}
@@ -659,12 +658,11 @@ SelectPackage(
      */
 
     if (pkgPtr->clientData != NULL) {
-	TclPrintfResult(interp,
-		"circular package dependency:"
+	TclPrintfResult(interp, "circular package dependency:"
 		" attempt to provide %s %s requires %s",
 		name, (char *) pkgPtr->clientData, name);
 	AddRequirementsToResult(interp, reqc, reqv);
-	Tcl_SetErrorCode(interp, "TCL", "PACKAGE", "CIRCULARITY", (char *)NULL);
+	TclSetErrorCode(interp, "TCL", "PACKAGE", "CIRCULARITY");
 	return TCL_ERROR;
     }
 
@@ -864,12 +862,10 @@ SelectPackageFinal(
 	Tcl_ResetResult(interp);
 	if (reqPtr->pkgPtr->version == NULL) {
 	    result = TCL_ERROR;
-	    TclPrintfResult(interp,
-		    "attempt to provide package %s %s failed:"
+	    TclPrintfResult(interp, "attempt to provide package %s %s failed:"
 		    " no version of package %s provided",
 		    name, versionToProvide, name);
-	    Tcl_SetErrorCode(interp, "TCL", "PACKAGE", "UNPROVIDED",
-		    (char *)NULL);
+	    TclSetErrorCode(interp, "TCL", "PACKAGE", "UNPROVIDED");
 	} else {
 	    char *pvi, *vi;
 
@@ -892,8 +888,7 @@ SelectPackageFinal(
 			    " package %s %s provided instead",
 			    name, versionToProvide,
 			    name, Tcl_GetString(reqPtr->pkgPtr->version));
-		    Tcl_SetErrorCode(interp, "TCL", "PACKAGE",
-			    "WRONGPROVIDE", (char *)NULL);
+		    TclSetErrorCode(interp, "TCL", "PACKAGE", "WRONGPROVIDE");
 		}
 	    }
 	}
@@ -901,11 +896,10 @@ SelectPackageFinal(
 	Tcl_Obj *codePtr;
 
 	TclNewIntObj(codePtr, result);
-	TclPrintfResult(interp,
-		"attempt to provide package %s %s failed:"
+	TclPrintfResult(interp, "attempt to provide package %s %s failed:"
 		" bad return code: %s",
 		name, versionToProvide, TclGetString(codePtr));
-	Tcl_SetErrorCode(interp, "TCL", "PACKAGE", "BADRESULT", (char *)NULL);
+	TclSetErrorCode(interp, "TCL", "PACKAGE", "BADRESULT");
 	TclDecrRefCount(codePtr);
 	result = TCL_ERROR;
     }
@@ -1010,8 +1004,7 @@ Tcl_PkgPresentEx(
 		    exact, clientDataPtr);
 
 	    if (foundVersion == NULL) {
-		Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "PACKAGE", name,
-			(char *)NULL);
+		TclSetErrorCode(interp, "TCL", "LOOKUP", "PACKAGE", name);
 	    }
 	    return foundVersion;
 	}
@@ -1022,7 +1015,7 @@ Tcl_PkgPresentEx(
     } else {
 	TclPrintfResult(interp, "package %s is not present", name);
     }
-    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "PACKAGE", name, (char *)NULL);
+    TclSetErrorCode(interp, "TCL", "LOOKUP", "PACKAGE", name);
     return NULL;
 }
 
@@ -1740,7 +1733,7 @@ CheckVersionAndConvert(
   error:
     Tcl_Free(ibuf);
     TclPrintfResult(interp, "expected version number but got \"%s\"", string);
-    Tcl_SetErrorCode(interp, "TCL", "VALUE", "VERSION", (char *)NULL);
+    TclSetErrorCode(interp, "TCL", "VALUE", "VERSION");
     return TCL_ERROR;
 }
 
@@ -2003,7 +1996,7 @@ CheckRequirement(
 
 	TclPrintfResult(interp,
 		"expected versionMin-versionMax but got \"%s\"", string);
-	Tcl_SetErrorCode(interp, "TCL", "VALUE", "VERSIONRANGE", (char *)NULL);
+	TclSetErrorCode(interp, "TCL", "VALUE", "VERSIONRANGE");
 	return TCL_ERROR;
     }
 

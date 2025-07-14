@@ -55,7 +55,7 @@
     do {								\
 	if (interp) {							\
 	    TclPrintfResult(interp, "out of memory");			\
-	    Tcl_SetErrorCode(interp, "TCL", "MALLOC", (char *)NULL);	\
+	    TclSetErrorCode(interp, "TCL", "MALLOC");	\
 	}								\
     } while (0)
 #define ZIPFS_POSIX_ERROR(interp,errstr) \
@@ -68,8 +68,7 @@
 #define ZIPFS_ERROR_CODE(interp,errcode) \
     do {								\
 	if (interp) {							\
-	    Tcl_SetErrorCode(interp,					\
-		    "TCL", "ZIPFS", errcode, (char *)NULL);		\
+	    TclSetErrorCode(interp, "TCL", "ZIPFS", errcode);		\
 	}								\
     } while (0)
 
@@ -1975,8 +1974,8 @@ ZipFSCatalogFilesystem(
     if (!isNew) {
 	if (interp) {
 	    zf0 = (ZipFile *) Tcl_GetHashValue(hPtr);
-	    TclPrintfResult(interp,
-		    "%s is already mounted on %s", zf0->name, mountPoint);
+	    TclPrintfResult(interp, "%s is already mounted on %s",
+		    zf0->name, mountPoint);
 	    ZIPFS_ERROR_CODE(interp, "MOUNTED");
 	}
 	Unlock();
@@ -2439,9 +2438,9 @@ TclZipfs_Mount(
 	Tcl_IncrRefCount(zipPathObj);
 	normZipPathObj = Tcl_FSGetNormalizedPath(interp, zipPathObj);
 	if (normZipPathObj == NULL) {
-	    TclPrintfResult(interp,
-		    "could not normalize zip filename \"%s\"", zipname);
-	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "NORMALIZE", (char *)NULL);
+	    TclPrintfResult(interp, "could not normalize zip filename \"%s\"",
+		    zipname);
+	    TclSetErrorCode(interp, "TCL", "OPERATION", "NORMALIZE");
 	    ret = TCL_ERROR;
 	} else {
 	    Tcl_IncrRefCount(normZipPathObj);
@@ -2987,8 +2986,8 @@ ZipAddFile(
     zpathExt = Tcl_DStringValue(&zpathDs);
     zpathlen = strlen(zpathExt);
     if (zpathlen + ZIP_CENTRAL_HEADER_LEN > bufsize) {
-	TclPrintfResult(interp,
-		"path too long for \"%s\"", TclGetString(pathObj));
+	TclPrintfResult(interp, "path too long for \"%s\"",
+		TclGetString(pathObj));
 	ZIPFS_ERROR_CODE(interp, "PATH_LEN");
 	Tcl_DStringFree(&zpathDs);
 	return TCL_ERROR;

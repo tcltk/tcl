@@ -781,12 +781,12 @@ TclNewArithSeriesObj(
 
   exceeded:
     TclPrintfResult(interp, "max length of a Tcl list exceeded");
-    Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
+    TclSetErrorCode(interp, "TCL", "MEMORY");
     return NULL;
 
   domain:
     TclPrintfResult(interp, "%s", description);
-    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN", description, (char *)NULL);
+    TclSetErrorCode(interp, "ARITH", "DOMAIN", description);
     return NULL;
 
   notANumber:
@@ -795,7 +795,7 @@ TclNewArithSeriesObj(
     TclPrintfResult(interp,
 	    "cannot use %s \"%s\" to estimate length of arith-series",
 	    description, tmp);
-    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN", description, (char *)NULL);
+    TclSetErrorCode(interp, "ARITH", "DOMAIN", description);
     return NULL;
 }
 
@@ -1050,9 +1050,8 @@ TclArithSeriesGetElements(
 		objv = (Tcl_Obj **) Tcl_Alloc(sizeof(Tcl_Obj*) * objc);
 		if (objv == NULL) {
 		    if (interp) {
-			TclPrintfResult(interp,
-				"max length of a Tcl list exceeded");
-			Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
+			TclPrintfResult(interp, "max length of a Tcl list exceeded");
+			TclSetErrorCode(interp, "TCL", "MEMORY");
 		    }
 		    return TCL_ERROR;
 		}
@@ -1076,7 +1075,7 @@ TclArithSeriesGetElements(
     } else {
 	if (interp != NULL) {
 	    TclPrintfResult(interp, "value is not an arithseries");
-	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "UNKNOWN", (char *)NULL);
+	    TclSetErrorCode(interp, "TCL", "VALUE", "UNKNOWN");
 	}
 	return TCL_ERROR;
     }

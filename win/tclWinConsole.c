@@ -2299,11 +2299,10 @@ ConsoleSetOptionProc(
 	    mode = chanInfoPtr->initMode;
 	} else {
 	    if (interp) {
-		TclPrintfResult(interp,
-			"bad mode \"%s\" for -inputmode: must be"
+		TclPrintfResult(interp, "bad mode \"%s\" for -inputmode: must be"
 			" normal, password, raw, or reset", value);
-		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "FCONFIGURE",
-			"VALUE", (char *)NULL);
+		TclSetErrorCode(interp, "TCL", "OPERATION", "FCONFIGURE",
+			"VALUE");
 	    }
 	    return TCL_ERROR;
 	}

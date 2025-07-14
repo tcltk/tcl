@@ -184,17 +184,15 @@ Tcl_ProcObjCmd(
 	    &nsPtr, &altNsPtr, &cxtNsPtr, &simpleName);
 
     if (nsPtr == NULL) {
-	TclPrintfResult(interp,
-		"can't create procedure \"%s\": unknown namespace",
-		procName);
-	Tcl_SetErrorCode(interp, "TCL", "VALUE", "COMMAND", (char *)NULL);
+	TclPrintfResult(interp, "can't create procedure \"%s\": %s",
+		procName, "unknown namespace");
+	TclSetErrorCode(interp, "TCL", "VALUE", "COMMAND");
 	return TCL_ERROR;
     }
     if (simpleName == NULL) {
-	TclPrintfResult(interp,
-		"can't create procedure \"%s\": bad procedure name",
-		procName);
-	Tcl_SetErrorCode(interp, "TCL", "VALUE", "COMMAND", (char *)NULL);
+	TclPrintfResult(interp, "can't create procedure \"%s\": %s",
+		procName, "bad procedure name");
+	TclSetErrorCode(interp, "TCL", "VALUE", "COMMAND");
 	return TCL_ERROR;
     }
 
@@ -686,8 +684,7 @@ TclCreateProc(
 		    "procedure \"%s\": arg list contains too many (%"
 		    TCL_SIZE_MODIFIER "d) entries", procName, numArgs);
 	}
-	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
-		errorCode, (char *)NULL);
+	TclSetErrorCode(interp, "TCL", "OPERATION", "PROC", errorCode);
     }
     return TCL_ERROR;
 }
@@ -860,7 +857,7 @@ badLevel:
 	name = objPtr ? TclGetString(objPtr) : "1" ;
     }
     TclPrintfResult(interp, "bad level \"%s\"", name);
-    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LEVEL", name, (char *)NULL);
+    TclSetErrorCode(interp, "TCL", "LOOKUP", "LEVEL", name);
     return -1;
 }
 
@@ -1870,10 +1867,9 @@ InterpProcNR2(
 	 * transform to an error now.
 	 */
 
-	TclPrintfResult(interp,
-		"invoked \"%s\" outside of a loop",
+	TclPrintfResult(interp, "invoked \"%s\" outside of a loop",
 		((result == TCL_BREAK) ? "break" : "continue"));
-	Tcl_SetErrorCode(interp, "TCL", "RESULT", "UNEXPECTED", (char *)NULL);
+	TclSetErrorCode(interp, "TCL", "RESULT", "UNEXPECTED");
 	result = TCL_ERROR;
 	TCL_FALLTHROUGH();
 
@@ -1952,10 +1948,9 @@ TclProcCompileProc(
 
 	if (codePtr->flags & TCL_BYTECODE_PRECOMPILED) {
 	    if ((Interp *) *codePtr->interpHandle != iPtr) {
-		TclPrintfResult(interp,
-			"a precompiled script jumped interps");
-		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
-			"CROSSINTERPBYTECODE", (char *)NULL);
+		TclPrintfResult(interp, "a precompiled script jumped interps");
+		TclSetErrorCode(interp, "TCL", "OPERATION", "PROC",
+			"CROSSINTERPBYTECODE");
 		return TCL_ERROR;
 	    }
 	    codePtr->compileEpoch = iPtr->compileEpoch;
@@ -2470,18 +2465,14 @@ SetLambdaFromAny(
 
     result = TclListObjLength(NULL, objPtr, &objc);
     if ((result != TCL_OK) || ((objc != 2) && (objc != 3))) {
-	TclPrintfResult(interp,
-		"can't interpret \"%s\" as a lambda expression",
-		Tcl_GetString(objPtr));
-	Tcl_SetErrorCode(interp, "TCL", "VALUE", "LAMBDA", (char *)NULL);
-	return TCL_ERROR;
+	goto notLambda;
     }
     result = TclListObjGetElements(NULL, objPtr, &objc, &objv);
     if ((result != TCL_OK) || ((objc != 2) && (objc != 3))) {
-	TclPrintfResult(interp,
-		"can't interpret \"%s\" as a lambda expression",
+    notLambda:
+	TclPrintfResult(interp, "can't interpret \"%s\" as a lambda expression",
 		TclGetString(objPtr));
-	Tcl_SetErrorCode(interp, "TCL", "VALUE", "LAMBDA", (char *)NULL);
+	TclSetErrorCode(interp, "TCL", "VALUE", "LAMBDA");
 	return TCL_ERROR;
     }
 

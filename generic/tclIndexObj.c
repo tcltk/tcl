@@ -359,7 +359,7 @@ Tcl_GetIndexFromObjStruct(
 	    }
 	}
 	Tcl_SetObjResult(interp, resultPtr);
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "INDEX", msg, key, (char *)NULL);
+	TclSetErrorCode(interp, "TCL", "LOOKUP", "INDEX", msg, key);
     }
     return TCL_ERROR;
 }
@@ -542,7 +542,7 @@ PrefixMatchObjCmd(
 	case PRFMATCH_MESSAGE:
 	    if (i > objc-4) {
 		TclPrintfResult(interp, "missing value for -message");
-		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "NOARG", (char *)NULL);
+		TclSetErrorCode(interp, "TCL", "OPERATION", "NOARG");
 		return TCL_ERROR;
 	    }
 	    i++;
@@ -551,7 +551,7 @@ PrefixMatchObjCmd(
 	case PRFMATCH_ERROR:
 	    if (i > objc-4) {
 		TclPrintfResult(interp, "missing value for -error");
-		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "NOARG", (char *)NULL);
+		TclSetErrorCode(interp, "TCL", "OPERATION", "NOARG");
 		return TCL_ERROR;
 	    }
 	    i++;
@@ -562,7 +562,7 @@ PrefixMatchObjCmd(
 	    if ((errorLength % 2) != 0) {
 		TclPrintfResult(interp,
 			"error options must have an even number of elements");
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "DICTIONARY", (char *)NULL);
+		TclSetErrorCode(interp, "TCL", "VALUE", "DICTIONARY");
 		return TCL_ERROR;
 	    }
 	    errorPtr = objv[i];
@@ -961,7 +961,7 @@ Tcl_WrongNumArgs(
 	Tcl_AppendStringsToObj(objPtr, message, (char *)NULL);
     }
     Tcl_AppendStringsToObj(objPtr, "\"", (char *)NULL);
-    Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", (char *)NULL);
+    TclSetErrorCode(interp, "TCL", "WRONGARGS");
     Tcl_SetObjResult(interp, objPtr);
 }
 
@@ -1175,8 +1175,8 @@ Tcl_ParseArgsObjv(
 	}
 	case TCL_ARGV_GENFUNC: {
 	    if (objc > INT_MAX) {
-		TclPrintfResult(interp,
-			"too many (%" TCL_SIZE_MODIFIER "d) arguments for TCL_ARGV_GENFUNC",
+		TclPrintfResult(interp, "too many (%" TCL_SIZE_MODIFIER "d) "
+			"arguments for TCL_ARGV_GENFUNC",
 			objc);
 		goto error;
 	    }
@@ -1197,8 +1197,8 @@ Tcl_ParseArgsObjv(
 	    PrintUsage(interp, argTable);
 	    goto error;
 	default:
-	    TclPrintfResult(interp,
-		    "bad argument type %d in Tcl_ArgvInfo", infoPtr->type);
+	    TclPrintfResult(interp, "bad argument type %d in Tcl_ArgvInfo",
+		    infoPtr->type);
 	    goto error;
 	}
     }
@@ -1234,8 +1234,8 @@ Tcl_ParseArgsObjv(
      */
 
   missingArg:
-    TclPrintfResult(interp,
-	    "\"%s\" option requires an additional argument", str);
+    TclPrintfResult(interp, "\"%s\" option requires an additional argument",
+	    str);
   error:
     if (leftovers != NULL) {
 	Tcl_Free(leftovers);
@@ -1380,11 +1380,10 @@ TclGetCompletionCodeFromObj(
      */
 
     if (interp != NULL) {
-	TclPrintfResult(interp,
-		"bad completion code \"%s\": must be"
+	TclPrintfResult(interp, "bad completion code \"%s\": must be"
 		" ok, error, return, break, continue, or an integer",
 		TclGetString(value));
-	Tcl_SetErrorCode(interp, "TCL", "RESULT", "ILLEGAL_CODE", (char *)NULL);
+	TclSetErrorCode(interp, "TCL", "RESULT", "ILLEGAL_CODE");
     }
     return TCL_ERROR;
 }

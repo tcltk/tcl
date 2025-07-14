@@ -1600,8 +1600,8 @@ ConvertFileNameFormat(
 
     if (splitPath == NULL || pathc == 0) {
 	if (interp != NULL) {
-	    TclPrintfResult(interp,
-		    "could not read \"%s\": no such file or directory",
+	    TclPrintfResult(interp, "could not read \"%s\": "
+		    "no such file or directory",
 		    TclGetString(fileName));
 	    errno = ENOENT;
 	    Tcl_PosixError(interp);

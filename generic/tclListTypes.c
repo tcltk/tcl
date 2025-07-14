@@ -695,8 +695,7 @@ Tcl_ListObjRepeat(
 	TclPrintfResult(interp,
 		"bad count \"%" TCL_SIZE_MODIFIER "d\": must be integer >= 0",
 		repeatCount);
-	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LREPEAT", "NEGARG",
-		(char *)NULL);
+	TclSetErrorCode(interp, "TCL", "OPERATION", "LREPEAT", "NEGARG");
 	return TCL_ERROR;
     }
 

@@ -1513,7 +1513,7 @@ TclGetOpenMode(
 	*modeFlagsPtr = 0;
 	if (interp != NULL) {
 	    TclPrintfResult(interp, "illegal access mode \"%s\"", modeString);
-	    Tcl_SetErrorCode(interp, "TCL", "OPENMODE", "INVALID", (char *)NULL);
+	    TclSetErrorCode(interp, "TCL", "OPENMODE", "INVALID");
 	}
 	return -1;
     }
@@ -1528,9 +1528,9 @@ TclGetOpenMode(
     invAccessMode:
 	if (interp != NULL) {
 	    TclAppendPrintfToErrorInfo(interp,
-		    "\n    while processing open access modes \"%s\"",
+		    "\n    (while processing open access modes \"%s\")",
 		    modeString);
-	    Tcl_SetErrorCode(interp, "TCL", "OPENMODE", "INVALID", (char *)NULL);
+	    TclSetErrorCode(interp, "TCL", "OPENMODE", "INVALID");
 	}
 	if (modeArgv) {
 	    Tcl_Free((void *)modeArgv);
@@ -1547,8 +1547,8 @@ TclGetOpenMode(
 	    invRW:
 		if (interp != NULL) {
 		    TclPrintfResult(interp,
-				"invalid access mode \"%s\": modes RDONLY, "
-				"RDWR, and WRONLY cannot be combined", flag);
+			    "invalid access mode \"%s\": modes RDONLY, "
+			    "RDWR, and WRONLY cannot be combined", flag);
 		}
 		goto invAccessMode;
 	    }
@@ -1570,8 +1570,8 @@ TclGetOpenMode(
 	    if (mode & O_APPEND) {
 	    accessFlagRepeated:
 		if (interp) {
-		    TclPrintfResult(interp,
-			    "access mode \"%s\" repeated", flag);
+		    TclPrintfResult(interp, "access mode \"%s\" repeated",
+			    flag);
 		}
 		goto invAccessMode;
 	    }
@@ -1706,15 +1706,13 @@ Tcl_FSEvalFileEx(
 
     if (Tcl_FSStat(pathPtr, &statBuf) == -1) {
 	Tcl_SetErrno(errno);
-	TclPrintfResult(interp,
-		"couldn't read file \"%s\": %s",
+	TclPrintfResult(interp, "couldn't read file \"%s\": %s",
 		TclGetString(pathPtr), Tcl_PosixError(interp));
 	return result;
     }
     chan = Tcl_FSOpenFileChannel(interp, pathPtr, "r", 0644);
     if (chan == NULL) {
-	TclPrintfResult(interp,
-		"couldn't read file \"%s\": %s",
+	TclPrintfResult(interp, "couldn't read file \"%s\": %s",
 		TclGetString(pathPtr), Tcl_PosixError(interp));
 	return result;
     }
@@ -1749,8 +1747,7 @@ Tcl_FSEvalFileEx(
 
     if (Tcl_ReadChars(chan, objPtr, 1, 0) == TCL_IO_FAILURE) {
 	Tcl_CloseEx(interp, chan, 0);
-	TclPrintfResult(interp,
-		"couldn't read file \"%s\": %s",
+	TclPrintfResult(interp, "couldn't read file \"%s\": %s",
 		TclGetString(pathPtr), Tcl_PosixError(interp));
 	goto end;
     }
@@ -1764,8 +1761,7 @@ Tcl_FSEvalFileEx(
     if (Tcl_ReadChars(chan, objPtr, TCL_INDEX_NONE,
 	    memcmp(string, "\xEF\xBB\xBF", 3)) == TCL_IO_FAILURE) {
 	Tcl_CloseEx(interp, chan, 0);
-	TclPrintfResult(interp,
-		"couldn't read file \"%s\": %s",
+	TclPrintfResult(interp, "couldn't read file \"%s\": %s",
 		TclGetString(pathPtr), Tcl_PosixError(interp));
 	goto end;
     }
@@ -1809,8 +1805,7 @@ Tcl_FSEvalFileEx(
 	int limit = 150;
 	int overflow = (length > limit);
 
-	TclAppendPrintfToErrorInfo(interp,
-		"\n    (file \"%.*s%s\" line %d)",
+	TclAppendPrintfToErrorInfo(interp, "\n    (file \"%.*s%s\" line %d)",
 		(overflow ? limit : (int)length), pathString,
 		(overflow ? "..." : ""), Tcl_GetErrorLine(interp));
     }
@@ -2052,7 +2047,7 @@ Tcl_PosixError(
     msg = Tcl_ErrnoMsg(errno);
     id = Tcl_ErrnoId();
     if (interp) {
-	Tcl_SetErrorCode(interp, "POSIX", id, msg, (char *)NULL);
+	TclSetErrorCode(interp, "POSIX", id, msg);
     }
     return msg;
 }
@@ -3202,8 +3197,7 @@ Tcl_LoadFile(
 
     if (Tcl_FSAccess(pathPtr, R_OK) != 0) {
 	if (interp) {
-	    TclPrintfResult(interp,
-		    "couldn't load library \"%s\": %s",
+	    TclPrintfResult(interp, "couldn't load library \"%s\": %s",
 		    TclGetString(pathPtr), Tcl_PosixError(interp));
 	}
 	return TCL_ERROR;
@@ -4519,16 +4513,14 @@ Tcl_Obj *
 Tcl_FSFileSystemInfo(
     Tcl_Obj *pathPtr)
 {
-    Tcl_Obj *resPtr;
     const Tcl_Filesystem *fsPtr = Tcl_FSGetFileSystemForPath(pathPtr);
 
     if (fsPtr == NULL) {
 	return NULL;
     }
 
-    resPtr = Tcl_NewListObj(0, NULL);
-    Tcl_ListObjAppendElement(NULL, resPtr,
-	    Tcl_NewStringObj(fsPtr->typeName, -1));
+    Tcl_Obj *namePtr = Tcl_NewStringObj(fsPtr->typeName, -1);
+    Tcl_Obj *resPtr = Tcl_NewListObj(1, &namePtr);
 
     if (fsPtr->filesystemPathTypeProc != NULL) {
 	Tcl_Obj *typePtr = fsPtr->filesystemPathTypeProc(pathPtr);

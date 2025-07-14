@@ -433,8 +433,8 @@ TestbooleanobjCmd(
 	}
 	Tcl_SetObjResult(interp, varPtr[varIndex]);
     } else {
-	TclPrintfResult(interp, "bad option \"%s\": must be set, get, or not",
-		Tcl_GetString(objv[1]));
+	TclPrintfResult(interp, "bad option \"%s\": must be %s",
+		Tcl_GetString(objv[1]), "set, get, or not");
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -549,9 +549,8 @@ TestdoubleobjCmd(
 	}
 	Tcl_SetObjResult(interp, varPtr[varIndex]);
     } else {
-	TclPrintfResult(interp,
-		"bad option \"%s\": must be set, get, mult10, or div10",
-		Tcl_GetString(objv[1]));
+	TclPrintfResult(interp, "bad option \"%s\": must be %s",
+		Tcl_GetString(objv[1]), "set, get, mult10, or div10");
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -838,9 +837,8 @@ TestintobjCmd(
 	}
 	Tcl_SetObjResult(interp, varPtr[varIndex]);
     } else {
-	TclPrintfResult(interp,
-		"bad option \"%s\": must be set, get, get2, mult10, or div10",
-		Tcl_GetString(objv[1]));
+	TclPrintfResult(interp, "bad option \"%s\": must be %s",
+		Tcl_GetString(objv[1]), "set, get, get2, mult10, or div10");
 	return TCL_ERROR;
     }
     return TCL_OK;
