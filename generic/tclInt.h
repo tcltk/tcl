@@ -3814,6 +3814,7 @@ MODULE_SCOPE Tcl_ObjCmdProc Tcl_SplitObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_SocketObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_SourceObjCmd;
 MODULE_SCOPE Tcl_Command TclInitStringCmd(Tcl_Interp *interp);
+MODULE_SCOPE Tcl_Command TclInitUnicodeCmd(Tcl_Interp *interp);
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_SubstObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_SwitchObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_TellObjCmd;

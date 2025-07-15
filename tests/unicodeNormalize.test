@@ -1,0 +1,349 @@
+# See the file LICENSE for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import ::tcltest::*
+}
+
+namespace eval utf8proc::test {
+    variable normalizationData {}
+    variable normalizationDataFile \
+        [file join [file dirname [info script]] unicodeTestVectors NormalizationTest.txt]
+    variable caseFoldData {}
+    variable caseFoldDataFile \
+        [file join [file dirname [info script]] unicodeTestVectors DerivedNormalizationProps.txt]
+    variable caseFoldIdentities
+    variable singleFormChar
+    variable singleFormChars {}
+    variable testCase
+
+    tcltest::testConstraint normalization [file exists $normalizationDataFile]
+
+    # Don't enable casefolding tests - not implemented or TIP'ed in core
+    # tcltest::testConstraint casefolding [file exists $caseFoldDataFile]
+
+    proc hexListToChars {s} {
+        # 0044 030c -> \u0044\u030c
+        subst -novariables -nocommands \\U[join $s \\U]
+    }
+
+    proc readNormalizationData {} {
+        variable normalizationData
+        variable normalizationDataFile
+        variable singleFormChars
+
+        set fd [open $normalizationDataFile]
+        fconfigure $fd -encoding utf-8
+        set lineno 0; # Start numbering as line number 1
+        set normalizationData {}
+        set inPart1 0
+        set prevPart1Char -1
+        # See comments at top of normalizationDataFile for format
+        while {[gets $fd line] >= 0} {
+            incr lineno
+            set line [string trim $line]
+            if {[string index $line 0] in {{} #}} {
+                continue
+            }
+            if {[regexp -nocase {^@part(\d+)} $line -> partNum]} {
+                set inPart1 [expr {$partNum == 1}]
+                continue
+            }
+            # Form list of {lineno chars nfcform nfdform nfkfcform nfkdform}
+            set fields [lrange [split $line \;] 0 4]
+            lappend normalizationData [list $lineno \
+                                  {*}[lmap v $fields {
+                hexListToChars $v
+            }]]
+            # Characters that are not listed in part1 need to be tested that
+            # they map to themselves.
+            if {$inPart1} {
+                set thisChar [scan [lindex $fields 0] %x]
+                # We assume the file is in order!
+                if {$thisChar <= $prevPart1Char} {
+                    puts stderr "Warning: Part 1 lines in $normalizationDataFile do not seem sorted by codepoint!"
+                }
+                while {[incr prevPart1Char] != $thisChar} {
+                    if {$prevPart1Char >= 0xD800 && $prevPart1Char <= 0xDFFF} {
+                        continue; # Surrogates
+                    }
+                    lappend singleFormChars [hexListToChars [format %x $prevPart1Char]]
+                }
+            }
+        }
+        while {[incr prevPart1Char] <= 0x10ffff} {
+            lappend singleFormChars [hexListToChars [format %x $prevPart1Char]]
+        }
+
+        proc readNormalizationData {} {}; # Only read once
+    }
+
+    proc readCaseFoldData {} {
+        variable caseFoldData
+        variable caseFoldDataFile
+        variable caseFoldIdentities
+
+        set fd [open $caseFoldDataFile]
+        fconfigure $fd -encoding utf-8
+        set lineno 0; # Start numbering as line number 1
+        set caseFoldData {}
+        set prevCodePoint -1
+        # See comments at top of normalizationDataFile for format
+        while {[gets $fd line] >= 0} {
+            incr lineno
+            set line [string trim $line]
+            if {[string index $line 0] in {{} #}} {
+                continue
+            }
+            # Line is of the form
+            #   XXXX[..YYYY]  ; NFKC_CF; XXXX XXXX # descriptive text
+            lassign [lmap field [split [lindex [split $line #] 0] \;] {
+                string trim $field
+            }] rangeOfChars typeOfLine casefoldedchars
+            if {$typeOfLine ne "NFKC_CF"} {
+                continue
+            }
+            # Some entries may be ranges of chars xxxx..yyyy
+            set rangeOfChars [regexp -inline -all {[[:xdigit:]]+} $rangeOfChars]; # xxxx..yyyy
+            foreach codePoint [lseq 0x[lindex $rangeOfChars 0] .. 0x[lindex $rangeOfChars end]] {
+                set chars [format %c $codePoint]
+                # Some chars are ignored in case folds
+                if {$casefoldedchars eq ""} {
+                    # Mapping column empty. Reserved chars map to themselves.
+                    # Otherwise, character is ignored by folding algorithm
+                    if {[string match *reserved* $line]} {
+                        set expected $chars
+                    } else {
+                        set expected {}
+                    }
+                } else {
+                    set expected [hexListToChars $casefoldedchars]
+                }
+                lappend caseFoldData \
+                    [list $lineno $chars $expected]
+
+                # Characters that are not listed need to be tested that
+                # they map to themselves.
+                # We assume the file is in order!
+                if {$codePoint <= $prevCodePoint} {
+                    puts stderr "Warning: Part 1 lines in $caseFoldDataFile do not seem sorted by codepoint!"
+                    puts stderr "Line $lineno ($codePoint <= $prevCodePoint)"
+                    exit
+                }
+                while {[incr prevCodePoint] < $codePoint} {
+                    if {$prevCodePoint >= 0xD800 && $prevCodePoint <= 0xDFFF} {
+                        continue; # Surrogates
+                    }
+                    lappend caseFoldIdentities [hexListToChars [format %x $prevCodePoint]]
+                }
+            }
+        }
+        while {[incr prevCodePoint] <= 0x10ffff} {
+            lappend caseFoldIdentities [hexListToChars [format %x $prevCodePoint]]
+        }
+
+        proc readCaseFoldData {} {}; # Only read once
+    }
+
+    if {[tcltest::testConstraint normalization]} {
+        readNormalizationData
+    }
+    if {[tcltest::testConstraint casefolding]} {
+        readCaseFoldData
+    }
+
+    # Test generation for nfc, nfd, nfkc, nfkd
+    foreach testCase $normalizationData {
+        lassign $testCase lineno chars nfc nfd nfkc nfkd
+        test tonfc-line-$lineno \
+            "Test case for NFC at line $lineno of $normalizationDataFile" \
+            -constraints normalization \
+            -body {
+                # See Comments in NormalizationTest.txt for expected behaviours
+                list \
+                    [string equal $nfc [unicode tonfc $chars]] \
+                    [string equal $nfc [unicode tonfc $nfc]] \
+                    [string equal $nfc [unicode tonfc $nfd]] \
+                    [string equal $nfkc [unicode tonfc $nfkc]] \
+                    [string equal $nfkc [unicode tonfc $nfkd]]
+            } -result {1 1 1 1 1}
+
+        test tonfd-line-$lineno \
+            "Test case for NFD at line $lineno of $normalizationDataFile" \
+            -constraints normalization \
+            -setup {
+                readNormalizationData
+            } -body {
+                # See Comments in NormalizationTest.txt for expected behaviours
+                list \
+                    [string equal $nfd [unicode tonfd $chars]] \
+                    [string equal $nfd [unicode tonfd $nfc]] \
+                    [string equal $nfd [unicode tonfd $nfd]] \
+                    [string equal $nfkd [unicode tonfd $nfkc]] \
+                    [string equal $nfkd [unicode tonfd $nfkd]]
+            } -result {1 1 1 1 1}
+
+        test tonfkc-line-$lineno \
+            "Test case for NFKC at line $lineno of $normalizationDataFile" \
+            -constraints normalization \
+            -setup {
+                readNormalizationData
+            } -body {
+                # See Comments in NormalizationTest.txt for expected behaviours
+                list \
+                    [string equal $nfkc [unicode tonfkc $chars]] \
+                    [string equal $nfkc [unicode tonfkc $nfc]] \
+                    [string equal $nfkc [unicode tonfkc $nfd]] \
+                    [string equal $nfkc [unicode tonfkc $nfkc]] \
+                    [string equal $nfkc [unicode tonfkc $nfkd]]
+            } -result {1 1 1 1 1}
+
+        test tonfkd-line-$lineno \
+            "Test case for NFKD at line $lineno of $normalizationDataFile" \
+            -constraints normalization \
+            -setup {
+                readNormalizationData
+            } -body {
+                # See Comments in NormalizationTest.txt for expected behaviours
+                list \
+                    [string equal $nfkd [unicode tonfkd $chars]] \
+                    [string equal $nfkd [unicode tonfkd $nfc]] \
+                    [string equal $nfkd [unicode tonfkd $nfd]] \
+                    [string equal $nfkd [unicode tonfkd $nfkc]] \
+                    [string equal $nfkd [unicode tonfkd $nfkd]]
+            } -result {1 1 1 1 1}
+    }
+
+    # Each single form character should map to itself for all forms
+    test normalize-singleform-0 "Normalize single form characters" \
+        -constraints normalization \
+        -body {
+            lmap singleFormChar $singleFormChars {
+                if {[tcl::mathop::eq \
+                         $singleFormChar \
+                         [unicode tonfc $singleFormChar] \
+                         [unicode tonfd $singleFormChar] \
+                         [unicode tonfkc $singleFormChar] \
+                         [unicode tonfkd $singleFormChar] \
+                        ]} {
+                    continue
+                }
+                set singleFormChar
+            }
+        } -result {}
+
+    # Test generation for casefolding
+    if {[tcltest::testConstraint casefolding]} {
+        foreach testCase $caseFoldData {
+            lassign $testCase lineno chars casefoldedchars
+            set id [format %.6X [scan $chars %c]]
+            test normalize-line-$lineno-$id-nfccasefold \
+                "Test case for NFC_CaseFold at line $lineno of $caseFoldDataFile" \
+                -constraints casefolding \
+                -body {
+                    # puts [codepoints $chars]->[codepoints $casefoldedchars]
+                    # See Comments in DerivedNormalizationProps.txt for expected behaviours
+                    toNFKC_Casefold $chars
+                } -result $casefoldedchars
+        }
+        # Characters that should case fold to themselves
+        proc codepoints {s} {join [lmap c [split $s ""] {
+            string cat U+ [format %.6X [scan $c %c]]}]
+        }
+        test normalize-casefold-identities-0 \
+            "NFKC Case fold chars mapping to themselves" \
+            -constraints casefolding \
+            -body {
+                lmap char $caseFoldIdentities {
+                    if {$char eq [toNFKC_Casefold $char]} {
+                        continue
+                    }
+                    # puts [codepoints $char]
+                    # puts [codepoints [toNFKC_Casefold $char]]
+                    set char
+                }
+            } -result {}
+    }
+
+    # Profiles
+    test tonfc-profile-default-0 "tonfc -profile default success" -body {
+        unicode tonfc \u1e0a\u031b\u0323
+    } -result \u1e0c\u031b\u0307
+    test tonfc-profile-default-1 "tonfc -profile default fail" -body {
+        unicode tonfc \ud800
+    } -result {unexpected character at index 0: 'U+00D800'} -returnCodes error
+    test tonfc-profile-strict-0 "tonfc -profile strict success" -body {
+        unicode tonfc -profile strict \u1e0a\u031b\u0323
+    } -result \u1e0c\u031b\u0307
+    test tonfc-profile-strict-1 "tonfc -profile strict fail" -body {
+        unicode tonfc -profile strict \ud800
+    } -result {unexpected character at index 0: 'U+00D800'} -returnCodes error
+    test tonfc-profile-replace-0 "tonfc -profile replace success" -body {
+        unicode tonfc -profile replace \u1e0a\u031b\u0323
+    } -result \u1e0c\u031b\u0307
+    test tonfc-profile-replace-1 "tonfc -profile replace fail" -body {
+        unicode tonfc -profile replace \ud800
+    } -result \uFFFD
+
+    test tonfd-profile-default-0 "tonfd -profile default success" -body {
+        unicode tonfd \u1E0A\u031B\u0323
+    } -result \u0044\u031B\u0323\u0307
+    test tonfd-profile-default-1 "tonfd -profile default fail" -body {
+        unicode tonfd \ud800
+    } -result {unexpected character at index 0: 'U+00D800'} -returnCodes error
+    test tonfd-profile-strict-0 "tonfd -profile strict success" -body {
+        unicode tonfd -profile strict \u1E0A\u031B\u0323
+    } -result \u0044\u031B\u0323\u0307
+    test tonfd-profile-strict-1 "tonfd -profile strict fail" -body {
+        unicode tonfd -profile strict \ud800
+    } -result {unexpected character at index 0: 'U+00D800'} -returnCodes error
+    test tonfd-profile-replace-0 "tonfd -profile replace success" -body {
+        unicode tonfd -profile replace \u1E0A\u031B\u0323
+    } -result \u0044\u031B\u0323\u0307
+    test tonfd-profile-replace-1 "tonfd -profile replace fail" -body {
+        unicode tonfd -profile replace \ud800
+    } -result \uFFFD
+
+    test tonfkc-profile-default-0 "tonfkc -profile default success" -body {
+        unicode tonfkc \u01C4\u0323
+    } -result \u0044\u1E92\u030C
+    test tonfkc-profile-default-1 "tonfkc -profile default fail" -body {
+        unicode tonfkc \ud800
+    } -result {unexpected character at index 0: 'U+00D800'} -returnCodes error
+    test tonfkc-profile-strict-0 "tonfkc -profile strict success" -body {
+        unicode tonfkc -profile strict \u01C4\u0323
+    } -result \u0044\u1E92\u030C
+    test tonfkc-profile-strict-1 "tonfkc -profile strict fail" -body {
+        unicode tonfkc -profile strict \ud800
+    } -result {unexpected character at index 0: 'U+00D800'} -returnCodes error
+    test tonfkc-profile-replace-0 "tonfkc -profile replace success" -body {
+        unicode tonfkc -profile replace \u01C4\u0323
+    } -result \u0044\u1E92\u030C
+    test tonfkc-profile-replace-1 "tonfkc -profile replace fail" -body {
+        unicode tonfkc -profile replace \ud800
+    } -result \uFFFD
+
+    test tonfkd-profile-default-0 "tonfkd -profile default success" -body {
+        unicode tonfkd \u01C4\u0323
+    } -result \u0044\u005A\u0323\u030C
+    test tonfkd-profile-default-1 "tonfkd -profile default fail" -body {
+        unicode tonfkd \ud800
+    } -result {unexpected character at index 0: 'U+00D800'} -returnCodes error
+    test tonfkd-profile-strict-0 "tonfkd -profile strict success" -body {
+        unicode tonfkd -profile strict \u01C4\u0323
+    } -result \u0044\u005A\u0323\u030C
+    test tonfkd-profile-strict-1 "tonfkd -profile strict fail" -body {
+        unicode tonfkd -profile strict \ud800
+    } -result {unexpected character at index 0: 'U+00D800'} -returnCodes error
+    test tonfkd-profile-replace-0 "tonfkd -profile replace success" -body {
+        unicode tonfkd -profile replace \u01C4\u0323
+    } -result \u0044\u005A\u0323\u030C
+    test tonfkd-profile-replace-1 "tonfkd -profile replace fail" -body {
+        unicode tonfkd -profile replace \ud800
+    } -result \uFFFD
+}
+
+::tcltest::cleanupTests
+namespace delete utf8proc::test
+return
