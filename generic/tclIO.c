@@ -9828,9 +9828,10 @@ CopyData(
 	if (size < 0) {
 	readError:
 	    if (interp) {
+		const char *name = Tcl_GetChannelName(inChan);
 		errObj = Tcl_ObjPrintf("error reading \"%s\": %s",
-			Tcl_GetChannelName(inChan),
-			(msg ? TclGetString(msg) : Tcl_PosixError(interp)));
+			name ? name : "",
+			msg ? TclGetString(msg) : Tcl_PosixError(interp));
 	    }
 	    if (msg != NULL) {
 		Tcl_DecrRefCount(msg);
@@ -9898,9 +9899,10 @@ CopyData(
 	if (sizeb < 0) {
 	writeError:
 	    if (interp) {
+		const char *name = Tcl_GetChannelName(outChan);
 		errObj = Tcl_ObjPrintf("error writing \"%s\": %s",
-			Tcl_GetChannelName(outChan),
-			(msg ? TclGetString(msg) : Tcl_PosixError(interp)));
+			name ? name : "",
+			msg ? TclGetString(msg) : Tcl_PosixError(interp));
 	    }
 	    if (msg != NULL) {
 		Tcl_DecrRefCount(msg);
