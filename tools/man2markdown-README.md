@@ -35,18 +35,24 @@ The tcl/doc directory contains 248 manual pages which are divided as follows:
 section | number of documents | initial conversion | final conversion
 --------|---------------------|--------------------|-----------------
 1       | 1                   | 1                  | 0
-3       | 108                 | 0                  | 0
+3       | 108                 | 9                  | 0
 n       | 139                 | 139                | 0
 
 
 The tk/doc directory comes next, after finishing Tcl.
 
+Note, that only pages counted under "final conversion" are considered
+final markdown versions of the nroff originals. Currently, many of the
+markdown pages are still missing some markup or still contains
+nroff markdown that is not yet handled. 
+
 
 # Open issues
-This section lists the shortcoming which are still present in the pages tha already have an initial markdown version.
+This section lists the shortcoming which are still present in the pages that already have an initial markdown version.
 
 ## General
 - handling of '\fB\e\fIk\fR' (see test script) not correct yet
+- not handling of ".AS" and ".AP" macros yet
 
 ## Specific pages
 - oo::... pages: no handling of the class hierarchy subsection yet

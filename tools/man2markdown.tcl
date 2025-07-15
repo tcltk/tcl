@@ -970,23 +970,25 @@ proc ::ndoc::parseCommand {mode line} {
 	set chunk {}
 	# some more processing is needed for section 3 pages:
 	if {[regexp {^.+\(.+\)$} $line]} {
-puts line=$line
+		if {$DEBUG == 3} {puts line=$line}
 		set l0 {}
 		set startIndex 0
 		if {[string index $line 0] eq "#"} {
 			# return code at the beginning, split into own word:
 			set startIndex [string first "§" $line]
-			set l0 [string range $line 0 [expr {$startIndex - 1}]]
+			set l0 [string trim [string range $line 0 [expr {$startIndex - 1}]]]
 		}
 		set openParens [string first ( $line $startIndex]
 		# the API function name:
 		set l1 [string range $line $startIndex [expr {$openParens - 1}]]
 		# the arguments to the function:
 		set l2 [string range $line [expr {$openParens + 1}] end-1]
-puts L0=$l0
-puts L1=$l1
-puts L2=$l2
-	if {$l0 eq ""} {set line [list $l1 $l2]} else {set line [list $l0 $l1 $l2]}
+		if {$DEBUG == 3} {puts L0=$l0; puts L1=$l1; puts L2=$l2}
+		if {$l0 eq ""} {set line [list $l1 $l2]} else {set line [list $l0 $l1 $l2]}
+	} elseif {[string index $line 0] eq "§" && [string index $line 1] eq "#"} {
+		# an '#include' line in section 3:
+		if {$DEBUG == 3} {puts line=$line; puts L=#}
+		return [list [list Strong {} [list [list Text {} [string range $line 1 end-1]]]]]
 	}
 	# [apply] code to expand the content of a Span (except Space) to contain a correct AST Text element:
 	set expandSpan	[list spanList {
@@ -1006,7 +1008,7 @@ puts L2=$l2
 		set word [lindex $line $i]
 		if {$i == 0} {
 			# the first word
-			if $DEBUG {puts 1st-word}
+			if $DEBUG {puts "1st-word: $word"}
 			switch -regexp $word {
 				{^§.+=$} {
 					# only one cmd without subcommand:
@@ -1050,6 +1052,7 @@ puts L2=$l2
 					# the return type of a Tcl C API function
 					# (the '#' was prefixed in parseBlock so we can detect it here ...)
 					lappend spanList [list Span .ret [string range $word 1 end]]
+					if $DEBUG {puts "section 3 return code .ret: $spanList"}
 				}
 				default {
 					puts "emergencyStop 0 in parseCommand"
@@ -1553,6 +1556,11 @@ proc ::ndoc::main {} {
 				puts "converting $file ..."
 				set md [man2markdown [readFile $file]]
 				set stem [file rootname [file tail $file]]
+				# make sure not to overwrite files in the n section with
+				# files from the 3 section having the same name
+				# (was no problem previously as they had different
+				# file extensions):
+				if {$section ne "n" && $stem in {Class Encoding Eval Exit Load Namespace Object RegExp UpVar zipfs}} {append stem $section}
 				set fh [open [file join $outDir ${stem}.md] w]
 				puts $fh $md
 				close $fh
