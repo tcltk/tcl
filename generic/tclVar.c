@@ -308,7 +308,6 @@ static const Tcl_ObjType parsedVarNameType = {
 	(elem) = irPtr ? (Tcl_Obj *)irPtr->twoPtrValue.ptr2 : NULL;	\
     } while (0)
 
-#ifndef TCL_NO_DEPRECATED
 Var *
 TclVarHashCreateVar(
     TclVarHashTable *tablePtr,
@@ -325,7 +324,6 @@ TclVarHashCreateVar(
 
     return varPtr;
 }
-#endif
 
 static int
 LocateArray(
