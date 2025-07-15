@@ -835,7 +835,7 @@ TclCopyAndCollapse(
  *	with the number of valid elements in the array. A single block of
  *	memory is dynamically allocated to hold both the argv array and a copy
  *	of the list (with backslashes and braces removed in the standard way).
- *	The caller must eventually free this memory by calling Tcl_Free() on
+ *	The caller must eventually free this memory by calling ckfree() on
  *	*argvPtr. Note: *argvPtr and *argcPtr are only modified if the
  *	function returns normally.
  *
