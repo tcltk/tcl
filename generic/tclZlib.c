@@ -3826,8 +3826,7 @@ ZlibStackChannelTransform(
     }
     chanDataPtr->chan = chan;
     chanDataPtr->parent = Tcl_GetStackedChannel(chan);
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-	    Tcl_GetChannelName(chan), TCL_AUTO_LENGTH));
+    Tcl_SetObjResult(interp, TclGetChannelNameObj(chan));
     return chan;
 
   error:

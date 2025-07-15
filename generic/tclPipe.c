@@ -107,7 +107,7 @@ FileForRedirect(
 		Tcl_SetObjResult(interp, msg);
 	    } else {
 		TclPrintfResult(interp, "channel \"%s\" wasn't opened for %s",
-			Tcl_GetChannelName(chan),
+			TclGetChannelName(chan),
 			(writing ? "writing" : "reading"));
 		TclSetErrorCode(interp, "TCL", "OPERATION", "EXEC", "BADCHAN");
 	    }

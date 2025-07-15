@@ -5018,6 +5018,29 @@ MODULE_SCOPE Tcl_LibraryInitProc Tcl_ABSListTest_Init;
 
 /*
  *----------------------------------------------------------------
+ *
+ * Wrapper for Tcl_GetChannelName() that never returns NULL.
+ *
+ *----------------------------------------------------------------
+ */
+static inline const char *
+TclGetChannelName(
+    Tcl_Channel channel)
+{
+    const char *name = Tcl_GetChannelName(channel);
+    return name ? name : "";
+}
+
+static inline Tcl_Obj *
+TclGetChannelNameObj(
+    Tcl_Channel channel)
+{
+    const char *name = TclGetChannelName(channel);
+    return Tcl_NewStringObj(name, TCL_AUTO_LENGTH);
+}
+
+/*
+ *----------------------------------------------------------------
  * Allocator for small structs (<=sizeof(Tcl_Obj)) using the Tcl_Obj pool.
  * Only checked at compile time.
  *

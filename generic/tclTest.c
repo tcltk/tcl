@@ -6301,7 +6301,7 @@ TestChannelCmd(
 		    curPtr != NULL;
 		     nextPtrPtr = &(curPtr->nextPtr), curPtr = curPtr->nextPtr) {
 
-		if (strcmp(Tcl_GetString(objv[2]), Tcl_GetChannelName(curPtr->chan)) == 0) {
+		if (strcmp(Tcl_GetString(objv[2]), TclGetChannelName(curPtr->chan)) == 0) {
 		    *nextPtrPtr = curPtr->nextPtr;
 		    curPtr->nextPtr = NULL;
 		    chan = curPtr->chan;

@@ -4398,16 +4398,17 @@ TclNREvalObjv(
 {
     Interp *iPtr = (Interp *) interp;
 
-    /*
-     * data[1] stores a marker for use by tailcalls; it will be set to 1 by
-     * command redirectors (imports, alias, ensembles) so that tailcall skips
-     * this callback (that marks the end of the target command) and goes back
-     * to the end of the source command.
-     */
-
     if (iPtr->deferredCallbacks) {
 	iPtr->deferredCallbacks = NULL;
     } else {
+	/*
+	 * Argument data[1] to NRCommand (defaulted to NULL) stores a marker
+	 * for use by tailcalls; it will be set to 1 by command redirectors
+	 * (imports, alias, ensembles) so that tailcall skips this callback
+	 * (that marks the end of the target command) and goes back to the end
+	 * of the source command.
+	 */
+
 	TclNRAddCallback(interp, NRCommand);
     }
 

@@ -703,8 +703,7 @@ TclChanPushObjCmd(
      * Return the channel as the result of the command.
      */
 
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-	    Tcl_GetChannelName(rtPtr->chan), -1));
+    Tcl_SetObjResult(interp, TclGetChannelNameObj(rtPtr->chan));
     return TCL_OK;
 
   error:

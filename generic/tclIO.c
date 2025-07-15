@@ -1838,7 +1838,7 @@ Tcl_StackChannel(
     if (statePtr == NULL) {
 	if (interp) {
 	    TclPrintfResult(interp, "couldn't find state for channel \"%s\"",
-		    Tcl_GetChannelName(prevChan));
+		    TclGetChannelName(prevChan));
 	}
 	return NULL;
     }
@@ -1860,7 +1860,7 @@ Tcl_StackChannel(
 	if (interp) {
 	    TclPrintfResult(interp,
 		    "reading and writing both disallowed for channel \"%s\"",
-		    Tcl_GetChannelName(prevChan));
+		    TclGetChannelName(prevChan));
 	}
 	return NULL;
     }
@@ -1888,7 +1888,7 @@ Tcl_StackChannel(
 	    statePtr->csPtrW = csPtrW;
 	    if (interp) {
 		TclPrintfResult(interp, "could not flush channel \"%s\"",
-			Tcl_GetChannelName(prevChan));
+			TclGetChannelName(prevChan));
 	    }
 	    return NULL;
 	}
@@ -2082,7 +2082,7 @@ Tcl_UnstackChannel(
 
 		if (!TclChanCaughtErrorBypass(interp, chan) && interp) {
 		    TclPrintfResult(interp, "could not flush channel \"%s\"",
-			    Tcl_GetChannelName((Tcl_Channel) chanPtr));
+			    TclGetChannelName(chan));
 		}
 		return TCL_ERROR;
 	    }
@@ -2416,7 +2416,7 @@ Tcl_GetChannelHandle(
     if (!chanPtr->typePtr->getHandleProc) {
 	Tcl_SetChannelError(chan, Tcl_ObjPrintf(
 		"channel \"%s\" does not support OS handles",
-		Tcl_GetChannelName(chan)));
+		TclGetChannelName(chan)));
 	return TCL_ERROR;
     }
     result = chanPtr->typePtr->getHandleProc(chanPtr->instanceData, direction,
@@ -2470,7 +2470,7 @@ Tcl_RemoveChannelMode(
     if (interp != NULL) {
 	TclPrintfResult(interp,
 		"Tcl_RemoveChannelMode error: %s. Channel: \"%s\"",
-		emsg, Tcl_GetChannelName((Tcl_Channel) chan));
+		emsg, TclGetChannelName(chan));
     }
     return TCL_ERROR;
 }
@@ -9368,14 +9368,14 @@ TclCopyChannel(
     if (BUSY_STATE(inStatePtr, TCL_READABLE)) {
 	if (interp) {
 	    TclPrintfResult(interp, "channel \"%s\" is busy",
-		    Tcl_GetChannelName(inChan));
+		    TclGetChannelName(inChan));
 	}
 	return TCL_ERROR;
     }
     if (BUSY_STATE(outStatePtr, TCL_WRITABLE)) {
 	if (interp) {
 	    TclPrintfResult(interp, "channel \"%s\" is busy",
-		    Tcl_GetChannelName(outChan));
+		    TclGetChannelName(outChan));
 	}
 	return TCL_ERROR;
     }
@@ -9522,7 +9522,7 @@ MBError(
 
     errObj = Tcl_ObjPrintf( "error %sing \"%s\": %s",
 	    (mask & TCL_READABLE) ? "read" : "writ",
-	    Tcl_GetChannelName((mask & TCL_READABLE) ? inChan : outChan),
+	    TclGetChannelName((mask & TCL_READABLE) ? inChan : outChan),
 	    Tcl_PosixError(csPtr->interp));
 
     if (csPtr->cmdPtr) {
@@ -9828,9 +9828,8 @@ CopyData(
 	if (size < 0) {
 	readError:
 	    if (interp) {
-		const char *name = Tcl_GetChannelName(inChan);
 		errObj = Tcl_ObjPrintf("error reading \"%s\": %s",
-			name ? name : "",
+			TclGetChannelName(inChan),
 			msg ? TclGetString(msg) : Tcl_PosixError(interp));
 	    }
 	    if (msg != NULL) {
@@ -9899,9 +9898,8 @@ CopyData(
 	if (sizeb < 0) {
 	writeError:
 	    if (interp) {
-		const char *name = Tcl_GetChannelName(outChan);
 		errObj = Tcl_ObjPrintf("error writing \"%s\": %s",
-			name ? name : "",
+			TclGetChannelName(outChan),
 			msg ? TclGetString(msg) : Tcl_PosixError(interp));
 	    }
 	    if (msg != NULL) {

@@ -310,7 +310,7 @@ TclChannelTransform(
 	    mode, chan);
     if (dataPtr->self == NULL) {
 	Tcl_AppendPrintfToObj(Tcl_GetObjResult(interp),
-		"\nfailed to stack channel \"%s\"", Tcl_GetChannelName(chan));
+		"\nfailed to stack channel \"%s\"", TclGetChannelName(chan));
 	ReleaseData(dataPtr);
 	return TCL_ERROR;
     }

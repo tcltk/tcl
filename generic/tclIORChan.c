@@ -1224,7 +1224,7 @@ ReflectClose(
 	if (!rcPtr->dead) {
 	    rcmPtr = GetReflectedChannelMap(rcPtr->interp);
 	    hPtr = Tcl_FindHashEntry(&rcmPtr->map,
-		    Tcl_GetChannelName(rcPtr->chan));
+		    TclGetChannelName(rcPtr->chan));
 	    if (hPtr) {
 		Tcl_DeleteHashEntry(hPtr);
 	    }
@@ -1232,7 +1232,7 @@ ReflectClose(
 #if TCL_THREADS
 	rcmPtr = GetThreadReflectedChannelMap();
 	hPtr = Tcl_FindHashEntry(&rcmPtr->map,
-		Tcl_GetChannelName(rcPtr->chan));
+		TclGetChannelName(rcPtr->chan));
 	if (hPtr) {
 	    Tcl_DeleteHashEntry(hPtr);
 	}
@@ -3034,12 +3034,12 @@ ForwardProc(
 
 	rcmPtr = GetReflectedChannelMap(interp);
 	hPtr = Tcl_FindHashEntry(&rcmPtr->map,
-		Tcl_GetChannelName(rcPtr->chan));
+		TclGetChannelName(rcPtr->chan));
 	Tcl_DeleteHashEntry(hPtr);
 
 	rcmPtr = GetThreadReflectedChannelMap();
 	hPtr = Tcl_FindHashEntry(&rcmPtr->map,
-		Tcl_GetChannelName(rcPtr->chan));
+		TclGetChannelName(rcPtr->chan));
 	Tcl_DeleteHashEntry(hPtr);
 	MarkDead(rcPtr);
 	break;

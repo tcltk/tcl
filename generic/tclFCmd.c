@@ -1547,7 +1547,7 @@ TclFileTemporaryCmd(
 	    return TCL_ERROR;
 	}
     }
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetChannelName(chan), -1));
+    Tcl_SetObjResult(interp, TclGetChannelNameObj(chan));
     return TCL_OK;
 }
 

@@ -438,8 +438,7 @@ Tcl_ReadObjCmd(
 	Tcl_Obj *returnOptsPtr = NULL;
 	if (TclChannelGetBlockingMode(chan)) {
 	    returnOptsPtr = Tcl_NewDictObj();
-	    Tcl_DictObjPut(NULL, returnOptsPtr, Tcl_NewStringObj("-data", -1),
-		    resultPtr);
+	    TclDictPut(NULL, returnOptsPtr, "-data", resultPtr);
 	} else {
 	    Tcl_DecrRefCount(resultPtr);
 	}
@@ -1241,7 +1240,7 @@ Tcl_OpenObjCmd(
 	return TCL_ERROR;
     }
     Tcl_RegisterChannel(interp, chan);
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetChannelName(chan), -1));
+    Tcl_SetObjResult(interp, TclGetChannelNameObj(chan));
     return TCL_OK;
 }
 
@@ -1418,7 +1417,7 @@ AcceptCallbackProc(
 	Tcl_Obj *script, *objv[] = {
 	    acceptCallbackPtr->script,
 	    Tcl_NewListObj(3, ((Tcl_Obj*[]) {
-		Tcl_NewStringObj(Tcl_GetChannelName(chan), -1),
+		TclGetChannelNameObj(chan),
 		Tcl_NewStringObj(address, -1),
 		Tcl_NewWideIntObj(port)
 	    }))
@@ -1746,7 +1745,7 @@ Tcl_SocketObjCmd(
     }
 
     Tcl_RegisterChannel(interp, chan);
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetChannelName(chan), -1));
+    Tcl_SetObjResult(interp, TclGetChannelNameObj(chan));
     return TCL_OK;
 }
 
@@ -2017,8 +2016,8 @@ ChanPipeObjCmd(
     }
 
     Tcl_Obj *channelNames[] = {
-	Tcl_NewStringObj(Tcl_GetChannelName(rchan), -1),
-	Tcl_NewStringObj(Tcl_GetChannelName(wchan), -1)
+	TclGetChannelNameObj(rchan),
+	TclGetChannelNameObj(wchan)
     };
     Tcl_SetObjResult(interp, Tcl_NewListObj(2, channelNames));
     return TCL_OK;
