@@ -835,7 +835,7 @@ TclCopyAndCollapse(
  *	with the number of valid elements in the array. A single block of
  *	memory is dynamically allocated to hold both the argv array and a copy
  *	of the list (with backslashes and braces removed in the standard way).
- *	The caller must eventually free this memory by calling free() on
+ *	The caller must eventually free this memory by calling Tcl_Free() on
  *	*argvPtr. Note: *argvPtr and *argcPtr are only modified if the
  *	function returns normally.
  *
@@ -869,6 +869,11 @@ Tcl_SplitList(
 
     size = TclMaxListLength(list, -1, &end) + 1;
     length = end - list;
+    if (size >= (INT_MAX/sizeof(char *)) ||
+	length > (INT_MAX - 1 - (size * sizeof(char *)))) {
+	Tcl_SetResult(interp, "memory allocation limit exceeded", TCL_STATIC);
+	return TCL_ERROR;
+    }
     argv = (const char **)ckalloc((size * sizeof(char *)) + length + 1);
 
     for (i = 0, p = ((char *) argv) + size*sizeof(char *);
