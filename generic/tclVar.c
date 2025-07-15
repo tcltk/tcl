@@ -6524,7 +6524,7 @@ AppendLocals(
 {
     Interp *iPtr = (Interp *) interp;
     Var *varPtr;
-    Tcl_Size i, localVarCt;
+    Tcl_Size localVarCt;
     int added;
     Tcl_Obj *objNamePtr;
     const char *varName;
@@ -6543,7 +6543,7 @@ AppendLocals(
     if (localVarCt > 0) {
 	Tcl_Obj **varNamePtr = &iPtr->varFramePtr->localCachePtr->varName0;
 
-	for (i = 0; i < localVarCt; i++, varNamePtr++) {
+	for (Tcl_Size i = 0; i < localVarCt; i++, varNamePtr++) {
 	    /*
 	     * Skip nameless (temporary) variables and undefined variables.
 	     */

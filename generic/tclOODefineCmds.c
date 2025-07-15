@@ -328,8 +328,6 @@ TclOOObjectSetFilters(
     Tcl_Size numFilters,
     Tcl_Obj *const *filters)
 {
-    Tcl_Size i;
-
     if (oPtr->filters.num) {
 	Tcl_Obj *filterObj;
 
@@ -360,7 +358,7 @@ TclOOObjectSetFilters(
 	} else {
 	    filtersList = (Tcl_Obj **) Tcl_Realloc(oPtr->filters.list, size);
 	}
-	for (i = 0 ; i < numFilters ; i++) {
+	for (Tcl_Size i = 0 ; i < numFilters ; i++) {
 	    filtersList[i] = filters[i];
 	    Tcl_IncrRefCount(filters[i]);
 	}
@@ -388,8 +386,6 @@ TclOOClassSetFilters(
     Tcl_Size numFilters,
     Tcl_Obj *const *filters)
 {
-    Tcl_Size i;
-
     if (classPtr->filters.num) {
 	Tcl_Obj *filterObj;
 
@@ -420,7 +416,7 @@ TclOOClassSetFilters(
 	    filtersList = (Tcl_Obj **)
 		    Tcl_Realloc(classPtr->filters.list, size);
 	}
-	for (i = 0 ; i < numFilters ; i++) {
+	for (Tcl_Size i = 0 ; i < numFilters ; i++) {
 	    filtersList[i] = filters[i];
 	    Tcl_IncrRefCount(filters[i]);
 	}
@@ -452,7 +448,6 @@ TclOOObjectSetMixins(
     Class *const *mixins)
 {
     Class *mixinPtr;
-    Tcl_Size i;
 
     if (numMixins == 0) {
 	if (oPtr->mixins.num != 0) {
@@ -514,7 +509,6 @@ TclOOClassSetMixins(
     Class *const *mixins)
 {
     Class *mixinPtr;
-    Tcl_Size i;
 
     if (numMixins == 0) {
 	if (classPtr->mixins.num != 0) {
@@ -577,7 +571,7 @@ InstallStandardVariableMapping(
     for (i=0 ; i<varc ; i++) {
 	Tcl_IncrRefCount(varv[i]);
     }
-    FOREACH(variableObj, *vnlPtr) {
+    FOREACH_IDX(i, variableObj, *vnlPtr) {
 	Tcl_DecrRefCount(variableObj);
     }
     if (i != varc) {
@@ -630,7 +624,7 @@ InstallPrivateVariableMapping(
     for (i=0 ; i<varc ; i++) {
 	Tcl_IncrRefCount(varv[i]);
     }
-    FOREACH_STRUCT(privatePtr, *pvlPtr) {
+    FOREACH_IDX_STRUCT(i, privatePtr, *pvlPtr) {
 	Tcl_DecrRefCount(privatePtr->variableObj);
 	Tcl_DecrRefCount(privatePtr->fullNameObj);
     }
@@ -785,7 +779,6 @@ TclOOUnknownDefinition(
     Tcl_Obj *const *objv)
 {
     Namespace *nsPtr = (Namespace *) Tcl_GetCurrentNamespace(interp);
-    FOREACH_HASH_DECLS;
     Tcl_Size soughtLen;
     const char *soughtStr, *nameStr, *matchedStr = NULL;
 
@@ -857,7 +850,6 @@ FindCommand(
     Tcl_Size length;
     const char *nameStr, *string = TclGetStringFromObj(stringObj, &length);
     Namespace *const nsPtr = (Namespace *) namespacePtr;
-    FOREACH_HASH_DECLS;
     Tcl_Command cmd, cmd2;
 
     /*
@@ -2395,7 +2387,6 @@ ClassFilter_Get(
 {
     Class *clsPtr = TclOOGetClassDefineCmdContext(interp);
     Tcl_Obj *resultObj, *filterObj;
-    Tcl_Size i;
 
     if (clsPtr == NULL) {
 	return TCL_ERROR;
@@ -2465,7 +2456,6 @@ ClassMixin_Get(
     Class *clsPtr = TclOOGetClassDefineCmdContext(interp);
     Tcl_Obj *resultObj;
     Class *mixinPtr;
-    Tcl_Size i;
 
     if (clsPtr == NULL) {
 	return TCL_ERROR;
@@ -2571,7 +2561,6 @@ ClassSuper_Get(
     Class *clsPtr = TclOOGetClassDefineCmdContext(interp);
     Tcl_Obj *resultObj;
     Class *superPtr;
-    Tcl_Size i;
 
     if (clsPtr == NULL) {
 	return TCL_ERROR;
@@ -2600,7 +2589,6 @@ ClassSuper_Set(
 {
     Class *clsPtr = TclOOGetClassDefineCmdContext(interp);
     Tcl_Size superc, j;
-    Tcl_Size i;
     Tcl_Obj **superv;
     Class **superclasses, *superPtr;
 
@@ -2647,7 +2635,7 @@ ClassSuper_Set(
 	superc = 1;
 	AddRef(superclasses[0]->thisPtr);
     } else {
-	for (i = 0; i < superc; i++) {
+	for (Tcl_Size i = 0; i < superc; i++) {
 	    superclasses[i] = GetClassInOuterContext(interp, superv[i],
 		    "only a class can be a superclass");
 	    if (superclasses[i] == NULL) {
@@ -2727,7 +2715,6 @@ ClassVars_Get(
 {
     Class *clsPtr = TclOOGetClassDefineCmdContext(interp);
     Tcl_Obj *resultObj;
-    Tcl_Size i;
 
     if (clsPtr == NULL) {
 	return TCL_ERROR;
@@ -2830,7 +2817,6 @@ ObjFilter_Get(
 {
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
     Tcl_Obj *resultObj, *filterObj;
-    Tcl_Size i;
 
     if (Tcl_ObjectContextSkippedArgs(context) != objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
@@ -2898,7 +2884,6 @@ ObjMixin_Get(
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
     Tcl_Obj *resultObj;
     Class *mixinPtr;
-    Tcl_Size i;
 
     if (Tcl_ObjectContextSkippedArgs(context) != objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
@@ -2998,7 +2983,6 @@ ObjVars_Get(
 {
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
     Tcl_Obj *resultObj;
-    Tcl_Size i;
 
     if (Tcl_ObjectContextSkippedArgs(context) != objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
@@ -3386,7 +3370,7 @@ BuildPropertyList(
     int addingProp,		/* True if we're adding, false if removing. */
     Tcl_Obj *listObj)		/* The list of property names we're building */
 {
-    int present = 0, changed = 0, i;
+    int present = 0, changed = 0;
     Tcl_Obj *other;
 
     Tcl_SetListObj(listObj, 0, NULL);

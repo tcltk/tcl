@@ -163,7 +163,7 @@ struct PrivateVariableMapping {
  * either optimized for simplicity (in the case that the whole array is
  * typically assigned at once) or efficiency (in the case that the array is
  * expected to be expanded over time). These lists are designed to be iterated
- * over with the help of the FOREACH macro (see later in this file).
+ * over with the help of the FOREACH_* macros (see later in this file).
  *
  * The "num" field always counts the number of listType_t elements used in the
  * "list" field. When a "size" field exists, it describes how many elements
@@ -653,47 +653,71 @@ MODULE_SCOPE void	TclOORegisterInstanceProperty(Object *oPtr,
 /*
  * A convenience macro for iterating through the lists used in the internal
  * memory management of objects.
- * REQUIRES DECLARATION: Tcl_Size i;
+ * FOREACH_IDX REQUIRES DECLARATION: Tcl_Size i;
+ * FOREACH doesn't need that declaration.
  */
 
-#define FOREACH(var,ary) \
+#define FOREACH_IDX(i, var,ary) \
     for (i=0 ; i<(ary).num; i++) if ((ary).list[i] == NULL) { \
 	continue; \
     } else if ((var) = (ary).list[i], 1)
+
+#define FOREACH_CORE(i,var,ary) \
+    for (Tcl_Size i=0 ; i<(ary).num; i++) if ((ary).list[i] == NULL) { \
+	continue; \
+    } else if ((var) = (ary).list[i], 1)
+#define FOREACH(var,ary) FOREACH_CORE(JOIN(i_,__LINE__),var,ary)
 
 /*
  * A variation where the array is an array of structs. There's no issue with
  * possible NULLs; every element of the array will be iterated over and the
  * variable set to a pointer to each of those elements in turn.
- * REQUIRES DECLARATION: Tcl_Size i; See [96551aca55] for more FOREACH_STRUCT details.
+ * FOREACH_IDX_STRUCT REQUIRES DECLARATION: Tcl_Size i;
+ * FOREACH_STRUCT doesn't need that declaration.
+ * See [96551aca55] for more FOREACH_STRUCT_IDX details.
  */
 
-#define FOREACH_STRUCT(var,ary) \
+#define FOREACH_IDX_STRUCT(i, var,ary) \
     if (i=0, (ary).num>0) for (; var=&((ary).list[i]), i<(ary).num; i++)
+
+#define FOREACH_STRUCT_CORE(i,var,ary) \
+    if ((ary).num>0) for (Tcl_Size i=0; var=&((ary).list[i]), i<(ary).num; i++)
+#define FOREACH_STRUCT(var,ary) FOREACH_STRUCT_CORE(JOIN(i_,__LINE__),var,ary)
 
 /*
  * Convenience macros for iterating through hash tables. FOREACH_HASH_DECLS
  * sets up the declarations needed for the main macro, FOREACH_HASH, which
  * does the actual iteration. FOREACH_HASH_KEY and FOREACH_HASH_VALUE are
  * restricted versions that only iterate over keys or values respectively.
- * REQUIRES DECLARATION: FOREACH_HASH_DECLS;
  */
 
-#define FOREACH_HASH_DECLS \
-    Tcl_HashEntry *hPtr;Tcl_HashSearch search
+typedef struct HashIter {
+    Tcl_HashEntry *hPtr;
+    Tcl_HashSearch search;
+} HashIter;
+
+static inline HashIter
+TclFirstHashEntry(
+    Tcl_HashTable *tablePtr)
+{
+    Tcl_HashSearch search;
+    Tcl_HashEntry *hPtr = Tcl_FirstHashEntry(tablePtr, &search);
+    return (HashIter){ hPtr, search };
+}
+
 #define FOREACH_HASH(key, val, tablePtr) \
-    for (hPtr = Tcl_FirstHashEntry((tablePtr), &search); hPtr != NULL ? \
-	    (*(void **)&(key) = Tcl_GetHashKey((tablePtr), hPtr), \
-	    *(void **)&(val) = Tcl_GetHashValue(hPtr), 1) : 0; \
-	    hPtr = Tcl_NextHashEntry(&search))
+    for (HashIter hi = TclFirstHashEntry(tablePtr); hi.hPtr ? \
+	    (*(void **)&(key) = Tcl_GetHashKey((tablePtr), hi.hPtr), \
+	    *(void **)&(val) = Tcl_GetHashValue(hi.hPtr), 1) : 0; \
+	    hi.hPtr = Tcl_NextHashEntry(&hi.search))
 #define FOREACH_HASH_KEY(key, tablePtr) \
-    for (hPtr = Tcl_FirstHashEntry((tablePtr), &search); hPtr != NULL ? \
-	    (*(void **)&(key) = Tcl_GetHashKey((tablePtr), hPtr), 1) : 0; \
-	    hPtr = Tcl_NextHashEntry(&search))
+    for (HashIter hi = TclFirstHashEntry(tablePtr); hi.hPtr ? \
+	    (*(void **)&(key) = Tcl_GetHashKey((tablePtr), hi.hPtr), 1) : 0; \
+	    hi.hPtr = Tcl_NextHashEntry(&hi.search))
 #define FOREACH_HASH_VALUE(val, tablePtr) \
-    for (hPtr = Tcl_FirstHashEntry((tablePtr), &search); hPtr != NULL ? \
-	    (*(void **)&(val) = Tcl_GetHashValue(hPtr), 1) : 0; \
-	    hPtr = Tcl_NextHashEntry(&search))
+    for (HashIter hi = TclFirstHashEntry(tablePtr); hi.hPtr ? \
+	    (*(void **)&(val) = Tcl_GetHashValue(hi.hPtr), 1) : 0; \
+	    hi.hPtr = Tcl_NextHashEntry(&hi.search))
 
 /*
  * Convenience macro for duplicating a list. Needs no external declaration,

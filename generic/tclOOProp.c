@@ -541,7 +541,6 @@ FindClassProps(
 				 * property set. */
     Tcl_HashTable *accumulator)	/* Where to gather the names. */
 {
-    int i;
     Tcl_Obj *propName;
     Class *mixin, *sup;
 
@@ -592,7 +591,6 @@ FindObjectProps(
 				 * property set. */
     Tcl_HashTable *accumulator)	/* Where to gather the names. */
 {
-    int i;
     Tcl_Obj *propName;
     Class *mixin;
 
@@ -634,7 +632,6 @@ GetAllClassProperties(
 				 * modified by the caller. */
 {
     Tcl_HashTable hashTable;
-    FOREACH_HASH_DECLS;
     Tcl_Obj *propName, *result;
 
     /*
@@ -748,7 +745,6 @@ TclOOGetAllObjectProperties(
 				 * instead. */
 {
     Tcl_HashTable hashTable;
-    FOREACH_HASH_DECLS;
     Tcl_Obj *propName, *result;
 
     /*
@@ -828,7 +824,7 @@ SetPropertyList(
     for (i=0 ; i<objc ; i++) {
 	Tcl_IncrRefCount(objv[i]);
     }
-    FOREACH(propObj, *propList) {
+    FOREACH_IDX(i, propObj, *propList) {
 	Tcl_DecrRefCount(propObj);
     }
     if (i != objc) {
@@ -929,7 +925,6 @@ TclOOGetPropertyList(
     PropertyList *propList)	/* The property list to read. */
 {
     Tcl_Obj *resultObj, *propNameObj;
-    Tcl_Size i;
 
     TclNewObj(resultObj);
     FOREACH(propNameObj, *propList) {
@@ -1317,7 +1312,6 @@ ReleasePropertyList(
     PropertyList *propList)
 {
     Tcl_Obj *propertyObj;
-    Tcl_Size i;
 
     FOREACH(propertyObj, *propList) {
 	Tcl_DecrRefCount(propertyObj);
