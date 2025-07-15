@@ -23,5 +23,5 @@ eof - Check for end of file condition on channel
 
 # Description
 
-The **eof** command has been superceded by the **chan eof** command which supports the same syntax and options.
+The \fBeof\fR command has been superceded by the \fBchan eof\fR command which supports the same syntax and options.
 

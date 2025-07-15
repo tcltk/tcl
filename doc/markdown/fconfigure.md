@@ -24,5 +24,5 @@ fconfigure - Set and get options on a channel
 
 # Description
 
-The **fconfigure** command has been superceded by the **chan configure** command which supports the same syntax and options.
+The \fBfconfigure\fR command has been superceded by the \fBchan configure\fR command which supports the same syntax and options.
 

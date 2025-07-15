@@ -30,7 +30,7 @@ join - Create a string by joining together list elements
 
 # Description
 
-The *list* argument must be a valid Tcl list. This command returns the string formed by joining all of the elements of *list* together with *joinString* separating each adjacent pair of elements. The *joinString* argument defaults to a space character.
+The \fIlist\fR argument must be a valid Tcl list. This command returns the string formed by joining all of the elements of \fIlist\fR together with \fIjoinString\fR separating each adjacent pair of elements. The \fIjoinString\fR argument defaults to a space character.
 
 # Examples
 
@@ -42,7 +42,7 @@ join $data ", "
      \(-> 1, 2, 3, 4, 5
 ```
 
-Using **join** to flatten a list by a single level:
+Using \fBjoin\fR to flatten a list by a single level:
 
 ```
 set data {1 {2 3} 4 {5 {6 7} 8}}

@@ -112,10 +112,9 @@ namespace eval ::ndoc {
 		| Div          | <class>       | a div element with a custom class attribute (currently only '.synopsis') used for grouping lines of Tcl command syntax
 	
 	   
-		Here is an example of a complete AST:
+		Here is example 1 of a complete AST:
 		
 		``` {.nroff}
-		.\" Example 1 as nroff:
 		this is \fIitalic "and quoted" text\fR, right?
 		```
 	
@@ -137,10 +136,9 @@ namespace eval ::ndoc {
 		}
 		```
 		
-		Here's another example where the nesting is slightly different:
+		Here's another example 2 where the nesting is slightly different:
 		
 		``` {.nroff}
-		.\" Example 2 as nroff:
 		this is "*italic and quoted*"
 		```
 	
@@ -477,6 +475,7 @@ proc ::ndoc::parseQuoting {line} {
 	# split text into the two or three elements:
 	lassign [parseArgs $line] argText(1) argText(2) argText(3)
 	append quotedText §\" $argText(1)
+	# make the broken ctags happy ...: "
 	if {$type eq "QR"} {
 		append quotedText - $argText(2) \"§
 	} else {
@@ -765,6 +764,7 @@ proc ::ndoc::parseBlock {parent manContent} {
 							}
 						}
 						. - .\\\" {
+							# make broken ctags happy: "
 							if $verbose {puts "ignore"}
 							# ignore
 						}
@@ -1258,6 +1258,7 @@ proc ::ndoc::parseInline {keyword attributes content} {
 			# quoted text (starts with §" and ends with "§)
 			if {$verbose} {puts QUOTED}
 			set endMark [string first \"§ $content 2]
+			# "
 			if {$endMark == -1} {return -code error "parseInline: unbalanced quote (no end marker found)"}
 			lappend inlineAST [parseInline Quoted {} [string range $content 2 $endMark-1]]
 			set content [string range $content $endMark+2 end]
@@ -1270,6 +1271,7 @@ proc ::ndoc::parseInline {keyword attributes content} {
 			# put the first index where an '\f' or a quote was found into 'endMark'
 			# (note that 'endMark' is a list of two indices)
 			set found [regexp -indices {(\\f)[BIRP]|(§\")} $content endMark]
+			# 
 			if {$found} {
 				set endMark [lindex $endMark 0]
 			} else {

@@ -46,13 +46,13 @@ lseq - Build a numeric sequence returned as a list
 
 # Description
 
-The **lseq** command creates a sequence of numeric values using the arguments *start*, *end*, *count*, and optionally *stepSpec*/*stepValue*. 
+The \fBlseq\fR command creates a sequence of numeric values using the arguments \fIstart\fR, \fIend\fR, \fIcount\fR, and optionally \fIstepSpec\fR/\fIstepValue\fR. 
 
-If a *start* value is specified as the first argument, the *end* value of the sequence can be specified as the next argument, optionally preceeded by the literal word "**to**" or "**..**". Alternatively, the *count* (number of elements in the sequence) can be defined instead when preceeded by the word **count**. In both cases, the interval between the subsequent numbers of the sequence can be specified using the optional *stepSpec* argument. It is defined as "?**by**? *stepValue*", i.e. the optional word **by** followed by the step value.
+If a \fIstart\fR value is specified as the first argument, the \fIend\fR value of the sequence can be specified as the next argument, optionally preceeded by the literal word "\fBto\fR" or "\fB..\fR". Alternatively, the \fIcount\fR (number of elements in the sequence) can be defined instead when preceeded by the word \fBcount\fR. In both cases, the interval between the subsequent numbers of the sequence can be specified using the optional \fIstepSpec\fR argument. It is defined as "?\fBby\fR? \fIstepValue\fR", i.e. the optional word \fBby\fR followed by the step value.
 
-A short form use of the command with a single argument *count* will create a sequence from 0 to *count*-1. It can optioanlly be followed by a step value preceeded by the word **by**.
+A short form use of the command with a single argument \fIcount\fR will create a sequence from 0 to \fIcount\fR-1. It can optioanlly be followed by a step value preceeded by the word \fBby\fR.
 
-The **lseq** command can produce both increasing and decreasing sequences. When both *start* and *end* are provided without a *stepValue*, then if *start* <= *end*, the sequence will be increasing and if *start* > *end* it will be decreasing. If the *stepValue* is included, it's sign should agree with the direction of the sequence (descending \(-> negative and ascending \(-> positive), otherwise an empty list is returned.  For example:
+The \fBlseq\fR command can produce both increasing and decreasing sequences. When both \fIstart\fR and \fIend\fR are provided without a \fIstepValue\fR, then if \fIstart\fR <= \fIend\fR, the sequence will be increasing and if \fIstart\fR > \fIend\fR it will be decreasing. If the \fIstepValue\fR is included, it's sign should agree with the direction of the sequence (descending \(-> negative and ascending \(-> positive), otherwise an empty list is returned.  For example:
 
 ```
 % lseq 1 to 5    ;# increasing
@@ -66,9 +66,9 @@ The **lseq** command can produce both increasing and decreasing sequences. When 
 % lseq 1 to 5 by 0   ;# all step sizes of 0 produce an empty list
 ```
 
-The numeric arguments in *start*, *end*, *stepValue* and *count* may also be valid expressions. The expression will be evaluated and the numeric result will be used.  An expression that does not evaluate to a number will produce an invalid argument error.
+The numeric arguments in \fIstart\fR, \fIend\fR, \fIstepValue\fR and \fIcount\fR may also be valid expressions. The expression will be evaluated and the numeric result will be used.  An expression that does not evaluate to a number will produce an invalid argument error.
 
-*Start* defines the initial value and *end* defines the limit, not necessarily the last value. **lseq** produces a list with *count* elements, and if *count* is not supplied, it is computed as:
+*Start* defines the initial value and \fIend\fR defines the limit, not necessarily the last value. \fBlseq\fR produces a list with \fIcount\fR elements, and if \fIcount\fR is not supplied, it is computed as:
 
 ```
 count = int( (end - start + stepValue) / stepValueq )

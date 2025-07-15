@@ -45,7 +45,7 @@ lindex - Retrieve an element from a list
 
 # Description
 
-The **lindex** command accepts a parameter, *list*, which it treats as a Tcl list. It also accepts zero or more *indices* into the list.  The indices may be presented either consecutively on the command line, or grouped in a Tcl list and presented as a single argument.
+The \fBlindex\fR command accepts a parameter, \fIlist\fR, which it treats as a Tcl list. It also accepts zero or more \fIindices\fR into the list.  The indices may be presented either consecutively on the command line, or grouped in a Tcl list and presented as a single argument.
 
 If no indices are presented, the command takes the form:
 
@@ -59,11 +59,11 @@ or
 lindex list {}
 ```
 
-In this case, the return value of **lindex** is simply the value of the *list* parameter.
+In this case, the return value of \fBlindex\fR is simply the value of the \fIlist\fR parameter.
 
-When presented with a single index, the **lindex** command treats *list* as a Tcl list and returns the *index*'th element from it (0 refers to the first element of the list). In extracting the element, **lindex** observes the same rules concerning braces and quotes and backslashes as the Tcl command interpreter; however, variable substitution and command substitution do not occur. If *index* is negative or greater than or equal to the number of elements in *value*, then an empty string is returned. The interpretation of each simple *index* value is the same as for the command **string index**, supporting simple index arithmetic and indices relative to the end of the list.
+When presented with a single index, the \fBlindex\fR command treats \fIlist\fR as a Tcl list and returns the \fIindex\fR'th element from it (0 refers to the first element of the list). In extracting the element, \fBlindex\fR observes the same rules concerning braces and quotes and backslashes as the Tcl command interpreter; however, variable substitution and command substitution do not occur. If \fIindex\fR is negative or greater than or equal to the number of elements in \fIvalue\fR, then an empty string is returned. The interpretation of each simple \fIindex\fR value is the same as for the command \fBstring index\fR, supporting simple index arithmetic and indices relative to the end of the list.
 
-If additional *index* arguments are supplied, then each argument is used in turn to select an element from the previous indexing operation, allowing the script to select elements from sublists.  The command,
+If additional \fIindex\fR arguments are supplied, then each argument is used in turn to select an element from the previous indexing operation, allowing the script to select elements from sublists.  The command,
 
 ```
 lindex $a 1 2 3

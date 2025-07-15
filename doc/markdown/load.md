@@ -33,11 +33,11 @@ load - Load machine code and initialize new commands
 
 # Description
 
-This command loads binary code from a file into the application's address space and calls an initialization procedure in the library to incorporate it into an interpreter.  *fileName* is the name of the file containing the code;  its exact form varies from system to system but on most systems it is a shared library, such as a **.so** file under Solaris or a DLL under Windows. *prefix* is used to compute the name of an initialization procedure. *interp* is the path name of the interpreter into which to load the library (see the **interp** manual entry for details); if *interp* is omitted, it defaults to the interpreter in which the **load** command was invoked.
+This command loads binary code from a file into the application's address space and calls an initialization procedure in the library to incorporate it into an interpreter.  \fIfileName\fR is the name of the file containing the code;  its exact form varies from system to system but on most systems it is a shared library, such as a \fB.so\fR file under Solaris or a DLL under Windows. \fIprefix\fR is used to compute the name of an initialization procedure. \fIinterp\fR is the path name of the interpreter into which to load the library (see the \fBinterp\fR manual entry for details); if \fIinterp\fR is omitted, it defaults to the interpreter in which the \fBload\fR command was invoked.
 
-Once the file has been loaded into the application's address space, one of two initialization procedures will be invoked in the new code. Typically the initialization procedure will add new commands to a Tcl interpreter. The name of the initialization procedure is determined by *prefix* and whether or not the target interpreter is a safe one.  For normal interpreters the name of the initialization procedure will have the form *prefix***_Init**.  For example, if *prefix* is **Foo**, the initialization procedure's name will be **Foo_Init**.
+Once the file has been loaded into the application's address space, one of two initialization procedures will be invoked in the new code. Typically the initialization procedure will add new commands to a Tcl interpreter. The name of the initialization procedure is determined by \fIprefix\fR and whether or not the target interpreter is a safe one.  For normal interpreters the name of the initialization procedure will have the form \fIprefix\fR\fB_Init\fR.  For example, if \fIprefix\fR is \fBFoo\fR, the initialization procedure's name will be \fBFoo_Init\fR.
 
-If the target interpreter is a safe interpreter, then the name of the initialization procedure will be *prefix***_SafeInit** instead of *prefix***_Init**. The *prefix***_SafeInit** function should be written carefully, so that it initializes the safe interpreter only with partial functionality provided by the library that is safe for use by untrusted code. For more information on Safe-Tcl, see the **safe** manual entry.
+If the target interpreter is a safe interpreter, then the name of the initialization procedure will be \fIprefix\fR\fB_SafeInit\fR instead of \fIprefix\fR\fB_Init\fR. The \fIprefix\fR\fB_SafeInit\fR function should be written carefully, so that it initializes the safe interpreter only with partial functionality provided by the library that is safe for use by untrusted code. For more information on Safe-Tcl, see the \fBsafe\fR manual entry.
 
 The initialization procedure must match the following prototype:
 
@@ -46,19 +46,19 @@ typedef int Tcl_LibraryInitProc(
         Tcl_Interp *interp);
 ```
 
-The *interp* argument identifies the interpreter in which the library is to be loaded.  The initialization procedure must return **TCL_OK** or **TCL_ERROR** to indicate whether or not it completed successfully;  in the event of an error it should set the interpreter's result to point to an error message.  The result of the **load** command will be the result returned by the initialization procedure.
+The \fIinterp\fR argument identifies the interpreter in which the library is to be loaded.  The initialization procedure must return \fBTCL_OK\fR or \fBTCL_ERROR\fR to indicate whether or not it completed successfully;  in the event of an error it should set the interpreter's result to point to an error message.  The result of the \fBload\fR command will be the result returned by the initialization procedure.
 
-The actual loading of a file will only be done once for each *fileName* in an application.  If a given *fileName* is loaded into multiple interpreters, then the first **load** will load the code and call the initialization procedure;  subsequent **load**s will call the initialization procedure without loading the code again. For Tcl versions lower than 8.5, it is not possible to unload or reload a library. From version 8.5 however, the **unload** command allows the unloading of libraries loaded with **load**, for libraries that are aware of the Tcl's unloading mechanism.
+The actual loading of a file will only be done once for each \fIfileName\fR in an application.  If a given \fIfileName\fR is loaded into multiple interpreters, then the first \fBload\fR will load the code and call the initialization procedure;  subsequent \fBload\fRs will call the initialization procedure without loading the code again. For Tcl versions lower than 8.5, it is not possible to unload or reload a library. From version 8.5 however, the \fBunload\fR command allows the unloading of libraries loaded with \fBload\fR, for libraries that are aware of the Tcl's unloading mechanism.
 
-The **load** command also supports libraries that are statically linked with the application, if those libraries have been registered by calling the **Tcl_StaticLibrary** procedure. If *fileName* is an empty string, then *prefix* must be specified.
+The \fBload\fR command also supports libraries that are statically linked with the application, if those libraries have been registered by calling the \fBTcl_StaticLibrary\fR procedure. If \fIfileName\fR is an empty string, then \fIprefix\fR must be specified.
 
-If *prefix* is omitted or specified as an empty string, Tcl tries to guess the prefix by taking the last element of *fileName*, strip off the first three characters if they are **lib**, then strip off the next four characters if they are **tcl9**, and use any following wordchars but not digits, converted to titlecase as the prefix. For example, the command **load libxyz4.2.so** uses the prefix **Xyz** and the command **load bin/last.so {}** uses the prefix **Last**.
+If \fIprefix\fR is omitted or specified as an empty string, Tcl tries to guess the prefix by taking the last element of \fIfileName\fR, strip off the first three characters if they are \fBlib\fR, then strip off the next four characters if they are \fBtcl9\fR, and use any following wordchars but not digits, converted to titlecase as the prefix. For example, the command \fBload libxyz4.2.so\fR uses the prefix \fBXyz\fR and the command \fBload bin/last.so {}\fR uses the prefix \fBLast\fR.
 
-If *fileName* is an empty string, then *prefix* must be specified. The **load** command first searches for a statically loaded library (one that has been registered by calling the **Tcl_StaticLibrary** procedure) by that name; if one is found, it is used. Otherwise, the **load** command searches for a dynamically loaded library by that name, and uses it if it is found.  If several different files have been **load**ed with different versions of the library, Tcl picks the file that was loaded first.
+If \fIfileName\fR is an empty string, then \fIprefix\fR must be specified. The \fBload\fR command first searches for a statically loaded library (one that has been registered by calling the \fBTcl_StaticLibrary\fR procedure) by that name; if one is found, it is used. Otherwise, the \fBload\fR command searches for a dynamically loaded library by that name, and uses it if it is found.  If several different files have been \fBload\fRed with different versions of the library, Tcl picks the file that was loaded first.
 
-If **-global** is specified preceding the filename, all symbols found in the shared library are exported for global use by other libraries. The option **-lazy** delays the actual loading of symbols until their first actual use. The options may be abbreviated. The option **--** indicates the end of the options, and should be used if you wish to use a filename which starts with **-** and you provide a prefix to the **load** command.
+If \fB-global\fR is specified preceding the filename, all symbols found in the shared library are exported for global use by other libraries. The option \fB-lazy\fR delays the actual loading of symbols until their first actual use. The options may be abbreviated. The option \fB--\fR indicates the end of the options, and should be used if you wish to use a filename which starts with \fB-\fR and you provide a prefix to the \fBload\fR command.
 
-On platforms which do not support the **-global** or **-lazy** options, the options still exist but have no effect. Note that use of the **-global** or **-lazy** option may lead to crashes in your application later (in case of symbol conflicts resp. missing symbols), which cannot be detected during the **load**. So, only use this when you know what you are doing, you will not get a nice error message when something is wrong with the loaded library.
+On platforms which do not support the \fB-global\fR or \fB-lazy\fR options, the options still exist but have no effect. Note that use of the \fB-global\fR or \fB-lazy\fR option may lead to crashes in your application later (in case of symbol conflicts resp. missing symbols), which cannot be detected during the \fBload\fR. So, only use this when you know what you are doing, you will not get a nice error message when something is wrong with the loaded library.
 
 # Portability issues
 
@@ -72,7 +72,7 @@ On platforms which do not support the **-global** or **-lazy** options, the opti
 
 # Bugs
 
-If the same file is **load**ed by different *fileName*s, it will be loaded into the process's address space multiple times.  The behavior of this varies from system to system (some systems may detect the redundant loads, others may not).
+If the same file is \fBload\fRed by different \fIfileName\fRs, it will be loaded into the process's address space multiple times.  The behavior of this varies from system to system (some systems may detect the redundant loads, others may not).
 
 # Example
 
@@ -96,7 +96,7 @@ int Foo_Init(Tcl_Interp *interp) {
 }
 ```
 
-When built into a shared/dynamic library with a suitable name (e.g. **foo.dll** on Windows, **libfoo.so** on Solaris and Linux) it can then be loaded into Tcl with the following:
+When built into a shared/dynamic library with a suitable name (e.g. \fBfoo.dll\fR on Windows, \fBlibfoo.so\fR on Solaris and Linux) it can then be loaded into Tcl with the following:
 
 ```
 # Load the extension

@@ -46,7 +46,7 @@ lassign - Assign list elements to variables
 
 # Description
 
-This command treats the value *list* as a list and assigns successive elements from that list to the variables given by the *varName* arguments in order.  If there are more variable names than list elements, the remaining variables are set to the empty string.  If there are more list elements than variables, a list of unassigned elements is returned.
+This command treats the value \fIlist\fR as a list and assigns successive elements from that list to the variables given by the \fIvarName\fR arguments in order.  If there are more variable names than list elements, the remaining variables are set to the empty string.  If there are more list elements than variables, a list of unassigned elements is returned.
 
 # Examples
 
@@ -68,7 +68,7 @@ puts $x                     ;# Prints "f"
 puts $y                     ;# Prints "g"
 ```
 
-The **lassign** command has other uses.  It can be used to create the analogue of the "shift" command in many shell languages like this:
+The \fBlassign\fR command has other uses.  It can be used to create the analogue of the "shift" command in many shell languages like this:
 
 ```
 set ::argv [lassign $::argv argumentToReadOff]

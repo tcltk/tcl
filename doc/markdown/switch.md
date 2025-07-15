@@ -30,48 +30,48 @@ switch - Evaluate one of several scripts, depending on a given value
 
 # Description
 
-The **switch** command matches its *string* argument against each of the *pattern* arguments in order. As soon as it finds a *pattern* that matches *string* it evaluates the following *body* argument by passing it recursively to the Tcl interpreter and returns the result of that evaluation. If the last *pattern* argument is **default** then it matches anything. If no *pattern* argument matches *string* and no default is given, then the **switch** command returns an empty string.
+The \fBswitch\fR command matches its \fIstring\fR argument against each of the \fIpattern\fR arguments in order. As soon as it finds a \fIpattern\fR that matches \fIstring\fR it evaluates the following \fIbody\fR argument by passing it recursively to the Tcl interpreter and returns the result of that evaluation. If the last \fIpattern\fR argument is \fBdefault\fR then it matches anything. If no \fIpattern\fR argument matches \fIstring\fR and no default is given, then the \fBswitch\fR command returns an empty string.
 
-If the initial arguments to **switch** start with **-** then they are treated as options unless there are exactly two arguments to **switch** (in which case the first must the *string* and the second must be the *pattern*/*body* list). The following options are currently supported:
+If the initial arguments to \fBswitch\fR start with \fB-\fR then they are treated as options unless there are exactly two arguments to \fBswitch\fR (in which case the first must the \fIstring\fR and the second must be the \fIpattern\fR/\fIbody\fR list). The following options are currently supported:
 
 **-exact**
-: Use exact matching when comparing *string* to a pattern.  This is the default.
+: Use exact matching when comparing \fIstring\fR to a pattern.  This is the default.
 
 **-glob**
-: When matching *string* to the patterns, use glob-style matching (i.e. the same as implemented by the **string match** command).
+: When matching \fIstring\fR to the patterns, use glob-style matching (i.e. the same as implemented by the \fBstring match\fR command).
 
 **-regexp**
-: When matching *string* to the patterns, use regular expression matching (as described in the **re_syntax** reference page).
+: When matching \fIstring\fR to the patterns, use regular expression matching (as described in the \fBre_syntax\fR reference page).
 
 **-nocase**
 : Causes comparisons to be handled in a case-insensitive manner.
 
-**-matchvar** *varName*
-: This option (only legal when **-regexp** is also specified) specifies the name of a variable into which the list of matches found by the regular expression engine will be written.  The first element of the list written will be the overall substring of the input string (i.e. the *string* argument to **switch**) matched, the second element of the list will be the substring matched by the first capturing parenthesis in the regular expression that matched, and so on.  When a **default** branch is taken, the variable will have the empty list written to it.  This option may be specified at the same time as the **-indexvar** option.
+**-matchvar** \fIvarName\fR
+: This option (only legal when \fB-regexp\fR is also specified) specifies the name of a variable into which the list of matches found by the regular expression engine will be written.  The first element of the list written will be the overall substring of the input string (i.e. the \fIstring\fR argument to \fBswitch\fR) matched, the second element of the list will be the substring matched by the first capturing parenthesis in the regular expression that matched, and so on.  When a \fBdefault\fR branch is taken, the variable will have the empty list written to it.  This option may be specified at the same time as the \fB-indexvar\fR option.
 
-**-indexvar** *varName*
-: This option (only legal when **-regexp** is also specified) specifies the name of a variable into which the list of indices referring to matching substrings found by the regular expression engine will be written.  The first element of the list written will be a two-element list specifying the index of the start and index of the first character after the end of the overall substring of the input string (i.e. the *string* argument to **switch**) matched, in a similar way to the **-indices** option to the **regexp** can obtain.  Similarly, the second element of the list refers to the first capturing parenthesis in the regular expression that matched, and so on.  When a **default** branch is taken, the variable will have the empty list written to it.  This option may be specified at the same time as the **-matchvar** option.
+**-indexvar** \fIvarName\fR
+: This option (only legal when \fB-regexp\fR is also specified) specifies the name of a variable into which the list of indices referring to matching substrings found by the regular expression engine will be written.  The first element of the list written will be a two-element list specifying the index of the start and index of the first character after the end of the overall substring of the input string (i.e. the \fIstring\fR argument to \fBswitch\fR) matched, in a similar way to the \fB-indices\fR option to the \fBregexp\fR can obtain.  Similarly, the second element of the list refers to the first capturing parenthesis in the regular expression that matched, and so on.  When a \fBdefault\fR branch is taken, the variable will have the empty list written to it.  This option may be specified at the same time as the \fB-matchvar\fR option.
 
 **-\|-**
-: Marks the end of options.  The argument following this one will be treated as *string* even if it starts with a **-**. This is not required when the matching patterns and bodies are grouped together in a single argument.
+: Marks the end of options.  The argument following this one will be treated as \fIstring\fR even if it starts with a \fB-\fR. This is not required when the matching patterns and bodies are grouped together in a single argument.
 
 
-Two syntaxes are provided for the *pattern* and *body* arguments. The first uses a separate argument for each of the patterns and commands; this form is convenient if substitutions are desired on some of the patterns or commands. The second form places all of the patterns and commands together into a single argument; the argument must have proper list structure, with the elements of the list being the patterns and commands. The second form makes it easy to construct multi-line switch commands, since the braces around the whole list make it unnecessary to include a backslash at the end of each line. Since the *pattern* arguments are in braces in the second form, no command or variable substitutions are performed on them;  this makes the behavior of the second form different than the first form in some cases.
+Two syntaxes are provided for the \fIpattern\fR and \fIbody\fR arguments. The first uses a separate argument for each of the patterns and commands; this form is convenient if substitutions are desired on some of the patterns or commands. The second form places all of the patterns and commands together into a single argument; the argument must have proper list structure, with the elements of the list being the patterns and commands. The second form makes it easy to construct multi-line switch commands, since the braces around the whole list make it unnecessary to include a backslash at the end of each line. Since the \fIpattern\fR arguments are in braces in the second form, no command or variable substitutions are performed on them;  this makes the behavior of the second form different than the first form in some cases.
 
-If a *body* is specified as "**-**" it means that the *body* for the next pattern should also be used as the body for this pattern (if the next pattern also has a body of "**-**" then the body after that is used, and so on). This feature makes it possible to share a single *body* among several patterns.
+If a \fIbody\fR is specified as "**-**" it means that the \fIbody\fR for the next pattern should also be used as the body for this pattern (if the next pattern also has a body of "**-**" then the body after that is used, and so on). This feature makes it possible to share a single \fIbody\fR among several patterns.
 
-Beware of how you place comments in **switch** commands.  Comments should only be placed **inside** the execution body of one of the patterns, and not intermingled with the patterns.
+Beware of how you place comments in \fBswitch\fR commands.  Comments should only be placed \fBinside\fR the execution body of one of the patterns, and not intermingled with the patterns.
 
 # Examples
 
-The **switch** command can match against variables and not just literals, as shown here (the result is *2*):
+The \fBswitch\fR command can match against variables and not just literals, as shown here (the result is \fI2\fR):
 
 ```
 set foo "abc"
 switch abc a - b {expr {1}} $foo {expr {2}} default {expr {3}}
 ```
 
-Using glob matching and the fall-through body is an alternative to writing regular expressions with alternations, as can be seen here (this returns *1*):
+Using glob matching and the fall-through body is an alternative to writing regular expressions with alternations, as can be seen here (this returns \fI1\fR):
 
 ```
 switch -glob aaab {
@@ -82,7 +82,7 @@ switch -glob aaab {
 }
 ```
 
-Whenever nothing matches, the **default** clause (which must be last) is taken.  This example has a result of *3*:
+Whenever nothing matches, the \fBdefault\fR clause (which must be last) is taken.  This example has a result of \fI3\fR:
 
 ```
 switch xyz {
@@ -100,7 +100,7 @@ switch xyz {
 }
 ```
 
-When matching against regular expressions, information about what exactly matched is easily obtained using the **-matchvar** option:
+When matching against regular expressions, information about what exactly matched is easily obtained using the \fB-matchvar\fR option:
 
 ```
 switch -regexp -matchvar foo -- $bar {

@@ -46,9 +46,9 @@ lrange - Return one or more adjacent elements from a list
 
 # Description
 
-*List* must be a valid Tcl list.  This command will return a new list consisting of elements *first* through *last*, inclusive. The index values *first* and *last* are interpreted the same as index values for the command **string index**, supporting simple index arithmetic and indices relative to the end of the list. If *first* is less than zero, it is treated as if it were zero. If *last* is greater than or equal to the number of elements in the list, then it is treated as if it were **end**. If *first* is greater than *last* then an empty string is returned.
+*List* must be a valid Tcl list.  This command will return a new list consisting of elements \fIfirst\fR through \fIlast\fR, inclusive. The index values \fIfirst\fR and \fIlast\fR are interpreted the same as index values for the command \fBstring index\fR, supporting simple index arithmetic and indices relative to the end of the list. If \fIfirst\fR is less than zero, it is treated as if it were zero. If \fIlast\fR is greater than or equal to the number of elements in the list, then it is treated as if it were \fBend\fR. If \fIfirst\fR is greater than \fIlast\fR then an empty string is returned.
 
-Note that "**lrange** *list first first*" does not always produce the same result as "**lindex** *list first*" (although it often does for simple fields that are not enclosed in braces); it does, however, produce exactly the same results as "**list [lindex** *list first***]**"
+Note that "**lrange** \fIlist first first\fR" does not always produce the same result as "**lindex** \fIlist first\fR" (although it often does for simple fields that are not enclosed in braces); it does, however, produce exactly the same results as "**list [lindex** \fIlist first\fR\fB]\fR"
 
 # Examples
 
@@ -73,7 +73,7 @@ Selecting everything except the first and last element:
 b c d
 ```
 
-Selecting a single element with **lrange** is not the same as doing so with **lindex**:
+Selecting a single element with \fBlrange\fR is not the same as doing so with \fBlindex\fR:
 
 ```
 % set var {some {elements to} select}

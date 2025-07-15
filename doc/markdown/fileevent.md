@@ -25,5 +25,5 @@ fileevent - Execute a script when a channel becomes readable or writable
 
 # Description
 
-The **fileevent** command has been superceded by the **chan event** command which supports the same syntax and options.
+The \fBfileevent\fR command has been superceded by the \fBchan event\fR command which supports the same syntax and options.
 

@@ -32,23 +32,23 @@ tcl::prefix - facilities for prefix matching
 
 This document describes commands looking up a prefix in a list of strings. The following commands are supported:
 
-**::tcl::prefix all** *table string*
-: Returns a list of all elements in *table* that begin with the prefix *string*.
+**::tcl::prefix all** \fItable string\fR
+: Returns a list of all elements in \fItable\fR that begin with the prefix \fIstring\fR.
 
-**::tcl::prefix longest** *table string*
-: Returns the longest common prefix of all elements in *table* that begin with the prefix *string*.
+**::tcl::prefix longest** \fItable string\fR
+: Returns the longest common prefix of all elements in \fItable\fR that begin with the prefix \fIstring\fR.
 
-**::tcl::prefix match** ?*option ...*? *table string*
-: If *string* equals one element in *table* or is a prefix to exactly one element, the matched element is returned. If not, the result depends on the **-error** option. (It is recommended that the *table* be sorted before use with this subcommand, so that the list of matches presented in the error message also becomes sorted, though this is not strictly necessary for the operation of this subcommand itself.) The following options are supported:
+**::tcl::prefix match** ?\fIoption ...\fR? \fItable string\fR
+: If \fIstring\fR equals one element in \fItable\fR or is a prefix to exactly one element, the matched element is returned. If not, the result depends on the \fB-error\fR option. (It is recommended that the \fItable\fR be sorted before use with this subcommand, so that the list of matches presented in the error message also becomes sorted, though this is not strictly necessary for the operation of this subcommand itself.) The following options are supported:
 
 **-exact**
 : Accept only exact matches.
 
 **-message\0***string*
-: Use *string* in the error message at a mismatch. Default is "option".
+: Use \fIstring\fR in the error message at a mismatch. Default is "option".
 
 **-error\0***options*
-: The *options* are used when no match is found. If *options* is empty, no error is generated and an empty string is returned. Otherwise the *options* are used as **return** options when generating the error message. The default corresponds to setting "-level 0". Example: If "**-error** {-errorcode MyError -level 1}" is used, an error would be generated as:
+: The \fIoptions\fR are used when no match is found. If \fIoptions\fR is empty, no error is generated and an empty string is returned. Otherwise the \fIoptions\fR are used as \fBreturn\fR options when generating the error message. The default corresponds to setting "-level 0". Example: If "**-error** {-errorcode MyError -level 1}" is used, an error would be generated as:
 
 
     ```
@@ -86,7 +86,7 @@ foreach {arg val} $args {
 }
 ```
 
-Creating a **switch** that supports prefixes:
+Creating a \fBswitch\fR that supports prefixes:
 
 ```
 switch [prefix match {apa bepa cepa} $arg] {

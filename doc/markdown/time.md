@@ -26,7 +26,7 @@ time - Time the execution of a script
 
 # Description
 
-This command will call the Tcl interpreter *count* times to evaluate *script* (or once if *count* is not specified).  It will then return a string of the form
+This command will call the Tcl interpreter \fIcount\fR times to evaluate \fIscript\fR (or once if \fIcount\fR is not specified).  It will then return a string of the form
 
 ```
 503.2 microseconds per iteration
@@ -36,7 +36,7 @@ which indicates the average amount of time required per iteration, in microsecon
 
 # Example
 
-Estimate how long it takes for a simple Tcl **for** loop to count to a thousand:
+Estimate how long it takes for a simple Tcl \fBfor\fR loop to count to a thousand:
 
 ```
 time {

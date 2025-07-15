@@ -44,7 +44,7 @@ list - Create a list
 
 # Description
 
-This command returns a list comprised of all the *arg*s, or an empty string if no *arg*s are specified. Braces and backslashes get added as necessary, so that the **lindex** command may be used on the result to re-extract the original arguments, and also so that **eval** may be used to execute the resulting list, with *arg1* comprising the command's name and the other *arg*s comprising its arguments.  **List** produces slightly different results than **concat**:  **concat** removes one level of grouping before forming the list, while **list** works directly from the original arguments.
+This command returns a list comprised of all the \fIarg\fRs, or an empty string if no \fIarg\fRs are specified. Braces and backslashes get added as necessary, so that the \fBlindex\fR command may be used on the result to re-extract the original arguments, and also so that \fBeval\fR may be used to execute the resulting list, with \fIarg1\fR comprising the command's name and the other \fIarg\fRs comprising its arguments.  \fBList\fR produces slightly different results than \fBconcat\fR:  \fBconcat\fR removes one level of grouping before forming the list, while \fBlist\fR works directly from the original arguments.
 
 # Example
 
@@ -60,7 +60,7 @@ will return
 a b {c d e  } {  f {g h}}
 ```
 
-while **concat** with the same arguments will return
+while \fBconcat\fR with the same arguments will return
 
 ```
 a b c d e f {g h}

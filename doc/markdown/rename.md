@@ -29,11 +29,11 @@ rename - Rename or delete a command
 
 # Description
 
-Rename the command that used to be called *oldName* so that it is now called *newName*. If *newName* is an empty string then *oldName* is deleted. *oldName* and *newName* may include namespace qualifiers (names of containing namespaces). If a command is renamed into a different namespace, future invocations of it will execute in the new namespace. The **rename** command returns an empty string as result.
+Rename the command that used to be called \fIoldName\fR so that it is now called \fInewName\fR. If \fInewName\fR is an empty string then \fIoldName\fR is deleted. \fIoldName\fR and \fInewName\fR may include namespace qualifiers (names of containing namespaces). If a command is renamed into a different namespace, future invocations of it will execute in the new namespace. The \fBrename\fR command returns an empty string as result.
 
 # Example
 
-The **rename** command can be used to wrap the standard Tcl commands with your own monitoring machinery.  For example, you might wish to count how often the **source** command is called:
+The \fBrename\fR command can be used to wrap the standard Tcl commands with your own monitoring machinery.  For example, you might wish to count how often the \fBsource\fR command is called:
 
 ```
 rename ::source ::theRealSource

@@ -30,29 +30,29 @@ oo::abstract - a class that does not allow direct instances of itself
 
 # Class hierarchy
 
-**oo::object**    \(-> **oo::class**        \(-> **oo::abstract**
+**oo::object**    \(-> \fBoo::class\fR        \(-> \fBoo::abstract\fR
 
 # Description
 
-Abstract classes are classes that can contain definitions, but which cannot be directly manufactured; they are intended to only ever be inherited from and instantiated indirectly. The characteristic methods of **oo::class** (**create** and **new**) are not exported by an instance of **oo::abstract**.
+Abstract classes are classes that can contain definitions, but which cannot be directly manufactured; they are intended to only ever be inherited from and instantiated indirectly. The characteristic methods of \fBoo::class\fR (\fBcreate\fR and \fBnew\fR) are not exported by an instance of \fBoo::abstract\fR.
 
-Note that **oo::abstract** is not itself an instance of **oo::abstract**.
+Note that \fBoo::abstract\fR is not itself an instance of \fBoo::abstract\fR.
 
 ## Constructor
 
-The **oo::abstract** class does not define an explicit constructor; this means that it is effectively the same as the constructor of the **oo::class** class.
+The \fBoo::abstract\fR class does not define an explicit constructor; this means that it is effectively the same as the constructor of the \fBoo::class\fR class.
 
 ## Destructor
 
-The **oo::abstract** class does not define an explicit destructor; destroying an instance of it is just like destroying an ordinary class (and will destroy all its subclasses).
+The \fBoo::abstract\fR class does not define an explicit destructor; destroying an instance of it is just like destroying an ordinary class (and will destroy all its subclasses).
 
 ## Exported methods
 
-The **oo::abstract** class defines no new exported methods.
+The \fBoo::abstract\fR class defines no new exported methods.
 
 ## Non-exported methods
 
-The **oo::abstract** class explicitly states that **create**, **createWithNamespace**, and **new** are unexported.
+The \fBoo::abstract\fR class explicitly states that \fBcreate\fR, \fBcreateWithNamespace\fR, and \fBnew\fR are unexported.
 
 # Examples
 

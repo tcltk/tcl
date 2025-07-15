@@ -31,24 +31,24 @@ try - Trap and process errors and exceptions
 
 # Description
 
-This command executes the script *body* and, depending on what the outcome of that script is (normal exit, error, or some other exceptional result), runs a handler script to deal with the case. Once that has all happened, if the **finally** clause is present, the *script* it includes will be run and the result of the handler (or the *body* if no handler matched) is allowed to continue to propagate. Note that the **finally** clause is processed even if an error occurs and irrespective of which, if any, *handler* is used.
+This command executes the script \fIbody\fR and, depending on what the outcome of that script is (normal exit, error, or some other exceptional result), runs a handler script to deal with the case. Once that has all happened, if the \fBfinally\fR clause is present, the \fIscript\fR it includes will be run and the result of the handler (or the \fIbody\fR if no handler matched) is allowed to continue to propagate. Note that the \fBfinally\fR clause is processed even if an error occurs and irrespective of which, if any, \fIhandler\fR is used.
 
-The *handler* clauses are each expressed as several words, and must have one of the following forms:
+The \fIhandler\fR clauses are each expressed as several words, and must have one of the following forms:
 
-**on** *code variableList script*
-: This clause matches if the evaluation of *body* completed with the exception code *code*. The *code* may be expressed as an integer or one of the following literal words: **ok**, **error**, **return**, **break**, or **continue**. Those literals correspond to the integers 0 through 4 respectively.
+**on** \fIcode variableList script\fR
+: This clause matches if the evaluation of \fIbody\fR completed with the exception code \fIcode\fR. The \fIcode\fR may be expressed as an integer or one of the following literal words: \fBok\fR, \fBerror\fR, \fBreturn\fR, \fBbreak\fR, or \fBcontinue\fR. Those literals correspond to the integers 0 through 4 respectively.
 
-**trap** *pattern variableList script*
-: This clause matches if the evaluation of *body* resulted in an error and the prefix of the **-errorcode** from the interpreter's status dictionary is equal to the *pattern*. The number of prefix words taken from the **-errorcode** is equal to the list-length of *pattern*, and inter-word spaces are normalized in both the **-errorcode** and *pattern* before comparison.
+**trap** \fIpattern variableList script\fR
+: This clause matches if the evaluation of \fIbody\fR resulted in an error and the prefix of the \fB-errorcode\fR from the interpreter's status dictionary is equal to the \fIpattern\fR. The number of prefix words taken from the \fB-errorcode\fR is equal to the list-length of \fIpattern\fR, and inter-word spaces are normalized in both the \fB-errorcode\fR and \fIpattern\fR before comparison.
 
 
-The *variableList* word in each *handler* is always interpreted as a list of variable names. If the first word of the list is present and non-empty, it names a variable into which the result of the evaluation of *body* (from the main **try**) will be placed; this will contain the human-readable form of any errors. If the second word of the list is present and non-empty, it names a variable into which the options dictionary of the interpreter at the moment of completion of execution of *body* will be placed.
+The \fIvariableList\fR word in each \fIhandler\fR is always interpreted as a list of variable names. If the first word of the list is present and non-empty, it names a variable into which the result of the evaluation of \fIbody\fR (from the main \fBtry\fR) will be placed; this will contain the human-readable form of any errors. If the second word of the list is present and non-empty, it names a variable into which the options dictionary of the interpreter at the moment of completion of execution of \fIbody\fR will be placed.
 
-The *script* word of each *handler* is also always interpreted the same: as a Tcl script to evaluate if the clause is matched. If *script* is a literal "-" and the *handler* is not the last one, the *script* of the following *handler* is invoked instead (just like with the **switch** command).
+The \fIscript\fR word of each \fIhandler\fR is also always interpreted the same: as a Tcl script to evaluate if the clause is matched. If \fIscript\fR is a literal "-" and the \fIhandler\fR is not the last one, the \fIscript\fR of the following \fIhandler\fR is invoked instead (just like with the \fBswitch\fR command).
 
-Note that *handler* clauses are matched against in order, and that the first matching one is always selected. At most one *handler* clause will selected. As a consequence, an **on error** will mask any subsequent **trap** in the **try**. Also note that **on error** is equivalent to **trap {}**.
+Note that \fIhandler\fR clauses are matched against in order, and that the first matching one is always selected. At most one \fIhandler\fR clause will selected. As a consequence, an \fBon error\fR will mask any subsequent \fBtrap\fR in the \fBtry\fR. Also note that \fBon error\fR is equivalent to \fBtrap {}\fR.
 
-If an exception (i.e. any non-**ok** result) occurs during the evaluation of either the *handler* or the **finally** clause, the original exception's status dictionary will be added to the new exception's status dictionary under the **-during** key.
+If an exception (i.e. any non-\fBok\fR result) occurs during the evaluation of either the \fIhandler\fR or the \fBfinally\fR clause, the original exception's status dictionary will be added to the new exception's status dictionary under the \fB-during\fR key.
 
 # Examples
 
@@ -76,7 +76,7 @@ try {
 }
 ```
 
-Proc to read a file in utf-8 encoding and return its contents. The file is closed in success and error case by the finally clause. It is allowed to call **return** within the **try** block. Remark that with tcl 9, the read command may also throw utf-8 conversion errors:
+Proc to read a file in utf-8 encoding and return its contents. The file is closed in success and error case by the finally clause. It is allowed to call \fBreturn\fR within the \fBtry\fR block. Remark that with tcl 9, the read command may also throw utf-8 conversion errors:
 
 ```
 proc readfile {filename} {

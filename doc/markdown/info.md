@@ -46,235 +46,235 @@ info - Information about the state of the Tcl interpreter
 
 Available commands:
 
-**info args** *procname*
-: Returns the names of the parameters to the procedure named *procname*.
+**info args** \fIprocname\fR
+: Returns the names of the parameters to the procedure named \fIprocname\fR.
 
-**info body** *procname*
-: Returns the body of the procedure named *procname*.
+**info body** \fIprocname\fR
+: Returns the body of the procedure named \fIprocname\fR.
 
-**info class** *subcommand class* ?*arg ...*
-: Returns information about the class named *class*. See **CLASS INTROSPECTION** below.
+**info class** \fIsubcommand class\fR ?\fIarg ...\fR
+: Returns information about the class named \fIclass\fR. See \fBCLASS INTROSPECTION\fR below.
 
 **info cmdcount**
 : Returns the total number of commands evaluated in this interpreter.
 
-**info cmdtype** *commandName*
-: Returns a the type of the command named *commandName*. Built-in types are:
+**info cmdtype** \fIcommandName\fR
+: Returns a the type of the command named \fIcommandName\fR. Built-in types are:
 
 **alias**
-: *commandName* was created by **interp alias**. In a safe interpreter an alias is only visible if both the alias and the target are visible.
+: *commandName* was created by \fBinterp alias\fR. In a safe interpreter an alias is only visible if both the alias and the target are visible.
 
 **coroutine**
-: *commandName* was created by **coroutine**.
+: *commandName* was created by \fBcoroutine\fR.
 
 **ensemble**
-: *commandName* was created by **namespace ensemble**.
+: *commandName* was created by \fBnamespace ensemble\fR.
 
 **import**
-: *commandName* was created by **namespace import**.
+: *commandName* was created by \fBnamespace import\fR.
 
 **native**
-: *commandName* was created by the **Tcl_CreateObjCommand** interface directly without further registration of the type of command.
+: *commandName* was created by the \fBTcl_CreateObjCommand\fR interface directly without further registration of the type of command.
 
 **object**
-: *commandName* is the public command that represents an instance of **oo::object** or one of its subclasses.
+: *commandName* is the public command that represents an instance of \fBoo::object\fR or one of its subclasses.
 
 **privateObject**
-: *commandName* is the private command, **my** by default, that represents an instance of **oo::object** or one of its subclasses.
+: *commandName* is the private command, \fBmy\fR by default, that represents an instance of \fBoo::object\fR or one of its subclasses.
 
 **proc**
-: *commandName* was created by **proc**.
+: *commandName* was created by \fBproc\fR.
 
 **interp**
-: *commandName* was created by **interp create**.
+: *commandName* was created by \fBinterp create\fR.
 
 **zlibStream**
-: *commandName* was created by **zlib stream**.
+: *commandName* was created by \fBzlib stream\fR.
 
 
-**info commands** ?*pattern*?
-: Returns the names of all commands visible in the current namespace.  If *pattern* is given, returns only those names that match according to **string match**.  Only the last component of *pattern* is a pattern. Other components identify a namespace.  See **NAMESPACE RESOLUTION** in the **namespace**(n) documentation.
+**info commands** ?\fIpattern\fR?
+: Returns the names of all commands visible in the current namespace.  If \fIpattern\fR is given, returns only those names that match according to \fBstring match\fR.  Only the last component of \fIpattern\fR is a pattern. Other components identify a namespace.  See \fBNAMESPACE RESOLUTION\fR in the \fBnamespace\fR(n) documentation.
 
-**info complete** *command*
-: Returns 1 if *command* is a complete command, and **0** otherwise. Typically used in line-oriented input environments to allow users to type in commands that span multiple lines.
+**info complete** \fIcommand\fR
+: Returns 1 if \fIcommand\fR is a complete command, and \fB0\fR otherwise. Typically used in line-oriented input environments to allow users to type in commands that span multiple lines.
 
-**info constant** *varName*
-: Returns 1 if *varName* is a constant variable (see **const**) and 0 otherwise.
+**info constant** \fIvarName\fR
+: Returns 1 if \fIvarName\fR is a constant variable (see \fBconst\fR) and 0 otherwise.
 
-**info consts** ?*pattern*?
-: Returns the list of constant variables (see **const**) in the current scope, or the list of constant variables matching *pattern* (if that is provided) in a manner similar to **info vars**.
+**info consts** ?\fIpattern\fR?
+: Returns the list of constant variables (see \fBconst\fR) in the current scope, or the list of constant variables matching \fIpattern\fR (if that is provided) in a manner similar to \fBinfo vars\fR.
 
 **info coroutine**
-: Returns the name of the current **coroutine**, or the empty string if there is no current coroutine or the current coroutine has been deleted.
+: Returns the name of the current \fBcoroutine\fR, or the empty string if there is no current coroutine or the current coroutine has been deleted.
 
-**info default** *procname parameter varname*
-: If the parameter *parameter* for the procedure named *procname* has a default value, stores that value in *varname* and returns **1**. Otherwise, returns **0**.
+**info default** \fIprocname parameter varname\fR
+: If the parameter \fIparameter\fR for the procedure named \fIprocname\fR has a default value, stores that value in \fIvarname\fR and returns \fB1\fR. Otherwise, returns \fB0\fR.
 
-**info errorstack** ?*interp*?
-: Returns a description of the active command at each level for the last error in the current interpreter, or in the interpreter named *interp* if given.
-    The description is a dictionary of tokens and parameters. Tokens are currently either **CALL**, **UP**, or **INNER**, but other values may be introduced in the future. **CALL** indicates a command call, and its parameter is the corresponding **info level** **0**. **UP** indicates a shift in variable frames generated by **uplevel** or similar, and applies to the previous **CALL** item. Its parameter is the level offset. **INNER** identifies the "inner context", which is the innermost atomic command or bytecode instruction that raised the error, along with its arguments when available. While **CALL** and **UP** provide a trail of the call path, **INNER** provides details of the offending operation in the innermost procedure call, even to sub-expression granularity.
-    This information is also present in the **-errorstack** entry of the options dictionary returned by 3-argument **catch**; **info errorstack** is a convenient way of retrieving it for uncaught errors at top-level in an interactive **interpreter**.
+**info errorstack** ?\fIinterp\fR?
+: Returns a description of the active command at each level for the last error in the current interpreter, or in the interpreter named \fIinterp\fR if given.
+    The description is a dictionary of tokens and parameters. Tokens are currently either \fBCALL\fR, \fBUP\fR, or \fBINNER\fR, but other values may be introduced in the future. \fBCALL\fR indicates a command call, and its parameter is the corresponding \fBinfo level\fR \fB0\fR. \fBUP\fR indicates a shift in variable frames generated by \fBuplevel\fR or similar, and applies to the previous \fBCALL\fR item. Its parameter is the level offset. \fBINNER\fR identifies the "inner context", which is the innermost atomic command or bytecode instruction that raised the error, along with its arguments when available. While \fBCALL\fR and \fBUP\fR provide a trail of the call path, \fBINNER\fR provides details of the offending operation in the innermost procedure call, even to sub-expression granularity.
+    This information is also present in the \fB-errorstack\fR entry of the options dictionary returned by 3-argument \fBcatch\fR; \fBinfo errorstack\fR is a convenient way of retrieving it for uncaught errors at top-level in an interactive \fBinterpreter\fR.
 
-**info exists** *varName*
-: Returns **1** if a variable named *varName* is visible and has been defined, and **0** otherwise.
+**info exists** \fIvarName\fR
+: Returns \fB1\fR if a variable named \fIvarName\fR is visible and has been defined, and \fB0\fR otherwise.
 
-**info frame** ?*depth*?
-: Returns the depth of the call to **info frame** itself.  Otherwise, returns a dictionary describing the active command at the *depth*, which counts all commands visible to **info level**, plus commands that don't create a new level, such as **eval**, **source**, or *uplevel*. The frame depth is always greater than the current level.
-    If *depth* is greater than **0** it is the frame at that depth.  Otherwise it is the number of frames up from the current frame.
-    As with **info level** and error traces, for nested commands like "foo [bar [x]]", only "x" is seen by **info frame** invoked within "x".
+**info frame** ?\fIdepth\fR?
+: Returns the depth of the call to \fBinfo frame\fR itself.  Otherwise, returns a dictionary describing the active command at the \fIdepth\fR, which counts all commands visible to \fBinfo level\fR, plus commands that don't create a new level, such as \fBeval\fR, \fBsource\fR, or \fIuplevel\fR. The frame depth is always greater than the current level.
+    If \fIdepth\fR is greater than \fB0\fR it is the frame at that depth.  Otherwise it is the number of frames up from the current frame.
+    As with \fBinfo level\fR and error traces, for nested commands like "foo [bar [x]]", only "x" is seen by \fBinfo frame\fR invoked within "x".
     The dictionary may contain the following keys:
 
 **type**
-: Always present.  Possible values are **source**, **proc**, **eval**, and **precompiled**.
+: Always present.  Possible values are \fBsource\fR, \fBproc\fR, \fBeval\fR, and \fBprecompiled\fR.
 
 **source**
-: A script loaded via the **source** command.
+: A script loaded via the \fBsource\fR command.
 
 **proc**
 : The body of a procedure that could not be traced back to a line in a particular script.
 
 **eval**
-: The body of a script provided to **eval** or **uplevel**.
+: The body of a script provided to \fBeval\fR or \fBuplevel\fR.
 
 **precompiled**
-: A precompiled script (loadable by the package **tbcload**), and no further information is available.
+: A precompiled script (loadable by the package \fBtbcload\fR), and no further information is available.
 
 
 **line**
-: The line number of of the command inside its script.  Not available for **precompiled** commands.  When the type is **source**, the line number is relative to the beginning of the file, whereas for the last two types it is relative to the start of the script.
+: The line number of of the command inside its script.  Not available for \fBprecompiled\fR commands.  When the type is \fBsource\fR, the line number is relative to the beginning of the file, whereas for the last two types it is relative to the start of the script.
 
 **file**
-: For type **source**, provides the normalized path of the file that contains the command.
+: For type \fBsource\fR, provides the normalized path of the file that contains the command.
 
 **cmd**
 : The command before substitutions were performed.
 
 **proc**
-: For type **proc**, the name of the procedure containing the command.
+: For type \fBproc\fR, the name of the procedure containing the command.
 
 **lambda**
-: For a command in a script evaluated as the body of an unnamed routine via the **apply** command, the definition of that routine.
+: For a command in a script evaluated as the body of an unnamed routine via the \fBapply\fR command, the definition of that routine.
 
 **level**
 : For a frame that corresponds to a level, (to be determined).
 
 
-When a command can be traced to its literal definition in some script, e.g. procedures nested in statically defined procedures, and literal eval scripts in files or statically defined procedures, its type is **source** and its location is the absolute line number in the script.  Otherwise, its type is **proc** and its location is its line number within the body of the procedure.
+When a command can be traced to its literal definition in some script, e.g. procedures nested in statically defined procedures, and literal eval scripts in files or statically defined procedures, its type is \fBsource\fR and its location is the absolute line number in the script.  Otherwise, its type is \fBproc\fR and its location is its line number within the body of the procedure.
 
-In contrast, procedure definitions and **eval** within a dynamically **eval**uated environment count line numbers relative to the start of their script, even if they would be able to count relative to the start of the outer dynamic script. That type of number usually makes more sense.
+In contrast, procedure definitions and \fBeval\fR within a dynamically \fBeval\fRuated environment count line numbers relative to the start of their script, even if they would be able to count relative to the start of the outer dynamic script. That type of number usually makes more sense.
 
-A different way of describing this behaviour is that file-based locations are tracked as deeply as possible, and where this is not possible the lines are counted based on the smallest possible **eval** or procedure body, as that scope is usually easier to find than any dynamic outer scope.
+A different way of describing this behaviour is that file-based locations are tracked as deeply as possible, and where this is not possible the lines are counted based on the smallest possible \fBeval\fR or procedure body, as that scope is usually easier to find than any dynamic outer scope.
 
-The syntactic form **{*}** is handled like **eval**. I.e. if it is given a literal list argument the system tracks the line number within the list words as well, and otherwise all line numbers are counted relative to the start of each word (smallest scope)
+The syntactic form \fB{*}\fR is handled like \fBeval\fR. I.e. if it is given a literal list argument the system tracks the line number within the list words as well, and otherwise all line numbers are counted relative to the start of each word (smallest scope)
 
-**info functions** ?*pattern*?
-: If *pattern* is not given, returns a list of all the math functions currently defined. If *pattern* is given, returns only those names that match *pattern* according to **string match**.
+**info functions** ?\fIpattern\fR?
+: If \fIpattern\fR is not given, returns a list of all the math functions currently defined. If \fIpattern\fR is given, returns only those names that match \fIpattern\fR according to \fBstring match\fR.
 
-**info globals** ?*pattern*?
-: If *pattern* is not given, returns a list of all the names of currently-defined global variables. Global variables are variables in the global namespace. If *pattern* is given, only those names matching *pattern* are returned.  Matching is determined using the same rules as for **string match**.
+**info globals** ?\fIpattern\fR?
+: If \fIpattern\fR is not given, returns a list of all the names of currently-defined global variables. Global variables are variables in the global namespace. If \fIpattern\fR is given, only those names matching \fIpattern\fR are returned.  Matching is determined using the same rules as for \fBstring match\fR.
 
 **info hostname**
 : Returns the name of the current host.
     This name is not guaranteed to be the fully-qualified domain name of the host.  Where machines have several different names, as is common on systems with both TCP/IP (DNS) and NetBIOS-based networking installed, it is the name that is suitable for TCP/IP networking that is returned.
 
-**info level** ?*level*?
-: If *number* is not given, the level this routine was called from. Otherwise returns the complete command active at the given level.  If *number* is greater than **0**, it is the desired level.  Otherwise, it is *number* levels up from the current level.  A complete command is the words in the command, with all substitutions performed, meaning that it is a list.  See **uplevel** for more information on levels.
+**info level** ?\fIlevel\fR?
+: If \fInumber\fR is not given, the level this routine was called from. Otherwise returns the complete command active at the given level.  If \fInumber\fR is greater than \fB0\fR, it is the desired level.  Otherwise, it is \fInumber\fR levels up from the current level.  A complete command is the words in the command, with all substitutions performed, meaning that it is a list.  See \fBuplevel\fR for more information on levels.
 
 **info library**
-: Returns the value of **tcl_library**, which is the name of the library directory in which the scripts distributed with Tcl scripts are stored.
+: Returns the value of \fBtcl_library\fR, which is the name of the library directory in which the scripts distributed with Tcl scripts are stored.
 
-**info loaded** ?*interp*? ?*prefix*?
-: Returns the name of each file loaded in *interp* by the **load** command with prefix *prefix* .  If *prefix* is not given, returns a list where each item is the name of the loaded file and the prefix for which the file was loaded.  For a statically-loaded package the name of the file is the empty string.  For *interp*, the empty string is the current interpreter.
+**info loaded** ?\fIinterp\fR? ?\fIprefix\fR?
+: Returns the name of each file loaded in \fIinterp\fR by the \fBload\fR command with prefix \fIprefix\fR .  If \fIprefix\fR is not given, returns a list where each item is the name of the loaded file and the prefix for which the file was loaded.  For a statically-loaded package the name of the file is the empty string.  For \fIinterp\fR, the empty string is the current interpreter.
 
-**info locals** ?*pattern*?
-: If *pattern* is given, returns the name of each local variable matching *pattern* according to **string match**.  Otherwise, returns the name of each local variable.  A variables defined with the **global**, **upvar** or **variable** is not local.
+**info locals** ?\fIpattern\fR?
+: If \fIpattern\fR is given, returns the name of each local variable matching \fIpattern\fR according to \fBstring match\fR.  Otherwise, returns the name of each local variable.  A variables defined with the \fBglobal\fR, \fBupvar\fR or \fBvariable\fR is not local.
 
 **info nameofexecutable**
 : Returns the absolute pathname of the program for the current interpreter.  If such a file can not be identified an empty string is returned.
 
-**info object** *subcommand object* ?*arg ...*
-: Returns information about the object named *object*. *subcommand* is described **OBJECT INTROSPECTION** below.
+**info object** \fIsubcommand object\fR ?\fIarg ...\fR
+: Returns information about the object named \fIobject\fR. \fIsubcommand\fR is described \fBOBJECT INTROSPECTION\fR below.
 
 **info patchlevel**
-: Returns the value of the global variable **tcl_patchLevel**, in which the exact version of the Tcl library initially stored.
+: Returns the value of the global variable \fBtcl_patchLevel\fR, in which the exact version of the Tcl library initially stored.
 
-**info procs** ?*pattern*?
-: Returns the names of all visible procedures. If *pattern* is given, returns only those names that match according to **string match**.  Only the final component in *pattern* is actually considered a pattern.  Any qualifying components simply select a namespace.  See **NAMESPACE RESOLUTION** in the **namespace**(n) documentation.
+**info procs** ?\fIpattern\fR?
+: Returns the names of all visible procedures. If \fIpattern\fR is given, returns only those names that match according to \fBstring match\fR.  Only the final component in \fIpattern\fR is actually considered a pattern.  Any qualifying components simply select a namespace.  See \fBNAMESPACE RESOLUTION\fR in the \fBnamespace\fR(n) documentation.
 
-**info script** ?*filename*?
-: Returns the pathname of the innermost script currently being evaluated, or the empty string if no pathname can be determined.  If *filename* is given, sets the return value of any future calls to **info script** for the duration of the innermost active script.  This is useful in virtual file system applications.
+**info script** ?\fIfilename\fR?
+: Returns the pathname of the innermost script currently being evaluated, or the empty string if no pathname can be determined.  If \fIfilename\fR is given, sets the return value of any future calls to \fBinfo script\fR for the duration of the innermost active script.  This is useful in virtual file system applications.
 
 **info sharedlibextension**
-: Returns the extension used on this platform for names of shared libraries, e.g. **.so** under Solaris.  Returns the empty string if shared libraries are not supported on this platform.
+: Returns the extension used on this platform for names of shared libraries, e.g. \fB.so\fR under Solaris.  Returns the empty string if shared libraries are not supported on this platform.
 
 **info tclversion**
-: Returns the value of the global variable **tcl_version**, in which the major and minor version of the Tcl library are stored.
+: Returns the value of the global variable \fBtcl_version\fR, in which the major and minor version of the Tcl library are stored.
 
-**info vars** ?*pattern*?
-: If *pattern* is not given, returns the names of all visible variables.  If *pattern* is given, returns only those names that match according to **string match**.  Only the last component of *pattern* is a pattern. Other components identify a namespace.  See **NAMESPACE RESOLUTION** in the **namespace**(n) documentation.  When *pattern* is a qualified name, results are fully qualified.
+**info vars** ?\fIpattern\fR?
+: If \fIpattern\fR is not given, returns the names of all visible variables.  If \fIpattern\fR is given, returns only those names that match according to \fBstring match\fR.  Only the last component of \fIpattern\fR is a pattern. Other components identify a namespace.  See \fBNAMESPACE RESOLUTION\fR in the \fBnamespace\fR(n) documentation.  When \fIpattern\fR is a qualified name, results are fully qualified.
     A variable that has been declared but not yet given a value will be included in the results.
 
 
 ## Class introspection
 
-The following *subcommand* values are supported by **info class**:
+The following \fIsubcommand\fR values are supported by \fBinfo class\fR:
 
-**info class call** *class method*
-: Returns a description of the method implementations that are used to provide a stereotypical instance of *class*'s implementation of *method* (stereotypical instances being objects instantiated by a class without having any object-specific definitions added). This consists of a list of lists of four elements, where each sublist consists of a word that describes the general type of method implementation (being one of **method** for an ordinary method, **filter** for an applied filter, **private** for a private method, and **unknown** for a method that is invoked as part of unknown method handling), a word giving the name of the particular method invoked (which is always the same as *method* for the **method** type, and "**unknown**" for the **unknown** type), a word giving the fully qualified name of the class that defined the method, and a word describing the type of method implementation (see **info class methodtype**).
-    Note that there is no inspection of whether the method implementations actually use **next** to transfer control along the call chain, and the call chains that this command files do not actually contain private methods.
+**info class call** \fIclass method\fR
+: Returns a description of the method implementations that are used to provide a stereotypical instance of \fIclass\fR's implementation of \fImethod\fR (stereotypical instances being objects instantiated by a class without having any object-specific definitions added). This consists of a list of lists of four elements, where each sublist consists of a word that describes the general type of method implementation (being one of \fBmethod\fR for an ordinary method, \fBfilter\fR for an applied filter, \fBprivate\fR for a private method, and \fBunknown\fR for a method that is invoked as part of unknown method handling), a word giving the name of the particular method invoked (which is always the same as \fImethod\fR for the \fBmethod\fR type, and "**unknown**" for the \fBunknown\fR type), a word giving the fully qualified name of the class that defined the method, and a word describing the type of method implementation (see \fBinfo class methodtype\fR).
+    Note that there is no inspection of whether the method implementations actually use \fBnext\fR to transfer control along the call chain, and the call chains that this command files do not actually contain private methods.
 
-**info class constructor** *class*
-: This subcommand returns a description of the definition of the constructor of class *class*. The definition is described as a two element list; the first element is the list of arguments to the constructor in a form suitable for passing to another call to **proc** or a method definition, and the second element is the body of the constructor. If no constructor is present, this returns the empty list.
+**info class constructor** \fIclass\fR
+: This subcommand returns a description of the definition of the constructor of class \fIclass\fR. The definition is described as a two element list; the first element is the list of arguments to the constructor in a form suitable for passing to another call to \fBproc\fR or a method definition, and the second element is the body of the constructor. If no constructor is present, this returns the empty list.
 
-**info class definition** *class method*
-: This subcommand returns a description of the definition of the method named *method* of class *class*. The definition is described as a two element list; the first element is the list of arguments to the method in a form suitable for passing to another call to **proc** or a method definition, and the second element is the body of the method.
+**info class definition** \fIclass method\fR
+: This subcommand returns a description of the definition of the method named \fImethod\fR of class \fIclass\fR. The definition is described as a two element list; the first element is the list of arguments to the method in a form suitable for passing to another call to \fBproc\fR or a method definition, and the second element is the body of the method.
 
-**info class definitionnamespace** *class* ?*kind*?
-: This subcommand returns the definition namespace for *kind* definitions of the class *class*; the definition namespace only affects the instances of *class*, not *class* itself. The *kind* can be either **-class** to return the definition namespace used for **oo::define**, or **-instance** to return the definition namespace used for **oo::objdefine**; the **-class** kind is default (though this is only actually useful on classes that are subclasses of **oo::class**).
-    If *class* does not provide a definition namespace of the given kind, this command returns the empty string. In those circumstances, the **oo::define** and **oo::objdefine** commands look up which definition namespace to use using the class inheritance hierarchy.
+**info class definitionnamespace** \fIclass\fR ?\fIkind\fR?
+: This subcommand returns the definition namespace for \fIkind\fR definitions of the class \fIclass\fR; the definition namespace only affects the instances of \fIclass\fR, not \fIclass\fR itself. The \fIkind\fR can be either \fB-class\fR to return the definition namespace used for \fBoo::define\fR, or \fB-instance\fR to return the definition namespace used for \fBoo::objdefine\fR; the \fB-class\fR kind is default (though this is only actually useful on classes that are subclasses of \fBoo::class\fR).
+    If \fIclass\fR does not provide a definition namespace of the given kind, this command returns the empty string. In those circumstances, the \fBoo::define\fR and \fBoo::objdefine\fR commands look up which definition namespace to use using the class inheritance hierarchy.
 
-**info class destructor** *class*
-: This subcommand returns the body of the destructor of class *class*. If no destructor is present, this returns the empty string.
+**info class destructor** \fIclass\fR
+: This subcommand returns the body of the destructor of class \fIclass\fR. If no destructor is present, this returns the empty string.
 
-**info class filters** *class*
+**info class filters** \fIclass\fR
 : This subcommand returns the list of filter methods set on the class.
 
-**info class forward** *class method*
-: This subcommand returns the argument list for the method forwarding called *method* that is set on the class called *class*.
+**info class forward** \fIclass method\fR
+: This subcommand returns the argument list for the method forwarding called \fImethod\fR that is set on the class called \fIclass\fR.
 
-**info class instances** *class* ?*pattern*?
-: This subcommand returns a list of instances of class *class*. If the optional *pattern* argument is present, it constrains the list of returned instances to those that match it according to the rules of **string match**.
+**info class instances** \fIclass\fR ?\fIpattern\fR?
+: This subcommand returns a list of instances of class \fIclass\fR. If the optional \fIpattern\fR argument is present, it constrains the list of returned instances to those that match it according to the rules of \fBstring match\fR.
 
-**info class methods** *class* ?*options...*?
-: This subcommand returns a list of all public (i.e. exported) methods of the class called *class*. Any of the following *option*s may be given, controlling exactly which method names are returned:
+**info class methods** \fIclass\fR ?\fIoptions...\fR?
+: This subcommand returns a list of all public (i.e. exported) methods of the class called \fIclass\fR. Any of the following \fIoption\fRs may be given, controlling exactly which method names are returned:
 
 **-all**
-: If the **-all** flag is given, and the **-scope** flag is not given, the list of methods will include those methods defined not just by the class, but also by the class's superclasses and mixins.
+: If the \fB-all\fR flag is given, and the \fB-scope\fR flag is not given, the list of methods will include those methods defined not just by the class, but also by the class's superclasses and mixins.
 
 **-private**
-: If the **-private** flag is given, and the **-scope** flag is not given, the list of methods will also include the non-exported methods of the class (and superclasses and mixins, if **-all** is also given). Note that this naming is an unfortunate clash with true private methods; this option name is retained for backward compatibility.
+: If the \fB-private\fR flag is given, and the \fB-scope\fR flag is not given, the list of methods will also include the non-exported methods of the class (and superclasses and mixins, if \fB-all\fR is also given). Note that this naming is an unfortunate clash with true private methods; this option name is retained for backward compatibility.
 
-**-scope** *scope*
-: Returns a list of all methods on *class* that have the given visibility *scope*.  When this option is supplied, both the **-all** and **-private** options are ignored. The valid values for *scope* are:
+**-scope** \fIscope\fR
+: Returns a list of all methods on \fIclass\fR that have the given visibility \fIscope\fR.  When this option is supplied, both the \fB-all\fR and \fB-private\fR options are ignored. The valid values for \fIscope\fR are:
 
 **public**
-: Only methods with *public* scope (i.e., callable from anywhere by any instance of this class) are to be returned.
+: Only methods with \fIpublic\fR scope (i.e., callable from anywhere by any instance of this class) are to be returned.
 
 **unexported**
-: Only methods with *unexported* scope (i.e., only callable via **my**) are to be returned.
+: Only methods with \fIunexported\fR scope (i.e., only callable via \fBmy\fR) are to be returned.
 
 **private**
-: Only methods with *private* scope (i.e., only callable from within this class's methods) are to be returned.
+: Only methods with \fIprivate\fR scope (i.e., only callable from within this class's methods) are to be returned.
 
 
-**info class methodtype** *class method*
-: This subcommand returns a description of the type of implementation used for the method named *method* of class *class*. When the result is **method**, further information can be discovered with **info class definition**, and when the result is **forward**, further information can be discovered with **info class forward**.
+**info class methodtype** \fIclass method\fR
+: This subcommand returns a description of the type of implementation used for the method named \fImethod\fR of class \fIclass\fR. When the result is \fBmethod\fR, further information can be discovered with \fBinfo class definition\fR, and when the result is \fBforward\fR, further information can be discovered with \fBinfo class forward\fR.
 
-**info class mixins** *class*
-: This subcommand returns a list of all classes that have been mixed into the class named *class*.
+**info class mixins** \fIclass\fR
+: This subcommand returns a list of all classes that have been mixed into the class named \fIclass\fR.
 
-**info class properties** *class* ?*options...*
-: This subcommand returns a sorted list of properties defined on the class named *class*. The *options* define exactly which properties are returned:
+**info class properties** \fIclass\fR ?\fIoptions...\fR
+: This subcommand returns a sorted list of properties defined on the class named \fIclass\fR. The \fIoptions\fR define exactly which properties are returned:
 
 **-all**
 : With this option, the properties from the superclasses and mixins of the class are also returned.
@@ -286,92 +286,92 @@ The following *subcommand* values are supported by **info class**:
 : This option asks for the writable properties to be returned.  Only readable or writable properties are returned, not both.
 
 
-**info class subclasses** *class* ?*pattern*?
-: This subcommand returns a list of direct subclasses of class *class*. If the optional *pattern* argument is present, it constrains the list of returned classes to those that match it according to the rules of **string match**.
+**info class subclasses** \fIclass\fR ?\fIpattern\fR?
+: This subcommand returns a list of direct subclasses of class \fIclass\fR. If the optional \fIpattern\fR argument is present, it constrains the list of returned classes to those that match it according to the rules of \fBstring match\fR.
 
-**info class superclasses** *class*
-: This subcommand returns a list of direct superclasses of class *class* in inheritance precedence order.
+**info class superclasses** \fIclass\fR
+: This subcommand returns a list of direct superclasses of class \fIclass\fR in inheritance precedence order.
 
-**info class variables** *class* ?**-private**?
-: This subcommand returns a list of all variables that have been declared for the class named *class* (i.e. that are automatically present in the class's methods, constructor and destructor). If the **-private** option is given, this lists the private variables declared instead.
+**info class variables** \fIclass\fR ?\fB-private\fR?
+: This subcommand returns a list of all variables that have been declared for the class named \fIclass\fR (i.e. that are automatically present in the class's methods, constructor and destructor). If the \fB-private\fR option is given, this lists the private variables declared instead.
 
 
 ## Object introspection
 
-The following *subcommand* values are supported by **info object**:
+The following \fIsubcommand\fR values are supported by \fBinfo object\fR:
 
-**info object call** *object method*
-: Returns a description of the method implementations that are used to provide *object*'s implementation of *method*.  This consists of a list of lists of four elements, where each sublist consists of a word that describes the general type of method implementation (being one of **method** for an ordinary method, **filter** for an applied filter, **private** for a private method, and **unknown** for a method that is invoked as part of unknown method handling), a word giving the name of the particular method invoked (which is always the same as *method* for the **method** type, and "**unknown**" for the **unknown** type), a word giving what defined the method (the fully qualified name of the class, or the literal string **object** if the method implementation is on an instance), and a word describing the type of method implementation (see **info object methodtype**).
-    Note that there is no inspection of whether the method implementations actually use **next** to transfer control along the call chain, and the call chains that this command files do not actually contain private methods.
+**info object call** \fIobject method\fR
+: Returns a description of the method implementations that are used to provide \fIobject\fR's implementation of \fImethod\fR.  This consists of a list of lists of four elements, where each sublist consists of a word that describes the general type of method implementation (being one of \fBmethod\fR for an ordinary method, \fBfilter\fR for an applied filter, \fBprivate\fR for a private method, and \fBunknown\fR for a method that is invoked as part of unknown method handling), a word giving the name of the particular method invoked (which is always the same as \fImethod\fR for the \fBmethod\fR type, and "**unknown**" for the \fBunknown\fR type), a word giving what defined the method (the fully qualified name of the class, or the literal string \fBobject\fR if the method implementation is on an instance), and a word describing the type of method implementation (see \fBinfo object methodtype\fR).
+    Note that there is no inspection of whether the method implementations actually use \fBnext\fR to transfer control along the call chain, and the call chains that this command files do not actually contain private methods.
 
-**info object class** *object* ?*className*?
-: If *className* is not given, this subcommand returns class of the *object* object. If *className* is present, this subcommand returns a boolean value indicating whether the *object* is of that class.
+**info object class** \fIobject\fR ?\fIclassName\fR?
+: If \fIclassName\fR is not given, this subcommand returns class of the \fIobject\fR object. If \fIclassName\fR is present, this subcommand returns a boolean value indicating whether the \fIobject\fR is of that class.
 
-**info object creationid** *object*
-: Returns the unique creation identifier for the *object* object. This creation identifier is unique to the object (within a Tcl interpreter) and cannot be controlled at object creation time or altered afterwards.
+**info object creationid** \fIobject\fR
+: Returns the unique creation identifier for the \fIobject\fR object. This creation identifier is unique to the object (within a Tcl interpreter) and cannot be controlled at object creation time or altered afterwards.
     *Implementation note:* the creation identifier is used to generate unique identifiers associated with the object, especially for private variables.
 
-**info object definition** *object method*
-: This subcommand returns a description of the definition of the method named *method* of object *object*. The definition is described as a two element list; the first element is the list of arguments to the method in a form suitable for passing to another call to **proc** or a method definition, and the second element is the body of the method.
+**info object definition** \fIobject method\fR
+: This subcommand returns a description of the definition of the method named \fImethod\fR of object \fIobject\fR. The definition is described as a two element list; the first element is the list of arguments to the method in a form suitable for passing to another call to \fBproc\fR or a method definition, and the second element is the body of the method.
 
-**info object filters** *object*
+**info object filters** \fIobject\fR
 : This subcommand returns the list of filter methods set on the object.
 
-**info object forward** *object method*
-: This subcommand returns the argument list for the method forwarding called *method* that is set on the object called *object*.
+**info object forward** \fIobject method\fR
+: This subcommand returns the argument list for the method forwarding called \fImethod\fR that is set on the object called \fIobject\fR.
 
-**info object isa** *category object* ?*arg*?
-: This subcommand tests whether an object belongs to a particular category, returning a boolean value that indicates whether the *object* argument meets the criteria for the category. The supported categories are:
+**info object isa** \fIcategory object\fR ?\fIarg\fR?
+: This subcommand tests whether an object belongs to a particular category, returning a boolean value that indicates whether the \fIobject\fR argument meets the criteria for the category. The supported categories are:
 
-**info object isa class** *object*
-: This returns whether *object* is a class (i.e. an instance of **oo::class** or one of its subclasses).
+**info object isa class** \fIobject\fR
+: This returns whether \fIobject\fR is a class (i.e. an instance of \fBoo::class\fR or one of its subclasses).
 
-**info object isa metaclass** *object*
-: This returns whether *object* is a class that can manufacture classes (i.e. is **oo::class** or a subclass of it).
+**info object isa metaclass** \fIobject\fR
+: This returns whether \fIobject\fR is a class that can manufacture classes (i.e. is \fBoo::class\fR or a subclass of it).
 
-**info object isa mixin** *object class*
-: This returns whether *class* is directly mixed into *object*.
+**info object isa mixin** \fIobject class\fR
+: This returns whether \fIclass\fR is directly mixed into \fIobject\fR.
 
-**info object isa object** *object*
-: This returns whether *object* really is an object.
+**info object isa object** \fIobject\fR
+: This returns whether \fIobject\fR really is an object.
 
-**info object isa typeof** *object class*
-: This returns whether *class* is the type of *object* (i.e. whether *object* is an instance of *class* or one of its subclasses, whether direct or indirect).
+**info object isa typeof** \fIobject class\fR
+: This returns whether \fIclass\fR is the type of \fIobject\fR (i.e. whether \fIobject\fR is an instance of \fIclass\fR or one of its subclasses, whether direct or indirect).
 
 
-**info object methods** *object* ?*option...*?
-: This subcommand returns a list of all public (i.e. exported) methods of the object called *object*. Any of the following *option*s may be given, controlling exactly which method names are returned:
+**info object methods** \fIobject\fR ?\fIoption...\fR?
+: This subcommand returns a list of all public (i.e. exported) methods of the object called \fIobject\fR. Any of the following \fIoption\fRs may be given, controlling exactly which method names are returned:
 
 **-all**
-: If the **-all** flag is given, and the **-scope** flag is not given, the list of methods will include those methods defined not just by the object, but also by the object's class and mixins, plus the superclasses of those classes.
+: If the \fB-all\fR flag is given, and the \fB-scope\fR flag is not given, the list of methods will include those methods defined not just by the object, but also by the object's class and mixins, plus the superclasses of those classes.
 
 **-private**
-: If the **-private** flag is given, and the **-scope** flag is not given, the list of methods will also include the non-exported methods of the object (and classes, if **-all** is also given). Note that this naming is an unfortunate clash with true private methods; this option name is retained for backward compatibility.
+: If the \fB-private\fR flag is given, and the \fB-scope\fR flag is not given, the list of methods will also include the non-exported methods of the object (and classes, if \fB-all\fR is also given). Note that this naming is an unfortunate clash with true private methods; this option name is retained for backward compatibility.
 
-**-scope** *scope*
-: Returns a list of all methods on *object* that have the given visibility *scope*.  When this option is supplied, both the **-all** and **-private** options are ignored. The valid values for *scope* are:
+**-scope** \fIscope\fR
+: Returns a list of all methods on \fIobject\fR that have the given visibility \fIscope\fR.  When this option is supplied, both the \fB-all\fR and \fB-private\fR options are ignored. The valid values for \fIscope\fR are:
 
 **public**
-: Only methods with *public* scope (i.e., callable from anywhere) are to be returned.
+: Only methods with \fIpublic\fR scope (i.e., callable from anywhere) are to be returned.
 
 **unexported**
-: Only methods with *unexported* scope (i.e., only callable via **my**) are to be returned.
+: Only methods with \fIunexported\fR scope (i.e., only callable via \fBmy\fR) are to be returned.
 
 **private**
-: Only methods with *private* scope (i.e., only callable from within this object's instance methods) are to be returned.
+: Only methods with \fIprivate\fR scope (i.e., only callable from within this object's instance methods) are to be returned.
 
 
-**info object methodtype** *object method*
-: This subcommand returns a description of the type of implementation used for the method named *method* of object *object*. When the result is **method**, further information can be discovered with **info object definition**, and when the result is **forward**, further information can be discovered with **info object forward**.
+**info object methodtype** \fIobject method\fR
+: This subcommand returns a description of the type of implementation used for the method named \fImethod\fR of object \fIobject\fR. When the result is \fBmethod\fR, further information can be discovered with \fBinfo object definition\fR, and when the result is \fBforward\fR, further information can be discovered with \fBinfo object forward\fR.
 
-**info object mixins** *object*
-: This subcommand returns a list of all classes that have been mixed into the object named *object*.
+**info object mixins** \fIobject\fR
+: This subcommand returns a list of all classes that have been mixed into the object named \fIobject\fR.
 
-**info object namespace** *object*
-: This subcommand returns the name of the internal namespace of the object named *object*.
+**info object namespace** \fIobject\fR
+: This subcommand returns the name of the internal namespace of the object named \fIobject\fR.
 
-**info object properties** *object* ?*options...*
-: This subcommand returns a sorted list of properties defined on the object named *object*. The *options* define exactly which properties are returned:
+**info object properties** \fIobject\fR ?\fIoptions...\fR
+: This subcommand returns a sorted list of properties defined on the object named \fIobject\fR. The \fIoptions\fR define exactly which properties are returned:
 
 **-all**
 : With this option, the properties from the class, superclasses and mixins of the object are also returned.
@@ -383,11 +383,11 @@ The following *subcommand* values are supported by **info object**:
 : This option asks for the writable properties to be returned. Only readable or writable properties are returned, not both.
 
 
-**info object variables** *object* ?**-private**?
-: This subcommand returns a list of all variables that have been declared for the object named *object* (i.e. that are automatically present in the object's methods). If the **-private** option is given, this lists the private variables declared instead.
+**info object variables** \fIobject\fR ?\fB-private\fR?
+: This subcommand returns a list of all variables that have been declared for the object named \fIobject\fR (i.e. that are automatically present in the object's methods). If the \fB-private\fR option is given, this lists the private variables declared instead.
 
-**info object vars** *object* ?*pattern*?
-: This subcommand returns a list of all variables in the private namespace of the object named *object*. If the optional *pattern* argument is given, it is a filter (in the syntax of a **string match** glob pattern) that constrains the list of variables returned. Note that this is different from the list returned by **info object variables**; that can include variables that are currently unset, whereas this can include variables that are not automatically included by any of *object*'s methods (or those of its class, superclasses or mixins).
+**info object vars** \fIobject\fR ?\fIpattern\fR?
+: This subcommand returns a list of all variables in the private namespace of the object named \fIobject\fR. If the optional \fIpattern\fR argument is given, it is a filter (in the syntax of a \fBstring match\fR glob pattern) that constrains the list of variables returned. Note that this is different from the list returned by \fBinfo object variables\fR; that can include variables that are currently unset, whereas this can include variables that are not automatically included by any of \fIobject\fR's methods (or those of its class, superclasses or mixins).
 
 
 # Examples
@@ -444,7 +444,7 @@ proc getDef {obj method} {
 }
 ```
 
-This is an alternate way of looking up the definition; it is implemented by manually scanning the list of methods up the inheritance tree. This code assumes that only single inheritance is in use, and that there is no complex use of mixed-in classes (in such cases, using **info object call** as above is the simplest way of doing this by far):
+This is an alternate way of looking up the definition; it is implemented by manually scanning the list of methods up the inheritance tree. This code assumes that only single inheritance is in use, and that there is no complex use of mixed-in classes (in such cases, using \fBinfo object call\fR as above is the simplest way of doing this by far):
 
 ```
 proc getDef {obj method} {

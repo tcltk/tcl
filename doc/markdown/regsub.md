@@ -33,43 +33,43 @@ regsub - Perform substitutions based on regular expression pattern matching
 
 # Description
 
-This command matches the regular expression *exp* against *string*, and either copies *string* to the variable whose name is given by *varName* or returns *string* if *varName* is not present. (Regular expression matching is described in the **re_syntax** reference page.) If there is a match, then while copying *string* to *varName* (or to the result of this command if *varName* is not present) the portion of *string* that matched *exp* is replaced with *subSpec*. If *subSpec* contains a "&" or "\0", then it is replaced in the substitution with the portion of *string* that matched *exp*. If *subSpec* contains a "\*n*", where *n* is a digit between 1 and 9, then it is replaced in the substitution with the portion of *string* that matched the *n*'th parenthesized subexpression of *exp*. Additional backslashes may be used in *subSpec* to prevent special interpretation of "&", "\0", "\*n*" and backslashes. The use of backslashes in *subSpec* tends to interact badly with the Tcl parser's use of backslashes, so it is generally safest to enclose *subSpec* in braces if it includes backslashes. .LP If the initial arguments to **regsub** start with **-** then they are treated as switches.  The following switches are currently supported:
+This command matches the regular expression \fIexp\fR against \fIstring\fR, and either copies \fIstring\fR to the variable whose name is given by \fIvarName\fR or returns \fIstring\fR if \fIvarName\fR is not present. (Regular expression matching is described in the \fBre_syntax\fR reference page.) If there is a match, then while copying \fIstring\fR to \fIvarName\fR (or to the result of this command if \fIvarName\fR is not present) the portion of \fIstring\fR that matched \fIexp\fR is replaced with \fIsubSpec\fR. If \fIsubSpec\fR contains a "&" or "\0", then it is replaced in the substitution with the portion of \fIstring\fR that matched \fIexp\fR. If \fIsubSpec\fR contains a "\\fIn\fR", where \fIn\fR is a digit between 1 and 9, then it is replaced in the substitution with the portion of \fIstring\fR that matched the \fIn\fR'th parenthesized subexpression of \fIexp\fR. Additional backslashes may be used in \fIsubSpec\fR to prevent special interpretation of "&", "\0", "\\fIn\fR" and backslashes. The use of backslashes in \fIsubSpec\fR tends to interact badly with the Tcl parser's use of backslashes, so it is generally safest to enclose \fIsubSpec\fR in braces if it includes backslashes. .LP If the initial arguments to \fBregsub\fR start with \fB-\fR then they are treated as switches.  The following switches are currently supported:
 
 **-all**
-: All ranges in *string* that match *exp* are found and substitution is performed for each of these ranges. Without this switch only the first matching range is found and substituted. If **-all** is specified, then "&" and "\*n*" sequences are handled for each substitution using the information from the corresponding match.
+: All ranges in \fIstring\fR that match \fIexp\fR are found and substitution is performed for each of these ranges. Without this switch only the first matching range is found and substituted. If \fB-all\fR is specified, then "&" and "\\fIn\fR" sequences are handled for each substitution using the information from the corresponding match.
 
 **-command**
-: Changes the handling of *subSpec* so that it is not treated as a template for a substitution string and the substrings "&" and "\*n*" no longer have special meaning. Instead *subSpec* must be a command prefix, that is, a non-empty list.  The substring of *string* that matches *exp*, and then each substring that matches each capturing sub-RE within *exp* are appended as additional elements to that list. (The items appended to the list are much like what **regexp** **-inline** would return).  The completed list is then evaluated as a Tcl command, and the result of that command is the substitution string.  Any error or exception from command evaluation becomes an error or exception from the **regsub** command.
-    If **-all** is not also given, the command callback will be invoked at most once (exactly when the regular expression matches). If **-all** is given, the command callback will be invoked for each matched location, in sequence. The exact location indices that matched are not made available to the script.
-    See **EXAMPLES** below for illustrative cases.
+: Changes the handling of \fIsubSpec\fR so that it is not treated as a template for a substitution string and the substrings "&" and "\\fIn\fR" no longer have special meaning. Instead \fIsubSpec\fR must be a command prefix, that is, a non-empty list.  The substring of \fIstring\fR that matches \fIexp\fR, and then each substring that matches each capturing sub-RE within \fIexp\fR are appended as additional elements to that list. (The items appended to the list are much like what \fBregexp\fR \fB-inline\fR would return).  The completed list is then evaluated as a Tcl command, and the result of that command is the substitution string.  Any error or exception from command evaluation becomes an error or exception from the \fBregsub\fR command.
+    If \fB-all\fR is not also given, the command callback will be invoked at most once (exactly when the regular expression matches). If \fB-all\fR is given, the command callback will be invoked for each matched location, in sequence. The exact location indices that matched are not made available to the script.
+    See \fBEXAMPLES\fR below for illustrative cases.
 
 **-expanded**
-: Enables use of the expanded regular expression syntax where whitespace and comments are ignored.  This is the same as specifying the **(?x)** embedded option (see the **re_syntax** manual page).
+: Enables use of the expanded regular expression syntax where whitespace and comments are ignored.  This is the same as specifying the \fB(?x)\fR embedded option (see the \fBre_syntax\fR manual page).
 
 **-line**
-: Enables newline-sensitive matching.  By default, newline is a completely ordinary character with no special meaning.  With this flag, "[^" bracket expressions and "." never match newline, "^" matches an empty string after any newline in addition to its normal function, and "$" matches an empty string before any newline in addition to its normal function.  This flag is equivalent to specifying both **-linestop** and **-lineanchor**, or the **(?n)** embedded option (see the **re_syntax** manual page).
+: Enables newline-sensitive matching.  By default, newline is a completely ordinary character with no special meaning.  With this flag, "[^" bracket expressions and "." never match newline, "^" matches an empty string after any newline in addition to its normal function, and "$" matches an empty string before any newline in addition to its normal function.  This flag is equivalent to specifying both \fB-linestop\fR and \fB-lineanchor\fR, or the \fB(?n)\fR embedded option (see the \fBre_syntax\fR manual page).
 
 **-linestop**
-: Changes the behavior of "[^" bracket expressions and "." so that they stop at newlines.  This is the same as specifying the **(?p)** embedded option (see the **re_syntax** manual page).
+: Changes the behavior of "[^" bracket expressions and "." so that they stop at newlines.  This is the same as specifying the \fB(?p)\fR embedded option (see the \fBre_syntax\fR manual page).
 
 **-lineanchor**
-: Changes the behavior of "^" and "$" (the "anchors") so they match the beginning and end of a line respectively.  This is the same as specifying the **(?w)** embedded option (see the **re_syntax** manual page).
+: Changes the behavior of "^" and "$" (the "anchors") so they match the beginning and end of a line respectively.  This is the same as specifying the \fB(?w)\fR embedded option (see the \fBre_syntax\fR manual page).
 
 **-nocase**
-: Upper-case characters in *string* will be converted to lower-case before matching against *exp*;  however, substitutions specified by *subSpec* use the original unconverted form of *string*.
+: Upper-case characters in \fIstring\fR will be converted to lower-case before matching against \fIexp\fR;  however, substitutions specified by \fIsubSpec\fR use the original unconverted form of \fIstring\fR.
 
-**-start** *index*
-: Specifies a character index offset into the string to start matching the regular expression at. The *index* value is interpreted in the same manner as the *index* argument to **string index**. When using this switch, "^" will not match the beginning of the line, and \A will still match the start of the string at *index*. *index* will be constrained to the bounds of the input string.
+**-start** \fIindex\fR
+: Specifies a character index offset into the string to start matching the regular expression at. The \fIindex\fR value is interpreted in the same manner as the \fIindex\fR argument to \fBstring index\fR. When using this switch, "^" will not match the beginning of the line, and \A will still match the start of the string at \fIindex\fR. \fIindex\fR will be constrained to the bounds of the input string.
 
 **-\|-**
-: Marks the end of switches.  The argument following this one will be treated as *exp* even if it starts with a **-**.
+: Marks the end of switches.  The argument following this one will be treated as \fIexp\fR even if it starts with a \fB-\fR.
 
 
-If *varName* is supplied, the command returns a count of the number of matching ranges that were found and replaced, otherwise the string after replacement is returned. See the manual entry for **regexp** for details on the interpretation of regular expressions.
+If \fIvarName\fR is supplied, the command returns a count of the number of matching ranges that were found and replaced, otherwise the string after replacement is returned. See the manual entry for \fBregexp\fR for details on the interpretation of regular expressions.
 
 # Examples
 
-Replace (in the string in variable *string*) every instance of **foo** which is a word by itself with **bar**:
+Replace (in the string in variable \fIstring\fR) every instance of \fBfoo\fR which is a word by itself with \fBbar\fR:
 
 ```
 regsub -all {\mfoo\M} $string bar string
@@ -81,13 +81,13 @@ or (using the "basic regular expression" syntax):
 regsub -all {(?b)\<foo\>} $string bar string
 ```
 
-Insert double-quotes around the first instance of the word **interesting**, however it is capitalized.
+Insert double-quotes around the first instance of the word \fBinteresting\fR, however it is capitalized.
 
 ```
 regsub -nocase {\yinteresting\y} $string {"&"} string
 ```
 
-Convert all non-ASCII and Tcl-significant characters into \u escape sequences by using **regsub** and **subst** in combination:
+Convert all non-ASCII and Tcl-significant characters into \u escape sequences by using \fBregsub\fR and \fBsubst\fR in combination:
 
 ```
 # This RE is just a character class for almost everything "bad"
@@ -105,7 +105,7 @@ set quoted [subst [string map {\n {\\u000a}} \
 ```
 
 ::: {.info -version="TIP463"}
-The above operation can be done using **regsub -command** instead, which is often faster. (A full pre-computed **string map** would be faster still, but the cost of computing the map for a transformation as complex as this can be quite large.)
+The above operation can be done using \fBregsub -command\fR instead, which is often faster. (A full pre-computed \fBstring map\fR would be faster still, but the cost of computing the map for a transformation as complex as this can be quite large.)
 :::
 
 ```
@@ -127,7 +127,7 @@ proc encodeChar {ch} {
 set quoted [regsub -all -command $RE $string encodeChar]
 ```
 
-Decoding a URL-encoded string using **regsub -command**, a lambda term and the **apply** command.
+Decoding a URL-encoded string using \fBregsub -command\fR, a lambda term and the \fBapply\fR command.
 
 ```
 # Match one of the sequences in a URL-encoded string that needs
@@ -147,7 +147,7 @@ set decoded [regsub -all -command $RE $string {apply {{- p h} {
 }}}]
 ```
 
-The **-command** option can also be useful for restricting the range of commands such as **string totitle**:
+The \fB-command\fR option can also be useful for restricting the range of commands such as \fBstring totitle\fR:
 
 ```
 set message "the quIck broWn fOX JUmped oVer the laZy dogS..."

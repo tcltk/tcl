@@ -29,7 +29,7 @@ platform::shell - System identification support code and utilities
 
 # Description
 
-The **platform::shell** package provides several utility commands useful for the identification of the architecture of a specific Tcl shell.
+The \fBplatform::shell\fR package provides several utility commands useful for the identification of the architecture of a specific Tcl shell.
 
 This package allows the identification of the architecture of a specific Tcl shell different from the shell running the package. The only requirement is that the other shell (identified by its path), is actually executable on the current machine.
 
@@ -39,13 +39,13 @@ For applications like a code repository it is important to identify the architec
 
 # Commands
 
-**platform::shell::identify** *shell*
-: This command does the same identification as **platform::identify**, for the specified Tcl shell, in contrast to the running shell.
+**platform::shell::identify** \fIshell\fR
+: This command does the same identification as \fBplatform::identify\fR, for the specified Tcl shell, in contrast to the running shell.
 
-**platform::shell::generic** *shell*
-: This command does the same identification as **platform::generic**, for the specified Tcl shell, in contrast to the running shell.
+**platform::shell::generic** \fIshell\fR
+: This command does the same identification as \fBplatform::generic\fR, for the specified Tcl shell, in contrast to the running shell.
 
-**platform::shell::platform** *shell*
-: This command returns the contents of **tcl_platform(platform)** for the specified Tcl shell.
+**platform::shell::platform** \fIshell\fR
+: This command returns the contents of \fBtcl_platform(platform)\fR for the specified Tcl shell.
 
 

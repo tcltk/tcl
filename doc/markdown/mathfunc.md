@@ -65,124 +65,124 @@ mathfunc - Mathematical functions for Tcl expressions
 
 # Description
 
-The **expr** command handles mathematical functions of the form **sin($x)** or **atan2($y,$x)** by converting them to calls of the form **[tcl::mathfunc::sin [expr {$x}]]** or **[tcl::mathfunc::atan2 [expr {$y}] [expr {$x}]]**. A number of math functions are available by default within the namespace **::tcl::mathfunc**; these functions are also available for code apart from **expr**, by invoking the given commands directly.
+The \fBexpr\fR command handles mathematical functions of the form \fBsin($x)\fR or \fBatan2($y,$x)\fR by converting them to calls of the form \fB[tcl::mathfunc::sin [expr {$x}]]\fR or \fB[tcl::mathfunc::atan2 [expr {$y}] [expr {$x}]]\fR. A number of math functions are available by default within the namespace \fB::tcl::mathfunc\fR; these functions are also available for code apart from \fBexpr\fR, by invoking the given commands directly.
 
-Tcl supports the following mathematical functions in expressions, all of which work solely with floating-point numbers unless otherwise noted: .DS **abs**	**acos**	**asin**	**atan** **atan2**	**bool**	**ceil**	**cos** **cosh**	**double**	**entier**	**exp** **floor**	**fmod**	**hypot**	**int** **isfinite**	**isinf**	**isnan**	**isnormal** **isqrt**	**issubnormal**	**isunordered**	**log** **log10**	**max**	**min**	**pow** **rand**	**round**	**sin**	**sinh** **sqrt**	**srand**	**tan**	**tanh** **wide** .DE
+Tcl supports the following mathematical functions in expressions, all of which work solely with floating-point numbers unless otherwise noted: .DS \fBabs\fR	\fBacos\fR	\fBasin\fR	\fBatan\fR \fBatan2\fR	\fBbool\fR	\fBceil\fR	\fBcos\fR \fBcosh\fR	\fBdouble\fR	\fBentier\fR	\fBexp\fR \fBfloor\fR	\fBfmod\fR	\fBhypot\fR	\fBint\fR \fBisfinite\fR	\fBisinf\fR	\fBisnan\fR	\fBisnormal\fR \fBisqrt\fR	\fBissubnormal\fR	\fBisunordered\fR	\fBlog\fR \fBlog10\fR	\fBmax\fR	\fBmin\fR	\fBpow\fR \fBrand\fR	\fBround\fR	\fBsin\fR	\fBsinh\fR \fBsqrt\fR	\fBsrand\fR	\fBtan\fR	\fBtanh\fR \fBwide\fR .DE
 
-In addition to these predefined functions, applications may define additional functions by using **proc** (or any other method, such as **interp alias** or **Tcl_CreateObjCommand**) to define new commands in the **tcl::mathfunc** namespace.
+In addition to these predefined functions, applications may define additional functions by using \fBproc\fR (or any other method, such as \fBinterp alias\fR or \fBTcl_CreateObjCommand\fR) to define new commands in the \fBtcl::mathfunc\fR namespace.
 
 ## Detailed definitions
 
-**abs** *arg*
-: Returns the absolute value of *arg*.  *Arg* may be either integer or floating-point, and the result is returned in the same form.
+**abs** \fIarg\fR
+: Returns the absolute value of \fIarg\fR.  \fIArg\fR may be either integer or floating-point, and the result is returned in the same form.
 
-**acos** *arg*
-: Returns the arc cosine of *arg*, in the range [*0*,*pi*] radians. *Arg* should be in the range [*-1*,*1*].
+**acos** \fIarg\fR
+: Returns the arc cosine of \fIarg\fR, in the range [\fI0\fR,\fIpi\fR] radians. \fIArg\fR should be in the range [\fI-1\fR,\fI1\fR].
 
-**asin** *arg*
-: Returns the arc sine of *arg*, in the range [*-pi/2*,*pi/2*] radians.  *Arg* should be in the range [*-1*,*1*].
+**asin** \fIarg\fR
+: Returns the arc sine of \fIarg\fR, in the range [\fI-pi/2\fR,\fIpi/2\fR] radians.  \fIArg\fR should be in the range [\fI-1\fR,\fI1\fR].
 
-**atan** *arg*
-: Returns the arc tangent of *arg*, in the range [*-pi/2*,*pi/2*] radians.
+**atan** \fIarg\fR
+: Returns the arc tangent of \fIarg\fR, in the range [\fI-pi/2\fR,\fIpi/2\fR] radians.
 
-**atan2** *y x*
-: Returns the arc tangent of *y*/*x*, in the range [*-pi*,*pi*] radians.  *x* and *y* cannot both be 0.  If *x* is greater than *0*, this is equivalent to "**atan** [**expr** {*y***/***x*}]".
+**atan2** \fIy x\fR
+: Returns the arc tangent of \fIy\fR/\fIx\fR, in the range [\fI-pi\fR,\fIpi\fR] radians.  \fIx\fR and \fIy\fR cannot both be 0.  If \fIx\fR is greater than \fI0\fR, this is equivalent to "**atan** [\fBexpr\fR {\fIy\fR\fB/\fR\fIx\fR}]".
 
-**bool** *arg*
-: Accepts any numeric value, or any string acceptable to **string is boolean**, and returns the corresponding boolean value **0** or **1**.  Non-zero numbers are true. Other numbers are false.  Non-numeric strings produce boolean value in agreement with **string is true** and **string is false**.
+**bool** \fIarg\fR
+: Accepts any numeric value, or any string acceptable to \fBstring is boolean\fR, and returns the corresponding boolean value \fB0\fR or \fB1\fR.  Non-zero numbers are true. Other numbers are false.  Non-numeric strings produce boolean value in agreement with \fBstring is true\fR and \fBstring is false\fR.
 
-**ceil** *arg*
-: Returns the smallest integral floating-point value (i.e. with a zero fractional part) not less than *arg*.  The argument may be any numeric value.
+**ceil** \fIarg\fR
+: Returns the smallest integral floating-point value (i.e. with a zero fractional part) not less than \fIarg\fR.  The argument may be any numeric value.
 
-**cos** *arg*
-: Returns the cosine of *arg*, measured in radians.
+**cos** \fIarg\fR
+: Returns the cosine of \fIarg\fR, measured in radians.
 
-**cosh** *arg*
-: Returns the hyperbolic cosine of *arg*.  If the result would cause an overflow, an error is returned.
+**cosh** \fIarg\fR
+: Returns the hyperbolic cosine of \fIarg\fR.  If the result would cause an overflow, an error is returned.
 
-**double** *arg*
-: The argument may be any numeric value, If *arg* is a floating-point value, returns *arg*, otherwise converts *arg* to floating-point and returns the converted value.  May return **Inf** or **-Inf** when the argument is a numeric value that exceeds the floating-point range.
+**double** \fIarg\fR
+: The argument may be any numeric value, If \fIarg\fR is a floating-point value, returns \fIarg\fR, otherwise converts \fIarg\fR to floating-point and returns the converted value.  May return \fBInf\fR or \fB-Inf\fR when the argument is a numeric value that exceeds the floating-point range.
 
-**entier** *arg*
-: The argument may be any numeric value.  The integer part of *arg* is determined and returned.  The integer range returned by this function is unlimited, unlike **int** and **wide** which truncate their range to fit in particular storage widths.
+**entier** \fIarg\fR
+: The argument may be any numeric value.  The integer part of \fIarg\fR is determined and returned.  The integer range returned by this function is unlimited, unlike \fBint\fR and \fBwide\fR which truncate their range to fit in particular storage widths.
 
-**exp** *arg*
-: Returns the exponential of *arg*, defined as *e****arg*. If the result would cause an overflow, an error is returned.
+**exp** \fIarg\fR
+: Returns the exponential of \fIarg\fR, defined as \fIe\fR**\fIarg\fR. If the result would cause an overflow, an error is returned.
 
-**floor** *arg*
-: Returns the largest integral floating-point value (i.e. with a zero fractional part) not greater than *arg*.  The argument may be any numeric value.
+**floor** \fIarg\fR
+: Returns the largest integral floating-point value (i.e. with a zero fractional part) not greater than \fIarg\fR.  The argument may be any numeric value.
 
-**fmod** *x y*
-: Returns the floating-point remainder of the division of *x* by *y*.  If *y* is 0, an error is returned.
+**fmod** \fIx y\fR
+: Returns the floating-point remainder of the division of \fIx\fR by \fIy\fR.  If \fIy\fR is 0, an error is returned.
 
-**hypot** *x y*
-: Computes the length of the hypotenuse of a right-angled triangle, approximately "**sqrt** [**expr** {*x*******x***+***y*******y*}]" except for being more numerically stable when the two arguments have substantially different magnitudes.
+**hypot** \fIx y\fR
+: Computes the length of the hypotenuse of a right-angled triangle, approximately "**sqrt** [\fBexpr\fR {\fIx\fR\fB*\fR\fIx\fR\fB+\fR\fIy\fR\fB*\fR\fIy\fR}]" except for being more numerically stable when the two arguments have substantially different magnitudes.
 
-**int** *arg*
-: The argument may be any numeric value.  The integer part of *arg* is determined, and then the low order bits of that integer value up to the machine word size are returned as an integer value.  For reference, the number of bytes in the machine word are stored in the **wordSize** element of the **tcl_platform** array.
+**int** \fIarg\fR
+: The argument may be any numeric value.  The integer part of \fIarg\fR is determined, and then the low order bits of that integer value up to the machine word size are returned as an integer value.  For reference, the number of bytes in the machine word are stored in the \fBwordSize\fR element of the \fBtcl_platform\fR array.
 
-**isfinite** *arg*
-: Returns 1 if the floating-point number *arg* is finite. That is, if it is zero, subnormal, or normal. Returns 0 if the number is infinite or NaN. Throws an error if *arg* cannot be promoted to a floating-point value.
+**isfinite** \fIarg\fR
+: Returns 1 if the floating-point number \fIarg\fR is finite. That is, if it is zero, subnormal, or normal. Returns 0 if the number is infinite or NaN. Throws an error if \fIarg\fR cannot be promoted to a floating-point value.
 
-**isinf** *arg*
-: Returns 1 if the floating-point number *arg* is infinite. Returns 0 if the number is finite or NaN. Throws an error if *arg* cannot be promoted to a floating-point value.
+**isinf** \fIarg\fR
+: Returns 1 if the floating-point number \fIarg\fR is infinite. Returns 0 if the number is finite or NaN. Throws an error if \fIarg\fR cannot be promoted to a floating-point value.
 
-**isnan** *arg*
-: Returns 1 if the floating-point number *arg* is Not-a-Number. Returns 0 if the number is finite or infinite. Throws an error if *arg* cannot be promoted to a floating-point value.
+**isnan** \fIarg\fR
+: Returns 1 if the floating-point number \fIarg\fR is Not-a-Number. Returns 0 if the number is finite or infinite. Throws an error if \fIarg\fR cannot be promoted to a floating-point value.
 
-**isnormal** *arg*
-: Returns 1 if the floating-point number *arg* is normal. Returns 0 if the number is zero, subnormal, infinite or NaN. Throws an error if *arg* cannot be promoted to a floating-point value.
+**isnormal** \fIarg\fR
+: Returns 1 if the floating-point number \fIarg\fR is normal. Returns 0 if the number is zero, subnormal, infinite or NaN. Throws an error if \fIarg\fR cannot be promoted to a floating-point value.
 
-**isqrt** *arg*
-: Computes the integer part of the square root of *arg*.  *Arg* must be a positive value, either an integer or a floating point number. Unlike **sqrt**, which is limited to the precision of a floating point number, *isqrt* will return a result of arbitrary precision.
+**isqrt** \fIarg\fR
+: Computes the integer part of the square root of \fIarg\fR.  \fIArg\fR must be a positive value, either an integer or a floating point number. Unlike \fBsqrt\fR, which is limited to the precision of a floating point number, \fIisqrt\fR will return a result of arbitrary precision.
 
-**issubnormal** *arg*
-: Returns 1 if the floating-point number *arg* is subnormal, i.e., the result of gradual underflow. Returns 0 if the number is zero, normal, infinite or NaN. Throws an error if *arg* cannot be promoted to a floating-point value.
+**issubnormal** \fIarg\fR
+: Returns 1 if the floating-point number \fIarg\fR is subnormal, i.e., the result of gradual underflow. Returns 0 if the number is zero, normal, infinite or NaN. Throws an error if \fIarg\fR cannot be promoted to a floating-point value.
 
-**isunordered** *x y*
-: Returns 1 if *x* and *y* cannot be compared for ordering, that is, if either one is NaN. Returns 0 if both values can be ordered, that is, if they are both chosen from among the set of zero, subnormal, normal and infinite values. Throws an error if either *x* or *y* cannot be promoted to a floating-point value.
+**isunordered** \fIx y\fR
+: Returns 1 if \fIx\fR and \fIy\fR cannot be compared for ordering, that is, if either one is NaN. Returns 0 if both values can be ordered, that is, if they are both chosen from among the set of zero, subnormal, normal and infinite values. Throws an error if either \fIx\fR or \fIy\fR cannot be promoted to a floating-point value.
 
-**log** *arg*
-: Returns the natural logarithm of *arg*.  *Arg* must be a positive value.
+**log** \fIarg\fR
+: Returns the natural logarithm of \fIarg\fR.  \fIArg\fR must be a positive value.
 
-**log10** *arg*
-: Returns the base 10 logarithm of *arg*.  *Arg* must be a positive value.
+**log10** \fIarg\fR
+: Returns the base 10 logarithm of \fIarg\fR.  \fIArg\fR must be a positive value.
 
-**max** *arg* *...*
+**max** \fIarg\fR \fI...\fR
 : Accepts one or more numeric arguments.  Returns the one argument with the greatest value.
 
-**min** *arg* *...*
+**min** \fIarg\fR \fI...\fR
 : Accepts one or more numeric arguments.  Returns the one argument with the least value.
 
-**pow** *x y*
-: Computes the value of *x* raised to the power *y*.  If *x* is negative, *y* must be an integer value.
+**pow** \fIx y\fR
+: Computes the value of \fIx\fR raised to the power \fIy\fR.  If \fIx\fR is negative, \fIy\fR must be an integer value.
 
 **rand**
-: Returns a pseudo-random floating-point value in the range (*0*,*1*). The generator algorithm is a simple linear congruential generator that is not cryptographically secure.  Each result from **rand** completely determines all future results from subsequent calls to **rand**, so **rand** should not be used to generate a sequence of secrets, such as one-time passwords.  The seed of the generator is initialized from the internal clock of the machine or may be set with the **srand** function.
+: Returns a pseudo-random floating-point value in the range (\fI0\fR,\fI1\fR). The generator algorithm is a simple linear congruential generator that is not cryptographically secure.  Each result from \fBrand\fR completely determines all future results from subsequent calls to \fBrand\fR, so \fBrand\fR should not be used to generate a sequence of secrets, such as one-time passwords.  The seed of the generator is initialized from the internal clock of the machine or may be set with the \fBsrand\fR function.
 
-**round** *arg*
-: If *arg* is an integer value, returns *arg*, otherwise converts *arg* to integer by rounding and returns the converted value.
+**round** \fIarg\fR
+: If \fIarg\fR is an integer value, returns \fIarg\fR, otherwise converts \fIarg\fR to integer by rounding and returns the converted value.
 
-**sin** *arg*
-: Returns the sine of *arg*, measured in radians.
+**sin** \fIarg\fR
+: Returns the sine of \fIarg\fR, measured in radians.
 
-**sinh** *arg*
-: Returns the hyperbolic sine of *arg*.  If the result would cause an overflow, an error is returned.
+**sinh** \fIarg\fR
+: Returns the hyperbolic sine of \fIarg\fR.  If the result would cause an overflow, an error is returned.
 
-**sqrt** *arg*
-: The argument may be any non-negative numeric value.  Returns a floating-point value that is the square root of *arg*.  May return **Inf** when the argument is a numeric value that exceeds the square of the maximum value of the floating-point range.
+**sqrt** \fIarg\fR
+: The argument may be any non-negative numeric value.  Returns a floating-point value that is the square root of \fIarg\fR.  May return \fBInf\fR when the argument is a numeric value that exceeds the square of the maximum value of the floating-point range.
 
-**srand** *arg*
-: The *arg*, which must be an integer, is used to reset the seed for the random number generator of **rand**.  Returns the first random number (see **rand**) from that seed.  Each interpreter has its own seed.
+**srand** \fIarg\fR
+: The \fIarg\fR, which must be an integer, is used to reset the seed for the random number generator of \fBrand\fR.  Returns the first random number (see \fBrand\fR) from that seed.  Each interpreter has its own seed.
 
-**tan** *arg*
-: Returns the tangent of *arg*, measured in radians.
+**tan** \fIarg\fR
+: Returns the tangent of \fIarg\fR, measured in radians.
 
-**tanh** *arg*
-: Returns the hyperbolic tangent of *arg*.
+**tanh** \fIarg\fR
+: Returns the hyperbolic tangent of \fIarg\fR.
 
-**wide** *arg*
-: The argument may be any numeric value.  The integer part of *arg* is determined, and then the low order 64 bits of that integer value are returned as an integer value.
+**wide** \fIarg\fR
+: The argument may be any numeric value.  The integer part of \fIarg\fR is determined, and then the low order 64 bits of that integer value are returned as an integer value.
 
 
 # Copyright

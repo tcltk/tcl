@@ -35,27 +35,27 @@ clock - Obtain and manipulate dates and times
 
 # Description
 
-The **clock** command performs several operations that obtain and manipulate values that represent times.  The command supports several subcommands that determine what action is carried out by the command.
+The \fBclock\fR command performs several operations that obtain and manipulate values that represent times.  The command supports several subcommands that determine what action is carried out by the command.
 
-**clock add** *timeVal* ?*count unit...*? ?*-option value*?
-: Adds a (possibly negative) offset to a time that is expressed as an integer number of seconds.  See **CLOCK ARITHMETIC** for a full description.
+**clock add** \fItimeVal\fR ?\fIcount unit...\fR? ?\fI-option value\fR?
+: Adds a (possibly negative) offset to a time that is expressed as an integer number of seconds.  See \fBCLOCK ARITHMETIC\fR for a full description.
 
-**clock clicks** ?*-option*?
-: If no *-option* argument is supplied, returns a high-resolution time value as a system-dependent integer value.  The unit of the value is system-dependent but should be the highest resolution clock available on the system such as a CPU cycle counter. See **HIGH RESOLUTION TIMERS** for a full description.
-    If the *-option* argument is **-milliseconds**, then the command is synonymous with **clock milliseconds** (see below).  This usage is obsolete, and **clock milliseconds** is to be considered the preferred way of obtaining a count of milliseconds.
-    If the *-option* argument is **-microseconds**, then the command is synonymous with **clock microseconds** (see below).  This usage is obsolete, and **clock microseconds** is to be considered the preferred way of obtaining a count of microseconds.
+**clock clicks** ?\fI-option\fR?
+: If no \fI-option\fR argument is supplied, returns a high-resolution time value as a system-dependent integer value.  The unit of the value is system-dependent but should be the highest resolution clock available on the system such as a CPU cycle counter. See \fBHIGH RESOLUTION TIMERS\fR for a full description.
+    If the \fI-option\fR argument is \fB-milliseconds\fR, then the command is synonymous with \fBclock milliseconds\fR (see below).  This usage is obsolete, and \fBclock milliseconds\fR is to be considered the preferred way of obtaining a count of milliseconds.
+    If the \fI-option\fR argument is \fB-microseconds\fR, then the command is synonymous with \fBclock microseconds\fR (see below).  This usage is obsolete, and \fBclock microseconds\fR is to be considered the preferred way of obtaining a count of microseconds.
 
-**clock format** *timeVal* ?*-option value*...?
-: Formats a time that is expressed as an integer number of seconds into a format intended for consumption by users or external programs. See **FORMATTING TIMES** for a full description.
+**clock format** \fItimeVal\fR ?\fI-option value\fR...?
+: Formats a time that is expressed as an integer number of seconds into a format intended for consumption by users or external programs. See \fBFORMATTING TIMES\fR for a full description.
 
 **clock microseconds**
-: Returns the current time as an integer number of microseconds. See **HIGH RESOLUTION TIMERS** for a full description.
+: Returns the current time as an integer number of microseconds. See \fBHIGH RESOLUTION TIMERS\fR for a full description.
 
 **clock milliseconds**
-: Returns the current time as an integer number of milliseconds. See **HIGH RESOLUTION TIMERS** for a full description.
+: Returns the current time as an integer number of milliseconds. See \fBHIGH RESOLUTION TIMERS\fR for a full description.
 
-**clock scan** *inputString* ?*-option value*...?
-: Scans a time that is expressed as a character string and produces an integer number of seconds. See **SCANNING TIMES** for a full description.
+**clock scan** \fIinputString\fR ?\fI-option value\fR...?
+: Scans a time that is expressed as a character string and produces an integer number of seconds. See \fBSCANNING TIMES\fR for a full description.
 
 **clock seconds**
 : Returns the current time as an integer number of seconds.
@@ -64,64 +64,64 @@ The **clock** command performs several operations that obtain and manipulate val
 ## Parameters
 
 *count*
-: An integer representing a count of some unit of time.  See **CLOCK ARITHMETIC** for the details.
+: An integer representing a count of some unit of time.  See \fBCLOCK ARITHMETIC\fR for the details.
 
 *timeVal*
-: An integer value passed to the **clock** command that represents an absolute time as a number of seconds from the *epoch time* of 1 January 1970, 00:00 UTC.  Note that the count of seconds does not include any leap seconds; seconds are counted as if each UTC day has exactly 86400 seconds.  Tcl responds to leap seconds by speeding or slowing its clock by a tiny fraction for some minutes until it is back in sync with UTC; its data model does not represent minutes that have 59 or 61 seconds.
+: An integer value passed to the \fBclock\fR command that represents an absolute time as a number of seconds from the \fIepoch time\fR of 1 January 1970, 00:00 UTC.  Note that the count of seconds does not include any leap seconds; seconds are counted as if each UTC day has exactly 86400 seconds.  Tcl responds to leap seconds by speeding or slowing its clock by a tiny fraction for some minutes until it is back in sync with UTC; its data model does not represent minutes that have 59 or 61 seconds.
 
 *now*
-: Instead of *timeVal* a non-integer value **now** can be used as replacement for today, which is simply interpolated to the run-time as value of **clock seconds**. For example: .sp **clock format now -f %a; # current day of the week** .sp **clock add now 1 month; # next month**
+: Instead of \fItimeVal\fR a non-integer value \fBnow\fR can be used as replacement for today, which is simply interpolated to the run-time as value of \fBclock seconds\fR. For example: .sp \fBclock format now -f %a; # current day of the week\fR .sp \fBclock add now 1 month; # next month\fR
 
 *unit*
-: One of the words, **seconds**, **minutes**, **hours**, **days**, **weekdays**, **weeks**, **months**, or **years**. Used in conjunction with *count* to identify an interval of time, for example, *3 seconds* or *1 year*.
+: One of the words, \fBseconds\fR, \fBminutes\fR, \fBhours\fR, \fBdays\fR, \fBweekdays\fR, \fBweeks\fR, \fBmonths\fR, or \fByears\fR. Used in conjunction with \fIcount\fR to identify an interval of time, for example, \fI3 seconds\fR or \fI1 year\fR.
 
 
 ## Options
 
 **-base** time
-: Specifies that any relative times present in a **clock scan** command are to be given relative to *time*.  *time* must be expressed as a count of nominal seconds from the epoch time of 1 January 1970, 00:00 UTC.
+: Specifies that any relative times present in a \fBclock scan\fR command are to be given relative to \fItime\fR.  \fItime\fR must be expressed as a count of nominal seconds from the epoch time of 1 January 1970, 00:00 UTC.
 
 **-format** format
-: Specifies the desired output format for **clock format** or the expected input format for **clock scan**.  The *format* string consists of any number of characters other than the per-cent sign ("**%**") interspersed with any number of *format groups*, which are two- or three-character sequences beginning with the per-cent sign.  The permissible format groups, and their interpretation, are described under **FORMAT GROUPS**.
-    On **clock format**, the default format is
+: Specifies the desired output format for \fBclock format\fR or the expected input format for \fBclock scan\fR.  The \fIformat\fR string consists of any number of characters other than the per-cent sign ("**%**") interspersed with any number of \fIformat groups\fR, which are two- or three-character sequences beginning with the per-cent sign.  The permissible format groups, and their interpretation, are described under \fBFORMAT GROUPS\fR.
+    On \fBclock format\fR, the default format is
 
     ```
     %a %b %d %H:%M:%S %Z %Y
     ```
-    On **clock scan**, the lack of a **-format** option indicates that a "free format scan" is requested; see **FREE FORM SCAN** for a description of what happens.
+    On \fBclock scan\fR, the lack of a \fB-format\fR option indicates that a "free format scan" is requested; see \fBFREE FORM SCAN\fR for a description of what happens.
 
 **-gmt** boolean
-: If *boolean* is true, specifies that a time specified to **clock add**, **clock format** or **clock scan** should be processed in UTC.  If *boolean* is false, the processing defaults to the local time zone.  This usage is obsolete; the correct current usage is to specify the UTC time zone with "**-timezone** *:UTC*" or any of the equivalent ways to specify it.
+: If \fIboolean\fR is true, specifies that a time specified to \fBclock add\fR, \fBclock format\fR or \fBclock scan\fR should be processed in UTC.  If \fIboolean\fR is false, the processing defaults to the local time zone.  This usage is obsolete; the correct current usage is to specify the UTC time zone with "**-timezone** \fI:UTC\fR" or any of the equivalent ways to specify it.
 
 **-locale** localeName
-: Specifies that locale-dependent scanning and formatting (and date arithmetic for dates preceding the adoption of the Gregorian calendar) is to be done in the locale identified by *localeName*.  The locale name may be any of the locales acceptable to the **msgcat** package, or it may be the special name *system*, which represents the current locale of the process, or the null string, which represents Tcl's default locale.
-    The effect of locale on scanning and formatting is discussed in the descriptions of the individual format groups under **FORMAT GROUPS**. The effect of locale on clock arithmetic is discussed under **CLOCK ARITHMETIC**.
+: Specifies that locale-dependent scanning and formatting (and date arithmetic for dates preceding the adoption of the Gregorian calendar) is to be done in the locale identified by \fIlocaleName\fR.  The locale name may be any of the locales acceptable to the \fBmsgcat\fR package, or it may be the special name \fIsystem\fR, which represents the current locale of the process, or the null string, which represents Tcl's default locale.
+    The effect of locale on scanning and formatting is discussed in the descriptions of the individual format groups under \fBFORMAT GROUPS\fR. The effect of locale on clock arithmetic is discussed under \fBCLOCK ARITHMETIC\fR.
 
 **-timezone** zoneName
-: Specifies that clock arithmetic, formatting, and scanning are to be done according to the rules for the time zone specified by *zoneName*. The permissible values, and their interpretation, are discussed under **TIME ZONES**. On subcommands that expect a **-timezone** argument, the default is to use the *current time zone*.  The current time zone is determined, in order of preference, by:
+: Specifies that clock arithmetic, formatting, and scanning are to be done according to the rules for the time zone specified by \fIzoneName\fR. The permissible values, and their interpretation, are discussed under \fBTIME ZONES\fR. On subcommands that expect a \fB-timezone\fR argument, the default is to use the \fIcurrent time zone\fR.  The current time zone is determined, in order of preference, by:
 
-1.     the environment variable **TCL_TZ**.
+1.     the environment variable \fBTCL_TZ\fR.
 
-2.     the environment variable **TZ**.
+2.     the environment variable \fBTZ\fR.
 
 3.     on Windows systems, the time zone settings from the Control Panel.
 
 
 **-validate** boolean
-: If *boolean* is true (default), **clock scan** will raise an error if the input contains invalid values, e.g. day of month greater than number of days in the month. If specified as false, the command makes an adjustment to bring values within acceptable range. See **SCANNING TIMES** for details.
+: If \fIboolean\fR is true (default), \fBclock scan\fR will raise an error if the input contains invalid values, e.g. day of month greater than number of days in the month. If specified as false, the command makes an adjustment to bring values within acceptable range. See \fBSCANNING TIMES\fR for details.
 
 
-If none of these is present, the C **localtime** and **mktime** functions are used to attempt to convert times between local and Greenwich.  On 32-bit systems, this approach is likely to have bugs, particularly for times that lie outside the window (approximately the years 1902 to 2037) that can be represented in a 32-bit integer.
+If none of these is present, the C \fBlocaltime\fR and \fBmktime\fR functions are used to attempt to convert times between local and Greenwich.  On 32-bit systems, this approach is likely to have bugs, particularly for times that lie outside the window (approximately the years 1902 to 2037) that can be represented in a 32-bit integer.
 
 # Clock arithmetic
 
-The **clock add** command performs clock arithmetic on a value (expressed as nominal seconds from the epoch time of 1 January 1970, 00:00 UTC) given as its first argument.  The remaining arguments (other than the possible **-timezone**, **-locale** and **-gmt** options) are integers and keywords in alternation, where the keywords are chosen from **seconds**, **minutes**, **hours**, **days**, **weekdays**, **weeks**, **months**, or **years**.
+The \fBclock add\fR command performs clock arithmetic on a value (expressed as nominal seconds from the epoch time of 1 January 1970, 00:00 UTC) given as its first argument.  The remaining arguments (other than the possible \fB-timezone\fR, \fB-locale\fR and \fB-gmt\fR options) are integers and keywords in alternation, where the keywords are chosen from \fBseconds\fR, \fBminutes\fR, \fBhours\fR, \fBdays\fR, \fBweekdays\fR, \fBweeks\fR, \fBmonths\fR, or \fByears\fR.
 
-Addition of seconds, minutes and hours is fairly straightforward; the given time increment (times sixty for minutes, or 3600 for hours) is simply added to the *timeVal* given to the **clock add** command.  The result is interpreted as a nominal number of seconds from the Epoch.
+Addition of seconds, minutes and hours is fairly straightforward; the given time increment (times sixty for minutes, or 3600 for hours) is simply added to the \fItimeVal\fR given to the \fBclock add\fR command.  The result is interpreted as a nominal number of seconds from the Epoch.
 
-Surprising results may be obtained when crossing a point at which a leap second is inserted or removed; the **clock add** command simply ignores leap seconds and therefore assumes that times come in sequence, 23:59:58, 23:59:59, 00:00:00.  This assumption is handled by the fact that Tcl's model of time reacts to leap seconds by speeding or slowing the clock by a miniscule amount until Tcl's time is back in step with the world.
+Surprising results may be obtained when crossing a point at which a leap second is inserted or removed; the \fBclock add\fR command simply ignores leap seconds and therefore assumes that times come in sequence, 23:59:58, 23:59:59, 00:00:00.  This assumption is handled by the fact that Tcl's model of time reacts to leap seconds by speeding or slowing the clock by a miniscule amount until Tcl's time is back in step with the world.
 
-The fact that adding and subtracting hours is defined in terms of absolute time means that it will add fixed amounts of time in time zones that observe summer time (Daylight Saving Time).  For example, the following code sets the value of **x** to **04:00:00** because the clock has changed in the interval in question.
+The fact that adding and subtracting hours is defined in terms of absolute time means that it will add fixed amounts of time in time zones that observe summer time (Daylight Saving Time).  For example, the following code sets the value of \fBx\fR to \fB04:00:00\fR because the clock has changed in the interval in question.
 
 ```
 set s [clock scan {2004-10-30 05:00:00} \
@@ -132,9 +132,9 @@ set x [clock format $a \
            -format {%H:%M:%S} -timezone :America/New_York]
 ```
 
-Adding and subtracting days and weeks is accomplished by converting the given time to a calendar day and time of day in the appropriate time zone and locale.  The requisite number of days (weeks are converted to days by multiplying by seven) is added to the calendar day, and the date and time are then converted back to a count of seconds from the epoch time.  The **weekdays** keyword is similar to **days**, with the only difference that weekends - Saturdays and Sundays - are skipped.
+Adding and subtracting days and weeks is accomplished by converting the given time to a calendar day and time of day in the appropriate time zone and locale.  The requisite number of days (weeks are converted to days by multiplying by seven) is added to the calendar day, and the date and time are then converted back to a count of seconds from the epoch time.  The \fBweekdays\fR keyword is similar to \fBdays\fR, with the only difference that weekends - Saturdays and Sundays - are skipped.
 
-Adding and subtracting a given number of days across the point that the time changes at the start or end of summer time (Daylight Saving Time) results in the *same local time* on the day in question.  For instance, the following code sets the value of **x** to **05:00:00**.
+Adding and subtracting a given number of days across the point that the time changes at the start or end of summer time (Daylight Saving Time) results in the \fIsame local time\fR on the day in question.  For instance, the following code sets the value of \fBx\fR to \fB05:00:00\fR.
 
 ```
 set s [clock scan {2004-10-30 05:00:00} \
@@ -145,7 +145,7 @@ set x [clock format $a \
            -format {%H:%M:%S} -timezone :America/New_York]
 ```
 
-In cases of ambiguity, where the same local time happens twice on the same day, the earlier time is used.  In cases where the conversion yields an impossible time (for instance, 02:30 during the Spring Daylight Saving Time change using US rules), the time is converted as if the clock had not changed.  Thus, the following code will set the value of **x** to **03:30:00**.
+In cases of ambiguity, where the same local time happens twice on the same day, the earlier time is used.  In cases where the conversion yields an impossible time (for instance, 02:30 during the Spring Daylight Saving Time change using US rules), the time is converted as if the clock had not changed.  Thus, the following code will set the value of \fBx\fR to \fB03:30:00\fR.
 
 ```
 set s [clock scan {2004-04-03 02:30:00} \
@@ -156,7 +156,7 @@ set x [clock format $a \
            -format {%H:%M:%S} -timezone :America/New_York]
 ```
 
-Adding a given number of days or weeks works correctly across the conversion between the Julian and Gregorian calendars; the omitted days are skipped. The following code sets **z** to **1752-09-14**.
+Adding a given number of days or weeks works correctly across the conversion between the Julian and Gregorian calendars; the omitted days are skipped. The following code sets \fBz\fR to \fB1752-09-14\fR.
 
 ```
 set x [clock scan 1752-09-02 -format %Y-%m-%d -locale en_US]
@@ -172,41 +172,41 @@ If the resulting date is impossible because the month has too few days (for exam
 
 The rules for handling anomalies relating to summer time and to the Gregorian calendar are the same when adding/subtracting months and years as they are when adding/subtracting days and weeks.
 
-If multiple *count unit* pairs are present on the command, they are evaluated consecutively, from left to right.
+If multiple \fIcount unit\fR pairs are present on the command, they are evaluated consecutively, from left to right.
 
 # High resolution timers
 
-Most of the subcommands supported by the **clock** command deal with times represented as a count of seconds from the epoch time, and this is the representation that **clock seconds** returns.  There are three exceptions, which are all intended for use where higher-resolution times are required. **clock milliseconds** returns the count of milliseconds from the epoch time, and **clock microseconds** returns the count of microseconds from the epoch time. In addition, there is a **clock clicks** command that returns a platform-dependent high-resolution timer.  Unlike **clock seconds** and **clock milliseconds**, the value of **clock clicks** is not guaranteed to be tied to any fixed epoch; it is simply intended to be the most precise interval timer available, and is intended only for relative timing studies such as benchmarks.
+Most of the subcommands supported by the \fBclock\fR command deal with times represented as a count of seconds from the epoch time, and this is the representation that \fBclock seconds\fR returns.  There are three exceptions, which are all intended for use where higher-resolution times are required. \fBclock milliseconds\fR returns the count of milliseconds from the epoch time, and \fBclock microseconds\fR returns the count of microseconds from the epoch time. In addition, there is a \fBclock clicks\fR command that returns a platform-dependent high-resolution timer.  Unlike \fBclock seconds\fR and \fBclock milliseconds\fR, the value of \fBclock clicks\fR is not guaranteed to be tied to any fixed epoch; it is simply intended to be the most precise interval timer available, and is intended only for relative timing studies such as benchmarks.
 
 # Formatting times
 
-The **clock format** command produces times for display to a user or writing to an external medium.  The command accepts times that are expressed in seconds from the epoch time of 1 January 1970, 00:00 UTC, as returned by **clock seconds**, **clock scan**, **clock add**, **file atime** or **file mtime**.
+The \fBclock format\fR command produces times for display to a user or writing to an external medium.  The command accepts times that are expressed in seconds from the epoch time of 1 January 1970, 00:00 UTC, as returned by \fBclock seconds\fR, \fBclock scan\fR, \fBclock add\fR, \fBfile atime\fR or \fBfile mtime\fR.
 
-If a **-format** option is present, the following argument is a string that specifies how the date and time are to be formatted. The string consists of any number of characters other than the per-cent sign ("**%**") interspersed with any number of *format groups*, which are two-character sequences beginning with the per-cent sign.  The permissible format groups, and their interpretation, are described under **FORMAT GROUPS**.
+If a \fB-format\fR option is present, the following argument is a string that specifies how the date and time are to be formatted. The string consists of any number of characters other than the per-cent sign ("**%**") interspersed with any number of \fIformat groups\fR, which are two-character sequences beginning with the per-cent sign.  The permissible format groups, and their interpretation, are described under \fBFORMAT GROUPS\fR.
 
-If a **-timezone** option is present, the following argument is a string that specifies the time zone in which the date and time are to be formatted.  As an alternative to "**-timezone** *:UTC*", the obsolete usage "**-gmt** *true*" may be used.  See **TIME ZONES** for the permissible variants for the time zone.
+If a \fB-timezone\fR option is present, the following argument is a string that specifies the time zone in which the date and time are to be formatted.  As an alternative to "**-timezone** \fI:UTC\fR", the obsolete usage "**-gmt** \fItrue\fR" may be used.  See \fBTIME ZONES\fR for the permissible variants for the time zone.
 
-If a **-locale** option is present, the following argument is a string that specifies the locale in which the time is to be formatted, in the same format that is used for the **msgcat** package.  Note that the default, if **-locale** is not specified, is the root locale **{}** rather than the current locale.  The current locale may be obtained by using **-locale current**. In addition, some platforms support a **system** locale that reflects the user's current choices.  For instance, on Windows, the format that the user has selected from dates and times in the Control Panel can be obtained by using the **system** locale.  On platforms that do not define a user selection of date and time formats separate from **LC_TIME**, **-locale system** is synonymous with **-locale current**.
+If a \fB-locale\fR option is present, the following argument is a string that specifies the locale in which the time is to be formatted, in the same format that is used for the \fBmsgcat\fR package.  Note that the default, if \fB-locale\fR is not specified, is the root locale \fB{}\fR rather than the current locale.  The current locale may be obtained by using \fB-locale current\fR. In addition, some platforms support a \fBsystem\fR locale that reflects the user's current choices.  For instance, on Windows, the format that the user has selected from dates and times in the Control Panel can be obtained by using the \fBsystem\fR locale.  On platforms that do not define a user selection of date and time formats separate from \fBLC_TIME\fR, \fB-locale system\fR is synonymous with \fB-locale current\fR.
 
 # Scanning times
 
-The **clock scan** command accepts times that are formatted as strings and converts them to counts of seconds from the epoch time of 1 January 1970, 00:00 UTC.  It normally takes a **-format** option that is followed by a string describing the expected format of the input.  (See **FREE FORM SCAN** for the effect of **clock scan** without such an argument.)  The string consists of any number of characters other than the per-cent sign ("**%**"), interspersed with any number of *format groups*, which are two-character sequences beginning with the per-cent sign.  The permissible format groups, and their interpretation, are described under **FORMAT GROUPS**.
+The \fBclock scan\fR command accepts times that are formatted as strings and converts them to counts of seconds from the epoch time of 1 January 1970, 00:00 UTC.  It normally takes a \fB-format\fR option that is followed by a string describing the expected format of the input.  (See \fBFREE FORM SCAN\fR for the effect of \fBclock scan\fR without such an argument.)  The string consists of any number of characters other than the per-cent sign ("**%**"), interspersed with any number of \fIformat groups\fR, which are two-character sequences beginning with the per-cent sign.  The permissible format groups, and their interpretation, are described under \fBFORMAT GROUPS\fR.
 
-If a **-timezone** option is present, the following argument is a string that specifies the time zone in which the date and time are to be interpreted.  As an alternative to **-timezone** *:UTC*, the obsolete usage **-gmt** *true* may be used.  See **TIME ZONES** for the permissible variants for the time zone.
+If a \fB-timezone\fR option is present, the following argument is a string that specifies the time zone in which the date and time are to be interpreted.  As an alternative to \fB-timezone\fR \fI:UTC\fR, the obsolete usage \fB-gmt\fR \fItrue\fR may be used.  See \fBTIME ZONES\fR for the permissible variants for the time zone.
 
-If a **-locale** option is present, the following argument is a string that specifies the locale in which the time is to be interpreted, in the same format that is used for the **msgcat** package.  Note that the default, if **-locale** is not specified, is the root locale **{}** rather than the current locale.  The current locale may be obtained by using **-locale current**. In addition, some platforms support a **system** locale that reflects the user's current choices.  For instance, on Windows, the format that the user has selected from dates and times in the Control Panel can be obtained by using the **system** locale.  On platforms that do not define a user selection of date and time formats separate from **LC_TIME**, **-locale system** is synonymous with **-locale current**.
+If a \fB-locale\fR option is present, the following argument is a string that specifies the locale in which the time is to be interpreted, in the same format that is used for the \fBmsgcat\fR package.  Note that the default, if \fB-locale\fR is not specified, is the root locale \fB{}\fR rather than the current locale.  The current locale may be obtained by using \fB-locale current\fR. In addition, some platforms support a \fBsystem\fR locale that reflects the user's current choices.  For instance, on Windows, the format that the user has selected from dates and times in the Control Panel can be obtained by using the \fBsystem\fR locale.  On platforms that do not define a user selection of date and time formats separate from \fBLC_TIME\fR, \fB-locale system\fR is synonymous with \fB-locale current\fR.
 
-If a **-base** option is present, the following argument is a time (expressed in seconds from the epoch time) that is used as a *base time* for interpreting relative times.  If no **-base** option is present, the base time is the current time.
+If a \fB-base\fR option is present, the following argument is a time (expressed in seconds from the epoch time) that is used as a \fIbase time\fR for interpreting relative times.  If no \fB-base\fR option is present, the base time is the current time.
 
 Scanning of times in fixed format works by determining three things: the date, the time of day, and the time zone.  These three are then combined into a point in time, which is returned as the number of seconds from the epoch.
 
-Before scanning begins, the format string is preprocessed to replace **%c**, **%Ec**, **%x**, **%Ex**, **%X**. **%Ex**, **%r**, **%R**, **%T**, **%D**, **%EY** and **%+** format groups with counterparts that are appropriate to the current locale and contain none of the above groups.  For instance, **%D** will (in the **en_US** locale) be replaced with **%m/%d/%Y**.
+Before scanning begins, the format string is preprocessed to replace \fB%c\fR, \fB%Ec\fR, \fB%x\fR, \fB%Ex\fR, \fB%X\fR. \fB%Ex\fR, \fB%r\fR, \fB%R\fR, \fB%T\fR, \fB%D\fR, \fB%EY\fR and \fB%+\fR format groups with counterparts that are appropriate to the current locale and contain none of the above groups.  For instance, \fB%D\fR will (in the \fBen_US\fR locale) be replaced with \fB%m/%d/%Y\fR.
 
 The date is determined according to the fields that are present in the preprocessed format string.  In order of preference:
 
-1. If the string contains a **%s** format group, representing seconds from the epoch, that group is used to determine the date.
+1. If the string contains a \fB%s\fR format group, representing seconds from the epoch, that group is used to determine the date.
 
-2. If the string contains a **%J**, **%EJ** or **%Ej** format groups, representing the Calendar or Astronomical Julian Day Number, that groups are used to determine the date. Note, that in case of **%EJ** or **%Ej** format groups, representing the Julian Date with time fraction, this groups may be used to determine the date and time.
+2. If the string contains a \fB%J\fR, \fB%EJ\fR or \fB%Ej\fR format groups, representing the Calendar or Astronomical Julian Day Number, that groups are used to determine the date. Note, that in case of \fB%EJ\fR or \fB%Ej\fR format groups, representing the Julian Date with time fraction, this groups may be used to determine the date and time.
 
 3. If the string contains a complete set of format groups specifying century, year, month, and day of month; century, year, and day of year; or ISO8601 fiscal year, week of year, and day of week; those groups are combined and used to determine the date.  If more than one complete set is present, the one at the rightmost position in the string is used.
 
@@ -221,37 +221,37 @@ The date is determined according to the fields that are present in the preproces
 
 The time is also determined according to the fields that are present in the preprocessed format string.  In order of preference:
 
-1. If the string contains a **%s** format group, representing seconds from the epoch, that group determines the time of day.
+1. If the string contains a \fB%s\fR format group, representing seconds from the epoch, that group determines the time of day.
 
 2. If the string contains either an hour on the 24-hour clock or an hour on the 12-hour clock plus an AM/PM indicator, that hour determines the hour of the day.  If the string further contains a group specifying the minute of the hour, that group combines with the hour.  If the string further contains a group specifying the second of the minute, that group combines with the hour and minute.
 
-3. If the string contains neither a **%s** format group nor a group specifying the hour of the day, then midnight (**00:00**, the start of the given date) is used. The time zone is determined by either the **-timezone** or **-gmt** options, or by using the current time zone.
+3. If the string contains neither a \fB%s\fR format group nor a group specifying the hour of the day, then midnight (\fB00:00\fR, the start of the given date) is used. The time zone is determined by either the \fB-timezone\fR or \fB-gmt\fR options, or by using the current time zone.
 
 
-If a format string lacks a **%z** or **%Z** format group, it is possible for the time to be ambiguous because it appears twice in the same day, once without and once with Daylight Saving Time. If this situation occurs, the first occurrence of the time is chosen. (For this reason, it is wise to have the input string contain the time zone when converting local times.  This caveat does not apply to UTC times.)
+If a format string lacks a \fB%z\fR or \fB%Z\fR format group, it is possible for the time to be ambiguous because it appears twice in the same day, once without and once with Daylight Saving Time. If this situation occurs, the first occurrence of the time is chosen. (For this reason, it is wise to have the input string contain the time zone when converting local times.  This caveat does not apply to UTC times.)
 
-If the interpretation of the groups yields an impossible time because a field is out of range, an exception is raised if the **-validate** option is not present or passed as true. If passed as false, enough of that field's unit will be added to or subtracted from the time to bring it in range. Thus, if attempting to scan or format day 0 of the month, one day will be subtracted from day 1 of the month, yielding the last day of the previous month.
+If the interpretation of the groups yields an impossible time because a field is out of range, an exception is raised if the \fB-validate\fR option is not present or passed as true. If passed as false, enough of that field's unit will be added to or subtracted from the time to bring it in range. Thus, if attempting to scan or format day 0 of the month, one day will be subtracted from day 1 of the month, yielding the last day of the previous month.
 
-If the interpretation of the groups yields an impossible time because a Daylight Saving Time change skips over that time, or an ambiguous time because a Daylight Saving Time change skips back so that the clock observes the given time twice, and no time zone specifier (**%z** or **%Z**) is present in the format, the time is interpreted as if the clock had not changed.
+If the interpretation of the groups yields an impossible time because a Daylight Saving Time change skips over that time, or an ambiguous time because a Daylight Saving Time change skips back so that the clock observes the given time twice, and no time zone specifier (\fB%z\fR or \fB%Z\fR) is present in the format, the time is interpreted as if the clock had not changed.
 
 # Format groups
 
-The following format groups are recognized by the **clock scan** and **clock format** commands.
+The following format groups are recognized by the \fBclock scan\fR and \fBclock format\fR commands.
 
 **%a**
-: On output, produces an abbreviation (*e.g.,* **Mon**) for the day of the week in the given locale.  On input, matches the name of the day of the week in the given locale (in either abbreviated or full form, or any unique prefix of either form).
+: On output, produces an abbreviation (\fIe.g.,\fR \fBMon\fR) for the day of the week in the given locale.  On input, matches the name of the day of the week in the given locale (in either abbreviated or full form, or any unique prefix of either form).
 
 **%A**
-: On output, produces the full name (*e.g.,* **Monday**) of the day of the week in the given locale.  On input, matches the name of the day of the week in the given locale (in either abbreviated or full form, or any unique prefix of either form).
+: On output, produces the full name (\fIe.g.,\fR \fBMonday\fR) of the day of the week in the given locale.  On input, matches the name of the day of the week in the given locale (in either abbreviated or full form, or any unique prefix of either form).
 
 **%b**
-: On output, produces an abbreviation (*e.g.,* **Jan**) for the name of the month in the given locale.  On input, matches the name of the month in the given locale (in either abbreviated or full form, or any unique prefix of either form).
+: On output, produces an abbreviation (\fIe.g.,\fR \fBJan\fR) for the name of the month in the given locale.  On input, matches the name of the month in the given locale (in either abbreviated or full form, or any unique prefix of either form).
 
 **%B**
-: On output, produces the full name (*e.g.,* **January**) of the month in the given locale.  On input, matches the name of the month in the given locale (in either abbreviated or full form, or any unique prefix of either form).
+: On output, produces the full name (\fIe.g.,\fR \fBJanuary\fR) of the month in the given locale.  On input, matches the name of the month in the given locale (in either abbreviated or full form, or any unique prefix of either form).
 
 **%c**
-: On output, produces a localized representation of date and time of day; the localized representation is expected to use the Gregorian calendar. On input, matches whatever **%c** produces.
+: On output, produces a localized representation of date and time of day; the localized representation is expected to use the Gregorian calendar. On input, matches whatever \fB%c\fR produces.
 
 **%C**
 : On output, produces the number of the century in Indo-Arabic numerals. On input, matches one or two digits, possibly with leading whitespace, that are expected to be the number of the century.
@@ -260,49 +260,49 @@ The following format groups are recognized by the **clock scan** and **clock for
 : On output, produces the number of the day of the month, as two decimal digits.  On input, matches one or two digits, possibly with leading whitespace, that are expected to be the number of the day of the month.
 
 **%D**
-: This format group is synonymous with **%m/%d/%Y**.  It should be used only in exchanging data within the **en_US** locale, since other locales typically do not use this order for the fields of the date.
+: This format group is synonymous with \fB%m/%d/%Y\fR.  It should be used only in exchanging data within the \fBen_US\fR locale, since other locales typically do not use this order for the fields of the date.
 
 **%e**
 : On output, produces the number of the day of the month, as one or two decimal digits (with a leading blank for one-digit dates). On input, matches one or two digits, possibly with leading whitespace, that are expected to be the number of the day of the month.
 
 **%Ec**
-: On output, produces a locale-dependent representation of the date and time of day in the locale's alternative calendar.  On input, matches whatever **%Ec** produces.  The locale's alternative calendar need not be the Gregorian calendar.
+: On output, produces a locale-dependent representation of the date and time of day in the locale's alternative calendar.  On input, matches whatever \fB%Ec\fR produces.  The locale's alternative calendar need not be the Gregorian calendar.
 
 **%EC**
 : On output, produces a locale-dependent name of an era in the locale's alternative calendar.  On input, matches the name of the era or any unique prefix.
 
 **%EE**
-: On output, produces the string **B.C.E.** or **C.E.**, or a string of the same meaning in the locale, to indicate whether **%Y** refers to years before or after Year 1 of the Common Era.  On input, accepts the string **B.C.E.**, **B.C.**, **C.E.**, **A.D.**, or the abbreviation appropriate to the current locale, and uses it to fix whether **%Y** refers to years before or after Year 1 of the Common Era.
+: On output, produces the string \fBB.C.E.\fR or \fBC.E.\fR, or a string of the same meaning in the locale, to indicate whether \fB%Y\fR refers to years before or after Year 1 of the Common Era.  On input, accepts the string \fBB.C.E.\fR, \fBB.C.\fR, \fBC.E.\fR, \fBA.D.\fR, or the abbreviation appropriate to the current locale, and uses it to fix whether \fB%Y\fR refers to years before or after Year 1 of the Common Era.
 
 **%Ej**
-: On output, produces a string of digits giving the Astronomical Julian Date or Astronomical Julian Day Number (JDN/JD). In opposite to calendar julian day **%J**, it starts the day at noon. On input, accepts a string of digits (or floating point with the time fraction) and interprets it as an Astronomical Julian Day Number (JDN/JD). The Astronomical Julian Date is a count of the number of calendar days that have elapsed since 1 January, 4713 BCE of the proleptic Julian calendar, which contains also the time fraction (after floating point). The epoch time of 1 January 1970 corresponds to Astronomical JDN 2440587.5. This value corresponds the julian day used in sqlite-database, and is the same as result of **select julianday(:seconds, 'unixepoch')**.
+: On output, produces a string of digits giving the Astronomical Julian Date or Astronomical Julian Day Number (JDN/JD). In opposite to calendar julian day \fB%J\fR, it starts the day at noon. On input, accepts a string of digits (or floating point with the time fraction) and interprets it as an Astronomical Julian Day Number (JDN/JD). The Astronomical Julian Date is a count of the number of calendar days that have elapsed since 1 January, 4713 BCE of the proleptic Julian calendar, which contains also the time fraction (after floating point). The epoch time of 1 January 1970 corresponds to Astronomical JDN 2440587.5. This value corresponds the julian day used in sqlite-database, and is the same as result of \fBselect julianday(:seconds, 'unixepoch')\fR.
 
 **%EJ**
-: On output, produces a string of digits giving the Calendar Julian Date. In opposite to julian day **%J** format group, it produces float number. In opposite to astronomical julian day **%Ej** group, it starts at midnight. On input, accepts a string of digits (or floating point with the time fraction) and interprets it as a Calendar Julian Day Number. The Calendar Julian Date is a count of the number of calendar days that have elapsed since 1 January, 4713 BCE of the proleptic Julian calendar, which contains also the time fraction (after floating point). The epoch time of 1 January 1970 corresponds to Astronomical JDN 2440588.
+: On output, produces a string of digits giving the Calendar Julian Date. In opposite to julian day \fB%J\fR format group, it produces float number. In opposite to astronomical julian day \fB%Ej\fR group, it starts at midnight. On input, accepts a string of digits (or floating point with the time fraction) and interprets it as a Calendar Julian Day Number. The Calendar Julian Date is a count of the number of calendar days that have elapsed since 1 January, 4713 BCE of the proleptic Julian calendar, which contains also the time fraction (after floating point). The epoch time of 1 January 1970 corresponds to Astronomical JDN 2440588.
 
 **%Es**
-: This affects similar to **%s**, but in opposition to **%s** it parses or formats local seconds (not the posix seconds). Because **%s** has the same precedence as **%s** (uniquely determines a point in time), it overrides all other input formats.
+: This affects similar to \fB%s\fR, but in opposition to \fB%s\fR it parses or formats local seconds (not the posix seconds). Because \fB%s\fR has the same precedence as \fB%s\fR (uniquely determines a point in time), it overrides all other input formats.
 
 **%Ex**
-: On output, produces a locale-dependent representation of the date in the locale's alternative calendar.  On input, matches whatever **%Ex** produces.  The locale's alternative calendar need not be the Gregorian calendar.
+: On output, produces a locale-dependent representation of the date in the locale's alternative calendar.  On input, matches whatever \fB%Ex\fR produces.  The locale's alternative calendar need not be the Gregorian calendar.
 
 **%EX**
-: On output, produces a locale-dependent representation of the time of day in the locale's alternative numerals.  On input, matches whatever **%EX** produces.
+: On output, produces a locale-dependent representation of the time of day in the locale's alternative numerals.  On input, matches whatever \fB%EX\fR produces.
 
 **%Ey**
 : On output, produces a locale-dependent number of the year of the era in the locale's alternative calendar and numerals.  On input, matches such a number.
 
 **%EY**
-: On output, produces a representation of the year in the locale's alternative calendar and numerals.  On input, matches what **%EY** produces.  Often synonymous with **%EC%Ey**.
+: On output, produces a representation of the year in the locale's alternative calendar and numerals.  On input, matches what \fB%EY\fR produces.  Often synonymous with \fB%EC%Ey\fR.
 
 **%g**
-: On output, produces a two-digit year number suitable for use with the week-based ISO8601 calendar; that is, the year number corresponds to the week number produced by **%V**.  On input, accepts such a two-digit year number, possibly with leading whitespace.
+: On output, produces a two-digit year number suitable for use with the week-based ISO8601 calendar; that is, the year number corresponds to the week number produced by \fB%V\fR.  On input, accepts such a two-digit year number, possibly with leading whitespace.
 
 **%G**
-: On output, produces a four-digit year number suitable for use with the week-based ISO8601 calendar; that is, the year number corresponds to the week number produced by **%V**.  On input, accepts such a four-digit year number, possibly with leading whitespace.
+: On output, produces a four-digit year number suitable for use with the week-based ISO8601 calendar; that is, the year number corresponds to the week number produced by \fB%V\fR.  On input, accepts such a four-digit year number, possibly with leading whitespace.
 
 **%h**
-: This format group is synonymous with **%b**.
+: This format group is synonymous with \fB%b\fR.
 
 **%H**
 : On output, produces a two-digit number giving the hour of the day (00-23) on a 24-hour clock.  On input, accepts such a number.
@@ -331,26 +331,26 @@ The following format groups are recognized by the **clock scan** and **clock for
 **%N**
 : On output, produces the number of the month (1-12) with one or two digits, and a leading blank for one-digit dates. On input, accepts one or two digits, possibly with leading whitespace, and interprets them as the number of the month.
 
-**%Od**, **%Oe**, **%OH**, **%OI**, **%Ok**, **%Ol**, **%Om**, **%OM**, **%OS**, **%Ou**, **%Ow**, **%Oy**
+**%Od**, \fB%Oe\fR, \fB%OH\fR, \fB%OI\fR, \fB%Ok\fR, \fB%Ol\fR, \fB%Om\fR, \fB%OM\fR, \fB%OS\fR, \fB%Ou\fR, \fB%Ow\fR, \fB%Oy\fR
 : All of these format groups are synonymous with their counterparts without the "**O**", except that the string is produced and parsed in the locale-dependent alternative numerals.
 
 **%p**
-: On output, produces an indicator for the part of the day, **AM** or **PM**, appropriate to the given locale.  If the script of the given locale supports multiple letterforms, lowercase is preferred. On input, matches the representation **AM** or **PM** in the given locale, in either case.
+: On output, produces an indicator for the part of the day, \fBAM\fR or \fBPM\fR, appropriate to the given locale.  If the script of the given locale supports multiple letterforms, lowercase is preferred. On input, matches the representation \fBAM\fR or \fBPM\fR in the given locale, in either case.
 
 **%P**
-: On output, produces an indicator for the part of the day, **am** or **pm**, appropriate to the given locale.  If the script of the given locale supports multiple letterforms, uppercase is preferred. On input, matches the representation **AM** or **PM** in the given locale, in either case.
+: On output, produces an indicator for the part of the day, \fBam\fR or \fBpm\fR, appropriate to the given locale.  If the script of the given locale supports multiple letterforms, uppercase is preferred. On input, matches the representation \fBAM\fR or \fBPM\fR in the given locale, in either case.
 
 **%Q**
 : This format group is reserved for internal use within the Tcl library.
 
 **%r**
-: On output, produces a locale-dependent time of day representation on a 12-hour clock. On input, accepts whatever **%r** produces.
+: On output, produces a locale-dependent time of day representation on a 12-hour clock. On input, accepts whatever \fB%r\fR produces.
 
 **%R**
-: On output, the time in 24-hour notation (%H:%M). For a version including the seconds, see **%T** below. On input, accepts whatever **%R** produces.
+: On output, the time in 24-hour notation (%H:%M). For a version including the seconds, see \fB%T\fR below. On input, accepts whatever \fB%R\fR produces.
 
 **%s**
-: On output, simply formats the *timeVal* argument as a decimal integer and inserts it into the output string.  On input, accepts a decimal integer and uses is as the time value without any further processing. Since **%s** uniquely determines a point in time, it overrides all other input formats.
+: On output, simply formats the \fItimeVal\fR argument as a decimal integer and inserts it into the output string.  On input, accepts a decimal integer and uses is as the time value without any further processing. Since \fB%s\fR uniquely determines a point in time, it overrides all other input formats.
 
 **%S**
 : On output, produces a two-digit number of the second of the minute (00-59). On input, accepts two digits and uses them as the second of the minute.
@@ -359,40 +359,40 @@ The following format groups are recognized by the **clock scan** and **clock for
 : On output, produces a TAB character. On input, matches a TAB character.
 
 **%T**
-: Synonymous with **%H:%M:%S**.
+: Synonymous with \fB%H:%M:%S\fR.
 
 **%u**
-: On output, produces the number of the day of the week (**1**\(->Monday, **7**\(->Sunday). On input, accepts a single digit and interprets it as the day of the week. Sunday may be either **0** or **7**.
+: On output, produces the number of the day of the week (\fB1\fR\(->Monday, \fB7\fR\(->Sunday). On input, accepts a single digit and interprets it as the day of the week. Sunday may be either \fB0\fR or \fB7\fR.
 
 **%U**
-: On output, produces the ordinal number of the week of the year (00-53). The first Sunday of the year is the first day of week 01. On input accepts two digits which are otherwise ignored. This format group is never used in determining an input date.  This interpretation of the week of the year was once common in US banking but is now largely obsolete.  See **%V** for the ISO8601 week number.
+: On output, produces the ordinal number of the week of the year (00-53). The first Sunday of the year is the first day of week 01. On input accepts two digits which are otherwise ignored. This format group is never used in determining an input date.  This interpretation of the week of the year was once common in US banking but is now largely obsolete.  See \fB%V\fR for the ISO8601 week number.
 
 **%V**
 : On output, produces the number of the ISO8601 week as a two digit number (01-53). Week 01 is the week containing January 4; or the first week of the year containing at least 4 days; or the week containing the first Thursday of the year (the three statements are equivalent). Each week begins on a Monday. On input, accepts the ISO8601 week number.
 
 **%w**
-: On output, produces the ordinal number of the day of the week (Sunday==0; Saturday==6).  On input, accepts a single digit and interprets it as the day of the week; Sunday may be represented as either 0 or 7.  Note that **%w** is not the ISO8601 weekday number, which is produced and accepted by **%u**.
+: On output, produces the ordinal number of the day of the week (Sunday==0; Saturday==6).  On input, accepts a single digit and interprets it as the day of the week; Sunday may be represented as either 0 or 7.  Note that \fB%w\fR is not the ISO8601 weekday number, which is produced and accepted by \fB%u\fR.
 
 **%W**
-: On output, produces a week number (00-53) within the year; week 01 begins on the first Monday of the year. On input, accepts two digits, which are otherwise ignored. This format group is never used in determining an input date.  It is not the ISO8601 week number; that week is produced and accepted by **%V**.
+: On output, produces a week number (00-53) within the year; week 01 begins on the first Monday of the year. On input, accepts two digits, which are otherwise ignored. This format group is never used in determining an input date.  It is not the ISO8601 week number; that week is produced and accepted by \fB%V\fR.
 
 **%x**
-: On output, produces the date in a locale-dependent representation. On input, accepts whatever **%x** produces and is used to determine calendar date.
+: On output, produces the date in a locale-dependent representation. On input, accepts whatever \fB%x\fR produces and is used to determine calendar date.
 
 **%X**
-: On output, produces the time of day in a locale-dependent representation. On input, accepts whatever **%X** produces and is used to determine time of day.
+: On output, produces the time of day in a locale-dependent representation. On input, accepts whatever \fB%X\fR produces and is used to determine time of day.
 
 **%y**
-: On output, produces the two-digit year of the century. On input, accepts two digits, and is used to determine calendar date. The date is presumed to lie between 1938 and 2037 inclusive. Note that **%y** does not yield a year appropriate for use with the ISO8601 week number **%V**; programs should use **%g** for that purpose.
+: On output, produces the two-digit year of the century. On input, accepts two digits, and is used to determine calendar date. The date is presumed to lie between 1938 and 2037 inclusive. Note that \fB%y\fR does not yield a year appropriate for use with the ISO8601 week number \fB%V\fR; programs should use \fB%g\fR for that purpose.
 
 **%Y**
-: On output, produces the four-digit calendar year. On input, accepts four digits and may be used to determine calendar date. Note that **%Y** does not yield a year appropriate for use with the ISO8601 week number **%V**; programs should use **%G** for that purpose.
+: On output, produces the four-digit calendar year. On input, accepts four digits and may be used to determine calendar date. Note that \fB%Y\fR does not yield a year appropriate for use with the ISO8601 week number \fB%V\fR; programs should use \fB%G\fR for that purpose.
 
 **%z**
-: On output, produces the current time zone, expressed in hours and minutes east (+hhmm) or west (-hhmm) of Greenwich. On input, accepts a time zone specifier (see **TIME ZONES** below) that will be used to determine the time zone (this token is optionally applicable on input, so the value is not mandatory and can be missing in input).
+: On output, produces the current time zone, expressed in hours and minutes east (+hhmm) or west (-hhmm) of Greenwich. On input, accepts a time zone specifier (see \fBTIME ZONES\fR below) that will be used to determine the time zone (this token is optionally applicable on input, so the value is not mandatory and can be missing in input).
 
 **%Z**
-: On output, produces the current time zone's name, possibly translated to the given locale. On input, accepts a time zone specifier (see **TIME ZONES** below) that will be used to determine the time zone (token is also like **%z** optionally applicable on input). This option should, in general, be used on input only when parsing RFC822 dates. Other uses are fraught with ambiguity; for instance, the string **BST** may represent British Summer Time or Brazilian Standard Time. It is recommended that date/time strings for use by computers use numeric time zones instead.
+: On output, produces the current time zone's name, possibly translated to the given locale. On input, accepts a time zone specifier (see \fBTIME ZONES\fR below) that will be used to determine the time zone (token is also like \fB%z\fR optionally applicable on input). This option should, in general, be used on input only when parsing RFC822 dates. Other uses are fraught with ambiguity; for instance, the string \fBBST\fR may represent British Summer Time or Brazilian Standard Time. It is recommended that date/time strings for use by computers use numeric time zones instead.
 
 **%%**
 : On output, produces a literal "**%**" character. On input, matches a literal "**%**" character.
@@ -403,22 +403,22 @@ The following format groups are recognized by the **clock scan** and **clock for
 
 # Time zones
 
-When the **clock** command is processing a local time, it has several possible sources for the time zone to use.  In order of preference, they are:
+When the \fBclock\fR command is processing a local time, it has several possible sources for the time zone to use.  In order of preference, they are:
 
-1. A time zone specified inside a string being parsed and matched by a **%z** or **%Z** format group.
+1. A time zone specified inside a string being parsed and matched by a \fB%z\fR or \fB%Z\fR format group.
 
-2. A time zone specified with the **-timezone** option to the **clock** command (or, equivalently, by **-gmt 1**).
+2. A time zone specified with the \fB-timezone\fR option to the \fBclock\fR command (or, equivalently, by \fB-gmt 1\fR).
 
-3. A time zone specified in an environment variable **TCL_TZ**.
+3. A time zone specified in an environment variable \fBTCL_TZ\fR.
 
-4. A time zone specified in an environment variable **TZ**.
+4. A time zone specified in an environment variable \fBTZ\fR.
 
 5. The local time zone from the Control Panel on Windows systems.
 
-6. The C library's idea of the local time zone, as defined by the **mktime** and **localtime** functions.
+6. The C library's idea of the local time zone, as defined by the \fBmktime\fR and \fBlocaltime\fR functions.
 
 
-In case [1] *only,* the string is tested to see if it is one of the strings:
+In case [1] \fIonly,\fR the string is tested to see if it is one of the strings:
 
 ```
  gmt     ut      utc     bst     wet     wat     at
@@ -436,11 +436,11 @@ If it is a string in the above list, it designates a known time zone, and is int
 
 For time zones in case [1] that do not match any of the above strings, and always for cases [2]-[6], the following rules apply.
 
-If the time zone begins with a colon, it is one of a standardized list of names like **:America/New_York** that give the rules for various locales.  A complete list of the location names is too lengthy to be listed here. On most Tcl installations, the definitions of the locations are to be found in named files in the directory "*/no_backup/tools/lib/tcl9.0/clock/tzdata*". On some Unix systems, these files are omitted, and the definitions are instead obtained from system files in "*/usr/share/zoneinfo*", "*/usr/share/lib/zoneinfo*" or "*/usr/local/etc/zoneinfo*". As a special case, the name **:localtime** refers to the local time zone as defined by the C library.
+If the time zone begins with a colon, it is one of a standardized list of names like \fB:America/New_York\fR that give the rules for various locales.  A complete list of the location names is too lengthy to be listed here. On most Tcl installations, the definitions of the locations are to be found in named files in the directory "*/no_backup/tools/lib/tcl9.0/clock/tzdata*". On some Unix systems, these files are omitted, and the definitions are instead obtained from system files in "*/usr/share/zoneinfo*", "*/usr/share/lib/zoneinfo*" or "*/usr/local/etc/zoneinfo*". As a special case, the name \fB:localtime\fR refers to the local time zone as defined by the C library.
 
 A time zone string consisting of a plus or minus sign followed by four or six decimal digits is interpreted as an offset in hours, minutes, and seconds (if six digits are present) from UTC.  The plus sign denotes a sign east of Greenwich; the minus sign one west of Greenwich.
 
-A time zone string conforming to the Posix specification of the **TZ** environment variable will be recognized.  The specification may be found at *https://pubs.opengroup.org/onlinepubs/009695399/basedefs/xbd_chap08.html*.
+A time zone string conforming to the Posix specification of the \fBTZ\fR environment variable will be recognized.  The specification may be found at \fIhttps://pubs.opengroup.org/onlinepubs/009695399/basedefs/xbd_chap08.html\fR.
 
 If the Posix time zone string contains a DST (Daylight Savings Time) part, but doesn't contain a rule stating when DST starts or ends, then default rules are used. For Timezones with an offset between 0 and +12, the current European/Russian rules are used, otherwise the current US rules are used. In Europe (offset +0 to +2) the switch to summertime is done each last Sunday in March at 1:00 GMT, and the switch back is each last Sunday in October at 2:00 GMT. In Russia (offset +3 to +12), the switch dates are the same, only the switch to summertime is at 2:00 local time, and the switch back is at 3:00 local time in all time zones. The US switch to summertime takes place each second Sunday in March at 2:00 local time, and the switch back is each first Sunday in November at 3:00 local time. These default rules mean that in all European, Russian and US (or compatible) time zones, DST calculations will be correct for dates in 2007 and later, unless in the future the rules change again.
 
@@ -448,33 +448,33 @@ Any other time zone string is processed by prefixing a colon and attempting to u
 
 # Localization
 
-Developers wishing to localize the date and time formatting and parsing are referred to *https://tip.tcl-lang.org/173* for a specification.
+Developers wishing to localize the date and time formatting and parsing are referred to \fIhttps://tip.tcl-lang.org/173\fR for a specification.
 
 # Free form scan
 
-If the **clock scan** command is invoked without a **-format** option, then it requests a *free-form scan*. *This form of scan is deprecated.* The reason for the deprecation is that there are too many ambiguities. (Does the string "2000" represent a year, a time of day, or a quantity?)  No set of rules for interpreting free-form dates and times has been found to give unsurprising results in all cases.
+If the \fBclock scan\fR command is invoked without a \fB-format\fR option, then it requests a \fIfree-form scan\fR. \fIThis form of scan is deprecated.\fR The reason for the deprecation is that there are too many ambiguities. (Does the string "2000" represent a year, a time of day, or a quantity?)  No set of rules for interpreting free-form dates and times has been found to give unsurprising results in all cases.
 
-If free-form scan is used, only the **-base** and **-gmt** options are accepted.  The **-timezone** and **-locale** options will result in an error if **-format** is not supplied.
+If free-form scan is used, only the \fB-base\fR and \fB-gmt\fR options are accepted.  The \fB-timezone\fR and \fB-locale\fR options will result in an error if \fB-format\fR is not supplied.
 
 For the benefit of users who need to understand legacy code that uses free-form scan, the documentation for how free-form scan interprets a string is included here:
 
-If only a time is specified, the current date is assumed.  If the *inputString* does not contain a time zone mnemonic, the local time zone is assumed, unless the **-gmt** argument is true, in which case the clock value is calculated assuming that the specified time is relative to Greenwich Mean Time. **-gmt**, if specified, affects only the computed time value; it does not impact the interpretation of **-base**.
+If only a time is specified, the current date is assumed.  If the \fIinputString\fR does not contain a time zone mnemonic, the local time zone is assumed, unless the \fB-gmt\fR argument is true, in which case the clock value is calculated assuming that the specified time is relative to Greenwich Mean Time. \fB-gmt\fR, if specified, affects only the computed time value; it does not impact the interpretation of \fB-base\fR.
 
-If the **-base** flag is specified, the next argument should contain an integer clock value.  Only the date in this value is used, not the time.  This is useful for determining the time on a specific day or doing other date-relative conversions.
+If the \fB-base\fR flag is specified, the next argument should contain an integer clock value.  Only the date in this value is used, not the time.  This is useful for determining the time on a specific day or doing other date-relative conversions.
 
-The *inputString* argument consists of zero or more specifications of the following form:
+The \fIinputString\fR argument consists of zero or more specifications of the following form:
 
 *time*
-: A time of day, which is of the form: "*hh*?**:***mm*?**:***ss*?? ?*meridian*? ?*zone*?" or "**hhmm** ?**meridian**? ?**zone**?". If no *meridian* is specified, *hh* is interpreted on a 24-hour clock. The "24:00" and "24:00:00" formats (with or without colon) are supported only if no *meridian* is specified.
+: A time of day, which is of the form: "*hh*?\fB:\fR\fImm\fR?\fB:\fR\fIss\fR?? ?\fImeridian\fR? ?\fIzone\fR?" or "**hhmm** ?\fBmeridian\fR? ?\fBzone\fR?". If no \fImeridian\fR is specified, \fIhh\fR is interpreted on a 24-hour clock. The "24:00" and "24:00:00" formats (with or without colon) are supported only if no \fImeridian\fR is specified.
 
 *date*
-: A specific month and day with optional year.  The acceptable formats are "*mm***/***dd*?**/***yy*?", "*monthname dd*?**,** *yy*?", "*day***,** *dd monthname* ?*yy*?", "*dd monthname yy*", "?*CC*?*yymmdd*", and "*dd***-***monthname***-**?*CC*?*yy*". The default year is the current year.  If the year is less than 100, we treat the years 00-68 as 2000-2068 and the years 69-99 as 1969-1999.  Not all platforms can represent the years 38-70, so an error may result if these years are used.
+: A specific month and day with optional year.  The acceptable formats are "*mm***/***dd*?\fB/\fR\fIyy\fR?", "*monthname dd*?\fB,\fR \fIyy\fR?", "*day***,** \fIdd monthname\fR ?\fIyy\fR?", "*dd monthname yy*", "?\fICC\fR?\fIyymmdd\fR", and "*dd***-***monthname***-**?\fICC\fR?\fIyy\fR". The default year is the current year.  If the year is less than 100, we treat the years 00-68 as 2000-2068 and the years 69-99 as 1969-1999.  Not all platforms can represent the years 38-70, so an error may result if these years are used.
 
 *ISO 8601 point-in-time*
-: An ISO 8601 point-in-time specification, such as "*CCyymmdd***T***hhmmss*", where **T** is the literal "T", "*CCyymmdd hhmmss*", "*CCyymmdd***T***hh:mm:ss*", or "*CCyy-mm-dd***T***hh:mm:ss*". Note that only these four formats are accepted. The command does *not* accept the full range of point-in-time specifications specified in ISO8601.  For example, leap seconds are not supported. The "24:00" and "24:00:00" formats (with or without colon) are supported.  Other formats can be recognized by giving an explicit **-format** option to the **clock scan** command.
+: An ISO 8601 point-in-time specification, such as "*CCyymmdd***T***hhmmss*", where \fBT\fR is the literal "T", "*CCyymmdd hhmmss*", "*CCyymmdd***T***hh:mm:ss*", or "*CCyy-mm-dd***T***hh:mm:ss*". Note that only these four formats are accepted. The command does \fInot\fR accept the full range of point-in-time specifications specified in ISO8601.  For example, leap seconds are not supported. The "24:00" and "24:00:00" formats (with or without colon) are supported.  Other formats can be recognized by giving an explicit \fB-format\fR option to the \fBclock scan\fR command.
 
 *relative time*
-: A specification relative to the current time.  The format is **number unit**. Acceptable units are **year**, **fortnight**, **month**, **week**, **day**, **hour**, **minute** (or **min**), and **second** (or **sec**).  The unit can be specified as a singular or plural, as in **3 weeks**. These modifiers may also be specified: **tomorrow**, **yesterday**, **today**, **now**, **last**, **this**, **next**, **ago**.
+: A specification relative to the current time.  The format is \fBnumber unit\fR. Acceptable units are \fByear\fR, \fBfortnight\fR, \fBmonth\fR, \fBweek\fR, \fBday\fR, \fBhour\fR, \fBminute\fR (or \fBmin\fR), and \fBsecond\fR (or \fBsec\fR).  The unit can be specified as a singular or plural, as in \fB3 weeks\fR. These modifiers may also be specified: \fBtomorrow\fR, \fByesterday\fR, \fBtoday\fR, \fBnow\fR, \fBlast\fR, \fBthis\fR, \fBnext\fR, \fBago\fR.
 
 
 The actual date is calculated according to the following steps.

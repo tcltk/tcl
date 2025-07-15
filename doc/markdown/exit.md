@@ -27,11 +27,11 @@ exit - End the application
 
 # Description
 
-Terminate the process, returning *returnCode* to the system as the exit status. If *returnCode* is not specified then it defaults to 0.
+Terminate the process, returning \fIreturnCode\fR to the system as the exit status. If \fIreturnCode\fR is not specified then it defaults to 0.
 
 # Example
 
-Since non-zero exit codes are usually interpreted as error cases by the calling process, the **exit** command is an important part of signaling that something fatal has gone wrong. This code fragment is useful in scripts to act as a general problem trap:
+Since non-zero exit codes are usually interpreted as error cases by the calling process, the \fBexit\fR command is an important part of signaling that something fatal has gone wrong. This code fragment is useful in scripts to act as a general problem trap:
 
 ```
 proc main {} {

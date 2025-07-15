@@ -27,19 +27,19 @@ cd - Change working directory
 
 # Description
 
-Change the current working directory to *dirName*, or to the home directory (as specified in the HOME environment variable) if *dirName* is not given. Returns an empty string.
+Change the current working directory to \fIdirName\fR, or to the home directory (as specified in the HOME environment variable) if \fIdirName\fR is not given. Returns an empty string.
 
-Note that the current working directory is a per-process resource; the **cd** command changes the working directory for all interpreters and all threads.
+Note that the current working directory is a per-process resource; the \fBcd\fR command changes the working directory for all interpreters and all threads.
 
 # Examples
 
-Change to the home directory of the user **fred**:
+Change to the home directory of the user \fBfred\fR:
 
 ```
 cd [file home fred]
 ```
 
-Change to the directory **lib** that is a sibling directory of the current one:
+Change to the directory \fBlib\fR that is a sibling directory of the current one:
 
 ```
 cd ../lib

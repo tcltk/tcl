@@ -42,7 +42,7 @@ lreverse - Reverse the order of a list
 
 # Description
 
-The **lreverse** command returns a list that has the same elements as its input list, *list*, except with the elements in the reverse order.
+The \fBlreverse\fR command returns a list that has the same elements as its input list, \fIlist\fR, except with the elements in the reverse order.
 
 # Examples
 
