@@ -83,6 +83,7 @@ test split-2.1 {split errors} {
 test split-2.2 {split errors} {
     list [catch {split a b c} msg] $msg $errorCode
 } {1 {wrong # args: should be "split string ?splitChars?"} {TCL WRONGARGS}}
+
 
 # cleanup
 catch {rename foo {}}

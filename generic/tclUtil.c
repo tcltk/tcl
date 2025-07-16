@@ -899,6 +899,14 @@ Tcl_SplitList(
 
     size = TclMaxListLength(list, TCL_INDEX_NONE, &end) + 1;
     length = end - list;
+    if (size >= (Tcl_Size) (TCL_SIZE_MAX/sizeof(char *)) ||
+	length > (Tcl_Size) (TCL_SIZE_MAX - 1 - (size * sizeof(char *)))) {
+	if (interp) {
+	    Tcl_SetResult(
+		interp, "memory allocation limit exceeded", TCL_STATIC);
+	}
+	return TCL_ERROR;
+    }
     argv = (const char **)Tcl_Alloc((size * sizeof(char *)) + length + 1);
 
     for (i = 0, p = ((char *) argv) + size*sizeof(char *);
