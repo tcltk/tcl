@@ -80,6 +80,21 @@ test split-2.1 {split errors} {
 test split-2.2 {split errors} {
     list [catch {split a b c} msg] $msg $errorCode
 } {1 {wrong # args: should be "split string ?splitChars?"} {TCL WRONGARGS}}
+
+test bug-c9f0520f7e "Bug c9f0520f7e Tcl_SplitList memory overflow crash" -body {
+    # [dict for] compilation calls Tcl_SplitList, thus its use. Not
+    # a bug in dict.
+    proc p {} [list dict for $str {} {}]
+    p
+} -constraints slowTest -setup {
+    set limit 26
+    set str "0 1 2 3 4 5 6 7 8 9 "
+    for { set i 0 } { $i < $limit } { incr i } {
+        set str "$str $str"
+    }
+} -cleanup {
+    catch {rename p {}}
+} -result {max length of a Tcl list * exceeded} -match glob -returnCodes error
 
 # cleanup
 catch {rename foo {}}
