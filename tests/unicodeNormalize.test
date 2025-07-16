@@ -18,6 +18,22 @@ namespace eval utf8proc::test {
     variable singleFormChars {}
     variable testCase
 
+    variable normForm
+    variable normEnums; # Matches Tcl_UnicodeNormalizationForm enums
+    array set normEnums {
+        nfc  0
+        nfd  1
+        nfkc 2
+        nfkd 3
+    }
+    variable profileFlags; # Match TCL_ENCODING_PROFILE_* C flags
+    array set profileFlags {
+        strict  0x00000000
+        tcl8    0x01000000
+        replace 0x02000000
+    }
+    variable bytes
+
     tcltest::testConstraint normalization [file exists $normalizationDataFile]
 
     # Don't enable casefolding tests - not implemented or TIP'ed in core
@@ -52,10 +68,8 @@ namespace eval utf8proc::test {
             }
             # Form list of {lineno chars nfcform nfdform nfkfcform nfkdform}
             set fields [lrange [split $line \;] 0 4]
-            lappend normalizationData [list $lineno \
-                                  {*}[lmap v $fields {
-                hexListToChars $v
-            }]]
+            lappend normalizationData \
+                [list $lineno {*}[lmap v $fields {hexListToChars $v}]]
             # Characters that are not listed in part1 need to be tested that
             # they map to themselves.
             if {$inPart1} {
@@ -151,6 +165,27 @@ namespace eval utf8proc::test {
     }
     if {[tcltest::testConstraint casefolding]} {
         readCaseFoldData
+    }
+
+    # Standard arg number tests
+    test unicode-badargs-0 {unicode no args} -returnCodes error -body {
+        unicode
+    } -result {wrong # args: should be "unicode subcommand ?arg ...?"}
+    test unicode-badargs-1 {unicode bad command} -returnCodes error -body {
+        unicode foo
+    } -result {unknown or ambiguous subcommand "foo": must be tonfc, tonfd, tonfkc, or tonfkd}
+
+    variable cmd
+    foreach cmd {tonfc tonfd tonfkc tonfkd} {
+        test $cmd-badargs-0 "$cmd 0 args" -returnCodes error -body {
+            unicode $cmd
+        } -result "wrong # args: should be \"unicode $cmd ?-profile PROFILE? STRING\""
+        test $cmd-badargs-1 "$cmd 2 args" -returnCodes error -body {
+            unicode $cmd -profile strict
+        } -result "wrong # args: should be \"unicode $cmd ?-profile PROFILE? STRING\""
+        test $cmd-badargs-2 "$cmd extra args" -returnCodes error -body {
+            unicode $cmd -profile strict foo extra
+        } -result "wrong # args: should be \"unicode $cmd ?-profile PROFILE? STRING\""
     }
 
     # Test generation for nfc, nfd, nfkc, nfkd
@@ -285,6 +320,9 @@ namespace eval utf8proc::test {
     test tonfc-profile-replace-1 "tonfc -profile replace fail" -body {
         unicode tonfc -profile replace \ud800
     } -result \uFFFD
+    test tonfc-profile-tcl8-0 "tonfc -profile tcl8" -returnCodes error -body {
+        unicode tonfc -profile tcl8 x
+    } -result {Invalid value "tcl8" supplied for option "-profile". Must be "strict" or "replace".}
 
     test tonfd-profile-default-0 "tonfd -profile default success" -body {
         unicode tonfd \u1E0A\u031B\u0323
@@ -304,6 +342,9 @@ namespace eval utf8proc::test {
     test tonfd-profile-replace-1 "tonfd -profile replace fail" -body {
         unicode tonfd -profile replace \ud800
     } -result \uFFFD
+    test tonfd-profile-tcl8-0 "tonfd -profile tcl8" -returnCodes error -body {
+        unicode tonfd -profile tcl8 x
+    } -result {Invalid value "tcl8" supplied for option "-profile". Must be "strict" or "replace".}
 
     test tonfkc-profile-default-0 "tonfkc -profile default success" -body {
         unicode tonfkc \u01C4\u0323
@@ -323,6 +364,9 @@ namespace eval utf8proc::test {
     test tonfkc-profile-replace-1 "tonfkc -profile replace fail" -body {
         unicode tonfkc -profile replace \ud800
     } -result \uFFFD
+    test tonfkc-profile-tcl8-0 "tonfkc -profile tcl8" -returnCodes error -body {
+        unicode tonfkc -profile tcl8 x
+    } -result {Invalid value "tcl8" supplied for option "-profile". Must be "strict" or "replace".}
 
     test tonfkd-profile-default-0 "tonfkd -profile default success" -body {
         unicode tonfkd \u01C4\u0323
@@ -342,6 +386,41 @@ namespace eval utf8proc::test {
     test tonfkd-profile-replace-1 "tonfkd -profile replace fail" -body {
         unicode tonfkd -profile replace \ud800
     } -result \uFFFD
+    test tonfkd-profile-tcl8-0 "tonfkd -profile tcl8" -returnCodes error -body {
+        unicode tonfkd -profile tcl8 x
+    } -result {Invalid value "tcl8" supplied for option "-profile". Must be "strict" or "replace".}
+
+    # Tcl_UtfToNormalizedDString C API
+
+    foreach testCase $normalizationData {
+        lassign $testCase lineno chars nfc nfd nfkc nfkd
+        set bytes [teststringbytes $chars]
+        foreach profile {strict replace} {
+            foreach normForm {nfc nfd nfkc nfkd} {
+                test Tcl_UtfToNormalizedDString-$normForm-line-$lineno-$profile \
+                    "Tcl_UtfToNormalizedDString for $normForm at line $lineno of $normalizationDataFile" \
+                    -body {
+                        testutfnormalize $bytes $normEnums($normForm) $profileFlags($profile)
+                    } -result [teststringbytes [set $normForm]]
+            }
+        }
+    }
+
+    foreach normForm {nfc nfd nfkc nfkd} {
+        test Tcl_UtfToNormalizedDString-$normForm-tcl8 \
+            "Tcl_UtfToNormalizedDString for tcl8" \
+            -body {
+                testutfnormalize abc $normEnums($normForm) $profileFlags(tcl8)
+            } -result {Invalid value 16777216 passed for encoding profile.} -returnCodes error
+    }
+    test Tcl_UtfToNormalizedDString-invalid-normalization-form \
+            "Tcl_UtfToNormalizedDString invalid value for normalization form" \
+            -body {
+                testutfnormalize abc 4 $profileFlags(strict)
+            } -result {Invalid value 4 passed for normalization form.} -returnCodes error
+
+    # TODO - truncated utf-8 string
+
 }
 
 ::tcltest::cleanupTests
