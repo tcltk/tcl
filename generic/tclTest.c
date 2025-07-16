@@ -326,6 +326,7 @@ static Tcl_Obj *	SimpleRedirect(Tcl_Obj *pathPtr);
 static Tcl_FSMatchInDirectoryProc SimpleMatchInDirectory;
 static Tcl_ObjCmdProc	TestUtfNextCmd;
 static Tcl_ObjCmdProc	TestUtfPrevCmd;
+static Tcl_ObjCmdProc	TestUtfNormalizeCmd;
 static Tcl_ObjCmdProc	TestNumUtfCharsCmd;
 static Tcl_ObjCmdProc	TestGetUniCharCmd;
 static Tcl_ObjCmdProc	TestFindFirstCmd;
@@ -737,6 +738,8 @@ Tcltest_Init(
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testlutil", TestLutilCmd,
 	    NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testutfnormalize", TestUtfNormalizeCmd, NULL,
+	    NULL);
 #if defined(_WIN32)
     Tcl_CreateObjCommand(interp, "testhandlecount", TestHandleCountCmd,
 	    NULL, NULL);
@@ -9024,6 +9027,76 @@ vamoose:
 	Tcl_DecrRefCount(l2Obj);
     }
     return ret;
+}
+
+/*
+ * TestUtfNormalizeCmd --
+ *
+ *	This procedure implements the "testutfnormalize" command which
+ *	provides a raw interface to the Tcl_UtfToNormalizedDString API.
+ *      objv[1] - input byte array encoded in Tcl internal UTF-8. Use
+ *		  teststringbytes to construct.
+ *	objv[2] - normForm value to pass to Tcl_UtfToNormalizeDString
+ *	objv[3] - profile value to pass to Tcl_UtfToNormalizeDString
+ *	objv[4] - (optional) length to pass to Tcl_UtfToNormalizeDString. If
+ *		  not present, length of objv[1] is used.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	The interpreter result is set to the raw bytes output of the
+ *	Tcl_UtfToNormalizeDString call.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+TestUtfNormalizeCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Arguments. */
+{
+    if (objc != 4 && objc != 5) {
+	Tcl_WrongNumArgs(interp, 1, objv, "BYTES NORMALFORM PROFILE ?LENGTH?");
+    }
+    Tcl_Size len, slen;
+    unsigned char *s = Tcl_GetBytesFromObj(interp, objv[1], &slen);
+    if (s == NULL) {
+	return TCL_ERROR;
+    }
+    int normForm, profile;
+    if (Tcl_GetIntFromObj(interp, objv[2], &normForm) != TCL_OK ||
+	Tcl_GetIntFromObj(interp, objv[3], &profile) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (objc == 4) {
+	len = slen;
+    } else {
+	if (Tcl_GetSizeIntFromObj(interp, objv[2], &len) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if (len > slen) {
+	    Tcl_SetObjResult(interp,
+		Tcl_ObjPrintf(
+		    "Passed length %" TCL_SIZE_MODIFIER
+		    "d is greater than string length %" TCL_SIZE_MODIFIER
+		    "d.", len, slen));
+	    return TCL_ERROR;
+	}
+    }
+    const char *bytes;
+    Tcl_DString ds;
+    bytes = Tcl_UtfToNormalizedDString(interp, (char *) s, len,
+	(Tcl_UnicodeNormalizationForm)normForm, profile, &ds);
+    if (bytes == NULL) {
+	return TCL_ERROR;
+    }
+    /* Return as raw bytes, not string */
+    Tcl_SetObjResult(interp,
+	Tcl_NewByteArrayObj((unsigned char *)Tcl_DStringValue(&ds), Tcl_DStringLength(&ds)));
+    Tcl_DStringFree(&ds);
+    return TCL_OK;
 }
 
 #ifdef _WIN32

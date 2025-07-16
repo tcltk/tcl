@@ -4663,8 +4663,30 @@ Tcl_UtfToNormalizedDString(
     if (profile != TCL_ENCODING_PROFILE_REPLACE &&
 	profile != TCL_ENCODING_PROFILE_STRICT) {
 	Tcl_SetObjResult(interp,
-	    Tcl_ObjPrintf("Invalid value %d passed for encoding profile",
+	    Tcl_ObjPrintf("Invalid value %d passed for encoding profile.",
 		profile));
+	return NULL;
+    }
+
+    utf8proc_option_t options = UTF8PROC_STABLE;
+    switch (normForm) {
+    case TCL_NFC:
+	options |= UTF8PROC_COMPOSE;
+	break;
+    case TCL_NFD:
+	options |= UTF8PROC_DECOMPOSE;
+	break;
+    case TCL_NFKC:
+	options |= UTF8PROC_COMPOSE | UTF8PROC_COMPAT;
+	break;
+    case TCL_NFKD:
+	options |= UTF8PROC_DECOMPOSE | UTF8PROC_COMPAT;
+	break;
+    default:
+	Tcl_SetObjResult(interp,
+	    Tcl_ObjPrintf("Invalid value %d passed for normalization form.",
+		normForm));
+	return NULL;
     }
 
     Tcl_Encoding encoding = Tcl_GetEncoding(interp, "utf-8");
@@ -4684,21 +4706,6 @@ Tcl_UtfToNormalizedDString(
 	Tcl_Size dsLength = Tcl_DStringLength(&dsExt);
 	const utf8proc_uint8_t *dsStr =
 	    (utf8proc_uint8_t *)Tcl_DStringValue(&dsExt);
-        utf8proc_option_t options = UTF8PROC_STABLE;
-        switch (normForm) {
-        case TCL_NFC:
-            options |= UTF8PROC_COMPOSE;
-            break;
-        case TCL_NFD:
-            options |= UTF8PROC_DECOMPOSE;
-            break;
-        case TCL_NFKC:
-            options |= UTF8PROC_COMPOSE|UTF8PROC_COMPAT;
-            break;
-        case TCL_NFKD:
-            options |= UTF8PROC_DECOMPOSE|UTF8PROC_COMPAT;
-            break;
-        }
 	normLength = utf8proc_map_custom(dsStr, dsLength, &normUtf8,
 	    options, NULL, NULL);
 
