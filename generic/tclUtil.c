@@ -871,7 +871,10 @@ Tcl_SplitList(
     length = end - list;
     if (size >= (INT_MAX/sizeof(char *)) ||
 	length > (INT_MAX - 1 - (size * sizeof(char *)))) {
-	Tcl_SetResult(interp, "memory allocation limit exceeded", TCL_STATIC);
+	if (interp) {
+	    Tcl_SetResult(
+		interp, "memory allocation limit exceeded", TCL_STATIC);
+	}
 	return TCL_ERROR;
     }
     argv = (const char **)ckalloc((size * sizeof(char *)) + length + 1);
