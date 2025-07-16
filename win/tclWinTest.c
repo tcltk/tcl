@@ -637,7 +637,7 @@ TestchmodCmd(
     int objc,			/* Parameter count */
     Tcl_Obj *const * objv)	/* Parameter vector */
 {
-    int i, mode;
+    int mode;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "mode file ?file ...?");
@@ -648,7 +648,7 @@ TestchmodCmd(
 	return TCL_ERROR;
     }
 
-    for (i = 2; i < objc; i++) {
+    for (int i = 2; i < objc; i++) {
 	Tcl_DString buffer;
 	const char *translated;
 

@@ -614,8 +614,6 @@ GetKeys(void)
 	 * First call in this thread, create the keys...
 	 */
 
-	int i;
-
 	TclNewLiteralStringObj(keys[KEY_CODE],	    "-code");
 	TclNewLiteralStringObj(keys[KEY_ERRORCODE], "-errorcode");
 	TclNewLiteralStringObj(keys[KEY_ERRORINFO], "-errorinfo");
@@ -624,7 +622,7 @@ GetKeys(void)
 	TclNewLiteralStringObj(keys[KEY_LEVEL],	    "-level");
 	TclNewLiteralStringObj(keys[KEY_OPTIONS],   "-options");
 
-	for (i = KEY_CODE; i < KEY_LAST; i++) {
+	for (int i = KEY_CODE; i < KEY_LAST; i++) {
 	    Tcl_IncrRefCount(keys[i]);
 	}
 
@@ -659,9 +657,8 @@ ReleaseKeys(
     void *clientData)
 {
     Tcl_Obj **keys = (Tcl_Obj **)clientData;
-    int i;
 
-    for (i = KEY_CODE; i < KEY_LAST; i++) {
+    for (int i = KEY_CODE; i < KEY_LAST; i++) {
 	Tcl_DecrRefCount(keys[i]);
 	keys[i] = NULL;
     }

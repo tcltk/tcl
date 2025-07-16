@@ -1819,7 +1819,6 @@ SerialSetOptionProc(
      */
 
     if ((len > 4) && (strncmp(optionName, "-ttycontrol", len) == 0)) {
-	Tcl_Size i;
 	int res = TCL_OK;
 
 	if (Tcl_SplitList(interp, value, &argc, &argv) == TCL_ERROR) {
@@ -1836,7 +1835,7 @@ SerialSetOptionProc(
 	    return TCL_ERROR;
 	}
 
-	for (i = 0; i < argc - 1; i += 2) {
+	for (Tcl_Size i = 0; i < argc - 1; i += 2) {
 	    if (Tcl_GetBoolean(interp, argv[i+1], &flag) == TCL_ERROR) {
 		res = TCL_ERROR;
 		break;

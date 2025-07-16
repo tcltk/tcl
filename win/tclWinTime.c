@@ -1076,9 +1076,7 @@ ResetCounterSamples(
     long long perfCounter,	/* Current performance counter */
     long long perfFreq)		/* Target performance frequency */
 {
-    int i;
-
-    for (i = SAMPLES - 1 ; i >= 0 ; --i) {
+    for (int i = SAMPLES - 1 ; i >= 0 ; --i) {
 	timeInfo.perfCounterSample[i] = perfCounter;
 	timeInfo.fileTimeSample[i] = fileTime;
 	perfCounter -= perfFreq;

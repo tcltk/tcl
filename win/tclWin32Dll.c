@@ -209,9 +209,7 @@ char *
 TclWinNoBackslash(
     char *path)			/* String to change. */
 {
-    char *p;
-
-    for (p = path; *p != '\0'; p++) {
+    for (char *p = path; *p != '\0'; p++) {
 	if (*p == '\\') {
 	    *p = '/';
 	}

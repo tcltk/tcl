@@ -558,8 +558,7 @@ TclIsZipfsPath(
 #ifdef _WIN32
     return strncmp(path, ZIPFS_VOLUME, ZIPFS_VOLUME_LEN) ? 0 : ZIPFS_VOLUME_LEN;
 #else
-    int i;
-    for (i = 0; i < ZIPFS_VOLUME_LEN; ++i) {
+    for (int i = 0; i < ZIPFS_VOLUME_LEN; ++i) {
 	if (path[i] != ZIPFS_VOLUME[i] &&
 		(path[i] != '\\' || ZIPFS_VOLUME[i] != '/')) {
 	    return 0;
@@ -1310,7 +1309,7 @@ ContainsMountPoint(
      */
     for (hPtr = Tcl_FirstHashEntry(&ZipFS.zipHash, &search); hPtr;
 	    hPtr = Tcl_NextHashEntry(&search)) {
-	ZipFile *zf = (ZipFile *) Tcl_GetHashValue(hPtr);
+	const ZipFile *zf = (ZipFile *) Tcl_GetHashValue(hPtr);
 
 	if (zf->mountPointLen == 0) {
 	    /*
@@ -1318,9 +1317,8 @@ ContainsMountPoint(
 	     * TODO - a holdover from androwish? Tcl does not allow mounting
 	     * outside of the //zipfs:/ area.
 	     */
-	    ZipEntry *z;
 
-	    for (z = zf->topEnts; z; z = z->tnext) {
+	    for (const ZipEntry *z = zf->topEnts; z; z = z->tnext) {
 		int lenz = (int) strlen(z->name);
 		if ((lenz >= pathLen) &&
 			(z->name[pathLen] == '/' || z->name[pathLen] == '\0') &&
@@ -1930,7 +1928,7 @@ ZipFSCatalogFilesystem(
     const char *zipname)	/* Path to ZIP file to build a catalog of. */
 {
     int isNew;
-    size_t i, pwlen;
+    size_t pwlen;
     ZipFile *zf0;
     ZipEntry *z;
     Tcl_HashEntry *hPtr;
@@ -2001,7 +1999,7 @@ ZipFSCatalogFilesystem(
 	int k = 0;
 
 	zf->passBuf[k++] = pwlen;
-	for (i = pwlen; i-- > 0 ;) {
+	for (size_t i = pwlen; i-- > 0 ;) {
 	    zf->passBuf[k++] = (passwd[i] & 0x0f)
 		    | pwrot[(passwd[i] >> 4) & 0x0f];
 	}
@@ -2033,19 +2031,16 @@ ZipFSCatalogFilesystem(
     }
     q = zf->data + zf->directoryOffset;
     Tcl_DStringInit(&fpBuf);
-    for (i = 0; i < zf->numFiles; i++) {
+    for (size_t i = 0; i < zf->numFiles; i++) {
 	const unsigned char *start = zf->data;
 	const unsigned char *end = zf->data + zf->length;
-	int extra, isdir = 0, dosTime, dosDate, nbcompr;
-	size_t offs, pathlen, comlen;
-	unsigned char *lq, *gq = NULL;
-	char *fullpath, *path;
+	int isdir = 0;
 
-	pathlen = ZipReadShort(start, end, q + ZIP_CENTRAL_PATHLEN_OFFS);
-	comlen = ZipReadShort(start, end, q + ZIP_CENTRAL_FCOMMENTLEN_OFFS);
-	extra = ZipReadShort(start, end, q + ZIP_CENTRAL_EXTRALEN_OFFS);
+	size_t pathlen = ZipReadShort(start, end, q + ZIP_CENTRAL_PATHLEN_OFFS);
+	size_t comlen = ZipReadShort(start, end, q + ZIP_CENTRAL_FCOMMENTLEN_OFFS);
+	unsigned extra = ZipReadShort(start, end, q + ZIP_CENTRAL_EXTRALEN_OFFS);
 	Tcl_DStringSetLength(&ds, 0);
-	path = DecodeZipEntryText(q + ZIP_CENTRAL_HEADER_LEN, pathlen, &ds);
+	char *path = DecodeZipEntryText(q + ZIP_CENTRAL_HEADER_LEN, pathlen, &ds);
 	if ((pathlen > 0) && (path[pathlen - 1] == '/')) {
 	    Tcl_DStringSetLength(&ds, pathlen - 1);
 	    path = Tcl_DStringValue(&ds);
@@ -2054,19 +2049,20 @@ ZipFSCatalogFilesystem(
 	if ((strcmp(path, ".") == 0) || (strcmp(path, "..") == 0)) {
 	    goto nextent;
 	}
-	lq = zf->data + zf->baseOffset
+	unsigned char *lq = zf->data + zf->baseOffset
 		+ ZipReadInt(start, end, q + ZIP_CENTRAL_LOCALHDR_OFFS);
 	if ((lq < start) || (lq + ZIP_LOCAL_HEADER_LEN > end)) {
 	    goto nextent;
 	}
-	nbcompr = ZipReadInt(start, end, lq + ZIP_LOCAL_COMPLEN_OFFS);
+	int nbcompr = ZipReadInt(start, end, lq + ZIP_LOCAL_COMPLEN_OFFS);
+	unsigned char *gq = NULL;
 	if (!isdir && (nbcompr == 0)
 		&& (ZipReadInt(start, end, lq + ZIP_LOCAL_UNCOMPLEN_OFFS) == 0)
 		&& (ZipReadInt(start, end, lq + ZIP_LOCAL_CRC32_OFFS) == 0)) {
 	    gq = q;
 	    nbcompr = ZipReadInt(start, end, gq + ZIP_CENTRAL_COMPLEN_OFFS);
 	}
-	offs = (lq - zf->data)
+	size_t offs = (lq - zf->data)
 		+ ZIP_LOCAL_HEADER_LEN
 		+ ZipReadShort(start, end, lq + ZIP_LOCAL_PATHLEN_OFFS)
 		+ ZipReadShort(start, end, lq + ZIP_LOCAL_EXTRALEN_OFFS);
@@ -2108,7 +2104,7 @@ ZipFSCatalogFilesystem(
 	}
 
 	Tcl_DStringSetLength(&fpBuf, 0);
-	fullpath = MapPathToZipfs(interp, mountPoint, path, &fpBuf);
+	char *fullpath = MapPathToZipfs(interp, mountPoint, path, &fpBuf);
 	z = AllocateZipEntry();
 	z->depth = CountSlashes(fullpath);
 	assert(z->depth >= ZIPFS_ROOTDIR_DEPTH);
@@ -2118,6 +2114,7 @@ ZipFSCatalogFilesystem(
 		(ZipReadShort(start, end, lq + ZIP_LOCAL_FLAGS_OFFS) & 1)
 		&& (nbcompr > ZIP_CRYPT_HDR_LEN);
 	z->offset = offs;
+	int dosTime, dosDate;
 	if (gq) {
 	    z->crc32 = ZipReadInt(start, end, gq + ZIP_CENTRAL_CRC32_OFFS);
 	    dosDate = ZipReadShort(start, end, gq + ZIP_CENTRAL_MDATE_OFFS);
@@ -2160,14 +2157,11 @@ ZipFSCatalogFilesystem(
 	 */
 
 	if (!z->isDirectory && (z->depth > ZIPFS_ROOTDIR_DEPTH)) {
-	    char *dir, *endPtr;
-	    ZipEntry *zd;
-
 	    Tcl_DStringSetLength(&ds, strlen(z->name) + 8);
 	    Tcl_DStringSetLength(&ds, 0);
 	    Tcl_DStringAppend(&ds, z->name, -1);
-	    dir = Tcl_DStringValue(&ds);
-	    for (endPtr = strrchr(dir, '/'); endPtr && (endPtr != dir);
+	    char *dir = Tcl_DStringValue(&ds);
+	    for (char *endPtr = strrchr(dir, '/'); endPtr && (endPtr != dir);
 		    endPtr = strrchr(dir, '/')) {
 		Tcl_DStringSetLength(&ds, endPtr - dir);
 		hPtr = Tcl_CreateHashEntry(&ZipFS.fileHash, dir, &isNew);
@@ -2178,7 +2172,7 @@ ZipFSCatalogFilesystem(
 		    break;
 		}
 
-		zd = AllocateZipEntry();
+		ZipEntry *zd = AllocateZipEntry();
 		zd->depth = CountSlashes(dir);
 		assert(zd->depth > ZIPFS_ROOTDIR_DEPTH);
 		zd->zipFilePtr = zf;
@@ -2314,11 +2308,9 @@ static void
 CleanupMount(
     ZipFile *zf)		/* Mount point */
 {
-    ZipEntry *z, *znext;
-    Tcl_HashEntry *hPtr;
-    for (z = zf->entries; z; z = znext) {
+    for (ZipEntry *z = zf->entries, *znext; z; z = znext) {
 	znext = z->next;
-	hPtr = Tcl_FindHashEntry(&ZipFS.fileHash, z->name);
+	Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&ZipFS.fileHash, z->name);
 	if (hPtr) {
 	    Tcl_DeleteHashEntry(hPtr);
 	}
@@ -3173,10 +3165,8 @@ ZipAddFile(
 	    }
 	    olen = sizeof(obuf) - stream.avail_out;
 	    if (passwd) {
-		Tcl_Size i;
-		int tmp;
-
-		for (i = 0; i < olen; i++) {
+		for (Tcl_Size i = 0; i < olen; i++) {
+		    int tmp;
 		    obuf[i] = (char) zencode(keys, crc32tab, obuf[i], tmp);
 		}
 	    }
@@ -3220,10 +3210,8 @@ ZipAddFile(
 		break;
 	    }
 	    if (passwd) {
-		Tcl_Size i;
-		int tmp;
-
-		for (i = 0; i < len; i++) {
+		for (Tcl_Size i = 0; i < len; i++) {
+		    int tmp;
 		    buf[i] = (char) zencode(keys0, crc32tab, buf[i], tmp);
 		}
 	    }
@@ -3429,7 +3417,7 @@ ZipFSMkZipOrImg(
 {
     Tcl_Channel out;
     int count, ret = TCL_ERROR;
-    Tcl_Size pwlen = 0, slen = 0, len, i = 0;
+    Tcl_Size pwlen = 0, slen = 0, len;
     Tcl_Size lobjc;
     long long dataStartOffset;	/* The overall file offset of the start of the
 				 * data section of the file. */
@@ -3510,7 +3498,7 @@ ZipFSMkZipOrImg(
 	imgName = (originFile != NULL) ? TclGetString(originFile) :
 		Tcl_GetNameOfExecutable();
 	if (pwlen) {
-	    i = 0;
+	    Tcl_Size i = 0;
 	    for (len = pwlen; len-- > 0;) {
 		int ch = pw[len];
 
@@ -3594,7 +3582,7 @@ ZipFSMkZipOrImg(
 
 	len = strlen(passBuf);
 	if (len > 0) {
-	    i = Tcl_Write(out, passBuf, len);
+	    Tcl_Size i = Tcl_Write(out, passBuf, len);
 	    if (i != len) {
 		Tcl_DecrRefCount(list);
 		TclPrintfResult(interp, "write error: %s",
@@ -3621,7 +3609,7 @@ ZipFSMkZipOrImg(
 	    strip = NULL;
 	}
     }
-    for (i = 0; i < lobjc; i += (mappingList ? 2 : 1)) {
+    for (Tcl_Size i = 0; i < lobjc; i += (mappingList ? 2 : 1)) {
 	Tcl_Obj *pathObj = lobjv[i];
 	const char *name = ComputeNameInArchive(pathObj,
 		(mappingList ? lobjv[i + 1] : NULL), strip, slen);
@@ -3641,7 +3629,7 @@ ZipFSMkZipOrImg(
 
     directoryStartOffset = Tcl_Tell(out);
     count = 0;
-    for (i = 0; i < lobjc; i += (mappingList ? 2 : 1)) {
+    for (Tcl_Size i = 0; i < lobjc; i += (mappingList ? 2 : 1)) {
 	const char *name = ComputeNameInArchive(lobjv[i],
 		(mappingList ? lobjv[i + 1] : NULL), strip, slen);
 	Tcl_DString ds;
@@ -3728,14 +3716,11 @@ CopyImageFile(
     Tcl_Channel out)		/* Where to copy to; already open for writing
 				 * binary data. */
 {
-    Tcl_WideInt i, k;
-    Tcl_Size m, n;
-    Tcl_Channel in;
     char buf[4096];
     const char *errMsg;
 
     Tcl_ResetResult(interp);
-    in = Tcl_OpenFileChannel(interp, imgName, "rb", 0644);
+    Tcl_Channel in = Tcl_OpenFileChannel(interp, imgName, "rb", 0644);
     if (!in) {
 	return TCL_ERROR;
     }
@@ -3744,7 +3729,7 @@ CopyImageFile(
      * Get the length of the file (and exclude non-files).
      */
 
-    i = Tcl_Seek(in, 0, SEEK_END);
+    Tcl_WideInt i = Tcl_Seek(in, 0, SEEK_END);
     if (i == -1) {
 	errMsg = "seek error";
 	goto copyError;
@@ -3756,7 +3741,8 @@ CopyImageFile(
      * that this totally ignores things like Windows's Alternate File Streams.
      */
 
-    for (k = 0; k < i; k += m) {
+    Tcl_Size m, n;
+    for (Tcl_WideInt k = 0; k < i; k += m) {
 	m = i - k;
 	if (m > (Tcl_Size) sizeof(buf)) {
 	    m = sizeof(buf);
@@ -4579,13 +4565,12 @@ ZipChannelRead(
 	return 0;
     }
     if (info->isEncrypted) {
-	int i;
 	/*
 	 * TODO - when is this code ever exercised? Cannot reach it from
 	 * tests. In particular, decryption is always done at channel open
 	 * to allow for seeks and random reads.
 	 */
-	for (i = 0; i < toRead; i++) {
+	for (int i = 0; i < toRead; i++) {
 	    int ch = info->ubuf[i + info->cursor];
 
 	    buf[i] = zdecode(info->keys, crc32tab, ch);
@@ -5017,7 +5002,7 @@ InitWritableChannel(
 				 * to. */
     int mode)			/* O_APPEND, O_TRUNC */
 {
-    int i, ch;
+    int ch;
     unsigned char *cbuf = NULL;
 
     /*
@@ -5077,8 +5062,6 @@ InitWritableChannel(
 	    stream.opaque = Z_NULL;
 	    stream.avail_in = z->numCompressedBytes;
 	    if (z->isEncrypted) {
-		unsigned int j;
-
 		/* Min length ZIP_CRYPT_HDR_LEN for keys should already been checked. */
 		assert(stream.avail_in >= ZIP_CRYPT_HDR_LEN);
 
@@ -5087,7 +5070,7 @@ InitWritableChannel(
 		if (!cbuf) {
 		    goto memoryError;
 		}
-		for (j = 0; j < stream.avail_in; j++) {
+		for (unsigned j = 0; j < stream.avail_in; j++) {
 		    ch = zbuf[j];
 		    cbuf[j] = zdecode(info->keys, crc32tab, ch);
 		}
@@ -5124,7 +5107,7 @@ InitWritableChannel(
 	    }
 	    int len = z->numCompressedBytes - ZIP_CRYPT_HDR_LEN;
 	    assert(len <= info->ubufSize);
-	    for (i = 0; i < len; i++) {
+	    for (int i = 0; i < len; i++) {
 		ch = zbuf[i];
 		info->ubuf[i] = zdecode(info->keys, crc32tab, ch);
 	    }
@@ -5219,8 +5202,6 @@ InitReadableChannel(
 
     if (info->iscompr) {
 	z_stream stream;
-	int err;
-	unsigned int j;
 
 	/*
 	 * Data to decode is compressed, and possibly encrpyted too. If
@@ -5241,7 +5222,7 @@ InitReadableChannel(
 		goto memoryError;
 	    }
 
-	    for (j = 0; j < stream.avail_in; j++) {
+	    for (unsigned j = 0; j < stream.avail_in; j++) {
 		ch = info->ubuf[j];
 		ubuf[j] = zdecode(info->keys, crc32tab, ch);
 	    }
@@ -5261,7 +5242,7 @@ InitReadableChannel(
 	if (inflateInit2(&stream, -15) != Z_OK) {
 	    goto corruptionError;
 	}
-	err = inflate(&stream, Z_SYNC_FLUSH);
+	int err = inflate(&stream, Z_SYNC_FLUSH);
 	inflateEnd(&stream);
 
 	/*
@@ -5284,8 +5265,6 @@ InitReadableChannel(
 	    Tcl_Free(ubuf);
 	}
     } else if (info->isEncrypted) {
-	unsigned int j, len;
-
 	/*
 	 * Decode encrypted but uncompressed file, since we support Tcl_Seek()
 	 * on it, and it can be randomly accessed later.
@@ -5294,12 +5273,12 @@ InitReadableChannel(
 		(z->numCompressedBytes - ZIP_CRYPT_HDR_LEN) != z->numBytes) {
 	    goto corruptionError;
 	}
-	len = z->numCompressedBytes - ZIP_CRYPT_HDR_LEN;
+	unsigned len = z->numCompressedBytes - ZIP_CRYPT_HDR_LEN;
 	ubuf = (unsigned char *) Tcl_AttemptAlloc(len);
 	if (ubuf == NULL) {
 	    goto memoryError;
 	}
-	for (j = 0; j < len; j++) {
+	for (unsigned j = 0; j < len; j++) {
 	    ch = info->ubuf[j];
 	    ubuf[j] = zdecode(info->keys, crc32tab, ch);
 	}
@@ -5832,7 +5811,6 @@ ZipFSMatchMountPoints(
 {
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
-    int l;
     Tcl_Size normLength;
     const char *path = TclGetStringFromObj(normPathPtr, &normLength);
     Tcl_Size len = normLength;
@@ -5844,7 +5822,7 @@ ZipFSMatchMountPoints(
 
 	return;
     }
-    l = CountSlashes(path);
+    int l = CountSlashes(path);
     if (path[len - 1] == '/') {
 	len--;
     } else {
@@ -5859,15 +5837,13 @@ ZipFSMatchMountPoints(
 	ZipFile *zf = (ZipFile *) Tcl_GetHashValue(hPtr);
 
 	if (zf->mountPointLen == 0) {
-	    ZipEntry *z;
-
 	    /*
 	     * Enumerate the contents of the ZIP; it's mounted on the root.
 	     * TODO - a holdover from androwish? Tcl does not allow mounting
 	     * outside of the //zipfs:/ area.
 	     */
 
-	    for (z = zf->topEnts; z; z = z->tnext) {
+	    for (ZipEntry *z = zf->topEnts; z; z = z->tnext) {
 		Tcl_Size lenz = strlen(z->name);
 
 		if ((lenz > len + 1) && (strncmp(z->name, path, len) == 0)

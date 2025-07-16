@@ -1504,7 +1504,7 @@ TclpGetUserHome(
 	    domain = (const char *)INT2PTR(-1); /* repeat once */
 	}
 	if (rc == 0) {
-	    DWORD i, size = MAX_PATH;
+	    DWORD size = MAX_PATH;
 
 	    wHomeDir = uiPtr->usri1_home_dir;
 	    if ((wHomeDir != NULL) && (wHomeDir[0] != '\0')) {
@@ -1528,7 +1528,7 @@ TclpGetUserHome(
 	     * Be sure we return normalized path
 	     */
 
-	    for (i = 0; i < size; ++i) {
+	    for (DWORD i = 0; i < size; ++i) {
 		if (result[i] == '\\') {
 		    result[i] = '/';
 		}
@@ -2565,9 +2565,7 @@ TclpObjNormalizePath(
 			 * Actually it does exist - COM1, etc.
 			 */
 
-			size_t i;
-
-			for (i=0 ; i<len ; i++) {
+			for (size_t i=0 ; i<len ; i++) {
 			    WCHAR wc = ((WCHAR *)nativePath)[i];
 
 			    if (wc >= 'a') {
@@ -2954,13 +2952,11 @@ TclpNativeToNormalized(
     void *clientData)
 {
     Tcl_DString ds;
-    Tcl_Obj *objPtr;
     size_t len;
-    char *copy, *p;
 
     Tcl_DStringInit(&ds);
     Tcl_WCharToUtfDString((const WCHAR *) clientData, TCL_INDEX_NONE, &ds);
-    copy = Tcl_DStringValue(&ds);
+    char *copy = Tcl_DStringValue(&ds);
     len = Tcl_DStringLength(&ds);
 
     /*
@@ -2983,15 +2979,14 @@ TclpNativeToNormalized(
      * Ensure we are using forward slashes only.
      */
 
-    for (p = copy; *p != '\0'; p++) {
+    for (char *p = copy; *p != '\0'; p++) {
 	if (*p == '\\') {
 	    *p = '/';
 	}
     }
 
-    objPtr = Tcl_NewStringObj(copy,len);
+    Tcl_Obj *objPtr = Tcl_NewStringObj(copy, len);
     Tcl_DStringFree(&ds);
-
     return objPtr;
 }
 

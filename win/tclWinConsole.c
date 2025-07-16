@@ -1591,7 +1591,6 @@ ConsoleDataAvailable(
 {
     INPUT_RECORD input[10];
     DWORD count;
-    DWORD i;
 
     /*
      * Need at least one keyboard event.
@@ -1611,7 +1610,7 @@ ConsoleDataAvailable(
     if (count == (sizeof(input)/sizeof(input[0]))) {
 	return 1;
     }
-    for (i = 0; i < count; ++i) {
+    for (DWORD i = 0; i < count; ++i) {
 	if (input[i].EventType == KEY_EVENT
 		&& input[i].Event.KeyEvent.bKeyDown) {
 	    return 1;

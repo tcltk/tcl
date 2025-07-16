@@ -487,7 +487,7 @@ ProcessStatusObjCmd(
     Tcl_HashEntry *entry;
     Tcl_HashSearch search;
     ProcessInfo *info;
-    Tcl_Size i, numPids;
+    Tcl_Size numPids;
     Tcl_Obj **pidObjs;
     int result;
     int pid;
@@ -563,7 +563,7 @@ ProcessStatusObjCmd(
 	}
 	dict = Tcl_NewDictObj();
 	Tcl_MutexLock(&infoTablesMutex);
-	for (i = 0; i < numPids; i++) {
+	for (Tcl_Size i = 0; i < numPids; i++) {
 	    result = Tcl_GetIntFromObj(interp, pidObjs[i], &pid);
 	    if (result != TCL_OK) {
 		Tcl_MutexUnlock(&infoTablesMutex);
@@ -631,11 +631,7 @@ ProcessPurgeObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_HashEntry *entry;
-    Tcl_HashSearch search;
     ProcessInfo *info;
-    Tcl_Size i, numPids;
-    Tcl_Obj **pidObjs;
-    int result, pid;
 
     if (objc != 1 && objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?pids?");
@@ -654,6 +650,7 @@ ProcessPurgeObjCmd(
 	 */
 
 	Tcl_MutexLock(&infoTablesMutex);
+	Tcl_HashSearch search;
 	for (entry = Tcl_FirstHashEntry(&infoTablePerResolvedPid, &search);
 		entry != NULL; entry = Tcl_NextHashEntry(&search)) {
 	    info = (ProcessInfo *) Tcl_GetHashValue(entry);
@@ -670,12 +667,15 @@ ProcessPurgeObjCmd(
 	 * Purge only provided processes.
 	 */
 
-	result = TclListObjGetElements(interp, objv[1], &numPids, &pidObjs);
+	Tcl_Size numPids;
+	Tcl_Obj **pidObjs;
+	int result = TclListObjGetElements(interp, objv[1], &numPids, &pidObjs);
 	if (result != TCL_OK) {
 	    return result;
 	}
 	Tcl_MutexLock(&infoTablesMutex);
-	for (i = 0; i < numPids; i++) {
+	for (Tcl_Size i = 0; i < numPids; i++) {
+	    int pid;
 	    result = Tcl_GetIntFromObj(interp, pidObjs[i], &pid);
 	    if (result != TCL_OK) {
 		Tcl_MutexUnlock(&infoTablesMutex);

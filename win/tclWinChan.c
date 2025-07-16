@@ -1708,7 +1708,7 @@ NativeIsComPort(
     const WCHAR *nativePath)	/* Path of file to access, native encoding. */
 {
     const WCHAR *p = (const WCHAR *) nativePath;
-    size_t i, len = wcslen(p);
+    size_t len = wcslen(p);
 
     /*
      * 1. Look for com[1-9]:?
@@ -1734,7 +1734,7 @@ NativeIsComPort(
 	 * Charaters 8..end must be a digits 0..9
 	 */
 
-	for (i=7; i<len; i++) {
+	for (size_t i=7; i<len; i++) {
 	    if ((p[i] < '0') || (p[i] > '9')) {
 		return 0;
 	    }

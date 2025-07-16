@@ -341,7 +341,6 @@ InitDLLDirectoryName(void)
     WCHAR name[MAX_PATH];	/* Path name of the temp folder. */
     DWORD id;			/* The process id. */
     DWORD lastError;		/* Last error to happen in Win API. */
-    int i;
 
     /*
      * Determine the name of the directory to use, and create it.  (Keep
@@ -361,7 +360,7 @@ InitDLLDirectoryName(void)
     id = GetCurrentProcessId();
     lastError = ERROR_ALREADY_EXISTS;
 
-    for (i=0 ; i<256 ; i++) {
+    for (int i=0 ; i<256 ; i++) {
 	wsprintfW(name+nameLen-8, L"%08x", id);
 	if (CreateDirectoryW(name, NULL)) {
 	    /*

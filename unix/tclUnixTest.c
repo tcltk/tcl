@@ -137,7 +137,7 @@ TestfilehandlerCmd(
     Tcl_Obj *const *objv)	/* Argument strings. */
 {
     Pipe *pipePtr;
-    int i, mask, timeout;
+    int mask, timeout;
     static int initialized = 0;
     char buffer[4000];
     TclFile file;
@@ -148,7 +148,7 @@ TestfilehandlerCmd(
      */
 
     if (!initialized) {
-	for (i = 0; i < MAX_PIPES; i++) {
+	for (int i = 0; i < MAX_PIPES; i++) {
 	    testPipes[i].readFile = NULL;
 	}
 	initialized = 1;
@@ -171,7 +171,7 @@ TestfilehandlerCmd(
     }
 
     if (strcmp(Tcl_GetString(objv[1]), "close") == 0) {
-	for (i = 0; i < MAX_PIPES; i++) {
+	for (int i = 0; i < MAX_PIPES; i++) {
 	    if (testPipes[i].readFile != NULL) {
 		TclpCloseFile(testPipes[i].readFile);
 		testPipes[i].readFile = NULL;

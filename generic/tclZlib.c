@@ -1337,7 +1337,7 @@ Tcl_ZlibStreamGet(
 {
     ZlibStreamHandle *zshPtr = (ZlibStreamHandle *) zshandle;
     int e;
-    Tcl_Size listLen, i, itemLen = 0, dataPos = 0;
+    Tcl_Size listLen, itemLen = 0, dataPos = 0;
     Tcl_Obj *itemObj;
     unsigned char *dataPtr, *itemPtr;
     Tcl_Size existing = 0;
@@ -1513,7 +1513,7 @@ Tcl_ZlibStreamGet(
 	TclListObjLength(NULL, zshPtr->outData, &listLen);
 	if (count < 0) {
 	    count = 0;
-	    for (i=0; i<listLen; i++) {
+	    for (Tcl_Size i=0; i<listLen; i++) {
 		Tcl_ListObjIndex(NULL, zshPtr->outData, i, &itemObj);
 		(void) Tcl_GetBytesFromObj(NULL, itemObj, &itemLen);
 		if (i == 0) {

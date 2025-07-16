@@ -1593,10 +1593,8 @@ ConvertFileNameFormat(
     int longShort,		/* 0 to short name, 1 to long name. */
     Tcl_Obj **attributePtrPtr)	/* A pointer to return the object with. */
 {
-    Tcl_Size pathc, i, length;
-    Tcl_Obj *splitPath;
-
-    splitPath = Tcl_FSSplitPath(fileName, &pathc);
+    Tcl_Size pathc;
+    Tcl_Obj *splitPath = Tcl_FSSplitPath(fileName, &pathc);
 
     if (splitPath == NULL || pathc == 0) {
 	if (interp != NULL) {
@@ -1616,9 +1614,10 @@ ConvertFileNameFormat(
 
     Tcl_IncrRefCount(splitPath);
 
-    for (i = 0; i < pathc; i++) {
+    for (Tcl_Size i = 0; i < pathc; i++) {
 	Tcl_Obj *elt;
 	char *pathv;
+	Tcl_Size length;
 
 	Tcl_ListObjIndex(NULL, splitPath, i, &elt);
 
@@ -1909,8 +1908,6 @@ TclpObjListVolumes(void)
 {
     Tcl_Obj *resultPtr, *elemPtr;
     char buf[40 * 4];		/* There couldn't be more than 30 drives??? */
-    int i;
-    char *p;
 
     TclNewObj(resultPtr);
 
@@ -1934,7 +1931,7 @@ TclpObjListVolumes(void)
 	buf[2] = '/';
 	buf[3] = '\0';
 
-	for (i = 0; i < 26; i++) {
+	for (int i = 0; i < 26; i++) {
 	    buf[0] = (char) ('a' + i);
 	    if (GetVolumeInformationA(buf, NULL, 0, NULL, NULL, NULL, NULL, 0)
 		    || (GetLastError() == ERROR_NOT_READY)) {
@@ -1943,7 +1940,7 @@ TclpObjListVolumes(void)
 	    }
 	}
     } else {
-	for (p = buf; *p != '\0'; p += 4) {
+	for (char *p = buf; *p != '\0'; p += 4) {
 	    p[2] = '/';
 	    elemPtr = Tcl_NewStringObj(p, TCL_INDEX_NONE);
 	    Tcl_ListObjAppendElement(NULL, resultPtr, elemPtr);
@@ -2028,7 +2025,6 @@ TclpCreateTemporaryDirectory(
     baseLen = Tcl_DStringLength(&base);
     do {
 	char tempbuf[SUFFIX_LENGTH + 1];
-	int i;
 	static const char randChars[] =
 	    "QWERTYUIOPASDFGHJKLZXCVBNM1234567890";
 	static const int numRandChars = sizeof(randChars) - 1;
@@ -2039,7 +2035,7 @@ TclpCreateTemporaryDirectory(
 
 	error = ERROR_SUCCESS;
 	tempbuf[SUFFIX_LENGTH] = '\0';
-	for (i = 0 ; i < SUFFIX_LENGTH; i++) {
+	for (int i = 0 ; i < SUFFIX_LENGTH; i++) {
 	    tempbuf[i] = randChars[(int) (rand() % numRandChars)];
 	}
 	Tcl_DStringSetLength(&base, baseLen);

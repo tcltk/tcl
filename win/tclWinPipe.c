@@ -1557,7 +1557,6 @@ BuildCommandLine(
 {
     const char *arg, *start, *special, *bspos;
     int quote = 0;
-    size_t i;
     Tcl_DString ds;
 #ifdef TCL_WIN_PIPE_FULLESC
     /* full escape inclusive %-subst avoidance */
@@ -1592,7 +1591,7 @@ BuildCommandLine(
 	TclDStringAppendLiteral(&ds, " ");
     }
 
-    for (i = 0; i < argc; i++) {
+    for (size_t i = 0; i < argc; i++) {
 	if (i == 0) {
 	    arg = executable;
 	} else {
@@ -1921,7 +1920,6 @@ TclGetAndDetachPids(
     PipeInfo *pipePtr;
     const Tcl_ChannelType *chanTypePtr;
     Tcl_Obj *pidsObj;
-    size_t i;
 
     /*
      * Punt if the channel is not a command channel.
@@ -1934,7 +1932,7 @@ TclGetAndDetachPids(
 
     pipePtr = (PipeInfo *)Tcl_GetChannelInstanceData(chan);
     TclNewObj(pidsObj);
-    for (i = 0; i < pipePtr->numPids; i++) {
+    for (size_t i = 0; i < pipePtr->numPids; i++) {
 	Tcl_ListObjAppendElement(NULL, pidsObj, Tcl_NewWideIntObj(
 		TclpGetPid(pipePtr->pidPtr[i])));
 	Tcl_DetachPids(1, &pipePtr->pidPtr[i]);

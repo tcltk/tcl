@@ -1273,7 +1273,7 @@ SetValue(
 		(DWORD) type, (BYTE *) &value, sizeof(DWORD));
     } else if (type == REG_MULTI_SZ) {
 	Tcl_DString data, buf;
-	Tcl_Size objc, i;
+	Tcl_Size objc;
 	Tcl_Obj **objv;
 
 	if (Tcl_ListObjGetElements(interp, dataObj, &objc, &objv) != TCL_OK) {
@@ -1289,7 +1289,7 @@ SetValue(
 	 */
 
 	Tcl_DStringInit(&data);
-	for (i = 0; i < objc; i++) {
+	for (Tcl_Size i = 0; i < objc; i++) {
 	    const char *bytes = Tcl_GetStringFromObj(objv[i], &len);
 
 	    Tcl_DStringAppend(&data, bytes, len);

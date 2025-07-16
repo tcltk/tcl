@@ -409,7 +409,7 @@ TclCreateProc(
     Interp *iPtr = (Interp *) interp;
 
     Proc *procPtr = NULL;
-    Tcl_Size i, numArgs;
+    Tcl_Size numArgs;
     CompiledLocal *localPtr = NULL;
     Tcl_Obj **argArray;
     int precompiled = 0, result;
@@ -510,7 +510,7 @@ TclCreateProc(
 	procPtr->numCompiledLocals = numArgs;
     }
 
-    for (i = 0; i < numArgs; i++) {
+    for (Tcl_Size i = 0; i < numArgs; i++) {
 	const char *argname, *argnamei, *argnamelast;
 	Tcl_Size fieldCount, nameLength;
 	Tcl_Obj **fieldValues;
@@ -1079,7 +1079,7 @@ ProcWrongNumArgs(
 {
     CallFrame *framePtr = ((Interp *)interp)->varFramePtr;
     Proc *procPtr = framePtr->procPtr;
-    Tcl_Size localCt = procPtr->numCompiledLocals, numArgs, i;
+    Tcl_Size localCt = procPtr->numCompiledLocals, numArgs;
     Tcl_Obj **desiredObjs;
     const char *final = NULL;
 
@@ -1101,7 +1101,7 @@ ProcWrongNumArgs(
     if (localCt > 0) {
 	Var *defPtr = (Var *)(&framePtr->localCachePtr->varName0 + localCt);
 
-	for (i=1 ; i<=numArgs ; i++, defPtr++) {
+	for (Tcl_Size i=1 ; i<=numArgs ; i++, defPtr++) {
 	    Tcl_Obj *argObj;
 	    Tcl_Obj *namePtr = localName(framePtr, i-1);
 
@@ -1123,7 +1123,7 @@ ProcWrongNumArgs(
     Tcl_ResetResult(interp);
     Tcl_WrongNumArgs(interp, numArgs+1, desiredObjs, final);
 
-    for (i=0 ; i<=numArgs ; i++) {
+    for (Tcl_Size i=0 ; i<=numArgs ; i++) {
 	Tcl_DecrRefCount(desiredObjs[i]);
     }
     TclStackFree(interp, desiredObjs);
@@ -1261,10 +1261,9 @@ TclFreeLocalCache(
     Tcl_Interp *interp,
     LocalCache *localCachePtr)
 {
-    Tcl_Size i;
     Tcl_Obj **namePtrPtr = &localCachePtr->varName0;
 
-    for (i = 0; i < localCachePtr->numVars; i++, namePtrPtr++) {
+    for (Tcl_Size i = 0; i < localCachePtr->numVars; i++, namePtrPtr++) {
 	Tcl_Obj *objPtr = *namePtrPtr;
 
 	if (objPtr) {
@@ -1726,14 +1725,13 @@ TclNRInterpProcCore(
 #if defined(TCL_COMPILE_DEBUG)
     if (tclTraceExec >= TCL_TRACE_BYTECODE_EXEC_PROCS) {
 	CallFrame *framePtr = iPtr->varFramePtr;
-	Tcl_Size i;
 
 	if (framePtr->isProcCallFrame & FRAME_IS_LAMBDA) {
 	    fprintf(stdout, "Calling lambda ");
 	} else {
 	    fprintf(stdout, "Calling proc ");
 	}
-	for (i = 0; i < framePtr->objc; i++) {
+	for (Tcl_Size i = 0; i < framePtr->objc; i++) {
 	    TclPrintObject(stdout, framePtr->objv[i], 15);
 	    fprintf(stdout, " ");
 	}
@@ -1746,12 +1744,10 @@ TclNRInterpProcCore(
     if (TCL_DTRACE_PROC_ARGS_ENABLED()) {
 	Tcl_Size l = iPtr->varFramePtr->isProcCallFrame & FRAME_IS_LAMBDA ? 1 : 0;
 	const char *a[10];
-	Tcl_Size i;
 
-	for (i = 0 ; i < 10 ; i++) {
+	for (Tcl_Size i = 0 ; i < 10 ; i++, l++) {
 	    a[i] = (l < iPtr->varFramePtr->objc ?
 		    TclGetString(iPtr->varFramePtr->objv[l]) : NULL);
-	    l++;
 	}
 	TCL_DTRACE_PROC_ARGS(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7],
 		a[8], a[9]);
@@ -1999,9 +1995,9 @@ TclProcCompileProc(
 	if (procPtr->numCompiledLocals > procPtr->numArgs) {
 	    CompiledLocal *clPtr = procPtr->firstLocalPtr;
 	    CompiledLocal *lastPtr = NULL;
-	    int i, numArgs = procPtr->numArgs;
+	    Tcl_Size numArgs = procPtr->numArgs;
 
-	    for (i = 0; i < numArgs; i++) {
+	    for (Tcl_Size i = 0; i < numArgs; i++) {
 		lastPtr = clPtr;
 		clPtr = clPtr->nextPtr;
 	    }
