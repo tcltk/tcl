@@ -635,7 +635,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 
     if test "${GCC}" = "yes" ; then
 	extra_cflags="-pipe"
-	extra_ldflags="-pipe -static-libgcc"
+	extra_ldflags="-pipe -static-libgcc -Wl,--disable-high-entropy-va"
 	AC_CACHE_CHECK(for mingw32 version of gcc,
 	    ac_cv_win32,
 	    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
