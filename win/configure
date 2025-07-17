@@ -4198,7 +4198,7 @@ printf "%s\n" "yes" >&6; }
 
     if test "${GCC}" = "yes" ; then
 	extra_cflags="-pipe"
-	extra_ldflags="-pipe -static-libgcc"
+	extra_ldflags="-pipe -static-libgcc -Wl,--disable-high-entropy-va"
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for mingw32 version of gcc" >&5
 printf %s "checking for mingw32 version of gcc... " >&6; }
 if test ${ac_cv_win32+y}
