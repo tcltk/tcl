@@ -974,6 +974,7 @@ TclpMatchInDirectory(
 	if (fileNamePtr == NULL) {
 	    return TCL_ERROR;
 	}
+	Tcl_IncrRefCount(fileNamePtr); /* ensure it'd be alive, while used. */
 
 	/*
 	 * Verify that the specified path exists and is actually a directory.
@@ -981,12 +982,14 @@ TclpMatchInDirectory(
 
 	native = (const WCHAR *)Tcl_FSGetNativePath(pathPtr);
 	if (native == NULL) {
+	    Tcl_DecrRefCount(fileNamePtr);
 	    return TCL_OK;
 	}
 	attr = GetFileAttributesW(native);
 
 	if ((attr == INVALID_FILE_ATTRIBUTES)
 		|| ((attr & FILE_ATTRIBUTE_DIRECTORY) == 0)) {
+	    Tcl_DecrRefCount(fileNamePtr);
 	    return TCL_OK;
 	}
 
@@ -1004,6 +1007,7 @@ TclpMatchInDirectory(
 	    TclDStringAppendLiteral(&dsOrig, "/");
 	    dirLength++;
 	}
+	Tcl_DecrRefCount(fileNamePtr);
 	dirName = Tcl_DStringValue(&dsOrig);
 
 	/*
