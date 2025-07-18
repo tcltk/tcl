@@ -2055,7 +2055,7 @@ CreateMirrorNumJumpTable(
 	    }
 	    goto error;
 	}
-	hPtr = Tcl_CreateHashEntry(&jtnPtr->hashTable, (void*)key, &isNew);
+	hPtr = Tcl_CreateHashEntry(&jtnPtr->hashTable, INT2PTR(key), &isNew);
 	if (!isNew) {
 	    if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
