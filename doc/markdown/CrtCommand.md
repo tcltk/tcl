@@ -31,7 +31,7 @@ Tcl_CreateCommand - implement new commands in C
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[Tcl_Command]{.ret} [Tcl_CreateCommand]{.lit} [interp, cmdName, proc, clientData, deleteProc]{.arg}
+[Tcl_Command]{.ret} [Tcl_CreateCommand]{.ccmd}[interp, cmdName, proc, clientData, deleteProc]{.cargs}
 :::
 
 # Arguments

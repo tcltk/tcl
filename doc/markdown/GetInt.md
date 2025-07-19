@@ -23,10 +23,10 @@ Tcl_GetInt, Tcl_GetDouble, Tcl_GetBoolean - convert from string to integer, doub
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[int]{.ret} [Tcl_GetInt]{.lit} [interp, src, intPtr]{.arg}
-[int]{.ret} [Tcl_GetDouble]{.lit} [interp, src, doublePtr]{.arg}
-[int]{.ret} [Tcl_GetBoolean]{.lit} [interp, src, intPtr]{.arg}
-[int]{.ret} [Tcl_GetBool]{.lit} [interp, src, flags, charPtr]{.arg}
+[int]{.ret} [Tcl_GetInt]{.ccmd}[interp, src, intPtr]{.cargs}
+[int]{.ret} [Tcl_GetDouble]{.ccmd}[interp, src, doublePtr]{.cargs}
+[int]{.ret} [Tcl_GetBoolean]{.ccmd}[interp, src, intPtr]{.cargs}
+[int]{.ret} [Tcl_GetBool]{.ccmd}[interp, src, flags, charPtr]{.cargs}
 :::
 
 # Arguments

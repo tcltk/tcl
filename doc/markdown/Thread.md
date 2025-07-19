@@ -31,15 +31,15 @@ Tcl_ConditionNotify, Tcl_ConditionWait, Tcl_ConditionFinalize, Tcl_GetThreadData
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[Tcl_ConditionNotify]{.cmd} [condPtr]{.arg}
-[Tcl_ConditionWait]{.cmd} [condPtr, mutexPtr, timePtr]{.arg}
-[Tcl_ConditionFinalize]{.cmd} [condPtr]{.arg}
-[void *]{.ret} [Tcl_GetThreadData]{.lit} [keyPtr, size]{.arg}
-[Tcl_MutexLock]{.cmd} [mutexPtr]{.arg}
-[Tcl_MutexUnlock]{.cmd} [mutexPtr]{.arg}
-[Tcl_MutexFinalize]{.cmd} [mutexPtr]{.arg}
-[int]{.ret} [Tcl_CreateThread]{.lit} [idPtr, proc, clientData, stackSize, flags]{.arg}
-[int]{.ret} [Tcl_JoinThread]{.lit} [id, result]{.arg}
+[Tcl_ConditionNotify]{.ccmd}[condPtr]{.cargs}
+[Tcl_ConditionWait]{.ccmd}[condPtr, mutexPtr, timePtr]{.cargs}
+[Tcl_ConditionFinalize]{.ccmd}[condPtr]{.cargs}
+[void *]{.ret} [Tcl_GetThreadData]{.ccmd}[keyPtr, size]{.cargs}
+[Tcl_MutexLock]{.ccmd}[mutexPtr]{.cargs}
+[Tcl_MutexUnlock]{.ccmd}[mutexPtr]{.cargs}
+[Tcl_MutexFinalize]{.ccmd}[mutexPtr]{.cargs}
+[int]{.ret} [Tcl_CreateThread]{.ccmd}[idPtr, proc, clientData, stackSize, flags]{.cargs}
+[int]{.ret} [Tcl_JoinThread]{.ccmd}[id, result]{.cargs}
 :::
 
 # Arguments

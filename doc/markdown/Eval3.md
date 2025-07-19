@@ -25,14 +25,14 @@ Tcl_EvalObjEx, Tcl_EvalFile, Tcl_EvalObjv, Tcl_Eval, Tcl_EvalEx, Tcl_GlobalEval,
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[int]{.ret} [Tcl_EvalObjEx]{.lit} [interp, objPtr, flags]{.arg}
-[int]{.ret} [Tcl_EvalFile]{.lit} [interp, fileName]{.arg}
-[int]{.ret} [Tcl_EvalObjv]{.lit} [interp, objc, objv, flags]{.arg}
-[int]{.ret} [Tcl_Eval]{.lit} [interp, script]{.arg}
-[int]{.ret} [Tcl_EvalEx]{.lit} [interp, script, numBytes, flags]{.arg}
-[int]{.ret} [Tcl_GlobalEval]{.lit} [interp, script]{.arg}
-[int]{.ret} [Tcl_GlobalEvalObj]{.lit} [interp, objPtr]{.arg}
-[int]{.ret} [Tcl_VarEval]{.lit} [interp, part, part, ...= §(char *)NULL]{.arg}
+[int]{.ret} [Tcl_EvalObjEx]{.ccmd}[interp, objPtr, flags]{.cargs}
+[int]{.ret} [Tcl_EvalFile]{.ccmd}[interp, fileName]{.cargs}
+[int]{.ret} [Tcl_EvalObjv]{.ccmd}[interp, objc, objv, flags]{.cargs}
+[int]{.ret} [Tcl_Eval]{.ccmd}[interp, script]{.cargs}
+[int]{.ret} [Tcl_EvalEx]{.ccmd}[interp, script, numBytes, flags]{.cargs}
+[int]{.ret} [Tcl_GlobalEval]{.ccmd}[interp, script]{.cargs}
+[int]{.ret} [Tcl_GlobalEvalObj]{.ccmd}[interp, objPtr]{.cargs}
+[int]{.ret} [Tcl_VarEval]{.ccmd}[interp, part, part, ...= §(char *)NULL]{.cargs}
 :::
 
 # Arguments

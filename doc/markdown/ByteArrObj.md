@@ -27,11 +27,11 @@ Tcl_NewByteArrayObj, Tcl_SetByteArrayObj, Tcl_GetBytesFromObj, Tcl_GetByteArrayF
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[Tcl_Obj *]{.ret} [Tcl_NewByteArrayObj]{.lit} [bytes, numBytes]{.arg}
-[Tcl_SetByteArrayObj]{.cmd} [objPtr, bytes, numBytes]{.arg}
-[unsigned char *]{.ret} [Tcl_GetBytesFromObj]{.lit} [interp, objPtr, numBytesPtr]{.arg}
-[unsigned char *]{.ret} [Tcl_GetByteArrayFromObj]{.lit} [objPtr, numBytesPtr]{.arg}
-[unsigned char *]{.ret} [Tcl_SetByteArrayLength]{.lit} [objPtr, numBytes]{.arg}
+[Tcl_Obj *]{.ret} [Tcl_NewByteArrayObj]{.ccmd}[bytes, numBytes]{.cargs}
+[Tcl_SetByteArrayObj]{.ccmd}[objPtr, bytes, numBytes]{.cargs}
+[unsigned char *]{.ret} [Tcl_GetBytesFromObj]{.ccmd}[interp, objPtr, numBytesPtr]{.cargs}
+[unsigned char *]{.ret} [Tcl_GetByteArrayFromObj]{.ccmd}[objPtr, numBytesPtr]{.cargs}
+[unsigned char *]{.ret} [Tcl_SetByteArrayLength]{.ccmd}[objPtr, numBytes]{.cargs}
 :::
 
 # Arguments

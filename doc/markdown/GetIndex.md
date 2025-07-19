@@ -24,8 +24,8 @@ Tcl_GetIndexFromObj, Tcl_GetIndexFromObjStruct - lookup string in table of keywo
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[int]{.ret} [Tcl_GetIndexFromObj]{.lit} [interp, objPtr, tablePtr, msg, flags, indexPtr]{.arg}
-[int]{.ret} [Tcl_GetIndexFromObjStruct]{.lit} [interp, objPtr, structTablePtr, offset, msg, flags, indexPtr]{.arg}
+[int]{.ret} [Tcl_GetIndexFromObj]{.ccmd}[interp, objPtr, tablePtr, msg, flags, indexPtr]{.cargs}
+[int]{.ret} [Tcl_GetIndexFromObjStruct]{.ccmd}[interp, objPtr, structTablePtr, offset, msg, flags, indexPtr]{.cargs}
 :::
 
 # Arguments

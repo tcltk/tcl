@@ -198,7 +198,7 @@ foreach {num nroff internal ast markdown} {
 	{\fBreturn \fR?\fB\-code \fIcode\fR? ?\fIresult\fR?}
 	{§return= ?§-code= +code=? ?+result=?}
 	{{Span .cmd {{Text {} return}}} {Space {} {}} {Span .optarg {{Span .lit {{Text {} -code}}} {Space {} {}} {Span .arg {{Text {} code}}}}} {Space {} {}} {Span .optarg {{Text {} result}}}}
-	{[return]{cmd} [[-code]{.lit} [code]{.arg}]{.optarg} [result]{.optarg}}
+	{[return]{.cmd} [[-code]{.lit} [code]{.arg}]{.optarg} [result]{.optarg}}
 	
 	cmd-4
 	{\fBputs \fR?\fB\-nonewline\fR? ?\fIchannel\fR? \fIstring\fR}

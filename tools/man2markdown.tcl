@@ -969,8 +969,8 @@ proc ::ndoc::parseCommand {mode line} {
 	set state =
 	set chunk {}
 	# some more processing is needed for section 3 pages:
-	if {[regexp {^.+\(.+\)$} $line]} {
-		if {$DEBUG == 3} {puts line=$line}
+	if {[regexp {^.+\(.*\)$} $line]} {
+		if {$DEBUG == 3} {puts "===\nline API=$line"}
 		set l0 {}
 		set startIndex 0
 		if {[string index $line 0] eq "#"} {
@@ -987,7 +987,7 @@ proc ::ndoc::parseCommand {mode line} {
 		if {$l0 eq ""} {set line [list $l1 $l2]} else {set line [list $l0 $l1 $l2]}
 	} elseif {[string index $line 0] eq "§" && [string index $line 1] eq "#"} {
 		# an '#include' line in section 3:
-		if {$DEBUG == 3} {puts line=$line; puts L=#}
+		if {$DEBUG == 3} {puts "line # = $line"; puts L=#}
 		return [list [list Strong {} [list [list Text {} [string range $line 1 end-1]]]]]
 	}
 	# [apply] code to expand the content of a Span (except Space) to contain a correct AST Text element:
@@ -1003,6 +1003,7 @@ proc ::ndoc::parseCommand {mode line} {
 	}]
 	# translate line to Span elements with Space elements in between:
 	if $DEBUG {puts "-------\nparseCommand: $line"}
+	set cmdType {}
 	# treat the line as a list so that we easily can detect the individual elements:
 	for {set i 0} {$i < [llength $line]} {incr i} {
 		set word [lindex $line $i]
@@ -1012,7 +1013,13 @@ proc ::ndoc::parseCommand {mode line} {
 			switch -regexp $word {
 				{^§.+=$} {
 					# only one cmd without subcommand:
-					lappend spanList [list Span .cmd [string range $word 1 end-1]]
+					if {[string range $word 1 4] eq "Tcl_" || [string range $word 1 9] eq "TclZipfs_"} {
+						# API command:
+						set cmdType ccmd
+					} else {
+						set cmdType cmd
+					}
+					lappend spanList [list Span .$cmdType [string range $word 1 end-1]]
 					if $DEBUG {puts "single .cmd: $spanList"}
 				}
 				{^§.+[^=]$} {
@@ -1051,8 +1058,12 @@ proc ::ndoc::parseCommand {mode line} {
 				{^#.+$} {
 					# the return type of a Tcl C API function
 					# (the '#' was prefixed in parseBlock so we can detect it here ...)
-					lappend spanList [list Span .ret [string range $word 1 end]]
+					lappend spanList [list Span .ret [string range $word 1 end]] [list Space {} {}]
 					if $DEBUG {puts "section 3 return code .ret: $spanList"}
+					# remove the first word from the line and go again for the first word (avoid code duplication):
+					set line [lrange $line 1 end]
+					incr i -1
+					continue
 				}
 				default {
 					puts "emergencyStop 0 in parseCommand"
@@ -1063,8 +1074,13 @@ proc ::ndoc::parseCommand {mode line} {
 			set spanList [apply $expandSpan $spanList]
 		} else {
 			# remaining words of the command:
-			if $DEBUG {puts "word [expr {$i + 1}]: $word"}
 			set sublist [list]
+			if $DEBUG {puts "word [expr {$i + 1}]: $word"}
+			if {$cmdType eq "ccmd"} {
+				if $DEBUG {puts "API arguments: [string range $word 1 end-1]"}
+				lappend spanList [list Span .cargs [list [list Text {} [string range $word 1 end-1]]]]
+				continue
+			}
 			switch -regexp $word {
 				{^\?\+.+ \.\.\.\=\?$} {
 					# possibly multiple optional args
