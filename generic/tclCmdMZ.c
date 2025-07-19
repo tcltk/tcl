@@ -1197,8 +1197,6 @@ Tcl_SplitObjCmd(
     int ch = 0;
     int len;
     const char *splitChars;
-    const char *stringPtr;
-    const char *end;
     Tcl_Size splitCharLen, stringLen;
     Tcl_Obj *listPtr, *objPtr;
 
@@ -1212,8 +1210,8 @@ Tcl_SplitObjCmd(
 	return TCL_ERROR;
     }
 
-    stringPtr = TclGetStringFromObj(objv[1], &stringLen);
-    end = stringPtr + stringLen;
+    const char *stringPtr = TclGetStringFromObj(objv[1], &stringLen);
+    const char *end = stringPtr + stringLen;
     TclNewObj(listPtr);
 
     if (stringLen == 0) {
@@ -1222,8 +1220,6 @@ Tcl_SplitObjCmd(
 	 */
     } else if (splitCharLen == 0) {
 	Tcl_HashTable charReuseTable;
-	Tcl_HashEntry *hPtr;
-	int isNew;
 
 	/*
 	 * Handle the special case of splitting on every character.
@@ -1238,7 +1234,9 @@ Tcl_SplitObjCmd(
 
 	for ( ; stringPtr < end; stringPtr += len) {
 	    len = TclUtfToUniChar(stringPtr, &ch);
-	    hPtr = Tcl_CreateHashEntry(&charReuseTable, INT2PTR(ch), &isNew);
+	    int isNew;
+	    Tcl_HashEntry *hPtr = Tcl_CreateHashEntry(&charReuseTable,
+		    INT2PTR(ch), &isNew);
 	    if (isNew) {
 		TclNewStringObj(objPtr, stringPtr, len);
 
@@ -1271,7 +1269,7 @@ Tcl_SplitObjCmd(
 	TclNewStringObj(objPtr, stringPtr, end - stringPtr);
 	Tcl_ListObjAppendElement(NULL, listPtr, objPtr);
     } else {
-	const char *element, *p, *splitEnd;
+	const char *element, *splitEnd;
 	Tcl_Size splitLen;
 	int splitChar;
 
@@ -1284,7 +1282,7 @@ Tcl_SplitObjCmd(
 
 	for (element = stringPtr; stringPtr < end; stringPtr += len) {
 	    len = TclUtfToUniChar(stringPtr, &ch);
-	    for (p = splitChars; p < splitEnd; p += splitLen) {
+	    for (const char *p = splitChars; p < splitEnd; p += splitLen) {
 		splitLen = TclUtfToUniChar(p, &splitChar);
 		if (ch == splitChar) {
 		    TclNewStringObj(objPtr, element, stringPtr - element);
@@ -1541,7 +1539,7 @@ StringIsCmd(
 {
     const char *string1, *end, *stop;
     int (*chcomp)(int) = NULL;	/* The UniChar comparison function. */
-    int i, result = 1, strict = 0;
+    int result = 1, strict = 0;
     Tcl_Size failat = 0, length1, length2, length3;
     Tcl_Obj *objPtr, *failVarObj = NULL;
     Tcl_WideInt w;
@@ -1580,7 +1578,7 @@ StringIsCmd(
     }
 
     if (objc != 3) {
-	for (i = 2; i < objc-1; i++) {
+	for (int i = 2; i < objc-1; i++) {
 	    if (Tcl_GetIndexFromObj(interp, objv[i], isOptions, "option", 0,
 		    &idx2) != TCL_OK) {
 		return TCL_ERROR;
@@ -2657,7 +2655,7 @@ StringEqualCmd(
      */
 
     const char *string2;
-    int i, match, nocase = 0;
+    int match, nocase = 0;
     Tcl_Size length;
     Tcl_WideInt reqlength = -1;
 
@@ -2668,12 +2666,11 @@ StringEqualCmd(
 	return TCL_ERROR;
     }
 
-    for (i = 1; i < objc-2; i++) {
+    for (int i = 1; i < objc-2; i++) {
 	string2 = TclGetStringFromObj(objv[i], &length);
 	if ((length > 1) && !strncmp(string2, "-nocase", length)) {
 	    nocase = 1;
-	} else if ((length > 1)
-		&& !strncmp(string2, "-length", length)) {
+	} else if ((length > 1) && !strncmp(string2, "-length", length)) {
 	    if (i+1 >= objc-2) {
 		goto str_cmp_args;
 	    }
@@ -2757,11 +2754,6 @@ StringCmpOpts(
     int *nocase,
     Tcl_Size *reqlength)
 {
-    int i;
-    Tcl_Size length;
-    const char *string;
-    Tcl_WideInt wreqlength = -1;
-
     *nocase = 0;
     if (objc < 3 || objc > 6) {
     str_cmp_args:
@@ -2770,8 +2762,9 @@ StringCmpOpts(
 	return TCL_ERROR;
     }
 
-    for (i = 1; i < objc-2; i++) {
-	string = TclGetStringFromObj(objv[i], &length);
+    for (int i = 1; i < objc-2; i++) {
+	Tcl_Size length;
+	const char *string = TclGetStringFromObj(objv[i], &length);
 	if ((length > 1) && !strncmp(string, "-nocase", length)) {
 	    *nocase = 1;
 	} else if ((length > 1)
@@ -2780,6 +2773,7 @@ StringCmpOpts(
 		goto str_cmp_args;
 	    }
 	    i++;
+	    Tcl_WideInt wreqlength = -1;
 	    if (TclGetWideIntFromObj(interp, objv[i], &wreqlength) != TCL_OK) {
 		return TCL_ERROR;
 	    }
@@ -3459,7 +3453,7 @@ TclNRSwitchObjCmd(
 {
     int i, mode, foundmode, splitObjs, numMatchesSaved;
     int noCase;
-    Tcl_Size patternLength, j;
+    Tcl_Size patternLength;
     const char *pattern;
     Tcl_Obj *stringObj, *indexVarObj, *matchVarObj;
     Tcl_Obj *const *savedObjv = objv;
@@ -3766,7 +3760,7 @@ TclNRSwitchObjCmd(
 	    TclNewObj(indicesObj);
 	}
 
-	for (j=0 ; j<=info.nsubs ; j++) {
+	for (Tcl_Size j=0 ; j<=info.nsubs ; j++) {
 	    if (indexVarObj != NULL) {
 		int have = info.matches[j].end > 0;
 		Tcl_Obj *rangeObjAry[] = {
@@ -3879,16 +3873,15 @@ TclNRSwitchObjCmd(
 	     * which triggers reversion to the old behavior.
 	     */
 
-	    int k;
-
 	    ctxPtr->line = (int *)Tcl_Alloc(objc * sizeof(int));
 	    ctxPtr->nline = objc;
-	    for (k=0; k < objc; k++) {
+	    for (int k=0; k < objc; k++) {
 		ctxPtr->line[k] = -1;
 	    }
 	}
     }
 
+    Tcl_Size j;
     for (j = i + 1; ; j += 2) {
 	if (j >= objc) {
 	    /*
@@ -5343,20 +5336,20 @@ TclListLines(
     Tcl_Obj *listObj,		/* Pointer to obj holding a string with list
 				 * structure. Assumed to be valid. Assumed to
 				 * contain n elements. */
-    int line,		/* Line the list as a whole starts on. */
+    int line,			/* Line the list as a whole starts on. */
     Tcl_Size n,			/* #elements in lines */
-    int *lines,		/* Array of line numbers, to fill. */
+    int *lines,			/* Array of line numbers, to fill. */
     Tcl_Obj *const *elems)	/* The list elems as Tcl_Obj*, in need of
 				 * derived continuation data */
 {
     const char *listStr = TclGetString(listObj);
     const char *listHead = listStr;
-    Tcl_Size i, length = strlen(listStr);
+    Tcl_Size length = strlen(listStr);
     const char *element = NULL, *next = NULL;
     ContLineLoc *clLocPtr = TclContinuationsGet(listObj);
     Tcl_Size *clNext = (clLocPtr ? &clLocPtr->loc[0] : NULL);
 
-    for (i = 0; i < n; i++) {
+    for (Tcl_Size i = 0; i < n; i++) {
 	TclFindElement(NULL, listStr, length, &element, &next, NULL, NULL);
 
 	TclAdvanceLines(&line, listStr, element);

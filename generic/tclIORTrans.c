@@ -1838,7 +1838,7 @@ static void
 FreeReflectedTransformArgs(
     ReflectedTransform *rtPtr)
 {
-    int i, n = rtPtr->argc - 2;
+    int n = rtPtr->argc - 2;
 
     if (n < 0) {
 	return;
@@ -1847,7 +1847,7 @@ FreeReflectedTransformArgs(
     Tcl_DecrRefCount(rtPtr->handle);
     rtPtr->handle = NULL;
 
-    for (i=0; i<n; i++) {
+    for (int i=0; i<n; i++) {
 	Tcl_DecrRefCount(rtPtr->argv[i]);
     }
 

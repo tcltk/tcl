@@ -2666,14 +2666,13 @@ TclLindexFlat(
 				 * represent the indices in the list. */
 {
     int status;
-    Tcl_Size i;
 
     /* Handle AbstractList as special case */
     if (indexCount == 1 && TclObjTypeHasProc(listObj,indexProc)) {
 	Tcl_Size listLen = TclObjTypeLength(listObj);
 	Tcl_Size index;
 	Tcl_Obj *elemObj = listObj; /* for lindex without indices return list */
-	for (i=0 ; i<indexCount && listObj ; i++) {
+	for (Tcl_Size i=0 ; i<indexCount && listObj ; i++) {
 	    if (TclGetIntForIndexM(interp, indexArray[i], /*endValue*/ listLen-1,
 		    &index) != TCL_OK) {
 		return NULL;
@@ -2702,7 +2701,7 @@ TclLindexFlat(
 
     Tcl_IncrRefCount(listObj);
 
-    for (i=0 ; i<indexCount && listObj ; i++) {
+    for (Tcl_Size i=0 ; i<indexCount && listObj ; i++) {
 	Tcl_Size index, listLen = 0;
 	Tcl_Obj **elemPtrs = NULL;
 
@@ -3362,7 +3361,7 @@ SetListFromAny(
 	    Tcl_DictObjNext(&search, &keyPtr, &valuePtr, &done);
 	}
     } else if (TclObjTypeHasProc(objPtr,indexProc)) {
-	Tcl_Size elemCount, i;
+	Tcl_Size elemCount;
 
 	elemCount = TclObjTypeLength(objPtr);
 
@@ -3376,7 +3375,7 @@ SetListFromAny(
 	elemPtrs = listRep.storePtr->slots;
 
 	/* Each iteration, store a list element */
-	for (i = 0; i < elemCount; i++) {
+	for (Tcl_Size i = 0; i < elemCount; i++) {
 	    if (TclObjTypeIndex(interp, objPtr, i, elemPtrs) != TCL_OK) {
 		return TCL_ERROR;
 	    }
@@ -3496,7 +3495,7 @@ UpdateStringOfList(
 {
 #   define LOCAL_SIZE 64
     char localFlags[LOCAL_SIZE], *flagPtr = NULL;
-    Tcl_Size numElems, i, length;
+    Tcl_Size numElems, length;
     size_t bytesNeeded = 0;
     const char *elem, *start;
     char *dst;
@@ -3546,7 +3545,7 @@ UpdateStringOfList(
 	/* We know numElems <= LIST_MAX, so this is safe. */
 	flagPtr = (char *)Tcl_Alloc(numElems);
     }
-    for (i = 0; i < numElems; i++) {
+    for (Tcl_Size i = 0; i < numElems; i++) {
 	flagPtr[i] = (i ? TCL_DONT_QUOTE_HASH : 0);
 	elem = TclGetStringFromObj(elemPtrs[i], &length);
 	bytesNeeded += TclScanElement(elem, length, flagPtr+i);
@@ -3563,7 +3562,7 @@ UpdateStringOfList(
 
     start = dst = Tcl_InitStringRep(listObj, NULL, bytesNeeded);
     TclOOM(dst, bytesNeeded);
-    for (i = 0; i < numElems; i++) {
+    for (Tcl_Size i = 0; i < numElems; i++) {
 	if (i) {
 	    flagPtr[i] |= TCL_DONT_QUOTE_HASH;
 	}
@@ -3620,8 +3619,7 @@ TclListTestObj(
     ListRepInit(capacity, NULL, LISTREP_PANIC_ON_FAIL, &listRep);
 
     ListStore *storePtr = listRep.storePtr;
-    size_t i;
-    for (i = 0; i < length; ++i) {
+    for (size_t i = 0; i < length; ++i) {
 	TclNewUIntObj(storePtr->slots[i + leadingSpace], i);
 	Tcl_IncrRefCount(storePtr->slots[i + leadingSpace]);
     }

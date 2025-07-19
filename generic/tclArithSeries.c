@@ -409,9 +409,9 @@ FreeElements(
     ArithSeries *arithSeriesRepPtr)
 {
     if (arithSeriesRepPtr->elements) {
-	Tcl_WideInt i, len = arithSeriesRepPtr->len;
+	Tcl_WideInt len = arithSeriesRepPtr->len;
 
-	for (i=0; i<len; i++) {
+	for (Tcl_WideInt i=0; i<len; i++) {
 	    Tcl_DecrRefCount(arithSeriesRepPtr->elements[i]);
 	}
 	Tcl_Free((void *)arithSeriesRepPtr->elements);
@@ -1057,8 +1057,7 @@ TclArithSeriesGetElements(
 		}
 		arithSeriesRepPtr->elements = objv;
 
-		Tcl_Size i;
-		for (i = 0; i < objc; i++) {
+		for (Tcl_Size i = 0; i < objc; i++) {
 		    int status = TclArithSeriesObjIndex(interp, objPtr, i, &objv[i]);
 
 		    if (status) {
@@ -1186,7 +1185,7 @@ UpdateStringOfArithSeries(
     ArithSeries *arithSeriesRepPtr = (ArithSeries *)
 	    arithSeriesObjPtr->internalRep.twoPtrValue.ptr1;
     char *p, *srep;
-    Tcl_Size i, bytlen = 0;
+    Tcl_Size bytlen = 0;
 
     if (arithSeriesRepPtr->len == 0) {
 	(void)Tcl_InitStringRep(arithSeriesObjPtr, NULL, 0);
@@ -1197,7 +1196,7 @@ UpdateStringOfArithSeries(
      * Pass 1: estimate space.
      */
     if (!arithSeriesRepPtr->isDouble) {
-	for (i = 0; i < arithSeriesRepPtr->len; i++) {
+	for (Tcl_Size i = 0; i < arithSeriesRepPtr->len; i++) {
 	    double d = (double)ArithSeriesIndexInt(arithSeriesRepPtr, i);
 	    Tcl_Size slen = d>0 ? log10(d)+1 : d<0 ? log10(-d)+2 : 1;
 
@@ -1205,7 +1204,7 @@ UpdateStringOfArithSeries(
 	}
     } else {
 	char tmp[TCL_DOUBLE_SPACE + 2];
-	for (i = 0; i < arithSeriesRepPtr->len; i++) {
+	for (Tcl_Size i = 0; i < arithSeriesRepPtr->len; i++) {
 	    double d = ArithSeriesIndexDbl(arithSeriesRepPtr, i);
 	    Tcl_Size elen;
 
@@ -1230,14 +1229,14 @@ UpdateStringOfArithSeries(
     TclOOM(p, bytlen+1);
 
     if (!arithSeriesRepPtr->isDouble) {
-	for (i = 0; i < arithSeriesRepPtr->len; i++) {
+	for (Tcl_Size i = 0; i < arithSeriesRepPtr->len; i++) {
 	    Tcl_WideInt d = ArithSeriesIndexInt(arithSeriesRepPtr, i);
 	    p += TclFormatInt(p, d);
 	    assert(p - arithSeriesObjPtr->bytes <= bytlen);
 	    *p++ = ' ';
 	}
     } else {
-	for (i = 0; i < arithSeriesRepPtr->len; i++) {
+	for (Tcl_Size i = 0; i < arithSeriesRepPtr->len; i++) {
 	    double d = ArithSeriesIndexDbl(arithSeriesRepPtr, i);
 
 	    *p = '\0';

@@ -380,7 +380,6 @@ Tcl_ParseCommand(
 	tokenPtr->size = src - tokenPtr->start;
 	tokenPtr->numComponents = parsePtr->numTokens - (wordIndex + 1);
 	if (expandWord) {
-	    Tcl_Size i;
 	    int isLiteral = 1;
 
 	    /*
@@ -397,7 +396,7 @@ Tcl_ParseCommand(
 	     * tokens.
 	     */
 
-	    for (i = 1; i <= tokenPtr->numComponents; i++) {
+	    for (Tcl_Size i = 1; i <= tokenPtr->numComponents; i++) {
 		if (tokenPtr[i].type != TCL_TOKEN_TEXT) {
 		    isLiteral = 0;
 		    break;
@@ -2124,7 +2123,7 @@ TclSubstTokens(
     int code = TCL_OK;
 #define NUM_STATIC_POS 20
     int isLiteral;
-    Tcl_Size i, maxNumCL, numCL, adjust;
+    Tcl_Size maxNumCL, numCL, adjust;
     Tcl_Size *clPosition = NULL;
     Interp *iPtr = (Interp *) interp;
     int inFile = iPtr->evalFlags & TCL_EVAL_FILE;
@@ -2150,7 +2149,7 @@ TclSubstTokens(
     numCL = 0;
     maxNumCL = 0;
     isLiteral = 1;
-    for (i=0 ; i < count; i++) {
+    for (Tcl_Size i=0 ; i < count; i++) {
 	if ((tokenPtr[i].type != TCL_TOKEN_TEXT)
 		&& (tokenPtr[i].type != TCL_TOKEN_BS)) {
 	    isLiteral = 0;

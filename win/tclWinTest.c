@@ -425,7 +425,6 @@ TestplatformChmod(
     int res = 0;
 
     HANDLE hToken = NULL;
-    int i;
     int nSids = 0;
     struct {
 	PSID pSid;
@@ -563,7 +562,7 @@ TestplatformChmod(
 
     newAclSize = sizeof(ACL);
     /* Add in size required for each ACE entry in the ACL */
-    for (i = 0; i < nSids; ++i) {
+    for (int i = 0; i < nSids; ++i) {
 	newAclSize +=
 	    (DWORD)offsetof(ACCESS_ALLOWED_ACE, SidStart) + aceEntry[i].sidLen;
     }
@@ -572,7 +571,7 @@ TestplatformChmod(
 	goto done;
     }
 
-    for (i = 0; i < nSids; ++i) {
+    for (int i = 0; i < nSids; ++i) {
 	if (!AddAccessAllowedAce(newAcl, ACL_REVISION, aceEntry[i].mask, aceEntry[i].pSid)) {
 	    goto done;
 	}
@@ -599,7 +598,7 @@ TestplatformChmod(
     if (newAcl) {
 	Tcl_Free(newAcl);
     }
-    for (i = 0; i < nSids; ++i) {
+    for (int i = 0; i < nSids; ++i) {
 	Tcl_Free(aceEntry[i].pSid);
     }
 

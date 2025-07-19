@@ -442,7 +442,7 @@ Tcl_SetEncodingSearchPath(
 static void
 FillEncodingFileMap(void)
 {
-    Tcl_Size i, numDirs = 0;
+    Tcl_Size numDirs = 0;
     Tcl_Obj *map, *searchPath;
 
     searchPath = Tcl_GetEncodingSearchPath();
@@ -451,13 +451,13 @@ FillEncodingFileMap(void)
     map = Tcl_NewDictObj();
     Tcl_IncrRefCount(map);
 
-    for (i = numDirs-1; i != TCL_INDEX_NONE; i--) {
+    for (Tcl_Size i = numDirs-1; i != TCL_INDEX_NONE; i--) {
 	/*
 	 * Iterate backwards through the search path so as we overwrite
 	 * entries found, we favor files earlier on the search path.
 	 */
 
-	Tcl_Size j, numFiles;
+	Tcl_Size numFiles;
 	Tcl_Obj *directory, *matchFileList;
 	Tcl_Obj **filev;
 	Tcl_GlobTypeData readableFiles = {
@@ -472,7 +472,7 @@ FillEncodingFileMap(void)
 		&readableFiles);
 
 	TclListObjGetElements(NULL, matchFileList, &numFiles, &filev);
-	for (j=0; j<numFiles; j++) {
+	for (Tcl_Size j=0; j<numFiles; j++) {
 	    Tcl_Obj *encoding, *fileObj;
 
 	    fileObj = TclPathPart(NULL, filev[j], TCL_PATH_TAIL);
@@ -527,7 +527,6 @@ TclInitEncodingSubsystem(void)
     Tcl_EncodingType type;
     TableEncodingData *dataPtr;
     unsigned size;
-    unsigned short i;
     union {
 	char c;
 	short s;
@@ -637,12 +636,12 @@ TclInitEncodingSubsystem(void)
 
     dataPtr->toUnicode[0] = (unsigned short *) (dataPtr->toUnicode + 256);
     dataPtr->fromUnicode[0] = (unsigned short *) (dataPtr->fromUnicode + 256);
-    for (i=1 ; i<256 ; i++) {
+    for (int i=1 ; i<256 ; i++) {
 	dataPtr->toUnicode[i] = emptyPage;
 	dataPtr->fromUnicode[i] = emptyPage;
     }
 
-    for (i=0 ; i<256 ; i++) {
+    for (unsigned short i=0 ; i<256 ; i++) {
 	dataPtr->toUnicode[0][i] = i;
 	dataPtr->fromUnicode[0][i] = i;
     }
@@ -1751,7 +1750,7 @@ OpenEncodingFileChannel(
     Tcl_Obj *map = TclGetProcessGlobalValue(&encodingFileMap);
     Tcl_Obj **dir, *path, *directory = NULL;
     Tcl_Channel chan = NULL;
-    Tcl_Size i, numDirs;
+    Tcl_Size numDirs;
 
     TclListObjGetElements(NULL, searchPath, &numDirs, &dir);
     Tcl_IncrRefCount(fileNameObj);
@@ -1764,7 +1763,7 @@ OpenEncodingFileChannel(
     if (NULL != directory) {
 	int verified = 0;
 
-	for (i=0; i<numDirs && !verified; i++) {
+	for (Tcl_Size i=0; i<numDirs && !verified; i++) {
 	    if (dir[i] == directory) {
 		verified = 1;
 	    }
@@ -1772,7 +1771,7 @@ OpenEncodingFileChannel(
 	if (!verified) {
 	    const char *dirString = TclGetString(directory);
 
-	    for (i=0; i<numDirs && !verified; i++) {
+	    for (Tcl_Size i=0; i<numDirs && !verified; i++) {
 		if (strcmp(dirString, TclGetString(dir[i])) == 0) {
 		    verified = 1;
 		}
@@ -1807,7 +1806,7 @@ OpenEncodingFileChannel(
      * Scan the search path until we find it.
      */
 
-    for (i=0; i<numDirs && (chan == NULL); i++) {
+    for (Tcl_Size i=0; i<numDirs && (chan == NULL); i++) {
 	path = Tcl_FSJoinToPath(dir[i], 1, &fileNameObj);
 	Tcl_IncrRefCount(path);
 	chan = Tcl_FSOpenFileChannel(NULL, path, "r", 0);
@@ -1937,7 +1936,7 @@ LoadTableEncoding(
     Tcl_DString lineString;
     Tcl_Obj *objPtr;
     char *line;
-    int i, hi, lo, numPages, symbol, fallback, len;
+    int hi, lo, numPages, symbol, fallback, len;
     unsigned char used[256];
     unsigned size;
     TableEncodingData *dataPtr;
@@ -2008,7 +2007,7 @@ LoadTableEncoding(
 
     TclNewObj(objPtr);
     Tcl_IncrRefCount(objPtr);
-    for (i = 0; i < numPages; i++) {
+    for (int i = 0; i < numPages; i++) {
 	int ch;
 	const char *p;
 	Tcl_Size expected = 3 + 16 * (16 * 4 + 1);
@@ -2235,7 +2234,6 @@ LoadEscapeEncoding(
     const char *name,		/* Name of the new encoding. */
     Tcl_Channel chan)		/* File containing new encoding. */
 {
-    int i;
     unsigned size;
     Tcl_DString escapeData;
     char init[16], final[16];
@@ -2313,7 +2311,7 @@ LoadEscapeEncoding(
     Tcl_DStringFree(&escapeData);
 
     memset(dataPtr->prefixBytes, 0, sizeof(dataPtr->prefixBytes));
-    for (i = 0; i < dataPtr->numSubTables; i++) {
+    for (int i = 0; i < dataPtr->numSubTables; i++) {
 	dataPtr->prefixBytes[UCHAR(dataPtr->subTables[i].sequence[0])] = 1;
     }
     if (dataPtr->init[0] != '\0') {
@@ -3940,7 +3938,7 @@ EscapeToUtfProc(
 	byte = *((unsigned char *) src);
 	if (prefixBytes[byte]) {
 	    unsigned left, len, longest;
-	    int checked, i;
+	    int checked;
 	    const EscapeSubTable *subTablePtr;
 
 	    /*
@@ -3984,7 +3982,7 @@ EscapeToUtfProc(
 	    }
 
 	    subTablePtr = dataPtr->subTables;
-	    for (i = 0; i < dataPtr->numSubTables; i++) {
+	    for (int i = 0; i < dataPtr->numSubTables; i++) {
 		len = subTablePtr->sequenceLen;
 		if (len > longest) {
 		    longest = len;
@@ -4338,9 +4336,6 @@ EscapeFreeProc(
 				 * encoding. */
 {
     EscapeEncodingData *dataPtr = (EscapeEncodingData *)clientData;
-    EscapeSubTable *subTablePtr;
-    int i;
-
     if (dataPtr == NULL) {
 	return;
     }
@@ -4357,8 +4352,8 @@ EscapeFreeProc(
      */
 
     if (encodingsInitialized) {
-	subTablePtr = dataPtr->subTables;
-	for (i = 0; i < dataPtr->numSubTables; i++) {
+	EscapeSubTable *subTablePtr = dataPtr->subTables;
+	for (int i = 0; i < dataPtr->numSubTables; i++) {
 	    FreeEncoding((Tcl_Encoding) subTablePtr->encodingPtr);
 	    subTablePtr->encodingPtr = NULL;
 	    subTablePtr++;
@@ -4482,7 +4477,7 @@ InitializeEncodingSearchPath(
     Tcl_Encoding *encodingPtr)
 {
     const char *bytes;
-    Tcl_Size i, numDirs, numBytes;
+    Tcl_Size numDirs, numBytes;
     Tcl_Obj *libPathObj, *encodingObj, *searchPathObj;
 
     TclNewLiteralStringObj(encodingObj, "encoding");
@@ -4493,7 +4488,7 @@ InitializeEncodingSearchPath(
     Tcl_IncrRefCount(libPathObj);
     TclListObjLength(NULL, libPathObj, &numDirs);
 
-    for (i = 0; i < numDirs; i++) {
+    for (Tcl_Size i = 0; i < numDirs; i++) {
 	Tcl_Obj *directoryObj, *pathObj;
 	Tcl_StatBuf stat;
 
@@ -4541,10 +4536,9 @@ TclEncodingProfileNameToId(
     const char *profileName,	/* Name of profile */
     int *profilePtr)		/* Output */
 {
-    size_t i;
     size_t numProfiles = sizeof(encodingProfiles) / sizeof(encodingProfiles[0]);
 
-    for (i = 0; i < numProfiles; ++i) {
+    for (size_t i = 0; i < numProfiles; ++i) {
 	if (!strcmp(profileName, encodingProfiles[i].name)) {
 	    *profilePtr = encodingProfiles[i].value;
 	    return TCL_OK;
@@ -4554,7 +4548,7 @@ TclEncodingProfileNameToId(
 	/* This code assumes at least two profiles :-) */
 	Tcl_Obj *errorObj = Tcl_ObjPrintf("bad profile name \"%s\": must be",
 		profileName);
-	for (i = 0; i < (numProfiles - 1); ++i) {
+	for (size_t i = 0; i < (numProfiles - 1); ++i) {
 	    Tcl_AppendPrintfToObj(errorObj, " %s,", encodingProfiles[i].name);
 	}
 	Tcl_AppendPrintfToObj(errorObj, " or %s",
@@ -4586,9 +4580,7 @@ TclEncodingProfileIdToName(
     Tcl_Interp *interp,		/* For error messages. May be NULL */
     int profileValue)		/* Profile #define value */
 {
-    size_t i;
-
-    for (i = 0; i < sizeof(encodingProfiles) / sizeof(encodingProfiles[0]); ++i) {
+    for (size_t i = 0; i < sizeof(encodingProfiles) / sizeof(encodingProfiles[0]); ++i) {
 	if (profileValue == encodingProfiles[i].value) {
 	    return encodingProfiles[i].name;
 	}

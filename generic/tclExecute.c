@@ -1912,8 +1912,7 @@ PrintArgumentWords(
     Tcl_Size objc,
     Tcl_Obj *const *objv)
 {
-    Tcl_Size i;
-    for (i = 0;  i < objc;  i++) {
+    for (Tcl_Size i = 0;  i < objc;  i++) {
 	TclPrintObject(stdout, objv[i], 15);
 	if (i < objc - 1) {
 	    fprintf(stdout, " ");
@@ -1944,8 +1943,7 @@ FindTclOOMethodIndex(
     CallContext *contextPtr,
     Class *clsPtr)
 {
-    Tcl_Size i;
-    for (i=contextPtr->index+1 ; i<contextPtr->callPtr->numChain ; i++) {
+    for (Tcl_Size i=contextPtr->index+1 ; i<contextPtr->callPtr->numChain ; i++) {
 	MInvoke *miPtr = contextPtr->callPtr->chain + i;
 	if (!miPtr->isFilter && miPtr->mPtr->declaringClassPtr == clsPtr) {
 	    return i;
@@ -2604,7 +2602,6 @@ TEBCresume(
 
     {
 	Tcl_Obj *listPtr;
-	Tcl_Size i;
 
 #ifndef REMOVE_DEPRECATED_OPCODES
     case INST_TAILCALL1:
@@ -2637,7 +2634,7 @@ TEBCresume(
 	if (tclTraceExec >= TCL_TRACE_BYTECODE_EXEC_COMMANDS) {
 	    if (traceInstructions) {
 		TRACE_APPEND("[");
-		for (i=numArgs-1 ; i>=0 ; i--) {
+		for (Tcl_Size i=numArgs-1 ; i>=0 ; i--) {
 		    TRACE_APPEND("\"%.30s\"", O2S(OBJ_AT_DEPTH(i)));
 		    if (i > 0) {
 			TRACE_APPEND(" ");
@@ -2712,8 +2709,9 @@ TEBCresume(
 	    Tcl_DecrRefCount(iPtr->varFramePtr->tailcallPtr);
 	}
 	// Always at least one word: the namespace name.
-	ListObjLength(listPtr, i);
-	if (i > 1) {
+	Tcl_Size len;
+	ListObjLength(listPtr, len);
+	if (len > 1) {
 	    Tcl_IncrRefCount(listPtr);
 	    iPtr->varFramePtr->tailcallPtr = listPtr;
 	} else {
@@ -2962,11 +2960,8 @@ TEBCresume(
 	 * that it has a freeIntRepProc we use Tcl_DecrRefCount().
 	 */
 
-	{
-	    Tcl_Size i;
-	    for (i = 0; i < objc; i++) {
-		PUSH_OBJECT(objv[i]);
-	    }
+	for (Tcl_Size i = 0; i < objc; i++) {
+	    PUSH_OBJECT(objv[i]);
 	}
 
 	TRACE_APPEND("OK\n");
@@ -3091,8 +3086,7 @@ TEBCresume(
 			"%" SIZEd ": (%" SIZEd ") invoking (using implementation %s) ",
 			iPtr->numLevels, PC_REL, O2S(objPtr));
 	    }
-	    Tcl_Size i;
-	    for (i = 0;  i < objc;  i++) {
+	    for (Tcl_Size i = 0;  i < objc;  i++) {
 		if (i < numArgs) {
 		    fprintf(stdout, "<");
 		    TclPrintObject(stdout, objv[i], 15);
@@ -6779,7 +6773,7 @@ TEBCresume(
 	ForeachVarList *varListPtr;
 	Tcl_Size numLists, listLen, numVars, listTmpDepth;
 	Tcl_Size iterNum, iterMax, iterTmp;
-	Tcl_Size varIndex, valIndex, i, j;
+	Tcl_Size varIndex, valIndex;
 
     case INST_FOREACH_START:
 	/*
@@ -6798,7 +6792,7 @@ TEBCresume(
 
 	iterMax = 0;
 	listTmpDepth = numLists - 1;
-	for (i = 0;  i < numLists;  i++) {
+	for (Tcl_Size i = 0;  i < numLists;  i++) {
 	    varListPtr = infoPtr->varLists[i];
 	    numVars = varListPtr->numVars;
 	    listPtr = OBJ_AT_DEPTH(listTmpDepth);
@@ -6873,19 +6867,17 @@ TEBCresume(
 	 */
 
 	if (iterNum < iterMax) {
-	    int status;
 	    /*
 	     * Set the variables and jump back to run the body
 	     */
 
 	    tmpPtr->internalRep.twoPtrValue.ptr1 =(void *)(iterNum + 1);
-
 	    listTmpDepth = numLists + 1;
 
-	    for (i = 0;  i < numLists;  i++) {
+	    for (Tcl_Size i = 0;  i < numLists;  i++) {
 		varListPtr = infoPtr->varLists[i];
 		numVars = varListPtr->numVars;
-		int hasAbstractList;
+		int hasAbstractList, status;
 
 		listPtr = OBJ_AT_DEPTH(listTmpDepth);
 		hasAbstractList = TclObjTypeHasProc(listPtr, indexProc) != 0;
@@ -6904,7 +6896,7 @@ TEBCresume(
 		CACHE_STACK_INFO();
 
 		valIndex = (iterNum * numVars);
-		for (j = 0;  j < numVars;  j++) {
+		for (Tcl_Size j = 0;  j < numVars;  j++) {
 		    if (valIndex >= listLen) {
 			TclNewObj(valuePtr);
 		    } else {
@@ -7114,7 +7106,6 @@ TEBCresume(
 
     {
 	int allocateDict, done, allocdict;
-	Tcl_Size i;
 	Tcl_Obj *dictPtr, *statePtr, *keyPtr, *listPtr, *varNamePtr, *keysPtr;
 	Tcl_Obj *emptyPtr, **keyPtrPtr;
 	Tcl_DictSearch *searchPtr;
@@ -7610,7 +7601,7 @@ TEBCresume(
 	    Tcl_Panic("dictUpdateStart argument length mismatch");
 	    TCL_UNREACHABLE();
 	}
-	for (i=0 ; i<length ; i++) {
+	for (Tcl_Size i=0 ; i<length ; i++) {
 	    if (Tcl_DictObjGet(interp, dictPtr, keyPtrPtr[i],
 		    &valuePtr) != TCL_OK) {
 		TRACE_ERROR(interp);
@@ -7674,7 +7665,7 @@ TEBCresume(
 	if (length > 0) {
 	    TclInvalidateStringRep(dictPtr);
 	}
-	for (i=0 ; i<length ; i++) {
+	for (Tcl_Size i=0 ; i<length ; i++) {
 	    Var *var2Ptr = LOCAL(duiPtr->varIndices[i]);
 
 	    while (TclIsVarLink(var2Ptr)) {
@@ -9786,7 +9777,6 @@ TclGetSrcInfoForPc(
 	ExtCmdLoc *eclPtr;
 	ECL *locPtr = NULL;
 	Tcl_Size srcOffset;
-	Tcl_Size i;
 	Interp *iPtr = (Interp *) *codePtr->interpHandle;
 	Tcl_HashEntry *hePtr =
 		Tcl_FindHashEntry(iPtr->lineBCPtr, codePtr);
@@ -9798,7 +9788,7 @@ TclGetSrcInfoForPc(
 	srcOffset = cfPtr->cmd - codePtr->source;
 	eclPtr = (ExtCmdLoc *)Tcl_GetHashValue(hePtr);
 
-	for (i=0; i < eclPtr->nuloc; i++) {
+	for (Tcl_Size i=0; i < eclPtr->nuloc; i++) {
 	    if (eclPtr->loc[i].srcOffset == srcOffset) {
 		locPtr = eclPtr->loc+i;
 		break;
@@ -9846,7 +9836,7 @@ GetSrcInfoForPc(
     Tcl_Size numCmds = codePtr->numCommands;
     unsigned char *codeDeltaNext, *codeLengthNext;
     unsigned char *srcDeltaNext, *srcLengthNext;
-    Tcl_Size codeOffset, codeLen, codeEnd, srcOffset, srcLen, delta, i;
+    Tcl_Size codeOffset, codeLen, codeEnd, srcOffset, srcLen, delta;
     Tcl_Size bestDist = TCL_SIZE_MAX; /* Distance of pc to best cmd's start pc. */
     Tcl_Size bestSrcOffset = -1; /* Initialized to avoid compiler warning. */
     Tcl_Size bestSrcLength = -1; /* Initialized to avoid compiler warning. */
@@ -9866,7 +9856,7 @@ GetSrcInfoForPc(
     srcDeltaNext = codePtr->srcDeltaStart;
     srcLengthNext = codePtr->srcLengthStart;
     codeOffset = srcOffset = 0;
-    for (i = 0;  i < numCmds;  i++) {
+    for (Tcl_Size i = 0;  i < numCmds;  i++) {
 	if ((unsigned) *codeDeltaNext == (unsigned) 0xFF) {
 	    codeDeltaNext++;
 	    delta = TclGetInt4AtPtr(codeDeltaNext);

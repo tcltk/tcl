@@ -645,14 +645,14 @@ void
 mstats(
     char *s)			/* Where to write info. */
 {
-    unsigned int i, j;
-    union overhead *overPtr;
     size_t totalFree = 0, totalUsed = 0;
 
     Tcl_MutexLock(allocMutexPtr);
 
     fprintf(stderr, "Memory allocation statistics %s\nTclpFree:\t", s);
-    for (i = 0; i < NBUCKETS; i++) {
+    for (unsigned i = 0; i < NBUCKETS; i++) {
+	unsigned j;
+	union overhead *overPtr;
 	for (j=0, overPtr=nextf[i]; overPtr; overPtr=overPtr->next, j++) {
 	    fprintf(stderr, " %u", j);
 	}
@@ -660,7 +660,7 @@ mstats(
     }
 
     fprintf(stderr, "\nused:\t");
-    for (i = 0; i < NBUCKETS; i++) {
+    for (unsigned i = 0; i < NBUCKETS; i++) {
 	fprintf(stderr, " %" TCL_Z_MODIFIER "u", numMallocs[i]);
 	totalUsed += numMallocs[i] * ((size_t)1 << (i + 3));
     }

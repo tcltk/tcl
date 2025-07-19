@@ -157,12 +157,12 @@ dlopen(
 	 */
 
 	if (errno == ENOEXEC) {
-	    char *tmp[BUFSIZ/sizeof(char *)], **p;
+	    char *tmp[BUFSIZ / sizeof(char *)];
 
 	    if (loadquery(L_GETMESSAGES, tmp, sizeof(tmp)) == -1) {
 		strcpy(errbuf, strerror(errno));
 	    } else {
-		for (p=tmp ; *p ; p++) {
+		for (char **p=tmp ; *p ; p++) {
 		    caterr(*p);
 		}
 	    }
@@ -390,7 +390,6 @@ readExports(
     LDHDR *lhp;
     char *ldbuf;
     LDSYM *ls;
-    int i;
     ExportPtr ep;
     const char *errMsg;
 
@@ -419,7 +418,7 @@ readExports(
 		SysErr();
 	    }
 
-	    i = loadquery(L_GETINFO, buf, size);
+	    int i = loadquery(L_GETINFO, buf, size);
 
 	    if (i != -1) {
 		break;
@@ -500,7 +499,7 @@ readExports(
      * Count the number of exports to include in our export table.
      */
 
-    for (i = lhp->l_nsyms; i; i--, ls++) {
+    for (int i = lhp->l_nsyms; i; i--, ls++) {
 	if (!LDR_EXPORT(*ls)) {
 	    continue;
 	}
@@ -520,7 +519,7 @@ readExports(
 
     ep = mp->exports;
     ls = (LDSYM *)(ldbuf + LDHDRSZ);
-    for (i=lhp->l_nsyms ; i!=0 ; i--,ls++) {
+    for (int i=lhp->l_nsyms ; i!=0 ; i--,ls++) {
 	char *symname;
 	char tmpsym[SYMNMLEN+1];
 

@@ -1883,7 +1883,6 @@ MoveExceptionRangesToBasicBlock(
 				/* Current basic block */
     Tcl_Size exceptionCount = envPtr->exceptArrayNext - savedExceptArrayNext;
 				/* Number of ranges that must be moved */
-    Tcl_Size i;
 
     if (exceptionCount == 0) {
 	/* Nothing to do */
@@ -1909,7 +1908,7 @@ MoveExceptionRangesToBasicBlock(
     memcpy(curr_bb->foreignExceptions,
 	    envPtr->exceptArrayPtr + savedExceptArrayNext,
 	    exceptionCount * sizeof(ExceptionRange));
-    for (i = 0; i < exceptionCount; ++i) {
+    for (Tcl_Size i = 0; i < exceptionCount; ++i) {
 	curr_bb->foreignExceptions[i].nestingLevel -= envPtr->exceptDepth;
     }
     envPtr->exceptArrayNext = savedExceptArrayNext;
@@ -1949,7 +1948,6 @@ CreateMirrorJumpTable(
     Tcl_HashEntry* hPtr;	/* Entry for a key in the hashtable */
     int isNew;			/* Flag==1 if the key is not yet in the
 				 * table. */
-    Tcl_Size i;
 
     /*
      * Allocate the jumptable. Don't write to BB until we know we aren't going
@@ -1963,7 +1961,7 @@ CreateMirrorJumpTable(
      */
 
     DEBUG_PRINT("jump table {\n");
-    for (i = 0; i < objc; i+=2) {
+    for (Tcl_Size i = 0; i < objc; i+=2) {
 	DEBUG_PRINT("  %s -> %s\n", TclGetString(objv[i]),
 		TclGetString(objv[i+1]));
 	hPtr = Tcl_CreateHashEntry(&jtPtr->hashTable, TclGetString(objv[i]),
@@ -2021,28 +2019,23 @@ CreateMirrorNumJumpTable(
 				/* Tcl interpreter */
     BasicBlock* bbPtr = assemEnvPtr->curr_bb;
 				/* Current basic block */
-    JumptableNumInfo* jtnPtr;
-    Tcl_HashEntry* hPtr;	/* Entry for a key in the hashtable */
-    int isNew;			/* Flag==1 if the key is not yet in the
-				 * table. */
-    Tcl_Size i;
-    Tcl_WideInt key;
 
     /*
      * Allocate the jumptable. Don't write to BB until we know we aren't going
      * to fail the build of the table.
      */
 
-    jtnPtr = AllocJumptableNum();
+    JumptableNumInfo* jtnPtr = AllocJumptableNum();
 
     /*
      * Fill the keys and labels into the table.
      */
 
     DEBUG_PRINT("jump table {\n");
-    for (i = 0; i < objc; i+=2) {
+    for (Tcl_Size i = 0; i < objc; i+=2) {
 	DEBUG_PRINT("  %s -> %s\n", TclGetString(objv[i]),
-		TclGetString(objv[i+1]));
+		TclGetString(objv[i + 1]));
+	Tcl_WideInt key;
 	if (Tcl_GetWideIntFromObj(NULL, objv[i], &key) != TCL_OK) {
 	    if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
 		TclPrintfResult(interp,
@@ -2052,7 +2045,9 @@ CreateMirrorNumJumpTable(
 	    }
 	    goto error;
 	}
-	hPtr = Tcl_CreateHashEntry(&jtnPtr->hashTable, (void*)key, &isNew);
+	int isNew;
+	Tcl_HashEntry* hPtr = Tcl_CreateHashEntry(&jtnPtr->hashTable,
+		(void*)key, &isNew);
 	if (!isNew) {
 	    if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
 		TclPrintfResult(interp,
@@ -2062,8 +2057,8 @@ CreateMirrorNumJumpTable(
 	    }
 	    goto error;
 	}
-	Tcl_SetHashValue(hPtr, objv[i+1]);
-	Tcl_IncrRefCount(objv[i+1]);
+	Tcl_SetHashValue(hPtr, objv[i + 1]);
+	Tcl_IncrRefCount(objv[i + 1]);
     }
     DEBUG_PRINT("}\n");
 
@@ -2412,9 +2407,7 @@ CheckNamespaceQualifiers(
     const char* name,		/* Variable name to check */
     Tcl_Size nameLen)		/* Length of the variable */
 {
-    const char* p;
-
-    for (p = name; p+2 < name+nameLen;  p++) {
+    for (const char *p = name; p+2 < name+nameLen;  p++) {
 	if ((*p == ':') && (p[1] == ':')) {
 	    TclPrintfResult(interp, "variable \"%s\" is not local", name);
 	    TclSetErrorCode(interp, "TCL", "ASSEM", "NONLOCAL", name);
@@ -3897,7 +3890,6 @@ BuildExceptionRanges(
     BasicBlock** catches;	/* Stack of catches in progress */
     Tcl_Size* catchIndices;	/* Indices of the exception ranges of catches
 				 * in progress */
-    int i;
 
     /*
      * Determine the max catch depth for the entire assembly script
@@ -3916,7 +3908,7 @@ BuildExceptionRanges(
 
     catches = (BasicBlock**)Tcl_Alloc(maxCatchDepth * sizeof(BasicBlock*));
     catchIndices = (Tcl_Size *)Tcl_Alloc(maxCatchDepth * sizeof(Tcl_Size));
-    for (i = 0; i < maxCatchDepth; ++i) {
+    for (int i = 0; i < maxCatchDepth; ++i) {
 	catches[i] = NULL;
 	catchIndices[i] = -1;
     }
@@ -4156,7 +4148,6 @@ RestoreEmbeddedExceptionRanges(
     unsigned char opcode;	/* Current instruction's opcode */
     Tcl_Size catchIndex;	/* Index of the exception range to which the
 				 * current instruction refers */
-    int i;
 
     /*
      * Walk the basic blocks looking for exceptions in embedded scripts.
@@ -4171,7 +4162,7 @@ RestoreEmbeddedExceptionRanges(
 	     */
 
 	    rangeBase = envPtr->exceptArrayNext;
-	    for (i = 0; i < bbPtr->foreignExceptionCount; ++i) {
+	    for (int i = 0; i < bbPtr->foreignExceptionCount; ++i) {
 		range = bbPtr->foreignExceptions + i;
 		rangeIndex = TclCreateExceptRange(range->type, envPtr);
 		range->nestingLevel += envPtr->exceptDepth + bbPtr->catchDepth;
@@ -4187,8 +4178,8 @@ RestoreEmbeddedExceptionRanges(
 	     * INST_BEGIN_CATCH instructions to the new locations
 	     */
 
-	    i = bbPtr->startOffset;
-	    while (i < bbPtr->successor1->startOffset) {
+	    for (int i = bbPtr->startOffset; i < bbPtr->successor1->startOffset;
+		    i += tclInstructionTable[opcode].numBytes) {
 		opcode = envPtr->codeStart[i];
 		if (opcode == INST_BEGIN_CATCH) {
 		    catchIndex = TclGetUInt4AtPtr(envPtr->codeStart + i + 1);
@@ -4200,7 +4191,6 @@ RestoreEmbeddedExceptionRanges(
 			TclStoreInt4AtPtr(catchIndex, envPtr->codeStart+i+1);
 		    }
 		}
-		i += tclInstructionTable[opcode].numBytes;
 	    }
 	}
     }

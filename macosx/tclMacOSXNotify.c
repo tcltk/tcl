@@ -1000,7 +1000,7 @@ TclpDeleteFileHandler(
 				 * function. */
 {
     FileHandler *filePtr, *prevPtr;
-    int i, numFdBits = -1;
+    int numFdBits = -1;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     /*
@@ -1018,7 +1018,7 @@ TclpDeleteFileHandler(
 
     if (fd + 1 == tsdPtr->numFdBits) {
 	numFdBits = 0;
-	for (i = fd - 1; i >= 0; i--) {
+	for (int i = fd - 1; i >= 0; i--) {
 	    if (FD_ISSET(i, &tsdPtr->checkMasks.readable)
 		    || FD_ISSET(i, &tsdPtr->checkMasks.writable)
 		    || FD_ISSET(i, &tsdPtr->checkMasks.exceptional)) {
@@ -1787,7 +1787,7 @@ NotifierThreadProc(
 {
     ThreadSpecificData *tsdPtr;
     fd_set readableMask, writableMask, exceptionalMask;
-    int i, ret, numFdBits = 0, polling;
+    int ret, numFdBits = 0, polling;
     struct timeval poll = {0., 0.}, *timePtr;
     char buf[2];
 
@@ -1809,7 +1809,7 @@ NotifierThreadProc(
 	LOCK_NOTIFIER;
 	for (tsdPtr = waitingListPtr; tsdPtr; tsdPtr = tsdPtr->nextPtr) {
 	    LOCK_NOTIFIER_TSD;
-	    for (i = tsdPtr->numFdBits-1; i >= 0; --i) {
+	    for (int i = tsdPtr->numFdBits-1; i >= 0; --i) {
 		if (FD_ISSET(i, &tsdPtr->checkMasks.readable)) {
 		    FD_SET(i, &readableMask);
 		}
@@ -1885,7 +1885,7 @@ NotifierThreadProc(
 	    FD_ZERO(&readyMasks.writable);
 	    FD_ZERO(&readyMasks.exceptional);
 
-	    for (i = tsdPtr->numFdBits-1; i >= 0; --i) {
+	    for (int i = tsdPtr->numFdBits-1; i >= 0; --i) {
 		if (FD_ISSET(i, &checkMasks.readable)
 			&& FD_ISSET(i, &readableMask)) {
 		    FD_SET(i, &readyMasks.readable);
@@ -1935,7 +1935,7 @@ NotifierThreadProc(
 	 */
 
 	if (FD_ISSET(receivePipe, &readableMask)) {
-	    i = read(receivePipe, buf, 1);
+	    int i = read(receivePipe, buf, 1);
 
 	    if ((i == 0) || ((i == 1) && (buf[0] == 'q'))) {
 		/*

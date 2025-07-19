@@ -1585,15 +1585,12 @@ AccumulateDecimalDigit(
     int bignumFlag)		/* Flag == 1 if the number overflowed previous
 				 * to this digit. */
 {
-    int i, n;
-    Tcl_WideUInt w;
-
     /*
      * Try wide multiplication first.
      */
 
     if (!bignumFlag) {
-	w = *wideRepPtr;
+	Tcl_WideUInt w = *wideRepPtr;
 	if (w == 0) {
 	    /*
 	     * There's no need to multiply if the multiplicand is zero.
@@ -1635,7 +1632,6 @@ AccumulateDecimalDigit(
 		|| (mp_add_d(bignumRepPtr, (mp_digit) digit, bignumRepPtr) != MP_OKAY))
 	return 0;
     } else {
-	mp_err err;
 	/*
 	 * More than single digit multiplication. Multiply by the appropriate
 	 * small powers of 5, and then shift. Large strings of zeroes are
@@ -1645,9 +1641,9 @@ AccumulateDecimalDigit(
 	 * multiply (this presumes that MP_DIGIT_BIT >= 24).
 	 */
 
-	n = numZeros + 1;
-	err = mp_mul_d(bignumRepPtr, (mp_digit) pow10_wide[n&0x7], bignumRepPtr);
-	for (i = 3; (err == MP_OKAY) && (i <= 7); ++i) {
+	int n = numZeros + 1;
+	mp_err err = mp_mul_d(bignumRepPtr, (mp_digit) pow10_wide[n&0x7], bignumRepPtr);
+	for (int i = 3; (err == MP_OKAY) && (i <= 7); ++i) {
 	    if (n & (1 << i)) {
 		err = mp_mul(bignumRepPtr, pow5+i, bignumRepPtr);
 	    }
@@ -2780,7 +2776,7 @@ AdjustRange(
 				 * accumulated. */
     double d = *dPtr;		/* Number to adjust. */
     double ds;
-    int i, j, j1;
+    int i, j1;
 
     ieps = 2;
 
@@ -2790,7 +2786,7 @@ AdjustRange(
 	 */
 
 	ds = tens[k & 0xF];
-	j = k >> 4;
+	int j = k >> 4;
 	if (j & BLETCH) {
 	    j &= (BLETCH-1);
 	    d /= bigtens[N_BIGTENS - 1];
@@ -2812,7 +2808,7 @@ AdjustRange(
 
 	d *= tens[j1 & 0xF];
 	i = 0;
-	for (j = j1>>4; j; j>>=1) {
+	for (int j = j1>>4; j; j>>=1) {
 	    if (j & 1) {
 		ieps++;
 		d *= bigtens[i];
@@ -3420,7 +3416,6 @@ ShouldBankerRoundUpPowD(
     int sd,			/* Denominator is 2**(sd*MP_DIGIT_BIT). */
     int isodd)			/* 1 if the digit is odd, 0 if even. */
 {
-    int i;
     static const mp_digit topbit = ((mp_digit)1) << (MP_DIGIT_BIT - 1);
 
     if (b->used < sd || (b->dp[sd-1] & topbit) == 0) {
@@ -3429,7 +3424,7 @@ ShouldBankerRoundUpPowD(
     if (b->dp[sd-1] != topbit) {
 	return 1;
     }
-    for (i = sd-2; i >= 0; --i) {
+    for (int i = sd-2; i >= 0; --i) {
 	if (b->dp[i] != 0) {
 	    return 1;
 	}
@@ -3460,8 +3455,6 @@ ShouldBankerRoundUpToNextPowD(
     int isodd,			/* 1 if the integer significand is odd. */
     mp_int *temp)		/* Work area for the calculation. */
 {
-    int i;
-
     /*
      * Compare B and S-m - which is the same as comparing B+m and S - which we
      * do by computing b+m and doing a bitwhack compare against
@@ -3476,7 +3469,7 @@ ShouldBankerRoundUpToNextPowD(
 				/* >= 2s */
 	return 1;
     }
-    for (i = sd-1; i >= 0; --i) {
+    for (int i = sd-1; i >= 0; --i) {
 				/* Check for ==s */
 	if (temp->dp[i] != 0) {	/* > s */
 	    return 1;
@@ -4175,7 +4168,7 @@ StrictBignumConversion(
     mp_int dig;			/* Current digit of the result. */
     int digit;			/* Current digit of the result. */
     int g;			/* Size of the current digit ground. */
-    int i, j;
+    int i;
     mp_err err;
 
     /*
@@ -4272,7 +4265,7 @@ StrictBignumConversion(
 		Tcl_Panic("wrong digit!");
 	    }
 	    digit = (int)dig.dp[0];
-	    for (j = g-1; j >= 0; --j) {
+	    for (int j = g-1; j >= 0; --j) {
 		int t = itens[j];
 
 		*s++ = (char)(digit / t + '0');
@@ -4785,13 +4778,11 @@ TclInitDoubleConversion(void)
 void
 TclFinalizeDoubleConversion(void)
 {
-    int i;
-
     Tcl_Free(pow10_wide);
-    for (i=0; i<9; ++i) {
+    for (int i=0; i<9; ++i) {
 	mp_clear(pow5 + i);
     }
-    for (i=0; i < 5; ++i) {
+    for (int i=0; i < 5; ++i) {
 	mp_clear(pow5_13 + i);
     }
 }
@@ -4882,7 +4873,7 @@ TclBignumToDouble(
     const void *big)		/* Integer to convert. */
 {
     mp_int b;
-    int bits, shift, i, lsb;
+    int bits, shift, lsb;
     double r;
     mp_err err;
     const mp_int *a = (const mp_int *)big;
@@ -4962,7 +4953,7 @@ TclBignumToDouble(
 	return 0.0;
     }
     r = 0.0;
-    for (i = b.used-1; i>=0; --i) {
+    for (int i = b.used-1; i>=0; --i) {
 	r = ldexp(r, MP_DIGIT_BIT) + (double)b.dp[i];
     }
     mp_clear(&b);
@@ -5017,7 +5008,7 @@ TclCeil(
 	if (bits > DBL_MAX_EXP*log2FLT_RADIX) {
 	    r = HUGE_VAL;
 	} else {
-	    int i, exact = 1, shift = mantBits - bits;
+	    int exact = 1, shift = mantBits - bits;
 
 	    if (err != MP_OKAY) {
 		/* just skip */
@@ -5040,7 +5031,7 @@ TclCeil(
 	    if (err != MP_OKAY) {
 		return 0.0;
 	    }
-	    for (i=b.used-1 ; i>=0 ; --i) {
+	    for (int i=b.used-1 ; i>=0 ; --i) {
 		r = ldexp(r, MP_DIGIT_BIT) + (double)b.dp[i];
 	    }
 	    r = ldexp(r, bits - mantBits);
@@ -5083,7 +5074,7 @@ TclFloor(
 	if (bits > DBL_MAX_EXP*log2FLT_RADIX) {
 	    r = DBL_MAX;
 	} else {
-	    int i, shift = mantBits - bits;
+	    int shift = mantBits - bits;
 
 	    if (shift > 0) {
 		err = mp_mul_2d(a, shift, &b);
@@ -5095,7 +5086,7 @@ TclFloor(
 	    if (err != MP_OKAY) {
 		return 0.0;
 	    }
-	    for (i=b.used-1 ; i>=0 ; --i) {
+	    for (int i=b.used-1 ; i>=0 ; --i) {
 		r = ldexp(r, MP_DIGIT_BIT) + (double)b.dp[i];
 	    }
 	    r = ldexp(r, bits - mantBits);
@@ -5133,7 +5124,6 @@ BignumToBiasedFrExp(
     mp_int b;
     int bits;
     int shift;
-    int i;
     double r;
     mp_err err = MP_OKAY;
 
@@ -5161,7 +5151,7 @@ BignumToBiasedFrExp(
 
     r = 0.0;
     if (err == MP_OKAY) {
-	for (i=b.used-1; i>=0; --i) {
+	for (int i=b.used-1; i>=0; --i) {
 	    r = ldexp(r, MP_DIGIT_BIT) + (double)b.dp[i];
 	}
     }
@@ -5202,7 +5192,7 @@ Pow10TimesFrExp(
     int *machexp)		/* On input, exponent of multiplicand. On
 				 * output, exponent of result. */
 {
-    int i, j;
+    int j;
     int expt = *machexp;
     double retval = fraction;
 
@@ -5213,7 +5203,7 @@ Pow10TimesFrExp(
 
 	retval = frexp(retval * pow10vals[exponent & 0xF], &j);
 	expt += j;
-	for (i=4; i<9; ++i) {
+	for (int i=4; i<9; ++i) {
 	    if (exponent & (1<<i)) {
 		retval = frexp(retval * pow_10_2_n[i], &j);
 		expt += j;
@@ -5226,7 +5216,7 @@ Pow10TimesFrExp(
 
 	retval = frexp(retval / pow10vals[(-exponent) & 0xF], &j);
 	expt += j;
-	for (i=4; i<9; ++i) {
+	for (int i=4; i<9; ++i) {
 	    if ((-exponent) & (1<<i)) {
 		retval = frexp(retval / pow_10_2_n[i], &j);
 		expt += j;

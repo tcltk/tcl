@@ -320,9 +320,7 @@ TclFSNormalizeAbsolutePath(
 			     */
 
 			    if (tclPlatform == TCL_PLATFORM_WINDOWS) {
-				Tcl_Size i;
-
-				for (i = 0; i < curLen; i++) {
+				for (Tcl_Size i = 0; i < curLen; i++) {
 				    if (linkStr[i] == '\\') {
 					linkStr[i] = '/';
 				    }
@@ -842,7 +840,6 @@ TclJoinPath(
 				 * relative (e.g. simple normalization) */
 {
     Tcl_Obj *res = NULL;
-    Tcl_Size i;
     const Tcl_Filesystem *fsPtr = NULL;
 
     if (elements == 0) {
@@ -945,7 +942,7 @@ TclJoinPath(
 
     assert ( res == NULL );
 
-    for (i = 0; i < elements; i++) {
+    for (Tcl_Size i = 0; i < elements; i++) {
 	Tcl_Size driveNameLength;
 	Tcl_Size strEltLen, length;
 	Tcl_PathType type;
@@ -2691,7 +2688,7 @@ TclResolveTildePathList(
 	return NULL;
     }
     if (Tcl_ListObjGetElements(NULL, pathsObj, &objc, &objv) != TCL_OK) {
-	return NULL; /* Not a list */
+	return NULL;		/* Not a list */
     }
 
     /*
@@ -2700,11 +2697,11 @@ TclResolveTildePathList(
     for (i = 0; i < objc; ++i) {
 	path = Tcl_GetString(objv[i]);
 	if (path[0] == '~') {
-	    break; /* At least one path needs resolution */
+	    break;		/* At least one path needs resolution */
 	}
     }
     if (i == objc) {
-	return pathsObj; /* No paths needed to be resolved */
+	return pathsObj;	/* No paths needed to be resolved */
     }
 
     resolvedPaths = Tcl_NewListObj(objc, NULL);
@@ -2712,7 +2709,7 @@ TclResolveTildePathList(
 	Tcl_Obj *resolvedPath;
 	path = Tcl_GetString(objv[i]);
 	if (path[0] == 0) {
-	    continue; /* Skip empty strings */
+	    continue;		/* Skip empty strings */
 	}
 	resolvedPath = TclResolveTildePath(NULL, objv[i]);
 	if (resolvedPath) {

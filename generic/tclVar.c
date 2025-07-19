@@ -857,7 +857,7 @@ TclLookupSimpleVar(
     Namespace *varNsPtr, *cxtNsPtr, *dummy1Ptr, *dummy2Ptr;
     ResolverScheme *resPtr;
     int result;
-    Tcl_Size i, varLen;
+    Tcl_Size varLen;
     const char *varName = TclGetStringFromObj(varNamePtr, &varLen);
 
     varPtr = NULL;
@@ -990,14 +990,13 @@ TclLookupSimpleVar(
 
 	if (localCt > 0) {
 	    Tcl_Obj **objPtrPtr = &varFramePtr->localCachePtr->varName0;
-	    const char *localNameStr;
-	    Tcl_Size localLen;
 
-	    for (i=0 ; i<localCt ; i++, objPtrPtr++) {
+	    for (Tcl_Size i=0 ; i<localCt ; i++, objPtrPtr++) {
 		Tcl_Obj *objPtr = *objPtrPtr;
 
 		if (objPtr) {
-		    localNameStr = TclGetStringFromObj(objPtr, &localLen);
+		    Tcl_Size localLen;
+		    const char *localNameStr = TclGetStringFromObj(objPtr, &localLen);
 
 		    if ((varLen == localLen) && (varName[0] == localNameStr[0])
 			    && !memcmp(varName, localNameStr, varLen)) {
@@ -2829,7 +2828,6 @@ Tcl_AppendObjCmd(
     Var *varPtr, *arrayPtr;
     Tcl_Obj *varValuePtr = NULL;
 				/* Initialized to avoid compiler warning. */
-    int i;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "varName ?value ...?");
@@ -2847,7 +2845,7 @@ Tcl_AppendObjCmd(
 	if (varPtr == NULL) {
 	    return TCL_ERROR;
 	}
-	for (i=2 ; i<objc ; i++) {
+	for (int i=2 ; i<objc ; i++) {
 	    /*
 	     * Note that we do not need to increase the refCount of the Var
 	     * pointers: should a trace delete the variable, the return value
@@ -3700,7 +3698,7 @@ ArrayGetCmd(
     Tcl_Obj **nameObjPtr, *patternObj;
     Tcl_HashSearch search;
     const char *pattern;
-    Tcl_Size i, count;
+    Tcl_Size count;
     int result, isArray;
 
     switch (objc) {
@@ -3788,7 +3786,7 @@ ArrayGetCmd(
 	goto errorInArrayGet;
     }
 
-    for (i=0 ; i<count ; i++) {
+    for (Tcl_Size i=0 ; i<count ; i++) {
 	nameObj = *nameObjPtr++;
 	valueObj = Tcl_ObjGetVar2(interp, varNameObj, nameObj,
 		TCL_LEAVE_ERR_MSG);
@@ -4107,7 +4105,6 @@ ArraySetCmd(
 
 	Tcl_Size elemLen;
 	Tcl_Obj **elemPtrs, *copyListObj;
-	Tcl_Size i;
 
 	result = TclListObjLength(interp, arrayElemObj, &elemLen);
 	if (result != TCL_OK) {
@@ -4137,7 +4134,7 @@ ArraySetCmd(
 	if (!copyListObj) {
 	    return TCL_ERROR;
 	}
-	for (i=0 ; i<elemLen ; i+=2) {
+	for (Tcl_Size i=0 ; i<elemLen ; i+=2) {
 	    Var *elemVarPtr = TclLookupArrayElement(interp, arrayNameObj,
 		    elemPtrs[i], TCL_LEAVE_ERR_MSG, "set", 1, 1, varPtr, -1);
 
@@ -4964,8 +4961,6 @@ Tcl_GlobalObjCmd(
     Tcl_Obj *objPtr, *tailPtr;
     const char *varName;
     const char *tail;
-    int result;
-    int i;
 
     /*
      * If we are not executing inside a Tcl procedure, just return.
@@ -4975,7 +4970,7 @@ Tcl_GlobalObjCmd(
 	return TCL_OK;
     }
 
-    for (i=1 ; i<objc ; i++) {
+    for (int i=1 ; i<objc ; i++) {
 	/*
 	 * Make a local variable linked to its counterpart in the global ::
 	 * namespace.
@@ -5010,7 +5005,7 @@ Tcl_GlobalObjCmd(
 	 * Link to the variable "varName" in the global :: namespace.
 	 */
 
-	result = ObjMakeUpvar(interp, NULL, objPtr, NULL,
+	int result = ObjMakeUpvar(interp, NULL, objPtr, NULL,
 		TCL_GLOBAL_ONLY, /*myName*/ tailPtr, /*myFlags*/ 0, -1);
 
 	if (tail != varName) {
@@ -5069,11 +5064,10 @@ Tcl_VariableObjCmd(
     const char *varName, *tail, *cp;
     Var *varPtr, *arrayPtr;
     Tcl_Obj *varValuePtr;
-    int i;
     int result;
     Tcl_Obj *varNamePtr, *tailPtr;
 
-    for (i=1 ; i<objc ; i+=2) {
+    for (int i=1 ; i<objc ; i+=2) {
 	/*
 	 * Look up each variable in the current namespace context, creating it
 	 * if necessary.
@@ -5551,14 +5545,11 @@ TclDeleteCompiledLocalVars(
     CallFrame *framePtr)	/* Procedure call frame containing compiler-
 				 * assigned local variables to delete. */
 {
-    Var *varPtr;
-    Tcl_Size numLocals, i;
-    Tcl_Obj **namePtrPtr;
+    Tcl_Size numLocals = framePtr->numCompiledLocals;
+    Var *varPtr = framePtr->compiledLocals;
+    Tcl_Obj **namePtrPtr = &localName(framePtr, 0);
 
-    numLocals = framePtr->numCompiledLocals;
-    varPtr = framePtr->compiledLocals;
-    namePtrPtr = &localName(framePtr, 0);
-    for (i=0 ; i<numLocals ; i++, namePtrPtr++, varPtr++) {
+    for (Tcl_Size i=0 ; i<numLocals ; i++, namePtrPtr++, varPtr++) {
 	UnsetVarStruct(varPtr, NULL, iPtr, *namePtrPtr, NULL,
 		TCL_TRACE_UNSETS, i);
     }

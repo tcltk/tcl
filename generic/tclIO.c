@@ -7911,13 +7911,12 @@ Tcl_BadChannelOption(
 				 * standard generic options. Can be NULL for
 				 * generic options only. */
 {
+    static const char *genericopt =
+	"blocking buffering buffersize encoding eofchar profile translation";
     if (interp != NULL) {
-	const char *genericopt =
-		"blocking buffering buffersize encoding eofchar profile translation";
 	const char **argv;
 	Tcl_Size argc, i;
 	Tcl_DString ds;
-	Tcl_Obj *errObj;
 
 	Tcl_DStringInit(&ds);
 	Tcl_DStringAppend(&ds, genericopt, -1);
@@ -7930,7 +7929,7 @@ Tcl_BadChannelOption(
 	    Tcl_Panic("malformed option list in channel driver");
 	}
 	Tcl_ResetResult(interp);
-	errObj = Tcl_ObjPrintf("bad option \"%s\": should be one of ",
+	Tcl_Obj *errObj = Tcl_ObjPrintf("bad option \"%s\": should be one of ",
 		optionName ? optionName : "");
 	argc--;
 	for (i = 0; i < argc; i++) {
@@ -11213,7 +11212,7 @@ FixLevelCode(
     int explicitResult, numOptions, lcn;
     Tcl_Size lc;
     Tcl_Obj **lv, **lvn;
-    int res, i, j, val, lignore, cignore;
+    int res, val, lignore, cignore;
     int newlevel = -1, newcode = -1;
 
     /* ASSERT msg != NULL */
@@ -11248,7 +11247,7 @@ FixLevelCode(
      * Check for -code x, x != 1|error, and -level x, x != 0
      */
 
-    for (i = 0; i < numOptions; i += 2) {
+    for (int i = 0; i < numOptions; i += 2) {
 	if (0 == strcmp(TclGetString(lv[i]), "-code")) {
 	    /*
 	     * !"error", !integer, integer != 1 (numeric code for error)
@@ -11300,6 +11299,7 @@ FixLevelCode(
      */
 
     lignore = cignore = 0;
+    int i, j;
     for (i=0, j=0; i<numOptions; i+=2) {
 	if (0 == strcmp(TclGetString(lv[i]), "-level")) {
 	    if (newlevel >= 0) {

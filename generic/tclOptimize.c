@@ -56,7 +56,6 @@ LocateTargetAddresses(
 {
     unsigned char *currentInstPtr, *targetInstPtr;
     int isNew;
-    Tcl_Size i;
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch hSearch;
 
@@ -66,7 +65,7 @@ LocateTargetAddresses(
      * The starts of commands represent target addresses.
      */
 
-    for (i=0 ; i<envPtr->numCommands ; i++) {
+    for (Tcl_Size i=0 ; i<envPtr->numCommands ; i++) {
 	DefineTargetAddress(tablePtr,
 		envPtr->codeStart + envPtr->cmdMapPtr[i].codeOffset);
     }
@@ -117,7 +116,7 @@ LocateTargetAddresses(
 	    break;
 #ifndef REMOVE_DEPRECATED_OPCODES
 	case INST_RETURN_CODE_BRANCH:
-	    for (i=TCL_ERROR ; i<TCL_CONTINUE+1 ; i++) {
+	    for (int i=TCL_ERROR ; i<TCL_CONTINUE+1 ; i++) {
 		DefineTargetAddress(tablePtr, currentInstPtr + 2*i - 1);
 	    }
 	    break;
@@ -136,7 +135,7 @@ LocateTargetAddresses(
      * Enter in the targets of exception ranges.
      */
 
-    for (i=0 ; i<envPtr->exceptArrayNext ; i++) {
+    for (Tcl_Size i=0 ; i<envPtr->exceptArrayNext ; i++) {
 	ExceptionRange *rangePtr = &envPtr->exceptArrayPtr[i];
 
 	if (rangePtr->type == CATCH_EXCEPTION_RANGE) {
@@ -221,7 +220,7 @@ ConvertZeroEffectToNOP(
     LocateTargetAddresses(envPtr, &targets);
     for (currentInstPtr = envPtr->codeStart ;
 	    currentInstPtr < envPtr->codeNext ; currentInstPtr += size) {
-	int blank = 0, i, nextInst;
+	int blank = 0, nextInst;
 
 	size = AddrLength(currentInstPtr);
 	while ((currentInstPtr + size < envPtr->codeNext)
@@ -334,7 +333,7 @@ ConvertZeroEffectToNOP(
 	}
 
 	if (blank > 0) {
-	    for (i=0 ; i<blank ; i++) {
+	    for (int i=0 ; i<blank ; i++) {
 		currentInstPtr[i] = INST_NOP;
 	    }
 	    size = blank;

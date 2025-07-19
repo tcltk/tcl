@@ -1568,10 +1568,7 @@ NativeAccess(
     const WCHAR *nativePath,	/* Path of file to access, native encoding. */
     int mode)			/* Permission setting. */
 {
-    DWORD attr;
-
-    attr = GetFileAttributesW(nativePath);
-
+    DWORD attr = GetFileAttributesW(nativePath);
     if (attr == INVALID_FILE_ATTRIBUTES) {
 	/*
 	 * File might not exist.
@@ -1627,7 +1624,6 @@ NativeAccess(
 
 	if ((mode & (R_OK|W_OK|X_OK)) && !(mode & ~(R_OK|W_OK|X_OK))) {
 	    DWORD mask = 0;
-	    HANDLE hFile;
 
 	    if (mode & R_OK) {
 		mask |= GENERIC_READ;
@@ -1639,7 +1635,7 @@ NativeAccess(
 		mask |= GENERIC_EXECUTE;
 	    }
 
-	    hFile = CreateFileW(nativePath, mask,
+	    HANDLE hFile = CreateFileW(nativePath, mask,
 		    FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
 		    NULL, OPEN_EXISTING, FILE_FLAG_NO_BUFFERING, NULL);
 	    if (hFile != INVALID_HANDLE_VALUE) {
@@ -1664,174 +1660,161 @@ NativeAccess(
     }
 
     /*
-     * It looks as if the permissions are ok, but if we are on NT, 2000 or XP,
+     * It looks as if the permissions are ok, but on all modern Windows,
      * we have a more complex permissions structure so we try to check that.
      * The code below is remarkably complex for such a simple thing as finding
      * what permissions the OS has set for a file.
      */
 
-    {
-	SECURITY_DESCRIPTOR *sdPtr = NULL;
-	unsigned long size;
-	PSID pSid = 0;
-	BOOL SidDefaulted;
-	SID_IDENTIFIER_AUTHORITY samba_unmapped = {{0, 0, 0, 0, 0, 22}};
-	GENERIC_MAPPING genMap;
-	HANDLE hToken = NULL;
-	DWORD desiredAccess = 0, grantedAccess = 0;
-	BOOL accessYesNo = FALSE;
-	PRIVILEGE_SET privSet;
-	DWORD privSetSize = sizeof(PRIVILEGE_SET);
-	int error;
+    /*
+     * First find out how big the buffer needs to be.
+     * Should fail with ERROR_INSUFFICIENT_BUFFER
+     */
 
+    unsigned long size = 0;
+    GetFileSecurityW(nativePath,
+	    OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION
+	    | DACL_SECURITY_INFORMATION | LABEL_SECURITY_INFORMATION,
+	    0, 0, &size);
+    DWORD error = GetLastError();
+    if (error != ERROR_INSUFFICIENT_BUFFER) {
 	/*
-	 * First find out how big the buffer needs to be.
+	 * Most likely case is ERROR_ACCESS_DENIED, which we will convert
+	 * to EACCES - just what we want!
 	 */
 
-	size = 0;
-	GetFileSecurityW(nativePath,
-		OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION
-		| DACL_SECURITY_INFORMATION | LABEL_SECURITY_INFORMATION,
-		0, 0, &size);
-
-	/*
-	 * Should have failed with ERROR_INSUFFICIENT_BUFFER
-	 */
-
-	error = GetLastError();
-	if (error != ERROR_INSUFFICIENT_BUFFER) {
-	    /*
-	     * Most likely case is ERROR_ACCESS_DENIED, which we will convert
-	     * to EACCES - just what we want!
-	     */
-
-	    Tcl_WinConvertError((DWORD) error);
-	    return -1;
-	}
-
-	/*
-	 * Now size contains the size of buffer needed.
-	 */
-
-	sdPtr = (SECURITY_DESCRIPTOR *) HeapAlloc(GetProcessHeap(), 0, size);
-
-	if (sdPtr == NULL) {
-	    goto accessError;
-	}
-
-	/*
-	 * Call GetFileSecurityW() for real.
-	 */
-
-	if (!GetFileSecurityW(nativePath,
-		OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION
-		| DACL_SECURITY_INFORMATION | LABEL_SECURITY_INFORMATION,
-		sdPtr, size, &size)) {
-	    /*
-	     * Error getting owner SD
-	     */
-
-	    goto accessError;
-	}
-
-	/*
-	 * As of Samba 3.0.23 (10-Jul-2006), unmapped users and groups are
-	 * assigned to SID domains S-1-22-1 and S-1-22-2, where "22" is the
-	 * top-level authority.	 If the file owner and group is unmapped then
-	 * the ACL access check below will only test against world access,
-	 * which is likely to be more restrictive than the actual access
-	 * restrictions.  Since the ACL tests are more likely wrong than
-	 * right, skip them.  Moreover, the unix owner access permissions are
-	 * usually mapped to the Windows attributes, so if the user is the
-	 * file owner then the attrib checks above are correct (as far as they
-	 * go).
-	 */
-
-	if (!GetSecurityDescriptorOwner(sdPtr,&pSid,&SidDefaulted) ||
-	    memcmp(GetSidIdentifierAuthority(pSid),&samba_unmapped,
-		    sizeof(SID_IDENTIFIER_AUTHORITY))==0) {
-	    HeapFree(GetProcessHeap(), 0, sdPtr);
-	    return 0; /* Attrib tests say access allowed. */
-	}
-
-	/*
-	 * Perform security impersonation of the user and open the resulting
-	 * thread token.
-	 */
-
-	if (!ImpersonateSelf(SecurityImpersonation)) {
-	    /*
-	     * Unable to perform security impersonation.
-	     */
-
-	    goto accessError;
-	}
-	if (!OpenThreadToken(GetCurrentThread(),
-		TOKEN_DUPLICATE | TOKEN_QUERY, FALSE, &hToken)) {
-	    /*
-	     * Unable to get current thread's token.
-	     */
-
-	    goto accessError;
-	}
-
-	RevertToSelf();
-
-	/*
-	 * Setup desiredAccess according to the access privileges we are
-	 * checking.
-	 */
-
-	if (mode & R_OK) {
-	    desiredAccess |= FILE_GENERIC_READ;
-	}
-	if (mode & W_OK) {
-	    desiredAccess |= FILE_GENERIC_WRITE;
-	}
-	if (mode & X_OK) {
-	    desiredAccess |= FILE_GENERIC_EXECUTE;
-	}
-
-	memset(&genMap, 0x0, sizeof(GENERIC_MAPPING));
-	genMap.GenericRead = FILE_GENERIC_READ;
-	genMap.GenericWrite = FILE_GENERIC_WRITE;
-	genMap.GenericExecute = FILE_GENERIC_EXECUTE;
-	genMap.GenericAll = FILE_ALL_ACCESS;
-
-	/*
-	 * Perform access check using the token.
-	 */
-
-	if (!AccessCheck(sdPtr, hToken, desiredAccess,
-		&genMap, &privSet, &privSetSize, &grantedAccess,
-		&accessYesNo)) {
-	    /*
-	     * Unable to perform access check.
-	     */
-
-	accessError:
-	    Tcl_WinConvertError(GetLastError());
-	    if (sdPtr != NULL) {
-		HeapFree(GetProcessHeap(), 0, sdPtr);
-	    }
-	    if (hToken != NULL) {
-		CloseHandle(hToken);
-	    }
-	    return -1;
-	}
-
-	/*
-	 * Clean up.
-	 */
-
-	HeapFree(GetProcessHeap(), 0, sdPtr);
-	CloseHandle(hToken);
-	if (!accessYesNo) {
-	    Tcl_SetErrno(EACCES);
-	    return -1;
-	}
-
+	Tcl_WinConvertError(error);
+	return -1;
     }
+
+    /*
+     * Now size contains the size of buffer needed.
+     */
+
+    HANDLE hToken = NULL;
+    SECURITY_DESCRIPTOR *sdPtr = (SECURITY_DESCRIPTOR *)
+	    HeapAlloc(GetProcessHeap(), 0, size);
+    if (sdPtr == NULL) {
+	goto accessError;
+    }
+
+    /*
+     * Call GetFileSecurityW() for real.
+     */
+
+    if (!GetFileSecurityW(nativePath,
+	    OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION
+	    | DACL_SECURITY_INFORMATION | LABEL_SECURITY_INFORMATION,
+	    sdPtr, size, &size)) {
+	/*
+	 * Error getting owner SD
+	 */
+
+	goto accessError;
+    }
+
+    /*
+     * As of Samba 3.0.23 (10-Jul-2006), unmapped users and groups are
+     * assigned to SID domains S-1-22-1 and S-1-22-2, where "22" is the
+     * top-level authority. If the file owner and group is unmapped then
+     * the ACL access check below will only test against world access, which
+     * is likely to be more restrictive than the actual access restrictions.
+     * Since the ACL tests are more likely wrong than right, skip them.
+     * Moreover, the unix owner access permissions are usually mapped to the
+     * Windows attributes, so if the user is the file owner then the attrib
+     * checks above are correct (as far as they go).
+     */
+
+    PSID pSid = 0;
+    BOOL SidDefaulted;
+    static const SID_IDENTIFIER_AUTHORITY samba_unmapped = {{0, 0, 0, 0, 0, 22}};
+    if (!GetSecurityDescriptorOwner(sdPtr, &pSid, &SidDefaulted) ||
+	    memcmp(GetSidIdentifierAuthority(pSid), &samba_unmapped,
+		    sizeof(samba_unmapped)) == 0) {
+	HeapFree(GetProcessHeap(), 0, sdPtr);
+	return 0; /* Attrib tests say access allowed. */
+    }
+
+    /*
+     * Perform security impersonation of the user and open the resulting
+     * thread token.
+     */
+
+    if (!ImpersonateSelf(SecurityImpersonation)) {
+	/*
+	 * Unable to perform security impersonation.
+	 */
+
+	goto accessError;
+    }
+    if (!OpenThreadToken(GetCurrentThread(),
+	    TOKEN_DUPLICATE | TOKEN_QUERY, FALSE, &hToken)) {
+	/*
+	 * Unable to get current thread's token.
+	 */
+
+	goto accessError;
+    }
+
+    RevertToSelf();
+
+    /*
+     * Setup desiredAccess according to the access privileges we are
+     * checking.
+     */
+
+    DWORD desiredAccess = 0, grantedAccess = 0;
+    if (mode & R_OK) {
+	desiredAccess |= FILE_GENERIC_READ;
+    }
+    if (mode & W_OK) {
+	desiredAccess |= FILE_GENERIC_WRITE;
+    }
+    if (mode & X_OK) {
+	desiredAccess |= FILE_GENERIC_EXECUTE;
+    }
+
+    /*
+     * Perform access check using the token.
+     */
+
+    GENERIC_MAPPING genMap = {
+	FILE_GENERIC_READ,
+	FILE_GENERIC_WRITE,
+	FILE_GENERIC_EXECUTE,
+	FILE_ALL_ACCESS
+    };
+    PRIVILEGE_SET privSet;
+    DWORD privSetSize = sizeof(PRIVILEGE_SET);
+    BOOL accessYesNo = FALSE;
+    if (!AccessCheck(sdPtr, hToken, desiredAccess,
+	    &genMap, &privSet, &privSetSize, &grantedAccess, &accessYesNo)) {
+	/*
+	 * Unable to perform access check.
+	 */
+
+    accessError:
+	Tcl_WinConvertError(GetLastError());
+	if (sdPtr != NULL) {
+	    HeapFree(GetProcessHeap(), 0, sdPtr);
+	}
+	if (hToken != NULL) {
+	    CloseHandle(hToken);
+	}
+	return -1;
+    }
+
+    /*
+     * Clean up.
+     */
+
+    HeapFree(GetProcessHeap(), 0, sdPtr);
+    CloseHandle(hToken);
+    if (!accessYesNo) {
+	Tcl_SetErrno(EACCES);
+	return -1;
+    }
+
     return 0;
 }
 
@@ -1893,16 +1876,12 @@ int
 TclpObjChdir(
     Tcl_Obj *pathPtr)	/* Path to new working directory. */
 {
-    int result;
-    const WCHAR *nativePath;
-
-    nativePath = (const WCHAR *)Tcl_FSGetNativePath(pathPtr);
-
+    const WCHAR *nativePath = (const WCHAR *)Tcl_FSGetNativePath(pathPtr);
     if (!nativePath) {
 	return -1;
     }
-    result = SetCurrentDirectoryW(nativePath);
 
+    int result = SetCurrentDirectoryW(nativePath);
     if (result == 0) {
 	Tcl_WinConvertError(GetLastError());
 	return -1;
@@ -1939,9 +1918,6 @@ TclpGetCwd(
 				 * name of current directory. */
 {
     WCHAR buffer[MAX_PATH];
-    char *p;
-    WCHAR *native;
-
     if (GetCurrentDirectoryW(MAX_PATH, buffer) == 0) {
 	Tcl_WinConvertError(GetLastError());
 	if (interp != NULL) {
@@ -1955,7 +1931,7 @@ TclpGetCwd(
      * Watch for the weird Windows c:\\UNC syntax.
      */
 
-    native = (WCHAR *) buffer;
+    WCHAR *native = (WCHAR *) buffer;
     if ((native[0] != '\0') && (native[1] == ':')
 	    && (native[2] == '\\') && (native[3] == '\\')) {
 	native += 2;
@@ -1967,7 +1943,7 @@ TclpGetCwd(
      * Convert to forward slashes for easier use in scripts.
      */
 
-    for (p = Tcl_DStringValue(bufferPtr); *p != '\0'; p++) {
+    for (char *p = Tcl_DStringValue(bufferPtr); *p != '\0'; p++) {
 	if (*p == '\\') {
 	    *p = '/';
 	}

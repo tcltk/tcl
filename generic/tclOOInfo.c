@@ -608,10 +608,8 @@ InfoObjectMethodsCmd(
 	SCOPE_LOCALPRIVATE,
 	SCOPE_DEFAULT = -1
     };
-    Object *oPtr;
     int flag = PUBLIC_METHOD, recurse = 0, scope = SCOPE_DEFAULT;
     Tcl_Obj *namePtr, *resultObj;
-    Method *mPtr;
 
     /*
      * Parse arguments.
@@ -621,14 +619,12 @@ InfoObjectMethodsCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "objName ?-option value ...?");
 	return TCL_ERROR;
     }
-    oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[1]);
+    Object *oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[1]);
     if (oPtr == NULL) {
 	return TCL_ERROR;
     }
     if (objc != 2) {
-	int i;
-
-	for (i=2 ; i<objc ; i++) {
+	for (int i=2 ; i<objc ; i++) {
 	    if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0,
 		    &idx) != TCL_OK) {
 		return TCL_ERROR;
@@ -684,10 +680,10 @@ InfoObjectMethodsCmd(
     TclNewObj(resultObj);
     if (recurse) {
 	const char **names;
-	int i, numNames = TclOOGetSortedMethodList(oPtr, NULL, NULL, flag,
+	Tcl_Size numNames = TclOOGetSortedMethodList(oPtr, NULL, NULL, flag,
 		&names);
 
-	for (i=0 ; i<numNames ; i++) {
+	for (Tcl_Size i=0 ; i<numNames ; i++) {
 	    Tcl_ListObjAppendElement(NULL, resultObj,
 		    Tcl_NewStringObj(names[i], TCL_AUTO_LENGTH));
 	}
@@ -695,6 +691,7 @@ InfoObjectMethodsCmd(
 	    Tcl_Free((void *)names);
 	}
     } else if (oPtr->methodsPtr) {
+	Method *mPtr;
 	if (scope == SCOPE_DEFAULT) {
 	    /*
 	     * Handle legacy-mode matching. [Bug 36e5517a6850]

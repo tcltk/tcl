@@ -4591,8 +4591,7 @@ ExtendStringRepWithUnicode(
      * Precondition: this is the "string" Tcl_ObjType.
      */
 
-    Tcl_Size i, origLength, size = 0;
-    char *dst;
+    Tcl_Size origLength, size = 0;
     String *stringPtr = GET_STRING(objPtr);
 
     if (numChars < 0) {
@@ -4617,7 +4616,7 @@ ExtendStringRepWithUnicode(
 	goto copyBytes;
     }
 
-    for (i = 0; i < numChars && size >= 0; i++) {
+    for (Tcl_Size i = 0; i < numChars && size >= 0; i++) {
 	/* TODO - overflow check! I don't think check below at end suffices */
 	size += TclUtfCount(unicode[i]);
     }
@@ -4633,9 +4632,9 @@ ExtendStringRepWithUnicode(
 	GrowStringBuffer(objPtr, size, 1);
     }
 
-  copyBytes:
-    dst = objPtr->bytes + origLength;
-    for (i = 0; i < numChars; i++) {
+  copyBytes:;
+    char *dst = objPtr->bytes + origLength;
+    for (Tcl_Size i = 0; i < numChars; i++) {
 	dst += Tcl_UniCharToUtf(unicode[i], dst);
     }
     *dst = '\0';

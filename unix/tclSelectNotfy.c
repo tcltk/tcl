@@ -544,7 +544,6 @@ TclpDeleteFileHandler(
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     FileHandler *filePtr, *prevPtr;
-    int i;
 
     /*
      * Find the entry for the given file (and return if there isn't one).
@@ -576,7 +575,7 @@ TclpDeleteFileHandler(
     if (fd + 1 == tsdPtr->numFdBits) {
 	int numFdBits = 0;
 
-	for (i = fd - 1; i >= 0; i--) {
+	for (int i = fd - 1; i >= 0; i--) {
 	    if (FD_ISSET(i, &tsdPtr->checkMasks.readable)
 		    || FD_ISSET(i, &tsdPtr->checkMasks.writable)
 		    || FD_ISSET(i, &tsdPtr->checkMasks.exception)) {
@@ -999,7 +998,7 @@ NotifierThreadProc(
     fd_set readableMask;
     fd_set writableMask;
     fd_set exceptionMask;
-    int i, fds[2], receivePipe, ret;
+    int fds[2], receivePipe, ret;
     long found;
     struct timeval poll = {0, 0}, *timePtr;
     char buf[2];
@@ -1068,7 +1067,7 @@ NotifierThreadProc(
 	pthread_mutex_lock(&notifierMutex);
 	timePtr = NULL;
 	for (tsdPtr = waitingListPtr; tsdPtr; tsdPtr = tsdPtr->nextPtr) {
-	    for (i = tsdPtr->numFdBits-1; i >= 0; --i) {
+	    for (int i = tsdPtr->numFdBits-1; i >= 0; --i) {
 		if (FD_ISSET(i, &tsdPtr->checkMasks.readable)) {
 		    FD_SET(i, &readableMask);
 		}
@@ -1152,7 +1151,7 @@ NotifierThreadProc(
 	for (tsdPtr = waitingListPtr; tsdPtr; tsdPtr = tsdPtr->nextPtr) {
 	    found = 0;
 
-	    for (i = tsdPtr->numFdBits - 1; i >= 0; --i) {
+	    for (int i = tsdPtr->numFdBits - 1; i >= 0; --i) {
 		if (FD_ISSET(i, &tsdPtr->checkMasks.readable)
 			&& FD_ISSET(i, &readableMask)) {
 		    FD_SET(i, &tsdPtr->readyMasks.readable);
@@ -1182,6 +1181,7 @@ NotifierThreadProc(
 	 * avoid a race condition we only read one at a time.
 	 */
 
+	int i;
 	do {
 	    i = (int)read(receivePipe, buf, 1);
 	    if (i <= 0) {

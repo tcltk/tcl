@@ -748,7 +748,6 @@ Tcl_FconfigureObjCmd(
 {
     const char *optionName, *valueName;
     Tcl_Channel chan;		/* The channel to set a mode on. */
-    int i;			/* Iterate over arg-value pairs. */
 
     if ((objc < 2) || (((objc % 2) == 1) && (objc != 3))) {
 	Tcl_WrongNumArgs(interp, 1, objv, "channel ?-option value ...?");
@@ -784,7 +783,7 @@ Tcl_FconfigureObjCmd(
 	return TCL_OK;
     }
 
-    for (i = 3; i < objc; i += 2) {
+    for (int i = 3; i < objc; i += 2) {
 	optionName = TclGetString(objv[i-1]);
 	valueName = TclGetString(objv[i]);
 	if (Tcl_SetChannelOption(interp, chan, optionName, valueName)
@@ -905,7 +904,7 @@ Tcl_ExecObjCmd(
 				 * on the _Tcl_ stack. */
     const char *string;
     Tcl_Channel chan;
-    int argc, background, i, index, keepNewline, result, skip, ignoreStderr;
+    int argc, background, index, keepNewline, result, skip, ignoreStderr;
     Tcl_Size length;
     static const char *const options[] = {
 	"-ignorestderr", "-keepnewline", "-encoding", "--", NULL
@@ -987,7 +986,7 @@ Tcl_ExecObjCmd(
      * argument vector.
      */
 
-    for (i = 0; i < argc; i++) {
+    for (int i = 0; i < argc; i++) {
 	argv[i] = TclGetString(objv[i + skip]);
     }
     argv[argc] = NULL;
@@ -1775,9 +1774,7 @@ Tcl_FcopyObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Channel inChan, outChan;
-    int mode, i, index;
-    Tcl_WideInt toRead;
-    Tcl_Obj *cmdPtr;
+    int mode;
     static const char *const switches[] = { "-size", "-command", NULL };
     enum { FcopySize, FcopyCommand };
 
@@ -1809,9 +1806,10 @@ Tcl_FcopyObjCmd(
 	return TCL_ERROR;
     }
 
-    toRead = -1;
-    cmdPtr = NULL;
-    for (i = 3; i < objc; i += 2) {
+    Tcl_WideInt toRead = -1;
+    Tcl_Obj *cmdPtr = NULL;
+    for (int i = 3; i < objc; i += 2) {
+	int index;
 	if (Tcl_GetIndexFromObj(interp, objv[i], switches, "option", 0,
 		&index) != TCL_OK) {
 	    return TCL_ERROR;
@@ -2113,11 +2111,10 @@ TclInitChanCmd(
     };
     Tcl_Command ensemble;
     Tcl_Obj *mapObj;
-    int i;
 
     ensemble = TclMakeEnsemble(interp, "chan", initMap);
     Tcl_GetEnsembleMappingDict(NULL, ensemble, &mapObj);
-    for (i=0 ; extras[i] ; i+=2) {
+    for (int i=0 ; extras[i] ; i+=2) {
 	/*
 	 * Can assume that reference counts are all incremented.
 	 */

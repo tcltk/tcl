@@ -1750,15 +1750,13 @@ TclOODefineDeleteMethodObjCmd(
     Tcl_Obj *const *objv)
 {
     int isInstanceDeleteMethod = (clientData != NULL);
-    Object *oPtr;
-    int i;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name ?name ...?");
 	return TCL_ERROR;
     }
 
-    oPtr = (Object *) TclOOGetDefineCmdContext(interp);
+    Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
     if (oPtr == NULL) {
 	return TCL_ERROR;
     }
@@ -1768,7 +1766,7 @@ TclOODefineDeleteMethodObjCmd(
 	return TCL_ERROR;
     }
 
-    for (i = 1; i < objc; i++) {
+    for (int i = 1; i < objc; i++) {
 	/*
 	 * Delete the method structure from the appropriate hash table.
 	 */
@@ -1867,29 +1865,25 @@ TclOODefineExportObjCmd(
     Tcl_Obj *const *objv)
 {
     int isInstanceExport = (clientData != NULL);
-    Object *oPtr;
-    Method *mPtr;
-    Tcl_HashEntry *hPtr;
-    Class *clsPtr;
-    int i, isNew, changed = 0;
+    int changed = 0;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name ?name ...?");
 	return TCL_ERROR;
     }
 
-    oPtr = (Object *) TclOOGetDefineCmdContext(interp);
+    Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
     if (oPtr == NULL) {
 	return TCL_ERROR;
     }
-    clsPtr = oPtr->classPtr;
+    Class *clsPtr = oPtr->classPtr;
     if (!isInstanceExport && !clsPtr) {
 	TclPrintfResult(interp, "attempt to misuse API");
 	OO_ERROR(interp, MONKEY_BUSINESS);
 	return TCL_ERROR;
     }
 
-    for (i = 1; i < objc; i++) {
+    for (int i = 1; i < objc; i++) {
 	/*
 	 * Exporting is done by adding the PUBLIC_METHOD flag to the method
 	 * record. If there is no such method in this object or class (i.e.
@@ -1899,6 +1893,8 @@ TclOODefineExportObjCmd(
 	 * their flags member.
 	 */
 
+	int isNew;
+	Tcl_HashEntry *hPtr;
 	if (isInstanceExport) {
 	    if (!oPtr->methodsPtr) {
 		oPtr->methodsPtr = (Tcl_HashTable *)
@@ -1906,13 +1902,12 @@ TclOODefineExportObjCmd(
 		Tcl_InitObjHashTable(oPtr->methodsPtr);
 		oPtr->flags &= ~USE_CLASS_CACHE;
 	    }
-	    hPtr = Tcl_CreateHashEntry(oPtr->methodsPtr, objv[i],
-		    &isNew);
+	    hPtr = Tcl_CreateHashEntry(oPtr->methodsPtr, objv[i], &isNew);
 	} else {
-	    hPtr = Tcl_CreateHashEntry(&clsPtr->classMethods, objv[i],
-		    &isNew);
+	    hPtr = Tcl_CreateHashEntry(&clsPtr->classMethods, objv[i], &isNew);
 	}
 
+	Method *mPtr;
 	if (isNew) {
 	    mPtr = (Method *) Tcl_Alloc(sizeof(Method));
 	    memset(mPtr, 0, sizeof(Method));
@@ -2179,29 +2174,25 @@ TclOODefineUnexportObjCmd(
     Tcl_Obj *const *objv)
 {
     int isInstanceUnexport = (clientData != NULL);
-    Object *oPtr;
-    Method *mPtr;
-    Tcl_HashEntry *hPtr;
-    Class *clsPtr;
-    int i, isNew, changed = 0;
+    int changed = 0;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name ?name ...?");
 	return TCL_ERROR;
     }
 
-    oPtr = (Object *) TclOOGetDefineCmdContext(interp);
+    Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
     if (oPtr == NULL) {
 	return TCL_ERROR;
     }
-    clsPtr = oPtr->classPtr;
+    Class *clsPtr = oPtr->classPtr;
     if (!isInstanceUnexport && !clsPtr) {
 	TclPrintfResult(interp, "attempt to misuse API");
 	OO_ERROR(interp, MONKEY_BUSINESS);
 	return TCL_ERROR;
     }
 
-    for (i = 1; i < objc; i++) {
+    for (int i = 1; i < objc; i++) {
 	/*
 	 * Unexporting is done by removing the PUBLIC_METHOD flag from the
 	 * method record. If there is no such method in this object or class
@@ -2211,6 +2202,8 @@ TclOODefineUnexportObjCmd(
 	 * their flags member.
 	 */
 
+	Tcl_HashEntry *hPtr;
+	int isNew;
 	if (isInstanceUnexport) {
 	    if (!oPtr->methodsPtr) {
 		oPtr->methodsPtr = (Tcl_HashTable *)
@@ -2218,13 +2211,12 @@ TclOODefineUnexportObjCmd(
 		Tcl_InitObjHashTable(oPtr->methodsPtr);
 		oPtr->flags &= ~USE_CLASS_CACHE;
 	    }
-	    hPtr = Tcl_CreateHashEntry(oPtr->methodsPtr, objv[i],
-		    &isNew);
+	    hPtr = Tcl_CreateHashEntry(oPtr->methodsPtr, objv[i], &isNew);
 	} else {
-	    hPtr = Tcl_CreateHashEntry(&clsPtr->classMethods, objv[i],
-		    &isNew);
+	    hPtr = Tcl_CreateHashEntry(&clsPtr->classMethods, objv[i], &isNew);
 	}
 
+	Method *mPtr;
 	if (isNew) {
 	    mPtr = (Method *) Tcl_Alloc(sizeof(Method));
 	    memset(mPtr, 0, sizeof(Method));
@@ -2483,14 +2475,13 @@ ClassMixin_Set(
     Tcl_Obj *const *objv)
 {
     Class *clsPtr = TclOOGetClassDefineCmdContext(interp);
-    Tcl_Size mixinc, i;
+    Tcl_Size mixinc;
     Tcl_Obj **mixinv;
     Class **mixins;		/* The references to the classes to actually
 				 * install. */
     Tcl_HashTable uniqueCheck;	/* Note that this hash table is just used as a
 				 * set of class references; it has no payload
 				 * values and keys are always pointers. */
-    int isNew;
 
     if (clsPtr == NULL) {
 	return TCL_ERROR;
@@ -2508,13 +2499,14 @@ ClassMixin_Set(
     mixins = (Class **) TclStackAlloc(interp, sizeof(Class *) * mixinc);
     Tcl_InitHashTable(&uniqueCheck, TCL_ONE_WORD_KEYS);
 
-    for (i = 0; i < mixinc; i++) {
+    for (Tcl_Size i = 0; i < mixinc; i++) {
 	mixins[i] = GetClassInOuterContext(interp, mixinv[i],
 		"may only mix in classes");
 	if (mixins[i] == NULL) {
 	    i--;
 	    goto freeAndError;
 	}
+	int isNew;
 	(void) Tcl_CreateHashEntry(&uniqueCheck, (void *) mixins[i], &isNew);
 	if (!isNew) {
 	    TclPrintfResult(interp, "class should only be a direct mixin once");
@@ -2588,7 +2580,7 @@ ClassSuper_Set(
     Tcl_Obj *const *objv)
 {
     Class *clsPtr = TclOOGetClassDefineCmdContext(interp);
-    Tcl_Size superc, j;
+    Tcl_Size superc;
     Tcl_Obj **superv;
     Class **superclasses, *superPtr;
 
@@ -2641,7 +2633,7 @@ ClassSuper_Set(
 	    if (superclasses[i] == NULL) {
 		goto failedAfterAlloc;
 	    }
-	    for (j = 0; j < i; j++) {
+	    for (Tcl_Size j = 0; j < i; j++) {
 		if (superclasses[j] == superclasses[i]) {
 		    TclPrintfResult(interp,
 			    "class should only be a direct superclass once");
@@ -2751,7 +2743,6 @@ ClassVars_Set(
     Tcl_Obj *const *objv)
 {
     Class *clsPtr = TclOOGetClassDefineCmdContext(interp);
-    Tcl_Size i;
     Tcl_Size varc;
     Tcl_Obj **varv;
 
@@ -2768,7 +2759,7 @@ ClassVars_Set(
 	return TCL_ERROR;
     }
 
-    for (i = 0; i < varc; i++) {
+    for (Tcl_Size i = 0; i < varc; i++) {
 	const char *varName = TclGetString(varv[i]);
 
 	if (strstr(varName, "::") != NULL) {
@@ -2913,14 +2904,13 @@ ObjMixin_Set(
     Tcl_Obj *const *objv)
 {
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
-    Tcl_Size mixinc, i;
+    Tcl_Size mixinc;
     Tcl_Obj **mixinv;
     Class **mixins;		/* The references to the classes to actually
 				 * install. */
     Tcl_HashTable uniqueCheck;	/* Note that this hash table is just used as a
 				 * set of class references; it has no payload
 				 * values and keys are always pointers. */
-    int isNew;
 
     if (Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
@@ -2937,12 +2927,13 @@ ObjMixin_Set(
     mixins = (Class **) TclStackAlloc(interp, sizeof(Class *) * mixinc);
     Tcl_InitHashTable(&uniqueCheck, TCL_ONE_WORD_KEYS);
 
-    for (i = 0; i < mixinc; i++) {
+    for (Tcl_Size i = 0; i < mixinc; i++) {
 	mixins[i] = GetClassInOuterContext(interp, mixinv[i],
 		"may only mix in classes");
 	if (mixins[i] == NULL) {
 	    goto freeAndError;
 	}
+	int isNew;
 	(void) Tcl_CreateHashEntry(&uniqueCheck, (void *) mixins[i], &isNew);
 	if (!isNew) {
 	    TclPrintfResult(interp, "class should only be a direct mixin once");
@@ -3019,7 +3010,7 @@ ObjVars_Set(
     Tcl_Obj *const *objv)
 {
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
-    Tcl_Size varc, i;
+    Tcl_Size varc;
     Tcl_Obj **varv;
 
     if (Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
@@ -3034,7 +3025,7 @@ ObjVars_Set(
 	return TCL_ERROR;
     }
 
-    for (i = 0; i < varc; i++) {
+    for (Tcl_Size i = 0; i < varc; i++) {
 	const char *varName = TclGetString(varv[i]);
 
 	if (strstr(varName, "::") != NULL) {

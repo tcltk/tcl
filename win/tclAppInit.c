@@ -112,8 +112,6 @@ _tmain(
     TCHAR *argv[])		/* Values of command-line arguments. */
 {
 #endif
-    TCHAR *p;
-
     /*
      * Set up the default locale to be standard "C" locale so parsing is
      * performed correctly.
@@ -134,7 +132,7 @@ _tmain(
      * Forward slashes substituted for backslashes.
      */
 
-    for (p = argv[0]; *p != '\0'; p++) {
+    for (TCHAR *p = argv[0]; *p != '\0'; p++) {
 	if (*p == '\\') {
 	    *p = '/';
 	}

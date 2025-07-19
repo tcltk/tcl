@@ -665,7 +665,6 @@ NRInterpCmd(
 #endif
 	OPT_TARGET,	OPT_TRANSFER
     } index;
-    Tcl_Size i;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "cmd ?arg ...?");
@@ -735,6 +734,7 @@ NRInterpCmd(
 	enum optionCancelEnum {
 	    OPT_UNWIND,	OPT_LAST
 	} idx;
+	Tcl_Size i;
 
 	for (i = 2; i < objc; i++) {
 	    if (TclGetString(objv[i])[0] != '-') {
@@ -799,9 +799,6 @@ NRInterpCmd(
 	return Tcl_CancelEval(childInterp, resultObjPtr, 0, flags);
     }
     case OPT_CREATE: {
-	int last, safe;
-	Tcl_Obj *childPtr;
-	char buf[16 + TCL_INTEGER_SPACE];
 	static const char *const createOptions[] = {
 	    "-safe",	"--", NULL
 	};
@@ -809,15 +806,15 @@ NRInterpCmd(
 	    OPT_SAFE,	OPT_LAST
 	} idx;
 
-	safe = Tcl_IsSafe(interp);
+	int safe = Tcl_IsSafe(interp);
 
 	/*
 	 * Weird historical rules: "-safe" is accepted at the end, too.
 	 */
 
-	childPtr = NULL;
-	last = 0;
-	for (i = 2; i < objc; i++) {
+	Tcl_Obj *childPtr = NULL;
+	int last = 0;
+	for (Tcl_Size i = 2; i < objc; i++) {
 	    if ((last == 0) && (TclGetString(objv[i])[0] == '-')) {
 		if (Tcl_GetIndexFromObj(interp, objv[i], createOptions,
 			"option", 0, &idx) != TCL_OK) {
@@ -838,6 +835,7 @@ NRInterpCmd(
 		childPtr = objv[i];
 	    }
 	}
+	char buf[16 + TCL_INTEGER_SPACE];
 	buf[0] = '\0';
 	if (childPtr == NULL) {
 	    Parent *parentInfo = &INTERP_INFO(interp)->parent;
@@ -877,10 +875,8 @@ NRInterpCmd(
 	    return TCL_ERROR;
 	}
 	return ChildDebugCmd(interp, childInterp, objc - 3, objv + 3);
-    case OPT_DELETE: {
-	InterpInfo *iiPtr;
-
-	for (i = 2; i < objc; i++) {
+    case OPT_DELETE:
+	for (Tcl_Size i = 2; i < objc; i++) {
 	    childInterp = GetInterp(interp, objv[i]);
 	    if (childInterp == NULL) {
 		return TCL_ERROR;
@@ -891,12 +887,11 @@ NRInterpCmd(
 			"DELETESELF");
 		return TCL_ERROR;
 	    }
-	    iiPtr = INTERP_INFO(childInterp);
+	    InterpInfo *iiPtr = INTERP_INFO(childInterp);
 	    Tcl_DeleteCommandFromToken(iiPtr->child.parentInterp,
 		    iiPtr->child.interpCmd);
 	}
 	return TCL_OK;
-    }
     case OPT_EVAL:
 	if (objc < 4) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "path arg ?arg ...?");
@@ -962,6 +957,7 @@ NRInterpCmd(
 	enum hiddenOption {
 	    OPT_GLOBAL,	OPT_NAMESPACE,	OPT_LAST
 	} idx;
+	Tcl_Size i;
 
 	namespaceName = NULL;
 	for (i = 3; i < objc; i++) {
@@ -1216,11 +1212,10 @@ Tcl_CreateAlias(
 {
     Tcl_Obj *childObjPtr, *targetObjPtr;
     Tcl_Obj **objv;
-    Tcl_Size i;
     int result;
 
     objv = (Tcl_Obj **) TclStackAlloc(childInterp, sizeof(Tcl_Obj *) * argc);
-    for (i = 0; i < argc; i++) {
+    for (Tcl_Size i = 0; i < argc; i++) {
 	objv[i] = Tcl_NewStringObj(argv[i], -1);
 	Tcl_IncrRefCount(objv[i]);
     }
@@ -1234,7 +1229,7 @@ Tcl_CreateAlias(
     result = AliasCreate(childInterp, childInterp, targetInterp, childObjPtr,
 	    targetObjPtr, argc, objv);
 
-    for (i = 0; i < argc; i++) {
+    for (Tcl_Size i = 0; i < argc; i++) {
 	Tcl_DecrRefCount(objv[i]);
     }
     TclStackFree(childInterp, objv);
@@ -1481,7 +1476,6 @@ AliasCreate(
     Parent *parentPtr;
     Tcl_Obj **prefv;
     int isNew;
-    Tcl_Size i;
 
     aliasPtr = (Alias *) Tcl_Alloc(sizeof(Alias) + objc * sizeof(Tcl_Obj *));
     aliasPtr->token = namePtr;
@@ -1493,7 +1487,7 @@ AliasCreate(
 
     *prefv = targetCmdPtr;
     Tcl_IncrRefCount(targetCmdPtr);
-    for (i = 0; i < objc; i++) {
+    for (Tcl_Size i = 0; i < objc; i++) {
 	*(++prefv) = objv[i];
 	Tcl_IncrRefCount(objv[i]);
     }
@@ -1520,15 +1514,13 @@ AliasCreate(
 	 * try to delete itself.
 	 */
 
-	Command *cmdPtr;
-
 	Tcl_DecrRefCount(aliasPtr->token);
 	Tcl_DecrRefCount(targetCmdPtr);
-	for (i = 0; i < objc; i++) {
+	for (Tcl_Size i = 0; i < objc; i++) {
 	    Tcl_DecrRefCount(objv[i]);
 	}
 
-	cmdPtr = (Command *) aliasPtr->childCmd;
+	Command *cmdPtr = (Command *) aliasPtr->childCmd;
 	cmdPtr->clientData = NULL;
 	cmdPtr->deleteProc = NULL;
 	cmdPtr->deleteData = NULL;
@@ -1777,7 +1769,7 @@ AliasNRCmd(
     Tcl_Obj *const objv[])	/* Argument vector. */
 {
     Alias *aliasPtr = (Alias *) clientData;
-    Tcl_Size prefc, cmdc, i;
+    Tcl_Size prefc, cmdc;
     Tcl_Obj **prefv, **cmdv;
     Tcl_Obj *listPtr;
     ListRep listRep;
@@ -1806,7 +1798,7 @@ AliasNRCmd(
     memcpy(cmdv, prefv, prefc * sizeof(Tcl_Obj *));
     memcpy(cmdv+prefc, objv+1, (objc-1) * sizeof(Tcl_Obj *));
 
-    for (i=0; i<cmdc; i++) {
+    for (Tcl_Size i=0; i<cmdc; i++) {
 	Tcl_IncrRefCount(cmdv[i]);
     }
 
@@ -1833,7 +1825,7 @@ TclAliasObjCmd(
     Alias *aliasPtr = (Alias *) clientData;
     Tcl_Interp *targetInterp = aliasPtr->targetInterp;
     int result;
-    Tcl_Size prefc, cmdc, i;
+    Tcl_Size prefc, cmdc;
     Tcl_Obj **prefv, **cmdv;
     Tcl_Obj *cmdArr[ALIAS_CMDV_PREALLOC];
     int isRootEnsemble;
@@ -1857,7 +1849,7 @@ TclAliasObjCmd(
 
     Tcl_ResetResult(targetInterp);
 
-    for (i=0; i<cmdc; i++) {
+    for (Tcl_Size i=0; i<cmdc; i++) {
 	Tcl_IncrRefCount(cmdv[i]);
     }
 
@@ -1903,7 +1895,7 @@ TclAliasObjCmd(
 	Tcl_Release(targetInterp);
     }
 
-    for (i=0; i<cmdc; i++) {
+    for (Tcl_Size i=0; i<cmdc; i++) {
 	Tcl_DecrRefCount(cmdv[i]);
     }
     if (cmdv != cmdArr) {
@@ -1923,7 +1915,7 @@ TclLocalAliasObjCmd(
 #define ALIAS_CMDV_PREALLOC 10
     Alias *aliasPtr = (Alias *) clientData;
     int result;
-    Tcl_Size prefc, cmdc, i;
+    Tcl_Size prefc, cmdc;
     Tcl_Obj **prefv, **cmdv;
     Tcl_Obj *cmdArr[ALIAS_CMDV_PREALLOC];
     int isRootEnsemble;
@@ -1945,7 +1937,7 @@ TclLocalAliasObjCmd(
     memcpy(cmdv, prefv, prefc * sizeof(Tcl_Obj *));
     memcpy(cmdv+prefc, objv+1, (objc-1) * sizeof(Tcl_Obj *));
 
-    for (i=0; i<cmdc; i++) {
+    for (Tcl_Size i=0; i<cmdc; i++) {
 	Tcl_IncrRefCount(cmdv[i]);
     }
 
@@ -1970,7 +1962,7 @@ TclLocalAliasObjCmd(
 	TclResetRewriteEnsemble(interp, 1);
     }
 
-    for (i=0; i<cmdc; i++) {
+    for (Tcl_Size i=0; i<cmdc; i++) {
 	Tcl_DecrRefCount(cmdv[i]);
     }
     if (cmdv != cmdArr) {
@@ -2004,12 +1996,11 @@ AliasObjCmdDeleteProc(
 {
     Alias *aliasPtr = (Alias *) clientData;
     Target *targetPtr;
-    Tcl_Size i;
     Tcl_Obj **objv;
 
     Tcl_DecrRefCount(aliasPtr->token);
     objv = &aliasPtr->objPtr;
-    for (i = 0; i < aliasPtr->objc; i++) {
+    for (Tcl_Size i = 0; i < aliasPtr->objc; i++) {
 	Tcl_DecrRefCount(objv[i]);
     }
     Tcl_DeleteHashEntry(aliasPtr->aliasEntryPtr);
@@ -2272,7 +2263,7 @@ GetInterp(
     Tcl_HashEntry *hPtr;	/* Search element. */
     Child *childPtr;		/* Interim child record. */
     Tcl_Obj **objv;
-    Tcl_Size objc, i;
+    Tcl_Size objc;
     Tcl_Interp *searchInterp;	/* Interim storage for interp. to find. */
     InterpInfo *parentInfoPtr;
 
@@ -2281,7 +2272,7 @@ GetInterp(
     }
 
     searchInterp = interp;
-    for (i = 0; i < objc; i++) {
+    for (Tcl_Size i = 0; i < objc; i++) {
 	parentInfoPtr = INTERP_INFO(searchInterp);
 	hPtr = Tcl_FindHashEntry(&parentInfoPtr->parent.childTable,
 		TclGetString(objv[i]));
@@ -4517,12 +4508,12 @@ ChildCommandLimitCmd(
 	Tcl_WrongNumArgs(interp, consumedObjc, objv, "?-option value ...?");
 	return TCL_ERROR;
     } else {
-	Tcl_Size i, scriptLen = 0, limitLen = 0;
+	Tcl_Size scriptLen = 0, limitLen = 0;
 	Tcl_Obj *scriptObj = NULL, *granObj = NULL, *limitObj = NULL;
 	int gran = 0;
 	Tcl_Size limit = 0;
 
-	for (i=consumedObjc ; i<objc ; i+=2) {
+	for (Tcl_Size i=consumedObjc ; i<objc ; i+=2) {
 	    if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0,
 		    &index) != TCL_OK) {
 		return TCL_ERROR;
@@ -4719,7 +4710,7 @@ ChildTimeLimitCmd(
 	Tcl_WrongNumArgs(interp, consumedObjc, objv, "?-option value ...?");
 	return TCL_ERROR;
     } else {
-	Tcl_Size i, scriptLen = 0, milliLen = 0, secLen = 0;
+	Tcl_Size scriptLen = 0, milliLen = 0, secLen = 0;
 	Tcl_Obj *scriptObj = NULL, *granObj = NULL;
 	Tcl_Obj *milliObj = NULL, *secObj = NULL;
 	int gran = 0;
@@ -4727,7 +4718,7 @@ ChildTimeLimitCmd(
 	Tcl_WideInt tmp;
 
 	Tcl_LimitGetTime(childInterp, &limitMoment);
-	for (i=consumedObjc ; i<objc ; i+=2) {
+	for (Tcl_Size i=consumedObjc ; i<objc ; i+=2) {
 	    if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0,
 		    &index) != TCL_OK) {
 		return TCL_ERROR;

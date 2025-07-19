@@ -226,15 +226,15 @@ TclFileMakeDirsCmd(
     Tcl_Obj *const objv[])	/* Argument strings passed to Tcl_FileCmd. */
 {
     Tcl_Obj *errfile = NULL;
-    int result, i;
-    Tcl_Size j, pobjc;
+    int result;
+    Tcl_Size pobjc;
     Tcl_Obj *split = NULL;
     Tcl_Obj *target = NULL;
     Tcl_StatBuf statBuf;
     Tcl_DString ds;
 
     result = TCL_OK;
-    for (i = 1; i < objc; i++) {
+    for (int i = 1; i < objc; i++) {
 	if (Tcl_FSConvertToPathType(interp, objv[i]) != TCL_OK) {
 	    result = TCL_ERROR;
 	    break;
@@ -254,7 +254,7 @@ TclFileMakeDirsCmd(
 	    errfile = objv[i];
 	    break;
 	}
-	for (j = 0; j < pobjc; j++) {
+	for (Tcl_Size j = 0; j < pobjc; j++) {
 	    int errCount = 2;
 
 	    target = Tcl_FSJoinPath(split, j + 1);

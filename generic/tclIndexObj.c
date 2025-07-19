@@ -108,8 +108,7 @@ GetIndexFromObjList(
     int flags,			/* 0 or TCL_EXACT */
     Tcl_Size *indexPtr)		/* Place to store resulting index. */
 {
-
-    Tcl_Size objc, t;
+    Tcl_Size objc;
     int result;
     Tcl_Obj **objv;
     const char **tablePtr;
@@ -129,7 +128,7 @@ GetIndexFromObjList(
      */
 
     tablePtr = (const char **)Tcl_Alloc((objc + 1) * sizeof(char *));
-    for (t = 0; t < objc; t++) {
+    for (Tcl_Size t = 0; t < objc; t++) {
 	if (objv[t] == objPtr) {
 	    /*
 	     * An exact match is always chosen, so we can stop here.
@@ -148,7 +147,6 @@ GetIndexFromObjList(
 	    sizeof(char *), msg, flags | TCL_INDEX_TEMP_TABLE, indexPtr);
 
     Tcl_Free(tablePtr);
-
     return result;
 }
 
@@ -513,7 +511,7 @@ PrefixMatchObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int flags = 0, result;
-    Tcl_Size errorLength, i;
+    Tcl_Size errorLength;
     Tcl_Obj *errorPtr = NULL;
     const char *message = "option";
     Tcl_Obj *tablePtr, *objPtr, *resultPtr;
@@ -529,7 +527,7 @@ PrefixMatchObjCmd(
 	return TCL_ERROR;
     }
 
-    for (i = 1; i < (objc - 2); i++) {
+    for (Tcl_Size i = 1; i < (objc - 2); i++) {
 	if (Tcl_GetIndexFromObjStruct(interp, objv[i], matchOptions,
 		sizeof(char *), "option", 0, &index) != TCL_OK) {
 	    return TCL_ERROR;
@@ -577,13 +575,14 @@ PrefixMatchObjCmd(
      * error case regardless of level.
      */
 
-    result = TclListObjLength(interp, tablePtr, &i);
+    Tcl_Size idx;
+    result = TclListObjLength(interp, tablePtr, &idx);
     if (result != TCL_OK) {
 	return result;
     }
 
     result = GetIndexFromObjList(interp, objPtr, tablePtr, message, flags,
-	    &i);
+	    &idx);
     if (result != TCL_OK) {
 	if (errorPtr != NULL && errorLength == 0) {
 	    Tcl_ResetResult(interp);
@@ -603,7 +602,7 @@ PrefixMatchObjCmd(
 	return Tcl_SetReturnOptions(interp, errorPtr);
     }
 
-    result = Tcl_ListObjIndex(interp, tablePtr, i, &resultPtr);
+    result = Tcl_ListObjIndex(interp, tablePtr, idx, &resultPtr);
     if (result != TCL_OK) {
 	return result;
     }
@@ -635,7 +634,7 @@ PrefixAllObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int result;
-    Tcl_Size length, elemLength, tableObjc, t;
+    Tcl_Size length, elemLength, tableObjc;
     const char *string, *elemString;
     Tcl_Obj **tableObjv, *resultPtr;
 
@@ -651,7 +650,7 @@ PrefixAllObjCmd(
     resultPtr = Tcl_NewListObj(0, NULL);
     string = TclGetStringFromObj(objv[2], &length);
 
-    for (t = 0; t < tableObjc; t++) {
+    for (Tcl_Size t = 0; t < tableObjc; t++) {
 	elemString = TclGetStringFromObj(tableObjv[t], &elemLength);
 
 	/*
@@ -693,7 +692,7 @@ PrefixLongestObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int result;
-    Tcl_Size i, length, elemLength, resultLength, tableObjc, t;
+    Tcl_Size length, elemLength, resultLength, tableObjc;
     const char *string, *elemString, *resultString;
     Tcl_Obj **tableObjv;
 
@@ -711,7 +710,7 @@ PrefixLongestObjCmd(
     resultString = NULL;
     resultLength = 0;
 
-    for (t = 0; t < tableObjc; t++) {
+    for (Tcl_Size t = 0; t < tableObjc; t++) {
 	elemString = TclGetStringFromObj(tableObjv[t], &elemLength);
 
 	/*
@@ -746,7 +745,7 @@ PrefixLongestObjCmd(
 	     * Compare strings.
 	     */
 
-	    for (i = 0; i < resultLength; i++) {
+	    for (Tcl_Size i = 0; i < resultLength; i++) {
 		if (resultString[i] != elemString[i]) {
 		    /*
 		     * Adjust in case we stopped in the middle of a UTF char.
@@ -816,7 +815,7 @@ Tcl_WrongNumArgs(
 				 * NULL. */
 {
     Tcl_Obj *objPtr;
-    Tcl_Size i, len, elemLen;
+    Tcl_Size len, elemLen;
     char flags;
     Interp *iPtr = (Interp *)interp;
     const char *elementStr;
@@ -862,7 +861,7 @@ Tcl_WrongNumArgs(
 	 * Assume no object is of index type.
 	 */
 
-	for (i=0 ; i<toPrint ; i++) {
+	for (Tcl_Size i=0 ; i<toPrint ; i++) {
 	    /*
 	     * Add the element, quoting it if necessary.
 	     */
@@ -907,7 +906,7 @@ Tcl_WrongNumArgs(
      */
 
   addNormalArgumentsToMessage:
-    for (i = 0; i < objc; i++) {
+    for (Tcl_Size i = 0; i < objc; i++) {
 	/*
 	 * If the object is an index type, use the index table which allows for
 	 * the correct error message even if the subcommand was abbreviated.

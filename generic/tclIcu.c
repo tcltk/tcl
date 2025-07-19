@@ -353,10 +353,9 @@ DetectEncoding(
     if (U_FAILURE(status) || nmatches == 0) {
 	ret = IcuError(interp, "Could not detect character set", status);
     } else {
-	int i;
 	Tcl_Obj *resultObj = Tcl_NewListObj(nmatches, NULL);
 
-	for (i = 0; i < nmatches; ++i) {
+	for (int i = 0; i < nmatches; ++i) {
 	    const char *name = ucsdet_getName(matches[i], &status);
 	    if (U_FAILURE(status) || name == NULL) {
 		name = "unknown";
@@ -405,10 +404,9 @@ DetectableEncodings(
 	    IcuError(interp, "Could not get charset enumerator count", status);
 	    ret = TCL_ERROR;
 	} else {
-	    int i;
 	    Tcl_Obj *resultObj = Tcl_NewListObj(0, NULL);
 
-	    for (i = 0; i < count; ++i) {
+	    for (int32_t i = 0; i < count; ++i) {
 		const char *name;
 		int32_t len;
 
@@ -601,7 +599,6 @@ IcuConverterNamesObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-
     if (objc != 1) {
 	Tcl_WrongNumArgs(interp, 1 , objv, "");
 	return TCL_ERROR;
@@ -615,9 +612,8 @@ IcuConverterNamesObjCmd(
 	return TCL_OK;
     }
     Tcl_Obj *resultObj = Tcl_NewListObj(count, NULL);
-    int32_t i;
 
-    for (i = 0; i < count; ++i) {
+    for (int32_t i = 0; i < count; ++i) {
 	const char *name = ucnv_getAvailableName(i);
 	if (name) {
 	    Tcl_ListObjAppendElement(NULL, resultObj,
@@ -670,9 +666,7 @@ IcuConverterAliasesObjCmd(
     }
 
     Tcl_Obj *resultObj = Tcl_NewListObj(count, NULL);
-    uint16_t i;
-
-    for (i = 0; i < count; ++i) {
+    for (uint16_t i = 0; i < count; ++i) {
 	status = U_ZERO_ERRORZ; /* Reset in case U_AMBIGUOUS_ALIAS_WARNING */
 	const char *aliasName = ucnv_getAlias(name, i, &status);
 
@@ -961,9 +955,8 @@ static int IcuParseConvertOptions(
 
     static const char *optNames[] = {"-profile", "-failindex", NULL};
     enum { OPT_PROFILE, OPT_FAILINDEX } opt;
-    int i;
     int strict = 1;
-    for (i = 1; i < objc; ++i) {
+    for (int i = 1; i < objc; ++i) {
 	if (Tcl_GetIndexFromObj(
 		interp, objv[i], optNames, "option", 0, &opt) != TCL_OK) {
 	    return TCL_ERROR;
@@ -1128,10 +1121,9 @@ IcuNormalizeObjCmd(
 	return TCL_ERROR;
     }
 
-    int i;
     int strict = 1;
     NormalizationMode mode = MODE_NFC;
-    for (i = 1; i < objc - 1; ++i) {
+    for (int i = 1; i < objc - 1; ++i) {
 	if (Tcl_GetIndexFromObj(
 		interp, objv[i], optNames, "option", 0, &opt) != TCL_OK) {
 	    return TCL_ERROR;
@@ -1201,11 +1193,10 @@ TclIcuCleanup(
 {
     Tcl_MutexLock(&icu_mutex);
     if (icu_fns.nopen-- <= 1) {
-	int i;
 	if (u_cleanup != NULL) {
 	    u_cleanup();
 	}
-	for (i = 0; i < (int)(sizeof(icu_fns.libs) / sizeof(icu_fns.libs[0]));
+	for (size_t i = 0; i < sizeof(icu_fns.libs) / sizeof(icu_fns.libs[0]);
 		++i) {
 	    if (icu_fns.libs[i] != NULL) {
 		Tcl_FSUnloadFile(NULL, icu_fns.libs[i]);

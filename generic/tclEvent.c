@@ -1823,11 +1823,10 @@ Tcl_VwaitObjCmd(
 
     if (result == TCL_OK) {
 	if (extended) {
-	    int k;
 	    Tcl_Obj *listObj, *keyObj;
 
 	    TclNewObj(listObj);
-	    for (k = 0; k < done; k++) {
+	    for (int k = 0; k < done; k++) {
 		for (i = 0; i < numItems; i++) {
 		    if (vwaitItems[i].sequence != k) {
 			continue;

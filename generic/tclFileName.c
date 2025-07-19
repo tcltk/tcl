@@ -529,7 +529,7 @@ Tcl_SplitPath(
 {
     Tcl_Obj *resultPtr = NULL;	/* Needed only to prevent gcc warnings. */
     Tcl_Obj *tmpPtr, *eltPtr;
-    Tcl_Size i, size, len;
+    Tcl_Size size, len;
     char *p;
     const char *str;
 
@@ -548,7 +548,7 @@ Tcl_SplitPath(
      */
 
     size = 1;
-    for (i = 0; i < *argcPtr; i++) {
+    for (Tcl_Size i = 0; i < *argcPtr; i++) {
 	Tcl_ListObjIndex(NULL, resultPtr, i, &eltPtr);
 	(void)TclGetStringFromObj(eltPtr, &len);
 	size += len + 1;
@@ -568,7 +568,7 @@ Tcl_SplitPath(
      */
 
     p = (char *) &(*argvPtr)[(*argcPtr) + 1];
-    for (i = 0; i < *argcPtr; i++) {
+    for (Tcl_Size i = 0; i < *argcPtr; i++) {
 	Tcl_ListObjIndex(NULL, resultPtr, i, &eltPtr);
 	str = TclGetStringFromObj(eltPtr, &len);
 	memcpy(p, str, len + 1);
@@ -581,6 +581,7 @@ Tcl_SplitPath(
 
     p = (char *) &(*argvPtr)[(*argcPtr) + 1];
 
+    Tcl_Size i;
     for (i = 0; i < *argcPtr; i++) {
 	(*argvPtr)[i] = p;
 	while (*(p++) != '\0');
@@ -930,7 +931,7 @@ Tcl_JoinPath(
     const char *const *argv,
     Tcl_DString *resultPtr)	/* Pointer to previously initialized DString */
 {
-    Tcl_Size i, len;
+    Tcl_Size len;
     Tcl_Obj *listObj;
     Tcl_Obj *resultObj;
     const char *resultStr;
@@ -940,7 +941,7 @@ Tcl_JoinPath(
      */
 
     TclNewObj(listObj);
-    for (i = 0; i < argc; i++) {
+    for (Tcl_Size i = 0; i < argc; i++) {
 	Tcl_ListObjAppendElement(NULL, listObj,
 		Tcl_NewStringObj(argv[i], -1));
     }
@@ -1023,8 +1024,7 @@ Tcl_TranslateFileName(
      */
 
     if (tclPlatform == TCL_PLATFORM_WINDOWS) {
-	char *p;
-	for (p = Tcl_DStringValue(bufferPtr); *p != '\0'; p++) {
+	for (char *p = Tcl_DStringValue(bufferPtr); *p != '\0'; p++) {
 	    if (*p == '/') {
 		*p = '\\';
 	    }
@@ -1792,7 +1792,7 @@ TclGlob(
      */
 
     if (globFlags & TCL_GLOBMODE_TAILS) {
-	Tcl_Size objc, i;
+	Tcl_Size objc;
 	Tcl_Obj **objv;
 	Tcl_Size prefixLen;
 	const char *pre;
@@ -1821,7 +1821,7 @@ TclGlob(
 	}
 
 	TclListObjGetElements(NULL, filenamesObj, &objc, &objv);
-	for (i = 0; i< objc; i++) {
+	for (Tcl_Size i = 0; i< objc; i++) {
 	    Tcl_Size len;
 	    const char *oldStr = TclGetStringFromObj(objv[i], &len);
 	    Tcl_Obj *elem;
@@ -2140,12 +2140,12 @@ DoGlob(
 		pattern, &dirOnly);
 	*p = save;
 	if (result == TCL_OK) {
-	    Tcl_Size i, subdirc, repair = -1;
+	    Tcl_Size subdirc, repair = -1;
 	    Tcl_Obj **subdirv;
 
 	    result = TclListObjGetElements(interp, subdirsPtr,
 		    &subdirc, &subdirv);
-	    for (i=0; result==TCL_OK && i<subdirc; i++) {
+	    for (Tcl_Size i=0; result==TCL_OK && i<subdirc; i++) {
 		Tcl_Obj *copy = NULL;
 
 		result = DoGlob(interp, matchesObj, separators, subdirv[i],

@@ -631,7 +631,6 @@ Tcl_GetMemoryInfo(
 {
     Cache *cachePtr;
     char buf[200];
-    unsigned int n;
 
     Tcl_MutexLock(listLockPtr);
     cachePtr = firstCachePtr;
@@ -643,7 +642,7 @@ Tcl_GetMemoryInfo(
 	    snprintf(buf, sizeof(buf), "thread%p", cachePtr->owner);
 	    Tcl_DStringAppendElement(dsPtr, buf);
 	}
-	for (n = 0; n < NBUCKETS; ++n) {
+	for (unsigned n = 0; n < NBUCKETS; ++n) {
 	    snprintf(buf, sizeof(buf), "%" TCL_Z_MODIFIER "u %" TCL_Z_MODIFIER "u %" TCL_Z_MODIFIER "u %"
 		    TCL_Z_MODIFIER "u %" TCL_Z_MODIFIER "u %" TCL_Z_MODIFIER "u",
 		    bucketInfo[n].blockSize,
@@ -1049,11 +1048,9 @@ GetBlocks(
 void
 TclInitThreadAlloc(void)
 {
-    unsigned int i;
-
     listLockPtr = TclpNewAllocMutex();
     objLockPtr = TclpNewAllocMutex();
-    for (i = 0; i < NBUCKETS; ++i) {
+    for (unsigned i = 0; i < NBUCKETS; ++i) {
 	bucketInfo[i].blockSize = MINALLOC << i;
 	bucketInfo[i].maxBlocks = ((size_t)1) << (NBUCKETS - 1 - i);
 	bucketInfo[i].numMove = i < NBUCKETS - 1 ?
@@ -1083,9 +1080,7 @@ TclInitThreadAlloc(void)
 void
 TclFinalizeThreadAlloc(void)
 {
-    unsigned int i;
-
-    for (i = 0; i < NBUCKETS; ++i) {
+    for (unsigned i = 0; i < NBUCKETS; ++i) {
 	TclpFreeAllocMutex(bucketInfo[i].lockPtr);
 	bucketInfo[i].lockPtr = NULL;
     }

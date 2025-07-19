@@ -1962,7 +1962,7 @@ ZlibCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    int i, option, level = -1;
+    int option, level = -1;
     size_t buffersize = 0;
     Tcl_Size dlen = 0;
     unsigned int start;
@@ -2085,7 +2085,7 @@ ZlibCmd(
 		    "data ?-level level? ?-header header?");
 	    return TCL_ERROR;
 	}
-	for (i=3 ; i<objc ; i+=2) {
+	for (int i=3 ; i<objc ; i+=2) {
 	    static const char *const gzipopts[] = {
 		"-header", "-level", NULL
 	    };
@@ -2154,14 +2154,12 @@ ZlibCmd(
 		buffersize, NULL);
     case CMD_GUNZIP: {		/* gunzip gzippeddata ?-headerVar varName?
 				 *	-> decompressedData */
-	Tcl_Obj *headerVarObj;
-
 	if (objc < 3 || objc > 5 || ((objc & 1) == 0)) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "data ?-headerVar varName?");
 	    return TCL_ERROR;
 	}
-	headerDictObj = headerVarObj = NULL;
-	for (i=3 ; i<objc ; i+=2) {
+	Tcl_Obj *headerVarObj = headerDictObj = NULL;
+	for (int i=3 ; i<objc ; i+=2) {
 	    static const char *const gunzipopts[] = {
 		"-buffersize", "-headerVar", NULL
 	    };
@@ -2252,7 +2250,7 @@ ZlibStreamSubcmd(
 	FMT_COMPRESS, FMT_DECOMPRESS, FMT_DEFLATE, FMT_GUNZIP, FMT_GZIP,
 	FMT_INFLATE
     } fmt;
-    int i, format, mode = 0, option, level;
+    int format, mode = 0, option, level;
     enum objIndices {
 	OPT_COMPRESSION_DICTIONARY = 0,
 	OPT_GZIP_HEADER = 1,
@@ -2285,7 +2283,6 @@ ZlibStreamSubcmd(
 	{ NULL, OPT_END }
     };
     const OptDescriptor *desc = NULL;
-    Tcl_ZlibStream zh;
 
     if (objc < 3 || !(objc & 1)) {
 	Tcl_WrongNumArgs(interp, 2, objv, "mode ?-option value...?");
@@ -2340,7 +2337,7 @@ ZlibStreamSubcmd(
      * Parse the options.
      */
 
-    for (i=3 ; i<objc ; i+=2) {
+    for (int i=3 ; i<objc ; i+=2) {
 	if (Tcl_GetIndexFromObjStruct(interp, objv[i], desc,
 		sizeof(OptDescriptor), "option", 0, &option) != TCL_OK) {
 	    return TCL_ERROR;
@@ -2374,6 +2371,7 @@ ZlibStreamSubcmd(
      * Construct the stream now we know its configuration.
      */
 
+    Tcl_ZlibStream zh;
     if (Tcl_ZlibStreamInit(interp, mode, format, level, gzipHeaderObj,
 	    &zh) != TCL_OK) {
 	return TCL_ERROR;
@@ -2412,8 +2410,7 @@ ZlibPushSubcmd(
 	FMT_COMPRESS, FMT_DECOMPRESS, FMT_DEFLATE, FMT_GUNZIP, FMT_GZIP,
 	FMT_INFLATE
     } fmt;
-    Tcl_Channel chan;
-    int chanMode, format, mode = 0, level, i;
+    int chanMode, format, mode = 0, level;
     static const char *const pushCompressOptions[] = {
 	"-dictionary", "-header", "-level", NULL
     };
@@ -2424,7 +2421,6 @@ ZlibPushSubcmd(
     enum pushOptionsEnum {poDictionary, poHeader, poLevel, poLimit} option;
     Tcl_Obj *headerObj = NULL, *compDictObj = NULL;
     int limit = DEFAULT_BUFFER_SIZE;
-    Tcl_Size dummy;
 
     if (objc < 4) {
 	Tcl_WrongNumArgs(interp, 2, objv, "mode channel ?options...?");
@@ -2467,6 +2463,7 @@ ZlibPushSubcmd(
 	TCL_UNREACHABLE();
     }
 
+    Tcl_Channel chan;
     if (TclGetChannelFromObj(interp, objv[3], &chan, &chanMode, 0) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -2493,7 +2490,7 @@ ZlibPushSubcmd(
      */
 
     level = Z_DEFAULT_COMPRESSION;
-    for (i=4 ; i<objc ; i++) {
+    for (int i=4 ; i<objc ; i++) {
 	if (Tcl_GetIndexFromObj(interp, objv[i], pushOptions, "option", 0,
 		&option) != TCL_OK) {
 	    return TCL_ERROR;
@@ -2507,6 +2504,7 @@ ZlibPushSubcmd(
 	switch (option) {
 	case poHeader:		/* -header headerDict */
 	    headerObj = objv[i];
+	    Tcl_Size dummy;
 	    if (Tcl_DictObjSize(interp, headerObj, &dummy) != TCL_OK) {
 		goto genericOptionError;
 	    }
@@ -2583,7 +2581,7 @@ ZlibStreamCmd(
     Tcl_Obj *const objv[])
 {
     Tcl_ZlibStream zstream = (Tcl_ZlibStream) clientData;
-    int count, code;
+    int code;
     Tcl_Obj *obj;
     static const char *const cmds[] = {
 	"add", "checksum", "close", "eof", "finalize", "flush",
@@ -2619,7 +2617,7 @@ ZlibStreamCmd(
 	    return TCL_ERROR;
 	}
 
-	count = -1;
+	int count = -1;
 	if (objc >= 3) {
 	    if (Tcl_GetIntFromObj(interp, objv[2], &count) != TCL_OK) {
 		return TCL_ERROR;
@@ -2709,8 +2707,8 @@ ZlibStreamAddCmd(
     Tcl_Obj *const objv[])
 {
     Tcl_ZlibStream zstream = (Tcl_ZlibStream) clientData;
-    int code, buffersize = -1, flush = -1, i;
-    Tcl_Obj *obj, *compDictObj = NULL;
+    int buffersize = -1, flush = -1;
+    Tcl_Obj *compDictObj = NULL;
     static const char *const add_options[] = {
 	"-buffer", "-dictionary", "-finalize", "-flush", "-fullflush", NULL
     };
@@ -2718,7 +2716,7 @@ ZlibStreamAddCmd(
 	ao_buffer, ao_dictionary, ao_finalize, ao_flush, ao_fullflush
     } index;
 
-    for (i=2; i<objc-1; i++) {
+    for (int i=2; i<objc-1; i++) {
 	if (Tcl_GetIndexFromObj(interp, objv[i], add_options, "option", 0,
 		&index) != TCL_OK) {
 	    return TCL_ERROR;
@@ -2819,8 +2817,8 @@ ZlibStreamAddCmd(
      * Get such data out as we can (up to the requested length).
      */
 
-    TclNewObj(obj);
-    code = Tcl_ZlibStreamGet(zstream, obj, buffersize);
+    Tcl_Obj *obj = Tcl_NewObj();
+    int code = Tcl_ZlibStreamGet(zstream, obj, buffersize);
     if (code == TCL_OK) {
 	Tcl_SetObjResult(interp, obj);
     } else {
@@ -2837,7 +2835,7 @@ ZlibStreamPutCmd(
     Tcl_Obj *const objv[])
 {
     Tcl_ZlibStream zstream = (Tcl_ZlibStream) clientData;
-    int flush = -1, i;
+    int flush = -1;
     Tcl_Obj *compDictObj = NULL;
     static const char *const put_options[] = {
 	"-dictionary", "-finalize", "-flush", "-fullflush", NULL
@@ -2846,7 +2844,7 @@ ZlibStreamPutCmd(
 	po_dictionary, po_finalize, po_flush, po_fullflush
     } index;
 
-    for (i=2; i<objc-1; i++) {
+    for (int i=2; i<objc-1; i++) {
 	if (Tcl_GetIndexFromObj(interp, objv[i], put_options, "option", 0,
 		&index) != TCL_OK) {
 	    return TCL_ERROR;
@@ -2930,7 +2928,6 @@ ZlibStreamHeaderCmd(
     Tcl_Obj *const objv[])
 {
     ZlibStreamHandle *zshPtr = (ZlibStreamHandle *) clientData;
-    Tcl_Obj *resultObj;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 2, objv, NULL);
@@ -2943,7 +2940,7 @@ ZlibStreamHeaderCmd(
 	return TCL_ERROR;
     }
 
-    TclNewObj(resultObj);
+    Tcl_Obj *resultObj = Tcl_NewObj();
     ExtractHeader(&zshPtr->gzHeaderPtr->header, resultObj);
     Tcl_SetObjResult(interp, resultObj);
     return TCL_OK;

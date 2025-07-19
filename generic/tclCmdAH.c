@@ -2775,8 +2775,7 @@ EachloopCmd(
 {
     int numLists = (objc-2) / 2;
     struct ForeachState *statePtr;
-    int i, result;
-    Tcl_Size j;
+    int result = TCL_OK;
 
     if (objc < 4 || (objc%2 != 0)) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -2827,7 +2826,7 @@ EachloopCmd(
      * Break up the value lists and variable lists into elements.
      */
 
-    for (i=0 ; i<numLists ; i++) {
+    for (int i=0 ; i<numLists ; i++) {
 	/* List */
 	/* Variables */
 	statePtr->vCopyList[i] = TclListObjCopy(interp, objv[1+i*2]);
@@ -2877,7 +2876,7 @@ EachloopCmd(
 	    }
 	}
 	/* account for variable <> value mismatch */
-	j = statePtr->argcList[i] / statePtr->varcList[i];
+	Tcl_Size j = statePtr->argcList[i] / statePtr->varcList[i];
 	if ((statePtr->argcList[i] % statePtr->varcList[i]) != 0) {
 	    j++;
 	}
@@ -2998,16 +2997,13 @@ ForeachAssignments(
     Tcl_Interp *interp,
     struct ForeachState *statePtr)
 {
-    int i;
-    Tcl_Size v, k;
-    Tcl_Obj *valuePtr, *varValuePtr;
-
-    for (i=0 ; i<statePtr->numLists ; i++) {
+    for (Tcl_Size i=0 ; i<statePtr->numLists ; i++) {
 	int isAbstractList =
 		TclObjTypeHasProc(statePtr->aCopyList[i],indexProc) != NULL;
 
-	for (v=0 ; v<statePtr->varcList[i] ; v++) {
-	    k = statePtr->index[i]++;
+	for (Tcl_Size v=0 ; v<statePtr->varcList[i] ; v++) {
+	    Tcl_Size k = statePtr->index[i]++;
+	    Tcl_Obj *valuePtr;
 	    if (k < statePtr->argcList[i]) {
 		if (isAbstractList) {
 		    if (TclObjTypeIndex(interp, statePtr->aCopyList[i], k, &valuePtr) != TCL_OK) {
@@ -3024,7 +3020,7 @@ ForeachAssignments(
 		TclNewObj(valuePtr);	/* Empty string */
 	    }
 
-	    varValuePtr = Tcl_ObjSetVar2(interp, statePtr->varvList[i][v],
+	    Tcl_Obj *varValuePtr = Tcl_ObjSetVar2(interp, statePtr->varvList[i][v],
 		    NULL, valuePtr, TCL_LEAVE_ERR_MSG);
 
 	    if (varValuePtr == NULL) {
@@ -3049,9 +3045,7 @@ ForeachCleanup(
     Tcl_Interp *interp,
     struct ForeachState *statePtr)
 {
-    int i;
-
-    for (i=0 ; i<statePtr->numLists ; i++) {
+    for (Tcl_Size i=0 ; i<statePtr->numLists ; i++) {
 	if (statePtr->vCopyList[i]) {
 	    TclDecrRefCount(statePtr->vCopyList[i]);
 	}

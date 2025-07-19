@@ -333,7 +333,7 @@ void *
 TclpInitNotifier(void)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    int i, fdFl;
+    int fdFl;
     FileHandler *filePtr;
 
     errno = pthread_mutex_init(&tsdPtr->notifierMutex, NULL);
@@ -342,7 +342,7 @@ TclpInitNotifier(void)
     }
     if (pipe(tsdPtr->triggerPipe) != 0) {
 	Tcl_Panic("Tcl_InitNotifier: %s", "could not create trigger pipe");
-    } else for (i = 0; i < 2; i++) {
+    } else for (int i = 0; i < 2; i++) {
 	if (fcntl(tsdPtr->triggerPipe[i], F_SETFD, FD_CLOEXEC) == -1) {
 	    Tcl_Panic("fcntl: %s", strerror(errno));
 	} else {
@@ -633,7 +633,6 @@ TclpWaitForEvent(
     struct PlatformEventData *pedPtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     int numQueued;
-    ssize_t i;
     char buf[1];
 
     /*
@@ -736,7 +735,7 @@ TclpWaitForEvent(
 	filePtr = pedPtr->filePtr;
 	mask = PlatformEventsTranslate(&tsdPtr->readyEvents[numEvent]);
 	if (filePtr->fd == tsdPtr->triggerPipe[0]) {
-	    i = read(tsdPtr->triggerPipe[0], buf, 1);
+	    ssize_t i = read(tsdPtr->triggerPipe[0], buf, 1);
 	    if ((i == -1) && (errno != EAGAIN)) {
 		Tcl_Panic("Tcl_WaitForEvent: read from %p->triggerPipe: %s",
 			tsdPtr, strerror(errno));

@@ -537,7 +537,7 @@ TclOO_Object_Unknown(
     Class *callerCls = NULL;
     Object *oPtr = contextPtr->oPtr;
     const char **methodNames;
-    int numMethodNames, i;
+    Tcl_Size numMethodNames;
     size_t skip = Tcl_ObjectContextSkippedArgs(context);
     CallFrame *framePtr = ((Interp *) interp)->varFramePtr;
     Tcl_Obj *errorMsg;
@@ -603,6 +603,7 @@ TclOO_Object_Unknown(
 
     errorMsg = Tcl_ObjPrintf("unknown method \"%s\": must be ",
 	    TclGetString(objv[skip]));
+    Tcl_Size i;
     for (i=0 ; i<numMethodNames-1 ; i++) {
 	if (i) {
 	    Tcl_AppendToObj(errorMsg, ", ", TCL_AUTO_LENGTH);
@@ -641,8 +642,6 @@ TclOO_Object_LinkVar(
 {
     Interp *iPtr = (Interp *) interp;
     Tcl_Object object = Tcl_ObjectContextObject(context);
-    Namespace *savedNsPtr;
-    Tcl_Size i;
 
     if (objc < Tcl_ObjectContextSkippedArgs(context)) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
@@ -660,7 +659,7 @@ TclOO_Object_LinkVar(
 	return TCL_OK;
     }
 
-    for (i = Tcl_ObjectContextSkippedArgs(context) ; i < objc ; i++) {
+    for (Tcl_Size i = Tcl_ObjectContextSkippedArgs(context) ; i < objc ; i++) {
 	Var *varPtr, *aryPtr;
 	const char *varName = TclGetString(objv[i]);
 
@@ -687,7 +686,7 @@ TclOO_Object_LinkVar(
 	 * would be horribly expensive by comparison).
 	 */
 
-	savedNsPtr = iPtr->varFramePtr->nsPtr;
+	Namespace *savedNsPtr = iPtr->varFramePtr->nsPtr;
 	iPtr->varFramePtr->nsPtr = (Namespace *)
 		Tcl_GetObjectNamespace(object);
 	varPtr = TclObjLookupVar(interp, objv[i], NULL, TCL_NAMESPACE_ONLY,

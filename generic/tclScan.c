@@ -260,7 +260,7 @@ ValidateFormat(
     int *totalSubs)		/* The number of variables that will be
 				 * required. */
 {
-    int gotXpg, gotSequential, i, flags;
+    int gotXpg, gotSequential, flags;
     char *end;
     Tcl_UniChar ch = 0;
     int objIndex, xpgSize, nspace = numVars;
@@ -273,7 +273,7 @@ ValidateFormat(
      * is multiply assigned or left unassigned.
      */
 
-    for (i = 0; i < nspace; i++) {
+    for (int i = 0; i < nspace; i++) {
 	nassign[i] = 0;
     }
 
@@ -498,7 +498,7 @@ ValidateFormat(
 		}
 		nassign = (int *)TclStackRealloc(interp, nassign,
 			nspace * sizeof(int));
-		for (i = nspaceOrig; i < nspace; i++) {
+		for (int i = nspaceOrig; i < nspace; i++) {
 		    nassign[i] = 0;
 		}
 	    }
@@ -521,7 +521,7 @@ ValidateFormat(
     if (totalSubs) {
 	*totalSubs = numVars;
     }
-    for (i = 0; i < numVars; i++) {
+    for (int i = 0; i < numVars; i++) {
 	if (nassign[i] > 1) {
 	    TclPrintfResult(interp,
 		    "variable is assigned by multiple \"%%n$\" conversion specifiers");
@@ -584,7 +584,7 @@ Tcl_ScanObjCmd(
 {
     const char *format;
     int numVars, nconversions, totalVars = -1;
-    int objIndex, offset, i, result, code;
+    int objIndex, offset, result, code;
     int value;
     const char *string, *end, *baseString;
     char op = 0;
@@ -618,7 +618,7 @@ Tcl_ScanObjCmd(
 
     if (totalVars > 0) {
 	objs = (Tcl_Obj **)Tcl_Alloc(sizeof(Tcl_Obj *) * totalVars);
-	for (i = 0; i < totalVars; i++) {
+	for (int i = 0; i < totalVars; i++) {
 	    objs[i] = NULL;
 	}
     }
@@ -901,11 +901,12 @@ Tcl_ScanObjCmd(
 
 	    break;
 	}
-	case 'c':
+	case 'c': {
 	    /*
 	     * Scan a single Unicode character.
 	     */
 
+	    int i;
 	    offset = TclUtfToUniChar(string, &i);
 	    string += offset;
 	    if (!(flags & SCAN_SUPPRESS)) {
@@ -915,7 +916,7 @@ Tcl_ScanObjCmd(
 		objs[objIndex++] = objPtr;
 	    }
 	    break;
-
+	}
 	case 'i':
 	    /*
 	     * Scan an unsigned or signed integer.
@@ -1076,7 +1077,7 @@ Tcl_ScanObjCmd(
 	 * In this case, variables were specified (classic scan).
 	 */
 
-	for (i = 0; i < totalVars; i++) {
+	for (int i = 0; i < totalVars; i++) {
 	    if (objs[i] == NULL) {
 		continue;
 	    }
@@ -1100,6 +1101,7 @@ Tcl_ScanObjCmd(
 	 * allocating a new Tcl_Obj every time. See test scan-bigdata-XX.
 	 */
 	Tcl_Obj *emptyObj = NULL;
+	int i;
 	TclNewObj(objPtr);
 	for (i = 0; code == TCL_OK && i < totalVars; i++) {
 	    if (objs[i] != NULL) {

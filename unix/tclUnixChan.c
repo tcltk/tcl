@@ -902,7 +902,6 @@ TtySetOptionProc(
     if ((len > 4) && (strncmp(optionName, "-ttycontrol", len) == 0)) {
 #if defined(TIOCMGET) && defined(TIOCMSET)
 	int control, flag;
-	Tcl_Size i;
 
 	if (Tcl_SplitList(interp, value, &argc, &argv) == TCL_ERROR) {
 	    return TCL_ERROR;
@@ -920,7 +919,7 @@ TtySetOptionProc(
 	}
 
 	ioctl(fsPtr->fileState.fd, TIOCMGET, &control);
-	for (i = 0; i < argc-1; i += 2) {
+	for (Tcl_Size i = 0; i < argc-1; i += 2) {
 	    if (Tcl_GetBoolean(interp, argv[i+1], &flag) == TCL_ERROR) {
 		Tcl_Free(argv);
 		return TCL_ERROR;
@@ -1423,7 +1422,7 @@ static speed_t
 TtyGetSpeed(
     int baud)			/* The baud rate to look up. */
 {
-    int bestIdx, bestDiff, i, diff;
+    int bestIdx, bestDiff, diff;
 
     bestIdx = 0;
     bestDiff = 1000000;
@@ -1434,7 +1433,7 @@ TtyGetSpeed(
      * rate.
      */
 
-    for (i = 0; speeds[i].baud >= 0; i++) {
+    for (int i = 0; speeds[i].baud >= 0; i++) {
 	diff = speeds[i].baud - baud;
 	if (diff < 0) {
 	    diff = -diff;
@@ -1464,9 +1463,7 @@ static int
 TtyGetBaud(
     speed_t speed)		/* Speed mask value to look up. */
 {
-    int i;
-
-    for (i = 0; speeds[i].baud >= 0; i++) {
+    for (int i = 0; speeds[i].baud >= 0; i++) {
 	if (speeds[i].speed == speed) {
 	    return speeds[i].baud;
 	}

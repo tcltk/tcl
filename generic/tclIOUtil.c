@@ -994,7 +994,7 @@ Tcl_FSMatchInDirectory(
 {
     const Tcl_Filesystem *fsPtr;
     Tcl_Obj *cwd, *tmpResultPtr, **elemsPtr;
-    Tcl_Size resLength, i;
+    Tcl_Size resLength;
     int ret = -1;
 
     if (types != NULL && (types->type & TCL_GLOB_TYPE_MOUNT)) {
@@ -1072,7 +1072,7 @@ Tcl_FSMatchInDirectory(
 
 	    ret = TclListObjGetElements(interp, tmpResultPtr,
 		    &resLength, &elemsPtr);
-	    for (i=0 ; ret==TCL_OK && i<resLength ; i++) {
+	    for (Tcl_Size i=0 ; ret==TCL_OK && i<resLength ; i++) {
 		ret = Tcl_ListObjAppendElement(interp, resultPtr,
 			TclFSMakePathRelative(interp, elemsPtr[i], cwd));
 	    }
@@ -1109,7 +1109,7 @@ FsAddMountsToGlobResult(
     Tcl_GlobTypeData *types)	/* Acceptable types.  May be NULL. The
 				 * directory flag is particularly significant. */
 {
-    Tcl_Size mLength, gLength, i;
+    Tcl_Size mLength, gLength;
     int dir = (types == NULL || (types->type & TCL_GLOB_TYPE_DIR));
     Tcl_Obj *mounts = FsListMounts(pathPtr, pattern);
 
@@ -1123,14 +1123,13 @@ FsAddMountsToGlobResult(
     if (TclListObjLength(NULL, resultPtr, &gLength) != TCL_OK) {
 	goto endOfMounts;
     }
-    for (i=0 ; i<mLength ; i++) {
+    for (Tcl_Size i=0 ; i<mLength ; i++) {
 	Tcl_Obj *mElt;
-	Tcl_Size j;
 	int found = 0;
 
 	Tcl_ListObjIndex(NULL, mounts, i, &mElt);
 
-	for (j=0 ; j<gLength ; j++) {
+	for (Tcl_Size j=0 ; j<gLength ; j++) {
 	    Tcl_Obj *gElt;
 
 	    Tcl_ListObjIndex(NULL, resultPtr, j, &gElt);
@@ -1447,7 +1446,7 @@ TclGetOpenMode(
     int *modeFlagsPtr)
 {
     int mode, c, gotRW;
-    Tcl_Size modeArgc, i;
+    Tcl_Size modeArgc;
     const char **modeArgv = NULL, *flag;
 
     /*
@@ -1483,7 +1482,7 @@ TclGetOpenMode(
 	default:
 	    goto error;
 	}
-	i = 1;
+	Tcl_Size i = 1;
 	while (i<3 && modeString[i]) {
 	    if (modeString[i] == modeString[i-1]) {
 		goto error;
@@ -1539,7 +1538,7 @@ TclGetOpenMode(
     }
 
     gotRW = 0;
-    for (i = 0; i < modeArgc; i++) {
+    for (Tcl_Size i = 0; i < modeArgc; i++) {
 	flag = modeArgv[i];
 	c = flag[0];
 	if ((c == 'R') && (strcmp(flag, "RDONLY") == 0)) {
@@ -2465,14 +2464,14 @@ TclFSFileAttrIndex(
 	 * It's a non-constant attribute list, so do a literal search.
 	 */
 
-	Tcl_Size i, objc;
+	Tcl_Size objc;
 	Tcl_Obj **objv;
 
 	if (TclListObjGetElements(NULL, listObj, &objc, &objv) != TCL_OK) {
 	    TclDecrRefCount(listObj);
 	    return TCL_ERROR;
 	}
-	for (i=0 ; i<objc ; i++) {
+	for (Tcl_Size i=0 ; i<objc ; i++) {
 	    if (!strcmp(attributeName, TclGetString(objv[i]))) {
 		TclDecrRefCount(listObj);
 		*indexPtr = i;
@@ -3162,7 +3161,6 @@ Tcl_LoadFile(
     Tcl_FSUnloadFileProc *newUnloadProcPtr = NULL;
     FsDivertLoad *tvdlPtr;
     int retVal;
-    int i;
 
     if (fsPtr == NULL) {
 	Tcl_SetErrno(ENOENT);
@@ -3405,7 +3403,7 @@ Tcl_LoadFile(
      */
 
     if (symbols != NULL) {
-	for (i=0 ; symbols[i] != NULL; i++) {
+	for (int i=0 ; symbols[i] != NULL; i++) {
 	    procPtrs[i] = Tcl_FindSymbol(interp, *handlePtr, symbols[i]);
 	    if (procPtrs[i] == NULL) {
 		/*

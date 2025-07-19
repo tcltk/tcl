@@ -644,7 +644,6 @@ InfoCommandsCmd(
     Tcl_Obj *listPtr, *elemObjPtr;
     int specificNsInPattern = 0;/* Init. to avoid compiler warning. */
     Tcl_Command cmd;
-    Tcl_Size i;
 
     /*
      * Get the pattern and find the "effective namespace" in which to list
@@ -718,7 +717,7 @@ InfoCommandsCmd(
 	if ((nsPtr != globalNsPtr) && !specificNsInPattern) {
 	    Tcl_HashTable *tablePtr = NULL;	/* Quell warning. */
 
-	    for (i=0 ; i<nsPtr->commandPathLength ; i++) {
+	    for (Tcl_Size i=0 ; i<nsPtr->commandPathLength ; i++) {
 		Namespace *pathNsPtr = nsPtr->commandPathArray[i].nsPtr;
 
 		if (pathNsPtr == NULL) {
@@ -823,7 +822,7 @@ InfoCommandsCmd(
 	 * Search the path next.
 	 */
 
-	for (i=0 ; i<nsPtr->commandPathLength ; i++) {
+	for (Tcl_Size i=0 ; i<nsPtr->commandPathLength ; i++) {
 	    Namespace *pathNsPtr = nsPtr->commandPathArray[i].nsPtr;
 
 	    if (pathNsPtr == NULL) {
@@ -1391,14 +1390,13 @@ TclInfoFrame(
 	    ADD_PAIR("proc", procNameObj);
 	} else if (procPtr->cmdPtr->clientData) {
 	    ExtraFrameInfo *efiPtr = (ExtraFrameInfo *)procPtr->cmdPtr->clientData;
-	    Tcl_Size i;
 
 	    /*
 	     * This is a non-standard command. Luckily, it's told us how to
 	     * render extra information about its frame.
 	     */
 
-	    for (i=0 ; i<efiPtr->length ; i++) {
+	    for (Tcl_Size i=0 ; i<efiPtr->length ; i++) {
 		lv[lc++] = Tcl_NewStringObj(efiPtr->fields[i].name, -1);
 		if (efiPtr->fields[i].proc) {
 		    lv[lc++] =
@@ -1418,9 +1416,8 @@ TclInfoFrame(
     if (framePtr && (framePtr->framePtr != NULL) && (iPtr->varFramePtr != NULL)) {
 	CallFrame *current = framePtr->framePtr;
 	CallFrame *top = iPtr->varFramePtr;
-	CallFrame *idx;
 
-	for (idx=top ; idx!=NULL ; idx=idx->callerVarPtr) {
+	for (CallFrame *idx=top ; idx!=NULL ; idx=idx->callerVarPtr) {
 	    if (idx == current) {
 		int c = framePtr->framePtr->level;
 		int t = iPtr->varFramePtr->level;
@@ -2199,12 +2196,9 @@ Tcl_JoinObjCmd(
     if (length == 0) {
 	resObjPtr = TclStringCat(interp, listLen, elemPtrs, 0);
     } else {
-	Tcl_Size i;
-
 	TclNewObj(resObjPtr);
-	for (i = 0;  i < listLen;  i++) {
+	for (Tcl_Size i = 0;  i < listLen;  i++) {
 	    if (i > 0) {
-
 		/*
 		 * NOTE: This code is relying on Tcl_AppendObjToObj() **NOT**
 		 * to shimmer joinObjPtr.  If it did, then the case where
@@ -2775,9 +2769,7 @@ Tcl_LremoveObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_Size i, idxc, prevIdx, first, num;
-    Tcl_Size *idxv, listLen;
-    Tcl_Obj *listObj;
+    Tcl_Size idxc, first, num, *idxv, listLen;
     int copied = 0, status = TCL_OK;
 
     /*
@@ -2789,7 +2781,7 @@ Tcl_LremoveObjCmd(
 	return TCL_ERROR;
     }
 
-    listObj = objv[1];
+    Tcl_Obj *listObj = objv[1];
     if (TclListObjLength(interp, listObj, &listLen) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -2800,7 +2792,7 @@ Tcl_LremoveObjCmd(
 	return TCL_OK;
     }
     idxv = (Tcl_Size *)Tcl_Alloc((objc - 2) * sizeof(*idxv));
-    for (i = 2; i < objc; i++) {
+    for (Tcl_Size i = 2; i < objc; i++) {
 	status = (TclGetIntForIndexM(interp, objv[i], /*endValue*/ listLen - 1,
 		&idxv[i - 2]) != TCL_OK);
 	if (status != TCL_OK) {
@@ -2827,7 +2819,7 @@ Tcl_LremoveObjCmd(
     }
     num = 0;
     first = listLen;
-    for (i = 0, prevIdx = -1 ; i < idxc ; i++) {
+    for (Tcl_Size i = 0, prevIdx = -1 ; i < idxc ; i++) {
 	Tcl_Size idx = idxv[i];
 
 	/*
@@ -2877,7 +2869,7 @@ Tcl_LremoveObjCmd(
 	}
     }
     Tcl_SetObjResult(interp, listObj);
-done:
+  done:
     Tcl_Free(idxv);
     return status;
 }
@@ -3100,7 +3092,6 @@ Tcl_LsearchObjCmd(
     Tcl_WideInt patWide, objWide, wide, groupSize;
     int allMatches, inlineReturn, negatedMatch, returnSubindices, noCase;
     double patDouble, objDouble;
-    SortInfo sortInfo;
     Tcl_Obj *patObj, **listv, *listPtr, *startPtr, *itemPtr = NULL;
     SortStrCmpFn_t strCmpFn = TclUtfCmp;
     Tcl_RegExp regexp = NULL;
@@ -3124,9 +3115,8 @@ Tcl_LsearchObjCmd(
     enum modes {
 	EXACT, GLOB, REGEXP, SORTED
     };
-    enum modes mode;
+    enum modes mode  = GLOB;
 
-    mode = GLOB;
     dataType = ASCII;
     isIncreasing = 1;
     allMatches = 0;
@@ -3140,13 +3130,18 @@ Tcl_LsearchObjCmd(
     groupOffset = 0;
     start = 0;
     noCase = 0;
-    sortInfo.compareCmdPtr = NULL;
-    sortInfo.isIncreasing = 1;
-    sortInfo.sortMode = 0;
-    sortInfo.interp = interp;
-    sortInfo.resultCode = TCL_OK;
-    sortInfo.indexv = NULL;
-    sortInfo.indexc = 0;
+    SortInfo sortInfo = {
+	1,		// isIncreasing
+	SORTMODE_ASCII,	// sortMode
+	NULL,		// compareCmdPtr
+	NULL,		// indexv
+	0,		// indexc
+	0,		// singleIndex
+	0,		// unique
+	0,		// numElements
+	interp,
+	TCL_OK
+    };
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?-option value ...? list pattern");
@@ -3267,9 +3262,6 @@ Tcl_LsearchObjCmd(
 	    i++;
 	    break;
 	case LSEARCH_INDEX: {		/* -index */
-	    Tcl_Obj **indices;
-	    Tcl_Size j;
-
 	    if (allocatedIndexVector) {
 		TclStackFree(interp, sortInfo.indexv);
 		allocatedIndexVector = 0;
@@ -3289,6 +3281,7 @@ Tcl_LsearchObjCmd(
 	     */
 
 	    i++;
+	    Tcl_Obj **indices;
 	    if (TclListObjGetElements(interp, objv[i],
 		    &sortInfo.indexc, &indices) != TCL_OK) {
 		result = TCL_ERROR;
@@ -3314,7 +3307,7 @@ Tcl_LsearchObjCmd(
 	     * syntactic check here.
 	     */
 
-	    for (j=0 ; j<sortInfo.indexc ; j++) {
+	    for (Tcl_Size j=0 ; j<sortInfo.indexc ; j++) {
 		int encoded = 0;
 		if (TclIndexEncode(interp, indices[j], TCL_INDEX_NONE,
 			TCL_INDEX_NONE, &encoded) != TCL_OK) {
@@ -3764,10 +3757,8 @@ Tcl_LsearchObjCmd(
 		    Tcl_ListObjAppendElement(interp, listPtr, itemPtr);
 		}
 	    } else if (returnSubindices) {
-		Tcl_Size j;
-
 		TclNewIndexObj(itemPtr, i+groupOffset);
-		for (j=0 ; j<sortInfo.indexc ; j++) {
+		for (Tcl_Size j=0 ; j<sortInfo.indexc ; j++) {
 		    Tcl_Obj *elObj;
 		    size_t elValue = TclIndexDecode(sortInfo.indexv[j], listc);
 		    TclNewIndexObj(elObj, elValue);
@@ -3791,10 +3782,8 @@ Tcl_LsearchObjCmd(
 	Tcl_SetObjResult(interp, listPtr);
     } else if (!inlineReturn) {
 	if (returnSubindices) {
-	    Tcl_Size j;
-
 	    TclNewIndexObj(itemPtr, index+groupOffset);
-	    for (j=0 ; j<sortInfo.indexc ; j++) {
+	    for (Tcl_Size j=0 ; j<sortInfo.indexc ; j++) {
 		Tcl_Obj *elObj;
 		size_t elValue = TclIndexDecode(sortInfo.indexv[j], listc);
 		TclNewIndexObj(elObj, elValue);
@@ -3973,7 +3962,7 @@ Tcl_LseqObjCmd(
     Tcl_Obj *arithSeriesPtr;
     SequenceOperators opmode;
     SequenceDecoded decoded;
-    int i, arg_key = 0, value_i = 0;
+    int arg_key = 0, value_i = 0;
     /* Default constants */
 #define zero	((Interp *)interp)->execEnvPtr->constants[0];
 #define one	((Interp *)interp)->execEnvPtr->constants[1];
@@ -3987,7 +3976,7 @@ Tcl_LseqObjCmd(
 	/* Too many arguments */
 	goto syntax;
     }
-    for (i = 1; i < objc; i++) {
+    for (int i = 1; i < objc; i++) {
 	arg_key = (arg_key * 10);
 	numValues[value_i] = NULL;
 	decoded = SequenceIdentifyArgument(interp, objv[i],
@@ -4340,13 +4329,11 @@ Tcl_LsortObjCmd(
     int indices, nocase = 0, indexc;
     int sortMode = SORTMODE_ASCII;
     int group, allocatedIndexVector = 0;
-    Tcl_Size j, idx, groupOffset, length;
+    Tcl_Size idx, groupOffset, length;
     Tcl_WideInt wide, groupSize;
     Tcl_Obj *resultPtr, *cmdPtr, **listObjPtrs, *listObj, *indexPtr;
-    Tcl_Size i, elmArrSize;
+    Tcl_Size elmArrSize;
     SortElement *elementArray = NULL, *elementPtr;
-    SortInfo sortInfo;		/* Information about this sort that needs to
-				 * be passed to the comparison function. */
 #   define MAXCALLOC 1024000
 #   define NUM_LISTS 30
     SortElement *subList[NUM_LISTS+1];
@@ -4374,20 +4361,27 @@ Tcl_LsortObjCmd(
      * Parse arguments to set up the mode for the sort.
      */
 
-    sortInfo.isIncreasing = 1;
-    sortInfo.sortMode = SORTMODE_ASCII;
-    sortInfo.indexv = NULL;
-    sortInfo.indexc = 0;
-    sortInfo.unique = 0;
-    sortInfo.interp = interp;
-    sortInfo.resultCode = TCL_OK;
+    SortInfo sortInfo = {	/* Information about this sort that needs to
+				 * be passed to the comparison function. */
+	1,		// isIncreasing
+	SORTMODE_ASCII,	// sortMode
+	NULL,		// compareCmdPtr
+	NULL,		// indexv
+	0,		// indexc
+	0,		// singleIndex
+	0,		// unique
+	0,		// numElements
+	interp,
+	TCL_OK
+    };
+
     cmdPtr = NULL;
     indices = 0;
     group = 0;
     groupSize = 1;
     groupOffset = 0;
     indexPtr = NULL;
-    for (i = 1; i < objc-1; i++) {
+    for (Tcl_Size i = 1; i < objc-1; i++) {
 	if (Tcl_GetIndexFromObj(interp, objv[i], switches, "option", 0,
 		&index) != TCL_OK) {
 	    sortInfo.resultCode = TCL_ERROR;
@@ -4444,7 +4438,7 @@ Tcl_LsortObjCmd(
 	     * options is done.
 	     */
 
-	    for (j=0 ; j<sortindex ; j++) {
+	    for (Tcl_Size j=0 ; j<sortindex ; j++) {
 		int encoded = 0;
 		int result = TclIndexEncode(interp, indexv[j],
 			TCL_INDEX_NONE, TCL_INDEX_NONE, &encoded);
@@ -4536,7 +4530,7 @@ Tcl_LsortObjCmd(
 	    allocatedIndexVector = 1;	/* Cannot use indexc field, as it
 					 * might be decreased by 1 later. */
 	}
-	for (j=0 ; j<sortInfo.indexc ; j++) {
+	for (Tcl_Size j=0 ; j<sortInfo.indexc ; j++) {
 	    /* Prescreened values, no errors or out of range possible */
 	    TclIndexEncode(NULL, indexv[j], TCL_INDEX_NONE,
 		    TCL_INDEX_NONE, &sortInfo.indexv[j]);
@@ -4635,7 +4629,7 @@ Tcl_LsortObjCmd(
 		 * array shift.
 		 */
 
-		for (i = 0; i < sortInfo.indexc; i++) {
+		for (Tcl_Size i = 0; i < sortInfo.indexc; i++) {
 		    sortInfo.indexv[i] = sortInfo.indexv[i+1];
 		}
 	    }
@@ -4661,7 +4655,7 @@ Tcl_LsortObjCmd(
      * end, always at NULL, to indicate the end of the lists.
      */
 
-    for (j=0 ; j<=NUM_LISTS ; j++) {
+    for (Tcl_Size j=0 ; j<=NUM_LISTS ; j++) {
 	subList[j] = NULL;
     }
 
@@ -4685,7 +4679,7 @@ Tcl_LsortObjCmd(
 	goto done;
     }
 
-    for (i=0; i < length; i++) {
+    for (Tcl_Size i=0; i < length; i++) {
 	idx = groupSize * i + groupOffset;
 	if (indexc) {
 	    /*
@@ -4743,6 +4737,7 @@ Tcl_LsortObjCmd(
 
 	elementArray[i].nextPtr = NULL;
 	elementPtr = &elementArray[i];
+	Tcl_Size j;
 	for (j=0 ; subList[j] ; j++) {
 	    elementPtr = MergeLists(subList[j], elementPtr, &sortInfo);
 	    subList[j] = NULL;
@@ -4758,7 +4753,7 @@ Tcl_LsortObjCmd(
      */
 
     elementPtr = subList[0];
-    for (j=1 ; j<NUM_LISTS ; j++) {
+    for (Tcl_Size j=1 ; j<NUM_LISTS ; j++) {
 	elementPtr = MergeLists(subList[j], elementPtr, &sortInfo);
     }
 
@@ -4769,6 +4764,7 @@ Tcl_LsortObjCmd(
     if (sortInfo.resultCode == TCL_OK) {
 	ListRep listRep;
 	Tcl_Obj **newArray, *objPtr;
+	Tcl_Size i;
 
 	resultPtr = Tcl_NewListObj(sortInfo.numElements * groupSize, NULL);
 	ListObjGetRep(resultPtr, &listRep);
@@ -4776,7 +4772,7 @@ Tcl_LsortObjCmd(
 	if (group) {
 	    for (i=0; elementPtr!=NULL ; elementPtr=elementPtr->nextPtr) {
 		idx = elementPtr->payload.index;
-		for (j = 0; j < groupSize; j++) {
+		for (Tcl_Size j = 0; j < groupSize; j++) {
 		    if (indices) {
 			TclNewIndexObj(objPtr, idx + j - groupOffset);
 			newArray[i++] = objPtr;
@@ -5303,8 +5299,6 @@ SelectObjFromSublist(
     SortInfo *infoPtr)		/* Information passed from the top-level
 				 * "lsearch" or "lsort" command. */
 {
-    Tcl_Size i;
-
     /*
      * Quick check for case when no "-index" option is there.
      */
@@ -5318,9 +5312,8 @@ SelectObjFromSublist(
      * go.
      */
 
-    for (i=0 ; i<infoPtr->indexc ; i++) {
+    for (Tcl_Size i=0 ; i<infoPtr->indexc ; i++) {
 	Tcl_Size listLen;
-	int index;
 	Tcl_Obj *currentObj, *lastObj=NULL;
 
 	if (TclListObjLength(infoPtr->interp, objPtr, &listLen) != TCL_OK) {
@@ -5328,7 +5321,7 @@ SelectObjFromSublist(
 	    return NULL;
 	}
 
-	index = TclIndexDecode(infoPtr->indexv[i], listLen - 1);
+	int index = TclIndexDecode(infoPtr->indexv[i], listLen - 1);
 
 	if (Tcl_ListObjIndex(infoPtr->interp, objPtr, index,
 		&currentObj) != TCL_OK) {

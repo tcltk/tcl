@@ -287,7 +287,7 @@ DdeSetServerName(
     Tcl_DString dString;
     const WCHAR *actualName;
     Tcl_Obj *srvListPtr = NULL, **srvPtrPtr = NULL;
-    Tcl_Size n, srvCount = 0, offset;
+    Tcl_Size srvCount = 0, offset;
     int lastSuffix, r = TCL_OK;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
@@ -379,7 +379,7 @@ DdeSetServerName(
 	     * See if the name is already in use, if so increment suffix.
 	     */
 
-	    for (n = 0; n < srvCount; ++n) {
+	    for (Tcl_Size n = 0; n < srvCount; ++n) {
 		Tcl_Obj* namePtr;
 		Tcl_DString ds;
 

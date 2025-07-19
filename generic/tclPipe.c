@@ -180,12 +180,9 @@ Tcl_DetachPids(
 				 * array pointed to by pidPtr. */
     Tcl_Pid *pidPtr)		/* Array of pids to detach. */
 {
-    Detached *detPtr;
-    Tcl_Size i;
-
     Tcl_MutexLock(&pipeMutex);
-    for (i = 0; i < numPids; i++) {
-	detPtr = (Detached *)Tcl_Alloc(sizeof(Detached));
+    for (Tcl_Size i = 0; i < numPids; i++) {
+	Detached *detPtr = (Detached *)Tcl_Alloc(sizeof(Detached));
 	detPtr->pid = pidPtr[i];
 	detPtr->nextPtr = detList;
 	detList = detPtr;
@@ -274,11 +271,10 @@ TclCleanupChildren(
     int result = TCL_OK;
     int code, abnormalExit, anyErrorInfo;
     TclProcessWaitStatus waitStatus;
-    Tcl_Size i;
     Tcl_Obj *msg, *error;
 
     abnormalExit = 0;
-    for (i = 0; i < numPids; i++) {
+    for (Tcl_Size i = 0; i < numPids; i++) {
 	waitStatus = TclProcessWait(pidPtr[i], 0, &code, &msg, &error);
 	if (waitStatus == TCL_PROCESS_ERROR) {
 	    result = TCL_ERROR;
@@ -455,7 +451,7 @@ TclCreatePipeline(
     const char *p;
     const char *nextArg;
     int skip, atOK, flags, needCmd, errorToOutput = 0;
-    Tcl_Size i, j, lastArg, lastBar;
+    Tcl_Size lastArg, lastBar;
     Tcl_DString execBuffer;
     TclFile pipeIn;
     TclFile curInFile, curOutFile, curErrFile;
@@ -494,7 +490,7 @@ TclCreatePipeline(
     lastBar = -1;
     cmdCount = 1;
     needCmd = 1;
-    for (i = 0; i < argc; i++) {
+    for (Tcl_Size i = 0; i < argc; i++) {
 	errorToOutput = 0;
 	skip = 0;
 	p = argv[i];
@@ -679,7 +675,7 @@ TclCreatePipeline(
 	}
 
 	if (skip != 0) {
-	    for (j = i + skip; j < argc; j++) {
+	    for (Tcl_Size j = i + skip; j < argc; j++) {
 		argv[j - skip] = argv[j];
 	    }
 	    argc -= skip;
@@ -820,7 +816,7 @@ TclCreatePipeline(
 
     curInFile = inputFile;
 
-    for (i = 0; i < argc; i = lastArg + 1) {
+    for (Tcl_Size i = 0; i < argc; i = lastArg + 1) {
 	int result, joinThisError;
 	Tcl_Pid pid;
 	const char *oldName;
@@ -965,7 +961,7 @@ TclCreatePipeline(
 	*errFilePtr = NULL;
     }
     if (pidPtr != NULL) {
-	for (i = 0; i < numPids; i++) {
+	for (Tcl_Size i = 0; i < numPids; i++) {
 	    if (pidPtr[i] != (Tcl_Pid)-1) {
 		Tcl_DetachPids(1, &pidPtr[i]);
 	    }

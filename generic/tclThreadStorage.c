@@ -83,7 +83,6 @@ static TSDTable *
 TSDTableCreate(void)
 {
     TSDTable *tsdTablePtr;
-    sig_atomic_t i;
 
     tsdTablePtr = (TSDTable *)TclpSysAlloc(sizeof(TSDTable));
     if (tsdTablePtr == NULL) {
@@ -97,7 +96,7 @@ TSDTableCreate(void)
 	Tcl_Panic("unable to allocate TSDTable");
     }
 
-    for (i = 0; i < tsdTablePtr->allocated; ++i) {
+    for (sig_atomic_t i = 0; i < tsdTablePtr->allocated; ++i) {
 	tsdTablePtr->tablePtr[i] = NULL;
     }
 
@@ -108,9 +107,7 @@ static void
 TSDTableDelete(
     TSDTable *tsdTablePtr)
 {
-    sig_atomic_t i;
-
-    for (i=0 ; i<tsdTablePtr->allocated ; i++) {
+    for (sig_atomic_t i=0 ; i<tsdTablePtr->allocated ; i++) {
 	if (tsdTablePtr->tablePtr[i] != NULL) {
 	    /*
 	     * These values were allocated in Tcl_GetThreadData in tclThread.c
@@ -149,7 +146,6 @@ TSDTableGrow(
 {
     sig_atomic_t newAllocated = tsdTablePtr->allocated * 2;
     void **newTablePtr;
-    sig_atomic_t i;
 
     if (newAllocated <= atLeast) {
 	newAllocated = atLeast + 10;
@@ -161,7 +157,7 @@ TSDTableGrow(
 	Tcl_Panic("unable to reallocate TSDTable");
     }
 
-    for (i = tsdTablePtr->allocated; i < newAllocated; ++i) {
+    for (sig_atomic_t i = tsdTablePtr->allocated; i < newAllocated; ++i) {
 	newTablePtr[i] = NULL;
     }
 

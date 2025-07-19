@@ -495,10 +495,7 @@ void
 Tcl_DeleteHashTable(
     Tcl_HashTable *tablePtr)	/* Table to delete. */
 {
-    Tcl_HashEntry *hPtr, *nextPtr;
     const Tcl_HashKeyType *typePtr;
-    Tcl_Size i;
-
     if (tablePtr->keyType == TCL_STRING_KEYS) {
 	typePtr = &tclStringHashKeyType;
     } else if (tablePtr->keyType == TCL_ONE_WORD_KEYS) {
@@ -514,16 +511,14 @@ Tcl_DeleteHashTable(
      * Free up all the entries in the table.
      */
 
-    for (i = 0; i < tablePtr->numBuckets; i++) {
-	hPtr = tablePtr->buckets[i];
-	while (hPtr != NULL) {
+    for (Tcl_Size i = 0; i < tablePtr->numBuckets; i++) {
+	for (Tcl_HashEntry *nextPtr, *hPtr=tablePtr->buckets[i]; hPtr; hPtr=nextPtr) {
 	    nextPtr = hPtr->nextPtr;
 	    if (typePtr->freeEntryProc) {
 		typePtr->freeEntryProc(hPtr);
 	    } else {
 		Tcl_Free(hPtr);
 	    }
-	    hPtr = nextPtr;
 	}
     }
 
@@ -647,7 +642,6 @@ Tcl_HashStats(
     Tcl_HashTable *tablePtr)	/* Table for which to produce stats. */
 {
 #define NUM_COUNTERS 10
-    Tcl_Size i;
     size_t count[NUM_COUNTERS], overflow, j;
     double average, tmp;
     Tcl_HashEntry *hPtr;
@@ -657,12 +651,12 @@ Tcl_HashStats(
      * Compute a histogram of bucket usage.
      */
 
-    for (i = 0; i < NUM_COUNTERS; i++) {
+    for (int i = 0; i < NUM_COUNTERS; i++) {
 	count[i] = 0;
     }
     overflow = 0;
     average = 0.0;
-    for (i = 0; i < tablePtr->numBuckets; i++) {
+    for (Tcl_Size i = 0; i < tablePtr->numBuckets; i++) {
 	j = 0;
 	for (hPtr = tablePtr->buckets[i]; hPtr != NULL; hPtr = hPtr->nextPtr) {
 	    j++;
@@ -686,8 +680,8 @@ Tcl_HashStats(
     snprintf(result, 60, "%" TCL_SIZE_MODIFIER "u entries in table, %" TCL_SIZE_MODIFIER "u buckets\n",
 	    tablePtr->numEntries, tablePtr->numBuckets);
     p = result + strlen(result);
-    for (i = 0; i < NUM_COUNTERS; i++) {
-	snprintf(p, 60, "number of buckets with %" TCL_SIZE_MODIFIER "u entries: %" TCL_SIZE_MODIFIER "u\n",
+    for (int i = 0; i < NUM_COUNTERS; i++) {
+	snprintf(p, 60, "number of buckets with %d entries: %" TCL_SIZE_MODIFIER "u\n",
 		i, count[i]);
 	p += strlen(p);
     }

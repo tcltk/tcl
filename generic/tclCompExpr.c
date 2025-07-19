@@ -2662,7 +2662,7 @@ TclSortingOpCmd(
 	OpNode *nodes = (OpNode *)TclStackAlloc(interp,
 		2 * (objc-2) * sizeof(OpNode));
 	unsigned char lexeme;
-	int i, lastAnd = 1;
+	int lastAnd = 1;
 	Tcl_Obj *const *litObjPtrPtr = litObjv;
 
 	ParseLexeme(occdPtr->op, strlen(occdPtr->op), &lexeme, NULL);
@@ -2670,7 +2670,7 @@ TclSortingOpCmd(
 	litObjv[0] = objv[1];
 	nodes[0].lexeme = START;
 	nodes[0].mark = MARK_RIGHT;
-	for (i=2; i<objc-1; i++) {
+	for (int i=2; i<objc-1; i++) {
 	    int j = 2 * (i - 1);
 	    litObjv[j - 1] = objv[i];
 	    nodes[j - 1].lexeme = lexeme;
@@ -2790,12 +2790,12 @@ TclVariadicOpCmd(
 	Tcl_Obj *const *litObjv = objv + 1;
 	OpNode *nodes = (OpNode *)TclStackAlloc(interp,
 		(objc - 1) * sizeof(OpNode));
-	int i, lastOp = OT_LITERAL;
+	int lastOp = OT_LITERAL;
 
 	nodes[0].lexeme = START;
 	nodes[0].mark = MARK_RIGHT;
 	if (lexeme == EXPON) {
-	    for (i=objc-2; i>0; i--) {
+	    for (int i=objc-2; i>0; i--) {
 		nodes[i].lexeme = lexeme;
 		nodes[i].mark = MARK_LEFT;
 		nodes[i].left = OT_LITERAL;
@@ -2806,7 +2806,7 @@ TclVariadicOpCmd(
 		lastOp = i;
 	    }
 	} else {
-	    for (i=1; i<objc-1; i++) {
+	    for (int i=1; i<objc-1; i++) {
 		nodes[i].lexeme = lexeme;
 		nodes[i].mark = MARK_LEFT;
 		nodes[i].left = lastOp;

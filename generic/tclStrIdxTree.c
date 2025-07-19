@@ -247,7 +247,6 @@ TclStrIdxTreeBuildFromList(
     void **values)
 {
     Tcl_Obj **lwrv;
-    Tcl_Size i;
     int ret = TCL_ERROR;
     void *val;
     const char *s, *e, *f;
@@ -259,14 +258,14 @@ TclStrIdxTreeBuildFromList(
     if (lwrv == NULL) {
 	return TCL_ERROR;
     }
-    for (i = 0; i < lstc; i++) {
+    for (Tcl_Size i = 0; i < lstc; i++) {
 	lwrv[i] = Tcl_DuplicateObj(lstv[i]);
 	Tcl_IncrRefCount(lwrv[i]);
 	lwrv[i]->length = Tcl_UtfToLower(TclGetString(lwrv[i]));
     }
 
     /* build index tree of the list keys */
-    for (i = 0; i < lstc; i++) {
+    for (Tcl_Size i = 0; i < lstc; i++) {
 	TclStrIdxTree *foundParent = idxTree;
 
 	e = s = TclGetString(lwrv[i]);
@@ -340,7 +339,7 @@ TclStrIdxTreeBuildFromList(
     ret = TCL_OK;
   done:
     if (lwrv != NULL) {
-	for (i = 0; i < lstc; i++) {
+	for (Tcl_Size i = 0; i < lstc; i++) {
 	    Tcl_DecrRefCount(lwrv[i]);
 	}
 	Tcl_Free(lwrv);

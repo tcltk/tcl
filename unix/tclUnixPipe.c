@@ -432,7 +432,6 @@ TclpCreateProcess(
     Tcl_DString *volatile dsArray;
     char **volatile newArgv;
     int pid;
-    size_t i;
 #if defined(HAVE_POSIX_SPAWNP)
     int childErrno;
     static int use_spawn = -1;
@@ -461,7 +460,7 @@ TclpCreateProcess(
     dsArray = (Tcl_DString *)TclStackAlloc(interp, argc * sizeof(Tcl_DString));
     newArgv = (char **)TclStackAlloc(interp, (argc+1) * sizeof(char *));
     newArgv[argc] = NULL;
-    for (i = 0; i < argc; i++) {
+    for (size_t i = 0; i < argc; i++) {
 	if (Tcl_UtfToExternalDStringEx(interp, NULL, argv[i], TCL_INDEX_NONE,
 		0, &dsArray[i], NULL) != TCL_OK) {
 	    while (i-- > 0) {
@@ -602,7 +601,7 @@ TclpCreateProcess(
      * Free the mem we used for the fork
      */
 
-    for (i = 0; i < argc; i++) {
+    for (size_t i = 0; i < argc; i++) {
 	Tcl_DStringFree(&dsArray[i]);
     }
     TclStackFree(interp, newArgv);
@@ -960,7 +959,6 @@ TclGetAndDetachPids(
     PipeState *pipePtr;
     const Tcl_ChannelType *chanTypePtr;
     Tcl_Obj *pidsObj;
-    size_t i;
 
     /*
      * Punt if the channel is not a command channel.
@@ -973,7 +971,7 @@ TclGetAndDetachPids(
 
     pipePtr = (PipeState *)Tcl_GetChannelInstanceData(chan);
     TclNewObj(pidsObj);
-    for (i = 0; i < pipePtr->numPids; i++) {
+    for (size_t i = 0; i < pipePtr->numPids; i++) {
 	Tcl_ListObjAppendElement(NULL, pidsObj, Tcl_NewWideIntObj(
 		PTR2INT(pipePtr->pidPtr[i])));
 	Tcl_DetachPids(1, &pipePtr->pidPtr[i]);
@@ -1375,11 +1373,6 @@ Tcl_PidObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument strings. */
 {
-    Tcl_Channel chan;
-    PipeState *pipePtr;
-    size_t i;
-    Tcl_Obj *resultPtr;
-
     if (objc > 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?channel?");
 	return TCL_ERROR;
@@ -1392,7 +1385,7 @@ Tcl_PidObjCmd(
 	 * Get the channel and make sure that it refers to a pipe.
 	 */
 
-	chan = Tcl_GetChannel(interp, TclGetString(objv[1]), NULL);
+	Tcl_Channel chan = Tcl_GetChannel(interp, TclGetString(objv[1]), NULL);
 	if (chan == NULL) {
 	    return TCL_ERROR;
 	}
@@ -1404,9 +1397,10 @@ Tcl_PidObjCmd(
 	 * Extract the process IDs from the pipe structure.
 	 */
 
-	pipePtr = (PipeState *)Tcl_GetChannelInstanceData(chan);
+	PipeState *pipePtr = (PipeState *)Tcl_GetChannelInstanceData(chan);
+	Tcl_Obj *resultPtr;
 	TclNewObj(resultPtr);
-	for (i = 0; i < pipePtr->numPids; i++) {
+	for (size_t i = 0; i < pipePtr->numPids; i++) {
 	    Tcl_ListObjAppendElement(NULL, resultPtr,
 		    Tcl_NewWideIntObj(TclpGetPid(pipePtr->pidPtr[i])));
 	}

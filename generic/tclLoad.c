@@ -141,7 +141,7 @@ Tcl_LoadObjCmd(
     int code, namesMatch, filesMatch;
     Tcl_Size offset;
     Tcl_LibraryInitProc *initProc;
-    const char *p, *fullFileName, *prefix;
+    const char *fullFileName, *prefix;
     Tcl_LoadHandle loadHandle;
     Tcl_UniChar ch = 0;
     size_t len;
@@ -350,6 +350,7 @@ Tcl_LoadObjCmd(
 		    && (pkgGuess[2] == 'l') && (pkgGuess[3] == '9')) {
 		pkgGuess += 4;
 	    }
+	    const char *p;
 	    for (p = pkgGuess; *p != 0; p += offset) {
 		offset = TclUtfToUniChar(p, &ch);
 		if (!Tcl_UniCharIsWordChar(UCHAR(ch))

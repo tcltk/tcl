@@ -171,7 +171,6 @@ TclClockInit(
 				 * plus a terminating NUL. */
     Command *cmdPtr;
     ClockClientData *data;
-    int i;
 
     static int initialized = 0;	/* global clock engine initialized (in process) */
     /*
@@ -198,7 +197,7 @@ TclClockInit(
     data = (ClockClientData *)Tcl_Alloc(sizeof(ClockClientData));
     data->refCount = 0;
     data->literals = (Tcl_Obj **)Tcl_Alloc(LIT__END * sizeof(Tcl_Obj*));
-    for (i = 0; i < LIT__END; ++i) {
+    for (int i = 0; i < LIT__END; ++i) {
 	TclInitObjRef(data->literals[i], Tcl_NewStringObj(
 		Literals[i], TCL_AUTO_LENGTH));
     }
@@ -344,21 +343,20 @@ ClockDeleteCmdProc(
     void *clientData)		/* Opaque pointer to the client data */
 {
     ClockClientData *data = (ClockClientData *)clientData;
-    int i;
 
     if (data->refCount-- <= 1) {
-	for (i = 0; i < LIT__END; ++i) {
+	for (int i = 0; i < LIT__END; ++i) {
 	    Tcl_DecrRefCount(data->literals[i]);
 	}
 	if (data->mcLiterals != NULL) {
-	    for (i = 0; i < MCLIT__END; ++i) {
+	    for (int i = 0; i < MCLIT__END; ++i) {
 		Tcl_DecrRefCount(data->mcLiterals[i]);
 	    }
 	    Tcl_Free(data->mcLiterals);
 	    data->mcLiterals = NULL;
 	}
 	if (data->mcLitIdxs != NULL) {
-	    for (i = 0; i < MCLIT__END; ++i) {
+	    for (int i = 0; i < MCLIT__END; ++i) {
 		Tcl_DecrRefCount(data->mcLitIdxs[i]);
 	    }
 	    Tcl_Free(data->mcLitIdxs);
@@ -712,11 +710,9 @@ ClockMCDict(
 
 	    /* check locale literals already available (on demand creation) */
 	    if (dataPtr->mcLiterals == NULL) {
-		int i;
-
 		dataPtr->mcLiterals = (Tcl_Obj **)
 			Tcl_Alloc(MCLIT__END * sizeof(Tcl_Obj*));
-		for (i = 0; i < MCLIT__END; ++i) {
+		for (int i = 0; i < MCLIT__END; ++i) {
 		    TclInitObjRef(dataPtr->mcLiterals[i], Tcl_NewStringObj(
 			    MsgCtLiterals[i], TCL_AUTO_LENGTH));
 		}
@@ -889,10 +885,8 @@ ClockMCSetIdx(
 
     /* if literal storage for indices not yet created */
     if (dataPtr->mcLitIdxs == NULL) {
-	int i;
-
 	dataPtr->mcLitIdxs = (Tcl_Obj **)Tcl_Alloc(MCLIT__END * sizeof(Tcl_Obj*));
-	for (i = 0; i < MCLIT__END; ++i) {
+	for (int i = 0; i < MCLIT__END; ++i) {
 	    TclInitObjRef(dataPtr->mcLitIdxs[i],
 		    Tcl_NewStringObj(MsgCtLitIdxs[i], TCL_AUTO_LENGTH));
 	}
@@ -967,10 +961,9 @@ ClockConfigureObjCmd(
 	CLOCK_MIN_YEAR, CLOCK_MAX_YEAR, CLOCK_MAX_JDN, CLOCK_VALIDATE,
 	CLOCK_INIT_COMPLETE,  CLOCK_SETUP_TZ, CLOCK_SYSTEM_TZ
     };
-    int optionIndex;		/* Index of an option. */
-    Tcl_Size i;
 
-    for (i = 1; i < objc; i++) {
+    for (int i = 1; i < objc; i++) {
+	int optionIndex;	/* Index of an option. */
 	if (Tcl_GetIndexFromObj(interp, objv[i++], options,
 		"option", 0, &optionIndex) != TCL_OK) {
 	    TclSetErrorCode(interp, "CLOCK", "badOption",
@@ -1997,15 +1990,11 @@ ConvertLocalToUTCUsingTable(
     Tcl_Obj *const rowv[],	/* Points at which time changes */
     Tcl_WideInt *rangesVal)	/* Return bounds for time period */
 {
-    Tcl_Obj *row;
-    Tcl_Size cellc;
-    Tcl_Obj **cellv;
     struct {
 	Tcl_Obj *tzName;
 	int tzOffset;
     } have[8];
     int nHave = 0;
-    Tcl_Size i;
 
     /*
      * Perform an initial lookup assuming that local == UTC, and locate the
@@ -2020,18 +2009,21 @@ ConvertLocalToUTCUsingTable(
     fields->tzOffset = 0;
     fields->seconds = fields->localSeconds;
     while (1) {
-	row = LookupLastTransition(interp, fields->seconds, rowc, rowv,
+	Tcl_Obj *row = LookupLastTransition(interp, fields->seconds, rowc, rowv,
 		rangesVal);
+	Tcl_Size cellc;
+	Tcl_Obj **cellv;
 	if ((row == NULL)
-		|| TclListObjGetElements(interp, row, &cellc,
-		    &cellv) != TCL_OK
-		|| TclGetIntFromObj(interp, cellv[1],
-		    &fields->tzOffset) != TCL_OK) {
+		|| TclListObjGetElements(interp, row, &cellc, &cellv) != TCL_OK
+		|| TclGetIntFromObj(interp, cellv[1], &fields->tzOffset) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	for (i = 0; i < nHave; ++i) {
+	for (int i = 0; i < nHave; ++i) {
 	    if (have[i].tzOffset == fields->tzOffset) {
-		goto found;
+		fields->tzOffset = have[i].tzOffset;
+		fields->seconds = fields->localSeconds - fields->tzOffset;
+		TclSetObjRef(fields->tzName, have[i].tzName);
+		return TCL_OK;
 	    }
 	}
 	if (nHave == 8) {
@@ -2041,13 +2033,6 @@ ConvertLocalToUTCUsingTable(
 	have[nHave++].tzOffset = fields->tzOffset;
 	fields->seconds = fields->localSeconds - fields->tzOffset;
     }
-
-  found:
-    fields->tzOffset = have[i].tzOffset;
-    fields->seconds = fields->localSeconds - fields->tzOffset;
-    TclSetObjRef(fields->tzName, have[i].tzName);
-
-    return TCL_OK;
 }
 
 /*
@@ -4434,7 +4419,6 @@ ClockAddObjCmd(
 	CLC_ADD_HOURS,	CLC_ADD_MINUTES,    CLC_ADD_SECONDS
     };
     int unitIndex = CLC_ADD_SECONDS;	/* Index of an option. */
-    Tcl_Size i;
     Tcl_WideInt offs;
 
     /* even number of arguments */
@@ -4474,7 +4458,7 @@ ClockAddObjCmd(
      * Find each offset and process date increment
      */
 
-    for (i = 2; i < objc; i+=2) {
+    for (int i = 2; i < objc; i+=2) {
 	/* bypass not integers (options, allready processed above in ClockParseFmtScnArgs) */
 	if (TclGetWideIntFromObj(NULL, objv[i], &offs) != TCL_OK) {
 	    continue;

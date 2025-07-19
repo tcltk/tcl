@@ -335,9 +335,7 @@ TclOOInvokeContext(
      */
 
     if (contextPtr->index == 0) {
-	Tcl_Size i;
-
-	for (i = 0 ; i < contextPtr->callPtr->numChain ; i++) {
+	for (Tcl_Size i = 0 ; i < contextPtr->callPtr->numChain ; i++) {
 	    AddRef(contextPtr->callPtr->chain[i].mPtr);
 	}
 
@@ -416,9 +414,8 @@ FinalizeMethodRefs(
     int result)
 {
     CallContext *contextPtr = (CallContext *) data[0];
-    Tcl_Size i;
 
-    for (i = 0 ; i < contextPtr->callPtr->numChain ; i++) {
+    for (Tcl_Size i = 0 ; i < contextPtr->callPtr->numChain ; i++) {
 	TclOODelMethodRef(contextPtr->callPtr->chain[i].mPtr);
     }
     return result;
@@ -1860,9 +1857,7 @@ TclOORenderCallChain(
     CallChain *callPtr)
 {
     Tcl_Obj *filterLiteral, *methodLiteral, *objectLiteral, *privateLiteral;
-    Tcl_Obj *resultObj, *descObjs[4], **objv;
     Foundation *fPtr = TclOOGetFoundation(interp);
-    Tcl_Size i;
 
     /*
      * Allocate the literals (potentially) used in our description.
@@ -1885,27 +1880,30 @@ TclOORenderCallChain(
      * method (or "object" if it is declared on the instance).
      */
 
-    objv = (Tcl_Obj **)
+    Tcl_Obj **objv = (Tcl_Obj **)
 	    TclStackAlloc(interp, callPtr->numChain * sizeof(Tcl_Obj *));
-    for (i = 0 ; i < callPtr->numChain ; i++) {
+    for (Tcl_Size i = 0 ; i < callPtr->numChain ; i++) {
 	MInvoke *miPtr = &callPtr->chain[i];
 
-	descObjs[0] =
-	    miPtr->isFilter ? filterLiteral :
-	    callPtr->flags & OO_UNKNOWN_METHOD ? fPtr->unknownMethodNameObj :
-	    IS_PRIVATE(miPtr->mPtr) ? privateLiteral :
-		    methodLiteral;
-	descObjs[1] =
-	    callPtr->flags & CONSTRUCTOR ? fPtr->constructorName :
-	    callPtr->flags & DESTRUCTOR ? fPtr->destructorName :
-		    miPtr->mPtr->namePtr;
-	descObjs[2] = miPtr->mPtr->declaringClassPtr
-		? Tcl_GetObjectName(interp,
+	Tcl_Obj *descObjs[4] = {
+	    miPtr->isFilter
+		    ? filterLiteral
+		: callPtr->flags & OO_UNKNOWN_METHOD
+		    ? fPtr->unknownMethodNameObj
+		: IS_PRIVATE(miPtr->mPtr)
+		    ? privateLiteral
+		    : methodLiteral,
+	    callPtr->flags & CONSTRUCTOR
+		    ? fPtr->constructorName
+	        : callPtr->flags & DESTRUCTOR
+		    ? fPtr->destructorName
+		    : miPtr->mPtr->namePtr,
+	    miPtr->mPtr->declaringClassPtr
+		    ? Tcl_GetObjectName(interp,
 			(Tcl_Object) miPtr->mPtr->declaringClassPtr->thisPtr)
-		: objectLiteral;
-	descObjs[3] = Tcl_NewStringObj(miPtr->mPtr->typePtr->name,
-		TCL_AUTO_LENGTH);
-
+		    : objectLiteral,
+	    Tcl_NewStringObj(miPtr->mPtr->typePtr->name, TCL_AUTO_LENGTH)
+	};
 	objv[i] = Tcl_NewListObj(4, descObjs);
     }
 
@@ -1923,7 +1921,7 @@ TclOORenderCallChain(
      * Finish building the description and return it.
      */
 
-    resultObj = Tcl_NewListObj(callPtr->numChain, objv);
+    Tcl_Obj *resultObj = Tcl_NewListObj(callPtr->numChain, objv);
     TclStackFree(interp, objv);
     return resultObj;
 }
@@ -2106,8 +2104,6 @@ AddDefinitionNamespaceToChain(
 				 * looking to add things from a mixin and have
 				 * not passed a mixin. */
 {
-    int i;
-
     /*
      * Return if this entry is blank. This is also where we enforce
      * mixin-consistency.
@@ -2121,6 +2117,7 @@ AddDefinitionNamespaceToChain(
      * First test whether the method is already in the call chain.
      */
 
+    int i;
     for (i=0 ; i<definePtr->num ; i++) {
 	if (definePtr->list[i].definerCls == definerCls) {
 	    /*

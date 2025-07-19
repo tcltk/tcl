@@ -1585,7 +1585,6 @@ Tcl_Merge(
 {
 #define LOCAL_SIZE 64
     char localFlags[LOCAL_SIZE], *flagPtr = NULL;
-    Tcl_Size i;
     size_t bytesNeeded = 0;
     char *result, *dst;
 
@@ -1612,7 +1611,7 @@ Tcl_Merge(
     } else {
 	flagPtr = (char *)Tcl_Alloc(argc);
     }
-    for (i = 0; i < argc; i++) {
+    for (Tcl_Size i = 0; i < argc; i++) {
 	flagPtr[i] = ( i ? DONT_QUOTE_HASH : 0 );
 	bytesNeeded += TclScanElement(argv[i], TCL_INDEX_NONE, &flagPtr[i]);
     }
@@ -1624,7 +1623,7 @@ Tcl_Merge(
 
     result = (char *)Tcl_Alloc(bytesNeeded);
     dst = result;
-    for (i = 0; i < argc; i++) {
+    for (Tcl_Size i = 0; i < argc; i++) {
 	if (i) {
 	    flagPtr[i] |= DONT_QUOTE_HASH;
 	}
@@ -3316,7 +3315,7 @@ TclFormatInt(
     Tcl_WideInt n)		/* The integer to format. */
 {
     Tcl_WideUInt intVal;
-    int i = 0, numFormatted, j;
+    int i = 0, numFormatted;
     static const char digits[] = "0123456789";
 
     /*
@@ -3338,7 +3337,7 @@ TclFormatInt(
      * Now reverse the characters.
      */
 
-    for (j = 0;  j < i;  j++, i--) {
+    for (int j = 0;  j < i;  j++, i--) {
 	char tmp = buffer[i];
 
 	buffer[i] = buffer[j];
@@ -4415,7 +4414,7 @@ TclReToGlob(
 {
     int anchorLeft, anchorRight, lastIsStar, numStars;
     char *dsStr, *dsStrStart;
-    const char *msg, *p, *strEnd, *code;
+    const char *msg, *strEnd, *code;
 
     strEnd = reStr + reStrLen;
     Tcl_DStringInit(dsPtr);
@@ -4436,7 +4435,7 @@ TclReToGlob(
 	Tcl_DStringSetLength(dsPtr, reStrLen + 2);
 	dsStr = dsStrStart = Tcl_DStringValue(dsPtr);
 	*dsStr++ = '*';
-	for (p = reStr + 4; p < strEnd; p++) {
+	for (const char *p = reStr + 4; p < strEnd; p++) {
 	    switch (*p) {
 	    case '\\': case '*': case '[': case ']': case '?':
 		/* Only add \ where necessary for glob */
@@ -4473,7 +4472,7 @@ TclReToGlob(
 
     msg = NULL;
     code = NULL;
-    p = reStr;
+    const char *p = reStr;
     anchorRight = 0;
     lastIsStar = 0;
     numStars = 0;

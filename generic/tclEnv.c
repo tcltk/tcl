@@ -150,10 +150,8 @@ TclSetupEnv(
      */
 
     if (tenviron[0] != NULL) {
-	int i;
-
 	Tcl_MutexLock(&envMutex);
-	for (i = 0; tenviron[i] != NULL; i++) {
+	for (int i = 0; tenviron[i] != NULL; i++) {
 	    Tcl_Obj *obj1, *obj2;
 	    const char *p1;
 	    char *p2;
@@ -808,8 +806,7 @@ TclFinalizeEnvironment(void)
 
     if (env.cache) {
 #ifdef PURIFY
-	Tcl_Size i;
-	for (i = 0; i < env.cacheSize; i++) {
+	for (Tcl_Size i = 0; i < env.cacheSize; i++) {
 	    Tcl_Free(env.cache[i]);
 	}
 #endif

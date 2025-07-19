@@ -389,12 +389,8 @@ TclInitObjSubsystem(void)
     Tcl_MutexLock(&tclObjMutex);
     tclObjsAlloced = 0;
     tclObjsFreed = 0;
-    {
-	int i;
-
-	for (i=0 ; i<TCL_MAX_SHARED_OBJ_STATS ; i++) {
-	    tclObjsShared[i] = 0;
-	}
+    for (int i=0 ; i<TCL_MAX_SHARED_OBJ_STATS ; i++) {
+	tclObjsShared[i] = 0;
     }
     Tcl_MutexUnlock(&tclObjMutex);
 #endif
@@ -654,14 +650,13 @@ TclContinuationsEnterDerived(
 
     num = wordCLLast - clNext;
     if (num) {
-	Tcl_Size i;
 	ContLineLoc *clLocPtr = TclContinuationsEnter(objPtr, num, clNext);
 
 	/*
 	 * Re-base the locations.
 	 */
 
-	for (i=0 ; i<num ; i++) {
+	for (Tcl_Size i=0 ; i<num ; i++) {
 	    clLocPtr->loc[i] -= start;
 
 	    /*
@@ -1215,9 +1210,6 @@ void
 TclAllocateFreeObjects(void)
 {
     size_t bytesToAlloc = (OBJS_TO_ALLOC_EACH_TIME * sizeof(Tcl_Obj));
-    char *basePtr;
-    Tcl_Obj *prevPtr, *objPtr;
-    int i;
 
     /*
      * This has been noted by Purify to be a potential leak. The problem is
@@ -1228,11 +1220,10 @@ TclAllocateFreeObjects(void)
      * Purify apparently can't figure that out, and fires a false alarm.
      */
 
-    basePtr = (char *)Tcl_Alloc(bytesToAlloc);
-
-    prevPtr = NULL;
-    objPtr = (Tcl_Obj *) basePtr;
-    for (i = 0; i < OBJS_TO_ALLOC_EACH_TIME; i++) {
+    char *basePtr = (char *)Tcl_Alloc(bytesToAlloc);
+    Tcl_Obj *prevPtr = NULL;
+    Tcl_Obj *objPtr = (Tcl_Obj *) basePtr;
+    for (int i = 0; i < OBJS_TO_ALLOC_EACH_TIME; i++) {
 	objPtr->internalRep.twoPtrValue.ptr1 = prevPtr;
 	prevPtr = objPtr;
 	objPtr++;
@@ -2115,7 +2106,7 @@ ParseBoolean(
 {
     int newBool;
     char lowerCase[6];
-    Tcl_Size i, length;
+    Tcl_Size length;
     const char *str = Tcl_GetStringFromObj(objPtr, &length);
 
     if ((length < 1) || (length > 5)) {
@@ -2146,7 +2137,7 @@ ParseBoolean(
      * invalid characters at the same time.
      */
 
-    for (i=0; i < length; i++) {
+    for (Tcl_Size i=0; i < length; i++) {
 	char c = str[i];
 
 	switch (c) {

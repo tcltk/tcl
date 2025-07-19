@@ -615,7 +615,7 @@ TestchmodCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument strings. */
 {
-    int i, mode;
+    int mode;
     Tcl_DString ds;
 
     if (objc < 2) {
@@ -628,7 +628,7 @@ TestchmodCmd(
     }
 
     Tcl_DStringInit(&ds);
-    for (i = 2; i < objc; i++) {
+    for (int i = 2; i < objc; i++) {
 	Tcl_DString buffer;
 	const char *translated;
 

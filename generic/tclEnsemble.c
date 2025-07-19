@@ -1556,7 +1556,7 @@ TclMakeEnsemble(
     Tcl_DString buf, hiddenBuf;
     const char **nameParts = NULL;
     const char *cmdName = NULL;
-    Tcl_Size i, nameCount = 0;
+    Tcl_Size nameCount = 0;
     int ensembleFlags = 0;
     Tcl_Size hiddenLen;
 
@@ -1590,7 +1590,7 @@ TclMakeEnsemble(
 	    Tcl_Panic("invalid ensemble name '%s'", name);
 	}
 
-	for (i = 0; i < nameCount; ++i) {
+	for (Tcl_Size i = 0; i < nameCount; ++i) {
 	    TclDStringAppendLiteral(&buf, "::");
 	    Tcl_DStringAppend(&buf, nameParts[i], TCL_AUTO_LENGTH);
 	}
@@ -1636,7 +1636,7 @@ TclMakeEnsemble(
 
 	TclDStringAppendLiteral(&buf, "::");
 	TclNewObj(mapDict);
-	for (i=0 ; map[i].name != NULL ; i++) {
+	for (Tcl_Size i=0 ; map[i].name != NULL ; i++) {
 	    TclNewStringObj(toObj, Tcl_DStringValue(&buf),
 		    Tcl_DStringLength(&buf));
 	    Tcl_AppendToObj(toObj, map[i].name, TCL_AUTO_LENGTH);
@@ -1838,12 +1838,12 @@ NsEnsembleImplementationCmdNR(
 	const char *subcmdName; /* Name of the subcommand or unique prefix of
 				 * it (a non-unique prefix produces an error). */
 	char *fullName = NULL;	/* Full name of the subcommand. */
-	Tcl_Size stringLength, i;
+	Tcl_Size stringLength;
 	Tcl_Size tableLength = ensemblePtr->subcommandTable.numEntries;
 	Tcl_Obj *fix;
 
 	subcmdName = TclGetStringFromObj(subObj, &stringLength);
-	for (i=0 ; i<tableLength ; i++) {
+	for (Tcl_Size i=0 ; i<tableLength ; i++) {
 	    int cmp = strncmp(subcmdName,
 		    ensemblePtr->subcommandArrayPtr[i],
 		    stringLength);
@@ -2001,9 +2001,8 @@ NsEnsembleImplementationCmdNR(
 	Tcl_Size i;
 
 	for (i=0 ; i<ensemblePtr->subcommandTable.numEntries-1 ; i++) {
-	    Tcl_AppendToObj(errorObj, ensemblePtr->subcommandArrayPtr[i],
-		    TCL_AUTO_LENGTH);
-	    Tcl_AppendToObj(errorObj, ", ", 2);
+	    Tcl_AppendPrintfToObj(errorObj, "%s, ",
+		    ensemblePtr->subcommandArrayPtr[i]);
 	}
 	Tcl_AppendPrintfToObj(errorObj, "or %s",
 		ensemblePtr->subcommandArrayPtr[i]);
@@ -2326,7 +2325,7 @@ EnsembleUnknownCallback(
 {
     Tcl_Size paramc;
     int result;
-    Tcl_Size i, prefixObjc;
+    Tcl_Size prefixObjc;
     Tcl_Obj **paramv, *unknownCmd, *ensObj;
 
     /*
@@ -2337,9 +2336,7 @@ EnsembleUnknownCallback(
     TclNewObj(ensObj);
     Tcl_GetCommandFullName(interp, ensemblePtr->token, ensObj);
     Tcl_ListObjAppendElement(NULL, unknownCmd, ensObj);
-    for (i = 1 ; i < objc ; i++) {
-	Tcl_ListObjAppendElement(NULL, unknownCmd, objv[i]);
-    }
+    TclListObjAppendElements(NULL, unknownCmd, objc-1, objv+1);
     TclListObjGetElements(NULL, unknownCmd, &paramc, &paramv);
     Tcl_IncrRefCount(unknownCmd);
 
@@ -2615,7 +2612,6 @@ BuildEnsembleConfig(
 {
     Tcl_HashSearch search;	/* Used for scanning the commands in
 				 * the namespace for this ensemble. */
-    Tcl_Size i, j;
     int isNew;
     Tcl_HashTable *hash = &ensemblePtr->subcommandTable;
     Tcl_HashEntry *hPtr;
@@ -2642,7 +2638,7 @@ BuildEnsembleConfig(
 	     * as the dict mapping to targets.
 	     */
 
-	    for (i = 0; i < subc; i += 2) {
+	    for (Tcl_Size i = 0; i < subc; i += 2) {
 		name = TclGetString(subv[i]);
 		hPtr = Tcl_CreateHashEntry(hash, name, &isNew);
 		if (!isNew) {
@@ -2666,7 +2662,7 @@ BuildEnsembleConfig(
 	     * Usual case where we can freely act on the list and dict.
 	     */
 
-	    for (i = 0; i < subc; i++) {
+	    for (Tcl_Size i = 0; i < subc; i++) {
 		name = TclGetString(subv[i]);
 		hPtr = Tcl_CreateHashEntry(hash, name, &isNew);
 		if (!isNew) {
@@ -2738,7 +2734,7 @@ BuildEnsembleConfig(
 	    char *nsCmdName = (char *)	/* Name of command in namespace. */
 		    Tcl_GetHashKey(&ensemblePtr->nsPtr->cmdTable, hPtr);
 
-	    for (i=0 ; i<ensemblePtr->nsPtr->numExportPatterns ; i++) {
+	    for (Tcl_Size i=0 ; i<ensemblePtr->nsPtr->numExportPatterns ; i++) {
 		if (Tcl_StringMatch(nsCmdName,
 			ensemblePtr->nsPtr->exportArrayPtr[i])) {
 		    hPtr = Tcl_CreateHashEntry(hash, nsCmdName, &isNew);
@@ -2798,17 +2794,15 @@ BuildEnsembleConfig(
      * }
      *
      * can produce long runs of precisely ordered table entries when the
-     * commands in the namespace are declared in a sorted fashion,  which is an
+     * commands in the namespace are declared in a sorted fashion, which is an
      * ordering some people like, and the hashing functions or the command
      * names themselves are fairly unfortunate. Filling from both ends means
      * that it requires active malice, and probably a debugger, to get qsort()
      * to have awful runtime behaviour.
      */
 
-    i = 0;
-    j = hash->numEntries;
     hPtr = Tcl_FirstHashEntry(hash, &search);
-    while (hPtr != NULL) {
+    for (Tcl_Size i=0, j=hash->numEntries; hPtr; hPtr=Tcl_NextHashEntry(&search)) {
 	ensemblePtr->subcommandArrayPtr[i++] = (char *)
 		Tcl_GetHashKey(hash, hPtr);
 	hPtr = Tcl_NextHashEntry(&search);
@@ -2817,7 +2811,6 @@ BuildEnsembleConfig(
 	}
 	ensemblePtr->subcommandArrayPtr[--j] = (char *)
 		Tcl_GetHashKey(hash, hPtr);
-	hPtr = Tcl_NextHashEntry(&search);
     }
     if (hash->numEntries > 1) {
 	qsort(ensemblePtr->subcommandArrayPtr, hash->numEntries,
@@ -2962,7 +2955,7 @@ TclCompileEnsemble(
     Command *oldCmdPtr = cmdPtr, *newCmdPtr;
     int result, flags = 0, depth = 1, invokeAnyway = 0;
     int ourResult = TCL_ERROR;
-    Tcl_Size i, len, numBytes;
+    Tcl_Size len, numBytes;
     const char *word;
 
     TclNewObj(replaced);
@@ -3039,7 +3032,7 @@ TclCompileEnsemble(
 	if (TclListObjGetElements(NULL, listObj, &len, &elems) != TCL_OK) {
 	    goto tryCompileToInv;
 	}
-	for (i=0 ; i<len ; i++) {
+	for (Tcl_Size i=0 ; i<len ; i++) {
 	    str = TclGetStringFromObj(elems[i], &sclen);
 	    if ((sclen == numBytes) && !memcmp(word, str, numBytes)) {
 		/*
@@ -3283,7 +3276,6 @@ TclAttemptCompileProc(
 {
     DefineLineInformation;
     int result;
-    Tcl_Size i;
     Tcl_Token *saveTokenPtr = parsePtr->tokenPtr;
     Tcl_Size savedStackDepth = envPtr->currStackDepth;
     Tcl_Size savedCodeNext = CurrentOffset(envPtr);
@@ -3304,7 +3296,7 @@ TclAttemptCompileProc(
      * allocate a synthetic Tcl_Parse struct or copy tokens around.
      */
 
-    for (i = 0; i < depth - 1; i++) {
+    for (Tcl_Size i = 0; i < depth - 1; i++) {
 	parsePtr->tokenPtr = TokenAfter(parsePtr->tokenPtr);
     }
     parsePtr->numWords -= (depth - 1);
@@ -3348,7 +3340,7 @@ TclAttemptCompileProc(
     if (result != TCL_OK) {
 	ExceptionAux *auxPtr = envPtr->exceptAuxArrayPtr;
 
-	for (i = 0; i < savedExceptArrayNext; i++) {
+	for (Tcl_Size i = 0; i < savedExceptArrayNext; i++) {
 	    while (auxPtr->numBreakTargets > 0
 		    && (Tcl_Size) auxPtr->breakTargets[auxPtr->numBreakTargets - 1]
 		    >= savedCodeNext) {

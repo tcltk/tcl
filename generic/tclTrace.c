@@ -298,7 +298,7 @@ TraceExecutionObjCmd(
     case TRACE_ADD:
     case TRACE_REMOVE: {
 	int flags = 0, result;
-	Tcl_Size i, listLen;
+	Tcl_Size listLen;
 	Tcl_Obj **elemPtrs;
 
 	if (objc != 6) {
@@ -326,7 +326,7 @@ TraceExecutionObjCmd(
 	if (result != TCL_OK) {
 	    return result;
 	}
-	for (i = 0; i < listLen; i++) {
+	for (Tcl_Size i = 0; i < listLen; i++) {
 	    if (Tcl_GetIndexFromObj(interp, elemPtrs[i], opStrings,
 		    "operation", TCL_EXACT, &index) != TCL_OK) {
 		return TCL_ERROR;
@@ -538,7 +538,7 @@ TraceCommandObjCmd(
     case TRACE_ADD:
     case TRACE_REMOVE: {
 	int flags = 0, result;
-	Tcl_Size i, listLen;
+	Tcl_Size listLen;
 	Tcl_Obj **elemPtrs;
 
 	if (objc != 6) {
@@ -566,7 +566,7 @@ TraceCommandObjCmd(
 	if (result != TCL_OK) {
 	    return result;
 	}
-	for (i = 0; i < listLen; i++) {
+	for (Tcl_Size i = 0; i < listLen; i++) {
 	    if (Tcl_GetIndexFromObj(interp, elemPtrs[i], opStrings,
 		    "operation", TCL_EXACT, &index) != TCL_OK) {
 		return TCL_ERROR;
@@ -734,7 +734,7 @@ TraceVariableObjCmd(
     case TRACE_ADD:
     case TRACE_REMOVE: {
 	int flags = 0, result;
-	Tcl_Size i, listLen;
+	Tcl_Size listLen;
 	Tcl_Obj **elemPtrs;
 
 	if (objc != 6) {
@@ -762,7 +762,7 @@ TraceVariableObjCmd(
 	if (result != TCL_OK) {
 	    return result;
 	}
-	for (i = 0; i < listLen ; i++) {
+	for (Tcl_Size i = 0; i < listLen ; i++) {
 	    if (Tcl_GetIndexFromObj(interp, elemPtrs[i], opStrings,
 		    "operation", TCL_EXACT, &index) != TCL_OK) {
 		return TCL_ERROR;
@@ -1682,7 +1682,6 @@ TraceExecutionProc(
 
 	if (call) {
 	    Tcl_DString cmd, sub;
-	    Tcl_Size i;
 	    int saveInterpFlags;
 
 	    Tcl_DStringInit(&cmd);
@@ -1693,7 +1692,7 @@ TraceExecutionProc(
 	     */
 
 	    Tcl_DStringInit(&sub);
-	    for (i = 0; i < objc; i++) {
+	    for (Tcl_Size i = 0; i < objc; i++) {
 		Tcl_DStringAppendElement(&sub, TclGetString(objv[i]));
 	    }
 	    Tcl_DStringAppendElement(&cmd, Tcl_DStringValue(&sub));
@@ -2165,7 +2164,6 @@ StringTraceProc(
     StringTraceData *data = (StringTraceData *)clientData;
     Command *cmdPtr = (Command *) commandInfo;
     const char **argv;		/* Args to pass to string trace proc */
-    Tcl_Size i;
 
     /*
      * This is a bit messy because we have to emulate the old trace interface,
@@ -2174,7 +2172,7 @@ StringTraceProc(
 
     argv = (const char **) TclStackAlloc(interp,
 	    (objc + 1) * sizeof(const char *));
-    for (i = 0; i < objc; i++) {
+    for (Tcl_Size i = 0; i < objc; i++) {
 	argv[i] = TclGetString(objv[i]);
     }
     argv[objc] = 0;
@@ -2482,7 +2480,7 @@ TclCallVarTraces(
     VarTrace *tracePtr;
     ActiveVarTrace active;
     char *result;
-    const char *openParen, *p;
+    const char *openParen;
     Tcl_DString nameCopy;
     int copiedName;
     int code = TCL_OK;
@@ -2518,7 +2516,7 @@ TclCallVarTraces(
 
     copiedName = 0;
     if (part2 == NULL) {
-	for (p = part1; *p ; p++) {
+	for (const char *p = part1; *p ; p++) {
 	    if (*p == '(') {
 		openParen = p;
 		do {

@@ -341,7 +341,6 @@ InitFoundation(
     Foundation *fPtr = (Foundation *) Tcl_Alloc(sizeof(Foundation));
     Tcl_Namespace *define, *objdef;
     Tcl_Obj *namePtr;
-    size_t i;
 
     /*
      * Initialize the structure that holds the OO system core. This is
@@ -388,11 +387,11 @@ InitFoundation(
      * Create the subcommands in the oo::define and oo::objdefine spaces.
      */
 
-    for (i = 0 ; defineCmds[i].name ; i++) {
+    for (size_t i = 0 ; defineCmds[i].name ; i++) {
 	TclCreateObjCommandInNs(interp, defineCmds[i].name, define,
 		defineCmds[i].objProc, INT2PTR(defineCmds[i].flag), NULL);
     }
-    for (i = 0 ; objdefCmds[i].name ; i++) {
+    for (size_t i = 0 ; objdefCmds[i].name ; i++) {
 	TclCreateObjCommandInNs(interp, objdefCmds[i].name, objdef,
 		objdefCmds[i].objProc, INT2PTR(objdefCmds[i].flag), NULL);
     }

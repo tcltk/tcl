@@ -1064,7 +1064,7 @@ TclNRPackageObjCmd(
     } optionIndex;
     Interp *iPtr = (Interp *) interp;
     int exact, satisfies;
-    Tcl_Size i, newobjc;
+    Tcl_Size newobjc;
     PkgAvail *availPtr, *prevPtr;
     Package *pkgPtr;
     Tcl_HashEntry *hPtr;
@@ -1106,7 +1106,7 @@ TclNRPackageObjCmd(
 	PkgFiles *pkgFiles = (PkgFiles *)
 		Tcl_GetAssocData(interp, ASSOC_KEY, NULL);
 
-	for (i = 2; i < objc; i++) {
+	for (Tcl_Size i = 2; i < objc; i++) {
 	    const char *keyString = TclGetString(objv[i]);
 	    if (pkgFiles) {
 		hPtr = Tcl_FindHashEntry(&pkgFiles->table, keyString);
@@ -1361,7 +1361,7 @@ TclNRPackageObjCmd(
 	    objvListPtr = Tcl_NewListObj(0, NULL);
 	    Tcl_IncrRefCount(objvListPtr);
 	    Tcl_IncrRefCount(objv[2]);
-	    for (i = 0; i < newobjc; i++) {
+	    for (Tcl_Size i = 0; i < newobjc; i++) {
 		/*
 		 * Tcl_Obj structures may have come from another interpreter,
 		 * so duplicate them.
@@ -1939,9 +1939,7 @@ CheckAllRequirements(
     Tcl_Size reqc,			/* Requirements to check. */
     Tcl_Obj *const reqv[])
 {
-    Tcl_Size i;
-
-    for (i = 0; i < reqc; i++) {
+    for (Tcl_Size i = 0; i < reqc; i++) {
 	if ((CheckRequirement(interp, TclGetString(reqv[i])) != TCL_OK)) {
 	    return TCL_ERROR;
 	}
@@ -2042,16 +2040,15 @@ CheckRequirement(
 static void
 AddRequirementsToResult(
     Tcl_Interp *interp,
-    Tcl_Size reqc,			/* Requirements constraining the desired
+    Tcl_Size reqc,		/* Requirements constraining the desired
 				 * version. */
     Tcl_Obj *const reqv[])	/* 0 means to use the latest version
 				 * available. */
 {
     Tcl_Obj *result = Tcl_GetObjResult(interp);
-    int i;
-    Tcl_Size length;
-
-    for (i = 0; i < reqc; i++) {
+    
+    for (Tcl_Size i = 0; i < reqc; i++) {
+	Tcl_Size length;
 	const char *v = TclGetStringFromObj(reqv[i], &length);
 
 	if ((length & 0x1) && (v[length/2] == '-')
@@ -2087,10 +2084,8 @@ AddRequirementsToDString(
     Tcl_Obj *const reqv[])	/* 0 means to use the latest version
 				 * available. */
 {
-    int i;
-
     if (reqc > 0) {
-	for (i = 0; i < reqc; i++) {
+	for (int i = 0; i < reqc; i++) {
 	    TclDStringAppendLiteral(dsPtr, " ");
 	    TclDStringAppendObj(dsPtr, reqv[i]);
 	}
@@ -2122,14 +2117,12 @@ static int
 SomeRequirementSatisfied(
     char *availVersionI,	/* Candidate version to check against the
 				 * requirements. */
-    Tcl_Size reqc,			/* Requirements constraining the desired
+    Tcl_Size reqc,		/* Requirements constraining the desired
 				 * version. */
     Tcl_Obj *const reqv[])	/* 0 means to use the latest version
 				 * available. */
 {
-    Tcl_Size i;
-
-    for (i = 0; i < reqc; i++) {
+    for (Tcl_Size i = 0; i < reqc; i++) {
 	if (RequirementSatisfied(availVersionI, TclGetString(reqv[i]))) {
 	    return 1;
 	}

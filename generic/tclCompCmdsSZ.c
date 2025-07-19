@@ -232,7 +232,7 @@ TclCompileStringCatCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
-    Tcl_Size i, numWords = parsePtr->numWords, numArgs;
+    Tcl_Size numWords = parsePtr->numWords, numArgs;
     Tcl_Token *wordTokenPtr;
     Tcl_Obj *obj, *folded;
     /* TODO: Consider support for compiling expanded args. */
@@ -250,7 +250,7 @@ TclCompileStringCatCmd(
     numArgs = 0;
     folded = NULL;
     wordTokenPtr = TokenAfter(parsePtr->tokenPtr);
-    for (i = 1; i < numWords; i++) {
+    for (Tcl_Size i = 1; i < numWords; i++) {
 	TclNewObj(obj);
 	if (TclWordKnownAtCompileTime(wordTokenPtr, obj)) {
 	    if (folded) {
@@ -791,7 +791,7 @@ TclCompileStringMatchCmd(
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr;
     int exactMatch = 0, nocase = 0;
-    Tcl_Size i, numWords = parsePtr->numWords;
+    Tcl_Size numWords = parsePtr->numWords;
 
     if (numWords < 3 || numWords > 4) {
 	return TCL_ERROR;
@@ -818,7 +818,7 @@ TclCompileStringMatchCmd(
      * Push the strings to match against each other.
      */
 
-    for (i = 0; i < 2; i++) {
+    for (Tcl_Size i = 0; i < 2; i++) {
 	if (tokenPtr->type == TCL_TOKEN_SIMPLE_WORD && !nocase && (i == 0)) {
 	    /*
 	     * Trivial matches can be done by 'string equal'. If -nocase was
@@ -1549,10 +1549,9 @@ TclSubstCompile(
 	     */
 
 	    if (tokenPtr->numComponents > 1) {
-		Tcl_Size i;
 		int foundCommand = 0;
 
-		for (i=2 ; i<=tokenPtr->numComponents ; i++) {
+		for (Tcl_Size i=2 ; i<=tokenPtr->numComponents ; i++) {
 		    if (tokenPtr[i].type == TCL_TOKEN_COMMAND) {
 			foundCommand = 1;
 			break;
@@ -1770,7 +1769,7 @@ TclCompileSwitchCmd(
     SwitchArmInfo *arms;	/* Array of information about switch arms. */
     int noCase;			/* Has the -nocase flag been given? */
     int foundMode = 0;		/* Have we seen a mode flag yet? */
-    Tcl_Size i, valueIndex;
+    Tcl_Size valueIndex;
     int result = TCL_ERROR;
     Tcl_Size *clNext = envPtr->clNext;
 
@@ -1996,7 +1995,7 @@ TclCompileSwitchCmd(
 	bodyTokenArray = NULL;
 	arms = (SwitchArmInfo *) TclStackAlloc(interp,
 		sizeof(SwitchArmInfo) * numWords / 2);
-	for (i=0 ; i<numWords ; i++) {
+	for (Tcl_Size i=0 ; i<numWords ; i++) {
 	    /*
 	     * We only handle the very simplest case. Anything more complex is
 	     * a good reason to go to the interpreted case anyway due to
@@ -2106,7 +2105,6 @@ IssueSwitchChainedTests(
     Tcl_Size nextArmFixupIndex;	/* Index of next issued arm to fix the jump to
 				 * the next test for, or -1 if no fix pending. */
     int simple, exact;		/* For extracting the type of regexp. */
-    Tcl_Size i, j;
 
     /*
      * Generate a test for each arm.
@@ -2118,7 +2116,7 @@ IssueSwitchChainedTests(
 	    sizeof(Tcl_BytecodeLabel) * numArms * 2);
     jumpCount = 0;
     foundDefault = 0;
-    for (i=0 ; i<numArms ; i++) {
+    for (Tcl_Size i=0 ; i<numArms ; i++) {
 	SwitchArmInfo *arm = &arms[i];
 
 	nextArmFixupIndex = NO_PENDING_JUMP;
@@ -2237,7 +2235,7 @@ IssueSwitchChainedTests(
 	 */
 
 	if (contJumpIdx != NO_PENDING_JUMP) {
-	    for (j=0 ; j<contJumpCount ; j++) {
+	    for (Tcl_Size j=0 ; j<contJumpCount ; j++) {
 		FWDLABEL(   fwdJumps[contJumpIdx + j]);
 		fwdJumps[contJumpIdx + j] = 0;
 	    }
@@ -2279,7 +2277,7 @@ IssueSwitchChainedTests(
      * been fixed.
      */
 
-    for (j=0 ; j<jumpCount ; j++) {
+    for (Tcl_Size j=0 ; j<jumpCount ; j++) {
 	if (fwdJumps[j] != 0) {
 	    FWDLABEL(	fwdJumps[j]);
 	}
@@ -2316,7 +2314,7 @@ IssueSwitchJumpTable(
     JumptableInfo *jtPtr;
     Tcl_AuxDataRef infoIndex;
     int isNew, mustGenerate, foundDefault;
-    Tcl_Size numRealBodies = 0, i;
+    Tcl_Size numRealBodies = 0;
     Tcl_BytecodeLabel jumpLocation, jumpToDefault, *finalFixups;
     Tcl_DString buffer;
 
@@ -2358,7 +2356,7 @@ IssueSwitchJumpTable(
     OP4(			JUMP_TABLE, infoIndex);
     FWDJUMP(			JUMP, jumpToDefault);
 
-    for (i=0 ; i<numArms ; i++) {
+    for (Tcl_Size i=0 ; i<numArms ; i++) {
 	SwitchArmInfo *arm = &arms[i];
 
 	/*
@@ -2462,7 +2460,7 @@ IssueSwitchJumpTable(
      * end of the command is fixed up at this point.
      */
 
-    for (i=0 ; i<numRealBodies ; i++) {
+    for (Tcl_Size i=0 ; i<numRealBodies ; i++) {
 	FWDLABEL(	finalFixups[i]);
     }
 
@@ -2687,7 +2685,7 @@ TclCompileTailcallCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr = parsePtr->tokenPtr;
-    Tcl_Size i, numWords = parsePtr->numWords;
+    Tcl_Size numWords = parsePtr->numWords;
     Tcl_Size build = 1;
     int concat = 0;
 
@@ -2705,7 +2703,7 @@ TclCompileTailcallCmd(
     }
 
     // Check if we're doing expansion.
-    for (i=1 ; i<numWords ; i++) {
+    for (Tcl_Size i=1 ; i<numWords ; i++) {
 	tokenPtr = TokenAfter(tokenPtr);
 	if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
 	    goto tailcallExpanded;
@@ -2714,7 +2712,7 @@ TclCompileTailcallCmd(
     tokenPtr = parsePtr->tokenPtr;
 
     // Push the words. The first one is marked for limited sharing.
-    for (i=1 ; i<numWords ; i++) {
+    for (Tcl_Size i=1 ; i<numWords ; i++) {
 	tokenPtr = TokenAfter(tokenPtr);
 	if (i == 1 && tokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
 	    PUSH_COMMAND_TOKEN(	tokenPtr);
@@ -2730,7 +2728,7 @@ TclCompileTailcallCmd(
   tailcallExpanded:
     // Build all the words into a list. Handles expansion.
     tokenPtr = parsePtr->tokenPtr;
-    for (i = 1; i < numWords; i++) {
+    for (Tcl_Size i = 1; i < numWords; i++) {
 	tokenPtr = TokenAfter(tokenPtr);
 	// If we're about to expand, make sure we have a single list before.
 	if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD && build > 0) {
@@ -3151,7 +3149,7 @@ IssueTryClausesInstructions(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_LVTIndex resultVar, optionsVar;
-    Tcl_Size i, j, len;
+    Tcl_Size len;
     int continuationsPending = 0, trapZero = 0;
     Tcl_ExceptionRange range;
     Tcl_BytecodeLabel afterBody = 0, pushReturnOptions = 0;
@@ -3169,7 +3167,7 @@ IssueTryClausesInstructions(
      * If not, we can handle that case much more efficiently.
      */
 
-    for (i=0 ; i<numHandlers ; i++) {
+    for (Tcl_Size i=0 ; i<numHandlers ; i++) {
 	if (handlers[i].matchCode == 0) {
 	    trapZero = 1;
 	    break;
@@ -3222,11 +3220,11 @@ IssueTryClausesInstructions(
 	    sizeof(Tcl_BytecodeLabel) * numHandlers * 3);
     continuationJumps = afterReturn0 + numHandlers;
     noError = continuationJumps + numHandlers;
-    for (i=0; i<numHandlers*3; i++) {
+    for (Tcl_Size i=0; i<numHandlers*3; i++) {
 	afterReturn0[i] = NO_PENDING_JUMP;
     }
 
-    for (i=0 ; i<numHandlers ; i++) {
+    for (Tcl_Size i=0 ; i<numHandlers ; i++) {
 	OP(			DUP);
 	PUSH_OBJ(		Tcl_NewIntObj(handlers[i].matchCode));
 	OP(			EQ);
@@ -3272,7 +3270,7 @@ IssueTryClausesInstructions(
 	} else {
 	    if (continuationsPending) {
 		continuationsPending = 0;
-		for (j=0 ; j<i ; j++) {
+		for (Tcl_Size j=0 ; j<i ; j++) {
 		    if (continuationJumps[j] != NO_PENDING_JUMP) {
 			FWDLABEL(continuationJumps[j]);
 		    }
@@ -3340,7 +3338,7 @@ IssueTryClausesInstructions(
     if (!trapZero) {
 	FWDLABEL(	afterBody);
     }
-    for (i=0 ; i<numHandlers ; i++) {
+    for (Tcl_Size i=0 ; i<numHandlers ; i++) {
 	if (afterReturn0[i] != NO_PENDING_JUMP) {
 	    FWDLABEL(	afterReturn0[i]);
 	}
@@ -3362,7 +3360,6 @@ IssueTryTraplessClausesInstructions(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_LVTIndex resultVar, optionsVar;
-    Tcl_Size i, j;
     int continuationsPending = 0, trapZero = 0;
     Tcl_ExceptionRange range;
     Tcl_BytecodeLabel afterBody = 0, pushReturnOptions = 0;
@@ -3380,7 +3377,7 @@ IssueTryTraplessClausesInstructions(
 	    sizeof(Tcl_BytecodeLabel) * numHandlers * 3);
     continuationJumps = afterReturn0 + numHandlers;
     noError = continuationJumps + numHandlers;
-    for (i=0; i<numHandlers*3; i++) {
+    for (Tcl_Size i=0; i<numHandlers*3; i++) {
 	afterReturn0[i] = NO_PENDING_JUMP;
     }
     tablePtr = AllocJumptableNum();
@@ -3391,7 +3388,7 @@ IssueTryTraplessClausesInstructions(
      * If not, we can handle that case much more efficiently.
      */
 
-    for (i=0 ; i<numHandlers ; i++) {
+    for (Tcl_Size i=0 ; i<numHandlers ; i++) {
 	if (handlers[i].matchCode == 0) {
 	    trapZero = 1;
 	    break;
@@ -3443,7 +3440,7 @@ IssueTryTraplessClausesInstructions(
     BACKLABEL(		tableBase);
     OP4(			JUMP_TABLE_NUM, tableIdx);
     FWDJUMP(		JUMP, haveOther);
-    for (i=0 ; i<numHandlers ; i++) {
+    for (Tcl_Size i=0 ; i<numHandlers ; i++) {
 	CreateJumptableNumEntryToHere(tablePtr, handlers[i].matchCode, tableBase);
 
 	/*
@@ -3468,7 +3465,7 @@ IssueTryTraplessClausesInstructions(
 	} else {
 	    if (continuationsPending) {
 		continuationsPending = 0;
-		for (j=0 ; j<i ; j++) {
+		for (Tcl_Size j=0 ; j<i ; j++) {
 		    if (continuationJumps[j] != NO_PENDING_JUMP) {
 			FWDLABEL(continuationJumps[j]);
 		    }
@@ -3532,7 +3529,7 @@ IssueTryTraplessClausesInstructions(
     if (!trapZero) {
 	FWDLABEL(	afterBody);
     }
-    for (i=0 ; i<numHandlers ; i++) {
+    for (Tcl_Size i=0 ; i<numHandlers ; i++) {
 	if (afterReturn0[i] != NO_PENDING_JUMP) {
 	    FWDLABEL(	afterReturn0[i]);
 	}
@@ -3555,7 +3552,7 @@ IssueTryClausesFinallyInstructions(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_LVTIndex resultLocal, optionsLocal;
-    Tcl_Size i, j, len;
+    Tcl_Size len;
     int forwardsNeedFixing = 0, trapZero = 0;
     Tcl_ExceptionRange range;
     Tcl_BytecodeLabel *addrsToFix, *forwardsToFix;
@@ -3573,7 +3570,7 @@ IssueTryClausesFinallyInstructions(
      * If not, we can handle that case much more efficiently.
      */
 
-    for (i=0 ; i<numHandlers ; i++) {
+    for (Tcl_Size i=0 ; i<numHandlers ; i++) {
 	if (handlers[i].matchCode == 0) {
 	    trapZero = 1;
 	    break;
@@ -3630,7 +3627,7 @@ IssueTryClausesFinallyInstructions(
 	    sizeof(Tcl_BytecodeLabel) * numHandlers * 2);
     forwardsToFix = addrsToFix + numHandlers;
 
-    for (i=0 ; i<numHandlers ; i++) {
+    for (Tcl_Size i=0 ; i<numHandlers ; i++) {
 	Tcl_BytecodeLabel codeNotMatched, notErrorCodeMatched = NO_PENDING_JUMP;
 
 	OP(			DUP);
@@ -3714,7 +3711,7 @@ IssueTryClausesFinallyInstructions(
 	    Tcl_BytecodeLabel bodyStart;
 	    forwardsNeedFixing = 0;
 	    FWDJUMP(		JUMP, bodyStart);
-	    for (j=0 ; j<i ; j++) {
+	    for (Tcl_Size j=0 ; j<i ; j++) {
 		if (forwardsToFix[j] == NO_PENDING_JUMP) {
 		    continue;
 		}
@@ -3787,7 +3784,7 @@ IssueTryClausesFinallyInstructions(
      */
 
     OP(				POP);
-    for (i=0 ; i<numHandlers-1 ; i++) {
+    for (Tcl_Size i=0 ; i<numHandlers-1 ; i++) {
 	FWDLABEL(	addrsToFix[i]);
     }
     TclStackFree(interp, addrsToFix);
@@ -3852,7 +3849,6 @@ IssueTryTraplessClausesFinallyInstructions(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_LVTIndex resultLocal, optionsLocal;
-    Tcl_Size i, j;
     int forwardsNeedFixing = 0, trapZero = 0;
     Tcl_ExceptionRange range;
     Tcl_BytecodeLabel *addrsToFix, *forwardsToFix;
@@ -3869,7 +3865,7 @@ IssueTryTraplessClausesFinallyInstructions(
     addrsToFix = (Tcl_BytecodeLabel *)TclStackAlloc(interp,
 	    sizeof(Tcl_BytecodeLabel) * numHandlers * 2);
     forwardsToFix = addrsToFix + numHandlers;
-    for (i=0; i < numHandlers * 2; i++) {
+    for (Tcl_Size i=0; i < numHandlers * 2; i++) {
 	addrsToFix[i] = NO_PENDING_JUMP;
     }
     tablePtr = AllocJumptableNum();
@@ -3880,7 +3876,7 @@ IssueTryTraplessClausesFinallyInstructions(
      * If not, we can handle that case much more efficiently.
      */
 
-    for (i=0 ; i<numHandlers ; i++) {
+    for (Tcl_Size i=0 ; i<numHandlers ; i++) {
 	if (handlers[i].matchCode == 0) {
 	    trapZero = 1;
 	    break;
@@ -3934,7 +3930,7 @@ IssueTryTraplessClausesFinallyInstructions(
     BACKLABEL(		tableBase);
     OP4(			JUMP_TABLE_NUM, tableIdx);
     FWDJUMP(			JUMP, haveOther);
-    for (i=0 ; i<numHandlers ; i++) {
+    for (Tcl_Size i=0 ; i<numHandlers ; i++) {
 	Tcl_BytecodeLabel endCatch = 0;
 	CreateJumptableNumEntryToHere(tablePtr, handlers[i].matchCode, tableBase);
 
@@ -4000,7 +3996,7 @@ IssueTryTraplessClausesFinallyInstructions(
 	    Tcl_BytecodeLabel bodyStart;
 	    forwardsNeedFixing = 0;
 	    FWDJUMP(		JUMP, bodyStart);
-	    for (j=0 ; j<i ; j++) {
+	    for (Tcl_Size j=0 ; j<i ; j++) {
 		if (forwardsToFix[j] == NO_PENDING_JUMP) {
 		    continue;
 		}
@@ -4060,7 +4056,7 @@ IssueTryTraplessClausesFinallyInstructions(
      * table to point to the start of the finally processing.
      */
 
-    for (i=0 ; i<numHandlers-1 ; i++) {
+    for (Tcl_Size i=0 ; i<numHandlers-1 ; i++) {
 	FWDLABEL(	addrsToFix[i]);
     }
     TclStackFree(interp, addrsToFix);
@@ -4358,7 +4354,7 @@ TclCompileUplevelCmd(
     Tcl_Size numWords = parsePtr->numWords;
     Tcl_Token *tokenPtr;
     Tcl_Obj *objPtr;
-    Tcl_Size i, first;
+    Tcl_Size first;
 
     /* TODO: Consider support for compiling expanded args. */
     if (numWords < 2 || numWords > 1<<8 || !EnvIsProc(envPtr)) {
@@ -4405,7 +4401,7 @@ TclCompileUplevelCmd(
     }
 
     // Push all remaining words and concatenate them to make a single script word
-    for (i=first; i<numWords; i++, tokenPtr=TokenAfter(tokenPtr)) {
+    for (Tcl_Size i=first; i<numWords; i++, tokenPtr=TokenAfter(tokenPtr)) {
 	PUSH_TOKEN(		tokenPtr, i);
     }
     if (numWords - first > 1) {

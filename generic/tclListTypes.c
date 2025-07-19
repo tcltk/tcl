@@ -275,7 +275,7 @@ TclAbstractListUpdateString(
 {
 #define LOCAL_SIZE 64
     char localFlags[LOCAL_SIZE], *flagPtr = NULL;
-    Tcl_Size numElems, i, length;
+    Tcl_Size numElems, length;
     size_t bytesNeeded = 0;
     Tcl_Obj *elemObj;
     const char *elem;
@@ -301,7 +301,7 @@ TclAbstractListUpdateString(
     } else {
 	flagPtr = (char *)Tcl_Alloc(numElems);
     }
-    for (i = 0; i < numElems; i++) {
+    for (Tcl_Size i = 0; i < numElems; i++) {
 	flagPtr[i] = (i ? TCL_DONT_QUOTE_HASH : 0);
 	ret = Tcl_ListObjIndex(NULL, objPtr, i, &elemObj);
 	assert(ret == TCL_OK);
@@ -323,7 +323,7 @@ TclAbstractListUpdateString(
      */
 
     start = dst = (char *) Tcl_Alloc(bytesNeeded);
-    for (i = 0; i < numElems; i++) {
+    for (Tcl_Size i = 0; i < numElems; i++) {
 	flagPtr[i] |= (i ? TCL_DONT_QUOTE_HASH : 0);
 	ret = Tcl_ListObjIndex(NULL, objPtr, i, &elemObj);
 	assert(ret == TCL_OK);

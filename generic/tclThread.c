@@ -141,14 +141,11 @@ RememberSyncObject(
     void *objPtr,		/* Pointer to sync object */
     SyncObjRecord *recPtr)	/* Record of sync objects */
 {
-    void **newList;
-    int i, j;
-
     /*
      * Reuse any free slot in the list.
      */
 
-    for (i=0 ; i < recPtr->num ; ++i) {
+    for (int i=0 ; i < recPtr->num ; ++i) {
 	if (recPtr->list[i] == NULL) {
 	    recPtr->list[i] = objPtr;
 	    return;
@@ -161,9 +158,10 @@ RememberSyncObject(
      */
 
     if (recPtr->num >= recPtr->max) {
+	int j;
 	recPtr->max += 8;
-	newList = (void **)Tcl_Alloc(recPtr->max * sizeof(void *));
-	for (i=0,j=0 ; i<recPtr->num ; i++) {
+	void **newList = (void **)Tcl_Alloc(recPtr->max * sizeof(void *));
+	for (int i=j=0 ; i<recPtr->num ; i++) {
 	    if (recPtr->list[i] != NULL) {
 		newList[j++] = recPtr->list[i];
 	    }
@@ -201,9 +199,7 @@ ForgetSyncObject(
     void *objPtr,		/* Pointer to sync object */
     SyncObjRecord *recPtr)	/* Record of sync objects */
 {
-    int i;
-
-    for (i=0 ; i<recPtr->num ; i++) {
+    for (int i=0 ; i<recPtr->num ; i++) {
 	if (objPtr == recPtr->list[i]) {
 	    recPtr->list[i] = NULL;
 	    return;
@@ -373,13 +369,9 @@ TclFinalizeThreadData(int quick)
 void
 TclFinalizeSynchronization(void)
 {
-    int i;
-    void *blockPtr;
     Tcl_ThreadDataKey *keyPtr;
-#if TCL_THREADS
-    Tcl_Mutex *mutexPtr;
-    Tcl_Condition *condPtr;
 
+#if TCL_THREADS
     TclpGlobalLock();
 #endif
 
@@ -389,9 +381,9 @@ TclFinalizeSynchronization(void)
      */
 
     if (keyRecord.list != NULL) {
-	for (i=0 ; i<keyRecord.num ; i++) {
+	for (int i=0 ; i<keyRecord.num ; i++) {
 	    keyPtr = (Tcl_ThreadDataKey *) keyRecord.list[i];
-	    blockPtr = *keyPtr;
+	    void *blockPtr = *keyPtr;
 	    Tcl_Free(blockPtr);
 	}
 	Tcl_Free(keyRecord.list);
@@ -407,8 +399,8 @@ TclFinalizeSynchronization(void)
 
     TclFinalizeThreadStorage();
 
-    for (i=0 ; i<mutexRecord.num ; i++) {
-	mutexPtr = (Tcl_Mutex *)mutexRecord.list[i];
+    for (int i=0 ; i<mutexRecord.num ; i++) {
+	Tcl_Mutex *mutexPtr = (Tcl_Mutex *)mutexRecord.list[i];
 	if (mutexPtr != NULL) {
 	    TclpFinalizeMutex(mutexPtr);
 	}
@@ -420,8 +412,8 @@ TclFinalizeSynchronization(void)
     mutexRecord.max = 0;
     mutexRecord.num = 0;
 
-    for (i=0 ; i<condRecord.num ; i++) {
-	condPtr = (Tcl_Condition *) condRecord.list[i];
+    for (int i=0 ; i<condRecord.num ; i++) {
+	Tcl_Condition *condPtr = (Tcl_Condition *) condRecord.list[i];
 	if (condPtr != NULL) {
 	    TclpFinalizeCondition(condPtr);
 	}
