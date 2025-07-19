@@ -56,11 +56,11 @@ msgcat - Tcl message catalog
 
 # Description
 
-The \fBmsgcat\fR package provides a set of functions that can be used to manage multi-lingual user interfaces. Text strings are defined in a "message catalog" which is independent from the application, and which can be edited or localized without modifying the application source code.  New languages or locales may be provided by adding a new file to the message catalog.
+The **msgcat** package provides a set of functions that can be used to manage multi-lingual user interfaces. Text strings are defined in a "message catalog" which is independent from the application, and which can be edited or localized without modifying the application source code.  New languages or locales may be provided by adding a new file to the message catalog.
 
-**msgcat** distinguishes packages by its namespace. Each package has its own message catalog and configuration settings in \fBmsgcat\fR.
+**msgcat** distinguishes packages by its namespace. Each package has its own message catalog and configuration settings in **msgcat**.
 
-A \fIlocale\fR is a specification string describing a user language like \fBde_ch\fR for Swiss German. In \fBmsgcat\fR, there is a global locale initialized by the system locale of the current system. Each package may decide to use the global locale or to use a package specific locale.
+A *locale* is a specification string describing a user language like **de_ch** for Swiss German. In **msgcat**, there is a global locale initialized by the system locale of the current system. Each package may decide to use the global locale or to use a package specific locale.
 
 The global locale may be changed on demand, for example by a user initiated language change or within a multi user application like a web server.
 
@@ -70,34 +70,34 @@ Object oriented programming is supported by the use of a package namespace.
 
 # Commands
 
-**::msgcat::mc** \fIsrc-string\fR ?\fIarg ...\fR?
-: Returns a translation of \fIsrc-string\fR according to the current locale.  If additional arguments past \fIsrc-string\fR are given, the \fBformat\fR command is used to substitute the additional arguments in the translation of \fIsrc-string\fR.
-    **::msgcat::mc** will search the messages defined in the current namespace for a translation of \fIsrc-string\fR; if none is found, it will search in the parent of the current namespace, and so on until it reaches the global namespace.  If no translation string exists, \fB::msgcat::mcunknown\fR is called and the string returned from \fB::msgcat::mcunknown\fR is returned.
-    **::msgcat::mc** is the main function used to localize an application.  Instead of using an English string directly, an application can pass the English string through \fB::msgcat::mc\fR and use the result.  If an application is written for a single language in this fashion, then it is easy to add support for additional languages later simply by defining new message catalog entries.
+**::msgcat::mc** *src-string* ?*arg ...*?
+: Returns a translation of *src-string* according to the current locale.  If additional arguments past *src-string* are given, the **format** command is used to substitute the additional arguments in the translation of *src-string*.
+    **::msgcat::mc** will search the messages defined in the current namespace for a translation of *src-string*; if none is found, it will search in the parent of the current namespace, and so on until it reaches the global namespace.  If no translation string exists, **::msgcat::mcunknown** is called and the string returned from **::msgcat::mcunknown** is returned.
+    **::msgcat::mc** is the main function used to localize an application.  Instead of using an English string directly, an application can pass the English string through **::msgcat::mc** and use the result.  If an application is written for a single language in this fashion, then it is easy to add support for additional languages later simply by defining new message catalog entries.
 
-**::msgcat::mcn** \fInamespace src-string\fR ?\fIarg arg ...\fR?
-: Like \fB::msgcat::mc\fR, but with the message namespace specified as first argument.
-
-
-**mcn** may be used for cases where the package namespace is not the namespace of the caller. An example is shown within the description of the command \fB::msgcat::mcpackagenamespaceget\fR below.
-
-**::msgcat::mcmax** ?\fIsrc-string ...\fR?
-: Given several source strings, \fB::msgcat::mcmax\fR returns the length of the longest translated string.  This is useful when designing localized GUIs, which may require that all buttons, for example, be a fixed width (which will be the width of the widest button).
-
-**::msgcat::mcexists** ?\fB-exactnamespace\fR? ?\fB-exactlocale\fR? ?\fB-namespace\fR \fInamespace\fR? \fIsrc-string\fR
-: Return true, if there is a translation for the given \fIsrc-string\fR.
+**::msgcat::mcn** *namespace src-string* ?*arg arg ...*?
+: Like **::msgcat::mc**, but with the message namespace specified as first argument.
 
 
-The search may be limited by the option \fB-exactnamespace\fR to only check the current namespace and not any parent namespaces.
+**mcn** may be used for cases where the package namespace is not the namespace of the caller. An example is shown within the description of the command **::msgcat::mcpackagenamespaceget** below.
 
-It may also be limited by the option \fB-exactlocale\fR to only check the first prefered locale (e.g. first element returned by \fB::msgcat::mcpreferences\fR if global locale is used).
+**::msgcat::mcmax** ?*src-string ...*?
+: Given several source strings, **::msgcat::mcmax** returns the length of the longest translated string.  This is useful when designing localized GUIs, which may require that all buttons, for example, be a fixed width (which will be the width of the widest button).
+
+**::msgcat::mcexists** ?**-exactnamespace**? ?**-exactlocale**? ?**-namespace** *namespace*? *src-string*
+: Return true, if there is a translation for the given *src-string*.
+
+
+The search may be limited by the option **-exactnamespace** to only check the current namespace and not any parent namespaces.
+
+It may also be limited by the option **-exactlocale** to only check the first prefered locale (e.g. first element returned by **::msgcat::mcpreferences** if global locale is used).
 
 ::: {.info -version="TIP490"}
-An explicit package namespace may be specified by the option \fB-namespace\fR. The namespace of the caller is used if not explicitly specified.
+An explicit package namespace may be specified by the option **-namespace**. The namespace of the caller is used if not explicitly specified.
 :::
 
 **::msgcat::mcpackagenamespaceget**
-: Return the package namespace of the caller. This command handles all cases described in section \fBOBJECT ORIENTED PROGRAMMING\fR.
+: Return the package namespace of the caller. This command handles all cases described in section **OBJECT ORIENTED PROGRAMMING**.
 
 
 Example usage is a tooltip package, which saves the caller package namespace to update the translation each time the tooltip is shown:
@@ -117,21 +117,21 @@ proc ::tooltip::show {widget messagenamespace message} {
 }
 ```
 
-**::msgcat::mclocale** ?\fInewLocale\fR?
-: If \fInewLocale\fR is omitted, the current locale is returned, otherwise the current locale is set to \fInewLocale\fR.
+**::msgcat::mclocale** ?*newLocale*?
+: If *newLocale* is omitted, the current locale is returned, otherwise the current locale is set to *newLocale*.
 
 
-If the new locale is set to \fInewLocale\fR, the corresponding preferences are calculated and set. For example, if the current locale is en_US_funky, then \fB::msgcat::mcpreferences\fR returns \fB{en_us_funky en_us en {}}\fR.
+If the new locale is set to *newLocale*, the corresponding preferences are calculated and set. For example, if the current locale is en_US_funky, then **::msgcat::mcpreferences** returns **{en_us_funky en_us en {}}**.
 
-The same result may be achieved by \fB::msgcat::mcpreferences\fR {*}[\fB::msgcat::mcutil getpreferences\fR \fInewLocale\fR].
+The same result may be achieved by **::msgcat::mcpreferences** {*}[**::msgcat::mcutil getpreferences** *newLocale*].
 
-The current locale is always the first element of the list returned by \fBmcpreferences\fR.
+The current locale is always the first element of the list returned by **mcpreferences**.
 
-msgcat stores and compares the locale in a case-insensitive manner, and returns locales in lowercase. The initial locale is determined by the locale specified in the user's environment.  See \fBLOCALE SPECIFICATION\fR below for a description of the locale string format.
+msgcat stores and compares the locale in a case-insensitive manner, and returns locales in lowercase. The initial locale is determined by the locale specified in the user's environment.  See **LOCALE SPECIFICATION** below for a description of the locale string format.
 
 If the locale is set, the preference list of locales is evaluated. Locales in this list are loaded now, if not jet loaded.
 
-**::msgcat::mcpreferences** ?\fIlocale preference ...\fR?
+**::msgcat::mcpreferences** ?*locale preference ...*?
 : Without arguments, returns an ordered list of the locales preferred by the user. The list is ordered from most specific to least preference.
 
 
@@ -151,36 +151,36 @@ As an example, the user may prefer French or English text. This may be configure
 : This group of commands manage the list of loaded locales for packages not setting a package locale.
 
 
-The subcommand \fBloaded\fR returns the list of currently loaded locales.
+The subcommand **loaded** returns the list of currently loaded locales.
 
-The subcommand \fBclear\fR removes all locales and their data, which are not in the current preference list.
+The subcommand **clear** removes all locales and their data, which are not in the current preference list.
 
-**::msgcat::mcload** \fIdirname\fR
-: Searches the specified directory for files that match the language specifications returned by \fB::msgcat::mcloadedlocales loaded\fR (or \fBmsgcat::mcpackagelocale preferences\fR if a package locale is set) (note that these are all lowercase), extended by the file extension ".msg". Each matching file is read in order, assuming a UTF-8 encoding.  The file contents are then evaluated as a Tcl script.  This means that Unicode characters may be present in the message file either directly in their UTF-8 encoded form, or by use of the backslash-u quoting recognized by Tcl evaluation.  The number of message files which matched the specification and were loaded is returned.
-    In addition, the given folder is stored in the \fBmsgcat\fR package configuration option \fImcfolder\fR to eventually load message catalog files required by a locale change.
+**::msgcat::mcload** *dirname*
+: Searches the specified directory for files that match the language specifications returned by **::msgcat::mcloadedlocales loaded** (or **msgcat::mcpackagelocale preferences** if a package locale is set) (note that these are all lowercase), extended by the file extension ".msg". Each matching file is read in order, assuming a UTF-8 encoding.  The file contents are then evaluated as a Tcl script.  This means that Unicode characters may be present in the message file either directly in their UTF-8 encoded form, or by use of the backslash-u quoting recognized by Tcl evaluation.  The number of message files which matched the specification and were loaded is returned.
+    In addition, the given folder is stored in the **msgcat** package configuration option *mcfolder* to eventually load message catalog files required by a locale change.
 
-**::msgcat::mcset** \fIlocale src-string\fR ?\fItranslate-string\fR?
-: Sets the translation for \fIsrc-string\fR to \fItranslate-string\fR in the specified \fIlocale\fR and the current namespace.  If \fItranslate-string\fR is not specified, \fIsrc-string\fR is used for both.  The function returns \fItranslate-string\fR.
+**::msgcat::mcset** *locale src-string* ?*translate-string*?
+: Sets the translation for *src-string* to *translate-string* in the specified *locale* and the current namespace.  If *translate-string* is not specified, *src-string* is used for both.  The function returns *translate-string*.
 
-**::msgcat::mcmset** \fIlocale src-trans-list\fR
-: Sets the translation for multiple source strings in \fIsrc-trans-list\fR in the specified \fIlocale\fR and the current namespace. \fIsrc-trans-list\fR must have an even number of elements and is in the form {\fIsrc-string translate-string\fR ?\fIsrc-string translate-string ...\fR?} \fB::msgcat::mcmset\fR can be significantly faster than multiple invocations of \fB::msgcat::mcset\fR. The function returns the number of translations set.
+**::msgcat::mcmset** *locale src-trans-list*
+: Sets the translation for multiple source strings in *src-trans-list* in the specified *locale* and the current namespace. *src-trans-list* must have an even number of elements and is in the form {*src-string translate-string* ?*src-string translate-string ...*?} **::msgcat::mcmset** can be significantly faster than multiple invocations of **::msgcat::mcset**. The function returns the number of translations set.
 
-**::msgcat::mcflset** \fIsrc-string\fR ?\fItranslate-string\fR?
-: Sets the translation for \fIsrc-string\fR to \fItranslate-string\fR in the current namespace for the locale implied by the name of the message catalog being loaded via \fB::msgcat::mcload\fR.  If \fItranslate-string\fR is not specified, \fIsrc-string\fR is used for both.  The function returns \fItranslate-string\fR.
+**::msgcat::mcflset** *src-string* ?*translate-string*?
+: Sets the translation for *src-string* to *translate-string* in the current namespace for the locale implied by the name of the message catalog being loaded via **::msgcat::mcload**.  If *translate-string* is not specified, *src-string* is used for both.  The function returns *translate-string*.
 
-**::msgcat::mcflmset** \fIsrc-trans-list\fR
-: Sets the translation for multiple source strings in \fIsrc-trans-list\fR in the current namespace for the locale implied by the name of the message catalog being loaded via \fB::msgcat::mcload\fR. \fIsrc-trans-list\fR must have an even number of elements and is in the form {\fIsrc-string translate-string\fR ?\fIsrc-string translate-string ...\fR?} \fB::msgcat::mcflmset\fR can be significantly faster than multiple invocations of \fB::msgcat::mcflset\fR. The function returns the number of translations set.
+**::msgcat::mcflmset** *src-trans-list*
+: Sets the translation for multiple source strings in *src-trans-list* in the current namespace for the locale implied by the name of the message catalog being loaded via **::msgcat::mcload**. *src-trans-list* must have an even number of elements and is in the form {*src-string translate-string* ?*src-string translate-string ...*?} **::msgcat::mcflmset** can be significantly faster than multiple invocations of **::msgcat::mcflset**. The function returns the number of translations set.
 
-**::msgcat::mcunknown** \fIlocale src-string\fR ?\fIarg arg ...\fR?
-: This routine is called by \fB::msgcat::mc\fR in the case when a translation for \fIsrc-string\fR is not defined in the current locale.  The default action is to return \fIsrc-string\fR passed by format if there are any arguments.  This procedure can be redefined by the application, for example to log error messages for each unknown string.  The \fB::msgcat::mcunknown\fR procedure is invoked at the same stack context as the call to \fB::msgcat::mc\fR.  The return value of \fB::msgcat::mcunknown\fR is used as the return value for the call to \fB::msgcat::mc\fR.
+**::msgcat::mcunknown** *locale src-string* ?*arg arg ...*?
+: This routine is called by **::msgcat::mc** in the case when a translation for *src-string* is not defined in the current locale.  The default action is to return *src-string* passed by format if there are any arguments.  This procedure can be redefined by the application, for example to log error messages for each unknown string.  The **::msgcat::mcunknown** procedure is invoked at the same stack context as the call to **::msgcat::mc**.  The return value of **::msgcat::mcunknown** is used as the return value for the call to **::msgcat::mc**.
     Note that this routine is only called if the concerned package did not set a package locale unknown command name.
 
 **::msgcat::mcforgetpackage**
-: The calling package clears all its state within the \fBmsgcat\fR package including all settings and translations.
+: The calling package clears all its state within the **msgcat** package including all settings and translations.
 
 
-**::msgcat::mcutil getpreferences** \fIlocale\fR
-: Return the preferences list of the given locale as described in the section \fBLOCALE SPECIFICATION\fR. An example is the composition of a preference list for the bilingual region "Biel/Bienne" as a concatenation of swiss german and swiss french:
+**::msgcat::mcutil getpreferences** *locale*
+: Return the preferences list of the given locale as described in the section **LOCALE SPECIFICATION**. An example is the composition of a preference list for the bilingual region "Biel/Bienne" as a concatenation of swiss german and swiss french:
 
     ```
     % concat [lrange [msgcat::mcutil getpreferences fr_CH] 0 end-1] [msgcat::mcutil getpreferences de_CH]
@@ -188,20 +188,20 @@ The subcommand \fBclear\fR removes all locales and their data, which are not in 
     ```
 
 **::msgcat::mcutil getsystemlocale**
-: The system locale is returned as described by the section \fBLOCALE SPECIFICATION\fR.
+: The system locale is returned as described by the section **LOCALE SPECIFICATION**.
 
 
 # Locale specification
 
-The locale is specified to \fBmsgcat\fR by a locale string passed to \fB::msgcat::mclocale\fR. The locale string consists of a language code, an optional country code, and an optional system-specific code, each separated by "_". The country and language codes are specified in standards ISO-639 and ISO-3166. For example, the locale "en" specifies English and "en_US" specifies U.S. English.
+The locale is specified to **msgcat** by a locale string passed to **::msgcat::mclocale**. The locale string consists of a language code, an optional country code, and an optional system-specific code, each separated by "_". The country and language codes are specified in standards ISO-639 and ISO-3166. For example, the locale "en" specifies English and "en_US" specifies U.S. English.
 
-When the msgcat package is first loaded, the locale is initialized according to the user's environment.  The variables \fBenv(LC_ALL)\fR, \fBenv(LC_MESSAGES)\fR, and \fBenv(LANG)\fR are examined in order. The first of them to have a non-empty value is used to determine the initial locale.  The value is parsed according to the XPG4 pattern
+When the msgcat package is first loaded, the locale is initialized according to the user's environment.  The variables **env(LC_ALL)**, **env(LC_MESSAGES)**, and **env(LANG)** are examined in order. The first of them to have a non-empty value is used to determine the initial locale.  The value is parsed according to the XPG4 pattern
 
 ```
 language[_country][.codeset][@modifier]
 ```
 
-to extract its parts.  The initial locale is then set by calling \fB::msgcat::mclocale\fR with the argument
+to extract its parts.  The initial locale is then set by calling **::msgcat::mclocale** with the argument
 
 ```
 language[_country][_modifier]
@@ -278,7 +278,7 @@ en_gb.msg \(em United Kingdom English
 
 *Exception:* The message file for the root locale .MT is called "**ROOT.msg**". This exception is made so as not to cause peculiar behavior, such as marking the message file as "hidden" on Unix file systems.
 
-1. The file contains a series of calls to \fBmcflset\fR and \fBmcflmset\fR, setting the necessary translation strings for the language, likely enclosed in a \fBnamespace eval\fR so that all source strings are tied to the namespace of the package. For example, a short \fBes.msg\fR might contain:
+1. The file contains a series of calls to **mcflset** and **mcflmset**, setting the necessary translation strings for the language, likely enclosed in a **namespace eval** so that all source strings are tied to the namespace of the package. For example, a short **es.msg** might contain:
 
 
 ```
@@ -289,9 +289,9 @@ namespace eval ::mypackage {
 
 # Recommended message setup for packages
 
-If a package is installed into a subdirectory of the \fBtcl_pkgPath\fR and loaded via \fBpackage require\fR, the following procedure is recommended.
+If a package is installed into a subdirectory of the **tcl_pkgPath** and loaded via **package require**, the following procedure is recommended.
 
-1. During package installation, create a subdirectory \fBmsgs\fR under your package directory.
+1. During package installation, create a subdirectory **msgs** under your package directory.
 
 2. Copy your *.msg files into that directory.
 
@@ -305,7 +305,7 @@ If a package is installed into a subdirectory of the \fBtcl_pkgPath\fR and loade
 
 # Positional codes for format and scan commands
 
-It is possible that a message string used as an argument to \fBformat\fR might have positionally dependent parameters that might need to be repositioned.  For example, it might be syntactically desirable to rearrange the sentence structure while translating.
+It is possible that a message string used as an argument to **format** might have positionally dependent parameters that might need to be repositioned.  For example, it might be syntactically desirable to rearrange the sentence structure while translating.
 
 ```
 format "We produced %d units in location %s" $num $city
@@ -319,7 +319,7 @@ format "We produced %1\$d units in location %2\$s" $num $city
 format "In location %2\$s we produced %1\$d units" $num $city
 ```
 
-Similarly, positional parameters can be used with \fBscan\fR to extract values from internationalized strings. Note that it is not necessary to pass the output of \fB::msgcat::mc\fR to \fBformat\fR directly; by passing the values to substitute in as arguments, the formatting substitution is done directly.
+Similarly, positional parameters can be used with **scan** to extract values from internationalized strings. Note that it is not necessary to pass the output of **::msgcat::mc** to **format** directly; by passing the values to substitute in as arguments, the formatting substitution is done directly.
 
 ```
 msgcat::mc {Produced %1$d at %2$s} $num $city
@@ -329,14 +329,14 @@ msgcat::mc {Produced %1$d at %2$s} $num $city
 
 # Package private locale
 
-A package using \fBmsgcat\fR may choose to use its own package private locale and its own set of loaded locales, independent to the global locale set by \fB::msgcat::mclocale\fR.
+A package using **msgcat** may choose to use its own package private locale and its own set of loaded locales, independent to the global locale set by **::msgcat::mclocale**.
 
 This allows a package to change its locale without causing any locales load or removal in other packages and not to invoke the global locale change callback (see below).
 
 This action is controled by the following ensemble:
 
-**::msgcat::mcpackagelocale set** ?\fIlocale\fR?
-: Set or change a package private locale. The package private locale is set to the given \fIlocale\fR if the \fIlocale\fR is given. If the option \fIlocale\fR is not given, the package is set to package private locale mode, but no locale is changed (e.g. if the global locale was valid for the package before, it is copied to the package private locale).
+**::msgcat::mcpackagelocale set** ?*locale*?
+: Set or change a package private locale. The package private locale is set to the given *locale* if the *locale* is given. If the option *locale* is not given, the package is set to package private locale mode, but no locale is changed (e.g. if the global locale was valid for the package before, it is copied to the package private locale).
 
 
 This command may cause the load of locales.
@@ -344,8 +344,8 @@ This command may cause the load of locales.
 **::msgcat::mcpackagelocale get**
 : Return the package private locale or the global locale, if no package private locale is set.
 
-**::msgcat::mcpackagelocale preferences** ?\fIlocale preference\fR? ...
-: With no parameters, return the package private preferences or the global preferences, if no package private locale is set. The package locale state (set or not) is not changed (in contrast to the command \fB::msgcat::mcpackagelocale set\fR).
+**::msgcat::mcpackagelocale preferences** ?*locale preference*? ...
+: With no parameters, return the package private preferences or the global preferences, if no package private locale is set. The package locale state (set or not) is not changed (in contrast to the command **::msgcat::mcpackagelocale set**).
 
 
 ::: {.info -version="TIP499"}
@@ -363,7 +363,7 @@ Locale preferences are loaded now for the package, if not yet loaded.
 **::msgcat::mcpackagelocale unset**
 : Unset the package private locale and use the global locale. Load and remove locales to adjust the list of loaded locales for the package to the global loaded locales list.
 
-**::msgcat::mcpackagelocale present** \fIlocale\fR
+**::msgcat::mcpackagelocale present** *locale*
 : Returns true, if the given locale is loaded for the package.
 
 **::msgcat::mcpackagelocale clear**
@@ -372,19 +372,19 @@ Locale preferences are loaded now for the package, if not yet loaded.
 
 # Changing package options
 
-Each package using msgcat has a set of options within \fBmsgcat\fR. The package options are described in the next sectionPackage options. Each package option may be set or unset individually using the following ensemble:
+Each package using msgcat has a set of options within **msgcat**. The package options are described in the next sectionPackage options. Each package option may be set or unset individually using the following ensemble:
 
-**::msgcat::mcpackageconfig get** \fIoption\fR
-: Return the current value of the given \fIoption\fR. This call returns an error if the option is not set for the package.
+**::msgcat::mcpackageconfig get** *option*
+: Return the current value of the given *option*. This call returns an error if the option is not set for the package.
 
-**::msgcat::mcpackageconfig isset** \fIoption\fR
-: Returns 1, if the given \fIoption\fR is set for the package, 0 otherwise.
+**::msgcat::mcpackageconfig isset** *option*
+: Returns 1, if the given *option* is set for the package, 0 otherwise.
 
-**::msgcat::mcpackageconfig set** \fIoption value\fR
-: Set the given \fIoption\fR to the given \fIvalue\fR. This may invoke additional actions in dependency of the \fIoption\fR. The return value is 0 or the number of loaded packages for the option \fBmcfolder\fR.
+**::msgcat::mcpackageconfig set** *option value*
+: Set the given *option* to the given *value*. This may invoke additional actions in dependency of the *option*. The return value is 0 or the number of loaded packages for the option **mcfolder**.
 
-**::msgcat::mcpackageconfig unset** \fIoption\fR
-: Unsets the given \fIoption\fR for the package. No action is taken if the \fIoption\fR is not set for the package. The empty string is returned.
+**::msgcat::mcpackageconfig unset** *option*
+: Unsets the given *option* for the package. No action is taken if the *option* is not set for the package. The empty string is returned.
 
 
 ## Package options
@@ -402,7 +402,7 @@ The following package options are available for each package:
 
 This callback may be used to do any preparation work for message file load or to get the message data from another source like a data base. In this case, no message files are used (mcfolder is unset).
 
-See section \fBcallback invocation\fR below. The parameter list appended to this callback is the list of locales to load.
+See section **callback invocation** below. The parameter list appended to this callback is the list of locales to load.
 
 If this callback is changed, it is called with the preferences valid for the package.
 
@@ -410,17 +410,17 @@ If this callback is changed, it is called with the preferences valid for the pac
 : This callback is invoked when a default local change was performed. Its purpose is to allow a package to update any dependency on the default locale like showing the GUI in another language.
 
 
-See the callback invocation section below. The parameter list appended to this callback is \fBmcpreferences\fR. The registered callbacks are invoked in no particular order.
+See the callback invocation section below. The parameter list appended to this callback is **mcpreferences**. The registered callbacks are invoked in no particular order.
 
 **unknowncmd**
-: Use a package locale mcunknown procedure instead of the standard version supplied by the msgcat package (\fBmsgcat::mcunknown\fR).
+: Use a package locale mcunknown procedure instead of the standard version supplied by the msgcat package (**msgcat::mcunknown**).
 
 
-The called procedure must return the formatted message which will finally be returned by \fBmsgcat::mc\fR.
+The called procedure must return the formatted message which will finally be returned by **msgcat::mc**.
 
-A generic unknown handler is used if set to the empty string. This consists of returning the key if no arguments are given. With given arguments, the \fBformat\fR command is used to process the arguments.
+A generic unknown handler is used if set to the empty string. This consists of returning the key if no arguments are given. With given arguments, the **format** command is used to process the arguments.
 
-See section \fBcallback invocation\fR below. The appended arguments are identical to \fBmsgcat::mcunknown\fR.
+See section **callback invocation** below. The appended arguments are identical to **msgcat::mcunknown**.
 
 # Callback invocation
 
@@ -434,13 +434,13 @@ Callbacks are invoked, if:
 
 3. the registering namespace exists.
 
-If a called routine fails with an error, the \fBbgerror\fR routine for the interpreter is invoked after command completion. Only exception is the callback \fBunknowncmd\fR, where an error causes the invoking \fBmc\fR-command to fail with that error.
+If a called routine fails with an error, the **bgerror** routine for the interpreter is invoked after command completion. Only exception is the callback **unknowncmd**, where an error causes the invoking **mc**-command to fail with that error.
 
 # Object oriented programming
 
 **msgcat** supports packages implemented by object oriented programming. Objects and classes should be defined within a package namespace.
 
-There are 3 supported cases where package namespace sensitive commands of msgcat (\fBmc\fR, \fBmcexists\fR, \fBmcpackagelocale\fR, \fBmcforgetpackage\fR, \fBmcpackagenamespaceget\fR, \fBmcpackageconfig\fR, \fBmcset\fR and \fBmcmset\fR) may be called:
+There are 3 supported cases where package namespace sensitive commands of msgcat (**mc**, **mcexists**, **mcpackagelocale**, **mcforgetpackage**, **mcpackagenamespaceget**, **mcpackageconfig**, **mcset** and **mcmset**) may be called:
 
 **1) In class definition script**
 : **msgcat** command is called within a class definition script.
@@ -498,7 +498,7 @@ fr
 % New locale is 'fr'.
 ```
 
-If locales (or additional locales) are contained in another source like a database, a package may use the load callback and not \fBmcload\fR:
+If locales (or additional locales) are contained in another source like a database, a package may use the load callback and not **mcload**:
 
 ```
 namespace eval db {
@@ -514,7 +514,7 @@ namespace eval db {
 }
 ```
 
-The \fBclock\fR command implementation uses \fBmsgcat\fR with a package locale to implement the command line parameter \fB-locale\fR. Here are some sketches of the implementation:
+The **clock** command implementation uses **msgcat** with a package locale to implement the command line parameter **-locale**. Here are some sketches of the implementation:
 
 First, a package locale is initialized and the generic unknown function is deactivated:
 
@@ -529,7 +529,7 @@ As an example, the user requires the week day in a certain locale as follows:
 clock format [clock seconds] -format %A -locale fr
 ```
 
-**clock** sets the package locale to \fBfr\fR and looks for the day name as follows:
+**clock** sets the package locale to **fr** and looks for the day name as follows:
 
 ```
 msgcat::mcpackagelocale set $locale
@@ -537,7 +537,7 @@ return [lindex [msgcat::mc DAYS_OF_WEEK_FULL] $day]
 ### Returns "mercredi"
 ```
 
-Within \fBclock\fR, some message-catalog items are heavy in computation and thus are dynamically cached using:
+Within **clock**, some message-catalog items are heavy in computation and thus are dynamically cached using:
 
 ```
 proc ::tcl::clock::LocalizeFormat { locale format } {

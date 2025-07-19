@@ -33,13 +33,13 @@ callback, mymethod - generate callbacks to methods
 
 # Description
 
-The \fBcallback\fR command, also called \fBmymethod\fR for compatibility with the ooutil and snit packages of Tcllib, and which should only be used from within the context of a call to a method (i.e. inside a method, constructor or destructor body) is used to generate a script fragment that will invoke the method, \fImethodName\fR, on the current object (as reported by \fBself\fR) when executed. Any additional arguments provided will be provided as leading arguments to the callback. The resulting script fragment shall be a proper list.
+The **callback** command, also called **mymethod** for compatibility with the ooutil and snit packages of Tcllib, and which should only be used from within the context of a call to a method (i.e. inside a method, constructor or destructor body) is used to generate a script fragment that will invoke the method, *methodName*, on the current object (as reported by **self**) when executed. Any additional arguments provided will be provided as leading arguments to the callback. The resulting script fragment shall be a proper list.
 
-Note that it is up to the caller to ensure that the current object is able to handle the call of \fImethodName\fR; this command does not check that. \fImethodName\fR may refer to any exported or unexported method, but may not refer to a private method as those can only be invoked directly from within methods. If there is no such method present at the point when the callback is invoked, the standard \fBunknown\fR method handler will be called.
+Note that it is up to the caller to ensure that the current object is able to handle the call of *methodName*; this command does not check that. *methodName* may refer to any exported or unexported method, but may not refer to a private method as those can only be invoked directly from within methods. If there is no such method present at the point when the callback is invoked, the standard **unknown** method handler will be called.
 
 # Example
 
-This is a simple echo server class. The \fBcallback\fR command is used in two places, to arrange for the incoming socket connections to be handled by the \fIAccept\fR method, and to arrange for the incoming bytes on those connections to be handled by the \fIReceive\fR method.
+This is a simple echo server class. The **callback** command is used in two places, to arrange for the incoming socket connections to be handled by the *Accept* method, and to arrange for the incoming bytes on those connections to be handled by the *Receive* method.
 
 ```
 oo::class create EchoServer {

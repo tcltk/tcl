@@ -23,5 +23,5 @@ flush - Flush buffered output for a channel
 
 # Description
 
-The \fBflush\fR command has been superceded by the \fBchan flush\fR command which supports the same syntax and options.
+The **flush** command has been superceded by the **chan flush** command which supports the same syntax and options.
 

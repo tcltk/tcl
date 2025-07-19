@@ -34,15 +34,15 @@ classvariable - create link from local variable to variable in class
 
 # Description
 
-The \fBclassvariable\fR command is available within methods. It takes a series of one or more variable names and makes them available in the method's scope; those variable names must not be qualified and must not refer to array elements. The originating scope for the variables is the namespace of the class that the method was defined by. In other words, the referenced variables are shared between all instances of that class.
+The **classvariable** command is available within methods. It takes a series of one or more variable names and makes them available in the method's scope; those variable names must not be qualified and must not refer to array elements. The originating scope for the variables is the namespace of the class that the method was defined by. In other words, the referenced variables are shared between all instances of that class.
 
-Note that this command is equivalent to the command \fBtypevariable\fR provided by the snit package in tcllib for approximately the same purpose. If used in a method defined directly on a class instance (e.g., through the \fBoo::objdefine\fR \fBmethod\fR definition) this is very much like just using:
+Note that this command is equivalent to the command **typevariable** provided by the snit package in tcllib for approximately the same purpose. If used in a method defined directly on a class instance (e.g., through the **oo::objdefine** **method** definition) this is very much like just using:
 
 ```
 namespace upvar [namespace current] $var $var
 ```
 
-for each variable listed to \fBclassvariable\fR.
+for each variable listed to **classvariable**.
 
 # Example
 

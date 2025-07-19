@@ -45,13 +45,13 @@ lreplace - Replace elements in a list with new elements
 
 # Description
 
-**lreplace** returns a new list formed by replacing zero or more elements of \fIlist\fR with the \fIelement\fR arguments. \fIfirst\fR and \fIlast\fR are index values specifying the first and last elements of the range to replace. The index values \fIfirst\fR and \fIlast\fR are interpreted the same as index values for the command \fBstring index\fR, supporting simple index arithmetic and indices relative to the end of the list. 0 refers to the first element of the list, and \fBend\fR refers to the last element of the list.
+**lreplace** returns a new list formed by replacing zero or more elements of *list* with the *element* arguments. *first* and *last* are index values specifying the first and last elements of the range to replace. The index values *first* and *last* are interpreted the same as index values for the command **string index**, supporting simple index arithmetic and indices relative to the end of the list. 0 refers to the first element of the list, and **end** refers to the last element of the list.
 
-If either \fIfirst\fR or \fIlast\fR is less than zero, it is considered to refer to before the first element of the list. This allows \fBlreplace\fR to prepend elements to \fIlist\fR. If either \fIfirst\fR or \fIlast\fR indicates a position greater than the index of the last element of the list, it is treated as if it is an index one greater than the last element. This allows \fBlreplace\fR to append elements to \fIlist\fR.
+If either *first* or *last* is less than zero, it is considered to refer to before the first element of the list. This allows **lreplace** to prepend elements to *list*. If either *first* or *last* indicates a position greater than the index of the last element of the list, it is treated as if it is an index one greater than the last element. This allows **lreplace** to append elements to *list*.
 
-If \fIlast\fR is less than \fIfirst\fR, then any specified elements will be inserted into the list before the element specified by \fIfirst\fR with no elements being deleted.
+If *last* is less than *first*, then any specified elements will be inserted into the list before the element specified by *first* with no elements being deleted.
 
-The \fIelement\fR arguments specify zero or more new elements to be added to the list in place of those that were deleted. Each \fIelement\fR argument will become a separate element of the list.  If no \fIelement\fR arguments are specified, then the elements between \fIfirst\fR and \fIlast\fR are simply deleted.
+The *element* arguments specify zero or more new elements to be added to the list in place of those that were deleted. Each *element* argument will become a separate element of the list.  If no *element* arguments are specified, then the elements between *first* and *last* are simply deleted.
 
 # Examples
 
@@ -88,7 +88,7 @@ proc lremove {listVariable value} {
 }
 ```
 
-Appending elements to the list; note that \fBend+2\fR will initially be treated as if it is \fB6\fR here, but both that and \fB12345\fR are greater than the index of the final item so they behave identically:
+Appending elements to the list; note that **end+2** will initially be treated as if it is **6** here, but both that and **12345** are greater than the index of the final item so they behave identically:
 
 ```
 % set var {a b c d e}

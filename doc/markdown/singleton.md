@@ -29,36 +29,36 @@ oo::singleton - a class that does only allows one instance of itself
 
 # Class hierarchy
 
-**oo::object**    \(-> \fBoo::class\fR        \(-> \fBoo::singleton\fR
+**oo::object**    \(-> **oo::class**        \(-> **oo::singleton**
 
 # Description
 
-Singleton classes are classes that only permit at most one instance of themselves to exist. They unexport the \fBcreate\fR and \fBcreateWithNamespace\fR methods entirely, and override the \fBnew\fR method so that it only makes a new instance if there is no existing instance.  It is not recommended to inherit from a singleton class; singleton-ness is \fInot\fR inherited. It is not recommended that a singleton class's constructor take any arguments.
+Singleton classes are classes that only permit at most one instance of themselves to exist. They unexport the **create** and **createWithNamespace** methods entirely, and override the **new** method so that it only makes a new instance if there is no existing instance.  It is not recommended to inherit from a singleton class; singleton-ness is *not* inherited. It is not recommended that a singleton class's constructor take any arguments.
 
-Instances have their\fB destroy\fR method overridden with a method that always returns an error in order to discourage destruction of the object, but destruction remains possible if strictly necessary (e.g., by destroying the class or using \fBrename\fR to delete it). They also have a (non-exported) \fB<cloned>\fR method defined on them that similarly always returns errors to make attempts to use the singleton instance with \fBoo::copy\fR fail.
+Instances have their** destroy** method overridden with a method that always returns an error in order to discourage destruction of the object, but destruction remains possible if strictly necessary (e.g., by destroying the class or using **rename** to delete it). They also have a (non-exported) **<cloned>** method defined on them that similarly always returns errors to make attempts to use the singleton instance with **oo::copy** fail.
 
 ## Constructor
 
-The \fBoo::singleton\fR class does not define an explicit constructor; this means that it is effectively the same as the constructor of the \fBoo::class\fR class.
+The **oo::singleton** class does not define an explicit constructor; this means that it is effectively the same as the constructor of the **oo::class** class.
 
 ## Destructor
 
-The \fBoo::singleton\fR class does not define an explicit destructor; destroying an instance of it is just like destroying an ordinary class (and will destroy the singleton object).
+The **oo::singleton** class does not define an explicit destructor; destroying an instance of it is just like destroying an ordinary class (and will destroy the singleton object).
 
 ## Exported methods
 
-*cls* \fBnew\fR ?\fIarg ...\fR?
-: This returns the current instance of the singleton class, if one exists, and creates a new instance only if there is no existing instance. The additional arguments, \fIarg ...\fR, are only used if a new instance is actually manufactured; that construction is via the \fBoo::class\fR class's \fBnew\fR method.
+*cls* **new** ?*arg ...*?
+: This returns the current instance of the singleton class, if one exists, and creates a new instance only if there is no existing instance. The additional arguments, *arg ...*, are only used if a new instance is actually manufactured; that construction is via the **oo::class** class's **new** method.
     This is an override of the behaviour of a superclass's method with an identical call signature to the superclass's implementation.
 
 
 ## Non-exported methods
 
-The \fBoo::singleton\fR class explicitly states that \fBcreate\fR and \fBcreateWithNamespace\fR are unexported; callers should not assume that they have control over either the name or the namespace name of the singleton instance.
+The **oo::singleton** class explicitly states that **create** and **createWithNamespace** are unexported; callers should not assume that they have control over either the name or the namespace name of the singleton instance.
 
 # Example
 
-This example demonstrates that there is only one instance even though the \fBnew\fR method is called three times.
+This example demonstrates that there is only one instance even though the **new** method is called three times.
 
 ```
 oo::singleton create Highlander {

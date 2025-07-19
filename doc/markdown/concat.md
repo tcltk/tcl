@@ -30,11 +30,11 @@ concat - Join lists together
 
 # Description
 
-This command joins each of its arguments together with spaces after trimming leading and trailing white-space from each of them.  If all of the arguments are lists, this has the same effect as concatenating them into a single list. Arguments that are empty (after trimming) are ignored entirely. It permits any number of arguments; if no \fIarg\fRs are supplied, the result is an empty string.
+This command joins each of its arguments together with spaces after trimming leading and trailing white-space from each of them.  If all of the arguments are lists, this has the same effect as concatenating them into a single list. Arguments that are empty (after trimming) are ignored entirely. It permits any number of arguments; if no *arg*s are supplied, the result is an empty string.
 
 # Examples
 
-Although \fBconcat\fR will concatenate lists, flattening them in the process (so giving the following interactive session):
+Although **concat** will concatenate lists, flattening them in the process (so giving the following interactive session):
 
 ```
 % concat a b {c d e} {f {g h}}
@@ -55,9 +55,9 @@ Note also that the concatenation does not remove spaces from the middle of value
 a   b   c d e f
 ```
 
-(i.e., there are three spaces between each of the \fBa\fR, the \fBb\fR and the \fBc\fR).
+(i.e., there are three spaces between each of the **a**, the **b** and the **c**).
 
-For \fItrue\fR list concatenation, the \fBlist\fR command should be used with expansion of each input list:
+For *true* list concatenation, the **list** command should be used with expansion of each input list:
 
 ```
 % list {*}"a   b   c" {*}{ d e f }

@@ -28,11 +28,11 @@ pid - Retrieve process identifiers
 
 # Description
 
-If the \fIfileId\fR argument is given then it should normally refer to a process pipeline created with the \fBopen\fR command. In this case the \fBpid\fR command will return a list whose elements are the process identifiers of all the processes in the pipeline, in order. The list will be empty if \fIfileId\fR refers to an open file that is not a process pipeline. If no \fIfileId\fR argument is given then \fBpid\fR returns the process identifier of the current process. All process identifiers are returned as decimal strings.
+If the *fileId* argument is given then it should normally refer to a process pipeline created with the **open** command. In this case the **pid** command will return a list whose elements are the process identifiers of all the processes in the pipeline, in order. The list will be empty if *fileId* refers to an open file that is not a process pipeline. If no *fileId* argument is given then **pid** returns the process identifier of the current process. All process identifiers are returned as decimal strings.
 
 # Example
 
-Print process information about the processes in a pipeline using the SysV \fBps\fR program before reading the output of that pipeline:
+Print process information about the processes in a pipeline using the SysV **ps** program before reading the output of that pipeline:
 
 ```
 set pipeline [open "| zcat somefile.gz | grep foobar | sort -u"]

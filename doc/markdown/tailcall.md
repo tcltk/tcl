@@ -29,13 +29,13 @@ tailcall - Replace the current procedure with another command
 
 # Description
 
-The \fBtailcall\fR command replaces the currently executing procedure, lambda application, or method with another command. The \fIcommand\fR, which will have \fIarg ...\fR passed as arguments if they are supplied, will be looked up in the current namespace context, not in the caller's. Apart from that difference in resolution, it is equivalent to:
+The **tailcall** command replaces the currently executing procedure, lambda application, or method with another command. The *command*, which will have *arg ...* passed as arguments if they are supplied, will be looked up in the current namespace context, not in the caller's. Apart from that difference in resolution, it is equivalent to:
 
 ```
 return [uplevel 1 [list command ?arg ...?]]
 ```
 
-This command may not be invoked from within an \fBuplevel\fR into a procedure or inside a \fBcatch\fR inside a procedure or lambda.
+This command may not be invoked from within an **uplevel** into a procedure or inside a **catch** inside a procedure or lambda.
 
 # Example
 

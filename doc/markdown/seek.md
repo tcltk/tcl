@@ -23,5 +23,5 @@ seek - Change the access position for an open channel
 
 # Description
 
-The \fBseek\fR command has been superceded by the \fBchan seek\fR command which supports the same syntax and options.
+The **seek** command has been superceded by the **chan seek** command which supports the same syntax and options.
 

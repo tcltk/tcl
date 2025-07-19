@@ -29,15 +29,15 @@ apply - Apply an anonymous function
 
 # Description
 
-The command \fBapply\fR applies the function \fIfunc\fR to the arguments \fIarg1 arg2 ...\fR and returns the result.
+The command **apply** applies the function *func* to the arguments *arg1 arg2 ...* and returns the result.
 
-The function \fIfunc\fR is a two element list \fI{args body}\fR or a three element list \fI{args body namespace}\fR (as if the \fBlist\fR command had been used). The first element \fIargs\fR specifies the formal arguments to \fIfunc\fR. The specification of the formal arguments \fIargs\fR is shared with the \fBproc\fR command, and is described in detail in the corresponding manual page.
+The function *func* is a two element list *{args body}* or a three element list *{args body namespace}* (as if the **list** command had been used). The first element *args* specifies the formal arguments to *func*. The specification of the formal arguments *args* is shared with the **proc** command, and is described in detail in the corresponding manual page.
 
-The contents of \fIbody\fR are executed by the Tcl interpreter after the local variables corresponding to the formal arguments are given the values of the actual parameters \fIarg1 arg2 ...\fR. When \fIbody\fR is being executed, variable names normally refer to local variables, which are created automatically when referenced and deleted when \fBapply\fR returns.  One local variable is automatically created for each of the function's arguments. Global variables can only be accessed by invoking the \fBglobal\fR command or the \fBupvar\fR command. Namespace variables can only be accessed by invoking the \fBvariable\fR command or the \fBupvar\fR command.
+The contents of *body* are executed by the Tcl interpreter after the local variables corresponding to the formal arguments are given the values of the actual parameters *arg1 arg2 ...*. When *body* is being executed, variable names normally refer to local variables, which are created automatically when referenced and deleted when **apply** returns.  One local variable is automatically created for each of the function's arguments. Global variables can only be accessed by invoking the **global** command or the **upvar** command. Namespace variables can only be accessed by invoking the **variable** command or the **upvar** command.
 
-The invocation of \fBapply\fR adds a call frame to Tcl's evaluation stack (the stack of frames accessed via \fBuplevel\fR). The execution of \fIbody\fR proceeds in this call frame, in the namespace given by \fInamespace\fR or in the global namespace if none was specified. If given, \fInamespace\fR is interpreted relative to the global namespace even if its name does not start with "::".
+The invocation of **apply** adds a call frame to Tcl's evaluation stack (the stack of frames accessed via **uplevel**). The execution of *body* proceeds in this call frame, in the namespace given by *namespace* or in the global namespace if none was specified. If given, *namespace* is interpreted relative to the global namespace even if its name does not start with "::".
 
-The semantics of \fBapply\fR can also be described by approximately this:
+The semantics of **apply** can also be described by approximately this:
 
 ```
 proc apply {fun args} {
@@ -74,7 +74,7 @@ map {x {expr {$x**2 + 3*$x - 2}}} {-4 -3 -2 -1 0 1 2 3 4}
       \(-> 2 -2 -4 -4 -2 2 8 16 26
 ```
 
-The \fBapply\fR command is also useful for defining callbacks for use in the \fBtrace\fR command:
+The **apply** command is also useful for defining callbacks for use in the **trace** command:
 
 ```
 set vbl "123abc"

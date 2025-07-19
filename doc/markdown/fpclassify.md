@@ -27,7 +27,7 @@ fpclassify - Floating point number classification of Tcl values
 
 # Description
 
-The \fBfpclassify\fR command takes a floating point number, \fIvalue\fR, and returns one of the following strings that describe it:
+The **fpclassify** command takes a floating point number, *value*, and returns one of the following strings that describe it:
 
 **zero**
 : *value* is a floating point zero.
@@ -45,7 +45,7 @@ The \fBfpclassify\fR command takes a floating point number, \fIvalue\fR, and ret
 : *value* is Not-a-Number.
 
 
-The \fBfpclassify\fR command throws an error if value is not a floating-point value and cannot be converted to one.
+The **fpclassify** command throws an error if value is not a floating-point value and cannot be converted to one.
 
 # Example
 
@@ -71,7 +71,7 @@ switch [fpclassify $value] {
 
 # Standards
 
-This command depends on the \fBfpclassify\fR() C macro conforming to "ISO C99" (i.e., to ISO/IEC 9899:1999).
+This command depends on the **fpclassify**() C macro conforming to "ISO C99" (i.e., to ISO/IEC 9899:1999).
 
 # Copyright
 

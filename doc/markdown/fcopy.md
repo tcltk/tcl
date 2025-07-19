@@ -34,45 +34,45 @@ fcopy - Copy data from one channel to another
 
 # Description
 
-The \fBfcopy\fR command copies data from one I/O channel, \fIinchan\fR, to another I/O channel, \fIoutchan\fR. The \fBfcopy\fR command leverages the buffering in the Tcl I/O system to avoid extra copies and to avoid buffering too much data in main memory when copying large files to destinations like network sockets.
+The **fcopy** command copies data from one I/O channel, *inchan*, to another I/O channel, *outchan*. The **fcopy** command leverages the buffering in the Tcl I/O system to avoid extra copies and to avoid buffering too much data in main memory when copying large files to destinations like network sockets.
 
 ## Data quantity
 
-All data until \fIEOF\fR is copied. In addition, the quantity of copied data may be specified by the option \fB-size\fR. The given size is in bytes, if the input channel is in binary mode. Otherwise, it is in characters.
+All data until *EOF* is copied. In addition, the quantity of copied data may be specified by the option **-size**. The given size is in bytes, if the input channel is in binary mode. Otherwise, it is in characters.
 
 Depreciated feature: the transfer is treated as a binary transfer, if the encoding profile is set to "tcl8" and the input encoding matches the output encoding. In this case, eventual encoding errors are not handled. An eventually given size is in bytes in this case.
 
 ## Blocking operation mode
 
-Without the \fB-command\fR option, \fBfcopy\fR blocks until the copy is complete and returns the number of bytes or characters (using the same rules as for the \fB-size\fR option) written to \fIoutchan\fR.
+Without the **-command** option, **fcopy** blocks until the copy is complete and returns the number of bytes or characters (using the same rules as for the **-size** option) written to *outchan*.
 
 ## Background operation mode
 
-The \fB-command\fR argument makes \fBfcopy\fR work in the background. In this case it returns immediately and the \fIcallback\fR is invoked later when the copy completes. The \fIcallback\fR is called with one or two additional arguments that indicates how many bytes were written to \fIoutchan\fR. If an error occurred during the background copy, the second argument is the error string associated with the error. With a background copy, it is not necessary to put \fIinchan\fR or \fIoutchan\fR into non-blocking mode; the \fBfcopy\fR command takes care of that automatically. However, it is necessary to enter the event loop by using the \fBvwait\fR command or by using Tk.
+The **-command** argument makes **fcopy** work in the background. In this case it returns immediately and the *callback* is invoked later when the copy completes. The *callback* is called with one or two additional arguments that indicates how many bytes were written to *outchan*. If an error occurred during the background copy, the second argument is the error string associated with the error. With a background copy, it is not necessary to put *inchan* or *outchan* into non-blocking mode; the **fcopy** command takes care of that automatically. However, it is necessary to enter the event loop by using the **vwait** command or by using Tk.
 
-You are not allowed to do other input operations with \fIinchan\fR, or output operations with \fIoutchan\fR, during a background \fBfcopy\fR. The converse is entirely legitimate, as exhibited by the bidirectional fcopy example below.
+You are not allowed to do other input operations with *inchan*, or output operations with *outchan*, during a background **fcopy**. The converse is entirely legitimate, as exhibited by the bidirectional fcopy example below.
 
-If either \fIinchan\fR or \fIoutchan\fR get closed while the copy is in progress, the current copy is stopped and the command callback is \fInot\fR made. If \fIinchan\fR is closed, then all data already queued for \fIoutchan\fR is written out.
+If either *inchan* or *outchan* get closed while the copy is in progress, the current copy is stopped and the command callback is *not* made. If *inchan* is closed, then all data already queued for *outchan* is written out.
 
-Note that \fIinchan\fR can become readable during a background copy. You should turn off any \fBfileevent\fR handlers during a background copy so those handlers do not interfere with the copy. Any wrong-sided I/O attempted (by a \fBfileevent\fR handler or otherwise) will get a "channel busy" error.
+Note that *inchan* can become readable during a background copy. You should turn off any **fileevent** handlers during a background copy so those handlers do not interfere with the copy. Any wrong-sided I/O attempted (by a **fileevent** handler or otherwise) will get a "channel busy" error.
 
 ## Channel translation options
 
-**Fcopy** translates end-of-line sequences in \fIinchan\fR and \fIoutchan\fR according to the \fB-translation\fR option for these channels. See the manual entry for \fBfconfigure\fR for details on the \fB-translation\fR option. The translations mean that the number of bytes read from \fIinchan\fR can be different than the number of bytes written to \fIoutchan\fR. Only the number of bytes written to \fIoutchan\fR is reported, either as the return value of a synchronous \fBfcopy\fR or as the argument to the callback for an asynchronous \fBfcopy\fR.
+**Fcopy** translates end-of-line sequences in *inchan* and *outchan* according to the **-translation** option for these channels. See the manual entry for **fconfigure** for details on the **-translation** option. The translations mean that the number of bytes read from *inchan* can be different than the number of bytes written to *outchan*. Only the number of bytes written to *outchan* is reported, either as the return value of a synchronous **fcopy** or as the argument to the callback for an asynchronous **fcopy**.
 
 ## Channel encoding options
 
-**Fcopy** obeys the encodings, profiles and character translations configured for the channels. This means that the incoming characters are converted internally first UTF-8 and then into the encoding of the channel \fBfcopy\fR writes to. See the manual entry for \fBfconfigure\fR for details on the \fB-encoding\fR and \fB-profile\fR options. No conversion is done if both channels are set to encoding "binary" and have matching translations. If only the output channel is set to encoding "binary" the system will write the internal UTF-8 representation of the incoming characters. If only the input channel is set to encoding "binary" the system will assume that the incoming bytes are valid UTF-8 characters and convert them according to the output encoding. The behaviour of the system for bytes which are not valid UTF-8 characters is undefined in this case.
+**Fcopy** obeys the encodings, profiles and character translations configured for the channels. This means that the incoming characters are converted internally first UTF-8 and then into the encoding of the channel **fcopy** writes to. See the manual entry for **fconfigure** for details on the **-encoding** and **-profile** options. No conversion is done if both channels are set to encoding "binary" and have matching translations. If only the output channel is set to encoding "binary" the system will write the internal UTF-8 representation of the incoming characters. If only the input channel is set to encoding "binary" the system will assume that the incoming bytes are valid UTF-8 characters and convert them according to the output encoding. The behaviour of the system for bytes which are not valid UTF-8 characters is undefined in this case.
 
-**Fcopy** may throw encoding errors (error code \fBEILSEQ\fR), if input or output channel is configured to the "strict" encoding profile.
+**Fcopy** may throw encoding errors (error code **EILSEQ**), if input or output channel is configured to the "strict" encoding profile.
 
-If an encoding error arises on the input channel, any data before the error byte is written to the output channel. The input file pointer is located just before the values causing the encoding error. Error inspection or recovery is possible by changing the encoding parameters and invoking a file command (\fBread\fR, \fBfcopy\fR).
+If an encoding error arises on the input channel, any data before the error byte is written to the output channel. The input file pointer is located just before the values causing the encoding error. Error inspection or recovery is possible by changing the encoding parameters and invoking a file command (**read**, **fcopy**).
 
-If an encoding error arises on the output channel, the erroneous data is lost. To make the difference between the input error case and the output error case, only the error message may be inspected (read or write), as both throw the error code \fIEILSEQ\fR.
+If an encoding error arises on the output channel, the erroneous data is lost. To make the difference between the input error case and the output error case, only the error message may be inspected (read or write), as both throw the error code *EILSEQ*.
 
 # Examples
 
-The first example transfers the contents of one channel exactly to another. Note that when copying one file to another, it is better to use \fBfile copy\fR which also copies file metadata (e.g. the file access permissions) where possible.
+The first example transfers the contents of one channel exactly to another. Note that when copying one file to another, it is better to use **file copy** which also copies file metadata (e.g. the file access permissions) where possible.
 
 ```
 fconfigure $in -translation binary

@@ -33,17 +33,17 @@ subst - Perform backslash, command, and variable substitutions
 
 # Description
 
-This command performs variable substitutions, command substitutions, and backslash substitutions on its \fIstring\fR argument and returns the fully-substituted result. The substitutions are performed in exactly the same way as for Tcl commands. As a result, the \fIstring\fR argument is actually substituted twice, once by the Tcl parser in the usual fashion for Tcl commands, and again by the \fIsubst\fR command.
+This command performs variable substitutions, command substitutions, and backslash substitutions on its *string* argument and returns the fully-substituted result. The substitutions are performed in exactly the same way as for Tcl commands. As a result, the *string* argument is actually substituted twice, once by the Tcl parser in the usual fashion for Tcl commands, and again by the *subst* command.
 
-If any of the \fB-nobackslashes\fR, \fB-nocommands\fR, or \fB-novariables\fR are specified, then the corresponding substitutions are not performed. For example, if \fB-nocommands\fR is specified, command substitution is not performed:  open and close brackets are treated as ordinary characters with no special interpretation.
+If any of the **-nobackslashes**, **-nocommands**, or **-novariables** are specified, then the corresponding substitutions are not performed. For example, if **-nocommands** is specified, command substitution is not performed:  open and close brackets are treated as ordinary characters with no special interpretation.
 
-Note that the substitution of one kind can include substitution of other kinds.  For example, even when the \fB-novariables\fR option is specified, command substitution is performed without restriction. This means that any variable substitution necessary to complete the command substitution will still take place.  Likewise, any command substitution necessary to complete a variable substitution will take place, even when \fB-nocommands\fR is specified.  See the \fBEXAMPLES\fR below.
+Note that the substitution of one kind can include substitution of other kinds.  For example, even when the **-novariables** option is specified, command substitution is performed without restriction. This means that any variable substitution necessary to complete the command substitution will still take place.  Likewise, any command substitution necessary to complete a variable substitution will take place, even when **-nocommands** is specified.  See the **EXAMPLES** below.
 
-If an error occurs during substitution, then \fBsubst\fR will return that error.  If a break exception occurs during command or variable substitution, the result of the whole substitution will be the string (as substituted) up to the start of the substitution that raised the exception.  If a continue exception occurs during the evaluation of a command or variable substitution, an empty string will be substituted for that entire command or variable substitution (as long as it is well-formed Tcl.)  If a return exception occurs, or any other return code is returned during command or variable substitution, then the returned value is substituted for that substitution.  See the \fBEXAMPLES\fR below.  In this way, all exceptional return codes are "caught" by \fBsubst\fR.  The \fBsubst\fR command itself will either return an error, or will complete successfully.
+If an error occurs during substitution, then **subst** will return that error.  If a break exception occurs during command or variable substitution, the result of the whole substitution will be the string (as substituted) up to the start of the substitution that raised the exception.  If a continue exception occurs during the evaluation of a command or variable substitution, an empty string will be substituted for that entire command or variable substitution (as long as it is well-formed Tcl.)  If a return exception occurs, or any other return code is returned during command or variable substitution, then the returned value is substituted for that substitution.  See the **EXAMPLES** below.  In this way, all exceptional return codes are "caught" by **subst**.  The **subst** command itself will either return an error, or will complete successfully.
 
 # Examples
 
-When it performs its substitutions, \fIsubst\fR does not give any special treatment to double quotes or curly braces (except within command substitutions) so the script
+When it performs its substitutions, *subst* does not give any special treatment to double quotes or curly braces (except within command substitutions) so the script
 
 ```
 set a 44
@@ -76,7 +76,7 @@ subst -nocommands {[b] $a([b])}
 
 returns "**[b] c**", not "**[b] tricky**".
 
-The continue and break exceptions allow command substitutions to prevent substitution of the rest of the command substitution and the rest of \fIstring\fR respectively, giving script authors more options when processing text using \fIsubst\fR.  For example, the script
+The continue and break exceptions allow command substitutions to prevent substitution of the rest of the command substitution and the rest of *string* respectively, giving script authors more options when processing text using *subst*.  For example, the script
 
 ```
 subst {abc,[break],def}

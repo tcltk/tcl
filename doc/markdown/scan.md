@@ -29,21 +29,21 @@ scan - Parse string using conversion specifiers in the style of sscanf
 
 # Introduction
 
-This command parses substrings from an input string in a fashion similar to the ANSI C \fBsscanf\fR procedure and returns a count of the number of conversions performed, or -1 if the end of the input string is reached before any conversions have been performed.  \fIString\fR gives the input to be parsed and \fIformat\fR indicates how to parse it, using \fB%\fR conversion specifiers as in \fBsscanf\fR.  Each \fIvarName\fR gives the name of a variable; when a substring is scanned from \fIstring\fR that matches a conversion specifier, the substring is assigned to the corresponding variable. If no \fIvarName\fR variables are specified, then \fBscan\fR works in an inline manner, returning the data that would otherwise be stored in the variables as a list.  In the inline case, an empty string is returned when the end of the input string is reached before any conversions have been performed.
+This command parses substrings from an input string in a fashion similar to the ANSI C **sscanf** procedure and returns a count of the number of conversions performed, or -1 if the end of the input string is reached before any conversions have been performed.  *String* gives the input to be parsed and *format* indicates how to parse it, using **%** conversion specifiers as in **sscanf**.  Each *varName* gives the name of a variable; when a substring is scanned from *string* that matches a conversion specifier, the substring is assigned to the corresponding variable. If no *varName* variables are specified, then **scan** works in an inline manner, returning the data that would otherwise be stored in the variables as a list.  In the inline case, an empty string is returned when the end of the input string is reached before any conversions have been performed.
 
 # Details on scanning
 
-**Scan** operates by scanning \fIstring\fR and \fIformat\fR together. If the next character in \fIformat\fR is a blank or tab then it matches any number of white space characters in \fIstring\fR (including zero). Otherwise, if it is not a \fB%\fR character then it must match the next character of \fIstring\fR. When a \fB%\fR is encountered in \fIformat\fR, it indicates the start of a conversion specifier. A conversion specifier contains up to four fields after the \fB%\fR: a XPG3 position specifier (or a \fB*\fR to indicate the converted value is to be discarded instead of assigned to any variable); a number indicating a maximum substring width; a size modifier; and a conversion character. All of these fields are optional except for the conversion character. The fields that are present must appear in the order given above.
+**Scan** operates by scanning *string* and *format* together. If the next character in *format* is a blank or tab then it matches any number of white space characters in *string* (including zero). Otherwise, if it is not a **%** character then it must match the next character of *string*. When a **%** is encountered in *format*, it indicates the start of a conversion specifier. A conversion specifier contains up to four fields after the **%**: a XPG3 position specifier (or a ***** to indicate the converted value is to be discarded instead of assigned to any variable); a number indicating a maximum substring width; a size modifier; and a conversion character. All of these fields are optional except for the conversion character. The fields that are present must appear in the order given above.
 
-When \fBscan\fR finds a conversion specifier in \fIformat\fR, it first skips any white-space characters in \fIstring\fR (unless the conversion character is \fB[\fR or \fBc\fR). Then it converts the next input characters according to the conversion specifier and stores the result in the variable given by the next argument to \fBscan\fR.
+When **scan** finds a conversion specifier in *format*, it first skips any white-space characters in *string* (unless the conversion character is **[** or **c**). Then it converts the next input characters according to the conversion specifier and stores the result in the variable given by the next argument to **scan**.
 
 ## Optional positional specifier
 
-If the \fB%\fR is followed by a decimal number and a \fB$\fR, as in "**%2$d**", then the variable to use is not taken from the next sequential argument.  Instead, it is taken from the argument indicated by the number, where 1 corresponds to the first \fIvarName\fR.  If there are any positional specifiers in \fIformat\fR then all of the specifiers must be positional.  Every \fIvarName\fR on the argument list must correspond to exactly one conversion specifier or an error is generated, or in the inline case, any position can be specified at most once and the empty positions will be filled in with empty strings.
+If the **%** is followed by a decimal number and a **$**, as in "**%2$d**", then the variable to use is not taken from the next sequential argument.  Instead, it is taken from the argument indicated by the number, where 1 corresponds to the first *varName*.  If there are any positional specifiers in *format* then all of the specifiers must be positional.  Every *varName* on the argument list must correspond to exactly one conversion specifier or an error is generated, or in the inline case, any position can be specified at most once and the empty positions will be filled in with empty strings.
 
 ## Optional size modifier
 
-The size modifier field is used only when scanning a substring into one of Tcl's integer values.  The size modifier field dictates the integer range acceptable to be stored in a variable, or, for the inline case, in a position in the result list. The syntactically valid values for the size modifier are \fBh\fR, \fBl\fR, \fBz\fR, \fBt\fR, \fBq\fR, \fBj\fR, \fBll\fR, and \fBL\fR. The \fBh\fR size modifier value is equivalent to the absence of a size modifier in the the conversion specifier.  Either one indicates the integer range to be stored is limited to the 32-bit range.  The \fBL\fR size modifier is equivalent to the \fBll\fR size modifier.  Either one indicates the integer range to be stored is unlimited.  The \fBl\fR (or \fBq\fR or \fBj\fR) size modifier indicates that the integer range to be stored is limited to the same range produced by the \fBwide()\fR function of the \fBexpr\fR command. The \fBz\fR and \fBt\fR modifiers indicate the integer range to be the same as for either \fBh\fR or \fBl\fR, depending on the value of the \fBpointerSize\fR element of the \fBtcl_platform\fR array.
+The size modifier field is used only when scanning a substring into one of Tcl's integer values.  The size modifier field dictates the integer range acceptable to be stored in a variable, or, for the inline case, in a position in the result list. The syntactically valid values for the size modifier are **h**, **l**, **z**, **t**, **q**, **j**, **ll**, and **L**. The **h** size modifier value is equivalent to the absence of a size modifier in the the conversion specifier.  Either one indicates the integer range to be stored is limited to the 32-bit range.  The **L** size modifier is equivalent to the **ll** size modifier.  Either one indicates the integer range to be stored is unlimited.  The **l** (or **q** or **j**) size modifier indicates that the integer range to be stored is limited to the same range produced by the **wide()** function of the **expr** command. The **z** and **t** modifiers indicate the integer range to be the same as for either **h** or **l**, depending on the value of the **pointerSize** element of the **tcl_platform** array.
 
 ## Mandatory conversion character
 
@@ -55,7 +55,7 @@ The following conversion characters are supported:
 **o**
 : The input substring must be an octal integer. It is read in and the integer value is stored in the variable, truncated as required by the size modifier value.
 
-**x** or \fBX\fR
+**x** or **X**
 : The input substring must be a hexadecimal integer. It is read in and the integer value is stored in the variable, truncated as required by the size modifier value.
 
 **b**
@@ -73,30 +73,30 @@ The following conversion characters are supported:
 **s**
 : The input substring consists of all the characters up to the next white-space character; the characters are copied to the variable.
 
-**e** or \fBf\fR or \fBg\fR or \fBE\fR or \fBG\fR
-: The input substring must be a floating-point number consisting of an optional sign, a string of decimal digits possibly containing a decimal point, and an optional exponent consisting of an \fBe\fR or \fBE\fR followed by an optional sign and a string of decimal digits. It is read in and stored in the variable as a floating-point value.
+**e** or **f** or **g** or **E** or **G**
+: The input substring must be a floating-point number consisting of an optional sign, a string of decimal digits possibly containing a decimal point, and an optional exponent consisting of an **e** or **E** followed by an optional sign and a string of decimal digits. It is read in and stored in the variable as a floating-point value.
 
 **[***chars***]**
-: The input substring consists of one or more characters in \fIchars\fR. The matching string is stored in the variable. If the first character between the brackets is a \fB]\fR then it is treated as part of \fIchars\fR rather than the closing bracket for the set. If \fIchars\fR contains a sequence of the form \fIa\fR\fB-\fR\fIb\fR then any character between \fIa\fR and \fIb\fR (inclusive) will match. If the first or last character between the brackets is a \fB-\fR, then it is treated as part of \fIchars\fR rather than indicating a range.
+: The input substring consists of one or more characters in *chars*. The matching string is stored in the variable. If the first character between the brackets is a **]** then it is treated as part of *chars* rather than the closing bracket for the set. If *chars* contains a sequence of the form *a***-***b* then any character between *a* and *b* (inclusive) will match. If the first or last character between the brackets is a **-**, then it is treated as part of *chars* rather than indicating a range.
 
 **[^***chars***]**
-: The input substring consists of one or more characters not in \fIchars\fR. The matching string is stored in the variable. If the character immediately following the \fB^\fR is a \fB]\fR then it is treated as part of the set rather than the closing bracket for the set. If \fIchars\fR contains a sequence of the form \fIa\fR\fB-\fR\fIb\fR then any character between \fIa\fR and \fIb\fR (inclusive) will be excluded from the set. If the first or last character between the brackets is a \fB-\fR, then it is treated as part of \fIchars\fR rather than indicating a range value.
+: The input substring consists of one or more characters not in *chars*. The matching string is stored in the variable. If the character immediately following the **^** is a **]** then it is treated as part of the set rather than the closing bracket for the set. If *chars* contains a sequence of the form *a***-***b* then any character between *a* and *b* (inclusive) will be excluded from the set. If the first or last character between the brackets is a **-**, then it is treated as part of *chars* rather than indicating a range value.
 
 **n**
 : No input is consumed from the input string.  Instead, the total number of characters scanned from the input string so far is stored in the variable.
 
 
-The number of characters read from the input for a conversion is the largest number that makes sense for that particular conversion (e.g. as many decimal digits as possible for \fB%d\fR, as many octal digits as possible for \fB%o\fR, and so on). The input substring for a given conversion terminates either when a white-space character is encountered or when the maximum substring width has been reached, whichever comes first. If a \fB*\fR is present in the conversion specifier then no variable is assigned and the next scan argument is not consumed.
+The number of characters read from the input for a conversion is the largest number that makes sense for that particular conversion (e.g. as many decimal digits as possible for **%d**, as many octal digits as possible for **%o**, and so on). The input substring for a given conversion terminates either when a white-space character is encountered or when the maximum substring width has been reached, whichever comes first. If a ***** is present in the conversion specifier then no variable is assigned and the next scan argument is not consumed.
 
 # Differences from ansi sscanf
 
-The behavior of the \fBscan\fR command is the same as the behavior of the ANSI C \fBsscanf\fR procedure except for the following differences:
+The behavior of the **scan** command is the same as the behavior of the ANSI C **sscanf** procedure except for the following differences:
 
 1. **%p** conversion specifier is not supported.
 
-2. For \fB%c\fR conversions a single character value is converted to a decimal string, which is then assigned to the corresponding \fIvarName\fR; no substring width may be specified for this conversion.
+2. For **%c** conversions a single character value is converted to a decimal string, which is then assigned to the corresponding *varName*; no substring width may be specified for this conversion.
 
-3. The \fBh\fR modifier is always ignored and the \fBl\fR and \fBL\fR modifiers are ignored when converting real values (i.e. type \fBdouble\fR is used for the internal representation).  The \fBll\fR modifier has no \fBsscanf\fR counterpart.
+3. The **h** modifier is always ignored and the **l** and **L** modifiers are ignored when converting real values (i.e. type **double** is used for the internal representation).  The **ll** modifier has no **sscanf** counterpart.
 
 4. If the end of the input string is reached before any conversions have been performed and no variables are given, an empty string is returned.
 
@@ -110,14 +110,14 @@ set char "x"
 set value [scan $char %c]
 ```
 
-Parse a simple color specification of the form \fI#RRGGBB\fR using hexadecimal conversions with substring sizes:
+Parse a simple color specification of the form *#RRGGBB* using hexadecimal conversions with substring sizes:
 
 ```
 set string "#08D03F"
 scan $string "#%2x%2x%2x" r g b
 ```
 
-Parse a \fIHH:MM\fR time string:
+Parse a *HH:MM* time string:
 
 ```
 set string "08:08"
@@ -130,7 +130,7 @@ if {$minutes < 0 || $minutes > 59} {
 }
 ```
 
-Break a string up into sequences of non-whitespace characters (note the use of the \fB%n\fR conversion so that we get skipping over leading whitespace correct):
+Break a string up into sequences of non-whitespace characters (note the use of the **%n** conversion so that we get skipping over leading whitespace correct):
 
 ```
 set string " a string {with braced words} + leading space "

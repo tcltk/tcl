@@ -32,9 +32,9 @@ if - Execute scripts conditionally
 
 # Description
 
-The \fIif\fR command evaluates \fIexpr1\fR as an expression (in the same way that \fBexpr\fR evaluates its argument).  The result value of the expression must be a boolean (a numeric value, where 0 is false and anything is true, or a string value such as \fBtrue\fR or \fByes\fR for true and \fBfalse\fR or \fBno\fR for false); if it is true then \fIbody1\fR is executed by passing it to the Tcl interpreter. Otherwise, if present, the \fIelseifClause\fR is evaluated. This clause is defined as "\fBelseif\fR \fIexprN\fR ?\fBthen\fR? \fIbodyN\fR" and there may be any number of such clauses following each other with diferent expressions and bodies. \fIexprN\fR is then evaluated as an expression and if it evaluates to true then \fIbodyN\fR is executed, and so on. If none of the expressions evaluates to true then \fIelseClause\fR is executed, if present. The \fIelseClause\fR is defined as "?\fBelse\fR? \fIbodyM\fR". Note, that the \fBthen\fR and \fBelse\fR arguments are optional "syntactic sugar" to make the command easier to read.
+The *if* command evaluates *expr1* as an expression (in the same way that **expr** evaluates its argument).  The result value of the expression must be a boolean (a numeric value, where 0 is false and anything is true, or a string value such as **true** or **yes** for true and **false** or **no** for false); if it is true then *body1* is executed by passing it to the Tcl interpreter. Otherwise, if present, the *elseifClause* is evaluated. This clause is defined as "**elseif** *exprN* ?**then**? *bodyN*" and there may be any number of such clauses following each other with diferent expressions and bodies. *exprN* is then evaluated as an expression and if it evaluates to true then *bodyN* is executed, and so on. If none of the expressions evaluates to true then *elseClause* is executed, if present. The *elseClause* is defined as "?**else**? *bodyM*". Note, that the **then** and **else** arguments are optional "syntactic sugar" to make the command easier to read.
 
-The return value from the command is the result of the single body script that was executed, or an empty string if none of the expressions was non-zero and there was no \fIbodyM\fR.
+The return value from the command is the result of the single body script that was executed, or an empty string if none of the expressions was non-zero and there was no *bodyM*.
 
 # Examples
 
@@ -44,7 +44,7 @@ A simple conditional:
 if {$vbl == 1} { puts "vbl is one" }
 ```
 
-With an \fBelse\fR-clause:
+With an **else**-clause:
 
 ```
 if {$vbl == 1} {
@@ -54,7 +54,7 @@ if {$vbl == 1} {
 }
 ```
 
-With an \fBelseif\fR-clause too:
+With an **elseif**-clause too:
 
 ```
 if {$vbl == 1} {
@@ -66,7 +66,7 @@ if {$vbl == 1} {
 }
 ```
 
-Remember, expressions can be multi-line, but in that case it can be a good idea to use the optional \fBthen\fR keyword for clarity:
+Remember, expressions can be multi-line, but in that case it can be a good idea to use the optional **then** keyword for clarity:
 
 ```
 if {

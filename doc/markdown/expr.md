@@ -40,7 +40,7 @@ expr - Evaluate an expression
 
 # Description
 
-Concatenates \fIarg\fRs, separated by a space, into an expression, and evaluates that expression, returning its value. The operators permitted in an expression include a subset of the operators permitted in C expressions.  For those operators common to both Tcl and C, Tcl applies the same meaning and precedence as the corresponding C operators. The value of an expression is often a numeric result, either an integer or a floating-point value, but may also be a non-numeric value. For example, the expression
+Concatenates *arg*s, separated by a space, into an expression, and evaluates that expression, returning its value. The operators permitted in an expression include a subset of the operators permitted in C expressions.  For those operators common to both Tcl and C, Tcl applies the same meaning and precedence as the corresponding C operators. The value of an expression is often a numeric result, either an integer or a floating-point value, but may also be a non-numeric value. For example, the expression
 
 ```
 expr 8.2 + 6
@@ -48,10 +48,10 @@ expr 8.2 + 6
 
 evaluates to 14.2. Expressions differ from C expressions in the way that operands are specified.  Expressions also support non-numeric operands, string comparisons, and some additional operators not found in C.
 
-When the result of expression is an integer, it is in decimal form, and when the result is a floating-point number, it is in the form produced by the \fB%g\fR format specifier of \fBformat\fR.
+When the result of expression is an integer, it is in decimal form, and when the result is a floating-point number, it is in the form produced by the **%g** format specifier of **format**.
 
 ::: {.info -version="TIP582"}
-At any point in the expression except within double quotes or braces, \fB#\fR is the beginning of a comment, which lasts to the end of the line or the end of the expression, whichever comes first.
+At any point in the expression except within double quotes or braces, **#** is the beginning of a comment, which lasts to the end of the line or the end of the expression, whichever comes first.
 :::
 
 ## Operands
@@ -60,15 +60,15 @@ An expression consists of a combination of operands, operators, parentheses and 
 
 Each operand has one of the following forms:
 
-A \fBnumeric value\fR
+A **numeric value**
 : ...see next...
 
 
-Either integer or floating-point.  The first two characters of an integer may also be \fB0d\fR for decimal, \fB0b\fR for binary, \fB0o\fR for octal or \fB0x\fR for hexadecimal.
+Either integer or floating-point.  The first two characters of an integer may also be **0d** for decimal, **0b** for binary, **0o** for octal or **0x** for hexadecimal.
 
-A floating-point number may be take any of several common decimal formats, and may use the decimal point \fB.\fR, \fBe\fR or \fBE\fR for scientific notation, and the sign characters \fB+\fR and \fB-\fR.  The following are all valid floating-point numbers:  2.1, 3., 6e4, 7.91e+16. The strings \fBInf\fR and \fBNaN\fR, in any combination of case, are also recognized as floating point values.  An operand that doesn't have a numeric interpretation must be quoted with either braces or with double quotes.
+A floating-point number may be take any of several common decimal formats, and may use the decimal point **.**, **e** or **E** for scientific notation, and the sign characters **+** and **-**.  The following are all valid floating-point numbers:  2.1, 3., 6e4, 7.91e+16. The strings **Inf** and **NaN**, in any combination of case, are also recognized as floating point values.  An operand that doesn't have a numeric interpretation must be quoted with either braces or with double quotes.
 
-Digits in any numeric value may be separated with one or more underscore characters, "\fB_\fR".  A separator may only appear between digits, not appear at the start of a numeric value, between the leading 0 and radix specifier, or at the end of a numeric value.  Here are some examples:
+Digits in any numeric value may be separated with one or more underscore characters, "**_**".  A separator may only appear between digits, not appear at the start of a numeric value, between the leading 0 and radix specifier, or at the end of a numeric value.  Here are some examples:
 
 ```
 expr 100_000_000		100000000
@@ -77,28 +77,28 @@ format 0x%x 0b1111_1110_1101_1011		0xfedb
 expr 3_141_592_653_589e-1_2		3.141592653589
 ```
 
-A \fBboolean value\fR
-: Using any form understood by \fBstring is\fR \fBboolean\fR.
+A **boolean value**
+: Using any form understood by **string is** **boolean**.
 
-A \fBvariable\fR
-: Using standard \fB$\fR notation. The value of the variable is the value of the operand.
+A **variable**
+: Using standard **$** notation. The value of the variable is the value of the operand.
 
-A string enclosed in \fBdouble-quotes\fR
-: Backslash, variable, and command substitution are performed according to the rules for \fBTcl\fR.
+A string enclosed in **double-quotes**
+: Backslash, variable, and command substitution are performed according to the rules for **Tcl**.
 
-A string enclosed in \fBbraces\fR.
-: The operand is treated as a braced value according to the rule for braces in \fBTcl\fR.
+A string enclosed in **braces**.
+: The operand is treated as a braced value according to the rule for braces in **Tcl**.
 
-A Tcl command enclosed in \fBbrackets\fR
-: Command substitution is performed as according to the command substitution rule for \fBTcl\fR.
+A Tcl command enclosed in **brackets**
+: Command substitution is performed as according to the command substitution rule for **Tcl**.
 
 A function call.
-: This is mathematical function such as \fBsin($x)\fR, whose arguments have any of the above forms for operands.  See \fBMATH FUNCTIONS\fR below for a discussion of how mathematical functions are handled.
+: This is mathematical function such as **sin($x)**, whose arguments have any of the above forms for operands.  See **MATH FUNCTIONS** below for a discussion of how mathematical functions are handled.
 
 
-Because \fBexpr\fR parses and performs substitutions on values that have already been parsed and substituted by \fBTcl\fR, it is usually best to enclose expressions in braces to avoid the first round of substitutions by \fBTcl\fR.
+Because **expr** parses and performs substitutions on values that have already been parsed and substituted by **Tcl**, it is usually best to enclose expressions in braces to avoid the first round of substitutions by **Tcl**.
 
-Below are some examples of simple expressions where the value of \fBa\fR is 3 and the value of \fBb\fR is 6.  The command on the left side of each line produces the value on the right side.
+Below are some examples of simple expressions where the value of **a** is 3 and the value of **b** is 6.  The command on the left side of each line produces the value on the right side.
 
 ```
 expr {3.1 + $a}	6.1
@@ -109,9 +109,9 @@ expr {{word one} < "word $a"}	0
 
 ## Operators
 
-For operators having both a numeric mode and a string mode, the numeric mode is chosen when all operands have a numeric interpretation.  The integer interpretation of an operand is preferred over the floating-point interpretation.  To ensure string operations on arbitrary values it is generally a good idea to use \fBeq\fR, \fBne\fR, or the \fBstring\fR command instead of more versatile operators such as \fB==\fR.
+For operators having both a numeric mode and a string mode, the numeric mode is chosen when all operands have a numeric interpretation.  The integer interpretation of an operand is preferred over the floating-point interpretation.  To ensure string operations on arbitrary values it is generally a good idea to use **eq**, **ne**, or the **string** command instead of more versatile operators such as **==**.
 
-Unless otherwise specified, operators accept non-numeric operands.  The value of a boolean operation is 1 if true, 0 otherwise.  See also \fBstring is\fR \fBboolean\fR.  The valid operators, most of which are also available as commands in the \fBtcl::mathop\fR namespace (see \fBmathop\fR(n)), are listed below, grouped in decreasing order of precedence:
+Unless otherwise specified, operators accept non-numeric operands.  The value of a boolean operation is 1 if true, 0 otherwise.  See also **string is** **boolean**.  The valid operators, most of which are also available as commands in the **tcl::mathop** namespace (see **mathop**(n)), are listed below, grouped in decreasing order of precedence:
 
 **-\0\0+\0\0~\0\0!**
 : Unary minus, unary plus, bit-wise NOT, logical NOT.  These operators may only be applied to numeric operands, and bit-wise NOT may only be applied to integers.
@@ -121,7 +121,7 @@ Unless otherwise specified, operators accept non-numeric operands.  The value of
 
 ***\0\0/\0\0%**
 : Multiply and divide, which are valid for numeric operands, and remainder, which is valid for integers.  The remainder, an absolute value smaller than the absolute value of the divisor, has the same sign as the divisor.
-    When applied to integers, division and remainder can be considered to partition the number line into a sequence of adjacent non-overlapping pieces, where each piece is the size of the divisor; the quotient identifies which piece the dividend lies within, and the remainder identifies where within that piece the dividend lies. A consequence of this is that the result of "-57 \fB/\fR 10" is always -6, and the result of "-57 \fB%\fR 10" is always 3.
+    When applied to integers, division and remainder can be considered to partition the number line into a sequence of adjacent non-overlapping pieces, where each piece is the size of the divisor; the quotient identifies which piece the dividend lies within, and the remainder identifies where within that piece the dividend lies. A consequence of this is that the result of "-57 **/** 10" is always -6, and the result of "-57 **%** 10" is always 3.
 
 **+\0\0-**
 : Add and subtract.  Valid for numeric operands.
@@ -133,7 +133,7 @@ Unless otherwise specified, operators accept non-numeric operands.  The value of
 : Boolean numeric-preferring comparisons: less than, greater than, less than or equal, and greater than or equal. If either argument is not numeric, the comparison is done using UNICODE string comparison, as with the string comparison operators below, which have the same precedence.
 
 **lt\0\0gt\0\0le\0\0ge**
-: Boolean string comparisons: less than, greater than, less than or equal, and greater than or equal. These always compare values using their UNICODE strings (also see \fBstring compare\fR), unlike with the numeric-preferring comparisons above, which have the same precedence.
+: Boolean string comparisons: less than, greater than, less than or equal, and greater than or equal. These always compare values using their UNICODE strings (also see **string compare**), unlike with the numeric-preferring comparisons above, which have the same precedence.
 
 **==\0\0!=**
 : Boolean equal and not equal.
@@ -142,7 +142,7 @@ Unless otherwise specified, operators accept non-numeric operands.  The value of
 : Boolean string equal and string not equal.
 
 **in\0\0ni**
-: List containment and negated list containment.  The first argument is interpreted as a string, the second as a list.  \fBin\fR tests for membership in the list, and \fBni\fR is the inverse.
+: List containment and negated list containment.  The first argument is interpreted as a string, the second as a list.  **in** tests for membership in the list, and **ni** is the inverse.
 
 **&**
 : Bit-wise AND.  Valid for integer operands.
@@ -159,11 +159,11 @@ Unless otherwise specified, operators accept non-numeric operands.  The value of
 **||**
 : Logical OR.  If both operands are false, the result is 0, or 1 otherwise. This operator evaluates lazily; it only evaluates its second operand if it must in order to determine its result.
 
-*x* \fB?\fR \fIy\fR \fB:\fR \fIz\fR
-: If-then-else, as in C.  If \fIx\fR is false , the result is the value of \fIy\fR.  Otherwise the result is the value of \fIz\fR. This operator evaluates lazily; it evaluates only one of \fIy\fR or \fIz\fR.
+*x* **?** *y* **:** *z*
+: If-then-else, as in C.  If *x* is false , the result is the value of *y*.  Otherwise the result is the value of *z*. This operator evaluates lazily; it evaluates only one of *y* or *z*.
 
 
-The exponentiation operator promotes types in the same way that the multiply and divide operators do, and the result is is the same as the result of \fBpow\fR. Exponentiation groups right-to-left within a precedence level. Other binary operators group left-to-right.  For example, the value of
+The exponentiation operator promotes types in the same way that the multiply and divide operators do, and the result is is the same as the result of **pow**. Exponentiation groups right-to-left within a precedence level. Other binary operators group left-to-right.  For example, the value of
 
 ```
 expr {4*2 < 7}
@@ -177,19 +177,19 @@ expr {2**3**2}
 
 is 512.
 
-As in C, \fB&&\fR, \fB||\fR, and \fB?:\fR feature "lazy evaluation", which means that operands are not evaluated if they are not needed to determine the outcome.  For example, in
+As in C, **&&**, **||**, and **?:** feature "lazy evaluation", which means that operands are not evaluated if they are not needed to determine the outcome.  For example, in
 
 ```
 expr {$v?[a]:[b]}
 ```
 
-only one of \fB[a]\fR or \fB[b]\fR is evaluated, depending on the value of \fB$v\fR.  This is not true of the normal Tcl parser, so it is normally recommended to enclose the arguments to \fBexpr\fR in braces. Without braces, as in \fBexpr\fR $v ? [a] : [b] both \fB[a]\fR and \fB[b]\fR are evaluated before \fBexpr\fR is even called.
+only one of **[a]** or **[b]** is evaluated, depending on the value of **$v**.  This is not true of the normal Tcl parser, so it is normally recommended to enclose the arguments to **expr** in braces. Without braces, as in **expr** $v ? [a] : [b] both **[a]** and **[b]** are evaluated before **expr** is even called.
 
 For more details on the results produced by each operator, see the documentation for C.
 
 ## Math functions
 
-A mathematical function such as \fBsin($x)\fR is replaced with a call to an ordinary Tcl command in the \fBtcl::mathfunc\fR namespace.  The evaluation of an expression such as
+A mathematical function such as **sin($x)** is replaced with a call to an ordinary Tcl command in the **tcl::mathfunc** namespace.  The evaluation of an expression such as
 
 ```
 expr {sin($x+$y)}
@@ -207,7 +207,7 @@ which in turn is the same as the evaluation of
 tcl::mathfunc::sin [expr {$x+$y}]
 ```
 
-**tcl::mathfunc::sin** is resolved as described in \fBNAMESPACE RESOLUTION\fR in the \fBnamespace\fR(n) documentation.  Given the default value of \fBnamespace path\fR, \fB[namespace current]::tcl::mathfunc::sin\fR or \fB::tcl::mathfunc::sin\fR are the typical resolutions.
+**tcl::mathfunc::sin** is resolved as described in **NAMESPACE RESOLUTION** in the **namespace**(n) documentation.  Given the default value of **namespace path**, **[namespace current]::tcl::mathfunc::sin** or **::tcl::mathfunc::sin** are the typical resolutions.
 
 As in C, a mathematical function may accept multiple arguments separated by commas. Thus,
 
@@ -221,11 +221,11 @@ becomes
 tcl::mathfunc::hypot $x $y
 ```
 
-See the \fBmathfunc\fR(n) documentation for the math functions that are available by default.
+See the **mathfunc**(n) documentation for the math functions that are available by default.
 
 ## Types, overflow, and precision
 
-Internal floating-point computations are performed using the \fIdouble\fR C type. When converting a string to floating-point value, exponent overflow is detected and results in the \fIdouble\fR value of \fBInf\fR or \fB-Inf\fR as appropriate.  Floating-point overflow and underflow are detected to the degree supported by the hardware, which is generally fairly reliable.
+Internal floating-point computations are performed using the *double* C type. When converting a string to floating-point value, exponent overflow is detected and results in the *double* value of **Inf** or **-Inf** as appropriate.  Floating-point overflow and underflow are detected to the degree supported by the hardware, which is generally fairly reliable.
 
 Conversion among internal representations for integer, floating-point, and string operands is done automatically as needed.  For arithmetic computations, integers are used until some floating-point number is introduced, after which floating-point values are used.  For example,
 
@@ -248,13 +248,13 @@ both return 1.25. A floating-point result can be distinguished from an integer r
 expr {20.0/5.0}
 ```
 
-returns \fB4.0\fR, not \fB4\fR.
+returns **4.0**, not **4**.
 
 # Performance considerations
 
-Where an expression contains syntax that Tcl would otherwise perform substitutions on, enclosing an expression in braces or otherwise quoting it so that it's a static value allows the Tcl compiler to generate bytecode for the expression, resulting in better speed and smaller storage requirements. This also avoids issues that can arise if Tcl is allowed to perform substitution on the value before \fBexpr\fR is called.
+Where an expression contains syntax that Tcl would otherwise perform substitutions on, enclosing an expression in braces or otherwise quoting it so that it's a static value allows the Tcl compiler to generate bytecode for the expression, resulting in better speed and smaller storage requirements. This also avoids issues that can arise if Tcl is allowed to perform substitution on the value before **expr** is called.
 
-In the following example, the value of the expression is 11 because the Tcl parser first substitutes \fB$b\fR and \fBexpr\fR then substitutes \fB$a\fR as part of evaluating the expression "$a + 2*4". Enclosing the expression in braces would result in a syntax error as \fB$b\fR does not evaluate to a numeric value.
+In the following example, the value of the expression is 11 because the Tcl parser first substitutes **$b** and **expr** then substitutes **$a** as part of evaluating the expression "$a + 2*4". Enclosing the expression in braces would result in a syntax error as **$b** does not evaluate to a numeric value.
 
 ```
 set a 3
@@ -262,11 +262,11 @@ set b {$a + 2}
 expr $b*4
 ```
 
-When an expression is generated at runtime, like the one above is, the bytecode compiler must ensure that new code is generated each time the expression is evaluated.  This is the most costly kind of expression from a performance perspective.  In such cases, consider directly using the commands described in the \fBmathfunc\fR(n) or \fBmathop\fR(n) documentation instead of \fBexpr\fR.
+When an expression is generated at runtime, like the one above is, the bytecode compiler must ensure that new code is generated each time the expression is evaluated.  This is the most costly kind of expression from a performance perspective.  In such cases, consider directly using the commands described in the **mathfunc**(n) or **mathop**(n) documentation instead of **expr**.
 
-Most expressions are not formed at runtime, but are literal strings or contain substitutions that don't introduce other substitutions.  To allow the bytecode compiler to work with an expression as a string literal at compilation time, ensure that it contains no substitutions or that it is enclosed in braces or otherwise quoted to prevent Tcl from performing substitutions, allowing \fBexpr\fR to perform them instead.
+Most expressions are not formed at runtime, but are literal strings or contain substitutions that don't introduce other substitutions.  To allow the bytecode compiler to work with an expression as a string literal at compilation time, ensure that it contains no substitutions or that it is enclosed in braces or otherwise quoted to prevent Tcl from performing substitutions, allowing **expr** to perform them instead.
 
-If it is necessary to include a non-constant expression string within the wider context of an otherwise-constant expression, the most efficient technique is to put the varying part inside a recursive \fBexpr\fR, as this at least allows for the compilation of the outer part, though it does mean that the varying part must itself be evaluated as a separate expression. Thus, in this example the result is 20 and the outer expression benefits from fully cached bytecode compilation.
+If it is necessary to include a non-constant expression string within the wider context of an otherwise-constant expression, the most efficient technique is to put the varying part inside a recursive **expr**, as this at least allows for the compilation of the outer part, though it does mean that the varying part must itself be evaluated as a separate expression. Thus, in this example the result is 20 and the outer expression benefits from fully cached bytecode compilation.
 
 ```
 set a 3
@@ -274,7 +274,7 @@ set b {$a + 2}
 expr {[expr $b] * 4}
 ```
 
-In general, you should enclose your expression in braces wherever possible, and where not possible, the argument to \fBexpr\fR should be an expression defined elsewhere as simply as possible. It is usually more efficient and safer to use other techniques (e.g., the commands in the \fBtcl::mathop\fR namespace) than it is to do complex expression generation.
+In general, you should enclose your expression in braces wherever possible, and where not possible, the argument to **expr** should be an expression defined elsewhere as simply as possible. It is usually more efficient and safer to use other techniques (e.g., the commands in the **tcl::mathop** namespace) than it is to do complex expression generation.
 
 # Examples
 

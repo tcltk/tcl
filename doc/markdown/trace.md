@@ -33,124 +33,124 @@ trace - Monitor variable accesses, command usages and command executions
 
 # Description
 
-This command causes Tcl commands to be executed whenever certain operations are invoked.  The legal \fIoption\fRs (which may be abbreviated) are:
+This command causes Tcl commands to be executed whenever certain operations are invoked.  The legal *option*s (which may be abbreviated) are:
 
-**trace add** \fItype name ops\fR ?\fIargs\fR?
-: Where \fItype\fR is \fBcommand\fR, \fBexecution\fR, or \fBvariable\fR.
+**trace add** *type name ops* ?*args*?
+: Where *type* is **command**, **execution**, or **variable**.
 
-**trace add command** \fIname ops commandPrefix\fR
-: Arrange for \fIcommandPrefix\fR to be executed (with additional arguments) whenever command \fIname\fR is modified in one of the ways given by the list \fIops\fR. \fIName\fR will be resolved using the usual namespace resolution rules used by commands. If the command does not exist, an error will be thrown.
+**trace add command** *name ops commandPrefix*
+: Arrange for *commandPrefix* to be executed (with additional arguments) whenever command *name* is modified in one of the ways given by the list *ops*. *Name* will be resolved using the usual namespace resolution rules used by commands. If the command does not exist, an error will be thrown.
 
     *Ops* indicates which operations are of interest, and is a list of one or more of the following items:
 
 **rename**
-: Invoke \fIcommandPrefix\fR whenever the traced command is renamed.  Note that renaming to the empty string is considered deletion, and will not be traced with "**rename**".
+: Invoke *commandPrefix* whenever the traced command is renamed.  Note that renaming to the empty string is considered deletion, and will not be traced with "**rename**".
 
 **delete**
-: Invoke \fIcommandPrefix\fR when the traced command is deleted. Commands can be deleted explicitly by using the \fBrename\fR command to rename the command to an empty string. Commands are also deleted when the interpreter is deleted, but traces will not be invoked because there is no interpreter in which to execute them.
+: Invoke *commandPrefix* when the traced command is deleted. Commands can be deleted explicitly by using the **rename** command to rename the command to an empty string. Commands are also deleted when the interpreter is deleted, but traces will not be invoked because there is no interpreter in which to execute them.
 
-    When the trace triggers, depending on the operations being traced, a number of arguments are appended to \fIcommandPrefix\fR so that the actual command is as follows:
+    When the trace triggers, depending on the operations being traced, a number of arguments are appended to *commandPrefix* so that the actual command is as follows:
 
     ```
     commandPrefix oldName newName op
     ```
-    *OldName* and \fInewName\fR give the traced command's current (old) name, and the name to which it is being renamed (the empty string if this is a "delete" operation). \fIOp\fR indicates what operation is being performed on the command, and is one of \fBrename\fR or \fBdelete\fR as defined above.  The trace operation cannot be used to stop a command from being deleted.  Tcl will always remove the command once the trace is complete.  Recursive renaming or deleting will not cause further traces of the same type to be evaluated, so a delete trace which itself deletes the command, or a rename trace which itself renames the command will not cause further trace evaluations to occur. Both \fIoldName\fR and \fInewName\fR are fully qualified with any namespace(s) in which they appear.
+    *OldName* and *newName* give the traced command's current (old) name, and the name to which it is being renamed (the empty string if this is a "delete" operation). *Op* indicates what operation is being performed on the command, and is one of **rename** or **delete** as defined above.  The trace operation cannot be used to stop a command from being deleted.  Tcl will always remove the command once the trace is complete.  Recursive renaming or deleting will not cause further traces of the same type to be evaluated, so a delete trace which itself deletes the command, or a rename trace which itself renames the command will not cause further trace evaluations to occur. Both *oldName* and *newName* are fully qualified with any namespace(s) in which they appear.
 
-**trace add execution** \fIname ops commandPrefix\fR
-: Arrange for \fIcommandPrefix\fR to be executed (with additional arguments) whenever command \fIname\fR is executed, with traces occurring at the points indicated by the list \fIops\fR.  \fIName\fR will be resolved using the usual namespace resolution rules used by commands.  If the command does not exist, an error will be thrown.
+**trace add execution** *name ops commandPrefix*
+: Arrange for *commandPrefix* to be executed (with additional arguments) whenever command *name* is executed, with traces occurring at the points indicated by the list *ops*.  *Name* will be resolved using the usual namespace resolution rules used by commands.  If the command does not exist, an error will be thrown.
     *Ops* indicates which operations are of interest, and is a list of one or more of the following items:
 
 **enter**
-: Invoke \fIcommandPrefix\fR whenever the command \fIname\fR is executed, just before the actual execution takes place.
+: Invoke *commandPrefix* whenever the command *name* is executed, just before the actual execution takes place.
 
 **leave**
-: Invoke \fIcommandPrefix\fR whenever the command \fIname\fR is executed, just after the actual execution takes place.
+: Invoke *commandPrefix* whenever the command *name* is executed, just after the actual execution takes place.
 
 **enterstep**
-: Invoke \fIcommandPrefix\fR for every Tcl command which is executed from the start of the execution of the procedure \fIname\fR until that procedure finishes. \fICommandPrefix\fR is invoked just before the actual execution of the Tcl command being reported takes place.  For example if we have "proc foo {} { puts \N'34'hello\N'34' }", then an \fIenterstep\fR trace would be invoked just before "*puts \N'34'hello\N'34'*" is executed. Setting an \fIenterstep\fR trace on a command \fIname\fR that does not refer to a procedure will not result in an error and is simply ignored.
+: Invoke *commandPrefix* for every Tcl command which is executed from the start of the execution of the procedure *name* until that procedure finishes. *CommandPrefix* is invoked just before the actual execution of the Tcl command being reported takes place.  For example if we have "proc foo {} { puts \N'34'hello\N'34' }", then an *enterstep* trace would be invoked just before "*puts \N'34'hello\N'34'*" is executed. Setting an *enterstep* trace on a command *name* that does not refer to a procedure will not result in an error and is simply ignored.
 
 **leavestep**
-: Invoke \fIcommandPrefix\fR for every Tcl command which is executed from the start of the execution of the procedure \fIname\fR until that procedure finishes. \fICommandPrefix\fR is invoked just after the actual execution of the Tcl command being reported takes place. Setting a \fIleavestep\fR trace on a command \fIname\fR that does not refer to a procedure will not result in an error and is simply ignored.
+: Invoke *commandPrefix* for every Tcl command which is executed from the start of the execution of the procedure *name* until that procedure finishes. *CommandPrefix* is invoked just after the actual execution of the Tcl command being reported takes place. Setting a *leavestep* trace on a command *name* that does not refer to a procedure will not result in an error and is simply ignored.
 
-    When the trace triggers, depending on the operations being traced, a number of arguments are appended to \fIcommandPrefix\fR so that the actual command is as follows:
-    For \fBenter\fR and \fBenterstep\fR operations:
+    When the trace triggers, depending on the operations being traced, a number of arguments are appended to *commandPrefix* so that the actual command is as follows:
+    For **enter** and **enterstep** operations:
 
     ```
     commandPrefix command-string op
     ```
-    *Command-string* gives the complete current command being executed (the traced command for a \fBenter\fR operation, an arbitrary command for a \fBenterstep\fR operation), including all arguments in their fully expanded form. \fIOp\fR indicates what operation is being performed on the command execution, and is one of \fBenter\fR or \fBenterstep\fR as defined above.  The trace operation can be used to stop the command from executing, by deleting the command in question.  Of course when the command is subsequently executed, an "invalid command" error will occur.
-    For \fBleave\fR and \fBleavestep\fR operations:
+    *Command-string* gives the complete current command being executed (the traced command for a **enter** operation, an arbitrary command for a **enterstep** operation), including all arguments in their fully expanded form. *Op* indicates what operation is being performed on the command execution, and is one of **enter** or **enterstep** as defined above.  The trace operation can be used to stop the command from executing, by deleting the command in question.  Of course when the command is subsequently executed, an "invalid command" error will occur.
+    For **leave** and **leavestep** operations:
 
     ```
     commandPrefix command-string code result op
     ```
-    *Command-string* gives the complete current command being executed (the traced command for a \fBenter\fR operation, an arbitrary command for a \fBenterstep\fR operation), including all arguments in their fully expanded form. \fICode\fR gives the result code of that execution, and \fIresult\fR the result string. \fIOp\fR indicates what operation is being performed on the command execution, and is one of \fBleave\fR or \fBleavestep\fR as defined above.
-    Note that the creation of many \fBenterstep\fR or \fBleavestep\fR traces can lead to unintuitive results, since the invoked commands from one trace can themselves lead to further command invocations for other traces.
-    *CommandPrefix* executes in the same context as the code that invoked the traced operation: thus the \fIcommandPrefix\fR, if invoked from a procedure, will have access to the same local variables as code in the procedure. This context may be different than the context in which the trace was created. If \fIcommandPrefix\fR invokes a procedure (which it normally does) then the procedure will have to use \fBupvar\fR or \fBuplevel\fR commands if it wishes to access the local variables of the code which invoked the trace operation.
-    While \fIcommandPrefix\fR is executing during an execution trace, traces on \fIname\fR are temporarily disabled. This allows the \fIcommandPrefix\fR to execute \fIname\fR in its body without invoking any other traces again. If an error occurs while executing the \fIcommandPrefix\fR, then the command \fIname\fR as a whole will return that same error.
-    When multiple traces are set on \fIname\fR, then for \fIenter\fR and \fIenterstep\fR operations, the traced commands are invoked in the reverse order of how the traces were originally created; and for \fIleave\fR and \fIleavestep\fR operations, the traced commands are invoked in the original order of creation.
-    The behavior of execution traces is currently undefined for a command \fIname\fR imported into another namespace.
+    *Command-string* gives the complete current command being executed (the traced command for a **enter** operation, an arbitrary command for a **enterstep** operation), including all arguments in their fully expanded form. *Code* gives the result code of that execution, and *result* the result string. *Op* indicates what operation is being performed on the command execution, and is one of **leave** or **leavestep** as defined above.
+    Note that the creation of many **enterstep** or **leavestep** traces can lead to unintuitive results, since the invoked commands from one trace can themselves lead to further command invocations for other traces.
+    *CommandPrefix* executes in the same context as the code that invoked the traced operation: thus the *commandPrefix*, if invoked from a procedure, will have access to the same local variables as code in the procedure. This context may be different than the context in which the trace was created. If *commandPrefix* invokes a procedure (which it normally does) then the procedure will have to use **upvar** or **uplevel** commands if it wishes to access the local variables of the code which invoked the trace operation.
+    While *commandPrefix* is executing during an execution trace, traces on *name* are temporarily disabled. This allows the *commandPrefix* to execute *name* in its body without invoking any other traces again. If an error occurs while executing the *commandPrefix*, then the command *name* as a whole will return that same error.
+    When multiple traces are set on *name*, then for *enter* and *enterstep* operations, the traced commands are invoked in the reverse order of how the traces were originally created; and for *leave* and *leavestep* operations, the traced commands are invoked in the original order of creation.
+    The behavior of execution traces is currently undefined for a command *name* imported into another namespace.
 
-**trace add variable** \fIname ops commandPrefix\fR
-: Arrange for \fIcommandPrefix\fR to be executed whenever variable \fIname\fR is accessed in one of the ways given by the list \fIops\fR.  \fIName\fR may refer to a normal variable, an element of an array, or to an array as a whole (i.e. \fIname\fR may be just the name of an array, with no parenthesized index).  If \fIname\fR refers to a whole array, then \fIcommandPrefix\fR is invoked whenever any element of the array is manipulated.  If the variable does not exist, it will be created but will not be given a value, so it will be visible to \fBnamespace which\fR queries, but not to \fBinfo exists\fR queries.
+**trace add variable** *name ops commandPrefix*
+: Arrange for *commandPrefix* to be executed whenever variable *name* is accessed in one of the ways given by the list *ops*.  *Name* may refer to a normal variable, an element of an array, or to an array as a whole (i.e. *name* may be just the name of an array, with no parenthesized index).  If *name* refers to a whole array, then *commandPrefix* is invoked whenever any element of the array is manipulated.  If the variable does not exist, it will be created but will not be given a value, so it will be visible to **namespace which** queries, but not to **info exists** queries.
     *Ops* indicates which operations are of interest, and is a list of one or more of the following items:
 
 **array**
-: Invoke \fIcommandPrefix\fR whenever the variable is accessed or modified via the \fBarray\fR command, provided that \fIname\fR is not a scalar variable at the time that the \fBarray\fR command is invoked.  If \fIname\fR is a scalar variable, the access via the \fBarray\fR command will not trigger the trace.
+: Invoke *commandPrefix* whenever the variable is accessed or modified via the **array** command, provided that *name* is not a scalar variable at the time that the **array** command is invoked.  If *name* is a scalar variable, the access via the **array** command will not trigger the trace.
 
 **read**
-: Invoke \fIcommandPrefix\fR whenever the variable is read.
+: Invoke *commandPrefix* whenever the variable is read.
 
 **write**
-: Invoke \fIcommandPrefix\fR whenever the variable is written.
+: Invoke *commandPrefix* whenever the variable is written.
 
 **unset**
-: Invoke \fIcommandPrefix\fR whenever the variable is unset.  Variables can be unset explicitly with the \fBunset\fR command, or implicitly when procedures return (all of their local variables are unset).  Variables are also unset when interpreters are deleted, but traces will not be invoked because there is no interpreter in which to execute them.
+: Invoke *commandPrefix* whenever the variable is unset.  Variables can be unset explicitly with the **unset** command, or implicitly when procedures return (all of their local variables are unset).  Variables are also unset when interpreters are deleted, but traces will not be invoked because there is no interpreter in which to execute them.
 
-    When the trace triggers, three arguments are appended to \fIcommandPrefix\fR so that the actual command is as follows:
+    When the trace triggers, three arguments are appended to *commandPrefix* so that the actual command is as follows:
 
     ```
     commandPrefix name1 name2 op
     ```
-    *Name1* gives the name for the variable being accessed. This is not necessarily the same as the name used in the \fBtrace add variable\fR command:  the \fBupvar\fR command allows a procedure to reference a variable under a different name. If the trace was originally set on an array or array element, \fIname2\fR provides which index into the array was affected. This information is present even when \fIname1\fR refers to a scalar, which may happen if the \fBupvar\fR command was used to create a reference to a single array element. If an entire array is being deleted and the trace was registered on the overall array, rather than a single element, then \fIname1\fR gives the array name and \fIname2\fR is an empty string. \fIOp\fR indicates what operation is being performed on the variable, and is one of \fBread\fR, \fBwrite\fR, or \fBunset\fR as defined above.
-    *CommandPrefix* executes in the same context as the code that invoked the traced operation:  if the variable was accessed as part of a Tcl procedure, then \fIcommandPrefix\fR will have access to the same local variables as code in the procedure.  This context may be different than the context in which the trace was created. If \fIcommandPrefix\fR invokes a procedure (which it normally does) then the procedure will have to use \fBupvar\fR or \fBuplevel\fR if it wishes to access the traced variable.  Note also that \fIname1\fR may not necessarily be the same as the name used to set the trace on the variable; differences can occur if the access is made through a variable defined with the \fBupvar\fR command.
-    For read and write traces, \fIcommandPrefix\fR can modify the variable to affect the result of the traced operation.  If \fIcommandPrefix\fR modifies the value of a variable during a read or write trace, then the new value will be returned as the result of the traced operation.  The return value from  \fIcommandPrefix\fR is ignored except that if it returns an error of any sort then the traced operation also returns an error with the same error message returned by the trace command (this mechanism can be used to implement read-only variables, for example). For write traces, \fIcommandPrefix\fR is invoked after the variable's value has been changed; it can write a new value into the variable to override the original value specified in the write operation.  To implement read-only variables, \fIcommandPrefix\fR will have to restore the old value of the variable.
-    While \fIcommandPrefix\fR is executing during a read or write trace, traces on the variable are temporarily disabled.  This means that reads and writes invoked by \fIcommandPrefix\fR will occur directly, without invoking \fIcommandPrefix\fR (or any other traces) again.  However, if \fIcommandPrefix\fR unsets the variable then unset traces will be invoked.
+    *Name1* gives the name for the variable being accessed. This is not necessarily the same as the name used in the **trace add variable** command:  the **upvar** command allows a procedure to reference a variable under a different name. If the trace was originally set on an array or array element, *name2* provides which index into the array was affected. This information is present even when *name1* refers to a scalar, which may happen if the **upvar** command was used to create a reference to a single array element. If an entire array is being deleted and the trace was registered on the overall array, rather than a single element, then *name1* gives the array name and *name2* is an empty string. *Op* indicates what operation is being performed on the variable, and is one of **read**, **write**, or **unset** as defined above.
+    *CommandPrefix* executes in the same context as the code that invoked the traced operation:  if the variable was accessed as part of a Tcl procedure, then *commandPrefix* will have access to the same local variables as code in the procedure.  This context may be different than the context in which the trace was created. If *commandPrefix* invokes a procedure (which it normally does) then the procedure will have to use **upvar** or **uplevel** if it wishes to access the traced variable.  Note also that *name1* may not necessarily be the same as the name used to set the trace on the variable; differences can occur if the access is made through a variable defined with the **upvar** command.
+    For read and write traces, *commandPrefix* can modify the variable to affect the result of the traced operation.  If *commandPrefix* modifies the value of a variable during a read or write trace, then the new value will be returned as the result of the traced operation.  The return value from  *commandPrefix* is ignored except that if it returns an error of any sort then the traced operation also returns an error with the same error message returned by the trace command (this mechanism can be used to implement read-only variables, for example). For write traces, *commandPrefix* is invoked after the variable's value has been changed; it can write a new value into the variable to override the original value specified in the write operation.  To implement read-only variables, *commandPrefix* will have to restore the old value of the variable.
+    While *commandPrefix* is executing during a read or write trace, traces on the variable are temporarily disabled.  This means that reads and writes invoked by *commandPrefix* will occur directly, without invoking *commandPrefix* (or any other traces) again.  However, if *commandPrefix* unsets the variable then unset traces will be invoked.
     When an unset trace is invoked, the variable has already been deleted: it will appear to be undefined with no traces.  If an unset occurs because of a procedure return, then the trace will be invoked in the variable context of the procedure being returned to:  the stack frame of the returning procedure will no longer exist.  Traces are not disabled during unset traces, so if an unset trace command creates a new trace and accesses the variable, the trace will be invoked.  Any errors in unset traces are ignored.
     If there are multiple traces on a variable they are invoked in order of creation, most-recent first.  If one trace returns an error, then no further traces are invoked for the variable.  If an array element has a trace set, and there is also a trace set on the array as a whole, the trace on the overall array is invoked before the one on the element.
-    Once created, the trace remains in effect either until the trace is removed with the \fBtrace remove variable\fR command described below, until the variable is unset, or until the interpreter is deleted. Unsetting an element of array will remove any traces on that element, but will not remove traces on the overall array.
+    Once created, the trace remains in effect either until the trace is removed with the **trace remove variable** command described below, until the variable is unset, or until the interpreter is deleted. Unsetting an element of array will remove any traces on that element, but will not remove traces on the overall array.
     This command returns an empty string.
 
-**trace remove** \fItype name opList commandPrefix\fR
-: Where \fItype\fR is either \fBcommand\fR, \fBexecution\fR or \fBvariable\fR.
+**trace remove** *type name opList commandPrefix*
+: Where *type* is either **command**, **execution** or **variable**.
 
-**trace remove command** \fIname opList commandPrefix\fR
-: If there is a trace set on command \fIname\fR with the operations and command given by \fIopList\fR and \fIcommandPrefix\fR, then the trace is removed, so that \fIcommandPrefix\fR will never again be invoked.  Returns an empty string.   If \fIname\fR does not exist, the command will throw an error.
+**trace remove command** *name opList commandPrefix*
+: If there is a trace set on command *name* with the operations and command given by *opList* and *commandPrefix*, then the trace is removed, so that *commandPrefix* will never again be invoked.  Returns an empty string.   If *name* does not exist, the command will throw an error.
 
-**trace remove execution** \fIname opList commandPrefix\fR
-: If there is a trace set on command \fIname\fR with the operations and command given by \fIopList\fR and \fIcommandPrefix\fR, then the trace is removed, so that \fIcommandPrefix\fR will never again be invoked.  Returns an empty string.   If \fIname\fR does not exist, the command will throw an error.
+**trace remove execution** *name opList commandPrefix*
+: If there is a trace set on command *name* with the operations and command given by *opList* and *commandPrefix*, then the trace is removed, so that *commandPrefix* will never again be invoked.  Returns an empty string.   If *name* does not exist, the command will throw an error.
 
-**trace remove variable** \fIname opList commandPrefix\fR
-: If there is a trace set on variable \fIname\fR with the operations and command given by \fIopList\fR and \fIcommandPrefix\fR, then the trace is removed, so that \fIcommandPrefix\fR will never again be invoked.  Returns an empty string.
+**trace remove variable** *name opList commandPrefix*
+: If there is a trace set on variable *name* with the operations and command given by *opList* and *commandPrefix*, then the trace is removed, so that *commandPrefix* will never again be invoked.  Returns an empty string.
 
 
-**trace info** \fItype name\fR
-: Where \fItype\fR is either \fBcommand\fR, \fBexecution\fR or \fBvariable\fR.
+**trace info** *type name*
+: Where *type* is either **command**, **execution** or **variable**.
 
-**trace info command** \fIname\fR
-: Returns a list containing one element for each trace currently set on command \fIname\fR. Each element of the list is itself a list containing two elements, which are the \fIopList\fR and \fIcommandPrefix\fR associated with the trace.  If \fIname\fR does not have any traces set, then the result of the command will be an empty string.  If \fIname\fR does not exist, the command will throw an error.
+**trace info command** *name*
+: Returns a list containing one element for each trace currently set on command *name*. Each element of the list is itself a list containing two elements, which are the *opList* and *commandPrefix* associated with the trace.  If *name* does not have any traces set, then the result of the command will be an empty string.  If *name* does not exist, the command will throw an error.
 
-**trace info execution** \fIname\fR
-: Returns a list containing one element for each trace currently set on command \fIname\fR. Each element of the list is itself a list containing two elements, which are the \fIopList\fR and \fIcommandPrefix\fR associated with the trace.  If \fIname\fR does not have any traces set, then the result of the command will be an empty string.  If \fIname\fR does not exist, the command will throw an error.
+**trace info execution** *name*
+: Returns a list containing one element for each trace currently set on command *name*. Each element of the list is itself a list containing two elements, which are the *opList* and *commandPrefix* associated with the trace.  If *name* does not have any traces set, then the result of the command will be an empty string.  If *name* does not exist, the command will throw an error.
 
-**trace info variable** \fIname\fR
-: Returns a list containing one element for each trace currently set on variable \fIname\fR.  Each element of the list is itself a list containing two elements, which are the \fIopList\fR and \fIcommandPrefix\fR associated with the trace.  If \fIname\fR does not exist or does not have any traces set, then the result of the command will be an empty string.
+**trace info variable** *name*
+: Returns a list containing one element for each trace currently set on variable *name*.  Each element of the list is itself a list containing two elements, which are the *opList* and *commandPrefix* associated with the trace.  If *name* does not exist or does not have any traces set, then the result of the command will be an empty string.
 
 
 
 # Examples
 
-Print a message whenever either of the global variables \fBfoo\fR and \fBbar\fR are updated, even if they have a different local name at the time (which can be done with the \fBupvar\fR command):
+Print a message whenever either of the global variables **foo** and **bar** are updated, even if they have a different local name at the time (which can be done with the **upvar** command):
 
 ```
 proc tracer {varname args} {
@@ -161,7 +161,7 @@ trace add variable foo write "tracer foo"
 trace add variable bar write "tracer bar"
 ```
 
-Ensure that the global variable \fBfoobar\fR always contains the product of the global variables \fBfoo\fR and \fBbar\fR:
+Ensure that the global variable **foobar** always contains the product of the global variables **foo** and **bar**:
 
 ```
 proc doMult args {

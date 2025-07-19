@@ -33,43 +33,43 @@ tcl::process - Subprocess management
 
 # Description
 
-This command provides a way to manage subprocesses created by the \fBopen\fR and \fBexec\fR commands, as identified by the process identifiers (PIDs) of those subprocesses. The legal \fIoptions\fR (which may be abbreviated) are:
+This command provides a way to manage subprocesses created by the **open** and **exec** commands, as identified by the process identifiers (PIDs) of those subprocesses. The legal *options* (which may be abbreviated) are:
 
-**::tcl::process autopurge** ?\fIflag\fR?
-: Automatic purge facility. If \fIflag\fR is specified as a boolean value then it activates or deactivate autopurge. In all cases it returns the current status as a boolean value. When autopurge is active, \fBTcl_ReapDetachedProcs\fR is called each time the \fBexec\fR command is executed or a pipe channel created by \fBopen\fR is closed. When autopurge is inactive, \fB::tcl::process\fR purge must be called explicitly. By default autopurge is active.
+**::tcl::process autopurge** ?*flag*?
+: Automatic purge facility. If *flag* is specified as a boolean value then it activates or deactivate autopurge. In all cases it returns the current status as a boolean value. When autopurge is active, **Tcl_ReapDetachedProcs** is called each time the **exec** command is executed or a pipe channel created by **open** is closed. When autopurge is inactive, **::tcl::process** purge must be called explicitly. By default autopurge is active.
 
 **::tcl::process list**
 : Returns the list of subprocess PIDs. This includes all currently executing subprocesses and all terminated subprocesses that have not yet had their corresponding process table entries purged.
 
-**::tcl::process purge** ?\fIpids\fR?
-: Cleans up all data associated with terminated subprocesses. If \fIpids\fR is specified as a list of PIDs then the command only cleans up data for the matching subprocesses if they exist. If a process listed is still active, this command does nothing to that process. Any PID that does not correspond to a subprocess is ignored.
+**::tcl::process purge** ?*pids*?
+: Cleans up all data associated with terminated subprocesses. If *pids* is specified as a list of PIDs then the command only cleans up data for the matching subprocesses if they exist. If a process listed is still active, this command does nothing to that process. Any PID that does not correspond to a subprocess is ignored.
 
-**::tcl::process status** ?\fIswitches\fR? ?\fIpids\fR?
-: Returns a dictionary mapping subprocess PIDs to their respective status. If \fIpids\fR is specified as a list of PIDs then the command only returns the status of the matching subprocesses if they exist. Any PID that does not correspond to a subprocess is ignored. For active processes, the status is an empty value. For terminated processes, the status is a list with the following format: "**{***code* ?\fImsg errorCode\fR?\fB}\fR", where:
+**::tcl::process status** ?*switches*? ?*pids*?
+: Returns a dictionary mapping subprocess PIDs to their respective status. If *pids* is specified as a list of PIDs then the command only returns the status of the matching subprocesses if they exist. Any PID that does not correspond to a subprocess is ignored. For active processes, the status is an empty value. For terminated processes, the status is a list with the following format: "**{***code* ?*msg errorCode*?**}**", where:
 
 *code*
-: is a standard Tcl return code, i.e., \fB0\fR for TCL_OK and \fB1\fR for TCL_ERROR,
+: is a standard Tcl return code, i.e., **0** for TCL_OK and **1** for TCL_ERROR,
 
 *msg*
 : is the human-readable error message,
 
 *errorCode*
-: uses the same format as the \fBerrorCode\fR global variable
+: uses the same format as the **errorCode** global variable
 
-    Note that \fBmsg\fR and \fBerrorCode\fR are only present for abnormally terminated processes (i.e. those where the \fIcode\fR is nonzero). Under the hood this command calls \fBTcl_WaitPid\fR with the \fBWNOHANG\fR flag set for non-blocking behavior, unless the \fB-wait\fR switch is set (see below).
-    Additionally, \fB::tcl::process status\fR accepts the following switches:
+    Note that **msg** and **errorCode** are only present for abnormally terminated processes (i.e. those where the *code* is nonzero). Under the hood this command calls **Tcl_WaitPid** with the **WNOHANG** flag set for non-blocking behavior, unless the **-wait** switch is set (see below).
+    Additionally, **::tcl::process status** accepts the following switches:
 
 **-wait**
-: By default the command returns immediately (the underlying \fBTcl_WaitPid\fR is called with the \fBWNOHANG\fR flag set) unless this switch is set. If \fIpids\fR is specified as a list of PIDs then the command waits until the status of the matching subprocesses are available. If \fIpids\fR was not specified, this command will wait for all known subprocesses.
+: By default the command returns immediately (the underlying **Tcl_WaitPid** is called with the **WNOHANG** flag set) unless this switch is set. If *pids* is specified as a list of PIDs then the command waits until the status of the matching subprocesses are available. If *pids* was not specified, this command will wait for all known subprocesses.
 
 **-\|-**
-: Marks the end of switches.  The argument following this one will be treated as the first \fIarg\fR even if it starts with a \fB-\fR.
+: Marks the end of switches.  The argument following this one will be treated as the first *arg* even if it starts with a **-**.
 
 
 
 # Examples
 
-These show the use of \fB::tcl::process\fR. Some of the results from \fB::tcl::process status\fR are split over multiple lines for readability.
+These show the use of **::tcl::process**. Some of the results from **::tcl::process status** are split over multiple lines for readability.
 
 ```
 ::tcl::process autopurge

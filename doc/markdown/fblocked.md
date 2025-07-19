@@ -22,5 +22,5 @@ fblocked - Test whether the last input operation exhausted all available input
 
 # Description
 
-The \fBfblocked\fR command has been superceded by the \fBchan blocked\fR command which supports the same syntax and options.
+The **fblocked** command has been superceded by the **chan blocked** command which supports the same syntax and options.
 

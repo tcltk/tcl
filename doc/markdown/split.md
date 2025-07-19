@@ -29,7 +29,7 @@ split - Split a string into a proper Tcl list
 
 # Description
 
-Returns a list created by splitting \fIstring\fR at each character that is in the \fIsplitChars\fR argument. Each element of the result list will consist of the characters from \fIstring\fR that lie between instances of the characters in \fIsplitChars\fR. Empty list elements will be generated if \fIstring\fR contains adjacent characters in \fIsplitChars\fR, or if the first or last character of \fIstring\fR is in \fIsplitChars\fR. If \fIsplitChars\fR is an empty string then each character of \fIstring\fR becomes a separate element of the result list. \fISplitChars\fR defaults to the standard white-space characters.
+Returns a list created by splitting *string* at each character that is in the *splitChars* argument. Each element of the result list will consist of the characters from *string* that lie between instances of the characters in *splitChars*. Empty list elements will be generated if *string* contains adjacent characters in *splitChars*, or if the first or last character of *string* is in *splitChars*. If *splitChars* is an empty string then each character of *string* becomes a separate element of the result list. *SplitChars* defaults to the standard white-space characters.
 
 # Examples
 
@@ -40,7 +40,7 @@ split "comp.lang.tcl" .
       \(-> comp lang tcl
 ```
 
-See how the \fBsplit\fR command splits on \fIevery\fR character in \fIsplitChars\fR, which can result in information loss if you are not careful:
+See how the **split** command splits on *every* character in *splitChars*, which can result in information loss if you are not careful:
 
 ```
 split "alpha beta gamma" "temp"

@@ -23,5 +23,5 @@ puts - Write to a channel
 
 # Description
 
-The \fBputs\fR command has been superceded by the \fBchan puts\fR command which supports the same syntax and options.
+The **puts** command has been superceded by the **chan puts** command which supports the same syntax and options.
 

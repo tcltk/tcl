@@ -44,7 +44,7 @@ llength - Count the number of elements in a list
 
 # Description
 
-Treats \fIlist\fR as a list and returns a decimal string giving the number of elements in it.
+Treats *list* as a list and returns a decimal string giving the number of elements in it.
 
 # Examples
 
