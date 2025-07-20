@@ -64,7 +64,7 @@ A *locale* is a specification string describing a user language like **de_ch** f
 
 The global locale may be changed on demand, for example by a user initiated language change or within a multi user application like a web server.
 
-::: {.info -version="TIP490"}
+::: {.info version="TIP490"}
 Object oriented programming is supported by the use of a package namespace.
 :::
 
@@ -92,7 +92,7 @@ The search may be limited by the option **-exactnamespace** to only check the cu
 
 It may also be limited by the option **-exactlocale** to only check the first prefered locale (e.g. first element returned by **::msgcat::mcpreferences** if global locale is used).
 
-::: {.info -version="TIP490"}
+::: {.info version="TIP490"}
 An explicit package namespace may be specified by the option **-namespace**. The namespace of the caller is used if not explicitly specified.
 :::
 
@@ -135,7 +135,7 @@ If the locale is set, the preference list of locales is evaluated. Locales in th
 : Without arguments, returns an ordered list of the locales preferred by the user. The list is ordered from most specific to least preference.
 
 
-::: {.info -version="TIP499"}
+::: {.info version="TIP499"}
 A set of locale preferences may be given to set the list of locale preferences. The current locale is also set, which is the first element of the locale preferences list.
 :::
 
@@ -348,7 +348,7 @@ This command may cause the load of locales.
 : With no parameters, return the package private preferences or the global preferences, if no package private locale is set. The package locale state (set or not) is not changed (in contrast to the command **::msgcat::mcpackagelocale set**).
 
 
-::: {.info -version="TIP499"}
+::: {.info version="TIP499"}
 If a set of locale preferences is given, it is set as package locale preference list. The package locale is set to the first element of the preference list. A package locale is activated, if it was not set so far.
 :::
 

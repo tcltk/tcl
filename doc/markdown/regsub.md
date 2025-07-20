@@ -104,7 +104,7 @@ set quoted [subst [string map {\n {\\u000a}} \
         [regsub -all $RE $string $substitution]]]
 ```
 
-::: {.info -version="TIP463"}
+::: {.info version="TIP463"}
 The above operation can be done using **regsub -command** instead, which is often faster. (A full pre-computed **string map** would be faster still, but the cost of computing the map for a transformation as complex as this can be quite large.)
 :::
 

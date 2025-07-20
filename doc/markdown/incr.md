@@ -33,7 +33,7 @@ Increments the value stored in the variable whose name is *varName*. The value o
 
 Starting with the Tcl 8.5 release, the variable *varName* passed to **incr** may be unset, and in that case, it will be set to the value *increment* or to the default increment value of **1**.
 
-::: {.info -version="TIP508"}
+::: {.info version="TIP508"}
 If *varName* indicate an element that does not exist of an array that has a default value set, the sum of the default value and the *increment* (or 1) will be stored in the array element.
 :::
 

@@ -46,7 +46,7 @@ Tcl_ConditionNotify, Tcl_ConditionWait, Tcl_ConditionFinalize, Tcl_GetThreadData
 
 .AP Tcl_Condition *condPtr in A condition variable, which must be associated with a mutex lock. .AP Tcl_Mutex *mutexPtr in
 
-::: {.info -version="TIP509"}
+::: {.info version="TIP509"}
 A recursive mutex lock.
 :::
 
@@ -78,7 +78,7 @@ Tcl provides **Tcl_ThreadQueueEvent** and **Tcl_ThreadAlert** for handling event
 
 A mutex is a lock that is used to serialize all threads through a piece of code by calling **Tcl_MutexLock** and **Tcl_MutexUnlock**. If one thread holds a mutex, any other thread calling **Tcl_MutexLock** will block until **Tcl_MutexUnlock** is called. A mutex can be destroyed after its use by calling **Tcl_MutexFinalize**.
 
-::: {.info -version="TIP509"}
+::: {.info version="TIP509"}
 Mutexes are reentrant: they can be locked several times from the same thread. However there must be exactly one call to **Tcl_MutexUnlock** for each call to **Tcl_MutexLock** in order for a thread to release a mutex completely.
 :::
 

@@ -183,7 +183,7 @@ The following definitions are also supported, but are not required in simple pro
 
 # Private methods
 
-::: {.info -version="TIP500"}
+::: {.info version="TIP500"}
 When a class or instance has a private method, that private method can only be invoked from within methods of that class or instance. Other callers of the object's methods *cannot* invoke private methods, it is as if the private methods do not exist. However, a private method of a class *can* be invoked from the class's methods when those methods are being used on another instance object; this means that a class can use them to coordinate behaviour between several instances of itself without interfering with how other classes (especially either subclasses or superclasses) interact. Private methods precede all mixed in classes in the method call order (as reported by **self call**).
 :::
 
@@ -240,7 +240,7 @@ The implementation of these methods is slot-dependent (and responsible for acces
 
 Note that slot instances are not expected to contain the storage for the slot they manage; that will be in or attached to the class or object that they manage. Those instances should provide their own implementations of the **Get** and **Set** methods (and optionally **Resolve**; that defaults to a do-nothing pass-through).
 
-::: {.info -version="TIP516"}
+::: {.info version="TIP516"}
 Most slot operations will initially **Resolve** their argument list, combine it with the results of the **Get** method, and then **Set** the result. Some operations omit one or both of the first two steps; omitting the third would result in an idempotent read-only operation (but the standard mechanism for reading from slots is via **info class** and **info object**).
 :::
 
@@ -299,7 +299,7 @@ inst m1              \(-> prints "red brick"
 inst m2              \(-> prints "blue brick"
 ```
 
-::: {.info -version="TIP478"}
+::: {.info version="TIP478"}
 This example shows how to create and use class variables. It is a class that counts how many instances of itself have been made.
 :::
 
@@ -375,7 +375,7 @@ $g update "emailaddress=admins"
         \(-> DB: update row ::oo::Obj125 with emailaddress=admins
 ```
 
-::: {.info -version="TIP524"}
+::: {.info version="TIP524"}
 This example shows how to make a custom definition for a class. Note that it explicitly includes delegation to the existing definition commands via **namespace path**.
 :::
 

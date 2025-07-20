@@ -53,7 +53,7 @@ The coroutine can also be deleted by destroying the command *name*, and the name
 
 At the point when *command* is called, the current namespace will be the global namespace and there will be no stack frames above it (in the sense of **upvar** and **uplevel**). However, which command to call will be determined in the namespace that the **coroutine** command was called from.
 
-::: {.info -version="TIP383"}
+::: {.info version="TIP383"}
 A suspended coroutine (i.e., one that has **yield**ed or **yieldto**-d) may have its state inspected (or modified) at that point by using **coroprobe** to run a command at the point where the coroutine is at. The command takes the name of the coroutine to run the command in, *coroName*, and the name of a command (any any arguments it requires) to immediately run at that point. The result of that command is the result of the **coroprobe** command, and the gross state of the coroutine remains the same afterwards (i.e., the coroutine is still expecting the results of a **yield** or **yieldto** as before) though variables may have been changed.
 :::
 
@@ -148,7 +148,7 @@ coroutine j1 juggler Larry [
         coroutine j3 juggler Moe j1]] "Nyuck!Nyuck!Nyuck!"
 ```
 
-::: {.info -version="TIP383"}
+::: {.info version="TIP383"}
 This example shows a simple coroutine that collects non-empty values and returns a list of them when not given an argument. It also shows how we can look inside the coroutine to find out what it is doing, and how we can modify the input on a one-off basis.
 :::
 

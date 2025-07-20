@@ -55,7 +55,7 @@ Objects are typed entities that have a set of operations ("methods") associated 
 
 Every object has its own command and namespace associated with it. The command may be retrieved using the **Tcl_GetObjectCommand** function, the name of the object (and hence the name of the command) with **Tcl_GetObjectName**, and the namespace may be retrieved using the **Tcl_GetObjectNamespace** function. Note that the Tcl_Obj reference returned by **Tcl_GetObjectName** is a shared reference. You can also get whether the object has been marked for deletion with **Tcl_ObjectDeleted** (it returns true if deletion of the object has begun); this can be useful during the processing of methods.
 
-::: {.info -version="TIP605"}
+::: {.info version="TIP605"}
 The class of an object can be retrieved with **Tcl_GetClassOfObject**, and the name of the class of an object with **Tcl_GetObjectClassName**; note that these two *may* return NULL during deletion of an object (this is transient, and only occurs when the object is a long way through being deleted).
 :::
 

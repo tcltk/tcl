@@ -105,7 +105,7 @@ In the second form, *access* consists of a list of any of the following flags, m
 
 If a new file is created as part of opening it, *permissions* (an integer) is used to set the permissions for the new file in conjunction with the process's file mode creation mask. *Permissions* defaults to 0666.
 
-::: {.info -version="TIP603"}
+::: {.info version="TIP603"}
 When the file opened is an ordinary disk file, the **chan configure** and **fconfigure** commands can be used to query this additional configuration option:
 :::
 
@@ -270,7 +270,7 @@ See the **PORTABILITY ISSUES** section of the **exec** command for additional in
 
 # Console channels
 
-::: {.info -version="TIP160"}
+::: {.info version="TIP160"}
 On Windows only, console channels (usually **stdin** or **stdout**) support the following options:
 :::
 
@@ -330,7 +330,7 @@ set binData [read $fl]
 close $fl
 ```
 
-::: {.info -version="TIP160"}
+::: {.info version="TIP160"}
 Read a password securely from the user (assuming that the script is being run interactively):
 :::
 

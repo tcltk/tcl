@@ -50,7 +50,7 @@ evaluates to 14.2. Expressions differ from C expressions in the way that operand
 
 When the result of expression is an integer, it is in decimal form, and when the result is a floating-point number, it is in the form produced by the **%g** format specifier of **format**.
 
-::: {.info -version="TIP582"}
+::: {.info version="TIP582"}
 At any point in the expression except within double quotes or braces, **#** is the beginning of a comment, which lasts to the end of the line or the end of the expression, whichever comes first.
 :::
 
@@ -290,7 +290,7 @@ A string comparison whose result is 1:
 expr {"0y" > "0x12"}
 ```
 
-::: {.info -version="TIP461"}
+::: {.info version="TIP461"}
 A forced string comparison whose result is 0:
 :::
 

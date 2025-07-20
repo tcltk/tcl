@@ -108,7 +108,7 @@ namespace eval ::ndoc {
 		| Strong       |               | text with strong emphasis, typically rendered as bold |
 		| Quoted       | -type         | text enclosed in quotes of a specific type (-type single|double)
 		| Link         | -target       | an internal link, within the document (-target #<anchor>) or to another manual page (-target <page>)
-		| Span         | <class>       | a span element with a custom class attribute such as '.cmd', '.sub' etc. used for Tcl command syntax elements
+		| Span         | <class>  -vs  | a span element with a custom class attribute such as '.cmd', '.sub' etc. used for Tcl command syntax elements
 		| Div          | <class>       | a div element with a custom class attribute (currently only '.synopsis') used for grouping lines of Tcl command syntax
 	
 	   
@@ -925,7 +925,7 @@ proc ::ndoc::parseBlock {parent manContent} {
 				if {$blockType ne ""} {set doCloseBlock 1; continue}
 				set blockType Paragraph
 				lassign $line - info
-				set blockAttributes [list -version $info]
+				set blockAttributes [list version $info]
 				set manContent [lrange $manContent 1 end]
 			}
 			default {

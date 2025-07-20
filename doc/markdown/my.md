@@ -35,19 +35,19 @@ my, myclass - invoke any method of current object or its class
 
 The **my** command is used to allow methods of objects to invoke methods of the object (or its class),
 
-::: {.info -version="TIP478"}
+::: {.info version="TIP478"}
 and the **myclass** command is used to allow methods of objects to invoke methods of the current class of the object *as an object*.
 :::
 
 In particular, the set of valid values for *methodName* is the set of all methods supported by an object and its superclasses, including those that are not exported
 
-::: {.info -version="TIP500"}
+::: {.info version="TIP500"}
 and private methods of the object or class when used within another method defined by that object or class.
 :::
 
 The object upon which the method is invoked via **my** is the one that owns the namespace that the **my** command is contained in initially (**NB:** the link remains if the command is renamed), which is the currently invoked object by default.
 
-::: {.info -version="TIP478"}
+::: {.info version="TIP478"}
 Similarly, the object on which the method is invoked via **myclass** is the object that is the current class of the object that owns the namespace that the **myclass** command is contained in initially. As with **my**, the link remains even if the command is renamed into another namespace, and defaults to being the manufacturing class of the current object.
 :::
 
@@ -91,7 +91,7 @@ trace add variable xyz write [$o makeCallback]
 set xyz "called"     \(-> prints "callback: xyz {} write"
 ```
 
-::: {.info -version="TIP478"}
+::: {.info version="TIP478"}
 This example shows how to access a private method of a class from an instance of that class. (See the **classmethod** declaration in **oo::define** for a higher level interface for doing this.)
 :::
 

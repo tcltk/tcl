@@ -35,7 +35,7 @@ The tcl/doc directory contains 248 manual pages which are divided as follows:
 section | number of documents | initial conversion | final conversion
 --------|---------------------|--------------------|-----------------
 1       | 1                   | 1                  | 0
-3       | 108                 | 25                 | 0
+3       | 108                 | 80                 | 0
 n       | 139                 | 139                | 0
 
 
@@ -92,3 +92,10 @@ List of nroff commands/macros currently implemented (partly not a complete imple
 
 
 AST element "Paragraph" is not yet treated properly (the content field of the AST is not yet a list of Inline AST elements).
+
+# Manual work to be done after final conversion
+
+After the final round of conversion from nroff to Markdown, some manual work needs to be done that is not covered by the conversion script
+
+- find all instances of .VS/.VE macros to add the 'version="TIPxxx"' attribute to the corresponding elements (e.g. they are not caught inside the synopsis section)
+- ...

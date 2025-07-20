@@ -47,7 +47,7 @@ lappend - Append list elements onto a variable
 
 This command treats the variable given by *varName* as a list and appends each of the *value* arguments to that list as a separate element, with spaces between elements. If *varName* does not exist, it is created as a list with elements given by the *value* arguments.
 
-::: {.info -version="TIP508"}
+::: {.info version="TIP508"}
 If *varName* indicate an element that does not exist of an array that has a default value set, list that is comprised of the default value with all the *value* arguments appended as elements will be stored in the array element.
 :::
 

@@ -29,7 +29,7 @@ append - Append to variable
 
 Append all of the *value* arguments to the current value of variable *varName*.  If *varName* does not exist, it is given a value equal to the concatenation of all the *value* arguments.
 
-::: {.info -version="TIP508"}
+::: {.info version="TIP508"}
 If *varName* indicate an element that does not exist of an array that has a default value set, the concatenation of the default value and all the *value* arguments will be stored in the array element.
 :::
 

@@ -41,7 +41,7 @@ Performs one of several encoding related operations, depending on *option*.  The
 : Converts *data*, which should be in binary string encoded as per *encoding*, to a Tcl string. If *encoding* is not specified, the current system encoding is used.
 
 
-::: {.info -version="TIP607, TIP656"}
+::: {.info version="TIP607, TIP656"}
 The **-profile** option determines the command behavior in the presence of conversion errors. See the **PROFILES** section below for details. Any premature termination of processing due to errors is reported through an exception if the **-failindex** option is not specified.
 :::
 
@@ -54,7 +54,7 @@ If the **-failindex** is specified, instead of an exception being raised on prem
 : Convert *string* to the specified *encoding*. The result is a Tcl binary string that contains the sequence of bytes representing the converted string in the specified encoding. If *encoding* is not specified, the current system encoding is used.
 
 
-::: {.info -version="TIP607, TIP656"}
+::: {.info version="TIP607, TIP656"}
 The **-profile** and **-failindex** options have the same effect as described for the **encoding convertfrom** command.
 :::
 
@@ -76,7 +76,7 @@ The **-profile** and **-failindex** options have the same effect as described fo
 
 # Profiles
 
-::: {.info -version="TIP656"}
+::: {.info version="TIP656"}
 Operations involving encoding transforms may encounter several types of errors such as invalid sequences in the source data, characters that cannot be encoded in the target encoding and so on. A *profile* prescribes the strategy for dealing with such errors in one of two ways:
 :::
 
