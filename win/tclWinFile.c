@@ -915,19 +915,23 @@ TclpMatchInDirectory(
 
 	    int len;
 	    DWORD attr;
-	    const char *str = Tcl_GetStringFromObj(norm,&len);
+	    const char *str;
 
+	    if (norm != pathPtr) { Tcl_IncrRefCount(norm); }
+	    str = TclGetStringFromObj(norm, &len);
 	    native = (const TCHAR *) Tcl_FSGetNativePath(pathPtr);
 
 	    if (tclWinProcs->getFileAttributesExProc == NULL) {
 		attr = (*tclWinProcs->getFileAttributesProc)(native);
 		if (attr == 0xffffffff) {
+		    if (norm != pathPtr) { Tcl_DecrRefCount(norm); }
 		    return TCL_OK;
 		}
 	    } else {
 		WIN32_FILE_ATTRIBUTE_DATA data;
 		if ((*tclWinProcs->getFileAttributesExProc)(native,
 			GetFileExInfoStandard, &data) != TRUE) {
+		    if (norm != pathPtr) { Tcl_DecrRefCount(norm); }
 		    return TCL_OK;
 		}
 		attr = data.dwFileAttributes;
@@ -936,6 +940,7 @@ TclpMatchInDirectory(
 	    if (NativeMatchType(WinIsDrive(str,len), attr, native, types)) {
 		Tcl_ListObjAppendElement(interp, resultPtr, pathPtr);
 	    }
+	    if (norm != pathPtr) { Tcl_DecrRefCount(norm); }
 	}
 	return TCL_OK;
     } else {
@@ -961,7 +966,8 @@ TclpMatchInDirectory(
 	if (fileNamePtr == NULL) {
 	    return TCL_ERROR;
 	}
-	Tcl_IncrRefCount(fileNamePtr); /* ensure it'd be alive, while used. */
+	/* Ensure it'd be alive, while used. */
+	if (fileNamePtr != pathPtr) { Tcl_IncrRefCount(fileNamePtr); }
 
 	/*
 	 * Verify that the specified path exists and is actually a directory.
@@ -969,13 +975,13 @@ TclpMatchInDirectory(
 
 	native = Tcl_FSGetNativePath(pathPtr);
 	if (native == NULL) {
-	    Tcl_DecrRefCount(fileNamePtr);
+	    if (fileNamePtr != pathPtr) { Tcl_DecrRefCount(fileNamePtr); }
 	    return TCL_OK;
 	}
 	attr = (*tclWinProcs->getFileAttributesProc)(native);
 
 	if ((attr == 0xffffffff) || ((attr & FILE_ATTRIBUTE_DIRECTORY) == 0)) {
-	    Tcl_DecrRefCount(fileNamePtr);
+	    if (fileNamePtr != pathPtr) { Tcl_DecrRefCount(fileNamePtr); }
 	    return TCL_OK;
 	}
 
@@ -993,7 +999,7 @@ TclpMatchInDirectory(
 	    Tcl_DStringAppend(&dsOrig, "/", 1);
 	    dirLength++;
 	}
-	Tcl_DecrRefCount(fileNamePtr);
+	if (fileNamePtr != pathPtr) { Tcl_DecrRefCount(fileNamePtr); }
 	dirName = Tcl_DStringValue(&dsOrig);
 
 	/*
@@ -2487,18 +2493,21 @@ TclpObjLink(
 	int res;
 	TCHAR *LinkTarget;
 	TCHAR *LinkSource = (TCHAR *) Tcl_FSGetNativePath(pathPtr);
-	Tcl_Obj *normalizedToPtr = Tcl_FSGetNormalizedPath(NULL, toPtr);
+	Tcl_Obj *normToPtr = Tcl_FSGetNormalizedPath(NULL, toPtr);
 
-	if (normalizedToPtr == NULL) {
+	if (normToPtr == NULL) {
 	    return NULL;
 	}
+	if (normToPtr != toPtr) { Tcl_IncrRefCount(normToPtr); }
 
-	LinkTarget = (TCHAR *) Tcl_FSGetNativePath(normalizedToPtr);
+	LinkTarget = (TCHAR *) Tcl_FSGetNativePath(normToPtr);
 
 	if (LinkSource == NULL || LinkTarget == NULL) {
+	    if (normToPtr != toPtr) { Tcl_DecrRefCount(normToPtr); }
 	    return NULL;
 	}
 	res = WinLink(LinkSource, LinkTarget, linkAction);
+	if (normToPtr != toPtr) { Tcl_DecrRefCount(normToPtr); }
 	if (res == 0) {
 	    return toPtr;
 	} else {
