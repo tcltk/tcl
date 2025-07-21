@@ -2981,6 +2981,7 @@ Tcl_FSChdir(
 	    Tcl_SetErrno(ENOENT);
 	    return -1;
 	}
+	if (normDirName != pathPtr) { Tcl_IncrRefCount(normDirName); }
 
 	if (fsPtr == &tclNativeFilesystem) {
 	    /*
@@ -3022,6 +3023,7 @@ Tcl_FSChdir(
 	if (oldFsPtr != NULL && fsPtr != oldFsPtr) {
 	    Tcl_FSMountsChanged(NULL);
 	}
+	if (normDirName != pathPtr) { Tcl_DecrRefCount(normDirName); }
     }
 
     return retVal;
