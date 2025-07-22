@@ -5779,7 +5779,7 @@ TclUnicodeIsCmd(
 	chcomp = Tcl_UniCharIsSpace;
 	break;
     case STR_IS_UPPER:
-	chcomp = Tcl_UniCharIsUpper;
+	chcomp = utf8proc_isupper;
 	break;
     case STR_IS_WORD:
 	chcomp = Tcl_UniCharIsWordChar;

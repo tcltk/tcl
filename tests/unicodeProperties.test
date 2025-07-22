@@ -25,6 +25,21 @@ namespace eval unicode::test {
 		}
 		set mismatches
 	} -constraints ucdproperties -result {Lower case mismatches:}
+
+	test string-is-upper-ucd "string is upper vs UCD" -setup {
+	 	set upperChars [getUppercaseChars]
+	 } -cleanup {
+	    unset -nocomplain upperChars
+	 } -body {
+		set mismatches {Upper case mismatches:}
+		foreach codePoint [lseq 0 $::tcltests::ucd::maxCodepoint] {
+			set ch [format %c $codePoint]
+			if {[dict exists $upperChars $ch] != [string is upper $ch]} {
+				append mismatches " " U+[format %x $codePoint]
+			}
+		}
+		set mismatches
+	} -constraints ucdproperties -result {Upper case mismatches:}
 }
 
 ::tcltest::cleanupTests
