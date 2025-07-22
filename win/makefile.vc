@@ -476,7 +476,7 @@ LIBTCLVFS = $(OUT_DIR)\$(LIBTCLVFSSUBDIR)
 # Additional include and C macro definitions for the implicit rules
 # defined in rules.vc
 PRJ_INCLUDES	= -I"$(TOMMATHDIR)"
-PRJ_DEFINES	= /DMP_PREC=4 /Dinline=__inline /D_CRT_SECURE_NO_DEPRECATE /D_CRT_NONSTDC_NO_DEPRECATE /DMP_FIXED_CUTOFFS
+PRJ_DEFINES	= /DMP_PREC=4 /Dinline=__inline /D_CRT_SECURE_NO_DEPRECATE /D_CRT_NONSTDC_NO_DEPRECATE /DMP_FIXED_CUTOFFS /DUTF8PROC_STATIC
 
 !if $(STATIC_BUILD)
 PRJ_DEFINES = $(PRJ_DEFINES) /DTCL_WITH_INTERNAL_ZLIB
@@ -1028,7 +1028,7 @@ $(TCLOBJS)
 #---------------------------------------------------------------------
 
 {$(UTF8PROCDIR)}.c{$(TMP_DIR)}.obj::
-	$(cc32) $(pkgcflags) -DUTF8PROC_EXPORTS -Fo$(TMP_DIR)\ @<<
+	$(cc32) $(pkgcflags) -Fo$(TMP_DIR)\ @<<
 $<
 <<
 
