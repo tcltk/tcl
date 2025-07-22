@@ -407,19 +407,39 @@ namespace eval utf8proc::test {
     }
 
     foreach normForm {nfc nfd nfkc nfkd} {
+        test Tcl_UtfToNormalizedDString-$normForm-nulchar-$profile \
+            "Tcl_UtfToNormalizedDString for $normForm passed nul character" \
+            -body {
+                testutfnormalize [teststringbytes \0] $normEnums($normForm) $profileFlags($profile)
+            } -result \xC0\x80
+    }
+
+    # Tcl_UtfToNormalizedDString error cases
+
+    foreach normForm {nfc nfd nfkc nfkd} {
         test Tcl_UtfToNormalizedDString-$normForm-tcl8 \
-            "Tcl_UtfToNormalizedDString for tcl8" \
+            "Tcl_UtfToNormalizedDString for $normForm profile tcl8" \
             -body {
                 testutfnormalize abc $normEnums($normForm) $profileFlags(tcl8)
             } -result {Invalid value 16777216 passed for encoding profile.} -returnCodes error
+
+        if {0} {
+            # TODO - currently, Tcl "fixes up" any internal invalid UTF-8 so
+            # no way to test normalization of invalid UTF-8. Enable this test
+            # once this "fixing up" by Tcl is corrected (see Bug [b69e00ecf6])
+            test Tcl_UtfToNormalizedDString-$normForm-invalid-utf8 \
+                "Tcl_UtfToNormalizedDString for $normForm invalid utf8 profile strict" \
+                -body {
+                    testutfnormalize [binary decode hex EFBF7F] $normEnums($normForm) $profileFlags(strict)
+                } -result {} -returnCodes error
+        }
     }
+
     test Tcl_UtfToNormalizedDString-invalid-normalization-form \
             "Tcl_UtfToNormalizedDString invalid value for normalization form" \
             -body {
                 testutfnormalize abc 4 $profileFlags(strict)
             } -result {Invalid value 4 passed for normalization form.} -returnCodes error
-
-    # TODO - truncated utf-8 string
 
 }
 
