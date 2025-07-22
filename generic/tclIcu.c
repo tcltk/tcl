@@ -16,6 +16,7 @@
 
 typedef uint16_t UCharx;
 typedef uint32_t UChar32x;
+typedef int8_t   UBoolX;
 
 /*
  * Runtime linking of libicu.
@@ -141,6 +142,12 @@ typedef UNormalizer2 *(*fn_unorm2_getNFKDInstance)(UErrorCodex *);
 typedef int32_t (*fn_unorm2_normalize)(const UNormalizer2 *, const UCharx *,
 	int32_t, UCharx *, int32_t, UErrorCodex *);
 
+typedef UBoolX (*fn_u_islower)(UChar32x c);
+typedef UBoolX (*fn_u_isupper)(UChar32x c);
+typedef UBoolX (*fn_u_isULowercase)(UChar32x c);
+typedef UBoolX (*fn_u_isUUppercase)(UChar32x c);
+
+
 #define FIELD(name) fn_ ## name _ ## name
 
 static struct {
@@ -196,6 +203,11 @@ static struct {
     FIELD(unorm2_getNFKCInstance);
     FIELD(unorm2_getNFKDInstance);
     FIELD(unorm2_normalize);
+
+    FIELD(u_islower);
+    FIELD(u_isupper);
+    FIELD(u_isULowercase);
+    FIELD(u_isUUppercase);
 } icu_fns = {
     0,    {NULL, NULL}, /* Reference count, library handles */
     NULL, NULL, NULL, NULL, NULL, NULL,                     /* u_* */
@@ -205,6 +217,7 @@ static struct {
     NULL, NULL, NULL, NULL, NULL, NULL, NULL,               /* ucsdet* */
     NULL, NULL, NULL,                                       /* uenum_* */
     NULL, NULL, NULL, NULL, NULL,                           /* unorm2_* */
+    NULL, NULL, NULL, NULL,                                 /* u_is* */
 };
 
 #define u_cleanup        icu_fns._u_cleanup
@@ -252,6 +265,11 @@ static struct {
 #define unorm2_getNFKCInstance icu_fns._unorm2_getNFKCInstance
 #define unorm2_getNFKDInstance icu_fns._unorm2_getNFKDInstance
 #define unorm2_normalize       icu_fns._unorm2_normalize
+
+#define u_islower       icu_fns._u_islower
+#define u_isupper       icu_fns._u_isupper
+#define u_isULowercase  icu_fns._u_isULowercase
+#define u_isUUppercase  icu_fns._u_isUUppercase
 
 TCL_DECLARE_MUTEX(icu_mutex);
 
@@ -580,6 +598,89 @@ IcuDetectObjCmd(
     }
 
     return DetectEncoding(interp, objv[1], all);
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * IcuIsObjCmd --
+ *
+ *	Checks if all characters in the given string belong to a specific class
+ *
+ * Results:
+ *	TCL_OK    - Success.
+ *	TCL_ERROR - Error.
+ *
+ * Side effects:
+ *	Interpreter result holds 1 if all characters in the string belong to
+ *	the specified class, 0 otherwise.
+ *
+ *------------------------------------------------------------------------
+ */
+static int
+IcuIsObjCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 1 , objv, "CLASS STRING");
+	return TCL_ERROR;
+    }
+    static const char *const isClasses[] = {
+	"alnum",	"alpha",	"ascii",	"control",
+	"boolean",	"dict",		"digit",	"double",
+	"entier",	"false",	"graph",	"integer",
+	"list",		"lower",	"print",	"punct",
+	"space",	"true",		"upper",
+	"wideinteger", "wordchar",	"xdigit",	NULL
+    };
+    enum isClassesEnum {
+	STR_IS_ALNUM,	STR_IS_ALPHA,	STR_IS_ASCII,	STR_IS_CONTROL,
+	STR_IS_BOOL,	STR_IS_DICT,	STR_IS_DIGIT,	STR_IS_DOUBLE,
+	STR_IS_ENTIER,	STR_IS_FALSE,	STR_IS_GRAPH,	STR_IS_INT,
+	STR_IS_LIST,	STR_IS_LOWER,	STR_IS_PRINT,	STR_IS_PUNCT,
+	STR_IS_SPACE,	STR_IS_TRUE,	STR_IS_UPPER,
+	STR_IS_WIDE,	STR_IS_WORD,	STR_IS_XDIGIT
+    } index;
+
+    if (Tcl_GetIndexFromObj(interp, objv[1], isClasses, "class", 0,
+	    &index) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    UBoolX (*classifierFn)(UChar32x c);
+    switch (index) {
+    case STR_IS_LOWER:
+	classifierFn = u_isULowercase;
+	break;
+    case STR_IS_UPPER:
+	classifierFn = u_isUUppercase;
+	break;
+    default:
+	Tcl_SetObjResult(interp,
+	    Tcl_ObjPrintf("Unsupported class %s", Tcl_GetString(objv[1])));
+	return TCL_ERROR;
+    }
+    if (classifierFn == NULL) {
+	return FunctionNotAvailableError(interp);
+    }
+
+    Tcl_Size length1, length2;
+    const char *string = TclGetStringFromObj(objv[2], &length1);
+    const char *end = string + length1;
+    int result = 1;
+    for (; string < end; string += length2) {
+	int ucs4;
+	length2 = TclUtfToUniChar(string, &ucs4);
+	if (!classifierFn(ucs4)) {
+	    result = 0;
+	    break;
+	}
+    }
+    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(result));
+    return TCL_OK;
 }
 
 /*
@@ -1451,6 +1552,12 @@ TclIcuInit(
 	    ICUUC_SYM(unorm2_getNFKCInstance);
 	    ICUUC_SYM(unorm2_getNFKDInstance);
 	    ICUUC_SYM(unorm2_normalize);
+
+	    ICUUC_SYM(u_islower);
+	    ICUUC_SYM(u_isupper);
+	    ICUUC_SYM(u_isULowercase);
+	    ICUUC_SYM(u_isUUppercase);
+
 #undef ICUUC_SYM
 	}
 
@@ -1500,6 +1607,8 @@ TclIcuInit(
 		IcuConverterAliasesObjCmd, 0, TclIcuCleanup);
 	Tcl_CreateObjCommand(interp, "::tcl::unsupported::icu::normalize",
 		IcuNormalizeObjCmd, 0, TclIcuCleanup);
+	Tcl_CreateObjCommand(interp, "::tcl::unsupported::icu::is",
+		IcuIsObjCmd, 0, TclIcuCleanup);
     }
 
     Tcl_MutexUnlock(&icu_mutex);

@@ -1,0 +1,32 @@
+# See the file LICENSE for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import ::tcltest::*
+}
+
+source [file join [file dirname [info script]] ucdUtils.tcl]
+
+namespace eval unicode::test {
+	namespace path ::tcltests::ucd
+
+	test string-is-lower-ucd "string is lower vs UCD" -setup {
+	 	set lowerChars [getLowercaseChars]
+	 } -cleanup {
+	    unset -nocomplain lowerChars
+	 } -body {
+		set mismatches {Lower case mismatches:}
+		foreach codePoint [lseq 0 $::tcltests::ucd::maxCodepoint] {
+			set ch [format %c $codePoint]
+			if {[dict exists $lowerChars $ch] != [string is lower $ch]} {
+				append mismatches " " U+[format %x $codePoint]
+			}
+		}
+		set mismatches
+	} -constraints ucdproperties -result {Lower case mismatches:}
+}
+
+::tcltest::cleanupTests
+namespace delete unicode::test
+return

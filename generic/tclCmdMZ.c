@@ -21,6 +21,7 @@
 #include "tclRegexp.h"
 #include "tclStringTrim.h"
 #include "tclTomMath.h"
+#include "../utf8proc/utf8proc.h"
 
 static inline Tcl_Obj *	During(Tcl_Interp *interp, int resultCode,
 			    Tcl_Obj *oldOptions, Tcl_Obj *errorInfo);
@@ -5405,6 +5406,428 @@ TclListLines(
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
+ * TclUnicodeIsCmd --
+ *
+ *	This procedure is invoked to process the "unicode is" Tcl command. See
+ *	the user documentation for details on what it does. Note that this
+ *	command only functions correctly on properly formed Tcl UTF strings.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TclUnicodeIsCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    const char *string1, *end, *stop;
+    int (*chcomp)(int) = NULL;	/* The UniChar comparison function. */
+    int i, result = 1, strict = 0;
+    Tcl_Size failat = 0, length1, length2, length3;
+    Tcl_Obj *objPtr, *failVarObj = NULL;
+    Tcl_WideInt w;
+
+    static const char *const isClasses[] = {
+	"alnum",	"alpha",	"ascii",	"control",
+	"boolean",	"dict",		"digit",	"double",
+	"entier",	"false",	"graph",	"integer",
+	"list",		"lower",	"print",	"punct",
+	"space",	"true",		"upper",
+	"wideinteger", "wordchar",	"xdigit",	NULL
+    };
+    enum isClassesEnum {
+	STR_IS_ALNUM,	STR_IS_ALPHA,	STR_IS_ASCII,	STR_IS_CONTROL,
+	STR_IS_BOOL,	STR_IS_DICT,	STR_IS_DIGIT,	STR_IS_DOUBLE,
+	STR_IS_ENTIER,	STR_IS_FALSE,	STR_IS_GRAPH,	STR_IS_INT,
+	STR_IS_LIST,	STR_IS_LOWER,	STR_IS_PRINT,	STR_IS_PUNCT,
+	STR_IS_SPACE,	STR_IS_TRUE,	STR_IS_UPPER,
+	STR_IS_WIDE,	STR_IS_WORD,	STR_IS_XDIGIT
+    } index;
+    static const char *const isOptions[] = {
+	"-strict", "-failindex", NULL
+    };
+    enum isOptionsEnum {
+	OPT_STRICT, OPT_FAILIDX
+    } idx2;
+
+    if (objc < 3 || objc > 6) {
+	Tcl_WrongNumArgs(interp, 1, objv,
+		"class ?-strict? ?-failindex var? str");
+	return TCL_ERROR;
+    }
+    if (Tcl_GetIndexFromObj(interp, objv[1], isClasses, "class", 0,
+	    &index) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    if (objc != 3) {
+	for (i = 2; i < objc-1; i++) {
+	    if (Tcl_GetIndexFromObj(interp, objv[i], isOptions, "option", 0,
+		    &idx2) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    switch (idx2) {
+	    case OPT_STRICT:
+		strict = 1;
+		break;
+	    case OPT_FAILIDX:
+		if (i+1 >= objc-1) {
+		    Tcl_WrongNumArgs(interp, 2, objv,
+			    "?-strict? ?-failindex var? str");
+		    return TCL_ERROR;
+		}
+		failVarObj = objv[++i];
+		break;
+	    default:
+		TCL_UNREACHABLE();
+	    }
+	}
+    }
+
+    /*
+     * We get the objPtr so that we can short-cut for some classes by checking
+     * the object type (int and double), but we need the string otherwise,
+     * because we don't want any conversion of type occurring (as, for example,
+     * Tcl_Get*FromObj would do).
+     */
+
+    objPtr = objv[objc-1];
+
+    /*
+     * When entering here, result == 1 and failat == 0.
+     */
+
+    switch (index) {
+    case STR_IS_ALNUM:
+	chcomp = Tcl_UniCharIsAlnum;
+	break;
+    case STR_IS_ALPHA:
+	chcomp = Tcl_UniCharIsAlpha;
+	break;
+    case STR_IS_ASCII:
+	chcomp = UniCharIsAscii;
+	break;
+    case STR_IS_BOOL:
+    case STR_IS_TRUE:
+    case STR_IS_FALSE:
+	if (!TclHasInternalRep(objPtr, &tclBooleanType)
+		&& (TCL_OK != TclSetBooleanFromAny(NULL, objPtr))) {
+	    if (strict) {
+		result = 0;
+	    } else {
+		string1 = TclGetStringFromObj(objPtr, &length1);
+		result = length1 == 0;
+	    }
+	} else if ((objPtr->internalRep.wideValue != 0)
+		? (index == STR_IS_FALSE) : (index == STR_IS_TRUE)) {
+	    result = 0;
+	}
+	break;
+    case STR_IS_CONTROL:
+	chcomp = Tcl_UniCharIsControl;
+	break;
+    case STR_IS_DICT: {
+	int dresult;
+	Tcl_Size dsize;
+
+	dresult = Tcl_DictObjSize(interp, objPtr, &dsize);
+	Tcl_ResetResult(interp);
+	result = (dresult == TCL_OK) ? 1 : 0;
+	if (dresult != TCL_OK && failVarObj != NULL) {
+	    /*
+	     * Need to figure out where the list parsing failed, which is
+	     * fairly expensive. This is adapted from the core of
+	     * SetDictFromAny().
+	     */
+
+	    const char *elemStart, *nextElem;
+	    Tcl_Size lenRemain, elemSize;
+	    const char *p;
+
+	    string1 = TclGetStringFromObj(objPtr, &length1);
+	    end = string1 + length1;
+	    failat = -1;
+	    for (p=string1, lenRemain=length1; lenRemain > 0;
+		    p=nextElem, lenRemain=end-nextElem) {
+		if (TCL_ERROR == TclFindElement(NULL, p, lenRemain,
+			&elemStart, &nextElem, &elemSize, NULL)) {
+		    Tcl_Obj *tmpStr;
+
+		    /*
+		     * This is the simplest way of getting the number of
+		     * characters parsed. Note that this is not the same as
+		     * the number of bytes when parsing strings with non-ASCII
+		     * characters in them.
+		     *
+		     * Skip leading spaces first. This is only really an issue
+		     * if it is the first "element" that has the failure.
+		     */
+
+		    while (TclIsSpaceProc(*p)) {
+			p++;
+		    }
+		    TclNewStringObj(tmpStr, string1, p-string1);
+		    failat = Tcl_GetCharLength(tmpStr);
+		    TclDecrRefCount(tmpStr);
+		    break;
+		}
+	    }
+	}
+	break;
+    }
+    case STR_IS_DIGIT:
+	chcomp = Tcl_UniCharIsDigit;
+	break;
+    case STR_IS_DOUBLE: {
+	if (TclHasInternalRep(objPtr, &tclDoubleType) ||
+		TclHasInternalRep(objPtr, &tclIntType) ||
+		TclHasInternalRep(objPtr, &tclBignumType)) {
+	    break;
+	}
+	string1 = TclGetStringFromObj(objPtr, &length1);
+	if (length1 == 0) {
+	    if (strict) {
+		result = 0;
+	    }
+	    goto str_is_done;
+	}
+	end = string1 + length1;
+	if (TclParseNumber(NULL, objPtr, NULL, NULL, TCL_INDEX_NONE,
+		(const char **) &stop, 0) != TCL_OK) {
+	    result = 0;
+	    failat = 0;
+	} else {
+	    failat = stop - string1;
+	    if (stop < end) {
+		result = 0;
+		TclFreeInternalRep(objPtr);
+	    }
+	}
+	break;
+    }
+    case STR_IS_GRAPH:
+	chcomp = Tcl_UniCharIsGraph;
+	break;
+    case STR_IS_INT:
+    case STR_IS_ENTIER:
+	if (TclHasInternalRep(objPtr, &tclIntType) ||
+		TclHasInternalRep(objPtr, &tclBignumType)) {
+	    break;
+	}
+	string1 = TclGetStringFromObj(objPtr, &length1);
+	if (length1 == 0) {
+	    if (strict) {
+		result = 0;
+	    }
+	    goto str_is_done;
+	}
+	end = string1 + length1;
+	if (TclParseNumber(NULL, objPtr, NULL, NULL, TCL_INDEX_NONE,
+		(const char **) &stop, TCL_PARSE_INTEGER_ONLY) == TCL_OK) {
+	    if (stop == end) {
+		/*
+		 * Entire string parses as an integer.
+		 */
+
+		break;
+	    } else {
+		/*
+		 * Some prefix parsed as an integer, but not the whole string,
+		 * so return failure index as the point where parsing stopped.
+		 * Clear out the internal rep, since keeping it would leave
+		 * *objPtr in an inconsistent state.
+		 */
+
+		result = 0;
+		failat = stop - string1;
+		TclFreeInternalRep(objPtr);
+	    }
+	} else {
+	    /*
+	     * No prefix is a valid integer. Fail at beginning.
+	     */
+
+	    result = 0;
+	    failat = 0;
+	}
+	break;
+    case STR_IS_WIDE:
+	if (TCL_OK == TclGetWideIntFromObj(NULL, objPtr, &w)) {
+	    break;
+	}
+
+	string1 = TclGetStringFromObj(objPtr, &length1);
+	if (length1 == 0) {
+	    if (strict) {
+		result = 0;
+	    }
+	    goto str_is_done;
+	}
+	result = 0;
+	if (failVarObj == NULL) {
+	    /*
+	     * Don't bother computing the failure point if we're not going to
+	     * return it.
+	     */
+
+	    break;
+	}
+	end = string1 + length1;
+	if (TclParseNumber(NULL, objPtr, NULL, NULL, TCL_INDEX_NONE,
+		(const char **) &stop, TCL_PARSE_INTEGER_ONLY) == TCL_OK) {
+	    if (stop == end) {
+		/*
+		 * Entire string parses as an integer, but rejected by
+		 * Tcl_Get(Wide)IntFromObj() so we must have overflowed the
+		 * target type, and our convention is to return failure at
+		 * index -1 in that situation.
+		 */
+
+		failat = -1;
+	    } else {
+		/*
+		 * Some prefix parsed as an integer, but not the whole string,
+		 * so return failure index as the point where parsing stopped.
+		 * Clear out the internal rep, since keeping it would leave
+		 * *objPtr in an inconsistent state.
+		 */
+
+		failat = stop - string1;
+		TclFreeInternalRep(objPtr);
+	    }
+	} else {
+	    /*
+	     * No prefix is a valid integer. Fail at beginning.
+	     */
+
+	    failat = 0;
+	}
+	break;
+    case STR_IS_LIST:
+	/*
+	 * We ignore the strictness here, since empty strings are always
+	 * well-formed lists.
+	 */
+
+	if (TCL_OK == TclListObjLength(NULL, objPtr, &length3)) {
+	    break;
+	}
+
+	if (failVarObj != NULL) {
+	    /*
+	     * Need to figure out where the list parsing failed, which is
+	     * fairly expensive. This is adapted from the core of
+	     * SetListFromAny().
+	     */
+
+	    const char *elemStart, *nextElem;
+	    Tcl_Size lenRemain;
+	    Tcl_Size elemSize;
+	    const char *p;
+
+	    string1 = TclGetStringFromObj(objPtr, &length1);
+	    end = string1 + length1;
+	    failat = -1;
+	    for (p=string1, lenRemain=length1; lenRemain > 0;
+		    p=nextElem, lenRemain=end-nextElem) {
+		if (TCL_ERROR == TclFindElement(NULL, p, lenRemain,
+			&elemStart, &nextElem, &elemSize, NULL)) {
+		    Tcl_Obj *tmpStr;
+
+		    /*
+		     * This is the simplest way of getting the number of
+		     * characters parsed. Note that this is not the same as
+		     * the number of bytes when parsing strings with non-ASCII
+		     * characters in them.
+		     *
+		     * Skip leading spaces first. This is only really an issue
+		     * if it is the first "element" that has the failure.
+		     */
+
+		    while (TclIsSpaceProcM(*p)) {
+			p++;
+		    }
+		    TclNewStringObj(tmpStr, string1, p-string1);
+		    failat = Tcl_GetCharLength(tmpStr);
+		    TclDecrRefCount(tmpStr);
+		    break;
+		}
+	    }
+	}
+	result = 0;
+	break;
+    case STR_IS_LOWER:
+	chcomp = utf8proc_islower;
+	break;
+    case STR_IS_PRINT:
+	chcomp = Tcl_UniCharIsPrint;
+	break;
+    case STR_IS_PUNCT:
+	chcomp = Tcl_UniCharIsPunct;
+	break;
+    case STR_IS_SPACE:
+	chcomp = Tcl_UniCharIsSpace;
+	break;
+    case STR_IS_UPPER:
+	chcomp = Tcl_UniCharIsUpper;
+	break;
+    case STR_IS_WORD:
+	chcomp = Tcl_UniCharIsWordChar;
+	break;
+    case STR_IS_XDIGIT:
+	chcomp = UniCharIsHexDigit;
+	break;
+    default:
+	TCL_UNREACHABLE();
+    }
+
+    if (chcomp != NULL) {
+	string1 = TclGetStringFromObj(objPtr, &length1);
+	if (length1 == 0) {
+	    if (strict) {
+		result = 0;
+	    }
+	    goto str_is_done;
+	}
+	end = string1 + length1;
+	for (; string1 < end; string1 += length2, failat++) {
+	    int ucs4;
+
+	    length2 = TclUtfToUniChar(string1, &ucs4);
+	    if (!chcomp(ucs4)) {
+		result = 0;
+		break;
+	    }
+	}
+    }
+
+    /*
+     * Only set the failVarObj when we will return 0 and we have indicated a
+     * valid fail index (>= 0).
+     */
+
+  str_is_done:
+    if ((result == 0) && (failVarObj != NULL)) {
+	TclNewIndexObj(objPtr, failat);
+	if (Tcl_ObjSetVar2(interp, failVarObj, NULL, objPtr, TCL_LEAVE_ERR_MSG) == NULL) {
+	    return TCL_ERROR;
+	}
+    }
+    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(result));
+    return TCL_OK;
+}
+
+/*
  * TclUnicodeNormalizeCmd --
  *
  *	This procedure implements the "unicode tonfc|tonfd|tonfkc|tonfkd"
@@ -5482,6 +5905,7 @@ TclInitUnicodeCmd(
 	{"tonfd", TclUnicodeNormalizeCmd, NULL, NULL, (void *)TCL_NFD, 0},
 	{"tonfkc", TclUnicodeNormalizeCmd, NULL, NULL, (void *)TCL_NFKC, 0},
 	{"tonfkd", TclUnicodeNormalizeCmd, NULL, NULL, (void *)TCL_NFKD, 0},
+	{"is", TclUnicodeIsCmd, NULL, NULL, NULL, 0},
 	{NULL, NULL, NULL, NULL, NULL, 0}
     };
     return TclMakeEnsemble(interp, "unicode", unicodeImplMap);
