@@ -5,20 +5,22 @@ if {[namespace exists tcltest::ucd]} {
 }
 
 namespace eval tcltests::ucd {
-    variable normalizationData {}
+	# UCD file paths
     variable normalizationDataFile \
         [file join [file dirname [info script]] unicodeTestVectors NormalizationTest.txt]
-    variable caseFoldData {}
     variable caseFoldDataFile \
         [file join [file dirname [info script]] unicodeTestVectors DerivedNormalizationProps.txt]
-    variable caseFoldIdentities
-    variable singleFormChar
-    variable singleFormChars {}
+    variable derivedCorePropertiesFile \
+        [file join [file dirname [info script]] unicodeTestVectors DerivedCoreProperties.txt]
 
-    tcltest::testConstraint normalization [file exists $normalizationDataFile]
+	# Highest assigned Unicode code point
+	variable maxCodepoint 0x10ffff
+
+    tcltest::testConstraint ucdnormalization [file exists $normalizationDataFile]
+    tcltest::testConstraint ucdproperties [file exists $derivedCorePropertiesFile]
 
     # Don't enable casefolding tests - not implemented or TIP'ed in core
-    # tcltest::testConstraint casefolding [file exists $caseFoldDataFile]
+    # tcltest::testConstraint ucdcasefolding [file exists $caseFoldDataFile]
 
     proc hexListToChars {s} {
         # 0044 030c -> \u0044\u030c
@@ -26,9 +28,9 @@ namespace eval tcltests::ucd {
     }
 
     proc readNormalizationData {} {
-        variable normalizationData
+        variable normalizationData {}
         variable normalizationDataFile
-        variable singleFormChars
+        variable singleFormChars {}
 
         set fd [open $normalizationDataFile]
         fconfigure $fd -encoding utf-8
@@ -87,7 +89,7 @@ namespace eval tcltests::ucd {
 	}
 
     proc readCaseFoldData {} {
-        variable caseFoldData
+        variable caseFoldData {}
         variable caseFoldDataFile
         variable caseFoldIdentities
 
@@ -163,5 +165,49 @@ namespace eval tcltests::ucd {
 	    variable caseFoldIdentities
 		readCaseFoldData
 		return $caseFoldIdentities
+	}
+
+
+    proc readDerivedCoreProperties {} {
+        variable derivedCorePropertiesFile
+		variable derivedCoreProperties; # Dict indexed by property name
+
+        set fd [open $derivedCorePropertiesFile]
+        fconfigure $fd -encoding utf-8
+        # See comments at top of $derivedCorePropertiesFile for format
+        while {[gets $fd line] >= 0} {
+            set line [string trim $line]
+            if {[string index $line 0] in {{} #}} {
+                continue
+            }
+            # Line is of the form
+            #   XXXX[..YYYY]  ; PROPERTYNAME # descriptive text
+            lassign [lmap field [split [lindex [split $line #] 0] \;] {
+                string trim $field
+            }] rangeOfChars propertyName
+            if {$propertyName ni {Lowercase Uppercase}} {
+                continue
+            }
+            # Some entries may be ranges of chars xxxx..yyyy
+            set rangeOfChars [regexp -inline -all {[[:xdigit:]]+} $rangeOfChars]; # xxxx..yyyy
+            foreach codePoint [lseq 0x[lindex $rangeOfChars 0] .. 0x[lindex $rangeOfChars end]] {
+                set char [format %c $codePoint]
+				dict set derivedCoreProperties $propertyName $char {}
+            }
+        }
+
+        proc readDerivedCoreProperties {} {}; # Only read once
+    }
+
+    proc getLowercaseChars {} {
+	    variable derivedCoreProperties
+		readDerivedCoreProperties
+		return [dict get $derivedCoreProperties Lowercase]
+	}
+
+    proc getUppercaseChars {} {
+	    variable derivedCoreProperties
+		readDerivedCoreProperties
+		return [dict get $derivedCoreProperties Uppercase]
 	}
 }
