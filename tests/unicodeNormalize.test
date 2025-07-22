@@ -8,7 +8,7 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 
 source [file join [file dirname [info script]] ucdUtils.tcl]
 
-namespace eval utf8proc::test {
+namespace eval unicode::test {
 	namespace path ::tcltests::ucd
 
     variable singleFormChar
@@ -61,7 +61,7 @@ namespace eval utf8proc::test {
         lassign $testCase lineno chars nfc nfd nfkc nfkd
         test tonfc-line-$lineno \
             "Test case for NFC at line $lineno of $::tcltests::ucd::normalizationDataFile" \
-            -constraints normalization \
+            -constraints ucdnormalization \
             -body {
                 # See Comments in NormalizationTest.txt for expected behaviours
                 list \
@@ -74,7 +74,7 @@ namespace eval utf8proc::test {
 
         test tonfd-line-$lineno \
             "Test case for NFD at line $lineno of $::tcltests::ucd::normalizationDataFile" \
-            -constraints normalization \
+            -constraints ucdnormalization \
             -setup {
                 readNormalizationData
             } -body {
@@ -89,7 +89,7 @@ namespace eval utf8proc::test {
 
         test tonfkc-line-$lineno \
             "Test case for NFKC at line $lineno of $::tcltests::ucd::normalizationDataFile" \
-            -constraints normalization \
+            -constraints ucdnormalization \
             -setup {
                 readNormalizationData
             } -body {
@@ -104,7 +104,7 @@ namespace eval utf8proc::test {
 
         test tonfkd-line-$lineno \
             "Test case for NFKD at line $lineno of $::tcltests::ucd::normalizationDataFile" \
-            -constraints normalization \
+            -constraints ucdnormalization \
             -setup {
                 readNormalizationData
             } -body {
@@ -120,7 +120,7 @@ namespace eval utf8proc::test {
 
     # Each single form character should map to itself for all forms
     test normalize-singleform-0 "Normalize single form characters" \
-        -constraints normalization \
+        -constraints ucdnormalization \
         -body {
             lmap singleFormChar [getSingleFormChars] {
                 if {[tcl::mathop::eq \
@@ -137,13 +137,13 @@ namespace eval utf8proc::test {
         } -result {}
 
     # Test generation for casefolding
-    if {[tcltest::testConstraint casefolding]} {
+    if {[tcltest::testConstraint ucdcasefolding]} {
         foreach testCase [getCaseFoldData] {
             lassign $testCase lineno chars casefoldedchars
             set id [format %.6X [scan $chars %c]]
             test normalize-line-$lineno-$id-nfccasefold \
                 "Test case for NFC_CaseFold at line $lineno of $::tcltests::ucd::caseFoldDataFile" \
-                -constraints casefolding \
+                -constraints ucdcasefolding \
                 -body {
                     # puts [codepoints $chars]->[codepoints $casefoldedchars]
                     # See Comments in DerivedNormalizationProps.txt for expected behaviours
@@ -156,7 +156,7 @@ namespace eval utf8proc::test {
         }
         test normalize-casefold-identities-0 \
             "NFKC Case fold chars mapping to themselves" \
-            -constraints casefolding \
+            -constraints ucdcasefolding \
             -body {
                 lmap char [caseFoldIdentities] {
                     if {$char eq [toNFKC_Casefold $char]} {
@@ -312,5 +312,5 @@ namespace eval utf8proc::test {
 }
 
 ::tcltest::cleanupTests
-namespace delete utf8proc::test
+namespace delete unicode::test
 return
