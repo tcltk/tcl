@@ -6,16 +6,12 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
     namespace import ::tcltest::*
 }
 
+source [file join [file dirname [info script]] ucdUtils.tcl]
+
 namespace eval utf8proc::test {
-    variable normalizationData {}
-    variable normalizationDataFile \
-        [file join [file dirname [info script]] unicodeTestVectors NormalizationTest.txt]
-    variable caseFoldData {}
-    variable caseFoldDataFile \
-        [file join [file dirname [info script]] unicodeTestVectors DerivedNormalizationProps.txt]
-    variable caseFoldIdentities
+	namespace path ::tcltests::ucd
+
     variable singleFormChar
-    variable singleFormChars {}
     variable testCase
 
     variable normForm
@@ -34,137 +30,9 @@ namespace eval utf8proc::test {
     }
     variable bytes
 
-    tcltest::testConstraint normalization [file exists $normalizationDataFile]
-
-    # Don't enable casefolding tests - not implemented or TIP'ed in core
-    # tcltest::testConstraint casefolding [file exists $caseFoldDataFile]
-
     proc hexListToChars {s} {
         # 0044 030c -> \u0044\u030c
         subst -novariables -nocommands \\U[join $s \\U]
-    }
-
-    proc readNormalizationData {} {
-        variable normalizationData
-        variable normalizationDataFile
-        variable singleFormChars
-
-        set fd [open $normalizationDataFile]
-        fconfigure $fd -encoding utf-8
-        set lineno 0; # Start numbering as line number 1
-        set normalizationData {}
-        set inPart1 0
-        set prevPart1Char -1
-        # See comments at top of normalizationDataFile for format
-        while {[gets $fd line] >= 0} {
-            incr lineno
-            set line [string trim $line]
-            if {[string index $line 0] in {{} #}} {
-                continue
-            }
-            if {[regexp -nocase {^@part(\d+)} $line -> partNum]} {
-                set inPart1 [expr {$partNum == 1}]
-                continue
-            }
-            # Form list of {lineno chars nfcform nfdform nfkfcform nfkdform}
-            set fields [lrange [split $line \;] 0 4]
-            lappend normalizationData \
-                [list $lineno {*}[lmap v $fields {hexListToChars $v}]]
-            # Characters that are not listed in part1 need to be tested that
-            # they map to themselves.
-            if {$inPart1} {
-                set thisChar [scan [lindex $fields 0] %x]
-                # We assume the file is in order!
-                if {$thisChar <= $prevPart1Char} {
-                    puts stderr "Warning: Part 1 lines in $normalizationDataFile do not seem sorted by codepoint!"
-                }
-                while {[incr prevPart1Char] != $thisChar} {
-                    if {$prevPart1Char >= 0xD800 && $prevPart1Char <= 0xDFFF} {
-                        continue; # Surrogates
-                    }
-                    lappend singleFormChars [hexListToChars [format %x $prevPart1Char]]
-                }
-            }
-        }
-        while {[incr prevPart1Char] <= 0x10ffff} {
-            lappend singleFormChars [hexListToChars [format %x $prevPart1Char]]
-        }
-
-        proc readNormalizationData {} {}; # Only read once
-    }
-
-    proc readCaseFoldData {} {
-        variable caseFoldData
-        variable caseFoldDataFile
-        variable caseFoldIdentities
-
-        set fd [open $caseFoldDataFile]
-        fconfigure $fd -encoding utf-8
-        set lineno 0; # Start numbering as line number 1
-        set caseFoldData {}
-        set prevCodePoint -1
-        # See comments at top of normalizationDataFile for format
-        while {[gets $fd line] >= 0} {
-            incr lineno
-            set line [string trim $line]
-            if {[string index $line 0] in {{} #}} {
-                continue
-            }
-            # Line is of the form
-            #   XXXX[..YYYY]  ; NFKC_CF; XXXX XXXX # descriptive text
-            lassign [lmap field [split [lindex [split $line #] 0] \;] {
-                string trim $field
-            }] rangeOfChars typeOfLine casefoldedchars
-            if {$typeOfLine ne "NFKC_CF"} {
-                continue
-            }
-            # Some entries may be ranges of chars xxxx..yyyy
-            set rangeOfChars [regexp -inline -all {[[:xdigit:]]+} $rangeOfChars]; # xxxx..yyyy
-            foreach codePoint [lseq 0x[lindex $rangeOfChars 0] .. 0x[lindex $rangeOfChars end]] {
-                set chars [format %c $codePoint]
-                # Some chars are ignored in case folds
-                if {$casefoldedchars eq ""} {
-                    # Mapping column empty. Reserved chars map to themselves.
-                    # Otherwise, character is ignored by folding algorithm
-                    if {[string match *reserved* $line]} {
-                        set expected $chars
-                    } else {
-                        set expected {}
-                    }
-                } else {
-                    set expected [hexListToChars $casefoldedchars]
-                }
-                lappend caseFoldData \
-                    [list $lineno $chars $expected]
-
-                # Characters that are not listed need to be tested that
-                # they map to themselves.
-                # We assume the file is in order!
-                if {$codePoint <= $prevCodePoint} {
-                    puts stderr "Warning: Part 1 lines in $caseFoldDataFile do not seem sorted by codepoint!"
-                    puts stderr "Line $lineno ($codePoint <= $prevCodePoint)"
-                    exit
-                }
-                while {[incr prevCodePoint] < $codePoint} {
-                    if {$prevCodePoint >= 0xD800 && $prevCodePoint <= 0xDFFF} {
-                        continue; # Surrogates
-                    }
-                    lappend caseFoldIdentities [hexListToChars [format %x $prevCodePoint]]
-                }
-            }
-        }
-        while {[incr prevCodePoint] <= 0x10ffff} {
-            lappend caseFoldIdentities [hexListToChars [format %x $prevCodePoint]]
-        }
-
-        proc readCaseFoldData {} {}; # Only read once
-    }
-
-    if {[tcltest::testConstraint normalization]} {
-        readNormalizationData
-    }
-    if {[tcltest::testConstraint casefolding]} {
-        readCaseFoldData
     }
 
     # Standard arg number tests
@@ -189,10 +57,10 @@ namespace eval utf8proc::test {
     }
 
     # Test generation for nfc, nfd, nfkc, nfkd
-    foreach testCase $normalizationData {
+    foreach testCase [getNormalizationData] {
         lassign $testCase lineno chars nfc nfd nfkc nfkd
         test tonfc-line-$lineno \
-            "Test case for NFC at line $lineno of $normalizationDataFile" \
+            "Test case for NFC at line $lineno of $::tcltests::ucd::normalizationDataFile" \
             -constraints normalization \
             -body {
                 # See Comments in NormalizationTest.txt for expected behaviours
@@ -205,7 +73,7 @@ namespace eval utf8proc::test {
             } -result {1 1 1 1 1}
 
         test tonfd-line-$lineno \
-            "Test case for NFD at line $lineno of $normalizationDataFile" \
+            "Test case for NFD at line $lineno of $::tcltests::ucd::normalizationDataFile" \
             -constraints normalization \
             -setup {
                 readNormalizationData
@@ -220,7 +88,7 @@ namespace eval utf8proc::test {
             } -result {1 1 1 1 1}
 
         test tonfkc-line-$lineno \
-            "Test case for NFKC at line $lineno of $normalizationDataFile" \
+            "Test case for NFKC at line $lineno of $::tcltests::ucd::normalizationDataFile" \
             -constraints normalization \
             -setup {
                 readNormalizationData
@@ -235,7 +103,7 @@ namespace eval utf8proc::test {
             } -result {1 1 1 1 1}
 
         test tonfkd-line-$lineno \
-            "Test case for NFKD at line $lineno of $normalizationDataFile" \
+            "Test case for NFKD at line $lineno of $::tcltests::ucd::normalizationDataFile" \
             -constraints normalization \
             -setup {
                 readNormalizationData
@@ -254,7 +122,7 @@ namespace eval utf8proc::test {
     test normalize-singleform-0 "Normalize single form characters" \
         -constraints normalization \
         -body {
-            lmap singleFormChar $singleFormChars {
+            lmap singleFormChar [getSingleFormChars] {
                 if {[tcl::mathop::eq \
                          $singleFormChar \
                          [unicode tonfc $singleFormChar] \
@@ -270,11 +138,11 @@ namespace eval utf8proc::test {
 
     # Test generation for casefolding
     if {[tcltest::testConstraint casefolding]} {
-        foreach testCase $caseFoldData {
+        foreach testCase [getCaseFoldData] {
             lassign $testCase lineno chars casefoldedchars
             set id [format %.6X [scan $chars %c]]
             test normalize-line-$lineno-$id-nfccasefold \
-                "Test case for NFC_CaseFold at line $lineno of $caseFoldDataFile" \
+                "Test case for NFC_CaseFold at line $lineno of $::tcltests::ucd::caseFoldDataFile" \
                 -constraints casefolding \
                 -body {
                     # puts [codepoints $chars]->[codepoints $casefoldedchars]
@@ -290,7 +158,7 @@ namespace eval utf8proc::test {
             "NFKC Case fold chars mapping to themselves" \
             -constraints casefolding \
             -body {
-                lmap char $caseFoldIdentities {
+                lmap char [caseFoldIdentities] {
                     if {$char eq [toNFKC_Casefold $char]} {
                         continue
                     }
@@ -392,13 +260,13 @@ namespace eval utf8proc::test {
 
     # Tcl_UtfToNormalizedDString C API
 
-    foreach testCase $normalizationData {
+    foreach testCase [getNormalizationData] {
         lassign $testCase lineno chars nfc nfd nfkc nfkd
         set bytes [teststringbytes $chars]
         foreach profile {strict replace} {
             foreach normForm {nfc nfd nfkc nfkd} {
                 test Tcl_UtfToNormalizedDString-$normForm-line-$lineno-$profile \
-                    "Tcl_UtfToNormalizedDString for $normForm at line $lineno of $normalizationDataFile" \
+                    "Tcl_UtfToNormalizedDString for $normForm at line $lineno of $::tcltests::ucd::normalizationDataFile" \
                     -body {
                         testutfnormalize $bytes $normEnums($normForm) $profileFlags($profile)
                     } -result [teststringbytes [set $normForm]]
