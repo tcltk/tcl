@@ -906,10 +906,16 @@ TclpObjCopyDirectory(
     int ret;
 
     normSrcPtr = Tcl_FSGetNormalizedPath(NULL,srcPathPtr);
-    normDestPtr = Tcl_FSGetNormalizedPath(NULL,destPathPtr);
-    if ((normSrcPtr == NULL) || (normDestPtr == NULL)) {
+    if (normSrcPtr == NULL) {
 	return TCL_ERROR;
     }
+    if (normSrcPtr != srcPathPtr) { Tcl_IncrRefCount(normSrcPtr); }
+    normDestPtr = Tcl_FSGetNormalizedPath(NULL,destPathPtr);
+    if (normDestPtr == NULL) {
+	if (normSrcPtr != srcPathPtr) { Tcl_DecrRefCount(normSrcPtr); }
+	return TCL_ERROR;
+    }
+    if (normDestPtr != destPathPtr) { Tcl_IncrRefCount(normDestPtr); }
 
     Tcl_DStringInit(&srcString);
     Tcl_DStringInit(&dstString);
@@ -932,6 +938,9 @@ TclpObjCopyDirectory(
 	Tcl_DStringFree(&ds);
 	Tcl_IncrRefCount(*errorPtr);
     }
+
+    if (normSrcPtr != srcPathPtr) { Tcl_DecrRefCount(normSrcPtr); }
+    if (normDestPtr != destPathPtr) { Tcl_DecrRefCount(normDestPtr); }
     return ret;
 }
 
@@ -986,6 +995,7 @@ TclpObjRemoveDirectory(
 	if (normPtr == NULL) {
 	    return TCL_ERROR;
 	}
+	if (normPtr != pathPtr) { Tcl_IncrRefCount(normPtr); }
 	Tcl_DStringInit(&native);
 	Tcl_UtfToWCharDString(TclGetString(normPtr), TCL_INDEX_NONE, &native);
 	ret = DoRemoveDirectory(&native, recursive, &ds);
@@ -1006,6 +1016,7 @@ TclpObjRemoveDirectory(
 	}
 	Tcl_DStringFree(&ds);
     }
+    if (normPtr && normPtr != pathPtr) { Tcl_DecrRefCount(normPtr); }
 
     return ret;
 }
