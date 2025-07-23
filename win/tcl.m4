@@ -626,6 +626,16 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	else
 	    CFLAGS_NOLTO=""
 	fi
+
+	AC_CACHE_CHECK([if the linker understands --disable-high-entropy-va],
+	    tcl_cv_ld_high_entropy, [
+	    hold_cflags=$CFLAGS; CFLAGS="$CFLAGS  -Wl,--disable-high-entropy-va"
+	    AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],[tcl_cv_ld_high_entropy=yes],[tcl_cv_ld_high_entropy=no])
+	    CFLAGS=$hold_cflags])
+	if test $tcl_cv_ld_high_entropy = yes; then
+	    extra_ldflags="$extra_ldflags -Wl,--disable-high-entropy-va"
+	fi
+
 	AC_CACHE_CHECK([if the compiler understands -finput-charset],
 	    tcl_cv_cc_input_charset, [
 	    hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -finput-charset=UTF-8"
@@ -639,7 +649,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
     hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -Wl,--enable-auto-image-base"
     AC_CACHE_CHECK(for working --enable-auto-image-base,
 	ac_cv_enable_auto_image_base,
-    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([])],
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([])],
 	[ac_cv_enable_auto_image_base=yes],
 	[ac_cv_enable_auto_image_base=no])
     )
@@ -991,7 +1001,7 @@ AC_DEFUN([SC_WITH_TCL], [
 	TCL_BIN_DEFAULT=../../tcl9.1/win
     fi
 
-    AC_ARG_WITH(tcl, [  --with-tcl=DIR          use Tcl 9.1 binaries from DIR],
+    AC_ARG_WITH(tcl, [  --with-tcl=DIR          use Tcl 9.x binaries from DIR],
 	    TCL_BIN_DIR=$withval, TCL_BIN_DIR=`cd $TCL_BIN_DEFAULT; pwd`)
     if test ! -d $TCL_BIN_DIR; then
 	AC_MSG_ERROR(Tcl directory $TCL_BIN_DIR does not exist)

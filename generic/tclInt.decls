@@ -529,7 +529,8 @@ declare 233 {
     void TclGetSrcInfoForPc(CmdFrame *contextPtr)
 }
 
-declare 234 {deprecated {Not used in Tcl, not in any extension any more}} {
+# Exports for VarReform compat: Itcl, XOTcl like to peek into our varTables :(
+declare 234 {
     Var *TclVarHashCreateVar(TclVarHashTable *tablePtr, const char *key,
 	    int *newPtr)
 }
