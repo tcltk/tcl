@@ -352,13 +352,13 @@ namespace eval listtype {
                                               {0 -1 0} {} \
                                               [list 0 $largeListLength 0] {} \
                 ] {
-                    testdef lindex-nested-onearg-$ltype1-$ltype2-$ltype3 "lindex nested single indices argument $ltype1 $ltype2 $ltype3 $indices" \
+                    testdef lindex-nested-onearg-$ltype1-$ltype2-$ltype3-[join $indices ,] "lindex nested single indices argument $ltype1 $ltype2 $ltype3 $indices" \
                         -body {
                             variable indices
                             lindex [makeNestedList $ltype1 $ltype2 $ltype3] $indices
                         } -result $result
 
-                    testdef lindex-nested-multiarg-$ltype1-$ltype2-$ltype3 "lindex nested multiple index arguments $ltype1 $ltype2 $ltype3 $indices" \
+                    testdef lindex-nested-multiarg-$ltype1-$ltype2-$ltype3-[join $indices ,] "lindex nested multiple index arguments $ltype1 $ltype2 $ltype3 $indices" \
                         -body {
                             variable indices
                             lindex [makeNestedList $ltype1 $ltype2 $ltype3] {*}$indices
@@ -708,12 +708,12 @@ namespace eval listtype {
             # TODO - consider changing lsort to not shimmer its argument.
             list [isAbstractList $l] $l $l2
         } -result [list 0 [lsort [makeNonAbstract [makeList $ltype]]] [makeList $ltype]]
-        testdef lsort-$ltype-unshared "lsort -decreasing unshared $ltype" -body {
+        testdef lsort-$ltype-unshared-decreasing "lsort -decreasing unshared $ltype" -body {
             set l [lsort -decreasing [makeList $ltype]]
             list [isAbstractList $l] $l
         } -result [list 0 [lsort -decreasing [makeNonAbstract [makeList $ltype]]]]
 
-        testdef lsort-$ltype-shared "lsort unshared $ltype" -body {
+        testdef lsort-$ltype-shared-decreasing "lsort unshared $ltype" -body {
             set l2 [makeList $ltype]
             set l [lsort -decreasing $l2]
             # Note: $l2 is shimmered by lsort.
@@ -1216,7 +1216,7 @@ namespace eval listtype {
         }
     }
     foreach nrefs {0 1 2} {
-        test Tcl_ListObjRange-invalid-list {
+        test Tcl_ListObjRange-invalid-list-$nrefs {
             Invalid list should return NULL in resultPtr
         } -body {
             set apiresult [testlistapi Tcl_ListObjRange $nrefs \{ 0 0]
@@ -1293,7 +1293,7 @@ namespace eval listtype {
         }
     }
     foreach nrefs {0 1 2} {
-        test Tcl_ListObjReverse-invalid-list {
+        test Tcl_ListObjReverse-invalid-list-$nrefs {
             Invalid list should return NULL in resultPtr
         } -body {
             set apiresult [testlistapi Tcl_ListObjReverse $nrefs \{]
