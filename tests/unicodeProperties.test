@@ -71,7 +71,7 @@ namespace eval unicode::test {
             }
         }
         set mismatches
-    } -constraints ucdproperties -result {Lower case mismatches:}
+    } -constraints {ucdproperties bug_1ecea011} -result {Lower case mismatches:}
 
     test unicode-is-lower-outofrange "unicode is lower out of range" -cleanup {
         testobj freeallvars
@@ -85,14 +85,14 @@ namespace eval unicode::test {
         unset -nocomplain upperChars
     } -body {
         set mismatches {Upper case mismatches:}
-        foreach codePoint [lseq 0 $::tcltests::ucd::maxCodepoint] {
+        foreach codePoint [lseq 0 1+$::tcltests::ucd::maxCodepoint] {
             set ch [format %c $codePoint]
             if {[dict exists $upperChars $ch] != [unicode is upper $ch]} {
                 append mismatches " " U+[format %x $codePoint]
             }
         }
         set mismatches
-    } -constraints ucdproperties -result {Upper case mismatches:}
+    } -constraints {ucdproperties bug_1ecea011} -result {Upper case mismatches:}
 
     test unicode-is-upper-outofrange "unicode is upper out of range" -cleanup {
         testobj freeallvars
