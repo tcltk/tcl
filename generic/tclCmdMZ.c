@@ -5956,7 +5956,7 @@ TclUnicodeToUpperCmd(
     if (objc == 2) {
 	Tcl_Obj *resultPtr = Tcl_NewStringObj(string1, length1);
 
-	length1 = Tcl_Utf8procUtfToUpper(TclGetString(resultPtr));
+	length1 = Tcl_UtfToUpper(TclGetString(resultPtr));
 	Tcl_SetObjLength(resultPtr, length1);
 	Tcl_SetObjResult(interp, resultPtr);
     } else {
@@ -5992,7 +5992,7 @@ TclUnicodeToUpperCmd(
 	resultPtr = Tcl_NewStringObj(string1, end - string1);
 	string2 = TclGetString(resultPtr) + (start - string1);
 
-	length2 = Tcl_Utf8procUtfToUpper(string2);
+	length2 = Tcl_UtfToUpper(string2);
 	Tcl_SetObjLength(resultPtr, length2 + (start - string1));
 
 	Tcl_AppendToObj(resultPtr, end, -1);
@@ -6023,7 +6023,7 @@ TclUnicodeToLowerCmd(
     if (objc == 2) {
 	Tcl_Obj *resultPtr = Tcl_NewStringObj(string1, length1);
 
-	length1 = Tcl_Utf8procUtfToLower(TclGetString(resultPtr));
+	length1 = Tcl_UtfToLower(TclGetString(resultPtr));
 	Tcl_SetObjLength(resultPtr, length1);
 	Tcl_SetObjResult(interp, resultPtr);
     } else {
@@ -6059,7 +6059,7 @@ TclUnicodeToLowerCmd(
 	resultPtr = Tcl_NewStringObj(string1, end - string1);
 	string2 = TclGetString(resultPtr) + (start - string1);
 
-	length2 = Tcl_Utf8procUtfToLower(string2);
+	length2 = Tcl_UtfToLower(string2);
 	Tcl_SetObjLength(resultPtr, length2 + (start - string1));
 
 	Tcl_AppendToObj(resultPtr, end, -1);
@@ -6091,7 +6091,7 @@ TclUnicodeToTitleCmd(
     if (objc == 2) {
 	Tcl_Obj *resultPtr = Tcl_NewStringObj(string1, length1);
 
-	length1 = Tcl_Utf8procUtfToTitle(TclGetString(resultPtr));
+	length1 = Tcl_UtfToTitle(TclGetString(resultPtr));
 	Tcl_SetObjLength(resultPtr, length1);
 	Tcl_SetObjResult(interp, resultPtr);
     } else {
@@ -6127,7 +6127,7 @@ TclUnicodeToTitleCmd(
 	resultPtr = Tcl_NewStringObj(string1, end - string1);
 	string2 = TclGetString(resultPtr) + (start - string1);
 
-	length2 = Tcl_Utf8procUtfToTitle(string2);
+	length2 = Tcl_UtfToTitle(string2);
 	Tcl_SetObjLength(resultPtr, length2 + (start - string1));
 
 	Tcl_AppendToObj(resultPtr, end, -1);
