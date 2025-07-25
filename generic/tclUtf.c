@@ -10,6 +10,7 @@
  */
 
 #include "tclInt.h"
+#include "../utf8proc/utf8proc.h"
 
 /*
  * Include the static character classification tables and macros.
@@ -47,6 +48,42 @@ enum UnicodeCharacterCategoryMasks {
 	(1 << OTHER_NUMBER) |
 	(1 << MATH_SYMBOL) | (1 << CURRENCY_SYMBOL) |
 	(1 << MODIFIER_SYMBOL) | (1 << OTHER_SYMBOL)
+};
+
+enum Utf8ProcCharacterCategoryMasks {
+    UTF8PROC_ALPHA_BITS =
+	(1 << UTF8PROC_CATEGORY_LU) | (1 << UTF8PROC_CATEGORY_LL) |
+	(1 << UTF8PROC_CATEGORY_LT) | (1 << UTF8PROC_CATEGORY_LM) |
+	(1 << UTF8PROC_CATEGORY_LO),
+
+    UTF8PROC_CONTROL_BITS =
+	(1 << UTF8PROC_CATEGORY_CC) | (1 << UTF8PROC_CATEGORY_CF),
+
+    UTF8PROC_DIGIT_BITS = (1 << UTF8PROC_CATEGORY_ND),
+
+    UTF8PROC_SPACE_BITS = (1 << UTF8PROC_CATEGORY_ZS) |
+			  (1 << UTF8PROC_CATEGORY_ZL) |
+			  (1 << UTF8PROC_CATEGORY_ZP),
+
+    UTF8PROC_WORD_BITS =
+	UTF8PROC_ALPHA_BITS | UTF8PROC_DIGIT_BITS | (1 << UTF8PROC_CATEGORY_PC),
+
+    UTF8PROC_PUNCT_BITS =
+	(1 << UTF8PROC_CATEGORY_PC) | (1 << UTF8PROC_CATEGORY_PD) |
+	(1 << UTF8PROC_CATEGORY_PS) | (1 << UTF8PROC_CATEGORY_PE) |
+	(1 << UTF8PROC_CATEGORY_PI) | (1 << UTF8PROC_CATEGORY_PF) |
+	(1 << UTF8PROC_CATEGORY_PO),
+
+    UTF8PROC_GRAPH_BITS = UTF8PROC_WORD_BITS | UTF8PROC_PUNCT_BITS |
+			  (1 << UTF8PROC_CATEGORY_MN) |
+			  (1 << UTF8PROC_CATEGORY_MC) |
+			  (1 << UTF8PROC_CATEGORY_ME) |
+			  (1 << UTF8PROC_CATEGORY_NL) |
+			  (1 << UTF8PROC_CATEGORY_NO) |
+			  (1 << UTF8PROC_CATEGORY_SM) |
+			  (1 << UTF8PROC_CATEGORY_SC) |
+			  (1 << UTF8PROC_CATEGORY_SK) |
+			  (1 << UTF8PROC_CATEGORY_SO)
 };
 
 /*
@@ -2026,6 +2063,12 @@ Tcl_UniCharIsAlnum(
     }
     return (((ALPHA_BITS | DIGIT_BITS) >> GetCategory(ch)) & 1);
 }
+int
+Tcl_Utf8procIsAlnum(
+    int ch)			/* Unicode character to test. */
+{
+    return ((1 << utf8proc_category(ch)) & (UTF8PROC_ALPHA_BITS|UTF8PROC_DIGIT_BITS)) != 0;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -2051,6 +2094,12 @@ Tcl_UniCharIsAlpha(
 	return 0;
     }
     return ((ALPHA_BITS >> GetCategory(ch)) & 1);
+}
+int
+Tcl_Utf8procIsAlpha(
+    int ch)			/* Unicode character to test. */
+{
+    return ((1 << utf8proc_category(ch)) & UTF8PROC_ALPHA_BITS) != 0;
 }
 
 /*
@@ -2080,6 +2129,12 @@ Tcl_UniCharIsControl(
     }
     return ((CONTROL_BITS >> GetCategory(ch)) & 1);
 }
+int
+Tcl_Utf8procIsControl(
+    int ch)			/* Unicode character to test. */
+{
+    return ((1 << utf8proc_category(ch)) & UTF8PROC_CONTROL_BITS) != 0;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -2105,6 +2160,12 @@ Tcl_UniCharIsDigit(
 	return 0;
     }
     return (GetCategory(ch) == DECIMAL_DIGIT_NUMBER);
+}
+int
+Tcl_Utf8procIsDigit(
+    int ch)			/* Unicode character to test. */
+{
+    return (utf8proc_category(ch) == UTF8PROC_CATEGORY_ND);
 }
 
 /*
@@ -2132,6 +2193,12 @@ Tcl_UniCharIsGraph(
     }
     return ((GRAPH_BITS >> GetCategory(ch)) & 1);
 }
+int
+Tcl_Utf8procIsGraph(
+    int ch)			/* Unicode character to test. */
+{
+    return ((1 << utf8proc_category(ch)) & UTF8PROC_GRAPH_BITS) != 0;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -2157,6 +2224,12 @@ Tcl_UniCharIsLower(
 	return 0;
     }
     return (GetCategory(ch) == LOWERCASE_LETTER);
+}
+int
+Tcl_Utf8procIsLower(
+    int ch)			/* Unicode character to test. */
+{
+    return (utf8proc_category(ch) == UTF8PROC_CATEGORY_LL);
 }
 
 /*
@@ -2184,6 +2257,12 @@ Tcl_UniCharIsPrint(
     }
     return (((GRAPH_BITS|SPACE_BITS) >> GetCategory(ch)) & 1);
 }
+int
+Tcl_Utf8procIsPrint(
+    int ch)			/* Unicode character to test. */
+{
+    return ((1 << utf8proc_category(ch)) & (UTF8PROC_SPACE_BITS|UTF8PROC_GRAPH_BITS)) != 0;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -2209,6 +2288,12 @@ Tcl_UniCharIsPunct(
 	return 0;
     }
     return ((PUNCT_BITS >> GetCategory(ch)) & 1);
+}
+int
+Tcl_Utf8procIsPunct(
+    int ch)			/* Unicode character to test. */
+{
+    return ((1 << utf8proc_category(ch)) & UTF8PROC_PUNCT_BITS) != 0;
 }
 
 /*
@@ -2250,6 +2335,29 @@ Tcl_UniCharIsSpace(
 	return ((SPACE_BITS >> GetCategory(ch)) & 1);
     }
 }
+int
+Tcl_Utf8procIsSpace(
+    int ch)			/* Unicode character to test. */
+{
+    /* Ignore upper 11 bits. */
+    ch &= 0x1FFFFF;
+
+    /*
+     * If the character is within the first 127 characters, just use the
+     * standard C function, otherwise consult the Unicode table.
+     */
+
+    if (ch < 0x80) {
+	return TclIsSpaceProcM((char) ch);
+    } else if (UNICODE_OUT_OF_RANGE(ch)) {
+	return 0;
+    } else if (ch == 0x0085 || ch == 0x180E || ch == 0x200B
+	    || ch == 0x202F || ch == 0x2060 || ch == 0xFEFF) {
+	return 1;
+    } else {
+	return ((1 << utf8proc_category(ch)) & UTF8PROC_SPACE_BITS) != 0;
+    }
+}
 
 /*
  *----------------------------------------------------------------------
@@ -2276,6 +2384,12 @@ Tcl_UniCharIsUpper(
     }
     return (GetCategory(ch) == UPPERCASE_LETTER);
 }
+int
+Tcl_Utf8procIsUpper(
+    int ch)			/* Unicode character to test. */
+{
+    return (utf8proc_category(ch) == UTF8PROC_CATEGORY_LU);
+}
 
 /*
  *----------------------------------------------------------------------
@@ -2301,6 +2415,12 @@ Tcl_UniCharIsWordChar(
 	return 0;
     }
     return ((WORD_BITS >> GetCategory(ch)) & 1);
+}
+int
+Tcl_Utf8procIsWordChar(
+    int ch)			/* Unicode character to test. */
+{
+    return ((1 << utf8proc_category(ch)) & UTF8PROC_WORD_BITS) != 0;
 }
 
 /*
