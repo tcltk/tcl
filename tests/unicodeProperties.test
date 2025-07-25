@@ -119,6 +119,7 @@ namespace eval unicode::test {
 		} -result "is $class mismatches:"
     }
 
+    tcltest::testConstraint haveUnicodeToCmds [expr {![catch {unicode tolower A}]}]
 	proc testStringUnicodeCaseConvertCompatibility {tocase} {
         set mismatches "$tocase mismatches:"
         foreach codePoint [lseq 0 $::tcltests::ucd::maxCodepoint] {
@@ -133,7 +134,7 @@ namespace eval unicode::test {
     foreach tocase {tolower toupper totitle} {
     	test string-vs-unicode-$tocase "string $tocase vs unicode" -body {
             testStringUnicodeCaseConvertCompatibility $tocase
-		} -result "$tocase mismatches:"
+		} -constraints haveUnicodeToCmds -result "$tocase mismatches:"
     }
 }
 
