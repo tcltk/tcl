@@ -41,7 +41,7 @@ namespace eval unicode::test {
     } -result {wrong # args: should be "unicode subcommand ?arg ...?"}
     test unicode-badargs-1 {unicode bad command} -returnCodes error -body {
         unicode foo
-    } -result {unknown or ambiguous subcommand "foo": must be tonfc, tonfd, tonfkc, or tonfkd}
+    } -result {unknown or ambiguous subcommand "foo": must be category, is, tonfc, tonfd, tonfkc, or tonfkd}
 
     variable cmd
     foreach cmd {tonfc tonfd tonfkc tonfkd} {

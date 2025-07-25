@@ -1386,6 +1386,40 @@ Tcl_UtfToUpper(
     *dst = '\0';
     return (dst - str);
 }
+Tcl_Size
+Tcl_Utf8procUtfToUpper(
+    char *str)			/* String to convert in place. */
+{
+    int ch, upChar;
+    char *src, *dst;
+    Tcl_Size len;
+
+    /*
+     * Iterate over the string until we hit the terminating null.
+     */
+
+    src = dst = str;
+    while (*src) {
+	len = TclUtfToUniChar(src, &ch);
+	upChar = Tcl_Utf8procUniCharToUpper(ch);
+
+	/*
+	 * To keep badly formed Utf strings from getting inflated by the
+	 * conversion (thereby causing a segfault), only copy the upper case
+	 * char to dst if its size is <= the original char.
+	 */
+
+	if (len < TclUtfCount(upChar)) {
+	    memmove(dst, src, len);
+	    dst += len;
+	} else {
+	    dst += Tcl_UniCharToUtf(upChar, dst);
+	}
+	src += len;
+    }
+    *dst = '\0';
+    return (dst - str);
+}
 
 /*
  *----------------------------------------------------------------------
@@ -1421,6 +1455,41 @@ Tcl_UtfToLower(
     while (*src) {
 	len = TclUtfToUniChar(src, &ch);
 	lowChar = Tcl_UniCharToLower(ch);
+
+	/*
+	 * To keep badly formed Utf strings from getting inflated by the
+	 * conversion (thereby causing a segfault), only copy the lower case
+	 * char to dst if its size is <= the original char.
+	 */
+
+	if (len < TclUtfCount(lowChar)) {
+	    memmove(dst, src, len);
+	    dst += len;
+	} else {
+	    dst += Tcl_UniCharToUtf(lowChar, dst);
+	}
+	src += len;
+    }
+    *dst = '\0';
+    return (dst - str);
+}
+
+Tcl_Size
+Tcl_Utf8procUtfToLower(
+    char *str)			/* String to convert in place. */
+{
+    int ch, lowChar;
+    char *src, *dst;
+    Tcl_Size len;
+
+    /*
+     * Iterate over the string until we hit the terminating null.
+     */
+
+    src = dst = str;
+    while (*src) {
+	len = TclUtfToUniChar(src, &ch);
+	lowChar = Tcl_Utf8procUniCharToLower(ch);
 
 	/*
 	 * To keep badly formed Utf strings from getting inflated by the
@@ -1492,6 +1561,52 @@ Tcl_UtfToTitle(
 	/* Special exception for Georgian Asomtavruli chars, no titlecase. */
 	if ((unsigned)(lowChar - 0x1C90) >= 0x30) {
 	    lowChar = Tcl_UniCharToLower(lowChar);
+	}
+
+	if (len < TclUtfCount(lowChar)) {
+	    memmove(dst, src, len);
+	    dst += len;
+	} else {
+	    dst += Tcl_UniCharToUtf(lowChar, dst);
+	}
+	src += len;
+    }
+    *dst = '\0';
+    return (dst - str);
+}
+Tcl_Size
+Tcl_Utf8procUtfToTitle(
+    char *str)			/* String to convert in place. */
+{
+    int ch, titleChar, lowChar;
+    char *src, *dst;
+    Tcl_Size len;
+
+    /*
+     * Capitalize the first character and then lowercase the rest of the
+     * characters until we get to a null.
+     */
+
+    src = dst = str;
+
+    if (*src) {
+	len = TclUtfToUniChar(src, &ch);
+	titleChar = Tcl_Utf8procUniCharToTitle(ch);
+
+	if (len < TclUtfCount(titleChar)) {
+	    memmove(dst, src, len);
+	    dst += len;
+	} else {
+	    dst += Tcl_UniCharToUtf(titleChar, dst);
+	}
+	src += len;
+    }
+    while (*src) {
+	len = TclUtfToUniChar(src, &ch);
+	lowChar = ch;
+	/* Special exception for Georgian Asomtavruli chars, no titlecase. */
+	if ((unsigned)(lowChar - 0x1C90) >= 0x30) {
+	    lowChar = Tcl_Utf8procUniCharToLower(lowChar);
 	}
 
 	if (len < TclUtfCount(lowChar)) {
@@ -1824,6 +1939,16 @@ Tcl_UniCharToUpper(
     /* Clear away extension bits, if any */
     return ch & 0x1FFFFF;
 }
+int
+Tcl_Utf8procUniCharToUpper(
+    int ch)			/* Unicode character to convert. */
+{
+    if (!UNICODE_OUT_OF_RANGE(ch)) {
+	ch = utf8proc_toupper(ch);
+    }
+    /* Clear away extension bits, if any */
+    return ch & 0x1FFFFF;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -1852,6 +1977,16 @@ Tcl_UniCharToLower(
 	if ((mode & 0x02) && (mode != 0x7)) {
 	    ch += GetDelta(info);
 	}
+    }
+    /* Clear away extension bits, if any */
+    return ch & 0x1FFFFF;
+}
+int
+Tcl_Utf8procUniCharToLower(
+    int ch)			/* Unicode character to convert. */
+{
+    if (!UNICODE_OUT_OF_RANGE(ch)) {
+	ch = utf8proc_tolower(ch);
     }
     /* Clear away extension bits, if any */
     return ch & 0x1FFFFF;
@@ -1892,6 +2027,16 @@ Tcl_UniCharToTitle(
 	} else if (mode == 0x4) {
 	    ch -= GetDelta(info);
 	}
+    }
+    /* Clear away extension bits, if any */
+    return ch & 0x1FFFFF;
+}
+int
+Tcl_Utf8procUniCharToTitle(
+    int ch)			/* Unicode character to convert. */
+{
+    if (!UNICODE_OUT_OF_RANGE(ch)) {
+	ch = utf8proc_totitle(ch);
     }
     /* Clear away extension bits, if any */
     return ch & 0x1FFFFF;
