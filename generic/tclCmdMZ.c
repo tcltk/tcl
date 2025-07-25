@@ -5509,10 +5509,12 @@ TclUnicodeIsCmd(
 
     switch (index) {
     case STR_IS_ALNUM:
-	chcomp = Tcl_UniCharIsAlnum;
+	int Tcl_Utf8procIsAlnum(int ch);
+	chcomp = Tcl_Utf8procIsAlnum;
 	break;
     case STR_IS_ALPHA:
-	chcomp = Tcl_UniCharIsAlpha;
+	int Tcl_Utf8procIsAlpha(int ch);
+	chcomp = Tcl_Utf8procIsAlpha;
 	break;
     case STR_IS_ASCII:
 	chcomp = UniCharIsAscii;
@@ -5534,7 +5536,8 @@ TclUnicodeIsCmd(
 	}
 	break;
     case STR_IS_CONTROL:
-	chcomp = Tcl_UniCharIsControl;
+	int Tcl_Utf8procIsControl(int ch);
+	chcomp = Tcl_Utf8procIsControl;
 	break;
     case STR_IS_DICT: {
 	int dresult;
@@ -5586,8 +5589,10 @@ TclUnicodeIsCmd(
 	break;
     }
     case STR_IS_DIGIT:
-	chcomp = Tcl_UniCharIsDigit;
+	int Tcl_Utf8procIsDigit(int ch);
+	chcomp = Tcl_Utf8procIsDigit;
 	break;
+
     case STR_IS_DOUBLE: {
 	if (TclHasInternalRep(objPtr, &tclDoubleType) ||
 		TclHasInternalRep(objPtr, &tclIntType) ||
@@ -5616,7 +5621,8 @@ TclUnicodeIsCmd(
 	break;
     }
     case STR_IS_GRAPH:
-	chcomp = Tcl_UniCharIsGraph;
+	int Tcl_Utf8procIsGraph(int ch);
+	chcomp = Tcl_Utf8procIsGraph;
 	break;
     case STR_IS_INT:
     case STR_IS_ENTIER:
@@ -5767,22 +5773,28 @@ TclUnicodeIsCmd(
 	result = 0;
 	break;
     case STR_IS_LOWER:
-	chcomp = utf8proc_islower;
+	int Tcl_Utf8procIsLower(int ch);
+	chcomp = Tcl_Utf8procIsLower;
 	break;
     case STR_IS_PRINT:
-	chcomp = Tcl_UniCharIsPrint;
+	int Tcl_Utf8procIsPrint(int ch);
+	chcomp = Tcl_Utf8procIsPrint;
 	break;
     case STR_IS_PUNCT:
-	chcomp = Tcl_UniCharIsPunct;
+	int Tcl_Utf8procIsPunct(int ch);
+	chcomp = Tcl_Utf8procIsPunct;
 	break;
     case STR_IS_SPACE:
-	chcomp = Tcl_UniCharIsSpace;
+	int Tcl_Utf8procIsSpace(int ch);
+	chcomp = Tcl_Utf8procIsSpace;
 	break;
     case STR_IS_UPPER:
-	chcomp = utf8proc_isupper;
+	int Tcl_Utf8procIsUpper(int ch);
+	chcomp = Tcl_Utf8procIsUpper;
 	break;
     case STR_IS_WORD:
-	chcomp = Tcl_UniCharIsWordChar;
+	int Tcl_Utf8procIsWordChar(int ch);
+	chcomp = Tcl_Utf8procIsWordChar;
 	break;
     case STR_IS_XDIGIT:
 	chcomp = UniCharIsHexDigit;
@@ -5824,6 +5836,45 @@ TclUnicodeIsCmd(
 	}
     }
     Tcl_SetObjResult(interp, Tcl_NewBooleanObj(result));
+    return TCL_OK;
+}
+
+/*
+ * TclUnicodeNormalizeCmd --
+ *
+ *	This procedure implements the "unicode tonfc|tonfd|tonfkc|tonfkd"
+ *	commands. See the user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	Stores the normalized string in the interpreter result.
+ */
+static int
+TclUnicodeCategoryCmd(
+    void *clientData,		/* TCL_{NFC,NFD,NFKC,NFKD} */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv,
+		"str");
+	return TCL_ERROR;
+    }
+    Tcl_Obj *categoriesObj = Tcl_NewListObj(0, NULL);
+    Tcl_Size length1, length2;
+    const char *string = TclGetStringFromObj(objv[1], &length1);
+    const char *end = string + length1;
+    for (; string < end; string += length2) {
+	int ucs4;
+
+	length2 = TclUtfToUniChar(string, &ucs4);
+	Tcl_ListObjAppendElement(interp, categoriesObj,
+	    Tcl_NewStringObj(utf8proc_category_string(ucs4), -1));
+    }
+    Tcl_SetObjResult(interp, categoriesObj);
     return TCL_OK;
 }
 
@@ -5906,6 +5957,7 @@ TclInitUnicodeCmd(
 	{"tonfkc", TclUnicodeNormalizeCmd, NULL, NULL, (void *)TCL_NFKC, 0},
 	{"tonfkd", TclUnicodeNormalizeCmd, NULL, NULL, (void *)TCL_NFKD, 0},
 	{"is", TclUnicodeIsCmd, NULL, NULL, NULL, 0},
+	{"category", TclUnicodeCategoryCmd, NULL, NULL, NULL, 0},
 	{NULL, NULL, NULL, NULL, NULL, 0}
     };
     return TclMakeEnsemble(interp, "unicode", unicodeImplMap);

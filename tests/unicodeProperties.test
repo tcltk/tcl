@@ -99,6 +99,26 @@ namespace eval unicode::test {
     } -body {
     	unicode is upper [teststringobj newunicode 1 0x110000]
     } -constraints teststringobj -result 0
+
+	###
+    # Compatibility tests between the string and unicode commands.
+	proc testStringUnicodeCompatibility {class} {
+        set mismatches "is $class mismatches:"
+        foreach codePoint [lseq 0 $::tcltests::ucd::maxCodepoint] {
+            set ch [format %c $codePoint]
+            if {[string is $class $ch] != [unicode is $class $ch]} {
+                append mismatches " " U+[format %x $codePoint]
+                break
+            }
+        }
+        return $mismatches
+    }
+
+    foreach class {alpha alnum control digit graph lower print space upper wordchar} {
+    	test string-vs-unicode-is-$class "string is $class vs unicode" -body {
+            testStringUnicodeCompatibility $class
+		} -result "is $class mismatches:"
+    }
 }
 
 ::tcltest::cleanupTests
