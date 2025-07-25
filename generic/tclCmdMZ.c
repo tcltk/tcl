@@ -5509,12 +5509,12 @@ TclUnicodeIsCmd(
 
     switch (index) {
     case STR_IS_ALNUM:
-	int Tcl_Utf8procIsAlnum(int ch);
-	chcomp = Tcl_Utf8procIsAlnum;
+	int Tcl_UniCharIsAlnum(int ch);
+	chcomp = Tcl_UniCharIsAlnum;
 	break;
     case STR_IS_ALPHA:
-	int Tcl_Utf8procIsAlpha(int ch);
-	chcomp = Tcl_Utf8procIsAlpha;
+	int Tcl_UniCharIsAlpha(int ch);
+	chcomp = Tcl_UniCharIsAlpha;
 	break;
     case STR_IS_ASCII:
 	chcomp = UniCharIsAscii;
@@ -5536,8 +5536,8 @@ TclUnicodeIsCmd(
 	}
 	break;
     case STR_IS_CONTROL:
-	int Tcl_Utf8procIsControl(int ch);
-	chcomp = Tcl_Utf8procIsControl;
+	int Tcl_UniCharIsControl(int ch);
+	chcomp = Tcl_UniCharIsControl;
 	break;
     case STR_IS_DICT: {
 	int dresult;
@@ -5589,8 +5589,8 @@ TclUnicodeIsCmd(
 	break;
     }
     case STR_IS_DIGIT:
-	int Tcl_Utf8procIsDigit(int ch);
-	chcomp = Tcl_Utf8procIsDigit;
+	int Tcl_UniCharIsDigit(int ch);
+	chcomp = Tcl_UniCharIsDigit;
 	break;
 
     case STR_IS_DOUBLE: {
@@ -5621,8 +5621,8 @@ TclUnicodeIsCmd(
 	break;
     }
     case STR_IS_GRAPH:
-	int Tcl_Utf8procIsGraph(int ch);
-	chcomp = Tcl_Utf8procIsGraph;
+	int Tcl_UniCharIsGraph(int ch);
+	chcomp = Tcl_UniCharIsGraph;
 	break;
     case STR_IS_INT:
     case STR_IS_ENTIER:
@@ -5773,28 +5773,28 @@ TclUnicodeIsCmd(
 	result = 0;
 	break;
     case STR_IS_LOWER:
-	int Tcl_Utf8procIsLower(int ch);
-	chcomp = Tcl_Utf8procIsLower;
+	int Tcl_UniCharIsLower(int ch);
+	chcomp = Tcl_UniCharIsLower;
 	break;
     case STR_IS_PRINT:
-	int Tcl_Utf8procIsPrint(int ch);
-	chcomp = Tcl_Utf8procIsPrint;
+	int Tcl_UniCharIsPrint(int ch);
+	chcomp = Tcl_UniCharIsPrint;
 	break;
     case STR_IS_PUNCT:
-	int Tcl_Utf8procIsPunct(int ch);
-	chcomp = Tcl_Utf8procIsPunct;
+	int Tcl_UniCharIsPunct(int ch);
+	chcomp = Tcl_UniCharIsPunct;
 	break;
     case STR_IS_SPACE:
-	int Tcl_Utf8procIsSpace(int ch);
-	chcomp = Tcl_Utf8procIsSpace;
+	int Tcl_UniCharIsSpace(int ch);
+	chcomp = Tcl_UniCharIsSpace;
 	break;
     case STR_IS_UPPER:
-	int Tcl_Utf8procIsUpper(int ch);
-	chcomp = Tcl_Utf8procIsUpper;
+	int Tcl_UniCharIsUpper(int ch);
+	chcomp = Tcl_UniCharIsUpper;
 	break;
     case STR_IS_WORD:
-	int Tcl_Utf8procIsWordChar(int ch);
-	chcomp = Tcl_Utf8procIsWordChar;
+	int Tcl_UniCharIsWordChar(int ch);
+	chcomp = Tcl_UniCharIsWordChar;
 	break;
     case STR_IS_XDIGIT:
 	chcomp = UniCharIsHexDigit;
@@ -5877,7 +5877,7 @@ TclUnicodeCategoryCmd(
     Tcl_SetObjResult(interp, categoriesObj);
     return TCL_OK;
 }
-
+
 /*
  * TclUnicodeNormalizeCmd --
  *
@@ -5934,6 +5934,208 @@ TclUnicodeNormalizeCmd(
     Tcl_DStringResult(interp, &ds);
     return TCL_OK;
 }
+
+static int
+TclUnicodeToUpperCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    Tcl_Size length1, length2;
+    const char *string1;
+    char *string2;
+
+    if (objc < 2 || objc > 4) {
+	Tcl_WrongNumArgs(interp, 1, objv, "string ?first? ?last?");
+	return TCL_ERROR;
+    }
+
+    string1 = TclGetStringFromObj(objv[1], &length1);
+
+    if (objc == 2) {
+	Tcl_Obj *resultPtr = Tcl_NewStringObj(string1, length1);
+
+	length1 = Tcl_Utf8procUtfToUpper(TclGetString(resultPtr));
+	Tcl_SetObjLength(resultPtr, length1);
+	Tcl_SetObjResult(interp, resultPtr);
+    } else {
+	Tcl_Size first, last;
+	const char *start, *end;
+	Tcl_Obj *resultPtr;
+
+	length1 = Tcl_NumUtfChars(string1, length1) - 1;
+	if (TclGetIntForIndexM(interp,objv[2],length1, &first) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if (first < 0) {
+	    first = 0;
+	}
+	last = first;
+
+	if ((objc == 4) && (TclGetIntForIndexM(interp, objv[3], length1,
+		&last) != TCL_OK)) {
+	    return TCL_ERROR;
+	}
+
+	if (last >= length1) {
+	    last = length1;
+	}
+	if (last < first) {
+	    Tcl_SetObjResult(interp, objv[1]);
+	    return TCL_OK;
+	}
+
+	string1 = TclGetStringFromObj(objv[1], &length1);
+	start = Tcl_UtfAtIndex(string1, first);
+	end = Tcl_UtfAtIndex(start, last - first + 1);
+	resultPtr = Tcl_NewStringObj(string1, end - string1);
+	string2 = TclGetString(resultPtr) + (start - string1);
+
+	length2 = Tcl_Utf8procUtfToUpper(string2);
+	Tcl_SetObjLength(resultPtr, length2 + (start - string1));
+
+	Tcl_AppendToObj(resultPtr, end, -1);
+	Tcl_SetObjResult(interp, resultPtr);
+    }
+
+    return TCL_OK;
+}
+
+static int
+TclUnicodeToLowerCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    Tcl_Size length1, length2;
+    const char *string1;
+    char *string2;
+
+    if (objc < 2 || objc > 4) {
+	Tcl_WrongNumArgs(interp, 1, objv, "string ?first? ?last?");
+	return TCL_ERROR;
+    }
+
+    string1 = TclGetStringFromObj(objv[1], &length1);
+
+    if (objc == 2) {
+	Tcl_Obj *resultPtr = Tcl_NewStringObj(string1, length1);
+
+	length1 = Tcl_Utf8procUtfToLower(TclGetString(resultPtr));
+	Tcl_SetObjLength(resultPtr, length1);
+	Tcl_SetObjResult(interp, resultPtr);
+    } else {
+	Tcl_Size first, last;
+	const char *start, *end;
+	Tcl_Obj *resultPtr;
+
+	length1 = Tcl_NumUtfChars(string1, length1) - 1;
+	if (TclGetIntForIndexM(interp,objv[2],length1, &first) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if (first < 0) {
+	    first = 0;
+	}
+	last = first;
+
+	if ((objc == 4) && (TclGetIntForIndexM(interp, objv[3], length1,
+		&last) != TCL_OK)) {
+	    return TCL_ERROR;
+	}
+
+	if (last >= length1) {
+	    last = length1;
+	}
+	if (last < first) {
+	    Tcl_SetObjResult(interp, objv[1]);
+	    return TCL_OK;
+	}
+
+	string1 = TclGetStringFromObj(objv[1], &length1);
+	start = Tcl_UtfAtIndex(string1, first);
+	end = Tcl_UtfAtIndex(start, last - first + 1);
+	resultPtr = Tcl_NewStringObj(string1, end - string1);
+	string2 = TclGetString(resultPtr) + (start - string1);
+
+	length2 = Tcl_Utf8procUtfToLower(string2);
+	Tcl_SetObjLength(resultPtr, length2 + (start - string1));
+
+	Tcl_AppendToObj(resultPtr, end, -1);
+	Tcl_SetObjResult(interp, resultPtr);
+    }
+
+    return TCL_OK;
+}
+
+static int
+TclUnicodeToTitleCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    Tcl_Size length1, length2;
+    const char *string1;
+    char *string2;
+    Tcl_Size Tcl_Utf8procToTitle(char *str);
+
+    if (objc < 2 || objc > 4) {
+	Tcl_WrongNumArgs(interp, 1, objv, "string ?first? ?last?");
+	return TCL_ERROR;
+    }
+
+    string1 = TclGetStringFromObj(objv[1], &length1);
+
+    if (objc == 2) {
+	Tcl_Obj *resultPtr = Tcl_NewStringObj(string1, length1);
+
+	length1 = Tcl_Utf8procUtfToTitle(TclGetString(resultPtr));
+	Tcl_SetObjLength(resultPtr, length1);
+	Tcl_SetObjResult(interp, resultPtr);
+    } else {
+	Tcl_Size first, last;
+	const char *start, *end;
+	Tcl_Obj *resultPtr;
+
+	length1 = Tcl_NumUtfChars(string1, length1) - 1;
+	if (TclGetIntForIndexM(interp,objv[2],length1, &first) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if (first < 0) {
+	    first = 0;
+	}
+	last = first;
+
+	if ((objc == 4) && (TclGetIntForIndexM(interp, objv[3], length1,
+		&last) != TCL_OK)) {
+	    return TCL_ERROR;
+	}
+
+	if (last >= length1) {
+	    last = length1;
+	}
+	if (last < first) {
+	    Tcl_SetObjResult(interp, objv[1]);
+	    return TCL_OK;
+	}
+
+	string1 = TclGetStringFromObj(objv[1], &length1);
+	start = Tcl_UtfAtIndex(string1, first);
+	end = Tcl_UtfAtIndex(start, last - first + 1);
+	resultPtr = Tcl_NewStringObj(string1, end - string1);
+	string2 = TclGetString(resultPtr) + (start - string1);
+
+	length2 = Tcl_Utf8procUtfToTitle(string2);
+	Tcl_SetObjLength(resultPtr, length2 + (start - string1));
+
+	Tcl_AppendToObj(resultPtr, end, -1);
+	Tcl_SetObjResult(interp, resultPtr);
+    }
+
+    return TCL_OK;
+}
 
 /*
  * TclInitUnicodeCmd --
@@ -5952,12 +6154,15 @@ TclInitUnicodeCmd(
     Tcl_Interp *interp)
 {
     static const EnsembleImplMap unicodeImplMap[] = {
+	{"is", TclUnicodeIsCmd, NULL, NULL, NULL, 0},
+	{"category", TclUnicodeCategoryCmd, NULL, NULL, NULL, 0},
+	{"tolower", TclUnicodeToLowerCmd, NULL, NULL, NULL, 0},
 	{"tonfc", TclUnicodeNormalizeCmd, NULL, NULL, (void *)TCL_NFC, 0},
 	{"tonfd", TclUnicodeNormalizeCmd, NULL, NULL, (void *)TCL_NFD, 0},
 	{"tonfkc", TclUnicodeNormalizeCmd, NULL, NULL, (void *)TCL_NFKC, 0},
 	{"tonfkd", TclUnicodeNormalizeCmd, NULL, NULL, (void *)TCL_NFKD, 0},
-	{"is", TclUnicodeIsCmd, NULL, NULL, NULL, 0},
-	{"category", TclUnicodeCategoryCmd, NULL, NULL, NULL, 0},
+	{"totitle", TclUnicodeToTitleCmd, NULL, NULL, NULL, 0},
+	{"toupper", TclUnicodeToUpperCmd, NULL, NULL, NULL, 0},
 	{NULL, NULL, NULL, NULL, NULL, 0}
     };
     return TclMakeEnsemble(interp, "unicode", unicodeImplMap);

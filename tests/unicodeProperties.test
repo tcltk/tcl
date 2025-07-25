@@ -108,7 +108,6 @@ namespace eval unicode::test {
             set ch [format %c $codePoint]
             if {[string is $class $ch] != [unicode is $class $ch]} {
                 append mismatches " " U+[format %x $codePoint]
-                break
             }
         }
         return $mismatches
@@ -118,6 +117,23 @@ namespace eval unicode::test {
     	test string-vs-unicode-is-$class "string is $class vs unicode" -body {
             testStringUnicodeCompatibility $class
 		} -result "is $class mismatches:"
+    }
+
+	proc testStringUnicodeCaseConvertCompatibility {tocase} {
+        set mismatches "$tocase mismatches:"
+        foreach codePoint [lseq 0 $::tcltests::ucd::maxCodepoint] {
+            set ch [format %c $codePoint]
+            if {[string $tocase $ch] != [unicode $tocase $ch]} {
+                append mismatches " " U+[format %x $codePoint]
+            break
+            }
+        }
+        return $mismatches
+    }
+    foreach tocase {tolower toupper totitle} {
+    	test string-vs-unicode-$tocase "string $tocase vs unicode" -body {
+            testStringUnicodeCaseConvertCompatibility $tocase
+		} -result "$tocase mismatches:"
     }
 }
 
