@@ -107,9 +107,9 @@ if {[interp issafe]} {
 	package unknown {::tcl::tm::UnknownHandler ::tclPkgUnknown}
     }
 
-    # Set up the 'clock' ensemble
-
-    apply {{} {
+    # Set up the 'clock' ensemble (auto-loading)
+    set ::auto_index(clock) {apply {{} {
+	set ::auto_index(clock) {}
 	set cmdmap [dict create]
 	foreach cmd {add clicks format microseconds milliseconds scan seconds} {
 	    dict set cmdmap $cmd ::tcl::clock::$cmd
@@ -117,18 +117,28 @@ if {[interp issafe]} {
 	namespace inscope ::tcl::clock [list namespace ensemble create -command \
 	    ::clock -map $cmdmap]
 	::tcl::unsupported::clock::configure -init-complete
+    } ::}}
+    # Auto-init C-stubs and auto-load stubs for 'clock.tcl'
 
-	# Auto-loading stubs for 'clock.tcl'
-
-	namespace inscope ::tcl::clock {
-	    proc _load_stubs args {
-		namespace unknown {}
-		::source -encoding utf-8 [::file join [info library] clock.tcl]
+    namespace inscope ::tcl::clock {
+	proc _load_stubs args {
+	    variable auto_load_cmds
+	    set cmd [uplevel {namespace current}]::[lindex $args 0]
+	    regsub {^(::){1,2}tcl::clock(::){1,2}} $cmd {} cmd
+	    if {[info exists auto_load_cmds] &&
+		[dict getd $auto_load_cmds $cmd 0]
+	    } {
+		unset auto_load_cmds
+		::tcl::clock::load
 		tailcall {*}$args
 	    }
-	    namespace unknown ::tcl::clock::_load_stubs
+	    namespace unknown {}
+	    ::source -encoding utf-8 [::file join [info library] clock.tcl]
+	    tailcall {*}$args
 	}
-    }}
+	namespace unknown ::tcl::clock::_load_stubs
+    }
+    set ::auto_index(::tcl::unsupported::clock::configure) ::tcl::clock::load
 }
 
 # Conditionalize for presence of exec.

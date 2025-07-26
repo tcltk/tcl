@@ -20,6 +20,10 @@
 
 package require msgcat 1.7
 
+# Ensure clock ensemble is initialized.
+
+::tcl::clock::load
+
 # Put the library directory into the namespace for the ensemble so that the
 # library code can find message catalogs and time zone definition files.
 

@@ -1167,9 +1167,7 @@ Tcl_CreateInterp(void)
     TclInitProcessCmd(interp);
 
     /*
-     * Register "clock" subcommands. These *do* go through
-     * Tcl_CreateObjCommand, since they aren't in the global namespace and
-     * involve ensembles.
+     * Register "clock" auto loader.
      */
 
     TclClockInit(interp);

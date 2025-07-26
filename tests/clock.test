@@ -298,7 +298,7 @@ test clock-0.1 "initial: auto-loading of ensemble and stubs on demand" -setup {
     }
 } -cleanup {
     interp delete $i
-} -result {ens:1 ens:1 stubs:0 stubs:1}
+} -result {ens:0 ens:1 stubs:0 stubs:1}
 test clock-0.1a "initial: safe interpreter shares clock command with parent" -setup {
     set i [interp create]
     $i eval {set sci [interp create -safe]}
@@ -313,7 +313,7 @@ test clock-0.1a "initial: safe interpreter shares clock command with parent" -se
     }
 } -cleanup {
     interp delete $i
-} -result {ens:1 ens:1 stubs:0 stubs:1}
+} -result {ens:0 ens:1 stubs:0 stubs:1}
 
 test clock-0.2 "initial: loading of format/locale does not overwrite interp state (errorInfo)" -setup {
     # be sure - we have no cached locale/msgcat, etc:
