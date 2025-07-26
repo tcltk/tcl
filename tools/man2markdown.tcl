@@ -1578,7 +1578,7 @@ proc ::ndoc::main {} {
 				# files from the 3 section having the same name
 				# (was no problem previously as they had different
 				# file extensions):
-				if {$section ne "n" && $stem in {Class Encoding Eval Exit Load Namespace Object RegExp UpVar zipfs}} {append stem $section}
+				if {$section ne "n" && $stem in {Class Concat Encoding Eval Exit Load Namespace Object RegExp UpVar zipfs}} {append stem $section}
 				set fh [open [file join $outDir ${stem}.md] w]
 				puts $fh $md
 				close $fh
