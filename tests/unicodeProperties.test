@@ -5,6 +5,8 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
     namespace import ::tcltest::*
 }
+tcltest::loadTestedCommands
+package require tcl::test
 
 testConstraint teststringobj [llength [info commands teststringobj]]
 
