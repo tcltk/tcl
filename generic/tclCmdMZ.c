@@ -5509,11 +5509,9 @@ TclUnicodeIsCmd(
 
     switch (index) {
     case STR_IS_ALNUM:
-	int Tcl_UniCharIsAlnum(int ch);
 	chcomp = Tcl_UniCharIsAlnum;
 	break;
     case STR_IS_ALPHA:
-	int Tcl_UniCharIsAlpha(int ch);
 	chcomp = Tcl_UniCharIsAlpha;
 	break;
     case STR_IS_ASCII:
@@ -5536,7 +5534,6 @@ TclUnicodeIsCmd(
 	}
 	break;
     case STR_IS_CONTROL:
-	int Tcl_UniCharIsControl(int ch);
 	chcomp = Tcl_UniCharIsControl;
 	break;
     case STR_IS_DICT: {
@@ -5589,7 +5586,6 @@ TclUnicodeIsCmd(
 	break;
     }
     case STR_IS_DIGIT:
-	int Tcl_UniCharIsDigit(int ch);
 	chcomp = Tcl_UniCharIsDigit;
 	break;
 
@@ -5621,7 +5617,6 @@ TclUnicodeIsCmd(
 	break;
     }
     case STR_IS_GRAPH:
-	int Tcl_UniCharIsGraph(int ch);
 	chcomp = Tcl_UniCharIsGraph;
 	break;
     case STR_IS_INT:
@@ -5773,27 +5768,21 @@ TclUnicodeIsCmd(
 	result = 0;
 	break;
     case STR_IS_LOWER:
-	int Tcl_UniCharIsLower(int ch);
 	chcomp = Tcl_UniCharIsLower;
 	break;
     case STR_IS_PRINT:
-	int Tcl_UniCharIsPrint(int ch);
 	chcomp = Tcl_UniCharIsPrint;
 	break;
     case STR_IS_PUNCT:
-	int Tcl_UniCharIsPunct(int ch);
 	chcomp = Tcl_UniCharIsPunct;
 	break;
     case STR_IS_SPACE:
-	int Tcl_UniCharIsSpace(int ch);
 	chcomp = Tcl_UniCharIsSpace;
 	break;
     case STR_IS_UPPER:
-	int Tcl_UniCharIsUpper(int ch);
 	chcomp = Tcl_UniCharIsUpper;
 	break;
     case STR_IS_WORD:
-	int Tcl_UniCharIsWordChar(int ch);
 	chcomp = Tcl_UniCharIsWordChar;
 	break;
     case STR_IS_XDIGIT:
@@ -5853,7 +5842,7 @@ TclUnicodeIsCmd(
  */
 static int
 TclUnicodeCategoryCmd(
-    void *clientData,		/* TCL_{NFC,NFD,NFKC,NFKD} */
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
