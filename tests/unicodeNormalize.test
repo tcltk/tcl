@@ -270,7 +270,8 @@ namespace eval unicode::test {
                 test Tcl_UtfToNormalizedDString-$normForm-line-$lineno-$profile \
                     "Tcl_UtfToNormalizedDString for $normForm at line $lineno of $::tcltests::ucd::normalizationDataFile" \
                     -body {
-                        testutfnormalize $bytes $normEnums($normForm) $profileFlags($profile)
+                        testutftonormalizeddstring $bytes $normEnums($normForm) \
+					        $profileFlags($profile)
                     } -result [teststringbytes [set $normForm]]
             }
         }
@@ -280,7 +281,8 @@ namespace eval unicode::test {
         test Tcl_UtfToNormalizedDString-$normForm-nulchar-$profile \
             "Tcl_UtfToNormalizedDString for $normForm passed nul character" \
             -body {
-                testutfnormalize [teststringbytes \0] $normEnums($normForm) $profileFlags($profile)
+                testutftonormalizeddstring [teststringbytes \0] \
+				$normEnums($normForm) $profileFlags($profile)
             } -result \xC0\x80
     }
 
@@ -290,7 +292,7 @@ namespace eval unicode::test {
         test Tcl_UtfToNormalizedDString-$normForm-tcl8 \
             "Tcl_UtfToNormalizedDString for $normForm profile tcl8" \
             -body {
-                testutfnormalize abc $normEnums($normForm) $profileFlags(tcl8)
+                testutftonormalizeddstring abc $normEnums($normForm) $profileFlags(tcl8)
             } -result {Invalid value 16777216 passed for encoding profile.} -returnCodes error
 
         if {0} {
@@ -300,7 +302,7 @@ namespace eval unicode::test {
             test Tcl_UtfToNormalizedDString-$normForm-invalid-utf8 \
                 "Tcl_UtfToNormalizedDString for $normForm invalid utf8 profile strict" \
                 -body {
-                    testutfnormalize [binary decode hex EFBF7F] $normEnums($normForm) $profileFlags(strict)
+                    testutftonormalizeddstring [testbytestring [binary decode hex EFBF7F]] $normEnums($normForm) $profileFlags(strict)
                 } -result {} -returnCodes error
         }
     }
@@ -308,7 +310,7 @@ namespace eval unicode::test {
     test Tcl_UtfToNormalizedDString-invalid-normalization-form \
             "Tcl_UtfToNormalizedDString invalid value for normalization form" \
             -body {
-                testutfnormalize abc 4 $profileFlags(strict)
+                testutftonormalizeddstring abc 4 $profileFlags(strict)
             } -result {Invalid value 4 passed for normalization form.} -returnCodes error
 
 }

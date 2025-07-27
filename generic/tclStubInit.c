@@ -1502,7 +1502,8 @@ const TclStubs tclStubs = {
     Tcl_ListObjRepeat, /* 693 */
     Tcl_ListObjRange, /* 694 */
     Tcl_UtfToNormalizedDString, /* 695 */
-    TclUnusedStubEntry, /* 696 */
+    Tcl_UtfToNormalized, /* 696 */
+    TclUnusedStubEntry, /* 697 */
 };
 
 /* !END!: Do not edit above this line. */

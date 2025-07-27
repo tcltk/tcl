@@ -2393,15 +2393,21 @@ declare 694 {
 
 # TIP 726
 declare 695 {
-    const char *Tcl_UtfToNormalizedDString(Tcl_Interp *interp,
+    int Tcl_UtfToNormalizedDString(Tcl_Interp *interp,
 	    const char *bytes, Tcl_Size length,
 	    Tcl_UnicodeNormalizationForm normForm, int profile,
 	    Tcl_DString *dsPtr)
 }
+declare 696 {
+    int Tcl_UtfToNormalized(Tcl_Interp *interp,
+	    const char *bytes, Tcl_Size length,
+	    Tcl_UnicodeNormalizationForm normForm, int profile,
+	    char *bufPtr, Tcl_Size bufLen, Tcl_Size *lengthPtr)
+}
 
 # ----- BASELINE -- FOR -- 9.1.0 ----- #
 
-declare 696 {
+declare 697 {
     void TclUnusedStubEntry(void)
 }
 

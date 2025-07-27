@@ -4637,35 +4637,25 @@ TclGetEncodingProfiles(
     }
     Tcl_SetObjResult(interp, objPtr);
 }
-
-/*
- * Tcl_UtfToNormalizedDString --
- *
- *	Converts the passed string to a Unicode normalization form storing
- *	it in dsPtr.
- *
- * Results:
- *	Pointer to content of dsPtr on success, and NULL on error.
- *
- */
-const char *
-Tcl_UtfToNormalizedDString(
-    Tcl_Interp *interp, /* Used for error messages. May be NULL */
-    const char *bytes,  /* Operand encoded in Tcl internal UTF8 */
-    Tcl_Size length,	/* Length bytes[], or -1 if NUL terminated */
-    Tcl_UnicodeNormalizationForm normForm, /* TCL_{NFC,NFD,NFKC,NFKC} */
-    int profile,        /* TCL_ENCODING_PROFILE_{STRICT,REPLACE} */
-    Tcl_DString *dsPtr) /* Converted output string in Tcl internal
-			   UTF8 encoding. Init'ed by function */
-{
-    Tcl_DStringInit(dsPtr);
 
+static utf8proc_ssize_t
+TclUtfNormalize(
+    Tcl_Interp *interp,	/* Error messages. May be NULL */
+    const char *bytes,  /* Operand encoded in Tcl internal UTF8 */
+    Tcl_Size numBytes, /* Length bytes[], or -1 if NUL terminated */
+    Tcl_Encoding encoding, /* Encoding - must be UTF-8. Caller passed for reuse */
+    Tcl_UnicodeNormalizationForm normForm, /* TCL_{NFC,NFD,NFKC,NFKC} */
+    int profile,                  /* TCL_ENCODING_PROFILE_{STRICT,REPLACE} */
+    utf8proc_uint8_t **bufPtrPtr) /* On success, output length excluding nul */
+{
     if (profile != TCL_ENCODING_PROFILE_REPLACE &&
 	profile != TCL_ENCODING_PROFILE_STRICT) {
-	Tcl_SetObjResult(interp,
-	    Tcl_ObjPrintf("Invalid value %d passed for encoding profile.",
-		profile));
-	return NULL;
+	if (interp) {
+	    Tcl_SetObjResult(interp,
+		Tcl_ObjPrintf("Invalid value %d passed for encoding profile.",
+		    profile));
+	}
+	return -1;
     }
 
     utf8proc_option_t options = UTF8PROC_STABLE;
@@ -4683,50 +4673,167 @@ Tcl_UtfToNormalizedDString(
 	options |= UTF8PROC_DECOMPOSE | UTF8PROC_COMPAT;
 	break;
     default:
-	Tcl_SetObjResult(interp,
-	    Tcl_ObjPrintf("Invalid value %d passed for normalization form.",
-		normForm));
-	return NULL;
+	if (interp) {
+	    Tcl_SetObjResult(interp,
+		Tcl_ObjPrintf("Invalid value %d passed for normalization form.",
+		    normForm));
+	}
+	return -1;
     }
 
-    Tcl_Encoding encoding = Tcl_GetEncoding(interp, "utf-8");
-    if (encoding == NULL) {
-	return NULL;
+    if (numBytes < 0) {
+	numBytes = -1;
     }
-
     int result;
     Tcl_DString dsExt;
-    result = Tcl_UtfToExternalDStringEx(interp, encoding, bytes, length,
+    result = Tcl_UtfToExternalDStringEx(interp, encoding, bytes, numBytes,
 	profile, &dsExt, NULL);
     /* !!! dsExt needs to be freed even in case of error returns */
 
+    utf8proc_ssize_t normLength = -1;
     if (result == TCL_OK) {
-	utf8proc_uint8_t *normUtf8;
-        utf8proc_ssize_t normLength;
-	Tcl_Size dsLength = Tcl_DStringLength(&dsExt);
-	const utf8proc_uint8_t *dsStr =
-	    (utf8proc_uint8_t *)Tcl_DStringValue(&dsExt);
-	normLength = utf8proc_map_custom(dsStr, dsLength, &normUtf8,
-	    options, NULL, NULL);
+	normLength =
+	    utf8proc_map_custom((utf8proc_uint8_t *)Tcl_DStringValue(&dsExt),
+		Tcl_DStringLength(&dsExt), bufPtrPtr, options, NULL, NULL);
 
 	if (normLength < 0) {
-            const char *errorMsg = utf8proc_errmsg(normLength);
-            Tcl_SetObjResult(
-                interp, Tcl_NewStringObj(
-                    errorMsg ? errorMsg : "Unicode normalization failed.", -1));
-            result = TCL_ERROR;
-        } else {
-            /* Convert standard UTF8 to internal UTF8 */
-            assert(normUtf8);
-            result = Tcl_ExternalToUtfDStringEx(interp, encoding,
-                (const char *)normUtf8, normLength, profile, dsPtr, NULL);
-            free(normUtf8);
-        }
+	    if (interp) {
+		const char *errorMsg = utf8proc_errmsg(normLength);
+		Tcl_SetObjResult(interp,
+		    Tcl_NewStringObj(
+			errorMsg ? errorMsg : "Unicode normalization failed.",
+			-1));
+	    }
+	}
     }
 
     Tcl_DStringFree(&dsExt);
+    return normLength;
+}
+
+/*
+ * Tcl_UtfToNormalizedDString --
+ *
+ *	Converts the passed string to a Unicode normalization form storing
+ *	it in dsPtr.
+ *
+ * Results:
+ *	A standard Tcl error code.
+ *
+ * Side effects:
+ *      The output string is stored in dsPtr, which is initialized.
+ */
+int
+Tcl_UtfToNormalizedDString(
+    Tcl_Interp *interp, /* Used for error messages. May be NULL */
+    const char *bytes,  /* Operand encoded in Tcl internal UTF8 */
+    Tcl_Size numBytes,	/* Length of bytes[], or -1 if NUL terminated */
+    Tcl_UnicodeNormalizationForm normForm, /* TCL_{NFC,NFD,NFKC,NFKC} */
+    int profile,        /* TCL_ENCODING_PROFILE_{STRICT,REPLACE} */
+    Tcl_DString *dsPtr) /* Converted output string in Tcl internal
+			   UTF8 encoding. Init'ed by function */
+{
+    Tcl_DStringInit(dsPtr);
+    Tcl_Encoding encoding = Tcl_GetEncoding(interp, "utf-8");
+    if (encoding == NULL) {
+	return TCL_ERROR;
+    }
+
+    utf8proc_uint8_t *normUtf8;
+    utf8proc_ssize_t normLength;
+
+    normLength = TclUtfNormalize(interp, bytes, numBytes, encoding, normForm,
+	profile, &normUtf8);
+    if (normLength >= 0) {
+	assert(normUtf8);
+	/* Convert standard UTF8 to internal UTF8 */
+	int result = Tcl_ExternalToUtfDStringEx(interp, encoding,
+	    (const char *)normUtf8, normLength, profile, dsPtr, NULL);
+	if (result != TCL_OK) {
+	    normLength = -1;
+	}
+	free(normUtf8); /* NOT Tcl_Free! */
+    }
     Tcl_FreeEncoding(encoding);
-    return result == TCL_OK ? Tcl_DStringValue(dsPtr) : NULL;
+    return normLength >= 0 ? TCL_OK : TCL_ERROR;
+}
+
+/*
+ * Tcl_UtfToNormalized --
+ *
+ *	Converts the passed string to a Unicode normalization form storing
+ *	it in the caller provided buffer.
+ *
+ * Results:
+ *	A standard Tcl error code.
+ *
+ * Side effects:
+ *      The output string is stored in bufPtr.
+ */
+int
+Tcl_UtfToNormalized(
+    Tcl_Interp *interp, /* Used for error messages. May be NULL */
+    const char *bytes,  /* Operand encoded in Tcl internal UTF8 */
+    Tcl_Size numBytes,  /* Length of bytes[], or -1 if NUL terminated */
+    Tcl_UnicodeNormalizationForm normForm, /* TCL_{NFC,NFD,NFKC,NFKC} */
+    int profile,        /* TCL_ENCODING_PROFILE_{STRICT,REPLACE} */
+    char *bufPtr,       /* Pointer to output buffer. Must not be NULL.  */
+    Tcl_Size bufLen,    /* Size of bufPtr storage. */
+    Tcl_Size *lengthPtr) /* Length of the output string in bytes excluding
+			   the trailing NUL byte. May be NULL */
+{
+    Tcl_Encoding encoding = Tcl_GetEncoding(interp, "utf-8");
+    if (encoding == NULL) {
+	return TCL_ERROR;
+    }
+
+    utf8proc_uint8_t *normUtf8;
+    utf8proc_ssize_t normLength;
+    normLength = TclUtfNormalize(interp, bytes, numBytes, encoding, normForm,
+	profile, &normUtf8);
+    Tcl_FreeEncoding(encoding);
+    if (normLength < 0) {
+	return TCL_ERROR;
+    }
+    assert(normUtf8);
+
+    /* Convert standard UTF8 to internal UTF8 */
+    int result;
+    utf8proc_uint8_t *from = normUtf8;
+    utf8proc_uint8_t *fromEnd = from + normLength;
+    char *to = (utf8proc_uint8_t *)bufPtr;
+    char *toEnd = to + bufLen - 1; /* -1 for trailing NUL */
+    while (from < fromEnd && to < toEnd) {
+	/*
+	 * The only difference between UTF-8 and internal UTF-8 is that
+	 * internal UTF-8 does not allow NUL bytes in the middle of the string.
+	 */
+	if (*from) {
+	    *to++ = *from++;
+	} else {
+	    *to++ = 0xC0; /* NUL byte in internal UTF-8 is encoded as C080 */
+	    if (to == toEnd) {
+		break;
+	    }
+	    *to++ = 0x80;
+	    from++;
+	}
+    }
+    if (from < fromEnd) {
+	Tcl_SetObjResult(interp,
+	    Tcl_NewStringObj("Output buffer too small", -1));
+	result = TCL_CONVERT_NOSPACE;
+    } else {
+	assert(to < (bufPtr + bufLen - 1));
+	*to = '\0'; /* NUL terminate the output */
+	if (lengthPtr) {
+	    *lengthPtr = to-bufPtr;
+	}
+	result = TCL_OK;
+    }
+
+    free(normUtf8); /* NOT Tcl_Free! */
+    return result;
 }
 
 /*
