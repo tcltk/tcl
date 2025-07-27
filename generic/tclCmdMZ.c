@@ -5454,7 +5454,7 @@ TclUnicodeNormalizeCmd(
     Tcl_DString ds;
     if (Tcl_UtfToNormalizedDString(interp, Tcl_GetString(objv[objc - 1]),
 	    TCL_INDEX_NONE, (Tcl_UnicodeNormalizationForm)clientData, profile,
-	    &ds) == NULL) {
+	    &ds) != TCL_OK) {
 	return TCL_ERROR;
     }
 

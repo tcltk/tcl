@@ -1887,11 +1887,17 @@ EXTERN int		Tcl_ListObjRange(Tcl_Interp *interp, Tcl_Obj *objPtr,
 				Tcl_Size start, Tcl_Size end,
 				Tcl_Obj **resultPtrPtr);
 /* 695 */
-EXTERN const char *	Tcl_UtfToNormalizedDString(Tcl_Interp *interp,
+EXTERN int		Tcl_UtfToNormalizedDString(Tcl_Interp *interp,
 				const char *bytes, Tcl_Size length,
 				Tcl_UnicodeNormalizationForm normForm,
 				int profile, Tcl_DString *dsPtr);
 /* 696 */
+EXTERN int		Tcl_UtfToNormalized(Tcl_Interp *interp,
+				const char *bytes, Tcl_Size length,
+				Tcl_UnicodeNormalizationForm normForm,
+				int profile, char *bufPtr, Tcl_Size bufLen,
+				Tcl_Size *lengthPtr);
+/* 697 */
 EXTERN void		TclUnusedStubEntry(void);
 
 typedef struct {
@@ -2599,8 +2605,9 @@ typedef struct TclStubs {
     int (*tcl_ListObjReverse) (Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Obj **resultPtrPtr); /* 692 */
     int (*tcl_ListObjRepeat) (Tcl_Interp *interp, Tcl_Size repeatCount, Tcl_Size objc, Tcl_Obj *const objv[], Tcl_Obj **resultPtrPtr); /* 693 */
     int (*tcl_ListObjRange) (Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Size start, Tcl_Size end, Tcl_Obj **resultPtrPtr); /* 694 */
-    const char * (*tcl_UtfToNormalizedDString) (Tcl_Interp *interp, const char *bytes, Tcl_Size length, Tcl_UnicodeNormalizationForm normForm, int profile, Tcl_DString *dsPtr); /* 695 */
-    void (*tclUnusedStubEntry) (void); /* 696 */
+    int (*tcl_UtfToNormalizedDString) (Tcl_Interp *interp, const char *bytes, Tcl_Size length, Tcl_UnicodeNormalizationForm normForm, int profile, Tcl_DString *dsPtr); /* 695 */
+    int (*tcl_UtfToNormalized) (Tcl_Interp *interp, const char *bytes, Tcl_Size length, Tcl_UnicodeNormalizationForm normForm, int profile, char *bufPtr, Tcl_Size bufLen, Tcl_Size *lengthPtr); /* 696 */
+    void (*tclUnusedStubEntry) (void); /* 697 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3942,8 +3949,10 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_ListObjRange) /* 694 */
 #define Tcl_UtfToNormalizedDString \
 	(tclStubsPtr->tcl_UtfToNormalizedDString) /* 695 */
+#define Tcl_UtfToNormalized \
+	(tclStubsPtr->tcl_UtfToNormalized) /* 696 */
 #define TclUnusedStubEntry \
-	(tclStubsPtr->tclUnusedStubEntry) /* 696 */
+	(tclStubsPtr->tclUnusedStubEntry) /* 697 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
