@@ -67,7 +67,7 @@ This command causes Tcl commands to be executed whenever certain operations are 
 : Invoke *commandPrefix* whenever the command *name* is executed, just after the actual execution takes place.
 
 **enterstep**
-: Invoke *commandPrefix* for every Tcl command which is executed from the start of the execution of the procedure *name* until that procedure finishes. *CommandPrefix* is invoked just before the actual execution of the Tcl command being reported takes place.  For example if we have "proc foo {} { puts \N'34'hello\N'34' }", then an *enterstep* trace would be invoked just before "*puts \N'34'hello\N'34'*" is executed. Setting an *enterstep* trace on a command *name* that does not refer to a procedure will not result in an error and is simply ignored.
+: Invoke *commandPrefix* for every Tcl command which is executed from the start of the execution of the procedure *name* until that procedure finishes. *CommandPrefix* is invoked just before the actual execution of the Tcl command being reported takes place.  For example if we have "proc foo {} { puts \"hello\" }", then an *enterstep* trace would be invoked just before "*puts \"hello\"*" is executed. Setting an *enterstep* trace on a command *name* that does not refer to a procedure will not result in an error and is simply ignored.
 
 **leavestep**
 : Invoke *commandPrefix* for every Tcl command which is executed from the start of the execution of the procedure *name* until that procedure finishes. *CommandPrefix* is invoked just after the actual execution of the Tcl command being reported takes place. Setting a *leavestep* trace on a command *name* that does not refer to a procedure will not result in an error and is simply ignored.

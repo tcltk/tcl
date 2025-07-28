@@ -56,7 +56,6 @@ This section lists the shortcoming which are still present in the pages that alr
 
 ## Specific pages
 - oo::... pages: no handling of the class hierarchy subsection yet
-- configurable.n: no way to represent nested '?' in synopsis, attempt made to split syntax definition into pieces
 
 
 # Implemented and missing features in conversion script
@@ -65,6 +64,7 @@ List of nroff commands/macros currently implemented (partly not a complete imple
 
 - .\" (comments)
 - '\" (comments)
+- \\N'34' (literal double quote)
 - backslash escapes "e" and "c"
 - . (single dot as placeholder)
 - \\fB (bold text)
@@ -98,4 +98,5 @@ AST element "Paragraph" is not yet treated properly (the content field of the AS
 After the final round of conversion from nroff to Markdown, some manual work needs to be done that is not covered by the conversion script
 
 - find all instances of .VS/.VE macros to add the 'version="TIPxxx"' attribute to the corresponding elements (e.g. they are not caught inside the synopsis section)
-- ...
+- subdivide certain manual pages (the nroff files only have sections and subsection, in the markdown version, also subsubsections are needed in some pages)
+- find all pages where nested definition lists occur (e.g. Tcl.md) and consider using subsections instead. Otherwise do the nesting manually in the markdown files

@@ -500,6 +500,8 @@ proc ::ndoc::parseBackslash {text} {
 	set text [string map {
 		\u005ce \u005c
 		\u005c- -
+		\N'34' \"
+		\(en –
 	} $text]
 	return $text
 }
@@ -565,7 +567,7 @@ proc ::ndoc::blocksExpand {blockList} {
 				lappend newList [list $blockType $blockAttributes [blocksExpand $blockContent]]
 			}
 			Span - Div {
-				# Spans and Divs already comes fully expanded, so just add them as they are:
+				# Spans and Divs already come fully expanded, so just add them as they are:
 				lappend newList $block
 			}
 			default {
@@ -1231,11 +1233,13 @@ proc ::ndoc::parseInline {keyword attributes content} {
 	#
 	variable verbose
 	variable convertCmdToLink
+	set DEBUG 0
 	set inlineAST [list]
-	if {$verbose} {puts CONTENT=$content}
+	if {$verbose || $DEBUG} {puts CONTENT=$content}
 	if {$keyword eq "Code"} {
 		# special case for 'Code' where we do not want to have anything expanded
 		# apart from nroff backslash "formatting"
+		if $DEBUG {puts =Code}
 		set content [BIRPstrip $content]
 		set content [string map {{\e} "\\"} $content]
 		return [list $keyword $attributes $content]
@@ -1272,7 +1276,7 @@ proc ::ndoc::parseInline {keyword attributes content} {
 			}
 		} elseif {$char eq "§" && [string index $content 1] eq "\""} {
 			# quoted text (starts with §" and ends with "§)
-			if {$verbose} {puts QUOTED}
+			if {$verbose || $DEBUG} {puts QUOTED}
 			set endMark [string first \"§ $content 2]
 			# "
 			if {$endMark == -1} {return -code error "parseInline: unbalanced quote (no end marker found)"}
@@ -1283,7 +1287,7 @@ proc ::ndoc::parseInline {keyword attributes content} {
 			# - a known backslash sequence comes (\fI, \fB, ...)
 			# - a quoted text comes
 			# - or until the end of the content if nothing of the above is found
-			if {$verbose} {puts DEFAULT}
+			if {$verbose || $DEBUG} {puts DEFAULT}
 			# put the first index where an '\f' or a quote was found into 'endMark'
 			# (note that 'endMark' is a list of two indices)
 			set found [regexp -indices {(\\f)[BIRP]|(§\")} $content endMark]

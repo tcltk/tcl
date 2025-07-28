@@ -38,7 +38,7 @@ The following rules define the syntax and semantics of the Tcl language:
 : Words of a command are separated by white space (except for newlines, which are command separators).
 
 [4] **Double quotes.**
-: If the first character of a word is double-quote ("\N'34'") then the word is terminated by the next double-quote character. If semi-colons, close brackets, or white space characters (including newlines) appear between the quotes then they are treated as ordinary characters and included in the word. Command substitution, variable substitution, and backslash substitution are performed on the characters between the quotes as described below. The double-quotes are not retained as part of the word.
+: If the first character of a word is double-quote ("\"") then the word is terminated by the next double-quote character. If semi-colons, close brackets, or white space characters (including newlines) appear between the quotes then they are treated as ordinary characters and included in the word. Command substitution, variable substitution, and backslash substitution are performed on the characters between the quotes as described below. The double-quotes are not retained as part of the word.
 
 [5] **Argument expansion.**
 : If a word starts with the string "{*}" followed by a non-whitespace character, then the leading "{*}" is removed and the rest of the word is parsed and substituted as any other word. After substitution, the word is parsed as a list (without command or variable substitutions; backslash substitutions are performed as is normal for a list and individual internal words may be surrounded by either braces or double-quote characters), and its words are added to the command being substituted. For instance, "cmd a {*}{b [c]} d {*}{$e f {g h}}" is equivalent to "cmd a b {[c]} d {$e} f {g h}".
@@ -53,10 +53,10 @@ The following rules define the syntax and semantics of the Tcl language:
 : If a word contains a dollar-sign ("$") followed by one of the forms described below, then Tcl performs *variable substitution*:  the dollar-sign and the following characters are replaced in the word by the value of a variable. Variable substitution may take any of the following forms:
 
 **$***name*
-: *Name* is the name of a scalar variable;  the name is a sequence of one or more characters that are a letter, digit, underscore, or namespace separators (two or more colons). Letters and digits are *only* the standard ASCII ones (**0**\(en**9**, **A**\(en**Z** and **a**\(en**z**).
+: *Name* is the name of a scalar variable;  the name is a sequence of one or more characters that are a letter, digit, underscore, or namespace separators (two or more colons). Letters and digits are *only* the standard ASCII ones (**0**\–**9**, **A**\–**Z** and **a**\–**z**).
 
 **$***name***(***index***)**
-: *Name* gives the name of an array variable and *index* gives the name of an element within that array. *Name* must contain only letters, digits, underscores, and namespace separators, and may be an empty string. Letters and digits are *only* the standard ASCII ones (**0**\(en**9**, **A**\(en**Z** and **a**\(en**z**). Command substitutions, variable substitutions, and backslash substitutions are performed on the characters of *index*.
+: *Name* gives the name of an array variable and *index* gives the name of an element within that array. *Name* must contain only letters, digits, underscores, and namespace separators, and may be an empty string. Letters and digits are *only* the standard ASCII ones (**0**\–**9**, **A**\–**Z** and **a**\–**z**). Command substitutions, variable substitutions, and backslash substitutions are performed on the characters of *index*.
 
 **${***name***}**
 : *Name* is the name of a scalar variable or array element.  It may contain any characters whatsoever except for close braces.  It indicates an array element if *name* is in the form "*arrayName***(***index***)**" where *arrayName* does not contain any open parenthesis characters, "**(**", or close brace characters, "**}**", and *index* can be any sequence of characters except for close brace characters.  No further substitutions are performed during the parsing of *name*.
@@ -95,16 +95,16 @@ The following rules define the syntax and semantics of the Tcl language:
 : Backslash ("\").
 
 \*ooo*
-: The digits *ooo* (one, two, or three of them) give a eight-bit octal value for the Unicode character that will be inserted, in the range *000*\(en*377* (i.e., the range U+000000\(enU+0000FF). The parser will stop just before this range overflows, or when the maximum of three digits is reached.  The upper bits of the Unicode character will be 0.
+: The digits *ooo* (one, two, or three of them) give a eight-bit octal value for the Unicode character that will be inserted, in the range *000*\–*377* (i.e., the range U+000000\–U+0000FF). The parser will stop just before this range overflows, or when the maximum of three digits is reached.  The upper bits of the Unicode character will be 0.
 
 \**x***hh*
-: The hexadecimal digits *hh* (one or two of them) give an eight-bit hexadecimal value for the Unicode character that will be inserted.  The upper bits of the Unicode character will be 0 (i.e., the character will be in the range U+000000\(enU+0000FF).
+: The hexadecimal digits *hh* (one or two of them) give an eight-bit hexadecimal value for the Unicode character that will be inserted.  The upper bits of the Unicode character will be 0 (i.e., the character will be in the range U+000000\–U+0000FF).
 
 \**u***hhhh*
-: The hexadecimal digits *hhhh* (one, two, three, or four of them) give a sixteen-bit hexadecimal value for the Unicode character that will be inserted.  The upper bits of the Unicode character will be 0 (i.e., the character will be in the range U+000000\(enU+00FFFF).
+: The hexadecimal digits *hhhh* (one, two, three, or four of them) give a sixteen-bit hexadecimal value for the Unicode character that will be inserted.  The upper bits of the Unicode character will be 0 (i.e., the character will be in the range U+000000\–U+00FFFF).
 
 \**U***hhhhhhhh*
-: The hexadecimal digits *hhhhhhhh* (one up to eight of them) give a twenty-one-bit hexadecimal value for the Unicode character that will be inserted, in the range U+000000\(enU+10FFFF.  The parser will stop just before this range overflows, or when the maximum of eight digits is reached.  The upper bits of the Unicode character will be 0.
+: The hexadecimal digits *hhhhhhhh* (one up to eight of them) give a twenty-one-bit hexadecimal value for the Unicode character that will be inserted, in the range U+000000\–U+10FFFF.  The parser will stop just before this range overflows, or when the maximum of eight digits is reached.  The upper bits of the Unicode character will be 0.
 
 
 
