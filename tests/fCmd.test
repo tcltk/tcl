@@ -2708,6 +2708,7 @@ test fCmd-30.3 {file readable on 'pagefile.sys'} -constraints {win notInCIenv} -
 	lappend r exists [file exists $path]
 	lappend r readable [file readable $path]
 	lappend r stat [catch {file stat $path a} e] $e
+        unset -nocomplain path
     }
     return $r
 } -result {exists 1 readable 0 stat 0 {}}
@@ -2716,17 +2717,20 @@ test fCmd-31.1 {file home} -body {
     file home
 } -result [file join $::env(HOME)]
 test fCmd-31.2 {file home - obeys env} -setup {
+    set temp $::env(HOME)
     set ::env(HOME) $::env(HOME)/xxx
 } -cleanup {
-    set ::env(HOME) [file dirname $::env(HOME)]
+    set ::env(HOME) $temp
+    unset temp
 } -body {
     file home
 } -result [file join $::env(HOME) xxx]
 test fCmd-31.3 {file home - \ -> /} -constraints win -setup {
-    set saved $::env(HOME)
+    set temp $::env(HOME)
     set ::env(HOME) C:\\backslash\\path
 } -cleanup {
-    set ::env(HOME) $saved
+    set ::env(HOME) $temp
+    unset temp
 } -body {
     file home
 } -result C:/backslash/path
@@ -2735,6 +2739,7 @@ test fCmd-31.4 {file home - error} -setup {
     unset ::env(HOME)
 } -cleanup {
     set ::env(HOME) $saved
+    unset saved
 } -body {
     file home
 } -returnCodes error -result {couldn't find HOME environment variable to expand path}
@@ -2746,6 +2751,7 @@ test fCmd-31.5 {
     set ::env(HOME) relative/path
 } -cleanup {
     set ::env(HOME) $saved
+    unset saved
 } -body {
     file home
 } -result relative/path
@@ -2762,9 +2768,11 @@ test fCmd-31.8 {file home extra arg} -body {
     file home $::tcl_platform(user) arg
 } -returnCodes error -result {wrong # args: should be "file home ?user?"}
 test fCmd-31.9 {file home USER does not follow env(HOME)} -setup {
+    set saved $::env(HOME)
     set ::env(HOME) [file join $::env(HOME) foo]
 } -cleanup {
-    set ::env(HOME) [file dirname $::env(HOME)]
+    set ::env(HOME) $saved
+    unset saved
 } -body {
     string tolower [file home $::tcl_platform(user)]
 } -match glob -result [gethomedirglob $::tcl_platform(user)]
@@ -2779,16 +2787,20 @@ test fCmd-32.1.1 {Tcl_FSTildeExpand ~} -constraints testfstildeexpand -body {
     testfstildeexpand ~
 } -result [file join $::env(HOME)]
 test fCmd-32.2 {file tildeexpand ~ - obeys env} -setup {
+    set saved $::env(HOME)
     set ::env(HOME) $::env(HOME)/xxx
 } -cleanup {
-    set ::env(HOME) [file dirname $::env(HOME)]
+    set ::env(HOME) $saved
+    unset saved
 } -body {
     file tildeexpand ~
 } -result [file join $::env(HOME) xxx]
 test fCmd-32.2.1 {Tcl_FSTildeExpand ~ - obeys env} -setup {
+    set saved $::env(HOME)
     set ::env(HOME) $::env(HOME)/xxx
 } -cleanup {
-    set ::env(HOME) [file dirname $::env(HOME)]
+    set ::env(HOME) $saved
+    unset saved
 } -constraints testfstildeexpand -body {
     testfstildeexpand ~
 } -result [file join $::env(HOME) xxx]
@@ -2921,16 +2933,18 @@ test fCmd-32.16.1 {Tcl_FSTildeExpand ~USER\\bar} -constraints testfstildeexpand 
     string tolower [testfstildeexpand ~$::tcl_platform(user)\\bar]
 } -constraints win -match glob -result [file join [gethomedirglob $::tcl_platform(user)] bar]
 test fCmd-32.17 {file tildeexpand ~USER does not mirror HOME} -setup {
+    set oldHome $::env(HOME)
     set ::env(HOME) [file join $::env(HOME) foo]
 } -cleanup {
-    set ::env(HOME) [file dirname $::env(HOME)]
+    set ::env(HOME) $oldHome
 } -body {
     string tolower [file tildeexpand ~$::tcl_platform(user)]
 } -match glob -result [gethomedirglob $::tcl_platform(user)]
 test fCmd-32.17.1 {Tcl_FSTildeExpand ~USER does not mirror HOME} -setup {
+    set oldHome $::env(HOME)
     set ::env(HOME) [file join $::env(HOME) foo]
 } -cleanup {
-    set ::env(HOME) [file dirname $::env(HOME)]
+    set ::env(HOME) $oldHome
 } -constraints testfstildeexpand -body {
     string tolower [testfstildeexpand ~$::tcl_platform(user)]
 } -match glob -result [gethomedirglob $::tcl_platform(user)]
