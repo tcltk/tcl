@@ -828,7 +828,7 @@ unset cmdBuiltin
 foreach file {gorp.file gorp.file2 echo echo2 echobin cat wc sh sh2 sleep exit err} {
     removeFile $file
 }
-unset -nocomplain path
+unset -nocomplain path tmp
 
 ::tcltest::cleanupTests
 return
