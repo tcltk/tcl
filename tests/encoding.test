@@ -84,6 +84,7 @@ test encoding-2.2 {Tcl_FreeEncoding: refcount != 0} -setup {
     encoding system iso8859-1
     encoding dirs $path
     encoding system $system
+    unset -nocomplain path
 } -result "\x8C\xC1 1 {unknown encoding \"shiftjis\"}"
 
 test encoding-3.1 {Tcl_GetEncodingName, NULL} -setup {
@@ -138,6 +139,7 @@ test encoding-4.1 {Tcl_GetEncodingNames} -constraints {testencoding} -setup {
     removeFile [file join tmp encoding junk.enc]
     removeDirectory [file join tmp encoding]
     removeDirectory tmp
+    unset -nocomplain path
 } -result {junk junk2}
 
 test encoding-5.1 {Tcl_SetSystemEncoding} -setup {
@@ -236,6 +238,7 @@ test encoding-11.1 {LoadEncodingFile: unknown encoding} {testencoding} {
     llength jis0208	;# Shimmer any cached Tcl_Encoding in shared literal
     set x [list [catch {encoding convertto jis0208 乎} msg] $msg]
     encoding dirs $path
+    unset -nocomplain path
     encoding system $system
     lappend x [encoding convertto jis0208 乎]
 } {1 {unknown encoding "jis0208"} 8C}
@@ -275,6 +278,7 @@ test encoding-11.6 {LoadEncodingFile: invalid file} -constraints {testencoding} 
     cd [workingDirectory]
     encoding dirs $path
     encoding system $system
+    unset -nocomplain path
 } -result {invalid encoding file "splat"}
 test encoding-11.8 {encoding: extended Unicode UTF-16} {
     encoding convertto utf-16le 😹
