@@ -1273,12 +1273,17 @@ test filename-14.22 {asterisks, question marks, and brackets} -body {
 test filename-14.23 {slash globbing} {unix} {
     glob /
 } /
+
+# NOTE: [The string index x/ 1] construction is a workaround for the
+# testsetplatform calls above interacting with normalized path caching
+# in -singleproc 1 runs. See ticket [8c63606802].
 test filename-14.23.2 {slash globbing} {win} {
     glob /
-} [file normalize /]
+} [file normalize [string index x/ 1]]
 test filename-14.24 {slash globbing} {win} {
     glob {\\}
-} [file normalize /]
+} [file normalize [string index x/ 1]]
+
 test filename-14.25 {type specific globbing} {unix} {
     lsort [glob -dir globTest -types f *]
 } [lsort [list \
