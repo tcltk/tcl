@@ -36934,18 +36934,18 @@ test clock-38.1 {regression - convertUTCToLocalViaC - east of Greenwich} \
 
 test clock-38.2 {make sure TZ is not cached after unset} \
     -body {
-	set t1 [clock format 0]
+	set t1 [clock format 0 -locale en]
 	# a time zone that is unlikely to anywhere
 	set env(TZ) "+04:20"
-	set t2 [clock format 0]
+	set t2 [clock format 0 -locale en]
 	unset -nocomplain env(TZ)
-	set t3 [clock format 0]
-	expr {$t1 eq $t3 && $t1 ne $t2}
+	set t3 [clock format 0 -locale en]
+	list [expr {$t1 eq $t3 && $t1 ne $t2}] [subst {"$t1" eq "$t3" && "$t1" ne "$t2"}]
     } \
     -cleanup {
 	unset -nocomplain env(TZ)
     } \
-    -result 1
+    -match glob -result {1 *}
 
 test clock-38.3sc {ensure cache of base is correct for :localtime if TZ-env changing / scan} \
     -body {
