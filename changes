@@ -9385,13 +9385,19 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 
 2024-12-16 (bug) [63449c] [namespace children] doesn't match non-glob patterns below the global namespace (stu)
 
-2025-01-06 (bug) [63449c] Better error-message than "interpreter uses an incompatible stubs mechanism" (nijtmans)
+2025-01-06 (bug) [fc3509] Better error-message than "interpreter uses an incompatible stubs mechanism" (nijtmans)
 
 2025-01-19 tzdata updated to Olson's tzdata2025a (nijtmans)
 
+2025-01-28 (bug) [4f0b57] Win: [exec] now works on App Execution Aliases. (noble,nadkarni)
+
+2025-01-28 (bug) [4e2c8b] Win: [auto_execok] handles larger set of shell commands. (nadkarni)
+
+2025-03-06 (bug) [ba68d1] errorline from [interp eval], interp-26.9 (sebres)
+
 2025-03-23 tzdata updated to Olson's tzdata2025b (nijtmans)
 
-2025-04-01 (bug) [fd8341] Tcl_InitStubs compatibility for 9.1, better error-handling (nijtmans)
+2025-04-11 (bug) [fd8341] Tcl_InitStubs compatibility for 9.1, better error-handling (nijtmans)
 
 2025-05-05 (bug) [42d14c] Fix scan with long mantissa. Ex.: scan "1.[string repeat 1 191]e-321" %g
 
@@ -9402,3 +9408,10 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 2025-06-25 (bug) [ecafd8] Euro/Tail-sign missing from cp864 encoding (nijtmans)
 
 2025-07-03 (bug) [6b0f77] gcc 14 breaks configure test for bigendian leading to broken floating point (nijtmans)
+
+2025-07-16 (bug) [c9f052] prevent overflow crash in Tcl_SplitList(). (boyang,nadkarni)
+
+2025-07-21 (bug) [61c01e] Flawed ref counts in filesystem implementation for Windows led to use-after-free (sebres)
+
+- Released 8.6.17, Aug 15, 2025 - details at https://core.tcl-lang.org/tcl/ -
+
