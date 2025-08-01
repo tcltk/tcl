@@ -562,9 +562,7 @@ FileHandlerEventProc(
     int flags)			/* Flags that indicate what events to handle,
 				 * such as TCL_FILE_EVENTS. */
 {
-    FileHandler *filePtr;
     FileHandlerEvent *fileEvPtr = (FileHandlerEvent *) evPtr;
-    int mask;
 
     if (!(flags & TCL_FILE_EVENTS)) {
 	return 0;
@@ -577,7 +575,7 @@ FileHandlerEventProc(
      * event is queued without leaving a dangling pointer.
      */
 
-    for (filePtr = notifier.firstFileHandlerPtr; filePtr != NULL;
+    for (FileHandler *filePtr = notifier.firstFileHandlerPtr; filePtr != NULL;
 	    filePtr = filePtr->nextPtr) {
 	if (filePtr->fd != fileEvPtr->fd) {
 	    continue;
@@ -595,7 +593,7 @@ FileHandlerEventProc(
 	 *    file.
 	 */
 
-	mask = filePtr->readyMask & filePtr->mask;
+	int mask = filePtr->readyMask & filePtr->mask;
 	filePtr->readyMask = 0;
 	if (mask != 0) {
 	    filePtr->proc(filePtr->clientData, mask);

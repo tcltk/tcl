@@ -74,8 +74,6 @@ Tcl_RegisterConfig(
 				 * configuration values, ASCII, thus UTF-8. */
 {
     Tcl_Obj *pDB, *pkgDict;
-    Tcl_DString cmdName;
-    const Tcl_Config *cfg;
     QCCD *cdPtr = (QCCD *)Tcl_Alloc(sizeof(QCCD));
 
     cdPtr->interp = interp;
@@ -126,7 +124,8 @@ Tcl_RegisterConfig(
      * store the value as-is in a byte array. See Bug [9b2e636361].
      */
 
-    for (cfg=configuration ; cfg->key!=NULL && cfg->key[0]!='\0' ; cfg++) {
+    for (const Tcl_Config *cfg=configuration ;
+	    cfg->key!=NULL && cfg->key[0]!='\0' ; cfg++) {
 	TclDictPut(interp, pkgDict, cfg->key,
 		Tcl_NewByteArrayObj((unsigned char *)cfg->value, strlen(cfg->value)));
     }
@@ -142,6 +141,7 @@ Tcl_RegisterConfig(
      * information.
      */
 
+    Tcl_DString cmdName;
     Tcl_DStringInit(&cmdName);
     TclDStringAppendLiteral(&cmdName, "::");
     Tcl_DStringAppend(&cmdName, pkgName, -1);
@@ -206,7 +206,6 @@ QueryConfigObjCmd(
     enum subcmds {
 	CFG_GET, CFG_LIST
     } index;
-    Tcl_DString conv;
     Tcl_Encoding venc = NULL;
     const char *value;
 
@@ -262,10 +261,9 @@ QueryConfigObjCmd(
 	if (value == NULL) {
 	    return TCL_ERROR;
 	}
-	value = Tcl_ExternalToUtfDString(venc, value, n, &conv);
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(value,
-		Tcl_DStringLength(&conv)));
-	Tcl_DStringFree(&conv);
+	Tcl_DString conv;
+	(void) Tcl_ExternalToUtfDString(venc, value, n, &conv);
+	Tcl_SetObjResult(interp, Tcl_DStringToObj(&conv));
 	return TCL_OK;
 
     case CFG_LIST:

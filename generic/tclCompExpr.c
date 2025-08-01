@@ -695,8 +695,6 @@ ParseExpr(
 	 */
 
 	if ((NODE_TYPE & lexeme) == 0) {
-	    int b;
-
 	    switch (lexeme) {
 	    case COMMENT:
 		start += scanned;
@@ -721,6 +719,7 @@ ParseExpr(
 		 * is a legal literal boolean value, we accept that as well.
 		 */
 
+		int b;
 		if (literal && start[scanned+TclParseAllWhiteSpace(
 			start+scanned, numBytes-scanned)] == '(') {
 		    lexeme = FUNCTION;
@@ -845,9 +844,7 @@ ParseExpr(
 	     * for this lexeme.
 	     */
 
-	    Tcl_Token *tokenPtr;
 	    const char *end = start;
-	    Tcl_Size wordIndex;
 	    int code = TCL_OK;
 
 	    /*
@@ -907,8 +904,8 @@ ParseExpr(
 	     */
 
 	    TclGrowParseTokenArray(parsePtr, 2);
-	    wordIndex = parsePtr->numTokens;
-	    tokenPtr = parsePtr->tokenPtr + wordIndex;
+	    Tcl_Size wordIndex = parsePtr->numTokens;
+	    Tcl_Token *tokenPtr = parsePtr->tokenPtr + wordIndex;
 	    tokenPtr->type = TCL_TOKEN_WORD;
 	    tokenPtr->start = start;
 	    parsePtr->numTokens++;
@@ -1092,7 +1089,6 @@ ParseExpr(
 	    break;
 
 	case BINARY: {
-	    OpNode *incompletePtr;
 	    unsigned char precedence = prec[lexeme];
 
 	    /*
@@ -1191,6 +1187,7 @@ ParseExpr(
 	     * and "1+2*3-".
 	     */
 
+	    OpNode *incompletePtr;
 	    while (1) {
 		incompletePtr = nodes + incomplete;
 
@@ -1513,7 +1510,6 @@ ConvertTreeToTokens(
     int next = nodePtr->right;
 
     while (1) {
-	Tcl_Token *subExprTokenPtr;
 	Tcl_Size scanned, parentIdx;
 	unsigned char lexeme;
 
@@ -1551,7 +1547,7 @@ ConvertTreeToTokens(
 	    scanned = ParseLexeme(start, numBytes, &lexeme, NULL);
 
 	    TclGrowParseTokenArray(parsePtr, 2);
-	    subExprTokenPtr = parsePtr->tokenPtr + parsePtr->numTokens;
+	    Tcl_Token *subExprTokenPtr = parsePtr->tokenPtr + parsePtr->numTokens;
 	    subExprTokenPtr->type = TCL_TOKEN_SUB_EXPR;
 	    subExprTokenPtr->start = start;
 	    subExprTokenPtr->size = scanned;
@@ -1739,7 +1735,7 @@ ConvertTreeToTokens(
 		 * the string marking where the operator is.
 		 */
 
-		subExprTokenPtr = parsePtr->tokenPtr + subExprTokenIdx;
+		Tcl_Token *subExprTokenPtr = parsePtr->tokenPtr + subExprTokenIdx;
 		subExprTokenPtr[1].start = start;
 		subExprTokenPtr[1].size = scanned;
 		break;
@@ -1786,7 +1782,7 @@ ConvertTreeToTokens(
 		 * substring for the subexpression ends.
 		 */
 
-		subExprTokenPtr = parsePtr->tokenPtr + subExprTokenIdx;
+		Tcl_Token *subExprTokenPtr = parsePtr->tokenPtr + subExprTokenIdx;
 		subExprTokenPtr->size = start - subExprTokenPtr->start;
 
 		/*
@@ -1858,7 +1854,6 @@ Tcl_ParseExpr(
 				 * the parsed expression; any previous
 				 * information in the structure is ignored. */
 {
-    int code;
     OpNode *opTree = NULL;	/* Will point to the tree of operators. */
     Tcl_Obj *litList;		/* List to hold the literals. */
     Tcl_Obj *funcList;		/* List to hold the functon names. */
@@ -1871,7 +1866,7 @@ Tcl_ParseExpr(
 	numBytes = (start ? strlen(start) : 0);
     }
 
-    code = ParseExpr(interp, start, numBytes, &opTree, litList, funcList,
+    int code = ParseExpr(interp, start, numBytes, &opTree, litList, funcList,
 	    exprParsePtr, 1 /* parseOnly */);
     Tcl_DecrRefCount(funcList);
     Tcl_DecrRefCount(litList);
@@ -1918,7 +1913,6 @@ ParseLexeme(
 				 * storage, if non-NULL. */
 {
     const char *end;
-    int ch;
     Tcl_Obj *literal = NULL;
     unsigned char byte;
 
@@ -2142,6 +2136,7 @@ ParseLexeme(
 
     if (!TclIsBareword(*start) || *start == '_') {
 	Tcl_Size scanned;
+	int ch;
 	if (Tcl_UtfCharComplete(start, numBytes)) {
 	    scanned = TclUtfToUniChar(start, &ch);
 	} else {
@@ -2200,11 +2195,10 @@ TclCompileExpr(
     Tcl_Obj *funcList;		/* List to hold the functon names*/
     Tcl_Parse *parsePtr = (Tcl_Parse *)TclStackAlloc(interp, sizeof(Tcl_Parse));
 				/* Holds the Tcl_Tokens of substitutions */
-    int code;
 
     TclNewObj(litList);
     TclNewObj(funcList);
-    code = ParseExpr(interp, script, numBytes, &opTree, litList,
+    int code = ParseExpr(interp, script, numBytes, &opTree, litList,
 	    funcList, parsePtr, 0 /* parseOnly */);
 
     if (code == TCL_OK) {
@@ -2260,9 +2254,6 @@ ExecConstantExprTree(
     int index,
     Tcl_Obj *const **litObjvPtr)
 {
-    CompileEnv *envPtr;
-    ByteCode *byteCodePtr;
-    int code;
     NRE_callback *rootPtr = TOP_CB(interp);
 
     /*
@@ -2271,16 +2262,16 @@ ExecConstantExprTree(
      * bytecode, so there's no need to tend to TIP 280 issues.
      */
 
-    envPtr = (CompileEnv *)TclStackAlloc(interp, sizeof(CompileEnv));
+    CompileEnv *envPtr = (CompileEnv *)TclStackAlloc(interp, sizeof(CompileEnv));
     TclInitCompileEnv(interp, envPtr, NULL, 0, NULL, 0);
     CompileExprTree(interp, nodes, index, litObjvPtr, NULL, NULL, envPtr,
 	    0 /* optimize */);
     OP(				DONE);
-    byteCodePtr = TclInitByteCode(envPtr);
+    ByteCode *byteCodePtr = TclInitByteCode(envPtr);
     TclFreeCompileEnv(envPtr);
     TclStackFree(interp, envPtr);
     TclNRExecuteByteCode(interp, byteCodePtr);
-    code = TclNRRunCallbacks(interp, TCL_OK, rootPtr);
+    int code = TclNRRunCallbacks(interp, TCL_OK, rootPtr);
     TclReleaseByteCode(byteCodePtr);
     return code;
 }
@@ -2327,7 +2318,7 @@ CompileExprTree(
 
     while (1) {
 	int next;
-	JumpList *freePtr, *newJump;
+	JumpList *newJump;
 
 	if (nodePtr->mark == MARK_LEFT) {
 	    next = nodePtr->left;
@@ -2386,7 +2377,6 @@ CompileExprTree(
 		break;
 	    }
 	} else {
-	    Tcl_Size target;
 	    Tcl_BytecodeLabel pc1, pc2;
 
 	    switch (nodePtr->lexeme) {
@@ -2428,17 +2418,19 @@ CompileExprTree(
 		    jumpPtr->jump.jumpType = TCL_UNCONDITIONAL_JUMP;
 		    convert = 1;
 		}
-		target = jumpPtr->jump.codeOffset + 5;
+		Tcl_Size target = jumpPtr->jump.codeOffset + 5;
 		TclFixupForwardJumpToHere(envPtr, &jumpPtr->jump);
-		freePtr = jumpPtr;
-		jumpPtr = jumpPtr->next;
-		TclStackFree(interp, freePtr);
-		TclFixupForwardJump(envPtr, &jumpPtr->jump,
-			target - jumpPtr->jump.codeOffset);
+		{
+		    JumpList *freePtr = jumpPtr;
+		    jumpPtr = jumpPtr->next;
+		    TclStackFree(interp, freePtr);
+		    TclFixupForwardJump(envPtr, &jumpPtr->jump,
+			    target - jumpPtr->jump.codeOffset);
 
-		freePtr = jumpPtr;
-		jumpPtr = jumpPtr->next;
-		TclStackFree(interp, freePtr);
+		    freePtr = jumpPtr;
+		    jumpPtr = jumpPtr->next;
+		    TclStackFree(interp, freePtr);
+		}
 		break;
 	    case AND:
 	    case OR:
@@ -2456,9 +2448,11 @@ CompileExprTree(
 		PUSH_STRING(	(nodePtr->lexeme == AND) ? "0" : "1");
 		FWDLABEL(pc2);
 		convert = 0;
-		freePtr = jumpPtr;
-		jumpPtr = jumpPtr->next;
-		TclStackFree(interp, freePtr);
+		{
+		    JumpList *freePtr = jumpPtr;
+		    jumpPtr = jumpPtr->next;
+		    TclStackFree(interp, freePtr);
+		}
 		break;
 	    default:
 		TclEmitOpcode(instruction[nodePtr->lexeme], envPtr);
@@ -2539,13 +2533,12 @@ CompileExprTree(
 		     */
 
 		    if (TclHasStringRep(objPtr)) {
-			Tcl_Obj *tableValue;
 			Tcl_Size numBytes;
 			const char *bytes
 				= TclGetStringFromObj(objPtr, &numBytes);
 
 			idx = TclRegisterLiteral(envPtr, bytes, numBytes, 0);
-			tableValue = TclFetchLiteral(envPtr, idx);
+			Tcl_Obj *tableValue = TclFetchLiteral(envPtr, idx);
 			if ((tableValue->typePtr == NULL) &&
 				(objPtr->typePtr != NULL)) {
 			    /*
@@ -2735,7 +2728,6 @@ TclVariadicOpCmd(
 {
     TclOpCmdClientData *occdPtr = (TclOpCmdClientData *)clientData;
     unsigned char lexeme;
-    int code;
 
     if (objc < 2) {
 	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(occdPtr->i.identity));
@@ -2782,7 +2774,7 @@ TclVariadicOpCmd(
 	    nodes[1].p.parent = 0;
 	}
 
-	code = ExecConstantExprTree(interp, nodes, 0, &litObjPtrPtr);
+	int code = ExecConstantExprTree(interp, nodes, 0, &litObjPtrPtr);
 
 	Tcl_DecrRefCount(litObjv[decrMe]);
 	return code;
@@ -2820,7 +2812,7 @@ TclVariadicOpCmd(
 	nodes[0].right = lastOp;
 	nodes[lastOp].p.parent = 0;
 
-	code = ExecConstantExprTree(interp, nodes, 0, &litObjv);
+	int code = ExecConstantExprTree(interp, nodes, 0, &litObjv);
 
 	TclStackFree(interp, nodes);
 	return code;

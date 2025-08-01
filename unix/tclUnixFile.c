@@ -264,7 +264,6 @@ TclpMatchInDirectory(
     } else {
 	TclDIR *d;
 	Tcl_DirEntry *entryPtr;
-	const char *dirName;
 	Tcl_Size dirLength, nativeDirLen;
 	int matchHidden, matchHiddenPat;
 	Tcl_StatBuf statBuf;
@@ -272,8 +271,8 @@ TclpMatchInDirectory(
 	Tcl_DString dsOrig;	/* utf-8 encoding of dir */
 
 	Tcl_DStringInit(&dsOrig);
-	dirName = TclGetStringFromObj(fileNamePtr, &dirLength);
-	Tcl_DStringAppend(&dsOrig, dirName, dirLength);
+	TclDStringAppendObj(&dsOrig, fileNamePtr);
+	const char *dirName = TclGetStringFromObj(fileNamePtr, &dirLength);
 
 	/*
 	 * Make sure that the directory part of the name really is a
@@ -302,7 +301,8 @@ TclpMatchInDirectory(
 	 * Now open the directory for reading and iterate over the contents.
 	 */
 
-	if (Tcl_UtfToExternalDStringEx(interp, NULL, dirName, TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
+	if (Tcl_UtfToExternalDStringEx(interp, NULL, dirName, TCL_INDEX_NONE,
+		0, &ds, NULL) != TCL_OK) {
 	    Tcl_DStringFree(&dsOrig);
 	    Tcl_DStringFree(&ds);
 	    Tcl_DecrRefCount(fileNamePtr);

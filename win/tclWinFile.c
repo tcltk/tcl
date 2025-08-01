@@ -382,7 +382,6 @@ WinSymLinkDirectory(
     REPARSE_DATA_BUFFER *reparseBuffer = (REPARSE_DATA_BUFFER *) &dummy;
     size_t len;
     WCHAR nativeTarget[MAX_PATH];
-    WCHAR *loop;
 
     /*
      * Make the native target name.
@@ -399,7 +398,7 @@ WinSymLinkDirectory(
      * is useless!
      */
 
-    for (loop = nativeTarget; *loop != 0; loop++) {
+    for (WCHAR *loop = nativeTarget; *loop != 0; loop++) {
 	if (*loop == '/') {
 	    *loop = '\\';
 	}
@@ -981,8 +980,8 @@ TclpMatchInDirectory(
 	 */
 
 	Tcl_DStringInit(&dsOrig);
+	TclDStringAppendObj(&dsOrig, fileNamePtr);
 	dirName = TclGetStringFromObj(fileNamePtr, &dirLength);
-	Tcl_DStringAppend(&dsOrig, dirName, dirLength);
 
 	lastChar = dirName[dirLength -1];
 	if ((lastChar != '\\') && (lastChar != '/') && (lastChar != ':')) {

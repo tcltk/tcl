@@ -818,7 +818,6 @@ SetPropertyList(
 {
     Tcl_Size i, n;
     Tcl_Obj *propObj;
-    int created;
     Tcl_HashTable uniqueTable;
 
     for (i=0 ; i<objc ; i++) {
@@ -842,6 +841,7 @@ SetPropertyList(
     if (objc > 0) {
 	Tcl_InitObjHashTable(&uniqueTable);
 	for (i=n=0 ; i<objc ; i++) {
+	    int created;
 	    Tcl_CreateHashEntry(&uniqueTable, objv[i], &created);
 	    if (created) {
 		propList->list[n++] = objv[i];

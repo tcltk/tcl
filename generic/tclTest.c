@@ -853,8 +853,6 @@ TestasyncCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Arguments. */
 {
-    TestAsyncHandler *asyncPtr, *prevPtr;
-    int id, code;
     static int nextId = 1;
 
     if (objc < 2) {
@@ -866,7 +864,7 @@ TestasyncCmd(
 	if (objc != 3) {
 	    goto wrongNumArgs;
 	}
-	asyncPtr = (TestAsyncHandler *)Tcl_Alloc(sizeof(TestAsyncHandler));
+	TestAsyncHandler *asyncPtr = (TestAsyncHandler *)Tcl_Alloc(sizeof(TestAsyncHandler));
 	asyncPtr->command = (char *)Tcl_Alloc(strlen(Tcl_GetString(objv[2])) + 1);
 	strcpy(asyncPtr->command, Tcl_GetString(objv[2]));
 	Tcl_MutexLock(&asyncTestMutex);
@@ -881,7 +879,7 @@ TestasyncCmd(
 	if (objc == 2) {
 	    Tcl_MutexLock(&asyncTestMutex);
 	    while (firstHandler != NULL) {
-		asyncPtr = firstHandler;
+		TestAsyncHandler *asyncPtr = firstHandler;
 		firstHandler = asyncPtr->nextPtr;
 		Tcl_AsyncDelete(asyncPtr->handler);
 		Tcl_Free(asyncPtr->command);
@@ -893,11 +891,12 @@ TestasyncCmd(
 	if (objc != 3) {
 	    goto wrongNumArgs;
 	}
+	int id;
 	if (Tcl_GetIntFromObj(interp, objv[2], &id) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	Tcl_MutexLock(&asyncTestMutex);
-	for (prevPtr = NULL, asyncPtr = firstHandler; asyncPtr != NULL;
+	for (TestAsyncHandler *prevPtr = NULL, *asyncPtr = firstHandler; asyncPtr != NULL;
 		prevPtr = asyncPtr, asyncPtr = asyncPtr->nextPtr) {
 	    if (asyncPtr->id != id) {
 		continue;
@@ -917,12 +916,13 @@ TestasyncCmd(
 	if (objc != 5) {
 	    goto wrongNumArgs;
 	}
+	int id, code;
 	if ((Tcl_GetIntFromObj(interp, objv[2], &id) != TCL_OK)
 		|| (Tcl_GetIntFromObj(interp, objv[4], &code) != TCL_OK)) {
 	    return TCL_ERROR;
 	}
 	Tcl_MutexLock(&asyncTestMutex);
-	for (asyncPtr = firstHandler; asyncPtr != NULL;
+	for (TestAsyncHandler *asyncPtr = firstHandler; asyncPtr != NULL;
 		asyncPtr = asyncPtr->nextPtr) {
 	    if (asyncPtr->id == id) {
 		Tcl_AsyncMark(asyncPtr->handler);
@@ -936,11 +936,12 @@ TestasyncCmd(
 	if (objc != 3) {
 	    goto wrongNumArgs;
 	}
+	int id;
 	if (Tcl_GetIntFromObj(interp, objv[2], &id) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	Tcl_MutexLock(&asyncTestMutex);
-	for (asyncPtr = firstHandler; asyncPtr != NULL;
+	for (TestAsyncHandler *asyncPtr = firstHandler; asyncPtr != NULL;
 		asyncPtr = asyncPtr->nextPtr) {
 	    if (asyncPtr->id == id) {
 		Tcl_ThreadId threadID;
@@ -974,9 +975,6 @@ AsyncHandlerProc(
 {
     TestAsyncHandler *asyncPtr;
     int id = (int)PTR2INT(clientData);
-    const char *listArgv[4];
-    char *cmd;
-    char string[TCL_INTEGER_SPACE];
 
     Tcl_MutexLock(&asyncTestMutex);
     for (asyncPtr = firstHandler; asyncPtr != NULL;
@@ -992,12 +990,15 @@ AsyncHandlerProc(
 	return TCL_OK;
     }
 
+    char string[TCL_INTEGER_SPACE];
     TclFormatInt(string, code);
-    listArgv[0] = asyncPtr->command;
-    listArgv[1] = Tcl_GetStringResult(interp);
-    listArgv[2] = string;
-    listArgv[3] = NULL;
-    cmd = Tcl_Merge(3, listArgv);
+    const char *listArgv[] = {
+	asyncPtr->command,
+	Tcl_GetStringResult(interp),
+	string,
+	NULL
+    };
+    char *cmd = Tcl_Merge(3, listArgv);
     if (interp != NULL) {
 	code = Tcl_EvalEx(interp, cmd, TCL_INDEX_NONE, 0);
     } else {
@@ -1692,12 +1693,11 @@ TestdcallCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Arguments. */
 {
-    int i;
-    int id;
-
     delInterp = Tcl_CreateInterp();
     Tcl_DStringInit(&delString);
-    for (i = 1; i < objc; i++) {
+    for (int i = 1; i < objc; i++) {
+	int id;
+
 	if (Tcl_GetIntFromObj(interp, objv[i], &id) != TCL_OK) {
 	    return TCL_ERROR;
 	}
@@ -1882,15 +1882,9 @@ TestdoubledigitsCmd(
 
     const Tcl_ObjType* doubleType;
     double d;
-    int status;
-    int ndigits;
-    int type;
-    int decpt;
-    int signum;
-    char *str;
-    char *endPtr;
-    Tcl_Obj* strObj;
-    Tcl_Obj* retval;
+    int status, ndigits, type, decpt, signum;
+    char *str, *endPtr;
+    Tcl_Obj *strObj, *retval;
 
     if (objc < 4 || objc > 5) {
 	Tcl_WrongNumArgs(interp, 1, objv, "fpval ndigits type ?shorten?");
@@ -1900,7 +1894,7 @@ TestdoubledigitsCmd(
     if (status != TCL_OK) {
 	doubleType = Tcl_GetObjType("double");
 	if (Tcl_FetchInternalRep(objv[1], doubleType)
-	    && isnan(objv[1]->internalRep.doubleValue)) {
+		&& isnan(objv[1]->internalRep.doubleValue)) {
 	    status = TCL_OK;
 	    memcpy(&d, &(objv[1]->internalRep.doubleValue), sizeof(double));
 	}
@@ -2118,8 +2112,7 @@ static int UtfExtWrapper(
     unsigned char *bufPtr;
     int srcRead, dstLen, dstWrote, dstChars;
     Tcl_Obj *srcReadVar, *dstWroteVar, *dstCharsVar;
-    int result;
-    int flags;
+    int result, flags;
     Tcl_Obj **flagObjs;
     Tcl_Size nflags;
     static const struct {
@@ -6962,10 +6955,6 @@ TestChannelEventCmd(
  *----------------------------------------------------------------------
  */
 
-#define TCP_ASYNC_TEST_MODE	(1<<8)	/* Async testing activated.  Do not
-					 * automatically continue connection
-					 * process. */
-
 static int
 TestSocketCmd(
     TCL_UNUSED(void *),
@@ -6975,6 +6964,11 @@ TestSocketCmd(
 {
     const char *cmdName;	/* Sub command. */
     Tcl_Size len;		/* Length of subcommand string. */
+    enum TclTcpTestFlags {
+	TCP_ASYNC_TEST_MODE = 1<<8	/* Async testing activated.  Do not
+					 * automatically continue connection
+					 * process. */
+    };
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "subcommand ?additional args..?");
@@ -6983,10 +6977,6 @@ TestSocketCmd(
     cmdName = Tcl_GetStringFromObj(objv[1], &len);
 
     if ((cmdName[0] == 't') && (strncmp(cmdName, "testflags", len) == 0)) {
-	Tcl_Channel hChannel;
-	int modePtr;
-	int testMode;
-	TcpState *statePtr;
 	/* Set test value in the socket driver
 	 */
 	/* Check for argument "channel name"
@@ -6995,18 +6985,20 @@ TestSocketCmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, "channel flags");
 	    return TCL_ERROR;
 	}
-	hChannel = Tcl_GetChannel(interp, Tcl_GetString(objv[2]), &modePtr);
+	int modePtr;
+	Tcl_Channel hChannel = Tcl_GetChannel(interp, Tcl_GetString(objv[2]), &modePtr);
 	if (NULL == hChannel) {
 	    TclPrintfResult(interp, "unknown channel: %s",
 		    Tcl_GetString(objv[2]));
 	    return TCL_ERROR;
 	}
-	statePtr = (TcpState *)Tcl_GetChannelInstanceData(hChannel);
+	TcpState *statePtr = (TcpState *)Tcl_GetChannelInstanceData(hChannel);
 	if (NULL == statePtr) {
 	    TclPrintfResult(interp, "No channel instance data: %s",
 		    Tcl_GetString(objv[2]));
 	    return TCL_ERROR;
 	}
+	int testMode;
 	if (Tcl_GetBooleanFromObj(interp, objv[3], &testMode) != TCL_OK) {
 	    return TCL_ERROR;
 	}
@@ -7871,14 +7863,13 @@ TestGetUniCharCmd(
     int objc,			/* Number of arguments */
     Tcl_Obj *const objv[])	/* Argument strings */
 {
-    int index;
-    int c ;
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "STRING INDEX");
 	return TCL_ERROR;
     }
+    int index;
     Tcl_GetIntFromObj(interp, objv[2], &index);
-    c = Tcl_GetUniChar(objv[1], index);
+    int c = Tcl_GetUniChar(objv[1], index);
     Tcl_SetObjResult(interp, Tcl_NewIntObj(c));
 
     return TCL_OK;

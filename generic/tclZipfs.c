@@ -898,12 +898,11 @@ DecodeCryptHeader(
 				/* From zip file content */
 {
     int i;
-    int ch;
     int len = z->zipFilePtr->passBuf[0] & 0xFF;
     char passBuf[260];
 
     for (i = 0; i < len; i++) {
-	ch = z->zipFilePtr->passBuf[len - i];
+	int ch = z->zipFilePtr->passBuf[len - i];
 	passBuf[i] = (ch & 0x0f) | pwrot[(ch >> 4) & 0x0f];
     }
     passBuf[i] = '\0';
@@ -912,7 +911,7 @@ DecodeCryptHeader(
     unsigned char encheader[ZIP_CRYPT_HDR_LEN];
     memcpy(encheader, cryptHeader, ZIP_CRYPT_HDR_LEN);
     for (i = 0; i < ZIP_CRYPT_HDR_LEN; i++) {
-	ch = cryptHeader[i];
+	int ch = cryptHeader[i];
 	ch ^= decrypt_byte(keys, crc32tab);
 	encheader[i] = ch;
 	update_keys(keys, crc32tab, ch);
@@ -1066,9 +1065,6 @@ NormalizeMountPoint(
 {
     char *joinedPath;
     Tcl_Obj *unnormalizedObj;
-    Tcl_Obj *normalizedObj;
-    const char *normalizedPath;
-    Tcl_Size normalizedLen;
     Tcl_DString dsJoin;
 
     /*
@@ -1101,7 +1097,7 @@ NormalizeMountPoint(
 	unnormalizedObj = Tcl_ObjPrintf(ZIPFS_VOLUME "%s", joinedPath + 1);
     }
     Tcl_IncrRefCount(unnormalizedObj);
-    normalizedObj = Tcl_FSGetNormalizedPath(interp, unnormalizedObj);
+    Tcl_Obj *normalizedObj = Tcl_FSGetNormalizedPath(interp, unnormalizedObj);
     if (normalizedObj == NULL) {
 	Tcl_DecrRefCount(unnormalizedObj);
 	goto errorReturn;
@@ -1109,11 +1105,10 @@ NormalizeMountPoint(
     Tcl_IncrRefCount(normalizedObj); /* BEFORE DecrRefCount on unnormalizedObj */
     Tcl_DecrRefCount(unnormalizedObj);
 
+    TclDStringAppendObj(dsPtr, normalizedObj);
     /* normalizedObj owned by Tcl!! Do NOT DecrRef without an IncrRef */
-    normalizedPath = TclGetStringFromObj(normalizedObj, &normalizedLen);
-    Tcl_DStringFree(&dsJoin);
-    Tcl_DStringAppend(dsPtr, normalizedPath, normalizedLen);
     Tcl_DecrRefCount(normalizedObj);
+    Tcl_DStringFree(&dsJoin);
     return TCL_OK;
 
 invalidMountPath:
@@ -1156,9 +1151,6 @@ MapPathToZipfs(
 {
     char *joinedPath;
     Tcl_Obj *unnormalizedObj;
-    Tcl_Obj *normalizedObj;
-    const char *normalizedPath;
-    Tcl_Size normalizedLen;
     Tcl_DString dsJoin;
 
     assert(TclIsZipfsPath(mountPath));
@@ -1168,7 +1160,7 @@ MapPathToZipfs(
 	path
     };
 #ifndef _WIN32
-    /* On Unix C:/foo/bat is not treated as absolute by JoinPath so check ourself */
+    // On Unix C:/foo/bat is not treated as absolute by JoinPath so check ourself
     if (path[0] && path[1] == ':') {
 	joiner[1] += 2;
     }
@@ -1188,7 +1180,7 @@ MapPathToZipfs(
     }
     unnormalizedObj = Tcl_DStringToObj(&dsJoin); /* Also resets dsJoin */
     Tcl_IncrRefCount(unnormalizedObj);
-    normalizedObj = Tcl_FSGetNormalizedPath(interp, unnormalizedObj);
+    Tcl_Obj *normalizedObj = Tcl_FSGetNormalizedPath(interp, unnormalizedObj);
     if (normalizedObj == NULL) {
 	/* Should not happen but continue... */
 	normalizedObj = unnormalizedObj;
@@ -1196,9 +1188,8 @@ MapPathToZipfs(
     Tcl_IncrRefCount(normalizedObj); /* BEFORE DecrRefCount on unnormalizedObj */
     Tcl_DecrRefCount(unnormalizedObj);
 
+    TclDStringAppendObj(dsPtr, normalizedObj);
     /* normalizedObj owned by Tcl!! Do NOT DecrRef without an IncrRef */
-    normalizedPath = TclGetStringFromObj(normalizedObj, &normalizedLen);
-    Tcl_DStringAppend(dsPtr, normalizedPath, normalizedLen);
     Tcl_DecrRefCount(normalizedObj);
     return Tcl_DStringValue(dsPtr);
 }
@@ -1293,9 +1284,6 @@ ContainsMountPoint(
     const char *path,
     int pathLen)
 {
-    Tcl_HashEntry *hPtr;
-    Tcl_HashSearch search;
-
     if (ZipFS.zipHash.numEntries == 0) {
 	return 0;
     }
@@ -1307,7 +1295,9 @@ ContainsMountPoint(
      * We are looking for the case where the path is //zipfs:/a/b
      * and there is a mount point //zipfs:/a/b/c/.. below it
      */
-    for (hPtr = Tcl_FirstHashEntry(&ZipFS.zipHash, &search); hPtr;
+
+    Tcl_HashSearch search;
+    for (Tcl_HashEntry *hPtr = Tcl_FirstHashEntry(&ZipFS.zipHash, &search); hPtr;
 	    hPtr = Tcl_NextHashEntry(&search)) {
 	const ZipFile *zf = (ZipFile *) Tcl_GetHashValue(hPtr);
 
@@ -2091,8 +2081,7 @@ ZipFSCatalogFilesystem(
 		goto nextent;
 	    }
 	    Tcl_DStringSetLength(&ds, 0);
-	    Tcl_DStringAppend(&ds, Tcl_DStringValue(&ds2),
-		    Tcl_DStringLength(&ds2));
+	    TclDStringAppendDString(&ds, &ds2);
 	    path = Tcl_DStringValue(&ds);
 	    Tcl_DStringFree(&ds2);
 #else /* !ANDROID */
@@ -2261,9 +2250,6 @@ static int
 ListMountPoints(
     Tcl_Interp *interp)
 {
-    Tcl_HashEntry *hPtr;
-    Tcl_HashSearch search;
-
     if (!interp) {
 	/*
 	 * Are there any entries in the zipHash? Don't need to enumerate them
@@ -2274,7 +2260,8 @@ ListMountPoints(
     }
 
     Tcl_Obj *resultList = Tcl_NewListObj(0, NULL);
-    for (hPtr = Tcl_FirstHashEntry(&ZipFS.zipHash, &search); hPtr;
+    Tcl_HashSearch search;
+    for (Tcl_HashEntry *hPtr = Tcl_FirstHashEntry(&ZipFS.zipHash, &search); hPtr;
 	    hPtr = Tcl_NextHashEntry(&search)) {
 	const ZipFile *zf = (ZipFile *) Tcl_GetHashValue(hPtr);
 	Tcl_Obj *names[] = {
@@ -3415,9 +3402,8 @@ ZipFSMkZipOrImg(
     Tcl_Obj *passwordObj)	/* The password for encoding things. NULL if
 				 * there's no password protection. */
 {
-    Tcl_Channel out;
     int count, ret = TCL_ERROR;
-    Tcl_Size pwlen = 0, slen = 0, len;
+    Tcl_Size pwlen = 0, slen = 0;
     Tcl_Size lobjc;
     long long dataStartOffset;	/* The overall file offset of the start of the
 				 * data section of the file. */
@@ -3428,10 +3414,6 @@ ZipFSMkZipOrImg(
 				 * suffix of the central directory (i.e.,
 				 * where this data will be written). */
     Tcl_Obj **lobjv, *list = mappingList;
-    ZipEntry *z;
-    Tcl_HashEntry *hPtr;
-    Tcl_HashSearch search;
-    Tcl_HashTable fileHash;
     char *strip = NULL, *pw = NULL, passBuf[264], buf[4096];
     unsigned char *start = (unsigned char *) buf;
     unsigned char *end = start + sizeof(buf);
@@ -3477,7 +3459,8 @@ ZipFSMkZipOrImg(
 	Tcl_DecrRefCount(list);
 	return TCL_ERROR;
     }
-    out = Tcl_FSOpenFileChannel(interp, targetFile, "wb", 0755);
+
+    Tcl_Channel out = Tcl_FSOpenFileChannel(interp, targetFile, "wb", 0755);
     if (out == NULL) {
 	Tcl_DecrRefCount(list);
 	return TCL_ERROR;
@@ -3492,14 +3475,13 @@ ZipFSMkZipOrImg(
     if (isImg) {
 	ZipFile *zf, zf0;
 	int isMounted = 0;
-	const char *imgName;
 
 	// TODO: normalize the origin file name
-	imgName = (originFile != NULL) ? TclGetString(originFile) :
+	const char *imgName = (originFile != NULL) ? TclGetString(originFile) :
 		Tcl_GetNameOfExecutable();
 	if (pwlen) {
 	    Tcl_Size i = 0;
-	    for (len = pwlen; len-- > 0;) {
+	    for (Tcl_Size len = pwlen; len-- > 0;) {
 		int ch = pw[len];
 
 		passBuf[i] = (ch & 0x0f) | pwrot[(ch >> 4) & 0x0f];
@@ -3519,8 +3501,9 @@ ZipFSMkZipOrImg(
 	 */
 
 	WriteLock();
-	for (hPtr = Tcl_FirstHashEntry(&ZipFS.zipHash, &search); hPtr;
-		hPtr = Tcl_NextHashEntry(&search)) {
+	Tcl_HashSearch search;
+	for (Tcl_HashEntry *hPtr = Tcl_FirstHashEntry(&ZipFS.zipHash, &search);
+		hPtr; hPtr = Tcl_NextHashEntry(&search)) {
 	    zf = (ZipFile *) Tcl_GetHashValue(hPtr);
 	    if (strcmp(zf->name, imgName) == 0) {
 		isMounted = 1;
@@ -3580,7 +3563,7 @@ ZipFSMkZipOrImg(
 	 * Store the password so that the automounter can find it.
 	 */
 
-	len = strlen(passBuf);
+	Tcl_Size len = strlen(passBuf);
 	if (len > 0) {
 	    Tcl_Size i = Tcl_Write(out, passBuf, len);
 	    if (i != len) {
@@ -3602,6 +3585,7 @@ ZipFSMkZipOrImg(
      * Prepare the contents of the ZIP archive.
      */
 
+    Tcl_HashTable fileHash;
     Tcl_InitHashTable(&fileHash, TCL_STRING_KEYS);
     if (mappingList == NULL && stripPrefix != NULL) {
 	strip = TclGetStringFromObj(stripPrefix, &slen);
@@ -3634,11 +3618,11 @@ ZipFSMkZipOrImg(
 		(mappingList ? lobjv[i + 1] : NULL), strip, slen);
 	Tcl_DString ds;
 
-	hPtr = Tcl_FindHashEntry(&fileHash, name);
+	Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&fileHash, name);
 	if (!hPtr) {
 	    continue;
 	}
-	z = (ZipEntry *) Tcl_GetHashValue(hPtr);
+	ZipEntry *z = (ZipEntry *) Tcl_GetHashValue(hPtr);
 
 	if (Tcl_UtfToExternalDStringEx(interp, tclUtf8Encoding, z->name,
 		TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
@@ -3646,7 +3630,7 @@ ZipFSMkZipOrImg(
 	    goto done;
 	}
 	name = Tcl_DStringValue(&ds);
-	len = Tcl_DStringLength(&ds);
+	Tcl_Size len = Tcl_DStringLength(&ds);
 	SerializeCentralDirectoryEntry(start, end, (unsigned char *) buf,
 		z, len, dataStartOffset);
 	if ((Tcl_Write(out, buf, ZIP_CENTRAL_HEADER_LEN)
@@ -3682,9 +3666,10 @@ ZipFSMkZipOrImg(
 	Tcl_Close(interp, out);
     }
     Tcl_DecrRefCount(list);
-    for (hPtr = Tcl_FirstHashEntry(&fileHash, &search); hPtr;
+    Tcl_HashSearch search;
+    for (Tcl_HashEntry *hPtr = Tcl_FirstHashEntry(&fileHash, &search); hPtr;
 	    hPtr = Tcl_NextHashEntry(&search)) {
-	z = (ZipEntry *) Tcl_GetHashValue(hPtr);
+	ZipEntry *z = (ZipEntry *) Tcl_GetHashValue(hPtr);
 	Tcl_Free(z);
 	Tcl_DeleteHashEntry(hPtr);
     }
@@ -4197,7 +4182,6 @@ ZipFSListObjCmd(
 {
     char *pattern = NULL;
     Tcl_RegExp regexp = NULL;
-    Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
     Tcl_Obj *result = Tcl_GetObjResult(interp);
     const char *options[] = {"-glob", "-regexp", NULL};
@@ -4241,7 +4225,7 @@ ZipFSListObjCmd(
 
     ReadLock();
     if (pattern) {
-	for (hPtr = Tcl_FirstHashEntry(&ZipFS.fileHash, &search);
+	for (Tcl_HashEntry *hPtr = Tcl_FirstHashEntry(&ZipFS.fileHash, &search);
 		hPtr != NULL; hPtr = Tcl_NextHashEntry(&search)) {
 	    ZipEntry *z = (ZipEntry *) Tcl_GetHashValue(hPtr);
 
@@ -4251,7 +4235,7 @@ ZipFSListObjCmd(
 	    }
 	}
     } else if (regexp) {
-	for (hPtr = Tcl_FirstHashEntry(&ZipFS.fileHash, &search);
+	for (Tcl_HashEntry *hPtr = Tcl_FirstHashEntry(&ZipFS.fileHash, &search);
 		hPtr; hPtr = Tcl_NextHashEntry(&search)) {
 	    ZipEntry *z = (ZipEntry *) Tcl_GetHashValue(hPtr);
 
@@ -4261,7 +4245,7 @@ ZipFSListObjCmd(
 	    }
 	}
     } else {
-	for (hPtr = Tcl_FirstHashEntry(&ZipFS.fileHash, &search);
+	for (Tcl_HashEntry *hPtr = Tcl_FirstHashEntry(&ZipFS.fileHash, &search);
 		hPtr; hPtr = Tcl_NextHashEntry(&search)) {
 	    ZipEntry *z = (ZipEntry *) Tcl_GetHashValue(hPtr);
 
@@ -5719,11 +5703,10 @@ ZipFSMatchInDirectoryProc(
     notDuplicate = 0;
     Tcl_InitHashTable(&duplicates, TCL_STRING_KEYS);
 
-    Tcl_HashEntry *hPtr;
-    Tcl_HashSearch search;
     if (foundInHash) {
-	for (hPtr = Tcl_FirstHashEntry(&ZipFS.fileHash, &search); hPtr;
-		hPtr = Tcl_NextHashEntry(&search)) {
+	Tcl_HashSearch search;
+	for (Tcl_HashEntry *hPtr = Tcl_FirstHashEntry(&ZipFS.fileHash, &search);
+		hPtr; hPtr = Tcl_NextHashEntry(&search)) {
 	    z = (ZipEntry *)Tcl_GetHashValue(hPtr);
 
 	    if ((wanted == (TCL_GLOB_TYPE_DIR | TCL_GLOB_TYPE_FILE)) ||
@@ -5749,8 +5732,9 @@ ZipFSMatchInDirectoryProc(
 	 */
 	Tcl_DString ds;
 	Tcl_DStringInit(&ds);
-	for (hPtr = Tcl_FirstHashEntry(&ZipFS.zipHash, &search); hPtr;
-		hPtr = Tcl_NextHashEntry(&search)) {
+	Tcl_HashSearch search;
+	for (Tcl_HashEntry *hPtr = Tcl_FirstHashEntry(&ZipFS.zipHash, &search);
+		hPtr; hPtr = Tcl_NextHashEntry(&search)) {
 	    ZipFile *zf = (ZipFile *)Tcl_GetHashValue(hPtr);
 	    if (Tcl_StringCaseMatch(zf->mountPoint, pat, 0)) {
 		const char *tail = zf->mountPoint + len;
@@ -5809,8 +5793,6 @@ ZipFSMatchMountPoints(
 				 * filenames, or NULL if no prefix is to be
 				 * used. */
 {
-    Tcl_HashEntry *hPtr;
-    Tcl_HashSearch search;
     Tcl_Size normLength;
     const char *path = TclGetStringFromObj(normPathPtr, &normLength);
     Tcl_Size len = normLength;
@@ -5832,7 +5814,8 @@ ZipFSMatchMountPoints(
 	pattern = "*";
     }
 
-    for (hPtr = Tcl_FirstHashEntry(&ZipFS.zipHash, &search); hPtr;
+    Tcl_HashSearch search;
+    for (Tcl_HashEntry *hPtr = Tcl_FirstHashEntry(&ZipFS.zipHash, &search); hPtr;
 	    hPtr = Tcl_NextHashEntry(&search)) {
 	ZipFile *zf = (ZipFile *) Tcl_GetHashValue(hPtr);
 
@@ -6419,10 +6402,9 @@ TclZipfsFinalize(void)
 	return;
     }
 
-    Tcl_HashEntry *hPtr;
     Tcl_HashSearch zipSearch;
-    for (hPtr = Tcl_FirstHashEntry(&ZipFS.zipHash, &zipSearch); hPtr;
-	    hPtr = Tcl_NextHashEntry(&zipSearch)) {
+    for (Tcl_HashEntry *hPtr = Tcl_FirstHashEntry(&ZipFS.zipHash, &zipSearch);
+	    hPtr; hPtr = Tcl_NextHashEntry(&zipSearch)) {
 	ZipFile *zf = (ZipFile *) Tcl_GetHashValue(hPtr);
 	Tcl_DeleteHashEntry(hPtr);
 	CleanupMount(zf); /* Frees file entries belonging to the archive */

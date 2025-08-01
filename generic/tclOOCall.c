@@ -74,7 +74,7 @@ enum CallChainFlags {
     (((mPtr)->flags & PUBLIC_METHOD) != 0)
 #define IS_UNEXPORTED(mPtr)			\
     (((mPtr)->flags & SCOPE_FLAGS) == 0)
-#define IS_ITCLPRIVATE(mPtr)				\
+#define IS_ITCLPRIVATE(mPtr)			\
     (((mPtr)->flags & PRIVATE_METHOD) != 0)
 #define IS_PRIVATE(mPtr)			\
     (((mPtr)->flags & TRUE_PRIVATE_METHOD) != 0)

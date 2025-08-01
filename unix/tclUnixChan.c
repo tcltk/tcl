@@ -676,8 +676,6 @@ FileGetOptionProc(
 
     if ((len > 1) && (strncmp(optionName, "-stat", len) == 0)) {
 	Tcl_Obj *dictObj = StatOpenFile(fsPtr);
-	const char *dictContents;
-	Tcl_Size dictLength;
 
 	if (dictObj == NULL) {
 	    TclPrintfResult(interp, "couldn't read file channel status: %s",
@@ -691,8 +689,7 @@ FileGetOptionProc(
 	 * general probe.
 	 */
 
-	dictContents = TclGetStringFromObj(dictObj, &dictLength);
-	Tcl_DStringAppend(dsPtr, dictContents, dictLength);
+	TclDStringAppendObj(dsPtr, dictObj);
 	Tcl_DecrRefCount(dictObj);
 	return TCL_OK;
     }

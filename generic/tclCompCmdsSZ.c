@@ -137,7 +137,6 @@ TclCompileSetCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
-    Tcl_Token *varTokenPtr, *valueTokenPtr;
     int isAssignment, isScalar;
     Tcl_Size numWords = parsePtr->numWords;
     Tcl_LVTIndex localIndex;
@@ -155,7 +154,7 @@ TclCompileSetCmd(
      * qualifiers.
      */
 
-    varTokenPtr = TokenAfter(parsePtr->tokenPtr);
+    Tcl_Token *varTokenPtr = TokenAfter(parsePtr->tokenPtr);
     PushVarNameWord(varTokenPtr, 0, &localIndex, &isScalar, 1);
 
     /*
@@ -163,7 +162,7 @@ TclCompileSetCmd(
      */
 
     if (isAssignment) {
-	valueTokenPtr = TokenAfter(varTokenPtr);
+	Tcl_Token *valueTokenPtr = TokenAfter(varTokenPtr);
 	PUSH_TOKEN(		valueTokenPtr, 2);
     }
 
@@ -232,9 +231,7 @@ TclCompileStringCatCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
-    Tcl_Size numWords = parsePtr->numWords, numArgs;
-    Tcl_Token *wordTokenPtr;
-    Tcl_Obj *obj, *folded;
+    Tcl_Size numWords = parsePtr->numWords;
     /* TODO: Consider support for compiling expanded args. */
 
     /* Trivial case, no arg */
@@ -247,10 +244,11 @@ TclCompileStringCatCmd(
     /* General case: issue CONCAT1's (by chunks of 254 if needed), folding
      * contiguous constants along the way */
 
-    numArgs = 0;
-    folded = NULL;
-    wordTokenPtr = TokenAfter(parsePtr->tokenPtr);
+    Tcl_Size numArgs = 0;
+    Tcl_Obj *folded = NULL;
+    Tcl_Token *wordTokenPtr = TokenAfter(parsePtr->tokenPtr);
     for (Tcl_Size i = 1; i < numWords; i++) {
+	Tcl_Obj *obj;
 	TclNewObj(obj);
 	if (TclWordKnownAtCompileTime(wordTokenPtr, obj)) {
 	    if (folded) {
@@ -296,7 +294,6 @@ TclCompileStringCmpCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
-    Tcl_Token *aTokenPtr, *bTokenPtr;
 
     /*
      * We don't support any flags; the bytecode isn't that sophisticated.
@@ -310,8 +307,8 @@ TclCompileStringCmpCmd(
      * Push the two operands onto the stack and then the test.
      */
 
-    aTokenPtr = TokenAfter(parsePtr->tokenPtr);
-    bTokenPtr = TokenAfter(aTokenPtr);
+    Tcl_Token *aTokenPtr = TokenAfter(parsePtr->tokenPtr);
+    Tcl_Token *bTokenPtr = TokenAfter(aTokenPtr);
     PUSH_TOKEN(			aTokenPtr, 1);
     PUSH_TOKEN(			bTokenPtr, 2);
     OP(				STR_CMP);
@@ -327,7 +324,6 @@ TclCompileStringEqualCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
-    Tcl_Token *aTokenPtr, *bTokenPtr;
 
     /*
      * We don't support any flags; the bytecode isn't that sophisticated.
@@ -341,8 +337,8 @@ TclCompileStringEqualCmd(
      * Push the two operands onto the stack and then the test.
      */
 
-    aTokenPtr = TokenAfter(parsePtr->tokenPtr);
-    bTokenPtr = TokenAfter(aTokenPtr);
+    Tcl_Token *aTokenPtr = TokenAfter(parsePtr->tokenPtr);
+    Tcl_Token *bTokenPtr = TokenAfter(aTokenPtr);
     PUSH_TOKEN(			aTokenPtr, 1);
     PUSH_TOKEN(			bTokenPtr, 2);
     OP(				STR_EQ);
@@ -358,7 +354,6 @@ TclCompileStringFirstCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
-    Tcl_Token *needleToken, *haystackToken;
 
     /*
      * We don't support any flags; the bytecode isn't that sophisticated.
@@ -372,8 +367,8 @@ TclCompileStringFirstCmd(
      * Push the two operands onto the stack and then the test.
      */
 
-    needleToken = TokenAfter(parsePtr->tokenPtr);
-    haystackToken = TokenAfter(needleToken);
+    Tcl_Token *needleToken = TokenAfter(parsePtr->tokenPtr);
+    Tcl_Token *haystackToken = TokenAfter(needleToken);
     PUSH_TOKEN(			needleToken, 1);
     PUSH_TOKEN(			haystackToken, 2);
     OP(				STR_FIND);
@@ -389,7 +384,6 @@ TclCompileStringLastCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
-    Tcl_Token *needleToken, *haystackToken;
 
     /*
      * We don't support any flags; the bytecode isn't that sophisticated.
@@ -403,8 +397,8 @@ TclCompileStringLastCmd(
      * Push the two operands onto the stack and then the test.
      */
 
-    needleToken = TokenAfter(parsePtr->tokenPtr);
-    haystackToken = TokenAfter(needleToken);
+    Tcl_Token *needleToken = TokenAfter(parsePtr->tokenPtr);
+    Tcl_Token *haystackToken = TokenAfter(needleToken);
     PUSH_TOKEN(			needleToken, 1);
     PUSH_TOKEN(			haystackToken, 2);
     OP(				STR_FIND_LAST);
@@ -420,7 +414,6 @@ TclCompileStringIndexCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
-    Tcl_Token *aTokenPtr, *bTokenPtr;
 
     if (parsePtr->numWords != 3) {
 	return TCL_ERROR;
@@ -430,8 +423,8 @@ TclCompileStringIndexCmd(
      * Push the two operands onto the stack and then the index operation.
      */
 
-    aTokenPtr = TokenAfter(parsePtr->tokenPtr);
-    bTokenPtr = TokenAfter(aTokenPtr);
+    Tcl_Token *aTokenPtr = TokenAfter(parsePtr->tokenPtr);
+    Tcl_Token *bTokenPtr = TokenAfter(aTokenPtr);
     PUSH_TOKEN(			aTokenPtr, 1);
     PUSH_TOKEN(			bTokenPtr, 2);
     OP(				STR_INDEX);
@@ -447,17 +440,16 @@ TclCompileStringInsertCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
-    Tcl_Token *strToken, *idxToken, *insToken;
-    int idx;
 
     if (parsePtr->numWords != 4) {
 	return TCL_ERROR;
     }
 
-    strToken = TokenAfter(parsePtr->tokenPtr);
+    Tcl_Token *strToken = TokenAfter(parsePtr->tokenPtr);
 
     /* See what can be discovered about index at compile time */
-    idxToken = TokenAfter(strToken);
+    Tcl_Token *idxToken = TokenAfter(strToken);
+    int idx;
     if (TCL_OK != TclGetIndexFromToken(idxToken, TCL_INDEX_START,
 	    TCL_INDEX_END, &idx)) {
 
@@ -465,7 +457,7 @@ TclCompileStringInsertCmd(
 	return TCL_ERROR;
     }
 
-    insToken = TokenAfter(idxToken);
+    Tcl_Token *insToken = TokenAfter(idxToken);
 
     PUSH_TOKEN(			strToken, 1);
     PUSH_TOKEN(			insToken, 3);
@@ -789,14 +781,13 @@ TclCompileStringMatchCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
-    Tcl_Token *tokenPtr;
     int exactMatch = 0, nocase = 0;
     Tcl_Size numWords = parsePtr->numWords;
 
     if (numWords < 3 || numWords > 4) {
 	return TCL_ERROR;
     }
-    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    Tcl_Token *tokenPtr = TokenAfter(parsePtr->tokenPtr);
 
     /*
      * Check if we have a -nocase flag.
@@ -855,14 +846,13 @@ TclCompileStringLenCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
-    Tcl_Token *tokenPtr;
     Tcl_Obj *objPtr;
 
     if (parsePtr->numWords != 2) {
 	return TCL_ERROR;
     }
 
-    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    Tcl_Token *tokenPtr = TokenAfter(parsePtr->tokenPtr);
     TclNewObj(objPtr);
     if (TclWordKnownAtCompileTime(tokenPtr, objPtr)) {
 	/*
@@ -892,7 +882,6 @@ TclCompileStringMapCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
-    Tcl_Token *mapTokenPtr, *stringTokenPtr;
     Tcl_Obj *mapObj, **objv;
     Tcl_Size len;
 
@@ -909,8 +898,8 @@ TclCompileStringMapCmd(
     if (parsePtr->numWords != 3) {
 	return TCL_ERROR;
     }
-    mapTokenPtr = TokenAfter(parsePtr->tokenPtr);
-    stringTokenPtr = TokenAfter(mapTokenPtr);
+    Tcl_Token *mapTokenPtr = TokenAfter(parsePtr->tokenPtr);
+    Tcl_Token *stringTokenPtr = TokenAfter(mapTokenPtr);
     TclNewObj(mapObj);
     Tcl_IncrRefCount(mapObj);
     if (!TclWordKnownAtCompileTime(mapTokenPtr, mapObj)) {
@@ -951,15 +940,14 @@ TclCompileStringRangeCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
-    Tcl_Token *stringTokenPtr, *fromTokenPtr, *toTokenPtr;
     int idx1, idx2;
 
     if (parsePtr->numWords != 4) {
 	return TCL_ERROR;
     }
-    stringTokenPtr = TokenAfter(parsePtr->tokenPtr);
-    fromTokenPtr = TokenAfter(stringTokenPtr);
-    toTokenPtr = TokenAfter(fromTokenPtr);
+    Tcl_Token *stringTokenPtr = TokenAfter(parsePtr->tokenPtr);
+    Tcl_Token *fromTokenPtr = TokenAfter(stringTokenPtr);
+    Tcl_Token *toTokenPtr = TokenAfter(fromTokenPtr);
 
     /* Every path must push the string argument */
     PUSH_TOKEN(			stringTokenPtr, 1);
@@ -1026,7 +1014,6 @@ TclCompileStringReplaceCmd(
     CompileEnv *envPtr)		/* Holds the resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
-    Tcl_Token *tokenPtr, *valueTokenPtr;
     int first, last;
 
     if (parsePtr->numWords < 4 || parsePtr->numWords > 5) {
@@ -1034,13 +1021,13 @@ TclCompileStringReplaceCmd(
     }
 
     /* Bytecode to compute/push string argument being replaced */
-    valueTokenPtr = TokenAfter(parsePtr->tokenPtr);
+    Tcl_Token *valueTokenPtr = TokenAfter(parsePtr->tokenPtr);
     PUSH_TOKEN(			valueTokenPtr, 1);
 
     /*
      * Check for first index known and useful at compile time.
      */
-    tokenPtr = TokenAfter(valueTokenPtr);
+    Tcl_Token *tokenPtr = TokenAfter(valueTokenPtr);
     if (TclGetIndexFromToken(tokenPtr, TCL_INDEX_START, TCL_INDEX_NONE,
 	    &first) != TCL_OK) {
 	goto genericReplace;
@@ -1223,13 +1210,12 @@ TclCompileStringTrimLCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
-    Tcl_Token *tokenPtr;
 
     if (parsePtr->numWords != 2 && parsePtr->numWords != 3) {
 	return TCL_ERROR;
     }
 
-    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    Tcl_Token *tokenPtr = TokenAfter(parsePtr->tokenPtr);
     PUSH_TOKEN(			tokenPtr, 1);
     if (parsePtr->numWords == 3) {
 	tokenPtr = TokenAfter(tokenPtr);
@@ -1250,13 +1236,12 @@ TclCompileStringTrimRCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
-    Tcl_Token *tokenPtr;
 
     if (parsePtr->numWords != 2 && parsePtr->numWords != 3) {
 	return TCL_ERROR;
     }
 
-    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    Tcl_Token *tokenPtr = TokenAfter(parsePtr->tokenPtr);
     PUSH_TOKEN(			tokenPtr, 1);
     if (parsePtr->numWords == 3) {
 	tokenPtr = TokenAfter(tokenPtr);
@@ -1277,13 +1262,12 @@ TclCompileStringTrimCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
-    Tcl_Token *tokenPtr;
 
     if (parsePtr->numWords != 2 && parsePtr->numWords != 3) {
 	return TCL_ERROR;
     }
 
-    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    Tcl_Token *tokenPtr = TokenAfter(parsePtr->tokenPtr);
     PUSH_TOKEN(			tokenPtr, 1);
     if (parsePtr->numWords == 3) {
 	tokenPtr = TokenAfter(tokenPtr);
@@ -1305,13 +1289,12 @@ TclCompileStringToUpperCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
-    Tcl_Token *tokenPtr;
 
     if (parsePtr->numWords != 2) {
 	return TclCompileBasic1To3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     }
 
-    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    Tcl_Token *tokenPtr = TokenAfter(parsePtr->tokenPtr);
     PUSH_TOKEN(			tokenPtr, 1);
     OP(				STR_UPPER);
     return TCL_OK;
@@ -1327,13 +1310,12 @@ TclCompileStringToLowerCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
-    Tcl_Token *tokenPtr;
 
     if (parsePtr->numWords != 2) {
 	return TclCompileBasic1To3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     }
 
-    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    Tcl_Token *tokenPtr = TokenAfter(parsePtr->tokenPtr);
     PUSH_TOKEN(			tokenPtr, 1);
     OP(				STR_LOWER);
     return TCL_OK;
@@ -1349,13 +1331,12 @@ TclCompileStringToTitleCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
-    Tcl_Token *tokenPtr;
 
     if (parsePtr->numWords != 2) {
 	return TclCompileBasic1To3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     }
 
-    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    Tcl_Token *tokenPtr = TokenAfter(parsePtr->tokenPtr);
     PUSH_TOKEN(			tokenPtr, 1);
     OP(				STR_TITLE);
     return TCL_OK;
@@ -1428,7 +1409,6 @@ TclCompileSubstCmd(
     Tcl_Size numArgs = parsePtr->numWords - 1;
     Tcl_Size objc, numOpts = numArgs - 1;
     int flags = TCL_SUBST_ALL;
-    Tcl_Obj **objv/*, *toSubst = NULL*/;
     Tcl_Token *wordTokenPtr = TokenAfter(parsePtr->tokenPtr);
     int code = TCL_ERROR;
 
@@ -1436,7 +1416,7 @@ TclCompileSubstCmd(
 	return TCL_ERROR;
     }
 
-    objv = (Tcl_Obj **)TclStackAlloc(interp, numOpts * sizeof(Tcl_Obj *));
+    Tcl_Obj **objv = (Tcl_Obj **)TclStackAlloc(interp, numOpts * sizeof(Tcl_Obj *));
 
     for (objc = 0; objc < numOpts; objc++) {
 	TclNewObj(objv[objc]);
@@ -1448,12 +1428,12 @@ TclCompileSubstCmd(
 	wordTokenPtr = TokenAfter(wordTokenPtr);
     }
 
-/*
+#if 0
     if (TclSubstOptions(NULL, numOpts, objv, &flags) == TCL_OK) {
 	toSubst = objv[numOpts];
 	Tcl_IncrRefCount(toSubst);
     }
-*/
+#endif
 
     /* TODO: Figure out expansion to cover WordKnownAtCompileTime
      * The difficulty is that WKACT makes a copy, and if TclSubstParse
@@ -1491,7 +1471,6 @@ TclSubstCompile(
     int line,
     CompileEnv *envPtr)
 {
-    Tcl_Token *endTokenPtr, *tokenPtr;
     Tcl_BytecodeLabel breakOffset = 0;
     Tcl_Size count = 0;
     int bline = line;
@@ -1511,13 +1490,13 @@ TclSubstCompile(
      * identifying a script that could trigger this case.
      */
 
-    tokenPtr = parse.tokenPtr;
+    Tcl_Token *tokenPtr = parse.tokenPtr;
     if (tokenPtr->type != TCL_TOKEN_TEXT && tokenPtr->type != TCL_TOKEN_BS) {
 	PUSH(			"");
 	count++;
     }
 
-    for (endTokenPtr = tokenPtr + parse.numTokens;
+    for (const Tcl_Token *endTokenPtr = tokenPtr + parse.numTokens;
 	    tokenPtr < endTokenPtr; tokenPtr = TokenAfter(tokenPtr)) {
 	Tcl_Size length;
 	Tcl_ExceptionRange catchRange;
@@ -2144,8 +2123,6 @@ IssueSwitchChainedTests(
 		 */
 
 		if (arms[i].valueToken->type == TCL_TOKEN_TEXT) {
-		    Tcl_DString ds;
-
 		    if (arms[i].valueToken->size == 0) {
 			/*
 			 * The semantics of regexps are that they always match
@@ -2161,6 +2138,7 @@ IssueSwitchChainedTests(
 		     * the converted pattern.
 		     */
 
+		    Tcl_DString ds;
 		    if (TclReToGlob(NULL, arm->valueToken->start,
 			    arm->valueToken->size, &ds, &exact, NULL) == TCL_OK) {
 			simple = 1;
@@ -2311,12 +2289,8 @@ IssueSwitchJumpTable(
     Tcl_Size numArms,		/* Number of arms of the switch. */
     SwitchArmInfo *arms)	/* Array of arm descriptors. */
 {
-    JumptableInfo *jtPtr;
-    Tcl_AuxDataRef infoIndex;
-    int isNew, mustGenerate, foundDefault;
     Tcl_Size numRealBodies = 0;
-    Tcl_BytecodeLabel jumpLocation, jumpToDefault, *finalFixups;
-    Tcl_DString buffer;
+    Tcl_BytecodeLabel jumpLocation, jumpToDefault;
 
     /*
      * If doing case-insensitive matching, convert to lower case and then do
@@ -2336,12 +2310,12 @@ IssueSwitchJumpTable(
      * Start by allocating the jump table itself, plus some workspace.
      */
 
-    jtPtr = AllocJumptable();
-    infoIndex = RegisterJumptable(jtPtr, envPtr);
-    finalFixups = (Tcl_BytecodeLabel *)TclStackAlloc(interp,
+    JumptableInfo *jtPtr = AllocJumptable();
+    Tcl_AuxDataRef infoIndex = RegisterJumptable(jtPtr, envPtr);
+    Tcl_BytecodeLabel *finalFixups = (Tcl_BytecodeLabel *)TclStackAlloc(interp,
 	    sizeof(Tcl_BytecodeLabel) * numArms);
-    foundDefault = 0;
-    mustGenerate = 1;
+    int foundDefault = 0;
+    int mustGenerate = 1;
 
     /*
      * Next, issue the instruction to do the jump, together with what we want
@@ -2358,6 +2332,7 @@ IssueSwitchJumpTable(
 
     for (Tcl_Size i=0 ; i<numArms ; i++) {
 	SwitchArmInfo *arm = &arms[i];
+	int isNew;
 
 	/*
 	 * For each arm, we must first work out what to do with the match
@@ -2376,6 +2351,7 @@ IssueSwitchJumpTable(
 	     * with all keys being lower case strings.
 	     */
 
+	    Tcl_DString buffer;
 	    Tcl_DStringInit(&buffer);
 	    TclDStringAppendToken(&buffer, arm->valueToken);
 	    if (noCase) {
@@ -2807,21 +2783,18 @@ TclCompileThrowCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Size numWords = parsePtr->numWords;
-    Tcl_Token *codeToken, *msgToken;
-    Tcl_Obj *objPtr;
-    int codeKnown, codeIsList, codeIsValid;
-    Tcl_Size len;
 
     if (numWords != 3) {
 	return TCL_ERROR;
     }
-    codeToken = TokenAfter(parsePtr->tokenPtr);
-    msgToken = TokenAfter(codeToken);
+    Tcl_Token *codeToken = TokenAfter(parsePtr->tokenPtr);
+    Tcl_Token *msgToken = TokenAfter(codeToken);
 
+    Tcl_Obj *objPtr;
     TclNewObj(objPtr);
     Tcl_IncrRefCount(objPtr);
 
-    codeKnown = TclWordKnownAtCompileTime(codeToken, objPtr);
+    int codeKnown = TclWordKnownAtCompileTime(codeToken, objPtr);
 
     /*
      * First we must emit the code to substitute the arguments.  This
@@ -2833,9 +2806,10 @@ TclCompileThrowCmd(
     }
     PUSH_TOKEN(			msgToken, 2);
 
-    codeIsList = codeKnown && (TCL_OK ==
+    Tcl_Size len;
+    int codeIsList = codeKnown && (TCL_OK ==
 	    TclListObjLength(interp, objPtr, &len));
-    codeIsValid = codeIsList && (len != 0);
+    int codeIsValid = codeIsList && (len != 0);
 
     if (codeIsValid) {
 	Tcl_Obj *dictPtr;
@@ -2913,17 +2887,15 @@ TclCompileTryCmd(
 {
     Tcl_Size numHandlers, numWords = parsePtr->numWords;
     int result = TCL_ERROR, anyTrapClauses = 0;
-    Tcl_Token *bodyToken, *finallyToken, *tokenPtr;
     TryHandlerInfo staticHandler, *handlers = &staticHandler;
-    Tcl_Size handlerIdx = 0;
 
     if (numWords < 2 || numWords > UINT_MAX) {
 	return TCL_ERROR;
     }
 
-    bodyToken = TokenAfter(parsePtr->tokenPtr);
+    Tcl_Token *bodyToken = TokenAfter(parsePtr->tokenPtr);
     numWords -= 2;
-    tokenPtr = TokenAfter(bodyToken);
+    Tcl_Token *tokenPtr = TokenAfter(bodyToken);
 
     /*
      * Extract information about what handlers there are.
@@ -2940,11 +2912,11 @@ TclCompileTryCmd(
 	}
 
 	/* Bug [c587295271]. Initialize so they can be released on exit. */
-	for (handlerIdx = 0; handlerIdx < numHandlers ; handlerIdx++) {
+	for (Tcl_Size handlerIdx = 0; handlerIdx < numHandlers ; handlerIdx++) {
 	    handlers[handlerIdx].matchClause = NULL;
 	}
 
-	for (handlerIdx = 0; handlerIdx < numHandlers ; handlerIdx++) {
+	for (Tcl_Size handlerIdx = 0; handlerIdx < numHandlers ; handlerIdx++) {
 	    Tcl_Obj *tmpObj, **objv;
 	    Tcl_Size objc;
 
@@ -3057,6 +3029,7 @@ TclCompileTryCmd(
      * Parse the finally clause
      */
 
+    Tcl_Token *finallyToken;
     if (numWords == 0) {
 	finallyToken = NULL;
     } else if (numWords == 2) {
@@ -3113,7 +3086,7 @@ TclCompileTryCmd(
      */
 
 failedToCompile:
-    for (handlerIdx = 0; handlerIdx < numHandlers; ++handlerIdx) {
+    for (Tcl_Size handlerIdx = 0; handlerIdx < numHandlers; ++handlerIdx) {
 	if (handlers[handlerIdx].matchClause) {
 	    TclDecrRefCount(handlers[handlerIdx].matchClause);
 	}
@@ -3148,16 +3121,13 @@ IssueTryClausesInstructions(
     TryHandlerInfo *handlers)
 {
     DefineLineInformation;	/* TIP #280 */
-    Tcl_LVTIndex resultVar, optionsVar;
-    Tcl_Size len;
     int continuationsPending = 0, trapZero = 0;
-    Tcl_ExceptionRange range;
     Tcl_BytecodeLabel afterBody = 0, pushReturnOptions = 0;
     Tcl_BytecodeLabel notCodeJumpSource, notECJumpSource, dontSpliceDuring;
     Tcl_BytecodeLabel *continuationJumps, *afterReturn0, *noError;
 
-    resultVar = AnonymousLocal(envPtr);
-    optionsVar = AnonymousLocal(envPtr);
+    Tcl_LVTIndex resultVar = AnonymousLocal(envPtr);
+    Tcl_LVTIndex optionsVar = AnonymousLocal(envPtr);
     if (resultVar < 0 || optionsVar < 0) {
 	return TCL_ERROR;
     }
@@ -3181,7 +3151,7 @@ IssueTryClausesInstructions(
      * (and it's never called when there's a finally clause).
      */
 
-    range = MAKE_CATCH_RANGE();
+    Tcl_ExceptionRange range = MAKE_CATCH_RANGE();
     OP4(			BEGIN_CATCH, range);
     CATCH_RANGE(range) {
 	BODY(			bodyToken, 1);
@@ -3230,6 +3200,7 @@ IssueTryClausesInstructions(
 	OP(			EQ);
 	FWDJUMP(		JUMP_FALSE, notCodeJumpSource);
 	if (handlers[i].matchClause) {
+	    Tcl_Size len;
 	    TclListObjLength(NULL, handlers[i].matchClause, &len);
 
 	    /*
@@ -3359,29 +3330,24 @@ IssueTryTraplessClausesInstructions(
     TryHandlerInfo *handlers)
 {
     DefineLineInformation;	/* TIP #280 */
-    Tcl_LVTIndex resultVar, optionsVar;
     int continuationsPending = 0, trapZero = 0;
-    Tcl_ExceptionRange range;
     Tcl_BytecodeLabel afterBody = 0, pushReturnOptions = 0;
     Tcl_BytecodeLabel dontSpliceDuring, tableBase, haveOther;
-    Tcl_BytecodeLabel *continuationJumps, *afterReturn0, *noError;
-    JumptableNumInfo *tablePtr;
-    Tcl_AuxDataRef tableIdx;
 
-    resultVar = AnonymousLocal(envPtr);
-    optionsVar = AnonymousLocal(envPtr);
+    Tcl_LVTIndex resultVar = AnonymousLocal(envPtr);
+    Tcl_LVTIndex optionsVar = AnonymousLocal(envPtr);
     if (resultVar < 0 || optionsVar < 0) {
 	return TCL_ERROR;
     }
-    afterReturn0 = (Tcl_BytecodeLabel *)TclStackAlloc(interp,
+    Tcl_BytecodeLabel *afterReturn0 = (Tcl_BytecodeLabel *)TclStackAlloc(interp,
 	    sizeof(Tcl_BytecodeLabel) * numHandlers * 3);
-    continuationJumps = afterReturn0 + numHandlers;
-    noError = continuationJumps + numHandlers;
+    Tcl_BytecodeLabel *continuationJumps = afterReturn0 + numHandlers;
+    Tcl_BytecodeLabel *noError = continuationJumps + numHandlers;
     for (Tcl_Size i=0; i<numHandlers*3; i++) {
 	afterReturn0[i] = NO_PENDING_JUMP;
     }
-    tablePtr = AllocJumptableNum();
-    tableIdx = RegisterJumptableNum(tablePtr, envPtr);
+    JumptableNumInfo *tablePtr = AllocJumptableNum();
+    Tcl_AuxDataRef tableIdx = RegisterJumptableNum(tablePtr, envPtr);
 
     /*
      * Check if we're supposed to trap a normal TCL_OK completion of the body.
@@ -3402,7 +3368,7 @@ IssueTryTraplessClausesInstructions(
      * (and it's never called when there's a finally clause).
      */
 
-    range = MAKE_CATCH_RANGE();
+    Tcl_ExceptionRange range = MAKE_CATCH_RANGE();
     OP4(			BEGIN_CATCH, range);
     CATCH_RANGE(range) {
 	BODY(			bodyToken, 1);
@@ -3551,16 +3517,13 @@ IssueTryClausesFinallyInstructions(
     Tcl_Token *finallyToken)	/* Not NULL */
 {
     DefineLineInformation;	/* TIP #280 */
-    Tcl_LVTIndex resultLocal, optionsLocal;
     Tcl_Size len;
     int forwardsNeedFixing = 0, trapZero = 0;
-    Tcl_ExceptionRange range;
-    Tcl_BytecodeLabel *addrsToFix, *forwardsToFix;
     Tcl_BytecodeLabel finalOK, dontSpliceDuring;
     Tcl_BytecodeLabel pushReturnOptions = 0, endCatch = 0, afterBody = 0;
 
-    resultLocal = AnonymousLocal(envPtr);
-    optionsLocal = AnonymousLocal(envPtr);
+    Tcl_LVTIndex resultLocal = AnonymousLocal(envPtr);
+    Tcl_LVTIndex optionsLocal = AnonymousLocal(envPtr);
     if (resultLocal < 0 || optionsLocal < 0) {
 	return TCL_ERROR;
     }
@@ -3582,7 +3545,7 @@ IssueTryClausesFinallyInstructions(
      * (if any trap matches) and run a finally clause.
      */
 
-    range = MAKE_CATCH_RANGE();
+    Tcl_ExceptionRange range = MAKE_CATCH_RANGE();
     OP4(			BEGIN_CATCH, range);
     CATCH_RANGE(range) {
 	BODY(			bodyToken, 1);
@@ -3623,9 +3586,9 @@ IssueTryClausesFinallyInstructions(
      * Slight overallocation, but reduces size of this function.
      */
 
-    addrsToFix = (Tcl_BytecodeLabel *)TclStackAlloc(interp,
+    Tcl_BytecodeLabel *addrsToFix = (Tcl_BytecodeLabel *)TclStackAlloc(interp,
 	    sizeof(Tcl_BytecodeLabel) * numHandlers * 2);
-    forwardsToFix = addrsToFix + numHandlers;
+    Tcl_BytecodeLabel *forwardsToFix = addrsToFix + numHandlers;
 
     for (Tcl_Size i=0 ; i<numHandlers ; i++) {
 	Tcl_BytecodeLabel codeNotMatched, notErrorCodeMatched = NO_PENDING_JUMP;
@@ -3848,28 +3811,24 @@ IssueTryTraplessClausesFinallyInstructions(
     Tcl_Token *finallyToken)	/* Not NULL */
 {
     DefineLineInformation;	/* TIP #280 */
-    Tcl_LVTIndex resultLocal, optionsLocal;
     int forwardsNeedFixing = 0, trapZero = 0;
     Tcl_ExceptionRange range;
-    Tcl_BytecodeLabel *addrsToFix, *forwardsToFix;
     Tcl_BytecodeLabel finalOK, dontSpliceDuring, tableBase, haveOther;
     Tcl_BytecodeLabel pushReturnOptions = 0, afterBody = 0;
-    JumptableNumInfo *tablePtr;
-    Tcl_AuxDataRef tableIdx;
 
-    resultLocal = AnonymousLocal(envPtr);
-    optionsLocal = AnonymousLocal(envPtr);
+    Tcl_LVTIndex resultLocal = AnonymousLocal(envPtr);
+    Tcl_LVTIndex optionsLocal = AnonymousLocal(envPtr);
     if (resultLocal < 0 || optionsLocal < 0) {
 	return TCL_ERROR;
     }
-    addrsToFix = (Tcl_BytecodeLabel *)TclStackAlloc(interp,
+    Tcl_BytecodeLabel *addrsToFix = (Tcl_BytecodeLabel *)TclStackAlloc(interp,
 	    sizeof(Tcl_BytecodeLabel) * numHandlers * 2);
-    forwardsToFix = addrsToFix + numHandlers;
+    Tcl_BytecodeLabel *forwardsToFix = addrsToFix + numHandlers;
     for (Tcl_Size i=0; i < numHandlers * 2; i++) {
 	addrsToFix[i] = NO_PENDING_JUMP;
     }
-    tablePtr = AllocJumptableNum();
-    tableIdx = RegisterJumptableNum(tablePtr, envPtr);
+    JumptableNumInfo *tablePtr = AllocJumptableNum();
+    Tcl_AuxDataRef tableIdx = RegisterJumptableNum(tablePtr, envPtr);
 
     /*
      * Check if we're supposed to trap a normal TCL_OK completion of the body.
@@ -4119,7 +4078,6 @@ IssueTryFinallyInstructions(
     Tcl_Token *finallyToken)
 {
     DefineLineInformation;	/* TIP #280 */
-    Tcl_ExceptionRange bodyRange, finallyRange;
     Tcl_BytecodeLabel jumpOK, dontSpliceDuring, endCatch;
 
     /*
@@ -4127,7 +4085,7 @@ IssueTryFinallyInstructions(
      * needing a local variable table, making it a universal compilation.
      */
 
-    bodyRange = MAKE_CATCH_RANGE();
+    Tcl_ExceptionRange bodyRange = MAKE_CATCH_RANGE();
 
     // Body
     OP4(			BEGIN_CATCH, bodyRange);
@@ -4145,7 +4103,7 @@ IssueTryFinallyInstructions(
     OP(				END_CATCH);
 
     // Finally
-    finallyRange = MAKE_CATCH_RANGE();
+    Tcl_ExceptionRange finallyRange = MAKE_CATCH_RANGE();
     OP4(			BEGIN_CATCH, finallyRange);
     CATCH_RANGE(finallyRange) {
 	BODY(			finallyToken, 3);
@@ -4208,9 +4166,8 @@ TclCompileUnsetCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
-    Tcl_Token *varTokenPtr;
     int isScalar, flags = 1;
-    Tcl_Size haveFlags = 0, i, varCount = 0;
+    Tcl_Size haveFlags = 0, i = 1, varCount = 0;
     Tcl_LVTIndex localIndex;
 
     /* TODO: Consider support for compiling expanded args. */
@@ -4225,7 +4182,7 @@ TclCompileUnsetCmd(
      * push/rotate. [Bug 3970f54c4e]
      */
 
-    for (i=1,varTokenPtr=parsePtr->tokenPtr ; i<parsePtr->numWords ; i++) {
+    for (Tcl_Token *varTokenPtr=parsePtr->tokenPtr ; i<parsePtr->numWords ; i++) {
 	Tcl_Obj *leadingWord;
 
 	TclNewObj(leadingWord);
@@ -4285,7 +4242,7 @@ TclCompileUnsetCmd(
      * Issue instructions to unset each of the named variables.
      */
 
-    varTokenPtr = TokenAfter(parsePtr->tokenPtr);
+    Tcl_Token *varTokenPtr = TokenAfter(parsePtr->tokenPtr);
     for (i=0; i<haveFlags;i++) {
 	varTokenPtr = TokenAfter(varTokenPtr);
     }
@@ -4352,9 +4309,6 @@ TclCompileUplevelCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Size numWords = parsePtr->numWords;
-    Tcl_Token *tokenPtr;
-    Tcl_Obj *objPtr;
-    Tcl_Size first;
 
     /* TODO: Consider support for compiling expanded args. */
     if (numWords < 2 || numWords > 1<<8 || !EnvIsProc(envPtr)) {
@@ -4365,7 +4319,8 @@ TclCompileUplevelCmd(
 	return TCL_ERROR;
     }
 
-    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    Tcl_Token *tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    Tcl_Obj *objPtr;
     TclNewObj(objPtr);
     if (!TclWordKnownAtCompileTime(tokenPtr, objPtr)) {
 	/*
@@ -4387,6 +4342,7 @@ TclCompileUplevelCmd(
 	return TCL_ERROR;
     }
 
+    Tcl_Size first;
     if (numFrameWords) {
 	PUSH_TOKEN(		tokenPtr, 1);
 	tokenPtr = TokenAfter(tokenPtr);
@@ -4440,13 +4396,8 @@ TclCompileWhileCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
-    Tcl_Token *testTokenPtr, *bodyTokenPtr;
-    Tcl_BytecodeLabel jumpEvalCond, bodyCodeOffset;
-    Tcl_ExceptionRange range;
-    int code, boolVal;
     int loopMayEnd = 1;		/* This is set to 0 if it is recognized as an
 				 * infinite loop. */
-    Tcl_Obj *boolObj;
 
     if (parsePtr->numWords != 3) {
 	return TCL_ERROR;
@@ -4461,12 +4412,13 @@ TclCompileWhileCmd(
      * insure correct behaviour [Bug 219166]
      */
 
-    testTokenPtr = TokenAfter(parsePtr->tokenPtr);
-    bodyTokenPtr = TokenAfter(testTokenPtr);
+    Tcl_Token *testTokenPtr = TokenAfter(parsePtr->tokenPtr);
+    Tcl_Token *bodyTokenPtr = TokenAfter(testTokenPtr);
 
     if (bodyTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
 	return TCL_ERROR;
     }
+    Tcl_Obj *boolObj;
     TclNewObj(boolObj);
     if (!TclWordKnownAtCompileTime(testTokenPtr, boolObj)) {
 	Tcl_BounceRefCount(boolObj);
@@ -4477,7 +4429,7 @@ TclCompileWhileCmd(
      * Find out if the condition is a constant.
      */
 
-    code = Tcl_GetBooleanFromObj(NULL, boolObj, &boolVal);
+    int boolVal, code = Tcl_GetBooleanFromObj(NULL, boolObj, &boolVal);
     Tcl_BounceRefCount(boolObj);
     if (code == TCL_OK) {
 	if (boolVal) {
@@ -4502,7 +4454,8 @@ TclCompileWhileCmd(
      * implement break and continue.
      */
 
-    range = MAKE_LOOP_RANGE();
+    Tcl_ExceptionRange range = MAKE_LOOP_RANGE();
+    Tcl_BytecodeLabel jumpEvalCond, bodyCodeOffset;
 
     /*
      * Jump to the evaluation of the condition. This code uses the "loop
@@ -4709,12 +4662,11 @@ CompileUnaryOpCmd(
     CompileEnv *envPtr)
 {
     DefineLineInformation;	/* TIP #280 */
-    Tcl_Token *tokenPtr;
 
     if (parsePtr->numWords != 2) {
 	return TCL_ERROR;
     }
-    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    Tcl_Token *tokenPtr = TokenAfter(parsePtr->tokenPtr);
     PUSH_TOKEN(			tokenPtr, 1);
     TclEmitOpcode(instruction, envPtr);
     return TCL_OK;
@@ -4839,7 +4791,6 @@ CompileComparisonOpCmd(
     CompileEnv *envPtr)
 {
     DefineLineInformation;	/* TIP #280 */
-    Tcl_Token *tokenPtr;
 
     /* TODO: Consider support for compiling expanded args. */
     if (parsePtr->numWords > UINT_MAX) {
@@ -4848,7 +4799,7 @@ CompileComparisonOpCmd(
     if (parsePtr->numWords < 3) {
 	PUSH(			"1");
     } else if (parsePtr->numWords == 3) {
-	tokenPtr = TokenAfter(parsePtr->tokenPtr);
+	Tcl_Token *tokenPtr = TokenAfter(parsePtr->tokenPtr);
 	PUSH_TOKEN(		tokenPtr, 1);
 	tokenPtr = TokenAfter(tokenPtr);
 	PUSH_TOKEN(		tokenPtr, 2);
@@ -4861,14 +4812,13 @@ CompileComparisonOpCmd(
 	return TCL_ERROR;
     } else {
 	Tcl_LVTIndex tmpIndex = AnonymousLocal(envPtr);
-	Tcl_Size words;
-
-	tokenPtr = TokenAfter(parsePtr->tokenPtr);
+	Tcl_Token *tokenPtr = TokenAfter(parsePtr->tokenPtr);
 	PUSH_TOKEN(		tokenPtr, 1);
 	tokenPtr = TokenAfter(tokenPtr);
 	PUSH_TOKEN(		tokenPtr, 2);
 	OP4(			STORE_SCALAR, tmpIndex);
 	TclEmitOpcode(instruction, envPtr);
+	Tcl_Size words;
 	for (words=3 ; words<parsePtr->numWords ;) {
 	    OP4(		LOAD_SCALAR, tmpIndex);
 	    tokenPtr = TokenAfter(tokenPtr);

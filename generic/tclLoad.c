@@ -137,7 +137,6 @@ Tcl_LoadObjCmd(
     LoadedLibrary *libraryPtr, *defaultPtr;
     Tcl_DString pfx, tmp, initName, safeInitName;
     Tcl_DString unloadName, safeUnloadName;
-    InterpLibrary *ipFirstPtr, *ipPtr;
     int code, namesMatch, filesMatch;
     Tcl_Size offset;
     Tcl_LibraryInitProc *initProc;
@@ -231,7 +230,8 @@ Tcl_LoadObjCmd(
     Tcl_MutexLock(&libraryMutex);
 
     defaultPtr = NULL;
-    for (libraryPtr = firstLibraryPtr; libraryPtr != NULL; libraryPtr = libraryPtr->nextPtr) {
+    for (libraryPtr = firstLibraryPtr; libraryPtr != NULL;
+	    libraryPtr = libraryPtr->nextPtr) {
 	if (prefix == NULL) {
 	    namesMatch = 0;
 	} else {
@@ -282,8 +282,10 @@ Tcl_LoadObjCmd(
      */
 
     if (libraryPtr != NULL) {
-	ipFirstPtr = (InterpLibrary *)Tcl_GetAssocData(target, ASSOC_KEY, NULL);
-	for (ipPtr = ipFirstPtr; ipPtr != NULL; ipPtr = ipPtr->nextPtr) {
+	InterpLibrary *ipFirstPtr = (InterpLibrary *)
+		Tcl_GetAssocData(target, ASSOC_KEY, NULL);
+	for (InterpLibrary *ipPtr = ipFirstPtr; ipPtr != NULL;
+		ipPtr = ipPtr->nextPtr) {
 	    if (ipPtr->libraryPtr == libraryPtr) {
 		code = TCL_OK;
 		goto done;
@@ -378,7 +380,6 @@ Tcl_LoadObjCmd(
 
 	    Tcl_DStringSetLength(&pfx,
 		    Tcl_UtfToTitle(Tcl_DStringValue(&pfx)));
-
 	}
 
 	/*
@@ -426,20 +427,20 @@ Tcl_LoadObjCmd(
 	memcpy(libraryPtr->prefix, Tcl_DStringValue(&pfx), len);
 	libraryPtr->loadHandle	   = loadHandle;
 	libraryPtr->initProc	   = initProc;
-	libraryPtr->safeInitProc	   = (Tcl_LibraryInitProc *)
+	libraryPtr->safeInitProc   = (Tcl_LibraryInitProc *)
 		Tcl_FindSymbol(interp, loadHandle,
 			Tcl_DStringValue(&safeInitName));
 	libraryPtr->unloadProc	   = (Tcl_LibraryUnloadProc *)
 		Tcl_FindSymbol(interp, loadHandle,
 			Tcl_DStringValue(&unloadName));
-	libraryPtr->safeUnloadProc	   = (Tcl_LibraryUnloadProc *)
+	libraryPtr->safeUnloadProc = (Tcl_LibraryUnloadProc *)
 		Tcl_FindSymbol(interp, loadHandle,
 			Tcl_DStringValue(&safeUnloadName));
-	libraryPtr->interpRefCount	   = 0;
+	libraryPtr->interpRefCount = 0;
 	libraryPtr->safeInterpRefCount = 0;
 
 	Tcl_MutexLock(&libraryMutex);
-	libraryPtr->nextPtr		   = firstLibraryPtr;
+	libraryPtr->nextPtr	   = firstLibraryPtr;
 	firstLibraryPtr		   = libraryPtr;
 	Tcl_MutexUnlock(&libraryMutex);
 
@@ -513,13 +514,9 @@ Tcl_LoadObjCmd(
     }
     Tcl_MutexUnlock(&libraryMutex);
 
-    /*
-     * Refetch ipFirstPtr: loading the library may have introduced additional
-     * static libraries at the head of the linked list!
-     */
-
-    ipFirstPtr = (InterpLibrary *)Tcl_GetAssocData(target, ASSOC_KEY, NULL);
-    ipPtr = (InterpLibrary *)Tcl_Alloc(sizeof(InterpLibrary));
+    InterpLibrary *ipFirstPtr = (InterpLibrary *)
+	    Tcl_GetAssocData(target, ASSOC_KEY, NULL);
+    InterpLibrary *ipPtr = (InterpLibrary *)Tcl_Alloc(sizeof(InterpLibrary));
     ipPtr->libraryPtr = libraryPtr;
     ipPtr->nextPtr = ipFirstPtr;
     Tcl_SetAssocData(target, ASSOC_KEY, LoadCleanupProc, ipPtr);

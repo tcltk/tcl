@@ -307,12 +307,10 @@ CreateCmdInNS(
     CompileProc *compileProc,
     int flags)
 {
-    Command *cmdPtr;
-
     if (cmdProc == NULL && nreProc == NULL) {
 	Tcl_Panic("must supply at least one implementation function");
     }
-    cmdPtr = (Command *) TclCreateObjCommandInNs(interp, name,
+    Command *cmdPtr = (Command *) TclCreateObjCommandInNs(interp, name,
 	    namespacePtr, cmdProc, NULL, NULL);
     cmdPtr->nreProc = nreProc;
     cmdPtr->compileProc = compileProc;
@@ -339,7 +337,6 @@ InitFoundation(
     ThreadLocalData *tsdPtr = (ThreadLocalData *)
 	    Tcl_GetThreadData(&tsdKey, sizeof(ThreadLocalData));
     Foundation *fPtr = (Foundation *) Tcl_Alloc(sizeof(Foundation));
-    Tcl_Namespace *define, *objdef;
     Tcl_Obj *namePtr;
 
     /*
@@ -353,8 +350,8 @@ InitFoundation(
     fPtr->interp = interp;
     fPtr->ooNs = Tcl_CreateNamespace(interp, "::oo", fPtr, NULL);
     Tcl_Export(interp, fPtr->ooNs, "[a-z]*", 1);
-    define = Tcl_CreateNamespace(interp, "::oo::define", fPtr, NULL);
-    objdef = Tcl_CreateNamespace(interp, "::oo::objdefine", fPtr, NULL);
+    Tcl_Namespace *define = Tcl_CreateNamespace(interp, "::oo::define", fPtr, NULL);
+    Tcl_Namespace *objdef = Tcl_CreateNamespace(interp, "::oo::objdefine", fPtr, NULL);
     fPtr->helpersNs = Tcl_CreateNamespace(interp, "::oo::Helpers", fPtr,
 	    DeletedHelpersNamespace);
     Tcl_CreateNamespace(interp, "::oo::configuresupport", NULL, NULL);
@@ -662,12 +659,7 @@ AllocObject(
 				 * will be the same as if this was NULL. */
 {
     Foundation *fPtr = GetFoundation(interp);
-    Object *oPtr;
-    Command *cmdPtr;
-    CommandTrace *tracePtr;
-    size_t creationEpoch;
-
-    oPtr = (Object *) Tcl_Alloc(sizeof(Object));
+    Object *oPtr = (Object *) Tcl_Alloc(sizeof(Object));
     memset(oPtr, 0, sizeof(Object));
 
     /*
@@ -682,6 +674,7 @@ AllocObject(
      * created.
      */
 
+    size_t creationEpoch;
     if (nsNameStr != NULL) {
 	oPtr->namespacePtr = Tcl_CreateNamespace(interp, nsNameStr, oPtr, NULL);
 	if (oPtr->namespacePtr == NULL) {
@@ -782,9 +775,9 @@ AllocObject(
      * abstractions, it is faster and we're inside Tcl here so we're allowed.
      */
 
-    cmdPtr = (Command *) oPtr->command;
+    Command *cmdPtr = (Command *) oPtr->command;
     cmdPtr->nreProc = PublicNRObjectCmd;
-    cmdPtr->tracePtr = tracePtr = (CommandTrace *)
+    CommandTrace *tracePtr = cmdPtr->tracePtr = (CommandTrace *)
 	    Tcl_Alloc(sizeof(CommandTrace));
     tracePtr->traceProc = ObjectRenamedTrace;
     tracePtr->clientData = oPtr;
@@ -914,7 +907,6 @@ TclOODeleteDescendants(
     Object *oPtr)		/* The object representing the class. */
 {
     Class *clsPtr = oPtr->classPtr, *subclassPtr, *mixinSubclassPtr;
-    Object *instancePtr;
 
     /*
      * Squelch classes that this class has been mixed into.
@@ -970,7 +962,7 @@ TclOODeleteDescendants(
 
     if (clsPtr->instances.num > 0) {
 	while (clsPtr->instances.num > 0) {
-	    instancePtr = clsPtr->instances.list[clsPtr->instances.num - 1];
+	    Object *instancePtr = clsPtr->instances.list[clsPtr->instances.num - 1];
 
 	    /*
 	     * This condition also covers the case where instancePtr == oPtr
@@ -1007,10 +999,7 @@ TclOOReleaseClassContents(
     Object *oPtr)		/* The object representing the class. */
 {
     Class *clsPtr = oPtr->classPtr, *tmpClsPtr;
-    Method *mPtr;
     Foundation *fPtr = oPtr->fPtr;
-    Tcl_Obj *variableObj;
-    PrivateVariableMapping *privateVariable;
 
     /*
      * Sanity check!
@@ -1053,7 +1042,6 @@ TclOOReleaseClassContents(
     }
     if (clsPtr->classChainCache) {
 	CallChain *callPtr;
-
 	FOREACH_HASH_VALUE(callPtr, clsPtr->classChainCache) {
 	    TclOODeleteChain(callPtr);
 	}
@@ -1119,6 +1107,7 @@ TclOOReleaseClassContents(
 	clsPtr->superclasses.list = NULL;
     }
 
+    Method *mPtr;
     FOREACH_HASH_VALUE(mPtr, &clsPtr->classMethods) {
 	/* instance gets deleted, so if method remains, reset it there */
 	if (mPtr->refCount > 1 && mPtr->declaringClassPtr == clsPtr) {
@@ -1130,19 +1119,20 @@ TclOOReleaseClassContents(
     TclOODelMethodRef(clsPtr->constructorPtr);
     TclOODelMethodRef(clsPtr->destructorPtr);
 
-    Tcl_Size i;
-    FOREACH_IDX(i, variableObj, clsPtr->variables) {
-	TclDecrRefCount(variableObj);
-    }
-    if (i) {
+    if (clsPtr->variables.num) {
+	Tcl_Obj *variableObj;
+	FOREACH(variableObj, clsPtr->variables) {
+	    TclDecrRefCount(variableObj);
+	}
 	Tcl_Free(clsPtr->variables.list);
     }
 
-    FOREACH_IDX_STRUCT(i, privateVariable, clsPtr->privateVariables) {
-	TclDecrRefCount(privateVariable->variableObj);
-	TclDecrRefCount(privateVariable->fullNameObj);
-    }
-    if (i) {
+    if (clsPtr->privateVariables.num) {
+	PrivateVariableMapping *privateVariable;
+	FOREACH_STRUCT(privateVariable, clsPtr->privateVariables) {
+	    TclDecrRefCount(privateVariable->variableObj);
+	    TclDecrRefCount(privateVariable->fullNameObj);
+	}
 	Tcl_Free(clsPtr->privateVariables.list);
     }
 
@@ -1171,12 +1161,7 @@ ObjectNamespaceDeleted(
 {
     Object *oPtr = (Object *) clientData;
     Foundation *fPtr = oPtr->fPtr;
-    Class *mixinPtr;
-    Method *mPtr;
-    Tcl_Obj *filterObj, *variableObj;
-    PrivateVariableMapping *privateVariable;
     Tcl_Interp *interp = fPtr->interp;
-    Tcl_Size i;
 
     if (Destructing(oPtr)) {
 	/*
@@ -1216,13 +1201,10 @@ ObjectNamespaceDeleted(
 
 	oPtr->flags |= DESTRUCTOR_CALLED;
 	if (contextPtr != NULL) {
-	    int result;
-	    Tcl_InterpState state;
-
 	    contextPtr->callPtr->flags |= DESTRUCTOR;
 	    contextPtr->skip = 0;
-	    state = Tcl_SaveInterpState(interp, TCL_OK);
-	    result = Tcl_NRCallObjProc(interp, TclOOInvokeContext,
+	    Tcl_InterpState state = Tcl_SaveInterpState(interp, TCL_OK);
+	    int result = Tcl_NRCallObjProc(interp, TclOOInvokeContext,
 		    contextPtr, 0, NULL);
 	    if (result != TCL_OK) {
 		Tcl_BackgroundException(interp, result);
@@ -1269,6 +1251,7 @@ ObjectNamespaceDeleted(
     TclOORemoveFromInstances(oPtr, oPtr->selfCls);
 
     if (oPtr->mixins.num > 0) {
+	Class *mixinPtr;
 	FOREACH(mixinPtr, oPtr->mixins) {
 	    TclOORemoveFromInstances(oPtr, mixinPtr);
 	    TclOODecrRefCount(mixinPtr->thisPtr);
@@ -1278,14 +1261,16 @@ ObjectNamespaceDeleted(
 	}
     }
 
-    FOREACH_IDX(i, filterObj, oPtr->filters) {
-	TclDecrRefCount(filterObj);
-    }
-    if (i) {
+    if (oPtr->filters.num > 0) {
+	Tcl_Obj *filterObj;
+	FOREACH(filterObj, oPtr->filters) {
+	    TclDecrRefCount(filterObj);
+	}
 	Tcl_Free(oPtr->filters.list);
     }
 
     if (oPtr->methodsPtr) {
+	Method *mPtr;
 	FOREACH_HASH_VALUE(mPtr, oPtr->methodsPtr) {
 	    /* instance gets deleted, so if method remains, reset it there */
 	    if (mPtr->refCount > 1 && mPtr->declaringObjectPtr == oPtr) {
@@ -1297,18 +1282,20 @@ ObjectNamespaceDeleted(
 	Tcl_Free(oPtr->methodsPtr);
     }
 
-    FOREACH_IDX(i, variableObj, oPtr->variables) {
-	TclDecrRefCount(variableObj);
-    }
-    if (i) {
+    if (oPtr->variables.num > 0) {
+	Tcl_Obj *variableObj;
+	FOREACH(variableObj, oPtr->variables) {
+	    TclDecrRefCount(variableObj);
+	}
 	Tcl_Free(oPtr->variables.list);
     }
 
-    FOREACH_IDX_STRUCT(i, privateVariable, oPtr->privateVariables) {
-	TclDecrRefCount(privateVariable->variableObj);
-	TclDecrRefCount(privateVariable->fullNameObj);
-    }
-    if (i) {
+    if (oPtr->privateVariables.num > 0) {
+	PrivateVariableMapping *privateVariable;
+	FOREACH_STRUCT(privateVariable, oPtr->privateVariables) {
+	    TclDecrRefCount(privateVariable->variableObj);
+	    TclDecrRefCount(privateVariable->fullNameObj);
+	}
 	Tcl_Free(oPtr->privateVariables.list);
     }
 
@@ -1386,7 +1373,6 @@ TclOODecrRefCount(
     Object *oPtr)
 {
     if (oPtr->refCount-- <= 1) {
-
 	if (oPtr->classPtr != NULL) {
 	    Tcl_Free(oPtr->classPtr);
 	}
@@ -1668,10 +1654,10 @@ InitClassPath(
     Foundation *fPtr = GetFoundation(interp);
 
     if (fPtr->helpersNs != NULL) {
-	Tcl_Namespace *path[2];
-
-	path[0] = fPtr->helpersNs;
-	path[1] = fPtr->ooNs;
+	Tcl_Namespace *path[2] = {
+	    fPtr->helpersNs,
+	    fPtr->ooNs
+	};
 	TclSetNsPath((Namespace *) clsPtr->thisPtr->namespacePtr, 2, path);
     } else {
 	TclSetNsPath((Namespace *) clsPtr->thisPtr->namespacePtr, 1,
@@ -1748,10 +1734,8 @@ Tcl_NewObjectInstance(
 				 * constructor. */
 {
     Class *classPtr = (Class *) cls;
-    Object *oPtr;
-    void *clientData[4];
 
-    oPtr = TclNewObjectInstanceCommon(interp, classPtr, nameStr, nsNameStr);
+    Object *oPtr = TclNewObjectInstanceCommon(interp, classPtr, nameStr, nsNameStr);
     if (oPtr == NULL) {
 	return NULL;
     }
@@ -1766,10 +1750,7 @@ Tcl_NewObjectInstance(
 		TclOOGetCallContext(oPtr, NULL, CONSTRUCTOR, NULL, NULL, NULL);
 
 	if (contextPtr != NULL) {
-	    int isRoot, result;
-	    Tcl_InterpState state;
-
-	    state = Tcl_SaveInterpState(interp, TCL_OK);
+	    Tcl_InterpState state = Tcl_SaveInterpState(interp, TCL_OK);
 	    contextPtr->callPtr->flags |= CONSTRUCTOR;
 	    contextPtr->skip = skip;
 
@@ -1777,19 +1758,20 @@ Tcl_NewObjectInstance(
 	     * Adjust the ensemble tracking record if necessary. [Bug 3514761]
 	     */
 
-	    isRoot = TclInitRewriteEnsemble(interp, skip, skip, objv);
-	    result = Tcl_NRCallObjProc(interp, TclOOInvokeContext, contextPtr,
-		    objc, objv);
+	    int isRoot = TclInitRewriteEnsemble(interp, skip, skip, objv);
+	    int result = Tcl_NRCallObjProc(interp, TclOOInvokeContext,
+		    contextPtr, objc, objv);
 
 	    if (isRoot) {
 		TclResetRewriteEnsemble(interp, 1);
 	    }
 
-	    clientData[0] = contextPtr;
-	    clientData[1] = oPtr;
-	    clientData[2] = state;
-	    clientData[3] = &oPtr;
-
+	    void *clientData[4] = {
+		contextPtr,
+		oPtr,
+		state,
+		&oPtr
+	    };
 	    result = FinalizeAlloc(clientData, interp, result);
 	    if (result != TCL_OK) {
 		return NULL;
@@ -1818,11 +1800,7 @@ TclNRNewObjectInstance(
 				 * successful allocation. */
 {
     Class *classPtr = (Class *) cls;
-    CallContext *contextPtr;
-    Tcl_InterpState state;
-    Object *oPtr;
-
-    oPtr = TclNewObjectInstanceCommon(interp, classPtr, nameStr, nsNameStr);
+    Object *oPtr = TclNewObjectInstanceCommon(interp, classPtr, nameStr, nsNameStr);
     if (oPtr == NULL) {
 	return TCL_ERROR;
     }
@@ -1836,13 +1814,14 @@ TclNRNewObjectInstance(
 	*objectPtr = (Tcl_Object) oPtr;
 	return TCL_OK;
     }
-    contextPtr = TclOOGetCallContext(oPtr, NULL, CONSTRUCTOR, NULL, NULL, NULL);
+    CallContext *contextPtr = TclOOGetCallContext(oPtr, NULL, CONSTRUCTOR,
+	    NULL, NULL, NULL);
     if (contextPtr == NULL) {
 	*objectPtr = (Tcl_Object) oPtr;
 	return TCL_OK;
     }
 
-    state = Tcl_SaveInterpState(interp, TCL_OK);
+    Tcl_InterpState state = Tcl_SaveInterpState(interp, TCL_OK);
     contextPtr->callPtr->flags |= CONSTRUCTOR;
     contextPtr->skip = skip;
 
@@ -1871,14 +1850,13 @@ TclNewObjectInstanceCommon(
     const char *nameStr,
     const char *nsNameStr)
 {
-    Tcl_HashEntry *hPtr;
     Foundation *fPtr = GetFoundation(interp);
-    Object *oPtr;
     const char *simpleName = NULL;
-    Namespace *nsPtr = NULL, *dummy;
-    Namespace *inNsPtr = (Namespace *) TclGetCurrentNamespace(interp);
+    Namespace *nsPtr = NULL;
 
     if (nameStr) {
+	Namespace *inNsPtr = (Namespace *) TclGetCurrentNamespace(interp);
+	Namespace *dummy;
 	TclGetNamespaceForQualName(interp, nameStr, inNsPtr,
 		TCL_CREATE_NS_IF_UNKNOWN, &nsPtr, &dummy, &dummy, &simpleName);
 
@@ -1886,7 +1864,7 @@ TclNewObjectInstanceCommon(
 	 * Disallow creation of an object over an existing command.
 	 */
 
-	hPtr = Tcl_FindHashEntry(&nsPtr->cmdTable, simpleName);
+	Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&nsPtr->cmdTable, simpleName);
 	if (hPtr) {
 	    TclPrintfResult(interp,
 		    "can't create object \"%s\": command already exists with"
@@ -1900,7 +1878,7 @@ TclNewObjectInstanceCommon(
      * Create the object.
      */
 
-    oPtr = AllocObject(interp, simpleName, nsPtr, nsNameStr);
+    Object *oPtr = AllocObject(interp, simpleName, nsPtr, nsNameStr);
     if (oPtr == NULL) {
 	return NULL;
     }
@@ -2002,12 +1980,8 @@ Tcl_CopyObjectInstance(
     const char *targetNamespaceName)
 {
     Object *oPtr = (Object *) sourceObject;
-    Method *mPtr;
-    Class *mixinPtr;
-    CallContext *contextPtr;
-    Tcl_Obj *keyPtr, *filterObj, *variableObj, *args[3];
+    Tcl_Obj *keyPtr, *filterObj, *variableObj;
     PrivateVariableMapping *privateVariable;
-    int result;
 
     /*
      * Sanity check.
@@ -2035,6 +2009,7 @@ Tcl_CopyObjectInstance(
      */
 
     if (oPtr->methodsPtr) {
+	Method *mPtr;
 	FOREACH_HASH(keyPtr, mPtr, oPtr->methodsPtr) {
 	    if (CloneObjectMethod(interp, o2Ptr, mPtr, keyPtr) != TCL_OK) {
 		Tcl_DeleteCommandFromToken(interp, o2Ptr->command);
@@ -2047,6 +2022,7 @@ Tcl_CopyObjectInstance(
      * Copy the object's mixin references to the new object.
      */
 
+    Class *mixinPtr;
     if (o2Ptr->mixins.num != 0) {
 	FOREACH(mixinPtr, o2Ptr->mixins) {
 	    if (mixinPtr && mixinPtr != o2Ptr->selfCls) {
@@ -2228,6 +2204,7 @@ Tcl_CopyObjectInstance(
 	 * Duplicate the source class's methods, constructor and destructor.
 	 */
 
+	Method *mPtr;
 	FOREACH_HASH(keyPtr, mPtr, &clsPtr->classMethods) {
 	    if (CloneClassMethod(interp, cls2Ptr, mPtr, keyPtr,
 		    NULL) != TCL_OK) {
@@ -2277,17 +2254,19 @@ Tcl_CopyObjectInstance(
     }
 
     TclResetRewriteEnsemble(interp, 1);
-    contextPtr = TclOOGetCallContext(o2Ptr, oPtr->fPtr->clonedName, 0, NULL,
-	    NULL, NULL);
+    CallContext *contextPtr = TclOOGetCallContext(o2Ptr, oPtr->fPtr->clonedName,
+	    0, NULL, NULL, NULL);
     if (contextPtr) {
-	args[0] = TclOOObjectName(interp, o2Ptr);
-	args[1] = oPtr->fPtr->clonedName;
-	args[2] = TclOOObjectName(interp, oPtr);
+	Tcl_Obj *args[3] = {
+	    TclOOObjectName(interp, o2Ptr),
+	    oPtr->fPtr->clonedName,
+	    TclOOObjectName(interp, oPtr)
+	};
 	Tcl_IncrRefCount(args[0]);
 	Tcl_IncrRefCount(args[1]);
 	Tcl_IncrRefCount(args[2]);
-	result = Tcl_NRCallObjProc(interp, TclOOInvokeContext, contextPtr, 3,
-		args);
+	int result = Tcl_NRCallObjProc(interp, TclOOInvokeContext, contextPtr,
+		3, args);
 	TclDecrRefCount(args[0]);
 	TclDecrRefCount(args[1]);
 	TclDecrRefCount(args[2]);
@@ -2409,7 +2388,6 @@ Tcl_ClassGetMetadata(
     const Tcl_ObjectMetadataType *typePtr)
 {
     Class *clsPtr = (Class *) clazz;
-    Tcl_HashEntry *hPtr;
 
     /*
      * If there's no metadata store attached, the type in question has
@@ -2424,7 +2402,7 @@ Tcl_ClassGetMetadata(
      * There is a metadata store, so look in it for the given type.
      */
 
-    hPtr = Tcl_FindHashEntry(clsPtr->metadataPtr, typePtr);
+    Tcl_HashEntry *hPtr = Tcl_FindHashEntry(clsPtr->metadataPtr, typePtr);
 
     /*
      * Return the metadata value if we found it, otherwise NULL.
@@ -2443,8 +2421,6 @@ Tcl_ClassSetMetadata(
     void *metadata)
 {
     Class *clsPtr = (Class *) clazz;
-    Tcl_HashEntry *hPtr;
-    int isNew;
 
     /*
      * Attach the metadata store if not done already.
@@ -2464,7 +2440,7 @@ Tcl_ClassSetMetadata(
      */
 
     if (metadata == NULL) {
-	hPtr = Tcl_FindHashEntry(clsPtr->metadataPtr, typePtr);
+	Tcl_HashEntry *hPtr = Tcl_FindHashEntry(clsPtr->metadataPtr, typePtr);
 	if (hPtr != NULL) {
 	    typePtr->deleteProc(Tcl_GetHashValue(hPtr));
 	    Tcl_DeleteHashEntry(hPtr);
@@ -2477,7 +2453,9 @@ Tcl_ClassSetMetadata(
      * some metadata attached of this type, we delete that first.
      */
 
-    hPtr = Tcl_CreateHashEntry(clsPtr->metadataPtr, typePtr, &isNew);
+    int isNew;
+    Tcl_HashEntry *hPtr = Tcl_CreateHashEntry(clsPtr->metadataPtr, typePtr,
+	    &isNew);
     if (!isNew) {
 	typePtr->deleteProc(Tcl_GetHashValue(hPtr));
     }
@@ -2490,7 +2468,6 @@ Tcl_ObjectGetMetadata(
     const Tcl_ObjectMetadataType *typePtr)
 {
     Object *oPtr = (Object *) object;
-    Tcl_HashEntry *hPtr;
 
     /*
      * If there's no metadata store attached, the type in question has
@@ -2505,7 +2482,7 @@ Tcl_ObjectGetMetadata(
      * There is a metadata store, so look in it for the given type.
      */
 
-    hPtr = Tcl_FindHashEntry(oPtr->metadataPtr, typePtr);
+    Tcl_HashEntry *hPtr = Tcl_FindHashEntry(oPtr->metadataPtr, typePtr);
 
     /*
      * Return the metadata value if we found it, otherwise NULL.
@@ -2524,8 +2501,6 @@ Tcl_ObjectSetMetadata(
     void *metadata)
 {
     Object *oPtr = (Object *) object;
-    Tcl_HashEntry *hPtr;
-    int isNew;
 
     /*
      * Attach the metadata store if not done already.
@@ -2544,7 +2519,7 @@ Tcl_ObjectSetMetadata(
      */
 
     if (metadata == NULL) {
-	hPtr = Tcl_FindHashEntry(oPtr->metadataPtr, typePtr);
+	Tcl_HashEntry *hPtr = Tcl_FindHashEntry(oPtr->metadataPtr, typePtr);
 	if (hPtr != NULL) {
 	    typePtr->deleteProc(Tcl_GetHashValue(hPtr));
 	    Tcl_DeleteHashEntry(hPtr);
@@ -2557,7 +2532,8 @@ Tcl_ObjectSetMetadata(
      * some metadata attached of this type, we delete that first.
      */
 
-    hPtr = Tcl_CreateHashEntry(oPtr->metadataPtr, typePtr, &isNew);
+    int isNew;
+    Tcl_HashEntry *hPtr = Tcl_CreateHashEntry(oPtr->metadataPtr, typePtr, &isNew);
     if (!isNew) {
 	typePtr->deleteProc(Tcl_GetHashValue(hPtr));
     }
@@ -2716,7 +2692,6 @@ TclOOObjectCmdCore(
     CallFrame *framePtr = ((Interp *) interp)->varFramePtr;
     Object *callerObjPtr = NULL;
     Class *callerClsPtr = NULL;
-    int result;
 
     /*
      * If we've no method name, throw this directly into the unknown
@@ -2756,7 +2731,7 @@ TclOOObjectCmdCore(
 	Class **startClsPtr = &startCls;
 	Tcl_Obj *mappedMethodName = Tcl_DuplicateObj(methodNamePtr);
 
-	result = oPtr->mapMethodNameProc(interp, (Tcl_Object) oPtr,
+	int result = oPtr->mapMethodNameProc(interp, (Tcl_Object) oPtr,
 		(Tcl_Class *) startClsPtr, mappedMethodName);
 	if (result != TCL_OK) {
 	    TclDecrRefCount(mappedMethodName);
@@ -3090,11 +3065,11 @@ TclOOObjectName(
     Tcl_Interp *interp,
     Object *oPtr)
 {
-    Tcl_Obj *namePtr;
-
     if (oPtr->cachedNameObj) {
 	return oPtr->cachedNameObj;
     }
+
+    Tcl_Obj *namePtr;
     TclNewObj(namePtr);
     Tcl_GetCommandFullName(interp, oPtr->command, namePtr);
     Tcl_IncrRefCount(namePtr);

@@ -1271,10 +1271,9 @@ TcpAcceptCallbacksDeleteProc(
     TCL_UNUSED(Tcl_Interp *))
 {
     Tcl_HashTable *hTblPtr = (Tcl_HashTable *)clientData;
-    Tcl_HashEntry *hPtr;
     Tcl_HashSearch hSearch;
 
-    for (hPtr = Tcl_FirstHashEntry(hTblPtr, &hSearch);
+    for (Tcl_HashEntry *hPtr = Tcl_FirstHashEntry(hTblPtr, &hSearch);
 	    hPtr != NULL; hPtr = Tcl_NextHashEntry(&hSearch)) {
 	AcceptCallback *acceptCallbackPtr = (AcceptCallback *)Tcl_GetHashValue(hPtr);
 

@@ -249,7 +249,6 @@ FileSetupProc(
     TCL_UNUSED(void *),
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
-    FileInfo *infoPtr;
     Tcl_Time blockTime = { 0, 0 };
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
@@ -261,7 +260,7 @@ FileSetupProc(
      * Check to see if there is a ready file. If so, poll.
      */
 
-    for (infoPtr = tsdPtr->firstFilePtr; infoPtr != NULL;
+    for (FileInfo *infoPtr = tsdPtr->firstFilePtr; infoPtr != NULL;
 	    infoPtr = infoPtr->nextPtr) {
 	if (infoPtr->watchMask) {
 	    Tcl_SetMaxBlockTime(&blockTime);
@@ -292,24 +291,22 @@ FileCheckProc(
     TCL_UNUSED(void *),
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
-    FileEvent *evPtr;
-    FileInfo *infoPtr;
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-
     if (!TEST_FLAG(flags, TCL_FILE_EVENTS)) {
 	return;
     }
+
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     /*
      * Queue events for any ready files that don't already have events queued
      * (caused by persistent states that won't generate WinSock events).
      */
 
-    for (infoPtr = tsdPtr->firstFilePtr; infoPtr != NULL;
+    for (FileInfo *infoPtr = tsdPtr->firstFilePtr; infoPtr != NULL;
 	    infoPtr = infoPtr->nextPtr) {
 	if (infoPtr->watchMask && !TEST_FLAG(infoPtr->flags, FILE_PENDING)) {
 	    SET_FLAG(infoPtr->flags, FILE_PENDING);
-	    evPtr = (FileEvent *)Tcl_Alloc(sizeof(FileEvent));
+	    FileEvent *evPtr = (FileEvent *)Tcl_Alloc(sizeof(FileEvent));
 	    evPtr->header.proc = FileEventProc;
 	    evPtr->infoPtr = infoPtr;
 	    Tcl_QueueEvent((Tcl_Event *) evPtr, TCL_QUEUE_TAIL);
@@ -345,7 +342,6 @@ FileEventProc(
 				 * such as TCL_FILE_EVENTS. */
 {
     FileEvent *fileEvPtr = (FileEvent *)evPtr;
-    FileInfo *infoPtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     if (!TEST_FLAG(flags, TCL_FILE_EVENTS)) {
@@ -359,7 +355,7 @@ FileEventProc(
      * the queue.
      */
 
-    for (infoPtr = tsdPtr->firstFilePtr; infoPtr != NULL;
+    for (FileInfo *infoPtr = tsdPtr->firstFilePtr; infoPtr != NULL;
 	    infoPtr = infoPtr->nextPtr) {
 	if (fileEvPtr->infoPtr == infoPtr) {
 	    CLEAR_FLAG(infoPtr->flags, FILE_PENDING);
@@ -432,8 +428,6 @@ FileCloseProc(
     int flags)
 {
     FileInfo *fileInfoPtr = (FileInfo *)instanceData;
-    FileInfo *infoPtr;
-    ThreadSpecificData *tsdPtr;
     int errorCode = 0;
 
     if ((flags & (TCL_CLOSE_READ | TCL_CLOSE_WRITE)) != 0) {
@@ -466,8 +460,8 @@ FileCloseProc(
      * See if this FileInfo* is still on the thread local list.
      */
 
-    tsdPtr = TCL_TSD_INIT(&dataKey);
-    for (infoPtr = tsdPtr->firstFilePtr; infoPtr != NULL;
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    for (FileInfo *infoPtr = tsdPtr->firstFilePtr; infoPtr != NULL;
 	    infoPtr = infoPtr->nextPtr) {
 	if (infoPtr == fileInfoPtr) {
 	    /*
@@ -933,8 +927,6 @@ FileGetOptionProc(
 
     if ((len > 1) && (strncmp(optionName, "-stat", len) == 0)) {
 	Tcl_Obj *dictObj = StatOpenFile(infoPtr);
-	const char *dictContents;
-	Tcl_Size dictLength;
 
 	if (dictObj == NULL) {
 	    TclPrintfResult(interp, "couldn't read file channel status: %s",
@@ -948,8 +940,7 @@ FileGetOptionProc(
 	 * general probe.
 	 */
 
-	dictContents = TclGetStringFromObj(dictObj, &dictLength);
-	Tcl_DStringAppend(dsPtr, dictContents, dictLength);
+	TclDStringAppendObj(dsPtr, dictObj);
 	Tcl_DecrRefCount(dictObj);
 	return TCL_OK;
     }
@@ -957,8 +948,7 @@ FileGetOptionProc(
     if (valid) {
 	return TCL_OK;
     }
-    return Tcl_BadChannelOption(interp, optionName,
-		"stat");
+    return Tcl_BadChannelOption(interp, optionName, "stat");
 }
 
 /*
@@ -1500,14 +1490,13 @@ OpenFileChannel(
 				 * additional configuration of the channel is
 				 * present. */
 {
-    FileInfo *infoPtr;
     ThreadSpecificData *tsdPtr = FileInit();
 
     /*
      * See if a channel with this handle already exists.
      */
 
-    for (infoPtr = tsdPtr->firstFilePtr; infoPtr != NULL;
+    for (FileInfo *infoPtr = tsdPtr->firstFilePtr; infoPtr != NULL;
 	    infoPtr = infoPtr->nextPtr) {
 	if (infoPtr->handle == (HANDLE) handle) {
 	    return ((permissions & (TCL_READABLE|TCL_WRITABLE|TCL_EXCEPTION))==infoPtr->validMask)
@@ -1515,7 +1504,7 @@ OpenFileChannel(
 	}
     }
 
-    infoPtr = (FileInfo *)Tcl_Alloc(sizeof(FileInfo));
+    FileInfo *infoPtr = (FileInfo *)Tcl_Alloc(sizeof(FileInfo));
 
     /*
      * TIP #218. Removed the code inserting the new structure into the global
@@ -1565,7 +1554,6 @@ OpenFileChannel(
 void
 TclWinFlushDirtyChannels(void)
 {
-    FileInfo *infoPtr;
     ThreadSpecificData *tsdPtr = FileInit();
 
     /*
@@ -1573,7 +1561,7 @@ TclWinFlushDirtyChannels(void)
      * OS.
      */
 
-    for (infoPtr = tsdPtr->firstFilePtr; infoPtr != NULL;
+    for (FileInfo *infoPtr = tsdPtr->firstFilePtr; infoPtr != NULL;
 	    infoPtr = infoPtr->nextPtr) {
 	if (infoPtr->dirty) {
 	    FlushFileBuffers(infoPtr->handle);
@@ -1610,11 +1598,10 @@ FileThreadActionProc(
 	infoPtr->nextPtr = tsdPtr->firstFilePtr;
 	tsdPtr->firstFilePtr = infoPtr;
     } else {
-	FileInfo **nextPtrPtr;
 	int removed = 0;
 
-	for (nextPtrPtr = &(tsdPtr->firstFilePtr); (*nextPtrPtr) != NULL;
-		nextPtrPtr = &((*nextPtrPtr)->nextPtr)) {
+	for (FileInfo **nextPtrPtr = &(tsdPtr->firstFilePtr);
+		(*nextPtrPtr) != NULL; nextPtrPtr = &((*nextPtrPtr)->nextPtr)) {
 	    if ((*nextPtrPtr) == infoPtr) {
 		(*nextPtrPtr) = infoPtr->nextPtr;
 		removed = 1;
@@ -1654,9 +1641,7 @@ DWORD
 FileGetType(
     HANDLE handle)		/* Opened file handle */
 {
-    DWORD type;
-
-    type = GetFileType(handle);
+    DWORD type = GetFileType(handle);
 
     /*
      * If the file is a character device, we need to try to figure out whether

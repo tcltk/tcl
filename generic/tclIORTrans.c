@@ -1710,11 +1710,8 @@ NewReflectedTransform(
     Tcl_Obj *handleObj,
     Tcl_Channel parentChan)
 {
-    ReflectedTransform *rtPtr;
-    Tcl_Size i, listc;
-    Tcl_Obj **listv;
-
-    rtPtr = (ReflectedTransform *)Tcl_Alloc(sizeof(ReflectedTransform));
+    ReflectedTransform *rtPtr = (ReflectedTransform *)
+	    Tcl_Alloc(sizeof(ReflectedTransform));
 
     /* rtPtr->chan: Assigned by caller. Dummy data here. */
     /* rtPtr->methods: Assigned by caller. Dummy data here. */
@@ -1748,6 +1745,8 @@ NewReflectedTransform(
 
     /* ASSERT: cmdpfxObj is a Tcl List */
 
+    Tcl_Size listc;
+    Tcl_Obj **listv;
     TclListObjGetElements(interp, cmdpfxObj, &listc, &listv);
 
     /*
@@ -1761,12 +1760,13 @@ NewReflectedTransform(
      */
 
     rtPtr->argc = listc + 2;
-    rtPtr->argv = (Tcl_Obj **)Tcl_Alloc(sizeof(Tcl_Obj *) * (listc+4));
+    rtPtr->argv = (Tcl_Obj **)Tcl_Alloc(sizeof(Tcl_Obj *) * (listc + 4));
 
     /*
      * Duplicate object references.
      */
 
+    Tcl_Size i;
     for (i=0; i<listc ; i++) {
 	Tcl_Obj *word = rtPtr->argv[i] = listv[i];
 
@@ -1824,10 +1824,9 @@ NextHandle(void)
 
     TCL_DECLARE_MUTEX(rtCounterMutex)
     static unsigned long rtCounter = 0;
-    Tcl_Obj *resObj;
 
     Tcl_MutexLock(&rtCounterMutex);
-    resObj = Tcl_ObjPrintf("rt%lu", rtCounter);
+    Tcl_Obj *resObj = Tcl_ObjPrintf("rt%lu", rtCounter);
     rtCounter++;
     Tcl_MutexUnlock(&rtCounterMutex);
 
@@ -2105,14 +2104,8 @@ DeleteReflectedTransformMap(
     Tcl_Interp *interp)		/* The interpreter being deleted. */
 {
     ReflectedTransformMap *rtmPtr; /* The map */
-    Tcl_HashSearch hSearch;	/* Search variable. */
-    Tcl_HashEntry *hPtr;	/* Search variable. */
-    ReflectedTransform *rtPtr;
-#if TCL_THREADS
-    ForwardingResult *resultPtr;
-    ForwardingEvent *evPtr;
-    ForwardParam *paramPtr;
-#else
+    Tcl_HashSearch hSearch;	/* Iteration context. */
+#if !TCL_THREADS
     (void)interp;
 #endif /* TCL_THREADS */
 
@@ -2129,10 +2122,11 @@ DeleteReflectedTransformMap(
      */
 
     rtmPtr = (ReflectedTransformMap *)clientData;
-    for (hPtr = Tcl_FirstHashEntry(&rtmPtr->map, &hSearch);
+    for (Tcl_HashEntry *hPtr = Tcl_FirstHashEntry(&rtmPtr->map, &hSearch);
 	    hPtr != NULL;
 	    hPtr = Tcl_FirstHashEntry(&rtmPtr->map, &hSearch)) {
-	rtPtr = (ReflectedTransform *)Tcl_GetHashValue(hPtr);
+	ReflectedTransform *rtPtr = (ReflectedTransform *)
+		Tcl_GetHashValue(hPtr);
 
 	rtPtr->dead = 1;
 	Tcl_DeleteHashEntry(hPtr);
@@ -2153,10 +2147,11 @@ DeleteReflectedTransformMap(
      */
 
     rtmPtr = GetThreadReflectedTransformMap();
-    for (hPtr = Tcl_FirstHashEntry(&rtmPtr->map, &hSearch);
+    for (Tcl_HashEntry *hPtr = Tcl_FirstHashEntry(&rtmPtr->map, &hSearch);
 	    hPtr != NULL;
 	    hPtr = Tcl_NextHashEntry(&hSearch)) {
-	rtPtr = (ReflectedTransform *)Tcl_GetHashValue(hPtr);
+	ReflectedTransform *rtPtr = (ReflectedTransform *)
+		Tcl_GetHashValue(hPtr);
 
 	if (rtPtr->interp != interp) {
 	    /*
@@ -2179,7 +2174,7 @@ DeleteReflectedTransformMap(
 
     Tcl_MutexLock(&rtForwardMutex);
 
-    for (resultPtr = forwardList; resultPtr != NULL;
+    for (ForwardingResult *resultPtr = forwardList; resultPtr != NULL;
 	    resultPtr = resultPtr->nextPtr) {
 	if (resultPtr->dsti != interp) {
 	    /*
@@ -2194,11 +2189,11 @@ DeleteReflectedTransformMap(
 	 * detach the result now, wake the originator up and signal failure.
 	 */
 
-	evPtr = resultPtr->evPtr;
+	ForwardingEvent *evPtr = resultPtr->evPtr;
 	if (evPtr == NULL) {
 	    continue;
 	}
-	paramPtr = evPtr->param;
+	ForwardParam *paramPtr = evPtr->param;
 
 	evPtr->resultPtr = NULL;
 	resultPtr->evPtr = NULL;
@@ -2267,11 +2262,8 @@ static void
 DeleteThreadReflectedTransformMap(
     TCL_UNUSED(void *))
 {
-    Tcl_HashSearch hSearch;	   /* Search variable. */
-    Tcl_HashEntry *hPtr;	   /* Search variable. */
+    Tcl_HashSearch hSearch;	   /* Iteration context. */
     Tcl_ThreadId self = Tcl_GetCurrentThread();
-    ReflectedTransformMap *rtmPtr; /* The map */
-    ForwardingResult *resultPtr;
 
     /*
      * The origin thread for one or more reflected channels is gone.
@@ -2285,8 +2277,8 @@ DeleteThreadReflectedTransformMap(
      * through the channels, remove all, mark them as dead.
      */
 
-    rtmPtr = GetThreadReflectedTransformMap();
-    for (hPtr = Tcl_FirstHashEntry(&rtmPtr->map, &hSearch);
+    ReflectedTransformMap *rtmPtr = GetThreadReflectedTransformMap();
+    for (Tcl_HashEntry *hPtr = Tcl_FirstHashEntry(&rtmPtr->map, &hSearch);
 	    hPtr != NULL;
 	    hPtr = Tcl_FirstHashEntry(&rtmPtr->map, &hSearch)) {
 	ReflectedTransform *rtPtr = (ReflectedTransform *)Tcl_GetHashValue(hPtr);
@@ -2305,11 +2297,8 @@ DeleteThreadReflectedTransformMap(
 
     Tcl_MutexLock(&rtForwardMutex);
 
-    for (resultPtr = forwardList; resultPtr != NULL;
+    for (ForwardingResult *resultPtr = forwardList; resultPtr != NULL;
 	    resultPtr = resultPtr->nextPtr) {
-	ForwardingEvent *evPtr;
-	ForwardParam *paramPtr;
-
 	if (resultPtr->dst != self) {
 	    /*
 	     * Ignore results/events for other threads.
@@ -2323,11 +2312,11 @@ DeleteThreadReflectedTransformMap(
 	 * detach the result now, wake the originator up and signal failure.
 	 */
 
-	evPtr = resultPtr->evPtr;
+	ForwardingEvent *evPtr = resultPtr->evPtr;
 	if (evPtr == NULL) {
 	    continue;
 	}
-	paramPtr = evPtr->param;
+	ForwardParam *paramPtr = evPtr->param;
 
 	evPtr->resultPtr = NULL;
 	resultPtr->evPtr = NULL;
@@ -2347,8 +2336,6 @@ ForwardOpToOwnerThread(
     const void *param)		/* Arguments */
 {
     Tcl_ThreadId dst = rtPtr->thread;
-    ForwardingEvent *evPtr;
-    ForwardingResult *resultPtr;
 
     /*
      * We gather the lock early. This allows us to check the liveness of the
@@ -2372,8 +2359,10 @@ ForwardOpToOwnerThread(
      * Create and initialize the event and data structures.
      */
 
-    evPtr = (ForwardingEvent *)Tcl_Alloc(sizeof(ForwardingEvent));
-    resultPtr = (ForwardingResult *)Tcl_Alloc(sizeof(ForwardingResult));
+    ForwardingEvent *evPtr = (ForwardingEvent *)
+	    Tcl_Alloc(sizeof(ForwardingEvent));
+    ForwardingResult *resultPtr = (ForwardingResult *)
+	    Tcl_Alloc(sizeof(ForwardingResult));
 
     evPtr->event.proc = ForwardProc;
     evPtr->resultPtr = resultPtr;

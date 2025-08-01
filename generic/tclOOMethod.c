@@ -1299,11 +1299,10 @@ CommonMethErrorHandler(
     Tcl_Interp *interp,
     const char *special)
 {
-    Tcl_Size objectNameLen;
     CallContext *contextPtr = (CallContext *)((Interp *)
 	    interp)->varFramePtr->clientData;
     Method *mPtr = contextPtr->callPtr->chain[contextPtr->index].mPtr;
-    const char *objectName, *kindName = "instance";
+    const char *kindName = "instance";
     Object *declarerPtr = NULL;
 
     if (mPtr->declaringObjectPtr != NULL) {
@@ -1314,6 +1313,8 @@ CommonMethErrorHandler(
 	kindName = "class";
     }
 
+    const char *objectName;
+    Tcl_Size objectNameLen;
     if (declarerPtr) {
 	objectName = TclGetStringFromObj(TclOOObjectName(interp, declarerPtr),
 		&objectNameLen);
@@ -1402,16 +1403,13 @@ CloneProcedureMethod(
     void **newClientData)
 {
     ProcedureMethod *pmPtr = (ProcedureMethod *) clientData;
-    ProcedureMethod *pm2Ptr;
-    Tcl_Obj *bodyObj, *argsObj;
-    CompiledLocal *localPtr;
 
     /*
      * Copy the argument list.
      */
 
-    TclNewObj(argsObj);
-    for (localPtr=pmPtr->procPtr->firstLocalPtr; localPtr!=NULL;
+    Tcl_Obj *argsObj = Tcl_NewListObj(pmPtr->procPtr->numArgs, NULL);
+    for (CompiledLocal *localPtr=pmPtr->procPtr->firstLocalPtr; localPtr!=NULL;
 	    localPtr=localPtr->nextPtr) {
 	if (TclIsVarArgument(localPtr)) {
 	    Tcl_Obj *argObj;
@@ -1431,7 +1429,7 @@ CloneProcedureMethod(
      * bound references to instance variables are removed. [Bug 3609693]
      */
 
-    bodyObj = Tcl_DuplicateObj(pmPtr->procPtr->bodyPtr);
+    Tcl_Obj *bodyObj = Tcl_DuplicateObj(pmPtr->procPtr->bodyPtr);
     TclGetString(bodyObj);
     Tcl_StoreInternalRep(pmPtr->procPtr->bodyPtr, &tclByteCodeType, NULL);
 
@@ -1440,7 +1438,8 @@ CloneProcedureMethod(
      * record.
      */
 
-    pm2Ptr = (ProcedureMethod *) Tcl_Alloc(sizeof(ProcedureMethod));
+    ProcedureMethod *pm2Ptr = (ProcedureMethod *)
+	    Tcl_Alloc(sizeof(ProcedureMethod));
     memcpy(pm2Ptr, pmPtr, sizeof(ProcedureMethod));
     pm2Ptr->refCount = 1;
     pm2Ptr->cmd.clientData = &pm2Ptr->efi;
@@ -1484,7 +1483,6 @@ TclOONewForwardInstanceMethod(
 				 * prefix to forward to. */
 {
     Tcl_Size prefixLen;
-    ForwardMethod *fmPtr;
 
     if (TclListObjLength(interp, prefixObj, &prefixLen) != TCL_OK) {
 	return NULL;
@@ -1495,7 +1493,7 @@ TclOONewForwardInstanceMethod(
 	return NULL;
     }
 
-    fmPtr = (ForwardMethod *) Tcl_Alloc(sizeof(ForwardMethod));
+    ForwardMethod *fmPtr = (ForwardMethod *) Tcl_Alloc(sizeof(ForwardMethod));
     fmPtr->prefixObj = prefixObj;
     Tcl_IncrRefCount(prefixObj);
     return (Method *) TclNewInstanceMethod(interp, (Tcl_Object) oPtr,
@@ -1522,7 +1520,6 @@ TclOONewForwardMethod(
 				 * prefix to forward to. */
 {
     Tcl_Size prefixLen;
-    ForwardMethod *fmPtr;
 
     if (TclListObjLength(interp, prefixObj, &prefixLen) != TCL_OK) {
 	return NULL;
@@ -1533,7 +1530,7 @@ TclOONewForwardMethod(
 	return NULL;
     }
 
-    fmPtr = (ForwardMethod *) Tcl_Alloc(sizeof(ForwardMethod));
+    ForwardMethod *fmPtr = (ForwardMethod *) Tcl_Alloc(sizeof(ForwardMethod));
     fmPtr->prefixObj = prefixObj;
     Tcl_IncrRefCount(prefixObj);
     return (Method *) TclNewMethod((Tcl_Class) clsPtr, nameObj,
@@ -1561,9 +1558,6 @@ InvokeForwardMethod(
 {
     CallContext *contextPtr = (CallContext *) context;
     ForwardMethod *fmPtr = (ForwardMethod *) clientData;
-    Tcl_Obj **argObjs, **prefixObjs;
-    Tcl_Size numPrefixes, skip = contextPtr->skip;
-    int len;
 
     /*
      * Build the real list of arguments to use. Note that we know that the
@@ -1572,9 +1566,12 @@ InvokeForwardMethod(
      * can ignore here.
      */
 
+    Tcl_Size numPrefixes;
+    Tcl_Obj **prefixObjs;
     TclListObjGetElements(NULL, fmPtr->prefixObj, &numPrefixes, &prefixObjs);
-    argObjs = InitEnsembleRewrite(interp, objc, objv, skip,
-	    numPrefixes, prefixObjs, &len);
+    int len;
+    Tcl_Obj **argObjs = InitEnsembleRewrite(interp, objc, objv,
+	    contextPtr->skip, numPrefixes, prefixObjs, &len);
     TclNRAddCallback(interp, FinalizeForwardCall, argObjs);
     /*
      * NOTE: The combination of direct set of iPtr->lookupNsPtr and the use

@@ -259,9 +259,7 @@ static inline void
 DeleteChainTable(
     Dict *dict)
 {
-    ChainEntry *cPtr;
-
-    for (cPtr=dict->entryChainHead ; cPtr!=NULL ; cPtr=cPtr->nextPtr) {
+    for (ChainEntry *cPtr=dict->entryChainHead ; cPtr ; cPtr=cPtr->nextPtr) {
 	Tcl_Obj *valuePtr = (Tcl_Obj *)Tcl_GetHashValue(&cPtr->entry);
 
 	TclDecrRefCount(valuePtr);
@@ -361,7 +359,6 @@ DupDictInternalRep(
     Tcl_Obj *copyPtr)
 {
     Dict *oldDict, *newDict = (Dict *)Tcl_Alloc(sizeof(Dict));
-    ChainEntry *cPtr;
 
     DictGetInternalRep(srcPtr, oldDict);
 
@@ -370,7 +367,7 @@ DupDictInternalRep(
      */
 
     InitChainTable(newDict);
-    for (cPtr=oldDict->entryChainHead ; cPtr!=NULL ; cPtr=cPtr->nextPtr) {
+    for (ChainEntry *cPtr=oldDict->entryChainHead ; cPtr ; cPtr=cPtr->nextPtr) {
 	Tcl_Obj *key = (Tcl_Obj *)Tcl_GetHashKey(&oldDict->table, &cPtr->entry);
 	Tcl_Obj *valuePtr = (Tcl_Obj *)Tcl_GetHashValue(&cPtr->entry);
 	int n;
@@ -927,21 +924,18 @@ Tcl_DictObjPut(
     Tcl_Obj *keyPtr,
     Tcl_Obj *valuePtr)
 {
-    Dict *dict;
-    Tcl_HashEntry *hPtr;
-    int isNew;
-
     if (Tcl_IsShared(dictPtr)) {
 	Tcl_Panic("%s called with shared object", "Tcl_DictObjPut");
     }
 
-    dict = GetDictFromObj(interp, dictPtr);
+    Dict *dict = GetDictFromObj(interp, dictPtr);
     if (dict == NULL) {
 	return TCL_ERROR;
     }
 
     TclInvalidateStringRep(dictPtr);
-    hPtr = CreateChainEntry(dict, keyPtr, &isNew);
+    int isNew;
+    Tcl_HashEntry *hPtr = CreateChainEntry(dict, keyPtr, &isNew);
     dict->refCount++;
     TclFreeInternalRep(dictPtr)
     DictSetInternalRep(dictPtr, dict);
@@ -983,16 +977,13 @@ Tcl_DictObjGet(
     Tcl_Obj *keyPtr,
     Tcl_Obj **valuePtrPtr)
 {
-    Dict *dict;
-    Tcl_HashEntry *hPtr;
-
-    dict = GetDictFromObj(interp, dictPtr);
+    Dict *dict = GetDictFromObj(interp, dictPtr);
     if (dict == NULL) {
 	*valuePtrPtr = NULL;
 	return TCL_ERROR;
     }
 
-    hPtr = Tcl_FindHashEntry(&dict->table, keyPtr);
+    Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&dict->table, keyPtr);
     if (hPtr == NULL) {
 	*valuePtrPtr = NULL;
     } else {
@@ -1026,13 +1017,11 @@ Tcl_DictObjRemove(
     Tcl_Obj *dictPtr,
     Tcl_Obj *keyPtr)
 {
-    Dict *dict;
-
     if (Tcl_IsShared(dictPtr)) {
 	Tcl_Panic("%s called with shared object", "Tcl_DictObjRemove");
     }
 
-    dict = GetDictFromObj(interp, dictPtr);
+    Dict *dict = GetDictFromObj(interp, dictPtr);
     if (dict == NULL) {
 	return TCL_ERROR;
     }
@@ -1090,9 +1079,7 @@ Tcl_DictObjSize(
     Tcl_Obj *dictPtr,
     Tcl_Size *sizePtr)
 {
-    Dict *dict;
-
-    dict = GetDictFromObj(interp, dictPtr);
+    Dict *dict = GetDictFromObj(interp, dictPtr);
     if (dict == NULL) {
 	return TCL_ERROR;
     }
@@ -1866,14 +1853,12 @@ DictReplaceCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    Tcl_Obj *dictPtr;
-
     if ((objc < 2) || (objc & 1)) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictionary ?key value ...?");
 	return TCL_ERROR;
     }
 
-    dictPtr = objv[1];
+    Tcl_Obj *dictPtr = objv[1];
     if (GetDictFromObj(interp, dictPtr) == NULL) {
 	return TCL_ERROR;
     }
@@ -1913,14 +1898,12 @@ DictRemoveCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    Tcl_Obj *dictPtr;
-
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictionary ?key ...?");
 	return TCL_ERROR;
     }
 
-    dictPtr = objv[1];
+    Tcl_Obj *dictPtr = objv[1];
     if (GetDictFromObj(interp, dictPtr) == NULL) {
 	return TCL_ERROR;
     }
@@ -2320,20 +2303,17 @@ DictInfoCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    Dict *dict;
-    char *statsStr;
-
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictionary");
 	return TCL_ERROR;
     }
 
-    dict = GetDictFromObj(interp, objv[1]);
+    Dict *dict = GetDictFromObj(interp, objv[1]);
     if (dict == NULL) {
 	return TCL_ERROR;
     }
 
-    statsStr = Tcl_HashStats(&dict->table);
+    char *statsStr = Tcl_HashStats(&dict->table);
     Tcl_SetObjResult(interp, Tcl_NewStringObj(statsStr, -1));
     Tcl_Free(statsStr);
     return TCL_OK;

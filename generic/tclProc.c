@@ -771,7 +771,6 @@ TclObjGetFrame(
 				 * no frame resolution is wanted. */
 {
     Interp *iPtr = (Interp *) interp;
-    int curLevel;
     int result, level;
     const Tcl_ObjInternalRep *irPtr;
     const char *name = NULL;
@@ -782,7 +781,7 @@ TclObjGetFrame(
      */
 
     result = 0;
-    curLevel = iPtr->varFramePtr->level;
+    int curLevel = iPtr->varFramePtr->level;
 
     /*
      * Check for integer first, since that has potential to spare us
@@ -842,8 +841,7 @@ TclObjGetFrame(
 	    level = curLevel - 1;
 	}
 	if (level >= 0) {
-	    CallFrame *framePtr;
-	    for (framePtr = iPtr->varFramePtr; framePtr != NULL;
+	    for (CallFrame *framePtr = iPtr->varFramePtr; framePtr != NULL;
 		    framePtr = framePtr->callerVarPtr) {
 		if ((int)framePtr->level == level) {
 		    *framePtrPtr = framePtr;
@@ -852,7 +850,7 @@ TclObjGetFrame(
 	    }
 	}
     }
-badLevel:
+  badLevel:
     if (name == NULL) {
 	name = objPtr ? TclGetString(objPtr) : "1" ;
     }
@@ -2143,12 +2141,7 @@ void
 TclProcCleanupProc(
     Proc *procPtr)		/* Procedure to be deleted. */
 {
-    CompiledLocal *localPtr;
     Tcl_Obj *bodyPtr = procPtr->bodyPtr;
-    Tcl_Obj *defPtr;
-    Tcl_ResolvedVarInfo *resVarInfo;
-    Tcl_HashEntry *hePtr = NULL;
-    CmdFrame *cfPtr = NULL;
     Interp *iPtr = procPtr->iPtr;
 
     if (bodyPtr != NULL) {
@@ -2161,10 +2154,10 @@ TclProcCleanupProc(
 	}
 	Tcl_DecrRefCount(bodyPtr);
     }
-    for (localPtr = procPtr->firstLocalPtr; localPtr != NULL; ) {
+    for (CompiledLocal *localPtr = procPtr->firstLocalPtr; localPtr != NULL; ) {
 	CompiledLocal *nextPtr = localPtr->nextPtr;
 
-	resVarInfo = localPtr->resolveInfo;
+	Tcl_ResolvedVarInfo *resVarInfo = localPtr->resolveInfo;
 	if (resVarInfo) {
 	    if (resVarInfo->deleteProc) {
 		resVarInfo->deleteProc(resVarInfo);
@@ -2174,7 +2167,7 @@ TclProcCleanupProc(
 	}
 
 	if (localPtr->defValuePtr != NULL) {
-	    defPtr = localPtr->defValuePtr;
+	    Tcl_Obj *defPtr = localPtr->defValuePtr;
 	    Tcl_DecrRefCount(defPtr);
 	}
 	Tcl_Free(localPtr);
@@ -2192,13 +2185,12 @@ TclProcCleanupProc(
 	return;
     }
 
-    hePtr = Tcl_FindHashEntry(iPtr->linePBodyPtr, procPtr);
+    Tcl_HashEntry *hePtr = Tcl_FindHashEntry(iPtr->linePBodyPtr, procPtr);
     if (!hePtr) {
 	return;
     }
 
-    cfPtr = (CmdFrame *)Tcl_GetHashValue(hePtr);
-
+    CmdFrame *cfPtr = (CmdFrame *)Tcl_GetHashValue(hePtr);
     if (cfPtr) {
 	if (cfPtr->type == TCL_LOCATION_SOURCE) {
 	    Tcl_DecrRefCount(cfPtr->data.eval.path);

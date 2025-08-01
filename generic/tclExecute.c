@@ -7066,7 +7066,6 @@ TEBCresume(
 	 * each list just once.
 	 */
 
-	int match, index;
 	Tcl_Obj **aObjv, **bObjv;
 	Tcl_Size aObjc, bObjc, cmpLen;
 
@@ -7084,7 +7083,8 @@ TEBCresume(
 	    goto gotError;
 	}
 
-	for (match = 1, index = 0; index < cmpLen && match; index++) {
+	int match = 1;
+	for (int index = 0; index < cmpLen && match; index++) {
 	    Tcl_Obj *a = ((Tcl_Size) index < aObjc) ? aObjv[index] : NULL;
 	    Tcl_Obj *b = ((Tcl_Size) index < bObjc) ? bObjv[index] : NULL;
 	    if (a && b) {
@@ -8373,7 +8373,6 @@ ExecuteExtendedBinaryMathOp(
     mp_int big1, big2, bigResult, bigRemainder;
     Tcl_Obj *objResultPtr;
     int invalid, zero;
-    int shift;
     mp_err err;
 
     (void) GetNumberFromObj(NULL, valuePtr, &ptr1, &type1);
@@ -8511,6 +8510,7 @@ ExecuteExtendedBinaryMathOp(
 	    return constants[0];
 	}
 
+	int shift;
 	if (opcode == INST_LSHIFT) {
 	    /*
 	     * Large left shifts create integer overflow.
@@ -10164,9 +10164,7 @@ EvalStatsCmd(
     size_t refCountSum, literalMgmtBytes, sum, decadeHigh;
     size_t numSharedMultX, numSharedOnce, minSizeDecade, maxSizeDecade;
     Tcl_Size i, length;
-    size_t ui;
     char *litTableStats;
-    LiteralEntry *entryPtr;
     Tcl_Obj *objPtr;
 
 #define Percent(a,b) ((a) * 100.0 / (b))
@@ -10302,8 +10300,8 @@ EvalStatsCmd(
     strBytesIfUnshared = 0.0;
     strBytesSharedMultX = 0.0;
     strBytesSharedOnce = 0.0;
-    for (ui = 0;  ui < globalTablePtr->numBuckets;  ui++) {
-	for (entryPtr = globalTablePtr->buckets[i];  entryPtr != NULL;
+    for (size_t ui = 0;  ui < globalTablePtr->numBuckets;  ui++) {
+	for (LiteralEntry *entryPtr = globalTablePtr->buckets[i];  entryPtr;
 		entryPtr = entryPtr->nextPtr) {
 	    if (TclHasInternalRep(entryPtr->objPtr, &tclByteCodeType)) {
 		numByteCodeLits++;
@@ -10420,7 +10418,7 @@ EvalStatsCmd(
 	}
     }
     sum = 0;
-    for (ui = 0;  ui <= maxSizeDecade;  ui++) {
+    for (size_t ui = 0;  ui <= maxSizeDecade;  ui++) {
 	decadeHigh = (1 << (ui + 1)) - 1;
 	sum += statsPtr->literalCount[ui];
 	Tcl_AppendPrintfToObj(objPtr, "\t%10" SIZEu "\t\t%8.0f%%\n",
@@ -10453,7 +10451,7 @@ EvalStatsCmd(
     }
     maxSizeDecade = i;
     sum = 0;
-    for (ui = minSizeDecade;  ui <= maxSizeDecade;  ui++) {
+    for (size_t ui = minSizeDecade;  ui <= maxSizeDecade;  ui++) {
 	decadeHigh = (1 << (ui + 1)) - 1;
 	sum += statsPtr->srcCount[ui];
 	Tcl_AppendPrintfToObj(objPtr, "\t%10" SIZEu "\t\t%8.0f%%\n",
@@ -10477,7 +10475,7 @@ EvalStatsCmd(
     }
     maxSizeDecade = i;
     sum = 0;
-    for (ui = minSizeDecade;  ui <= maxSizeDecade;  ui++) {
+    for (size_t ui = minSizeDecade;  ui <= maxSizeDecade;  ui++) {
 	decadeHigh = (1 << (ui + 1)) - 1;
 	sum += statsPtr->byteCodeCount[ui];
 	Tcl_AppendPrintfToObj(objPtr, "\t%10" SIZEu "\t\t%8.0f%%\n",
@@ -10501,7 +10499,7 @@ EvalStatsCmd(
     }
     maxSizeDecade = i;
     sum = 0;
-    for (ui = minSizeDecade;  ui <= maxSizeDecade;  ui++) {
+    for (size_t ui = minSizeDecade;  ui <= maxSizeDecade;  ui++) {
 	decadeHigh = (1 << (ui + 1)) - 1;
 	sum += statsPtr->lifetimeCount[ui];
 	Tcl_AppendPrintfToObj(objPtr, "\t%12.3f\t\t%8.0f%%\n",

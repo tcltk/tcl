@@ -100,8 +100,6 @@ TclSetupEnv(
     Tcl_Obj *varNamePtr;
     Tcl_DString envString;
     Tcl_HashTable namesHash;
-    Tcl_HashEntry *hPtr;
-    Tcl_HashSearch search;
 
     /*
      * Synchronize the values in the environ array with the contents of the
@@ -193,7 +191,7 @@ TclSetupEnv(
 	    Tcl_IncrRefCount(obj1);
 	    Tcl_IncrRefCount(obj2);
 	    Tcl_ObjSetVar2(interp, varNamePtr, obj1, obj2, TCL_GLOBAL_ONLY);
-	    hPtr = Tcl_FindHashEntry(&namesHash, obj1);
+	    Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&namesHash, obj1);
 	    if (hPtr != NULL) {
 		Tcl_DeleteHashEntry(hPtr);
 	    }
@@ -208,7 +206,8 @@ TclSetupEnv(
      * counterparts in the environment array.
      */
 
-    for (hPtr=Tcl_FirstHashEntry(&namesHash, &search); hPtr!=NULL;
+    Tcl_HashSearch search;
+    for (Tcl_HashEntry *hPtr=Tcl_FirstHashEntry(&namesHash, &search); hPtr;
 	    hPtr=Tcl_NextHashEntry(&search)) {
 	Tcl_Obj *elemName = (Tcl_Obj *)Tcl_GetHashValue(hPtr);
 
@@ -459,14 +458,7 @@ void
 TclUnsetEnv(
     const char *name)		/* Name of variable to remove (UTF-8). */
 {
-    char *oldValue;
     Tcl_Size length, index;
-#ifdef USE_PUTENV_FOR_UNSET
-    Tcl_DString envString;
-    char *string;
-#else
-    char **envPtr;
-#endif /* USE_PUTENV_FOR_UNSET */
 
     Tcl_MutexLock(&envMutex);
     index = TclpFindVariable(name, &length);
@@ -485,7 +477,7 @@ TclUnsetEnv(
      * Remember the old value so we can free it if Tcl created the string.
      */
 
-    oldValue = (char *)tenviron[index];
+    char *oldValue = (char *)tenviron[index];
 
     /*
      * Update the system environment. This must be done before we update the
@@ -497,6 +489,9 @@ TclUnsetEnv(
      * For those platforms that support putenv to unset, Linux indicates
      * that no = should be included, and Windows requires it.
      */
+
+    Tcl_DString envString;
+    char *string;
 
 #if defined(_WIN32)
     string = (char *)Tcl_Alloc(length + 2);
@@ -539,7 +534,7 @@ TclUnsetEnv(
 #endif /* HAVE_PUTENV_THAT_COPIES */
     }
 #else /* !USE_PUTENV_FOR_UNSET */
-    for (envPtr = (char **)(tenviron+index+1); ; envPtr++) {
+    for (char **envPtr = (char **)(tenviron+index+1); ; envPtr++) {
 	envPtr[-1] = *envPtr;
 	if (*envPtr == NULL) {
 	    break;

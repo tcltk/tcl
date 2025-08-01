@@ -788,8 +788,7 @@ TclParseBackslash(
 				 * encoding of the backslash sequence is to be
 				 * written. At most 4 bytes will be written there. */
 {
-    const char *p = src+1;
-    int unichar;
+    const char *p = src + 1;
     int result;
     Tcl_Size count;
     char buf[4] = "";
@@ -922,6 +921,7 @@ TclParseBackslash(
 	 * #217987] test subst-3.2
 	 */
 
+	int unichar;
 	if (Tcl_UtfCharComplete(p, numBytes - 1)) {
 	    count = TclUtfToUniChar(p, &unichar) + 1;	/* +1 for '\' */
 	} else {

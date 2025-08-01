@@ -244,8 +244,6 @@ static const Tcl_ChannelType serialChannelType = {
 static ThreadSpecificData *
 SerialInit(void)
 {
-    ThreadSpecificData *tsdPtr;
-
     /*
      * Check the initialized flag first, then check it again in the mutex.
      * This is a speed enhancement.
@@ -260,7 +258,8 @@ SerialInit(void)
 	Tcl_MutexUnlock(&serialMutex);
     }
 
-    tsdPtr = (ThreadSpecificData *) TclThreadDataKeyGet(&dataKey);
+    ThreadSpecificData *tsdPtr = (ThreadSpecificData *)
+	    TclThreadDataKeyGet(&dataKey);
     if (tsdPtr == NULL) {
 	tsdPtr = TCL_TSD_INIT(&dataKey);
 	tsdPtr->firstSerialPtr = NULL;
@@ -292,7 +291,6 @@ SerialExitHandler(
     TCL_UNUSED(void *))
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    SerialInfo *infoPtr;
 
     /*
      * Clear all eventually pending output. Otherwise Tcl's exit could totally
@@ -300,7 +298,7 @@ SerialExitHandler(
      * that serial write operations may be blocked due to handshake.
      */
 
-    for (infoPtr = tsdPtr->firstSerialPtr; infoPtr != NULL;
+    for (SerialInfo *infoPtr = tsdPtr->firstSerialPtr; infoPtr != NULL;
 	    infoPtr = infoPtr->nextPtr) {
 	PurgeComm(infoPtr->handle,
 		PURGE_TXABORT | PURGE_RXABORT | PURGE_TXCLEAR | PURGE_RXCLEAR);
@@ -414,7 +412,6 @@ SerialSetupProc(
     TCL_UNUSED(void *),
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
-    SerialInfo *infoPtr;
     int block = 1;
     int msec = INT_MAX;		/* min. found block time */
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -428,7 +425,7 @@ SerialSetupProc(
      * block.
      */
 
-    for (infoPtr=tsdPtr->firstSerialPtr ; infoPtr!=NULL ;
+    for (SerialInfo *infoPtr=tsdPtr->firstSerialPtr ; infoPtr!=NULL ;
 	    infoPtr=infoPtr->nextPtr) {
 	if (infoPtr->watchMask & TCL_WRITABLE) {
 	    if (WaitForSingleObject(infoPtr->evWritable, 0) != WAIT_TIMEOUT) {
@@ -469,12 +466,7 @@ SerialCheckProc(
     TCL_UNUSED(void *),
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
-    SerialInfo *infoPtr;
-    SerialEvent *evPtr;
-    int needEvent;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    COMSTAT cStat;
-    unsigned long long time;
 
     if (!(flags & TCL_FILE_EVENTS)) {
 	return;
@@ -485,13 +477,13 @@ SerialCheckProc(
      * queued.
      */
 
-    for (infoPtr=tsdPtr->firstSerialPtr ; infoPtr!=NULL ;
+    for (SerialInfo *infoPtr=tsdPtr->firstSerialPtr ; infoPtr!=NULL ;
 	    infoPtr=infoPtr->nextPtr) {
 	if (infoPtr->flags & SERIAL_PENDING) {
 	    continue;
 	}
 
-	needEvent = 0;
+	int needEvent = 0;
 
 	/*
 	 * If WRITABLE watch mask is set look for infoPtr->evWritable object.
@@ -509,6 +501,7 @@ SerialCheckProc(
 	 */
 
 	if (infoPtr->watchMask & TCL_READABLE) {
+	    COMSTAT cStat;
 	    if (ClearCommError(infoPtr->handle, &infoPtr->error, &cStat)) {
 		/*
 		 * Look for characters already pending in windows queue. If
@@ -523,7 +516,7 @@ SerialCheckProc(
 		    if ((cStat.cbInQue > 0) ||
 			    (infoPtr->error & SERIAL_READ_ERRORS)) {
 			infoPtr->readable = 1;
-			time = SerialGetMilliseconds();
+			unsigned long long time = SerialGetMilliseconds();
 			if ((time - infoPtr->lastEventTime)
 				>= (unsigned long long) infoPtr->blockTime) {
 			    needEvent = 1;
@@ -540,7 +533,7 @@ SerialCheckProc(
 
 	if (needEvent) {
 	    infoPtr->flags |= SERIAL_PENDING;
-	    evPtr = (SerialEvent *)Tcl_Alloc(sizeof(SerialEvent));
+	    SerialEvent *evPtr = (SerialEvent *)Tcl_Alloc(sizeof(SerialEvent));
 	    evPtr->header.proc = SerialEventProc;
 	    evPtr->infoPtr = infoPtr;
 	    Tcl_QueueEvent((Tcl_Event *) evPtr, TCL_QUEUE_TAIL);
@@ -610,8 +603,7 @@ SerialCloseProc(
     int flags)
 {
     SerialInfo *serialPtr = (SerialInfo *) instanceData;
-    int errorCode = 0, result = 0;
-    SerialInfo *infoPtr, **nextPtrPtr;
+    int errorCode = 0;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     if ((flags & (TCL_CLOSE_READ | TCL_CLOSE_WRITE)) != 0) {
@@ -660,7 +652,7 @@ SerialCloseProc(
      * Remove the file from the list of watched files.
      */
 
-    for (nextPtrPtr=&(tsdPtr->firstSerialPtr), infoPtr=*nextPtrPtr;
+    for (SerialInfo **nextPtrPtr=&(tsdPtr->firstSerialPtr), *infoPtr=*nextPtrPtr;
 	    infoPtr!=NULL;
 	    nextPtrPtr=&infoPtr->nextPtr, infoPtr=*nextPtrPtr) {
 	if (infoPtr == (SerialInfo *)serialPtr) {
@@ -679,9 +671,6 @@ SerialCloseProc(
     }
     Tcl_Free(serialPtr);
 
-    if (errorCode == 0) {
-	return result;
-    }
     return errorCode;
 }
 
@@ -774,8 +763,6 @@ SerialBlockingWrite(
     LPDWORD lpWritten,		/* Returns number of bytes written */
     LPOVERLAPPED osPtr)		/* OVERLAPPED structure */
 {
-    int result;
-
     /*
      * Perform overlapped blocking write.
      *  1. Reset the overlapped event
@@ -796,7 +783,7 @@ SerialBlockingWrite(
      */
 
     osPtr->Offset = osPtr->OffsetHigh = 0;
-    result = WriteFile(infoPtr->handle, buf, bufSize, lpWritten, osPtr);
+    int result = WriteFile(infoPtr->handle, buf, bufSize, lpWritten, osPtr);
     LeaveCriticalSection(&infoPtr->csWrite);
 
     if (result == FALSE) {
@@ -866,8 +853,6 @@ SerialInputProc(
     int *errorCode)		/* Where to store error code. */
 {
     SerialInfo *infoPtr = (SerialInfo *) instanceData;
-    DWORD bytesRead = 0;
-    COMSTAT cStat;
 
     *errorCode = 0;
 
@@ -884,6 +869,7 @@ SerialInputProc(
      * mainly restored good old code from Tcl8.0
      */
 
+    COMSTAT cStat;
     if (ClearCommError(infoPtr->handle, &infoPtr->error, &cStat)) {
 	/*
 	 * Check for errors here, but not in the evSetup/Check procedures.
@@ -930,6 +916,7 @@ SerialInputProc(
      * checked the number of available bytes.
      */
 
+    DWORD bytesRead = 0;
     if (SerialBlockingRead(infoPtr, (LPVOID) buf, (DWORD) bufSize, &bytesRead,
 	    &infoPtr->osRead) == FALSE) {
 	Tcl_WinConvertError(GetLastError());
@@ -972,7 +959,6 @@ SerialOutputProc(
     int *errorCode)		/* Where to store error code. */
 {
     SerialInfo *infoPtr = (SerialInfo *) instanceData;
-    DWORD bytesWritten, timeout;
 
     *errorCode = 0;
 
@@ -998,7 +984,7 @@ SerialOutputProc(
 	goto error;
     }
 
-    timeout = (infoPtr->flags & SERIAL_ASYNC) ? 0 : INFINITE;
+    DWORD timeout = (infoPtr->flags & SERIAL_ASYNC) ? 0 : INFINITE;
     if (WaitForSingleObject(infoPtr->evWritable, timeout) == WAIT_TIMEOUT) {
 	/*
 	 * The writer thread is blocked waiting for a write to complete and
@@ -1027,6 +1013,7 @@ SerialOutputProc(
     infoPtr->writeQueue += toWrite;
     LeaveCriticalSection(&infoPtr->csWrite);
 
+    DWORD bytesWritten;
     if (infoPtr->flags & SERIAL_ASYNC) {
 	/*
 	 * The serial is non-blocking, so copy the data into the output buffer
@@ -1118,8 +1105,6 @@ SerialEventProc(
 				 * such as TCL_FILE_EVENTS. */
 {
     SerialEvent *serialEvPtr = (SerialEvent *)evPtr;
-    SerialInfo *infoPtr;
-    int mask;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     if (!(flags & TCL_FILE_EVENTS)) {
@@ -1133,6 +1118,7 @@ SerialEventProc(
      * in the queue.
      */
 
+    SerialInfo *infoPtr;
     for (infoPtr = tsdPtr->firstSerialPtr; infoPtr != NULL;
 	    infoPtr = infoPtr->nextPtr) {
 	if (serialEvPtr->infoPtr == infoPtr) {
@@ -1155,7 +1141,7 @@ SerialEventProc(
      * have detected EOF.
      */
 
-    mask = 0;
+    int mask = 0;
     if (infoPtr->watchMask & TCL_WRITABLE) {
 	if (infoPtr->writable) {
 	    mask |= TCL_WRITABLE;
@@ -1201,7 +1187,6 @@ SerialWatchProc(
 				 * of TCL_READABLE, TCL_WRITABLE and
 				 * TCL_EXCEPTION. */
 {
-    SerialInfo **nextPtrPtr, *ptr;
     SerialInfo *infoPtr = (SerialInfo *) instanceData;
     int oldMask = infoPtr->watchMask;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -1223,8 +1208,8 @@ SerialWatchProc(
 	 * Remove the serial port from the list of watched serial ports.
 	 */
 
-	for (nextPtrPtr=&(tsdPtr->firstSerialPtr), ptr=*nextPtrPtr; ptr!=NULL;
-		nextPtrPtr=&ptr->nextPtr, ptr=*nextPtrPtr) {
+	for (SerialInfo **nextPtrPtr=&(tsdPtr->firstSerialPtr), *ptr=*nextPtrPtr;
+		ptr!=NULL; nextPtrPtr=&ptr->nextPtr, ptr=*nextPtrPtr) {
 	    if (infoPtr == ptr) {
 		*nextPtrPtr = ptr->nextPtr;
 		break;
@@ -1286,8 +1271,6 @@ SerialWriterThread(
 {
     TclPipeThreadInfo *pipeTI = (TclPipeThreadInfo *)arg;
     SerialInfo *infoPtr = NULL;	/* access info only after success init/wait */
-    DWORD bytesWritten, toWrite;
-    char *buf;
     OVERLAPPED myWrite;		/* Have an own OVERLAPPED in this thread. */
 
     for (;;) {
@@ -1300,8 +1283,8 @@ SerialWriterThread(
 	}
 	infoPtr = (SerialInfo *) pipeTI->clientData;
 
-	buf = infoPtr->writeBuf;
-	toWrite = infoPtr->toWrite;
+	const char *buf = infoPtr->writeBuf;
+	DWORD toWrite = infoPtr->toWrite;
 
 	myWrite.hEvent = CreateEventW(NULL, TRUE, FALSE, NULL);
 
@@ -1318,6 +1301,7 @@ SerialWriterThread(
 	    if (infoPtr->writeError) {
 		break;
 	    }
+	    DWORD bytesWritten;
 	    if (SerialBlockingWrite(infoPtr, (LPVOID) buf, (DWORD) toWrite,
 		    &bytesWritten, &myWrite) == FALSE) {
 		infoPtr->writeError = GetLastError();
@@ -1455,11 +1439,9 @@ TclWinOpenSerialChannel(
     char *channelName,
     int permissions)
 {
-    SerialInfo *infoPtr;
-
     SerialInit();
 
-    infoPtr = (SerialInfo *)Tcl_Alloc(sizeof(SerialInfo));
+    SerialInfo *infoPtr = (SerialInfo *)Tcl_Alloc(sizeof(SerialInfo));
     memset(infoPtr, 0, sizeof(SerialInfo));
 
     infoPtr->validMask = permissions & (TCL_READABLE|TCL_WRITABLE);
@@ -1620,11 +1602,6 @@ SerialSetOptionProc(
     const char *value)		/* New value for option. */
 {
     SerialInfo *infoPtr = (SerialInfo *) instanceData;
-    DCB dcb;
-    BOOL result, flag;
-    size_t len, vlen;
-    Tcl_DString ds;
-    const WCHAR *native;
     Tcl_Size argc;
     const char **argv;
 
@@ -1633,8 +1610,8 @@ SerialSetOptionProc(
      * as that would let us use Tcl_GetIndexFromObj()...
      */
 
-    len = strlen(optionName);
-    vlen = strlen(value);
+    size_t len = strlen(optionName);
+    size_t vlen = strlen(value);
 
     /*
      * Option -closemode drain|discard|default
@@ -1667,12 +1644,14 @@ SerialSetOptionProc(
      */
 
     if ((len > 2) && (strncmp(optionName, "-mode", len) == 0)) {
+	DCB dcb;
 	if (!GetCommState(infoPtr->handle, &dcb)) {
 	    goto getStateFailed;
 	}
+	Tcl_DString ds;
 	Tcl_DStringInit(&ds);
-	native = Tcl_UtfToWCharDString(value, TCL_INDEX_NONE, &ds);
-	result = BuildCommDCBW(native, &dcb);
+	const WCHAR *native = Tcl_UtfToWCharDString(value, TCL_INDEX_NONE, &ds);
+	BOOL result = BuildCommDCBW(native, &dcb);
 	Tcl_DStringFree(&ds);
 
 	if (result == FALSE) {
@@ -1705,6 +1684,7 @@ SerialSetOptionProc(
      */
 
     if ((len > 1) && (strncmp(optionName, "-handshake", len) == 0)) {
+	DCB dcb;
 	if (!GetCommState(infoPtr->handle, &dcb)) {
 	    goto getStateFailed;
 	}
@@ -1760,6 +1740,7 @@ SerialSetOptionProc(
      */
 
     if ((len > 1) && (strncmp(optionName, "-xchar", len) == 0)) {
+	DCB dcb;
 	if (!GetCommState(infoPtr->handle, &dcb)) {
 	    goto getStateFailed;
 	}
@@ -1768,15 +1749,7 @@ SerialSetOptionProc(
 	    return TCL_ERROR;
 	}
 	if (argc != 2) {
-	badXchar:
-	    if (interp != NULL) {
-		TclPrintfResult(interp,
-			"bad value for -xchar: should be a list of"
-			" two elements with each a single 8-bit character");
-		TclSetErrorCode(interp, "TCL", "VALUE", "XCHAR");
-	    }
-	    Tcl_Free((void *)argv);
-	    return TCL_ERROR;
+	    goto badXchar;
 	}
 
 	/*
@@ -1793,9 +1766,7 @@ SerialSetOptionProc(
 	dcb.XoffChar = argv[1][0];
 	if (argv[0][0] & 0x80 || argv[1][0] & 0x80) {
 	    Tcl_UniChar character = 0;
-	    Tcl_Size charLen;
-
-	    charLen = TclUtfToUniChar(argv[0], &character);
+	    Tcl_Size charLen = TclUtfToUniChar(argv[0], &character);
 	    if ((character > 0xFF) || argv[0][charLen]) {
 		goto badXchar;
 	    }
@@ -1812,6 +1783,16 @@ SerialSetOptionProc(
 	    goto setStateFailed;
 	}
 	return TCL_OK;
+
+    badXchar:
+	if (interp) {
+	    TclPrintfResult(interp,
+		    "bad value for -xchar: should be a list of"
+		    " two elements with each a single 8-bit character");
+	    TclSetErrorCode(interp, "TCL", "VALUE", "XCHAR");
+	}
+	Tcl_Free((void *)argv);
+	return TCL_ERROR;
     }
 
     /*
@@ -1825,7 +1806,7 @@ SerialSetOptionProc(
 	    return TCL_ERROR;
 	}
 	if ((argc % 2) == 1) {
-	    if (interp != NULL) {
+	    if (interp) {
 		TclPrintfResult(interp,
 			"bad value \"%s\" for -ttycontrol: should be "
 			"a list of signal,value pairs", value);
@@ -1836,6 +1817,7 @@ SerialSetOptionProc(
 	}
 
 	for (Tcl_Size i = 0; i < argc - 1; i += 2) {
+	    BOOL flag;
 	    if (Tcl_GetBoolean(interp, argv[i+1], &flag) == TCL_ERROR) {
 		res = TCL_ERROR;
 		break;
@@ -1843,7 +1825,7 @@ SerialSetOptionProc(
 	    if (strncasecmp(argv[i], "DTR", strlen(argv[i])) == 0) {
 		if (!EscapeCommFunction(infoPtr->handle,
 			(DWORD) (flag ? SETDTR : CLRDTR))) {
-		    if (interp != NULL) {
+		    if (interp) {
 			TclPrintfResult(interp, "can't set DTR signal");
 			TclSetErrorCode(interp, "TCL", "OPERATION",
 				"FCONFIGURE", "TTY_SIGNAL");
@@ -1939,6 +1921,7 @@ SerialSetOptionProc(
 	 * influence even hardware handshake.
 	 */
 
+	DCB dcb;
 	if (!GetCommState(infoPtr->handle, &dcb)) {
 	    goto getStateFailed;
 	}
@@ -1955,7 +1938,7 @@ SerialSetOptionProc(
      */
 
     if ((len > 1) && (strncmp(optionName, "-pollinterval", len) == 0)) {
-	if (Tcl_GetInt(interp, value, &(infoPtr->blockTime)) != TCL_OK) {
+	if (Tcl_GetInt(interp, value, &infoPtr->blockTime) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	return TCL_OK;
@@ -2035,7 +2018,6 @@ SerialGetOptionProc(
     Tcl_DString *dsPtr)		/* Where to store value(s). */
 {
     SerialInfo *infoPtr = (SerialInfo *) instanceData;
-    DCB dcb;
     size_t len;
     int valid = 0;		/* Flag if valid option parsed. */
 
@@ -2078,6 +2060,7 @@ SerialGetOptionProc(
 	const char *stop;
 	char buf[2 * TCL_INTEGER_SPACE + 16];
 
+	DCB dcb;
 	if (!GetCommState(infoPtr->handle, &dcb)) {
 	    if (interp != NULL) {
 		Tcl_WinConvertError(GetLastError());
@@ -2148,6 +2131,7 @@ SerialGetOptionProc(
 	char buf[4];
 	valid = 1;
 
+	DCB dcb;
 	if (!GetCommState(infoPtr->handle, &dcb)) {
 	    if (interp != NULL) {
 		Tcl_WinConvertError(GetLastError());

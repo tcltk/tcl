@@ -197,7 +197,6 @@ Tcl_GetIndexFromObjStruct(
     const char *key, *p1;
     const char *p2;
     const char *const *entryPtr;
-    Tcl_Obj *resultPtr;
     IndexRep *indexRep;
     const Tcl_ObjInternalRep *irPtr;
 
@@ -283,19 +282,19 @@ Tcl_GetIndexFromObjStruct(
      */
 
     if (objPtr && (index != TCL_INDEX_NONE) && !(flags & TCL_INDEX_TEMP_TABLE)) {
-    irPtr = TclFetchInternalRep(objPtr, &tclIndexType);
-    if (irPtr) {
-	indexRep = (IndexRep *)irPtr->twoPtrValue.ptr1;
-    } else {
-	Tcl_ObjInternalRep ir;
+	irPtr = TclFetchInternalRep(objPtr, &tclIndexType);
+	if (irPtr) {
+	    indexRep = (IndexRep *)irPtr->twoPtrValue.ptr1;
+	} else {
+	    Tcl_ObjInternalRep ir;
 
-	indexRep = (IndexRep*)Tcl_Alloc(sizeof(IndexRep));
-	ir.twoPtrValue.ptr1 = indexRep;
-	Tcl_StoreInternalRep(objPtr, &tclIndexType, &ir);
-    }
-    indexRep->tablePtr = (void *) tablePtr;
-    indexRep->offset = offset;
-    indexRep->index = index;
+	    indexRep = (IndexRep*)Tcl_Alloc(sizeof(IndexRep));
+	    ir.twoPtrValue.ptr1 = indexRep;
+	    Tcl_StoreInternalRep(objPtr, &tclIndexType, &ir);
+	}
+	indexRep->tablePtr = (void *) tablePtr;
+	indexRep->offset = offset;
+	indexRep->index = index;
     }
 
   uncachedDone:
@@ -327,6 +326,7 @@ Tcl_GetIndexFromObjStruct(
 	 */
 
 	int count = 0;
+	Tcl_Obj *resultPtr;
 
 	TclNewObj(resultPtr);
 	entryPtr = (const char *const *)tablePtr;

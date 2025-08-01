@@ -734,9 +734,8 @@ static void
 NudgeWatchers(
     HANDLE consoleHandle)
 {
-    ConsoleChannelInfo *chanInfoPtr;
     AcquireSRWLockShared(&gConsoleLock); /* Shared-read lock */
-    for (chanInfoPtr = gWatchingChannelList; chanInfoPtr;
+    for (ConsoleChannelInfo *chanInfoPtr = gWatchingChannelList; chanInfoPtr;
 	    chanInfoPtr = chanInfoPtr->nextWatchingChannelPtr) {
 	/*
 	 * Notify channels interested in our handle AND that have
@@ -775,8 +774,6 @@ ConsoleSetupProc(
     TCL_UNUSED(void *),
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
-    ConsoleChannelInfo *chanInfoPtr;
-    Tcl_Time blockTime = { 0, 0 };
     int block = 1;
 
     if (!(flags & TCL_FILE_EVENTS)) {
@@ -788,8 +785,7 @@ ConsoleSetupProc(
      * ConsoleChannelInfo with regard to locking and field access.
      */
     AcquireSRWLockShared(&gConsoleLock); /* READ lock - no data modification */
-
-    for (chanInfoPtr = gWatchingChannelList; block && chanInfoPtr != NULL;
+    for (ConsoleChannelInfo *chanInfoPtr = gWatchingChannelList; block && chanInfoPtr;
 	    chanInfoPtr = chanInfoPtr->nextWatchingChannelPtr) {
 	ConsoleHandleInfo *handleInfoPtr = FindConsoleInfo(chanInfoPtr);
 	if (handleInfoPtr != NULL) {
@@ -813,6 +809,7 @@ ConsoleSetupProc(
 
     if (!block) {
 	/* At least one channel is readable/writable. Set block time to 0 */
+	Tcl_Time blockTime = { 0, 0 };
 	Tcl_SetMaxBlockTime(&blockTime);
     }
 }
@@ -839,15 +836,11 @@ ConsoleCheckProc(
     TCL_UNUSED(void *),
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
-    ConsoleChannelInfo *chanInfoPtr;
-    Tcl_ThreadId me;
-    int needEvent;
-
     if (!(flags & TCL_FILE_EVENTS)) {
 	return;
     }
 
-    me = Tcl_GetCurrentThread();
+    Tcl_ThreadId me = Tcl_GetCurrentThread();
 
     /*
      * Acquire a shared lock. Note this is ok even though we potentially
@@ -858,7 +851,7 @@ ConsoleCheckProc(
      */
     AcquireSRWLockShared(&gConsoleLock);
 
-    for (chanInfoPtr = gWatchingChannelList; chanInfoPtr != NULL;
+    for (ConsoleChannelInfo *chanInfoPtr = gWatchingChannelList; chanInfoPtr;
 	    chanInfoPtr = chanInfoPtr->nextWatchingChannelPtr) {
 	ConsoleHandleInfo *handleInfoPtr;
 
@@ -879,7 +872,7 @@ ConsoleCheckProc(
 	    continue;
 	}
 
-	needEvent = 0;
+	int needEvent = 0;
 	AcquireSRWLockShared(&handleInfoPtr->lock);
 	/* Rememeber channel is read or write, never both */
 	if (chanInfoPtr->watchMask & TCL_READABLE) {
@@ -980,9 +973,7 @@ ConsoleCloseProc(
     int flags)
 {
     ConsoleChannelInfo *chanInfoPtr = (ConsoleChannelInfo *)instanceData;
-    ConsoleHandleInfo *handleInfoPtr;
     int errorCode = 0;
-    ConsoleChannelInfo **nextPtrPtr;
     int closeHandle;
 
     if ((flags & (TCL_CLOSE_READ | TCL_CLOSE_WRITE)) != 0) {
@@ -1006,7 +997,7 @@ ConsoleCloseProc(
     AcquireSRWLockExclusive(&gConsoleLock);
 
     /* Remove channel from watchers' list */
-    for (nextPtrPtr = &gWatchingChannelList; *nextPtrPtr != NULL;
+    for (ConsoleChannelInfo **nextPtrPtr = &gWatchingChannelList; *nextPtrPtr;
 	    nextPtrPtr = &(*nextPtrPtr)->nextWatchingChannelPtr) {
 	if (*nextPtrPtr == (ConsoleChannelInfo *) chanInfoPtr) {
 	    *nextPtrPtr = (*nextPtrPtr)->nextWatchingChannelPtr;
@@ -1014,7 +1005,7 @@ ConsoleCloseProc(
 	}
     }
 
-    handleInfoPtr = FindConsoleInfo(chanInfoPtr);
+    ConsoleHandleInfo *handleInfoPtr = FindConsoleInfo(chanInfoPtr);
     if (handleInfoPtr) {
 	/*
 	 * Console thread may be blocked either waiting for console i/o
@@ -1101,7 +1092,6 @@ ConsoleInputProc(
     int *errorCode)		/* Where to store error code. */
 {
     ConsoleChannelInfo *chanInfoPtr = (ConsoleChannelInfo *)instanceData;
-    ConsoleHandleInfo *handleInfoPtr;
     Tcl_Size numRead;
 
     if (chanInfoPtr->handle == INVALID_HANDLE_VALUE) {
@@ -1111,7 +1101,7 @@ ConsoleInputProc(
     *errorCode = 0;
 
     AcquireSRWLockShared(&gConsoleLock);
-    handleInfoPtr = FindConsoleInfo(chanInfoPtr);
+    ConsoleHandleInfo *handleInfoPtr = FindConsoleInfo(chanInfoPtr);
     if (handleInfoPtr == NULL) {
 	/* Really shouldn't happen since channel is holding a reference */
 	ReleaseSRWLockShared(&gConsoleLock);
@@ -1178,10 +1168,9 @@ ConsoleInputProc(
 	if ((1 & (size_t)bufPtr) == 0	/* aligned buffer */
 		&& (1 & bufSize) == 0	/* Even number of bytes */
 		&& bufSize > INPUT_BUFFER_SIZE) {
-	    DWORD lastError;
-	    Tcl_Size numChars;
 	    ReleaseSRWLockExclusive(&handleInfoPtr->lock);
-	    lastError = ReadConsoleChars(chanInfoPtr->handle,
+	    Tcl_Size numChars;
+	    DWORD lastError = ReadConsoleChars(chanInfoPtr->handle,
 		    (WCHAR *)bufPtr, bufSize / sizeof(WCHAR), &numChars);
 	    /* NOTE lock released so DON'T break. Return instead */
 	    if (lastError != ERROR_SUCCESS) {
@@ -1256,10 +1245,6 @@ ConsoleOutputProc(
     int *errorCode)		/* Where to store error code. */
 {
     ConsoleChannelInfo *chanInfoPtr = (ConsoleChannelInfo *)instanceData;
-    ConsoleHandleInfo *handleInfoPtr;
-    Tcl_Size numWritten;
-
-    *errorCode = 0;
 
     if (chanInfoPtr->handle == INVALID_HANDLE_VALUE) {
 	/* Some other thread would have *previously* closed the stdio handle */
@@ -1268,7 +1253,7 @@ ConsoleOutputProc(
     }
 
     AcquireSRWLockShared(&gConsoleLock);
-    handleInfoPtr = FindConsoleInfo(chanInfoPtr);
+    ConsoleHandleInfo *handleInfoPtr = FindConsoleInfo(chanInfoPtr);
     if (handleInfoPtr == NULL) {
 	/* Really shouldn't happen since channel is holding a reference */
 	*errorCode = EPIPE;
@@ -1278,8 +1263,9 @@ ConsoleOutputProc(
     AcquireSRWLockExclusive(&handleInfoPtr->lock);
     ReleaseSRWLockShared(&gConsoleLock); /* AFTER acquiring handleInfoPtr->lock */
 
+    *errorCode = 0;
+    Tcl_Size numWritten = 0;
     /* Keep looping until all written. Break out for async and errors */
-    numWritten = 0;
     while (1) {
 	/* Check for error and closing on every loop. */
 	if (handleInfoPtr->lastError != 0) {
@@ -1333,13 +1319,12 @@ ConsoleOutputProc(
 	    }
 	} else {
 	    /* Direct output */
-	    DWORD winStatus;
 	    HANDLE consoleHandle = handleInfoPtr->console;
 	    /* Unlock before blocking in WriteConsole */
 	    ReleaseSRWLockExclusive(&handleInfoPtr->lock);
 	    /* UNLOCKED so return, DON'T break out of loop as it will unlock
 	     * again! */
-	    winStatus = WriteConsoleChars(consoleHandle,
+	    DWORD winStatus = WriteConsoleChars(consoleHandle,
 		    (WCHAR *)buf, toWrite / sizeof(WCHAR), &numWritten);
 	    if (winStatus == ERROR_SUCCESS) {
 		return (int)(numWritten * sizeof(WCHAR));
@@ -1385,15 +1370,13 @@ ConsoleEventProc(
 				 * such as TCL_FILE_EVENTS. */
 {
     ConsoleEvent *consoleEvPtr = (ConsoleEvent *) evPtr;
-    ConsoleChannelInfo *chanInfoPtr;
-    int freeChannel;
     int mask = 0;
 
     if (!(flags & TCL_FILE_EVENTS)) {
 	return 0;
     }
 
-    chanInfoPtr = consoleEvPtr->chanInfoPtr;
+    ConsoleChannelInfo *chanInfoPtr = consoleEvPtr->chanInfoPtr;
     /*
      * We know chanInfoPtr is valid because its reference count would have
      * been incremented when the event was queued. The corresponding release
@@ -1450,6 +1433,7 @@ ConsoleEventProc(
     /* No need to lock - see comments earlier */
 
     /* Remove the reference to the channel from event record */
+    int freeChannel;
     if (chanInfoPtr->numRefs > 1) {
 	chanInfoPtr->numRefs -= 1;
 	freeChannel = 0;
@@ -1487,7 +1471,6 @@ ConsoleWatchProc(
     int newMask)		/* What events to watch for, one of
 				 * TCL_READABLE, TCL_WRITABLE */
 {
-    ConsoleChannelInfo **nextPtrPtr, *ptr;
     ConsoleChannelInfo *chanInfoPtr = (ConsoleChannelInfo *)instanceData;
     int oldMask = chanInfoPtr->watchMask;
 
@@ -1498,8 +1481,6 @@ ConsoleWatchProc(
 
     chanInfoPtr->watchMask = newMask & chanInfoPtr->permissions;
     if (chanInfoPtr->watchMask) {
-	Tcl_Time blockTime = { 0, 0 };
-
 	if (!oldMask) {
 	    AcquireSRWLockExclusive(&gConsoleLock);
 	    /* Add to list of watched channels */
@@ -1520,12 +1501,13 @@ ConsoleWatchProc(
 	    }
 	    ReleaseSRWLockExclusive(&gConsoleLock);
 	}
+	Tcl_Time blockTime = { 0, 0 };
 	Tcl_SetMaxBlockTime(&blockTime);
     } else if (oldMask) {
 	/* Remove from list of watched channels */
 
 	AcquireSRWLockExclusive(&gConsoleLock);
-	for (nextPtrPtr = &gWatchingChannelList, ptr = *nextPtrPtr;
+	for (ConsoleChannelInfo **nextPtrPtr=&gWatchingChannelList, *ptr=*nextPtrPtr;
 		ptr != NULL;
 		nextPtrPtr = &ptr->nextWatchingChannelPtr, ptr = *nextPtrPtr) {
 	    if (chanInfoPtr == ptr) {
@@ -1640,11 +1622,9 @@ ConsoleReaderThread(
     LPVOID arg)
 {
     ConsoleHandleInfo *handleInfoPtr = (ConsoleHandleInfo *) arg;
-    ConsoleHandleInfo **iterator;
     Tcl_Size inputLen = 0;
     Tcl_Size inputOffset = 0;
     Tcl_Size lastReadSize = 0;
-    DWORD sleepTime;
     char inputChars[INPUT_BUFFER_SIZE];
 
     /*
@@ -1657,7 +1637,6 @@ ConsoleReaderThread(
     AcquireSRWLockExclusive(&handleInfoPtr->lock);
 
     while (1) {
-
 	if (handleInfoPtr->numRefs == 1) {
 	    /*
 	     * Sole reference. That's this thread. Exit since no clients
@@ -1673,13 +1652,10 @@ ConsoleReaderThread(
 	 * notify the interp threads.
 	 */
 	if (inputLen > 0 || handleInfoPtr->lastError != 0) {
-	    HANDLE consoleHandle;
 	    if (inputLen > 0) {
 		/* Private buffer has data. Copy it over. */
-		Tcl_Size nStored;
-
-		assert((inputLen - inputOffset) > 0);
-		nStored = RingBufferIn(&handleInfoPtr->buffer,
+		assert(inputLen - inputOffset > 0);
+		Tcl_Size nStored = RingBufferIn(&handleInfoPtr->buffer,
 			inputOffset + inputChars, inputLen - inputOffset,
 			1);
 		inputOffset += nStored;
@@ -1712,7 +1688,7 @@ ConsoleReaderThread(
 	     * order to follow the locking hierarchy, we need to release
 	     * handleInfoPtr->lock before calling NudgeWatchers.
 	     */
-	    consoleHandle = handleInfoPtr->console;
+	    HANDLE consoleHandle = handleInfoPtr->console;
 	    ReleaseSRWLockExclusive(&handleInfoPtr->lock);
 	    NudgeWatchers(consoleHandle);
 	    AcquireSRWLockExclusive(&handleInfoPtr->lock);
@@ -1742,10 +1718,9 @@ ConsoleReaderThread(
 	if (lastReadSize == sizeof(inputChars)
 		|| ((handleInfoPtr->flags & CONSOLE_DATA_AWAITED)
 		&& ConsoleDataAvailable(handleInfoPtr->console))) {
-	    DWORD error;
 	    /* Do not hold the lock while blocked in console */
 	    ReleaseSRWLockExclusive(&handleInfoPtr->lock);
-	    error = ReadConsoleChars(handleInfoPtr->console,
+	    DWORD error = ReadConsoleChars(handleInfoPtr->console,
 		    (WCHAR *)inputChars, sizeof(inputChars) / sizeof(WCHAR),
 		    &inputLen);
 	    AcquireSRWLockExclusive(&handleInfoPtr->lock);
@@ -1771,8 +1746,9 @@ ConsoleReaderThread(
 	     * poll since ReadConsole does not support async operation.
 	     * So sleep for a short while and loop back to retry.
 	     */
-	    sleepTime =
-		handleInfoPtr->flags & CONSOLE_DATA_AWAITED ? 50 : INFINITE;
+
+	    DWORD sleepTime =
+		    handleInfoPtr->flags & CONSOLE_DATA_AWAITED ? 50 : INFINITE;
 	    SleepConditionVariableSRW(&handleInfoPtr->consoleThreadCV,
 		    &handleInfoPtr->lock, sleepTime, 0);
 	}
@@ -1790,7 +1766,7 @@ ConsoleReaderThread(
      */
     ReleaseSRWLockExclusive(&handleInfoPtr->lock);
     AcquireSRWLockExclusive(&gConsoleLock); /* Modifying - exclusive lock */
-    for (iterator = &gConsoleHandleInfoList; *iterator;
+    for (ConsoleHandleInfo **iterator = &gConsoleHandleInfoList; *iterator;
 	    iterator = &(*iterator)->nextPtr) {
 	if (*iterator == handleInfoPtr) {
 	    *iterator = handleInfoPtr->nextPtr;
@@ -1840,9 +1816,6 @@ ConsoleWriterThread(
     LPVOID arg)
 {
     ConsoleHandleInfo *handleInfoPtr = (ConsoleHandleInfo *) arg;
-    ConsoleHandleInfo **iterator;
-    BOOL success;
-    Tcl_Size numBytes;
     /*
      * This buffer size has no relation really with the size of the shared
      * buffer. Could be bigger or smaller. Make larger as multiple threads
@@ -1866,9 +1839,6 @@ ConsoleWriterThread(
     while (1) {
 	/* handleInfoPtr->lock must be held on entry to loop */
 
-	Tcl_Size offset;
-	HANDLE consoleHandle;
-
 	/*
 	 * Sadly, we need to do another copy because do not want to hold
 	 * a lock on handleInfoPtr->buffer while calling WriteConsole as that
@@ -1876,7 +1846,8 @@ ConsoleWriterThread(
 	 * WCHAR's, i.e. even number of chars so do some length checks up
 	 * front.
 	 */
-	numBytes = RingBufferLength(&handleInfoPtr->buffer);
+
+	Tcl_Size numBytes = RingBufferLength(&handleInfoPtr->buffer);
 	numBytes &= ~1; /* Copy integral number of WCHARs -> even number of bytes */
 	if (numBytes == 0) {
 	    /* No data to write */
@@ -1889,7 +1860,7 @@ ConsoleWriterThread(
 	    }
 	    /* Wake up any threads waiting synchronously. */
 	    WakeConditionVariable(&handleInfoPtr->interpThreadCV);
-	    success = SleepConditionVariableSRW(&handleInfoPtr->consoleThreadCV,
+	    BOOL success = SleepConditionVariableSRW(&handleInfoPtr->consoleThreadCV,
 		    &handleInfoPtr->lock, INFINITE, 0);
 	    /* Note: lock has been acquired again! */
 	    if (!success && GetLastError() != ERROR_TIMEOUT) {
@@ -1906,14 +1877,13 @@ ConsoleWriterThread(
 	/* No need to check result, we already checked length bytes available */
 	RingBufferOut(&handleInfoPtr->buffer, buffer, numBytes, 0);
 
-	consoleHandle = handleInfoPtr->console;
+	HANDLE consoleHandle = handleInfoPtr->console;
 	WakeConditionVariable(&handleInfoPtr->interpThreadCV);
 	ReleaseSRWLockExclusive(&handleInfoPtr->lock);
-	offset = 0;
+	Tcl_Size offset = 0;
 	while (numBytes > 0) {
 	    Tcl_Size numWChars = numBytes / sizeof(WCHAR);
-	    DWORD status;
-	    status = WriteConsoleChars(handleInfoPtr->console,
+	    DWORD status = WriteConsoleChars(handleInfoPtr->console,
 		    (WCHAR *)(offset + buffer), numWChars, &numWChars);
 	    if (status != 0) {
 		/* Only overwrite if no previous error */
@@ -1958,7 +1928,7 @@ ConsoleWriterThread(
      */
     ReleaseSRWLockExclusive(&handleInfoPtr->lock);
     AcquireSRWLockExclusive(&gConsoleLock); /* Modifying - exclusive lock */
-    for (iterator = &gConsoleHandleInfoList; *iterator;
+    for (ConsoleHandleInfo **iterator = &gConsoleHandleInfoList; *iterator;
 	    iterator = &(*iterator)->nextPtr) {
 	if (*iterator == handleInfoPtr) {
 	    *iterator = handleInfoPtr->nextPtr;
@@ -2001,10 +1971,9 @@ AllocateConsoleHandleInfo(
     HANDLE consoleHandle,
     int permissions)		/* TCL_READABLE or TCL_WRITABLE */
 {
-    ConsoleHandleInfo *handleInfoPtr;
-    DWORD consoleMode;
+    ConsoleHandleInfo *handleInfoPtr = (ConsoleHandleInfo *)
+	    Tcl_Alloc(sizeof(*handleInfoPtr));
 
-    handleInfoPtr = (ConsoleHandleInfo *)Tcl_Alloc(sizeof(*handleInfoPtr));
     memset(handleInfoPtr, 0, sizeof(*handleInfoPtr));
     handleInfoPtr->console = consoleHandle;
     InitializeSRWLock(&handleInfoPtr->lock);
@@ -2016,7 +1985,7 @@ AllocateConsoleHandleInfo(
     handleInfoPtr->numRefs = 1; /* See function header */
     if (permissions == TCL_READABLE) {
 	GetConsoleMode(consoleHandle, &handleInfoPtr->initMode);
-	consoleMode = handleInfoPtr->initMode;
+	DWORD consoleMode = handleInfoPtr->initMode;
 	consoleMode &= ~(ENABLE_WINDOW_INPUT | ENABLE_MOUSE_INPUT);
 	consoleMode |= ENABLE_LINE_INPUT;
 	SetConsoleMode(consoleHandle, consoleMode);
@@ -2069,8 +2038,7 @@ static ConsoleHandleInfo *
 FindConsoleInfo(
     const ConsoleChannelInfo *chanInfoPtr)
 {
-    ConsoleHandleInfo *handleInfoPtr;
-    for (handleInfoPtr = gConsoleHandleInfoList; handleInfoPtr;
+    for (ConsoleHandleInfo *handleInfoPtr = gConsoleHandleInfoList; handleInfoPtr;
 	    handleInfoPtr = handleInfoPtr->nextPtr) {
 	if (handleInfoPtr->console == chanInfoPtr->handle) {
 	    return handleInfoPtr;
@@ -2102,9 +2070,6 @@ TclWinOpenConsoleChannel(
     char *channelName,
     int permissions)
 {
-    ConsoleChannelInfo *chanInfoPtr;
-    ConsoleHandleInfo *handleInfoPtr;
-
     /* A console handle can either be input or output, not both */
     if (permissions != TCL_READABLE && permissions != TCL_WRITABLE) {
 	return NULL;
@@ -2112,7 +2077,8 @@ TclWinOpenConsoleChannel(
 
     ConsoleInit();
 
-    chanInfoPtr = (ConsoleChannelInfo *)Tcl_Alloc(sizeof(*chanInfoPtr));
+    ConsoleChannelInfo *chanInfoPtr = (ConsoleChannelInfo *)
+	    Tcl_Alloc(sizeof(*chanInfoPtr));
     memset(chanInfoPtr, 0, sizeof(*chanInfoPtr));
 
     chanInfoPtr->permissions = permissions;
@@ -2155,7 +2121,7 @@ TclWinOpenConsoleChannel(
      */
     AcquireSRWLockExclusive(&gConsoleLock); /*Allocate needs exclusive lock */
 
-    handleInfoPtr = FindConsoleInfo(chanInfoPtr);
+    ConsoleHandleInfo *handleInfoPtr = FindConsoleInfo(chanInfoPtr);
     if (handleInfoPtr == NULL) {
 	/* Not found. Allocate one */
 	handleInfoPtr = AllocateConsoleHandleInfo(handle, permissions);
@@ -2284,8 +2250,7 @@ ConsoleSetOptionProc(
 	    return TCL_ERROR;
 	}
 	if (strncasecmp(value, "NORMAL", vlen) == 0) {
-	    mode |=
-		ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT;
+	    mode |= ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT;
 	} else if (strncasecmp(value, "PASSWORD", vlen) == 0) {
 	    mode |= ENABLE_LINE_INPUT|ENABLE_PROCESSED_INPUT;
 	    mode &= ~ENABLE_ECHO_INPUT;

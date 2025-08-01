@@ -3751,6 +3751,7 @@ GetEndOffsetFromObj(
  *----------------------------------------------------------------------
  *
  * TclIndexEncode --
+ *
  *      IMPORTANT: function only encodes indices in the range that fits within
  *      an "int" type. Do NOT change this as the byte code compiler and engine
  *      which call this function cannot handle wider index types. Indices
@@ -3815,13 +3816,13 @@ TclIndexEncode(
     int *indexPtr)		/* Where to write the encoded answer, not NULL */
 {
     Tcl_WideInt wide;
-    int idx;
     const Tcl_WideInt ENDVALUE = 2 * (Tcl_WideInt) INT_MAX;
 
     assert(ENDVALUE < WIDE_MAX);
     if (TCL_OK != GetWideForIndex(interp, objPtr, ENDVALUE, &wide)) {
 	return TCL_ERROR;
     }
+
     /*
      * We passed 2*INT_MAX as the "end value" to GetWideForIndex. The computed
      * index will be in one of the following ranges that need to be
@@ -3853,7 +3854,7 @@ TclIndexEncode(
      */
 
     const Tcl_ObjInternalRep *irPtr =
-	TclFetchInternalRep(objPtr, &endOffsetType);
+	    TclFetchInternalRep(objPtr, &endOffsetType);
 
     if (irPtr && irPtr->wideValue >= 0) {
 	/*
@@ -3865,6 +3866,7 @@ TclIndexEncode(
 	irPtr = NULL;
     }
 
+    int idx;
     if (irPtr == NULL) {
 	/* objPtr can be treated as a purely numeric value. */
 
@@ -3929,7 +3931,7 @@ TclIndexEncode(
     *indexPtr = idx;
     return TCL_OK;
 
-rangeerror:
+  rangeerror:
     if (interp) {
 	TclPrintfResult(interp, "index \"%s\" out of range", TclGetString(objPtr));
 	TclSetErrorCode(interp, "TCL", "VALUE", "INDEX", "OUTOFRANGE");
@@ -4018,9 +4020,7 @@ ClearHash(
     Tcl_HashTable *tablePtr)
 {
     Tcl_HashSearch search;
-    Tcl_HashEntry *hPtr;
-
-    for (hPtr = Tcl_FirstHashEntry(tablePtr, &search); hPtr != NULL;
+    for (Tcl_HashEntry *hPtr = Tcl_FirstHashEntry(tablePtr, &search); hPtr;
 	    hPtr = Tcl_NextHashEntry(&search)) {
 	Tcl_Obj *objPtr = (Tcl_Obj *)Tcl_GetHashValue(hPtr);
 
@@ -4051,8 +4051,8 @@ static Tcl_HashTable *
 GetThreadHash(
     Tcl_ThreadDataKey *keyPtr)
 {
-    Tcl_HashTable **tablePtrPtr =
-	    (Tcl_HashTable **)Tcl_GetThreadData(keyPtr, sizeof(Tcl_HashTable *));
+    Tcl_HashTable **tablePtrPtr = (Tcl_HashTable **)
+	    Tcl_GetThreadData(keyPtr, sizeof(Tcl_HashTable *));
 
     if (NULL == *tablePtrPtr) {
 	*tablePtrPtr = (Tcl_HashTable *)Tcl_Alloc(sizeof(Tcl_HashTable));
@@ -4131,11 +4131,6 @@ TclSetProcessGlobalValue(
     ProcessGlobalValue *pgvPtr,
     Tcl_Obj *newValue)
 {
-    const char *bytes;
-    Tcl_HashTable *cacheMap;
-    Tcl_HashEntry *hPtr;
-    Tcl_DString ds;
-
     Tcl_MutexLock(&pgvPtr->mutex);
 
     /*
@@ -4148,8 +4143,9 @@ TclSetProcessGlobalValue(
     } else {
 	Tcl_CreateExitHandler(FreeProcessGlobalValue, pgvPtr);
     }
-    bytes = TclGetString(newValue);
+    const char *bytes = TclGetString(newValue);
     pgvPtr->numBytes = newValue->length;
+    Tcl_DString ds;
     Tcl_UtfToExternalDStringEx(NULL, NULL, bytes, pgvPtr->numBytes,
 	    TCL_ENCODING_PROFILE_TCL8, &ds, NULL);
     pgvPtr->numBytes = Tcl_DStringLength(&ds);
@@ -4168,9 +4164,9 @@ TclSetProcessGlobalValue(
      */
 
     Tcl_IncrRefCount(newValue);
-    cacheMap = GetThreadHash(&pgvPtr->key);
+    Tcl_HashTable *cacheMap = GetThreadHash(&pgvPtr->key);
     ClearHash(cacheMap);
-    hPtr = Tcl_CreateHashEntry(cacheMap, INT2PTR(pgvPtr->epoch), NULL);
+    Tcl_HashEntry *hPtr = Tcl_CreateHashEntry(cacheMap, INT2PTR(pgvPtr->epoch), NULL);
     Tcl_SetHashValue(hPtr, newValue);
     Tcl_MutexUnlock(&pgvPtr->mutex);
 }
@@ -4194,8 +4190,6 @@ TclGetProcessGlobalValue(
     ProcessGlobalValue *pgvPtr)
 {
     Tcl_Obj *value = NULL;
-    Tcl_HashTable *cacheMap;
-    Tcl_HashEntry *hPtr;
     Tcl_Size epoch = pgvPtr->epoch;
     Tcl_DString newValue;
 
@@ -4214,10 +4208,10 @@ TclGetProcessGlobalValue(
 	    Tcl_MutexLock(&pgvPtr->mutex);
 	    epoch = ++pgvPtr->epoch;
 	    Tcl_UtfToExternalDStringEx(NULL, pgvPtr->encoding, pgvPtr->value,
-		pgvPtr->numBytes, TCL_ENCODING_PROFILE_TCL8, &native, NULL);
+		    pgvPtr->numBytes, TCL_ENCODING_PROFILE_TCL8, &native, NULL);
 	    Tcl_ExternalToUtfDStringEx(NULL, current, Tcl_DStringValue(&native),
-		Tcl_DStringLength(&native), TCL_ENCODING_PROFILE_TCL8,
-		&newValue, NULL);
+		    Tcl_DStringLength(&native), TCL_ENCODING_PROFILE_TCL8,
+		    &newValue, NULL);
 	    Tcl_DStringFree(&native);
 	    Tcl_Free(pgvPtr->value);
 	    pgvPtr->value = (char *)Tcl_Alloc(Tcl_DStringLength(&newValue) + 1);
@@ -4231,10 +4225,9 @@ TclGetProcessGlobalValue(
 	    Tcl_FreeEncoding(current);
 	}
     }
-    cacheMap = GetThreadHash(&pgvPtr->key);
-    hPtr = Tcl_FindHashEntry(cacheMap, INT2PTR(epoch));
+    Tcl_HashTable *cacheMap = GetThreadHash(&pgvPtr->key);
+    Tcl_HashEntry *hPtr = Tcl_FindHashEntry(cacheMap, INT2PTR(epoch));
     if (NULL == hPtr) {
-
 	/*
 	 * No cache for the current epoch - must be a new one.
 	 *
@@ -4265,8 +4258,7 @@ TclGetProcessGlobalValue(
 
 	Tcl_ExternalToUtfDString(NULL, pgvPtr->value, pgvPtr->numBytes, &newValue);
 	value = Tcl_DStringToObj(&newValue);
-	hPtr = Tcl_CreateHashEntry(cacheMap,
-		INT2PTR(pgvPtr->epoch), NULL);
+	hPtr = Tcl_CreateHashEntry(cacheMap, INT2PTR(pgvPtr->epoch), NULL);
 	Tcl_MutexUnlock(&pgvPtr->mutex);
 	Tcl_SetHashValue(hPtr, value);
 	Tcl_IncrRefCount(value);
@@ -4639,144 +4631,147 @@ int
 TclMSB(
     unsigned long long n)
 {
-    /* assert ( 64 == CHAR_BIT * sizeof(unsigned long long) ); */
-    /* assert ( n != 0 ); */
+#if 0
+    assert(64 == CHAR_BIT * sizeof(unsigned long long));
+    assert(n != 0);
+#endif
 
     /*
-     * Many platforms offer access to this functionality through
-     * compiler specific incantations that exploit processor
-     * instructions.  Add more as appropriate.
+     * Many platforms offer access to this functionality through compiler
+     * specific incantations that exploit processor instructions.  Add more
+     * as appropriate.
      */
 
 #if defined(_MSC_VER) && defined(_WIN64)
-	unsigned long result;
+    unsigned long result;
 
-	(void) _BitScanReverse64(&result, (unsigned __int64)n);
-	return (int)result;
+    (void) _BitScanReverse64(&result, (unsigned __int64)n);
+    return (int)result;
 
 #elif defined(__GNUC__) && ((__GNUC__ > 3) || (__GNUC__ == 3 && __GNUC_MINOR__ >= 4))
 
-	/*
-	 * The GNU Compiler Collection offers this builtin routine
-	 * starting with version 3.4, released 2004.
-	 * clzll() = Count of Leading Zeroes in a Long Long
-	 * NOTE: we rely on input constraint (n != 0).
-	 */
+    /*
+     * The GNU Compiler Collection offers this builtin routine starting with
+     * version 3.4, released 2004.
+     * clzll() = Count of Leading Zeroes in a Long Long
+     *
+     * NOTE: we rely on input constraint (n != 0).
+     */
 
-	return 63 - __builtin_clzll(n);
+    return 63 - __builtin_clzll(n);
 
 #else
 
-	/*
-	 * For a byte, consider two masks, C1 = 10000000 selecting just
-	 * the high bit, and C2 = 01111111 selecting all other bits.
-	 * Then for any byte value n, the computation
-	 *	LEAD(n) = C1 & (n | (C2 + (n & C2)))
-	 * will leave all bits but the high bit unset, and will have the
-	 * high bit set iff n!=0.  The whole thing is an 8-bit test
-	 * for being non-zero.  For an 8-byte n, each byte can have
-	 * the test applied all at once, with combined masks.
-	 */
-	const unsigned long long C1 = 0x8080808080808080;
-	const unsigned long long C2 = 0x7F7F7F7F7F7F7F7F;
+    /*
+     * For a byte, consider two masks, C1 = 10000000 selecting just
+     * the high bit, and C2 = 01111111 selecting all other bits.
+     * Then for any byte value n, the computation
+     *	LEAD(n) = C1 & (n | (C2 + (n & C2)))
+     * will leave all bits but the high bit unset, and will have the
+     * high bit set iff n!=0.  The whole thing is an 8-bit test
+     * for being non-zero.  For an 8-byte n, each byte can have
+     * the test applied all at once, with combined masks.
+     */
+    const unsigned long long C1 = 0x8080808080808080;
+    const unsigned long long C2 = 0x7F7F7F7F7F7F7F7F;
 #define LEAD(n) (C1 & (n | (C2 + (n & C2))))
 
-	/*
-	 * To shift a bit to a new place, multiplication by 2^k will do.
-	 * To shift the top 7 bits produced by the LEAD test to the high
-	 * 7 bits of the entire long long, multiply by the right sum of
-	 * powers of 2.  In this case
-	 * Q = 1 + 2^7 + 2^14 + 2^21 + 2^28 + 2^35 + 2^42
-	 * Then shift those 7 bits down to the low 7 bits of the long long.
-	 * The key to making this work is that none of the shifted bits
-	 * collide with each other in the top 7-bit destination.
-	 * Note that we lose the bit that indicates whether the low byte
-	 * is non-zero.  That doesn't matter because we require the original
-	 * value n to be non-zero, so if all other bytes signal to be zero,
-	 * we know the low byte is non-zero, and if one of the other bytes
-	 * signals non-zero, we just don't care what the low byte is.
-	 */
-	const unsigned long long Q = 0x0000040810204081;
+    /*
+     * To shift a bit to a new place, multiplication by 2^k will do.
+     * To shift the top 7 bits produced by the LEAD test to the high
+     * 7 bits of the entire long long, multiply by the right sum of
+     * powers of 2.  In this case
+     * Q = 1 + 2^7 + 2^14 + 2^21 + 2^28 + 2^35 + 2^42
+     * Then shift those 7 bits down to the low 7 bits of the long long.
+     * The key to making this work is that none of the shifted bits
+     * collide with each other in the top 7-bit destination.
+     * Note that we lose the bit that indicates whether the low byte
+     * is non-zero.  That doesn't matter because we require the original
+     * value n to be non-zero, so if all other bytes signal to be zero,
+     * we know the low byte is non-zero, and if one of the other bytes
+     * signals non-zero, we just don't care what the low byte is.
+     */
+    const unsigned long long Q = 0x0000040810204081;
 
-	/*
-	 * To place a copy of a 7-bit value in each of 7 bytes in
-	 * a long long, just multply by the right value.  In this case
-	 *  P = 0x00 01 01 01 01 01 01 01
-	 * We don't put a copy in the high byte since analysis of the
-	 * remaining steps in the algorithm indicates we do not need it.
-	 */
-	const unsigned long long P = 0x0001010101010101;
+    /*
+     * To place a copy of a 7-bit value in each of 7 bytes in
+     * a long long, just multply by the right value.  In this case
+     *  P = 0x00 01 01 01 01 01 01 01
+     * We don't put a copy in the high byte since analysis of the
+     * remaining steps in the algorithm indicates we do not need it.
+     */
+    const unsigned long long P = 0x0001010101010101;
 
-	/*
-	 * With 7 copies of the LEAD value, we can now apply 7 masks
-	 * to it in a single step by an & against the right value.
-	 * B =	00000000 01111111 01111110 01111100
-	 *	01111000 01110000 01100000 01000000
-	 * The higher the MSB of the copied value is, the more of the
-	 * B-masked bytes stored in t will be non-zero.
-	 */
-	const unsigned long long B = 0x007F7E7C78706040;
-	unsigned long long t = B & P * (LEAD(n) * Q >> 57);
+    /*
+     * With 7 copies of the LEAD value, we can now apply 7 masks
+     * to it in a single step by an & against the right value.
+     * B = 00000000 01111111 01111110 01111100
+     *	   01111000 01110000 01100000 01000000
+     * The higher the MSB of the copied value is, the more of the
+     * B-masked bytes stored in t will be non-zero.
+     */
+    const unsigned long long B = 0x007F7E7C78706040;
+    unsigned long long t = B & P * (LEAD(n) * Q >> 57);
 
-	/*
-	 * We want to get a count of the non-zero bytes stored in t.
-	 * First use LEAD(t) to create a set of high bits signaling
-	 * non-zero values as before.  Call this value
-	 * X = x6*2^55 +x5*2^47 +x4*2^39 +x3*2^31 +x2*2^23 +x1*2^15 +x0*2^7
-	 * Then notice what multiplication by
-	 * P =    2^48 +   2^40 +   2^32 +   2^24 +   2^16 +   2^8 + 1
-	 * produces:
-	 * P*X = x0*2^7 + (x0 + x1)*2^15 + ...
-	 *       ... + (x0 + x1 + x2 + x3 + x4 + x5 + x6) * 2^55 + ...
-	 *	 ... + (x5 + x6)*2^95 + x6*2^103
-	 * The high terms of this product are going to overflow the long long
-	 * and get lost, but we don't care about them.  What we care is that
-	 * the 2^55 term is exactly the sum we seek.  We shift the product
-	 * down by 55 bits and then mask away all but the bottom 3 bits
-	 * (Max sum can be 7) we get exactly the count of non-zero B-masked
-	 * bytes.  By design of the mask, this count is the index of the
-	 * MSB of the LEAD value.  It indicates which byte of the original
-	 * value contains the MSB of the original value.
-	 */
+    /*
+     * We want to get a count of the non-zero bytes stored in t.
+     * First use LEAD(t) to create a set of high bits signaling
+     * non-zero values as before.  Call this value
+     * X = x6*2^55 +x5*2^47 +x4*2^39 +x3*2^31 +x2*2^23 +x1*2^15 +x0*2^7
+     * Then notice what multiplication by
+     * P =    2^48 +   2^40 +   2^32 +   2^24 +   2^16 +   2^8 + 1
+     * produces:
+     * P*X = x0*2^7 + (x0 + x1)*2^15 + ...
+     *       ... + (x0 + x1 + x2 + x3 + x4 + x5 + x6) * 2^55 + ...
+     *	 ... + (x5 + x6)*2^95 + x6*2^103
+     * The high terms of this product are going to overflow the long long
+     * and get lost, but we don't care about them.  What we care is that
+     * the 2^55 term is exactly the sum we seek.  We shift the product
+     * down by 55 bits and then mask away all but the bottom 3 bits
+     * (Max sum can be 7) we get exactly the count of non-zero B-masked
+     * bytes.  By design of the mask, this count is the index of the
+     * MSB of the LEAD value.  It indicates which byte of the original
+     * value contains the MSB of the original value.
+     */
 #define SUM(t) (0x7 & (int)(LEAD(t) * P >> 55));
 
-	/*
-	 * Multiply by 8 to get the number of bits to shift to place
-	 * that MSB-containing byte in the low byte.
-	 */
-	int k = 8 * SUM(t);
+    /*
+     * Multiply by 8 to get the number of bits to shift to place
+     * that MSB-containing byte in the low byte.
+     */
+    int k = 8 * SUM(t);
 
-	/*
-	 * Shift the MSB byte to the low byte.  Then shift one more bit.
-	 * Since we know the MSB byte is non-zero we only need to compute
-	 * the MSB of the top 7 bits.  If all top 7 bits are zero, we know
-	 * the bottom bit is the 1 and the correct index is 0.  Compute the
-	 * MSB of that value by the same steps we did before.
-	 */
-	t = B & P * (n >> k >> 1);
+    /*
+     * Shift the MSB byte to the low byte.  Then shift one more bit.
+     * Since we know the MSB byte is non-zero we only need to compute
+     * the MSB of the top 7 bits.  If all top 7 bits are zero, we know
+     * the bottom bit is the 1 and the correct index is 0.  Compute the
+     * MSB of that value by the same steps we did before.
+     */
+    t = B & P * (n >> k >> 1);
 
-	/*
-	 * Add the index of the MSB of the byte to the index of the low
-	 * bit of that byte computed before to get the final answer.
-	 */
-	return k + SUM(t);
+    /*
+     * Add the index of the MSB of the byte to the index of the low
+     * bit of that byte computed before to get the final answer.
+     */
+    return k + SUM(t);
 
-	/* Total operations: 33
-	 * 10 bit-ands, 6 multiplies, 4 adds, 5 rightshifts,
-	 * 3 assignments, 3 bit-ors, 2 typecasts.
-	 *
-	 * The whole task is one direct computation.
-	 * No branches. No loops.
-	 *
-	 * 33 operations cannot beat one instruction, so assembly
-	 * wins and should be used wherever possible, but this isn't bad.
-	 */
+    /* Total operations: 33
+     * 10 bit-ands, 6 multiplies, 4 adds, 5 rightshifts,
+     * 3 assignments, 3 bit-ors, 2 typecasts.
+     *
+     * The whole task is one direct computation.
+     * No branches. No loops.
+     *
+     * 33 operations cannot beat one instruction, so assembly
+     * wins and should be used wherever possible, but this isn't bad.
+     */
 
 #undef SUM
 #undef LEAD
 #endif
 }
-
+
 /*
  * Local Variables:
  * mode: c

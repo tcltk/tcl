@@ -102,11 +102,8 @@ static inline Tcl_Obj *
 DescribeMethodArgs(
     Proc *procPtr)
 {
-    Tcl_Obj *argObjList;
-    CompiledLocal *localPtr;
-
-    TclNewObj(argObjList);
-    for (localPtr=procPtr->firstLocalPtr; localPtr!=NULL;
+    Tcl_Obj *argObjList = Tcl_NewListObj(procPtr->numArgs, NULL);
+    for (CompiledLocal *localPtr=procPtr->firstLocalPtr; localPtr!=NULL;
 	    localPtr=localPtr->nextPtr) {
 	if (TclIsVarArgument(localPtr)) {
 	    Tcl_Obj *argObj;

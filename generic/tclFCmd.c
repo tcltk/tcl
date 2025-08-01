@@ -1103,9 +1103,6 @@ TclFileAttrsCmd(
 	 * Get one attribute.
 	 */
 
-	int index;
-	Tcl_Obj *objPtr = NULL;
-
 	if (numObjStrings == 0) {
 	    TclPrintfResult(interp,
 		    "bad option \"%s\", there are no file attributes in this"
@@ -1114,12 +1111,13 @@ TclFileAttrsCmd(
 	    goto end;
 	}
 
+	int index;
 	if (Tcl_GetIndexFromObj(interp, objv[0], attributeStrings,
 		"option", TCL_INDEX_TEMP_TABLE, &index) != TCL_OK) {
 	    goto end;
 	}
-	if (Tcl_FSFileAttrsGet(interp, index, filePtr,
-		&objPtr) != TCL_OK) {
+	Tcl_Obj *objPtr;
+	if (Tcl_FSFileAttrsGet(interp, index, filePtr, &objPtr) != TCL_OK) {
 	    goto end;
 	}
 	Tcl_SetObjResult(interp, objPtr);
@@ -1128,8 +1126,6 @@ TclFileAttrsCmd(
 	 * Set option/value pairs.
 	 */
 
-	int i, index;
-
 	if (numObjStrings == 0) {
 	    TclPrintfResult(interp,
 		    "bad option \"%s\", there are no file attributes in this"
@@ -1138,7 +1134,8 @@ TclFileAttrsCmd(
 	    goto end;
 	}
 
-	for (i = 0; i < objc ; i += 2) {
+	for (int i = 0; i < objc ; i += 2) {
+	    int index;
 	    if (Tcl_GetIndexFromObj(interp, objv[i], attributeStrings,
 		    "option", TCL_INDEX_TEMP_TABLE, &index) != TCL_OK) {
 		goto end;

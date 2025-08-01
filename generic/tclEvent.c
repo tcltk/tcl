@@ -712,10 +712,8 @@ Tcl_DeleteExitHandler(
     Tcl_ExitProc *proc,		/* Function that was previously registered. */
     void *clientData)		/* Arbitrary value to pass to proc. */
 {
-    ExitHandler *exitPtr, *prevPtr;
-
     Tcl_MutexLock(&exitMutex);
-    for (prevPtr = NULL, exitPtr = firstExitPtr; exitPtr != NULL;
+    for (ExitHandler *prevPtr = NULL, *exitPtr = firstExitPtr; exitPtr != NULL;
 	    prevPtr = exitPtr, exitPtr = exitPtr->nextPtr) {
 	if ((exitPtr->proc == proc)
 		&& (exitPtr->clientData == clientData)) {
@@ -755,10 +753,8 @@ TclDeleteLateExitHandler(
     Tcl_ExitProc *proc,		/* Function that was previously registered. */
     void *clientData)		/* Arbitrary value to pass to proc. */
 {
-    ExitHandler *exitPtr, *prevPtr;
-
     Tcl_MutexLock(&exitMutex);
-    for (prevPtr = NULL, exitPtr = firstLateExitPtr; exitPtr != NULL;
+    for (ExitHandler *prevPtr = NULL, *exitPtr = firstLateExitPtr; exitPtr;
 	    prevPtr = exitPtr, exitPtr = exitPtr->nextPtr) {
 	if ((exitPtr->proc == proc)
 		&& (exitPtr->clientData == clientData)) {
@@ -798,10 +794,9 @@ Tcl_CreateThreadExitHandler(
     Tcl_ExitProc *proc,		/* Function to invoke. */
     void *clientData)		/* Arbitrary value to pass to proc. */
 {
-    ExitHandler *exitPtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
-    exitPtr = (ExitHandler*)Tcl_Alloc(sizeof(ExitHandler));
+    ExitHandler *exitPtr = (ExitHandler*) Tcl_Alloc(sizeof(ExitHandler));
     exitPtr->proc = proc;
     exitPtr->clientData = clientData;
     exitPtr->nextPtr = tsdPtr->firstExitPtr;
@@ -831,10 +826,9 @@ Tcl_DeleteThreadExitHandler(
     Tcl_ExitProc *proc,		/* Function that was previously registered. */
     void *clientData)		/* Arbitrary value to pass to proc. */
 {
-    ExitHandler *exitPtr, *prevPtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
-    for (prevPtr = NULL, exitPtr = tsdPtr->firstExitPtr; exitPtr != NULL;
+    for (ExitHandler *prevPtr = NULL, *exitPtr = tsdPtr->firstExitPtr; exitPtr;
 	    prevPtr = exitPtr, exitPtr = exitPtr->nextPtr) {
 	if ((exitPtr->proc == proc)
 		&& (exitPtr->clientData == clientData)) {
@@ -905,12 +899,11 @@ Tcl_SetExitProc(
 static void
 InvokeExitHandlers(void)
 {
-    ExitHandler *exitPtr;
-
     Tcl_MutexLock(&exitMutex);
     inExit = 1;
 
-    for (exitPtr = firstExitPtr; exitPtr != NULL; exitPtr = firstExitPtr) {
+    for (ExitHandler *exitPtr = firstExitPtr; exitPtr != NULL;
+	    exitPtr = firstExitPtr) {
 	/*
 	 * Be careful to remove the handler from the list before invoking its
 	 * callback. This protects us against double-freeing if the callback
@@ -964,13 +957,10 @@ Tcl_Exit(
      */
 
     if (currentAppExitPtr) {
-
 	currentAppExitPtr(INT2PTR(status));
 
     } else if (subsystemsInitialized) {
-
 	if (TclFullFinalizationRequested()) {
-
 	    /*
 	     * Thorough finalization for Valgrind et al.
 	     */
@@ -978,7 +968,6 @@ Tcl_Exit(
 	    Tcl_Finalize();
 
 	} else {
-
 	    /*
 	     * Fast and deterministic exit (default behavior)
 	     */
@@ -1194,8 +1183,6 @@ Tcl_InitSubsystems(void)
 void
 Tcl_Finalize(void)
 {
-    ExitHandler *exitPtr;
-
     /*
      * Invoke exit handlers first.
      */
@@ -1229,7 +1216,7 @@ Tcl_Finalize(void)
      */
 
     Tcl_MutexLock(&exitMutex);
-    for (exitPtr = firstLateExitPtr; exitPtr != NULL;
+    for (ExitHandler *exitPtr = firstLateExitPtr; exitPtr != NULL;
 	    exitPtr = firstLateExitPtr) {
 	/*
 	 * Be careful to remove the handler from the list before invoking its
@@ -1387,20 +1374,18 @@ void
 FinalizeThread(
     int quick)
 {
-    ExitHandler *exitPtr;
-    ThreadSpecificData *tsdPtr;
-
     /*
      * We use TclThreadDataKeyGet here, rather than Tcl_GetThreadData, because
      * we don't want to initialize the data block if it hasn't been
      * initialized already.
      */
 
-    tsdPtr = (ThreadSpecificData*)TclThreadDataKeyGet(&dataKey);
+    ThreadSpecificData *tsdPtr = (ThreadSpecificData *)
+	    TclThreadDataKeyGet(&dataKey);
     if (tsdPtr != NULL) {
 	tsdPtr->inExit = 1;
 
-	for (exitPtr = tsdPtr->firstExitPtr; exitPtr != NULL;
+	for (ExitHandler *exitPtr = tsdPtr->firstExitPtr; exitPtr != NULL;
 		exitPtr = tsdPtr->firstExitPtr) {
 	    /*
 	     * Be careful to remove the handler from the list before invoking

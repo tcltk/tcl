@@ -510,8 +510,6 @@ Tcl_RegsubObjCmd(
     int result, cflags, all, match, command;
     Tcl_Size idx, wlen, wsublen = 0, offset, numMatches, numParts;
     Tcl_Size start, end, subStart, subEnd;
-    Tcl_RegExp regExpr;
-    Tcl_RegExpInfo info;
     Tcl_Obj *resultPtr, *subPtr, *objPtr, *startIndex = NULL;
     Tcl_UniChar ch, *wsrc, *wfirstChar, *wstring, *wsubspec = 0, *wend;
 
@@ -620,15 +618,13 @@ Tcl_RegsubObjCmd(
 	 * slightly modified version of the one pair STR_MAP code.
 	 */
 
-	Tcl_Size slen;
-	int nocase, wsrclc;
 	int (*strCmpFn)(const Tcl_UniChar*,const Tcl_UniChar*,size_t);
-	Tcl_UniChar *p;
 
 	numMatches = 0;
-	nocase = (cflags & TCL_REG_NOCASE);
+	int nocase = (cflags & TCL_REG_NOCASE);
 	strCmpFn = nocase ? TclUniCharNcasecmp : TclUniCharNcmp;
 
+	Tcl_Size slen;
 	wsrc = Tcl_GetUnicodeFromObj(objv[0], &slen);
 	wstring = Tcl_GetUnicodeFromObj(objv[1], &wlen);
 	wsubspec = Tcl_GetUnicodeFromObj(objv[2], &wsublen);
@@ -652,7 +648,8 @@ Tcl_RegsubObjCmd(
 		wlen = 0;
 	    }
 	} else {
-	    wsrclc = Tcl_UniCharToLower(*wsrc);
+	    int wsrclc = Tcl_UniCharToLower(*wsrc);
+	    Tcl_UniChar *p;
 	    for (p = wfirstChar = wstring; wstring < wend; wstring++) {
 		if ((*wstring == *wsrc ||
 			(nocase && Tcl_UniCharToLower(*wstring)==wsrclc)) &&
@@ -683,7 +680,7 @@ Tcl_RegsubObjCmd(
 	goto regsubDone;
     }
 
-    regExpr = Tcl_GetRegExpFromObj(interp, objv[0], cflags);
+    Tcl_RegExp regExpr = Tcl_GetRegExpFromObj(interp, objv[0], cflags);
     if (regExpr == NULL) {
 	return TCL_ERROR;
     }
@@ -780,6 +777,7 @@ Tcl_RegsubObjCmd(
 	 * result variable.
 	 */
 
+	Tcl_RegExpInfo info;
 	Tcl_RegExpGetInfo(regExpr, &info);
 	start = info.matches[0].start;
 	end = info.matches[0].end;
@@ -1027,15 +1025,13 @@ Tcl_RenameObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    const char *oldName, *newName;
-
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "oldName newName");
 	return TCL_ERROR;
     }
 
-    oldName = TclGetString(objv[1]);
-    newName = TclGetString(objv[2]);
+    const char *oldName = TclGetString(objv[1]);
+    const char *newName = TclGetString(objv[2]);
     return TclRenameCommand(interp, oldName, newName);
 }
 
@@ -1122,7 +1118,6 @@ TclNRSourceObjCmd(
 {
     const char *encodingName = NULL;
     Tcl_Obj *fileName;
-    int result;
     void **pkgFiles = NULL;
     void *names = NULL;
 
@@ -1162,7 +1157,7 @@ TclNRSourceObjCmd(
 	names = *pkgFiles;
 	*pkgFiles = NULL;
     }
-    result = TclNREvalFile(interp, fileName, encodingName);
+    int result = TclNREvalFile(interp, fileName, encodingName);
     if (pkgFiles) {
 	/* restore "tclPkgFiles" assocdata to how it was. */
 	*pkgFiles = names;
@@ -1973,7 +1968,7 @@ StringMapCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_Size length1, length2,  mapElemc, index;
+    Tcl_Size length1, length2,  mapElemc;
     int nocase = 0, mapWithDict = 0, copySource = 0;
     Tcl_Obj **mapElemv, *sourceObj, *resultPtr;
     Tcl_UniChar *ustring1, *ustring2, *p, *end;
@@ -2036,7 +2031,7 @@ StringMapCmd(
 	mapElemv = (Tcl_Obj **)TclStackAlloc(interp, sizeof(Tcl_Obj *) * mapElemc);
 	Tcl_DictObjFirst(interp, objv[objc-2], &search, mapElemv+0,
 		mapElemv+1, &done);
-	for (index=2 ; index<mapElemc ; index+=2) {
+	for (Tcl_Size index=2 ; index<mapElemc ; index+=2) {
 	    Tcl_DictObjNext(&search, mapElemv+index, mapElemv+index+1, &done);
 	}
 	Tcl_DictObjDone(&search);
@@ -2152,7 +2147,7 @@ StringMapCmd(
 	if (nocase) {
 	    u2lc = (int *)TclStackAlloc(interp, mapElemc * sizeof(int));
 	}
-	for (index = 0; index < mapElemc; index++) {
+	for (Tcl_Size index = 0; index < mapElemc; index++) {
 	    mapStrings[index] = Tcl_GetUnicodeFromObj(mapElemv[index],
 		    mapLens+index);
 	    if (nocase && ((index % 2) == 0)) {
@@ -2160,7 +2155,7 @@ StringMapCmd(
 	    }
 	}
 	for (p = ustring1; ustring1 < end; ustring1++) {
-	    for (index = 0; index < mapElemc; index += 2) {
+	    for (Tcl_Size index = 0; index < mapElemc; index += 2) {
 		/*
 		 * Get the key string to match on.
 		 */
@@ -3451,8 +3446,7 @@ TclNRSwitchObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int i, mode, foundmode, splitObjs, numMatchesSaved;
-    int noCase;
+    int i, mode, foundmode, splitObjs, numMatchesSaved, noCase;
     Tcl_Size patternLength;
     const char *pattern;
     Tcl_Obj *stringObj, *indexVarObj, *matchVarObj;
@@ -4034,20 +4028,11 @@ Tcl_TimeObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_Obj *objPtr;
-    int i, result;
     int count;
-    double totalMicroSec;
-#ifndef TCL_WIDE_CLICKS
-    Tcl_Time start, stop;
-#else
-    Tcl_WideInt start, stop;
-#endif
-
     if (objc == 2) {
 	count = 1;
     } else if (objc == 3) {
-	result = TclGetIntFromObj(interp, objv[2], &count);
+	int result = TclGetIntFromObj(interp, objv[2], &count);
 	if (result != TCL_OK) {
 	    return result;
 	}
@@ -4056,26 +4041,27 @@ Tcl_TimeObjCmd(
 	return TCL_ERROR;
     }
 
-    objPtr = objv[1];
-    i = count;
+    Tcl_Obj *objPtr = objv[1];
 #ifndef TCL_WIDE_CLICKS
+    Tcl_Time start;
     Tcl_GetTime(&start);
 #else
-    start = TclpGetWideClicks();
+    Tcl_WideInt start = TclpGetWideClicks();
 #endif
-    while (i-- > 0) {
-	result = TclEvalObjEx(interp, objPtr, 0, NULL, 0);
+    for (int i = count; i-- > 0; ) {
+	int result = TclEvalObjEx(interp, objPtr, 0, NULL, 0);
 	if (result != TCL_OK) {
 	    return result;
 	}
     }
 #ifndef TCL_WIDE_CLICKS
+    Tcl_Time stop;
     Tcl_GetTime(&stop);
-    totalMicroSec = ((double) (stop.sec - start.sec)) * 1.0e6
+    double totalMicroSec = ((double) (stop.sec - start.sec)) * 1.0e6
 	    + (stop.usec - start.usec);
 #else
-    stop = TclpGetWideClicks();
-    totalMicroSec = ((double) TclpWideClicksToNanoseconds(stop - start))/1.0e3;
+    Tcl_WideInt stop = TclpGetWideClicks();
+    double totalMicroSec = ((double) TclpWideClicksToNanoseconds(stop - start)) / 1.0e3;
 #endif
 
     Tcl_Obj *objs[4];

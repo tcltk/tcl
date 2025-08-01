@@ -212,20 +212,17 @@ Tcl_DetachPids(
 void
 Tcl_ReapDetachedProcs(void)
 {
-    Detached *detPtr;
-    Detached *nextPtr, *prevPtr;
-    int status, code;
-
     Tcl_MutexLock(&pipeMutex);
-    for (detPtr = detList, prevPtr = NULL; detPtr != NULL; ) {
-	status = TclProcessWait(detPtr->pid, WNOHANG, &code, NULL, NULL);
+    for (Detached *detPtr = detList, *prevPtr = NULL; detPtr != NULL; ) {
+	int code, status = TclProcessWait(detPtr->pid, WNOHANG, &code, NULL, NULL);
 	if (status == TCL_PROCESS_UNCHANGED || (status == TCL_PROCESS_ERROR
 		&& code != ECHILD)) {
 	    prevPtr = detPtr;
 	    detPtr = detPtr->nextPtr;
 	    continue;
 	}
-	nextPtr = detPtr->nextPtr;
+
+	Detached *nextPtr = detPtr->nextPtr;
 	if (prevPtr == NULL) {
 	    detList = detPtr->nextPtr;
 	} else {

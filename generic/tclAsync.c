@@ -258,10 +258,8 @@ Tcl_AsyncMarkFromSignal(
 void
 TclAsyncMarkFromNotifier(void)
 {
-    AsyncHandler *token;
-
     Tcl_MutexLock(&asyncMutex);
-    for (token = firstHandler; token != NULL;
+    for (AsyncHandler *token = firstHandler; token != NULL;
 	    token = token->nextPtr) {
 	if (token->ready == -1) {
 	    token->ready = 1;

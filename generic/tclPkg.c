@@ -641,9 +641,6 @@ SelectPackage(
     Tcl_Interp *interp,
     TCL_UNUSED(int))
 {
-    PkgAvail *availPtr, *bestPtr, *bestStablePtr;
-    char *availVersion, *bestVersion, *bestStableVersion;
-				/* Internal rep. of versions */
     int availStable, satisfies;
     Require *reqPtr = (Require *)data[0];
     Tcl_Size reqc = PTR2INT(data[1]);
@@ -673,13 +670,14 @@ SelectPackage(
      * chosen based on the selection mode.
      */
 
-    bestPtr = NULL;
-    bestStablePtr = NULL;
-    bestVersion = NULL;
-    bestStableVersion = NULL;
+    PkgAvail *bestPtr = NULL;
+    PkgAvail *bestStablePtr = NULL;
+    char *bestVersion = NULL;
+    char *bestStableVersion = NULL;
 
-    for (availPtr = pkgPtr->availPtr; availPtr != NULL;
+    for (PkgAvail *availPtr = pkgPtr->availPtr; availPtr != NULL;
 	    availPtr = availPtr->nextPtr) {
+	char *availVersion;
 	if (CheckVersionAndConvert(interp, availPtr->version,
 		&availVersion, &availStable) != TCL_OK) {
 	    /*
@@ -768,7 +766,6 @@ SelectPackage(
 	}
 
 	Tcl_Free(availVersion);
-	availVersion = NULL;
     } /* end for */
 
     /*
@@ -808,19 +805,18 @@ SelectPackage(
 	 */
 
 	char *versionToProvide = bestPtr->version;
-	PkgFiles *pkgFiles;
-	PkgName *pkgName;
 
 	Tcl_Preserve(versionToProvide);
 	pkgPtr->clientData = versionToProvide;
 
-	pkgFiles = (PkgFiles *)TclInitPkgFiles(interp);
+	PkgFiles *pkgFiles = (PkgFiles *)TclInitPkgFiles(interp);
 
 	/*
 	 * Push "ifneeded" package name in "tclPkgFiles" assocdata.
 	 */
 
-	pkgName = (PkgName *)Tcl_Alloc(offsetof(PkgName, name) + 1 + strlen(name));
+	PkgName *pkgName = (PkgName *)
+		Tcl_Alloc(offsetof(PkgName, name) + 1 + strlen(name));
 	pkgName->nextPtr = pkgFiles->names;
 	strcpy(pkgName->name, name);
 	pkgFiles->names = pkgName;
@@ -1588,19 +1584,15 @@ void
 TclFreePackageInfo(
     Interp *iPtr)		/* Interpreter that is being deleted. */
 {
-    Package *pkgPtr;
     Tcl_HashSearch search;
-    Tcl_HashEntry *hPtr;
-    PkgAvail *availPtr;
-
-    for (hPtr = Tcl_FirstHashEntry(&iPtr->packageTable, &search);
+    for (Tcl_HashEntry *hPtr = Tcl_FirstHashEntry(&iPtr->packageTable, &search);
 	    hPtr != NULL; hPtr = Tcl_NextHashEntry(&search)) {
-	pkgPtr = (Package *)Tcl_GetHashValue(hPtr);
+	Package *pkgPtr = (Package *)Tcl_GetHashValue(hPtr);
 	if (pkgPtr->version != NULL) {
 	    Tcl_DecrRefCount(pkgPtr->version);
 	}
 	while (pkgPtr->availPtr != NULL) {
-	    availPtr = pkgPtr->availPtr;
+	    PkgAvail *availPtr = pkgPtr->availPtr;
 	    pkgPtr->availPtr = availPtr->nextPtr;
 	    Tcl_EventuallyFree(availPtr->version, TCL_DYNAMIC);
 	    Tcl_EventuallyFree(availPtr->script, TCL_DYNAMIC);

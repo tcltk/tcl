@@ -172,16 +172,14 @@ void
 TclFinalizeNotifier(void)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    ThreadSpecificData **prevPtrPtr;
-    Tcl_Event *evPtr, *hold;
 
     if (!tsdPtr->initialized) {
 	return; /* Notifier not initialized for the current thread */
     }
 
     Tcl_MutexLock(&(tsdPtr->queueMutex));
-    for (evPtr = tsdPtr->firstEventPtr; evPtr != NULL; ) {
-	hold = evPtr;
+    for (Tcl_Event *evPtr = tsdPtr->firstEventPtr; evPtr != NULL; ) {
+	Tcl_Event *hold = evPtr;
 	evPtr = evPtr->nextPtr;
 	Tcl_Free(hold);
     }
@@ -194,7 +192,7 @@ TclFinalizeNotifier(void)
 
     Tcl_FinalizeNotifier(tsdPtr->clientData);
     Tcl_MutexFinalize(&(tsdPtr->queueMutex));
-    for (prevPtrPtr = &firstNotifierPtr; *prevPtrPtr != NULL;
+    for (ThreadSpecificData **prevPtrPtr = &firstNotifierPtr; *prevPtrPtr;
 	    prevPtrPtr = &((*prevPtrPtr)->nextPtr)) {
 	if (*prevPtrPtr == tsdPtr) {
 	    *prevPtrPtr = tsdPtr->nextPtr;
@@ -350,9 +348,8 @@ Tcl_DeleteEventSource(
 				 * checkProc. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    EventSource *sourcePtr, *prevPtr;
 
-    for (sourcePtr = tsdPtr->firstEventSourcePtr, prevPtr = NULL;
+    for (EventSource *sourcePtr = tsdPtr->firstEventSourcePtr, *prevPtr = NULL;
 	    sourcePtr != NULL;
 	    prevPtr = sourcePtr, sourcePtr = sourcePtr->nextPtr) {
 	if ((sourcePtr->setupProc != setupProc)
@@ -651,7 +648,6 @@ Tcl_ServiceEvent(
 				 * matching this will be skipped for
 				 * processing later. */
 {
-    Tcl_Event *evPtr, *prevPtr;
     Tcl_EventProc *proc;
     Tcl_Size eventCount;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -682,7 +678,7 @@ Tcl_ServiceEvent(
      */
 
     Tcl_MutexLock(&(tsdPtr->queueMutex));
-    for (evPtr = tsdPtr->firstEventPtr; evPtr != NULL;
+    for (Tcl_Event *evPtr = tsdPtr->firstEventPtr; evPtr != NULL;
 	    evPtr = evPtr->nextPtr) {
 	/*
 	 * Call the handler for the event. If it actually handles the event
@@ -720,9 +716,9 @@ Tcl_ServiceEvent(
 
 	eventCount = tsdPtr->eventCount;
 	tsdPtr->eventCount = 0;
-	Tcl_MutexUnlock(&(tsdPtr->queueMutex));
+	Tcl_MutexUnlock(&tsdPtr->queueMutex);
 	result = proc(evPtr, flags);
-	Tcl_MutexLock(&(tsdPtr->queueMutex));
+	Tcl_MutexLock(&tsdPtr->queueMutex);
 	tsdPtr->eventCount += eventCount;
 
 	if (result) {
@@ -739,6 +735,7 @@ Tcl_ServiceEvent(
 		    tsdPtr->markerEventPtr = NULL;
 		}
 	    } else {
+		Tcl_Event *prevPtr;
 		for (prevPtr = tsdPtr->firstEventPtr;
 			prevPtr && prevPtr->nextPtr != evPtr;
 			prevPtr = prevPtr->nextPtr) {
@@ -760,7 +757,7 @@ Tcl_ServiceEvent(
 		Tcl_Free(evPtr);
 		tsdPtr->eventCount--;
 	    }
-	    Tcl_MutexUnlock(&(tsdPtr->queueMutex));
+	    Tcl_MutexUnlock(&tsdPtr->queueMutex);
 	    return 1;
 	} else {
 	    /*
@@ -771,7 +768,7 @@ Tcl_ServiceEvent(
 	    evPtr->proc = proc;
 	}
     }
-    Tcl_MutexUnlock(&(tsdPtr->queueMutex));
+    Tcl_MutexUnlock(&tsdPtr->queueMutex);
     return 0;
 }
 
@@ -820,10 +817,9 @@ Tcl_SetServiceMode(
     int mode)			/* New service mode: TCL_SERVICE_ALL or
 				 * TCL_SERVICE_NONE */
 {
-    int oldMode;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
-    oldMode = tsdPtr->serviceMode;
+    int oldMode = tsdPtr->serviceMode;
     tsdPtr->serviceMode = mode;
     Tcl_ServiceModeHook(mode);
     return oldMode;
@@ -904,9 +900,6 @@ Tcl_DoOneEvent(
 				 * TCL_TIMER_EVENTS, TCL_IDLE_EVENTS, or
 				 * others defined by event sources. */
 {
-    int result = 0, oldMode;
-    EventSource *sourcePtr;
-    Tcl_Time *timePtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     /*
@@ -931,7 +924,7 @@ Tcl_DoOneEvent(
      * service events recursively.
      */
 
-    oldMode = tsdPtr->serviceMode;
+    int oldMode = tsdPtr->serviceMode;
     tsdPtr->serviceMode = TCL_SERVICE_NONE;
 
     /*
@@ -940,6 +933,7 @@ Tcl_DoOneEvent(
      * events that don't do anything inside of Tcl.
      */
 
+    int result = 0;
     while (1) {
 	/*
 	 * If idle events are the only things to service, skip the main part
@@ -980,7 +974,7 @@ Tcl_DoOneEvent(
 	 */
 
 	tsdPtr->inTraversal = 1;
-	for (sourcePtr = tsdPtr->firstEventSourcePtr; sourcePtr != NULL;
+	for (EventSource *sourcePtr = tsdPtr->firstEventSourcePtr; sourcePtr;
 		sourcePtr = sourcePtr->nextPtr) {
 	    if (sourcePtr->setupProc) {
 		sourcePtr->setupProc(sourcePtr->clientData, flags);
@@ -988,6 +982,7 @@ Tcl_DoOneEvent(
 	}
 	tsdPtr->inTraversal = 0;
 
+	Tcl_Time *timePtr;
 	if ((flags & TCL_DONT_WAIT) || tsdPtr->blockTimeSet) {
 	    timePtr = &tsdPtr->blockTime;
 	} else {
@@ -1009,7 +1004,7 @@ Tcl_DoOneEvent(
 	 * Check all the event sources for new events.
 	 */
 
-	for (sourcePtr = tsdPtr->firstEventSourcePtr; sourcePtr != NULL;
+	for (EventSource *sourcePtr = tsdPtr->firstEventSourcePtr; sourcePtr;
 		sourcePtr = sourcePtr->nextPtr) {
 	    if (sourcePtr->checkProc) {
 		sourcePtr->checkProc(sourcePtr->clientData, flags);
@@ -1088,7 +1083,6 @@ int
 Tcl_ServiceAll(void)
 {
     int result = 0;
-    EventSource *sourcePtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     if (tsdPtr->serviceMode == TCL_SERVICE_NONE) {
@@ -1119,13 +1113,13 @@ Tcl_ServiceAll(void)
     tsdPtr->inTraversal = 1;
     tsdPtr->blockTimeSet = 0;
 
-    for (sourcePtr = tsdPtr->firstEventSourcePtr; sourcePtr != NULL;
+    for (EventSource *sourcePtr = tsdPtr->firstEventSourcePtr; sourcePtr;
 	    sourcePtr = sourcePtr->nextPtr) {
 	if (sourcePtr->setupProc) {
 	    sourcePtr->setupProc(sourcePtr->clientData, TCL_ALL_EVENTS);
 	}
     }
-    for (sourcePtr = tsdPtr->firstEventSourcePtr; sourcePtr != NULL;
+    for (EventSource *sourcePtr = tsdPtr->firstEventSourcePtr; sourcePtr;
 	    sourcePtr = sourcePtr->nextPtr) {
 	if (sourcePtr->checkProc) {
 	    sourcePtr->checkProc(sourcePtr->clientData, TCL_ALL_EVENTS);
@@ -1170,8 +1164,6 @@ void
 Tcl_ThreadAlert(
     Tcl_ThreadId threadId)	/* Identifier for thread to use. */
 {
-    ThreadSpecificData *tsdPtr;
-
     /*
      * Find the notifier associated with the specified thread. Note that we
      * need to hold the listLock while calling Tcl_AlertNotifier to avoid a
@@ -1179,7 +1171,8 @@ Tcl_ThreadAlert(
      */
 
     Tcl_MutexLock(&listLock);
-    for (tsdPtr = firstNotifierPtr; tsdPtr; tsdPtr = tsdPtr->nextPtr) {
+    for (ThreadSpecificData *tsdPtr = firstNotifierPtr; tsdPtr;
+	    tsdPtr = tsdPtr->nextPtr) {
 	if (tsdPtr->threadId == threadId) {
 	    Tcl_AlertNotifier(tsdPtr->clientData);
 	    break;

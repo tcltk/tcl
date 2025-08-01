@@ -544,15 +544,12 @@ InterpInfoDeleteProc(
 				 * child interps should already be deleted. */
 {
     InterpInfo *interpInfoPtr = INTERP_INFO(interp);
-    Child *childPtr;
-    Parent *parentPtr;
-    Target *targetPtr;
 
     /*
      * There shouldn't be any commands left.
      */
 
-    parentPtr = &interpInfoPtr->parent;
+    Parent *parentPtr = &interpInfoPtr->parent;
     if (parentPtr->childTable.numEntries != 0) {
 	Tcl_Panic("InterpInfoDeleteProc: still exist commands");
     }
@@ -564,15 +561,14 @@ InterpInfoDeleteProc(
      * have removed the target record already.
      */
 
-    for (targetPtr = parentPtr->targetsPtr; targetPtr != NULL; ) {
-	Target *tmpPtr = targetPtr->nextPtr;
-
+    for (Target *nextPtr, *targetPtr = parentPtr->targetsPtr; targetPtr;
+	    targetPtr = nextPtr) {
+	nextPtr = targetPtr->nextPtr;
 	Tcl_DeleteCommandFromToken(targetPtr->childInterp,
 		targetPtr->childCmd);
-	targetPtr = tmpPtr;
     }
 
-    childPtr = &interpInfoPtr->child;
+    Child *childPtr = &interpInfoPtr->child;
     if (childPtr->interpCmd != NULL) {
 	/*
 	 * Tcl_DeleteInterp() was called on this interpreter, rather "interp
@@ -678,9 +674,7 @@ NRInterpCmd(
 	return TCL_ERROR;
     }
     switch (index) {
-    case OPT_ALIAS: {
-	Tcl_Interp *parentInterp;
-
+    case OPT_ALIAS:
 	if (objc < 4) {
 	    goto aliasArgs;
 	}
@@ -695,7 +689,7 @@ NRInterpCmd(
 	    return AliasDelete(interp, childInterp, objv[3]);
 	}
 	if (objc > 5) {
-	    parentInterp = GetInterp(interp, objv[4]);
+	    Tcl_Interp *parentInterp = GetInterp(interp, objv[4]);
 	    if (parentInterp == NULL) {
 		return TCL_ERROR;
 	    }
@@ -708,7 +702,6 @@ NRInterpCmd(
 	Tcl_WrongNumArgs(interp, 2, objv,
 		"childPath childCmd ?parentPath parentCmd? ?arg ...?");
 	return TCL_ERROR;
-    }
     case OPT_ALIASES:
 	childInterp = GetInterp2(interp, objc, objv);
 	if (childInterp == NULL) {
@@ -726,8 +719,6 @@ NRInterpCmd(
 	}
 	return ChildBgerror(interp, childInterp, objc - 3, objv + 3);
     case OPT_CANCEL: {
-	int flags = 0;
-	Tcl_Obj *resultObjPtr;
 	static const char *const cancelOptions[] = {
 	    "-unwind",	"--",	NULL
 	};
@@ -736,6 +727,7 @@ NRInterpCmd(
 	} idx;
 	Tcl_Size i;
 
+	int flags = 0;
 	for (i = 2; i < objc; i++) {
 	    if (TclGetString(objv[i])[0] != '-') {
 		break;
@@ -783,6 +775,7 @@ NRInterpCmd(
 	    childInterp = interp;
 	}
 
+	Tcl_Obj *resultObjPtr = NULL;
 	if (i < objc) {
 	    resultObjPtr = objv[i];
 
@@ -791,9 +784,6 @@ NRInterpCmd(
 	     */
 
 	    Tcl_IncrRefCount(resultObjPtr);
-	    i++;
-	} else {
-	    resultObjPtr = NULL;
 	}
 
 	return Tcl_CancelEval(childInterp, resultObjPtr, 0, flags);

@@ -65,7 +65,6 @@ Tcl_AddInterpResolvers(
 {
     Interp *iPtr = (Interp *) interp;
     ResolverScheme *resPtr;
-    size_t len;
 
     /*
      * Since we're adding a new name resolution scheme, we must force all code
@@ -102,7 +101,7 @@ Tcl_AddInterpResolvers(
      */
 
     resPtr = (ResolverScheme *)Tcl_Alloc(sizeof(ResolverScheme));
-    len = strlen(name) + 1;
+    size_t len = strlen(name) + 1;
     resPtr->name = (char *)Tcl_Alloc(len);
     memcpy(resPtr->name, name, len);
     resPtr->cmdResProc = cmdProc;
@@ -142,14 +141,14 @@ Tcl_GetInterpResolvers(
 				 * found */
 {
     Interp *iPtr = (Interp *) interp;
-    ResolverScheme *resPtr;
 
     /*
      * Look for an existing scheme with the given name. If found, then return
      * pointers to its functions.
      */
 
-    for (resPtr=iPtr->resolverPtr ; resPtr!=NULL ; resPtr=resPtr->nextPtr) {
+    for (ResolverScheme *resPtr = iPtr->resolverPtr ; resPtr ;
+	    resPtr = resPtr->nextPtr) {
 	if (*name == *resPtr->name && strcmp(name, resPtr->name) == 0) {
 	    resInfoPtr->cmdResProc = resPtr->cmdResProc;
 	    resInfoPtr->varResProc = resPtr->varResProc;
@@ -191,13 +190,12 @@ Tcl_RemoveInterpResolvers(
     const char *name)		/* Name of the scheme to be removed. */
 {
     Interp *iPtr = (Interp *) interp;
-    ResolverScheme **prevPtrPtr, *resPtr;
 
     /*
      * Look for an existing scheme with the given name.
      */
 
-    prevPtrPtr = &iPtr->resolverPtr;
+    ResolverScheme **prevPtrPtr = &iPtr->resolverPtr, *resPtr;
     for (resPtr=iPtr->resolverPtr ; resPtr!=NULL ; resPtr=resPtr->nextPtr) {
 	if (*name == *resPtr->name && strcmp(name, resPtr->name) == 0) {
 	    break;
@@ -257,13 +255,12 @@ static void
 BumpCmdRefEpochs(
     Namespace *nsPtr)		/* Namespace being modified. */
 {
-    Tcl_HashEntry *entry;
     Tcl_HashSearch search;
 
     nsPtr->cmdRefEpoch++;
 
 #ifndef BREAK_NAMESPACE_COMPAT
-    for (entry = Tcl_FirstHashEntry(&nsPtr->childTable, &search);
+    for (Tcl_HashEntry *entry = Tcl_FirstHashEntry(&nsPtr->childTable, &search);
 	    entry != NULL; entry = Tcl_NextHashEntry(&search)) {
 	Namespace *childNsPtr = (Namespace *)Tcl_GetHashValue(entry);
 
@@ -271,7 +268,7 @@ BumpCmdRefEpochs(
     }
 #else
     if (nsPtr->childTablePtr != NULL) {
-	for (entry = Tcl_FirstHashEntry(nsPtr->childTablePtr, &search);
+	for (Tcl_HashEntry *entry = Tcl_FirstHashEntry(nsPtr->childTablePtr, &search);
 		entry != NULL; entry = Tcl_NextHashEntry(&search)) {
 	    Namespace *childNsPtr = (Namespace *)Tcl_GetHashValue(entry);
 

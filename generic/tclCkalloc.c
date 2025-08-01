@@ -224,13 +224,11 @@ ValidateMemory(
 				 * guards are to be reset to 0 after they have
 				 * been printed */
 {
-    unsigned char *hiPtr;
     size_t idx;
     int guard_failed = FALSE;
-    int byte;
 
     for (idx = 0; idx < LOW_GUARD_SIZE; idx++) {
-	byte = *(memHeaderP->low_guard + idx);
+	int byte = *(memHeaderP->low_guard + idx);
 	if (byte != GUARD_VALUE) {
 	    guard_failed = TRUE;
 	    fflush(stdout);
@@ -249,9 +247,9 @@ ValidateMemory(
 	Tcl_Panic("Memory validation failure");
     }
 
-    hiPtr = (unsigned char *)memHeaderP->body + memHeaderP->length;
+    unsigned char *hiPtr = (unsigned char *)memHeaderP->body + memHeaderP->length;
     for (idx = 0; idx < HIGH_GUARD_SIZE; idx++) {
-	byte = hiPtr[idx];
+	int byte = hiPtr[idx];
 	if (byte != GUARD_VALUE) {
 	    guard_failed = TRUE;
 	    fflush(stdout);
@@ -334,7 +332,6 @@ Tcl_DumpActiveMemory(
 {
     FILE *fileP;
     struct mem_header *memScanP;
-    char *address;
 
     if (fileName == NULL) {
 	fileP = stderr;
@@ -347,7 +344,7 @@ Tcl_DumpActiveMemory(
 
     Tcl_MutexLock(ckallocMutexPtr);
     for (memScanP = allocHead; memScanP != NULL; memScanP = memScanP->flink) {
-	address = &memScanP->body[0];
+	char *address = &memScanP->body[0];
 	fprintf(fileP, "%p - %p  %" TCL_Z_MODIFIER "u @ %s %d %s",
 		address, address + memScanP->length - 1,
 		memScanP->length, memScanP->file, memScanP->line,
@@ -583,8 +580,6 @@ Tcl_DbCkfree(
     const char *file,
     int line)
 {
-    struct mem_header *memp;
-
     if (ptr == NULL) {
 	return;
     }
@@ -597,7 +592,8 @@ Tcl_DbCkfree(
      * words on these machines).
      */
 
-    memp = (struct mem_header *) (((size_t) ptr) - BODY_OFFSET);
+    struct mem_header *memp = (struct mem_header *)
+	    (((size_t) ptr) - BODY_OFFSET);
 
     if (alloc_tracing) {
 	fprintf(stderr, "Tcl_Free %p %" TCL_Z_MODIFIER "u %s %d\n",
@@ -661,10 +657,6 @@ Tcl_DbCkrealloc(
     const char *file,
     int line)
 {
-    char *newPtr;
-    size_t copySize;
-    struct mem_header *memp;
-
     if (ptr == NULL) {
 	return Tcl_DbCkalloc(size, file, line);
     }
@@ -673,13 +665,14 @@ Tcl_DbCkrealloc(
      * See comment from Tcl_DbCkfree before you change the following line.
      */
 
-    memp = (struct mem_header *) (((size_t) ptr) - BODY_OFFSET);
+    struct mem_header *memp = (struct mem_header *)
+	    (((size_t) ptr) - BODY_OFFSET);
 
-    copySize = size;
+    size_t copySize = size;
     if (copySize > memp->length) {
 	copySize = memp->length;
     }
-    newPtr = (char *)Tcl_DbCkalloc(size, file, line);
+    char *newPtr = (char *)Tcl_DbCkalloc(size, file, line);
     memcpy(newPtr, ptr, copySize);
     Tcl_DbCkfree(ptr, file, line);
     return newPtr;
@@ -692,10 +685,6 @@ Tcl_AttemptDbCkrealloc(
     const char *file,
     int line)
 {
-    char *newPtr;
-    size_t copySize;
-    struct mem_header *memp;
-
     if (ptr == NULL) {
 	return Tcl_AttemptDbCkalloc(size, file, line);
     }
@@ -704,13 +693,14 @@ Tcl_AttemptDbCkrealloc(
      * See comment from Tcl_DbCkfree before you change the following line.
      */
 
-    memp = (struct mem_header *) (((size_t) ptr) - BODY_OFFSET);
+    struct mem_header *memp = (struct mem_header *)
+	    (((size_t) ptr) - BODY_OFFSET);
 
-    copySize = size;
+    size_t copySize = size;
     if (copySize > memp->length) {
 	copySize = memp->length;
     }
-    newPtr = (char *)Tcl_AttemptDbCkalloc(size, file, line);
+    char *newPtr = (char *)Tcl_AttemptDbCkalloc(size, file, line);
     if (newPtr == NULL) {
 	return NULL;
     }

@@ -66,22 +66,19 @@ TclSockGetPort(
     const char *proto,		/* "tcp" or "udp", typically */
     int *portPtr)		/* Return port number */
 {
-    struct servent *sp;		/* Protocol info for named services */
-    Tcl_DString ds;
-    const char *native;
-
     if (Tcl_GetInt(NULL, string, portPtr) != TCL_OK) {
 	/*
 	 * Don't bother translating 'proto' to native.
 	 */
 
-	if (Tcl_UtfToExternalDStringEx(interp, NULL, string, -1, 0, &ds,
-		NULL) != TCL_OK) {
+	Tcl_DString ds;
+	if (Tcl_UtfToExternalDStringEx(interp, NULL, string, TCL_AUTO_LENGTH,
+		0, &ds, NULL) != TCL_OK) {
 	    Tcl_DStringFree(&ds);
 	    return TCL_ERROR;
 	}
-	native = Tcl_DStringValue(&ds);
-	sp = getservbyname(native, proto);		/* INTL: Native. */
+	const char *native = Tcl_DStringValue(&ds);
+	struct servent *sp = getservbyname(native, proto);	/* INTL: Native. */
 	Tcl_DStringFree(&ds);
 	if (sp != NULL) {
 	    *portPtr = ntohs((unsigned short) sp->s_port);
@@ -91,7 +88,7 @@ TclSockGetPort(
     if (Tcl_GetInt(interp, string, portPtr) != TCL_OK) {
 	return TCL_ERROR;
     }
-    if (*portPtr > 0xFFFF) {
+    if (*portPtr < 0 || *portPtr > 0xFFFF) {
 	TclPrintfResult(interp, "couldn't open socket: port number too high");
 	return TCL_ERROR;
     }
@@ -178,19 +175,13 @@ TclCreateSocketAddress(
     const char **errorMsgPtr)	/* Place to store the error message detail, if
 				 * available. */
 {
-    struct addrinfo hints;
-    struct addrinfo *p;
-    struct addrinfo *v4head = NULL, *v4ptr = NULL;
-    struct addrinfo *v6head = NULL, *v6ptr = NULL;
     char *native = NULL, portbuf[TCL_INTEGER_SPACE], *portstring;
-    const char *family = NULL;
     Tcl_DString ds;
-    int result;
 
     if (host != NULL) {
 	if (Tcl_UtfToExternalDStringEx(interp, NULL, host, -1, 0, &ds,
 		NULL) != TCL_OK) {
-		Tcl_DStringFree(&ds);
+	    Tcl_DStringFree(&ds);
 	    return 0;
 	}
 	native = Tcl_DStringValue(&ds);
@@ -208,6 +199,7 @@ TclCreateSocketAddress(
 	portstring = portbuf;
     }
 
+    struct addrinfo hints;
     (void) memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_UNSPEC;
 
@@ -217,7 +209,8 @@ TclCreateSocketAddress(
      */
 
     if (interp != NULL) {
-	family = Tcl_GetVar2(interp, "::tcl::unsupported::socketAF", NULL, 0);
+	const char *family = Tcl_GetVar2(interp,
+		"::tcl::unsupported::socketAF", NULL, 0);
 	if (family != NULL) {
 	    if (strcmp(family, "inet") == 0) {
 		hints.ai_family = AF_INET;
@@ -229,7 +222,6 @@ TclCreateSocketAddress(
 
     hints.ai_socktype = SOCK_STREAM;
 
-#if 0
     /*
      * We found some problems when using AI_ADDRCONFIG, e.g. on systems that
      * have no networking besides the loopback interface and want to resolve
@@ -240,7 +232,7 @@ TclCreateSocketAddress(
      * Missing on NetBSD.
      * Causes failure when used on AIX 5.1 and HP-UX
      */
-
+#if 0
 #if defined(AI_ADDRCONFIG) && !defined(_AIX) && !defined(__hpux)
     hints.ai_flags |= AI_ADDRCONFIG;
 #endif /* AI_ADDRCONFIG && !_AIX && !__hpux */
@@ -250,8 +242,7 @@ TclCreateSocketAddress(
 	hints.ai_flags |= AI_PASSIVE;
     }
 
-    result = getaddrinfo(native, portstring, &hints, addrlist);
-
+    int result = getaddrinfo(native, portstring, &hints, addrlist);
     if (host != NULL) {
 	Tcl_DStringFree(&ds);
     }
@@ -273,7 +264,10 @@ TclCreateSocketAddress(
      */
 
     if (willBind) {
-	for (p = *addrlist; p != NULL; p = p->ai_next) {
+	struct addrinfo *v4head = NULL, *v4ptr = NULL;
+	struct addrinfo *v6head = NULL, *v6ptr = NULL;
+
+	for (struct addrinfo *p = *addrlist; p != NULL; p = p->ai_next) {
 	    if (p->ai_family == AF_INET) {
 		if (v4head == NULL) {
 		    v4head = p;
@@ -342,10 +336,9 @@ printaddrinfo(
     struct addrinfo *addrlist,
     char *prefix)
 {
-    char host[NI_MAXHOST], port[NI_MAXSERV];
-    struct addrinfo *ai;
+    for (struct addrinfo *ai = addrlist; ai != NULL; ai = ai->ai_next) {
+	char host[NI_MAXHOST], port[NI_MAXSERV];
 
-    for (ai = addrlist; ai != NULL; ai = ai->ai_next) {
 	getnameinfo(ai->ai_addr, ai->ai_addrlen,
 		host, sizeof(host), port, sizeof(port),
 		NI_NUMERICHOST|NI_NUMERICSERV);

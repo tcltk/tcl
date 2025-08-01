@@ -3096,9 +3096,6 @@ ZlibTransformInput(
     gotBytes = 0;
     readBytes = chanDataPtr->inStream.avail_in; /* how many bytes in buffer now */
     while (!HaveFlag(chanDataPtr, STREAM_DONE) && toRead > 0) {
-	unsigned int n;
-	int decBytes;
-
 	/* if starting from scratch or continuation after full decompression */
 	if (!chanDataPtr->inStream.avail_in) {
 	    /* buffer to start, we can read to whole available buffer */
@@ -3119,7 +3116,7 @@ ZlibTransformInput(
 	 */
 
 	/* Check free buffer size and adjust size of next chunk to read. */
-	n = chanDataPtr->inAllocated - ((char *)
+	unsigned int n = chanDataPtr->inAllocated - ((char *)
 		chanDataPtr->inStream.next_in - chanDataPtr->inBuffer);
 	if (n <= 0) {
 	    /* Normally unreachable: not enough input buffer to uncompress.
@@ -3157,7 +3154,7 @@ ZlibTransformInput(
 	/* more bytes (or Eof if readBytes == 0) */
 	chanDataPtr->inStream.avail_in += readBytes;
 
-copyDecompressed:
+    copyDecompressed:
 
 	/*
 	 * Transform the read chunk, if not empty. Anything we get
@@ -3167,7 +3164,7 @@ copyDecompressed:
 	 * partial data waiting is converted and returned.
 	 */
 
-	decBytes = ResultDecompress(chanDataPtr, buf, toRead,
+	int decBytes = ResultDecompress(chanDataPtr, buf, toRead,
 		(readBytes != 0) ? Z_NO_FLUSH : Z_SYNC_FLUSH,  errorCodePtr);
 	if (decBytes == -1) {
 	    return -1;
@@ -3222,8 +3219,6 @@ ZlibTransformOutput(
     ZlibChannelData *chanDataPtr = (ZlibChannelData *) instanceData;
     Tcl_DriverOutputProc *outProc =
 	    Tcl_ChannelOutputProc(Tcl_GetChannelType(chanDataPtr->parent));
-    int e;
-    size_t produced;
 
     if (chanDataPtr->mode == TCL_ZLIB_STREAM_INFLATE) {
 	return outProc(Tcl_GetChannelInstanceData(chanDataPtr->parent), buf,
@@ -3240,7 +3235,9 @@ ZlibTransformOutput(
 
     chanDataPtr->outStream.next_in = (Bytef *) buf;
     chanDataPtr->outStream.avail_in = toWrite;
-    while (chanDataPtr->outStream.avail_in > 0) {
+    int e = Z_OK;
+    do {
+	size_t produced;
 	e = Deflate(&chanDataPtr->outStream, chanDataPtr->outBuffer,
 		chanDataPtr->outAllocated, Z_NO_FLUSH, &produced);
 	if (e != Z_OK || produced == 0) {
@@ -3252,7 +3249,7 @@ ZlibTransformOutput(
 	    *errorCodePtr = Tcl_GetErrno();
 	    return -1;
 	}
-    }
+    } while (chanDataPtr->outStream.avail_in > 0);
 
     if (e == Z_OK) {
 	return toWrite - chanDataPtr->outStream.avail_in;
@@ -3353,7 +3350,6 @@ ZlibTransformSetOption(			/* not used */
     if (optionName && (strcmp(optionName, "-dictionary") == 0)
 	    && (chanDataPtr->format != TCL_ZLIB_FORMAT_GZIP)) {
 	Tcl_Obj *compDictObj;
-	int code;
 
 	TclNewStringObj(compDictObj, value, strlen(value));
 	Tcl_IncrRefCount(compDictObj);
@@ -3365,7 +3361,7 @@ ZlibTransformSetOption(			/* not used */
 	    TclDecrRefCount(chanDataPtr->compDictObj);
 	}
 	chanDataPtr->compDictObj = compDictObj;
-	code = Z_OK;
+	int code = Z_OK;
 	if (chanDataPtr->mode == TCL_ZLIB_STREAM_DEFLATE) {
 	    code = SetDeflateDictionary(&chanDataPtr->outStream, compDictObj);
 	    if (code != Z_OK) {
@@ -3506,11 +3502,7 @@ ZlibTransformGetOption(
 	    }
 	} else {
 	    if (chanDataPtr->compDictObj) {
-		Tcl_Size length;
-		const char *str = TclGetStringFromObj(chanDataPtr->compDictObj,
-			&length);
-
-		Tcl_DStringAppend(dsPtr, str, length);
+		TclDStringAppendObj(dsPtr, chanDataPtr->compDictObj);
 	    }
 	    return TCL_OK;
 	}
@@ -3714,8 +3706,6 @@ ZlibStackChannelTransform(
 {
     ZlibChannelData *chanDataPtr = (ZlibChannelData *)
 	    Tcl_Alloc(sizeof(ZlibChannelData));
-    Tcl_Channel chan;
-    int wbits = 0;
 
     if (mode != TCL_ZLIB_STREAM_DEFLATE && mode != TCL_ZLIB_STREAM_INFLATE) {
 	Tcl_Panic("unknown mode: %d", mode);
@@ -3752,6 +3742,7 @@ ZlibStackChannelTransform(
 	Tcl_GetBytesFromObj(NULL, chanDataPtr->compDictObj, (Tcl_Size *)NULL);
     }
 
+    int wbits;
     switch (format) {
     case  TCL_ZLIB_FORMAT_RAW:
 	wbits = WBITS_RAW;
@@ -3816,7 +3807,7 @@ ZlibStackChannelTransform(
 	}
     }
 
-    chan = Tcl_StackChannel(interp, &zlibChannelType, chanDataPtr,
+    Tcl_Channel chan = Tcl_StackChannel(interp, &zlibChannelType, chanDataPtr,
 	    Tcl_GetChannelMode(channel), channel);
     if (chan == NULL) {
 	goto error;
@@ -3869,7 +3860,7 @@ ResultDecompress(
     int flush,
     int *errorCodePtr)
 {
-    int e, written, resBytes = 0;
+    int e, resBytes = 0;
 
     chanDataPtr->flags &= ~STREAM_DECOMPRESS;
     chanDataPtr->inStream.next_out = (Bytef *) buf;
@@ -3898,7 +3889,7 @@ ResultDecompress(
 	 * "toRead - avail_out" is the amount of bytes generated.
 	 */
 
-	written = toRead - chanDataPtr->inStream.avail_out;
+	int written = toRead - chanDataPtr->inStream.avail_out;
 
 	/*
 	 * The cases where we're definitely done.
@@ -3974,8 +3965,6 @@ int
 TclZlibInit(
     Tcl_Interp *interp)
 {
-    Tcl_Config cfg[2];
-
     /*
      * This does two things. It creates a counter used in the creation of
      * stream commands, and it creates the namespace that will contain those
@@ -3998,9 +3987,10 @@ TclZlibInit(
      * a compatibility version built into Tcl?
      */
 
-    cfg[0].key = "zlibVersion";
-    cfg[0].value = zlibVersion();
-    cfg[1].key = NULL;
+    Tcl_Config cfg[2] = {
+	{"zlibVersion", zlibVersion()},
+	{NULL, NULL}
+    };
     Tcl_RegisterConfig(interp, "zlib", cfg, "utf-8");
 
     /*

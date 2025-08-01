@@ -4914,7 +4914,6 @@ TclBignumToDouble(
     } else if (shift < 0) {
 	lsb = mp_cnt_lsb(a);
 	if (lsb == -1-shift) {
-
 	    /*
 	     * Round to even
 	     */
@@ -4928,7 +4927,6 @@ TclBignumToDouble(
 		}
 	    }
 	} else {
-
 	    /*
 	     * Ordinary rounding
 	     */
@@ -4995,10 +4993,9 @@ TclCeil(
 {
     double r = 0.0;
     mp_int b;
-    mp_err err;
     const mp_int *a = (const mp_int *)big;
 
-    err = mp_init(&b);
+    mp_err err = mp_init(&b);
     if ((err == MP_OKAY) && mp_isneg(a)) {
 	err = mp_neg(a, &b);
 	r = -TclFloor(&b);
@@ -5061,10 +5058,9 @@ TclFloor(
 {
     double r = 0.0;
     mp_int b;
-    mp_err err;
     const mp_int *a = (const mp_int *)big;
 
-    err = mp_init(&b);
+    mp_err err = mp_init(&b);
     if ((err == MP_OKAY) && mp_isneg(a)) {
 	err = mp_neg(a, &b);
 	r = -TclCeil(&b);
@@ -5122,9 +5118,6 @@ BignumToBiasedFrExp(
     int *machexp)		/* Power of two. */
 {
     mp_int b;
-    int bits;
-    int shift;
-    double r;
     mp_err err = MP_OKAY;
 
     /*
@@ -5132,8 +5125,8 @@ BignumToBiasedFrExp(
      * Round to nearest unit in the last place.
      */
 
-    bits = mp_count_bits(a);
-    shift = mantBits - 2 - bits;
+    int bits = mp_count_bits(a);
+    int shift = mantBits - 2 - bits;
     if (mp_init(&b)) {
 	return 0.0;
     }
@@ -5149,7 +5142,7 @@ BignumToBiasedFrExp(
      * Accumulate the result, one mp_digit at a time.
      */
 
-    r = 0.0;
+    double r = 0.0;
     if (err == MP_OKAY) {
 	for (int i=b.used-1; i>=0; --i) {
 	    r = ldexp(r, MP_DIGIT_BIT) + (double)b.dp[i];

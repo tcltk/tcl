@@ -167,12 +167,11 @@ static void
 TrimUnreachable(
     CompileEnv *envPtr)
 {
-    unsigned char *currentInstPtr;
     Tcl_HashTable targets;
 
     LocateTargetAddresses(envPtr, &targets);
 
-    for (currentInstPtr = envPtr->codeStart ;
+    for (unsigned char *currentInstPtr = envPtr->codeStart ;
 	    currentInstPtr < envPtr->codeNext-1 ;
 	    currentInstPtr += AddrLength(currentInstPtr)) {
 	int clear = 0;
@@ -213,12 +212,11 @@ static void
 ConvertZeroEffectToNOP(
     CompileEnv *envPtr)
 {
-    unsigned char *currentInstPtr;
     int size;
     Tcl_HashTable targets;
 
     LocateTargetAddresses(envPtr, &targets);
-    for (currentInstPtr = envPtr->codeStart ;
+    for (unsigned char *currentInstPtr = envPtr->codeStart ;
 	    currentInstPtr < envPtr->codeNext ; currentInstPtr += size) {
 	int blank = 0, nextInst;
 
@@ -358,13 +356,12 @@ static void
 AdvanceJumps(
     CompileEnv *envPtr)
 {
-    unsigned char *currentInstPtr;
     Tcl_HashTable jumps;
 
-    for (currentInstPtr = envPtr->codeStart ;
+    for (unsigned char *currentInstPtr = envPtr->codeStart ;
 	    currentInstPtr < envPtr->codeNext-1 ;
 	    currentInstPtr += AddrLength(currentInstPtr)) {
-	int offset, delta, isNew;
+	int offset, isNew;
 
 	switch (*currentInstPtr) {
 #ifndef REMOVE_DEPRECATED_OPCODES
@@ -373,7 +370,7 @@ AdvanceJumps(
 	case INST_JUMP_FALSE1:
 	    offset = TclGetInt1AtPtr(currentInstPtr + 1);
 	    Tcl_InitHashTable(&jumps, TCL_ONE_WORD_KEYS);
-	    for (delta=0 ; offset+delta != 0 ;) {
+	    for (int delta=0 ; offset+delta != 0 ;) {
 		if (offset + delta < -128 || offset + delta > 127) {
 		    break;
 		}
@@ -448,11 +445,11 @@ static void
 BetterEqualityTesting(
     CompileEnv *envPtr)
 {
-    unsigned char *currentInstPtr, *emptyPushInstPtr = NULL;
+    unsigned char *emptyPushInstPtr = NULL;
     Tcl_HashTable targets;
 
     LocateTargetAddresses(envPtr, &targets);
-    for (currentInstPtr = envPtr->codeStart ;
+    for (unsigned char *currentInstPtr = envPtr->codeStart ;
 	    currentInstPtr < envPtr->codeNext-1 ;
 	    currentInstPtr += AddrLength(currentInstPtr)) {
 	if (emptyPushInstPtr && IsTargetAddress(&targets, currentInstPtr)) {

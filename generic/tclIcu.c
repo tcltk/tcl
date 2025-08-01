@@ -303,13 +303,6 @@ DetectEncoding(
     Tcl_Obj *objPtr,
     int all)
 {
-    Tcl_Size len;
-    const char *bytes;
-    const UCharsetMatch *match;
-    const UCharsetMatch **matches;
-    int nmatches;
-    int ret;
-
     // Confirm we have the profile of functions we need.
     if (ucsdet_open == NULL ||
 	    ucsdet_setText == NULL ||
@@ -320,7 +313,8 @@ DetectEncoding(
 	return FunctionNotAvailableError(interp);
     }
 
-    bytes = (char *)Tcl_GetBytesFromObj(interp, objPtr, &len);
+    Tcl_Size len;
+    const char *bytes = (char *)Tcl_GetBytesFromObj(interp, objPtr, &len);
     if (bytes == NULL) {
 	return TCL_ERROR;
     }
@@ -342,14 +336,17 @@ DetectEncoding(
 	return TCL_ERROR;
     }
 
+    int nmatches;
+    const UCharsetMatch **matches;
     if (all) {
 	matches = ucsdet_detectAll(csd, &nmatches, &status);
     } else {
-	match = ucsdet_detect(csd, &status);
+	const UCharsetMatch *match = ucsdet_detect(csd, &status);
 	matches = &match;
 	nmatches = match ? 1 : 0;
     }
 
+    int ret;
     if (U_FAILURE(status) || nmatches == 0) {
 	ret = IcuError(interp, "Could not detect character set", status);
     } else {
@@ -810,12 +807,11 @@ IcuBytesToUCharDString(
 	}
     }
 
-    int dstLen;
     int dstCapacity = (int)nbytes; /* In UChar's */
     Tcl_DStringInit(dsOutPtr);
     Tcl_DStringSetLength(dsOutPtr, dstCapacity);
-    dstLen = ucnv_toUChars(ucnvPtr, (UCharx *)Tcl_DStringValue(dsOutPtr), dstCapacity,
-	    (const char *)bytes, (int)nbytes, &status);
+    int dstLen = ucnv_toUChars(ucnvPtr, (UCharx *)Tcl_DStringValue(dsOutPtr),
+	    dstCapacity, (const char *)bytes, (int)nbytes, &status);
     if (U_FAILURE(status)) {
 	switch (status) {
 	case U_STRING_NOT_TERMINATED_WARNING:
@@ -824,8 +820,8 @@ IcuBytesToUCharDString(
 	    dstCapacity = sizeof(UCharx) * dstLen;
 	    Tcl_DStringSetLength(dsOutPtr, dstCapacity);
 	    status = U_ZERO_ERRORZ; /* Reset before call */
-	    dstLen = ucnv_toUChars(ucnvPtr, (UCharx *)Tcl_DStringValue(dsOutPtr), dstCapacity,
-		    (const char *)bytes, (int)nbytes, &status);
+	    dstLen = ucnv_toUChars(ucnvPtr, (UCharx *)Tcl_DStringValue(dsOutPtr),
+		    dstCapacity, (const char *)bytes, (int)nbytes, &status);
 	    if (U_SUCCESS(status)) {
 		break;
 	    }

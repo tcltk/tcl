@@ -1955,12 +1955,9 @@ ReflectGetOption(
 		(listc == 1 ? "" : "s"));
 	goto error;
     } else {
-	Tcl_Size len;
-	const char *str = TclGetStringFromObj(resObj, &len);
-
-	if (len) {
+	if (!Tcl_IsEmpty(resObj)) {
 	    TclDStringAppendLiteral(dsPtr, " ");
-	    Tcl_DStringAppend(dsPtr, str, len);
+	    TclDStringAppendObj(dsPtr, resObj);
 	}
 	goto ok;
     }
@@ -2564,15 +2561,7 @@ DeleteReflectedChannelMap(
 {
     ReflectedChannelMap *rcmPtr = (ReflectedChannelMap *)clientData;
 				/* The map */
-    Tcl_HashSearch hSearch;	/* Search variable. */
-    Tcl_HashEntry *hPtr;	/* Search variable. */
-    ReflectedChannel *rcPtr;
-    Tcl_Channel chan;
-#if TCL_THREADS
-    ForwardingResult *resultPtr;
-    ForwardingEvent *evPtr;
-    ForwardParam *paramPtr;
-#endif
+    Tcl_HashSearch hSearch;	/* Iteration context. */
 
     /*
      * Delete all entries. The channels may have been closed already, or will
@@ -2586,11 +2575,12 @@ DeleteReflectedChannelMap(
      * this interp.
      */
 
-    for (hPtr = Tcl_FirstHashEntry(&rcmPtr->map, &hSearch);
+    for (Tcl_HashEntry *hPtr = Tcl_FirstHashEntry(&rcmPtr->map, &hSearch);
 	    hPtr != NULL;
 	    hPtr = Tcl_FirstHashEntry(&rcmPtr->map, &hSearch)) {
-	chan = (Tcl_Channel)Tcl_GetHashValue(hPtr);
-	rcPtr = (ReflectedChannel *)Tcl_GetChannelInstanceData(chan);
+	Tcl_Channel chan = (Tcl_Channel)Tcl_GetHashValue(hPtr);
+	ReflectedChannel *rcPtr = (ReflectedChannel *)
+		Tcl_GetChannelInstanceData(chan);
 
 	MarkDead(rcPtr);
 	Tcl_DeleteHashEntry(hPtr);
@@ -2611,7 +2601,7 @@ DeleteReflectedChannelMap(
 
     Tcl_MutexLock(&rcForwardMutex);
 
-    for (resultPtr = forwardList;
+    for (ForwardingResult *resultPtr = forwardList;
 	    resultPtr != NULL;
 	    resultPtr = resultPtr->nextPtr) {
 	if (resultPtr->dsti != interp) {
@@ -2632,7 +2622,7 @@ DeleteReflectedChannelMap(
 	 * identical race condition in Tcl 8.6 IORTrans.
 	 */
 
-	evPtr = resultPtr->evPtr;
+	ForwardingEvent *evPtr = resultPtr->evPtr;
 
 	/*
 	 * Basic crash safety until this routine can get revised [3411310]
@@ -2641,7 +2631,7 @@ DeleteReflectedChannelMap(
 	if (evPtr == NULL) {
 	    continue;
 	}
-	paramPtr = evPtr->param;
+	ForwardParam *paramPtr = evPtr->param;
 	if (!evPtr) {
 	    continue;
 	}
@@ -2664,11 +2654,12 @@ DeleteReflectedChannelMap(
      */
 
     rcmPtr = GetThreadReflectedChannelMap();
-    for (hPtr = Tcl_FirstHashEntry(&rcmPtr->map, &hSearch);
+    for (Tcl_HashEntry *hPtr = Tcl_FirstHashEntry(&rcmPtr->map, &hSearch);
 	    hPtr != NULL;
 	    hPtr = Tcl_NextHashEntry(&hSearch)) {
-	chan = (Tcl_Channel)Tcl_GetHashValue(hPtr);
-	rcPtr = (ReflectedChannel *)Tcl_GetChannelInstanceData(chan);
+	Tcl_Channel chan = (Tcl_Channel)Tcl_GetHashValue(hPtr);
+	ReflectedChannel *rcPtr = (ReflectedChannel *)
+		Tcl_GetChannelInstanceData(chan);
 
 	if (rcPtr->interp != interp) {
 	    /*
@@ -2740,11 +2731,8 @@ static void
 DeleteThreadReflectedChannelMap(
     TCL_UNUSED(void *))
 {
-    Tcl_HashSearch hSearch;	 /* Search variable. */
-    Tcl_HashEntry *hPtr;	 /* Search variable. */
+    Tcl_HashSearch hSearch;	 /* Iteration context. */
     Tcl_ThreadId self = Tcl_GetCurrentThread();
-    ReflectedChannelMap *rcmPtr; /* The map */
-    ForwardingResult *resultPtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     /*
@@ -2761,12 +2749,9 @@ DeleteThreadReflectedChannelMap(
 
     Tcl_MutexLock(&rcForwardMutex);
 
-    for (resultPtr = forwardList;
+    for (ForwardingResult *resultPtr = forwardList;
 	    resultPtr != NULL;
 	    resultPtr = resultPtr->nextPtr) {
-	ForwardingEvent *evPtr;
-	ForwardParam *paramPtr;
-
 	if (resultPtr->dst != self) {
 	    /*
 	     * Ignore results/events for other threads.
@@ -2785,7 +2770,7 @@ DeleteThreadReflectedChannelMap(
 	 * identical race condition in Tcl 8.6 IORTrans.
 	 */
 
-	evPtr = resultPtr->evPtr;
+	ForwardingEvent *evPtr = resultPtr->evPtr;
 
 	/*
 	 * Basic crash safety until this routine can get revised [3411310]
@@ -2794,7 +2779,7 @@ DeleteThreadReflectedChannelMap(
 	if (evPtr == NULL ) {
 	    continue;
 	}
-	paramPtr = evPtr->param;
+	ForwardParam *paramPtr = evPtr->param;
 	if (!evPtr) {
 	    continue;
 	}
@@ -2824,9 +2809,9 @@ DeleteThreadReflectedChannelMap(
      * through the channels, remove all, mark them as dead.
      */
 
-    rcmPtr = GetThreadReflectedChannelMap();
+    ReflectedChannelMap *rcmPtr = GetThreadReflectedChannelMap();
     tsdPtr->rcmPtr = NULL;
-    for (hPtr = Tcl_FirstHashEntry(&rcmPtr->map, &hSearch);
+    for (Tcl_HashEntry *hPtr = Tcl_FirstHashEntry(&rcmPtr->map, &hSearch);
 	    hPtr != NULL;
 	    hPtr = Tcl_FirstHashEntry(&rcmPtr->map, &hSearch)) {
 	Tcl_Channel chan = (Tcl_Channel)Tcl_GetHashValue(hPtr);
@@ -2850,8 +2835,6 @@ ForwardOpToHandlerThread(
      */
 
     Tcl_ThreadId dst = rcPtr->thread;
-    ForwardingEvent *evPtr;
-    ForwardingResult *resultPtr;
 
     /*
      * We gather the lock early. This allows us to check the liveness of the
@@ -2875,8 +2858,10 @@ ForwardOpToHandlerThread(
      * Create and initialize the event and data structures.
      */
 
-    evPtr = (ForwardingEvent *)Tcl_Alloc(sizeof(ForwardingEvent));
-    resultPtr = (ForwardingResult *)Tcl_Alloc(sizeof(ForwardingResult));
+    ForwardingEvent *evPtr = (ForwardingEvent *)
+	    Tcl_Alloc(sizeof(ForwardingEvent));
+    ForwardingResult *resultPtr = (ForwardingResult *)
+	    Tcl_Alloc(sizeof(ForwardingResult));
 
     evPtr->event.proc = ForwardProc;
     evPtr->resultPtr = resultPtr;
@@ -3269,12 +3254,9 @@ ForwardProc(
 
 		ForwardSetDynamicError(paramPtr, buf);
 	    } else {
-		Tcl_Size len;
-		const char *str = TclGetStringFromObj(resObj, &len);
-
-		if (len) {
+		if (!Tcl_IsEmpty(resObj)) {
 		    TclDStringAppendLiteral(paramPtr->getOpt.value, " ");
-		    Tcl_DStringAppend(paramPtr->getOpt.value, str, len);
+		    TclDStringAppendObj(paramPtr->getOpt.value, resObj);
 		}
 	    }
 	}
@@ -3300,7 +3282,6 @@ ForwardProc(
 	 */
 
 	Tcl_Panic("Bad operation code in ForwardProc");
-	break;
     }
 
     /*
@@ -3333,8 +3314,6 @@ SrcExitProc(
     void *clientData)
 {
     ForwardingEvent *evPtr = (ForwardingEvent *)clientData;
-    ForwardingResult *resultPtr;
-    ForwardParam *paramPtr;
 
     /*
      * NOTE (2): Can this handler be called with the originator blocked?
@@ -3353,8 +3332,8 @@ SrcExitProc(
 
     Tcl_MutexLock(&rcForwardMutex);
 
-    resultPtr = evPtr->resultPtr;
-    paramPtr = evPtr->param;
+    ForwardingResult *resultPtr = evPtr->resultPtr;
+    ForwardParam *paramPtr = evPtr->param;
 
     evPtr->resultPtr = NULL;
     resultPtr->evPtr = NULL;

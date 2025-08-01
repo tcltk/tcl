@@ -283,9 +283,7 @@ CreateHashEntry(
     int *newPtr)		/* Store info here telling whether a new entry
 				 * was created. */
 {
-    Tcl_HashEntry *hPtr;
     const Tcl_HashKeyType *typePtr;
-    size_t hash, index;
 
     if (tablePtr->keyType == TCL_STRING_KEYS) {
 	typePtr = &tclStringHashKeyType;
@@ -298,6 +296,7 @@ CreateHashEntry(
 	typePtr = &tclArrayHashKeyType;
     }
 
+    size_t hash, index;
     if (typePtr->hashKeyProc) {
 	hash = typePtr->hashKeyProc(tablePtr, (void *) key);
 	if (typePtr->flags & TCL_HASH_KEY_RANDOMIZE_HASH) {
@@ -314,6 +313,7 @@ CreateHashEntry(
      * Search all of the entries in the appropriate bucket.
      */
 
+    Tcl_HashEntry *hPtr;
     if (typePtr->compareKeysProc) {
 	Tcl_CompareHashKeysProc *compareKeysProc = typePtr->compareKeysProc;
 	if (typePtr->flags & TCL_HASH_KEY_DIRECT_COMPARE) {
@@ -424,14 +424,8 @@ void
 Tcl_DeleteHashEntry(
     Tcl_HashEntry *entryPtr)
 {
-    Tcl_HashEntry *prevPtr;
+    Tcl_HashTable *tablePtr = entryPtr->tablePtr;
     const Tcl_HashKeyType *typePtr;
-    Tcl_HashTable *tablePtr;
-    Tcl_HashEntry **bucketPtr;
-    size_t index;
-
-    tablePtr = entryPtr->tablePtr;
-
     if (tablePtr->keyType == TCL_STRING_KEYS) {
 	typePtr = &tclStringHashKeyType;
     } else if (tablePtr->keyType == TCL_ONE_WORD_KEYS) {
@@ -443,6 +437,7 @@ Tcl_DeleteHashEntry(
 	typePtr = &tclArrayHashKeyType;
     }
 
+    size_t index;
     if (typePtr->hashKeyProc == NULL
 	    || typePtr->flags & TCL_HASH_KEY_RANDOMIZE_HASH) {
 	index = RANDOM_INDEX(tablePtr, entryPtr->hash);
@@ -450,12 +445,12 @@ Tcl_DeleteHashEntry(
 	index = entryPtr->hash & tablePtr->mask;
     }
 
-    bucketPtr = &tablePtr->buckets[index];
+    Tcl_HashEntry **bucketPtr = &tablePtr->buckets[index];
 
     if (*bucketPtr == entryPtr) {
 	*bucketPtr = entryPtr->nextPtr;
     } else {
-	for (prevPtr = *bucketPtr; ; prevPtr = prevPtr->nextPtr) {
+	for (Tcl_HashEntry *prevPtr = *bucketPtr; ; prevPtr = prevPtr->nextPtr) {
 	    if (prevPtr == NULL) {
 		Tcl_Panic("malformed bucket chain in Tcl_DeleteHashEntry");
 	    }
@@ -642,10 +637,7 @@ Tcl_HashStats(
     Tcl_HashTable *tablePtr)	/* Table for which to produce stats. */
 {
 #define NUM_COUNTERS 10
-    size_t count[NUM_COUNTERS], overflow, j;
-    double average, tmp;
-    Tcl_HashEntry *hPtr;
-    char *result, *p;
+    size_t count[NUM_COUNTERS];
 
     /*
      * Compute a histogram of bucket usage.
@@ -654,11 +646,11 @@ Tcl_HashStats(
     for (int i = 0; i < NUM_COUNTERS; i++) {
 	count[i] = 0;
     }
-    overflow = 0;
-    average = 0.0;
+    size_t overflow = 0;
+    double average = 0.0;
     for (Tcl_Size i = 0; i < tablePtr->numBuckets; i++) {
-	j = 0;
-	for (hPtr = tablePtr->buckets[i]; hPtr != NULL; hPtr = hPtr->nextPtr) {
+	size_t j = 0;
+	for (Tcl_HashEntry *hPtr = tablePtr->buckets[i]; hPtr; hPtr = hPtr->nextPtr) {
 	    j++;
 	}
 	if (j < NUM_COUNTERS) {
@@ -666,9 +658,9 @@ Tcl_HashStats(
 	} else {
 	    overflow++;
 	}
-	tmp = (double)j;
+	double tmp = (double) j;
 	if (tablePtr->numEntries != 0) {
-	    average += (tmp+1.0)*(tmp/(double)tablePtr->numEntries)/2.0;
+	    average += (tmp + 1.0) * (tmp / (double)tablePtr->numEntries) / 2.0;
 	}
     }
 
@@ -676,10 +668,10 @@ Tcl_HashStats(
      * Print out the histogram and a few other pieces of information.
      */
 
-    result = (char *)Tcl_Alloc((NUM_COUNTERS * 60) + 300);
+    char *result = (char *)Tcl_Alloc((NUM_COUNTERS * 60) + 300);
     snprintf(result, 60, "%" TCL_SIZE_MODIFIER "u entries in table, %" TCL_SIZE_MODIFIER "u buckets\n",
 	    tablePtr->numEntries, tablePtr->numBuckets);
-    p = result + strlen(result);
+    char *p = result + strlen(result);
     for (int i = 0; i < NUM_COUNTERS; i++) {
 	snprintf(p, 60, "number of buckets with %d entries: %" TCL_SIZE_MODIFIER "u\n",
 		i, count[i]);
@@ -713,14 +705,13 @@ AllocArrayEntry(
     Tcl_HashTable *tablePtr,	/* Hash table. */
     void *keyPtr)		/* Key to store in the hash table entry. */
 {
-    Tcl_HashEntry *hPtr;
     size_t count = tablePtr->keyType * sizeof(int);
     size_t size = offsetof(Tcl_HashEntry, key) + count;
 
     if (size < sizeof(Tcl_HashEntry)) {
 	size = sizeof(Tcl_HashEntry);
     }
-    hPtr = (Tcl_HashEntry *)Tcl_AttemptAlloc(size);
+    Tcl_HashEntry *hPtr = (Tcl_HashEntry *)Tcl_AttemptAlloc(size);
 
     if (hPtr) {
 	memcpy(hPtr->key.string, keyPtr, count);
@@ -781,11 +772,9 @@ HashArrayKey(
     void *keyPtr)		/* Key from which to compute hash value. */
 {
     const int *array = (const int *) keyPtr;
-    size_t result;
-    int count;
+    size_t result = 0;
 
-    for (result = 0, count = tablePtr->keyType; count > 0;
-	    count--, array++) {
+    for (int count = tablePtr->keyType; count > 0; count--, array++) {
 	result += *array;
     }
     return result;
@@ -878,7 +867,6 @@ TclHashStringKey(
 {
     const char *string = (const char *)keyPtr;
     size_t result;
-    char c;
 
     /*
      * I tried a zillion different hash functions and asked many other people
@@ -913,6 +901,7 @@ TclHashStringKey(
      */
 
     if ((result = UCHAR(*string)) != 0) {
+	char c;
 	while ((c = *++string) != 0) {
 	    result += (result << 3) + UCHAR(c);
 	}
@@ -970,10 +959,8 @@ static void
 RebuildTable(
     Tcl_HashTable *tablePtr)	/* Table to enlarge. */
 {
-    size_t count, index, oldSize = tablePtr->numBuckets;
+    size_t oldSize = tablePtr->numBuckets;
     Tcl_HashEntry **oldBuckets = tablePtr->buckets;
-    Tcl_HashEntry **oldChainPtr, **newChainPtr;
-    Tcl_HashEntry *hPtr;
     const Tcl_HashKeyType *typePtr;
 
     /* Avoid outgrowing capability of the memory allocators */
@@ -1003,11 +990,11 @@ RebuildTable(
 	tablePtr->buckets = (Tcl_HashEntry **)TclpSysAlloc(
 		tablePtr->numBuckets * sizeof(Tcl_HashEntry *));
     } else {
-	tablePtr->buckets =
-		(Tcl_HashEntry **)Tcl_Alloc(tablePtr->numBuckets * sizeof(Tcl_HashEntry *));
+	tablePtr->buckets = (Tcl_HashEntry **)
+		Tcl_Alloc(tablePtr->numBuckets * sizeof(Tcl_HashEntry *));
     }
-    for (count = tablePtr->numBuckets, newChainPtr = tablePtr->buckets;
-	    count > 0; count--, newChainPtr++) {
+    Tcl_HashEntry **newChainPtr = tablePtr->buckets;
+    for (size_t count = tablePtr->numBuckets; count > 0; count--, newChainPtr++) {
 	*newChainPtr = NULL;
     }
     tablePtr->rebuildSize *= 4;
@@ -1020,9 +1007,11 @@ RebuildTable(
      * Rehash all of the existing entries into the new bucket array.
      */
 
+    Tcl_HashEntry **oldChainPtr;
     for (oldChainPtr = oldBuckets; oldSize > 0; oldSize--, oldChainPtr++) {
-	for (hPtr = *oldChainPtr; hPtr != NULL; hPtr = *oldChainPtr) {
+	for (Tcl_HashEntry *hPtr = *oldChainPtr; hPtr; hPtr = *oldChainPtr) {
 	    *oldChainPtr = hPtr->nextPtr;
+	    size_t index;
 	    if (typePtr->hashKeyProc == NULL
 		    || typePtr->flags & TCL_HASH_KEY_RANDOMIZE_HASH) {
 		index = RANDOM_INDEX(tablePtr, hPtr->hash);

@@ -638,11 +638,11 @@ TclRegAbout(
     Tcl_RegExp re)		/* The compiled regular expression. */
 {
     TclRegexp *regexpPtr = (TclRegexp *) re;
-    struct infoname {
+    typedef struct infoname {
 	int bit;
 	const char *text;
-    };
-    static const struct infoname infonames[] = {
+    } infoname;
+    static const infoname infonames[] = {
 	{REG_UBACKREF,		"REG_UBACKREF"},
 	{REG_ULOOKAHEAD,	"REG_ULOOKAHEAD"},
 	{REG_UBOUNDS,		"REG_UBOUNDS"},
@@ -659,7 +659,6 @@ TclRegAbout(
 	{REG_USHORTEST,		"REG_USHORTEST"},
 	{0,			NULL}
     };
-    const struct infoname *inf;
     Tcl_Obj *infoObj, *resultObj;
 
     /*
@@ -685,7 +684,7 @@ TclRegAbout(
      */
 
     TclNewObj(infoObj);
-    for (inf=infonames ; inf->bit != 0 ; inf++) {
+    for (const infoname *inf=infonames ; inf->bit != 0 ; inf++) {
 	if (regexpPtr->re.re_info & inf->bit) {
 	    Tcl_ListObjAppendElement(NULL, infoObj,
 		    Tcl_NewStringObj(inf->text, -1));

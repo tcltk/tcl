@@ -264,14 +264,12 @@ Tcl_CdObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_Obj *dir;
-    int result;
-
     if (objc > 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?dirName?");
 	return TCL_ERROR;
     }
 
+    Tcl_Obj *dir;
     if (objc == 2) {
 	dir = objv[1];
     } else {
@@ -281,11 +279,14 @@ Tcl_CdObjCmd(
 	}
 	Tcl_IncrRefCount(dir);
     }
+
+    int result;
     if (Tcl_FSConvertToPathType(interp, dir) != TCL_OK) {
 	result = TCL_ERROR;
     } else {
 	Tcl_DString ds;
-	result = Tcl_UtfToExternalDStringEx(NULL, TCLFSENCODING, TclGetString(dir), -1, 0, &ds, NULL);
+	result = Tcl_UtfToExternalDStringEx(NULL, TCLFSENCODING, TclGetString(dir),
+		TCL_AUTO_LENGTH, 0, &ds, NULL);
 	Tcl_DStringFree(&ds);
 	if (result == TCL_OK) {
 	    result = Tcl_FSChdir(dir);
@@ -437,10 +438,8 @@ EncodingConvertParseOptions(
 {
     static const char *const options[] = {"-profile", "-failindex", NULL};
     enum convertfromOptions { PROFILE, FAILINDEX } optIndex;
-    Tcl_Encoding encoding;
-    Tcl_Obj *dataObj;
-    Tcl_Obj *failVarObj;
     int profile = TCL_ENCODING_PROFILE_STRICT;
+    Tcl_Encoding encoding = NULL;
 
     /*
      * Possible combinations:
@@ -453,21 +452,16 @@ EncodingConvertParseOptions(
      */
 
     if (objc == 1) {
-    numArgsError: /* ONLY jump here if nothing needs to be freed!!! */
-	Tcl_WrongNumArgs(interp, 1, objv,
-		"?-profile profile? ?-failindex var? encoding data");
-	((Interp *)interp)->flags |= INTERP_ALTERNATE_WRONG_ARGS;
-	Tcl_WrongNumArgs(interp, 1, objv, "data");
-	return TCL_ERROR;
+	goto numArgsError;
     }
 
-    failVarObj = NULL;
+    Tcl_Obj *dataObj;
+    Tcl_Obj *failVarObj = NULL;
     if (objc == 2) {
 	encoding = Tcl_GetEncoding(interp, NULL);
 	dataObj = objv[1];
     } else {
-	int argIndex;
-	for (argIndex = 1; argIndex < (objc-2); ++argIndex) {
+	for (int argIndex = 1; argIndex < objc - 2; ++argIndex) {
 	    if (Tcl_GetIndexFromObj(interp, objv[argIndex], options, "option",
 		    0, &optIndex) != TCL_OK) {
 		return TCL_ERROR;
@@ -502,6 +496,16 @@ EncodingConvertParseOptions(
     *failVarPtr = failVarObj;
 
     return TCL_OK;
+
+  numArgsError:
+    Tcl_WrongNumArgs(interp, 1, objv,
+	    "?-profile profile? ?-failindex var? encoding data");
+    ((Interp *)interp)->flags |= INTERP_ALTERNATE_WRONG_ARGS;
+    Tcl_WrongNumArgs(interp, 1, objv, "data");
+    if (encoding) {
+	Tcl_FreeEncoding(encoding);
+    }
+    return TCL_ERROR;
 }
 
 /*
@@ -531,7 +535,6 @@ EncodingConvertfromObjCmd(
     Tcl_Size length = 0;	/* Length of the byte array being converted */
     const char *bytesPtr;	/* Pointer to the first byte of the array */
     int flags;
-    int result;
     Tcl_Obj *failVarObj;
     Tcl_Size errorLocation;
 
@@ -548,8 +551,8 @@ EncodingConvertfromObjCmd(
     if (bytesPtr == NULL) {
 	return TCL_ERROR;
     }
-    result = Tcl_ExternalToUtfDStringEx(interp, encoding, bytesPtr, length, flags,
-	    &ds, failVarObj ? &errorLocation : NULL);
+    int result = Tcl_ExternalToUtfDStringEx(interp, encoding, bytesPtr, length,
+	    flags, &ds, failVarObj ? &errorLocation : NULL);
     /* NOTE: ds must be freed beyond this point even on error */
 
     switch (result) {
@@ -594,7 +597,7 @@ EncodingConvertfromObjCmd(
     Tcl_SetObjResult(interp, Tcl_DStringToObj(&ds));
     result = TCL_OK;
 
-done:
+  done:
     Tcl_DStringFree(&ds);
     if (encoding) {
 	Tcl_FreeEncoding(encoding);
@@ -628,7 +631,6 @@ EncodingConverttoObjCmd(
     Tcl_Encoding encoding;	/* Encoding to use */
     Tcl_Size length;		/* Length of the string being converted */
     const char *stringPtr;	/* Pointer to the first byte of the string */
-    int result;
     int flags;
     Tcl_Obj *failVarObj;
     Tcl_Size errorLocation;
@@ -643,8 +645,8 @@ EncodingConverttoObjCmd(
      */
 
     stringPtr = TclGetStringFromObj(data, &length);
-    result = Tcl_UtfToExternalDStringEx(interp, encoding, stringPtr, length, flags,
-	    &ds, failVarObj ? &errorLocation : NULL);
+    int result = Tcl_UtfToExternalDStringEx(interp, encoding, stringPtr, length,
+	    flags, &ds, failVarObj ? &errorLocation : NULL);
     /* NOTE: ds must be freed beyond this point even on error */
 
     switch (result) {
@@ -688,7 +690,7 @@ EncodingConverttoObjCmd(
 
     result = TCL_OK;
 
-done:
+  done:
     Tcl_DStringFree(&ds);
     if (encoding) {
 	Tcl_FreeEncoding(encoding);
@@ -719,8 +721,6 @@ EncodingDirsObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_Obj *dirListObj;
-
     if (objc > 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?dirList?");
 	return TCL_ERROR;
@@ -730,7 +730,7 @@ EncodingDirsObjCmd(
 	return TCL_OK;
     }
 
-    dirListObj = objv[1];
+    Tcl_Obj *dirListObj = objv[1];
     if (Tcl_SetEncodingSearchPath(dirListObj) == TCL_ERROR) {
 	TclPrintfResult(interp, "expected directory list but got \"%s\"",
 		TclGetString(dirListObj));
@@ -1666,14 +1666,6 @@ FileAttrIsOwnedCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-#ifdef __CYGWIN__
-#define geteuid() (short)(geteuid)()
-#endif
-#if !defined(_WIN32)
-    Tcl_StatBuf buf;
-#endif
-    int value = 0;
-
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name");
 	return TCL_ERROR;
@@ -1693,9 +1685,15 @@ FileAttrIsOwnedCmd(
      * for native paths we may not want links to be resolved.
      */
 
-#if defined(_WIN32)
+    int value = 0;
+
+#ifdef _WIN32
     value = TclWinFileOwned(objv[1]);
 #else
+#ifdef __CYGWIN__
+#define geteuid() (short)(geteuid)()
+#endif // __CYGWIN__
+    Tcl_StatBuf buf;
     if (GetStatBuf(NULL, objv[1], Tcl_FSStat, &buf) == TCL_OK) {
 	value = (geteuid() == buf.st_uid);
     }
@@ -1790,13 +1788,11 @@ PathDirNameCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    Tcl_Obj *dirPtr;
-
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name");
 	return TCL_ERROR;
     }
-    dirPtr = TclPathPart(interp, objv[1], TCL_PATH_DIRNAME);
+    Tcl_Obj *dirPtr = TclPathPart(interp, objv[1], TCL_PATH_DIRNAME);
     if (dirPtr == NULL) {
 	return TCL_ERROR;
     }
@@ -1829,13 +1825,11 @@ PathExtensionCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    Tcl_Obj *dirPtr;
-
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name");
 	return TCL_ERROR;
     }
-    dirPtr = TclPathPart(interp, objv[1], TCL_PATH_EXTENSION);
+    Tcl_Obj *dirPtr = TclPathPart(interp, objv[1], TCL_PATH_EXTENSION);
     if (dirPtr == NULL) {
 	return TCL_ERROR;
     }
@@ -1868,13 +1862,11 @@ PathRootNameCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    Tcl_Obj *dirPtr;
-
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name");
 	return TCL_ERROR;
     }
-    dirPtr = TclPathPart(interp, objv[1], TCL_PATH_ROOT);
+    Tcl_Obj *dirPtr = TclPathPart(interp, objv[1], TCL_PATH_ROOT);
     if (dirPtr == NULL) {
 	return TCL_ERROR;
     }
@@ -1907,13 +1899,11 @@ PathTailCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    Tcl_Obj *dirPtr;
-
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name");
 	return TCL_ERROR;
     }
-    dirPtr = TclPathPart(interp, objv[1], TCL_PATH_TAIL);
+    Tcl_Obj *dirPtr = TclPathPart(interp, objv[1], TCL_PATH_TAIL);
     if (dirPtr == NULL) {
 	return TCL_ERROR;
     }
@@ -1946,13 +1936,11 @@ PathFilesystemCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    Tcl_Obj *fsInfo;
-
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name");
 	return TCL_ERROR;
     }
-    fsInfo = Tcl_FSFileSystemInfo(objv[1]);
+    Tcl_Obj *fsInfo = Tcl_FSFileSystemInfo(objv[1]);
     if (fsInfo == NULL) {
 	TclPrintfResult(interp, "unrecognised path");
 	TclSetErrorCode(interp, "TCL", "LOOKUP", "FILESYSTEM",
@@ -2019,12 +2007,11 @@ PathNativeNameCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    Tcl_DString ds;
-
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name");
 	return TCL_ERROR;
     }
+    Tcl_DString ds;
     if (Tcl_TranslateFileName(interp, TclGetString(objv[1]), &ds) == NULL) {
 	return TCL_ERROR;
     }
@@ -2056,13 +2043,11 @@ PathNormalizeCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    Tcl_Obj *fileName;
-
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name");
 	return TCL_ERROR;
     }
-    fileName = Tcl_FSGetNormalizedPath(interp, objv[1]);
+    Tcl_Obj *fileName = Tcl_FSGetNormalizedPath(interp, objv[1]);
     if (fileName == NULL) {
 	return TCL_ERROR;
     }
@@ -2094,13 +2079,11 @@ PathSplitCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    Tcl_Obj *res;
-
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name");
 	return TCL_ERROR;
     }
-    res = Tcl_FSSplitPath(objv[1], (Tcl_Size *)NULL);
+    Tcl_Obj *res = Tcl_FSSplitPath(objv[1], (Tcl_Size *)NULL);
     if (res == NULL) {
 	TclPrintfResult(interp,
 		"could not read \"%s\": no such file or directory",
@@ -2136,12 +2119,11 @@ PathTypeCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    Tcl_Obj *typeName;
-
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name");
 	return TCL_ERROR;
     }
+    Tcl_Obj *typeName;
     switch (Tcl_FSGetPathType(objv[1])) {
     case TCL_PATH_ABSOLUTE:
 	TclNewLiteralStringObj(typeName, "absolute");
@@ -2318,13 +2300,12 @@ GetStatBuf(
     Tcl_StatBuf *statPtr)	/* Filled with info about file obtained by
 				 * calling (*statProc)(). */
 {
-    int status;
-    Tcl_DString ds;
-
     if (Tcl_FSConvertToPathType(interp, pathPtr) != TCL_OK) {
 	return TCL_ERROR;
     }
 
+    int status;
+    Tcl_DString ds;
     if (Tcl_UtfToExternalDStringEx(NULL, TCLFSENCODING, TclGetString(pathPtr),
 	    TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
 	status = -1;

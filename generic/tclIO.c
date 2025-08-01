@@ -899,10 +899,9 @@ Tcl_DeleteCloseHandler(
 				 * remove. */
 {
     ChannelState *statePtr = ((Channel *) chan)->state;
-    CloseCallback *cbPtr, *cbPrevPtr;
 
-    for (cbPtr = statePtr->closeCbPtr, cbPrevPtr = NULL;
-	    cbPtr != NULL; cbPtr = cbPtr->nextPtr) {
+    for (CloseCallback *cbPtr = statePtr->closeCbPtr, *cbPrevPtr = NULL;
+	    cbPtr; cbPrevPtr = cbPtr, cbPtr = cbPtr->nextPtr) {
 	if ((cbPtr->proc == proc) && (cbPtr->clientData == clientData)) {
 	    if (cbPrevPtr == NULL) {
 		statePtr->closeCbPtr = cbPtr->nextPtr;
@@ -912,7 +911,6 @@ Tcl_DeleteCloseHandler(
 	    Tcl_Free(cbPtr);
 	    break;
 	}
-	cbPrevPtr = cbPtr;
     }
 }
 
@@ -3450,9 +3448,7 @@ TclClose(
 				 * channel. */
     Channel *chanPtr;		/* The real IO channel. */
     ChannelState *statePtr;	/* State of real IO channel. */
-    int result = 0;			/* Of calling FlushChannel. */
-    int flushcode;
-    int stickyError;
+    int result = 0;		/* Of calling FlushChannel. */
 
     if (chan == NULL) {
 	return TCL_OK;
@@ -3495,7 +3491,7 @@ TclClose(
      * iso2022, the terminated escape sequence must write to the buffer.
      */
 
-    stickyError = 0;
+    int stickyError = 0;
 
     if (GotFlag(statePtr, TCL_WRITABLE)
 	    && (statePtr->encoding != GetBinaryEncoding())
@@ -3560,7 +3556,7 @@ TclClose(
 
     SetFlag(statePtr, CHANNEL_CLOSED);
 
-    flushcode = FlushChannel(interp, chanPtr, 0);
+    int flushcode = FlushChannel(interp, chanPtr, 0);
 
     /*
      * TIP #219.
@@ -3775,8 +3771,6 @@ CloseWrite(
 
     ChannelState *statePtr = chanPtr->state;
 				/* State of real IO channel. */
-    int flushcode;
-    int result = 0;
 
     /*
      * The call to FlushChannel will flush any queued output and invoke the
@@ -3786,7 +3780,7 @@ CloseWrite(
 
     SetFlag(statePtr, CHANNEL_CLOSEDWRITE);
 
-    flushcode = FlushChannel(interp, chanPtr, 0);
+    int flushcode = FlushChannel(interp, chanPtr, 0);
 
     /*
      * TIP #219.
@@ -3801,6 +3795,7 @@ CloseWrite(
      * NULL argument in the call below.
      */
 
+    int result = 0;
     if (TclChanCaughtErrorBypass(interp, NULL)) {
 	result = EINVAL;
     }
@@ -3963,7 +3958,6 @@ Tcl_ClearChannelHandlers(
     Channel *chanPtr;			/* The real IO channel. */
     ChannelState *statePtr;		/* State of real IO channel. */
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    NextChannelHandler *nhPtr;
 
     /*
      * This operation should occur at the top of a channel stack.
@@ -3984,7 +3978,7 @@ Tcl_ClearChannelHandlers(
      * about to be invoked.
      */
 
-    for (nhPtr = tsdPtr->nestedHandlerPtr; nhPtr != NULL;
+    for (NextChannelHandler *nhPtr = tsdPtr->nestedHandlerPtr; nhPtr;
 	    nhPtr = nhPtr->nestedHandlerPtr) {
 	if (nhPtr->nextHandlerPtr &&
 		(nhPtr->nextHandlerPtr->chanPtr == chanPtr)) {
@@ -3996,7 +3990,7 @@ Tcl_ClearChannelHandlers(
      * Remove all the channel handler records attached to the channel itself.
      */
 
-    for (chPtr = statePtr->chPtr; chPtr != NULL; chPtr = chNext) {
+    for (chPtr = statePtr->chPtr; chPtr; chPtr = chNext) {
 	chNext = chPtr->nextPtr;
 	Tcl_Free(chPtr);
     }
@@ -4028,7 +4022,7 @@ Tcl_ClearChannelHandlers(
      * Remove any EventScript records for this channel.
      */
 
-    for (ePtr = statePtr->scriptRecordPtr; ePtr != NULL; ePtr = eNextPtr) {
+    for (ePtr = statePtr->scriptRecordPtr; ePtr; ePtr = eNextPtr) {
 	eNextPtr = ePtr->nextPtr;
 	TclDecrRefCount(ePtr->scriptPtr);
 	Tcl_Free(ePtr);
@@ -6104,7 +6098,7 @@ DoReadChars(
 	}
     }
 
-finish:
+  finish:
     /*
      * Failure to fill a channel buffer may have left channel reporting a
      * "blocked" state, but so long as we fulfilled the request here, the
@@ -7692,10 +7686,9 @@ Tcl_InputBuffered(
 {
     ChannelState *statePtr = ((Channel *) chan)->state;
 				/* State of real channel structure. */
-    ChannelBuffer *bufPtr;
-    int bytesBuffered;
+    int bytesBuffered = 0;
 
-    for (bytesBuffered = 0, bufPtr = statePtr->inQueueHead; bufPtr != NULL;
+    for (ChannelBuffer *bufPtr = statePtr->inQueueHead; bufPtr;
 	    bufPtr = bufPtr->nextPtr) {
 	bytesBuffered += BytesLeft(bufPtr);
     }
@@ -7704,7 +7697,7 @@ Tcl_InputBuffered(
      * Remember the bytes in the topmost pushback area.
      */
 
-    for (bufPtr = statePtr->topChanPtr->inQueueHead; bufPtr != NULL;
+    for (ChannelBuffer *bufPtr = statePtr->topChanPtr->inQueueHead; bufPtr;
 	    bufPtr = bufPtr->nextPtr) {
 	bytesBuffered += BytesLeft(bufPtr);
     }
@@ -7736,10 +7729,9 @@ Tcl_OutputBuffered(
 {
     ChannelState *statePtr = ((Channel *) chan)->state;
 				/* State of real channel structure. */
-    ChannelBuffer *bufPtr;
-    int bytesBuffered;
+    int bytesBuffered = 0;
 
-    for (bytesBuffered = 0, bufPtr = statePtr->outQueueHead; bufPtr != NULL;
+    for (ChannelBuffer *bufPtr = statePtr->outQueueHead; bufPtr != NULL;
 	    bufPtr = bufPtr->nextPtr) {
 	bytesBuffered += BytesLeft(bufPtr);
     }
@@ -7778,10 +7770,9 @@ Tcl_ChannelBuffered(
 {
     Channel *chanPtr = (Channel *) chan;
 				/* Real channel structure. */
-    ChannelBuffer *bufPtr;
     int bytesBuffered = 0;
 
-    for (bufPtr = chanPtr->inQueueHead; bufPtr != NULL;
+    for (ChannelBuffer *bufPtr = chanPtr->inQueueHead; bufPtr != NULL;
 	    bufPtr = bufPtr->nextPtr) {
 	bytesBuffered += BytesLeft(bufPtr);
     }
@@ -9265,9 +9256,7 @@ Tcl_FileEventObjCmd(
      */
 
     if (objc == 3) {
-	EventScriptRecord *esPtr;
-
-	for (esPtr = statePtr->scriptRecordPtr; esPtr != NULL;
+	for (EventScriptRecord *esPtr = statePtr->scriptRecordPtr; esPtr;
 		esPtr = esPtr->nextPtr) {
 	    if ((esPtr->interp == interp) && (esPtr->mask == mask)) {
 		Tcl_SetObjResult(interp, esPtr->scriptPtr);
@@ -9596,7 +9585,6 @@ MBWrite(
     ChannelState *outStatePtr = csPtr->writePtr->state;
     ChannelBuffer *bufPtr = inStatePtr->inQueueHead;
     ChannelBuffer *tail = NULL;
-    int code;
     Tcl_WideInt inBytes = 0;
 
     /* Count up number of bytes waiting in the input queue */
@@ -9652,7 +9640,7 @@ MBWrite(
 	inStatePtr->inQueueTail = NULL;
     }
 
-    code = FlushChannel(csPtr->interp, outStatePtr->topChanPtr, 0);
+    int code = FlushChannel(csPtr->interp, outStatePtr->topChanPtr, 0);
     if (code) {
 	MBError(csPtr, TCL_WRITABLE, code);
 	return TCL_ERROR;
@@ -9689,12 +9677,10 @@ MoveBytes(
     }
 
     while (1) {
-	int code;
-
 	if (TCL_ERROR == MBRead(csPtr)) {
 	    return TCL_ERROR;
 	}
-	code = MBWrite(csPtr);
+	int code = MBWrite(csPtr);
 	if (code == TCL_OK) {
 	    Tcl_SetObjResult(csPtr->interp, Tcl_NewWideIntObj(csPtr->total));
 	    StopCopy(csPtr);
@@ -9713,27 +9699,20 @@ CopyData(
     CopyState *csPtr,		/* State of copy operation. */
     int mask)			/* Current channel event flags. */
 {
-    Tcl_Interp *interp;
-    Tcl_Obj *cmdPtr, *errObj = NULL, *bufObj = NULL, *msg = NULL;
-    Tcl_Channel inChan, outChan;
-    ChannelState *inStatePtr, *outStatePtr;
+    Tcl_Obj *errObj = NULL, *bufObj = NULL, *msg = NULL;
     int result = TCL_OK;
-    Tcl_Size sizeb;
-    Tcl_Size sizePart;
-    Tcl_WideInt total;
-    Tcl_WideInt size;
-    const char *buffer;
-    int moveBytes;
+    Tcl_Size sizeb, sizePart;
+    Tcl_WideInt total, size;
     int underflow;		/* Input underflow */
 
     csPtr->refCount++;		/* avoid freeing during handling */
 
-    inChan	= (Tcl_Channel) csPtr->readPtr;
-    outChan	= (Tcl_Channel) csPtr->writePtr;
-    inStatePtr	= csPtr->readPtr->state;
-    outStatePtr	= csPtr->writePtr->state;
-    interp	= csPtr->interp;
-    cmdPtr	= csPtr->cmdPtr;
+    Tcl_Channel inChan	= (Tcl_Channel) csPtr->readPtr;
+    Tcl_Channel outChan	= (Tcl_Channel) csPtr->writePtr;
+    ChannelState *inStatePtr	= csPtr->readPtr->state;
+    ChannelState *outStatePtr	= csPtr->writePtr->state;
+    Tcl_Interp *interp	= csPtr->interp;
+    Tcl_Obj *cmdPtr	= csPtr->cmdPtr;
 
     /*
      * Copy the data the slow way, using the translation mechanism.
@@ -9743,7 +9722,7 @@ CopyData(
      * the bottom of the stack.
      */
 
-    moveBytes = Lossless(inStatePtr, outStatePtr, csPtr->toRead);
+    int moveBytes = Lossless(inStatePtr, outStatePtr, csPtr->toRead);
 
     if (!moveBytes) {
 	TclNewObj(bufObj);
@@ -9875,10 +9854,10 @@ CopyData(
 	 */
 
 	if (moveBytes) {
-	    buffer = csPtr->buffer;
+	    const char *buffer = csPtr->buffer;
 	    sizeb = WriteBytes(outStatePtr->topChanPtr, buffer, size);
 	} else {
-	    buffer = TclGetStringFromObj(bufObj, &sizeb);
+	    const char *buffer = TclGetStringFromObj(bufObj, &sizeb);
 	    sizeb = WriteChars(outStatePtr->topChanPtr, buffer, sizeb);
 	}
 
@@ -10588,11 +10567,8 @@ Tcl_GetChannelNamesEx(
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     ChannelState *statePtr;
-    const char *name;		/* Name for channel */
     Tcl_Obj *resultPtr;		/* Pointer to result object */
-    Tcl_HashTable *hTblPtr;	/* Hash table of channels. */
-    Tcl_HashEntry *hPtr;	/* Search variable. */
-    Tcl_HashSearch hSearch;	/* Search variable. */
+    Tcl_HashSearch hSearch;	/* Iteration context. */
 
     if (interp == NULL) {
 	return TCL_OK;
@@ -10603,7 +10579,7 @@ Tcl_GetChannelNamesEx(
      * interpreter.
      */
 
-    hTblPtr = GetChannelTable(interp);
+    Tcl_HashTable *hTblPtr = GetChannelTable(interp);	// Hash table of channels.
     TclNewObj(resultPtr);
     if ((pattern != NULL) && TclMatchIsTrivial(pattern)
 	    && !((pattern[0] == 's') && (pattern[1] == 't')
@@ -10616,10 +10592,11 @@ Tcl_GetChannelNamesEx(
 	goto done;
     }
 
-    for (hPtr = Tcl_FirstHashEntry(hTblPtr, &hSearch); hPtr != NULL;
+    for (Tcl_HashEntry *hPtr = Tcl_FirstHashEntry(hTblPtr, &hSearch); hPtr;
 	    hPtr = Tcl_NextHashEntry(&hSearch)) {
 	statePtr = ((Channel *) Tcl_GetHashValue(hPtr))->state;
 
+	const char *name;	/* Name for channel */
 	if (statePtr->topChanPtr == (Channel *) tsdPtr->stdinChannel) {
 	    name = "stdin";
 	} else if (statePtr->topChanPtr == (Channel *) tsdPtr->stdoutChannel) {
@@ -10747,14 +10724,12 @@ int
 Tcl_IsChannelExisting(
     const char *chanName)	/* The name of the channel to look for. */
 {
-    ChannelState *statePtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    const char *name;
-    int chanNameLen;
+    size_t chanNameLen = strlen(chanName);
 
-    chanNameLen = strlen(chanName);
-    for (statePtr = tsdPtr->firstCSPtr; statePtr != NULL;
+    for (ChannelState *statePtr = tsdPtr->firstCSPtr; statePtr;
 	    statePtr = statePtr->nextCSPtr) {
+	const char *name;
 	if (statePtr->topChanPtr == (Channel *) tsdPtr->stdinChannel) {
 	    name = "stdin";
 	} else if (statePtr->topChanPtr == (Channel *) tsdPtr->stdoutChannel) {
@@ -11209,10 +11184,8 @@ static Tcl_Obj *
 FixLevelCode(
     Tcl_Obj *msg)
 {
-    int explicitResult, numOptions, lcn;
     Tcl_Size lc;
-    Tcl_Obj **lv, **lvn;
-    int res, val, lignore, cignore;
+    Tcl_Obj **lv;
     int newlevel = -1, newcode = -1;
 
     /* ASSERT msg != NULL */
@@ -11227,13 +11200,13 @@ FixLevelCode(
      * information. Hence an error means that we've got serious breakage.
      */
 
-    res = TclListObjGetElements(NULL, msg, &lc, &lv);
+    int res = TclListObjGetElements(NULL, msg, &lc, &lv);
     if (res != TCL_OK) {
 	Tcl_Panic("Tcl_SetChannelError: bad syntax of message");
     }
 
-    explicitResult = (1 == (lc % 2));
-    numOptions = lc - explicitResult;
+    int explicitResult = (1 == (lc % 2));
+    int numOptions = lc - explicitResult;
 
     /*
      * No options, nothing to do.
@@ -11253,6 +11226,7 @@ FixLevelCode(
 	     * !"error", !integer, integer != 1 (numeric code for error)
 	     */
 
+	    int val;
 	    res = TclGetIntFromObj(NULL, lv[i+1], &val);
 	    if (((res == TCL_OK) && (val != 1)) || ((res != TCL_OK) &&
 		    (0 != strcmp(TclGetString(lv[i+1]), "error")))) {
@@ -11263,6 +11237,7 @@ FixLevelCode(
 	     * !integer, integer != 0
 	     */
 
+	    int val;
 	    res = TclGetIntFromObj(NULL, lv [i+1], &val);
 	    if ((res != TCL_OK) || (val != 0)) {
 		newlevel = 0;
@@ -11278,7 +11253,7 @@ FixLevelCode(
 	return msg;
     }
 
-    lcn = numOptions;
+    int lcn = numOptions;
     if (explicitResult) {
 	lcn ++;
     }
@@ -11289,7 +11264,7 @@ FixLevelCode(
 	lcn += 2;
     }
 
-    lvn = (Tcl_Obj **)Tcl_Alloc(lcn * sizeof(Tcl_Obj *));
+    Tcl_Obj **lvn = (Tcl_Obj **)Tcl_Alloc(lcn * sizeof(Tcl_Obj *));
 
     /*
      * New level/code information is spliced into the first occurrence of
@@ -11298,7 +11273,7 @@ FixLevelCode(
      * copied over.
      */
 
-    lignore = cignore = 0;
+    int lignore = 0, cignore = 0;
     int i, j;
     for (i=0, j=0; i<numOptions; i+=2) {
 	if (0 == strcmp(TclGetString(lv[i]), "-level")) {

@@ -1027,7 +1027,7 @@ DisassembleByteCodeAsDicts(
     ByteCode *codePtr;
     Tcl_Obj *description, *literals, *variables, *instructions, *inst;
     Tcl_Obj *aux, *exn, *commands, *file;
-    unsigned char *pc, *opnd, *codeOffPtr, *codeLenPtr, *srcOffPtr, *srcLenPtr;
+    const unsigned char *opnd, *codeOffPtr, *codeLenPtr, *srcOffPtr, *srcLenPtr;
     int codeOffset, codeLength, sourceOffset, sourceLength, val, line;
 
     ByteCodeGetInternalRep(objPtr, &tclByteCodeType, codePtr);
@@ -1096,7 +1096,8 @@ DisassembleByteCodeAsDicts(
      */
 
     TclNewObj(instructions);
-    for (pc=codePtr->codeStart; pc<codePtr->codeStart+codePtr->numCodeBytes;){
+    for (const unsigned char *pc=codePtr->codeStart;
+	    pc<codePtr->codeStart+codePtr->numCodeBytes;){
 	const InstructionDesc *instDesc = &tclInstructionTable[*pc];
 	int address = pc - codePtr->codeStart;
 
