@@ -386,7 +386,7 @@ Tcl_DeleteEventSource(
 void
 Tcl_QueueEvent(
     Tcl_Event *evPtr,		/* Event to add to queue. The storage space
-				 * must have been allocated the caller with
+				 * must have been allocated by the caller with
 				 * malloc (Tcl_Alloc), and it becomes the
 				 * property of the event queue. It will be
 				 * freed after the event has been handled. */

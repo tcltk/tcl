@@ -4645,7 +4645,7 @@ TEBCresume(
 	if (Tcl_GetWideIntFromObj(NULL, OBJ_AT_TOS, &key) != TCL_OK) {
 	    goto jumpTableNumFallthrough;
 	}
-	hPtr = Tcl_FindHashEntry(&jtnPtr->hashTable, (void *)key);
+	hPtr = Tcl_FindHashEntry(&jtnPtr->hashTable, INT2PTR(key));
 
     processJumpTableEntry:
 	if (hPtr != NULL) {

@@ -334,6 +334,7 @@ test filesystem-1.38 {file normalisation with volume relative} -setup {
     file norm $path
 } -cleanup {
     cd $dir
+    unset -nocomplain path
 } -result "[lindex $drives 0]foo"
 test filesystem-1.39 {file normalisation with volume relative} -setup {
     set old [pwd]

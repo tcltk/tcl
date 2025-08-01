@@ -396,6 +396,7 @@ static const char pwrot[17] =
     "\x00\x80\x40\xC0\x20\xA0\x60\xE0"
     "\x10\x90\x50\xD0\x30\xB0\x70\xF0";
 
+static int zipfs_tcl_library_init = 0;
 static const char *zipfs_literal_tcl_library = NULL;
 
 /* Function prototypes */
@@ -4295,6 +4296,7 @@ ScriptLibrarySetup(
     Tcl_DecrRefCount(searchPathObj);
     /* Bug [fccb9f322f]. Reinit system encoding after setting search path */
     TclpSetInitialEncodings();
+    zipfs_tcl_library_init = 1;
     return libDirObj;
 }
 
@@ -4312,10 +4314,13 @@ TclZipfs_TclLibrary(void)
 
     /*
      * Use the cached value if that has been set; we don't want to repeat the
-     * searching and mounting.
+     * searching and mounting. Even if it is not found, see [62019f8aa9f5ec73].
      */
-
-    if (zipfs_literal_tcl_library) {
+    
+    if (zipfs_tcl_library_init) {
+	if (!zipfs_literal_tcl_library) {
+	    return NULL;
+	}
 	return ScriptLibrarySetup(zipfs_literal_tcl_library);
     }
 
@@ -4372,6 +4377,11 @@ TclZipfs_TclLibrary(void)
     if (zipfs_literal_tcl_library) {
 	return ScriptLibrarySetup(zipfs_literal_tcl_library);
     }
+    /* 
+     * No zipfs tcl-library, mark it to avoid performance penalty [62019f8aa9f5ec73],
+     * by future calls (child interpreters, threads, etc).
+     */
+    zipfs_tcl_library_init = 1;
     return NULL;
 }
 
