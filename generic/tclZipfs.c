@@ -646,6 +646,13 @@ ZipWriteShort(
 }
 
 /*
+ * Need a separate mutex for locating libraries because the search calls
+ * TclZipfs_Mount which takes out a write lock on the ZipFSMutex. Since
+ * those cannot be nested, we need a separate mutex.
+ */
+TCL_DECLARE_MUTEX(ZipFSLocateLibMutex)
+
+/*
  *-------------------------------------------------------------------------
  *
  * ReadLock, WriteLock, Unlock --
@@ -4302,6 +4309,22 @@ ZipFSListObjCmd(
     return TCL_OK;
 }
 
+/*
+ * TclZipfsLocateTclLibrary --
+ *
+ *	This procedure locates the root that Tcl's library files are mounted
+ *	under if they are under a zipfs file system.
+ *
+ * Results:
+ *	TCL_OK if the library was found, TCL_ERROR otherwise.
+ *
+ * Side effects:
+ *	Initializes the global variable zipfs_literal_tcl_library. Will
+ *	never be cleared.
+ *
+ *-------------------------------------------------------------------------
+ */
+
 int
 TclZipfsLocateTclLibrary(void)
 {
@@ -4314,28 +4337,33 @@ TclZipfsLocateTclLibrary(void)
     char dllName[(MAX_PATH + LIBRARY_SIZE) * 3];
 #endif /* _WIN32 */
 
-    assert(!zipfs_tcl_library_init);
+    if (zipfs_tcl_library_init) {
+	return zipfs_literal_tcl_library ? TCL_OK : TCL_ERROR;
+    }
 
-    /*
-     * Look for the library file system within the executable.
-     */
+    Tcl_MutexLock(&ZipFSLocateLibMutex);
+    if (zipfs_tcl_library_init) {
+	/* Some other thread won the race */
+	Tcl_MutexUnlock(&ZipFSLocateLibMutex);
+	return zipfs_literal_tcl_library ? TCL_OK : TCL_ERROR;
+    }
 
-    vfsInitScript = Tcl_NewStringObj(ZIPFS_APP_MOUNT "/tcl_library/init.tcl",
-	    -1);
+    /* Look for the library file system within the executable. */
+    vfsInitScript =
+	Tcl_NewStringObj(ZIPFS_APP_MOUNT "/tcl_library/init.tcl", -1);
     Tcl_IncrRefCount(vfsInitScript);
     found = Tcl_FSAccess(vfsInitScript, F_OK);
     Tcl_DecrRefCount(vfsInitScript);
     if (found == TCL_OK) {
 	zipfs_literal_tcl_library = ZIPFS_APP_MOUNT "/tcl_library";
-	zipfs_tcl_library_init = 1;
-	return TCL_OK;
+	goto unlock_and_return;
     }
 
     /*
-     * Look for the library file system within the DLL/shared library.  Note
-     * that we must mount the zip file and dll before releasing to search.
+     * Look for the library file system within the DLL/shared
+     * library.  Note that we must mount the zip file and dll before
+     * releasing to search.
      */
-
 #if !defined(STATIC_BUILD)
 #if defined(_WIN32) || defined(__CYGWIN__)
     hModule = (HMODULE)TclWinGetTclInstance();
@@ -4347,38 +4375,26 @@ TclZipfsLocateTclLibrary(void)
 #endif
 
     if (ZipfsAppHookFindTclInit(dllName) == TCL_OK) {
-	zipfs_tcl_library_init = 1;
-	return TCL_OK;
+	goto unlock_and_return;
     }
 #elif !defined(NO_DLFCN_H)
     Dl_info dlinfo;
     if (dladdr((const void *)TclZipfs_TclLibrary, &dlinfo) && (dlinfo.dli_fname != NULL)
 	    && (ZipfsAppHookFindTclInit(dlinfo.dli_fname) == TCL_OK)) {
-	zipfs_tcl_library_init = 1;
-	return TCL_OK;
+	goto unlock_and_return;
     }
 #else
     if (ZipfsAppHookFindTclInit(CFG_RUNTIME_LIBDIR "/" CFG_RUNTIME_DLLFILE) == TCL_OK) {
 	zipfs_tcl_library_init = 1;
-	return TCL_OK;
+	goto unlock_and_return;
     }
 #endif /* _WIN32 */
 #endif /* !defined(STATIC_BUILD) */
 
-    /*
-     * If anything set the cache (but subsequently failed) go with that
-     * anyway.
-     */
-
-    if (zipfs_literal_tcl_library) {
-	return TCL_OK;
-    }
-    /* 
-     * No zipfs tcl-library, mark it to avoid performance penalty [62019f8aa9f5ec73],
-     * by future calls (child interpreters, threads, etc).
-     */
+unlock_and_return:
     zipfs_tcl_library_init = 1;
-    return TCL_ERROR;
+    Tcl_MutexUnlock(&ZipFSLocateLibMutex);
+    return zipfs_literal_tcl_library ? TCL_OK : TCL_ERROR;
 }
 
 /*
@@ -6506,12 +6522,11 @@ TclZipfs_AppHook(
 #endif
     archive = Tcl_GetNameOfExecutable();
     TclZipfs_Init(NULL);
-
     /*
      * Look for init.tcl in one of the locations mounted later in this
      * function. Errors ignored as other locations may be available.
      */
-    (void) TclZipfsLocateTclLibrary();
+    (void)TclZipfsLocateTclLibrary();
 
     if (!TclZipfs_Mount(NULL, archive, ZIPFS_APP_MOUNT, NULL)) {
 	int found;
