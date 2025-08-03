@@ -466,7 +466,6 @@ Tcl_Init(
 "  }\n"
 "}\n"
 "tclInit", TCL_INDEX_NONE, 0);
-    TclpSetInitialEncodings();
 end:
     *names = (*names)->nextPtr;
     return result;
