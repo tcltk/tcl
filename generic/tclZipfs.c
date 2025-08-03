@@ -6489,6 +6489,37 @@ TclZipfsFinalize(void)
 }
 
 /*
+ * TclZipfsInitEncodingDirs --
+ *
+ *	Sets the encoding directory search path to the encoding directory
+ *	under the tcl_library directory within a ZipFS mount. Overwrites the
+ *	previously set encoding search path so only to be called at
+ *	initialization.
+ */
+static int
+TclZipfsInitEncodingDirs(void)
+{
+    if (zipfs_literal_tcl_library == NULL) {
+	return TCL_ERROR;
+    }
+    Tcl_Obj *libDirObj = Tcl_NewStringObj(zipfs_literal_tcl_library, -1);
+    Tcl_Obj *subDirObj, *searchPathObj;
+
+    TclNewLiteralStringObj(subDirObj, "encoding");
+    Tcl_IncrRefCount(subDirObj);
+    TclNewObj(searchPathObj);
+    Tcl_ListObjAppendElement(NULL, searchPathObj,
+	    Tcl_FSJoinToPath(libDirObj, 1, &subDirObj));
+    Tcl_DecrRefCount(subDirObj);
+    Tcl_IncrRefCount(searchPathObj);
+    Tcl_SetEncodingSearchPath(searchPathObj);
+    Tcl_DecrRefCount(searchPathObj);
+    /* Reinit system encoding after setting search path */
+    TclpSetInitialEncodings();
+    return TCL_OK;
+}
+
+/*
  *-------------------------------------------------------------------------
  *
  * TclZipfs_AppHook --
@@ -6525,7 +6556,9 @@ TclZipfs_AppHook(
      * Look for init.tcl in one of the locations mounted later in this
      * function. Errors ignored as other locations may be available.
      */
-    (void)TclZipfsLocateTclLibrary();
+    if (TclZipfsLocateTclLibrary() == TCL_OK) {
+	(void) TclZipfsInitEncodingDirs();
+    }
 
     if (!TclZipfs_Mount(NULL, archive, ZIPFS_APP_MOUNT, NULL)) {
 	int found;
