@@ -4345,8 +4345,8 @@ ScriptLibrarySetup(
     return libDirObj;
 }
 
-Tcl_Obj *
-TclZipfs_TclLibrary(void)
+int
+TclZipfsLocateTclLibrary(void)
 {
     Tcl_Obj *vfsInitScript;
     int found;
@@ -4357,17 +4357,7 @@ TclZipfs_TclLibrary(void)
     char dllName[(MAX_PATH + LIBRARY_SIZE) * 3];
 #endif /* _WIN32 */
 
-    /*
-     * Use the cached value if that has been set; we don't want to repeat the
-     * searching and mounting. Even if it is not found, see [62019f8aa9f5ec73].
-     */
-    
-    if (zipfs_tcl_library_init) {
-	if (!zipfs_literal_tcl_library) {
-	    return NULL;
-	}
-	return ScriptLibrarySetup(zipfs_literal_tcl_library);
-    }
+    assert(!zipfs_tcl_library_init);
 
     /*
      * Look for the library file system within the executable.
@@ -4380,7 +4370,8 @@ TclZipfs_TclLibrary(void)
     Tcl_DecrRefCount(vfsInitScript);
     if (found == TCL_OK) {
 	zipfs_literal_tcl_library = ZIPFS_APP_MOUNT "/tcl_library";
-	return ScriptLibrarySetup(zipfs_literal_tcl_library);
+	zipfs_tcl_library_init = 1;
+	return TCL_OK;
     }
 
     /*
@@ -4399,17 +4390,20 @@ TclZipfs_TclLibrary(void)
 #endif
 
     if (ZipfsAppHookFindTclInit(dllName) == TCL_OK) {
-	return ScriptLibrarySetup(zipfs_literal_tcl_library);
+	zipfs_tcl_library_init = 1;
+	return TCL_OK;
     }
 #elif !defined(NO_DLFCN_H)
     Dl_info dlinfo;
     if (dladdr((const void *)TclZipfs_TclLibrary, &dlinfo) && (dlinfo.dli_fname != NULL)
 	    && (ZipfsAppHookFindTclInit(dlinfo.dli_fname) == TCL_OK)) {
-	return ScriptLibrarySetup(zipfs_literal_tcl_library);
+	zipfs_tcl_library_init = 1;
+	return TCL_OK;
     }
 #else
     if (ZipfsAppHookFindTclInit(CFG_RUNTIME_LIBDIR "/" CFG_RUNTIME_DLLFILE) == TCL_OK) {
-	return ScriptLibrarySetup(zipfs_literal_tcl_library);
+	zipfs_tcl_library_init = 1;
+	return TCL_OK;
     }
 #endif /* _WIN32 */
 #endif /* !defined(STATIC_BUILD) */
@@ -4420,13 +4414,27 @@ TclZipfs_TclLibrary(void)
      */
 
     if (zipfs_literal_tcl_library) {
-	return ScriptLibrarySetup(zipfs_literal_tcl_library);
+	return TCL_OK;
     }
     /* 
      * No zipfs tcl-library, mark it to avoid performance penalty [62019f8aa9f5ec73],
      * by future calls (child interpreters, threads, etc).
      */
     zipfs_tcl_library_init = 1;
+    return TCL_ERROR;
+}
+
+Tcl_Obj *
+TclZipfs_TclLibrary(void)
+{
+    /*
+     * Assumes TclZipfsLocateTclLibrary has already been called at startup
+     * through Tcl_InitSubsystems.
+     */
+    assert(zipfs_tcl_library_init);
+    if (zipfs_literal_tcl_library) {
+	return ScriptLibrarySetup(zipfs_literal_tcl_library);
+    }
     return NULL;
 }
 
@@ -6529,8 +6537,9 @@ TclZipfs_AppHook(
 
     /*
      * Look for init.tcl in one of the locations mounted later in this
-     * function.
+     * function. Errors ignored as other locations may be available.
      */
+    (void) TclZipfsLocateTclLibrary();
 
     if (!TclZipfs_Mount(NULL, archive, ZIPFS_APP_MOUNT, NULL)) {
 	int found;
