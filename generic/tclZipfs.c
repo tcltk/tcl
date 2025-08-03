@@ -4385,7 +4385,6 @@ TclZipfsLocateTclLibrary(void)
     }
 #else
     if (ZipfsAppHookFindTclInit(CFG_RUNTIME_LIBDIR "/" CFG_RUNTIME_DLLFILE) == TCL_OK) {
-	zipfs_tcl_library_init = 1;
 	goto unlock_and_return;
     }
 #endif /* _WIN32 */
