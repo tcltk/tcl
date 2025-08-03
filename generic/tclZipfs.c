@@ -414,7 +414,6 @@ static int		InitWritableChannel(Tcl_Interp *interp,
 static int		ListMountPoints(Tcl_Interp *interp);
 static int		ContainsMountPoint(const char *path, int pathLen);
 static void		CleanupMount(ZipFile *zf);
-static Tcl_Obj *	ScriptLibrarySetup(const char *dirName);
 static void		SerializeCentralDirectoryEntry(
 			    const unsigned char *start,
 			    const unsigned char *end, unsigned char *buf,
@@ -4303,48 +4302,6 @@ ZipFSListObjCmd(
     return TCL_OK;
 }
 
-/*
- *-------------------------------------------------------------------------
- *
- * TclZipfs_TclLibrary --
- *
- *	This procedure gets (and possibly finds) the root that Tcl's library
- *	files are mounted under.
- *
- * Results:
- *	A Tcl object holding the location (with zero refcount), or NULL if no
- *	Tcl library can be found.
- *
- * Side effects:
- *	May initialise the cache of where such library files are to be found.
- *	This cache is never cleared.
- *
- *-------------------------------------------------------------------------
- */
-
-/* Utility routine to centralize housekeeping */
-static Tcl_Obj *
-ScriptLibrarySetup(
-    const char *dirName)
-{
-    Tcl_Obj *libDirObj = Tcl_NewStringObj(dirName, -1);
-    Tcl_Obj *subDirObj, *searchPathObj;
-
-    TclNewLiteralStringObj(subDirObj, "encoding");
-    Tcl_IncrRefCount(subDirObj);
-    TclNewObj(searchPathObj);
-    Tcl_ListObjAppendElement(NULL, searchPathObj,
-	    Tcl_FSJoinToPath(libDirObj, 1, &subDirObj));
-    Tcl_DecrRefCount(subDirObj);
-    Tcl_IncrRefCount(searchPathObj);
-    Tcl_SetEncodingSearchPath(searchPathObj);
-    Tcl_DecrRefCount(searchPathObj);
-    /* Bug [fccb9f322f]. Reinit system encoding after setting search path */
-    TclpSetInitialEncodings();
-    zipfs_tcl_library_init = 1;
-    return libDirObj;
-}
-
 int
 TclZipfsLocateTclLibrary(void)
 {
@@ -4424,6 +4381,21 @@ TclZipfsLocateTclLibrary(void)
     return TCL_ERROR;
 }
 
+/*
+ *-------------------------------------------------------------------------
+ *
+ * TclZipfs_TclLibrary --
+ *
+ *	This procedure gets the root that Tcl's library
+ *	files are mounted under if they are under a zipfs file system.
+ *
+ * Results:
+ *	A Tcl object holding the location (with zero refcount), or NULL if no
+ *	Tcl library can be found.
+ *
+ *-------------------------------------------------------------------------
+ */
+
 Tcl_Obj *
 TclZipfs_TclLibrary(void)
 {
@@ -4433,7 +4405,7 @@ TclZipfs_TclLibrary(void)
      */
     assert(zipfs_tcl_library_init);
     if (zipfs_literal_tcl_library) {
-	return ScriptLibrarySetup(zipfs_literal_tcl_library);
+	return Tcl_NewStringObj(zipfs_literal_tcl_library, -1);
     }
     return NULL;
 }
