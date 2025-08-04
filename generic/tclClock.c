@@ -1684,12 +1684,9 @@ ClockGetjuliandayfromerayearmonthdayObjCmd(
     Tcl_Obj *const *objv)	/* Parameter vector */
 {
     TclDateFields fields;
-    Tcl_Obj *dict;
     ClockClientData *data = (ClockClientData *)clientData;
     Tcl_Obj *const *lit = data->literals;
     int changeover;
-    int copied = 0;
-    int status;
     int isBce = 0;
 
     fields.tzName = NULL;
@@ -1702,7 +1699,7 @@ ClockGetjuliandayfromerayearmonthdayObjCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "dict changeover");
 	return TCL_ERROR;
     }
-    dict = objv[1];
+    Tcl_Obj *dict = objv[1];
     if (FetchEraField(interp, dict, lit[LIT_ERA], &isBce) != TCL_OK
 	    || FetchIntField(interp, dict, lit[LIT_YEAR], &fields.year)
 		!= TCL_OK
@@ -1725,12 +1722,13 @@ ClockGetjuliandayfromerayearmonthdayObjCmd(
      * Store Julian day in the dictionary - copy on write.
      */
 
+    int copied = 0;
     if (Tcl_IsShared(dict)) {
 	dict = Tcl_DuplicateObj(dict);
 	Tcl_IncrRefCount(dict);
 	copied = 1;
     }
-    status = Tcl_DictObjPut(interp, dict, lit[LIT_JULIANDAY],
+    int status = Tcl_DictObjPut(interp, dict, lit[LIT_JULIANDAY],
 	    Tcl_NewWideIntObj(fields.julianDay));
     if (status == TCL_OK) {
 	Tcl_SetObjResult(interp, dict);
@@ -1773,10 +1771,7 @@ ClockGetjuliandayfromerayearweekdayObjCmd(
     Tcl_Obj *dict;
     ClockClientData *data = (ClockClientData *)clientData;
     Tcl_Obj *const *lit = data->literals;
-    int changeover;
-    int copied = 0;
-    int status;
-    int isBce = 0;
+    int changeover, status, copied = 0, isBce = 0;
 
     fields.tzName = NULL;
 
@@ -2059,14 +2054,11 @@ ConvertLocalToUTCUsingC(
     TclDateFields *fields,	/* Time to convert, with 'seconds' filled in */
     int changeover)		/* Julian Day of the Gregorian transition */
 {
-    struct tm timeVal;
-    int localErrno;
-    int secondOfDay;
-
     /*
      * Convert the given time to a date.
      */
 
+    int secondOfDay;
     ClockExtractJDAndSODFromSeconds(fields->julianDay, secondOfDay,
 	    fields->localSeconds);
 
@@ -2077,6 +2069,7 @@ ConvertLocalToUTCUsingC(
      * Convert the date/time to a 'struct tm'.
      */
 
+    struct tm timeVal;
     timeVal.tm_year = fields->year - 1900;
     timeVal.tm_mon = fields->month - 1;
     timeVal.tm_mday = fields->dayOfMonth;
@@ -2096,7 +2089,7 @@ ConvertLocalToUTCUsingC(
     Tcl_MutexLock(&clockMutex);
     errno = 0;
     fields->seconds = (Tcl_WideInt) mktime(&timeVal);
-    localErrno = (fields->seconds == -1) ? errno : 0;
+    int localErrno = (fields->seconds == -1) ? errno : 0;
     Tcl_MutexUnlock(&clockMutex);
 
     /*

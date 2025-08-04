@@ -5109,9 +5109,7 @@ static int
 DictionaryCompare(
     const char *left, const char *right)	/* The strings to compare. */
 {
-    int uniLeft = 0, uniRight = 0, uniLeftLower, uniRightLower;
-    int diff, zeros;
-    int secondaryDiff = 0;
+    int diff, secondaryDiff = 0;
 
     while (1) {
 	if (isdigit(UCHAR(*right))		/* INTL: digit */
@@ -5123,7 +5121,7 @@ DictionaryCompare(
 	     * zeros sorts later, but only as a secondary choice.
 	     */
 
-	    zeros = 0;
+	    int zeros = 0;
 	    while ((*right == '0') && isdigit(UCHAR(right[1]))) {
 		right++;
 		zeros--;
@@ -5177,24 +5175,24 @@ DictionaryCompare(
 	 * bail out immediately.
 	 */
 
-	if ((*left != '\0') && (*right != '\0')) {
-	    left += TclUtfToUniChar(left, &uniLeft);
-	    right += TclUtfToUniChar(right, &uniRight);
-
-	    /*
-	     * Convert both chars to lower for the comparison, because
-	     * dictionary sorts are case-insensitive. Covert to lower, not
-	     * upper, so chars between Z and a will sort before A (where most
-	     * other interesting punctuations occur).
-	     */
-
-	    uniLeftLower = Tcl_UniCharToLower(uniLeft);
-	    uniRightLower = Tcl_UniCharToLower(uniRight);
-	} else {
+	if ((*left == '\0') || (*right == '\0')) {
 	    diff = UCHAR(*left) - UCHAR(*right);
 	    break;
 	}
 
+	int uniLeft = 0, uniRight = 0;
+	left += TclUtfToUniChar(left, &uniLeft);
+	right += TclUtfToUniChar(right, &uniRight);
+
+	/*
+	* Convert both chars to lower for the comparison, because
+	* dictionary sorts are case-insensitive. Covert to lower, not
+	* upper, so chars between Z and a will sort before A (where most
+	* other interesting punctuations occur).
+	*/
+
+	int uniLeftLower = Tcl_UniCharToLower(uniLeft);
+	int uniRightLower = Tcl_UniCharToLower(uniRight);
 	diff = uniLeftLower - uniRightLower;
 	if (diff) {
 	    return diff;

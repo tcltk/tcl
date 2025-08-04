@@ -585,7 +585,6 @@ Tcl_ScanObjCmd(
     const char *format;
     int numVars, nconversions, totalVars = -1;
     int objIndex, offset, result, code;
-    int value;
     const char *string, *end, *baseString;
     char op = 0;
     int underflow = 0;
@@ -685,7 +684,7 @@ Tcl_ScanObjCmd(
 	} else if ((ch < 0x80) && isdigit(UCHAR(ch))) {	/* INTL: "C" locale. */
 	    char *formatEnd;
 	    /* Note currently XPG3 range limited to INT_MAX to match type of objc */
-	    value = strtoul(format-1, &formatEnd, 10);/* INTL: "C" locale. */
+	    int value = strtoul(format-1, &formatEnd, 10);/* INTL: "C" locale. */
 	    if (*formatEnd == '$') {
 		format = formatEnd+1;
 		format += TclUtfToUniChar(format, &ch);
@@ -990,6 +989,7 @@ Tcl_ScanObjCmd(
 		    }
 		}
 	    } else {
+		int value;
 		if (TclGetIntFromObj(NULL, objPtr, &value) != TCL_OK) {
 		    if (TclGetString(objPtr)[0] == '-') {
 			value = INT_MIN;

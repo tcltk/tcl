@@ -4644,8 +4644,6 @@ TclDoubleDigits(
 void
 TclInitDoubleConversion(void)
 {
-    int i;
-    int x;
     Tcl_WideUInt u;
     double d;
 #ifdef IEEE_FLOATING_POINT
@@ -4672,6 +4670,7 @@ TclInitDoubleConversion(void)
     pow10_wide = (Tcl_WideUInt *)
 	    Tcl_Alloc((maxpow10_wide + 1) * sizeof(Tcl_WideUInt));
     u = 1;
+    int i;
     for (i = 0; i < maxpow10_wide; ++i) {
 	pow10_wide[i] = u;
 	u *= 10;
@@ -4695,7 +4694,7 @@ TclInitDoubleConversion(void)
      * a double.
      */
 
-    x = (int) (DBL_MANT_DIG * log((double) FLT_RADIX) / log(5.0));
+    int x = (int) (DBL_MANT_DIG * log((double) FLT_RADIX) / log(5.0));
     if (x < MAXPOW) {
 	mmaxpow = x;
     } else {
@@ -5185,7 +5184,6 @@ Pow10TimesFrExp(
     int *machexp)		/* On input, exponent of multiplicand. On
 				 * output, exponent of result. */
 {
-    int j;
     int expt = *machexp;
     double retval = fraction;
 
@@ -5194,6 +5192,7 @@ Pow10TimesFrExp(
 	 * Multiply by 10**exponent.
 	 */
 
+	int j;
 	retval = frexp(retval * pow10vals[exponent & 0xF], &j);
 	expt += j;
 	for (int i=4; i<9; ++i) {
@@ -5207,6 +5206,7 @@ Pow10TimesFrExp(
 	 * Divide by 10**-exponent.
 	 */
 
+	int j;
 	retval = frexp(retval / pow10vals[(-exponent) & 0xF], &j);
 	expt += j;
 	for (int i=4; i<9; ++i) {

@@ -898,25 +898,28 @@ DecodeCryptHeader(
     unsigned char cryptHeader[ZIP_CRYPT_HDR_LEN])
 				/* From zip file content */
 {
-    int i;
     int len = z->zipFilePtr->passBuf[0] & 0xFF;
     char passBuf[260];
 
-    for (i = 0; i < len; i++) {
-	int ch = z->zipFilePtr->passBuf[len - i];
+    for (int i = 0; i < len; i++) {
+	unsigned ch = z->zipFilePtr->passBuf[len - i];
 	passBuf[i] = (ch & 0x0f) | pwrot[(ch >> 4) & 0x0f];
     }
-    passBuf[i] = '\0';
+    passBuf[len] = '\0';
+
     init_keys(passBuf, keys, crc32tab);
     memset(passBuf, 0, sizeof(passBuf));
+
     unsigned char encheader[ZIP_CRYPT_HDR_LEN];
     memcpy(encheader, cryptHeader, ZIP_CRYPT_HDR_LEN);
-    for (i = 0; i < ZIP_CRYPT_HDR_LEN; i++) {
-	int ch = cryptHeader[i];
+
+    for (int i = 0; i < ZIP_CRYPT_HDR_LEN; i++) {
+	unsigned ch = cryptHeader[i];
 	ch ^= decrypt_byte(keys, crc32tab);
 	encheader[i] = ch;
 	update_keys(keys, crc32tab, ch);
     }
+
     if (!IsCryptHeaderValid(z, encheader)) {
 	ZIPFS_ERROR(interp, "invalid password");
 	ZIPFS_ERROR_CODE(interp, "PASSWORD");
@@ -924,7 +927,7 @@ DecodeCryptHeader(
     }
     return TCL_OK;
 }
-
+
 /*
  *-------------------------------------------------------------------------
  *
@@ -956,12 +959,6 @@ DecodeZipEntryText(
     unsigned int inputLength,
     Tcl_DString *dstPtr)	/* Must have been initialized by caller! */
 {
-    Tcl_Encoding encoding;
-    const char *src;
-    char *dst;
-    int dstLen, srcLen = inputLength, flags;
-    Tcl_EncodingState state;
-
     if (inputLength < 1) {
 	return Tcl_DStringValue(dstPtr);
     }
@@ -975,11 +972,13 @@ DecodeZipEntryText(
      * be present.
      */
 
-    src = (const char *) inputBytes;
-    dst = Tcl_DStringValue(dstPtr);
-    dstLen = dstPtr->spaceAvl - 1;
-    flags = TCL_ENCODING_START | TCL_ENCODING_END;	/* Special flag! */
+    const char *src = (const char *) inputBytes;
+    int srcLen = inputLength;
+    char *dst = Tcl_DStringValue(dstPtr);
+    int dstLen = dstPtr->spaceAvl - 1;
+    int flags = TCL_ENCODING_START | TCL_ENCODING_END;	/* Special flag! */
 
+    Tcl_EncodingState state;
     while (1) {
 	int srcRead, dstWrote;
 	int result = Tcl_ExternalToUtf(NULL, tclUtf8Encoding, src, srcLen, flags,
@@ -1009,7 +1008,7 @@ DecodeZipEntryText(
      * Tcl_ExternalToUtfDString().
      */
 
-    encoding = NULL;
+    Tcl_Encoding encoding = NULL;
     if (ZipFS.fallbackEntryEncoding) {
 	encoding = Tcl_GetEncoding(NULL, ZipFS.fallbackEntryEncoding);
     }

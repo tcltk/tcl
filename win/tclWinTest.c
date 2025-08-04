@@ -117,14 +117,13 @@ TesteventloopCmd(
     if (strcmp(Tcl_GetString(objv[1]), "done") == 0) {
 	*framePtr = 1;
     } else if (strcmp(Tcl_GetString(objv[1]), "wait") == 0) {
-	int *oldFramePtr, done;
-	int oldMode = Tcl_SetServiceMode(TCL_SERVICE_ALL);
+	int done, oldMode = Tcl_SetServiceMode(TCL_SERVICE_ALL);
 
 	/*
 	 * Save the old stack frame pointer and set up the current frame.
 	 */
 
-	oldFramePtr = framePtr;
+	int *oldFramePtr = framePtr;
 	framePtr = &done;
 
 	/*
