@@ -2911,7 +2911,7 @@ proc tcltest::runAllTests { {shell ""} } {
 		"Only running test files that match:  [matchFiles]"
     }
 
-    set timeCmd {clock format [clock seconds]}
+    set timeCmd {clock format now -format "%Y-%m-%d %H:%M:%S %Z" -locale en}
     puts [outputChannel] "Tests began at [eval $timeCmd]"
 
     # Run each of the specified tests
