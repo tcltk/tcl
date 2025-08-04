@@ -36974,6 +36974,55 @@ test clock-38.3fm {ensure cache of base is correct for :localtime if TZ-env chan
     } \
     -result {{1970-01-02T07:30:00 +1130} {1970-01-02T03:30:00 +0730} {1970-01-01T23:30:00 +0330} {1970-01-01T20:00:00 +0000}}
 
+test clock-38.4sc {ensure cache of base is correct for :localtime if TZ-env changing / scan (system TZ, no registry)} \
+    -setup {
+	::testClock::_setupRegistry
+	# simulate we have no registry, so system TZ and :localtime get +HHMM format
+	proc ::tcl::clock::_hasRegistry {} {return 0}
+    } -body {
+	# force epoch switch and set first TZ (a time zone that is unlikely to anywhere) and use :localtime
+	set env(TZ) "+03:20"
+	clock scan "12:00:00" -format "%H:%M:%S" -base [expr {20*60*60}] -timezone :localtime -locale en
+	# force epoch switch, with unset TZ, it shall be system timezone now
+	unset -nocomplain env(TZ)
+	set t1 [clock scan "12:00:00" -format "%H:%M:%S" -base [expr {20*60*60}] -locale en]
+	# force epoch switch and set another TZ (a time zone that is unlikely to anywhere) and use system timezone
+	set env(TZ) "+04:20"
+	set t2 [clock scan "12:00:00" -format "%H:%M:%S" -base [expr {20*60*60}] -locale en]
+	# force epoch switch, with unset TZ, it shall be again system timezone
+	unset -nocomplain env(TZ)
+	set t3 [clock scan "12:00:00" -format "%H:%M:%S" -base [expr {20*60*60}] -locale en]
+	# compare scanned values (t1 must be equal t3 and not equal t2):
+	list [expr {$t1 == $t3 && $t1 != $t2}] [subst {$t1 == $t3 && $t1 != $t2}]
+    } -cleanup {
+	unset -nocomplain env(TZ)
+	::testClock::_cleanupRegistry
+    } -match glob -result {1 *}
+test clock-38.4fm {ensure cache of base is correct for :localtime if TZ-env changing / format (system TZ, no registry)} \
+    -setup {
+	::testClock::_setupRegistry
+	# simulate we have no registry, so system TZ and :localtime get +HHMM format
+	proc ::tcl::clock::_hasRegistry {} {return 0}
+    } -body {
+	# force epoch switch and set first TZ (a time zone that is unlikely to anywhere) and use :localtime
+	set env(TZ) "+03:20"
+	clock format 0  -timezone :localtime -locale en
+	# force epoch switch, with unset TZ, it shall be system timezone now
+	unset -nocomplain env(TZ)
+	set t1 [clock format 0 -locale en]
+	# force epoch switch and set another TZ (a time zone that is unlikely to anywhere) and use system timezone
+	set env(TZ) "+04:20"
+	set t2 [clock format 0 -locale en]
+	# force epoch switch, with unset TZ, it shall be again system timezone
+	unset -nocomplain env(TZ)
+	set t3 [clock format 0 -locale en]
+	# compare formatted values (t1 must be equal t3 and not equal t2):
+	list [expr {$t1 eq $t3 && $t1 ne $t2}] [subst {"$t1" eq "$t3" && "$t1" ne "$t2"}]
+    } -cleanup {
+	unset -nocomplain env(TZ)
+	::testClock::_cleanupRegistry
+    } -match glob -result {1 *}
+
 test clock-39.1 {regression - synonym timezones} {
     clock format 0 -format {%H:%M:%S} -timezone :US/Eastern
 } {19:00:00}
