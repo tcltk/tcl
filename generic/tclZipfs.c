@@ -964,43 +964,19 @@ DecodeZipEntryText(
     }
 
     /*
-     * We can't use Tcl_ExternalToUtfDString at this point; it has no way to
-     * fail. So we use this modified version of it that can report encoding
-     * errors to us (so we can fall back to something else).
+     * We Tcl_ExternalToUtfDStringEx because that can report if it failed,
+     * allowing us to try a different encoding.
      *
-     * The utf-8 encoding is implemented internally, and so is guaranteed to
-     * be present.
+     * The UTF-8 encoding is implemented internally, and so is guaranteed to
+     * be present. Tcl's own startup files (including the encoding definitions)
+     * should all have ASCII filenames, which is a subset of UTF-8, and so they
+     * should all work via this.
      */
 
-    const char *src = (const char *) inputBytes;
-    int srcLen = inputLength;
-    char *dst = Tcl_DStringValue(dstPtr);
-    int dstLen = dstPtr->spaceAvl - 1;
-    int flags = TCL_ENCODING_START | TCL_ENCODING_END;	/* Special flag! */
-
-    Tcl_EncodingState state;
-    while (1) {
-	int srcRead, dstWrote;
-	int result = Tcl_ExternalToUtf(NULL, tclUtf8Encoding, src, srcLen, flags,
-		&state, dst, dstLen, &srcRead, &dstWrote, NULL);
-	int soFar = dst + dstWrote - Tcl_DStringValue(dstPtr);
-
-	if (result == TCL_OK) {
-	    Tcl_DStringSetLength(dstPtr, soFar);
-	    return Tcl_DStringValue(dstPtr);
-	} else if (result != TCL_CONVERT_NOSPACE) {
-	    break;
-	}
-
-	flags &= ~TCL_ENCODING_START;
-	src += srcRead;
-	srcLen -= srcRead;
-	if (Tcl_DStringLength(dstPtr) == 0) {
-	    Tcl_DStringSetLength(dstPtr, dstLen);
-	}
-	Tcl_DStringSetLength(dstPtr, 2 * Tcl_DStringLength(dstPtr) + 1);
-	dst = Tcl_DStringValue(dstPtr) + soFar;
-	dstLen = Tcl_DStringLength(dstPtr) - soFar - 1;
+    if (Tcl_ExternalToUtfDStringEx(NULL, tclUtf8Encoding,
+	    (const char *) inputBytes, inputLength,
+	    TCL_ENCODING_PROFILE_STRICT, dstPtr, NULL) == TCL_OK) {
+	return Tcl_DStringValue(dstPtr);
     }
 
     /*
