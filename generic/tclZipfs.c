@@ -961,7 +961,6 @@ DecodeZipEntryText(
     Tcl_DString *dstPtr)	/* Must have been initialized by caller! */
 {
     Tcl_Encoding encoding;
-    Tcl_EncodingState state;
 
     if (inputLength < 1) {
 	return Tcl_DStringValue(dstPtr);
