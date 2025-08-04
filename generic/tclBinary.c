@@ -2502,7 +2502,6 @@ BinaryDecodeHex(
 	    cut++;
 	}
 	*cursor++ = UCHAR(value);
-	value = 0;
     }
     if (cut > size) {
 	cut = size;

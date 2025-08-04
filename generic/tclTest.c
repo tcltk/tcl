@@ -7943,9 +7943,7 @@ TestGetIntForIndexCmd(
     Tcl_SetObjResult(interp, Tcl_NewWideIntObj(result));
     return TCL_OK;
 }
-
-
-
+
 #if defined(HAVE_CPUID) && !defined(MAC_OSX_TCL)
 /*
  *----------------------------------------------------------------------
@@ -7977,24 +7975,22 @@ TestcpuidCmd(
     int objc,			/* Parameter count */
     Tcl_Obj *const * objv)	/* Parameter vector */
 {
-    int status, index, i;
-    int regs[4];
-    Tcl_Obj *regsObjs[4];
-
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "eax");
 	return TCL_ERROR;
     }
+    int index;
     if (Tcl_GetIntFromObj(interp, objv[1], &index) != TCL_OK) {
 	return TCL_ERROR;
     }
-    status = TclWinCPUID(index, regs);
+    int regs[4], status = TclWinCPUID(index, regs);
     if (status != TCL_OK) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"operation not available", -1));
 	return status;
     }
-    for (i=0 ; i<4 ; ++i) {
+    Tcl_Obj *regsObjs[4];
+    for (int i=0 ; i<4 ; ++i) {
 	regsObjs[i] = Tcl_NewWideIntObj(regs[i]);
     }
     Tcl_SetObjResult(interp, Tcl_NewListObj(4, regsObjs));

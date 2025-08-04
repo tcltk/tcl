@@ -6390,19 +6390,17 @@ ReadChars(
 		    return -1;
 		}
 
-		{
-		    /*
-		     * There are chars leading the buffer before the eof char.
-		     * Adjust the dstLimit so we go back and read only those
-		     * and do not encounter the eof char this time.
-		     */
+		/*
+		 * There are chars leading the buffer before the eof char.
+		 * Adjust the dstLimit so we go back and read only those
+		 * and do not encounter the eof char this time.
+		 */
 
-		    dstLimit = dstRead + (TCL_UTF_MAX - 1);
-		    statePtr->flags = savedFlags;
-		    statePtr->inputEncodingFlags = savedIEFlags;
-		    statePtr->inputEncodingState = savedState;
-		    continue;
-		}
+		dstLimit = dstRead + (TCL_UTF_MAX - 1);
+		statePtr->flags = savedFlags;
+		statePtr->inputEncodingFlags = savedIEFlags;
+		statePtr->inputEncodingState = savedState;
+		continue;
 	    }
 
 	    /*

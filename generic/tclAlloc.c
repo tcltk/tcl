@@ -516,9 +516,6 @@ TclpRealloc(
 {
     int i;
     union overhead *overPtr;
-    struct block *bigBlockPtr;
-    int expensive;
-    size_t maxSize;
 
     if (oldPtr == NULL) {
 	return TclpAlloc(numBytes);
@@ -545,7 +542,7 @@ TclpRealloc(
 
     if (i == 0xFF) {
 	struct block *prevPtr, *nextPtr;
-	bigBlockPtr = (struct block *) overPtr - 1;
+	struct block *bigBlockPtr = (struct block *) overPtr - 1;
 	prevPtr = bigBlockPtr->prevPtr;
 	nextPtr = bigBlockPtr->nextPtr;
 	bigBlockPtr = (struct block *) TclpSysRealloc(bigBlockPtr,
@@ -583,8 +580,8 @@ TclpRealloc(
 	Tcl_MutexUnlock(allocMutexPtr);
 	return (void *)(overPtr+1);
     }
-    maxSize = (size_t)1 << (i+3);
-    expensive = 0;
+    size_t maxSize = (size_t)1 << (i+3);
+    int expensive = 0;
     if (numBytes+OVERHEAD > maxSize) {
 	expensive = 1;
     } else if (i>0 && numBytes+OVERHEAD < maxSize/2) {

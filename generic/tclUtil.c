@@ -3106,12 +3106,6 @@ Tcl_PrintDouble(
     char *dst)			/* Where to store converted value; must have
 				 * at least TCL_DOUBLE_SPACE characters. */
 {
-    char *p, c;
-    int exponent;
-    int signum;
-    char *digits;
-    char *end;
-
     /*
      * Handle NaN.
      */
@@ -3142,19 +3136,20 @@ Tcl_PrintDouble(
      * Ordinary (normal and denormal) values.
      */
 
-    digits = TclDoubleDigits(value, -1, TCL_DD_SHORTEST,
+    int exponent, signum;
+    char *end, *digits = TclDoubleDigits(value, -1, TCL_DD_SHORTEST,
 	    &exponent, &signum, &end);
     if (signum) {
 	*dst++ = '-';
     }
-    p = digits;
+    char *p = digits;
     if (exponent < -4 || exponent > 16) {
 	/*
 	 * E format for numbers < 1e-3 or >= 1e17.
 	 */
 
 	*dst++ = *p++;
-	c = *p;
+	char c = *p;
 	if (c != '\0') {
 	    *dst++ = '.';
 	    while (c != '\0') {
@@ -3172,7 +3167,7 @@ Tcl_PrintDouble(
 	if (exponent < 0) {
 	    *dst++ = '0';
 	}
-	c = *p;
+	char c = *p;
 	while (exponent-- >= 0) {
 	    if (c != '\0') {
 		*dst++ = c;
