@@ -2490,7 +2490,8 @@ Tcl_CreateCommand(
 {
     Interp *iPtr = (Interp *) interp;
     ImportRef *oldRefPtr = NULL;
-    int isNew = 0, deleted = 0;
+    int isNew = 0;
+    bool deleted = false;
 
     if (iPtr->flags & DELETED) {
 	/*
@@ -2565,7 +2566,7 @@ Tcl_CreateCommand(
 	    cmdPtr->importRefPtr = NULL;
 	}
 	TclCleanupCommandMacro(cmdPtr);
-	deleted = 1;
+	deleted = true;
     }
 
     if (!isNew) {
@@ -2796,7 +2797,8 @@ TclCreateObjCommandInNs(
 				/* If not NULL, gives a function to call when
 				 * this command is deleted. */
 {
-    int deleted = 0, isNew = 0;
+    bool deleted = false;
+    int isNew = 0;
     ImportRef *oldRefPtr = NULL;
     Tcl_HashEntry *hPtr;
     Namespace *nsPtr = (Namespace *) namesp;
@@ -2853,7 +2855,7 @@ TclCreateObjCommandInNs(
 	    cmdPtr->importRefPtr = NULL;
 	}
 	TclCleanupCommandMacro(cmdPtr);
-	deleted = 1;
+	deleted = true;
     }
     if (!isNew) {
 	/*
@@ -4362,7 +4364,7 @@ EvalObjvCore(
     Tcl_Obj **objv = (Tcl_Obj **)data[3];
     Interp *iPtr = (Interp *) interp;
     Namespace *lookupNsPtr = NULL;
-    int enterTracesDone = 0;
+    bool enterTracesDone = false;
 
     /*
      * Push records for task to be done on return, in INVERSE order. First, if
@@ -4490,7 +4492,7 @@ EvalObjvCore(
 	     */
 
 	    if (cmdPtr == NULL) {
-		enterTracesDone = 1;
+		enterTracesDone = true;
 		Tcl_DecrRefCount(commandPtr);
 		goto reresolve;
 	    }
@@ -4695,7 +4697,7 @@ TEOV_Exception(
     int result)
 {
     Interp *iPtr = (Interp *) interp;
-    int allowExceptions = (PTR2INT(data[0]) & TCL_ALLOW_EXCEPTIONS);
+    bool allowExceptions = (PTR2INT(data[0]) & TCL_ALLOW_EXCEPTIONS);
 
     if (result != TCL_OK) {
 	if (result == TCL_RETURN) {
@@ -5090,8 +5092,8 @@ TclEvalEx(
     int code = TCL_OK;
     CallFrame *savedVarFramePtr;/* Saves old copy of iPtr->varFramePtr in case
 				 * TCL_EVAL_GLOBAL was set. */
-    int allowExceptions = (iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS);
-    int gotParse = 0;
+    bool allowExceptions = (iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS);
+    bool gotParse = false;
     Tcl_Size objectsUsed = 0;	/* This variable keeps track of how much
 				 * state has been allocated while evaluating
 				 * the script, so that it can be freed
@@ -5099,7 +5101,7 @@ TclEvalEx(
     Tcl_Parse *parsePtr = (Tcl_Parse *)TclStackAlloc(interp, sizeof(Tcl_Parse));
     CmdFrame *eeFramePtr = (CmdFrame *)TclStackAlloc(interp, sizeof(CmdFrame));
     Tcl_Obj **stackObjArray = (Tcl_Obj **)TclStackAlloc(interp, minObjs * sizeof(Tcl_Obj *));
-    char *expandStack = (char *)TclStackAlloc(interp, minObjs * sizeof(char));
+    bool *expandStack = (bool *)TclStackAlloc(interp, minObjs * sizeof(bool));
     int *linesStack = (int *)TclStackAlloc(interp, minObjs * sizeof(int));
 				/* TIP #280 Structures for tracking of command
 				 * locations. */
@@ -5136,7 +5138,7 @@ TclEvalEx(
 
     Tcl_Obj **objv = stackObjArray, **objvSpace = stackObjArray;
     int *lines = linesStack, *lineSpace = linesStack;
-    char *expand = expandStack;
+    bool *expand = expandStack;
     const char *p = script;
     Tcl_Size bytesLeft = numBytes;
 
@@ -5216,7 +5218,7 @@ TclEvalEx(
 	TclAdvanceContinuations(&line, &clNext,
 		parsePtr->commandStart - outerScript);
 
-	gotParse = 1;
+	gotParse = true;
 	if (parsePtr->numWords > 0) {
 	    /*
 	     * TIP #280. Track lines within the words of the current
@@ -5236,13 +5238,13 @@ TclEvalEx(
 	     */
 
 	    if (numWords > minObjs) {
-		expand = (char *)Tcl_Alloc(numWords * sizeof(char));
+		expand = (bool *)Tcl_Alloc(numWords * sizeof(bool));
 		objvSpace = (Tcl_Obj **)
 			Tcl_Alloc(numWords * sizeof(Tcl_Obj *));
 		lineSpace = (int *)
 			Tcl_Alloc(numWords * sizeof(int));
 	    }
-	    int expandRequested = 0;
+	    bool expandRequested = false;
 	    objv = objvSpace;
 	    lines = lineSpace;
 
@@ -5300,12 +5302,12 @@ TclEvalEx(
 			Tcl_DecrRefCount(objv[objectsUsed]);
 			break;
 		    }
-		    expandRequested = 1;
-		    expand[objectsUsed] = 1;
+		    expandRequested = true;
+		    expand[objectsUsed] = true;
 
 		    additionalObjsCount = (numElements ? numElements : 1);
 		} else {
-		    expand[objectsUsed] = 0;
+		    expand[objectsUsed] = false;
 		    additionalObjsCount = 1;
 		}
 
@@ -5443,7 +5445,7 @@ TclEvalEx(
 	p = next;
 	TclAdvanceLines(&line, parsePtr->commandStart, p);
 	Tcl_FreeParse(parsePtr);
-	gotParse = 0;
+	gotParse = false;
     } while (bytesLeft > 0);
     iPtr->varFramePtr = savedVarFramePtr;
     code = TCL_OK;
@@ -6106,7 +6108,7 @@ TclNREvalObjEx(
 	 * We transfer this to the byte code compiler.
 	 */
 
-	int allowExceptions = (iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS);
+	bool allowExceptions = (iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS);
 	CallFrame *savedVarFramePtr = NULL;	/* Saves old copy of
 						 * iPtr->varFramePtr in case
 						 * TCL_EVAL_GLOBAL was set. */
@@ -6177,7 +6179,7 @@ TEOEx_ByteCodeCallback(
     Interp *iPtr = (Interp *) interp;
     CallFrame *savedVarFramePtr = (CallFrame *)data[0];
     Tcl_Obj *objPtr = (Tcl_Obj *)data[1];
-    int allowExceptions = (int)PTR2INT(data[2]);
+    bool allowExceptions = (bool)PTR2INT(data[2]);
 
     if (iPtr->numLevels == 0) {
 	if (result == TCL_RETURN) {
@@ -6982,7 +6984,7 @@ ExprIsqrtFunc(
     double d;
     Tcl_WideInt w;
     mp_int big;
-    int exact = 0;		/* Flag ==1 if the argument can be represented
+    bool exact = false;		/* Flag if the argument can be represented
 				 * in a double as an exact integer. */
 
     /*
@@ -7015,7 +7017,7 @@ ExprIsqrtFunc(
 	}
 #ifdef IEEE_FLOATING_POINT
 	if (d <= MAX_EXACT) {
-	    exact = 1;
+	    exact = true;
 	}
 #endif
 	if (!exact) {
@@ -7043,7 +7045,7 @@ ExprIsqrtFunc(
 	d = (double) w;
 #ifdef IEEE_FLOATING_POINT
 	if (d < MAX_EXACT) {
-	    exact = 1;
+	    exact = true;
 	}
 #endif
 	if (!exact) {
@@ -7823,7 +7825,7 @@ ClassifyDouble(
 				 * untested). */
     unsigned int exponent, mantissaLow, mantissaHigh;
 				/* The pieces extracted from the double. */
-    int zeroMantissa;		/* Was the mantissa zero? That's special. */
+    bool zeroMantissa;		/* Was the mantissa zero? That's special. */
 
     /*
      * Shifts and masks to use with the doubleMeaning variable above.
@@ -7932,7 +7934,7 @@ DoubleObjIsClass(
     int objc,			/* Actual parameter count */
     Tcl_Obj *const *objv,	/* Actual parameter list */
     int cmpCls,			/* FP class to compare. */
-    int positive)		/* 1 if compare positive, 0 - otherwise */
+    bool positive)		/* true if compare positive, false otherwise */
 {
     if (objc != 2) {
 	MathFuncWrongNumArgs(interp, 2, objc, objv);
@@ -7960,7 +7962,7 @@ ExprIsFiniteFunc(
     int objc,			/* Actual parameter count */
     Tcl_Obj *const *objv)	/* Actual parameter list */
 {
-    return DoubleObjIsClass(interp, objc, objv, FP_INFINITE, 0);
+    return DoubleObjIsClass(interp, objc, objv, FP_INFINITE, false);
 }
 
 static int
@@ -7971,7 +7973,7 @@ ExprIsInfinityFunc(
     int objc,			/* Actual parameter count */
     Tcl_Obj *const *objv)	/* Actual parameter list */
 {
-    return DoubleObjIsClass(interp, objc, objv, FP_INFINITE, 1);
+    return DoubleObjIsClass(interp, objc, objv, FP_INFINITE, true);
 }
 
 static int
@@ -7982,7 +7984,7 @@ ExprIsNaNFunc(
     int objc,			/* Actual parameter count */
     Tcl_Obj *const *objv)	/* Actual parameter list */
 {
-    return DoubleObjIsClass(interp, objc, objv, FP_NAN, 1);
+    return DoubleObjIsClass(interp, objc, objv, FP_NAN, true);
 }
 
 static int
@@ -7993,7 +7995,7 @@ ExprIsNormalFunc(
     int objc,			/* Actual parameter count */
     Tcl_Obj *const *objv)	/* Actual parameter list */
 {
-    return DoubleObjIsClass(interp, objc, objv, FP_NORMAL, 1);
+    return DoubleObjIsClass(interp, objc, objv, FP_NORMAL, true);
 }
 
 static int
@@ -8004,7 +8006,7 @@ ExprIsSubnormalFunc(
     int objc,			/* Actual parameter count */
     Tcl_Obj *const *objv)	/* Actual parameter list */
 {
-    return DoubleObjIsClass(interp, objc, objv, FP_SUBNORMAL, 1);
+    return DoubleObjIsClass(interp, objc, objv, FP_SUBNORMAL, true);
 }
 
 static int

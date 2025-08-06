@@ -125,7 +125,7 @@ static struct block bigBlocks={	/* Big blocks aren't suballocated. */
 #if TCL_THREADS
 static Tcl_Mutex *allocMutexPtr;
 #endif
-static int allocInit = 0;
+static bool allocInit = false;
 
 #ifdef MSTATS
 
@@ -171,7 +171,7 @@ void
 TclInitAlloc(void)
 {
     if (!allocInit) {
-	allocInit = 1;
+	allocInit = true;
 #if TCL_THREADS
 	allocMutexPtr = Tcl_GetAllocMutex();
 #endif
@@ -204,7 +204,6 @@ TclInitAlloc(void)
 void
 TclFinalizeAllocSubsystem(void)
 {
-    unsigned int i;
     struct block *blockPtr, *nextPtr;
 
     Tcl_MutexLock(allocMutexPtr);
@@ -222,6 +221,7 @@ TclFinalizeAllocSubsystem(void)
     bigBlocks.nextPtr = &bigBlocks;
     bigBlocks.prevPtr = &bigBlocks;
 
+    unsigned i;
     for (i=0 ; i<NBUCKETS ; i++) {
 	nextf[i] = NULL;
 #ifdef MSTATS
@@ -514,7 +514,6 @@ TclpRealloc(
     void *oldPtr,		/* Pointer to alloc'ed block. */
     size_t numBytes)		/* New size of memory. */
 {
-    int i;
     union overhead *overPtr;
 
     if (oldPtr == NULL) {
@@ -534,7 +533,7 @@ TclpRealloc(
 
     RANGE_ASSERT(overPtr->rangeCheckMagic == RMAGIC);
     RANGE_ASSERT(BLOCK_END(overPtr) == RMAGIC);
-    i = overPtr->bucketIndex;
+    int i = overPtr->bucketIndex;
 
     /*
      * If the block isn't in a bin, just realloc it.
@@ -581,11 +580,11 @@ TclpRealloc(
 	return (void *)(overPtr+1);
     }
     size_t maxSize = (size_t)1 << (i+3);
-    int expensive = 0;
+    bool expensive = false;
     if (numBytes+OVERHEAD > maxSize) {
-	expensive = 1;
+	expensive = true;
     } else if (i>0 && numBytes+OVERHEAD < maxSize/2) {
-	expensive = 1;
+	expensive = true;
     }
 
     if (expensive) {

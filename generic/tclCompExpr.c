@@ -497,7 +497,7 @@ typedef struct JumpList {
 static void		CompileExprTree(Tcl_Interp *interp, OpNode *nodes,
 			    int index, Tcl_Obj *const **litObjvPtr,
 			    Tcl_Obj *const *funcObjv, Tcl_Token *tokenPtr,
-			    CompileEnv *envPtr, int optimize);
+			    CompileEnv *envPtr, bool optimize);
 static void		ConvertTreeToTokens(const char *start, Tcl_Size numBytes,
 			    OpNode *nodes, Tcl_Token *tokenPtr,
 			    Tcl_Parse *parsePtr);
@@ -506,7 +506,7 @@ static int		ExecConstantExprTree(Tcl_Interp *interp, OpNode *nodes,
 static int		ParseExpr(Tcl_Interp *interp, const char *start,
 			    Tcl_Size numBytes, OpNode **opTreePtr,
 			    Tcl_Obj *litList, Tcl_Obj *funcList,
-			    Tcl_Parse *parsePtr, int parseOnly);
+			    Tcl_Parse *parsePtr, bool parseOnly);
 static Tcl_Size		ParseLexeme(const char *start, Tcl_Size numBytes,
 			    unsigned char *lexemePtr, Tcl_Obj **literalPtr);
 
@@ -553,7 +553,7 @@ ParseExpr(
     Tcl_Parse *parsePtr,	/* Structure to fill with tokens representing
 				 * those operands that require run time
 				 * substitutions. */
-    int parseOnly)		/* A boolean indicating whether the caller's
+    bool parseOnly)		/* A boolean indicating whether the caller's
 				 * aim is just a parse, or whether it will go
 				 * on to compile the expression. Different
 				 * optimizations are appropriate for the two
@@ -610,7 +610,7 @@ ParseExpr(
 				 * into the string being parsed to aid in
 				 * pinpointing the location of the syntax
 				 * error in the expression. */
-    int insertMark = 0;		/* A boolean controlling whether the "mark"
+    bool insertMark = false;	/* A boolean controlling whether the "mark"
 				 * should be inserted. */
     const int limit = 25;	/* Portions of the error message are
 				 * constructed out of substrings of the
@@ -732,7 +732,8 @@ ParseExpr(
 		     */
 
 		    Tcl_ListObjAppendElement(NULL, funcList, literal);
-		} else if (literal && Tcl_GetBooleanFromObj(NULL,literal,&b) == TCL_OK) {
+		} else if (literal && Tcl_GetBooleanFromObj(NULL, literal,
+			&b) == TCL_OK) {
 		    lexeme = BOOL_LIT;
 		} else {
 		    /*
@@ -856,7 +857,7 @@ ParseExpr(
 		msg = Tcl_ObjPrintf("missing operator at %s", mark);
 		errCode = "MISSING";
 		scanned = 0;
-		insertMark = 1;
+		insertMark = true;
 
 		/*
 		 * Free any literal to avoid a memleak.
@@ -1055,7 +1056,7 @@ ParseExpr(
 	    if (NotOperator(lastParsed)) {
 		msg = Tcl_ObjPrintf("missing operator at %s", mark);
 		scanned = 0;
-		insertMark = 1;
+		insertMark = true;
 		errCode = "MISSING";
 		goto error;
 	    }
@@ -1116,7 +1117,7 @@ ParseExpr(
 		    }
 		    msg = Tcl_ObjPrintf("empty subexpression at %s", mark);
 		    scanned = 0;
-		    insertMark = 1;
+		    insertMark = true;
 		    errCode = "EMPTY";
 		    goto error;
 		}
@@ -1130,7 +1131,7 @@ ParseExpr(
 			msg = Tcl_ObjPrintf(
 				"missing function argument at %s", mark);
 			scanned = 0;
-			insertMark = 1;
+			insertMark = true;
 			errCode = "MISSING";
 		    } else if (nodePtr[-1].lexeme == START) {
 			TclNewLiteralStringObj(msg, "empty expression");
@@ -1145,13 +1146,13 @@ ParseExpr(
 		    msg = Tcl_ObjPrintf("missing function argument at %s",
 			    mark);
 		    scanned = 0;
-		    insertMark = 1;
+		    insertMark = true;
 		    errCode = "UNBALANCED";
 		}
 		if (msg == NULL) {
 		    msg = Tcl_ObjPrintf("missing operand at %s", mark);
 		    scanned = 0;
-		    insertMark = 1;
+		    insertMark = true;
 		    errCode = "MISSING";
 		}
 		goto error;
@@ -1240,7 +1241,7 @@ ParseExpr(
 			|| (nodes[complete].lexeme != COLON))) {
 		    msg = Tcl_ObjPrintf("missing operator \":\" at %s", mark);
 		    scanned = 0;
-		    insertMark = 1;
+		    insertMark = true;
 		    errCode = "MISSING";
 		    goto error;
 		}
@@ -1867,7 +1868,7 @@ Tcl_ParseExpr(
     }
 
     int code = ParseExpr(interp, start, numBytes, &opTree, litList, funcList,
-	    exprParsePtr, 1 /* parseOnly */);
+	    exprParsePtr, true /* parseOnly */);
     Tcl_DecrRefCount(funcList);
     Tcl_DecrRefCount(litList);
 
@@ -2188,7 +2189,7 @@ TclCompileExpr(
     const char *script,		/* The source script to compile. */
     Tcl_Size numBytes,		/* Number of bytes in script. */
     CompileEnv *envPtr,		/* Holds resulting instructions. */
-    int optimize)		/* 0 for one-off expressions. */
+    bool optimize)		/* false for one-off expressions. */
 {
     OpNode *opTree = NULL;	/* Will point to the tree of operators */
     Tcl_Obj *litList;		/* List to hold the literals */
@@ -2199,7 +2200,7 @@ TclCompileExpr(
     TclNewObj(litList);
     TclNewObj(funcList);
     int code = ParseExpr(interp, script, numBytes, &opTree, litList,
-	    funcList, parsePtr, 0 /* parseOnly */);
+	    funcList, parsePtr, false /* parseOnly */);
 
     if (code == TCL_OK) {
 	/*
@@ -2265,7 +2266,7 @@ ExecConstantExprTree(
     CompileEnv *envPtr = (CompileEnv *)TclStackAlloc(interp, sizeof(CompileEnv));
     TclInitCompileEnv(interp, envPtr, NULL, 0, NULL, 0);
     CompileExprTree(interp, nodes, index, litObjvPtr, NULL, NULL, envPtr,
-	    0 /* optimize */);
+	    false /* optimize */);
     OP(				DONE);
     ByteCode *byteCodePtr = TclInitByteCode(envPtr);
     TclFreeCompileEnv(envPtr);
@@ -2308,13 +2309,13 @@ CompileExprTree(
     Tcl_Obj *const *funcObjv,
     Tcl_Token *tokenPtr,
     CompileEnv *envPtr,
-    int optimize)
+    bool optimize)
 {
     OpNode *nodePtr = nodes + index;
     OpNode *rootPtr = nodePtr;
     int numWords = 0;
     JumpList *jumpPtr = NULL;
-    int convert = 1;
+    bool convert = true;
 
     while (1) {
 	int next;
@@ -2324,7 +2325,7 @@ CompileExprTree(
 	    next = nodePtr->left;
 
 	    if (nodePtr->lexeme == QUESTION) {
-		convert = 1;
+		convert = true;
 	    }
 	} else if (nodePtr->mark == MARK_RIGHT) {
 	    next = nodePtr->right;
@@ -2365,7 +2366,7 @@ CompileExprTree(
 		if (convert) {
 		    jumpPtr->jump.jumpType = TCL_TRUE_JUMP;
 		}
-		convert = 1;
+		convert = true;
 		break;
 	    case AND:
 	    case OR:
@@ -2403,7 +2404,7 @@ CompileExprTree(
 		 */
 
 		numWords = nodePtr->left;
-		convert = 1;
+		convert = true;
 		break;
 	    case COMMA:
 		/*
@@ -2416,7 +2417,7 @@ CompileExprTree(
 		CLANG_ASSERT(jumpPtr);
 		if (jumpPtr->jump.jumpType == TCL_TRUE_JUMP) {
 		    jumpPtr->jump.jumpType = TCL_UNCONDITIONAL_JUMP;
-		    convert = 1;
+		    convert = true;
 		}
 		Tcl_Size target = jumpPtr->jump.codeOffset + 5;
 		TclFixupForwardJumpToHere(envPtr, &jumpPtr->jump);
@@ -2447,7 +2448,7 @@ CompileExprTree(
 		TclFixupForwardJumpToHere(envPtr, &jumpPtr->jump);
 		PUSH_STRING(	(nodePtr->lexeme == AND) ? "0" : "1");
 		FWDLABEL(pc2);
-		convert = 0;
+		convert = false;
 		{
 		    JumpList *freePtr = jumpPtr;
 		    jumpPtr = jumpPtr->next;
@@ -2456,7 +2457,7 @@ CompileExprTree(
 		break;
 	    default:
 		TclEmitOpcode(instruction[nodePtr->lexeme], envPtr);
-		convert = 0;
+		convert = false;
 		break;
 	    }
 	    if (nodePtr == rootPtr) {
@@ -2557,7 +2558,7 @@ CompileExprTree(
 		    TclCompileSyntaxError(interp, envPtr);
 		}
 		Tcl_RestoreInterpState(interp, save);
-		convert = 0;
+		convert = false;
 	    } else {
 		nodePtr = nodes + next;
 	    }

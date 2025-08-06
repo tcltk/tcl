@@ -98,14 +98,14 @@ static ExitHandler *firstLateExitPtr = NULL;
 TCL_DECLARE_MUTEX(exitMutex)
 
 /*
- * This variable is set to 1 when Tcl_Exit is called. The variable is checked
+ * This variable is set true when Tcl_Exit is called. The variable is checked
  * by TclInExit() to allow different behavior for exit-time processing, e.g.,
  * in closing of files and pipes.
  */
 
-static int inExit = 0;
+static bool inExit = false;
 
-static int subsystemsInitialized = 0;
+static bool subsystemsInitialized = false;
 
 static const char ENCODING_ERROR[] = "\n\t(encoding error in stderr)";
 
@@ -120,7 +120,7 @@ static Tcl_ExitProc *appExitPtr = NULL;
 typedef struct ThreadSpecificData_Event {
     ExitHandler *firstExitPtr;	/* First in list of all exit handlers for this
 				 * thread. */
-    int inExit;			/* True when this thread is exiting. This is
+    bool inExit;		/* True when this thread is exiting. This is
 				 * used as a hack to decide to close the
 				 * standard channels. */
 } ThreadSpecificData;
@@ -900,7 +900,7 @@ static void
 InvokeExitHandlers(void)
 {
     Tcl_MutexLock(&exitMutex);
-    inExit = 1;
+    inExit = true;
 
     for (ExitHandler *exitPtr = firstExitPtr; exitPtr != NULL;
 	    exitPtr = firstExitPtr) {
@@ -1154,7 +1154,7 @@ Tcl_InitSubsystems(void)
 	    TclInitIOSubsystem();	/* Inits a tsd key (noop). */
 	    TclInitEncodingSubsystem();	/* Process wide encoding init. */
 	    TclInitNamespaceSubsystem();/* Register ns obj type (mutexed). */
-	    subsystemsInitialized = 1;
+	    subsystemsInitialized = true;
 	}
 	TclpInitUnlock();
     }
@@ -1193,7 +1193,7 @@ Tcl_Finalize(void)
     if (subsystemsInitialized == 0) {
 	goto alreadyFinalized;
     }
-    subsystemsInitialized = 0;
+    subsystemsInitialized = false;
 
     /*
      * Ensure the thread-specific data is initialised as it is used in
@@ -1383,7 +1383,7 @@ FinalizeThread(
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *)
 	    TclThreadDataKeyGet(&dataKey);
     if (tsdPtr != NULL) {
-	tsdPtr->inExit = 1;
+	tsdPtr->inExit = true;
 
 	for (ExitHandler *exitPtr = tsdPtr->firstExitPtr; exitPtr != NULL;
 		exitPtr = tsdPtr->firstExitPtr) {
@@ -1461,7 +1461,7 @@ TclInThreadExit(void)
     if (tsdPtr == NULL) {
 	return 0;
     }
-    return tsdPtr->inExit;
+    return (int) tsdPtr->inExit;
 }
 
 /*
@@ -1488,8 +1488,9 @@ Tcl_VwaitObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int i, done = 0, timedOut = 0, foundEvent, any = 1, timeout = 0;
-    int numItems = 0, extended = 0, result, mode, mask = TCL_ALL_EVENTS;
+    int i, done = 0, timedOut = 0, timeout = 0, numItems = 0, result;
+    int mask = TCL_ALL_EVENTS;
+    bool any = true, extended = false, foundEvent;
     Tcl_InterpState saved = NULL;
     Tcl_TimerToken timer = NULL;
     Tcl_Time before, after;
@@ -1533,10 +1534,10 @@ Tcl_VwaitObjCmd(
 	}
 	switch (index) {
 	case OPT_ALL:
-	    any = 0;
+	    any = false;
 	    break;
 	case OPT_EXTD:
-	    extended = 1;
+	    extended = true;
 	    break;
 	case OPT_NO_FEVTS:
 	    mask &= ~TCL_FILE_EVENTS;
@@ -1594,17 +1595,19 @@ Tcl_VwaitObjCmd(
 	case OPT_READABLE:
 	    if (++i >= objc) {
 		goto needArg;
-	    }
-	    if (TclGetChannelFromObj(interp, objv[i], &chan, &mode, 0)
-		    != TCL_OK) {
-		result = TCL_ERROR;
-		goto done;
-	    }
-	    if (!(mode & TCL_READABLE)) {
-		TclPrintfResult(interp, "channel \"%s\" wasn't open for reading",
-			TclGetString(objv[i]));
-		result = TCL_ERROR;
-		goto done;
+	    } else {
+		int mode;
+		if (TclGetChannelFromObj(interp, objv[i], &chan, &mode, 0)
+			!= TCL_OK) {
+		    result = TCL_ERROR;
+		    goto done;
+		}
+		if (!(mode & TCL_READABLE)) {
+		    TclPrintfResult(interp, "channel \"%s\" wasn't open for reading",
+			    TclGetString(objv[i]));
+		    result = TCL_ERROR;
+		    goto done;
+		}
 	    }
 	    Tcl_CreateChannelHandler(chan, TCL_READABLE,
 		    VwaitChannelReadProc, &vwaitItems[numItems]);
@@ -1617,17 +1620,19 @@ Tcl_VwaitObjCmd(
 	case OPT_WRITABLE:
 	    if (++i >= objc) {
 		goto needArg;
-	    }
-	    if (TclGetChannelFromObj(interp, objv[i], &chan, &mode, 0)
-		    != TCL_OK) {
-		result = TCL_ERROR;
-		goto done;
-	    }
-	    if (!(mode & TCL_WRITABLE)) {
-		TclPrintfResult(interp, "channel \"%s\" wasn't open for writing",
-			TclGetString(objv[i]));
-		result = TCL_ERROR;
-		goto done;
+	    } else {
+		int mode;
+		if (TclGetChannelFromObj(interp, objv[i], &chan, &mode, 0)
+			!= TCL_OK) {
+		    result = TCL_ERROR;
+		    goto done;
+		}
+		if (!(mode & TCL_WRITABLE)) {
+		    TclPrintfResult(interp, "channel \"%s\" wasn't open for writing",
+			    TclGetString(objv[i]));
+		    result = TCL_ERROR;
+		    goto done;
+		}
 	    }
 	    Tcl_CreateChannelHandler(chan, TCL_WRITABLE,
 		    VwaitChannelWriteProc, &vwaitItems[numItems]);
@@ -1706,11 +1711,11 @@ Tcl_VwaitObjCmd(
 	 * "vwait -nofileevents -notimerevents -nowindowevents"
 	 * is equivalent to "update idletasks"
 	 */
-	any = 1;
+	any = true;
 	mask |= TCL_DONT_WAIT;
     }
 
-    foundEvent = 1;
+    foundEvent = true;
     while (!timedOut && foundEvent &&
 	    ((!any && (done < numItems)) || (any && !done))) {
 	foundEvent = Tcl_DoOneEvent(mask);
@@ -1787,6 +1792,7 @@ Tcl_VwaitObjCmd(
 	saved = Tcl_SaveInterpState(interp, result);
     }
     for (i = 0; i < numItems; i++) {
+	int mode;
 	if (vwaitItems[i].mask & TCL_READABLE) {
 	    if (TclGetChannelFromObj(interp, vwaitItems[i].sourceObj,
 		    &chan, &mode, 0) == TCL_OK) {

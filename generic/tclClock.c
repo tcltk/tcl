@@ -172,13 +172,13 @@ TclClockInit(
     Command *cmdPtr;
     ClockClientData *data;
 
-    static int initialized = 0;	/* global clock engine initialized (in process) */
+    static bool initialized = false;	/* global clock engine initialized (in process) */
     /*
      * Register handler to finalize clock on exit.
      */
     if (!initialized) {
 	Tcl_CreateExitHandler(ClockFinalize, NULL);
-	initialized = 1;
+	initialized = true;
     }
 
     /*
@@ -418,11 +418,11 @@ static Tcl_Obj *
 NormTimezoneObj(
     ClockClientData *dataPtr,	/* Client data containing literal pool */
     Tcl_Obj *timezoneObj,	/* Name of zone to find */
-    int *loaded)		/* Used to recognized TZ was loaded */
+    bool *loaded)		/* Used to recognized TZ was loaded */
 {
     const char *tz;
 
-    *loaded = 1;
+    *loaded = true;
     if (timezoneObj == dataPtr->lastSetupTimeZoneUnnorm
 	    && dataPtr->lastSetupTimeZone != NULL) {
 	return dataPtr->lastSetupTimeZone;
@@ -460,12 +460,12 @@ NormTimezoneObj(
     if (strcmp(tz, Literals[LIT_GMT]) == 0) {
 	TclSetObjRef(dataPtr->gmtSetupTimeZoneUnnorm, timezoneObj);
 	if (dataPtr->gmtSetupTimeZone == NULL) {
-	    *loaded = 0;
+	    *loaded = false;
 	}
 	return dataPtr->literals[LIT_GMT];
     }
     /* unknown/unloaded tz - recache/revalidate later as last-setup if needed */
-    *loaded = 0;
+    *loaded = false;
     return timezoneObj;
 }
 
@@ -994,7 +994,7 @@ ClockConfigureObjCmd(
 	}
 	case CLOCK_SETUP_TZ:
 	    if (i < objc) {
-		int loaded;
+		bool loaded;
 		Tcl_Obj *timezoneObj = NormTimezoneObj(dataPtr, objv[i], &loaded);
 
 		if (!loaded) {
@@ -1286,9 +1286,6 @@ ClockSetupTimeZone(
     Tcl_Interp *interp,		/* Tcl interpreter */
     Tcl_Obj *timezoneObj)
 {
-    int loaded;
-    Tcl_Obj *normTzObj;
-
     /* if cached (if already setup this one) */
     if (timezoneObj == dataPtr->literals[LIT_GMT]
 	    && dataPtr->gmtSetupTZData != NULL) {
@@ -1306,7 +1303,8 @@ ClockSetupTimeZone(
     }
 
     /* differentiate normalized (last, GMT and system) zones, because used often and already set */
-    normTzObj = NormTimezoneObj(dataPtr, timezoneObj, &loaded);
+    bool loaded;
+    Tcl_Obj *normTzObj = NormTimezoneObj(dataPtr, timezoneObj, &loaded);
     /* if loaded (setup already called for this TZ) */
     if (loaded) {
 	return normTzObj;
@@ -1411,7 +1409,7 @@ ClockConvertlocaltoutcObjCmd(
     Tcl_Obj *dict;
     int changeover;
     TclDateFields fields;
-    int created = 0;
+    bool created = false;
     int status;
 
     fields.tzName = NULL;
@@ -1445,7 +1443,7 @@ ClockConvertlocaltoutcObjCmd(
 
     if (Tcl_IsShared(dict)) {
 	dict = Tcl_DuplicateObj(dict);
-	created = 1;
+	created = true;
 	Tcl_IncrRefCount(dict);
     }
     status = Tcl_DictObjPut(interp, dict, dataPtr->literals[LIT_SECONDS],
@@ -1647,7 +1645,7 @@ FetchEraField(
     Tcl_Interp *interp,
     Tcl_Obj *dict,
     Tcl_Obj *key,
-    int *storePtr)
+    bool *storePtr)
 {
     Tcl_Obj *value = NULL;
 
@@ -1691,7 +1689,7 @@ ClockGetjuliandayfromerayearmonthdayObjCmd(
     ClockClientData *data = (ClockClientData *)clientData;
     Tcl_Obj *const *lit = data->literals;
     int changeover;
-    int isBce = 0;
+    bool isBce = false;
 
     fields.tzName = NULL;
 
@@ -1726,11 +1724,11 @@ ClockGetjuliandayfromerayearmonthdayObjCmd(
      * Store Julian day in the dictionary - copy on write.
      */
 
-    int copied = 0;
+    bool copied = false;
     if (Tcl_IsShared(dict)) {
 	dict = Tcl_DuplicateObj(dict);
 	Tcl_IncrRefCount(dict);
-	copied = 1;
+	copied = true;
     }
     int status = Tcl_DictObjPut(interp, dict, lit[LIT_JULIANDAY],
 	    Tcl_NewWideIntObj(fields.julianDay));
@@ -1775,7 +1773,8 @@ ClockGetjuliandayfromerayearweekdayObjCmd(
     Tcl_Obj *dict;
     ClockClientData *data = (ClockClientData *)clientData;
     Tcl_Obj *const *lit = data->literals;
-    int changeover, status, copied = 0, isBce = 0;
+    int changeover, status;
+    bool copied = false, isBce = false;
 
     fields.tzName = NULL;
 
@@ -1813,7 +1812,7 @@ ClockGetjuliandayfromerayearweekdayObjCmd(
     if (Tcl_IsShared(dict)) {
 	dict = Tcl_DuplicateObj(dict);
 	Tcl_IncrRefCount(dict);
-	copied = 1;
+	copied = true;
     }
     status = Tcl_DictObjPut(interp, dict, lit[LIT_JULIANDAY],
 	    Tcl_NewWideIntObj(fields.julianDay));
@@ -2342,7 +2341,7 @@ ConvertUTCToLocalUsingC(
      * Fill in the date in 'fields' and use it to derive Julian Day.
      */
 
-    fields->isBce = 0;
+    fields->isBce = false;
     fields->year = timeVal->tm_year + 1900;
     fields->month = timeVal->tm_mon + 1;
     fields->dayOfMonth = timeVal->tm_mday;
@@ -2558,7 +2557,7 @@ GetGregorianEraYearDay(
 	 * Gregorian calendar.
 	 */
 
-	fields->gregorian = 1;
+	fields->gregorian = true;
 	year = 1;
 
 	/*
@@ -2596,7 +2595,7 @@ GetGregorianEraYearDay(
 	 * Julian calendar.
 	 */
 
-	fields->gregorian = 0;
+	fields->gregorian = false;
 	year = 1;
 	day = jday - JDAY_1_JAN_1_CE_JULIAN;
     }
@@ -2634,10 +2633,10 @@ GetGregorianEraYearDay(
      */
 
     if (year <= 0) {
-	fields->isBce = 1;
+	fields->isBce = true;
 	fields->year = 1 - year;
     } else {
-	fields->isBce = 0;
+	fields->isBce = false;
 	fields->year = year;
     }
     fields->dayOfYear = day + 1;
@@ -2794,12 +2793,12 @@ GetJulianDayFromEraYearMonthDay(
      * Adjust the year after reducing the month.
      */
 
-    fields->gregorian = 1;
+    fields->gregorian = true;
     if (year < 1) {
-	fields->isBce = 1;
+	fields->isBce = true;
 	fields->year = 1 - year;
     } else {
-	fields->isBce = 0;
+	fields->isBce = false;
 	fields->year = year;
     }
 
@@ -2845,7 +2844,7 @@ GetJulianDayFromEraYearMonthDay(
      */
 
     if (fields->julianDay < changeover) {
-	fields->gregorian = 0;
+	fields->gregorian = false;
 	fields->julianDay = JDAY_1_JAN_1_CE_JULIAN - 1
 		+ fields->dayOfMonth
 		+ daysInPriorMonths[year%4 == 0][month - 1]
@@ -2888,7 +2887,7 @@ GetJulianDayFromEraYearDay(
     ym1 = year - 1;
 
     /* Try the Gregorian calendar first. */
-    fields->gregorian = 1;
+    fields->gregorian = true;
     fields->julianDay =
 	    1721425
 	    + fields->dayOfYear
@@ -2900,7 +2899,7 @@ GetJulianDayFromEraYearDay(
     /* If the date is before the Gregorian change, use the Julian calendar. */
 
     if (fields->julianDay < changeover) {
-	fields->gregorian = 0;
+	fields->gregorian = false;
 	fields->julianDay =
 		1721423
 		+ fields->dayOfYear
@@ -3268,7 +3267,7 @@ ClockParseFmtScnArgs(
 {
     Tcl_Interp *interp = opts->interp;
     ClockClientData *dataPtr = opts->dataPtr;
-    int gmtFlag = 0;
+    bool gmtFlag = false;
     static const char *const options[] = {
 	"-base", "-format", "-gmt", "-locale", "-timezone", "-validate", NULL
     };
@@ -3277,7 +3276,7 @@ ClockParseFmtScnArgs(
 	CLC_ARGS_TIMEZONE, CLC_ARGS_VALIDATE
     };
     int optionIndex;		/* Index of an option. */
-    int saw = 0;		/* Flag == 1 if option was seen already. */
+    int saw = 0;		/* Bit flags: 1 if option was seen already. */
     Tcl_Size i, baseIdx;
     Tcl_WideInt baseVal;	/* Base time, expressed in seconds from the Epoch */
 
@@ -3342,7 +3341,7 @@ ClockParseFmtScnArgs(
 	    if (operation != CLC_OP_SCN) {
 		goto badOptionMsg;
 	    } else {
-		int val;
+		bool val;
 
 		if (Tcl_GetBooleanFromObj(interp, objv[i + 1], &val) != TCL_OK) {
 		    return TCL_ERROR;
@@ -3510,7 +3509,6 @@ ClockFormatObjCmd(
 	    "?-format string? "
 	    "?-gmt boolean? "
 	    "?-locale LOCALE? ?-timezone ZONE?";
-    int ret;
     ClockFmtScnCmdArgs opts;	/* Format, locale, timezone and base */
     DateFormat dateFmt;		/* Common structure used for formatting */
 
@@ -3528,7 +3526,7 @@ ClockFormatObjCmd(
      */
 
     ClockInitFmtScnArgs(dataPtr, interp, &opts);
-    ret = ClockParseFmtScnArgs(&opts, &dateFmt.date, objc, objv,
+    int ret = ClockParseFmtScnArgs(&opts, &dateFmt.date, objc, objv,
 	    CLC_OP_FMT, "-format, -gmt, -locale, or -timezone");
     if (ret != TCL_OK) {
 	goto done;
@@ -3580,7 +3578,6 @@ ClockScanObjCmd(
 	    "?-format string? "
 	    "?-gmt boolean? "
 	    "?-locale LOCALE? ?-timezone ZONE? ?-validate boolean?";
-    int ret;
     ClockFmtScnCmdArgs opts;	/* Format, locale, timezone and base */
     DateInfo yy;		/* Common structure used for parsing */
     DateInfo *info = &yy;
@@ -3599,7 +3596,7 @@ ClockScanObjCmd(
      */
 
     ClockInitFmtScnArgs(dataPtr, interp, &opts);
-    ret = ClockParseFmtScnArgs(&opts, &yy.date, objc, objv,
+    int ret = ClockParseFmtScnArgs(&opts, &yy.date, objc, objv,
 	    CLC_OP_SCN, "-base, -format, -gmt, -locale, -timezone or -validate");
     if (ret != TCL_OK) {
 	goto done;
@@ -4004,7 +4001,7 @@ ClockFreeScan(
 	    }
 	    yyYear += dataPtr->currentYearCentury;
 	}
-	yydate.isBce = 0;
+	yydate.isBce = false;
 	info->flags |= CLF_ASSEMBLE_JULIANDAY|CLF_ASSEMBLE_SECONDS;
     }
 
@@ -4221,7 +4218,7 @@ ClockCalcRelTime(
 	    info->flags &= ~CLF_ASSEMBLE_JULIANDAY;
 	}
 
-	yydate.isBce = 0;
+	yydate.isBce = false;
 	yydate.julianDay = WeekdayOnOrBefore(yyDayOfWeek, yydate.julianDay + 6)
 		+ 7 * yyDayOrdinal;
 	if (yyDayOrdinal > 0) {
@@ -4398,7 +4395,6 @@ ClockAddObjCmd(
 	    "?-gmt boolean? "
 	    "?-locale LOCALE? ?-timezone ZONE?";
     ClockClientData *dataPtr = (ClockClientData *)clientData;
-    int ret;
     ClockFmtScnCmdArgs opts;	/* Format, locale, timezone and base */
     DateInfo yy;		/* Common structure used for parsing */
     DateInfo *info = &yy;
@@ -4432,7 +4428,7 @@ ClockAddObjCmd(
      */
 
     ClockInitFmtScnArgs(dataPtr, interp, &opts);
-    ret = ClockParseFmtScnArgs(&opts, &yy.date, objc, objv,
+    int ret = ClockParseFmtScnArgs(&opts, &yy.date, objc, objv,
 	    CLC_OP_ADD, "-gmt, -locale, or -timezone");
     if (ret != TCL_OK) {
 	goto done;
@@ -4622,15 +4618,14 @@ ClockSafeCatchCmd(
     } InterpState;
 
     Interp *iPtr = (Interp *)interp;
-    int ret, flags = 0;
-    InterpState *statePtr;
+    int flags = 0;
 
     if (objc == 1) {
 	/* wrong # args : */
 	return Tcl_CatchObjCmd(NULL, interp, objc, objv);
     }
 
-    statePtr = (InterpState *)Tcl_SaveInterpState(interp, 0);
+    InterpState *statePtr = (InterpState *)Tcl_SaveInterpState(interp, 0);
     if (!statePtr->errorInfo) {
 	/* todo: avoid traced get of errorInfo here */
 	TclInitObjRef(statePtr->errorInfo,
@@ -4645,7 +4640,7 @@ ClockSafeCatchCmd(
     }
 
     /* original catch */
-    ret = Tcl_CatchObjCmd(NULL, interp, objc, objv);
+    int ret = Tcl_CatchObjCmd(NULL, interp, objc, objv);
 
     if (ret == TCL_ERROR) {
 	Tcl_DiscardInterpState((Tcl_InterpState)statePtr);

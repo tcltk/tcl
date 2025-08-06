@@ -1944,7 +1944,8 @@ DictMergeCmd(
     Tcl_Obj *const *objv)
 {
     Tcl_Obj *targetObj, *keyObj = NULL, *valueObj = NULL;
-    int done, allocatedDict = 0;
+    int done;
+    bool allocatedDict = false;
     Tcl_DictSearch search;
 
     if (objc == 1) {
@@ -1979,7 +1980,7 @@ DictMergeCmd(
 
     if (Tcl_IsShared(targetObj)) {
 	targetObj = Tcl_DuplicateObj(targetObj);
-	allocatedDict = 1;
+	allocatedDict = true;
     }
     for (int i=2 ; i<objc ; i++) {
 	if (Tcl_DictObjFirst(interp, objv[i], &search, &keyObj, &valueObj,
@@ -2466,7 +2467,7 @@ DictLappendCmd(
     Tcl_Obj *const *objv)
 {
     Tcl_Obj *dictPtr, *valuePtr, *resultPtr;
-    int allocatedDict = 0, allocatedValue = 0;
+    bool allocatedDict = false, allocatedValue = false;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictVarName key ?value ...?");
@@ -2475,10 +2476,10 @@ DictLappendCmd(
 
     dictPtr = Tcl_ObjGetVar2(interp, objv[1], NULL, 0);
     if (dictPtr == NULL) {
-	allocatedDict = 1;
+	allocatedDict = true;
 	dictPtr = Tcl_NewDictObj();
     } else if (Tcl_IsShared(dictPtr)) {
-	allocatedDict = 1;
+	allocatedDict = true;
 	dictPtr = Tcl_DuplicateObj(dictPtr);
     }
 
@@ -2491,10 +2492,10 @@ DictLappendCmd(
 
     if (valuePtr == NULL) {
 	valuePtr = Tcl_NewListObj(objc-3, objv+3);
-	allocatedValue = 1;
+	allocatedValue = true;
     } else {
 	if (Tcl_IsShared(valuePtr)) {
-	    allocatedValue = 1;
+	    allocatedValue = true;
 	    valuePtr = Tcl_DuplicateObj(valuePtr);
 	}
 
@@ -2553,7 +2554,7 @@ DictAppendCmd(
     Tcl_Obj *const *objv)
 {
     Tcl_Obj *dictPtr, *valuePtr, *resultPtr;
-    int allocatedDict = 0;
+    bool allocatedDict = false;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictVarName key ?value ...?");
@@ -2562,10 +2563,10 @@ DictAppendCmd(
 
     dictPtr = Tcl_ObjGetVar2(interp, objv[1], NULL, 0);
     if (dictPtr == NULL) {
-	allocatedDict = 1;
+	allocatedDict = true;
 	dictPtr = Tcl_NewDictObj();
     } else if (Tcl_IsShared(dictPtr)) {
-	allocatedDict = 1;
+	allocatedDict = true;
 	dictPtr = Tcl_DuplicateObj(dictPtr);
     }
 
@@ -3062,7 +3063,7 @@ DictSetCmd(
     Tcl_Obj *const *objv)
 {
     Tcl_Obj *dictPtr, *resultPtr;
-    int result, allocatedDict = 0;
+    bool allocatedDict = false;
 
     if (objc < 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictVarName key ?key ...? value");
@@ -3071,14 +3072,14 @@ DictSetCmd(
 
     dictPtr = Tcl_ObjGetVar2(interp, objv[1], NULL, 0);
     if (dictPtr == NULL) {
-	allocatedDict = 1;
+	allocatedDict = true;
 	dictPtr = Tcl_NewDictObj();
     } else if (Tcl_IsShared(dictPtr)) {
-	allocatedDict = 1;
+	allocatedDict = true;
 	dictPtr = Tcl_DuplicateObj(dictPtr);
     }
 
-    result = Tcl_DictObjPutKeyList(interp, dictPtr, objc-3, objv+2,
+    int result = Tcl_DictObjPutKeyList(interp, dictPtr, objc-3, objv+2,
 	    objv[objc-1]);
     if (result != TCL_OK) {
 	if (allocatedDict) {
@@ -3122,7 +3123,7 @@ DictUnsetCmd(
     Tcl_Obj *const *objv)
 {
     Tcl_Obj *dictPtr, *resultPtr;
-    int result, allocatedDict = 0;
+    bool allocatedDict = false;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictVarName key ?key ...?");
@@ -3131,14 +3132,14 @@ DictUnsetCmd(
 
     dictPtr = Tcl_ObjGetVar2(interp, objv[1], NULL, 0);
     if (dictPtr == NULL) {
-	allocatedDict = 1;
+	allocatedDict = true;
 	dictPtr = Tcl_NewDictObj();
     } else if (Tcl_IsShared(dictPtr)) {
-	allocatedDict = 1;
+	allocatedDict = true;
 	dictPtr = Tcl_DuplicateObj(dictPtr);
     }
 
-    result = Tcl_DictObjRemoveKeyList(interp, dictPtr, objc-2, objv+2);
+    int result = Tcl_DictObjRemoveKeyList(interp, dictPtr, objc-2, objv+2);
     if (result != TCL_OK) {
 	if (allocatedDict) {
 	    TclDecrRefCount(dictPtr);
@@ -3832,8 +3833,9 @@ TclDictWithFinish(
 				 * the result value from TclDictWithInit. */
 {
     Tcl_Obj *dictPtr, *leafPtr, *valPtr;
-    Tcl_Size allocdict, keyc;
+    Tcl_Size keyc;
     Tcl_Obj **keyv;
+    bool allocdict = false;
 
     /*
      * If the dictionary variable doesn't exist, drop everything silently.
@@ -3856,9 +3858,7 @@ TclDictWithFinish(
 
     if (Tcl_IsShared(dictPtr)) {
 	dictPtr = Tcl_DuplicateObj(dictPtr);
-	allocdict = 1;
-    } else {
-	allocdict = 0;
+	allocdict = true;
     }
 
     if (pathc > 0) {

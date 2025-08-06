@@ -1529,7 +1529,7 @@ FileAttrIsDirectoryCmd(
     Tcl_Obj *const objv[])
 {
     Tcl_StatBuf buf;
-    int value = 0;
+    bool value = false;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name");
@@ -1629,7 +1629,7 @@ FileAttrIsFileCmd(
     Tcl_Obj *const objv[])
 {
     Tcl_StatBuf buf;
-    int value = 0;
+    bool value = false;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name");
@@ -1685,7 +1685,7 @@ FileAttrIsOwnedCmd(
      * for native paths we may not want links to be resolved.
      */
 
-    int value = 0;
+    bool value = false;
 
 #ifdef _WIN32
     value = TclWinFileOwned(objv[1]);
@@ -2253,14 +2253,14 @@ CheckAccess(
     int mode)			/* Attribute to check; passed as argument to
 				 * access(). */
 {
-    int value;
+    bool value;
     Tcl_DString ds;
 
     if (Tcl_FSConvertToPathType(interp, pathPtr) != TCL_OK) {
-	value = 0;
+	value = false;
     } else if (Tcl_UtfToExternalDStringEx(NULL, TCLFSENCODING, TclGetString(pathPtr),
 	    TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
-	value = 0;
+	value = false;
 	Tcl_DStringFree(&ds);
     } else {
 	Tcl_DStringFree(&ds);
@@ -2618,7 +2618,7 @@ ForCondCallback(
     Interp *iPtr = (Interp *) interp;
     ForIterData *iterPtr = (ForIterData *)data[0];
     Tcl_Obj *boolObj = (Tcl_Obj *)data[1];
-    int value;
+    bool value;
 
     if (result != TCL_OK) {
 	Tcl_DecrRefCount(boolObj);
@@ -2979,7 +2979,7 @@ ForeachAssignments(
     struct ForeachState *statePtr)
 {
     for (Tcl_Size i=0 ; i<statePtr->numLists ; i++) {
-	int isAbstractList =
+	bool isAbstractList =
 		TclObjTypeHasProc(statePtr->aCopyList[i],indexProc) != NULL;
 
 	for (Tcl_Size v=0 ; v<statePtr->varcList[i] ; v++) {
