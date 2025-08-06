@@ -516,7 +516,7 @@ ClockFmtScnStorage_GC_Out(
  * Used for fast searching by format string.
  */
 static Tcl_HashTable FmtScnHashTable;
-static int initialized = 0;
+static bool initialized = false;
 
 /*
  * Wrappers between pointers to hash entry and format storage object
@@ -830,7 +830,6 @@ FindOrCreateFmtScnStorage(
     const char *strFmt = TclGetString(objPtr);
     ClockFmtScnStorage *fss = NULL;
     int isNew;
-    Tcl_HashEntry *hPtr;
 
     Tcl_MutexLock(&ClockFmtMutex);
 
@@ -840,17 +839,18 @@ FindOrCreateFmtScnStorage(
 	Tcl_InitCustomHashTable(&FmtScnHashTable, TCL_CUSTOM_TYPE_KEYS,
 		&ClockFmtScnStorageHashKeyType);
 
-	initialized = 1;
+	initialized = true;
     }
 
     /* get or create entry (and alocate storage) */
-    hPtr = Tcl_AttemptCreateHashEntry(&FmtScnHashTable, strFmt, &isNew);
+    Tcl_HashEntry *hPtr = Tcl_AttemptCreateHashEntry(&FmtScnHashTable, strFmt,
+	    &isNew);
     if (hPtr != NULL) {
 	fss = FmtScn4HashEntry(hPtr);
 
 #if CLOCK_FMT_SCN_STORAGE_GC_SIZE > 0
 	/* unlink if it is currently in GC */
-	if (isNew == 0 && fss->objRefCount == 0) {
+	if (!isNew && fss->objRefCount == 0) {
 	    ClockFmtScnStorage_GC_Out(fss);
 	}
 #endif
@@ -1550,18 +1550,17 @@ ClockScnToken_Month_Proc(
 #else
     static int monthsKeys[] = {MCLIT_MONTHS_FULL, MCLIT_MONTHS_ABBREV, 0};
 
-    int ret, val;
-    TclStrIdxTree *idxTree;
     MinMax len = DetermineGreedySearchLen(opts, info, tok);
 
     /* get or create tree in msgcat dict */
 
-    idxTree = ClockMCGetMultiListIdxTree(opts, MCLIT_MONTHS_COMB, monthsKeys);
+    TclStrIdxTree *idxTree = ClockMCGetMultiListIdxTree(opts, MCLIT_MONTHS_COMB,
+	    monthsKeys);
     if (idxTree == NULL) {
 	return TCL_ERROR;
     }
 
-    ret = ClockStrIdxTreeSearch(info, idxTree, &val, len.min, len.max);
+    int val, ret = ClockStrIdxTreeSearch(info, idxTree, &val, len.min, len.max);
     if (ret != TCL_OK) {
 	return ret;
     }
@@ -1579,7 +1578,6 @@ ClockScnToken_DayOfWeek_Proc(
 {
     static int dowKeys[] = {MCLIT_DAYS_OF_WEEK_ABBREV, MCLIT_DAYS_OF_WEEK_FULL, 0};
 
-    int ret, val;
     char curTok = *tok->tokWord.start;
     TclStrIdxTree *idxTree;
     MinMax len = DetermineGreedySearchLen(opts, info, tok);
@@ -1587,7 +1585,7 @@ ClockScnToken_DayOfWeek_Proc(
     /* %u %w %Ou %Ow */
     if (curTok != 'a' && curTok != 'A'
 	    && ((len.min <= 1 && len.max >= 1) || PTR2INT(tok->map->data))) {
-	val = -1;
+	int val = -1;
 
 	if (PTR2INT(tok->map->data) == 0) {
 	    if (*yyInput >= '0' && *yyInput <= '9') {
@@ -1599,7 +1597,7 @@ ClockScnToken_DayOfWeek_Proc(
 		return TCL_ERROR;
 	    }
 
-	    ret = ClockStrIdxTreeSearch(info, idxTree, &val, len.min, len.max);
+	    int ret = ClockStrIdxTreeSearch(info, idxTree, &val, len.min, len.max);
 	    if (ret != TCL_OK) {
 		return ret;
 	    }
@@ -1629,7 +1627,7 @@ ClockScnToken_DayOfWeek_Proc(
 	return TCL_ERROR;
     }
 
-    ret = ClockStrIdxTreeSearch(info, idxTree, &val, len.min, len.max);
+    int val, ret = ClockStrIdxTreeSearch(info, idxTree, &val, len.min, len.max);
     if (ret != TCL_OK) {
 	return ret;
     }
@@ -3564,7 +3562,7 @@ ClockFrmScnFinalize(void)
     ClockFmtScnStorage_GC.count = 0;
 #endif
     if (initialized) {
-	initialized = 0;
+	initialized = false;
 	Tcl_DeleteHashTable(&FmtScnHashTable);
     }
     Tcl_MutexUnlock(&ClockFmtMutex);

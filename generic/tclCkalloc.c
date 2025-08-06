@@ -18,9 +18,6 @@
 #include "tclInt.h"
 #include <assert.h>
 
-#define FALSE	0
-#define TRUE	1
-
 #undef Tcl_Alloc
 #undef Tcl_Free
 #undef Tcl_Realloc
@@ -98,12 +95,12 @@ static size_t current_malloc_packets = 0;
 static size_t  maximum_malloc_packets = 0;
 static size_t break_on_malloc = 0;
 static size_t trace_on_at_malloc = 0;
-static int alloc_tracing = FALSE;
-static int init_malloced_bodies = TRUE;
+static bool alloc_tracing = false;
+static bool init_malloced_bodies = true;
 #ifdef MEM_VALIDATE
-static int validate_memory = TRUE;
+static bool validate_memory = true;
 #else
-static int validate_memory = FALSE;
+static bool validate_memory = false;
 #endif
 
 /*
@@ -126,7 +123,7 @@ static char dumpFile[100];	/* Records where to dump memory allocation
  */
 
 static Tcl_Mutex *ckallocMutexPtr;
-static int ckallocInit = 0;
+static bool ckallocInit = false;
 
 /*
  *----------------------------------------------------------------------
@@ -144,7 +141,7 @@ void
 TclInitDbCkalloc(void)
 {
     if (!ckallocInit) {
-	ckallocInit = 1;
+	ckallocInit = true;
 	ckallocMutexPtr = Tcl_GetAllocMutex();
 #if !TCL_THREADS
 	/* Silence compiler warning */
@@ -220,17 +217,17 @@ ValidateMemory(
 				 * Tcl_ValidateAllMemory */
     int line,			/* Line number of call to
 				 * Tcl_ValidateAllMemory */
-    int nukeGuards)		/* If non-zero, indicates that the memory
+    bool nukeGuards)		/* If true, indicates that the memory
 				 * guards are to be reset to 0 after they have
 				 * been printed */
 {
     size_t idx;
-    int guard_failed = FALSE;
+    bool guard_failed = false;
 
     for (idx = 0; idx < LOW_GUARD_SIZE; idx++) {
 	int byte = *(memHeaderP->low_guard + idx);
 	if (byte != GUARD_VALUE) {
-	    guard_failed = TRUE;
+	    guard_failed = true;
 	    fflush(stdout);
 	    byte &= 0xFF;
 	    fprintf(stderr, "low guard byte %" TCL_Z_MODIFIER "u is 0x%x  \t%c\n", idx, byte,
@@ -251,7 +248,7 @@ ValidateMemory(
     for (idx = 0; idx < HIGH_GUARD_SIZE; idx++) {
 	int byte = hiPtr[idx];
 	if (byte != GUARD_VALUE) {
-	    guard_failed = TRUE;
+	    guard_failed = true;
 	    fflush(stdout);
 	    byte &= 0xFF;
 	    fprintf(stderr, "hi guard byte %" TCL_Z_MODIFIER "u is 0x%x  \t%c\n", idx, byte,
@@ -306,7 +303,7 @@ Tcl_ValidateAllMemory(
     }
     Tcl_MutexLock(ckallocMutexPtr);
     for (memScanP = allocHead; memScanP != NULL; memScanP = memScanP->flink) {
-	ValidateMemory(memScanP, file, line, FALSE);
+	ValidateMemory(memScanP, file, line, false);
     }
     Tcl_MutexUnlock(ckallocMutexPtr);
 }
@@ -438,7 +435,7 @@ Tcl_DbCkalloc(
 	fprintf(stderr, "reached malloc trace enable point (%" TCL_Z_MODIFIER "u)\n",
 		total_mallocs);
 	fflush(stderr);
-	alloc_tracing = TRUE;
+	alloc_tracing = true;
 	trace_on_at_malloc = 0;
     }
 
@@ -527,7 +524,7 @@ Tcl_AttemptDbCkalloc(
 	fprintf(stderr, "reached malloc trace enable point (%" TCL_Z_MODIFIER "u)\n",
 		total_mallocs);
 	fflush(stderr);
-	alloc_tracing = TRUE;
+	alloc_tracing = true;
 	trace_on_at_malloc = 0;
     }
 
@@ -605,7 +602,7 @@ Tcl_DbCkfree(
     }
 
     Tcl_MutexLock(ckallocMutexPtr);
-    ValidateMemory(memp, file, line, TRUE);
+    ValidateMemory(memp, file, line, true);
     if (init_malloced_bodies) {
 	memset(ptr, GUARD_VALUE, memp->length);
     }

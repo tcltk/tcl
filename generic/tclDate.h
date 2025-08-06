@@ -172,8 +172,8 @@ typedef struct TclDateFields {
     int tzOffset;		/* Time zone offset in seconds east of
 				 * Greenwich */
     Tcl_WideInt julianDay;	/* Julian Day Number in local time zone */
-    int isBce;			/* 1 if BCE */
-    int gregorian;		/* Flag == 1 if the date is Gregorian */
+    bool isBce;			/* True if BCE */
+    bool gregorian;		/* Flag true if the date is Gregorian */
     int year;			/* Year of the era */
     int dayOfYear;		/* Day of the year (1 January == 1) */
     int month;			/* Month number */

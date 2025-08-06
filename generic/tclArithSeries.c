@@ -607,7 +607,7 @@ NewArithSeriesDbl(
 static int
 assignNumber(
     Tcl_Interp *interp,
-    int useDoubles,
+    bool useDoubles,
     Tcl_WideInt *intNumberPtr,
     double *dblNumberPtr,
     Tcl_Obj *numberObj)
@@ -1277,18 +1277,17 @@ ArithSeriesInOperation(
 {
     ArithSeries *repPtr = (ArithSeries *)
 	    arithSeriesObjPtr->internalRep.twoPtrValue.ptr1;
-    int status;
     Tcl_Size index, incr, elen, vlen;
 
     if (repPtr->isDouble) {
 	ArithSeriesDbl *dblRepPtr = (ArithSeriesDbl *) repPtr;
 	double y;
-	int test = 0;
+	bool test = false;
 
 	incr = 0; // Check index+incr where incr is 0 and 1
-	status = Tcl_GetDoubleFromObj(interp, valueObj, &y);
+	int status = Tcl_GetDoubleFromObj(interp, valueObj, &y);
 	if (status != TCL_OK) {
-	    test = 0;
+	    test = false;
 	} else {
 	    const char *vstr = TclGetStringFromObj(valueObj, &vlen);
 	    index = (y - dblRepPtr->start) / dblRepPtr->step;
@@ -1301,7 +1300,7 @@ ArithSeriesInOperation(
 		const char *estr = elemObj ? TclGetStringFromObj(elemObj, &elen) : "";
 
 		/* "in" operation defined as a string compare */
-		test = (elen == vlen) ? (memcmp(estr, vstr, elen) == 0) : 0;
+		test = (elen == vlen) ? (memcmp(estr, vstr, elen) == 0) : false;
 		Tcl_BounceRefCount(elemObj);
 		/* Stop if we have a match */
 		if (test) {
@@ -1317,7 +1316,7 @@ ArithSeriesInOperation(
 	ArithSeriesInt *intRepPtr = (ArithSeriesInt *) repPtr;
 	Tcl_WideInt y;
 
-	status = Tcl_GetWideIntFromObj(NULL, valueObj, &y);
+	int status = Tcl_GetWideIntFromObj(NULL, valueObj, &y);
 	if (status != TCL_OK) {
 	    if (boolResult) {
 		*boolResult = 0;

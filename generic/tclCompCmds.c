@@ -136,7 +136,7 @@ TclCompileAppendCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *varTokenPtr, *valueTokenPtr;
-    int isScalar;
+    bool isScalar;
     Tcl_LVTIndex localIndex;
     Tcl_Size numWords = parsePtr->numWords;
 
@@ -260,7 +260,7 @@ TclCompileArrayExistsCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr;
-    int isScalar;
+    bool isScalar;
     Tcl_LVTIndex localIndex;
 
     if (parsePtr->numWords != 2) {
@@ -292,7 +292,7 @@ TclCompileArraySetCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *varTokenPtr, *dataTokenPtr;
-    int isScalar, code = TCL_OK, isDataLiteral, isDataValid, isDataEven;
+    int code = TCL_OK;
     Tcl_Size len;
     Tcl_LVTIndex keyVar, valVar, localIndex;
     Tcl_AuxDataRef infoIndex;
@@ -307,10 +307,10 @@ TclCompileArraySetCmd(
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
     dataTokenPtr = TokenAfter(varTokenPtr);
     TclNewObj(literalObj);
-    isDataLiteral = TclWordKnownAtCompileTime(dataTokenPtr, literalObj);
-    isDataValid = (isDataLiteral
+    bool isDataLiteral = TclWordKnownAtCompileTime(dataTokenPtr, literalObj);
+    bool isDataValid = (isDataLiteral
 	    && TclListObjLength(NULL, literalObj, &len) == TCL_OK);
-    isDataEven = (isDataValid && (len & 1) == 0);
+    bool isDataEven = (isDataValid && (len & 1) == 0);
 
     /*
      * Special case: literal odd-length argument is always an error.
@@ -345,6 +345,7 @@ TclCompileArraySetCmd(
 	goto done;
     }
 
+    bool isScalar;
     PushVarNameWord(varTokenPtr, TCL_NO_ELEMENT, &localIndex, &isScalar, 1);
     if (!isScalar || localIndex > UINT_MAX) {
 	code = TCL_ERROR;
@@ -388,7 +389,7 @@ TclCompileArraySetCmd(
 	 */
 
 	localIndex = TclFindCompiledLocal(varTokenPtr->start,
-		varTokenPtr->size, 1, envPtr);
+		varTokenPtr->size, true, envPtr);
 	PUSH(			"0");
 	OP(			SWAP);
 	OP4(			UPVAR, localIndex);
@@ -471,7 +472,7 @@ TclCompileArrayUnsetCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr = TokenAfter(parsePtr->tokenPtr);
-    int isScalar;
+    bool isScalar;
     Tcl_LVTIndex localIndex;
     Tcl_BytecodeLabel noSuchArray, end;
 
@@ -932,7 +933,7 @@ TclCompileConstCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *varTokenPtr, *valueTokenPtr;
-    int isScalar;
+    bool isScalar;
     Tcl_LVTIndex localIndex;
 
     /*
@@ -2110,13 +2111,13 @@ TclCompileDictWithCmd(
      * to hold the temporary variables (used to keep stack usage simple).
      */
 
-    int bodyIsEmpty = 1;
+    bool bodyIsEmpty = true;
     if (!TclIsEmptyToken(tokenPtr)) {
 	if (!EnvIsProc(envPtr)) {
 	    return TclCompileBasicMin2ArgCmd(interp, parsePtr, cmdPtr,
 		    envPtr);
 	}
-	bodyIsEmpty = 0;
+	bodyIsEmpty = false;
     }
 
     /* Now we commit to issuing code. */
@@ -2655,7 +2656,7 @@ TclCompileForCmd(
     CONTINUE_TARGET(	bodyRange);
     if (!TclIsEmptyToken(nextTokenPtr)) {
 	nextRange = MAKE_LOOP_RANGE();
-	envPtr->exceptAuxArrayPtr[nextRange].supportsContinue = 0;
+	envPtr->exceptAuxArrayPtr[nextRange].supportsContinue = false;
 	CATCH_RANGE(nextRange) {
 	    BODY(		nextTokenPtr, 3);
 	}

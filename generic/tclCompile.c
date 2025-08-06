@@ -28,7 +28,7 @@
 
 #ifdef TCL_COMPILE_DEBUG
 int tclTraceCompile = TCL_TRACE_BYTECODE_COMPILE_NONE;
-static int traceInitialized = 0;
+static bool traceInitialized = false;
 #endif
 
 /*
@@ -1010,7 +1010,7 @@ static void		EnterCmdStartData(CompileEnv *envPtr,
 static void		FreeByteCodeInternalRep(Tcl_Obj *objPtr);
 static void		FreeSubstCodeInternalRep(Tcl_Obj *objPtr);
 static int		GetCmdLocEncodingSize(CompileEnv *envPtr);
-static int		IsCompactibleCompileEnv(CompileEnv *envPtr);
+static bool		IsCompactibleCompileEnv(CompileEnv *envPtr);
 static void		PreventCycle(Tcl_Obj *objPtr, CompileEnv *envPtr);
 #ifdef TCL_COMPILE_STATS
 static void		RecordByteCodeStats(ByteCode *codePtr);
@@ -1113,7 +1113,7 @@ TclSetByteCodeFromAny(
 	    Tcl_Panic("SetByteCodeFromAny: "
 		    "unable to create link for tcl_traceCompile variable");
 	}
-	traceInitialized = 1;
+	traceInitialized = true;
     }
 #endif
 
@@ -1473,7 +1473,7 @@ CleanupByteCode(
  * ---------------------------------------------------------------------
  */
 
-static int
+static bool
 IsCompactibleCompileEnv(
     CompileEnv *envPtr)
 {
@@ -1488,7 +1488,7 @@ IsCompactibleCompileEnv(
 
 	if (nsPtr && (strcmp(nsPtr->fullName, "::tcl") == 0
 		|| strncmp(nsPtr->fullName, "::tcl::", 7) == 0)) {
-	    return 1;
+	    return true;
 	}
     }
 
@@ -1507,23 +1507,26 @@ IsCompactibleCompileEnv(
 	case INST_INVOKE_STK:
 	case INST_INVOKE_EXPANDED:
 	case INST_INVOKE_REPLACE:
-	    return 0;
+	    return false;
 	    /* Runtime evals */
 	case INST_EVAL_STK:
 	case INST_EXPR_STK:
 	case INST_YIELD:
 	case INST_YIELD_TO_INVOKE:
-	    return 0;
+	    return false;
 	    /* Upvars */
 	case INST_UPVAR:
 	case INST_NSUPVAR:
 	case INST_VARIABLE:
-	    return 0;
+	    return false;
 	    /* TclOO::next is NOT a problem: puts stack frame out of way.
 	     * There's a way to do it, but it's beneath the threshold of
 	     * likelihood. */
 	case INST_TCLOO_NEXT:
 	case INST_TCLOO_NEXT_CLASS:
+	    /* Uplevel is itself fine under normal circumstances; it's what is
+	     * upleveled into that may have problems. */
+	case INST_UPLEVEL:
 	default:
 	    int size = tclInstructionTable[*pc].numBytes;
 	    assert (size > 0);
@@ -1532,7 +1535,7 @@ IsCompactibleCompileEnv(
 	}
     }
 
-    return 1;
+    return true;
 }
 
 /*
@@ -1739,12 +1742,12 @@ void
 TclInitCompileEnv(
     Tcl_Interp *interp,		/* The interpreter for which a CompileEnv
 				 * structure is initialized. */
-    CompileEnv *envPtr,/* Points to the CompileEnv structure to
+    CompileEnv *envPtr,		/* Points to the CompileEnv structure to
 				 * initialize. */
     const char *stringPtr,	/* The source string to be compiled. */
     size_t numBytes,		/* Number of bytes in source string. */
     const CmdFrame *invoker,	/* Location context invoking the bcc */
-    Tcl_Size word)			/* Index of the word in that context getting
+    Tcl_Size word)		/* Index of the word in that context getting
 				 * compiled */
 {
     Interp *iPtr = (Interp *) interp;
@@ -1766,22 +1769,22 @@ TclInitCompileEnv(
     envPtr->codeStart = envPtr->staticCodeSpace;
     envPtr->codeNext = envPtr->codeStart;
     envPtr->codeEnd = envPtr->codeStart + COMPILEENV_INIT_CODE_BYTES;
-    envPtr->mallocedCodeArray = 0;
+    envPtr->mallocedCodeArray = false;
 
     envPtr->literalArrayPtr = envPtr->staticLiteralSpace;
     envPtr->literalArrayNext = 0;
     envPtr->literalArrayEnd = COMPILEENV_INIT_NUM_OBJECTS;
-    envPtr->mallocedLiteralArray = 0;
+    envPtr->mallocedLiteralArray = false;
 
     envPtr->exceptArrayPtr = envPtr->staticExceptArraySpace;
     envPtr->exceptAuxArrayPtr = envPtr->staticExAuxArraySpace;
     envPtr->exceptArrayNext = 0;
     envPtr->exceptArrayEnd = COMPILEENV_INIT_EXCEPT_RANGES;
-    envPtr->mallocedExceptArray = 0;
+    envPtr->mallocedExceptArray = false;
 
     envPtr->cmdMapPtr = envPtr->staticCmdMapSpace;
     envPtr->cmdMapEnd = COMPILEENV_INIT_CMD_MAP_SIZE;
-    envPtr->mallocedCmdMap = 0;
+    envPtr->mallocedCmdMap = false;
     envPtr->atCmdStart = 1;
     envPtr->expandCount = 0;
 
@@ -1851,7 +1854,7 @@ TclInitCompileEnv(
 	 */
 
 	CmdFrame *ctxPtr = (CmdFrame *)TclStackAlloc(interp, sizeof(CmdFrame));
-	int pc = 0;
+	bool pc = false;
 
 	*ctxPtr = *invoker;
 	if (invoker->type == TCL_LOCATION_BC) {
@@ -1861,7 +1864,7 @@ TclInitCompileEnv(
 	     */
 
 	    TclGetSrcInfoForPc(ctxPtr);
-	    pc = 1;
+	    pc = true;
 	}
 
 	if ((ctxPtr->nline <= word) || (ctxPtr->line[word] < 0)) {
@@ -1919,7 +1922,7 @@ TclInitCompileEnv(
     envPtr->auxDataArrayPtr = envPtr->staticAuxDataArraySpace;
     envPtr->auxDataArrayNext = 0;
     envPtr->auxDataArrayEnd = COMPILEENV_INIT_AUX_DATA_SIZE;
-    envPtr->mallocedAuxDataArray = 0;
+    envPtr->mallocedAuxDataArray = false;
 }
 
 /*
@@ -2682,7 +2685,8 @@ TclCompileVarSubst(
 
     Tcl_Size localVar = TCL_INDEX_NONE;
     if (localVarName != -1) {
-	localVar = TclFindCompiledLocal(name, nameBytes, localVarName, envPtr);
+	localVar = TclFindCompiledLocal(name, nameBytes, (bool)localVarName,
+		envPtr);
     }
     if (localVar < 0) {
 	PushLiteral(envPtr, name, nameBytes);
@@ -2744,11 +2748,11 @@ TclCompileTokens(
 
     Tcl_Size numCL = 0;
     Tcl_Size maxNumCL = 0;
-    int isLiteral = 1;
+    bool isLiteral = true;
     for (Tcl_Size i=0 ; i < count; i++) {
 	if ((tokenPtr[i].type != TCL_TOKEN_TEXT)
 		&& (tokenPtr[i].type != TCL_TOKEN_BS)) {
-	    isLiteral = 0;
+	    isLiteral = false;
 	    break;
 	}
     }
@@ -2985,7 +2989,8 @@ TclCompileExprWords(
      */
 
     if ((numWords == 1) && (tokenPtr->type == TCL_TOKEN_SIMPLE_WORD)) {
-	TclCompileExpr(interp, tokenPtr[1].start,tokenPtr[1].size, envPtr, 1);
+	TclCompileExpr(interp, tokenPtr[1].start, tokenPtr[1].size, envPtr,
+		true);
 	return;
     }
 
@@ -3295,8 +3300,8 @@ TclFindCompiledLocal(
 				 * scalar or array variable. If NULL, a
 				 * temporary var should be created. */
     Tcl_Size nameBytes,		/* Number of bytes in the name. */
-    int create,			/* If 1, allocate a local frame entry for the
-				 * variable if it is new. */
+    bool create,		/* If true, allocate a local frame entry for
+				 * the variable if it is new. */
     CompileEnv *envPtr)		/* Points to the current compile environment*/
 {
     Tcl_LVTIndex localVar = TCL_INDEX_NONE;
@@ -3429,7 +3434,7 @@ TclExpandCodeArray(
 
 	memcpy(newPtr, envPtr->codeStart, currBytes);
 	envPtr->codeStart = newPtr;
-	envPtr->mallocedCodeArray = 1;
+	envPtr->mallocedCodeArray = true;
     }
 
     envPtr->codeNext = envPtr->codeStart + currBytes;
@@ -3496,7 +3501,7 @@ EnterCmdStartData(
 
 	    memcpy(newPtr, envPtr->cmdMapPtr, currBytes);
 	    envPtr->cmdMapPtr = newPtr;
-	    envPtr->mallocedCmdMap = 1;
+	    envPtr->mallocedCmdMap = true;
 	}
 	envPtr->cmdMapEnd = newElems;
     }
@@ -3697,7 +3702,7 @@ TclCreateExceptRange(
 	    memcpy(newPtr2, envPtr->exceptAuxArrayPtr, currBytes2);
 	    envPtr->exceptArrayPtr = newPtr;
 	    envPtr->exceptAuxArrayPtr = newPtr2;
-	    envPtr->mallocedExceptArray = 1;
+	    envPtr->mallocedExceptArray = true;
 	}
 	envPtr->exceptArrayEnd = newElems;
     }
@@ -3713,7 +3718,7 @@ TclCreateExceptRange(
     rangePtr->catchOffset = TCL_INDEX_NONE;
 
     ExceptionAux *auxPtr = &envPtr->exceptAuxArrayPtr[index];
-    auxPtr->supportsContinue = 1;
+    auxPtr->supportsContinue = true;
     auxPtr->stackDepth = envPtr->currStackDepth;
     auxPtr->expandTarget = envPtr->expandCount;
     auxPtr->expandTargetDepth = TCL_INDEX_NONE;
@@ -4046,7 +4051,7 @@ TclCreateAuxData(
 
 	    memcpy(newPtr, envPtr->auxDataArrayPtr, currBytes);
 	    envPtr->auxDataArrayPtr = newPtr;
-	    envPtr->mallocedAuxDataArray = 1;
+	    envPtr->mallocedAuxDataArray = true;
 	}
 	envPtr->auxDataArrayEnd = newElems;
     }
@@ -4084,7 +4089,7 @@ TclInitJumpFixupArray(
     fixupArrayPtr->fixup = fixupArrayPtr->staticFixupSpace;
     fixupArrayPtr->next = 0;
     fixupArrayPtr->end = JUMPFIXUP_INIT_ENTRIES - 1;
-    fixupArrayPtr->mallocedArray = 0;
+    fixupArrayPtr->mallocedArray = true;
 }
 
 /*
@@ -4135,7 +4140,7 @@ TclExpandJumpFixupArray(
 
 	memcpy(newPtr, fixupArrayPtr->fixup, currBytes);
 	fixupArrayPtr->fixup = newPtr;
-	fixupArrayPtr->mallocedArray = 1;
+	fixupArrayPtr->mallocedArray = true;
     }
     fixupArrayPtr->end = newElems;
 }
@@ -4781,7 +4786,7 @@ TclLocalScalarFromToken(
     Tcl_Token *tokenPtr,
     CompileEnv *envPtr)
 {
-    int isScalar;
+    bool isScalar;
     Tcl_LVTIndex index;
 
     TclPushVarName(NULL, tokenPtr, envPtr, TCL_NO_ELEMENT, &index, &isScalar);
@@ -4840,10 +4845,10 @@ TclPushVarName(
     CompileEnv *envPtr,		/* Holds resulting instructions. */
     int flags,			/* TCL_NO_ELEMENT. */
     Tcl_Size *localIndexPtr,	/* Must not be NULL. */
-    int *isScalarPtr)		/* Must not be NULL. */
+    bool *isScalarPtr)		/* Must not be NULL. */
 {
     Tcl_Token *elemTokenPtr = NULL;
-    int simpleVarName = 0, allocedTokens = 0;
+    bool simpleVarName = false, allocedTokens = false;
     Tcl_Size elemTokenCount = 0, removedParen = 0;
     const char *name = NULL, *elName = NULL;
     Tcl_Size nameLen = 0, elNameLen = 0;
@@ -4864,7 +4869,7 @@ TclPushVarName(
 	 * strings. If it is not a local variable, look it up at runtime.
 	 */
 
-	simpleVarName = 1;
+	simpleVarName = true;
 
 	name = varTokenPtr[1].start;
 	nameLen = varTokenPtr[1].size;
@@ -4892,7 +4897,7 @@ TclPushVarName(
 		 */
 
 		elemTokenPtr = (Tcl_Token *)TclStackAlloc(interp, sizeof(Tcl_Token));
-		allocedTokens = 1;
+		allocedTokens = true;
 		elemTokenPtr->type = TCL_TOKEN_TEXT;
 		elemTokenPtr->start = elName;
 		elemTokenPtr->size = elNameLen;
@@ -4908,11 +4913,11 @@ TclPushVarName(
 	 * Check for parentheses inside first token.
 	 */
 
-	simpleVarName = 0;
+	simpleVarName = false;
 	const char *p = varTokenPtr[1].start;
 	for (const char *last = p + varTokenPtr[1].size; p < last;  p++) {
 	    if (*p == '(') {
-		simpleVarName = 1;
+		simpleVarName = true;
 		break;
 	    }
 	}
@@ -4945,7 +4950,7 @@ TclPushVarName(
 
 		    elemTokenPtr = (Tcl_Token *)TclStackAlloc(interp,
 			    n * sizeof(Tcl_Token));
-		    allocedTokens = 1;
+		    allocedTokens = true;
 		    elemTokenPtr->type = TCL_TOKEN_TEXT;
 		    elemTokenPtr->start = elName;
 		    elemTokenPtr->size = remainingLen;
@@ -4975,11 +4980,11 @@ TclPushVarName(
 	 * See whether name has any namespace separators (::'s).
 	 */
 
-	int hasNsQualifiers = 0;
+	bool hasNsQualifiers = false;
 
 	for (const char *p = name, *last = p + nameLen-1;  p < last;  p++) {
 	    if ((p[0] == ':') && (p[1] == ':')) {
-		hasNsQualifiers = 1;
+		hasNsQualifiers = true;
 		break;
 	    }
 	}
@@ -4991,7 +4996,7 @@ TclPushVarName(
 	 */
 
 	if (!hasNsQualifiers) {
-	    localIndex = TclFindCompiledLocal(name, nameLen, 1, envPtr);
+	    localIndex = TclFindCompiledLocal(name, nameLen, true, envPtr);
 	}
 	if (interp && localIndex < 0) {
 	    PushLiteral(envPtr, name, nameLen);

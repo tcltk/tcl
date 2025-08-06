@@ -70,6 +70,9 @@
 #include <stdint.h>
 #include <string.h>
 #include <locale.h>
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ < 202311L
+#include <stdbool.h>
+#endif
 
 /*
  * Ensure WORDS_BIGENDIAN is defined correctly:
@@ -149,7 +152,6 @@
 #elif defined(__GNUC__)
 #define TCL_UNREACHABLE()	__builtin_unreachable()
 #elif defined(_MSC_VER)
-#include <stdbool.h>
 #define TCL_UNREACHABLE()	__assume(false)
 #else
 #define TCL_UNREACHABLE()	((void) 0)

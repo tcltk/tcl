@@ -141,7 +141,7 @@ typedef struct ExceptionRange {
  */
 
 typedef struct ExceptionAux {
-    int supportsContinue;	/* Whether this exception range will have a
+    bool supportsContinue;	/* Whether this exception range will have a
 				 * continueOffset created for it; if it is a
 				 * loop exception range that *doesn't* have
 				 * one (see [for] next-clause) then we must
@@ -346,16 +346,20 @@ typedef struct CompileEnv {
     unsigned char *codeNext;	/* Points to next code array byte to use. */
     unsigned char *codeEnd;	/* Points just after the last allocated code
 				 * array byte. */
-    int mallocedCodeArray;	/* Set 1 if code array was expanded and
+    bool mallocedCodeArray;	/* True if code array was expanded and
 				 * codeStart points into the heap.*/
-    int mallocedExceptArray;	/* 1 if ExceptionRange array was expanded and
-				 * exceptArrayPtr points in heap, else 0. */
+    bool mallocedExceptArray;	/* True if ExceptionRange array was expanded and
+				 * exceptArrayPtr points in heap. */
+    bool mallocedLiteralArray;	/* True if object array was expanded and objArray
+				 * points into the heap. */
+    bool mallocedCmdMap;	/* True if command map array was expanded and
+				 * cmdMapPtr points in the heap. */
+    bool mallocedAuxDataArray;	/* True if aux data array was expanded and
+				 * auxDataArrayPtr points in heap. */
     LiteralEntry *literalArrayPtr;
 				/* Points to start of LiteralEntry array. */
     Tcl_Size literalArrayNext;	/* Index of next free object array entry. */
     Tcl_Size literalArrayEnd;	/* Index just after last obj array entry. */
-    int mallocedLiteralArray;	/* 1 if object array was expanded and objArray
-				 * points into the heap, else 0. */
     ExceptionRange *exceptArrayPtr;
 				/* Points to start of the ExceptionRange
 				 * array. */
@@ -375,10 +379,6 @@ typedef struct CompileEnv {
 				 * to use; (numCommands-1) is the entry index
 				 * for the last command. */
     Tcl_Size cmdMapEnd;		/* Index after last CmdLocation entry. */
-    int mallocedCmdMap;		/* 1 if command map array was expanded and
-				 * cmdMapPtr points in the heap, else 0. */
-    int mallocedAuxDataArray;	/* 1 if aux data array was expanded and
-				 * auxDataArrayPtr points in heap else 0. */
     AuxData *auxDataArrayPtr;	/* Points to auxiliary data array start. */
     Tcl_Size auxDataArrayNext;	/* Next free compile aux data array index.
 				 * auxDataArrayNext is the number of aux data
@@ -1069,8 +1069,8 @@ typedef struct JumpFixupArray {
     JumpFixup *fixup;		/* Points to start of jump fixup array. */
     Tcl_Size next;		/* Index of next free array entry. */
     Tcl_Size end;		/* Index of last usable entry in array. */
-    int mallocedArray;		/* 1 if array was expanded and fixups points
-				 * into the heap, else 0. */
+    bool mallocedArray;		/* true if array was expanded and fixups points
+				 * into the heap, else false. */
     JumpFixup staticFixupSpace[JUMPFIXUP_INIT_ENTRIES];
 				/* Initial storage for jump fixup array. */
 } JumpFixupArray;
@@ -1262,7 +1262,7 @@ MODULE_SCOPE void	TclCompileCmdWord(Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, Tcl_Size count,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCompileExpr(Tcl_Interp *interp, const char *script,
-			    Tcl_Size numBytes, CompileEnv *envPtr, int optimize);
+			    Tcl_Size numBytes, CompileEnv *envPtr, bool optimize);
 MODULE_SCOPE void	TclCompileExprWords(Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, size_t numWords,
 			    CompileEnv *envPtr);
@@ -1301,7 +1301,7 @@ MODULE_SCOPE int	TclNRExecuteByteCode(Tcl_Interp *interp,
 			    ByteCode *codePtr);
 MODULE_SCOPE Tcl_Obj *	TclFetchLiteral(CompileEnv *envPtr, Tcl_Size index);
 MODULE_SCOPE Tcl_LVTIndex TclFindCompiledLocal(const char *name, Tcl_Size nameChars,
-			    int create, CompileEnv *envPtr);
+			    bool create, CompileEnv *envPtr);
 MODULE_SCOPE void	TclFixupForwardJump(CompileEnv *envPtr,
 			    JumpFixup *jumpFixupPtr, Tcl_Size jumpDist);
 MODULE_SCOPE void	TclFreeCompileEnv(CompileEnv *envPtr);
@@ -1348,7 +1348,7 @@ MODULE_SCOPE void	TclPrintSource(FILE *outFile,
 MODULE_SCOPE void	TclPushVarName(Tcl_Interp *interp,
 			    Tcl_Token *varTokenPtr, CompileEnv *envPtr,
 			    int flags, Tcl_LVTIndex *localIndexPtr,
-			    int *isScalarPtr);
+			    bool *isScalarPtr);
 MODULE_SCOPE void	TclPreserveByteCode(ByteCode *codePtr);
 MODULE_SCOPE int	TclRegisterLiteralObj(CompileEnv *envPtr,
 			    Tcl_Obj *objPtr, int flags);
@@ -1990,7 +1990,7 @@ ExceptionRangeEnds(
  */
 
 #define AnonymousLocal(envPtr) \
-    (TclFindCompiledLocal(NULL, /*nameChars*/ 0, /*create*/ 1, (envPtr)))
+    (TclFindCompiledLocal(NULL, /*nameChars*/ 0, /*create*/ true, (envPtr)))
 #define LocalScalar(chars,len,envPtr) \
     TclLocalScalar(chars, len, envPtr)
 #define LocalScalarFromToken(tokenPtr,envPtr) \
