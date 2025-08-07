@@ -31,11 +31,15 @@ test zipfs-0.1 {zipfs basics} -constraints zipfs -body {
     expr {${ziproot} in [file volumes]}
 } -result 1
 
-if {[string match ${ziproot}* $tcl_library]} {
-    testConstraint zipfslib 1
-    set zipLibTop [file tail [file join {*}[lrange [file split $tcl_library] 0 1]]]
-} else {
+if {[::tcl::build-info no-zipfs]} {
+	# Tcl library is not embedded in zipfs volume
     set zipLibTop ""
+} else {
+    testConstraint zipfslib 1
+    if {![string match [zipfs root]* $tcl_library]} {
+	    error "Build indicates embedded tcl library in zipfs but tcl_library points to $tcl_library"
+	}
+    set zipLibTop [file tail [file join {*}[lrange [file split $tcl_library] 0 1]]]
 }
 
 test zipfs-0.2 {zipfs basics} -constraints zipfslib -body {
