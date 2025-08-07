@@ -173,6 +173,7 @@ TCL_TEST_LIBRARY=$(ROOT:\=/)/library
 !message *** Tcl script library will be appended to the binary.
 TCL_EMBED_SCRIPTS = 1
 TCL_TEST_LIBRARY=
+cflags = -DZIPFS_BUILD=1 $(cflags)
 !endif
 
 # We need versions of various core packages to generate appropriate
