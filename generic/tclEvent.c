@@ -1102,6 +1102,9 @@ static const struct {
 #ifdef STATIC_BUILD
 	    ".static"
 #endif
+#if !(defined(ZIPFS_BUILD) && ZIPFS_BUILD)
+	    ".no-zipfs"
+#endif
 #ifndef TCL_WITH_EXTERNAL_TOMMATH
 	    ".tommath-0103"
 #endif
