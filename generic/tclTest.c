@@ -502,6 +502,9 @@ static const char version[] = TCL_PATCH_LEVEL "+" STRINGIFY(TCL_VERSION_UUID)
 #ifndef TCL_CFG_OPTIMIZED
 	    ".no-optimize"
 #endif
+#if !(defined(ZIPFS_BUILD) && ZIPFS_BUILD)
+	    ".no-zipfs"
+#endif
 #ifdef __OBJC__
 	    ".objective-c"
 #if defined(__cplusplus)

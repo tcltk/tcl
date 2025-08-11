@@ -16,6 +16,9 @@ if {"::tcltest" ni [namespace children]} {
     package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
+::tcltest::loadTestedCommands
+catch [list package require -exact tcl::test [info patchlevel]]
+
 source [file join [file dirname [info script]] tcltests.tcl]
 
 testConstraint zipfs [expr {[llength [info commands zipfs]]}]
@@ -31,7 +34,7 @@ test zipfs-0.1 {zipfs basics} -constraints zipfs -body {
     expr {${ziproot} in [file volumes]}
 } -result 1
 
-if {[::tcl::build-info no-zipfs]} {
+if {![llength [info commands ::tcl::test::build-info]] || [::tcl::test::build-info no-zipfs]} {
 	# Tcl library is not embedded in zipfs volume
     set zipLibTop ""
 } else {
