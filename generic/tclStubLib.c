@@ -71,7 +71,7 @@ Tcl_InitStubs(
 	}
 	if (stubsPtr && (stubsPtr->magic == ((int)0xFCA3BACB + (int)sizeof(void *)))
 		&& ((exact|0x010000) == 0x070800)) {
-	    /* We are running in Tcl 9.x, but extension is compiled with 8.6 or 8.7 */
+	    /* We are running in Tcl 9.x, but extension is compiled with 8.6 */
 	    stubsPtr->tcl_SetObjResult(interp, stubsPtr->tcl_ObjPrintf(
 		    "this extension is compiled for Tcl %d.%d",
 		    (exact & 0x0FF00)>>8, (exact & 0x0FF0000)>>16));
