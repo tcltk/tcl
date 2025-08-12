@@ -30,7 +30,7 @@ jobs:
         working-directory: unix
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         timeout-minutes: 5
       - name: Install 32-bit dependencies if needed
         # Duplicated from above
