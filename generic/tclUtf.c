@@ -16,13 +16,7 @@
  * Include the static character classification tables and macros.
  */
 
-#ifndef UNICODE_OUT_OF_RANGE
-# if TCL_UTF_MAX > 3 || TCL_MAJOR_VERSION > 8 || TCL_MINOR_VERSION > 6
-#   define UNICODE_OUT_OF_RANGE(ch)	(((ch) & 0x1FFFFF) >= 0x323C0)
-# else
-#   define UNICODE_OUT_OF_RANGE(ch)	(((ch) & 0x1F0000) != 0)
-# endif
-#endif
+#define UNICODE_OUT_OF_RANGE(ch)	(((ch) & 0x1FFFFF) >= 0x323C0)
 
 /*
  * The following masks are used for fast character category tests.

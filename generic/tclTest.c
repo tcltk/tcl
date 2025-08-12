@@ -9095,7 +9095,7 @@ TestUtfToNormalizedCmd(
     char buffer[20] = {0x80};
     char *bufPtr;
     Tcl_Size bufStored = 0;
-    if (bufLen > sizeof(buffer)) {
+    if (bufLen > (int)sizeof(buffer)) {
 	bufPtr = (char *)Tcl_Alloc(bufLen);
     } else {
 	bufPtr = buffer;
@@ -9105,7 +9105,7 @@ TestUtfToNormalizedCmd(
     if (result == TCL_OK) {
 	/* Return as raw bytes, not string */
 	Tcl_SetObjResult(interp,
-	    Tcl_NewByteArrayObj(bufPtr, bufStored));
+	    Tcl_NewByteArrayObj((unsigned char *)bufPtr, bufStored));
     }
     if (bufPtr != buffer) {
 	Tcl_Free(bufPtr);
