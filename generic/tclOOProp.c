@@ -708,7 +708,7 @@ PropNameCompare(
     Tcl_Obj *first = *(Tcl_Obj **) a;
     Tcl_Obj *second = *(Tcl_Obj **) b;
 
-    return TclStringCmp(first, second, 0, 0, TCL_INDEX_NONE);
+    return TclStringCmp(first, second, false, false, TCL_INDEX_NONE);
 }
 
 static inline void

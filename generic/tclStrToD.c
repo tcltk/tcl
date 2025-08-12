@@ -296,7 +296,7 @@ static const Tcl_WideUInt wuipow5[] = {
  */
 
 static bool		AccumulateDecimalDigit(unsigned, int,
-			    Tcl_WideUInt *, mp_int *, int);
+			    Tcl_WideUInt *, mp_int *, bool);
 static double		MakeHighPrecisionDouble(int signum,
 			    mp_int *significand, int nSigDigs, int exponent);
 static double		MakeLowPrecisionDouble(int signum,
@@ -316,7 +316,7 @@ static void		TakeAbsoluteValue(Double *, int *);
 static char *		FormatInfAndNaN(Double *, int *, char **);
 static char *		FormatZero(int *, char **);
 static int		ApproximateLog10(Tcl_WideUInt, int, int);
-static int		BetterLog10(double, int, int *);
+static int		BetterLog10(double, int, bool *);
 static void		ComputeScale(int, int, int *, int *, int *, int *);
 static void		SetPrecisionLimits(int, int, int *, int *, int *,
 			    int *);
@@ -326,7 +326,7 @@ static char *		ShorteningQuickFormat(double, int, int, double,
 			    char *, int *);
 static char *		StrictQuickFormat(double, int, int, double,
 			    char *, int *);
-static char *		QuickConversion(double, int, int, int, int, int, int,
+static char *		QuickConversion(double, int, bool, int, int, int, int,
 			    int *, char **);
 static void		CastOutPowersOf2(int *, int *, int *);
 static char *		ShorteningInt64Conversion(Double *, Tcl_WideUInt,
@@ -1582,7 +1582,7 @@ AccumulateDecimalDigit(
 				 * wide integer. */
     mp_int *bignumRepPtr,	/* Representation of the partial number as a
 				 * bignum. */
-    int bignumFlag)		/* Flag == 1 if the number overflowed previous
+    bool bignumFlag)		/* True if the number overflowed previous
 				 * to this digit. */
 {
     /*
@@ -2579,7 +2579,7 @@ BetterLog10(
     double d,			/* Original number to format. */
     int k,			/* Characteristic(Log base 10) of the
 				 * number. */
-    int *k_check)		/* Flag == 1 if k is inexact. */
+    bool *k_check)		/* True if k is inexact. */
 {
     /*
      * Performance hack. If k is in the range 0..TEN_PMAX, then we can use a
@@ -2590,9 +2590,9 @@ BetterLog10(
 	if (d < tens[k]) {
 	    k--;
 	}
-	*k_check = 0;
+	*k_check = false;
     } else {
-	*k_check = 1;
+	*k_check = true;
     }
     return k;
 }
@@ -2994,7 +2994,7 @@ static inline char *
 QuickConversion(
     double e,			/* Number to format. */
     int k,			/* floor(log10(d)), approximately. */
-    int k_check,		/* 0 if k is exact, 1 if it may be too high */
+    bool k_check,		/* false if k is exact, true if it may be too high */
     int flags,			/* Flags passed to dtoa:
 				 *    TCL_DD_SHORTEST */
     int len,			/* Length of the return value. */
@@ -3453,7 +3453,7 @@ ShouldBankerRoundUpToNextPowD(
     mp_int *b,			/* Numerator of the fraction. */
     mp_int *m,			/* Numerator of the rounding tolerance. */
     int sd,			/* Common denominator is 2**(sd*MP_DIGIT_BIT). */
-    bool isodd,			/* 1 if the integer significand is odd. */
+    bool isodd,			/* True if the integer significand is odd. */
     mp_int *temp)		/* Work area for the calculation. */
 {
     /*
@@ -3837,7 +3837,7 @@ ShouldBankerRoundUp(
     mp_int *twor,		/* 2x the remainder from thd division that
 				 * produced the last digit. */
     mp_int *S,			/* Denominator. */
-    bool isodd)			/* Flag == 1 if the last digit is odd. */
+    bool isodd)			/* True if the last digit is odd. */
 {
     int r = mp_cmp_mag(twor, S);
 
@@ -3871,7 +3871,7 @@ ShouldBankerRoundUpToNext(
 				 * the last digit. */
     mp_int *m,			/* Numerator of the rounding tolerance. */
     mp_int *S,			/* Denominator. */
-    bool isodd)			/* 1 if the integer significand is odd. */
+    bool isodd)			/* True if the integer significand is odd. */
 {
     int r;
     mp_int temp;
@@ -4385,10 +4385,10 @@ TclDoubleDigits(
     Tcl_WideUInt bw;		/* Integer significand. */
     int be;			/* Power of 2 by which b must be multiplied */
     int bbits;			/* Number of bits needed to represent b. */
-    int denorm;			/* Flag == 1 iff the input number was
+    bool denorm;		/* True iff the input number was
 				 * denormalized. */
     int k;			/* Estimate of floor(log10(d)). */
-    int k_check;		/* Flag == 1 if d is near enough to a power of
+    bool k_check;		/* True if d is near enough to a power of
 				 * ten that k must be checked. */
     int b2, b5, s2, s5;		/* Powers of 2 and 5 in the numerator and
 				 * denominator of intermediate results. */

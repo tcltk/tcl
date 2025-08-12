@@ -126,7 +126,8 @@ TclSetupEnv(
     Tcl_IncrRefCount(varNamePtr);
     Tcl_InitObjHashTable(&namesHash);
     varPtr = TclObjLookupVarEx(interp, varNamePtr, NULL, TCL_GLOBAL_ONLY,
-	    /*msg*/ 0, /*createPart1*/ 0, /*createPart2*/ 0, &arrayPtr);
+	    /*msg*/ NULL, /*createPart1*/ false, /*createPart2*/ false,
+	    &arrayPtr);
     TclFindArrayPtrElements(varPtr, &namesHash);
 
 #if defined(_WIN32)
