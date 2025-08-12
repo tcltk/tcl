@@ -9415,4 +9415,6 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 
 2025-08-12 (new) dde => 1.4.5
 
+2025-08-12 (bug) [992f94] avoid misaligned pointers in macOS file attribute functions (chavez)
+
 - (to be) Released 8.6.17, Aug ??, 2025 - https://core.tcl-lang.org/tcl/ for details

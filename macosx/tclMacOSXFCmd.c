@@ -107,6 +107,8 @@ typedef	struct finderinfo {
 } __attribute__ ((__packed__)) finderinfo;
 
 typedef struct {
+    u_int64_t reserved1; /* Make sure data is 8-byte aligned */
+    u_int32_t reserved2; /* See [992f94d847] */
     u_int32_t info_length;
     u_int32_t data[8];
 } fileinfobuf;
@@ -173,7 +175,8 @@ TclMacOSXGetFileAttribute(
 	alist.commonattr = ATTR_CMN_FNDRINFO;
     }
     native = (const char *)Tcl_FSGetNativePath(fileName);
-    result = getattrlist(native, &alist, &finfo, sizeof(fileinfobuf), 0);
+    result = getattrlist(native, &alist, &finfo.info_length,
+	    sizeof(fileinfobuf) - offsetof(fileinfobuf, info_length), 0);
 
     if (result != 0) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -269,7 +272,8 @@ TclMacOSXSetFileAttribute(
 	alist.commonattr = ATTR_CMN_FNDRINFO;
     }
     native = (const char *)Tcl_FSGetNativePath(fileName);
-    result = getattrlist(native, &alist, &finfo, sizeof(fileinfobuf), 0);
+    result = getattrlist(native, &alist, &finfo.info_length,
+	    sizeof(fileinfobuf) - offsetof(fileinfobuf, info_length), 0);
 
     if (result != 0) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -426,7 +430,8 @@ TclMacOSXCopyFileAttributes(
 	alist.bitmapcount = ATTR_BIT_MAP_COUNT;
 	alist.commonattr = ATTR_CMN_FNDRINFO;
 
-	if (getattrlist(src, &alist, &finfo, sizeof(fileinfobuf), 0)) {
+	if (getattrlist(src, &alist, &finfo.info_length,
+		sizeof(fileinfobuf) - offsetof(fileinfobuf, info_length), 0)) {
 	    return TCL_ERROR;
 	}
 	if (setattrlist(dst, &alist, &finfo.data, sizeof(finfo.data), 0)) {
@@ -448,7 +453,8 @@ TclMacOSXCopyFileAttributes(
 
 	alist.commonattr = 0;
 	alist.fileattr = ATTR_FILE_RSRCLENGTH;
-	if (getattrlist(src, &alist, &finfo, sizeof(fileinfobuf), 0)) {
+	if (getattrlist(src, &alist, &finfo.info_length,
+		sizeof(fileinfobuf) - offsetof(fileinfobuf, info_length), 0)) {
 	    return TCL_ERROR;
 	} else if (*rsrcForkSize == 0) {
 	    return TCL_OK;
@@ -517,7 +523,8 @@ TclMacOSXMatchType(
     bzero(&alist, sizeof(struct attrlist));
     alist.bitmapcount = ATTR_BIT_MAP_COUNT;
     alist.commonattr = ATTR_CMN_FNDRINFO;
-    if (getattrlist(pathName, &alist, &finfo, sizeof(fileinfobuf), 0)) {
+    if (getattrlist(pathName, &alist, &finfo.info_length,
+	    sizeof(fileinfobuf) - offsetof(fileinfobuf, info_length), 0)) {
 	return 0;
     }
     if ((types->perm & TCL_GLOB_PERM_HIDDEN) &&
