@@ -3361,7 +3361,7 @@ MODULE_SCOPE Tcl_Size	TclDictGetSize(Tcl_Obj *dictPtr);
 MODULE_SCOPE int	TclFindDictElement(Tcl_Interp *interp,
 			    const char *dict, Tcl_Size dictLength,
 			    const char **elementPtr, const char **nextPtr,
-			    Tcl_Size *sizePtr, int *literalPtr);
+			    Tcl_Size *sizePtr, bool *literalPtr);
 MODULE_SCOPE Tcl_Obj *	TclDictObjSmartRef(Tcl_Interp *interp, Tcl_Obj *);
 MODULE_SCOPE int	TclDictGet(Tcl_Interp *interp, Tcl_Obj *dictPtr,
 			    const char *key, Tcl_Obj **valuePtrPtr);
@@ -3642,7 +3642,7 @@ MODULE_SCOPE void *	TclStackRealloc(Tcl_Interp *interp, void *ptr,
 			    size_t numBytes);
 typedef int (*memCmpFn_t)(const void*, const void*, size_t);
 MODULE_SCOPE int	TclStringCmp(Tcl_Obj *value1Ptr, Tcl_Obj *value2Ptr,
-			    int checkEq, int nocase, Tcl_Size reqlength);
+			    bool checkEq, bool nocase, Tcl_Size reqlength);
 MODULE_SCOPE int	TclStringMatch(const char *str, Tcl_Size strLen,
 			    const char *pattern, int ptnLen, int flags);
 MODULE_SCOPE int	TclStringMatchObj(Tcl_Obj *stringObj,
@@ -4053,12 +4053,12 @@ enum StringOpFlags {
 
 MODULE_SCOPE Var *	TclObjLookupVarEx(Tcl_Interp * interp,
 			    Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, int flags,
-			    const char *msg, int createPart1,
-			    int createPart2, Var **arrayPtrPtr);
+			    const char *msg, bool createPart1,
+			    bool createPart2, Var **arrayPtrPtr);
 MODULE_SCOPE Var *	TclLookupArrayElement(Tcl_Interp *interp,
 			    Tcl_Obj *arrayNamePtr, Tcl_Obj *elNamePtr,
 			    int flags, const char *msg,
-			    int createPart1, int createPart2,
+			    bool createPart1, bool createPart2,
 			    Var *arrayPtr, Tcl_Size index);
 MODULE_SCOPE Tcl_Obj *	TclPtrGetVarIdx(Tcl_Interp *interp,
 			    Var *varPtr, Var *arrayPtr, Tcl_Obj *part1Ptr,

@@ -3616,8 +3616,8 @@ int
 TclStringCmp(
     Tcl_Obj *value1Ptr,
     Tcl_Obj *value2Ptr,
-    int checkEq,		/* comparison is only for equality */
-    int nocase,			/* comparison is not case sensitive */
+    bool checkEq,		/* comparison is only for equality */
+    bool nocase,		/* comparison is not case sensitive */
     Tcl_Size reqlength)		/* requested length in characters;
 				 * TCL_INDEX_NONE to compare whole strings */
 {

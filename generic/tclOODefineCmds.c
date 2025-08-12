@@ -3343,7 +3343,7 @@ BuildPropertyList(
 
     Tcl_SetListObj(listObj, 0, NULL);
     FOREACH(other, *propsList) {
-	if (!TclStringCmp(propName, other, 1, 0, TCL_INDEX_NONE)) {
+	if (!TclStringCmp(propName, other, true, false, TCL_INDEX_NONE)) {
 	    present = true;
 	    if (!addingProp) {
 		changed = true;

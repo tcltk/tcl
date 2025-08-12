@@ -640,7 +640,7 @@ SetDictFromAny(
 	    Tcl_Obj *keyPtr, *valuePtr;
 	    const char *elemStart;
 	    Tcl_Size elemSize;
-	    int literal;
+	    bool literal;
 
 	    if (TclFindDictElement(interp, nextElem, (limit - nextElem),
 		    &elemStart, &nextElem, &elemSize, &literal) != TCL_OK) {
@@ -3697,7 +3697,7 @@ FinalizeDictWith(
      */
 
     varPtr = TclObjLookupVarEx(interp, varName, NULL, TCL_LEAVE_ERR_MSG, "set",
-	    /*createPart1*/ 1, /*createPart2*/ 1, &arrayPtr);
+	    /*createPart1*/ true, /*createPart2*/ true, &arrayPtr);
     if (varPtr == NULL) {
 	result = TCL_ERROR;
     } else {

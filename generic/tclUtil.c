@@ -131,7 +131,7 @@ static int		FindElement(Tcl_Interp *interp, const char *string,
 			    Tcl_Size stringLength, const char *typeStr,
 			    const char *typeCode, const char **elementPtr,
 			    const char **nextPtr, Tcl_Size *sizePtr,
-			    int *literalPtr);
+			    int *literalIntPtr, bool *literalBoolPtr);
 /*
  * The following is the Tcl object type definition for an object that
  * represents a list index in the form, "end-offset". It is used as a
@@ -538,7 +538,7 @@ TclFindElement(
 				 * TclCopyAndCollapse() by the caller. */
 {
     return FindElement(interp, list, listLength, "list", "LIST", elementPtr,
-	    nextPtr, sizePtr, literalPtr);
+	    nextPtr, sizePtr, literalPtr, NULL);
 }
 
 int
@@ -559,7 +559,7 @@ TclFindDictElement(
 				 * element (next arg or end of list). */
     Tcl_Size *sizePtr,		/* If non-zero, fill in with size of
 				 * element. */
-    int *literalPtr)		/* If non-zero, fill in with non-zero/zero to
+    bool *literalPtr)		/* If non-zero, fill in with true/false to
 				 * indicate that the substring of *sizePtr
 				 * bytes starting at **elementPtr is/is not
 				 * the literal key or value and therefore
@@ -567,7 +567,7 @@ TclFindDictElement(
 				 * TclCopyAndCollapse() by the caller. */
 {
     return FindElement(interp, dict, dictLength, "dict", "DICTIONARY",
-	    elementPtr, nextPtr, sizePtr, literalPtr);
+	    elementPtr, nextPtr, sizePtr, NULL, literalPtr);
 }
 
 static int
@@ -591,7 +591,13 @@ FindElement(
 				 * argument (next arg or end of list/dict). */
     Tcl_Size *sizePtr,		/* If non-NULL, fill in with size of
 				 * element. */
-    int *literalPtr)		/* If non-NULL, fill in with non-zero/zero to
+    int *literalIntPtr,		/* If non-NULL, fill in with non-zero/zero to
+				 * indicate that the substring of *sizePtr
+				 * bytes starting at **elementPtr is/is not
+				 * the literal list/dict element and therefore
+				 * does not/does require a call to
+				 * TclCopyAndCollapse() by the caller. */
+    bool *literalBoolPtr)	/* If non-NULL, fill in with true/false to
 				 * indicate that the substring of *sizePtr
 				 * bytes starting at **elementPtr is/is not
 				 * the literal list/dict element and therefore
@@ -605,7 +611,7 @@ FindElement(
     bool inQuotes = false;
     Tcl_Size size = 0;
     Tcl_Size numChars;
-    int literal = true;
+    bool literal = true;
     const char *p2;
 
     /*
@@ -781,8 +787,11 @@ FindElement(
     if (sizePtr != 0) {
 	*sizePtr = size;
     }
-    if (literalPtr != 0) {
-	*literalPtr = literal;
+    if (literalIntPtr) {
+	*literalIntPtr = literal;
+    }
+    if (literalBoolPtr) {
+	*literalBoolPtr = literal;
     }
     return TCL_OK;
 }

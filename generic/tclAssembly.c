@@ -276,7 +276,7 @@ static size_t		FindLocalVar(AssemblyEnv* envPtr,
 			    Tcl_Token** tokenPtrPtr);
 static int		FinishAssembly(AssemblyEnv*);
 static void		FreeAssemblyEnv(AssemblyEnv*);
-static int		GetBooleanOperand(AssemblyEnv*, Tcl_Token**, int*);
+static int		GetBooleanOperand(AssemblyEnv*, Tcl_Token**, bool*);
 static int		GetListIndexOperand(AssemblyEnv*, Tcl_Token**, int*);
 static int		GetIntegerOperand(AssemblyEnv*, Tcl_Token**, int*);
 static int		GetNextOperand(AssemblyEnv*, Tcl_Token**, Tcl_Obj**);
@@ -1241,6 +1241,7 @@ AssembleOneLine(
     const char* operand1;	/* String rep of the operand */
     Tcl_Size operand1Len;	/* String length of the operand */
     int opnd;			/* Integer representation of an operand */
+    bool bopnd;			/* Boolean representation of an operand */
     int litIndex;		/* Literal pool index of a constant */
     Tcl_Size localVar;		/* LVT index of a local variable */
     int flags;			/* Flags for a basic block */
@@ -1321,10 +1322,10 @@ AssembleOneLine(
 	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "boolean");
 	    goto cleanup;
 	}
-	if (GetBooleanOperand(assemEnvPtr, &tokenPtr, &opnd) != TCL_OK) {
+	if (GetBooleanOperand(assemEnvPtr, &tokenPtr, &bopnd) != TCL_OK) {
 	    goto cleanup;
 	}
-	BBEmitInstInt1(assemEnvPtr, tblIdx, opnd, 0);
+	BBEmitInstInt1(assemEnvPtr, tblIdx, bopnd ? 1 : 0, 0);
 	break;
 
     case ASSEM_BOOL_LVT:
@@ -1332,14 +1333,14 @@ AssembleOneLine(
 	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "boolean varName");
 	    goto cleanup;
 	}
-	if (GetBooleanOperand(assemEnvPtr, &tokenPtr, &opnd) != TCL_OK) {
+	if (GetBooleanOperand(assemEnvPtr, &tokenPtr, &bopnd) != TCL_OK) {
 	    goto cleanup;
 	}
 	localVar = FindLocalVar(assemEnvPtr, &tokenPtr);
 	if (localVar < 0) {
 	    goto cleanup;
 	}
-	BBEmitInstInt1(assemEnvPtr, tblIdx, opnd, 0);
+	BBEmitInstInt1(assemEnvPtr, tblIdx, opnd ? 1 : 0, 0);
 	TclEmitInt4(localVar, envPtr);
 	break;
 
@@ -1670,11 +1671,11 @@ AssembleOneLine(
 	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "boolean");
 	    goto cleanup;
 	}
-	if (GetBooleanOperand(assemEnvPtr, &tokenPtr, &opnd) != TCL_OK) {
+	if (GetBooleanOperand(assemEnvPtr, &tokenPtr, &bopnd) != TCL_OK) {
 	    goto cleanup;
 	}
 	BBEmitInstInt1(assemEnvPtr, tblIdx,
-		TCL_REG_ADVANCED | (opnd ? TCL_REG_NOCASE : 0), 0);
+		TCL_REG_ADVANCED | (bopnd ? TCL_REG_NOCASE : 0), 0);
 	break;
 
     case ASSEM_REVERSE:
@@ -2188,7 +2189,7 @@ static int
 GetBooleanOperand(
     AssemblyEnv* assemEnvPtr,	/* Assembly environment */
     Tcl_Token** tokenPtrPtr,	/* Current token from the parser */
-    int* result)		/* OUTPUT: Integer extracted from the token */
+    bool* result)		/* OUTPUT: Boolean extracted from the token */
 {
     CompileEnv* envPtr = assemEnvPtr->envPtr;
 				/* Compilation environment */

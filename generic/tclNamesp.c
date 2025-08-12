@@ -4614,7 +4614,7 @@ NamespaceUpvarCmd(
 	iPtr->varFramePtr->nsPtr = (Namespace *) nsPtr;
 	Var *arrayPtr, *otherPtr = TclObjLookupVarEx(interp, objv[0], NULL,
 		(TCL_NAMESPACE_ONLY|TCL_LEAVE_ERR_MSG|TCL_AVOID_RESOLVERS),
-		"access", /*createPart1*/ 1, /*createPart2*/ 1, &arrayPtr);
+		"access", /*createPart1*/ true, /*createPart2*/ true, &arrayPtr);
 	iPtr->varFramePtr->nsPtr = savedNsPtr;
 	if (otherPtr == NULL) {
 	    return TCL_ERROR;
@@ -4978,7 +4978,7 @@ TclLogCommandInfo(
 		(overflow ? "..." : ""));
 
 	varPtr = TclObjLookupVarEx(interp, iPtr->eiVar, NULL, TCL_GLOBAL_ONLY,
-		NULL, 0, 0, &arrayPtr);
+		NULL, false, false, &arrayPtr);
 	if ((varPtr == NULL) || !TclIsVarTraced(varPtr)) {
 	    /*
 	     * Should not happen.
