@@ -152,10 +152,10 @@ typedef struct {
      */
 
     int mode;			/* Mask of R/W mode */
-    int nonblocking;		/* Flag: Channel is blocking or not. */
-    int readIsDrained;		/* Flag: Read buffers are flushed. */
-    int eofPending;		/* Flag: EOF seen down, but not raised up */
-    int dead;			/* Boolean signal that some operations
+    bool nonblocking;		/* Flag: Channel is blocking or not. */
+    bool readIsDrained;		/* Flag: Read buffers are flushed. */
+    bool eofPending;		/* Flag: EOF seen down, but not raised up */
+    bool dead;			/* Boolean signal that some operations
 				 * should no longer be attempted. */
     ResultBuffer result;
 } ReflectedTransform;
@@ -249,7 +249,7 @@ typedef enum {
 typedef struct {
     int code;			/* O: Ok/Fail of the cmd handler */
     char *msgStr;		/* O: Error message for handler failure */
-    int mustFree;		/* O: True if msgStr is allocated, false if
+    bool mustFree;		/* O: True if msgStr is allocated, false if
 				 * otherwise (static). */
 } ForwardParamBase;
 
@@ -379,13 +379,13 @@ static void		SrcExitProc(void *clientData);
 #define ForwardSetStaticError(p,emsg) \
 	do {								\
 	    (p)->base.code = TCL_ERROR;					\
-	    (p)->base.mustFree = 0;					\
+	    (p)->base.mustFree = false;					\
 	    (p)->base.msgStr = (char *) (emsg);				\
 	} while (0)
 #define ForwardSetDynamicError(p,emsg) \
 	do {								\
 	    (p)->base.code = TCL_ERROR;					\
-	    (p)->base.mustFree = 1;					\
+	    (p)->base.mustFree = true;					\
 	    (p)->base.msgStr = (char *) (emsg);				\
 	} while (0)
 
@@ -876,7 +876,8 @@ ReflectClose(
     int flags)
 {
     ReflectedTransform *rtPtr = (ReflectedTransform *)clientData;
-    int errorCode, errorCodeSet = 0;
+    int errorCode = 0;
+    bool errorCodeSet = false;
     int result = TCL_OK;	/* Result code for 'close' */
     Tcl_Obj *resObj;		/* Result data for 'close' */
     ReflectedTransformMap *rtmPtr;
@@ -939,7 +940,7 @@ ReflectClose(
 		return errorCode;
 	    }
 #endif /* TCL_THREADS */
-	    errorCodeSet = 1;
+	    errorCodeSet = true;
 	    goto cleanup;
 	}
     }
@@ -953,7 +954,7 @@ ReflectClose(
 		return errorCode;
 	    }
 #endif /* TCL_THREADS */
-	    errorCodeSet = 1;
+	    errorCodeSet = true;
 	    goto cleanup;
 	}
     }
@@ -1080,7 +1081,7 @@ ReflectInput(
     if (rtPtr->eofPending) {
 	goto stop;
     }
-    rtPtr->readIsDrained = 0;
+    rtPtr->readIsDrained = false;
     while (toRead > 0) {
 	/*
 	 * Loop until the request is satisfied (or no data available from
@@ -1162,34 +1163,33 @@ ReflectInput(
 	}
 
 	if (readBytes == 0) {
-
 	    /*
 	     * Zero returned from Tcl_ReadRaw() always indicates EOF
 	     * on the down channel.
 	     */
 
-	    rtPtr->eofPending = 1;
+	    rtPtr->eofPending = true;
 
+	    /*
+	     * Now this is a bit different. The partial data waiting is
+	     * converted and returned.
+	     */
+
+	    if (HAS(rtPtr->methods, METH_DRAIN)) {
+		if (!TransformDrain(rtPtr, errorCodePtr)) {
+		    goto error;
+		}
+	    }
+
+	    if (ResultLength(&rtPtr->result) == 0) {
 		/*
-		 * Now this is a bit different. The partial data waiting is
-		 * converted and returned.
+		 * The drain delivered nothing.
 		 */
 
-		if (HAS(rtPtr->methods, METH_DRAIN)) {
-		    if (!TransformDrain(rtPtr, errorCodePtr)) {
-			goto error;
-		    }
-		}
+		goto stop;
+	    }
 
-		if (ResultLength(&rtPtr->result) == 0) {
-		    /*
-		     * The drain delivered nothing.
-		     */
-
-		    goto stop;
-		}
-
-		continue; /* at: while (toRead > 0) */
+	    continue; /* at: while (toRead > 0) */
 	} /* readBytes == 0 */
 
 	/*
@@ -1212,7 +1212,7 @@ ReflectInput(
 
   stop:
     if (gotBytes == 0) {
-	rtPtr->eofPending = 0;
+	rtPtr->eofPending = false;
     }
     Tcl_DecrRefCount(bufObj);
     Tcl_Release(rtPtr);
@@ -1727,11 +1727,11 @@ NewReflectedTransform(
     Tcl_IncrRefCount(handleObj);
     rtPtr->timer = NULL;
     rtPtr->mode = 0;
-    rtPtr->readIsDrained = 0;
-    rtPtr->eofPending = 0;
+    rtPtr->readIsDrained = false;
+    rtPtr->eofPending = false;
     rtPtr->nonblocking =
 	    (((Channel *) parentChan)->state->flags & CHANNEL_NONBLOCKING);
-    rtPtr->dead = 0;
+    rtPtr->dead = false;
 
     /*
      * Query parent for current blocking mode.
@@ -2128,7 +2128,7 @@ DeleteReflectedTransformMap(
 	ReflectedTransform *rtPtr = (ReflectedTransform *)
 		Tcl_GetHashValue(hPtr);
 
-	rtPtr->dead = 1;
+	rtPtr->dead = true;
 	Tcl_DeleteHashEntry(hPtr);
     }
     Tcl_DeleteHashTable(&rtmPtr->map);
@@ -2161,7 +2161,7 @@ DeleteReflectedTransformMap(
 	    continue;
 	}
 
-	rtPtr->dead = 1;
+	rtPtr->dead = true;
 	FreeReflectedTransformArgs(rtPtr);
 	Tcl_DeleteHashEntry(hPtr);
     }
@@ -2283,7 +2283,7 @@ DeleteThreadReflectedTransformMap(
 	    hPtr = Tcl_FirstHashEntry(&rtmPtr->map, &hSearch)) {
 	ReflectedTransform *rtPtr = (ReflectedTransform *)Tcl_GetHashValue(hPtr);
 
-	rtPtr->dead = 1;
+	rtPtr->dead = true;
 	FreeReflectedTransformArgs(rtPtr);
 	Tcl_DeleteHashEntry(hPtr);
     }
@@ -3189,7 +3189,7 @@ TransformDrain(
 	Tcl_DecrRefCount(resObj);	/* Remove reference held from invoke */
     }
 
-    rtPtr->readIsDrained = 1;
+    rtPtr->readIsDrained = true;
     return 1;
 }
 
@@ -3277,8 +3277,8 @@ TransformClear(
 
     (void) InvokeTclMethod(rtPtr, "clear", NULL, NULL, NULL);
 
-    rtPtr->readIsDrained = 0;
-    rtPtr->eofPending = 0;
+    rtPtr->readIsDrained = false;
+    rtPtr->eofPending = false;
     ResultClear(&rtPtr->result);
 }
 

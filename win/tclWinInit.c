@@ -593,14 +593,13 @@ TclpSetVariables(
     Tcl_Interp *interp)		/* Interp to initialize. */
 {
     typedef int(__stdcall getVersionProc)(void *);
-    const char *ptr;
     char buffer[TCL_INTEGER_SPACE * 2];
     union {
 	SYSTEM_INFO info;
 	OemId oemId;
     } sys;
     static OSVERSIONINFOW osInfo;
-    static int osInfoInitialized = 0;
+    static bool osInfoInitialized = false;
     Tcl_DString ds;
 
     Tcl_SetVar2Ex(interp, "tclDefaultLibrary", NULL,
@@ -615,7 +614,7 @@ TclpSetVariables(
 	if (!getVersion || getVersion(&osInfo)) {
 	    GetVersionExW(&osInfo);
 	}
-	osInfoInitialized = 1;
+	osInfoInitialized = true;
     }
     GetSystemInfo(&sys.info);
 
@@ -644,7 +643,7 @@ TclpSetVariables(
      */
 
     Tcl_DStringInit(&ds);
-    ptr = Tcl_GetVar2(interp, "env", "HOME", TCL_GLOBAL_ONLY);
+    const char *ptr = Tcl_GetVar2(interp, "env", "HOME", TCL_GLOBAL_ONLY);
     if (ptr == NULL) {
 	ptr = Tcl_GetVar2(interp, "env", "HOMEDRIVE", TCL_GLOBAL_ONLY);
 	if (ptr != NULL) {
@@ -719,8 +718,6 @@ TclpFindVariable(
 {
     Tcl_Size i, length, result = TCL_INDEX_NONE;
     const WCHAR *env;
-    const char *p1, *p2;
-    char *envUpper, *nameUpper;
     Tcl_DString envString;
 
     /*
@@ -728,7 +725,7 @@ TclpFindVariable(
      */
 
     length = strlen(name);
-    nameUpper = (char *)Tcl_Alloc(length + 1);
+    char *nameUpper = (char *)Tcl_Alloc(length + 1);
     memcpy(nameUpper, name, length+1);
     Tcl_UtfToUpper(nameUpper);
 
@@ -741,8 +738,8 @@ TclpFindVariable(
 	 */
 
 	Tcl_DStringInit(&envString);
-	envUpper = Tcl_WCharToUtfDString(env, TCL_INDEX_NONE, &envString);
-	p1 = strchr(envUpper, '=');
+	char *envUpper = Tcl_WCharToUtfDString(env, TCL_INDEX_NONE, &envString);
+	const char *p1 = strchr(envUpper, '=');
 	if (p1 == NULL) {
 	    continue;
 	}
@@ -751,7 +748,7 @@ TclpFindVariable(
 	Tcl_UtfToUpper(envUpper);
 
 	p1 = envUpper;
-	p2 = nameUpper;
+	const char *p2 = nameUpper;
 	for (; *p2 == *p1; p1++, p2++) {
 	    /* NULL loop body. */
 	}

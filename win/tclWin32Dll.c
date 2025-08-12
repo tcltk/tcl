@@ -367,12 +367,12 @@ TclWinDriveLetterForVolMountPoint(
 
 	if (GetVolumeNameForVolumeMountPointW(drive,
 		Target, 55) != 0) {
-	    int alreadyStored = 0;
+	    bool alreadyStored = false;
 
 	    for (dlIter = driveLetterLookup; dlIter != NULL;
 		    dlIter = dlIter->nextPtr) {
 		if (wcscmp(dlIter->volumeName, Target) == 0) {
-		    alreadyStored = 1;
+		    alreadyStored = true;
 		    break;
 		}
 	    }

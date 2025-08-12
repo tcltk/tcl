@@ -22,7 +22,7 @@
  * These functions are not exported at all at present.
  */
 
-MODULE_SCOPE int	TclFSCwdPointerEquals(Tcl_Obj **pathPtrPtr);
+MODULE_SCOPE bool	TclFSCwdPointerEquals(Tcl_Obj **pathPtrPtr);
 MODULE_SCOPE int	TclFSNormalizeToUniquePath(Tcl_Interp *interp,
 			    Tcl_Obj *pathPtr, int startAt);
 MODULE_SCOPE Tcl_Obj *	TclFSMakePathRelative(Tcl_Interp *interp,
@@ -56,7 +56,7 @@ MODULE_SCOPE Tcl_PathType TclGetPathType(Tcl_Obj *pathPtr,
 			    const Tcl_Filesystem **filesystemPtrPtr,
 			    Tcl_Size *driveNameLengthPtr, Tcl_Obj **driveNameRef);
 MODULE_SCOPE int	TclFSEpochOk(size_t filesystemEpoch);
-MODULE_SCOPE int	TclFSCwdIsNative(void);
+MODULE_SCOPE bool	TclFSCwdIsNative(void);
 MODULE_SCOPE Tcl_Obj *	TclWinVolumeRelativeNormalize(Tcl_Interp *interp,
 			    const char *path, Tcl_Obj **useThisCwdPtr);
 

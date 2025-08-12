@@ -2410,7 +2410,7 @@ TclCompileRegexpCmd(
 
     varTokenPtr = TokenAfter(varTokenPtr);
 
-    int exact = 0;
+    bool exact = false;
     if (varTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
 	const char *str = varTokenPtr[1].start;
 	Tcl_Size len = varTokenPtr[1].size;
@@ -2527,7 +2527,8 @@ TclCompileRegsubCmd(
     Tcl_Size numWords = parsePtr->numWords;
     Tcl_Token *tokenPtr, *stringTokenPtr;
     Tcl_Obj *patternObj = NULL, *replacementObj = NULL;
-    int exact, quantified, result = TCL_ERROR;
+    bool exact, quantified;
+    int result = TCL_ERROR;
 
     if (numWords < 5 || numWords > 6) {
 	return TCL_ERROR;

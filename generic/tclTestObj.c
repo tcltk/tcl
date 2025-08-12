@@ -33,7 +33,7 @@
  * Forward declarations for functions defined later in this file:
  */
 
-static int		CheckIfVarUnset(Tcl_Interp *interp, Tcl_Obj **varPtr, Tcl_Size varIndex);
+static bool		CheckIfVarUnset(Tcl_Interp *interp, Tcl_Obj **varPtr, Tcl_Size varIndex);
 static int		GetVariableIndex(Tcl_Interp *interp,
 			    Tcl_Obj *obj, Tcl_Size *indexPtr);
 static void		SetVarToObj(Tcl_Obj **varPtr, Tcl_Size varIndex, Tcl_Obj *objPtr);
@@ -1810,7 +1810,7 @@ GetVariableIndex(
  *	i.e., that varPtr[varIndex] is non-NULL.
  *
  * Results:
- *	1 if the test variable is unset (NULL); 0 otherwise.
+ *	true if the test variable is unset (NULL); false otherwise.
  *
  * Side effects:
  *	Sets the interpreter result to an error message if the variable is
@@ -1819,7 +1819,7 @@ GetVariableIndex(
  *----------------------------------------------------------------------
  */
 
-static int
+static bool
 CheckIfVarUnset(
     Tcl_Interp *interp,		/* Interpreter for error reporting. */
     Tcl_Obj ** varPtr,
@@ -1829,9 +1829,9 @@ CheckIfVarUnset(
 	Tcl_ResetResult(interp);
 	TclPrintfResult(interp, "variable %" TCL_SIZE_MODIFIER "d is unset (NULL)",
 		varIndex);
-	return 1;
+	return true;
     }
-    return 0;
+    return false;
 }
 
 static int

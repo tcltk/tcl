@@ -50,7 +50,7 @@ typedef struct FilesystemRecord {
  */
 
 typedef struct ThreadSpecificData_IOUtilities {
-    int initialized;
+    bool initialized;
     size_t cwdPathEpoch;	/* Compared with the global cwdPathEpoch to
 				 * determine whether cwdPathPtr is stale. */
     size_t filesystemEpoch;
@@ -243,12 +243,11 @@ Tcl_Stat(
 				 * encoding). */
     struct stat *oldStyleBuf)	/* Filled with results of stat call. */
 {
-    int ret;
     Tcl_StatBuf buf;
     Tcl_Obj *pathPtr = Tcl_NewStringObj(path,-1);
 
     Tcl_IncrRefCount(pathPtr);
-    ret = Tcl_FSStat(pathPtr, &buf);
+    int ret = Tcl_FSStat(pathPtr, &buf);
     Tcl_DecrRefCount(pathPtr);
     if (ret != -1) {
 #ifndef TCL_WIDE_INT_IS_LONG
@@ -330,11 +329,10 @@ Tcl_Access(
 				 * system encoding). */
     int mode)			/* Permission setting. */
 {
-    int ret;
     Tcl_Obj *pathPtr = Tcl_NewStringObj(path,-1);
 
     Tcl_IncrRefCount(pathPtr);
-    ret = Tcl_FSAccess(pathPtr,mode);
+    int ret = Tcl_FSAccess(pathPtr,mode);
     Tcl_DecrRefCount(pathPtr);
 
     return ret;
@@ -350,11 +348,10 @@ Tcl_OpenFileChannel(
 				 * as "rw". */
     int permissions)		/* The modes to use if creating a new file. */
 {
-    Tcl_Channel ret;
     Tcl_Obj *pathPtr = Tcl_NewStringObj(path,-1);
 
     Tcl_IncrRefCount(pathPtr);
-    ret = Tcl_FSOpenFileChannel(interp, pathPtr, modeString, permissions);
+    Tcl_Channel ret = Tcl_FSOpenFileChannel(interp, pathPtr, modeString, permissions);
     Tcl_DecrRefCount(pathPtr);
 
     return ret;
@@ -365,10 +362,9 @@ int
 Tcl_Chdir(
     const char *dirName)
 {
-    int ret;
     Tcl_Obj *pathPtr = Tcl_NewStringObj(dirName,-1);
     Tcl_IncrRefCount(pathPtr);
-    ret = Tcl_FSChdir(pathPtr);
+    int ret = Tcl_FSChdir(pathPtr);
     Tcl_DecrRefCount(pathPtr);
     return ret;
 }
@@ -397,11 +393,10 @@ Tcl_EvalFile(
 				 * Performs Tilde-substitution on this
 				 * pathaname. */
 {
-    int ret;
     Tcl_Obj *pathPtr = Tcl_NewStringObj(fileName,-1);
 
     Tcl_IncrRefCount(pathPtr);
-    ret = Tcl_FSEvalFile(interp, pathPtr);
+    int ret = Tcl_FSEvalFile(interp, pathPtr);
     Tcl_DecrRefCount(pathPtr);
     return ret;
 }
@@ -441,10 +436,10 @@ FsThrExitProc(
 	fsRecPtr = tmpFsRecPtr;
     }
     tsdPtr->filesystemList = NULL;
-    tsdPtr->initialized = 0;
+    tsdPtr->initialized = false;
 }
 
-int
+bool
 TclFSCwdIsNative(void)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&fsDataKey);
@@ -452,14 +447,12 @@ TclFSCwdIsNative(void)
     /* if not yet initialized - ensure we'll once obtain cwd */
     if (!tsdPtr->cwdPathEpoch) {
 	Tcl_Obj *temp = Tcl_FSGetCwd(NULL);
-	if (temp) { Tcl_DecrRefCount(temp); }
+	if (temp) {
+	    Tcl_DecrRefCount(temp);
+	}
     }
 
-    if (tsdPtr->cwdClientData != NULL) {
-	return 1;
-    } else {
-	return 0;
-    }
+    return (tsdPtr->cwdClientData != NULL);
 }
 
 /*
@@ -470,7 +463,7 @@ TclFSCwdIsNative(void)
  *	directory.
  *
  * Results:
- *	1 if equal, 0 otherwise.
+ *	true if equal, false otherwise.
  *
  * Side effects:
  *	Updates TSD if needed.
@@ -483,7 +476,7 @@ TclFSCwdIsNative(void)
  *----------------------------------------------------------------------
  */
 
-int
+bool
 TclFSCwdPointerEquals(
     Tcl_Obj **pathPtrPtr)
 {
@@ -515,7 +508,7 @@ TclFSCwdPointerEquals(
 
     if (tsdPtr->initialized == 0) {
 	Tcl_CreateThreadExitHandler(FsThrExitProc, tsdPtr);
-	tsdPtr->initialized = 1;
+	tsdPtr->initialized = true;
     }
 
     if (pathPtrPtr == NULL) {
@@ -523,27 +516,26 @@ TclFSCwdPointerEquals(
     }
 
     if (tsdPtr->cwdPathPtr == *pathPtrPtr) {
-	return 1;
-    } else {
-	Tcl_Size len1, len2;
-	const char *str1, *str2;
-
-	str1 = TclGetStringFromObj(tsdPtr->cwdPathPtr, &len1);
-	str2 = TclGetStringFromObj(*pathPtrPtr, &len2);
-	if ((len1 == len2) && !memcmp(str1, str2, len1)) {
-	    /*
-	     * The values are equal but the objects are different.  Cache the
-	     * current structure in place of the old one.
-	     */
-
-	    Tcl_DecrRefCount(*pathPtrPtr);
-	    *pathPtrPtr = tsdPtr->cwdPathPtr;
-	    Tcl_IncrRefCount(*pathPtrPtr);
-	    return 1;
-	} else {
-	    return 0;
-	}
+	return true;
     }
+
+    Tcl_Size len1, len2;
+    const char *str1 = TclGetStringFromObj(tsdPtr->cwdPathPtr, &len1);
+    const char *str2 = TclGetStringFromObj(*pathPtrPtr, &len2);
+
+    if ((len1 != len2) || memcmp(str1, str2, len1)) {
+	return false;
+    }
+
+    /*
+     * The values are equal but the objects are different.  Cache the
+     * current structure in place of the old one.
+     */
+
+    Tcl_DecrRefCount(*pathPtrPtr);
+    *pathPtrPtr = tsdPtr->cwdPathPtr;
+    Tcl_IncrRefCount(*pathPtrPtr);
+    return true;
 }
 
 static void
@@ -607,7 +599,7 @@ FsRecacheFilesystemList(void)
 
     if (tsdPtr->initialized == 0) {
 	Tcl_CreateThreadExitHandler(FsThrExitProc, tsdPtr);
-	tsdPtr->initialized = 1;
+	tsdPtr->initialized = true;
     }
 }
 
@@ -851,13 +843,12 @@ Tcl_FSRegister(
     void *clientData,		/* Client-specific data for this filesystem. */
     const Tcl_Filesystem *fsPtr)/* The filesystem record for the new fs. */
 {
-    FilesystemRecord *newFilesystemPtr;
-
     if (fsPtr == NULL) {
 	return TCL_ERROR;
     }
 
-    newFilesystemPtr = (FilesystemRecord *)Tcl_Alloc(sizeof(FilesystemRecord));
+    FilesystemRecord *newFilesystemPtr = (FilesystemRecord *)
+	    Tcl_Alloc(sizeof(FilesystemRecord));
 
     newFilesystemPtr->clientData = clientData;
     newFilesystemPtr->fsPtr = fsPtr;
@@ -911,7 +902,6 @@ Tcl_FSUnregister(
     const Tcl_Filesystem *fsPtr)/* The filesystem record to remove. */
 {
     int retVal = TCL_ERROR;
-    FilesystemRecord *fsRecPtr;
 
     Tcl_MutexLock(&filesystemMutex);
 
@@ -921,7 +911,7 @@ Tcl_FSUnregister(
      * Do not revmoe the record for the native filesystem.
      */
 
-    fsRecPtr = filesystemList;
+    FilesystemRecord *fsRecPtr = filesystemList;
     while ((retVal == TCL_ERROR) && (fsRecPtr != &nativeFilesystemRecord)) {
 	if (fsRecPtr->fsPtr == fsPtr) {
 	    if (fsRecPtr->prevPtr) {
@@ -1125,7 +1115,7 @@ FsAddMountsToGlobResult(
     }
     for (Tcl_Size i=0 ; i<mLength ; i++) {
 	Tcl_Obj *mElt;
-	int found = 0;
+	bool found = false;
 
 	Tcl_ListObjIndex(NULL, mounts, i, &mElt);
 
@@ -1134,7 +1124,7 @@ FsAddMountsToGlobResult(
 
 	    Tcl_ListObjIndex(NULL, resultPtr, j, &gElt);
 	    if (Tcl_FSEqualPaths(mElt, gElt)) {
-		found = 1;
+		found = true;
 		if (!dir) {
 		    /*
 		     * We don't want to list this.
@@ -1324,7 +1314,7 @@ TclFSNormalizeToUniquePath(
 				 * the byte just after the separator. */
 {
     Tcl_Size i;
-    int isVfsPath = 0;
+    bool isVfsPath = false;
     const char *path;
 
     /*
@@ -1350,7 +1340,7 @@ TclFSNormalizeToUniquePath(
 	}
 	--i;
 	if (path[i] == ':') {
-	    isVfsPath = 1;
+	    isVfsPath = true;
 	}
     }
 
@@ -1445,7 +1435,7 @@ TclGetOpenMode(
     const char *modeString,	/* Mode string, e.g. "r+" or "RDONLY CREAT" */
     int *modeFlagsPtr)
 {
-    int mode, c, gotRW;
+    int mode, c;
     Tcl_Size modeArgc;
     const char **modeArgv = NULL, *flag;
 
@@ -1537,7 +1527,7 @@ TclGetOpenMode(
 	return -1;
     }
 
-    gotRW = 0;
+    bool gotRW = false;
     for (Tcl_Size i = 0; i < modeArgc; i++) {
 	flag = modeArgv[i];
 	c = flag[0];
@@ -1552,19 +1542,19 @@ TclGetOpenMode(
 		goto invAccessMode;
 	    }
 	    mode = (mode & ~O_ACCMODE) | O_RDONLY;
-	    gotRW = 1;
+	    gotRW = true;
 	} else if ((c == 'W') && (strcmp(flag, "WRONLY") == 0)) {
 	    if (gotRW) {
 		goto invRW;
 	    }
 	    mode = (mode & ~O_ACCMODE) | O_WRONLY;
-	    gotRW = 1;
+	    gotRW = true;
 	} else if ((c == 'R') && (strcmp(flag, "RDWR") == 0)) {
 	    if (gotRW) {
 		goto invRW;
 	    }
 	    mode = (mode & ~O_ACCMODE) | O_RDWR;
-	    gotRW = 1;
+	    gotRW = true;
 	} else if ((c == 'A') && (strcmp(flag, "APPEND") == 0)) {
 	    if (mode & O_APPEND) {
 	    accessFlagRepeated:
@@ -3059,7 +3049,7 @@ Tcl_FSLoadFile(
 #define WCHAR char
 #endif
 
-static int
+static bool
 SkipUnlink(
     Tcl_Obj *shlibFile)
 {
@@ -3077,7 +3067,7 @@ SkipUnlink(
 
 #ifdef hpux
     (void)shlibFile;
-    return 1;
+    return true;
 #else
     WCHAR *skipstr = getenv("TCL_TEMPLOAD_NO_UNLINK");
 
@@ -3088,29 +3078,31 @@ SkipUnlink(
 #ifndef TCL_TEMPLOAD_NO_UNLINK
     (void)shlibFile;
 #else
-/* At built time TCL_TEMPLOAD_NO_UNLINK can be set manually to control whether
- * this automatic overriding of unlink is included.
- */
+    /*
+     * At built time TCL_TEMPLOAD_NO_UNLINK can be set manually to control
+     * whether this automatic overriding of unlink is included.
+      */
+
 #ifndef NO_FSTATFS
-    {
-	struct statfs fs;
-	/*
-	 * Have fstatfs. May not have the AUFS super magic ... Indeed our build
-	 * box is too old to have it directly in the headers. Define taken from
-	 *     http://mooon.googlecode.com/svn/trunk/linux_include/linux/aufs_type.h
-	 *     http://aufs.sourceforge.net/
-	 * Better reference will be gladly accepted.
-	 */
+    struct statfs fs;
+    /*
+     * Have fstatfs. May not have the AUFS super magic ... Indeed our build
+     * box is too old to have it directly in the headers. Define taken from
+     *     http://mooon.googlecode.com/svn/trunk/linux_include/linux/aufs_type.h
+     *     http://aufs.sourceforge.net/
+     * Better reference will be gladly accepted.
+     *
+     * AUFS_SUPER_MAGIC can disable/override the AUFS detection, i.e. for
+     * testing if a newer AUFS does not have the bug any more.
+     */
+
 #ifndef AUFS_SUPER_MAGIC
-/* AUFS_SUPER_MAGIC can disable/override the AUFS detection, i.e. for
- * testing if a newer AUFS does not have the bug any more.
-*/
 #define AUFS_SUPER_MAGIC ('a' << 24 | 'u' << 16 | 'f' << 8 | 's')
 #endif /* AUFS_SUPER_MAGIC */
-	if ((statfs(TclGetString(shlibFile), &fs) == 0)
-		&& (fs.f_type == AUFS_SUPER_MAGIC)) {
-	    return 1;
-	}
+
+    if ((statfs(TclGetString(shlibFile), &fs) == 0)
+	    && (fs.f_type == AUFS_SUPER_MAGIC)) {
+	return true;
     }
 #endif /* ... NO_FSTATFS */
 #endif /* ... TCL_TEMPLOAD_NO_UNLINK */
@@ -3119,7 +3111,7 @@ SkipUnlink(
      * No HPUX, environment variable override, or AUFS detected.  Perform
      * unlink.
      */
-    return 0;
+    return false;
 #endif /* hpux */
 }
 

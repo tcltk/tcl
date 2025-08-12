@@ -1045,7 +1045,7 @@ Tcl_UntraceCommand(
 {
     CommandTrace *tracePtr, *prevPtr;
     Interp *iPtr = (Interp *)interp;
-    int hasExecTraces = 0;
+    bool hasExecTraces = false;
 
     Command *cmdPtr = (Command *) Tcl_FindCommand(interp, cmdName, NULL,
 	    TCL_LEAVE_ERR_MSG);
@@ -1065,7 +1065,7 @@ Tcl_UntraceCommand(
 			TCL_TRACE_ANY_EXEC)) == flags)
 		&& (tracePtr->clientData == clientData)) {
 	    if (tracePtr->flags & TCL_TRACE_ANY_EXEC) {
-		hasExecTraces = 1;
+		hasExecTraces = true;
 	    }
 	    break;
 	}
@@ -1314,7 +1314,7 @@ TclCheckExecutionTraces(
 	     * Execute the trace command in order of creation for "leave".
 	     */
 
-	    active.reverseScan = 1;
+	    active.reverseScan = true;
 	    active.nextTracePtr = NULL;
 	    tracePtr = cmdPtr->tracePtr;
 	    while (tracePtr->nextPtr != lastTracePtr) {
@@ -1322,7 +1322,7 @@ TclCheckExecutionTraces(
 		tracePtr = tracePtr->nextPtr;
 	    }
 	} else {
-	    active.reverseScan = 0;
+	    active.reverseScan = false;
 	    active.nextTracePtr = tracePtr->nextPtr;
 	}
 	if (tracePtr->traceProc == TraceCommandProc) {
@@ -1422,7 +1422,7 @@ TclCheckInterpTraces(
 	     * results in one more reversal of trace invocation.
 	     */
 
-	    active.reverseScan = 1;
+	    active.reverseScan = true;
 	    active.nextTracePtr = NULL;
 	    tracePtr = iPtr->tracePtr;
 	    while (tracePtr->nextPtr != lastTracePtr) {
@@ -1433,7 +1433,7 @@ TclCheckInterpTraces(
 		lastTracePtr = active.nextTracePtr->nextPtr;
 	    }
 	} else {
-	    active.reverseScan = 0;
+	    active.reverseScan = false;
 	    active.nextTracePtr = tracePtr->nextPtr;
 	}
 
@@ -1619,7 +1619,7 @@ TraceExecutionProc(
     Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
-    int call = 0;
+    bool call = false;
     Interp *iPtr = (Interp *) interp;
     TraceCommandInfo *tcmdPtr = (TraceCommandInfo *)clientData;
     int flags = tcmdPtr->curFlags;
@@ -1648,7 +1648,7 @@ TraceExecutionProc(
 	    call = flags & tcmdPtr->flags &
 		    (TCL_TRACE_ENTER_EXEC | TCL_TRACE_LEAVE_EXEC);
 	} else {
-	    call = 1;
+	    call = true;
 	}
 
 	/*
@@ -1825,9 +1825,8 @@ TraceVarProc(
 				 * information. */
 {
     TraceVarInfo *tvarPtr = (TraceVarInfo *)clientData;
-    int destroy = 0;
+    bool destroy = false, rewind = ((Interp *)interp)->execEnvPtr->rewind;
     Tcl_DString cmd;
-    int rewind = ((Interp *)interp)->execEnvPtr->rewind;
 
     /*
      * We might call Tcl_EvalEx() below, and that might evaluate
@@ -1870,7 +1869,7 @@ TraceVarProc(
 
 	    if ((flags & TCL_TRACE_DESTROYED)
 		    && !(tvarPtr->flags & TCL_TRACE_DESTROYED)) {
-		destroy = 1;
+		destroy = true;
 		tvarPtr->flags |= TCL_TRACE_DESTROYED;
 	    }
 
@@ -1880,7 +1879,7 @@ TraceVarProc(
 	     */
 
 	    if (rewind && (flags & TCL_TRACE_UNSETS)) {
-		((Interp *)interp)->execEnvPtr->rewind = 0;
+		((Interp *)interp)->execEnvPtr->rewind = false;
 	    }
 	    int code = Tcl_EvalEx(interp, Tcl_DStringValue(&cmd),
 		    Tcl_DStringLength(&cmd), 0);
@@ -2382,8 +2381,8 @@ TclCheckArrayTraces(
 	Interp *iPtr = (Interp *)interp;
 
 	code = TclObjCallVarTraces(iPtr, arrayPtr, varPtr, name, NULL,
-		(TCL_NAMESPACE_ONLY|TCL_GLOBAL_ONLY| TCL_TRACE_ARRAY),
-		/* leaveErrMsg */ 1, index);
+		(TCL_NAMESPACE_ONLY | TCL_GLOBAL_ONLY | TCL_TRACE_ARRAY),
+		/* leaveErrMsg */ true, index);
     }
     return code;
 }
@@ -2414,7 +2413,7 @@ TclCheckArrayTraces(
 int
 TclObjCallVarTraces(
     Interp *iPtr,		/* Interpreter containing variable. */
-    Var *arrayPtr,	/* Pointer to array variable that contains the
+    Var *arrayPtr,		/* Pointer to array variable that contains the
 				 * variable, or NULL if the variable isn't an
 				 * element of an array. */
     Var *varPtr,		/* Variable whose traces are to be invoked. */
@@ -2423,7 +2422,7 @@ TclObjCallVarTraces(
     int flags,			/* Flags passed to trace functions: indicates
 				 * what's happening to variable, plus maybe
 				 * TCL_GLOBAL_ONLY or TCL_NAMESPACE_ONLY */
-    int leaveErrMsg,		/* If true, and one of the traces indicates an
+    bool leaveErrMsg,		/* If true, and one of the traces indicates an
 				 * error, then leave an error message and
 				 * stack trace information in *iPTr. */
     Tcl_Size index)		/* Index into the local variable table of the
@@ -2492,7 +2491,7 @@ TclCallVarTraces(
      * get used by the callbacks we invoke).
      */
 
-    int copiedName = 0;
+    bool copiedName = false;
     if (part2 == NULL) {
 	for (const char *p = part1; *p ; p++) {
 	    if (*p == '(') {
@@ -2510,7 +2509,7 @@ TclCallVarTraces(
 		    newPart1[offset] = 0;
 		    part1 = newPart1;
 		    part2 = newPart1 + offset + 1;
-		    copiedName = 1;
+		    copiedName = true;
 		}
 		break;
 	    }

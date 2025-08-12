@@ -71,7 +71,7 @@ StartNotifierThread(
 	    }
 	    pthread_mutex_unlock(&notifierMutex);
 
-	    notifierThreadRunning = 1;
+	    notifierThreadRunning = true;
 	}
 	pthread_mutex_unlock(&notifierInitMutex);
     }
@@ -286,7 +286,7 @@ FileHandlerEventProc(
     ThreadSpecificData *tsdPtr;
 
     if (!(flags & TCL_FILE_EVENTS)) {
-	return 0;
+	return false;
     }
 
     /*
@@ -323,7 +323,7 @@ FileHandlerEventProc(
 	}
 	break;
     }
-    return 1;
+    return true;
 }
 
 #ifdef NOTIFIER_SELECT
@@ -368,7 +368,7 @@ AlertSingleThread(
 	    tsdPtr->nextPtr->prevPtr = tsdPtr->prevPtr;
 	}
 	tsdPtr->nextPtr = tsdPtr->prevPtr = NULL;
-	tsdPtr->onList = 0;
+	tsdPtr->onList = false;
 	tsdPtr->pollState = 0;
     }
 #ifdef __CYGWIN__
@@ -398,7 +398,7 @@ AlertSingleThread(
 static void
 AtForkChild(void)
 {
-    if (notifierThreadRunning == 1) {
+    if (notifierThreadRunning) {
 	pthread_cond_destroy(&notifierCV);
     }
     pthread_mutex_init(&notifierInitMutex, NULL);
@@ -406,23 +406,23 @@ AtForkChild(void)
     pthread_cond_init(&notifierCV, NULL);
 
 #ifdef NOTIFIER_SELECT
-    asyncPending = 0;
+    asyncPending = false;
 #endif
 
     /*
-     * notifierThreadRunning == 1: thread is running, (there might be data in
-     *		notifier lists)
-     * atForkInit == 0: InitNotifier was never called
+     * notifierThreadRunning == true: thread is running, (there might be data
+     *		in notifier lists)
+     * atForkInit == false: InitNotifier was never called
      * notifierCount != 0: unbalanced InitNotifier() / FinalizeNotifier calls
      * waitingListPtr != 0: there are threads currently waiting for events.
      */
 
-    if (atForkInit == 1) {
+    if (atForkInit) {
 
 	notifierCount = 0;
-	if (notifierThreadRunning == 1) {
+	if (notifierThreadRunning) {
 	    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-	    notifierThreadRunning = 0;
+	    notifierThreadRunning = false;
 
 	    close(triggerPipe);
 	    triggerPipe = -1;

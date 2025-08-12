@@ -200,18 +200,18 @@ typedef struct ThreadSpecificData_Notifier_macOS ThreadSpecificData;
 struct ThreadSpecificData_Notifier_macOS {
     FileHandler *firstFileHandlerPtr;
 				/* Pointer to head of file handler list. */
-    int polled;			/* True if the notifier thread has polled for
+    bool polled;		/* True if the notifier thread has polled for
 				 * this thread. */
-    int sleeping;		/* True if runloop is inside Tcl_Sleep. */
-    int runLoopSourcePerformed;	/* True after the runLoopSource callack was
+    bool sleeping;		/* True if runloop is inside Tcl_Sleep. */
+    bool runLoopSourcePerformed;/* True after the runLoopSource callack was
 				 * performed. */
-    int runLoopRunning;		/* True if this thread's Tcl runLoop is
+    bool runLoopRunning;	/* True if this thread's Tcl runLoop is
 				 * running. */
     int runLoopNestingLevel;	/* Level of nested runLoop invocations. */
 
     /* Must hold the notifierLock before accessing the following fields: */
     /* Start notifierLock section */
-    int onList;			/* True if this thread is on the
+    bool onList;		/* True if this thread is on the
 				 * waitingList */
     ThreadSpecificData *nextPtr, *prevPtr;
 				/* All threads that are currently waiting on
@@ -239,7 +239,7 @@ struct ThreadSpecificData_Notifier_macOS {
     int numFdBits;		/* Number of valid bits in checkMasks (one
 				 * more than highest fd for which
 				 * Tcl_WatchFile has been called). */
-    int polling;		/* True if this thread is polling for
+    bool polling;		/* True if this thread is polling for
 				 * events. */
     CFRunLoopRef runLoop;	/* This thread's CFRunLoop, needs to be woken
 				 * up whenever the runLoopSource is
@@ -304,14 +304,14 @@ static int receivePipe = -1;	/* Output end of triggerPipe */
  * You must hold the notifierInitLock before accessing this variable.
  */
 
-static int notifierThreadRunning;
+static bool notifierThreadRunning;
 
 /*
  * The following static flag indicates that async handlers are pending.
  */
 
 #if TCL_THREADS
-static int asyncPending = 0;
+static bool asyncPending = false;
 #endif
 
 /*
@@ -322,7 +322,7 @@ static sigset_t allSigMask;
 
 /*
  * This is the thread ID of the notifier thread that does select. Only valid
- * when notifierThreadRunning is non-zero.
+ * when notifierThreadRunning is true.
  *
  * You must hold the notifierInitLock before accessing this variable.
  */
@@ -361,11 +361,11 @@ static void		QueueFileEvents(void *info);
 static void		UpdateWaitingListAndServiceEvents(
 			    CFRunLoopObserverRef observer,
 			    CFRunLoopActivity activity, void *info);
-static int		OnOffWaitingList(ThreadSpecificData *tsdPtr,
-			    int onList, int signalNotifier);
+static bool		OnOffWaitingList(ThreadSpecificData *tsdPtr,
+			    bool onList, bool signalNotifier);
 
 #ifdef HAVE_PTHREAD_ATFORK
-static int atForkInit = 0;
+static bool atForkInit = false;
 static void		AtForkPrepare(void);
 static void		AtForkParent(void);
 static void		AtForkChild(void);
@@ -539,7 +539,7 @@ TclpInitNotifier(void)
 	if (result) {
 	    Tcl_Panic("Tcl_InitNotifier: %s", "pthread_atfork failed");
 	}
-	atForkInit = 1;
+	atForkInit = true;
     }
 #endif /* HAVE_PTHREAD_ATFORK */
     if (notifierCount == 0) {
@@ -575,7 +575,7 @@ TclpInitNotifier(void)
 	 * execve() when more than one thread is present).
 	 */
 
-	notifierThreadRunning = 0;
+	notifierThreadRunning = false;
     }
     notifierCount++;
     UNLOCK_NOTIFIER_INIT;
@@ -639,9 +639,6 @@ StartNotifierThread(void)
 	Tcl_Panic("StartNotifierThread: notifier not initialized");
     }
     if (!notifierThreadRunning) {
-	int result;
-	pthread_attr_t attr;
-
 	/*
 	 * Arrange for the notifier thread to start with all
 	 * signals blocked. In its mainloop it unblocks the
@@ -651,17 +648,18 @@ StartNotifierThread(void)
 	sigfillset(&allSigMask);
 	pthread_sigmask(SIG_BLOCK, &allSigMask, &notifierSigMask);
 
+	pthread_attr_t attr;
 	pthread_attr_init(&attr);
 	pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM);
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 	pthread_attr_setstacksize(&attr, 60 * 1024);
-	result = pthread_create(&notifierThread, &attr,
+	int result = pthread_create(&notifierThread, &attr,
 		(void * (*)(void *)) NotifierThreadProc, NULL);
 	pthread_attr_destroy(&attr);
 	if (result) {
 	    Tcl_Panic("StartNotifierThread: unable to start notifier thread");
 	}
-	notifierThreadRunning = 1;
+	notifierThreadRunning = true;
 
 	/*
 	 * Restore original signal mask.
@@ -727,13 +725,13 @@ TclpFinalizeNotifier(
 		    Tcl_Panic("Tcl_FinalizeNotifier: unable to join notifier "
 			    "thread");
 		}
-		notifierThreadRunning = 0;
+		notifierThreadRunning = false;
 
 		/*
 		 * If async marks are outstanding, perform actions now.
 		 */
 		if (asyncPending) {
-		    asyncPending = 0;
+		    asyncPending = false;
 		    TclAsyncMarkFromNotifier();
 		}
 	    }
@@ -1094,7 +1092,7 @@ FileHandlerEventProc(
     ThreadSpecificData *tsdPtr;
 
     if (!(flags & TCL_FILE_EVENTS)) {
-	return 0;
+	return false;
     }
 
     /*
@@ -1136,7 +1134,7 @@ FileHandlerEventProc(
 	    filePtr->proc(filePtr->clientData, mask);
 	}
     }
-    return 1;
+    return true;
 }
 
 /*
@@ -1185,13 +1183,14 @@ int
 TclpWaitForEvent(
     const Tcl_Time *timePtr)	/* Maximum block time, or NULL. */
 {
-    int result, polling, runLoopRunning;
+    int result;
+    bool polling, runLoopRunning;
     CFTimeInterval waitTime;
     SInt32 runLoopStatus;
     ThreadSpecificData *tsdPtr;
 
     result = -1;
-    polling = 0;
+    polling = false;
     waitTime = CF_TIMEINTERVAL_FOREVER;
     tsdPtr = TCL_TSD_INIT(&dataKey);
 
@@ -1230,7 +1229,7 @@ TclpWaitForEvent(
 	     * there is another RunLoop running.
 	     */
 
-	    polling = 1;
+	    polling = true;
 	    waitTime = tsdPtr->runLoopRunning ? 0 : 0.0001;
 	}
     }
@@ -1240,7 +1239,7 @@ TclpWaitForEvent(
     LOCK_NOTIFIER_TSD;
     tsdPtr->polling = polling;
     UNLOCK_NOTIFIER_TSD;
-    tsdPtr->runLoopSourcePerformed = 0;
+    tsdPtr->runLoopSourcePerformed = false;
 
     /*
      * If the Tcl runloop is already running (e.g. if Tcl_WaitForEvent was
@@ -1252,14 +1251,14 @@ TclpWaitForEvent(
      */
 
     runLoopRunning = tsdPtr->runLoopRunning;
-    tsdPtr->runLoopRunning = 1;
+    tsdPtr->runLoopRunning = true;
     runLoopStatus = CFRunLoopRunInMode(
 	runLoopRunning ? tclEventsOnlyRunLoopMode : kCFRunLoopDefaultMode,
 	waitTime, TRUE);
     tsdPtr->runLoopRunning = runLoopRunning;
 
     LOCK_NOTIFIER_TSD;
-    tsdPtr->polling = 0;
+    tsdPtr->polling = false;
     UNLOCK_NOTIFIER_TSD;
     switch (runLoopStatus) {
     case kCFRunLoopRunFinished:
@@ -1314,7 +1313,7 @@ QueueFileEvents(
     FD_ZERO(&tsdPtr->readyMasks.writable);
     FD_ZERO(&tsdPtr->readyMasks.exceptional);
     UNLOCK_NOTIFIER_TSD;
-    tsdPtr->runLoopSourcePerformed = 1;
+    tsdPtr->runLoopSourcePerformed = true;
 
     for (filePtr = tsdPtr->firstFileHandlerPtr; (filePtr != NULL);
 	    filePtr = filePtr->nextPtr) {
@@ -1383,7 +1382,7 @@ UpdateWaitingListAndServiceEvents(
 	tsdPtr->runLoopNestingLevel++;
 	if (tsdPtr->numFdBits > 0 || tsdPtr->polling) {
 	    LOCK_NOTIFIER;
-	    if (!OnOffWaitingList(tsdPtr, 1, 1) && tsdPtr->polling) {
+	    if (!OnOffWaitingList(tsdPtr, true, true) && tsdPtr->polling) {
 		write(triggerPipe, "", 1);
 	    }
 	    UNLOCK_NOTIFIER;
@@ -1392,7 +1391,7 @@ UpdateWaitingListAndServiceEvents(
     case kCFRunLoopExit:
 	if (tsdPtr->runLoopNestingLevel == 1) {
 	    LOCK_NOTIFIER;
-	    OnOffWaitingList(tsdPtr, 0, 1);
+	    OnOffWaitingList(tsdPtr, false, true);
 	    UNLOCK_NOTIFIER;
 	}
 	tsdPtr->runLoopNestingLevel--;
@@ -1421,13 +1420,13 @@ UpdateWaitingListAndServiceEvents(
  *----------------------------------------------------------------------
  */
 
-static int
+static bool
 OnOffWaitingList(
     ThreadSpecificData *tsdPtr,
-    int onList,
-    int signalNotifier)
+    bool onList,
+    bool signalNotifier)
 {
-    int changeWaitingList;
+    bool changeWaitingList;
 
     changeWaitingList = (!onList ^ !tsdPtr->onList);
     if (changeWaitingList) {
@@ -1438,7 +1437,7 @@ OnOffWaitingList(
 	    }
 	    tsdPtr->prevPtr = NULL;
 	    waitingListPtr = tsdPtr;
-	    tsdPtr->onList = 1;
+	    tsdPtr->onList = true;
 	} else {
 	    if (tsdPtr->prevPtr) {
 		tsdPtr->prevPtr->nextPtr = tsdPtr->nextPtr;
@@ -1449,7 +1448,7 @@ OnOffWaitingList(
 		tsdPtr->nextPtr->prevPtr = tsdPtr->prevPtr;
 	    }
 	    tsdPtr->nextPtr = tsdPtr->prevPtr = NULL;
-	    tsdPtr->onList = 0;
+	    tsdPtr->onList = false;
 	}
 	if (signalNotifier) {
 	    write(triggerPipe, "", 1);
@@ -1513,7 +1512,7 @@ Tcl_Sleep(
 		runLoopTimer = NULL;
 	    }
 	}
-	tsdPtr->sleeping = 1;
+	tsdPtr->sleeping = true;
 	do {
 	    runLoopStatus = CFRunLoopRunInMode(kCFRunLoopDefaultMode,
 		    waitTime, FALSE);
@@ -1529,7 +1528,7 @@ Tcl_Sleep(
 		break;
 	    }
 	} while (waitTime > 0);
-	tsdPtr->sleeping = 0;
+	tsdPtr->sleeping = false;
 	if (runLoopTimer) {
 	    CFRunLoopTimerSetNextFireDate(runLoopTimer, nextTimerFire);
 	}
@@ -1720,7 +1719,7 @@ TclUnixWaitForFile(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 TclAsyncNotifier(
     int sigNumber,		/* Signal number. */
     TCL_UNUSED(Tcl_ThreadId),	/* Target thread. */
@@ -1740,12 +1739,12 @@ TclAsyncNotifier(
 	if (notifierThreadRunning) {
 	    *flagPtr = value;
 	    if (!asyncPending) {
-		asyncPending = 1;
+		asyncPending = true;
 		write(triggerPipe, "S", 1);
 	    }
-	    return 1;
+	    return true;
 	}
-	return 0;
+	return false;
     }
 
     /*
@@ -1754,7 +1753,7 @@ TclAsyncNotifier(
 
     pthread_kill((pthread_t) notifierThread, sigNumber);
 #endif
-    return 0;
+    return false;
 }
 
 /*
@@ -1787,7 +1786,7 @@ NotifierThreadProc(
 {
     ThreadSpecificData *tsdPtr;
     fd_set readableMask, writableMask, exceptionalMask;
-    int ret, numFdBits = 0, polling;
+    int ret, numFdBits = 0;
     struct timeval poll = {0., 0.}, *timePtr;
     char buf[2];
 
@@ -1823,7 +1822,7 @@ NotifierThreadProc(
 	    if (tsdPtr->numFdBits > numFdBits) {
 		numFdBits = tsdPtr->numFdBits;
 	    }
-	    polling = tsdPtr->polling;
+	    bool polling = tsdPtr->polling;
 	    UNLOCK_NOTIFIER_TSD;
 	    if ((tsdPtr->polled = polling)) {
 		timePtr = &poll;
@@ -1855,7 +1854,7 @@ NotifierThreadProc(
 	     * perform work on async handlers now.
 	     */
 	    if (errno == EINTR && asyncPending) {
-		asyncPending = 0;
+		asyncPending = false;
 		TclAsyncMarkFromNotifier();
 	    }
 
@@ -1872,7 +1871,7 @@ NotifierThreadProc(
 
 	LOCK_NOTIFIER;
 	for (tsdPtr = waitingListPtr; tsdPtr; tsdPtr = tsdPtr->nextPtr) {
-	    int found = 0;
+	    bool found = false;
 	    SelectMasks readyMasks, checkMasks;
 
 	    LOCK_NOTIFIER_TSD;
@@ -1889,17 +1888,17 @@ NotifierThreadProc(
 		if (FD_ISSET(i, &checkMasks.readable)
 			&& FD_ISSET(i, &readableMask)) {
 		    FD_SET(i, &readyMasks.readable);
-		    found = 1;
+		    found = true;
 		}
 		if (FD_ISSET(i, &checkMasks.writable)
 			&& FD_ISSET(i, &writableMask)) {
 		    FD_SET(i, &readyMasks.writable);
-		    found = 1;
+		    found = true;
 		}
 		if (FD_ISSET(i, &checkMasks.exceptional)
 			&& FD_ISSET(i, &exceptionalMask)) {
 		    FD_SET(i, &readyMasks.exceptional);
-		    found = 1;
+		    found = true;
 		}
 	    }
 
@@ -1911,7 +1910,7 @@ NotifierThreadProc(
 		 * services the file event.
 		 */
 
-		OnOffWaitingList(tsdPtr, 0, 0);
+		OnOffWaitingList(tsdPtr, false, false);
 
 		LOCK_NOTIFIER_TSD;
 		FD_COPY(&readyMasks.readable, &tsdPtr->readyMasks.readable);
@@ -1919,7 +1918,7 @@ NotifierThreadProc(
 		FD_COPY(&readyMasks.exceptional,
 			&tsdPtr->readyMasks.exceptional);
 		UNLOCK_NOTIFIER_TSD;
-		tsdPtr->polled = 0;
+		tsdPtr->polled = false;
 		if (tsdPtr->runLoop) {
 		    CFRunLoopSourceSignal(tsdPtr->runLoopSource);
 		    CFRunLoopWakeUp(tsdPtr->runLoop);
@@ -1948,7 +1947,7 @@ NotifierThreadProc(
 	    }
 
 	    if (asyncPending) {
-		asyncPending = 0;
+		asyncPending = false;
 		TclAsyncMarkFromNotifier();
 	    }
 	}
@@ -2046,7 +2045,7 @@ AtForkChild(void)
     UNLOCK_NOTIFIER_INIT;
 #endif
 
-    asyncPending = 0;
+    asyncPending = false;
 
     if (tsdPtr->runLoop) {
 	tsdPtr->runLoop = NULL;
@@ -2055,7 +2054,7 @@ AtForkChild(void)
     }
     if (notifierCount > 0) {
 	notifierCount = 1;
-	notifierThreadRunning = 0;
+	notifierThreadRunning = false;
 
 	/*
 	 * Restart the notifier thread for signal handling.

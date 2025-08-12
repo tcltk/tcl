@@ -120,7 +120,7 @@ const unsigned char tclCharTypeTable[] = {
  * Prototypes for local functions defined in this file:
  */
 
-static int		CommandComplete(const char *script, Tcl_Size numBytes);
+static bool		CommandComplete(const char *script, Tcl_Size numBytes);
 static Tcl_Size		ParseComment(const char *src, Tcl_Size numBytes,
 			    Tcl_Parse *parsePtr);
 static int		ParseTokens(const char *src, Tcl_Size numBytes, int mask,
@@ -165,7 +165,7 @@ TclParseInit(
     parsePtr->end = start + numBytes;
     parsePtr->term = parsePtr->end;
     parsePtr->interp = interp;
-    parsePtr->incomplete = 0;
+    parsePtr->incomplete = false;
     parsePtr->errorType = TCL_PARSE_SUCCESS;
 }
 
@@ -263,7 +263,7 @@ Tcl_ParseCommand(
     type = CHAR_TYPE(*src);
     scanned = 1;	/* Can't have missing whitepsace before first word. */
     while (1) {
-	int expandWord = 0;
+	bool expandWord = false;
 
 	/* Are we at command termination? */
 
@@ -341,7 +341,7 @@ Tcl_ParseCommand(
 	     */
 
 	    expPtr = &parsePtr->tokenPtr[expIdx];
-	    if ((0 == expandWord)
+	    if (!expandWord
 		    /* Haven't seen prefix already */
 		    && (expIdx + 1 == parsePtr->numTokens)
 		    /* Only one token */
@@ -353,7 +353,7 @@ Tcl_ParseCommand(
 			    numBytes, &parsePtr->incomplete, &type))
 		    && (type != TYPE_COMMAND_END)
 		    /* Non-whitespace follows */) {
-		expandWord = 1;
+		expandWord = true;
 		parsePtr->numTokens--;
 		goto parseWord;
 	    }
@@ -380,7 +380,7 @@ Tcl_ParseCommand(
 	tokenPtr->size = src - tokenPtr->start;
 	tokenPtr->numComponents = parsePtr->numTokens - (wordIndex + 1);
 	if (expandWord) {
-	    int isLiteral = 1;
+	    bool isLiteral = true;
 
 	    /*
 	     * When a command includes a word that is an expanded literal; for
@@ -398,7 +398,7 @@ Tcl_ParseCommand(
 
 	    for (Tcl_Size i = 1; i <= tokenPtr->numComponents; i++) {
 		if (tokenPtr[i].type != TCL_TOKEN_TEXT) {
-		    isLiteral = 0;
+		    isLiteral = false;
 		    break;
 		}
 	    }
@@ -543,7 +543,7 @@ Tcl_ParseCommand(
  *	Tcl to separate words in scripts or elements in lists.
  *
  * Results:
- *	Returns 1, if byte is in the set, 0 otherwise.
+ *	Returns true if byte is in the set, false otherwise.
  *
  * Side effects:
  *	None.
@@ -551,7 +551,7 @@ Tcl_ParseCommand(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 TclIsSpaceProc(
     int byte)
 {
@@ -580,23 +580,23 @@ TclIsSpaceProc(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 TclIsBareword(
     int byte)
 {
     if (byte < '0' || byte > 'z') {
-	return 0;
+	return false;
     }
     if (byte <= '9' || byte >= 'a') {
-	return 1;
+	return true;
     }
     if (byte == '_') {
-	return 1;
+	return true;
     }
     if (byte < 'A' || byte > 'Z') {
-	return 0;
+	return false;
     }
-    return 1;
+    return true;
 }
 
 /*
@@ -648,7 +648,7 @@ ParseWhiteSpace(
 	    }
 	    p += 2;
 	    if (--numBytes == 0) {
-		*incompletePtr = 1;
+		*incompletePtr = true;
 		break;
 	    }
 	    continue;
@@ -1163,7 +1163,7 @@ ParseTokens(
 		    }
 		    parsePtr->errorType = TCL_PARSE_MISSING_BRACKET;
 		    parsePtr->term = tokenPtr->start;
-		    parsePtr->incomplete = 1;
+		    parsePtr->incomplete = true;
 		    TclStackFree(parsePtr->interp, nestedPtr);
 		    return TCL_ERROR;
 		}
@@ -1202,7 +1202,7 @@ ParseTokens(
 
 	    if (src[1] == '\n') {
 		if (numBytes == 2) {
-		    parsePtr->incomplete = 1;
+		    parsePtr->incomplete = true;
 		}
 
 		/*
@@ -1415,7 +1415,7 @@ Tcl_ParseVarName(
 	    }
 	    parsePtr->errorType = TCL_PARSE_MISSING_VAR_BRACE;
 	    parsePtr->term = tokenPtr->start-1;
-	    parsePtr->incomplete = 1;
+	    parsePtr->incomplete = true;
 	    goto error;
 	}
 	tokenPtr->size = src - tokenPtr->start;
@@ -1472,7 +1472,7 @@ Tcl_ParseVarName(
 		}
 		parsePtr->errorType = TCL_PARSE_MISSING_PAREN;
 		parsePtr->term = src;
-		parsePtr->incomplete = 1;
+		parsePtr->incomplete = true;
 		goto error;
 	    } else if ((*parsePtr->term != ')')){
 		if (parsePtr->interp != NULL) {
@@ -1706,7 +1706,7 @@ Tcl_ParseBraces(
 		 */
 
 		if (numBytes == 2) {
-		    parsePtr->incomplete = 1;
+		    parsePtr->incomplete = true;
 		}
 		tokenPtr->size = (src - tokenPtr->start);
 		if (tokenPtr->size != 0) {
@@ -1737,7 +1737,7 @@ Tcl_ParseBraces(
   missingBraceError:
     parsePtr->errorType = TCL_PARSE_MISSING_BRACE;
     parsePtr->term = start;
-    parsePtr->incomplete = 1;
+    parsePtr->incomplete = true;
     if (parsePtr->interp == NULL) {
 	/*
 	 * Skip straight to the exit code since we have no interpreter to put
@@ -1756,25 +1756,22 @@ Tcl_ParseBraces(
      * preceded by a '<whitespace>#' on the same line.
      */
 
-    {
-	int openBrace = 0;
-
-	while (--src > start) {
-	    switch (*src) {
-	    case '{':
-		openBrace = 1;
-		break;
-	    case '\n':
-		openBrace = 0;
-		break;
-	    case '#' :
-		if (openBrace && TclIsSpaceProcM(src[-1])) {
-		    TclAppendResult(parsePtr->interp,
-			    ": possible unbalanced brace in comment");
-		    goto error;
-		}
-		break;
+    bool openBrace = false;
+    while (--src > start) {
+	switch (*src) {
+	case '{':
+	    openBrace = true;
+	    break;
+	case '\n':
+	    openBrace = false;
+	    break;
+	case '#' :
+	    if (openBrace && TclIsSpaceProcM(src[-1])) {
+		TclAppendResult(parsePtr->interp,
+			": possible unbalanced brace in comment");
+		goto error;
 	    }
+	    break;
 	}
     }
 
@@ -1851,7 +1848,7 @@ Tcl_ParseQuotedString(
 	}
 	parsePtr->errorType = TCL_PARSE_MISSING_QUOTE;
 	parsePtr->term = start;
-	parsePtr->incomplete = 1;
+	parsePtr->incomplete = true;
 	goto error;
     }
     if (termPtr != NULL) {
@@ -1936,7 +1933,7 @@ TclSubstParse(
 	    parsePtr->numTokens = 0;
 	    parsePtr->tokensAvailable = NUM_STATIC_TOKENS;
 	    parsePtr->end = parsePtr->term;
-	    parsePtr->incomplete = 0;
+	    parsePtr->incomplete = false;
 	    parsePtr->errorType = TCL_PARSE_SUCCESS;
 	} while (TCL_OK !=
 		ParseTokens(p, parsePtr->end - p, 0, flags, parsePtr));
@@ -2122,7 +2119,7 @@ TclSubstTokens(
     Tcl_Obj *result;
     int code = TCL_OK;
 #define NUM_STATIC_POS 20
-    int isLiteral;
+    bool isLiteral;
     Tcl_Size maxNumCL, numCL, adjust;
     Tcl_Size *clPosition = NULL;
     Interp *iPtr = (Interp *) interp;
@@ -2148,11 +2145,11 @@ TclSubstTokens(
 
     numCL = 0;
     maxNumCL = 0;
-    isLiteral = 1;
+    isLiteral = true;
     for (Tcl_Size i=0 ; i < count; i++) {
 	if ((tokenPtr[i].type != TCL_TOKEN_TEXT)
 		&& (tokenPtr[i].type != TCL_TOKEN_BS)) {
-	    isLiteral = 0;
+	    isLiteral = false;
 	    break;
 	}
     }
@@ -2392,8 +2389,8 @@ TclSubstTokens(
  *	script is complete
  *
  * Results:
- *	1 is returned if the script is complete, 0 if there are open
- *	delimiters such as " or (. 1 is also returned if there is a parse
+ *	true is returned if the script is complete, fa;se if there are open
+ *	delimiters such as " or (. true is also returned if there is a parse
  *	error in the script other than unmatched delimiters.
  *
  * Side effects:
@@ -2402,14 +2399,13 @@ TclSubstTokens(
  *----------------------------------------------------------------------
  */
 
-static int
+static bool
 CommandComplete(
     const char *script,		/* Script to check. */
     Tcl_Size numBytes)		/* Number of bytes in script. */
 {
     Tcl_Parse parse;
     const char *p, *end;
-    int result;
 
     p = script;
     end = p + numBytes;
@@ -2420,11 +2416,7 @@ CommandComplete(
 	}
 	Tcl_FreeParse(&parse);
     }
-    if (parse.incomplete) {
-	result = 0;
-    } else {
-	result = 1;
-    }
+    bool result = !parse.incomplete;
     Tcl_FreeParse(&parse);
     return result;
 }

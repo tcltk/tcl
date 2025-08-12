@@ -63,13 +63,13 @@ struct ThreadSpecificData_Notifier {
 				 * four fields. */
     int serviceMode;		/* One of TCL_SERVICE_NONE or
 				 * TCL_SERVICE_ALL. */
-    int blockTimeSet;		/* 0 means there is no maximum block time:
+    bool blockTimeSet;		/* false means there is no maximum block time:
 				 * block forever. */
     Tcl_Time blockTime;		/* If blockTimeSet is 1, gives the maximum
 				 * elapsed time for the next block. */
-    int inTraversal;		/* 1 if Tcl_SetMaxBlockTime is being called
+    bool inTraversal;		/* true if Tcl_SetMaxBlockTime is being called
 				 * during an event source traversal. */
-    int initialized;		/* 1 if notifier has been initialized. */
+    bool initialized;		/* true if notifier has been initialized. */
     EventSource *firstEventSourcePtr;
 				/* Pointer to first event source in list of
 				 * event sources for this thread. */
@@ -136,7 +136,7 @@ TclInitNotifier(void)
 	tsdPtr = TCL_TSD_INIT(&dataKey);
 	tsdPtr->threadId = threadId;
 	tsdPtr->clientData = Tcl_InitNotifier();
-	tsdPtr->initialized = 1;
+	tsdPtr->initialized = true;
 	tsdPtr->nextPtr = firstNotifierPtr;
 	firstNotifierPtr = tsdPtr;
     }
@@ -199,7 +199,7 @@ TclFinalizeNotifier(void)
 	    break;
 	}
     }
-    tsdPtr->initialized = 0;
+    tsdPtr->initialized = false;
 
     Tcl_MutexUnlock(&listLock);
 }
@@ -485,7 +485,7 @@ QueueEvent(
     int position)		/* One of TCL_QUEUE_TAIL, TCL_QUEUE_HEAD, TCL_QUEUE_MARK,
 				 * possibly combined with TCL_QUEUE_ALERT_IF_EMPTY */
 {
-    int wasEmpty = 0;
+    bool wasEmpty = false;
 
     Tcl_MutexLock(&(tsdPtr->queueMutex));
     if ((position & 3) == TCL_QUEUE_TAIL) {
@@ -651,7 +651,6 @@ Tcl_ServiceEvent(
     Tcl_EventProc *proc;
     Tcl_Size eventCount;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    int result;
 
     /*
      * Asynchronous event handlers are considered to be the highest priority
@@ -661,7 +660,7 @@ Tcl_ServiceEvent(
 
     if (Tcl_AsyncReady()) {
 	(void) Tcl_AsyncInvoke(NULL, 0);
-	return 1;
+	return true;
     }
 
     /*
@@ -717,7 +716,7 @@ Tcl_ServiceEvent(
 	eventCount = tsdPtr->eventCount;
 	tsdPtr->eventCount = 0;
 	Tcl_MutexUnlock(&tsdPtr->queueMutex);
-	result = proc(evPtr, flags);
+	int result = proc(evPtr, flags);
 	Tcl_MutexLock(&tsdPtr->queueMutex);
 	tsdPtr->eventCount += eventCount;
 
@@ -758,7 +757,7 @@ Tcl_ServiceEvent(
 		tsdPtr->eventCount--;
 	    }
 	    Tcl_MutexUnlock(&tsdPtr->queueMutex);
-	    return 1;
+	    return true;
 	} else {
 	    /*
 	     * The event wasn't actually handled, so we have to restore the
@@ -769,7 +768,7 @@ Tcl_ServiceEvent(
 	}
     }
     Tcl_MutexUnlock(&tsdPtr->queueMutex);
-    return 0;
+    return false;
 }
 
 /*
@@ -856,7 +855,7 @@ Tcl_SetMaxBlockTime(
 	    || ((timePtr->sec == tsdPtr->blockTime.sec)
 	    && (timePtr->usec < tsdPtr->blockTime.usec))) {
 	tsdPtr->blockTime = *timePtr;
-	tsdPtr->blockTimeSet = 1;
+	tsdPtr->blockTimeSet = true;
     }
 
     /*
@@ -963,9 +962,9 @@ Tcl_DoOneEvent(
 	if (flags & TCL_DONT_WAIT) {
 	    tsdPtr->blockTime.sec = 0;
 	    tsdPtr->blockTime.usec = 0;
-	    tsdPtr->blockTimeSet = 1;
+	    tsdPtr->blockTimeSet = true;
 	} else {
-	    tsdPtr->blockTimeSet = 0;
+	    tsdPtr->blockTimeSet = false;
 	}
 
 	/*
@@ -973,14 +972,14 @@ Tcl_DoOneEvent(
 	 * block time to be updated if necessary.
 	 */
 
-	tsdPtr->inTraversal = 1;
+	tsdPtr->inTraversal = true;
 	for (EventSource *sourcePtr = tsdPtr->firstEventSourcePtr; sourcePtr;
 		sourcePtr = sourcePtr->nextPtr) {
 	    if (sourcePtr->setupProc) {
 		sourcePtr->setupProc(sourcePtr->clientData, flags);
 	    }
 	}
-	tsdPtr->inTraversal = 0;
+	tsdPtr->inTraversal = false;
 
 	Tcl_Time *timePtr;
 	if ((flags & TCL_DONT_WAIT) || tsdPtr->blockTimeSet) {
@@ -1110,8 +1109,8 @@ Tcl_ServiceAll(void)
      * so we can avoid multiple changes.
      */
 
-    tsdPtr->inTraversal = 1;
-    tsdPtr->blockTimeSet = 0;
+    tsdPtr->inTraversal = true;
+    tsdPtr->blockTimeSet = false;
 
     for (EventSource *sourcePtr = tsdPtr->firstEventSourcePtr; sourcePtr;
 	    sourcePtr = sourcePtr->nextPtr) {
@@ -1138,7 +1137,7 @@ Tcl_ServiceAll(void)
     } else {
 	Tcl_SetTimer(&tsdPtr->blockTime);
     }
-    tsdPtr->inTraversal = 0;
+    tsdPtr->inTraversal = false;
     tsdPtr->serviceMode = TCL_SERVICE_ALL;
     return result;
 }

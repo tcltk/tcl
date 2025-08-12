@@ -39,7 +39,7 @@ typedef struct {
 				 * (allocated+1). */
     Tcl_Size maxChars;		/* Max number of chars that can fit in the
 				 * space allocated for the Unicode array. */
-    int hasUnicode;		/* Boolean determining whether the string has
+    bool hasUnicode;		/* Boolean determining whether the string has
 				 * a Tcl_UniChar representation. */
     Tcl_UniChar unicode[TCLFLEXARRAY];	/* The array of Tcl_UniChar units.
 				 * The actual size of this field depends on

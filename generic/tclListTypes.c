@@ -193,7 +193,7 @@ TclListContainsValue(
     Tcl_Interp *interp,		/* Used for error messages. May be NULL */
     Tcl_Obj *needlePtr,		/* List to search */
     Tcl_Obj *hayPtr,		/* List to search */
-    int *foundPtr)		/* Result */
+    int *foundPtr)		/* Result; should be a bool* */
 {
     /* Adapted from TEBCresume. */
     /* FUTURES - use this in TEBCresume INST_LIST_IN as well */
@@ -210,7 +210,7 @@ TclListContainsValue(
     }
 
     if (haySize == 0) {
-	*foundPtr = 0;
+	*foundPtr = false;
 	return TCL_OK;
     }
 
@@ -244,11 +244,11 @@ TclListContainsValue(
 	const char *hayElem = TclGetStringFromObj(hayElemObj, &hayElemLen);
 	if (needleLen == hayElemLen &&
 		memcmp(needle, hayElem, needleLen) == 0) {
-	    *foundPtr = 1;
+	    *foundPtr = true;
 	    return TCL_OK;
 	}
     }
-    *foundPtr = 0;
+    *foundPtr = false;
     return TCL_OK;
 }
 

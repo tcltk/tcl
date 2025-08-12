@@ -99,8 +99,8 @@ static void	LoadCleanupProc(void *clientData,
 		    Tcl_Interp *interp);
 static int	IsStatic(LoadedLibrary *libraryPtr);
 static int	UnloadLibrary(Tcl_Interp *interp, Tcl_Interp *target,
-		    LoadedLibrary *library, int keepLibrary,
-		    const char *fullFileName, int interpExiting);
+		    LoadedLibrary *library, bool keepLibrary,
+		    const char *fullFileName, bool interpExiting);
 
 static int
 IsStatic(
@@ -137,7 +137,7 @@ Tcl_LoadObjCmd(
     LoadedLibrary *libraryPtr, *defaultPtr;
     Tcl_DString pfx, tmp, initName, safeInitName;
     Tcl_DString unloadName, safeUnloadName;
-    int code, namesMatch, filesMatch;
+    int code;
     Tcl_Size offset;
     Tcl_LibraryInitProc *initProc;
     const char *fullFileName, *prefix;
@@ -232,19 +232,16 @@ Tcl_LoadObjCmd(
     defaultPtr = NULL;
     for (libraryPtr = firstLibraryPtr; libraryPtr != NULL;
 	    libraryPtr = libraryPtr->nextPtr) {
+	bool namesMatch, filesMatch;
 	if (prefix == NULL) {
-	    namesMatch = 0;
+	    namesMatch = false;
 	} else {
 	    TclDStringClear(&pfx);
 	    Tcl_DStringAppend(&pfx, prefix, -1);
 	    TclDStringClear(&tmp);
 	    Tcl_DStringAppend(&tmp, libraryPtr->prefix, -1);
-	    if (strcmp(Tcl_DStringValue(&tmp),
-		    Tcl_DStringValue(&pfx)) == 0) {
-		namesMatch = 1;
-	    } else {
-		namesMatch = 0;
-	    }
+	    namesMatch = (strcmp(Tcl_DStringValue(&tmp),
+		    Tcl_DStringValue(&pfx)) == 0);
 	}
 	TclDStringClear(&pfx);
 
@@ -559,7 +556,8 @@ Tcl_UnloadObjCmd(
     LoadedLibrary *libraryPtr;
     Tcl_DString pfx, tmp;
     InterpLibrary *ipFirstPtr, *ipPtr;
-    int i, code, complain = 1, keepLibrary = 0;
+    int i, code;
+    bool complain = true, keepLibrary = false;
     const char *fullFileName = "";
     const char *prefix;
     static const char *const options[] = {
@@ -592,10 +590,10 @@ Tcl_UnloadObjCmd(
 	}
 	switch (index) {
 	case UNLOAD_NOCOMPLAIN:		/* -nocomplain */
-	    complain = 0;
+	    complain = false;
 	    break;
 	case UNLOAD_KEEPLIB:		/* -keeplibrary */
-	    keepLibrary = 1;
+	    keepLibrary = true;
 	    break;
 	case UNLOAD_LAST:		/* -- */
 	    i++;
@@ -659,21 +657,17 @@ Tcl_UnloadObjCmd(
     Tcl_MutexLock(&libraryMutex);
 
     for (libraryPtr = firstLibraryPtr; libraryPtr != NULL; libraryPtr = libraryPtr->nextPtr) {
-	int namesMatch, filesMatch;
+	bool namesMatch, filesMatch;
 
 	if (prefix == NULL) {
-	    namesMatch = 0;
+	    namesMatch = false;
 	} else {
 	    TclDStringClear(&pfx);
 	    Tcl_DStringAppend(&pfx, prefix, -1);
 	    TclDStringClear(&tmp);
 	    Tcl_DStringAppend(&tmp, libraryPtr->prefix, -1);
-	    if (strcmp(Tcl_DStringValue(&tmp),
-		    Tcl_DStringValue(&pfx)) == 0) {
-		namesMatch = 1;
-	    } else {
-		namesMatch = 0;
-	    }
+	    namesMatch = (strcmp(Tcl_DStringValue(&tmp),
+		    Tcl_DStringValue(&pfx)) == 0);
 	}
 	TclDStringClear(&pfx);
 
@@ -739,7 +733,8 @@ Tcl_UnloadObjCmd(
 	goto done;
     }
 
-    code = UnloadLibrary(interp, target, libraryPtr, keepLibrary, fullFileName, 0);
+    code = UnloadLibrary(interp, target, libraryPtr, keepLibrary, fullFileName,
+	    false);
 
   done:
     Tcl_DStringFree(&pfx);
@@ -772,9 +767,9 @@ UnloadLibrary(
     Tcl_Interp *interp,
     Tcl_Interp *target,
     LoadedLibrary *libraryPtr,
-    int keepLibrary,
+    bool keepLibrary,
     const char *fullFileName,
-    int interpExiting)
+    bool interpExiting)
 {
     int code;
     InterpLibrary *ipFirstPtr, *ipPtr;
@@ -1197,7 +1192,7 @@ LoadCleanupProc(
 
     while (ipPtr) {
 	libraryPtr = ipPtr->libraryPtr;
-	UnloadLibrary(interp, interp, libraryPtr, 0, "", 1);
+	UnloadLibrary(interp, interp, libraryPtr, false, "", true);
 	/* UnloadLibrary doesn't free it by interp delete, so do it here and
 	 * repeat for next. */
 	nextPtr = ipPtr->nextPtr;

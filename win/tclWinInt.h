@@ -101,7 +101,7 @@ enum PipeWorkerStates {
 MODULE_SCOPE
 TclPipeThreadInfo *	TclPipeThreadCreateTI(TclPipeThreadInfo **pipeTIPtr,
 			    void *clientData);
-MODULE_SCOPE int	TclPipeThreadWaitForSignal(
+MODULE_SCOPE bool	TclPipeThreadWaitForSignal(
 			    TclPipeThreadInfo **pipeTIPtr);
 
 static inline void
@@ -122,7 +122,7 @@ TclPipeThreadIsAlive(
     return (pipeTI && pipeTI->state != PTI_STATE_DOWN);
 };
 
-MODULE_SCOPE int	TclPipeThreadStopSignal(TclPipeThreadInfo **pipeTIPtr);
+MODULE_SCOPE bool	TclPipeThreadStopSignal(TclPipeThreadInfo **pipeTIPtr);
 MODULE_SCOPE void	TclPipeThreadStop(TclPipeThreadInfo **pipeTIPtr,
 			    HANDLE hThread);
 MODULE_SCOPE void	TclPipeThreadExit(TclPipeThreadInfo **pipeTIPtr);

@@ -763,7 +763,7 @@ TclpSetVariables(
 #ifdef __CYGWIN__
     SYSTEM_INFO sysInfo;
     static OSVERSIONINFOW osInfo;
-    static int osInfoInitialized = 0;
+    static bool osInfoInitialized = false;
     char buffer[TCL_INTEGER_SPACE * 2];
 #elif !defined(NO_UNAME)
     struct utsname name;
@@ -866,7 +866,7 @@ TclpSetVariables(
 	if (!getversion || getversion(&osInfo)) {
 	    GetVersionExW(&osInfo);
 	}
-	osInfoInitialized = 1;
+	osInfoInitialized = true;
     }
 
     GetSystemInfo(&sysInfo);

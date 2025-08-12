@@ -107,20 +107,20 @@ static void		MyClassDeleted(void *clientData);
 	{TCL_OO_METHOD_VERSION_CURRENT,"core method: "#name,proc,NULL,NULL}}
 
 static const DeclaredClassMethod objMethods[] = {
-    DCM("destroy", 1,	TclOO_Object_Destroy),
-    DCM("eval", 0,	TclOO_Object_Eval),
-    DCM("unknown", 0,	TclOO_Object_Unknown),
-    DCM("variable", 0,	TclOO_Object_LinkVar),
-    DCM("varname", 0,	TclOO_Object_VarName),
-    {NULL, 0, {0, NULL, NULL, NULL, NULL}}
+    DCM("destroy", true,	TclOO_Object_Destroy),
+    DCM("eval", false,		TclOO_Object_Eval),
+    DCM("unknown", false,	TclOO_Object_Unknown),
+    DCM("variable", false,	TclOO_Object_LinkVar),
+    DCM("varname", false,	TclOO_Object_VarName),
+    {NULL, false, {0, NULL, NULL, NULL, NULL}}
 }, clsMethods[] = {
-    DCM("create", 1,	TclOO_Class_Create),
-    DCM("new", 1,	TclOO_Class_New),
-    DCM("createWithNamespace", 0, TclOO_Class_CreateNs),
-    {NULL, 0, {0, NULL, NULL, NULL, NULL}}
+    DCM("create", true,		TclOO_Class_Create),
+    DCM("new", true,		TclOO_Class_New),
+    DCM("createWithNamespace", false, TclOO_Class_CreateNs),
+    {NULL, false, {0, NULL, NULL, NULL, NULL}}
 }, cfgMethods[] = {
-    DCM("configure", 1, TclOO_Configurable_Configure),
-    {NULL, 0, {0, NULL, NULL, NULL, NULL}}
+    DCM("configure", true,	TclOO_Configurable_Configure),
+    {NULL, false, {0, NULL, NULL, NULL, NULL}}
 };
 
 /*
@@ -1362,13 +1362,13 @@ ObjectNamespaceDeleted(
  * TclOODecrRefCount --
  *
  *	Decrement the refcount of an object and deallocate storage then object
- *	is no longer referenced.  Returns 1 if storage was deallocated, and 0
- *	otherwise.
+ *	is no longer referenced.  Returns true if storage was deallocated, and
+ *	false otherwise.
  *
  * ----------------------------------------------------------------------
  */
 
-int
+bool
 TclOODecrRefCount(
     Object *oPtr)
 {
@@ -1377,9 +1377,9 @@ TclOODecrRefCount(
 	    Tcl_Free(oPtr->classPtr);
 	}
 	Tcl_Free(oPtr);
-	return 1;
+	return true;
     }
-    return 0;
+    return false;
 }
 
 /*
@@ -3019,7 +3019,7 @@ Tcl_GetObjectFromObj(
  * ----------------------------------------------------------------------
  */
 
-int
+int // bool, but not for backward compatibility
 TclOOIsReachable(
     Class *targetPtr,
     Class *startPtr)
@@ -3028,7 +3028,7 @@ TclOOIsReachable(
 
   tailRecurse:
     if (startPtr == targetPtr) {
-	return 1;
+	return true;
     }
     if (startPtr->superclasses.num == 1 && startPtr->mixins.num == 0) {
 	startPtr = startPtr->superclasses.list[0];
@@ -3036,15 +3036,15 @@ TclOOIsReachable(
     }
     FOREACH(superPtr, startPtr->superclasses) {
 	if (TclOOIsReachable(targetPtr, superPtr)) {
-	    return 1;
+	    return true;
 	}
     }
     FOREACH(superPtr, startPtr->mixins) {
 	if (TclOOIsReachable(targetPtr, superPtr)) {
-	    return 1;
+	    return true;
 	}
     }
-    return 0;
+    return false;
 }
 
 /*
@@ -3106,7 +3106,7 @@ Tcl_ObjectContextIsFiltering(
     Tcl_ObjectContext context)
 {
     CallContext *contextPtr = (CallContext *) context;
-    return contextPtr->callPtr->chain[contextPtr->index].isFilter;
+    return (int) contextPtr->callPtr->chain[contextPtr->index].isFilter;
 }
 
 Tcl_Object

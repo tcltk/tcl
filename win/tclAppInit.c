@@ -261,7 +261,8 @@ setargv(
 {
     TCHAR *cmdLine, *p, *arg, *argSpace;
     TCHAR **argv;
-    int argc, size, inquote, copy, slashes;
+    int argc, size, slashes;
+    bool copy, inquote;
 
     cmdLine = GetCommandLine();
 
@@ -302,20 +303,20 @@ setargv(
 	    break;
 	}
 
-	inquote = 0;
+	inquote = false;
 	slashes = 0;
 	while (1) {
-	    copy = 1;
+	    copy = true;
 	    while (*p == '\\') {
 		slashes++;
 		p++;
 	    }
 	    if (*p == '"') {
 		if ((slashes & 1) == 0) {
-		    copy = 0;
-		    if ((inquote) && (p[1] == '"')) {
+		    copy = false;
+		    if (inquote && (p[1] == '"')) {
 			p++;
-			copy = 1;
+			copy = true;
 		    } else {
 			inquote = !inquote;
 		    }
@@ -333,7 +334,7 @@ setargv(
 		    ((*p == ' ') || (*p == '\t')))) {	/* INTL: ISO space. */
 		break;
 	    }
-	    if (copy != 0) {
+	    if (copy) {
 		*arg = *p;
 		arg++;
 	    }

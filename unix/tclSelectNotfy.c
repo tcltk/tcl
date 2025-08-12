@@ -83,7 +83,7 @@ struct ThreadSpecificData_Notifier_select {
 				 * more than highest fd for which
 				 * Tcl_WatchFile has been called). */
 #if TCL_THREADS
-    int onList;			/* True if it is in this list */
+    bool onList;		/* True if it is in this list */
     unsigned int pollState;	/* pollState is used to implement a polling
 				 * handshake between each thread and the
 				 * notifier thread. Bits defined below. */
@@ -163,13 +163,13 @@ static pthread_mutex_t notifierMutex     = PTHREAD_MUTEX_INITIALIZER;
  * You must hold the notifierInitMutex before accessing this variable.
  */
 
-static int notifierThreadRunning = 0;
+static bool notifierThreadRunning = false;
 
 /*
  * The following static flag indicates that async handlers are pending.
  */
 
-static int asyncPending = 0;
+static bool asyncPending = false;
 
 /*
  * The notifier thread signals the notifierCV when it has finished
@@ -217,7 +217,7 @@ static sigset_t allSigMask;
 #if TCL_THREADS
 static TCL_NORETURN void NotifierThreadProc(void *clientData);
 #if defined(HAVE_PTHREAD_ATFORK)
-static int atForkInit = 0;
+static int atForkInit = false;
 static void		AtForkChild(void);
 #endif /* HAVE_PTHREAD_ATFORK */
 #endif /* TCL_THREADS */
@@ -366,7 +366,7 @@ TclpInitNotifier(void)
 	if (result) {
 	    Tcl_Panic("Tcl_InitNotifier: %s", "pthread_atfork failed");
 	}
-	atForkInit = 1;
+	atForkInit = true;
     }
 #endif /* HAVE_PTHREAD_ATFORK */
 
@@ -428,13 +428,13 @@ TclpFinalizeNotifier(
 		Tcl_Panic("Tcl_FinalizeNotifier: %s",
 			"unable to join notifier thread");
 	    }
-	    notifierThreadRunning = 0;
+	    notifierThreadRunning = false;
 
 	    /*
 	     * If async marks are outstanding, perform actions now.
 	     */
 	    if (asyncPending) {
-		asyncPending = 0;
+		asyncPending = false;
 		TclAsyncMarkFromNotifier();
 	    }
 	}
@@ -753,7 +753,7 @@ TclpWaitForEvent(
 	}
 	tsdPtr->prevPtr = 0;
 	waitingListPtr = tsdPtr;
-	tsdPtr->onList = 1;
+	tsdPtr->onList = true;
 
 	if ((write(triggerPipe, "", 1) == -1) && (errno != EAGAIN)) {
 	    Tcl_Panic("Tcl_WaitForEvent: %s",
@@ -836,7 +836,7 @@ TclpWaitForEvent(
 	    tsdPtr->nextPtr->prevPtr = tsdPtr->prevPtr;
 	}
 	tsdPtr->nextPtr = tsdPtr->prevPtr = NULL;
-	tsdPtr->onList = 0;
+	tsdPtr->onList = false;
 	if ((write(triggerPipe, "", 1) == -1) && (errno != EAGAIN)) {
 	    Tcl_Panic("Tcl_WaitForEvent: %s",
 		    "unable to write to triggerPipe");
@@ -920,7 +920,7 @@ TclpWaitForEvent(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 TclAsyncNotifier(
     int sigNumber,		/* Signal number. */
     TCL_UNUSED(Tcl_ThreadId),	/* Target thread. */
@@ -940,15 +940,15 @@ TclAsyncNotifier(
 	if (notifierThreadRunning) {
 	    *flagPtr = value;
 	    if (!asyncPending) {
-		asyncPending = 1;
+		asyncPending = true;
 		if (write(triggerPipe, "S", 1) != 1) {
-		    asyncPending = 0;
-		    return 0;
+		    asyncPending = false;
+		    return false;
 		};
 	    }
-	    return 1;
+	    return true;
 	}
-	return 0;
+	return false;
     }
 
     /*
@@ -961,7 +961,7 @@ TclAsyncNotifier(
     (void)flagPtr;
     (void)value;
 #endif
-    return 0;
+    return false;
 }
 
 /*
@@ -1133,7 +1133,7 @@ NotifierThreadProc(
 	     * perform work on async handlers now.
 	     */
 	    if (errno == EINTR && asyncPending) {
-		asyncPending = 0;
+		asyncPending = false;
 		TclAsyncMarkFromNotifier();
 	    }
 
@@ -1198,7 +1198,7 @@ NotifierThreadProc(
 	} while (1);
 
 	if (asyncPending) {
-	    asyncPending = 0;
+	    asyncPending = false;
 	    TclAsyncMarkFromNotifier();
 	}
 

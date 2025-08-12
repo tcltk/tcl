@@ -202,7 +202,7 @@ struct PropertyStorage {
 				 * exposed by this object or class (in its
 				 * stereotypical instances). Contains a sorted
 				 * unique list if not NULL. */
-    Tcl_Size epoch;			/* The epoch that the caches are valid for. */
+    Tcl_Size epoch;		/* The epoch that the caches are valid for. */
 };
 
 /*
@@ -422,7 +422,7 @@ struct Foundation {
 struct MInvoke {
     Method *mPtr;		/* Reference to the method implementation
 				 * record. */
-    int isFilter;		/* Whether this is a filter invocation. */
+    bool isFilter;		/* Whether this is a filter invocation. */
     Class *filterDeclarer;	/* What class decided to add the filter; if
 				 * NULL, it was added by the object. */
 };
@@ -485,7 +485,7 @@ enum TclOOCallChainFlags {
  */
 struct DeclaredClassMethod {
     const char *name;		/* Name of the method in question. */
-    int isPublic;		/* Whether the method is public by default. */
+    bool isPublic;		/* Whether the method is public by default. */
     Tcl_MethodType definition;	/* How to call the method. */
 };
 
@@ -565,7 +565,7 @@ MODULE_SCOPE Object *	TclNewObjectInstanceCommon(Tcl_Interp *interp,
 			    Class *classPtr,
 			    const char *nameStr,
 			    const char *nsNameStr);
-MODULE_SCOPE int	TclOODecrRefCount(Object *oPtr);
+MODULE_SCOPE bool	TclOODecrRefCount(Object *oPtr);
 MODULE_SCOPE int	TclOOObjectDestroyed(Object *oPtr);
 MODULE_SCOPE const char *TclOOContextTypeName(CallContext *contextPtr);
 MODULE_SCOPE int	TclOODefineSlots(Foundation *fPtr);
@@ -583,7 +583,7 @@ MODULE_SCOPE Class *	TclOOGetClassDefineCmdContext(Tcl_Interp *interp);
 MODULE_SCOPE Class *	TclOOGetClassFromObj(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr);
 MODULE_SCOPE Tcl_Namespace *TclOOGetDefineContextNamespace(
-			    Tcl_Interp *interp, Object *oPtr, int forClass);
+			    Tcl_Interp *interp, Object *oPtr, bool forClass);
 MODULE_SCOPE CallChain *TclOOGetStereotypeCallChain(Class *clsPtr,
 			    Tcl_Obj *methodNameObj, int flags);
 MODULE_SCOPE Foundation	*TclOOGetFoundation(Tcl_Interp *interp);
@@ -622,7 +622,7 @@ MODULE_SCOPE Tcl_Obj *	TclOORenderCallChain(Tcl_Interp *interp,
 MODULE_SCOPE void	TclOOStashContext(Tcl_Obj *objPtr,
 			    CallContext *contextPtr);
 MODULE_SCOPE Tcl_Obj *	TclOOGetAllObjectProperties(Object *oPtr,
-			    int writable);
+			    bool writable);
 MODULE_SCOPE void	TclOOSetupVariableResolver(Tcl_Namespace *nsPtr);
 MODULE_SCOPE Tcl_Obj *	TclOOGetPropertyList(PropertyList *propList);
 MODULE_SCOPE void	TclOOReleasePropertyStorage(PropertyStorage *propsPtr);
@@ -632,11 +632,11 @@ MODULE_SCOPE void	TclOOInstallWritableProperties(PropertyStorage *props,
 			    Tcl_Size objc, Tcl_Obj *const objv[]);
 MODULE_SCOPE int	TclOOInstallStdPropertyImpls(void *useInstance,
 			    Tcl_Interp *interp, Tcl_Obj *propName,
-			    int readable, int writable);
+			    bool readable, bool writable);
 MODULE_SCOPE void	TclOORegisterProperty(Class *clsPtr,
-			    Tcl_Obj *propName, int mayRead, int mayWrite);
+			    Tcl_Obj *propName, bool mayRead, bool mayWrite);
 MODULE_SCOPE void	TclOORegisterInstanceProperty(Object *oPtr,
-			    Tcl_Obj *propName, int mayRead, int mayWrite);
+			    Tcl_Obj *propName, bool mayRead, bool mayWrite);
 
 /*
  * Include all the private API, generated from tclOO.decls.

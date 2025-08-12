@@ -412,7 +412,8 @@ TclCreateProc(
     Tcl_Size numArgs;
     CompiledLocal *localPtr = NULL;
     Tcl_Obj **argArray;
-    int precompiled = 0, result;
+    bool precompiled = false;
+    int result;
     const char *errorCode = NULL;
 
     ProcGetInternalRep(bodyPtr, procPtr);
@@ -431,7 +432,7 @@ TclCreateProc(
 
 	procPtr->iPtr = iPtr;
 	procPtr->refCount++;
-	precompiled = 1;
+	precompiled = true;
     } else {
 	/*
 	 * If the procedure's body object is shared because its string value
@@ -1281,12 +1282,6 @@ InitLocalCache(
     Tcl_Size localCt = procPtr->numCompiledLocals;
     Tcl_Size numArgs = procPtr->numArgs, i = 0;
 
-    Tcl_Obj **namePtr;
-    Var *varPtr;
-    LocalCache *localCachePtr;
-    CompiledLocal *localPtr;
-    int isNew;
-
     ByteCodeGetInternalRep(procPtr->bodyPtr, &tclByteCodeType, codePtr);
 
     /*
@@ -1295,17 +1290,19 @@ InitLocalCache(
      * for future calls.
      */
 
-    localCachePtr = (LocalCache *)Tcl_Alloc(offsetof(LocalCache, varName0)
+    LocalCache *localCachePtr = (LocalCache *)Tcl_Alloc(
+	    offsetof(LocalCache, varName0)
 	    + localCt * sizeof(Tcl_Obj *)
 	    + numArgs * sizeof(Var));
+    Tcl_Obj **namePtr = &localCachePtr->varName0;
+    Var *varPtr = (Var *) (namePtr + localCt);
 
-    namePtr = &localCachePtr->varName0;
-    varPtr = (Var *) (namePtr + localCt);
-    localPtr = procPtr->firstLocalPtr;
-    while (localPtr) {
+    for (CompiledLocal *localPtr = procPtr->firstLocalPtr; localPtr;
+	    localPtr = localPtr->nextPtr) {
 	if (TclIsVarTemporary(localPtr)) {
 	    *namePtr = NULL;
 	} else {
+	    bool isNew;
 	    *namePtr = TclCreateLiteral(iPtr, localPtr->name,
 		    localPtr->nameLength, /* hash */ TCL_INDEX_NONE,
 		    &isNew, /* nsPtr */ NULL, 0, NULL);
@@ -1319,7 +1316,6 @@ InitLocalCache(
 	    i++;
 	}
 	namePtr++;
-	localPtr = localPtr->nextPtr;
     }
     codePtr->localCachePtr = localCachePtr;
     localCachePtr->refCount = 1;

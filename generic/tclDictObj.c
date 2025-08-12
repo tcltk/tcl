@@ -52,9 +52,9 @@ static Tcl_AllocHashEntryProc	AllocChainEntry;
 static inline void		InitChainTable(struct Dict *dict);
 static inline void		DeleteChainTable(struct Dict *dict);
 static inline Tcl_HashEntry *	CreateChainEntry(struct Dict *dict,
-					Tcl_Obj *keyPtr, int *newPtr);
-static inline int		DeleteChainEntry(struct Dict *dict,
-					Tcl_Obj *keyPtr);
+				    Tcl_Obj *keyPtr, int newPtr[static 1]);
+static inline bool		DeleteChainEntry(struct Dict *dict,
+				    Tcl_Obj *keyPtr);
 static Tcl_NRPostProc		FinalizeDictUpdate;
 static Tcl_NRPostProc		FinalizeDictWith;
 static Tcl_ObjCmdProc		DictForNRCmd;
@@ -271,7 +271,7 @@ static inline Tcl_HashEntry *
 CreateChainEntry(
     Dict *dict,
     Tcl_Obj *keyPtr,
-    int *newPtr)
+    int newPtr[static 1])	// OUT: New flag. ABSOLUTELY NOT NULL!
 {
     ChainEntry *cPtr = (ChainEntry *)
 	    Tcl_CreateHashEntry(&dict->table, keyPtr, newPtr);
@@ -296,7 +296,7 @@ CreateChainEntry(
     return &cPtr->entry;
 }
 
-static inline int
+static inline bool
 DeleteChainEntry(
     Dict *dict,
     Tcl_Obj *keyPtr)
@@ -305,12 +305,11 @@ DeleteChainEntry(
 	    Tcl_FindHashEntry(&dict->table, keyPtr);
 
     if (cPtr == NULL) {
-	return 0;
-    } else {
-	Tcl_Obj *valuePtr = (Tcl_Obj *)Tcl_GetHashValue(&cPtr->entry);
-
-	TclDecrRefCount(valuePtr);
+	return false;
     }
+
+    Tcl_Obj *valuePtr = (Tcl_Obj *)Tcl_GetHashValue(&cPtr->entry);
+    TclDecrRefCount(valuePtr);
 
     /*
      * Unstitch from the chain.
@@ -328,7 +327,7 @@ DeleteChainEntry(
     }
 
     Tcl_DeleteHashEntry(&cPtr->entry);
-    return 1;
+    return true;
 }
 
 /*
@@ -937,7 +936,7 @@ Tcl_DictObjPut(
     int isNew;
     Tcl_HashEntry *hPtr = CreateChainEntry(dict, keyPtr, &isNew);
     dict->refCount++;
-    TclFreeInternalRep(dictPtr)
+    TclFreeInternalRep(dictPtr);
     DictSetInternalRep(dictPtr, dict);
     Tcl_IncrRefCount(valuePtr);
     if (!isNew) {

@@ -192,14 +192,14 @@ static const DeclaredSlot slots[] = {
  * ----------------------------------------------------------------------
  */
 
-static inline int
+static inline bool
 IsPrivateDefine(
     Tcl_Interp *interp)
 {
     Interp *iPtr = (Interp *) interp;
 
     if (!iPtr->varFramePtr) {
-	return 0;
+	return false;
     }
     return iPtr->varFramePtr->isProcCallFrame == PRIVATE_FRAME;
 }
@@ -1237,7 +1237,7 @@ TclOODefineObjCmd(
      * command(s).
      */
 
-    nsPtr = TclOOGetDefineContextNamespace(interp, oPtr, 1);
+    nsPtr = TclOOGetDefineContextNamespace(interp, oPtr, true);
     if (InitDefineContext(interp, nsPtr, oPtr, objc, objv) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -1303,7 +1303,7 @@ TclOOObjDefObjCmd(
      * command(s).
      */
 
-    Tcl_Namespace *nsPtr = TclOOGetDefineContextNamespace(interp, oPtr, 0);
+    Tcl_Namespace *nsPtr = TclOOGetDefineContextNamespace(interp, oPtr, false);
     if (InitDefineContext(interp, nsPtr, oPtr, objc, objv) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -1364,14 +1364,14 @@ TclOODefineSelfObjCmd(
 	return TCL_OK;
     }
 
-    int isPrivate = IsPrivateDefine(interp);
+    bool isPrivate = IsPrivateDefine(interp);
 
     /*
      * Make the oo::objdefine namespace the current namespace and evaluate the
      * command(s).
      */
 
-    Tcl_Namespace *nsPtr = TclOOGetDefineContextNamespace(interp, oPtr, 0);
+    Tcl_Namespace *nsPtr = TclOOGetDefineContextNamespace(interp, oPtr, false);
     if (InitDefineContext(interp, nsPtr, oPtr, objc, objv) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -1574,8 +1574,8 @@ TclOODefineClassObjCmd(
      * Set the object's class.
      */
 
-    int wasClass = (oPtr->classPtr != NULL);
-    int willBeClass = TclOOIsReachable(fPtr->classCls, clsPtr);
+    bool wasClass = (oPtr->classPtr != NULL);
+    bool willBeClass = TclOOIsReachable(fPtr->classCls, clsPtr);
 
     if (oPtr->selfCls != clsPtr) {
 	TclOORemoveFromInstances(oPtr, oPtr->selfCls);
@@ -1873,7 +1873,7 @@ TclOODefineExportObjCmd(
     Tcl_Obj *const *objv)
 {
     int isInstanceExport = (clientData != NULL);
-    int changed = 0;
+    bool changed = false;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name ?name ...?");
@@ -1924,7 +1924,7 @@ TclOODefineExportObjCmd(
 	if (isNew || !(mPtr->flags & (PUBLIC_METHOD | PRIVATE_METHOD))) {
 	    mPtr->flags |= PUBLIC_METHOD;
 	    mPtr->flags &= ~TRUE_PRIVATE_METHOD;
-	    changed = 1;
+	    changed = true;
 	}
     }
 
@@ -2157,7 +2157,7 @@ TclOODefineUnexportObjCmd(
     Tcl_Obj *const *objv)
 {
     int isInstanceUnexport = (clientData != NULL);
-    int changed = 0;
+    bool changed = false;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name ?name ...?");
@@ -2207,7 +2207,7 @@ TclOODefineUnexportObjCmd(
 	}
 	if (isNew || mPtr->flags & (PUBLIC_METHOD | TRUE_PRIVATE_METHOD)) {
 	    mPtr->flags &= ~(PUBLIC_METHOD | TRUE_PRIVATE_METHOD);
-	    changed = 1;
+	    changed = true;
 	}
     }
 
@@ -3331,22 +3331,22 @@ Configurable_ObjectWritableProps_Set(
  * ----------------------------------------------------------------------
  */
 
-static int
+static bool
 BuildPropertyList(
     PropertyList *propsList,	/* Property list to scan. */
     Tcl_Obj *propName,		/* Property to add/remove. */
-    int addingProp,		/* True if we're adding, false if removing. */
+    bool addingProp,		/* True if we're adding, false if removing. */
     Tcl_Obj *listObj)		/* The list of property names we're building */
 {
-    int present = 0, changed = 0;
+    bool present = false, changed = false;
     Tcl_Obj *other;
 
     Tcl_SetListObj(listObj, 0, NULL);
     FOREACH(other, *propsList) {
 	if (!TclStringCmp(propName, other, 1, 0, TCL_INDEX_NONE)) {
-	    present = 1;
+	    present = true;
 	    if (!addingProp) {
-		changed = 1;
+		changed = true;
 		continue;
 	    }
 	}
@@ -3354,7 +3354,7 @@ BuildPropertyList(
     }
     if (!present && addingProp) {
 	Tcl_ListObjAppendElement(NULL, listObj, propName);
-	changed = 1;
+	changed = true;
     }
     return changed;
 }
@@ -3365,10 +3365,10 @@ TclOORegisterInstanceProperty(
     Tcl_Obj *propName,		/* Property to add/remove. Must include the
 				 * hyphen if one is desired; this is the value
 				 * that is actually placed in the slot. */
-    int registerReader,		/* True if we're adding the property name to
+    bool registerReader,	/* True if we're adding the property name to
 				 * the readable property slot. False if we're
 				 * removing the property name from the slot. */
-    int registerWriter)		/* True if we're adding the property name to
+    bool registerWriter)	/* True if we're adding the property name to
 				 * the writable property slot. False if we're
 				 * removing the property name from the slot. */
 {
@@ -3396,30 +3396,30 @@ TclOORegisterProperty(
     Tcl_Obj *propName,		/* Property to add/remove. Must include the
 				 * hyphen if one is desired; this is the value
 				 * that is actually placed in the slot. */
-    int registerReader,		/* True if we're adding the property name to
+    bool registerReader,	/* True if we're adding the property name to
 				 * the readable property slot. False if we're
 				 * removing the property name from the slot. */
-    int registerWriter)		/* True if we're adding the property name to
+    bool registerWriter)	/* True if we're adding the property name to
 				 * the writable property slot. False if we're
 				 * removing the property name from the slot. */
 {
     Tcl_Obj *listObj = Tcl_NewObj();	/* Working buffer. */
     Tcl_Obj **objv;
     Tcl_Size count;
-    int changed = 0;
+    bool changed = false;
 
     if (BuildPropertyList(&clsPtr->properties.readable, propName,
 	    registerReader, listObj)) {
 	TclListObjGetElements(NULL, listObj, &count, &objv);
 	TclOOInstallReadableProperties(&clsPtr->properties, count, objv);
-	changed = 1;
+	changed = true;
     }
 
     if (BuildPropertyList(&clsPtr->properties.writable, propName,
 	    registerWriter, listObj)) {
 	TclListObjGetElements(NULL, listObj, &count, &objv);
 	TclOOInstallWritableProperties(&clsPtr->properties, count, objv);
-	changed = 1;
+	changed = true;
     }
     Tcl_BounceRefCount(listObj);
     if (changed) {

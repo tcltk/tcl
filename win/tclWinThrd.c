@@ -27,7 +27,7 @@ _CRTIMP unsigned int __cdecl _controlfp (unsigned int unNew, unsigned int unMask
  */
 
 static CRITICAL_SECTION globalLock;
-static int initialized = 0;
+static bool initialized = false;
 
 /*
  * This is the global lock used to serialize initialization and finalization
@@ -47,7 +47,7 @@ static struct Tcl_Mutex_ {
     CRITICAL_SECTION crit;
 } allocLock;
 static Tcl_Mutex allocLockPtr = &allocLock;
-static int allocOnce = 0;
+static bool allocOnce = false;
 
 #endif /* TCL_THREADS */
 
@@ -356,7 +356,7 @@ TclpInitLock(void)
 	 * that create interpreters in parallel.
 	 */
 
-	initialized = 1;
+	initialized = true;
 	InitializeCriticalSection(&joinLock);
 	InitializeCriticalSection(&initLock);
 	InitializeCriticalSection(&globalLock);
@@ -418,7 +418,7 @@ TclpGlobalLock(void)
 	 * that create interpreters in parallel.
 	 */
 
-	initialized = 1;
+	initialized = true;
 	InitializeCriticalSection(&joinLock);
 	InitializeCriticalSection(&initLock);
 	InitializeCriticalSection(&globalLock);
@@ -474,7 +474,7 @@ Tcl_GetAllocMutex(void)
 #if TCL_THREADS
     if (!allocOnce) {
 	InitializeCriticalSection(&allocLock.crit);
-	allocOnce = 1;
+	allocOnce = true;
     }
     return &allocLockPtr;
 #else
@@ -511,12 +511,12 @@ TclFinalizeLock(void)
      */
 
     DeleteCriticalSection(&globalLock);
-    initialized = 0;
+    initialized = false;
 
 #if TCL_THREADS
     if (allocOnce) {
 	DeleteCriticalSection(&allocLock.crit);
-	allocOnce = 0;
+	allocOnce = false;
     }
 #endif
 
@@ -662,8 +662,8 @@ Tcl_ConditionWait(
     WinCondition *winCondPtr;	/* Per-condition queue head */
     CRITICAL_SECTION *csPtr;	/* Caller's Mutex, after casting */
     DWORD wtime;		/* Windows time value */
-    int timeout;		/* True if we got a timeout */
-    int doExit = 0;		/* True if we need to do exit setup */
+    bool timeout;		/* True if we got a timeout */
+    bool doExit = false;	/* True if we need to do exit setup */
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     /*
@@ -684,7 +684,7 @@ Tcl_ConditionWait(
 	    tsdPtr->nextPtr = NULL;
 	    tsdPtr->prevPtr = NULL;
 	    tsdPtr->flags = WIN_THREAD_RUNNING;
-	    doExit = 1;
+	    doExit = true;
 	}
 	TclpGlobalUnlock();
 
@@ -753,13 +753,13 @@ Tcl_ConditionWait(
      */
 
     LeaveCriticalSection(csPtr);
-    timeout = 0;
+    timeout = false;
     while (!timeout && (tsdPtr->flags & WIN_THREAD_BLOCKED)) {
 	ResetEvent(tsdPtr->condEvent);
 	LeaveCriticalSection(&winCondPtr->condLock);
 	if (WaitForSingleObjectEx(tsdPtr->condEvent, wtime,
 		TRUE) == WAIT_TIMEOUT) {
-	    timeout = 1;
+	    timeout = true;
 	}
 	EnterCriticalSection(&winCondPtr->condLock);
     }
@@ -771,7 +771,7 @@ Tcl_ConditionWait(
 
     if (timeout) {
 	if (tsdPtr->flags & WIN_THREAD_RUNNING) {
-	    timeout = 0;
+	    timeout = false;
 	} else {
 	    /*
 	     * When dequeueing, we can leave the tsdPtr->nextPtr and

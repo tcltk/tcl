@@ -36,10 +36,10 @@ typedef struct ThreadSpecificData_Notifier_Windows {
 				 * notifier. */
     HANDLE event;		/* Event object used to wake up the notifier
 				 * thread. */
-    int pending;		/* Alert message pending, this field is locked
+    bool pending;		/* Alert message pending, this field is locked
 				 * by the notifierMutex. */
     HWND hwnd;			/* Messaging window. */
-    int timerActive;		/* 1 if interval timer is running. */
+    bool timerActive;		/* true if interval timer is running. */
 } ThreadSpecificData;
 
 static Tcl_ThreadDataKey dataKey;
@@ -53,7 +53,7 @@ static Tcl_ThreadDataKey dataKey;
 
 static int notifierCount = 0;
 static const WCHAR className[] = L"TclNotifier";
-static int initialized = 0;
+static bool initialized = false;
 static CRITICAL_SECTION notifierMutex;
 
 /*
@@ -86,7 +86,7 @@ TclpInitNotifier(void)
 
     TclpGlobalLock();
     if (!initialized) {
-	initialized = 1;
+	initialized = true;
 	InitializeCriticalSection(&notifierMutex);
     }
     TclpGlobalUnlock();
@@ -119,8 +119,8 @@ TclpInitNotifier(void)
     notifierCount++;
     LeaveCriticalSection(&notifierMutex);
 
-    tsdPtr->pending = 0;
-    tsdPtr->timerActive = 0;
+    tsdPtr->pending = false;
+    tsdPtr->timerActive = false;
 
     InitializeCriticalSection(&tsdPtr->crit);
 
@@ -240,7 +240,7 @@ TclpAlertNotifier(
 	if (!tsdPtr->pending) {
 	    PostMessageW(tsdPtr->hwnd, WM_WAKEUP, 0, 0);
 	}
-	tsdPtr->pending = 1;
+	tsdPtr->pending = true;
 	LeaveCriticalSection(&tsdPtr->crit);
     } else {
 	SetEvent(tsdPtr->event);
@@ -297,10 +297,10 @@ TclpSetTimer(
     }
 
     if (timeout != 0) {
-	tsdPtr->timerActive = 1;
+	tsdPtr->timerActive = true;
 	SetTimer(tsdPtr->hwnd, INTERVAL_TIMER, timeout, NULL);
     } else {
-	tsdPtr->timerActive = 0;
+	tsdPtr->timerActive = false;
 	KillTimer(tsdPtr->hwnd, INTERVAL_TIMER);
     }
 }
@@ -362,22 +362,22 @@ TclpServiceModeHook(
  *	This procedure is a no-op on Windows.
  *
  * Result:
- *	Always true.
+ *	Always false.
  *
  * Side effetcs:
  *	None.
  *----------------------------------------------------------------------
  */
 
-int
+bool
 TclAsyncNotifier(
     TCL_UNUSED(int),		/* Signal number. */
     TCL_UNUSED(Tcl_ThreadId),	/* Target thread. */
-    TCL_UNUSED(void *),	/* Notifier data. */
+    TCL_UNUSED(void *),		/* Notifier data. */
     TCL_UNUSED(int *),		/* Flag to mark. */
-    TCL_UNUSED(int))			/* Value of mark. */
+    TCL_UNUSED(int))		/* Value of mark. */
 {
-    return 0;
+    return false;
 }
 
 /*
@@ -409,7 +409,7 @@ NotifierProc(
 
     if (message == WM_WAKEUP) {
 	EnterCriticalSection(&tsdPtr->crit);
-	tsdPtr->pending = 0;
+	tsdPtr->pending = false;
 	LeaveCriticalSection(&tsdPtr->crit);
     } else if (message != WM_TIMER) {
 	return DefWindowProcW(hwnd, message, wParam, lParam);

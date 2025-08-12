@@ -658,12 +658,12 @@ FileGetOptionProc(
     Tcl_DString *dsPtr)
 {
     FileState *fsPtr = (FileState *)instanceData;
-    int valid = 0;		/* Flag if valid option parsed. */
+    bool valid = false;		/* Flag if valid option parsed. */
     size_t len;
 
     if (optionName == NULL) {
 	len = 0;
-	valid = 1;
+	valid = true;
     } else {
 	len = strlen(optionName);
     }
@@ -1102,7 +1102,7 @@ TtyGetOptionProc(
     TtyState *fsPtr = (TtyState *)instanceData;
     size_t len;
     char buf[3*TCL_INTEGER_SPACE + 16];
-    int valid = 0;		/* Flag if valid option parsed. */
+    bool valid = false;		/* Flag if valid option parsed. */
     struct termios iostate;
 
     if (optionName == NULL) {
@@ -1143,7 +1143,7 @@ TtyGetOptionProc(
 	Tcl_DStringAppendElement(dsPtr, "-inputmode");
     }
     if (len==0 || (len>1 && strncmp(optionName, "-inputmode", len)==0)) {
-	valid = 1;
+	valid = true;
 	if (tcgetattr(fsPtr->fileState.fd, &iostate) < 0) {
 	    if (interp != NULL) {
 		TclPrintfResult(interp,
@@ -1173,7 +1173,7 @@ TtyGetOptionProc(
     if (len==0 || (len>2 && strncmp(optionName, "-mode", len)==0)) {
 	TtyAttrs tty;
 
-	valid = 1;
+	valid = true;
 	TtyGetAttributes(fsPtr->fileState.fd, &tty);
 	snprintf(buf, sizeof(buf), "%d,%c,%d,%d", tty.baud, tty.parity, tty.data, tty.stop);
 	Tcl_DStringAppendElement(dsPtr, buf);
@@ -1190,7 +1190,7 @@ TtyGetOptionProc(
     if (len==0 || (len>1 && strncmp(optionName, "-xchar", len)==0)) {
 	Tcl_DString ds;
 
-	valid = 1;
+	valid = true;
 	tcgetattr(fsPtr->fileState.fd, &iostate);
 	Tcl_DStringInit(&ds);
 
@@ -1217,7 +1217,7 @@ TtyGetOptionProc(
     if ((len > 1) && (strncmp(optionName, "-queue", len) == 0)) {
 	int inQueue=0, outQueue=0, inBuffered, outBuffered;
 
-	valid = 1;
+	valid = true;
 	GETREADQUEUE(fsPtr->fileState.fd, inQueue);
 	GETWRITEQUEUE(fsPtr->fileState.fd, outQueue);
 	inBuffered = Tcl_InputBuffered(fsPtr->fileState.channel);
@@ -1239,7 +1239,7 @@ TtyGetOptionProc(
     if ((len > 4) && (strncmp(optionName, "-ttystatus", len) == 0)) {
 	int status;
 
-	valid = 1;
+	valid = true;
 	ioctl(fsPtr->fileState.fd, TIOCMGET, &status);
 	TtyModemStatusStr(status, dsPtr);
     }
@@ -1255,7 +1255,7 @@ TtyGetOptionProc(
     if ((len > 1) && (strncmp(optionName, "-winsize", len) == 0)) {
 	struct winsize ws;
 
-	valid = 1;
+	valid = true;
 	if (ioctl(fsPtr->fileState.fd, TIOCGWINSZ, &ws) < 0) {
 	    if (interp != NULL) {
 		TclPrintfResult(interp, "couldn't read terminal size: %s",

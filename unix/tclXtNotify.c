@@ -70,7 +70,7 @@ static struct NotifierState {
  * The following static indicates whether this module has been initialized.
  */
 
-static int initialized = 0;
+static bool initialized = false;
 
 /*
  * Static routines defined in this file.
@@ -206,7 +206,7 @@ InitNotifier(void)
      * external applications from setting it for us to their own ones.
      */
 
-    initialized = 1;
+    initialized = true;
     Tcl_CreateExitHandler(NotifierExitHandler, NULL);
 }
 
@@ -242,7 +242,7 @@ NotifierExitHandler(
 	notifier.appContextCreated = 0;
 	notifier.appContext = NULL;
     }
-    initialized = 0;
+    initialized = false;
 }
 
 /*
@@ -565,7 +565,7 @@ FileHandlerEventProc(
     FileHandlerEvent *fileEvPtr = (FileHandlerEvent *) evPtr;
 
     if (!(flags & TCL_FILE_EVENTS)) {
-	return 0;
+	return false;
     }
 
     /*
@@ -600,7 +600,7 @@ FileHandlerEventProc(
 	}
 	break;
     }
-    return 1;
+    return true;
 }
 
 /*

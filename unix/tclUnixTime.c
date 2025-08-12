@@ -263,7 +263,7 @@ TclpWideClickInMicrosec(void)
 	return 1.0;
     } else {
 #ifdef MAC_OSX_TCL
-	static int initialized = 0;
+	static bool initialized = false;
 	static double scale = 0.0;
 
 	if (!initialized) {
@@ -272,7 +272,7 @@ TclpWideClickInMicrosec(void)
 	    mach_timebase_info(&tb);
 	    /* value of tb.numer / tb.denom = 1 click in nanoseconds */
 	    scale = ((double) tb.numer) / tb.denom / 1000;
-	    initialized = 1;
+	    initialized = true;
 	}
 	return scale;
 #else

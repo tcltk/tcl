@@ -51,6 +51,13 @@
 
 #define BINARY_SCAN_MAX_CACHE	260
 
+typedef enum ReversingModes {
+    REVERSE_NO = 0,	// No re-ordering needed.
+    REVERSE_YES = 1,	// Reverse the bytes:	01234567 <-> 76543210 (little to big)
+    NOKIA_LITTLE = 2,	// Apply this re-ordering: 01234567 <-> 45670123 (Nokia to little)
+    NOKIA_BIG = 3	// Apply this re-ordering: 01234567 <-> 32107654 (Nokia to big)
+} ReversingModes;
+
 /*
  * Prototypes for local procedures defined in this file:
  */
@@ -60,7 +67,7 @@ static void		DupProperByteArrayInternalRep(Tcl_Obj *srcPtr,
 static int		FormatNumber(Tcl_Interp *interp, int type,
 			    Tcl_Obj *src, unsigned char **cursorPtr);
 static void		FreeProperByteArrayInternalRep(Tcl_Obj *objPtr);
-static int		GetFormatSpec(const char **formatPtr, char *cmdPtr,
+static bool		GetFormatSpec(const char **formatPtr, char *cmdPtr,
 			    Tcl_Size *countPtr, int *flagsPtr);
 static Tcl_Obj *	ScanNumber(unsigned char *buffer, int type,
 			    int flags, Tcl_HashTable **numberCachePtr);
@@ -68,7 +75,7 @@ static int		SetByteArrayFromAny(Tcl_Interp *interp, Tcl_Size limit,
 			    Tcl_Obj *objPtr);
 static void		UpdateStringOfByteArray(Tcl_Obj *listPtr);
 static void		DeleteScanNumberCache(Tcl_HashTable *numberCachePtr);
-static int		NeedReversing(int format);
+static ReversingModes	NeedReversing(int format);
 static void		CopyNumber(const void *from, void *to,
 			    size_t length, int type);
 /* Binary ensemble commands */
@@ -192,7 +199,7 @@ typedef struct ByteArray {
 #define SET_BYTEARRAY(irPtr, baPtr) \
 		(irPtr)->twoPtrValue.ptr1 = (baPtr)
 
-int
+bool
 TclIsPureByteArray(
     Tcl_Obj * objPtr)
 {
@@ -1681,8 +1688,8 @@ BinaryScanCmd(
  *	Moves the formatPtr to the start of the next command. Returns the
  *	current command character and count in cmdPtr and countPtr. The count
  *	is set to BINARY_ALL if the count character was '*' or BINARY_NOCOUNT
- *	if no count was specified. Returns 1 on success, or 0 if the string
- *	did not have a format specifier.
+ *	if no count was specified. Returns true on success, or false if the
+ *	string did not have a format specifier.
  *
  * Side effects:
  *	None.
@@ -1690,7 +1697,7 @@ BinaryScanCmd(
  *----------------------------------------------------------------------
  */
 
-static int
+static bool
 GetFormatSpec(
     const char **formatPtr,	/* Pointer to format string. */
     char *cmdPtr,		/* Pointer to location of command char. */
@@ -1710,7 +1717,7 @@ GetFormatSpec(
      */
 
     if (!(**formatPtr)) {
-	return 0;
+	return false;
     }
 
     /*
@@ -1739,7 +1746,7 @@ GetFormatSpec(
     } else {
 	*countPtr = BINARY_NOCOUNT;
     }
-    return 1;
+    return true;
 }
 
 /*
@@ -1769,7 +1776,7 @@ GetFormatSpec(
  *----------------------------------------------------------------------
  */
 
-static int
+static ReversingModes
 NeedReversing(
     int format)
 {
@@ -1793,7 +1800,7 @@ NeedReversing(
 	/* small endian floats: reverse if we're big-endian */
     case 'r':
 #endif /* WORDS_BIGENDIAN */
-	return 0;
+	return REVERSE_NO;
 
 #ifdef WORDS_BIGENDIAN
 	/* small endian floats: reverse if we're big-endian */
@@ -1811,7 +1818,7 @@ NeedReversing(
     case 'i':
     case 's':
     case 'w':
-	return 1;
+	return REVERSE_YES;
 
 #ifndef WORDS_BIGENDIAN
     /*
@@ -1822,19 +1829,19 @@ NeedReversing(
 
     case 'Q':
 	if (TclNokia770Doubles()) {
-	    return 3;
+	    return NOKIA_BIG;
 	}
-	return 1;
+	return REVERSE_YES;
     case 'q':
 	if (TclNokia770Doubles()) {
-	    return 2;
+	    return NOKIA_LITTLE;
 	}
-	return 0;
+	return REVERSE_NO;
 #endif
     }
 
     Tcl_Panic("unexpected fallthrough");
-    return 0;
+    return REVERSE_NO;
 }
 
 /*
@@ -1864,10 +1871,10 @@ CopyNumber(
     int type)			/* What type of thing are we copying? */
 {
     switch (NeedReversing(type)) {
-    case 0:
+    case REVERSE_NO:
 	memcpy(to, from, length);
 	break;
-    case 1: {
+    case REVERSE_YES: {
 	const unsigned char *fromPtr = (const unsigned char *)from;
 	unsigned char *toPtr = (unsigned char *)to;
 
@@ -1891,7 +1898,7 @@ CopyNumber(
 	}
 	break;
     }
-    case 2: {
+    case NOKIA_LITTLE: {
 	const unsigned char *fromPtr = (const unsigned char *)from;
 	unsigned char *toPtr = (unsigned char *)to;
 
@@ -1905,7 +1912,7 @@ CopyNumber(
 	toPtr[7] = fromPtr[3];
 	break;
     }
-    case 3: {
+    case NOKIA_BIG: {
 	const unsigned char *fromPtr = (const unsigned char *)from;
 	unsigned char *toPtr = (unsigned char *)to;
 
@@ -2018,7 +2025,7 @@ FormatNumber(
 	if (TclGetWideBitsFromObj(interp, src, &wvalue) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	if (NeedReversing(type)) {
+	if (NeedReversing(type) != REVERSE_NO) {
 	    *(*cursorPtr)++ = UCHAR(wvalue);
 	    *(*cursorPtr)++ = UCHAR(wvalue >> 8);
 	    *(*cursorPtr)++ = UCHAR(wvalue >> 16);
@@ -2048,7 +2055,7 @@ FormatNumber(
 	if (TclGetWideBitsFromObj(interp, src, &wvalue) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	if (NeedReversing(type)) {
+	if (NeedReversing(type) != REVERSE_NO) {
 	    *(*cursorPtr)++ = UCHAR(wvalue);
 	    *(*cursorPtr)++ = UCHAR(wvalue >> 8);
 	    *(*cursorPtr)++ = UCHAR(wvalue >> 16);
@@ -2070,7 +2077,7 @@ FormatNumber(
 	if (TclGetWideBitsFromObj(interp, src, &wvalue) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	if (NeedReversing(type)) {
+	if (NeedReversing(type) != REVERSE_NO) {
 	    *(*cursorPtr)++ = UCHAR(wvalue);
 	    *(*cursorPtr)++ = UCHAR(wvalue >> 8);
 	} else {
@@ -2163,7 +2170,7 @@ ScanNumber(
     case 's':
     case 'S':
     case 't':
-	if (NeedReversing(type)) {
+	if (NeedReversing(type) != REVERSE_NO) {
 	    value = (long) (buffer[0] + (buffer[1] << 8));
 	} else {
 	    value = (long) (buffer[1] + (buffer[0] << 8));
@@ -2182,7 +2189,7 @@ ScanNumber(
     case 'i':
     case 'I':
     case 'n':
-	if (NeedReversing(type)) {
+	if (NeedReversing(type) != REVERSE_NO) {
 	    value = (long) (buffer[0]
 		    + (buffer[1] << 8)
 		    + (buffer[2] << 16)
@@ -2251,7 +2258,7 @@ ScanNumber(
     case 'w':
     case 'W':
     case 'm':
-	if (NeedReversing(type)) {
+	if (NeedReversing(type) != REVERSE_NO) {
 	    uwvalue = ((Tcl_WideUInt) buffer[0])
 		    | (((Tcl_WideUInt) buffer[1]) << 8)
 		    | (((Tcl_WideUInt) buffer[2]) << 16)

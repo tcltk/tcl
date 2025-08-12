@@ -102,7 +102,7 @@ struct ThreadSpecificData_Notifier_kqueue {
     struct kevent *readyEvents;	/* Pointer to at most maxReadyEvents events
 				 * returned by kevent(2). */
     size_t maxReadyEvents;	/* Count of kevents in readyEvents. */
-    int asyncPending;		/* True when signal triggered thread. */
+    bool asyncPending;		/* True when signal triggered thread. */
 };
 
 static Tcl_ThreadDataKey dataKey;
@@ -484,7 +484,7 @@ PlatformEventsWait(
 	}
     }
     if (tsdPtr->asyncPending) {
-	tsdPtr->asyncPending = 0;
+	tsdPtr->asyncPending = false;
 	TclAsyncMarkFromNotifier();
     }
     return numFound;
@@ -781,7 +781,7 @@ TclpWaitForEvent(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 TclAsyncNotifier(
     int sigNumber,		/* Signal number. */
     Tcl_ThreadId threadId,	/* Target thread. */
@@ -802,11 +802,11 @@ TclAsyncNotifier(
 
 	*flagPtr = value;
 	if (tsdPtr != NULL && !tsdPtr->asyncPending) {
-	    tsdPtr->asyncPending = 1;
+	    tsdPtr->asyncPending = true;
 	    TclpAlertNotifier(tsdPtr);
-	    return 1;
+	    return true;
 	}
-	return 0;
+	return false;
     }
 
     /*
@@ -821,7 +821,7 @@ TclAsyncNotifier(
     (void)flagPtr;
     (void)value;
 #endif
-    return 0;
+    return false;
 }
 
 #endif /* NOTIFIER_KQUEUE && TCL_THREADS */

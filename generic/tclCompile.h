@@ -1285,7 +1285,7 @@ MODULE_SCOPE Tcl_ExceptionRange TclCreateExceptRange(ExceptionRangeType type,
 			    CompileEnv *envPtr);
 MODULE_SCOPE ExecEnv *	TclCreateExecEnv(Tcl_Interp *interp, size_t size);
 MODULE_SCOPE Tcl_Obj *	TclCreateLiteral(Interp *iPtr, const char *bytes,
-			    Tcl_Size length, size_t hash, int *newPtr,
+			    Tcl_Size length, size_t hash, bool *newPtr,
 			    Namespace *nsPtr, int flags,
 			    LiteralEntry **globalPtrPtr);
 MODULE_SCOPE void	TclDeleteExecEnv(ExecEnv *eePtr);
@@ -1318,7 +1318,7 @@ MODULE_SCOPE void	TclInitJumpFixupArray(JumpFixupArray *fixupArrayPtr);
 MODULE_SCOPE void	TclInitLiteralTable(LiteralTable *tablePtr);
 MODULE_SCOPE ExceptionRange *TclGetInnermostExceptionRange(CompileEnv *envPtr,
 			    int returnCode, ExceptionAux **auxPtrPtr);
-MODULE_SCOPE int	TclIsEmptyToken(const Tcl_Token *tokenPtr);
+MODULE_SCOPE bool	TclIsEmptyToken(const Tcl_Token *tokenPtr);
 MODULE_SCOPE void	TclAddLoopBreakFixup(CompileEnv *envPtr,
 			    ExceptionAux *auxPtr);
 MODULE_SCOPE void	TclAddLoopContinueFixup(CompileEnv *envPtr,
@@ -1364,7 +1364,7 @@ MODULE_SCOPE Tcl_ObjCmdProc	TclNoIdentOpCmd;
 MODULE_SCOPE void	TclVerifyGlobalLiteralTable(Interp *iPtr);
 MODULE_SCOPE void	TclVerifyLocalLiteralTable(CompileEnv *envPtr);
 #endif
-MODULE_SCOPE int	TclWordKnownAtCompileTime(Tcl_Token *tokenPtr,
+MODULE_SCOPE bool	TclWordKnownAtCompileTime(Tcl_Token *tokenPtr,
 			    Tcl_Obj *valuePtr);
 MODULE_SCOPE void	TclLogCommandInfo(Tcl_Interp *interp,
 			    const char *script, const char *command,
