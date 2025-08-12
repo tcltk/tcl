@@ -2084,8 +2084,7 @@ IssueSwitchChainedTests(
 				 * the current (or next) real body. */
     Tcl_Size nextArmFixupIndex;	/* Index of next issued arm to fix the jump to
 				 * the next test for, or -1 if no fix pending. */
-    bool simple;
-    int exact;
+    bool simple, exact;
 
     /*
      * Generate a test for each arm.
@@ -2119,7 +2118,7 @@ IssueSwitchChainedTests(
 		break;
 	    case Switch_Regexp:
 		simple = false;
-		exact = 0;
+		exact = false;
 
 		/*
 		 * Keep in sync with TclCompileRegexpCmd.

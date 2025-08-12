@@ -2027,7 +2027,7 @@ TclFreeCompileEnv(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 TclWordKnownAtCompileTime(
     Tcl_Token *tokenPtr,	/* Points to Tcl_Token we should check */
     Tcl_Obj *valuePtr)		/* If not NULL, points to an unshared Tcl_Obj
@@ -2041,10 +2041,10 @@ TclWordKnownAtCompileTime(
 	if (valuePtr != NULL) {
 	    Tcl_AppendToObj(valuePtr, tokenPtr[1].start, tokenPtr[1].size);
 	}
-	return 1;
+	return true;
     }
     if (tokenPtr->type != TCL_TOKEN_WORD) {
-	return 0;
+	return false;
     }
     tokenPtr++;
     if (valuePtr != NULL) {
@@ -2073,7 +2073,7 @@ TclWordKnownAtCompileTime(
 	    if (tempPtr != NULL) {
 		Tcl_DecrRefCount(tempPtr);
 	    }
-	    return 0;
+	    return false;
 	}
 	tokenPtr++;
     }
@@ -2081,7 +2081,7 @@ TclWordKnownAtCompileTime(
 	Tcl_AppendObjToObj(valuePtr, tempPtr);
 	Tcl_DecrRefCount(tempPtr);
     }
-    return 1;
+    return true;
 }
 
 /*
@@ -2102,7 +2102,7 @@ TclWordKnownAtCompileTime(
  *----------------------------------------------------------------------
  */
 
-static int
+static bool
 ExpandRequested(
     Tcl_Token *tokenPtr,
     Tcl_Size numWords)
@@ -2110,11 +2110,11 @@ ExpandRequested(
     /* Determine whether any words of the command require expansion */
     while (numWords--) {
 	if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
-	    return 1;
+	    return true;
 	}
 	tokenPtr = TokenAfter(tokenPtr);
     }
-    return 0;
+    return false;
 }
 
 static void
@@ -4089,7 +4089,7 @@ TclInitJumpFixupArray(
     fixupArrayPtr->fixup = fixupArrayPtr->staticFixupSpace;
     fixupArrayPtr->next = 0;
     fixupArrayPtr->end = JUMPFIXUP_INIT_ENTRIES - 1;
-    fixupArrayPtr->mallocedArray = true;
+    fixupArrayPtr->mallocedArray = false;
 }
 
 /*
@@ -4745,7 +4745,7 @@ EncodeCmdLocMap(
  *
  *----------------------------------------------------------------------
  */
-int
+bool
 TclIsEmptyToken(
     const Tcl_Token *tokenPtr)
 {
@@ -4755,10 +4755,10 @@ TclIsEmptyToken(
 	chLen = TclUtfToUniChar(ptr, &ucs4);
 	// Can't use Tcl_UniCharIsSpace; see test dict-22.24
 	if (!TclIsSpaceProcM((unsigned) ucs4)) {
-	    return 0;
+	    return false;
 	}
     }
-    return 1;
+    return true;
 }
 
 /*

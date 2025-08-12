@@ -24,7 +24,7 @@ typedef struct {
     void *clientData;		/* Address of preserved block. */
     size_t refCount;		/* Number of Tcl_Preserve calls in effect for
 				 * block. */
-    int mustFree;		/* Non-zero means Tcl_EventuallyFree was
+    bool mustFree;		/* True means Tcl_EventuallyFree was
 				 * called while a Tcl_Preserve call was in
 				 * effect, so the structure must be freed when
 				 * refCount becomes zero. */
@@ -154,8 +154,8 @@ Tcl_Preserve(
     refPtr = &refArray[inUse];
     refPtr->clientData = clientData;
     refPtr->refCount = 1;
-    refPtr->mustFree = 0;
-    refPtr->freeProc = 0;
+    refPtr->mustFree = false;
+    refPtr->freeProc = NULL;
     inUse += 1;
     Tcl_MutexUnlock(&preserveMutex);
 }
@@ -279,7 +279,7 @@ Tcl_EventuallyFree(
 	if (refPtr->mustFree) {
 	    Tcl_Panic("Tcl_EventuallyFree called twice for %p", clientData);
 	}
-	refPtr->mustFree = 1;
+	refPtr->mustFree = true;
 	refPtr->freeProc = freeProc;
 	Tcl_MutexUnlock(&preserveMutex);
 	return;

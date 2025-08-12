@@ -288,15 +288,15 @@ ListSpanDecrRefs(
  *    deciding which option is better.
  *
  * Results:
- *    Returns non-0 if a span-based list is likely to be more optimal
- *    and 0 if not.
+ *    Returns true if a span-based list is likely to be more optimal
+ *    and false if not.
  *
  * Side effects:
  *    None.
  *
  *------------------------------------------------------------------------
  */
-static inline int
+static inline bool
 ListSpanMerited(
     Tcl_Size length,		/* Length of the proposed span */
     Tcl_Size usedStorageLength,	/* Number of slots currently in used */
@@ -312,16 +312,16 @@ ListSpanMerited(
      */
 
     if (length < LIST_SPAN_THRESHOLD) {
-	return 0;/* No span for small lists */
+	return false;	/* No span for small lists */
     }
     if (length < (allocatedStorageLength / 2 - allocatedStorageLength / 8)) {
-	return 0; /* No span if less than 3/8 of allocation */
+	return false;	/* No span if less than 3/8 of allocation */
     }
     if (length < usedStorageLength / 2) {
-	return 0; /* No span if less than half current storage */
+	return false;	/* No span if less than half current storage */
     }
 
-    return 1;
+    return true;
 }
 
 /*

@@ -475,7 +475,7 @@ InfoObjectIsACmd(
 	IsClass, IsMetaclass, IsMixin, IsObject, IsType
     } idx;
     Object *oPtr, *o2Ptr;
-    int result = 0;
+    bool result = false;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "category objName ?arg ...?");
@@ -523,7 +523,7 @@ InfoObjectIsACmd(
 
     switch (idx) {
     case IsObject:
-	result = 1;
+	result = true;
 	break;
     case IsClass:
 	result = (oPtr->classPtr != NULL);
@@ -547,7 +547,7 @@ InfoObjectIsACmd(
 		    continue;
 		}
 		if (TclOOIsReachable(o2Ptr->classPtr, mixinPtr)) {
-		    result = 1;
+		    result = true;
 		    break;
 		}
 	    }
@@ -605,7 +605,8 @@ InfoObjectMethodsCmd(
 	SCOPE_LOCALPRIVATE,
 	SCOPE_DEFAULT = -1
     };
-    int flag = PUBLIC_METHOD, recurse = 0, scope = SCOPE_DEFAULT;
+    int flag = PUBLIC_METHOD, scope = SCOPE_DEFAULT;
+    bool recurse = false;
     Tcl_Obj *namePtr, *resultObj;
 
     /*
@@ -628,7 +629,7 @@ InfoObjectMethodsCmd(
 	    }
 	    switch (idx) {
 	    case OPT_ALL:
-		recurse = 1;
+		recurse = true;
 		break;
 	    case OPT_LOCALPRIVATE:
 		flag = PRIVATE_METHOD;
@@ -653,7 +654,7 @@ InfoObjectMethodsCmd(
 	}
     }
     if (scope != SCOPE_DEFAULT) {
-	recurse = 0;
+	recurse = false;
 	switch (scope) {
 	case SCOPE_PRIVATE:
 	    flag = TRUE_PRIVATE_METHOD;
@@ -870,7 +871,7 @@ InfoObjectVariablesCmd(
 {
     Object *oPtr;
     Tcl_Obj *resultObj;
-    int isPrivate = 0;
+    bool isPrivate = false;
 
     if (objc != 2 && objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "objName ?-private?");
@@ -883,7 +884,7 @@ InfoObjectVariablesCmd(
 	    OO_ERROR(interp, BAD_ARG);
 	    return TCL_ERROR;
 	}
-	isPrivate = 1;
+	isPrivate = true;
     }
     oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[1]);
     if (oPtr == NULL) {
@@ -1310,7 +1311,8 @@ InfoClassMethodsCmd(
 	SCOPE_PRIVATE, SCOPE_PUBLIC, SCOPE_UNEXPORTED,
 	SCOPE_DEFAULT = -1
     };
-    int flag = PUBLIC_METHOD, recurse = 0, scope = SCOPE_DEFAULT;
+    int flag = PUBLIC_METHOD, scope = SCOPE_DEFAULT;
+    bool recurse = false;
     Tcl_Obj *namePtr, *resultObj;
     Method *mPtr;
     Class *clsPtr;
@@ -1333,7 +1335,7 @@ InfoClassMethodsCmd(
 	    }
 	    switch (idx) {
 	    case OPT_ALL:
-		recurse = 1;
+		recurse = true;
 		break;
 	    case OPT_LOCALPRIVATE:
 		flag = PRIVATE_METHOD;
@@ -1358,7 +1360,7 @@ InfoClassMethodsCmd(
 	}
     }
     if (scope != SCOPE_DEFAULT) {
-	recurse = 0;
+	recurse = false;
 	switch (scope) {
 	case SCOPE_PRIVATE:
 	    flag = TRUE_PRIVATE_METHOD;
@@ -1596,7 +1598,7 @@ InfoClassVariablesCmd(
 {
     Class *clsPtr;
     Tcl_Obj *resultObj;
-    int isPrivate = 0;
+    bool isPrivate = false;
 
     if (objc != 2 && objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "className ?-private?");
@@ -1609,7 +1611,7 @@ InfoClassVariablesCmd(
 	    OO_ERROR(interp, BAD_ARG);
 	    return TCL_ERROR;
 	}
-	isPrivate = 1;
+	isPrivate = true;
     }
     clsPtr = TclOOGetClassFromObj(interp, objv[1]);
     if (clsPtr == NULL) {

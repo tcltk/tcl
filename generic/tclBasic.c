@@ -132,7 +132,7 @@ typedef struct CancelInfo {
     int flags;			/* Additional flags */
 } CancelInfo;
 static Tcl_HashTable cancelTable;
-static int cancelTableInitialized = 0;	/* 0 means not yet initialized. */
+static bool cancelTableInitialized = false;	/* false means not yet initialized. */
 TCL_DECLARE_MUTEX(cancelLock);
 
 /*
@@ -143,7 +143,7 @@ TCL_DECLARE_MUTEX(cancelLock);
  */
 
 static Tcl_HashTable commandTypeTable;
-static int commandTypeInit = 0;
+static bool commandTypeInit = false;
 TCL_DECLARE_MUTEX(commandTypeLock);
 
 /*
@@ -630,16 +630,16 @@ void
 TclFinalizeEvaluation(void)
 {
     Tcl_MutexLock(&cancelLock);
-    if (cancelTableInitialized == 1) {
+    if (cancelTableInitialized) {
 	Tcl_DeleteHashTable(&cancelTable);
-	cancelTableInitialized = 0;
+	cancelTableInitialized = false;
     }
     Tcl_MutexUnlock(&cancelLock);
 
     Tcl_MutexLock(&commandTypeLock);
     if (commandTypeInit) {
 	Tcl_DeleteHashTable(&commandTypeTable);
-	commandTypeInit = 0;
+	commandTypeInit = false;
     }
     Tcl_MutexUnlock(&commandTypeLock);
 }
@@ -830,18 +830,18 @@ Tcl_CreateInterp(void)
     }
 #endif
 
-    if (cancelTableInitialized == 0) {
+    if (!cancelTableInitialized) {
 	Tcl_MutexLock(&cancelLock);
-	if (cancelTableInitialized == 0) {
+	if (!cancelTableInitialized) {
 	    Tcl_InitHashTable(&cancelTable, TCL_ONE_WORD_KEYS);
-	    cancelTableInitialized = 1;
+	    cancelTableInitialized = true;
 	}
 
 	Tcl_MutexUnlock(&cancelLock);
     }
 
 #undef TclObjInterpProc
-    if (commandTypeInit == 0) {
+    if (!commandTypeInit) {
 	TclRegisterCommandTypeName(TclObjInterpProc, "proc");
 	TclRegisterCommandTypeName(TclEnsembleImplementationCmd, "ensemble");
 	TclRegisterCommandTypeName(TclAliasObjCmd, "alias");
@@ -907,7 +907,7 @@ Tcl_CreateInterp(void)
     Tcl_IncrRefCount(iPtr->eiVar);
     iPtr->errorStack = Tcl_NewListObj(0, NULL);
     Tcl_IncrRefCount(iPtr->errorStack);
-    iPtr->resetErrorStack = 1;
+    iPtr->resetErrorStack = true;
     TclNewLiteralStringObj(iPtr->upLiteral,"UP");
     Tcl_IncrRefCount(iPtr->upLiteral);
     TclNewLiteralStringObj(iPtr->callLiteral,"CALL");
@@ -1361,9 +1361,9 @@ TclRegisterCommandTypeName(
     const char *nameStr)
 {
     Tcl_MutexLock(&commandTypeLock);
-    if (commandTypeInit == 0) {
+    if (!commandTypeInit) {
 	Tcl_InitHashTable(&commandTypeTable, TCL_ONE_WORD_KEYS);
-	commandTypeInit = 1;
+	commandTypeInit = true;
     }
 
     Tcl_HashEntry *hPtr;
@@ -4211,7 +4211,7 @@ Tcl_CancelEval(
     }
 
     Tcl_MutexLock(&cancelLock);
-    if (cancelTableInitialized != 1) {
+    if (!cancelTableInitialized) {
 	/*
 	 * No CancelInfo hash table (Tcl_CreateInterp has never been called?)
 	 */
@@ -8870,7 +8870,7 @@ RewindCoroutine(
     NRE_ASSERT(corPtr->eePtr != NULL);
     NRE_ASSERT(corPtr->eePtr != iPtr->execEnvPtr);
 
-    corPtr->eePtr->rewind = 1;
+    corPtr->eePtr->rewind = true;
     TclNRAddCallback(interp, RewindCoroutineCallback, state);
     return TclNRInterpCoroutine(corPtr, interp, 0, NULL);
 }

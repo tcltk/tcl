@@ -183,9 +183,9 @@ struct TransformChannelData {
      */
 
     Tcl_Channel self;		/* Our own Channel handle. */
-    int readIsFlushed;		/* Flag to note whether in.flushProc was
+    bool readIsFlushed;		/* Flag to note whether in.flushProc was
 				 * called or not. */
-    int eofPending;		/* Flag: EOF seen down, not raised up */
+    bool eofPending;		/* Flag: EOF seen down, not raised up */
     int flags;			/* Currently CHANNEL_ASYNC or zero. */
     int watchMask;		/* Current watch/event/interest mask. */
     int mode;			/* Mode of parent channel, OR'ed combination
@@ -288,8 +288,8 @@ TclChannelTransform(
     dataPtr->refCount = 1;
     Tcl_DStringInit(&ds);
     Tcl_GetChannelOption(interp, chan, "-blocking", &ds);
-    dataPtr->readIsFlushed = 0;
-    dataPtr->eofPending = 0;
+    dataPtr->readIsFlushed = false;
+    dataPtr->eofPending = false;
     dataPtr->flags = 0;
     if (ds.string[0] == '0') {
 	dataPtr->flags |= CHANNEL_ASYNC;
@@ -586,7 +586,7 @@ TransformCloseProc(
     }
 
     if ((dataPtr->mode & TCL_READABLE) && !dataPtr->readIsFlushed) {
-	dataPtr->readIsFlushed = 1;
+	dataPtr->readIsFlushed = true;
 	ExecuteCallback(dataPtr, interp, A_FLUSH_READ, NULL, 0, TRANSMIT_IBUF,
 		P_PRESERVE);
     }
@@ -743,8 +743,8 @@ TransformInputProc(
 	     * on the down channel.
 	     */
 
-	    dataPtr->eofPending = 1;
-	    dataPtr->readIsFlushed = 1;
+	    dataPtr->eofPending = true;
+	    dataPtr->readIsFlushed = true;
 	    ExecuteCallback(dataPtr, NULL, A_FLUSH_READ, NULL, 0,
 		    TRANSMIT_IBUF, P_PRESERVE);
 
@@ -773,7 +773,7 @@ TransformInputProc(
     } /* while toRead > 0 */
 
     if (gotBytes == 0) {
-	dataPtr->eofPending = 0;
+	dataPtr->eofPending = false;
     }
     ReleaseData(dataPtr);
     return gotBytes;
@@ -891,8 +891,8 @@ TransformWideSeekProc(
 	ExecuteCallback(dataPtr, NULL, A_CLEAR_READ, NULL, 0, TRANSMIT_DONT,
 		P_NO_PRESERVE);
 	ResultClear(&dataPtr->result);
-	dataPtr->readIsFlushed = 0;
-	dataPtr->eofPending = 0;
+	dataPtr->readIsFlushed = false;
+	dataPtr->eofPending = false;
     }
     ReleaseData(dataPtr);
 

@@ -153,11 +153,11 @@ Tcl_GetInterpResolvers(
 	    resInfoPtr->cmdResProc = resPtr->cmdResProc;
 	    resInfoPtr->varResProc = resPtr->varResProc;
 	    resInfoPtr->compiledVarResProc = resPtr->compiledVarResProc;
-	    return 1;
+	    return true;
 	}
     }
 
-    return 0;
+    return false;
 }
 
 /*
@@ -226,9 +226,9 @@ Tcl_RemoveInterpResolvers(
 	Tcl_Free(resPtr->name);
 	Tcl_Free(resPtr);
 
-	return 1;
+	return true;
     }
-    return 0;
+    return false;
 }
 
 /*
@@ -407,9 +407,9 @@ Tcl_GetNamespaceResolvers(
 
     if (nsPtr->cmdResProc != NULL || nsPtr->varResProc != NULL ||
 	    nsPtr->compiledVarResProc != NULL) {
-	return 1;
+	return true;
     }
-    return 0;
+    return false;
 }
 
 /*

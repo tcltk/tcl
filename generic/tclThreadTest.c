@@ -52,8 +52,9 @@ static ThreadSpecificData *threadList = NULL;
  * The following bit-values are legal for the "flags" field of the
  * ThreadSpecificData structure.
  */
-
-#define TP_Dying		0x001 /* This thread is being canceled */
+enum TSDFlags {
+    TP_Dying = 0x001		/* This thread is being canceled */
+};
 
 /*
  * An instance of the following structure contains all information that is
@@ -120,10 +121,10 @@ TCL_DECLARE_MUTEX(threadMutex)
 
 static Tcl_ObjCmdProc ThreadCmd;
 static int		ThreadCreate(Tcl_Interp *interp, const char *script,
-			    int joinable);
+			    bool joinable);
 static int		ThreadList(Tcl_Interp *interp);
 static int		ThreadSend(Tcl_Interp *interp, Tcl_ThreadId id,
-			    const char *script, int wait);
+			    const char *script, bool wait);
 static int		ThreadCancel(Tcl_Interp *interp, Tcl_ThreadId id,
 			    const char *result, int flags);
 
@@ -277,7 +278,7 @@ ThreadCmd(
     }
     case THREAD_CREATE: {
 	const char *script;
-	int joinable;
+	bool joinable;
 	Tcl_Size len;
 
 	if (objc == 2) {
@@ -285,7 +286,7 @@ ThreadCmd(
 	     * Neither joinable nor special script
 	     */
 
-	    joinable = 0;
+	    joinable = false;
 	    script = "testthread wait";		/* Just enter event loop */
 	} else if (objc == 3) {
 	    /*
@@ -297,14 +298,14 @@ ThreadCmd(
 
 	    if ((len > 1) && (script[0] == '-') && (script[1] == 'j') &&
 		    (0 == strncmp(script, "-joinable", len))) {
-		joinable = 1;
+		joinable = true;
 		script = "testthread wait";	/* Just enter event loop */
 	    } else {
 		/*
 		 * Remember the script
 		 */
 
-		joinable = 0;
+		joinable = false;
 	    }
 	} else if (objc == 4) {
 	    /*
@@ -385,7 +386,8 @@ ThreadCmd(
     case THREAD_SEND: {
 	Tcl_WideInt id;
 	const char *script;
-	int wait, arg;
+	int arg;
+	bool wait;
 
 	if ((objc != 4) && (objc != 5)) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "?-async? id script");
@@ -396,10 +398,10 @@ ThreadCmd(
 		Tcl_WrongNumArgs(interp, 2, objv, "?-async? id script");
 		return TCL_ERROR;
 	    }
-	    wait = 0;
+	    wait = false;
 	    arg = 3;
 	} else {
-	    wait = 1;
+	    wait = true;
 	    arg = 2;
 	}
 	if (Tcl_GetWideIntFromObj(interp, objv[arg], &id) != TCL_OK) {
@@ -495,7 +497,7 @@ static int
 ThreadCreate(
     Tcl_Interp *interp,		/* Current interpreter. */
     const char *script,		/* Script to execute */
-    int joinable)		/* Flag, joinable thread or not */
+    bool joinable)		/* Flag, joinable thread or not */
 {
     ThreadCtrl ctrl;
     Tcl_ThreadId id;
@@ -504,11 +506,11 @@ ThreadCreate(
     ctrl.condWait = NULL;
     ctrl.flags = 0;
 
-    joinable = joinable ? TCL_THREAD_JOINABLE : TCL_THREAD_NOFLAGS;
+    int flags = joinable ? TCL_THREAD_JOINABLE : TCL_THREAD_NOFLAGS;
 
     Tcl_MutexLock(&threadMutex);
     if (Tcl_CreateThread(&id, NewTestThread, &ctrl,
-	    TCL_THREAD_STACK_DEFAULT, joinable) != TCL_OK) {
+	    TCL_THREAD_STACK_DEFAULT, flags) != TCL_OK) {
 	Tcl_MutexUnlock(&threadMutex);
 	TclPrintfResult(interp, "cannot create a new thread");
 	return TCL_ERROR;
@@ -668,7 +670,7 @@ ThreadErrorProc(
 	argv[1] = buf;
 	argv[2] = errorInfo;
 	script = Tcl_Merge(3, argv);
-	ThreadSend(interp, errorThreadId, script, 0);
+	ThreadSend(interp, errorThreadId, script, false);
 	Tcl_Free(script);
     }
 }
@@ -799,12 +801,11 @@ ThreadSend(
     Tcl_Interp *interp,		/* The current interpreter. */
     Tcl_ThreadId id,		/* Thread Id of other interpreter. */
     const char *script,		/* The script to evaluate. */
-    int wait)			/* If 1, we block for the result. */
+    bool wait)			/* If true, we block for the result. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     ThreadEvent *threadEventPtr;
     ThreadEventResult *resultPtr;
-    int found, code;
     Tcl_ThreadId threadId = (Tcl_ThreadId) id;
 
     /*
@@ -812,10 +813,10 @@ ThreadSend(
      */
 
     Tcl_MutexLock(&threadMutex);
-    found = 0;
+    bool found = false;
     for (tsdPtr = threadList ; tsdPtr ; tsdPtr = tsdPtr->nextPtr) {
 	if (tsdPtr->threadId == threadId) {
-	    found = 1;
+	    found = true;
 	    break;
 	}
     }
@@ -925,7 +926,7 @@ ThreadSend(
     }
     TclAppendResult(interp, resultPtr->result);
     Tcl_ConditionFinalize(&resultPtr->done);
-    code = resultPtr->code;
+    int code = resultPtr->code;
 
     Tcl_Free(resultPtr->result);
     Tcl_Free(resultPtr);
@@ -957,7 +958,6 @@ ThreadCancel(
     int flags)			/* Flags for Tcl_CancelEval. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    int found;
     Tcl_ThreadId threadId = (Tcl_ThreadId) id;
 
     /*
@@ -965,10 +965,10 @@ ThreadCancel(
      */
 
     Tcl_MutexLock(&threadMutex);
-    found = 0;
+    bool found = false;
     for (tsdPtr = threadList ; tsdPtr ; tsdPtr = tsdPtr->nextPtr) {
 	if (tsdPtr->threadId == threadId) {
-	    found = 1;
+	    found = true;
 	    break;
 	}
     }
@@ -1056,7 +1056,7 @@ ThreadEventProc(
     if (interp != NULL) {
 	Tcl_Release(interp);
     }
-    return 1;
+    return true;
 }
 
 /*

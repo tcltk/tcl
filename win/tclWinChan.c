@@ -44,7 +44,7 @@ typedef struct FileInfo {
     int flags;			/* State flags, see above for a list. */
     HANDLE handle;		/* Input/output file. */
     struct FileInfo *nextPtr;	/* Pointer to next registered file. */
-    int dirty;			/* Boolean flag. Set if the OS may have data
+    bool dirty;			/* Boolean flag. Set if the OS may have data
 				 * pending on the channel. */
 } FileInfo;
 
@@ -101,7 +101,7 @@ static void		FileThreadActionProc(void *instanceData,
 static int		FileTruncateProc(void *instanceData,
 			    long long length);
 static DWORD		FileGetType(HANDLE handle);
-static int		NativeIsComPort(const WCHAR *nativeName);
+static bool		NativeIsComPort(const WCHAR *nativeName);
 static Tcl_Channel	OpenFileChannel(HANDLE handle, char *channelName,
 			    int permissions, int appendMode);
 
@@ -345,7 +345,7 @@ FileEventProc(
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     if (!TEST_FLAG(flags, TCL_FILE_EVENTS)) {
-	return 0;
+	return false;
     }
 
     /*
@@ -363,7 +363,7 @@ FileEventProc(
 	    break;
 	}
     }
-    return 1;
+    return true;
 }
 
 /*
@@ -707,7 +707,7 @@ FileOutputProc(
 	*errorCode = errno;
 	return -1;
     }
-    infoPtr->dirty = 1;
+    infoPtr->dirty = true;
     return (int)bytesWritten;
 }
 
@@ -909,12 +909,12 @@ FileGetOptionProc(
     Tcl_DString *dsPtr)		/* Where to write the value read. */
 {
     FileInfo *infoPtr = (FileInfo *)instanceData;
-    int valid = 0;		/* Flag if valid option parsed. */
+    bool valid = false;		/* Flag if valid option parsed. */
     size_t len;
 
     if (optionName == NULL) {
 	len = 0;
-	valid = 1;
+	valid = true;
     } else {
 	len = strlen(optionName);
     }
@@ -1208,15 +1208,11 @@ Tcl_MakeFileChannel(
     int mode)			/* OR'ed combination of TCL_READABLE and
 				 * TCL_WRITABLE to indicate file mode. */
 {
-#if defined(HAVE_NO_SEH) && !defined(_WIN64) && !defined(__clang__)
-    TCLEXCEPTION_REGISTRATION registration;
-#endif
     char channelName[16 + TCL_INTEGER_SPACE];
     Tcl_Channel channel = NULL;
     HANDLE handle = (HANDLE) rawHandle;
     HANDLE dupedHandle;
     TclFile readFile = NULL, writeFile = NULL;
-    BOOL result;
 
     if ((mode & (TCL_READABLE|TCL_WRITABLE)) == 0) {
 	return NULL;
@@ -1255,11 +1251,11 @@ Tcl_MakeFileChannel(
 	 * function in this way.
 	 */
 
-	result = DuplicateHandle(GetCurrentProcess(), handle,
+	BOOL result = DuplicateHandle(GetCurrentProcess(), handle,
 		GetCurrentProcess(), &dupedHandle, 0, FALSE,
 		DUPLICATE_SAME_ACCESS);
 
-	if (result == 0) {
+	if (result == FALSE) {
 	    /*
 	     * Unable to make a duplicate. It's definitely invalid at this
 	     * point.
@@ -1273,7 +1269,7 @@ Tcl_MakeFileChannel(
 	 * of this duped handle which might throw EXCEPTION_INVALID_HANDLE.
 	 */
 
-	result = 0;
+	result = FALSE;
 #if defined(HAVE_NO_SEH) && !defined(_WIN64) && !defined(__clang__)
 	/*
 	 * Don't have SEH available, do things the hard way. Note that this
@@ -1281,8 +1277,9 @@ Tcl_MakeFileChannel(
 	 * illegal for one asm block to contain a jump to another.
 	 */
 
-	__asm__ __volatile__ (
+	TCLEXCEPTION_REGISTRATION registration;
 
+	__asm__ __volatile__ (
 	    /*
 	     * Pick up parameters before messing with the stack
 	     */
@@ -1359,7 +1356,7 @@ Tcl_MakeFileChannel(
 	__try {
 #endif
 	    CloseHandle(dupedHandle);
-	    result = 1;
+	    result = TRUE;
 #ifndef HAVE_NO_SEH
 	} __except (EXCEPTION_EXECUTE_HANDLER) {}
 #endif
@@ -1517,7 +1514,7 @@ OpenFileChannel(
     infoPtr->watchMask = 0;
     infoPtr->flags = appendMode;
     infoPtr->handle = handle;
-    infoPtr->dirty = 0;
+    infoPtr->dirty = false;
     TclWinGenerateChannelName(channelName, "file", infoPtr);
     infoPtr->channel = Tcl_CreateChannel(&fileChannelType, channelName,
 	    infoPtr, permissions);
@@ -1565,7 +1562,7 @@ TclWinFlushDirtyChannels(void)
 	    infoPtr = infoPtr->nextPtr) {
 	if (infoPtr->dirty) {
 	    FlushFileBuffers(infoPtr->handle);
-	    infoPtr->dirty = 0;
+	    infoPtr->dirty = false;
 	}
     }
 }
@@ -1598,13 +1595,13 @@ FileThreadActionProc(
 	infoPtr->nextPtr = tsdPtr->firstFilePtr;
 	tsdPtr->firstFilePtr = infoPtr;
     } else {
-	int removed = 0;
+	bool removed = false;
 
 	for (FileInfo **nextPtrPtr = &(tsdPtr->firstFilePtr);
 		(*nextPtrPtr) != NULL; nextPtrPtr = &((*nextPtrPtr)->nextPtr)) {
 	    if ((*nextPtrPtr) == infoPtr) {
 		(*nextPtrPtr) = infoPtr->nextPtr;
-		removed = 1;
+		removed = true;
 		break;
 	    }
 	}
@@ -1683,12 +1680,12 @@ FileGetType(
  *	    \\.\COM[0-9]+
  *
  * Results:
- *	1 = serial port, 0 = not.
+ *	true = serial port, false = not.
  *
  *----------------------------------------------------------------------
  */
 
-static int
+static bool
 NativeIsComPort(
     const WCHAR *nativePath)	/* Path of file to access, native encoding. */
 {
@@ -1705,9 +1702,9 @@ NativeIsComPort(
 	 */
 
 	if ((p[3] < '1') || (p[3] > '9')) {
-	    return 0;
+	    return false;
 	}
-	return 1;
+	return true;
     }
 
     /*
@@ -1721,12 +1718,12 @@ NativeIsComPort(
 
 	for (size_t i=7; i<len; i++) {
 	    if ((p[i] < '0') || (p[i] > '9')) {
-		return 0;
+		return false;
 	    }
 	}
-	return 1;
+	return true;
     }
-    return 0;
+    return false;
 }
 
 /*

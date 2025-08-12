@@ -45,7 +45,7 @@ typedef struct {
     Tcl_Obj *returnOpts;
     Tcl_Obj *objResult;
     Tcl_Obj *errorStack;
-    int resetErrorStack;
+    bool resetErrorStack;
 } InterpState;
 
 /*
@@ -411,7 +411,7 @@ Tcl_ResetResult(
 	Tcl_DecrRefCount(iPtr->errorInfo);
 	iPtr->errorInfo = NULL;
     }
-    iPtr->resetErrorStack = 1;
+    iPtr->resetErrorStack = true;
     iPtr->returnLevel = 1;
     iPtr->returnCode = TCL_OK;
     if (iPtr->returnOpts) {
@@ -748,7 +748,7 @@ TclProcessReturn(
 		    &valueObjv) == TCL_ERROR) {
 		return TCL_ERROR;
 	    }
-	    iPtr->resetErrorStack = 0;
+	    iPtr->resetErrorStack = false;
 	    TclListObjLength(interp, iPtr->errorStack, &len);
 
 	    /*

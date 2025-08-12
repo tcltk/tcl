@@ -251,7 +251,7 @@ Tcl_CreateHashEntry(
     int *newPtr)		/* Store info here telling whether a new entry
 				 * was created. */
 {
-    Tcl_HashEntry *entry = (*((tablePtr)->createProc))(tablePtr, (const char *)key, newPtr);
+    Tcl_HashEntry *entry = tablePtr->createProc(tablePtr, (const char *)key, newPtr);
     if (!entry) {
 	Tcl_Panic("%s: Memory overflow", "Tcl_CreateHashEntry");
     }
@@ -268,7 +268,7 @@ Tcl_DbCreateHashEntry(
     const char *file,
     int line)
 {
-    Tcl_HashEntry *entry = (*((tablePtr)->createProc))(tablePtr, (const char *)key, newPtr);
+    Tcl_HashEntry *entry = tablePtr->createProc(tablePtr, (const char *)key, newPtr);
     if (!entry) {
 	Tcl_Panic("%s: Memory overflow in file %s:%d", "Tcl_CreateHashEntry", file, line);
     }
@@ -326,7 +326,7 @@ CreateHashEntry(
 		if ((key == hPtr->key.oneWordValue)
 		    || compareKeysProc((void *) key, hPtr)) {
 		    if (newPtr && (newPtr != TCL_HASH_FIND)) {
-			*newPtr = 0;
+			*newPtr = false;
 		    }
 		    return hPtr;
 		}
@@ -341,7 +341,7 @@ CreateHashEntry(
 		if ((key == hPtr->key.string)
 			|| compareKeysProc((void *) key, hPtr)) {
 		    if (newPtr && (newPtr != TCL_HASH_FIND)) {
-			*newPtr = 0;
+			*newPtr = false;
 		    }
 		    return hPtr;
 		}
@@ -355,7 +355,7 @@ CreateHashEntry(
 	    }
 	    if (key == hPtr->key.oneWordValue) {
 		if (newPtr && (newPtr != TCL_HASH_FIND)) {
-		    *newPtr = 0;
+		    *newPtr = false;
 		}
 		return hPtr;
 	    }
@@ -372,7 +372,7 @@ CreateHashEntry(
      */
 
     if (newPtr) {
-	*newPtr = 1;
+	*newPtr = true;
     }
     if (typePtr->allocEntryProc) {
 	hPtr = typePtr->allocEntryProc(tablePtr, (void *) key);

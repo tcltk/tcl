@@ -25,11 +25,11 @@ typedef struct JoinableThread {
     Tcl_ThreadId  id;		/* The id of the joinable thread. */
     int result;			/* A place for the result after the demise of
 				 * the thread. */
-    int done;			/* Boolean flag. Initialized to 0 and set to 1
+    bool done;			/* Initialized to false and set to true
 				 * after the exit of the thread. This allows a
 				 * thread requesting a join to detect when
 				 * waiting is not necessary. */
-    int waitedUpon;		/* Boolean flag. Initialized to 0 and set to 1
+    bool waitedUpon;		/* Initialized to false and set to true
 				 * by the thread waiting for this one via
 				 * Tcl_JoinThread.  Used to lock any other
 				 * thread trying to wait on this one. */
@@ -142,7 +142,7 @@ TclJoinThread(
      * We are waiting now, let other threads recognize this.
      */
 
-    threadPtr->waitedUpon = 1;
+    threadPtr->waitedUpon = true;
 
     while (!threadPtr->done) {
 	Tcl_ConditionWait(&threadPtr->cond, &threadPtr->threadMutex, NULL);
@@ -232,8 +232,8 @@ TclRememberJoinableThread(
 
     threadPtr = (JoinableThread *)Tcl_Alloc(sizeof(JoinableThread));
     threadPtr->id = id;
-    threadPtr->done = 0;
-    threadPtr->waitedUpon = 0;
+    threadPtr->done = false;
+    threadPtr->waitedUpon = false;
     threadPtr->threadMutex = (Tcl_Mutex) NULL;
     threadPtr->cond = (Tcl_Condition) NULL;
 
@@ -296,7 +296,7 @@ TclSignalExitThread(
     Tcl_MutexLock(&threadPtr->threadMutex);
     Tcl_MutexUnlock(&joinMutex);
 
-    threadPtr->done = 1;
+    threadPtr->done = true;
     threadPtr->result = result;
 
     if (threadPtr->waitedUpon) {

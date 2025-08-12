@@ -157,7 +157,8 @@ TclDeleteLiteralTable(
  *
  * Results:
  *	The literal object. If it was created in this call *newPtr is set to
- *	1, else 0. NULL is returned if newPtr==NULL and no literal is found.
+ *	true, else false. NULL is returned if newPtr==NULL and no literal is
+ *	found.
  *
  * Side effects:
  *	Increments the ref count of the global LiteralEntry since the caller
@@ -179,7 +180,7 @@ TclCreateLiteral(
     Tcl_Size length,		/* Number of bytes in the string. */
     size_t hash,		/* The string's hash. If the value is
 				 * TCL_INDEX_NONE, it will be computed here. */
-    int *newPtr,
+    bool *newPtr,		/* Where to report if the literal was created */
     Namespace *nsPtr,
     int flags,
     LiteralEntry **globalPtrPtr)
@@ -217,7 +218,7 @@ TclCreateLiteral(
 		 */
 
 		if (newPtr) {
-		    *newPtr = 0;
+		    *newPtr = false;
 		}
 		if (globalPtrPtr) {
 		    *globalPtrPtr = globalPtr;
@@ -233,7 +234,7 @@ TclCreateLiteral(
 	}
     }
     if (!newPtr) {
-	if ((flags & LITERAL_ON_HEAP)) {
+	if (flags & LITERAL_ON_HEAP) {
 	    Tcl_Free((void *)bytes);
 	}
 	return NULL;
@@ -245,7 +246,7 @@ TclCreateLiteral(
 
     Tcl_Obj *objPtr;
     TclNewObj(objPtr);
-    if ((flags & LITERAL_ON_HEAP)) {
+    if (flags & LITERAL_ON_HEAP) {
 	objPtr->bytes = (char *) bytes;
 	objPtr->length = length;
     } else if (!TclAttemptInitStringRep(objPtr, bytes, length)) {
@@ -255,7 +256,7 @@ TclCreateLiteral(
 
     /* Should the new literal be shared globally? */
 
-    if ((flags & LITERAL_UNSHARED)) {
+    if (flags & LITERAL_UNSHARED) {
 	/*
 	 * No, do *not* add it the global literal table
 	 * Make clear, that no global value is returned
@@ -296,22 +297,20 @@ TclCreateLiteral(
 
 #ifdef TCL_COMPILE_DEBUG
     TclVerifyGlobalLiteralTable(iPtr);
-    {
-	int found = 0;
-	for (size_t i=0 ; i<globalTablePtr->numBuckets ; i++) {
-	    for (LiteralEntry *entryPtr=globalTablePtr->buckets[i];
-		    entryPtr!=NULL ; entryPtr=entryPtr->nextPtr) {
-		if ((entryPtr == globalPtr) && (entryPtr->objPtr == objPtr)) {
-		    found = 1;
-		    goto doneVerifyLoop;
-		}
+    bool found = false;
+    for (size_t i=0 ; i<globalTablePtr->numBuckets ; i++) {
+	for (LiteralEntry *entryPtr=globalTablePtr->buckets[i];
+		entryPtr!=NULL ; entryPtr=entryPtr->nextPtr) {
+	    if ((entryPtr == globalPtr) && (entryPtr->objPtr == objPtr)) {
+		found = true;
+		goto doneVerifyLoop;
 	    }
 	}
-    doneVerifyLoop:
-	if (!found) {
-	    Tcl_Panic("%s: literal \"%.*s\" wasn't global",
-		    "TclRegisterLiteral", (length>60? 60 : (int)length), bytes);
-	}
+    }
+  doneVerifyLoop:
+    if (!found) {
+	Tcl_Panic("%s: literal \"%.*s\" wasn't global",
+		"TclRegisterLiteral", (length>60? 60 : (int)length), bytes);
     }
 #endif /*TCL_COMPILE_DEBUG*/
 
@@ -325,7 +324,7 @@ TclCreateLiteral(
     if (globalPtrPtr) {
 	*globalPtrPtr = globalPtr;
     }
-    *newPtr = 1;
+    *newPtr = true;
     return objPtr;
 }
 
@@ -457,7 +456,7 @@ TclRegisterLiteral(
      * Is it in the interpreter's global literal table? If not, create it.
      */
 
-    int isNew;
+    bool isNew;
     LiteralEntry *globalPtr = NULL;
     Tcl_Obj *objPtr = TclCreateLiteral(iPtr, bytes, length, hash, &isNew,
 	    nsPtr, flags, &globalPtr);
@@ -733,24 +732,24 @@ AddLocalLiteralEntry(
 
 #ifdef TCL_COMPILE_DEBUG
     TclVerifyLocalLiteralTable(envPtr);
-    {
-	int found = 0;
-	for (size_t i=0 ; i<localTablePtr->numBuckets ; i++) {
-	    for (localPtr=localTablePtr->buckets[i] ; localPtr!=NULL ;
-		    localPtr=localPtr->nextPtr) {
-		if (localPtr->objPtr == objPtr) {
-		    found = 1;
-		}
+    bool found = false;
+    for (size_t i=0 ; i<localTablePtr->numBuckets ; i++) {
+	for (localPtr=localTablePtr->buckets[i] ; localPtr!=NULL ;
+		localPtr=localPtr->nextPtr) {
+	    if (localPtr->objPtr == objPtr) {
+		found = true;
+		goto doneVerifyLoop;
 	    }
 	}
-
-	if (!found) {
-	    Tcl_Size length;
-	    char *bytes = TclGetStringFromObj(objPtr, &length);
-	    Tcl_Panic("%s: literal \"%.*s\" wasn't found locally",
-		    "AddLocalLiteralEntry", (length>60? 60 : (int)length), bytes);
-	}
     }
+
+  doneVerifyLoop:
+    if (!found) {
+	Tcl_Size length;
+	char *bytes = TclGetStringFromObj(objPtr, &length);
+	Tcl_Panic("%s: literal \"%.*s\" wasn't found locally",
+		"AddLocalLiteralEntry", (length>60? 60 : (int)length), bytes);
+}
 #endif /*TCL_COMPILE_DEBUG*/
 
     return objIndex;
@@ -808,7 +807,7 @@ ExpandLocalLiteralArray(
 
 	newArrayPtr = (LiteralEntry *)Tcl_Alloc(newSize);
 	memcpy(newArrayPtr, currArrayPtr, currBytes);
-	envPtr->mallocedLiteralArray = 1;
+	envPtr->mallocedLiteralArray = true;
     }
 
     /*

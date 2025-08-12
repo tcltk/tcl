@@ -430,7 +430,7 @@ TclMaxListLength(
      * No list element before leading white space.
      */
 
-    count += 1 - TclIsSpaceProcM(*bytes);
+    count += 1 - (int) TclIsSpaceProcM(*bytes);
 
     /*
      * Count white space runs as potential element separators.
@@ -589,9 +589,9 @@ FindElement(
     const char **nextPtr,	/* Fill in with location of character just
 				 * after all white space following end of
 				 * argument (next arg or end of list/dict). */
-    Tcl_Size *sizePtr,		/* If non-zero, fill in with size of
+    Tcl_Size *sizePtr,		/* If non-NULL, fill in with size of
 				 * element. */
-    int *literalPtr)		/* If non-zero, fill in with non-zero/zero to
+    int *literalPtr)		/* If non-NULL, fill in with non-zero/zero to
 				 * indicate that the substring of *sizePtr
 				 * bytes starting at **elementPtr is/is not
 				 * the literal list/dict element and therefore
@@ -602,10 +602,10 @@ FindElement(
     const char *elemStart;	/* Points to first byte of first element. */
     const char *limit;		/* Points just after list/dict's last byte. */
     Tcl_Size openBraces = 0;	/* Brace nesting level during parse. */
-    int inQuotes = 0;
+    bool inQuotes = false;
     Tcl_Size size = 0;
     Tcl_Size numChars;
-    int literal = 1;
+    int literal = true;
     const char *p2;
 
     /*
@@ -615,7 +615,7 @@ FindElement(
      */
 
     limit = (string + stringLength);
-    while ((p < limit) && (TclIsSpaceProcM(*p))) {
+    while ((p < limit) && TclIsSpaceProcM(*p)) {
 	p++;
     }
     if (p == limit) {		/* no element found */
@@ -627,7 +627,7 @@ FindElement(
 	openBraces = 1;
 	p++;
     } else if (*p == '"') {
-	inQuotes = 1;
+	inQuotes = true;
 	p++;
     }
     elemStart = p;
@@ -697,7 +697,7 @@ FindElement(
 		 * needed to produce the element value. Inform the caller.
 		 */
 
-		literal = 0;
+		literal = false;
 	    }
 	    TclParseBackslash(p, limit - p, &numChars, NULL);
 	    p += (numChars - 1);
@@ -721,7 +721,7 @@ FindElement(
 
 		if (interp != NULL) {
 		    p2 = p;
-		    while ((p2 < limit) && (!TclIsSpaceProcM(*p2))
+		    while ((p2 < limit) && !TclIsSpaceProcM(*p2)
 			    && (p2 < p+20)) {
 			p2++;
 		    }
@@ -773,7 +773,7 @@ FindElement(
     }
 
   done:
-    while ((p < limit) && (TclIsSpaceProcM(*p))) {
+    while ((p < limit) && TclIsSpaceProcM(*p)) {
 	p++;
     }
     *elementPtr = elemStart;
@@ -1049,9 +1049,9 @@ TclScanElement(
 {
     const char *p = src;
     Tcl_Size nestingLevel = 0;	/* Brace nesting count */
-    int forbidNone = 0;		/* Do not permit CONVERT_NONE mode. Something
+    bool forbidNone = false;	/* Do not permit CONVERT_NONE mode. Something
 				 * needs protection or escape. */
-    int requireEscape = 0;	/* Force use of CONVERT_ESCAPE mode.  For some
+    bool requireEscape = false;	/* Force use of CONVERT_ESCAPE mode.  For some
 				 * reason bare or brace-quoted form fails. */
     Tcl_Size extra = 0;		/* Count of number of extra bytes needed for
 				 * formatted element, assuming we use escape
@@ -1059,8 +1059,8 @@ TclScanElement(
     Tcl_Size bytesNeeded;	/* Buffer length computed to complete the
 				 * element formatting in the selected mode. */
 #if COMPAT
-    int preferEscape = 0;	/* Use preferences to track whether to use */
-    int preferBrace = 0;	/* CONVERT_MASK mode. */
+    bool preferEscape = false;	/* Use preferences to track whether to use */
+    bool preferBrace = false;	/* CONVERT_MASK mode. */
     int braceCount = 0;		/* Count of all braces '{' '}' seen. */
 #endif /* COMPAT */
 
@@ -1086,7 +1086,7 @@ TclScanElement(
      * Set that preference here so that we compute a tight size requirement.
      */
     if ((*src == '#') && !(*flagPtr & DONT_QUOTE_HASH)) {
-	preferBrace = 1;
+	preferBrace = true;
     }
 #endif
 
@@ -1096,9 +1096,9 @@ TclScanElement(
 	 * misinterpreted as list element delimiting syntax.
 	 */
 
-	forbidNone = 1;
+	forbidNone = true;
 #if COMPAT
-	preferBrace = 1;
+	preferBrace = true;
 #endif /* COMPAT */
     }
 
@@ -1122,15 +1122,15 @@ TclScanElement(
 		     * Unbalanced braces!  Cannot format with brace quoting.
 		     */
 
-		    requireEscape = 1;
+		    requireEscape = true;
 		}
 		break;
 	    case ']':	/* TYPE_CLOSE_BRACK */
 	    case '"':	/* TYPE_SPACE */
 #if COMPAT
-		forbidNone = 1;
+		forbidNone = true;
 		extra++;	/* Escapes all just prepend a backslash */
-		preferEscape = 1;
+		preferEscape = true;
 		break;
 #else
 		TCL_FALLTHROUGH();
@@ -1138,10 +1138,10 @@ TclScanElement(
 	    case '[':	/* TYPE_SUBS */
 	    case '$':	/* TYPE_SUBS */
 	    case ';':	/* TYPE_COMMAND_END */
-		forbidNone = 1;
+		forbidNone = true;
 		extra++;	/* Escape sequences all one byte longer. */
 #if COMPAT
-		preferBrace = 1;
+		preferBrace = true;
 #endif /* COMPAT */
 		break;
 	    case '\\':	/* TYPE_SUBS */
@@ -1152,7 +1152,7 @@ TclScanElement(
 		     * Final backslash. Cannot format with brace quoting.
 		     */
 
-		    requireEscape = 1;
+		    requireEscape = true;
 		    break;
 		}
 		if (p[1] == '\n') {
@@ -1162,7 +1162,7 @@ TclScanElement(
 		     * Backslash newline sequence.  Brace quoting not permitted.
 		     */
 
-		    requireEscape = 1;
+		    requireEscape = true;
 		    length -= (length > 0);
 		    p++;
 		    break;
@@ -1172,9 +1172,9 @@ TclScanElement(
 		    length -= (length > 0);
 		    p++;
 		}
-		forbidNone = 1;
+		forbidNone = true;
 #if COMPAT
-		preferBrace = 1;
+		preferBrace = true;
 #endif /* COMPAT */
 		break;
 	    case '\0':	/* TYPE_SUBS */
@@ -1185,10 +1185,10 @@ TclScanElement(
 		break;
 	    default:
 		if (TclIsSpaceProcM(*p)) {
-		    forbidNone = 1;
+		    forbidNone = true;
 		    extra++;	/* Escape sequences all one byte longer. */
 #if COMPAT
-		    preferBrace = 1;
+		    preferBrace = true;
 #endif
 		}
 		break;
@@ -1204,7 +1204,7 @@ TclScanElement(
 	 * Unbalanced braces!  Cannot format with brace quoting.
 	 */
 
-	requireEscape = 1;
+	requireEscape = true;
     }
 
     /*
@@ -1884,7 +1884,8 @@ Tcl_Concat(
     Tcl_Size argc,		/* Number of strings to concatenate. */
     const char *const *argv)	/* Array of strings to concatenate. */
 {
-    Tcl_Size i, needSpace = 0, bytesNeeded = 0;
+    Tcl_Size i, bytesNeeded = 0;
+    bool needSpace = false;
     char *result, *p;
 
     /*
@@ -1955,7 +1956,7 @@ Tcl_Concat(
 	}
 	memcpy(p, element, elemLength);
 	p += elemLength;
-	needSpace = 1;
+	needSpace = true;
     }
     *p = '\0';
     return result;
@@ -1984,7 +1985,7 @@ Tcl_ConcatObj(
     Tcl_Size objc,		/* Number of objects to concatenate. */
     Tcl_Obj *const objv[])	/* Array of objects to concatenate. */
 {
-    int needSpace = 0;
+    bool needSpace = false;
     Tcl_Size i, bytesNeeded = 0, elemLength;
     const char *element;
     Tcl_Obj *objPtr, *resPtr;
@@ -2097,7 +2098,7 @@ Tcl_ConcatObj(
 	    Tcl_AppendToObj(resPtr, " ", 1);
 	}
 	Tcl_AppendToObj(resPtr, element, elemLength);
-	needSpace = 1;
+	needSpace = true;
     }
     return resPtr;
 }
@@ -2144,7 +2145,7 @@ Tcl_StringCaseMatch(
 	    return (*str == '\0');
 	}
 	if ((*str == '\0') && (p != '*')) {
-	    return 0;
+	    return false;
 	}
 
 	/*
@@ -2162,7 +2163,7 @@ Tcl_StringCaseMatch(
 	    while (*(++pattern) == '*');
 	    p = *pattern;
 	    if (p == '\0') {
-		return 1;
+		return true;
 	    }
 
 	    /*
@@ -2212,10 +2213,10 @@ Tcl_StringCaseMatch(
 		    }
 		}
 		if (Tcl_StringCaseMatch(str, pattern, nocase)) {
-		    return 1;
+		    return true;
 		}
 		if (*str == '\0') {
-		    return 0;
+		    return false;
 		}
 		str += TclUtfToUniChar(str, &ch1);
 	    }
@@ -2254,7 +2255,7 @@ Tcl_StringCaseMatch(
 	    }
 	    while (1) {
 		if ((*pattern == ']') || (*pattern == '\0')) {
-		    return 0;
+		    return false;
 		}
 		if (UCHAR(*pattern) < 0x80) {
 		    startChar = (int) (nocase
@@ -2269,7 +2270,7 @@ Tcl_StringCaseMatch(
 		if (*pattern == '-') {
 		    pattern++;
 		    if (*pattern == '\0') {
-			return 0;
+			return false;
 		    }
 		    if (UCHAR(*pattern) < 0x80) {
 			endChar = (int) (nocase
@@ -2315,7 +2316,7 @@ Tcl_StringCaseMatch(
 	if (p == '\\') {
 	    pattern++;
 	    if (*pattern == '\0') {
-		return 0;
+		return false;
 	    }
 	}
 
@@ -2328,10 +2329,10 @@ Tcl_StringCaseMatch(
 	pattern += TclUtfToUniChar(pattern, &ch2);
 	if (nocase) {
 	    if (Tcl_UniCharToLower(ch1) != Tcl_UniCharToLower(ch2)) {
-		return 0;
+		return false;
 	    }
 	} else if (ch1 != ch2) {
-	    return 0;
+	    return false;
 	}
     }
 }
@@ -2346,8 +2347,8 @@ Tcl_StringCaseMatch(
  *	Parallels tclUtf.c:TclUniCharMatch, adjusted for char* and sans nocase.
  *
  * Results:
- *	The return value is 1 if string matches pattern, and 0 otherwise. The
- *	matching operation permits the following special characters in the
+ *	The return value is true if string matches pattern, and false otherwise.
+ *	The matching operation permits the following special characters in the
  *	pattern: *?\[] (see the manual entry for details on what these mean).
  *
  * Side effects:
@@ -2356,7 +2357,7 @@ Tcl_StringCaseMatch(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 TclByteArrayMatch(
     const unsigned char *string,/* String. */
     Tcl_Size strLen,		/* Length of String */
@@ -2384,7 +2385,7 @@ TclByteArrayMatch(
 	}
 	p = *pattern;
 	if ((string == stringEnd) && (p != '*')) {
-	    return 0;
+	    return false;
 	}
 
 	/*
@@ -2404,7 +2405,7 @@ TclByteArrayMatch(
 		/* empty body */
 	    }
 	    if (pattern == patternEnd) {
-		return 1;
+		return true;
 	    }
 	    p = *pattern;
 	    while (1) {
@@ -2421,10 +2422,10 @@ TclByteArrayMatch(
 		}
 		if (TclByteArrayMatch(string, stringEnd - string,
 			pattern, patternEnd - pattern, 0)) {
-		    return 1;
+		    return true;
 		}
 		if (string == stringEnd) {
-		    return 0;
+		    return false;
 		}
 		string++;
 	    }
@@ -2455,14 +2456,14 @@ TclByteArrayMatch(
 	    string++;
 	    while (1) {
 		if ((*pattern == ']') || (pattern == patternEnd)) {
-		    return 0;
+		    return false;
 		}
 		startChar = *pattern;
 		pattern++;
 		if (*pattern == '-') {
 		    pattern++;
 		    if (pattern == patternEnd) {
-			return 0;
+			return false;
 		    }
 		    endChar = *pattern;
 		    pattern++;
@@ -2496,7 +2497,7 @@ TclByteArrayMatch(
 
 	if (p == '\\') {
 	    if (++pattern == patternEnd) {
-		return 0;
+		return false;
 	    }
 	}
 
@@ -2506,7 +2507,7 @@ TclByteArrayMatch(
 	 */
 
 	if (*string != *pattern) {
-	    return 0;
+	    return false;
 	}
 	string++;
 	pattern++;
@@ -2731,7 +2732,7 @@ Tcl_DStringAppendElement(
     char *dst = dsPtr->string + dsPtr->length;
     int needSpace = TclNeedSpace(dsPtr->string, dst);
     char flags = 0;
-    int quoteHash = 1;
+    bool quoteHash = true;
     Tcl_Size newSize;
 
     if (needSpace) {
@@ -2740,7 +2741,7 @@ Tcl_DStringAppendElement(
 	 * already ending the string, we're not appending the first element
 	 * of any list, so we need not quote any leading hash character.
 	 */
-	quoteHash = 0;
+	quoteHash = false;
     } else {
 	/*
 	 * We don't need a space, maybe because there's some already there.
@@ -3224,7 +3225,7 @@ TclNeedSpace(
      *
 
     if (end == start) {
-	return 0;
+	return false;
     }
 
      *
@@ -3250,7 +3251,7 @@ TclNeedSpace(
     end = Tcl_UtfPrev(end, start);
     while (*end == '{') {
 	if (end == start) {
-	    return 0;
+	    return false;
 	}
 	end = Tcl_UtfPrev(end, start);
     }
@@ -3261,7 +3262,7 @@ TclNeedSpace(
     while ((--end >= start) && (*end == '{')) {
     }
     if (end < start) {
-	return 0;
+	return false;
     }
 
     /*
@@ -3271,7 +3272,7 @@ TclNeedSpace(
      */
 
     if (TclIsSpaceProcM(*end)) {
-	int result = 0;
+	bool result = false;
 
 	/*
 	 * Trailing whitespace might be part of a backslash escape
@@ -3283,7 +3284,7 @@ TclNeedSpace(
 	}
 	return result;
     }
-    return 1;
+    return true;
 }
 
 /*
@@ -4404,17 +4405,18 @@ TclReToGlob(
     const char *reStr,
     Tcl_Size reStrLen,
     Tcl_DString *dsPtr,
-    int *exactPtr,
-    int *quantifiersFoundPtr)
+    bool *exactPtr,
+    bool *quantifiersFoundPtr)
 {
-    int anchorLeft, anchorRight, lastIsStar, numStars;
+    bool anchorLeft, anchorRight, lastIsStar;
+    int numStars;
     char *dsStr, *dsStrStart;
     const char *msg, *strEnd, *code;
 
     strEnd = reStr + reStrLen;
     Tcl_DStringInit(dsPtr);
     if (quantifiersFoundPtr != NULL) {
-	*quantifiersFoundPtr = 0;
+	*quantifiersFoundPtr = false;
     }
 
     /*
@@ -4444,7 +4446,7 @@ TclReToGlob(
 	*dsStr++ = '*';
 	Tcl_DStringSetLength(dsPtr, dsStr - dsStrStart);
 	if (exactPtr) {
-	    *exactPtr = 0;
+	    *exactPtr = false;
 	}
 	return TCL_OK;
     }
@@ -4468,17 +4470,17 @@ TclReToGlob(
     msg = NULL;
     code = NULL;
     const char *p = reStr;
-    anchorRight = 0;
-    lastIsStar = 0;
-    numStars = 0;
+    anchorRight = false;
+    lastIsStar = false;
+    numStars = false;
 
     if (*p == '^') {
-	anchorLeft = 1;
+	anchorLeft = true;
 	p++;
     } else {
-	anchorLeft = 0;
+	anchorLeft = false;
 	*dsStr++ = '*';
-	lastIsStar = 1;
+	lastIsStar = true;
     }
 
     for ( ; p < strEnd; p++) {
@@ -4510,12 +4512,12 @@ TclReToGlob(
 	    case 'B': case '\\':
 		*dsStr++ = '\\';
 		*dsStr++ = '\\';
-		anchorLeft = 0; /* prevent exact match */
+		anchorLeft = false; /* prevent exact match */
 		break;
 	    case '*': case '[': case ']': case '?':
 		/* Only add \ where necessary for glob */
 		*dsStr++ = '\\';
-		anchorLeft = 0; /* prevent exact match */
+		anchorLeft = false; /* prevent exact match */
 		TCL_FALLTHROUGH();
 	    case '{': case '}': case '(': case ')': case '+':
 	    case '.': case '|': case '^': case '$':
@@ -4529,15 +4531,15 @@ TclReToGlob(
 	    break;
 	case '.':
 	    if (quantifiersFoundPtr != NULL) {
-		*quantifiersFoundPtr = 1;
+		*quantifiersFoundPtr = true;
 	    }
-	    anchorLeft = 0; /* prevent exact match */
+	    anchorLeft = false; /* prevent exact match */
 	    if (p+1 < strEnd) {
 		if (p[1] == '*') {
 		    p++;
 		    if (!lastIsStar) {
 			*dsStr++ = '*';
-			lastIsStar = 1;
+			lastIsStar = true;
 			numStars++;
 		    }
 		    continue;
@@ -4545,7 +4547,7 @@ TclReToGlob(
 		    p++;
 		    *dsStr++ = '?';
 		    *dsStr++ = '*';
-		    lastIsStar = 1;
+		    lastIsStar = true;
 		    numStars++;
 		    continue;
 		}
@@ -4558,7 +4560,7 @@ TclReToGlob(
 		code = "NONANCHOR";
 		goto invalidGlob;
 	    }
-	    anchorRight = 1;
+	    anchorRight = true;
 	    break;
 	case '*': case '+': case '?': case '|': case '^':
 	case '{': case '}': case '(': case ')': case '[': case ']':
@@ -4569,7 +4571,7 @@ TclReToGlob(
 	    *dsStr++ = *p;
 	    break;
 	}
-	lastIsStar = 0;
+	lastIsStar = false;
     }
     if (numStars > 1) {
 	/*

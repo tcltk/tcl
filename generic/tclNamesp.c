@@ -1173,11 +1173,11 @@ Tcl_DeleteNamespace(
     TclNsDecrRefCount(nsPtr);
 }
 
-int
+bool
 TclNamespaceDeleted(
     Namespace *nsPtr)
 {
-    return (nsPtr->flags & NS_DYING) ? 1 : 0;
+    return (nsPtr->flags & NS_DYING) ? true : false;
 }
 
 void
@@ -1201,7 +1201,7 @@ TclDeleteNamespaceChildren(
      * Important: leave the hash table itself still live.
      */
 
-    int unchecked = (NumChildEntries(nsPtr) > 0);
+    bool unchecked = (NumChildEntries(nsPtr) > 0);
     while (NumChildEntries(nsPtr) > 0 && unchecked) {
 	size_t length = NumChildEntries(nsPtr);
 	Namespace **children = (Namespace **)
@@ -1215,10 +1215,10 @@ TclDeleteNamespaceChildren(
 	    children[i]->refCount++;
 	    i++;
 	}
-	unchecked = 0;
+	unchecked = false;
 	for (i = 0 ; i < length ; i++) {
 	    if (!(children[i]->flags & NS_DYING)) {
-		unchecked = 1;
+		unchecked = true;
 		Tcl_DeleteNamespace((Tcl_Namespace *) children[i]);
 		TclNsDecrRefCount(children[i]);
 	    }
@@ -2839,7 +2839,7 @@ TclResetShadowedCmdRefs(
 	 * contains a command cmdName.
 	 */
 
-	int found = 1;
+	bool found = true;
 	shadowNsPtr = globalNsPtr;
 
 	for (int i = trailFront;  i >= 0;  i--) {
@@ -2848,7 +2848,7 @@ TclResetShadowedCmdRefs(
 	    if (hPtr != NULL) {
 		shadowNsPtr = (Namespace *) Tcl_GetHashValue(hPtr);
 	    } else {
-		found = 0;
+		found = false;
 		break;
 	    }
 	}
@@ -3746,7 +3746,7 @@ NamespaceImportCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int allowOverwrite = 0;
+    bool allowOverwrite = false;
 
     if (objc < 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?-force? ?pattern pattern...?");
@@ -3761,7 +3761,7 @@ NamespaceImportCmd(
     if (firstArg < objc) {
 	const char *string = TclGetString(objv[firstArg]);
 	if ((*string == '-') && (strcmp(string, "-force") == 0)) {
-	    allowOverwrite = 1;
+	    allowOverwrite = true;
 	    firstArg++;
 	}
     } else {
@@ -5019,7 +5019,7 @@ TclLogCommandInfo(
     if (iPtr->resetErrorStack) {
 	Tcl_Size len;
 
-	iPtr->resetErrorStack = 0;
+	iPtr->resetErrorStack = false;
 	TclListObjLength(interp, iPtr->errorStack, &len);
 
 	/*
@@ -5109,7 +5109,7 @@ TclErrorStackResetIf(
     if (iPtr->resetErrorStack) {
 	Tcl_Size len;
 
-	iPtr->resetErrorStack = 0;
+	iPtr->resetErrorStack = false;
 	TclListObjLength(interp, iPtr->errorStack, &len);
 
 	/*

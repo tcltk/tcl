@@ -17,7 +17,7 @@
  * processes (see tclPipe.c).
  */
 
-static int autopurge = 1;	/* Autopurge flag. */
+static bool autopurge = true;	/* Autopurge flag. */
 
 /*
  * Hash tables that keeps track of all child process statuses. Keys are the
@@ -27,7 +27,7 @@ static int autopurge = 1;	/* Autopurge flag. */
 typedef struct ProcessInfo {
     Tcl_Pid pid;		/* Process id. */
     Tcl_Size resolvedPid;	/* Resolved process id. */
-    int purge;			/* Purge eventualy. */
+    bool purge;			/* Purge eventualy. */
     TclProcessWaitStatus status;/* Process status. */
     int code;			/* Error code, exit status or signal
 				 * number. */
@@ -37,7 +37,7 @@ typedef struct ProcessInfo {
 
 static Tcl_HashTable infoTablePerPid;
 static Tcl_HashTable infoTablePerResolvedPid;
-static int infoTablesInitialized = 0;	/* 0 means not yet initialized. */
+static bool infoTablesInitialized = false;
 TCL_DECLARE_MUTEX(infoTablesMutex)
 
 /*
@@ -47,7 +47,7 @@ TCL_DECLARE_MUTEX(infoTablesMutex)
 static void		InitProcessInfo(ProcessInfo *info, Tcl_Pid pid,
 			    Tcl_Size resolvedPid);
 static void		FreeProcessInfo(ProcessInfo *info);
-static int		RefreshProcessInfo(ProcessInfo *info, int options);
+static bool		RefreshProcessInfo(ProcessInfo *info, int options);
 static TclProcessWaitStatus WaitProcessStatus(Tcl_Pid pid, Tcl_Size resolvedPid,
 			    int options, int *codePtr, Tcl_Obj **msgPtr,
 			    Tcl_Obj **errorObjPtr);
@@ -73,7 +73,7 @@ static Tcl_ObjCmdProc ProcessAutopurgeObjCmd;
  *----------------------------------------------------------------------
  */
 
-void
+static void
 InitProcessInfo(
     ProcessInfo *info,		/* Structure to initialize. */
     Tcl_Pid pid,		/* Process id. */
@@ -81,7 +81,7 @@ InitProcessInfo(
 {
     info->pid = pid;
     info->resolvedPid = resolvedPid;
-    info->purge = 0;
+    info->purge = false;
     info->status = TCL_PROCESS_UNCHANGED;
     info->code = 0;
     info->msg = NULL;
@@ -104,7 +104,7 @@ InitProcessInfo(
  *----------------------------------------------------------------------
  */
 
-void
+static void
 FreeProcessInfo(
     ProcessInfo *info)		/* Structure to free. */
 {
@@ -134,7 +134,7 @@ FreeProcessInfo(
  *	Refresh process info.
  *
  * Results:
- *	Nonzero if state changed, else zero.
+ *	True if state changed, else false.
  *
  * Side effects:
  *	May call WaitProcessStatus, which can block if WNOHANG option is set.
@@ -142,7 +142,7 @@ FreeProcessInfo(
  *----------------------------------------------------------------------
  */
 
-int
+static bool
 RefreshProcessInfo(
     ProcessInfo *info,		/* Structure to refresh. */
     int options)		/* Options passed to WaitProcessStatus. */
@@ -166,7 +166,7 @@ RefreshProcessInfo(
 	 * No change.
 	 */
 
-	return 0;
+	return false;
     }
 }
 
@@ -186,7 +186,7 @@ RefreshProcessInfo(
  *----------------------------------------------------------------------
  */
 
-TclProcessWaitStatus
+static TclProcessWaitStatus
 WaitProcessStatus(
     Tcl_Pid pid,		/* Process id. */
     Tcl_Size resolvedPid,	/* Resolved process id. */
@@ -378,7 +378,7 @@ WaitProcessStatus(
  *----------------------------------------------------------------------
  */
 
-Tcl_Obj *
+static Tcl_Obj *
 BuildProcessStatusObj(
     ProcessInfo *info)
 {
@@ -785,7 +785,7 @@ TclInitProcessCmd(
 	if (infoTablesInitialized == 0) {
 	    Tcl_InitHashTable(&infoTablePerPid, TCL_ONE_WORD_KEYS);
 	    Tcl_InitHashTable(&infoTablePerResolvedPid, TCL_ONE_WORD_KEYS);
-	    infoTablesInitialized = 1;
+	    infoTablesInitialized = true;
 	}
 	Tcl_MutexUnlock(&infoTablesMutex);
     }
@@ -974,7 +974,7 @@ TclProcessWait(
 	 * TCL_PROCESS_UNCHANGED.
 	 */
 
-	info->purge = 1;
+	info->purge = true;
     }
     Tcl_MutexUnlock(&infoTablesMutex);
     return result;

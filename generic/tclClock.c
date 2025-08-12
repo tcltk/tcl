@@ -2916,12 +2916,12 @@ GetJulianDayFromEraYearDay(
  *	Gregorian calendar.
  *
  * Results:
- *	Returns 1 for a leap year, 0 otherwise.
+ *	Returns true for a leap year, false otherwise.
  *
  *----------------------------------------------------------------------
  */
 
-int
+bool
 IsGregorianLeapYear(
     TclDateFields *fields)	/* Date to test */
 {
@@ -2931,15 +2931,15 @@ IsGregorianLeapYear(
 	year = 1 - year;
     }
     if (year % 4 != 0) {
-	return 0;
+	return false;
     } else if (!(fields->gregorian)) {
-	return 1;
+	return true;
     } else if (year % 400 == 0) {
-	return 1;
+	return true;
     } else if (year % 100 == 0) {
-	return 0;
+	return false;
     } else {
-	return 1;
+	return true;
     }
 }
 
@@ -3764,7 +3764,7 @@ ClockValidDate(
 {
     const char *errMsg = "", *errCode = "";
     TclDateFields temp;
-    int tempCpyFlg = 0;
+    bool tempCpyFlg = false;
     ClockClientData *dataPtr = opts->dataPtr;
 
 #if 0
@@ -3848,7 +3848,7 @@ ClockValidDate(
 	    == (CLF_DAYOFYEAR|CLF_DAYOFMONTH|CLF_MONTH)) {
 	if (!tempCpyFlg) {
 	    memcpy(&temp, &yydate, sizeof(temp));
-	    tempCpyFlg = 1;
+	    tempCpyFlg = true;
 	}
 	GetJulianDayFromEraYearDay(&temp, GREGORIAN_CHANGE_DATE);
 	if (temp.julianDay != yydate.julianDay) {
@@ -3926,7 +3926,7 @@ ClockValidDate(
     if (info->flags & CLF_DAYOFWEEK) {
 	if (!tempCpyFlg) {
 	    memcpy(&temp, &yydate, sizeof(temp));
-	    tempCpyFlg = 1;
+	    tempCpyFlg = true;
 	}
 	GetYearWeekDay(&temp, GREGORIAN_CHANGE_DATE);
 	if (temp.dayOfWeek != yyDayOfWeek) {
@@ -4614,7 +4614,7 @@ ClockSafeCatchCmd(
 	Tcl_Obj *returnOpts;
 	Tcl_Obj *objResult;
 	Tcl_Obj *errorStack;
-	int resetErrorStack;
+	bool resetErrorStack;
     } InterpState;
 
     Interp *iPtr = (Interp *)interp;

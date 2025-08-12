@@ -17,7 +17,7 @@
  */
 
 typedef struct ThreadSpecificData_Sockets {
-    int initialized;
+    bool initialized;
     Tcl_DString errorMsg;	/* UTF-8 encoded error-message */
 } ThreadSpecificData;
 static Tcl_ThreadDataKey dataKey;
@@ -33,7 +33,7 @@ gai_strerror(
 	Tcl_DStringSetLength(&tsdPtr->errorMsg, 0);
     } else {
 	Tcl_DStringInit(&tsdPtr->errorMsg);
-	tsdPtr->initialized = 1;
+	tsdPtr->initialized = true;
     }
     Tcl_WCharToUtfDString(gai_strerrorW(code), -1, &tsdPtr->errorMsg);
     return Tcl_DStringValue(&tsdPtr->errorMsg);
@@ -154,8 +154,8 @@ TclSockMinimumBuffers(
  *	This function initializes a sockaddr structure for a host and port.
  *
  * Results:
- *	1 if the host was valid, 0 if the host could not be converted to an IP
- *	address.
+ *	true if the host was valid, false if the host could not be converted
+ *	to an IP address.
  *
  * Side effects:
  *	Fills in the *sockaddrPtr structure.
@@ -163,7 +163,7 @@ TclSockMinimumBuffers(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 TclCreateSocketAddress(
     Tcl_Interp *interp,		/* Interpreter for querying the desired socket
 				 * family */
@@ -182,7 +182,7 @@ TclCreateSocketAddress(
 	if (Tcl_UtfToExternalDStringEx(interp, NULL, host, -1, 0, &ds,
 		NULL) != TCL_OK) {
 	    Tcl_DStringFree(&ds);
-	    return 0;
+	    return false;
 	}
 	native = Tcl_DStringValue(&ds);
     }
@@ -253,7 +253,7 @@ TclCreateSocketAddress(
 		(result == EAI_SYSTEM) ? Tcl_PosixError(interp) :
 #endif /* EAI_SYSTEM */
 		gai_strerror(result);
-	return 0;
+	return false;
     }
 
     /*
@@ -294,7 +294,7 @@ TclCreateSocketAddress(
 	    *addrlist = v4head;
 	}
     }
-    return 1;
+    return true;
 }
 
 /*

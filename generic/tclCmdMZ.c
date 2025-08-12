@@ -182,7 +182,7 @@ Tcl_RegexpObjCmd(
 	}
 	switch (index) {
 	case REGEXP_ALL:
-	    all = true;
+	    all = 1;
 	    break;
 	case REGEXP_INDICES:
 	    indices = true;
@@ -1968,7 +1968,7 @@ StringMapCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Size length1, length2,  mapElemc;
-    int nocase = 0, mapWithDict = 0, copySource = 0;
+    bool nocase = false, mapWithDict = false, copySource = false;
     Tcl_Obj **mapElemv, *sourceObj, *resultPtr;
     Tcl_UniChar *ustring1, *ustring2, *p, *end;
     int (*strCmpFn)(const Tcl_UniChar*, const Tcl_UniChar*, size_t);
@@ -1983,7 +1983,7 @@ StringMapCmd(
 
 	if ((length2 > 1) &&
 		strncmp(string, "-nocase", length2) == 0) {
-	    nocase = 1;
+	    nocase = true;
 	} else {
 	    TclPrintfResult(interp, "bad option \"%s\": must be %s",
 		    string, "-nocase");
@@ -2001,8 +2001,6 @@ StringMapCmd(
     if (!TclHasStringRep(objv[objc-2])
 	    && TclHasInternalRep(objv[objc-2], &tclDictType)) {
 	Tcl_Size i;
-	int done;
-	Tcl_DictSearch search;
 
 	/*
 	 * We know the type exactly, so all dict operations will succeed for
@@ -2020,7 +2018,7 @@ StringMapCmd(
 	}
 
 	mapElemc = 2 * i;
-	mapWithDict = 1;
+	mapWithDict = true;
 
 	/*
 	 * Copy the dictionary out into an array; that's the easiest way to
@@ -2028,6 +2026,8 @@ StringMapCmd(
 	 */
 
 	mapElemv = (Tcl_Obj **)TclStackAlloc(interp, sizeof(Tcl_Obj *) * mapElemc);
+	int done;
+	Tcl_DictSearch search;
 	Tcl_DictObjFirst(interp, objv[objc-2], &search, mapElemv+0,
 		mapElemv+1, &done);
 	for (Tcl_Size index=2 ; index<mapElemc ; index+=2) {
@@ -2067,7 +2067,7 @@ StringMapCmd(
 
     if (objv[objc-2] == objv[objc-1]) {
 	sourceObj = Tcl_DuplicateObj(objv[objc-1]);
-	copySource = 1;
+	copySource = true;
     } else {
 	sourceObj = objv[objc-1];
     }
@@ -4853,10 +4853,10 @@ TclNRTryObjCmd(
   freeHandlersOnError:
     for (i=0; i<handlerCount; i++) {
 	if (handlers[i].resultVar) {
-	    Tcl_IncrRefCount(handlers[i].resultVar);
+	    TclDecrRefCount(handlers[i].resultVar);
 	}
 	if (handlers[i].optionsVar) {
-	    Tcl_IncrRefCount(handlers[i].optionsVar);
+	    TclDecrRefCount(handlers[i].optionsVar);
 	}
     }
     TclStackFree(interp, (void *) handlers);
@@ -4916,10 +4916,10 @@ ReleaseHandlers(
 {
     for (TryHandler *handler=handlers; handler->type; handler++) {
 	if (handler->resultVar) {
-	    Tcl_DecrRefCount(handler->resultVar);
+	    TclDecrRefCount(handler->resultVar);
 	}
 	if (handler->optionsVar) {
-	    Tcl_DecrRefCount(handler->optionsVar);
+	    TclDecrRefCount(handler->optionsVar);
 	}
     }
     TclStackFree(interp, (void*) handlers);

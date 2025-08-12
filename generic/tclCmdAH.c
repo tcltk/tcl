@@ -206,7 +206,7 @@ CatchObjCmdCallback(
     int objc = PTR2INT(data[0]);
     Tcl_Obj *varNamePtr = (Tcl_Obj *)data[1];
     Tcl_Obj *optionVarNamePtr = (Tcl_Obj *)data[2];
-    int rewind = iPtr->execEnvPtr->rewind;
+    bool rewind = iPtr->execEnvPtr->rewind;
 
     /*
      * We disable catch in interpreters where the limit has been exceeded.
@@ -1979,7 +1979,7 @@ PathJoinCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "name ?name ...?");
 	return TCL_ERROR;
     }
-    Tcl_SetObjResult(interp, TclJoinPath(objc - 1, objv + 1, 0));
+    Tcl_SetObjResult(interp, TclJoinPath(objc - 1, objv + 1, false));
     return TCL_OK;
 }
 

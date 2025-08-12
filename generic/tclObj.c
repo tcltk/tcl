@@ -24,7 +24,7 @@
  */
 
 static Tcl_HashTable typeTable;
-static int typeTableInitialized = 0;	/* 0 means not yet initialized. */
+static bool typeTableInitialized = false;
 TCL_DECLARE_MUTEX(tableMutex)
 
 /*
@@ -372,7 +372,7 @@ void
 TclInitObjSubsystem(void)
 {
     Tcl_MutexLock(&tableMutex);
-    typeTableInitialized = 1;
+    typeTableInitialized = true;
     Tcl_InitHashTable(&typeTable, TCL_STRING_KEYS);
     Tcl_MutexUnlock(&tableMutex);
 
@@ -461,7 +461,7 @@ TclFinalizeObjects(void)
     Tcl_MutexLock(&tableMutex);
     if (typeTableInitialized) {
 	Tcl_DeleteHashTable(&typeTable);
-	typeTableInitialized = 0;
+	typeTableInitialized = false;
     }
     Tcl_MutexUnlock(&tableMutex);
 
@@ -2061,7 +2061,7 @@ static int
 ParseBoolean(
     Tcl_Obj *objPtr)		/* The object to parse/convert. */
 {
-    int newBool;
+    bool newBool;
     Tcl_Size length;
     const char *str = Tcl_GetStringFromObj(objPtr, &length);
 
@@ -2076,13 +2076,13 @@ ParseBoolean(
     switch (str[0]) {
     case '0':
 	if (length == 1) {
-	    newBool = 0;
+	    newBool = false;
 	    goto numericBoolean;
 	}
 	return TCL_ERROR;
     case '1':
 	if (length == 1) {
-	    newBool = 1;
+	    newBool = true;
 	    goto numericBoolean;
 	}
 	return TCL_ERROR;
@@ -2117,25 +2117,25 @@ ParseBoolean(
 	 * Checking the 'y' is redundant, but makes the code clearer.
 	 */
 	if (strncmp(lowerCase, "yes", length) == 0) {
-	    newBool = 1;
+	    newBool = true;
 	    goto goodBoolean;
 	}
 	return TCL_ERROR;
     case 'n':
 	if (strncmp(lowerCase, "no", length) == 0) {
-	    newBool = 0;
+	    newBool = false;
 	    goto goodBoolean;
 	}
 	return TCL_ERROR;
     case 't':
 	if (strncmp(lowerCase, "true", length) == 0) {
-	    newBool = 1;
+	    newBool = true;
 	    goto goodBoolean;
 	}
 	return TCL_ERROR;
     case 'f':
 	if (strncmp(lowerCase, "false", length) == 0) {
-	    newBool = 0;
+	    newBool = false;
 	    goto goodBoolean;
 	}
 	return TCL_ERROR;
@@ -2144,10 +2144,10 @@ ParseBoolean(
 	    return TCL_ERROR;
 	}
 	if (strncmp(lowerCase, "on", length) == 0) {
-	    newBool = 1;
+	    newBool = true;
 	    goto goodBoolean;
 	} else if (strncmp(lowerCase, "off", length) == 0) {
-	    newBool = 0;
+	    newBool = false;
 	    goto goodBoolean;
 	}
 	return TCL_ERROR;
@@ -2163,13 +2163,13 @@ ParseBoolean(
 
   goodBoolean:
     TclFreeInternalRep(objPtr);
-    objPtr->internalRep.wideValue = newBool;
+    objPtr->internalRep.wideValue = (int) newBool;
     objPtr->typePtr = &tclBooleanType;
     return TCL_OK;
 
   numericBoolean:
     TclFreeInternalRep(objPtr);
-    objPtr->internalRep.wideValue = newBool;
+    objPtr->internalRep.wideValue = (int) newBool;
     objPtr->typePtr = &tclIntType;
     return TCL_OK;
 }

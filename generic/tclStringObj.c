@@ -544,7 +544,7 @@ Tcl_GetUniChar(
 	Tcl_Size length = 0;
 	unsigned char *bytes = Tcl_GetBytesFromObj(NULL, objPtr, &length);
 	if (index >= length) {
-		return -1;
+	    return -1;
 	}
 
 	return bytes[index];
@@ -557,7 +557,7 @@ Tcl_GetUniChar(
     SetStringFromAny(NULL, objPtr);
     String *stringPtr = GET_STRING(objPtr);
 
-    if (stringPtr->hasUnicode == 0) {
+    if (!stringPtr->hasUnicode) {
 	/*
 	 * If numChars is unknown, compute it.
 	 */
@@ -651,7 +651,7 @@ TclGetUnicodeFromObj(
     SetStringFromAny(NULL, objPtr);
     String *stringPtr = GET_STRING(objPtr);
 
-    if (stringPtr->hasUnicode == 0) {
+    if (!stringPtr->hasUnicode) {
 	FillUnicodeRep(objPtr);
 	stringPtr = GET_STRING(objPtr);
     }
@@ -678,7 +678,7 @@ Tcl_GetUnicodeFromObj(
     SetStringFromAny(NULL, objPtr);
     String *stringPtr = GET_STRING(objPtr);
 
-    if (stringPtr->hasUnicode == 0) {
+    if (!stringPtr->hasUnicode) {
 	FillUnicodeRep(objPtr);
 	stringPtr = GET_STRING(objPtr);
     }
@@ -750,7 +750,7 @@ Tcl_GetRange(
     SetStringFromAny(NULL, objPtr);
     String *stringPtr = GET_STRING(objPtr);
 
-    if (stringPtr->hasUnicode == 0) {
+    if (!stringPtr->hasUnicode) {
 	/*
 	 * If numChars is unknown, compute it.
 	 */
@@ -957,7 +957,7 @@ Tcl_SetObjLength(
 	 */
 
 	stringPtr->numChars = TCL_INDEX_NONE;
-	stringPtr->hasUnicode = 0;
+	stringPtr->hasUnicode = false;
     } else {
 	if (length > stringPtr->maxChars) {
 	    stringPtr = stringRealloc(stringPtr, length);
@@ -971,7 +971,7 @@ Tcl_SetObjLength(
 
 	stringPtr->numChars = length;
 	stringPtr->unicode[length] = 0;
-	stringPtr->hasUnicode = 1;
+	stringPtr->hasUnicode = true;
 
 	/*
 	 * Can only get here when objPtr->bytes == NULL. No need to invalidate
@@ -1013,14 +1013,14 @@ Tcl_AttemptSetObjLength(
 {
     if (length < 0) {
 	/* Negative lengths => most likely integer overflow */
-	return 0;
+	return false;
     }
 
     if (Tcl_IsShared(objPtr)) {
 	Tcl_Panic("%s called with shared object", "Tcl_AttemptSetObjLength");
     }
     if (objPtr->bytes && objPtr->length == length) {
-	return 1;
+	return true;
     }
 
     SetStringFromAny(NULL, objPtr);
@@ -1043,7 +1043,7 @@ Tcl_AttemptSetObjLength(
 		newBytes = (char *)Tcl_AttemptRealloc(objPtr->bytes, length + 1U);
 	    }
 	    if (newBytes == NULL) {
-		return 0;
+		return false;
 	    }
 	    objPtr->bytes = newBytes;
 	    stringPtr->allocated = length;
@@ -1057,7 +1057,7 @@ Tcl_AttemptSetObjLength(
 	 */
 
 	stringPtr->numChars = TCL_INDEX_NONE;
-	stringPtr->hasUnicode = 0;
+	stringPtr->hasUnicode = false;
     } else {
 	/*
 	 * Changing length of pure Unicode string.
@@ -1066,7 +1066,7 @@ Tcl_AttemptSetObjLength(
 	if (length > stringPtr->maxChars) {
 	    stringPtr = stringAttemptRealloc(stringPtr, length);
 	    if (stringPtr == NULL) {
-		return 0;
+		return false;
 	    }
 	    SET_STRING(objPtr, stringPtr);
 	    stringPtr->maxChars = length;
@@ -1078,14 +1078,14 @@ Tcl_AttemptSetObjLength(
 
 	stringPtr->unicode[length] = 0;
 	stringPtr->numChars = length;
-	stringPtr->hasUnicode = 1;
+	stringPtr->hasUnicode = true;
 
 	/*
 	 * Can only get here when objPtr->bytes == NULL. No need to invalidate
 	 * the string rep.
 	 */
     }
-    return 1;
+    return true;
 }
 
 /*
@@ -1158,7 +1158,7 @@ SetUnicodeObj(
     memcpy(stringPtr->unicode, unicode, numChars * sizeof(Tcl_UniChar));
     stringPtr->unicode[numChars] = 0;
     stringPtr->numChars = numChars;
-    stringPtr->hasUnicode = 1;
+    stringPtr->hasUnicode = true;
 
     TclInvalidateStringRep(objPtr);
     stringPtr->allocated = 0;
@@ -1715,7 +1715,7 @@ AppendUtfToUtfRep(
      */
 
     stringPtr->numChars = -1;
-    stringPtr->hasUnicode = 0;
+    stringPtr->hasUnicode = false;
 
     if (bytes) {
 	memmove(objPtr->bytes + oldLength, bytes, numBytes);
@@ -1827,7 +1827,7 @@ Tcl_AppendFormatToObj(
     Tcl_Obj *const objv[])
 {
     const char *span = format, *msg, *errCode;
-    int gotXpg = 0, gotSequential = 0;
+    bool gotXpg = false, gotSequential = false;
     Tcl_Size objIndex = 0, originalLength, limit, numBytes = 0;
     Tcl_UniChar ch = 0;
     static const char *mixedXPG =
@@ -1849,12 +1849,10 @@ Tcl_AppendFormatToObj(
      */
 
     while (*format != '\0') {
-	char *end;
-	int gotMinus = 0, gotHash = 0, gotZero = 0, gotSpace = 0, gotPlus = 0;
-	int gotPrecision, sawFlag, useShort = 0, useBig = 0;
+	bool gotMinus = false, gotHash = false, gotZero = false, gotSpace = false, gotPlus = false;
+	bool useShort = false, useBig = false, useWide = false;
 	Tcl_WideInt width, precision;
-	int useWide = 0;
-	int newXpg, allocSegment = 0;
+	bool allocSegment = false;
 	Tcl_Size numChars, segmentLimit, segmentNumBytes;
 	Tcl_Obj *segment;
 	int step = TclUtfToUniChar(format, &ch);
@@ -1893,12 +1891,13 @@ Tcl_AppendFormatToObj(
 	 * Step 1. XPG3 position specifier
 	 */
 
-	newXpg = 0;
+	bool newXpg = false;
 	if (isdigit(UCHAR(ch))) {
+	    char *end;
 	    int position = strtoul(format, &end, 10);
 
 	    if (*end == '$') {
-		newXpg = 1;
+		newXpg = true;
 		objIndex = position - 1;
 		format = end + 1;
 		step = TclUtfToUniChar(format, &ch);
@@ -1910,17 +1909,17 @@ Tcl_AppendFormatToObj(
 		errCode = "MIXEDSPECTYPES";
 		goto errorMsg;
 	    }
-	    gotXpg = 1;
+	    gotXpg = true;
 	} else {
 	    if (gotXpg) {
 		msg = mixedXPG;
 		errCode = "MIXEDSPECTYPES";
 		goto errorMsg;
 	    }
-	    gotSequential = 1;
+	    gotSequential = true;
 	}
 	if ((objIndex < 0) || (objIndex >= objc)) {
-	    msg = badIndex[gotXpg];
+	    msg = badIndex[(int) gotXpg];
 	    errCode = gotXpg ? "INDEXRANGE" : "FIELDVARMISMATCH";
 	    goto errorMsg;
 	}
@@ -1929,26 +1928,26 @@ Tcl_AppendFormatToObj(
 	 * Step 2. Set of flags.
 	 */
 
-	sawFlag = 1;
+	bool sawFlag = true;
 	do {
 	    switch (ch) {
 	    case '-':
-		gotMinus = 1;
+		gotMinus = true;
 		break;
 	    case '#':
-		gotHash = 1;
+		gotHash = true;
 		break;
 	    case '0':
-		gotZero = 1;
+		gotZero = true;
 		break;
 	    case ' ':
-		gotSpace = 1;
+		gotSpace = true;
 		break;
 	    case '+':
-		gotPlus = 1;
+		gotPlus = true;
 		break;
 	    default:
-		sawFlag = 0;
+		sawFlag = false;
 	    }
 	    if (sawFlag) {
 		format += step;
@@ -1963,8 +1962,8 @@ Tcl_AppendFormatToObj(
 	width = 0;
 	if (isdigit(UCHAR(ch))) {
 	    /* Note ull will be >= 0 because of isdigit check above */
-	    unsigned long long ull;
-	    ull = strtoull(format, &end, 10);
+	    char *end;
+	    unsigned long long ull = strtoull(format, &end, 10);
 	    /* Comparison is >=, not >, to leave room for nul */
 	    if (ull >= WIDE_MAX) {
 		msg = overflow;
@@ -1985,7 +1984,7 @@ Tcl_AppendFormatToObj(
 	    }
 	    if (width < 0) {
 		width = -width;
-		gotMinus = 1;
+		gotMinus = true;
 	    }
 	    objIndex++;
 	    format += step;
@@ -2001,16 +2000,17 @@ Tcl_AppendFormatToObj(
 	 * Step 4. Precision.
 	 */
 
-	gotPrecision = precision = 0;
+	bool gotPrecision = false;
+	precision = 0;
 	if (ch == '.') {
-	    gotPrecision = 1;
+	    gotPrecision = true;
 	    format += step;
 	    step = TclUtfToUniChar(format, &ch);
 	}
 	if (isdigit(UCHAR(ch))) {
 	    /* Note ull will be >= 0 because of isdigit check above */
-	    unsigned long long ull;
-	    ull = strtoull(format, &end, 10);
+	    char *end;
+	    unsigned long long ull = strtoull(format, &end, 10);
 	    /* Comparison is >=, not >, to leave room for nul */
 	    if (ull >= WIDE_MAX) {
 		msg = overflow;
@@ -2048,24 +2048,24 @@ Tcl_AppendFormatToObj(
 	 */
 
 	if (ch == 'h') {
-	    useShort = 1;
+	    useShort = true;
 	    format += step;
 	    step = TclUtfToUniChar(format, &ch);
 	} else if (ch == 'l') {
 	    format += step;
 	    step = TclUtfToUniChar(format, &ch);
 	    if (ch == 'l') {
-		useBig = 1;
+		useBig = true;
 		format += step;
 		step = TclUtfToUniChar(format, &ch);
 	    } else {
-		useWide = 1;
+		useWide = true;
 	    }
 	} else if (ch == 'I') {
 	    if ((format[1] == '6') && (format[2] == '4')) {
 		format += (step + 2);
 		step = TclUtfToUniChar(format, &ch);
-		useWide = 1;
+		useWide = true;
 	    } else if ((format[1] == '3') && (format[2] == '2')) {
 		format += (step + 2);
 		step = TclUtfToUniChar(format, &ch);
@@ -2076,17 +2076,17 @@ Tcl_AppendFormatToObj(
 	} else if ((ch == 'q') || (ch == 'j')) {
 	    format += step;
 	    step = TclUtfToUniChar(format, &ch);
-	    useWide = 1;
+	    useWide = true;
 	} else if ((ch == 't') || (ch == 'z')) {
 	    format += step;
 	    step = TclUtfToUniChar(format, &ch);
 	    if (sizeof(void *) > sizeof(int)) {
-		useWide = 1;
+		useWide = true;
 	    }
 	} else if (ch == 'L') {
 	    format += step;
 	    step = TclUtfToUniChar(format, &ch);
-	    useBig = 1;
+	    useBig = true;
 	}
 
 	format += step;
@@ -2117,7 +2117,7 @@ Tcl_AppendFormatToObj(
 		    }
 		    numChars = precision;
 		    Tcl_IncrRefCount(segment);
-		    allocSegment = 1;
+		    allocSegment = true;
 		}
 	    }
 	    break;
@@ -2134,7 +2134,7 @@ Tcl_AppendFormatToObj(
 	    length = Tcl_UniCharToUtf(code, buf);
 	    segment = Tcl_NewStringObj(buf, length);
 	    Tcl_IncrRefCount(segment);
-	    allocSegment = 1;
+	    allocSegment = true;
 	    break;
 	}
 
@@ -2150,11 +2150,11 @@ Tcl_AppendFormatToObj(
 	    int l;
 	    Tcl_WideInt w;
 	    mp_int big;
-	    int isNegative = 0;
+	    bool isNegative = false;
 	    Tcl_Size toAppend;
 
 	    if ((ch == 'p') && (sizeof(void *) > sizeof(int))) {
-		useWide = 1;
+		useWide = true;
 	    }
 	    if (useBig) {
 		int cmpResult;
@@ -2164,7 +2164,7 @@ Tcl_AppendFormatToObj(
 		cmpResult = mp_cmp_d(&big, 0);
 		isNegative = (cmpResult == MP_LT);
 		if (cmpResult == MP_EQ) {
-		    gotHash = 0;
+		    gotHash = false;
 		}
 		if (ch == 'u') {
 		    if (isNegative) {
@@ -2182,7 +2182,7 @@ Tcl_AppendFormatToObj(
 		}
 		isNegative = (w < (Tcl_WideInt) 0);
 		if (w == (Tcl_WideInt) 0) {
-		    gotHash = 0;
+		    gotHash = false;
 		}
 	    } else if (TclGetIntFromObj(NULL, segment, &l) != TCL_OK) {
 		if (TclGetWideBitsFromObj(interp, segment, &w) != TCL_OK) {
@@ -2194,29 +2194,29 @@ Tcl_AppendFormatToObj(
 		    s = (short) l;
 		    isNegative = (s < (short) 0);
 		    if (s == (short) 0) {
-			gotHash = 0;
+			gotHash = false;
 		    }
 		} else {
 		    isNegative = (l < (int) 0);
 		    if (l == (int) 0) {
-			gotHash = 0;
+			gotHash = false;
 		    }
 		}
 	    } else if (useShort) {
 		s = (short) l;
 		isNegative = (s < (short) 0);
 		if (s == (short) 0) {
-		    gotHash = 0;
+		    gotHash = false;
 		}
 	    } else {
 		isNegative = (l < (int) 0);
 		if (l == (int) 0) {
-		    gotHash = 0;
+		    gotHash = false;
 		}
 	    }
 
 	    TclNewObj(segment);
-	    allocSegment = 1;
+	    allocSegment = true;
 	    segmentLimit = TCL_SIZE_MAX;
 	    Tcl_IncrRefCount(segment);
 
@@ -2291,7 +2291,7 @@ Tcl_AppendFormatToObj(
 			Tcl_AppendToObj(segment, "0", 1);
 			length++;
 		    }
-		    gotZero = 0;
+		    gotZero = false;
 		}
 		if (gotZero) {
 		    length += Tcl_GetCharLength(segment);
@@ -2421,7 +2421,7 @@ Tcl_AppendFormatToObj(
 			Tcl_AppendToObj(segment, "0", 1);
 			length++;
 		    }
-		    gotZero = 0;
+		    gotZero = false;
 		}
 		if (gotZero) {
 		    length += Tcl_GetCharLength(segment);
@@ -2505,7 +2505,7 @@ Tcl_AppendFormatToObj(
 	    *p = '\0';
 
 	    TclNewObj(segment);
-	    allocSegment = 1;
+	    allocSegment = true;
 	    if (!Tcl_AttemptSetObjLength(segment, length)) {
 		if (allocSegment) {
 		    Tcl_DecrRefCount(segment);
@@ -2688,7 +2688,8 @@ AppendPrintfToObjVA(
     p = format;
     Tcl_IncrRefCount(list);
     while (*p != '\0') {
-	int size = 0, seekingConversion = 1, gotPrecision = 0;
+	int size = 0;
+	bool seekingConversion = true, gotPrecision = false;
 	int lastNum = -1;
 
 	if (*p++ != '%') {
@@ -2701,11 +2702,11 @@ AppendPrintfToObjVA(
 	do {
 	    switch (*p) {
 	    case '\0':
-		seekingConversion = 0;
+		seekingConversion = false;
 		break;
 	    case 's': {
 		const char *q, *end, *bytes = va_arg(argList, char *);
-		seekingConversion = 0;
+		seekingConversion = false;
 
 		/*
 		 * The buffer to copy characters from starts at bytes and ends
@@ -2752,7 +2753,7 @@ AppendPrintfToObjVA(
 	    case 'o':
 	    case 'x':
 	    case 'X':
-		seekingConversion = 0;
+		seekingConversion = false;
 		switch (size) {
 		case -1:
 		case 0:
@@ -2787,7 +2788,7 @@ AppendPrintfToObjVA(
 		    Tcl_ListObjAppendElement(NULL, list, Tcl_NewDoubleObj(
 			    va_arg(argList, double)));
 		}
-		seekingConversion = 0;
+		seekingConversion = false;
 		break;
 	    case '*':
 		lastNum = va_arg(argList, int);
@@ -2803,7 +2804,7 @@ AppendPrintfToObjVA(
 		break;
 	    }
 	    case '.':
-		gotPrecision = 1;
+		gotPrecision = true;
 		p++;
 		break;
 	    case 'l':
@@ -3123,9 +3124,9 @@ TclStringCat(
     int flags)
 {
     Tcl_Obj *objResultPtr, * const *ov;
-    int binary = 1;
+    bool binary = true;
     Tcl_Size oc, length = 0;
-    int allowUniChar = 1, requestUniChar = 0, forceUniChar = 0;
+    bool allowUniChar = true, requestUniChar = false, forceUniChar = false;
     Tcl_Size first = objc - 1;	/* Index of first value possibly not empty */
     Tcl_Size last = 0;		/* Index of last value possibly not empty */
     int inPlace = (flags & TCL_STRING_IN_PLACE) && !Tcl_IsShared(*objv);
@@ -3153,7 +3154,7 @@ TclStringCat(
 	Tcl_Obj *objPtr = *ov++;
 
 	if (TclIsPureByteArray(objPtr)) {
-	    allowUniChar = 0;
+	    allowUniChar = false;
 	} else if (objPtr->bytes) {
 	    /* Value has a string rep. */
 	    if (objPtr->length) {
@@ -3162,22 +3163,22 @@ TclStringCat(
 		 * create a pure byte-array.
 		 */
 
-		binary = 0;
+		binary = false;
 		if (ov > objv+1 && ISCONTINUATION(TclGetString(objPtr))) {
-		    forceUniChar = 1;
+		    forceUniChar = true;
 		} else if ((objPtr->typePtr) && !TclHasInternalRep(objPtr, &tclStringType)) {
 		    /* Prevent shimmer of non-string types. */
-		    allowUniChar = 0;
+		    allowUniChar = false;
 		}
 	    }
 	} else {
-	    binary = 0;
+	    binary = false;
 	    if (TclHasInternalRep(objPtr, &tclStringType)) {
 		/* Have a pure Unicode value; ask to preserve it */
-		requestUniChar = 1;
+		requestUniChar = true;
 	    } else {
 		/* Have another type; prevent shimmer */
-		allowUniChar = 0;
+		allowUniChar = false;
 	    }
 	}
     } while (--oc && (binary || allowUniChar));
@@ -4308,7 +4309,7 @@ ExtendUnicodeRepWithString(
 	stringPtr = GET_STRING(objPtr);
     }
 
-    stringPtr->hasUnicode = 1;
+    stringPtr->hasUnicode = true;
     if (bytes) {
 	stringPtr->numChars = needed;
     } else {
@@ -4485,7 +4486,7 @@ SetStringFromAny(
 	stringPtr->numChars = -1;
 	stringPtr->allocated = objPtr->length;
 	stringPtr->maxChars = 0;
-	stringPtr->hasUnicode = 0;
+	stringPtr->hasUnicode = false;
 	SET_STRING(objPtr, stringPtr);
 	objPtr->typePtr = &tclStringType;
     }

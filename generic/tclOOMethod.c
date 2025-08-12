@@ -1078,7 +1078,8 @@ ProcedureMethodCompiledVarConnect(
     Tcl_Obj *variableObj;
     PrivateVariableMapping *privateVar;
     Tcl_HashEntry *hPtr;
-    int isNew, cacheIt;
+    int isNew;
+    bool cacheIt;
     Tcl_Size varLen, len;
     const char *match, *varName;
 
@@ -1116,7 +1117,7 @@ ProcedureMethodCompiledVarConnect(
 	    match = Tcl_GetStringFromObj(privateVar->variableObj, &len);
 	    if ((len == varLen) && !memcmp(match, varName, len)) {
 		variableObj = privateVar->fullNameObj;
-		cacheIt = 0;
+		cacheIt = false;
 		goto gotMatch;
 	    }
 	}
@@ -1124,7 +1125,7 @@ ProcedureMethodCompiledVarConnect(
 		.mPtr->declaringClassPtr->variables) {
 	    match = Tcl_GetStringFromObj(variableObj, &len);
 	    if ((len == varLen) && !memcmp(match, varName, len)) {
-		cacheIt = 0;
+		cacheIt = false;
 		goto gotMatch;
 	    }
 	}
@@ -1133,14 +1134,14 @@ ProcedureMethodCompiledVarConnect(
 	    match = Tcl_GetStringFromObj(privateVar->variableObj, &len);
 	    if ((len == varLen) && !memcmp(match, varName, len)) {
 		variableObj = privateVar->fullNameObj;
-		cacheIt = 1;
+		cacheIt = true;
 		goto gotMatch;
 	    }
 	}
 	FOREACH(variableObj, contextPtr->oPtr->variables) {
 	    match = Tcl_GetStringFromObj(variableObj, &len);
 	    if ((len == varLen) && !memcmp(match, varName, len)) {
-		cacheIt = 1;
+		cacheIt = true;
 		goto gotMatch;
 	    }
 	}
@@ -1777,9 +1778,9 @@ TclMethodIsType(
 	if (clientDataPtr != NULL) {
 	    *clientDataPtr = mPtr->clientData;
 	}
-	return 1;
+	return true;
     }
-    return 0;
+    return false;
 }
 
 int
@@ -1798,9 +1799,9 @@ Tcl_MethodIsType(
 	if (clientDataPtr != NULL) {
 	    *clientDataPtr = mPtr->clientData;
 	}
-	return 1;
+	return true;
     }
-    return 0;
+    return false;
 }
 
 int
@@ -1819,23 +1820,23 @@ Tcl_MethodIsType2(
 	if (clientDataPtr != NULL) {
 	    *clientDataPtr = mPtr->clientData;
 	}
-	return 1;
+	return true;
     }
-    return 0;
+    return false;
 }
 
 int
 Tcl_MethodIsPublic(
     Tcl_Method method)
 {
-    return (((Method *) method)->flags & PUBLIC_METHOD) ? 1 : 0;
+    return (((Method *) method)->flags & PUBLIC_METHOD) ? true : false;
 }
 
 int
 Tcl_MethodIsPrivate(
     Tcl_Method method)
 {
-    return (((Method *) method)->flags & TRUE_PRIVATE_METHOD) ? 1 : 0;
+    return (((Method *) method)->flags & TRUE_PRIVATE_METHOD) ? true : false;
 }
 
 /*

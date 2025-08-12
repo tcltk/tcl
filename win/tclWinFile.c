@@ -159,17 +159,17 @@ static void		FromCTime(__time64_t posixTime, FILETIME *fileTime);
 static int		NativeAccess(const WCHAR *path, int mode);
 static int		NativeDev(const WCHAR *path);
 static int		NativeStat(const WCHAR *path, Tcl_StatBuf *statPtr,
-			    int checkLinks);
-static unsigned short	NativeStatMode(DWORD attr, int checkLinks,
-			    int isExec);
-static int		NativeIsExec(const WCHAR *path);
+			    bool checkLinks);
+static unsigned short	NativeStatMode(DWORD attr, bool checkLinks,
+			    bool isExec);
+static bool		NativeIsExec(const WCHAR *path);
 static int		NativeReadReparse(const WCHAR *LinkDirectory,
 			    REPARSE_DATA_BUFFER *buffer, DWORD desiredAccess);
 static int		NativeWriteReparse(const WCHAR *LinkDirectory,
 			    REPARSE_DATA_BUFFER *buffer);
-static int		NativeMatchType(int isDrive, DWORD attr,
+static bool		NativeMatchType(bool isDrive, DWORD attr,
 			    const WCHAR *nativeName, Tcl_GlobTypeData *types);
-static int		WinIsDrive(const char *name, size_t nameLen);
+static bool		WinIsDrive(const char *name, size_t nameLen);
 static size_t		WinIsReserved(const char *path);
 static Tcl_Obj *	WinReadLink(const WCHAR *LinkSource);
 static Tcl_Obj *	WinReadLinkDirectory(const WCHAR *LinkDirectory);
@@ -946,7 +946,7 @@ TclpMatchInDirectory(
 	const char *dirName;	/* UTF-8 dir name, later with pattern
 				 * appended. */
 	Tcl_Size dirLength;
-	int matchSpecialDots;
+	bool matchSpecialDots;
 	Tcl_DString ds;		/* Native encoding of dir, also used
 				 * temporarily for other things. */
 	Tcl_DString dsOrig;	/* UTF-8 encoding of dir. */
@@ -1073,9 +1073,9 @@ TclpMatchInDirectory(
 
 	if ((pattern[0] == '.')
 		|| ((pattern[0] == '\\') && (pattern[1] == '.'))) {
-	    matchSpecialDots = 1;
+	    matchSpecialDots = true;
 	} else {
-	    matchSpecialDots = 0;
+	    matchSpecialDots = false;
 	}
 
 	/*
@@ -1085,7 +1085,7 @@ TclpMatchInDirectory(
 
 	do {
 	    const char *utfname;
-	    int checkDrive = 0, isDrive;
+	    bool checkDrive = false;
 
 	    native = data.cFileName;
 	    attr = data.dwFileAttributes;
@@ -1109,7 +1109,7 @@ TclpMatchInDirectory(
 		 * match 'hidden' and not hidden files.
 		 */
 
-		checkDrive = 1;
+		checkDrive = true;
 	    }
 
 	    /*
@@ -1129,6 +1129,7 @@ TclpMatchInDirectory(
 		 * of the path.
 		 */
 
+		bool isDrive;
 		if (checkDrive) {
 		    const char *fullname = Tcl_DStringAppend(&dsOrig, utfname,
 			    Tcl_DStringLength(&ds));
@@ -1136,7 +1137,7 @@ TclpMatchInDirectory(
 		    isDrive = WinIsDrive(fullname, Tcl_DStringLength(&dsOrig));
 		    Tcl_DStringSetLength(&dsOrig, dirLength);
 		} else {
-		    isDrive = 0;
+		    isDrive = false;
 		}
 		if (NativeMatchType(isDrive, attr, native, types)) {
 		    Tcl_ListObjAppendElement(interp, resultPtr,
@@ -1164,7 +1165,7 @@ TclpMatchInDirectory(
  * attribute when it should not.
  */
 
-static int
+static bool
 WinIsDrive(
     const char *name,		/* Name (UTF-8) */
     size_t len)			/* Length of name */
@@ -1212,18 +1213,18 @@ WinIsDrive(
 	     * Path is pointing to the root volume.
 	     */
 
-	    return 1;
+	    return true;
 	} else if ((name[1] == ':')
 		   && (len == 2 || (name[2] == '/' || name[2] == '\\'))) {
 	    /*
 	     * Path is of the form 'x:' or 'x:/' or 'x:\'
 	     */
 
-	    return 1;
+	    return true;
 	}
     }
 
-    return 0;
+    return false;
 }
 
 /*
@@ -1297,15 +1298,15 @@ WinIsReserved(
  *	information.
  *
  * Results:
- *	0 = file doesn't match
- *	1 = file matches
+ *	false = file doesn't match
+ *	true = file matches
  *
  *----------------------------------------------------------------------
  */
 
-static int
+static bool
 NativeMatchType(
-    int isDrive,		/* Is this a drive. */
+    bool isDrive,		/* Is this a drive. */
     DWORD attr,			/* We already know the attributes for the
 				 * file. */
     const WCHAR *nativeName,	/* Native path to check. */
@@ -1332,7 +1333,7 @@ NativeMatchType(
 	 */
 
 	if ((types->perm == 0) || !(types->perm & TCL_GLOB_PERM_HIDDEN)) {
-	    return 0;
+	    return false;
 	}
     } else {
 	/*
@@ -1340,7 +1341,7 @@ NativeMatchType(
 	 */
 
 	if (types->perm & TCL_GLOB_PERM_HIDDEN) {
-	    return 0;
+	    return false;
 	}
     }
 
@@ -1354,7 +1355,7 @@ NativeMatchType(
 		((types->perm & TCL_GLOB_PERM_X) &&
 		    (!(attr & FILE_ATTRIBUTE_DIRECTORY)
 		    && !NativeIsExec(nativeName)))) {
-	    return 0;
+	    return false;
 	}
     }
 
@@ -1364,13 +1365,11 @@ NativeMatchType(
 	 * Quicker test for directory, which is a common case.
 	 */
 
-	return 1;
+	return true;
 
     } else if (types->type != 0) {
-	unsigned short st_mode;
-	int isExec = NativeIsExec(nativeName);
-
-	st_mode = NativeStatMode(attr, 0, isExec);
+	bool isExec = NativeIsExec(nativeName);
+	unsigned short st_mode = NativeStatMode(attr, false, isExec);
 
 	/*
 	 * In order bcdpfls as in 'find -t'
@@ -1390,16 +1389,16 @@ NativeMatchType(
 	} else {
 #ifdef S_ISLNK
 	    if (types->type & TCL_GLOB_TYPE_LINK) {
-		st_mode = NativeStatMode(attr, 1, isExec);
+		st_mode = NativeStatMode(attr, true, isExec);
 		if (S_ISLNK(st_mode)) {
-		    return 1;
+		    return true;
 		}
 	    }
 #endif /* S_ISLNK */
-	    return 0;
+	    return false;
 	}
     }
-    return 1;
+    return true;
 }
 
 /*
@@ -1840,18 +1839,18 @@ NativeAccess(
  *----------------------------------------------------------------------
  */
 
-static int
+static bool
 NativeIsExec(
     const WCHAR *path)
 {
     size_t len = wcslen(path);
 
     if (len < 5) {
-	return 0;
+	return false;
     }
 
     if (path[len-4] != '.') {
-	return 0;
+	return false;
     }
 
     path += len-3;
@@ -1859,9 +1858,9 @@ NativeIsExec(
 	    || (_wcsicmp(path, L"com") == 0)
 	    || (_wcsicmp(path, L"cmd") == 0)
 	    || (_wcsicmp(path, L"bat") == 0)) {
-	return 1;
+	return true;
     }
-    return 0;
+    return false;
 }
 
 /*
@@ -1972,7 +1971,7 @@ TclpObjStat(
 
     TclWinFlushDirtyChannels();
 
-    return NativeStat((const WCHAR *)Tcl_FSGetNativePath(pathPtr), statPtr, 0);
+    return NativeStat((const WCHAR *)Tcl_FSGetNativePath(pathPtr), statPtr, false);
 }
 
 /*
@@ -2002,7 +2001,7 @@ static int
 NativeStat(
     const WCHAR *nativePath,	/* Path of file to stat */
     Tcl_StatBuf *statPtr,	/* Filled with results of stat call. */
-    int checkLinks)		/* If non-zero, behave like 'lstat' */
+    bool checkLinks)		/* If true, behave like 'lstat' */
 {
     DWORD attr;
     int dev, nlink = 1;
@@ -2216,8 +2215,8 @@ NativeDev(
 static unsigned short
 NativeStatMode(
     DWORD attr,
-    int checkLinks,
-    int isExec)
+    bool checkLinks,
+    bool isExec)
 {
     int mode;
 
@@ -2359,7 +2358,7 @@ TclpObjLstat(
 
     TclWinFlushDirtyChannels();
 
-    return NativeStat((const WCHAR *)Tcl_FSGetNativePath(pathPtr), statPtr, 1);
+    return NativeStat((const WCHAR *)Tcl_FSGetNativePath(pathPtr), statPtr, true);
 }
 
 #ifdef S_IFLNK
@@ -2370,36 +2369,36 @@ TclpObjLink(
     int linkAction)
 {
     if (toPtr != NULL) {
-	int res;
-	const WCHAR *LinkTarget;
-	const WCHAR *LinkSource = (const WCHAR *)Tcl_FSGetNativePath(pathPtr);
+	const WCHAR *linkSource = (const WCHAR *)Tcl_FSGetNativePath(pathPtr);
 	Tcl_Obj *normToPtr = Tcl_FSGetNormalizedPath(NULL, toPtr);
 
 	if (normToPtr == NULL) {
 	    return NULL;
 	}
-	if (normToPtr != toPtr) { Tcl_IncrRefCount(normToPtr); }
+	if (normToPtr != toPtr) {
+	    Tcl_IncrRefCount(normToPtr);
+	}
 
-	LinkTarget = (const WCHAR *)Tcl_FSGetNativePath(normToPtr);
+	const WCHAR *linkTarget = (const WCHAR *)Tcl_FSGetNativePath(normToPtr);
 
-	if (LinkSource == NULL || LinkTarget == NULL) {
-	    if (normToPtr != toPtr) { Tcl_DecrRefCount(normToPtr); }
+	if (linkSource == NULL || linkTarget == NULL) {
+	    if (normToPtr != toPtr) {
+		Tcl_DecrRefCount(normToPtr);
+	    }
 	    return NULL;
 	}
-	res = WinLink(LinkSource, LinkTarget, linkAction);
-	if (normToPtr != toPtr) { Tcl_DecrRefCount(normToPtr); }
-	if (res == 0) {
-	    return toPtr;
-	} else {
-	    return NULL;
+	int res = WinLink(linkSource, linkTarget, linkAction);
+	if (normToPtr != toPtr) {
+	    Tcl_DecrRefCount(normToPtr);
 	}
+	return (res == 0) ? toPtr : NULL;
     } else {
-	const WCHAR *LinkSource = (const WCHAR *)Tcl_FSGetNativePath(pathPtr);
+	const WCHAR *linkSource = (const WCHAR *)Tcl_FSGetNativePath(pathPtr);
 
-	if (LinkSource == NULL) {
+	if (linkSource == NULL) {
 	    return NULL;
 	}
-	return WinReadLink(LinkSource);
+	return WinReadLink(linkSource);
     }
 }
 #endif /* S_IFLNK */
@@ -2427,21 +2426,19 @@ TclpFilesystemPathType(
     Tcl_Obj *pathPtr)
 {
 #define VOL_BUF_SIZE 32
-    int found;
+    BOOL found;
     WCHAR volType[VOL_BUF_SIZE];
-    char *firstSeparator;
-    const char *path;
-    Tcl_Obj *normPath = Tcl_FSGetNormalizedPath(NULL, pathPtr);
 
+    Tcl_Obj *normPath = Tcl_FSGetNormalizedPath(NULL, pathPtr);
     if (normPath == NULL) {
 	return NULL;
     }
-    path = TclGetString(normPath);
+    const char *path = TclGetString(normPath);
     if (path == NULL) {
 	return NULL;
     }
 
-    firstSeparator = strchr((char *)path, '/');
+    char *firstSeparator = strchr((char *)path, '/');
     if (firstSeparator == NULL) {
 	found = GetVolumeInformationW((const WCHAR *)Tcl_FSGetNativePath(pathPtr),
 		NULL, 0, NULL, NULL, NULL, volType, VOL_BUF_SIZE);
@@ -2454,15 +2451,14 @@ TclpFilesystemPathType(
 	Tcl_DecrRefCount(driveName);
     }
 
-    if (found == 0) {
+    if (!found) {
 	return NULL;
-    } else {
-	Tcl_DString ds;
-
-	Tcl_DStringInit(&ds);
-	Tcl_WCharToUtfDString(volType, TCL_INDEX_NONE, &ds);
-	return Tcl_DStringToObj(&ds);
     }
+
+    Tcl_DString ds;
+    Tcl_DStringInit(&ds);
+    Tcl_WCharToUtfDString(volType, TCL_INDEX_NONE, &ds);
+    return Tcl_DStringToObj(&ds);
 #undef VOL_BUF_SIZE
 }
 
@@ -2512,7 +2508,7 @@ TclpObjNormalizePath(
     Tcl_DString dsNorm;		/* This will hold the normalized string. */
     char *path, *currentPathEndPosition;
     Tcl_Obj *temp = NULL;
-    int isDrive = 1;
+    bool isDrive = true;
     Tcl_DString ds;		/* Some workspace. */
     Tcl_Size nextCheckpoint = nextCheckpoint1;
 
@@ -2629,7 +2625,7 @@ TclpObjNormalizePath(
 		     * Reset variables so we can restart normalization.
 		     */
 
-		    isDrive = 1;
+		    isDrive = true;
 		    Tcl_DStringFree(&dsNorm);
 		    Tcl_DStringFree(&ds);
 		    continue;
@@ -2724,7 +2720,7 @@ TclpObjNormalizePath(
 	     * know it is no longer a drive.
 	     */
 
-	    isDrive = 0;
+	    isDrive = false;
 	}
 	currentPathEndPosition++;
 
@@ -3059,7 +3055,7 @@ TclNativeCreateNativeRep(
 	 */
 
 	len = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, str, -1, 0, 0);
-	if (len==0) {
+	if (len == 0) {
 	    goto done;
 	}
     }
@@ -3069,7 +3065,7 @@ TclNativeCreateNativeRep(
      */
 
     wp = nativePathPtr = (WCHAR *)Tcl_Alloc((len + 6) * sizeof(WCHAR));
-    if (nativePathPtr==0) {
+    if (nativePathPtr == 0) {
 	goto done;
     }
     MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, str, -1, nativePathPtr,
@@ -3253,7 +3249,7 @@ TclWinFileOwned(
     HANDLE token;
     LPBYTE buf = NULL;
     DWORD bufsz;
-    int owned = 0;
+    BOOL owned = FALSE;
 
     native = (const WCHAR *)Tcl_FSGetNativePath(pathPtr);
 
@@ -3265,7 +3261,7 @@ TclWinFileOwned(
 	 * are in all likelihood not the owner.
 	 */
 
-	return 0;
+	return false;
     }
 
     /*
@@ -3302,7 +3298,7 @@ TclWinFileOwned(
 	Tcl_Free(buf);
     }
 
-    return (owned != 0);        /* Convert non-0 to 1 */
+    return (owned != FALSE);        /* Convert non-0 to 1 */
 }
 
 /*

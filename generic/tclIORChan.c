@@ -107,7 +107,7 @@ typedef struct {
     int interest;		/* Mask of events the channel is interested
 				 * in. */
 
-    int dead;			/* Boolean signal that some operations
+    bool dead;			/* Boolean signal that some operations
 				 * should no longer be attempted. */
 
     /*
@@ -241,7 +241,7 @@ typedef enum {
 typedef struct {
     int code;			/* O: Ok/Fail of the cmd handler */
     char *msgStr;		/* O: Error message for handler failure */
-    int mustFree;		/* O: True if msgStr is allocated, false if
+    bool mustFree;		/* O: True if msgStr is allocated, false if
 				 * otherwise (static). */
 } ForwardParamBase;
 
@@ -391,8 +391,8 @@ static int		ForwardProc(Tcl_Event *evPtr, int mask);
 static void		SrcExitProc(void *clientData);
 
 #define FreeReceivedError(p) \
-	if ((p)->base.mustFree) {                               \
-	    Tcl_Free((p)->base.msgStr);                           \
+	if ((p)->base.mustFree) {				\
+	    Tcl_Free((p)->base.msgStr);				\
 	}
 #define PassReceivedErrorInterp(i,p) \
 	if ((i) != NULL) {                                      \
@@ -404,12 +404,12 @@ static void		SrcExitProc(void *clientData);
 	Tcl_SetChannelError((c), Tcl_NewStringObj((p)->base.msgStr, -1)); \
 	FreeReceivedError(p)
 #define ForwardSetStaticError(p,emsg) \
-	(p)->base.code = TCL_ERROR;                             \
-	(p)->base.mustFree = 0;                                 \
+	(p)->base.code = TCL_ERROR;				\
+	(p)->base.mustFree = false;				\
 	(p)->base.msgStr = (char *) (emsg)
 #define ForwardSetDynamicError(p,emsg) \
-	(p)->base.code = TCL_ERROR;                             \
-	(p)->base.mustFree = 1;                                 \
+	(p)->base.code = TCL_ERROR;				\
+	(p)->base.mustFree = true;				\
 	(p)->base.msgStr = (char *) (emsg)
 
 static void		ForwardSetObjError(ForwardParam *p, Tcl_Obj *objPtr);
@@ -796,9 +796,9 @@ ReflectEventDelete(
     ReflectEvent *e = (ReflectEvent *) ev;
 
     if ((ev->proc != ReflectEventRun) || ((cd != NULL) && (cd != e->rcPtr))) {
-	return 0;
+	return false;
     }
-    return 1;
+    return true;
 }
 #endif
 
@@ -1038,7 +1038,7 @@ UnmarshallErrorResult(
     ((Interp *) interp)->flags &= ~ERR_ALREADY_LOGGED;
 }
 
-int
+bool
 TclChanCaughtErrorBypass(
     Tcl_Interp *interp,
     Tcl_Channel chan)
@@ -1054,7 +1054,7 @@ TclChanCaughtErrorBypass(
      */
 
     if ((chan == NULL) && (interp == NULL)) {
-	return 0;
+	return false;
     }
 
     if (chan != NULL) {
@@ -1085,13 +1085,13 @@ TclChanCaughtErrorBypass(
      */
 
     if (msgObj == NULL) {
-	return 0;
+	return false;
     }
 
     UnmarshallErrorResult(interp, msgObj);
 
     Tcl_DecrRefCount(msgObj);
-    return 1;
+    return true;
 }
 
 /*
@@ -2188,7 +2188,7 @@ NewReflectedChannel(
 
     rcPtr->chan = NULL;
     rcPtr->interp = interp;
-    rcPtr->dead = 0;
+    rcPtr->dead = false;
 #if TCL_THREADS
     rcPtr->thread = Tcl_GetCurrentThread();
 #endif
@@ -2551,7 +2551,7 @@ MarkDead(
 	return;
     }
     CleanRefChannelInstance(rcPtr);
-    rcPtr->dead = 1;
+    rcPtr->dead = true;
 }
 
 static void
@@ -2989,7 +2989,7 @@ ForwardProc(
 
     paramPtr->base.code = TCL_OK;
     paramPtr->base.msgStr = NULL;
-    paramPtr->base.mustFree = 0;
+    paramPtr->base.mustFree = false;
 
     switch (evPtr->op) {
 	/*

@@ -28,7 +28,7 @@ typedef struct {
  */
 
 typedef struct ThreadSpecificData_IOCommands {
-    int initialized;		/* Set to 1 when the module is initialized. */
+    bool initialized;		/* True when the module is initialized. */
     Tcl_Obj *stdoutObjPtr;	/* Cached stdout channel Tcl_Obj */
 } ThreadSpecificData;
 
@@ -84,7 +84,7 @@ FinalizeIOCmdTSD(
 	Tcl_DecrRefCount(tsdPtr->stdoutObjPtr);
 	tsdPtr->stdoutObjPtr = NULL;
     }
-    tsdPtr->initialized = 0;
+    tsdPtr->initialized = false;
 }
 
 /*
@@ -114,21 +114,21 @@ Tcl_PutsObjCmd(
     Tcl_Channel chan;		/* The channel to puts on. */
     Tcl_Obj *string;		/* String to write. */
     Tcl_Obj *chanObjPtr = NULL;	/* channel object. */
-    int newline;		/* Add a newline at end? */
+    bool newline;		/* Add a newline at end? */
     Tcl_Size result;		/* Result of puts operation. */
     int mode;			/* Mode in which channel is opened. */
 
     switch (objc) {
     case 2:			/* [puts $x] */
 	string = objv[1];
-	newline = 1;
+	newline = true;
 	break;
 
     case 3:			/* [puts -nonewline $x] or [puts $chan $x] */
 	if (strcmp(TclGetString(objv[1]), "-nonewline") == 0) {
-	    newline = 0;
+	    newline = false;
 	} else {
-	    newline = 1;
+	    newline = true;
 	    chanObjPtr = objv[1];
 	}
 	string = objv[2];
@@ -136,7 +136,7 @@ Tcl_PutsObjCmd(
 
     case 4:			/* [puts -nonewline $chan $x] or
 				 * [puts $chan $x nonewline] */
-	newline = 0;
+	newline = false;
 	if (strcmp(TclGetString(objv[1]), "-nonewline") == 0) {
 	    chanObjPtr = objv[2];
 	    string = objv[3];
@@ -153,7 +153,7 @@ Tcl_PutsObjCmd(
 	ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
 	if (!tsdPtr->initialized) {
-	    tsdPtr->initialized = 1;
+	    tsdPtr->initialized = true;
 	    TclNewLiteralStringObj(tsdPtr->stdoutObjPtr, "stdout");
 	    Tcl_IncrRefCount(tsdPtr->stdoutObjPtr);
 	    Tcl_CreateThreadExitHandler(FinalizeIOCmdTSD, NULL);
@@ -174,7 +174,7 @@ Tcl_PutsObjCmd(
     if (result == TCL_INDEX_NONE) {
 	goto error;
     }
-    if (newline != 0) {
+    if (newline) {
 	result = Tcl_WriteChars(chan, "\n", 1);
 	if (result == TCL_INDEX_NONE) {
 	    goto error;
@@ -370,7 +370,7 @@ Tcl_ReadObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Channel chan;		/* The channel to read from. */
-    int newline, i;		/* Discard newline at end? */
+    bool newline;		/* Discard newline at end? */
     Tcl_WideInt toRead;		/* How many bytes to read? */
     Tcl_Size charactersRead;	/* How many characters were read? */
     int mode;			/* Mode in which channel is opened. */
@@ -393,10 +393,10 @@ Tcl_ReadObjCmd(
 	return TCL_ERROR;
     }
 
-    i = 1;
-    newline = 0;
+    int i = 1;
+    newline = false;
     if (strcmp(TclGetString(objv[1]), "-nonewline") == 0) {
-	newline = 1;
+	newline = true;
 	i++;
     }
 
@@ -464,7 +464,7 @@ Tcl_ReadObjCmd(
      * If requested, remove the last newline in the channel if at EOF.
      */
 
-    if ((charactersRead > 0) && (newline != 0)) {
+    if ((charactersRead > 0) && newline) {
 	const char *result;
 	Tcl_Size length;
 
@@ -904,7 +904,8 @@ Tcl_ExecObjCmd(
 				 * on the _Tcl_ stack. */
     const char *string;
     Tcl_Channel chan;
-    int argc, background, index, keepNewline, result, skip, ignoreStderr;
+    int argc, index, result, skip;
+    bool background, keepNewline, ignoreStderr;
     Tcl_Size length;
     static const char *const options[] = {
 	"-ignorestderr", "-keepnewline", "-encoding", "--", NULL
@@ -918,8 +919,8 @@ Tcl_ExecObjCmd(
      * Check for any leading option arguments.
      */
 
-    keepNewline = 0;
-    ignoreStderr = 0;
+    keepNewline = false;
+    ignoreStderr = false;
     for (skip = 1; skip < objc; skip++) {
 	string = TclGetString(objv[skip]);
 	if (string[0] != '-') {
@@ -935,10 +936,10 @@ Tcl_ExecObjCmd(
 	}
 	switch (index) {
 	case EXEC_KEEPNEWLINE:
-	    keepNewline = 1;
+	    keepNewline = true;
 	    break;
 	case EXEC_IGNORESTDERR:
-	    ignoreStderr = 1;
+	    ignoreStderr = true;
 	    break;
 	case EXEC_ENCODING:
 	    if (++skip >= objc) {
@@ -966,11 +967,11 @@ Tcl_ExecObjCmd(
      * See if the command is to be run in background.
      */
 
-    background = 0;
+    background = false;
     string = TclGetString(objv[objc - 1]);
     if ((string[0] == '&') && (string[1] == '\0')) {
 	objc--;
-	background = 1;
+	background = true;
     }
 
     /*
@@ -1061,7 +1062,7 @@ Tcl_ExecObjCmd(
      * newline character.
      */
 
-    if (keepNewline == 0) {
+    if (!keepNewline) {
 	string = TclGetStringFromObj(resultPtr, &length);
 	if ((length > 0) && (string[length - 1] == '\n')) {
 	    Tcl_SetObjLength(resultPtr, length - 1);
@@ -1147,7 +1148,8 @@ Tcl_OpenObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int pipeline, prot;
+    bool pipeline;
+    int prot;
     const char *modeString, *what;
     Tcl_Channel chan;
 
@@ -1187,10 +1189,10 @@ Tcl_OpenObjCmd(
 	}
     }
 
-    pipeline = 0;
+    pipeline = false;
     what = TclGetString(objv[1]);
     if (what[0] == '|') {
-	pipeline = 1;
+	pipeline = true;
     }
 
     /*
@@ -1530,8 +1532,8 @@ Tcl_SocketObjCmd(
 	SKT_ASYNC, SKT_BACKLOG, SKT_MYADDR, SKT_MYPORT, SKT_REUSEADDR,
 	SKT_REUSEPORT, SKT_SERVER
     } optionIndex;
-    int a, server = 0, myport = 0, async = 0, reusep = -1,
-	reusea = -1, backlog = -1;
+    int a, myport = 0, reusep = -1, reusea = -1, backlog = -1;
+    bool server = false, async = false;
     unsigned int flags = 0;
     const char *host, *port, *myaddr = NULL;
     Tcl_Obj *script = NULL;
@@ -1551,12 +1553,12 @@ Tcl_SocketObjCmd(
 	}
 	switch (optionIndex) {
 	case SKT_ASYNC:
-	    if (server == 1) {
+	    if (server) {
 		TclPrintfResult(interp,
 			"cannot set -async option for server sockets");
 		return TCL_ERROR;
 	    }
-	    async = 1;
+	    async = true;
 	    break;
 	case SKT_MYADDR:
 	    a++;
@@ -1583,12 +1585,12 @@ Tcl_SocketObjCmd(
 	    break;
 	}
 	case SKT_SERVER:
-	    if (async == 1) {
+	    if (async) {
 		TclPrintfResult(interp,
 			"cannot set -async option for server sockets");
 		return TCL_ERROR;
 	    }
-	    server = 1;
+	    server = true;
 	    a++;
 	    if (a >= objc) {
 		TclPrintfResult(interp, "no argument given for %s option",

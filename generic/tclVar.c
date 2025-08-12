@@ -2669,7 +2669,7 @@ UnsetVarStruct(
 	    TclObjCallVarTraces(iPtr, arrayPtr, &dummyVar, part1Ptr, part2Ptr,
 		    (flags & (TCL_GLOBAL_ONLY|TCL_NAMESPACE_ONLY|VAR_ARRAY_ELEMENT))
 			    | TCL_TRACE_UNSETS,
-		    /* leaveErrMsg */ 0, index);
+		    /*leaveErrMsg*/ false, index);
 
 	    /*
 	     * The traces that we just called may have triggered a change in
@@ -2939,7 +2939,7 @@ Tcl_LappendObjCmd(
 	 * copy to modify: this is "copy on write".
 	 */
 
-	int createdNewObj = 0;
+	bool createdNewObj = false;
 
 	/*
 	 * Protect the variable pointers around the TclPtrGetVarIdx call
@@ -2976,10 +2976,10 @@ Tcl_LappendObjCmd(
 	     */
 
 	    TclNewObj(varValuePtr);
-	    createdNewObj = 1;
+	    createdNewObj = true;
 	} else if (Tcl_IsShared(varValuePtr)) {
 	    varValuePtr = Tcl_DuplicateObj(varValuePtr);
-	    createdNewObj = 1;
+	    createdNewObj = true;
 	}
 
 	Tcl_Size numElems;
@@ -3060,7 +3060,7 @@ ArrayObjNext(
 	return donerc;
     }
 
-    int gotValue = 0;
+    bool gotValue = false;
     while (1) {
 	Tcl_HashEntry *hPtr = searchPtr->nextEntry;
 
@@ -3069,13 +3069,13 @@ ArrayObjNext(
 	} else {
 	    hPtr = Tcl_NextHashEntry(&searchPtr->search);
 	    if (hPtr == NULL) {
-		gotValue = 0;
+		gotValue = false;
 		break;
 	    }
 	}
 	varPtr = VarHashGetValue(hPtr);
 	if (!TclIsVarUndefined(varPtr)) {
-	    gotValue = 1;
+	    gotValue = true;
 	    break;
 	}
     }
@@ -5544,7 +5544,7 @@ DeleteArray(
 
 		elPtr->flags &= ~VAR_TRACE_ACTIVE;
 		TclObjCallVarTraces(iPtr, NULL, elPtr, arrayNamePtr,
-			elNamePtr, flags,/* leaveErrMsg */ 0, index);
+			elNamePtr, flags, /*leaveErrMsg*/ false, index);
 	    }
 
 	    Tcl_HashEntry *tPtr = Tcl_FindHashEntry(&iPtr->varTraces, elPtr);
@@ -5930,7 +5930,7 @@ TclInfoVarsCmd(
     Namespace *nsPtr;
     Namespace *currNsPtr = (Namespace *) Tcl_GetCurrentNamespace(interp);
     Tcl_Obj *listPtr, *elemObjPtr, *varNamePtr;
-    int specificNsInPattern = 0;/* Init. to avoid compiler warning. */
+    bool specificNsInPattern = false;/* Init. to avoid compiler warning. */
     Tcl_Obj *simplePatternPtr = NULL;
 
     /*
@@ -5942,7 +5942,7 @@ TclInfoVarsCmd(
     if (objc == 1) {
 	simplePattern = NULL;
 	nsPtr = currNsPtr;
-	specificNsInPattern = 0;
+	specificNsInPattern = false;
     } else if (objc == 2) {
 	/*
 	 * From the pattern, get the effective namespace and the simple
@@ -6227,7 +6227,7 @@ TclInfoConstsCmd(
     Namespace *nsPtr;
     Namespace *globalNsPtr = (Namespace *) Tcl_GetGlobalNamespace(interp);
     Namespace *currNsPtr = (Namespace *) Tcl_GetCurrentNamespace(interp);
-    int specificNsInPattern = 0;/* Init. to avoid compiler warning. */
+    bool specificNsInPattern = false;/* Init. to avoid compiler warning. */
     Tcl_Obj *simplePatternPtr = NULL;
 
     /*
@@ -6239,7 +6239,7 @@ TclInfoConstsCmd(
     if (objc == 1) {
 	simplePattern = NULL;
 	nsPtr = currNsPtr;
-	specificNsInPattern = 0;
+	specificNsInPattern = false;
     } else if (objc == 2) {
 	/*
 	 * From the pattern, get the effective namespace and the simple

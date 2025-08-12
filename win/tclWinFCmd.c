@@ -1198,7 +1198,8 @@ TraverseWinTree(
 {
     DWORD sourceAttr;
     WCHAR *nativeSource, *nativeTarget, *nativeErrfile;
-    int result, found;
+    int result;
+    BOOL found;
     Tcl_Size sourceLen, oldSourceLen, oldTargetLen, targetLen = 0;
     HANDLE handle;
     WIN32_FIND_DATAW data;
@@ -1271,7 +1272,7 @@ TraverseWinTree(
 	Tcl_DStringSetLength(targetPtr, targetLen);
     }
 
-    found = 1;
+    found = TRUE;
     for (; found; found = FindNextFileW(handle, &data)) {
 	WCHAR *nativeName;
 	size_t len;
@@ -1524,7 +1525,6 @@ GetWinFileAttributes(
 {
     DWORD result;
     const WCHAR *nativeName;
-    int attr;
 
     nativeName = (const WCHAR *)Tcl_FSGetNativePath(fileName);
     result = GetFileAttributesW(nativeName);
@@ -1534,7 +1534,7 @@ GetWinFileAttributes(
 	return TCL_ERROR;
     }
 
-    attr = (int)(result & attributeArray[objIndex]);
+    int attr = (int)(result & attributeArray[objIndex]);
     if ((objIndex == WIN_HIDDEN_ATTRIBUTE) && (attr != 0)) {
 	/*
 	 * It is hidden. However there is a bug on some Windows OSes in which

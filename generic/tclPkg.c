@@ -84,15 +84,15 @@ typedef struct RequireProcArgs {
  */
 
 static int		CheckVersionAndConvert(Tcl_Interp *interp,
-			    const char *string, char **internal, int *stable);
+			    const char *string, char **internal, bool *stable);
 static int		CompareVersions(char *v1i, char *v2i,
-			    int *isMajorPtr);
+			    bool *isMajorPtr);
 static int		CheckRequirement(Tcl_Interp *interp,
 			    const char *string);
 static int		CheckAllRequirements(Tcl_Interp *interp, Tcl_Size reqc,
 			    Tcl_Obj *const reqv[]);
-static int		RequirementSatisfied(char *havei, const char *req);
-static int		SomeRequirementSatisfied(char *havei, Tcl_Size reqc,
+static bool		RequirementSatisfied(char *havei, const char *req);
+static bool		SomeRequirementSatisfied(char *havei, Tcl_Size reqc,
 			    Tcl_Obj *const reqv[]);
 static void		AddRequirementsToResult(Tcl_Interp *interp, Tcl_Size reqc,
 			    Tcl_Obj *const reqv[]);
@@ -163,11 +163,9 @@ Tcl_PkgProvideEx(
     const void *clientData)	/* clientdata for this package (normally used
 				 * for C callback function table) */
 {
-    Package *pkgPtr;
     char *pvi, *vi;
-    int res;
 
-    pkgPtr = FindPackage(interp, name);
+    Package *pkgPtr = FindPackage(interp, name);
     if (pkgPtr->version == NULL) {
 	pkgPtr->version = Tcl_NewStringObj(version, -1);
 	Tcl_IncrRefCount(pkgPtr->version);
@@ -183,7 +181,7 @@ Tcl_PkgProvideEx(
 	return TCL_ERROR;
     }
 
-    res = CompareVersions(pvi, vi, NULL);
+    int res = CompareVersions(pvi, vi, NULL);
     Tcl_Free(pvi);
     Tcl_Free(vi);
 
@@ -641,7 +639,7 @@ SelectPackage(
     Tcl_Interp *interp,
     TCL_UNUSED(int))
 {
-    int availStable, satisfies;
+    bool availStable, satisfies;
     Require *reqPtr = (Require *)data[0];
     Tcl_Size reqc = PTR2INT(data[1]);
     Tcl_Obj **const reqv = (Tcl_Obj **)data[2];
@@ -1059,7 +1057,6 @@ TclNRPackageObjCmd(
 	PKG_VERSIONS, PKG_VSATISFIES
     } optionIndex;
     Interp *iPtr = (Interp *) interp;
-    int exact, satisfies;
     Tcl_Size newobjc;
     PkgAvail *availPtr, *prevPtr;
     Package *pkgPtr;
@@ -1237,6 +1234,7 @@ TclNRPackageObjCmd(
 	break;
     case PKG_PRESENT: {
 	const char *name;
+	bool exact;
 
 	if (objc < 3) {
 	    goto require;
@@ -1246,10 +1244,10 @@ TclNRPackageObjCmd(
 	    if (objc != 5) {
 		goto requireSyntax;
 	    }
-	    exact = 1;
+	    exact = true;
 	    name = TclGetString(objv[3]);
 	} else {
-	    exact = 0;
+	    exact = false;
 	    name = argv2;
 	}
 
@@ -1499,7 +1497,7 @@ TclNRPackageObjCmd(
 	    return TCL_ERROR;
 	}
 
-	satisfies = SomeRequirementSatisfied(argv2i, objc-3, objv+3);
+	bool satisfies = SomeRequirementSatisfied(argv2i, objc-3, objv+3);
 	Tcl_Free(argv2i);
 
 	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(satisfies));
@@ -1637,11 +1635,11 @@ CheckVersionAndConvert(
 				 * groups of decimal digits separated by
 				 * dots. */
     char **internal,		/* Internal normalized representation */
-    int *stable)		/* Flag: Version is (un)stable. */
+    bool *stable)		/* Flag: Version is (un)stable. */
 {
     const char *p = string;
     char prevChar;
-    int hasunstable = 0;
+    bool hasunstable = false;
     /*
      * 4* assuming that each char is a separator (a,b become ' -x ').
      * 4+ to have space for an additional -2 at the end
@@ -1680,7 +1678,7 @@ CheckVersionAndConvert(
 	}
 
 	if (*p == 'a' || *p == 'b') {
-	    hasunstable = 1;
+	    hasunstable = true;
 	}
 
 	/*
@@ -1752,11 +1750,12 @@ static int
 CompareVersions(
     char *v1, char *v2,		/* Versions strings, of form 2.1.3 (any number
 				 * of version numbers). */
-    int *isMajorPtr)		/* If non-null, the word pointed to is filled
-				 * in with a 0/1 value. 1 means that the
+    bool *isMajorPtr)		/* If non-null, the word pointed to is filled
+				 * in with a bool value. true means that the
 				 * difference occurred in the first element. */
 {
-    int thisIsMajor, res, flip;
+    bool thisIsMajor, flip;
+    int res;
     char *s1, *e1, *s2, *e2, o1, o2;
 
     /*
@@ -1779,7 +1778,7 @@ CompareVersions(
      * work. This change breaks through the 32bit-limit on version numbers.
      */
 
-    thisIsMajor = 1;
+    thisIsMajor = true;
     s1 = v1;
     s2 = v2;
 
@@ -1820,9 +1819,9 @@ CompareVersions(
 	    /* a < b => -a > -b, etc. */
 	    s1++;
 	    s2++;
-	    flip = 1;
+	    flip = true;
 	} else {
-	    flip = 0;
+	    flip = false;
 	}
 
 	/*
@@ -1897,7 +1896,7 @@ CompareVersions(
 	if (*s2 != 0) {
 	    s2++;
 	}
-	thisIsMajor = 0;
+	thisIsMajor = false;
     }
 
     if (isMajorPtr != NULL) {
@@ -2105,7 +2104,7 @@ AddRequirementsToDString(
  *----------------------------------------------------------------------
  */
 
-static int
+static bool
 SomeRequirementSatisfied(
     char *availVersionI,	/* Candidate version to check against the
 				 * requirements. */
@@ -2116,10 +2115,10 @@ SomeRequirementSatisfied(
 {
     for (Tcl_Size i = 0; i < reqc; i++) {
 	if (RequirementSatisfied(availVersionI, TclGetString(reqv[i]))) {
-	    return 1;
+	    return true;
 	}
     }
-    return 0;
+    return false;
 }
 
 /*
@@ -2130,7 +2129,7 @@ SomeRequirementSatisfied(
  *	This function checks to see whether a version satisfies a requirement.
  *
  * Results:
- *	If the requirement is satisfied 1 is returned. Otherwise 0 is
+ *	If the requirement is satisfied true is returned. Otherwise false is
  *	returned. The function assumes that all pieces have valid syntax, and
  *	is allowed to make that assumption.
  *
@@ -2140,7 +2139,7 @@ SomeRequirementSatisfied(
  *----------------------------------------------------------------------
  */
 
-static int
+static bool
 RequirementSatisfied(
     char *havei,		/* Version string, of candidate package we
 				 * have. */
@@ -2151,7 +2150,8 @@ RequirementSatisfied(
      * The have candidate is already in internal rep.
      */
 
-    int satisfied, res;
+    int res;
+    bool satisfied;
     char *dash = NULL, *buf, *min, *max;
 
     dash = (char *)strchr(req, '-');
@@ -2164,7 +2164,7 @@ RequirementSatisfied(
 	 */
 
 	char *reqi = NULL;
-	int thisIsMajor;
+	bool thisIsMajor;
 
 	CheckVersionAndConvert(NULL, req, &reqi, NULL);
 	strcat(reqi, " -2");

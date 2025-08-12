@@ -682,12 +682,12 @@ TcpClose2Proc(
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wstrict-aliasing"
 #endif
-static inline int
+static inline bool
 IPv6AddressNeedsNumericRendering(
     struct in6_addr addr)
 {
     if (IN6_ARE_ADDR_EQUAL(&addr, &in6addr_any)) {
-	return 1;
+	return true;
     }
 
     /*
@@ -696,7 +696,7 @@ IPv6AddressNeedsNumericRendering(
      */
 
     if (!IN6_IS_ADDR_V4MAPPED(&addr)) {
-	return 0;
+	return false;
     }
 
     return (addr.s6_addr[12] == 0 && addr.s6_addr[13] == 0
