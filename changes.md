@@ -10,7 +10,8 @@ Tcl patch releases have the primary purpose of delivering bug fixes
 to the userbase.
 
 # Bug fixes
- - [On Unix, IsTimeNative() always defined but not always used](https://core.tcl-lang.org/tcl/tktview/6b8e3)
+ - [On Unix, IsTimeNative() always defined but not always used](https://core.tcl-lang.org/tcl/tktview/6b8e39)
+ - [Tweak install permissions](https://core.tcl-lang.org/tcl/tktview/31d4fa)
 
 # Updated bundled packages, libraries, standards, data
  - sqlite3 3.50.2
