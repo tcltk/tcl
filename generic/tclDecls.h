@@ -4244,6 +4244,32 @@ extern const TclStubs *tclStubsPtr;
 #   undef Tcl_GetAliasObj
 #   define Tcl_GetAliasObj(interp, childCmd, targetInterpPtr, targetCmdPtr, objcPtr, objv) \
 	    tclStubsPtr->tclGetAliasObj((interp), (childCmd), (targetInterpPtr), (targetCmdPtr), (objcPtr), (objv))
+#   undef Tcl_OpenTcpServerEx
+#   undef TclZipfs_Mount
+#   undef TclZipfs_Unmount
+#   undef TclZipfs_TclLibrary
+#   undef TclZipfs_MountBuffer
+#   undef Tcl_FreeInternalRep
+#   undef Tcl_InitStringRep
+#   undef Tcl_FetchInternalRep
+#   undef Tcl_StoreInternalRep
+#   undef Tcl_HasStringRep
+#   undef Tcl_LinkArray
+#   undef Tcl_GetIntForIndex
+#   undef Tcl_FSTildeExpand
+#   undef Tcl_ExternalToUtfDStringEx
+#   undef Tcl_UtfToExternalDStringEx
+#   undef Tcl_AsyncMarkFromSignal
+#   undef Tcl_GetBool
+#   undef Tcl_GetBoolFromObj
+#   undef Tcl_GetNumberFromObj
+#   undef Tcl_GetNumber
+#   undef Tcl_RemoveChannelMode
+#   undef Tcl_GetEncodingNulLength
+#   undef Tcl_GetWideUIntFromObj
+#   undef Tcl_DStringToObj
+#   undef Tcl_NewWideUIntObj
+#   undef Tcl_SetWideUIntObj
 #elif defined(TCL_8_API)
 #   undef Tcl_GetByteArrayFromObj
 #   undef Tcl_GetBytesFromObj
