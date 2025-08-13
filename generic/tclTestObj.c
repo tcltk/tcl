@@ -106,7 +106,7 @@ TclObjTest_Init(
     Tcl_Obj **varPtr;
 
 #ifndef TCL_WITH_EXTERNAL_TOMMATH
-    if (Tcl_TomMath_InitStubs(interp, "8.7-") == NULL) {
+    if (Tcl_TomMath_InitStubs(interp, "9.0-") == NULL) {
 	return TCL_ERROR;
     }
 #endif
@@ -856,8 +856,8 @@ TestintobjCmd(
  *	test a few possible corner cases in list object manipulation from
  *	C code that cannot occur at the Tcl level.
  *
- *      Following new commands are added for 8.7 as regression tests for
- *      memory leaks and use-after-free. Unlike 8.6, 8.7 has multiple internal
+ *      Following new commands are added for 9.0 as regression tests for
+ *      memory leaks and use-after-free. Unlike 8.6, 9.0 has multiple internal
  *      representations for lists.  It has to be ensured that corresponding
  *      implementations obey the invariants of the C list API. The script
  *      level tests do not suffice as Tcl list commands do not execute
