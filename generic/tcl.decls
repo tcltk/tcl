@@ -2379,7 +2379,7 @@ declare 689 {
     void Tcl_SetWideUIntObj(Tcl_Obj *objPtr, Tcl_WideUInt uwideValue)
 }
 
-# ----- BASELINE -- FOR -- 8.7.0 / 9.0.0 ----- #
+# ----- BASELINE -- FOR -- 9.0.0 ----- #
 
 declare 690 {
     void TclUnusedStubEntry(void)

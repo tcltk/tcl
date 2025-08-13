@@ -2105,7 +2105,7 @@ typedef struct Tcl_EncodingType {
  * reflected in regcustom.h.
  */
 
-#if TCL_UTF_MAX == 4
+#if TCL_UTF_MAX == 4 && TCL_MAJOR_VERSION > 8
     /*
      * int isn't 100% accurate as it should be a strict 4-byte value
      * (perhaps int32_t). ILP64/SILP64 systems may have troubles. The
@@ -2334,17 +2334,10 @@ void *			TclStubCall(void *arg);
 
 #ifdef USE_TCL_STUBS
 #if TCL_MAJOR_VERSION < 9
-# if TCL_UTF_MAX < 4
 #   define Tcl_InitStubs(interp, version, exact) \
 	(Tcl_InitStubs)(interp, version, \
 	    (exact)|(TCL_MAJOR_VERSION<<8)|(0xFF<<16), \
 	    TCL_STUB_MAGIC)
-# else
-#   define Tcl_InitStubs(interp, version, exact) \
-	(Tcl_InitStubs)(interp, "8.7b1", \
-	    (exact)|(TCL_MAJOR_VERSION<<8)|(0xFF<<16), \
-	    TCL_STUB_MAGIC)
-# endif
 #else
 #   define Tcl_InitStubs(interp, version, exact) \
 	(Tcl_InitStubs)(interp, version, \
