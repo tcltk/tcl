@@ -17,7 +17,7 @@ jobs:
         working-directory: macosx
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         timeout-minutes: 5
       - name: Prepare
         run: |
@@ -48,7 +48,7 @@ jobs:
         working-directory: unix
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         timeout-minutes: 5
       - name: Prepare
         run: |
