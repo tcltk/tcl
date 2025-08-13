@@ -4198,7 +4198,7 @@ extern const TclStubs *tclStubsPtr;
 #undef TclGetAliasObj
 
 #if TCL_MAJOR_VERSION < 9
-    /* TIP #627 for 8.7 */
+    /* TIP #627 */
 #   undef Tcl_CreateObjCommand2
 #   define Tcl_CreateObjCommand2 Tcl_CreateObjCommand
 #   undef Tcl_CreateObjTrace2
@@ -4207,7 +4207,7 @@ extern const TclStubs *tclStubsPtr;
 #   define Tcl_NRCreateCommand2 Tcl_NRCreateCommand
 #   undef Tcl_NRCallObjProc2
 #   define Tcl_NRCallObjProc2 Tcl_NRCallObjProc
-    /* TIP #660 for 8.7 */
+    /* TIP #660 */
 #   undef Tcl_GetSizeIntFromObj
 #   define Tcl_GetSizeIntFromObj Tcl_GetIntFromObj
 
