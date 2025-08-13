@@ -9413,5 +9413,8 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 
 2025-07-21 (bug) [61c01e] Flawed ref counts in filesystem implementation for Windows led to use-after-free (sebres)
 
-- Released 8.6.17, Aug 15, 2025 - details at https://core.tcl-lang.org/tcl/ -
+2025-08-12 (new) dde => 1.4.5
 
+2025-08-12 (bug) [992f94] avoid misaligned pointers in macOS file attribute functions (chavez)
+
+- Released 8.6.17, Aug 15, 2025 - details at https://core.tcl-lang.org/tcl/ -

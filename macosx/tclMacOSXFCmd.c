@@ -84,11 +84,11 @@ static int		SetOSTypeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void		UpdateStringOfOSType(Tcl_Obj *objPtr);
 
 static const Tcl_ObjType tclOSTypeType = {
-    "osType",				/* name */
-    NULL,				/* freeIntRepProc */
-    NULL,				/* dupIntRepProc */
-    UpdateStringOfOSType,		/* updateStringProc */
-    SetOSTypeFromAny			/* setFromAnyProc */
+    "osType",			/* name */
+    NULL,			/* freeIntRepProc */
+    NULL,			/* dupIntRepProc */
+    UpdateStringOfOSType,	/* updateStringProc */
+    SetOSTypeFromAny		/* setFromAnyProc */
 };
 
 enum {
@@ -107,6 +107,8 @@ typedef	struct finderinfo {
 } __attribute__ ((__packed__)) finderinfo;
 
 typedef struct {
+    u_int64_t reserved1; /* Make sure data is 8-byte aligned */
+    u_int32_t reserved2; /* See [992f94d847] */
     u_int32_t info_length;
     u_int32_t data[8];
 } fileinfobuf;
@@ -131,10 +133,10 @@ typedef struct {
 
 int
 TclMacOSXGetFileAttribute(
-    Tcl_Interp *interp,		 /* The interp we are using for errors. */
-    int objIndex,		 /* The index of the attribute. */
-    Tcl_Obj *fileName,		 /* The name of the file (UTF-8). */
-    Tcl_Obj **attributePtrPtr)	 /* A pointer to return the object with. */
+    Tcl_Interp *interp,		/* The interp we are using for errors. */
+    int objIndex,		/* The index of the attribute. */
+    Tcl_Obj *fileName,		/* The name of the file (UTF-8). */
+    Tcl_Obj **attributePtrPtr)	/* A pointer to return the object with. */
 {
 #ifdef HAVE_GETATTRLIST
     int result;
@@ -173,7 +175,8 @@ TclMacOSXGetFileAttribute(
 	alist.commonattr = ATTR_CMN_FNDRINFO;
     }
     native = (const char *)Tcl_FSGetNativePath(fileName);
-    result = getattrlist(native, &alist, &finfo, sizeof(fileinfobuf), 0);
+    result = getattrlist(native, &alist, &finfo.info_length,
+	    sizeof(fileinfobuf) - offsetof(fileinfobuf, info_length), 0);
 
     if (result != 0) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -192,18 +195,18 @@ TclMacOSXGetFileAttribute(
 		OSSwapBigToHostInt32(finder->type));
 	break;
     case MACOSX_HIDDEN_ATTRIBUTE:
-	*attributePtrPtr = Tcl_NewBooleanObj(
+	TclNewIntObj(*attributePtrPtr,
 		(finder->fdFlags & kFinfoIsInvisible) != 0);
 	break;
     case MACOSX_RSRCLENGTH_ATTRIBUTE:
-	*attributePtrPtr = Tcl_NewWideIntObj(*rsrcForkSize);
+	TclNewIntObj(*attributePtrPtr, *rsrcForkSize);
 	break;
     }
     return TCL_OK;
 #else
     Tcl_SetObjResult(interp, Tcl_NewStringObj(
 	    "Mac OS X file attributes not supported", -1));
-    Tcl_SetErrorCode(interp, "TCL", "UNSUPPORTED", NULL);
+    Tcl_SetErrorCode(interp, "TCL", "UNSUPPORTED", (char *)NULL);
     return TCL_ERROR;
 #endif /* HAVE_GETATTRLIST */
 }
@@ -269,7 +272,8 @@ TclMacOSXSetFileAttribute(
 	alist.commonattr = ATTR_CMN_FNDRINFO;
     }
     native = (const char *)Tcl_FSGetNativePath(fileName);
-    result = getattrlist(native, &alist, &finfo, sizeof(fileinfobuf), 0);
+    result = getattrlist(native, &alist, &finfo.info_length,
+	    sizeof(fileinfobuf) - offsetof(fileinfobuf, info_length), 0);
 
     if (result != 0) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -335,7 +339,7 @@ TclMacOSXSetFileAttribute(
 	    if (newRsrcForkSize != 0) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"setting nonzero rsrclength not supported", -1));
-		Tcl_SetErrorCode(interp, "TCL", "UNSUPPORTED", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "UNSUPPORTED", (char *)NULL);
 		return TCL_ERROR;
 	    }
 
@@ -376,7 +380,7 @@ TclMacOSXSetFileAttribute(
 #else
     Tcl_SetObjResult(interp, Tcl_NewStringObj(
 	    "Mac OS X file attributes not supported", -1));
-    Tcl_SetErrorCode(interp, "TCL", "UNSUPPORTED", NULL);
+    Tcl_SetErrorCode(interp, "TCL", "UNSUPPORTED", (char *)NULL);
     return TCL_ERROR;
 #endif
 }
@@ -426,7 +430,8 @@ TclMacOSXCopyFileAttributes(
 	alist.bitmapcount = ATTR_BIT_MAP_COUNT;
 	alist.commonattr = ATTR_CMN_FNDRINFO;
 
-	if (getattrlist(src, &alist, &finfo, sizeof(fileinfobuf), 0)) {
+	if (getattrlist(src, &alist, &finfo.info_length,
+		sizeof(fileinfobuf) - offsetof(fileinfobuf, info_length), 0)) {
 	    return TCL_ERROR;
 	}
 	if (setattrlist(dst, &alist, &finfo.data, sizeof(finfo.data), 0)) {
@@ -448,7 +453,8 @@ TclMacOSXCopyFileAttributes(
 
 	alist.commonattr = 0;
 	alist.fileattr = ATTR_FILE_RSRCLENGTH;
-	if (getattrlist(src, &alist, &finfo, sizeof(fileinfobuf), 0)) {
+	if (getattrlist(src, &alist, &finfo.info_length,
+		sizeof(fileinfobuf) - offsetof(fileinfobuf, info_length), 0)) {
 	    return TCL_ERROR;
 	} else if (*rsrcForkSize == 0) {
 	    return TCL_OK;
@@ -517,7 +523,8 @@ TclMacOSXMatchType(
     bzero(&alist, sizeof(struct attrlist));
     alist.bitmapcount = ATTR_BIT_MAP_COUNT;
     alist.commonattr = ATTR_CMN_FNDRINFO;
-    if (getattrlist(pathName, &alist, &finfo, sizeof(fileinfobuf), 0) != 0) {
+    if (getattrlist(pathName, &alist, &finfo.info_length,
+	    sizeof(fileinfobuf) - offsetof(fileinfobuf, info_length), 0)) {
 	return 0;
     }
     if ((types->perm & TCL_GLOB_PERM_HIDDEN) &&
@@ -636,18 +643,19 @@ SetOSTypeFromAny(
     Tcl_Obj *objPtr)		/* Pointer to the object to convert */
 {
     const char *string;
-    int length, result = TCL_OK;
+    int result = TCL_OK;
     Tcl_DString ds;
     Tcl_Encoding encoding = Tcl_GetEncoding(NULL, "macRoman");
+    int length;
 
-    string = Tcl_GetStringFromObj(objPtr, &length);
+    string = TclGetStringFromObj(objPtr, &length);
     Tcl_UtfToExternalDString(encoding, string, length, &ds);
 
     if (Tcl_DStringLength(&ds) > 4) {
 	if (interp) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "expected Macintosh OS type but got \"%s\": ", string));
-	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "MAC_OSTYPE", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "MAC_OSTYPE", (char *)NULL);
 	}
 	result = TCL_ERROR;
     } else {
@@ -656,9 +664,9 @@ SetOSTypeFromAny(
 
 	memcpy(bytes, Tcl_DStringValue(&ds), Tcl_DStringLength(&ds));
 	osType = (OSType) bytes[0] << 24 |
-		 (OSType) bytes[1] << 16 |
-		 (OSType) bytes[2] <<  8 |
-		 (OSType) bytes[3];
+		(OSType) bytes[1] << 16 |
+		(OSType) bytes[2] <<  8 |
+		(OSType) bytes[3];
 	TclFreeIntRep(objPtr);
 	objPtr->internalRep.longValue = (long) osType;
 	objPtr->typePtr = &tclOSTypeType;
@@ -689,22 +697,22 @@ SetOSTypeFromAny(
 
 static void
 UpdateStringOfOSType(
-    Tcl_Obj *objPtr)	/* OSType object whose string rep to
+    Tcl_Obj *objPtr)		/* OSType object whose string rep to
 				 * update. */
 {
-    char string[5];
     OSType osType = (OSType) objPtr->internalRep.longValue;
     Tcl_DString ds;
     Tcl_Encoding encoding = Tcl_GetEncoding(NULL, "macRoman");
     unsigned len;
+    char src[5];
 
-    string[0] = (char) (osType >> 24);
-    string[1] = (char) (osType >> 16);
-    string[2] = (char) (osType >>  8);
-    string[3] = (char) (osType);
-    string[4] = '\0';
-    Tcl_ExternalToUtfDString(encoding, string, -1, &ds);
-    len = (unsigned) Tcl_DStringLength(&ds) + 1;
+    src[0] = (char) (osType >> 24);
+    src[1] = (char) (osType >> 16);
+    src[2] = (char) (osType >>  8);
+    src[3] = (char) (osType);
+    src[4] = '\0';
+    Tcl_ExternalToUtfDString(encoding, src, -1, &ds);
+    len = (unsigned)Tcl_DStringLength(&ds) + 1;
     objPtr->bytes = ckalloc(len);
     memcpy(objPtr->bytes, Tcl_DStringValue(&ds), len);
     objPtr->length = Tcl_DStringLength(&ds);
