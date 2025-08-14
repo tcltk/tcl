@@ -3697,6 +3697,7 @@ MODULE_SCOPE void	TclErrorStackResetIf(Tcl_Interp *interp,
 MODULE_SCOPE int	TclZipfs_Init(Tcl_Interp *interp);
 MODULE_SCOPE int	TclIsZipfsPath(const char *path);
 MODULE_SCOPE void	TclZipfsFinalize(void);
+MODULE_SCOPE int 	TclZipfsLocateTclLibrary(void);
 
 /*
  * Many parsing tasks need a common definition of whitespace.
