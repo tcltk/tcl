@@ -14,7 +14,10 @@ to the userbase.
  - [Tweak install permissions](https://core.tcl-lang.org/tcl/tktview/31d4fa)
 
 # Updated bundled packages, libraries, standards, data
- - sqlite3 3.50.2
+ - sqlite3 3.50.4
+ - tcltest 2.5.10
+ - Thread 3.0.3
+ - TDBC\* 1.1.12
 
 Release Tcl 9.0.2 arises from the check-in with tag `core-9-0-2`.
 
