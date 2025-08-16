@@ -239,10 +239,14 @@ TclOOInitModuleObjCmd(
 {
     Interp *iPtr = (Interp *)interp;
     if (iPtr->objectFoundation == NULL) {
-	/*
-	 * Build the core of the OO system.
-	 */
+	/* Not initialized so do it */
 
+	/*
+	 * Defining of oo::{configurable,singleton} as classes will fail
+	 * if the command of that name exists so delete their stubs.
+	 */
+	(void) Tcl_DeleteCommand(interp, "::oo::configurable");
+	(void) Tcl_DeleteCommand(interp, "::oo::singleton");
 	if (InitFoundation(interp) != TCL_OK) {
 	    return TCL_ERROR;
 	}
@@ -276,11 +280,15 @@ TclOOInit(
 {
     Tcl_CreateObjCommand(interp, "::oo::class",
 	    TclOOInitModuleObjCmd, INT2PTR(0), NULL);
+    Tcl_CreateObjCommand(interp, "::oo::configurable",
+	    TclOOInitModuleObjCmd, INT2PTR(0), NULL);
     Tcl_CreateObjCommand(interp, "::oo::define",
 	    TclOOInitModuleObjCmd, INT2PTR(0), NULL);
     Tcl_CreateObjCommand(interp, "::oo::objdefine",
 	    TclOOInitModuleObjCmd, INT2PTR(0), NULL);
     Tcl_CreateObjCommand(interp, "::oo::object",
+	    TclOOInitModuleObjCmd, INT2PTR(0), NULL);
+    Tcl_CreateObjCommand(interp, "::oo::singleton",
 	    TclOOInitModuleObjCmd, INT2PTR(0), NULL);
 
 
