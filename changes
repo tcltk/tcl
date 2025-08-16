@@ -9418,3 +9418,5 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 2025-08-12 (bug) [992f94] avoid misaligned pointers in macOS file attribute functions (chavez)
 
 - Released 8.6.17, Aug 15, 2025 - details at https://core.tcl-lang.org/tcl/ -
+
+- (to be) Released 8.6.17, Apr ??, 2026 - details at https://core.tcl-lang.org/tcl/ -
