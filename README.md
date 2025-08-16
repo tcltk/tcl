@@ -1,6 +1,6 @@
 # README:  Tcl
 
-This is the **Tcl 8.6.17** source distribution.
+This is the **Tcl 8.6.18** source distribution.
 
 You can get any source release of Tcl from [our distribution
 site](https://sourceforge.net/projects/tcl/files/Tcl/).
