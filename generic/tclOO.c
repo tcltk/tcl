@@ -51,6 +51,20 @@ static const struct {
     {NULL, NULL, 0}
 };
 
+static const char *
+initCmds[] = {
+    "_init",
+    "class",
+    "configurable",
+    "define",
+    "objdefine",
+    "object",
+    "singleton",
+    "InfoObject",
+    "InfoClass",
+    NULL
+};
+
 /*
  * What sort of size of things we like to allocate.
  */
@@ -232,26 +246,51 @@ RemoveObject(
  */
 static int
 TclOOInitModuleObjCmd(
-    TCL_UNUSED(void *),
+    void *clientData,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
 {
     Interp *iPtr = (Interp *)interp;
-    if (iPtr->objectFoundation == NULL) {
-	/* Not initialized so do it */
-
-	/*
-	 * Defining of oo::{configurable,singleton} as classes will fail
-	 * if the command of that name exists so delete their stubs.
+    
+    if (iPtr->objectFoundation != NULL) {
+	/* 
+	 * Shall be not initialized yet, so it looks like a mockup/injection,
+	 * try to update the command.
 	 */
-	(void) Tcl_DeleteCommand(interp, "::oo::configurable");
-	(void) Tcl_DeleteCommand(interp, "::oo::singleton");
-	if (InitFoundation(interp) != TCL_OK) {
-	    return TCL_ERROR;
+	Foundation *fPtr = (Foundation *) iPtr->objectFoundation;
+	const char *cmdName = (char *)clientData;
+
+	if (objc) {
+	    Tcl_Command cmd = Tcl_FindCommand(interp, cmdName, fPtr->ooNs, 0);
+	    Tcl_Command cmd2 = Tcl_FindCommand(interp, TclGetString(objv[0]),
+					fPtr->ooNs, 0);
+	    if (cmd && cmd2) {
+	    	Tcl_CmdInfo info;
+		Tcl_GetCommandInfoFromToken(cmd, &info);
+		Tcl_SetCommandInfoFromToken(cmd2, &info);
+		goto evalIt;
+	    }
 	}
 
+	/* We cannot reinitialize the command, so simply produce an error */
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    "unexpected already initialized foundation calling \"%s\" for \"%s\"",
+		objc ? TclGetString(objv[0]) : "", cmdName));
+	return TCL_ERROR;
     }
+
+    /*
+     * Defining of oo::{configurable,singleton} as classes will fail
+     * if the command of that name exists so delete their stubs.
+     */
+    (void) Tcl_DeleteCommand(interp, "::oo::configurable");
+    (void) Tcl_DeleteCommand(interp, "::oo::singleton");
+    if (InitFoundation(interp) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+evalIt:
     return Tcl_EvalObjv(interp, objc, objv, 0);
 }
 
@@ -278,22 +317,16 @@ int
 TclOOInit(
     Tcl_Interp *interp)		/* The interpreter to install into. */
 {
-    Tcl_CreateObjCommand(interp, "::oo::class",
-	    TclOOInitModuleObjCmd, INT2PTR(0), NULL);
-    Tcl_CreateObjCommand(interp, "::oo::configurable",
-	    TclOOInitModuleObjCmd, INT2PTR(0), NULL);
-    Tcl_CreateObjCommand(interp, "::oo::define",
-	    TclOOInitModuleObjCmd, INT2PTR(0), NULL);
-    Tcl_CreateObjCommand(interp, "::oo::objdefine",
-	    TclOOInitModuleObjCmd, INT2PTR(0), NULL);
-    Tcl_CreateObjCommand(interp, "::oo::object",
-	    TclOOInitModuleObjCmd, INT2PTR(0), NULL);
-    Tcl_CreateObjCommand(interp, "::oo::singleton",
-	    TclOOInitModuleObjCmd, INT2PTR(0), NULL);
-
-
+    Tcl_Namespace *ooNS;
+    const char **cmdNamePtr;
     Tcl_Command infoCmd;
     Tcl_Obj *mapDict;
+
+    ooNS = Tcl_CreateNamespace(interp, "::oo", NULL, NULL);
+    for (cmdNamePtr = initCmds; *cmdNamePtr; cmdNamePtr++) {
+	TclCreateObjCommandInNs(interp, *cmdNamePtr, ooNS,
+		TclOOInitModuleObjCmd, (void *)*cmdNamePtr, NULL);
+    }
 
     /*
      * Install into the [info] ensemble.
@@ -301,10 +334,6 @@ TclOOInit(
 
     infoCmd = Tcl_FindCommand(interp, "info", NULL, TCL_GLOBAL_ONLY);
     if (infoCmd) {
-	Tcl_CreateObjCommand(interp, "::oo::InfoObject",
-	    TclOOInitModuleObjCmd, INT2PTR(0), NULL);
-	Tcl_CreateObjCommand(interp, "::oo::InfoClass",
-	    TclOOInitModuleObjCmd, INT2PTR(0), NULL);
 	Tcl_GetEnsembleMappingDict(NULL, infoCmd, &mapDict);
 	TclDictPutString(NULL, mapDict, "object", "::oo::InfoObject");
 	TclDictPutString(NULL, mapDict, "class", "::oo::InfoClass");
@@ -318,16 +347,9 @@ TclOOInit(
     Tcl_SetVar2(interp, "::oo::patchlevel", NULL, TCLOO_PATCHLEVEL, 0);
     Tcl_SetVar2(interp, "::oo::version", NULL, TCLOO_VERSION, 0);
 
-#ifndef TCL_NO_DEPRECATED
-    Tcl_PkgProvideEx(interp, "TclOO", TCLOO_PATCHLEVEL,
-	    &tclOOStubs);
-#endif
-    Tcl_PkgProvideEx(interp, "tcl::oo", TCLOO_PATCHLEVEL,
-	    &tclOOStubs);
-
     if (Tcl_EvalEx(interp,
-	"package ifneeded tcl::oo " TCLOO_PATCHLEVEL " {};"
-	"package ifneeded TclOO " TCLOO_PATCHLEVEL " {};",
+	"package ifneeded tcl::oo " TCLOO_PATCHLEVEL " oo::_init;"
+	"package ifneeded TclOO " TCLOO_PATCHLEVEL " oo::_init;",
 	TCL_INDEX_NONE, 0) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -382,6 +404,15 @@ CreateCmdInNS(
     cmdPtr->compileProc = compileProc;
 }
 
+static int
+NoopCmd(
+    TCL_UNUSED(void *),
+    TCL_UNUSED(Tcl_Interp *),
+    TCL_UNUSED(int) /*objc*/,
+    TCL_UNUSED(Tcl_Obj *const *) /*objv*/)
+{
+    return TCL_OK;
+}
 /*
  * ----------------------------------------------------------------------
  *
@@ -398,17 +429,24 @@ static int
 InitFoundation(
     Tcl_Interp *interp)
 {
+    static Tcl_ThreadDataKey tsdKey;
+    ThreadLocalData *tsdPtr = (ThreadLocalData *)
+	    Tcl_GetThreadData(&tsdKey, sizeof(ThreadLocalData));
+    Foundation *fPtr;
+    Tcl_Namespace *define, *objdef;
+    Tcl_Obj *namePtr;
+    size_t i;
+
     if (((Interp *) interp)->objectFoundation) {
 	return TCL_OK;
     }
 
-    static Tcl_ThreadDataKey tsdKey;
-    ThreadLocalData *tsdPtr = (ThreadLocalData *)
-	    Tcl_GetThreadData(&tsdKey, sizeof(ThreadLocalData));
-    Foundation *fPtr = (Foundation *) Tcl_Alloc(sizeof(Foundation));
-    Tcl_Namespace *define, *objdef;
-    Tcl_Obj *namePtr;
-    size_t i;
+#ifndef TCL_NO_DEPRECATED
+    Tcl_PkgProvideEx(interp, "TclOO", TCLOO_PATCHLEVEL,
+	    &tclOOStubs);
+#endif
+    Tcl_PkgProvideEx(interp, "tcl::oo", TCLOO_PATCHLEVEL,
+	    &tclOOStubs);
 
     /*
      * Initialize the structure that holds the OO system core. This is
@@ -416,11 +454,13 @@ InitFoundation(
      * but the best we can do without hacking the core more.
      */
 
+    fPtr = (Foundation *) Tcl_Alloc(sizeof(Foundation));
     memset(fPtr, 0, sizeof(Foundation));
     ((Interp *) interp)->objectFoundation = fPtr;
     fPtr->interp = interp;
     fPtr->ooNs = Tcl_FindNamespace(interp, "::oo", NULL, 0);
     assert(fPtr->ooNs != NULL);
+    TclCreateObjCommandInNs(interp, "_init", fPtr->ooNs, NoopCmd, NULL, NULL);
     Tcl_Export(interp, fPtr->ooNs, "[a-z]*", 1);
     define = Tcl_CreateNamespace(interp, "::oo::define", fPtr, NULL);
     objdef = Tcl_CreateNamespace(interp, "::oo::objdefine", fPtr, NULL);
