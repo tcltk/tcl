@@ -1107,6 +1107,7 @@ Tcl_CreateInterp(void)
     iPtr->pendingObjDataPtr = NULL;
     iPtr->asyncReadyPtr = TclGetAsyncReadyPtr();
     iPtr->deferredCallbacks = NULL;
+    iPtr->objectFoundation = NULL;
 
     /*
      * Create the core commands. Do it here, rather than calling Tcl_CreateObjCommand,
