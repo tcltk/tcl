@@ -341,7 +341,7 @@ DoRenameFile(
 		&& (strncmp(srcPath, dstPath, strlen(srcPath)) != 0)) {
 	    dirPtr = TclOSopendir(dst);			/* INTL: Native. */
 	    if (dirPtr != NULL) {
-		while (1) {
+		while (true) {
 		    dirEntPtr = TclOSreaddir(dirPtr);	/* INTL: Native. */
 		    if (dirEntPtr == NULL) {
 			break;
@@ -574,7 +574,7 @@ TclUnixCopyFile(
 	blockSize = DEFAULT_COPY_BLOCK_SIZE;
     }
     buffer = (char *)Tcl_Alloc(blockSize);
-    while (1) {
+    while (true) {
 	nread = read(srcFd, buffer, blockSize);
 	if ((nread == -1) || (nread == 0)) {
 	    break;
@@ -1984,7 +1984,7 @@ TclpObjNormalizePath(
      */
 #endif
 
-    while (1) {
+    while (true) {
 	cur = *currentPathEndPosition;
 	if ((cur == '/') && (path != currentPathEndPosition)) {
 	    /*

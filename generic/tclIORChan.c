@@ -199,7 +199,6 @@ typedef enum {
 	(TCL_READABLE | TCL_WRITABLE)
 
 #define IMPLIES(a,b)	((!(a)) || (b))
-#define NEGIMPL(a,b)
 #define HAS(x,f)	((x) & FLAG(f))
 
 #if TCL_THREADS
@@ -1424,7 +1423,7 @@ ReflectOutput(
     Tcl_Preserve(rcPtr);
     Tcl_Preserve(rcPtr->interp);
 
-    bufObj = Tcl_NewByteArrayObj((unsigned char *) buf, toWrite);
+    bufObj = Tcl_NewByteArrayObj(UCHARP(buf), toWrite);
     Tcl_IncrRefCount(bufObj);
 
     if (InvokeTclMethod(rcPtr, METH_WRITE, bufObj, NULL, &resObj) != TCL_OK) {
@@ -3075,8 +3074,8 @@ ForwardProc(
     }
 
     case ForwardedOutput: {
-	Tcl_Obj *bufObj = Tcl_NewByteArrayObj((unsigned char *)
-		paramPtr->output.buf, paramPtr->output.toWrite);
+	Tcl_Obj *bufObj = Tcl_NewByteArrayObj(
+		UCHARP(paramPtr->output.buf), paramPtr->output.toWrite);
 	Tcl_IncrRefCount(bufObj);
 
 	Tcl_Preserve(rcPtr);

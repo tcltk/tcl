@@ -305,7 +305,7 @@ setargv(
 
 	inquote = false;
 	slashes = 0;
-	while (1) {
+	while (true) {
 	    copy = true;
 	    while (*p == '\\') {
 		slashes++;

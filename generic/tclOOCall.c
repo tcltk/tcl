@@ -726,7 +726,7 @@ AddClassMethodNames(
      * tail-recursion optimization usefully.
      */
 
-    while (1) {
+    while (true) {
 	Tcl_Obj *namePtr;
 	Method *mPtr;
 	int isNew;

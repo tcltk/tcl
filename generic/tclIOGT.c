@@ -166,12 +166,6 @@ struct ResultBuffer {
 #define FLUSH_DELAY	5
 
 /*
- * Convenience macro to make some casts easier to use.
- */
-
-#define UCHARP(x)	((unsigned char *) (x))
-
-/*
  * Definition of a structure used by all transformations generated here to
  * maintain their local state.
  */
@@ -1353,10 +1347,10 @@ ResultAdd(
 
 	if (r->allocated == 0) {
 	    r->allocated = toWrite + INCREMENT;
-	    r->buf = (unsigned char *)Tcl_Alloc(r->allocated);
+	    r->buf = UCHARP(Tcl_Alloc(r->allocated));
 	} else {
 	    r->allocated += toWrite + INCREMENT;
-	    r->buf = (unsigned char *)Tcl_Realloc(r->buf, r->allocated);
+	    r->buf = UCHARP(Tcl_Realloc(r->buf, r->allocated));
 	}
     }
 

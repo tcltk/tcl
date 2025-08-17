@@ -933,7 +933,7 @@ Tcl_DoOneEvent(
      */
 
     int result = 0;
-    while (1) {
+    while (true) {
 	/*
 	 * If idle events are the only things to service, skip the main part
 	 * of the loop and go directly to handle idle events (i.e. don't wait

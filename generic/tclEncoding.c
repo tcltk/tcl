@@ -1220,7 +1220,7 @@ Tcl_ExternalToUtfDStringEx(
     }
 
     Tcl_EncodingState state;
-    while (1) {
+    while (true) {
 	int srcChunkLen, srcChunkRead;
 	int dstChunkLen, dstChunkWrote, dstChunkChars;
 
@@ -1401,7 +1401,7 @@ Tcl_ExternalToUtf(
 	flags |= ENCODING_INPUT;
     }
     int result;
-    do {
+    while (true) {
 	Tcl_EncodingState savedState = *statePtr;
 
 	result = encodingPtr->toUtfProc(encodingPtr->clientData, src, srcLen,
@@ -1412,7 +1412,7 @@ Tcl_ExternalToUtf(
 	}
 	dstLen = Tcl_UtfAtIndex(dst, maxChars) - dst + (TCL_UTF_MAX - 1);
 	*statePtr = savedState;
-    } while (1);
+    }
     if (!noTerminate) {
 	/* ...and then append it */
 
@@ -1530,7 +1530,7 @@ Tcl_UtfToExternalDStringEx(
     flags &= ~TCL_ENCODING_END;
     flags |= TCL_ENCODING_START;
     Tcl_EncodingState state;
-    while (1) {
+    while (true) {
 	int srcChunkLen, srcChunkRead;
 	int dstChunkLen, dstChunkWrote, dstChunkChars;
 
@@ -1885,7 +1885,7 @@ LoadEncodingFile(
 
     // Read first character of first non-comment line
     int ch;
-    while (1) {
+    while (true) {
 	Tcl_DString ds;
 
 	Tcl_DStringInit(&ds);
@@ -2174,7 +2174,6 @@ LoadTableEncoding(
     for (TclDStringClear(&lineString);
 	    (len = Tcl_Gets(chan, &lineString)) != -1;
 	    TclDStringClear(&lineString)) {
-	const unsigned char *p;
 	int to, from;
 
 	/*
@@ -2189,7 +2188,7 @@ LoadTableEncoding(
 	 * Parse the line as a sequence of hex digits.
 	 */
 
-	p = (const unsigned char *) Tcl_DStringValue(&lineString);
+	const unsigned char *p = (unsigned char *) Tcl_DStringValue(&lineString);
 	to = (staticHex[p[0]] << 12) + (staticHex[p[1]] << 8)
 		+ (staticHex[p[2]] << 4) + staticHex[p[3]];
 	if (to == 0) {
@@ -2254,7 +2253,7 @@ LoadEscapeEncoding(
     final[0] = '\0';
     Tcl_DStringInit(&escapeData);
 
-    while (1) {
+    while (true) {
 	Tcl_DString lineString;
 	Tcl_DStringInit(&lineString);
 	if (Tcl_Gets(chan, &lineString) < 0) {

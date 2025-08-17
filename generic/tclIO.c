@@ -4695,7 +4695,7 @@ Tcl_GetsObj(
     inEofChar = statePtr->inEofChar;
 
     ResetFlag(statePtr, CHANNEL_BLOCKED);
-    while (1) {
+    while (true) {
 	if (dst >= dstEnd) {
 	    /*
 	     * In case of encoding errors, state gets flag
@@ -5097,7 +5097,7 @@ TclGetsObjBinary(
     eolChar = (statePtr->inputTranslation == TCL_TRANSLATE_LF) ? '\n' : '\r';
 
     ResetFlag(statePtr, CHANNEL_BLOCKED);
-    while (1) {
+    while (true) {
 	/*
 	 * Subtract the number of bytes that were removed from channel buffer
 	 * during last call.
@@ -5137,7 +5137,7 @@ TclGetsObjBinary(
 	    assert(!GotFlag(statePtr, CHANNEL_EOF));
 	}
 
-	dst = (unsigned char *) RemovePoint(bufPtr);
+	dst = UCHARP(RemovePoint(bufPtr));
 	dstEnd = dst + BytesLeft(bufPtr);
 
 	/*
@@ -6189,8 +6189,7 @@ ReadBytes(
     int srcLen = BytesLeft(bufPtr);
     int toRead = bytesToRead>srcLen || bytesToRead<0 ? srcLen : bytesToRead;
 
-    TclAppendBytesToByteArray(objPtr, (unsigned char *) RemovePoint(bufPtr),
-	    toRead);
+    TclAppendBytesToByteArray(objPtr, UCHARP(RemovePoint(bufPtr)), toRead);
     bufPtr->nextRemoved += toRead;
     return toRead;
 }
@@ -6303,7 +6302,7 @@ ReadChars(
      * of results.  This takes the shape of a loop.
      */
 
-    while (1) {
+    while (true) {
 	int dstDecoded, dstRead, dstWrote, srcRead, numChars, code;
 	int flags = statePtr->inputEncodingFlags | TCL_ENCODING_NO_TERMINATE;
 
@@ -9674,7 +9673,7 @@ MoveBytes(
 	return TCL_OK;
     }
 
-    while (1) {
+    while (true) {
 	if (TCL_ERROR == MBRead(csPtr)) {
 	    return TCL_ERROR;
 	}

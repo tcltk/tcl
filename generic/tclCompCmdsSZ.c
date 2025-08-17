@@ -865,7 +865,7 @@ TclCompileStringLenCmd(
 	PUSH_OBJ(		objLen);
     } else {
 	SetLineInformation(1);
-	CompileTokens(envPtr, tokenPtr, interp);
+	CompileTokens(tokenPtr);
 	OP(			STR_LEN);
     }
     TclDecrRefCount(objPtr);
@@ -2144,7 +2144,7 @@ IssueSwitchChainedTests(
 		    if (TclReToGlob(NULL, arm->valueToken->start,
 			    arm->valueToken->size, &ds, &exact, NULL) == TCL_OK) {
 			simple = true;
-			TclPushDString(envPtr, &ds);
+			TclPushDString(&ds);
 			Tcl_DStringFree(&ds);
 		    }
 		}
@@ -2984,7 +2984,7 @@ TclCompileTryCmd(
 		Tcl_Size len;
 		const char *varname = TclGetStringFromObj(objv[0], &len);
 
-		handlers[handlerIdx].resultVar = LocalScalar(varname, len, envPtr);
+		handlers[handlerIdx].resultVar = LocalScalar(varname, len);
 		if (handlers[handlerIdx].resultVar < 0) {
 		    Tcl_BounceRefCount(tmpObj);
 		    goto failedToCompile;
@@ -2996,7 +2996,7 @@ TclCompileTryCmd(
 		Tcl_Size len;
 		const char *varname = TclGetStringFromObj(objv[1], &len);
 
-		handlers[handlerIdx].optionVar = LocalScalar(varname, len, envPtr);
+		handlers[handlerIdx].optionVar = LocalScalar(varname, len);
 		if (handlers[handlerIdx].optionVar < 0) {
 		    Tcl_BounceRefCount(tmpObj);
 		    goto failedToCompile;
@@ -3129,8 +3129,8 @@ IssueTryClausesInstructions(
     Tcl_BytecodeLabel notCodeJumpSource, notECJumpSource, dontSpliceDuring;
     Tcl_BytecodeLabel *continuationJumps, *afterReturn0, *noError;
 
-    Tcl_LVTIndex resultVar = AnonymousLocal(envPtr);
-    Tcl_LVTIndex optionsVar = AnonymousLocal(envPtr);
+    Tcl_LVTIndex resultVar = AnonymousLocal();
+    Tcl_LVTIndex optionsVar = AnonymousLocal();
     if (resultVar < 0 || optionsVar < 0) {
 	return TCL_ERROR;
     }
@@ -3337,8 +3337,8 @@ IssueTryTraplessClausesInstructions(
     Tcl_BytecodeLabel afterBody = 0, pushReturnOptions = 0;
     Tcl_BytecodeLabel dontSpliceDuring, tableBase, haveOther;
 
-    Tcl_LVTIndex resultVar = AnonymousLocal(envPtr);
-    Tcl_LVTIndex optionsVar = AnonymousLocal(envPtr);
+    Tcl_LVTIndex resultVar = AnonymousLocal();
+    Tcl_LVTIndex optionsVar = AnonymousLocal();
     if (resultVar < 0 || optionsVar < 0) {
 	return TCL_ERROR;
     }
@@ -3525,8 +3525,8 @@ IssueTryClausesFinallyInstructions(
     Tcl_BytecodeLabel finalOK, dontSpliceDuring;
     Tcl_BytecodeLabel pushReturnOptions = 0, endCatch = 0, afterBody = 0;
 
-    Tcl_LVTIndex resultLocal = AnonymousLocal(envPtr);
-    Tcl_LVTIndex optionsLocal = AnonymousLocal(envPtr);
+    Tcl_LVTIndex resultLocal = AnonymousLocal();
+    Tcl_LVTIndex optionsLocal = AnonymousLocal();
     if (resultLocal < 0 || optionsLocal < 0) {
 	return TCL_ERROR;
     }
@@ -3819,8 +3819,8 @@ IssueTryTraplessClausesFinallyInstructions(
     Tcl_BytecodeLabel finalOK, dontSpliceDuring, tableBase, haveOther;
     Tcl_BytecodeLabel pushReturnOptions = 0, afterBody = 0;
 
-    Tcl_LVTIndex resultLocal = AnonymousLocal(envPtr);
-    Tcl_LVTIndex optionsLocal = AnonymousLocal(envPtr);
+    Tcl_LVTIndex resultLocal = AnonymousLocal();
+    Tcl_LVTIndex optionsLocal = AnonymousLocal();
     if (resultLocal < 0 || optionsLocal < 0) {
 	return TCL_ERROR;
     }
@@ -4815,7 +4815,7 @@ CompileComparisonOpCmd(
 
 	return TCL_ERROR;
     } else {
-	Tcl_LVTIndex tmpIndex = AnonymousLocal(envPtr);
+	Tcl_LVTIndex tmpIndex = AnonymousLocal();
 	Tcl_Token *tokenPtr = TokenAfter(parsePtr->tokenPtr);
 	PUSH_TOKEN(		tokenPtr, 1);
 	tokenPtr = TokenAfter(tokenPtr);

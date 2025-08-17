@@ -1488,8 +1488,8 @@ Tcl_OpenTcpClient(
      * Do the name lookups for the local and remote addresses.
      */
 
-    if (!TclCreateSocketAddress(interp, &addrlist, host, port, 0, &errorMsg)
-	    || !TclCreateSocketAddress(interp, &myaddrlist, myaddr, myport, 1,
+    if (!TclCreateSocketAddress(interp, &addrlist, host, port, false, &errorMsg)
+	    || !TclCreateSocketAddress(interp, &myaddrlist, myaddr, myport, true,
 		    &errorMsg)) {
 	if (addrlist != NULL) {
 	    freeaddrinfo(addrlist);
@@ -1681,7 +1681,7 @@ Tcl_OpenTcpServerEx(
 	goto error;
     }
 
-    if (!TclCreateSocketAddress(interp, &addrlist, myHost, port, 1,
+    if (!TclCreateSocketAddress(interp, &addrlist, myHost, port, true,
 	    &errorMsg)) {
 	my_errno = errno;
 	goto error;

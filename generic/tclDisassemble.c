@@ -107,7 +107,7 @@ GetLocationInformation(
 
     *linePtr = cfPtr->line[0];
     if (cfPtr->type == TCL_LOCATION_SOURCE) {
-	*fileObjPtr = cfPtr->data.eval.path;
+	*fileObjPtr = cfPtr->path;
     }
 }
 

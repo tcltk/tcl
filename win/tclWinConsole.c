@@ -102,8 +102,12 @@ typedef struct RingBuffer {
 
 #define RingBufferLength(ringPtr_) \
 	((ringPtr_)->length)
-#define RingBufferHasFreeSpace(ringPtr_) \
-	((ringPtr_)->length < (ringPtr_)->capacity)
+static inline bool
+RingBufferHasFreeSpace(
+    const RingBuffer *ringPtr)
+{
+    return ringPtr->length < ringPtr->capacity;
+}
 #define RINGBUFFER_ASSERT(ringPtr_) \
 	assert(RingBufferCheck(ringPtr_))
 
@@ -1110,7 +1114,7 @@ ConsoleInputProc(
     AcquireSRWLockExclusive(&handleInfoPtr->lock);
     ReleaseSRWLockShared(&gConsoleLock); /* AFTER acquiring handleInfoPtr->lock */
 
-    while (1) {
+    while (true) {
 	numRead = RingBufferOut(&handleInfoPtr->buffer, bufPtr, bufSize, 1);
 	/*
 	 * Note: even if channel is closed or has an error, as long there is
@@ -1266,7 +1270,7 @@ ConsoleOutputProc(
     *errorCode = 0;
     Tcl_Size numWritten = 0;
     /* Keep looping until all written. Break out for async and errors */
-    while (1) {
+    while (true) {
 	/* Check for error and closing on every loop. */
 	if (handleInfoPtr->lastError != 0) {
 	    Tcl_WinConvertError(handleInfoPtr->lastError);
@@ -1636,7 +1640,7 @@ ConsoleReaderThread(
     /* This thread is holding a reference so pointer is safe */
     AcquireSRWLockExclusive(&handleInfoPtr->lock);
 
-    while (1) {
+    while (true) {
 	if (handleInfoPtr->numRefs == 1) {
 	    /*
 	     * Sole reference. That's this thread. Exit since no clients
@@ -1836,7 +1840,7 @@ ConsoleWriterThread(
 
     /* This thread is holding a reference so pointer is safe */
     AcquireSRWLockExclusive(&handleInfoPtr->lock);
-    while (1) {
+    while (true) {
 	/* handleInfoPtr->lock must be held on entry to loop */
 
 	/*

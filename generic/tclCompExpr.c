@@ -645,7 +645,7 @@ ParseExpr(
      * completed the parse and we return to the caller.
      */
 
-    while (1) {
+    while (true) {
 	OpNode *nodePtr;	/* Points to the OpNode we may fill this pass
 				 * through the loop. */
 	unsigned char lexeme;	/* The lexeme we parse this iteration. */
@@ -952,7 +952,7 @@ ParseExpr(
 
 		end = start + numBytes;
 		start++;
-		while (1) {
+		while (true) {
 		    code = Tcl_ParseCommand(interp, start, end - start, 1,
 			    nestedPtr);
 		    if (code != TCL_OK) {
@@ -1189,7 +1189,7 @@ ParseExpr(
 	     */
 
 	    OpNode *incompletePtr;
-	    while (1) {
+	    while (true) {
 		incompletePtr = nodes + incomplete;
 
 		if (incompletePtr->precedence < precedence) {
@@ -1510,7 +1510,7 @@ ConvertTreeToTokens(
     OpNode *nodePtr = nodes;
     int next = nodePtr->right;
 
-    while (1) {
+    while (true) {
 	Tcl_Size scanned, parentIdx;
 	unsigned char lexeme;
 
@@ -2317,7 +2317,7 @@ CompileExprTree(
     JumpList *jumpPtr = NULL;
     bool convert = true;
 
-    while (1) {
+    while (true) {
 	int next;
 	JumpList *newJump;
 
@@ -2420,7 +2420,7 @@ CompileExprTree(
 		    convert = true;
 		}
 		Tcl_Size target = jumpPtr->jump.codeOffset + 5;
-		TclFixupForwardJumpToHere(envPtr, &jumpPtr->jump);
+		FixupForwardJumpToHere(&jumpPtr->jump);
 		{
 		    JumpList *freePtr = jumpPtr;
 		    jumpPtr = jumpPtr->next;
@@ -2445,7 +2445,7 @@ CompileExprTree(
 		FWDJUMP(	JUMP, pc2);
 		STKDELTA(-1);
 		FWDLABEL(pc1);
-		TclFixupForwardJumpToHere(envPtr, &jumpPtr->jump);
+		FixupForwardJumpToHere(&jumpPtr->jump);
 		PUSH_STRING(	(nodePtr->lexeme == AND) ? "0" : "1");
 		FWDLABEL(pc2);
 		convert = false;
@@ -2516,7 +2516,7 @@ CompileExprTree(
 	    break;
 	}
 	case OT_TOKENS:
-	    CompileTokens(envPtr, tokenPtr, interp);
+	    CompileTokens(tokenPtr);
 	    tokenPtr += tokenPtr->numComponents + 1;
 	    break;
 	default:
@@ -2648,7 +2648,7 @@ TclSortingOpCmd(
     int code = TCL_OK;
 
     if (objc < 3) {
-	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(1));
+	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(true));
     } else {
 	TclOpCmdClientData *occdPtr = (TclOpCmdClientData *)clientData;
 	Tcl_Obj **litObjv = (Tcl_Obj **)TclStackAlloc(interp,

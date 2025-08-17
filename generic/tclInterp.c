@@ -1380,7 +1380,7 @@ TclPreventAliasLoop(
 
     aliasPtr = (Alias *) cmdPtr->objClientData;
     nextAliasPtr = aliasPtr;
-    while (1) {
+    while (true) {
 	Tcl_Obj *cmdNamePtr;
 
 	/*
@@ -1532,7 +1532,7 @@ AliasCreate(
      */
 
     childPtr = &INTERP_INFO(childInterp)->child;
-    while (1) {
+    while (true) {
 	Tcl_Obj *newToken;
 	const char *string;
 
@@ -1818,7 +1818,7 @@ TclAliasObjCmd(
     Tcl_Size prefc, cmdc;
     Tcl_Obj **prefv, **cmdv;
     Tcl_Obj *cmdArr[ALIAS_CMDV_PREALLOC];
-    int isRootEnsemble;
+    bool isRootEnsemble;
 
     /*
      * Append the arguments to the command prefix and invoke the command in
@@ -1908,7 +1908,7 @@ TclLocalAliasObjCmd(
     Tcl_Size prefc, cmdc;
     Tcl_Obj **prefv, **cmdv;
     Tcl_Obj *cmdArr[ALIAS_CMDV_PREALLOC];
-    int isRootEnsemble;
+    bool isRootEnsemble;
 
     /*
      * Append the arguments to the command prefix and invoke the command in

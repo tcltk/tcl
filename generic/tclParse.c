@@ -262,7 +262,7 @@ Tcl_ParseCommand(
     parsePtr->commandStart = src;
     type = CHAR_TYPE(*src);
     scanned = 1;	/* Can't have missing whitepsace before first word. */
-    while (1) {
+    while (true) {
 	bool expandWord = false;
 
 	/* Are we at command termination? */
@@ -616,6 +616,10 @@ TclIsBareword(
  * Side effects:
  *	None.
  *
+ * Notes:
+ *	incompletePtr should be a bool*, but that would require a change to
+ *	the public Tcl_Parse structure, so we don't.
+ *
  *----------------------------------------------------------------------
  */
 
@@ -631,7 +635,7 @@ ParseWhiteSpace(
     char type = TYPE_NORMAL;
     const char *p = src;
 
-    while (1) {
+    while (true) {
 	while (numBytes && ((type = CHAR_TYPE(*p)) & TYPE_SPACE)) {
 	    numBytes--;
 	    p++;
@@ -1052,9 +1056,9 @@ ParseTokens(
 {
     char type;
     Tcl_Size originalTokens;
-    int noSubstCmds = !(flags & TCL_SUBST_COMMANDS);
-    int noSubstVars = !(flags & TCL_SUBST_VARIABLES);
-    int noSubstBS = !(flags & TCL_SUBST_BACKSLASHES);
+    bool noSubstCmds = !(flags & TCL_SUBST_COMMANDS);
+    bool noSubstVars = !(flags & TCL_SUBST_VARIABLES);
+    bool noSubstBS = !(flags & TCL_SUBST_BACKSLASHES);
     Tcl_Token *tokenPtr;
 
     /*
@@ -1129,7 +1133,7 @@ ParseTokens(
 	    src++;
 	    numBytes--;
 	    nestedPtr = (Tcl_Parse *)TclStackAlloc(parsePtr->interp, sizeof(Tcl_Parse));
-	    while (1) {
+	    while (true) {
 		const char *curEnd;
 
 		if (Tcl_ParseCommand(parsePtr->interp, src, numBytes, 1,
@@ -1539,8 +1543,6 @@ Tcl_ParseVar(
 				 * character just after last one in the
 				 * variable specifier. */
 {
-    Tcl_Obj *objPtr;
-    int code;
     Tcl_Parse *parsePtr = (Tcl_Parse *)TclStackAlloc(interp, sizeof(Tcl_Parse));
 
     if (Tcl_ParseVarName(interp, start, TCL_INDEX_NONE, parsePtr, 0) != TCL_OK) {
@@ -1560,14 +1562,14 @@ Tcl_ParseVar(
 	return "$";
     }
 
-    code = TclSubstTokens(interp, parsePtr->tokenPtr, parsePtr->numTokens,
+    int code = TclSubstTokens(interp, parsePtr->tokenPtr, parsePtr->numTokens,
 	    NULL, 1, NULL, NULL);
     Tcl_FreeParse(parsePtr);
     TclStackFree(interp, parsePtr);
     if (code != TCL_OK) {
 	return NULL;
     }
-    objPtr = Tcl_GetObjResult(interp);
+    Tcl_Obj *objPtr = Tcl_GetObjResult(interp);
 
     /*
      * At this point we should have an object containing the value of a
@@ -1655,7 +1657,7 @@ Tcl_ParseBraces(
     tokenPtr->start = src+1;
     tokenPtr->numComponents = 0;
     level = 1;
-    while (1) {
+    while (true) {
 	while (++src, --numBytes) {
 	    if (CHAR_TYPE(*src) != TYPE_NORMAL) {
 		break;
@@ -2097,7 +2099,7 @@ TclSubstTokens(
     Tcl_Size *tokensLeftPtr,	/* If not NULL, points to memory where an
 				 * integer representing the number of tokens
 				 * left to be substituted will be written */
-    int line,		/* The line the script starts on. */
+    int line,			/* The line the script starts on. */
     Tcl_Size *clNextOuter,	/* Information about an outer context for */
     const char *outerScript)	/* continuation line data. This is set by
 				 * EvalEx() to properly handle [...]-nested
@@ -2123,7 +2125,7 @@ TclSubstTokens(
     Tcl_Size maxNumCL, numCL, adjust;
     Tcl_Size *clPosition = NULL;
     Interp *iPtr = (Interp *) interp;
-    int inFile = iPtr->evalFlags & TCL_EVAL_FILE;
+    bool inFile = iPtr->evalFlags & TCL_EVAL_FILE;
 
     /*
      * Each pass through this loop will substitute one token, and its

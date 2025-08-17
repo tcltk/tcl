@@ -2795,7 +2795,7 @@ WaitForRead(
 {
     HANDLE handle = ((WinFile *) infoPtr->readFile)->handle;
 
-    while (1) {
+    while (true) {
 	/*
 	 * Synchronize with the reader thread.
 	 */

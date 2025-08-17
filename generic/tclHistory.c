@@ -123,8 +123,8 @@ Tcl_RecordAndEvalObj(
     int result;
     bool call = true;
     Tcl_CmdInfo info;
-    HistoryObjs *histObjsPtr =
-	    (HistoryObjs *)Tcl_GetAssocData(interp, HISTORY_OBJS_KEY, NULL);
+    HistoryObjs *histObjsPtr = (HistoryObjs *)
+	    Tcl_GetAssocData(interp, HISTORY_OBJS_KEY, NULL);
 
     /*
      * Create the references to the [::history add] command if necessary.

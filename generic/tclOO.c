@@ -689,7 +689,7 @@ AllocObject(
 	goto configNamespace;
     }
 
-    while (1) {
+    while (true) {
 	char objName[10 + TCL_INTEGER_SPACE];
 
 	snprintf(objName, sizeof(objName), "::oo::Obj%" TCL_Z_MODIFIER "u",

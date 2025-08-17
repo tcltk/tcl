@@ -240,18 +240,18 @@ Tcl_ProcObjCmd(
 	    /*
 	     * Retrieve source information from the bytecode, if possible. If
 	     * the information is retrieved successfully, context.type will be
-	     * TCL_LOCATION_SOURCE and the reference held by
-	     * context.data.eval.path will be counted.
+	     * TCL_LOCATION_SOURCE and the reference held by context.path will
+	     * be counted.
 	     */
 
 	    TclGetSrcInfoForPc(contextPtr);
 	} else if (contextPtr->type == TCL_LOCATION_SOURCE) {
 	    /*
 	     * The copy into 'context' up above has created another reference
-	     * to 'context.data.eval.path'; account for it.
+	     * to 'context.path'; account for it.
 	     */
 
-	    Tcl_IncrRefCount(contextPtr->data.eval.path);
+	    Tcl_IncrRefCount(contextPtr->path);
 	}
 
 	if (contextPtr->type == TCL_LOCATION_SOURCE) {
@@ -274,8 +274,8 @@ Tcl_ProcObjCmd(
 		cfPtr->framePtr = NULL;
 		cfPtr->nextPtr = NULL;
 
-		cfPtr->data.eval.path = contextPtr->data.eval.path;
-		Tcl_IncrRefCount(cfPtr->data.eval.path);
+		cfPtr->path = contextPtr->path;
+		Tcl_IncrRefCount(cfPtr->path);
 
 		cfPtr->cmd = NULL;
 		cfPtr->len = 0;
@@ -293,8 +293,8 @@ Tcl_ProcObjCmd(
 		    CmdFrame *cfOldPtr = (CmdFrame *)Tcl_GetHashValue(hePtr);
 
 		    if (cfOldPtr->type == TCL_LOCATION_SOURCE) {
-			Tcl_DecrRefCount(cfOldPtr->data.eval.path);
-			cfOldPtr->data.eval.path = NULL;
+			Tcl_DecrRefCount(cfOldPtr->path);
+			cfOldPtr->path = NULL;
 		    }
 		    Tcl_Free(cfOldPtr->line);
 		    cfOldPtr->line = NULL;
@@ -308,8 +308,8 @@ Tcl_ProcObjCmd(
 	     * that it's holding to the path name.
 	     */
 
-	    Tcl_DecrRefCount(contextPtr->data.eval.path);
-	    contextPtr->data.eval.path = NULL;
+	    Tcl_DecrRefCount(contextPtr->path);
+	    contextPtr->path = NULL;
 	}
 	TclStackFree(interp, contextPtr);
     }
@@ -2189,8 +2189,8 @@ TclProcCleanupProc(
     CmdFrame *cfPtr = (CmdFrame *)Tcl_GetHashValue(hePtr);
     if (cfPtr) {
 	if (cfPtr->type == TCL_LOCATION_SOURCE) {
-	    Tcl_DecrRefCount(cfPtr->data.eval.path);
-	    cfPtr->data.eval.path = NULL;
+	    Tcl_DecrRefCount(cfPtr->path);
+	    cfPtr->path = NULL;
 	}
 	Tcl_Free(cfPtr->line);
 	cfPtr->line = NULL;
@@ -2511,7 +2511,7 @@ SetLambdaFromAny(
 	    /*
 	     * Retrieve the source context from the bytecode. This call
 	     * accounts for the reference to the source file, if any, held in
-	     * 'context.data.eval.path'.
+	     * 'context.path'.
 	     */
 
 	    TclGetSrcInfoForPc(contextPtr);
@@ -2521,7 +2521,7 @@ SetLambdaFromAny(
 	     * created 'context' above. Account for the reference.
 	     */
 
-	    Tcl_IncrRefCount(contextPtr->data.eval.path);
+	    Tcl_IncrRefCount(contextPtr->path);
 
 	}
 
@@ -2551,8 +2551,8 @@ SetLambdaFromAny(
 		cfPtr->framePtr = NULL;
 		cfPtr->nextPtr = NULL;
 
-		cfPtr->data.eval.path = contextPtr->data.eval.path;
-		Tcl_IncrRefCount(cfPtr->data.eval.path);
+		cfPtr->path = contextPtr->path;
+		Tcl_IncrRefCount(cfPtr->path);
 
 		cfPtr->cmd = NULL;
 		cfPtr->len = 0;
@@ -2563,7 +2563,7 @@ SetLambdaFromAny(
 	     * it's holding to the source file path
 	     */
 
-	    Tcl_DecrRefCount(contextPtr->data.eval.path);
+	    Tcl_DecrRefCount(contextPtr->path);
 	}
 	TclStackFree(interp, contextPtr);
     }

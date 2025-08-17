@@ -75,8 +75,8 @@ FileForRedirect(
 				 * mode for channel. */
     int *skipPtr,		/* Filled with 1 if redirection target was in
 				 * spec, 2 if it was in nextArg. */
-    bool *closePtr,		/* Filled with one if the caller should close
-				 * the file when done with it, zero
+    bool *closePtr,		/* Filled with true if the caller should close
+				 * the file when done with it, false
 				 * otherwise. */
     bool *releasePtr)
 {
@@ -813,11 +813,6 @@ TclCreatePipeline(
     curInFile = inputFile;
 
     for (Tcl_Size i = 0; i < argc; i = lastArg + 1) {
-	int result;
-	bool joinThisError;
-	Tcl_Pid pid;
-	const char *oldName;
-
 	/*
 	 * Convert the program name into native form.
 	 */
@@ -830,7 +825,7 @@ TclCreatePipeline(
 	 * Find the end of the current segment of the pipeline.
 	 */
 
-	joinThisError = false;
+	bool joinThisError = false;
 	for (lastArg = i; lastArg < argc; lastArg++) {
 	    if (argv[lastArg][0] != '|') {
 		continue;
@@ -872,9 +867,10 @@ TclCreatePipeline(
 	 * argv to be modified.
 	 */
 
-	oldName = argv[i];
+	const char *oldName = argv[i];
 	argv[i] = Tcl_DStringValue(&execBuffer);
-	result = TclpCreateProcess(interp, lastArg - i, argv + i,
+	Tcl_Pid pid;
+	int result = TclpCreateProcess(interp, lastArg - i, argv + i,
 		curInFile, curOutFile, curErrFile, &pid);
 	argv[i] = oldName;
 	if (result != TCL_OK) {

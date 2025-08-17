@@ -50,7 +50,7 @@ Tcl_Sleep(
 	after.usec -= 1000000;
 	after.sec += 1;
     }
-    while (1) {
+    while (true) {
 	/*
 	 * TIP #233: Scale from virtual time to real-time for select.
 	 */

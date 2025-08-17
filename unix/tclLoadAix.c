@@ -393,8 +393,13 @@ readExports(
     ExportPtr ep;
     const char *errMsg;
 
-#define Error(msg) do{errMsg=(msg);goto error;}while(0)
-#define SysErr() Error(strerror(errno))
+#define Error(msg) \
+    do {								\
+	errMsg = (msg);							\
+	goto error;							\
+    } while (0)
+#define SysErr() \
+    Error(strerror(errno))
 
     ldp = ldopen(mp->name, ldp);
     if (ldp == NULL) {
@@ -411,7 +416,7 @@ readExports(
 	 * Search for the loaded module using L_GETINFO.
 	 */
 
-	while (1) {
+	while (true) {
 	    size += 4 * 1024;
 	    buf = malloc(size);
 	    if (buf == NULL) {

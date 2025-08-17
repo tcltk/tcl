@@ -1239,7 +1239,7 @@ TclOOSelfObjCmd(
     case SELF_CALL:
 	Tcl_Obj *result[] = {
 	    TclOORenderCallChain(interp, contextPtr->callPtr),
-	    Tcl_NewWideIntObj(contextPtr->index)
+	    Tcl_NewIndexObj(contextPtr->index)
 	};
 	Tcl_SetObjResult(interp, Tcl_NewListObj(2, result));
 	return TCL_OK;

@@ -314,7 +314,7 @@ Tcl_RegexpObjCmd(
      * loop when the starting offset is past the end of the string.
      */
 
-    while (1) {
+    while (true) {
 	/*
 	 * Pass either 0 or TCL_REG_NOTBOL in the eflags. Passing
 	 * TCL_REG_NOTBOL indicates that the character at offset should not be
@@ -406,8 +406,8 @@ Tcl_RegexpObjCmd(
 		}
 
 		Tcl_Obj *objs[] = {
-		    Tcl_NewWideIntObj(start),
-		    Tcl_NewWideIntObj(end)
+		    Tcl_NewIndexObj(start),
+		    Tcl_NewIndexObj(end)
 		};
 		newPtr = Tcl_NewListObj(2, objs);
 	    } else {
@@ -1915,8 +1915,8 @@ StringIsCmd(
 
   str_is_done:
     if ((result == 0) && (failVarObj != NULL)) {
-	TclNewIndexObj(objPtr, failat);
-	if (Tcl_ObjSetVar2(interp, failVarObj, NULL, objPtr, TCL_LEAVE_ERR_MSG) == NULL) {
+	if (Tcl_ObjSetVar2(interp, failVarObj, NULL, Tcl_NewIndexObj(failat),
+		TCL_LEAVE_ERR_MSG) == NULL) {
 	    return TCL_ERROR;
 	}
     }
@@ -2544,9 +2544,7 @@ StringStartCmd(
 	    cur += 1;
 	}
     }
-    Tcl_Obj *obj;
-    TclNewIndexObj(obj, cur);
-    Tcl_SetObjResult(interp, obj);
+    Tcl_SetObjResult(interp, Tcl_NewIndexObj(cur));
     return TCL_OK;
 }
 
@@ -2604,9 +2602,7 @@ StringEndCmd(
     } else {
 	cur = length;
     }
-    Tcl_Obj *obj;
-    TclNewIndexObj(obj, cur);
-    Tcl_SetObjResult(interp, obj);
+    Tcl_SetObjResult(interp, Tcl_NewIndexObj(cur));
     return TCL_OK;
 }
 
@@ -3248,30 +3244,30 @@ TclInitStringCmd(
     Tcl_Interp *interp)		/* Current interpreter. */
 {
     static const EnsembleImplMap stringImplMap[] = {
-	{"cat",		StringCatCmd,	TclCompileStringCatCmd, NULL, NULL, 0},
-	{"compare",	StringCmpCmd,	TclCompileStringCmpCmd, NULL, NULL, 0},
-	{"equal",	StringEqualCmd,	TclCompileStringEqualCmd, NULL, NULL, 0},
-	{"first",	StringFirstCmd,	TclCompileStringFirstCmd, NULL, NULL, 0},
-	{"index",	StringIndexCmd,	TclCompileStringIndexCmd, NULL, NULL, 0},
-	{"insert",	StringInsertCmd, TclCompileStringInsertCmd, NULL, NULL, 0},
-	{"is",		StringIsCmd,	TclCompileStringIsCmd, NULL, NULL, 0},
-	{"last",	StringLastCmd,	TclCompileStringLastCmd, NULL, NULL, 0},
-	{"length",	StringLenCmd,	TclCompileStringLenCmd, NULL, NULL, 0},
-	{"map",		StringMapCmd,	TclCompileStringMapCmd, NULL, NULL, 0},
-	{"match",	StringMatchCmd,	TclCompileStringMatchCmd, NULL, NULL, 0},
-	{"range",	StringRangeCmd,	TclCompileStringRangeCmd, NULL, NULL, 0},
-	{"repeat",	StringReptCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
-	{"replace",	StringRplcCmd,	TclCompileStringReplaceCmd, NULL, NULL, 0},
-	{"reverse",	StringRevCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
-	{"tolower",	StringLowerCmd,	TclCompileStringToLowerCmd, NULL, NULL, 0},
-	{"toupper",	StringUpperCmd,	TclCompileStringToUpperCmd, NULL, NULL, 0},
-	{"totitle",	StringTitleCmd,	TclCompileStringToTitleCmd, NULL, NULL, 0},
-	{"trim",	StringTrimCmd,	TclCompileStringTrimCmd, NULL, NULL, 0},
-	{"trimleft",	StringTrimLCmd,	TclCompileStringTrimLCmd, NULL, NULL, 0},
-	{"trimright",	StringTrimRCmd,	TclCompileStringTrimRCmd, NULL, NULL, 0},
-	{"wordend",	StringEndCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
-	{"wordstart",	StringStartCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
-	{NULL, NULL, NULL, NULL, NULL, 0}
+	{"cat",		StringCatCmd,	TclCompileStringCatCmd, NULL, NULL, false},
+	{"compare",	StringCmpCmd,	TclCompileStringCmpCmd, NULL, NULL, false},
+	{"equal",	StringEqualCmd,	TclCompileStringEqualCmd, NULL, NULL, false},
+	{"first",	StringFirstCmd,	TclCompileStringFirstCmd, NULL, NULL, false},
+	{"index",	StringIndexCmd,	TclCompileStringIndexCmd, NULL, NULL, false},
+	{"insert",	StringInsertCmd, TclCompileStringInsertCmd, NULL, NULL, false},
+	{"is",		StringIsCmd,	TclCompileStringIsCmd, NULL, NULL, false},
+	{"last",	StringLastCmd,	TclCompileStringLastCmd, NULL, NULL, false},
+	{"length",	StringLenCmd,	TclCompileStringLenCmd, NULL, NULL, false},
+	{"map",		StringMapCmd,	TclCompileStringMapCmd, NULL, NULL, false},
+	{"match",	StringMatchCmd,	TclCompileStringMatchCmd, NULL, NULL, false},
+	{"range",	StringRangeCmd,	TclCompileStringRangeCmd, NULL, NULL, false},
+	{"repeat",	StringReptCmd,	TclCompileBasic2ArgCmd, NULL, NULL, false},
+	{"replace",	StringRplcCmd,	TclCompileStringReplaceCmd, NULL, NULL, false},
+	{"reverse",	StringRevCmd,	TclCompileBasic1ArgCmd, NULL, NULL, false},
+	{"tolower",	StringLowerCmd,	TclCompileStringToLowerCmd, NULL, NULL, false},
+	{"toupper",	StringUpperCmd,	TclCompileStringToUpperCmd, NULL, NULL, false},
+	{"totitle",	StringTitleCmd,	TclCompileStringToTitleCmd, NULL, NULL, false},
+	{"trim",	StringTrimCmd,	TclCompileStringTrimCmd, NULL, NULL, false},
+	{"trimleft",	StringTrimLCmd,	TclCompileStringTrimLCmd, NULL, NULL, false},
+	{"trimright",	StringTrimRCmd,	TclCompileStringTrimRCmd, NULL, NULL, false},
+	{"wordend",	StringEndCmd,	TclCompileBasic2ArgCmd, NULL, NULL, false},
+	{"wordstart",	StringStartCmd,	TclCompileBasic2ArgCmd, NULL, NULL, false},
+	{NULL, NULL, NULL, NULL, NULL, false}
     };
 
     return TclMakeEnsemble(interp, "string", stringImplMap);
@@ -3718,8 +3714,8 @@ TclNRSwitchObjCmd(
 	    if (indexVarObj != NULL) {
 		int have = info.matches[j].end > 0;
 		Tcl_Obj *rangeObjAry[] = {
-		    Tcl_NewWideIntObj(have ? info.matches[j].start : -1),
-		    Tcl_NewWideIntObj(have ? info.matches[j].end-1 : -1)
+		    Tcl_NewIndexObj(have ? info.matches[j].start : -1),
+		    Tcl_NewIndexObj(have ? info.matches[j].end-1 : -1)
 		};
 
 		/*
@@ -3799,8 +3795,8 @@ TclNRSwitchObjCmd(
 
 	if (ctxPtr->type == TCL_LOCATION_BC) {
 	    /*
-	     * Type BC => ctxPtr->data.eval.path    is not used.
-	     *		  ctxPtr->data.tebc.codePtr is used instead.
+	     * Type BC => ctxPtr->path    is not used.
+	     *		  ctxPtr->codePtr is used instead.
 	     */
 
 	    TclGetSrcInfoForPc(ctxPtr);
@@ -3884,7 +3880,7 @@ SwitchPostProc(
 	     * Death of SrcInfo reference.
 	     */
 
-	    Tcl_DecrRefCount(ctxPtr->data.eval.path);
+	    Tcl_DecrRefCount(ctxPtr->path);
 	}
     }
 
@@ -4342,7 +4338,7 @@ Tcl_TimeRateObjCmd(
      */
 
     if (maxcnt > 0) {
-	while (1) {
+	while (true) {
 	    /*
 	     * Evaluate a single iteration.
 	     */

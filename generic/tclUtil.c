@@ -2141,7 +2141,7 @@ Tcl_StringCaseMatch(
     Tcl_Size charLen;
     int p, ch1 = 0, ch2 = 0;
 
-    while (1) {
+    while (true) {
 	p = *pattern;
 
 	/*
@@ -2189,7 +2189,7 @@ Tcl_StringCaseMatch(
 		}
 	    }
 
-	    while (1) {
+	    while (true) {
 		/*
 		 * Optimization for matching - cruise through the string
 		 * quickly if the next char in the pattern isn't a special
@@ -2262,7 +2262,7 @@ Tcl_StringCaseMatch(
 		    ch1 = Tcl_UniCharToLower(ch1);
 		}
 	    }
-	    while (1) {
+	    while (true) {
 		if ((*pattern == ']') || (*pattern == '\0')) {
 		    return false;
 		}
@@ -2382,7 +2382,7 @@ TclByteArrayMatch(
     stringEnd = string + strLen;
     patternEnd = pattern + ptnLen;
 
-    while (1) {
+    while (true) {
 	/*
 	 * See if we're at the end of both the pattern and the string. If so,
 	 * we succeeded. If we're at the end of the pattern but not at the end
@@ -2417,7 +2417,7 @@ TclByteArrayMatch(
 		return true;
 	    }
 	    p = *pattern;
-	    while (1) {
+	    while (true) {
 		/*
 		 * Optimization for matching - cruise through the string
 		 * quickly if the next char in the pattern isn't a special
@@ -2463,7 +2463,7 @@ TclByteArrayMatch(
 	    pattern++;
 	    ch1 = *string;
 	    string++;
-	    while (1) {
+	    while (true) {
 		if ((*pattern == ']') || (pattern == patternEnd)) {
 		    return false;
 		}

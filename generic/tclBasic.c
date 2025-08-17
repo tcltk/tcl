@@ -764,13 +764,13 @@ BuildInfoObjCmd2(
 		    buf[q - p] = '\0';
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, TCL_INDEX_NONE));
 		} else {
-		    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(1));
+		    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(true));
 		}
 		return TCL_OK;
 	    }
 	}
     }
-    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(0));
+    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(false));
     return TCL_OK;
 }
 
@@ -2043,7 +2043,7 @@ DeleteInterpProc(
 	procPtr->iPtr = NULL;
 	if (cfPtr) {
 	    if (cfPtr->type == TCL_LOCATION_SOURCE) {
-		Tcl_DecrRefCount(cfPtr->data.eval.path);
+		Tcl_DecrRefCount(cfPtr->path);
 	    }
 	    Tcl_Free(cfPtr->line);
 	    Tcl_Free(cfPtr);
@@ -2512,7 +2512,7 @@ Tcl_CreateCommand(
     Namespace *nsPtr;
     Tcl_HashEntry *hPtr;
     const char *tail;
-    while (1) {
+    while (true) {
 	/*
 	 * Determine where the command should reside. If its name contains
 	 * namespace qualifiers, we put it in the specified namespace;
@@ -2810,7 +2810,7 @@ TclCreateObjCommandInNs(
      * one command and that didn't finish the job.
      */
 
-    while (1) {
+    while (true) {
 	hPtr = Tcl_CreateHashEntry(&nsPtr->cmdTable, cmdName, &isNew);
 
 	if (isNew || deleted) {
@@ -5185,18 +5185,18 @@ TclEvalEx(
 		code = TCL_ERROR;
 		goto error;
 	    }
-	    eeFramePtr->data.eval.path = norm;
+	    eeFramePtr->path = norm;
 	} else {
-	    TclNewLiteralStringObj(eeFramePtr->data.eval.path, "");
+	    TclNewLiteralStringObj(eeFramePtr->path, "");
 	}
-	Tcl_IncrRefCount(eeFramePtr->data.eval.path);
+	Tcl_IncrRefCount(eeFramePtr->path);
     } else {
 	/*
 	 * Set up for plain eval.
 	 */
 
 	eeFramePtr->type = TCL_LOCATION_EVAL;
-	eeFramePtr->data.eval.path = NULL;
+	eeFramePtr->path = NULL;
     }
 
     iPtr->evalFlags = 0;
@@ -5509,7 +5509,7 @@ TclEvalEx(
 
     iPtr->cmdFramePtr = iPtr->cmdFramePtr->nextPtr;
     if (eeFramePtr->type == TCL_LOCATION_SOURCE) {
-	Tcl_DecrRefCount(eeFramePtr->data.eval.path);
+	Tcl_DecrRefCount(eeFramePtr->path);
     }
     TclStackFree(interp, linesStack);
     TclStackFree(interp, expandStack);
@@ -5939,8 +5939,7 @@ TclArgumentGet(
 	CFWordBC *cfwPtr = (CFWordBC *)Tcl_GetHashValue(hPtr);
 
 	CmdFrame *framePtr = cfwPtr->framePtr;
-	framePtr->data.tebc.pc = (char *) (((ByteCode *)
-		framePtr->data.tebc.codePtr)->codeStart + cfwPtr->pc);
+	framePtr->pc = framePtr->codePtr->codeStart + cfwPtr->pc;
 	*cfPtrPtr = cfwPtr->framePtr;
 	*wordPtr = cfwPtr->word;
 	return;
@@ -6084,7 +6083,7 @@ TclNREvalObjEx(
 	    eoFramePtr->cmdObj = objPtr;
 	    eoFramePtr->cmd = NULL;
 	    eoFramePtr->len = 0;
-	    eoFramePtr->data.eval.path = NULL;
+	    eoFramePtr->path = NULL;
 
 	    iPtr->cmdFramePtr = eoFramePtr;
 
@@ -6769,7 +6768,7 @@ Tcl_VarEval(
 
     Tcl_DString buf;
     Tcl_DStringInit(&buf);
-    while (1) {
+    while (true) {
 	char *string = va_arg(argList, char *);
 	if (string == NULL) {
 	    break;
@@ -9210,7 +9209,8 @@ TclNRCoroInjectObjCmd(
     ExecEnv *savedEEPtr = iPtr->execEnvPtr;
     iPtr->execEnvPtr = corPtr->eePtr;
     TclNRAddCallback(interp, InjectHandler, corPtr,
-	    Tcl_NewListObj(objc - 2, objv + 2), INT2PTR(corPtr->nargs));
+	    Tcl_NewListObj(objc - 2, objv + 2), INT2PTR(corPtr->nargs),
+	    INT2PTR(false));
     iPtr->execEnvPtr = savedEEPtr;
 
     return TCL_OK;
@@ -9253,7 +9253,8 @@ TclNRCoroProbeObjCmd(
     ExecEnv *savedEEPtr = iPtr->execEnvPtr;
     iPtr->execEnvPtr = corPtr->eePtr;
     TclNRAddCallback(interp, InjectHandler, corPtr,
-	    Tcl_NewListObj(objc - 2, objv + 2), INT2PTR(corPtr->nargs), corPtr);
+	    Tcl_NewListObj(objc - 2, objv + 2), INT2PTR(corPtr->nargs),
+	    INT2PTR(true));
     iPtr->execEnvPtr = savedEEPtr;
 
     /*
@@ -9316,7 +9317,7 @@ InjectHandler(
     CoroutineData *corPtr = (CoroutineData *)data[0];
     Tcl_Obj *listPtr = (Tcl_Obj *)data[1];
     Tcl_Size nargs = PTR2INT(data[2]);
-    void *isProbe = data[3];
+    bool isProbe = PTR2INT(data[3]);
     Tcl_Size objc;
     Tcl_Obj **objv;
 
@@ -9347,7 +9348,7 @@ InjectHandler(
     Tcl_IncrRefCount(listPtr);
     TclMarkTailcall(interp);
     TclNRAddCallback(interp, InjectHandlerPostCall, corPtr, listPtr,
-	    INT2PTR(nargs), isProbe);
+	    INT2PTR(nargs), INT2PTR(isProbe));
     TclListObjGetElements(NULL, listPtr, &objc, &objv);
     return TclNREvalObjv(interp, objc, objv, 0, NULL);
 }
@@ -9361,7 +9362,7 @@ InjectHandlerPostCall(
     CoroutineData *corPtr = (CoroutineData *)data[0];
     Tcl_Obj *listPtr = (Tcl_Obj *)data[1];
     Tcl_Size nargs = PTR2INT(data[2]);
-    void *isProbe = data[3];
+    bool isProbe = PTR2INT(data[3]);
 
     /*
      * Delete the command words for what we just executed.

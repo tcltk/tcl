@@ -103,7 +103,7 @@ TclpFindExecutable(
      * argv[0] is in one of them. If so, use that file name.
      */
 
-    while (1) {
+    while (true) {
 	while (TclIsSpaceProcM(*p)) {
 	    p++;
 	}

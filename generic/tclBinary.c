@@ -127,23 +127,23 @@ static const char B64Digits[65] = {
  */
 
 static const EnsembleImplMap binaryMap[] = {
-    { "format", BinaryFormatCmd, TclCompileBasicMin1ArgCmd, NULL, NULL, 0 },
-    { "scan",   BinaryScanCmd, TclCompileBasicMin2ArgCmd, NULL, NULL, 0 },
-    { "encode", NULL, NULL, NULL, NULL, 0 },
-    { "decode", NULL, NULL, NULL, NULL, 0 },
-    { NULL, NULL, NULL, NULL, NULL, 0 }
+    { "format", BinaryFormatCmd, TclCompileBasicMin1ArgCmd, NULL, NULL, false },
+    { "scan",   BinaryScanCmd, TclCompileBasicMin2ArgCmd, NULL, NULL, false },
+    { "encode", NULL, NULL, NULL, NULL, false },
+    { "decode", NULL, NULL, NULL, NULL, false },
+    { NULL, NULL, NULL, NULL, NULL, false }
 };
 static const EnsembleImplMap encodeMap[] = {
-    { "hex",      BinaryEncodeHex, TclCompileBasic1ArgCmd, NULL, NULL, 0 },
-    { "uuencode", BinaryEncodeUu,  NULL, NULL, NULL, 0 },
-    { "base64",   BinaryEncode64,  NULL, NULL, NULL, 0 },
-    { NULL, NULL, NULL, NULL, NULL, 0 }
+    { "hex",      BinaryEncodeHex, TclCompileBasic1ArgCmd, NULL, NULL, false },
+    { "uuencode", BinaryEncodeUu,  NULL, NULL, NULL, false },
+    { "base64",   BinaryEncode64,  NULL, NULL, NULL, false },
+    { NULL, NULL, NULL, NULL, NULL, false }
 };
 static const EnsembleImplMap decodeMap[] = {
-    { "hex",      BinaryDecodeHex, TclCompileBasic1Or2ArgCmd, NULL, NULL, 0 },
-    { "uuencode", BinaryDecodeUu,  TclCompileBasic1Or2ArgCmd, NULL, NULL, 0 },
-    { "base64",   BinaryDecode64,  TclCompileBasic1Or2ArgCmd, NULL, NULL, 0 },
-    { NULL, NULL, NULL, NULL, NULL, 0 }
+    { "hex",      BinaryDecodeHex, TclCompileBasic1Or2ArgCmd, NULL, NULL, false },
+    { "uuencode", BinaryDecodeUu,  TclCompileBasic1Or2ArgCmd, NULL, NULL, false },
+    { "base64",   BinaryDecode64,  TclCompileBasic1Or2ArgCmd, NULL, NULL, false },
+    { NULL, NULL, NULL, NULL, NULL, false }
 };
 
 /*
@@ -2930,14 +2930,14 @@ BinaryDecodeUu(
 	 */
 
 	if (lineLen > 0) {
-	    *cursor++ = (unsigned char)(((d[0] - 0x20) & 0x3F) << 2)
-		    | (((d[1] - 0x20) & 0x3F) >> 4);
+	    *cursor++ = UCHAR(((d[0] - 0x20) & 0x3F) << 2)
+		    | UCHAR(((d[1] - 0x20) & 0x3F) >> 4);
 	    if (--lineLen > 0) {
-		*cursor++ = (unsigned char)(((d[1] - 0x20) & 0x3F) << 4)
-			| (((d[2] - 0x20) & 0x3F) >> 2);
+		*cursor++ = UCHAR(((d[1] - 0x20) & 0x3F) << 4)
+			| UCHAR(((d[2] - 0x20) & 0x3F) >> 2);
 		if (--lineLen > 0) {
-		    *cursor++ = (unsigned char)((((d[2] - 0x20) & 0x3F) << 6)
-			    | (((d[3] - 0x20) & 0x3F)));
+		    *cursor++ = UCHAR((((d[2] - 0x20) & 0x3F) << 6)
+			    | UCHAR(((d[3] - 0x20) & 0x3F)));
 		    lineLen--;
 		}
 	    }

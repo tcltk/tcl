@@ -926,7 +926,7 @@ Tcl_UtfFindFirst(
     const char *src,		/* The UTF-8 string to be searched. */
     int ch)			/* The Unicode character to search for. */
 {
-    while (1) {
+    while (true) {
 	int find, len = TclUtfToUniChar(src, &find);
 
 	if (find == ch) {
@@ -965,7 +965,7 @@ Tcl_UtfFindLast(
 {
     const char *last = NULL;
 
-    while (1) {
+    while (true) {
 	int find, len = TclUtfToUniChar(src, &find);
 
 	if (find == ch) {
@@ -2335,7 +2335,7 @@ TclUniCharCaseMatch(
 {
     Tcl_UniChar ch1 = 0, p;
 
-    while (1) {
+    while (true) {
 	p = *uniPattern;
 
 	/*
@@ -2374,7 +2374,7 @@ TclUniCharCaseMatch(
 	    if (nocase) {
 		p = Tcl_UniCharToLower(p);
 	    }
-	    while (1) {
+	    while (true) {
 		/*
 		 * Optimization for matching - cruise through the string
 		 * quickly if the next char in the pattern isn't a special
@@ -2426,7 +2426,7 @@ TclUniCharCaseMatch(
 	    uniPattern++;
 	    ch1 = (nocase ? Tcl_UniCharToLower(*uniStr) : *uniStr);
 	    uniStr++;
-	    while (1) {
+	    while (true) {
 		if ((*uniPattern == ']') || (*uniPattern == 0)) {
 		    return false;
 		}
@@ -2528,7 +2528,7 @@ TclUniCharMatch(
     stringEnd = string + strLen;
     patternEnd = pattern + ptnLen;
 
-    while (1) {
+    while (true) {
 	/*
 	 * See if we're at the end of both the pattern and the string. If so,
 	 * we succeeded. If we're at the end of the pattern but not at the end
@@ -2566,7 +2566,7 @@ TclUniCharMatch(
 	    if (nocase) {
 		p = Tcl_UniCharToLower(p);
 	    }
-	    while (1) {
+	    while (true) {
 		/*
 		 * Optimization for matching - cruise through the string
 		 * quickly if the next char in the pattern isn't a special
@@ -2619,7 +2619,7 @@ TclUniCharMatch(
 	    pattern++;
 	    ch1 = (nocase ? Tcl_UniCharToLower(*string) : *string);
 	    string++;
-	    while (1) {
+	    while (true) {
 		if ((*pattern == ']') || (pattern == patternEnd)) {
 		    return false;
 		}

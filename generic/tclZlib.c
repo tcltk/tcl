@@ -652,7 +652,7 @@ AppendByteArray(
 {
     if (size > 0) {
 	Tcl_ListObjAppendElement(NULL, listObj,
-		Tcl_NewByteArrayObj((unsigned char *) buffer, size));
+		Tcl_NewByteArrayObj(UCHARP(buffer), size));
     }
 }
 
@@ -1258,7 +1258,7 @@ Tcl_ZlibStreamPut(
 	}
 	dataTmp = (char *) Tcl_Alloc(outSize);
 
-	while (1) {
+	while (true) {
 	    e = Deflate(&zshPtr->stream, dataTmp, outSize, flush, &toStore);
 
 	    /*
@@ -1839,7 +1839,7 @@ Tcl_ZlibInflate(
      * Start the decompression cycle.
      */
 
-    while (1) {
+    while (true) {
 	e = inflate(&stream, Z_FINISH);
 	if (e != Z_BUF_ERROR) {
 	    break;

@@ -615,7 +615,7 @@ Tcl_Sleep(
     TclScaleTime(&vdelay);
     sleepTime = (DWORD)vdelay.sec * 1000 + (unsigned long)vdelay.usec / 1000;
 
-    for (;;) {
+    while (true) {
 	SleepEx(sleepTime, TRUE);
 	Tcl_GetTime(&now);
 	if (now.sec > desired.sec) {
