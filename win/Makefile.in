@@ -158,8 +158,8 @@ TEST_DLL_FILE		= tcltest$(VER)${DLLSUFFIX}
 TEST_EXE_FILE		= tcltest${EXESUFFIX}
 TEST_LIB_FILE		= @LIBPREFIX@tcltest$(VER)${DLLSUFFIX}${LIBSUFFIX}
 TEST_LOAD_PRMS		= lappend ::auto_path {$(ROOT_DIR_WIN_NATIVE)/tests};\
-			  package ifneeded dde 1.5a0 [list load ${DDE_DLL_FILE}];\
-			  package ifneeded registry 1.4a0 [list load ${REG_DLL_FILE}]
+			  package ifneeded dde 1.5a1 [list load ${DDE_DLL_FILE}];\
+			  package ifneeded registry 1.4a1 [list load ${REG_DLL_FILE}]
 TEST_LOAD_FACILITIES	= package ifneeded tcl::test ${VERSION}@TCL_PATCH_LEVEL@ [list load ${TEST_DLL_FILE} Tcltest];\
 			  $(TEST_LOAD_PRMS)
 ZLIB_DLL_FILE		= zlib1.dll
@@ -929,8 +929,8 @@ install-libraries: libraries install-tzdata install-msgs
 	    done;
 	@echo "Installing package msgcat 1.7.1 as a Tcl Module";
 	@$(COPY) $(ROOT_DIR)/library/msgcat/msgcat.tcl "$(MODULE_INSTALL_DIR)/9.0/msgcat-1.7.1.tm";
-	@echo "Installing package tcltest 2.5.9 as a Tcl Module";
-	@$(COPY) $(ROOT_DIR)/library/tcltest/tcltest.tcl "$(MODULE_INSTALL_DIR)/9.0/tcltest-2.5.9.tm";
+	@echo "Installing package tcltest 2.5.10 as a Tcl Module";
+	@$(COPY) $(ROOT_DIR)/library/tcltest/tcltest.tcl "$(MODULE_INSTALL_DIR)/9.0/tcltest-2.5.10.tm";
 	@echo "Installing package platform 1.0.19 as a Tcl Module";
 	@$(COPY) $(ROOT_DIR)/library/platform/platform.tcl "$(MODULE_INSTALL_DIR)/9.0/platform-1.0.19.tm";
 	@echo "Installing package platform::shell 1.1.4 as a Tcl Module";

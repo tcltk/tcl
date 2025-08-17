@@ -163,7 +163,7 @@ Registry_Init(
     cmd = Tcl_CreateObjCommand2(interp, "registry", RegistryObjCmd,
 	    interp, DeleteCmd);
     Tcl_SetAssocData(interp, REGISTRY_ASSOC_KEY, NULL, cmd);
-    return Tcl_PkgProvideEx(interp, "registry", "1.4a0", NULL);
+    return Tcl_PkgProvideEx(interp, "registry", "1.4a1", NULL);
 }
 
 /*

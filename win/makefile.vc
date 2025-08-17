@@ -152,14 +152,14 @@ TCLLIBRAW=$(TCLLIB:.dll=-raw.dll)
 DOTVERSION      = $(TCL_MAJOR_VERSION).$(TCL_MINOR_VERSION)
 VERSION         = $(TCL_MAJOR_VERSION)$(TCL_MINOR_VERSION)
 
-# The staticpkg option is not longer supported in Tcl 8.7
+# The staticpkg option is not longer supported in Tcl 9.0
 # though extensions may still be using it. If specified together
 # with "static", ignore it as that is now the default for
 # static build. For non-static builds, no longer supported
 # now (was permitted in 8.6)
 !if $(TCL_USE_STATIC_PACKAGES)
 !if $(STATIC_BUILD)
-!message *** NOTE: The "staticpkg" option redundant in 8.7.
+!message *** NOTE: The "staticpkg" option redundant in 9.0.
 !else
 !message *** NOTE: The "staticpkg" option ignored for shared library builds.
 !endif
@@ -554,8 +554,8 @@ test: test-core test-pkgs
 test-core: tcltest
 	set TCL_LIBRARY=$(TCL_TEST_LIBRARY)
 	$(DEBUGGER) $(TCLTEST) "$(ROOT:\=/)/tests/all.tcl" $(TESTFLAGS) -loadfile <<
-		package ifneeded dde 1.5a0 [list load "$(TCLDDELIB:\=/)"]
-		package ifneeded registry 1.4a0 [list load "$(TCLREGLIB:\=/)"]
+		package ifneeded dde 1.5a1 [list load "$(TCLDDELIB:\=/)"]
+		package ifneeded registry 1.4a1 [list load "$(TCLREGLIB:\=/)"]
 <<
 
 runtest: setup $(TCLTEST) dlls

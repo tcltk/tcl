@@ -195,7 +195,7 @@ static const unsigned short pageMap[] = {
     1344, 1344, 1344, 10112, 10144, 1344, 10176, 1344, 10208, 10240, 10272,
     10304, 10336, 10368, 1344, 1344, 1344, 10400, 10432, 64, 10464, 10496,
     10528, 4736, 10560, 10592
-#if TCL_UTF_MAX > 3 || TCL_MAJOR_VERSION > 8 || TCL_MINOR_VERSION > 6
+#if TCL_UTF_MAX > 3 || TCL_MAJOR_VERSION > 8
     ,10624, 10656, 10688, 3296, 1344, 1344, 1344, 10720, 10752, 10784,
     10816, 10848, 10880, 10912, 8032, 10944, 3296, 3296, 3296, 3296, 9216,
     1344, 10976, 11008, 1344, 11040, 11072, 11104, 11136, 1344, 11168,
@@ -1180,7 +1180,7 @@ static const unsigned char groupMap[] = {
     15, 15, 15, 15, 15, 0, 0, 15, 15, 15, 15, 15, 15, 0, 0, 15, 15, 15,
     0, 0, 0, 4, 4, 7, 11, 14, 4, 4, 0, 14, 7, 7, 7, 7, 14, 14, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 17, 17, 17, 14, 14, 0, 0
-#if TCL_UTF_MAX > 3 || TCL_MAJOR_VERSION > 8 || TCL_MINOR_VERSION > 6
+#if TCL_UTF_MAX > 3 || TCL_MAJOR_VERSION > 8
     ,15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 0, 15, 15, 15, 15,
     15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15,
     15, 15, 15, 15, 15, 0, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15,
@@ -1733,7 +1733,7 @@ static const int groups[] = {
     10370, 10049, 10114, 8769, 8834
 };
 
-#if TCL_UTF_MAX > 3 || TCL_MAJOR_VERSION > 8 || TCL_MINOR_VERSION > 6
+#if TCL_UTF_MAX > 3 || TCL_MAJOR_VERSION > 8
 #   define UNICODE_OUT_OF_RANGE(ch)	(((ch) & 0x1FFFFF) >= 0x323C0)
 #else
 #   define UNICODE_OUT_OF_RANGE(ch)	(((ch) & 0x1F0000) != 0)
@@ -1792,7 +1792,7 @@ enum {
  * Unicode character tables.
  */
 
-#if TCL_UTF_MAX > 3 || TCL_MAJOR_VERSION > 8 || TCL_MINOR_VERSION > 6
+#if TCL_UTF_MAX > 3 || TCL_MAJOR_VERSION > 8
 #   define GetUniCharInfo(ch) \
 	(groups[groupMap[pageMap[((ch) & 0x1FFFFF) >> OFFSET_BITS] | ((ch) & ((1 << OFFSET_BITS)-1))]])
 #else

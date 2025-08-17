@@ -996,9 +996,11 @@ Tcl_GetEncodingNulLength(
  *	unless interp was NULL.
  *
  * Side effects:
- *	The reference count of the new system encoding is incremented. The
- *	reference count of the old system encoding is decremented and it may
- *	be freed. All VFS cached information is invalidated.
+ *	If the passed encoding is the same as the current system
+ *	encoding, the call is effectively a no-op. Otherwise, the reference
+ *	count of the new system encoding is incremented. The reference count
+ *	of the old system encoding is decremented and it may be freed. All
+ *	VFS cached information is invalidated.
  *
  *------------------------------------------------------------------------
  */
@@ -1011,23 +1013,33 @@ Tcl_SetSystemEncoding(
 {
     Tcl_Encoding encoding;
 
-    if (!name || !*name) {
-	Tcl_MutexLock(&encodingMutex);
-	encoding = defaultEncoding;
-	Encoding *encodingPtr = (Encoding *) encoding;
-	encodingPtr->refCount++;
-	Tcl_MutexUnlock(&encodingMutex);
+    Tcl_MutexLock(&encodingMutex);
+    if (name == NULL || name[0] == '\0') {
+        if (defaultEncoding == systemEncoding) {
+            Tcl_MutexUnlock(&encodingMutex);
+            return TCL_OK;
+        }
+        encoding = defaultEncoding;
+        ((Encoding *) encoding)->refCount++;
     } else {
 	encoding = Tcl_GetEncoding(interp, name);
+        if (encoding == systemEncoding) {
+            FreeEncoding(encoding);
+            Tcl_MutexUnlock(&encodingMutex);
+            return TCL_OK;
+        }
 	if (encoding == NULL) {
+            Tcl_MutexUnlock(&encodingMutex);
 	    return TCL_ERROR;
 	}
     }
 
-    Tcl_MutexLock(&encodingMutex);
+    assert(encoding != systemEncoding);
     FreeEncoding(systemEncoding);
     systemEncoding = encoding;
     Tcl_MutexUnlock(&encodingMutex);
+
+    /* Checks above ensure this is only called when system encoding changes */
     Tcl_FSMountsChanged(NULL);
 
     return TCL_OK;
