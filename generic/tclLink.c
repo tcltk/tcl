@@ -1211,7 +1211,7 @@ ObjValue(
 	    memcpy(linkPtr->lastValue.aryPtr, linkPtr->addr, linkPtr->bytes);
 	    objv = (Tcl_Obj **)Tcl_Alloc(linkPtr->numElems * sizeof(Tcl_Obj *));
 	    for (Tcl_Size i=0; i < linkPtr->numElems; i++) {
-		objv[i] = Tcl_NewBooleanObj(linkPtr->lastValue.iPtr[i] != 0);
+		objv[i] = Tcl_NewBooleanObj(linkPtr->lastValue.iPtr[i]);
 	    }
 	    resultObj = Tcl_NewListObj(linkPtr->numElems, objv);
 	    Tcl_Free(objv);

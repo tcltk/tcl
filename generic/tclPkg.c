@@ -1782,7 +1782,7 @@ CompareVersions(
     s1 = v1;
     s2 = v2;
 
-    while (1) {
+    while (true) {
 	/*
 	 * Parse one decimal number from the front of each string. Skip
 	 * leading zeros. Terminate found number for upcoming string-wise

@@ -1273,7 +1273,7 @@ SerialWriterThread(
     SerialInfo *infoPtr = NULL;	/* access info only after success init/wait */
     OVERLAPPED myWrite;		/* Have an own OVERLAPPED in this thread. */
 
-    for (;;) {
+    while (true) {
 	/*
 	 * Wait for the main thread to signal before attempting to write.
 	 */

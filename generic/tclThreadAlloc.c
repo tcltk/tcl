@@ -39,6 +39,8 @@
 /* Actual definition moved to tclInt.h */
 #define NOBJHIGH	ALLOC_NOBJHIGH
 
+typedef unsigned char uchar;		// Just to keep things shorter...
+
 /*
  * The following union stores accounting information for each block including
  * two small magic numbers and a bucket number when in use or a next pointer
@@ -49,24 +51,19 @@
 typedef union Block {
     struct {
 	union {
-	    union Block *next;		/* Next in free list. */
+	    union Block *nextBlock;	/* Next in free list. */
 	    struct {
-		unsigned char magic1;	/* First magic number. */
-		unsigned char bucket;	/* Bucket block allocated from. */
-		unsigned char unused;	/* Padding. */
-		unsigned char magic2;	/* Second magic number. */
-	    } s;
-	} u;
-	size_t reqSize;			/* Requested allocation size. */
-    } b;
-    unsigned char padding[TCL_ALLOCALIGN];
+		uchar magicNum1;	/* First magic number. */
+		uchar sourceBucket;	/* Bucket block allocated from. */
+		uchar unused;		/* Padding. */
+		uchar magicNum2;	/* Second magic number. */
+	    };
+	};
+	size_t blockReqSize;		/* Requested allocation size. */
+    };
+    uchar padding[TCL_ALLOCALIGN];
 } Block;
-#define nextBlock	b.u.next
-#define sourceBucket	b.u.s.bucket
-#define magicNum1	b.u.s.magic1
-#define magicNum2	b.u.s.magic2
 #define MAGIC		0xEF
-#define blockReqSize	b.reqSize
 
 /*
  * The following defines the minimum and maximum block sizes and the number
@@ -120,7 +117,7 @@ typedef struct Cache {
 static struct {
     size_t blockSize;		/* Bucket blocksize. */
     size_t maxBlocks;		/* Max blocks before move to share. */
-    size_t numMove;			/* Num blocks to move to share. */
+    size_t numMove;		/* Num blocks to move to share. */
     Tcl_Mutex *lockPtr;		/* Share bucket lock. */
 } bucketInfo[NBUCKETS];
 
@@ -151,20 +148,20 @@ static Cache *firstCachePtr = &sharedCache;
 #if defined(HAVE_FAST_TSD)
 static __thread Cache *tcachePtr;
 
-# define GETCACHE(cachePtr)			\
-    do {					\
-	if (!tcachePtr) {			\
-	    tcachePtr = GetCache();		\
-	}					\
-	(cachePtr) = tcachePtr;			\
+# define GETCACHE(cachePtr) \
+    do {								\
+	if (!tcachePtr) {						\
+	    tcachePtr = GetCache();					\
+	}								\
+	(cachePtr) = tcachePtr;						\
     } while (0)
 #else
-# define GETCACHE(cachePtr)			\
-    do {					\
-	(cachePtr) = (Cache*)TclpGetAllocCache();	\
-	if ((cachePtr) == NULL) {		\
-	    (cachePtr) = GetCache();		\
-	}					\
+# define GETCACHE(cachePtr) \
+    do {								\
+	(cachePtr) = (Cache*)TclpGetAllocCache();			\
+	if ((cachePtr) == NULL) {					\
+	    (cachePtr) = GetCache();					\
+	}								\
     } while (0)
 #endif
 
@@ -768,7 +765,7 @@ Block2Ptr(
     blockPtr->blockReqSize = reqSize;
     void *ptr = ((void *) (blockPtr + 1));
 #if RCHECK
-    ((unsigned char *)(ptr))[reqSize] = MAGIC;
+    ((uchar *)(ptr))[reqSize] = MAGIC;
 #endif
     return ptr;
 }
@@ -783,10 +780,10 @@ Ptr2Block(
 		blockPtr, blockPtr->magicNum1, blockPtr->magicNum2);
     }
 #if RCHECK
-    if (((unsigned char *) ptr)[blockPtr->blockReqSize] != MAGIC) {
+    if (((uchar *) ptr)[blockPtr->blockReqSize] != MAGIC) {
 	Tcl_Panic("alloc: invalid block: %p: %x %x %x",
 		blockPtr, blockPtr->magicNum1, blockPtr->magicNum2,
-		((unsigned char *) ptr)[blockPtr->blockReqSize]);
+		((uchar *) ptr)[blockPtr->blockReqSize]);
     }
 #endif
     return blockPtr;

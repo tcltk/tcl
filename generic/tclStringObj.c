@@ -569,7 +569,7 @@ Tcl_GetUniChar(
 	    return -1;
 	}
 	if (stringPtr->numChars == objPtr->length) {
-	    return (unsigned char) objPtr->bytes[index];
+	    return UCHAR(objPtr->bytes[index]);
 	}
 	FillUnicodeRep(objPtr);
 	stringPtr = GET_STRING(objPtr);
@@ -1787,7 +1787,7 @@ Tcl_AppendStringsToObj(
 	Tcl_Panic("%s called with shared object", "Tcl_AppendStringsToObj");
     }
 
-    while (1) {
+    while (true) {
 	const char *bytes = va_arg(argList, char *);
 
 	if (bytes == NULL) {
@@ -3888,7 +3888,7 @@ TclStringFirst(
 	}
     }
   firstEnd:
-    return Tcl_NewWideIntObj(value);
+    return Tcl_NewIndexObj(value);
 }
 
 /*
@@ -3968,7 +3968,7 @@ TclStringLast(
 	}
     }
   lastEnd:
-    return Tcl_NewWideIntObj(value);
+    return Tcl_NewIndexObj(value);
 }
 
 /*

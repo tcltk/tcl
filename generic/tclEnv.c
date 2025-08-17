@@ -19,13 +19,16 @@ TCL_DECLARE_MUTEX(envMutex)	/* To serialize access to environ. */
 
 #if defined(_WIN32)
 #  define tenviron _wenviron
-#  define tenviron2utfdstr(str, dsPtr) (Tcl_DStringInit(dsPtr), \
+#  define tenviron2utfDStr(str, dsPtr) \
+	(Tcl_DStringInit(dsPtr),					\
 	(char *)Tcl_Char16ToUtfDString((const unsigned short *)(str), -1, (dsPtr)))
-#  define utf2tenvirondstr(str, dsPtr) (Tcl_DStringInit(dsPtr), \
+#  define utf2tenvironDStr(str, dsPtr) \
+	(Tcl_DStringInit(dsPtr),					\
 	(const WCHAR *)Tcl_UtfToChar16DString((str), -1, (dsPtr)))
 #  define techar WCHAR
 #  ifdef USE_PUTENV
-#    define putenv(env) _wputenv((const wchar_t *)env)
+#    define putenv(env) \
+	_wputenv((const wchar_t *)env)
 #  endif
 #else
 #  define tenviron environ
@@ -98,7 +101,6 @@ TclSetupEnv(
 {
     Var *varPtr, *arrayPtr;
     Tcl_Obj *varNamePtr;
-    Tcl_DString envString;
     Tcl_HashTable namesHash;
 
     /*
@@ -155,7 +157,8 @@ TclSetupEnv(
 	    const char *p1;
 	    char *p2;
 
-	    p1 = tenviron2utfdstr(tenviron[i], &envString);
+	    Tcl_DString envString;
+	    p1 = tenviron2utfDStr(tenviron[i], &envString);
 	    if (p1 == NULL) {
 		/* Ignore what cannot be decoded (should not happen) */
 		continue;
@@ -302,7 +305,7 @@ TclSetEnv(
 	 * interpreters.
 	 */
 
-	oldEnv = tenviron2utfdstr(tenviron[index], &envString);
+	oldEnv = tenviron2utfDStr(tenviron[index], &envString);
 	if (oldEnv == NULL || strcmp(value, oldEnv + (length + 1)) == 0) {
 	    Tcl_DStringFree(&envString); /* OK even if oldEnv is NULL */
 	    Tcl_MutexUnlock(&envMutex);
@@ -325,7 +328,7 @@ TclSetEnv(
     memcpy(p, name, nameLength);
     p[nameLength] = '=';
     memcpy(p+nameLength+1, value, valueLength+1);
-    p2 = utf2tenvirondstr(p, &envString);
+    p2 = utf2tenvironDStr(p, &envString);
     if (p2 == NULL) {
 	/* No way to signal error from here :-( but should not happen */
 	Tcl_Free(p);
@@ -505,7 +508,7 @@ TclUnsetEnv(
     string[length] = '\0';
 #endif /* _WIN32 */
 
-    if (utf2tenvirondstr(string, &envString) == NULL) {
+    if (utf2tenvironDStr(string, &envString) == NULL) {
 	/* Should not happen except memory alloc fail. */
 	Tcl_MutexUnlock(&envMutex);
 	return;
@@ -584,7 +587,7 @@ TclGetEnv(
     if (index != -1) {
 	Tcl_DString envStr;
 
-	result = tenviron2utfdstr(tenviron[index], &envStr);
+	result = tenviron2utfDStr(tenviron[index], &envStr);
 	if (result) {
 	    result += length;
 	    if (*result == '=') {

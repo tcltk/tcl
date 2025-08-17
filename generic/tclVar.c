@@ -3061,7 +3061,7 @@ ArrayObjNext(
     }
 
     bool gotValue = false;
-    while (1) {
+    while (true) {
 	Tcl_HashEntry *hPtr = searchPtr->nextEntry;
 
 	if (hPtr != NULL) {
@@ -3448,7 +3448,7 @@ ArrayAnyMoreCmd(
      */
 
     int gotValue;
-    while (1) {
+    while (true) {
 	if (searchPtr->nextEntry != NULL) {
 	    varPtr = VarHashGetValue(searchPtr->nextEntry);
 	    if (!TclIsVarUndefined(varPtr)) {
@@ -3519,7 +3519,7 @@ ArrayNextElementCmd(
      * there first.
      */
 
-    while (1) {
+    while (true) {
 	Tcl_HashEntry *hPtr = searchPtr->nextEntry;
 
 	if (hPtr == NULL) {
@@ -4390,20 +4390,20 @@ TclInitArrayCmd(
     Tcl_Interp *interp)		/* Current interpreter. */
 {
     static const EnsembleImplMap arrayImplMap[] = {
-	{"anymore",	ArrayAnyMoreCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
-	{"default",	ArrayDefaultCmd,	TclCompileBasic2Or3ArgCmd, NULL, NULL, 0},
-	{"donesearch",	ArrayDoneSearchCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
-	{"exists",	ArrayExistsCmd,		TclCompileArrayExistsCmd, NULL, NULL, 0},
-	{"for",		ArrayForObjCmd,		TclCompileBasic3ArgCmd, ArrayForNRCmd, NULL, 0},
-	{"get",		ArrayGetCmd,		TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
-	{"names",	ArrayNamesCmd,		TclCompileBasic1To3ArgCmd, NULL, NULL, 0},
-	{"nextelement",	ArrayNextElementCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
-	{"set",		ArraySetCmd,		TclCompileArraySetCmd, NULL, NULL, 0},
-	{"size",	ArraySizeCmd,		TclCompileBasic1ArgCmd, NULL, NULL, 0},
-	{"startsearch",	ArrayStartSearchCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
-	{"statistics",	ArrayStatsCmd,		TclCompileBasic1ArgCmd, NULL, NULL, 0},
-	{"unset",	ArrayUnsetCmd,		TclCompileArrayUnsetCmd, NULL, NULL, 0},
-	{NULL, NULL, NULL, NULL, NULL, 0}
+	{"anymore",	ArrayAnyMoreCmd,	TclCompileBasic2ArgCmd, NULL, NULL, false},
+	{"default",	ArrayDefaultCmd,	TclCompileBasic2Or3ArgCmd, NULL, NULL, false},
+	{"donesearch",	ArrayDoneSearchCmd,	TclCompileBasic2ArgCmd, NULL, NULL, false},
+	{"exists",	ArrayExistsCmd,		TclCompileArrayExistsCmd, NULL, NULL, false},
+	{"for",		ArrayForObjCmd,		TclCompileBasic3ArgCmd, ArrayForNRCmd, NULL, false},
+	{"get",		ArrayGetCmd,		TclCompileBasic1Or2ArgCmd, NULL, NULL, false},
+	{"names",	ArrayNamesCmd,		TclCompileBasic1To3ArgCmd, NULL, NULL, false},
+	{"nextelement",	ArrayNextElementCmd,	TclCompileBasic2ArgCmd, NULL, NULL, false},
+	{"set",		ArraySetCmd,		TclCompileArraySetCmd, NULL, NULL, false},
+	{"size",	ArraySizeCmd,		TclCompileBasic1ArgCmd, NULL, NULL, false},
+	{"startsearch",	ArrayStartSearchCmd,	TclCompileBasic1ArgCmd, NULL, NULL, false},
+	{"statistics",	ArrayStatsCmd,		TclCompileBasic1ArgCmd, NULL, NULL, false},
+	{"unset",	ArrayUnsetCmd,		TclCompileArrayUnsetCmd, NULL, NULL, false},
+	{NULL, NULL, NULL, NULL, NULL, false}
     };
 
     return TclMakeEnsemble(interp, "array", arrayImplMap);
@@ -6630,8 +6630,8 @@ TclInfoConstantCmd(
 
     Var  *arrayPtr, *varPtr = TclObjLookupVar(interp, objv[1], NULL, 0,
 	    "lookup", 0, 0, &arrayPtr);
-    int result = (varPtr && TclIsVarConstant(varPtr));
-    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(result));
+    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(
+	    varPtr && TclIsVarConstant(varPtr)));
     return TCL_OK;
 }
 
@@ -6852,7 +6852,7 @@ ArrayDefaultCmd(
 	 */
 
 	if (!varPtr || TclIsVarUndefined(varPtr)) {
-	    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(0));
+	    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(false));
 	} else if (!isArray) {
 	    return NotArrayError(interp, arrayNameObj);
 	} else {

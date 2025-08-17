@@ -527,18 +527,18 @@ InitCmdFrame(
 	    /*
 	     * Retrieve source information from the bytecode, if possible. If
 	     * the information is retrieved successfully, context.type will be
-	     * TCL_LOCATION_SOURCE and the reference held by
-	     * context.data.eval.path will be counted.
+	     * TCL_LOCATION_SOURCE and the reference held by context.path will
+	     * be counted.
 	     */
 
 	    TclGetSrcInfoForPc(&context);
 	} else if (context.type == TCL_LOCATION_SOURCE) {
 	    /*
 	     * The copy into 'context' up above has created another reference
-	     * to 'context.data.eval.path'; account for it.
+	     * to 'context.path'; account for it.
 	     */
 
-	    Tcl_IncrRefCount(context.data.eval.path);
+	    Tcl_IncrRefCount(context.path);
 	}
 
 	if (context.type == TCL_LOCATION_SOURCE) {
@@ -564,8 +564,8 @@ InitCmdFrame(
 		cfPtr->framePtr = NULL;
 		cfPtr->nextPtr = NULL;
 
-		cfPtr->data.eval.path = context.data.eval.path;
-		Tcl_IncrRefCount(cfPtr->data.eval.path);
+		cfPtr->path = context.path;
+		Tcl_IncrRefCount(cfPtr->path);
 
 		cfPtr->cmd = NULL;
 		cfPtr->len = 0;
@@ -580,8 +580,8 @@ InitCmdFrame(
 	     * it's holding to the path name.
 	     */
 
-	    Tcl_DecrRefCount(context.data.eval.path);
-	    context.data.eval.path = NULL;
+	    Tcl_DecrRefCount(context.path);
+	    context.path = NULL;
 	}
     }}
 

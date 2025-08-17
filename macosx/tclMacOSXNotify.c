@@ -1632,7 +1632,7 @@ TclUnixWaitForFile(
      * become ready or a timeout to occur.
      */
 
-    while (1) {
+    while (true) {
 	if (timeout > 0) {
 	    blockTime.tv_sec = abortTime.sec - now.sec;
 	    blockTime.tv_usec = abortTime.usec - now.usec;
@@ -1794,7 +1794,7 @@ NotifierThreadProc(
      * Look for file events and report them to interested threads.
      */
 
-    while (1) {
+    while (true) {
 	FD_ZERO(&readableMask);
 	FD_ZERO(&writableMask);
 	FD_ZERO(&exceptionalMask);

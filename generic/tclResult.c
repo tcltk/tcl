@@ -308,7 +308,7 @@ Tcl_AppendResult(
     if (Tcl_IsShared(objPtr)) {
 	objPtr = Tcl_DuplicateObj(objPtr);
     }
-    while (1) {
+    while (true) {
 	const char *bytes = va_arg(argList, char *);
 
 	if (bytes == NULL) {
@@ -502,7 +502,7 @@ Tcl_SetErrorCode(
      * errorCode field as list elements.
      */
 
-    while (1) {
+    while (true) {
 	char *elem = va_arg(argList, char *);
 
 	if (elem == NULL) {

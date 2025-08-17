@@ -34,9 +34,9 @@ int			copyfile(const char *from, const char *to,
 #ifdef WEAK_IMPORT_COPYFILE
 #define MayUseCopyFile()	(copyfile != NULL)
 #elif defined(HAVE_COPYFILE)
-#define MayUseCopyFile()	(1)
+#define MayUseCopyFile()	(true)
 #else
-#define MayUseCopyFile()	(0)
+#define MayUseCopyFile()	(false)
 #endif
 
 #include <libkern/OSByteOrder.h>
@@ -177,8 +177,7 @@ TclMacOSXGetFileAttribute(
 		OSSwapBigToHostInt32(finder->type));
 	break;
     case MACOSX_HIDDEN_ATTRIBUTE:
-	TclNewIntObj(*attributePtrPtr,
-		(finder->fdFlags & kFinfoIsInvisible) != 0);
+	*attributePtrPtr = Tcl_NewBooleanObj(finder->fdFlags & kFinfoIsInvisible);
 	break;
     case MACOSX_RSRCLENGTH_ATTRIBUTE:
 	TclNewIntObj(*attributePtrPtr, *rsrcForkSize);

@@ -2006,7 +2006,7 @@ ConvertLocalToUTCUsingTable(
 
     fields->tzOffset = 0;
     fields->seconds = fields->localSeconds;
-    while (1) {
+    while (true) {
 	Tcl_Obj *row = LookupLastTransition(interp, fields->seconds, rowc, rowv,
 		rangesVal);
 	Tcl_Size cellc;
@@ -2671,7 +2671,7 @@ GetMonthDay(
      */
     month = (day*12) / dipm[12];
     /* then do forwards backwards correction */
-    while (1) {
+    while (true) {
 	if (day > dipm[month]) {
 	    if (month >= 11 || day <= dipm[month + 1]) {
 		break;

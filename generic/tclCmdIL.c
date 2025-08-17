@@ -151,34 +151,34 @@ static Tcl_Obj *	SelectObjFromSublist(Tcl_Obj *firstPtr,
  */
 
 static const EnsembleImplMap defaultInfoMap[] = {
-    {"args",		   InfoArgsCmd,		    TclCompileBasic1ArgCmd, NULL, NULL, 0},
-    {"body",		   InfoBodyCmd,		    TclCompileBasic1ArgCmd, NULL, NULL, 0},
-    {"cmdcount",	   InfoCmdCountCmd,	    TclCompileBasic0ArgCmd, NULL, NULL, 0},
-    {"cmdtype",		   InfoCmdTypeCmd,	    TclCompileBasic1ArgCmd, NULL, NULL, 1},
-    {"commands",	   InfoCommandsCmd,	    TclCompileInfoCommandsCmd, NULL, NULL, 0},
-    {"complete",	   InfoCompleteCmd,	    TclCompileBasic1ArgCmd, NULL, NULL, 0},
-    {"constant",	   TclInfoConstantCmd,	    TclCompileBasic1ArgCmd, NULL, NULL, 0},
-    {"consts",		   TclInfoConstsCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
-    {"coroutine",	   TclInfoCoroutineCmd,     TclCompileInfoCoroutineCmd, NULL, NULL, 0},
-    {"default",		   InfoDefaultCmd,	    TclCompileBasic3ArgCmd, NULL, NULL, 0},
-    {"errorstack",	   InfoErrorStackCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
-    {"exists",		   TclInfoExistsCmd,	    TclCompileInfoExistsCmd, NULL, NULL, 0},
-    {"frame",		   InfoFrameCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
-    {"functions",	   InfoFunctionsCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
-    {"globals",		   TclInfoGlobalsCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
-    {"hostname",	   InfoHostnameCmd,	    TclCompileBasic0ArgCmd, NULL, NULL, 0},
-    {"level",		   InfoLevelCmd,	    TclCompileInfoLevelCmd, NULL, NULL, 0},
-    {"library",		   InfoLibraryCmd,	    TclCompileBasic0ArgCmd, NULL, NULL, 0},
-    {"loaded",		   InfoLoadedCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
-    {"locals",		   TclInfoLocalsCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
-    {"nameofexecutable",   InfoNameOfExecutableCmd, TclCompileBasic0ArgCmd, NULL, NULL, 1},
-    {"patchlevel",	   InfoPatchLevelCmd,	    TclCompileBasic0ArgCmd, NULL, NULL, 0},
-    {"procs",		   InfoProcsCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
-    {"script",		   InfoScriptCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
-    {"sharedlibextension", InfoSharedlibCmd,	    TclCompileBasic0ArgCmd, NULL, NULL, 0},
-    {"tclversion",	   InfoTclVersionCmd,	    TclCompileBasic0ArgCmd, NULL, NULL, 0},
-    {"vars",		   TclInfoVarsCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
-    {NULL, NULL, NULL, NULL, NULL, 0}
+    {"args",		   InfoArgsCmd,		    TclCompileBasic1ArgCmd, NULL, NULL, false},
+    {"body",		   InfoBodyCmd,		    TclCompileBasic1ArgCmd, NULL, NULL, false},
+    {"cmdcount",	   InfoCmdCountCmd,	    TclCompileBasic0ArgCmd, NULL, NULL, false},
+    {"cmdtype",		   InfoCmdTypeCmd,	    TclCompileBasic1ArgCmd, NULL, NULL, true},
+    {"commands",	   InfoCommandsCmd,	    TclCompileInfoCommandsCmd, NULL, NULL, false},
+    {"complete",	   InfoCompleteCmd,	    TclCompileBasic1ArgCmd, NULL, NULL, false},
+    {"constant",	   TclInfoConstantCmd,	    TclCompileBasic1ArgCmd, NULL, NULL, false},
+    {"consts",		   TclInfoConstsCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, false},
+    {"coroutine",	   TclInfoCoroutineCmd,     TclCompileInfoCoroutineCmd, NULL, NULL, false},
+    {"default",		   InfoDefaultCmd,	    TclCompileBasic3ArgCmd, NULL, NULL, false},
+    {"errorstack",	   InfoErrorStackCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, false},
+    {"exists",		   TclInfoExistsCmd,	    TclCompileInfoExistsCmd, NULL, NULL, false},
+    {"frame",		   InfoFrameCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, false},
+    {"functions",	   InfoFunctionsCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, false},
+    {"globals",		   TclInfoGlobalsCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, false},
+    {"hostname",	   InfoHostnameCmd,	    TclCompileBasic0ArgCmd, NULL, NULL, false},
+    {"level",		   InfoLevelCmd,	    TclCompileInfoLevelCmd, NULL, NULL, false},
+    {"library",		   InfoLibraryCmd,	    TclCompileBasic0ArgCmd, NULL, NULL, false},
+    {"loaded",		   InfoLoadedCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, false},
+    {"locals",		   TclInfoLocalsCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, false},
+    {"nameofexecutable",   InfoNameOfExecutableCmd, TclCompileBasic0ArgCmd, NULL, NULL, true},
+    {"patchlevel",	   InfoPatchLevelCmd,	    TclCompileBasic0ArgCmd, NULL, NULL, false},
+    {"procs",		   InfoProcsCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, false},
+    {"script",		   InfoScriptCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, false},
+    {"sharedlibextension", InfoSharedlibCmd,	    TclCompileBasic0ArgCmd, NULL, NULL, false},
+    {"tclversion",	   InfoTclVersionCmd,	    TclCompileBasic0ArgCmd, NULL, NULL, false},
+    {"vars",		   TclInfoVarsCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, false},
+    {NULL, NULL, NULL, NULL, NULL, false}
 };
 
 /*
@@ -264,7 +264,7 @@ IfConditionCallback(
     }
     TclDecrRefCount(boolObj);
 
-    while (1) {
+    while (true) {
 	i++;
 	if (i >= objc) {
 	    goto missingScript;
@@ -954,7 +954,7 @@ InfoDefaultCmd(
 			localPtr->defValuePtr, TCL_LEAVE_ERR_MSG) == NULL) {
 		    return TCL_ERROR;
 		}
-		Tcl_SetObjResult(interp, Tcl_NewBooleanObj(1));
+		Tcl_SetObjResult(interp, Tcl_NewBooleanObj(true));
 	    } else {
 		Tcl_Obj *nullObjPtr;
 		TclNewObj(nullObjPtr);
@@ -963,7 +963,7 @@ InfoDefaultCmd(
 			nullObjPtr, TCL_LEAVE_ERR_MSG) == NULL) {
 		    return TCL_ERROR;
 		}
-		Tcl_SetObjResult(interp, Tcl_NewBooleanObj(0));
+		Tcl_SetObjResult(interp, Tcl_NewBooleanObj(false));
 	    }
 	    return TCL_OK;
 	}
@@ -1273,8 +1273,8 @@ TclInfoFrame(
 
 	/*
 	 * Note:
-	 * Type BC => f.data.eval.path	  is not used.
-	 *	      f.data.tebc.codePtr is used instead.
+	 * Type BC => f.path	  is not used.
+	 *	      f.codePtr is used instead.
 	 */
 
 	TclGetSrcInfoForPc(fPtr);
@@ -1290,13 +1290,13 @@ TclInfoFrame(
 	}
 
 	if (fPtr->type == TCL_LOCATION_SOURCE) {
-	    TclDictPut(NULL, dictObj, "file", fPtr->data.eval.path);
+	    TclDictPut(NULL, dictObj, "file", fPtr->path);
 
 	    /*
 	     * Death of reference by TclGetSrcInfoForPc.
 	     */
 
-	    Tcl_DecrRefCount(fPtr->data.eval.path);
+	    Tcl_DecrRefCount(fPtr->path);
 	}
 
 	TclDictPut(NULL, dictObj, "cmd", TclGetSourceFromFrame(fPtr, 0, NULL));
@@ -1312,10 +1312,10 @@ TclInfoFrame(
 
 	TclDictPut(NULL, dictObj, "type", Tcl_NewStringObj("source", -1));
 	TclDictPut(NULL, dictObj, "line", Tcl_NewWideIntObj(framePtr->line[0]));
-	TclDictPut(NULL, dictObj, "file", framePtr->data.eval.path);
+	TclDictPut(NULL, dictObj, "file", framePtr->path);
 
 	/*
-	 * Refcount framePtr->data.eval.path goes up when lv is converted into
+	 * Refcount framePtr->path goes up when lv is converted into
 	 * the result list object.
 	 */
 
@@ -3390,9 +3390,7 @@ Tcl_LsearchObjCmd(
 	    if (allMatches || inlineReturn) {
 		Tcl_ResetResult(interp);
 	    } else {
-		Tcl_Obj *itemPtr;
-		TclNewIntObj(itemPtr, -1);
-		Tcl_SetObjResult(interp, itemPtr);
+		Tcl_SetObjResult(interp, Tcl_NewIndexObj(-1));
 	    }
 	    goto done;
 	}
@@ -3714,14 +3712,13 @@ Tcl_LsearchObjCmd(
 	    } else if (returnSubindices) {
 		TclNewIndexObj(itemPtr, i+groupOffset);
 		for (Tcl_Size j=0 ; j<sortInfo.indexc ; j++) {
-		    Tcl_Obj *elObj;
 		    size_t elValue = TclIndexDecode(sortInfo.indexv[j], listc);
-		    TclNewIndexObj(elObj, elValue);
-		    Tcl_ListObjAppendElement(interp, itemPtr, elObj);
+		    Tcl_ListObjAppendElement(interp, itemPtr,
+			    Tcl_NewIndexObj(elValue));
 		}
 		Tcl_ListObjAppendElement(interp, listPtr, itemPtr);
 	    } else {
-		Tcl_ListObjAppendElement(interp, listPtr, Tcl_NewWideIntObj(i));
+		Tcl_ListObjAppendElement(interp, listPtr, Tcl_NewIndexObj(i));
 	    }
 	}
     }
@@ -3739,16 +3736,13 @@ Tcl_LsearchObjCmd(
 	if (returnSubindices) {
 	    TclNewIndexObj(itemPtr, index+groupOffset);
 	    for (Tcl_Size j=0 ; j<sortInfo.indexc ; j++) {
-		Tcl_Obj *elObj;
 		size_t elValue = TclIndexDecode(sortInfo.indexv[j], listc);
-		TclNewIndexObj(elObj, elValue);
-		Tcl_ListObjAppendElement(interp, itemPtr, elObj);
+		Tcl_ListObjAppendElement(interp, itemPtr,
+			Tcl_NewIndexObj(elValue));
 	    }
 	    Tcl_SetObjResult(interp, itemPtr);
 	} else {
-	    Tcl_Obj *elObj;
-	    TclNewIndexObj(elObj, index);
-	    Tcl_SetObjResult(interp, elObj);
+	    Tcl_SetObjResult(interp, Tcl_NewIndexObj(index));
 	}
     } else if (index < 0) {
 	/*
@@ -5118,7 +5112,7 @@ DictionaryCompare(
 {
     int diff, secondaryDiff = 0;
 
-    while (1) {
+    while (true) {
 	if (isdigit(UCHAR(*right))		/* INTL: digit */
 		&& isdigit(UCHAR(*left))) {	/* INTL: digit */
 	    /*
@@ -5149,7 +5143,7 @@ DictionaryCompare(
 	     */
 
 	    diff = 0;
-	    while (1) {
+	    while (true) {
 		if (diff == 0) {
 		    diff = UCHAR(*left) - UCHAR(*right);
 		}

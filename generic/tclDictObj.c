@@ -67,30 +67,30 @@ static Tcl_NRPostProc		DictMapLoopCallback;
  */
 
 static const EnsembleImplMap implementationMap[] = {
-    {"append",	DictAppendCmd,	TclCompileDictAppendCmd, NULL, NULL, 0 },
-    {"create",	DictCreateCmd,	TclCompileDictCreateCmd, NULL, NULL, 0 },
-    {"exists",	DictExistsCmd,	TclCompileDictExistsCmd, NULL, NULL, 0 },
-    {"filter",	DictFilterCmd,	NULL, NULL, NULL, 0 },
-    {"for",	NULL,		TclCompileDictForCmd, DictForNRCmd, NULL, 0 },
-    {"get",	DictGetCmd,	TclCompileDictGetCmd, NULL, NULL, 0 },
-    {"getdef",	DictGetDefCmd,	TclCompileDictGetWithDefaultCmd, NULL,NULL,0},
+    {"append",	DictAppendCmd,	TclCompileDictAppendCmd, NULL, NULL, false},
+    {"create",	DictCreateCmd,	TclCompileDictCreateCmd, NULL, NULL, false},
+    {"exists",	DictExistsCmd,	TclCompileDictExistsCmd, NULL, NULL, false},
+    {"filter",	DictFilterCmd,	NULL, NULL, NULL, false},
+    {"for",	NULL,		TclCompileDictForCmd, DictForNRCmd, NULL, false},
+    {"get",	DictGetCmd,	TclCompileDictGetCmd, NULL, NULL, false},
+    {"getdef",	DictGetDefCmd,	TclCompileDictGetWithDefaultCmd, NULL,NULL,false},
     {"getwithdefault",	DictGetDefCmd,	TclCompileDictGetWithDefaultCmd,
-	NULL, NULL, 0 },
-    {"incr",	DictIncrCmd,	TclCompileDictIncrCmd, NULL, NULL, 0 },
-    {"info",	DictInfoCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0 },
-    {"keys",	DictKeysCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, 0 },
-    {"lappend",	DictLappendCmd,	TclCompileDictLappendCmd, NULL, NULL, 0 },
-    {"map",	NULL,		TclCompileDictMapCmd, DictMapNRCmd, NULL, 0 },
-    {"merge",	DictMergeCmd,	TclCompileDictMergeCmd, NULL, NULL, 0 },
-    {"remove",	DictRemoveCmd,	TclCompileDictRemoveCmd, NULL, NULL, 0 },
-    {"replace",	DictReplaceCmd, TclCompileDictReplaceCmd, NULL, NULL, 0 },
-    {"set",	DictSetCmd,	TclCompileDictSetCmd, NULL, NULL, 0 },
-    {"size",	DictSizeCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0 },
-    {"unset",	DictUnsetCmd,	TclCompileDictUnsetCmd, NULL, NULL, 0 },
-    {"update",	DictUpdateCmd,	TclCompileDictUpdateCmd, NULL, NULL, 0 },
-    {"values",	DictValuesCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, 0 },
-    {"with",	DictWithCmd,	TclCompileDictWithCmd, NULL, NULL, 0 },
-    {NULL, NULL, NULL, NULL, NULL, 0}
+	NULL, NULL, false},
+    {"incr",	DictIncrCmd,	TclCompileDictIncrCmd, NULL, NULL, false},
+    {"info",	DictInfoCmd,	TclCompileBasic1ArgCmd, NULL, NULL, false},
+    {"keys",	DictKeysCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, false},
+    {"lappend",	DictLappendCmd,	TclCompileDictLappendCmd, NULL, NULL, false},
+    {"map",	NULL,		TclCompileDictMapCmd, DictMapNRCmd, NULL, false},
+    {"merge",	DictMergeCmd,	TclCompileDictMergeCmd, NULL, NULL, false},
+    {"remove",	DictRemoveCmd,	TclCompileDictRemoveCmd, NULL, NULL, false},
+    {"replace",	DictReplaceCmd, TclCompileDictReplaceCmd, NULL, NULL, false},
+    {"set",	DictSetCmd,	TclCompileDictSetCmd, NULL, NULL, false},
+    {"size",	DictSizeCmd,	TclCompileBasic1ArgCmd, NULL, NULL, false},
+    {"unset",	DictUnsetCmd,	TclCompileDictUnsetCmd, NULL, NULL, false},
+    {"update",	DictUpdateCmd,	TclCompileDictUpdateCmd, NULL, NULL, false},
+    {"values",	DictValuesCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, false},
+    {"with",	DictWithCmd,	TclCompileDictWithCmd, NULL, NULL, false},
+    {NULL, NULL, NULL, NULL, NULL, false}
 };
 
 /*
@@ -2271,7 +2271,7 @@ DictExistsCmd(
     dictPtr = TclTraceDictPath(NULL, objv[1], objc-3, objv+2,DICT_PATH_EXISTS);
     if (dictPtr == NULL || dictPtr == DICT_PATH_NON_EXISTENT ||
 	    Tcl_DictObjGet(NULL, dictPtr, objv[objc-1], &valuePtr) != TCL_OK) {
-	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(0));
+	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(false));
     } else {
 	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(valuePtr != NULL));
     }

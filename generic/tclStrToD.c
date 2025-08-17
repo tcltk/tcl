@@ -568,7 +568,7 @@ TclParseNumber(
     len = numBytes;
     acceptPoint = p;
     acceptLen = len;
-    while (1) {
+    while (true) {
 	char c = len ? *p : '\0';
 
 	/*
@@ -2857,7 +2857,7 @@ ShorteningQuickFormat(
 
     eps = 0.5 / tens[ilim-1] - eps;
     i = 0;
-    for (;;) {
+    while (true) {
 	/*
 	 * Convert a digit.
 	 */
@@ -2932,7 +2932,7 @@ StrictQuickFormat(
 
     eps *= tens[ilim-1];
     i = 1;
-    for (;;) {
+    while (true) {
 	/*
 	 * Extract a digit.
 	 */
@@ -3197,7 +3197,7 @@ ShorteningInt64Conversion(
      */
 
     i = 1;
-    for (;;) {
+    while (true) {
 	digit = (int)(b / S);
 	if (digit > 10) {
 	    Tcl_Panic("wrong digit!");
@@ -3350,7 +3350,7 @@ StrictInt64Conversion(
      */
 
     i = 1;
-    for (;;) {
+    while (true) {
 	digit = (int)(b / S);
 	if (digit > 10) {
 	    Tcl_Panic("wrong digit!");
@@ -3590,7 +3590,7 @@ ShorteningBignumConversionPowD(
      */
 
     i = 0;
-    for (;;) {
+    while (true) {
 	if (b.used <= sd) {
 	    digit = 0;
 	} else {

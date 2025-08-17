@@ -170,7 +170,7 @@ TclCreateSocketAddress(
     struct addrinfo **addrlist,	/* Socket address list */
     const char *host,		/* Host. NULL implies INADDR_ANY */
     int port,			/* Port number */
-    int willBind,		/* Is this an address to bind() to or to
+    bool willBind,		/* Is this an address to bind() to or to
 				 * connect() to? */
     const char **errorMsgPtr)	/* Place to store the error message detail, if
 				 * available. */

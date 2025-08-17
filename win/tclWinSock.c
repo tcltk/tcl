@@ -648,7 +648,7 @@ WaitForConnect(
      * Loop in the blocking case until the connect signal is present
      */
 
-    while (1) {
+    while (true) {
 	/*
 	 * Get the statePtr lock.
 	 */
@@ -821,7 +821,7 @@ TcpInputProc(
      */
 
     int bytesRead;
-    while (1) {
+    while (true) {
 	SendSelectMessage(tsdPtr, UNSELECT, statePtr);
 
 	/*
@@ -936,7 +936,7 @@ TcpOutputProc(
     }
 
     int written;
-    while (1) {
+    while (true) {
 	SendSelectMessage(tsdPtr, UNSELECT, statePtr);
 
 	/*
@@ -1968,8 +1968,8 @@ Tcl_OpenTcpClient(
      * Do the name lookups for the local and remote addresses.
      */
 
-    if (!TclCreateSocketAddress(interp, &addrlist, host, port, 0, &errorMsg)
-	    || !TclCreateSocketAddress(interp, &myaddrlist, myaddr, myport, 1,
+    if (!TclCreateSocketAddress(interp, &addrlist, host, port, false, &errorMsg)
+	    || !TclCreateSocketAddress(interp, &myaddrlist, myaddr, myport, true,
 		    &errorMsg)) {
 	if (addrlist != NULL) {
 	    freeaddrinfo(addrlist);
@@ -2108,7 +2108,7 @@ Tcl_OpenTcpServerEx(
 	goto error;
     }
 
-    if (!TclCreateSocketAddress(interp, &addrlist, myHost, port, 1,
+    if (!TclCreateSocketAddress(interp, &addrlist, myHost, port, true,
 	    &errorMsg)) {
 	goto error;
     }
@@ -2890,7 +2890,7 @@ WaitForSocketEvent(
     SendSelectMessage(tsdPtr, UNSELECT, statePtr);
     SendSelectMessage(tsdPtr, SELECT, statePtr);
 
-    while (1) {
+    while (true) {
 	int event_found;
 
 	/*

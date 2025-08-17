@@ -643,7 +643,7 @@ SplitUnixPath(
      * Split on slashes.
      */
 
-    for (;;) {
+    while (true) {
 	elementStart = path;
 	while ((*path != '\0') && (*path != '/')) {
 	    path++;

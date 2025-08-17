@@ -2372,7 +2372,7 @@ FindLocalVar(
 	Tcl_DecrRefCount(varNameObj);
 	return TCL_INDEX_NONE;
     }
-    localVar = TclFindCompiledLocal(varNameStr, varNameLen, 1, envPtr);
+    localVar = LocalVar(varNameStr, varNameLen);
     Tcl_DecrRefCount(varNameObj);
     if (localVar < 0) {
 	if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {

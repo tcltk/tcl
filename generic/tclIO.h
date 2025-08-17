@@ -291,6 +291,12 @@ typedef struct ChannelState {
  */
 
 #define SYNTHETIC_EVENT_TIME	0
+
+/*
+ * Convenience macro to make some casts easier to use.
+ */
+
+#define UCHARP(x)	((unsigned char *) (x))
 
 /*
  * Local Variables:

@@ -697,9 +697,9 @@ static void		FreeExprCodeInternalRep(Tcl_Obj *objPtr);
 static Tcl_Obj *	GenerateArithSeries(Tcl_Interp *interp, Tcl_Obj *from,
 			    Tcl_Obj *to, Tcl_Obj *step, Tcl_Obj *count);
 static ExceptionRange *	GetExceptRangeForPc(const unsigned char *pc,
-			    int searchMode, ByteCode *codePtr);
+			    int searchMode, const ByteCode *codePtr);
 static const char *	GetSrcInfoForPc(const unsigned char *pc,
-			    ByteCode *codePtr, Tcl_Size *lengthPtr,
+			    const ByteCode *codePtr, Tcl_Size *lengthPtr,
 			    const unsigned char **pcBeg, Tcl_Size *cmdIdxPtr);
 static Tcl_Obj **	GrowEvaluationStack(ExecEnv *eePtr, size_t growth,
 			    int move);
@@ -1699,8 +1699,8 @@ TclCompileObj(
 
 	    if (invoker->type == TCL_LOCATION_BC) {
 		/*
-		 * Note: Type BC => ctx.data.eval.path    is not used.
-		 *		    ctx.data.tebc.codePtr used instead
+		 * Note: Type BC => ctx.path    is not used.
+		 *		    ctx.codePtr used instead
 		 */
 
 		TclGetSrcInfoForPc(ctxCopyPtr);
@@ -1709,8 +1709,8 @@ TclCompileObj(
 		     * The reference made by 'TclGetSrcInfoForPc' is dead.
 		     */
 
-		    Tcl_DecrRefCount(ctxCopyPtr->data.eval.path);
-		    ctxCopyPtr->data.eval.path = NULL;
+		    Tcl_DecrRefCount(ctxCopyPtr->path);
+		    ctxCopyPtr->path = NULL;
 		}
 	    }
 
@@ -2050,8 +2050,8 @@ TclNRExecuteByteCode(
     bcFramePtr->nline = 0;
     bcFramePtr->line = NULL;
     bcFramePtr->litarg = NULL;
-    bcFramePtr->data.tebc.codePtr = codePtr;
-    bcFramePtr->data.tebc.pc = NULL;
+    bcFramePtr->codePtr = codePtr;
+    bcFramePtr->pc = NULL;
     bcFramePtr->cmdObj = NULL;
     bcFramePtr->cmd = NULL;
     bcFramePtr->len = 0;
@@ -2279,8 +2279,8 @@ TEBCresume(
      * most frequent cases (instructions that consume up to two stack
      * elements).
      *
-     * This used to be a "for(;;)" loop, with each instruction doing its own
-     * cleanup.
+     * This used to be a "while (true)" loop, with each instruction doing its
+     * own cleanup.
      */
 
   cleanupV_pushObjResultPtr:
@@ -2585,7 +2585,7 @@ TEBCresume(
 	 * 'TclGetSrcInfoForPc', and push the frame.
 	 */
 
-	bcFramePtr->data.tebc.pc = (char *) pc;
+	bcFramePtr->pc = pc;
 	iPtr->cmdFramePtr = bcFramePtr;
 
 	if (iPtr->flags & INTERP_DEBUG_FRAME) {
@@ -2735,7 +2735,7 @@ TEBCresume(
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
-	bcFramePtr->data.tebc.pc = (char *) pc;
+	bcFramePtr->pc = pc;
 	iPtr->cmdFramePtr = bcFramePtr;
 	TclArgumentGet(interp, scriptObj, &invoker, &word);
 	DECACHE_STACK_INFO();
@@ -2969,7 +2969,7 @@ TEBCresume(
 	NEXT_INST_F0(5, 0);
 
     case INST_EXPR_STK: {
-	bcFramePtr->data.tebc.pc = (char *) pc;
+	bcFramePtr->pc = pc;
 	iPtr->cmdFramePtr = bcFramePtr;
 	DECACHE_STACK_INFO();
 	ByteCode *newCodePtr = CompileExprObj(interp, OBJ_AT_TOS);
@@ -2986,7 +2986,7 @@ TEBCresume(
 
     case INST_EVAL_STK:
     instEvalStk:
-	bcFramePtr->data.tebc.pc = (char *) pc;
+	bcFramePtr->pc = pc;
 	iPtr->cmdFramePtr = bcFramePtr;
 
 	cleanup = 1;
@@ -3052,7 +3052,7 @@ TEBCresume(
 	 * 'TclGetSrcInfoForPc', and push the frame.
 	 */
 
-	bcFramePtr->data.tebc.pc = (char *) pc;
+	bcFramePtr->pc = pc;
 	iPtr->cmdFramePtr = bcFramePtr;
 
 	if (iPtr->flags & INTERP_DEBUG_FRAME) {
@@ -3101,7 +3101,7 @@ TEBCresume(
 	}
 #endif /*TCL_COMPILE_DEBUG*/
 
-	bcFramePtr->data.tebc.pc = (char *) pc;
+	bcFramePtr->pc = pc;
 	iPtr->cmdFramePtr = bcFramePtr;
 	if (iPtr->flags & INTERP_DEBUG_FRAME) {
 	    ArgumentBCEnter(interp, codePtr, TD, pc, objc, objv);
@@ -4905,7 +4905,7 @@ TEBCresume(
 	    fflush(stdout);
 	}
 #endif // TCL_COMPILE_DEBUG
-	bcFramePtr->data.tebc.pc = (char *) pc;
+	bcFramePtr->pc = pc;
 	iPtr->cmdFramePtr = bcFramePtr;
 
 	if (iPtr->flags & INTERP_DEBUG_FRAME) {
@@ -9366,7 +9366,8 @@ GenerateArithSeries(
     Tcl_Obj *count)		// The count value, or NULL if not supplied.
 {
     Tcl_Obj *result = NULL;
-    int type, useDoubles = 0;
+    int type;
+    bool useDoubles = false;
     void *ptr;
 
     // Hold explicit references.
@@ -9394,7 +9395,7 @@ GenerateArithSeries(
 	}
 	switch (type) {
 	case TCL_NUMBER_DOUBLE:
-	    useDoubles = 1;
+	    useDoubles = true;
 	    break;
 	case TCL_NUMBER_NAN:
 	    TclPrintfResult(interp,
@@ -9411,7 +9412,7 @@ GenerateArithSeries(
 	}
 	switch (type) {
 	case TCL_NUMBER_DOUBLE:
-	    useDoubles = 1;
+	    useDoubles = true;
 	    break;
 	case TCL_NUMBER_NAN:
 	    TclPrintfResult(interp,
@@ -9430,7 +9431,7 @@ GenerateArithSeries(
 	}
 	switch (type) {
 	case TCL_NUMBER_DOUBLE:
-	    useDoubles = 1;
+	    useDoubles = true;
 	    break;
 	case TCL_NUMBER_NAN:
 	    TclPrintfResult(interp,
@@ -9741,10 +9742,8 @@ TclGetSourceFromFrame(
     }
     if (cfPtr->cmdObj == NULL) {
 	if (cfPtr->cmd == NULL) {
-	    ByteCode *codePtr = (ByteCode *)cfPtr->data.tebc.codePtr;
-
-	    cfPtr->cmd = GetSrcInfoForPc((unsigned char *)
-		    cfPtr->data.tebc.pc, codePtr, &cfPtr->len, NULL, NULL);
+	    cfPtr->cmd = GetSrcInfoForPc(cfPtr->pc, cfPtr->codePtr, &cfPtr->len,
+		    NULL, NULL);
 	}
 	if (cfPtr->cmd) {
 	    cfPtr->cmdObj = Tcl_NewStringObj(cfPtr->cmd, cfPtr->len);
@@ -9760,15 +9759,13 @@ void
 TclGetSrcInfoForPc(
     CmdFrame *cfPtr)
 {
-    ByteCode *codePtr = (ByteCode *) cfPtr->data.tebc.codePtr;
+    const ByteCode *codePtr = cfPtr->codePtr;
 
     assert(cfPtr->type == TCL_LOCATION_BC);
 
     if (cfPtr->cmd == NULL) {
-
-	cfPtr->cmd = GetSrcInfoForPc(
-		(unsigned char *) cfPtr->data.tebc.pc, codePtr,
-		&cfPtr->len, NULL, NULL);
+	cfPtr->cmd = GetSrcInfoForPc(cfPtr->pc, codePtr, &cfPtr->len,
+		NULL, NULL);
     }
 
     if (cfPtr->cmd != NULL) {
@@ -9781,8 +9778,7 @@ TclGetSrcInfoForPc(
 	ECL *locPtr = NULL;
 	Tcl_Size srcOffset;
 	Interp *iPtr = (Interp *) *codePtr->interpHandle;
-	Tcl_HashEntry *hePtr =
-		Tcl_FindHashEntry(iPtr->lineBCPtr, codePtr);
+	Tcl_HashEntry *hePtr = Tcl_FindHashEntry(iPtr->lineBCPtr, codePtr);
 
 	if (!hePtr) {
 	    return;
@@ -9806,13 +9802,13 @@ TclGetSrcInfoForPc(
 	cfPtr->type = eclPtr->type;
 
 	if (eclPtr->type == TCL_LOCATION_SOURCE) {
-	    cfPtr->data.eval.path = eclPtr->path;
-	    Tcl_IncrRefCount(cfPtr->data.eval.path);
+	    cfPtr->path = eclPtr->path;
+	    Tcl_IncrRefCount(cfPtr->path);
 	}
 
 	/*
-	 * Do not set cfPtr->data.eval.path NULL for non-SOURCE. Needed for
-	 * cfPtr->data.tebc.codePtr.
+	 * Do not set cfPtr->path NULL for non-SOURCE. Needed for
+	 * cfPtr->codePtr.
 	 */
     }
 }
@@ -9823,7 +9819,7 @@ GetSrcInfoForPc(
 				 * return the closest command's source info.
 				 * This points within a bytecode instruction
 				 * in codePtr's code. */
-    ByteCode *codePtr,		/* The bytecode sequence in which to look up
+    const ByteCode *codePtr,	/* The bytecode sequence in which to look up
 				 * the command source for the pc. */
     Tcl_Size *lengthPtr,	/* If non-NULL, the location where the length
 				 * of the command's source should be stored.
@@ -9983,7 +9979,7 @@ GetExceptRangeForPc(
 				 * closer loop ranges). If TCL_CONTINUE, look
 				 * for loop ranges that define a continue
 				 * point or a catch range. */
-    ByteCode *codePtr)		/* Points to the ByteCode in which to search
+    const ByteCode *codePtr)	/* Points to the ByteCode in which to search
 				 * for the enclosing ExceptionRange. */
 {
     ExceptionRange *rangeArrayPtr;

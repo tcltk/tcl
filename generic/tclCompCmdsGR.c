@@ -25,8 +25,8 @@
 static void		CompileReturnInternal(CompileEnv *envPtr,
 			    unsigned char op, int code, int level,
 			    Tcl_Obj *returnOpts);
-static Tcl_LVTIndex	IndexTailVarIfKnown(Tcl_Interp *interp,
-			    Tcl_Token *varTokenPtr, CompileEnv *envPtr);
+static Tcl_LVTIndex	IndexTailVarIfKnown(Tcl_Token *varTokenPtr,
+			    CompileEnv *envPtr);
 
 /*
  *----------------------------------------------------------------------
@@ -117,7 +117,7 @@ TclCompileGlobalCmd(
 
     Tcl_Token *varTokenPtr = TokenAfter(parsePtr->tokenPtr);
     for (Tcl_Size i=1; i<numWords; varTokenPtr = TokenAfter(varTokenPtr),i++) {
-	Tcl_LVTIndex localIndex = IndexTailVarIfKnown(interp, varTokenPtr, envPtr);
+	Tcl_LVTIndex localIndex = IndexTailVarIfKnown(varTokenPtr, envPtr);
 
 	if (localIndex < 0 || localIndex > INT_MAX) {
 	    return TCL_ERROR;
@@ -311,8 +311,7 @@ TclCompileIfCmd(
 	     */
 
 	    STKDELTA(-1);
-	    TclFixupForwardJumpToHere(envPtr,
-		    jumpFalseFixupArray.fixup + jumpIndex);
+	    FixupForwardJumpToHere(jumpFalseFixupArray.fixup + jumpIndex);
 	} else if (boolVal) {
 	    /*
 	     * We were processing an "if 1 {...}"; stop compiling scripts.
@@ -385,8 +384,7 @@ TclCompileIfCmd(
 
     for (Tcl_Size j = jumpEndFixupArray.next;  j > 0;  j--) {
 	jumpIndex = j - 1;	/* i.e. process the closest jump first. */
-	TclFixupForwardJumpToHere(envPtr,
-		jumpEndFixupArray.fixup + jumpIndex);
+	FixupForwardJumpToHere(jumpEndFixupArray.fixup + jumpIndex);
     }
 
     /*
@@ -456,7 +454,7 @@ TclCompileIncrCmd(
 	Tcl_BounceRefCount(intObj);
 	if (!haveImmValue) {
 	    SetLineInformation(2);
-	    CompileTokens(envPtr, incrTokenPtr, interp);
+	    CompileTokens(incrTokenPtr);
 	}
     } else {			/* No incr amount given so use 1. */
 	haveImmValue = true;
@@ -1616,7 +1614,7 @@ TclCompileLpopCmd(
     }
 
     Tcl_Token *varTokenPtr = TokenAfter(parsePtr->tokenPtr);
-    Tcl_LVTIndex varIdx = LocalScalarFromToken(varTokenPtr, envPtr);
+    Tcl_LVTIndex varIdx = LocalScalarFromToken(varTokenPtr);
     if (varIdx < 0) {
 	// Give up if we pushed any words; makes stack computations tractable
 	return TCL_ERROR;
@@ -2269,7 +2267,7 @@ TclCompileNamespaceUpvarCmd(
 	localTokenPtr = TokenAfter(otherTokenPtr);
 
 	PUSH_TOKEN(		otherTokenPtr, i);
-	Tcl_LVTIndex localIndex = LocalScalarFromToken(localTokenPtr, envPtr);
+	Tcl_LVTIndex localIndex = LocalScalarFromToken(localTokenPtr);
 	if (localIndex < 0) {
 	    return TCL_ERROR;
 	}
@@ -2440,7 +2438,7 @@ TclCompileRegexpCmd(
 	Tcl_DString ds;
 	if (TclReToGlob(NULL, str, len, &ds, &exact, NULL) == TCL_OK) {
 	    simple = true;
-	    TclPushDString(envPtr, &ds);
+	    TclPushDString(&ds);
 	    Tcl_DStringFree(&ds);
 	}
     }
@@ -2596,7 +2594,7 @@ TclCompileRegsubCmd(
     if (*bytes++ != '*') {
 	goto done;
     }
-    while (1) {
+    while (true) {
 	switch (*bytes) {
 	case '*':
 	    if (bytes[1] == '\0') {
@@ -2983,7 +2981,7 @@ TclCompileUpvarCmd(
 	localTokenPtr = TokenAfter(otherTokenPtr);
 
 	PUSH_TOKEN(		otherTokenPtr, i);
-	Tcl_LVTIndex localIndex = LocalScalarFromToken(localTokenPtr, envPtr);
+	Tcl_LVTIndex localIndex = LocalScalarFromToken(localTokenPtr);
 	if (localIndex < 0) {
 	    return TCL_ERROR;
 	}
@@ -3049,7 +3047,7 @@ TclCompileVariableCmd(
 	Tcl_Token *varTokenPtr = TokenAfter(valueTokenPtr);
 	valueTokenPtr = TokenAfter(varTokenPtr);
 
-	Tcl_LVTIndex localIndex = IndexTailVarIfKnown(interp, varTokenPtr, envPtr);
+	Tcl_LVTIndex localIndex = IndexTailVarIfKnown(varTokenPtr, envPtr);
 	if (localIndex < 0) {
 	    return TCL_ERROR;
 	}
@@ -3100,7 +3098,6 @@ TclCompileVariableCmd(
 
 static Tcl_LVTIndex
 IndexTailVarIfKnown(
-    TCL_UNUSED(Tcl_Interp *),
     Tcl_Token *varTokenPtr,	/* Token representing the variable name */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
@@ -3173,7 +3170,7 @@ IndexTailVarIfKnown(
 	tailName = p;
     }
 
-    Tcl_LVTIndex localIndex = TclFindCompiledLocal(tailName, len, true, envPtr);
+    Tcl_LVTIndex localIndex = LocalVar(tailName, len);
     Tcl_DecrRefCount(tailPtr);
     return localIndex;
 }

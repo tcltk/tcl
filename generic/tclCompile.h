@@ -468,7 +468,7 @@ enum ByteCodeFlags {
     TCL_BYTECODE_RECOMPILE = 0x0004
 };
 
-typedef struct ByteCode {
+struct ByteCode {
     TclHandle interpHandle;	/* Handle for interpreter containing the
 				 * compiled code. Commands and their compile
 				 * procs are specific to an interpreter so the
@@ -570,7 +570,7 @@ typedef struct ByteCode {
     Tcl_Time createTime;	/* Absolute time when the ByteCode was
 				 * created. */
 #endif /* TCL_COMPILE_STATS */
-} ByteCode;
+};
 
 #define ByteCodeSetInternalRep(objPtr, typePtr, codePtr) \
     do {								\
@@ -1439,14 +1439,18 @@ TclAdjustStackDepth(
 static inline void
 TclCheckStackDepth(
     size_t depth,
-    CompileEnv *envPtr)
+    CompileEnv *envPtr,
+    const char *func)
 {
     if (depth != (size_t) envPtr->currStackDepth) {
-	Tcl_Panic("bad stack depth computations: "
+	Tcl_Panic("bad stack depth computations in %s: "
 		"is %" TCL_Z_MODIFIER "u, should be %" TCL_Z_MODIFIER "u",
-		(size_t) envPtr->currStackDepth, depth);
+		func, (size_t) envPtr->currStackDepth, depth);
     }
 }
+
+#define CheckStackDepth(depth) \
+    TclCheckStackDepth((depth), envPtr, __func__)
 
 /*
  * Update the stack requirements based on the instruction definition. It is
@@ -1766,6 +1770,9 @@ TclFixupForwardJumpToHere(
 	    CurrentOffset(envPtr) - (int) fixupPtr->codeOffset);
 }
 
+#define FixupForwardJumpToHere(fixupPtr) \
+    TclFixupForwardJumpToHere(envPtr, (fixupPtr))
+
 /*
  * Macros to get a signed integer (GET_INT{1,2}) or an unsigned int
  * (GET_UINT{1,2}) from a pointer. There are two variants for each return type
@@ -1841,13 +1848,11 @@ TclGetUInt4AtPtr(const unsigned char *p) {
  * Convenience macro for use when compiling tokens to be pushed. The ANSI C
  * "prototype" for this macro is:
  *
- * static void		CompileTokens(CompileEnv *envPtr, Tcl_Token *tokenPtr,
- *			    Tcl_Interp *interp);
+ * static void		CompileTokens(Tcl_Token *tokenPtr);
  */
 
-#define CompileTokens(envPtr, tokenPtr, interp) \
-    TclCompileTokens((interp), (tokenPtr)+1, (tokenPtr)->numComponents, \
-	    (envPtr));
+#define CompileTokens(tokenPtr) \
+    TclCompileTokens(interp, (tokenPtr)+1, (tokenPtr)->numComponents, envPtr)
 
 /*
  * Convenience macro for use when pushing literals, returning the ID of the
@@ -1927,11 +1932,11 @@ ExceptionRangeEnds(
 
 #define TclDStringAppendToken(dsPtr, tokenPtr) \
     Tcl_DStringAppend((dsPtr), (tokenPtr)->start, (tokenPtr)->size)
-#define TclRegisterDStringLiteral(envPtr, dsPtr) \
+#define TclRegisterDStringLiteral(dsPtr) \
     TclRegisterLiteral(envPtr, Tcl_DStringValue(dsPtr),			\
 	    Tcl_DStringLength(dsPtr), /*flags*/ 0)
-#define TclPushDString(envPtr, dsPtr) \
-    TclEmitPush(TclRegisterDStringLiteral((envPtr), (dsPtr)), (envPtr))
+#define TclPushDString(dsPtr) \
+    TclEmitPush(TclRegisterDStringLiteral(dsPtr), envPtr)
 
 /*
  * Macro that encapsulates an efficiency trick that avoids a function call for
@@ -1946,7 +1951,7 @@ ExceptionRangeEnds(
 	PushLiteral((envPtr), (tokenPtr)[1].start, (tokenPtr)[1].size);	\
     } else {								\
 	SetLineInformation((word));					\
-	CompileTokens((envPtr), (tokenPtr), (interp));			\
+	CompileTokens(tokenPtr);					\
     }
 
 /*
@@ -1989,11 +1994,13 @@ ExceptionRangeEnds(
  * off the stack) or a local simple scalar.
  */
 
-#define AnonymousLocal(envPtr) \
-    (TclFindCompiledLocal(NULL, /*nameChars*/ 0, /*create*/ true, (envPtr)))
-#define LocalScalar(chars,len,envPtr) \
+#define AnonymousLocal() \
+    (TclFindCompiledLocal(/*name*/NULL, /*nameBytes*/0, /*create*/true, envPtr))
+#define LocalVar(chars, len) \
+    (TclFindCompiledLocal((chars), (len), /*create*/true, envPtr))
+#define LocalScalar(chars, len) \
     TclLocalScalar(chars, len, envPtr)
-#define LocalScalarFromToken(tokenPtr,envPtr) \
+#define LocalScalarFromToken(tokenPtr) \
     TclLocalScalarFromToken(tokenPtr, envPtr)
 
 /*
@@ -2090,7 +2097,7 @@ typedef Tcl_Size Tcl_BytecodeLabel;
 
 // Push a string literal.
 #define PUSH(string) \
-    PushLiteral((envPtr), (string), LENGTH_OF(string))
+    PushLiteral(envPtr, (string), LENGTH_OF(string))
 // Push a string whose is computed with strlen().
 #define PUSH_STRING(strVar) \
     PushLiteral(envPtr, (strVar), TCL_AUTO_LENGTH)

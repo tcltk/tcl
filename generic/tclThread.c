@@ -334,7 +334,7 @@ Tcl_ConditionFinalize(
  */
 
 void
-TclFinalizeThreadData(int quick)
+TclFinalizeThreadData(bool quick)
 {
     TclFinalizeThreadDataThread();
 #if TCL_THREADS && defined(USE_THREAD_ALLOC)
@@ -478,9 +478,9 @@ Tcl_ExitThread(
 #undef Tcl_ConditionWait
 void
 Tcl_ConditionWait(
-    TCL_UNUSED(Tcl_Condition *),	/* Really (pthread_cond_t **) */
-    TCL_UNUSED(Tcl_Mutex *),	/* Really (pthread_mutex_t **) */
-    TCL_UNUSED(const Tcl_Time *)) /* Timeout on waiting period */
+    TCL_UNUSED(Tcl_Condition *),
+    TCL_UNUSED(Tcl_Mutex *),
+    TCL_UNUSED(const Tcl_Time *))
 {
 }
 

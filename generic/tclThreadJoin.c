@@ -228,9 +228,8 @@ void
 TclRememberJoinableThread(
     Tcl_ThreadId id)		/* The thread to remember as joinable */
 {
-    JoinableThread *threadPtr;
-
-    threadPtr = (JoinableThread *)Tcl_Alloc(sizeof(JoinableThread));
+    JoinableThread *threadPtr = (JoinableThread *)
+	    Tcl_Alloc(sizeof(JoinableThread));
     threadPtr->id = id;
     threadPtr->done = false;
     threadPtr->waitedUpon = false;
@@ -268,11 +267,9 @@ TclSignalExitThread(
     Tcl_ThreadId id,		/* Id of the thread signaling its exit. */
     int result)			/* The result from the thread. */
 {
-    JoinableThread *threadPtr;
-
     Tcl_MutexLock(&joinMutex);
 
-    threadPtr = firstThreadPtr;
+    JoinableThread *threadPtr = firstThreadPtr;
     while ((threadPtr != NULL) && (threadPtr->id != id)) {
 	threadPtr = threadPtr->nextThreadPtr;
     }

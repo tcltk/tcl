@@ -1054,7 +1054,7 @@ NotifierThreadProc(
      * Look for file events and report them to interested threads.
      */
 
-    while (1) {
+    while (true) {
 	FD_ZERO(&readableMask);
 	FD_ZERO(&writableMask);
 	FD_ZERO(&exceptionMask);
@@ -1182,7 +1182,7 @@ NotifierThreadProc(
 	 */
 
 	int i;
-	do {
+	while (true) {
 	    i = (int)read(receivePipe, buf, 1);
 	    if (i <= 0) {
 		break;
@@ -1195,7 +1195,7 @@ NotifierThreadProc(
 
 		break;
 	    }
-	} while (1);
+	}
 
 	if (asyncPending) {
 	    asyncPending = false;

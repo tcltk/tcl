@@ -680,7 +680,7 @@ CopyRenameOneFile(
 	} else {
 	    int counter = 0;
 
-	    while (1) {
+	    while (true) {
 		Tcl_Obj *path = Tcl_FSLink(actualSource, NULL, 0);
 		if (path == NULL) {
 		    break;

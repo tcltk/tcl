@@ -740,7 +740,7 @@ ProcessAutopurgeObjCmd(
 	    return result;
 	}
 
-	autopurge = !!flag;
+	autopurge = flag;
     }
 
     /*
@@ -773,16 +773,16 @@ TclInitProcessCmd(
     Tcl_Interp *interp)		/* Current interpreter. */
 {
     static const EnsembleImplMap processImplMap[] = {
-	{"list", ProcessListObjCmd, TclCompileBasic0ArgCmd, NULL, NULL, 1},
-	{"status", ProcessStatusObjCmd, TclCompileBasicMin0ArgCmd, NULL, NULL, 1},
-	{"purge", ProcessPurgeObjCmd, TclCompileBasic0Or1ArgCmd, NULL, NULL, 1},
-	{"autopurge", ProcessAutopurgeObjCmd, TclCompileBasic0Or1ArgCmd, NULL, NULL, 1},
-	{NULL, NULL, NULL, NULL, NULL, 0}
+	{"list",	ProcessListObjCmd,	TclCompileBasic0ArgCmd, NULL, NULL, true},
+	{"status",	ProcessStatusObjCmd,	TclCompileBasicMin0ArgCmd, NULL, NULL, true},
+	{"purge",	ProcessPurgeObjCmd,	TclCompileBasic0Or1ArgCmd, NULL, NULL, true},
+	{"autopurge",	ProcessAutopurgeObjCmd,	TclCompileBasic0Or1ArgCmd, NULL, NULL, true},
+	{NULL, NULL, NULL, NULL, NULL, false}
     };
 
-    if (infoTablesInitialized == 0) {
+    if (!infoTablesInitialized) {
 	Tcl_MutexLock(&infoTablesMutex);
-	if (infoTablesInitialized == 0) {
+	if (!infoTablesInitialized) {
 	    Tcl_InitHashTable(&infoTablePerPid, TCL_ONE_WORD_KEYS);
 	    Tcl_InitHashTable(&infoTablePerResolvedPid, TCL_ONE_WORD_KEYS);
 	    infoTablesInitialized = true;

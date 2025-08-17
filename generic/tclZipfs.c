@@ -536,6 +536,12 @@ static const Tcl_ChannelType zipChannelType = {
     NULL,			/* Thread action function. */
     NULL,			/* Truncate function. */
 };
+
+/*
+ * Convenience macro to make some casts easier to use.
+ */
+
+#define UCHARP(x)	((unsigned char *) (x))
 
 /*
  *------------------------------------------------------------------------
@@ -1412,7 +1418,7 @@ ZipFSCloseArchive(
 #else /* !_WIN32 */
     if ((zf->data != MAP_FAILED) && !zf->ptrToFree) {
 	munmap(zf->data, zf->length);
-	zf->data = (unsigned char *) MAP_FAILED;
+	zf->data = UCHARP(MAP_FAILED);
     }
 #endif /* _WIN32 */
 
@@ -1666,7 +1672,7 @@ ZipFSOpenArchive(
     zf->data = NULL;
     zf->mountHandle = INVALID_HANDLE_VALUE;
 #else /* !_WIN32 */
-    zf->data = (unsigned char *) MAP_FAILED;
+    zf->data = UCHARP(MAP_FAILED);
 #endif /* _WIN32 */
     zf->length = 0;
     zf->numFiles = 0;
@@ -1719,7 +1725,7 @@ ZipFSOpenArchive(
 	    ZIPFS_POSIX_ERROR(interp, "seek error");
 	    goto error;
 	}
-	zf->ptrToFree = zf->data = (unsigned char *) Tcl_AttemptAlloc(zf->length);
+	zf->ptrToFree = zf->data = UCHARP(Tcl_AttemptAlloc(zf->length));
 	if (!zf->ptrToFree) {
 	    ZIPFS_MEM_ERROR(interp);
 	    goto error;
@@ -1803,8 +1809,8 @@ ZipMapArchive(
 	ZIPFS_POSIX_ERROR(interp, "file mapping failed");
 	return TCL_ERROR;
     }
-    zf->data = (unsigned char *)
-	    MapViewOfFile(zf->mountHandle, FILE_MAP_READ, 0, 0, zf->length);
+    zf->data = UCHARP(MapViewOfFile(zf->mountHandle, FILE_MAP_READ, 0, 0,
+	    zf->length));
     if (!zf->data) {
 	Tcl_WinConvertError(GetLastError());
 	ZIPFS_POSIX_ERROR(interp, "file mapping failed");
@@ -1829,8 +1835,8 @@ ZipMapArchive(
     }
     lseek(fd, 0, SEEK_SET);
 
-    zf->data = (unsigned char *)
-	    mmap(0, zf->length, PROT_READ, MAP_FILE | MAP_PRIVATE, fd, 0);
+    zf->data = UCHARP(mmap(0, zf->length, PROT_READ, MAP_FILE | MAP_PRIVATE,
+	    fd, 0));
     if (zf->data == MAP_FAILED) {
 	ZIPFS_POSIX_ERROR(interp, "file mapping failed");
 	return TCL_ERROR;
@@ -2501,7 +2507,7 @@ TclZipfs_MountBuffer(
     zf->length = datalen;
 
     if (copy) {
-	zf->data = (unsigned char *)Tcl_AttemptAlloc(datalen);
+	zf->data = UCHARP(Tcl_AttemptAlloc(datalen));
 	if (zf->data == NULL) {
 	    ZipFSCloseArchive(interp, zf);
 	    Tcl_Free(zf);
@@ -2511,7 +2517,7 @@ TclZipfs_MountBuffer(
 	memcpy(zf->data, data, datalen);
 	zf->ptrToFree = zf->data;
     } else {
-	zf->data = (unsigned char *)data;
+	zf->data = UCHARP(data);
 	zf->ptrToFree = NULL;
     }
     ret = ZipFSFindTOC(interp, 1, zf);
@@ -2898,8 +2904,8 @@ ZipAddFile(
     Tcl_HashTable *fileHash)	/* Where to record ZIP entry metdata so we can
 				 * built the central directory. */
 {
-    const unsigned char *start = (unsigned char *) buf;
-    const unsigned char *end = (unsigned char *) buf + bufsize;
+    const unsigned char *start = UCHARP(buf);
+    const unsigned char *end = UCHARP(buf + bufsize);
     Tcl_Channel in;
     Tcl_HashEntry *hPtr;
     ZipEntry *z;
@@ -2975,7 +2981,7 @@ ZipAddFile(
 
     crc = 0;
     nbyte = nbytecompr = 0;
-    while (1) {
+    while (true) {
 	len = Tcl_Read(in, buf, bufsize);
 	if (len < 0) {
 	    Tcl_DStringFree(&zpathDs);
@@ -2992,7 +2998,7 @@ ZipAddFile(
 	if (len == 0) {
 	    break;
 	}
-	crc = crc32(crc, (unsigned char *) buf, len);
+	crc = crc32(crc, UCHARP(buf), len);
 	nbyte += len;
     }
     if (Tcl_Seek(in, 0, SEEK_SET) == -1) {
@@ -3112,11 +3118,11 @@ ZipAddFile(
 	    goto readErrorWithChannelOpen;
 	}
 	stream.avail_in = len;
-	stream.next_in = (unsigned char *) buf;
+	stream.next_in = UCHARP(buf);
 	flush = Tcl_Eof(in) ? Z_FINISH : Z_NO_FLUSH;
 	do {
 	    stream.avail_out = sizeof(obuf);
-	    stream.next_out = (unsigned char *) obuf;
+	    stream.next_out = UCHARP(obuf);
 	    len = deflate(&stream, flush);
 	    if (len == Z_STREAM_ERROR) {
 		TclPrintfResult(interp, "deflate error on \"%s\"",
@@ -3166,7 +3172,7 @@ ZipAddFile(
 	    return TCL_ERROR;
 	}
 	nbytecompr = (passwd ? ZIP_CRYPT_HDR_LEN : 0);
-	while (1) {
+	while (true) {
 	    len = Tcl_Read(in, buf, bufsize);
 	    if (len < 0) {
 		goto readErrorWithChannelOpen;
@@ -3228,8 +3234,7 @@ ZipAddFile(
      * Write final local header information.
      */
 
-    SerializeLocalEntryHeader(start, end, (unsigned char *) buf, z,
-	    zpathlen, align);
+    SerializeLocalEntryHeader(start, end, UCHARP(buf), z, zpathlen, align);
     if (Tcl_Seek(out, headerStartOffset, SEEK_SET) != headerStartOffset) {
 	Tcl_DeleteHashEntry(hPtr);
 	Tcl_Free(z);
@@ -3392,7 +3397,7 @@ ZipFSMkZipOrImg(
 				 * where this data will be written). */
     Tcl_Obj **lobjv, *list = mappingList;
     char *strip = NULL, *pw = NULL, passBuf[264], buf[4096];
-    unsigned char *start = (unsigned char *) buf;
+    unsigned char *start = UCHARP(buf);
     unsigned char *end = start + sizeof(buf);
 
     /*
@@ -3608,8 +3613,8 @@ ZipFSMkZipOrImg(
 	}
 	name = Tcl_DStringValue(&ds);
 	Tcl_Size len = Tcl_DStringLength(&ds);
-	SerializeCentralDirectoryEntry(start, end, (unsigned char *) buf,
-		z, len, dataStartOffset);
+	SerializeCentralDirectoryEntry(start, end, UCHARP(buf), z, len,
+		dataStartOffset);
 	if ((Tcl_Write(out, buf, ZIP_CENTRAL_HEADER_LEN)
 		!= ZIP_CENTRAL_HEADER_LEN)
 		|| (Tcl_Write(out, name, len) != len)) {
@@ -3627,8 +3632,8 @@ ZipFSMkZipOrImg(
 
     Tcl_Flush(out);
     suffixStartOffset = Tcl_Tell(out);
-    SerializeCentralDirectorySuffix(start, end, (unsigned char *) buf,
-	    count, dataStartOffset, directoryStartOffset, suffixStartOffset);
+    SerializeCentralDirectorySuffix(start, end, UCHARP(buf), count,
+	    dataStartOffset, directoryStartOffset, suffixStartOffset);
     if (Tcl_Write(out, buf, ZIP_CENTRAL_END_LEN) != ZIP_CENTRAL_END_LEN) {
 	TclPrintfResult(interp, "write error: %s", Tcl_PosixError(interp));
 	goto done;
@@ -4051,18 +4056,15 @@ ZipFSExistsObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    char *filename;
-    int exists;
-
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "filename");
 	return TCL_ERROR;
     }
 
-    filename = TclGetString(objv[1]);
+    const char *filename = TclGetString(objv[1]);
 
     ReadLock();
-    exists = ZipFSLookup(filename) != NULL;
+    bool exists = ZipFSLookup(filename) != NULL;
     if (!exists) {
 	/* An ancestor directory of a file ? */
 	exists = ContainsMountPoint(filename, -1);
@@ -4438,10 +4440,8 @@ ZipChannelClose(
 	 */
 	ZipEntry *z = info->zipEntryPtr;
 	assert(info->ubufToFree && info->ubuf);
-	unsigned char *newdata;
-	newdata = (unsigned char *) Tcl_AttemptRealloc(
-		info->ubufToFree,
-		info->numBytes ? info->numBytes : 1); /* Bug [23dd83ce7c] */
+	unsigned char *newdata = UCHARP(Tcl_AttemptRealloc(info->ubufToFree,
+		info->numBytes ? info->numBytes : 1)); /* Bug [23dd83ce7c] */
 	if (newdata == NULL) {
 	    /* Could not reallocate, keep existing buffer */
 	    newdata = info->ubufToFree;
@@ -4615,8 +4615,8 @@ ZipChannelWrite(
 	} else {
 	    needed = info->maxWrite;
 	}
-	unsigned char *newBuf = (unsigned char *)
-		Tcl_AttemptRealloc(info->ubufToFree, needed);
+	unsigned char *newBuf = UCHARP(Tcl_AttemptRealloc(info->ubufToFree,
+		needed));
 	if (newBuf == NULL) {
 	    *errloc = ENOMEM;
 	    return -1;
@@ -4983,7 +4983,7 @@ InitWritableChannel(
     info->maxWrite = ZipFS.wrmax;
 
     info->ubufSize = z->numBytes ? z->numBytes : 1;
-    info->ubufToFree = (unsigned char *)Tcl_AttemptAlloc(info->ubufSize);
+    info->ubufToFree = UCHARP(Tcl_AttemptAlloc(info->ubufSize));
     info->ubuf = info->ubufToFree;
     if (info->ubufToFree == NULL) {
 	goto memoryError;
@@ -5036,7 +5036,8 @@ InitWritableChannel(
 		assert(stream.avail_in >= ZIP_CRYPT_HDR_LEN);
 
 		stream.avail_in -= ZIP_CRYPT_HDR_LEN;
-		cbuf = (unsigned char *) Tcl_AttemptAlloc(stream.avail_in ? stream.avail_in : 1);
+		cbuf = UCHARP(Tcl_AttemptAlloc(
+			stream.avail_in ? stream.avail_in : 1));
 		if (!cbuf) {
 		    goto memoryError;
 		}
@@ -5187,7 +5188,7 @@ InitReadableChannel(
 	if (info->isEncrypted) {
 	    assert(stream.avail_in >= ZIP_CRYPT_HDR_LEN);
 	    stream.avail_in -= ZIP_CRYPT_HDR_LEN;
-	    ubuf = (unsigned char *) Tcl_AttemptAlloc(stream.avail_in ? stream.avail_in : 1);
+	    ubuf = UCHARP(Tcl_AttemptAlloc(stream.avail_in ? stream.avail_in : 1));
 	    if (!ubuf) {
 		goto memoryError;
 	    }
@@ -5202,7 +5203,7 @@ InitReadableChannel(
 	}
 
 	info->ubufSize = info->numBytes ? info->numBytes : 1;
-	info->ubufToFree = (unsigned char *)Tcl_AttemptAlloc(info->ubufSize);
+	info->ubufToFree = UCHARP(Tcl_AttemptAlloc(info->ubufSize));
 	info->ubuf = info->ubufToFree;
 	stream.next_out = info->ubuf;
 	if (!info->ubuf) {
@@ -5244,7 +5245,7 @@ InitReadableChannel(
 	    goto corruptionError;
 	}
 	unsigned len = z->numCompressedBytes - ZIP_CRYPT_HDR_LEN;
-	ubuf = (unsigned char *) Tcl_AttemptAlloc(len);
+	ubuf = UCHARP(Tcl_AttemptAlloc(len));
 	if (ubuf == NULL) {
 	    goto memoryError;
 	}
@@ -6251,20 +6252,20 @@ TclZipfs_Init(
     Tcl_Interp *interp)		/* Current interpreter. */
 {
     static const EnsembleImplMap initMap[] = {
-	{"mkimg",	ZipFSMkImgObjCmd,	NULL, NULL, NULL, 1},
-	{"mkzip",	ZipFSMkZipObjCmd,	NULL, NULL, NULL, 1},
-	{"lmkimg",	ZipFSLMkImgObjCmd,	NULL, NULL, NULL, 1},
-	{"lmkzip",	ZipFSLMkZipObjCmd,	NULL, NULL, NULL, 1},
-	{"mount",	ZipFSMountObjCmd,	NULL, NULL, NULL, 1},
-	{"mountdata",	ZipFSMountBufferObjCmd,	NULL, NULL, NULL, 1},
-	{"unmount",	ZipFSUnmountObjCmd,	NULL, NULL, NULL, 1},
-	{"mkkey",	ZipFSMkKeyObjCmd,	NULL, NULL, NULL, 1},
-	{"exists",	ZipFSExistsObjCmd,	NULL, NULL, NULL, 1},
-	{"info",	ZipFSInfoObjCmd,	NULL, NULL, NULL, 1},
-	{"list",	ZipFSListObjCmd,	NULL, NULL, NULL, 1},
-	{"canonical",	ZipFSCanonicalObjCmd,	NULL, NULL, NULL, 1},
-	{"root",	ZipFSRootObjCmd,	NULL, NULL, NULL, 1},
-	{NULL, NULL, NULL, NULL, NULL, 0}
+	{"mkimg",	ZipFSMkImgObjCmd,	NULL, NULL, NULL, true},
+	{"mkzip",	ZipFSMkZipObjCmd,	NULL, NULL, NULL, true},
+	{"lmkimg",	ZipFSLMkImgObjCmd,	NULL, NULL, NULL, true},
+	{"lmkzip",	ZipFSLMkZipObjCmd,	NULL, NULL, NULL, true},
+	{"mount",	ZipFSMountObjCmd,	NULL, NULL, NULL, true},
+	{"mountdata",	ZipFSMountBufferObjCmd,	NULL, NULL, NULL, true},
+	{"unmount",	ZipFSUnmountObjCmd,	NULL, NULL, NULL, true},
+	{"mkkey",	ZipFSMkKeyObjCmd,	NULL, NULL, NULL, true},
+	{"exists",	ZipFSExistsObjCmd,	NULL, NULL, NULL, true},
+	{"info",	ZipFSInfoObjCmd,	NULL, NULL, NULL, true},
+	{"list",	ZipFSListObjCmd,	NULL, NULL, NULL, true},
+	{"canonical",	ZipFSCanonicalObjCmd,	NULL, NULL, NULL, true},
+	{"root",	ZipFSRootObjCmd,	NULL, NULL, NULL, true},
+	{NULL, NULL, NULL, NULL, NULL, false}
     };
     static const char findproc[] =
 	"namespace eval ::tcl::zipfs {}\n"

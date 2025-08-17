@@ -2324,8 +2324,6 @@ EnsembleUnknownCallback(
 				 * a meaningful value on TCL_OK. */
 {
     Tcl_Size paramc;
-    int result;
-    Tcl_Size prefixObjc;
     Tcl_Obj **paramv, *unknownCmd, *ensObj;
 
     /*
@@ -2348,7 +2346,7 @@ EnsembleUnknownCallback(
 
     Tcl_Preserve(ensemblePtr);
     TclSkipTailcall(interp);
-    result = Tcl_EvalObjv(interp, paramc, paramv, 0);
+    int result = Tcl_EvalObjv(interp, paramc, paramv, 0);
     if ((result == TCL_OK) && (ensemblePtr->flags & ENSEMBLE_DEAD)) {
 	if (!Tcl_InterpDeleted(interp)) {
 	    TclPrintfResult(interp,
@@ -2372,11 +2370,12 @@ EnsembleUnknownCallback(
 
 	/* A non-empty list is the replacement command. */
 
+	Tcl_Size prefixObjc;
 	if (TclListObjLength(interp, *prefixObjPtr, &prefixObjc) != TCL_OK) {
 	    TclDecrRefCount(*prefixObjPtr);
 	    TclAppendPrintfToErrorInfo(interp, "\n    (while parsing result of "
 		    "ensemble unknown subcommand handler: \"%s\")",
-		TclGetString(unknownCmd));
+		    TclGetString(unknownCmd));
 	    TclDecrRefCount(unknownCmd);
 	    return TCL_ERROR;
 	}
@@ -3439,7 +3438,7 @@ CompileToInvokedCommand(
 			envPtr->clNext);
 	    }
 	} else {
-	    CompileTokens(envPtr, tokPtr, interp);
+	    CompileTokens(tokPtr);
 	}
     }
 

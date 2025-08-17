@@ -669,7 +669,7 @@ assignNumber(
 Tcl_Obj *
 TclNewArithSeriesObj(
     Tcl_Interp *interp,		/* For error reporting */
-    int useDoubles,		/* Flag indicates values start,
+    bool useDoubles,		/* Flag indicates values start,
 				 * end, step, are treated as doubles */
     Tcl_Obj *startObj,		/* Starting value */
     Tcl_Obj *endObj,		/* Ending limit */

@@ -158,26 +158,26 @@ static const Tcl_ObjType nsNameType = {
  */
 
 static const EnsembleImplMap defaultNamespaceMap[] = {
-    {"children",   NamespaceChildrenCmd, TclCompileBasic0To2ArgCmd, NULL, NULL, 0},
-    {"code",	   NamespaceCodeCmd,	TclCompileNamespaceCodeCmd, NULL, NULL, 0},
-    {"current",	   NamespaceCurrentCmd,	TclCompileNamespaceCurrentCmd, NULL, NULL, 0},
-    {"delete",	   NamespaceDeleteCmd,	TclCompileBasicMin0ArgCmd, NULL, NULL, 0},
-    {"ensemble",   TclNamespaceEnsembleCmd, NULL, NULL, NULL, 0},
-    {"eval",	   NamespaceEvalCmd,	NULL, NRNamespaceEvalCmd, NULL, 0},
-    {"exists",	   NamespaceExistsCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
-    {"export",	   NamespaceExportCmd,	TclCompileBasicMin0ArgCmd, NULL, NULL, 0},
-    {"forget",	   NamespaceForgetCmd,	TclCompileBasicMin0ArgCmd, NULL, NULL, 0},
-    {"import",	   NamespaceImportCmd,	TclCompileBasicMin0ArgCmd, NULL, NULL, 0},
-    {"inscope",	   NamespaceInscopeCmd,	NULL, NRNamespaceInscopeCmd, NULL, 0},
-    {"origin",	   NamespaceOriginCmd,	TclCompileNamespaceOriginCmd, NULL, NULL, 0},
-    {"parent",	   NamespaceParentCmd,	TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
-    {"path",	   NamespacePathCmd,	TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
-    {"qualifiers", NamespaceQualifiersCmd, TclCompileNamespaceQualifiersCmd, NULL, NULL, 0},
-    {"tail",	   NamespaceTailCmd,	TclCompileNamespaceTailCmd, NULL, NULL, 0},
-    {"unknown",	   NamespaceUnknownCmd, TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
-    {"upvar",	   NamespaceUpvarCmd,	TclCompileNamespaceUpvarCmd, NULL, NULL, 0},
-    {"which",	   NamespaceWhichCmd,	TclCompileNamespaceWhichCmd, NULL, NULL, 0},
-    {NULL, NULL, NULL, NULL, NULL, 0}
+    {"children",   NamespaceChildrenCmd, TclCompileBasic0To2ArgCmd, NULL, NULL, false},
+    {"code",	   NamespaceCodeCmd,	TclCompileNamespaceCodeCmd, NULL, NULL, false},
+    {"current",	   NamespaceCurrentCmd,	TclCompileNamespaceCurrentCmd, NULL, NULL, false},
+    {"delete",	   NamespaceDeleteCmd,	TclCompileBasicMin0ArgCmd, NULL, NULL, false},
+    {"ensemble",   TclNamespaceEnsembleCmd, NULL, NULL, NULL, false},
+    {"eval",	   NamespaceEvalCmd,	NULL, NRNamespaceEvalCmd, NULL, false},
+    {"exists",	   NamespaceExistsCmd,	TclCompileBasic1ArgCmd, NULL, NULL, false},
+    {"export",	   NamespaceExportCmd,	TclCompileBasicMin0ArgCmd, NULL, NULL, false},
+    {"forget",	   NamespaceForgetCmd,	TclCompileBasicMin0ArgCmd, NULL, NULL, false},
+    {"import",	   NamespaceImportCmd,	TclCompileBasicMin0ArgCmd, NULL, NULL, false},
+    {"inscope",	   NamespaceInscopeCmd,	NULL, NRNamespaceInscopeCmd, NULL, false},
+    {"origin",	   NamespaceOriginCmd,	TclCompileNamespaceOriginCmd, NULL, NULL, false},
+    {"parent",	   NamespaceParentCmd,	TclCompileBasic0Or1ArgCmd, NULL, NULL, false},
+    {"path",	   NamespacePathCmd,	TclCompileBasic0Or1ArgCmd, NULL, NULL, false},
+    {"qualifiers", NamespaceQualifiersCmd, TclCompileNamespaceQualifiersCmd, NULL, NULL, false},
+    {"tail",	   NamespaceTailCmd,	TclCompileNamespaceTailCmd, NULL, NULL, false},
+    {"unknown",	   NamespaceUnknownCmd, TclCompileBasic0Or1ArgCmd, NULL, NULL, false},
+    {"upvar",	   NamespaceUpvarCmd,	TclCompileNamespaceUpvarCmd, NULL, NULL, false},
+    {"which",	   NamespaceWhichCmd,	TclCompileNamespaceWhichCmd, NULL, NULL, false},
+    {NULL, NULL, NULL, NULL, NULL, false}
 };
 
 /*

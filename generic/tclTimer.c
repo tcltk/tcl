@@ -356,25 +356,23 @@ Tcl_DeleteTimerHandler(
     Tcl_TimerToken token)	/* Result previously returned by
 				 * Tcl_DeleteTimerHandler. */
 {
-    TimerHandler *timerHandlerPtr, *prevPtr;
     ThreadSpecificData *tsdPtr = InitTimer();
 
     if (token == NULL) {
 	return;
     }
 
-    for (timerHandlerPtr = tsdPtr->firstTimerHandlerPtr, prevPtr = NULL;
-	    timerHandlerPtr != NULL; prevPtr = timerHandlerPtr,
-	    timerHandlerPtr = timerHandlerPtr->nextPtr) {
-	if (timerHandlerPtr->token != token) {
+    for (TimerHandler *timerPtr = tsdPtr->firstTimerHandlerPtr, *prevPtr = NULL;
+	    timerPtr != NULL; prevPtr = timerPtr, timerPtr = timerPtr->nextPtr) {
+	if (timerPtr->token != token) {
 	    continue;
 	}
 	if (prevPtr == NULL) {
-	    tsdPtr->firstTimerHandlerPtr = timerHandlerPtr->nextPtr;
+	    tsdPtr->firstTimerHandlerPtr = timerPtr->nextPtr;
 	} else {
-	    prevPtr->nextPtr = timerHandlerPtr->nextPtr;
+	    prevPtr->nextPtr = timerPtr->nextPtr;
 	}
-	Tcl_Free(timerHandlerPtr);
+	Tcl_Free(timerPtr);
 	return;
     }
 }
@@ -522,7 +520,6 @@ TimerHandlerEventProc(
     int flags)			/* Flags that indicate what events to handle,
 				 * such as TCL_FILE_EVENTS. */
 {
-    Tcl_Time time;
     ThreadSpecificData *tsdPtr = InitTimer();
 
     /*
@@ -562,8 +559,9 @@ TimerHandlerEventProc(
 
     tsdPtr->timerPending = false;
     int currentTimerId = tsdPtr->lastTimerId;
+    Tcl_Time time;
     Tcl_GetTime(&time);
-    while (1) {
+    while (true) {
 	TimerHandler *timerHandlerPtr, **nextPtrPtr;
 	nextPtrPtr = &tsdPtr->firstTimerHandlerPtr;
 	timerHandlerPtr = tsdPtr->firstTimerHandlerPtr;
@@ -579,7 +577,7 @@ TimerHandlerEventProc(
 	 * Bail out if the next timer is of a newer generation.
 	 */
 
-	if ((currentTimerId - PTR2INT(timerHandlerPtr->token)) < 0) {
+	if (currentTimerId - PTR2INT(timerHandlerPtr->token) < 0) {
 	    break;
 	}
 
@@ -620,7 +618,6 @@ Tcl_DoWhenIdle(
     Tcl_IdleProc *proc,		/* Function to invoke. */
     void *clientData)		/* Arbitrary value to pass to proc. */
 {
-    Tcl_Time blockTime;
     ThreadSpecificData *tsdPtr = InitTimer();
 
     IdleHandler *idlePtr = (IdleHandler *)Tcl_Alloc(sizeof(IdleHandler));
@@ -635,6 +632,7 @@ Tcl_DoWhenIdle(
     }
     tsdPtr->lastIdlePtr = idlePtr;
 
+    Tcl_Time blockTime;
     blockTime.sec = 0;
     blockTime.usec = 0;
     Tcl_SetMaxBlockTime(&blockTime);

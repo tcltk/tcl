@@ -2416,10 +2416,8 @@ TclBounceRefCount(
     const char* file,
     int line)
 {
-    if (objPtr) {
-	if ((objPtr)->refCount == 0) {
-	    Tcl_DbDecrRefCount(objPtr, file, line);
-	}
+    if (objPtr && objPtr->refCount == 0) {
+	Tcl_DbDecrRefCount(objPtr, file, line);
     }
 }
 #else
@@ -2453,10 +2451,8 @@ static inline void
 TclBounceRefCount(
     Tcl_Obj* objPtr)
 {
-    if (objPtr) {
-	if ((objPtr)->refCount == 0) {
-	    Tcl_DecrRefCount(objPtr);
-	}
+    if (objPtr && objPtr->refCount == 0) {
+	Tcl_DecrRefCount(objPtr);
     }
 }
 

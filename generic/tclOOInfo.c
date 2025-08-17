@@ -49,21 +49,21 @@ static Tcl_ObjCmdProc InfoClassVariablesCmd;
  */
 
 static const EnsembleImplMap infoObjectCmds[] = {
-    {"call",	   InfoObjectCallCmd,	    TclCompileBasic2ArgCmd, NULL, NULL, 0},
-    {"class",	   InfoObjectClassCmd,	    TclCompileInfoObjectClassCmd, NULL, NULL, 0},
-    {"creationid", InfoObjectIdCmd,	    TclCompileInfoObjectCreationIdCmd, NULL, NULL, 0},
-    {"definition", InfoObjectDefnCmd,	    TclCompileBasic2ArgCmd, NULL, NULL, 0},
-    {"filters",	   InfoObjectFiltersCmd,    TclCompileBasic1ArgCmd, NULL, NULL, 0},
-    {"forward",	   InfoObjectForwardCmd,    TclCompileBasic2ArgCmd, NULL, NULL, 0},
-    {"isa",	   InfoObjectIsACmd,	    TclCompileInfoObjectIsACmd, NULL, NULL, 0},
-    {"methods",	   InfoObjectMethodsCmd,    TclCompileBasicMin1ArgCmd, NULL, NULL, 0},
-    {"methodtype", InfoObjectMethodTypeCmd, TclCompileBasic2ArgCmd, NULL, NULL, 0},
-    {"mixins",	   InfoObjectMixinsCmd,	    TclCompileBasic1ArgCmd, NULL, NULL, 0},
-    {"namespace",  InfoObjectNsCmd,	    TclCompileInfoObjectNamespaceCmd, NULL, NULL, 0},
-    {"properties", TclOOInfoObjectPropCmd,  TclCompileBasicMin1ArgCmd, NULL, NULL, 0},
-    {"variables",  InfoObjectVariablesCmd,  TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
-    {"vars",	   InfoObjectVarsCmd,	    TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
-    {NULL, NULL, NULL, NULL, NULL, 0}
+    {"call",	   InfoObjectCallCmd,	    TclCompileBasic2ArgCmd, NULL, NULL, false},
+    {"class",	   InfoObjectClassCmd,	    TclCompileInfoObjectClassCmd, NULL, NULL, false},
+    {"creationid", InfoObjectIdCmd,	    TclCompileInfoObjectCreationIdCmd, NULL, NULL, false},
+    {"definition", InfoObjectDefnCmd,	    TclCompileBasic2ArgCmd, NULL, NULL, false},
+    {"filters",	   InfoObjectFiltersCmd,    TclCompileBasic1ArgCmd, NULL, NULL, false},
+    {"forward",	   InfoObjectForwardCmd,    TclCompileBasic2ArgCmd, NULL, NULL, false},
+    {"isa",	   InfoObjectIsACmd,	    TclCompileInfoObjectIsACmd, NULL, NULL, false},
+    {"methods",	   InfoObjectMethodsCmd,    TclCompileBasicMin1ArgCmd, NULL, NULL, false},
+    {"methodtype", InfoObjectMethodTypeCmd, TclCompileBasic2ArgCmd, NULL, NULL, false},
+    {"mixins",	   InfoObjectMixinsCmd,	    TclCompileBasic1ArgCmd, NULL, NULL, false},
+    {"namespace",  InfoObjectNsCmd,	    TclCompileInfoObjectNamespaceCmd, NULL, NULL, false},
+    {"properties", TclOOInfoObjectPropCmd,  TclCompileBasicMin1ArgCmd, NULL, NULL, false},
+    {"variables",  InfoObjectVariablesCmd,  TclCompileBasic1Or2ArgCmd, NULL, NULL, false},
+    {"vars",	   InfoObjectVarsCmd,	    TclCompileBasic1Or2ArgCmd, NULL, NULL, false},
+    {NULL, NULL, NULL, NULL, NULL, false}
 };
 
 /*
@@ -71,22 +71,22 @@ static const EnsembleImplMap infoObjectCmds[] = {
  */
 
 static const EnsembleImplMap infoClassCmds[] = {
-    {"call",	     InfoClassCallCmd,		TclCompileBasic2ArgCmd, NULL, NULL, 0},
-    {"constructor",  InfoClassConstrCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
-    {"definition",   InfoClassDefnCmd,		TclCompileBasic2ArgCmd, NULL, NULL, 0},
-    {"definitionnamespace", InfoClassDefnNsCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
-    {"destructor",   InfoClassDestrCmd,		TclCompileBasic1ArgCmd, NULL, NULL, 0},
-    {"filters",	     InfoClassFiltersCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
-    {"forward",	     InfoClassForwardCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
-    {"instances",    InfoClassInstancesCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
-    {"methods",	     InfoClassMethodsCmd,	TclCompileBasicMin1ArgCmd, NULL, NULL, 0},
-    {"methodtype",   InfoClassMethodTypeCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
-    {"mixins",	     InfoClassMixinsCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
-    {"properties",   TclOOInfoClassPropCmd,	TclCompileBasicMin1ArgCmd, NULL, NULL, 0},
-    {"subclasses",   InfoClassSubsCmd,		TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
-    {"superclasses", InfoClassSupersCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
-    {"variables",    InfoClassVariablesCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
-    {NULL, NULL, NULL, NULL, NULL, 0}
+    {"call",	     InfoClassCallCmd,		TclCompileBasic2ArgCmd, NULL, NULL, false},
+    {"constructor",  InfoClassConstrCmd,	TclCompileBasic1ArgCmd, NULL, NULL, false},
+    {"definition",   InfoClassDefnCmd,		TclCompileBasic2ArgCmd, NULL, NULL, false},
+    {"definitionnamespace", InfoClassDefnNsCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, false},
+    {"destructor",   InfoClassDestrCmd,		TclCompileBasic1ArgCmd, NULL, NULL, false},
+    {"filters",	     InfoClassFiltersCmd,	TclCompileBasic1ArgCmd, NULL, NULL, false},
+    {"forward",	     InfoClassForwardCmd,	TclCompileBasic2ArgCmd, NULL, NULL, false},
+    {"instances",    InfoClassInstancesCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, false},
+    {"methods",	     InfoClassMethodsCmd,	TclCompileBasicMin1ArgCmd, NULL, NULL, false},
+    {"methodtype",   InfoClassMethodTypeCmd,	TclCompileBasic2ArgCmd, NULL, NULL, false},
+    {"mixins",	     InfoClassMixinsCmd,	TclCompileBasic1ArgCmd, NULL, NULL, false},
+    {"properties",   TclOOInfoClassPropCmd,	TclCompileBasicMin1ArgCmd, NULL, NULL, false},
+    {"subclasses",   InfoClassSubsCmd,		TclCompileBasic1Or2ArgCmd, NULL, NULL, false},
+    {"superclasses", InfoClassSupersCmd,	TclCompileBasic1ArgCmd, NULL, NULL, false},
+    {"variables",    InfoClassVariablesCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, false},
+    {NULL, NULL, NULL, NULL, NULL, false}
 };
 /*
  * ----------------------------------------------------------------------
@@ -293,7 +293,7 @@ InfoObjectClassCmd(
 	    continue;
 	}
 	if (TclOOIsReachable(o2clsPtr, mixinPtr)) {
-	    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(1));
+	    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(true));
 	    return TCL_OK;
 	}
     }
@@ -570,7 +570,7 @@ InfoObjectIsACmd(
 
   failPrecondition:
     Tcl_ResetResult(interp);
-    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(0));
+    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(false));
     return TCL_OK;
 }
 

@@ -31,7 +31,7 @@
  * whole process, and includes the mutex used to protect it.
  */
 
-static struct {
+static struct TSDGlobals {
     void *key;			/* Key into the system TSD structure. The
 				 * collection of Tcl TSD values for a
 				 * particular thread will hang off the
@@ -47,7 +47,7 @@ static struct {
  * The type of the data held per thread in a system TSD.
  */
 
-typedef struct {
+typedef struct TSDTable {
     void **tablePtr;		/* The table of Tcl TSDs. */
     sig_atomic_t allocated;	/* The size of the table in the current
 				 * thread. */

@@ -100,12 +100,6 @@ static inline size_t	ResultCopy(ResultBuffer *r, unsigned char *buf,
 #define RB_INCREMENT (512)
 
 /*
- * Convenience macro to make some casts easier to use.
- */
-
-#define UCHARP(x)	((unsigned char *) (x))
-
-/*
  * Instance data for a reflected transformation. ===========================
  */
 
@@ -210,7 +204,6 @@ typedef enum {
 	(TCL_READABLE | TCL_WRITABLE)
 
 #define IMPLIES(a,b)	((!(a)) || (b))
-#define NEGIMPL(a,b)
 #define HAS(x,f)	((x) & FLAG(f))
 
 #if TCL_THREADS
@@ -2533,8 +2526,8 @@ ForwardProc(
 	break;
 
     case ForwardedInput: {
-	Tcl_Obj *bufObj = Tcl_NewByteArrayObj((unsigned char *)
-		paramPtr->transform.buf, paramPtr->transform.size);
+	Tcl_Obj *bufObj = Tcl_NewByteArrayObj(
+		UCHARP(paramPtr->transform.buf), paramPtr->transform.size);
 	Tcl_IncrRefCount(bufObj);
 
 	if (InvokeTclMethod(rtPtr, "read", bufObj, NULL, &resObj) != TCL_OK) {
@@ -2567,8 +2560,8 @@ ForwardProc(
     }
 
     case ForwardedOutput: {
-	Tcl_Obj *bufObj = Tcl_NewByteArrayObj((unsigned char *)
-		paramPtr->transform.buf, paramPtr->transform.size);
+	Tcl_Obj *bufObj = Tcl_NewByteArrayObj(
+		UCHARP(paramPtr->transform.buf), paramPtr->transform.size);
 	Tcl_IncrRefCount(bufObj);
 
 	if (InvokeTclMethod(rtPtr, "write", bufObj, NULL, &resObj) != TCL_OK) {
@@ -3117,7 +3110,7 @@ TransformWrite(
 	/* ASSERT: rtPtr->method & FLAG(METH_WRITE) */
 	/* ASSERT: rtPtr->mode & TCL_WRITABLE */
 
-	bufObj = Tcl_NewByteArrayObj((unsigned char *) buf, toWrite);
+	bufObj = Tcl_NewByteArrayObj(UCHARP(buf), toWrite);
 	Tcl_IncrRefCount(bufObj);
 	if (InvokeTclMethod(rtPtr, "write", bufObj, NULL, &resObj) != TCL_OK) {
 	    *errorCodePtr = EINVAL;

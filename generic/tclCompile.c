@@ -1060,11 +1060,16 @@ static const Tcl_ObjType substCodeType = {
 #define SubstFlags(objPtr) (objPtr)->internalRep.twoPtrValue.ptr2
 
 /*
- * Helper macros.
+ * Helper functions.
  */
 
-#define TclIncrUInt4AtPtr(ptr, delta) \
-    TclStoreInt4AtPtr(TclGetUInt4AtPtr(ptr)+(delta), (ptr))
+static inline void
+TclIncrUInt4AtPtr(
+    unsigned char *ptr,
+    int delta)
+{
+    TclStoreInt4AtPtr(TclGetUInt4AtPtr(ptr)+delta, ptr);
+}
 
 /*
  *----------------------------------------------------------------------
@@ -1859,8 +1864,8 @@ TclInitCompileEnv(
 	*ctxPtr = *invoker;
 	if (invoker->type == TCL_LOCATION_BC) {
 	    /*
-	     * Note: Type BC => ctx.data.eval.path    is not used.
-	     *			ctx.data.tebc.codePtr is used instead.
+	     * Note: Type BC => ctx.path    is not used.
+	     *			ctx.codePtr is used instead.
 	     */
 
 	    TclGetSrcInfoForPc(ctxPtr);
@@ -1881,21 +1886,21 @@ TclInitCompileEnv(
 		 * The reference made by 'TclGetSrcInfoForPc' is dead.
 		 */
 
-		Tcl_DecrRefCount(ctxPtr->data.eval.path);
+		Tcl_DecrRefCount(ctxPtr->path);
 	    }
 	} else {
 	    envPtr->line = ctxPtr->line[word];
 	    envPtr->extCmdMapPtr->type = ctxPtr->type;
 
 	    if (ctxPtr->type == TCL_LOCATION_SOURCE) {
-		envPtr->extCmdMapPtr->path = ctxPtr->data.eval.path;
+		envPtr->extCmdMapPtr->path = ctxPtr->path;
 
 		if (pc) {
 		    /*
 		     * The reference 'TclGetSrcInfoForPc' made is transfered.
 		     */
 
-		    ctxPtr->data.eval.path = NULL;
+		    ctxPtr->path = NULL;
 		} else {
 		    /*
 		     * We have a new reference here.
@@ -2158,7 +2163,7 @@ TclCompileInvocation(
 	SetLineInformation(wordIdx);
 
 	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
-	    CompileTokens(envPtr, tokenPtr, interp);
+	    CompileTokens(tokenPtr);
 	    continue;
 	}
 
@@ -2170,7 +2175,7 @@ TclCompileInvocation(
     }
 
     INVOKE4(			INVOKE_STK, wordIdx);
-    TclCheckStackDepth(depth+1, envPtr);
+    CheckStackDepth(depth + 1);
 }
 
 static void
@@ -2196,7 +2201,7 @@ CompileExpanded(
 	SetLineInformation(wordIdx);
 
 	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
-	    CompileTokens(envPtr, tokenPtr, interp);
+	    CompileTokens(tokenPtr);
 	    if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
 		OP4(		EXPAND_STKTOP, envPtr->currStackDepth);
 	    }
@@ -2225,7 +2230,7 @@ CompileExpanded(
      */
 
     INVOKE4(			INVOKE_EXPANDED, wordIdx);
-    TclCheckStackDepth(depth + 1, envPtr);
+    CheckStackDepth(depth + 1);
 }
 
 static int
@@ -2285,7 +2290,7 @@ CompileCmdCompileProc(
 		TclStoreInt4AtPtr(envPtr->codeNext - startPtr, startPtr + 1);
 	    }
 	}
-	TclCheckStackDepth(depth+1, envPtr);
+	CheckStackDepth(depth + 1);
 	return TCL_OK;
     }
 
@@ -2439,7 +2444,7 @@ CompileCommandTokens(
     eclPtr->loc[wlineat].line = wlines;
     eclPtr->loc[wlineat].next = NULL;
 
-    TclCheckStackDepth(depth, envPtr);
+    CheckStackDepth(depth);
     return cmdIdx;
 }
 
@@ -2624,7 +2629,7 @@ TclCompileScript(
 	envPtr->codeNext--;
 	envPtr->currStackDepth++;
     }
-    TclCheckStackDepth(depth+1, envPtr);
+    CheckStackDepth(depth + 1);
 }
 
 /*
@@ -2815,7 +2820,7 @@ TclCompileTokens(
 	     */
 
 	    if (Tcl_DStringLength(&textBuffer) > 0) {
-		int literal = TclPushDString(envPtr, &textBuffer);
+		int literal = TclPushDString(&textBuffer);
 
 		numObjsToConcat++;
 		Tcl_DStringFree(&textBuffer);
@@ -2839,7 +2844,7 @@ TclCompileTokens(
 	     */
 
 	    if (Tcl_DStringLength(&textBuffer) > 0) {
-		TclPushDString(envPtr, &textBuffer);
+		TclPushDString(&textBuffer);
 		numObjsToConcat++;
 		Tcl_DStringFree(&textBuffer);
 	    }
@@ -2861,7 +2866,7 @@ TclCompileTokens(
      */
 
     if (Tcl_DStringLength(&textBuffer) > 0) {
-	int literal = TclPushDString(envPtr, &textBuffer);
+	int literal = TclPushDString(&textBuffer);
 
 	numObjsToConcat++;
 	if (numCL) {
@@ -2900,7 +2905,7 @@ TclCompileTokens(
     if (maxNumCL) {
 	Tcl_Free(clPosition);
     }
-    TclCheckStackDepth(depth+1, envPtr);
+    CheckStackDepth(depth + 1);
 }
 
 /*
@@ -3001,7 +3006,7 @@ TclCompileExprWords(
 
     Tcl_Token *wordPtr = tokenPtr;
     for (size_t i = 0;  i < numWords;  i++) {
-	CompileTokens(envPtr, wordPtr, interp);
+	CompileTokens(wordPtr);
 	if (i + 1 < numWords) {
 	    PUSH(		" ");
 	}
@@ -3049,7 +3054,7 @@ TclCompileNoOp(
 	tokenPtr = tokenPtr + tokenPtr->numComponents + 1;
 
 	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
-	    CompileTokens(envPtr, tokenPtr, interp);
+	    CompileTokens(tokenPtr);
 	    OP(			POP);
 	}
     }
@@ -4502,7 +4507,7 @@ TclEmitInvoke(
 	FINALIZE_LOOP(		loopRange);
 	FWDLABEL(		noTrap);
     }
-    TclCheckStackDepth(depth+1-cleanup, envPtr);
+    CheckStackDepth(depth + 1 - cleanup);
 }
 
 /*
@@ -4996,7 +5001,7 @@ TclPushVarName(
 	 */
 
 	if (!hasNsQualifiers) {
-	    localIndex = TclFindCompiledLocal(name, nameLen, true, envPtr);
+	    localIndex = LocalVar(name, nameLen);
 	}
 	if (interp && localIndex < 0) {
 	    PushLiteral(envPtr, name, nameLen);
@@ -5020,7 +5025,7 @@ TclPushVarName(
 	 * The var name isn't simple: compile and push it.
 	 */
 
-	CompileTokens(envPtr, varTokenPtr, interp);
+	CompileTokens(varTokenPtr);
     }
 
     if (removedParen) {

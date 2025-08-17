@@ -148,7 +148,7 @@ static char *		VwaitVarProc(void *clientData,
 			    Tcl_Interp *interp, const char *name1,
 			    const char *name2, int flags);
 static void		InvokeExitHandlers(void);
-static void		FinalizeThread(int quick);
+static void		FinalizeThread(bool quick);
 
 /*
  *----------------------------------------------------------------------
@@ -987,7 +987,7 @@ Tcl_Exit(
 	     * Tcl_Channels that may have data enqueued.
 	     */
 
-	    FinalizeThread(/* quick */ 1);
+	    FinalizeThread(/*quick*/ true);
 	}
     }
 
@@ -1281,7 +1281,7 @@ Tcl_Finalize(void)
      * This fixes the Tcl Bug #990552.
      */
 
-    TclFinalizeThreadData(/* quick */ 0);
+    TclFinalizeThreadData(/*quick*/ false);
 
     /*
      * Now we can free constants for conversions to/from double.
@@ -1367,12 +1367,12 @@ Tcl_Finalize(void)
 void
 Tcl_FinalizeThread(void)
 {
-    FinalizeThread(/* quick */ 0);
+    FinalizeThread(/*quick*/ false);
 }
 
-void
+static void
 FinalizeThread(
-    int quick)
+    bool quick)
 {
     /*
      * We use TclThreadDataKeyGet here, rather than Tcl_GetThreadData, because
