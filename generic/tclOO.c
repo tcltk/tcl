@@ -430,6 +430,10 @@ InitFoundation(
      * ensemble.
      */
 
+    CreateCmdInNS(interp, fPtr->helpersNs, "callback",
+	    TclOOCallbackObjCmd, NULL, NULL, 0);
+    CreateCmdInNS(interp, fPtr->helpersNs, "mymethod",
+	    TclOOCallbackObjCmd, NULL, NULL, 0);
     CreateCmdInNS(interp, fPtr->helpersNs, "next",
 	    NULL, TclOONextObjCmd, TclCompileObjectNextCmd, CMD_COMPILES_EXPANDED);
     CreateCmdInNS(interp, fPtr->helpersNs, "nextto",
@@ -3118,6 +3122,30 @@ Tcl_GetObjectName(
     Tcl_Object object)
 {
     return TclOOObjectName(interp, (Object *) object);
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclOOObjectMyName --
+ *
+ *	Utility function that returns the name of the object's [my], or NULL
+ *	if it has been deleted (or otherwise doesn't exist).
+ *
+ * ----------------------------------------------------------------------
+ */
+Tcl_Obj *
+TclOOObjectMyName(
+    Tcl_Interp *interp,
+    Object *oPtr)
+{
+    if (!oPtr->myCommand) {
+	return NULL;
+    }
+    Tcl_Obj *namePtr;
+    TclNewObj(namePtr);
+    Tcl_GetCommandFullName(interp, oPtr->myCommand, namePtr);
+    return namePtr;
 }
 
 /*

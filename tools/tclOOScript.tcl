@@ -22,26 +22,6 @@
 
 	# ------------------------------------------------------------------
 	#
-	# callback, mymethod --
-	#
-	#	Create a script prefix that calls a method on the current
-	#	object. Same operation, two names.
-	#
-	# ------------------------------------------------------------------
-
-	proc callback {method args} {
-	    list [uplevel 1 {::namespace which my}] $method {*}$args
-	}
-
-	# Make the [callback] command appear as [mymethod] too.
-	namespace export callback
-	namespace eval tmp {namespace import ::oo::Helpers::callback}
-	namespace export -clear
-	rename tmp::callback mymethod
-	namespace delete tmp
-
-	# ------------------------------------------------------------------
-	#
 	# classvariable --
 	#
 	#	Link to a variable in the class of the current object.
