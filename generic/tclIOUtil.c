@@ -3309,14 +3309,14 @@ Tcl_LoadFile(
     /*
      * It might be necessary on some systems to set the appropriate permissions
      * on the file.  On Unix we could loop over the file attributes and set any
-     * that are called "-permissions" to 0700, but just do it directly instead:
+     * that are called "-permissions" to 0o700, but just do it directly instead:
      */
 
     {
 	int index;
 	Tcl_Obj *perm;
 
-	TclNewLiteralStringObj(perm, "0700");
+	TclNewLiteralStringObj(perm, "0o700");
 	Tcl_IncrRefCount(perm);
 	if (TclFSFileAttrIndex(copyToPtr, "-permissions", &index) == TCL_OK) {
 	    Tcl_FSFileAttrsSet(NULL, index, copyToPtr, perm);
