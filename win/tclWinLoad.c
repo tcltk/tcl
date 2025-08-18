@@ -28,8 +28,6 @@ static Tcl_Mutex dllDirectoryNameMutex;
  * Static functions defined within this file.
  */
 
-static void *		FindSymbol(Tcl_Interp *interp,
-			    Tcl_LoadHandle loadHandle, const char *symbol);
 static int		InitDLLDirectoryName(void);
 static void		UnloadFile(Tcl_LoadHandle loadHandle);
 
@@ -176,7 +174,7 @@ TclpDlopen(
 
     handlePtr = (Tcl_LoadHandle)Tcl_Alloc(sizeof(struct Tcl_LoadHandle_));
     handlePtr->clientData = (void *)hInstance;
-    handlePtr->findSymbolProcPtr = &FindSymbol;
+    handlePtr->findSymbolProcPtr = &TclpFindSymbol;
     handlePtr->unloadFileProcPtr = &UnloadFile;
     *loadHandle = handlePtr;
     *unloadProcPtr = &UnloadFile;
@@ -186,10 +184,11 @@ TclpDlopen(
 /*
  *----------------------------------------------------------------------
  *
- * FindSymbol --
+ * TclpFindSymbol --
  *
  *	Looks up a symbol, by name, through a handle associated with a
  *	previously loaded piece of code (shared library).
+ *	If handle is NULL, it would try to find it for current process.
  *
  * Results:
  *	Returns a pointer to the function associated with 'symbol' if it is
@@ -199,14 +198,24 @@ TclpDlopen(
  *----------------------------------------------------------------------
  */
 
-static void *
-FindSymbol(
+void *
+TclpFindSymbol(
     Tcl_Interp *interp,
     Tcl_LoadHandle loadHandle,
     const char *symbol)
 {
-    HINSTANCE hInstance = (HINSTANCE) loadHandle->clientData;
+    static HINSTANCE exeInstanceHandle = NULL;
+    HINSTANCE hInstance;
     void *proc = NULL;
+
+    if (loadHandle) {
+	hInstance = (HINSTANCE) loadHandle->clientData;
+    } else {
+	if (!exeInstanceHandle) {
+	    exeInstanceHandle = GetModuleHandle(NULL);
+	}
+	hInstance = exeInstanceHandle;
+    }
 
     /*
      * For each symbol, check for both Symbol and _Symbol, since Borland

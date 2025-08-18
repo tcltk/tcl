@@ -3574,7 +3574,9 @@ Tcl_FindSymbol(
     Tcl_LoadHandle loadHandle,	/* A handle for the loaded object. */
     const char *symbol)		/* The name of the symbol to resolve. */
 {
-    return loadHandle->findSymbolProcPtr(interp, loadHandle, symbol);
+    return loadHandle ?
+		loadHandle->findSymbolProcPtr(interp, loadHandle, symbol) :
+		TclpFindSymbol(interp, NULL, symbol);
 }
 
 /*
