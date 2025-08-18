@@ -366,6 +366,17 @@ proc ::platform::patterns {id} {
 		    foreach {major minor} [split $v .] break
 
 		    set res {}
+		    if {$major gt 26} {
+			# Add x.0 to x.minor to patterns.
+			for {set j $minor} {$j >= 0} {incr j -1} {
+			    lappend res macosx${major}.${j}-${cpu}
+			    foreach a $alt {
+				lappend res macosx${major}.${j}-$a
+			    }
+			}
+			incr major -1
+			set minor 5; # Assume that (major-1).5 will be there one day. 
+		    }
 		    if {$major eq 26} {
 			# Add 26.0 to 26.minor to patterns.
 			for {set j $minor} {$j >= 0} {incr j -1} {
