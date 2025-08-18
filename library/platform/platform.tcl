@@ -181,12 +181,14 @@ proc ::platform::identify {} {
 	    set major [lindex [split $tcl_platform(osVersion) .] 0]
 	    if {$major > 19} {
 		set minor [lindex [split $tcl_platform(osVersion) .] 1]
-		incr major -9
+		incr major 1
+		if {$major < 26} {
+		    incr major -10
+		}
 		append plat $major.[expr {$minor - 1}]
 	    } else {
 		incr major -4
 		append plat 10.$major
-		return "${plat}-${cpu}"
 	    }
 	    return "${plat}-${cpu}"
 	}
@@ -364,6 +366,39 @@ proc ::platform::patterns {id} {
 		    foreach {major minor} [split $v .] break
 
 		    set res {}
+		    if {$major eq 26} {
+			# Add 26.0 to 26.minor to patterns.
+			for {set j $minor} {$j >= 0} {incr j -1} {
+			    lappend res macosx${major}.${j}-${cpu}
+			    foreach a $alt {
+				lappend res macosx${major}.${j}-$a
+			    }
+			}
+			set major 15
+			set minor 7
+		    }
+		    if {$major eq 15} {
+			# Add 15.0 to 15.minor to patterns.
+			for {set j $minor} {$j >= 0} {incr j -1} {
+			    lappend res macosx${major}.${j}-${cpu}
+			    foreach a $alt {
+				lappend res macosx${major}.${j}-$a
+			    }
+			}
+			set major 14
+			set minor 8
+		    }
+		    if {$major eq 14} {
+			# Add 14.0 to 14.minor to patterns.
+			for {set j $minor} {$j >= 0} {incr j -1} {
+			    lappend res macosx${major}.${j}-${cpu}
+			    foreach a $alt {
+				lappend res macosx${major}.${j}-$a
+			    }
+			}
+			set major 13
+			set minor 7
+		    }
 		    if {$major eq 13} {
 			# Add 13.0 to 13.minor to patterns.
 			for {set j $minor} {$j >= 0} {incr j -1} {
@@ -373,7 +408,7 @@ proc ::platform::patterns {id} {
 			    }
 			}
 			set major 12
-			set minor 5
+			set minor 7
 		    }
 		    if {$major eq 12} {
 			# Add 12.0 to 12.minor to patterns.
