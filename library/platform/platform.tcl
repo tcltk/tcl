@@ -185,7 +185,10 @@ proc ::platform::identify {} {
 		if {$major < 26} {
 		    incr major -10
 		}
-		append plat $major.[expr {$minor - 1}]
+		if {$major < 14} {
+		    incr minor -1
+		}
+		append plat $major.$minor
 	    } else {
 		incr major -4
 		append plat 10.$major
@@ -386,7 +389,7 @@ proc ::platform::patterns {id} {
 			    }
 			}
 			set major 15
-			set minor 7
+			set minor 6
 		    }
 		    if {$major eq 15} {
 			# Add 15.0 to 15.minor to patterns.
@@ -397,7 +400,7 @@ proc ::platform::patterns {id} {
 			    }
 			}
 			set major 14
-			set minor 8
+			set minor 6
 		    }
 		    if {$major eq 14} {
 			# Add 14.0 to 14.minor to patterns.
@@ -408,7 +411,7 @@ proc ::platform::patterns {id} {
 			    }
 			}
 			set major 13
-			set minor 7
+			set minor 5
 		    }
 		    if {$major eq 13} {
 			# Add 13.0 to 13.minor to patterns.
@@ -419,7 +422,7 @@ proc ::platform::patterns {id} {
 			    }
 			}
 			set major 12
-			set minor 7
+			set minor 5
 		    }
 		    if {$major eq 12} {
 			# Add 12.0 to 12.minor to patterns.
@@ -443,8 +446,8 @@ proc ::platform::patterns {id} {
 			set major 10
 			set minor 15
 		    }
-		    # Add 10.5 to 10.minor to patterns.
-		    for {set j $minor} {$j >= 5} {incr j -1} {
+		    # Add 10.9 to 10.minor to patterns.
+		    for {set j $minor} {$j >= 9} {incr j -1} {
 			if {$cpu ne "arm"} {
 			    lappend res macosx${major}.${j}-${cpu}
 			}
@@ -452,11 +455,21 @@ proc ::platform::patterns {id} {
 			    lappend res macosx${major}.${j}-$a
 			}
 		    }
-
-		    # Add unversioned patterns for 10.3/10.4 builds.
-		    lappend res macosx-${cpu}
-		    foreach a $alt {
-			lappend res macosx-$a
+		    if {![package vsatisfies [package provide Tcl] 9.0-]} {
+			# Continue up to 10.5.
+			for {} {$j >= 5} {incr j -1} {
+			    if {$cpu ne "arm"} {
+				lappend res macosx${major}.${j}-${cpu}
+			    }
+			    foreach a $alt {
+				lappend res macosx${major}.${j}-$a
+			    }
+			}
+    			# Add unversioned patterns for 10.3/10.4 builds.
+			lappend res macosx-${cpu}
+			foreach a $alt {
+			    lappend res macosx-$a
+			}
 		    }
 		} else {
 		    # No version, just do unversioned patterns.
