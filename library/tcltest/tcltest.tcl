@@ -3039,6 +3039,11 @@ proc tcltest::runAllTests { {shell ""} } {
 #     none.
 
 proc tcltest::loadTestedCommands {} {
+    # first we'd load tcltest binary package if possible:
+    if {[string match "tcltest*" [file tail [info nameofexecutable]]]} {
+	namespace inscope :: { load {} Tcltest }
+    }
+    # now load specified script
     return [uplevel 1 [loadScript]]
 }
 
