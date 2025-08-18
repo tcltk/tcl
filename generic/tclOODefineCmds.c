@@ -2032,6 +2032,53 @@ TclOODefineForwardObjCmd(
 /*
  * ----------------------------------------------------------------------
  *
+ * TclOODefineInitialiseObjCmd --
+ *
+ *	Implementation of the "initialise" subcommand of the "oo::define"
+ *	command.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+int
+TclOODefineInitialiseObjCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "body");
+	return TCL_ERROR;
+    }
+
+    // Build the lambda
+    Tcl_Object object = TclOOGetDefineCmdContext(interp);
+    if (object == NULL) {
+	return TCL_ERROR;
+    }
+    Tcl_Obj *lambdaWords[] = {
+	Tcl_NewObj(),
+	objv[1],
+	TclNewNamespaceObj(Tcl_GetObjectNamespace(object))
+    };
+
+    // Delegate to [apply] to run it
+    Tcl_Obj *applyArgs[] = {
+	Tcl_NewStringObj("apply", -1),
+	Tcl_NewListObj(3, lambdaWords)
+    };
+    Tcl_IncrRefCount(applyArgs[0]);
+    Tcl_IncrRefCount(applyArgs[1]);
+    int result = Tcl_ApplyObjCmd(NULL, interp, 2, applyArgs);
+    Tcl_DecrRefCount(applyArgs[0]);
+    Tcl_DecrRefCount(applyArgs[1]);
+    return result;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
  * TclOODefineMethodObjCmd --
  *
  *	Implementation of the "method" subcommand of the "oo::define" and
