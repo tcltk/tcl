@@ -366,7 +366,7 @@ test ooUtil-3.4 {TIP 478: class initialisation} -setup {
     trace add execution oo::define::initialise enter appendToResultVar
     oo::class create ::cls {
 	superclass parent
-	initialize {proc xyzzy {} {}}
+	initialise {proc xyzzy {} {}}
     }
     return $result
 } -cleanup {
@@ -375,13 +375,7 @@ test ooUtil-3.4 {TIP 478: class initialisation} -setup {
     }
     rename ::appendToResultVar {}
     parent destroy
-} -result {{initialize {proc xyzzy {} {}}} enter}
-test ooUtil-3.5 {TIP 478: class initialisation} -body {
-    oo::define oo::object {
-	::list [::namespace which initialise] [::namespace which initialize] \
-	     [::namespace origin initialise] [::namespace origin initialize]
-    }
-} -result {::oo::define::initialise ::oo::define::initialize ::oo::define::initialise ::oo::define::initialise}
+} -result {{initialise {proc xyzzy {} {}}} enter}
 
 test ooUtil-4.1 {TIP 478: singleton} -setup {
     oo::class create parent

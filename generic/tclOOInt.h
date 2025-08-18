@@ -504,6 +504,7 @@ MODULE_SCOPE Tcl_ObjCmdProc	TclOODefineDeleteMethodObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOODefineDestructorObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOODefineExportObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOODefineForwardObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc	TclOODefineInitialiseObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOODefineMethodObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOODefineRenameMethodObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOODefineUnexportObjCmd;
