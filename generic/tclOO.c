@@ -15,6 +15,7 @@
 #endif
 #include "tclInt.h"
 #include "tclOOInt.h"
+#include <assert.h>
 
 /*
  * Commands in oo::define and oo::objdefine.
@@ -50,6 +51,20 @@ static const struct {
     {"self", TclOODefineObjSelfObjCmd, 0},
     {"unexport", TclOODefineUnexportObjCmd, 1},
     {NULL, NULL, 0}
+};
+
+static const char *
+initCmds[] = {
+    "_init",
+    "class",
+    "configurable",
+    "define",
+    "objdefine",
+    "object",
+    "singleton",
+    "InfoObject",
+    "InfoClass",
+    NULL
 };
 
 /*
@@ -136,21 +151,6 @@ static const Tcl_MethodType classConstructor = {
 };
 
 /*
- * Scripted parts of TclOO. First, the main script (cannot be outside this
- * file).
- */
-
-static const char initScript[] =
-#ifndef TCL_NO_DEPRECATED
-"package ifneeded TclOO " TCLOO_PATCHLEVEL " {# Already present, OK?};"
-#endif
-"package ifneeded tcl::oo " TCLOO_PATCHLEVEL " {# Already present, OK?};"
-"namespace eval ::oo { variable version " TCLOO_VERSION " };"
-"namespace eval ::oo { variable patchlevel " TCLOO_PATCHLEVEL " };";
-/* "tcl_findLibrary tcloo $oo::version $oo::version" */
-/* " tcloo.tcl OO_LIBRARY oo::library;"; */
-
-/*
  * The scripted part of the definitions of TclOO.
  */
 
@@ -228,12 +228,17 @@ RemoveObject(
 /*
  * ----------------------------------------------------------------------
  *
- * TclOOInit --
+ * TclOOInitModuleObjCmd --
  *
- *	Called to initialise the OO system within an interpreter.
+ *	This is stub command that is mapped to the public commands of
+ *	oo::class, oo::define, oo::objdefine and oo::object. When called
+ *	it will initialize the OO system which will define the real tcl::oo
+ *	commands and then call the command that was invoked. Will be called
+ *	only once per interpreter since any call will define all of the
+ *	real tcl::oo commands, overwriting the stubs.
  *
  * Result:
- *	TCL_OK if the setup succeeded. Currently assumed to always work.
+ *	TCL_OK if the setup succeeded.
  *
  * Side effects:
  *	Creates namespaces, commands, several classes and a number of
@@ -241,36 +246,118 @@ RemoveObject(
  *
  * ----------------------------------------------------------------------
  */
-
-int
-TclOOInit(
-    Tcl_Interp *interp)		/* The interpreter to install into. */
+static int
+TclOOInitModuleObjCmd(
+    void *clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
 {
-    /*
-     * Build the core of the OO system.
-     */
+    Interp *iPtr = (Interp *)interp;
+    
+    if (iPtr->objectFoundation != NULL) {
+	/* 
+	 * Shall be not initialized yet, so it looks like a mockup/injection,
+	 * try to update the command.
+	 */
+	Foundation *fPtr = (Foundation *) iPtr->objectFoundation;
+	const char *cmdName = (char *)clientData;
 
+	if (objc) {
+	    Tcl_Command cmd = Tcl_FindCommand(interp, cmdName, fPtr->ooNs, 0);
+	    Tcl_Command cmd2 = Tcl_FindCommand(interp, TclGetString(objv[0]),
+					fPtr->ooNs, 0);
+	    if (cmd && cmd2) {
+	    	Tcl_CmdInfo info;
+		Tcl_GetCommandInfoFromToken(cmd, &info);
+		Tcl_SetCommandInfoFromToken(cmd2, &info);
+		goto evalIt;
+	    }
+	}
+
+	/* We cannot reinitialize the command, so simply produce an error */
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    "unexpected already initialized foundation calling \"%s\" for \"%s\"",
+		objc ? TclGetString(objv[0]) : "", cmdName));
+	return TCL_ERROR;
+    }
+
+    /*
+     * Defining of oo::{configurable,singleton} as classes will fail
+     * if the command of that name exists so delete their stubs.
+     */
+    (void) Tcl_DeleteCommand(interp, "::oo::configurable");
+    (void) Tcl_DeleteCommand(interp, "::oo::singleton");
     if (InitFoundation(interp) != TCL_OK) {
 	return TCL_ERROR;
     }
 
-    /*
-     * Run our initialization script and, if that works, declare the package
-     * to be fully provided.
-     */
-
-    if (Tcl_EvalEx(interp, initScript, TCL_INDEX_NONE, 0) != TCL_OK) {
-	return TCL_ERROR;
-    }
-
-#ifndef TCL_NO_DEPRECATED
-    Tcl_PkgProvideEx(interp, "TclOO", TCLOO_PATCHLEVEL,
-	    &tclOOStubs);
-#endif
-    return Tcl_PkgProvideEx(interp, "tcl::oo", TCLOO_PATCHLEVEL,
-	    &tclOOStubs);
+evalIt:
+    return Tcl_EvalObjv(interp, objc, objv, 0);
 }
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclOOInit --
+ *
+ *	Called to initialise the OO system within an interpreter. Does
+ *	not do the actual initialization but rather sets up stub commands
+ *	that will do the initialization when called.
+ *
+ * Result:
+ *	TCL_OK if the setup succeeded.
+ *
+ * Side effects:
+ *	Creates stub commands for the public oo commands like oo::class etc.,
+ *	subcommands for the info command and version variables. Also registers
+ *	the tcl::oo package.
+ *
+ * ----------------------------------------------------------------------
+ */
+int
+TclOOInit(
+    Tcl_Interp *interp)		/* The interpreter to install into. */
+{
+    Tcl_Namespace *ooNS;
+    const char **cmdNamePtr;
+    Tcl_Command infoCmd;
+    Tcl_Obj *mapDict;
+
+    ooNS = Tcl_CreateNamespace(interp, "::oo", NULL, NULL);
+    for (cmdNamePtr = initCmds; *cmdNamePtr; cmdNamePtr++) {
+	TclCreateObjCommandInNs(interp, *cmdNamePtr, ooNS,
+		TclOOInitModuleObjCmd, (void *)*cmdNamePtr, NULL);
+    }
+
+    /*
+     * Install into the [info] ensemble.
+     */
+
+    infoCmd = Tcl_FindCommand(interp, "info", NULL, TCL_GLOBAL_ONLY);
+    if (infoCmd) {
+	Tcl_GetEnsembleMappingDict(NULL, infoCmd, &mapDict);
+	TclDictPutString(NULL, mapDict, "object", "::oo::InfoObject");
+	TclDictPutString(NULL, mapDict, "class", "::oo::InfoClass");
+	Tcl_SetEnsembleMappingDict(interp, infoCmd, mapDict);
+    }
+
+    /*
+     * Set up the version and patchlevel variables. This used to be done by
+     * the init script which is no longer used.
+     */
+    Tcl_SetVar2(interp, "::oo::patchlevel", NULL, TCLOO_PATCHLEVEL, 0);
+    Tcl_SetVar2(interp, "::oo::version", NULL, TCLOO_VERSION, 0);
+
+    if (Tcl_EvalEx(interp,
+	"package ifneeded tcl::oo " TCLOO_PATCHLEVEL " oo::_init;"
+	"package ifneeded TclOO " TCLOO_PATCHLEVEL " oo::_init;",
+	TCL_INDEX_NONE, 0) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    return TCL_OK;
+}
+
 /*
  * ----------------------------------------------------------------------
  *
@@ -321,6 +408,15 @@ CreateCmdInNS(
     cmdPtr->flags |= flags;
 }
 
+static int
+NoopCmd(
+    TCL_UNUSED(void *),
+    TCL_UNUSED(Tcl_Interp *),
+    TCL_UNUSED(int) /*objc*/,
+    TCL_UNUSED(Tcl_Obj *const *) /*objv*/)
+{
+    return TCL_OK;
+}
 /*
  * ----------------------------------------------------------------------
  *
@@ -340,10 +436,21 @@ InitFoundation(
     static Tcl_ThreadDataKey tsdKey;
     ThreadLocalData *tsdPtr = (ThreadLocalData *)
 	    Tcl_GetThreadData(&tsdKey, sizeof(ThreadLocalData));
-    Foundation *fPtr = (Foundation *) Tcl_Alloc(sizeof(Foundation));
+    Foundation *fPtr;
     Tcl_Namespace *define, *objdef;
     Tcl_Obj *namePtr;
     size_t i;
+
+    if (((Interp *) interp)->objectFoundation) {
+	return TCL_OK;
+    }
+
+#ifndef TCL_NO_DEPRECATED
+    Tcl_PkgProvideEx(interp, "TclOO", TCLOO_PATCHLEVEL,
+	    &tclOOStubs);
+#endif
+    Tcl_PkgProvideEx(interp, "tcl::oo", TCLOO_PATCHLEVEL,
+	    &tclOOStubs);
 
     /*
      * Initialize the structure that holds the OO system core. This is
@@ -351,10 +458,13 @@ InitFoundation(
      * but the best we can do without hacking the core more.
      */
 
+    fPtr = (Foundation *) Tcl_Alloc(sizeof(Foundation));
     memset(fPtr, 0, sizeof(Foundation));
     ((Interp *) interp)->objectFoundation = fPtr;
     fPtr->interp = interp;
-    fPtr->ooNs = Tcl_CreateNamespace(interp, "::oo", fPtr, NULL);
+    fPtr->ooNs = Tcl_FindNamespace(interp, "::oo", NULL, 0);
+    assert(fPtr->ooNs != NULL);
+    TclCreateObjCommandInNs(interp, "_init", fPtr->ooNs, NoopCmd, NULL, NULL);
     Tcl_Export(interp, fPtr->ooNs, "[a-z]*", 1);
     define = Tcl_CreateNamespace(interp, "::oo::define", fPtr, NULL);
     objdef = Tcl_CreateNamespace(interp, "::oo::objdefine", fPtr, NULL);
