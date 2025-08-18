@@ -366,7 +366,7 @@ proc ::platform::patterns {id} {
 		    foreach {major minor} [split $v .] break
 
 		    set res {}
-		    if {$major gt 26} {
+		    if {$major ge 27} {
 			# Add x.0 to x.minor to patterns.
 			for {set j $minor} {$j >= 0} {incr j -1} {
 			    lappend res macosx${major}.${j}-${cpu}
