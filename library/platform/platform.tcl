@@ -466,7 +466,7 @@ proc ::platform::patterns {id} {
 # ### ### ### ######### ######### #########
 ## Ready
 
-package provide platform 1.0.19
+package provide platform 1.0.20
 
 # ### ### ### ######### ######### #########
 ## Demo application
