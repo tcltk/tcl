@@ -289,18 +289,8 @@ Tcl_LoadObjCmd(
 
     if (libraryPtr == NULL) {
 	/*
-	 * The desired file isn't currently loaded, so load it. It's an error
-	 * if the desired library is a static one.
+	 * The desired file isn't currently loaded, so load it.
 	 */
-
-	if (fullFileName[0] == 0) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "no library with prefix \"%s\" is loaded statically", prefix));
-	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LOAD", "NOTSTATIC",
-		    (char *)NULL);
-	    code = TCL_ERROR;
-	    goto done;
-	}
 
 	/*
 	 * Figure out the prefix if it wasn't provided explicitly.
@@ -393,18 +383,33 @@ Tcl_LoadObjCmd(
 
 	/*
 	 * Call platform-specific code to load the library and find the two
-	 * initialization functions.
+	 * initialization functions. Thereby consider statically linked library.
 	 */
 
-	symbols[0] = Tcl_DStringValue(&initName);
-	symbols[1] = NULL;
+	if (*fullFileName) {
+	    symbols[0] = Tcl_DStringValue(&initName);
+	    symbols[1] = NULL;
 
-	Tcl_MutexLock(&libraryMutex);
-	code = Tcl_LoadFile(interp, objv[1], symbols, flags, &initProc,
-		&loadHandle);
-	Tcl_MutexUnlock(&libraryMutex);
-	if (code != TCL_OK) {
-	    goto done;
+	    Tcl_MutexLock(&libraryMutex);
+	    code = Tcl_LoadFile(interp, objv[1], symbols, flags, &initProc,
+			&loadHandle);
+	    Tcl_MutexUnlock(&libraryMutex);
+	    if (code != TCL_OK) {
+		goto done;
+	    }
+	} else {
+	    loadHandle = NULL;
+	    initProc = (Tcl_LibraryInitProc *)
+			    Tcl_FindSymbol(interp, loadHandle,
+				Tcl_DStringValue(&initName));
+	    if (!initProc) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "no library with prefix \"%s\" is loaded statically", prefix));
+		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LOAD", "NOTSTATIC",
+		    (char *)NULL);
+		code = TCL_ERROR;
+		goto done;
+	    }
 	}
 
 	/*
