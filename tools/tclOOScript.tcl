@@ -12,73 +12,68 @@
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 ::namespace eval ::oo {
-    ::namespace path {}
 
     #
     # Commands that are made available to objects by default.
     #
-    namespace eval Helpers {
-	namespace path {}
 
-	# ------------------------------------------------------------------
-	#
-	# classvariable --
-	#
-	#	Link to a variable in the class of the current object.
-	#
-	# ------------------------------------------------------------------
+    # ------------------------------------------------------------------
+    #
+    # classvariable --
+    #
+    #	Link to a variable in the class of the current object.
+    #
+    # ------------------------------------------------------------------
 
-	proc classvariable {name args} {
-	    # Get a reference to the class's namespace
-	    set ns [info object namespace [uplevel 1 {self class}]]
-	    # Double up the list of variable names
-	    foreach v [list $name {*}$args] {
-		if {[string match *(*) $v]} {
-		    set reason "can't create a scalar variable that looks like an array element"
-		    return -code error -errorcode {TCL UPVAR LOCAL_ELEMENT} \
-			[format {bad variable name "%s": %s} $v $reason]
-		}
-		if {[string match *::* $v]} {
-		    set reason "can't create a local variable with a namespace separator in it"
-		    return -code error -errorcode {TCL UPVAR INVERTED} \
-			[format {bad variable name "%s": %s} $v $reason]
-		}
-		lappend vs $v $v
+    proc Helpers::classvariable {name args} {
+	# Get a reference to the class's namespace
+	set ns [info object namespace [uplevel 1 {self class}]]
+	# Double up the list of variable names
+	foreach v [list $name {*}$args] {
+	    if {[string match *(*) $v]} {
+		set reason "can't create a scalar variable that looks like an array element"
+		return -code error -errorcode {TCL UPVAR LOCAL_ELEMENT} \
+		    [format {bad variable name "%s": %s} $v $reason]
 	    }
-	    # Lastly, link the caller's local variables to the class's variables
-	    tailcall namespace upvar $ns {*}$vs
+	    if {[string match *::* $v]} {
+		set reason "can't create a local variable with a namespace separator in it"
+		return -code error -errorcode {TCL UPVAR INVERTED} \
+		    [format {bad variable name "%s": %s} $v $reason]
+	    }
+	    lappend vs $v $v
 	}
+	# Lastly, link the caller's local variables to the class's variables
+	tailcall namespace upvar $ns {*}$vs
+    }
 
-	# ------------------------------------------------------------------
-	#
-	# link --
-	#
-	#	Make a command that invokes a method on the current object.
-	#	The name of the command and the name of the method match by
-	#	default.
-	#
-	# ------------------------------------------------------------------
+    # ------------------------------------------------------------------
+    #
+    # link --
+    #
+    #	Make a command that invokes a method on the current object.
+    #	The name of the command and the name of the method match by
+    #	default.
+    #
+    # ------------------------------------------------------------------
 
-	proc link {args} {
-	    set ns [uplevel 1 {::namespace current}]
-	    foreach link $args {
-		if {[llength $link] == 2} {
-		    lassign $link src dst
-		} elseif {[llength $link] == 1} {
-		    lassign $link src
-		    set dst $src
-		} else {
-		    return -code error -errorcode {TCL OO CMDLINK_FORMAT} \
-			"bad link description; must only have one or two elements"
-		}
-		if {![string match ::* $src]} {
-		    set src [string cat $ns :: $src]
-		}
-		interp alias {} $src {} ${ns}::my $dst
-		trace add command ${ns}::my delete [list \
-		    ::oo::UnlinkLinkedCommand $src]
+    proc Helpers::link {args} {
+	set ns [uplevel 1 {::namespace current}]
+	foreach link $args {
+	    if {[llength $link] == 2} {
+		lassign $link src dst
+	    } elseif {[llength $link] == 1} {
+		lassign $link src
+		set dst $src
+	    } else {
+		return -code error -errorcode {TCL OO CMDLINK_FORMAT} \
+		    "bad link description; must only have one or two elements"
 	    }
-	    return
+	    if {![string match ::* $src]} {
+		set src [string cat $ns :: $src]
+	    }
+	    interp alias {} $src {} ${ns}::my $dst
+	    trace add command ${ns}::my delete [list \
+		::oo::UnlinkLinkedCommand $src]
 	}
     }
 
@@ -437,47 +432,45 @@
     #
     # ----------------------------------------------------------------------
 
-    namespace eval configuresupport {
-	# ------------------------------------------------------------------
-	#
-	# oo::configuresupport::configurableclass,
-	# oo::configuresupport::configurableobject --
-	#
-	#	Namespaces used as implementation vectors for oo::define and
-	#	oo::objdefine when the class/instance is configurable.
-	#	Note that these also contain commands implemented in C,
-	#	especially the [property] definition command.
-	#
-	# ------------------------------------------------------------------
+    # ------------------------------------------------------------------
+    #
+    # oo::configuresupport::configurableclass,
+    # oo::configuresupport::configurableobject --
+    #
+    #	Namespaces used as implementation vectors for oo::define and
+    #	oo::objdefine when the class/instance is configurable.
+    #	Note that these also contain commands implemented in C,
+    #	especially the [property] definition command.
+    #
+    # ------------------------------------------------------------------
 
-	::namespace eval configurableclass {
-	    # Plural alias just in case; deliberately NOT documented!
-	    ::proc properties args {::tailcall property {*}$args}
-	    ::namespace path ::oo::define
-	    ::namespace export property
-	}
+    namespace eval configuresupport::configurableclass {
+	# Plural alias just in case; deliberately NOT documented!
+	::proc properties args {::tailcall property {*}$args}
+	::namespace path ::oo::define
+	::namespace export property
+    }
 
-	::namespace eval configurableobject {
-	    # Plural alias just in case; deliberately NOT documented!
-	    ::proc properties args {::tailcall property {*}$args}
-	    ::namespace path ::oo::objdefine
-	    ::namespace export property
-	}
+    namespace eval configuresupport::configurableobject {
+	# Plural alias just in case; deliberately NOT documented!
+	::proc properties args {::tailcall property {*}$args}
+	::namespace path ::oo::objdefine
+	::namespace export property
+    }
 
-	# ------------------------------------------------------------------
-	#
-	# oo::configuresupport::configurable --
-	#
-	#	The class that contains the implementation of the actual
-	#	'configure' method (mixed into actually configurable classes).
-	#	The 'configure' method is in tclOOBasic.c.
-	#
-	# ------------------------------------------------------------------
+    # ------------------------------------------------------------------
+    #
+    # oo::configuresupport::configurable --
+    #
+    #	The class that contains the implementation of the actual
+    #	'configure' method (mixed into actually configurable classes).
+    #	The 'configure' method is in tclOOBasic.c.
+    #
+    # ------------------------------------------------------------------
 
-	::oo::define configurable {
-	    definitionnamespace -instance configurableobject
-	    definitionnamespace -class configurableclass
-	}
+    define configuresupport::configurable {
+	definitionnamespace -instance configuresupport::configurableobject
+	definitionnamespace -class configuresupport::configurableclass
     }
 
     # ----------------------------------------------------------------------
