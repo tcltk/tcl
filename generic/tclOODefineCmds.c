@@ -39,14 +39,24 @@ typedef struct DeclaredSlot {
     const Tcl_MethodType resolverType;
 } DeclaredSlot;
 
-#define SLOT(name,getter,setter,resolver)				\
+#define SLOT(name,getter,setter,resolver) \
     {"::oo::" name,							\
-	    {TCL_OO_METHOD_VERSION_CURRENT, "core method: " name " Getter", \
+	    {TCL_OO_METHOD_VERSION_1, "core method: " name " Getter",	\
 		    getter, NULL, NULL},				\
-	    {TCL_OO_METHOD_VERSION_CURRENT, "core method: " name " Setter", \
+	    {TCL_OO_METHOD_VERSION_1, "core method: " name " Setter",	\
 		    setter, NULL, NULL},				\
-	    {TCL_OO_METHOD_VERSION_CURRENT, "core method: " name " Resolver", \
+	    {TCL_OO_METHOD_VERSION_1, "core method: " name " Resolver",	\
 		    resolver, NULL, NULL}}
+
+typedef struct DeclaredSlotMethod {
+    const char *name;
+    int flags;
+    const Tcl_MethodType implType;
+} DeclaredSlotMethod;
+
+#define SLOT_METHOD(name,impl,flags) \
+    {name, flags, {TCL_OO_METHOD_VERSION_1,				\
+	    "core method: " name " slot", impl, NULL, NULL}}
 
 /*
  * A [string match] pattern used to determine if a method should be exported.
@@ -78,6 +88,33 @@ static inline void	RecomputeClassCacheFlag(Object *oPtr);
 static int		RenameDeleteMethod(Tcl_Interp *interp, Object *oPtr,
 			    int useClass, Tcl_Obj *const fromPtr,
 			    Tcl_Obj *const toPtr);
+static int		Slot_Append(void *,
+			    Tcl_Interp *interp, Tcl_ObjectContext context,
+			    int objc, Tcl_Obj *const *objv);
+static int		Slot_AppendNew(void *,
+			    Tcl_Interp *interp, Tcl_ObjectContext context,
+			    int objc, Tcl_Obj *const *objv);
+static int		Slot_Clear(void *,
+			    Tcl_Interp *interp, Tcl_ObjectContext context,
+			    int objc, Tcl_Obj *const *objv);
+static int		Slot_Prepend(void *,
+			    Tcl_Interp *interp, Tcl_ObjectContext context,
+			    int objc, Tcl_Obj *const *objv);
+static int		Slot_Remove(void *,
+			    Tcl_Interp *interp, Tcl_ObjectContext context,
+			    int objc, Tcl_Obj *const *objv);
+static int		Slot_Resolve(void *,
+			    Tcl_Interp *interp, Tcl_ObjectContext context,
+			    int objc, Tcl_Obj *const *objv);
+static int		Slot_Set(void *,
+			    Tcl_Interp *interp, Tcl_ObjectContext context,
+			    int objc, Tcl_Obj *const *objv);
+static int		Slot_Unimplemented(void *,
+			    Tcl_Interp *interp, Tcl_ObjectContext,
+			    int, Tcl_Obj *const *);
+static int		Slot_Unknown(void *,
+			    Tcl_Interp *interp, Tcl_ObjectContext context,
+			    int objc, Tcl_Obj *const *objv);
 static int		ClassFilter_Get(void *clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
@@ -173,6 +210,20 @@ static const DeclaredSlot slots[] = {
 	    Configurable_ObjectWritableProps_Get,
 	    Configurable_ObjectWritableProps_Set, NULL),
     {NULL, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}}
+};
+
+static const DeclaredSlotMethod slotMethods[] = {
+    SLOT_METHOD("Get",		Slot_Unimplemented, 0),
+    SLOT_METHOD("Resolve",	Slot_Resolve,	0),
+    SLOT_METHOD("Set",		Slot_Unimplemented, 0),
+    SLOT_METHOD("-append",	Slot_Append,	PUBLIC_METHOD),
+    SLOT_METHOD("-appendifnew",	Slot_AppendNew,	PUBLIC_METHOD),
+    SLOT_METHOD("-clear",	Slot_Clear,	PUBLIC_METHOD),
+    SLOT_METHOD("-prepend",	Slot_Prepend,	PUBLIC_METHOD),
+    SLOT_METHOD("-remove",	Slot_Remove,	PUBLIC_METHOD),
+    SLOT_METHOD("-set",		Slot_Set,	PUBLIC_METHOD),
+    SLOT_METHOD("unknown",	Slot_Unknown,	0),
+    {NULL, 0, {0, 0, 0, 0, 0}}
 };
 
 /*
@@ -2397,45 +2448,542 @@ int
 TclOODefineSlots(
     Foundation *fPtr)
 {
-    const DeclaredSlot *slotInfoPtr;
     Tcl_Interp *interp = fPtr->interp;
-    Tcl_Obj *getName, *setName, *resolveName;
     Tcl_Object object = Tcl_NewObjectInstance(interp, (Tcl_Class)
 	    fPtr->classCls, "::oo::Slot", NULL, TCL_INDEX_NONE, NULL, 0);
-    Class *slotCls;
 
     if (object == NULL) {
 	return TCL_ERROR;
     }
-    slotCls = ((Object *) object)->classPtr;
+    Tcl_Class slotCls = (Tcl_Class) ((Object *) object)->classPtr;
     if (slotCls == NULL) {
 	return TCL_ERROR;
     }
 
-    TclNewLiteralStringObj(getName, "Get");
-    TclNewLiteralStringObj(setName, "Set");
-    TclNewLiteralStringObj(resolveName, "Resolve");
-    for (slotInfoPtr = slots ; slotInfoPtr->name ; slotInfoPtr++) {
+    for (const DeclaredSlotMethod *smPtr = slotMethods; smPtr->name; smPtr++) {
+	Tcl_Obj *name = Tcl_NewStringObj(smPtr->name, -1);
+	Tcl_NewMethod(interp, slotCls, name, smPtr->flags,
+		&smPtr->implType, NULL);
+	Tcl_BounceRefCount(name);
+    }
+
+    for (const DeclaredSlot *slotPtr = slots ; slotPtr->name ; slotPtr++) {
 	Tcl_Object slotObject = Tcl_NewObjectInstance(interp,
-		(Tcl_Class) slotCls, slotInfoPtr->name, NULL, TCL_INDEX_NONE,
-		NULL, 0);
+		slotCls, slotPtr->name, NULL, TCL_INDEX_NONE, NULL, 0);
 
 	if (slotObject == NULL) {
 	    continue;
 	}
-	TclNewInstanceMethod(interp, slotObject, getName, 0,
-		&slotInfoPtr->getterType, NULL);
-	TclNewInstanceMethod(interp, slotObject, setName, 0,
-		&slotInfoPtr->setterType, NULL);
-	if (slotInfoPtr->resolverType.callProc) {
-	    TclNewInstanceMethod(interp, slotObject, resolveName, 0,
-		    &slotInfoPtr->resolverType, NULL);
+	TclNewInstanceMethod(interp, slotObject, fPtr->slotGetName, 0,
+		&slotPtr->getterType, NULL);
+	TclNewInstanceMethod(interp, slotObject, fPtr->slotSetName, 0,
+		&slotPtr->setterType, NULL);
+	if (slotPtr->resolverType.callProc) {
+	    TclNewInstanceMethod(interp, slotObject, fPtr->slotResolveName, 0,
+		    &slotPtr->resolverType, NULL);
 	}
     }
-    Tcl_BounceRefCount(getName);
-    Tcl_BounceRefCount(setName);
-    Tcl_BounceRefCount(resolveName);
     return TCL_OK;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * CallSlotGet, CallSlotSet, CallSlotResolve, ResolveAll --
+ *
+ *	How to call the standard low-level methods of a slot.
+ *	ResolveAll is the lifting of CallSlotResolve to work over a whole
+ *	list of items.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+// Call [$slot Get] to retrieve the list of contents of the slot
+static inline Tcl_Obj *
+CallSlotGet(
+    Tcl_Interp *interp,
+    Object *slot)
+{
+    Tcl_Obj *getArgs[] = {
+	slot->fPtr->myName,
+	slot->fPtr->slotGetName
+    };
+    int code = TclOOPrivateObjectCmd(slot, interp, 2, getArgs);
+    if (code != TCL_OK) {
+	return NULL;
+    }
+    return Tcl_GetObjResult(interp);
+}
+
+// Call [$slot Set $list] to set the list of contents of the slot
+static inline int
+CallSlotSet(
+    Tcl_Interp *interp,
+    Object *slot,
+    Tcl_Obj *list)
+{
+    Tcl_Obj *setArgs[] = {
+	slot->fPtr->myName,
+	slot->fPtr->slotSetName,
+	list
+    };
+    return TclOOPrivateObjectCmd(slot, interp, 3, setArgs);
+}
+
+// Call [$slot Resolve $item] to convert a slot item into canonical form
+static inline Tcl_Obj *
+CallSlotResolve(
+    Tcl_Interp *interp,
+    Object *slot,
+    Tcl_Obj *item)
+{
+    Tcl_Obj *resolveArgs[] = {
+	slot->fPtr->myName,
+	slot->fPtr->slotResolveName,
+	item
+    };
+    int code = TclOOPrivateObjectCmd(slot, interp, 3, resolveArgs);
+    if (code != TCL_OK) {
+	return NULL;
+    }
+    return Tcl_GetObjResult(interp);
+}
+
+static inline Tcl_Obj *
+ResolveAll(
+    Tcl_Interp *interp,
+    Object *slot,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Tcl_Obj **resolvedItems = (Tcl_Obj **) TclStackAlloc(interp,
+	    sizeof(Tcl_Obj *) * objc);
+    for (int i = 0; i < objc; i++) {
+	resolvedItems[i] = CallSlotResolve(interp, slot, objv[i]);
+	if (resolvedItems[i] == NULL) {
+	    for (int j = 0; j < i; j++) {
+		Tcl_DecrRefCount(resolvedItems[j]);
+	    }
+	    TclStackFree(interp, (void *) resolvedItems);
+	    return NULL;
+	}
+	Tcl_IncrRefCount(resolvedItems[i]);
+	Tcl_ResetResult(interp);
+    }
+    Tcl_Obj *resolvedList = Tcl_NewListObj(objc, resolvedItems);
+    for (int i = 0; i < objc; i++) {
+	TclDecrRefCount(resolvedItems[i]);
+    }
+    TclStackFree(interp, (void *) resolvedItems);
+    return resolvedList;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * Slot_Append --
+ *
+ *	Implementation of the "-append" slot operation.
+ *
+ * ----------------------------------------------------------------------
+ */
+static int
+Slot_Append(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,
+    Tcl_ObjectContext context,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
+    int skip = Tcl_ObjectContextSkippedArgs(context);
+    if (skip == objc) {
+	return TCL_OK;
+    }
+
+    // Resolve all values
+    Tcl_Obj *resolved = ResolveAll(interp, oPtr, objc - skip, objv + skip);
+    if (resolved == NULL) {
+	return TCL_ERROR;
+    }
+
+    // Get slot contents; store in list
+    Tcl_Obj *list = CallSlotGet(interp, oPtr);
+    if (list == NULL) {
+	Tcl_DecrRefCount(resolved);
+	return TCL_ERROR;
+    }
+    Tcl_IncrRefCount(list);
+    Tcl_ResetResult(interp);
+
+    // Append
+    if (Tcl_IsShared(list)) {
+	Tcl_Obj *dup = Tcl_DuplicateObj(list);
+	Tcl_IncrRefCount(dup);
+	Tcl_DecrRefCount(list);
+	list = dup;
+    }
+    if (Tcl_ListObjAppendList(interp, list, resolved) != TCL_OK) {
+	Tcl_DecrRefCount(list);
+	Tcl_DecrRefCount(resolved);
+	return TCL_ERROR;
+    }
+    Tcl_DecrRefCount(resolved);
+
+    // Set slot contents
+    int code = CallSlotSet(interp, oPtr, list);
+    Tcl_DecrRefCount(list);
+    return code;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * Slot_AppendNew --
+ *
+ *	Implementation of the "-appendifnew" slot operation.
+ *
+ * ----------------------------------------------------------------------
+ */
+static int
+Slot_AppendNew(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,
+    Tcl_ObjectContext context,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
+    int skip = Tcl_ObjectContextSkippedArgs(context);
+    if (skip == objc) {
+	return TCL_OK;
+    }
+
+    // Resolve all values
+    Tcl_Obj *resolved = ResolveAll(interp, oPtr, objc - skip, objv + skip);
+    if (resolved == NULL) {
+	return TCL_ERROR;
+    }
+
+    // Get slot contents; store in list
+    Tcl_Obj *list = CallSlotGet(interp, oPtr);
+    if (list == NULL) {
+	Tcl_DecrRefCount(resolved);
+	return TCL_ERROR;
+    }
+    Tcl_IncrRefCount(list);
+    Tcl_ResetResult(interp);
+
+    // Prepare a set of items in the list to set
+    Tcl_Size listc;
+    Tcl_Obj **listv;
+    if (TclListObjGetElements(interp, list, &listc, &listv) != TCL_OK) {
+	Tcl_DecrRefCount(list);
+	Tcl_DecrRefCount(resolved);
+	return TCL_ERROR;
+    }
+    Tcl_HashTable unique;
+    Tcl_InitObjHashTable(&unique);
+    for (Tcl_Size i=0 ; i<listc; i++) {
+	Tcl_CreateHashEntry(&unique, listv[i], NULL);
+    }
+
+    // Append the new items if they're not already there
+    if (Tcl_IsShared(list)) {
+	Tcl_Obj *dup = Tcl_DuplicateObj(list);
+	Tcl_IncrRefCount(dup);
+	Tcl_DecrRefCount(list);
+	list = dup;
+    }
+    TclListObjGetElements(NULL, resolved, &listc, &listv);
+    for (Tcl_Size i=0 ; i<listc; i++) {
+	int isNew;
+	Tcl_CreateHashEntry(&unique, listv[i], &isNew);
+	if (isNew) {
+	    Tcl_ListObjAppendElement(interp, list, listv[i]);
+	}
+    }
+    Tcl_DecrRefCount(resolved);
+    Tcl_DeleteHashTable(&unique);
+
+    // Set slot contents
+    int code = CallSlotSet(interp, oPtr, list);
+    Tcl_DecrRefCount(list);
+    return code;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * Slot_Clear --
+ *
+ *	Implementation of the "-clear" slot operation.
+ *
+ * ----------------------------------------------------------------------
+ */
+static int
+Slot_Clear(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,
+    Tcl_ObjectContext context,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
+    int skip = Tcl_ObjectContextSkippedArgs(context);
+    if (skip != objc) {
+	Tcl_WrongNumArgs(interp, skip, objv, NULL);
+	return TCL_ERROR;
+    }
+    Tcl_Obj *list = Tcl_NewObj();
+    Tcl_IncrRefCount(list);
+    int code = CallSlotSet(interp, oPtr, list);
+    Tcl_DecrRefCount(list);
+    return code;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * Slot_Prepend --
+ *
+ *	Implementation of the "-prepend" slot operation.
+ *
+ * ----------------------------------------------------------------------
+ */
+static int
+Slot_Prepend(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,
+    Tcl_ObjectContext context,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
+    int skip = Tcl_ObjectContextSkippedArgs(context);
+    if (skip == objc) {
+	return TCL_OK;
+    }
+
+    // Resolve all values
+    Tcl_Obj *list = ResolveAll(interp, oPtr, objc - skip, objv + skip);
+    if (list == NULL) {
+	return TCL_ERROR;
+    }
+    Tcl_IncrRefCount(list);
+
+    // Get slot contents and append to list
+    Tcl_Obj *oldList = CallSlotGet(interp, oPtr);
+    if (oldList == NULL) {
+	Tcl_DecrRefCount(list);
+	return TCL_ERROR;
+    }
+    Tcl_ListObjAppendList(NULL, list, oldList);
+    Tcl_ResetResult(interp);
+
+    // Set slot contents
+    int code = CallSlotSet(interp, oPtr, list);
+    Tcl_DecrRefCount(list);
+    return code;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * Slot_Remove --
+ *
+ *	Implementation of the "-remove" slot operation.
+ *
+ * ----------------------------------------------------------------------
+ */
+static int
+Slot_Remove(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,
+    Tcl_ObjectContext context,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
+    int skip = Tcl_ObjectContextSkippedArgs(context);
+    if (skip == objc) {
+	return TCL_OK;
+    }
+
+    // Resolve all values
+    Tcl_Obj *resolved = ResolveAll(interp, oPtr, objc - skip, objv + skip);
+    if (resolved == NULL) {
+	return TCL_ERROR;
+    }
+
+    // Get slot contents; store in list
+    Tcl_Obj *oldList = CallSlotGet(interp, oPtr);
+    if (oldList == NULL) {
+	Tcl_DecrRefCount(resolved);
+	return TCL_ERROR;
+    }
+    Tcl_IncrRefCount(oldList);
+    Tcl_ResetResult(interp);
+
+    // Prepare a set of items in the list to remove
+    Tcl_Size listc;
+    Tcl_Obj **listv;
+    TclListObjGetElements(NULL, resolved, &listc, &listv);
+    Tcl_HashTable removeSet;
+    Tcl_InitObjHashTable(&removeSet);
+    for (Tcl_Size i=0 ; i<listc; i++) {
+	Tcl_CreateHashEntry(&removeSet, listv[i], NULL);
+    }
+    Tcl_DecrRefCount(resolved);
+
+    // Append the new items from the old items if they're not in the remove set
+    if (TclListObjGetElements(interp, oldList, &listc, &listv) != TCL_OK) {
+	Tcl_DecrRefCount(oldList);
+	Tcl_DeleteHashTable(&removeSet);
+	return TCL_ERROR;
+    }
+    Tcl_Obj *newList = Tcl_NewObj();
+    for (Tcl_Size i=0 ; i<listc; i++) {
+	if (Tcl_FindHashEntry(&removeSet, listv[i]) == NULL) {
+	    Tcl_ListObjAppendElement(NULL, newList, listv[i]);
+	}
+    }
+    Tcl_DecrRefCount(oldList);
+    Tcl_DeleteHashTable(&removeSet);
+
+    // Set slot contents
+    Tcl_IncrRefCount(newList);
+    int code = CallSlotSet(interp, oPtr, newList);
+    Tcl_DecrRefCount(newList);
+    return code;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * Slot_Resolve --
+ *
+ *	Default implementation of the "Resolve" slot accessor. Just returns
+ *	its argument unchanged; particular slots may override.
+ *
+ * ----------------------------------------------------------------------
+ */
+static int
+Slot_Resolve(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,
+    Tcl_ObjectContext context,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    int skip = Tcl_ObjectContextSkippedArgs(context);
+    if (skip + 1 != objc) {
+	Tcl_WrongNumArgs(interp, skip, objv, "list");
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, objv[objc - 1]);
+    return TCL_OK;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * Slot_Set --
+ *
+ *	Implementation of the "-set" slot operation.
+ *
+ * ----------------------------------------------------------------------
+ */
+static int
+Slot_Set(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,
+    Tcl_ObjectContext context,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
+    int skip = Tcl_ObjectContextSkippedArgs(context);
+    Tcl_Obj *list;
+
+    // Resolve all values
+    if (skip == objc) {
+	list = Tcl_NewObj();
+    } else {
+	list = ResolveAll(interp, oPtr, objc - skip, objv + skip);
+	if (list == NULL) {
+	    return TCL_ERROR;
+	}
+    }
+    Tcl_IncrRefCount(list);
+
+    // Set slot contents
+    int code = CallSlotSet(interp, oPtr, list);
+    Tcl_DecrRefCount(list);
+    return code;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * Slot_Unimplemented --
+ *
+ *	Default implementation of the "Get" and "Set" slot accessors. Just
+ *	returns an error; actual slots must override.
+ *
+ * ----------------------------------------------------------------------
+ */
+static int
+Slot_Unimplemented(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,
+    TCL_UNUSED(Tcl_ObjectContext),
+    TCL_UNUSED(int),
+    TCL_UNUSED(Tcl_Obj *const *))
+{
+    Tcl_SetObjResult(interp, Tcl_NewStringObj("unimplemented", -1));
+    OO_ERROR(interp, ABSTRACT_SLOT);
+    return TCL_ERROR;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * Slot_Unknown --
+ *
+ *	Unknown method name handler for slots. Delegates to the default slot
+ *	operation (--default-operation forwarded method) unless the first
+ *	argument starts with a dash.
+ *
+ * ----------------------------------------------------------------------
+ */
+static int
+Slot_Unknown(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,
+    Tcl_ObjectContext context,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
+    int skip = Tcl_ObjectContextSkippedArgs(context);
+    if (skip >= objc) {
+	Tcl_Obj *args[] = {
+	    oPtr->fPtr->myName,
+	    oPtr->fPtr->slotDefOpName
+	};
+	return TclOOPrivateObjectCmd(oPtr, interp, 2, args);
+    } else if (TclGetString(objv[skip])[0] != '-') {
+	Tcl_Obj **args = (Tcl_Obj **) TclStackAlloc(interp,
+		sizeof(Tcl_Obj *) * (objc - skip + 2));
+	args[0] = oPtr->fPtr->myName;
+	args[1] = oPtr->fPtr->slotDefOpName;
+	memcpy(args+2, objv+skip, sizeof(Tcl_Obj*) * (objc - skip));
+	int code = TclOOPrivateObjectCmd(oPtr, interp, objc - skip + 2, args);
+	TclStackFree(interp, args);
+	return code;
+    }
+    return TclNRObjectContextInvokeNext(interp, context, objc, objv, skip);
 }
 
 /*
