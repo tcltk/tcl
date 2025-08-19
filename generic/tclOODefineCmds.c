@@ -88,7 +88,7 @@ static inline void	RecomputeClassCacheFlag(Object *oPtr);
 static int		RenameDeleteMethod(Tcl_Interp *interp, Object *oPtr,
 			    int useClass, Tcl_Obj *const fromPtr,
 			    Tcl_Obj *const toPtr);
-static int		Slot_Append(void *clientData,
+static int		Slot_Append(void *,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
 #if 0 // TODO
@@ -96,10 +96,10 @@ static int		Slot_AppendNew(void *clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
 #endif
-static int		Slot_Clear(void *clientData,
+static int		Slot_Clear(void *,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
-static int		Slot_Prepend(void *clientData,
+static int		Slot_Prepend(void *,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
 #if 0 // TODO
@@ -107,20 +107,18 @@ static int		Slot_Remove(void *clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
 #endif
-static int		Slot_Resolve(void *clientData,
+static int		Slot_Resolve(void *,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
-static int		Slot_Set(void *clientData,
+static int		Slot_Set(void *,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
-static int		Slot_Unimplemented(void *clientData,
+static int		Slot_Unimplemented(void *,
+			    Tcl_Interp *interp, Tcl_ObjectContext,
+			    int, Tcl_Obj *const *);
+static int		Slot_Unknown(void *,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
-#if 0 // TODO
-static int		Slot_Unknown(void *clientData,
-			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    int objc, Tcl_Obj *const *objv);
-#endif
 static int		ClassFilter_Get(void *clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
@@ -226,10 +224,10 @@ static const DeclaredSlotMethod slotMethods[] = {
     SLOT_METHOD("-clear",	Slot_Clear,	PUBLIC_METHOD),
     SLOT_METHOD("-prepend",	Slot_Prepend,	PUBLIC_METHOD),
     SLOT_METHOD("-set",		Slot_Set,	PUBLIC_METHOD),
+    SLOT_METHOD("unknown",	Slot_Unknown,	0),
 #if 0 // TODO
     SLOT_METHOD("-appendifnew",	Slot_AppendNew,	PUBLIC_METHOD),
     SLOT_METHOD("-remove",	Slot_Remove,	PUBLIC_METHOD),
-    SLOT_METHOD("unknown",	Slot_Unknown,	0),
 #endif
     {NULL, 0, {0, 0, 0, 0, 0}}
 };
@@ -2475,10 +2473,6 @@ TclOODefineSlots(
 	Tcl_BounceRefCount(name);
     }
 
-    Tcl_Obj *getName, *setName, *resolveName;
-    TclNewLiteralStringObj(getName, "Get");
-    TclNewLiteralStringObj(setName, "Set");
-    TclNewLiteralStringObj(resolveName, "Resolve");
     for (const DeclaredSlot *slotPtr = slots ; slotPtr->name ; slotPtr++) {
 	Tcl_Object slotObject = Tcl_NewObjectInstance(interp,
 		slotCls, slotPtr->name, NULL, TCL_INDEX_NONE, NULL, 0);
@@ -2486,19 +2480,85 @@ TclOODefineSlots(
 	if (slotObject == NULL) {
 	    continue;
 	}
-	TclNewInstanceMethod(interp, slotObject, getName, 0,
+	TclNewInstanceMethod(interp, slotObject, fPtr->slotGetName, 0,
 		&slotPtr->getterType, NULL);
-	TclNewInstanceMethod(interp, slotObject, setName, 0,
+	TclNewInstanceMethod(interp, slotObject, fPtr->slotSetName, 0,
 		&slotPtr->setterType, NULL);
 	if (slotPtr->resolverType.callProc) {
-	    TclNewInstanceMethod(interp, slotObject, resolveName, 0,
+	    TclNewInstanceMethod(interp, slotObject, fPtr->slotResolveName, 0,
 		    &slotPtr->resolverType, NULL);
 	}
     }
-    Tcl_BounceRefCount(getName);
-    Tcl_BounceRefCount(setName);
-    Tcl_BounceRefCount(resolveName);
     return TCL_OK;
+}
+
+static inline int
+CallSlotGet(
+    Tcl_Interp *interp,
+    Object *oPtr)
+{
+    Tcl_Obj *getArgs[] = {
+	oPtr->fPtr->myName,
+	oPtr->fPtr->slotGetName
+    };
+    return TclOOPrivateObjectCmd(oPtr, interp, 2, getArgs);
+}
+
+static inline int
+CallSlotSet(
+    Tcl_Interp *interp,
+    Object *oPtr,
+    Tcl_Obj *list)
+{
+    Tcl_Obj *setArgs[] = {
+	oPtr->fPtr->myName,
+	oPtr->fPtr->slotSetName,
+	list
+    };
+    return TclOOPrivateObjectCmd(oPtr, interp, 3, setArgs);
+}
+
+static inline int
+CallSlotResolve(
+    Tcl_Interp *interp,
+    Object *oPtr,
+    Tcl_Obj *item)
+{
+    Tcl_Obj *resolveArgs[] = {
+	oPtr->fPtr->myName,
+	oPtr->fPtr->slotResolveName,
+	item
+    };
+    return TclOOPrivateObjectCmd(oPtr, interp, 3, resolveArgs);
+}
+
+static inline Tcl_Obj *
+ResolveAll(
+    Tcl_Interp *interp,
+    Object *oPtr,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Tcl_Obj **resolvedItems = (Tcl_Obj **) TclStackAlloc(interp,
+	    sizeof(Tcl_Obj *) * objc);
+    for (int i = 0; i < objc; i++) {
+	if (CallSlotResolve(interp, oPtr, objv[i]) != TCL_OK) {
+	    for (int j = 0; j < i; j++) {
+		Tcl_DecrRefCount(resolvedItems[j]);
+	    }
+	    TclStackFree(interp, (void *) resolvedItems);
+	    return NULL;
+	}
+	resolvedItems[i] = Tcl_GetObjResult(interp);
+	Tcl_IncrRefCount(resolvedItems[i]);
+	Tcl_ResetResult(interp);
+    }
+    Tcl_Obj *resolvedList = Tcl_NewListObj(objc, resolvedItems);
+    for (int i = 0; i < objc; i++) {
+	TclDecrRefCount(resolvedItems[i]);
+    }
+    TclStackFree(interp, (void *) resolvedItems);
+    return resolvedList;
 }
 
 static int
@@ -2510,84 +2570,43 @@ Slot_Append(
     Tcl_Obj *const *objv)
 {
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
-    if (Tcl_ObjectContextSkippedArgs(context) == objc) {
+    int skip = Tcl_ObjectContextSkippedArgs(context);
+    if (skip == objc) {
 	return TCL_OK;
     }
-    objc -= Tcl_ObjectContextSkippedArgs(context);
-    objv += Tcl_ObjectContextSkippedArgs(context);
-
-    Tcl_Obj *args[3];
-    args[0] = Tcl_NewStringObj("my", -1);
-    Tcl_IncrRefCount(args[0]);
 
     // Resolve all values
-    Tcl_Obj **resolved = (Tcl_Obj **)
-	    TclStackAlloc(interp, sizeof(Tcl_Obj *) * objc);
-    args[1] = Tcl_NewStringObj("Resolve", -1);
-    Tcl_IncrRefCount(args[1]);
-    for (int i = 0; i < objc; i++) {
-	args[2] = objv[i];
-	if (TclOOPrivateObjectCmd(oPtr, interp, 3, args) != TCL_OK) {
-	    Tcl_DecrRefCount(args[0]);
-	    Tcl_DecrRefCount(args[1]);
-	    for (int j = 0; j < i; j++) {
-		Tcl_DecrRefCount(resolved[j]);
-	    }
-	    TclStackFree(interp, (void *) resolved);
-	    return TCL_ERROR;
-	}
-	resolved[i] = Tcl_GetObjResult(interp);
-	Tcl_IncrRefCount(resolved[i]);
-	Tcl_ResetResult(interp);
-    }
-    Tcl_DecrRefCount(args[1]);
-
-    // Get slot contents; store in args[2]
-    args[1] = Tcl_NewStringObj("Get", -1);
-    Tcl_IncrRefCount(args[1]);
-    if (TclOOPrivateObjectCmd(oPtr, interp, 2, args) != TCL_OK) {
-	Tcl_DecrRefCount(args[0]);
-	Tcl_DecrRefCount(args[1]);
-	for (int j = 0; j < objc; j++) {
-	    Tcl_DecrRefCount(resolved[j]);
-	}
-	TclStackFree(interp, (void *) resolved);
+    Tcl_Obj *resolved = ResolveAll(interp, oPtr, objc - skip, objv + skip);
+    if (resolved == NULL) {
 	return TCL_ERROR;
     }
-    args[2] = Tcl_GetObjResult(interp);
-    Tcl_IncrRefCount(args[2]);
-    Tcl_DecrRefCount(args[1]);
+
+    // Get slot contents; store in list
+    if (CallSlotGet(interp, oPtr) != TCL_OK) {
+	Tcl_DecrRefCount(resolved);
+	return TCL_ERROR;
+    }
+    Tcl_Obj *list = Tcl_GetObjResult(interp);
+    Tcl_IncrRefCount(list);
     Tcl_ResetResult(interp);
 
     // Append
-    if (Tcl_IsShared(args[2])) {
-	Tcl_Obj *dup = Tcl_DuplicateObj(args[2]);
+    if (Tcl_IsShared(list)) {
+	Tcl_Obj *dup = Tcl_DuplicateObj(list);
 	Tcl_IncrRefCount(dup);
-	Tcl_DecrRefCount(args[2]);
-	args[2] = dup;
+	Tcl_DecrRefCount(list);
+	list = dup;
     }
-    if (TclListObjAppendElements(interp, args[2], objc, resolved) != TCL_OK) {
-	Tcl_DecrRefCount(args[0]);
-	Tcl_DecrRefCount(args[2]);
-	for (int j = 0; j < objc; j++) {
-	    Tcl_DecrRefCount(resolved[j]);
-	}
-	TclStackFree(interp, (void *) resolved);
+    if (Tcl_ListObjAppendList(interp, list, resolved) != TCL_OK) {
+	Tcl_DecrRefCount(list);
+	Tcl_DecrRefCount(resolved);
 	return TCL_ERROR;
     }
-    for (int j = 0; j < objc; j++) {
-	Tcl_DecrRefCount(resolved[j]);
-    }
-    TclStackFree(interp, (void *) resolved);
-    // resolved is now non-referenceable
+    Tcl_DecrRefCount(resolved);
 
     // Set slot contents
-    args[1] = Tcl_NewStringObj("Set", -1);
-    Tcl_IncrRefCount(args[1]);
-    int code = TclOOPrivateObjectCmd(oPtr, interp, 3, args);
-    Tcl_DecrRefCount(args[0]);
-    Tcl_IncrRefCount(args[1]);
-    Tcl_IncrRefCount(args[2]);
+    int code = CallSlotSet(interp, oPtr, list);
+    Tcl_DecrRefCount(list);
     return code;
 }
 
@@ -2600,23 +2619,15 @@ Slot_Clear(
     Tcl_Obj *const *objv)
 {
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
-    if (Tcl_ObjectContextSkippedArgs(context) != objc) {
-	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
-		NULL);
+    int skip = Tcl_ObjectContextSkippedArgs(context);
+    if (skip != objc) {
+	Tcl_WrongNumArgs(interp, skip, objv, NULL);
 	return TCL_ERROR;
     }
-    Tcl_Obj *args[] = {
-	Tcl_NewStringObj("my", -1),
-	Tcl_NewStringObj("Set", -1),
-	Tcl_NewObj()
-    };
-    Tcl_IncrRefCount(args[0]);
-    Tcl_IncrRefCount(args[1]);
-    Tcl_IncrRefCount(args[2]);
-    int code = TclOOPrivateObjectCmd(oPtr, interp, 3, args);
-    Tcl_DecrRefCount(args[0]);
-    Tcl_IncrRefCount(args[1]);
-    Tcl_IncrRefCount(args[2]);
+    Tcl_Obj *list = Tcl_NewObj();
+    Tcl_IncrRefCount(list);
+    int code = CallSlotSet(interp, oPtr, list);
+    Tcl_DecrRefCount(list);
     return code;
 }
 
@@ -2629,51 +2640,20 @@ Slot_Prepend(
     Tcl_Obj *const *objv)
 {
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
-    if (Tcl_ObjectContextSkippedArgs(context) == objc) {
+    int skip = Tcl_ObjectContextSkippedArgs(context);
+    if (skip == objc) {
 	return TCL_OK;
     }
-    objc -= Tcl_ObjectContextSkippedArgs(context);
-    objv += Tcl_ObjectContextSkippedArgs(context);
-
-    Tcl_Obj *args[3];
-    args[0] = Tcl_NewStringObj("my", -1);
-    Tcl_IncrRefCount(args[0]);
 
     // Resolve all values
-    Tcl_Obj **resolved = (Tcl_Obj **)
-	    TclStackAlloc(interp, sizeof(Tcl_Obj *) * objc);
-    args[1] = Tcl_NewStringObj("Resolve", -1);
-    Tcl_IncrRefCount(args[1]);
-    for (int i = 0; i < objc; i++) {
-	args[2] = objv[i];
-	if (TclOOPrivateObjectCmd(oPtr, interp, 3, args) != TCL_OK) {
-	    Tcl_DecrRefCount(args[0]);
-	    Tcl_DecrRefCount(args[1]);
-	    for (int j = 0; j < i; j++) {
-		Tcl_DecrRefCount(resolved[j]);
-	    }
-	    TclStackFree(interp, (void *) resolved);
-	    return TCL_ERROR;
-	}
-	resolved[i] = Tcl_GetObjResult(interp);
-	Tcl_IncrRefCount(resolved[i]);
-	Tcl_ResetResult(interp);
+    Tcl_Obj *list = ResolveAll(interp, oPtr, objc - skip, objv + skip);
+    if (list == NULL) {
+	return TCL_ERROR;
     }
-    Tcl_DecrRefCount(args[1]);
-    Tcl_Obj *list = Tcl_NewListObj(objc, resolved);
     Tcl_IncrRefCount(list);
-    for (int j = 0; j < objc; j++) {
-	Tcl_DecrRefCount(resolved[j]);
-    }
-    TclStackFree(interp, (void *) resolved);
-    // resolved is now non-referenceable
 
     // Get slot contents and append to list
-    args[1] = Tcl_NewStringObj("Get", -1);
-    Tcl_IncrRefCount(args[1]);
-    if (TclOOPrivateObjectCmd(oPtr, interp, 2, args) != TCL_OK) {
-	Tcl_DecrRefCount(args[0]);
-	Tcl_DecrRefCount(args[1]);
+    if (CallSlotGet(interp, oPtr) != TCL_OK) {
 	Tcl_DecrRefCount(list);
 	return TCL_ERROR;
     }
@@ -2681,13 +2661,8 @@ Slot_Prepend(
     Tcl_ResetResult(interp);
 
     // Set slot contents
-    args[1] = Tcl_NewStringObj("Set", -1);
-    args[2] = list; // Already has a ref
-    Tcl_IncrRefCount(args[1]);
-    int code = TclOOPrivateObjectCmd(oPtr, interp, 3, args);
-    Tcl_DecrRefCount(args[0]);
-    Tcl_IncrRefCount(args[1]);
-    Tcl_IncrRefCount(args[2]);
+    int code = CallSlotSet(interp, oPtr, list);
+    Tcl_DecrRefCount(list);
     return code;
 }
 
@@ -2699,9 +2674,9 @@ Slot_Resolve(
     int objc,
     Tcl_Obj *const *objv)
 {
-    if (Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
-	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
-		"list");
+    int skip = Tcl_ObjectContextSkippedArgs(context);
+    if (skip + 1 != objc) {
+	Tcl_WrongNumArgs(interp, skip, objv, "list");
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, objv[objc - 1]);
@@ -2717,54 +2692,23 @@ Slot_Set(
     Tcl_Obj *const *objv)
 {
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
-    if (Tcl_ObjectContextSkippedArgs(context) == objc) {
-	return TCL_OK;
-    }
-    objc -= Tcl_ObjectContextSkippedArgs(context);
-    objv += Tcl_ObjectContextSkippedArgs(context);
-
-    Tcl_Obj *args[3];
-    args[0] = Tcl_NewStringObj("my", -1);
-    Tcl_IncrRefCount(args[0]);
+    int skip = Tcl_ObjectContextSkippedArgs(context);
+    Tcl_Obj *list;
 
     // Resolve all values
-    Tcl_Obj **resolved = (Tcl_Obj **)
-	    TclStackAlloc(interp, sizeof(Tcl_Obj *) * objc);
-    args[1] = Tcl_NewStringObj("Resolve", -1);
-    Tcl_IncrRefCount(args[1]);
-    for (int i = 0; i < objc; i++) {
-	args[2] = objv[i];
-	if (TclOOPrivateObjectCmd(oPtr, interp, 3, args) != TCL_OK) {
-	    Tcl_DecrRefCount(args[0]);
-	    Tcl_DecrRefCount(args[1]);
-	    for (int j = 0; j < i; j++) {
-		Tcl_DecrRefCount(resolved[j]);
-	    }
-	    TclStackFree(interp, (void *) resolved);
+    if (skip == objc) {
+	list = Tcl_NewObj();
+    } else {
+	list = ResolveAll(interp, oPtr, objc - skip, objv + skip);
+	if (list == NULL) {
 	    return TCL_ERROR;
 	}
-	resolved[i] = Tcl_GetObjResult(interp);
-	Tcl_IncrRefCount(resolved[i]);
-	Tcl_ResetResult(interp);
     }
-    Tcl_DecrRefCount(args[1]);
-
-    // Make a list
-    args[2] = Tcl_NewListObj(objc, resolved);
-    Tcl_IncrRefCount(args[2]);
-    for (int j = 0; j < objc; j++) {
-	Tcl_DecrRefCount(resolved[j]);
-    }
-    TclStackFree(interp, (void *) resolved);
-    // resolved is now non-referenceable
+    Tcl_IncrRefCount(list);
 
     // Set slot contents
-    args[1] = Tcl_NewStringObj("Set", -1);
-    Tcl_IncrRefCount(args[1]);
-    int code = TclOOPrivateObjectCmd(oPtr, interp, 3, args);
-    Tcl_DecrRefCount(args[0]);
-    Tcl_IncrRefCount(args[1]);
-    Tcl_IncrRefCount(args[2]);
+    int code = CallSlotSet(interp, oPtr, list);
+    Tcl_DecrRefCount(list);
     return code;
 }
 
@@ -2779,6 +2723,35 @@ Slot_Unimplemented(
     Tcl_SetObjResult(interp, Tcl_NewStringObj("unimplemented", -1));
     OO_ERROR(interp, ABSTRACT_SLOT);
     return TCL_ERROR;
+}
+
+static int
+Slot_Unknown(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,
+    Tcl_ObjectContext context,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
+    int skip = Tcl_ObjectContextSkippedArgs(context);
+    if (skip >= objc) {
+	Tcl_Obj *args[] = {
+	    oPtr->fPtr->myName,
+	    oPtr->fPtr->slotDefOpName
+	};
+	return TclOOPrivateObjectCmd(oPtr, interp, 2, args);
+    } else if (TclGetString(objv[skip])[0] != '-') {
+	Tcl_Obj **args = (Tcl_Obj **) TclStackAlloc(interp,
+		sizeof(Tcl_Obj *) * (objc - skip + 2));
+	args[0] = oPtr->fPtr->myName;
+	args[1] = oPtr->fPtr->slotDefOpName;
+	memcpy(args+2, objv+skip, sizeof(Tcl_Obj*) * (objc - skip));
+	int code = TclOOPrivateObjectCmd(oPtr, interp, objc - skip + 2, args);
+	TclStackFree(interp, args);
+	return code;
+    }
+    return TclNRObjectContextInvokeNext(interp, context, objc, objv, skip);
 }
 
 /*

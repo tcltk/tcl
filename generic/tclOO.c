@@ -371,6 +371,10 @@ InitFoundation(
     TclNewLiteralStringObj(fPtr->defineName, "::oo::define");
     TclNewLiteralStringObj(fPtr->myName, "my");
     TclNewLiteralStringObj(fPtr->mcdName, "::oo::MixinClassDelegates");
+    TclNewLiteralStringObj(fPtr->slotGetName, "Get");
+    TclNewLiteralStringObj(fPtr->slotSetName, "Set");
+    TclNewLiteralStringObj(fPtr->slotResolveName, "Resolve");
+    TclNewLiteralStringObj(fPtr->slotDefOpName, "--default-operation");
     Tcl_IncrRefCount(fPtr->unknownMethodNameObj);
     Tcl_IncrRefCount(fPtr->constructorName);
     Tcl_IncrRefCount(fPtr->destructorName);
@@ -378,6 +382,10 @@ InitFoundation(
     Tcl_IncrRefCount(fPtr->defineName);
     Tcl_IncrRefCount(fPtr->myName);
     Tcl_IncrRefCount(fPtr->mcdName);
+    Tcl_IncrRefCount(fPtr->slotGetName);
+    Tcl_IncrRefCount(fPtr->slotSetName);
+    Tcl_IncrRefCount(fPtr->slotResolveName);
+    Tcl_IncrRefCount(fPtr->slotDefOpName);
 
     TclCreateObjCommandInNs(interp, "UnknownDefinition", fPtr->ooNs,
 	    TclOOUnknownDefinition, NULL, NULL);
@@ -621,6 +629,10 @@ KillFoundation(
     TclDecrRefCount(fPtr->defineName);
     TclDecrRefCount(fPtr->myName);
     TclDecrRefCount(fPtr->mcdName);
+    TclDecrRefCount(fPtr->slotGetName);
+    TclDecrRefCount(fPtr->slotSetName);
+    TclDecrRefCount(fPtr->slotResolveName);
+    TclDecrRefCount(fPtr->slotDefOpName);
     TclOODecrRefCount(fPtr->objectCls->thisPtr);
     TclOODecrRefCount(fPtr->classCls->thisPtr);
 
