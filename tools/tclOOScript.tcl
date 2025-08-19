@@ -372,8 +372,8 @@
     # ----------------------------------------------------------------------
 
     class create singleton {
-	superclass class
-	variable object
+	superclass -set class
+	variable -set object
 	unexport create createWithNamespace
 	method new args {
 	    if {![info exists object] || ![info object isa object $object]} {
@@ -403,7 +403,7 @@
     # ----------------------------------------------------------------------
 
     class create abstract {
-	superclass class
+	superclass -set class
 	unexport create createWithNamespace new
     }
 
@@ -486,7 +486,7 @@
     # ----------------------------------------------------------------------
 
     class create configurable {
-	superclass class
+	superclass -set class
 
 	constructor {{definitionScript ""}} {
 	    next {mixin ::oo::configuresupport::configurable}
