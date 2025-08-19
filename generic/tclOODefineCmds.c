@@ -91,22 +91,18 @@ static int		RenameDeleteMethod(Tcl_Interp *interp, Object *oPtr,
 static int		Slot_Append(void *,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
-#if 0 // TODO
-static int		Slot_AppendNew(void *clientData,
+static int		Slot_AppendNew(void *,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
-#endif
 static int		Slot_Clear(void *,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
 static int		Slot_Prepend(void *,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
-#if 0 // TODO
-static int		Slot_Remove(void *clientData,
+static int		Slot_Remove(void *,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
-#endif
 static int		Slot_Resolve(void *,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
@@ -221,14 +217,12 @@ static const DeclaredSlotMethod slotMethods[] = {
     SLOT_METHOD("Resolve",	Slot_Resolve,	0),
     SLOT_METHOD("Set",		Slot_Unimplemented, 0),
     SLOT_METHOD("-append",	Slot_Append,	PUBLIC_METHOD),
+    SLOT_METHOD("-appendifnew",	Slot_AppendNew,	PUBLIC_METHOD),
     SLOT_METHOD("-clear",	Slot_Clear,	PUBLIC_METHOD),
     SLOT_METHOD("-prepend",	Slot_Prepend,	PUBLIC_METHOD),
+    SLOT_METHOD("-remove",	Slot_Remove,	PUBLIC_METHOD),
     SLOT_METHOD("-set",		Slot_Set,	PUBLIC_METHOD),
     SLOT_METHOD("unknown",	Slot_Unknown,	0),
-#if 0 // TODO
-    SLOT_METHOD("-appendifnew",	Slot_AppendNew,	PUBLIC_METHOD),
-    SLOT_METHOD("-remove",	Slot_Remove,	PUBLIC_METHOD),
-#endif
     {NULL, 0, {0, 0, 0, 0, 0}}
 };
 
@@ -2611,6 +2605,73 @@ Slot_Append(
 }
 
 static int
+Slot_AppendNew(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,
+    Tcl_ObjectContext context,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
+    int skip = Tcl_ObjectContextSkippedArgs(context);
+    if (skip == objc) {
+	return TCL_OK;
+    }
+
+    // Resolve all values
+    Tcl_Obj *resolved = ResolveAll(interp, oPtr, objc - skip, objv + skip);
+    if (resolved == NULL) {
+	return TCL_ERROR;
+    }
+
+    // Get slot contents; store in list
+    if (CallSlotGet(interp, oPtr) != TCL_OK) {
+	Tcl_DecrRefCount(resolved);
+	return TCL_ERROR;
+    }
+    Tcl_Obj *list = Tcl_GetObjResult(interp);
+    Tcl_IncrRefCount(list);
+    Tcl_ResetResult(interp);
+
+    // Prepare a set of items in the list to set
+    Tcl_Size listc;
+    Tcl_Obj **listv;
+    if (TclListObjGetElements(interp, list, &listc, &listv) != TCL_OK) {
+	Tcl_DecrRefCount(list);
+	Tcl_DecrRefCount(resolved);
+	return TCL_ERROR;
+    }
+    Tcl_HashTable unique;
+    Tcl_InitObjHashTable(&unique);
+    for (Tcl_Size i=0 ; i<listc; i++) {
+	Tcl_CreateHashEntry(&unique, listv[i], NULL);
+    }
+
+    // Append the new items if they're not already there
+    if (Tcl_IsShared(list)) {
+	Tcl_Obj *dup = Tcl_DuplicateObj(list);
+	Tcl_IncrRefCount(dup);
+	Tcl_DecrRefCount(list);
+	list = dup;
+    }
+    TclListObjGetElements(NULL, resolved, &listc, &listv);
+    for (Tcl_Size i=0 ; i<listc; i++) {
+	int isNew;
+	Tcl_CreateHashEntry(&unique, listv[i], &isNew);
+	if (isNew) {
+	    Tcl_ListObjAppendElement(interp, list, listv[i]);
+	}
+    }
+    Tcl_DecrRefCount(resolved);
+    Tcl_DeleteHashTable(&unique);
+
+    // Set slot contents
+    int code = CallSlotSet(interp, oPtr, list);
+    Tcl_DecrRefCount(list);
+    return code;
+}
+
+static int
 Slot_Clear(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
@@ -2663,6 +2724,68 @@ Slot_Prepend(
     // Set slot contents
     int code = CallSlotSet(interp, oPtr, list);
     Tcl_DecrRefCount(list);
+    return code;
+}
+
+static int
+Slot_Remove(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,
+    Tcl_ObjectContext context,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
+    int skip = Tcl_ObjectContextSkippedArgs(context);
+    if (skip == objc) {
+	return TCL_OK;
+    }
+
+    // Resolve all values
+    Tcl_Obj *resolved = ResolveAll(interp, oPtr, objc - skip, objv + skip);
+    if (resolved == NULL) {
+	return TCL_ERROR;
+    }
+
+    // Get slot contents; store in list
+    if (CallSlotGet(interp, oPtr) != TCL_OK) {
+	Tcl_DecrRefCount(resolved);
+	return TCL_ERROR;
+    }
+    Tcl_Obj *oldList = Tcl_GetObjResult(interp);
+    Tcl_IncrRefCount(oldList);
+    Tcl_ResetResult(interp);
+
+    // Prepare a set of items in the list to remove
+    Tcl_Size listc;
+    Tcl_Obj **listv;
+    TclListObjGetElements(NULL, resolved, &listc, &listv);
+    Tcl_HashTable removeSet;
+    Tcl_InitObjHashTable(&removeSet);
+    for (Tcl_Size i=0 ; i<listc; i++) {
+	Tcl_CreateHashEntry(&removeSet, listv[i], NULL);
+    }
+    Tcl_DecrRefCount(resolved);
+
+    // Append the new items from the old items if they're not in the remove set
+    if (TclListObjGetElements(interp, oldList, &listc, &listv) != TCL_OK) {
+	Tcl_DecrRefCount(oldList);
+	Tcl_DeleteHashTable(&removeSet);
+	return TCL_ERROR;
+    }
+    Tcl_Obj *newList = Tcl_NewObj();
+    for (Tcl_Size i=0 ; i<listc; i++) {
+	if (Tcl_FindHashEntry(&removeSet, listv[i]) == NULL) {
+	    Tcl_ListObjAppendElement(NULL, newList, listv[i]);
+	}
+    }
+    Tcl_DecrRefCount(oldList);
+    Tcl_DeleteHashTable(&removeSet);
+
+    // Set slot contents
+    Tcl_IncrRefCount(newList);
+    int code = CallSlotSet(interp, oPtr, newList);
+    Tcl_DecrRefCount(newList);
     return code;
 }
 

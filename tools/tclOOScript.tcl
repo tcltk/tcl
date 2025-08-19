@@ -198,32 +198,12 @@
     define Slot {
 	# ------------------------------------------------------------------
 	#
-	# Slot -appendifnew, -remove, --default-operation --
+	# Slot --default-operation --
 	#
-	#	Standard public slot operations. If a slot can't figure out
-	#	what method to call directly, it uses --default-operation.
+	#	If a slot can't figure out what method to call directly, it
+	#	uses --default-operation.
 	#
 	# ------------------------------------------------------------------
-
-	method -appendifnew -export args {
-	    set my [namespace which my]
-	    set current [uplevel 1 [list $my Get]]
-	    foreach a $args {
-		set a [uplevel 1 [list $my Resolve $a]]
-		if {$a ni $current} {
-		    lappend current $a
-		}
-	    }
-	    tailcall my Set $current
-	}
-	method -remove -export args {
-	    set my [namespace which my]
-	    set args [lmap a $args {uplevel 1 [list $my Resolve $a]}]
-	    set current [uplevel 1 [list $my Get]]
-	    tailcall my Set [lmap val $current {
-		if {$val in $args} continue else {set val}
-	    }]
-	}
 
 	# Default handling
 	forward --default-operation my -append
