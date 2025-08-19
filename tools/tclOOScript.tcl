@@ -198,103 +198,15 @@
     define Slot {
 	# ------------------------------------------------------------------
 	#
-	# Slot Get --
+	# Slot --default-operation --
 	#
-	#	Basic slot getter. Retrieves the contents of the slot.
-	#	Particular slots must provide concrete non-erroring
-	#	implementation.
-	#
-	# ------------------------------------------------------------------
-
-	method Get -unexport {} {
-	    return -code error -errorcode {TCL OO ABSTRACT_SLOT} "unimplemented"
-	}
-
-	# ------------------------------------------------------------------
-	#
-	# Slot Set --
-	#
-	#	Basic slot setter. Sets the contents of the slot.  Particular
-	#	slots must provide concrete non-erroring implementation.
+	#	If a slot can't figure out what method to call directly, it
+	#	uses --default-operation.
 	#
 	# ------------------------------------------------------------------
-
-	method Set -unexport list {
-	    return -code error -errorcode {TCL OO ABSTRACT_SLOT} "unimplemented"
-	}
-
-	# ------------------------------------------------------------------
-	#
-	# Slot Resolve --
-	#
-	#	Helper that lets a slot convert a list of arguments of a
-	#	particular type to their canonical forms. Defaults to doing
-	#	nothing (suitable for simple strings).
-	#
-	# ------------------------------------------------------------------
-
-	method Resolve -unexport list {
-	    return $list
-	}
-
-	# ------------------------------------------------------------------
-	#
-	# Slot -set, -append, -clear, --default-operation --
-	#
-	#	Standard public slot operations. If a slot can't figure out
-	#	what method to call directly, it uses --default-operation.
-	#
-	# ------------------------------------------------------------------
-
-	method -set -export args {
-	    set my [namespace which my]
-	    set args [lmap a $args {uplevel 1 [list $my Resolve $a]}]
-	    tailcall my Set $args
-	}
-	method -append -export args {
-	    set my [namespace which my]
-	    set args [lmap a $args {uplevel 1 [list $my Resolve $a]}]
-	    set current [uplevel 1 [list $my Get]]
-	    tailcall my Set [list {*}$current {*}$args]
-	}
-	method -appendifnew -export args {
-	    set my [namespace which my]
-	    set current [uplevel 1 [list $my Get]]
-	    foreach a $args {
-		set a [uplevel 1 [list $my Resolve $a]]
-		if {$a ni $current} {
-		    lappend current $a
-		}
-	    }
-	    tailcall my Set $current
-	}
-	method -clear -export {} {tailcall my Set {}}
-	method -prepend -export args {
-	    set my [namespace which my]
-	    set args [lmap a $args {uplevel 1 [list $my Resolve $a]}]
-	    set current [uplevel 1 [list $my Get]]
-	    tailcall my Set [list {*}$args {*}$current]
-	}
-	method -remove -export args {
-	    set my [namespace which my]
-	    set args [lmap a $args {uplevel 1 [list $my Resolve $a]}]
-	    set current [uplevel 1 [list $my Get]]
-	    tailcall my Set [lmap val $current {
-		if {$val in $args} continue else {set val}
-	    }]
-	}
 
 	# Default handling
 	forward --default-operation my -append
-	method unknown -unexport {args} {
-	    set def --default-operation
-	    if {[llength $args] == 0} {
-		tailcall my $def
-	    } elseif {![string match -* [lindex $args 0]]} {
-		tailcall my $def {*}$args
-	    }
-	    next {*}$args
-	}
 
 	# Hide destroy
 	unexport destroy
