@@ -184,13 +184,13 @@ proc ::platform::identify {} {
 	}
 	macos* {
 	    set major [lindex [split $tcl_platform(osVersion) .] 0]
-	    incr major 1
-	    if {$major > 22} {
+	    incr major
+	    if {$major > 21} {
 		if {$major < 26} {
 		    incr major -10
 		}
 		append plat $major
-	    } elif {$major > 20} {
+	    } elseif {$major > 20} {
 		set minor [lindex [split $tcl_platform(osVersion) .] 1]
 		if {$major < 14} {
 		    incr minor -1
@@ -373,9 +373,9 @@ proc ::platform::patterns {id} {
 		}
 
 		if {$v ne ""} {
-		    foreach {major minor} [split $v.5 .] break
+		    foreach {major minor} [split $v.15 .] break
 		    set res {}
-		    while {$major > 11} {
+		    while {$major > 10} {
 			# Add $major to patterns.
 			lappend res macos${major}-${cpu}
 			foreach a $alt {
@@ -385,17 +385,6 @@ proc ::platform::patterns {id} {
 			if {$major == 25} {
 			    set major 15
 			}
-		    }
-		    if {$major == 11} {
-			# Add 11.0 to 11.minor to patterns.
-			for {set j $minor} {$j >= 0} {incr j -1} {
-			    lappend res macosx${major}.${j}-${cpu}
-			    foreach a $alt {
-				lappend res macosx${major}.${j}-$a
-			    }
-			}
-			set major 10
-			set minor 15
 		    }
 		    # Add 10.9 to 10.minor to patterns.
 		    for {set j $minor} {$j >= 9} {incr j -1} {
