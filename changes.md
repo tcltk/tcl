@@ -14,6 +14,7 @@ to the userbase.
  - [Tweak install permissions](https://core.tcl-lang.org/tcl/tktview/31d4fa)
 
 # Updated bundled packages, libraries, standards, data
+ - platform 1.0.20
  - sqlite3 3.50.4
  - tcltest 2.5.10
  - Thread 3.0.3

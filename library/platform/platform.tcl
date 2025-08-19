@@ -181,12 +181,17 @@ proc ::platform::identify {} {
 	    set major [lindex [split $tcl_platform(osVersion) .] 0]
 	    if {$major > 19} {
 		set minor [lindex [split $tcl_platform(osVersion) .] 1]
-		incr major -9
-		append plat $major.[expr {$minor - 1}]
+		incr major 1
+		if {$major < 26} {
+		    incr major -10
+		}
+		if {$major < 14} {
+		    incr minor -1
+		}
+		append plat $major.$minor
 	    } else {
 		incr major -4
 		append plat 10.$major
-		return "${plat}-${cpu}"
 	    }
 	    return "${plat}-${cpu}"
 	}
@@ -364,6 +369,50 @@ proc ::platform::patterns {id} {
 		    foreach {major minor} [split $v .] break
 
 		    set res {}
+		    if {$major > 26} {
+			# Add x.0 to x.minor to patterns.
+			for {set j $minor} {$j >= 0} {incr j -1} {
+			    lappend res macosx${major}.${j}-${cpu}
+			    foreach a $alt {
+				lappend res macosx${major}.${j}-$a
+			    }
+			}
+			incr major -1
+			set minor 5; # Assume that (major-1).5 will be there one day. 
+		    }
+		    if {$major eq 26} {
+			# Add 26.0 to 26.minor to patterns.
+			for {set j $minor} {$j >= 0} {incr j -1} {
+			    lappend res macosx${major}.${j}-${cpu}
+			    foreach a $alt {
+				lappend res macosx${major}.${j}-$a
+			    }
+			}
+			set major 15
+			set minor 6
+		    }
+		    if {$major eq 15} {
+			# Add 15.0 to 15.minor to patterns.
+			for {set j $minor} {$j >= 0} {incr j -1} {
+			    lappend res macosx${major}.${j}-${cpu}
+			    foreach a $alt {
+				lappend res macosx${major}.${j}-$a
+			    }
+			}
+			set major 14
+			set minor 6
+		    }
+		    if {$major eq 14} {
+			# Add 14.0 to 14.minor to patterns.
+			for {set j $minor} {$j >= 0} {incr j -1} {
+			    lappend res macosx${major}.${j}-${cpu}
+			    foreach a $alt {
+				lappend res macosx${major}.${j}-$a
+			    }
+			}
+			set major 13
+			set minor 5
+		    }
 		    if {$major eq 13} {
 			# Add 13.0 to 13.minor to patterns.
 			for {set j $minor} {$j >= 0} {incr j -1} {
@@ -397,8 +446,8 @@ proc ::platform::patterns {id} {
 			set major 10
 			set minor 15
 		    }
-		    # Add 10.5 to 10.minor to patterns.
-		    for {set j $minor} {$j >= 5} {incr j -1} {
+		    # Add 10.9 to 10.minor to patterns.
+		    for {set j $minor} {$j >= 9} {incr j -1} {
 			if {$cpu ne "arm"} {
 			    lappend res macosx${major}.${j}-${cpu}
 			}
@@ -406,11 +455,21 @@ proc ::platform::patterns {id} {
 			    lappend res macosx${major}.${j}-$a
 			}
 		    }
-
-		    # Add unversioned patterns for 10.3/10.4 builds.
-		    lappend res macosx-${cpu}
-		    foreach a $alt {
-			lappend res macosx-$a
+		    if {![package vsatisfies [package provide Tcl] 9.0-]} {
+			# Continue up to 10.5.
+			for {} {$j >= 5} {incr j -1} {
+			    if {$cpu ne "arm"} {
+				lappend res macosx${major}.${j}-${cpu}
+			    }
+			    foreach a $alt {
+				lappend res macosx${major}.${j}-$a
+			    }
+			}
+    			# Add unversioned patterns for 10.3/10.4 builds.
+			lappend res macosx-${cpu}
+			foreach a $alt {
+			    lappend res macosx-$a
+			}
 		    }
 		} else {
 		    # No version, just do unversioned patterns.
@@ -431,7 +490,7 @@ proc ::platform::patterns {id} {
 # ### ### ### ######### ######### #########
 ## Ready
 
-package provide platform 1.0.19
+package provide platform 1.0.20
 
 # ### ### ### ######### ######### #########
 ## Demo application
