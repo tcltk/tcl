@@ -407,6 +407,10 @@ struct Foundation {
     Tcl_Obj *myName;		/* The "my" shared object. */
     Tcl_Obj *mcdName;		/* The shared object for calling the helper to
 				 * mix in class delegates. */
+    Tcl_Obj *slotGetName;	/* The "Get" name used by slots. */
+    Tcl_Obj *slotSetName;	/* The "Set" name used by slots. */
+    Tcl_Obj *slotResolveName;	/* The "Resolve" name used by slots. */
+    Tcl_Obj *slotDefOpName;	/* The "--default-operation" name used by slots. */
 };
 
 /*

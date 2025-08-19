@@ -198,7 +198,7 @@
     define Slot {
 	# ------------------------------------------------------------------
 	#
-	# Slot -set, -append, -clear, --default-operation --
+	# Slot -appendifnew, -remove, --default-operation --
 	#
 	#	Standard public slot operations. If a slot can't figure out
 	#	what method to call directly, it uses --default-operation.
@@ -227,15 +227,6 @@
 
 	# Default handling
 	forward --default-operation my -append
-	method unknown -unexport {args} {
-	    set def --default-operation
-	    if {[llength $args] == 0} {
-		tailcall my $def
-	    } elseif {![string match -* [lindex $args 0]]} {
-		tailcall my $def {*}$args
-	    }
-	    next {*}$args
-	}
 
 	# Hide destroy
 	unexport destroy
