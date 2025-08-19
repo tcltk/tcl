@@ -198,47 +198,6 @@
     define Slot {
 	# ------------------------------------------------------------------
 	#
-	# Slot Get --
-	#
-	#	Basic slot getter. Retrieves the contents of the slot.
-	#	Particular slots must provide concrete non-erroring
-	#	implementation.
-	#
-	# ------------------------------------------------------------------
-
-	method Get -unexport {} {
-	    return -code error -errorcode {TCL OO ABSTRACT_SLOT} "unimplemented"
-	}
-
-	# ------------------------------------------------------------------
-	#
-	# Slot Set --
-	#
-	#	Basic slot setter. Sets the contents of the slot.  Particular
-	#	slots must provide concrete non-erroring implementation.
-	#
-	# ------------------------------------------------------------------
-
-	method Set -unexport list {
-	    return -code error -errorcode {TCL OO ABSTRACT_SLOT} "unimplemented"
-	}
-
-	# ------------------------------------------------------------------
-	#
-	# Slot Resolve --
-	#
-	#	Helper that lets a slot convert a list of arguments of a
-	#	particular type to their canonical forms. Defaults to doing
-	#	nothing (suitable for simple strings).
-	#
-	# ------------------------------------------------------------------
-
-	method Resolve -unexport list {
-	    return $list
-	}
-
-	# ------------------------------------------------------------------
-	#
 	# Slot -set, -append, -clear, --default-operation --
 	#
 	#	Standard public slot operations. If a slot can't figure out
@@ -246,17 +205,6 @@
 	#
 	# ------------------------------------------------------------------
 
-	method -set -export args {
-	    set my [namespace which my]
-	    set args [lmap a $args {uplevel 1 [list $my Resolve $a]}]
-	    tailcall my Set $args
-	}
-	method -append -export args {
-	    set my [namespace which my]
-	    set args [lmap a $args {uplevel 1 [list $my Resolve $a]}]
-	    set current [uplevel 1 [list $my Get]]
-	    tailcall my Set [list {*}$current {*}$args]
-	}
 	method -appendifnew -export args {
 	    set my [namespace which my]
 	    set current [uplevel 1 [list $my Get]]
@@ -267,13 +215,6 @@
 		}
 	    }
 	    tailcall my Set $current
-	}
-	method -clear -export {} {tailcall my Set {}}
-	method -prepend -export args {
-	    set my [namespace which my]
-	    set args [lmap a $args {uplevel 1 [list $my Resolve $a]}]
-	    set current [uplevel 1 [list $my Get]]
-	    tailcall my Set [list {*}$args {*}$current]
 	}
 	method -remove -export args {
 	    set my [namespace which my]
@@ -372,8 +313,8 @@
     # ----------------------------------------------------------------------
 
     class create singleton {
-	superclass class
-	variable object
+	superclass -set class
+	variable -set object
 	unexport create createWithNamespace
 	method new args {
 	    if {![info exists object] || ![info object isa object $object]} {
@@ -403,7 +344,7 @@
     # ----------------------------------------------------------------------
 
     class create abstract {
-	superclass class
+	superclass -set class
 	unexport create createWithNamespace new
     }
 
@@ -486,7 +427,7 @@
     # ----------------------------------------------------------------------
 
     class create configurable {
-	superclass class
+	superclass -set class
 
 	constructor {{definitionScript ""}} {
 	    next {mixin ::oo::configuresupport::configurable}
