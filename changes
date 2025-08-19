@@ -9419,4 +9419,7 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 
 - Released 8.6.17, Aug 15, 2025 - details at https://core.tcl-lang.org/tcl/ -
 
-- (to be) Released 8.6.17, Apr ??, 2026 - details at https://core.tcl-lang.org/tcl/ -
+2025-08-18 (new) support for MacOS Tahoe (nijtmans)
+	=> platform 1.0.20
+
+- (to be) Released 8.6.18, Apr ??, 2026 - details at https://core.tcl-lang.org/tcl/ -
