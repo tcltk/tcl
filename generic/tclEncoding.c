@@ -988,21 +988,21 @@ Tcl_SetSystemEncoding(
 
     Tcl_MutexLock(&encodingMutex);
     if (name == NULL || name[0] == '\0') {
-        if (defaultEncoding == systemEncoding) {
-            Tcl_MutexUnlock(&encodingMutex);
-            return TCL_OK;
-        }
-        encoding = defaultEncoding;
-        ((Encoding *)encoding)->refCount += 1;
+	if (defaultEncoding == systemEncoding) {
+	    Tcl_MutexUnlock(&encodingMutex);
+	    return TCL_OK;
+	}
+	encoding = defaultEncoding;
+	((Encoding *)encoding)->refCount += 1;
     } else {
 	encoding = Tcl_GetEncoding(interp, name);
-        if (encoding == systemEncoding) {
-            FreeEncoding(encoding);
-            Tcl_MutexUnlock(&encodingMutex);
-            return TCL_OK;
-        }
+	if (encoding == systemEncoding) {
+	    FreeEncoding(encoding);
+	    Tcl_MutexUnlock(&encodingMutex);
+	    return TCL_OK;
+	}
 	if (encoding == NULL) {
-            Tcl_MutexUnlock(&encodingMutex);
+	    Tcl_MutexUnlock(&encodingMutex);
 	    return TCL_ERROR;
 	}
     }
