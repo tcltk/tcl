@@ -1412,6 +1412,97 @@ TclOOCallbackObjCmd(
 }
 
 /*
+ * ----------------------------------------------------------------------
+ *
+ * TclOOClassVariableObjCmd --
+ *
+ *	Implementation of the [classvariable] command, which links to
+ *	variables in the class of the current object.
+ *
+ * ----------------------------------------------------------------------
+ */
+int
+TclOOClassVariableObjCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Interp *iPtr = (Interp *) interp;
+    CallFrame *framePtr = iPtr->varFramePtr;
+
+    if (objc < 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "name ...");
+	return TCL_ERROR;
+    }
+
+    /*
+     * Start with sanity checks on the calling context to make sure that we
+     * are invoked from a suitable method context. If so, we can safely
+     * retrieve the handle to the object call context.
+     */
+
+    if (framePtr == NULL || !(framePtr->isProcCallFrame & FRAME_IS_METHOD)) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"%s may only be called from inside a method",
+		TclGetString(objv[0])));
+	OO_ERROR(interp, CONTEXT_REQUIRED);
+	return TCL_ERROR;
+    }
+
+    // Get a reference to the class's namespace
+    CallContext *contextPtr = (CallContext *) framePtr->clientData;
+    Class *clsPtr = CurrentlyInvoked(contextPtr).mPtr->declaringClassPtr;
+    if (clsPtr == NULL) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"method not defined by a class", TCL_AUTO_LENGTH));
+	OO_ERROR(interp, UNMATCHED_CONTEXT);
+	return TCL_ERROR;
+    }
+    Tcl_Namespace *clsNsPtr = clsPtr->thisPtr->namespacePtr;
+
+    // Check the list of variable names
+    for (int i = 1; i < objc; i++) {
+	const char *varName = TclGetString(objv[i]);
+	if (Tcl_StringMatch(varName, "*(*)")) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "bad variable name \"%s\": can't create a %s",
+		    varName, "scalar variable that looks like an array element"));
+	    Tcl_SetErrorCode(interp, "TCL", "UPVAR", "LOCAL_ELEMENT", NULL);
+	    return TCL_ERROR;
+	}
+	if (Tcl_StringMatch(varName, "*::*")) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "bad variable name \"%s\": can't create a %s",
+		    varName, "local variable with a namespace separator in it"));
+	    Tcl_SetErrorCode(interp, "TCL", "UPVAR", "LOCAL_ELEMENT", NULL);
+	    return TCL_ERROR;
+	}
+    }
+
+    // Lastly, link the caller's local variables to the class's variables
+    Tcl_Namespace *ourNsPtr = (Tcl_Namespace *) iPtr->varFramePtr->nsPtr;
+    for (int i = 1; i < objc; i++) {
+	// Locate the other variable.
+	iPtr->varFramePtr->nsPtr = (Namespace *) clsNsPtr;
+	Var *arrayPtr, *otherPtr = TclObjLookupVarEx(interp, objv[i], NULL,
+		(TCL_NAMESPACE_ONLY|TCL_LEAVE_ERR_MSG|TCL_AVOID_RESOLVERS),
+		"access", /*createPart1*/ 1, /*createPart2*/ 0, &arrayPtr);
+	iPtr->varFramePtr->nsPtr = (Namespace *) ourNsPtr;
+	if (otherPtr == NULL) {
+	    return TCL_ERROR;
+	}
+
+	// Create the new variable and link it to otherPtr.
+	if (TclPtrObjMakeUpvarIdx(interp, otherPtr, objv[i], 0, -1) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+    }
+
+    return TCL_OK;
+}
+
+/*
  * Local Variables:
  * mode: c
  * c-basic-offset: 4
