@@ -521,6 +521,7 @@ MODULE_SCOPE Tcl_ObjCmdProc	TclOOUnknownDefinition;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOOCallbackObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOOClassVariableObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOOCopyObjectCmd;
+MODULE_SCOPE Tcl_ObjCmdProc	TclOODelegateNameObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOONextObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOONextToObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOOSelfObjCmd;
