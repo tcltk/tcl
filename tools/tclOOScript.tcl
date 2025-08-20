@@ -65,20 +65,6 @@
 
     # ----------------------------------------------------------------------
     #
-    # DelegateName --
-    #
-    #	Utility that gets the name of the class delegate for a class. It's
-    #	trivial, but makes working with them much easier as delegate names are
-    #	intentionally hard to create by accident.
-    #
-    # ----------------------------------------------------------------------
-
-    proc DelegateName {class} {
-	string cat [info object namespace $class] {:: oo ::delegate}
-    }
-
-    # ----------------------------------------------------------------------
-    #
     # MixinClassDelegates --
     #
     #	Support code called *after* [oo::define] inside the constructor of a

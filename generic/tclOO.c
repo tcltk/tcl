@@ -456,6 +456,7 @@ InitFoundation(
     CreateCmdInNS(interp, fPtr->ooNs, "define", TclOODefineObjCmd, NULL, NULL, 0);
     CreateCmdInNS(interp, fPtr->ooNs, "objdefine", TclOOObjDefObjCmd, NULL, NULL, 0);
     CreateCmdInNS(interp, fPtr->ooNs, "copy", TclOOCopyObjectCmd, NULL, NULL, 0);
+    CreateCmdInNS(interp, fPtr->ooNs, "DelegateName", TclOODelegateNameObjCmd, NULL, NULL, 0);
 
     TclOOInitInfo(interp);
 
