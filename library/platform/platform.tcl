@@ -124,7 +124,7 @@ proc ::platform::generic {} {
 	}
 	darwin {
 	    set major [lindex [split $tcl_platform(osVersion) .] 0]
-	    if {$major > 15} {
+	    if {$major > 19} {
 		set plat macos
 	    } else {
 		set plat macosx
@@ -184,20 +184,14 @@ proc ::platform::identify {} {
 	}
 	macos* {
 	    set major [lindex [split $tcl_platform(osVersion) .] 0]
-	    incr major
-	    if {$major > 21} {
+	    if {$major > 19} {
+		incr major
 		if {$major < 26} {
 		    incr major -10
 		}
 		append plat $major
-	    } elseif {$major > 20} {
-		set minor [lindex [split $tcl_platform(osVersion) .] 1]
-		if {$major < 14} {
-		    incr minor -1
-		}
-		append plat $major.$minor
 	    } else {
-		incr major -5
+		incr major -4
 		append plat 10.$major
 	    }
 	    return "${plat}-${cpu}"
