@@ -19,35 +19,6 @@
 
     # ------------------------------------------------------------------
     #
-    # classvariable --
-    #
-    #	Link to a variable in the class of the current object.
-    #
-    # ------------------------------------------------------------------
-
-    proc Helpers::classvariable {name args} {
-	# Get a reference to the class's namespace
-	set ns [info object namespace [uplevel 1 {self class}]]
-	# Double up the list of variable names
-	foreach v [list $name {*}$args] {
-	    if {[string match *(*) $v]} {
-		set reason "can't create a scalar variable that looks like an array element"
-		return -code error -errorcode {TCL UPVAR LOCAL_ELEMENT} \
-		    [format {bad variable name "%s": %s} $v $reason]
-	    }
-	    if {[string match *::* $v]} {
-		set reason "can't create a local variable with a namespace separator in it"
-		return -code error -errorcode {TCL UPVAR INVERTED} \
-		    [format {bad variable name "%s": %s} $v $reason]
-	    }
-	    lappend vs $v $v
-	}
-	# Lastly, link the caller's local variables to the class's variables
-	tailcall namespace upvar $ns {*}$vs
-    }
-
-    # ------------------------------------------------------------------
-    #
     # link --
     #
     #	Make a command that invokes a method on the current object.
