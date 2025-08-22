@@ -442,6 +442,8 @@ InitFoundation(
 	    TclOOCallbackObjCmd, NULL, NULL, 0);
     CreateCmdInNS(interp, fPtr->helpersNs, "mymethod",
 	    TclOOCallbackObjCmd, NULL, NULL, 0);
+    CreateCmdInNS(interp, fPtr->helpersNs, "classvariable",
+	    TclOOClassVariableObjCmd, NULL, NULL, 0);
     CreateCmdInNS(interp, fPtr->helpersNs, "next",
 	    NULL, TclOONextObjCmd, TclCompileObjectNextCmd);
     CreateCmdInNS(interp, fPtr->helpersNs, "nextto",
