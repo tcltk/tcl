@@ -115,7 +115,7 @@ static const char *tclOOSetupScript =
 "\tclass create configurable\n"
 "\tdefine configurable superclass -set class\n"
 "\tdefine configurable constructor {{definitionScript \"\"}} {\n"
-"\t\tnext {mixin ::oo::configuresupport::configurable}\n"
+"\t\too::define [self] {mixin -append ::oo::configuresupport::configurable}\n"
 "\t\tnext $definitionScript\n"
 "\t}\n"
 "\tdefine configurable definitionnamespace -class configuresupport::configurableclass\n"
