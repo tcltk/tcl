@@ -232,7 +232,7 @@
     class create configurable
     define configurable superclass -set class
     define configurable constructor {{definitionScript ""}} {
-	next {mixin ::oo::configuresupport::configurable}
+	::oo::define [self] {mixin -append ::oo::configuresupport::configurable}
 	next $definitionScript
     }
 
