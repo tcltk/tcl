@@ -255,6 +255,7 @@ struct Object {
     PropertyStorage properties;	/* Information relating to the lists of
 				 * properties that this object *claims* to
 				 * support. */
+    Tcl_Obj *linkedCmdsList;	/* List of names of linked commands. */
 };
 
 enum ObjectFlags {
@@ -520,6 +521,7 @@ MODULE_SCOPE Tcl_ObjCmdProc	TclOOCallbackObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOOClassVariableObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOOCopyObjectCmd;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOODelegateNameObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc	TclOOLinkObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOONextObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOONextToObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOOSelfObjCmd;
