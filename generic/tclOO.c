@@ -442,6 +442,8 @@ InitFoundation(
 	    TclOOCallbackObjCmd, NULL, NULL, 0);
     CreateCmdInNS(interp, fPtr->helpersNs, "classvariable",
 	    TclOOClassVariableObjCmd, NULL, NULL, 0);
+    CreateCmdInNS(interp, fPtr->helpersNs, "link",
+	    TclOOLinkObjCmd, NULL, NULL, 0);
     CreateCmdInNS(interp, fPtr->helpersNs, "next",
 	    NULL, TclOONextObjCmd, TclCompileObjectNextCmd);
     CreateCmdInNS(interp, fPtr->helpersNs, "nextto",
@@ -814,6 +816,7 @@ AllocObject(
     oPtr->myclassCommand = TclNRCreateCommandInNs(interp, "myclass",
 	    oPtr->namespacePtr, TclOOMyClassObjCmd, MyClassNRObjCmd, oPtr,
 	    MyClassDeleted);
+    oPtr->linkedCmdsList = NULL;
     return oPtr;
 }
 
@@ -857,7 +860,18 @@ MyDeleted(
 				 * squelched. */
 {
     Object *oPtr = (Object *) clientData;
+    Tcl_Size linkc, i;
+    Tcl_Obj **linkv, *link;
 
+    if (oPtr->linkedCmdsList) {
+	TclListObjGetElements(NULL, oPtr->linkedCmdsList, &linkc, &linkv);
+	for (i=0 ; i<linkc ; i++) {
+	    link = linkv[i];
+	    (void) Tcl_DeleteCommand(oPtr->fPtr->interp, TclGetString(link));
+	}
+	Tcl_DecrRefCount(oPtr->linkedCmdsList);
+	oPtr->linkedCmdsList = NULL;
+    }
     oPtr->myCommand = NULL;
 }
 

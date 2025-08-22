@@ -12,57 +12,6 @@
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 ::namespace eval ::oo {
-
-    #
-    # Commands that are made available to objects by default.
-    #
-
-    # ------------------------------------------------------------------
-    #
-    # link --
-    #
-    #	Make a command that invokes a method on the current object.
-    #	The name of the command and the name of the method match by
-    #	default.
-    #
-    # ------------------------------------------------------------------
-
-    proc Helpers::link {args} {
-	set ns [uplevel 1 {::namespace current}]
-	foreach link $args {
-	    if {[llength $link] == 2} {
-		lassign $link src dst
-	    } elseif {[llength $link] == 1} {
-		lassign $link src
-		set dst $src
-	    } else {
-		return -code error -errorcode {TCL OO CMDLINK_FORMAT} \
-		    "bad link description; must only have one or two elements"
-	    }
-	    if {![string match ::* $src]} {
-		set src [string cat $ns :: $src]
-	    }
-	    interp alias {} $src {} ${ns}::my $dst
-	    trace add command ${ns}::my delete [list \
-		::oo::UnlinkLinkedCommand $src]
-	}
-    }
-
-    # ----------------------------------------------------------------------
-    #
-    # UnlinkLinkedCommand --
-    #
-    #	Callback used to remove linked command when the underlying mechanism
-    #	that supports it is deleted.
-    #
-    # ----------------------------------------------------------------------
-
-    proc UnlinkLinkedCommand {cmd args} {
-	if {[namespace which $cmd] ne {}} {
-	    rename $cmd {}
-	}
-    }
-
     # ----------------------------------------------------------------------
     #
     # UpdateClassDelegatesAfterClone --

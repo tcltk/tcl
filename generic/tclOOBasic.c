@@ -1023,6 +1023,102 @@ TclOO_Object_VarName(
 /*
  * ----------------------------------------------------------------------
  *
+ * TclOOLinkObjCmd --
+ *
+ *	Implementation of the [link] command, that makes a command that
+ *	invokes a method on the current object. The name of the command and
+ *	the name of the method match by default. Note that this command is
+ *	only ever to be used inside the body of a procedure-like method,
+ *	and is typically intended for constructors.
+ *
+ * ----------------------------------------------------------------------
+ */
+int
+TclOOLinkObjCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    /* Set up common bits. */
+    CallFrame *framePtr = ((Interp *) interp)->varFramePtr;
+    CallContext *context;
+    Object *oPtr;
+    Tcl_Obj *myCmd, **linkv, *src, *dst;
+    Tcl_Size linkc;
+    const char *srcStr;
+    int i;
+
+    if (framePtr == NULL || !(framePtr->isProcCallFrame & FRAME_IS_METHOD)) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"%s may only be called from inside a method",
+		TclGetString(objv[0])));
+	OO_ERROR(interp, CONTEXT_REQUIRED);
+	return TCL_ERROR;
+    }
+    context = (CallContext *) framePtr->clientData;
+    oPtr = context->oPtr;
+    if (!oPtr->myCommand) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"cannot link to non-existent callback handle"));
+	OO_ERROR(interp, MY_GONE);
+	return TCL_ERROR;
+    }
+    myCmd = Tcl_NewObj();
+    Tcl_GetCommandFullName(interp, oPtr->myCommand, myCmd);
+    if (!oPtr->linkedCmdsList) {
+	oPtr->linkedCmdsList = Tcl_NewListObj(0, NULL);
+	Tcl_IncrRefCount(oPtr->linkedCmdsList);
+    }
+
+    /* For each argument */
+    for (i=1; i<objc; i++) {
+	/* Parse as list of (one or) two items: source and destination names */
+	if (TclListObjGetElements(interp, objv[i], &linkc, &linkv) != TCL_OK) {
+	    Tcl_BounceRefCount(myCmd);
+	    return TCL_ERROR;
+	}
+	switch (linkc) {
+	case 1:
+	    /* Degenerate case */
+	    src = dst = linkv[0];
+	    break;
+	case 2:
+	    src = linkv[0];
+	    dst = linkv[1];
+	    break;
+	default:
+	    Tcl_BounceRefCount(myCmd);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "bad link description; must only have one or two elements"));
+	    OO_ERROR(interp, CMDLINK_FORMAT);
+	    return TCL_ERROR;
+	}
+
+	/* Qualify the source if necessary */
+	srcStr = TclGetString(src);
+	if (srcStr[0] != ':' || srcStr[1] != ':') {
+	    src = Tcl_ObjPrintf("%s::%s",
+		    context->oPtr->namespacePtr->fullName, srcStr);
+	}
+
+	/* Make the alias command */
+	if (TclAliasCreate(interp, interp, interp, src, myCmd, 1, &dst) != TCL_OK) {
+	    Tcl_BounceRefCount(myCmd);
+	    Tcl_BounceRefCount(src);
+	    return TCL_ERROR;
+	}
+
+	/* Remember the alias for cleanup if necessary */
+	Tcl_ListObjAppendElement(NULL, oPtr->linkedCmdsList, src);
+    }
+    Tcl_BounceRefCount(myCmd);
+    return TCL_OK;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
  * TclOONextObjCmd, TclOONextToObjCmd --
  *
  *	Implementation of the [next] and [nextto] commands. Note that these
@@ -1533,7 +1629,7 @@ TclOOCallbackObjCmd(
 	return TCL_ERROR;
     }
 
-    // Get the [my] real name.
+    /* Get the [my] real name. */
     namePtr = TclOOObjectMyName(interp, contextPtr->oPtr);
     if (!namePtr) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
@@ -1542,7 +1638,7 @@ TclOOCallbackObjCmd(
 	return TCL_ERROR;
     }
 
-    // No check that the method exists; could be dynamically added.
+    /* No check that the method exists; could be dynamically added. */
 
     listPtr = Tcl_NewListObj(1, &namePtr);
     (void) TclListObjAppendElements(NULL, listPtr, objc-1, objv+1);
@@ -1594,7 +1690,7 @@ TclOOClassVariableObjCmd(
 	return TCL_ERROR;
     }
 
-    // Get a reference to the class's namespace
+    /* Get a reference to the class's namespace */
     contextPtr = (CallContext *) framePtr->clientData;
     clsPtr = CurrentlyInvoked(contextPtr).mPtr->declaringClassPtr;
     if (clsPtr == NULL) {
@@ -1605,7 +1701,7 @@ TclOOClassVariableObjCmd(
     }
     clsNsPtr = clsPtr->thisPtr->namespacePtr;
 
-    // Check the list of variable names
+    /* Check the list of variable names */
     for (i = 1; i < objc; i++) {
 	const char *varName = TclGetString(objv[i]);
 	if (Tcl_StringMatch(varName, "*(*)")) {
@@ -1624,10 +1720,10 @@ TclOOClassVariableObjCmd(
 	}
     }
 
-    // Lastly, link the caller's local variables to the class's variables
+    /* Lastly, link the caller's local variables to the class's variables */
     ourNsPtr = (Tcl_Namespace *) iPtr->varFramePtr->nsPtr;
     for (i = 1; i < objc; i++) {
-	// Locate the other variable.
+	/* Locate the other variable. */
 	iPtr->varFramePtr->nsPtr = (Namespace *) clsNsPtr;
 	otherPtr = TclObjLookupVarEx(interp, objv[i], NULL,
 		(TCL_NAMESPACE_ONLY|TCL_LEAVE_ERR_MSG|TCL_AVOID_RESOLVERS),
@@ -1637,7 +1733,7 @@ TclOOClassVariableObjCmd(
 	    return TCL_ERROR;
 	}
 
-	// Create the new variable and link it to otherPtr.
+	/* Create the new variable and link it to otherPtr. */
 	if (TclPtrObjMakeUpvarIdx(interp, otherPtr, objv[i], 0,
 		TCL_INDEX_NONE) != TCL_OK) {
 	    return TCL_ERROR;
