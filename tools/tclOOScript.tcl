@@ -193,32 +193,6 @@
 
     # ----------------------------------------------------------------------
     #
-    # oo::define::initialise, oo::define::initialize --
-    #
-    #	Do specific initialisation for a class. See define(n) for details.
-    #
-    # Note that the ::oo::define namespace is semi-public and a bit weird
-    # anyway, so we don't regard the namespace path as being under control:
-    # fully qualified names are used for everything.
-    #
-    # ----------------------------------------------------------------------
-
-    proc define::initialise {body} {
-	::set clsns [::info object namespace [::uplevel 1 self]]
-	::tailcall apply [::list {} $body $clsns]
-    }
-
-    # Make the [initialise] definition appear as [initialize] too
-    namespace eval define {
-	::namespace export initialise
-	::namespace eval tmp {::namespace import ::oo::define::initialise}
-	::namespace export -clear
-	::rename tmp::initialise initialize
-	::namespace delete tmp
-    }
-
-    # ----------------------------------------------------------------------
-    #
     # Slot --
     #
     #	The class of slot operations, which are basically lists at the low
