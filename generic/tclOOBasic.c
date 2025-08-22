@@ -1519,11 +1519,46 @@ TclOOClassVariableObjCmd(
 	}
 
 	// Create the new variable and link it to otherPtr.
-	if (TclPtrObjMakeUpvarIdx(interp, otherPtr, objv[i], 0, -1) != TCL_OK) {
+	if (TclPtrObjMakeUpvarIdx(interp, otherPtr, objv[i], 0,
+		TCL_INDEX_NONE) != TCL_OK) {
 	    return TCL_ERROR;
 	}
     }
 
+    return TCL_OK;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclOODelegateNameObjCmd --
+ *
+ *	Implementation of the [oo::DelegateName] command, which is a utility
+ *	that gets the name of the class delegate for a class. It's trivial,
+ *	but makes working with them much easier as delegate names are
+ *	intentionally hard to create by accident.
+ *
+ *	Not part of TclOO public API. No public documentation.
+ *
+ * ----------------------------------------------------------------------
+ */
+int
+TclOODelegateNameObjCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "class");
+	return TCL_ERROR;
+    }
+    Class *clsPtr = TclOOGetClassFromObj(interp, objv[1]);
+    if (clsPtr == NULL) {
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf("%s:: oo ::delegate",
+	    clsPtr->thisPtr->namespacePtr->fullName));
     return TCL_OK;
 }
 
