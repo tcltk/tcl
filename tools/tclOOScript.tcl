@@ -195,22 +195,18 @@
     #
     # ----------------------------------------------------------------------
 
-    define Slot {
-	# ------------------------------------------------------------------
-	#
-	# Slot --default-operation --
-	#
-	#	If a slot can't figure out what method to call directly, it
-	#	uses --default-operation.
-	#
-	# ------------------------------------------------------------------
+    # ------------------------------------------------------------------
+    #
+    # Slot --default-operation --
+    #
+    #	If a slot can't figure out what method to call directly, it
+    #	uses --default-operation.
+    #
+    # ------------------------------------------------------------------
+    define Slot forward --default-operation my -append
 
-	# Default handling
-	forward --default-operation my -append
-
-	# Hide destroy
-	unexport destroy
-    }
+    # Hide destroy
+    define Slot unexport destroy
 
     # Set the default operation differently for these slots
     objdefine define::superclass forward --default-operation my -set
@@ -283,26 +279,25 @@
     #
     # ----------------------------------------------------------------------
 
-    class create singleton {
-	superclass -set class
-	variable -set object
-	unexport create createWithNamespace
-	method new args {
-	    if {![info exists object] || ![info object isa object $object]} {
-		set object [next {*}$args]
-		::oo::objdefine $object {
-		    method destroy {} {
-			::return -code error -errorcode {TCL OO SINGLETON} \
-			    "may not destroy a singleton object"
-		    }
-		    method <cloned> -unexport {originObject} {
-			::return -code error -errorcode {TCL OO SINGLETON} \
-			    "may not clone a singleton object"
-		    }
+    class create singleton
+    define singleton superclass -set class
+    define singleton variable -set object
+    define singleton unexport create createWithNamespace
+    define singleton method new args {
+	if {![info exists object] || ![info object isa object $object]} {
+	    set object [next {*}$args]
+	    ::oo::objdefine $object {
+		method destroy {} {
+		    ::return -code error -errorcode {TCL OO SINGLETON} \
+			"may not destroy a singleton object"
+		}
+		method <cloned> -unexport {originObject} {
+		    ::return -code error -errorcode {TCL OO SINGLETON} \
+			"may not clone a singleton object"
 		}
 	    }
-	    return $object
 	}
+	return $object
     }
 
     # ----------------------------------------------------------------------
@@ -314,10 +309,9 @@
     #
     # ----------------------------------------------------------------------
 
-    class create abstract {
-	superclass -set class
-	unexport create createWithNamespace new
-    }
+    class create abstract
+    define abstract superclass -set class
+    define abstract unexport create createWithNamespace new
 
     # ----------------------------------------------------------------------
     #
@@ -397,16 +391,14 @@
     #
     # ----------------------------------------------------------------------
 
-    class create configurable {
-	superclass -set class
-
-	constructor {{definitionScript ""}} {
-	    next {mixin ::oo::configuresupport::configurable}
-	    next $definitionScript
-	}
-
-	definitionnamespace -class configuresupport::configurableclass
+    class create configurable
+    define configurable superclass -set class
+    define configurable constructor {{definitionScript ""}} {
+	next {mixin ::oo::configuresupport::configurable}
+	next $definitionScript
     }
+
+    define configurable definitionnamespace -class configuresupport::configurableclass
 }
 
 # Local Variables:
