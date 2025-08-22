@@ -2228,6 +2228,75 @@ TclOODefineMethodObjCmd(
 /*
  * ----------------------------------------------------------------------
  *
+ * TclOODefineClassMethodObjCmd --
+ *
+ *	Implementation of the "classmethod" subcommand of the "oo::define"
+ *	command. Defines a class method. See define(n) for details.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+int
+TclOODefineClassMethodObjCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Class *clsPtr;
+    int isPublic;
+    Tcl_Obj *forwardArgs[2], *prefixObj;
+    Method *mPtr;
+
+    if (objc != 2 && objc != 4) {
+	Tcl_WrongNumArgs(interp, 1, objv, "name ?args body?");
+	return TCL_ERROR;
+    }
+    clsPtr = TclOOGetClassDefineCmdContext(interp);
+    if (!clsPtr) {
+	return TCL_ERROR;
+    }
+
+    isPublic = Tcl_StringMatch(TclGetString(objv[1]), PUBLIC_PATTERN)
+	    ? PUBLIC_METHOD : 0;
+
+    // Create the method on the delegate class if the caller gave arguments and body
+    if (objc == 4) {
+	Tcl_Obj *delegateName = Tcl_ObjPrintf("%s:: oo ::delegate",
+		clsPtr->thisPtr->namespacePtr->fullName);
+	Class *delegatePtr = TclOOGetClassFromObj(interp, delegateName);
+
+	Tcl_DecrRefCount(delegateName);
+	if (!delegatePtr) {
+	    return TCL_ERROR;
+	}
+	if (IsPrivateDefine(interp)) {
+	    isPublic = 0;
+	}
+	if (TclOONewProcMethod(interp, delegatePtr, isPublic, objv[1],
+		objv[2], objv[3], NULL) == NULL) {
+	    return TCL_ERROR;
+	}
+    }
+
+    // Make the connection to the delegate by forwarding
+    if (IsPrivateDefine(interp)) {
+	isPublic = TRUE_PRIVATE_METHOD;
+    }
+    forwardArgs[0] = Tcl_NewStringObj("myclass", -1);
+    forwardArgs[1] = objv[1];
+    prefixObj = Tcl_NewListObj(2, forwardArgs);
+    mPtr = TclOONewForwardMethod(interp, clsPtr, isPublic, objv[1], prefixObj);
+    if (mPtr == NULL) {
+	Tcl_DecrRefCount(prefixObj);
+	return TCL_ERROR;
+    }
+    return TCL_OK;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
  * TclOODefineRenameMethodObjCmd --
  *
  *	Implementation of the "renamemethod" subcommand of the "oo::define"
