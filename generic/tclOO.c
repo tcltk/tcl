@@ -1261,7 +1261,7 @@ ObjectNamespaceDeleted(
      * freed memory.
      */
 
-    if (((Command *) oPtr->command)->flags && CMD_DYING) {
+    if (((Command *) oPtr->command)->flags & CMD_DYING) {
 	/*
 	 * Something has already started the command deletion process. We can
 	 * go ahead and clean up the namespace,
