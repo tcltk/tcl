@@ -2107,7 +2107,7 @@ TclOODefineInitialiseObjCmd(
 	return TCL_ERROR;
     }
 
-    // Build the lambda
+    /* Build the lambda */
     object = TclOOGetDefineCmdContext(interp);
     if (object == NULL) {
 	return TCL_ERROR;
@@ -2116,7 +2116,7 @@ TclOODefineInitialiseObjCmd(
     lambdaWords[1] = objv[1];
     lambdaWords[2] = TclNewNamespaceObj(Tcl_GetObjectNamespace(object));
 
-    // Delegate to [apply] to run it
+    /* Delegate to [apply] to run it */
     applyArgs[0] = Tcl_NewStringObj("apply", -1);
     applyArgs[1] = Tcl_NewListObj(3, lambdaWords);
     Tcl_IncrRefCount(applyArgs[0]);
@@ -2260,7 +2260,10 @@ TclOODefineClassMethodObjCmd(
     isPublic = Tcl_StringMatch(TclGetString(objv[1]), PUBLIC_PATTERN)
 	    ? PUBLIC_METHOD : 0;
 
-    // Create the method on the delegate class if the caller gave arguments and body
+    /*
+     * Create the method on the delegate class if the caller gave arguments
+     * and body.
+     */
     if (objc == 4) {
 	Tcl_Obj *delegateName = Tcl_ObjPrintf("%s:: oo ::delegate",
 		clsPtr->thisPtr->namespacePtr->fullName);
@@ -2279,7 +2282,7 @@ TclOODefineClassMethodObjCmd(
 	}
     }
 
-    // Make the connection to the delegate by forwarding
+    /* Make the connection to the delegate by forwarding */
     if (IsPrivateDefine(interp)) {
 	isPublic = TRUE_PRIVATE_METHOD;
     }
@@ -2570,7 +2573,7 @@ TclOODefineSlots(
  * ----------------------------------------------------------------------
  */
 
-// Call [$slot Get] to retrieve the list of contents of the slot
+/* Call [$slot Get] to retrieve the list of contents of the slot */
 static inline Tcl_Obj *
 CallSlotGet(
     Tcl_Interp *interp,
@@ -2588,7 +2591,7 @@ CallSlotGet(
     return Tcl_GetObjResult(interp);
 }
 
-// Call [$slot Set $list] to set the list of contents of the slot
+/* Call [$slot Set $list] to set the list of contents of the slot */
 static inline int
 CallSlotSet(
     Tcl_Interp *interp,
@@ -2602,7 +2605,7 @@ CallSlotSet(
     return TclOOPrivateObjectCmd(slot, interp, 3, setArgs);
 }
 
-// Call [$slot Resolve $item] to convert a slot item into canonical form
+/* Call [$slot Resolve $item] to convert a slot item into canonical form */
 static inline Tcl_Obj *
 CallSlotResolve(
     Tcl_Interp *interp,
@@ -2679,13 +2682,13 @@ Slot_Append(
 	return TCL_OK;
     }
 
-    // Resolve all values
+    /* Resolve all values */
     resolved = ResolveAll(interp, oPtr, objc - skip, objv + skip);
     if (resolved == NULL) {
 	return TCL_ERROR;
     }
 
-    // Get slot contents; store in list
+    /* Get slot contents; store in list */
     list = CallSlotGet(interp, oPtr);
     if (list == NULL) {
 	Tcl_DecrRefCount(resolved);
@@ -2694,7 +2697,7 @@ Slot_Append(
     Tcl_IncrRefCount(list);
     Tcl_ResetResult(interp);
 
-    // Append
+    /* Append */
     if (Tcl_IsShared(list)) {
 	Tcl_Obj *dup = Tcl_DuplicateObj(list);
 	Tcl_IncrRefCount(dup);
@@ -2708,7 +2711,7 @@ Slot_Append(
     }
     Tcl_DecrRefCount(resolved);
 
-    // Set slot contents
+    /* Set slot contents */
     code = CallSlotSet(interp, oPtr, list);
     Tcl_DecrRefCount(list);
     return code;
@@ -2741,13 +2744,13 @@ Slot_AppendNew(
 	return TCL_OK;
     }
 
-    // Resolve all values
+    /* Resolve all values */
     resolved = ResolveAll(interp, oPtr, objc - skip, objv + skip);
     if (resolved == NULL) {
 	return TCL_ERROR;
     }
 
-    // Get slot contents; store in list
+    /* Get slot contents; store in list */
     list = CallSlotGet(interp, oPtr);
     if (list == NULL) {
 	Tcl_DecrRefCount(resolved);
@@ -2756,7 +2759,7 @@ Slot_AppendNew(
     Tcl_IncrRefCount(list);
     Tcl_ResetResult(interp);
 
-    // Prepare a set of items in the list to set
+    /* Prepare a set of items in the list to set */
     if (TclListObjGetElements(interp, list, &listc, &listv) != TCL_OK) {
 	Tcl_DecrRefCount(list);
 	Tcl_DecrRefCount(resolved);
@@ -2767,7 +2770,7 @@ Slot_AppendNew(
 	Tcl_CreateHashEntry(&unique, listv[i], NULL);
     }
 
-    // Append the new items if they're not already there
+    /* Append the new items if they're not already there */
     if (Tcl_IsShared(list)) {
 	Tcl_Obj *dup = Tcl_DuplicateObj(list);
 	Tcl_IncrRefCount(dup);
@@ -2785,7 +2788,7 @@ Slot_AppendNew(
     Tcl_DecrRefCount(resolved);
     Tcl_DeleteHashTable(&unique);
 
-    // Set slot contents
+    /* Set slot contents */
     code = CallSlotSet(interp, oPtr, list);
     Tcl_DecrRefCount(list);
     return code;
@@ -2847,14 +2850,14 @@ Slot_Prepend(
 	return TCL_OK;
     }
 
-    // Resolve all values
+    /* Resolve all values */
     list = ResolveAll(interp, oPtr, objc - skip, objv + skip);
     if (list == NULL) {
 	return TCL_ERROR;
     }
     Tcl_IncrRefCount(list);
 
-    // Get slot contents and append to list
+    /* Get slot contents and append to list */
     oldList = CallSlotGet(interp, oPtr);
     if (oldList == NULL) {
 	Tcl_DecrRefCount(list);
@@ -2863,7 +2866,7 @@ Slot_Prepend(
     Tcl_ListObjAppendList(NULL, list, oldList);
     Tcl_ResetResult(interp);
 
-    // Set slot contents
+    /* Set slot contents */
     code = CallSlotSet(interp, oPtr, list);
     Tcl_DecrRefCount(list);
     return code;
@@ -2896,13 +2899,13 @@ Slot_Remove(
 	return TCL_OK;
     }
 
-    // Resolve all values
+    /* Resolve all values */
     resolved = ResolveAll(interp, oPtr, objc - skip, objv + skip);
     if (resolved == NULL) {
 	return TCL_ERROR;
     }
 
-    // Get slot contents; store in list
+    /* Get slot contents; store in list */
     oldList = CallSlotGet(interp, oPtr);
     if (oldList == NULL) {
 	Tcl_DecrRefCount(resolved);
@@ -2911,7 +2914,7 @@ Slot_Remove(
     Tcl_IncrRefCount(oldList);
     Tcl_ResetResult(interp);
 
-    // Prepare a set of items in the list to remove
+    /* Prepare a set of items in the list to remove */
     TclListObjGetElements(NULL, resolved, &listc, &listv);
     Tcl_InitObjHashTable(&removeSet);
     for (i=0 ; i<listc; i++) {
@@ -2919,7 +2922,7 @@ Slot_Remove(
     }
     Tcl_DecrRefCount(resolved);
 
-    // Append the new items from the old items if they're not in the remove set
+    /* Append the new items from the old items if they're not in the remove set */
     if (TclListObjGetElements(interp, oldList, &listc, &listv) != TCL_OK) {
 	Tcl_DecrRefCount(oldList);
 	Tcl_DeleteHashTable(&removeSet);
@@ -2934,7 +2937,7 @@ Slot_Remove(
     Tcl_DecrRefCount(oldList);
     Tcl_DeleteHashTable(&removeSet);
 
-    // Set slot contents
+    /* Set slot contents */
     Tcl_IncrRefCount(newList);
     code = CallSlotSet(interp, oPtr, newList);
     Tcl_DecrRefCount(newList);
@@ -2989,7 +2992,7 @@ Slot_Set(
     int skip = Tcl_ObjectContextSkippedArgs(context), code;
     Tcl_Obj *list;
 
-    // Resolve all values
+    /* Resolve all values */
     if (skip == objc) {
 	list = Tcl_NewObj();
     } else {
@@ -3000,7 +3003,7 @@ Slot_Set(
     }
     Tcl_IncrRefCount(list);
 
-    // Set slot contents
+    /* Set slot contents */
     code = CallSlotSet(interp, oPtr, list);
     Tcl_DecrRefCount(list);
     return code;
