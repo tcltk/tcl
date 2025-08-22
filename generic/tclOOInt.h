@@ -513,6 +513,7 @@ MODULE_SCOPE Tcl_ObjCmdProc	TclOODefineObjSelfObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOODefinePrivateObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOODefinePropertyCmd;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOOUnknownDefinition;
+MODULE_SCOPE Tcl_ObjCmdProc	TclOOCallbackObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOOCopyObjectCmd;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOONextObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOONextToObjCmd;
@@ -608,6 +609,7 @@ MODULE_SCOPE int	TclNRObjectContextInvokeNext(Tcl_Interp *interp,
 MODULE_SCOPE void	TclOODefineBasicMethods(Class *clsPtr,
 			    const DeclaredClassMethod *dcm);
 MODULE_SCOPE Tcl_Obj *	TclOOObjectName(Tcl_Interp *interp, Object *oPtr);
+MODULE_SCOPE Tcl_Obj *	TclOOObjectMyName(Tcl_Interp *interp, Object *oPtr);
 MODULE_SCOPE void	TclOOReleaseClassContents(Tcl_Interp *interp,
 			    Object *oPtr);
 MODULE_SCOPE int	TclOORemoveFromInstances(Object *oPtr, Class *clsPtr);

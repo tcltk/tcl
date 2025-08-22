@@ -1373,6 +1373,65 @@ TclOOCopyObjectCmd(
 }
 
 /*
+ * ----------------------------------------------------------------------
+ *
+ * TclOOCallbackObjCmd --
+ *
+ *	Implementation of the [callback] command, which constructs callbacks
+ *	into the current object.
+ *
+ * ----------------------------------------------------------------------
+ */
+int
+TclOOCallbackObjCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Interp *iPtr = (Interp *) interp;
+    CallFrame *framePtr = iPtr->varFramePtr;
+    CallContext *contextPtr;
+    Tcl_Obj *namePtr, *listPtr;
+
+    /*
+     * Start with sanity checks on the calling context to make sure that we
+     * are invoked from a suitable method context. If so, we can safely
+     * retrieve the handle to the object call context.
+     */
+
+    if (framePtr == NULL || !(framePtr->isProcCallFrame & FRAME_IS_METHOD)) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"%s may only be called from inside a method",
+		TclGetString(objv[0])));
+	OO_ERROR(interp, CONTEXT_REQUIRED);
+	return TCL_ERROR;
+    }
+
+    contextPtr = (CallContext *) framePtr->clientData;
+    if (objc < 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "method ...");
+	return TCL_ERROR;
+    }
+
+    // Get the [my] real name.
+    namePtr = TclOOObjectMyName(interp, contextPtr->oPtr);
+    if (!namePtr) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"no possible safe callback without my", TCL_AUTO_LENGTH));
+	OO_ERROR(interp, NO_MY);
+	return TCL_ERROR;
+    }
+
+    // No check that the method exists; could be dynamically added.
+
+    listPtr = Tcl_NewListObj(1, &namePtr);
+    (void) TclListObjAppendElements(NULL, listPtr, objc-1, objv+1);
+    Tcl_SetObjResult(interp, listPtr);
+    return TCL_OK;
+}
+
+/*
  * Local Variables:
  * mode: c
  * c-basic-offset: 4
