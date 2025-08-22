@@ -405,8 +405,6 @@ struct Foundation {
 				 * "<cloned>" pseudo-constructor. */
     Tcl_Obj *defineName;	/* Fully qualified name of oo::define. */
     Tcl_Obj *myName;		/* The "my" shared object. */
-    Tcl_Obj *mcdName;		/* The shared object for calling the helper to
-				 * mix in class delegates. */
     Tcl_Obj *slotGetName;	/* The "Get" name used by slots. */
     Tcl_Obj *slotSetName;	/* The "Set" name used by slots. */
     Tcl_Obj *slotResolveName;	/* The "Resolve" name used by slots. */
