@@ -14,31 +14,6 @@
 ::namespace eval ::oo {
     # ----------------------------------------------------------------------
     #
-    # UpdateClassDelegatesAfterClone --
-    #
-    #	Support code that is like [MixinClassDelegates] except for when a
-    #	class is cloned.
-    #
-    # ----------------------------------------------------------------------
-
-    proc UpdateClassDelegatesAfterClone {originObject targetObject} {
-	# Rebuild the class inheritance delegation class
-	set originDelegate [DelegateName $originObject]
-	set targetDelegate [DelegateName $targetObject]
-	if {
-	    [info object isa class $originDelegate]
-	    && ![info object isa class $targetDelegate]
-	} then {
-	    copy $originDelegate $targetDelegate
-	    objdefine $targetObject ::oo::objdefine::mixin -set \
-		{*}[lmap c [info object mixin $targetObject] {
-		    if {$c eq $originDelegate} {set targetDelegate} {set c}
-		}]
-	}
-    }
-
-    # ----------------------------------------------------------------------
-    #
     # Slot --
     #
     #	The class of slot operations, which are basically lists at the low
@@ -116,9 +91,21 @@
     # ----------------------------------------------------------------------
 
     define class method <cloned> -unexport {originObject} {
+	set targetObject [self]
 	next $originObject
 	# Rebuild the class inheritance delegation class
-	::oo::UpdateClassDelegatesAfterClone $originObject [self]
+	set originDelegate [::oo::DelegateName $originObject]
+	set targetDelegate [::oo::DelegateName $targetObject]
+	if {
+	    [info object isa class $originDelegate]
+	    && ![info object isa class $targetDelegate]
+	} then {
+	    ::oo::copy $originDelegate $targetDelegate
+	    ::oo::objdefine $targetObject mixin -set \
+		{*}[lmap c [info object mixin $targetObject] {
+		    if {$c eq $originDelegate} {set targetDelegate} {set c}
+		}]
+	}
     }
 
     # ----------------------------------------------------------------------
@@ -139,11 +126,11 @@
 	    set object [next {*}$args]
 	    ::oo::objdefine $object {
 		method destroy {} {
-		    ::return -code error -errorcode {TCL OO SINGLETON} \
+		    return -code error -errorcode {TCL OO SINGLETON} \
 			"may not destroy a singleton object"
 		}
 		method <cloned> -unexport {originObject} {
-		    ::return -code error -errorcode {TCL OO SINGLETON} \
+		    return -code error -errorcode {TCL OO SINGLETON} \
 			"may not clone a singleton object"
 		}
 	    }
