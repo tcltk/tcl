@@ -19,7 +19,7 @@
 
 static inline Tcl_Object *AddConstructionFinalizer(Tcl_Interp *interp);
 static Tcl_NRPostProc	AfterNRDestructor;
-static Tcl_NRPostProc	DecrRefsPostClassConstructor;
+static Tcl_NRPostProc	PostClassConstructor;
 static Tcl_NRPostProc	FinalizeConstruction;
 static Tcl_NRPostProc	FinalizeEval;
 static Tcl_NRPostProc	NextRestoreFrame;
@@ -68,6 +68,119 @@ FinalizeConstruction(
 /*
  * ----------------------------------------------------------------------
  *
+ * MixinClassDelegates --
+ *
+ *	Internal utility for setting up the class delegate.
+ *	Runs after the class has called [oo::define] on its argument.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+// Look up the delegate for a class.
+static inline Class *
+GetClassDelegate(
+    Tcl_Interp *interp,
+    Class *clsPtr)
+{
+    Tcl_Obj *delegateName = Tcl_ObjPrintf("%s:: oo ::delegate",
+	    clsPtr->thisPtr->namespacePtr->fullName);
+    Class *delegatePtr = TclOOGetClassFromObj(interp, delegateName);
+    Tcl_DecrRefCount(delegateName);
+    return delegatePtr;
+}
+
+/*
+ * Patches in the appropriate class delegates' superclasses.
+ * Sonewhat nessy because the list of superclasses isn't modified frequently.
+ */
+static inline void
+SetDelegateSuperclasses(
+    Tcl_Interp *interp,
+    Class *clsPtr,
+    Class *delegatePtr)
+{
+    // Build new list of superclasses
+    int i, j = delegatePtr->superclasses.num, k;
+    Class *superPtr, **supers = (Class **) Tcl_Alloc(sizeof(Class *) *
+	    (delegatePtr->superclasses.num + clsPtr->superclasses.num));
+    if (delegatePtr->superclasses.num) {
+	memcpy(supers, delegatePtr->superclasses.list,
+		sizeof(Class *) * delegatePtr->superclasses.num);
+    }
+    FOREACH(superPtr, clsPtr->superclasses) {
+	Class *superDelegatePtr = GetClassDelegate(interp, superPtr);
+	if (!superDelegatePtr) {
+	    continue;
+	}
+	for (k=0 ; k<=j ; k++) {
+	    if (k == j) {
+		supers[j++] = superDelegatePtr;
+		TclOOAddToSubclasses(delegatePtr, superDelegatePtr);
+		AddRef(superDelegatePtr->thisPtr);
+		break;
+	    } else if (supers[k] == superDelegatePtr) {
+		break;
+	    }
+	}
+    }
+
+    // Install new list of superclasses;
+    if (delegatePtr->superclasses.num) {
+	Tcl_Free(delegatePtr->superclasses.list);
+    }
+    delegatePtr->superclasses.list = supers;
+    delegatePtr->superclasses.num = j;
+
+    // Definitely don't need to bump any epoch here
+}
+
+/*
+ * Mixes the delegate into its controlling class.
+ */
+static inline void
+InstallDelegateAsMixin(
+    Tcl_Interp *interp,
+    Class *clsPtr,
+    Class *delegatePtr)
+{
+    if (clsPtr->thisPtr->mixins.num == 0) {
+	TclOOObjectSetMixins(clsPtr->thisPtr, 1, &delegatePtr);
+	return;
+    }
+    Class **mixins = (Class **) TclStackAlloc(interp,
+	    sizeof(Class *) * (clsPtr->thisPtr->mixins.num + 1));
+    for (int i = 0; i < clsPtr->thisPtr->mixins.num; i++) {
+	mixins[i] = clsPtr->thisPtr->mixins.list[i];
+	if (mixins[i] == delegatePtr) {
+	    TclStackFree(interp, (void *) mixins);
+	    return;
+	}
+    }
+    mixins[clsPtr->thisPtr->mixins.num] = delegatePtr;
+    TclOOObjectSetMixins(clsPtr->thisPtr, clsPtr->thisPtr->mixins.num + 1, mixins);
+    TclStackFree(interp, mixins);
+}
+
+// Patches in the appropriate class delegates.
+static void
+MixinClassDelegates(
+    Tcl_Interp *interp,
+    Object *oPtr,
+    Tcl_Obj *delegateName)
+{
+    Class *clsPtr = oPtr->classPtr;
+    if (clsPtr) {
+	Class *delegatePtr = TclOOGetClassFromObj(interp, delegateName);
+	if (delegatePtr) {
+	    SetDelegateSuperclasses(interp, clsPtr, delegatePtr);
+	    InstallDelegateAsMixin(interp, clsPtr, delegatePtr);
+	}
+    }
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
  * TclOO_Class_Constructor --
  *
  *	Implementation for oo::class constructor.
@@ -84,7 +197,6 @@ TclOO_Class_Constructor(
     Tcl_Obj *const *objv)
 {
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
-    Tcl_Obj **invoke, *nameObj;
 
     size_t skip = Tcl_ObjectContextSkippedArgs(context);
     if ((size_t) objc > skip + 1) {
@@ -101,25 +213,28 @@ TclOO_Class_Constructor(
      * argument to [oo::define]. [Bug 680503]
      */
 
-    nameObj = Tcl_ObjPrintf("%s:: oo ::delegate",
+    Tcl_Obj *delegateName = Tcl_ObjPrintf("%s:: oo ::delegate",
 	    oPtr->namespacePtr->fullName);
+    Tcl_IncrRefCount(delegateName);
     Tcl_NewObjectInstance(interp, (Tcl_Class) oPtr->fPtr->classCls,
-	    TclGetString(nameObj), NULL, TCL_INDEX_NONE, NULL, 0);
-    Tcl_BounceRefCount(nameObj);
+	    TclGetString(delegateName), NULL, TCL_INDEX_NONE, NULL, 0);
 
     /*
      * If there's nothing else to do, we're done.
      */
 
     if ((size_t) objc == skip) {
-	return TCL_OK;
+	Tcl_InterpState saved = Tcl_SaveInterpState(interp, TCL_OK);
+	MixinClassDelegates(interp, oPtr, delegateName);
+	Tcl_DecrRefCount(delegateName);
+	return Tcl_RestoreInterpState(interp, saved);
     }
 
     /*
      * Delegate to [oo::define] to do the work.
      */
 
-    invoke = (Tcl_Obj **) TclStackAlloc(interp, 3 * sizeof(Tcl_Obj *));
+    Tcl_Obj **invoke = (Tcl_Obj **) TclStackAlloc(interp, 3 * sizeof(Tcl_Obj *));
     invoke[0] = oPtr->fPtr->defineName;
     invoke[1] = TclOOObjectName(interp, oPtr);
     invoke[2] = objv[objc - 1];
@@ -132,8 +247,8 @@ TclOO_Class_Constructor(
     Tcl_IncrRefCount(invoke[0]);
     Tcl_IncrRefCount(invoke[1]);
     Tcl_IncrRefCount(invoke[2]);
-    TclNRAddCallback(interp, DecrRefsPostClassConstructor,
-	    invoke, oPtr, NULL, NULL);
+    TclNRAddCallback(interp, PostClassConstructor,
+	    invoke, oPtr, delegateName, NULL);
 
     /*
      * Tricky point: do not want the extra reported level in the Tcl stack
@@ -143,33 +258,28 @@ TclOO_Class_Constructor(
     return TclNREvalObjv(interp, 3, invoke, TCL_EVAL_NOERR, NULL);
 }
 
+/*
+ *	Called *after* [oo::define] inside the constructor of a class.
+ *	Cleans up some temporary storage and sets up the delegate.
+ */
 static int
-DecrRefsPostClassConstructor(
+PostClassConstructor(
     void *data[],
     Tcl_Interp *interp,
     int result)
 {
     Tcl_Obj **invoke = (Tcl_Obj **) data[0];
     Object *oPtr = (Object *) data[1];
-    Tcl_InterpState saved;
-    int code;
+    Tcl_Obj *delegateName = (Tcl_Obj *) data[2];
 
     TclDecrRefCount(invoke[0]);
     TclDecrRefCount(invoke[1]);
     TclDecrRefCount(invoke[2]);
-    invoke[0] = oPtr->fPtr->mcdName;
-    invoke[1] = TclOOObjectName(interp, oPtr);
-    Tcl_IncrRefCount(invoke[0]);
-    Tcl_IncrRefCount(invoke[1]);
-    saved = Tcl_SaveInterpState(interp, result);
-    code = Tcl_EvalObjv(interp, 2, invoke, 0);
-    TclDecrRefCount(invoke[0]);
-    TclDecrRefCount(invoke[1]);
     TclStackFree(interp, invoke);
-    if (code != TCL_OK) {
-	Tcl_DiscardInterpState(saved);
-	return code;
-    }
+
+    Tcl_InterpState saved = Tcl_SaveInterpState(interp, result);
+    MixinClassDelegates(interp, oPtr, delegateName);
+    Tcl_DecrRefCount(delegateName);
     return Tcl_RestoreInterpState(interp, saved);
 }
 

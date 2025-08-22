@@ -370,7 +370,6 @@ InitFoundation(
     TclNewLiteralStringObj(fPtr->clonedName, "<cloned>");
     TclNewLiteralStringObj(fPtr->defineName, "::oo::define");
     TclNewLiteralStringObj(fPtr->myName, "my");
-    TclNewLiteralStringObj(fPtr->mcdName, "::oo::MixinClassDelegates");
     TclNewLiteralStringObj(fPtr->slotGetName, "Get");
     TclNewLiteralStringObj(fPtr->slotSetName, "Set");
     TclNewLiteralStringObj(fPtr->slotResolveName, "Resolve");
@@ -381,7 +380,6 @@ InitFoundation(
     Tcl_IncrRefCount(fPtr->clonedName);
     Tcl_IncrRefCount(fPtr->defineName);
     Tcl_IncrRefCount(fPtr->myName);
-    Tcl_IncrRefCount(fPtr->mcdName);
     Tcl_IncrRefCount(fPtr->slotGetName);
     Tcl_IncrRefCount(fPtr->slotSetName);
     Tcl_IncrRefCount(fPtr->slotResolveName);
@@ -631,7 +629,6 @@ KillFoundation(
     TclDecrRefCount(fPtr->clonedName);
     TclDecrRefCount(fPtr->defineName);
     TclDecrRefCount(fPtr->myName);
-    TclDecrRefCount(fPtr->mcdName);
     TclDecrRefCount(fPtr->slotGetName);
     TclDecrRefCount(fPtr->slotSetName);
     TclDecrRefCount(fPtr->slotResolveName);

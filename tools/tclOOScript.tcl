@@ -65,33 +65,6 @@
 
     # ----------------------------------------------------------------------
     #
-    # MixinClassDelegates --
-    #
-    #	Support code called *after* [oo::define] inside the constructor of a
-    #	class that patches in the appropriate class delegates.
-    #
-    # ----------------------------------------------------------------------
-
-    proc MixinClassDelegates {class} {
-	if {![info object isa class $class]} {
-	    return
-	}
-	set delegate [DelegateName $class]
-	if {![info object isa class $delegate]} {
-	    return
-	}
-	foreach c [info class superclass $class] {
-	    set d [DelegateName $c]
-	    if {![info object isa class $d]} {
-		continue
-	    }
-	    define $delegate ::oo::define::superclass -appendifnew $d
-	}
-	objdefine $class ::oo::objdefine::mixin -appendifnew $delegate
-    }
-
-    # ----------------------------------------------------------------------
-    #
     # UpdateClassDelegatesAfterClone --
     #
     #	Support code that is like [MixinClassDelegates] except for when a
