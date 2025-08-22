@@ -90,34 +90,6 @@
 
     # ----------------------------------------------------------------------
     #
-    # oo::define::classmethod --
-    #
-    #	Defines a class method. See define(n) for details.
-    #
-    # Note that the ::oo::define namespace is semi-public and a bit weird
-    # anyway, so we don't regard the namespace path as being under control:
-    # fully qualified names are used for everything.
-    #
-    # ----------------------------------------------------------------------
-
-    proc define::classmethod {name args} {
-	# Create the method on the class if the caller gave arguments and body
-	::set argc [::llength [::info level 0]]
-	::if {$argc == 3} {
-	    ::return -code error -errorcode {TCL WRONGARGS} [::format \
-		{wrong # args: should be "%s name ?args body?"} \
-		[::lindex [::info level 0] 0]]
-	}
-	::set cls [::uplevel 1 self]
-	::if {$argc == 4} {
-	    ::oo::define [::oo::DelegateName $cls] method $name {*}$args
-	}
-	# Make the connection by forwarding
-	::tailcall forward $name myclass $name
-    }
-
-    # ----------------------------------------------------------------------
-    #
     # Slot --
     #
     #	The class of slot operations, which are basically lists at the low

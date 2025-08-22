@@ -25,6 +25,7 @@ static const struct {
     Tcl_ObjCmdProc *objProc;
     int flag;
 } defineCmds[] = {
+    {"classmethod", TclOODefineClassMethodObjCmd, 0},
     {"constructor", TclOODefineConstructorObjCmd, 0},
     {"definitionnamespace", TclOODefineDefnNsObjCmd, 0},
     {"deletemethod", TclOODefineDeleteMethodObjCmd, 0},
