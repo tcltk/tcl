@@ -31,6 +31,8 @@ static const struct {
     {"destructor", TclOODefineDestructorObjCmd, 0},
     {"export", TclOODefineExportObjCmd, 0},
     {"forward", TclOODefineForwardObjCmd, 0},
+    {"initialise", TclOODefineInitialiseObjCmd, 0},
+    {"initialize", TclOODefineInitialiseObjCmd, 0},
     {"method", TclOODefineMethodObjCmd, 0},
     {"private", TclOODefinePrivateObjCmd, 0},
     {"renamemethod", TclOODefineRenameMethodObjCmd, 0},
