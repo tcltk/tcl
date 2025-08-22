@@ -500,6 +500,7 @@ struct DeclaredClassMethod {
 MODULE_SCOPE int		TclOOInit(Tcl_Interp *interp);
 MODULE_SCOPE Tcl_ObjCmdProc	TclOODefineObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOOObjDefObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc	TclOODefineClassMethodObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOODefineConstructorObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOODefineDefnNsObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOODefineDeleteMethodObjCmd;
