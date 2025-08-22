@@ -147,7 +147,13 @@ PCondWait(
     pthread_cond_t *pcondPtr,
     PMutex *pmutexPtr)
 {
+    int counter = pmutexPtr->counter;
+
+    pmutexPtr->thread = 0;
+    pmutexPtr->counter = 0; 
     pthread_cond_wait(pcondPtr, &pmutexPtr->mutex);
+    pmutexPtr->thread = pthread_self();
+    pmutexPtr->counter = counter;
 }
 
 static void
@@ -156,7 +162,13 @@ PCondTimedWait(
     PMutex *pmutexPtr,
     struct timespec *ptime)
 {
+    int counter = pmutexPtr->counter;
+
+    pmutexPtr->thread = 0;
+    pmutexPtr->counter = 0; 
     pthread_cond_timedwait(pcondPtr, &pmutexPtr->mutex, ptime);
+    pmutexPtr->thread = pthread_self();
+    pmutexPtr->counter = counter; 
 }
 #endif /* HAVE_PTHREAD_MUTEX_RECURSIVE */
 
