@@ -17,10 +17,37 @@
 #include "tclOOInt.h"
 
 /*
+ * Commands in oo and oo::Helpers.
+ */
+
+static const struct StdCommands {
+    const char *name;
+    Tcl_ObjCmdProc *objProc;
+    Tcl_ObjCmdProc *nreProc;
+    CompileProc *compileProc;
+    int flags;
+} ooCmds[] = {
+    {"define",		TclOODefineObjCmd, NULL, NULL, 0},
+    {"objdefine",	TclOOObjDefObjCmd, NULL, NULL, 0},
+    {"copy",		TclOOCopyObjectCmd, NULL, NULL, 0},
+    {"DelegateName",	TclOODelegateNameObjCmd, NULL, NULL, 0},
+    {NULL, NULL, NULL, NULL, 0}
+}, helpCmds[] = {
+    {"callback",	TclOOCallbackObjCmd, NULL, NULL, 0},
+    {"mymethod",	TclOOCallbackObjCmd, NULL, NULL, 0},
+    {"classvariable",	TclOOClassVariableObjCmd, NULL, NULL, 0},
+    {"link",		TclOOLinkObjCmd, NULL, NULL, 0},
+    {"next",		NULL, TclOONextObjCmd, TclCompileObjectNextCmd, CMD_COMPILES_EXPANDED},
+    {"nextto",		NULL, TclOONextToObjCmd, TclCompileObjectNextToCmd, CMD_COMPILES_EXPANDED},
+    {"self",		TclOOSelfObjCmd, NULL, TclCompileObjectSelfCmd, 0},
+    {NULL, NULL, NULL, NULL, 0}
+};
+
+/*
  * Commands in oo::define and oo::objdefine.
  */
 
-static const struct {
+static const struct DefineCommands {
     const char *name;
     Tcl_ObjCmdProc *objProc;
     int flag;
@@ -439,25 +466,16 @@ InitFoundation(
      * ensemble.
      */
 
-    CreateCmdInNS(interp, fPtr->helpersNs, "callback",
-	    TclOOCallbackObjCmd, NULL, NULL, 0);
-    CreateCmdInNS(interp, fPtr->helpersNs, "mymethod",
-	    TclOOCallbackObjCmd, NULL, NULL, 0);
-    CreateCmdInNS(interp, fPtr->helpersNs, "classvariable",
-	    TclOOClassVariableObjCmd, NULL, NULL, 0);
-    CreateCmdInNS(interp, fPtr->helpersNs, "link",
-	    TclOOLinkObjCmd, NULL, NULL, 0);
-    CreateCmdInNS(interp, fPtr->helpersNs, "next",
-	    NULL, TclOONextObjCmd, TclCompileObjectNextCmd, CMD_COMPILES_EXPANDED);
-    CreateCmdInNS(interp, fPtr->helpersNs, "nextto",
-	    NULL, TclOONextToObjCmd, TclCompileObjectNextToCmd, CMD_COMPILES_EXPANDED);
-    CreateCmdInNS(interp, fPtr->helpersNs, "self",
-	    TclOOSelfObjCmd, NULL, TclCompileObjectSelfCmd, 0);
-
-    CreateCmdInNS(interp, fPtr->ooNs, "define", TclOODefineObjCmd, NULL, NULL, 0);
-    CreateCmdInNS(interp, fPtr->ooNs, "objdefine", TclOOObjDefObjCmd, NULL, NULL, 0);
-    CreateCmdInNS(interp, fPtr->ooNs, "copy", TclOOCopyObjectCmd, NULL, NULL, 0);
-    CreateCmdInNS(interp, fPtr->ooNs, "DelegateName", TclOODelegateNameObjCmd, NULL, NULL, 0);
+    for (i = 0 ; helpCmds[i].name ; i++) {
+	CreateCmdInNS(interp, fPtr->helpersNs, helpCmds[i].name,
+		helpCmds[i].objProc, helpCmds[i].nreProc,
+		helpCmds[i].compileProc, helpCmds[i].flags);
+    }
+    for (i = 0 ; ooCmds[i].name ; i++) {
+	CreateCmdInNS(interp, fPtr->ooNs, ooCmds[i].name,
+		ooCmds[i].objProc, ooCmds[i].nreProc,
+		ooCmds[i].compileProc, ooCmds[i].flags);
+    }
 
     TclOOInitInfo(interp);
 

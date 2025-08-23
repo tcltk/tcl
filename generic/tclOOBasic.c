@@ -91,7 +91,7 @@ GetClassDelegate(
 
 /*
  * Patches in the appropriate class delegates' superclasses.
- * Sonewhat nessy because the list of superclasses isn't modified frequently.
+ * Sonewhat messy because the list of superclasses isn't modified frequently.
  */
 static inline void
 SetDelegateSuperclasses(
