@@ -2735,7 +2735,7 @@ Slot_AppendNew(
     Tcl_Obj *const *objv)
 {
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
-    int skip = Tcl_ObjectContextSkippedArgs(context), code;
+    int skip = Tcl_ObjectContextSkippedArgs(context), code, isNew;
     Tcl_Obj *resolved, *list, **listv;
     Tcl_Size listc, i;
     Tcl_HashTable unique;
@@ -2767,7 +2767,7 @@ Slot_AppendNew(
     }
     Tcl_InitObjHashTable(&unique);
     for (i=0 ; i<listc; i++) {
-	Tcl_CreateHashEntry(&unique, listv[i], NULL);
+	Tcl_CreateHashEntry(&unique, listv[i], &isNew);
     }
 
     /* Append the new items if they're not already there */
@@ -2779,7 +2779,6 @@ Slot_AppendNew(
     }
     TclListObjGetElements(NULL, resolved, &listc, &listv);
     for (i=0 ; i<listc; i++) {
-	int isNew;
 	Tcl_CreateHashEntry(&unique, listv[i], &isNew);
 	if (isNew) {
 	    Tcl_ListObjAppendElement(interp, list, listv[i]);
@@ -2890,7 +2889,7 @@ Slot_Remove(
     Tcl_Obj *const *objv)
 {
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
-    int skip = Tcl_ObjectContextSkippedArgs(context), code;
+    int skip = Tcl_ObjectContextSkippedArgs(context), code, isNew;
     Tcl_Size listc, i;
     Tcl_Obj *resolved, *oldList, *newList, **listv;
     Tcl_HashTable removeSet;
@@ -2918,7 +2917,7 @@ Slot_Remove(
     TclListObjGetElements(NULL, resolved, &listc, &listv);
     Tcl_InitObjHashTable(&removeSet);
     for (i=0 ; i<listc; i++) {
-	Tcl_CreateHashEntry(&removeSet, listv[i], NULL);
+	Tcl_CreateHashEntry(&removeSet, listv[i], &isNew);
     }
     Tcl_DecrRefCount(resolved);
 
