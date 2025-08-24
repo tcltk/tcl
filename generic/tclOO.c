@@ -52,31 +52,31 @@ static const struct DefineCommands {
     Tcl_ObjCmdProc *objProc;
     int flag;
 } defineCmds[] = {
-    {"classmethod", TclOODefineClassMethodObjCmd, 0},
-    {"constructor", TclOODefineConstructorObjCmd, 0},
+    {"classmethod",	TclOODefineClassMethodObjCmd, 0},
+    {"constructor",	TclOODefineConstructorObjCmd, 0},
     {"definitionnamespace", TclOODefineDefnNsObjCmd, 0},
-    {"deletemethod", TclOODefineDeleteMethodObjCmd, 0},
-    {"destructor", TclOODefineDestructorObjCmd, 0},
-    {"export", TclOODefineExportObjCmd, 0},
-    {"forward", TclOODefineForwardObjCmd, 0},
-    {"initialise", TclOODefineInitialiseObjCmd, 0},
-    {"initialize", TclOODefineInitialiseObjCmd, 0},
-    {"method", TclOODefineMethodObjCmd, 0},
-    {"private", TclOODefinePrivateObjCmd, 0},
-    {"renamemethod", TclOODefineRenameMethodObjCmd, 0},
-    {"self", TclOODefineSelfObjCmd, 0},
-    {"unexport", TclOODefineUnexportObjCmd, 0},
+    {"deletemethod",	TclOODefineDeleteMethodObjCmd, 0},
+    {"destructor",	TclOODefineDestructorObjCmd, 0},
+    {"export",		TclOODefineExportObjCmd, 0},
+    {"forward",		TclOODefineForwardObjCmd, 0},
+    {"initialise",	TclOODefineInitialiseObjCmd, 0},
+    {"initialize",	TclOODefineInitialiseObjCmd, 0},
+    {"method",		TclOODefineMethodObjCmd, 0},
+    {"private",		TclOODefinePrivateObjCmd, 0},
+    {"renamemethod",	TclOODefineRenameMethodObjCmd, 0},
+    {"self",		TclOODefineSelfObjCmd, 0},
+    {"unexport",	TclOODefineUnexportObjCmd, 0},
     {NULL, NULL, 0}
 }, objdefCmds[] = {
-    {"class", TclOODefineClassObjCmd, 1},
-    {"deletemethod", TclOODefineDeleteMethodObjCmd, 1},
-    {"export", TclOODefineExportObjCmd, 1},
-    {"forward", TclOODefineForwardObjCmd, 1},
-    {"method", TclOODefineMethodObjCmd, 1},
-    {"private", TclOODefinePrivateObjCmd, 1},
-    {"renamemethod", TclOODefineRenameMethodObjCmd, 1},
-    {"self", TclOODefineObjSelfObjCmd, 0},
-    {"unexport", TclOODefineUnexportObjCmd, 1},
+    {"class",		TclOODefineClassObjCmd, 1},
+    {"deletemethod",	TclOODefineDeleteMethodObjCmd, 1},
+    {"export",		TclOODefineExportObjCmd, 1},
+    {"forward",		TclOODefineForwardObjCmd, 1},
+    {"method",		TclOODefineMethodObjCmd, 1},
+    {"private",		TclOODefinePrivateObjCmd, 1},
+    {"renamemethod",	TclOODefineRenameMethodObjCmd, 1},
+    {"self",		TclOODefineObjSelfObjCmd, 0},
+    {"unexport",	TclOODefineUnexportObjCmd, 1},
     {NULL, NULL, 0}
 };
 
@@ -97,7 +97,7 @@ static int		CloneClassMethod(Tcl_Interp *interp, Class *clsPtr,
 			    Method **newMPtrPtr);
 static int		CloneObjectMethod(Tcl_Interp *interp, Object *oPtr,
 			    Method *mPtr, Tcl_Obj *namePtr);
-static void		DeletedHelpersNamespace(void *clientData);
+static Tcl_NamespaceDeleteProc	DeletedHelpersNamespace;
 static Tcl_NRPostProc	FinalizeAlloc;
 static Tcl_NRPostProc	FinalizeNext;
 static Tcl_NRPostProc	FinalizeObjectCall;
@@ -106,23 +106,17 @@ static void		InitClassSystemRoots(Tcl_Interp *interp,
 			    Foundation *fPtr);
 static int		InitFoundation(Tcl_Interp *interp);
 static Tcl_InterpDeleteProc	KillFoundation;
-static void		MyDeleted(void *clientData);
-static void		ObjectNamespaceDeleted(void *clientData);
+static Tcl_CmdDeleteProc	MyDeleted;
+static Tcl_NamespaceDeleteProc	ObjectNamespaceDeleted;
 static Tcl_CommandTraceProc	ObjectRenamedTrace;
 static inline void	RemoveClass(Class **list, size_t num, size_t idx);
 static inline void	RemoveObject(Object **list, size_t num, size_t idx);
 static inline void	SquelchCachedName(Object *oPtr);
 
-static int		PublicNRObjectCmd(void *clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const *objv);
-static int		PrivateNRObjectCmd(void *clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const *objv);
-static int		MyClassNRObjCmd(void *clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const *objv);
-static void		MyClassDeleted(void *clientData);
+static Tcl_ObjCmdProc	PublicNRObjectCmd;
+static Tcl_ObjCmdProc	PrivateNRObjectCmd;
+static Tcl_ObjCmdProc	MyClassNRObjCmd;
+static Tcl_CmdDeleteProc	MyClassDeleted;
 
 /*
  * Methods in the oo::object and oo::class classes. First, we define a helper
@@ -173,8 +167,9 @@ static const char initScript[] =
 "package ifneeded TclOO " TCLOO_PATCHLEVEL " {# Already present, OK?};"
 #endif
 "package ifneeded tcl::oo " TCLOO_PATCHLEVEL " {# Already present, OK?};"
-"namespace eval ::oo { variable version " TCLOO_VERSION " };"
-"namespace eval ::oo { variable patchlevel " TCLOO_PATCHLEVEL " };";
+"namespace eval ::oo {"
+"    variable version " TCLOO_VERSION " patchlevel " TCLOO_PATCHLEVEL
+"};";
 /* "tcl_findLibrary tcloo $oo::version $oo::version" */
 /* " tcloo.tcl OO_LIBRARY oo::library;"; */
 
