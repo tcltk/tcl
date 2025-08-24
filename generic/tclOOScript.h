@@ -27,11 +27,6 @@
 static const char *tclOOSetupScript =
 /* !BEGIN!: Do not edit below this line. */
 "::namespace eval ::oo {\n"
-"\tdefine Slot forward --default-operation my -append\n"
-"\tdefine Slot unexport destroy\n"
-"\tobjdefine define::superclass forward --default-operation my -set\n"
-"\tobjdefine define::mixin forward --default-operation my -set\n"
-"\tobjdefine objdefine::mixin forward --default-operation my -set\n"
 "\tdefine object method <cloned> -unexport {originObject} {\n"
 "\t\tforeach p [info procs [info object namespace $originObject]::*] {\n"
 "\t\t\tset args [info args $p]\n"
@@ -115,7 +110,7 @@ static const char *tclOOSetupScript =
 "\tclass create configurable\n"
 "\tdefine configurable superclass -set class\n"
 "\tdefine configurable constructor {{definitionScript \"\"}} {\n"
-"\t\too::define [self] {mixin -append ::oo::configuresupport::configurable}\n"
+"\t\t::oo::define [self] {mixin -append ::oo::configuresupport::configurable}\n"
 "\t\tnext $definitionScript\n"
 "\t}\n"
 "\tdefine configurable definitionnamespace -class configuresupport::configurableclass\n"

@@ -37,16 +37,17 @@ typedef struct DeclaredSlot {
     const Tcl_MethodType getterType;
     const Tcl_MethodType setterType;
     const Tcl_MethodType resolverType;
+    const char *defaultOp;	// The default op, if not set by the class
 } DeclaredSlot;
 
-#define SLOT(name,getter,setter,resolver) \
+#define SLOT(name,getter,setter,resolver,defOp) \
     {"::oo::" name,							\
 	    {TCL_OO_METHOD_VERSION_1, "core method: " name " Getter",	\
 		    getter, NULL, NULL},				\
 	    {TCL_OO_METHOD_VERSION_1, "core method: " name " Setter",	\
 		    setter, NULL, NULL},				\
 	    {TCL_OO_METHOD_VERSION_1, "core method: " name " Resolver",	\
-		    resolver, NULL, NULL}}
+		    resolver, NULL, NULL}, (defOp)}
 
 typedef struct DeclaredSlotMethod {
     const char *name;
@@ -190,26 +191,26 @@ static int		ResolveClass(void *clientData,
  */
 
 static const DeclaredSlot slots[] = {
-    SLOT("define::filter",      ClassFilter_Get, ClassFilter_Set, NULL),
-    SLOT("define::mixin",       ClassMixin_Get,  ClassMixin_Set, ResolveClass),
-    SLOT("define::superclass",  ClassSuper_Get,  ClassSuper_Set, ResolveClass),
-    SLOT("define::variable",    ClassVars_Get,   ClassVars_Set, NULL),
-    SLOT("objdefine::filter",   ObjFilter_Get,   ObjFilter_Set, NULL),
-    SLOT("objdefine::mixin",    ObjMixin_Get,    ObjMixin_Set, ResolveClass),
-    SLOT("objdefine::variable", ObjVars_Get,     ObjVars_Set, NULL),
+    SLOT("define::filter",      ClassFilter_Get, ClassFilter_Set, NULL, NULL),
+    SLOT("define::mixin",       ClassMixin_Get,  ClassMixin_Set, ResolveClass, "-set"),
+    SLOT("define::superclass",  ClassSuper_Get,  ClassSuper_Set, ResolveClass, "-set"),
+    SLOT("define::variable",    ClassVars_Get,   ClassVars_Set, NULL, NULL),
+    SLOT("objdefine::filter",   ObjFilter_Get,   ObjFilter_Set, NULL, NULL),
+    SLOT("objdefine::mixin",    ObjMixin_Get,    ObjMixin_Set, ResolveClass, "-set"),
+    SLOT("objdefine::variable", ObjVars_Get,     ObjVars_Set, NULL, NULL),
     SLOT("configuresupport::readableproperties",
 	    Configurable_ClassReadableProps_Get,
-	    Configurable_ClassReadableProps_Set, NULL),
+	    Configurable_ClassReadableProps_Set, NULL, NULL),
     SLOT("configuresupport::writableproperties",
 	    Configurable_ClassWritableProps_Get,
-	    Configurable_ClassWritableProps_Set, NULL),
+	    Configurable_ClassWritableProps_Set, NULL, NULL),
     SLOT("configuresupport::objreadableproperties",
 	    Configurable_ObjectReadableProps_Get,
-	    Configurable_ObjectReadableProps_Set, NULL),
+	    Configurable_ObjectReadableProps_Set, NULL, NULL),
     SLOT("configuresupport::objwritableproperties",
 	    Configurable_ObjectWritableProps_Get,
-	    Configurable_ObjectWritableProps_Set, NULL),
-    {NULL, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}}
+	    Configurable_ObjectWritableProps_Set, NULL, NULL),
+    {NULL, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, 0}
 };
 
 static const DeclaredSlotMethod slotMethods[] = {
@@ -2349,6 +2350,75 @@ TclOODefineRenameMethodObjCmd(
 }
 
 /*
+ * Unexporting is done by removing the PUBLIC_METHOD flag from the method
+ * record. If there is no such method in this object or class (i.e. the method
+ * comes from something inherited from or that we're an instance of) then we
+ * put in a blank record without that flag; such records are skipped over by
+ * the call chain engine *except* for their flags member.
+ *
+ * Caller has the responsibility to update any epochs if necessary.
+ */
+
+static int
+UnexportMethod(
+    Class *clsPtr,
+    Tcl_Obj *namePtr)
+{
+    int isNew;
+    Tcl_HashEntry *hPtr = Tcl_CreateHashEntry(&clsPtr->classMethods, namePtr,
+		    &isNew);
+    Method *mPtr;
+    if (isNew) {
+	mPtr = (Method *) Tcl_Alloc(sizeof(Method));
+	memset(mPtr, 0, sizeof(Method));
+	mPtr->refCount = 1;
+	mPtr->namePtr = namePtr;
+	Tcl_IncrRefCount(namePtr);
+	Tcl_SetHashValue(hPtr, mPtr);
+    } else {
+	mPtr = (Method *) Tcl_GetHashValue(hPtr);
+    }
+    if (isNew || mPtr->flags & (PUBLIC_METHOD | TRUE_PRIVATE_METHOD)) {
+	mPtr->flags &= ~(PUBLIC_METHOD | TRUE_PRIVATE_METHOD);
+	isNew = 1;
+    }
+    return isNew;
+}
+
+static int
+UnexportInstanceMethod(
+    Object *oPtr,
+    Tcl_Obj *namePtr)
+{
+    if (!oPtr->methodsPtr) {
+	oPtr->methodsPtr = (Tcl_HashTable *)
+		Tcl_Alloc(sizeof(Tcl_HashTable));
+	Tcl_InitObjHashTable(oPtr->methodsPtr);
+	oPtr->flags &= ~USE_CLASS_CACHE;
+    }
+
+    int isNew;
+    Tcl_HashEntry *hPtr = Tcl_CreateHashEntry(oPtr->methodsPtr, namePtr,
+	    &isNew);
+    Method *mPtr;
+    if (isNew) {
+	mPtr = (Method *) Tcl_Alloc(sizeof(Method));
+	memset(mPtr, 0, sizeof(Method));
+	mPtr->refCount = 1;
+	mPtr->namePtr = namePtr;
+	Tcl_IncrRefCount(namePtr);
+	Tcl_SetHashValue(hPtr, mPtr);
+    } else {
+	mPtr = (Method *) Tcl_GetHashValue(hPtr);
+    }
+    if (isNew || mPtr->flags & (PUBLIC_METHOD | TRUE_PRIVATE_METHOD)) {
+	mPtr->flags &= ~(PUBLIC_METHOD | TRUE_PRIVATE_METHOD);
+	isNew = 1;
+    }
+    return isNew;
+}
+
+/*
  * ----------------------------------------------------------------------
  *
  * TclOODefineUnexportObjCmd --
@@ -2368,10 +2438,8 @@ TclOODefineUnexportObjCmd(
 {
     int isInstanceUnexport = (clientData != NULL);
     Object *oPtr;
-    Method *mPtr;
-    Tcl_HashEntry *hPtr;
     Class *clsPtr;
-    int i, isNew, changed = 0;
+    int i, changed = 0;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name ?name ...?");
@@ -2391,42 +2459,10 @@ TclOODefineUnexportObjCmd(
     }
 
     for (i = 1; i < objc; i++) {
-	/*
-	 * Unexporting is done by removing the PUBLIC_METHOD flag from the
-	 * method record. If there is no such method in this object or class
-	 * (i.e. the method comes from something inherited from or that we're
-	 * an instance of) then we put in a blank record without that flag;
-	 * such records are skipped over by the call chain engine *except* for
-	 * their flags member.
-	 */
-
 	if (isInstanceUnexport) {
-	    if (!oPtr->methodsPtr) {
-		oPtr->methodsPtr = (Tcl_HashTable *)
-			Tcl_Alloc(sizeof(Tcl_HashTable));
-		Tcl_InitObjHashTable(oPtr->methodsPtr);
-		oPtr->flags &= ~USE_CLASS_CACHE;
-	    }
-	    hPtr = Tcl_CreateHashEntry(oPtr->methodsPtr, objv[i],
-		    &isNew);
+	    changed |= UnexportInstanceMethod(oPtr, objv[i]);
 	} else {
-	    hPtr = Tcl_CreateHashEntry(&clsPtr->classMethods, objv[i],
-		    &isNew);
-	}
-
-	if (isNew) {
-	    mPtr = (Method *) Tcl_Alloc(sizeof(Method));
-	    memset(mPtr, 0, sizeof(Method));
-	    mPtr->refCount = 1;
-	    mPtr->namePtr = objv[i];
-	    Tcl_IncrRefCount(objv[i]);
-	    Tcl_SetHashValue(hPtr, mPtr);
-	} else {
-	    mPtr = (Method *) Tcl_GetHashValue(hPtr);
-	}
-	if (isNew || mPtr->flags & (PUBLIC_METHOD | TRUE_PRIVATE_METHOD)) {
-	    mPtr->flags &= ~(PUBLIC_METHOD | TRUE_PRIVATE_METHOD);
-	    changed = 1;
+	    changed |= UnexportMethod(clsPtr, objv[i]);
 	}
     }
 
@@ -2504,8 +2540,9 @@ Tcl_ClassSetDestructor(
  *
  * TclOODefineSlots --
  *
- *	Create the "::oo::Slot" class and its standard instances. Class
- *	definition is empty at the stage (added by scripting).
+ *	Create the "::oo::Slot" class and its standard instances. These are
+ *	basically lists at the low level of TclOO; this provides a more
+ *	consistent interface to them.
  *
  * ----------------------------------------------------------------------
  */
@@ -2533,6 +2570,19 @@ TclOODefineSlots(
 	Tcl_BounceRefCount(name);
     }
 
+    // If a slot can't figure out what method to call directly, it uses
+    // --default-operation. That defaults to -append; we set that here.
+    Tcl_Obj *defaults[] = {
+	fPtr->myName,
+	Tcl_NewStringObj("-append", TCL_AUTO_LENGTH)
+    };
+    TclOONewForwardMethod(interp, (Class *) slotCls, 0,
+	    fPtr->slotDefOpName, Tcl_NewListObj(2, defaults));
+
+    // Hide the destroy method. (We're definitely taking a ref to the name.)
+    UnexportMethod((Class *) slotCls,
+	    Tcl_NewStringObj("destroy", TCL_AUTO_LENGTH));
+
     for (const DeclaredSlot *slotPtr = slots ; slotPtr->name ; slotPtr++) {
 	Tcl_Object slotObject = Tcl_NewObjectInstance(interp,
 		slotCls, slotPtr->name, NULL, TCL_INDEX_NONE, NULL, 0);
@@ -2547,6 +2597,14 @@ TclOODefineSlots(
 	if (slotPtr->resolverType.callProc) {
 	    TclNewInstanceMethod(interp, slotObject, fPtr->slotResolveName, 0,
 		    &slotPtr->resolverType, NULL);
+	}
+	if (slotPtr->defaultOp) {
+	    Tcl_Obj *slotDefaults[] = {
+		fPtr->myName,
+		Tcl_NewStringObj(slotPtr->defaultOp, TCL_AUTO_LENGTH)
+	    };
+	    TclOONewForwardInstanceMethod(interp, (Object *) slotObject, 0,
+		    fPtr->slotDefOpName, Tcl_NewListObj(2, slotDefaults));
 	}
     }
     return TCL_OK;
