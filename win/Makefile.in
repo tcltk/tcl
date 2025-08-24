@@ -758,7 +758,7 @@ tclWinPanic.${OBJEXT}: tclWinPanic.c
 .rc.$(RES):
 	$(RC) @RC_OUT@ $@ @RC_TYPE@ @RC_DEFINES@ @RC_INCLUDE@ "$(GENERIC_DIR_NATIVE)" @RC_INCLUDE@ "$(WIN_DIR_NATIVE)" @DEPARG@
 
-
+tclOO.${OBJEXT}: tclOO.c tclOOScript.h
 
 #--------------------------------------------------------------------------
 # Minizip implementation
