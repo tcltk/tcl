@@ -23,6 +23,7 @@ static Tcl_NRPostProc	PostClassConstructor;
 static Tcl_NRPostProc	FinalizeConstruction;
 static Tcl_NRPostProc	FinalizeEval;
 static Tcl_NRPostProc	NextRestoreFrame;
+static Tcl_NRPostProc	MarkAsSingleton;
 
 /*
  * ----------------------------------------------------------------------
@@ -1737,6 +1738,57 @@ TclOODelegateNameObjCmd(
     Tcl_SetObjResult(interp, Tcl_ObjPrintf("%s:: oo ::delegate",
 	    clsPtr->thisPtr->namespacePtr->fullName));
     return TCL_OK;
+}
+
+int
+TclOO_Singleton_New(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* Interpreter in which to create the object;
+				 * also used for error reporting. */
+    Tcl_ObjectContext context,	/* The object/call context. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const *objv)	/* The actual arguments. */
+{
+    Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
+    Class *clsPtr = oPtr->classPtr;
+
+    if (oPtr->classPtr->instances.num) {
+	Tcl_SetObjResult(interp, TclOOObjectName(interp, clsPtr->instances.list[0]));
+	return TCL_OK;
+    }
+
+    TclNRAddCallback(interp, MarkAsSingleton, clsPtr, NULL, NULL, NULL);
+    return TclNRNewObjectInstance(interp, (Tcl_Class) clsPtr,
+	    NULL, NULL, objc, objv, Tcl_ObjectContextSkippedArgs(context),
+	    AddConstructionFinalizer(interp));    
+}
+
+static int
+MarkAsSingleton(
+    void *data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    Class *clsPtr = (Class *) data[1];
+    if (result == TCL_OK && clsPtr->instances.num) {
+	// Prepend oo::SingletonInstance to the list of mixins
+	Tcl_Obj *singletonInstanceName = Tcl_NewStringObj(
+		"::oo::SingletonInstance", TCL_AUTO_LENGTH);
+	Class *singInst = TclOOGetClassFromObj(interp, singletonInstanceName);
+	Tcl_BounceRefCount(singletonInstanceName);
+	if (!singInst) {
+	    return TCL_ERROR;
+	}
+	Object *oPtr = clsPtr->instances.list[0];
+	Tcl_Size mixinc = oPtr->mixins.num;
+	Class **mixins = TclStackAlloc(interp, sizeof(Class *) * (mixinc + 1));
+	if (mixinc > 0) {
+	    memcpy(mixins + 1, oPtr->mixins.list, mixinc * sizeof(Class *));
+	}
+	mixins[0] = singInst; 
+	TclOOObjectSetMixins(oPtr, mixinc + 1, mixins);
+    }
+    return result;
 }
 
 /*
