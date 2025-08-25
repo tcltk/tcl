@@ -347,13 +347,14 @@ proc ::platform::patterns {id} {
 	    # 10.5+,11.0+
 	    if {[regexp {macosx([^-]*)-(.*)} $id -> v cpu]} {
 
+		foreach {major minor} [split $v.15 .] break
 		switch -exact -- $cpu {
 		    ix86    {
 			lappend alt i386-x86_64
 			lappend alt universal
 		    }
 		    x86_64  {
-			if {[lindex [split $::tcl_platform(osVersion) .] 0] < 19} {
+			if {$major < 11 && $minor < 15} {
 			    set alt i386-x86_64
 			} else {
 			    set alt {}
@@ -366,8 +367,6 @@ proc ::platform::patterns {id} {
 		}
 
 		if {$v ne ""} {
-		    foreach {major minor} [split $v .] break
-
 		    set res {}
 		    if {$major > 26} {
 			# Add x.0 to x.minor to patterns.
@@ -451,6 +450,9 @@ proc ::platform::patterns {id} {
 			if {$cpu ne "arm"} {
 			    lappend res macosx${major}.${j}-${cpu}
 			}
+			if {($cpu eq "x86_64") && ($j == 14)} {
+			    set alt i386-x86_64
+			}
 			foreach a $alt {
 			    lappend res macosx${major}.${j}-$a
 			}
@@ -465,7 +467,7 @@ proc ::platform::patterns {id} {
 				lappend res macosx${major}.${j}-$a
 			    }
 			}
-    			# Add unversioned patterns for 10.3/10.4 builds.
+			# Add unversioned patterns for 10.3/10.4 builds.
 			lappend res macosx-${cpu}
 			foreach a $alt {
 			    lappend res macosx-$a
