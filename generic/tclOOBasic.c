@@ -469,6 +469,40 @@ TclOO_Class_New(
 /*
  * ----------------------------------------------------------------------
  *
+ * TclOO_Configurable_Constructor --
+ *
+ *	Implementation for oo::configurable constructor.
+ *
+ * ----------------------------------------------------------------------
+ */
+int
+TclOO_Configurable_Constructor(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,
+    Tcl_ObjectContext context,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
+    Tcl_Size skip = Tcl_ObjectContextSkippedArgs(context);
+    if (objc != skip && objc != skip + 1) {
+	Tcl_WrongNumArgs(interp, skip, objv, "?definitionScript?");
+	return TCL_ERROR;
+    }
+    Tcl_Obj *cfgSupportName = Tcl_NewStringObj(
+	    "::oo::configuresupport::configurable", TCL_AUTO_LENGTH);
+    Class *mixin = TclOOGetClassFromObj(interp, cfgSupportName);
+    Tcl_BounceRefCount(cfgSupportName);
+    if (!mixin) {
+	return TCL_ERROR;
+    }
+    TclOOClassSetMixins(interp, oPtr->classPtr, 1, &mixin);
+    return TclNRObjectContextInvokeNext(interp, context, objc, objv, skip);
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
  * TclOO_Object_Destroy --
  *
  *	Implementation for oo::object->destroy method.
