@@ -61,40 +61,9 @@
  *----------------------------------------------------------------------
  */
 
-#ifndef HAVE_DECL_PTHREAD_MUTEX_RECURSIVE
-#define HAVE_DECL_PTHREAD_MUTEX_RECURSIVE 0
-#endif
-
-#if HAVE_DECL_PTHREAD_MUTEX_RECURSIVE
 /*
- * Pthread has native reentrant (AKA recursive) mutexes. Use them for
- * Tcl_Mutex.
- */
-
-typedef pthread_mutex_t PMutex;
-
-static void
-PMutexInit(
-    PMutex *pmutexPtr)
-{
-    pthread_mutexattr_t attr;
-
-    pthread_mutexattr_init(&attr);
-    pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
-    pthread_mutex_init(pmutexPtr, &attr);
-}
-
-#define PMutexDestroy	pthread_mutex_destroy
-#define PMutexLock	pthread_mutex_lock
-#define PMutexUnlock	pthread_mutex_unlock
-#define PCondWait	pthread_cond_wait
-#define PCondTimedWait	pthread_cond_timedwait
-
-#else /* !HAVE_PTHREAD_MUTEX_RECURSIVE */
-
-/*
- * No native support for reentrant mutexes. Emulate them with regular mutexes
- * and thread-local counters.
+ * No correct native support for reentrant mutexes. Emulate them with regular mutexes
+ * and threadlocal counters.
  */
 
 typedef struct PMutex {
@@ -150,7 +119,7 @@ PCondWait(
     int counter = pmutexPtr->counter;
 
     pmutexPtr->thread = 0;
-    pmutexPtr->counter = 0; 
+    pmutexPtr->counter = 0;
     pthread_cond_wait(pcondPtr, &pmutexPtr->mutex);
     pmutexPtr->thread = pthread_self();
     pmutexPtr->counter = counter;
@@ -165,12 +134,11 @@ PCondTimedWait(
     int counter = pmutexPtr->counter;
 
     pmutexPtr->thread = 0;
-    pmutexPtr->counter = 0; 
+    pmutexPtr->counter = 0;
     pthread_cond_timedwait(pcondPtr, &pmutexPtr->mutex, ptime);
     pmutexPtr->thread = pthread_self();
-    pmutexPtr->counter = counter; 
+    pmutexPtr->counter = counter;
 }
-#endif /* HAVE_PTHREAD_MUTEX_RECURSIVE */
 
 /*
  * globalLock is used to serialize creation of mutexes, condition variables,
