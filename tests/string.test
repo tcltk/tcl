@@ -226,11 +226,7 @@ test string-2.36.$noComp {string compare, binary neq unequal length} {
     run {string compare [binary format a20a 0 1] [binary format a100a 0 0]}
 } 1
 test string-2.37.$noComp {string compare, big -length} {
-    if {[package vsatisfies [info patchlevel] 8.7-]} {
-      run {string compare -length 0x100000000 ab abde}
-    } else {
-      run {string compare -length 0x7fffffff ab abde}
-    }
+    run {string compare -length 0x100000000 ab abde}
 } -1
 test string-2.38a.$noComp {string compare empty string against byte array} {
     # Bug edb4b065f4
@@ -397,11 +393,7 @@ test string-3.42.$noComp {string equal, binary neq inequal length} {
     run {string equal [binary format a20a 0 1] [binary format a100a 0 0]}
 } 0
 test string-3.43.$noComp {string equal, big -length} {
-    if {[package vsatisfies [info patchlevel] 8.7-]} {
-      run {string equal -length 0x100000000 abc def}
-    } else {
-      run {string equal -length 0x7fffffff abc def}
-    }
+    run {string equal -length 0x100000000 abc def}
 } 0
 test string-3.44.$noComp {string equal, bigger -length} -body {
     run {string equal -length 18446744073709551616 abc def}
