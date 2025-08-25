@@ -996,14 +996,14 @@ Tcl_SetSystemEncoding(
 	((Encoding *)encoding)->refCount += 1;
     } else {
 	encoding = Tcl_GetEncoding(interp, name);
+	if (encoding == NULL) {
+	    Tcl_MutexUnlock(&encodingMutex);
+	    return TCL_ERROR;
+	}
 	if (encoding == systemEncoding) {
 	    FreeEncoding(encoding);
 	    Tcl_MutexUnlock(&encodingMutex);
 	    return TCL_OK;
-	}
-	if (encoding == NULL) {
-	    Tcl_MutexUnlock(&encodingMutex);
-	    return TCL_ERROR;
 	}
     }
 
