@@ -1752,7 +1752,7 @@ TclOO_Singleton_New(
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
     Class *clsPtr = oPtr->classPtr;
 
-    if (oPtr->classPtr->instances.num) {
+    if (clsPtr->instances.num) {
 	Tcl_SetObjResult(interp, TclOOObjectName(interp, clsPtr->instances.list[0]));
 	return TCL_OK;
     }
@@ -1769,7 +1769,7 @@ MarkAsSingleton(
     Tcl_Interp *interp,
     int result)
 {
-    Class *clsPtr = (Class *) data[1];
+    Class *clsPtr = (Class *) data[0];
     if (result == TCL_OK && clsPtr->instances.num) {
 	// Prepend oo::SingletonInstance to the list of mixins
 	Tcl_Obj *singletonInstanceName = Tcl_NewStringObj(
