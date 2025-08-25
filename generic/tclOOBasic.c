@@ -1781,14 +1781,45 @@ MarkAsSingleton(
 	}
 	Object *oPtr = clsPtr->instances.list[0];
 	Tcl_Size mixinc = oPtr->mixins.num;
-	Class **mixins = TclStackAlloc(interp, sizeof(Class *) * (mixinc + 1));
+	Class **mixins = (Class **)TclStackAlloc(interp,
+		sizeof(Class *) * (mixinc + 1));
 	if (mixinc > 0) {
 	    memcpy(mixins + 1, oPtr->mixins.list, mixinc * sizeof(Class *));
 	}
 	mixins[0] = singInst; 
 	TclOOObjectSetMixins(oPtr, mixinc + 1, mixins);
+	TclStackFree(interp, mixins);
     }
     return result;
+}
+
+int
+TclOO_SingletonInstance_Destroy(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* Interpreter for error reporting. */
+    TCL_UNUSED(Tcl_ObjectContext),
+    TCL_UNUSED(int),
+    TCL_UNUSED(Tcl_Obj *const *))
+{
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    "may not destroy a singleton object"));
+    OO_ERROR(interp, SINGLETON);
+    return TCL_ERROR;
+}
+
+int
+TclOO_SingletonInstance_Cloned(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* Interpreter in which to create the object;
+				 * also used for error reporting. */
+    TCL_UNUSED(Tcl_ObjectContext),
+    TCL_UNUSED(int),
+    TCL_UNUSED(Tcl_Obj *const *))
+{
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    "may not clone a singleton object"));
+    OO_ERROR(interp, SINGLETON);
+    return TCL_ERROR;
 }
 
 /*
