@@ -30,7 +30,7 @@ namespace eval tcltest {
     variable patchLevel [info patchlevel]
 
     # Detect if we can use code points >= \U10000
-    variable fullutf [package vsatisfies $version 8.7-]
+    variable fullutf [package vsatisfies $version 9.0-]
 
 ##### Export the public tcltest procs; several categories
     #
@@ -3330,7 +3330,7 @@ proc tcltest::viewFile {name {directory ""}} {
 # construct improperly formed strings in this manner, because it involves
 # exposing that Tcl uses UTF-8 internally.
 #
-# This function doesn't work any more in Tcl 8.7, since the 'identity'
+# This function doesn't work any more in Tcl 9.0, since the 'identity'
 # is gone (TIP #345)
 #
 # Arguments:

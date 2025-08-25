@@ -2461,7 +2461,7 @@ proc http::Connected {token proto phost srvurl} {
 	    # be discarded.
 	} elseif {$state(status) eq ""} {
 	    # https handshake errors come here, for
-	    # Tcl 8.7 without http::SecureProxyConnect, and for Tcl 8.6.
+	    # Tcl 9.0 without http::SecureProxyConnect, and for Tcl 8.6.
 	    set msg [registerError $sock]
 	    registerError $sock {}
 	    if {$msg eq {}} {
@@ -3622,7 +3622,7 @@ proc http::Event {sock token} {
 		    # they will be discarded.
 		} else {
 		    # https handshake errors come here, for
-		    # Tcl 8.7 with http::SecureProxyConnect.
+		    # Tcl 9.0 with http::SecureProxyConnect.
 		    set msg [registerError $sock]
 		    registerError $sock {}
 		    if {$msg eq {}} {
