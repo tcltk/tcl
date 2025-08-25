@@ -81,31 +81,6 @@
 	}
     }
 
-    # ----------------------------------------------------------------------
-    #
-    # oo::configuresupport --
-    #
-    #	Namespace that holds all the implementation details of TIP #558.
-    #	Also includes the commands:
-    #
-    #	 * readableproperties
-    #	 * writableproperties
-    #	 * objreadableproperties
-    #	 * objwritableproperties
-    #
-    #	These are all slot implementations that provide access to the C layer
-    #	of property support (i.e., very fast cached lookup of property names).
-    #
-    #	 * StdClassProperties
-    #	 * StdObjectPropertes
-    #
-    #	These cause very fast basic implementation methods for a property
-    #	following the standard model of property implementation naming.
-    #	Property schemes that use other models (such as to be more Tk-like)
-    #	should not use these (or the oo::cconfigurable metaclass).
-    #
-    # ----------------------------------------------------------------------
-
     # ------------------------------------------------------------------
     #
     # oo::configuresupport::configurableclass,
@@ -128,21 +103,6 @@
 	::namespace export property
     }
 
-    # ------------------------------------------------------------------
-    #
-    # oo::configuresupport::configurable --
-    #
-    #	The class that contains the implementation of the actual
-    #	'configure' method (mixed into actually configurable classes).
-    #	The 'configure' method is in tclOOBasic.c.
-    #
-    # ------------------------------------------------------------------
-
-    define configuresupport::configurable {
-	definitionnamespace -instance configuresupport::configurableobject
-	definitionnamespace -class configuresupport::configurableclass
-    }
-
     # ----------------------------------------------------------------------
     #
     # oo::configurable --
@@ -155,12 +115,9 @@
     #
     # ----------------------------------------------------------------------
 
-    define configurable {
-	constructor {{definitionScript ""}} {
-	    ::oo::define [self] {mixin -append ::oo::configuresupport::configurable}
-	    next $definitionScript
-	}
-	definitionnamespace -class configuresupport::configurableclass
+    define configurable constructor {{definitionScript ""}} {
+	::oo::define [self] {mixin -append ::oo::configuresupport::configurable}
+	next $definitionScript
     }
 }
 
