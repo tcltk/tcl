@@ -543,6 +543,7 @@ MODULE_SCOPE Tcl_MethodCallProc	TclOO_Object_LinkVar;
 MODULE_SCOPE Tcl_MethodCallProc	TclOO_Object_Unknown;
 MODULE_SCOPE Tcl_MethodCallProc	TclOO_Object_VarName;
 MODULE_SCOPE Tcl_MethodCallProc TclOO_Configurable_Configure;
+MODULE_SCOPE Tcl_MethodCallProc TclOO_Configurable_Constructor;
 MODULE_SCOPE Tcl_MethodCallProc TclOO_Singleton_New;
 MODULE_SCOPE Tcl_MethodCallProc TclOO_SingletonInstance_Cloned;
 MODULE_SCOPE Tcl_MethodCallProc TclOO_SingletonInstance_Destroy;

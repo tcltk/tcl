@@ -78,10 +78,6 @@ static const char *tclOOSetupScript =
 "\t\t::namespace path ::oo::objdefine\n"
 "\t\t::namespace export property\n"
 "\t}\n"
-"\tdefine configurable constructor {{definitionScript \"\"}} {\n"
-"\t\t::oo::define [self] {mixin -append ::oo::configuresupport::configurable}\n"
-"\t\tnext $definitionScript\n"
-"\t}\n"
 "}\n"
 /* !END!: Do not edit above this line. */
 ;

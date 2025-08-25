@@ -166,6 +166,16 @@ static const Tcl_MethodType classConstructor = {
 };
 
 /*
+ * And the oo::configurable constructor...
+ */
+
+static const Tcl_MethodType configurableConstructor = {
+    TCL_OO_METHOD_VERSION_CURRENT,
+    "oo::configurable constructor",
+    TclOO_Configurable_Constructor, NULL, NULL
+};
+
+/*
  * Scripted parts of TclOO. First, the main script (cannot be outside this
  * file).
  */
@@ -621,15 +631,15 @@ MakeAdditionalClasses(
 
     // A metaclass that is used to make classes that only permit one instance
     // of them to exist. See singleton(n).
-    Object *singletonCls = (Object *) Tcl_NewObjectInstance(interp,
+    Object *singletonObj = (Object *) Tcl_NewObjectInstance(interp,
 	    (Tcl_Class) fPtr->classCls, "::oo::singleton",
 	    NULL, TCL_INDEX_NONE, NULL, 0);
-    TclOODefineBasicMethods(singletonCls->classPtr, singletonMethods);
+    Class *singletonCls = singletonObj->classPtr;
+    TclOODefineBasicMethods(singletonCls, singletonMethods);
     // Set the superclass to oo::class
-    MarkAsMetaclass(fPtr, singletonCls->classPtr);
+    MarkAsMetaclass(fPtr, singletonCls);
     // Unexport methods
-    TclOOUnexportMethods(singletonCls->classPtr,
-	    "create", "createWithNamespace", NULL);
+    TclOOUnexportMethods(singletonCls, "create", "createWithNamespace", NULL);
 
     // A mixin used to make an object so it won't be destroyed or cloned (or
     // at least not easily).
@@ -660,10 +670,11 @@ MakeAdditionalClasses(
     // The class that contains the implementation of the actual
     // 'configure' method (mixed into actually configurable classes).
     // The 'configure' method is in tclOOBasic.c.
-    Object *cfgCls = (Object *) Tcl_NewObjectInstance(interp,
+    Object *cfgSupObj = (Object *) Tcl_NewObjectInstance(interp,
 	    (Tcl_Class) fPtr->classCls, "::oo::configuresupport::configurable",
 	    NULL, TCL_INDEX_NONE, NULL, 0);
-    TclOODefineBasicMethods(cfgCls->classPtr, cfgMethods);
+    Class *cfgSupCls = cfgSupObj->classPtr;
+    TclOODefineBasicMethods(cfgSupCls, cfgMethods);
 
     /*
      * Don't have handles to these namespaces, so use Tcl_CreateObjCommand.
@@ -688,35 +699,34 @@ MakeAdditionalClasses(
     // arrange for the class created to have a 'configure' method and for
     // oo::define and oo::objdefine (on the class and its instances) to have
     // a property definition for setting things up for 'configure'.
-    Object *configurableCls = (Object *) Tcl_NewObjectInstance(interp,
+    Object *configurableObj = (Object *) Tcl_NewObjectInstance(interp,
 	    (Tcl_Class) fPtr->classCls, "::oo::configurable",
 	    NULL, TCL_INDEX_NONE, NULL, 0);
-    MarkAsMetaclass(fPtr, configurableCls->classPtr);
-    // TODO: constructor {{definitionScript ""}} {
-    //    ::oo::define [self] {mixin -append ::oo::configuresupport::configurable}
-    //    next $definitionScript
-    // }
+    Class *configurableCls = configurableObj->classPtr;
+    MarkAsMetaclass(fPtr, configurableCls);
+    Tcl_ClassSetConstructor(interp, (Tcl_Class) configurableCls, TclNewMethod(
+	    (Tcl_Class) configurableCls, NULL, 0, &configurableConstructor, NULL));
 
     Tcl_Obj *nsName = Tcl_NewStringObj("::oo::configuresupport::configurableclass",
 	    TCL_AUTO_LENGTH);
     Tcl_IncrRefCount(nsName);
-    if (cfgCls->classPtr->clsDefinitionNs != NULL) {
-	Tcl_DecrRefCount(cfgCls->classPtr->clsDefinitionNs);
+    if (cfgSupCls->clsDefinitionNs != NULL) {
+	Tcl_DecrRefCount(cfgSupCls->clsDefinitionNs);
     }
-    cfgCls->classPtr->clsDefinitionNs = nsName;
+    cfgSupCls->clsDefinitionNs = nsName;
     Tcl_IncrRefCount(nsName);
-    if (configurableCls->classPtr->clsDefinitionNs != NULL) {
-	Tcl_DecrRefCount(configurableCls->classPtr->clsDefinitionNs);
+    if (configurableCls->clsDefinitionNs != NULL) {
+	Tcl_DecrRefCount(configurableCls->clsDefinitionNs);
     }
-    configurableCls->classPtr->clsDefinitionNs = nsName;
+    configurableCls->clsDefinitionNs = nsName;
 
     nsName = Tcl_NewStringObj("::oo::configuresupport::configurableobject",
 	    TCL_AUTO_LENGTH);
     Tcl_IncrRefCount(nsName);
-    if (cfgCls->classPtr->objDefinitionNs != NULL) {
-	Tcl_DecrRefCount(cfgCls->classPtr->objDefinitionNs);
+    if (cfgSupCls->objDefinitionNs != NULL) {
+	Tcl_DecrRefCount(cfgSupCls->objDefinitionNs);
     }
-    cfgCls->classPtr->objDefinitionNs = nsName;
+    cfgSupCls->objDefinitionNs = nsName;
 }
 
 /*

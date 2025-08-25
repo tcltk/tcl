@@ -102,23 +102,6 @@
 	::namespace path ::oo::objdefine
 	::namespace export property
     }
-
-    # ----------------------------------------------------------------------
-    #
-    # oo::configurable --
-    #
-    #	A metaclass that is used to make classes that can be configured in
-    #	their creation phase (and later too). All the metaclass itself does is
-    #	arrange for the class created to have a 'configure' method and for
-    #	oo::define and oo::objdefine (on the class and its instances) to have
-    #	a property definition for setting things up for 'configure'.
-    #
-    # ----------------------------------------------------------------------
-
-    define configurable constructor {{definitionScript ""}} {
-	::oo::define [self] {mixin -append ::oo::configuresupport::configurable}
-	next $definitionScript
-    }
 }
 
 # Local Variables:
