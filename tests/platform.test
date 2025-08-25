@@ -4,7 +4,7 @@
 # built-in commands.  Sourcing this file into Tcl runs the tests and
 # generates output for errors.  No output means no errors were found.
 #
-# Copyright (c) 1999 by Scriptics Corporation
+# Copyright (c) 1999 Scriptics Corporation
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -77,6 +77,38 @@ test platform-4.1 {format of platform::identify result} -constraints notValgrind
 test platform-4.2 {format of platform::generic result} -match regexp -body {
     platform::generic
 } -result {^([^-]+-)+[^-]+$}
+
+test platform-5.0 {format of platform::generic result} -setup {
+    set old_machine $::tcl_platform(machine)
+    set old_os $::tcl_platform(os)
+    set old_wordsize $::tcl_platform(wordSize)
+    set old_version $tcl_platform(osVersion)
+    set ::tcl_platform(machine) arm
+    set ::tcl_platform(os) Darwin
+    set ::tcl_platform(wordSize) 8
+    set ::tcl_platform(osVersion) 20.1
+} -body {
+    set res {}
+    set l {macosx10.15-x86_64 macosx10.14-x86_64 macosx10.13-x86_64 macosx10.12-x86_64 macosx10.11-x86_64 macosx10.10-x86_64 macosx10.9-x86_64 tcl}
+    set id [platform::identify]
+    set l [linsert $l 0 [string range $id 0 end-3]-x86_64]
+    set l [linsert $l 0 $id]
+    lappend res $id
+    lappend res [platform::patterns $id]
+    set res
+} -cleanup {
+    set ::tcl_platform(machine) $old_machine
+    set ::tcl_platform(os) $old_os
+    set ::tcl_platform(wordSize) $old_wordsize
+    set ::tcl_platform(osVersion) $old_version
+    unset res l old_machine old_os old_wordsize old_version
+} -result {macosx11.0-arm {macosx11.0-arm macosx11.0-x86_64 macosx10.15-x86_64 macosx10.14-x86_64 macosx10.13-x86_64 macosx10.12-x86_64 macosx10.11-x86_64 macosx10.10-x86_64 macosx10.9-x86_64 macosx10.8-x86_64 macosx10.7-x86_64 macosx10.6-x86_64 macosx10.5-x86_64 macosx-arm macosx-x86_64 tcl}}
+test platform-5.1 {format of platform::patterns macosx11.0-x86_64} -body {
+    platform::patterns macosx11.0-x86_64
+} -result {macosx11.0-x86_64 macosx10.15-x86_64 macosx10.14-x86_64 macosx10.14-i386-x86_64 macosx10.13-x86_64 macosx10.13-i386-x86_64 macosx10.12-x86_64 macosx10.12-i386-x86_64 macosx10.11-x86_64 macosx10.11-i386-x86_64 macosx10.10-x86_64 macosx10.10-i386-x86_64 macosx10.9-x86_64 macosx10.9-i386-x86_64 macosx10.8-x86_64 macosx10.8-i386-x86_64 macosx10.7-x86_64 macosx10.7-i386-x86_64 macosx10.6-x86_64 macosx10.6-i386-x86_64 macosx10.5-x86_64 macosx10.5-i386-x86_64 macosx-x86_64 macosx-i386-x86_64 tcl}
+test platform-5.2 {format of platform::patterns macosx11.0-arm} -body {
+    platform::patterns macosx11.0-arm
+} -result {macosx11.0-arm macosx11.0-x86_64 macosx10.15-x86_64 macosx10.14-x86_64 macosx10.13-x86_64 macosx10.12-x86_64 macosx10.11-x86_64 macosx10.10-x86_64 macosx10.9-x86_64 macosx10.8-x86_64 macosx10.7-x86_64 macosx10.6-x86_64 macosx10.5-x86_64 macosx-arm macosx-x86_64 tcl}
 
 # cleanup
 cleanupTests
