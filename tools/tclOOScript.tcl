@@ -14,33 +14,6 @@
 ::namespace eval ::oo {
     # ----------------------------------------------------------------------
     #
-    # Slot --
-    #
-    #	The class of slot operations, which are basically lists at the low
-    #	level of TclOO; this provides a more consistent interface to them.
-    #
-    # ----------------------------------------------------------------------
-
-    # ------------------------------------------------------------------
-    #
-    # Slot --default-operation --
-    #
-    #	If a slot can't figure out what method to call directly, it
-    #	uses --default-operation.
-    #
-    # ------------------------------------------------------------------
-    define Slot forward --default-operation my -append
-
-    # Hide destroy
-    define Slot unexport destroy
-
-    # Set the default operation differently for these slots
-    objdefine define::superclass forward --default-operation my -set
-    objdefine define::mixin forward --default-operation my -set
-    objdefine objdefine::mixin forward --default-operation my -set
-
-    # ----------------------------------------------------------------------
-    #
     # oo::object <cloned> --
     #
     #	Handler for cloning objects that clones basic bits (only!) of the
@@ -119,23 +92,33 @@
 
     class create singleton
     define singleton superclass -set class
-    define singleton variable -set object
     define singleton unexport create createWithNamespace
     define singleton method new args {
+	variable object
 	if {![info exists object] || ![info object isa object $object]} {
 	    set object [next {*}$args]
-	    ::oo::objdefine $object {
-		method destroy {} {
-		    return -code error -errorcode {TCL OO SINGLETON} \
-			"may not destroy a singleton object"
-		}
-		method <cloned> -unexport {originObject} {
-		    return -code error -errorcode {TCL OO SINGLETON} \
-			"may not clone a singleton object"
-		}
-	    }
+	    ::oo::objdefine $object mixin -prepend ::oo::SingletonInstance
 	}
 	return $object
+    }
+
+    # ----------------------------------------------------------------------
+    #
+    # oo::SingletonInstance --
+    #
+    #	A mixin used to make an object so it won't be destroyed or cloned (or
+    #	at least not easily).
+    #
+    # ----------------------------------------------------------------------
+
+    class create SingletonInstance
+    define SingletonInstance method destroy {} {
+	return -code error -errorcode {TCL OO SINGLETON} \
+	    "may not destroy a singleton object"
+    }
+    define SingletonInstance method <cloned> -unexport {originObject} {
+	return -code error -errorcode {TCL OO SINGLETON} \
+	    "may not clone a singleton object"
     }
 
     # ----------------------------------------------------------------------
