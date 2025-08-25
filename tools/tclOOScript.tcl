@@ -83,59 +83,6 @@
 
     # ----------------------------------------------------------------------
     #
-    # oo::singleton --
-    #
-    #	A metaclass that is used to make classes that only permit one instance
-    #	of them to exist. See singleton(n).
-    #
-    # ----------------------------------------------------------------------
-
-    class create singleton
-    define singleton superclass -set class
-    define singleton unexport create createWithNamespace
-    define singleton method new args {
-	variable object
-	if {![info exists object] || ![info object isa object $object]} {
-	    set object [next {*}$args]
-	    ::oo::objdefine $object mixin -prepend ::oo::SingletonInstance
-	}
-	return $object
-    }
-
-    # ----------------------------------------------------------------------
-    #
-    # oo::SingletonInstance --
-    #
-    #	A mixin used to make an object so it won't be destroyed or cloned (or
-    #	at least not easily).
-    #
-    # ----------------------------------------------------------------------
-
-    class create SingletonInstance
-    define SingletonInstance method destroy {} {
-	return -code error -errorcode {TCL OO SINGLETON} \
-	    "may not destroy a singleton object"
-    }
-    define SingletonInstance method <cloned> -unexport {originObject} {
-	return -code error -errorcode {TCL OO SINGLETON} \
-	    "may not clone a singleton object"
-    }
-
-    # ----------------------------------------------------------------------
-    #
-    # oo::abstract --
-    #
-    #	A metaclass that is used to make classes that can't be directly
-    #	instantiated. See abstract(n).
-    #
-    # ----------------------------------------------------------------------
-
-    class create abstract
-    define abstract superclass -set class
-    define abstract unexport create createWithNamespace new
-
-    # ----------------------------------------------------------------------
-    #
     # oo::configuresupport --
     #
     #	Namespace that holds all the implementation details of TIP #558.
@@ -172,15 +119,11 @@
     # ------------------------------------------------------------------
 
     namespace eval configuresupport::configurableclass {
-	# Plural alias just in case; deliberately NOT documented!
-	::proc properties args {::tailcall property {*}$args}
 	::namespace path ::oo::define
 	::namespace export property
     }
 
     namespace eval configuresupport::configurableobject {
-	# Plural alias just in case; deliberately NOT documented!
-	::proc properties args {::tailcall property {*}$args}
 	::namespace path ::oo::objdefine
 	::namespace export property
     }
@@ -212,14 +155,13 @@
     #
     # ----------------------------------------------------------------------
 
-    class create configurable
-    define configurable superclass -set class
-    define configurable constructor {{definitionScript ""}} {
-	::oo::define [self] {mixin -append ::oo::configuresupport::configurable}
-	next $definitionScript
+    define configurable {
+	constructor {{definitionScript ""}} {
+	    ::oo::define [self] {mixin -append ::oo::configuresupport::configurable}
+	    next $definitionScript
+	}
+	definitionnamespace -class configuresupport::configurableclass
     }
-
-    define configurable definitionnamespace -class configuresupport::configurableclass
 }
 
 # Local Variables:

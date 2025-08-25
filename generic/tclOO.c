@@ -106,6 +106,7 @@ static void		InitClassSystemRoots(Tcl_Interp *interp,
 			    Foundation *fPtr);
 static int		InitFoundation(Tcl_Interp *interp);
 static Tcl_InterpDeleteProc	KillFoundation;
+static void		MakeAdditionalClasses(Foundation *fPtr);
 static Tcl_CmdDeleteProc	MyDeleted;
 static Tcl_NamespaceDeleteProc	ObjectNamespaceDeleted;
 static Tcl_CommandTraceProc	ObjectRenamedTrace;
@@ -144,6 +145,13 @@ static const DeclaredClassMethod objMethods[] = {
     {NULL, 0, {0, NULL, NULL, NULL, NULL}}
 }, cfgMethods[] = {
     DCM("configure", 1, TclOO_Configurable_Configure),
+    {NULL, 0, {0, NULL, NULL, NULL, NULL}}
+}, singletonMethods[] = {
+    DCM("new", 1,	TclOO_Singleton_New),
+    {NULL, 0, {0, NULL, NULL, NULL, NULL}}
+}, singletonInstanceMethods[] = {
+    DCM("<cloned>", 0,	TclOO_SingletonInstance_Cloned),
+    DCM("destroy", 1,	TclOO_SingletonInstance_Destroy),
     {NULL, 0, {0, NULL, NULL, NULL, NULL}}
 };
 
@@ -482,25 +490,7 @@ InitFoundation(
 	return TCL_ERROR;
     }
 
-    /*
-     * Make the configurable class and install its standard defined method.
-     */
-
-    Tcl_Object cfgCls = Tcl_NewObjectInstance(interp,
-	    (Tcl_Class) fPtr->classCls, "::oo::configuresupport::configurable",
-	    NULL, TCL_INDEX_NONE, NULL, 0);
-    TclOODefineBasicMethods(((Object *) cfgCls)->classPtr, cfgMethods);
-
-    /*
-     * Don't have handles to these namespaces, so use Tcl_CreateObjCommand.
-     */
-
-    Tcl_CreateObjCommand(interp,
-	    "::oo::configuresupport::configurableobject::property",
-	    TclOODefinePropertyCmd, INT2PTR(1) /*useInstance*/, NULL);
-    Tcl_CreateObjCommand(interp,
-	    "::oo::configuresupport::configurableclass::property",
-	    TclOODefinePropertyCmd, INT2PTR(0) /*useInstance*/, NULL);
+    MakeAdditionalClasses(fPtr);
 
     /*
      * Evaluate the remaining definitions, which are a compiled-in Tcl script.
@@ -508,7 +498,7 @@ InitFoundation(
 
     return Tcl_EvalEx(interp, tclOOSetupScript, TCL_INDEX_NONE, 0);
 }
-
+
 /*
  * ----------------------------------------------------------------------
  *
@@ -598,6 +588,107 @@ InitClassSystemRoots(
      * THIS IS THE ONLY FUNCTION THAT DOES NON-STANDARD CLASS SPLICING.
      * Everything else is careful to prohibit looping.
      */
+}
+
+static inline void
+MarkAsMetaclass(
+    Foundation *fPtr,
+    Class *classPtr)
+{
+    Class **supers = (Class **) Tcl_Alloc(sizeof(Class *));
+    supers[0] = fPtr->classCls;
+    AddRef(supers[0]->thisPtr);
+    TclOOSetSuperclasses(classPtr, 1, supers);
+}
+/*
+ * ----------------------------------------------------------------------
+ *
+ * MakeAdditionalClasses --
+ *	Make the extra classes in TclOO that aren't core to how it functions.
+ *
+ * ----------------------------------------------------------------------
+ */
+static void
+MakeAdditionalClasses(
+    Foundation *fPtr)
+{
+    Tcl_Interp *interp = fPtr->interp;
+
+    /*
+     * Make the singleton class, the SingletonInstance class, and install their
+     * standard defined methods.
+     */
+
+    // A metaclass that is used to make classes that only permit one instance
+    // of them to exist. See singleton(n).
+    Object *singletonCls = (Object *) Tcl_NewObjectInstance(interp,
+	    (Tcl_Class) fPtr->classCls, "::oo::singleton",
+	    NULL, TCL_INDEX_NONE, NULL, 0);
+    TclOODefineBasicMethods(singletonCls->classPtr, singletonMethods);
+    // Set the superclass to oo::class
+    MarkAsMetaclass(fPtr, singletonCls->classPtr);
+    // Unexport methods
+    TclOOUnexportMethods(singletonCls->classPtr,
+	    "create", "createWithNamespace", NULL);
+
+    // A mixin used to make an object so it won't be destroyed or cloned (or
+    // at least not easily).
+    Object *singletonInst = (Object *) Tcl_NewObjectInstance(interp,
+	    (Tcl_Class) fPtr->classCls, "::oo::SingletonInstance",
+	    NULL, TCL_INDEX_NONE, NULL, 0);
+    TclOODefineBasicMethods(singletonInst->classPtr, singletonInstanceMethods);
+
+    /*
+     * Make the abstract class.
+     */
+
+    // A metaclass that is used to make classes that can't be directly
+    // instantiated. See abstract(n).
+    Object *abstractCls = (Object *) Tcl_NewObjectInstance(interp,
+	    (Tcl_Class) fPtr->classCls, "::oo::abstract",
+	    NULL, TCL_INDEX_NONE, NULL, 0);
+    // Set the superclass to oo::class
+    MarkAsMetaclass(fPtr, abstractCls->classPtr);
+    // Unexport methods
+    TclOOUnexportMethods(abstractCls->classPtr,
+	    "create", "createWithNamespace", "new", NULL);
+
+    /*
+     * Make the configurable class and install its standard defined method.
+     */
+
+    Object *cfgCls = (Object *) Tcl_NewObjectInstance(interp,
+	    (Tcl_Class) fPtr->classCls, "::oo::configuresupport::configurable",
+	    NULL, TCL_INDEX_NONE, NULL, 0);
+    TclOODefineBasicMethods(cfgCls->classPtr, cfgMethods);
+
+    /*
+     * Don't have handles to these namespaces, so use Tcl_CreateObjCommand.
+     * Plural forms are deliberately not documented.
+     */
+
+    Tcl_CreateObjCommand(interp,
+	    "::oo::configuresupport::configurableobject::property",
+	    TclOODefinePropertyCmd, INT2PTR(1) /*useInstance*/, NULL);
+    Tcl_CreateObjCommand(interp,
+	    "::oo::configuresupport::configurableobject::properties",
+	    TclOODefinePropertyCmd, INT2PTR(1) /*useInstance*/, NULL);
+    Tcl_CreateObjCommand(interp,
+	    "::oo::configuresupport::configurableclass::property",
+	    TclOODefinePropertyCmd, INT2PTR(0) /*useInstance*/, NULL);
+    Tcl_CreateObjCommand(interp,
+	    "::oo::configuresupport::configurableclass::properties",
+	    TclOODefinePropertyCmd, INT2PTR(0) /*useInstance*/, NULL);
+
+    // A metaclass that is used to make classes that can be configured in
+    // their creation phase (and later too). All the metaclass itself does is
+    // arrange for the class created to have a 'configure' method and for
+    // oo::define and oo::objdefine (on the class and its instances) to have
+    // a property definition for setting things up for 'configure'.
+    Object *configurableCls = (Object *) Tcl_NewObjectInstance(interp,
+	    (Tcl_Class) fPtr->classCls, "::oo::configurable",
+	    NULL, TCL_INDEX_NONE, NULL, 0);
+    MarkAsMetaclass(fPtr, configurableCls->classPtr);
 }
 
 /*
