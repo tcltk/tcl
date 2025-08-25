@@ -3282,6 +3282,10 @@ MODULE_SCOPE void	TclAdvanceContinuations(int *line, Tcl_Size **next,
 			    Tcl_Size loc);
 MODULE_SCOPE void	TclAdvanceLines(int *line, const char *start,
 			    const char *end);
+MODULE_SCOPE int	TclAliasCreate(Tcl_Interp *interp,
+			    Tcl_Interp *childInterp, Tcl_Interp *parentInterp,
+			    Tcl_Obj *namePtr, Tcl_Obj *targetPtr, Tcl_Size objc,
+			    Tcl_Obj *const objv[]);
 MODULE_SCOPE void	TclAppendBytesToByteArray(Tcl_Obj *objPtr,
 			    const unsigned char *bytes, Tcl_Size len);
 MODULE_SCOPE void	TclAppendUtfToUtf(Tcl_Obj *objPtr,
