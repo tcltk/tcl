@@ -39,10 +39,6 @@
    you don't. */
 #undef HAVE_DECL_GETHOSTBYNAME_R
 
-/* Define to 1 if you have the declaration of 'PTHREAD_MUTEX_RECURSIVE', and
-   to 0 if you don't. */
-#undef HAVE_DECL_PTHREAD_MUTEX_RECURSIVE
-
 /* Is 'DIR64' in <sys/types.h>? */
 #undef HAVE_DIR64
 
