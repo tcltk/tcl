@@ -657,6 +657,9 @@ MakeAdditionalClasses(
      * Make the configurable class and install its standard defined method.
      */
 
+    // The class that contains the implementation of the actual
+    // 'configure' method (mixed into actually configurable classes).
+    // The 'configure' method is in tclOOBasic.c.
     Object *cfgCls = (Object *) Tcl_NewObjectInstance(interp,
 	    (Tcl_Class) fPtr->classCls, "::oo::configuresupport::configurable",
 	    NULL, TCL_INDEX_NONE, NULL, 0);
@@ -689,6 +692,31 @@ MakeAdditionalClasses(
 	    (Tcl_Class) fPtr->classCls, "::oo::configurable",
 	    NULL, TCL_INDEX_NONE, NULL, 0);
     MarkAsMetaclass(fPtr, configurableCls->classPtr);
+    // TODO: constructor {{definitionScript ""}} {
+    //    ::oo::define [self] {mixin -append ::oo::configuresupport::configurable}
+    //    next $definitionScript
+    // }
+
+    Tcl_Obj *nsName = Tcl_NewStringObj("::oo::configuresupport::configurableclass",
+	    TCL_AUTO_LENGTH);
+    Tcl_IncrRefCount(nsName);
+    if (cfgCls->classPtr->clsDefinitionNs != NULL) {
+	Tcl_DecrRefCount(cfgCls->classPtr->clsDefinitionNs);
+    }
+    cfgCls->classPtr->clsDefinitionNs = nsName;
+    Tcl_IncrRefCount(nsName);
+    if (configurableCls->classPtr->clsDefinitionNs != NULL) {
+	Tcl_DecrRefCount(configurableCls->classPtr->clsDefinitionNs);
+    }
+    configurableCls->classPtr->clsDefinitionNs = nsName;
+
+    nsName = Tcl_NewStringObj("::oo::configuresupport::configurableobject",
+	    TCL_AUTO_LENGTH);
+    Tcl_IncrRefCount(nsName);
+    if (cfgCls->classPtr->objDefinitionNs != NULL) {
+	Tcl_DecrRefCount(cfgCls->classPtr->objDefinitionNs);
+    }
+    cfgCls->classPtr->objDefinitionNs = nsName;
 }
 
 /*
