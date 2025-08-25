@@ -3,7 +3,7 @@
 # This file contains tests for safe Tcl that were previously in the file
 # safe.test, and use files and packages of stock Tcl 8.6 to perform the tests.
 # These files may be changed or disappear in future revisions of Tcl,
-# for example package http 1.0 will be removed from Tcl 8.7.
+# for example package http 1.0 will be removed from Tcl 9.0.
 #
 # The tests are replaced in safe.tcl with tests that use files provided in the
 # tests directory.  Test numbering is for comparison with similar tests in
@@ -13,7 +13,7 @@
 # No output means no errors were found.
 #
 # Copyright (c) 1995-1996 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright (c) 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
