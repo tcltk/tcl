@@ -6557,7 +6557,7 @@ TclZipfs_AppHook(
      * Thereby errors ignored as other locations may be available.
      */
 
-    if (TclZipfs_Mount(NULL, archive, ZIPFS_APP_MOUNT, NULL) == TCL_OK) {
+    if (TclZipfs_Mount(NULL, archive, ZIPFS_APP_MOUNT, NULL) != TCL_OK) {
 	Tcl_Obj *vfsInitScript;
 
 	if (!zipfs_literal_tcl_library) {
@@ -6635,6 +6635,17 @@ TclZipfs_AppHook(
 #endif /* _WIN32 */
 #endif /* SUPPORT_BUILTIN_ZIP_INSTALL */
     }
+
+#if !defined(STATIC_BUILD)
+    /* If tcl_library not found in application archive, check shared library */
+    if (!zipfs_literal_tcl_library) {
+	/* TclZipfsLocateTclLibrary will mount shared lib archive */
+	if (TclZipfsLocateTclLibrary() == TCL_OK) {
+	    (void)TclZipfsInitEncodingDirs();
+	}
+    }
+#endif
+
     return result;
 }
 
