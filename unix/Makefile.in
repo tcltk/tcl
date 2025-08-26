@@ -1834,7 +1834,11 @@ tclUnixFCmd.o: $(UNIX_DIR)/tclUnixFCmd.c
 	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclUnixFCmd.c
 
 tclUnixFile.o: $(UNIX_DIR)/tclUnixFile.c $(FSHDR)
-	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclUnixFile.c
+	$(CC) -c $(CC_SWITCHES) \
+		-D_GNU_SOURCE \
+		-DCFG_RUNTIME_DLLFILE="\"$(TCL_LIB_FILE)\"" \
+		-DCFG_RUNTIME_LIBDIR="\"$(libdir)\"" \
+		$(UNIX_DIR)/tclUnixFile.c
 
 tclEpollNotfy.o: $(UNIX_DIR)/tclEpollNotfy.c $(UNIX_DIR)/tclUnixNotfy.c
 	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclEpollNotfy.c
