@@ -868,6 +868,14 @@ TclpFindExecutable(
     WideCharToMultiByte(CP_UTF8, 0, wName, -1, name, sizeof(name), NULL, NULL);
     TclWinNoBackslash(name);
     TclSetObjNameOfExecutable(Tcl_NewStringObj(name, TCL_INDEX_NONE), NULL);
+
+#if !defined(STATIC_BUILD)
+    hModule = (HMODULE)TclWinGetTclInstance();
+    GetModuleFileNameW(hModule, wName, MAX_PATH);
+    WideCharToMultiByte(CP_UTF8, 0, wName, -1, name, sizeof(name), NULL, NULL);
+
+#endif
+
 }
 
 /*
