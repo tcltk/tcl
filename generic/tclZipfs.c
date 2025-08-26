@@ -6557,7 +6557,7 @@ TclZipfs_AppHook(
      * Thereby errors ignored as other locations may be available.
      */
 
-    if (TclZipfs_Mount(NULL, archive, ZIPFS_APP_MOUNT, NULL) != TCL_OK) {
+    if (TclZipfs_Mount(NULL, archive, ZIPFS_APP_MOUNT, NULL) == TCL_OK) {
 	Tcl_Obj *vfsInitScript;
 
 	if (!zipfs_literal_tcl_library) {
