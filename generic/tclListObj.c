@@ -3546,7 +3546,7 @@ UpdateStringOfList(
 	/* We know numElems <= LIST_MAX, so this is safe. */
 	flagPtr = (char *)Tcl_AttemptAlloc(numElems);
 	if (!flagPtr) {
-	    listObj->length = numElems;
+	    listObj->length = numElems - 1;
 	allocError:
 	    /* Allocation error. Just give up. */
 	    if (listObj->bytes) {

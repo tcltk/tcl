@@ -4106,8 +4106,6 @@ extern const TclStubs *tclStubsPtr;
 #   undef Tcl_AttemptRealloc
 #   define Tcl_AttemptRealloc(x,y) \
     (Tcl_AttemptDbCkrealloc((x), (y), __FILE__, __LINE__))
-#   define Tcl_Alloc(x) \
-    (Tcl_DbCkalloc((x), __FILE__, __LINE__))
 #   undef Tcl_GetStringFromObj
 #   define Tcl_GetStringFromObj(x,y) \
     (Tcl_DbGetStringFromObj((x), (y), __FILE__, __LINE__))
