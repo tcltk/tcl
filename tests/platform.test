@@ -99,7 +99,7 @@ test platform-5.0 {format of platform::generic result} -setup {
 } -result {macos11-arm 1 macos12-arm 1 macos13-arm 1 macos14-arm 1 macos15-arm 1 macos26-arm 1 macos27-arm 1}
 test platform-5.1 {format of platform::patterns macos26-x86_64} -body {
     platform::patterns macos26-x86_64
-} -result {macos26-x86_64 macos15-x86_64 macos14-x86_64 macos13-x86_64 macos12-x86_64 macos11-x86_64 macosx10.15-x86_64 macosx10.14-x86_64 macosx10.14-i386-x86_64 macosx10.13-x86_64 macosx10.13-i386-x86_64 macosx10.12-x86_64 macosx10.12-i386-x86_64 macosx10.11-x86_64 macosx10.11-i386-x86_64 macosx10.10-x86_64 macosx10.10-i386-x86_64 macosx10.9-x86_64 macosx10.9-i386-x86_64 tcl}
+} -result {macos26-x86_64 macos15-x86_64 macos14-x86_64 macos13-x86_64 macos12-x86_64 macos11-x86_64 macosx10.15-x86_64 macosx10.14-x86_64 macosx10.13-x86_64 macosx10.12-x86_64 macosx10.11-x86_64 macosx10.10-x86_64 macosx10.9-x86_64 tcl}
 test platform-5.2 {format of platform::patterns macos26-arm} -body {
     platform::patterns macos26-arm
 } -result {macos26-arm macos26-x86_64 macos15-arm macos15-x86_64 macos14-arm macos14-x86_64 macos13-arm macos13-x86_64 macos12-arm macos12-x86_64 macos11-arm macos11-x86_64 macosx10.15-x86_64 macosx10.14-x86_64 macosx10.13-x86_64 macosx10.12-x86_64 macosx10.11-x86_64 macosx10.10-x86_64 macosx10.9-x86_64 tcl}
