@@ -385,7 +385,7 @@ proc ::platform::patterns {id} {
 			if {$cpu ne "arm"} {
 			    lappend res macosx${major}.${j}-${cpu}
 			}
-			if {($cpu eq "x86_64") && ($j == 14)} {
+			if {($cpu eq "x86_64") && ($j == 14) && ![package vsatisfies [package provide Tcl] 9.0-]} {
 			    set alt i386-x86_64
 			}
 			foreach a $alt {
