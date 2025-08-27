@@ -862,12 +862,22 @@ TclpFindExecutable(
     TCL_UNUSED(const char *))
 {
     WCHAR wName[MAX_PATH];
-    char name[MAX_PATH * 3];
+    char name[MAX_PATH * TCL_UTF_MAX];
 
-    GetModuleFileNameW(NULL, wName, sizeof(wName)/sizeof(WCHAR));
+    GetModuleFileNameW(NULL, wName, sizeof(wName)/sizeof(wName[0]));
     WideCharToMultiByte(CP_UTF8, 0, wName, -1, name, sizeof(name), NULL, NULL);
     TclWinNoBackslash(name);
     TclSetObjNameOfExecutable(Tcl_NewStringObj(name, TCL_INDEX_NONE), NULL);
+
+#if !defined(STATIC_BUILD)
+    HMODULE hModule = (HMODULE)TclWinGetTclInstance();
+    if (hModule) {
+	GetModuleFileNameW(hModule, wName, sizeof(wName) / sizeof(wName[0]));
+	WideCharToMultiByte(CP_UTF8, 0, wName, -1,
+				name, sizeof(name), NULL, NULL);
+	TclSetObjNameOfShlib(Tcl_NewStringObj(name, TCL_AUTO_LENGTH), NULL);
+    }
+#endif
 }
 
 /*
