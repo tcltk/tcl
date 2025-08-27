@@ -1712,7 +1712,7 @@ Tcl_GetStringFromObj(
 	if (objPtr->bytes == NULL) {
 	    Tcl_Panic("UpdateStringProc for type '%s' "
 		    "failed to allocate %" TCL_SIZE_MODIFIER "d bytes",
-		    objPtr->typePtr->name, objPtr->length);
+		    objPtr->typePtr->name, objPtr->length + 1);
 	} else if (objPtr->bytes[objPtr->length] != '\0') {
 	    Tcl_Panic("UpdateStringProc for type '%s' "
 		    "failed to create a valid string rep",
@@ -1756,7 +1756,7 @@ Tcl_DbGetStringFromObj(
 	if (objPtr->bytes == NULL) {
 	    Tcl_Panic("UpdateStringProc for type '%s' "
 		    "failed to allocate %" TCL_SIZE_MODIFIER "d bytes. %s:%d",
-		    objPtr->typePtr->name, objPtr->length, file, line);
+		    objPtr->typePtr->name, objPtr->length + 1, file, line);
 	} else if (objPtr->bytes[objPtr->length] != '\0') {
 	    Tcl_Panic("UpdateStringProc for type '%s' "
 		    "failed to create a valid string rep. %s:%d",

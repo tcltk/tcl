@@ -522,7 +522,7 @@ UpdateStringOfDict(
     } else {
 	flagPtr = (char *)Tcl_AttemptAlloc(numElems);
 	if (!flagPtr) {
-	    dictPtr->length = numElems;
+	    dictPtr->length = numElems - 1;
 	allocError:
 	    /* Allocation error. Just give up. */
 	    if (dictPtr->bytes) {
