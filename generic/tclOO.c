@@ -106,6 +106,9 @@ static void		InitClassSystemRoots(Tcl_Interp *interp,
 			    Foundation *fPtr);
 static int		InitFoundation(Tcl_Interp *interp);
 static Tcl_InterpDeleteProc	KillFoundation;
+static void		MakeAdditionalClasses(Foundation *fPtr,
+			    Tcl_Namespace *defineNs,
+			    Tcl_Namespace *objDefineNs);
 static Tcl_CmdDeleteProc	MyDeleted;
 static Tcl_NamespaceDeleteProc	ObjectNamespaceDeleted;
 static Tcl_CommandTraceProc	ObjectRenamedTrace;
@@ -138,12 +141,20 @@ static const DeclaredClassMethod objMethods[] = {
     DCM("varname", 0,	TclOO_Object_VarName),
     {NULL, 0, {0, NULL, NULL, NULL, NULL}}
 }, clsMethods[] = {
+    DCM("<cloned>", 0,	TclOO_Class_Cloned),
     DCM("create", 1,	TclOO_Class_Create),
     DCM("new", 1,	TclOO_Class_New),
     DCM("createWithNamespace", 0, TclOO_Class_CreateNs),
     {NULL, 0, {0, NULL, NULL, NULL, NULL}}
 }, cfgMethods[] = {
     DCM("configure", 1, TclOO_Configurable_Configure),
+    {NULL, 0, {0, NULL, NULL, NULL, NULL}}
+}, singletonMethods[] = {
+    DCM("new", 1,	TclOO_Singleton_New),
+    {NULL, 0, {0, NULL, NULL, NULL, NULL}}
+}, singletonInstanceMethods[] = {
+    DCM("<cloned>", 0,	TclOO_SingletonInstance_Cloned),
+    DCM("destroy", 1,	TclOO_SingletonInstance_Destroy),
     {NULL, 0, {0, NULL, NULL, NULL, NULL}}
 };
 
@@ -155,6 +166,16 @@ static const Tcl_MethodType classConstructor = {
     TCL_OO_METHOD_VERSION_CURRENT,
     "oo::class constructor",
     TclOO_Class_Constructor, NULL, NULL
+};
+
+/*
+ * And the oo::configurable constructor...
+ */
+
+static const Tcl_MethodType configurableConstructor = {
+    TCL_OO_METHOD_VERSION_CURRENT,
+    "oo::configurable constructor",
+    TclOO_Configurable_Constructor, NULL, NULL
 };
 
 /*
@@ -482,25 +503,7 @@ InitFoundation(
 	return TCL_ERROR;
     }
 
-    /*
-     * Make the configurable class and install its standard defined method.
-     */
-
-    Tcl_Object cfgCls = Tcl_NewObjectInstance(interp,
-	    (Tcl_Class) fPtr->classCls, "::oo::configuresupport::configurable",
-	    NULL, TCL_INDEX_NONE, NULL, 0);
-    TclOODefineBasicMethods(((Object *) cfgCls)->classPtr, cfgMethods);
-
-    /*
-     * Don't have handles to these namespaces, so use Tcl_CreateObjCommand.
-     */
-
-    Tcl_CreateObjCommand(interp,
-	    "::oo::configuresupport::configurableobject::property",
-	    TclOODefinePropertyCmd, INT2PTR(1) /*useInstance*/, NULL);
-    Tcl_CreateObjCommand(interp,
-	    "::oo::configuresupport::configurableclass::property",
-	    TclOODefinePropertyCmd, INT2PTR(0) /*useInstance*/, NULL);
+    MakeAdditionalClasses(fPtr, define, objdef);
 
     /*
      * Evaluate the remaining definitions, which are a compiled-in Tcl script.
@@ -508,7 +511,7 @@ InitFoundation(
 
     return Tcl_EvalEx(interp, tclOOSetupScript, TCL_INDEX_NONE, 0);
 }
-
+
 /*
  * ----------------------------------------------------------------------
  *
@@ -598,6 +601,142 @@ InitClassSystemRoots(
      * THIS IS THE ONLY FUNCTION THAT DOES NON-STANDARD CLASS SPLICING.
      * Everything else is careful to prohibit looping.
      */
+}
+
+static inline void
+MarkAsMetaclass(
+    Foundation *fPtr,
+    Class *classPtr)
+{
+    Class **supers = (Class **) Tcl_Alloc(sizeof(Class *));
+    supers[0] = fPtr->classCls;
+    AddRef(supers[0]->thisPtr);
+    TclOOSetSuperclasses(classPtr, 1, supers);
+}
+/*
+ * ----------------------------------------------------------------------
+ *
+ * MakeAdditionalClasses --
+ *	Make the extra classes in TclOO that aren't core to how it functions.
+ *
+ * ----------------------------------------------------------------------
+ */
+static void
+MakeAdditionalClasses(
+    Foundation *fPtr,
+    Tcl_Namespace *defineNs,
+    Tcl_Namespace *objDefineNs)
+{
+    Tcl_Interp *interp = fPtr->interp;
+
+    /*
+     * Make the singleton class, the SingletonInstance class, and install their
+     * standard defined methods.
+     */
+
+    // A metaclass that is used to make classes that only permit one instance
+    // of them to exist. See singleton(n).
+    Object *singletonObj = (Object *) Tcl_NewObjectInstance(interp,
+	    (Tcl_Class) fPtr->classCls, "::oo::singleton",
+	    NULL, TCL_INDEX_NONE, NULL, 0);
+    Class *singletonCls = singletonObj->classPtr;
+    TclOODefineBasicMethods(singletonCls, singletonMethods);
+    // Set the superclass to oo::class
+    MarkAsMetaclass(fPtr, singletonCls);
+    // Unexport methods
+    TclOOUnexportMethods(singletonCls, "create", "createWithNamespace", NULL);
+
+    // A mixin used to make an object so it won't be destroyed or cloned (or
+    // at least not easily).
+    Object *singletonInst = (Object *) Tcl_NewObjectInstance(interp,
+	    (Tcl_Class) fPtr->classCls, "::oo::SingletonInstance",
+	    NULL, TCL_INDEX_NONE, NULL, 0);
+    TclOODefineBasicMethods(singletonInst->classPtr, singletonInstanceMethods);
+
+    /*
+     * Make the abstract class.
+     */
+
+    // A metaclass that is used to make classes that can't be directly
+    // instantiated. See abstract(n).
+    Object *abstractCls = (Object *) Tcl_NewObjectInstance(interp,
+	    (Tcl_Class) fPtr->classCls, "::oo::abstract",
+	    NULL, TCL_INDEX_NONE, NULL, 0);
+    // Set the superclass to oo::class
+    MarkAsMetaclass(fPtr, abstractCls->classPtr);
+    // Unexport methods
+    TclOOUnexportMethods(abstractCls->classPtr,
+	    "create", "createWithNamespace", "new", NULL);
+
+    /*
+     * Make the configurable class and install its standard defined method.
+     */
+
+    // The class that contains the implementation of the actual
+    // 'configure' method (mixed into actually configurable classes).
+    // The 'configure' method is in tclOOBasic.c.
+    Object *cfgSupObj = (Object *) Tcl_NewObjectInstance(interp,
+	    (Tcl_Class) fPtr->classCls, "::oo::configuresupport::configurable",
+	    NULL, TCL_INDEX_NONE, NULL, 0);
+    Class *cfgSupCls = cfgSupObj->classPtr;
+    TclOODefineBasicMethods(cfgSupCls, cfgMethods);
+
+    // Namespaces used as implementation vectors for oo::define and
+    // oo::objdefine when the class/instance is configurable.
+    // Note that these also contain commands implemented in C,
+    // especially the [property] definition command.
+
+    Tcl_Namespace *cfgObjNs = Tcl_CreateNamespace(interp,
+	    "::oo::configuresupport::configurableobject", NULL, NULL);
+    TclCreateObjCommandInNs(interp, "property", cfgObjNs,
+	    TclOODefinePropertyCmd, INT2PTR(1) /*useInstance*/, NULL);
+    TclCreateObjCommandInNs(interp, "properties", cfgObjNs,
+	    TclOODefinePropertyCmd, INT2PTR(1) /*useInstance*/, NULL);
+    Tcl_Export(interp, cfgObjNs, "property", /*reset*/1);
+    TclSetNsPath((Namespace *) cfgObjNs, 1, &objDefineNs);
+
+    Tcl_Namespace *cfgClsNs = Tcl_CreateNamespace(interp,
+	    "::oo::configuresupport::configurableclass", NULL, NULL);
+    TclCreateObjCommandInNs(interp, "property", cfgClsNs,
+	    TclOODefinePropertyCmd, INT2PTR(0) /*useInstance*/, NULL);
+    TclCreateObjCommandInNs(interp, "properties", cfgClsNs,
+	    TclOODefinePropertyCmd, INT2PTR(0) /*useInstance*/, NULL);
+    Tcl_Export(interp, cfgClsNs, "property", /*reset*/1);
+    TclSetNsPath((Namespace *) cfgClsNs, 1, &defineNs);
+
+    // A metaclass that is used to make classes that can be configured in
+    // their creation phase (and later too). All the metaclass itself does is
+    // arrange for the class created to have a 'configure' method and for
+    // oo::define and oo::objdefine (on the class and its instances) to have
+    // a property definition for setting things up for 'configure'.
+    Object *configurableObj = (Object *) Tcl_NewObjectInstance(interp,
+	    (Tcl_Class) fPtr->classCls, "::oo::configurable",
+	    NULL, TCL_INDEX_NONE, NULL, 0);
+    Class *configurableCls = configurableObj->classPtr;
+    MarkAsMetaclass(fPtr, configurableCls);
+    Tcl_ClassSetConstructor(interp, (Tcl_Class) configurableCls, TclNewMethod(
+	    (Tcl_Class) configurableCls, NULL, 0, &configurableConstructor, NULL));
+
+    Tcl_Obj *nsName = Tcl_NewStringObj("::oo::configuresupport::configurableclass",
+	    TCL_AUTO_LENGTH);
+    Tcl_IncrRefCount(nsName);
+    if (cfgSupCls->clsDefinitionNs != NULL) {
+	Tcl_DecrRefCount(cfgSupCls->clsDefinitionNs);
+    }
+    cfgSupCls->clsDefinitionNs = nsName;
+    Tcl_IncrRefCount(nsName);
+    if (configurableCls->clsDefinitionNs != NULL) {
+	Tcl_DecrRefCount(configurableCls->clsDefinitionNs);
+    }
+    configurableCls->clsDefinitionNs = nsName;
+
+    nsName = Tcl_NewStringObj("::oo::configuresupport::configurableobject",
+	    TCL_AUTO_LENGTH);
+    Tcl_IncrRefCount(nsName);
+    if (cfgSupCls->objDefinitionNs != NULL) {
+	Tcl_DecrRefCount(cfgSupCls->objDefinitionNs);
+    }
+    cfgSupCls->objDefinitionNs = nsName;
 }
 
 /*

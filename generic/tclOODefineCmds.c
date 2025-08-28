@@ -1340,6 +1340,48 @@ UnexportInstanceMethod(
     }
     return isNew;
 }
+
+int
+TclOOExportMethods(
+    Class *clsPtr,
+    ...)
+{
+    va_list argList;
+    int changed = 0;
+    va_start(argList, clsPtr);
+    while (1) {
+	const char *name = va_arg(argList, char *);
+	if (!name) {
+	    break;
+	}
+	Tcl_Obj *namePtr = Tcl_NewStringObj(name, TCL_AUTO_LENGTH);
+	changed |= ExportMethod(clsPtr, namePtr);
+	Tcl_BounceRefCount(namePtr);
+    }
+    va_end(argList);
+    return changed;
+}
+
+int
+TclOOUnexportMethods(
+    Class *clsPtr,
+    ...)
+{
+    va_list argList;
+    int changed = 0;
+    va_start(argList, clsPtr);
+    while (1) {
+	const char *name = va_arg(argList, char *);
+	if (!name) {
+	    break;
+	}
+	Tcl_Obj *namePtr = Tcl_NewStringObj(name, TCL_AUTO_LENGTH);
+	changed |= UnexportMethod(clsPtr, namePtr);
+	Tcl_BounceRefCount(namePtr);
+    }
+    va_end(argList);
+    return changed;
+}
 
 /*
  * ----------------------------------------------------------------------
@@ -3129,6 +3171,41 @@ Slot_Unknown(
 /*
  * ----------------------------------------------------------------------
  *
+ * TclOOSetSuperclasses --
+ *
+ *	Core of the "superclass" slot setter. Caller must AddRef() the objects
+ *	holding the classes to set before calling this. The 'superclasses'
+ *	argument must be allocated with Tcl_Alloc(); this function takes
+ *	ownership.
+ *
+ * ----------------------------------------------------------------------
+ */
+void
+TclOOSetSuperclasses(
+    Class *clsPtr,
+    Tcl_Size superc,
+    Class **superclasses)
+{
+    Tcl_Size i;
+    Class *superPtr;
+
+    if (clsPtr->superclasses.num != 0) {
+	FOREACH(superPtr, clsPtr->superclasses) {
+	    TclOORemoveFromSubclasses(clsPtr, superPtr);
+	    TclOODecrRefCount(superPtr->thisPtr);
+	}
+	Tcl_Free(clsPtr->superclasses.list);
+    }
+    clsPtr->superclasses.list = superclasses;
+    clsPtr->superclasses.num = superc;
+    FOREACH(superPtr, clsPtr->superclasses) {
+	TclOOAddToSubclasses(clsPtr, superPtr);
+    }
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
  * ClassFilter_Get, ClassFilter_Set --
  *
  *	Implementation of the "filter" slot accessors of the "oo::define"
@@ -3357,7 +3434,6 @@ ClassSuper_Set(
     Tcl_Size superc, j;
     Tcl_Size i;
     Tcl_Obj **superv;
-    Class **superclasses, *superPtr;
 
     if (clsPtr == NULL) {
 	return TCL_ERROR;
@@ -3384,7 +3460,7 @@ ClassSuper_Set(
      * Allocate some working space.
      */
 
-    superclasses = (Class **) Tcl_Alloc(sizeof(Class *) * superc);
+    Class **superclasses = (Class **) Tcl_Alloc(sizeof(Class *) * superc);
 
     /*
      * Parse the arguments to get the class to use as superclasses.
@@ -3447,18 +3523,7 @@ ClassSuper_Set(
      * subclass list.
      */
 
-    if (clsPtr->superclasses.num != 0) {
-	FOREACH(superPtr, clsPtr->superclasses) {
-	    TclOORemoveFromSubclasses(clsPtr, superPtr);
-	    TclOODecrRefCount(superPtr->thisPtr);
-	}
-	Tcl_Free(clsPtr->superclasses.list);
-    }
-    clsPtr->superclasses.list = superclasses;
-    clsPtr->superclasses.num = superc;
-    FOREACH(superPtr, clsPtr->superclasses) {
-	TclOOAddToSubclasses(clsPtr, superPtr);
-    }
+    TclOOSetSuperclasses(clsPtr, superc, superclasses);
     BumpGlobalEpoch(interp, clsPtr);
 
     return TCL_OK;
