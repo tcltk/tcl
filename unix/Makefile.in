@@ -154,8 +154,8 @@ INSTALL_STRIP_PROGRAM	= strip
 INSTALL_STRIP_LIBRARY	= strip -x
 
 INSTALL			= $(SHELL) $(UNIX_DIR)/install-sh -c
-INSTALL_PROGRAM		= ${INSTALL}
-INSTALL_LIBRARY		= ${INSTALL}
+INSTALL_PROGRAM		= ${INSTALL} -m 755
+INSTALL_LIBRARY		= ${INSTALL} -m 755
 INSTALL_DATA		= ${INSTALL} -m 644
 INSTALL_DATA_DIR	= ${INSTALL} -d -m 755
 
@@ -1029,7 +1029,6 @@ install-binaries: binaries
 	done
 	@echo "Installing $(LIB_FILE) to $(DLL_INSTALL_DIR)/"
 	@@INSTALL_LIB@
-	@chmod 555 "$(DLL_INSTALL_DIR)/$(LIB_FILE)"
 	@echo "Installing ${TCL_EXE} as $(BIN_INSTALL_DIR)/tclsh$(VERSION)${EXE_SUFFIX}"
 	@$(INSTALL_PROGRAM) ${TCL_EXE} "$(BIN_INSTALL_DIR)/tclsh$(VERSION)${EXE_SUFFIX}"
 	@echo "Installing tclConfig.sh to $(CONFIG_INSTALL_DIR)/"
@@ -1090,12 +1089,12 @@ install-libraries: libraries
 	@echo "Installing package msgcat 1.7.1 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/msgcat/msgcat.tcl \
 		"$(MODULE_INSTALL_DIR)/9.0/msgcat-1.7.1.tm"
-	@echo "Installing package tcltest 2.5.9 as a Tcl Module"
+	@echo "Installing package tcltest 2.5.10 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/tcltest/tcltest.tcl \
-		"$(MODULE_INSTALL_DIR)/9.0/tcltest-2.5.9.tm"
-	@echo "Installing package platform 1.0.19 as a Tcl Module"
+		"$(MODULE_INSTALL_DIR)/9.0/tcltest-2.5.10.tm"
+	@echo "Installing package platform 1.1.0 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/platform.tcl \
-		"$(MODULE_INSTALL_DIR)/9.0/platform-1.0.19.tm"
+		"$(MODULE_INSTALL_DIR)/9.0/platform-1.1.0.tm"
 	@echo "Installing package platform::shell 1.1.4 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/shell.tcl \
 		"$(MODULE_INSTALL_DIR)/9.0/platform/shell-1.1.4.tm"

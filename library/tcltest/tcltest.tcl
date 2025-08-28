@@ -21,7 +21,7 @@ namespace eval tcltest {
     # When the version number changes, be sure to update the pkgIndex.tcl file,
     # and the install directory in the Makefiles.  When the minor version
     # changes (new feature) be sure to update the man page as well.
-    variable Version 2.5.9
+    variable Version 2.5.10
 
     # Compatibility support for dumb variables defined in tcltest 1
     # Do not use these.  Call [package require] and [info patchlevel]
@@ -2911,7 +2911,7 @@ proc tcltest::runAllTests { {shell ""} } {
 		"Only running test files that match:  [matchFiles]"
     }
 
-    set timeCmd {clock format [clock seconds]}
+    set timeCmd {clock format now -format "%Y-%m-%d %H:%M:%S %Z" -locale en}
     puts [outputChannel] "Tests began at [eval $timeCmd]"
 
     # Run each of the specified tests
