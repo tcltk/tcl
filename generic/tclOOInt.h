@@ -533,6 +533,7 @@ MODULE_SCOPE Tcl_ObjCmdProc	TclOOInfoClassPropCmd;
  * Method implementations (in tclOOBasic.c).
  */
 
+MODULE_SCOPE Tcl_MethodCallProc	TclOO_Class_Cloned;
 MODULE_SCOPE Tcl_MethodCallProc	TclOO_Class_Constructor;
 MODULE_SCOPE Tcl_MethodCallProc	TclOO_Class_Create;
 MODULE_SCOPE Tcl_MethodCallProc	TclOO_Class_CreateNs;
