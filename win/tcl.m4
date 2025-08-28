@@ -610,8 +610,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	CFLAGS=$hold_cflags
 	if test "$ac_cv_municode" = "yes" ; then
 	    extra_ldflags="$extra_ldflags -municode"
-	else
-	    extra_cflags="$extra_cflags -DTCL_BROKEN_MAINARGS"
 	fi
 	hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -fno-lto"
 	AC_CACHE_CHECK(for working -fno-lto,
