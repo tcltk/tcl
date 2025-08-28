@@ -472,11 +472,12 @@ TclOO_Class_New(
  *
  * TclOO_Class_Cloned --
  *
- *	Handler for cloning classes, which fixes up the delegates.
+ *	Handler for cloning classes, which fixes up the delegates. This allows
+ *	the clone's class methods to evolve independently of the origin's
+ *	class methods; this is how TclOO works by default.
  *
  * ----------------------------------------------------------------------
  */
-
 int
 TclOO_Class_Cloned(
     TCL_UNUSED(void *),
@@ -496,8 +497,10 @@ TclOO_Class_Cloned(
     if (!originObject) {
 	return TCL_ERROR;
     }
-    AddRef((Object*)originObject);
-    AddRef((Object*)targetObject);
+    // Add references so things won't vanish until after
+    // UpdateClassDelegatesAfterClone is finished with them.
+    AddRef((Object *) originObject);
+    AddRef((Object *) targetObject);
     TclNRAddCallback(interp, UpdateClassDelegatesAfterClone,
 	    originObject, targetObject, NULL, NULL);
     return TclNRObjectContextInvokeNext(interp, context, objc, objv, skip);
@@ -520,6 +523,8 @@ UpdateClassDelegatesAfterClone(
 	Object *originDelegate = (Object *) Tcl_GetObjectFromObj(interp,
 		originName);
 	Tcl_BounceRefCount(originName);
+	// Delegates never have their own delegates, so silently make sure we
+	// don't try to make a clone of them.
 	if (!(originDelegate && originDelegate->classPtr)) {
 	    goto noOriginDelegate;
 	}
