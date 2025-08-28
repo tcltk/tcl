@@ -4661,10 +4661,13 @@ TEBCresume(
 	JumptableNumInfo *jtnPtr = (JumptableNumInfo *)
 		codePtr->auxDataArrayPtr[tblIdx].clientData;
 	TRACE(("%u \"%.20s\" => ", tblIdx, O2S(OBJ_AT_TOS)));
+	DECACHE_STACK_INFO();
 	Tcl_WideInt key;
-	if (Tcl_GetWideIntFromObj(NULL, OBJ_AT_TOS, &key) != TCL_OK) {
-	    goto jumpTableNumFallthrough;
+	if (Tcl_GetWideIntFromObj(interp, OBJ_AT_TOS, &key) != TCL_OK) {
+	    TRACE_ERROR(interp);
+	    goto gotError;
 	}
+	CACHE_STACK_INFO();
 	hPtr = Tcl_FindHashEntry(&jtnPtr->hashTable, INT2PTR(key));
 
     processJumpTableEntry:
@@ -4675,7 +4678,6 @@ TEBCresume(
 		    PC_REL + jumpOffset));
 	    NEXT_INST_F0(jumpOffset, 1);
 	}
-    jumpTableNumFallthrough:
 	TRACE_APPEND(("not found in table\n"));
 	NEXT_INST_F0(5, 1);
     }

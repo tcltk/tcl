@@ -1524,7 +1524,7 @@ TclCompileLeditCmd(
 
     Tcl_Token *tokenPtr = TokenAfter(varTokenPtr);
     for (i=2; i<numWords; i++, tokenPtr=TokenAfter(tokenPtr)) {
-    	PUSH_TOKEN(		tokenPtr, i);
+	PUSH_TOKEN(		tokenPtr, i);
     }
 
     // Stack: varWords... idx1 idx2 values...

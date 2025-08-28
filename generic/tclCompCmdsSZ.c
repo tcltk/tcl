@@ -4374,7 +4374,7 @@ TclCompileUplevelCmd(
     if (!TclWordKnownAtCompileTime(tokenPtr, objPtr)) {
 	/*
 	 * If the first argument isn't known at compile time, we can't know if
-	 * it is a script fragment or a level descriptor. Punt. 
+	 * it is a script fragment or a level descriptor. Punt.
 	 */
 	Tcl_DecrRefCount(objPtr);
 	return TCL_ERROR;
