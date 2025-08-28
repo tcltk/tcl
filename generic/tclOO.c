@@ -106,7 +106,9 @@ static void		InitClassSystemRoots(Tcl_Interp *interp,
 			    Foundation *fPtr);
 static int		InitFoundation(Tcl_Interp *interp);
 static Tcl_InterpDeleteProc	KillFoundation;
-static void		MakeAdditionalClasses(Foundation *fPtr);
+static void		MakeAdditionalClasses(Foundation *fPtr,
+			    Tcl_Namespace *defineNs,
+			    Tcl_Namespace *objDefineNs);
 static Tcl_CmdDeleteProc	MyDeleted;
 static Tcl_NamespaceDeleteProc	ObjectNamespaceDeleted;
 static Tcl_CommandTraceProc	ObjectRenamedTrace;
@@ -500,7 +502,7 @@ InitFoundation(
 	return TCL_ERROR;
     }
 
-    MakeAdditionalClasses(fPtr);
+    MakeAdditionalClasses(fPtr, define, objdef);
 
     /*
      * Evaluate the remaining definitions, which are a compiled-in Tcl script.
@@ -620,7 +622,9 @@ MarkAsMetaclass(
  */
 static void
 MakeAdditionalClasses(
-    Foundation *fPtr)
+    Foundation *fPtr,
+    Tcl_Namespace *defineNs,
+    Tcl_Namespace *objDefineNs)
 {
     Tcl_Interp *interp = fPtr->interp;
 
@@ -676,23 +680,28 @@ MakeAdditionalClasses(
     Class *cfgSupCls = cfgSupObj->classPtr;
     TclOODefineBasicMethods(cfgSupCls, cfgMethods);
 
-    /*
-     * Don't have handles to these namespaces, so use Tcl_CreateObjCommand.
-     * Plural forms are deliberately not documented.
-     */
+    // Namespaces used as implementation vectors for oo::define and
+    // oo::objdefine when the class/instance is configurable.
+    // Note that these also contain commands implemented in C,
+    // especially the [property] definition command.
 
-    Tcl_CreateObjCommand(interp,
-	    "::oo::configuresupport::configurableobject::property",
+    Tcl_Namespace *cfgObjNs = Tcl_CreateNamespace(interp,
+	    "::oo::configuresupport::configurableobject", NULL, NULL);
+    TclCreateObjCommandInNs(interp, "property", cfgObjNs,
 	    TclOODefinePropertyCmd, INT2PTR(1) /*useInstance*/, NULL);
-    Tcl_CreateObjCommand(interp,
-	    "::oo::configuresupport::configurableobject::properties",
+    TclCreateObjCommandInNs(interp, "properties", cfgObjNs,
 	    TclOODefinePropertyCmd, INT2PTR(1) /*useInstance*/, NULL);
-    Tcl_CreateObjCommand(interp,
-	    "::oo::configuresupport::configurableclass::property",
+    Tcl_Export(interp, cfgObjNs, "property", /*reset*/1);
+    TclSetNsPath((Namespace *) cfgObjNs, 1, &objDefineNs);
+
+    Tcl_Namespace *cfgClsNs = Tcl_CreateNamespace(interp,
+	    "::oo::configuresupport::configurableclass", NULL, NULL);
+    TclCreateObjCommandInNs(interp, "property", cfgClsNs,
 	    TclOODefinePropertyCmd, INT2PTR(0) /*useInstance*/, NULL);
-    Tcl_CreateObjCommand(interp,
-	    "::oo::configuresupport::configurableclass::properties",
+    TclCreateObjCommandInNs(interp, "properties", cfgClsNs,
 	    TclOODefinePropertyCmd, INT2PTR(0) /*useInstance*/, NULL);
+    Tcl_Export(interp, cfgClsNs, "property", /*reset*/1);
+    TclSetNsPath((Namespace *) cfgClsNs, 1, &defineNs);
 
     // A metaclass that is used to make classes that can be configured in
     // their creation phase (and later too). All the metaclass itself does is

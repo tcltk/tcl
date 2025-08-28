@@ -80,28 +80,6 @@
 		}]
 	}
     }
-
-    # ------------------------------------------------------------------
-    #
-    # oo::configuresupport::configurableclass,
-    # oo::configuresupport::configurableobject --
-    #
-    #	Namespaces used as implementation vectors for oo::define and
-    #	oo::objdefine when the class/instance is configurable.
-    #	Note that these also contain commands implemented in C,
-    #	especially the [property] definition command.
-    #
-    # ------------------------------------------------------------------
-
-    namespace eval configuresupport::configurableclass {
-	::namespace path ::oo::define
-	::namespace export property
-    }
-
-    namespace eval configuresupport::configurableobject {
-	::namespace path ::oo::objdefine
-	::namespace export property
-    }
 }
 
 # Local Variables:
