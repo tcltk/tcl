@@ -92,23 +92,33 @@
 
     class create singleton
     define singleton superclass -set class
-    define singleton variable -set object
     define singleton unexport create createWithNamespace
     define singleton method new args {
+	variable object
 	if {![info exists object] || ![info object isa object $object]} {
 	    set object [next {*}$args]
-	    ::oo::objdefine $object {
-		method destroy {} {
-		    return -code error -errorcode {TCL OO SINGLETON} \
-			"may not destroy a singleton object"
-		}
-		method <cloned> -unexport {originObject} {
-		    return -code error -errorcode {TCL OO SINGLETON} \
-			"may not clone a singleton object"
-		}
-	    }
+	    ::oo::objdefine $object mixin -prepend ::oo::SingletonInstance
 	}
 	return $object
+    }
+
+    # ----------------------------------------------------------------------
+    #
+    # oo::SingletonInstance --
+    #
+    #	A mixin used to make an object so it won't be destroyed or cloned (or
+    #	at least not easily).
+    #
+    # ----------------------------------------------------------------------
+
+    class create SingletonInstance
+    define SingletonInstance method destroy {} {
+	return -code error -errorcode {TCL OO SINGLETON} \
+	    "may not destroy a singleton object"
+    }
+    define SingletonInstance method <cloned> -unexport {originObject} {
+	return -code error -errorcode {TCL OO SINGLETON} \
+	    "may not clone a singleton object"
     }
 
     # ----------------------------------------------------------------------
