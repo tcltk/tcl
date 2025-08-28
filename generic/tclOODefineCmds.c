@@ -1231,6 +1231,119 @@ MagicDefinitionInvoke(
 /*
  * ----------------------------------------------------------------------
  *
+ * ExportMethod, UnexportMethod, ExportInstanceMethod, UnexportInstanceMethod --
+ *
+ *	Exporting and unexporting are done by setting or removing the
+ *	PUBLIC_METHOD flag on the method record. If there is no such method in
+ *	this class or object (i.e. the method comes from something inherited
+ *	from or that we're an instance of) then we put in a blank record just
+ *	to hold that flag (or its absence); such records are skipped over by
+ *	the call chain engine *except* for their flags member.
+ *
+ *	Caller has the responsibility to update any epochs if necessary.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+// Make a blank method record or look up the existing one.
+static inline Method *
+GetOrCreateMethod(
+    Tcl_HashTable *tablePtr,
+    Tcl_Obj *namePtr,
+    int *isNew)
+{
+    Tcl_HashEntry *hPtr = Tcl_CreateHashEntry(tablePtr, namePtr,
+		    isNew);
+    if (*isNew) {
+	Method *mPtr = (Method *) Tcl_Alloc(sizeof(Method));
+	memset(mPtr, 0, sizeof(Method));
+	mPtr->refCount = 1;
+	mPtr->namePtr = namePtr;
+	Tcl_IncrRefCount(namePtr);
+	Tcl_SetHashValue(hPtr, mPtr);
+	return mPtr;
+    } else {
+	return (Method *) Tcl_GetHashValue(hPtr);
+    }
+}
+
+static int
+ExportMethod(
+    Class *clsPtr,
+    Tcl_Obj *namePtr)
+{
+    int isNew;
+    Method *mPtr = GetOrCreateMethod(&clsPtr->classMethods, namePtr, &isNew);
+    if (isNew || !(mPtr->flags & (PUBLIC_METHOD | PRIVATE_METHOD))) {
+	mPtr->flags |= PUBLIC_METHOD;
+	mPtr->flags &= ~TRUE_PRIVATE_METHOD;
+	isNew = 1;
+    }
+    return isNew;
+}
+
+static int
+UnexportMethod(
+    Class *clsPtr,
+    Tcl_Obj *namePtr)
+{
+    int isNew;
+    Method *mPtr = GetOrCreateMethod(&clsPtr->classMethods, namePtr, &isNew);
+    if (isNew || mPtr->flags & (PUBLIC_METHOD | TRUE_PRIVATE_METHOD)) {
+	mPtr->flags &= ~(PUBLIC_METHOD | TRUE_PRIVATE_METHOD);
+	isNew = 1;
+    }
+    return isNew;
+}
+
+// Make the table of methods in the instance if it doesn't already exist.
+static inline void
+InitMethodTable(
+    Object *oPtr)
+{
+    if (!oPtr->methodsPtr) {
+	oPtr->methodsPtr = (Tcl_HashTable *) Tcl_Alloc(sizeof(Tcl_HashTable));
+	Tcl_InitObjHashTable(oPtr->methodsPtr);
+	oPtr->flags &= ~USE_CLASS_CACHE;
+    }
+}
+
+static int
+ExportInstanceMethod(
+    Object *oPtr,
+    Tcl_Obj *namePtr)
+{
+    InitMethodTable(oPtr);
+
+    int isNew;
+    Method *mPtr = GetOrCreateMethod(oPtr->methodsPtr, namePtr, &isNew);
+    if (isNew || !(mPtr->flags & (PUBLIC_METHOD | PRIVATE_METHOD))) {
+	mPtr->flags |= PUBLIC_METHOD;
+	mPtr->flags &= ~TRUE_PRIVATE_METHOD;
+	isNew = 1;
+    }
+    return isNew;
+}
+
+static int
+UnexportInstanceMethod(
+    Object *oPtr,
+    Tcl_Obj *namePtr)
+{
+    InitMethodTable(oPtr);
+
+    int isNew;
+    Method *mPtr = GetOrCreateMethod(oPtr->methodsPtr, namePtr, &isNew);
+    if (isNew || mPtr->flags & (PUBLIC_METHOD | TRUE_PRIVATE_METHOD)) {
+	mPtr->flags &= ~(PUBLIC_METHOD | TRUE_PRIVATE_METHOD);
+	isNew = 1;
+    }
+    return isNew;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
  * TclOODefineObjCmd --
  *
  *	Implementation of the "oo::define" command. Works by effectively doing
@@ -1939,22 +2052,18 @@ TclOODefineExportObjCmd(
     Tcl_Obj *const *objv)
 {
     int isInstanceExport = (clientData != NULL);
-    Object *oPtr;
-    Method *mPtr;
-    Tcl_HashEntry *hPtr;
-    Class *clsPtr;
-    int i, isNew, changed = 0;
+    int i, changed = 0;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name ?name ...?");
 	return TCL_ERROR;
     }
 
-    oPtr = (Object *) TclOOGetDefineCmdContext(interp);
+    Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
     if (oPtr == NULL) {
 	return TCL_ERROR;
     }
-    clsPtr = oPtr->classPtr;
+    Class *clsPtr = oPtr->classPtr;
     if (!isInstanceExport && !clsPtr) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"attempt to misuse API", TCL_AUTO_LENGTH));
@@ -1973,33 +2082,9 @@ TclOODefineExportObjCmd(
 	 */
 
 	if (isInstanceExport) {
-	    if (!oPtr->methodsPtr) {
-		oPtr->methodsPtr = (Tcl_HashTable *)
-			Tcl_Alloc(sizeof(Tcl_HashTable));
-		Tcl_InitObjHashTable(oPtr->methodsPtr);
-		oPtr->flags &= ~USE_CLASS_CACHE;
-	    }
-	    hPtr = Tcl_CreateHashEntry(oPtr->methodsPtr, objv[i],
-		    &isNew);
+	    changed |= ExportInstanceMethod(oPtr, objv[i]);
 	} else {
-	    hPtr = Tcl_CreateHashEntry(&clsPtr->classMethods, objv[i],
-		    &isNew);
-	}
-
-	if (isNew) {
-	    mPtr = (Method *) Tcl_Alloc(sizeof(Method));
-	    memset(mPtr, 0, sizeof(Method));
-	    mPtr->refCount = 1;
-	    mPtr->namePtr = objv[i];
-	    Tcl_IncrRefCount(objv[i]);
-	    Tcl_SetHashValue(hPtr, mPtr);
-	} else {
-	    mPtr = (Method *) Tcl_GetHashValue(hPtr);
-	}
-	if (isNew || !(mPtr->flags & (PUBLIC_METHOD | PRIVATE_METHOD))) {
-	    mPtr->flags |= PUBLIC_METHOD;
-	    mPtr->flags &= ~TRUE_PRIVATE_METHOD;
-	    changed = 1;
+	    changed |= ExportMethod(clsPtr, objv[i]);
 	}
     }
 
@@ -2353,75 +2438,6 @@ TclOODefineRenameMethodObjCmd(
 	BumpGlobalEpoch(interp, oPtr->classPtr);
     }
     return TCL_OK;
-}
-
-/*
- * Unexporting is done by removing the PUBLIC_METHOD flag from the method
- * record. If there is no such method in this object or class (i.e. the method
- * comes from something inherited from or that we're an instance of) then we
- * put in a blank record without that flag; such records are skipped over by
- * the call chain engine *except* for their flags member.
- *
- * Caller has the responsibility to update any epochs if necessary.
- */
-
-static int
-UnexportMethod(
-    Class *clsPtr,
-    Tcl_Obj *namePtr)
-{
-    int isNew;
-    Tcl_HashEntry *hPtr = Tcl_CreateHashEntry(&clsPtr->classMethods, namePtr,
-		    &isNew);
-    Method *mPtr;
-    if (isNew) {
-	mPtr = (Method *) Tcl_Alloc(sizeof(Method));
-	memset(mPtr, 0, sizeof(Method));
-	mPtr->refCount = 1;
-	mPtr->namePtr = namePtr;
-	Tcl_IncrRefCount(namePtr);
-	Tcl_SetHashValue(hPtr, mPtr);
-    } else {
-	mPtr = (Method *) Tcl_GetHashValue(hPtr);
-    }
-    if (isNew || mPtr->flags & (PUBLIC_METHOD | TRUE_PRIVATE_METHOD)) {
-	mPtr->flags &= ~(PUBLIC_METHOD | TRUE_PRIVATE_METHOD);
-	isNew = 1;
-    }
-    return isNew;
-}
-
-static int
-UnexportInstanceMethod(
-    Object *oPtr,
-    Tcl_Obj *namePtr)
-{
-    if (!oPtr->methodsPtr) {
-	oPtr->methodsPtr = (Tcl_HashTable *)
-		Tcl_Alloc(sizeof(Tcl_HashTable));
-	Tcl_InitObjHashTable(oPtr->methodsPtr);
-	oPtr->flags &= ~USE_CLASS_CACHE;
-    }
-
-    int isNew;
-    Tcl_HashEntry *hPtr = Tcl_CreateHashEntry(oPtr->methodsPtr, namePtr,
-	    &isNew);
-    Method *mPtr;
-    if (isNew) {
-	mPtr = (Method *) Tcl_Alloc(sizeof(Method));
-	memset(mPtr, 0, sizeof(Method));
-	mPtr->refCount = 1;
-	mPtr->namePtr = namePtr;
-	Tcl_IncrRefCount(namePtr);
-	Tcl_SetHashValue(hPtr, mPtr);
-    } else {
-	mPtr = (Method *) Tcl_GetHashValue(hPtr);
-    }
-    if (isNew || mPtr->flags & (PUBLIC_METHOD | TRUE_PRIVATE_METHOD)) {
-	mPtr->flags &= ~(PUBLIC_METHOD | TRUE_PRIVATE_METHOD);
-	isNew = 1;
-    }
-    return isNew;
 }
 
 /*
