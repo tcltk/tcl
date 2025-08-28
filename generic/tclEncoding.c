@@ -4812,7 +4812,7 @@ Tcl_UtfToNormalized(
     int result;
     utf8proc_uint8_t *from = normUtf8;
     utf8proc_uint8_t *fromEnd = from + normLength;
-    char *to = (utf8proc_uint8_t *)bufPtr;
+    char *to = bufPtr;
     char *toEnd = to + bufLen - 1; /* -1 for trailing NUL */
     while (from < fromEnd && to < toEnd) {
 	/*
