@@ -506,8 +506,8 @@ TclOO_Class_Cloned(
     if (!originObject) {
 	return TCL_ERROR;
     }
-    // Add references so things won't vanish until after
-    // UpdateClassDelegatesAfterClone is finished with them.
+    /* Add references so things won't vanish until after
+     * UpdateClassDelegatesAfterClone is finished with them. */
     AddRef((Object *) originObject);
     AddRef((Object *) targetObject);
     TclNRAddCallback(interp, UpdateClassDelegatesAfterClone,
@@ -515,7 +515,7 @@ TclOO_Class_Cloned(
     return TclNRObjectContextInvokeNext(interp, context, objc, objv, skip);
 }
 
-// Rebuilds the class inheritance delegation class.
+/* Rebuilds the class inheritance delegation class. */
 static int
 UpdateClassDelegatesAfterClone(
     void *data[],
@@ -525,24 +525,28 @@ UpdateClassDelegatesAfterClone(
     Object *originPtr = (Object *) data[0];
     Object *targetPtr = (Object *) data[1];
     if (result == TCL_OK && originPtr->classPtr && targetPtr->classPtr) {
-	// Get the originating delegate to be cloned.
+	Tcl_Obj *originName, *targetName;
+	Object *originDelegate, *targetDelegate;
+	Tcl_Size i;
+	Class *mixin;
 
-	Tcl_Obj *originName = Tcl_ObjPrintf("%s:: oo ::delegate",
+	/* Get the originating delegate to be cloned. */
+
+	originName = Tcl_ObjPrintf("%s:: oo ::delegate",
 		originPtr->namespacePtr->fullName);
-	Object *originDelegate = (Object *) Tcl_GetObjectFromObj(interp,
-		originName);
+	originDelegate = (Object *) Tcl_GetObjectFromObj(interp, originName);
 	Tcl_BounceRefCount(originName);
-	// Delegates never have their own delegates, so silently make sure we
-	// don't try to make a clone of them.
+	/* Delegates never have their own delegates, so silently make sure we
+	 * don't try to make a clone of them. */
 	if (!(originDelegate && originDelegate->classPtr)) {
 	    goto noOriginDelegate;
 	}
 
-	// Create the cloned target delegate.
+	/* Create the cloned target delegate. */
 
-	Tcl_Obj *targetName = Tcl_ObjPrintf("%s:: oo ::delegate",
+	targetName = Tcl_ObjPrintf("%s:: oo ::delegate",
 		targetPtr->namespacePtr->fullName);
-	Object *targetDelegate = (Object *) Tcl_CopyObjectInstance(interp,
+	targetDelegate = (Object *) Tcl_CopyObjectInstance(interp,
 		(Tcl_Object) originDelegate, Tcl_GetString(targetName), NULL);
 	Tcl_BounceRefCount(targetName);
 	if (targetDelegate == NULL) {
@@ -550,13 +554,11 @@ UpdateClassDelegatesAfterClone(
 	    goto noOriginDelegate;
 	}
 
-	// Point the cloned target class at the cloned target delegate.
-	// This is like TclOOObjectSetMixins() but more efficient in this
-	// case as there's definitely no relevant call chains to invalidate
-	// and we're doing a one-for-one replacement.
+	/* Point the cloned target class at the cloned target delegate.
+	 * This is like TclOOObjectSetMixins() but more efficient in this
+	 * case as there's definitely no relevant call chains to invalidate
+	 * and we're doing a one-for-one replacement. */
 
-	Tcl_Size i;
-	Class *mixin;
 	FOREACH(mixin, targetPtr->mixins) {
 	    if (mixin == originDelegate->classPtr) {
 		TclOORemoveFromInstances(targetPtr, originDelegate->classPtr);
@@ -593,13 +595,16 @@ TclOO_Configurable_Constructor(
 {
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
     Tcl_Size skip = Tcl_ObjectContextSkippedArgs(context);
+    Tcl_Obj *cfgSupportName;
+    Class *mixin;
+
     if (objc != skip && objc != skip + 1) {
 	Tcl_WrongNumArgs(interp, skip, objv, "?definitionScript?");
 	return TCL_ERROR;
     }
-    Tcl_Obj *cfgSupportName = Tcl_NewStringObj(
+    cfgSupportName = Tcl_NewStringObj(
 	    "::oo::configuresupport::configurable", TCL_AUTO_LENGTH);
-    Class *mixin = TclOOGetClassFromObj(interp, cfgSupportName);
+    mixin = TclOOGetClassFromObj(interp, cfgSupportName);
     Tcl_BounceRefCount(cfgSupportName);
     if (!mixin) {
 	return TCL_ERROR;
@@ -1942,18 +1947,21 @@ MarkAsSingleton(
 {
     Class *clsPtr = (Class *) data[0];
     if (result == TCL_OK && clsPtr->instances.num) {
-	// Prepend oo::SingletonInstance to the list of mixins
+	/* Prepend oo::SingletonInstance to the list of mixins */
 	Tcl_Obj *singletonInstanceName = Tcl_NewStringObj(
 		"::oo::SingletonInstance", TCL_AUTO_LENGTH);
 	Class *singInst = TclOOGetClassFromObj(interp, singletonInstanceName);
+	Object *oPtr;
+	Tcl_Size mixinc;
+	Class **mixins;
+
 	Tcl_BounceRefCount(singletonInstanceName);
 	if (!singInst) {
 	    return TCL_ERROR;
 	}
-	Object *oPtr = clsPtr->instances.list[0];
-	Tcl_Size mixinc = oPtr->mixins.num;
-	Class **mixins = (Class **)TclStackAlloc(interp,
-		sizeof(Class *) * (mixinc + 1));
+	oPtr = clsPtr->instances.list[0];
+	mixinc = oPtr->mixins.num;
+	mixins = (Class **)TclStackAlloc(interp, sizeof(Class *) * (mixinc + 1));
 	if (mixinc > 0) {
 	    memcpy(mixins + 1, oPtr->mixins.list, mixinc * sizeof(Class *));
 	}
