@@ -24,6 +24,7 @@ static Tcl_NRPostProc	FinalizeConstruction;
 static Tcl_NRPostProc	FinalizeEval;
 static Tcl_NRPostProc	NextRestoreFrame;
 static Tcl_NRPostProc	MarkAsSingleton;
+static Tcl_NRPostProc	UpdateClassDelegatesAfterClone;
 
 /*
  * ----------------------------------------------------------------------
@@ -465,6 +466,99 @@ TclOO_Class_New(
 	    NULL, NULL, objc, objv, Tcl_ObjectContextSkippedArgs(context),
 	    AddConstructionFinalizer(interp));
 }
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclOO_Class_Cloned --
+ *
+ *	Handler for cloning classes, which fixes up the delegates.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+int
+TclOO_Class_Cloned(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* Interpreter in which to create the object;
+				 * also used for error reporting. */
+    Tcl_ObjectContext context,	/* The object/call context. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const *objv)	/* The actual arguments. */
+{
+    Tcl_Object targetObject = Tcl_ObjectContextObject(context);
+    Tcl_Size skip = Tcl_ObjectContextSkippedArgs(context);
+    if (skip >= objc) {
+	Tcl_WrongNumArgs(interp, skip, objv, "originObject");
+	return TCL_ERROR;
+    }
+    Tcl_Object originObject = Tcl_GetObjectFromObj(interp, objv[skip]);
+    if (!originObject) {
+	return TCL_ERROR;
+    }
+    AddRef((Object*)originObject);
+    AddRef((Object*)targetObject);
+    TclNRAddCallback(interp, UpdateClassDelegatesAfterClone,
+	    originObject, targetObject, NULL, NULL);
+    return TclNRObjectContextInvokeNext(interp, context, objc, objv, skip);
+}
+
+// Rebuilds the class inheritance delegation class.
+static int
+UpdateClassDelegatesAfterClone(
+    void *data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    Object *originPtr = (Object *) data[0];
+    Object *targetPtr = (Object *) data[1];
+    if (result == TCL_OK && originPtr->classPtr && targetPtr->classPtr) {
+	// Get the originating delegate to be cloned.
+
+	Tcl_Obj *originName = Tcl_ObjPrintf("%s:: oo ::delegate",
+		originPtr->namespacePtr->fullName);
+	Object *originDelegate = (Object *) Tcl_GetObjectFromObj(interp,
+		originName);
+	Tcl_BounceRefCount(originName);
+	if (!(originDelegate && originDelegate->classPtr)) {
+	    goto noOriginDelegate;
+	}
+
+	// Create the cloned target delegate.
+
+	Tcl_Obj *targetName = Tcl_ObjPrintf("%s:: oo ::delegate",
+		targetPtr->namespacePtr->fullName);
+	Object *targetDelegate = (Object *) Tcl_CopyObjectInstance(interp,
+		(Tcl_Object) originDelegate, Tcl_GetString(targetName), NULL);
+	Tcl_BounceRefCount(targetName);
+	if (targetDelegate == NULL) {
+	    result = TCL_ERROR;
+	    goto noOriginDelegate;
+	}
+
+	// Point the cloned target class at the cloned target delegate.
+	// This is like TclOOObjectSetMixins() but more efficient in this
+	// case as there's definitely no relevant call chains to invalidate
+	// and we're doing a one-for-one replacement.
+
+	Tcl_Size i;
+	Class *mixin;
+	FOREACH(mixin, targetPtr->mixins) {
+	    if (mixin == originDelegate->classPtr) {
+		TclOORemoveFromInstances(targetPtr, originDelegate->classPtr);
+		TclOODecrRefCount(originDelegate);
+		targetPtr->mixins.list[i] = targetDelegate->classPtr;
+		TclOOAddToInstances(targetPtr, targetDelegate->classPtr);
+		AddRef(targetDelegate);
+		break;
+	    }
+	}
+    }
+  noOriginDelegate:
+    TclOODecrRefCount(originPtr);
+    TclOODecrRefCount(targetPtr);
+    return result;
+};
 
 /*
  * ----------------------------------------------------------------------

@@ -141,6 +141,7 @@ static const DeclaredClassMethod objMethods[] = {
     DCM("varname", 0,	TclOO_Object_VarName),
     {NULL, 0, {0, NULL, NULL, NULL, NULL}}
 }, clsMethods[] = {
+    DCM("<cloned>", 0,	TclOO_Class_Cloned),
     DCM("create", 1,	TclOO_Class_Create),
     DCM("new", 1,	TclOO_Class_New),
     DCM("createWithNamespace", 0, TclOO_Class_CreateNs),
