@@ -11,232 +11,47 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-::namespace eval ::oo {
-    # ----------------------------------------------------------------------
-    #
-    # Slot --
-    #
-    #	The class of slot operations, which are basically lists at the low
-    #	level of TclOO; this provides a more consistent interface to them.
-    #
-    # ----------------------------------------------------------------------
+# ----------------------------------------------------------------------
+#
+# oo::object <cloned> --
+#
+#	Handler for cloning objects that clones basic bits (only!) of the
+#	object's namespace. Non-procedures, traces, sub-namespaces, etc. need
+#	more complex (and class-specific) handling.
+#
+# ----------------------------------------------------------------------
 
-    # ------------------------------------------------------------------
-    #
-    # Slot --default-operation --
-    #
-    #	If a slot can't figure out what method to call directly, it
-    #	uses --default-operation.
-    #
-    # ------------------------------------------------------------------
-    define Slot forward --default-operation my -append
-
-    # Hide destroy
-    define Slot unexport destroy
-
-    # Set the default operation differently for these slots
-    objdefine define::superclass forward --default-operation my -set
-    objdefine define::mixin forward --default-operation my -set
-    objdefine objdefine::mixin forward --default-operation my -set
-
-    # ----------------------------------------------------------------------
-    #
-    # oo::object <cloned> --
-    #
-    #	Handler for cloning objects that clones basic bits (only!) of the
-    #	object's namespace. Non-procedures, traces, sub-namespaces, etc. need
-    #	more complex (and class-specific) handling.
-    #
-    # ----------------------------------------------------------------------
-
-    define object method <cloned> -unexport {originObject} {
-	# Copy over the procedures from the original namespace
-	foreach p [info procs [info object namespace $originObject]::*] {
-	    set args [info args $p]
-	    set idx -1
-	    foreach a $args {
-		if {[info default $p $a d]} {
-		    lset args [incr idx] [list $a $d]
-		} else {
-		    lset args [incr idx] [list $a]
-		}
-	    }
-	    set b [info body $p]
-	    set p [namespace tail $p]
-	    proc $p $args $b
-	}
-	# Copy over the variables from the original namespace
-	foreach v [info vars [info object namespace $originObject]::*] {
-	    upvar 0 $v vOrigin
-	    namespace upvar [namespace current] [namespace tail $v] vNew
-	    if {[info exists vOrigin]} {
-		if {[array exists vOrigin]} {
-		    array set vNew [array get vOrigin]
-		} else {
-		    set vNew $vOrigin
-		}
+::oo::define ::oo::object method <cloned> -unexport {originObject} {
+    # Copy over the procedures from the original namespace
+    foreach p [info procs [info object namespace $originObject]::*] {
+	set args [info args $p]
+	set idx -1
+	foreach a $args {
+	    if {[info default $p $a d]} {
+		lset args [incr idx] [list $a $d]
+	    } else {
+		lset args [incr idx] [list $a]
 	    }
 	}
-	# General commands, sub-namespaces and advancd variable config (traces,
-	# etc) are *not* copied over. Classes that want that should do it
-	# themselves.
+	set b [info body $p]
+	set p [namespace tail $p]
+	proc $p $args $b
     }
-
-    # ----------------------------------------------------------------------
-    #
-    # oo::class <cloned> --
-    #
-    #	Handler for cloning classes, which fixes up the delegates.
-    #
-    # ----------------------------------------------------------------------
-
-    define class method <cloned> -unexport {originObject} {
-	set targetObject [self]
-	next $originObject
-	# Rebuild the class inheritance delegation class
-	set originDelegate [::oo::DelegateName $originObject]
-	set targetDelegate [::oo::DelegateName $targetObject]
-	if {
-	    [info object isa class $originDelegate]
-	    && ![info object isa class $targetDelegate]
-	} then {
-	    ::oo::copy $originDelegate $targetDelegate
-	    ::oo::objdefine $targetObject mixin -set \
-		{*}[lmap c [info object mixin $targetObject] {
-		    if {$c eq $originDelegate} {set targetDelegate} {set c}
-		}]
-	}
-    }
-
-    # ----------------------------------------------------------------------
-    #
-    # oo::singleton --
-    #
-    #	A metaclass that is used to make classes that only permit one instance
-    #	of them to exist. See singleton(n).
-    #
-    # ----------------------------------------------------------------------
-
-    class create singleton
-    define singleton superclass -set class
-    define singleton variable -set object
-    define singleton unexport create createWithNamespace
-    define singleton method new args {
-	if {![info exists object] || ![info object isa object $object]} {
-	    set object [next {*}$args]
-	    ::oo::objdefine $object {
-		method destroy {} {
-		    return -code error -errorcode {TCL OO SINGLETON} \
-			"may not destroy a singleton object"
-		}
-		method <cloned> -unexport {originObject} {
-		    return -code error -errorcode {TCL OO SINGLETON} \
-			"may not clone a singleton object"
-		}
+    # Copy over the variables from the original namespace
+    foreach v [info vars [info object namespace $originObject]::*] {
+	upvar 0 $v vOrigin
+	namespace upvar [namespace current] [namespace tail $v] vNew
+	if {[info exists vOrigin]} {
+	    if {[array exists vOrigin]} {
+		array set vNew [array get vOrigin]
+	    } else {
+		set vNew $vOrigin
 	    }
 	}
-	return $object
     }
-
-    # ----------------------------------------------------------------------
-    #
-    # oo::abstract --
-    #
-    #	A metaclass that is used to make classes that can't be directly
-    #	instantiated. See abstract(n).
-    #
-    # ----------------------------------------------------------------------
-
-    class create abstract
-    define abstract superclass -set class
-    define abstract unexport create createWithNamespace new
-
-    # ----------------------------------------------------------------------
-    #
-    # oo::configuresupport --
-    #
-    #	Namespace that holds all the implementation details of TIP #558.
-    #	Also includes the commands:
-    #
-    #	 * readableproperties
-    #	 * writableproperties
-    #	 * objreadableproperties
-    #	 * objwritableproperties
-    #
-    #	These are all slot implementations that provide access to the C layer
-    #	of property support (i.e., very fast cached lookup of property names).
-    #
-    #	 * StdClassProperties
-    #	 * StdObjectPropertes
-    #
-    #	These cause very fast basic implementation methods for a property
-    #	following the standard model of property implementation naming.
-    #	Property schemes that use other models (such as to be more Tk-like)
-    #	should not use these (or the oo::cconfigurable metaclass).
-    #
-    # ----------------------------------------------------------------------
-
-    # ------------------------------------------------------------------
-    #
-    # oo::configuresupport::configurableclass,
-    # oo::configuresupport::configurableobject --
-    #
-    #	Namespaces used as implementation vectors for oo::define and
-    #	oo::objdefine when the class/instance is configurable.
-    #	Note that these also contain commands implemented in C,
-    #	especially the [property] definition command.
-    #
-    # ------------------------------------------------------------------
-
-    namespace eval configuresupport::configurableclass {
-	# Plural alias just in case; deliberately NOT documented!
-	::proc properties args {::tailcall property {*}$args}
-	::namespace path ::oo::define
-	::namespace export property
-    }
-
-    namespace eval configuresupport::configurableobject {
-	# Plural alias just in case; deliberately NOT documented!
-	::proc properties args {::tailcall property {*}$args}
-	::namespace path ::oo::objdefine
-	::namespace export property
-    }
-
-    # ------------------------------------------------------------------
-    #
-    # oo::configuresupport::configurable --
-    #
-    #	The class that contains the implementation of the actual
-    #	'configure' method (mixed into actually configurable classes).
-    #	The 'configure' method is in tclOOBasic.c.
-    #
-    # ------------------------------------------------------------------
-
-    define configuresupport::configurable {
-	definitionnamespace -instance configuresupport::configurableobject
-	definitionnamespace -class configuresupport::configurableclass
-    }
-
-    # ----------------------------------------------------------------------
-    #
-    # oo::configurable --
-    #
-    #	A metaclass that is used to make classes that can be configured in
-    #	their creation phase (and later too). All the metaclass itself does is
-    #	arrange for the class created to have a 'configure' method and for
-    #	oo::define and oo::objdefine (on the class and its instances) to have
-    #	a property definition for setting things up for 'configure'.
-    #
-    # ----------------------------------------------------------------------
-
-    class create configurable
-    define configurable superclass -set class
-    define configurable constructor {{definitionScript ""}} {
-	::oo::define [self] {mixin -append ::oo::configuresupport::configurable}
-	next $definitionScript
-    }
-
-    define configurable definitionnamespace -class configuresupport::configurableclass
+    # General commands, sub-namespaces and advancd variable config (traces,
+    # etc) are *not* copied over. Classes that want that should do it
+    # themselves.
 }
 
 # Local Variables:
