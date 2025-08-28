@@ -70,14 +70,6 @@ static const char *tclOOSetupScript =
 "\t\t\t\t}]\n"
 "\t\t}\n"
 "\t}\n"
-"\tnamespace eval configuresupport::configurableclass {\n"
-"\t\t::namespace path ::oo::define\n"
-"\t\t::namespace export property\n"
-"\t}\n"
-"\tnamespace eval configuresupport::configurableobject {\n"
-"\t\t::namespace path ::oo::objdefine\n"
-"\t\t::namespace export property\n"
-"\t}\n"
 "}\n"
 /* !END!: Do not edit above this line. */
 ;
