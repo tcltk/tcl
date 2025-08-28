@@ -48,6 +48,9 @@ extern Tcl_LibraryInitProc Dde_SafeInit;
 #include <locale.h>
 #include <stdlib.h>
 #include <tchar.h>
+#if defined(__GNUC__)
+int _CRT_glob = 0;
+#endif /* __GNUC__ */
 
 /*
  * The following #if block allows you to change the AppInit function by using
