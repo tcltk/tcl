@@ -37,7 +37,7 @@ typedef struct DeclaredSlot {
     const Tcl_MethodType getterType;
     const Tcl_MethodType setterType;
     const Tcl_MethodType resolverType;
-    const char *defaultOp;	// The default op, if not set by the class
+    const char *defaultOp;	/* The default op, if not set by the class */
 } DeclaredSlot;
 
 #define SLOT(name,getter,setter,resolver,defOp) \
@@ -1256,6 +1256,7 @@ GetOrCreateMethod(
 		    isNew);
     if (*isNew) {
 	Method *mPtr = (Method *) Tcl_Alloc(sizeof(Method));
+
 	memset(mPtr, 0, sizeof(Method));
 	mPtr->refCount = 1;
 	mPtr->namePtr = namePtr;
@@ -1351,10 +1352,12 @@ TclOOExportMethods(
     va_start(argList, clsPtr);
     while (1) {
 	const char *name = va_arg(argList, char *);
+	Tcl_Obj *namePtr;
+
 	if (!name) {
 	    break;
 	}
-	Tcl_Obj *namePtr = Tcl_NewStringObj(name, TCL_AUTO_LENGTH);
+	namePtr = Tcl_NewStringObj(name, TCL_AUTO_LENGTH);
 	changed |= ExportMethod(clsPtr, namePtr);
 	Tcl_BounceRefCount(namePtr);
     }
@@ -1372,10 +1375,12 @@ TclOOUnexportMethods(
     va_start(argList, clsPtr);
     while (1) {
 	const char *name = va_arg(argList, char *);
+	Tcl_Obj *namePtr;
+
 	if (!name) {
 	    break;
 	}
-	Tcl_Obj *namePtr = Tcl_NewStringObj(name, TCL_AUTO_LENGTH);
+	namePtr = Tcl_NewStringObj(name, TCL_AUTO_LENGTH);
 	changed |= UnexportMethod(clsPtr, namePtr);
 	Tcl_BounceRefCount(namePtr);
     }
@@ -2095,17 +2100,19 @@ TclOODefineExportObjCmd(
 {
     int isInstanceExport = (clientData != NULL);
     int i, changed = 0;
+    Object *oPtr;
+    Class *clsPtr;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name ?name ...?");
 	return TCL_ERROR;
     }
 
-    Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
+    oPtr = (Object *) TclOOGetDefineCmdContext(interp);
     if (oPtr == NULL) {
 	return TCL_ERROR;
     }
-    Class *clsPtr = oPtr->classPtr;
+    clsPtr = oPtr->classPtr;
     if (!isInstanceExport && !clsPtr) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"attempt to misuse API", TCL_AUTO_LENGTH));
@@ -2621,6 +2628,7 @@ TclOODefineSlots(
     Tcl_Class slotCls;
     const DeclaredSlotMethod *smPtr;
     const DeclaredSlot *slotPtr;
+    Tcl_Obj *defaults[2];
 
     if (object == NULL) {
 	return TCL_ERROR;
@@ -2637,12 +2645,10 @@ TclOODefineSlots(
 	Tcl_BounceRefCount(name);
     }
 
-    // If a slot can't figure out what method to call directly, it uses
-    // --default-operation. That defaults to -append; we set that here.
-    Tcl_Obj *defaults[] = {
-	fPtr->myName,
-	Tcl_NewStringObj("-append", TCL_AUTO_LENGTH)
-    };
+    /* If a slot can't figure out what method to call directly, it uses
+     * --default-operation. That defaults to -append; we set that here. */
+    defaults[0] = fPtr->myName;
+    defaults[1] = Tcl_NewStringObj("-append", TCL_AUTO_LENGTH);
     TclOONewForwardMethod(interp, (Class *) slotCls, 0,
 	    fPtr->slotDefOpName, Tcl_NewListObj(2, defaults));
 
@@ -2666,12 +2672,9 @@ TclOODefineSlots(
 		    &slotPtr->resolverType, NULL);
 	}
 	if (slotPtr->defaultOp) {
-	    Tcl_Obj *slotDefaults[] = {
-		fPtr->myName,
-		Tcl_NewStringObj(slotPtr->defaultOp, TCL_AUTO_LENGTH)
-	    };
+	    defaults[1] = Tcl_NewStringObj(slotPtr->defaultOp, TCL_AUTO_LENGTH);
 	    TclOONewForwardInstanceMethod(interp, (Object *) slotObject, 0,
-		    fPtr->slotDefOpName, Tcl_NewListObj(2, slotDefaults));
+		    fPtr->slotDefOpName, Tcl_NewListObj(2, defaults));
 	}
     }
     return TCL_OK;
@@ -3449,10 +3452,12 @@ ClassSuper_Set(
     int objc,
     Tcl_Obj *const *objv)
 {
+    Foundation *fPtr;
     Class *clsPtr = TclOOGetClassDefineCmdContext(interp);
     Tcl_Size superc, j;
     Tcl_Size i;
     Tcl_Obj **superv;
+    Class **superclasses;
 
     if (clsPtr == NULL) {
 	return TCL_ERROR;
@@ -3463,7 +3468,7 @@ ClassSuper_Set(
     }
     objv += Tcl_ObjectContextSkippedArgs(context);
 
-    Foundation *fPtr = clsPtr->thisPtr->fPtr;
+    fPtr = clsPtr->thisPtr->fPtr;
     if (clsPtr == fPtr->objectCls) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"may not modify the superclass of the root object",
@@ -3479,7 +3484,7 @@ ClassSuper_Set(
      * Allocate some working space.
      */
 
-    Class **superclasses = (Class **) Tcl_Alloc(sizeof(Class *) * superc);
+    superclasses = (Class **) Tcl_Alloc(sizeof(Class *) * (superc ? superc : 1));
 
     /*
      * Parse the arguments to get the class to use as superclasses.
@@ -3489,7 +3494,6 @@ ClassSuper_Set(
      */
 
     if (superc == 0) {
-	superclasses = (Class **) Tcl_Realloc(superclasses, sizeof(Class *));
 	if (TclOOIsReachable(fPtr->classCls, clsPtr)) {
 	    superclasses[0] = fPtr->classCls;
 	} else {
