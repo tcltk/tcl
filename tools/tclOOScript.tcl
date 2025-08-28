@@ -14,33 +14,6 @@
 ::namespace eval ::oo {
     # ----------------------------------------------------------------------
     #
-    # Slot --
-    #
-    #	The class of slot operations, which are basically lists at the low
-    #	level of TclOO; this provides a more consistent interface to them.
-    #
-    # ----------------------------------------------------------------------
-
-    # ------------------------------------------------------------------
-    #
-    # Slot --default-operation --
-    #
-    #	If a slot can't figure out what method to call directly, it
-    #	uses --default-operation.
-    #
-    # ------------------------------------------------------------------
-    define Slot forward --default-operation my -append
-
-    # Hide destroy
-    define Slot unexport destroy
-
-    # Set the default operation differently for these slots
-    objdefine define::superclass forward --default-operation my -set
-    objdefine define::mixin forward --default-operation my -set
-    objdefine objdefine::mixin forward --default-operation my -set
-
-    # ----------------------------------------------------------------------
-    #
     # oo::object <cloned> --
     #
     #	Handler for cloning objects that clones basic bits (only!) of the
