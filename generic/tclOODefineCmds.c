@@ -3460,7 +3460,8 @@ ClassSuper_Set(
      * Allocate some working space.
      */
 
-    Class **superclasses = (Class **) Tcl_Alloc(sizeof(Class *) * superc);
+    Class **superclasses = (Class **)
+	    Tcl_Alloc(sizeof(Class *) * (superc ? superc : 1));
 
     /*
      * Parse the arguments to get the class to use as superclasses.
@@ -3470,7 +3471,6 @@ ClassSuper_Set(
      */
 
     if (superc == 0) {
-	superclasses = (Class **) Tcl_Realloc(superclasses, sizeof(Class *));
 	if (TclOOIsReachable(fPtr->classCls, clsPtr)) {
 	    superclasses[0] = fPtr->classCls;
 	} else {
