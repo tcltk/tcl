@@ -4835,7 +4835,7 @@ Tcl_UtfToNormalized(
 	    Tcl_NewStringObj("Output buffer too small.", -1));
 	result = TCL_CONVERT_NOSPACE;
     } else {
-	assert(to < (bufPtr + bufLen - 1));
+	assert(to <= toEnd);
 	*to = '\0'; /* NUL terminate the output */
 	if (lengthPtr) {
 	    *lengthPtr = to-bufPtr;
