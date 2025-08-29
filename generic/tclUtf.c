@@ -16,10 +16,10 @@
  * Include the static character classification tables and macros.
  */
 
-#define UNICODE_OUT_OF_RANGE(ch)	(((ch) & 0x1FFFFF) >= 0x323C0)
-
 /*
- * The following masks are used for fast character category tests.
+ * The following masks are used for fast character category tests. The x_BITS
+ * values are shifted right by the category value to determine whether the
+ * given category is included in the set.
  */
 enum Utf8ProcCharacterCategoryMasks {
     UTF8PROC_ALPHA_BITS =
@@ -1785,11 +1785,7 @@ int
 Tcl_UniCharToUpper(
     int ch)			/* Unicode character to convert. */
 {
-    if (!UNICODE_OUT_OF_RANGE(ch)) {
-	ch = utf8proc_toupper(ch);
-    }
-    /* Clear away extension bits, if any */
-    return ch & 0x1FFFFF;
+    return utf8proc_toupper(ch);
 }
 
 /*
@@ -1812,11 +1808,7 @@ int
 Tcl_UniCharToLower(
     int ch)			/* Unicode character to convert. */
 {
-    if (!UNICODE_OUT_OF_RANGE(ch)) {
-	ch = utf8proc_tolower(ch);
-    }
-    /* Clear away extension bits, if any */
-    return ch & 0x1FFFFF;
+    return utf8proc_tolower(ch);
 }
 
 /*
@@ -1839,11 +1831,7 @@ int
 Tcl_UniCharToTitle(
     int ch)			/* Unicode character to convert. */
 {
-    if (!UNICODE_OUT_OF_RANGE(ch)) {
-	ch = utf8proc_totitle(ch);
-    }
-    /* Clear away extension bits, if any */
-    return ch & 0x1FFFFF;
+    return utf8proc_totitle(ch);
 }
 
 /*
@@ -2007,7 +1995,7 @@ int
 Tcl_UniCharIsAlnum(
     int ch)			/* Unicode character to test. */
 {
-    return ((1 << utf8proc_category(ch)) & (UTF8PROC_ALPHA_BITS|UTF8PROC_DIGIT_BITS)) != 0;
+    return ((UTF8PROC_ALPHA_BITS|UTF8PROC_DIGIT_BITS) >> utf8proc_category(ch)) & 1;
 }
 
 /*
@@ -2030,7 +2018,7 @@ int
 Tcl_UniCharIsAlpha(
     int ch)			/* Unicode character to test. */
 {
-    return ((1 << utf8proc_category(ch)) & UTF8PROC_ALPHA_BITS) != 0;
+    return (UTF8PROC_ALPHA_BITS >> utf8proc_category(ch)) & 1;
 }
 
 /*
@@ -2053,7 +2041,7 @@ int
 Tcl_UniCharIsControl(
     int ch)			/* Unicode character to test. */
 {
-    return ((1 << utf8proc_category(ch)) & UTF8PROC_CONTROL_BITS) != 0;
+    return (UTF8PROC_CONTROL_BITS >> utf8proc_category(ch)) & 1;
 }
 
 /*
@@ -2099,7 +2087,7 @@ int
 Tcl_UniCharIsGraph(
     int ch)			/* Unicode character to test. */
 {
-    return ((1 << utf8proc_category(ch)) & UTF8PROC_GRAPH_BITS) != 0;
+    return (UTF8PROC_GRAPH_BITS >> utf8proc_category(ch)) & 1;
 }
 
 /*
@@ -2145,7 +2133,7 @@ int
 Tcl_UniCharIsPrint(
     int ch)			/* Unicode character to test. */
 {
-    return ((1 << utf8proc_category(ch)) & (UTF8PROC_SPACE_BITS|UTF8PROC_GRAPH_BITS)) != 0;
+    return ((UTF8PROC_SPACE_BITS|UTF8PROC_GRAPH_BITS) >> utf8proc_category(ch)) & 1;
 }
 
 /*
@@ -2168,7 +2156,7 @@ int
 Tcl_UniCharIsPunct(
     int ch)			/* Unicode character to test. */
 {
-    return ((1 << utf8proc_category(ch)) & UTF8PROC_PUNCT_BITS) != 0;
+    return (UTF8PROC_PUNCT_BITS >> utf8proc_category(ch)) & 1;
 }
 
 /*
@@ -2201,13 +2189,11 @@ Tcl_UniCharIsSpace(
 
     if (ch < 0x80) {
 	return TclIsSpaceProcM((char) ch);
-    } else if (UNICODE_OUT_OF_RANGE(ch)) {
-	return 0;
     } else if (ch == 0x0085 || ch == 0x180E || ch == 0x200B
 	    || ch == 0x202F || ch == 0x2060 || ch == 0xFEFF) {
 	return 1;
     } else {
-	return ((1 << utf8proc_category(ch)) & UTF8PROC_SPACE_BITS) != 0;
+	return (UTF8PROC_SPACE_BITS >> utf8proc_category(ch)) & 1;
     }
 }
 
@@ -2254,7 +2240,7 @@ int
 Tcl_UniCharIsWordChar(
     int ch)			/* Unicode character to test. */
 {
-    return ((1 << utf8proc_category(ch)) & UTF8PROC_WORD_BITS) != 0;
+    return (UTF8PROC_WORD_BITS >> utf8proc_category(ch)) & 1;
 }
 
 /*
