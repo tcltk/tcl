@@ -134,6 +134,7 @@ static Tcl_CmdDeleteProc	MyClassDeleted;
 	{TCL_OO_METHOD_VERSION_CURRENT,"core method: "#name,proc,NULL,NULL}}
 
 static const DeclaredClassMethod objMethods[] = {
+    DCM("<cloned>", 0,	TclOO_Object_Cloned),
     DCM("destroy", 1,	TclOO_Object_Destroy),
     DCM("eval", 0,	TclOO_Object_Eval),
     DCM("unknown", 0,	TclOO_Object_Unknown),
@@ -193,12 +194,6 @@ static const char initScript[] =
 "};";
 /* "tcl_findLibrary tcloo $oo::version $oo::version" */
 /* " tcloo.tcl OO_LIBRARY oo::library;"; */
-
-/*
- * The scripted part of the definitions of TclOO.
- */
-
-#include "tclOOScript.h"
 
 /*
  * The actual definition of the variable holding the TclOO stub table.
@@ -504,12 +499,7 @@ InitFoundation(
     }
 
     MakeAdditionalClasses(fPtr, define, objdef);
-
-    /*
-     * Evaluate the remaining definitions, which are a compiled-in Tcl script.
-     */
-
-    return Tcl_EvalEx(interp, tclOOSetupScript, TCL_INDEX_NONE, 0);
+    return TCL_OK;
 }
 
 /*
