@@ -750,6 +750,8 @@ typedef struct VarInHash {
 #define VAR_ARRAY		0x1
 #define VAR_LINK		0x2
 #define VAR_CONSTANT		0x10000
+#define VAR_TYPE \
+	(VAR_ARRAY | VAR_LINK | VAR_CONSTANT)
 
 /* Type of storage (0 is compiled local) */
 #define VAR_IN_HASHTABLE	0x4
@@ -3368,6 +3370,10 @@ MODULE_SCOPE void	TclContinuationsCopy(Tcl_Obj *objPtr,
 			    Tcl_Obj *originObjPtr);
 MODULE_SCOPE Tcl_Size	TclConvertElement(const char *src, Tcl_Size length,
 			    char *dst, int flags);
+MODULE_SCOPE int	TclCopyNamespaceProcedures(Tcl_Interp *interp,
+			    Namespace *srcNsPtr, Namespace *tgtNsPtr);
+MODULE_SCOPE int	TclCopyNamespaceVariables(Tcl_Interp *interp,
+			    Namespace *originNs, Namespace *targetNs);
 MODULE_SCOPE Tcl_Command TclCreateObjCommandInNs(Tcl_Interp *interp,
 			    const char *cmdName, Tcl_Namespace *nsPtr,
 			    Tcl_ObjCmdProc *proc, void *clientData,
