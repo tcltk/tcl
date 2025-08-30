@@ -2831,6 +2831,202 @@ TclGetCmdFrameForProcedure(
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
+ * TclCopyNamespaceProcedures --
+ *
+ *	Copy procedures from one namespace into another.
+ *
+ * Results:
+ *	A standard Tcl result code.
+ *
+ * Side effects:
+ *	Modifies the target namespace's commands.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/* Duplicate an argument to a procedure. */
+static inline int
+DuplicateArgument(
+    Proc *newProc,
+    const CompiledLocal *origLocal,
+    Tcl_Size i)
+{
+    const char *argname = origLocal->name;
+    Tcl_Size nameLength = origLocal->nameLength;
+    CompiledLocal *localPtr;
+
+    /*
+     * Allocate an entry in the runtime procedure frame's list of local
+     * variables for the argument.
+     */
+
+    localPtr = (CompiledLocal *)Tcl_AttemptAlloc(
+	    offsetof(CompiledLocal, name) + 1U + nameLength);
+    if (!localPtr) {
+	return TCL_ERROR;
+    }
+    if (newProc->firstLocalPtr == NULL) {
+	newProc->firstLocalPtr = newProc->lastLocalPtr = localPtr;
+    } else {
+	newProc->lastLocalPtr->nextPtr = localPtr;
+	newProc->lastLocalPtr = localPtr;
+    }
+    localPtr->nextPtr = NULL;
+    localPtr->nameLength = nameLength;
+    localPtr->frameIndex = i;
+    localPtr->flags = VAR_ARGUMENT;
+    localPtr->resolveInfo = NULL;
+    localPtr->defValuePtr = origLocal->defValuePtr;
+    if (localPtr->defValuePtr) {
+	Tcl_IncrRefCount(localPtr->defValuePtr);
+    }
+    memcpy(localPtr->name, argname, nameLength + 1);
+    if (origLocal->flags & VAR_IS_ARGS) {
+	localPtr->flags |= VAR_IS_ARGS;
+    }
+    return TCL_OK;
+}
+
+/* Duplicate a procedure into a different namespace. */
+static int
+DuplicateProc(
+    Tcl_Interp *interp,
+    Namespace *nsPtr,
+    const char *cmdName,
+    const Proc *origProc,
+    const Command *origCmd)
+{
+    Interp *iPtr = (Interp *) interp;
+    Tcl_Size length, i;
+    const char *bytes;
+    Tcl_Obj *bodyPtr;
+    Proc *newProc;
+    const CompiledLocal *origLocal;
+    Tcl_HashEntry *origHePtr;
+
+    /* Duplicate the string of body, not the bytecode. */
+    bytes = TclGetStringFromObj(origProc->bodyPtr, &length);
+    bodyPtr = Tcl_NewStringObj(bytes, length);
+    TclContinuationsCopy(bodyPtr, origProc->bodyPtr);
+    Tcl_IncrRefCount(bodyPtr);
+
+    /* The new procedure record. */
+    newProc = (Proc *) Tcl_Alloc(sizeof(Proc));
+    newProc->iPtr = iPtr;
+    newProc->refCount = 1;
+    newProc->bodyPtr = bodyPtr;
+    newProc->numArgs = origProc->numArgs;
+    newProc->numCompiledLocals = origProc->numArgs;
+    newProc->firstLocalPtr = NULL;
+    newProc->lastLocalPtr = NULL;
+
+    /* Work through the original arguments, duplicating them. */
+    origLocal = origProc->firstLocalPtr;
+    for (i = 0; i < newProc->numArgs; i++) {
+	if (DuplicateArgument(newProc, origLocal, i) != TCL_OK) {
+	    /* Don't set the interp result here. Since a malloc just failed,
+	     * first clean up some memory before doing that. */
+	    goto procError;
+	}
+	origLocal = origLocal->nextPtr;
+    }
+
+    /* Create the new command backed by the procedure. */
+    newProc->cmdPtr = (Command *) TclNRCreateCommandInNs(interp, cmdName,
+	    (Tcl_Namespace *) nsPtr, TclObjInterpProc, NRInterpProc, newProc,
+	    TclProcDeleteProc);
+
+    /* TIP #280: Duplicate the origin information (if we have it). */
+    origHePtr = Tcl_FindHashEntry(iPtr->linePBodyPtr, origProc);
+    if (origHePtr) {
+	CmdFrame *newCfPtr = (CmdFrame *) Tcl_Alloc(sizeof(CmdFrame));
+	const CmdFrame *origCfPtr = (CmdFrame *) Tcl_GetHashValue(origHePtr);
+	Tcl_HashEntry *hePtr;
+	int isNew;
+
+	/* Copy info, then fix up bits that need different treatment. */
+	memcpy(newCfPtr, origCfPtr, sizeof(CmdFrame));
+	newCfPtr->line = (Tcl_Size *)Tcl_Alloc(sizeof(Tcl_Size));
+	newCfPtr->line[0] = origCfPtr->line[0];
+	Tcl_IncrRefCount(newCfPtr->data.eval.path);
+
+	hePtr = Tcl_CreateHashEntry(iPtr->linePBodyPtr, newProc, &isNew);
+	Tcl_SetHashValue(hePtr, newCfPtr);
+    }
+
+    /* Optimize for no-op procs. Note that this is simpler than in [proc]; we
+     * just see whether we've got the compiler in the old command! */
+    if (origCmd->compileProc == TclCompileNoOp) {
+	newProc->cmdPtr->compileProc = TclCompileNoOp;
+    }
+
+    return TCL_OK;
+
+  procError:
+    /* Delete the data allocated so far. */
+    Tcl_DecrRefCount(bodyPtr);
+    while (newProc->firstLocalPtr != NULL) {
+	CompiledLocal *localPtr = newProc->firstLocalPtr;
+	newProc->firstLocalPtr = localPtr->nextPtr;
+
+	if (localPtr->defValuePtr != NULL) {
+	    Tcl_DecrRefCount(localPtr->defValuePtr);
+	}
+
+	Tcl_Free(localPtr);
+    }
+    Tcl_Free(newProc);
+    /* Complain about the failure to allocate. */
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    "procedure \"%s\": arg list contains too many (%"
+	    TCL_SIZE_MODIFIER "d) entries", cmdName, origProc->numArgs));
+    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
+	    TOOMANYARGS, (char *)NULL);
+    return TCL_ERROR;
+}
+
+/* Duplicate all the procedures in a namespace into another (new) namespace. */
+int
+TclCopyNamespaceProcedures(
+    Tcl_Interp *interp,
+    Namespace *srcNsPtr,	/* Where to copy from. */
+    Namespace *tgtNsPtr)	/* Where to copy to. */
+{
+    Tcl_HashEntry *entryPtr;
+    Tcl_HashSearch search;
+    if (srcNsPtr == tgtNsPtr) {
+	Tcl_Panic("cannot copy procedures from one namespace to itself");
+    }
+    for (entryPtr = Tcl_FirstHashEntry(&srcNsPtr->cmdTable, &search);
+	    entryPtr; entryPtr = Tcl_NextHashEntry(&search)) {
+	const char *cmdName = (const char *)
+		Tcl_GetHashKey(&srcNsPtr->cmdTable, entryPtr);
+	Command *cmdPtr = (Command *) Tcl_GetHashValue(entryPtr);
+	Proc *procPtr;
+
+	/* For non-procedures, check if this is an import of a procedure; those
+	 * also get copied. */
+	if (!TclIsProc(cmdPtr)) {
+	    Command *realCmdPtr = (Command *)
+		    TclGetOriginalCommand((Tcl_Command) cmdPtr);
+	    if (!realCmdPtr || !TclIsProc(realCmdPtr)) {
+		continue;
+	    }
+	    cmdPtr = realCmdPtr;
+	}
+
+	/* Make the copy. */
+	procPtr = (Proc *) cmdPtr->objClientData;
+	if (DuplicateProc(interp, tgtNsPtr, cmdName, procPtr, cmdPtr) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+    }
+    return TCL_OK;
+}
+
+/*
  * Local Variables:
  * mode: c
  * c-basic-offset: 4
