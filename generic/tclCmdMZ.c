@@ -21,6 +21,7 @@
 #include "tclRegexp.h"
 #include "tclStringTrim.h"
 #include "tclTomMath.h"
+#include "../utf8proc/utf8proc.h"
 
 static inline Tcl_Obj *	During(Tcl_Interp *interp, int resultCode,
 			    Tcl_Obj *oldOptions, Tcl_Obj *errorInfo);
@@ -5403,6 +5404,90 @@ TclListLines(
 	}
     }
 }
+
+/*
+ * TclUnicodeNormalizeCmd --
+ *
+ *	This procedure implements the "unicode tonfc|tonfd|tonfkc|tonfkd"
+ *	commands. See the user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	Stores the normalized string in the interpreter result.
+ */
+static int
+TclUnicodeNormalizeCmd(
+    void *clientData,		/* TCL_{NFC,NFD,NFKC,NFKD} */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    static const char *optNames[] = {"-profile", NULL};
+    enum { OPT_PROFILE } opt;
+    int profile = TCL_ENCODING_PROFILE_STRICT;
+
+    if (objc == 4) {
+	if (Tcl_GetIndexFromObj(interp, objv[1], optNames, "option", 0, &opt) !=
+	    TCL_OK) {
+	    return TCL_ERROR;
+	}
+	const char *s = Tcl_GetString(objv[2]);
+	if (!strcmp(s, "replace")) {
+	    profile = TCL_ENCODING_PROFILE_REPLACE;
+	} else if (!strcmp(s, "strict")) {
+	    profile = TCL_ENCODING_PROFILE_STRICT;
+	} else {
+	    Tcl_SetObjResult(interp,
+		Tcl_ObjPrintf("Invalid value \"%s\" supplied for option "
+			      "\"-profile\". Must be "
+			      "\"strict\" or \"replace\".",
+		    s));
+	    return TCL_ERROR;
+	}
+    } else if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?-profile PROFILE? STRING");
+	return TCL_ERROR;
+    }
+
+    Tcl_DString ds;
+    if (Tcl_UtfToNormalizedDString(interp, Tcl_GetString(objv[objc - 1]),
+	    TCL_INDEX_NONE, (Tcl_UnicodeNormalizationForm)clientData, profile,
+	    &ds) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    Tcl_DStringResult(interp, &ds);
+    return TCL_OK;
+}
+
+/*
+ * TclInitUnicodeCmd --
+ *
+ *	This procedure creates the "unicode" Tcl ensemble command. See user
+ *	documentation for details on implemented commands.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	Stores the result in the interpreter result.
+ */
+Tcl_Command
+TclInitUnicodeCmd(
+    Tcl_Interp *interp)
+{
+    static const EnsembleImplMap unicodeImplMap[] = {
+	{"tonfc", TclUnicodeNormalizeCmd, NULL, NULL, (void *)TCL_NFC, 0},
+	{"tonfd", TclUnicodeNormalizeCmd, NULL, NULL, (void *)TCL_NFD, 0},
+	{"tonfkc", TclUnicodeNormalizeCmd, NULL, NULL, (void *)TCL_NFKC, 0},
+	{"tonfkd", TclUnicodeNormalizeCmd, NULL, NULL, (void *)TCL_NFKD, 0},
+	{NULL, NULL, NULL, NULL, NULL, 0}
+    };
+    return TclMakeEnsemble(interp, "unicode", unicodeImplMap);
+}
+
 
 /*
  * Local Variables:
