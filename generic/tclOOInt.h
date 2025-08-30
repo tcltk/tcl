@@ -538,6 +538,7 @@ MODULE_SCOPE Tcl_MethodCallProc	TclOO_Class_Constructor;
 MODULE_SCOPE Tcl_MethodCallProc	TclOO_Class_Create;
 MODULE_SCOPE Tcl_MethodCallProc	TclOO_Class_CreateNs;
 MODULE_SCOPE Tcl_MethodCallProc	TclOO_Class_New;
+MODULE_SCOPE Tcl_MethodCallProc	TclOO_Object_Cloned;
 MODULE_SCOPE Tcl_MethodCallProc	TclOO_Object_Destroy;
 MODULE_SCOPE Tcl_MethodCallProc	TclOO_Object_Eval;
 MODULE_SCOPE Tcl_MethodCallProc	TclOO_Object_LinkVar;
