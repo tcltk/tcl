@@ -7088,6 +7088,181 @@ SetArrayDefault(
     }
 }
 
+/*----------------------------------------------------------------------
+ *
+ * TclCopyNamespaceVariables --
+ *
+ *	This copies the variables of one namespace (the source) to another
+ *	(the target). It skips variables in the source that have the same name
+ *	in the target.
+ *
+ * Results:
+ *	Returns a standard Tcl result.
+ *
+ * Side effects:
+ *	May run traces on the source variables.
+ *
+ *----------------------------------------------------------------------
+ */
+
+// Copy an array from one namespace to another.
+// This is basically [array set $tgt [array get $src]] but optimised.
+static int
+CopyNSArray(
+    Tcl_Interp *interp,
+    Var *srcAryPtr,
+    Var *tgtAryPtr,
+    Tcl_Obj *arrayName)
+{
+    // List the elements of the array prior to traces.
+    Tcl_Obj *nameList = Tcl_NewObj();
+    Tcl_HashSearch search;
+    for (Var *varPtr2 = VarHashFirstVar(srcAryPtr->value.tablePtr, &search);
+	    varPtr2; varPtr2 = VarHashNextVar(&search)) {
+	if (TclIsVarUndefined(varPtr2)) {
+	    continue;
+	}
+	Tcl_ListObjAppendElement(NULL, nameList, VarHashGetKey(varPtr2));
+    }
+
+    // Make sure the Var structure of the array is not removed by a trace
+    // while we're working.
+    VarHashRefCount(srcAryPtr)++;
+
+    Tcl_Size count;
+    Tcl_Obj **names;
+    TclListObjGetElements(NULL, nameList, &count, &names);
+
+    // Init the target array if necessary
+    if (!TclIsVarArray(tgtAryPtr)) {
+	TclInitArrayVar(tgtAryPtr);
+    }
+    // Make sure it won't go away
+    VarHashRefCount(tgtAryPtr)++;
+
+    // Copy elements!
+    for (Tcl_Size i=0 ; i<count ; i++) {
+	Tcl_Obj *elemName = names[i];
+
+	// Read the element in the source; may invoke read traces.
+	Var *srcElem = TclLookupArrayElement(interp, arrayName, elemName,
+		TCL_LEAVE_ERR_MSG, "read", 0, 0, srcAryPtr, TCL_INDEX_NONE);
+	if (!srcElem) {
+	    if (TclIsVarArray(srcAryPtr)) {
+		continue;
+	    }
+	    goto errorCopyingElement;
+	}
+	Tcl_Obj *valueObj = TclPtrGetVarIdx(interp, srcElem, srcAryPtr,
+		arrayName, elemName, TCL_LEAVE_ERR_MSG, TCL_INDEX_NONE);
+	if (!valueObj) {
+	    if (TclIsVarArray(srcAryPtr)) {
+		continue;
+	    }
+	    goto errorCopyingElement;
+	}
+
+	// Write the element in the target; may invoke write traces
+	Var *tgtElem = TclLookupArrayElement(interp, arrayName, elemName,
+		TCL_LEAVE_ERR_MSG, "write", 0, 1, tgtAryPtr, TCL_INDEX_NONE);
+	if (!tgtElem) {
+	    goto errorCopyingElement;
+	}
+	if (TclPtrSetVarIdx(interp, tgtElem, tgtAryPtr, arrayName, elemName,
+		valueObj, TCL_LEAVE_ERR_MSG, TCL_INDEX_NONE) == NULL) {
+	    goto errorCopyingElement;
+	}
+    }
+
+    // Clean up
+    VarHashRefCount(srcAryPtr)--;
+    VarHashRefCount(tgtAryPtr)--;
+    Tcl_BounceRefCount(nameList);
+    return TCL_OK;
+
+  errorCopyingElement:
+    VarHashRefCount(srcAryPtr)--;
+    VarHashRefCount(tgtAryPtr)--;
+    Tcl_BounceRefCount(nameList);
+    return TCL_ERROR;
+}
+
+// Copy variables from one namespace to another.
+int
+TclCopyNamespaceVariables(
+    Tcl_Interp *interp,
+    Namespace *originNs,
+    Namespace *targetNs)
+{
+    Var *srcVarPtr;
+    Tcl_HashSearch search;
+
+    if (targetNs == originNs) {
+	Tcl_Panic("cannot copy namespace variables to itself");
+    }
+
+  restartScan:
+    for (srcVarPtr=VarHashFirstVar(&originNs->varTable, &search);
+	    srcVarPtr!=NULL ; srcVarPtr=VarHashNextVar(&search)) {
+	Tcl_Obj *nameObj = VarHashGetKey(srcVarPtr), *valueObj;
+	int isNew, restart = 0;
+
+	Var *tgtVarPtr = VarHashCreateVar(&targetNs->varTable, nameObj, &isNew);
+	if (!tgtVarPtr || !isNew) {
+	    // If we couldn't make it or it existed, we skip.
+	    // This means that a variable that triggered a rescan because of
+	    // a trace won't do the second time round.
+	    continue;
+	}
+	// Mark this like [variable] does
+	TclSetVarNamespaceVar(tgtVarPtr);
+	if (TclIsVarUndefined(srcVarPtr)) {
+	    continue;
+	}
+	switch (srcVarPtr->flags & VAR_TYPE) {
+	case VAR_ARRAY:
+	    if (srcVarPtr->flags & VAR_ALL_TRACES) {
+		restart = 1;
+	    }
+	    if (CopyNSArray(interp, srcVarPtr, tgtVarPtr, nameObj) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    break;
+	case VAR_LINK:
+	    // Links don't have traces
+	    while (TclIsVarLink(srcVarPtr)) {
+		srcVarPtr = srcVarPtr->value.linkPtr;
+	    }
+	    TclSetVarLink(tgtVarPtr);
+	    tgtVarPtr->value.linkPtr = srcVarPtr;
+	    if (TclIsVarInHash(srcVarPtr)) {
+		VarHashRefCount(srcVarPtr)++;
+	    }
+	    break;
+	default:
+	    if (srcVarPtr->flags & VAR_ALL_TRACES) {
+		restart = 1;
+	    }
+	    valueObj = TclPtrGetVarIdx(interp, srcVarPtr, NULL, nameObj, NULL,
+		    TCL_LEAVE_ERR_MSG, TCL_INDEX_NONE);
+	    if (!valueObj) {
+		return TCL_ERROR;
+	    }
+	    tgtVarPtr->value.objPtr = valueObj;
+	    Tcl_IncrRefCount(valueObj);
+	    if (srcVarPtr->flags & VAR_CONSTANT) {
+		tgtVarPtr->flags |= VAR_CONSTANT;
+	    }
+	    break;
+	}
+	if (restart) {
+	    // A trace existed on a variable we touched, so we must rescan
+	    goto restartScan;
+	}
+    }
+    return TCL_OK;
+}
+
 /*
  * Local Variables:
  * mode: c
