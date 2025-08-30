@@ -613,10 +613,10 @@ TclOO_Configurable_Constructor(
 int
 TclOO_Object_Cloned(
     TCL_UNUSED(void *),
-    Tcl_Interp *interp,		/* Interpreter for error reporting. */
-    Tcl_ObjectContext context,	/* The object/call context. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const *objv)	/* The actual arguments. */
+    Tcl_Interp *interp,		// Interpreter for error reporting.
+    Tcl_ObjectContext context,	// The object/call context.
+    int objc,			// Number of arguments.
+    Tcl_Obj *const *objv)	// The actual arguments.
 {
     int skip = Tcl_ObjectContextSkippedArgs(context);
     if (objc != skip + 1) {
