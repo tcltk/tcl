@@ -758,8 +758,6 @@ tclWinPanic.${OBJEXT}: tclWinPanic.c
 .rc.$(RES):
 	$(RC) @RC_OUT@ $@ @RC_TYPE@ @RC_DEFINES@ @RC_INCLUDE@ "$(GENERIC_DIR_NATIVE)" @RC_INCLUDE@ "$(WIN_DIR_NATIVE)" @DEPARG@
 
-tclOO.${OBJEXT}: tclOO.c tclOOScript.h
-
 #--------------------------------------------------------------------------
 # Minizip implementation
 #--------------------------------------------------------------------------
@@ -1138,11 +1136,6 @@ $(GENERIC_DIR)/tclStubInit.c: $(GENERIC_DIR)/tcl.decls \
 	@echo "Developers may want to run \"make genstubs\" to regenerate."
 	@echo "This warning can be safely ignored, do not report as a bug!"
 
-$(GENERIC_DIR)/tclOOScript.h: $(TOOL_DIR)/tclOOScript.tcl
-	@echo "Warning: tclOOScript.h may be out of date."
-	@echo "Developers may want to run \"make genscript\" to regenerate."
-	@echo "This warning can be safely ignored, do not report as a bug!"
-
 genstubs:
 	$(TCL_EXE) "$(TOOL_DIR_NATIVE)/genStubs.tcl" \
 	    "$(GENERIC_DIR_NATIVE)" \
@@ -1152,11 +1145,6 @@ genstubs:
 	$(TCL_EXE) "$(TOOL_DIR_NATIVE)/genStubs.tcl" \
 	    "$(GENERIC_DIR_NATIVE)" \
 	    "$(GENERIC_DIR_NATIVE)/tclOO.decls"
-
-genscript:
-	$(TCL_EXE) "$(TOOL_DIR_NATIVE)/makeHeader.tcl" \
-		"$(TOOL_DIR_NATIVE)/tclOOScript.tcl" \
-		"$(GENERIC_DIR_NATIVE)/tclOOScript.h"
 
 #
 # This target creates the HTML folder for Tcl & Tk and places it in
