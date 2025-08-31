@@ -24,6 +24,7 @@ testConstraint teststringobj [llength [info commands teststringobj]]
 testConstraint testutfnext [llength [info commands testutfnext]]
 testConstraint testutfprev [llength [info commands testutfprev]]
 testConstraint testgetunichar [llength [info commands testgetunichar]]
+testConstraint testuniclass [llength [info commands testuniclass]]
 
 testConstraint tip413 [expr {[string trim \x00] eq {}}]
 
@@ -1126,6 +1127,29 @@ test utf-24.6 {unicode space char in regc_locale.c} tip413 {
     # this returns 1 with Unicode 7/TIP 413 compliance
     list [regexp {^[[:space:]]+$} \x85\u1680\u180E\u200B\u202F\u2060] [regexp {^\s+$} \x85\u1680\u180E\u200B\u202F\u2060]
 } {1 1}
+
+test utf-25.1 {tupper/tolower/totitle out of range values} testuniclass {
+    list [testuniclass 0x11FFFF] \
+	[testuniclass 0x1FFFFF] \
+	[testuniclass 0x200041] \
+	[testuniclass 0x200061] \
+	[testuniclass 0x20005F] \
+	[testuniclass 0x200030] \
+	[testuniclass 0x200020] \
+	[testuniclass 0x200001] \
+	[testuniclass 0x20002C] \
+	[testuniclass -1]
+} [list {1179647 1179647 1179647} \
+    {2097151 2097151 2097151} \
+    {97 65 65 upper alnum alpha word graph print} \
+    {97 65 65 lower alnum alpha word graph print} \
+    {95 95 95 word graph print punct} \
+    {48 48 48 alnum digit word graph print} \
+    {32 32 32 space print} \
+    {1 1 1 control} \
+    {44 44 44 graph print punct} \
+    {2097151 2097151 2097151}
+]
 
 proc UniCharCaseCmpTest {order one two {constraints {}}} {
     variable count
