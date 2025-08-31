@@ -20,12 +20,13 @@
  *
  * tests/oo.test
  * tests/ooNext2.test
+ * tests/ooUtil.test
  * unix/tclooConfig.sh
  * win/tclooConfig.sh
  */
 
 #define TCLOO_VERSION "1.3"
-#define TCLOO_PATCHLEVEL TCLOO_VERSION ".0"
+#define TCLOO_PATCHLEVEL TCLOO_VERSION ".1"
 
 #include "tcl.h"
 
