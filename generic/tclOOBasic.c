@@ -602,6 +602,44 @@ TclOO_Configurable_Constructor(
 /*
  * ----------------------------------------------------------------------
  *
+ * TclOO_Object_Cloned --
+ *
+ *	Handler for cloning objects that clones basic bits (only!) of the
+ *	object's namespace. Non-procedures, traces, sub-namespaces, etc. need
+ *	more complex (and class-specific) handling.
+ *
+ * ----------------------------------------------------------------------
+ */
+int
+TclOO_Object_Cloned(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		// Interpreter for error reporting.
+    Tcl_ObjectContext context,	// The object/call context.
+    int objc,			// Number of arguments.
+    Tcl_Obj *const *objv)	// The actual arguments.
+{
+    int skip = Tcl_ObjectContextSkippedArgs(context);
+    if (objc != skip + 1) {
+	Tcl_WrongNumArgs(interp, skip, objv, "originObject");
+	return TCL_ERROR;
+    }
+    Object *targetObject = (Object *) Tcl_ObjectContextObject(context);
+    Object *originObject = (Object *) Tcl_GetObjectFromObj(interp, objv[skip]);
+    if (!originObject) {
+	return TCL_ERROR;
+    }
+
+    Namespace *originNs = (Namespace *) originObject->namespacePtr;
+    Namespace *targetNs = (Namespace *) targetObject->namespacePtr;
+    if (TclCopyNamespaceProcedures(interp, originNs, targetNs) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    return TclCopyNamespaceVariables(interp, originNs, targetNs);
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
  * TclOO_Object_Destroy --
  *
  *	Implementation for oo::object->destroy method.
@@ -1873,6 +1911,16 @@ TclOODelegateNameObjCmd(
     return TCL_OK;
 }
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclOO_Singleton_New, MarkAsSingleton --
+ *
+ *	Implementation for oo::singleton->new method.
+ *
+ * ----------------------------------------------------------------------
+ */
+
 int
 TclOO_Singleton_New(
     TCL_UNUSED(void *),
@@ -1926,6 +1974,17 @@ MarkAsSingleton(
     return result;
 }
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclOO_SingletonInstance_Destroy, TclOO_SingletonInstance_Cloned --
+ *
+ *	Implementation for oo::SingletonInstance->destroy method and its
+ *	cloning callback method.
+ *
+ * ----------------------------------------------------------------------
+ */
+
 int
 TclOO_SingletonInstance_Destroy(
     TCL_UNUSED(void *),
