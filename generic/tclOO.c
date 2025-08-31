@@ -134,6 +134,7 @@ static Tcl_CmdDeleteProc	MyClassDeleted;
 	{TCL_OO_METHOD_VERSION_CURRENT,"core method: "#name,proc,NULL,NULL}}
 
 static const DeclaredClassMethod objMethods[] = {
+    DCM("<cloned>", 0,	TclOO_Object_Cloned),
     DCM("destroy", 1,	TclOO_Object_Destroy),
     DCM("eval", 0,	TclOO_Object_Eval),
     DCM("unknown", 0,	TclOO_Object_Unknown),
@@ -179,26 +180,15 @@ static const Tcl_MethodType configurableConstructor = {
 };
 
 /*
- * Scripted parts of TclOO. First, the main script (cannot be outside this
- * file).
+ * The scripted part of TclOO: (legacy) package registration. There's no C API
+ * at all for doing this, not even internally to Tcl.
  */
 
 static const char initScript[] =
 #ifndef TCL_NO_DEPRECATED
 "package ifneeded TclOO " TCLOO_PATCHLEVEL " {# Already present, OK?};"
 #endif
-"package ifneeded tcl::oo " TCLOO_PATCHLEVEL " {# Already present, OK?};"
-"namespace eval ::oo {"
-"    variable version " TCLOO_VERSION " patchlevel " TCLOO_PATCHLEVEL
-"};";
-/* "tcl_findLibrary tcloo $oo::version $oo::version" */
-/* " tcloo.tcl OO_LIBRARY oo::library;"; */
-
-/*
- * The scripted part of the definitions of TclOO.
- */
-
-#include "tclOOScript.h"
+"package ifneeded tcl::oo " TCLOO_PATCHLEVEL " {# Already present, OK?};";
 
 /*
  * The actual definition of the variable holding the TclOO stub table.
@@ -368,6 +358,62 @@ CreateCmdInNS(
 /*
  * ----------------------------------------------------------------------
  *
+ * TclCreateConstantInNS --
+ *
+ *	Create a constant in a given namespace. Does nothing if the variable
+ *	already exists. The variable name should not indicate an array element;
+ *	it should be a simple name as the namespace is given by other means.
+ *
+ * CreateConstantInNSStr --
+ *
+ *	Wrapper to make using a string constant easier.
+ *
+ * ----------------------------------------------------------------------
+ */
+static void
+TclCreateConstantInNS(
+    Tcl_Interp *interp,
+    Namespace *nsPtr,		// The namespace to contain the constant.
+    Tcl_Obj *nameObj,		// The unqualified name of the constant.
+    Tcl_Obj *valueObj)		// The value to put in the constant.
+{
+    Interp *iPtr = (Interp *) interp;
+    Namespace *savedNsPtr = iPtr->varFramePtr->nsPtr;
+
+    iPtr->varFramePtr->nsPtr = nsPtr;
+    Var *arrayPtr, *varPtr = TclObjLookupVarEx(interp, nameObj, NULL,
+	    (TCL_NAMESPACE_ONLY | TCL_AVOID_RESOLVERS),
+	    "write", /*createPart1*/ 1, /*createPart2*/ 1, &arrayPtr);
+    iPtr->varFramePtr->nsPtr = savedNsPtr;
+    if (arrayPtr) {
+	Tcl_Panic("constants may not be arrays");
+    }
+    if (varPtr && TclIsVarUndefined(varPtr)) {
+	varPtr->value.objPtr = valueObj;
+	Tcl_IncrRefCount(valueObj);
+	varPtr->flags = VAR_CONSTANT;
+    }
+}
+
+static inline void
+CreateConstantInNSStr(
+    Tcl_Interp *interp,
+    Tcl_Namespace *namespacePtr,// The namespace to contain the constant.
+    const char *nameStr,	// The unqualified name of the constant.
+    const char *valueStr)	// The value to put in the constant.
+{
+    Tcl_Obj *nameObj = Tcl_NewStringObj(nameStr, TCL_AUTO_LENGTH);
+    Tcl_IncrRefCount(nameObj);
+    Tcl_Obj *valueObj = Tcl_NewStringObj(valueStr, TCL_AUTO_LENGTH);
+    Tcl_IncrRefCount(valueObj);
+    TclCreateConstantInNS(interp, (Namespace *) namespacePtr, nameObj, valueObj);
+    Tcl_DecrRefCount(nameObj);
+    Tcl_DecrRefCount(valueObj);
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
  * InitFoundation --
  *
  *	Set up the core of the OO core class system. This is a structure
@@ -505,11 +551,9 @@ InitFoundation(
 
     MakeAdditionalClasses(fPtr, define, objdef);
 
-    /*
-     * Evaluate the remaining definitions, which are a compiled-in Tcl script.
-     */
-
-    return Tcl_EvalEx(interp, tclOOSetupScript, TCL_INDEX_NONE, 0);
+    CreateConstantInNSStr(interp, fPtr->ooNs, "version", TCLOO_VERSION);
+    CreateConstantInNSStr(interp, fPtr->ooNs, "patchlevel", TCLOO_PATCHLEVEL);
+    return TCL_OK;
 }
 
 /*

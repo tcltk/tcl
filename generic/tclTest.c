@@ -282,6 +282,7 @@ static Tcl_ObjCmdProc	TestSizeCmd;
 static Tcl_ObjCmdProc	TeststaticlibraryCmd;
 static Tcl_ObjCmdProc	TesttranslatefilenameCmd;
 static Tcl_ObjCmdProc	TestfstildeexpandCmd;
+static Tcl_ObjCmdProc	TestuniClassCmd;
 static Tcl_ObjCmdProc	TestupvarCmd;
 static Tcl_ObjCmdProc2	TestWrongNumArgsCmd;
 static Tcl_ObjCmdProc	TestGetIndexFromObjStructCmd;
@@ -719,6 +720,7 @@ Tcltest_Init(
     Tcl_CreateObjCommand(interp, "testfstildeexpand",
 	    TestfstildeexpandCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testupvar", TestupvarCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testuniclass", TestuniClassCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testmainthread", TestmainthreadCmd, NULL,
 	    NULL);
     Tcl_CreateObjCommand(interp, "testsetmainloop", TestsetmainloopCmd,
@@ -5312,6 +5314,80 @@ TestupvarCmd(
     }
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestuniClassCmd --
+ *
+ *	This procedure implements the "testuniclass" command.  It is used
+ *	to test Tcl_UniCharToXXXX and Tcl_UniCharIsXXXX.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	Return information about the unicode class.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestuniClassCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const *objv)	/* Arguments. */
+{
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "integer");
+	return TCL_ERROR;
+    }
+
+    int value;
+    if (Tcl_GetIntFromObj(interp, objv[1], &value) != TCL_OK) {
+    	return TCL_ERROR;
+    }
+    Tcl_Obj *result = Tcl_NewObj();
+    Tcl_ListObjAppendElement(interp, result, Tcl_NewIntObj(Tcl_UniCharToLower(value)));
+    Tcl_ListObjAppendElement(interp, result, Tcl_NewIntObj(Tcl_UniCharToUpper(value)));
+    Tcl_ListObjAppendElement(interp, result, Tcl_NewIntObj(Tcl_UniCharToTitle(value)));
+    if (Tcl_UniCharIsLower(value)) {
+	Tcl_ListObjAppendElement(interp, result, Tcl_NewStringObj("lower", -1));
+    }
+    if (Tcl_UniCharIsUpper(value)) {
+	Tcl_ListObjAppendElement(interp, result, Tcl_NewStringObj("upper", -1));
+    }
+    if (Tcl_UniCharIsAlnum(value)) {
+	Tcl_ListObjAppendElement(interp, result, Tcl_NewStringObj("alnum", -1));
+    }
+    if (Tcl_UniCharIsAlpha(value)) {
+	Tcl_ListObjAppendElement(interp, result, Tcl_NewStringObj("alpha", -1));
+    }
+    if (Tcl_UniCharIsDigit(value)) {
+	Tcl_ListObjAppendElement(interp, result, Tcl_NewStringObj("digit", -1));
+    }
+    if (Tcl_UniCharIsSpace(value)) {
+	Tcl_ListObjAppendElement(interp, result, Tcl_NewStringObj("space", -1));
+    }
+    if (Tcl_UniCharIsWordChar(value)) {
+	Tcl_ListObjAppendElement(interp, result, Tcl_NewStringObj("word", -1));
+    }
+    if (Tcl_UniCharIsControl(value)) {
+	Tcl_ListObjAppendElement(interp, result, Tcl_NewStringObj("control", -1));
+    }
+    if (Tcl_UniCharIsGraph(value)) {
+	Tcl_ListObjAppendElement(interp, result, Tcl_NewStringObj("graph", -1));
+    }
+    if (Tcl_UniCharIsPrint(value)) {
+	Tcl_ListObjAppendElement(interp, result, Tcl_NewStringObj("print", -1));
+    }
+    if (Tcl_UniCharIsPunct(value)) {
+	Tcl_ListObjAppendElement(interp, result, Tcl_NewStringObj("punct", -1));
+    }
+    Tcl_SetObjResult(interp, result);
+    return TCL_OK;
+}
+
 /*
  *----------------------------------------------------------------------
  *
