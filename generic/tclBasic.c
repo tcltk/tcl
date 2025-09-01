@@ -728,7 +728,8 @@ BuildInfoObjCmd2(
 	}
 	return TCL_OK;
     case ID_COMPILER:
-	for (p = strchr(buildData, '.'); p++; p = strchr(p, '.')) {
+	for (p = strchr(buildData, '.'); p != NULL; p = strchr(p, '.')) {
+	    p++;
 	    /*
 	     * Does the word begin with one of the standard prefixes?
 	     */
@@ -749,7 +750,8 @@ BuildInfoObjCmd2(
 	break;
     default:		/* Boolean test for other identifiers' presence */
 	arg = TclGetStringFromObj(objv[1], &len);
-	for (p = strchr(buildData, '.'); p++; p = strchr(p, '.')) {
+	for (p = strchr(buildData, '.'); p != NULL; p = strchr(p, '.')) {
+	    p++;
 	    if (!strncmp(p, arg, len)
 		    && ((p[len] == '.') || (p[len] == '-') || (p[len] == '\0'))) {
 		if (p[len] == '-') {
