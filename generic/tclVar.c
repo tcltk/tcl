@@ -7236,6 +7236,53 @@ TclCopyNamespaceVariables(
 }
 
 /*
+ * ----------------------------------------------------------------------
+ *
+ * TclCreateConstantInNS --
+ *
+ *	Create a constant in a given namespace. Does nothing if the variable
+ *	already exists. The variable name should not indicate an array element;
+ *	it should be a simple name as the namespace is given by other means.
+ *
+ * Results:
+ *	Tcl result code.
+ *
+ * Side effects:
+ *	May run traces.
+ *
+ * ----------------------------------------------------------------------
+ */
+int
+TclCreateConstantInNS(
+    Tcl_Interp *interp,
+    Namespace *nsPtr,		/* The namespace to contain the constant. */
+    Tcl_Obj *nameObj,		/* The unqualified name of the constant. */
+    Tcl_Obj *valueObj)		/* The value to put in the constant. */
+{
+    Interp *iPtr = (Interp *) interp;
+    Namespace *savedNsPtr = iPtr->varFramePtr->nsPtr;
+    Var *varPtr, *arrayPtr;
+
+    iPtr->varFramePtr->nsPtr = nsPtr;
+    varPtr = TclObjLookupVarEx(interp, nameObj, NULL,
+	    (TCL_NAMESPACE_ONLY | TCL_LEAVE_ERR_MSG | TCL_AVOID_RESOLVERS),
+	    "write", /*createPart1*/ 1, /*createPart2*/ 1, &arrayPtr);
+    iPtr->varFramePtr->nsPtr = savedNsPtr;
+    if (arrayPtr) {
+	Tcl_Panic("constants may not be arrays");
+    }
+    if (!varPtr) {
+	return TCL_ERROR;
+    }
+    if (TclIsVarUndefined(varPtr)) {
+	varPtr->value.objPtr = valueObj;
+	Tcl_IncrRefCount(valueObj);
+	varPtr->flags |= VAR_CONSTANT;
+    }
+    return TCL_OK;
+}
+
+/*
  * Local Variables:
  * mode: c
  * c-basic-offset: 4
