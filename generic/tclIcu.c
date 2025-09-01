@@ -556,7 +556,7 @@ static int
 IcuDetectObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     if (objc > 3) {
@@ -602,7 +602,7 @@ static int
 IcuConverterNamesObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
 
@@ -652,7 +652,7 @@ static int
 IcuConverterAliasesObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     if (objc != 2) {
@@ -953,7 +953,7 @@ IcuNormalizeUCharDString(
  */
 static int IcuParseConvertOptions(
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[],
     int *strictPtr,
     Tcl_Obj **failindexVarPtr)
@@ -1028,7 +1028,7 @@ static int
 IcuConvertfromObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int strict;
@@ -1079,7 +1079,7 @@ static int
 IcuConverttoObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int strict;
@@ -1124,7 +1124,7 @@ static int
 IcuNormalizeObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     static const char *optNames[] = {"-profile", "-mode", NULL};
@@ -1477,11 +1477,11 @@ TclIcuInit(
 
 	    /* Ref count number of commands */
 	    icu_fns.nopen += 3;
-	    Tcl_CreateObjCommand(interp,  "::tcl::unsupported::icu::convertto",
+	    Tcl_CreateObjCommand2(interp,  "::tcl::unsupported::icu::convertto",
 		    IcuConverttoObjCmd, 0, TclIcuCleanup);
-	    Tcl_CreateObjCommand(interp,  "::tcl::unsupported::icu::convertfrom",
+	    Tcl_CreateObjCommand2(interp,  "::tcl::unsupported::icu::convertfrom",
 		    IcuConvertfromObjCmd, 0, TclIcuCleanup);
-	    Tcl_CreateObjCommand(interp,  "::tcl::unsupported::icu::detect",
+	    Tcl_CreateObjCommand2(interp,  "::tcl::unsupported::icu::detect",
 		    IcuDetectObjCmd, 0, TclIcuCleanup);
 	}
 
@@ -1489,11 +1489,11 @@ TclIcuInit(
 
 	/* Ref count number of commands */
 	icu_fns.nopen += 3; /* UPDATE AS CMDS ADDED/DELETED BELOW */
-	Tcl_CreateObjCommand(interp, "::tcl::unsupported::icu::converters",
+	Tcl_CreateObjCommand2(interp, "::tcl::unsupported::icu::converters",
 		IcuConverterNamesObjCmd, 0, TclIcuCleanup);
-	Tcl_CreateObjCommand(interp, "::tcl::unsupported::icu::aliases",
+	Tcl_CreateObjCommand2(interp, "::tcl::unsupported::icu::aliases",
 		IcuConverterAliasesObjCmd, 0, TclIcuCleanup);
-	Tcl_CreateObjCommand(interp, "::tcl::unsupported::icu::normalize",
+	Tcl_CreateObjCommand2(interp, "::tcl::unsupported::icu::normalize",
 		IcuNormalizeObjCmd, 0, TclIcuCleanup);
     }
 
@@ -1520,7 +1520,7 @@ int
 TclLoadIcuObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     if (objc != 1) {
