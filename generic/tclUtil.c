@@ -32,6 +32,11 @@
 static ProcessGlobalValue executableName = {
     0, 0, NULL, NULL, NULL, NULL, NULL
 };
+#if !defined(STATIC_BUILD)
+static ProcessGlobalValue shlibName = {
+    0, 0, NULL, NULL, NULL, NULL, NULL
+};
+#endif
 
 /*
  * The following values are used in the flags arguments of Tcl*Scan*Element
@@ -4377,6 +4382,52 @@ Tcl_GetNameOfExecutable(void)
     return bytes;
 }
 
+#if !defined(STATIC_BUILD)
+/*
+ * TclSetObjNameOfShlib --
+ *
+ *	This function stores the absolute pathname of the Tcl shared library.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Stores the shared library name in the process global database.
+ */
+
+void
+TclSetObjNameOfShlib(
+    Tcl_Obj *name,
+    TCL_UNUSED(Tcl_Encoding))
+{
+    TclSetProcessGlobalValue(&shlibName, name);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclGetObjNameOfShlib --
+ *
+ *	This function retrieves the absolute pathname of the Tcl shared
+ *	library.
+ *
+ * Results:
+ *	A pointer to an "fsPath" Tcl_Obj, or to an empty Tcl_Obj if the
+ *	pathname of the application is unknown.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+TclGetObjNameOfShlib(void)
+{
+    return TclGetProcessGlobalValue(&shlibName);
+}
+
+#endif /* !STATIC_BUILD - Tcl{Get,Set}NameOfShlib */
 /*
  *----------------------------------------------------------------------
  *
