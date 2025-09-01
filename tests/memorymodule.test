@@ -1,0 +1,103 @@
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
+    namespace import -force ::tcltest::*
+}
+
+testConstraint memorymoduletest [expr {0 == [catch {zipfs mount dltest/memorymoduletest.zip [file join [zipfs root] memorymoduletest]}]}]
+
+lappend auto_path [file join [zipfs root] memorymoduletest]
+
+testConstraint thread [expr {[catch {package require thread 3.0}] == 0}]
+testConstraint memorymodule [expr {[tcl::build-info memorymodule] != 0}]
+testConstraint msvc [expr {[tcl::build-info msvc] != 0}]
+
+test memorymodule-1.0 {info loaded} memorymoduletest {
+    package require memorymoduletest
+    info loaded {} Memorymoduletest
+} [file join [zipfs root] memorymoduletest/tcl9memorymoduletest.dll]
+
+test memorymodule-1.1 {GetModuleFileNameA (WIP)} {memorymoduletest memorymodule} {
+    package require memorymoduletest
+    GetModuleFileNameA
+} //zipfs:/memorymoduletest/tcl9memorymoduletest.dll
+
+test memorymodule-1.2 {GetModuleFileNameW (WIP)} {memorymoduletest memorymodule} {
+    package require memorymoduletest
+    GetModuleFileNameW
+} //zipfs:/memorymoduletest/tcl9memorymoduletest.dll
+
+test memorymodule-2.0 {LTS, create thread before accessing var} -constraints {memorymoduletest thread} -body {
+    package require Thread
+    package require threadvartest
+    set t1 [thread::create]
+    ThreadVar 15; # Set ThreadVar to 15 in the main thread
+    thread::preserve $t1
+    thread::send $t1 {
+	lappend auto_path [file join [zipfs root] memorymoduletest]
+	package require threadvartest
+	# set ThreadVar to 16 in the subthread
+	ThreadVar 16
+	return [ThreadVar]
+    } result
+    thread::release $t1
+    # ThreadVar in main thread should be unchanged (15)
+    list [ThreadVar] $result
+} -result {15 16}
+
+test memorymodule-2.1 {LTS, create thread after accessing var} -constraints {memorymoduletest thread} -body {
+    package require Thread
+    package require threadvartest
+    ThreadVar 15; # Set ThreadVar to 15 in the main thread
+    set t1 [thread::create]; #create thread _before_ setting the variable
+    thread::preserve $t1
+    thread::send $t1 {
+	lappend auto_path [file join [zipfs root] memorymoduletest]
+	package require threadvartest
+	# set ThreadVar to 16 in the subthread
+	ThreadVar 16
+	return [ThreadVar]
+    } result
+    thread::release $t1
+    # ThreadVar in main thread should be unchanged (15)
+    list [ThreadVar] $result
+} -result {15 16}
+
+test memorymodule-2.2 {nexted exception} -constraints memorymoduletest -body {
+    NestedException
+} -result 1
+
+test memorymodule-3.0 {Multiple DLL's} -constraints memorymoduletest -body {
+    package require threadvar2test
+    package require threadvartest
+    set result {}
+    ThreadVar 15; # Modify first module
+    lappend result [ThreadVar]; # Check first module
+    ThreadVar2 16; # Modify second module
+    lappend result [ThreadVar]; # Check first module
+    ThreadVar 17; # Modify first module
+    lappend result [ThreadVar2]; # Check second module
+} -result {15 15 16}
+
+test memorymodule-3.1 {Multiple DLL's} -constraints memorymoduletest -body {
+    package require threadvar2test
+    package require threadvartest
+    # The two _tls_index should NOT be the same
+    expr {[ThreadVar -index] == [ThreadVar2 -index]}
+} -result 0
+
+test memorymodule-3.2 {_tls_index} -constraints {memorymoduletest thread} -body {
+    set t1 [thread::create];
+    thread::preserve $t1
+    thread::send $t1 {
+	lappend auto_path [file join [zipfs root] memorymoduletest]
+	package require threadvartest
+	return [list [expr {[ThreadVar -index] > 0}] [ThreadVar -start] [ThreadVar -end]]
+    } result
+    thread::release $t1
+    lappend result [expr {[ThreadVar -index] > 0}] [ThreadVar -start] [ThreadVar -end]
+} -result {1 0 0 1 0 0}
+
+# cleanup
+::tcltest::cleanupTests
+return
+
