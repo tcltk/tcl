@@ -6085,7 +6085,7 @@ TCL_WIN_VERSION="$TCL_VERSION.$TCL_RELEASE_LEVEL.`echo $TCL_PATCH_LEVEL | tr -d 
 
 
 
-ac_config_files="$ac_config_files Makefile tclConfig.sh tclsh.exe.manifest"
+ac_config_files="$ac_config_files Makefile dltest/Makefile tclConfig.sh tclsh.exe.manifest"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -6789,6 +6789,7 @@ for ac_config_target in $ac_config_targets
 do
   case $ac_config_target in
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
+    "dltest/Makefile") CONFIG_FILES="$CONFIG_FILES dltest/Makefile" ;;
     "tclConfig.sh") CONFIG_FILES="$CONFIG_FILES tclConfig.sh" ;;
     "tclsh.exe.manifest") CONFIG_FILES="$CONFIG_FILES tclsh.exe.manifest" ;;
 
