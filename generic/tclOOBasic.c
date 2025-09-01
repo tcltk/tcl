@@ -701,6 +701,9 @@ TclOO_Object_Destroy(
     return TCL_OK;
 }
 
+/* Post-NRE-callback for TclOO_Object_Destroy. Deletes the object command if
+ * it's still there, which triggers destruction of the namespace and attached
+ * structures. */
 static int
 AfterNRDestructor(
     void *data[],
@@ -788,6 +791,7 @@ TclOO_Object_Eval(
     return TclNREvalObjEx(interp, scriptPtr, 0, invoker, skip);
 }
 
+/* Post-NRE-callback for TclOO_Object_Eval. Cleans up. */
 static int
 FinalizeEval(
     void *data[],
@@ -1450,6 +1454,7 @@ TclOONextToObjCmd(
     return TCL_ERROR;
 }
 
+/* Post-NRE-callback for [next] and [nextto]. */
 static int
 NextRestoreFrame(
     void *data[],
@@ -1991,6 +1996,8 @@ TclOO_Singleton_New(
 	    AddConstructionFinalizer(interp));    
 }
 
+/* Once the singleton object is made, this mixes in a class to disable easy
+ * deleting of the instance. */
 static int
 MarkAsSingleton(
     void *data[],

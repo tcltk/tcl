@@ -182,7 +182,7 @@ static int		Configurable_ObjectWritableProps_Get(void *clientData,
 static int		Configurable_ObjectWritableProps_Set(void *clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
-static int		ResolveClass(void *clientData,
+static int		Slot_ResolveClass(void *clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
 
@@ -192,11 +192,11 @@ static int		ResolveClass(void *clientData,
 
 static const DeclaredSlot slots[] = {
     SLOT("define::filter",      ClassFilter_Get, ClassFilter_Set, NULL, NULL),
-    SLOT("define::mixin",       ClassMixin_Get,  ClassMixin_Set, ResolveClass, "-set"),
-    SLOT("define::superclass",  ClassSuper_Get,  ClassSuper_Set, ResolveClass, "-set"),
+    SLOT("define::mixin",       ClassMixin_Get,  ClassMixin_Set, Slot_ResolveClass, "-set"),
+    SLOT("define::superclass",  ClassSuper_Get,  ClassSuper_Set, Slot_ResolveClass, "-set"),
     SLOT("define::variable",    ClassVars_Get,   ClassVars_Set, NULL, NULL),
     SLOT("objdefine::filter",   ObjFilter_Get,   ObjFilter_Set, NULL, NULL),
-    SLOT("objdefine::mixin",    ObjMixin_Get,    ObjMixin_Set, ResolveClass, "-set"),
+    SLOT("objdefine::mixin",    ObjMixin_Get,    ObjMixin_Set, Slot_ResolveClass, "-set"),
     SLOT("objdefine::variable", ObjVars_Get,     ObjVars_Set, NULL, NULL),
     SLOT("configuresupport::readableproperties",
 	    Configurable_ClassReadableProps_Get,
@@ -2692,7 +2692,7 @@ TclOODefineSlots(
  * ----------------------------------------------------------------------
  */
 
-/* Call [$slot Get] to retrieve the list of contents of the slot */
+/* Call [$slot Get] to retrieve the list of contents of the slot. */
 static inline Tcl_Obj *
 CallSlotGet(
     Tcl_Interp *interp,
@@ -2710,7 +2710,7 @@ CallSlotGet(
     return Tcl_GetObjResult(interp);
 }
 
-/* Call [$slot Set $list] to set the list of contents of the slot */
+/* Call [$slot Set $list] to set the list of contents of the slot. */
 static inline int
 CallSlotSet(
     Tcl_Interp *interp,
@@ -2724,7 +2724,7 @@ CallSlotSet(
     return TclOOPrivateObjectCmd(slot, interp, 3, setArgs);
 }
 
-/* Call [$slot Resolve $item] to convert a slot item into canonical form */
+/* Call [$slot Resolve $item] to convert a slot item into canonical form. */
 static inline Tcl_Obj *
 CallSlotResolve(
     Tcl_Interp *interp,
@@ -2744,6 +2744,7 @@ CallSlotResolve(
     return Tcl_GetObjResult(interp);
 }
 
+/* Call [$slot Resolve $item] for each of a whole list of items. */
 static inline Tcl_Obj *
 ResolveAll(
     Tcl_Interp *interp,
@@ -3929,7 +3930,7 @@ ObjVars_Set(
 /*
  * ----------------------------------------------------------------------
  *
- * ResolveClass --
+ * Slot_ResolveClass --
  *
  *	Implementation of the "Resolve" support method for some slots (those
  *	that are slots around a list of classes). This resolves possible class
@@ -3939,7 +3940,7 @@ ObjVars_Set(
  */
 
 static int
-ResolveClass(
+Slot_ResolveClass(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,

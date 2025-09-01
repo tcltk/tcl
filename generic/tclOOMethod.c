@@ -99,7 +99,16 @@ static const Tcl_MethodType fwdMethodType = {
     ((Tcl_HashTable *) (&((Namespace *) (contextNs))->varTable))
 #define TclVarHashGetValue(hPtr) \
     ((Tcl_Var) ((char *)hPtr - offsetof(VarInHash, entry)))
-
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * AllocProcedureMethodRecord --
+ *
+ *	Allocate and initialise the record for procedure-like methods.
+ *
+ * ----------------------------------------------------------------------
+ */
 static inline ProcedureMethod *
 AllocProcedureMethodRecord(
     int flags)
@@ -586,7 +595,8 @@ InitCmdFrame(
 	    Tcl_DecrRefCount(context.data.eval.path);
 	    context.data.eval.path = NULL;
 	}
-    }}
+    }
+}
 
 /*
  * ----------------------------------------------------------------------
@@ -781,7 +791,7 @@ TclOOMakeProcMethod2(
 /*
  * ----------------------------------------------------------------------
  *
- * InvokeProcedureMethod, PushMethodCallFrame --
+ * InvokeProcedureMethod, FinalizePMCall, PushMethodCallFrame --
  *
  *	How to invoke a procedure-like method.
  *
@@ -790,7 +800,7 @@ TclOOMakeProcMethod2(
 
 static int
 InvokeProcedureMethod(
-    void *clientData,		/* Pointer to some per-method context. */
+    void *clientData,		/* Pointer to the per-method record. */
     Tcl_Interp *interp,
     Tcl_ObjectContext context,	/* The method calling context. */
     int objc,			/* Number of arguments. */
@@ -894,9 +904,9 @@ InvokeProcedureMethod(
 
 static int
 FinalizePMCall(
-    void *data[],
-    Tcl_Interp *interp,
-    int result)
+    void *data[],		/* Data from InvokeProcedureMethod. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int result)			/* Result of the body of the method. */
 {
     ProcedureMethod *pmPtr = (ProcedureMethod *) data[0];
     Tcl_ObjectContext context = (Tcl_ObjectContext) data[1];
@@ -1548,7 +1558,7 @@ TclOONewForwardMethod(
 /*
  * ----------------------------------------------------------------------
  *
- * InvokeForwardMethod --
+ * InvokeForwardMethod, FinalizeForwardCall --
  *
  *	How to invoke a forwarded method. Works by doing some ensemble-like
  *	command rearranging and then invokes some other Tcl command.
@@ -1580,7 +1590,7 @@ InvokeForwardMethod(
     TclListObjGetElements(NULL, fmPtr->prefixObj, &numPrefixes, &prefixObjs);
     argObjs = InitEnsembleRewrite(interp, objc, objv, skip,
 	    numPrefixes, prefixObjs, &len);
-    Tcl_NRAddCallback(interp, FinalizeForwardCall, argObjs, NULL, NULL, NULL);
+    TclNRAddCallback(interp, FinalizeForwardCall, argObjs, NULL, NULL, NULL);
     /*
      * NOTE: The combination of direct set of iPtr->lookupNsPtr and the use
      * of the TCL_EVAL_NOERR flag results in an evaluation configuration
@@ -1708,7 +1718,6 @@ TclOOGetFwdFromMethod(
  *
  * ----------------------------------------------------------------------
  */
-
 static Tcl_Obj **
 InitEnsembleRewrite(
     Tcl_Interp *interp,		/* Place to log the rewrite info. */
