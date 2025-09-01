@@ -16,7 +16,7 @@
  * Include the static character classification tables and macros.
  */
 
-#define UNICODE_OUT_OF_RANGE(ch)	(((ch) & 0x1FFFFF) >= 0x323C0)
+#define UNICODE_OUT_OF_RANGE(ch)	(((ch) & 0x1FFFFF) >= 0x110000)
 
 /*
  * The following masks are used for fast character category tests. The x_BITS
@@ -2203,8 +2203,6 @@ Tcl_UniCharIsSpace(
 
     if (ch < 0x80) {
 	return TclIsSpaceProcM((char) ch);
-    } else if (UNICODE_OUT_OF_RANGE(ch)) {
-	return 0;
     } else if (ch == 0x0085 || ch == 0x180E || ch == 0x200B
 	    || ch == 0x202F || ch == 0x2060 || ch == 0xFEFF) {
 	return 1;
