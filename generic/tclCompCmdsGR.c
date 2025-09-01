@@ -199,6 +199,9 @@ TclCompileIfCmd(
     wordIdx = 0;
     numWords = parsePtr->numWords;
 
+    if (numWords > INT_MAX) {
+	return TCL_ERROR;
+    }
     for (wordIdx = 0; wordIdx < numWords; wordIdx++) {
 	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
 	    return TCL_ERROR;
@@ -853,7 +856,7 @@ TclCompileLappendCmd(
 
     /* TODO: Consider support for compiling expanded args. */
     numWords = parsePtr->numWords;
-    if (numWords < 3) {
+    if (numWords < 3 || numWords > INT_MAX) {
 	return TCL_ERROR;
     }
 
@@ -973,7 +976,7 @@ TclCompileLassignCmd(
      * Check for command syntax error, but we'll punt that to runtime.
      */
 
-    if (numWords < 3) {
+    if (numWords < 3 || numWords > INT_MAX) {
 	return TCL_ERROR;
     }
 
@@ -1076,7 +1079,7 @@ TclCompileLindexCmd(
      */
 
     /* TODO: Consider support for compiling expanded args. */
-    if (numWords <= 1) {
+    if (numWords <= 1 || numWords > INT_MAX) {
 	return TCL_ERROR;
     }
 
@@ -1171,6 +1174,8 @@ TclCompileListCmd(
 
 	PushStringLiteral(envPtr, "");
 	return TCL_OK;
+    } else if (numWords > INT_MAX) {
+	return TCL_ERROR;
     }
 
     /*
@@ -1366,7 +1371,7 @@ TclCompileLinsertCmd(
     Tcl_Token *tokenPtr;
     Tcl_Size i;
 
-    if (parsePtr->numWords < 3) {
+    if (parsePtr->numWords < 3 || parsePtr->numWords > INT_MAX) {
 	return TCL_ERROR;
     }
 
@@ -1418,7 +1423,7 @@ TclCompileLreplaceCmd(
     Tcl_Token *tokenPtr;
     Tcl_Size i;
 
-    if (parsePtr->numWords < 4) {
+    if (parsePtr->numWords < 4 || parsePtr->numWords > INT_MAX) {
 	return TCL_ERROR;
     }
 
@@ -1509,7 +1514,7 @@ TclCompileLsetCmd(
      */
 
     /* TODO: Consider support for compiling expanded args. */
-    if (parsePtr->numWords < 3) {
+    if (parsePtr->numWords < 3 || parsePtr->numWords > INT_MAX) {
 	/*
 	 * Fail at run time, not in compilation.
 	 */
@@ -1820,7 +1825,7 @@ TclCompileNamespaceUpvarCmd(
      */
 
     numWords = parsePtr->numWords;
-    if ((numWords % 2) || (numWords < 4)) {
+    if ((numWords % 2) || (numWords < 4) || (numWords > INT_MAX)) {
 	return TCL_ERROR;
     }
 
@@ -1945,7 +1950,7 @@ TclCompileRegexpCmd(
      *   regexp ?-nocase? ?--? {^staticString$} $var
      */
 
-    if (parsePtr->numWords < 3) {
+    if (parsePtr->numWords < 3 || parsePtr->numWords > INT_MAX) {
 	return TCL_ERROR;
     }
 
@@ -2293,7 +2298,9 @@ TclCompileReturnCmd(
      * ('finally' clause processing) this piece of code would not be present.
      */
 
-    if ((numWords == 4) && (wordTokenPtr->type == TCL_TOKEN_SIMPLE_WORD)
+    if (numWords > INT_MAX) {
+	return TCL_ERROR;
+    } else if ((numWords == 4) && (wordTokenPtr->type == TCL_TOKEN_SIMPLE_WORD)
 	    && (wordTokenPtr[1].size == 8)
 	    && (strncmp(wordTokenPtr[1].start, "-options", 8) == 0)) {
 	Tcl_Token *optsTokenPtr = TokenAfter(wordTokenPtr);
@@ -2533,7 +2540,7 @@ TclCompileUpvarCmd(
     }
 
     numWords = parsePtr->numWords;
-    if (numWords < 3) {
+    if (numWords < 3 || numWords > INT_MAX) {
 	return TCL_ERROR;
     }
 
@@ -2634,7 +2641,7 @@ TclCompileVariableCmd(
     Tcl_Size localIndex, numWords, i;
 
     numWords = parsePtr->numWords;
-    if (numWords < 2) {
+    if (numWords < 2 || numWords > INT_MAX) {
 	return TCL_ERROR;
     }
 
