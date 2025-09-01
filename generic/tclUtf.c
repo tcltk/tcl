@@ -2078,7 +2078,7 @@ int
 Tcl_UniCharIsDigit(
     int ch)			/* Unicode character to test. */
 {
-    return (UTF8PROC_CATEGORY_ND >> utf8proc_category(ch & 0x1FFFFF)) & 1;
+    return (utf8proc_category(ch & 0x1FFFFF) == UTF8PROC_CATEGORY_ND);
 }
 
 /*
@@ -2124,7 +2124,7 @@ int
 Tcl_UniCharIsLower(
     int ch)			/* Unicode character to test. */
 {
-    return (UTF8PROC_CATEGORY_LL >> utf8proc_category(ch & 0x1FFFFF)) & 1;
+    return (utf8proc_category(ch & 0x1FFFFF) == UTF8PROC_CATEGORY_LL);
 }
 
 /*
@@ -2231,7 +2231,7 @@ int
 Tcl_UniCharIsUpper(
     int ch)			/* Unicode character to test. */
 {
-    return (UTF8PROC_CATEGORY_LU >> utf8proc_category(ch & 0x1FFFFF)) & 1;
+    return (utf8proc_category(ch & 0x1FFFFF) == UTF8PROC_CATEGORY_LU);
 }
 
 /*
