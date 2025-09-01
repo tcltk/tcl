@@ -12,6 +12,8 @@ to the userbase.
 # Bug fixes
  - [On Unix, IsTimeNative() always defined but not always used](https://core.tcl-lang.org/tcl/tktview/6b8e39)
  - [Tweak install permissions](https://core.tcl-lang.org/tcl/tktview/31d4fa)
+ - [interp creation resets encoding directory search path](https://core.tcl-lang.org/tcl/tktview/87b697)
+ - [Pointer arithmetic with NULL in buildInfoObjCmd()](https://core.tcl-lang.org/tcl/tktview/85fc8b)
 
 # Updated bundled packages, libraries, standards, data
  - platform 1.1.0
