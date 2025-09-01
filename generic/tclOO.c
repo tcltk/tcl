@@ -217,6 +217,7 @@ MODULE_SCOPE const TclOOStubs tclOOStubs;
 #define IsRootClass(ocPtr)	((ocPtr)->flags & ROOT_CLASS)
 #define IsRoot(ocPtr)		((ocPtr)->flags & (ROOT_OBJECT|ROOT_CLASS))
 
+/* Wrapper for removing an item from a "flexible" item list. */
 #define RemoveItem(type, lst, i) \
     do {						\
 	Remove ## type ((lst).list, (lst).num, i);	\
@@ -358,43 +359,13 @@ CreateCmdInNS(
 /*
  * ----------------------------------------------------------------------
  *
- * TclCreateConstantInNS --
- *
- *	Create a constant in a given namespace. Does nothing if the variable
- *	already exists. The variable name should not indicate an array element;
- *	it should be a simple name as the namespace is given by other means.
- *
  * CreateConstantInNSStr --
  *
- *	Wrapper to make using a string constant easier.
+ *	Wrapper around TclCreateConstantInNS to make using it with string
+ *	constants easier.
  *
  * ----------------------------------------------------------------------
  */
-static void
-TclCreateConstantInNS(
-    Tcl_Interp *interp,
-    Namespace *nsPtr,		// The namespace to contain the constant.
-    Tcl_Obj *nameObj,		// The unqualified name of the constant.
-    Tcl_Obj *valueObj)		// The value to put in the constant.
-{
-    Interp *iPtr = (Interp *) interp;
-    Namespace *savedNsPtr = iPtr->varFramePtr->nsPtr;
-
-    iPtr->varFramePtr->nsPtr = nsPtr;
-    Var *arrayPtr, *varPtr = TclObjLookupVarEx(interp, nameObj, NULL,
-	    (TCL_NAMESPACE_ONLY | TCL_AVOID_RESOLVERS),
-	    "write", /*createPart1*/ 1, /*createPart2*/ 1, &arrayPtr);
-    iPtr->varFramePtr->nsPtr = savedNsPtr;
-    if (arrayPtr) {
-	Tcl_Panic("constants may not be arrays");
-    }
-    if (varPtr && TclIsVarUndefined(varPtr)) {
-	varPtr->value.objPtr = valueObj;
-	Tcl_IncrRefCount(valueObj);
-	varPtr->flags = VAR_CONSTANT;
-    }
-}
-
 static inline void
 CreateConstantInNSStr(
     Tcl_Interp *interp,
@@ -647,6 +618,16 @@ InitClassSystemRoots(
      */
 }
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * MarkAsMetaclass --
+ *
+ *	Make a simple class into a metaclass by making it into a subclass of
+ *	oo::class. Assumes that the previous class it had can be ignored.
+ *
+ * ----------------------------------------------------------------------
+ */
 static inline void
 MarkAsMetaclass(
     Foundation *fPtr,
@@ -657,10 +638,12 @@ MarkAsMetaclass(
     AddRef(supers[0]->thisPtr);
     TclOOSetSuperclasses(classPtr, 1, supers);
 }
+
 /*
  * ----------------------------------------------------------------------
  *
  * MakeAdditionalClasses --
+ *
  *	Make the extra classes in TclOO that aren't core to how it functions.
  *
  * ----------------------------------------------------------------------
@@ -2096,6 +2079,16 @@ TclNRNewObjectInstance(
     return TclOOInvokeContext(contextPtr, interp, objc, objv);
 }
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclNewObjectInstanceCommon --
+ *
+ *	Common code for handling object allocation. Does the basic object
+ *	structure and class structure allocation.
+ *
+ * ----------------------------------------------------------------------
+ */
 Object *
 TclNewObjectInstanceCommon(
     Tcl_Interp *interp,
@@ -2161,6 +2154,17 @@ TclNewObjectInstanceCommon(
     return oPtr;
 }
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * FinalizeAlloc --
+ *
+ *	Final stage of NR-aware object allocation, running after the
+ *	constructor has been called to decide whether the construction
+ *	succeeded or failed.
+ *
+ * ----------------------------------------------------------------------
+ */
 static int
 FinalizeAlloc(
     void *data[],

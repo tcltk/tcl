@@ -3338,6 +3338,9 @@ MODULE_SCOPE int	TclCopyNamespaceProcedures(Tcl_Interp *interp,
 			    Namespace *srcNsPtr, Namespace *tgtNsPtr);
 MODULE_SCOPE int	TclCopyNamespaceVariables(Tcl_Interp *interp,
 			    Namespace *originNs, Namespace *targetNs);
+MODULE_SCOPE int	TclCreateConstantInNS(Tcl_Interp *interp,
+			    Namespace *nsPtr, Tcl_Obj *nameObj,
+			    Tcl_Obj *valueObj);
 MODULE_SCOPE Tcl_Command TclCreateObjCommandInNs(Tcl_Interp *interp,
 			    const char *cmdName, Tcl_Namespace *nsPtr,
 			    Tcl_ObjCmdProc *proc, void *clientData,
