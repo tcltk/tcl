@@ -803,7 +803,7 @@ AddStandardMethodName(
 	    isWanted |= (mPtr->type2Ptr == NULL ? NO_IMPLEMENTATION : 0);
 	    Tcl_SetHashValue(hPtr, INT2PTR(isWanted));
 	} else if ((PTR2INT(Tcl_GetHashValue(hPtr)) & NO_IMPLEMENTATION)
-		&& mPtr->typePtr != NULL) {
+		&& mPtr->type2Ptr != NULL) {
 	    int isWanted = (int)PTR2INT(Tcl_GetHashValue(hPtr));
 
 	    isWanted &= ~NO_IMPLEMENTATION;

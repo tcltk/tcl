@@ -106,7 +106,7 @@ TclObjTest_Init(
     Tcl_Obj **varPtr;
 
 #ifndef TCL_WITH_EXTERNAL_TOMMATH
-    if (Tcl_TomMath_InitStubs(interp, "8.7-") == NULL) {
+    if (Tcl_TomMath_InitStubs(interp, "9.0-") == NULL) {
 	return TCL_ERROR;
     }
 #endif
