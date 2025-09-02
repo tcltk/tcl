@@ -837,7 +837,7 @@ StatOpenFile(
 {
     DWORD attr;
     int dev, nlink = 1;
-    unsigned short mode;
+    int mode;
     unsigned long long size, inode;
     long long atime, ctime, mtime;
     BY_HANDLE_FILE_INFORMATION data;

@@ -1314,12 +1314,12 @@ Tcl_FSData(
  *---------------------------------------------------------------------------
  */
 
-int
+Tcl_Size
 TclFSNormalizeToUniquePath(
     Tcl_Interp *interp,		/* Used for error messages. */
     Tcl_Obj *pathPtr,		/* An Pathname to normalize in-place.  Must be
 				 * unshared. */
-    int startAt)		/* Offset the string of pathPtr to start at.
+    Tcl_Size startAt)		/* Offset the string of pathPtr to start at.
 				 * Must either be 0 or offset of a directory
 				 * separator at the end of a pathname part that
 				 * is already normalized, i.e. not the index of
@@ -1382,9 +1382,9 @@ TclFSNormalizeToUniquePath(
 	     * always exist.
 	     */
 
-	    if (fsRecPtr->fsPtr->normalizePathProc != NULL) {
+	    if (fsRecPtr->fsPtr->normalizePathProc != NULL && startAt < INT_MAX) {
 		startAt = fsRecPtr->fsPtr->normalizePathProc(interp, pathPtr,
-			startAt);
+			(int)startAt);
 	    }
 	    break;
 	}
@@ -1398,9 +1398,9 @@ TclFSNormalizeToUniquePath(
 	    continue;
 	}
 
-	if (fsRecPtr->fsPtr->normalizePathProc != NULL) {
+	if (fsRecPtr->fsPtr->normalizePathProc != NULL && startAt < INT_MAX) {
 	    startAt = fsRecPtr->fsPtr->normalizePathProc(interp, pathPtr,
-		    startAt);
+		    (int)startAt);
 	}
 
 	/*
@@ -2490,7 +2490,7 @@ TclFSFileAttrIndex(
 	for (i=0 ; i<objc ; i++) {
 	    if (!strcmp(attributeName, TclGetString(objv[i]))) {
 		TclDecrRefCount(listObj);
-		*indexPtr = i;
+		*indexPtr = (int)i;
 		return TCL_OK;
 	    }
 	}
