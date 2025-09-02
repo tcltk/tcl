@@ -2043,7 +2043,7 @@ NativeStat(
 {
     DWORD attr;
     int dev, nlink = 1;
-    unsigned short mode;
+    int mode;
     unsigned int inode = 0;
     HANDLE fileHandle;
     DWORD fileType = FILE_TYPE_UNKNOWN;

@@ -195,13 +195,13 @@ TclOO_Class_Constructor(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const *objv)
 {
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
 
-    size_t skip = Tcl_ObjectContextSkippedArgs(context);
-    if ((size_t) objc > skip + 1) {
+    Tcl_Size skip = Tcl_ObjectContextSkippedArgs(context);
+    if (objc > skip + 1) {
 	Tcl_WrongNumArgs(interp, skip, objv,
 		"?definitionScript?");
 	return TCL_ERROR;
@@ -225,7 +225,7 @@ TclOO_Class_Constructor(
      * If there's nothing else to do, we're done.
      */
 
-    if ((size_t) objc == skip) {
+    if (objc == skip) {
 	Tcl_InterpState saved = Tcl_SaveInterpState(interp, TCL_OK);
 	MixinClassDelegates(interp, oPtr, delegateName);
 	Tcl_DecrRefCount(delegateName);
@@ -301,7 +301,7 @@ TclOO_Class_Create(
     Tcl_Interp *interp,		/* Interpreter in which to create the object;
 				 * also used for error reporting. */
     Tcl_ObjectContext context,	/* The object/call context. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* The actual arguments. */
 {
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
@@ -366,7 +366,7 @@ TclOO_Class_CreateNs(
     Tcl_Interp *interp,		/* Interpreter in which to create the object;
 				 * also used for error reporting. */
     Tcl_ObjectContext context,	/* The object/call context. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* The actual arguments. */
 {
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
@@ -439,7 +439,7 @@ TclOO_Class_New(
     Tcl_Interp *interp,		/* Interpreter in which to create the object;
 				 * also used for error reporting. */
     Tcl_ObjectContext context,	/* The object/call context. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* The actual arguments. */
 {
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
@@ -484,7 +484,7 @@ TclOO_Class_Cloned(
     Tcl_Interp *interp,		/* Interpreter in which to create the object;
 				 * also used for error reporting. */
     Tcl_ObjectContext context,	/* The object/call context. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* The actual arguments. */
 {
     Tcl_Object targetObject = Tcl_ObjectContextObject(context);
@@ -579,7 +579,7 @@ TclOO_Configurable_Constructor(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const *objv)
 {
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
@@ -615,10 +615,10 @@ TclOO_Object_Cloned(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		// Interpreter for error reporting.
     Tcl_ObjectContext context,	// The object/call context.
-    int objc,			// Number of arguments.
+    Tcl_Size objc,			// Number of arguments.
     Tcl_Obj *const *objv)	// The actual arguments.
 {
-    int skip = Tcl_ObjectContextSkippedArgs(context);
+    Tcl_Size skip = Tcl_ObjectContextSkippedArgs(context);
     if (objc != skip + 1) {
 	Tcl_WrongNumArgs(interp, skip, objv, "originObject");
 	return TCL_ERROR;
@@ -653,13 +653,13 @@ TclOO_Object_Destroy(
     Tcl_Interp *interp,		/* Interpreter in which to create the object;
 				 * also used for error reporting. */
     Tcl_ObjectContext context,	/* The object/call context. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* The actual arguments. */
 {
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
     CallContext *contextPtr;
 
-    if (objc != (int) Tcl_ObjectContextSkippedArgs(context)) {
+    if (objc != Tcl_ObjectContextSkippedArgs(context)) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
 		NULL);
 	return TCL_ERROR;
@@ -717,17 +717,17 @@ TclOO_Object_Eval(
     Tcl_Interp *interp,		/* Interpreter in which to create the object;
 				 * also used for error reporting. */
     Tcl_ObjectContext context,	/* The object/call context. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* The actual arguments. */
 {
     CallContext *contextPtr = (CallContext *) context;
     Tcl_Object object = Tcl_ObjectContextObject(context);
-    size_t skip = Tcl_ObjectContextSkippedArgs(context);
+    Tcl_Size skip = Tcl_ObjectContextSkippedArgs(context);
     CallFrame *framePtr, **framePtrPtr = &framePtr;
     Tcl_Obj *scriptPtr;
     CmdFrame *invoker;
 
-    if ((size_t) objc < skip + 1) {
+    if (objc < skip + 1) {
 	Tcl_WrongNumArgs(interp, skip, objv, "arg ?arg ...?");
 	return TCL_ERROR;
     }
@@ -737,7 +737,7 @@ TclOO_Object_Eval(
      * command(s).
      */
 
-    (void) TclPushStackFrame(interp, (Tcl_CallFrame **) framePtrPtr,
+    (void)TclPushStackFrame(interp, (Tcl_CallFrame **)framePtrPtr,
 	    Tcl_GetObjectNamespace(object), FRAME_IS_METHOD);
     framePtr->clientData = context;
     framePtr->objc = objc;
@@ -756,7 +756,7 @@ TclOO_Object_Eval(
      * object when it decrements its refcount after eval'ing it.
      */
 
-    if ((size_t) objc != skip+1) {
+    if (objc != skip+1) {
 	scriptPtr = Tcl_ConcatObj(objc-skip, objv+skip);
 	invoker = NULL;
     } else {
@@ -820,7 +820,7 @@ TclOO_Object_Unknown(
     Tcl_Interp *interp,		/* Interpreter in which to create the object;
 				 * also used for error reporting. */
     Tcl_ObjectContext context,	/* The object/call context. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* The actual arguments. */
 {
     CallContext *contextPtr = (CallContext *) context;
@@ -828,8 +828,8 @@ TclOO_Object_Unknown(
     Class *callerCls = NULL;
     Object *oPtr = contextPtr->oPtr;
     const char **methodNames;
-    int numMethodNames, i;
-    size_t skip = Tcl_ObjectContextSkippedArgs(context);
+    Tcl_Size numMethodNames, i;
+    Tcl_Size skip = Tcl_ObjectContextSkippedArgs(context);
     CallFrame *framePtr = ((Interp *) interp)->varFramePtr;
     Tcl_Obj *errorMsg;
 
@@ -839,7 +839,7 @@ TclOO_Object_Unknown(
      * name without an error).
      */
 
-    if ((size_t) objc < skip + 1) {
+    if (objc < skip + 1) {
 	Tcl_WrongNumArgs(interp, skip, objv, "method ?arg ...?");
 	return TCL_ERROR;
     }
@@ -927,7 +927,7 @@ TclOO_Object_LinkVar(
     Tcl_Interp *interp,		/* Interpreter in which to create the object;
 				 * also used for error reporting. */
     Tcl_ObjectContext context,	/* The object/call context. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* The actual arguments. */
 {
     Interp *iPtr = (Interp *) interp;
@@ -1144,13 +1144,13 @@ TclOO_Object_VarName(
     Tcl_Interp *interp,		/* Interpreter in which to create the object;
 				 * also used for error reporting. */
     Tcl_ObjectContext context,	/* The object/call context. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* The actual arguments. */
 {
     Tcl_Var varPtr, aryVar;
     Tcl_Obj *varNamePtr;
 
-    if ((int) Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
+    if (Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
 		"varName");
 	return TCL_ERROR;
@@ -1204,7 +1204,7 @@ int
 TclOOLinkObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const *objv)
 {
     // Set up common bits.
@@ -1295,7 +1295,7 @@ int
 TclOONextObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const *objv)
 {
     Interp *iPtr = (Interp *) interp;
@@ -1331,7 +1331,7 @@ int
 TclOONextToObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const *objv)
 {
     Interp *iPtr = (Interp *) interp;
@@ -1446,7 +1446,7 @@ int
 TclOOSelfObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const *objv)
 {
     static const char *const subcmds[] = {
@@ -1666,7 +1666,7 @@ int
 TclOOCopyObjectCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const *objv)
 {
     Tcl_Object oPtr, o2Ptr;
@@ -1747,7 +1747,7 @@ int
 TclOOCallbackObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const *objv)
 {
     Interp *iPtr = (Interp *) interp;
@@ -1804,7 +1804,7 @@ int
 TclOOClassVariableObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const *objv)
 {
     Interp *iPtr = (Interp *) interp;
@@ -1900,7 +1900,7 @@ int
 TclOODelegateNameObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const *objv)
 {
     if (objc != 2) {
@@ -1932,7 +1932,7 @@ TclOO_Singleton_New(
     Tcl_Interp *interp,		/* Interpreter in which to create the object;
 				 * also used for error reporting. */
     Tcl_ObjectContext context,	/* The object/call context. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* The actual arguments. */
 {
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
@@ -1997,7 +1997,7 @@ TclOO_SingletonInstance_Destroy(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Interpreter for error reporting. */
     TCL_UNUSED(Tcl_ObjectContext),
-    TCL_UNUSED(int),
+    TCL_UNUSED(Tcl_Size),
     TCL_UNUSED(Tcl_Obj *const *))
 {
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -2012,7 +2012,7 @@ TclOO_SingletonInstance_Cloned(
     Tcl_Interp *interp,		/* Interpreter in which to create the object;
 				 * also used for error reporting. */
     TCL_UNUSED(Tcl_ObjectContext),
-    TCL_UNUSED(int),
+    TCL_UNUSED(Tcl_Size),
     TCL_UNUSED(Tcl_Obj *const *))
 {
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
