@@ -1207,7 +1207,7 @@ lGenObjCmd(
  *  lgen package init
  */
 int Lgen_Init(Tcl_Interp *interp) {
-    if (Tcl_InitStubs(interp, "8.7", 0) == NULL) {
+    if (Tcl_InitStubs(interp, "9.0-", 0) == NULL) {
 	return TCL_ERROR;
     }
     Tcl_CreateObjCommand2(interp, "lgen", lGenObjCmd, NULL, NULL);
@@ -1251,7 +1251,7 @@ int
 Tcl_ABSListTest_Init(
     Tcl_Interp *interp)
 {
-    if (Tcl_InitStubs(interp, "8.7-", 0) == NULL) {
+    if (Tcl_InitStubs(interp, "9.0-", 0) == NULL) {
 	return TCL_ERROR;
     }
     Tcl_CreateObjCommand2(interp, "lstring", lLStringObjCmd, NULL, NULL);

@@ -40,7 +40,7 @@ tsdPerfGetObjCmd(void *cdata, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const 
 
 int
 Tsdperf_Init(Tcl_Interp *interp) {
-    if (Tcl_InitStubs(interp, "8.7-", 0) == NULL) {
+    if (Tcl_InitStubs(interp, "9.0-", 0) == NULL) {
 	return TCL_ERROR;
     }
 
