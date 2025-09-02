@@ -22,7 +22,7 @@
 
 static const struct {
     const char *name;
-    Tcl_ObjCmdProc *objProc;
+    Tcl_ObjCmdProc2 *objProc;
     int flag;
 } defineCmds[] = {
     {"constructor", TclOODefineConstructorObjCmd, 0},
@@ -84,13 +84,13 @@ static inline void	RemoveObject(Object **list, size_t num, size_t idx);
 static inline void	SquelchCachedName(Object *oPtr);
 
 static int		PublicNRObjectCmd(void *clientData,
-			    Tcl_Interp *interp, int objc,
+			    Tcl_Interp *interp, Tcl_Size objc,
 			    Tcl_Obj *const *objv);
 static int		PrivateNRObjectCmd(void *clientData,
-			    Tcl_Interp *interp, int objc,
+			    Tcl_Interp *interp, Tcl_Size objc,
 			    Tcl_Obj *const *objv);
 static int		MyClassNRObjCmd(void *clientData,
-			    Tcl_Interp *interp, int objc,
+			    Tcl_Interp *interp, Tcl_Size objc,
 			    Tcl_Obj *const *objv);
 static void		MyClassDeleted(void *clientData);
 
@@ -104,7 +104,7 @@ static void		MyClassDeleted(void *clientData);
 
 #define DCM(name,visibility,proc) \
     {name,visibility,\
-	{TCL_OO_METHOD_VERSION_CURRENT,"core method: "#name,proc,NULL,NULL}}
+	{TCL_OO_METHOD_VERSION_2,"core method: "#name,proc,NULL,NULL}}
 
 static const DeclaredClassMethod objMethods[] = {
     DCM("destroy", 1,	TclOO_Object_Destroy),
@@ -127,8 +127,8 @@ static const DeclaredClassMethod objMethods[] = {
  * And for the oo::class constructor...
  */
 
-static const Tcl_MethodType classConstructor = {
-    TCL_OO_METHOD_VERSION_CURRENT,
+static const Tcl_MethodType2 classConstructor = {
+    TCL_OO_METHOD_VERSION_2,
     "oo::class constructor",
     TclOO_Class_Constructor, NULL, NULL
 };
@@ -302,8 +302,8 @@ CreateCmdInNS(
     Tcl_Interp *interp,
     Tcl_Namespace *namespacePtr,
     const char *name,
-    Tcl_ObjCmdProc *cmdProc,
-    Tcl_ObjCmdProc *nreProc,
+    Tcl_ObjCmdProc2 *cmdProc,
+    Tcl_ObjCmdProc2 *nreProc,
     CompileProc *compileProc)
 {
     Command *cmdPtr;
@@ -313,7 +313,7 @@ CreateCmdInNS(
     }
     cmdPtr = (Command *) TclCreateObjCommandInNs(interp, name,
 	    namespacePtr, cmdProc, NULL, NULL);
-    cmdPtr->nreProc = nreProc;
+    cmdPtr->nreProc2 = nreProc;
     cmdPtr->compileProc = compileProc;
 }
 
@@ -462,10 +462,10 @@ InitFoundation(
      * Don't have handles to these namespaces, so use Tcl_CreateObjCommand.
      */
 
-    Tcl_CreateObjCommand(interp,
+    Tcl_CreateObjCommand2(interp,
 	    "::oo::configuresupport::configurableobject::property",
 	    TclOODefinePropertyCmd, (void *) 1, NULL);
-    Tcl_CreateObjCommand(interp,
+    Tcl_CreateObjCommand2(interp,
 	    "::oo::configuresupport::configurableclass::property",
 	    TclOODefinePropertyCmd, (void *) 0, NULL);
 
@@ -782,7 +782,7 @@ AllocObject(
      */
 
     cmdPtr = (Command *) oPtr->command;
-    cmdPtr->nreProc = PublicNRObjectCmd;
+    cmdPtr->nreProc2 = PublicNRObjectCmd;
     cmdPtr->tracePtr = tracePtr = (CommandTrace *)
 	    Tcl_Alloc(sizeof(CommandTrace));
     tracePtr->traceProc = ObjectRenamedTrace;
@@ -1223,7 +1223,7 @@ ObjectNamespaceDeleted(
 	    contextPtr->callPtr->flags |= DESTRUCTOR;
 	    contextPtr->skip = 0;
 	    state = Tcl_SaveInterpState(interp, TCL_OK);
-	    result = Tcl_NRCallObjProc(interp, TclOOInvokeContext,
+	    result = Tcl_NRCallObjProc2(interp, TclOOInvokeContext,
 		    contextPtr, 0, NULL);
 	    if (result != TCL_OK) {
 		Tcl_BackgroundException(interp, result);
@@ -1779,7 +1779,7 @@ Tcl_NewObjectInstance(
 	     */
 
 	    isRoot = TclInitRewriteEnsemble(interp, skip, skip, objv);
-	    result = Tcl_NRCallObjProc(interp, TclOOInvokeContext, contextPtr,
+	    result = Tcl_NRCallObjProc2(interp, TclOOInvokeContext, contextPtr,
 		    objc, objv);
 
 	    if (isRoot) {
@@ -2291,7 +2291,7 @@ Tcl_CopyObjectInstance(
 	Tcl_IncrRefCount(args[0]);
 	Tcl_IncrRefCount(args[1]);
 	Tcl_IncrRefCount(args[2]);
-	result = Tcl_NRCallObjProc(interp, TclOOInvokeContext, contextPtr, 3,
+	result = Tcl_NRCallObjProc2(interp, TclOOInvokeContext, contextPtr, 3,
 		args);
 	TclDecrRefCount(args[0]);
 	TclDecrRefCount(args[1]);
@@ -2329,21 +2329,21 @@ CloneObjectMethod(
     Method *mPtr,
     Tcl_Obj *namePtr)
 {
-    if (mPtr->typePtr == NULL) {
+    if (mPtr->type2Ptr == NULL) {
 	TclNewInstanceMethod(interp, (Tcl_Object) oPtr, namePtr,
 		mPtr->flags & PUBLIC_METHOD, NULL, NULL);
-    } else if (mPtr->typePtr->cloneProc) {
+    } else if (mPtr->type2Ptr->cloneProc) {
 	void *newClientData;
 
-	if (mPtr->typePtr->cloneProc(interp, mPtr->clientData,
+	if (mPtr->type2Ptr->cloneProc(interp, mPtr->clientData,
 		&newClientData) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	TclNewInstanceMethod(interp, (Tcl_Object) oPtr, namePtr,
-		mPtr->flags & PUBLIC_METHOD, mPtr->typePtr, newClientData);
+		mPtr->flags & PUBLIC_METHOD, mPtr->type2Ptr, newClientData);
     } else {
 	TclNewInstanceMethod(interp, (Tcl_Object) oPtr, namePtr,
-		mPtr->flags & PUBLIC_METHOD, mPtr->typePtr, mPtr->clientData);
+		mPtr->flags & PUBLIC_METHOD, mPtr->type2Ptr, mPtr->clientData);
     }
     return TCL_OK;
 }
@@ -2358,22 +2358,22 @@ CloneClassMethod(
 {
     Method *m2Ptr;
 
-    if (mPtr->typePtr == NULL) {
+    if (mPtr->type2Ptr == NULL) {
 	m2Ptr = (Method *) TclNewMethod((Tcl_Class) clsPtr,
 		namePtr, mPtr->flags & PUBLIC_METHOD, NULL, NULL);
-    } else if (mPtr->typePtr->cloneProc) {
+    } else if (mPtr->type2Ptr->cloneProc) {
 	void *newClientData;
 
-	if (mPtr->typePtr->cloneProc(interp, mPtr->clientData,
+	if (mPtr->type2Ptr->cloneProc(interp, mPtr->clientData,
 		&newClientData) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	m2Ptr = (Method *) TclNewMethod((Tcl_Class) clsPtr,
-		namePtr, mPtr->flags & PUBLIC_METHOD, mPtr->typePtr,
+		namePtr, mPtr->flags & PUBLIC_METHOD, mPtr->type2Ptr,
 		newClientData);
     } else {
 	m2Ptr = (Method *) TclNewMethod((Tcl_Class) clsPtr,
-		namePtr, mPtr->flags & PUBLIC_METHOD, mPtr->typePtr,
+		namePtr, mPtr->flags & PUBLIC_METHOD, mPtr->type2Ptr,
 		mPtr->clientData);
     }
     if (m2PtrPtr != NULL) {
@@ -2586,17 +2586,17 @@ int
 TclOOPublicObjectCmd(
     void *clientData,
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const *objv)
 {
-    return Tcl_NRCallObjProc(interp, PublicNRObjectCmd, clientData, objc, objv);
+    return Tcl_NRCallObjProc2(interp, PublicNRObjectCmd, clientData, objc, objv);
 }
 
 static int
 PublicNRObjectCmd(
     void *clientData,
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const *objv)
 {
     return TclOOObjectCmdCore((Object *) clientData, interp, objc, objv,
@@ -2607,17 +2607,17 @@ int
 TclOOPrivateObjectCmd(
     void *clientData,
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const *objv)
 {
-    return Tcl_NRCallObjProc(interp, PrivateNRObjectCmd, clientData, objc, objv);
+    return Tcl_NRCallObjProc2(interp, PrivateNRObjectCmd, clientData, objc, objv);
 }
 
 static int
 PrivateNRObjectCmd(
     void *clientData,
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const *objv)
 {
     return TclOOObjectCmdCore((Object *) clientData, interp, objc, objv, 0, NULL);
@@ -2668,17 +2668,17 @@ int
 TclOOMyClassObjCmd(
     void *clientData,
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const *objv)
 {
-    return Tcl_NRCallObjProc(interp, MyClassNRObjCmd, clientData, objc, objv);
+    return Tcl_NRCallObjProc2(interp, MyClassNRObjCmd, clientData, objc, objv);
 }
 
 static int
 MyClassNRObjCmd(
     void *clientData,
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const *objv)
 {
     Object *oPtr = (Object *) clientData;
@@ -2920,7 +2920,7 @@ Tcl_ObjectContextInvokeNext(
      * Invoke the (advanced) method call context in the caller context.
      */
 
-    int result = Tcl_NRCallObjProc(interp, TclOOInvokeContext, contextPtr,
+    int result = Tcl_NRCallObjProc2(interp, TclOOInvokeContext, contextPtr,
 	    objc, objv);
 
     /*
@@ -3024,13 +3024,13 @@ Tcl_GetObjectFromObj(
     if (cmdPtr == NULL) {
 	goto notAnObject;
     }
-    if (cmdPtr->objProc != TclOOPublicObjectCmd) {
+    if (cmdPtr->objProc2 != TclOOPublicObjectCmd) {
 	cmdPtr = (Command *) TclGetOriginalCommand((Tcl_Command) cmdPtr);
-	if (cmdPtr == NULL || cmdPtr->objProc != TclOOPublicObjectCmd) {
+	if (cmdPtr == NULL || cmdPtr->objProc2 != TclOOPublicObjectCmd) {
 	    goto notAnObject;
 	}
     }
-    return (Tcl_Object) cmdPtr->objClientData;
+    return (Tcl_Object) cmdPtr->objClientData2;
 
   notAnObject:
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(

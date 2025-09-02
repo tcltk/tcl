@@ -71,42 +71,42 @@ static int		ConvertUTCToLocalUsingC(Tcl_Interp *,
 static int		ConvertLocalToUTC(ClockClientData *, Tcl_Interp *,
 			    TclDateFields *, Tcl_Obj *timezoneObj, int);
 static int		ConvertLocalToUTCUsingTable(Tcl_Interp *,
-			    TclDateFields *, int, Tcl_Obj *const[],
+			    TclDateFields *, Tcl_Size, Tcl_Obj *const[],
 			    Tcl_WideInt *rangesVal);
 static int		ConvertLocalToUTCUsingC(Tcl_Interp *,
 			    TclDateFields *, int);
-static Tcl_ObjCmdProc	ClockConfigureObjCmd;
+static Tcl_ObjCmdProc2	ClockConfigureObjCmd;
 static void		GetYearWeekDay(TclDateFields *, int);
 static void		GetGregorianEraYearDay(TclDateFields *, int);
 static void		GetMonthDay(TclDateFields *);
 static Tcl_WideInt	WeekdayOnOrBefore(int, Tcl_WideInt);
-static Tcl_ObjCmdProc	ClockClicksObjCmd;
-static Tcl_ObjCmdProc	ClockConvertlocaltoutcObjCmd;
+static Tcl_ObjCmdProc2	ClockClicksObjCmd;
+static Tcl_ObjCmdProc2	ClockConvertlocaltoutcObjCmd;
 static int		ClockGetDateFields(ClockClientData *,
 			    Tcl_Interp *interp, TclDateFields *fields,
 			    Tcl_Obj *timezoneObj, int changeover);
-static Tcl_ObjCmdProc	ClockGetdatefieldsObjCmd;
-static Tcl_ObjCmdProc	ClockGetjuliandayfromerayearmonthdayObjCmd;
-static Tcl_ObjCmdProc	ClockGetjuliandayfromerayearweekdayObjCmd;
-static Tcl_ObjCmdProc	ClockGetenvObjCmd;
-static Tcl_ObjCmdProc	ClockMicrosecondsObjCmd;
-static Tcl_ObjCmdProc	ClockMillisecondsObjCmd;
-static Tcl_ObjCmdProc	ClockSecondsObjCmd;
-static Tcl_ObjCmdProc	ClockFormatObjCmd;
-static Tcl_ObjCmdProc	ClockScanObjCmd;
+static Tcl_ObjCmdProc2	ClockGetdatefieldsObjCmd;
+static Tcl_ObjCmdProc2	ClockGetjuliandayfromerayearmonthdayObjCmd;
+static Tcl_ObjCmdProc2	ClockGetjuliandayfromerayearweekdayObjCmd;
+static Tcl_ObjCmdProc2	ClockGetenvObjCmd;
+static Tcl_ObjCmdProc2	ClockMicrosecondsObjCmd;
+static Tcl_ObjCmdProc2	ClockMillisecondsObjCmd;
+static Tcl_ObjCmdProc2	ClockSecondsObjCmd;
+static Tcl_ObjCmdProc2	ClockFormatObjCmd;
+static Tcl_ObjCmdProc2	ClockScanObjCmd;
 static int		ClockScanCommit(DateInfo *info,
 			    ClockFmtScnCmdArgs *opts);
 static int		ClockFreeScan(DateInfo *info,
 			    Tcl_Obj *strObj, ClockFmtScnCmdArgs *opts);
 static int		ClockCalcRelTime(DateInfo *info,
 			    ClockFmtScnCmdArgs *opts);
-static Tcl_ObjCmdProc	ClockAddObjCmd;
+static Tcl_ObjCmdProc2	ClockAddObjCmd;
 static int		ClockValidDate(DateInfo *,
 			    ClockFmtScnCmdArgs *, int stage);
 static struct tm *	ThreadSafeLocalTime(const time_t *);
 static size_t		TzsetIfNecessary(void);
 static void		ClockDeleteCmdProc(void *);
-static Tcl_ObjCmdProc	ClockSafeCatchCmd;
+static Tcl_ObjCmdProc2	ClockSafeCatchCmd;
 static void		ClockFinalize(void *);
 /*
  * Structure containing description of "native" clock commands to create.
@@ -116,7 +116,7 @@ struct ClockCommand {
     const char *name;		/* The tail of the command name. The full name
 				 * is "::tcl::clock::<name>". When NULL marks
 				 * the end of the table. */
-    Tcl_ObjCmdProc *objCmdProc;	/* Function that implements the command. This
+    Tcl_ObjCmdProc2 *objCmdProc;	/* Function that implements the command. This
 				 * will always have the ClockClientData sent
 				 * to it, but may well ignore this data. */
     CompileProc *compileProc;	/* The compiler for the command. */
@@ -257,13 +257,13 @@ TclClockInit(
 	    clientData = data;
 	    data->refCount++;
 	}
-	cmdPtr = (Command *)Tcl_CreateObjCommand(interp, cmdName,
+	cmdPtr = (Command *)Tcl_CreateObjCommand2(interp, cmdName,
 		clockCmdPtr->objCmdProc, clientData,
 		clockCmdPtr->clientData ? NULL : ClockDeleteCmdProc);
 	cmdPtr->compileProc = clockCmdPtr->compileProc ?
 		clockCmdPtr->compileProc : TclCompileBasicMin0ArgCmd;
     }
-    cmdPtr = (Command *) Tcl_CreateObjCommand(interp,
+    cmdPtr = (Command *) Tcl_CreateObjCommand2(interp,
 	    "::tcl::unsupported::clock::configure",
 	    ClockConfigureObjCmd, data, ClockDeleteCmdProc);
     data->refCount++;
@@ -952,7 +952,7 @@ static int
 ClockConfigureObjCmd(
     void *clientData,		/* Client data containing literal pool */
     Tcl_Interp *interp,		/* Tcl interpreter */
-    int objc,			/* Parameter count */
+    Tcl_Size objc,			/* Parameter count */
     Tcl_Obj *const objv[])	/* Parameter vector */
 {
     ClockClientData *dataPtr = (ClockClientData *)clientData;
@@ -1404,7 +1404,7 @@ static int
 ClockConvertlocaltoutcObjCmd(
     void *clientData,		/* Literal table */
     Tcl_Interp *interp,		/* Tcl interpreter */
-    int objc,			/* Parameter count */
+    Tcl_Size objc,			/* Parameter count */
     Tcl_Obj *const *objv)	/* Parameter vector */
 {
     ClockClientData *dataPtr = (ClockClientData *)clientData;
@@ -1494,7 +1494,7 @@ int
 ClockGetdatefieldsObjCmd(
     void *clientData,		/* Opaque pointer to literal pool, etc. */
     Tcl_Interp *interp,		/* Tcl interpreter */
-    int objc,			/* Parameter count */
+    Tcl_Size objc,			/* Parameter count */
     Tcl_Obj *const *objv)	/* Parameter vector */
 {
     TclDateFields fields;
@@ -1688,7 +1688,7 @@ static int
 ClockGetjuliandayfromerayearmonthdayObjCmd(
     void *clientData,		/* Opaque pointer to literal pool, etc. */
     Tcl_Interp *interp,		/* Tcl interpreter */
-    int objc,			/* Parameter count */
+    Tcl_Size objc,			/* Parameter count */
     Tcl_Obj *const *objv)	/* Parameter vector */
 {
     TclDateFields fields;
@@ -1774,7 +1774,7 @@ static int
 ClockGetjuliandayfromerayearweekdayObjCmd(
     void *clientData,		/* Opaque pointer to literal pool, etc. */
     Tcl_Interp *interp,		/* Tcl interpreter */
-    int objc,			/* Parameter count */
+    Tcl_Size objc,			/* Parameter count */
     Tcl_Obj *const *objv)	/* Parameter vector */
 {
     TclDateFields fields;
@@ -1994,7 +1994,7 @@ static int
 ConvertLocalToUTCUsingTable(
     Tcl_Interp *interp,		/* Tcl interpreter */
     TclDateFields *fields,	/* Time to convert, with 'seconds' filled in */
-    int rowc,			/* Number of points at which time changes */
+    Tcl_Size rowc,			/* Number of points at which time changes */
     Tcl_Obj *const rowv[],	/* Points at which time changes */
     Tcl_WideInt *rangesVal)	/* Return bounds for time period */
 {
@@ -2537,7 +2537,7 @@ GetYearWeekDay(
     }
 
     fields->iso8601Year = temp.iso8601Year;
-    dayOfFiscalYear = fields->julianDay - temp.julianDay;
+    dayOfFiscalYear = (int)(fields->julianDay - temp.julianDay);
     fields->iso8601Week = (dayOfFiscalYear / 7) + 1;
     fields->dayOfWeek = (dayOfFiscalYear + 1) % 7;
     if (fields->dayOfWeek < 1) { /* Mon .. Sun == 1 .. 7 */
@@ -2570,8 +2570,8 @@ GetGregorianEraYearDay(
 {
     Tcl_WideInt jday = fields->julianDay;
     Tcl_WideInt day;
-    Tcl_WideInt year;
-    Tcl_WideInt n;
+    int year;
+    int n;
 
     if (jday >= changeover) {
 	/*
@@ -2587,7 +2587,7 @@ GetGregorianEraYearDay(
 	 */
 
 	day = jday - JDAY_1_JAN_1_CE_GREGORIAN;
-	n = day / FOUR_CENTURIES;
+	n = (int)(day / FOUR_CENTURIES);
 	day %= FOUR_CENTURIES;
 	if (day < 0) {
 	    day += FOUR_CENTURIES;
@@ -2600,7 +2600,7 @@ GetGregorianEraYearDay(
 	 * day = remaining days
 	 */
 
-	n = day / ONE_CENTURY_GREGORIAN;
+	n = (int)(day / ONE_CENTURY_GREGORIAN);
 	day %= ONE_CENTURY_GREGORIAN;
 	if (n > 3) {
 	    /*
@@ -2625,7 +2625,7 @@ GetGregorianEraYearDay(
      * n = number of 4-year cycles; days = remaining days.
      */
 
-    n = day / FOUR_YEARS;
+    n = (int)(day / FOUR_YEARS);
     day %= FOUR_YEARS;
     if (day < 0) {
 	day += FOUR_YEARS;
@@ -2637,7 +2637,7 @@ GetGregorianEraYearDay(
      * n = number of years; days = remaining days.
      */
 
-    n = day / ONE_YEAR;
+    n = (int)(day / ONE_YEAR);
     day %= ONE_YEAR;
     if (n > 3) {
 	/*
@@ -2660,7 +2660,7 @@ GetGregorianEraYearDay(
 	fields->isBce = 0;
 	fields->year = year;
     }
-    fields->dayOfYear = day + 1;
+    fields->dayOfYear = (int)day + 1;
 }
 
 /*
@@ -2785,8 +2785,8 @@ GetJulianDayFromEraYearMonthDay(
     TclDateFields *fields,	/* Date to convert */
     int changeover)		/* Gregorian transition date as a Julian Day */
 {
-    Tcl_WideInt year, ym1, ym1o4, ym1o100, ym1o400;
-    int month, mm1, q, r;
+    Tcl_WideInt ym1, ym1o4, ym1o100, ym1o400;
+    int year, month, mm1, q, r;
 
     if (fields->isBce) {
 	year = 1 - fields->year;
@@ -3015,7 +3015,7 @@ int
 ClockGetenvObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
 #ifdef _WIN32
@@ -3119,7 +3119,7 @@ int
 ClockClicksObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Tcl interpreter */
-    int objc,			/* Parameter count */
+    Tcl_Size objc,			/* Parameter count */
     Tcl_Obj *const *objv)	/* Parameter values */
 {
     static const char *const clicksSwitches[] = {
@@ -3191,7 +3191,7 @@ int
 ClockMillisecondsObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Tcl interpreter */
-    int objc,			/* Parameter count */
+    Tcl_Size objc,			/* Parameter count */
     Tcl_Obj *const *objv)	/* Parameter values */
 {
     Tcl_Time now;
@@ -3230,7 +3230,7 @@ int
 ClockMicrosecondsObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Tcl interpreter */
-    int objc,			/* Parameter count */
+    Tcl_Size objc,			/* Parameter count */
     Tcl_Obj *const *objv)	/* Parameter values */
 {
     if (objc != 1) {
@@ -3526,7 +3526,7 @@ int
 ClockFormatObjCmd(
     void *clientData,		/* Client data containing literal pool */
     Tcl_Interp *interp,		/* Tcl interpreter */
-    int objc,			/* Parameter count */
+    Tcl_Size objc,			/* Parameter count */
     Tcl_Obj *const objv[])	/* Parameter values */
 {
     ClockClientData *dataPtr = (ClockClientData *)clientData;
@@ -3595,7 +3595,7 @@ int
 ClockScanObjCmd(
     void *clientData,		/* Client data containing literal pool */
     Tcl_Interp *interp,		/* Tcl interpreter */
-    int objc,			/* Parameter count */
+    Tcl_Size objc,			/* Parameter count */
     Tcl_Obj *const objv[])	/* Parameter values */
 {
     ClockClientData *dataPtr = (ClockClientData *)clientData;
@@ -3630,7 +3630,7 @@ ClockScanObjCmd(
     }
 
     /* seconds are in localSeconds (relative base date), so reset time here */
-    yyHour = yyMinutes = yySeconds = yySecondOfDay = 0;
+    yySecondOfDay = yySeconds = yyMinutes = yyHour = 0;
     yyMeridian = MER24;
 
     /* If free scan */
@@ -4083,7 +4083,7 @@ ClockFreeScan(
 	yySecondOfDay = 0;
 	info->flags |= CLF_ASSEMBLE_SECONDS;
     } else if (info->flags & CLF_TIME) {
-	yySecondOfDay = ToSeconds(yyHour, yyMinutes, yySeconds, yyMeridian);
+	yySecondOfDay = ToSeconds(yyHour, yyMinutes, (int)yySeconds, yyMeridian);
 	info->flags |= CLF_ASSEMBLE_SECONDS;
     } else if ((info->flags & (CLF_DAYOFWEEK | CLF_HAVEDATE)) == CLF_DAYOFWEEK
 	    || (info->flags & CLF_ORDINALMONTH)
@@ -4161,7 +4161,7 @@ ClockCalcRelTime(
 	}
 
 	/* add the requisite number of months */
-	yyMonth += yyRelMonth - 1;
+	yyMonth += (int)yyRelMonth - 1;
 	yyYear += yyMonth / 12;
 	m = yyMonth % 12;
 	/* compiler fix for signed-mod - wrap y, m = (0, -1) -> (-1, 11) */
@@ -4415,7 +4415,7 @@ int
 ClockAddObjCmd(
     void *clientData,		/* Client data containing literal pool */
     Tcl_Interp *interp,		/* Tcl interpreter */
-    int objc,			/* Parameter count */
+    Tcl_Size objc,			/* Parameter count */
     Tcl_Obj *const objv[])	/* Parameter values */
 {
     static const char *syntax = "clock add clockval|now ?number units?..."
@@ -4532,7 +4532,7 @@ ClockAddObjCmd(
 	case CLC_ADD_WEEKDAYS:
 	    /* add number of week days (skipping Saturdays and Sundays)
 	     * to a relative days value. */
-	    offs = ClockWeekdaysOffs(yy.date.dayOfWeek, offs);
+	    offs = ClockWeekdaysOffs(yy.date.dayOfWeek, (int)offs);
 	    yyRelDay += offs;
 	    break;
 	case CLC_ADD_HOURS:
@@ -4598,7 +4598,7 @@ int
 ClockSecondsObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Tcl interpreter */
-    int objc,			/* Parameter count */
+    Tcl_Size objc,			/* Parameter count */
     Tcl_Obj *const *objv)	/* Parameter values */
 {
     Tcl_Time now;
@@ -4630,7 +4630,7 @@ int
 ClockSafeCatchCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     typedef struct {
