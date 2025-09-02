@@ -1020,7 +1020,7 @@ typedef struct Tcl_DString {
  * Forward declarations of Tcl_HashTable and related types.
  */
 
-#ifndef TCL_HASH_TYPE
+#if !defined(TCL_HASH_TYPE) && !defined (TCL_NO_DEPRECATED)
 #   define TCL_HASH_TYPE size_t
 #endif
 
