@@ -573,10 +573,10 @@ TclObjLookupVar(
 }
 
 /*
- *	When createPart1 is 1, callers must IncrRefCount part1Ptr if they
- *	plan to DecrRefCount it.
- *	When createPart2 is 1, callers must IncrRefCount part2Ptr if they
- *	plan to DecrRefCount it.
+ * When createPart1 is 1, callers must IncrRefCount part1Ptr if they
+ * plan to DecrRefCount it.
+ * When createPart2 is 1, callers must IncrRefCount part2Ptr if they
+ * plan to DecrRefCount it.
  */
 Var *
 TclObjLookupVarEx(
