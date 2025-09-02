@@ -242,6 +242,8 @@ TclCompileStringCatCmd(
     if (numWords < 2) {
 	PUSH(			"");
 	return TCL_OK;
+    } else if (numWords > INT_MAX) {
+	return TCL_ERROR;
     }
 
     /* General case: issue CONCAT1's (by chunks of 254 if needed), folding
@@ -1432,7 +1434,7 @@ TclCompileSubstCmd(
     Tcl_Token *wordTokenPtr = TokenAfter(parsePtr->tokenPtr);
     int code = TCL_ERROR;
 
-    if (numArgs == 0 || numArgs > UINT_MAX) {
+    if (numArgs == 0 || numArgs > INT_MAX) {
 	return TCL_ERROR;
     }
 
@@ -1811,6 +1813,8 @@ TclCompileSwitchCmd(
 	 */
 
 	goto finishedOptionParse;
+    } else if (numWords > INT_MAX) {
+	return TCL_ERROR;
     }
 
     /*
@@ -2842,7 +2846,7 @@ TclCompileTryCmd(
     TryHandlerInfo staticHandler, *handlers = &staticHandler;
     Tcl_Size handlerIdx = 0;
 
-    if (numWords < 2 || numWords > UINT_MAX) {
+    if (numWords < 2 || numWords > INT_MAX) {
 	return TCL_ERROR;
     }
 
@@ -4476,7 +4480,7 @@ TclCompileYieldToCmd(
     Tcl_Size i;
 
     /* TODO: Consider support for compiling expanded args. */
-    if (parsePtr->numWords < 2 || parsePtr->numWords > UINT_MAX) {
+    if (parsePtr->numWords < 2 || parsePtr->numWords > INT_MAX) {
 	return TCL_ERROR;
     }
 
@@ -4660,7 +4664,7 @@ CompileComparisonOpCmd(
 	tokenPtr = TokenAfter(tokenPtr);
 	PUSH_TOKEN(		tokenPtr, 2);
 	TclEmitOpcode(instruction, envPtr);
-    } else if (!EnvHasLVT(envPtr)) {
+    } else if (!EnvHasLVT(envPtr) || parsePtr->numWords > INT_MAX) {
 	/*
 	 * No local variable space!
 	 */
@@ -4815,6 +4819,9 @@ TclCompilePowOpCmd(
      * one with right associativity.
      */
 
+    if (parsePtr->numWords > INT_MAX) {
+	return TCL_ERROR;
+    }
     for (words=1 ; words<parsePtr->numWords ; words++) {
 	tokenPtr = TokenAfter(tokenPtr);
 	PUSH_TOKEN(		tokenPtr, words);
@@ -5012,7 +5019,7 @@ TclCompileMinusOpCmd(
     Tcl_Size words;
 
     /* TODO: Consider support for compiling expanded args. */
-    if (parsePtr->numWords == 1 || parsePtr->numWords > UINT_MAX) {
+    if (parsePtr->numWords == 1 || parsePtr->numWords > INT_MAX) {
 	/*
 	 * Fallback to direct eval to report syntax error.
 	 */
@@ -5057,7 +5064,7 @@ TclCompileDivOpCmd(
     Tcl_Size words;
 
     /* TODO: Consider support for compiling expanded args. */
-    if (parsePtr->numWords == 1 || parsePtr->numWords > UINT_MAX) {
+    if (parsePtr->numWords == 1 || parsePtr->numWords > INT_MAX) {
 	/*
 	 * Fallback to direct eval to report syntax error.
 	 */

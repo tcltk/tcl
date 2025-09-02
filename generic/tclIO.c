@@ -1650,7 +1650,7 @@ Tcl_CreateChannel(
      */
 
     if (chanName != NULL) {
-	unsigned len = strlen(chanName) + 1;
+	size_t len = strlen(chanName) + 1;
 
 	/*
 	 * Make sure we allocate at least 7 bytes, so it fits for "stdout"
@@ -2808,7 +2808,7 @@ FlushChannel(
 	 */
 
 	PreserveChannelBuffer(bufPtr);
-	written = ChanWrite(chanPtr, RemovePoint(bufPtr), BytesLeft(bufPtr),
+	written = (int)ChanWrite(chanPtr, RemovePoint(bufPtr), BytesLeft(bufPtr),
 		&errorCode);
 
 	/*
@@ -9236,7 +9236,7 @@ Tcl_FileEventObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Interpreter in which the channel for which
 				 * to create the handler is found. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Channel *chanPtr;		/* The channel to create the handler for. */

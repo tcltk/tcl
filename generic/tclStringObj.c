@@ -1886,7 +1886,7 @@ Tcl_AppendFormatToObj(
 	int newXpg, allocSegment = 0;
 	Tcl_Size numChars, segmentLimit, segmentNumBytes;
 	Tcl_Obj *segment;
-	int step = TclUtfToUniChar(format, &ch);
+	Tcl_Size step = TclUtfToUniChar(format, &ch);
 
 	format += step;
 	if (ch != '%') {
@@ -2030,7 +2030,7 @@ Tcl_AppendFormatToObj(
 	 * Step 4. Precision.
 	 */
 
-	gotPrecision = precision = 0;
+	gotPrecision = (int)(precision = 0);
 	if (ch == '.') {
 	    gotPrecision = 1;
 	    format += step;
@@ -2151,8 +2151,9 @@ Tcl_AppendFormatToObj(
 	    }
 	    break;
 	case 'c': {
+	    Tcl_Size length;
+	    int code;
 	    char buf[4] = "";
-	    int code, length;
 
 	    if (TclGetIntFromObj(interp, segment, &code) != TCL_OK) {
 		goto error;
@@ -2370,7 +2371,7 @@ Tcl_AppendFormatToObj(
 		    bits = (Tcl_WideUInt) us;
 		    while (us) {
 			numDigits++;
-			us /= base;
+			us = (unsigned short)(us / base);
 		    }
 		} else if (useWide) {
 		    Tcl_WideUInt uw = (Tcl_WideUInt) w;
@@ -2427,15 +2428,15 @@ Tcl_AppendFormatToObj(
 			}
 			shift -= numBits;
 		    }
-		    digitOffset = bits % base;
+		    digitOffset = (int)(bits % base);
 		    if (digitOffset > 9) {
 			if (ch == 'X') {
-			    bytes[numDigits] = 'A' + digitOffset - 10;
+			    bytes[numDigits] = 'A' + (char)digitOffset - 10;
 			} else {
-			    bytes[numDigits] = 'a' + digitOffset - 10;
+			    bytes[numDigits] = 'a' + (char)digitOffset - 10;
 			}
 		    } else {
-			bytes[numDigits] = '0' + digitOffset;
+			bytes[numDigits] = '0' + (char)digitOffset;
 		    }
 		    bits /= base;
 		}
@@ -2512,18 +2513,18 @@ Tcl_AppendFormatToObj(
 	    if (width) {
 		p += snprintf(p, TCL_INTEGER_SPACE, "%" TCL_LL_MODIFIER "d", width);
 		if (width > length) {
-		    length = width;
+		    length = (int)width;
 		}
 	    }
 	    if (gotPrecision) {
 		*p++ = '.';
 		p += snprintf(p, TCL_INTEGER_SPACE, "%" TCL_LL_MODIFIER "d", precision);
-		if (precision > TCL_SIZE_MAX - length) {
+		if (precision > INT_MAX - length) {
 		    msg = overflow;
 		    errCode = "OVERFLOW";
 		    goto errorMsg;
 		}
-		length += precision;
+		length += (int)precision;
 	    }
 
 	    /*
@@ -3810,9 +3811,10 @@ TclStringCmp(
 	    match = memCmpFn(s1, s2, length);
 	}
 	if ((match == 0) && (reqlength > length)) {
-	    match = s1len - s2len;
+	    match = (s1len > s2len) ? 1 : (s1len < s2len) ? -1 : 0;
+	} else {
+	    match = (match > 0) ? 1 : (match < 0) ? -1 : 0;
 	}
-	match = (match > 0) ? 1 : (match < 0) ? -1 : 0;
     }
   matchdone:
     return match;
@@ -4140,7 +4142,7 @@ TclStringReverse(
 		 * skip calling Tcl_UtfCharComplete() here.
 		 */
 
-		int bytesInChar = TclUtfToUniChar(from, &chw);
+		Tcl_Size bytesInChar = TclUtfToUniChar(from, &chw);
 
 		ReverseBytes((unsigned char *)to, (unsigned char *)from,
 			bytesInChar);
@@ -4453,7 +4455,7 @@ DupStringInternalRep(
     }
 
     if (srcStringPtr->hasUnicode) {
-	int copyMaxChars;
+	Tcl_Size copyMaxChars;
 
 	if (srcStringPtr->maxChars / 2 >= srcStringPtr->numChars) {
 	    copyMaxChars = 2 * srcStringPtr->numChars;
