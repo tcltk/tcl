@@ -261,8 +261,8 @@ TclOO_Class_Constructor(
 }
 
 /*
- *	Called *after* [oo::define] inside the constructor of a class.
- *	Cleans up some temporary storage and sets up the delegate.
+ * Called *after* [oo::define] inside the constructor of a class.
+ * Cleans up some temporary storage and sets up the delegate.
  */
 static int
 PostClassConstructor(
