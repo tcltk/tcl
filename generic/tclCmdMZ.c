@@ -2691,6 +2691,10 @@ StringEqualCmd(
 
     objv += objc-2;
     match = TclStringCmp(objv[0], objv[1], 1, nocase, reqlength);
+    if (match == INT_MIN) {
+	Tcl_AppendResult(interp, "memory allocation error", (char *)NULL);
+	return TCL_ERROR;
+    }
     Tcl_SetObjResult(interp, Tcl_NewBooleanObj(match ? 0 : 1));
     return TCL_OK;
 }
@@ -2736,6 +2740,10 @@ StringCmpCmd(
 
     objv += objc-2;
     match = TclStringCmp(objv[0], objv[1], 0, nocase, reqlength);
+    if (match == INT_MIN) {
+	Tcl_AppendResult(interp, "memory allocation error", (char *)NULL);
+	return TCL_ERROR;
+    }
     Tcl_SetObjResult(interp, Tcl_NewWideIntObj(match));
     return TCL_OK;
 }
