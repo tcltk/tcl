@@ -2161,7 +2161,7 @@ NativeStat(
 
     statPtr->st_dev	= (dev_t) dev;
     statPtr->st_ino	= (_ino_t)inode;
-    statPtr->st_mode	= (mode_t)mode;
+    statPtr->st_mode	= (unsigned short)mode;
     statPtr->st_nlink	= (short)nlink;
     statPtr->st_uid	= 0;
     statPtr->st_gid	= 0;
