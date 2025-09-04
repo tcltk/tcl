@@ -3178,13 +3178,23 @@ TclStringRepeat(
 	 */
 
 	if (!inPlace || Tcl_IsShared(objPtr)) {
-	    objResultPtr = Tcl_NewStringObj(TclGetString(objPtr), length);
+	    char *str = TclAttemptGetString(objPtr);
+	    if (!str) {
+		count = 1;
+		goto allocoverflow;
+	    }
+	    objResultPtr = Tcl_AttemptNewStringObj(str, length);
+	    if (!objResultPtr) {
+		count = 1;
+		goto allocoverflow;
+	    }
 	} else {
 	    TclFreeInternalRep(objPtr);
 	    objResultPtr = objPtr;
 	}
 	/* TODO - overflow check */
 	if (0 == Tcl_AttemptSetObjLength(objResultPtr, count*length)) {
+	allocoverflow:
 	    if (interp) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"string size overflow: unable to alloc %" TCL_SIZE_MODIFIER "d bytes",
