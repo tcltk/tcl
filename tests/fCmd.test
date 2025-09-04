@@ -2708,7 +2708,7 @@ test fCmd-30.3 {file readable on 'pagefile.sys'} -constraints {win notInCIenv} -
 	lappend r exists [file exists $path]
 	lappend r readable [file readable $path]
 	lappend r stat [catch {file stat $path a} e] $e
-        unset -nocomplain path
+	unset -nocomplain path
     }
     return $r
 } -result {exists 1 readable 0 stat 0 {}}
