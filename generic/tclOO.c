@@ -1601,7 +1601,6 @@ TclOODecrRefCount(
     Object *oPtr)
 {
     if (oPtr->refCount-- <= 1) {
-
 	if (oPtr->classPtr != NULL) {
 	    Tcl_Free(oPtr->classPtr);
 	}

@@ -3264,7 +3264,7 @@ NamespaceCodeCmd(
      * Take care to only check for scoping in precisely the style that
      * [::namespace code] generates it.  Anything more forgiving can have
      * the effect of failing in namespaces that contain their own custom
-     " "namespace" command.  [Bug 3202171].
+     * "namespace" command.  [Bug 3202171].
      */
 
     arg = TclGetStringFromObj(objv[1], &length);
