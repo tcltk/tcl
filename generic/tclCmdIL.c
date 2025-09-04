@@ -106,7 +106,7 @@ typedef enum {
     LSEQ_DOTS, LSEQ_TO, LSEQ_COUNT, LSEQ_BY
 } SequenceOperators;
 typedef enum {
-     NoneArg, NumericArg, RangeKeywordArg, ErrArg, LastArg = 8
+    NoneArg, NumericArg, RangeKeywordArg, ErrArg, LastArg = 8
 } SequenceDecoded;
 
 /*
@@ -3882,11 +3882,11 @@ Tcl_LsearchObjCmd(
 
 static SequenceDecoded
 SequenceIdentifyArgument(
-     Tcl_Interp *interp,	/* for error reporting */
-     Tcl_Obj *argPtr,		/* Argument to decode */
-     int allowedArgs,		/* Flags if keyword or numeric allowed. */
-     Tcl_Obj **numValuePtr,	/* Return numeric value */
-     int *keywordIndexPtr)	/* Return keyword enum */
+    Tcl_Interp *interp,		/* for error reporting */
+    Tcl_Obj *argPtr,		/* Argument to decode */
+    int allowedArgs,		/* Flags if keyword or numeric allowed. */
+    Tcl_Obj **numValuePtr,	/* Return numeric value */
+    int *keywordIndexPtr)	/* Return keyword enum */
 {
     int result = TCL_ERROR;
     SequenceOperators opmode;

@@ -4553,8 +4553,8 @@ ObjMakeUpvar(
 
     if (index < 0) {
 	if (!(arrayPtr != NULL
-		     ? (TclIsVarInHash(arrayPtr) && TclGetVarNsPtr(arrayPtr))
-		     : (TclIsVarInHash(otherPtr) && TclGetVarNsPtr(otherPtr)))
+		    ? (TclIsVarInHash(arrayPtr) && TclGetVarNsPtr(arrayPtr))
+		    : (TclIsVarInHash(otherPtr) && TclGetVarNsPtr(otherPtr)))
 		&& ((myFlags & (TCL_GLOBAL_ONLY | TCL_NAMESPACE_ONLY))
 			|| (varFramePtr == NULL)
 			|| !HasLocalVars(varFramePtr)

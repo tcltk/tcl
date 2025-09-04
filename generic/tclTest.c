@@ -2413,8 +2413,8 @@ TestencodingCmd(
 	}
 	Tcl_DString ds;
 	string = (index == ENC_GETNAMEUSER
-		      ? Tcl_GetEncodingNameForUser
-		      : Tcl_GetEncodingNameFromEnvironment)(&ds);
+		    ? Tcl_GetEncodingNameForUser
+		    : Tcl_GetEncodingNameFromEnvironment)(&ds);
 	/* Note not string compare, the actual pointer must be the same */
 	if (string != Tcl_DStringValue(&ds)) {
 	    Tcl_DStringFree(&ds);
@@ -4124,8 +4124,8 @@ TestlistapiCmd(
 	    else {
 		APPENDSTR(resultType, "");
 	    }
-	   Tcl_ListObjAppendElement(NULL, objPtr, Tcl_NewStringObj("result", -1));
-	   Tcl_ListObjAppendElement(NULL, objPtr, resultPtr);
+	    Tcl_ListObjAppendElement(NULL, objPtr, Tcl_NewStringObj("result", -1));
+	    Tcl_ListObjAppendElement(NULL, objPtr, resultPtr);
 	}
     } else {
 	Tcl_ListObjAppendElement(NULL, objPtr, Tcl_NewStringObj("result", -1));
@@ -6394,8 +6394,7 @@ TestChannelCmd(
 	    chan = (Tcl_Channel) NULL;
 	    for (nextPtrPtr = &firstDetached, curPtr = firstDetached;
 		    curPtr != NULL;
-		     nextPtrPtr = &(curPtr->nextPtr), curPtr = curPtr->nextPtr) {
-
+		    nextPtrPtr = &(curPtr->nextPtr), curPtr = curPtr->nextPtr) {
 		if (strcmp(Tcl_GetString(objv[2]), Tcl_GetChannelName(curPtr->chan)) == 0) {
 		    *nextPtrPtr = curPtr->nextPtr;
 		    curPtr->nextPtr = NULL;
@@ -6693,8 +6692,8 @@ TestChannelCmd(
 	    return TCL_OK;
 	}
 	for (hPtr = Tcl_FirstHashEntry(hTblPtr, &hSearch);
-	     hPtr != NULL;
-	     hPtr = Tcl_NextHashEntry(&hSearch)) {
+		hPtr != NULL;
+		hPtr = Tcl_NextHashEntry(&hSearch)) {
 	    Tcl_AppendElement(interp, (char *)Tcl_GetHashKey(hTblPtr, hPtr));
 	}
 	return TCL_OK;
@@ -6731,8 +6730,8 @@ TestChannelCmd(
 	    return TCL_OK;
 	}
 	for (hPtr = Tcl_FirstHashEntry(hTblPtr, &hSearch);
-	     hPtr != NULL;
-	     hPtr = Tcl_NextHashEntry(&hSearch)) {
+		hPtr != NULL;
+		hPtr = Tcl_NextHashEntry(&hSearch)) {
 	    chanPtr  = (Channel *)Tcl_GetHashValue(hPtr);
 	    statePtr = chanPtr->state;
 	    if (statePtr->flags & TCL_READABLE) {
@@ -6925,8 +6924,8 @@ TestChannelEventCmd(
 	    return TCL_ERROR;
 	}
 	for (i = 0, esPtr = statePtr->scriptRecordPtr;
-	     (i < index) && (esPtr != NULL);
-	     i++, esPtr = esPtr->nextPtr) {
+		(i < index) && (esPtr != NULL);
+		i++, esPtr = esPtr->nextPtr) {
 	    /* Empty loop body. */
 	}
 	if (esPtr == NULL) {
@@ -6962,8 +6961,8 @@ TestChannelEventCmd(
 	}
 	resultListPtr = Tcl_GetObjResult(interp);
 	for (esPtr = statePtr->scriptRecordPtr;
-	     esPtr != NULL;
-	     esPtr = esPtr->nextPtr) {
+		esPtr != NULL;
+		esPtr = esPtr->nextPtr) {
 	    if (esPtr->mask) {
 		Tcl_ListObjAppendElement(interp, resultListPtr, Tcl_NewStringObj(
 		    (esPtr->mask == TCL_READABLE) ? "readable" : "writable", -1));
@@ -6983,8 +6982,8 @@ TestChannelEventCmd(
 	    return TCL_ERROR;
 	}
 	for (esPtr = statePtr->scriptRecordPtr;
-	     esPtr != NULL;
-	     esPtr = nextEsPtr) {
+		esPtr != NULL;
+		esPtr = nextEsPtr) {
 	    nextEsPtr = esPtr->nextPtr;
 	    Tcl_DeleteChannelHandler((Tcl_Channel) chanPtr,
 		    TclChannelEventScriptInvoker, esPtr);
@@ -7009,8 +7008,8 @@ TestChannelEventCmd(
 	    return TCL_ERROR;
 	}
 	for (i = 0, esPtr = statePtr->scriptRecordPtr;
-	     (i < index) && (esPtr != NULL);
-	     i++, esPtr = esPtr->nextPtr) {
+		(i < index) && (esPtr != NULL);
+		i++, esPtr = esPtr->nextPtr) {
 	    /* Empty loop body. */
 	}
 	if (esPtr == NULL) {

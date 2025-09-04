@@ -5439,11 +5439,9 @@ TclUnicodeNormalizeCmd(
 	} else if (!strcmp(s, "strict")) {
 	    profile = TCL_ENCODING_PROFILE_STRICT;
 	} else {
-	    Tcl_SetObjResult(interp,
-		Tcl_ObjPrintf("Invalid value \"%s\" supplied for option "
-			      "\"-profile\". Must be "
-			      "\"strict\" or \"replace\".",
-		    s));
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "Invalid value \"%s\" supplied for option \"-profile\". "
+		    "Must be \"strict\" or \"replace\".", s));
 	    return TCL_ERROR;
 	}
     } else if (objc != 2) {
