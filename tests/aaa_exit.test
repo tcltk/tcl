@@ -17,8 +17,8 @@ if {"::tcltest" ni [namespace children]} {
 }
 
 testConstraint noappverifier [expr {
-        [llength [info commands testappverifierpresent]] == 0
-        || ![testappverifierpresent]}]
+	[llength [info commands testappverifierpresent]] == 0
+	|| ![testappverifierpresent]}]
 
 test exit-1.1 {normal, quick exit} -constraints noappverifier -body {
     set f [open "|[interpreter] << \"exec [interpreter] << {set ::env(TCL_FINALIZE_ON_EXIT) 0;exit}\"" r]
