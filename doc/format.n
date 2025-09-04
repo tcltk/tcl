@@ -83,8 +83,7 @@ it is zero. For \fBx\fR or \fBX\fR conversions, \fB0x\fR
 will be added to the beginning of the result unless it is zero.
 For \fBb\fR conversions, \fB0b\fR
 will be added to the beginning of the result unless it is zero.
-For \fBd\fR conversions, there is only effect in combination
-with zero-padding or a field width: In that case, \fB0d\fR
+For \fBd\fR conversions, \fB0d\fR
 will be added to the beginning of the result unless it is zero.
 For all floating-point conversions (\fBe\fR, \fBE\fR, \fBf\fR,
 \fBg\fR, and \fBG\fR) it guarantees that the result always
