@@ -2138,7 +2138,7 @@ Tcl_ListObjReplace(
     if (numToDelete < 0) {
 	numToDelete = 0;
     } else if (first > LIST_MAX - numToDelete /* Handle integer overflow */
-	     || origListLen < first + numToDelete) {
+	    || origListLen < first + numToDelete) {
 	numToDelete = origListLen - first;
     }
 

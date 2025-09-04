@@ -4736,13 +4736,13 @@ TclUtfNormalize(
  */
 int
 Tcl_UtfToNormalizedDString(
-    Tcl_Interp *interp, /* Used for error messages. May be NULL */
-    const char *bytes,  /* Operand encoded in Tcl internal UTF8 */
-    Tcl_Size numBytes,	/* Length of bytes[], or -1 if NUL terminated */
+    Tcl_Interp *interp,		/* Used for error messages. May be NULL */
+    const char *bytes,		/* Operand encoded in Tcl internal UTF8 */
+    Tcl_Size numBytes,		/* Length of bytes[], or -1 if NUL terminated */
     Tcl_UnicodeNormalizationForm normForm, /* TCL_{NFC,NFD,NFKC,NFKC} */
-    int profile,        /* TCL_ENCODING_PROFILE_{STRICT,REPLACE} */
-    Tcl_DString *dsPtr) /* Converted output string in Tcl internal
-			   UTF8 encoding. Init'ed by function */
+    int profile,		/* TCL_ENCODING_PROFILE_{STRICT,REPLACE} */
+    Tcl_DString *dsPtr)		/* Converted output string in Tcl internal
+				 * UTF8 encoding. Init'ed by function */
 {
     Tcl_DStringInit(dsPtr);
     Tcl_Encoding encoding = Tcl_GetEncoding(interp, "utf-8");
@@ -4783,15 +4783,15 @@ Tcl_UtfToNormalizedDString(
  */
 int
 Tcl_UtfToNormalized(
-    Tcl_Interp *interp, /* Used for error messages. May be NULL */
-    const char *bytes,  /* Operand encoded in Tcl internal UTF8 */
-    Tcl_Size numBytes,  /* Length of bytes[], or -1 if NUL terminated */
+    Tcl_Interp *interp,		/* Used for error messages. May be NULL */
+    const char *bytes,		/* Operand encoded in Tcl internal UTF8 */
+    Tcl_Size numBytes,		/* Length of bytes[], or -1 if NUL terminated */
     Tcl_UnicodeNormalizationForm normForm, /* TCL_{NFC,NFD,NFKC,NFKC} */
-    int profile,        /* TCL_ENCODING_PROFILE_{STRICT,REPLACE} */
-    char *bufPtr,       /* Pointer to output buffer. Must not be NULL.  */
-    Tcl_Size bufLen,    /* Size of bufPtr storage. */
-    Tcl_Size *lengthPtr) /* Length of the output string in bytes excluding
-			   the trailing NUL byte. May be NULL */
+    int profile,		/* TCL_ENCODING_PROFILE_{STRICT,REPLACE} */
+    char *bufPtr,		/* Pointer to output buffer. Must not be NULL.  */
+    Tcl_Size bufLen,		/* Size of bufPtr storage. */
+    Tcl_Size *lengthPtr)	/* Length of the output string in bytes excluding
+				 * the trailing NUL byte. May be NULL */
 {
     Tcl_Encoding encoding = Tcl_GetEncoding(interp, "utf-8");
     if (encoding == NULL) {

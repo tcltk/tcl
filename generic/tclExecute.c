@@ -4643,7 +4643,7 @@ TEBCresume(
 	 * instr if lookup fails. Lookup by string.
 	 */
 
-   case INST_JUMP_TABLE:
+    case INST_JUMP_TABLE:
 	tblIdx = TclGetInt4AtPtr(pc + 1);
 	JumptableInfo *jtPtr = (JumptableInfo *)
 		codePtr->auxDataArrayPtr[tblIdx].clientData;

@@ -1226,7 +1226,7 @@ WinIsDrive(
 
 	    return 1;
 	} else if ((name[1] == ':')
-		   && (len == 2 || (name[2] == '/' || name[2] == '\\'))) {
+		&& (len == 2 || (name[2] == '/' || name[2] == '\\'))) {
 	    /*
 	     * Path is of the form 'x:' or 'x:/' or 'x:\'
 	     */

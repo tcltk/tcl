@@ -4908,7 +4908,7 @@ SetNsNameFromAny(
 
     name = TclGetString(objPtr);
     TclGetNamespaceForQualName(interp, name, NULL, TCL_FIND_ONLY_NS,
-	     &nsPtr, &dummy1Ptr, &dummy2Ptr, &dummy);
+	    &nsPtr, &dummy1Ptr, &dummy2Ptr, &dummy);
 
     if ((nsPtr == NULL) || (nsPtr->flags & NS_DYING)) {
 	return TCL_ERROR;

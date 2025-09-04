@@ -917,7 +917,7 @@ typedef struct VarInHash {
 
 #define TclIsVarTricky(varPtr,trickyFlags)				\
     (   ((varPtr)->flags & (VAR_ARRAY|VAR_LINK|trickyFlags))		\
-	  || (TclIsVarInHash(varPtr)					\
+	    || (TclIsVarInHash(varPtr)					\
 		&& (TclVarParentArray(varPtr) != NULL)			\
 		&& (TclVarParentArray(varPtr)->flags & (trickyFlags))))
 
