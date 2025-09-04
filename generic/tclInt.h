@@ -4858,20 +4858,6 @@ MODULE_SCOPE Tcl_LibraryInitProc Tcl_ABSListTest_Init;
 	TCL_DTRACE_OBJ_CREATE(objPtr);					\
     } while (0)
 
-#define TclAttemptNewStringObj(objPtr, s, len) \
-    do {								\
-	TclIncrObjsAllocated();						\
-	TclAllocObjStorage(objPtr);					\
-	(objPtr)->refCount = 0;						\
-	if (TclAttemptInitStringRep((objPtr), (s), (len))) { \
-	    (objPtr)->typePtr = NULL;					\
-	    TCL_DTRACE_OBJ_CREATE(objPtr);					\
-	} else { \
-	    Tcl_DecrRefCount(objPtr); \
-	    (objPtr) = NULL; \
-	} \
-    } while (0)
-
 #else /* TCL_MEM_DEBUG */
 #define TclNewIntObj(objPtr, w) \
     (objPtr) = Tcl_NewWideIntObj(w)
@@ -4900,10 +4886,21 @@ MODULE_SCOPE Tcl_LibraryInitProc Tcl_ABSListTest_Init;
 #define TclNewStringObj(objPtr, s, len) \
     (objPtr) = Tcl_NewStringObj((s), (len))
 
-#define TclAttemptNewStringObj(objPtr, s, len) \
-    (objPtr) = Tcl_AttemptNewStringObj((s), (len))
-
 #endif /* TCL_MEM_DEBUG */
+
+#define TclAttemptNewStringObj(objPtr, s, len) \
+    do {								\
+	TclIncrObjsAllocated();						\
+	TclAllocObjStorage(objPtr);					\
+	(objPtr)->refCount = 0;						\
+	if (TclAttemptInitStringRep((objPtr), (s), (len))) { \
+	    (objPtr)->typePtr = NULL;					\
+	    TCL_DTRACE_OBJ_CREATE(objPtr);					\
+	} else { \
+	    Tcl_DecrRefCount(objPtr); \
+	    (objPtr) = NULL; \
+	} \
+    } while (0)
 
 /*
  * The sLiteral argument *must* be a string literal; the incantation with
