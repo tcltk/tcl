@@ -3812,14 +3812,6 @@ Tcl_GetNumber(
     if (numBytes < 0) {
 	numBytes = strlen(bytes);
     }
-    if (numBytes > INT_MAX) {
-	if (interp) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "max size for a Tcl value (%d bytes) exceeded", INT_MAX));
-	    Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
-	}
-	return TCL_ERROR;
-    }
 
     objPtr->bytes = (char *) bytes;
     objPtr->length = numBytes;
