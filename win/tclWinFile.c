@@ -2043,7 +2043,7 @@ NativeStat(
 {
     DWORD attr;
     int dev, nlink = 1;
-    unsigned short mode;
+    int mode;
     unsigned int inode = 0;
     HANDLE fileHandle;
     DWORD fileType = FILE_TYPE_UNKNOWN;
@@ -2161,7 +2161,7 @@ NativeStat(
 
     statPtr->st_dev	= (dev_t) dev;
     statPtr->st_ino	= (_ino_t)inode;
-    statPtr->st_mode	= mode;
+    statPtr->st_mode	= (mode_t)mode;
     statPtr->st_nlink	= (short)nlink;
     statPtr->st_uid	= 0;
     statPtr->st_gid	= 0;
