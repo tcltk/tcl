@@ -1946,7 +1946,7 @@ TclOO_Singleton_New(
     TclNRAddCallback(interp, MarkAsSingleton, clsPtr, NULL, NULL, NULL);
     return TclNRNewObjectInstance(interp, (Tcl_Class) clsPtr,
 	    NULL, NULL, objc, objv, Tcl_ObjectContextSkippedArgs(context),
-	    AddConstructionFinalizer(interp));    
+	    AddConstructionFinalizer(interp));
 }
 
 /* Once the singleton object is made, this mixes in a class to disable easy
@@ -1974,7 +1974,7 @@ MarkAsSingleton(
 	if (mixinc > 0) {
 	    memcpy(mixins + 1, oPtr->mixins.list, mixinc * sizeof(Class *));
 	}
-	mixins[0] = singInst; 
+	mixins[0] = singInst;
 	TclOOObjectSetMixins(oPtr, mixinc + 1, mixins);
 	TclStackFree(interp, mixins);
     }
