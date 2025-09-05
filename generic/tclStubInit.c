@@ -867,7 +867,7 @@ const TclStubs tclStubs = {
     Tcl_SetByteArrayLength, /* 58 */
     Tcl_SetByteArrayObj, /* 59 */
     Tcl_SetDoubleObj, /* 60 */
-    0, /* 61 */
+    Tcl_AttemptGetCharLength, /* 61 */
     Tcl_SetListObj, /* 62 */
     0, /* 63 */
     Tcl_SetObjLength, /* 64 */
@@ -1503,8 +1503,7 @@ const TclStubs tclStubs = {
     Tcl_ListObjRange, /* 694 */
     Tcl_UtfToNormalizedDString, /* 695 */
     Tcl_UtfToNormalized, /* 696 */
-    Tcl_AttemptGetCharLength, /* 697 */
-    TclUnusedStubEntry, /* 698 */
+    TclUnusedStubEntry, /* 697 */
 };
 
 /* !END!: Do not edit above this line. */

@@ -204,7 +204,8 @@ EXTERN void		Tcl_SetByteArrayObj(Tcl_Obj *objPtr,
 				Tcl_Size numBytes);
 /* 60 */
 EXTERN void		Tcl_SetDoubleObj(Tcl_Obj *objPtr, double doubleValue);
-/* Slot 61 is reserved */
+/* 61 */
+EXTERN Tcl_Size		Tcl_AttemptGetCharLength(Tcl_Obj *objPtr);
 /* 62 */
 EXTERN void		Tcl_SetListObj(Tcl_Obj *objPtr, Tcl_Size objc,
 				Tcl_Obj *const objv[]);
@@ -1908,8 +1909,6 @@ EXTERN int		Tcl_UtfToNormalized(Tcl_Interp *interp,
 				int profile, char *bufPtr, Tcl_Size bufLen,
 				Tcl_Size *lengthPtr);
 /* 697 */
-EXTERN Tcl_Size		Tcl_AttemptGetCharLength(Tcl_Obj *objPtr);
-/* 698 */
 EXTERN void		TclUnusedStubEntry(void);
 
 typedef struct {
@@ -1983,7 +1982,7 @@ typedef struct TclStubs {
     unsigned char * (*tcl_SetByteArrayLength) (Tcl_Obj *objPtr, Tcl_Size numBytes); /* 58 */
     void (*tcl_SetByteArrayObj) (Tcl_Obj *objPtr, const unsigned char *bytes, Tcl_Size numBytes); /* 59 */
     void (*tcl_SetDoubleObj) (Tcl_Obj *objPtr, double doubleValue); /* 60 */
-    void (*reserved61)(void);
+    Tcl_Size (*tcl_AttemptGetCharLength) (Tcl_Obj *objPtr); /* 61 */
     void (*tcl_SetListObj) (Tcl_Obj *objPtr, Tcl_Size objc, Tcl_Obj *const objv[]); /* 62 */
     void (*reserved63)(void);
     void (*tcl_SetObjLength) (Tcl_Obj *objPtr, Tcl_Size length); /* 64 */
@@ -2619,8 +2618,7 @@ typedef struct TclStubs {
     int (*tcl_ListObjRange) (Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Size start, Tcl_Size end, Tcl_Obj **resultPtrPtr); /* 694 */
     int (*tcl_UtfToNormalizedDString) (Tcl_Interp *interp, const char *bytes, Tcl_Size length, Tcl_UnicodeNormalizationForm normForm, int profile, Tcl_DString *dsPtr); /* 695 */
     int (*tcl_UtfToNormalized) (Tcl_Interp *interp, const char *bytes, Tcl_Size length, Tcl_UnicodeNormalizationForm normForm, int profile, char *bufPtr, Tcl_Size bufLen, Tcl_Size *lengthPtr); /* 696 */
-    Tcl_Size (*tcl_AttemptGetCharLength) (Tcl_Obj *objPtr); /* 697 */
-    void (*tclUnusedStubEntry) (void); /* 698 */
+    void (*tclUnusedStubEntry) (void); /* 697 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -2749,7 +2747,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_SetByteArrayObj) /* 59 */
 #define Tcl_SetDoubleObj \
 	(tclStubsPtr->tcl_SetDoubleObj) /* 60 */
-/* Slot 61 is reserved */
+#define Tcl_AttemptGetCharLength \
+	(tclStubsPtr->tcl_AttemptGetCharLength) /* 61 */
 #define Tcl_SetListObj \
 	(tclStubsPtr->tcl_SetListObj) /* 62 */
 /* Slot 63 is reserved */
@@ -3969,10 +3968,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_UtfToNormalizedDString) /* 695 */
 #define Tcl_UtfToNormalized \
 	(tclStubsPtr->tcl_UtfToNormalized) /* 696 */
-#define Tcl_AttemptGetCharLength \
-	(tclStubsPtr->tcl_AttemptGetCharLength) /* 697 */
 #define TclUnusedStubEntry \
-	(tclStubsPtr->tclUnusedStubEntry) /* 698 */
+	(tclStubsPtr->tclUnusedStubEntry) /* 697 */
 
 #endif /* defined(USE_TCL_STUBS) */
 

@@ -209,6 +209,9 @@ declare 59 {
 declare 60 {
     void Tcl_SetDoubleObj(Tcl_Obj *objPtr, double doubleValue)
 }
+declare 61 {
+    Tcl_Size Tcl_AttemptGetCharLength(Tcl_Obj *objPtr)
+}
 declare 62 {
     void Tcl_SetListObj(Tcl_Obj *objPtr, Tcl_Size objc, Tcl_Obj *const objv[])
 }
@@ -2419,13 +2422,10 @@ declare 696 {
 	    Tcl_UnicodeNormalizationForm normForm, int profile,
 	    char *bufPtr, Tcl_Size bufLen, Tcl_Size *lengthPtr)
 }
-declare 697 {
-    Tcl_Size Tcl_AttemptGetCharLength(Tcl_Obj *objPtr)
-}
 
 # ----- BASELINE -- FOR -- 9.1.0 ----- #
 
-declare 698 {
+declare 697 {
     void TclUnusedStubEntry(void)
 }
 
