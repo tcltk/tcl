@@ -1093,6 +1093,29 @@ static const Tcl_ObjType v1TestListType = {
 };
 
 
+static
+void
+HugeUpdateString(
+    Tcl_Obj *obj
+)
+{
+	(void)obj;
+    /* Always returns NULL, as an indication that
+     * room for its string representation cannot be allocated */
+
+	return;
+}
+
+static const Tcl_ObjType hugeType = {
+    "huge",			/* name */
+    NULL,			/* freeIntRepProc */
+    NULL,			/* dupIntRepProc */
+    HugeUpdateString,		/* updateStringProc */
+    NULL,			/* setFromAnyProc */
+    TCL_OBJTYPE_V0
+};
+
+
 static int
 TestobjCmd(
     TCL_UNUSED(void *),
@@ -1107,7 +1130,7 @@ TestobjCmd(
     static const char *const subcommands[] = {
 	"freeallvars", "bug3598580", "buge58d7e19e9",
 	"types", "objtype", "newobj", "set",
-	"objrefcount",
+	"objrefcount", "huge",
 	"assign", "convert", "duplicate",
 	"invalidateStringRep", "refcount", "type",
 	NULL
@@ -1115,7 +1138,7 @@ TestobjCmd(
     enum testobjCmdIndex {
 	TESTOBJ_FREEALLVARS, TESTOBJ_BUG3598580, TESTOBJ_BUGE58D7E19E9,
 	TESTOBJ_TYPES, TESTOBJ_OBJTYPE, TESTOBJ_NEWOBJ, TESTOBJ_SET,
-	TESTOBJ_OBJREFCOUNT,
+	TESTOBJ_OBJREFCOUNT, TESTOBJ_HUGE,
 	TESTOBJ_ASSIGN, TESTOBJ_CONVERT, TESTOBJ_DUPLICATE,
 	TESTOBJ_INVALIDATESTRINGREP, TESTOBJ_REFCOUNT, TESTOBJ_TYPE,
     } cmdIndex;
@@ -1164,6 +1187,17 @@ TestobjCmd(
 	    Tcl_Obj *listObjPtr = Tcl_NewStringObj(Tcl_GetString(objv[2]), -1);
 	    listObjPtr->typePtr = &v1TestListType;
 	    Tcl_SetObjResult(interp, listObjPtr);
+	}
+	return TCL_OK;
+    case TESTOBJ_HUGE:
+	if (objc != 2) {
+	    goto wrongNumArgs;
+	} else {
+	    Tcl_Obj *hugeObjPtr = Tcl_NewObj();
+	    hugeObjPtr->typePtr = &hugeType;
+	    hugeObjPtr->length = INT_MAX - 1;
+	    hugeObjPtr->bytes = NULL;
+	    Tcl_SetObjResult(interp, hugeObjPtr);
 	}
 	return TCL_OK;
     case TESTOBJ_TYPES:

@@ -400,6 +400,20 @@ Tcl_GetCharLength(
     Tcl_Obj *objPtr)		/* The String object to get the num chars
 				 * of. */
 {
+    Tcl_Size result = Tcl_AttemptGetCharLength(objPtr);
+    if (result == -1) {
+	    Tcl_Panic("cannot allocate %" TCL_SIZE_MODIFIER "d bytes for type '%s' ",
+		    objPtr->length + 1, objPtr->typePtr->name);
+    }
+    return result;
+}
+
+
+Tcl_Size
+Tcl_AttemptGetCharLength(
+    Tcl_Obj *objPtr)		/* The String object to get the num chars
+				 * of. */
+{
     String *stringPtr;
     Tcl_Size numChars = 0;
 
@@ -432,7 +446,9 @@ Tcl_GetCharLength(
      * OK, need to work with the object as a string.
      */
 
-    SetStringFromAny(NULL, objPtr);
+    if (SetStringFromAny(NULL, objPtr) != TCL_OK) {
+	return -1;
+    }
     stringPtr = GET_STRING(objPtr);
     numChars = stringPtr->numChars;
 
@@ -3942,6 +3958,8 @@ TclStringFirst(
 	 * Whenever this routine is turned into a proper substring
 	 * finder, change to `return start` after limits imposed. */
 	goto firstEnd;
+    } else if (ln == -1) {
+	return NULL;
     }
 
     if (TclIsPureByteArray(needle) && TclIsPureByteArray(haystack)) {
@@ -4161,7 +4179,9 @@ TclStringReverse(
 	return objPtr;
     }
 
-    SetStringFromAny(NULL, objPtr);
+    if (SetStringFromAny(NULL, objPtr) != TCL_OK) {
+	return NULL;
+    }
     stringPtr = GET_STRING(objPtr);
 
     if (stringPtr->hasUnicode) {
@@ -4584,7 +4604,7 @@ DupStringInternalRep(
  *	Create an internal representation of type "String" for an object.
  *
  * Results:
- *	This operation always succeeds and returns TCL_OK.
+ *	This operation returns TCL_OK, or TCL_ERROR on an allocation error.
  *
  * Side effects:
  *	Any old internal representation for objPtr is freed and the internal
@@ -4607,8 +4627,7 @@ SetStringFromAny(
 
 	(void)TclAttemptGetString(objPtr);
 	if (!objPtr->bytes) {
-	    Tcl_AppendResult(interp, "allocation error", (char *)NULL);
-	    return TCL_ERROR;
+	    return TclCannotAllocateError(interp, objPtr);
 	}
 	TclFreeInternalRep(objPtr);
 

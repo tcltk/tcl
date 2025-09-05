@@ -1710,12 +1710,10 @@ Tcl_GetStringFromObj(
 	}
 	objPtr->typePtr->updateStringProc(objPtr);
 	if (objPtr->bytes == NULL) {
-	    Tcl_Panic("UpdateStringProc for type '%s' "
-		    "failed to allocate %" TCL_SIZE_MODIFIER "d bytes",
-		    objPtr->typePtr->name, objPtr->length + 1);
+	    Tcl_Panic("cannot allocate %" TCL_SIZE_MODIFIER "d bytes for type '%s' ",
+		    objPtr->length + 1, objPtr->typePtr->name);
 	} else if (objPtr->bytes[objPtr->length] != '\0') {
-	    Tcl_Panic("UpdateStringProc for type '%s' "
-		    "failed to create a valid string rep",
+	    Tcl_Panic("cannot create a valid string rep for type '%s'",
 		    objPtr->typePtr->name);
 	}
     }
@@ -1749,17 +1747,15 @@ Tcl_DbGetStringFromObj(
 	     * updateStringProc must be written in such a way that
 	     * (objPtr->bytes) never becomes NULL.
 	     */
-	    Tcl_Panic("UpdateStringProc should not be invoked for type %s. %s:%d",
+	    Tcl_Panic("cannot invoke UpdateStringProc for type %s. %s:%d",
 		    objPtr->typePtr->name, file, line);
 	}
 	objPtr->typePtr->updateStringProc(objPtr);
 	if (objPtr->bytes == NULL) {
-	    Tcl_Panic("UpdateStringProc for type '%s' "
-		    "failed to allocate %" TCL_SIZE_MODIFIER "d bytes. %s:%d",
-		    objPtr->typePtr->name, objPtr->length + 1, file, line);
+	    Tcl_Panic("cannot allocate %" TCL_SIZE_MODIFIER "d bytes for type '%s'. %s:%d",
+		    objPtr->length + 1, objPtr->typePtr->name, file, line);
 	} else if (objPtr->bytes[objPtr->length] != '\0') {
-	    Tcl_Panic("UpdateStringProc for type '%s' "
-		    "failed to create a valid string rep. %s:%d",
+	    Tcl_Panic("cannot create a valid string rep for type '%s'. %s:%d",
 		    objPtr->typePtr->name, file, line);
 	}
     }
@@ -1791,14 +1787,13 @@ Tcl_AttemptGetStringFromObj(
 	     * updateStringProc must be written in such a way that
 	     * (objPtr->bytes) never becomes NULL.
 	     */
-	    Tcl_Panic("UpdateStringProc should not be invoked for type %s",
+	    Tcl_Panic("cannot invoke UpdateStringProc for type %s",
 		    objPtr->typePtr->name);
 	}
 	objPtr->typePtr->updateStringProc(objPtr);
 	if (objPtr->bytes != NULL
 		&& objPtr->bytes[objPtr->length] != '\0') {
-	    Tcl_Panic("UpdateStringProc for type '%s' "
-		    "failed to create a valid string rep",
+	    Tcl_Panic("cannot create a valid string rep for type '%s'",
 		    objPtr->typePtr->name);
 	}
     }

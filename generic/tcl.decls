@@ -2419,10 +2419,13 @@ declare 696 {
 	    Tcl_UnicodeNormalizationForm normForm, int profile,
 	    char *bufPtr, Tcl_Size bufLen, Tcl_Size *lengthPtr)
 }
+declare 697 {
+    Tcl_Size Tcl_AttemptGetCharLength(Tcl_Obj *objPtr)
+}
 
 # ----- BASELINE -- FOR -- 9.1.0 ----- #
 
-declare 697 {
+declare 698 {
     void TclUnusedStubEntry(void)
 }
 
