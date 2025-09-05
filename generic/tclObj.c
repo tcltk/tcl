@@ -2075,7 +2075,7 @@ Tcl_GetBoolFromObj(
 	    }
 	}
 	Tcl_ObjTypeLengthProc *lengthProc = TclObjTypeHasProc(objPtr, lengthProc);
-	if (lengthProc && lengthProc(objPtr) != 1) {
+	if (lengthProc && lengthProc(objPtr) > 1) {
 	    goto listRep;
 	}
     } while ((ParseBoolean(objPtr) == TCL_OK) || (TCL_OK ==
@@ -2477,7 +2477,7 @@ Tcl_GetDoubleFromObj(
 	    }
 	}
 	Tcl_ObjTypeLengthProc *lengthProc = TclObjTypeHasProc(objPtr, lengthProc);
-	if (lengthProc && lengthProc(objPtr) != 1) {
+	if (lengthProc && lengthProc(objPtr) > 1) {
 	    goto listRep;
 	}
     } while (SetDoubleFromAny(interp, objPtr) == TCL_OK);
@@ -2776,7 +2776,7 @@ Tcl_GetLongFromObj(
 	    }
 	}
 	Tcl_ObjTypeLengthProc *lengthProc = TclObjTypeHasProc(objPtr, lengthProc);
-	if (lengthProc && lengthProc(objPtr) != 1) {
+	if (lengthProc && lengthProc(objPtr) > 1) {
 	    goto listRep;
 	}
     } while (TclParseNumber(interp, objPtr, "integer", NULL, -1, NULL,
@@ -3094,7 +3094,7 @@ Tcl_GetWideIntFromObj(
 	    }
 	}
 	Tcl_ObjTypeLengthProc *lengthProc = TclObjTypeHasProc(objPtr, lengthProc);
-	if (lengthProc && lengthProc(objPtr) != 1) {
+	if (lengthProc && lengthProc(objPtr) > 1) {
 	    goto listRep;
 	}
     } while (TclParseNumber(interp, objPtr, "integer", NULL, -1, NULL,
@@ -3783,7 +3783,7 @@ Tcl_GetNumberFromObj(
 	    }
 	}
 	Tcl_ObjTypeLengthProc *lengthProc = TclObjTypeHasProc(objPtr, lengthProc);
-	if (lengthProc && lengthProc(objPtr) != 1) {
+	if (lengthProc && lengthProc(objPtr) > 1) {
 	    goto listRep;
 	}
     } while (TCL_OK ==
