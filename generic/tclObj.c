@@ -3745,43 +3745,21 @@ Tcl_GetNumberFromObj(
     void **clientDataPtr,
     int *typePtr)
 {
-    Tcl_ObjTypeLengthProc *lengthProc = TclObjTypeHasProc(objPtr, lengthProc);
-
-    /*
-     *	Every numeric value in Tcl is also a Tcl list of length 1
-     *	Every numeric Tcl_ObjType built-in to Tcl uses abstract list
-     *	interfaces to report list-nature and list size (1) without string
-     *	generation or shimmering.
-     *
-     *	An empty string is not a Tcl number.
-     *	An empty list is not a Tcl number.
-     *	A Tcl dict is not a Tcl number.
-     */
-
-    if ((lengthProc && (1 != lengthProc(objPtr)))
-
-	/*
-	 * Values that report they are lists with length other than 1
-	 * are not numbers.  Error quickly without additional
-	 * processing.
-	 */
-
-	|| TclHasInternalRep(objPtr, &tclDictType)) {
-
-	/*
-	 * Handle dict separately because we don't even have to ask
-	 * a dict what its length is to know it is not 1.
-	 */
-	
-	if (interp) {
-	    Tcl_SetObjResult(interp,
-		    Tcl_NewStringObj("expected number but got a list", -1));
-	    /* TODO: set an error code?? */
-	}
-	return TCL_ERROR;
-    }
+    int needsErrMsg = 0, emptyList = 0;
 
     do {
+	Tcl_ObjTypeLengthProc *lengthProc;
+	Tcl_Size length;
+
+	/*
+	 * First pass: If objPtr already has one of the built-in
+	 * numeric types, move directly to returning the results.
+	 *
+	 * Second pass: A call to TclParseNumber succeeded, so now
+	 * we know objPtr has a numeric type, and we are returning
+	 * results and exiting.
+	 */
+
 	if (TclHasInternalRep(objPtr, &tclDoubleType)) {
 	    if (isnan(objPtr->internalRep.doubleValue)) {
 		*typePtr = TCL_NUMBER_NAN;
@@ -3806,8 +3784,77 @@ Tcl_GetNumberFromObj(
 	    *clientDataPtr = bigPtr;
 	    return TCL_OK;
 	}
+
+	/* 
+	 * We make only one pass through here, when objPtr did not
+	 * start with a built-in numeric type.  Now we want to screen
+	 * out cases where objPtr holds a value we know without parsing
+	 * cannot be a Tcl number.
+	 *
+	 * Every numeric value in Tcl is also a Tcl list of length 1
+	 * An empty list is not a Tcl number.
+	 * A Tcl dict is not a Tcl number.
+	 */
+
+	if (TclHasInternalRep(objPtr, &tclDictType)) {
+	    if (interp) {
+		Tcl_DictObjSize(NULL, objPtr, &length);
+		needsErrMsg = 1;
+		emptyList = (length == 0);
+	    }
+	    break; /* escape the do loop; make no TclParseNumber() call */
+	}
+
+	/*
+	 * Use the abstract list interfaces to ask the value whether
+	 * it represents a list, and then efficiently get the list length
+	 */
+
+	lengthProc = TclObjTypeHasProc(objPtr, lengthProc);
+	if (lengthProc) {
+	    length = lengthProc(objPtr);
+	    if (length == 1) {
+		/* Move directly to the TclParseNumber() call */
+		continue;
+	    }
+	    if (interp) {
+		needsErrMsg = 1;
+		emptyList = (length == 0);
+	    }
+	    break; /* escape the do loop; make no TclParseNumber() call */
+	}
+
+	/*
+	 * An empty string is also not a Tcl number, but cannot impose
+	 * significant cost or loss just passing through to TclParseNumber.
+	 * Don't bother to screen for it.
+	 */
     } while (TCL_OK ==
 	    TclParseNumber(interp, objPtr, "number", NULL, -1, NULL, 0));
+
+    /*
+     * Emulate the error reporting of TclParseNumber()
+     */
+
+    if (needsErrMsg) {
+	Tcl_Obj *msg;
+
+	assert( interp != NULL );
+
+	TclNewLiteralStringObj(msg, "expected number but got ");
+	if (emptyList) {
+	    Tcl_Size numBytes;
+	    const char *bytes = Tcl_GetStringFromObj(objPtr, &numBytes);
+
+	    Tcl_AppendToObj(msg, "\"", TCL_INDEX_NONE);
+	    Tcl_AppendLimitedToObj(msg, bytes, numBytes, 50, "");
+	    Tcl_AppendToObj(msg, "\"", TCL_INDEX_NONE);
+	} else {
+	    Tcl_AppendToObj(msg, "a list", TCL_INDEX_NONE);
+	}
+	Tcl_SetObjResult(interp, msg);
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "NUMBER", (char *)NULL);
+    }
     return TCL_ERROR;
 }
 
