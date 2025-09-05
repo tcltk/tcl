@@ -537,7 +537,13 @@ Tcl_MainEx(
 		if (!resultPtr->bytes) {
 		    chan = Tcl_GetStdChannel(TCL_STDERR);
 		    if (chan) {
-			Tcl_WriteChars(chan, "Memory allocation error\n", -1);
+			char buf[24];
+			snprintf(buf, sizeof(buf), "%" TCL_SIZE_MODIFIER "d", resultPtr->length + 1);
+			Tcl_WriteChars(chan, "cannot allocate ", -1);
+			Tcl_WriteChars(chan, buf, -1);
+			Tcl_WriteChars(chan, " bytes for type \'", -1);
+			Tcl_WriteChars(chan, resultPtr->typePtr->name , -1);
+			Tcl_WriteChars(chan, "\'\n", -1);
 		    }
 		} else {
 		    chan = Tcl_GetStdChannel(TCL_STDOUT);
@@ -824,7 +830,13 @@ StdinProc(
 	if (!resultPtr->bytes) {
 	    chan = Tcl_GetStdChannel(TCL_STDERR);
 	    if (chan) {
-		Tcl_WriteChars(chan, "Memory allocation error\n", -1);
+		char buf[24];
+		snprintf(buf, sizeof(buf), "%" TCL_SIZE_MODIFIER "d", resultPtr->length + 1);
+		Tcl_WriteChars(chan, "cannot allocate ", -1);
+		Tcl_WriteChars(chan, buf, -1);
+		Tcl_WriteChars(chan, " bytes for type \'", -1);
+		Tcl_WriteChars(chan, resultPtr->typePtr->name , -1);
+		Tcl_WriteChars(chan, "\'\n", -1);
 	    }
 	} else {
 	    if ((length > 0) && (chan != NULL)) {
