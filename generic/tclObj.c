@@ -2684,7 +2684,6 @@ Tcl_GetLongFromObj(
     Tcl_Obj *objPtr,	/* The object from which to get a long. */
     long *longPtr)	/* Place to store resulting long. */
 {
-    Tcl_Size length;
     do {
 #ifdef TCL_WIDE_INT_IS_LONG
 	if (TclHasInternalRep(objPtr, &tclIntType)) {
@@ -2763,21 +2762,6 @@ Tcl_GetLongFromObj(
 		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, (char *)NULL);
 	    }
 	    return TCL_ERROR;
-	}
-	/* Handle dict separately, because it doesn't have a lengthProc */
-	if (TclHasInternalRep(objPtr, &tclDictType)) {
-	    Tcl_DictObjSize(NULL, objPtr, &length);
-	    if (length > 0) {
-	    listRep:
-		if (interp) {
-		    Tcl_SetObjResult(interp, Tcl_NewStringObj("expected integer but got a list", -1));
-		}
-		return TCL_ERROR;
-	    }
-	}
-	Tcl_ObjTypeLengthProc *lengthProc = TclObjTypeHasProc(objPtr, lengthProc);
-	if (lengthProc && lengthProc(objPtr) > 1) {
-	    goto listRep;
 	}
     } while (TclParseNumber(interp, objPtr, "integer", NULL, -1, NULL,
 	    TCL_PARSE_INTEGER_ONLY)==TCL_OK);
@@ -3029,7 +3013,6 @@ Tcl_GetWideIntFromObj(
     Tcl_WideInt *wideIntPtr)
 				/* Place to store resulting long. */
 {
-    Tcl_Size length;
     do {
 	if (TclHasInternalRep(objPtr, &tclIntType)) {
 	    *wideIntPtr = objPtr->internalRep.wideValue;
@@ -3081,21 +3064,6 @@ Tcl_GetWideIntFromObj(
 		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, (char *)NULL);
 	    }
 	    return TCL_ERROR;
-	}
-	/* Handle dict separately, because it doesn't have a lengthProc */
-	if (TclHasInternalRep(objPtr, &tclDictType)) {
-	    Tcl_DictObjSize(NULL, objPtr, &length);
-	    if (length > 0) {
-	    listRep:
-		if (interp) {
-		    Tcl_SetObjResult(interp, Tcl_NewStringObj("expected integer but got a list", -1));
-		}
-		return TCL_ERROR;
-	    }
-	}
-	Tcl_ObjTypeLengthProc *lengthProc = TclObjTypeHasProc(objPtr, lengthProc);
-	if (lengthProc && lengthProc(objPtr) > 1) {
-	    goto listRep;
 	}
     } while (TclParseNumber(interp, objPtr, "integer", NULL, -1, NULL,
 	    TCL_PARSE_INTEGER_ONLY)==TCL_OK);
@@ -3745,7 +3713,6 @@ Tcl_GetNumberFromObj(
     void **clientDataPtr,
     int *typePtr)
 {
-    Tcl_Size length;
     do {
 	if (TclHasInternalRep(objPtr, &tclDoubleType)) {
 	    if (isnan(objPtr->internalRep.doubleValue)) {
@@ -3770,21 +3737,6 @@ Tcl_GetNumberFromObj(
 	    *typePtr = TCL_NUMBER_BIG;
 	    *clientDataPtr = bigPtr;
 	    return TCL_OK;
-	}
-	/* Handle dict separately, because it doesn't have a lengthProc */
-	if (TclHasInternalRep(objPtr, &tclDictType)) {
-	    Tcl_DictObjSize(NULL, objPtr, &length);
-	    if (length > 0) {
-	    listRep:
-		if (interp) {
-		    Tcl_SetObjResult(interp, Tcl_NewStringObj("expected number but got a list", -1));
-		}
-		return TCL_ERROR;
-	    }
-	}
-	Tcl_ObjTypeLengthProc *lengthProc = TclObjTypeHasProc(objPtr, lengthProc);
-	if (lengthProc && lengthProc(objPtr) > 1) {
-	    goto listRep;
 	}
     } while (TCL_OK ==
 	    TclParseNumber(interp, objPtr, "number", NULL, -1, NULL, 0));
