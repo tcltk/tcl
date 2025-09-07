@@ -236,6 +236,27 @@ Tcl_NewStringObj(
     return Tcl_DbNewStringObj(bytes, length, "unknown", 0);
 }
 
+Tcl_Obj *
+Tcl_AttemptNewStringObj(
+    const char *bytes,		/* Points to the first of the length bytes
+				 * used to initialize the new object. */
+    Tcl_Size length)		/* The number of bytes to copy from "bytes"
+				 * when initializing the new object. If
+				 * TCL_INDEX_NONE, use bytes up to the first NUL
+				 * byte. */
+{
+    Tcl_Obj *objPtr;
+    if (length == TCL_INDEX_NONE) {
+	length = (bytes? strlen(bytes) : 0);
+    }
+    TclDbNewObj(objPtr, "unknown", 0);
+    if (!TclAttemptInitStringRep(objPtr, bytes, length)) {
+	TclFreeObj(objPtr);
+	objPtr = NULL;
+    }
+    return objPtr;
+}
+
 // Redefine the macro
 #define Tcl_NewStringObj(bytes, len) \
     Tcl_DbNewStringObj(bytes, len, __FILE__, __LINE__)
@@ -256,7 +277,6 @@ Tcl_NewStringObj(
     TclNewStringObj(objPtr, bytes, length);
     return objPtr;
 }
-#endif /* TCL_MEM_DEBUG */
 
 Tcl_Obj *
 Tcl_AttemptNewStringObj(
@@ -274,6 +294,7 @@ Tcl_AttemptNewStringObj(
     TclAttemptNewStringObj(objPtr, bytes, length);
     return objPtr;
 }
+#endif /* TCL_MEM_DEBUG */
 
 
 /*
