@@ -638,7 +638,7 @@ NRInterpCmd(
 	"eval",		"exists",	"expose",	"hide",
 	"hidden",	"issafe",	"invokehidden",
 	"limit",	"marktrusted",	"recursionlimit",
-	"set", "share",
+	"set",		"share",
 #ifndef TCL_NO_DEPRECATED
 	"slaves",
 #endif
@@ -650,7 +650,7 @@ NRInterpCmd(
 	"eval",		"exists",	"expose",
 	"hide",		"hidden",	"issafe",
 	"invokehidden",	"limit",	"marktrusted",	"recursionlimit",
-	"set", "share",	"target",	"transfer",
+	"set",		"share",	"target",	"transfer",
 	NULL
     };
     enum interpOptionEnum {
@@ -658,8 +658,8 @@ NRInterpCmd(
 	OPT_CHILDREN,	OPT_CREATE,	OPT_DEBUG,	OPT_DELETE,
 	OPT_EVAL,	OPT_EXISTS,	OPT_EXPOSE,	OPT_HIDE,
 	OPT_HIDDEN,	OPT_ISSAFE,	OPT_INVOKEHID,
-	OPT_LIMIT,	OPT_MARKTRUSTED, OPT_RECLIMIT,	OPT_SHARE,
-	OPT_SET,
+	OPT_LIMIT,	OPT_MARKTRUSTED, OPT_RECLIMIT,	OPT_SET,
+	OPT_SHARE,
 #ifndef TCL_NO_DEPRECATED
 	OPT_SLAVES,
 #endif
