@@ -584,11 +584,12 @@ Tcl_ConditionNotify(
     Tcl_Condition *condPtr)
 {
     pthread_cond_t *pcondPtr = *((pthread_cond_t **)condPtr);
+
     if (pcondPtr != NULL) {
 	pthread_cond_broadcast(pcondPtr);
     } else {
 	/*
-	 * Noone has used the condition variable, so there are no waiters.
+	 * No-one has used the condition variable, so there are no waiters.
 	 */
     }
 }
