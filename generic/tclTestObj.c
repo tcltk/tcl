@@ -965,6 +965,28 @@ TestlistobjCmd(
  *----------------------------------------------------------------------
  */
 
+static
+void
+HugeUpdateString(
+    Tcl_Obj *obj
+)
+{
+	(void)obj;
+    /* Always returns NULL, as an indication that
+     * room for its string representation cannot be allocated */
+
+	return;
+}
+
+static const Tcl_ObjType hugeType = {
+    "huge",			/* name */
+    NULL,			/* freeIntRepProc */
+    NULL,			/* dupIntRepProc */
+    HugeUpdateString,		/* updateStringProc */
+    NULL 			/* setFromAnyProc */
+};
+
+
 static int
 TestobjCmd(
     ClientData clientData,	/* Not used. */
@@ -1116,6 +1138,15 @@ TestobjCmd(
 	    return TCL_ERROR;
 	}
 	Tcl_SetObjResult(interp, Tcl_NewIntObj(varPtr[varIndex]->refCount));
+    } else if (strcmp(subCmd, "huge") == 0) {
+	if (objc != 2) {
+	    goto wrongNumArgs;
+	}
+	Tcl_Obj *hugeObjPtr = Tcl_NewObj();
+	hugeObjPtr->typePtr = &hugeType;
+	hugeObjPtr->length = INT_MAX - 1;
+	hugeObjPtr->bytes = NULL;
+	Tcl_SetObjResult(interp, hugeObjPtr);
     } else if (strcmp(subCmd, "type") == 0) {
 	if (objc != 3) {
 	    goto wrongNumArgs;
@@ -1144,7 +1175,7 @@ TestobjCmd(
     } else {
 	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 		"bad option \"", Tcl_GetString(objv[1]),
-		"\": must be assign, convert, duplicate, freeallvars, "
+		"\": must be assign, convert, duplicate, freeallvars, huge, "
 		"newobj, objcount, objtype, refcount, type, or types", NULL);
 	return TCL_ERROR;
     }
