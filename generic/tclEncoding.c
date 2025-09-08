@@ -994,7 +994,7 @@ Tcl_SetSystemEncoding(
 	}
     }
 
-    /* Don't lock, change anything, bump epoch if it remains unchanged. */
+    /* Don't lock (and change anything, bump epoch) if it remains unchanged. */
 
     if ((encoding ? encoding : defaultEncoding) == systemEncoding) {
 	if (encoding) {
@@ -1006,17 +1006,17 @@ Tcl_SetSystemEncoding(
 
 	return TCL_OK;
     }
+
+    /* Checks above ensure this is only called when system encoding changes */
     Tcl_MutexLock(&encodingMutex);
     if (!encoding) {
 	encoding = defaultEncoding; /* need increase its refCount */
 	((Encoding *)encoding)->refCount++;
     }
 
-    /* Checks above ensure this is only called when system encoding changes */
     FreeEncoding(systemEncoding);
     systemEncoding = encoding;
     Tcl_MutexUnlock(&encodingMutex);
-
 
     Tcl_FSMountsChanged(NULL);
 
