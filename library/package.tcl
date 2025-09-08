@@ -236,9 +236,9 @@ proc pkg_mkIndex {args} {
 	    }
 	}
 
-	$c eval [list set ::tcl::dir $dir]
-	$c eval [list set ::tcl::file $file]
-	$c eval [list set ::tcl::direct $direct]
+	$c set ::tcl::dir $dir
+	$c set ::tcl::file $file
+	$c set ::tcl::direct $direct
 
 	# Download needed procedures into the child because we've just deleted
 	# the unknown procedure.  This doesn't handle procedures with default
@@ -353,18 +353,18 @@ proc pkg_mkIndex {args} {
 		}
 	    }
 	} on error msg {
-	    set what [$c eval set ::tcl::debug]
+	    set what [$c set ::tcl::debug]
 	    if {$doVerbose} {
 		tclLog "warning: error while $what $file: $msg"
 	    }
 	} on ok {} {
-	    set what [$c eval set ::tcl::debug]
+	    set what [$c set ::tcl::debug]
 	    if {$doVerbose} {
 		tclLog "successful $what of $file"
 	    }
-	    set type [$c eval set ::tcl::type]
-	    set cmds [lsort [$c eval array names ::tcl::newCmds]]
-	    set pkgs [$c eval set ::tcl::newPkgs]
+	    set type [$c set ::tcl::type]
+	    set cmds [lsort [$c eval {array names ::tcl::newCmds}]]
+	    set pkgs [$c set ::tcl::newPkgs]
 	    if {$doVerbose} {
 		if {!$direct} {
 		    tclLog "commands provided were $cmds"
