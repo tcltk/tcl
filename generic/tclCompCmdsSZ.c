@@ -25,6 +25,7 @@
  */
 typedef struct SwitchArmInfo {
     Tcl_Token *valueToken;	// The value to match for the arm.
+    Tcl_WideInt valueInt;	// The value to match in integer mode.
     Tcl_Token *bodyToken;	// The body of an arm; NULL if fall-through.
     Tcl_Size bodyLine;		// The line that the body starts on.
     Tcl_Size *bodyContLines;	// Continuations within the body.
@@ -70,6 +71,9 @@ static void		IssueSwitchChainedTests(Tcl_Interp *interp,
 			    Tcl_Size numArms, SwitchArmInfo *arms);
 static void		IssueSwitchJumpTable(Tcl_Interp *interp,
 			    CompileEnv *envPtr, int noCase, Tcl_Size numArms,
+			    SwitchArmInfo *arms);
+static void		IssueSwitchNumJumpTable(Tcl_Interp *interp,
+			    CompileEnv *envPtr, Tcl_Size numArms,
 			    SwitchArmInfo *arms);
 static int		IssueTryClausesInstructions(Tcl_Interp *interp,
 			    CompileEnv *envPtr, Tcl_Token *bodyToken,
@@ -1763,7 +1767,7 @@ TclCompileSwitchCmd(
     Tcl_Size numWords;		/* Number of words in command. */
 
     Tcl_Token *valueTokenPtr;	/* Token for the value to switch on. */
-    enum {Switch_Exact, Switch_Glob, Switch_Regexp} mode;
+    enum {Switch_Exact, Switch_Glob, Switch_Integer, Switch_Regexp} mode;
 				/* What kind of switch are we doing? */
 
     Tcl_Token *bodyTokenArray;	/* Array of real pattern list items. */
@@ -1845,6 +1849,14 @@ TclCompileSwitchCmd(
 	    foundMode = 1;
 	    valueIndex++;
 	    continue;
+	} else if (IS_TOKEN_PREFIX(tokenPtr, 4, "-integer")) {
+	    if (foundMode) {
+		return TCL_ERROR;
+	    }
+	    mode = Switch_Integer;
+	    foundMode = 1;
+	    valueIndex++;
+	    continue;
 	} else if (IS_TOKEN_PREFIX(tokenPtr, 2, "-regexp")) {
 	    if (foundMode) {
 		return TCL_ERROR;
@@ -1860,13 +1872,19 @@ TclCompileSwitchCmd(
 	} else if (IS_TOKEN_LITERALLY(tokenPtr, "--")) {
 	    valueIndex++;
 	    break;
+	} else if (IS_TOKEN_PREFIX(tokenPtr, 4, "-indexvar")
+		|| IS_TOKEN_PREFIX(tokenPtr, 2, "-matchvar")) {
+	    /*
+	     * Options that the compiler doesn't support. The bytecode engine
+	     * doesn't have the machinery to extract the info from the regexp
+	     * engine (yet; code welcome!).
+	     */
+	    return TCL_ERROR;
 	}
 
 	/*
-	 * The switch command has many flags we cannot compile at all (e.g.
-	 * all the RE-related ones) which we must have encountered. Either
-	 * that or we have run off the end. The action here is the same: punt
-	 * to interpreted version.
+	 * We've run off the end with something unrecognised or ambiguous.
+	 * Punt to the interpreted version.
 	 */
 
 	return TCL_ERROR;
@@ -1952,6 +1970,17 @@ TclCompileSwitchCmd(
 		}
 	    } else {
 		arm->valueToken = fakeToken;
+		if (mode == Switch_Integer && !(numWords >= maxLen - 2 &&
+			!memcmp(arm->valueToken->start, "default", 7))) {
+		    Tcl_Obj *objPtr = Tcl_NewStringObj(arm->valueToken->start,
+			    arm->valueToken->size);
+		    result = Tcl_GetWideIntFromObj(interp, objPtr,
+			    &arm->valueInt);
+		    Tcl_BounceRefCount(objPtr);
+		    if (result != TCL_OK) {
+			goto freeTemporaries;
+		    }
+		}
 	    }
 
 	    /*
@@ -2020,6 +2049,17 @@ TclCompileSwitchCmd(
 		arm->bodyContLines = ExtCmdLocation.next[valueIndex + 1 + i];
 	    } else {
 		arm->valueToken = tokenPtr + 1;
+		if (mode == Switch_Integer && !(
+			i >= numWords - 2 && IS_TOKEN_LITERALLY(tokenPtr, "default"))) {
+		    Tcl_Obj *objPtr = Tcl_NewStringObj(arm->valueToken->start,
+			    arm->valueToken->size);
+		    result = Tcl_GetWideIntFromObj(interp, objPtr,
+			    &arm->valueInt);
+		    Tcl_BounceRefCount(objPtr);
+		    if (result != TCL_OK) {
+			goto freeTemporaries;
+		    }
+		}
 	    }
 	    tokenPtr = TokenAfter(tokenPtr);
 	}
@@ -2042,11 +2082,13 @@ TclCompileSwitchCmd(
      * but it handles the most common case well enough.
      */
 
-    /* Both methods push the value to match against onto the stack. */
+    /* All methods push the value to match against onto the stack. */
     PUSH_TOKEN(			valueTokenPtr, valueIndex);
 
     if (mode == Switch_Exact) {
 	IssueSwitchJumpTable(interp, envPtr, noCase, numWords/2, arms);
+    } else if (mode == Switch_Integer) {
+	IssueSwitchNumJumpTable(interp, envPtr, numWords/2, arms);
     } else {
 	IssueSwitchChainedTests(interp, envPtr, mode, noCase, numWords/2, arms);
     }
@@ -2391,6 +2433,166 @@ IssueSwitchJumpTable(
 	    isNew = CreateJumptableEntry(jtPtr, Tcl_DStringValue(&buffer),
 		    CurrentOffset(envPtr) - jumpLocation);
 	    Tcl_DStringFree(&buffer);
+	} else {
+	    /*
+	     * This is a default clause, so patch up the fallthrough from the
+	     * INST_JUMP_TABLE instruction to here.
+	     */
+
+	    foundDefault = 1;
+	    isNew = 1;
+	    FWDLABEL(	jumpToDefault);
+	}
+
+	/*
+	 * Now, for each arm we must deal with the body of the clause.
+	 *
+	 * If this is a continuation body (never true of a final clause,
+	 * whether default or not) we're done because the next jump target
+	 * will also point here, so we advance to the next clause.
+	 */
+
+	if (IsFallthroughArm(arm)) {
+	    mustGenerate = 1;
+	    continue;
+	}
+
+	/*
+	 * Also skip this arm if its only match clause is masked. (We could
+	 * probably be more aggressive about this, but that would be much more
+	 * difficult to get right.)
+	 */
+
+	if (!isNew && !mustGenerate) {
+	    continue;
+	}
+	mustGenerate = 0;
+
+	/*
+	 * Compile the body of the arm.
+	 */
+
+	SetSwitchLineInformation(arm);
+	TclCompileCmdWord(interp, arm->bodyToken, 1, envPtr);
+
+	/*
+	 * Compile a jump in to the end of the command if this body is
+	 * anything other than a user-supplied default arm (to either skip
+	 * over the remaining bodies or the code that generates an empty
+	 * result).
+	 */
+
+	if (i < numArms-1 || !foundDefault) {
+	    FWDJUMP(		JUMP, finalFixups[numRealBodies++]);
+	    STKDELTA(-1);
+	}
+    }
+
+    /*
+     * We're at the end. If we've not already done so through the processing
+     * of a user-supplied default clause, add in a "default" default clause
+     * now.
+     */
+
+    if (!foundDefault) {
+	FWDLABEL(	jumpToDefault);
+	PUSH(			"");
+    }
+
+    /*
+     * No more instructions to be issued; everything that needs to jump to the
+     * end of the command is fixed up at this point.
+     */
+
+    for (i=0 ; i<numRealBodies ; i++) {
+	FWDLABEL(	finalFixups[i]);
+    }
+
+    /*
+     * Clean up all our temporary space and return.
+     */
+
+    TclStackFree(interp, finalFixups);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * IssueSwitchNumJumpTable --
+ *
+ *	Generate instructions for a [switch] command that is to be compiled
+ *	into a numeric jump table. This is only for the -integer mode.
+ *
+ *	We assume (because it was checked by our caller) that there's at least
+ *	one body, all tokens are literals, and all fallthroughs eventually hit
+ *	something real.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+IssueSwitchNumJumpTable(
+    Tcl_Interp *interp,		/* Context for compiling script bodies. */
+    CompileEnv *envPtr,		/* Holds resulting instructions. */
+    Tcl_Size numArms,		/* Number of arms of the switch. */
+    SwitchArmInfo *arms)	/* Array of arm descriptors. */
+{
+    JumptableNumInfo *jtPtr;
+    Tcl_AuxDataRef infoIndex;
+    int isNew, mustGenerate, foundDefault;
+    Tcl_Size numRealBodies = 0, i;
+    Tcl_BytecodeLabel jumpLocation, jumpToDefault, *finalFixups;
+
+    /*
+     * Compile the switch by using a jump table, which is basically a
+     * hashtable that maps from literal values to match against to the offset
+     * (relative to the INST_JUMP_TABLE instruction) to jump to. The jump
+     * table itself is independent of any invocation of the bytecode, and as
+     * such is stored in an auxData block.
+     *
+     * Start by allocating the jump table itself, plus some workspace.
+     */
+
+    jtPtr = AllocJumptableNum();
+    infoIndex = RegisterJumptableNum(jtPtr, envPtr);
+    finalFixups = (Tcl_BytecodeLabel *)TclStackAlloc(interp,
+	    sizeof(Tcl_BytecodeLabel) * numArms);
+    foundDefault = 0;
+    mustGenerate = 1;
+
+    /*
+     * Next, issue the instruction to do the jump, together with what we want
+     * to do if things do not work out (jump to either the default clause or
+     * the "default" default, which just sets the result to empty). Note that
+     * we will come back and rewrite the jump's offset parameter when we know
+     * what it should be, and that all jumps we issue are of the wide kind
+     * because that makes the code much easier to debug!
+     */
+
+    BACKLABEL(		jumpLocation);
+    OP4(			JUMP_TABLE_NUM, infoIndex);
+    FWDJUMP(			JUMP, jumpToDefault);
+
+    for (i=0 ; i<numArms ; i++) {
+	SwitchArmInfo *arm = &arms[i];
+
+	/*
+	 * For each arm, we must first work out what to do with the match
+	 * term.
+	 */
+
+	if (i != numArms-1 || !HasDefaultClause(numArms, arms)) {
+	    /*
+	     * This is not a default clause, so insert the current location as
+	     * a target in the jump table (assuming it isn't already there,
+	     * which would indicate that this clause is probably masked by an
+	     * earlier one).
+	     *
+	     * The value was parsed earlier.
+	     */
+
+	    isNew = CreateJumptableNumEntry(jtPtr, arm->valueInt,
+		    CurrentOffset(envPtr) - jumpLocation);
 	} else {
 	    /*
 	     * This is a default clause, so patch up the fallthrough from the
