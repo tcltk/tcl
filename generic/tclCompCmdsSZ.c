@@ -2205,6 +2205,7 @@ IssueSwitchChainedTests(
 
 	    switch (mode) {
 	    case Switch_Exact:
+		// I think this should be unreachable. It's buggy...
 		OP(		DUP);
 		TclCompileTokens(interp, arm->valueToken, 1,	envPtr);
 		OP(		STR_EQ);
@@ -2215,6 +2216,7 @@ IssueSwitchChainedTests(
 		OP1(		STR_MATCH, noCase);
 		break;
 	    case Switch_Integer:
+		// I think this should be unreachable. It's buggy...
 		OP(		DUP);
 		TclCompileTokens(interp, arm->valueToken, 1,	envPtr);
 		OP(		EQ);
