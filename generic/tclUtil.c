@@ -4026,6 +4026,35 @@ TclCommandWordLimitError(
 }
 
 /*
+ *------------------------------------------------------------------------
+ *
+ * TclCannotAllocateError --
+ *
+ *    Generates an error message limit on number of command words exceeded.
+ *
+ * Results:
+ *    Always return TCL_ERROR.
+ *
+ * Side effects:
+ *    If interp is not-NULL, an error message is stored in it.
+ *
+ *------------------------------------------------------------------------
+ */
+int
+TclCannotAllocateError(
+    Tcl_Interp *interp,		/* May be NULL */
+    Tcl_Obj *objPtr)
+{
+    if (interp) {
+	char buf[24];
+	snprintf(buf, sizeof(buf), "%" TCL_SIZE_MODIFIER "d", objPtr->length + 1);
+	Tcl_AppendResult(interp, "cannot allocate ", buf, " bytes for type \'",
+		objPtr->typePtr->name, "\'", (char *)NULL);
+    }
+    return TCL_ERROR; /* Always */
+}
+
+/*
  *----------------------------------------------------------------------
  *
  * ClearHash --

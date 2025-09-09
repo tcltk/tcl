@@ -690,26 +690,27 @@ UpdateStringOfOSType(
 {
     const size_t size = TCL_UTF_MAX * 4;
     char *dst = Tcl_InitStringRep(objPtr, NULL, size);
-    OSType osType = (OSType) objPtr->internalRep.wideValue;
-    int written = 0;
-    Tcl_Encoding encoding;
-    char src[5];
 
-    TclOOM(dst, size+1);
+    if (dst) {
+	OSType osType = (OSType) objPtr->internalRep.wideValue;
+	int written = 0;
+	Tcl_Encoding encoding;
+	char src[5];
 
-    src[0] = (char) (osType >> 24);
-    src[1] = (char) (osType >> 16);
-    src[2] = (char) (osType >>  8);
-    src[3] = (char) (osType);
-    src[4] = '\0';
+	src[0] = (char) (osType >> 24);
+	src[1] = (char) (osType >> 16);
+	src[2] = (char) (osType >>  8);
+	src[3] = (char) (osType);
+	src[4] = '\0';
 
-    encoding = Tcl_GetEncoding(NULL, "macRoman");
-    Tcl_ExternalToUtf(NULL, encoding, src, TCL_INDEX_NONE, /* flags */ 0,
-	    /* statePtr */ NULL, dst, size, /* srcReadPtr */ NULL,
-	    /* dstWrotePtr */ &written, /* dstCharsPtr */ NULL);
-    Tcl_FreeEncoding(encoding);
+	encoding = Tcl_GetEncoding(NULL, "macRoman");
+	Tcl_ExternalToUtf(NULL, encoding, src, TCL_INDEX_NONE, /* flags */ 0,
+		/* statePtr */ NULL, dst, size, /* srcReadPtr */ NULL,
+		/* dstWrotePtr */ &written, /* dstCharsPtr */ NULL);
+	Tcl_FreeEncoding(encoding);
 
-    (void)Tcl_InitStringRep(objPtr, NULL, written);
+	(void)Tcl_InitStringRep(objPtr, NULL, written);
+    }
 }
 
 /*
