@@ -618,7 +618,9 @@ Tcl_GetUniChar(
      * OK, need to work with the object as a string.
      */
 
-    SetStringFromAny(NULL, objPtr);
+    if (SetStringFromAny(NULL, objPtr) != TCL_OK) {
+	return -1;
+    }
     stringPtr = GET_STRING(objPtr);
 
     if (stringPtr->hasUnicode == 0) {
@@ -714,7 +716,9 @@ TclGetUnicodeFromObj(
 {
     String *stringPtr;
 
-    SetStringFromAny(NULL, objPtr);
+    if (SetStringFromAny(NULL, objPtr) != TCL_OK) {
+	return NULL;
+    }
     stringPtr = GET_STRING(objPtr);
 
     if (stringPtr->hasUnicode == 0) {
@@ -743,7 +747,9 @@ Tcl_GetUnicodeFromObj(
 {
     String *stringPtr;
 
-    SetStringFromAny(NULL, objPtr);
+    if (SetStringFromAny(NULL, objPtr) != TCL_OK) {
+	return NULL;
+    }
     stringPtr = GET_STRING(objPtr);
 
     if (stringPtr->hasUnicode == 0) {
@@ -816,7 +822,9 @@ Tcl_GetRange(
      * OK, need to work with the object as a string.
      */
 
-    SetStringFromAny(NULL, objPtr);
+    if (SetStringFromAny(NULL, objPtr) != TCL_OK) {
+	return NULL;
+    }
     stringPtr = GET_STRING(objPtr);
 
     if (stringPtr->hasUnicode == 0) {
@@ -841,7 +849,10 @@ Tcl_GetRange(
 	     * Since we know the char length of the result, store it.
 	     */
 
-	    SetStringFromAny(NULL, newObjPtr);
+	    if (SetStringFromAny(NULL, newObjPtr) != TCL_OK) {
+		return NULL;
+	    }
+
 	    stringPtr = GET_STRING(newObjPtr);
 	    stringPtr->numChars = newObjPtr->length;
 	    return newObjPtr;
@@ -1053,7 +1064,10 @@ Tcl_SetObjLength(
 	return;
     }
 
-    SetStringFromAny(NULL, objPtr);
+    if (SetStringFromAny(NULL, objPtr) != TCL_OK) {
+	Tcl_Panic("cannot allocate unicode rep");
+	return;
+    }
     stringPtr = GET_STRING(objPtr);
 
     if (objPtr->bytes != NULL) {
@@ -1148,7 +1162,9 @@ Tcl_AttemptSetObjLength(
 	return 1;
     }
 
-    SetStringFromAny(NULL, objPtr);
+    if (SetStringFromAny(NULL, objPtr) != TCL_OK) {
+	return 0;
+    }
     stringPtr = GET_STRING(objPtr);
 
     if (objPtr->bytes != NULL) {
@@ -1361,7 +1377,10 @@ Tcl_AppendLimitedToObj(
 	Tcl_Panic("%s called with shared object", "Tcl_AppendLimitedToObj");
     }
 
-    SetStringFromAny(NULL, objPtr);
+    if (SetStringFromAny(NULL, objPtr) != TCL_OK) {
+	Tcl_Panic("cannot allocate unicode rep");
+	return;
+    }
     stringPtr = GET_STRING(objPtr);
 
     /* If appended string starts with a continuation byte or a lower surrogate,
@@ -1452,7 +1471,10 @@ Tcl_AppendUnicodeToObj(
 	return;
     }
 
-    SetStringFromAny(NULL, objPtr);
+    if (SetStringFromAny(NULL, objPtr) != TCL_OK) {
+	Tcl_Panic("cannot allocate unicode rep");
+	return;
+    }
     stringPtr = GET_STRING(objPtr);
 
     /*
@@ -1564,7 +1586,10 @@ Tcl_AppendObjToObj(
      * Must append as strings.
      */
 
-    SetStringFromAny(NULL, objPtr);
+    if (SetStringFromAny(NULL, objPtr) != TCL_OK) {
+	Tcl_Panic("cannot allocate unicode rep");
+	return;
+    }
     stringPtr = GET_STRING(objPtr);
 
     /* If appended string starts with a continuation byte or a lower surrogate,
@@ -1651,7 +1676,10 @@ AppendUnicodeToUnicodeRep(
 	return;
     }
 
-    SetStringFromAny(NULL, objPtr);
+    if (SetStringFromAny(NULL, objPtr) != TCL_OK) {
+	Tcl_Panic("cannot allocate unicode rep");
+	return;
+    }
     stringPtr = GET_STRING(objPtr);
 
     /*
@@ -1892,7 +1920,10 @@ TclAppendUtfToUtf(
 	Tcl_Panic("%s called with shared object", "TclAppendUtfToUtf");
     }
 
-    SetStringFromAny(NULL, objPtr);
+    if (SetStringFromAny(NULL, objPtr) != TCL_OK) {
+	Tcl_Panic("cannot allocate unicode rep");
+	return;
+    }
 
     AppendUtfToUtfRep(objPtr, bytes, numBytes);
 }
