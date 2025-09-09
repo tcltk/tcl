@@ -1241,16 +1241,16 @@ TestobjCmd(
 	}
 	return TCL_OK;
     case TESTOBJ_HUGE: {
-	    if (objc != 2) {
-		goto wrongNumArgs;
-	    }
-	    Tcl_Obj *hugeObjPtr = Tcl_NewObj();
-	    hugeObjPtr->typePtr = &hugeType;
-	    hugeObjPtr->length = INT_MAX - 1;
-	    hugeObjPtr->bytes = NULL;
-	    Tcl_SetObjResult(interp, hugeObjPtr);
+	if (objc != 2) {
+	    goto wrongNumArgs;
 	}
+	Tcl_Obj *hugeObjPtr = Tcl_NewObj();
+	hugeObjPtr->typePtr = &hugeType;
+	hugeObjPtr->length = INT_MAX - 1;
+	hugeObjPtr->bytes = NULL;
+	Tcl_SetObjResult(interp, hugeObjPtr);
 	return TCL_OK;
+    }
     default:
 	break;
     }
