@@ -905,15 +905,21 @@ Tcl_SplitList(
     size = TclMaxListLength(list, TCL_INDEX_NONE, &end) + 1;
     length = end - list;
     if (size >= (Tcl_Size) (TCL_SIZE_MAX/sizeof(char *)) ||
-	length > (Tcl_Size) (TCL_SIZE_MAX - 1 - (size * sizeof(char *)))) {
+	    length > (Tcl_Size) (TCL_SIZE_MAX - 1 - (size * sizeof(char *)))) {
+	goto memerror;
+    }
+    argv = (const char **)Tcl_AttemptAlloc((size * sizeof(char *)) + length + 1);
+    if (!argv) {
+    memerror:
 	if (interp) {
-	    Tcl_SetResult(
-		interp, "memory allocation limit exceeded", TCL_STATIC);
+	    char buf[24];
+	    snprintf(buf, sizeof(buf), "%" TCL_SIZE_MODIFIER "d",
+		    (size * sizeof(char *)) + length + 1);
+	    Tcl_AppendResult(interp, "cannot allocate ", buf, " bytes", (char *)NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
 	}
 	return TCL_ERROR;
     }
-    argv = (const char **)Tcl_Alloc((size * sizeof(char *)) + length + 1);
-
     for (i = 0, p = ((char *) argv) + size*sizeof(char *);
 	    *list != 0;  i++) {
 	const char *prevList = list;
@@ -4051,6 +4057,7 @@ TclCannotAllocateError(
 	Tcl_AppendResult(interp, "cannot allocate ", buf, " bytes for type \'",
 		objPtr->typePtr->name, "\'", (char *)NULL);
     }
+    Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
     return TCL_ERROR; /* Always */
 }
 
