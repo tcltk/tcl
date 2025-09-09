@@ -2707,10 +2707,8 @@ StringEqualCmd(
     objv += objc-2;
     match = TclStringCmp(objv[0], objv[1], 1, nocase, reqlength);
     if (match == INT_MIN) {
-	if (interp) {
-	    Tcl_AppendResult(interp, "cannot allocate", (char *)NULL);
-	    Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
-	}
+	Tcl_AppendResult(interp, "cannot allocate", (char *)NULL);
+	Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, Tcl_NewBooleanObj(match ? 0 : 1));
