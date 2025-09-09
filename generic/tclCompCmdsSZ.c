@@ -1754,6 +1754,14 @@ IsFallthroughArm(
  *----------------------------------------------------------------------
  */
 
+// What kind of switch are we doing?
+typedef enum SwitchMode {
+    Switch_Exact,		// Use exact string matching.
+    Switch_Glob,		// Use glob/[string match] matching.
+    Switch_Integer,		// Use integer comparisons.
+    Switch_Regexp		// Use regular expression matching.
+} SwitchMode;
+
 int
 TclCompileSwitchCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
@@ -1767,9 +1775,7 @@ TclCompileSwitchCmd(
     Tcl_Size numWords;		/* Number of words in command. */
 
     Tcl_Token *valueTokenPtr;	/* Token for the value to switch on. */
-    enum {Switch_Exact, Switch_Glob, Switch_Integer, Switch_Regexp} mode;
-				/* What kind of switch are we doing? */
-
+    SwitchMode mode;		/* What kind of switch are we doing? */
     Tcl_Token *bodyTokenArray;	/* Array of real pattern list items. */
     SwitchArmInfo *arms;	/* Array of information about switch arms. */
     int noCase;			/* Has the -nocase flag been given? */
@@ -2164,7 +2170,6 @@ IssueSwitchChainedTests(
     Tcl_Size numArms,		/* Number of arms of the switch. */
     SwitchArmInfo *arms)	/* Array of arm descriptors. */
 {
-    enum {Switch_Exact, Switch_Glob, Switch_Regexp};
     int foundDefault;		/* Flag to indicate whether a "default" clause
 				 * is present. */
     Tcl_BytecodeLabel *fwdJumps;/* Array of forward-jump fixup locations. */
@@ -2208,6 +2213,11 @@ IssueSwitchChainedTests(
 		TclCompileTokens(interp, arm->valueToken, 1,	envPtr);
 		OP4(		OVER, 1);
 		OP1(		STR_MATCH, noCase);
+		break;
+	    case Switch_Integer:
+		OP(		DUP);
+		TclCompileTokens(interp, arm->valueToken, 1,	envPtr);
+		OP(		EQ);
 		break;
 	    case Switch_Regexp:
 		simple = exact = 0;
