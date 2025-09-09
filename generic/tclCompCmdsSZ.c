@@ -1780,15 +1780,17 @@ TclCompileSwitchCmd(
 
     /*
      * Only handle the following versions:
-     *   switch         ?--? word {pattern body ...}
-     *   switch -exact  ?--? word {pattern body ...}
-     *   switch -glob   ?--? word {pattern body ...}
-     *   switch -regexp ?--? word {pattern body ...}
-     *   switch         --   word simpleWordPattern simpleWordBody ...
-     *   switch -exact  --   word simpleWordPattern simpleWordBody ...
-     *   switch -glob   --   word simpleWordPattern simpleWordBody ...
-     *   switch -regexp --   word simpleWordPattern simpleWordBody ...
-     * When the mode is -glob, can also handle a -nocase flag.
+     *   switch          ?--? word {pattern body ...}
+     *   switch -exact   ?--? word {pattern body ...}
+     *   switch -glob    ?--? word {pattern body ...}
+     *   switch -integer ?--? word {pattern body ...}
+     *   switch -regexp  ?--? word {pattern body ...}
+     *   switch          --   word simpleWordPattern simpleWordBody ...
+     *   switch -exact   --   word simpleWordPattern simpleWordBody ...
+     *   switch -glob    --   word simpleWordPattern simpleWordBody ...
+     *   switch -integer --   word simpleWordPattern simpleWordBody ...
+     *   switch -regexp  --   word simpleWordPattern simpleWordBody ...
+     * When the mode is -exact or -glob, can also handle a -nocase flag.
      *
      * First off, we don't care how the command's word was generated; we're
      * compiling it anyway! So skip it...
@@ -1922,6 +1924,9 @@ TclCompileSwitchCmd(
 				 * and start of list for when tracking the
 				 * location. This list comes immediately after
 				 * the value we switch on. */
+	int wasDefault = 0;	/* For detecting a non-terminal "default" when
+				 * in [switch -integer] mode, as that's an
+				 * error case. */
 
 	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
 	    return TCL_ERROR;
@@ -1970,15 +1975,27 @@ TclCompileSwitchCmd(
 		}
 	    } else {
 		arm->valueToken = fakeToken;
-		if (mode == Switch_Integer && !(numWords >= maxLen - 2 &&
-			!memcmp(arm->valueToken->start, "default", 7))) {
-		    Tcl_Obj *objPtr = Tcl_NewStringObj(arm->valueToken->start,
-			    arm->valueToken->size);
-		    result = Tcl_GetWideIntFromObj(interp, objPtr,
-			    &arm->valueInt);
-		    Tcl_BounceRefCount(objPtr);
-		    if (result != TCL_OK) {
+		if (mode == Switch_Integer) {
+		    if (wasDefault) {
+			// Non-terminal default! Error as it isn't an int...
+			result = TCL_ERROR;
 			goto freeTemporaries;
+		    }
+		    // Can't use IS_TOKEN_LITERALLY; this is an unwrapped token
+		    if (arm->valueToken->size == 7 &&
+			    !memcmp(arm->valueToken->start, "default", 7)) {
+			wasDefault = 1;
+		    } else {
+			// Try to parse the token as an integer. If we can't,
+			// it's an error, and we fallback to interpreted.
+			Tcl_Obj *objPtr = Tcl_NewStringObj(arm->valueToken->start,
+				arm->valueToken->size);
+			result = Tcl_GetWideIntFromObj(interp, objPtr,
+				&arm->valueInt);
+			Tcl_BounceRefCount(objPtr);
+			if (result != TCL_OK) {
+			    goto freeTemporaries;
+			}
 		    }
 		}
 	    }
@@ -2022,6 +2039,9 @@ TclCompileSwitchCmd(
 	 * Multi-word definition of patterns & actions.
 	 */
 
+	int wasDefault = 0;	/* For detecting a non-terminal "default" when
+				 * in [switch -integer] mode, as that's an
+				 * error case. */
 	bodyTokenArray = NULL;
 	arms = (SwitchArmInfo *) TclStackAlloc(interp,
 		sizeof(SwitchArmInfo) * numWords / 2);
@@ -2049,15 +2069,24 @@ TclCompileSwitchCmd(
 		arm->bodyContLines = ExtCmdLocation.next[valueIndex + 1 + i];
 	    } else {
 		arm->valueToken = tokenPtr + 1;
-		if (mode == Switch_Integer && !(
-			i >= numWords - 2 && IS_TOKEN_LITERALLY(tokenPtr, "default"))) {
-		    Tcl_Obj *objPtr = Tcl_NewStringObj(arm->valueToken->start,
-			    arm->valueToken->size);
-		    result = Tcl_GetWideIntFromObj(interp, objPtr,
-			    &arm->valueInt);
-		    Tcl_BounceRefCount(objPtr);
-		    if (result != TCL_OK) {
+		if (mode == Switch_Integer) {
+		    if (wasDefault) {
+			// Non-terminal default! Error, as it isn't an int...
+			result = TCL_ERROR;
 			goto freeTemporaries;
+		    } else if (IS_TOKEN_LITERALLY(tokenPtr, "default")) {
+			wasDefault = 1;
+		    } else {
+			// Try to parse the token as an integer. If we can't,
+			// it's an error, and we fallback to interpreted.
+			Tcl_Obj *objPtr = Tcl_NewStringObj(arm->valueToken->start,
+				arm->valueToken->size);
+			result = Tcl_GetWideIntFromObj(interp, objPtr,
+				&arm->valueInt);
+			Tcl_BounceRefCount(objPtr);
+			if (result != TCL_OK) {
+			    goto freeTemporaries;
+			}
 		    }
 		}
 	    }
@@ -2390,10 +2419,7 @@ IssueSwitchJumpTable(
     /*
      * Next, issue the instruction to do the jump, together with what we want
      * to do if things do not work out (jump to either the default clause or
-     * the "default" default, which just sets the result to empty). Note that
-     * we will come back and rewrite the jump's offset parameter when we know
-     * what it should be, and that all jumps we issue are of the wide kind
-     * because that makes the code much easier to debug!
+     * the "default" default, which just sets the result to empty).
      */
 
     BACKLABEL(		jumpLocation);
@@ -2524,18 +2550,18 @@ IssueSwitchJumpTable(
  *	into a numeric jump table. This is only for the -integer mode.
  *
  *	We assume (because it was checked by our caller) that there's at least
- *	one body, all tokens are literals, and all fallthroughs eventually hit
- *	something real.
+ *	one body, all value tokens are parsed integers or "default", all body
+ *	tokens are literals, and all fallthroughs eventually hit something real.
  *
  *----------------------------------------------------------------------
  */
 
 static void
 IssueSwitchNumJumpTable(
-    Tcl_Interp *interp,		/* Context for compiling script bodies. */
-    CompileEnv *envPtr,		/* Holds resulting instructions. */
-    Tcl_Size numArms,		/* Number of arms of the switch. */
-    SwitchArmInfo *arms)	/* Array of arm descriptors. */
+    Tcl_Interp *interp,		// Context for compiling script bodies.
+    CompileEnv *envPtr,		// Holds resulting instructions.
+    Tcl_Size numArms,		// Number of arms of the switch.
+    SwitchArmInfo *arms)	// Array of arm descriptors.
 {
     JumptableNumInfo *jtPtr;
     Tcl_AuxDataRef infoIndex;
@@ -2563,10 +2589,9 @@ IssueSwitchNumJumpTable(
     /*
      * Next, issue the instruction to do the jump, together with what we want
      * to do if things do not work out (jump to either the default clause or
-     * the "default" default, which just sets the result to empty). Note that
-     * we will come back and rewrite the jump's offset parameter when we know
-     * what it should be, and that all jumps we issue are of the wide kind
-     * because that makes the code much easier to debug!
+     * the "default" default, which just sets the result to empty).
+     *
+     * Note that the jumpTableNum opcode enforces wide-int-ness.
      */
 
     BACKLABEL(		jumpLocation);
@@ -2586,7 +2611,8 @@ IssueSwitchNumJumpTable(
 	     * This is not a default clause, so insert the current location as
 	     * a target in the jump table (assuming it isn't already there,
 	     * which would indicate that this clause is probably masked by an
-	     * earlier one).
+	     * earlier one). Note that we've verified that the value is either
+	     * an integer or a _terminal_ default clause.
 	     *
 	     * The value was parsed earlier.
 	     */
