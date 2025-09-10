@@ -87,13 +87,13 @@ static const char *const typeNames[] = {
 
 static DWORD lastType = REG_RESOURCE_LIST;
 
-#if (TCL_MAJOR_VERSION < 9) && defined(TCL_MINOR_VERSION) && (TCL_MINOR_VERSION < 7)
+#if TCL_MAJOR_VERSION < 9
 # if TCL_UTF_MAX > 3
 #   define Tcl_WCharToUtfDString(a,b,c) Tcl_WinTCharToUtf((TCHAR *)(a),(b)*sizeof(WCHAR),c)
 #   define Tcl_UtfToWCharDString(a,b,c) (WCHAR *)Tcl_WinUtfToTChar(a,b,c)
 # else
-#   define Tcl_WCharToUtfDString Tcl_UniCharToUtfDString
-#   define Tcl_UtfToWCharDString Tcl_UtfToUniCharDString
+#   define Tcl_WCharToUtfDString(a,b,c) Tcl_UniCharToUtfDString((Tcl_UniChar *)(a),b,c)
+#   define Tcl_UtfToWCharDString(a,b,c) (WCHAR *)Tcl_UtfToUniCharDString(a,b,c)
 # endif
 #ifndef Tcl_Size
 #   define Tcl_Size int
