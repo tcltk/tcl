@@ -409,41 +409,44 @@ typedef void (Tcl_ThreadCreateProc) (void *clientData);
  */
 
 #define TCL_THREAD_STACK_DEFAULT (0)	/* Use default size for stack. */
-#define TCL_THREAD_NOFLAGS	 (0000) /* Standard flags, default
-					 * behaviour. */
-#define TCL_THREAD_JOINABLE	 (0001) /* Mark the thread as joinable. */
+
+enum Tcl_CreateThreadFlags {
+    TCL_THREAD_NOFLAGS = 0000,	/* Standard flags, default behaviour. */
+    TCL_THREAD_JOINABLE = 0001	/* Mark the thread as joinable. */
+};
 
 /*
  * Flag values passed to Tcl_StringCaseMatch.
  */
-
-#define TCL_MATCH_NOCASE	(1<<0)
+enum Tcl_StringCaseMatchFlags {
+    TCL_MATCH_NOCASE = 1<<0
+};
 
 /*
  * Flag values passed to Tcl_GetRegExpFromObj.
  */
-
-#define	TCL_REG_BASIC		000000	/* BREs (convenience). */
-#define	TCL_REG_EXTENDED	000001	/* EREs. */
-#define	TCL_REG_ADVF		000002	/* Advanced features in EREs. */
-#define	TCL_REG_ADVANCED	000003	/* AREs (which are also EREs). */
-#define	TCL_REG_QUOTE		000004	/* No special characters, none. */
-#define	TCL_REG_NOCASE		000010	/* Ignore case. */
-#define	TCL_REG_NOSUB		000020	/* Don't care about subexpressions. */
-#define	TCL_REG_EXPANDED	000040	/* Expanded format, white space &
-					 * comments. */
-#define	TCL_REG_NLSTOP		000100  /* \n doesn't match . or [^ ] */
-#define	TCL_REG_NLANCH		000200  /* ^ matches after \n, $ before. */
-#define	TCL_REG_NEWLINE		000300  /* Newlines are line terminators. */
-#define	TCL_REG_CANMATCH	001000  /* Report details on partial/limited
-					 * matches. */
+enum Tcl_GetRegExpFromObjFlags {
+    TCL_REG_BASIC = 000000,	/* BREs (convenience). */
+    TCL_REG_EXTENDED = 000001,	/* EREs. */
+    TCL_REG_ADVF = 000002,	/* Advanced features in EREs. */
+    TCL_REG_ADVANCED = 000003,	/* AREs (which are also EREs). */
+    TCL_REG_QUOTE = 000004,	/* No special characters, none. */
+    TCL_REG_NOCASE = 000010,	/* Ignore case. */
+    TCL_REG_NOSUB = 000020,	/* Don't care about subexpressions. */
+    TCL_REG_EXPANDED = 000040,	/* Expanded format, white space & comments. */
+    TCL_REG_NLSTOP = 000100,	/* \n doesn't match . or [^ ] */
+    TCL_REG_NLANCH = 000200,	/* ^ matches after \n, $ before. */
+    TCL_REG_NEWLINE = 000300,	/* Newlines are line terminators. */
+    TCL_REG_CANMATCH = 001000	/* Report details on partial/limited matches. */
+};
 
 /*
  * Flags values passed to Tcl_RegExpExecObj.
  */
-
-#define	TCL_REG_NOTBOL	0001	/* Beginning of string does not match ^. */
-#define	TCL_REG_NOTEOL	0002	/* End of string does not match $. */
+enum Tcl_RegExpExecObjFlags {
+    TCL_REG_NOTBOL = 0001,	/* Beginning of string does not match ^. */
+    TCL_REG_NOTEOL = 0002	/* End of string does not match $. */
+};
 
 /*
  * Structures filled in by Tcl_RegExpInfo. Note that all offset values are
@@ -482,38 +485,39 @@ typedef struct stat *Tcl_OldStat_;
  * result. See the SetResult man page for details. Besides this result, the
  * command function returns an integer code, which is one of the following:
  *
- * TCL_OK		Command completed normally; the interpreter's result
- *			contains the command's result.
- * TCL_ERROR		The command couldn't be completed successfully; the
- *			interpreter's result describes what went wrong.
- * TCL_RETURN		The command requests that the current function return;
- *			the interpreter's result contains the function's
- *			return value.
- * TCL_BREAK		The command requests that the innermost loop be
- *			exited; the interpreter's result is meaningless.
- * TCL_CONTINUE		Go on to the next iteration of the current loop; the
- *			interpreter's result is meaningless.
  * Integer return codes in the range TCL_CODE_USER_MIN to TCL_CODE_USER_MAX are
  * reserved for the use of packages.
  */
-
-#define TCL_OK			0
-#define TCL_ERROR		1
-#define TCL_RETURN		2
-#define TCL_BREAK		3
-#define TCL_CONTINUE		4
-#define TCL_CODE_USER_MIN	5
-#define TCL_CODE_USER_MAX	0x3fffffff /*  1073741823 */
+enum Tcl_ResultCode {
+    TCL_OK = 0,			/* The command completed normally; the
+				 * interpreter's result contains the command's
+				 * result. */
+    TCL_ERROR = 1,		/* The command couldn't be completed
+				 * successfully; the interpreter's result
+				 * describes what went wrong. */
+    TCL_RETURN = 2,		/* The command requests that the current
+				 * procedure return; the interpreter's result
+				 * contains the proc's return value. */
+    TCL_BREAK = 3,		/* The command requests that the innermost loop
+				 * be exited; the interpreter's result is
+				 * meaningless. */
+    TCL_CONTINUE = 4,		/* Go on to the next iteration of the current
+				 * innermost loop; the interpreter's result is
+				 * meaningless. */
+    TCL_CODE_USER_MIN = 5,
+    TCL_CODE_USER_MAX = 0x3fffffff
+};
 
 /*
  *----------------------------------------------------------------------------
  * Flags to control what substitutions are performed by Tcl_SubstObj():
  */
-
-#define TCL_SUBST_COMMANDS	001
-#define TCL_SUBST_VARIABLES	002
-#define TCL_SUBST_BACKSLASHES	004
-#define TCL_SUBST_ALL		007
+enum Tcl_SubstObjFlags {
+    TCL_SUBST_COMMANDS = 001,
+    TCL_SUBST_VARIABLES = 002,
+    TCL_SUBST_BACKSLASHES = 004,
+    TCL_SUBST_ALL = 007
+};
 
 /*
  * Forward declaration of Tcl_Obj to prevent an error when the forward
@@ -874,77 +878,71 @@ typedef struct Tcl_DString {
 /*
  *----------------------------------------------------------------------------
  * Type values returned by Tcl_GetNumberFromObj
- *	TCL_NUMBER_INT		Representation is a Tcl_WideInt
- *	TCL_NUMBER_BIG		Representation is an mp_int
- *	TCL_NUMBER_DOUBLE	Representation is a double
- *	TCL_NUMBER_NAN		Value is NaN.
  */
-
-#define TCL_NUMBER_INT          2
-#define TCL_NUMBER_BIG          3
-#define TCL_NUMBER_DOUBLE       4
-#define TCL_NUMBER_NAN          5
+enum Tcl_GetNumberFromObjTypes {
+    TCL_NUMBER_INT = 2,		/* Representation is a Tcl_WideInt */
+    TCL_NUMBER_BIG = 3,		/* Representation is an mp_int */
+    TCL_NUMBER_DOUBLE = 4,	/* Representation is a double */
+    TCL_NUMBER_NAN = 5		/* Value is NaN. */
+};
 
 /*
  * Flag values passed to Tcl_ConvertElement.
- * TCL_DONT_USE_BRACES forces it not to enclose the element in braces, but to
- *	use backslash quoting instead.
- * TCL_DONT_QUOTE_HASH disables the default quoting of the '#' character. It
- *	is safe to leave the hash unquoted when the element is not the first
- *	element of a list, and this flag can be used by the caller to indicate
- *	that condition.
  */
-
-#define TCL_DONT_USE_BRACES	1
-#define TCL_DONT_QUOTE_HASH	8
+enum Tcl_ConvertElementFlags {
+    TCL_DONT_USE_BRACES = 1,	/* Forces Tcl_ConvertElement to not to enclose
+				 * the element in braces, but to use backslash
+				 * quoting instead. */
+    TCL_DONT_QUOTE_HASH = 8	/* Disables the default quoting of the '#'
+				 * character. It is safe to leave the hash
+				 * unquoted when the element is not the first
+				 * element of a list, and this flag can be used
+				 * by the caller to indicate that condition. */
+};
 
 /*
  * Flags that may be passed to Tcl_GetIndexFromObj.
- * TCL_EXACT disallows abbreviated strings.
- * TCL_NULL_OK allows the empty string or NULL to return TCL_OK.
- *      The returned value will be -1;
- * TCL_INDEX_TEMP_TABLE disallows caching of lookups. A possible use case is
- *      a table that will not live long enough to make it worthwhile.
  */
-
-#define TCL_EXACT		1
-#define TCL_NULL_OK		32
-#define TCL_INDEX_TEMP_TABLE	64
+enum Tcl_GetIndexFromObjFlags {
+    TCL_EXACT = 1,		/* Disallow abbreviated strings. */
+    TCL_NULL_OK = 32,		/* Allow the empty string or NULL to return
+				 * TCL_OK. The returned value will be -1. */
+    TCL_INDEX_TEMP_TABLE = 64	/* Disallows caching of lookups. A possible use
+				 * case is a table that will not live long
+				 * enough to make it worthwhile. */
+};
 
 /*
  * Flags that may be passed to Tcl_UniCharToUtf.
- * TCL_COMBINE Combine surrogates
  */
+enum Tcl_UniCharToUtfFlags {
+    TCL_COMBINE = 0x1000000	/* Combine surrogates. */
+};
 
-#define TCL_COMBINE		0x1000000
 /*
  *----------------------------------------------------------------------------
  * Flag values passed to Tcl_RecordAndEval, Tcl_EvalObj, Tcl_EvalObjv.
  * WARNING: these bit choices must not conflict with the bit choices for
  * evalFlag bits in tclInt.h!
- *
- * Meanings:
- *	TCL_NO_EVAL:		Just record this command
- *	TCL_EVAL_GLOBAL:	Execute script in global namespace
- *	TCL_EVAL_DIRECT:	Do not compile this script
- *	TCL_EVAL_INVOKE:	Magical Tcl_EvalObjv mode for aliases/ensembles
- *				o Run in iPtr->lookupNsPtr or global namespace
- *				o Cut out of error traces
- *				o Don't reset the flags controlling ensemble
- *				  error message rewriting.
- *	TCL_CANCEL_UNWIND:	Magical Tcl_CancelEval mode that causes the
- *				stack for the script in progress to be
- *				completely unwound.
- *	TCL_EVAL_NOERR:		Do no exception reporting at all, just return
- *				as the caller will report.
  */
-
-#define TCL_NO_EVAL		0x010000
-#define TCL_EVAL_GLOBAL		0x020000
-#define TCL_EVAL_DIRECT		0x040000
-#define TCL_EVAL_INVOKE		0x080000
-#define TCL_CANCEL_UNWIND	0x100000
-#define TCL_EVAL_NOERR          0x200000
+enum Tcl_EvalFlags {
+    TCL_NO_EVAL = 0x010000,	/* Just record this command. */
+    TCL_EVAL_GLOBAL = 0x020000,	/* Execute script in global namespace. */
+    TCL_EVAL_DIRECT = 0x040000,	/* Do not compile this script. */
+    TCL_EVAL_INVOKE = 0x080000,	/* Magical Tcl_EvalObjv mode for
+				 * aliases/ensembles:
+				 * o Run in iPtr->lookupNsPtr or global
+				 *   namespace
+				 * o Cut out of error traces
+				 * o Don't reset the flags controlling ensemble
+				 *   error message rewriting. */
+    TCL_CANCEL_UNWIND = 0x100000,
+				/* Magical Tcl_CancelEval mode that causes the
+				 * stack for the script in progress to be
+				 * completely unwound. */
+    TCL_EVAL_NOERR = 0x200000	/* Do no exception reporting at all, just
+				 * return as the caller will report. */
+};
 
 /*
  * Special freeProc values that may be passed to Tcl_SetResult (see the man
@@ -960,60 +958,66 @@ typedef struct Tcl_DString {
  * WARNING: these bit choices must not conflict with the bit choice for
  * TCL_CANCEL_UNWIND, above.
  */
+enum Tcl_VarFlags {
+    TCL_GLOBAL_ONLY = 1,
+    TCL_NAMESPACE_ONLY = 2,
+    TCL_APPEND_VALUE = 4,
+    TCL_LIST_ELEMENT = 8,
+    TCL_TRACE_READS = 0x10,
+    TCL_TRACE_WRITES = 0x20,
+    TCL_TRACE_UNSETS = 0x40,
+    TCL_TRACE_DESTROYED = 0x80,
 
-#define TCL_GLOBAL_ONLY		 1
-#define TCL_NAMESPACE_ONLY	 2
-#define TCL_APPEND_VALUE	 4
-#define TCL_LIST_ELEMENT	 8
-#define TCL_TRACE_READS		 0x10
-#define TCL_TRACE_WRITES	 0x20
-#define TCL_TRACE_UNSETS	 0x40
-#define TCL_TRACE_DESTROYED	 0x80
+    TCL_LEAVE_ERR_MSG = 0x200,
+    TCL_TRACE_ARRAY = 0x800,
 
-#define TCL_LEAVE_ERR_MSG	 0x200
-#define TCL_TRACE_ARRAY		 0x800
-/* Indicate the semantics of the result of a trace. */
-#define TCL_TRACE_RESULT_DYNAMIC 0x8000
-#define TCL_TRACE_RESULT_OBJECT  0x10000
+    /* Indicate the semantics of the result of a trace. */
+
+    TCL_TRACE_RESULT_DYNAMIC = 0x8000,
+    TCL_TRACE_RESULT_OBJECT = 0x10000
+};
 
 /*
  * Flag values for ensemble commands.
  */
-
-#define TCL_ENSEMBLE_PREFIX 0x02/* Flag value to say whether to allow
+enum Tcl_EnsembleFlags {
+    TCL_ENSEMBLE_PREFIX = 0x02	/* Flag value to say whether to allow
 				 * unambiguous prefixes of commands or to
 				 * require exact matches for command names. */
+};
 
 /*
  * Flag values passed to command-related functions.
  */
+enum Tcl_CommandFlags {
+    TCL_TRACE_RENAME = 0x2000,
+    TCL_TRACE_DELETE = 0x4000,
 
-#define TCL_TRACE_RENAME	0x2000
-#define TCL_TRACE_DELETE	0x4000
-
-#define TCL_ALLOW_INLINE_COMPILATION 0x20000
+    TCL_ALLOW_INLINE_COMPILATION = 0x20000
+};
 
 /*
  * Types for linked variables:
  */
-
-#define TCL_LINK_INT		1
-#define TCL_LINK_DOUBLE		2
-#define TCL_LINK_BOOLEAN	3
-#define TCL_LINK_STRING		4
-#define TCL_LINK_WIDE_INT	5
-#define TCL_LINK_CHAR		6
-#define TCL_LINK_UCHAR		7
-#define TCL_LINK_SHORT		8
-#define TCL_LINK_USHORT		9
-#define TCL_LINK_UINT		10
-#define TCL_LINK_LONG		((sizeof(long) != sizeof(int)) ? TCL_LINK_WIDE_INT : TCL_LINK_INT)
-#define TCL_LINK_ULONG		((sizeof(long) != sizeof(int)) ? TCL_LINK_WIDE_UINT : TCL_LINK_UINT)
-#define TCL_LINK_FLOAT		13
-#define TCL_LINK_WIDE_UINT	14
-#define TCL_LINK_CHARS		15
-#define TCL_LINK_BINARY		16
-#define TCL_LINK_READ_ONLY	0x80
+enum Tcl_LinkTypes {
+    TCL_LINK_INT = 1,
+    TCL_LINK_DOUBLE = 2,
+    TCL_LINK_BOOLEAN = 3,
+    TCL_LINK_STRING = 4,
+    TCL_LINK_WIDE_INT = 5,
+    TCL_LINK_CHAR = 6,
+    TCL_LINK_UCHAR = 7,
+    TCL_LINK_SHORT = 8,
+    TCL_LINK_USHORT = 9,
+    TCL_LINK_UINT = 10,
+    TCL_LINK_LONG = ((sizeof(long) != sizeof(int)) ? TCL_LINK_WIDE_INT : TCL_LINK_INT),
+    TCL_LINK_ULONG = ((sizeof(long) != sizeof(int)) ? TCL_LINK_WIDE_UINT : TCL_LINK_UINT),
+    TCL_LINK_FLOAT = 13,
+    TCL_LINK_WIDE_UINT = 14,
+    TCL_LINK_CHARS = 15,
+    TCL_LINK_BINARY = 16,
+    TCL_LINK_READ_ONLY = 0x80
+};
 
 /*
  *----------------------------------------------------------------------------
@@ -1059,35 +1063,36 @@ struct Tcl_HashEntry {
 
 /*
  * Flags used in Tcl_HashKeyType.
- *
- * TCL_HASH_KEY_RANDOMIZE_HASH -
- *				There are some things, pointers for example
- *				which don't hash well because they do not use
- *				the lower bits. If this flag is set then the
- *				hash table will attempt to rectify this by
- *				randomising the bits and then using the upper
- *				N bits as the index into the table.
- * TCL_HASH_KEY_SYSTEM_HASH -	If this flag is set then all memory internally
- *                              allocated for the hash table that is not for an
- *                              entry will use the system heap.
- * TCL_HASH_KEY_DIRECT_COMPARE -
- *	                        Allows fast comparison for hash keys directly
- *                              by compare of their key.oneWordValue values,
- *                              before call of compareKeysProc (much slower
- *                              than a direct compare, so it is speed-up only
- *                              flag). Don't use it if keys contain values rather
- *                              than pointers.
  */
-
-#define TCL_HASH_KEY_RANDOMIZE_HASH 0x1
-#define TCL_HASH_KEY_SYSTEM_HASH    0x2
-#define TCL_HASH_KEY_DIRECT_COMPARE 0x4
+enum Tcl_HashKeyTypeFlags {
+    TCL_HASH_KEY_RANDOMIZE_HASH = 0x1,
+				/* There are some things, pointers for example
+				 * which don't hash well because they do not use
+				 * the lower bits. If this flag is set then the
+				 * hash table will attempt to rectify this by
+				 * randomising the bits and then using the upper
+				 * N bits as the index into the table. */
+    TCL_HASH_KEY_SYSTEM_HASH = 0x2,
+				/* If this flag is set then all memory internally
+				 * allocated for the hash table that is not for
+				 * an entry will use the system heap. */
+    TCL_HASH_KEY_DIRECT_COMPARE = 0x4
+				/* Allows fast comparison for hash keys directly
+				 * by compare of their key.oneWordValue values,
+				 * before call of compareKeysProc (much slower
+				 * than a direct compare, so it is speed-up only
+				 * flag). Don't use it if keys contain values
+				 * rather than pointers. */
+};
 
 /*
  * Structure definition for the methods associated with a hash table key type.
  */
 
-#define TCL_HASH_KEY_TYPE_VERSION 1
+enum Tcl_HashKeyTypeVersions {
+   TCL_HASH_KEY_TYPE_VERSION = 1
+};
+
 struct Tcl_HashKeyType {
     int version;		/* Version of the table. If this structure is
 				 * extended in future then the version can be
@@ -1183,16 +1188,7 @@ typedef struct Tcl_HashSearch {
 /*
  * Acceptable key types for hash tables:
  *
- * TCL_STRING_KEYS:		The keys are strings, they are copied into the
- *				entry.
- * TCL_ONE_WORD_KEYS:		The keys are pointers, the pointer is stored
- *				in the entry.
- * TCL_CUSTOM_TYPE_KEYS:	The keys are arbitrary types which are copied
- *				into the entry.
- * TCL_CUSTOM_PTR_KEYS:		The keys are pointers to arbitrary types, the
- *				pointer is stored in the entry.
- *
- * While maintaining binary compatibility the above have to be distinct values
+ * While maintaining binary compatibility these types have to be distinct values
  * as they are used to differentiate between old versions of the hash table
  * which don't have a typePtr and new ones which do. Once binary compatibility
  * is discarded in favour of making more wide spread changes TCL_STRING_KEYS
@@ -1200,11 +1196,17 @@ typedef struct Tcl_HashSearch {
  * same as TCL_CUSTOM_PTR_KEYS because they simply determine how the key is
  * accessed from the entry and not the behaviour.
  */
-
-#define TCL_STRING_KEYS		(0)
-#define TCL_ONE_WORD_KEYS	(1)
-#define TCL_CUSTOM_TYPE_KEYS	(-2)
-#define TCL_CUSTOM_PTR_KEYS	(-1)
+enum Tcl_HashKeyTypes {
+    TCL_STRING_KEYS = 0,	/* The keys are strings, they are copied into
+				 * the entry. */
+    TCL_ONE_WORD_KEYS = 1,	/* The keys are pointers (or integers of
+				 * equivalent size), the pointer is stored in
+				 * the entry. */
+    TCL_CUSTOM_TYPE_KEYS = -2,	/* The keys are arbitrary types which are
+				 * copied into the entry. */
+    TCL_CUSTOM_PTR_KEYS = -1,	/* The keys are pointers to arbitrary types,
+				 * the pointer is stored in the entry. */
+};
 
 /*
  * Structure definition for information used to keep track of searches through
@@ -1215,7 +1217,7 @@ typedef struct Tcl_HashSearch {
 typedef struct {
     void *next;			/* Search position for underlying hash
 				 * table. */
-    size_t epoch;	/* Epoch marker for dictionary being searched,
+    size_t epoch;		/* Epoch marker for dictionary being searched,
 				 * or 0 if search has terminated. */
     Tcl_Dict dictionaryPtr;	/* Reference to dictionary being searched. */
 } Tcl_DictSearch;
@@ -1225,13 +1227,14 @@ typedef struct {
  * Flag values to pass to Tcl_DoOneEvent to disable searches for some kinds of
  * events:
  */
-
-#define TCL_DONT_WAIT		(1<<1)
-#define TCL_WINDOW_EVENTS	(1<<2)
-#define TCL_FILE_EVENTS		(1<<3)
-#define TCL_TIMER_EVENTS	(1<<4)
-#define TCL_IDLE_EVENTS		(1<<5)	/* WAS 0x10 ???? */
-#define TCL_ALL_EVENTS		(~TCL_DONT_WAIT)
+enum Tcl_DoOneEventFlags {
+    TCL_DONT_WAIT = 1<<1,
+    TCL_WINDOW_EVENTS = 1<<2,
+    TCL_FILE_EVENTS = 1<<3,
+    TCL_TIMER_EVENTS = 1<<4,
+    TCL_IDLE_EVENTS = 1<<5,	/* WAS 0x10 ???? */
+    TCL_ALL_EVENTS = ~TCL_DONT_WAIT
+};
 
 /*
  * The following structure defines a generic event for the Tcl event system.
@@ -1252,17 +1255,20 @@ struct Tcl_Event {
  */
 
 typedef enum {
-    TCL_QUEUE_TAIL, TCL_QUEUE_HEAD, TCL_QUEUE_MARK,
-    TCL_QUEUE_ALERT_IF_EMPTY=4
+    TCL_QUEUE_TAIL,
+    TCL_QUEUE_HEAD,
+    TCL_QUEUE_MARK,
+    TCL_QUEUE_ALERT_IF_EMPTY = 4
 } Tcl_QueuePosition;
 
 /*
  * Values to pass to Tcl_SetServiceMode to specify the behavior of notifier
  * event routines.
  */
-
-#define TCL_SERVICE_NONE 0
-#define TCL_SERVICE_ALL 1
+enum Tcl_ServiceModes {
+    TCL_SERVICE_NONE = 0,
+    TCL_SERVICE_ALL = 1
+};
 
 /*
  * The following structure keeps is used to hold a time value, either as an
@@ -1294,29 +1300,32 @@ typedef void (Tcl_ScaleTimeProc) (Tcl_Time *timebuf, void *clientData);
  * Bits to pass to Tcl_CreateFileHandler and Tcl_CreateChannelHandler to
  * indicate what sorts of events are of interest:
  */
-
-#define TCL_READABLE		(1<<1)
-#define TCL_WRITABLE		(1<<2)
-#define TCL_EXCEPTION		(1<<3)
+enum Tcl_ChannelHandlerFlags {
+    TCL_READABLE = 1<<1,
+    TCL_WRITABLE = 1<<2,
+    TCL_EXCEPTION = 1<<3
+};
 
 /*
  * Flag values to pass to Tcl_OpenCommandChannel to indicate the disposition
  * of the stdio handles. TCL_STDIN, TCL_STDOUT, TCL_STDERR, are also used in
  * Tcl_GetStdChannel.
  */
-
-#define TCL_STDIN		(1<<1)
-#define TCL_STDOUT		(1<<2)
-#define TCL_STDERR		(1<<3)
-#define TCL_ENFORCE_MODE	(1<<4)
+enum Tcl_OpenCommandChannelFlags {
+    TCL_STDIN = 1<<1,
+    TCL_STDOUT = 1<<2,
+    TCL_STDERR = 1<<3,
+    TCL_ENFORCE_MODE = 1<<4
+};
 
 /*
  * Bits passed to Tcl_DriverClose2Proc to indicate which side of a channel
  * should be closed.
  */
-
-#define TCL_CLOSE_READ		(1<<1)
-#define TCL_CLOSE_WRITE		(1<<2)
+enum Tcl_CloseDirection {
+    TCL_CLOSE_READ = 1<<1,
+    TCL_CLOSE_WRITE = 1<<2
+};
 
 /*
  * Value to use as the closeProc for a channel that supports the close2Proc
@@ -1334,9 +1343,10 @@ typedef void (Tcl_ScaleTimeProc) (Tcl_Time *timebuf, void *clientData);
 /*
  * TIP #218: Channel Actions, Ids for Tcl_DriverThreadActionProc.
  */
-
-#define TCL_CHANNEL_THREAD_INSERT (0)
-#define TCL_CHANNEL_THREAD_REMOVE (1)
+enum Tcl_ChannelThreadActions {
+    TCL_CHANNEL_THREAD_INSERT = 0,
+    TCL_CHANNEL_THREAD_REMOVE = 1
+};
 
 /*
  * Typedefs for the various operations in a channel type:
@@ -1443,10 +1453,10 @@ typedef struct Tcl_ChannelType {
  * the channel into blocking or nonblocking mode. They are passed as arguments
  * to the blockModeProc function in the above structure.
  */
-
-#define TCL_MODE_BLOCKING	0	/* Put channel into blocking mode. */
-#define TCL_MODE_NONBLOCKING	1	/* Put channel into nonblocking
-					 * mode. */
+enum Tcl_BlockModeFlags {
+    TCL_MODE_BLOCKING = 0,	/* Put channel into blocking mode. */
+    TCL_MODE_NONBLOCKING = 1	/* Put channel into nonblocking mode. */
+};
 
 /*
  *----------------------------------------------------------------------------
@@ -1474,28 +1484,32 @@ typedef struct Tcl_GlobTypeData {
 /*
  * Type and permission definitions for glob command.
  */
+enum Tcl_GlobTypes {
+    TCL_GLOB_TYPE_BLOCK = 1<<0,
+    TCL_GLOB_TYPE_CHAR = 1<<1,
+    TCL_GLOB_TYPE_DIR = 1<<2,
+    TCL_GLOB_TYPE_PIPE = 1<<3,
+    TCL_GLOB_TYPE_FILE = 1<<4,
+    TCL_GLOB_TYPE_LINK = 1<<5,
+    TCL_GLOB_TYPE_SOCK = 1<<6,
+    TCL_GLOB_TYPE_MOUNT = 1<<7
+};
 
-#define TCL_GLOB_TYPE_BLOCK		(1<<0)
-#define TCL_GLOB_TYPE_CHAR		(1<<1)
-#define TCL_GLOB_TYPE_DIR		(1<<2)
-#define TCL_GLOB_TYPE_PIPE		(1<<3)
-#define TCL_GLOB_TYPE_FILE		(1<<4)
-#define TCL_GLOB_TYPE_LINK		(1<<5)
-#define TCL_GLOB_TYPE_SOCK		(1<<6)
-#define TCL_GLOB_TYPE_MOUNT		(1<<7)
-
-#define TCL_GLOB_PERM_RONLY		(1<<0)
-#define TCL_GLOB_PERM_HIDDEN		(1<<1)
-#define TCL_GLOB_PERM_R			(1<<2)
-#define TCL_GLOB_PERM_W			(1<<3)
-#define TCL_GLOB_PERM_X			(1<<4)
+enum Tcl_GlobPermissions {
+    TCL_GLOB_PERM_RONLY = 1<<0,
+    TCL_GLOB_PERM_HIDDEN = 1<<1,
+    TCL_GLOB_PERM_R = 1<<2,
+    TCL_GLOB_PERM_W = 1<<3,
+    TCL_GLOB_PERM_X = 1<<4
+};
 
 /*
  * Flags for the unload callback function.
  */
-
-#define TCL_UNLOAD_DETACH_FROM_INTERPRETER	(1<<0)
-#define TCL_UNLOAD_DETACH_FROM_PROCESS		(1<<1)
+enum Tcl_UnloadOperations {
+    TCL_UNLOAD_DETACH_FROM_INTERPRETER = 1<<0,
+    TCL_UNLOAD_DETACH_FROM_PROCESS = 1<<1
+};
 
 /*
  * Typedefs for the various filesystem operations:
@@ -1696,13 +1710,11 @@ typedef struct Tcl_Filesystem {
  * Tcl_FSLink, or the linkProc of any filesystem. Any combination of flags can
  * be given. For link creation, the linkProc should create a link which
  * matches any of the types given.
- *
- * TCL_CREATE_SYMBOLIC_LINK -	Create a symbolic or soft link.
- * TCL_CREATE_HARD_LINK -	Create a hard link.
  */
-
-#define TCL_CREATE_SYMBOLIC_LINK	0x01
-#define TCL_CREATE_HARD_LINK		0x02
+enum Tcl_FSLinkActions {
+    TCL_CREATE_SYMBOLIC_LINK = 1,	/* Create a symbolic or soft link. */
+    TCL_CREATE_HARD_LINK = 2		/* Create a hard link. */
+};
 
 /*
  *----------------------------------------------------------------------------
@@ -1745,99 +1757,95 @@ typedef struct Tcl_Token {
 /*
  * Type values defined for Tcl_Token structures. These values are defined as
  * mask bits so that it's easy to check for collections of types.
- *
- * TCL_TOKEN_WORD -		The token describes one word of a command,
- *				from the first non-blank character of the word
- *				(which may be " or {) up to but not including
- *				the space, semicolon, or bracket that
- *				terminates the word. NumComponents counts the
- *				total number of sub-tokens that make up the
- *				word. This includes, for example, sub-tokens
- *				of TCL_TOKEN_VARIABLE tokens.
- * TCL_TOKEN_SIMPLE_WORD -	This token is just like TCL_TOKEN_WORD except
- *				that the word is guaranteed to consist of a
- *				single TCL_TOKEN_TEXT sub-token.
- * TCL_TOKEN_TEXT -		The token describes a range of literal text
- *				that is part of a word. NumComponents is
- *				always 0.
- * TCL_TOKEN_BS -		The token describes a backslash sequence that
- *				must be collapsed. NumComponents is always 0.
- * TCL_TOKEN_COMMAND -		The token describes a command whose result
- *				must be substituted into the word. The token
- *				includes the enclosing brackets. NumComponents
- *				is always 0.
- * TCL_TOKEN_VARIABLE -		The token describes a variable substitution,
- *				including the dollar sign, variable name, and
- *				array index (if there is one) up through the
- *				right parentheses. NumComponents tells how
- *				many additional tokens follow to represent the
- *				variable name. The first token will be a
- *				TCL_TOKEN_TEXT token that describes the
- *				variable name. If the variable is an array
- *				reference then there will be one or more
- *				additional tokens, of type TCL_TOKEN_TEXT,
- *				TCL_TOKEN_BS, TCL_TOKEN_COMMAND, and
- *				TCL_TOKEN_VARIABLE, that describe the array
- *				index; numComponents counts the total number
- *				of nested tokens that make up the variable
- *				reference, including sub-tokens of
- *				TCL_TOKEN_VARIABLE tokens.
- * TCL_TOKEN_SUB_EXPR -		The token describes one subexpression of an
- *				expression, from the first non-blank character
- *				of the subexpression up to but not including
- *				the space, brace, or bracket that terminates
- *				the subexpression. NumComponents counts the
- *				total number of following subtokens that make
- *				up the subexpression; this includes all
- *				subtokens for any nested TCL_TOKEN_SUB_EXPR
- *				tokens. For example, a numeric value used as a
- *				primitive operand is described by a
- *				TCL_TOKEN_SUB_EXPR token followed by a
- *				TCL_TOKEN_TEXT token. A binary subexpression
- *				is described by a TCL_TOKEN_SUB_EXPR token
- *				followed by the TCL_TOKEN_OPERATOR token for
- *				the operator, then TCL_TOKEN_SUB_EXPR tokens
- *				for the left then the right operands.
- * TCL_TOKEN_OPERATOR -		The token describes one expression operator.
- *				An operator might be the name of a math
- *				function such as "abs". A TCL_TOKEN_OPERATOR
- *				token is always preceded by one
- *				TCL_TOKEN_SUB_EXPR token for the operator's
- *				subexpression, and is followed by zero or more
- *				TCL_TOKEN_SUB_EXPR tokens for the operator's
- *				operands. NumComponents is always 0.
- * TCL_TOKEN_EXPAND_WORD -	This token is just like TCL_TOKEN_WORD except
- *				that it marks a word that began with the
- *				literal character prefix "{*}". This word is
- *				marked to be expanded - that is, broken into
- *				words after substitution is complete.
  */
-
-#define TCL_TOKEN_WORD		1
-#define TCL_TOKEN_SIMPLE_WORD	2
-#define TCL_TOKEN_TEXT		4
-#define TCL_TOKEN_BS		8
-#define TCL_TOKEN_COMMAND	16
-#define TCL_TOKEN_VARIABLE	32
-#define TCL_TOKEN_SUB_EXPR	64
-#define TCL_TOKEN_OPERATOR	128
-#define TCL_TOKEN_EXPAND_WORD	256
+enum Tcl_TokenTypes {
+    TCL_TOKEN_WORD = 1,		/* The token describes one word of a command,
+				 * from the first non-blank character of the
+				 * word (which may be " or {) up to but not
+				 * including the space, semicolon, or bracket
+				 * that terminates the word. NumComponents
+				 * counts the total number of sub-tokens that
+				 * make up the word. This includes, for
+				 * example, sub-tokens of TCL_TOKEN_VARIABLE
+				 * tokens. */
+    TCL_TOKEN_SIMPLE_WORD = 2,	/* This token is just like TCL_TOKEN_WORD
+				 * except that the word is guaranteed to
+				 * consist of a single TCL_TOKEN_TEXT
+				 * sub-token. */
+    TCL_TOKEN_TEXT = 4,		/* The token describes a range of literal text
+				 * that is part of a word. NumComponents is
+				 * always 0. */
+    TCL_TOKEN_BS = 8,		/* The token describes a backslash sequence
+				 * that must be collapsed. NumComponents is
+				 * always 0. */
+    TCL_TOKEN_COMMAND = 16,	/* The token describes a command whose result
+				 * must be substituted into the word. The token
+				 * includes the enclosing brackets.
+				 * NumComponents is always 0. */
+    TCL_TOKEN_VARIABLE = 32,	/* The token describes a variable substitution,
+				 * including the dollar sign, variable name, and
+				 * array index (if there is one) up through the
+				 * right parentheses. NumComponents tells how
+				 * many additional tokens follow to represent
+				 * the variable name. The first token will be a
+				 * TCL_TOKEN_TEXT token that describes the
+				 * variable name. If the variable is an array
+				 * reference then there will be one or more
+				 * additional tokens, of type TCL_TOKEN_TEXT,
+				 * TCL_TOKEN_BS, TCL_TOKEN_COMMAND, and
+				 * TCL_TOKEN_VARIABLE, that describe the array
+				 * index; numComponents counts the total number
+				 * of nested tokens that make up the variable
+				 * reference, including sub-tokens of
+				 * TCL_TOKEN_VARIABLE tokens. */
+    TCL_TOKEN_SUB_EXPR = 64,	/* The token describes one subexpression of an
+				 * expression, from the first non-blank character
+				 * of the subexpression up to but not including
+				 * the space, brace, or bracket that terminates
+				 * the subexpression. NumComponents counts the
+				 * total number of following subtokens that make
+				 * up the subexpression; this includes all
+				 * subtokens for any nested TCL_TOKEN_SUB_EXPR
+				 * tokens. For example, a numeric value used as
+				 * a primitive operand is described by a
+				 * TCL_TOKEN_SUB_EXPR token followed by a
+				 * TCL_TOKEN_TEXT token. A binary subexpression
+				 * is described by a TCL_TOKEN_SUB_EXPR token
+				 * followed by the TCL_TOKEN_OPERATOR token for
+				 * the operator, then TCL_TOKEN_SUB_EXPR tokens
+				 * for the left then the right operands. */
+    TCL_TOKEN_OPERATOR = 128,	/* The token describes one expression operator.
+				 * An operator might be the name of a math
+				 * function such as "abs". A TCL_TOKEN_OPERATOR
+				 * token is always preceded by one
+				 * TCL_TOKEN_SUB_EXPR token for the operator's
+				 * subexpression, and is followed by zero or
+				 * more TCL_TOKEN_SUB_EXPR tokens for the
+				 * operator's operands. NumComponents is always
+				 * 0. */
+    TCL_TOKEN_EXPAND_WORD = 256	/* This token is just like TCL_TOKEN_WORD except
+				 * that it marks a word that began with the
+				 * literal character prefix "{*}". This word is
+				 * marked to be expanded - that is, broken into
+				 * words after substitution is complete. */
+};
 
 /*
  * Parsing error types. On any parsing error, one of these values will be
  * stored in the error field of the Tcl_Parse structure defined below.
  */
-
-#define TCL_PARSE_SUCCESS		0
-#define TCL_PARSE_QUOTE_EXTRA		1
-#define TCL_PARSE_BRACE_EXTRA		2
-#define TCL_PARSE_MISSING_BRACE		3
-#define TCL_PARSE_MISSING_BRACKET	4
-#define TCL_PARSE_MISSING_PAREN		5
-#define TCL_PARSE_MISSING_QUOTE		6
-#define TCL_PARSE_MISSING_VAR_BRACE	7
-#define TCL_PARSE_SYNTAX		8
-#define TCL_PARSE_BAD_NUMBER		9
+enum Tcl_ParseResults {
+    TCL_PARSE_SUCCESS = 0,
+    TCL_PARSE_QUOTE_EXTRA = 1,
+    TCL_PARSE_BRACE_EXTRA = 2,
+    TCL_PARSE_MISSING_BRACE = 3,
+    TCL_PARSE_MISSING_BRACKET = 4,
+    TCL_PARSE_MISSING_PAREN = 5,
+    TCL_PARSE_MISSING_QUOTE = 6,
+    TCL_PARSE_MISSING_VAR_BRACE = 7,
+    TCL_PARSE_SYNTAX = 8,
+    TCL_PARSE_BAD_NUMBER = 9
+};
 
 /*
  * A structure of the following type is filled in by Tcl_ParseCommand. It
@@ -1932,90 +1940,90 @@ typedef struct Tcl_EncodingType {
  * The following definitions are used as values for the conversion control
  * flags argument when converting text from one character set to another:
  *
- * TCL_ENCODING_START -		Signifies that the source buffer is the first
- *				block in a (potentially multi-block) input
- *				stream. Tells the conversion function to reset
- *				to an initial state and perform any
- *				initialization that needs to occur before the
- *				first byte is converted. If the source buffer
- *				contains the entire input stream to be
- *				converted, this flag should be set.
- * TCL_ENCODING_END -		Signifies that the source buffer is the last
- *				block in a (potentially multi-block) input
- *				stream. Tells the conversion routine to
- *				perform any finalization that needs to occur
- *				after the last byte is converted and then to
- *				reset to an initial state. If the source
- *				buffer contains the entire input stream to be
- *				converted, this flag should be set.
- * TCL_ENCODING_STOPONERROR -	Not used any more.
- * TCL_ENCODING_NO_TERMINATE -	If set, Tcl_ExternalToUtf does not append a
- *				terminating NUL byte.  Since it does not need
- *				an extra byte for a terminating NUL, it fills
- *				all dstLen bytes with encoded UTF-8 content if
- *				needed.  If clear, a byte is reserved in the
- *				dst space for NUL termination, and a
- *				terminating NUL is appended.
- * TCL_ENCODING_CHAR_LIMIT -	If set and dstCharsPtr is not NULL, then
- *				Tcl_ExternalToUtf takes the initial value of
- *				*dstCharsPtr as a limit of the maximum number
- *				of chars to produce in the encoded UTF-8
- *				content.  Otherwise, the number of chars
- *				produced is controlled only by other limiting
- *				factors.
- * TCL_ENCODING_PROFILE_* -	Mutually exclusive encoding profile ids. Note
- *				these are bit masks.
+ * TCL_ENCODING_PROFILE_* -	Mutually exclusive encoding profile ids.
  *
  * NOTE: THESE BIT DEFINITIONS SHOULD NOT OVERLAP WITH INTERNAL USE BITS
  * DEFINED IN tclEncoding.c (ENCODING_INPUT et al). Be cognizant of this
  * when adding bits.
  */
+enum Tcl_EncodingConversionFlags {
+    TCL_ENCODING_START = 0x01,	/* Signifies that the source buffer is the first
+				 * block in a (potentially multi-block) input
+				 * stream. Tells the conversion function to
+				 * reset to an initial state and perform any
+				 * initialization that needs to occur before the
+				 * first byte is converted. If the source buffer
+				 * contains the entire input stream to be
+				 * converted, this flag should be set. */
+    TCL_ENCODING_END = 0x02,	/* Signifies that the source buffer is the last
+				 * block in a (potentially multi-block) input
+				 * stream. Tells the conversion routine to
+				 * perform any finalization that needs to occur
+				 * after the last byte is converted and then to
+				 * reset to an initial state. If the source
+				 * buffer contains the entire input stream to be
+				 * converted, this flag should be set. */
+    TCL_ENCODING_STOPONERROR = 0x0, /* Not used any more */
+    TCL_ENCODING_NO_TERMINATE = 0x08,
+				/* If set, Tcl_ExternalToUtf does not append a
+				 * terminating NUL byte. Since it does not need
+				 * an extra byte for a terminating NUL, it fills
+				 * all dstLen bytes with encoded UTF-8 content
+				 * if needed.  If clear, a byte is reserved in
+				 * the dst space for NUL termination, and a
+				 * terminating NUL is appended. */
+    TCL_ENCODING_CHAR_LIMIT = 0x10,
+				/* If set and dstCharsPtr is not NULL, then
+				 * Tcl_ExternalToUtf takes the initial value of
+				 * *dstCharsPtr as a limit of the maximum number
+				 * of chars to produce in the encoded UTF-8
+				 * content.  Otherwise, the number of chars
+				 * produced is controlled only by other
+				 * limiting factors. */
 
-#define TCL_ENCODING_START		0x01
-#define TCL_ENCODING_END		0x02
-#define TCL_ENCODING_STOPONERROR	0x0 /* Not used any more */
-#define TCL_ENCODING_NO_TERMINATE	0x08
-#define TCL_ENCODING_CHAR_LIMIT		0x10
-/* Internal use bits, do not define bits in this space. See above comment */
-#define TCL_ENCODING_INTERNAL_USE_MASK  0xFF00
+    /* Internal use bits, do not define bits in this space. See above comment */
+    TCL_ENCODING_INTERNAL_USE_MASK = 0xFF00
+};
+
 /*
  * Reserve top byte for profile values (disjoint, not a mask). In case of
  * changes, ensure ENCODING_PROFILE_* macros in tclInt.h are modified if
  * necessary.
  */
-#define TCL_ENCODING_PROFILE_STRICT   0x00000000
-#define TCL_ENCODING_PROFILE_TCL8     0x01000000
-#define TCL_ENCODING_PROFILE_REPLACE  0x02000000
+enum Tcl_EncodingProfiles {
+    TCL_ENCODING_PROFILE_STRICT = 0x00000000,	/* Generate error. */
+    TCL_ENCODING_PROFILE_TCL8 = 0x01000000,	/* Guess replacement. */
+    TCL_ENCODING_PROFILE_REPLACE = 0x02000000	/* Use official replacement. */
+};
 
 /*
  * The following definitions are the error codes returned by the conversion
  * routines:
  *
- * TCL_OK -			All characters were converted.
- * TCL_CONVERT_NOSPACE -	The output buffer would not have been large
- *				enough for all of the converted data; as many
- *				characters as could fit were converted though.
- * TCL_CONVERT_MULTIBYTE -	The last few bytes in the source string were
- *				the beginning of a multibyte sequence, but
- *				more bytes were needed to complete this
- *				sequence. A subsequent call to the conversion
- *				routine should pass the beginning of this
- *				unconverted sequence plus additional bytes
- *				from the source stream to properly convert the
- *				formerly split-up multibyte sequence.
- * TCL_CONVERT_SYNTAX -		The source stream contained an invalid
- *				character sequence. This may occur if the
- *				input stream has been damaged or if the input
- *				encoding method was misidentified.
- * TCL_CONVERT_UNKNOWN -	The source string contained a character that
- *				could not be represented in the target
- *				encoding.
+ * Also:
+ *	TCL_OK -		All characters were converted.
  */
-
-#define TCL_CONVERT_MULTIBYTE	(-1)
-#define TCL_CONVERT_SYNTAX	(-2)
-#define TCL_CONVERT_UNKNOWN	(-3)
-#define TCL_CONVERT_NOSPACE	(-4)
+enum Tcl_EncodingConversionResults {
+    TCL_CONVERT_MULTIBYTE = -1,	/* The last few bytes in the source string were
+				 * the beginning of a multibyte sequence, but
+				 * more bytes were needed to complete this
+				 * sequence. A subsequent call to the conversion
+				 * routine should pass the beginning of this
+				 * unconverted sequence plus additional bytes
+				 * from the source stream to properly convert
+				 * the formerly split-up multibyte sequence. */
+    TCL_CONVERT_SYNTAX = -2,	/* The source stream contained an invalid
+				 * character sequence. This may occur if the
+				 * input stream has been damaged or if the
+				 * input encoding method was misidentified. */
+    TCL_CONVERT_UNKNOWN = -3,	/* The source string contained a character that
+				 * could not be represented in the target
+				 * encoding. */
+    TCL_CONVERT_NOSPACE = -4	/* The output buffer would not have been large
+				 * enough for all of the converted data; as
+				 * many characters as could fit were converted
+				 * though. */
+};
 
 /*
  * The maximum number of bytes that are necessary to represent a single
@@ -2072,9 +2080,10 @@ typedef struct Tcl_Config {
  * Flags for TIP#143 limits, detailing which limits are active in an
  * interpreter. Used for Tcl_{Add,Remove}LimitHandler type argument.
  */
-
-#define TCL_LIMIT_COMMANDS	0x01
-#define TCL_LIMIT_TIME		0x02
+enum Tcl_LimitTypes {
+    TCL_LIMIT_COMMANDS = 0x01,
+    TCL_LIMIT_TIME = 0x02
+};
 
 /*
  * Structure containing information about a limit handler to be called when a
@@ -2124,19 +2133,20 @@ typedef struct {
 } Tcl_ArgvInfo;
 
 /*
- * Legal values for the type field of a Tcl_ArgInfo: see the user
+ * Legal values for the type field of a Tcl_ArgvInfo: see the user
  * documentation for details.
  */
-
-#define TCL_ARGV_CONSTANT	15
-#define TCL_ARGV_INT		16
-#define TCL_ARGV_STRING		17
-#define TCL_ARGV_REST		18
-#define TCL_ARGV_FLOAT		19
-#define TCL_ARGV_FUNC		20
-#define TCL_ARGV_GENFUNC	21
-#define TCL_ARGV_HELP		22
-#define TCL_ARGV_END		23
+enum Tcl_ArgvInfoTypes {
+    TCL_ARGV_CONSTANT = 15,
+    TCL_ARGV_INT = 16,
+    TCL_ARGV_STRING = 17,
+    TCL_ARGV_REST = 18,
+    TCL_ARGV_FLOAT = 19,
+    TCL_ARGV_FUNC = 20,
+    TCL_ARGV_GENFUNC = 21,
+    TCL_ARGV_HELP = 22,
+    TCL_ARGV_END = 23
+};
 
 /*
  * Types of callback functions for the TCL_ARGV_FUNC and TCL_ARGV_GENFUNC
@@ -2169,53 +2179,60 @@ typedef Tcl_Size (Tcl_ArgvGenFuncProc)(void *clientData, Tcl_Interp *interp,
  * desired/expected for the Tcl_ZlibDeflate, Tcl_ZlibInflate and
  * Tcl_ZlibStreamInit functions.
  */
-
-#define TCL_ZLIB_FORMAT_RAW	1
-#define TCL_ZLIB_FORMAT_ZLIB	2
-#define TCL_ZLIB_FORMAT_GZIP	4
-#define TCL_ZLIB_FORMAT_AUTO	8
+enum Tcl_ZlibFormats {
+    TCL_ZLIB_FORMAT_RAW = 1,
+    TCL_ZLIB_FORMAT_ZLIB = 2,
+    TCL_ZLIB_FORMAT_GZIP = 4,
+    TCL_ZLIB_FORMAT_AUTO = 8
+};
 
 /*
  * Constants that describe whether the stream is to operate in compressing or
  * decompressing mode.
  */
-
-#define TCL_ZLIB_STREAM_DEFLATE	16
-#define TCL_ZLIB_STREAM_INFLATE	32
+enum Tcl_ZlibStreamModes {
+    TCL_ZLIB_STREAM_DEFLATE = 16,
+    TCL_ZLIB_STREAM_INFLATE = 32
+};
 
 /*
  * Constants giving compression levels. Use of TCL_ZLIB_COMPRESS_DEFAULT is
  * recommended.
  */
-
-#define TCL_ZLIB_COMPRESS_NONE	0
-#define TCL_ZLIB_COMPRESS_FAST	1
-#define TCL_ZLIB_COMPRESS_BEST	9
-#define TCL_ZLIB_COMPRESS_DEFAULT (-1)
+enum Tcl_ZlibCompressionLevels {
+    TCL_ZLIB_COMPRESS_NONE = 0,
+    TCL_ZLIB_COMPRESS_FAST = 1,
+    TCL_ZLIB_COMPRESS_BEST = 9,
+    TCL_ZLIB_COMPRESS_DEFAULT = -1
+};
 
 /*
  * Constants for types of flushing, used with Tcl_ZlibFlush.
  */
-
-#define TCL_ZLIB_NO_FLUSH	0
-#define TCL_ZLIB_FLUSH		2
-#define TCL_ZLIB_FULLFLUSH	3
-#define TCL_ZLIB_FINALIZE	4
+enum Tcl_ZlibFlushModes {
+    TCL_ZLIB_NO_FLUSH = 0,
+    TCL_ZLIB_FLUSH = 2,
+    TCL_ZLIB_FULLFLUSH = 3,
+    TCL_ZLIB_FINALIZE = 4
+};
 
 /*
  *----------------------------------------------------------------------------
  * Definitions needed for the Tcl_LoadFile function. [TIP #416]
  */
-
-#define TCL_LOAD_GLOBAL 1
-#define TCL_LOAD_LAZY 2
+enum Tcl_LoadFileFlags {
+    TCL_LOAD_GLOBAL = 1,
+    TCL_LOAD_LAZY = 2
+};
 
 /*
  *----------------------------------------------------------------------------
  * Definitions needed for the Tcl_OpenTcpServerEx function. [TIP #456]
  */
-#define TCL_TCPSERVER_REUSEADDR (1<<0)
-#define TCL_TCPSERVER_REUSEPORT (1<<1)
+enum Tcl_OpenTcpFlags {
+    TCL_TCPSERVER_REUSEADDR = 1<<0,
+    TCL_TCPSERVER_REUSEPORT = 1<<1
+};
 
 /*
  * Constants for special Tcl_Size-typed values, see TIP #494
