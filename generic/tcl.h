@@ -419,7 +419,7 @@ enum Tcl_CreateThreadFlags {
  * Flag values passed to Tcl_StringCaseMatch.
  */
 enum Tcl_StringCaseMatchFlags {
-    TCL_MATCH_NOCASE = 1<<0
+    TCL_MATCH_NOCASE = 1<<0	/* Ignore case in match. */
 };
 
 /*
@@ -513,10 +513,10 @@ enum Tcl_ResultCode {
  * Flags to control what substitutions are performed by Tcl_SubstObj():
  */
 enum Tcl_SubstObjFlags {
-    TCL_SUBST_COMMANDS = 001,
-    TCL_SUBST_VARIABLES = 002,
-    TCL_SUBST_BACKSLASHES = 004,
-    TCL_SUBST_ALL = 007
+    TCL_SUBST_COMMANDS = 001,	/* Apply command substitutions. */
+    TCL_SUBST_VARIABLES = 002,	/* Apply variable substitutions. */
+    TCL_SUBST_BACKSLASHES = 004,/* Apply backslash substitutions. */
+    TCL_SUBST_ALL = 007		/* Apply all substitutions. */
 };
 
 /*
@@ -959,22 +959,22 @@ enum Tcl_EvalFlags {
  * TCL_CANCEL_UNWIND, above.
  */
 enum Tcl_VarFlags {
-    TCL_GLOBAL_ONLY = 1,
-    TCL_NAMESPACE_ONLY = 2,
-    TCL_APPEND_VALUE = 4,
-    TCL_LIST_ELEMENT = 8,
-    TCL_TRACE_READS = 0x10,
-    TCL_TRACE_WRITES = 0x20,
-    TCL_TRACE_UNSETS = 0x40,
-    TCL_TRACE_DESTROYED = 0x80,
+    TCL_GLOBAL_ONLY = 1,	/* Look up variable name in global namespace. */
+    TCL_NAMESPACE_ONLY = 2,	/* Look up variable name in current namespace. */
+    TCL_APPEND_VALUE = 4,	/* Append value to string in variable. */
+    TCL_LIST_ELEMENT = 8,	/* Append value as element to list in variable. */
+    TCL_TRACE_READS = 0x10,	/* Trace reads from the variable. */
+    TCL_TRACE_WRITES = 0x20,	/* Trace writes to the variable. */
+    TCL_TRACE_UNSETS = 0x40,	/* Trace unsets of the variable. */
+    TCL_TRACE_DESTROYED = 0x80,	/* Notify a trace that it is being destroyed. */
 
-    TCL_LEAVE_ERR_MSG = 0x200,
-    TCL_TRACE_ARRAY = 0x800,
+    TCL_LEAVE_ERR_MSG = 0x200,	/* Leave an error message in the interpreter on failure. */
+    TCL_TRACE_ARRAY = 0x800,	/* Trace whole-array operations. */
 
     /* Indicate the semantics of the result of a trace. */
 
-    TCL_TRACE_RESULT_DYNAMIC = 0x8000,
-    TCL_TRACE_RESULT_OBJECT = 0x10000
+    TCL_TRACE_RESULT_DYNAMIC = 0x8000,	/* Trace result to be Tcl_Free'd when done. */
+    TCL_TRACE_RESULT_OBJECT = 0x10000	/* Trace result is a Tcl_Obj reference. */
 };
 
 /*
@@ -990,33 +990,35 @@ enum Tcl_EnsembleFlags {
  * Flag values passed to command-related functions.
  */
 enum Tcl_CommandFlags {
-    TCL_TRACE_RENAME = 0x2000,
-    TCL_TRACE_DELETE = 0x4000,
+    TCL_TRACE_RENAME = 0x2000,	/* Trace renames of a command. */
+    TCL_TRACE_DELETE = 0x4000,	/* Trace callback on delete of the command. */
 
-    TCL_ALLOW_INLINE_COMPILATION = 0x20000
+    TCL_ALLOW_INLINE_COMPILATION = 0x20000 /* Command may be compiled inline. */
 };
 
 /*
  * Types for linked variables:
  */
 enum Tcl_LinkTypes {
-    TCL_LINK_INT = 1,
-    TCL_LINK_DOUBLE = 2,
-    TCL_LINK_BOOLEAN = 3,
-    TCL_LINK_STRING = 4,
-    TCL_LINK_WIDE_INT = 5,
-    TCL_LINK_CHAR = 6,
-    TCL_LINK_UCHAR = 7,
-    TCL_LINK_SHORT = 8,
-    TCL_LINK_USHORT = 9,
-    TCL_LINK_UINT = 10,
-    TCL_LINK_LONG = ((sizeof(long) != sizeof(int)) ? TCL_LINK_WIDE_INT : TCL_LINK_INT),
-    TCL_LINK_ULONG = ((sizeof(long) != sizeof(int)) ? TCL_LINK_WIDE_UINT : TCL_LINK_UINT),
-    TCL_LINK_FLOAT = 13,
-    TCL_LINK_WIDE_UINT = 14,
-    TCL_LINK_CHARS = 15,
-    TCL_LINK_BINARY = 16,
-    TCL_LINK_READ_ONLY = 0x80
+    TCL_LINK_INT = 1,		/* Variable is of C type int. */
+    TCL_LINK_DOUBLE = 2,	/* Variable is of C type double. */
+    TCL_LINK_BOOLEAN = 3,	/* Variable is of C type int, holding a boolean. */
+    TCL_LINK_STRING = 4,	/* Variable is of C type char*, holding a dynamically-allocated string. */
+    TCL_LINK_WIDE_INT = 5,	/* Variable is of C type Tcl_WideInt. */
+    TCL_LINK_CHAR = 6,		/* Variable is of C type char. */
+    TCL_LINK_UCHAR = 7,		/* Variable is of C type unsigned char. */
+    TCL_LINK_SHORT = 8,		/* Variable is of C type short. */
+    TCL_LINK_USHORT = 9,	/* Variable is of C type unsigned short. */
+    TCL_LINK_UINT = 10,		/* Variable is of C type unsigned int. */
+    TCL_LINK_FLOAT = 13,	/* Variable is of C type float. */
+    TCL_LINK_WIDE_UINT = 14,	/* Variable is of C type Tcl_WideUInt. */
+    TCL_LINK_CHARS = 15,	/* Variable is of C type char[n], mapped as a string. */
+    TCL_LINK_BINARY = 16,	/* Variable is of C type unsigned char[n], mapped as a string. */
+    TCL_LINK_LONG = (		/* Variable is of C type long. */
+	(sizeof(long) != sizeof(int)) ? TCL_LINK_WIDE_INT : TCL_LINK_INT),
+    TCL_LINK_ULONG = (		/* Variable is of C type unsigned long. */
+	(sizeof(long) != sizeof(int)) ? TCL_LINK_WIDE_UINT : TCL_LINK_UINT),
+    TCL_LINK_READ_ONLY = 0x80	/* Bit-flag: variable is read-only from Tcl. */
 };
 
 /*
@@ -1228,12 +1230,12 @@ typedef struct {
  * events:
  */
 enum Tcl_DoOneEventFlags {
-    TCL_DONT_WAIT = 1<<1,
-    TCL_WINDOW_EVENTS = 1<<2,
-    TCL_FILE_EVENTS = 1<<3,
-    TCL_TIMER_EVENTS = 1<<4,
-    TCL_IDLE_EVENTS = 1<<5,	/* WAS 0x10 ???? */
-    TCL_ALL_EVENTS = ~TCL_DONT_WAIT
+    TCL_DONT_WAIT = 1<<1,	/* Do not use notifier to wait for events. */
+    TCL_WINDOW_EVENTS = 1<<2,	/* Process window (Tk) events. */
+    TCL_FILE_EVENTS = 1<<3,	/* Process standard channel events. */
+    TCL_TIMER_EVENTS = 1<<4,	/* Process timeouts/timer events. */
+    TCL_IDLE_EVENTS = 1<<5,	/* Process idle events. */
+    TCL_ALL_EVENTS = ~TCL_DONT_WAIT /* Process all events. */
 };
 
 /*
@@ -1266,8 +1268,8 @@ typedef enum Tcl_QueuePosition {
  * event routines.
  */
 enum Tcl_ServiceModes {
-    TCL_SERVICE_NONE = 0,
-    TCL_SERVICE_ALL = 1
+    TCL_SERVICE_NONE = 0,	/* Disable servicing of the notifier. */
+    TCL_SERVICE_ALL = 1		/* Enable servicing of the notifier. */
 };
 
 /*
@@ -1301,9 +1303,9 @@ typedef void (Tcl_ScaleTimeProc) (Tcl_Time *timebuf, void *clientData);
  * indicate what sorts of events are of interest:
  */
 enum Tcl_ChannelHandlerFlags {
-    TCL_READABLE = 1<<1,
-    TCL_WRITABLE = 1<<2,
-    TCL_EXCEPTION = 1<<3
+    TCL_READABLE = 1<<1,	/* Call handler when channel is readable. */
+    TCL_WRITABLE = 1<<2,	/* Call handler when channel is writable. */
+    TCL_EXCEPTION = 1<<3	/* Call handler when channel has error. */
 };
 
 /*
@@ -1312,10 +1314,10 @@ enum Tcl_ChannelHandlerFlags {
  * Tcl_GetStdChannel.
  */
 enum Tcl_OpenCommandChannelFlags {
-    TCL_STDIN = 1<<1,
-    TCL_STDOUT = 1<<2,
-    TCL_STDERR = 1<<3,
-    TCL_ENFORCE_MODE = 1<<4
+    TCL_STDIN = 1<<1,		/* Use the stdin channel. */
+    TCL_STDOUT = 1<<2,		/* Use the stdout channel. */
+    TCL_STDERR = 1<<3,		/* Use the stderr channel. */
+    TCL_ENFORCE_MODE = 1<<4	/* Require full enforcement of access mode. */
 };
 
 /*
@@ -1323,8 +1325,8 @@ enum Tcl_OpenCommandChannelFlags {
  * should be closed.
  */
 enum Tcl_CloseDirection {
-    TCL_CLOSE_READ = 1<<1,
-    TCL_CLOSE_WRITE = 1<<2
+    TCL_CLOSE_READ = 1<<1,	/* Close the reader side of a bidirectional channel. */
+    TCL_CLOSE_WRITE = 1<<2	/* Close the writer side of a bidirectional channel. */
 };
 
 /*
@@ -1344,8 +1346,8 @@ enum Tcl_CloseDirection {
  * TIP #218: Channel Actions, Ids for Tcl_DriverThreadActionProc.
  */
 enum Tcl_ChannelThreadActions {
-    TCL_CHANNEL_THREAD_INSERT = 0,
-    TCL_CHANNEL_THREAD_REMOVE = 1
+    TCL_CHANNEL_THREAD_INSERT = 0,	/* Channel added to thread. */
+    TCL_CHANNEL_THREAD_REMOVE = 1	/* Channel removed from thread. */
 };
 
 /*
@@ -1464,9 +1466,9 @@ enum Tcl_BlockModeFlags {
  */
 
 typedef enum Tcl_PathType {
-    TCL_PATH_ABSOLUTE,
-    TCL_PATH_RELATIVE,
-    TCL_PATH_VOLUME_RELATIVE
+    TCL_PATH_ABSOLUTE,		/* Path is absolute. */
+    TCL_PATH_RELATIVE,		/* Path is relative. */
+    TCL_PATH_VOLUME_RELATIVE	/* Path is absolute within the current volume. (For Windows) */
 } Tcl_PathType;
 
 /*
@@ -1485,30 +1487,30 @@ typedef struct Tcl_GlobTypeData {
  * Type and permission definitions for glob command.
  */
 enum Tcl_GlobTypes {
-    TCL_GLOB_TYPE_BLOCK = 1<<0,
-    TCL_GLOB_TYPE_CHAR = 1<<1,
-    TCL_GLOB_TYPE_DIR = 1<<2,
-    TCL_GLOB_TYPE_PIPE = 1<<3,
-    TCL_GLOB_TYPE_FILE = 1<<4,
-    TCL_GLOB_TYPE_LINK = 1<<5,
-    TCL_GLOB_TYPE_SOCK = 1<<6,
-    TCL_GLOB_TYPE_MOUNT = 1<<7
+    TCL_GLOB_TYPE_BLOCK = 1<<0,	/* Block (disk) devices. */
+    TCL_GLOB_TYPE_CHAR = 1<<1,	/* Character (non-disk) devices. */
+    TCL_GLOB_TYPE_DIR = 1<<2,	/* Directories. */
+    TCL_GLOB_TYPE_PIPE = 1<<3,	/* Named pipes. */
+    TCL_GLOB_TYPE_FILE = 1<<4,	/* Regular files. */
+    TCL_GLOB_TYPE_LINK = 1<<5,	/* Symbolic links. */
+    TCL_GLOB_TYPE_SOCK = 1<<6,	/* Unix-domain sockets. */
+    TCL_GLOB_TYPE_MOUNT = 1<<7	/* Mount points. */
 };
 
 enum Tcl_GlobPermissions {
-    TCL_GLOB_PERM_RONLY = 1<<0,
-    TCL_GLOB_PERM_HIDDEN = 1<<1,
-    TCL_GLOB_PERM_R = 1<<2,
-    TCL_GLOB_PERM_W = 1<<3,
-    TCL_GLOB_PERM_X = 1<<4
+    TCL_GLOB_PERM_RONLY = 1<<0,	/* File is read-only. */
+    TCL_GLOB_PERM_HIDDEN = 1<<1,/* File is hidden. */
+    TCL_GLOB_PERM_R = 1<<2,	/* File is readable. */
+    TCL_GLOB_PERM_W = 1<<3,	/* File is writable. */
+    TCL_GLOB_PERM_X = 1<<4	/* File is executable. */
 };
 
 /*
  * Flags for the unload callback function.
  */
 enum Tcl_UnloadOperations {
-    TCL_UNLOAD_DETACH_FROM_INTERPRETER = 1<<0,
-    TCL_UNLOAD_DETACH_FROM_PROCESS = 1<<1
+    TCL_UNLOAD_DETACH_FROM_INTERPRETER = 1<<0,	/* Detach from one interp. */
+    TCL_UNLOAD_DETACH_FROM_PROCESS = 1<<1	/* Detach from whole process. */
 };
 
 /*
@@ -1835,16 +1837,16 @@ enum Tcl_TokenTypes {
  * stored in the error field of the Tcl_Parse structure defined below.
  */
 enum Tcl_ParseResults {
-    TCL_PARSE_SUCCESS = 0,
-    TCL_PARSE_QUOTE_EXTRA = 1,
-    TCL_PARSE_BRACE_EXTRA = 2,
-    TCL_PARSE_MISSING_BRACE = 3,
-    TCL_PARSE_MISSING_BRACKET = 4,
-    TCL_PARSE_MISSING_PAREN = 5,
-    TCL_PARSE_MISSING_QUOTE = 6,
-    TCL_PARSE_MISSING_VAR_BRACE = 7,
-    TCL_PARSE_SYNTAX = 8,
-    TCL_PARSE_BAD_NUMBER = 9
+    TCL_PARSE_SUCCESS = 0,		/* Parse succeeded. */
+    TCL_PARSE_QUOTE_EXTRA = 1,		/* Extra data after " character. */
+    TCL_PARSE_BRACE_EXTRA = 2,		/* Extra data after } character. */
+    TCL_PARSE_MISSING_BRACE = 3,	/* No balancing } character. */
+    TCL_PARSE_MISSING_BRACKET = 4,	/* No balancing ] character. */
+    TCL_PARSE_MISSING_PAREN = 5,	/* No balancing ) character. */
+    TCL_PARSE_MISSING_QUOTE = 6,	/* No balancing " character. */
+    TCL_PARSE_MISSING_VAR_BRACE = 7,	/* No balancing } in variable ref. */
+    TCL_PARSE_SYNTAX = 8,		/* General syntax error. */
+    TCL_PARSE_BAD_NUMBER = 9		/* Mis-parsed number. */
 };
 
 /*
@@ -2084,8 +2086,8 @@ typedef struct Tcl_Config {
  * interpreter. Used for Tcl_{Add,Remove}LimitHandler type argument.
  */
 enum Tcl_LimitTypes {
-    TCL_LIMIT_COMMANDS = 0x01,
-    TCL_LIMIT_TIME = 0x02
+    TCL_LIMIT_COMMANDS = 0x01,	/* Command count limit. */
+    TCL_LIMIT_TIME = 0x02	/* Wall-clock execution time limit. */
 };
 
 /*
@@ -2140,15 +2142,15 @@ typedef struct {
  * documentation for details.
  */
 enum Tcl_ArgvInfoTypes {
-    TCL_ARGV_CONSTANT = 15,
-    TCL_ARGV_INT = 16,
-    TCL_ARGV_STRING = 17,
-    TCL_ARGV_REST = 18,
-    TCL_ARGV_FLOAT = 19,
-    TCL_ARGV_FUNC = 20,
-    TCL_ARGV_GENFUNC = 21,
-    TCL_ARGV_HELP = 22,
-    TCL_ARGV_END = 23
+    TCL_ARGV_CONSTANT = 15,	/* No second parameter; just option name. */
+    TCL_ARGV_INT = 16,		/* Option takes an integer. */
+    TCL_ARGV_STRING = 17,	/* Option takes a string. */
+    TCL_ARGV_REST = 18,		/* Option consumes all remaining arguments. */
+    TCL_ARGV_FLOAT = 19,	/* Option takes a floating point number. */
+    TCL_ARGV_FUNC = 20,		/* Option arg parsed by callback: Tcl_ArgvFuncProc. */
+    TCL_ARGV_GENFUNC = 21,	/* Option args parsed by callback: Tcl_ArgvGenFuncProc. */
+    TCL_ARGV_HELP = 22,		/* Print a help message. */
+    TCL_ARGV_END = 23		/* End of options. */
 };
 
 /*
@@ -2183,10 +2185,10 @@ typedef Tcl_Size (Tcl_ArgvGenFuncProc)(void *clientData, Tcl_Interp *interp,
  * Tcl_ZlibStreamInit functions.
  */
 enum Tcl_ZlibFormats {
-    TCL_ZLIB_FORMAT_RAW = 1,
-    TCL_ZLIB_FORMAT_ZLIB = 2,
-    TCL_ZLIB_FORMAT_GZIP = 4,
-    TCL_ZLIB_FORMAT_AUTO = 8
+    TCL_ZLIB_FORMAT_RAW = 1,	/* Direct compressed data, no header. */
+    TCL_ZLIB_FORMAT_ZLIB = 2,	/* Zlib-format header. */
+    TCL_ZLIB_FORMAT_GZIP = 4,	/* Gzip-format header. */
+    TCL_ZLIB_FORMAT_AUTO = 8	/* Auto-select between zlib and gzip. */
 };
 
 /*
@@ -2194,8 +2196,8 @@ enum Tcl_ZlibFormats {
  * decompressing mode.
  */
 enum Tcl_ZlibStreamModes {
-    TCL_ZLIB_STREAM_DEFLATE = 16,
-    TCL_ZLIB_STREAM_INFLATE = 32
+    TCL_ZLIB_STREAM_DEFLATE = 16,/* Compress data. */
+    TCL_ZLIB_STREAM_INFLATE = 32 /* Decompress data. */
 };
 
 /*
@@ -2203,20 +2205,20 @@ enum Tcl_ZlibStreamModes {
  * recommended.
  */
 enum Tcl_ZlibCompressionLevels {
-    TCL_ZLIB_COMPRESS_NONE = 0,
-    TCL_ZLIB_COMPRESS_FAST = 1,
-    TCL_ZLIB_COMPRESS_BEST = 9,
-    TCL_ZLIB_COMPRESS_DEFAULT = -1
+    TCL_ZLIB_COMPRESS_NONE = 0,	/* Pass through. */
+    TCL_ZLIB_COMPRESS_FAST = 1,	/* Minimal compression. Fastest. */
+    TCL_ZLIB_COMPRESS_BEST = 9,	/* Maximal compression. Slowest. */
+    TCL_ZLIB_COMPRESS_DEFAULT = -1 /* Default, balanced compression. */
 };
 
 /*
  * Constants for types of flushing, used with Tcl_ZlibFlush.
  */
 enum Tcl_ZlibFlushModes {
-    TCL_ZLIB_NO_FLUSH = 0,
-    TCL_ZLIB_FLUSH = 2,
-    TCL_ZLIB_FULLFLUSH = 3,
-    TCL_ZLIB_FINALIZE = 4
+    TCL_ZLIB_NO_FLUSH = 0,	/* Do not flush. */
+    TCL_ZLIB_FLUSH = 2,		/* Flush compressed data. */
+    TCL_ZLIB_FULLFLUSH = 3,	/* Fully flush compressed data. */
+    TCL_ZLIB_FINALIZE = 4	/* Finalize the compression; no more data. */
 };
 
 /*
@@ -2224,8 +2226,8 @@ enum Tcl_ZlibFlushModes {
  * Definitions needed for the Tcl_LoadFile function. [TIP #416]
  */
 enum Tcl_LoadFileFlags {
-    TCL_LOAD_GLOBAL = 1,
-    TCL_LOAD_LAZY = 2
+    TCL_LOAD_GLOBAL = 1,	/* Add symbols to global symbol table. */
+    TCL_LOAD_LAZY = 2		/* Load when first accessed. */
 };
 
 /*
@@ -2233,8 +2235,8 @@ enum Tcl_LoadFileFlags {
  * Definitions needed for the Tcl_OpenTcpServerEx function. [TIP #456]
  */
 enum Tcl_OpenTcpFlags {
-    TCL_TCPSERVER_REUSEADDR = 1<<0,
-    TCL_TCPSERVER_REUSEPORT = 1<<1
+    TCL_TCPSERVER_REUSEADDR = 1<<0,	/* Set SO_REUSEADDR flag on socket. */
+    TCL_TCPSERVER_REUSEPORT = 1<<1	/* Set SO_REUSEPORT flag on socket. */
 };
 
 /*
