@@ -43,7 +43,7 @@
  * don't like that, and complain. Simply disable the warning to silence them.
  */
 
-ifdef _MSC_VER
+#ifdef _MSC_VER
 #pragma warning( disable : 4102 )
 #elif defined (__clang__)
 #elif (__GNUC__)  && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5)))
