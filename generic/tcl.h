@@ -1254,11 +1254,11 @@ struct Tcl_Event {
  * Positions to pass to Tcl_QueueEvent/Tcl_ThreadQueueEvent:
  */
 
-typedef enum {
-    TCL_QUEUE_TAIL,
-    TCL_QUEUE_HEAD,
-    TCL_QUEUE_MARK,
-    TCL_QUEUE_ALERT_IF_EMPTY = 4
+typedef enum Tcl_QueuePosition {
+    TCL_QUEUE_TAIL,		/* Insert at end of event queue. */
+    TCL_QUEUE_HEAD,		/* Insert at Head of event queue. */
+    TCL_QUEUE_MARK,		/* Insert at mark in queue (for grouping events). */
+    TCL_QUEUE_ALERT_IF_EMPTY=4	/* Bit flag: notify on empty. */
 } Tcl_QueuePosition;
 
 /*
@@ -2058,8 +2058,11 @@ typedef unsigned short Tcl_UniChar;
 /*
  * Specifiers for Unicode normalization forms.
  */
-typedef enum {
-    TCL_NFC, TCL_NFD, TCL_NFKC, TCL_NFKD
+typedef enum Tcl_UnicodeNormalizationForm {
+    TCL_NFC,			/* Composed. */
+    TCL_NFD,			/* Decomposed. */
+    TCL_NFKC,			/* Composed, compatibility. */
+    TCL_NFKD			/* Decomposed, compatibility. */
 } Tcl_UnicodeNormalizationForm;
 
 /*
