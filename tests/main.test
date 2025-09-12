@@ -17,8 +17,8 @@ namespace eval ::tcl::test::main {
 	&& [package vsatisfies [package provide tcl::test] 8.5-]}]
 
     testConstraint noappverifier [expr {
-        [llength [info commands testappverifierpresent]] == 0
-        || ![testappverifierpresent]}]
+	[llength [info commands testappverifierpresent]] == 0
+	|| ![testappverifierpresent]}]
 
     # Procedure to simulate interactive typing of commands, line by line
     proc type {chan script} {

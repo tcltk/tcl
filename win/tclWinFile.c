@@ -863,12 +863,22 @@ TclpFindExecutable(
     TCL_UNUSED(const char *))
 {
     WCHAR wName[MAX_PATH];
-    char name[MAX_PATH * 3];
+    char name[MAX_PATH * TCL_UTF_MAX];
 
-    GetModuleFileNameW(NULL, wName, sizeof(wName)/sizeof(WCHAR));
+    GetModuleFileNameW(NULL, wName, sizeof(wName)/sizeof(wName[0]));
     WideCharToMultiByte(CP_UTF8, 0, wName, -1, name, sizeof(name), NULL, NULL);
     TclWinNoBackslash(name);
     TclSetObjNameOfExecutable(Tcl_NewStringObj(name, TCL_INDEX_NONE), NULL);
+
+#if !defined(STATIC_BUILD)
+    HMODULE hModule = (HMODULE)TclWinGetTclInstance();
+    if (hModule) {
+	GetModuleFileNameW(hModule, wName, sizeof(wName) / sizeof(wName[0]));
+	WideCharToMultiByte(CP_UTF8, 0, wName, -1,
+				name, sizeof(name), NULL, NULL);
+	TclSetObjNameOfShlib(Tcl_NewStringObj(name, TCL_AUTO_LENGTH), NULL);
+    }
+#endif
 }
 
 /*
@@ -1216,7 +1226,7 @@ WinIsDrive(
 
 	    return 1;
 	} else if ((name[1] == ':')
-		   && (len == 2 || (name[2] == '/' || name[2] == '\\'))) {
+		&& (len == 2 || (name[2] == '/' || name[2] == '\\'))) {
 	    /*
 	     * Path is of the form 'x:' or 'x:/' or 'x:\'
 	     */
@@ -2033,7 +2043,7 @@ NativeStat(
 {
     DWORD attr;
     int dev, nlink = 1;
-    unsigned short mode;
+    int mode;
     unsigned int inode = 0;
     HANDLE fileHandle;
     DWORD fileType = FILE_TYPE_UNKNOWN;
@@ -2151,7 +2161,7 @@ NativeStat(
 
     statPtr->st_dev	= (dev_t) dev;
     statPtr->st_ino	= (_ino_t)inode;
-    statPtr->st_mode	= mode;
+    statPtr->st_mode	= (unsigned short)mode;
     statPtr->st_nlink	= (short)nlink;
     statPtr->st_uid	= 0;
     statPtr->st_gid	= 0;

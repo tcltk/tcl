@@ -1115,10 +1115,10 @@ declare 365 {
     char *Tcl_GetCwd(Tcl_Interp *interp, Tcl_DString *cwdPtr)
 }
 declare 366 {
-   int Tcl_Chdir(const char *dirName)
+    int Tcl_Chdir(const char *dirName)
 }
 declare 367 {
-   int Tcl_Access(const char *path, int mode)
+    int Tcl_Access(const char *path, int mode)
 }
 declare 368 {
     int Tcl_Stat(const char *path, struct stat *bufPtr)
@@ -2086,12 +2086,12 @@ declare 626 {
 # TIP #357 (Export TclLoadFile and TclpFindSymbol) kbk
 declare 627 {
     int Tcl_LoadFile(Tcl_Interp *interp, Tcl_Obj *pathPtr,
-		     const char *const symv[], int flags, void *procPtrs,
-		     Tcl_LoadHandle *handlePtr)
+	    const char *const symv[], int flags, void *procPtrs,
+	    Tcl_LoadHandle *handlePtr)
 }
 declare 628 {
     void *Tcl_FindSymbol(Tcl_Interp *interp, Tcl_LoadHandle handle,
-			 const char *symbol)
+	    const char *symbol)
 }
 declare 629 {
     int Tcl_FSUnloadFile(Tcl_Interp *interp, Tcl_LoadHandle handlePtr)
@@ -2336,7 +2336,7 @@ declare 682 {
 
 # TIP 643
 declare 683 {
-   Tcl_Size Tcl_GetEncodingNulLength(Tcl_Encoding encoding)
+    Tcl_Size Tcl_GetEncodingNulLength(Tcl_Encoding encoding)
 }
 
 # TIP #650
@@ -2391,9 +2391,23 @@ declare 694 {
 	    Tcl_Size start, Tcl_Size end, Tcl_Obj **resultPtrPtr)
 }
 
+# TIP 726
+declare 695 {
+    int Tcl_UtfToNormalizedDString(Tcl_Interp *interp,
+	    const char *bytes, Tcl_Size length,
+	    Tcl_UnicodeNormalizationForm normForm, int profile,
+	    Tcl_DString *dsPtr)
+}
+declare 696 {
+    int Tcl_UtfToNormalized(Tcl_Interp *interp,
+	    const char *bytes, Tcl_Size length,
+	    Tcl_UnicodeNormalizationForm normForm, int profile,
+	    char *bufPtr, Tcl_Size bufLen, Tcl_Size *lengthPtr)
+}
+
 # ----- BASELINE -- FOR -- 9.1.0 ----- #
 
-declare 695 {
+declare 697 {
     void TclUnusedStubEntry(void)
 }
 

@@ -19,8 +19,8 @@ if {"::tcltest" ni [namespace children]} {
 }
 
 testConstraint noappverifier [expr {
-        [llength [info commands testappverifierpresent]] == 0
-        || ![testappverifierpresent]}]
+	[llength [info commands testappverifierpresent]] == 0
+	|| ![testappverifierpresent]}]
 
 namespace eval ::tcl::test::io {
 

@@ -2059,7 +2059,7 @@ typedef Tcl_Size Tcl_BytecodeLabel;
  * Shorthand macros for instruction issuing.
  */
 
- // Measure the length of a string literal.
+// Measure the length of a string literal.
 #define LENGTH_OF(str) \
     ((Tcl_Size) sizeof(str "") - 1)
 
