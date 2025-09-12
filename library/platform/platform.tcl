@@ -123,7 +123,12 @@ proc ::platform::generic {} {
 	    }
 	}
 	darwin {
-	    set plat macosx
+	    set major [lindex [split $tcl_platform(osVersion) .] 0]
+	    if {$major > 19} {
+		set plat macos
+	    } else {
+		set plat macosx
+	    }
 	    # Correctly identify the cpu when running as a 64bit
 	    # process on a machine with a 32bit kernel
 	    if {$cpu eq "ix86"} {
@@ -171,22 +176,23 @@ proc ::platform::identify {} {
     set id [generic]
     regexp {^([^-]+)-([^-]+)$} $id -> plat cpu
 
-    switch -- $plat {
+    switch -glob -- $plat {
 	solaris {
 	    regsub {^5} $tcl_platform(osVersion) 2 text
 	    append plat $text
 	    return "${plat}-${cpu}"
 	}
-	macosx {
+	macos* {
 	    set major [lindex [split $tcl_platform(osVersion) .] 0]
 	    if {$major > 19} {
-		set minor [lindex [split $tcl_platform(osVersion) .] 1]
-		incr major -9
-		append plat $major.[expr {$minor - 1}]
+		incr major
+		if {$major < 26} {
+		    incr major -10
+		}
+		append plat $major
 	    } else {
 		incr major -4
 		append plat 10.$major
-		return "${plat}-${cpu}"
 	    }
 	    return "${plat}-${cpu}"
 	}
@@ -338,17 +344,18 @@ proc ::platform::patterns {id} {
 	macosx-ix86 {
 	    lappend res macosx-universal macosx-i386-x86_64
 	}
-	macosx*-*    {
+	macos*-*    {
 	    # 10.5+,11.0+
-	    if {[regexp {macosx([^-]*)-(.*)} $id -> v cpu]} {
+	    if {[regexp {macosx?([^-]*)-(.*)} $id -> v cpu]} {
 
+		foreach {major minor} [split $v.15 .] break
 		switch -exact -- $cpu {
 		    ix86    {
 			lappend alt i386-x86_64
 			lappend alt universal
 		    }
 		    x86_64  {
-			if {[lindex [split $::tcl_platform(osVersion) .] 0] < 19} {
+			if {$major < 11 && $minor < 15} {
 			    set alt i386-x86_64
 			} else {
 			    set alt {}
@@ -361,56 +368,45 @@ proc ::platform::patterns {id} {
 		}
 
 		if {$v ne ""} {
-		    foreach {major minor} [split $v .] break
-
 		    set res {}
-		    if {$major eq 13} {
-			# Add 13.0 to 13.minor to patterns.
-			for {set j $minor} {$j >= 0} {incr j -1} {
-			    lappend res macosx${major}.${j}-${cpu}
-			    foreach a $alt {
-				lappend res macosx${major}.${j}-$a
-			    }
+		    while {$major > 10} {
+			# Add $major to patterns.
+			lappend res macos${major}-${cpu}
+			foreach a $alt {
+			    lappend res macos${major}-$a
 			}
-			set major 12
-			set minor 5
-		    }
-		    if {$major eq 12} {
-			# Add 12.0 to 12.minor to patterns.
-			for {set j $minor} {$j >= 0} {incr j -1} {
-			    lappend res macosx${major}.${j}-${cpu}
-			    foreach a $alt {
-				lappend res macosx${major}.${j}-$a
-			    }
+			incr major -1
+			if {$major == 25} {
+			    set major 15
 			}
-			set major 11
-			set minor 5
 		    }
-		    if {$major eq 11} {
-			# Add 11.0 to 11.minor to patterns.
-			for {set j $minor} {$j >= 0} {incr j -1} {
-			    lappend res macosx${major}.${j}-${cpu}
-			    foreach a $alt {
-				lappend res macosx${major}.${j}-$a
-			    }
-			}
-			set major 10
-			set minor 15
-		    }
-		    # Add 10.5 to 10.minor to patterns.
-		    for {set j $minor} {$j >= 5} {incr j -1} {
+		    # Add 10.9 to 10.minor to patterns.
+		    for {set j $minor} {$j >= 9} {incr j -1} {
 			if {$cpu ne "arm"} {
 			    lappend res macosx${major}.${j}-${cpu}
+			}
+			if {($cpu eq "x86_64") && ($j == 14) && ![package vsatisfies [package provide Tcl] 9.0-]} {
+			    set alt i386-x86_64
 			}
 			foreach a $alt {
 			    lappend res macosx${major}.${j}-$a
 			}
 		    }
-
-		    # Add unversioned patterns for 10.3/10.4 builds.
-		    lappend res macosx-${cpu}
-		    foreach a $alt {
-			lappend res macosx-$a
+		    if {![package vsatisfies [package provide Tcl] 9.0-]} {
+			# Continue up to 10.5.
+			for {} {$j >= 5} {incr j -1} {
+			    if {$cpu ne "arm"} {
+				lappend res macosx${major}.${j}-${cpu}
+			    }
+			    foreach a $alt {
+				lappend res macosx${major}.${j}-$a
+			    }
+			}
+			# Add unversioned patterns for 10.3/10.4 builds.
+			lappend res macosx-${cpu}
+			foreach a $alt {
+			    lappend res macosx-$a
+			}
 		    }
 		} else {
 		    # No version, just do unversioned patterns.
@@ -431,7 +427,7 @@ proc ::platform::patterns {id} {
 # ### ### ### ######### ######### #########
 ## Ready
 
-package provide platform 1.0.19
+package provide platform 1.1.0
 
 # ### ### ### ######### ######### #########
 ## Demo application

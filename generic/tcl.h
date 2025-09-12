@@ -1020,7 +1020,7 @@ typedef struct Tcl_DString {
  * Forward declarations of Tcl_HashTable and related types.
  */
 
-#ifndef TCL_HASH_TYPE
+#if !defined(TCL_HASH_TYPE) && !defined (TCL_NO_DEPRECATED)
 #   define TCL_HASH_TYPE size_t
 #endif
 
@@ -2046,6 +2046,13 @@ typedef unsigned short Tcl_UniChar;
 #else
 #   error "This TCL_UTF_MAX value is not supported"
 #endif
+
+/*
+ * Specifiers for Unicode normalization forms.
+ */
+typedef enum {
+    TCL_NFC, TCL_NFD, TCL_NFKC, TCL_NFKD
+} Tcl_UnicodeNormalizationForm;
 
 /*
  *----------------------------------------------------------------------------

@@ -48,12 +48,9 @@ extern Tcl_LibraryInitProc Dde_SafeInit;
 #include <locale.h>
 #include <stdlib.h>
 #include <tchar.h>
-#if defined(__GNUC__) || defined(TCL_BROKEN_MAINARGS)
+#if defined(__GNUC__)
 int _CRT_glob = 0;
-#endif /* __GNUC__ || TCL_BROKEN_MAINARGS */
-#ifdef TCL_BROKEN_MAINARGS
-static void setargv(int *argcPtr, TCHAR ***argvPtr);
-#endif /* TCL_BROKEN_MAINARGS */
+#endif /* __GNUC__ */
 
 /*
  * The following #if block allows you to change the AppInit function by using
@@ -96,20 +93,11 @@ MODULE_SCOPE int TCL_LOCAL_MAIN_HOOK(int *argc, TCHAR ***argv);
  *----------------------------------------------------------------------
  */
 
-#ifdef TCL_BROKEN_MAINARGS
-int
-main(
-    int argc,			/* Number of command-line arguments. */
-    char **argv1)		/* Not used. */
-{
-    TCHAR **argv;
-#else
 int
 _tmain(
     int argc,			/* Number of command-line arguments. */
     TCHAR *argv[])		/* Values of command-line arguments. */
 {
-#endif
     TCHAR *p;
 
     /*
@@ -118,15 +106,6 @@ _tmain(
      */
 
     setlocale(LC_ALL, "C");
-
-#ifdef TCL_BROKEN_MAINARGS
-    /*
-     * Get our args from the c-runtime. Ignore command line.
-     */
-
-    (void)argv1;
-    setargv(&argc, &argv);
-#endif
 
     /*
      * Forward slashes substituted for backslashes.
@@ -225,129 +204,6 @@ Tcl_AppInit(
 
     return TCL_OK;
 }
-
-/*
- *-------------------------------------------------------------------------
- *
- * setargv --
- *
- *	Parse the Windows command line string into argc/argv. Done here
- *	because we don't trust the builtin argument parser in crt0. Windows
- *	applications are responsible for breaking their command line into
- *	arguments.
- *
- *	2N backslashes + quote -> N backslashes + begin quoted string
- *	2N + 1 backslashes + quote -> literal
- *	N backslashes + non-quote -> literal
- *	quote + quote in a quoted string -> single quote
- *	quote + quote not in quoted string -> empty string
- *	quote -> begin quoted string
- *
- * Results:
- *	Fills argcPtr with the number of arguments and argvPtr with the array
- *	of arguments.
- *
- * Side effects:
- *	Memory allocated.
- *
- *--------------------------------------------------------------------------
- */
-
-#ifdef TCL_BROKEN_MAINARGS
-static void
-setargv(
-    int *argcPtr,		/* Filled with number of argument strings. */
-    TCHAR ***argvPtr)		/* Filled with argument strings (malloc'd). */
-{
-    TCHAR *cmdLine, *p, *arg, *argSpace;
-    TCHAR **argv;
-    int argc, size, inquote, copy, slashes;
-
-    cmdLine = GetCommandLine();
-
-    /*
-     * Precompute an overly pessimistic guess at the number of arguments in
-     * the command line by counting non-space spans.
-     */
-
-    size = 2;
-    for (p = cmdLine; *p != '\0'; p++) {
-	if ((*p == ' ') || (*p == '\t')) {	/* INTL: ISO space. */
-	    size++;
-	    while ((*p == ' ') || (*p == '\t')) { /* INTL: ISO space. */
-		p++;
-	    }
-	    if (*p == '\0') {
-		break;
-	    }
-	}
-    }
-
-    /* Make sure we don't call Tcl_Alloc through the (not yet initialized) stub table */
-#   undef Tcl_Alloc
-
-    argSpace = (TCHAR *)Tcl_Alloc(size * sizeof(char *)
-	    + (_tcslen(cmdLine) * sizeof(TCHAR)) + sizeof(TCHAR));
-    argv = (TCHAR **) argSpace;
-    argSpace += size * (sizeof(char *)/sizeof(TCHAR));
-    size--;
-
-    p = cmdLine;
-    for (argc = 0; argc < size; argc++) {
-	argv[argc] = arg = argSpace;
-	while ((*p == ' ') || (*p == '\t')) {	/* INTL: ISO space. */
-	    p++;
-	}
-	if (*p == '\0') {
-	    break;
-	}
-
-	inquote = 0;
-	slashes = 0;
-	while (1) {
-	    copy = 1;
-	    while (*p == '\\') {
-		slashes++;
-		p++;
-	    }
-	    if (*p == '"') {
-		if ((slashes & 1) == 0) {
-		    copy = 0;
-		    if ((inquote) && (p[1] == '"')) {
-			p++;
-			copy = 1;
-		    } else {
-			inquote = !inquote;
-		    }
-		}
-		slashes >>= 1;
-	    }
-
-	    while (slashes) {
-		*arg = '\\';
-		arg++;
-		slashes--;
-	    }
-
-	    if ((*p == '\0') || (!inquote &&
-		    ((*p == ' ') || (*p == '\t')))) {	/* INTL: ISO space. */
-		break;
-	    }
-	    if (copy != 0) {
-		*arg = *p;
-		arg++;
-	    }
-	    p++;
-	}
-	*arg = '\0';
-	argSpace = arg + 1;
-    }
-    argv[argc] = NULL;
-
-    *argcPtr = argc;
-    *argvPtr = argv;
-}
-#endif /* TCL_BROKEN_MAINARGS */
 
 /*
  * Local Variables:

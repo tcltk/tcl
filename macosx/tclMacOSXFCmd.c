@@ -25,9 +25,11 @@
 #else /* HAVE_COPYFILE_H */
 int			copyfile(const char *from, const char *to,
 			    void *state, uint32_t flags);
-#define COPYFILE_ACL		(1<<0)
-#define COPYFILE_XATTR		(1<<2)
-#define COPYFILE_NOFOLLOW_SRC	(1<<18)
+enum TclCopyfileFlags {
+    COPYFILE_ACL = (1<<0),
+    COPYFILE_XATTR = (1<<2),
+    COPYFILE_NOFOLLOW_SRC = (1<<18)
+};
 #endif /* HAVE_COPYFILE_H */
 #endif /* HAVE_COPYFILE */
 

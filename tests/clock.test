@@ -29,8 +29,8 @@ if {[testConstraint win]} {
 # detection fails. Disable tests that depend on that if
 # it is running.
 testConstraint noappverifier [expr {
-        [llength [info commands testappverifierpresent]] == 0
-        || ![testappverifierpresent]}]
+	[llength [info commands testappverifierpresent]] == 0
+	|| ![testappverifierpresent]}]
 
 package require msgcat 1.4
 

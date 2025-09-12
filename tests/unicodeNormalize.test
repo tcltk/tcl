@@ -1,0 +1,443 @@
+# See the file LICENSE for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import ::tcltest::*
+}
+tcltest::loadTestedCommands
+package require tcl::test
+
+source [file join [file dirname [info script]] ucdUtils.tcl]
+
+namespace eval unicode::normalization::test {
+	namespace path ::tcltests::ucd
+
+    variable singleFormChar
+    variable testCase
+
+    variable normForm
+    variable normEnums; # Matches Tcl_UnicodeNormalizationForm enums
+    array set normEnums {
+        nfc  0
+        nfd  1
+        nfkc 2
+        nfkd 3
+    }
+    variable profileFlags; # Match TCL_ENCODING_PROFILE_* C flags
+    array set profileFlags {
+        strict  0x00000000
+        tcl8    0x01000000
+        replace 0x02000000
+    }
+    variable bytes
+
+    proc hexListToChars {s} {
+        # 0044 030c -> \u0044\u030c
+        subst -novariables -nocommands \\U[join $s \\U]
+    }
+
+    # Standard arg number tests
+    test unicode-badargs-0 {unicode no args} -returnCodes error -body {
+        unicode
+    } -result {wrong # args: should be "unicode subcommand ?arg ...?"}
+    test unicode-badargs-1 {unicode bad command} -returnCodes error -body {
+        unicode foo
+    } -result {unknown or ambiguous subcommand "foo": must be tonfc, tonfd, tonfkc, or tonfkd}
+
+    variable cmd
+    foreach cmd {tonfc tonfd tonfkc tonfkd} {
+        test $cmd-badargs-0 "$cmd 0 args" -returnCodes error -body {
+            unicode $cmd
+        } -result "wrong # args: should be \"unicode $cmd ?-profile PROFILE? STRING\""
+        test $cmd-badargs-1 "$cmd 2 args" -returnCodes error -body {
+            unicode $cmd -profile strict
+        } -result "wrong # args: should be \"unicode $cmd ?-profile PROFILE? STRING\""
+        test $cmd-badargs-2 "$cmd extra args" -returnCodes error -body {
+            unicode $cmd -profile strict foo extra
+        } -result "wrong # args: should be \"unicode $cmd ?-profile PROFILE? STRING\""
+    }
+
+    # Test generation for nfc, nfd, nfkc, nfkd
+	variable allChars
+	variable allNfc
+	variable allNfd
+	variable allNfkc
+	variable allNfkd
+    foreach testCase [getNormalizationData] {
+        lassign $testCase lineno chars nfc nfd nfkc nfkd
+		lappend allChars $chars
+		lappend allNfc $nfc
+		lappend allNfd $nfd
+		lappend allNfkc $nfkc
+		lappend allNfkd $nfkd
+        test tonfc-line-$lineno \
+            "Test case for NFC at line $lineno of $::tcltests::ucd::normalizationDataFile" \
+            -constraints ucdnormalization \
+            -body {
+                # See Comments in NormalizationTest.txt for expected behaviours
+                list \
+                    [string equal $nfc [unicode tonfc $chars]] \
+                    [string equal $nfc [unicode tonfc $nfc]] \
+                    [string equal $nfc [unicode tonfc $nfd]] \
+                    [string equal $nfkc [unicode tonfc $nfkc]] \
+                    [string equal $nfkc [unicode tonfc $nfkd]]
+            } -result {1 1 1 1 1}
+
+        test tonfd-line-$lineno \
+            "Test case for NFD at line $lineno of $::tcltests::ucd::normalizationDataFile" \
+            -constraints ucdnormalization \
+            -setup {
+                readNormalizationData
+            } -body {
+                # See Comments in NormalizationTest.txt for expected behaviours
+                list \
+                    [string equal $nfd [unicode tonfd $chars]] \
+                    [string equal $nfd [unicode tonfd $nfc]] \
+                    [string equal $nfd [unicode tonfd $nfd]] \
+                    [string equal $nfkd [unicode tonfd $nfkc]] \
+                    [string equal $nfkd [unicode tonfd $nfkd]]
+            } -result {1 1 1 1 1}
+
+        test tonfkc-line-$lineno \
+            "Test case for NFKC at line $lineno of $::tcltests::ucd::normalizationDataFile" \
+            -constraints ucdnormalization \
+            -setup {
+                readNormalizationData
+            } -body {
+                # See Comments in NormalizationTest.txt for expected behaviours
+                list \
+                    [string equal $nfkc [unicode tonfkc $chars]] \
+                    [string equal $nfkc [unicode tonfkc $nfc]] \
+                    [string equal $nfkc [unicode tonfkc $nfd]] \
+                    [string equal $nfkc [unicode tonfkc $nfkc]] \
+                    [string equal $nfkc [unicode tonfkc $nfkd]]
+            } -result {1 1 1 1 1}
+
+        test tonfkd-line-$lineno \
+            "Test case for NFKD at line $lineno of $::tcltests::ucd::normalizationDataFile" \
+            -constraints ucdnormalization \
+            -setup {
+                readNormalizationData
+            } -body {
+                # See Comments in NormalizationTest.txt for expected behaviours
+                list \
+                    [string equal $nfkd [unicode tonfkd $chars]] \
+                    [string equal $nfkd [unicode tonfkd $nfc]] \
+                    [string equal $nfkd [unicode tonfkd $nfd]] \
+                    [string equal $nfkd [unicode tonfkd $nfkc]] \
+                    [string equal $nfkd [unicode tonfkd $nfkd]]
+            } -result {1 1 1 1 1}
+    }
+
+	# Test the entire string. Note normalization is not a closed operation
+	# so normalize(concatenation) != concatenate(normalization) so we insert
+	# \uFFFD (replacement char) as separator to prevent adjacent cases being
+	# combined. This is not a whole lot different from the above individual
+	# tests but more of a "long string" test.
+	test unicode-normalization-concat "Normalize concatenation of test vectors" -body {
+		list \
+		[string equal [unicode tonfc [join $allChars \uFFFD]] [join $allNfc \uFFFD]] \
+		[string equal [unicode tonfd [join $allChars \uFFFD]] [join $allNfd \uFFFD]] \
+		[string equal [unicode tonfkc [join $allChars \uFFFD]] [join $allNfkc \uFFFD]] \
+		[string equal [unicode tonfkd [join $allChars \uFFFD]] [join $allNfkd \uFFFD]]
+	} -result {1 1 1 1}
+
+    # Each single form character should map to itself for all forms
+    test normalize-singleform-0 "Normalize single form characters" \
+        -constraints ucdnormalization \
+        -body {
+            lmap singleFormChar [getSingleFormChars] {
+                if {[tcl::mathop::eq \
+                         $singleFormChar \
+                         [unicode tonfc $singleFormChar] \
+                         [unicode tonfd $singleFormChar] \
+                         [unicode tonfkc $singleFormChar] \
+                         [unicode tonfkd $singleFormChar] \
+                        ]} {
+                    continue
+                }
+                set singleFormChar
+            }
+        } -result {}
+
+    # Test generation for casefolding
+	# NOTE: casefolding is not in TIP 726 so these tests are not in use
+	# at the moment.
+    if {[tcltest::testConstraint ucdcasefolding]} {
+        foreach testCase [getCaseFoldData] {
+            lassign $testCase lineno chars casefoldedchars
+            set id [format %.6X [scan $chars %c]]
+            test normalize-line-$lineno-$id-nfccasefold \
+                "Test case for NFC_CaseFold at line $lineno of $::tcltests::ucd::caseFoldDataFile" \
+                -constraints ucdcasefolding \
+                -body {
+                    # puts [codepoints $chars]->[codepoints $casefoldedchars]
+                    # See Comments in DerivedNormalizationProps.txt for expected behaviours
+                    toNFKC_Casefold $chars
+                } -result $casefoldedchars
+        }
+        # Characters that should case fold to themselves
+        proc codepoints {s} {join [lmap c [split $s ""] {
+            string cat U+ [format %.6X [scan $c %c]]}]
+        }
+        test normalize-casefold-identities-0 \
+            "NFKC Case fold chars mapping to themselves" \
+            -constraints ucdcasefolding \
+            -body {
+                lmap char [caseFoldIdentities] {
+                    if {$char eq [toNFKC_Casefold $char]} {
+                        continue
+                    }
+                    set char
+                }
+            } -result {}
+    }
+
+    # Profiles
+    test tonfc-profile-default-0 "tonfc -profile default success" -body {
+        unicode tonfc X\u1e0a\u031b\u0323Y
+    } -result X\u1e0c\u031b\u0307Y
+    test tonfc-profile-default-1 "tonfc -profile default fail" -body {
+        unicode tonfc X\ud800Y
+    } -result {unexpected character at index 1: 'U+00D800'} -returnCodes error
+    test tonfc-profile-strict-0 "tonfc -profile strict success" -body {
+        unicode tonfc -profile strict X\u1e0a\u031b\u0323Y
+    } -result X\u1e0c\u031b\u0307Y
+    test tonfc-profile-strict-1 "tonfc -profile strict fail" -body {
+        unicode tonfc -profile strict \ud800
+    } -result {unexpected character at index 0: 'U+00D800'} -returnCodes error
+    test tonfc-profile-replace-0 "tonfc -profile replace success" -body {
+        unicode tonfc -profile replace X\u1e0a\u031b\u0323Y
+    } -result X\u1e0c\u031b\u0307Y
+    test tonfc-profile-replace-1 "tonfc -profile replace fail" -body {
+        unicode tonfc -profile replace X\ud800Y
+    } -result X\uFFFDY
+    test tonfc-profile-tcl8-0 "tonfc -profile tcl8" -returnCodes error -body {
+        unicode tonfc -profile tcl8 x
+    } -result {Invalid value "tcl8" supplied for option "-profile". Must be "strict" or "replace".}
+
+    test tonfd-profile-default-0 "tonfd -profile default success" -body {
+        unicode tonfd X\u1E0A\u031B\u0323Y
+    } -result X\u0044\u031B\u0323\u0307Y
+    test tonfd-profile-default-1 "tonfd -profile default fail" -body {
+        unicode tonfd \ud800
+    } -result {unexpected character at index 0: 'U+00D800'} -returnCodes error
+    test tonfd-profile-strict-0 "tonfd -profile strict success" -body {
+        unicode tonfd -profile strict X\u1E0A\u031B\u0323Y
+    } -result X\u0044\u031B\u0323\u0307Y
+    test tonfd-profile-strict-1 "tonfd -profile strict fail" -body {
+        unicode tonfd -profile strict X\ud800Y
+    } -result {unexpected character at index 1: 'U+00D800'} -returnCodes error
+    test tonfd-profile-replace-0 "tonfd -profile replace success" -body {
+        unicode tonfd -profile replace X\u1E0A\u031B\u0323Y
+    } -result X\u0044\u031B\u0323\u0307Y
+    test tonfd-profile-replace-1 "tonfd -profile replace fail" -body {
+        unicode tonfd -profile replace \ud800
+    } -result \uFFFD
+    test tonfd-profile-tcl8-0 "tonfd -profile tcl8" -returnCodes error -body {
+        unicode tonfd -profile tcl8 x
+    } -result {Invalid value "tcl8" supplied for option "-profile". Must be "strict" or "replace".}
+
+    test tonfkc-profile-default-0 "tonfkc -profile default success" -body {
+        unicode tonfkc X\u01C4\u0323Y
+    } -result X\u0044\u1E92\u030CY
+    test tonfkc-profile-default-1 "tonfkc -profile default fail" -body {
+        unicode tonfkc X\ud800Y
+    } -result {unexpected character at index 1: 'U+00D800'} -returnCodes error
+    test tonfkc-profile-strict-0 "tonfkc -profile strict success" -body {
+        unicode tonfkc -profile strict X\u01C4\u0323Y
+    } -result X\u0044\u1E92\u030CY
+    test tonfkc-profile-strict-1 "tonfkc -profile strict fail" -body {
+        unicode tonfkc -profile strict \ud800
+    } -result {unexpected character at index 0: 'U+00D800'} -returnCodes error
+    test tonfkc-profile-replace-0 "tonfkc -profile replace success" -body {
+        unicode tonfkc -profile replace X\u01C4\u0323Y
+    } -result X\u0044\u1E92\u030CY
+    test tonfkc-profile-replace-1 "tonfkc -profile replace fail" -body {
+        unicode tonfkc -profile replace X\ud800Y
+    } -result X\uFFFDY
+    test tonfkc-profile-tcl8-0 "tonfkc -profile tcl8" -returnCodes error -body {
+        unicode tonfkc -profile tcl8 x
+    } -result {Invalid value "tcl8" supplied for option "-profile". Must be "strict" or "replace".}
+
+    test tonfkd-profile-default-0 "tonfkd -profile default success" -body {
+        unicode tonfkd X\u01C4\u0323Y
+    } -result X\u0044\u005A\u0323\u030CY
+    test tonfkd-profile-default-1 "tonfkd -profile default fail" -body {
+        unicode tonfkd X\ud800Y
+    } -result {unexpected character at index 1: 'U+00D800'} -returnCodes error
+    test tonfkd-profile-strict-0 "tonfkd -profile strict success" -body {
+        unicode tonfkd -profile strict X\u01C4\u0323Y
+    } -result X\u0044\u005A\u0323\u030CY
+    test tonfkd-profile-strict-1 "tonfkd -profile strict fail" -body {
+        unicode tonfkd -profile strict \ud800
+    } -result {unexpected character at index 0: 'U+00D800'} -returnCodes error
+    test tonfkd-profile-replace-0 "tonfkd -profile replace success" -body {
+        unicode tonfkd -profile replace X\u01C4\u0323Y
+    } -result X\u0044\u005A\u0323\u030CY
+    test tonfkd-profile-replace-1 "tonfkd -profile replace fail" -body {
+        unicode tonfkd -profile replace X\ud800Y
+    } -result X\uFFFDY
+    test tonfkd-profile-tcl8-0 "tonfkd -profile tcl8" -returnCodes error -body {
+        unicode tonfkd -profile tcl8 x
+    } -result {Invalid value "tcl8" supplied for option "-profile". Must be "strict" or "replace".}
+
+    # Tcl_UtfToNormalizedDString C API
+
+    foreach testCase [getNormalizationData] {
+        lassign $testCase lineno chars nfc nfd nfkc nfkd
+        set bytes [teststringbytes $chars]
+        foreach profile {strict replace} {
+            foreach normForm {nfc nfd nfkc nfkd} {
+                test Tcl_UtfToNormalizedDString-$normForm-line-$lineno-$profile \
+                    "Tcl_UtfToNormalizedDString for $normForm at line $lineno of $::tcltests::ucd::normalizationDataFile" \
+                    -body {
+                        testutftonormalizeddstring $bytes $normEnums($normForm) \
+					        $profileFlags($profile)
+                    } -result [teststringbytes [set $normForm]]
+            }
+        }
+    }
+
+    foreach normForm {nfc nfd nfkc nfkd} {
+        test Tcl_UtfToNormalizedDString-$normForm-nulchar-$profile \
+            "Tcl_UtfToNormalizedDString for $normForm passed nul character" \
+            -body {
+                testutftonormalizeddstring [teststringbytes \0] \
+				$normEnums($normForm) $profileFlags(strict)
+            } -result \xC0\x80
+    }
+
+    # Test the entire string. Note normalization is not a closed operation
+    # so normalize(concatenation) != concatenate(normalization) so we insert
+    # \uFFFD (replacement char) as separator to prevent adjacent cases being
+    # combined. This is not a whole lot different from the above individual
+    # tests but more of a "long string" test.
+    test Tcl_UtfToNormalizedDString-concat "Normalize concatenation of test vectors" -setup {
+        set bytes [teststringbytes [join $allChars \uFFFD]]
+    } -body {
+        list \
+            [string equal \
+                 [testutftonormalizeddstring $bytes $normEnums(nfc) $profileFlags(strict)] \
+                 [teststringbytes [join $allNfc \uFFFD]]] \
+            [string equal \
+                 [testutftonormalizeddstring $bytes $normEnums(nfd) $profileFlags(strict)] \
+                 [teststringbytes [join $allNfd \uFFFD]]] \
+            [string equal \
+                 [testutftonormalizeddstring $bytes $normEnums(nfkc) $profileFlags(strict)] \
+                 [teststringbytes [join $allNfkc \uFFFD]]] \
+            [string equal \
+                 [testutftonormalizeddstring $bytes $normEnums(nfkd) $profileFlags(strict)] \
+                 [teststringbytes [join $allNfkd \uFFFD]]]
+    } -result {1 1 1 1}
+
+    # Tcl_UtfToNormalizedDString error cases
+
+    foreach normForm {nfc nfd nfkc nfkd} {
+        test Tcl_UtfToNormalizedDString-$normForm-tcl8 \
+            "Tcl_UtfToNormalizedDString for $normForm profile tcl8" \
+            -body {
+                testutftonormalizeddstring abc $normEnums($normForm) $profileFlags(tcl8)
+            } -result {Invalid value 16777216 passed for encoding profile.} -returnCodes error
+
+        if {0} {
+            # TODO - currently, Tcl "fixes up" any internal invalid UTF-8 so
+            # no way to test normalization of invalid UTF-8. Enable this test
+            # once this "fixing up" by Tcl is corrected (see Bug [b69e00ecf6])
+            test Tcl_UtfToNormalizedDString-$normForm-invalid-utf8 \
+                "Tcl_UtfToNormalizedDString for $normForm invalid utf8 profile strict" \
+                -body {
+                    testutftonormalizeddstring [testbytestring [binary decode hex EFBF7F]] $normEnums($normForm) $profileFlags(strict)
+                } -result {} -returnCodes error
+        }
+    }
+
+    test Tcl_UtfToNormalizedDString-invalid-normalization-form \
+            "Tcl_UtfToNormalizedDString invalid value for normalization form" \
+            -body {
+                testutftonormalizeddstring abc 4 $profileFlags(strict)
+            } -result {Invalid value 4 passed for normalization form.} -returnCodes error
+
+
+    # Tcl_UtfToNormalized C API
+
+    variable normBytes
+    foreach testCase [getNormalizationData] {
+        lassign $testCase lineno chars nfc nfd nfkc nfkd
+        set bytes [teststringbytes $chars]
+        foreach profile {strict replace} {
+            foreach normForm {nfc nfd nfkc nfkd} {
+                set normBytes [teststringbytes [set $normForm]]
+                test Tcl_UtfToNormalized-$normForm-line-$lineno-$profile \
+                    "Tcl_UtfToNormalized $normForm line $lineno of $::tcltests::ucd::normalizationDataFile" \
+                    -body {
+                        # Tests:
+                        # No length specified (implicit length of bytes)
+                        # Length of -1
+                        # Buffer too small
+                        set result [testutftonormalized $bytes \
+                                        $normEnums($normForm) \
+                                        $profileFlags($profile) 100]
+                        set result_minus1 [testutftonormalized $bytes\0 \
+                                        $normEnums($normForm) \
+                                        $profileFlags($profile) -1 100]
+                        list $result \
+                            $result_minus1 \
+                            [catch {
+                                testutftonormalized $bytes $normEnums($normForm) \
+                                    $profileFlags($profile) \
+                                    [expr {[string length $result]-1}]
+                            } message] \
+                            $message
+                    } -result [list $normBytes $normBytes -4 {Output buffer too small.}]
+            }
+        }
+    }
+
+    foreach normForm {nfc nfd nfkc nfkd} {
+        test Tcl_UtfToNormalized-$normForm-nulchar \
+            "Tcl_UtfToNormalized $normForm passed nul character" \
+            -body {
+                list \
+                    [testutftonormalized [teststringbytes \0] \
+                         $normEnums($normForm) $profileFlags(strict) 3] \
+                    [catch {
+                        [testutftonormalized [teststringbytes \0] \
+                         $normEnums($normForm) $profileFlags(strict) 2]
+                    } message] \
+                    $message
+            } -result [list \xC0\x80 -4 {Output buffer too small.}]
+    }
+
+    # Tcl_UtfToNormalized error cases
+
+    foreach normForm {nfc nfd nfkc nfkd} {
+        test Tcl_UtfToNormalized-$normForm-tcl8 \
+            "Tcl_UtfToNormalized for $normForm profile tcl8" \
+            -body {
+                testutftonormalized abc $normEnums($normForm) $profileFlags(tcl8) 20
+            } -result {Invalid value 16777216 passed for encoding profile.} -returnCodes error
+
+        if {0} {
+            # TODO - currently, Tcl "fixes up" any internal invalid UTF-8 so
+            # no way to test normalization of invalid UTF-8. Enable this test
+            # once this "fixing up" by Tcl is corrected (see Bug [b69e00ecf6])
+            test Tcl_UtfToNormalized-$normForm-invalid-utf8 \
+                "Tcl_UtfToNormalized for $normForm invalid utf8 profile strict" \
+                -body {
+                    testutftonormalized [testbytestring [binary decode hex EFBF7F]] $normEnums($normForm) $profileFlags(strict) 20
+                } -result {} -returnCodes error
+        }
+    }
+
+    test Tcl_UtfToNormalized-invalid-normalization-form \
+            "Tcl_UtfToNormalized invalid value for normalization form" \
+            -body {
+                testutftonormalized abc 4 $profileFlags(strict) 20
+            } -result {Invalid value 4 passed for normalization form.} -returnCodes error
+}
+
+::tcltest::cleanupTests
+namespace delete unicode::normalization::test
+return

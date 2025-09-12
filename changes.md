@@ -13,6 +13,7 @@ writing Tcl scripts.
 # New commands and options
 
 - [New options -backslashes, -commands and -variables for subst command](https://core.tcl-lang.org/tips/doc/trunk/tip/712.md)
+- [New command unicode for Unicode normalization](https://core.tcl-lang.org/tips/doc/trunk/tip/726.md)
 
 # New public C API
 
@@ -20,6 +21,7 @@ writing Tcl scripts.
 - [Tcl\_GetEncodingNameForUser returns name of encoding from user settings](https://core.tcl-lang.org/tips/doc/trunk/tip/716.md)
 - [Tcl\_AttemptCreateHashEntry - version of Tcl\_CreateHashEntry that returns NULL instead of panic'ing on memory allocation errors](https://core.tcl-lang.org/tips/doc/trunk/tip/717.md)
 - [Tcl\_ListObjRange, Tcl\_ListObjRepeat, Tcl\_TclListObjReverse - C API for new list operations](https://core.tcl-lang.org/tips/doc/trunk/tip/649.md)
+- [Tcl\_UtfToNormalized, Tcl\_UtfToNormalizedDString - C API for Unicode normalization](https://core.tcl-lang.org/tips/doc/trunk/tip/726.md)
 
 # Performance
 

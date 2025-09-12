@@ -1202,7 +1202,7 @@ test error-21.9.1 {Bug cee90e4e88 variant} {
 
 test error-22.1 {try trapless} {
     apply {{} {
-        try {
+	try {
 	    error foo
 	} on error {} {
 	    incr x
@@ -1212,7 +1212,7 @@ test error-22.1 {try trapless} {
 } 1
 test error-22.2 {try trapless} {
     apply {{} {
-        try {
+	try {
 	    error foo
 	} on ok {} {
 	    set x gorp
@@ -1224,7 +1224,7 @@ test error-22.2 {try trapless} {
 } 1
 test error-22.3 {try trapless + finally} {
     apply {{} {
-        try {
+	try {
 	    error foo
 	} on error {} {
 	    incr x
@@ -1236,7 +1236,7 @@ test error-22.3 {try trapless + finally} {
 } 1,1
 test error-22.4 {try trapless + finally} {
     apply {{} {
-        try {
+	try {
 	    error foo
 	} on ok {} {
 	    set x gorp

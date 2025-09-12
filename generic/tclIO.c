@@ -366,8 +366,8 @@ static const Tcl_ObjType chanObjType = {
     } while (0)
 
 #define BUSY_STATE(st, fl) \
-     ((((st)->csPtrR) && ((fl) & TCL_READABLE)) ||			\
-      (((st)->csPtrW) && ((fl) & TCL_WRITABLE)))
+    ((((st)->csPtrR) && ((fl) & TCL_READABLE)) ||			\
+     (((st)->csPtrW) && ((fl) & TCL_WRITABLE)))
 
 #define MAX_CHANNEL_BUFFER_SIZE (1024*1024)
 
@@ -2450,9 +2450,9 @@ Tcl_GetChannelHandle(
 
 int
 Tcl_RemoveChannelMode(
-     Tcl_Interp *interp,	/* The interp for an error message. Allowed to be NULL. */
-     Tcl_Channel chan,		/* The channel which is modified. */
-     int mode)			/* The access mode to drop from the channel */
+    Tcl_Interp *interp,		/* The interp for an error message. Allowed to be NULL. */
+    Tcl_Channel chan,		/* The channel which is modified. */
+    int mode)			/* The access mode to drop from the channel */
 {
     const char* emsg;
     ChannelState *statePtr = ((Channel *) chan)->state;

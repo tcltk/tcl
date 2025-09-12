@@ -4326,8 +4326,6 @@ printf "%s\n" "$ac_cv_municode" >&6; }
 	CFLAGS=$hold_cflags
 	if test "$ac_cv_municode" = "yes" ; then
 	    extra_ldflags="$extra_ldflags -municode"
-	else
-	    extra_cflags="$extra_cflags -DTCL_BROKEN_MAINARGS"
 	fi
 	hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -fno-lto"
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for working -fno-lto" >&5
