@@ -33,7 +33,9 @@
  * new object. Note there is no guarantee the returned object is unshared.
  */
 static inline Tcl_Obj *
-TclMakeResultObj(Tcl_Obj *srcPtr, Tcl_Obj *resultPtr)
+TclMakeResultObj(
+    Tcl_Obj *srcPtr,
+    Tcl_Obj *resultPtr)
 {
     return srcPtr == resultPtr ?  Tcl_DuplicateObj(resultPtr) : resultPtr;
 }
