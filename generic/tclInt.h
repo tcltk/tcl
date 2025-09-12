@@ -425,7 +425,6 @@ enum NamespaceFlags {
     NS_TEARDOWN = 4,		/* TclTeardownNamespace has already been called
 				 * on this namespace and it should not be
 				 * called again [Bug 1355942]. */
-    NS_KILLED =	4,		/* Same as NS_TEARDOWN (Deprecated) */
     NS_SUPPRESS_COMPILATION = 8	/* Marks the commands in this namespace for
 				 * not being compiled, forcing them to be
 				 * looked up every time. */
