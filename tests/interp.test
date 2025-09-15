@@ -66,6 +66,13 @@ test interp-1.9 {options for interp command} -returnCodes error -body {
 test interp-1.10 {options for interp command} -returnCodes error -body {
     interp target
 } -result {wrong # args: should be "interp target path alias"}
+test interp-1.11 {options for interp child command} -returnCodes error -setup {
+    interp create child
+} -body {
+    child gorp
+} -cleanup {
+    interp delete child
+} -result {bad option "gorp": must be alias, aliases, bgerror, debug, eval, expose, hide, hidden, issafe, invokehidden, limit, marktrusted, recursionlimit, or set}
 
 # Part 1: Basic interpreter creation tests:
 test interp-2.1 {basic interpreter creation} {
