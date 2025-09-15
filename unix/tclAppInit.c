@@ -207,11 +207,14 @@ Tcl_AppInit(
      * run interactively. Typically the startup file is "~/.apprc" where "app"
      * is the name of the application. If this line is deleted then no
      * user-specific startup file will be run under any conditions.
+     * In keeping with the historical behavior, errors setting the name
+     * for example, if the home directory cannot be found, are ignored.
      */
-    return TclSetRcFilePath(interp, TCL_RC_FILE);
-
+    (void) TclSetRcFilePath(interp, TCL_RC_FILE);
+    Tcl_ResetResult(interp);
+    return TCL_OK;
 }
-
+
 /*
  * Local Variables:
  * mode: c
