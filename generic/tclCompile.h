@@ -1818,7 +1818,9 @@ TclGetInt4AtPtr(
 }
 
 static inline unsigned
-TclGetUInt4AtPtr(const unsigned char *p) {
+TclGetUInt4AtPtr(
+    const unsigned char *p)
+{
     return (unsigned) (
 	(p[0] << 24) |
 	(p[1] << 16) |

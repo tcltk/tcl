@@ -222,23 +222,118 @@ proc pkg_mkIndex {args} {
 	    # pkgIndex.tcl file for the ::tcl namespace.
 
 	    namespace eval ::tcl {
-		variable dir		;# Current directory being processed
-		variable file		;# Current file being processed
-		variable direct		;# -direct flag value
-		variable x		;# Loop variable
-		variable debug		;# For debugging
-		variable type		;# "load" or "source", for -direct
-		variable namespaces	;# Existing namespaces (e.g., ::tcl)
-		variable packages	;# Existing packages (e.g., Tcl)
-		variable origCmds	;# Existing commands
-		variable newCmds	;# Newly created commands
+		variable dir {}		;# Current directory being processed
+		variable file {}	;# Current file being processed
+		variable direct {}	;# -direct flag value
+		variable debug {}	;# For debugging
+		variable type {}	;# "load" or "source", for -direct
+		variable newCmds {}	;# Newly created commands
 		variable newPkgs {}	;# Newly created packages
+
+		proc GetAllNamespaces {{root ::}} {
+		    set list $root
+		    foreach ns [namespace children $root] {
+			lappend list {*}[GetAllNamespaces $ns]
+		    }
+		    return $list
+		}
+
+		# we need to track command defined by each package even in the
+		# -direct case, because they are needed internally by the
+		# "partial pkgIndex.tcl" step above.
+		proc DiscoverPackageContents {dir file direct} {
+		    variable type
+		    variable debug
+		    variable newCmds
+		    variable newPkgs
+
+		    set debug "loading or sourcing"
+
+		    foreach x [GetAllNamespaces] {
+			set namespaces($x) 1
+		    }
+		    foreach x [package names] {
+			if {[package provide $x] ne ""} {
+			    set packages($x) 1
+			}
+		    }
+		    set origCmds [uplevel #0 {info commands}]
+
+		    # Try to load the file if it has the shared library extension,
+		    # otherwise source it.  It's important not to try to load
+		    # files that aren't shared libraries, because on some systems
+		    # (like SunOS) the loader will abort the whole application
+		    # when it gets an error.
+
+		    if {[Pkg::CompareExtension $file [info sharedlibextension]]} {
+			# The "file join ." command below is necessary.  Without
+			# it, if the file name has no \'s and we're on UNIX, the
+			# load command will invoke the LD_LIBRARY_PATH search
+			# mechanism, which could cause the wrong file to be used.
+
+			set debug loading
+			uplevel #0 [list load [file join $dir $file]]
+			set type load
+		    } else {
+			set debug sourcing
+			uplevel #0 [list source [file join $dir $file]]
+			set type source
+		    }
+
+		    # As a performance optimization, if we are creating direct
+		    # load packages, don't bother figuring out the set of commands
+		    # created by the new packages.  We only need that list for
+		    # setting up the autoloading used in the non-direct case.
+		    if {!$direct} {
+			# See what new namespaces appeared, and import commands
+			# from them.  Only exported commands go into the index.
+
+			foreach x [GetAllNamespaces] {
+			    if {![info exists namespaces($x)]} {
+				uplevel #0 [list namespace import -force ${x}::*]
+			    }
+
+			    # Figure out what commands appeared
+
+			    foreach x [uplevel #0 {info commands}] {
+				dict set newCmds $x 1
+			    }
+			    foreach x $origCmds {
+				dict unset newCmds $x
+			    }
+			    foreach x [dict keys $newCmds] {
+				# determine which namespace a command comes from
+
+				set abs [uplevel #0 [list namespace origin $x]]
+
+				# special case so that global names have no
+				# leading ::, this is required by the unknown
+				# command
+
+				set abs [lindex [auto_qualify $abs ::] 0]
+
+				if {$x ne $abs} {
+				    # Name changed during qualification
+
+				    dict set newCmds $abs 1
+				    dict unset newCmds $x
+				}
+			    }
+			}
+		    }
+
+		    # Look through the packages that appeared, and if there is a
+		    # version provided, then record it
+
+		    foreach x [package names] {
+			if {[package provide $x] ne ""
+				&& ![info exists packages($x)]} {
+			    lappend newPkgs [list $x [package provide $x]]
+			}
+		    }
+		}
 	    }
 	}
-
-	$c set ::tcl::dir $dir
-	$c set ::tcl::file $file
-	$c set ::tcl::direct $direct
 
 	# Download needed procedures into the child because we've just deleted
 	# the unknown procedure.  This doesn't handle procedures with default
@@ -250,120 +345,19 @@ proc pkg_mkIndex {args} {
 	}
 
 	try {
-	    $c eval {
-		set ::tcl::debug "loading or sourcing"
-
-		# we need to track command defined by each package even in the
-		# -direct case, because they are needed internally by the
-		# "partial pkgIndex.tcl" step above.
-
-		proc ::tcl::GetAllNamespaces {{root ::}} {
-		    set list $root
-		    foreach ns [namespace children $root] {
-			lappend list {*}[::tcl::GetAllNamespaces $ns]
-		    }
-		    return $list
-		}
-
-		# init the list of existing namespaces, packages, commands
-
-		foreach ::tcl::x [::tcl::GetAllNamespaces] {
-		    set ::tcl::namespaces($::tcl::x) 1
-		}
-		foreach ::tcl::x [package names] {
-		    if {[package provide $::tcl::x] ne ""} {
-			set ::tcl::packages($::tcl::x) 1
-		    }
-		}
-		set ::tcl::origCmds [info commands]
-
-		# Try to load the file if it has the shared library extension,
-		# otherwise source it.  It's important not to try to load
-		# files that aren't shared libraries, because on some systems
-		# (like SunOS) the loader will abort the whole application
-		# when it gets an error.
-
-		if {[::tcl::Pkg::CompareExtension $::tcl::file [info sharedlibextension]]} {
-		    # The "file join ." command below is necessary.  Without
-		    # it, if the file name has no \'s and we're on UNIX, the
-		    # load command will invoke the LD_LIBRARY_PATH search
-		    # mechanism, which could cause the wrong file to be used.
-
-		    set ::tcl::debug loading
-		    load [file join $::tcl::dir $::tcl::file]
-		    set ::tcl::type load
-		} else {
-		    set ::tcl::debug sourcing
-		    source [file join $::tcl::dir $::tcl::file]
-		    set ::tcl::type source
-		}
-
-		# As a performance optimization, if we are creating direct
-		# load packages, don't bother figuring out the set of commands
-		# created by the new packages.  We only need that list for
-		# setting up the autoloading used in the non-direct case.
-		if {!$::tcl::direct} {
-		    # See what new namespaces appeared, and import commands
-		    # from them.  Only exported commands go into the index.
-
-		    foreach ::tcl::x [::tcl::GetAllNamespaces] {
-			if {![info exists ::tcl::namespaces($::tcl::x)]} {
-			    namespace import -force ${::tcl::x}::*
-			}
-
-			# Figure out what commands appeared
-
-			foreach ::tcl::x [info commands] {
-			    set ::tcl::newCmds($::tcl::x) 1
-			}
-			foreach ::tcl::x $::tcl::origCmds {
-			    unset -nocomplain ::tcl::newCmds($::tcl::x)
-			}
-			foreach ::tcl::x [array names ::tcl::newCmds] {
-			    # determine which namespace a command comes from
-
-			    set ::tcl::abs [namespace origin $::tcl::x]
-
-			    # special case so that global names have no
-			    # leading ::, this is required by the unknown
-			    # command
-
-			    set ::tcl::abs \
-				    [lindex [auto_qualify $::tcl::abs ::] 0]
-
-			    if {$::tcl::x ne $::tcl::abs} {
-				# Name changed during qualification
-
-				set ::tcl::newCmds($::tcl::abs) 1
-				unset ::tcl::newCmds($::tcl::x)
-			    }
-			}
-		    }
-		}
-
-		# Look through the packages that appeared, and if there is a
-		# version provided, then record it
-
-		foreach ::tcl::x [package names] {
-		    if {[package provide $::tcl::x] ne ""
-			    && ![info exists ::tcl::packages($::tcl::x)]} {
-			lappend ::tcl::newPkgs \
-			    [list $::tcl::x [package provide $::tcl::x]]
-		    }
-		}
-	    }
+	    $c eval [list ::tcl::DiscoverPackageContents $dir $file $direct]
 	} on error msg {
-	    set what [$c set ::tcl::debug]
 	    if {$doVerbose} {
+		set what [$c set ::tcl::debug]
 		tclLog "warning: error while $what $file: $msg"
 	    }
 	} on ok {} {
-	    set what [$c set ::tcl::debug]
 	    if {$doVerbose} {
+		set what [$c set ::tcl::debug]
 		tclLog "successful $what of $file"
 	    }
 	    set type [$c set ::tcl::type]
-	    set cmds [lsort [$c eval {array names ::tcl::newCmds}]]
+	    set cmds [lsort [dict keys [$c set ::tcl::newCmds]]]
 	    set pkgs [$c set ::tcl::newPkgs]
 	    if {$doVerbose} {
 		if {!$direct} {
@@ -397,24 +391,26 @@ proc pkg_mkIndex {args} {
     append index "# full path name of this file's directory.\n"
 
     foreach pkg [lsort [array names files]] {
-	set cmd {}
+	set cmdArgs {}
 	lassign $pkg name version
-	lappend cmd ::tcl::Pkg::Create -name $name -version $version
 	foreach spec [lsort -index 0 $files($pkg)] {
 	    foreach {file type procs} $spec {
 		if {$direct} {
 		    set procs {}
 		}
-		lappend cmd "-$type" [list $file $procs]
+		lappend cmdArgs "-$type" [list $file $procs]
 	    }
 	}
-	append index "\n[eval $cmd]"
+	append index "\n[::tcl::Pkg::Create -name $name -version $version {*}$cmdArgs]"
     }
 
     set f [open [file join $dir pkgIndex.tcl] w]
-    fconfigure $f -encoding utf-8 -translation lf
-    puts $f $index
-    close $f
+    try {
+	fconfigure $f -encoding utf-8 -translation lf
+	puts $f $index
+    } finally {
+	close $f
+    }
 }
 
 # tclPkgSetup --
@@ -499,11 +495,10 @@ proc tclPkgUnknown {name args} {
 		    } trap {POSIX EACCES} {} {
 			# $file was not readable; silently ignore
 			continue
+		    } trap {TCL PACKAGE VERSIONCONFLICT} {} {
+			# In case of version conflict, silently ignore
+			continue
 		    } on error msg {
-			if {[regexp {version conflict for package} $msg]} {
-			    # In case of version conflict, silently ignore
-			    continue
-			}
 			tclLog "error reading package index file $file: $msg"
 		    } on ok {} {
 			set procdDirs($dir) 1
@@ -515,17 +510,16 @@ proc tclPkgUnknown {name args} {
 	if {![info exists procdDirs($dir)]} {
 	    set file [file join $dir pkgIndex.tcl]
 	    # safe interps usually don't have "file exists",
-	    if {([interp issafe] || [file exists $file])} {
+	    if {[interp issafe] || [file exists $file]} {
 		try {
 		    ::tcl::Pkg::source $file
 		} trap {POSIX EACCES} {} {
 		    # $file was not readable; silently ignore
 		    continue
+		} trap {TCL PACKAGE VERSIONCONFLICT} {} {
+		    # In case of version conflict, silently ignore
+		    continue
 		} on error msg {
-		    if {[regexp {version conflict for package} $msg]} {
-			# In case of version conflict, silently ignore
-			continue
-		    }
 		    tclLog "error reading package index file $file: $msg"
 		} on ok {} {
 		    set procdDirs($dir) 1
@@ -610,11 +604,10 @@ proc tcl::MacOSXPkgUnknown {original name args} {
 		} trap {POSIX EACCES} {} {
 		    # $file was not readable; silently ignore
 		    continue
+		} trap {TCL PACKAGE VERSIONCONFLICT} {} {
+		    # In case of version conflict, silently ignore
+		    continue
 		} on error msg {
-		    if {[regexp {version conflict for package} $msg]} {
-			# In case of version conflict, silently ignore
-			continue
-		    }
 		    tclLog "error reading package index file $file: $msg"
 		} on ok {} {
 		    set procdDirs($dir) 1

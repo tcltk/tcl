@@ -7971,9 +7971,9 @@ TEBCresume(
 	goto gotError;
 
     outOfMemory:
-	Tcl_SetObjResult(interp, Tcl_NewStringObj("out of memory", -1));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj("cannot allocate", -1));
 	DECACHE_STACK_INFO();
-	Tcl_SetErrorCode(interp, "ARITH", "OUTOFMEMORY", "out of memory", (char *)NULL);
+	Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
 	CACHE_STACK_INFO();
 	goto gotError;
 

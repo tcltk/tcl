@@ -466,9 +466,10 @@ static int		TransformLimit(ReflectedTransform *rtPtr,
 /*
  * Operation codes for TransformFlush().
  */
-
-#define FLUSH_WRITE	1
-#define FLUSH_DISCARD	0
+enum TransformFlushOperations {
+    FLUSH_WRITE = 1,
+    FLUSH_DISCARD = 0
+};
 
 /*
  * Main methods to plug into the 'chan' ensemble'. ==================

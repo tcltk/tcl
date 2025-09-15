@@ -222,8 +222,9 @@ typedef struct Tcl_ResolverInfo {
  *	namespace; never follow the second (global) resolution path
  *    - Bug #631741 - do not use special namespace or interp resolvers
  */
-
-#define TCL_AVOID_RESOLVERS 0x40000
+enum TclLookupVarFlags {
+    TCL_AVOID_RESOLVERS = 0x40000
+};
 
 /*
  *----------------------------------------------------------------
@@ -401,46 +402,48 @@ struct NamespacePathEntry {
 
 /*
  * Flags used to represent the status of a namespace:
- *
- * NS_DYING -	1 means Tcl_DeleteNamespace has been called to delete the
- *		namespace.  There may still be active call frames on the Tcl
- *		stack that refer to the namespace. When the last call frame
- *		referring to it has been popped, its remaining variables and
- *		commands are destroyed and it is marked "dead" (NS_DEAD).
- * NS_TEARDOWN  -1 means that TclTeardownNamespace has already been called on
- *		this namespace and it should not be called again [Bug 1355942].
- * NS_DEAD -	1 means Tcl_DeleteNamespace has been called to delete the
- *		namespace and no call frames still refer to it. It is no longer
- *		accessible by name. Its variables and commands have already
- *		been destroyed.  When the last namespaceName object in any byte
- *		code unit that refers to the namespace has been freed (i.e.,
- *		when the namespace's refCount is 0), the namespace's storage
- *		will be freed.
- * NS_SUPPRESS_COMPILATION -
- *		Marks the commands in this namespace for not being compiled,
- *		forcing them to be looked up every time.
  */
-
-#define NS_DYING	0x01
-#define NS_DEAD		0x02
-#define NS_TEARDOWN	0x04
-#define NS_KILLED	0x04 /* Same as NS_TEARDOWN (Deprecated) */
-#define NS_SUPPRESS_COMPILATION	0x08
+enum NamespaceFlags {
+    NS_DYING =	1,		/* Tcl_DeleteNamespace has been called to
+				 * delete the namespace.  There may still be
+				 * active call frames on the Tcl stack that
+				 * refer to the namespace. When the last call
+				 * frame referring to it has been popped, its
+				 * remaining variables and commands are
+				 * destroyed and it is marked "dead"
+				 * (NS_DEAD). */
+    NS_DEAD = 2,		/* Tcl_DeleteNamespace has been called to
+				 * delete the namespace and no call frames
+				 * still refer to it. It is no longer
+				 * accessible by name. Its variables and
+				 * commands have already been destroyed.  When
+				 * the last namespaceName object in any byte
+				 * code unit that refers to the namespace has
+				 * been freed (i.e., when the namespace's
+				 * refCount is 0), the namespace's storage
+				 * will be freed. */
+    NS_TEARDOWN = 4,		/* TclTeardownNamespace has already been called
+				 * on this namespace and it should not be
+				 * called again [Bug 1355942]. */
+    NS_SUPPRESS_COMPILATION = 8	/* Marks the commands in this namespace for
+				 * not being compiled, forcing them to be
+				 * looked up every time. */
+};
 
 /*
  * Flags passed to TclGetNamespaceForQualName:
  *
+ * Also:
  * TCL_GLOBAL_ONLY		- (see tcl.h) Look only in the global ns.
  * TCL_NAMESPACE_ONLY		- (see tcl.h) Look only in the context ns.
- * TCL_CREATE_NS_IF_UNKNOWN	- Create unknown namespaces.
- * TCL_FIND_ONLY_NS		- The name sought is a namespace name.
- * TCL_FIND_IF_NOT_SIMPLE	- Retrieve last namespace even if the rest of
- *				  name is not simple name (contains ::).
  */
-
-#define TCL_CREATE_NS_IF_UNKNOWN	0x800
-#define TCL_FIND_ONLY_NS		0x1000
-#define TCL_FIND_IF_NOT_SIMPLE		0x2000
+enum TclGetNamespaceForQualNameFlags {
+    TCL_CREATE_NS_IF_UNKNOWN = 0x800,	/* Create unknown namespaces. */
+    TCL_FIND_ONLY_NS = 0x1000,		/* The name sought is a namespace name. */
+    TCL_FIND_IF_NOT_SIMPLE = 0x2000	/* Retrieve last namespace even if the
+					 * rest of name is not simple name
+					 * (contains ::). */
+};
 
 /*
  * The client data for an ensemble command. This consists of the table of
@@ -523,11 +526,12 @@ typedef struct EnsembleConfig {
 /*
  * Various bits for the EnsembleConfig.flags field.
  */
-
-#define ENSEMBLE_DEAD	0x1	/* Flag value to say that the ensemble is dead
+enum EnsembleConfigFlags {
+    ENSEMBLE_DEAD = 0x1,	/* Flag value to say that the ensemble is dead
 				 * and on its way out. */
-#define ENSEMBLE_COMPILE 0x4	/* Flag to enable bytecode compilation of an
+    ENSEMBLE_COMPILE = 0x4	/* Flag to enable bytecode compilation of an
 				 * ensemble. */
+};
 
 /*
  *----------------------------------------------------------------
@@ -729,49 +733,47 @@ typedef struct VarInHash {
  * VAR_IS_ARGS			1 if this variable is the last argument and is
  *				named "args".
  */
-
-/*
- * FLAGS RENUMBERED: everything breaks already, make things simpler.
- *
- * IMPORTANT: skip the values 0x10, 0x20, 0x40, 0x800 corresponding to
- * TCL_TRACE_(READS/WRITES/UNSETS/ARRAY): makes code simpler in tclTrace.c
- *
- * Keep the flag values for VAR_ARGUMENT and VAR_TEMPORARY so that old values
- * in precompiled scripts keep working.
- */
-
+enum TclVarFlags {
 /* Type of value (0 is scalar) */
-#define VAR_ARRAY		0x1
-#define VAR_LINK		0x2
-#define VAR_CONSTANT		0x10000
-#define VAR_TYPE \
-	(VAR_ARRAY | VAR_LINK | VAR_CONSTANT)
+
+    VAR_ARRAY = 0x1,
+    VAR_LINK = 0x2,
+    VAR_CONSTANT = 0x10000,
+    VAR_TYPE = (VAR_ARRAY | VAR_LINK | VAR_CONSTANT),
 
 /* Type of storage (0 is compiled local) */
-#define VAR_IN_HASHTABLE	0x4
-#define VAR_DEAD_HASH		0x8
-#define VAR_ARRAY_ELEMENT	0x1000
-#define VAR_NAMESPACE_VAR	0x80	/* KEEP OLD VALUE for Itcl */
 
-#define VAR_ALL_HASH \
-	(VAR_IN_HASHTABLE|VAR_DEAD_HASH|VAR_NAMESPACE_VAR|VAR_ARRAY_ELEMENT)
+    VAR_IN_HASHTABLE = 0x4,
+    VAR_DEAD_HASH = 0x8,
+    VAR_ARRAY_ELEMENT = 0x1000,
+    VAR_NAMESPACE_VAR = 0x80,	/* KEEP OLD VALUE for Itcl */
+
+    VAR_ALL_HASH =
+	(VAR_IN_HASHTABLE|VAR_DEAD_HASH|VAR_NAMESPACE_VAR|VAR_ARRAY_ELEMENT),
 
 /* Trace and search state. */
 
-#define VAR_TRACED_READ		0x10	/* TCL_TRACE_READS */
-#define VAR_TRACED_WRITE	0x20	/* TCL_TRACE_WRITES */
-#define VAR_TRACED_UNSET	0x40	/* TCL_TRACE_UNSETS */
-#define VAR_TRACED_ARRAY	0x800	/* TCL_TRACE_ARRAY */
-#define VAR_TRACE_ACTIVE	0x2000
-#define VAR_SEARCH_ACTIVE	0x4000
-#define VAR_ALL_TRACES \
-	(VAR_TRACED_READ|VAR_TRACED_WRITE|VAR_TRACED_ARRAY|VAR_TRACED_UNSET)
+    VAR_TRACED_READ = TCL_TRACE_READS,
+    VAR_TRACED_WRITE = TCL_TRACE_WRITES,
+    VAR_TRACED_UNSET = TCL_TRACE_UNSETS,
+    VAR_TRACED_ARRAY = TCL_TRACE_ARRAY,
+    VAR_TRACE_ACTIVE = 0x2000,
+    VAR_SEARCH_ACTIVE = 0x4000,
+    VAR_ALL_TRACES =
+	(VAR_TRACED_READ|VAR_TRACED_WRITE|VAR_TRACED_ARRAY|VAR_TRACED_UNSET),
 
 /* Special handling on initialisation (only CompiledLocal). */
-#define VAR_ARGUMENT		0x100	/* KEEP OLD VALUE! See tclProc.c */
-#define VAR_TEMPORARY		0x200	/* KEEP OLD VALUE! See tclProc.c */
-#define VAR_IS_ARGS		0x400
-#define VAR_RESOLVED		0x8000
+
+    /*
+     * Keep the flag values for VAR_ARGUMENT and VAR_TEMPORARY so that old
+     * values in precompiled scripts keep working.
+     */
+
+    VAR_ARGUMENT = 0x100,	/* KEEP OLD VALUE! See tclProc.c */
+    VAR_TEMPORARY = 0x200,	/* KEEP OLD VALUE! See tclProc.c */
+    VAR_IS_ARGS = 0x400,
+    VAR_RESOLVED = 0x8000
+};
 
 #define TCL_HASH_FIND	((int *)-1)
 
@@ -804,7 +806,7 @@ typedef struct VarInHash {
     (varPtr)->flags = ((varPtr)->flags & ~VAR_ARRAY) | VAR_ARRAY_ELEMENT
 
 #define TclSetVarUndefined(varPtr) \
-    (varPtr)->flags &= ~(VAR_ARRAY|VAR_LINK|VAR_CONSTANT);\
+    (varPtr)->flags &= ~(VAR_ARRAY|VAR_LINK|VAR_CONSTANT);	\
     (varPtr)->value.objPtr = NULL
 
 #define TclClearVarUndefined(varPtr)
@@ -816,19 +818,19 @@ typedef struct VarInHash {
     (varPtr)->flags &= ~VAR_TRACE_ACTIVE
 
 #define TclSetVarNamespaceVar(varPtr) \
-    if (!TclIsVarNamespaceVar(varPtr)) {\
-	(varPtr)->flags |= VAR_NAMESPACE_VAR;\
-	if (TclIsVarInHash(varPtr)) {\
-	    ((VarInHash *)(varPtr))->refCount++;\
-	}\
+    if (!TclIsVarNamespaceVar(varPtr)) {			\
+	(varPtr)->flags |= VAR_NAMESPACE_VAR;			\
+	if (TclIsVarInHash(varPtr)) {				\
+	    ((VarInHash *)(varPtr))->refCount++;		\
+	}							\
     }
 
 #define TclClearVarNamespaceVar(varPtr) \
-    if (TclIsVarNamespaceVar(varPtr)) {\
-	(varPtr)->flags &= ~VAR_NAMESPACE_VAR;\
-	if (TclIsVarInHash(varPtr)) {\
-	    ((VarInHash *)(varPtr))->refCount--;\
-	}\
+    if (TclIsVarNamespaceVar(varPtr)) {				\
+	(varPtr)->flags &= ~VAR_NAMESPACE_VAR;			\
+	if (TclIsVarInHash(varPtr)) {				\
+	    ((VarInHash *)(varPtr))->refCount--;		\
+	}							\
     }
 
 /*
@@ -915,13 +917,13 @@ typedef struct VarInHash {
  * Macros for direct variable access by TEBC.
  */
 
-#define TclIsVarTricky(varPtr,trickyFlags)				\
+#define TclIsVarTricky(varPtr, trickyFlags) \
     (   ((varPtr)->flags & (VAR_ARRAY|VAR_LINK|trickyFlags))		\
 	    || (TclIsVarInHash(varPtr)					\
 		&& (TclVarParentArray(varPtr) != NULL)			\
 		&& (TclVarParentArray(varPtr)->flags & (trickyFlags))))
 
-#define TclIsVarDirectReadable(varPtr)					\
+#define TclIsVarDirectReadable(varPtr) \
     (   (!TclIsVarTricky(varPtr,VAR_TRACED_READ))			\
 	&& (varPtr)->value.objPtr)
 
@@ -936,15 +938,15 @@ typedef struct VarInHash {
 	&&  (varPtr)->value.objPtr)
 
 #define TclIsVarDirectReadable2(varPtr, arrayPtr) \
-    (TclIsVarDirectReadable(varPtr) &&\
+    (TclIsVarDirectReadable(varPtr) &&					\
 	(!(arrayPtr) || !((arrayPtr)->flags & VAR_TRACED_READ)))
 
 #define TclIsVarDirectWritable2(varPtr, arrayPtr) \
-    (TclIsVarDirectWritable(varPtr) &&\
+    (TclIsVarDirectWritable(varPtr) &&					\
 	(!(arrayPtr) || !((arrayPtr)->flags & VAR_TRACED_WRITE)))
 
 #define TclIsVarDirectModifyable2(varPtr, arrayPtr) \
-    (TclIsVarDirectModifyable(varPtr) &&\
+    (TclIsVarDirectModifyable(varPtr) &&				\
 	(!(arrayPtr) || !((arrayPtr)->flags & (VAR_TRACED_READ|VAR_TRACED_WRITE))))
 
 /*
@@ -1094,17 +1096,15 @@ typedef struct ActiveInterpTrace {
 /*
  * Flag values designating types of execution traces. See tclTrace.c for
  * related flag values.
- *
- * TCL_TRACE_ENTER_EXEC		- triggers enter/enterstep traces.
- *				- passed to Tcl_CreateObjTrace to set up
- *				  "enterstep" traces.
- * TCL_TRACE_LEAVE_EXEC		- triggers leave/leavestep traces.
- *				- passed to Tcl_CreateObjTrace to set up
- *				  "leavestep" traces.
  */
-
-#define TCL_TRACE_ENTER_EXEC	1
-#define TCL_TRACE_LEAVE_EXEC	2
+enum TclTraceExecFlags {
+    TCL_TRACE_ENTER_EXEC = 1,	/* - triggers enter/enterstep traces.
+				 * - passed to Tcl_CreateObjTrace to set up
+				 *   "enterstep" traces. */
+    TCL_TRACE_LEAVE_EXEC = 2	/* - triggers leave/leavestep traces.
+				 * - passed to Tcl_CreateObjTrace to set up
+				 *   "leavestep" traces. */
+};
 
 #define TclObjTypeHasProc(objPtr, proc) (((objPtr)->typePtr \
 	&& ((offsetof(Tcl_ObjType, proc) < offsetof(Tcl_ObjType, version)) \
@@ -1260,7 +1260,8 @@ typedef struct CallFrame {
 				 * varTablePtr and compiledLocals are ignored.
 				 * If FRAME_IS_PROC is set, the frame was
 				 * pushed to execute a Tcl procedure and may
-				 * have local vars. */
+				 * have local vars.
+				 * This field is mis-named. */
     Tcl_Size objc;		/* This and objv below describe the arguments
 				 * for this procedure call. */
     Tcl_Obj *const *objv;	/* Array of argument objects. */
@@ -1309,20 +1310,22 @@ typedef struct CallFrame {
     Tcl_Obj *tailcallPtr;	/* NULL if no tailcall is scheduled */
 } CallFrame;
 
-#define FRAME_IS_PROC	0x1	/* Frame is a procedure body. */
-#define FRAME_IS_LAMBDA 0x2	/* Frame is a lambda term body. */
-#define FRAME_IS_METHOD	0x4	/* The frame is a method body, and the frame's
+enum CallFrameFlags {
+    FRAME_IS_PROC = 0x1,	/* Frame is a procedure body. */
+    FRAME_IS_LAMBDA = 0x2,	/* Frame is a lambda term body. */
+    FRAME_IS_METHOD = 0x4,	/* The frame is a method body, and the frame's
 				 * clientData field contains a CallContext
 				 * reference. Part of TIP#257. */
-#define FRAME_IS_OO_DEFINE 0x8	/* The frame is part of the inside workings of
+    FRAME_IS_OO_DEFINE = 0x8,	/* The frame is part of the inside workings of
 				 * the [oo::define] command; the clientData
 				 * field contains an Object reference that has
 				 * been confirmed to refer to a class. Part of
 				 * TIP#257. */
-#define FRAME_IS_PRIVATE_DEFINE 0x10
+    FRAME_IS_PRIVATE_DEFINE = 0x10
 				/* Marks this frame as being used for private
 				 * declarations with [oo::define]. Usually
 				 * OR'd with FRAME_IS_OO_DEFINE. TIP#500. */
+};
 
 /*
  * TIP #280
@@ -1350,7 +1353,7 @@ typedef struct CmdFrame {
     int type;			/* Values see below. */
     int level;			/* Number of frames in stack, prevent O(n)
 				 * scan of list. */
-    int *line;		/* Lines the words of the command start on. */
+    int *line;			/* Lines the words of the command start on. */
     Tcl_Size nline;		/* Number of lines in CmdFrame.line. */
     CallFrame *framePtr;	/* Procedure activation record, may be
 				 * NULL. */
@@ -1440,7 +1443,9 @@ typedef struct CFWordBC {
  * the function TclThreadFinalizeObjects(), in the same file.
  */
 
-#define CLL_END		(-1)
+enum ContLineLocMarkers {
+    CLL_END = -1
+};
 
 typedef struct ContLineLoc {
     Tcl_Size num;		/* Number of entries in loc, not counting the
@@ -1468,14 +1473,15 @@ typedef struct ContLineLoc {
  * A TCL_LOCATION_BC type in a frame can be overridden by _SOURCE and _PROC
  * types, per the context of the byte code in execution.
  */
-
-#define TCL_LOCATION_EVAL	(0) /* Location in a dynamic eval script. */
-#define TCL_LOCATION_BC		(2) /* Location in byte code. */
-#define TCL_LOCATION_PREBC	(3) /* Location in precompiled byte code, no
-				     * location. */
-#define TCL_LOCATION_SOURCE	(4) /* Location in a file. */
-#define TCL_LOCATION_PROC	(5) /* Location in a dynamic proc. */
-#define TCL_LOCATION_LAST	(6) /* Number of values in the enum. */
+enum CmdFrameTypes {
+    TCL_LOCATION_EVAL = 0,	/* Location in a dynamic eval script. */
+    TCL_LOCATION_BC = 2,	/* Location in byte code. */
+    TCL_LOCATION_PREBC = 3,	/* Location in precompiled byte code, no
+				 * location. */
+    TCL_LOCATION_SOURCE = 4,	/* Location in a file. */
+    TCL_LOCATION_PROC = 5,	/* Location in a dynamic proc. */
+    TCL_LOCATION_LAST = 6	/* Number of values in the enum. */
+};
 
 /*
  * Structure passed to describe procedure-like "procedures" that are not
@@ -1515,9 +1521,10 @@ typedef void **TclHandle;
  * only by Expect. It will probably go away in a later release.
  *----------------------------------------------------------------
  */
-
-#define TCL_REG_BOSONLY 002000	/* Prepend \A to pattern so it only matches at
+enum ExperimentalRegExpFlags {
+    TCL_REG_BOSONLY = 002000	/* Prepend \A to pattern so it only matches at
 				 * the beginning of the string. */
+};
 
 /*
  * These are a thin layer over TclpThreadKeyDataGet and TclpThreadKeyDataSet
@@ -1662,7 +1669,7 @@ typedef struct ExecEnv {
     ((corPtr)->stackLevel == NULL)
 
 // The different types of yielded coroutine we have.
-#define CORO_ACTIVATE_YIELD	NULL		// 0 or 1 argument expected
+#define CORO_ACTIVATE_YIELD	INT2PTR(0)	// 0 or 1 argument expected
 #define CORO_ACTIVATE_YIELDM	INT2PTR(1)	// Arbitrary arguments expected
 
 /*
@@ -1690,8 +1697,8 @@ typedef struct LiteralEntry {
     Tcl_Size refCount;		/* If in an interpreter's global literal
 				 * table, the number of ByteCode structures
 				 * that share the literal object; the literal
-				 * entry can be freed when refCount drops to
-				 * 0. If in a local literal table, TCL_INDEX_NONE. */
+				 * entry can be freed when refCount drops to 0,
+				 * If in a local literal table, TCL_INDEX_NONE. */
     Namespace *nsPtr;		/* Namespace in which this literal is used. We
 				 * try to avoid sharing literal non-FQ command
 				 * names among different namespaces to reduce
@@ -1705,11 +1712,11 @@ typedef struct LiteralTable {
     LiteralEntry *staticBuckets[TCL_SMALL_HASH_TABLE];
 				/* Bucket array used for small tables to avoid
 				 * mallocs and frees. */
-    size_t numBuckets;	/* Total number of buckets allocated at
+    size_t numBuckets;		/* Total number of buckets allocated at
 				 * **buckets. */
-    size_t numEntries;	/* Total number of entries present in
+    size_t numEntries;		/* Total number of entries present in
 				 * table. */
-    size_t rebuildSize;	/* Enlarge table when numEntries gets to be
+    size_t rebuildSize;		/* Enlarge table when numEntries gets to be
 				 * this large. */
     size_t mask;		/* Mask value used in hashing function. */
 } LiteralTable;
@@ -1941,7 +1948,8 @@ typedef struct LimitHandler LimitHandler;
  */
 
 enum PkgPreferOptions {
-    PKG_PREFER_LATEST, PKG_PREFER_STABLE
+    PKG_PREFER_LATEST,
+    PKG_PREFER_STABLE
 };
 
 /*
@@ -2352,102 +2360,103 @@ typedef struct Interp {
  * Macros for splicing into and out of doubly linked lists. They assume
  * existence of struct items 'prevPtr' and 'nextPtr'.
  *
- * a = element to add or remove.
- * b = list head.
+ * element = element to add or remove.
+ * head = list head.
  *
  * TclSpliceIn adds to the head of the list.
  */
 
-#define TclSpliceIn(a,b)			\
-    (a)->nextPtr = (b);				\
-    if ((b) != NULL) {				\
-	(b)->prevPtr = (a);			\
-    }						\
-    (a)->prevPtr = NULL, (b) = (a);
+#define TclSpliceIn(element, head) \
+    do {							\
+	(element)->nextPtr = (head);				\
+	if ((head) != NULL) {					\
+	    (head)->prevPtr = (element);			\
+	}							\
+	(element)->prevPtr = NULL, (head) = (element);		\
+    } while (0)
 
-#define TclSpliceOut(a,b)			\
-    if ((a)->prevPtr != NULL) {			\
-	(a)->prevPtr->nextPtr = (a)->nextPtr;	\
-    } else {					\
-	(b) = (a)->nextPtr;			\
-    }						\
-    if ((a)->nextPtr != NULL) {			\
-	(a)->nextPtr->prevPtr = (a)->prevPtr;	\
-    }
+#define TclSpliceOut(element, head) \
+    do {							\
+	if ((element)->prevPtr != NULL) {			\
+	    (element)->prevPtr->nextPtr = (element)->nextPtr;	\
+	} else {						\
+	    (head) = (element)->nextPtr;			\
+	}							\
+	if ((element)->nextPtr != NULL) {			\
+	    (element)->nextPtr->prevPtr = (element)->prevPtr;	\
+	}							\
+    } while (0)
 
 /*
  * EvalFlag bits for Interp structures:
- *
- * TCL_ALLOW_EXCEPTIONS	1 means it's OK for the script to terminate with a
- *			code other than TCL_OK or TCL_ERROR; 0 means codes
- *			other than these should be turned into errors.
  */
-
-#define TCL_ALLOW_EXCEPTIONS		0x04
-#define TCL_EVAL_FILE			0x02
-#define TCL_EVAL_SOURCE_IN_FRAME	0x10
-#define TCL_EVAL_NORESOLVE		0x20
-#define TCL_EVAL_DISCARD_RESULT		0x40
+enum InterpEvalFlags {
+    TCL_ALLOW_EXCEPTIONS = 0x04,/* It's OK for the script to terminate with a
+				 * code other than TCL_OK or TCL_ERROR; if
+				 * unset, codes other than these should be
+				 * turned into errors. */
+    TCL_EVAL_FILE = 0x02,
+    TCL_EVAL_SOURCE_IN_FRAME = 0x10,
+    TCL_EVAL_NORESOLVE = 0x20,
+    TCL_EVAL_DISCARD_RESULT = 0x40
+};
 
 /*
  * Flag bits for Interp structures:
- *
- * DELETED:		Non-zero means the interpreter has been deleted:
- *			don't process any more commands for it, and destroy
- *			the structure as soon as all nested invocations of
- *			Tcl_Eval are done.
- * ERR_ALREADY_LOGGED:	Non-zero means information has already been logged in
- *			iPtr->errorInfo for the current Tcl_Eval instance, so
- *			Tcl_Eval needn't log it (used to implement the "error
- *			message log" command).
- * DONT_COMPILE_CMDS_INLINE: Non-zero means that the bytecode compiler should
- *			not compile any commands into an inline sequence of
- *			instructions. This is set 1, for example, when command
- *			traces are requested.
- * RAND_SEED_INITIALIZED: Non-zero means that the randSeed value of the interp
- *			has not be initialized. This is set 1 when we first
- *			use the rand() or srand() functions.
- * SAFE_INTERP:		Non zero means that the current interp is a safe
- *			interp (i.e. it has only the safe commands installed,
- *			less privilege than a regular interp).
- * INTERP_DEBUG_FRAME:	Used for switching on various extra interpreter
- *			debug/info mechanisms (e.g. info frame eval/uplevel
- *			tracing) which are performance intensive.
- * INTERP_TRACE_IN_PROGRESS: Non-zero means that an interp trace is currently
- *			active; so no further trace callbacks should be
- *			invoked.
- * INTERP_ALTERNATE_WRONG_ARGS: Used for listing second and subsequent forms
- *			of the wrong-num-args string in Tcl_WrongNumArgs.
- *			Makes it append instead of replacing and uses
- *			different intermediate text.
- * CANCELED:		Non-zero means that the script in progress should be
- *			canceled as soon as possible. This can be checked by
- *			extensions (and the core itself) by calling
- *			Tcl_Canceled and checking if TCL_ERROR is returned.
- *			This is a one-shot flag that is reset immediately upon
- *			being detected; however, if the TCL_CANCEL_UNWIND flag
- *			is set Tcl_Canceled will continue to report that the
- *			script in progress has been canceled thereby allowing
- *			the evaluation stack for the interp to be fully
- *			unwound.
  */
-
-#define DELETED				     1
-#define ERR_ALREADY_LOGGED		     4
-#define INTERP_DEBUG_FRAME		  0x10
-#define DONT_COMPILE_CMDS_INLINE	  0x20
-#define RAND_SEED_INITIALIZED		  0x40
-#define SAFE_INTERP			  0x80
-#define INTERP_TRACE_IN_PROGRESS	 0x200
-#define INTERP_ALTERNATE_WRONG_ARGS	 0x400
-#define ERR_LEGACY_COPY			 0x800
-#define CANCELED			0x1000
+enum InterpFlags {
+    DELETED = 1,		/* The interpreter has been deleted: don't
+				 * process any more commands for it, and
+				 * destroy the structure as soon as all nested
+				 * invocations of Tcl_Eval are done. */
+    ERR_ALREADY_LOGGED = 4,	/* Information has already been logged in
+				 * iPtr->errorInfo for the current Tcl_Eval
+				 * instance, so Tcl_Eval needn't log it (used
+				 * to implement the "error message log"
+				 * command). */
+    INTERP_DEBUG_FRAME = 0x10,	/* Used for switching on various extra
+				 * interpreter debug/info mechanisms (e.g.,
+				 * info frame eval/uplevel tracing) which are
+				 * performance intensive. */
+    DONT_COMPILE_CMDS_INLINE = 0x20,
+				/* The bytecode compiler should not compile
+				 * any commands into an inline sequence of
+				 * instructions. This is set, for example, when
+				 * command traces are requested. */
+    RAND_SEED_INITIALIZED = 0x40,
+				/* The randSeed value of the interp has been
+				 * initialized. This is set when we first use
+				 * the rand() or srand() functions. */
+    SAFE_INTERP = 0x80,		/* The current interp is a safe interp (i.e.,
+				 * it has only the safe commands installed,
+				 * less privilege than a regular interp). */
+    INTERP_TRACE_IN_PROGRESS = 0x200,
+				/* An interp trace is currently active; so no
+				 * further trace callbacks should be invoked. */
+    INTERP_ALTERNATE_WRONG_ARGS = 0x400,
+				/* Used for listing second and subsequent forms
+				 * of the wrong-num-args string in
+				 * Tcl_WrongNumArgs. Makes it append instead of
+				 * replacing and uses different intermediate
+				 * text. */
+    ERR_LEGACY_COPY = 0x800,
+    CANCELED = 0x1000		/* The script in progress should be canceled
+				 * as soon as possible. This can be checked by
+				 * extensions (and the core itself) by calling
+				 * Tcl_Canceled and checking if TCL_ERROR is
+				 * returned.  This is a one-shot flag that is
+				 * reset immediately upon being detected;
+				 * however, if the TCL_CANCEL_UNWIND flag is
+				 * set Tcl_Canceled will continue to report
+				 * that the script in progress has been
+				 * canceled thereby allowing the evaluation
+				 * stack for the interp to be fully unwound. */
+};
 
 /*
- * Maximum number of levels of nesting permitted in Tcl commands (used to
- * catch infinite recursion).
+ * Default maximum number of levels of nesting permitted in Tcl commands (used
+ * to catch infinite recursion).
  */
-
 #define MAX_NESTING_DEPTH	1000
 
 /*
@@ -2532,22 +2541,19 @@ typedef enum TclEolTranslation {
 
 /*
  * Flags for TclInvoke:
- *
- * TCL_INVOKE_HIDDEN		Invoke a hidden command; if not set, invokes
- *				an exposed command.
- * TCL_INVOKE_NO_UNKNOWN	If set, "unknown" is not invoked if the
- *				command to be invoked is not found. Only has
- *				an effect if invoking an exposed command,
- *				i.e. if TCL_INVOKE_HIDDEN is not also set.
- * TCL_INVOKE_NO_TRACEBACK	Does not record traceback information if the
- *				invoked command returns an error. Used if the
- *				caller plans on recording its own traceback
- *				information.
  */
-
-#define	TCL_INVOKE_HIDDEN	(1<<0)
-#define TCL_INVOKE_NO_UNKNOWN	(1<<1)
-#define TCL_INVOKE_NO_TRACEBACK	(1<<2)
+enum TclInvokeFlags {
+    TCL_INVOKE_HIDDEN = 1,	/* Invoke a hidden command; if not set, invokes
+				 * an exposed command. */
+    TCL_INVOKE_NO_UNKNOWN = 2,	/* "unknown" is not invoked if the command to
+				 * be invoked is not found. Only has an effect
+				 * if invoking an exposed command, i.e. if
+				 * TCL_INVOKE_HIDDEN is not also set. */
+    TCL_INVOKE_NO_TRACEBACK = 4	/* Does not record traceback information if the
+				 * invoked command returns an error. Used if the
+				 * caller plans on recording its own traceback
+				 * information. */
+};
 
 /*
  * ListStore --
@@ -2751,9 +2757,10 @@ typedef struct ListRep {
  * Modes for collecting (or not) in the implementations of TclNRForeachCmd,
  * TclNRLmapCmd and their compilations.
  */
-
-#define TCL_EACH_KEEP_NONE  0	/* Discard iteration result like [foreach] */
-#define TCL_EACH_COLLECT    1	/* Collect iteration result like [lmap] */
+enum TclEachModes {
+    TCL_EACH_KEEP_NONE = 0,	// Discard iteration result like [foreach]
+    TCL_EACH_COLLECT = 1	// Collect iteration result like [lmap]
+};
 
 /*
  * Macros providing a faster path to booleans and integers:
@@ -2811,27 +2818,22 @@ typedef struct ListRep {
 
 /*
  * Flag values for TclTraceDictPath().
- *
- * DICT_PATH_READ indicates that all entries on the path must exist but no
- * updates will be needed.
- *
- * DICT_PATH_UPDATE indicates that we are going to be doing an update at the
- * tip of the path, so duplication of shared objects should be done along the
- * way.
- *
- * DICT_PATH_EXISTS indicates that we are performing an existence test and a
- * lookup failure should therefore not be an error. If (and only if) this flag
- * is set, TclTraceDictPath() will return the special value
- * DICT_PATH_NON_EXISTENT if the path is not traceable.
- *
- * DICT_PATH_CREATE (which also requires the DICT_PATH_UPDATE bit to be set)
- * indicates that we are to create non-existent dictionaries on the path.
  */
-
-#define DICT_PATH_READ		0
-#define DICT_PATH_UPDATE	1
-#define DICT_PATH_EXISTS	2
-#define DICT_PATH_CREATE	5
+enum TraceDictPathFlags {
+    DICT_PATH_READ = 0,		/* All entries on the path must exist but no
+				 * updates will be needed. */
+    DICT_PATH_UPDATE = 1,	/* We are going to be doing an update at the
+				 * tip of the path, so duplication of shared
+				 * objects should be done along the way. */
+    DICT_PATH_EXISTS = 2,	/* We are performing an existence test and a
+				 * lookup failure should therefore not be an
+				 * error. If (and only if) this flag is set,
+				 * TclTraceDictPath() will return the special
+				 * value DICT_PATH_NON_EXISTENT if the path is
+				 * not traceable. */
+    DICT_PATH_CREATE = 5	/* We are to create non-existent dictionaries
+				 * on the path. Implies DICT_PATH_UPDATE. */
+};
 
 #define DICT_PATH_NON_EXISTENT	((Tcl_Obj *) (void *) 1)
 
@@ -2947,24 +2949,20 @@ typedef struct ProcessGlobalValue {
  *----------------------------------------------------------------------
  */
 
-#define TCL_PARSE_DECIMAL_ONLY	1
-				/* Leading zero doesn't denote octal or
-				 * hex. */
-#define TCL_PARSE_OCTAL_ONLY	2
-				/* Parse octal even without prefix. */
-#define TCL_PARSE_HEXADECIMAL_ONLY	4
+enum TclParseNumberFlags {
+    TCL_PARSE_DECIMAL_ONLY = 1,	/* Leading zero doesn't denote octal or hex. */
+    TCL_PARSE_OCTAL_ONLY = 2,	/* Parse octal even without prefix. */
+    TCL_PARSE_HEXADECIMAL_ONLY = 4,
 				/* Parse hexadecimal even without prefix. */
-#define TCL_PARSE_INTEGER_ONLY	8
-				/* Disable floating point parsing. */
-#define TCL_PARSE_SCAN_PREFIXES	16
-				/* Use [scan] rules dealing with 0?
-				 * prefixes. */
-#define TCL_PARSE_NO_WHITESPACE	32
+    TCL_PARSE_INTEGER_ONLY = 8,	/* Disable floating point parsing. */
+    TCL_PARSE_SCAN_PREFIXES = 16,
+				/* Use [scan] rules dealing with 0? prefixes. */
+    TCL_PARSE_NO_WHITESPACE = 32,
 				/* Reject leading/trailing whitespace. */
-#define TCL_PARSE_BINARY_ONLY	64
-				/* Parse binary even without prefix. */
-#define TCL_PARSE_NO_UNDERSCORE	128
+    TCL_PARSE_BINARY_ONLY = 64,	/* Parse binary even without prefix. */
+    TCL_PARSE_NO_UNDERSCORE = 128
 				/* Reject underscore digit separator */
+};
 
 /*
  *----------------------------------------------------------------------
@@ -2973,7 +2971,9 @@ typedef struct ProcessGlobalValue {
  *----------------------------------------------------------------------
  */
 
-#define ENCODING_PROFILE_MASK     0xFF000000
+enum EncodingProfileMask {
+    ENCODING_PROFILE_MASK = 0xFF000000
+};
 #define ENCODING_PROFILE_GET(flags_) \
     ((flags_) & ENCODING_PROFILE_MASK)
 #define ENCODING_PROFILE_SET(flags_, profile_) \
@@ -3167,7 +3167,9 @@ MODULE_SCOPE size_t	tclObjsShared[TCL_MAX_SHARED_OBJ_STATS];
 MODULE_SCOPE char	tclEmptyString;
 
 enum CheckEmptyStringResult {
-	TCL_EMPTYSTRING_UNKNOWN = -1, TCL_EMPTYSTRING_NO, TCL_EMPTYSTRING_YES
+    TCL_EMPTYSTRING_UNKNOWN = -1,
+    TCL_EMPTYSTRING_NO,
+    TCL_EMPTYSTRING_YES
 };
 
 /*
@@ -3251,17 +3253,18 @@ struct Tcl_LoadHandle_ {
 				/* Procedure that unloads a loaded module */
 };
 
-/* Flags for conversion of doubles to digit strings */
-
-#define TCL_DD_E_FORMAT 0x2	/* Use a fixed-length string of digits,
+/* Flags for conversion of doubles to digit strings. */
+enum DoubleToDigitStringFlags {
+    TCL_DD_E_FORMAT = 0x2,	/* Use a fixed-length string of digits,
 				 * suitable for E format*/
-#define TCL_DD_F_FORMAT 0x3	/* Use a fixed number of digits after the
+    TCL_DD_F_FORMAT = 0x3,	/* Use a fixed number of digits after the
 				 * decimal point, suitable for F format */
-#define TCL_DD_SHORTEST 0x4	/* Use the shortest possible string */
-#define TCL_DD_NO_QUICK 0x8	/* Debug flag: forbid quick FP conversion */
+    TCL_DD_SHORTEST = 0x4,	/* Use the shortest possible string */
+    TCL_DD_NO_QUICK = 0x8,	/* Debug flag: forbid quick FP conversion */
 
-#define TCL_DD_CONVERSION_TYPE_MASK	0x3
+    TCL_DD_CONVERSION_TYPE_MASK = 0x3
 				/* Mask to isolate the conversion type */
+};
 
 /*
  * Clock operations, communicated from command definitions to the bytecode
