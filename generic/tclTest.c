@@ -5345,7 +5345,7 @@ TestuniClassCmd(
 
     int value;
     if (Tcl_GetIntFromObj(interp, objv[1], &value) != TCL_OK) {
-    	return TCL_ERROR;
+	return TCL_ERROR;
     }
     Tcl_Obj *result = Tcl_NewObj();
     Tcl_ListObjAppendElement(interp, result, Tcl_NewIntObj(Tcl_UniCharToLower(value)));
@@ -7056,9 +7056,11 @@ TestChannelEventCmd(
  *----------------------------------------------------------------------
  */
 
-#define TCP_ASYNC_TEST_MODE	(1<<8)	/* Async testing activated.  Do not
-					 * automatically continue connection
-					 * process. */
+enum TcpStateFlags {
+    TCP_ASYNC_TEST_MODE = 1<<8	/* Async testing activated.  Do not
+				 * automatically continue connection
+				 * process. */
+};
 
 static int
 TestSocketCmd(

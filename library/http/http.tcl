@@ -11,7 +11,7 @@
 package require Tcl 8.6-
 # Keep this in sync with pkgIndex.tcl and with the install directories in
 # Makefiles
-package provide http 2.10.0
+package provide http 2.10.1
 
 namespace eval http {
     # Allow resourcing to not clobber existing data
@@ -3652,7 +3652,7 @@ proc http::Event {sock token} {
 		Log ^E$tk end of response headers - token $token
 		# We have now read all headers
 		# We ignore HTTP/1.1 100 Continue returns. RFC2616 sec 8.2.3
-		if {    ($state(http) == "")
+		if {    ($state(http) eq "")
 		     || ([regexp {^\S+\s(\d+)} $state(http) {} x] && $x == 100)
 		} {
 		    set state(state) "connecting"
