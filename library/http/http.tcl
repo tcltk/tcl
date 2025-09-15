@@ -11,7 +11,7 @@
 package require Tcl 8.6-
 # Keep this in sync with pkgIndex.tcl and with the install directories in
 # Makefiles
-package provide http 2.9.8
+package provide http 2.9.9
 
 namespace eval http {
     # Allow resourcing to not clobber existing data
@@ -1548,7 +1548,7 @@ proc http::Connected {token proto phost srvurl} {
 	if {[info exists state(reusing)] && $state(reusing)} {
 	    # The socket was closed at the server end, and closed at
 	    # this end by http::CheckEof.
-    	    if {[TestForReplay $token write $err a]} {
+	    if {[TestForReplay $token write $err a]} {
 		return
 	    } else {
 		Finish $token {failed to re-use socket}
@@ -2381,7 +2381,7 @@ proc http::cleanup {token} {
 #
 # Side Effects
 #	Sets the status of the connection, which unblocks
-# 	the waiting geturl call
+#	the waiting geturl call
 
 proc http::Connect {token proto phost srvurl} {
     variable $token
@@ -2625,7 +2625,7 @@ proc http::Event {sock token} {
 		Log ^E$tk end of response headers - token $token
 		# We have now read all headers
 		# We ignore HTTP/1.1 100 Continue returns. RFC2616 sec 8.2.3
-		if {    ($state(http) == "")
+		if {    ($state(http) eq "")
 		     || ([regexp {^\S+\s(\d+)} $state(http) {} x] && $x == 100)
 		} {
 		    set state(state) "connecting"
@@ -3548,7 +3548,7 @@ proc http::ReceiveChunked {chan command} {
 }
 
 # http::SplitCommaSeparatedFieldValue --
-# 	Return the individual values of a comma-separated field value.
+#	Return the individual values of a comma-separated field value.
 #
 # Arguments:
 #	fieldValue	Comma-separated header field value.
@@ -3565,7 +3565,7 @@ proc http::SplitCommaSeparatedFieldValue {fieldValue} {
 
 
 # http::GetFieldValue --
-# 	Return the value of a header field.
+#	Return the value of a header field.
 #
 # Arguments:
 #	headers	Headers key-value list

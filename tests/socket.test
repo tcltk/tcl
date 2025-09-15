@@ -2380,7 +2380,7 @@ test socket-14.12 {[socket -async] background progress triggered by [fconfigure 
     set s [socket -async localhost [randport]]
     for {set i 0} {$i < 50} {incr i} {
 	set x [fconfigure $s -error]
-	if {$x != ""} break
+	if {$x ne ""} break
 	after 200
     }
     set x
