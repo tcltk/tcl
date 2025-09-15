@@ -16,6 +16,7 @@ to the userbase.
  - [Pointer arithmetic with NULL in buildInfoObjCmd()](https://core.tcl-lang.org/tcl/tktview/85fc8b)
 
 # Updated bundled packages, libraries, standards, data
+ - http 2.10.1
  - platform 1.1.0
  - sqlite3 3.50.4
  - tcltest 2.5.10
