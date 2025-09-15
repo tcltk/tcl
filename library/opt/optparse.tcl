@@ -8,17 +8,18 @@
 #	on it.  If your code does rely on this package you
 #	may directly incorporate this code into your application.
 
-package require Tcl 8.5-
+package require Tcl 9.0-
 # When this version number changes, update the pkgIndex.tcl file
 # and the install directory in the Makefiles.
-package provide opt 0.4.9
+package provide opt 0.4.10
 
 namespace eval ::tcl {
 
     # Exported APIs
     namespace export OptKeyRegister OptKeyDelete OptKeyError OptKeyParse \
-	    OptProc OptProcArgGiven OptParse \
-	    Lempty Lget \
+	    OptProc OptProcArgGiven OptParse
+    # Leaked APIs
+    namespace export Lempty Lget \
 	    Lassign Lvarpop Lvarpop1 Lvarset Lvarincr \
 	    SetMax SetMin
 
@@ -132,10 +133,7 @@ namespace eval ::tcl {
 # ---------------------------------
 # We use tcl lists instead of arrays because with tcl8.0
 # they should start to be much faster.
-# But this code use a lot of helper procs (like Lvarset)
-# which are quite slow and would be helpfully optimized
-# for instance by being written in C. Also our structure
-# is complex and there is maybe some places where the
+# But our structure is complex and there is maybe some places where the
 # string rep might be calculated at great expense. to be checked.
 
 #
@@ -145,9 +143,11 @@ namespace eval ::tcl {
 proc ::tcl::OptKeyRegister {desc {key ""}} {
     variable OptDesc
     variable OptDescN
-    if {[string equal $key ""]} {
+    if {$key eq ""} {
 	# in case a key given to us as a parameter was a number
-	while {[info exists OptDesc($OptDescN)]} {incr OptDescN}
+	while {[info exists OptDesc($OptDescN)]} {
+	    incr OptDescN
+	}
 	set key $OptDescN
 	incr OptDescN
     }
@@ -163,14 +163,14 @@ proc ::tcl::OptKeyRegister {desc {key ""}} {
     set empty 1
 
     foreach item $desc {
-	if {$state == "args"} {
+	if {$state eq "args"} {
 	    # more items after 'args'...
 	    return -code error "'args' special argument must be the last one"
 	}
 	set res [OptNormalizeOne $item]
 	set state [lindex $res 0]
 	if {$inflags} {
-	    if {$state == "flags"} {
+	    if {$state eq "flags"} {
 		# add to 'subprogram'
 		lappend flagsprg $res
 	    } else {
@@ -184,7 +184,7 @@ proc ::tcl::OptKeyRegister {desc {key ""}} {
 		set empty 0
 	    }
 	} else {
-	   if {$state == "flags"} {
+	   if {$state eq "flags"} {
 	       set inflags 1
 	       # sub program counter + first sub program
 	       set flagsprg [list [list "P" 1] $res]
@@ -233,9 +233,11 @@ proc ::tcl::OptKeyDelete {key} {
 # Assign a temporary key, call OptKeyParse and then free the storage
 proc ::tcl::OptParse {desc arglist} {
     set tempkey [OptKeyRegister $desc]
-    set ret [catch {uplevel 1 [list ::tcl::OptKeyParse $tempkey $arglist]} res]
-    OptKeyDelete $tempkey
-    return -code $ret $res
+    try {
+	uplevel 1 [list ::tcl::OptKeyParse $tempkey $arglist]
+    } finally {
+	OptKeyDelete $tempkey
+    }
 }
 
 # Helper function, replacement for proc that both
@@ -243,11 +245,11 @@ proc ::tcl::OptParse {desc arglist} {
 # (and thus unique to that code)
 # and add a first line to the code to call the OptKeyParse proc
 # Stores the list of variables that have been actually given by the user
-# (the other will be sets to their default value)
+# (the others will be set to their default value)
 # into local variable named "Args".
 proc ::tcl::OptProc {name desc body} {
     set namespace [uplevel 1 [list ::namespace current]]
-    if {[string match "::*" $name] || [string equal $namespace "::"]} {
+    if {[string match "::*" $name] || $namespace eq "::"} {
 	# absolute name or global namespace, name is the key
 	set key $name
     } else {
@@ -261,8 +263,8 @@ proc ::tcl::OptProc {name desc body} {
 # Check that a argument has been given
 # assumes that "OptProc" has been used as it will check in "Args" list
 proc ::tcl::OptProcArgGiven {argname} {
-    upvar Args alist
-    expr {[lsearch $alist $argname] >=0}
+    upvar 1 Args alist
+    expr {$argname in $alist}
 }
 
     #######
@@ -274,33 +276,30 @@ proc ::tcl::OptProcArgGiven {argname} {
     }
     # Is a (sub) program or a plain instruction ?
     proc OptIsPrg {lst} {
-	expr {[llength [OptInstr $lst]]>=2}
+	expr {[llength [OptInstr $lst]] >= 2}
     }
     # Is this instruction a program counter or a real instr
     proc OptIsCounter {item} {
-	expr {[lindex $item 0]=="P"}
+	expr {[lindex $item 0] eq "P"}
     }
     # Current program counter (2nd word of first word)
     proc OptGetPrgCounter {lst} {
-	Lget $lst {0 1}
+	lindex $lst 0 1
     }
     # Current program counter (2nd word of first word)
     proc OptSetPrgCounter {lstName newValue} {
-	upvar $lstName lst
-	set lst [lreplace $lst 0 0 [concat "P" $newValue]]
+	upvar 1 $lstName lst
+	lset lst 0 [list "P" {*}$newValue]
     }
     # returns a list of currently selected items.
     proc OptSelection {lst} {
-	set res {}
-	foreach idx [lrange [lindex $lst 0] 1 end] {
-	    lappend res [Lget $lst $idx]
-	}
-	return $res
+	lmap idx [lrange [lindex $lst 0] 1 end] {lindex $lst $idx}
     }
 
     # Advance to next description
     proc OptNextDesc {descName} {
-	uplevel 1 [list Lvarincr $descName {0 1}]
+	upvar 1 $descName desc
+	lset desc 0 1 [expr {[lindex $desc 0 1] + 1}]
     }
 
     # Get the current description, eventually descend
@@ -317,26 +316,26 @@ proc ::tcl::OptProcArgGiven {argname} {
 	}
 	return $item
     }
-    # Current final instruction adress
+    # Current final instruction address
     proc OptCurAddr {descriptions {start {}}} {
-	set adress [OptGetPrgCounter $descriptions]
-	lappend start $adress
-	set item [lindex $descriptions $adress]
+	set address [OptGetPrgCounter $descriptions]
+	lappend start $address
+	set item [lindex $descriptions $address]
 	if {[OptIsPrg $item]} {
-	    return [OptCurAddr $item $start]
+	    tailcall OptCurAddr $item $start
 	} else {
 	    return $start
 	}
     }
     # Set the value field of the current instruction.
     proc OptCurSetValue {descriptionsName value} {
-	upvar $descriptionsName descriptions
+	upvar 1 $descriptionsName descriptions
 	# Get the current item full address.
-	set adress [OptCurAddr $descriptions]
+	set address [OptCurAddr $descriptions]
 	# Use the 3rd field of the item  (see OptValue / OptNewInst).
-	lappend adress 2
-	Lvarset descriptions $adress [list 1 $value]
-	#                                  ^hasBeenSet flag
+	lappend address 2
+	lset descriptions $address [list 1 $value]
+	#                               ^hasBeenSet flag
     }
 
     # Empty state means done/paste the end of the program.
@@ -358,19 +357,17 @@ proc ::tcl::OptProcArgGiven {argname} {
     }
     # Advance to next argument.
     proc OptNextArg {argsName} {
-	uplevel 1 [list Lvarpop1 $argsName]
+	upvar 1 $argsName list
+	lpop list 0
+	return $list
     }
     #######
-
-
-
-
 
     # Loop over all descriptions, calling OptDoOne which will
     # eventually eat all the arguments.
     proc OptDoAll {descriptionsName argumentsName} {
-	upvar $descriptionsName descriptions
-	upvar $argumentsName arguments
+	upvar 1 $descriptionsName descriptions \
+		$argumentsName arguments
 #	puts "entered DoAll"
 	# Nb: the places where "state" can be set are tricky to figure
 	#     because DoOne sets the state to flagsValue and return -continue
@@ -384,14 +381,13 @@ proc ::tcl::OptProcArgGiven {argname} {
 		OptDoAll curitem arguments
 #		puts "done DoAll sub"
 		# Insert back the results in current tree
-		Lvarset1nc descriptions [OptGetPrgCounter $descriptions]\
-			$curitem
+		lset descriptions [OptGetPrgCounter $descriptions] $curitem
 		OptNextDesc descriptions
 		set curitem [OptCurDesc $descriptions]
 		set state [OptCurState $descriptions]
 	    }
 #           puts "state = \"$state\" - arguments=($arguments)"
-	    if {[Lempty $state]} {
+	    if {![llength $state]} {
 		# Nothing left to do, we are done in this branch:
 		break
 	    }
@@ -410,14 +406,14 @@ proc ::tcl::OptProcArgGiven {argname} {
     # Process one step for the state machine,
     # eventually consuming the current argument.
     proc OptDoOne {descriptionsName stateName argumentsName} {
-	upvar $argumentsName arguments
-	upvar $descriptionsName descriptions
-	upvar $stateName state
+	upvar 1 $argumentsName arguments \
+		$descriptionsName descriptions \
+		$stateName state
 
 	# the special state/instruction "args" eats all
 	# the remaining args (if any)
-	if {($state == "args")} {
-	    if {![Lempty $arguments]} {
+	if {($state eq "args")} {
+	    if {[llength $arguments]} {
 		# If there is no additional arguments, leave the default value
 		# in.
 		OptCurSetValue descriptions $arguments
@@ -427,12 +423,12 @@ proc ::tcl::OptProcArgGiven {argname} {
 	    return -code break
 	}
 
-	if {[Lempty $arguments]} {
-	    if {$state == "flags"} {
+	if {![llength $arguments]} {
+	    if {$state eq "flags"} {
 		# no argument and no flags : we're done
 #                puts "returning to previous (sub)prg (no more args)"
 		return -code return
-	    } elseif {$state == "optValue"} {
+	    } elseif {$state eq "optValue"} {
 		set state next; # not used, for debug only
 		# go to next state
 		return
@@ -443,7 +439,7 @@ proc ::tcl::OptProcArgGiven {argname} {
 	    set arg [OptCurrentArg $arguments]
 	}
 
-	switch $state {
+	switch -exact -- $state {
 	    flags {
 		# A non-dash argument terminates the options, as does --
 
@@ -454,7 +450,7 @@ proc ::tcl::OptProcArgGiven {argname} {
 		}
 		# consume the flag
 		OptNextArg arguments
-		if {[string equal "--" $arg]} {
+		if {"--" eq $arg} {
 		    # return from 'flags' state
 		    return -code return
 		}
@@ -479,16 +475,17 @@ proc ::tcl::OptProcArgGiven {argname} {
 	    value {
 		set item [OptCurDesc $descriptions]
 		# Test the values against their required type
-		if {[catch {OptCheckType $arg\
-			[OptType $item] [OptTypeArgs $item]} val]} {
-		    return -code error [OptBadValue $item $arg $val]
+		try {
+		    set val [OptCheckType $arg [OptType $item] [OptTypeArgs $item]]
+		} on error msg {
+		    return -code error [OptBadValue $item $arg $msg]
 		}
 		# consume the value
 		OptNextArg arguments
 		# set the value
 		OptCurSetValue descriptions $val
 		# go to next state
-		if {$state == "flagValue"} {
+		if {$state eq "flagValue"} {
 		    set state flags
 		    return -code continue
 		} else {
@@ -499,8 +496,11 @@ proc ::tcl::OptProcArgGiven {argname} {
 	    optValue {
 		set item [OptCurDesc $descriptions]
 		# Test the values against their required type
-		if {![catch {OptCheckType $arg\
-			[OptType $item] [OptTypeArgs $item]} val]} {
+		try {
+		    set val [OptCheckType $arg [OptType $item] [OptTypeArgs $item]]
+		} on error {} {
+		    # Do nothing special
+		} on ok {} {
 		    # right type, so :
 		    # consume the value
 		    OptNextArg arguments
@@ -532,16 +532,17 @@ proc ::tcl::OptKeyParse {descKey arglist} {
 
     OptDoAll desc arglist
 
-    if {![Lempty $arglist]} {
+    if {[llength $arglist]} {
 	return -code error [OptTooManyArgs $desc $arglist]
     }
 
     # Analyse the result
     # Walk through the tree:
-    OptTreeVars $desc "#[expr {[info level]-1}]"
+    OptTreeVars $desc "#[expr {[info level] - 1}]"
 }
 
     # determine string length for nice tabulated output
+    # NB: level is expected to be an absolute level
     proc OptTreeVars {desc level {vnamesLst {}}} {
 	foreach item $desc {
 	    if {[OptIsCounter $item]} continue
@@ -588,7 +589,7 @@ proc ::tcl::OptCheckType {arg type {typeArgs ""}} {
 	script -
 	list {
 	    # if llength fail : malformed list
-	    if {[llength $arg]==0 && [OptIsFlag $arg]} {
+	    if {![llength $arg] && [OptIsFlag $arg]} {
 		error "no values with leading -"
 	    }
 	    return $arg
@@ -625,14 +626,13 @@ proc ::tcl::OptCheckType {arg type {typeArgs ""}} {
     # returns the number of flags matching the given arg
     # sets the (local) prg counter to the list of matches
     proc OptHits {descName arg} {
-	upvar $descName desc
+	upvar 1 $descName desc
 	set hits 0
 	set hitems {}
 	set i 1
 
 	set larg [string tolower $arg]
 	set len  [string length $larg]
-	set last [expr {$len-1}]
 
 	foreach item [lrange $desc 1 end] {
 	    set flag [OptName $item]
@@ -640,12 +640,12 @@ proc ::tcl::OptCheckType {arg type {typeArgs ""}} {
 	    # (string length ought to be cheap)
 	    set lflag [string tolower $flag]
 	    if {$len == [string length $lflag]} {
-		if {[string equal $larg $lflag]} {
+		if {$larg eq $lflag} {
 		    # Exact match case
 		    OptSetPrgCounter desc $i
 		    return 1
 		}
-	    } elseif {[string equal $larg [string range $lflag 0 $last]]} {
+	    } elseif {[string equal -length $len $larg $lflag]} {
 		lappend hitems $i
 		incr hits
 	    }
@@ -663,10 +663,10 @@ proc ::tcl::OptCheckType {arg type {typeArgs ""}} {
 	lindex $item 1
     }
     proc OptHasBeenSet {item} {
-	Lget $item {2 0}
+	lindex $item 2 0
     }
     proc OptValue {item} {
-	Lget $item {2 1}
+	lindex $item 2 1
     }
 
     proc OptIsFlag {name} {
@@ -695,7 +695,7 @@ proc ::tcl::OptCheckType {arg type {typeArgs ""}} {
 	lindex $item 5
     }
     proc OptNeedValue {item} {
-	expr {![string equal [OptType $item] boolflag]}
+	expr { [OptType $item] ne "boolflag"}
     }
     proc OptDefaultValue {item} {
 	set val [OptTypeArgs $item]
@@ -733,15 +733,15 @@ proc ::tcl::OptCheckType {arg type {typeArgs ""}} {
 
     # Translate one item to canonical form
     proc OptNormalizeOne {item} {
-	set lg [Lassign $item varname arg1 arg2 arg3]
-#       puts "called optnormalizeone '$item' v=($varname), lg=$lg"
+	lassign $item varname arg1 arg2 arg3
+#       puts "called optnormalizeone '$item' v=($varname), lg=[llength $item]"
 	set isflag [OptIsFlag $varname]
 	set isopt  [OptIsOpt  $varname]
 	if {$isflag} {
 	    set state "flags"
 	} elseif {$isopt} {
 	    set state "optValue"
-	} elseif {![string equal $varname "args"]} {
+	} elseif {$varname ne "args"} {
 	    set state "value"
 	} else {
 	    set state "args"
@@ -751,7 +751,7 @@ proc ::tcl::OptCheckType {arg type {typeArgs ""}} {
 	# description writer's life easy, and our's difficult :
 	# let's guess the missing arguments :-)
 
-	switch $lg {
+	switch -- [llength $item] {
 	    1 {
 		if {$isflag} {
 		    return [OptNewInst $state $varname boolflag false ""]
@@ -763,7 +763,7 @@ proc ::tcl::OptCheckType {arg type {typeArgs ""}} {
 		# varname default
 		# varname help
 		set type [OptGuessType $arg1]
-		if {[string equal $type "string"]} {
+		if {$type eq "string"} {
 		    if {$isflag} {
 			set type boolflag
 			set def false
@@ -786,7 +786,7 @@ proc ::tcl::OptCheckType {arg type {typeArgs ""}} {
 		    # flags/optValue as they are optional, need a "value",
 		    # on the contrary, for a variable (non optional),
 		    # default value is pointless, 'cept for choices :
-		    if {$isflag || $isopt || ($type == "choice")} {
+		    if {$isflag || $isopt || ($type eq "choice")} {
 			return [OptNewInst $state $varname $type $arg2 ""]
 		    } else {
 			return [OptNewInst $state $varname $type "" $arg2]
@@ -811,7 +811,7 @@ proc ::tcl::OptCheckType {arg type {typeArgs ""}} {
 
     # Auto magic lazy type determination
     proc OptGuessType {arg} {
-	if { $arg == "true" || $arg == "false" } {
+	if {[string is boolean -strict $arg]} {
 	    return boolean
 	}
 	if {[string is integer -strict $arg]} {
@@ -862,9 +862,9 @@ proc ::tcl::OptKeyError {prefix descKey {header 0}} {
 
     # determine string length for nice tabulated output
     proc OptLengths {desc nlName tlName dlName} {
-	upvar $nlName nl
-	upvar $tlName tl
-	upvar $dlName dl
+	upvar 1 $nlName nl \
+		$tlName tl \
+		$dlName dl
 	foreach item $desc {
 	    if {[OptIsCounter $item]} continue
 	    if {[OptIsPrg $item]} {
@@ -873,12 +873,12 @@ proc ::tcl::OptKeyError {prefix descKey {header 0}} {
 		SetMax nl [string length [OptName $item]]
 		SetMax tl [string length [OptType $item]]
 		set dv [OptTypeArgs $item]
-		if {[OptState $item] != "header"} {
+		if {[OptState $item] ne "header"} {
 		    set dv "($dv)"
 		}
 		set l [string length $dv]
 		# limit the space allocated to potentially big "choices"
-		if {([OptType $item] != "choice") || ($l<=12)} {
+		if {([OptType $item] ne "choice") || ($l <= 12)} {
 		    SetMax dl $l
 		} else {
 		    if {![info exists dl]} {
@@ -897,7 +897,7 @@ proc ::tcl::OptKeyError {prefix descKey {header 0}} {
 		append res [OptTree $item $nl $tl $dl]
 	    } else {
 		set dv [OptTypeArgs $item]
-		if {[OptState $item] != "header"} {
+		if {[OptState $item] ne "header"} {
 		    set dv "($dv)"
 		}
 		append res [string trimright [format "\n    %-*s %-*s %-*s %s" \
@@ -923,6 +923,8 @@ proc ::tcl::OptError {prefix desc {header 0}} {
     return "$prefix[OptTree $desc $nl $tl $dl]"
 }
 
+}
+
 
 ################     General Utility functions   #######################
 
@@ -934,114 +936,85 @@ proc ::tcl::OptError {prefix desc {header 0}} {
 #               (which is not costly with Tcl8 objects system
 #                as it's still a reference and not a copy of the values)
 #
+# Only defined because some third-party code expects them despite them
+# being undocumented.
+#
 
 # Is that list empty ?
 proc ::tcl::Lempty {list} {
-    expr {[llength $list]==0}
+    expr {![llength $list]}
 }
 
 # Gets the value of one leaf of a lists tree
 proc ::tcl::Lget {list indexLst} {
-    if {[llength $indexLst] <= 1} {
-	return [lindex $list $indexLst]
-    }
-    Lget [lindex $list [lindex $indexLst 0]] [lrange $indexLst 1 end]
+    lindex $list $indexLst
 }
-# Sets the value of one leaf of a lists tree
-# (we use the version that does not create the elements because
-#  it would be even slower... needs to be written in C !)
-# (nb: there is a non trivial recursive problem with indexes 0,
-#  which appear because there is no difference between a list
-#  of 1 element and 1 element alone : [list "a"] == "a" while
-#  it should be {a} and [listp a] should be 0 while [listp {a b}] would be 1
-#  and [listp "a b"] maybe 0. listp does not exist either...)
+
+# Sets the value of one existing leaf of a lists tree
 proc ::tcl::Lvarset {listName indexLst newValue} {
-    upvar $listName list
-    if {[llength $indexLst] <= 1} {
-	Lvarset1nc list $indexLst $newValue
-    } else {
-	set idx [lindex $indexLst 0]
-	set targetList [lindex $list $idx]
-	# reduce refcount on targetList (not really usefull now,
-	# could be with optimizing compiler)
-#        Lvarset1 list $idx {}
-	# recursively replace in targetList
-	Lvarset targetList [lrange $indexLst 1 end] $newValue
-	# put updated sub list back in the tree
-	Lvarset1nc list $idx $targetList
-    }
+    upvar 1 $listName list
+    lset list $indexLst $newValue
 }
+
 # Set one cell to a value, eventually create all the needed elements
 # (on level-1 of lists)
-variable emptyList {}
 proc ::tcl::Lvarset1 {listName index newValue} {
-    upvar $listName list
-    if {$index < 0} {return -code error "invalid negative index"}
+    upvar 1 $listName list
+    if {$index < 0} {
+	return -code error "invalid negative index"
+    }
     set lg [llength $list]
     if {$index >= $lg} {
-	variable emptyList
-	for {set i $lg} {$i<$index} {incr i} {
-	    lappend list $emptyList
-	}
-	lappend list $newValue
+	lappend list {*}[lrepeat [expr {$index - $lg}] {}] $newValue
     } else {
-	set list [lreplace $list $index $index $newValue]
+	lset list $index $newValue
     }
 }
+
 # same as Lvarset1 but no bound checking / creation
 proc ::tcl::Lvarset1nc {listName index newValue} {
-    upvar $listName list
-    set list [lreplace $list $index $index $newValue]
+    upvar 1 $listName list
+    ledit list $index $index $newValue
 }
+
 # Increments the value of one leaf of a lists tree
 # (which must exists)
 proc ::tcl::Lvarincr {listName indexLst {howMuch 1}} {
-    upvar $listName list
-    if {[llength $indexLst] <= 1} {
-	Lvarincr1 list $indexLst $howMuch
-    } else {
-	set idx [lindex $indexLst 0]
-	set targetList [lindex $list $idx]
-	# reduce refcount on targetList
-	Lvarset1nc list $idx {}
-	# recursively replace in targetList
-	Lvarincr targetList [lrange $indexLst 1 end] $howMuch
-	# put updated sub list back in the tree
-	Lvarset1nc list $idx $targetList
-    }
+    upvar 1 $listName list
+    lset list $indexLst [expr {[lindex $list $indexLst] + $howMuch}]
 }
+
 # Increments the value of one cell of a list
 proc ::tcl::Lvarincr1 {listName index {howMuch 1}} {
-    upvar $listName list
-    set newValue [expr {[lindex $list $index]+$howMuch}]
-    set list [lreplace $list $index $index $newValue]
+    upvar 1 $listName list
+    set newValue [expr {[lindex $list $index] + $howMuch}]
+    lset list $index $newValue
     return $newValue
 }
+
 # Removes the first element of a list
 # and returns the new list value
 proc ::tcl::Lvarpop1 {listName} {
-    upvar $listName list
-    set list [lrange $list 1 end]
+    upvar 1 $listName list
+    lpop list 0
+    return $list
 }
+
 # Same but returns the removed element
 # (Like the tclX version)
 proc ::tcl::Lvarpop {listName} {
-    upvar $listName list
-    set el [lindex $list 0]
-    set list [lrange $list 1 end]
-    return $el
+    upvar 1 $listName list
+    lpop list 0
 }
+
 # Assign list elements to variables and return the length of the list
 proc ::tcl::Lassign {list args} {
-    # faster than direct blown foreach (which does not byte compile)
-    set i 0
-    set lg [llength $list]
-    foreach vname $args {
-	if {$i>=$lg} break
-	uplevel 1 [list ::set $vname [lindex $list $i]]
-	incr i
+    set na [expr {min([llength $list], [llength $args]) - 1}]
+    foreach vname [lrange $args 0 $na] val [lrange $list 0 $na] {
+	upvar 1 $vname v
+	set v $val
     }
-    return $lg
+    return [llength $list]
 }
 
 # Misc utilities
@@ -1062,11 +1035,4 @@ proc ::tcl::SetMin {varname value} {
     if {![info exists var] || $value < $var} {
 	set var $value
     }
-}
-
-
-    # everything loaded fine, lets create the test proc:
- #    OptCreateTestProc
-    # Don't need the create temp proc anymore:
- #    rename OptCreateTestProc {}
 }
