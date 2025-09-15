@@ -9422,4 +9422,7 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 2025-08-25 (new) [66cd46] support for MacOS Tahoe. Simplify for MacOS > 10 (nijtmans)
 	=> platform 1.1.0
 
+2025-09-15 (bug)          Use correct equality
+	=> http 2.9.9
+
 - (to be) Released 8.6.18, Apr ??, 2026 - details at https://core.tcl-lang.org/tcl/ -
