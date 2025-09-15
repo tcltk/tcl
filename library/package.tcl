@@ -499,11 +499,10 @@ proc tclPkgUnknown {name args} {
 		    } trap {POSIX EACCES} {} {
 			# $file was not readable; silently ignore
 			continue
+		    } trap {TCL PACKAGE VERSIONCONFLICT} {} {
+			# In case of version conflict, silently ignore
+			continue
 		    } on error msg {
-			if {[regexp {version conflict for package} $msg]} {
-			    # In case of version conflict, silently ignore
-			    continue
-			}
 			tclLog "error reading package index file $file: $msg"
 		    } on ok {} {
 			set procdDirs($dir) 1
@@ -515,17 +514,16 @@ proc tclPkgUnknown {name args} {
 	if {![info exists procdDirs($dir)]} {
 	    set file [file join $dir pkgIndex.tcl]
 	    # safe interps usually don't have "file exists",
-	    if {([interp issafe] || [file exists $file])} {
+	    if {[interp issafe] || [file exists $file]} {
 		try {
 		    ::tcl::Pkg::source $file
 		} trap {POSIX EACCES} {} {
 		    # $file was not readable; silently ignore
 		    continue
+		} trap {TCL PACKAGE VERSIONCONFLICT} {} {
+		    # In case of version conflict, silently ignore
+		    continue
 		} on error msg {
-		    if {[regexp {version conflict for package} $msg]} {
-			# In case of version conflict, silently ignore
-			continue
-		    }
 		    tclLog "error reading package index file $file: $msg"
 		} on ok {} {
 		    set procdDirs($dir) 1
@@ -610,11 +608,10 @@ proc tcl::MacOSXPkgUnknown {original name args} {
 		} trap {POSIX EACCES} {} {
 		    # $file was not readable; silently ignore
 		    continue
+		} trap {TCL PACKAGE VERSIONCONFLICT} {} {
+		    # In case of version conflict, silently ignore
+		    continue
 		} on error msg {
-		    if {[regexp {version conflict for package} $msg]} {
-			# In case of version conflict, silently ignore
-			continue
-		    }
 		    tclLog "error reading package index file $file: $msg"
 		} on ok {} {
 		    set procdDirs($dir) 1
