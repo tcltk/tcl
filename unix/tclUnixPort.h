@@ -98,25 +98,18 @@ extern "C" {
 #   define SOCKET unsigned int
 #   define WSAEWOULDBLOCK 10035
     typedef unsigned short WCHAR;
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wignored-attributes"
-#endif
-    __declspec(dllimport) extern __stdcall int GetModuleHandleExW(unsigned int, const void *, void *);
-    __declspec(dllimport) extern __stdcall int GetModuleFileNameW(void *, const void *, int);
-    __declspec(dllimport) extern __stdcall int WideCharToMultiByte(int, int, const void *, int,
+    __declspec(dllimport) extern int GetModuleHandleExW(unsigned int, const void *, void *);
+    __declspec(dllimport) extern int GetModuleFileNameW(void *, const void *, int);
+    __declspec(dllimport) extern int WideCharToMultiByte(int, int, const void *, int,
 	    char *, int, const char *, void *);
-    __declspec(dllimport) extern __stdcall int MultiByteToWideChar(int, int, const char *, int,
+    __declspec(dllimport) extern int MultiByteToWideChar(int, int, const char *, int,
 	    WCHAR *, int);
-    __declspec(dllimport) extern __stdcall void OutputDebugStringW(const WCHAR *);
-    __declspec(dllimport) extern __stdcall int IsDebuggerPresent(void);
-    __declspec(dllimport) extern __stdcall int GetLastError(void);
-    __declspec(dllimport) extern __stdcall int GetFileAttributesW(const WCHAR *);
-    __declspec(dllimport) extern __stdcall int SetFileAttributesW(const WCHAR *, int);
+    __declspec(dllimport) extern void OutputDebugStringW(const WCHAR *);
+    __declspec(dllimport) extern int IsDebuggerPresent(void);
+    __declspec(dllimport) extern int GetLastError(void);
+    __declspec(dllimport) extern int GetFileAttributesW(const WCHAR *);
+    __declspec(dllimport) extern int SetFileAttributesW(const WCHAR *, int);
     __declspec(dllimport) extern int cygwin_conv_path(int, const void *, void *, int);
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
 #   define timezone _timezone
     extern int TclOSstat(const char *name, void *statBuf);
     extern int TclOSlstat(const char *name, void *statBuf);
