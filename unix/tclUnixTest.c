@@ -32,7 +32,7 @@
  */
 
 #define MakeFile(fd)	((TclFile)INT2PTR(((int)(fd))+1))
-#define GetFd(file)	(PTR2INT(file)-1)
+#define GetFd(file)	((int)PTR2INT(file)-1)
 
 /*
  * The stuff below is used to keep track of file handlers created and
@@ -380,7 +380,7 @@ TestfilewaitCmd(
 	Tcl_AppendResult(interp, "couldn't get channel file", (char *)NULL);
 	return TCL_ERROR;
     }
-    fd = PTR2INT(data);
+    fd = (int)PTR2INT(data);
     if (Tcl_GetIntFromObj(interp, objv[3], &timeout) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -615,7 +615,8 @@ TestchmodCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument strings. */
 {
-    int i, mode;
+    Tcl_Size i;
+    int mode;
     Tcl_DString ds;
 
     if (objc < 2) {

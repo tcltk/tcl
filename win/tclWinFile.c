@@ -863,12 +863,22 @@ TclpFindExecutable(
     TCL_UNUSED(const char *))
 {
     WCHAR wName[MAX_PATH];
-    char name[MAX_PATH * 3];
+    char name[MAX_PATH * TCL_UTF_MAX];
 
-    GetModuleFileNameW(NULL, wName, sizeof(wName)/sizeof(WCHAR));
+    GetModuleFileNameW(NULL, wName, sizeof(wName)/sizeof(wName[0]));
     WideCharToMultiByte(CP_UTF8, 0, wName, -1, name, sizeof(name), NULL, NULL);
     TclWinNoBackslash(name);
     TclSetObjNameOfExecutable(Tcl_NewStringObj(name, TCL_INDEX_NONE), NULL);
+
+#if !defined(STATIC_BUILD)
+    HMODULE hModule = (HMODULE)TclWinGetTclInstance();
+    if (hModule) {
+	GetModuleFileNameW(hModule, wName, sizeof(wName) / sizeof(wName[0]));
+	WideCharToMultiByte(CP_UTF8, 0, wName, -1,
+				name, sizeof(name), NULL, NULL);
+	TclSetObjNameOfShlib(Tcl_NewStringObj(name, TCL_AUTO_LENGTH), NULL);
+    }
+#endif
 }
 
 /*
@@ -921,12 +931,15 @@ TclpMatchInDirectory(
 	    DWORD attr;
 	    WIN32_FILE_ATTRIBUTE_DATA data;
 	    Tcl_Size len = 0;
-	    const char *str = TclGetStringFromObj(norm, &len);
+	    const char *str;
 
+	    if (norm != pathPtr) { Tcl_IncrRefCount(norm); }
+	    str = TclGetStringFromObj(norm, &len);
 	    native = (const WCHAR *)Tcl_FSGetNativePath(pathPtr);
 
 	    if (GetFileAttributesExW(native,
 		    GetFileExInfoStandard, &data) != TRUE) {
+		if (norm != pathPtr) { Tcl_DecrRefCount(norm); }
 		return TCL_OK;
 	    }
 	    attr = data.dwFileAttributes;
@@ -934,6 +947,7 @@ TclpMatchInDirectory(
 	    if (NativeMatchType(WinIsDrive(str, len), attr, native, types)) {
 		Tcl_ListObjAppendElement(interp, resultPtr, pathPtr);
 	    }
+	    if (norm != pathPtr) { Tcl_DecrRefCount(norm); }
 	}
 	return TCL_OK;
     } else {
@@ -959,6 +973,8 @@ TclpMatchInDirectory(
 	if (fileNamePtr == NULL) {
 	    return TCL_ERROR;
 	}
+	/* Ensure it'd be alive, while used. */
+	if (fileNamePtr != pathPtr) { Tcl_IncrRefCount(fileNamePtr); }
 
 	/*
 	 * Verify that the specified path exists and is actually a directory.
@@ -966,12 +982,14 @@ TclpMatchInDirectory(
 
 	native = (const WCHAR *)Tcl_FSGetNativePath(pathPtr);
 	if (native == NULL) {
+	    if (fileNamePtr != pathPtr) { Tcl_DecrRefCount(fileNamePtr); }
 	    return TCL_OK;
 	}
 	attr = GetFileAttributesW(native);
 
 	if ((attr == INVALID_FILE_ATTRIBUTES)
 		|| ((attr & FILE_ATTRIBUTE_DIRECTORY) == 0)) {
+	    if (fileNamePtr != pathPtr) { Tcl_DecrRefCount(fileNamePtr); }
 	    return TCL_OK;
 	}
 
@@ -989,6 +1007,7 @@ TclpMatchInDirectory(
 	    TclDStringAppendLiteral(&dsOrig, "/");
 	    dirLength++;
 	}
+	if (fileNamePtr != pathPtr) { Tcl_DecrRefCount(fileNamePtr); }
 	dirName = Tcl_DStringValue(&dsOrig);
 
 	/*
@@ -1207,7 +1226,7 @@ WinIsDrive(
 
 	    return 1;
 	} else if ((name[1] == ':')
-		   && (len == 2 || (name[2] == '/' || name[2] == '\\'))) {
+		&& (len == 2 || (name[2] == '/' || name[2] == '\\'))) {
 	    /*
 	     * Path is of the form 'x:' or 'x:/' or 'x:\'
 	     */
@@ -2024,7 +2043,7 @@ NativeStat(
 {
     DWORD attr;
     int dev, nlink = 1;
-    unsigned short mode;
+    int mode;
     unsigned int inode = 0;
     HANDLE fileHandle;
     DWORD fileType = FILE_TYPE_UNKNOWN;
@@ -2142,7 +2161,7 @@ NativeStat(
 
     statPtr->st_dev	= (dev_t) dev;
     statPtr->st_ino	= (_ino_t)inode;
-    statPtr->st_mode	= mode;
+    statPtr->st_mode	= (unsigned short)mode;
     statPtr->st_nlink	= (short)nlink;
     statPtr->st_uid	= 0;
     statPtr->st_gid	= 0;
@@ -2391,18 +2410,21 @@ TclpObjLink(
 	int res;
 	const WCHAR *LinkTarget;
 	const WCHAR *LinkSource = (const WCHAR *)Tcl_FSGetNativePath(pathPtr);
-	Tcl_Obj *normalizedToPtr = Tcl_FSGetNormalizedPath(NULL, toPtr);
+	Tcl_Obj *normToPtr = Tcl_FSGetNormalizedPath(NULL, toPtr);
 
-	if (normalizedToPtr == NULL) {
+	if (normToPtr == NULL) {
 	    return NULL;
 	}
+	if (normToPtr != toPtr) { Tcl_IncrRefCount(normToPtr); }
 
-	LinkTarget = (const WCHAR *)Tcl_FSGetNativePath(normalizedToPtr);
+	LinkTarget = (const WCHAR *)Tcl_FSGetNativePath(normToPtr);
 
 	if (LinkSource == NULL || LinkTarget == NULL) {
+	    if (normToPtr != toPtr) { Tcl_DecrRefCount(normToPtr); }
 	    return NULL;
 	}
 	res = WinLink(LinkSource, LinkTarget, linkAction);
+	if (normToPtr != toPtr) { Tcl_DecrRefCount(normToPtr); }
 	if (res == 0) {
 	    return toPtr;
 	} else {

@@ -61,7 +61,6 @@
 # define TclGetStringFromObj 0
 # define TclGetBytesFromObj 0
 # define TclGetUnicodeFromObj 0
-# define TclVarHashCreateVar 0
 #endif
 #undef Tcl_Close
 #define Tcl_Close 0
@@ -1499,7 +1498,12 @@ const TclStubs tclStubs = {
     Tcl_SetWideUIntObj, /* 689 */
     Tcl_IsEmpty, /* 690 */
     Tcl_GetEncodingNameForUser, /* 691 */
-    TclUnusedStubEntry, /* 692 */
+    Tcl_ListObjReverse, /* 692 */
+    Tcl_ListObjRepeat, /* 693 */
+    Tcl_ListObjRange, /* 694 */
+    Tcl_UtfToNormalizedDString, /* 695 */
+    Tcl_UtfToNormalized, /* 696 */
+    TclUnusedStubEntry, /* 697 */
 };
 
 /* !END!: Do not edit above this line. */

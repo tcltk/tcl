@@ -364,7 +364,7 @@ test interp-9.4 {testing aliases and namespace commands} {
     set res
  } {GLOBAL GLOBAL}
 
-if {[info command nonexistent-command-in-parent] != ""} {
+if {[info command nonexistent-command-in-parent] ne ""} {
     rename nonexistent-command-in-parent {}
 }
 

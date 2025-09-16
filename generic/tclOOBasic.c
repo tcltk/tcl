@@ -19,10 +19,12 @@
 
 static inline Tcl_Object *AddConstructionFinalizer(Tcl_Interp *interp);
 static Tcl_NRPostProc	AfterNRDestructor;
-static Tcl_NRPostProc	DecrRefsPostClassConstructor;
+static Tcl_NRPostProc	PostClassConstructor;
 static Tcl_NRPostProc	FinalizeConstruction;
 static Tcl_NRPostProc	FinalizeEval;
 static Tcl_NRPostProc	NextRestoreFrame;
+static Tcl_NRPostProc	MarkAsSingleton;
+static Tcl_NRPostProc	UpdateClassDelegatesAfterClone;
 
 /*
  * ----------------------------------------------------------------------
@@ -68,6 +70,119 @@ FinalizeConstruction(
 /*
  * ----------------------------------------------------------------------
  *
+ * MixinClassDelegates --
+ *
+ *	Internal utility for setting up the class delegate.
+ *	Runs after the class has called [oo::define] on its argument.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+// Look up the delegate for a class.
+static inline Class *
+GetClassDelegate(
+    Tcl_Interp *interp,
+    Class *clsPtr)
+{
+    Tcl_Obj *delegateName = Tcl_ObjPrintf("%s:: oo ::delegate",
+	    clsPtr->thisPtr->namespacePtr->fullName);
+    Class *delegatePtr = TclOOGetClassFromObj(interp, delegateName);
+    Tcl_DecrRefCount(delegateName);
+    return delegatePtr;
+}
+
+/*
+ * Patches in the appropriate class delegates' superclasses.
+ * Somewhat messy because the list of superclasses isn't modified frequently.
+ */
+static inline void
+SetDelegateSuperclasses(
+    Tcl_Interp *interp,
+    Class *clsPtr,
+    Class *delegatePtr)
+{
+    // Build new list of superclasses
+    int i, j = delegatePtr->superclasses.num, k;
+    Class *superPtr, **supers = (Class **) Tcl_Alloc(sizeof(Class *) *
+	    (delegatePtr->superclasses.num + clsPtr->superclasses.num));
+    if (delegatePtr->superclasses.num) {
+	memcpy(supers, delegatePtr->superclasses.list,
+		sizeof(Class *) * delegatePtr->superclasses.num);
+    }
+    FOREACH(superPtr, clsPtr->superclasses) {
+	Class *superDelegatePtr = GetClassDelegate(interp, superPtr);
+	if (!superDelegatePtr) {
+	    continue;
+	}
+	for (k=0 ; k<=j ; k++) {
+	    if (k == j) {
+		supers[j++] = superDelegatePtr;
+		TclOOAddToSubclasses(delegatePtr, superDelegatePtr);
+		AddRef(superDelegatePtr->thisPtr);
+		break;
+	    } else if (supers[k] == superDelegatePtr) {
+		break;
+	    }
+	}
+    }
+
+    // Install new list of superclasses;
+    if (delegatePtr->superclasses.num) {
+	Tcl_Free(delegatePtr->superclasses.list);
+    }
+    delegatePtr->superclasses.list = supers;
+    delegatePtr->superclasses.num = j;
+
+    // Definitely don't need to bump any epoch here
+}
+
+/*
+ * Mixes the delegate into its controlling class.
+ */
+static inline void
+InstallDelegateAsMixin(
+    Tcl_Interp *interp,
+    Class *clsPtr,
+    Class *delegatePtr)
+{
+    if (clsPtr->thisPtr->mixins.num == 0) {
+	TclOOObjectSetMixins(clsPtr->thisPtr, 1, &delegatePtr);
+	return;
+    }
+    Class **mixins = (Class **) TclStackAlloc(interp,
+	    sizeof(Class *) * (clsPtr->thisPtr->mixins.num + 1));
+    for (int i = 0; i < clsPtr->thisPtr->mixins.num; i++) {
+	mixins[i] = clsPtr->thisPtr->mixins.list[i];
+	if (mixins[i] == delegatePtr) {
+	    TclStackFree(interp, (void *) mixins);
+	    return;
+	}
+    }
+    mixins[clsPtr->thisPtr->mixins.num] = delegatePtr;
+    TclOOObjectSetMixins(clsPtr->thisPtr, clsPtr->thisPtr->mixins.num + 1, mixins);
+    TclStackFree(interp, mixins);
+}
+
+// Patches in the appropriate class delegates.
+static void
+MixinClassDelegates(
+    Tcl_Interp *interp,
+    Object *oPtr,
+    Tcl_Obj *delegateName)
+{
+    Class *clsPtr = oPtr->classPtr;
+    if (clsPtr) {
+	Class *delegatePtr = TclOOGetClassFromObj(interp, delegateName);
+	if (delegatePtr) {
+	    SetDelegateSuperclasses(interp, clsPtr, delegatePtr);
+	    InstallDelegateAsMixin(interp, clsPtr, delegatePtr);
+	}
+    }
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
  * TclOO_Class_Constructor --
  *
  *	Implementation for oo::class constructor.
@@ -84,7 +199,6 @@ TclOO_Class_Constructor(
     Tcl_Obj *const *objv)
 {
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
-    Tcl_Obj **invoke, *nameObj;
 
     size_t skip = Tcl_ObjectContextSkippedArgs(context);
     if ((size_t) objc > skip + 1) {
@@ -101,25 +215,28 @@ TclOO_Class_Constructor(
      * argument to [oo::define]. [Bug 680503]
      */
 
-    nameObj = Tcl_ObjPrintf("%s:: oo ::delegate",
+    Tcl_Obj *delegateName = Tcl_ObjPrintf("%s:: oo ::delegate",
 	    oPtr->namespacePtr->fullName);
+    Tcl_IncrRefCount(delegateName);
     Tcl_NewObjectInstance(interp, (Tcl_Class) oPtr->fPtr->classCls,
-	    TclGetString(nameObj), NULL, TCL_INDEX_NONE, NULL, 0);
-    Tcl_BounceRefCount(nameObj);
+	    TclGetString(delegateName), NULL, TCL_INDEX_NONE, NULL, 0);
 
     /*
      * If there's nothing else to do, we're done.
      */
 
     if ((size_t) objc == skip) {
-	return TCL_OK;
+	Tcl_InterpState saved = Tcl_SaveInterpState(interp, TCL_OK);
+	MixinClassDelegates(interp, oPtr, delegateName);
+	Tcl_DecrRefCount(delegateName);
+	return Tcl_RestoreInterpState(interp, saved);
     }
 
     /*
      * Delegate to [oo::define] to do the work.
      */
 
-    invoke = (Tcl_Obj **) TclStackAlloc(interp, 3 * sizeof(Tcl_Obj *));
+    Tcl_Obj **invoke = (Tcl_Obj **) TclStackAlloc(interp, 3 * sizeof(Tcl_Obj *));
     invoke[0] = oPtr->fPtr->defineName;
     invoke[1] = TclOOObjectName(interp, oPtr);
     invoke[2] = objv[objc - 1];
@@ -132,8 +249,8 @@ TclOO_Class_Constructor(
     Tcl_IncrRefCount(invoke[0]);
     Tcl_IncrRefCount(invoke[1]);
     Tcl_IncrRefCount(invoke[2]);
-    TclNRAddCallback(interp, DecrRefsPostClassConstructor,
-	    invoke, oPtr, NULL, NULL);
+    TclNRAddCallback(interp, PostClassConstructor,
+	    invoke, oPtr, delegateName, NULL);
 
     /*
      * Tricky point: do not want the extra reported level in the Tcl stack
@@ -143,33 +260,28 @@ TclOO_Class_Constructor(
     return TclNREvalObjv(interp, 3, invoke, TCL_EVAL_NOERR, NULL);
 }
 
+/*
+ * Called *after* [oo::define] inside the constructor of a class.
+ * Cleans up some temporary storage and sets up the delegate.
+ */
 static int
-DecrRefsPostClassConstructor(
+PostClassConstructor(
     void *data[],
     Tcl_Interp *interp,
     int result)
 {
     Tcl_Obj **invoke = (Tcl_Obj **) data[0];
     Object *oPtr = (Object *) data[1];
-    Tcl_InterpState saved;
-    int code;
+    Tcl_Obj *delegateName = (Tcl_Obj *) data[2];
 
     TclDecrRefCount(invoke[0]);
     TclDecrRefCount(invoke[1]);
     TclDecrRefCount(invoke[2]);
-    invoke[0] = oPtr->fPtr->mcdName;
-    invoke[1] = TclOOObjectName(interp, oPtr);
-    Tcl_IncrRefCount(invoke[0]);
-    Tcl_IncrRefCount(invoke[1]);
-    saved = Tcl_SaveInterpState(interp, result);
-    code = Tcl_EvalObjv(interp, 2, invoke, 0);
-    TclDecrRefCount(invoke[0]);
-    TclDecrRefCount(invoke[1]);
     TclStackFree(interp, invoke);
-    if (code != TCL_OK) {
-	Tcl_DiscardInterpState(saved);
-	return code;
-    }
+
+    Tcl_InterpState saved = Tcl_SaveInterpState(interp, result);
+    MixinClassDelegates(interp, oPtr, delegateName);
+    Tcl_DecrRefCount(delegateName);
     return Tcl_RestoreInterpState(interp, saved);
 }
 
@@ -358,6 +470,176 @@ TclOO_Class_New(
 /*
  * ----------------------------------------------------------------------
  *
+ * TclOO_Class_Cloned --
+ *
+ *	Handler for cloning classes, which fixes up the delegates. This allows
+ *	the clone's class methods to evolve independently of the origin's
+ *	class methods; this is how TclOO works by default.
+ *
+ * ----------------------------------------------------------------------
+ */
+int
+TclOO_Class_Cloned(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* Interpreter in which to create the object;
+				 * also used for error reporting. */
+    Tcl_ObjectContext context,	/* The object/call context. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const *objv)	/* The actual arguments. */
+{
+    Tcl_Object targetObject = Tcl_ObjectContextObject(context);
+    Tcl_Size skip = Tcl_ObjectContextSkippedArgs(context);
+    if (skip >= objc) {
+	Tcl_WrongNumArgs(interp, skip, objv, "originObject");
+	return TCL_ERROR;
+    }
+    Tcl_Object originObject = Tcl_GetObjectFromObj(interp, objv[skip]);
+    if (!originObject) {
+	return TCL_ERROR;
+    }
+    // Add references so things won't vanish until after
+    // UpdateClassDelegatesAfterClone is finished with them.
+    AddRef((Object *) originObject);
+    AddRef((Object *) targetObject);
+    TclNRAddCallback(interp, UpdateClassDelegatesAfterClone,
+	    originObject, targetObject, NULL, NULL);
+    return TclNRObjectContextInvokeNext(interp, context, objc, objv, skip);
+}
+
+// Rebuilds the class inheritance delegation class.
+static int
+UpdateClassDelegatesAfterClone(
+    void *data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    Object *originPtr = (Object *) data[0];
+    Object *targetPtr = (Object *) data[1];
+    if (result == TCL_OK && originPtr->classPtr && targetPtr->classPtr) {
+	// Get the originating delegate to be cloned.
+
+	Tcl_Obj *originName = Tcl_ObjPrintf("%s:: oo ::delegate",
+		originPtr->namespacePtr->fullName);
+	Object *originDelegate = (Object *) Tcl_GetObjectFromObj(interp,
+		originName);
+	Tcl_BounceRefCount(originName);
+	// Delegates never have their own delegates, so silently make sure we
+	// don't try to make a clone of them.
+	if (!(originDelegate && originDelegate->classPtr)) {
+	    goto noOriginDelegate;
+	}
+
+	// Create the cloned target delegate.
+
+	Tcl_Obj *targetName = Tcl_ObjPrintf("%s:: oo ::delegate",
+		targetPtr->namespacePtr->fullName);
+	Object *targetDelegate = (Object *) Tcl_CopyObjectInstance(interp,
+		(Tcl_Object) originDelegate, Tcl_GetString(targetName), NULL);
+	Tcl_BounceRefCount(targetName);
+	if (targetDelegate == NULL) {
+	    result = TCL_ERROR;
+	    goto noOriginDelegate;
+	}
+
+	// Point the cloned target class at the cloned target delegate.
+	// This is like TclOOObjectSetMixins() but more efficient in this
+	// case as there's definitely no relevant call chains to invalidate
+	// and we're doing a one-for-one replacement.
+
+	Tcl_Size i;
+	Class *mixin;
+	FOREACH(mixin, targetPtr->mixins) {
+	    if (mixin == originDelegate->classPtr) {
+		TclOORemoveFromInstances(targetPtr, originDelegate->classPtr);
+		TclOODecrRefCount(originDelegate);
+		targetPtr->mixins.list[i] = targetDelegate->classPtr;
+		TclOOAddToInstances(targetPtr, targetDelegate->classPtr);
+		AddRef(targetDelegate);
+		break;
+	    }
+	}
+    }
+  noOriginDelegate:
+    TclOODecrRefCount(originPtr);
+    TclOODecrRefCount(targetPtr);
+    return result;
+};
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclOO_Configurable_Constructor --
+ *
+ *	Implementation for oo::configurable constructor.
+ *
+ * ----------------------------------------------------------------------
+ */
+int
+TclOO_Configurable_Constructor(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,
+    Tcl_ObjectContext context,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
+    Tcl_Size skip = Tcl_ObjectContextSkippedArgs(context);
+    if (objc != skip && objc != skip + 1) {
+	Tcl_WrongNumArgs(interp, skip, objv, "?definitionScript?");
+	return TCL_ERROR;
+    }
+    Tcl_Obj *cfgSupportName = Tcl_NewStringObj(
+	    "::oo::configuresupport::configurable", TCL_AUTO_LENGTH);
+    Class *mixin = TclOOGetClassFromObj(interp, cfgSupportName);
+    Tcl_BounceRefCount(cfgSupportName);
+    if (!mixin) {
+	return TCL_ERROR;
+    }
+    TclOOClassSetMixins(interp, oPtr->classPtr, 1, &mixin);
+    return TclNRObjectContextInvokeNext(interp, context, objc, objv, skip);
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclOO_Object_Cloned --
+ *
+ *	Handler for cloning objects that clones basic bits (only!) of the
+ *	object's namespace. Non-procedures, traces, sub-namespaces, etc. need
+ *	more complex (and class-specific) handling.
+ *
+ * ----------------------------------------------------------------------
+ */
+int
+TclOO_Object_Cloned(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		// Interpreter for error reporting.
+    Tcl_ObjectContext context,	// The object/call context.
+    int objc,			// Number of arguments.
+    Tcl_Obj *const *objv)	// The actual arguments.
+{
+    int skip = Tcl_ObjectContextSkippedArgs(context);
+    if (objc != skip + 1) {
+	Tcl_WrongNumArgs(interp, skip, objv, "originObject");
+	return TCL_ERROR;
+    }
+    Object *targetObject = (Object *) Tcl_ObjectContextObject(context);
+    Object *originObject = (Object *) Tcl_GetObjectFromObj(interp, objv[skip]);
+    if (!originObject) {
+	return TCL_ERROR;
+    }
+
+    Namespace *originNs = (Namespace *) originObject->namespacePtr;
+    Namespace *targetNs = (Namespace *) targetObject->namespacePtr;
+    if (TclCopyNamespaceProcedures(interp, originNs, targetNs) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    return TclCopyNamespaceVariables(interp, originNs, targetNs);
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
  * TclOO_Object_Destroy --
  *
  *	Implementation for oo::object->destroy method.
@@ -401,6 +683,9 @@ TclOO_Object_Destroy(
     return TCL_OK;
 }
 
+/* Post-NRE-callback for TclOO_Object_Destroy. Deletes the object command if
+ * it's still there, which triggers destruction of the namespace and attached
+ * structures. */
 static int
 AfterNRDestructor(
     void *data[],
@@ -488,6 +773,7 @@ TclOO_Object_Eval(
     return TclNREvalObjEx(interp, scriptPtr, 0, invoker, skip);
 }
 
+/* Post-NRE-callback for TclOO_Object_Eval. Cleans up. */
 static int
 FinalizeEval(
     void *data[],
@@ -904,6 +1190,98 @@ TclOO_Object_VarName(
 /*
  * ----------------------------------------------------------------------
  *
+ * TclOOLinkObjCmd --
+ *
+ *	Implementation of the [link] command, that makes a command that
+ *	invokes a method on the current object. The name of the command and
+ *	the name of the method match by default. Note that this command is
+ *	only ever to be used inside the body of a procedure-like method,
+ *	and is typically intended for constructors.
+ *
+ * ----------------------------------------------------------------------
+ */
+int
+TclOOLinkObjCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    // Set up common bits.
+    CallFrame *framePtr = ((Interp *) interp)->varFramePtr;
+    if (framePtr == NULL || !(framePtr->isProcCallFrame & FRAME_IS_METHOD)) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"%s may only be called from inside a method",
+		TclGetString(objv[0])));
+	OO_ERROR(interp, CONTEXT_REQUIRED);
+	return TCL_ERROR;
+    }
+    CallContext *context = (CallContext *) framePtr->clientData;
+    Object *oPtr = context->oPtr;
+    if (!oPtr->myCommand) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"cannot link to non-existent callback handle"));
+	OO_ERROR(interp, MY_GONE);
+	return TCL_ERROR;
+    }
+    Tcl_Obj *myCmd = Tcl_NewObj();
+    Tcl_GetCommandFullName(interp, oPtr->myCommand, myCmd);
+    if (!oPtr->linkedCmdsList) {
+	oPtr->linkedCmdsList = Tcl_NewListObj(0, NULL);
+	Tcl_IncrRefCount(oPtr->linkedCmdsList);
+    }
+
+    // For each argument
+    for (int i=1; i<objc; i++) {
+	Tcl_Size linkc;
+	Tcl_Obj **linkv, *src, *dst;
+
+	// Parse as list of (one or) two items: source and destination names
+	if (TclListObjGetElements(interp, objv[i], &linkc, &linkv) != TCL_OK) {
+	    Tcl_BounceRefCount(myCmd);
+	    return TCL_ERROR;
+	}
+	switch (linkc) {
+	case 1:
+	    // Degenerate case
+	    src = dst = linkv[0];
+	    break;
+	case 2:
+	    src = linkv[0];
+	    dst = linkv[1];
+	    break;
+	default:
+	    Tcl_BounceRefCount(myCmd);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "bad link description; must only have one or two elements"));
+	    OO_ERROR(interp, CMDLINK_FORMAT);
+	    return TCL_ERROR;
+	}
+
+	// Qualify the source if necessary
+	const char *srcStr = TclGetString(src);
+	if (srcStr[0] != ':' || srcStr[1] != ':') {
+	    src = Tcl_ObjPrintf("%s::%s",
+		    context->oPtr->namespacePtr->fullName, srcStr);
+	}
+
+	// Make the alias command
+	if (TclAliasCreate(interp, interp, interp, src, myCmd, 1, &dst) != TCL_OK) {
+	    Tcl_BounceRefCount(myCmd);
+	    Tcl_BounceRefCount(src);
+	    return TCL_ERROR;
+	}
+
+	// Remember the alias for cleanup if necessary
+	Tcl_ListObjAppendElement(NULL, oPtr->linkedCmdsList, src);
+    }
+    Tcl_BounceRefCount(myCmd);
+    return TCL_OK;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
  * TclOONextObjCmd, TclOONextToObjCmd --
  *
  *	Implementation of the [next] and [nextto] commands. Note that these
@@ -1036,6 +1414,7 @@ TclOONextToObjCmd(
     return TCL_ERROR;
 }
 
+/* Post-NRE-callback for [next] and [nextto]. */
 static int
 NextRestoreFrame(
     void *data[],
@@ -1352,6 +1731,294 @@ TclOOCopyObjectCmd(
 
     Tcl_SetObjResult(interp, TclOOObjectName(interp, (Object *) o2Ptr));
     return TCL_OK;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclOOCallbackObjCmd --
+ *
+ *	Implementation of the [callback] command, which constructs callbacks
+ *	into the current object.
+ *
+ * ----------------------------------------------------------------------
+ */
+int
+TclOOCallbackObjCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Interp *iPtr = (Interp *) interp;
+    CallFrame *framePtr = iPtr->varFramePtr;
+
+    /*
+     * Start with sanity checks on the calling context to make sure that we
+     * are invoked from a suitable method context. If so, we can safely
+     * retrieve the handle to the object call context.
+     */
+
+    if (framePtr == NULL || !(framePtr->isProcCallFrame & FRAME_IS_METHOD)) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"%s may only be called from inside a method",
+		TclGetString(objv[0])));
+	OO_ERROR(interp, CONTEXT_REQUIRED);
+	return TCL_ERROR;
+    }
+
+    CallContext *contextPtr = (CallContext *) framePtr->clientData;
+    if (objc < 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "method ...");
+	return TCL_ERROR;
+    }
+
+    // Get the [my] real name.
+    Tcl_Obj *namePtr = TclOOObjectMyName(interp, contextPtr->oPtr);
+    if (!namePtr) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"no possible safe callback without my", TCL_AUTO_LENGTH));
+	OO_ERROR(interp, NO_MY);
+	return TCL_ERROR;
+    }
+
+    // No check that the method exists; could be dynamically added.
+
+    Tcl_Obj *listPtr = Tcl_NewListObj(1, &namePtr);
+    (void) TclListObjAppendElements(NULL, listPtr, objc-1, objv+1);
+    Tcl_SetObjResult(interp, listPtr);
+    return TCL_OK;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclOOClassVariableObjCmd --
+ *
+ *	Implementation of the [classvariable] command, which links to
+ *	variables in the class of the current object.
+ *
+ * ----------------------------------------------------------------------
+ */
+int
+TclOOClassVariableObjCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Interp *iPtr = (Interp *) interp;
+    CallFrame *framePtr = iPtr->varFramePtr;
+
+    if (objc < 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "name ...");
+	return TCL_ERROR;
+    }
+
+    /*
+     * Start with sanity checks on the calling context to make sure that we
+     * are invoked from a suitable method context. If so, we can safely
+     * retrieve the handle to the object call context.
+     */
+
+    if (framePtr == NULL || !(framePtr->isProcCallFrame & FRAME_IS_METHOD)) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"%s may only be called from inside a method",
+		TclGetString(objv[0])));
+	OO_ERROR(interp, CONTEXT_REQUIRED);
+	return TCL_ERROR;
+    }
+
+    // Get a reference to the class's namespace
+    CallContext *contextPtr = (CallContext *) framePtr->clientData;
+    Class *clsPtr = CurrentlyInvoked(contextPtr).mPtr->declaringClassPtr;
+    if (clsPtr == NULL) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"method not defined by a class", TCL_AUTO_LENGTH));
+	OO_ERROR(interp, UNMATCHED_CONTEXT);
+	return TCL_ERROR;
+    }
+    Tcl_Namespace *clsNsPtr = clsPtr->thisPtr->namespacePtr;
+
+    // Check the list of variable names
+    for (int i = 1; i < objc; i++) {
+	const char *varName = TclGetString(objv[i]);
+	if (Tcl_StringMatch(varName, "*(*)")) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "bad variable name \"%s\": can't create a %s",
+		    varName, "scalar variable that looks like an array element"));
+	    Tcl_SetErrorCode(interp, "TCL", "UPVAR", "LOCAL_ELEMENT", NULL);
+	    return TCL_ERROR;
+	}
+	if (Tcl_StringMatch(varName, "*::*")) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "bad variable name \"%s\": can't create a %s",
+		    varName, "local variable with a namespace separator in it"));
+	    Tcl_SetErrorCode(interp, "TCL", "UPVAR", "LOCAL_ELEMENT", NULL);
+	    return TCL_ERROR;
+	}
+    }
+
+    // Lastly, link the caller's local variables to the class's variables
+    Tcl_Namespace *ourNsPtr = (Tcl_Namespace *) iPtr->varFramePtr->nsPtr;
+    for (int i = 1; i < objc; i++) {
+	// Locate the other variable.
+	iPtr->varFramePtr->nsPtr = (Namespace *) clsNsPtr;
+	Var *arrayPtr, *otherPtr = TclObjLookupVarEx(interp, objv[i], NULL,
+		(TCL_NAMESPACE_ONLY|TCL_LEAVE_ERR_MSG|TCL_AVOID_RESOLVERS),
+		"access", /*createPart1*/ 1, /*createPart2*/ 0, &arrayPtr);
+	iPtr->varFramePtr->nsPtr = (Namespace *) ourNsPtr;
+	if (otherPtr == NULL) {
+	    return TCL_ERROR;
+	}
+
+	// Create the new variable and link it to otherPtr.
+	if (TclPtrObjMakeUpvarIdx(interp, otherPtr, objv[i], 0,
+		TCL_INDEX_NONE) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+    }
+
+    return TCL_OK;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclOODelegateNameObjCmd --
+ *
+ *	Implementation of the [oo::DelegateName] command, which is a utility
+ *	that gets the name of the class delegate for a class. It's trivial,
+ *	but makes working with them much easier as delegate names are
+ *	intentionally hard to create by accident.
+ *
+ *	Not part of TclOO public API. No public documentation.
+ *
+ * ----------------------------------------------------------------------
+ */
+int
+TclOODelegateNameObjCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "class");
+	return TCL_ERROR;
+    }
+    Class *clsPtr = TclOOGetClassFromObj(interp, objv[1]);
+    if (clsPtr == NULL) {
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf("%s:: oo ::delegate",
+	    clsPtr->thisPtr->namespacePtr->fullName));
+    return TCL_OK;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclOO_Singleton_New, MarkAsSingleton --
+ *
+ *	Implementation for oo::singleton->new method.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+int
+TclOO_Singleton_New(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* Interpreter in which to create the object;
+				 * also used for error reporting. */
+    Tcl_ObjectContext context,	/* The object/call context. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const *objv)	/* The actual arguments. */
+{
+    Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
+    Class *clsPtr = oPtr->classPtr;
+
+    if (clsPtr->instances.num) {
+	Tcl_SetObjResult(interp, TclOOObjectName(interp, clsPtr->instances.list[0]));
+	return TCL_OK;
+    }
+
+    TclNRAddCallback(interp, MarkAsSingleton, clsPtr, NULL, NULL, NULL);
+    return TclNRNewObjectInstance(interp, (Tcl_Class) clsPtr,
+	    NULL, NULL, objc, objv, Tcl_ObjectContextSkippedArgs(context),
+	    AddConstructionFinalizer(interp));
+}
+
+/* Once the singleton object is made, this mixes in a class to disable easy
+ * deleting of the instance. */
+static int
+MarkAsSingleton(
+    void *data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    Class *clsPtr = (Class *) data[0];
+    if (result == TCL_OK && clsPtr->instances.num) {
+	// Prepend oo::SingletonInstance to the list of mixins
+	Tcl_Obj *singletonInstanceName = Tcl_NewStringObj(
+		"::oo::SingletonInstance", TCL_AUTO_LENGTH);
+	Class *singInst = TclOOGetClassFromObj(interp, singletonInstanceName);
+	Tcl_BounceRefCount(singletonInstanceName);
+	if (!singInst) {
+	    return TCL_ERROR;
+	}
+	Object *oPtr = clsPtr->instances.list[0];
+	Tcl_Size mixinc = oPtr->mixins.num;
+	Class **mixins = (Class **)TclStackAlloc(interp,
+		sizeof(Class *) * (mixinc + 1));
+	if (mixinc > 0) {
+	    memcpy(mixins + 1, oPtr->mixins.list, mixinc * sizeof(Class *));
+	}
+	mixins[0] = singInst;
+	TclOOObjectSetMixins(oPtr, mixinc + 1, mixins);
+	TclStackFree(interp, mixins);
+    }
+    return result;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclOO_SingletonInstance_Destroy, TclOO_SingletonInstance_Cloned --
+ *
+ *	Implementation for oo::SingletonInstance->destroy method and its
+ *	cloning callback method.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+int
+TclOO_SingletonInstance_Destroy(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* Interpreter for error reporting. */
+    TCL_UNUSED(Tcl_ObjectContext),
+    TCL_UNUSED(int),
+    TCL_UNUSED(Tcl_Obj *const *))
+{
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    "may not destroy a singleton object"));
+    OO_ERROR(interp, SINGLETON);
+    return TCL_ERROR;
+}
+
+int
+TclOO_SingletonInstance_Cloned(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* Interpreter in which to create the object;
+				 * also used for error reporting. */
+    TCL_UNUSED(Tcl_ObjectContext),
+    TCL_UNUSED(int),
+    TCL_UNUSED(Tcl_Obj *const *))
+{
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    "may not clone a singleton object"));
+    OO_ERROR(interp, SINGLETON);
+    return TCL_ERROR;
 }
 
 /*

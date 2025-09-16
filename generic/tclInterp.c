@@ -221,10 +221,6 @@ enum LimitHandlerFlags {
  * Prototypes for local static functions:
  */
 
-static int		AliasCreate(Tcl_Interp *interp,
-			    Tcl_Interp *childInterp, Tcl_Interp *parentInterp,
-			    Tcl_Obj *namePtr, Tcl_Obj *targetPtr, Tcl_Size objc,
-			    Tcl_Obj *const objv[]);
 static int		AliasDelete(Tcl_Interp *interp,
 			    Tcl_Interp *childInterp, Tcl_Obj *namePtr);
 static int		AliasDescribe(Tcl_Interp *interp,
@@ -703,7 +699,7 @@ NRInterpCmd(
 		return TCL_ERROR;
 	    }
 
-	    return AliasCreate(interp, childInterp, parentInterp, objv[3],
+	    return TclAliasCreate(interp, childInterp, parentInterp, objv[3],
 		    objv[5], objc - 6, objv + 6);
 	}
 
@@ -1234,7 +1230,7 @@ Tcl_CreateAlias(
     targetObjPtr = Tcl_NewStringObj(targetCmd, -1);
     Tcl_IncrRefCount(targetObjPtr);
 
-    result = AliasCreate(childInterp, childInterp, targetInterp, childObjPtr,
+    result = TclAliasCreate(childInterp, childInterp, targetInterp, childObjPtr,
 	    targetObjPtr, argc, objv);
 
     for (i = 0; i < argc; i++) {
@@ -1281,7 +1277,7 @@ Tcl_CreateAliasObj(
     targetObjPtr = Tcl_NewStringObj(targetCmd, -1);
     Tcl_IncrRefCount(targetObjPtr);
 
-    result = AliasCreate(childInterp, childInterp, targetInterp, childObjPtr,
+    result = TclAliasCreate(childInterp, childInterp, targetInterp, childObjPtr,
 	    targetObjPtr, objc, objv);
 
     Tcl_DecrRefCount(childObjPtr);
@@ -1454,7 +1450,7 @@ TclPreventAliasLoop(
 /*
  *----------------------------------------------------------------------
  *
- * AliasCreate --
+ * TclAliasCreate --
  *
  *	Helper function to do the work to actually create an alias.
  *
@@ -1468,8 +1464,8 @@ TclPreventAliasLoop(
  *----------------------------------------------------------------------
  */
 
-static int
-AliasCreate(
+int
+TclAliasCreate(
     Tcl_Interp *interp,		/* Interp for error reporting. */
     Tcl_Interp *childInterp,	/* Interp where alias cmd will live or from
 				 * which alias will be deleted. */
@@ -2470,7 +2466,7 @@ ChildCreate(
 
 	TclNewLiteralStringObj(clockObj, "clock");
 	Tcl_IncrRefCount(clockObj);
-	status = AliasCreate(interp, childInterp, parentInterp, clockObj,
+	status = TclAliasCreate(interp, childInterp, parentInterp, clockObj,
 		clockObj, 0, NULL);
 	Tcl_DecrRefCount(clockObj);
 	if (status != TCL_OK) {
@@ -2560,7 +2556,7 @@ NRChildCmd(
 		    return AliasDelete(interp, childInterp, objv[2]);
 		}
 	    } else {
-		return AliasCreate(interp, childInterp, interp, objv[2],
+		return TclAliasCreate(interp, childInterp, interp, objv[2],
 			objv[3], objc - 4, objv + 4);
 	    }
 	}

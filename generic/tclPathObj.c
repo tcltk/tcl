@@ -80,9 +80,10 @@ typedef struct {
 /*
  * Flag values for FsPath->flags.
  */
-
-#define TCLPATH_APPENDED 1
-#define TCLPATH_NEEDNORM 4
+enum FsPathFlags {
+    TCLPATH_APPENDED = 1,
+    TCLPATH_NEEDNORM = 4
+};
 
 /*
  * Define some macros to give us convenient access to path-object specific

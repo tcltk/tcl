@@ -445,6 +445,7 @@ static const EnsembleSetup ensembleCommands[] = {
     {"string",		tclStringImplMap,	NULL, CMD_IS_SAFE},
     {"::tcl::prefix",	tclPrefixImplMap,	TclSetUpPrefixCmd, CMD_IS_SAFE},
     {"::tcl::process",	tclProcessImplMap,	TclSetUpProcessCmd, CMD_IS_SAFE},
+    {"unicode",		tclUnicodeImplMap,	NULL, CMD_IS_SAFE},
     {"zipfs",		tclZipfsImplMap,	NULL, 0},
     {"zlib",		tclZlibImplMap,		NULL, CMD_IS_SAFE},
     {NULL, NULL, NULL, 0}
@@ -697,7 +698,8 @@ BuildInfoObjCmd2(
 	}
 	return TCL_OK;
     case ID_COMPILER:
-	for (p = strchr(buildData, '.'); p++; p = strchr(p, '.')) {
+	for (p = strchr(buildData, '.'); p != NULL; p = strchr(p, '.')) {
+	    p++;
 	    /*
 	     * Does the word begin with one of the standard prefixes?
 	     */
@@ -718,7 +720,8 @@ BuildInfoObjCmd2(
 	break;
     default:		/* Boolean test for other identifiers' presence */
 	arg = TclGetStringFromObj(objv[1], &len);
-	for (p = strchr(buildData, '.'); p++; p = strchr(p, '.')) {
+	for (p = strchr(buildData, '.'); p != NULL; p = strchr(p, '.')) {
+	    p++;
 	    if (!strncmp(p, arg, len)
 		    && ((p[len] == '.') || (p[len] == '-') || (p[len] == '\0'))) {
 		if (p[len] == '-') {
@@ -1121,10 +1124,10 @@ Tcl_CreateInterp(void)
     }
 
     /*
-     * Create the "array", "binary", "chan", "clock", "dict", "encoding",
-     * "file", "info", "namespace" and "string" ensembles. Note that all these
-     * commands (and their subcommands that are not present in the global
-     * namespace) are wholly safe *except* for "clock", "encoding" and "file".
+     * Create the standard ensembles "array", "binary", "chan", "clock",
+     * "dict", "encoding", "file", "info", "namespace", "string", etc. Note
+     * that most of these commands (and their subcommands that are not present
+     * in the global namespace) are wholly safe *except*  as marked.
      */
 
     const EnsembleSetup *ensSetupPtr;
@@ -1341,8 +1344,8 @@ TclRegisterCommandTypeName(
 	int isNew;
 
 	hPtr = Tcl_CreateHashEntry(&commandTypeTable,
-		implementationProc, &isNew);
-	Tcl_SetHashValue(hPtr, (void *) nameStr);
+		(void *)implementationProc, &isNew);
+	Tcl_SetHashValue(hPtr, nameStr);
     } else {
 	hPtr = Tcl_FindHashEntry(&commandTypeTable,
 		implementationProc);
