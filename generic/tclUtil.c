@@ -152,7 +152,7 @@ const Tcl_ObjType tclEndOffsetType = {
  *	\u000A	\n	NEWLINE
  *	\u000B	\v	VERTICAL TAB
  *	\u000C	\f	FORM FEED
- * 	\u000D	\r	CARRIAGE RETURN
+ *	\u000D	\r	CARRIAGE RETURN
  *	\u0020		SPACE
  *
  * NOTE: differences between this and other places where Tcl defines a role
@@ -270,7 +270,7 @@ const Tcl_ObjType tclEndOffsetType = {
  *	* The command terminating character,
  *		\u003b	;	SEMICOLON
  *	  must be BRACEd, QUOTEd, or escaped so that it does not terminate the
- * 	  command prematurely.
+ *	  command prematurely.
  *	* Any of the characters that begin substitutions in scripts,
  *		\u0024	$	DOLLAR
  *		\u005b	[	OPEN BRACKET
@@ -869,11 +869,11 @@ Tcl_SplitList(
 
     size = TclMaxListLength(list, -1, &end) + 1;
     length = end - list;
-    if (size >= (INT_MAX/sizeof(char *)) ||
-	length > (INT_MAX - 1 - (size * sizeof(char *)))) {
+    if (size >= (INT_MAX/(int)sizeof(char *))
+	    || length > (INT_MAX - 1 - (size * (int)sizeof(char *)))) {
 	if (interp) {
-	    Tcl_SetResult(
-		interp, "memory allocation limit exceeded", TCL_STATIC);
+	    Tcl_SetResult(interp,
+		    "memory allocation limit exceeded", TCL_STATIC);
 	}
 	return TCL_ERROR;
     }
@@ -1719,7 +1719,7 @@ TclTrimRight(
 #endif
 	do {
 	    pp += pInc;
- 	    pInc = TclUtfToUCS4(pp, &ch1);
+	    pInc = TclUtfToUCS4(pp, &ch1);
 	} while (pp + pInc < p);
 
 	/*
@@ -1917,7 +1917,7 @@ Tcl_Concat(
      */
 
     if (argc == 0) {
-	result = (char *) ckalloc(1);
+	result = (char *)ckalloc(1);
 	result[0] = '\0';
 	return result;
     }
@@ -3610,21 +3610,21 @@ TclFormatInt(
  *	integer([+-]integer)? or end([+-]integer)?.
  *
  * Value
- * 	TCL_OK
+ *	TCL_OK
  *
- * 	    The index is stored at the address given by by 'indexPtr'. If
- * 	    'objPtr' has the value "end", the value stored is 'endValue'.
+ *    The index is stored at the address given by by 'indexPtr'. If
+ *	    'objPtr' has the value "end", the value stored is 'endValue'.
  *
- * 	TCL_ERROR
+ *	TCL_ERROR
  *
- * 	    The value of 'objPtr' does not have one of the expected formats. If
- * 	    'interp' is non-NULL, an error message is left in the interpreter's
- * 	    result object.
+ *	    The value of 'objPtr' does not have one of the expected formats. If
+ *	    'interp' is non-NULL, an error message is left in the interpreter's
+ *	    result object.
  *
  * Effect
  *
- * 	The object referenced by 'objPtr' is converted, as needed, to an
- * 	integer, wide integer, or end-based-index object.
+ *	The object referenced by 'objPtr' is converted, as needed, to an
+ *	integer, wide integer, or end-based-index object.
  *
  *----------------------------------------------------------------------
  */
