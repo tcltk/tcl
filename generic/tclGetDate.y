@@ -45,7 +45,8 @@
 
 #ifdef _MSC_VER
 #pragma warning( disable : 4102 )
-#elif defined (__clang__)
+#elif defined (__clang__) && (__clang_major__ > 14)
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
 #elif (__GNUC__)  && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5)))
 #pragma GCC diagnostic ignored "-Wunused-but-set-variable"
 #endif
