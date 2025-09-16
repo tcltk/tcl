@@ -1098,9 +1098,9 @@ IcuConverttoObjCmd(
 	    Tcl_GetString(objv[objc-2]), strict, &dsOut) != TCL_OK) {
 	return TCL_ERROR;
     }
-    Tcl_SetObjResult(interp,
-	Tcl_NewByteArrayObj((unsigned char *)Tcl_DStringValue(&dsOut),
-			    Tcl_DStringLength(&dsOut)));
+    Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(
+	    (unsigned char *)Tcl_DStringValue(&dsOut),
+	    Tcl_DStringLength(&dsOut)));
     Tcl_DStringFree(&dsOut);
     return TCL_OK;
 }

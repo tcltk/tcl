@@ -503,9 +503,9 @@ TclListLimitExceededError(
      * in Tcl_Size.
      */
     if (interp != NULL) {
-	Tcl_SetObjResult(interp,
-	    Tcl_ObjPrintf("max length (%" TCL_SIZE_MODIFIER
-		"d) of a Tcl list exceeded", (Tcl_Size)LIST_MAX));
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"max length (%" TCL_SIZE_MODIFIER "d) of a Tcl list exceeded",
+		(Tcl_Size)LIST_MAX));
 	Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
     }
     return TCL_ERROR;
