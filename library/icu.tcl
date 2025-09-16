@@ -26,6 +26,7 @@ namespace eval ::tcl::unsupported::icu {
 	puts stderr $message
     }
 
+    # Constructs the full mappings between Tcl and ICU names for encodings.
     proc Init {} {
 	variable tclToIcu
 	variable icuToTcl

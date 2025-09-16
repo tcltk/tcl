@@ -106,7 +106,7 @@ TclObjTest_Init(
     Tcl_Obj **varPtr;
 
 #ifndef TCL_WITH_EXTERNAL_TOMMATH
-    if (Tcl_TomMath_InitStubs(interp, "8.7-") == NULL) {
+    if (Tcl_TomMath_InitStubs(interp, "9.0-") == NULL) {
 	return TCL_ERROR;
     }
 #endif
@@ -856,8 +856,8 @@ TestintobjCmd(
  *	test a few possible corner cases in list object manipulation from
  *	C code that cannot occur at the Tcl level.
  *
- *      Following new commands are added for 8.7 as regression tests for
- *      memory leaks and use-after-free. Unlike 8.6, 8.7 has multiple internal
+ *      Following new commands are added for 9.0 as regression tests for
+ *      memory leaks and use-after-free. Unlike 8.6, 9.0 has multiple internal
  *      representations for lists.  It has to be ensured that corresponding
  *      implementations obey the invariants of the C list API. The script
  *      level tests do not suffice as Tcl list commands do not execute
@@ -1093,6 +1093,26 @@ static const Tcl_ObjType v1TestListType = {
 };
 
 
+static
+void
+HugeUpdateString(
+    TCL_UNUSED(Tcl_Obj *))
+{
+    /* Always returns NULL, as an indication that
+     * room for its string representation cannot be allocated */
+	return;
+}
+
+static const Tcl_ObjType hugeType = {
+    "huge",			/* name */
+    NULL,			/* freeIntRepProc */
+    NULL,			/* dupIntRepProc */
+    HugeUpdateString,		/* updateStringProc */
+    NULL,			/* setFromAnyProc */
+    TCL_OBJTYPE_V0
+};
+
+
 static int
 TestobjCmd(
     TCL_UNUSED(void *),
@@ -1108,7 +1128,7 @@ TestobjCmd(
 	"freeallvars", "bug3598580", "buge58d7e19e9",
 	"types", "objtype", "newobj", "set",
 	"objrefcount",
-	"assign", "convert", "duplicate",
+	"assign", "convert", "duplicate", "huge",
 	"invalidateStringRep", "refcount", "type",
 	NULL
     };
@@ -1116,7 +1136,7 @@ TestobjCmd(
 	TESTOBJ_FREEALLVARS, TESTOBJ_BUG3598580, TESTOBJ_BUGE58D7E19E9,
 	TESTOBJ_TYPES, TESTOBJ_OBJTYPE, TESTOBJ_NEWOBJ, TESTOBJ_SET,
 	TESTOBJ_OBJREFCOUNT,
-	TESTOBJ_ASSIGN, TESTOBJ_CONVERT, TESTOBJ_DUPLICATE,
+	TESTOBJ_ASSIGN, TESTOBJ_CONVERT, TESTOBJ_DUPLICATE, TESTOBJ_HUGE,
 	TESTOBJ_INVALIDATESTRINGREP, TESTOBJ_REFCOUNT, TESTOBJ_TYPE,
     } cmdIndex;
 
@@ -1220,7 +1240,17 @@ TestobjCmd(
 	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(objv[2]->refCount));
 	}
 	return TCL_OK;
-
+    case TESTOBJ_HUGE: {
+	    if (objc != 2) {
+		goto wrongNumArgs;
+	    }
+	    Tcl_Obj *hugeObjPtr = Tcl_NewObj();
+	    hugeObjPtr->typePtr = &hugeType;
+	    hugeObjPtr->length = INT_MAX - 1;
+	    hugeObjPtr->bytes = NULL;
+	    Tcl_SetObjResult(interp, hugeObjPtr);
+	}
+	return TCL_OK;
     default:
 	break;
     }

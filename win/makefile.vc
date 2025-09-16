@@ -152,14 +152,14 @@ TCLLIBRAW=$(TCLLIB:.dll=-raw.dll)
 DOTVERSION      = $(TCL_MAJOR_VERSION).$(TCL_MINOR_VERSION)
 VERSION         = $(TCL_MAJOR_VERSION)$(TCL_MINOR_VERSION)
 
-# The staticpkg option is not longer supported in Tcl 8.7
+# The staticpkg option is not longer supported in Tcl 9.0
 # though extensions may still be using it. If specified together
 # with "static", ignore it as that is now the default for
 # static build. For non-static builds, no longer supported
 # now (was permitted in 8.6)
 !if $(TCL_USE_STATIC_PACKAGES)
 !if $(STATIC_BUILD)
-!message *** NOTE: The "staticpkg" option redundant in 8.7.
+!message *** NOTE: The "staticpkg" option redundant in 9.0.
 !else
 !message *** NOTE: The "staticpkg" option ignored for shared library builds.
 !endif
@@ -209,10 +209,10 @@ TCL_TEST_LIBRARY=
 
 !include versions.vc
 
-DDEDOTVERSION = 1.4
+DDEDOTVERSION = 1.5
 DDEVERSION = $(DDEDOTVERSION:.=)
 
-REGDOTVERSION = 1.3
+REGDOTVERSION = 1.4
 REGVERSION = $(REGDOTVERSION:.=)
 
 TCLREGLIBNAME	= $(PROJECT)9registry$(REGVERSION)$(SUFX:t=).$(EXT)
@@ -223,6 +223,8 @@ TCLDDELIB	= $(OUT_DIR)\$(TCLDDELIBNAME)
 
 TCLTEST		= $(OUT_DIR)\$(PROJECT)test$(VERSION)$(SUFX:t=).exe
 TCLTESTRAW	= $(TCLTEST:.exe=-raw.exe)
+
+UTF8PROCDIR	= $(ROOT)\utf8proc
 
 TCLSHOBJS = \
 	$(TMP_DIR)\tclAppInit.obj \
@@ -335,7 +337,8 @@ COREOBJS = \
 	$(TMP_DIR)\tclUtil.obj \
 	$(TMP_DIR)\tclVar.obj \
 	$(TMP_DIR)\tclZipfs.obj \
-	$(TMP_DIR)\tclZlib.obj
+	$(TMP_DIR)\tclZlib.obj \
+	$(TMP_DIR)\utf8proc.obj \
 
 !if $(STATIC_BUILD)
 ZLIBOBJS = \
@@ -473,7 +476,7 @@ LIBTCLVFS = $(OUT_DIR)\$(LIBTCLVFSSUBDIR)
 # Additional include and C macro definitions for the implicit rules
 # defined in rules.vc
 PRJ_INCLUDES	= -I"$(TOMMATHDIR)"
-PRJ_DEFINES	= /DMP_PREC=4 /Dinline=__inline /D_CRT_SECURE_NO_DEPRECATE /D_CRT_NONSTDC_NO_DEPRECATE /DMP_FIXED_CUTOFFS
+PRJ_DEFINES	= /DMP_PREC=4 /Dinline=__inline /D_CRT_SECURE_NO_DEPRECATE /D_CRT_NONSTDC_NO_DEPRECATE /DMP_FIXED_CUTOFFS /DUTF8PROC_STATIC
 
 !if $(STATIC_BUILD)
 PRJ_DEFINES = $(PRJ_DEFINES) /DTCL_WITH_INTERNAL_ZLIB
@@ -554,8 +557,8 @@ test: test-core test-pkgs
 test-core: tcltest
 	set TCL_LIBRARY=$(TCL_TEST_LIBRARY)
 	$(DEBUGGER) $(TCLTEST) "$(ROOT:\=/)/tests/all.tcl" $(TESTFLAGS) -loadfile <<
-		package ifneeded dde 1.5a0 [list load "$(TCLDDELIB:\=/)"]
-		package ifneeded registry 1.4a0 [list load "$(TCLREGLIB:\=/)"]
+		package ifneeded dde 1.5a1 [list load "$(TCLDDELIB:\=/)"]
+		package ifneeded registry 1.4a1 [list load "$(TCLREGLIB:\=/)"]
 <<
 
 runtest: setup $(TCLTEST) dlls
@@ -1023,6 +1026,11 @@ $(TCLOBJS)
 # source directory can not contain spaces in the path.  This an
 # absolute.
 #---------------------------------------------------------------------
+
+{$(UTF8PROCDIR)}.c{$(TMP_DIR)}.obj::
+	$(cc32) $(pkgcflags) -Fo$(TMP_DIR)\ @<<
+$<
+<<
 
 {$(TOMMATHDIR)}.c{$(TMP_DIR)}.obj::
 	$(cc32) $(pkgcflags) -Fo$(TMP_DIR)\ @<<

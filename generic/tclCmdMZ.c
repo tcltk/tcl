@@ -56,6 +56,7 @@ static Tcl_ObjCmdProc	StringTrimLCmd;
 static Tcl_ObjCmdProc	StringTrimRCmd;
 static Tcl_ObjCmdProc	StringEndCmd;
 static Tcl_ObjCmdProc	StringStartCmd;
+static Tcl_ObjCmdProc	TclUnicodeNormalizeCmd;
 
 /*
  * Definition of the contents of the [string] ensemble.
@@ -84,6 +85,17 @@ const EnsembleImplMap tclStringImplMap[] = {
     {"trimright",	StringTrimRCmd,	TclCompileStringTrimRCmd,	NULL, NULL, 0},
     {"wordend",		StringEndCmd,	TclCompileBasic2ArgCmd,		NULL, NULL, 0},
     {"wordstart",	StringStartCmd,	TclCompileBasic2ArgCmd,		NULL, NULL, 0},
+    {NULL, NULL, NULL, NULL, NULL, 0}
+};
+
+/*
+ * Definition of the contents of the [unicode] ensemble.
+ */
+const EnsembleImplMap tclUnicodeImplMap[] = {
+    {"tonfc",	TclUnicodeNormalizeCmd, NULL, NULL, (void *)TCL_NFC,  0},
+    {"tonfd",	TclUnicodeNormalizeCmd, NULL, NULL, (void *)TCL_NFD,  0},
+    {"tonfkc",	TclUnicodeNormalizeCmd, NULL, NULL, (void *)TCL_NFKC, 0},
+    {"tonfkd",	TclUnicodeNormalizeCmd, NULL, NULL, (void *)TCL_NFKD, 0},
     {NULL, NULL, NULL, NULL, NULL, 0}
 };
 
@@ -185,7 +197,8 @@ Tcl_RegexpObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Size offset, stringLength, matchLength, cflags, eflags;
-    int i, indices, match, about, all, doinline, numMatchesSaved;
+    Tcl_Size i;
+    int indices, match, about, all, doinline, numMatchesSaved;
     Tcl_RegExp regExpr;
     Tcl_Obj *objPtr, *startIndex = NULL, *resultPtr = NULL;
     Tcl_RegExpInfo info;
@@ -430,7 +443,7 @@ Tcl_RegexpObjCmd(
 		 * area. (Scriptics Bug 4391/SF Bug #219232)
 		 */
 
-		if (i <= (int)info.nsubs && info.matches[i].start >= 0) {
+		if (i <= info.nsubs && info.matches[i].start >= 0) {
 		    start = offset + info.matches[i].start;
 		    end = offset + info.matches[i].end;
 
@@ -452,7 +465,7 @@ Tcl_RegexpObjCmd(
 
 		newPtr = Tcl_NewListObj(2, objs);
 	    } else {
-		if ((i <= (int)info.nsubs) && (info.matches[i].end > 0)) {
+		if ((i <= info.nsubs) && (info.matches[i].end > 0)) {
 		    newPtr = Tcl_GetRange(objPtr,
 			    offset + info.matches[i].start,
 			    offset + info.matches[i].end - 1);
@@ -4295,7 +4308,7 @@ Tcl_TimeRateObjCmd(
 	    maxms = -1000;
 	    do {
 		lastMeasureOverhead = measureOverhead;
-		TclNewIntObj(clobjv[i], (int) maxms);
+		TclNewIntObj(clobjv[i], maxms);
 		Tcl_IncrRefCount(clobjv[i]);
 		result = Tcl_TimeRateObjCmd(NULL, interp, i + 1, clobjv);
 		Tcl_DecrRefCount(clobjv[i]);
@@ -5397,6 +5410,61 @@ TclListLines(
 	    break;
 	}
     }
+}
+
+/*
+ * TclUnicodeNormalizeCmd --
+ *
+ *	This procedure implements the "unicode tonfc|tonfd|tonfkc|tonfkd"
+ *	commands. See the user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	Stores the normalized string in the interpreter result.
+ */
+static int
+TclUnicodeNormalizeCmd(
+    void *clientData,		/* TCL_{NFC,NFD,NFKC,NFKD} */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    static const char *optNames[] = {"-profile", NULL};
+    enum { OPT_PROFILE } opt;
+    int profile = TCL_ENCODING_PROFILE_STRICT;
+
+    if (objc == 4) {
+	if (Tcl_GetIndexFromObj(interp, objv[1], optNames, "option", 0, &opt) !=
+	    TCL_OK) {
+	    return TCL_ERROR;
+	}
+	const char *s = Tcl_GetString(objv[2]);
+	if (!strcmp(s, "replace")) {
+	    profile = TCL_ENCODING_PROFILE_REPLACE;
+	} else if (!strcmp(s, "strict")) {
+	    profile = TCL_ENCODING_PROFILE_STRICT;
+	} else {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "Invalid value \"%s\" supplied for option \"-profile\". "
+		    "Must be \"strict\" or \"replace\".", s));
+	    return TCL_ERROR;
+	}
+    } else if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?-profile PROFILE? STRING");
+	return TCL_ERROR;
+    }
+
+    Tcl_DString ds;
+    if (Tcl_UtfToNormalizedDString(interp, Tcl_GetString(objv[objc - 1]),
+	    TCL_INDEX_NONE, (Tcl_UnicodeNormalizationForm)PTR2INT(clientData), profile,
+	    &ds) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    Tcl_DStringResult(interp, &ds);
+    return TCL_OK;
 }
 
 /*

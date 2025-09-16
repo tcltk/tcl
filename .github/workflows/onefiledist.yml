@@ -18,7 +18,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Prepare
         run: |
           touch generic/tclStubInit.c generic/tclOOStubInit.c
@@ -61,9 +61,9 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Checkout create-dmg
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: create-dmg/create-dmg
           ref: v1.0.8
@@ -139,7 +139,7 @@ jobs:
           msystem: UCRT64
           install: git mingw-w64-ucrt-x86_64-toolchain make zip
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Prepare
         run: |
           touch generic/tclStubInit.c generic/tclOOStubInit.c
@@ -194,7 +194,7 @@ jobs:
         run: |
           mkdir data
       - name: Get Linux build
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           path: data
           # Can't download by artifact ID; stupid missing feature!
@@ -205,7 +205,7 @@ jobs:
         working-directory: data
       - name: Transfer built files
         # https://github.com/marketplace/actions/rsync-deployments-action
-        uses: burnett01/rsync-deployments@7.0.2
+        uses: burnett01/rsync-deployments@7.1.0
         id: rsync
         if: false  # Disabled... for now
         with:
