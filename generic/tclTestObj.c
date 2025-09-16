@@ -1105,7 +1105,7 @@ static const Tcl_ObjType hugeType = {
     NULL,			/* freeIntRepProc */
     NULL,			/* dupIntRepProc */
     HugeUpdateString,		/* updateStringProc */
-    NULL, 			/* setFromAnyProc */
+    NULL,			/* setFromAnyProc */
 	TCL_OBJTYPE_V0
 };
 

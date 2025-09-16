@@ -27,14 +27,11 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#ifdef __clang__
-#pragma clang diagnostic ignored "-Wignored-attributes"
-#endif
-DLLIMPORT extern __stdcall unsigned char GetVersionExW(void *);
-DLLIMPORT extern __stdcall void *GetModuleHandleW(const void *);
-DLLIMPORT extern __stdcall void FreeLibrary(void *);
-DLLIMPORT extern __stdcall void *GetProcAddress(void *, const char *);
-DLLIMPORT extern __stdcall void GetSystemInfo(void *);
+DLLIMPORT extern unsigned char GetVersionExW(void *);
+DLLIMPORT extern void *GetModuleHandleW(const void *);
+DLLIMPORT extern void FreeLibrary(void *);
+DLLIMPORT extern void *GetProcAddress(void *, const char *);
+DLLIMPORT extern void GetSystemInfo(void *);
 #ifdef __cplusplus
 }
 #endif
@@ -853,8 +850,8 @@ TclpSetVariables(
 	unameOK = 1;
     if (!osInfoInitialized) {
 	void *handle = GetModuleHandleW(L"NTDLL");
-	int(__stdcall *getversion)(void *) =
-		(int(__stdcall *)(void *))GetProcAddress(handle, "RtlGetVersion");
+	int(*getversion)(void *) =
+		(int(*)(void *))GetProcAddress(handle, "RtlGetVersion");
 	osInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOW);
 	if (!getversion || getversion(&osInfo)) {
 	    GetVersionExW(&osInfo);

@@ -5126,7 +5126,7 @@ TestuniClassCmd(
 
     int value;
     if (Tcl_GetIntFromObj(interp, objv[1], &value) != TCL_OK) {
-    	return TCL_ERROR;
+	return TCL_ERROR;
     }
     Tcl_Obj *result = Tcl_NewObj();
     Tcl_ListObjAppendElement(interp, result, Tcl_NewIntObj(Tcl_UniCharToLower(value)));
