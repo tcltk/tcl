@@ -1139,10 +1139,11 @@ TestobjCmd(
 	}
 	Tcl_SetObjResult(interp, Tcl_NewIntObj(varPtr[varIndex]->refCount));
     } else if (strcmp(subCmd, "huge") == 0) {
+	Tcl_Obj *hugeObjPtr;
 	if (objc != 2) {
 	    goto wrongNumArgs;
 	}
-	Tcl_Obj *hugeObjPtr = Tcl_NewObj();
+	hugeObjPtr = Tcl_NewObj();
 	hugeObjPtr->typePtr = &hugeType;
 	hugeObjPtr->length = INT_MAX - 1;
 	hugeObjPtr->bytes = NULL;
