@@ -12,6 +12,7 @@
  */
 
 #include "tclInt.h"
+#include <assert.h>
 
 /*
  * A pointer to a string that holds an initialization script that if non-NULL
@@ -276,6 +277,8 @@ static void		MakeSafe(Tcl_Interp *interp);
 static void		RunLimitHandlers(LimitHandler *handlerPtr,
 			    Tcl_Interp *interp);
 static void		TimeLimitCallback(void *clientData);
+static int		RunPreInitScript(Tcl_Interp *interp);
+static Tcl_Obj *	LocatePreInitScript(Tcl_Interp *interp);
 
 /* NRE enabling */
 static Tcl_NRPostProc	NRPostInvokeHidden;
@@ -307,6 +310,254 @@ Tcl_SetPreInitScript(
     tclPreInitScript = string;
     return prevString;
 }
+
+/*
+ * CheckForFileInDir --
+ *
+ * Little helper to check if a file exists within a directory and is readable.
+ *
+ * Results:
+ *	Returns path to the file if it exists, NULL if not. Reference count
+ *	of returned Tcl_Obj is incremented before returning to account for the
+ *      caller owning a reference.
+ */
+static Tcl_Obj *
+CheckForFileInDir(
+    Tcl_Obj *dirPathPtr,
+    Tcl_Obj *fileNamePtr)
+{
+    Tcl_Obj *path[2];
+    path[0] = dirPathPtr;
+    path[1] = fileNamePtr;
+    Tcl_Obj *fullPathPtr = TclJoinPath(2, path, 0);
+    Tcl_IncrRefCount(fullPathPtr);
+    if (Tcl_FSAccess(fullPathPtr, R_OK) == 0) {
+	return fullPathPtr;
+    }
+    Tcl_DecrRefCount(fullPathPtr);
+    return NULL;
+}
+
+/*
+ * LocatePreInitScript --
+ *
+ *	Locates the Tcl initialization script, "init.tcl".
+ *
+ * Results:
+ *	Returns a Tcl_Obj containing the path or NULL if not found.
+ *	Reference count of returned Tcl_Obj is incremented before returning
+ *	to account for the caller owning a reference.
+ *
+ * Side effects:
+ *	Sets the tcl_library variable to the directory containing init.tcl.
+ */
+Tcl_Obj *
+LocatePreInitScript(Tcl_Interp *interp)
+{
+    /*
+     * The search order for the init.tcl is as follows:
+     *
+     * $tcl_library -
+     * Can specify a primary location, if set, no other locations will be
+     * checked. This is the recommended way for a program that embeds Tcl
+     * to specifically tell Tcl where to find an init.tcl file.
+     *
+     * $env(TCL_LIBRARY) -
+     * Highest priority so user can always override the search path unless
+     * the application has specified an exact directory above
+     *
+     * $tclDefaultLibrary -
+     * INTERNAL: This variable is set by Tcl on those platforms where it
+     * can determine at runtime the directory where it expects the init.tcl
+     * file to be. If set, this value is unset after use. External users of
+     * Tcl should not make use of the variable to customize this function.
+     *
+     * [tcl::pkgconfig get scriptdir,runtime] -
+     * The directory determined by configure to be the place where Tcl's
+     * script library is to be installed.
+     *
+     * ancestor directories of the executable -
+     * The lib and library subdirectories of the parent and grand-parent
+     * directories of the directory containing the executable.
+     *
+     * The first directory on this path that contains a init.tcl script
+     * will be set as the value of tcl_library and the init.tcl file sourced.
+     *
+     * Note the following differences from Tcl 9.0 where this functionality
+     * was implemented as a Tcl script.
+     *
+     * - the $tcl_libPath variable is no longer used. It was maked OBSOLETE
+     *   and not supposed to be used. Applications that embed Tcl and want
+     *   to customize should set tcl_library or call Tcl_PreInitScript
+     *   instead.
+     */
+
+    Tcl_Obj *dirPtr;
+    Tcl_Obj *tailPtr;
+    Tcl_Obj *searchedDirs;
+    Tcl_Obj *initScriptPathPtr = NULL;
+    Tcl_Obj *parentDirPtr = NULL;
+    Tcl_Obj *grandParentDirPtr = NULL;
+    Tcl_Obj *tclVersionPtr = NULL;
+
+    /*
+     * Need to track checked directories for error reporting. As a side
+     * benefit, because they are tracked here we can keep overwriting dirPtr
+     * without leaking memory.
+     */
+    searchedDirs = Tcl_NewListObj(0, NULL);
+
+    tailPtr = Tcl_NewStringObj("init.tcl", 8);
+    Tcl_IncrRefCount(tailPtr);
+
+    dirPtr = Tcl_GetVar2Ex(interp, "tcl_library", NULL, TCL_GLOBAL_ONLY);
+    if (dirPtr != NULL) {
+	Tcl_ListObjAppendElement(NULL, searchedDirs, dirPtr);
+	initScriptPathPtr = CheckForFileInDir(dirPtr, tailPtr);
+	/*
+	 * As per documentation and historical behavior do not search further
+	 * even on failure in the case of tcl_library being set.
+	 */
+	goto done;
+    }
+
+    /*
+     * For remaining paths, failure means we just go on to the next one.
+     * Would be more elegant to use a loop over possible paths and check
+     * file existence in the body but that means paths that never get used
+     * are constructed. Instead we use a macro to reduce code duplication.
+     */
+#define TRY_PATH(dir_)                                            \
+    do {                                                          \
+	if (dir_) {                                               \
+	    Tcl_ListObjAppendElement(NULL, searchedDirs, dir_);   \
+	    initScriptPathPtr = CheckForFileInDir(dir_, tailPtr); \
+	    if (initScriptPathPtr != NULL) {                      \
+		dirPtr = dir_;                                    \
+		goto done;                                        \
+	    }                                                     \
+	}                                                         \
+    } while (0)
+
+    /*
+     * As documented, we do not check subdirectories of TCL_LIBRARY.
+     * This differs from the behavior of tcl 9.0.
+     */
+    dirPtr = Tcl_GetVar2Ex(interp, "env", "TCL_LIBRARY", TCL_GLOBAL_ONLY);
+    TRY_PATH(dirPtr);
+
+    dirPtr = TclZipfs_TclLibrary();
+    TRY_PATH(dirPtr);
+
+    dirPtr = Tcl_GetVar2Ex(interp, "tclDefaultLibrary", NULL, TCL_GLOBAL_ONLY);
+    TRY_PATH(dirPtr);
+    if (dirPtr == NULL) {
+	/*
+	 * tcl::pkgconfig get scriptdir,runtime. Why only if
+	 * tclDefaultLibrary is not set? Historical compatibility
+	 */
+#ifdef CFG_RUNTIME_SCRDIR
+	dirPtr = Tcl_NewStringObj(CFG_RUNTIME_SCRDIR,
+	    sizeof(CFG_RUNTIME_SCRDIR) - 1);
+	TRY_PATH(dirPtr);
+#endif
+    }
+
+    assert(initScriptPathPtr == NULL);
+
+    /*
+     * Now try ancestor directories of the executable. If "parent" is the
+     * parent of the directory containing the exe, paths are searched
+     * in the following order in the original Tcl 9.0 implementation:
+     *   1. parent/lib/tclVERSION
+     *   2. parent/../lib/tclVERSION
+     *   3. parent/library
+     *   4. parent/../library
+     *   5. parent/../tclVERSION/library
+     *   6. parent/../tclPATCHLEVEL/library
+     *   7. parent/../../tclPATCHLEVEL/library
+     * Heck! Why not search the whole damn disk!
+     */
+
+    /* Reminder - TclGetObjNameOfExecutable return need not be released */
+    Tcl_Obj *exePtr = TclGetObjNameOfExecutable();
+    if (exePtr == NULL) {
+	goto done;
+    }
+    parentDirPtr = TclPathPart(interp, exePtr, TCL_PATH_DIRNAME);
+    if (parentDirPtr == NULL) {
+	goto done;
+    }
+
+    
+
+done: /* initScriptPtr != NULL => dirPtr holds dir of init.tcl */
+    if (initScriptPathPtr == NULL) {
+	Tcl_SetObjResult(interp,
+	    Tcl_ObjPrintf(
+		"Cannot find a usable init.tcl in the following directories: \n"
+		"    %s\n\n"
+		"This probably means that Tcl wasn't installed properly.\n",
+		Tcl_GetString(searchedDirs)));
+    } else {
+	Tcl_SetVar2Ex(interp, "tcl_library", NULL, dirPtr, TCL_GLOBAL_ONLY);
+    }
+    Tcl_DecrRefCount(tailPtr);
+    if (parentDirPtr != NULL) {
+	Tcl_DecrRefCount(parentDirPtr);
+    }
+    if (grandParentDirPtr != NULL) {
+	Tcl_DecrRefCount(grandParentDirPtr);
+    }
+    if (tclVersionPtr != NULL) {
+	Tcl_DecrRefCount(tclVersionPtr);
+    }
+    /* Note all examined dirPtr values get freed with searchedDirs */
+    Tcl_DecrRefCount(searchedDirs);
+    return initScriptPathPtr;
+#undef TRY_PATH
+}
+
+/*
+ * RunPreInitScript --
+ *
+ *	Locates and invokes the Tcl initialization script, "init.tcl".
+ *
+ * Results:
+ *	Returns a standard Tcl completion code.
+ *
+ * Side effects:
+ *	Pretty much anything, depending on the contents of the script.
+ */
+int
+RunPreInitScript(Tcl_Interp *interp)
+{
+    /*
+     * Note the following differences from 9.0. If a init.tcl is found and
+     * sourced, further directories are NOT searched even if the init.tcl
+     * sourcing raised errors. This is by design as it is indicative of some
+     * configuration error and attempting a fix through trial and error is
+     * not a robust solution.
+     *
+     * Further, this search mechanism cannot be bypassed by defining an
+     * alternate tclInit command before calling Tcl_Init() as was the case
+     * in Tcl 9.0. Use the Tcl_SetPreInitScript function to instead.
+     */
+    Tcl_Obj *initScriptPathPtr = LocatePreInitScript(interp);
+    if (initScriptPathPtr == NULL) {
+	return TCL_ERROR;
+    }
+    Tcl_IncrRefCount(initScriptPathPtr);
+    int result = Tcl_FSEvalFile(interp, initScriptPathPtr);
+    Tcl_DecrRefCount(initScriptPathPtr);
+    if (result != TCL_OK) {
+	Tcl_ObjPrintf("Error sourcing Tcl initialization script from %s:\n%s",
+	    Tcl_GetString(initScriptPathPtr),
+	    Tcl_GetString(Tcl_GetObjResult(interp)));
+    }
+    return result;
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -397,6 +648,9 @@ Tcl_Init(
      * alternate tclInit command before calling Tcl_Init().
      */
 
+#if 1
+    result = RunPreInitScript(interp);
+#else
     result = Tcl_EvalEx(interp,
 "if {[namespace which -command tclInit] eq \"\"} {\n"
 "  proc tclInit {} {\n"
@@ -439,6 +693,7 @@ Tcl_Init(
 "    }\n"
 "    set dirs {}\n"
 "    set errors {}\n"
+"    set ::SCRIPTS $scripts\n"
 "    foreach script $scripts {\n"
 "	if {[set tcl_library [eval $script]] eq \"\"} continue\n"
 "	set tclfile [file join $tcl_library init.tcl]\n"
@@ -462,6 +717,7 @@ Tcl_Init(
 "  }\n"
 "}\n"
 "tclInit", TCL_INDEX_NONE, 0);
+#endif
     TclpSetInitialEncodings();
 end:
     *names = (*names)->nextPtr;
