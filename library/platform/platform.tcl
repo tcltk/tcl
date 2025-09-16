@@ -99,7 +99,7 @@ proc ::platform::generic {} {
 
     switch -glob -- $plat {
 	windows {
-	    if {$tcl_platform(platform) == "unix"} {
+	    if {$tcl_platform(platform) eq "unix"} {
 		set plat cygwin
 	    } else {
 		set plat win32
