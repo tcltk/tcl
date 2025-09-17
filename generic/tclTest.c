@@ -9160,8 +9160,7 @@ TestUtfToNormalizedCmd(
 	    return TCL_ERROR;
 	}
 	if (len > slen) {
-	    Tcl_SetObjResult(interp,
-		Tcl_ObjPrintf(
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "Passed length %" TCL_SIZE_MODIFIER
 		    "d is greater than string length %" TCL_SIZE_MODIFIER
 		    "d.", len, slen));
@@ -9181,8 +9180,8 @@ TestUtfToNormalizedCmd(
 	(Tcl_UnicodeNormalizationForm)normForm, profile, bufPtr, bufLen, &bufStored);
     if (result == TCL_OK) {
 	/* Return as raw bytes, not string */
-	Tcl_SetObjResult(interp,
-	    Tcl_NewByteArrayObj((unsigned char *)bufPtr, bufStored));
+	Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(
+		(unsigned char *)bufPtr, bufStored));
     }
     if (bufPtr != buffer) {
 	Tcl_Free(bufPtr);
@@ -9238,8 +9237,7 @@ TestUtfToNormalizedDStringCmd(
 	    return TCL_ERROR;
 	}
 	if (len > slen) {
-	    Tcl_SetObjResult(interp,
-		Tcl_ObjPrintf(
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "Passed length %" TCL_SIZE_MODIFIER
 		    "d is greater than string length %" TCL_SIZE_MODIFIER
 		    "d.", len, slen));
@@ -9252,8 +9250,8 @@ TestUtfToNormalizedDStringCmd(
 	(Tcl_UnicodeNormalizationForm)normForm, profile, &ds);
     if (result == TCL_OK) {
 	/* Return as raw bytes, not string */
-	Tcl_SetObjResult(interp,
-	    Tcl_NewByteArrayObj((unsigned char *)Tcl_DStringValue(&ds),
+	Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(
+		(unsigned char *)Tcl_DStringValue(&ds),
 		Tcl_DStringLength(&ds)));
 	Tcl_DStringFree(&ds);
     }
