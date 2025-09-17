@@ -1940,6 +1940,60 @@ Tcl_ListObjAppendElement(
 }
 
 /*
+ *------------------------------------------------------------------------
+ *
+ * TclListObjAppendIfAbsent --
+ *
+ *	Appends an element to a Tcl_Obj list object if the string value is
+ *	not present. If the passed Tcl_Obj is not a list object, it will be
+ *	converted and an error raised if the conversion fails.
+ *
+ *	The Tcl_Obj must not be shared though the internal representation
+ *	may be.
+ *
+ *	CAUTION: Linear search (of course)
+ *
+ * Results:
+ *	On success, TCL_OK is returned with the specified element appended.
+ *	On failure, TCL_ERROR is returned with an error message in the
+ *	interpreter if not NULL.
+ *
+ * Side effects:
+ *    None.
+ *
+ *------------------------------------------------------------------------
+ */
+int
+TclListObjAppendIfAbsent(
+    Tcl_Interp *interp,		/* Used to report errors if not NULL. */
+    Tcl_Obj *toObj,		/* List object to append */
+    Tcl_Obj *elemObj)		/* Element to append to toObj's list. */
+{
+    Tcl_Obj **elemObjs;
+    Tcl_Size numElems;
+    if (Tcl_ListObjGetElements(interp, toObj, &numElems, &elemObjs) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    /* Assume it is worth doing a pointer compare over the whole list first */
+    for (Tcl_Size i = 0; i < numElems; ++i) {
+	if (elemObjs[i] == elemObj) {
+	    return TCL_OK;
+	}
+    }
+    Tcl_Size elemLen;
+    const char *elemStr;
+    elemStr = Tcl_GetStringFromObj(elemObj, &elemLen);
+    for (Tcl_Size i = 0; i < numElems; ++i) {
+	Tcl_Size toLen;
+	const char *toStr = Tcl_GetStringFromObj(elemObjs[i], &toLen);
+	if (toLen == elemLen && !strncmp(elemStr, toStr, elemLen)) {
+	    return TCL_OK;
+	}
+    }
+    return TclListObjAppendElements(interp, toObj, 1, &elemObj);
+}
+
+/*
  *----------------------------------------------------------------------
  *
  * Tcl_ListObjIndex --
