@@ -48,6 +48,16 @@ static struct Tcl_Mutex_ {
 } allocLock;
 static Tcl_Mutex allocLockPtr = &allocLock;
 static int allocOnce = 0;
+/*
+ * Although CRITICAL_SECTIONs can be nested, we need to keep track
+ * of their lock counts for condition variables.
+ */
+
+typedef struct WMutex {
+    CRITICAL_SECTION crit;
+    volatile Tcl_ThreadId thread;
+    volatile int counter;
+} WMutex;
 
 #endif /* TCL_THREADS */
 
@@ -553,9 +563,9 @@ static void		FinalizeConditionEvent(void *data);
 
 void
 Tcl_MutexLock(
-    Tcl_Mutex *mutexPtr)	/* The lock */
+    Tcl_Mutex *mutexPtr)	/* Really (WMutex **) */
 {
-    CRITICAL_SECTION *csPtr;
+    WMutex *wmPtr;
 
     if (*mutexPtr == NULL) {
 	TclpGlobalLock();
@@ -565,15 +575,23 @@ Tcl_MutexLock(
 	 */
 
 	if (*mutexPtr == NULL) {
-	    csPtr = (CRITICAL_SECTION *) Tcl_Alloc(sizeof(CRITICAL_SECTION));
-	    InitializeCriticalSection(csPtr);
-	    *mutexPtr = (Tcl_Mutex) csPtr;
+	    wmPtr = (WMutex *) Tcl_Alloc(sizeof(WMutex));
+	    InitializeCriticalSection(&wmPtr->crit);
+	    wmPtr->thread = 0;
+	    wmPtr->counter = 0;
+	    *mutexPtr = (Tcl_Mutex) wmPtr;
 	    TclRememberMutex(mutexPtr);
 	}
 	TclpGlobalUnlock();
+    } else {
+	wmPtr = *((WMutex **)mutexPtr);
     }
-    csPtr = *((CRITICAL_SECTION **)mutexPtr);
-    EnterCriticalSection(csPtr);
+    if (wmPtr->thread != Tcl_GetCurrentThread() || wmPtr->counter == 0) {
+	EnterCriticalSection(&wmPtr->crit);
+	wmPtr->thread = Tcl_GetCurrentThread();
+	wmPtr->counter = 0;
+    }
+    wmPtr->counter++;
 }
 
 /*
@@ -594,11 +612,15 @@ Tcl_MutexLock(
 
 void
 Tcl_MutexUnlock(
-    Tcl_Mutex *mutexPtr)	/* The lock */
+    Tcl_Mutex *mutexPtr)	/* Really (WMutex **) */
 {
-    CRITICAL_SECTION *csPtr = *((CRITICAL_SECTION **)mutexPtr);
+    WMutex *wmPtr = *((WMutex **)mutexPtr);
 
-    LeaveCriticalSection(csPtr);
+    wmPtr->counter--;
+    if (wmPtr->counter == 0) {
+	wmPtr->thread = 0;
+	LeaveCriticalSection(&wmPtr->crit);
+    }
 }
 
 /*
@@ -620,13 +642,14 @@ Tcl_MutexUnlock(
 
 void
 TclpFinalizeMutex(
-    Tcl_Mutex *mutexPtr)
+    Tcl_Mutex *mutexPtr)	/* Really (WMutex **) */
 {
-    CRITICAL_SECTION *csPtr = *(CRITICAL_SECTION **)mutexPtr;
+    WMutex *wmPtr;
 
-    if (csPtr != NULL) {
-	DeleteCriticalSection(csPtr);
-	Tcl_Free(csPtr);
+    if (mutexPtr != NULL) {
+	wmPtr = *((WMutex **)mutexPtr);
+	DeleteCriticalSection(&wmPtr->crit);
+	Tcl_Free(wmPtr);
 	*mutexPtr = NULL;
     }
 }
@@ -660,9 +683,10 @@ Tcl_ConditionWait(
     const Tcl_Time *timePtr)	/* Timeout on waiting period */
 {
     WinCondition *winCondPtr;	/* Per-condition queue head */
-    CRITICAL_SECTION *csPtr;	/* Caller's Mutex, after casting */
+    WMutex *wmPtr;		/* Caller's Mutex, after casting */
     DWORD wtime;		/* Windows time value */
     int timeout;		/* True if we got a timeout */
+    int counter;		/* Caller's Mutex counter */
     int doExit = 0;		/* True if we need to do exit setup */
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
@@ -717,7 +741,7 @@ Tcl_ConditionWait(
 	}
 	TclpGlobalUnlock();
     }
-    csPtr = *((CRITICAL_SECTION **)mutexPtr);
+    wmPtr = *((WMutex **)mutexPtr);
     winCondPtr = *((WinCondition **)condPtr);
     if (timePtr == NULL) {
 	wtime = INFINITE;
@@ -752,7 +776,10 @@ Tcl_ConditionWait(
      * thread.
      */
 
-    LeaveCriticalSection(csPtr);
+    counter = wmPtr->counter;
+    wmPtr->thread = 0;
+    wmPtr->counter = 0;
+    LeaveCriticalSection(&wmPtr->crit);
     timeout = 0;
     while (!timeout && (tsdPtr->flags & WIN_THREAD_BLOCKED)) {
 	ResetEvent(tsdPtr->condEvent);
@@ -795,7 +822,8 @@ Tcl_ConditionWait(
     }
 
     LeaveCriticalSection(&winCondPtr->condLock);
-    EnterCriticalSection(csPtr);
+    Tcl_MutexLock(mutexPtr);
+    wmPtr->counter = counter;
 }
 
 /*
