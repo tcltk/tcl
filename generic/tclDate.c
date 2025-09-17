@@ -2348,7 +2348,7 @@ TclDateerror(
 }
 
 int
-ToSeconds(
+TclToSeconds(
     int Hours,
     int Minutes,
     int Seconds,
