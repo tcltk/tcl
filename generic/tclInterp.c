@@ -393,12 +393,11 @@ LocatePreInitScript(Tcl_Interp *interp)
      */
 
     Tcl_Obj *dirPtr;
-    Tcl_Obj *tailPtr;
     Tcl_Obj *searchedDirs;
     Tcl_Obj *initScriptPathPtr = NULL;
-    Tcl_Obj *parentDirPtr = NULL;
-    Tcl_Obj *grandParentDirPtr = NULL;
-    Tcl_Obj *tclVersionPtr = NULL;
+    Tcl_Obj *ancestors[2] = {NULL, NULL};
+    Tcl_Obj *literals[] = {NULL, NULL, NULL, NULL, NULL};
+    enum { INITLIT, VERSIONLIT, PATCHLIT, LIBLIT, LIBRARYLIT };
 
     /*
      * Need to track checked directories for error reporting. As a side
@@ -407,13 +406,13 @@ LocatePreInitScript(Tcl_Interp *interp)
      */
     searchedDirs = Tcl_NewListObj(0, NULL);
 
-    tailPtr = Tcl_NewStringObj("init.tcl", 8);
-    Tcl_IncrRefCount(tailPtr);
+    literals[INITLIT] = Tcl_NewStringObj("init.tcl", 8);
+    Tcl_IncrRefCount(literals[INITLIT]);
 
     dirPtr = Tcl_GetVar2Ex(interp, "tcl_library", NULL, TCL_GLOBAL_ONLY);
     if (dirPtr != NULL) {
 	Tcl_ListObjAppendElement(NULL, searchedDirs, dirPtr);
-	initScriptPathPtr = CheckForFileInDir(dirPtr, tailPtr);
+	initScriptPathPtr = CheckForFileInDir(dirPtr, literals[INITLIT]);
 	/*
 	 * As per documentation and historical behavior do not search further
 	 * even on failure in the case of tcl_library being set.
@@ -427,14 +426,18 @@ LocatePreInitScript(Tcl_Interp *interp)
      * file existence in the body but that means paths that never get used
      * are constructed. Instead we use a macro to reduce code duplication.
      */
-#define TRY_PATH(dir_)                                            \
+#define TRY_PATH(dirarg_)                                         \
     do {                                                          \
-	if (dir_) {                                               \
-	    Tcl_ListObjAppendElement(NULL, searchedDirs, dir_);   \
-	    initScriptPathPtr = CheckForFileInDir(dir_, tailPtr); \
-	    if (initScriptPathPtr != NULL) {                      \
-		dirPtr = dir_;                                    \
-		goto done;                                        \
+	dirPtr = (dirarg_);                                       \
+	if (dirPtr) {                                             \
+	    Tcl_ListObjAppendElement(NULL, searchedDirs, dirPtr); \
+	    /* Tcl_IsEmpty check - bug 465d4546e2 */              \
+	    if (!Tcl_IsEmpty(dirPtr)) {                           \
+		initScriptPathPtr =                               \
+		    CheckForFileInDir(dirPtr, literals[INITLIT]); \
+		if (initScriptPathPtr != NULL) {                  \
+		    goto done;                                    \
+		}                                                 \
 	    }                                                     \
 	}                                                         \
     } while (0)
@@ -443,23 +446,18 @@ LocatePreInitScript(Tcl_Interp *interp)
      * As documented, we do not check subdirectories of TCL_LIBRARY.
      * This differs from the behavior of tcl 9.0.
      */
-    dirPtr = Tcl_GetVar2Ex(interp, "env", "TCL_LIBRARY", TCL_GLOBAL_ONLY);
-    TRY_PATH(dirPtr);
+    TRY_PATH(Tcl_GetVar2Ex(interp, "env", "TCL_LIBRARY", TCL_GLOBAL_ONLY));
 
-    dirPtr = TclZipfs_TclLibrary();
-    TRY_PATH(dirPtr);
+    TRY_PATH(TclZipfs_TclLibrary());
 
-    dirPtr = Tcl_GetVar2Ex(interp, "tclDefaultLibrary", NULL, TCL_GLOBAL_ONLY);
-    TRY_PATH(dirPtr);
+    TRY_PATH(Tcl_GetVar2Ex(interp, "tclDefaultLibrary", NULL, TCL_GLOBAL_ONLY));
     if (dirPtr == NULL) {
 	/*
 	 * tcl::pkgconfig get scriptdir,runtime. Why only if
 	 * tclDefaultLibrary is not set? Historical compatibility
 	 */
 #ifdef CFG_RUNTIME_SCRDIR
-	dirPtr = Tcl_NewStringObj(CFG_RUNTIME_SCRDIR,
-	    sizeof(CFG_RUNTIME_SCRDIR) - 1);
-	TRY_PATH(dirPtr);
+	TRY_PATH(Tcl_NewStringObj(CFG_RUNTIME_SCRDIR, -1));
 #endif
     }
 
@@ -477,19 +475,50 @@ LocatePreInitScript(Tcl_Interp *interp)
      *   6. parent/../tclPATCHLEVEL/library
      *   7. parent/../../tclPATCHLEVEL/library
      * Heck! Why not search the whole damn disk!
+     * Pending further discussion, we only do 1-4, and further always
+     * prioritize parent over grandparent.
      */
+
+    literals[VERSIONLIT] = Tcl_NewStringObj("tcl" TCL_VERSION, -1);
+    Tcl_IncrRefCount(literals[VERSIONLIT]);
+    literals[LIBLIT] = Tcl_NewStringObj("lib", 3);
+    Tcl_IncrRefCount(literals[LIBLIT]);
+    literals[LIBRARYLIT] = Tcl_NewStringObj("library", 7);
+    Tcl_IncrRefCount(literals[LIBRARYLIT]);
 
     /* Reminder - TclGetObjNameOfExecutable return need not be released */
     Tcl_Obj *exePtr = TclGetObjNameOfExecutable();
     if (exePtr == NULL) {
 	goto done;
     }
-    parentDirPtr = TclPathPart(interp, exePtr, TCL_PATH_DIRNAME);
-    if (parentDirPtr == NULL) {
+    exePtr = TclPathPart(interp, exePtr, TCL_PATH_DIRNAME);
+    if (exePtr == NULL) {
 	goto done;
     }
+    ancestors[0] = TclPathPart(interp, exePtr, TCL_PATH_DIRNAME);
+    Tcl_DecrRefCount(exePtr);
+    if (ancestors[0] == NULL) {
+	goto done;
+    }
+    ancestors[1] = TclPathPart(interp, ancestors[0], TCL_PATH_DIRNAME);
+    if (ancestors[1] == NULL) {
+	goto done;
+    }
+    /*
+     * Note: ancestors[] are freed at function end. TclPathPart returns
+     * Tcl_Obj with ref count incremented so do not incr ref it here.
+     */
 
-    
+    Tcl_Obj *paths[3];
+    for (size_t i = 0; i < sizeof(ancestors) / sizeof(ancestors[0]); ++i) {
+	paths[0] = ancestors[i];
+	paths[1] = literals[LIBLIT];
+	paths[2] = literals[VERSIONLIT];
+	TRY_PATH(TclJoinPath(3, paths, 0));
+
+	paths[1] = literals[LIBRARYLIT];
+	TRY_PATH(TclJoinPath(2, paths, 0));
+    }
 
 done: /* initScriptPtr != NULL => dirPtr holds dir of init.tcl */
     if (initScriptPathPtr == NULL) {
@@ -502,15 +531,15 @@ done: /* initScriptPtr != NULL => dirPtr holds dir of init.tcl */
     } else {
 	Tcl_SetVar2Ex(interp, "tcl_library", NULL, dirPtr, TCL_GLOBAL_ONLY);
     }
-    Tcl_DecrRefCount(tailPtr);
-    if (parentDirPtr != NULL) {
-	Tcl_DecrRefCount(parentDirPtr);
+    for (size_t i = 0; i < sizeof(ancestors) / sizeof(ancestors[0]); ++i) {
+	if (ancestors[i]) {
+	    Tcl_DecrRefCount(ancestors[i]);
+	}
     }
-    if (grandParentDirPtr != NULL) {
-	Tcl_DecrRefCount(grandParentDirPtr);
-    }
-    if (tclVersionPtr != NULL) {
-	Tcl_DecrRefCount(tclVersionPtr);
+    for (size_t i = 0; i < sizeof(literals)/sizeof(literals[0]); i++) {
+	if (literals[i] != NULL) {
+	    Tcl_DecrRefCount(literals[i]);
+	}
     }
     /* Note all examined dirPtr values get freed with searchedDirs */
     Tcl_DecrRefCount(searchedDirs);
@@ -693,7 +722,6 @@ Tcl_Init(
 "    }\n"
 "    set dirs {}\n"
 "    set errors {}\n"
-"    set ::SCRIPTS $scripts\n"
 "    foreach script $scripts {\n"
 "	if {[set tcl_library [eval $script]] eq \"\"} continue\n"
 "	set tclfile [file join $tcl_library init.tcl]\n"
