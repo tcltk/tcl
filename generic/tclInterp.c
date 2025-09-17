@@ -279,6 +279,8 @@ static void		RunLimitHandlers(LimitHandler *handlerPtr,
 static void		TimeLimitCallback(void *clientData);
 static int		RunPreInitScript(Tcl_Interp *interp);
 static Tcl_Obj *	LocatePreInitScript(Tcl_Interp *interp);
+static Tcl_ObjCmdProc	InitAutoPathObjCmd;
+#define INIT_AUTO_PATH_CMD "::tcl::InitAutoPath"
 
 /* NRE enabling */
 static Tcl_NRPostProc	NRPostInvokeHidden;
@@ -586,8 +588,156 @@ RunPreInitScript(Tcl_Interp *interp)
     }
     return result;
 }
-
 
+int
+AddPathsInVarToList(
+	Tcl_Interp *interp,
+	const char *name1,
+	const char *name2,
+	Tcl_Obj *toListPtr,
+	int doTildeExpand
+)
+{
+    Tcl_Obj **elems;
+    Tcl_Size nelems;
+    Tcl_Obj *fromListPtr= Tcl_GetVar2Ex(interp, name1, name2, TCL_GLOBAL_ONLY);
+    if (fromListPtr) {
+	if (TclListObjGetElements(interp, fromListPtr, &nelems, &elems) !=
+	    TCL_OK) {
+	    return TCL_ERROR;
+	}
+	for (Tcl_Size i = 0; i < nelems; ++i) {
+	    Tcl_Obj *pathPtr = elems[i];
+	    if (doTildeExpand) {
+		pathPtr = TclResolveTildePath(NULL, pathPtr);
+		if (pathPtr == NULL) {
+		    continue;
+		}
+	    }
+	    if (TclListObjAppendIfAbsent(interp, toListPtr, pathPtr) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	}
+    }
+    return TCL_OK;
+}
+
+/*
+ * InitAutoPathObjCmd --
+ *
+ *	Initializes the auto_path variable in an interpreter. In safe interps,
+ *	it is set to empty. In unsafe interps, the following are added to it
+ *
+ *	- If auto_path does not exist, it is initialized with the content
+ *	  of the TCLLIBPATH environment variable with tilde expansion
+ *	- The tcl_library directory and its parent
+ *	- The lib subdirectory in the parent directory of the directory
+ *	  containing the executable
+ *	- The elements of tcl_pkgPath
+ *
+ *	The function also adds the encoding subdirectory of tcl_library
+ *	to the encodings search path if not already present.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	The command deletes itself as it should not be called more than once
+ *	for an interpreter.
+ */
+int
+InitAutoPathObjCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument vector. */
+{
+    if (objc != 1) {
+	Tcl_WrongNumArgs(interp, 1, NULL, "");
+	return TCL_ERROR;
+    }
+    Tcl_Obj *autoPathPtr;
+
+    Tcl_DeleteCommand(interp, INIT_AUTO_PATH_CMD);
+
+    autoPathPtr = Tcl_GetVar2Ex(interp, "auto_path", NULL, TCL_GLOBAL_ONLY);
+
+    /* Safe interps get empty auto_path if it does not exist. */
+    if (Tcl_IsSafe(interp)) {
+	if (autoPathPtr == NULL) {
+	    Tcl_SetVar2Ex(interp, "auto_path", NULL, Tcl_NewObj(),
+		TCL_GLOBAL_ONLY);
+	}
+	return TCL_OK;
+    }
+
+    /*
+     * Paths are added only if they do not exist. N**2 complexity but lengths
+     * should be short so not worth hashed lookups.
+     */
+
+    int result;
+
+    /* Initialize from TCLLIBPATH only if auto_path did not already exist */
+    if (autoPathPtr == NULL) {
+	autoPathPtr = Tcl_NewObj();
+	if (AddPathsInVarToList(interp, "env", "TCLLIBPATH", autoPathPtr, 1) != TCL_OK) {
+	    Tcl_DecrRefCount(autoPathPtr);
+	    return TCL_ERROR;
+	}
+    }
+
+    /* tcl_library and its parent */
+    Tcl_Obj *objPtr =
+	Tcl_GetVar2Ex(interp, "tcl_library", NULL, TCL_GLOBAL_ONLY);
+    if (objPtr) {
+	if (TclListObjAppendIfAbsent(interp, autoPathPtr, objPtr) != TCL_OK) {
+	    Tcl_DecrRefCount(autoPathPtr);
+	    return TCL_ERROR;
+	}
+	objPtr = TclPathPart(interp, objPtr, TCL_PATH_DIRNAME);
+	if (objPtr) {
+	    result = TclListObjAppendIfAbsent(interp, autoPathPtr, objPtr);
+	    Tcl_DecrRefCount(objPtr); /* TclPathPart returns a reference */
+	    if (result != TCL_OK) {
+		Tcl_DecrRefCount(autoPathPtr);
+		return TCL_ERROR;
+	    }
+	}
+    }
+
+    /* parent/lib */
+    Tcl_Obj *dirs[3] = {NULL, NULL, NULL}; /* exedir, exedirparent, lib */
+    Tcl_Size dirCount = TclGetObjExecutableAncestors(interp, 2, dirs);
+    if (dirCount == 2) {
+	assert(dirs[1]);
+	dirs[2] = Tcl_NewStringObj("lib", 3);
+	Tcl_IncrRefCount(dirs[2]);
+	objPtr = TclJoinPath(2, &dirs[1], 0);
+	if (objPtr != NULL) {
+	    Tcl_IncrRefCount(objPtr);
+	    (void) TclListObjAppendIfAbsent(NULL, autoPathPtr, objPtr);
+	    Tcl_DecrRefCount(objPtr);
+	}
+    }
+    for (size_t i = 0; i < sizeof(dirs) / sizeof(dirs[0]); ++i) {
+	if (dirs[i] != NULL) {
+	    Tcl_DecrRefCount(dirs[i]);
+	}
+    }
+
+    /* tcl_pkgPath. Errors ignored like original. Note no tildeexpand */
+    (void) AddPathsInVarToList(interp, "tcl_pkgPath", NULL, autoPathPtr, 0);
+    autoPathPtr =
+	Tcl_SetVar2Ex(interp, "auto_path", NULL, autoPathPtr, TCL_GLOBAL_ONLY);
+    if (autoPathPtr) {
+	Tcl_SetObjResult(interp, autoPathPtr);
+	return TCL_OK;
+    } else {
+	return TCL_ERROR;
+    }
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -795,7 +945,8 @@ TclInterpInit(
 
     Tcl_NRCreateCommand(interp, "interp", Tcl_InterpObjCmd, NRInterpCmd,
 	    NULL, NULL);
-
+    Tcl_CreateObjCommand(interp, INIT_AUTO_PATH_CMD, InitAutoPathObjCmd,
+	    NULL, NULL);
     Tcl_CallWhenDeleted(interp, InterpInfoDeleteProc, NULL);
     return TCL_OK;
 }
