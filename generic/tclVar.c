@@ -198,7 +198,7 @@ static void		ArrayPopulateSearch(Tcl_Interp *interp,
 			    ArraySearch *searchPtr);
 static void		ArrayDoneSearch(Interp *iPtr, Var *varPtr,
 			    ArraySearch *searchPtr);
-static Tcl_NRPostProc   ArrayForLoopCallback;
+static Tcl_NRPostProc	ArrayForLoopCallback;
 static Tcl_ObjCmdProc	ArrayForNRCmd;
 static void		DeleteSearches(Interp *iPtr, Var *arrayVarPtr);
 static void		DeleteArray(Interp *iPtr, Tcl_Obj *arrayNamePtr,
