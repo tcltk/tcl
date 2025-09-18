@@ -53,7 +53,7 @@ LIB_INSTALL_DIR		= $(INSTALL_ROOT)$(libdir)
 SCRIPT_INSTALL_DIR	= $(INSTALL_ROOT)$(TCL_LIBRARY)
 
 # Path name to use when installing Tcl modules.
-MODULE_INSTALL_DIR	= $(SCRIPT_INSTALL_DIR)/../tcl9
+MODULE_INSTALL_DIR	= $(INSTALL_ROOT)$(prefix)/lib/tcl9
 
 # Directory in which to install the include file tcl.h:
 INCLUDE_INSTALL_DIR	= $(INSTALL_ROOT)$(includedir)
@@ -119,11 +119,13 @@ bindir_native	= $(shell $(CYGPATH) '$(bindir)')
 includedir_native = $(shell $(CYGPATH) '$(includedir)')
 mandir_native = $(shell $(CYGPATH) '$(mandir)')
 TCL_LIBRARY_NATIVE	= $(shell $(CYGPATH) '$(TCL_LIBRARY)')
+MODULE_DIR_NATIVE	= $(shell $(CYGPATH) '$(prefix)/lib/tcl9')
 GENERIC_DIR_NATIVE	= $(shell $(CYGPATH) '$(GENERIC_DIR)')
 WIN_DIR_NATIVE		= $(shell $(CYGPATH) '$(WIN_DIR)')
 ROOT_DIR_NATIVE		= $(shell $(CYGPATH) '$(ROOT_DIR)')
 TOOL_DIR_NATIVE		= $(shell $(CYGPATH) '$(TOOL_DIR)')
 SCRIPT_INSTALL_DIR_NATIVE	= $(shell $(CYGPATH) '$(SCRIPT_INSTALL_DIR)')
+MODULE_INSTALL_DIR_NATIVE	= $(shell $(CYGPATH) '$(MODULE_INSTALL_DIR)')
 INCLUDE_INSTALL_DIR_NATIVE	= $(shell $(CYGPATH) '$(INCLUDE_INSTALL_DIR)')
 MAN_INSTALL_DIR_NATIVE	= $(shell $(CYGPATH) '$(MAN_INSTALL_DIR)')
 ROOT_DIR_WIN_NATIVE	= $(shell cd '$(ROOT_DIR)' ; pwd -W 2>/dev/null || pwd -P)
@@ -707,15 +709,18 @@ tclPkgConfig.${OBJEXT}: tclPkgConfig.c
 		-DCFG_INSTALL_LIBDIR="\"$(LIB_INSTALL_DIR_NATIVE)\"" \
 		-DCFG_INSTALL_BINDIR="\"$(BIN_INSTALL_DIR_NATIVE)\"" \
 		-DCFG_INSTALL_SCRDIR="\"$(SCRIPT_INSTALL_DIR_NATIVE)\"" \
+		-DCFG_INSTALL_MODULEDIR="\"$(MODULE_INSTALL_DIR_NATIVE)\"" \
 		-DCFG_INSTALL_INCDIR="\"$(INCLUDE_INSTALL_DIR_NATIVE)\"" \
 		-DCFG_INSTALL_DOCDIR="\"$(MAN_INSTALL_DIR_NATIVE)\"" \
 		\
 		-DCFG_RUNTIME_LIBDIR="\"$(libdir_native)\"" \
 		-DCFG_RUNTIME_BINDIR="\"$(bindir_native)\"" \
 		-DCFG_RUNTIME_SCRDIR="\"$(TCL_LIBRARY_NATIVE)\"" \
+		-DCFG_RUNTIME_MODULEDIR="\"$(MODULE_DIR_NATIVE)\"" \
 		-DCFG_RUNTIME_INCDIR="\"$(includedir_native)\"" \
 		-DCFG_RUNTIME_DOCDIR="\"$(mandir_native)\"" \
 		-DCFG_RUNTIME_DLLFILE="\"$(TCL_DLL_FILE)\"" \
+		-DZIPFS_BUILD=${ZIPFS_BUILD} \
 		-DBUILD_tcl \
 		@DEPARG@ $(CC_OBJNAME)
 

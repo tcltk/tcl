@@ -43,6 +43,8 @@ TCL_LIBRARY		= @TCL_LIBRARY@
 # Path to use at runtime to refer to LIB_INSTALL_DIR:
 LIB_RUNTIME_DIR		= $(libdir)
 
+MODULE_RUNTIME_DIR	= $(dirname "$(TCL_LIBRARY)")/tcl9
+
 # Directory in which to install the program tclsh:
 BIN_INSTALL_DIR		= $(INSTALL_ROOT)$(bindir)
 
@@ -54,7 +56,7 @@ DLL_INSTALL_DIR		= @DLL_INSTALL_DIR@
 SCRIPT_INSTALL_DIR	= $(INSTALL_ROOT)$(TCL_LIBRARY)
 
 # Path name to use when installing Tcl modules.
-MODULE_INSTALL_DIR	= $(SCRIPT_INSTALL_DIR)/../tcl9
+MODULE_INSTALL_DIR	= $(INSTALL_ROOT)$(MODULE_RUNTIME_DIR)
 
 # Directory in which to install the include file tcl.h:
 INCLUDE_INSTALL_DIR	= $(INSTALL_ROOT)$(includedir)
@@ -1516,14 +1518,17 @@ tclPkgConfig.o: $(GENERIC_DIR)/tclPkgConfig.c
 		-DCFG_INSTALL_LIBDIR="\"$(LIB_INSTALL_DIR)\"" \
 		-DCFG_INSTALL_BINDIR="\"$(BIN_INSTALL_DIR)\"" \
 		-DCFG_INSTALL_SCRDIR="\"$(SCRIPT_INSTALL_DIR)\"" \
+		-DCFG_INSTALL_MODULEDIR="\"$(MODULE_INSTALL_DIR)\"" \
 		-DCFG_INSTALL_INCDIR="\"$(INCLUDE_INSTALL_DIR)\"" \
 		-DCFG_INSTALL_DOCDIR="\"$(MAN_INSTALL_DIR)\"" \
 		-DCFG_RUNTIME_LIBDIR="\"$(libdir)\"" \
 		-DCFG_RUNTIME_BINDIR="\"$(bindir)\"" \
 		-DCFG_RUNTIME_SCRDIR="\"$(TCL_LIBRARY)\"" \
+		-DCFG_RUNTIME_MODULEDIR="\"$(MODULE_RUNTIME_DIR)\"" \
 		-DCFG_RUNTIME_INCDIR="\"$(includedir)\"" \
 		-DCFG_RUNTIME_DOCDIR="\"$(mandir)\"" \
 		-DCFG_RUNTIME_DLLFILE="\"$(TCL_LIB_FILE)\"" \
+		-DZIPFS_BUILD=${ZIPFS_BUILD} \
 		$(GENERIC_DIR)/tclPkgConfig.c
 
 tclPosixStr.o: $(GENERIC_DIR)/tclPosixStr.c

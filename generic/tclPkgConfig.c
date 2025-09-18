@@ -106,7 +106,10 @@ static Tcl_Config const cfg[] = {
 
     {"libdir,runtime",		CFG_RUNTIME_LIBDIR},
     {"bindir,runtime",		CFG_RUNTIME_BINDIR},
+#if ZIPFS_BUILD == 0
     {"scriptdir,runtime",	CFG_RUNTIME_SCRDIR},
+#endif
+    {"moduledir,runtime",	CFG_RUNTIME_MODULEDIR},
     {"includedir,runtime",	CFG_RUNTIME_INCDIR},
     {"docdir,runtime",		CFG_RUNTIME_DOCDIR},
 #if !defined(STATIC_BUILD)
@@ -117,7 +120,10 @@ static Tcl_Config const cfg[] = {
 
     {"libdir,install",		CFG_INSTALL_LIBDIR},
     {"bindir,install",		CFG_INSTALL_BINDIR},
+#if ZIPFS_BUILD == 0
     {"scriptdir,install",	CFG_INSTALL_SCRDIR},
+#endif
+    {"moduledir,install",	CFG_INSTALL_MODULEDIR},
     {"includedir,install",	CFG_INSTALL_INCDIR},
     {"docdir,install",		CFG_INSTALL_DOCDIR},
 
