@@ -946,8 +946,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		[Defined when cygwin/mingw does not support EXCEPTION DISPOSITION])
 	fi
 
-	AC_CHECK_HEADER(stdbool.h, [AC_DEFINE(HAVE_STDBOOL_H, 1, [Do we have <stdbool.h>?])],)
-
 	# See if the compiler supports casting to a union type.
 	# This is used to stop gcc from printing a compiler
 	# warning when initializing a union member.

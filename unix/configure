@@ -7540,15 +7540,6 @@ printf "%s\n" "$tcl_cv_cc_input_charset" >&6; }
 	CFLAGS="$CFLAGS -finput-charset=UTF-8"
     fi
 
-    ac_fn_c_check_header_compile "$LINENO" "stdbool.h" "ac_cv_header_stdbool_h" "$ac_includes_default"
-if test "x$ac_cv_header_stdbool_h" = xyes
-then :
-
-printf "%s\n" "#define HAVE_STDBOOL_H 1" >>confdefs.h
-
-fi
-
-
     # Check for vfork, posix_spawnp() and friends unconditionally
     ac_fn_c_check_func "$LINENO" "vfork" "ac_cv_func_vfork"
 if test "x$ac_cv_func_vfork" = xyes
