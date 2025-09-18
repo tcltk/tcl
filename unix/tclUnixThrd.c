@@ -12,7 +12,9 @@
  */
 
 #include "tclInt.h"
+#ifdef HAVE_STDATOMIC_H
 #include <stdatomic.h>
+#endif /* HAVE_STDATOMIC_H */
 
 #if TCL_THREADS
 
@@ -69,6 +71,9 @@
 
 typedef struct PMutex {
     pthread_mutex_t mutex;
+#if defined(HAVE_PTHREAD_SPIN_LOCK) && !defined(HAVE_STDATOMIC_H)
+    pthread_spinlock_t lock;
+#endif
     volatile pthread_t thread;
     volatile int counter;
 } PMutex;
@@ -77,6 +82,9 @@ static void
 PMutexInit(
     PMutex *pmutexPtr)
 {
+#if defined(HAVE_PTHREAD_SPIN_LOCK) && !defined(HAVE_STDATOMIC_H)
+    pthread_spin_init(&pmutexPtr->lock, PTHREAD_PROCESS_PRIVATE);
+#endif
     pthread_mutex_init(&pmutexPtr->mutex, NULL);
     pmutexPtr->thread = 0;
     pmutexPtr->counter = 0;
@@ -87,7 +95,12 @@ PMutexDestroy(
     PMutex *pmutexPtr)
 {
     pthread_mutex_destroy(&pmutexPtr->mutex);
+#if defined(HAVE_PTHREAD_SPIN_LOCK) && !defined(HAVE_STDATOMIC_H)
+    pthread_spin_destroy(&pmutexPtr->lock);
+#endif
 }
+
+#ifdef HAVE_STDATOMIC_H
 
 static void
 PMutexLock(
@@ -97,19 +110,19 @@ PMutexLock(
     if (__atomic_load_n(&pmutexPtr->counter, __ATOMIC_RELAXED) == 0) {
 	pthread_mutex_lock(&pmutexPtr->mutex);
 	__atomic_store_n(&pmutexPtr->thread, mythread, __ATOMIC_RELAXED);
-    } else if (__atomic_load_n (&pmutexPtr->thread, __ATOMIC_RELAXED) != mythread) {
+    } else if (__atomic_load_n(&pmutexPtr->thread, __ATOMIC_RELAXED) != mythread) {
 	pthread_mutex_lock(&pmutexPtr->mutex);
 	__atomic_store_n(&pmutexPtr->thread, mythread, __ATOMIC_RELAXED);
 	__atomic_store_n(&pmutexPtr->counter, 0, __ATOMIC_RELAXED);
     }
-    __atomic_fetch_add(&pmutexPtr->counter, 1, __ATOMIC_RELAXED);
+    __atomic_add_fetch(&pmutexPtr->counter, 1, __ATOMIC_RELAXED);
 }
 
 static void
 PMutexUnlock(
     PMutex *pmutexPtr)
 {
-    if (__atomic_fetch_add(&pmutexPtr->counter, -1, __ATOMIC_RELAXED) == 1) {
+    if (__atomic_sub_fetch(&pmutexPtr->counter, 1, __ATOMIC_RELAXED) == 0) {
     __atomic_store_n(&pmutexPtr->thread, 0, __ATOMIC_RELAXED);
 	pthread_mutex_unlock(&pmutexPtr->mutex);
     }
@@ -139,6 +152,106 @@ PCondTimedWait(
     __atomic_store_n(&pmutexPtr->thread, pthread_self(), __ATOMIC_RELAXED);
     __atomic_store_n(&pmutexPtr->counter, counter, __ATOMIC_RELAXED);
 }
+
+#else /* HAVE_STDATOMIC_H */
+
+static void
+PMutexLock(
+    PMutex *pmutexPtr)
+{
+    bool do_lock;
+
+#ifdef HAVE_PTHREAD_SPIN_LOCK
+    pthread_spin_lock(&pmutexPtr->lock);
+#endif
+    do_lock = (pmutexPtr->thread != pthread_self() || pmutexPtr->counter == 0);
+#ifdef HAVE_PTHREAD_SPIN_LOCK
+    pthread_spin_unlock(&pmutexPtr->lock);
+#endif
+
+    if (do_lock) {
+	pthread_mutex_lock(&pmutexPtr->mutex);
+	pmutexPtr->thread = pthread_self();
+	pmutexPtr->counter = 0;
+    }
+    pmutexPtr->counter++;
+}
+
+static void
+PMutexUnlock(
+    PMutex *pmutexPtr)
+{
+#ifdef HAVE_PTHREAD_SPIN_LOCK
+    bool is_owned;
+
+    pthread_spin_lock(&pmutexPtr->lock);
+    is_owned = (pmutexPtr->thread == pthread_self());
+    pthread_spin_unlock(&pmutexPtr->lock);
+
+    if (!is_owned) {
+	Tcl_Panic("mutex not owned");
+    }
+#endif
+
+    pmutexPtr->counter--;
+    if (pmutexPtr->counter == 0) {
+	pmutexPtr->thread = 0;
+	pthread_mutex_unlock(&pmutexPtr->mutex);
+    }
+}
+
+static void
+PCondWait(
+    pthread_cond_t *pcondPtr,
+    PMutex *pmutexPtr)
+{
+    int counter;
+#ifdef HAVE_PTHREAD_SPIN_LOCK
+    bool is_owned;
+
+    pthread_spin_lock(&pmutexPtr->lock);
+    is_owned = (pmutexPtr->thread == pthread_self());
+    pthread_spin_unlock(&pmutexPtr->lock);
+
+    if (!is_owned) {
+	Tcl_Panic("mutex not owned");
+    }
+#endif
+    counter = pmutexPtr->counter;
+    pmutexPtr->counter = 0;
+    pmutexPtr->thread = 0;
+    pthread_cond_wait(pcondPtr, &pmutexPtr->mutex);
+    pmutexPtr->thread = pthread_self();
+    pmutexPtr->counter = counter;
+}
+
+static void
+PCondTimedWait(
+    pthread_cond_t *pcondPtr,
+    PMutex *pmutexPtr,
+    struct timespec *ptime)
+{
+    int counter;
+#ifdef HAVE_PTHREAD_SPIN_LOCK
+    bool is_owned;
+
+    pthread_spin_lock(&pmutexPtr->lock);
+    is_owned = (pmutexPtr->thread == pthread_self());
+    pthread_spin_unlock(&pmutexPtr->lock);
+
+    if (!is_owned) {
+	Tcl_Panic("mutex not owned");
+    }
+#endif
+    counter = pmutexPtr->counter;
+    pmutexPtr->counter = 0;
+    pmutexPtr->thread = 0;
+    pthread_cond_timedwait(pcondPtr, &pmutexPtr->mutex, ptime);
+    pmutexPtr->thread = pthread_self();
+    pmutexPtr->counter = counter;
+}
+
+#endif /* HAVE_STDATOMIC_H */
 
 /*
  * globalLock is used to serialize creation of mutexes, condition variables,

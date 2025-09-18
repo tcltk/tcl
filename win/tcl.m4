@@ -946,7 +946,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		[Defined when cygwin/mingw does not support EXCEPTION DISPOSITION])
 	fi
 
-	AC_CHECK_HEADER(stdbool.h, [AC_DEFINE(HAVE_STDBOOL_H, 1, [Do we have <stdbool.h>?])],)
+	AC_CHECK_HEADER(stdatomic.h, [AC_DEFINE(HAVE_STDATOMIC_H, 1, [Do we have <stdatomic.h>?])],)
 
 	# See if the compiler supports casting to a union type.
 	# This is used to stop gcc from printing a compiler
