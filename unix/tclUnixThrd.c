@@ -12,6 +12,7 @@
  */
 
 #include "tclInt.h"
+#include <stdatomic.h>
 
 #if TCL_THREADS
 
@@ -68,8 +69,8 @@
 
 typedef struct PMutex {
     pthread_mutex_t mutex;
-    pthread_t thread;
-    int counter;
+    volatile pthread_t thread;
+    volatile int counter;
 } PMutex;
 
 static void
@@ -92,21 +93,24 @@ static void
 PMutexLock(
     PMutex *pmutexPtr)
 {
-    if (pmutexPtr->thread != pthread_self() || pmutexPtr->counter == 0) {
+    pthread_t mythread = pthread_self();
+    if (__atomic_load_n(&pmutexPtr->counter, __ATOMIC_RELAXED) == 0) {
 	pthread_mutex_lock(&pmutexPtr->mutex);
-	pmutexPtr->thread = pthread_self();
-	pmutexPtr->counter = 0;
+	__atomic_store_n(&pmutexPtr->thread, mythread, __ATOMIC_RELAXED);
+    } else if (__atomic_load_n (&pmutexPtr->thread, __ATOMIC_RELAXED) != mythread) {
+	pthread_mutex_lock(&pmutexPtr->mutex);
+	__atomic_store_n(&pmutexPtr->thread, mythread, __ATOMIC_RELAXED);
+	__atomic_store_n(&pmutexPtr->counter, 0, __ATOMIC_RELAXED);
     }
-    pmutexPtr->counter++;
+    __atomic_fetch_add(&pmutexPtr->counter, 1, __ATOMIC_RELAXED);
 }
 
 static void
 PMutexUnlock(
     PMutex *pmutexPtr)
 {
-    pmutexPtr->counter--;
-    if (pmutexPtr->counter == 0) {
-	pmutexPtr->thread = 0;
+    if (__atomic_fetch_add(&pmutexPtr->counter, -1, __ATOMIC_RELAXED) == 1) {
+    __atomic_store_n(&pmutexPtr->thread, 0, __ATOMIC_RELAXED);
 	pthread_mutex_unlock(&pmutexPtr->mutex);
     }
 }
@@ -116,13 +120,11 @@ PCondWait(
     pthread_cond_t *pcondPtr,
     PMutex *pmutexPtr)
 {
-    int counter = pmutexPtr->counter;
-
-    pmutexPtr->thread = 0;
-    pmutexPtr->counter = 0;
+    int counter =__atomic_exchange_n(&pmutexPtr->counter, 0, __ATOMIC_RELAXED);
+    __atomic_store_n(&pmutexPtr->thread, 0, __ATOMIC_RELAXED);
     pthread_cond_wait(pcondPtr, &pmutexPtr->mutex);
-    pmutexPtr->thread = pthread_self();
-    pmutexPtr->counter = counter;
+    __atomic_store_n(&pmutexPtr->thread, pthread_self(), __ATOMIC_RELAXED);
+    __atomic_store_n(&pmutexPtr->counter, counter, __ATOMIC_RELAXED);
 }
 
 static void
@@ -131,13 +133,11 @@ PCondTimedWait(
     PMutex *pmutexPtr,
     struct timespec *ptime)
 {
-    int counter = pmutexPtr->counter;
-
-    pmutexPtr->thread = 0;
-    pmutexPtr->counter = 0;
+    int counter =__atomic_exchange_n(&pmutexPtr->counter, 0, __ATOMIC_RELAXED);
+    __atomic_store_n(&pmutexPtr->thread, 0, __ATOMIC_RELAXED);
     pthread_cond_timedwait(pcondPtr, &pmutexPtr->mutex, ptime);
-    pmutexPtr->thread = pthread_self();
-    pmutexPtr->counter = counter;
+    __atomic_store_n(&pmutexPtr->thread, pthread_self(), __ATOMIC_RELAXED);
+    __atomic_store_n(&pmutexPtr->counter, counter, __ATOMIC_RELAXED);
 }
 
 /*
