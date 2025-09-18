@@ -575,10 +575,10 @@ RunPreInitScript(Tcl_Interp *interp)
      * in Tcl 9.0. Use the Tcl_SetPreInitScript function to instead.
      */
     Tcl_Obj *initScriptPathPtr = LocatePreInitScript(interp);
+    /* Note initScriptPathPtr reference count already incremented */
     if (initScriptPathPtr == NULL) {
 	return TCL_ERROR;
     }
-    Tcl_IncrRefCount(initScriptPathPtr);
     int result = Tcl_FSEvalFile(interp, initScriptPathPtr);
     Tcl_DecrRefCount(initScriptPathPtr);
     if (result != TCL_OK) {
@@ -653,7 +653,7 @@ InitAutoPathObjCmd(
     Tcl_Obj *const objv[])	/* Argument vector. */
 {
     if (objc != 1) {
-	Tcl_WrongNumArgs(interp, 1, NULL, "");
+	Tcl_WrongNumArgs(interp, 1, objv, "");
 	return TCL_ERROR;
     }
     Tcl_Obj *autoPathPtr;
