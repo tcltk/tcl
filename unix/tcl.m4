@@ -1862,8 +1862,6 @@ dnl # preprocessing tests use only CPPFLAGS.
 	CFLAGS="$CFLAGS -finput-charset=UTF-8"
     fi
 
-    AC_CHECK_HEADER(stdbool.h, [AC_DEFINE(HAVE_STDBOOL_H, 1, [Do we have <stdbool.h>?])],)
-
     # Check for vfork, posix_spawnp() and friends unconditionally
     AC_CHECK_FUNCS(vfork posix_spawnp posix_spawn_file_actions_adddup2 posix_spawnattr_setflags)
 
