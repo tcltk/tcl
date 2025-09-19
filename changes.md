@@ -14,6 +14,7 @@ to the userbase.
  - [Tweak install permissions](https://core.tcl-lang.org/tcl/tktview/31d4fa)
  - [interp creation resets encoding directory search path](https://core.tcl-lang.org/tcl/tktview/87b697)
  - [Pointer arithmetic with NULL in buildInfoObjCmd()](https://core.tcl-lang.org/tcl/tktview/85fc8b)
+ - [TclPushVarName(): pointer overflow](https://core.tcl-lang.org/tcl/tktview/77059c)
 
 # Updated bundled packages, libraries, standards, data
  - http 2.10.1
