@@ -38,6 +38,7 @@ jobs:
           PARTIAL: >
             [
               "",
+              "CFLAGS=-DNO_ATOMIC=1",
               "--enable-symbols=all",
               "CFLAGS=-m32 CPPFLAGS=-m32 LDFLAGS=-m32 --disable-64bit"
             ]

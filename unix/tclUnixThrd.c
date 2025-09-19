@@ -12,6 +12,13 @@
  */
 
 #include "tclInt.h"
+
+#if defined(HAVE_STDATOMIC_H) && defined(NO_ATOMIC)
+/*  TODO: for test purposes only, remove this before merge! */
+#  undef HAVE_STDATOMIC_H
+#endif
+
+
 #ifdef HAVE_STDATOMIC_H
 #include <stdatomic.h>
 #endif /* HAVE_STDATOMIC_H */
@@ -82,22 +89,26 @@ static void
 PMutexInit(
     PMutex *pmutexPtr)
 {
+    pthread_mutex_init(&pmutexPtr->mutex, NULL);
 #if defined(HAVE_PTHREAD_SPIN_LOCK) && !defined(HAVE_STDATOMIC_H)
     pthread_spin_init(&pmutexPtr->lock, PTHREAD_PROCESS_PRIVATE);
+    pthread_spin_lock(&pmutexPtr->lock);
 #endif
-    pthread_mutex_init(&pmutexPtr->mutex, NULL);
     pmutexPtr->thread = 0;
     pmutexPtr->counter = 0;
+#if defined(HAVE_PTHREAD_SPIN_LOCK) && !defined(HAVE_STDATOMIC_H)
+    pthread_spin_unlock(&pmutexPtr->lock);
+#endif
 }
 
 static void
 PMutexDestroy(
     PMutex *pmutexPtr)
 {
-    pthread_mutex_destroy(&pmutexPtr->mutex);
 #if defined(HAVE_PTHREAD_SPIN_LOCK) && !defined(HAVE_STDATOMIC_H)
     pthread_spin_destroy(&pmutexPtr->lock);
 #endif
+    pthread_mutex_destroy(&pmutexPtr->mutex);
 }
 
 #ifdef HAVE_STDATOMIC_H
@@ -159,43 +170,54 @@ static void
 PMutexLock(
     PMutex *pmutexPtr)
 {
-    bool do_lock;
+    pthread_t self = pthread_self();;
 
 #ifdef HAVE_PTHREAD_SPIN_LOCK
     pthread_spin_lock(&pmutexPtr->lock);
 #endif
-    do_lock = (pmutexPtr->thread != pthread_self() || pmutexPtr->counter == 0);
+    if ((pmutexPtr->thread != self || pmutexPtr->counter == 0)) {
 #ifdef HAVE_PTHREAD_SPIN_LOCK
-    pthread_spin_unlock(&pmutexPtr->lock);
+	pthread_spin_unlock(&pmutexPtr->lock);
 #endif
-
-    if (do_lock) {
 	pthread_mutex_lock(&pmutexPtr->mutex);
-	pmutexPtr->thread = pthread_self();
+#ifdef HAVE_PTHREAD_SPIN_LOCK
+	pthread_spin_lock(&pmutexPtr->lock);
+#endif
+	pmutexPtr->thread = self;
 	pmutexPtr->counter = 0;
     }
     pmutexPtr->counter++;
+#ifdef HAVE_PTHREAD_SPIN_LOCK
+    pthread_spin_unlock(&pmutexPtr->lock);
+#endif
 }
 
 static void
 PMutexUnlock(
     PMutex *pmutexPtr)
 {
+    pthread_t self = pthread_self();
+    int do_unlock;
+
 #ifdef HAVE_PTHREAD_SPIN_LOCK
-    bool is_owned;
-
     pthread_spin_lock(&pmutexPtr->lock);
-    is_owned = (pmutexPtr->thread == pthread_self());
-    pthread_spin_unlock(&pmutexPtr->lock);
-
-    if (!is_owned) {
+#endif
+    if (pmutexPtr->thread != self) {
+#ifdef HAVE_PTHREAD_SPIN_LOCK
+	pthread_spin_unlock(&pmutexPtr->lock);
+#endif
 	Tcl_Panic("mutex not owned");
     }
-#endif
-
+    do_unlock = 0;
     pmutexPtr->counter--;
     if (pmutexPtr->counter == 0) {
 	pmutexPtr->thread = 0;
+	do_unlock = 1;
+    }
+#ifdef HAVE_PTHREAD_SPIN_LOCK
+    pthread_spin_unlock(&pmutexPtr->lock);
+#endif
+    if (do_unlock) {
 	pthread_mutex_unlock(&pmutexPtr->mutex);
     }
 }
@@ -205,24 +227,33 @@ PCondWait(
     pthread_cond_t *pcondPtr,
     PMutex *pmutexPtr)
 {
+    pthread_t self = pthread_self();
     int counter;
+
 #ifdef HAVE_PTHREAD_SPIN_LOCK
-    bool is_owned;
-
     pthread_spin_lock(&pmutexPtr->lock);
-    is_owned = (pmutexPtr->thread == pthread_self());
-    pthread_spin_unlock(&pmutexPtr->lock);
-
-    if (!is_owned) {
+#endif
+    if (pmutexPtr->thread != self) {
+#ifdef HAVE_PTHREAD_SPIN_LOCK
+	pthread_spin_unlock(&pmutexPtr->lock);
+#endif
 	Tcl_Panic("mutex not owned");
     }
-#endif
     counter = pmutexPtr->counter;
     pmutexPtr->counter = 0;
     pmutexPtr->thread = 0;
+#ifdef HAVE_PTHREAD_SPIN_LOCK
+    pthread_spin_unlock(&pmutexPtr->lock);
+#endif
     pthread_cond_wait(pcondPtr, &pmutexPtr->mutex);
-    pmutexPtr->thread = pthread_self();
+#ifdef HAVE_PTHREAD_SPIN_LOCK
+    pthread_spin_lock(&pmutexPtr->lock);
+#endif
+    pmutexPtr->thread = self;
     pmutexPtr->counter = counter;
+#ifdef HAVE_PTHREAD_SPIN_LOCK
+    pthread_spin_unlock(&pmutexPtr->lock);
+#endif
 }
 
 static void
@@ -231,24 +262,33 @@ PCondTimedWait(
     PMutex *pmutexPtr,
     struct timespec *ptime)
 {
+    pthread_t self = pthread_self();
     int counter;
+
 #ifdef HAVE_PTHREAD_SPIN_LOCK
-    bool is_owned;
-
     pthread_spin_lock(&pmutexPtr->lock);
-    is_owned = (pmutexPtr->thread == pthread_self());
-    pthread_spin_unlock(&pmutexPtr->lock);
-
-    if (!is_owned) {
+#endif
+    if (pmutexPtr->thread != self) {
+#ifdef HAVE_PTHREAD_SPIN_LOCK
+	pthread_spin_unlock(&pmutexPtr->lock);
+#endif
 	Tcl_Panic("mutex not owned");
     }
-#endif
     counter = pmutexPtr->counter;
     pmutexPtr->counter = 0;
     pmutexPtr->thread = 0;
+#ifdef HAVE_PTHREAD_SPIN_LOCK
+    pthread_spin_unlock(&pmutexPtr->lock);
+#endif
     pthread_cond_timedwait(pcondPtr, &pmutexPtr->mutex, ptime);
-    pmutexPtr->thread = pthread_self();
+#ifdef HAVE_PTHREAD_SPIN_LOCK
+    pthread_spin_lock(&pmutexPtr->lock);
+#endif
+    pmutexPtr->thread = self;
     pmutexPtr->counter = counter;
+#ifdef HAVE_PTHREAD_SPIN_LOCK
+    pthread_spin_unlock(&pmutexPtr->lock);
+#endif
 }
 
 #endif /* HAVE_STDATOMIC_H */
@@ -730,7 +770,7 @@ void
 TclpFinalizeMutex(
     Tcl_Mutex *mutexPtr)
 {
-    PMutex *pmutexPtr = *(PMutex **) mutexPtr;
+    PMutex *pmutexPtr = *(PMutex **)mutexPtr;
 
     if (pmutexPtr != NULL) {
 	PMutexDestroy(pmutexPtr);

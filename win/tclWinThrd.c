@@ -13,6 +13,16 @@
 
 #include "tclWinInt.h"
 
+#if defined(HAVE_STDATOMIC_H) && defined(NO_ATOMIC)
+/*  TODO: for test purposes only, remove this before merge! */
+#  undef HAVE_STDATOMIC_H
+#endif
+
+
+#ifdef HAVE_STDATOMIC_H
+#include <stdatomic.h>
+#endif /* HAVE_STDATOMIC_H */
+
 /* Workaround for mingw versions which don't provide this in float.h */
 #ifndef _MCW_EM
 #   define	_MCW_EM		0x0008001F	/* Error masks */
@@ -541,6 +551,80 @@ TclFinalizeLock(void)
 
 #if TCL_THREADS
 
+static void
+WMutexInit(
+    WMutex *wmutexPtr)
+{
+    InitializeCriticalSection(&wmutexPtr->crit);
+    wmutexPtr->thread = 0;
+    wmutexPtr->counter = 0;
+}
+
+static void
+WMutexDestroy(
+    WMutex *wmutexPtr)
+{
+    DeleteCriticalSection(&wmutexPtr->crit);
+}
+
+#ifdef HAVE_STDATOMIC_H
+
+static void
+WMutexLock(
+    WMutex *wmPtr)
+{
+    Tcl_ThreadId mythread =  Tcl_GetCurrentThread();
+    if (__atomic_load_n(&wmPtr->counter, __ATOMIC_RELAXED) == 0) {
+	EnterCriticalSection(&wmPtr->crit);
+	__atomic_store_n(&wmPtr->thread, mythread, __ATOMIC_RELAXED);
+    } else if (wmPtr->thread != Tcl_GetCurrentThread()) {
+	EnterCriticalSection(&wmPtr->crit);
+	__atomic_store_n(&wmPtr->thread, mythread, __ATOMIC_RELAXED);
+	__atomic_store_n(&wmPtr->counter, 0, __ATOMIC_RELAXED);
+    }
+    __atomic_add_fetch(&wmPtr->counter, 1, __ATOMIC_RELAXED);
+}
+
+static void
+WMutexUnlock(
+    WMutex *wmPtr)
+{
+    if (__atomic_sub_fetch(&wmPtr->counter, 1, __ATOMIC_RELAXED) == 0) {
+	__atomic_store_n(&wmPtr->thread, 0, __ATOMIC_RELAXED);
+	LeaveCriticalSection(&wmPtr->crit);
+    }
+}
+
+#else /* HAVE_STDATOMIC_H */
+
+static void
+WMutexLock(
+    WMutex *wmPtr)
+{
+    Tcl_ThreadId mythread = Tcl_GetCurrentThread();
+    if (wmPtr->counter == 0) {
+	EnterCriticalSection(&wmPtr->crit);
+	InterlockedExchangePointer((void *volatile*)&wmPtr->thread, mythread);
+    } else if (wmPtr->thread != mythread) {
+	EnterCriticalSection(&wmPtr->crit);
+	InterlockedExchangePointer((void *volatile*)&wmPtr->thread, mythread);
+	InterlockedExchange((volatile long int *)&wmPtr->counter, 0);
+    }
+    InterlockedIncrement((volatile long int *)&wmPtr->counter);
+}
+
+static void
+WMutexUnlock(
+    WMutex *wmPtr)
+{
+    if (InterlockedDecrement((volatile long int *)&wmPtr->counter) == 0) {
+	InterlockedExchangePointer((void *volatile*)&wmPtr->thread, 0);
+	LeaveCriticalSection(&wmPtr->crit);
+    }
+}
+
+#endif /* HAVE_STDATOMIC_H */
+
 /* locally used prototype */
 static void		FinalizeConditionEvent(void *data);
 
@@ -565,7 +649,7 @@ void
 Tcl_MutexLock(
     Tcl_Mutex *mutexPtr)	/* Really (WMutex **) */
 {
-    WMutex *wmPtr;
+	WMutex *wmPtr;
 
     if (*mutexPtr == NULL) {
 	TclpGlobalLock();
@@ -576,22 +660,14 @@ Tcl_MutexLock(
 
 	if (*mutexPtr == NULL) {
 	    wmPtr = (WMutex *) Tcl_Alloc(sizeof(WMutex));
-	    InitializeCriticalSection(&wmPtr->crit);
-	    wmPtr->thread = 0;
-	    wmPtr->counter = 0;
+	    WMutexInit(wmPtr);
 	    *mutexPtr = (Tcl_Mutex) wmPtr;
 	    TclRememberMutex(mutexPtr);
 	}
 	TclpGlobalUnlock();
-    } else {
-	wmPtr = *((WMutex **)mutexPtr);
     }
-    if (wmPtr->thread != Tcl_GetCurrentThread() || wmPtr->counter == 0) {
-	EnterCriticalSection(&wmPtr->crit);
-	wmPtr->thread = Tcl_GetCurrentThread();
-	wmPtr->counter = 0;
-    }
-    wmPtr->counter++;
+    wmPtr = *((WMutex **)mutexPtr);
+    WMutexLock(wmPtr);
 }
 
 /*
@@ -615,12 +691,7 @@ Tcl_MutexUnlock(
     Tcl_Mutex *mutexPtr)	/* Really (WMutex **) */
 {
     WMutex *wmPtr = *((WMutex **)mutexPtr);
-
-    wmPtr->counter--;
-    if (wmPtr->counter == 0) {
-	wmPtr->thread = 0;
-	LeaveCriticalSection(&wmPtr->crit);
-    }
+    WMutexUnlock(wmPtr);
 }
 
 /*
@@ -648,7 +719,7 @@ TclpFinalizeMutex(
 
     if (mutexPtr != NULL) {
 	wmPtr = *((WMutex **)mutexPtr);
-	DeleteCriticalSection(&wmPtr->crit);
+	WMutexDestroy(wmPtr);
 	Tcl_Free(wmPtr);
 	*mutexPtr = NULL;
     }
