@@ -364,7 +364,7 @@ TclCompileArraySetCmd(
 	    TclEmitInstInt1(INST_JUMP1, 3,			envPtr);
 	    /* Each branch decrements stack depth, but we only take one. */
 	    TclAdjustStackDepth(1, envPtr);
-	    TclEmitOpcode(  INST_POP,				envPtr);
+	    TclEmitOpcode(  INST_POP,			envPtr);
 	}
 	PushStringLiteral(envPtr, "");
 	goto done;
@@ -379,9 +379,9 @@ TclCompileArraySetCmd(
 	localIndex = TclFindCompiledLocal(varTokenPtr->start,
 		varTokenPtr->size, 1, envPtr);
 	PushStringLiteral(envPtr, "0");
-	TclEmitInstInt4(INST_REVERSE, 2,        		envPtr);
-	TclEmitInstInt4(INST_UPVAR, localIndex, 		envPtr);
-	TclEmitOpcode(INST_POP,          			envPtr);
+	TclEmitInstInt4(INST_REVERSE, 2,			envPtr);
+	TclEmitInstInt4(INST_UPVAR, localIndex,			envPtr);
+	TclEmitOpcode(INST_POP,						envPtr);
     }
 
     /*
@@ -3315,10 +3315,10 @@ TclCompileFormatCmd(
  *	to a local scalar variable name.
  *
  * Results:
- * 	Returns the non-negative integer index value into the table of
- * 	compiled locals corresponding to a local scalar variable name.
- * 	If the arguments passed in do not identify a local scalar variable
- * 	then return -1.
+ *	Returns the non-negative integer index value into the table of
+ *	compiled locals corresponding to a local scalar variable name.
+ *	If the arguments passed in do not identify a local scalar variable
+ *	then return -1.
  *
  * Side effects:
  *	May add an entry into the table of compiled locals.
@@ -3422,7 +3422,7 @@ TclPushVarName(
 
 	name = varTokenPtr[1].start;
 	nameLen = varTokenPtr[1].size;
-	if (name[nameLen-1] == ')') {
+	if (nameLen > 0 && name[nameLen-1] == ')') {
 	    /*
 	     * last char is ')' => potential array reference.
 	     */

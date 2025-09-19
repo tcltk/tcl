@@ -9427,4 +9427,6 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 
 2025-09-15 (new) Unicode version 17 (nijtmans)
 
+2025-09-19 (bug) [77059c] TclPushVarName(): pointer overflow (chavez)
+
 - (to be) Released 8.6.18, Apr ??, 2026 - details at https://core.tcl-lang.org/tcl/ -
