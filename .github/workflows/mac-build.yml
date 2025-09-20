@@ -35,6 +35,7 @@ jobs:
           PARTIAL: >
             [
               "",
+              "CFLAGS=-DNO_ATOMIC=1",
               "--enable-symbols=all"
             ]
   xcode:
