@@ -206,11 +206,11 @@ PMutexLock(
     } else {
 	pthread_mutex_lock(&pmutexPtr->mutex);
 #ifdef HAVE_PTHREAD_SPIN_LOCK
-    pthread_spin_lock(&pmutexPtr->lock);
+	pthread_spin_lock(&pmutexPtr->lock);
 #endif
 	pmutexPtr->thread = mythread;
 #ifdef HAVE_PTHREAD_SPIN_LOCK
-    pthread_spin_unlock(&pmutexPtr->lock);
+	pthread_spin_unlock(&pmutexPtr->lock);
 #endif
     }
 }
@@ -238,11 +238,11 @@ PMutexUnlock(
 	pmutexPtr->counter--;
     } else {
 #ifdef HAVE_PTHREAD_SPIN_LOCK
-    pthread_spin_lock(&pmutexPtr->lock);
+	pthread_spin_lock(&pmutexPtr->lock);
 #endif
 	pmutexPtr->thread = 0;
 #ifdef HAVE_PTHREAD_SPIN_LOCK
-    pthread_spin_unlock(&pmutexPtr->lock);
+	pthread_spin_unlock(&pmutexPtr->lock);
 #endif
 	pthread_mutex_unlock(&pmutexPtr->mutex);
     }
