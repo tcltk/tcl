@@ -13,16 +13,6 @@
 
 #include "tclWinInt.h"
 
-#if defined(HAVE_STDATOMIC_H) && defined(NO_ATOMIC)
-/*  TODO: for test purposes only, remove this before merge! */
-#  undef HAVE_STDATOMIC_H
-#endif
-
-
-#ifdef HAVE_STDATOMIC_H
-#include <stdatomic.h>
-#endif /* HAVE_STDATOMIC_H */
-
 /* Workaround for mingw versions which don't provide this in float.h */
 #ifndef _MCW_EM
 #   define	_MCW_EM		0x0008001F	/* Error masks */
@@ -66,7 +56,7 @@ static int allocOnce = 0;
 typedef struct WMutex {
     CRITICAL_SECTION crit;
     volatile Tcl_ThreadId thread;
-    volatile int counter;
+    int counter;
 } WMutex;
 
 #endif /* TCL_THREADS */
@@ -567,63 +557,42 @@ WMutexDestroy(
     DeleteCriticalSection(&wmutexPtr->crit);
 }
 
-#ifdef HAVE_STDATOMIC_H
-
 static void
 WMutexLock(
     WMutex *wmPtr)
 {
-    Tcl_ThreadId mythread =  Tcl_GetCurrentThread();
-    if (__atomic_load_n(&wmPtr->counter, __ATOMIC_RELAXED) == 0) {
+	Tcl_ThreadId mythread = Tcl_GetCurrentThread();
+
+    if (wmPtr->thread == mythread) {
+	// We owned the lock already, so it's recursive.
+	wmPtr->counter++;
+    } else if (InterlockedCompareExchangePointer((void *volatile *)&wmPtr->thread, (void *)mythread, 0) == NULL) {
+	// No-one owns the lock, so we can safely lock it.
 	EnterCriticalSection(&wmPtr->crit);
-	__atomic_store_n(&wmPtr->thread, mythread, __ATOMIC_RELAXED);
-    } else if (wmPtr->thread != Tcl_GetCurrentThread()) {
+    } else {
+	// Someone else owned the lock, so we can safely lock it. Then we own it.
 	EnterCriticalSection(&wmPtr->crit);
-	__atomic_store_n(&wmPtr->thread, mythread, __ATOMIC_RELAXED);
-	__atomic_store_n(&wmPtr->counter, 0, __ATOMIC_RELAXED);
+	InterlockedExchangePointer((void *volatile*)&wmPtr->thread, mythread);
     }
-    __atomic_add_fetch(&wmPtr->counter, 1, __ATOMIC_RELAXED);
 }
 
 static void
 WMutexUnlock(
     WMutex *wmPtr)
 {
-    if (__atomic_sub_fetch(&wmPtr->counter, 1, __ATOMIC_RELAXED) == 0) {
-	__atomic_store_n(&wmPtr->thread, 0, __ATOMIC_RELAXED);
-	LeaveCriticalSection(&wmPtr->crit);
+	Tcl_ThreadId mythread = Tcl_GetCurrentThread();
+
+    if (wmPtr->thread != mythread) {
+	Tcl_Panic("mutex not owned");
     }
-}
-
-#else /* HAVE_STDATOMIC_H */
-
-static void
-WMutexLock(
-    WMutex *wmPtr)
-{
-    Tcl_ThreadId mythread = Tcl_GetCurrentThread();
-    if (wmPtr->counter == 0) {
-	EnterCriticalSection(&wmPtr->crit);
-	InterlockedExchangePointer((void *volatile*)&wmPtr->thread, mythread);
-    } else if (wmPtr->thread != mythread) {
-	EnterCriticalSection(&wmPtr->crit);
-	InterlockedExchangePointer((void *volatile*)&wmPtr->thread, mythread);
-	InterlockedExchange((volatile long int *)&wmPtr->counter, 0);
-    }
-    InterlockedIncrement((volatile long int *)&wmPtr->counter);
-}
-
-static void
-WMutexUnlock(
-    WMutex *wmPtr)
-{
-    if (InterlockedDecrement((volatile long int *)&wmPtr->counter) == 0) {
+    if (wmPtr->counter) {
+	// It's recursive
+	wmPtr->counter--;
+    } else {
 	InterlockedExchangePointer((void *volatile*)&wmPtr->thread, 0);
 	LeaveCriticalSection(&wmPtr->crit);
     }
 }
-
-#endif /* HAVE_STDATOMIC_H */
 
 /* locally used prototype */
 static void		FinalizeConditionEvent(void *data);
@@ -848,8 +817,8 @@ Tcl_ConditionWait(
      */
 
     counter = wmPtr->counter;
-    wmPtr->thread = 0;
     wmPtr->counter = 0;
+	InterlockedExchangePointer((void *volatile*)&wmPtr->thread, 0);
     LeaveCriticalSection(&wmPtr->crit);
     timeout = 0;
     while (!timeout && (tsdPtr->flags & WIN_THREAD_BLOCKED)) {
@@ -893,8 +862,9 @@ Tcl_ConditionWait(
     }
 
     LeaveCriticalSection(&winCondPtr->condLock);
-    Tcl_MutexLock(mutexPtr);
+    EnterCriticalSection(&wmPtr->crit);
     wmPtr->counter = counter;
+	InterlockedExchangePointer((void *volatile*)&wmPtr->thread, Tcl_GetCurrentThread());
 }
 
 /*

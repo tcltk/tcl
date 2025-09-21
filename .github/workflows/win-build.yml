@@ -52,7 +52,6 @@ jobs:
           GCC_PARTIAL: >
             [
               "",
-              "CFLAGS=-DNO_ATOMIC=1",
               "--disable-shared",
               "--enable-symbols=all"
             ]
