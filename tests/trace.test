@@ -747,11 +747,12 @@ test trace-12.7 {create array element during read trace} {
     trace add variable x read {traceCrtElement xyzzy}
     list [catch {set x(3)} msg] $msg
 } {0 xyzzy}
-test trace-12.8 {errors when setting variable traces} {
+test trace-12.8 {errors when setting variable traces} -setup {
     unset -nocomplain x
+} -returnCodes error -body {
     set x 44
-    list [catch {trace add variable x(0) write traceProc} msg] $msg
-} {1 {can't trace "x(0)": variable isn't array}}
+    trace add variable x(0) write traceProc
+} -result {can't trace "x(0)": variable isn't array}
 
 # Check trace deletion
 
@@ -835,43 +836,43 @@ set i 0
 set start "wrong # args:"
 foreach type {variable command} {
     foreach op {add remove} {
-	test trace-14.0.[incr i] "trace command, wrong # args errors" {
-	    list [catch {trace $op $type} msg] $msg
-	} [list 1 "$start should be \"trace $op $type name opList command\""]
-	test trace-14.0.[incr i] "trace command wrong # args errors" {
-	    list [catch {trace $op $type foo} msg] $msg
-	} [list 1 "$start should be \"trace $op $type name opList command\""]
-	test trace-14.0.[incr i] "trace command, wrong # args errors" {
-	    list [catch {trace $op $type foo bar} msg] $msg
-	} [list 1 "$start should be \"trace $op $type name opList command\""]
-	test trace-14.0.[incr i] "trace command, wrong # args errors" {
-	    list [catch {trace $op $type foo bar baz boo} msg] $msg
-	} [list 1 "$start should be \"trace $op $type name opList command\""]
+	test trace-14.0.[incr i] "trace command, wrong # args errors" -returnCodes error -body {
+	    trace $op $type
+	} -result "$start should be \"trace $op $type name opList command\""
+	test trace-14.0.[incr i] "trace command wrong # args errors" -returnCodes error -body {
+	    trace $op $type foo
+	} -result "$start should be \"trace $op $type name opList command\""
+	test trace-14.0.[incr i] "trace command, wrong # args errors" -returnCodes error -body {
+	    trace $op $type foo bar
+	} -result "$start should be \"trace $op $type name opList command\""
+	test trace-14.0.[incr i] "trace command, wrong # args errors" -returnCodes error -body {
+	    trace $op $type foo bar baz boo
+	} -result "$start should be \"trace $op $type name opList command\""
     }
-    test trace-14.0.[incr i] "trace command, wrong # args errors" {
-	list [catch {trace info $type foo bar} msg] $msg
-    } [list 1 "$start should be \"trace info $type name\""]
-    test trace-14.0.[incr i] "trace command, wrong # args errors" {
-	list [catch {trace info $type} msg] $msg
-    } [list 1 "$start should be \"trace info $type name\""]
+    test trace-14.0.[incr i] "trace command, wrong # args errors" -returnCodes error -body {
+	trace info $type foo bar
+    } -result "$start should be \"trace info $type name\""
+    test trace-14.0.[incr i] "trace command, wrong # args errors" -returnCodes error -body {
+	trace info $type
+    } -result "$start should be \"trace info $type name\""
 }
 
-test trace-14.1 "trace command, wrong # args errors" {
-    list [catch {trace} msg] $msg
-} [list 1 "wrong # args: should be \"trace option ?arg ...?\""]
-test trace-14.2 "trace command, wrong # args errors" {
-    list [catch {trace add} msg] $msg
-} [list 1 "wrong # args: should be \"trace add type ?arg ...?\""]
-test trace-14.3 "trace command, wrong # args errors" {
-    list [catch {trace remove} msg] $msg
-} [list 1 "wrong # args: should be \"trace remove type ?arg ...?\""]
-test trace-14.4 "trace command, wrong # args errors" {
-    list [catch {trace info} msg] $msg
-} [list 1 "wrong # args: should be \"trace info type name\""]
+test trace-14.1 "trace command, wrong # args errors" -returnCodes error -body {
+    trace
+} -result "wrong # args: should be \"trace option ?arg ...?\""
+test trace-14.2 "trace command, wrong # args errors" -returnCodes error -body {
+    trace add
+} -result "wrong # args: should be \"trace add type ?arg ...?\""
+test trace-14.3 "trace command, wrong # args errors" -returnCodes error -body {
+    trace remove
+} -result "wrong # args: should be \"trace remove type ?arg ...?\""
+test trace-14.4 "trace command, wrong # args errors" -returnCodes error -body {
+    trace info
+} -result "wrong # args: should be \"trace info type name\""
 
-test trace-14.5 {trace command, invalid option} {
-    list [catch {trace gorp} msg] $msg
-} [list 1 "bad option \"gorp\": must be add, info, or remove"]
+test trace-14.5 {trace command, invalid option} -returnCodes error -body {
+    trace gorp
+} -result "bad option \"gorp\": must be add, info, or remove"
 
 # Again, [trace ... command] and [trace ... variable] share syntax and
 # error message styles for their opList options; these loops test those
@@ -883,17 +884,17 @@ set abbvs [list {a r u w} {d r} {}]
 proc x {} {}
 foreach type {variable command execution} err $errs abbvlist $abbvs {
     foreach op {add remove} {
-	test trace-14.6.[incr i] "trace $op $type errors" {
-	    list [catch {trace $op $type x {y z w} a} msg] $msg
-	} [list 1 "bad operation \"y\": must be $err"]
+	test trace-14.6.[incr i] "trace $op $type errors" -returnCodes error -body {
+	    trace $op $type x {y z w} a
+	} -result "bad operation \"y\": must be $err"
 	foreach abbv $abbvlist {
-	    test trace-14.6.[incr i] "trace $op $type rejects abbreviations" {
-		list [catch {trace $op $type x $abbv a} msg] $msg
-	    } [list 1 "bad operation \"$abbv\": must be $err"]
+	    test trace-14.6.[incr i] "trace $op $type rejects abbreviations" -returnCodes error -body {
+		trace $op $type x $abbv a
+	    } -result "bad operation \"$abbv\": must be $err"
 	}
-	test trace-14.6.[incr i] "trace $op $type rejects null opList" {
-	    list [catch {trace $op $type x {} a} msg] $msg
-	} [list 1 "bad operation list \"\": must be one or more of $err"]
+	test trace-14.6.[incr i] "trace $op $type rejects null opList" -returnCodes error -body {
+	    trace $op $type x {} a
+	} -result "bad operation list \"\": must be one or more of $err"
     }
 }
 rename x {}
@@ -1254,14 +1255,15 @@ test trace-18.4 {namespace delete / trace remove variable combo, Bug \#1338280} 
 
 unset -nocomplain x y
 
-test trace-19.0.1 {trace add command (command existence)} {
+test trace-19.0.1 {trace add command (command existence)} -returnCodes error -setup {
     # Just in case!
     catch {rename nosuchname ""}
-    list [catch {trace add command nosuchname rename traceCommand} msg] $msg
-} {1 {unknown command "nosuchname"}}
-test trace-19.0.2 {trace add command (command existence in ns)} {
-    list [catch {trace add command nosuchns::nosuchname rename traceCommand} msg] $msg
-} {1 {unknown command "nosuchns::nosuchname"}}
+} -body {
+    trace add command nosuchname rename traceCommand
+} -result {unknown command "nosuchname"}
+test trace-19.0.2 {trace add command (command existence in ns)} -returnCodes error -body {
+    trace add command nosuchns::nosuchname rename traceCommand
+} -result {unknown command "nosuchns::nosuchname"}
 
 
 test trace-19.1 {trace add command (rename option)} {
@@ -2045,14 +2047,12 @@ test trace-27.1 {memory leak in rename trace (604609)} {
     info commands foo
 } {}
 
-test trace-27.2 {command trace remove nonsense} {
-    list [catch {trace remove command thisdoesntexist \
-      {delete rename} bar} res] $res
-} {1 {unknown command "thisdoesntexist"}}
-
-test trace-27.3 {command trace info nonsense} {
-    list [catch {trace info command thisdoesntexist} res] $res
-} {1 {unknown command "thisdoesntexist"}}
+test trace-27.2 {command trace remove nonsense} -returnCodes error -body {
+    trace remove command thisdoesntexist {delete rename} bar
+} -result {unknown command "thisdoesntexist"}
+test trace-27.3 {command trace info nonsense} -returnCodes error -body {
+    trace info command thisdoesntexist
+} -result {unknown command "thisdoesntexist"}
 
 
 test trace-28.1 {enterstep and leavestep traces with update idletasks (615043)} {
@@ -2283,18 +2283,16 @@ test trace-28.7 {exec trace information} {
     trace remove execution foo {enter leave enterstep leavestep} bar
 } {}
 
-test trace-28.8 {exec trace remove nonsense} {
-    list [catch {trace remove execution thisdoesntexist \
-      {enter leave enterstep leavestep} bar} res] $res
-} {1 {unknown command "thisdoesntexist"}}
-
-test trace-28.9 {exec trace info nonsense} {
-    list [catch {trace info execution thisdoesntexist} res] $res
-} {1 {unknown command "thisdoesntexist"}}
-
-test trace-28.10 {exec trace info nonsense} {
-    list [catch {trace remove execution} res] $res
-} {1 {wrong # args: should be "trace remove execution name opList command"}}
+test trace-28.8 {exec trace remove nonsense} -returnCodes error -body {
+    trace remove execution thisdoesntexist \
+	{enter leave enterstep leavestep} bar
+} -result {unknown command "thisdoesntexist"}
+test trace-28.9 {exec trace info nonsense} -returnCodes error -body {
+    trace info execution thisdoesntexist
+} -result {unknown command "thisdoesntexist"}
+test trace-28.10 {exec trace info nonsense} -returnCodes error -body {
+    trace remove execution
+} -result {wrong # args: should be "trace remove execution name opList command"}
 
 test trace-29.1 {Tcl_CreateTrace, correct command and argc/argv arguments of trace proc} {testcmdtrace} {
     testcmdtrace tracetest {set stuff [expr {14 + 16}]}

@@ -309,33 +309,24 @@ test upvar-6.3 {retargeting an upvar} {
     }
     p1
 } {abcde 44}
-
-
-
-test upvar-6.4 {
-	retargeting a variable created by upvar to itself is allowed
+test upvar-6.4 {retargeting a variable created by upvar to itself is allowed} -setup {
+    unset -nocomplain x
+    unset -nocomplain y
+    set res {}
 } -body {
-	catch {
-		unset x
-	}
-	catch {
-		unset y
-	}
-	set res {}
     set x abcde
-	set res [catch {
-		upvar 0 x x
-	} cres copts]
-	lappend res [dict get $copts -errorcode]
-	upvar 0 x y
-	lappend res $y
-	upvar 0 y y
-	lappend res $y
-	return $res
+    set res [catch {
+	upvar 0 x x
+    } cres copts]
+    lappend res [dict get $copts -errorcode]
+    upvar 0 x y
+    lappend res $y
+    upvar 0 y y
+    lappend res $y
+    return $res
 } -cleanup {
-	upvar 0 {} y
+    upvar 0 {} y
 } -result {1 {TCL UPVAR SELF} abcde abcde}
-
 
 test upvar-7.1 {upvar to same level} {
     set x 44
@@ -452,69 +443,75 @@ test upvar-8.11 {upvar will not create a variable that looks like an array} -set
     upvar 0 upvarArray(elem) upvarArrayElemAlias(elem)
 } -returnCodes 1 -match glob -result *
 
-test upvar-9.1 {Tcl_UpVar2 procedure} testupvar {
-    list [catch {testupvar xyz a {} x global} msg] $msg
-} {1 {bad level "1"}}
+test upvar-9.1 {Tcl_UpVar2 procedure} -constraints testupvar -returnCodes error -body {
+    testupvar xyz a {} x global
+} -result {bad level "1"}
 test upvar-9.1.1 {TclGetFrame, via Tcl_UpVar2} testupvar {
     apply {{} {testupvar xyz a {} x local; set x foo}}
     set a
 } foo
-test upvar-9.2 {Tcl_UpVar2 procedure} testupvar {
+test upvar-9.2 {Tcl_UpVar2 procedure} -constraints testupvar -returnCodes error -setup {
     catch {unset a}
     catch {unset x}
+} -body {
     set a 44
-    list [catch "testupvar #0 a 1 x global" msg] $msg
-} {1 {can't access "a(1)": variable isn't array}}
-test upvar-9.3 {Tcl_UpVar2 procedure} testupvar {
+    testupvar #0 a 1 x global
+} -result {can't access "a(1)": variable isn't array}
+test upvar-9.3 {Tcl_UpVar2 procedure} -constraints testupvar -setup {
+    catch {unset a}
+    catch {unset x}
+} -body {
     proc foo {} {
 	testupvar 1 a {} x local
 	set x
     }
-    catch {unset a}
-    catch {unset x}
     set a 44
     foo
-} {44}
-test upvar-9.4 {Tcl_UpVar2 procedure} testupvar {
+} -result {44}
+test upvar-9.4 {Tcl_UpVar2 procedure} -constraints testupvar -setup {
+    catch {unset a}
+    catch {unset _up_}
+} -body {
     proc foo {} {
 	testupvar 1 a {} _up_ global
 	list [catch {set x} msg] $msg
     }
-    catch {unset a}
-    catch {unset _up_}
     set a 44
     concat [foo] $_up_
-} {1 {can't read "x": no such variable} 44}
-test upvar-9.5 {Tcl_UpVar2 procedure} testupvar {
+} -result {1 {can't read "x": no such variable} 44}
+test upvar-9.5 {Tcl_UpVar2 procedure} -constraints testupvar -setup {
+    catch {unset a}
+    catch {unset x}
+} -body {
     proc foo {} {
 	testupvar 1 a b x local
 	set x
     }
-    catch {unset a}
-    catch {unset x}
     set a(b) 1234
     foo
-} {1234}
-test upvar-9.6 {Tcl_UpVar procedure} testupvar {
+} -result {1234}
+test upvar-9.6 {Tcl_UpVar procedure} -constraints testupvar -setup {
+    catch {unset a}
+    catch {unset x}
+} -body {
     proc foo {} {
 	testupvar 1 a x local
 	set x
     }
-    catch {unset a}
-    catch {unset x}
     set a xyzzy
     foo
-} {xyzzy}
-test upvar-9.7 {Tcl_UpVar procedure} testupvar {
+} -result {xyzzy}
+test upvar-9.7 {Tcl_UpVar procedure} -constraints testupvar -setup {
+    catch {unset a}
+    catch {unset x}
+} -body {
     proc foo {} {
 	testupvar #0 a(b) x local
 	set x
     }
-    catch {unset a}
-    catch {unset x}
     set a(b) 1234
     foo
-} {1234}
+} -result {1234}
 catch {unset a}
 
 test upvar-10.1 {CompileWord OBOE} -setup {

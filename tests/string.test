@@ -73,12 +73,12 @@ if {$noComp} {
 }
 
 
-test string-1.1.$noComp {error conditions} -body {
-    list [catch {run {string gorp a b}} msg] $msg
-} -result {1 {unknown or ambiguous subcommand "gorp": must be cat, compare, equal, first, index, insert, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
-test string-1.2.$noComp {error conditions} {
-    list [catch {run {string}} msg] $msg
-} {1 {wrong # args: should be "string subcommand ?arg ...?"}}
+test string-1.1.$noComp {error conditions} -returnCodes error -body {
+    run {string gorp a b}
+} -result {unknown or ambiguous subcommand "gorp": must be cat, compare, equal, first, index, insert, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}
+test string-1.2.$noComp {error conditions} -returnCodes error -body {
+    run {string}
+} -result {wrong # args: should be "string subcommand ?arg ...?"}
 test stringComp-1.3.$noComp {error condition - undefined method during compile} {
     # We don't want this to complain about 'never' because it may never
     # be called, or string may get redefined.  This must compile OK.
@@ -89,21 +89,21 @@ test stringComp-1.3.$noComp {error condition - undefined method during compile} 
     foo abc 0
 } a
 
-test string-2.1.$noComp {string compare, not enough args} {
-    list [catch {run {string compare a}} msg] $msg
-} {1 {wrong # args: should be "string compare ?-nocase? ?-length int? string1 string2"}}
-test string-2.2.$noComp {string compare, bad args} {
-    list [catch {run {string compare a b c}} msg] $msg
-} {1 {bad option "a": must be -nocase or -length}}
-test string-2.3.$noComp {string compare, bad args} {
-    list [catch {run {string compare -length -nocase str1 str2}} msg] $msg
-} {1 {expected integer but got "-nocase"}}
-test string-2.4.$noComp {string compare, too many args} {
-    list [catch {run {string compare -length 10 -nocase str1 str2 str3}} msg] $msg
-} {1 {wrong # args: should be "string compare ?-nocase? ?-length int? string1 string2"}}
-test string-2.5.$noComp {string compare with length unspecified} {
-    list [catch {run {string compare -length 10 10}} msg] $msg
-} {1 {wrong # args: should be "string compare ?-nocase? ?-length int? string1 string2"}}
+test string-2.1.$noComp {string compare, not enough args} -returnCodes error -body {
+    run {string compare a}
+} -result {wrong # args: should be "string compare ?-nocase? ?-length int? string1 string2"}
+test string-2.2.$noComp {string compare, bad args} -returnCodes error -body {
+    run {string compare a b c}
+} -result {bad option "a": must be -nocase or -length}
+test string-2.3.$noComp {string compare, bad args} -returnCodes error -body {
+    run {string compare -length -nocase str1 str2}
+} -result {expected integer but got "-nocase"}
+test string-2.4.$noComp {string compare, too many args} -returnCodes error -body {
+    run {string compare -length 10 -nocase str1 str2 str3}
+} -result {wrong # args: should be "string compare ?-nocase? ?-length int? string1 string2"}
+test string-2.5.$noComp {string compare with length unspecified} -returnCodes error -body {
+    run {string compare -length 10 10}
+} -result {wrong # args: should be "string compare ?-nocase? ?-length int? string1 string2"}
 test string-2.6.$noComp {string compare} {
     run {string compare abcde abdef}
 } -1
@@ -116,9 +116,9 @@ test string-2.8.$noComp {string compare} {
 test string-2.9.$noComp {string compare with length} {
     run {string compare -length 2 abcde abxyz}
 } 0
-test string-2.10.$noComp {string compare with special index} {
-    list [catch {run {string compare -length end-3 abcde abxyz}} msg] $msg
-} {1 {expected integer but got "end-3"}}
+test string-2.10.$noComp {string compare with special index} -returnCodes error -body {
+    run {string compare -length end-3 abcde abxyz}
+} -result {expected integer but got "end-3"}
 test string-2.11.$noComp {string compare, unicode} {
     run {string compare ab牦 ab牧}
 } -1
@@ -175,9 +175,9 @@ test string-2.20.$noComp {string compare -len unicode} {
     # shouldn't make a different because there are actually 3 CHARS long
     run {string compare -len 5 ÜÜÜ ÜÜü}
 } -1
-test string-2.21.$noComp {string compare -nocase with special index} {
-    list [catch {run {string compare -nocase -length end-3 Abcde abxyz}} msg] $msg
-} {1 {expected integer but got "end-3"}}
+test string-2.21.$noComp {string compare -nocase with special index} -returnCodes error -body {
+    run {string compare -nocase -length end-3 Abcde abxyz}
+} -result {expected integer but got "end-3"}
 test string-2.22.$noComp {string compare, null strings} {
     run {string compare "" ""}
 } 0
@@ -283,27 +283,27 @@ test string-3.7.$noComp {string equal -nocase} {
 test string-3.8.$noComp {string equal with length, unequal strings} {
     run {string equal -length 2 abc abde}
 } 1
-test string-3.9.$noComp {string equal, not enough args} {
-    list [catch {run {string equal a}} msg] $msg
-} {1 {wrong # args: should be "string equal ?-nocase? ?-length int? string1 string2"}}
-test string-3.10.$noComp {string equal, bad args} {
-    list [catch {run {string equal a b c}} msg] $msg
-} {1 {bad option "a": must be -nocase or -length}}
-test string-3.11.$noComp {string equal, bad args} {
-    list [catch {run {string equal -length -nocase str1 str2}} msg] $msg
-} {1 {expected integer but got "-nocase"}}
-test string-3.12.$noComp {string equal, too many args} {
-    list [catch {run {string equal -length 10 -nocase str1 str2 str3}} msg] $msg
-} {1 {wrong # args: should be "string equal ?-nocase? ?-length int? string1 string2"}}
-test string-3.13.$noComp {string equal with length unspecified} {
-    list [catch {run {string equal -length 10 10}} msg] $msg
-} {1 {wrong # args: should be "string equal ?-nocase? ?-length int? string1 string2"}}
+test string-3.9.$noComp {string equal, not enough args} -returnCodes error -body {
+    run {string equal a}
+} -result {wrong # args: should be "string equal ?-nocase? ?-length int? string1 string2"}
+test string-3.10.$noComp {string equal, bad args} -returnCodes error -body {
+    run {string equal a b c}
+} -result {bad option "a": must be -nocase or -length}
+test string-3.11.$noComp {string equal, bad args} -returnCodes error -body {
+    run {string equal -length -nocase str1 str2}
+} -result {expected integer but got "-nocase"}
+test string-3.12.$noComp {string equal, too many args} -returnCodes error -body {
+    run {string equal -length 10 -nocase str1 str2 str3}
+} -result {wrong # args: should be "string equal ?-nocase? ?-length int? string1 string2"}
+test string-3.13.$noComp {string equal with length unspecified} -returnCodes error -body {
+    run {string equal -length 10 10}
+} -result {wrong # args: should be "string equal ?-nocase? ?-length int? string1 string2"}
 test string-3.14.$noComp {string equal with length} {
     run {string equal -length 2 abcde abxyz}
 } 1
-test string-3.15.$noComp {string equal with special index} {
-    list [catch {run {string equal -length end-3 abcde abxyz}} msg] $msg
-} {1 {expected integer but got "end-3"}}
+test string-3.15.$noComp {string equal with special index} -returnCodes error -body {
+    run {string equal -length end-3 abcde abxyz}
+} -result {expected integer but got "end-3"}
 
 test string-3.16.$noComp {string equal, unicode} {
     run {string equal ab牦 ab牧}
@@ -352,9 +352,9 @@ test string-3.28.$noComp {string equal -len unicode} {
     # shouldn't make a different because there are actually 3 CHARS long
     run {string equal -len 5 ÜÜÜ ÜÜü}
 } 0
-test string-3.29.$noComp {string equal -nocase with special index} {
-    list [catch {run {string equal -nocase -length end-3 Abcde abxyz}} msg] $msg
-} {1 {expected integer but got "end-3"}}
+test string-3.29.$noComp {string equal -nocase with special index} -returnCodes error -body {
+    run {string equal -nocase -length end-3 Abcde abxyz}
+} -result {expected integer but got "end-3"}
 test string-3.30.$noComp {string equal, null strings} {
     run {string equal "" ""}
 } 1
@@ -432,15 +432,15 @@ test string-3.45f.$noComp {string equal -nocase empty string against byte array}
 } 0
 
 
-test string-4.1.$noComp {string first, not enough args} {
-    list [catch {run {string first a}} msg] $msg
-} {1 {wrong # args: should be "string first needleString haystackString ?startIndex?"}}
-test string-4.2.$noComp {string first, bad args} {
-    list [catch {run {string first a b c}} msg] $msg
-} {1 {bad index "c": must be integer?[+-]integer? or end?[+-]integer?}}
-test string-4.3.$noComp {string first, too many args} {
-    list [catch {run {string first a b 5 d}} msg] $msg
-} {1 {wrong # args: should be "string first needleString haystackString ?startIndex?"}}
+test string-4.1.$noComp {string first, not enough args} -returnCodes error -body {
+    run {string first a}
+} -result {wrong # args: should be "string first needleString haystackString ?startIndex?"}
+test string-4.2.$noComp {string first, bad args} -returnCodes error -body {
+    run {string first a b c}
+} -result {bad index "c": must be integer?[+-]integer? or end?[+-]integer?}
+test string-4.3.$noComp {string first, too many args} -returnCodes error -body {
+    run {string first a b 5 d}
+} -result {wrong # args: should be "string first needleString haystackString ?startIndex?"}
 test string-4.4.$noComp {string first} {
     run {string first bq abcdefgbcefgbqrs}
 } 12
@@ -507,12 +507,12 @@ test string-4.22.$noComp {string last, corner case} {
     run {string last a aaa end-5}
 } -1
 
-test string-5.1.$noComp {string index} {
-    list [catch {run {string index}} msg] $msg
-} {1 {wrong # args: should be "string index string charIndex"}}
-test string-5.2.$noComp {string index} {
-    list [catch {run {string index a b c}} msg] $msg
-} {1 {wrong # args: should be "string index string charIndex"}}
+test string-5.1.$noComp {string index} -returnCodes error -body {
+    run {string index}
+} -result {wrong # args: should be "string index string charIndex"}
+test string-5.2.$noComp {string index} -returnCodes error -body {
+    run {string index a b c}
+} -result {wrong # args: should be "string index string charIndex"}
 test string-5.3.$noComp {string index} {
     run {string index abcde 0}
 } a
@@ -523,11 +523,11 @@ test string-5.5.$noComp {string index} {
     run {string index abcde 5}
 } {}
 test string-5.6.$noComp {string index} {
-    list [catch {run {string index abcde -10}} msg] $msg
-} {0 {}}
-test string-5.7.$noComp {string index} {
-    list [catch {run {string index a xyz}} msg] $msg
-} {1 {bad index "xyz": must be integer?[+-]integer? or end?[+-]integer?}}
+    run {string index abcde -10}
+} {}
+test string-5.7.$noComp {string index} -returnCodes error -body {
+    run {string index a xyz}
+} -result {bad index "xyz": must be integer?[+-]integer? or end?[+-]integer?}
 test string-5.8.$noComp {string index} {
     run {string index abc end}
 } c
@@ -560,12 +560,12 @@ test string-5.16.$noComp {string index, bytearray object with string obj shimmer
     binary scan $str H* dump
     run {string compare [run {string index $str 10}] \x00}
 } 0
-test string-5.17.$noComp {string index, bad integer} -body {
-    list [catch {run {string index "abc" 0o8}} msg] $msg
-} -match glob -result {1 {*}}
-test string-5.18.$noComp {string index, bad integer} -body {
-    list [catch {run {string index "abc" end-0o0289}} msg] $msg
-} -match glob -result {1 {*}}
+test string-5.17.$noComp {string index, bad integer} -returnCodes error -body {
+    run {string index "abc" 0o8}
+} -result {bad index "0o8": must be integer?[+-]integer? or end?[+-]integer?}
+test string-5.18.$noComp {string index, bad integer} -returnCodes error -body {
+    run {string index "abc" end-0o0289}
+} -result {bad index "end-0o0289": must be integer?[+-]integer? or end?[+-]integer?}
 test string-5.19.$noComp {string index, bytearray object out of bounds} {
     run {string index [binary format I* {0x50515253 0x52}] -1}
 } {}
@@ -580,34 +580,34 @@ test string-5.22.$noComp {string index} -constraints testbytestring -body {
 } -result {1 255}
 
 
-test string-6.1.$noComp {string is, not enough args} {
-    list [catch {run {string is}} msg] $msg
-} {1 {wrong # args: should be "string is class ?-strict? ?-failindex var? str"}}
-test string-6.2.$noComp {string is, not enough args} {
-    list [catch {run {string is alpha}} msg] $msg
-} {1 {wrong # args: should be "string is class ?-strict? ?-failindex var? str"}}
-test string-6.3.$noComp {string is, bad args} {
-    list [catch {run {string is alpha -failin str}} msg] $msg
-} {1 {wrong # args: should be "string is alpha ?-strict? ?-failindex var? str"}}
-test string-6.4.$noComp {string is, too many args} {
-    list [catch {run {string is alpha -failin var -strict str more}} msg] $msg
-} {1 {wrong # args: should be "string is class ?-strict? ?-failindex var? str"}}
-test string-6.5.$noComp {string is, class check} {
-    list [catch {run {string is bogus str}} msg] $msg
-} {1 {bad class "bogus": must be alnum, alpha, ascii, control, boolean, dict, digit, double, entier, false, graph, integer, list, lower, print, punct, space, true, upper, wideinteger, wordchar, or xdigit}}
-test string-6.6.$noComp {string is, ambiguous class} {
-    list [catch {run {string is al str}} msg] $msg
-} {1 {ambiguous class "al": must be alnum, alpha, ascii, control, boolean, dict, digit, double, entier, false, graph, integer, list, lower, print, punct, space, true, upper, wideinteger, wordchar, or xdigit}}
+test string-6.1.$noComp {string is, not enough args} -returnCodes error -body {
+    run {string is}
+} -result {wrong # args: should be "string is class ?-strict? ?-failindex var? str"}
+test string-6.2.$noComp {string is, not enough args} -returnCodes error -body {
+    run {string is alpha}
+} -result {wrong # args: should be "string is class ?-strict? ?-failindex var? str"}
+test string-6.3.$noComp {string is, bad args} -returnCodes error -body {
+    run {string is alpha -failin str}
+} -result {wrong # args: should be "string is alpha ?-strict? ?-failindex var? str"}
+test string-6.4.$noComp {string is, too many args} -returnCodes error -body {
+    run {string is alpha -failin var -strict str more}
+} -result {wrong # args: should be "string is class ?-strict? ?-failindex var? str"}
+test string-6.5.$noComp {string is, class check} -returnCodes error -body {
+    run {string is bogus str}
+} -result {bad class "bogus": must be alnum, alpha, ascii, control, boolean, dict, digit, double, entier, false, graph, integer, list, lower, print, punct, space, true, upper, wideinteger, wordchar, or xdigit}
+test string-6.6.$noComp {string is, ambiguous class} -returnCodes error -body {
+    run {string is al str}
+} -result {ambiguous class "al": must be alnum, alpha, ascii, control, boolean, dict, digit, double, entier, false, graph, integer, list, lower, print, punct, space, true, upper, wideinteger, wordchar, or xdigit}
 test string-6.7.$noComp {string is alpha, all ok} {
     run {string is alpha -strict -failindex var abc}
 } 1
 test string-6.8.$noComp {string is, error in var} {
     list [run {string is alpha -failindex var abc5def}] $var
 } {0 3}
-test string-6.9.$noComp {string is, var shouldn't get set} {
-    catch {unset var}
-    list [catch {run {string is alpha -failindex var abc; set var}} msg] $msg
-} {1 {can't read "var": no such variable}}
+test string-6.9.$noComp {string is, var shouldn't get set} -returnCodes error -body {
+    unset -nocomplain var
+    run {string is alpha -failindex var abc; set var}
+} -result {can't read "var": no such variable}
 test string-6.10.$noComp {string is, ok on empty} {
     run {string is alpha {}}
 } 1
@@ -1038,15 +1038,15 @@ test string-6.140.$noComp {string is integer, bug [76ad7aeba3]} {
 } 1
 
 
-test string-7.1.$noComp {string last, not enough args} {
-    list [catch {run {string last a}} msg] $msg
-} {1 {wrong # args: should be "string last needleString haystackString ?lastIndex?"}}
-test string-7.2.$noComp {string last, bad args} {
-    list [catch {run {string last a b c}} msg] $msg
-} {1 {bad index "c": must be integer?[+-]integer? or end?[+-]integer?}}
-test string-7.3.$noComp {string last, too many args} {
-    list [catch {run {string last a b c d}} msg] $msg
-} {1 {wrong # args: should be "string last needleString haystackString ?lastIndex?"}}
+test string-7.1.$noComp {string last, not enough args} -returnCodes error -body {
+    run {string last a}
+} -result {wrong # args: should be "string last needleString haystackString ?lastIndex?"}
+test string-7.2.$noComp {string last, bad args} -returnCodes error -body {
+    run {string last a b c}
+} -result {bad index "c": must be integer?[+-]integer? or end?[+-]integer?}
+test string-7.3.$noComp {string last, too many args} -returnCodes error -body {
+    run {string last a b c d}
+} -result {wrong # args: should be "string last needleString haystackString ?lastIndex?"}
 test string-7.4.$noComp {string last} {
     run {string la xxx xxxx123xx345x678}
 } 1
@@ -1089,12 +1089,12 @@ test string-7.16.$noComp {string last, start index} {
     run {string last Üa ÜadÜad end-1}
 } 3
 
-test string-9.1.$noComp {string length} {
-    list [catch {run {string length}} msg] $msg
-} {1 {wrong # args: should be "string length string"}}
-test string-9.2.$noComp {string length} {
-    list [catch {run {string length a b}} msg] $msg
-} {1 {wrong # args: should be "string length string"}}
+test string-9.1.$noComp {string length} -returnCodes error -body {
+    run {string length}
+} -result {wrong # args: should be "string length string"}
+test string-9.2.$noComp {string length} -returnCodes error -body {
+    run {string length a b}
+} -result {wrong # args: should be "string length string"}
 test string-9.3.$noComp {string length} {
     run {string length "a little string"}
 } 15
@@ -1111,15 +1111,15 @@ test string-9.7.$noComp {string length, bytearray object} {
     run {string length [binary format I* {0x50515253 0x52}]}
 } 8
 
-test string-10.1.$noComp {string map, not enough args} {
-    list [catch {run {string map}} msg] $msg
-} {1 {wrong # args: should be "string map ?-nocase? charMap string"}}
-test string-10.2.$noComp {string map, bad args} {
-    list [catch {run {string map {a b} abba oops}} msg] $msg
-} {1 {bad option "a b": must be -nocase}}
-test string-10.3.$noComp {string map, too many args} {
-    list [catch {run {string map -nocase {a b} str1 str2}} msg] $msg
-} {1 {wrong # args: should be "string map ?-nocase? charMap string"}}
+test string-10.1.$noComp {string map, not enough args} -returnCodes error -body {
+    run {string map}
+} -result {wrong # args: should be "string map ?-nocase? charMap string"}
+test string-10.2.$noComp {string map, bad args} -returnCodes error -body {
+    run {string map {a b} abba oops}
+} -result {bad option "a b": must be -nocase}
+test string-10.3.$noComp {string map, too many args} -returnCodes error -body {
+    run {string map -nocase {a b} str1 str2}
+} -result {wrong # args: should be "string map ?-nocase? charMap string"}
 test string-10.4.$noComp {string map} {
     run {string map {a b} abba}
 } bbbb
@@ -1138,9 +1138,9 @@ test string-10.8.$noComp {string map -nocase} {
 test string-10.9.$noComp {string map -nocase} {
     run {string map -no {abc 321 Ab * a A} aAbCaBaAbAbcAb}
 } {A321*A*321*}
-test string-10.10.$noComp {string map} {
-    list [catch {run {string map {a b c} abba}} msg] $msg
-} {1 {char map list unbalanced}}
+test string-10.10.$noComp {string map} -returnCodes error -body {
+    run {string map {a b c} abba}
+} -result {char map list unbalanced}
 test string-10.11.$noComp {string map, nulls} {
     run {string map {\x00 NULL blah \x00nix} {qwerty}}
 } qwerty
@@ -1211,12 +1211,12 @@ test string-10.31.$noComp {string map, nasty sharing crash from [Bug 1018562]} {
     run {string map $a $a}
 } {b b}
 
-test string-11.1.$noComp {string match, not enough args} {
-    list [catch {run {string match a}} msg] $msg
-} {1 {wrong # args: should be "string match ?-nocase? pattern string"}}
-test string-11.2.$noComp {string match, too many args} {
-    list [catch {run {string match a b c d}} msg] $msg
-} {1 {wrong # args: should be "string match ?-nocase? pattern string"}}
+test string-11.1.$noComp {string match, not enough args} -returnCodes error -body {
+    run {string match a}
+} -result {wrong # args: should be "string match ?-nocase? pattern string"}
+test string-11.2.$noComp {string match, too many args} -returnCodes error -body {
+    run {string match a b c d}
+} -result {wrong # args: should be "string match ?-nocase? pattern string"}
 test string-11.3.$noComp {string match} {
     run {string match abc abc}
 } 1
@@ -1343,9 +1343,9 @@ test string-11.28.$noComp {string match} {
 test string-11.29.$noComp {string match} {
     run {string match \[a a}
 } 1
-test string-11.30.$noComp {string match, bad args} {
-    list [catch {run {string match - b c}} msg] $msg
-} {1 {bad option "-": must be -nocase}}
+test string-11.30.$noComp {string match, bad args} -returnCodes error -body {
+    run {string match - b c}
+} -result {bad option "-": must be -nocase}
 test string-11.31.$noComp {string match case} {
     run {string match a A}
 } 0
@@ -1471,15 +1471,15 @@ test stringComp-12.1.0.$noComp {Bug 3588366: end-offsets before start} {
 	string range $s 0 end-5
     }} 12345
 } {}
-test string-12.1.$noComp {string range} {
-    list [catch {run {string range}} msg] $msg
-} {1 {wrong # args: should be "string range string first last"}}
-test string-12.2.$noComp {string range} {
-    list [catch {run {string range a 1}} msg] $msg
-} {1 {wrong # args: should be "string range string first last"}}
-test string-12.3.$noComp {string range} {
-    list [catch {run {string range a 1 2 3}} msg] $msg
-} {1 {wrong # args: should be "string range string first last"}}
+test string-12.1.$noComp {string range} -returnCodes error -body {
+    run {string range}
+} -result {wrong # args: should be "string range string first last"}
+test string-12.2.$noComp {string range} -returnCodes error -body {
+    run {string range a 1}
+} -result {wrong # args: should be "string range string first last"}
+test string-12.3.$noComp {string range} -returnCodes error -body {
+    run {string range a 1 2 3}
+} -result {wrong # args: should be "string range string first last"}
 test string-12.4.$noComp {string range} {
     run {string range abcdefghijklmnop 2 14}
 } {cdefghijklmno}
@@ -1504,12 +1504,12 @@ test string-12.10.$noComp {string range} {
 test string-12.11.$noComp {string range} {
     run {string range abcdefghijklmnop -100 end}
 } {abcdefghijklmnop}
-test string-12.12.$noComp {string range} {
-    list [catch {run {string range abc abc 1}} msg] $msg
-} {1 {bad index "abc": must be integer?[+-]integer? or end?[+-]integer?}}
-test string-12.13.$noComp {string range} {
-    list [catch {run {string range abc 1 eof}} msg] $msg
-} {1 {bad index "eof": must be integer?[+-]integer? or end?[+-]integer?}}
+test string-12.12.$noComp {string range} -returnCodes error -body {
+    run {string range abc abc 1}
+} -result {bad index "abc": must be integer?[+-]integer? or end?[+-]integer?}
+test string-12.13.$noComp {string range} -returnCodes error -body {
+    run {string range abc 1 eof}
+} -result {bad index "eof": must be integer?[+-]integer? or end?[+-]integer?}
 test string-12.14.$noComp {string range} {
     run {string range abcdefghijklmnop end-1 end}
 } {op}
@@ -1573,12 +1573,12 @@ test string-12.25.$noComp {bignum index arithmetic} -setup {
     demo 0x10000000000000000-0xffffffffffffffff 3
 } -result uba
 
-test string-13.1.$noComp {string repeat} {
-    list [catch {run {string repeat}} msg] $msg
-} {1 {wrong # args: should be "string repeat string count"}}
-test string-13.2.$noComp {string repeat} {
-    list [catch {run {string repeat abc 10 oops}} msg] $msg
-} {1 {wrong # args: should be "string repeat string count"}}
+test string-13.1.$noComp {string repeat} -returnCodes error -body {
+    run {string repeat}
+} -result {wrong # args: should be "string repeat string count"}
+test string-13.2.$noComp {string repeat} -returnCodes error -body {
+    run {string repeat abc 10 oops}
+} -result {wrong # args: should be "string repeat string count"}
 test string-13.3.$noComp {string repeat} {
     run {string repeat {} 100}
 } {}
@@ -1591,9 +1591,9 @@ test string-13.5.$noComp {string repeat} {
 test string-13.6.$noComp {string repeat} {
     run {string repeat abc -1}
 } {}
-test string-13.7.$noComp {string repeat} {
-    list [catch {run {string repeat abc end}} msg] $msg
-} {1 {expected integer but got "end"}}
+test string-13.7.$noComp {string repeat} -returnCodes error -body {
+    run {string repeat abc end}
+} -result {expected integer but got "end"}
 test string-13.8.$noComp {string repeat} {
     run {string repeat {} -1000}
 } {}
@@ -1617,15 +1617,15 @@ test string-13.14.$noComp {string repeat} {
     run {string repeat [run {string range ab牦cd 2 3}] 3}
 } 牦c牦c牦c
 
-test string-14.1.$noComp {string replace} {
-    list [catch {run {string replace}} msg] $msg
-} {1 {wrong # args: should be "string replace string first last ?string?"}}
-test string-14.2.$noComp {string replace} {
-    list [catch {run {string replace a 1}} msg] $msg
-} {1 {wrong # args: should be "string replace string first last ?string?"}}
-test string-14.3.$noComp {string replace} {
-    list [catch {run {string replace a 1 2 3 4}} msg] $msg
-} {1 {wrong # args: should be "string replace string first last ?string?"}}
+test string-14.1.$noComp {string replace} -returnCodes error -body {
+    run {string replace}
+} -result {wrong # args: should be "string replace string first last ?string?"}
+test string-14.2.$noComp {string replace} -returnCodes error -body {
+    run {string replace a 1}
+} -result {wrong # args: should be "string replace string first last ?string?"}
+test string-14.3.$noComp {string replace} -returnCodes error -body {
+    run {string replace a 1 2 3 4}
+} -result {wrong # args: should be "string replace string first last ?string?"}
 test string-14.4.$noComp {string replace} {
 } {}
 test string-14.5.$noComp {string replace} {
@@ -1652,12 +1652,12 @@ test string-14.11.$noComp {string replace} -body {
 test string-14.12.$noComp {string replace} {
     run {string replace abcdefghijklmnop -100 end}
 } {}
-test string-14.13.$noComp {string replace} {
-    list [catch {run {string replace abc abc 1}} msg] $msg
-} {1 {bad index "abc": must be integer?[+-]integer? or end?[+-]integer?}}
-test string-14.14.$noComp {string replace} {
-    list [catch {run {string replace abc 1 eof}} msg] $msg
-} {1 {bad index "eof": must be integer?[+-]integer? or end?[+-]integer?}}
+test string-14.13.$noComp {string replace} -returnCodes error -body {
+    run {string replace abc abc 1}
+} -result {bad index "abc": must be integer?[+-]integer? or end?[+-]integer?}
+test string-14.14.$noComp {string replace} -returnCodes error -body {
+    run {string replace abc 1 eof}
+} -result {bad index "eof": must be integer?[+-]integer? or end?[+-]integer?}
 test string-14.15.$noComp {string replace} {
     run {string replace abcdefghijklmnop end-10 end-2 NEW}
 } {abcdeNEWop}
@@ -1733,15 +1733,15 @@ test stringComp-14.26.$noComp {expression indices} {
     run {string replace abcd 0x10000000000000000-0xffffffffffffffff 2 e}
 } aed
 
-test string-15.1.$noComp {string tolower not enough args} {
-    list [catch {run {string tolower}} msg] $msg
-} {1 {wrong # args: should be "string tolower string ?first? ?last?"}}
-test string-15.2.$noComp {string tolower bad args} {
-    list [catch {run {string tolower a b}} msg] $msg
-} {1 {bad index "b": must be integer?[+-]integer? or end?[+-]integer?}}
-test string-15.3.$noComp {string tolower too many args} {
-    list [catch {run {string tolower ABC 1 end oops}} msg] $msg
-} {1 {wrong # args: should be "string tolower string ?first? ?last?"}}
+test string-15.1.$noComp {string tolower not enough args} -returnCodes error -body {
+    run {string tolower}
+} -result {wrong # args: should be "string tolower string ?first? ?last?"}
+test string-15.2.$noComp {string tolower bad args} -returnCodes error -body {
+    run {string tolower a b}
+} -result {bad index "b": must be integer?[+-]integer? or end?[+-]integer?}
+test string-15.3.$noComp {string tolower too many args} -returnCodes error -body {
+    run {string tolower ABC 1 end oops}
+} -result {wrong # args: should be "string tolower string ?first? ?last?"}
 test string-15.4.$noComp {string tolower} {
     run {string tolower ABCDeF}
 } {abcdef}
@@ -1767,15 +1767,15 @@ test string-15.11.$noComp {string tolower, compiled} {
     lindex [run {string tolower [list A B [list C]]}] 1
 } b
 
-test string-16.1.$noComp {string toupper} {
-    list [catch {run {string toupper}} msg] $msg
-} {1 {wrong # args: should be "string toupper string ?first? ?last?"}}
-test string-16.2.$noComp {string toupper} {
-    list [catch {run {string toupper a b}} msg] $msg
-} {1 {bad index "b": must be integer?[+-]integer? or end?[+-]integer?}}
-test string-16.3.$noComp {string toupper} {
-    list [catch {run {string toupper a 1 end oops}} msg] $msg
-} {1 {wrong # args: should be "string toupper string ?first? ?last?"}}
+test string-16.1.$noComp {string toupper} -returnCodes error -body {
+    run {string toupper}
+} -result {wrong # args: should be "string toupper string ?first? ?last?"}
+test string-16.2.$noComp {string toupper} -returnCodes error -body {
+    run {string toupper a b}
+} -result {bad index "b": must be integer?[+-]integer? or end?[+-]integer?}
+test string-16.3.$noComp {string toupper} -returnCodes error -body {
+    run {string toupper a 1 end oops}
+} -result {wrong # args: should be "string toupper string ?first? ?last?"}
 test string-16.4.$noComp {string toupper} {
     run {string toupper abCDEf}
 } {ABCDEF}
@@ -1801,12 +1801,12 @@ test string-16.11.$noComp {string toupper, compiled} {
     lindex [run {string toupper [list a b [list c]]}] 1
 } B
 
-test string-17.1.$noComp {string totitle} {
-    list [catch {run {string totitle}} msg] $msg
-} {1 {wrong # args: should be "string totitle string ?first? ?last?"}}
-test string-17.2.$noComp {string totitle} {
-    list [catch {run {string totitle a b}} msg] $msg
-} {1 {bad index "b": must be integer?[+-]integer? or end?[+-]integer?}}
+test string-17.1.$noComp {string totitle} -returnCodes error -body {
+    run {string totitle}
+} -result {wrong # args: should be "string totitle string ?first? ?last?"}
+test string-17.2.$noComp {string totitle} -returnCodes error -body {
+    run {string totitle a b}
+} -result {bad index "b": must be integer?[+-]integer? or end?[+-]integer?}
 test string-17.3.$noComp {string totitle} {
     run {string totitle abCDEf}
 } {Abcdef}
@@ -1830,12 +1830,12 @@ test string-17.9.$noComp {string totitle, surrogates, bug [11ae2be95dac9417]} {
 	[string totitle a\U118c0c 3 3]}
 } [list a\U118a0c a\U118c0C a\U118c0c]
 
-test string-18.1.$noComp {string trim} {
-    list [catch {run {string trim}} msg] $msg
-} {1 {wrong # args: should be "string trim string ?chars?"}}
-test string-18.2.$noComp {string trim} {
-    list [catch {run {string trim a b c}} msg] $msg
-} {1 {wrong # args: should be "string trim string ?chars?"}}
+test string-18.1.$noComp {string trim} -returnCodes error -body {
+    run {string trim}
+} -result {wrong # args: should be "string trim string ?chars?"}
+test string-18.2.$noComp {string trim} -returnCodes error -body {
+    run {string trim a b c}
+} -result {wrong # args: should be "string trim string ?chars?"}
 test string-18.3.$noComp {string trim} {
     run {string trim "    XYZ      "}
 } {XYZ}
@@ -1867,9 +1867,9 @@ test string-18.12.$noComp {string trim, unicode default} {
     run {string trim \uFEFF\x00\x85\xA0\u1680\u180EABC\u1361\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200A\u200B\u2028\u2029\u202F\u205F\u3000}
 } ABC\u1361
 
-test string-19.1.$noComp {string trimleft} {
-    list [catch {run {string trimleft}} msg] $msg
-} {1 {wrong # args: should be "string trimleft string ?chars?"}}
+test string-19.1.$noComp {string trimleft} -returnCodes error -body {
+    run {string trimleft}
+} -result {wrong # args: should be "string trimleft string ?chars?"}
 test string-19.2.$noComp {string trimleft} {
     run {string trimleft "    XYZ      "}
 } {XYZ      }
@@ -1877,12 +1877,12 @@ test string-19.3.$noComp {string trimleft, unicode default} {
     run {string trimleft \uFEFF\x85\xA0\x00\u1680\u180E\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200A\u200B\u2028\u2029\u202F\u205F\u3000\u1361ABC}
 } \u1361ABC
 
-test string-20.1.$noComp {string trimright errors} {
-    list [catch {run {string trimright}} msg] $msg
-} {1 {wrong # args: should be "string trimright string ?chars?"}}
-test string-20.2.$noComp {string trimright errors} -body {
-    list [catch {run {string trimg a}} msg] $msg
-} -result {1 {unknown or ambiguous subcommand "trimg": must be cat, compare, equal, first, index, insert, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
+test string-20.1.$noComp {string trimright errors} -returnCodes error -body {
+    run {string trimright}
+} -result {wrong # args: should be "string trimright string ?chars?"}
+test string-20.2.$noComp {string trimright errors} -returnCodes error -body {
+    run {string trimg a}
+} -result {unknown or ambiguous subcommand "trimg": must be cat, compare, equal, first, index, insert, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}
 test string-20.3.$noComp {string trimright} {
     run {string trimright "    XYZ      "}
 } {    XYZ}
@@ -1924,15 +1924,15 @@ test string-20.8.$noComp {[c61818e4c9] [string trimright] fails when UtfPrev is 
     lappend result [string map $m [run {string trimright $b \x00}]]
 } [list {*}[lrepeat 4 fooUV] {*}[lrepeat 2 fooU] {*}[lrepeat 2 foo] fooUV]
 
-test string-21.1.$noComp {string wordend} -body {
-    list [catch {run {string wordend a}} msg] $msg
-} -result {1 {wrong # args: should be "string wordend string index"}}
-test string-21.2.$noComp {string wordend} -body {
-    list [catch {run {string wordend a b c}} msg] $msg
-} -result {1 {wrong # args: should be "string wordend string index"}}
-test string-21.3.$noComp {string wordend} -body {
-    list [catch {run {string wordend a gorp}} msg] $msg
-} -result {1 {bad index "gorp": must be integer?[+-]integer? or end?[+-]integer?}}
+test string-21.1.$noComp {string wordend} -returnCodes error -body {
+    run {string wordend a}
+} -result {wrong # args: should be "string wordend string index"}
+test string-21.2.$noComp {string wordend} -returnCodes error -body {
+    run {string wordend a b c}
+} -result {wrong # args: should be "string wordend string index"}
+test string-21.3.$noComp {string wordend} -returnCodes error -body {
+    run {string wordend a gorp}
+} -result {bad index "gorp": must be integer?[+-]integer? or end?[+-]integer?}
 test string-21.4.$noComp {string wordend} -body {
     run {string wordend abc. -1}
 } -result 3
@@ -2000,18 +2000,18 @@ test string-21.25.$noComp {string trimright, unicode} {
     run {string trimright "\uD83D\uDE02Hello world!\uD83D\uDE02" \uD93D}
 } "\uD83D\uDE02Hello world!\uD83D\uDE02"
 
-test string-22.1.$noComp {string wordstart} -body {
-    list [catch {run {string word a}} msg] $msg
-} -result {1 {unknown or ambiguous subcommand "word": must be cat, compare, equal, first, index, insert, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
-test string-22.2.$noComp {string wordstart} -body {
-    list [catch {run {string wordstart a}} msg] $msg
-} -result {1 {wrong # args: should be "string wordstart string index"}}
-test string-22.3.$noComp {string wordstart} -body {
-    list [catch {run {string wordstart a b c}} msg] $msg
-} -result {1 {wrong # args: should be "string wordstart string index"}}
-test string-22.4.$noComp {string wordstart} -body {
-    list [catch {run {string wordstart a gorp}} msg] $msg
-} -result {1 {bad index "gorp": must be integer?[+-]integer? or end?[+-]integer?}}
+test string-22.1.$noComp {string wordstart} -returnCodes error -body {
+    run {string word a}
+} -result {unknown or ambiguous subcommand "word": must be cat, compare, equal, first, index, insert, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}
+test string-22.2.$noComp {string wordstart} -returnCodes error -body {
+    run {string wordstart a}
+} -result {wrong # args: should be "string wordstart string index"}
+test string-22.3.$noComp {string wordstart} -returnCodes error -body {
+    run {string wordstart a b c}
+} -result {wrong # args: should be "string wordstart string index"}
+test string-22.4.$noComp {string wordstart} -returnCodes error -body {
+    run {string wordstart a gorp}
+} -result {bad index "gorp": must be integer?[+-]integer? or end?[+-]integer?}
 test string-22.5.$noComp {string wordstart} -body {
     run {string wordstart "one two three_words" 400}
 } -result 8

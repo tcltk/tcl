@@ -400,24 +400,24 @@ test cmdMZ-5.8 {Tcl_TimeObjCmd: done optimization: nested call of self inside ti
     list $y $x
 } {5 20}
 
-test cmdMZ-6.1 {Tcl_TimeRateObjCmd: basic format of command} {
-    list [catch {timerate} msg] $msg
-} {1 {wrong # args: should be "timerate ?-direct? ?-calibrate? ?-overhead double? command ?time ?max-count??"}}
-test cmdMZ-6.2.1 {Tcl_TimeRateObjCmd: basic format of command} {
-    list [catch {timerate a b c d} msg] $msg
-} {1 {wrong # args: should be "timerate ?-direct? ?-calibrate? ?-overhead double? command ?time ?max-count??"}}
-test cmdMZ-6.2.2 {Tcl_TimeRateObjCmd: basic format of command} {
-    list [catch {timerate a b c} msg] $msg
-} {1 {expected integer but got "b"}}
-test cmdMZ-6.2.3 {Tcl_TimeRateObjCmd: basic format of command} {
-    list [catch {timerate a b} msg] $msg
-} {1 {expected integer but got "b"}}
-test cmdMZ-6.3 {Tcl_TimeRateObjCmd: basic format of command} {
-    list [catch {timerate -overhead b {} a b} msg] $msg
-} {1 {expected floating-point number but got "b"}}
-test cmdMZ-6.4 {Tcl_TimeRateObjCmd: compile of script happens even with negative iteration counts} {
-    list [catch {timerate "foreach a {c d e} \{" -12456} msg] $msg
-} {1 {missing close-brace}}
+test cmdMZ-6.1 {Tcl_TimeRateObjCmd: basic format of command} -body {
+    timerate
+} -returnCodes error -result {wrong # args: should be "timerate ?-direct? ?-calibrate? ?-overhead double? command ?time ?max-count??"}
+test cmdMZ-6.2.1 {Tcl_TimeRateObjCmd: basic format of command} -body {
+    timerate a b c d
+} -returnCodes error -result {wrong # args: should be "timerate ?-direct? ?-calibrate? ?-overhead double? command ?time ?max-count??"}
+test cmdMZ-6.2.2 {Tcl_TimeRateObjCmd: basic format of command} -body {
+    timerate a b c
+} -returnCodes error -result {expected integer but got "b"}
+test cmdMZ-6.2.3 {Tcl_TimeRateObjCmd: basic format of command} -body {
+    timerate a b
+} -returnCodes error -result {expected integer but got "b"}
+test cmdMZ-6.3 {Tcl_TimeRateObjCmd: basic format of command} -body {
+    timerate -overhead b {} a b
+} -returnCodes error -result {expected floating-point number but got "b"}
+test cmdMZ-6.4 {Tcl_TimeRateObjCmd: compile of script happens even with negative iteration counts} -body {
+    timerate "foreach a {c d e} \{" -12456
+} -returnCodes error -result {missing close-brace}
 test cmdMZ-6.5a {Tcl_TimeRateObjCmd: result format and one iteration} {
     regexp {^\d+(?:\.\d+)? \ws/# 1 # \d+(?:\.\d+)? #/sec \d+(?:\.\d+)? net-ms$} [timerate {} 0]
 } 1

@@ -387,9 +387,9 @@ test clock-1.1 "clock format - bad time" {
     list [catch {clock format foo} msg opt] $msg [dict getd $opt -errorcode {}]
 } {1 {bad seconds "foo": must be now or integer} {CLOCK badOption foo}}
 
-test clock-1.2 "clock format - bad gmt val" {
-    list [catch {clock format 0 -gmt foo} msg] $msg
-} {1 {expected boolean value but got "foo"}}
+test clock-1.2 "clock format - bad gmt val" -returnCodes error -body {
+    clock format 0 -gmt foo
+} -result {expected boolean value but got "foo"}
 
 test clock-1.3 "clock format - empty val" {
     clock format 0 -gmt 1 -format ""
@@ -435,9 +435,9 @@ test clock-1.8 "clock format now" {
     expr {[clock format now -g 1 -f "%s"] in [list $n [incr n]]}
 } 1
 
-test clock-1.9 "clock arguments: option doubly present" {
-    list [catch {clock format 0 -gmt 1 -gmt 0} result] $result
-} {1 {bad option "-gmt": doubly present}}
+test clock-1.9 "clock arguments: option doubly present" -returnCodes error -body {
+    clock format 0 -gmt 1 -gmt 0
+} -result {bad option "-gmt": doubly present}
 
 test clock-1.10 {clock format: text with token (bug [a858d95f4bfddafb])} {
     clock format 0 -format text(%d) -gmt 1
@@ -36125,9 +36125,9 @@ test clock-33.2 {clock clicks tests} {
     set end [clock clicks]
     expr {$end > $start}
 } {1}
-test clock-33.3 {clock clicks tests} {
-    list [catch {clock clicks foo} msg] $msg
-} {1 {bad option "foo": must be -milliseconds or -microseconds}}
+test clock-33.3 {clock clicks tests} -returnCodes error -body {
+    clock clicks foo
+} -result {bad option "foo": must be -milliseconds or -microseconds}
 test clock-33.4 {clock clicks tests} {
     expr {[clock clicks -milliseconds] + 1}
     concat {}
@@ -36168,12 +36168,12 @@ test clock-33.5a {clock tests, millisecond timing test} {
 	  "ok" :
 	  "test should have taken 0-60 ms, actually took [expr {$end - $start}]"}
 } {ok}
-test clock-33.6 {clock clicks, milli with too much abbreviation} {
-    list [catch { clock clicks ? } msg] $msg
-} {1 {bad option "?": must be -milliseconds or -microseconds}}
-test clock-33.7 {clock clicks, milli with too much abbreviation} {
-    list [catch { clock clicks - } msg] $msg
-} {1 {ambiguous option "-": must be -milliseconds or -microseconds}}
+test clock-33.6 {clock clicks, milli with too much abbreviation} -returnCodes error -body {
+    clock clicks ?
+} -result {bad option "?": must be -milliseconds or -microseconds}
+test clock-33.7 {clock clicks, milli with too much abbreviation} -returnCodes error -body {
+    clock clicks -
+} -result {ambiguous option "-": must be -milliseconds or -microseconds}
 
 test clock-33.8 {clock clicks test, microsecond timing test} {
     # This test can fail on a system that is so heavily loaded that
@@ -36265,9 +36265,9 @@ test clock-33.11a {clock test, millis align with micros} {
 
 # clock scan
 set syntax "clock scan string ?-base seconds? ?-format string? ?-gmt boolean? ?-locale LOCALE? ?-timezone ZONE? ?-validate boolean?"
-test clock-34.1 {clock scan tests} {
-    list [catch {clock scan} msg] $msg
-} [subst {1 {wrong # args: should be "$syntax"}}]
+test clock-34.1 {clock scan tests} -returnCodes error -body {
+    clock scan
+} -result "wrong # args: should be \"$syntax\""
 test clock-34.2 {clock scan tests} {*}{
     -body {clock scan "bad-string"}
     -returnCodes error
@@ -36299,9 +36299,9 @@ test clock-34.8 {clock scan tests} {
     set time [clock scan "Oct 23,1992 15:00" -gmt true]
     clock format $time -format {%b %d,%Y %H:%M GMT} -gmt true
 } {Oct 23,1992 15:00 GMT}
-test clock-34.9 {clock scan tests} {
-    list [catch {clock scan "Jan 12" -bad arg} msg] $msg
-} [subst {1 {bad option "-bad": must be -base, -format, -gmt, -locale, -timezone or -validate}}]
+test clock-34.9 {clock scan tests} -returnCodes error -body {
+    clock scan "Jan 12" -bad arg
+} -result {bad option "-bad": must be -base, -format, -gmt, -locale, -timezone or -validate}
 # The following two two tests test the two year date policy
 test clock-34.10 {clock scan tests} {
     set time [clock scan "1/1/71" -gmt true]
@@ -36867,9 +36867,9 @@ test clock-35.1 {clock seconds tests} {
     expr {[clock seconds] + 1}
     concat {}
 } {}
-test clock-35.2 {clock seconds tests} {
-    list [catch {clock seconds foo} msg] $msg
-} {1 {wrong # args: should be "clock seconds"}}
+test clock-35.2 {clock seconds tests} -returnCodes error -body {
+    clock seconds foo
+} -result {wrong # args: should be "clock seconds"}
 test clock-35.3 {clock seconds tests} {
     set start [clock seconds]
     after 2000
@@ -37466,11 +37466,11 @@ test clock-48.1 {Bug 1185933: 'i' destroyed by clock init} -setup {
     interp eval child {
 	set i 12345
 	clock format 0
-	list [catch { set i } result] $result
+	set i
     }
 } -cleanup {
     interp delete child
-} -result {0 12345}
+} -result 12345
 
 test clock-49.1 {regression test - localtime with negative arg (Bug 1237907)} \
     -body {
