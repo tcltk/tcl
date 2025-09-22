@@ -170,7 +170,7 @@ test unload-3.5 {basic unloading of an unloadable package from a safe interprete
 	    [child eval {list $pkgua_loaded $pkgua_detached $pkgua_unloaded}]
 } -result {{. {} {}} {} {} {. . .}}
 test unload-3.6 {reloading of unloaded package in a safe interpreter, with guess for prefix} -setup {
-    if {[child eval set pkgua_loaded] eq ""} {
+    if {[child set pkgua_loaded] eq ""} {
 	load [file join $testDir tcl9pkgua$ext] {} child
 	unload [file join $testDir tcl9pkgua$ext] {} child
     }
@@ -182,7 +182,7 @@ test unload-3.6 {reloading of unloaded package in a safe interpreter, with guess
 	    [child eval {list $pkgua_loaded $pkgua_detached $pkgua_unloaded}]
 } -result {{. . .} {} 0 {pkgua_eq pkgua_quote} {.. . .}}
 test unload-3.7 {basic unloading of re-loaded package from a safe interpreter, with prefix conversion} -setup {
-    if {[child eval set pkgua_loaded] eq ""} {
+    if {[child set pkgua_loaded] eq ""} {
 	load [file join $testDir tcl9pkgua$ext] {} child
 	unload [file join $testDir tcl9pkgua$ext] {} child
 	load [file join $testDir tcl9pkgua$ext] {} child

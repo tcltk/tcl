@@ -501,7 +501,7 @@ test compile-13.2 {TclCompileScript: testing expected nested scripts compilation
     }
     _ti_gencode
     interp recursionlimit ti [expr {10000+50}]
-    ti eval {set result {}}
+    ti set result {}
 } -body {
     # Test different compilation variants (instructions evalStk, invokeStk, etc),
     # with 1500 (1000 in debug) nested scripts (bodies). If you get SO/SF exceptions on some low-stack
@@ -510,12 +510,12 @@ test compile-13.2 {TclCompileScript: testing expected nested scripts compilation
 	set c [gencode [expr {[tcl::build-info debug] ? 1500 : 1000}] $cmd]
 	if 1 $c
     }}
-    ti eval {set result}
+    ti set result
 } -result {1 1 1 1}
 test compile-13.3 {TclCompileScript: testing check of max depth by nested scripts compilation} -setup {
     _ti_gencode
     interp recursionlimit ti 100
-    ti eval {set result {}}
+    ti set result {}
 } -body {
     # Test different compilation variants (instructions evalStk, invokeStk, etc),
     # with 500 nested scripts (bodies). It must generate "too many nested compilations"
@@ -528,7 +528,7 @@ test compile-13.3 {TclCompileScript: testing check of max depth by nested script
     # all of nested calls exceed the limit, so must end with "too many nested compilations"
     # (or evaluations, depending on compile method/instruction and "mixed" compile within
     # evaluation), so no one succeeds, the result must be empty:
-    ti eval {set result}
+    ti set result
 } -result {}
 #
 # clean up:

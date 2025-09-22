@@ -348,17 +348,17 @@ proc pkg_mkIndex {args} {
 	    $c eval [list ::tcl::DiscoverPackageContents $dir $file $direct]
 	} on error msg {
 	    if {$doVerbose} {
-		set what [$c eval set ::tcl::debug]
+		set what [$c set ::tcl::debug]
 		tclLog "warning: error while $what $file: $msg"
 	    }
 	} on ok {} {
 	    if {$doVerbose} {
-		set what [$c eval set ::tcl::debug]
+		set what [$c set ::tcl::debug]
 		tclLog "successful $what of $file"
 	    }
-	    set type [$c eval set ::tcl::type]
-	    set cmds [lsort [dict keys [$c eval set ::tcl::newCmds]]]
-	    set pkgs [$c eval set ::tcl::newPkgs]
+	    set type [$c set ::tcl::type]
+	    set cmds [lsort [dict keys [$c set ::tcl::newCmds]]]
+	    set pkgs [$c set ::tcl::newPkgs]
 	    if {$doVerbose} {
 		if {!$direct} {
 		    tclLog "commands provided were $cmds"

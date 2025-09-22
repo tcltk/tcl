@@ -2148,7 +2148,7 @@ test iocmd-32.1 {origin interpreter of moved channel destroyed during access} -m
     # Run access from interpreter B, this will give us a synchronous
     # response.
 
-    interp eval $idb [list set chan $chan]
+    interp set $idb chan $chan
     set res [interp eval $idb {
 	# wait a bit, give the main thread the time to start its event
 	# loop to wait for the response from B

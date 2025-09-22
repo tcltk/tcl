@@ -150,15 +150,15 @@ test load-7.1 {Tcl_StaticLibrary procedure} [list teststaticlibrary] {
     teststaticlibrary Test 1 0
     load {} Test
     load {} Test child
-    list [set x] [child eval set x]
+    list [set x] [child set x]
 } {loaded loaded}
 test load-7.2 {Tcl_StaticLibrary procedure} [list teststaticlibrary] {
     set x "not loaded"
     teststaticlibrary Another 0 0
     load {} Another
-    child eval {set x "not loaded"}
+    child set x "not loaded"
     list [catch {load {} Another child} msg] $msg \
-	[child eval set x] [set x]
+	[child set x] [set x]
 } {1 {cannot use library in a safe interpreter: no Another_SafeInit procedure} {not loaded} loaded}
 test load-7.3 {Tcl_StaticLibrary procedure} [list teststaticlibrary] {
     set x "not loaded"

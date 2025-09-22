@@ -38,7 +38,7 @@ set PathMapp [list $tcl_library TCLLIB $TestsDir TESTSDIR]
 
 proc getAutoPath {child} {
     set ap1 [lrange [lindex [safe::interpConfigure $child -autoPath] 1] 0 end]
-    set ap2 [::safe::DetokPath $child [interp eval $child set ::auto_path]]
+    set ap2 [::safe::DetokPath $child [interp set $child ::auto_path]]
     list $ap1 -- $ap2
 }
 proc mapList {map listIn} {
@@ -669,7 +669,7 @@ test safe-9.1 {safe interps' deleteHook} -setup {
     proc testDelHook {args} {
 	global res
 	# the interp still exists at that point
-	interp eval a {set delete 1}
+	interp set a delete 1
 	# mark that we've been here (successfully)
 	set res $args
     }
@@ -690,7 +690,7 @@ test safe-9.2 {safe interps' error in deleteHook} -setup {
     proc testDelHook {args} {
 	global res
 	# the interp still exists at that point
-	interp eval a {set delete 1}
+	interp set a delete 1
 	# mark that we've been here (successfully)
 	set res $args
 	# create an exception
@@ -1748,7 +1748,7 @@ test safe-14.2 {Check that first element of child auto_path (and access path) is
     set i [safe::interpCreate]
 } -body {
     set autoList {}
-    set token [lindex [$i eval set ::auto_path] 0]
+    set token [lindex [$i set ::auto_path] 0]
     set auto0 [dict get [set ::safe::S${i}(access_path,map)] $token]
     set accessList [lindex [safe::interpConfigure $i -accessPath] 1]
     return [list [lindex $accessList 0] $auto0]
@@ -1776,7 +1776,7 @@ test safe-14.2.1 {Check that first element of child auto_path (and access path) 
     set i [safe::interpCreate]
 } -body {
     set autoList {}
-    set token [lindex [$i eval set ::auto_path] 0]
+    set token [lindex [$i set ::auto_path] 0]
     set auto0 [dict get [set ::safe::S${i}(access_path,map)] $token]
     set accessList [lindex [safe::interpConfigure $i -accessPath] 1]
     set autoList   [lindex [safe::interpConfigure $i -autoPath] 1]
@@ -1804,7 +1804,7 @@ test safe-14.3 {Check that first element of child auto_path (and access path) is
     set i [safe::interpCreate]
 } -body {
     set autoList {}
-    set token [lindex [$i eval set ::auto_path] 0]
+    set token [lindex [$i set ::auto_path] 0]
     set auto0 [dict get [set ::safe::S${i}(access_path,map)] $token]
     set accessList [lindex [safe::interpConfigure $i -accessPath] 1]
 
@@ -1834,7 +1834,7 @@ test safe-14.3.1 {Check that first element of child auto_path (and access path) 
     set i [safe::interpCreate]
 } -body {
     set autoList {}
-    set token [lindex [$i eval set ::auto_path] 0]
+    set token [lindex [$i set ::auto_path] 0]
     set auto0 [dict get [set ::safe::S${i}(access_path,map)] $token]
     set accessList [lindex [safe::interpConfigure $i -accessPath] 1]
     set autoList   [lindex [safe::interpConfigure $i -autoPath] 1]
@@ -2031,7 +2031,7 @@ test safe-17.2 {cf. safe-7.2 - negative non-module package require with specific
 } -body {
     set i [safe::interpCreate -nostat -nested 1 -accessPath [list [info library]]]
     # should not have been set by Safe Base:
-    set auto1 [interp eval $i {set ::auto_path}]
+    set auto1 [interp set $i ::auto_path]
     # This does not change the value of option -autoPath:
     interp eval $i {set ::auto_path [list {$p(:0:)}]}
     # should not add anything (p0)
@@ -2069,7 +2069,7 @@ test safe-17.3 {Check that default auto_path is the same as in the parent interp
     # This file's header sets auto_path to a single directory [info library],
     # which is the one required by Safe Base to be present & first in the list.
     set ap {}
-    foreach token [$i eval set ::auto_path] {
+    foreach token [$i set ::auto_path] {
 	lappend ap [dict get [set ::safe::S${i}(access_path,map)] $token]
     }
     return [list $ap [lindex [::safe::interpConfigure $i -autoPath] 1]]
@@ -2091,7 +2091,7 @@ test safe-17.4 {cf. safe-7.4 - positive non-module package require with specific
     set i [safe::interpCreate -nostat -nested 1 -accessPath [list [info library]]]
 
     # should not have been set by Safe Base:
-    set auto1 [interp eval $i {set ::auto_path}]
+    set auto1 [interp set $i ::auto_path]
 
     # This does not change the value of option -autoPath.
     interp eval $i {set ::auto_path [list {$p(:0:)}]}
@@ -2106,9 +2106,9 @@ test safe-17.4 {cf. safe-7.4 - positive non-module package require with specific
     set token3 [safe::interpAddToAccessPath $i [file join $TestsDir auto0 auto1]]
 
     # should not have been changed by Safe Base:
-    set auto2 [interp eval $i {set ::auto_path}]
+    set auto2 [interp set $i ::auto_path]
 
-    set auto3 [interp eval $i [list set ::auto_path [list {$p(:0:)} $token2]]]
+    set auto3 [interp set $i ::auto_path [list {$p(:0:)} $token2]]
 
     # This time, unlike test safe-17.2 and the try above, SafeTestPackage1 should be found:
     list $auto1 $auto2 $token1 $token2 $token3 \
@@ -2162,7 +2162,7 @@ test safe-18.1 {Check that each directory of the default auto_path is a valid to
     set i [safe::interpCreate]
 } -body {
     set badTokens {}
-    foreach dir [$i eval {set ::auto_path}] {
+    foreach dir [$i set ::auto_path] {
 	if {[regexp {^\$p\(:[0-9]+:\)$} $dir]} {
 	    # Match - OK - token has expected form
 	} else {
@@ -2188,7 +2188,7 @@ test safe-18.1.1 {Check that each directory of the default auto_path is a valid 
     set i [safe::interpCreate]
 } -body {
     set badTokens {}
-    foreach dir [$i eval {set ::auto_path}] {
+    foreach dir [$i set ::auto_path] {
 	if {[regexp {^\$p\(:[0-9]+:\)$} $dir]} {
 	    # Match - OK - token has expected form
 	} else {
@@ -2279,7 +2279,7 @@ test safe-19.8 {autoloading commands indexed in tclIndex files, Sync Mode off} -
     set path1 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 auto1]]
     set path2 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 auto2]]
     set mappC [mapList $PathMapp [dict get $confA -autoPath]]
-    set toksC [interp eval $i set ::auto_path]
+    set toksC [interp set $i ::auto_path]
 
     # Load and run the commands.
     set code1 [catch {interp eval $i {report1}} msg1]
@@ -2316,7 +2316,7 @@ test safe-19.9 {interpConfigure change the access path; tclIndex commands unaffe
     set path1 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 auto1]]
     set path2 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 auto2]]
     set mappC [mapList $PathMapp [dict get $confA -autoPath]]
-    set toksC [interp eval $i set ::auto_path]
+    set toksC [interp set $i ::auto_path]
 
     # Load auto_load data.
     interp eval $i {catch nonExistentCommand}
@@ -2339,7 +2339,7 @@ test safe-19.9 {interpConfigure change the access path; tclIndex commands unaffe
     set path3 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 auto1]]
     set path4 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 auto2]]
     set mappD [mapList $PathMapp [dict get $confB -autoPath]]
-    set toksD [interp eval $i set ::auto_path]
+    set toksD [interp set $i ::auto_path]
 
     # Run the commands.
     set code3 [catch {interp eval $i {report1}} msg3]
@@ -2379,7 +2379,7 @@ test safe-19.10 {interpConfigure change the access path; tclIndex commands unaff
     set path1 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 auto1]]
     set path2 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 auto2]]
     set mappC [mapList $PathMapp [dict get $confA -autoPath]]
-    set toksC [interp eval $i set ::auto_path]
+    set toksC [interp set $i ::auto_path]
 
     # Load auto_load data.
     interp eval $i {catch nonExistentCommand}
@@ -2400,7 +2400,7 @@ test safe-19.10 {interpConfigure change the access path; tclIndex commands unaff
     set path3 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 auto1]]
     set path4 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 auto2]]
     set mappD [mapList $PathMapp [dict get $confB -autoPath]]
-    set toksD [interp eval $i set ::auto_path]
+    set toksD [interp set $i ::auto_path]
 
     # Load and run the commands.
     set code3 [catch {interp eval $i {report1}} msg3]
@@ -2442,7 +2442,7 @@ test safe-19.11 {interpConfigure change the access path; pkgIndex.tcl packages u
     set path1 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 auto1]]
     set path2 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 auto2]]
     set mappC [mapList $PathMapp [dict get $confA -autoPath]]
-    set toksC [interp eval $i set ::auto_path]
+    set toksC [interp set $i ::auto_path]
 
     # Load pkgIndex.tcl data.
     catch {interp eval $i {package require NOEXIST}}
@@ -2462,7 +2462,7 @@ test safe-19.11 {interpConfigure change the access path; pkgIndex.tcl packages u
     set path3 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 auto1]]
     set path4 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 auto2]]
     set mappD [mapList $PathMapp [dict get $confB -autoPath]]
-    set toksD [interp eval $i set ::auto_path]
+    set toksD [interp set $i ::auto_path]
 
     # Try to load the packages and run a command from each one.
     set code3 [catch {interp eval $i {package require SafeTestPackage1}} msg3 opts3]
@@ -2507,7 +2507,7 @@ test safe-19.12 {interpConfigure change the access path; pkgIndex.tcl packages u
     set path1 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 auto1]]
     set path2 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 auto2]]
     set mappC [mapList $PathMapp [dict get $confA -autoPath]]
-    set toksC [interp eval $i set ::auto_path]
+    set toksC [interp set $i ::auto_path]
 
     # Load pkgIndex.tcl data.
     catch {interp eval $i {package require NOEXIST}}
@@ -2525,7 +2525,7 @@ test safe-19.12 {interpConfigure change the access path; pkgIndex.tcl packages u
     set path3 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 auto1]]
     set path4 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 auto2]]
     set mappD [mapList $PathMapp [dict get $confB -autoPath]]
-    set toksD [interp eval $i set ::auto_path]
+    set toksD [interp set $i ::auto_path]
 
     # Try to load the packages and run a command from each one.
     set code3 [catch {interp eval $i {package require SafeTestPackage1}} msg3 opts3]
@@ -2571,7 +2571,7 @@ test safe-19.13 {interpConfigure change the access path; pkgIndex.tcl packages f
     set path1 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 auto1]]
     set path2 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 auto2]]
     set mappC [mapList $PathMapp [dict get $confA -autoPath]]
-    set toksC [interp eval $i set ::auto_path]
+    set toksC [interp set $i ::auto_path]
 
     # Load pkgIndex.tcl data.
     catch {interp eval $i {package require NOEXIST}}
@@ -2585,7 +2585,7 @@ test safe-19.13 {interpConfigure change the access path; pkgIndex.tcl packages f
     set code4 [catch {::safe::interpFindInAccessPath $i [file join $TestsDir auto0 auto1]} path4]
     set code5 [catch {::safe::interpFindInAccessPath $i [file join $TestsDir auto0 auto2]} path5]
     set mappD [mapList $PathMapp [dict get $confB -autoPath]]
-    set toksD [interp eval $i set ::auto_path]
+    set toksD [interp set $i ::auto_path]
 
     # Try to load the packages.
     set code3 [catch {interp eval $i {package require SafeTestPackage1}} msg3]
@@ -2628,7 +2628,7 @@ test safe-19.14 {when interpConfigure changes the access path, ::auto_path uses 
     set path1 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 auto1]]
     set path2 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 auto2]]
     set mappC [mapList $PathMapp [dict get $confA -autoPath]]
-    set toksC [interp eval $i set ::auto_path]
+    set toksC [interp set $i ::auto_path]
 
     # Load pkgIndex.tcl data.
     catch {interp eval $i {package require NOEXIST}}
@@ -2645,7 +2645,7 @@ test safe-19.14 {when interpConfigure changes the access path, ::auto_path uses 
     set path3 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 auto1]]
     set path4 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 auto2]]
     set mappD [mapList $PathMapp [dict get $confA -autoPath]]
-    set toksD [interp eval $i set ::auto_path]
+    set toksD [interp set $i ::auto_path]
 
     # Try to load the packages and run a command from each one.
     set code3 [catch {interp eval $i {package require SafeTestPackage1}} msg3 opts3]
@@ -2690,7 +2690,7 @@ test safe-19.15 {when interpConfigure changes the access path, ::auto_path uses 
     set mappA [mapList $PathMapp [dict get $confA -accessPath]]
     set path0 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0]]
     set mappC [mapList $PathMapp [dict get $confA -autoPath]]
-    set toksC [interp eval $i set ::auto_path]
+    set toksC [interp set $i ::auto_path]
 
     # Load pkgIndex.tcl data.
     catch {interp eval $i {package require NOEXIST}}
@@ -2707,7 +2707,7 @@ test safe-19.15 {when interpConfigure changes the access path, ::auto_path uses 
     set path3 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 auto1]]
     set path4 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 auto2]]
     set mappD [mapList $PathMapp [dict get $confA -autoPath]]
-    set toksD [interp eval $i set ::auto_path]
+    set toksD [interp set $i ::auto_path]
 
     # Try to load the packages and run a command from each one.
     set code3 [catch {interp eval $i {package require SafeTestPackage1}} msg3 opts3]
@@ -2748,7 +2748,7 @@ test safe-19.16 {default value for -accessPath and -autoPath on creation; -autoP
     # Inspect.
     set confA [safe::interpConfigure $i]
     set mappC [mapList $PathMapp [dict get $confA -autoPath]]
-    set toksC [interp eval $i set ::auto_path]
+    set toksC [interp set $i ::auto_path]
 
     # Load pkgIndex.tcl data.
     catch {interp eval $i {package require NOEXIST}}
@@ -2763,7 +2763,7 @@ test safe-19.16 {default value for -accessPath and -autoPath on creation; -autoP
     set path5 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0]]
     set path3 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 auto1]]
     set mappD [mapList $PathMapp [dict get $confA -autoPath]]
-    set toksD [interp eval $i set ::auto_path]
+    set toksD [interp set $i ::auto_path]
 
     # Try to load the packages and run a command from each one.
     set code3 [catch {interp eval $i {package require SafeTestPackage1}} msg3]

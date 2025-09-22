@@ -1005,7 +1005,7 @@ test execute-8.6 {Compile epoch bump in global level (bug [fa6bf38d07])} -setup 
 	    lappend res A; testbumpinterpepoch; lappend res B; error test; lappend res C;
 	}
     }
-    child eval {set res}
+    child set res
 } -cleanup {
     interp delete child
 } -result [lrepeat 4 A B]
@@ -1041,7 +1041,7 @@ test execute-8.7 {Compile epoch bump in global level (bug [fa6bf38d07]), excepti
 	   lappend res A; testbumpinterpepoch; lappend res B; break; lappend res C;
 	}
     } e] $e
-    list $res [child eval {set res}]
+    list $res [child set res]
 } -cleanup {
     interp delete child
 } -result [list {1 test 1 test 2 test 3 {}} [lrepeat 4 A B]]

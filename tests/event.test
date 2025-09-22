@@ -296,7 +296,7 @@ test event-6.1 {BgErrorDeleteProc procedure} -setup {
     interp create foo
     set erroutfile [makeFile Unmodified err.out]
 } -body {
-    foo eval [list set erroutfile $erroutfile]
+    foo set erroutfile $erroutfile
     foo eval {
 	proc bgerror args {
 	    global errorInfo erroutfile

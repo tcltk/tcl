@@ -1249,7 +1249,7 @@ test iortrans-11.0 {origin interpreter of moved transform gone} -setup {
 	[catch {interp eval $idb [list seek $chan 1]} msg] $msg \
 	[catch {interp eval $idb [list gets $chan]} msg] $msg \
 	[catch {interp eval $idb [list close $chan]} msg] $msg
-    #lappend res [interp eval $ida {set res}]
+    #lappend res [interp set $ida res]
     # actions: clear|write|clear|write|clear|flush|limit?|drain|flush
     # The 'tell' is ok, as it passed through the transform to the base channel
     # without invoking the transform handler.
@@ -1285,8 +1285,8 @@ test iortrans-11.1 {origin interpreter of moved transform destroyed during acces
     interp eval $ida [list testchannel cut $chan]
     interp eval $idb [list testchannel splice $chan]
     # Run access from interpreter B, this will give us a synchronous response.
-    interp eval $idb [list set chan $chan]
-    interp eval $idb [list set mid $tcltest::mainThread]
+    interp set $idb chan $chan
+    interp set $idb mid $tcltest::mainThread
     set res [interp eval $idb {
 	# Wait a bit, give the main thread the time to start its event loop to
 	# wait for the response from B
@@ -1307,7 +1307,7 @@ test iortrans-11.2 {delete interp of reflected transform} -setup {
     set c [tempchan]
     testchannel cut $c
     interp eval child [list testchannel splice $c]
-    interp eval child [list set c $c]
+    interp set child c $c
     child eval {
 	proc no-op args {}
 	proc driver {c sub args} {

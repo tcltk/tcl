@@ -887,7 +887,7 @@ test coroutine-8.1.2 {coro inject with result, ticket 42202ba1e5ff566e} -body {
 	coroinject demo lappend ::result inject-executed
     }
     child eval demo
-    set result [child eval {set ::result}]
+    set result [child set ::result]
 
     interp delete child
     set result

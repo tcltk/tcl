@@ -38,7 +38,7 @@ test interp-1.1 {options for interp command} -returnCodes error -body {
 } -result {wrong # args: should be "interp cmd ?arg ...?"}
 test interp-1.2 {options for interp command} -returnCodes error -body {
     interp frobox
-} -result {bad option "frobox": must be alias, aliases, bgerror, cancel, children, create, debug, delete, eval, exists, expose, hide, hidden, issafe, invokehidden, limit, marktrusted, recursionlimit, share, target, or transfer}
+} -result {bad option "frobox": must be alias, aliases, bgerror, cancel, children, create, debug, delete, eval, exists, expose, hide, hidden, issafe, invokehidden, limit, marktrusted, recursionlimit, set, share, target, or transfer}
 test interp-1.3 {options for interp command} {
     interp delete
 } ""
@@ -56,16 +56,23 @@ test interp-1.6 {options for interp command} -returnCodes error -body {
 } -result {wrong # args: should be "interp children ?path?"}
 test interp-1.7 {options for interp command} -returnCodes error -body {
     interp hello
-} -result {bad option "hello": must be alias, aliases, bgerror, cancel, children, create, debug, delete, eval, exists, expose, hide, hidden, issafe, invokehidden, limit, marktrusted, recursionlimit, share, target, or transfer}
+} -result {bad option "hello": must be alias, aliases, bgerror, cancel, children, create, debug, delete, eval, exists, expose, hide, hidden, issafe, invokehidden, limit, marktrusted, recursionlimit, set, share, target, or transfer}
 test interp-1.8 {options for interp command} -returnCodes error -body {
     interp -froboz
-} -result {bad option "-froboz": must be alias, aliases, bgerror, cancel, children, create, debug, delete, eval, exists, expose, hide, hidden, issafe, invokehidden, limit, marktrusted, recursionlimit, share, target, or transfer}
+} -result {bad option "-froboz": must be alias, aliases, bgerror, cancel, children, create, debug, delete, eval, exists, expose, hide, hidden, issafe, invokehidden, limit, marktrusted, recursionlimit, set, share, target, or transfer}
 test interp-1.9 {options for interp command} -returnCodes error -body {
     interp -froboz -safe
-} -result {bad option "-froboz": must be alias, aliases, bgerror, cancel, children, create, debug, delete, eval, exists, expose, hide, hidden, issafe, invokehidden, limit, marktrusted, recursionlimit, share, target, or transfer}
+} -result {bad option "-froboz": must be alias, aliases, bgerror, cancel, children, create, debug, delete, eval, exists, expose, hide, hidden, issafe, invokehidden, limit, marktrusted, recursionlimit, set, share, target, or transfer}
 test interp-1.10 {options for interp command} -returnCodes error -body {
     interp target
 } -result {wrong # args: should be "interp target path alias"}
+test interp-1.11 {options for interp child command} -returnCodes error -setup {
+    interp create child
+} -body {
+    child gorp
+} -cleanup {
+    interp delete child
+} -result {bad option "gorp": must be alias, aliases, bgerror, debug, eval, expose, hide, hidden, issafe, invokehidden, limit, marktrusted, recursionlimit, or set}
 
 # Part 1: Basic interpreter creation tests:
 test interp-2.1 {basic interpreter creation} {
@@ -1120,7 +1127,7 @@ test interp-20.7 {interp invokehidden vs variable eval} -body {
 test interp-20.8 {interp invokehidden vs variable eval} -body {
     set a [interp create]
     $a hide list
-    $a eval set z 89
+    $a set z 89
     set z 45
     list [catch {$a invokehidden list {$z a b c}} msg] $msg
 } -cleanup {
@@ -1129,7 +1136,7 @@ test interp-20.8 {interp invokehidden vs variable eval} -body {
 test interp-20.9 {interp invokehidden vs variable eval} -body {
     set a [interp create]
     $a hide list
-    $a eval set z 89
+    $a set z 89
     set z 45
     set l ""
     lappend l [catch {$a invokehidden list $z {$z a b c}} msg] $msg
@@ -1221,7 +1228,7 @@ test interp-20.17 {interp invokehidden vs variable eval} -setup {
 } -body {
     interp create a
     interp hide a list
-    a eval set z 89
+    a set z 89
     set z 45
     interp invokehidden a list {$z a b c}
 } -cleanup {
@@ -1232,7 +1239,7 @@ test interp-20.18 {interp invokehidden vs variable eval} -setup {
 } -body {
     interp create a
     interp hide a list
-    a eval set z 89
+    a set z 89
     set z 45
     interp invokehidden a list $z {$z a b c}
 } -cleanup {
@@ -1688,7 +1695,7 @@ test interp-20.49 {interp invokehidden -namespace} -setup {
     interp create -safe child
 } -body {
     child invokehidden -namespace ::foo source $script
-    child eval {set ::foo::x}
+    child set ::foo::x
 } -cleanup {
     interp delete child
     removeFile script
@@ -2673,7 +2680,7 @@ test interp-29.3.3 {recursion limit} -body {
 } -result {1 {too many nested evaluations (infinite loop?)} 49}
 test interp-29.3.4 {recursion limit error reporting} -body {
     interp create child
-    set r1 [child eval {
+    list [child eval {
 	catch {			# nesting level 1
 	    eval {		# 2
 		eval {		# 3
@@ -2686,15 +2693,13 @@ test interp-29.3.4 {recursion limit error reporting} -body {
 		}
 	    }
 	} msg
-    }]
-    set r2 [child eval { set msg }]
-    list $r1 $r2
+    }] [child set msg]
 } -cleanup {
     interp delete child
 } -result {1 {falling back due to new recursion limit}}
 test interp-29.3.5 {recursion limit error reporting} -body {
     interp create child
-    set r1 [child eval {
+    list [child eval {
 	catch {			# nesting level 1
 	    eval {		# 2
 		eval {		# 3
@@ -2707,15 +2712,13 @@ test interp-29.3.5 {recursion limit error reporting} -body {
 		}
 	    }
 	} msg
-    }]
-    set r2 [child eval { set msg }]
-    list $r1 $r2
+    }] [child set msg]
 } -cleanup {
     interp delete child
 } -result {1 {falling back due to new recursion limit}}
 test interp-29.3.6 {recursion limit error reporting} -body {
     interp create child
-    set r1 [child eval {
+    list [child eval {
 	catch {			# nesting level 1
 	    eval {		# 2
 		eval {		# 3
@@ -2728,9 +2731,7 @@ test interp-29.3.6 {recursion limit error reporting} -body {
 		}
 	    }
 	} msg
-    }]
-    set r2 [child eval { set msg }]
-    list $r1 $r2
+    }] [child set msg]
 } -cleanup {
     interp delete child
 } -result {0 ok}
@@ -2741,7 +2742,7 @@ test interp-29.3.6 {recursion limit error reporting} -body {
 test interp-29.3.7a {recursion limit error reporting} -body {
     interp create child
     after 0 {interp recursionlimit child 5}
-    set r1 [child eval {
+    list [child eval {
 	catch {			# nesting level 1
 	    eval {		# 2
 		eval {		# 3
@@ -2754,16 +2755,14 @@ test interp-29.3.7a {recursion limit error reporting} -body {
 		}
 	    }
 	} msg
-    }]
-    set r2 [child eval { set msg }]
-    list $r1 $r2
+    }] [child set msg]
 } -cleanup {
     interp delete child
 } -result {0 ok}
 test interp-29.3.7b {recursion limit error reporting} -body {
     interp create child
     after 0 {interp recursionlimit child 5}
-    set r1 [child eval {
+    list [child eval {
 	catch {			# nesting level 1
 	    eval {		# 2
 		eval {		# 3
@@ -2776,16 +2775,14 @@ test interp-29.3.7b {recursion limit error reporting} -body {
 		}
 	    }
 	} msg
-    }]
-    set r2 [child eval { set msg }]
-    list $r1 $r2
+    }] [child set msg]
 } -cleanup {
     interp delete child
 } -result {0 ok}
 test interp-29.3.7c {recursion limit error reporting} -body {
     interp create child
     after 0 {interp recursionlimit child 5}
-    set r1 [child eval {
+    list [child eval {
 	catch {			# nesting level 1
 	    eval {		# 2
 		eval {		# 3
@@ -2799,16 +2796,14 @@ test interp-29.3.7c {recursion limit error reporting} -body {
 		}
 	    }
 	} msg
-    }]
-    set r2 [child eval { set msg }]
-    list $r1 $r2
+    }] [child set msg]
 } -cleanup {
     interp delete child
 } -result {1 {too many nested evaluations (infinite loop?)}}
 test interp-29.3.8a {recursion limit error reporting} -body {
     interp create child
     after 0 {interp recursionlimit child 4}
-    set r1 [child eval {
+    list [child eval {
 	catch {			# nesting level 1
 	    eval {		# 2
 		eval {		# 3
@@ -2821,16 +2816,14 @@ test interp-29.3.8a {recursion limit error reporting} -body {
 		}
 	    }
 	} msg
-    }]
-    set r2 [child eval { set msg }]
-    list $r1 $r2
+    }] [child set msg]
 } -cleanup {
     interp delete child
 } -result {0 ok}
 test interp-29.3.8b {recursion limit error reporting} -body {
     interp create child
     after 0 {interp recursionlimit child 4}
-    set r1 [child eval {
+    list [child eval {
 	catch {			# nesting level 1
 	    eval {		# 2
 		eval {		# 3
@@ -2843,16 +2836,14 @@ test interp-29.3.8b {recursion limit error reporting} -body {
 		}
 	    }
 	} msg
-    }]
-    set r2 [child eval { set msg }]
-    list $r1 $r2
+    }] [child set msg]
 } -cleanup {
     interp delete child
 } -result {1 {too many nested evaluations (infinite loop?)}}
 test interp-29.3.9a {recursion limit error reporting} -body {
     interp create child
     after 0 {interp recursionlimit child 6}
-    set r1 [child eval {
+    list [child eval {
 	catch {			# nesting level 1
 	    eval {		# 2
 		eval {		# 3
@@ -2865,16 +2856,14 @@ test interp-29.3.9a {recursion limit error reporting} -body {
 		}
 	    }
 	} msg
-    }]
-    set r2 [child eval { set msg }]
-    list $r1 $r2
+    }] [child set msg]
 } -cleanup {
     interp delete child
 } -result {0 ok}
 test interp-29.3.9b {recursion limit error reporting} -body {
     interp create child
     after 0 {interp recursionlimit child 6}
-    set r1 [child eval {
+    list [child eval {
 	catch {			# nesting level 1
 	    eval {		# 2
 		eval {		# 3
@@ -2887,16 +2876,14 @@ test interp-29.3.9b {recursion limit error reporting} -body {
 		}
 	    }
 	} msg
-    }]
-    set r2 [child eval { set msg }]
-    list $r1 $r2
+    }] [child set msg]
 } -cleanup {
     interp delete child
 } -result {0 ok}
 test interp-29.3.10a {recursion limit error reporting} -body {
     interp create child
     after 0 {child recursionlimit 4}
-    set r1 [child eval {
+    list [child eval {
 	catch {			# nesting level 1
 	    eval {		# 2
 		eval {		# 3
@@ -2909,16 +2896,14 @@ test interp-29.3.10a {recursion limit error reporting} -body {
 		}
 	    }
 	} msg
-    }]
-    set r2 [child eval { set msg }]
-    list $r1 $r2
+    }] [child set msg]
 } -cleanup {
     interp delete child
 } -result {0 ok}
 test interp-29.3.10b {recursion limit error reporting} -body {
     interp create child
     after 0 {child recursionlimit 4}
-    set r1 [child eval {
+    list [child eval {
 	catch {			# nesting level 1
 	    eval {		# 2
 		eval {		# 3
@@ -2931,16 +2916,14 @@ test interp-29.3.10b {recursion limit error reporting} -body {
 		}
 	    }
 	} msg
-    }]
-    set r2 [child eval { set msg }]
-    list $r1 $r2
+    }] [child set msg]
 } -cleanup {
     interp delete child
 } -result {1 {too many nested evaluations (infinite loop?)}}
 test interp-29.3.11a {recursion limit error reporting} -body {
     interp create child
     after 0 {child recursionlimit 5}
-    set r1 [child eval {
+    list [child eval {
 	catch {			# nesting level 1
 	    eval {		# 2
 		eval {		# 3
@@ -2953,16 +2936,14 @@ test interp-29.3.11a {recursion limit error reporting} -body {
 		}
 	    }
 	} msg
-    }]
-    set r2 [child eval { set msg }]
-    list $r1 $r2
+    }] [child set msg]
 } -cleanup {
     interp delete child
 } -result {0 ok}
 test interp-29.3.11b {recursion limit error reporting} -body {
     interp create child
     after 0 {child recursionlimit 5}
-    set r1 [child eval {
+    list [child eval {
 	catch {			# nesting level 1
 	    eval {		# 2
 		eval {		# 3
@@ -2976,16 +2957,14 @@ test interp-29.3.11b {recursion limit error reporting} -body {
 		}
 	    }
 	} msg
-    }]
-    set r2 [child eval { set msg }]
-    list $r1 $r2
+    }] [child set msg]
 } -cleanup {
     interp delete child
 } -result {1 {too many nested evaluations (infinite loop?)}}
 test interp-29.3.12a {recursion limit error reporting} -body {
     interp create child
     after 0 {child recursionlimit 6}
-    set r1 [child eval {
+    list [child eval {
 	catch {			# nesting level 1
 	    eval {		# 2
 		eval {		# 3
@@ -2998,16 +2977,14 @@ test interp-29.3.12a {recursion limit error reporting} -body {
 		}
 	    }
 	} msg
-    }]
-    set r2 [child eval { set msg }]
-    list $r1 $r2
+    }] [child set msg]
 } -cleanup {
     interp delete child
 } -result {0 ok}
 test interp-29.3.12b {recursion limit error reporting} -body {
     interp create child
     after 0 {child recursionlimit 6}
-    set r1 [child eval {
+    list [child eval {
 	catch {			# nesting level 1
 	    eval {		# 2
 		eval {		# 3
@@ -3021,9 +2998,7 @@ test interp-29.3.12b {recursion limit error reporting} -body {
 		}
 	    }
 	} msg
-    }]
-    set r2 [child eval { set msg }]
-    list $r1 $r2
+    }] [child set msg]
 } -cleanup {
     interp delete child
 } -result {0 ok}
@@ -3425,7 +3400,7 @@ test interp-34.7 {limits with callbacks: deleting the handler interp} -setup {
 	incr n
     }
 } -body {
-    set subi [$i eval set i]
+    set subi [$i set i]
     interp alias $i trapToParent {} cb3
     set n 0
     $i eval {
@@ -3822,6 +3797,179 @@ test interp-38.8 {interp debug basic setup} -body {
 } -returnCodes {
     error
 } -result {wrong # args: should be "interp debug path ?-frame ?bool??"}
+
+test interp-39.1 {interp set: syntax} -returnCodes error -body {
+    interp set {}
+} -result {wrong # args: should be "interp set path varName ?value?"}
+test interp-39.2 {interp set: syntax} -returnCodes error -body {
+    interp set {} foo bar gorp
+} -result {wrong # args: should be "interp set path varName ?value?"}
+test interp-39.3 {interp set} -setup {
+    unset -nocomplain x
+} -body {
+    apply {{} {
+	set x foo
+	list [interp set {} x bar] $x
+    }}
+} -result {bar bar}
+test interp-39.4 {interp set} -setup {
+    unset -nocomplain x
+} -body {
+    apply {{} {
+	set x foo
+	list [interp set {} x] $x
+    }}
+} -result {foo foo}
+test interp-39.5 {interp set} -setup {
+    unset -nocomplain x
+} -body {
+    apply {{} {
+	const x foo
+	interp set {} x
+    }}
+} -result foo
+test interp-39.6 {interp set} -returnCodes error -setup {
+    unset -nocomplain x
+} -body {
+    apply {{} {
+	const x foo
+	interp set {} x bar
+    }}
+} -result {can't set "x": variable is a constant}
+test interp-39.7 {interp set} -setup {
+    unset -nocomplain x
+} -body {
+    set x foo
+    trace add variable x write {apply {args {
+	global x
+	set x gorp
+	return
+    }}}
+    list [interp set {} x bar] $x
+} -result {gorp gorp} -cleanup {
+    unset -nocomplain x
+}
+test interp-39.8 {interp set} -setup {
+    unset -nocomplain x
+} -body {
+    set x foo
+    trace add variable x read {apply {args {
+	global x
+	set x gorp
+	return
+    }}}
+    list [interp set {} x] $x
+} -result {gorp gorp} -cleanup {
+    unset -nocomplain x
+}
+test interp-39.9 {interp set} -setup {
+    set i [interp create]
+} -body {
+    interp eval $i {
+	proc readX {} {
+	    global x
+	    return $x
+	}
+    }
+    interp set $i x "123 45"
+    interp eval $i readX
+} -result {123 45} -cleanup {
+    interp delete $i
+}
+
+test interp-40.1 {interp child set: syntax} -setup {
+    set i [interp create child]
+} -returnCodes error -body {
+    $i set
+} -cleanup {
+    interp delete child
+} -result {wrong # args: should be "child set varName ?value?"}
+test interp-40.2 {interp child set: syntax} -setup {
+    set i [interp create child]
+} -returnCodes error -body {
+    $i set foo bar gorp
+} -cleanup {
+    interp delete child
+} -result {wrong # args: should be "child set varName ?value?"}
+test interp-40.3 {interp child set} -setup {
+    set i [interp create]
+} -body {
+    $i eval set x foo
+    list [$i set x bar] [$i eval set x]
+} -cleanup {
+    interp delete $i
+} -result {bar bar}
+test interp-40.4 {interp child set} -setup {
+    set i [interp create]
+} -body {
+    $i eval set x foo
+    list [$i set x] [$i eval set x]
+} -cleanup {
+    interp delete $i
+} -result {foo foo}
+test interp-40.5 {interp child set} -setup {
+    set i [interp create]
+} -body {
+    $i eval const x foo
+    $i set x
+} -cleanup {
+    interp delete $i
+} -result foo
+test interp-40.6 {interp child set} -setup {
+    set i [interp create]
+} -body {
+    $i eval const x foo
+    catch {$i set x bar} msg opt
+    list $msg [dict get $opt -errorinfo]
+} -cleanup {
+    interp delete $i
+} -result {{can't set "x": variable is a constant} {can't set "x": variable is a constant
+    invoked from within
+"$i set x bar"}}
+test interp-40.7 {interp child set} -setup {
+    set i [interp create]
+} -body {
+    $i eval {
+	set x foo
+	trace add variable x write {apply {args {
+	    global x
+	    set x gorp
+	    return
+	}}}
+    }
+    list [$i set x bar] [$i eval set x]
+} -result {gorp gorp} -cleanup {
+    interp delete $i
+}
+test interp-40.8 {interp child set} -setup {
+    set i [interp create]
+} -body {
+    $i eval {
+	set x foo
+	trace add variable x read {apply {args {
+	    global x
+	    set x gorp
+	    return
+	}}}
+    }
+    list [$i set x] [$i eval set x]
+} -result {gorp gorp} -cleanup {
+    interp delete $i
+}
+test interp-40.9 {interp child set} -setup {
+    set i [interp create]
+} -body {
+    interp eval $i {
+	proc readX {} {
+	    global x
+	    return $x
+	}
+    }
+    $i set x "123 45"
+    interp eval $i readX
+} -result {123 45} -cleanup {
+    interp delete $i
+}
 
 # cleanup
 unset -nocomplain hidden_cmds

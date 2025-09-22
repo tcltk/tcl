@@ -428,7 +428,7 @@ proc ::safe::InterpSetConfig {child access_path staticsok nestedok deletehook au
 	    lappend tokens_auto_path [dict get $remap_access_path $dir]
 	}
     }
-    ::interp eval $child [list set auto_path $tokens_auto_path]
+    ::interp set $child auto_path $tokens_auto_path
 
     # Add the tcl::tm directories to the access path.
     set morepaths [::tcl::tm::list]
@@ -767,7 +767,7 @@ proc ::safe::SyncAccessPath {child} {
 
     set child_access_path $state(access_path,child)
     if {$AutoPathSync} {
-	::interp eval $child [list set auto_path $child_access_path]
+	::interp set $child auto_path $child_access_path
 
 	Log $child "auto_path in $child has been set to $child_access_path"\
 		NOTICE
@@ -777,8 +777,7 @@ proc ::safe::SyncAccessPath {child} {
     # list of access path's. See -> InterpSetConfig for the code which
     # ensures this condition.
 
-    ::interp eval $child [list \
-	      set tcl_library [lindex $child_access_path 0]]
+    ::interp set $child tcl_library [lindex $child_access_path 0]
     return
 }
 

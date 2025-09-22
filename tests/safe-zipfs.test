@@ -766,7 +766,7 @@ apply [list {} {
 	}
     } -body {
 	set i [safe::interpCreate -nostat -nested 1 -accessPath [list [info library]]]
-	set auto1 [interp eval $i {set ::auto_path}]
+	set auto1 [interp set $i ::auto_path]
 	interp eval $i {set ::auto_path [list {$p(:0:)}]}
 	# should not add anything (p0)
 	set token1 [safe::interpAddToAccessPath $i [info library]]
@@ -794,7 +794,7 @@ apply [list {} {
 	set i [safe::interpCreate -nostat -nested 1 -accessPath [list [info library]]]
 
 	# should not have been set by Safe Base:
-	set auto1 [interp eval $i {set ::auto_path}]
+	set auto1 [interp set $i ::auto_path]
 
 	# This will differ from the value -autoPath {}
 	interp eval $i {set ::auto_path [list {$p(:0:)}]}
@@ -809,10 +809,10 @@ apply [list {} {
 	set token3 [safe::interpAddToAccessPath $i [file join $ZipMountPoint auto0 auto1]]
 
 	# should not have been changed by Safe Base:
-	set auto2 [interp eval $i {set ::auto_path}]
+	set auto2 [interp set $i ::auto_path]
 
 	# This will differ from the value -autoPath {}
-	set auto3 [interp eval $i [list set ::auto_path [list {$p(:0:)} $token2]]]
+	set auto3 [interp set $i ::auto_path [list {$p(:0:)} $token2]]
 
 	# This time, unlike test safe-zipfs-18.2 and the try above, SafeTestPackage1 should be found:
 	list $auto1 $auto2 $token1 $token2 $token3  [catch {interp eval $i {package require SafeTestPackage1}} msg] $msg  [safe::interpConfigure $i] [safe::interpDelete $i]
