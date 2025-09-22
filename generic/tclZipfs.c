@@ -6456,7 +6456,7 @@ TclZipfs_AppHook(
     TCL_UNUSED(int *), /*argcPtr*/
 #endif
 #ifdef _WIN32
-    TCL_UNUSED(WCHAR ***)) /* argvPtr */
+    TCL_UNUSED(unsigned short ***)) /* argvPtr */
 #else /* !_WIN32 */
     char ***argvPtr)		/* Pointer to argv */
 #endif /* _WIN32 */

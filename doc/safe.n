@@ -141,8 +141,8 @@ Example of use:
 .RS
 .PP
 .CS
-$child eval [list set tk_library \e
-      [::safe::interpFindInAccessPath $name $tk_library]]
+$child set tk_library \e
+      [::safe::interpFindInAccessPath $name $tk_library]
 .CE
 .RE
 .\" COMMAND: interpAddToAccessPath
@@ -158,8 +158,8 @@ Example of use:
 .RS
 .PP
 .CS
-$child eval [list set tk_library \e
-      [::safe::interpAddToAccessPath $name $tk_library]]
+$child set tk_library \e
+      [::safe::interpAddToAccessPath $name $tk_library]
 .CE
 .RE
 .\" COMMAND: setSyncMode

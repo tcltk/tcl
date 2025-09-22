@@ -1438,8 +1438,8 @@ test trace-20.6 {trace add command rename and delete in subinterp} {
     foreach p {traceCommand} {
 	$tc eval [list proc $p [info args $p] [info body $p]]
     }
-    $tc eval [list set infotemp {}]
-    $tc eval [list set info {}]
+    $tc set infotemp {}
+    $tc set info {}
     $tc eval [list proc foo {} {}]
     $tc eval [list trace add command foo {rename delete} traceCommand]
     $tc eval [list rename foo bar]
@@ -1448,7 +1448,7 @@ test trace-20.6 {trace add command rename and delete in subinterp} {
     $tc eval {lappend infotemp $info}
     $tc eval {set info $infotemp}
     $tc eval [list unset infotemp]
-    set info [$tc eval [list set info]]
+    set info [$tc set info]
     interp delete $tc
     set info
 } {{::foo ::bar rename} {::bar {} delete}}

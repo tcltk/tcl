@@ -1862,6 +1862,8 @@ dnl # preprocessing tests use only CPPFLAGS.
 	CFLAGS="$CFLAGS -finput-charset=UTF-8"
     fi
 
+    AC_CHECK_HEADER(stdatomic.h, [AC_DEFINE(HAVE_STDATOMIC_H, 1, [Do we have <stdatomic.h>?])],)
+
     # Check for vfork, posix_spawnp() and friends unconditionally
     AC_CHECK_FUNCS(vfork posix_spawnp posix_spawn_file_actions_adddup2 posix_spawnattr_setflags)
 
@@ -2254,11 +2256,8 @@ AC_DEFUN([SC_TCL_LINK_LIBS], [
 
     ac_saved_libs=$LIBS
     LIBS="$LIBS $THREADS_LIBS"
-    AC_CHECK_FUNCS(pthread_attr_setstacksize pthread_atfork)
+    AC_CHECK_FUNCS(pthread_attr_setstacksize pthread_atfork pthread_spin_lock)
     LIBS=$ac_saved_libs
-
-    # TIP #509
-    AC_CHECK_DECLS([PTHREAD_MUTEX_RECURSIVE],tcl_ok=yes,tcl_ok=no, [[#include <pthread.h>]])
 ])
 
 #--------------------------------------------------------------------

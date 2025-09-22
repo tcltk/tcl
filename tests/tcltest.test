@@ -76,8 +76,8 @@ proc child {msgVar args} {
 	    \[[list open [set of [makeFile {} output]] w]]"
     i eval "set tcltest::errorChannel\
 	    \[[list open [set ef [makeFile {} error]] w]]"
-    i eval [list set argv0 [lindex $args 0]]
-    i eval [list set argv [lrange $args 1 end]]
+    i set argv0 [lindex $args 0]
+    i set argv [lrange $args 1 end]
     i eval [list package ifneeded tcltest [package provide tcltest] \
 	    [package ifneeded tcltest [package provide tcltest]]]
     i eval {proc exit args {}}
@@ -1152,7 +1152,7 @@ test tcltest-19.1 {TCLTEST_OPTIONS default} -setup {
 	# Windows env handling that removes empty elements from env array.
 	set ::env(TCLTEST_OPTIONS) { }
 	interp create child1
-	child1 eval [list set argv {-debug 2}]
+	child1 set argv {-debug 2}
 	child1 alias puts puts
 	interp create child2
 	child2 alias puts puts

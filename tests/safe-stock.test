@@ -346,7 +346,7 @@ test safe-stock-18.2 {cf. safe-stock-7.2opt - tests specific path and interpFind
     }
 } -body {
     set i [safe::interpCreate -nostat -nested 1 -accessPath [list [info library]]]
-    set auto1 [interp eval $i {set ::auto_path}]
+    set auto1 [interp set $i ::auto_path]
     # This will differ from the value -autoPath {}
     interp eval $i {set ::auto_path [list {$p(:0:)}]}
     # should not add anything (p0)
@@ -378,7 +378,7 @@ test safe-stock-18.4 {cf. safe-stock-7.4opt - tests specific path and positive s
     set i [safe::interpCreate -nostat -nested 1 -accessPath [list [info library]]]
 
     # should not have been set by Safe Base:
-    set auto1 [interp eval $i {set ::auto_path}]
+    set auto1 [interp set $i ::auto_path]
 
     # This will differ from the value -autoPath {}
     interp eval $i {set ::auto_path [list {$p(:0:)}]}
@@ -390,7 +390,7 @@ test safe-stock-18.4 {cf. safe-stock-7.4opt - tests specific path and positive s
     set token2 [safe::interpAddToAccessPath $i [file join [info library] $pkgOptDir]]
 
     # should not have been changed by Safe Base:
-    set auto2 [interp eval $i {set ::auto_path}]
+    set auto2 [interp set $i ::auto_path]
 
     # This time, unlike test safe-stock-18.2opt and the try above, opt should be found:
     list $auto1 $auto2 $token1 $token2 \
