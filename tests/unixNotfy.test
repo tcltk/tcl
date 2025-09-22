@@ -22,8 +22,9 @@ testConstraint thread [expr {0 == [catch {package require Thread 2.7-}]}]
 # The next two tests will hang if threads are enabled because the notifier
 # will not necessarily wait for ever in this case, so it does not generate
 # an error.
-test unixNotfy-1.1 {Tcl_DeleteFileHandler} -constraints nonPortable -body {
+test unixNotfy-1.1 {Tcl_DeleteFileHandler} -constraints nonPortable -setup {
     catch {vwait x}
+} -body {
     set f [open [makeFile "" foo] w]
     fileevent $f writable {set x 1}
     vwait x
@@ -33,8 +34,9 @@ test unixNotfy-1.1 {Tcl_DeleteFileHandler} -constraints nonPortable -body {
     catch { close $f }
     catch { removeFile foo }
 }
-test unixNotfy-1.2 {Tcl_DeleteFileHandler} -constraints nonPortable -body {
+test unixNotfy-1.2 {Tcl_DeleteFileHandler} -constraints nonPortable -setup {
     catch {vwait x}
+} -body {
     set f1 [open [makeFile "" foo] w]
     set f2 [open [makeFile "" foo2] w]
     fileevent $f1 writable {set x 1}

@@ -113,9 +113,9 @@ test format-2.13 {string formatting, precision} {
 test format-2.14 {string formatting, precision} {
     format "a%.sa" foobarbaz
 } "aa"
-test format-2.15 {string formatting, precision} {
-    list [catch {format "a%.-2sa" foobarbaz} msg] $msg
-} {1 {bad field specifier "-"}}
+test format-2.15 {string formatting, precision} -returnCodes error -body {
+    format "a%.-2sa" foobarbaz
+} -result {bad field specifier "-"}
 test format-2.16 {string formatting, width and precision} {
     format "a%5.2sa" foobarbaz
 } "a   foa"
@@ -281,86 +281,51 @@ test format-7.3 {various syntax features} {
     format "\*\t\\n"
 } {*	\n}
 
-test format-8.1 {error conditions} {
-    catch format
-} 1
-test format-8.2 {error conditions} {
-    catch format msg
-    set msg
-} {wrong # args: should be "format formatString ?arg ...?"}
-test format-8.3 {error conditions} {
-    catch {format %*d}
-} 1
-test format-8.4 {error conditions} {
-    catch {format %*d} msg
-    set msg
-} {not enough arguments for all format specifiers}
-test format-8.5 {error conditions} {
-    catch {format %*.*f 12}
-} 1
-test format-8.6 {error conditions} {
-    catch {format %*.*f 12} msg
-    set msg
-} {not enough arguments for all format specifiers}
-test format-8.7 {error conditions} {
-    catch {format %*.*f 12 3}
-} 1
-test format-8.8 {error conditions} {
-    catch {format %*.*f 12 3} msg
-    set msg
-} {not enough arguments for all format specifiers}
-test format-8.9 {error conditions} {
-    list [catch {format %*d x 3} msg] $msg
-} {1 {expected integer but got "x"}}
-test format-8.10 {error conditions} {
-    list [catch {format %*.*f 2 xyz 3} msg] $msg
-} {1 {expected integer but got "xyz"}}
-test format-8.11 {error conditions} {
-    catch {format %d 2a}
-} 1
-test format-8.12 {error conditions} {
-    catch {format %d 2a} msg
-    set msg
-} {expected integer but got "2a"}
-test format-8.13 {error conditions} {
-    catch {format %c 2x}
-} 1
-test format-8.14 {error conditions} {
-    catch {format %c 2x} msg
-    set msg
-} {expected integer but got "2x"}
-test format-8.15 {error conditions} {
-    catch {format %f 2.1z}
-} 1
-test format-8.16 {error conditions} {
-    catch {format %f 2.1z} msg
-    set msg
-} {expected floating-point number but got "2.1z"}
-test format-8.17 {error conditions} {
-    catch {format ab%}
-} 1
-test format-8.18 {error conditions} {
-    catch {format ab% 12} msg
-    set msg
-} {format string ended in middle of field specifier}
-test format-8.19 {error conditions} {
-    catch {format %q x}
-} 1
-test format-8.20 {error conditions} {
-    catch {format %r x} msg
-    set msg
-} {bad field specifier "r"}
-test format-8.21 {error conditions} {
-    catch {format %d}
-} 1
-test format-8.22 {error conditions} {
-    catch {format %d} msg
-    set msg
-} {not enough arguments for all format specifiers}
-test format-8.23 {error conditions} {
-    catch {format "%d %d" 24 xyz} msg
-    set msg
-} {expected integer but got "xyz"}
+test format-8.1 {error conditions} -returnCodes error -body {
+    format
+} -result {wrong # args: should be "format formatString ?arg ...?"}
+test format-8.3 {error conditions} -returnCodes error -body {
+    format %*d
+} -result {not enough arguments for all format specifiers}
+test format-8.5 {error conditions} -returnCodes error -body {
+    format %*.*f 12
+} -result {not enough arguments for all format specifiers}
+test format-8.7 {error conditions} -returnCodes error -body {
+    format %*.*f 12 3
+} -result {not enough arguments for all format specifiers}
+test format-8.9 {error conditions} -returnCodes error -body {
+    format %*d x 3
+} -result {expected integer but got "x"}
+test format-8.10 {error conditions} -returnCodes error -body {
+    format %*.*f 2 xyz 3
+} -result {expected integer but got "xyz"}
+test format-8.12 {error conditions} -returnCodes error -body {
+    format %d 2a
+} -result {expected integer but got "2a"}
+test format-8.13 {error conditions} -returnCodes error -body {
+    format %c 2x
+} -result {expected integer but got "2x"}
+test format-8.15 {error conditions} -returnCodes error -body {
+    format %f 2.1z
+} -result {expected floating-point number but got "2.1z"}
+test format-8.17 {error conditions} -returnCodes error -body {
+    format ab%
+} -result {not enough arguments for all format specifiers}
+test format-8.18 {error conditions} -returnCodes error -body {
+    format ab% 12
+} -result {format string ended in middle of field specifier}
+test format-8.19 {error conditions} -returnCodes error -body {
+    format %q x
+} -result {format string ended in middle of field specifier}
+test format-8.20 {error conditions} -returnCodes error -body {
+    format %r x
+} -result {bad field specifier "r"}
+test format-8.21 {error conditions} -returnCodes error -body {
+    format %d
+} -result {not enough arguments for all format specifiers}
+test format-8.23 {error conditions} -returnCodes error -body {
+    format "%d %d" 24 xyz
+} -result {expected integer but got "xyz"}
 test format-8.24 {Other formats} -body {
     format "%zd %td %d" [expr {2**30}] [expr {2**30}] [expr {2**30}]
 } -result {1073741824 1073741824 1073741824}
@@ -406,36 +371,36 @@ test format-11.1 {XPG3 %$n specifiers} {
 test format-11.2 {XPG3 %$n specifiers} {
     format {%2$d %1$d %1$d %3$d} 4 5 6
 } {5 4 4 6}
-test format-11.3 {XPG3 %$n specifiers} {
-    list [catch {format {%2$d %3$d} 4 5} msg] $msg
-} {1 {"%n$" argument index out of range}}
-test format-11.4 {XPG3 %$n specifiers} {
-    list [catch {format {%2$d %0$d} 4 5 6} msg] $msg
-} {1 {"%n$" argument index out of range}}
-test format-11.5 {XPG3 %$n specifiers} {
-    list [catch {format {%d %1$d} 4 5 6} msg] $msg
-} {1 {cannot mix "%" and "%n$" conversion specifiers}}
-test format-11.6 {XPG3 %$n specifiers} {
-    list [catch {format {%2$d %d} 4 5 6} msg] $msg
-} {1 {cannot mix "%" and "%n$" conversion specifiers}}
-test format-11.7 {XPG3 %$n specifiers} {
-    list [catch {format {%2$d %3d} 4 5 6} msg] $msg
-} {1 {cannot mix "%" and "%n$" conversion specifiers}}
+test format-11.3 {XPG3 %$n specifiers} -returnCodes error -body {
+    format {%2$d %3$d} 4 5
+} -result {"%n$" argument index out of range}
+test format-11.4 {XPG3 %$n specifiers} -returnCodes error -body {
+    format {%2$d %0$d} 4 5 6
+} -result {"%n$" argument index out of range}
+test format-11.5 {XPG3 %$n specifiers} -returnCodes error -body {
+    format {%d %1$d} 4 5 6
+} -result {cannot mix "%" and "%n$" conversion specifiers}
+test format-11.6 {XPG3 %$n specifiers} -returnCodes error -body {
+    format {%2$d %d} 4 5 6
+} -result {cannot mix "%" and "%n$" conversion specifiers}
+test format-11.7 {XPG3 %$n specifiers} -returnCodes error -body {
+    format {%2$d %3d} 4 5 6
+} -result {cannot mix "%" and "%n$" conversion specifiers}
 test format-11.8 {XPG3 %$n specifiers} {
     format {%2$*d %3$d} 1 10 4
 } {         4 4}
 test format-11.9 {XPG3 %$n specifiers} {
     format {%2$.*s %4$d} 1 5 abcdefghijklmnop 44
 } {abcde 44}
-test format-11.10 {XPG3 %$n specifiers} {
-    list [catch {format {%2$*d} 4} msg] $msg
-} {1 {"%n$" argument index out of range}}
-test format-11.11 {XPG3 %$n specifiers} {
-    list [catch {format {%2$*d} 4 5} msg] $msg
-} {1 {"%n$" argument index out of range}}
+test format-11.10 {XPG3 %$n specifiers} -returnCodes error -body {
+    format {%2$*d} 4
+} -result {"%n$" argument index out of range}
+test format-11.11 {XPG3 %$n specifiers} -returnCodes error -body {
+    format {%2$*d} 4 5
+} -result {"%n$" argument index out of range}
 test format-11.12 {XPG3 %$n specifiers} {
-    list [catch {format {%2$*d} 4 5 6} msg] $msg
-} {0 {    6}}
+    format {%2$*d} 4 5 6
+} {    6}
 test format-11.13 {XPG3 %$n specifiers} {
     format {%2$.*s %4$d} 1 -4294967298 abcdefghijklmnop 44
 } { 44}

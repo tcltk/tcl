@@ -27,8 +27,8 @@ test compExpr-1.2 {TclCompileExpr procedure, error parsing expr} -body {
     expr 1+2+
 } -returnCodes error -match glob -result *
 test compExpr-1.3 {TclCompileExpr procedure, error compiling expr} -body {
-    list [catch {expr "foo(123)"} msg] $msg
-} -match glob -result {1 {* "*foo"}}
+    expr "foo(123)"
+} -returnCodes error -match glob -result {* "*foo"}
 test compExpr-1.4 {TclCompileExpr procedure, expr has no operators} {
     set a {0o00123}
     expr {$a}
@@ -87,8 +87,8 @@ test compExpr-2.13 {CompileSubExpr procedure, error in TCL_TOKEN_SUB_EXPR parse 
     unset -nocomplain a
 } -body {
     set a 15
-    list [catch {expr {27 || "$a[expr 1+]00"}} msg] $msg
-} -result {0 1}
+    expr {27 || "$a[expr 1+]00"}
+} -result 1
 test compExpr-2.14 {CompileSubExpr procedure, TCL_TOKEN_OPERATOR token, op found} {
     expr {5*6}
 } 30
@@ -96,8 +96,8 @@ test compExpr-2.15 {CompileSubExpr procedure, TCL_TOKEN_OPERATOR token, math fun
     format %.6g [expr {sin(2.0)}]
 } 0.909297
 test compExpr-2.16 {CompileSubExpr procedure, TCL_TOKEN_OPERATOR token, math function not found} -body {
-    list [catch {expr {fred(2.0)}} msg] $msg
-} -match glob -result {1 {* "*fred"}}
+    expr {fred(2.0)}
+} -returnCodes error -match glob -result {* "*fred"}
 test compExpr-2.17 {CompileSubExpr procedure, TCL_TOKEN_OPERATOR token, normal operator} {
     expr {4*2}
 } 8
@@ -183,8 +183,8 @@ test compExpr-2.42 {CompileSubExpr procedure, error in TCL_TOKEN_SUB_EXPR parse 
     unset -nocomplain a
 } -body {
     set a 15
-    list [catch {expr {27 || "$a[expr 1+]00"}} msg] $msg
-} -result {0 1}
+    expr {27 || "$a[expr 1+]00"}
+} -result 1
 test compExpr-2.43 {CompileSubExpr procedure, TCL_TOKEN_OPERATOR token, special operator} -setup {
     unset -nocomplain a
 } -body {
@@ -201,8 +201,8 @@ test compExpr-2.45 {CompileSubExpr procedure, error in TCL_TOKEN_SUB_EXPR parse 
     unset -nocomplain a
 } -body {
     set a 15
-    list [catch {expr {1? 54 : "$a[expr 1+]00"}} msg] $msg
-} -result {0 54}
+    expr {1? 54 : "$a[expr 1+]00"}
+} -result 54
 
 test compExpr-3.1 {CompileLandOrLorExpr procedure, numeric 1st operand} -setup {
     unset -nocomplain a
@@ -303,8 +303,8 @@ test compExpr-4.8 {CompileCondExpr procedure, convert "false" clause to numeric}
     expr {0? 42 : $a}
 } -result 83
 test compExpr-4.9 {CompileCondExpr procedure, error in "false" clause} {
-    list [catch {expr {1? 15 : [expr *2]}} msg] $msg
-} {0 15}
+    expr {1? 15 : [expr *2]}
+} 15
 
 test compExpr-5.1 {CompileMathFuncCall procedure, math function found} {
     format %.6g [expr {atan2(1.0, 2.0)}]

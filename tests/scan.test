@@ -131,8 +131,8 @@ test scan-3.3 {ValidateFormat} -returnCodes error -body {
 } -result {"%n$" argument index out of range}
 test scan-3.4 {ValidateFormat} {
     # degenerate case, before changed from 8.2 to 8.3
-    list [catch {scan {} %d} msg] $msg
-} {0 {}}
+    scan {} %d
+} {}
 test scan-3.5 {ValidateFormat} -returnCodes error -body {
     scan {} {%10c} a
 } -result {field width may not be specified in %c conversion}
@@ -169,8 +169,8 @@ test scan-4.2 {Tcl_ScanObjCmd, argument checks} -returnCodes error -body {
 } -result {wrong # args: should be "scan string format ?varName ...?"}
 test scan-4.3 {Tcl_ScanObjCmd, argument checks} {
     # degenerate case, before changed from 8.2 to 8.3
-    list [catch {scan string format} msg] $msg
-} {0 {}}
+    scan string format
+} {}
 test scan-4.4 {Tcl_ScanObjCmd, whitespace} {
     list [scan {   abc   def   } {%s%s} x y] $x $y
 } {2 abc def}
@@ -828,8 +828,8 @@ test scan-12.5 {Tcl_ScanObjCmd, inline case} {
 } {{} {} {}}
 test scan-12.6 {Tcl_ScanObjCmd, inline case} {
     # degenerate case, behavior changed from 8.2 to 8.3
-    list [catch {scan foo foobar} msg] $msg
-} {0 {}}
+    scan foo foobar
+} {}
 test scan-12.7 {Tcl_ScanObjCmd, inline case lots of arguments} {
     scan "10 20 30 40 50 60 70 80 90 100 110 120 130 140\
 	    150 160 170 180 190 200" \

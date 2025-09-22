@@ -344,7 +344,6 @@ test compile-11.8 {Tcl_Append*: ensure Tcl_ResetResult is used properly} -body {
 } -returnCodes error -match glob -result *
 test compile-11.9 {Tcl_Append*: ensure Tcl_ResetResult is used properly} -body {
     apply {{} { set r [list foobar] ; llength "\{" }}
-    list [catch {p} msg] $msg
 } -returnCodes error -result {unmatched open brace in list}
 
 #

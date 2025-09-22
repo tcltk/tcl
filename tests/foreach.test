@@ -61,24 +61,27 @@ test foreach-1.11 {basic foreach tests} {
     }
     set a
 } {}
-test foreach-1.12 {foreach errors} {
-    list [catch {foreach {{a}{b}} {1 2 3} {}} msg] $msg
-} {1 {list element in braces followed by "{b}" instead of space}}
-test foreach-1.13 {foreach errors} {
-    list [catch {foreach a {{1 2}3} {}} msg] $msg
-} {1 {list element in braces followed by "3" instead of space}}
+test foreach-1.12 {foreach errors} -body {
+    foreach {{a}{b}} {1 2 3} {}
+} -returnCodes error -result {list element in braces followed by "{b}" instead of space}
+test foreach-1.13 {foreach errors} -body {
+    foreach a {{1 2}3} {}
+} -returnCodes error -result {list element in braces followed by "3" instead of space}
 catch {unset a}
-test foreach-1.14 {foreach errors} {
-    catch {unset a}
+test foreach-1.14 {foreach errors} -setup {
+    unset -nocomplain a
+} -body {
     set a(0) 44
     list [catch {foreach a {1 2 3} {}} msg o] $msg $::errorInfo
-} {1 {can't set "a": variable is array} {can't set "a": variable is array
+} -result {1 {can't set "a": variable is array} {can't set "a": variable is array
     (setting foreach loop variable "a")
     invoked from within
-"foreach a {1 2 3} {}"}}
-test foreach-1.15 {foreach errors} {
-    list [catch {foreach {} {} {}} msg] $msg
-} {1 {foreach varlist is empty}}
+"foreach a {1 2 3} {}"}} -cleanup {
+    unset -nocomplain a
+}
+test foreach-1.15 {foreach errors} -body {
+    foreach {} {} {}
+} -returnCodes error -result {foreach varlist is empty}
 catch {unset a}
 
 test foreach-2.1 {parallel foreach tests} {

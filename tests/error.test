@@ -131,18 +131,20 @@ test error-2.6 {errors in nested procedures} {
 
 # Error conditions related to "catch".
 
-test error-3.1 {errors in catch command} {
-    list [catch {catch} msg] $msg
-} {1 {wrong # args: should be "catch script ?resultVarName? ?optionVarName?"}}
+test error-3.1 {errors in catch command} -returnCodes error -body {
+    catch
+} -result {wrong # args: should be "catch script ?resultVarName? ?optionVarName?"}
 test error-3.2 {errors in catch command} {
     list [catch {catch a b c} msg] $msg
 } {0 1}
-test error-3.3 {errors in catch command} {
+test error-3.3 {errors in catch command} -setup {
     catch {unset a}
+} -body {
     set a(0) 22
-    list [catch {catch {format 44} a} msg] $msg
-} {1 {can't set "a": variable is array}}
-catch {unset a}
+    catch {format 44} a
+} -returnCodes error -result {can't set "a": variable is array} -cleanup {
+    catch {unset a}
+}
 
 # More tests related to errorInfo and errorCode
 
@@ -195,12 +197,12 @@ test error-4.8 {errorstack from exec traces} -body {
 
 # Errors in error command itself
 
-test error-5.1 {errors in error command} {
-    list [catch {error} msg] $msg
-} {1 {wrong # args: should be "error message ?errorInfo? ?errorCode?"}}
-test error-5.2 {errors in error command} {
-    list [catch {error a b c d} msg] $msg
-} {1 {wrong # args: should be "error message ?errorInfo? ?errorCode?"}}
+test error-5.1 {errors in error command} -returnCodes error -body {
+    error
+} -result {wrong # args: should be "error message ?errorInfo? ?errorCode?"}
+test error-5.2 {errors in error command} -returnCodes error -body {
+    error a b c d
+} -result {wrong # args: should be "error message ?errorInfo? ?errorCode?"}
 
 # Make sure that catch resets error information
 
@@ -248,13 +250,13 @@ test error-6.9 {catch must reset error state} {
     list $::errorCode
 } {NONE}
 test error-6.10 {catch must reset errorstack} -body {
-	proc f x {g $x$x}
-	proc g x {error G:$x}
-	catch {f 12}
-	set e1 [info errorstack]
-	catch {f 13}
-	set e2 [info errorstack]
-	list $e1 $e2
+    proc f x {g $x$x}
+    proc g x {error G:$x}
+    catch {f 12}
+    set e1 [info errorstack]
+    catch {f 13}
+    set e2 [info errorstack]
+    list $e1 $e2
 } -match glob -result {{INNER * CALL {g 1212} CALL {f 12} UP 1} {INNER * CALL {g 1313} CALL {f 13} UP 1}}
 
 test error-7.1 {Bug 1397843} -body {
@@ -275,9 +277,9 @@ test error-7.1 {Bug 1397843} -body {
 
 # throw tests
 
-test error-8.1 {throw produces error 1 at level 0} {
-    catch { throw FOO bar }
-} {1}
+test error-8.1 {throw produces error 1 at level 0} -body {
+    throw FOO bar
+} -returnCodes error -result bar
 test error-8.2 {throw behaves as error does at level 0} {
     catch { throw FOO bar } em1 opts1
     catch { error bar {} FOO } em2 opts2

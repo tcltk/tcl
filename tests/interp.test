@@ -88,9 +88,9 @@ test interp-2.5 {basic interpreter creation} {
 test interp-2.6 {basic interpreter creation} {
     interp create d -safe
 } d
-test interp-2.7 {basic interpreter creation} {
-    list [catch {interp create -froboz} msg] $msg
-} {1 {bad option "-froboz": must be -safe or --}}
+test interp-2.7 {basic interpreter creation} -returnCodes error -body {
+    interp create -froboz
+} -result {bad option "-froboz": must be -safe or --}
 test interp-2.8 {basic interpreter creation} {
     interp create -- -froboz
 } -froboz
@@ -298,30 +298,33 @@ test interp-8.3 {testing basic alias invocation} -returnCodes error -body {
 } -result {wrong # args: should be "a alias aliasName ?targetName? ?arg ...?"}
 
 # Part 8: Testing aliases for non-existent or hidden targets
-test interp-9.1 {testing aliases for non-existent targets} {
+test interp-9.1 {testing aliases for non-existent targets} -setup {
     catch {interp create a}
+} -returnCodes error -body {
     a alias zop nonexistent-command-in-parent
-    list [catch {a eval zop} msg] $msg
-} {1 {invalid command name "nonexistent-command-in-parent"}}
-test interp-9.2 {testing aliases for non-existent targets} {
+    a eval zop
+} -result {invalid command name "nonexistent-command-in-parent"}
+test interp-9.2 {testing aliases for non-existent targets} -setup {
     catch {interp create a}
+} -body {
     a alias zop nonexistent-command-in-parent
     proc nonexistent-command-in-parent {} {return i_exist!}
     a eval zop
-} i_exist!
-test interp-9.3 {testing aliases for hidden commands} {
+} -result i_exist!
+test interp-9.3 {testing aliases for hidden commands} -setup {
     catch {interp create a}
+} -body {
     a eval {proc p {} {return ENTER_A}}
     interp alias {} p a p
     set res {}
     lappend res [list [catch p msg] $msg]
     interp hide a p
     lappend res [list [catch p msg] $msg]
+} -cleanup {
     rename p {}
     interp delete a
-    set res
- } {{0 ENTER_A} {1 {invalid command name "p"}}}
-test interp-9.4 {testing aliases and namespace commands} {
+} -result {{0 ENTER_A} {1 {invalid command name "p"}}}
+test interp-9.4 {testing aliases and namespace commands} -body {
     proc p {} {return GLOBAL}
     namespace eval tst {
 	proc p {} {return NAMESPACE}
@@ -329,68 +332,75 @@ test interp-9.4 {testing aliases and namespace commands} {
     interp alias {} a {} p
     set res [a]
     lappend res [namespace eval tst a]
+} -cleanup {
     rename p {}
     rename a {}
     namespace delete tst
-    set res
- } {GLOBAL GLOBAL}
+} -result {GLOBAL GLOBAL}
 
 if {[info command nonexistent-command-in-parent] ne ""} {
     rename nonexistent-command-in-parent {}
 }
 
 # Part 9: Aliasing between interpreters
-test interp-10.1 {testing aliasing between interpreters} {
+test interp-10.1 {testing aliasing between interpreters} -setup {
     catch {interp delete a}
     catch {interp delete b}
+} -body {
     interp create a
     interp create b
     interp alias a a_alias b b_alias 1 2 3
-} a_alias
-test interp-10.2 {testing aliasing between interpreters} {
+} -result a_alias
+test interp-10.2 {testing aliasing between interpreters} -setup {
     catch {interp delete a}
     catch {interp delete b}
+} -body {
     interp create a
     interp create b
     b eval {proc b_alias {args} {return [list got $args]}}
     interp alias a a_alias b b_alias 1 2 3
     a eval a_alias a b c
-} {got {1 2 3 a b c}}
-test interp-10.3 {testing aliasing between interpreters} {
+} -result {got {1 2 3 a b c}}
+test interp-10.3 {testing aliasing between interpreters} -setup {
     catch {interp delete a}
     catch {interp delete b}
+} -returnCodes error -body {
     interp create a
     interp create b
     interp alias a a_alias b b_alias 1 2 3
-    list [catch {a eval a_alias a b c} msg] $msg
-} {1 {invalid command name "b_alias"}}
-test interp-10.4 {testing aliasing between interpreters} {
+    a eval a_alias a b c
+} -result {invalid command name "b_alias"}
+test interp-10.4 {testing aliasing between interpreters} -setup {
     catch {interp delete a}
+} -body {
     interp create a
     a alias a_alias puts
     a aliases
-} a_alias
-test interp-10.5 {testing aliasing between interpreters} {
+} -result a_alias
+test interp-10.5 {testing aliasing between interpreters} -setup {
     catch {interp delete a}
     catch {interp delete b}
+} -body {
     interp create a
     interp create b
     a alias a_alias puts
     interp alias a a_del b b_del
     interp delete b
     a aliases
-} a_alias
-test interp-10.6 {testing aliasing between interpreters} {
+} -result a_alias
+test interp-10.6 {testing aliasing between interpreters} -setup {
     catch {interp delete a}
     catch {interp delete b}
+} -body {
     interp create a
     interp create b
     interp alias a a_command b b_command a1 a2 a3
     b alias b_command in_parent b1 b2 b3
     a eval a_command m1 m2 m3
-} {seen in parent: {b1 b2 b3 a1 a2 a3 m1 m2 m3}}
-test interp-10.7 {testing aliases between interpreters} {
+} -result {seen in parent: {b1 b2 b3 a1 a2 a3 m1 m2 m3}}
+test interp-10.7 {testing aliases between interpreters} -setup {
     catch {interp delete a}
+} -body {
     interp create a
     interp alias "" foo a zoppo
     a eval {proc zoppo {x} {list $x $x $x}}
@@ -398,79 +408,87 @@ test interp-10.7 {testing aliases between interpreters} {
     a eval {rename zoppo {}}
     interp alias "" foo a {}
     return $x
-} {33 33 33}
+} -result {33 33 33}
 
 # Part 10: Testing "interp target"
-test interp-11.1 {testing interp target} {
-    list [catch {interp target} msg] $msg
-} {1 {wrong # args: should be "interp target path alias"}}
-test interp-11.2 {testing interp target} {
-    list [catch {interp target nosuchinterpreter foo} msg] $msg
-} {1 {could not find interpreter "nosuchinterpreter"}}
-test interp-11.3 {testing interp target} {
+test interp-11.1 {testing interp target} -returnCodes error -body {
+    interp target
+} -result {wrong # args: should be "interp target path alias"}
+test interp-11.2 {testing interp target} -returnCodes error -body {
+    interp target nosuchinterpreter foo
+} -result {could not find interpreter "nosuchinterpreter"}
+test interp-11.3 {testing interp target} -setup {
     catch {interp delete a}
+} -body {
     interp create a
     a alias boo no_command
     interp target a boo
-} ""
-test interp-11.4 {testing interp target} {
+} -result ""
+test interp-11.4 {testing interp target} -setup {
     catch {interp delete x1}
+    catch {interp delete y1}
+} -body {
     interp create x1
     x1 eval interp create x2
     x1 eval x2 eval interp create x3
-    catch {interp delete y1}
     interp create y1
     y1 eval interp create y2
     y1 eval y2 eval interp create y3
     interp alias {x1 x2 x3} xcommand {y1 y2 y3} ycommand
     interp target {x1 x2 x3} xcommand
-} {y1 y2 y3}
-test interp-11.5 {testing interp target} {
+} -result {y1 y2 y3}
+test interp-11.5 {testing interp target} -setup {
     catch {interp delete x1}
+    catch {interp delete y1}
+} -returnCodes error -body {
     interp create x1
     interp create {x1 x2}
     interp create {x1 x2 x3}
-    catch {interp delete y1}
     interp create y1
     interp create {y1 y2}
     interp create {y1 y2 y3}
     interp alias {x1 x2 x3} xcommand {y1 y2 y3} ycommand
-    list [catch {x1 eval {interp target {x2 x3} xcommand}} msg] $msg
-} {1 {target interpreter for alias "xcommand" in path "x2 x3" is not my descendant}}
-test interp-11.6 {testing interp target} {
+    x1 eval {interp target {x2 x3} xcommand}
+} -result {target interpreter for alias "xcommand" in path "x2 x3" is not my descendant}
+test interp-11.6 {testing interp target} -setup {
     foreach a [interp aliases] {
 	rename $a {}
     }
-    list [catch {interp target {} foo} msg] $msg
-} {1 {alias "foo" in path "" not found}}
-test interp-11.7 {testing interp target} {
+} -returnCodes error -body {
+    interp target {} foo
+} -result {alias "foo" in path "" not found}
+test interp-11.7 {testing interp target} -setup {
     catch {interp delete a}
+} -returnCodes error -body {
     interp create a
-    list [catch {interp target a foo} msg] $msg
-} {1 {alias "foo" in path "a" not found}}
+    interp target a foo
+} -result {alias "foo" in path "a" not found}
 
 # Part 11: testing "interp issafe"
 test interp-12.1 {testing interp issafe} {
     interp issafe
 } 0
-test interp-12.2 {testing interp issafe} {
+test interp-12.2 {testing interp issafe} -setup {
     catch {interp delete a}
+} -body {
     interp create a
     interp issafe a
-} 0
-test interp-12.3 {testing interp issafe} {
+} -result 0
+test interp-12.3 {testing interp issafe} -setup {
     catch {interp delete a}
+} -body {
     interp create a
     interp create {a x3} -safe
     interp issafe {a x3}
-} 1
-test interp-12.4 {testing interp issafe} {
+} -result 1
+test interp-12.4 {testing interp issafe} -setup {
     catch {interp delete a}
+} -body {
     interp create a
     interp create {a x3} -safe
     interp create {a x3 foo}
     interp issafe {a x3 foo}
-} 1
+} -result 1
 
 # Part 12: testing interpreter object command "issafe" sub-command
 test interp-13.1 {testing foo issafe} {

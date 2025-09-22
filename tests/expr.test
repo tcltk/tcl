@@ -240,23 +240,23 @@ test expr-4.6 {CompileLorExpr: error compiling lor arm} -body {
 test expr-4.7 {CompileLorExpr: error compiling lor arm} -body {
     expr 1.3||2***3
 } -returnCodes error -match glob -result *
-test expr-4.8 {CompileLorExpr: error compiling lor arms} {
-    list [catch {expr {"a"||"b"}} msg] $msg
-} {1 {expected boolean value but got "a"}}
+test expr-4.8 {CompileLorExpr: error compiling lor arms} -body {
+    expr {"a"||"b"}
+} -returnCodes error -result {expected boolean value but got "a"}
 test expr-4.9 {CompileLorExpr: long lor arm} {
     set a "abcdefghijkl"
     set i 7
     expr {[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]] || [string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]] || [string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]] || [string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]}
 } 1
-test expr-4.10 {CompileLorExpr: error compiling ! operand} {
-    list [catch {expr {!"a"}} msg] $msg
-} {1 {cannot use non-numeric string "a" as operand of "!"}}
-test expr-4.11 {CompileLorExpr: error compiling land arms} {
-    list [catch {expr {"a"||0}} msg] $msg
-} {1 {expected boolean value but got "a"}}
-test expr-4.12 {CompileLorExpr: error compiling land arms} {
-    list [catch {expr {0||"a"}} msg] $msg
-} {1 {expected boolean value but got "a"}}
+test expr-4.10 {CompileLorExpr: error compiling ! operand} -body {
+    expr {!"a"}
+} -returnCodes error -result {cannot use non-numeric string "a" as operand of "!"}
+test expr-4.11 {CompileLorExpr: error compiling land arms} -body {
+    expr {"a"||0}
+} -returnCodes error -result {expected boolean value but got "a"}
+test expr-4.12 {CompileLorExpr: error compiling land arms} -body {
+    expr {0||"a"}
+} -returnCodes error -result {expected boolean value but got "a"}
 
 test expr-5.1 {CompileLandExpr: just bitor expr} {expr 7|0x13} 23
 test expr-5.2 {CompileLandExpr: error in bitor expr} -body {
@@ -272,9 +272,9 @@ test expr-5.7 {CompileLandExpr: error compiling land arm} -body {
 test expr-5.8 {CompileLandExpr: error compiling land arm} -body {
     expr 1.3&&2***3
 } -returnCodes error -match glob -result *
-test expr-5.9 {CompileLandExpr: error compiling land arm} {
-    list [catch {expr {"a"&&"b"}} msg] $msg
-} {1 {expected boolean value but got "a"}}
+test expr-5.9 {CompileLandExpr: error compiling land arm} -body {
+    expr {"a"&&"b"}
+} -returnCodes error -result {expected boolean value but got "a"}
 test expr-5.10 {CompileLandExpr: long land arms} {
     set a "abcdefghijkl"
     set i 7
@@ -295,12 +295,12 @@ test expr-6.7 {CompileBitXorExpr: error compiling bitxor arm} -body {
 test expr-6.8 {CompileBitXorExpr: error compiling bitxor arm} -body {
     expr 2^x
 } -returnCodes error -match glob -result *
-test expr-6.9 {CompileBitXorExpr: runtime error in bitxor arm} {
-    list [catch {expr {24.0^3}} msg] $msg
-} {1 {cannot use floating-point value "24.0" as left operand of "^"}}
-test expr-6.10 {CompileBitXorExpr: runtime error in bitxor arm} {
-    list [catch {expr {"a"^"b"}} msg] $msg
-} {1 {cannot use non-numeric string "a" as left operand of "^"}}
+test expr-6.9 {CompileBitXorExpr: runtime error in bitxor arm} -body {
+    expr {24.0^3}
+} -returnCodes error -result {cannot use floating-point value "24.0" as left operand of "^"}
+test expr-6.10 {CompileBitXorExpr: runtime error in bitxor arm} -body {
+    expr {"a"^"b"}
+} -returnCodes error -result {cannot use non-numeric string "a" as left operand of "^"}
 
 test expr-7.1 {CompileBitAndExpr: just equality expr} {expr 3==2} 0
 test expr-7.2 {CompileBitAndExpr: just equality expr} {expr 2.0==2} 1
@@ -319,12 +319,12 @@ test expr-7.10 {CompileBitAndExpr: error compiling bitand arm} -body {
 test expr-7.11 {CompileBitAndExpr: error compiling bitand arm} -body {
     expr 2&x
 } -returnCodes error -match glob -result *
-test expr-7.12 {CompileBitAndExpr: runtime error in bitand arm} {
-    list [catch {expr {24.0&3}} msg] $msg
-} {1 {cannot use floating-point value "24.0" as left operand of "&"}}
-test expr-7.13 {CompileBitAndExpr: runtime error in bitand arm} {
-    list [catch {expr {"a"&"b"}} msg] $msg
-} {1 {cannot use non-numeric string "a" as left operand of "&"}}
+test expr-7.12 {CompileBitAndExpr: runtime error in bitand arm} -body {
+    expr {24.0&3}
+} -returnCodes error -result {cannot use floating-point value "24.0" as left operand of "&"}
+test expr-7.13 {CompileBitAndExpr: runtime error in bitand arm} -body {
+    expr {"a"&"b"}
+} -returnCodes error -result {cannot use non-numeric string "a" as left operand of "&"}
 test expr-7.14 {CompileBitAndExpr: equality expr} {expr 3eq2} 0
 test expr-7.18 {CompileBitAndExpr: equality expr} {expr {"abc" eq "abd"}} 0
 test expr-7.20 {CompileBitAndExpr: error in equality expr} -body {
@@ -464,12 +464,12 @@ test expr-10.8 {CompileShiftExpr: error compiling shift arm} -body {
 test expr-10.9 {CompileShiftExpr: error compiling shift arm} -body {
     expr 2<<x
 } -returnCodes error -match glob -result *
-test expr-10.10 {CompileShiftExpr: runtime error} {
-    list [catch {expr {24.0>>43}} msg] $msg
-} {1 {cannot use floating-point value "24.0" as left operand of ">>"}}
-test expr-10.11 {CompileShiftExpr: runtime error} {
-    list [catch {expr {"a"<<"b"}} msg] $msg
-} {1 {cannot use non-numeric string "a" as left operand of "<<"}}
+test expr-10.10 {CompileShiftExpr: runtime error} -body {
+    expr {24.0>>43}
+} -returnCodes error -result {cannot use floating-point value "24.0" as left operand of ">>"}
+test expr-10.11 {CompileShiftExpr: runtime error} -body {
+    expr {"a"<<"b"}
+} -returnCodes error -result {cannot use non-numeric string "a" as left operand of "<<"}
 
 test expr-11.1 {CompileAddExpr: just multiply expr} {expr 4*-2} -8
 test expr-11.2 {CompileAddExpr: just multiply expr} {expr 0xff%2} 1
@@ -486,30 +486,30 @@ test expr-11.8 {CompileAddExpr: error compiling add arm} -body {
 test expr-11.9 {CompileAddExpr: error compiling add arm} -body {
     expr 2-x
 } -returnCodes error -match glob -result *
-test expr-11.10 {CompileAddExpr: runtime error} {
-    list [catch {expr {24.0+"xx"}} msg] $msg
-} {1 {cannot use non-numeric string "xx" as right operand of "+"}}
-test expr-11.11 {CompileAddExpr: runtime error} {
-    list [catch {expr {"a"-"b"}} msg] $msg
-} {1 {cannot use non-numeric string "a" as left operand of "-"}}
-test expr-11.12 {CompileAddExpr: runtime error} {
-    list [catch {expr {3/0}} msg] $msg
-} {1 {divide by zero}}
-test expr-11.13a {CompileAddExpr: runtime error} !ieeeFloatingPoint {
-    list [catch {expr {2.3/0.0}} msg] $msg
-} {1 {divide by zero}}
-test expr-11.13b {CompileAddExpr: runtime error} ieeeFloatingPoint {
-    list [catch {expr {2.3/0.0}} msg] $msg
-} {0 Inf}
-test expr-11.14 {CompileAddExpr: runtime error} {
-    list [catch {expr {24.0+[lseq 2 4]}} msg] $msg
-} {1 {cannot use a list as right operand of "+"}}
-test expr-11.15 {CompileAddExpr: runtime error} {
-    list [catch {expr {{1 2 "}+24.0}} msg] $msg
-} {1 {cannot use non-numeric string "1 2 "" as left operand of "+"}}
-test expr-11.16 {CompileAddExpr: runtime error} {
-    list [catch {expr {~[dict create foo bar]}} msg] $msg
-} {1 {cannot use a list as operand of "~"}}
+test expr-11.10 {CompileAddExpr: runtime error} -body {
+    expr {24.0+"xx"}
+} -returnCodes error -result {cannot use non-numeric string "xx" as right operand of "+"}
+test expr-11.11 {CompileAddExpr: runtime error} -body {
+    expr {"a"-"b"}
+} -returnCodes error -result {cannot use non-numeric string "a" as left operand of "-"}
+test expr-11.12 {CompileAddExpr: runtime error} -body {
+    expr {3/0}
+} -returnCodes error -result {divide by zero}
+test expr-11.13a {CompileAddExpr: runtime error} -constraints !ieeeFloatingPoint -body {
+    expr {2.3/0.0}
+} -returnCodes error -result {divide by zero}
+test expr-11.13b {CompileAddExpr: runtime error} -constraints ieeeFloatingPoint -body {
+    expr {2.3/0.0}
+} -result Inf
+test expr-11.14 {CompileAddExpr: runtime error} -body {
+    expr {24.0+[lseq 2 4]}
+} -returnCodes error -result {cannot use a list as right operand of "+"}
+test expr-11.15 {CompileAddExpr: runtime error} -body {
+    expr {{1 2 "}+24.0}
+} -returnCodes error -result {cannot use non-numeric string "1 2 "" as left operand of "+"}; #"}
+test expr-11.16 {CompileAddExpr: runtime error} -body {
+    expr {~[dict create foo bar]}
+} -returnCodes error -result {cannot use a list as operand of "~"}
 
 test expr-12.1 {CompileMultiplyExpr: just unary expr} {expr ~4} -5
 test expr-12.2 {CompileMultiplyExpr: just unary expr} {expr --5} 5
@@ -526,12 +526,12 @@ test expr-12.8 {CompileMultiplyExpr: error compiling multiply arm} -body {
 test expr-12.9 {CompileMultiplyExpr: error compiling multiply arm} -body {
     expr 2*x
 } -returnCodes error -match glob -result *
-test expr-12.10 {CompileMultiplyExpr: runtime error} {
-    list [catch {expr {24.0*"xx"}} msg] $msg
-} {1 {cannot use non-numeric string "xx" as right operand of "*"}}
-test expr-12.11 {CompileMultiplyExpr: runtime error} {
-    list [catch {expr {"a"/"b"}} msg] $msg
-} {1 {cannot use non-numeric string "a" as left operand of "/"}}
+test expr-12.10 {CompileMultiplyExpr: runtime error} -body {
+    expr {24.0*"xx"}
+} -returnCodes error -result {cannot use non-numeric string "xx" as right operand of "*"}
+test expr-12.11 {CompileMultiplyExpr: runtime error} -body {
+    expr {"a"/"b"}
+} -returnCodes error -result {cannot use non-numeric string "a" as left operand of "/"}
 
 test expr-13.1 {CompileUnaryExpr: unary exprs} {expr -0xff} -255
 test expr-13.2 {CompileUnaryExpr: unary exprs} {expr +0o00123} 83
@@ -546,12 +546,12 @@ test expr-13.8 {CompileUnaryExpr: error compiling unary expr} -body {
 test expr-13.9 {CompileUnaryExpr: error compiling unary expr} -body {
     expr !1.x
 } -returnCodes error -match glob -result *
-test expr-13.10 {CompileUnaryExpr: runtime error} {
-    list [catch {expr {~"xx"}} msg] $msg
-} {1 {cannot use non-numeric string "xx" as operand of "~"}}
-test expr-13.11 {CompileUnaryExpr: runtime error} {
-    list [catch {expr ~4.0} msg] $msg
-} {1 {cannot use floating-point value "4.0" as operand of "~"}}
+test expr-13.10 {CompileUnaryExpr: runtime error} -body {
+    expr {~"xx"}
+} -returnCodes error -result {cannot use non-numeric string "xx" as operand of "~"}
+test expr-13.11 {CompileUnaryExpr: runtime error} -body {
+    expr ~4.0
+} -returnCodes error -result {cannot use floating-point value "4.0" as operand of "~"}
 test expr-13.12 {CompileUnaryExpr: just primary expr} {expr 0x123} 291
 test expr-13.13 {CompileUnaryExpr: just primary expr} {
     set a 27
@@ -762,16 +762,15 @@ test expr-19.1 {expr and interpreter result object resetting} {
 
 # Test for incorrect "double evaluation" semantics
 
-test expr-20.1 {wrong brace matching} {
-    catch {unset l}
-    catch {unset r}
-    catch {unset q}
-    catch {unset cmd}
-    catch {unset a}
-    set l "\{"; set r "\}"; set q "\""
+test expr-20.1 {wrong brace matching} -setup {
+    unset -nocomplain l r q cmd a
+} -body {
+    set l [format %c 123]; # \{
+    set r [format %c 125]; # \}
+    set q [format %c 34];  # \"
     set cmd "expr $l$q|$q == $q$r$q$r"
     list [catch $cmd a] $a
-} {1 {extra characters after close-brace}}
+} -result {1 {extra characters after close-brace}}
 test expr-20.2 {double invocation of variable traces} -body {
     set exprtracecounter 0
     proc exprtraceproc {args} {
@@ -795,20 +794,20 @@ test expr-20.3 {broken substitution of integer digits} {
     # fails with 8.0.x, but not 8.1b2
     list [set a 000; expr 0x1$a] [set a 1; expr ${a}000]
 } {4096 1000}
-test expr-20.4 {proper double evaluation compilation, error case} {
-    catch {unset a}; # make sure $a doesn't exist
-    list [catch {expr 1?{$a}:0} msg] $msg
-} {1 {can't read "a": no such variable}}
+test expr-20.4 {proper double evaluation compilation, error case} -returnCodes error -body {
+    unset -nocomplain a; # make sure $a doesn't exist
+    expr 1?{$a}:0
+} -result {can't read "a": no such variable}
 test expr-20.5 {proper double evaluation compilation, working case} {
     set a yellow
     expr 1?{$a}:0
 } yellow
-test expr-20.6 {handling of compile error in trial compile} {
-    list [catch {expr + {[incr]}} msg] $msg
-} {1 {wrong # args: should be "incr varName ?increment?"}}
-test expr-20.7 {handling of compile error in runtime case} {
-    list [catch {expr + {[error foo]}} msg] $msg
-} {1 foo}
+test expr-20.6 {handling of compile error in trial compile} -returnCodes error -body {
+    expr + {[incr]}
+} -result {wrong # args: should be "incr varName ?increment?"}
+test expr-20.7 {handling of compile error in runtime case} -returnCodes error -body {
+    expr + {[error foo]}
+} -result foo
 
 # Test for non-numeric boolean literal handling
 test expr-21.1	{non-numeric boolean literals} {expr false } false
@@ -826,69 +825,69 @@ test expr-21.12 {non-numeric boolean literals} {expr !yes  } 0
 test expr-21.13 {non-numeric boolean literals} -body {
     expr !truef
 } -returnCodes error -match glob -result *
-test expr-21.14 {non-numeric boolean literals} {
-    list [catch {expr !"truef"} err] $err
-} {1 {cannot use non-numeric string "truef" as operand of "!"}}
-test expr-21.15 {non-numeric boolean variables} {
+test expr-21.14 {non-numeric boolean literals} -body {
+    expr !"truef"
+} -returnCodes error -result {cannot use non-numeric string "truef" as operand of "!"}
+test expr-21.15 {non-numeric boolean variables} -body {
     set v truef
-    list [catch {expr {!$v}} err] $err
-} {1 {cannot use non-numeric string "truef" as operand of "!"}}
-test expr-21.16 {non-numeric boolean variables} {
+    expr {!$v}
+} -returnCodes error -result {cannot use non-numeric string "truef" as operand of "!"}
+test expr-21.16 {non-numeric boolean variables} -body {
     set v "true "
-    list [catch {expr {!$v}} err] $err
-} {1 {cannot use non-numeric string "true " as operand of "!"}}
+    expr {!$v}
+} -returnCodes error -result {cannot use non-numeric string "true " as operand of "!"}
 test expr-21.17 {non-numeric boolean variables} {
     set v "tru"
-    list [catch {expr {!$v}} err] $err
-} {0 0}
+    expr {!$v}
+} 0
 test expr-21.18 {non-numeric boolean variables} {
     set v "fal"
-    list [catch {expr {!$v}} err] $err
-} {0 1}
+    expr {!$v}
+} 1
 test expr-21.19 {non-numeric boolean variables} {
     set v "y"
-    list [catch {expr {!$v}} err] $err
-} {0 0}
+    expr {!$v}
+} 0
 test expr-21.20 {non-numeric boolean variables} {
     set v "of"
-    list [catch {expr {!$v}} err] $err
-} {0 1}
-test expr-21.21 {non-numeric boolean variables} {
+    expr {!$v}
+} 1
+test expr-21.21 {non-numeric boolean variables} -returnCodes error -body {
     set v "o"
-    list [catch {expr {!$v}} err] $err
-} {1 {cannot use non-numeric string "o" as operand of "!"}}
-test expr-21.22 {non-numeric boolean variables} {
+    expr {!$v}
+} -result {cannot use non-numeric string "o" as operand of "!"}
+test expr-21.22 {non-numeric boolean variables} -returnCodes error -body {
     set v ""
-    list [catch {expr {!$v}} err] $err
-} {1 {cannot use non-numeric string "" as operand of "!"}}
+    expr {!$v}
+} -result {cannot use non-numeric string "" as operand of "!"}
 
 # Test for non-numeric float handling.
-test expr-22.1 {non-numeric floats} {
-    list [catch {expr {NaN + 1}} msg] $msg
-} {1 {cannot use non-numeric floating-point value "NaN" as left operand of "+"}}
-test expr-22.2 {non-numeric floats} !ieeeFloatingPoint {
-    list [catch {expr {Inf + 1}} msg] $msg
-} {1 {can't use infinite floating-point value as operand of "+"}}
-test expr-22.3 {non-numeric floats} {
+test expr-22.1 {non-numeric floats} -returnCodes error -body {
+    expr {NaN + 1}
+} -result {cannot use non-numeric floating-point value "NaN" as left operand of "+"}
+test expr-22.2 {non-numeric floats} -constraints !ieeeFloatingPoint -returnCodes error -body {
+    expr {Inf + 1}
+} -result {can't use infinite floating-point value as operand of "+"}
+test expr-22.3 {non-numeric floats} -returnCodes error -body {
     set nan NaN
-    list [catch {expr {$nan + 1}} msg] $msg
-} {1 {cannot use non-numeric floating-point value "NaN" as left operand of "+"}}
-test expr-22.4 {non-numeric floats} !ieeeFloatingPoint {
+    expr {$nan + 1}
+} -result {cannot use non-numeric floating-point value "NaN" as left operand of "+"}
+test expr-22.4 {non-numeric floats} -constraints !ieeeFloatingPoint -returnCodes error -body {
     set inf Inf
-    list [catch {expr {$inf + 1}} msg] $msg
-} {1 {can't use infinite floating-point value as operand of "+"}}
-test expr-22.5 {non-numeric floats} {
-    list [catch {expr NaN} msg] $msg
-} {1 {domain error: argument not in valid range}}
-test expr-22.6 {non-numeric floats} !ieeeFloatingPoint {
-    list [catch {expr Inf} msg] $msg
-} {1 {floating-point value too large to represent}}
-test expr-22.7 {non-numeric floats} {
-    list [catch {expr {1 / NaN}} msg] $msg
-} {1 {cannot use non-numeric floating-point value "NaN" as right operand of "/"}}
-test expr-22.8 {non-numeric floats} !ieeeFloatingPoint {
-    list [catch {expr {1 / Inf}} msg] $msg
-} {1 {can't use infinite floating-point value as operand of "/"}}
+    expr {$inf + 1}
+} -result {can't use infinite floating-point value as operand of "+"}
+test expr-22.5 {non-numeric floats} -returnCodes error -body {
+    expr NaN
+} -result {domain error: argument not in valid range}
+test expr-22.6 {non-numeric floats} -constraints !ieeeFloatingPoint -returnCodes error -body {
+    expr Inf
+} -result {floating-point value too large to represent}
+test expr-22.7 {non-numeric floats} -returnCodes error -body {
+    expr {1 / NaN}
+} -result {cannot use non-numeric floating-point value "NaN" as right operand of "/"}
+test expr-22.8 {non-numeric floats} -constraints !ieeeFloatingPoint -returnCodes error -body {
+    expr {1 / Inf}
+} -result {can't use infinite floating-point value as operand of "/"}
 # Make sure [Bug 761471] stays fixed.
 test expr-22.9 {non-numeric floats: shared object equality and NaN} {
     set x NaN
@@ -919,21 +918,21 @@ test expr-23.7 {CompileExponentialExpr: error compiling expo arm} -body {
 test expr-23.8 {CompileExponentialExpr: error compiling expo arm} -body {
     expr 2**x
 } -returnCodes error -match glob -result *
-test expr-23.9 {CompileExponentialExpr: runtime error} {
-    list [catch {expr {24.0**"xx"}} msg] $msg
-} {1 {cannot use non-numeric string "xx" as right operand of "**"}}
-test expr-23.10 {CompileExponentialExpr: runtime error} {
-    list [catch {expr {"a"**2}} msg] $msg
-} {1 {cannot use non-numeric string "a" as left operand of "**"}}
-test expr-23.11 {CompileExponentialExpr: runtime error} {
-    list [catch {expr {0**-1}} msg] $msg
-} {1 {exponentiation of zero by negative power}}
-test expr-23.12 {CompileExponentialExpr: runtime error} {
-    list [catch {expr {0.0**-1.0}} msg] $msg
-} {1 {exponentiation of zero by negative power}}
-test expr-23.13 {CompileExponentialExpr: runtime error} {
-    list [catch {expr {wide(0)**wide(-1)}} msg] $msg
-} {1 {exponentiation of zero by negative power}}
+test expr-23.9 {CompileExponentialExpr: runtime error} -returnCodes error -body {
+    expr {24.0**"xx"}
+} -result {cannot use non-numeric string "xx" as right operand of "**"}
+test expr-23.10 {CompileExponentialExpr: runtime error} -returnCodes error -body {
+    expr {"a"**2}
+} -result {cannot use non-numeric string "a" as left operand of "**"}
+test expr-23.11 {CompileExponentialExpr: runtime error} -returnCodes error -body {
+    expr {0**-1}
+} -result {exponentiation of zero by negative power}
+test expr-23.12 {CompileExponentialExpr: runtime error} -returnCodes error -body {
+    expr {0.0**-1.0}
+} -result {exponentiation of zero by negative power}
+test expr-23.13 {CompileExponentialExpr: runtime error} -returnCodes error -body {
+    expr {wide(0)**wide(-1)}
+} -result {exponentiation of zero by negative power}
 test expr-23.14 {INST_EXPON: special cases} {expr {0**1}} 0
 test expr-23.15 {INST_EXPON: special cases} {expr {0**0}} 1
 test expr-23.16 {INST_EXPON: special cases} {expr {-2**-1}} 0
@@ -6743,10 +6742,11 @@ test expr-39.6 {Tcl_ExprLongObj handles overflows} {testexprlongobj longIs32bit}
 test expr-39.7 {Tcl_ExprLongObj handles overflows} \
     -constraints {testexprlongobj longIs32bit} \
     -match glob \
+    -returnCodes error \
     -body {
-	list [catch {testexprlongobj 0x100000000} result] $result
+	testexprlongobj 0x100000000
     } \
-    -result {1 {integer value too large to represent*}}
+    -result {integer value too large to represent*}
 test expr-39.8 {Tcl_ExprLongObj handles overflows} testexprlongobj {
     testexprlongobj -0x80000000
 } {This is a result: -2147483648}
@@ -6756,10 +6756,11 @@ test expr-39.9 {Tcl_ExprLongObj handles overflows} {testexprlongobj longIs32bit}
 test expr-39.10 {Tcl_ExprLongObj handles overflows} \
     -constraints {testexprlongobj longIs32bit} \
     -match glob \
+    -returnCodes error \
     -body {
-	list [catch {testexprlongobj -0x100000000} result] $result
+	testexprlongobj -0x100000000
     } \
-    -result {1 {integer value too large to represent*}}
+    -result {integer value too large to represent*}
 test expr-39.11 {Tcl_ExprLongObj handles overflows} {testexprlongobj longIs32bit} {
     testexprlongobj 2147483648.
 } {This is a result: -2147483648}
@@ -6769,10 +6770,11 @@ test expr-39.12 {Tcl_ExprLongObj handles overflows} {testexprlongobj longIs32bit
 test expr-39.13 {Tcl_ExprLongObj handles overflows} \
     -constraints {testexprlongobj longIs32bit} \
     -match glob \
+    -returnCodes error \
     -body {
-	list [catch {testexprlongobj 4294967296.} result] $result
+	testexprlongobj 4294967296.
     } \
-    -result {1 {integer value too large to represent*}}
+    -result {integer value too large to represent*}
 test expr-39.14 {Tcl_ExprLongObj handles overflows} testexprlongobj {
     testexprlongobj -2147483648.
 } {This is a result: -2147483648}
@@ -6782,10 +6784,11 @@ test expr-39.15 {Tcl_ExprLongObj handles overflows} {testexprlongobj longIs32bit
 test expr-39.16 {Tcl_ExprLongObj handles overflows} \
     -constraints {testexprlongobj longIs32bit} \
     -match glob \
+    -returnCodes error \
     -body {
-	list [catch {testexprlongobj 4294967296.} result] $result
+	testexprlongobj 4294967296.
     } \
-    -result {1 {integer value too large to represent*}}
+    -result {integer value too large to represent*}
 
 test expr-39.17 {Check that Tcl_ExprDoubleObj doesn't modify interpreter result if no error} testexprdoubleobj {
     testexprdoubleobj 4.+1.
@@ -6819,9 +6822,9 @@ test expr-39.24 {Tcl_ExprDoubleObj handles overflows that look like int} \
 	testexprdoubleobj 17976931348623165[string repeat 0 292]
     } {This is a result: Inf}
 test expr-39.25 {Tcl_ExprDoubleObj and NaN} \
-    {testexprdoubleobj ieeeFloatingPoint} {
-	list [catch {testexprdoubleobj 0.0/0.0} result] $result
-    } {1 {domain error: argument not in valid range}}
+    -constraints {testexprdoubleobj ieeeFloatingPoint} -body {
+	testexprdoubleobj 0.0/0.0
+    } -returnCodes error -result {domain error: argument not in valid range}
 
 test expr-40.1 {large octal shift} {
     expr 0o100000000000000000000000000000000
@@ -7006,15 +7009,15 @@ test expr-45.5 {entier} {
 test expr-45.6 {entier} {
     expr entier(1e+22)
 } 10000000000000000000000
-test expr-45.7 {entier} {
-    list [catch {expr entier(Inf)} result] $result
-} {1 {integer value too large to represent}}
-test expr-45.8 {entier} ieeeFloatingPoint {
-    list [catch {expr {entier($ieeeValues(NaN))}} result] $result
-} {1 {floating point value is Not a Number}}
-test expr-45.9 {entier} ieeeFloatingPoint {
-    list [catch {expr {entier($ieeeValues(-NaN))}} result] $result
-} {1 {floating point value is Not a Number}}
+test expr-45.7 {entier} -returnCodes error -body {
+    expr entier(Inf)
+} -result {integer value too large to represent}
+test expr-45.8 {entier} -constraints ieeeFloatingPoint -returnCodes error -body {
+    expr {entier($ieeeValues(NaN))}
+} -result {floating point value is Not a Number}
+test expr-45.9 {entier} -constraints ieeeFloatingPoint -returnCodes error -body {
+    expr {entier($ieeeValues(-NaN))}
+} -result {floating point value is Not a Number}
 
 test expr-46.1 {round() rounds to +-infinity} {
     expr round(0.5)
@@ -7114,22 +7117,18 @@ test expr-46.19 {round() handling of long/bignum boundary} {
     expr {round(double(0x7fffffffffffffff))}
 } 9223372036854775808
 
-test expr-47.1 {isqrt() - arg count} {
-    list [catch {expr {isqrt(1,2)}} result] $result
-} {1 {too many arguments for math function "isqrt"}}
-
-test expr-47.2 {isqrt() - non-number} {
-    list [catch {expr {isqrt({rubbish})}} result] $result
-} {1 {expected number but got "rubbish"}}
-
-test expr-47.3 {isqrt() - NaN} ieeeFloatingPoint {
-    list [catch {expr {isqrt(NaN)}} result] $result
-} {1 {floating point value is Not a Number}}
-
-test expr-47.4 {isqrt() of negative floating point number} {
-    list [catch {expr {isqrt(-1.0)}} result] $result
-} {1 {square root of negative argument}}
-
+test expr-47.1 {isqrt() - arg count} -returnCodes error -body {
+    expr {isqrt(1,2)}
+} -result {too many arguments for math function "isqrt"}
+test expr-47.2 {isqrt() - non-number} -returnCodes error -body {
+    expr {isqrt({rubbish})}
+} -result {expected number but got "rubbish"}
+test expr-47.3 {isqrt() - NaN} -constraints ieeeFloatingPoint -returnCodes error -body {
+    expr {isqrt(NaN)}
+} -result {floating point value is Not a Number}
+test expr-47.4 {isqrt() of negative floating point number} -returnCodes error -body {
+    expr {isqrt(-1.0)}
+} -result {square root of negative argument}
 test expr-47.5 {isqrt() of floating point zero} {
     expr isqrt(0.0)
 } 0
@@ -7176,13 +7175,13 @@ test expr-47.8 {isqrt of inexact floating point number} ieeeFloatingPoint {
     expr isqrt(2[string repeat 0 34])
 } 141421356237309504
 
-test expr-47.9 {isqrt of negative int} {
-    list [catch {expr isqrt(-1)} result] $result
-} {1 {square root of negative argument}}
+test expr-47.9 {isqrt of negative int} -returnCodes error -body {
+    expr isqrt(-1)
+} -result {square root of negative argument}
 
-test expr-47.10 {isqrt of negative bignum} {
-    list [catch {expr isqrt(-1[string repeat 0 1000])} result] $result
-} {1 {square root of negative argument}}
+test expr-47.10 {isqrt of negative bignum} -returnCodes error -body {
+    expr isqrt(-1[string repeat 0 1000])
+} -result {square root of negative argument}
 
 test expr-47.11 {isqrt of zero} {
     expr {isqrt(0)}
@@ -7236,15 +7235,15 @@ test expr-47.13 {isqrt and floating point rounding (Bug 2143288)} {
     }
     set trouble
 } {}
-test expr-47.14 {isqrt() - lseq} {
-    list [catch {expr {isqrt([lseq 1 3])}} result] $result
-} {1 {expected number but got a list}}
-test expr-47.15 {isqrt() - lseq} {
-    list [catch {expr {isqrt({1 2 "})}} result] $result
-} {1 {expected number but got "1 2 ""}}
-test expr-47.16 {isqrt() - lseq} {
-    list [catch {expr {isqrt([dict create foo bar])}} result] $result
-} {1 {expected number but got a list}}
+test expr-47.14 {isqrt() - lseq} -returnCodes error -body {
+    expr {isqrt([lseq 1 3])}
+} -result {expected number but got a list}
+test expr-47.15 {isqrt() - lseq} -returnCodes error -body {
+    expr {isqrt({1 2 "})}
+} -result {expected number but got "1 2 ""}
+test expr-47.16 {isqrt() - lseq} -returnCodes error -body {
+    expr {isqrt([dict create foo bar])}
+} -result {expected number but got a list}
 
 test expr-48.1 {Bug 1770224} {
     expr {-0x8000000000000001 >> 0x8000000000000000}
