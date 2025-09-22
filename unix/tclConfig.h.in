@@ -39,10 +39,6 @@
    you don't. */
 #undef HAVE_DECL_GETHOSTBYNAME_R
 
-/* Define to 1 if you have the declaration of 'PTHREAD_MUTEX_RECURSIVE', and
-   to 0 if you don't. */
-#undef HAVE_DECL_PTHREAD_MUTEX_RECURSIVE
-
 /* Is 'DIR64' in <sys/types.h>? */
 #undef HAVE_DIR64
 
@@ -190,11 +186,17 @@
 /* Define to 1 if you have the 'pthread_attr_setstacksize' function. */
 #undef HAVE_PTHREAD_ATTR_SETSTACKSIZE
 
+/* Define to 1 if you have the 'pthread_spin_lock' function. */
+#undef HAVE_PTHREAD_SPIN_LOCK
+
 /* Does putenv() copy strings or incorporate them by reference? */
 #undef HAVE_PUTENV_THAT_COPIES
 
 /* Are characters signed? */
 #undef HAVE_SIGNED_CHAR
+
+/* Do we have <stdatomic.h>? */
+#undef HAVE_STDATOMIC_H
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
