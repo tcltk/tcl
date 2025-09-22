@@ -491,28 +491,32 @@ test interp-12.4 {testing interp issafe} -setup {
 } -result 1
 
 # Part 12: testing interpreter object command "issafe" sub-command
-test interp-13.1 {testing foo issafe} {
+test interp-13.1 {testing foo issafe} -setup {
     catch {interp delete a}
+} -body {
     interp create a
     a issafe
-} 0
-test interp-13.2 {testing foo issafe} {
+} -result 0
+test interp-13.2 {testing foo issafe} -setup {
     catch {interp delete a}
+} -body {
     interp create a
     interp create {a x3} -safe
     a eval x3 issafe
-} 1
-test interp-13.3 {testing foo issafe} {
+} -result 1
+test interp-13.3 {testing foo issafe} -setup {
     catch {interp delete a}
+} -body {
     interp create a
     interp create {a x3} -safe
     interp create {a x3 foo}
     a eval x3 eval foo issafe
-} 1
-test interp-13.4 {testing issafe arg checking} {
+} -result 1
+test interp-13.4 {testing issafe arg checking} -setup {
     catch {interp create a}
-    list [catch {a issafe too many args} msg] $msg
-} {1 {wrong # args: should be "a issafe"}}
+} -returnCodes error -body {
+    a issafe too many args
+} -result {wrong # args: should be "a issafe"}
 
 # part 14: testing interp aliases
 test interp-14.1 {testing interp aliases} -setup {
@@ -522,27 +526,30 @@ test interp-14.1 {testing interp aliases} -setup {
 } -cleanup {
     interp delete abc
 } -result ""
-test interp-14.2 {testing interp aliases} {
+test interp-14.2 {testing interp aliases} -setup {
     catch {interp delete a}
+} -body {
     interp create a
     a alias a1 puts
     a alias a2 puts
     a alias a3 puts
     lsort [interp aliases a]
-} {a1 a2 a3}
-test interp-14.3 {testing interp aliases} {
+} -result {a1 a2 a3}
+test interp-14.3 {testing interp aliases} -setup {
     catch {interp delete a}
+} -body {
     interp create a
     interp create {a x3}
     interp alias {a x3} froboz "" puts
     interp aliases {a x3}
-} froboz
-test interp-14.4 {testing interp alias - alias over parent} {
-    # SF Bug 641195
+} -result froboz
+test interp-14.4 {testing interp alias - alias over parent} -setup {
     catch {interp delete a}
+} -body {
+    # SF Bug 641195
     interp create a
     list [catch {interp alias "" a a eval} msg] $msg [info commands a]
-} {1 {cannot define or rename alias "a": interpreter deleted} {}}
+} -result {1 {cannot define or rename alias "a": interpreter deleted} {}}
 test interp-14.5 {testing interp-alias: wrong # args} -body {
     proc setx x {set x}
     interp alias {} a {} setx
@@ -635,7 +642,6 @@ test interp-14.11 {{interp alias} {target named the empty string} {bug 2bf56185}
     interp eval $interp {
 	proc {} args {return $args}
     }
-
 } -body {
     interp alias {} p1 $interp {}
     p1 one two three
@@ -644,14 +650,16 @@ test interp-14.11 {{interp alias} {target named the empty string} {bug 2bf56185}
 } -result {one two three}
 
 # part 15: testing file sharing
-test interp-15.1 {testing file sharing} {
+test interp-15.1 {testing file sharing} -setup {
     catch {interp delete z}
+} -returnCodes error -body {
     interp create z
     z eval close stdout
-    list [catch {z eval puts hello} msg] $msg
-} {1 {can not find channel named "stdout"}}
-test interp-15.2 {testing file sharing} -body {
+    z eval puts hello
+} -result {can not find channel named "stdout"}
+test interp-15.2 {testing file sharing} -setup {
     catch {interp delete z}
+} -body {
     interp create z
     set f [open [makeFile {} file-15.2] w]
     interp share "" $f z
@@ -661,13 +669,15 @@ test interp-15.2 {testing file sharing} -body {
 } -cleanup {
     removeFile file-15.2
 } -result ""
-test interp-15.3 {testing file sharing} {
+test interp-15.3 {testing file sharing} -setup {
     catch {interp delete xsafe}
+} -returnCodes error -body {
     interp create xsafe -safe
-    list [catch {xsafe eval puts hello} msg] $msg
-} {1 {can not find channel named "stdout"}}
-test interp-15.4 {testing file sharing} -body {
+    xsafe eval puts hello
+} -result {can not find channel named "stdout"}
+test interp-15.4 {testing file sharing} -setup {
     catch {interp delete xsafe}
+} -body {
     interp create xsafe -safe
     set f [open [makeFile {} file-15.4] w]
     interp share "" $f xsafe
@@ -677,14 +687,16 @@ test interp-15.4 {testing file sharing} -body {
 } -cleanup {
     removeFile file-15.4
 } -result ""
-test interp-15.5 {testing file sharing} {
+test interp-15.5 {testing file sharing} -setup {
     catch {interp delete xsafe}
+} -returnCodes error -body {
     interp create xsafe -safe
     interp share "" stdout xsafe
-    list [catch {xsafe eval gets stdout} msg] $msg
-} {1 {channel "stdout" wasn't opened for reading}}
-test interp-15.6 {testing file sharing} -body {
+    xsafe eval gets stdout
+} -result {channel "stdout" wasn't opened for reading}
+test interp-15.6 {testing file sharing} -setup {
     catch {interp delete xsafe}
+} -body {
     interp create xsafe -safe
     set f [open [makeFile {} file-15.6] w]
     interp share "" $f xsafe
@@ -692,12 +704,13 @@ test interp-15.6 {testing file sharing} -body {
     xsafe eval close $f
     close $f
     string compare [string tolower $x] \
-		[list 1 [format "channel \"%s\" wasn't opened for reading" $f]]
+	    [list 1 [format "channel \"%s\" wasn't opened for reading" $f]]
 } -cleanup {
     removeFile file-15.6
 } -result 0
-test interp-15.7 {testing file transferring} -body {
+test interp-15.7 {testing file transferring} -setup {
     catch {interp delete xsafe}
+} -body {
     interp create xsafe -safe
     set f [open [makeFile {} file-15.7] w]
     interp transfer "" $f xsafe
@@ -706,15 +719,16 @@ test interp-15.7 {testing file transferring} -body {
 } -cleanup {
     removeFile file-15.7
 } -result ""
-test interp-15.8 {testing file transferring} -body {
+test interp-15.8 {testing file transferring} -setup {
     catch {interp delete xsafe}
+} -body {
     interp create xsafe -safe
     set f [open [makeFile {} file-15.8] w]
     interp transfer "" $f xsafe
     xsafe eval close $f
     set x [list [catch {close $f} msg] $msg]
     string compare [string tolower $x] \
-		[list 1 [format "can not find channel named \"%s\"" $f]]
+	    [list 1 [format "can not find channel named \"%s\"" $f]]
 } -cleanup {
     removeFile file-15.8
 } -result 0
@@ -723,49 +737,55 @@ test interp-15.8 {testing file transferring} -body {
 # Torture tests for interpreter deletion order
 #
 proc kill {} {interp delete xxx}
-test interp-16.0 {testing deletion order} {
+test interp-16.0 {testing deletion order} -setup {
     catch {interp delete xxx}
+} -body {
     interp create xxx
     xxx alias kill kill
-    list [catch {xxx eval kill} msg] $msg
-} {0 {}}
-test interp-16.1 {testing deletion order} {
+    xxx eval kill
+} -result {}
+test interp-16.1 {testing deletion order} -setup {
     catch {interp delete xxx}
+} -body {
     interp create xxx
     interp create {xxx yyy}
     interp alias {xxx yyy} kill "" kill
-    list [catch {interp eval {xxx yyy} kill} msg] $msg
-} {0 {}}
-test interp-16.2 {testing deletion order} {
+    interp eval {xxx yyy} kill
+} -result {}
+test interp-16.2 {testing deletion order} -setup {
     catch {interp delete xxx}
+} -body {
     interp create xxx
     interp create {xxx yyy}
     interp alias {xxx yyy} kill "" kill
-    list [catch {xxx eval yyy eval kill} msg] $msg
-} {0 {}}
-test interp-16.3 {testing deletion order} {
+    xxx eval yyy eval kill
+} -result {}
+test interp-16.3 {testing deletion order} -setup {
     catch {interp delete xxx}
+} -body {
     interp create xxx
     interp create ddd
     xxx alias kill kill
     interp alias ddd kill xxx kill
-    set x [ddd eval kill]
+    ddd eval kill
+} -cleanup {
     interp delete ddd
-    set x
-} ""
-test interp-16.4 {testing deletion order} {
+} -result ""
+test interp-16.4 {testing deletion order} -setup {
     catch {interp delete xxx}
+} -body {
     interp create xxx
     interp create {xxx yyy}
     interp alias {xxx yyy} kill "" kill
     interp create ddd
     interp alias ddd kill {xxx yyy} kill
-    set x [ddd eval kill]
+    ddd eval kill
+} -cleanup {
     interp delete ddd
-    set x
-} ""
-test interp-16.5 {testing deletion order, bgerror} {
+} -result ""
+test interp-16.5 {testing deletion order, bgerror} -setup {
     catch {interp delete xxx}
+} -body {
     interp create xxx
     xxx eval {proc bgerror {args} {exit}}
     xxx alias exit kill xxx
@@ -774,47 +794,52 @@ test interp-16.5 {testing deletion order, bgerror} {
     after 200
     update
     interp exists xxx
-} 0
+} -result 0
 
 #
 # Alias loop prevention testing.
 #
 
-test interp-17.1 {alias loop prevention} {
-    list [catch {interp alias {} a {} a} msg] $msg
-} {1 {cannot define or rename alias "a": would create a loop}}
-test interp-17.2 {alias loop prevention} {
+test interp-17.1 {alias loop prevention} -returnCodes error -body {
+    interp alias {} a {} a
+} -result {cannot define or rename alias "a": would create a loop}
+test interp-17.2 {alias loop prevention} -setup {
     catch {interp delete x}
+} -returnCodes error -body {
     interp create x
     x alias a loop
-    list [catch {interp alias {} loop x a} msg] $msg
-} {1 {cannot define or rename alias "loop": would create a loop}}
-test interp-17.3 {alias loop prevention} {
+    interp alias {} loop x a
+} -result {cannot define or rename alias "loop": would create a loop}
+test interp-17.3 {alias loop prevention} -setup {
     catch {interp delete x}
+} -returnCodes error -body {
     interp create x
     interp alias x a x b
-    list [catch {interp alias x b x a} msg] $msg
-} {1 {cannot define or rename alias "b": would create a loop}}
-test interp-17.4 {alias loop prevention} {
+    interp alias x b x a
+} -result {cannot define or rename alias "b": would create a loop}
+test interp-17.4 {alias loop prevention} -setup {
     catch {interp delete x}
+} -returnCodes error -body {
     interp create x
     interp alias x b x a
-    list [catch {x eval rename b a} msg] $msg
-} {1 {cannot define or rename alias "a": would create a loop}}
-test interp-17.5 {alias loop prevention} {
+    x eval rename b a
+} -result {cannot define or rename alias "a": would create a loop}
+test interp-17.5 {alias loop prevention} -setup {
     catch {interp delete x}
+} -returnCodes error -body {
     interp create x
     x alias z l1
     interp alias {} l2 x z
-    list [catch {rename l2 l1} msg] $msg
-} {1 {cannot define or rename alias "l1": would create a loop}}
-test interp-17.6 {alias loop prevention} {
+    rename l2 l1
+} -result {cannot define or rename alias "l1": would create a loop}
+test interp-17.6 {alias loop prevention} -setup {
     catch {interp delete x}
+} -returnCodes error -body {
     interp create x
     interp alias x a x b
     x eval rename a c
-    list [catch {x eval rename c b} msg] $msg
-} {1 {cannot define or rename alias "b": would create a loop}}
+    x eval rename c b
+} -result {cannot define or rename alias "b": would create a loop}
 
 #
 # Test robustness of Tcl_DeleteInterp when applied to a child interpreter.
@@ -822,44 +847,50 @@ test interp-17.6 {alias loop prevention} {
 # the bugs as a core dump.
 #
 
-test interp-18.1 {testing Tcl_DeleteInterp vs children} testinterpdelete {
-    list [catch {testinterpdelete} msg] $msg
-} {1 {wrong # args: should be "testinterpdelete path"}}
-test interp-18.2 {testing Tcl_DeleteInterp vs children} testinterpdelete {
+test interp-18.1 {testing Tcl_DeleteInterp vs children} -constraints testinterpdelete -returnCodes error -body {
+    testinterpdelete
+} -result {wrong # args: should be "testinterpdelete path"}
+test interp-18.2 {testing Tcl_DeleteInterp vs children} -constraints testinterpdelete -setup {
     catch {interp delete a}
+} -body {
     interp create a
     testinterpdelete a
-} ""
-test interp-18.3 {testing Tcl_DeleteInterp vs children} testinterpdelete {
+} -result ""
+test interp-18.3 {testing Tcl_DeleteInterp vs children} -constraints testinterpdelete -setup {
     catch {interp delete a}
+} -body {
     interp create a
     interp create {a b}
     testinterpdelete {a b}
-} ""
-test interp-18.4 {testing Tcl_DeleteInterp vs children} testinterpdelete {
+} -result ""
+test interp-18.4 {testing Tcl_DeleteInterp vs children} -constraints testinterpdelete -setup {
     catch {interp delete a}
+} -body {
     interp create a
     interp create {a b}
     testinterpdelete a
-} ""
-test interp-18.5 {testing Tcl_DeleteInterp vs children} testinterpdelete {
+} -result ""
+test interp-18.5 {testing Tcl_DeleteInterp vs children} -constraints testinterpdelete -setup {
     catch {interp delete a}
+} -body {
     interp create a
     interp create {a b}
     interp alias {a b} dodel {} dodel
     proc dodel {x} {testinterpdelete $x}
-    list [catch {interp eval {a b} {dodel {a b}}} msg] $msg
-} {0 {}}
-test interp-18.6 {testing Tcl_DeleteInterp vs children} testinterpdelete {
+    interp eval {a b} {dodel {a b}}
+} -result {}
+test interp-18.6 {testing Tcl_DeleteInterp vs children} -constraints testinterpdelete -setup {
     catch {interp delete a}
+} -body {
     interp create a
     interp create {a b}
     interp alias {a b} dodel {} dodel
     proc dodel {x} {testinterpdelete $x}
-    list [catch {interp eval {a b} {dodel a}} msg] $msg
-} {0 {}}
-test interp-18.7 {eval in deleted interp} {
+    interp eval {a b} {dodel a}
+} -result {}
+test interp-18.7 {eval in deleted interp} -setup {
     catch {interp delete a}
+} -returnCodes error -body {
     interp create a
     a eval {
 	proc dodel {} {
@@ -872,10 +903,11 @@ test interp-18.7 {eval in deleted interp} {
     }
     a alias delme dela
     proc dela {} {interp delete a}
-    list [catch {a eval dodel} msg] $msg
-} {1 {attempt to call eval in deleted interpreter}}
-test interp-18.8 {eval in deleted interp} {
+    a eval dodel
+} -result {attempt to call eval in deleted interpreter}
+test interp-18.8 {eval in deleted interp} -setup {
     catch {interp delete a}
+} -returnCodes error -body {
     interp create a
     a eval {
 	interp create b
@@ -894,119 +926,132 @@ test interp-18.8 {eval in deleted interp} {
     }
     interp alias {a b} dela {} dela
     proc dela {} {interp delete a}
-    list [catch {a eval foo} msg] $msg
-} {1 {attempt to call eval in deleted interpreter}}
-test interp-18.9 {eval in deleted interp, bug 495830} {
+    a eval foo
+} -result {attempt to call eval in deleted interpreter}
+test interp-18.9 {eval in deleted interp, bug 495830} -setup {
+    catch {interp delete tst}
+} -returnCodes error -body {
     interp create tst
     interp alias tst suicide {} interp delete tst
-    list [catch {tst eval {suicide; set a 5}} msg] $msg
-} {1 {attempt to call eval in deleted interpreter}}
-test interp-18.10 {eval in deleted interp, bug 495830} {
+    tst eval {suicide; set a 5}
+} -result {attempt to call eval in deleted interpreter}
+test interp-18.10 {eval in deleted interp, bug 495830} -setup {
+    catch {interp delete tst}
+} -returnCodes error -body {
     interp create tst
     interp alias tst suicide {} interp delete tst
-    list [catch {tst eval {set set set; suicide; $set a 5}} msg] $msg
-} {1 {attempt to call eval in deleted interpreter}}
+    tst eval {set set set; suicide; $set a 5}
+} -result {attempt to call eval in deleted interpreter}
 
 # Test alias deletion
 
-test interp-19.1 {alias deletion} {
+test interp-19.1 {alias deletion} -setup {
     catch {interp delete a}
+} -body {
     interp create a
     interp alias a foo a bar
-    set s [interp alias a foo {}]
+    interp alias a foo {}
+} -cleanup {
     interp delete a
-    set s
-} {}
-test interp-19.2 {alias deletion} {
+} -result {}
+test interp-19.2 {alias deletion} -setup {
     catch {interp delete a}
+} -returnCodes error -body {
     interp create a
-    catch {interp alias a foo {}} msg
+    interp alias a foo {}
+} -cleanup {
     interp delete a
-    set msg
-} {alias "foo" not found}
-test interp-19.3 {alias deletion} {
+} -result {alias "foo" not found}
+test interp-19.3 {alias deletion} -setup {
     catch {interp delete a}
+} -returnCodes error -body {
     interp create a
     interp alias a foo a bar
     interp eval a {rename foo zop}
     interp alias a foo a zop
-    catch {interp eval a foo} msg
+    interp eval a foo
+} -cleanup {
     interp delete a
-    set msg
-} {invalid command name "bar"}
-test interp-19.4 {alias deletion} {
+} -result {invalid command name "bar"}
+test interp-19.4 {alias deletion} -setup {
     catch {interp delete a}
+} -returnCodes error -body {
     interp create a
     interp alias a foo a bar
     interp eval a {rename foo zop}
-    catch {interp eval a foo} msg
+    interp eval a foo
+} -cleanup {
     interp delete a
-    set msg
-} {invalid command name "foo"}
-test interp-19.5 {alias deletion} {
+} -result {invalid command name "foo"}
+test interp-19.5 {alias deletion} -setup {
     catch {interp delete a}
+} -body {
     interp create a
     interp eval a {proc bar {} {return 1}}
     interp alias a foo a bar
     interp eval a {rename foo zop}
-    catch {interp eval a zop} msg
+    interp eval a zop
+} -cleanup {
     interp delete a
-    set msg
-} 1
-test interp-19.6 {alias deletion} {
+} -result 1
+test interp-19.6 {alias deletion} -setup {
     catch {interp delete a}
+} -body {
     interp create a
     interp alias a foo a bar
     interp eval a {rename foo zop}
     interp alias a foo a zop
-    set s [interp aliases a]
+    interp aliases a
+} -cleanup {
     interp delete a
-    set s
-} {::foo foo}
-test interp-19.7 {alias deletion, renaming} {
+} -result {::foo foo}
+test interp-19.7 {alias deletion, renaming} -setup {
     catch {interp delete a}
+} -body {
     interp create a
     interp alias a foo a bar
     interp eval a rename foo blotz
     interp alias a foo {}
-    set s [interp aliases a]
+    interp aliases a
+} -cleanup {
     interp delete a
-    set s
-} {}
-test interp-19.8 {alias deletion, renaming} {
+} -result {}
+test interp-19.8 {alias deletion, renaming} -setup {
     catch {interp delete a}
-    interp create a
-    interp alias a foo a bar
-    interp eval a rename foo blotz
     set l ""
+} -body {
+    interp create a
+    interp alias a foo a bar
+    interp eval a rename foo blotz
     lappend l [interp aliases a]
     interp alias a foo {}
     lappend l [interp aliases a]
+} -cleanup {
     interp delete a
-    set l
-} {foo {}}
-test interp-19.9 {alias deletion, renaming} {
+} -result {foo {}}
+test interp-19.9 {alias deletion, renaming} -setup {
     catch {interp delete a}
+} -body {
     interp create a
     interp alias a foo a bar
     interp eval a rename foo blotz
     interp eval a {proc foo {} {expr {34 * 34}}}
     interp alias a foo {}
-    set l [interp eval a foo]
+    interp eval a foo
+} -cleanup {
     interp delete a
-    set l
-} 1156
+} -result 1156
 
-test interp-20.1 {interp hide, interp expose and interp invokehidden} {
+test interp-20.1 {interp hide, interp expose and interp invokehidden} -body {
     set a [interp create]
     $a eval {proc unknown {x args} {error "invalid command name \"$x\""}}
     $a eval {proc foo {} {}}
     $a hide foo
-    catch {$a eval foo something} msg
+    $a eval foo something
+} -returnCodes error -cleanup {
     interp delete $a
-    set msg
-} {invalid command name "foo"}
-test interp-20.2 {interp hide, interp expose and interp invokehidden} {
+} -result {invalid command name "foo"}
+test interp-20.2 {interp hide, interp expose and interp invokehidden} -body {
     set a [interp create]
     $a eval {proc unknown {x args} {error "invalid command name \"$x\""}}
     $a hide list
@@ -1014,10 +1059,10 @@ test interp-20.2 {interp hide, interp expose and interp invokehidden} {
     lappend l [catch {$a eval {list 1 2 3}} msg] $msg
     $a expose list
     lappend l [catch {$a eval {list 1 2 3}} msg] $msg
+} -cleanup {
     interp delete $a
-    set l
-} {1 {invalid command name "list"} 0 {1 2 3}}
-test interp-20.3 {interp hide, interp expose and interp invokehidden} {
+} -result {1 {invalid command name "list"} 0 {1 2 3}}
+test interp-20.3 {interp hide, interp expose and interp invokehidden} -body {
     set a [interp create]
     $a eval {proc unknown {x args} {error "invalid command name \"$x\""}}
     $a hide list
@@ -1026,10 +1071,10 @@ test interp-20.3 {interp hide, interp expose and interp invokehidden} {
     lappend l [catch { $a invokehidden list 1 2 3 } msg] $msg
     $a expose list
     lappend l [catch { $a eval {list 1 2 3}       } msg] $msg
+} -cleanup {
     interp delete $a
-    set l
-} {1 {invalid command name "list"} 0 {1 2 3} 0 {1 2 3}}
-test interp-20.4 {interp hide, interp expose and interp invokehidden -- passing {}} {
+} -result {1 {invalid command name "list"} 0 {1 2 3} 0 {1 2 3}}
+test interp-20.4 {interp hide, interp expose and interp invokehidden -- passing {}} -body {
     set a [interp create]
     $a eval {proc unknown {x args} {error "invalid command name \"$x\""}}
     $a hide list
@@ -1038,10 +1083,10 @@ test interp-20.4 {interp hide, interp expose and interp invokehidden -- passing 
     lappend l [catch { $a invokehidden list {"" 1 2 3} } msg] $msg
     $a expose list
     lappend l [catch { $a eval {list 1 2 3}            } msg] $msg
+} -cleanup {
     interp delete $a
-    set l
-} {1 {invalid command name "list"} 0 {{"" 1 2 3}} 0 {1 2 3}}
-test interp-20.5 {interp hide, interp expose and interp invokehidden -- passing {}} {
+} -result {1 {invalid command name "list"} 0 {{"" 1 2 3}} 0 {1 2 3}}
+test interp-20.5 {interp hide, interp expose and interp invokehidden -- passing {}} -body {
     set a [interp create]
     $a eval {proc unknown {x args} {error "invalid command name \"$x\""}}
     $a hide list
@@ -1050,10 +1095,10 @@ test interp-20.5 {interp hide, interp expose and interp invokehidden -- passing 
     lappend l [catch { $a invokehidden list {{} 1 2 3} } msg] $msg
     $a expose list
     lappend l [catch { $a eval {list 1 2 3}            } msg] $msg
+} -cleanup {
     interp delete $a
-    set l
-} {1 {invalid command name "list"} 0 {{{} 1 2 3}} 0 {1 2 3}}
-test interp-20.6 {interp invokehidden -- eval args} {
+} -result {1 {invalid command name "list"} 0 {{{} 1 2 3}} 0 {1 2 3}}
+test interp-20.6 {interp invokehidden -- eval args} -body {
     set a [interp create]
     $a hide list
     set l ""
@@ -1061,46 +1106,47 @@ test interp-20.6 {interp invokehidden -- eval args} {
     lappend l [catch { $a invokehidden list $z 1 2 3 } msg] $msg
     $a expose list
     lappend l [catch { $a eval list $z 1 2 3         } msg] $msg
+} -cleanup {
     interp delete $a
-    set l
-} {0 {45 1 2 3} 0 {45 1 2 3}}
-test interp-20.7 {interp invokehidden vs variable eval} {
+} -result {0 {45 1 2 3} 0 {45 1 2 3}}
+test interp-20.7 {interp invokehidden vs variable eval} -body {
     set a [interp create]
     $a hide list
     set z 45
     set l [list [catch {$a invokehidden list {$z a b c}} msg] $msg]
+} -cleanup {
     interp delete $a
-    set l
-} {0 {{$z a b c}}}
-test interp-20.8 {interp invokehidden vs variable eval} {
+} -result {0 {{$z a b c}}}
+test interp-20.8 {interp invokehidden vs variable eval} -body {
     set a [interp create]
     $a hide list
     $a eval set z 89
     set z 45
-    set l [list [catch {$a invokehidden list {$z a b c}} msg] $msg]
+    list [catch {$a invokehidden list {$z a b c}} msg] $msg
+} -cleanup {
     interp delete $a
-    set l
-} {0 {{$z a b c}}}
-test interp-20.9 {interp invokehidden vs variable eval} {
+} -result {0 {{$z a b c}}}
+test interp-20.9 {interp invokehidden vs variable eval} -body {
     set a [interp create]
     $a hide list
     $a eval set z 89
     set z 45
     set l ""
     lappend l [catch {$a invokehidden list $z {$z a b c}} msg] $msg
+} -cleanup {
     interp delete $a
-    set l
-} {0 {45 {$z a b c}}}
-test interp-20.10 {interp hide, interp expose and interp invokehidden} {
+} -result {0 {45 {$z a b c}}}
+test interp-20.10 {interp hide, interp expose and interp invokehidden} -body {
     set a [interp create]
     $a eval {proc unknown {x args} {error "invalid command name \"$x\""}}
     $a eval {proc foo {} {}}
     interp hide $a foo
-    catch {interp eval $a foo something} msg
+    interp eval $a foo something
+} -returnCodes error -cleanup {
     interp delete $a
     set msg
-} {invalid command name "foo"}
-test interp-20.11 {interp hide, interp expose and interp invokehidden} {
+} -result {invalid command name "foo"}
+test interp-20.11 {interp hide, interp expose and interp invokehidden} -body {
     set a [interp create]
     $a eval {proc unknown {x args} {error "invalid command name \"$x\""}}
     interp hide $a list
@@ -1108,10 +1154,10 @@ test interp-20.11 {interp hide, interp expose and interp invokehidden} {
     lappend l [catch {interp eval $a {list 1 2 3}} msg] $msg
     interp expose $a list
     lappend l [catch {interp eval $a {list 1 2 3}} msg] $msg
+} -cleanup {
     interp delete $a
-    set l
-} {1 {invalid command name "list"} 0 {1 2 3}}
-test interp-20.12 {interp hide, interp expose and interp invokehidden} {
+} -result {1 {invalid command name "list"} 0 {1 2 3}}
+test interp-20.12 {interp hide, interp expose and interp invokehidden} -body {
     set a [interp create]
     $a eval {proc unknown {x args} {error "invalid command name \"$x\""}}
     interp hide $a list
@@ -1120,10 +1166,10 @@ test interp-20.12 {interp hide, interp expose and interp invokehidden} {
     lappend l [catch {interp invokehidden $a list 1 2 3} msg] $msg
     interp expose $a list
     lappend l [catch {interp eval $a {list 1 2 3}      } msg] $msg
+} -cleanup {
     interp delete $a
-    set l
-} {1 {invalid command name "list"} 0 {1 2 3} 0 {1 2 3}}
-test interp-20.13 {interp hide, interp expose, interp invokehidden -- passing {}} {
+} -result {1 {invalid command name "list"} 0 {1 2 3} 0 {1 2 3}}
+test interp-20.13 {interp hide, interp expose, interp invokehidden -- passing {}} -body {
     set a [interp create]
     $a eval {proc unknown {x args} {error "invalid command name \"$x\""}}
     interp hide $a list
@@ -1132,10 +1178,10 @@ test interp-20.13 {interp hide, interp expose, interp invokehidden -- passing {}
     lappend l [catch {interp invokehidden $a list {"" 1 2 3}} msg] $msg
     interp expose $a list
     lappend l [catch {interp eval $a {list 1 2 3}           } msg] $msg
+} -cleanup {
     interp delete $a
-    set l
-} {1 {invalid command name "list"} 0 {{"" 1 2 3}} 0 {1 2 3}}
-test interp-20.14 {interp hide, interp expose, interp invokehidden -- passing {}} {
+} -result {1 {invalid command name "list"} 0 {{"" 1 2 3}} 0 {1 2 3}}
+test interp-20.14 {interp hide, interp expose, interp invokehidden -- passing {}} -body {
     set a [interp create]
     $a eval {proc unknown {x args} {error "invalid command name \"$x\""}}
     interp hide $a list
@@ -1144,228 +1190,215 @@ test interp-20.14 {interp hide, interp expose, interp invokehidden -- passing {}
     lappend l [catch {interp invokehidden $a list {{} 1 2 3}} msg] $msg
     interp expose $a list
     lappend l [catch {$a eval {list 1 2 3}                  } msg] $msg
+} -cleanup {
     interp delete $a
-    set l
-} {1 {invalid command name "list"} 0 {{{} 1 2 3}} 0 {1 2 3}}
-test interp-20.15 {interp invokehidden -- eval args} {
+} -result {1 {invalid command name "list"} 0 {{{} 1 2 3}} 0 {1 2 3}}
+test interp-20.15 {interp invokehidden -- eval args} -setup {
     catch {interp delete a}
+    set l ""
+} -body {
     interp create a
     interp hide a list
-    set l ""
     set z 45
-    lappend l [catch {interp invokehidden a list $z 1 2 3} msg]
-    lappend l $msg
+    lappend l [catch {interp invokehidden a list $z 1 2 3} msg] $msg
     a expose list
-    lappend l [catch {interp eval a list $z 1 2 3} msg]
-    lappend l $msg
+    lappend l [catch {interp eval a list $z 1 2 3} msg] $msg
+} -cleanup {
     interp delete a
-    set l
-} {0 {45 1 2 3} 0 {45 1 2 3}}
-test interp-20.16 {interp invokehidden vs variable eval} {
+} -result {0 {45 1 2 3} 0 {45 1 2 3}}
+test interp-20.16 {interp invokehidden vs variable eval} -setup {
     catch {interp delete a}
+} -body {
     interp create a
     interp hide a list
     set z 45
-    set l ""
-    lappend l [catch {interp invokehidden a list {$z a b c}} msg]
-    lappend l $msg
+    interp invokehidden a list {$z a b c}
+} -cleanup {
     interp delete a
-    set l
-} {0 {{$z a b c}}}
-test interp-20.17 {interp invokehidden vs variable eval} {
+} -result {{$z a b c}}
+test interp-20.17 {interp invokehidden vs variable eval} -setup {
     catch {interp delete a}
+} -body {
     interp create a
     interp hide a list
     a eval set z 89
     set z 45
-    set l ""
-    lappend l [catch {interp invokehidden a list {$z a b c}} msg]
-    lappend l $msg
+    interp invokehidden a list {$z a b c}
+} -cleanup {
     interp delete a
-    set l
-} {0 {{$z a b c}}}
-test interp-20.18 {interp invokehidden vs variable eval} {
+} -result {{$z a b c}}
+test interp-20.18 {interp invokehidden vs variable eval} -setup {
     catch {interp delete a}
+} -body {
     interp create a
     interp hide a list
     a eval set z 89
     set z 45
-    set l ""
-    lappend l [catch {interp invokehidden a list $z {$z a b c}} msg]
-    lappend l $msg
+    interp invokehidden a list $z {$z a b c}
+} -cleanup {
     interp delete a
-    set l
-} {0 {45 {$z a b c}}}
-test interp-20.19 {interp invokehidden vs nested commands} {
+} -result {45 {$z a b c}}
+test interp-20.19 {interp invokehidden vs nested commands} -setup {
     catch {interp delete a}
+} -body {
     interp create a
     a hide list
-    set l [a invokehidden list {[list x y z] f g h} z]
+    a invokehidden list {[list x y z] f g h} z
+} -cleanup {
     interp delete a
-    set l
-} {{[list x y z] f g h} z}
-test interp-20.20 {interp invokehidden vs nested commands} {
+} -result {{[list x y z] f g h} z}
+test interp-20.20 {interp invokehidden vs nested commands} -setup {
     catch {interp delete a}
+} -body {
     interp create a
     a hide list
-    set l [interp invokehidden a list {[list x y z] f g h} z]
+    interp invokehidden a list {[list x y z] f g h} z
+} -cleanup {
     interp delete a
-    set l
-} {{[list x y z] f g h} z}
-test interp-20.21 {interp hide vs safety} {
+} -result {{[list x y z] f g h} z}
+test interp-20.21 {interp hide vs safety} -setup {
     catch {interp delete a}
+} -body {
     interp create a -safe
-    set l ""
-    lappend l [catch {a hide list} msg]
-    lappend l $msg
+    a hide list
+} -cleanup {
     interp delete a
-    set l
-} {0 {}}
-test interp-20.22 {interp hide vs safety} {
+} -result {}
+test interp-20.22 {interp hide vs safety} -setup {
     catch {interp delete a}
-    interp create a -safe
-    set l ""
-    lappend l [catch {interp hide a list} msg]
-    lappend l $msg
-    interp delete a
-    set l
-} {0 {}}
-test interp-20.23 {interp hide vs safety} {
-    catch {interp delete a}
-    interp create a -safe
-    set l ""
-    lappend l [catch {a eval {interp hide {} list}} msg]
-    lappend l $msg
-    interp delete a
-    set l
-} {1 {permission denied: safe interpreter cannot hide commands}}
-test interp-20.24 {interp hide vs safety} {
-    catch {interp delete a}
-    interp create a -safe
-    interp create {a b}
-    set l ""
-    lappend l [catch {a eval {interp hide b list}} msg]
-    lappend l $msg
-    interp delete a
-    set l
-} {1 {permission denied: safe interpreter cannot hide commands}}
-test interp-20.25 {interp hide vs safety} {
-    catch {interp delete a}
-    interp create a -safe
-    interp create {a b}
-    set l ""
-    lappend l [catch {interp hide {a b} list} msg]
-    lappend l $msg
-    interp delete a
-    set l
-} {0 {}}
-test interp-20.26 {interp expoose vs safety} {
-    catch {interp delete a}
-    interp create a -safe
-    set l ""
-    lappend l [catch {a hide list} msg]
-    lappend l $msg
-    lappend l [catch {a expose list} msg]
-    lappend l $msg
-    interp delete a
-    set l
-} {0 {} 0 {}}
-test interp-20.27 {interp expose vs safety} {
-    catch {interp delete a}
-    interp create a -safe
-    set l ""
-    lappend l [catch {interp hide a list} msg]
-    lappend l $msg
-    lappend l [catch {interp expose a list} msg]
-    lappend l $msg
-    interp delete a
-    set l
-} {0 {} 0 {}}
-test interp-20.28 {interp expose vs safety} {
-    catch {interp delete a}
-    interp create a -safe
-    set l ""
-    lappend l [catch {a hide list} msg]
-    lappend l $msg
-    lappend l [catch {a eval {interp expose {} list}} msg]
-    lappend l $msg
-    interp delete a
-    set l
-} {0 {} 1 {permission denied: safe interpreter cannot expose commands}}
-test interp-20.29 {interp expose vs safety} {
-    catch {interp delete a}
-    interp create a -safe
-    set l ""
-    lappend l [catch {interp hide a list} msg]
-    lappend l $msg
-    lappend l [catch {a eval {interp expose {} list}} msg]
-    lappend l $msg
-    interp delete a
-    set l
-} {0 {} 1 {permission denied: safe interpreter cannot expose commands}}
-test interp-20.30 {interp expose vs safety} {
-    catch {interp delete a}
-    interp create a -safe
-    interp create {a b}
-    set l ""
-    lappend l [catch {interp hide {a b} list} msg]
-    lappend l $msg
-    lappend l [catch {a eval {interp expose b list}} msg]
-    lappend l $msg
-    interp delete a
-    set l
-} {0 {} 1 {permission denied: safe interpreter cannot expose commands}}
-test interp-20.31 {interp expose vs safety} {
-    catch {interp delete a}
-    interp create a -safe
-    interp create {a b}
-    set l ""
-    lappend l [catch {interp hide {a b} list} msg]
-    lappend l $msg
-    lappend l [catch {interp expose {a b} list} msg]
-    lappend l $msg
-    interp delete a
-    set l
-} {0 {} 0 {}}
-test interp-20.32 {interp invokehidden vs safety} {
-    catch {interp delete a}
+} -body {
     interp create a -safe
     interp hide a list
-    set l ""
-    lappend l [catch {a eval {interp invokehidden {} list a b c}} msg]
-    lappend l $msg
+} -cleanup {
     interp delete a
-    set l
-} {1 {not allowed to invoke hidden commands from safe interpreter}}
-test interp-20.33 {interp invokehidden vs safety} {
+} -result {}
+test interp-20.23 {interp hide vs safety} -setup {
     catch {interp delete a}
+} -returnCodes error -body {
     interp create a -safe
-    interp hide a list
-    set l ""
-    lappend l [catch {a eval {interp invokehidden {} list a b c}} msg]
-    lappend l $msg
-    lappend l [catch {a invokehidden list a b c} msg]
-    lappend l $msg
+    a eval {interp hide {} list}
+} -cleanup {
     interp delete a
-    set l
-} {1 {not allowed to invoke hidden commands from safe interpreter}\
-0 {a b c}}
-test interp-20.34 {interp invokehidden vs safety} {
+} -result {permission denied: safe interpreter cannot hide commands}
+test interp-20.24 {interp hide vs safety} -setup {
     catch {interp delete a}
+} -returnCodes error -body {
+    interp create a -safe
+    interp create {a b}
+    a eval {interp hide b list}
+} -cleanup {
+    interp delete a
+} -result {permission denied: safe interpreter cannot hide commands}
+test interp-20.25 {interp hide vs safety} -setup {
+    catch {interp delete a}
+} -body {
     interp create a -safe
     interp create {a b}
     interp hide {a b} list
+} -cleanup {
+    interp delete a
+} -result {}
+test interp-20.26 {interp expoose vs safety} -setup {
+    catch {interp delete a}
     set l ""
-    lappend l [catch {a eval {interp invokehidden b list a b c}} msg]
-    lappend l $msg
-    lappend l [catch {interp invokehidden {a b} list a b c} msg]
-    lappend l $msg
+} -body {
+    interp create a -safe
+    lappend l [catch {a hide list  } msg] $msg
+    lappend l [catch {a expose list} msg] $msg
+} -cleanup {
+    interp delete a
+} -result {0 {} 0 {}}
+test interp-20.27 {interp expose vs safety} -setup {
+    catch {interp delete a}
+    set l ""
+} -body {
+    interp create a -safe
+    lappend l [catch {interp hide a list  } msg] $msg
+    lappend l [catch {interp expose a list} msg] $msg
+} -cleanup {
+    interp delete a
+} -result {0 {} 0 {}}
+test interp-20.28 {interp expose vs safety} -setup {
+    catch {interp delete a}
+    set l ""
+} -body {
+    interp create a -safe
+    lappend l [catch {a hide list                   } msg] $msg
+    lappend l [catch {a eval {interp expose {} list}} msg] $msg
+} -cleanup {
+    interp delete a
+} -result {0 {} 1 {permission denied: safe interpreter cannot expose commands}}
+test interp-20.29 {interp expose vs safety} -setup {
+    catch {interp delete a}
+    set l ""
+} -body {
+    interp create a -safe
+    lappend l [catch {interp hide a list            } msg] $msg
+    lappend l [catch {a eval {interp expose {} list}} msg] $msg
+} -cleanup {
+    interp delete a
+} -result {0 {} 1 {permission denied: safe interpreter cannot expose commands}}
+test interp-20.30 {interp expose vs safety} -setup {
+    catch {interp delete a}
+    set l ""
+} -body {
+    interp create a -safe
+    interp create {a b}
+    lappend l [catch {interp hide {a b} list       } msg] $msg
+    lappend l [catch {a eval {interp expose b list}} msg] $msg
+} -cleanup {
     interp delete a
     set l
-} {1 {not allowed to invoke hidden commands from safe interpreter}\
+} -result {0 {} 1 {permission denied: safe interpreter cannot expose commands}}
+test interp-20.31 {interp expose vs safety} -setup {
+    catch {interp delete a}
+    set l ""
+} -body {
+    interp create a -safe
+    interp create {a b}
+    lappend l [catch {interp hide {a b} list  } msg] $msg
+    lappend l [catch {interp expose {a b} list} msg] $msg
+} -cleanup {
+    interp delete a
+} -result {0 {} 0 {}}
+test interp-20.32 {interp invokehidden vs safety} -setup {
+    catch {interp delete a}
+} -returnCodes error -body {
+    interp create a -safe
+    interp hide a list
+    a eval {interp invokehidden {} list a b c}
+} -cleanup {
+    interp delete a
+} -result {not allowed to invoke hidden commands from safe interpreter}
+test interp-20.33 {interp invokehidden vs safety} -setup {
+    catch {interp delete a}
+    set l ""
+} -body {
+    interp create a -safe
+    interp hide a list
+    lappend l [catch {a eval {interp invokehidden {} list a b c}} msg] $msg
+    lappend l [catch {a invokehidden list a b c                 } msg] $msg
+} -cleanup {
+    interp delete a
+} -result {1 {not allowed to invoke hidden commands from safe interpreter}\
 0 {a b c}}
-test interp-20.35 {invokehidden at local level} {
+test interp-20.34 {interp invokehidden vs safety} -setup {
     catch {interp delete a}
+    set l ""
+} -body {
+    interp create a -safe
+    interp create {a b}
+    interp hide {a b} list
+    lappend l [catch {a eval {interp invokehidden b list a b c}} msg] $msg
+    lappend l [catch {interp invokehidden {a b} list a b c     } msg] $msg
+} -cleanup {
+    interp delete a
+    set l
+} -result {1 {not allowed to invoke hidden commands from safe interpreter}\
+0 {a b c}}
+test interp-20.35 {invokehidden at local level} -setup {
+    catch {interp delete a}
+} -body {
     interp create a
     a eval {
 	proc p1 {} {
@@ -1383,12 +1416,13 @@ test interp-20.35 {invokehidden at local level} {
     proc a1 {} {
 	interp invokehidden a h1
     }
-    set r [interp eval a p1]
+    interp eval a p1
+} -cleanup {
     interp delete a
-    set r
-} 91
-test interp-20.36 {invokehidden at local level} {
+} -result 91
+test interp-20.36 {invokehidden at local level} -setup {
     catch {interp delete a}
+} -body {
     interp create a
     a eval {
 	set z 90
@@ -1407,12 +1441,13 @@ test interp-20.36 {invokehidden at local level} {
     proc a1 {} {
 	interp invokehidden a h1
     }
-    set r [interp eval a p1]
+    interp eval a p1
+} -cleanup {
     interp delete a
-    set r
-} 91
-test interp-20.37 {invokehidden at local level} {
+} -result 91
+test interp-20.37 {invokehidden at local level} -setup {
     catch {interp delete a}
+} -body {
     interp create a
     a eval {
 	proc p1 {} {
@@ -1429,12 +1464,13 @@ test interp-20.37 {invokehidden at local level} {
     proc a1 {} {
 	interp invokehidden a h1
     }
-    set r [interp eval a p1]
+    interp eval a p1
+} -cleanup {
     interp delete a
-    set r
-} 91
-test interp-20.38 {invokehidden at global level} {
+} -result 91
+test interp-20.38 {invokehidden at global level} -setup {
     catch {interp delete a}
+} -returnCodes error -body {
     interp create a
     a eval {
 	proc p1 {} {
@@ -1451,12 +1487,13 @@ test interp-20.38 {invokehidden at global level} {
     proc a1 {} {
 	interp invokehidden a -global h1
     }
-    set r [catch {interp eval a p1} msg]
+    interp eval a p1
+} -cleanup {
     interp delete a
-    list $r $msg
-} {1 {can't read "z": no such variable}}
-test interp-20.39 {invokehidden at global level} {
+} -result {can't read "z": no such variable}
+test interp-20.39 {invokehidden at global level} -setup {
     catch {interp delete a}
+} -body {
     interp create a
     a eval {
 	proc p1 {} {
@@ -1474,12 +1511,13 @@ test interp-20.39 {invokehidden at global level} {
     proc a1 {} {
 	interp invokehidden a -global h1
     }
-    set r [catch {interp eval a p1} msg]
+    interp eval a p1
+} -cleanup {
     interp delete a
-    list $r $msg
-} {0 91}
-test interp-20.40 {safe, invokehidden at local level} {
+} -result 91
+test interp-20.40 {safe, invokehidden at local level} -setup {
     catch {interp delete a}
+} -body {
     interp create a -safe
     a eval {
 	proc p1 {} {
@@ -1497,12 +1535,13 @@ test interp-20.40 {safe, invokehidden at local level} {
     proc a1 {} {
 	interp invokehidden a h1
     }
-    set r [interp eval a p1]
+    interp eval a p1
+} -cleanup {
     interp delete a
-    set r
-} 91
-test interp-20.41 {safe, invokehidden at local level} {
+} -result 91
+test interp-20.41 {safe, invokehidden at local level} -setup {
     catch {interp delete a}
+} -body {
     interp create a -safe
     a eval {
 	set z 90
@@ -1521,12 +1560,13 @@ test interp-20.41 {safe, invokehidden at local level} {
     proc a1 {} {
 	interp invokehidden a h1
     }
-    set r [interp eval a p1]
+    interp eval a p1
+} -cleanup {
     interp delete a
-    set r
-} 91
-test interp-20.42 {safe, invokehidden at local level} {
+} -result 91
+test interp-20.42 {safe, invokehidden at local level} -setup {
     catch {interp delete a}
+} -body {
     interp create a -safe
     a eval {
 	proc p1 {} {
@@ -1543,12 +1583,13 @@ test interp-20.42 {safe, invokehidden at local level} {
     proc a1 {} {
 	interp invokehidden a h1
     }
-    set r [interp eval a p1]
+    interp eval a p1
+} -cleanup {
     interp delete a
-    set r
-} 91
-test interp-20.43 {invokehidden at global level} {
+} -result 91
+test interp-20.43 {invokehidden at global level} -setup {
     catch {interp delete a}
+} -returnCodes error -body {
     interp create a
     a eval {
 	proc p1 {} {
@@ -1565,12 +1606,13 @@ test interp-20.43 {invokehidden at global level} {
     proc a1 {} {
 	interp invokehidden a -global h1
     }
-    set r [catch {interp eval a p1} msg]
+    interp eval a p1
+} -cleanup {
     interp delete a
-    list $r $msg
-} {1 {can't read "z": no such variable}}
-test interp-20.44 {invokehidden at global level} {
+} -result {can't read "z": no such variable}
+test interp-20.44 {invokehidden at global level} -setup {
     catch {interp delete a}
+} -body {
     interp create a
     a eval {
 	proc p1 {} {
@@ -1588,53 +1630,57 @@ test interp-20.44 {invokehidden at global level} {
     proc a1 {} {
 	interp invokehidden a -global h1
     }
-    set r [catch {interp eval a p1} msg]
+    interp eval a p1
+} -cleanup {
     interp delete a
-    list $r $msg
-} {0 91}
-test interp-20.45 {interp hide vs namespaces} {
+} -result 91
+test interp-20.45 {interp hide vs namespaces} -setup {
     catch {interp delete a}
+} -returnCodes error -body {
     interp create a
     a eval {
 	namespace eval foo {}
 	proc foo::x {} {}
     }
-    set l [list [catch {interp hide a foo::x} msg] $msg]
+    interp hide a foo::x
+} -cleanup {
     interp delete a
-    set l
-} {1 {cannot use namespace qualifiers in hidden command token (rename)}}
-test interp-20.46 {interp hide vs namespaces} {
+} -result {cannot use namespace qualifiers in hidden command token (rename)}
+test interp-20.46 {interp hide vs namespaces} -setup {
     catch {interp delete a}
+} -returnCodes error -body {
     interp create a
     a eval {
 	namespace eval foo {}
 	proc foo::x {} {}
     }
-    set l [list [catch {interp hide a foo::x x} msg] $msg]
+    interp hide a foo::x x
+} -cleanup {
     interp delete a
-    set l
-} {1 {can only hide global namespace commands (use rename then hide)}}
-test interp-20.47 {interp hide vs namespaces} {
+} -result {can only hide global namespace commands (use rename then hide)}
+test interp-20.47 {interp hide vs namespaces} -setup {
     catch {interp delete a}
+} -returnCodes error -body {
     interp create a
     a eval {
 	proc x {} {}
     }
-    set l [list [catch {interp hide a x foo::x} msg] $msg]
+    interp hide a x foo::x
+} -cleanup {
     interp delete a
-    set l
-} {1 {cannot use namespace qualifiers in hidden command token (rename)}}
-test interp-20.48 {interp hide vs namespaces} {
+} -result {cannot use namespace qualifiers in hidden command token (rename)}
+test interp-20.48 {interp hide vs namespaces} -setup {
     catch {interp delete a}
+} -returnCodes error -body {
     interp create a
     a eval {
 	namespace eval foo {}
 	proc foo::x {} {}
     }
-    set l [list [catch {interp hide a foo::x bar::x} msg] $msg]
+    interp hide a foo::x bar::x
+} -cleanup {
     interp delete a
-    set l
-} {1 {cannot use namespace qualifiers in hidden command token (rename)}}
+} -result {cannot use namespace qualifiers in hidden command token (rename)}
 test interp-20.49 {interp invokehidden -namespace} -setup {
     set script [makeFile {
 	set x [namespace current]
@@ -1654,7 +1700,7 @@ test interp-20.50 {Bug 2486550} -setup {
     child invokehidden coroutine
 } -cleanup {
     interp delete child
-} -returnCodes error -match glob -result *
+} -returnCodes error -match glob -result {wrong # args: *}
 test interp-20.50.1 {Bug 2486550} -setup {
     interp create child
 } -body {
@@ -1744,78 +1790,86 @@ test interp-21.9 {interp hidden vs interp hide, interp expose} -setup {
     interp delete a
 } -result {{} pwd {}}
 
-test interp-22.1 {testing interp marktrusted} {
+test interp-22.1 {testing interp marktrusted} -setup {
     catch {interp delete a}
-    interp create a
     set l ""
+} -body {
+    interp create a
     lappend l [a issafe]
     lappend l [a marktrusted]
     lappend l [a issafe]
+} -cleanup {
     interp delete a
-    set l
-} {0 {} 0}
-test interp-22.2 {testing interp marktrusted} {
+} -result {0 {} 0}
+test interp-22.2 {testing interp marktrusted} -setup {
     catch {interp delete a}
-    interp create a
     set l ""
+} -body {
+    interp create a
     lappend l [interp issafe a]
     lappend l [interp marktrusted a]
     lappend l [interp issafe a]
+} -cleanup {
     interp delete a
-    set l
-} {0 {} 0}
-test interp-22.3 {testing interp marktrusted} {
+} -result {0 {} 0}
+test interp-22.3 {testing interp marktrusted} -setup {
     catch {interp delete a}
-    interp create a -safe
     set l ""
+} -body {
+    interp create a -safe
     lappend l [a issafe]
     lappend l [a marktrusted]
     lappend l [a issafe]
+} -cleanup {
     interp delete a
-    set l
-} {1 {} 0}
-test interp-22.4 {testing interp marktrusted} {
+} -result {1 {} 0}
+test interp-22.4 {testing interp marktrusted} -setup {
     catch {interp delete a}
-    interp create a -safe
     set l ""
+} -body {
+    interp create a -safe
     lappend l [interp issafe a]
     lappend l [interp marktrusted a]
     lappend l [interp issafe a]
+} -cleanup {
     interp delete a
-    set l
-} {1 {} 0}
-test interp-22.5 {testing interp marktrusted} {
+} -result {1 {} 0}
+test interp-22.5 {testing interp marktrusted} -setup {
     catch {interp delete a}
+} -returnCodes error -body {
     interp create a -safe
     interp create {a b}
-    catch {a eval {interp marktrusted b}} msg
+    a eval {interp marktrusted b}
+} -cleanup {
     interp delete a
-    set msg
-} {permission denied: safe interpreter cannot mark trusted}
-test interp-22.6 {testing interp marktrusted} {
+} -result {permission denied: safe interpreter cannot mark trusted}
+test interp-22.6 {testing interp marktrusted} -setup {
     catch {interp delete a}
+} -returnCodes error -body {
     interp create a -safe
     interp create {a b}
-    catch {a eval {b marktrusted}} msg
+    a eval {b marktrusted}
+} -cleanup {
     interp delete a
-    set msg
-} {permission denied: safe interpreter cannot mark trusted}
-test interp-22.7 {testing interp marktrusted} {
+} -result {permission denied: safe interpreter cannot mark trusted}
+test interp-22.7 {testing interp marktrusted} -setup {
     catch {interp delete a}
-    interp create a -safe
     set l ""
+} -body {
+    interp create a -safe
     lappend l [interp issafe a]
     interp marktrusted a
     interp create {a b}
     lappend l [interp issafe a]
     lappend l [interp issafe {a b}]
+} -cleanup {
     interp delete a
-    set l
-} {1 0 0}
-test interp-22.8 {testing interp marktrusted} {
+} -result {1 0 0}
+test interp-22.8 {testing interp marktrusted} -setup {
     catch {interp delete a}
-    interp create a -safe
     set l ""
+} -body {
+    interp create a -safe
     lappend l [interp issafe a]
     interp create {a b}
     lappend l [interp issafe {a b}]
@@ -1823,13 +1877,14 @@ test interp-22.8 {testing interp marktrusted} {
     interp create {a c}
     lappend l [interp issafe a]
     lappend l [interp issafe {a c}]
+} -cleanup {
     interp delete a
-    set l
-} {1 1 0 0}
-test interp-22.9 {testing interp marktrusted} {
+} -result {1 1 0 0}
+test interp-22.9 {testing interp marktrusted} -setup {
     catch {interp delete a}
-    interp create a -safe
     set l ""
+} -body {
+    interp create a -safe
     lappend l [interp issafe a]
     interp create {a b}
     lappend l [interp issafe {a b}]
@@ -1838,9 +1893,9 @@ test interp-22.9 {testing interp marktrusted} {
     lappend l [interp issafe {a b}]
     interp create {a b c}
     lappend l [interp issafe {a b c}]
+} -cleanup {
     interp delete a
-    set l
-} {1 1 1 0 0}
+} -result {1 1 1 0 0}
 
 test interp-23.1 {testing hiding vs aliases: unsafe interp} -setup {
     catch {interp delete a}
@@ -2081,17 +2136,16 @@ test interp-25.2 {lambda on different interpreters, bug [67d5f75c36cbada6]} -set
     interp create a
 } -body {
     set res {}
-    set lambda {{} { list OK from lambda }}
+    set lambda { {} { list OK from lambda } }
     lappend res [apply $lambda]
     lappend res [a eval [list apply $lambda]]
-    set lambda [list apply {{} { list OK from lambda }}]
+    set lambda [list apply { {} { list OK from lambda }}]
     lappend res [eval $lambda]
     lappend res [a eval $lambda]
     # cover also epoch change (command list is replaced):
     a eval {proc list args {return {NO LIST}}}
     lappend res [a eval $lambda]
     lappend res [eval $lambda]
-    set res
 } -cleanup {
     interp delete a
     unset -nocomplain res lambda
@@ -2101,11 +2155,12 @@ test interp-25.2 {lambda on different interpreters, bug [67d5f75c36cbada6]} -set
 # Interps result transmission
 #
 
-test interp-26.1 {result code transmission : interp eval direct} {
+test interp-26.1 {result code transmission : interp eval direct} -setup {
+    catch {interp delete a}
+} -body {
     # Test that all the possibles error codes from Tcl get passed up
     # from the child interp's context to the parent, even though the
     # child nominally thinks the command is running at the root level.
-    catch {interp delete a}
     interp create a
     set res {}
     # use a for so if a return -code break 'escapes' we would notice
@@ -2114,10 +2169,11 @@ test interp-26.1 {result code transmission : interp eval direct} {
     }
     interp delete a
     set res
-} {-1 0 1 2 3 4 5}
-test interp-26.2 {result code transmission : interp eval indirect} {
-    # retcode == 2 == return is special
+} -result {-1 0 1 2 3 4 5}
+test interp-26.2 {result code transmission : interp eval indirect} -setup {
     catch {interp delete a}
+} -body {
+    # retcode == 2 == return is special
     interp create a
     interp eval a {proc retcode {code} {return -code $code ret$code}}
     set res {}
@@ -2127,12 +2183,13 @@ test interp-26.2 {result code transmission : interp eval indirect} {
     }
     interp delete a
     set res
-} {-1 ret-1 0 ret0 1 ret1 0 ret2 3 ret3 4 ret4 5 ret5}
-test interp-26.3 {result code transmission : aliases} {
+} -result {-1 ret-1 0 ret0 1 ret1 0 ret2 3 ret3 4 ret4 5 ret5}
+test interp-26.3 {result code transmission : aliases} -setup {
+    catch {interp delete a}
+} -body {
     # Test that all the possibles error codes from Tcl get passed up from the
     # child interp's context to the parent, even though the child nominally
     # thinks the command is running at the root level.
-    catch {interp delete a}
     interp create a
     set res {}
     proc MyTestAlias {code} {
@@ -2144,11 +2201,12 @@ test interp-26.3 {result code transmission : aliases} {
     }
     interp delete a
     set res
-} {-1 0 1 2 3 4 5}
+} -result {-1 0 1 2 3 4 5}
 test interp-26.4 {result code transmission: invoke hidden direct--bug 1637} \
-	{knownBug} {
-    # The known bug is that code 2 is returned, not the -code argument
+	-constraints {knownBug} -setup {
     catch {interp delete a}
+} -body {
+    # The known bug is that code 2 is returned, not the -code argument
     interp create a
     set res {}
     interp hide a return
@@ -2157,7 +2215,7 @@ test interp-26.4 {result code transmission: invoke hidden direct--bug 1637} \
     }
     interp delete a
     set res
-} {-1 0 1 2 3 4 5}
+} -result {-1 0 1 2 3 4 5}
 test interp-26.5 {result code transmission: invoke hidden indirect--bug 1637} -setup {
     catch {interp delete a}
     interp create a
@@ -2405,7 +2463,7 @@ test interp-27.7 {interp hidden & aliases & imports & namespaces} -setup {
     namespace delete mfoo
     interp delete $i
 } -result {{child bar called (foo-child) (bar test1) (::tcltest) (::foo) (test1)} {parent bar called (foo-parent) (::mfoo) (test2)} {child bar called (foo-child) (test::bar test2) (::) (::foo) (test2)}}
-test interp-27.8 {hiding, namespaces and integrity} knownBug {
+test interp-27.8 {hiding, namespaces and integrity} -constraints knownBug -body {
     namespace eval foo {
 	variable v 3
 	proc bar {} {variable v; set v}
@@ -2413,8 +2471,8 @@ test interp-27.8 {hiding, namespaces and integrity} knownBug {
 	interp hide {} bar
     }
     namespace delete foo
-    list [catch {interp invokehidden {} foo::bar} msg] $msg
-} {1 {invalid hidden command name "foo"}}
+    interp invokehidden {} foo::bar
+} -returnCodes error -result {invalid hidden command name "foo"}
 
 test interp-28.1 {getting fooled by child's namespace ?} -setup {
     set i [interp create -safe]
@@ -2460,156 +2518,160 @@ test interp-28.2 {parent's nsName cache should not cross} -setup {
 #  29.5.*  Confirming the recursionlimit command does not affect the parent
 #  29.6.*  Safe interpreter restriction
 
-test interp-29.1.1 {interp recursionlimit argument checking} {
-    list [catch {interp recursionlimit} msg] $msg
-} {1 {wrong # args: should be "interp recursionlimit path ?newlimit?"}}
-test interp-29.1.2 {interp recursionlimit argument checking} {
-    list [catch {interp recursionlimit foo bar} msg] $msg
-} {1 {could not find interpreter "foo"}}
-test interp-29.1.3 {interp recursionlimit argument checking} {
-    list [catch {interp recursionlimit foo bar baz} msg] $msg
-} {1 {wrong # args: should be "interp recursionlimit path ?newlimit?"}}
-test interp-29.1.4 {interp recursionlimit argument checking} {
+test interp-29.1.1 {interp recursionlimit argument checking} -returnCodes error -body {
+    interp recursionlimit
+} -result {wrong # args: should be "interp recursionlimit path ?newlimit?"}
+test interp-29.1.2 {interp recursionlimit argument checking} -returnCodes error -body {
+    interp recursionlimit foo bar
+} -result {could not find interpreter "foo"}
+test interp-29.1.3 {interp recursionlimit argument checking} -returnCodes error -body {
+    interp recursionlimit foo bar baz
+} -result {wrong # args: should be "interp recursionlimit path ?newlimit?"}
+test interp-29.1.4 {interp recursionlimit argument checking} -returnCodes error -body {
     interp create moo
-    set result [catch {interp recursionlimit moo bar} msg]
+    interp recursionlimit moo bar
+} -cleanup {
     interp delete moo
-    list $result $msg
-} {1 {expected integer but got "bar"}}
+} -result {expected integer but got "bar"}
 test interp-29.1.5 {interp recursionlimit argument checking} -body {
     interp create moo
-    set result [catch {interp recursionlimit moo 0} msg]
+    interp recursionlimit moo 0
+} -cleanup {
     interp delete moo
-    list $result $msg
-} -match glob -result {1 {recursion limit must be > 0}}
+} -returnCodes error -result {recursion limit must be > 0}
 test interp-29.1.6 {interp recursionlimit argument checking} -body {
     interp create moo
-    set result [catch {interp recursionlimit moo -1} msg]
+    interp recursionlimit moo -1
+} -cleanup {
     interp delete moo
-    list $result $msg
-} -match glob -result {1 {recursion limit must be > 0}}
-test interp-29.1.7 {interp recursionlimit argument checking} {
+} -returnCodes error -result {recursion limit must be > 0}
+test interp-29.1.7 {interp recursionlimit argument checking} -body {
     interp create moo
-    set result [catch {interp recursionlimit moo [expr {wide(1)<<64}]} msg]
+    interp recursionlimit moo [expr {wide(1)<<64}]
+} -returnCodes error -cleanup {
     interp delete moo
-    list $result [string range $msg 0 35]
-} {1 {integer value too large to represent}}
-test interp-29.1.8 {child recursionlimit argument checking} {
+} -match glob -result {integer value too large to represent*}
+test interp-29.1.8 {child recursionlimit argument checking} -body {
     interp create moo
-    set result [catch {moo recursionlimit foo bar} msg]
+    moo recursionlimit foo bar
+} -returnCodes error -cleanup {
     interp delete moo
-    list $result $msg
-} {1 {wrong # args: should be "moo recursionlimit ?newlimit?"}}
-test interp-29.1.9 {child recursionlimit argument checking} {
+} -result {wrong # args: should be "moo recursionlimit ?newlimit?"}
+test interp-29.1.9 {child recursionlimit argument checking} -body {
     interp create moo
-    set result [catch {moo recursionlimit foo} msg]
+    moo recursionlimit foo
+} -returnCodes error -cleanup {
     interp delete moo
-    list $result $msg
-} {1 {expected integer but got "foo"}}
+} -result {expected integer but got "foo"}
 test interp-29.1.10 {child recursionlimit argument checking} -body {
     interp create moo
-    set result [catch {moo recursionlimit 0} msg]
+    moo recursionlimit 0
+} -cleanup {
     interp delete moo
-    list $result $msg
-} -match glob -result {1 {recursion limit must be > 0}}
+} -returnCodes error -result {recursion limit must be > 0}
 test interp-29.1.11 {child recursionlimit argument checking} -body {
     interp create moo
-    set result [catch {moo recursionlimit -1} msg]
+    moo recursionlimit -1
+} -returnCodes error -cleanup {
     interp delete moo
-    list $result $msg
-} -match glob -result {1 {recursion limit must be > 0}}
-test interp-29.1.12 {child recursionlimit argument checking} {
+} -result {recursion limit must be > 0}
+test interp-29.1.12 {child recursionlimit argument checking} -body {
     interp create moo
-    set result [catch {moo recursionlimit [expr {wide(1)<<64}]} msg]
+    moo recursionlimit [expr {wide(1)<<64}]
+} -returnCodes error -cleanup {
     interp delete moo
-    list $result [string range $msg 0 35]
-} {1 {integer value too large to represent}}
+} -match glob -result {integer value too large to represent*}
 test interp-29.2.1 {query recursion limit} {
     interp recursionlimit {}
 } 1000
-test interp-29.2.2 {query recursion limit} {
+test interp-29.2.2 {query recursion limit} -body {
     set i [interp create]
-    set n [interp recursionlimit $i]
+    interp recursionlimit $i
+} -cleanup {
     interp delete $i
-    set n
-} 1000
-test interp-29.2.3 {query recursion limit} {
+} -result 1000
+test interp-29.2.3 {query recursion limit} -body {
     set i [interp create]
-    set n [$i recursionlimit]
+    $i recursionlimit
+} -cleanup {
     interp delete $i
-    set n
-} 1000
-test interp-29.2.4 {query recursion limit} {
+} -result 1000
+test interp-29.2.4 {query recursion limit} -body {
     set i [interp create]
-    set r [$i eval {
+    $i eval {
 	set n1 [interp recursionlimit {} 42]
 	set n2 [interp recursionlimit {}]
 	list $n1 $n2
-    }]
+    }
+} -cleanup {
     interp delete $i
-    set r
-} {42 42}
-test interp-29.2.5 {query recursion limit} {
+} -result {42 42}
+test interp-29.2.5 {query recursion limit} -body {
     set i [interp create]
     set n1 [interp recursionlimit $i 42]
     set n2 [interp recursionlimit $i]
-    interp delete $i
     list $n1 $n2
-} {42 42}
-test interp-29.2.6 {query recursion limit} {
+} -cleanup {
+    interp delete $i
+} -result {42 42}
+test interp-29.2.6 {query recursion limit} -body {
     set i [interp create]
     set n1 [interp recursionlimit $i 42]
     set n2 [$i recursionlimit]
-    interp delete $i
     list $n1 $n2
-} {42 42}
-test interp-29.2.7 {query recursion limit} {
+} -cleanup {
+    interp delete $i
+} -result {42 42}
+test interp-29.2.7 {query recursion limit} -body {
     set i [interp create]
     set n1 [$i recursionlimit 42]
     set n2 [interp recursionlimit $i]
-    interp delete $i
     list $n1 $n2
-} {42 42}
-test interp-29.2.8 {query recursion limit} {
+} -cleanup {
+    interp delete $i
+} -result {42 42}
+test interp-29.2.8 {query recursion limit} -body {
     set i [interp create]
     set n1 [$i recursionlimit 42]
     set n2 [$i recursionlimit]
-    interp delete $i
     list $n1 $n2
-} {42 42}
-test interp-29.3.1 {recursion limit} {
+} -cleanup {
+    interp delete $i
+} -result {42 42}
+test interp-29.3.1 {recursion limit} -body {
     set i [interp create]
-    set r [interp eval $i {
+    interp eval $i {
 	interp recursionlimit {} 50
 	proc p {} {incr ::i; p}
 	set i 0
 	list [catch p msg] $msg $i
-    }]
+    }
+} -cleanup {
     interp delete $i
-    set r
-} {1 {too many nested evaluations (infinite loop?)} 49}
-test interp-29.3.2 {recursion limit} {
+} -result {1 {too many nested evaluations (infinite loop?)} 49}
+test interp-29.3.2 {recursion limit} -body {
     set i [interp create]
     interp recursionlimit $i 50
-    set r [interp eval $i {
+    interp eval $i {
 	proc p {} {incr ::i; p}
 	set i 0
 	list [catch p msg] $msg $i
-    }]
-   interp delete $i
-   set r
-} {1 {too many nested evaluations (infinite loop?)} 49}
-test interp-29.3.3 {recursion limit} {
+    }
+} -cleanup {
+    interp delete $i
+} -result {1 {too many nested evaluations (infinite loop?)} 49}
+test interp-29.3.3 {recursion limit} -body {
     set i [interp create]
     $i recursionlimit 50
-    set r [interp eval $i {
+    interp eval $i {
 	proc p {} {incr ::i; p}
 	set i 0
 	list [catch p msg] $msg $i
-    }]
-   interp delete $i
-   set r
-} {1 {too many nested evaluations (infinite loop?)} 49}
-test interp-29.3.4 {recursion limit error reporting} {
+    }
+} -cleanup {
+    interp delete $i
+} -result {1 {too many nested evaluations (infinite loop?)} 49}
+test interp-29.3.4 {recursion limit error reporting} -body {
     interp create child
     set r1 [child eval {
 	catch {			# nesting level 1
@@ -2626,10 +2688,11 @@ test interp-29.3.4 {recursion limit error reporting} {
 	} msg
     }]
     set r2 [child eval { set msg }]
-    interp delete child
     list $r1 $r2
-} {1 {falling back due to new recursion limit}}
-test interp-29.3.5 {recursion limit error reporting} {
+} -cleanup {
+    interp delete child
+} -result {1 {falling back due to new recursion limit}}
+test interp-29.3.5 {recursion limit error reporting} -body {
     interp create child
     set r1 [child eval {
 	catch {			# nesting level 1
@@ -2646,10 +2709,11 @@ test interp-29.3.5 {recursion limit error reporting} {
 	} msg
     }]
     set r2 [child eval { set msg }]
-    interp delete child
     list $r1 $r2
-} {1 {falling back due to new recursion limit}}
-test interp-29.3.6 {recursion limit error reporting} {
+} -cleanup {
+    interp delete child
+} -result {1 {falling back due to new recursion limit}}
+test interp-29.3.6 {recursion limit error reporting} -body {
     interp create child
     set r1 [child eval {
 	catch {			# nesting level 1
@@ -2666,14 +2730,15 @@ test interp-29.3.6 {recursion limit error reporting} {
 	} msg
     }]
     set r2 [child eval { set msg }]
-    interp delete child
     list $r1 $r2
-} {0 ok}
+} -cleanup {
+    interp delete child
+} -result {0 ok}
 #
 # Note that TEBC does not verify the interp's nesting level itself; the nesting
 # level will only be verified when it invokes a non-bcc'd command.
 #
-test interp-29.3.7a {recursion limit error reporting} {
+test interp-29.3.7a {recursion limit error reporting} -body {
     interp create child
     after 0 {interp recursionlimit child 5}
     set r1 [child eval {
@@ -2691,10 +2756,11 @@ test interp-29.3.7a {recursion limit error reporting} {
 	} msg
     }]
     set r2 [child eval { set msg }]
-    interp delete child
     list $r1 $r2
-} {0 ok}
-test interp-29.3.7b {recursion limit error reporting} {
+} -cleanup {
+    interp delete child
+} -result {0 ok}
+test interp-29.3.7b {recursion limit error reporting} -body {
     interp create child
     after 0 {interp recursionlimit child 5}
     set r1 [child eval {
@@ -2712,10 +2778,11 @@ test interp-29.3.7b {recursion limit error reporting} {
 	} msg
     }]
     set r2 [child eval { set msg }]
-    interp delete child
     list $r1 $r2
-} {0 ok}
-test interp-29.3.7c {recursion limit error reporting} {
+} -cleanup {
+    interp delete child
+} -result {0 ok}
+test interp-29.3.7c {recursion limit error reporting} -body {
     interp create child
     after 0 {interp recursionlimit child 5}
     set r1 [child eval {
@@ -2734,10 +2801,11 @@ test interp-29.3.7c {recursion limit error reporting} {
 	} msg
     }]
     set r2 [child eval { set msg }]
-    interp delete child
     list $r1 $r2
-} {1 {too many nested evaluations (infinite loop?)}}
-test interp-29.3.8a {recursion limit error reporting} {
+} -cleanup {
+    interp delete child
+} -result {1 {too many nested evaluations (infinite loop?)}}
+test interp-29.3.8a {recursion limit error reporting} -body {
     interp create child
     after 0 {interp recursionlimit child 4}
     set r1 [child eval {
@@ -2755,10 +2823,11 @@ test interp-29.3.8a {recursion limit error reporting} {
 	} msg
     }]
     set r2 [child eval { set msg }]
-    interp delete child
     list $r1 $r2
-} {0 ok}
-test interp-29.3.8b {recursion limit error reporting} {
+} -cleanup {
+    interp delete child
+} -result {0 ok}
+test interp-29.3.8b {recursion limit error reporting} -body {
     interp create child
     after 0 {interp recursionlimit child 4}
     set r1 [child eval {
@@ -2776,10 +2845,11 @@ test interp-29.3.8b {recursion limit error reporting} {
 	} msg
     }]
     set r2 [child eval { set msg }]
-    interp delete child
     list $r1 $r2
-} {1 {too many nested evaluations (infinite loop?)}}
-test interp-29.3.9a {recursion limit error reporting} {
+} -cleanup {
+    interp delete child
+} -result {1 {too many nested evaluations (infinite loop?)}}
+test interp-29.3.9a {recursion limit error reporting} -body {
     interp create child
     after 0 {interp recursionlimit child 6}
     set r1 [child eval {
@@ -2797,10 +2867,11 @@ test interp-29.3.9a {recursion limit error reporting} {
 	} msg
     }]
     set r2 [child eval { set msg }]
-    interp delete child
     list $r1 $r2
-} {0 ok}
-test interp-29.3.9b {recursion limit error reporting} {
+} -cleanup {
+    interp delete child
+} -result {0 ok}
+test interp-29.3.9b {recursion limit error reporting} -body {
     interp create child
     after 0 {interp recursionlimit child 6}
     set r1 [child eval {
@@ -2818,10 +2889,11 @@ test interp-29.3.9b {recursion limit error reporting} {
 	} msg
     }]
     set r2 [child eval { set msg }]
-    interp delete child
     list $r1 $r2
-} {0 ok}
-test interp-29.3.10a {recursion limit error reporting} {
+} -cleanup {
+    interp delete child
+} -result {0 ok}
+test interp-29.3.10a {recursion limit error reporting} -body {
     interp create child
     after 0 {child recursionlimit 4}
     set r1 [child eval {
@@ -2839,10 +2911,11 @@ test interp-29.3.10a {recursion limit error reporting} {
 	} msg
     }]
     set r2 [child eval { set msg }]
-    interp delete child
     list $r1 $r2
-} {0 ok}
-test interp-29.3.10b {recursion limit error reporting} {
+} -cleanup {
+    interp delete child
+} -result {0 ok}
+test interp-29.3.10b {recursion limit error reporting} -body {
     interp create child
     after 0 {child recursionlimit 4}
     set r1 [child eval {
@@ -2860,10 +2933,11 @@ test interp-29.3.10b {recursion limit error reporting} {
 	} msg
     }]
     set r2 [child eval { set msg }]
-    interp delete child
     list $r1 $r2
-} {1 {too many nested evaluations (infinite loop?)}}
-test interp-29.3.11a {recursion limit error reporting} {
+} -cleanup {
+    interp delete child
+} -result {1 {too many nested evaluations (infinite loop?)}}
+test interp-29.3.11a {recursion limit error reporting} -body {
     interp create child
     after 0 {child recursionlimit 5}
     set r1 [child eval {
@@ -2881,10 +2955,11 @@ test interp-29.3.11a {recursion limit error reporting} {
 	} msg
     }]
     set r2 [child eval { set msg }]
-    interp delete child
     list $r1 $r2
-} {0 ok}
-test interp-29.3.11b {recursion limit error reporting} {
+} -cleanup {
+    interp delete child
+} -result {0 ok}
+test interp-29.3.11b {recursion limit error reporting} -body {
     interp create child
     after 0 {child recursionlimit 5}
     set r1 [child eval {
@@ -2903,10 +2978,11 @@ test interp-29.3.11b {recursion limit error reporting} {
 	} msg
     }]
     set r2 [child eval { set msg }]
-    interp delete child
     list $r1 $r2
-} {1 {too many nested evaluations (infinite loop?)}}
-test interp-29.3.12a {recursion limit error reporting} {
+} -cleanup {
+    interp delete child
+} -result {1 {too many nested evaluations (infinite loop?)}}
+test interp-29.3.12a {recursion limit error reporting} -body {
     interp create child
     after 0 {child recursionlimit 6}
     set r1 [child eval {
@@ -2924,10 +3000,11 @@ test interp-29.3.12a {recursion limit error reporting} {
 	} msg
     }]
     set r2 [child eval { set msg }]
-    interp delete child
     list $r1 $r2
-} {0 ok}
-test interp-29.3.12b {recursion limit error reporting} {
+} -cleanup {
+    interp delete child
+} -result {0 ok}
+test interp-29.3.12b {recursion limit error reporting} -body {
     interp create child
     after 0 {child recursionlimit 6}
     set r1 [child eval {
@@ -2946,154 +3023,160 @@ test interp-29.3.12b {recursion limit error reporting} {
 	} msg
     }]
     set r2 [child eval { set msg }]
-    interp delete child
     list $r1 $r2
-} {0 ok}
-test interp-29.4.1 {recursion limit inheritance} {
+} -cleanup {
+    interp delete child
+} -result {0 ok}
+test interp-29.4.1 {recursion limit inheritance} -body {
     set i [interp create]
     set ii [interp eval $i {
 	interp recursionlimit {} 50
 	interp create
     }]
-    set r [interp eval [list $i $ii] {
+    interp eval [list $i $ii] {
 	proc p {} {incr ::i; p}
 	set i 0
 	catch p
 	set i
-    }]
-   interp delete $i
-   set r
-} 50
-test interp-29.4.2 {recursion limit inheritance} {
+    }
+} -cleanup {
+    interp delete $i
+} -result 50
+test interp-29.4.2 {recursion limit inheritance} -body {
     set i [interp create]
     $i recursionlimit 50
     set ii [interp eval $i {interp create}]
-    set r [interp eval [list $i $ii] {
+    interp eval [list $i $ii] {
 	proc p {} {incr ::i; p}
 	set i 0
 	catch p
 	set i
-    }]
-   interp delete $i
-   set r
-} 50
-test interp-29.5.1 {does child recursion limit affect parent?} {
+    }
+} -cleanup {
+    interp delete $i
+} -result 50
+test interp-29.5.1 {does child recursion limit affect parent?} -body {
     set before [interp recursionlimit {}]
     set i [interp create]
     interp recursionlimit $i 20000
     set after [interp recursionlimit {}]
     set childlimit [interp recursionlimit $i]
-    interp delete $i
     list [expr {$before == $after}] $childlimit
-} {1 20000}
-test interp-29.5.2 {does child recursion limit affect parent?} {
+} -cleanup {
+    interp delete $i
+} -result {1 20000}
+test interp-29.5.2 {does child recursion limit affect parent?} -body {
     set before [interp recursionlimit {}]
     set i [interp create]
     interp recursionlimit $i 20000
     set after [interp recursionlimit {}]
     set childlimit [$i recursionlimit]
-    interp delete $i
     list [expr {$before == $after}] $childlimit
-} {1 20000}
-test interp-29.5.3 {does child recursion limit affect parent?} {
+} -cleanup {
+    interp delete $i
+} -result {1 20000}
+test interp-29.5.3 {does child recursion limit affect parent?} -body {
     set before [interp recursionlimit {}]
     set i [interp create]
     $i recursionlimit 20000
     set after [interp recursionlimit {}]
     set childlimit [interp recursionlimit $i]
-    interp delete $i
     list [expr {$before == $after}] $childlimit
-} {1 20000}
-test interp-29.5.4 {does child recursion limit affect parent?} {
+} -cleanup {
+    interp delete $i
+} -result {1 20000}
+test interp-29.5.4 {does child recursion limit affect parent?} -body {
     set before [interp recursionlimit {}]
     set i [interp create]
     $i recursionlimit 20000
     set after [interp recursionlimit {}]
     set childlimit [$i recursionlimit]
-    interp delete $i
     list [expr {$before == $after}] $childlimit
-} {1 20000}
-test interp-29.6.1 {safe interpreter recursion limit} {
+} -cleanup {
+    interp delete $i
+} -result {1 20000}
+test interp-29.6.1 {safe interpreter recursion limit} -body {
     interp create child -safe
-    set n [interp recursionlimit child]
+    interp recursionlimit child
+} -cleanup {
     interp delete child
-    set n
-} 1000
-test interp-29.6.2 {safe interpreter recursion limit} {
+} -result 1000
+test interp-29.6.2 {safe interpreter recursion limit} -body {
     interp create child -safe
-    set n [child recursionlimit]
+    child recursionlimit
+} -cleanup {
     interp delete child
-    set n
-} 1000
-test interp-29.6.3 {safe interpreter recursion limit} {
+} -result 1000
+test interp-29.6.3 {safe interpreter recursion limit} -body {
     interp create child -safe
     set n1 [interp recursionlimit child 42]
     set n2 [interp recursionlimit child]
-    interp delete child
     list $n1 $n2
-} {42 42}
-test interp-29.6.4 {safe interpreter recursion limit} {
+} -cleanup {
+    interp delete child
+} -result {42 42}
+test interp-29.6.4 {safe interpreter recursion limit} -body {
     interp create child -safe
     set n1 [child recursionlimit 42]
     set n2 [interp recursionlimit child]
-    interp delete child
     list $n1 $n2
-} {42 42}
-test interp-29.6.5 {safe interpreter recursion limit} {
+} -cleanup {
+    interp delete child
+} -result {42 42}
+test interp-29.6.5 {safe interpreter recursion limit} -body {
     interp create child -safe
     set n1 [interp recursionlimit child 42]
     set n2 [child recursionlimit]
-    interp delete child
     list $n1 $n2
-} {42 42}
-test interp-29.6.6 {safe interpreter recursion limit} {
+} -cleanup {
+    interp delete child
+} -result {42 42}
+test interp-29.6.6 {safe interpreter recursion limit} -body {
     interp create child -safe
     set n1 [child recursionlimit 42]
     set n2 [child recursionlimit]
-    interp delete child
     list $n1 $n2
-} {42 42}
-test interp-29.6.7 {safe interpreter recursion limit} {
+} -cleanup {
+    interp delete child
+} -result {42 42}
+test interp-29.6.7 {safe interpreter recursion limit} -body {
     interp create child -safe
     set n1 [child recursionlimit 42]
     set n2 [child recursionlimit]
-    interp delete child
     list $n1 $n2
-} {42 42}
+} -cleanup {
+    interp delete child
+} -result {42 42}
 test interp-29.6.8 {safe interpreter recursion limit} {
     interp create child -safe
     set n [catch {child eval {interp recursionlimit {} 42}} msg]
     interp delete child
     list $n $msg
 } {1 {permission denied: safe interpreters cannot change recursion limit}}
-test interp-29.6.9 {safe interpreter recursion limit} {
+test interp-29.6.9 {safe interpreter recursion limit} -body {
     interp create child -safe
-    set result [
-	child eval {
-	    interp create child2 -safe
-	    set n [catch {
-		interp recursionlimit child2 42
-	    } msg]
-	    list $n $msg
-	}
-    ]
+    child eval {
+	interp create child2 -safe
+	set n [catch {
+	    interp recursionlimit child2 42
+	} msg]
+	list $n $msg
+    }
+} -cleanup {
     interp delete child
-    set result
-} {1 {permission denied: safe interpreters cannot change recursion limit}}
-test interp-29.6.10 {safe interpreter recursion limit} {
+} -result {1 {permission denied: safe interpreters cannot change recursion limit}}
+test interp-29.6.10 {safe interpreter recursion limit} -body {
     interp create child -safe
-    set result [
-	child eval {
-	    interp create child2 -safe
-	    set n [catch {
-		child2 recursionlimit 42
-	    } msg]
-	    list $n $msg
-	}
-    ]
+    child eval {
+	interp create child2 -safe
+	set n [catch {
+	    child2 recursionlimit 42
+	} msg]
+	list $n $msg
+    }
+} -cleanup {
     interp delete child
-    set result
-} {1 {permission denied: safe interpreters cannot change recursion limit}}
+} -result {1 {permission denied: safe interpreters cannot change recursion limit}}
 
 
 #    # Deep recursion (into interps when the regular one fails):
@@ -3127,7 +3210,7 @@ test interp-30.1 {deletion of aliases inside namespaces} {
     $i alias ns::cmd {}
 } {}
 
-test interp-31.1 {alias invocation scope} {
+test interp-31.1 {alias invocation scope} -body {
     proc mySet {varName value} {
 	upvar 1 $varName localVar
 	set localVar $value
@@ -3138,12 +3221,12 @@ test interp-31.1 {alias invocation scope} {
 	return $a
     }
     unset -nocomplain a
-    set result [testMyNewSet "ok"]
+    testMyNewSet "ok"
+} -cleanup {
     rename testMyNewSet {}
     rename mySet {}
     rename myNewSet {}
-    set result
-} ok
+} -result ok
 
 test interp-32.1 {parent's working directory should be inherited by a child interp} -setup {
     cd [temporaryDirectory]
@@ -3160,13 +3243,12 @@ test interp-32.1 {parent's working directory should be inherited by a child inte
     cd ..
     file delete cwd_test
     interp delete $i
-    expr {[string equal $parent $child] ? 1 :
-	     "\{$parent\} != \{$child\}"}
+    expr {$parent eq $child ? 1 : "\{$parent\} != \{$child\}"}
 } -cleanup {
     cd [workingDirectory]
 } -result 1
 
-test interp-33.1 {refCounting for target words of alias [Bug 730244]} {
+test interp-33.1 {refCounting for target words of alias [Bug 730244]} -body {
     # This test will panic if Bug 730244 is not fixed.
     set i [interp create]
     proc testHelper args {rename testHelper {}; return $args}
@@ -3174,7 +3256,9 @@ test interp-33.1 {refCounting for target words of alias [Bug 730244]} {
     trace add execution testHelper enter "interp alias $i alias {} ;#"
     interp alias $i alias {} testHelper this
     $i eval alias
-} this
+} -cleanup {
+    catch {interp delete $i}
+} -result this
 
 test interp-34.1 {basic test of limits - calling commands} -body {
     set i [interp create]
