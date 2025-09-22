@@ -114,16 +114,12 @@ PMutexLock(
     PMutex *pmutexPtr)
 {
     pthread_t mythread = pthread_self();
-    pthread_t prevthread = 0;
 
     if (__atomic_load_n(&pmutexPtr->thread, __ATOMIC_SEQ_CST) == mythread) {
-	// We owned the lock already, so it's recursive.
+	// We own the lock already, so it's recursive.
 	pmutexPtr->counter++;
-    } else if (__atomic_compare_exchange_n(&pmutexPtr->thread, &prevthread, mythread, false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST)) {
-	// No-one owns the lock, so we can safely lock it.
-	pthread_mutex_lock(&pmutexPtr->mutex);
     } else {
-	// Someone else owned the lock, so we can safely lock it. Then we own it.
+	// We don't owns the lock, so we have to lock it. Then we own it.
 	pthread_mutex_lock(&pmutexPtr->mutex);
 	__atomic_store_n(&pmutexPtr->thread, mythread, __ATOMIC_SEQ_CST);
     }
