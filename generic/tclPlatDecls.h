@@ -33,7 +33,7 @@
  */
 #if (defined(_WIN32) || defined(__CYGWIN__)) && !defined(_TCHAR_DEFINED)
 #   if defined(_UNICODE)
-	typedef wchar_t TCHAR;
+	typedef unsigned short TCHAR;
 #   else
 	typedef char TCHAR;
 #   endif
