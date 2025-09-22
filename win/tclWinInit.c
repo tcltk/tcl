@@ -221,6 +221,7 @@ AppendEnvironment(
 {
     int pathc;
     WCHAR wBuf[MAX_PATH];
+    DWORD dw;
     char buf[MAX_PATH * 3];
     Tcl_Obj *objPtr;
     Tcl_DString ds;
@@ -245,13 +246,14 @@ AppendEnvironment(
 	Tcl_Panic("no '/' character found in lib");
     }
 
-    /*
-     * The "L" preceding the TCL_LIBRARY string is used to tell VC++ that
-     * this is a Unicode string.
-     */
-
-    GetEnvironmentVariableW(L"TCL_LIBRARY", wBuf, MAX_PATH);
-    WideCharToMultiByte(CP_UTF8, 0, wBuf, -1, buf, MAX_PATH * 3, NULL, NULL);
+    dw = GetEnvironmentVariableW(L"TCL_LIBRARY", wBuf, MAX_PATH);
+    if (dw <= 0 || dw >= (sizeof(buf) / sizeof(buf[0]))) {
+	return;
+    }
+    if (WideCharToMultiByte(
+	    CP_UTF8, 0, wBuf, -1, buf, MAX_PATH * 3, NULL, NULL) == 0) {
+	return;
+    }
 
     if (buf[0] != '\0') {
 	objPtr = Tcl_NewStringObj(buf, -1);
