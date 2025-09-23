@@ -615,7 +615,7 @@ void
 Tcl_MutexLock(
     Tcl_Mutex *mutexPtr)	/* Really (WMutex **) */
 {
-	WMutex *wmPtr;
+    WMutex *wmPtr;
 
     if (*mutexPtr == NULL) {
 	TclpGlobalLock();
@@ -814,7 +814,7 @@ Tcl_ConditionWait(
 
     counter = wmPtr->counter;
     wmPtr->counter = 0;
-	InterlockedExchange(&wmPtr->thread, 0);
+    InterlockedExchange(&wmPtr->thread, 0);
     LeaveCriticalSection(&wmPtr->crit);
     timeout = 0;
     while (!timeout && (tsdPtr->flags & WIN_THREAD_BLOCKED)) {
@@ -860,7 +860,7 @@ Tcl_ConditionWait(
     LeaveCriticalSection(&winCondPtr->condLock);
     EnterCriticalSection(&wmPtr->crit);
     wmPtr->counter = counter;
-	InterlockedExchange(&wmPtr->thread, GetCurrentThreadId());
+    InterlockedExchange(&wmPtr->thread, GetCurrentThreadId());
 }
 
 /*
