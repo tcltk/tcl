@@ -55,7 +55,7 @@ static int allocOnce = 0;
 
 typedef struct WMutex {
     CRITICAL_SECTION crit;
-    volatile Tcl_ThreadId thread;
+    volatile LONG thread;
     int counter;
 } WMutex;
 
@@ -561,18 +561,15 @@ static void
 WMutexLock(
     WMutex *wmPtr)
 {
-	Tcl_ThreadId mythread = Tcl_GetCurrentThread();
+	LONG mythread = GetCurrentThreadId();
 
     if (wmPtr->thread == mythread) {
 	// We owned the lock already, so it's recursive.
 	wmPtr->counter++;
-    } else if (InterlockedCompareExchangePointer((void *volatile *)&wmPtr->thread, (void *)mythread, 0) == NULL) {
-	// No-one owns the lock, so we can safely lock it.
-	EnterCriticalSection(&wmPtr->crit);
     } else {
-	// Someone else owned the lock, so we can safely lock it. Then we own it.
+	// We don't own the lock, so we can safely lock it. Then we own it.
 	EnterCriticalSection(&wmPtr->crit);
-	InterlockedExchangePointer((void *volatile*)&wmPtr->thread, mythread);
+	InterlockedExchange(&wmPtr->thread, mythread);
     }
 }
 
@@ -580,7 +577,7 @@ static void
 WMutexUnlock(
     WMutex *wmPtr)
 {
-	Tcl_ThreadId mythread = Tcl_GetCurrentThread();
+	LONG mythread = GetCurrentThreadId();
 
     if (wmPtr->thread != mythread) {
 	Tcl_Panic("mutex not owned");
@@ -589,7 +586,7 @@ WMutexUnlock(
 	// It's recursive
 	wmPtr->counter--;
     } else {
-	InterlockedExchangePointer((void *volatile*)&wmPtr->thread, 0);
+	InterlockedExchange(&wmPtr->thread, 0);
 	LeaveCriticalSection(&wmPtr->crit);
     }
 }
@@ -684,10 +681,9 @@ void
 TclpFinalizeMutex(
     Tcl_Mutex *mutexPtr)	/* Really (WMutex **) */
 {
-    WMutex *wmPtr;
+    WMutex *wmPtr = *(WMutex **)mutexPtr;
 
-    if (mutexPtr != NULL) {
-	wmPtr = *((WMutex **)mutexPtr);
+    if (wmPtr != NULL) {
 	WMutexDestroy(wmPtr);
 	Tcl_Free(wmPtr);
 	*mutexPtr = NULL;
@@ -818,7 +814,7 @@ Tcl_ConditionWait(
 
     counter = wmPtr->counter;
     wmPtr->counter = 0;
-	InterlockedExchangePointer((void *volatile*)&wmPtr->thread, 0);
+	InterlockedExchange(&wmPtr->thread, 0);
     LeaveCriticalSection(&wmPtr->crit);
     timeout = 0;
     while (!timeout && (tsdPtr->flags & WIN_THREAD_BLOCKED)) {
@@ -864,7 +860,7 @@ Tcl_ConditionWait(
     LeaveCriticalSection(&winCondPtr->condLock);
     EnterCriticalSection(&wmPtr->crit);
     wmPtr->counter = counter;
-	InterlockedExchangePointer((void *volatile*)&wmPtr->thread, Tcl_GetCurrentThread());
+	InterlockedExchange(&wmPtr->thread, GetCurrentThreadId());
 }
 
 /*
