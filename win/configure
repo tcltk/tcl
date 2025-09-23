@@ -4441,7 +4441,7 @@ printf "%s\n" "using shared flags" >&6; }
 		CFLAGS_WARNING="${CFLAGS_WARNING} -Wno-format"
 		;;
 	    *)
-		CFLAGS_WARNING="${CFLAGS_WARNING} -Wc++-compat -fextended-identifiers"
+		CFLAGS_WARNING="${CFLAGS_WARNING} -Wc++-compat -Wno-c++-keyword -fextended-identifiers"
 		;;
 	esac
 
