@@ -438,8 +438,12 @@ TclpInitLibraryPath(
      */
 
     str = getenv("TCL_LIBRARY");			/* INTL: Native. */
-    Tcl_ExternalToUtfDStringEx(NULL, NULL, str, TCL_INDEX_NONE, TCL_ENCODING_PROFILE_TCL8, &buffer, NULL);
-    str = Tcl_DStringValue(&buffer);
+    if (str != NULL) {
+        Tcl_ExternalToUtfDStringEx(NULL, NULL, str, TCL_INDEX_NONE, TCL_ENCODING_PROFILE_TCL8, &buffer, NULL);
+	str = Tcl_DStringValue(&buffer);
+    } else {
+        Tcl_DStringInit(&buffer);
+    }
 
     if ((str != NULL) && (str[0] != '\0')) {
 	Tcl_DString ds;
