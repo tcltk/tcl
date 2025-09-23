@@ -607,19 +607,10 @@ require that values are resolvable to work).
 .RS
 .PP
 Implementations \fIshould not\fR enforce uniqueness and ordering constraints
-in this method; that is the responsibility of the \fBSet\fR method.
+in this method; that is the responsibility of the \fBSet\fR method. A default
+implementation of this method (that just returns its \fIslotElement\fR
+argument) is provided in the \fBoo::Slot\fR class.
 .RE
-.VE TIP516
-.\" METHOD: Resolve
-.TP
-\fIslot\fR \fBResolve \fIelement\fR
-.VS
-This converts an element of the slotted collection into its resolved form; for
-a simple value, it could just return the value, but for a slot that contains
-references to commands or classes it should convert those into their
-fully-qualified forms (so they can be compared with \fBstring equals\fR): that
-could be done by forwarding to \fBnamespace which\fR or similar.
-.VE
 .\" METHOD: Set
 .TP
 \fIslot\fR \fBSet \fIelementList\fR
