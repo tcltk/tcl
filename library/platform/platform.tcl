@@ -223,7 +223,7 @@ proc ::platform::identify {} {
 	    # the necessary CPU code. If we can't we simply use the
 	    # hardwired fallback.
 
-	    switch -exact -- $tcl_platform(wordSize) {
+	    switch -integer -- $tcl_platform(wordSize) {
 		4 {
 		    lappend bases /lib
 		    if {[catch {

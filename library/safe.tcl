@@ -130,7 +130,7 @@ proc ::safe::CheckInterp {child} {
 # (hopefully for tcl9.0 ?)
 proc ::safe::interpConfigure {args} {
     variable AutoPathSync
-    switch [llength $args] {
+    switch -integer -- [llength $args] {
 	1 {
 	    # If we have exactly 1 argument the semantic is to return all
 	    # the current configuration. We still call OptKeyParse though
