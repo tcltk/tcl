@@ -223,27 +223,25 @@ proc ::platform::identify {} {
 	    # the necessary CPU code. If we can't we simply use the
 	    # hardwired fallback.
 
-	    switch -integer -- $tcl_platform(wordSize) {
+	    switch -- $tcl_platform(wordSize) {
 		4 {
 		    lappend bases /lib
-		    if {[catch {
-			exec dpkg-architecture -qDEB_HOST_MULTIARCH
-		    } res]} {
-			lappend bases /lib/i386-linux-gnu
-		    } else {
-			# dpkg-arch returns the full tripled, not just cpu.
+		    try {
+			set res [exec dpkg-architecture -qDEB_HOST_MULTIARCH]
+			# dpkg-arch returns the full triple, not just cpu.
 			lappend bases /lib/$res
+		    } on error {} {
+			lappend bases /lib/i386-linux-gnu
 		    }
 		}
 		8 {
 		    lappend bases /lib64
-		    if {[catch {
-			exec dpkg-architecture -qDEB_HOST_MULTIARCH
-		    } res]} {
-			lappend bases /lib/x86_64-linux-gnu
-		    } else {
-			# dpkg-arch returns the full tripled, not just cpu.
+		    try {
+			set res [exec dpkg-architecture -qDEB_HOST_MULTIARCH]
+			# dpkg-arch returns the full triple, not just cpu.
 			lappend bases /lib/$res
+		    } on error {} {
+			lappend bases /lib/x86_64-linux-gnu
 		    }
 		}
 		default {
@@ -272,17 +270,16 @@ proc ::platform::LibcVersion {base _->_ vv} {
     set libc [lindex $libclist 0]
 
     # Try executing the library first. This should succeed
-    # for a glibc library, and return the version
-    # information.
+    # for a glibc library, and return the version information.
 
-    if {![catch {
+    try {
 	set vdata [lindex [split [exec $libc] \n] 0]
-    }]} {
+    } on ok {} {
 	regexp {version ([0-9]+(\.[0-9]+)*)} $vdata -> v
-	foreach {major minor} [split $v .] break
+	lassign [split $v .] major minor
 	set v glibc${major}.${minor}
 	return 1
-    } else {
+    } on error {} {
 	# We had trouble executing the library. We are now
 	# inspecting its name to determine the version
 	# number. This code by Larry McVoy.
@@ -319,7 +316,7 @@ proc ::platform::patterns {id} {
 	solaris*-* {
 	    if {[regexp {solaris([^-]*)-(.*)} $id -> v cpu]} {
 		if {$v eq ""} {return $id}
-		foreach {major minor} [split $v .] break
+		lassign [split $v .] major minor
 		incr minor -1
 		for {set j $minor} {$j >= 6} {incr j -1} {
 		    lappend res solaris${major}.${j}-${cpu}
@@ -328,7 +325,7 @@ proc ::platform::patterns {id} {
 	}
 	linux*-* {
 	    if {[regexp {linux-glibc([^-]*)-(.*)} $id -> v cpu]} {
-		foreach {major minor} [split $v .] break
+		lassign [split $v .] major minor
 		incr minor -1
 		for {set j $minor} {$j >= 0} {incr j -1} {
 		    lappend res linux-glibc${major}.${j}-${cpu}
@@ -348,7 +345,7 @@ proc ::platform::patterns {id} {
 	    # 10.5+,11.0+
 	    if {[regexp {macosx?([^-]*)-(.*)} $id -> v cpu]} {
 
-		foreach {major minor} [split $v.15 .] break
+		lassign [split $v.15 .] major minor
 		switch -exact -- $cpu {
 		    ix86    {
 			lappend alt i386-x86_64
