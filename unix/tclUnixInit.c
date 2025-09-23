@@ -482,6 +482,8 @@ TclpInitLibraryPath(
     if (str != NULL) {
 	Tcl_ExternalToUtfDString(NULL, str, -1, &buffer);
 	str = Tcl_DStringValue(&buffer);
+    } else {
+        Tcl_DStringInit(&buffer);
     }
 
     if ((str != NULL) && (str[0] != '\0')) {
