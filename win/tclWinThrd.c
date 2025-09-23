@@ -561,9 +561,9 @@ static void
 WMutexLock(
     WMutex *wmPtr)
 {
-	LONG mythread = GetCurrentThreadId();
+    LONG mythread = GetCurrentThreadId();
 
-    if (wmPtr->thread == mythread) {
+    if (InterlockedOr(&wmPtr->thread, 0) == mythread) {
 	// We owned the lock already, so it's recursive.
 	wmPtr->counter++;
     } else {
@@ -577,9 +577,9 @@ static void
 WMutexUnlock(
     WMutex *wmPtr)
 {
-	LONG mythread = GetCurrentThreadId();
+    LONG mythread = GetCurrentThreadId();
 
-    if (wmPtr->thread != mythread) {
+    if (InterlockedOr(&wmPtr->thread, 0) != mythread) {
 	Tcl_Panic("mutex not owned");
     }
     if (wmPtr->counter) {
