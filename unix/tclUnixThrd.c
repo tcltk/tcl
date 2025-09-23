@@ -13,12 +13,6 @@
 
 #include "tclInt.h"
 
-#if defined(HAVE_STDATOMIC_H) && defined(NO_ATOMIC)
-/*  TODO: for test purposes only, remove this before merge! */
-#  undef HAVE_STDATOMIC_H
-#endif
-
-
 #ifdef HAVE_STDATOMIC_H
 #include <stdatomic.h>
 #endif /* HAVE_STDATOMIC_H */
@@ -378,8 +372,8 @@ int
 TclpThreadCreate(
     Tcl_ThreadId *idPtr,	/* Return, the ID of the thread */
     Tcl_ThreadCreateProc *proc,	/* Main() function of the thread */
-    void *clientData,	/* The one argument to Main() */
-    size_t stackSize,	/* Size of stack for the new thread */
+    void *clientData,		/* The one argument to Main() */
+    size_t stackSize,		/* Size of stack for the new thread */
     int flags)			/* Flags controlling behaviour of the new
 				 * thread. */
 {
@@ -837,7 +831,7 @@ void
 Tcl_ConditionWait(
     Tcl_Condition *condPtr,	/* Really (pthread_cond_t **) */
     Tcl_Mutex *mutexPtr,	/* Really (PMutex **) */
-    const Tcl_Time *timePtr) /* Timeout on waiting period */
+    const Tcl_Time *timePtr)	/* Timeout on waiting period */
 {
     pthread_cond_t *pcondPtr;
     PMutex *pmutexPtr;
