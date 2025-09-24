@@ -108,7 +108,7 @@ typedef enum _DSTMODE {
 
 %union {
     Tcl_WideInt Number;
-    enum _MERIDIAN Meridian;
+    MERIDIAN Meridian;
 }
 
 %{

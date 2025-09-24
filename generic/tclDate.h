@@ -82,7 +82,7 @@ enum DateInfoFlags {
  * Enumeration of the string literals used in [clock]
  */
 
-typedef enum ClockLiteral {
+typedef enum {
     LIT__NIL,
     LIT__DEFAULT_FORMAT,
     LIT_SYSTEM,		LIT_CURRENT,		LIT_C,
@@ -129,7 +129,7 @@ typedef enum ClockLiteral {
  * Enumeration of the msgcat literals used in [clock]
  */
 
-typedef enum ClockMsgCtLiteral {
+typedef enum {
     MCLIT__NIL, /* placeholder */
     MCLIT_MONTHS_FULL,	MCLIT_MONTHS_ABBREV,  MCLIT_MONTHS_COMB,
     MCLIT_DAYS_OF_WEEK_FULL,  MCLIT_DAYS_OF_WEEK_ABBREV,  MCLIT_DAYS_OF_WEEK_COMB,
@@ -162,7 +162,7 @@ enum TclDateFieldsFlags {
     CLF_CTZ = (1 << 4)
 };
 
-typedef struct TclDateFields {
+typedef struct {
     /* Cacheable fields:	 */
 
     Tcl_WideInt seconds;	/* Time expressed in seconds from the Posix
@@ -201,7 +201,7 @@ typedef struct TclDateFields {
  * Meridian: am, pm, or 24-hour style.
  */
 
-typedef enum _MERIDIAN {
+typedef enum {
     MERam, MERpm, MER24
 } MERIDIAN;
 
@@ -395,7 +395,7 @@ typedef int ClockScanTokenProc(
 	DateInfo *info,
 	const ClockScanToken *tok);
 
-typedef enum _CLCKTOK_TYPE {
+typedef enum {
    CTOKT_INT = 1, CTOKT_WIDE, CTOKT_PARSER, CTOKT_SPACE, CTOKT_WORD, CTOKT_CHAR,
    CFMTT_PROC
 } CLCKTOK_TYPE;
