@@ -43,11 +43,6 @@ static CRITICAL_SECTION initLock;
 
 #if TCL_THREADS
 
-static struct Tcl_Mutex_ {
-    CRITICAL_SECTION crit;
-} allocLock;
-static Tcl_Mutex allocLockPtr = &allocLock;
-static int allocOnce = 0;
 /*
  * Although CRITICAL_SECTIONs can be nested, we need to keep track
  * of their lock counts for condition variables.
@@ -58,6 +53,10 @@ typedef struct WMutex {
     volatile LONG thread;
     int counter;
 } WMutex;
+
+static struct WMutex allocLock;
+static WMutex *allocLockPtr = &allocLock;
+static int allocOnce = 0;
 
 #endif /* TCL_THREADS */
 
@@ -132,6 +131,9 @@ typedef struct {
     CRITICAL_SECTION wlock;
 } allocMutex;
 #endif /* USE_THREAD_ALLOC */
+
+static void WMutexInit(WMutex *);
+static void WMutexDestroy(WMutex *);
 
 /*
  * The per thread data passed from TclpThreadCreate
@@ -483,10 +485,10 @@ Tcl_GetAllocMutex(void)
 {
 #if TCL_THREADS
     if (!allocOnce) {
-	InitializeCriticalSection(&allocLock.crit);
+	WMutexInit(&allocLock);
 	allocOnce = 1;
     }
-    return &allocLockPtr;
+    return (Tcl_Mutex *) &allocLockPtr;
 #else
     return NULL;
 #endif
@@ -525,7 +527,7 @@ TclFinalizeLock(void)
 
 #if TCL_THREADS
     if (allocOnce) {
-	DeleteCriticalSection(&allocLock.crit);
+	WMutexDestroy(&allocLock);
 	allocOnce = 0;
     }
 #endif
@@ -543,21 +545,21 @@ TclFinalizeLock(void)
 
 static void
 WMutexInit(
-    WMutex *wmutexPtr)
+    WMutex *wmPtr)
 {
-    InitializeCriticalSection(&wmutexPtr->crit);
-    wmutexPtr->thread = 0;
-    wmutexPtr->counter = 0;
+    InitializeCriticalSection(&wmPtr->crit);
+    wmPtr->thread = 0;
+    wmPtr->counter = 0;
 }
 
 static void
 WMutexDestroy(
-    WMutex *wmutexPtr)
+    WMutex *wmPtr)
 {
     if (InterlockedOr(&wmPtr->thread, 0) != 0) {
 	Tcl_Panic("mutex still owned");
     }
-    DeleteCriticalSection(&wmutexPtr->crit);
+    DeleteCriticalSection(&wmPtr->crit);
 }
 
 static void
