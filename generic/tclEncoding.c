@@ -4826,7 +4826,7 @@ Tcl_UtfToNormalizedDString(
 	assert(normUtf8);
 	/* Convert standard UTF8 to internal UTF8 */
 	int result = Tcl_ExternalToUtfDStringEx(interp, encoding,
-	    (const char *)normUtf8, normLength, profile, dsPtr, NULL);
+		(const char *)normUtf8, normLength, profile, dsPtr, NULL);
 	if (result != TCL_OK) {
 	    normLength = -1;
 	}

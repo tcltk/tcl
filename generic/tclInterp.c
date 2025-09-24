@@ -257,6 +257,9 @@ static int		ChildInvokeHidden(Tcl_Interp *interp,
 static int		ChildMarkTrusted(Tcl_Interp *interp,
 			    Tcl_Interp *childInterp);
 static Tcl_CmdDeleteProc	ChildObjCmdDeleteProc;
+static int		ChildSet(Tcl_Interp *interp,
+			    Tcl_Interp *childInterp, Tcl_Obj *varNameObj,
+			    Tcl_Obj *valueObj);
 static int		ChildRecursionLimit(Tcl_Interp *interp,
 			    Tcl_Interp *childInterp, Tcl_Size objc,
 			    Tcl_Obj *const objv[]);
@@ -1070,7 +1073,7 @@ NRInterpCmd(
 	"eval",		"exists",	"expose",	"hide",
 	"hidden",	"issafe",	"invokehidden",
 	"limit",	"marktrusted",	"recursionlimit",
-	"share",
+	"set",		"share",
 #ifndef TCL_NO_DEPRECATED
 	"slaves",
 #endif
@@ -1082,7 +1085,7 @@ NRInterpCmd(
 	"eval",		"exists",	"expose",
 	"hide",		"hidden",	"issafe",
 	"invokehidden",	"limit",	"marktrusted",	"recursionlimit",
-	"share",	"target",	"transfer",
+	"set",		"share",	"target",	"transfer",
 	NULL
     };
     enum interpOptionEnum {
@@ -1090,7 +1093,8 @@ NRInterpCmd(
 	OPT_CHILDREN,	OPT_CREATE,	OPT_DEBUG,	OPT_DELETE,
 	OPT_EVAL,	OPT_EXISTS,	OPT_EXPOSE,	OPT_HIDE,
 	OPT_HIDDEN,	OPT_ISSAFE,	OPT_INVOKEHID,
-	OPT_LIMIT,	OPT_MARKTRUSTED, OPT_RECLIMIT, OPT_SHARE,
+	OPT_LIMIT,	OPT_MARKTRUSTED, OPT_RECLIMIT,	OPT_SET,
+	OPT_SHARE,
 #ifndef TCL_NO_DEPRECATED
 	OPT_SLAVES,
 #endif
@@ -1338,6 +1342,17 @@ NRInterpCmd(
 	    return TCL_ERROR;
 	}
 	return ChildEval(interp, childInterp, objc - 3, objv + 3);
+    case OPT_SET:
+	if (objc < 4 || objc > 5) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "path varName ?value?");
+	    return TCL_ERROR;
+	}
+	childInterp = GetInterp(interp, objv[2]);
+	if (childInterp == NULL) {
+	    return TCL_ERROR;
+	}
+	return ChildSet(interp, childInterp, objv[3],
+		objc > 4 ? objv[4] : NULL);
     case OPT_EXISTS: {
 	int exists = 1;
 
@@ -2956,13 +2971,13 @@ NRChildCmd(
 	"alias",	"aliases",	"bgerror",	"debug",
 	"eval",		"expose",	"hide",		"hidden",
 	"issafe",	"invokehidden",	"limit",	"marktrusted",
-	"recursionlimit", NULL
+	"recursionlimit", "set",	NULL
     };
     enum childCmdOptionsEnum {
 	OPT_ALIAS,	OPT_ALIASES,	OPT_BGERROR,	OPT_DEBUG,
 	OPT_EVAL,	OPT_EXPOSE,	OPT_HIDE,	OPT_HIDDEN,
 	OPT_ISSAFE,	OPT_INVOKEHIDDEN, OPT_LIMIT,	OPT_MARKTRUSTED,
-	OPT_RECLIMIT
+	OPT_RECLIMIT,	OPT_SET
     } index;
 
     if (childInterp == NULL) {
@@ -3124,6 +3139,12 @@ NRChildCmd(
 	    return TCL_ERROR;
 	}
 	return ChildRecursionLimit(interp, childInterp, objc - 2, objv + 2);
+    case OPT_SET:
+	if (objc < 3 || objc > 4) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "varName ?value?");
+	    return TCL_ERROR;
+	}
+	return ChildSet(interp, childInterp, objv[2], objc>3 ? objv[3] : NULL);
     default:
 	TCL_UNREACHABLE();
     }
@@ -3309,6 +3330,51 @@ ChildEval(
     }
     Tcl_TransferResult(childInterp, result, interp);
 
+    Tcl_Release(childInterp);
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ChildSet --
+ *
+ *	Helper function to read and write a variable in a child interpreter.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	Depends on whether the variable has traces. If so, this can have
+ *	extensive arbitrary side effects.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+ChildSet(
+    Tcl_Interp *interp,
+    Tcl_Interp *childInterp,
+    Tcl_Obj *varNameObj,
+    Tcl_Obj *valueObj)
+{
+    int result = TCL_ERROR;
+    Tcl_Obj *resultObj;
+    Tcl_Preserve(childInterp);
+
+    // Modelled after the guts of Tcl_SetObjCmd().
+    if (valueObj) {
+	resultObj = Tcl_ObjSetVar2(childInterp, varNameObj, NULL, valueObj,
+		TCL_LEAVE_ERR_MSG);
+    } else {
+	resultObj = Tcl_ObjGetVar2(childInterp, varNameObj, NULL,
+		TCL_LEAVE_ERR_MSG);
+    }
+    if (resultObj) {
+	Tcl_SetObjResult(childInterp, resultObj);
+	result = TCL_OK;
+    }
+
+    Tcl_TransferResult(childInterp, result, interp);
     Tcl_Release(childInterp);
     return result;
 }

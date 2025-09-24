@@ -521,29 +521,25 @@ struct ClockFmtScnStorage {
  * Prototypes of module functions.
  */
 
-MODULE_SCOPE int	ToSeconds(int Hours, int Minutes,
+MODULE_SCOPE int	TclToSeconds(int Hours, int Minutes,
 			    int Seconds, MERIDIAN Meridian);
-MODULE_SCOPE int	IsGregorianLeapYear(TclDateFields *);
-MODULE_SCOPE void	GetJulianDayFromEraYearWeekDay(
+MODULE_SCOPE int	TclIsGregorianLeapYear(TclDateFields *);
+MODULE_SCOPE void	TclGetJulianDayFromEraYearDay(
 			    TclDateFields *fields, int changeover);
-MODULE_SCOPE void	GetJulianDayFromEraYearMonthDay(
-			    TclDateFields *fields, int changeover);
-MODULE_SCOPE void	GetJulianDayFromEraYearDay(
-			    TclDateFields *fields, int changeover);
-MODULE_SCOPE int	ConvertUTCToLocal(ClockClientData *dataPtr, Tcl_Interp *,
+MODULE_SCOPE int	TclConvertUTCToLocal(ClockClientData *dataPtr, Tcl_Interp *,
 			    TclDateFields *, Tcl_Obj *timezoneObj, int);
-MODULE_SCOPE Tcl_Obj *	LookupLastTransition(Tcl_Interp *, Tcl_WideInt,
+MODULE_SCOPE Tcl_Obj *	TclClockLookupLastTransition(Tcl_Interp *, Tcl_WideInt,
 			    Tcl_Size, Tcl_Obj *const *, Tcl_WideInt *rangesVal);
 MODULE_SCOPE int	TclClockFreeScan(Tcl_Interp *interp, DateInfo *info);
 
 /* tclClock.c module declarations */
 
-MODULE_SCOPE Tcl_Obj *	ClockSetupTimeZone(ClockClientData *dataPtr,
+MODULE_SCOPE Tcl_Obj *	TclClockSetupTimeZone(ClockClientData *dataPtr,
 			    Tcl_Interp *interp, Tcl_Obj *timezoneObj);
-MODULE_SCOPE Tcl_Obj *	ClockMCDict(ClockFmtScnCmdArgs *opts);
-MODULE_SCOPE Tcl_Obj *	ClockMCGet(ClockFmtScnCmdArgs *opts, int mcKey);
-MODULE_SCOPE Tcl_Obj *	ClockMCGetIdx(ClockFmtScnCmdArgs *opts, int mcKey);
-MODULE_SCOPE int	ClockMCSetIdx(ClockFmtScnCmdArgs *opts, int mcKey,
+MODULE_SCOPE Tcl_Obj *	TclClockMCDict(ClockFmtScnCmdArgs *opts);
+MODULE_SCOPE Tcl_Obj *	TclClockMCGet(ClockFmtScnCmdArgs *opts, int mcKey);
+MODULE_SCOPE Tcl_Obj *	TclClockMCGetIdx(ClockFmtScnCmdArgs *opts, int mcKey);
+MODULE_SCOPE int	TclClockMCSetIdx(ClockFmtScnCmdArgs *opts, int mcKey,
 			    Tcl_Obj *valObj);
 
 /* tclClockFmt.c module declarations */
@@ -551,16 +547,13 @@ MODULE_SCOPE int	ClockMCSetIdx(ClockFmtScnCmdArgs *opts, int mcKey,
 MODULE_SCOPE char *	TclItoAw(char *buf, int val, char padchar, unsigned short width);
 MODULE_SCOPE int	TclAtoWIe(Tcl_WideInt *out, const char *p, const char *e, int sign);
 
-MODULE_SCOPE Tcl_Obj*	ClockFrmObjGetLocFmtKey(Tcl_Interp *interp,
-			    Tcl_Obj *objPtr);
 MODULE_SCOPE ClockFmtScnStorage *Tcl_GetClockFrmScnFromObj(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr);
-MODULE_SCOPE Tcl_Obj *	ClockLocalizeFormat(ClockFmtScnCmdArgs *opts);
-MODULE_SCOPE int	ClockScan(DateInfo *info, Tcl_Obj *strObj,
+MODULE_SCOPE int	TclClockScan(DateInfo *info, Tcl_Obj *strObj,
 			    ClockFmtScnCmdArgs *opts);
-MODULE_SCOPE int	ClockFormat(DateFormat *dateFmt,
+MODULE_SCOPE int	TclClockFormat(DateFormat *dateFmt,
 			    ClockFmtScnCmdArgs *opts);
-MODULE_SCOPE void	ClockFrmScnClearCaches(void);
-MODULE_SCOPE void	ClockFrmScnFinalize();
+MODULE_SCOPE void	TclClockFrmScnClearCaches(void);
+MODULE_SCOPE void	TclClockFrmScnFinalize();
 
 #endif /* _TCLCLOCK_H */
