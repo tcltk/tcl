@@ -247,7 +247,7 @@ AppendEnvironment(
     }
 
     dw = GetEnvironmentVariableW(L"TCL_LIBRARY", wBuf, MAX_PATH);
-    if (dw <= 0 || dw >= (sizeof(buf) / sizeof(buf[0]))) {
+    if (dw <= 0 || dw >= MAX_PATH) {
 	return;
     }
     if (WideCharToMultiByte(
