@@ -700,10 +700,8 @@ Tcl_Mutex *
 Tcl_GetAllocMutex(void)
 {
 #if TCL_THREADS
-    PMutex **allocLockPtrPtr = &allocLockPtr;
-
     pthread_once(&allocLockInitOnce, allocLockInit);
-    return (Tcl_Mutex *) allocLockPtrPtr;
+    return (Tcl_Mutex *) &allocLockPtr;
 #else
     return NULL;
 #endif
