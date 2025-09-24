@@ -4609,7 +4609,7 @@ Tcl_LsortObjCmd(
 	    TclObjTypeGetElements(interp, listObj, &length, &listObjPtrs);
     } else {
 	sortInfo.resultCode = TclListObjGetElements(interp, listObj,
-	    &length, &listObjPtrs);
+		&length, &listObjPtrs);
     }
     if (sortInfo.resultCode != TCL_OK || length <= 0) {
 	goto done;

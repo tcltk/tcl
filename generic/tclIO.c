@@ -237,12 +237,12 @@ static Tcl_Size		Write(Channel *chanPtr, const char *src,
 static Tcl_Obj *	FixLevelCode(Tcl_Obj *msg);
 static void		SpliceChannel(Tcl_Channel chan);
 static void		CutChannel(Tcl_Channel chan);
-static int	      WillRead(Channel *chanPtr);
+static int		WillRead(Channel *chanPtr);
 
 #define WriteChars(chanPtr, src, srcLen) \
-			Write(chanPtr, src, srcLen, chanPtr->state->encoding)
+	Write(chanPtr, src, srcLen, chanPtr->state->encoding)
 #define WriteBytes(chanPtr, src, srcLen) \
-			Write(chanPtr, src, srcLen, tclIdentityEncoding)
+	Write(chanPtr, src, srcLen, tclIdentityEncoding)
 
 /*
  * Simplifying helper macros. All may use their argument(s) multiple times.
@@ -8069,7 +8069,7 @@ Tcl_GetChannelOption(
 	    Tcl_DStringAppendElement(dsPtr, "-encoding");
 	}
 	Tcl_DStringAppendElement(dsPtr,
-	    Tcl_GetEncodingName(statePtr->encoding));
+		Tcl_GetEncodingName(statePtr->encoding));
 	if (len > 0) {
 	    return TCL_OK;
 	}
@@ -11534,7 +11534,8 @@ DumpFlags(
     int i = 0;
     char buf[24];
 
-#define ChanFlag(chr, bit)      (buf[i++] = ((flags & (bit)) ? (chr) : '_'))
+#define ChanFlag(chr, bit) \
+	(buf[i++] = ((flags & (bit)) ? (chr) : '_'))
 
     ChanFlag('r', TCL_READABLE);
     ChanFlag('w', TCL_WRITABLE);

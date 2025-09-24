@@ -68,6 +68,7 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <string.h>
 #include <locale.h>
 
@@ -149,7 +150,6 @@
 #elif defined(__GNUC__)
 #define TCL_UNREACHABLE()	__builtin_unreachable()
 #elif defined(_MSC_VER)
-#include <stdbool.h>
 #define TCL_UNREACHABLE()	__assume(false)
 #else
 #define TCL_UNREACHABLE()	((void) 0)

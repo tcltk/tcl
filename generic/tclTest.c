@@ -4087,19 +4087,19 @@ TestlistapiCmd(
 	}
     }
 
-#define APPENDINT(name_, var_)                                    \
-    do {                                                           \
-	Tcl_ListObjAppendElement(                                  \
-	    NULL, objPtr, Tcl_NewStringObj((#name_), -1));      \
-	Tcl_ListObjAppendElement(                                  \
-	    NULL, objPtr, Tcl_NewWideIntObj((intptr_t)(var_))); \
+#define APPENDINT(name_, var_) \
+    do {							\
+	Tcl_ListObjAppendElement(NULL,				\
+		objPtr, Tcl_NewStringObj((#name_), -1));	\
+	Tcl_ListObjAppendElement(NULL,				\
+		objPtr, Tcl_NewWideIntObj((intptr_t)(var_)));	\
     } while (0)
-#define APPENDSTR(name_, var_)                                    \
-    do {                                                           \
-	Tcl_ListObjAppendElement(                                  \
-	    NULL, objPtr, Tcl_NewStringObj((#name_), -1));      \
-	Tcl_ListObjAppendElement(                                  \
-	    NULL, objPtr, Tcl_NewStringObj((var_), -1)); \
+#define APPENDSTR(name_, var_) \
+    do {							\
+	Tcl_ListObjAppendElement(NULL,				\
+		objPtr, Tcl_NewStringObj((#name_), -1));	\
+	Tcl_ListObjAppendElement(NULL,				\
+		objPtr, Tcl_NewStringObj((var_), -1));		\
     } while (0)
 
     Tcl_Obj *objPtr = Tcl_NewListObj(0, NULL);

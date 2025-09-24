@@ -1094,8 +1094,8 @@ IcuConverttoObjCmd(
     Tcl_DString dsIn;
     Tcl_DString dsOut;
     if (IcuObjToUCharDString(interp, objv[objc - 1], strict, &dsIn) != TCL_OK ||
-	IcuConverttoDString(interp, &dsIn,
-	    Tcl_GetString(objv[objc-2]), strict, &dsOut) != TCL_OK) {
+	    IcuConverttoDString(interp, &dsIn,
+		    Tcl_GetString(objv[objc-2]), strict, &dsOut) != TCL_OK) {
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(

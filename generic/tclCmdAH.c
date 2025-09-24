@@ -2846,7 +2846,7 @@ EachloopCmd(
 	    goto done;
 	}
 	result = TclListObjLength(interp, statePtr->vCopyList[i],
-	    &statePtr->varcList[i]);
+		&statePtr->varcList[i]);
 	if (result != TCL_OK) {
 	    result = TCL_ERROR;
 	    goto done;
@@ -2862,7 +2862,7 @@ EachloopCmd(
 	    goto done;
 	}
 	TclListObjGetElements(NULL, statePtr->vCopyList[i],
-	    &statePtr->varcList[i], &statePtr->varvList[i]);
+		&statePtr->varcList[i], &statePtr->varvList[i]);
 
 	/* Values */
 	if (TclObjTypeHasProc(objv[2+i*2],indexProc)) {
