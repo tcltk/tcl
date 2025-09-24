@@ -554,6 +554,9 @@ static void
 WMutexDestroy(
     WMutex *wmutexPtr)
 {
+    if (InterlockedOr(&wmPtr->thread, 0) != 0) {
+	Tcl_Panic("mutex still owned");
+    }
     DeleteCriticalSection(&wmutexPtr->crit);
 }
 

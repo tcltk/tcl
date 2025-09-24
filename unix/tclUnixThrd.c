@@ -95,8 +95,17 @@ static void
 PMutexDestroy(
     PMutex *pmutexPtr)
 {
-#if defined(HAVE_PTHREAD_SPIN_LOCK) && !defined(HAVE_STDATOMIC_H)
+#ifdef HAVE_STDATOMIC_H
+    if (__atomic_load_n(&pmutexPtr->thread, __ATOMIC_SEQ_CST) != 0) {
+	Tcl_Panic("mutex still owned");
+    }
+#else
+    if (mutexPtr->thread != 0) {
+	Tcl_Panic("mutex still owned");
+    }
+# if defined(HAVE_PTHREAD_SPIN_LOCK)
     pthread_spin_destroy(&pmutexPtr->lock);
+# endif
 #endif
     pthread_mutex_destroy(&pmutexPtr->mutex);
 }
