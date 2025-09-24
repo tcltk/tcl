@@ -225,6 +225,7 @@ normally \fIbasenameversion\fR
 (e.g., tk8.0), but it might be
 .QW library
 when in the build hierarchies.
+The \fIpatch\fR argument is not used.
 The \fIinitScript\fR file will be sourced into the interpreter
 once it is found.  The directory in which this file is found is
 stored into the global variable \fIvarName\fR.
