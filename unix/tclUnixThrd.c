@@ -95,8 +95,17 @@ static void
 PMutexDestroy(
     PMutex *pmutexPtr)
 {
-#if defined(HAVE_PTHREAD_SPIN_LOCK) && !defined(HAVE_STDATOMIC_H)
+#ifdef HAVE_STDATOMIC_H
+    if (__atomic_load_n(&pmutexPtr->thread, __ATOMIC_SEQ_CST) != 0) {
+	Tcl_Panic("mutex still owned");
+    }
+#else
+    if (mutexPtr->thread != 0) {
+	Tcl_Panic("mutex still owned");
+    }
+# if defined(HAVE_PTHREAD_SPIN_LOCK)
     pthread_spin_destroy(&pmutexPtr->lock);
+# endif
 #endif
     pthread_mutex_destroy(&pmutexPtr->mutex);
 }
@@ -372,8 +381,8 @@ int
 TclpThreadCreate(
     Tcl_ThreadId *idPtr,	/* Return, the ID of the thread */
     Tcl_ThreadCreateProc *proc,	/* Main() function of the thread */
-    void *clientData,	/* The one argument to Main() */
-    size_t stackSize,	/* Size of stack for the new thread */
+    void *clientData,		/* The one argument to Main() */
+    size_t stackSize,		/* Size of stack for the new thread */
     int flags)			/* Flags controlling behaviour of the new
 				 * thread. */
 {
@@ -691,10 +700,8 @@ Tcl_Mutex *
 Tcl_GetAllocMutex(void)
 {
 #if TCL_THREADS
-    PMutex **allocLockPtrPtr = &allocLockPtr;
-
     pthread_once(&allocLockInitOnce, allocLockInit);
-    return (Tcl_Mutex *) allocLockPtrPtr;
+    return (Tcl_Mutex *) &allocLockPtr;
 #else
     return NULL;
 #endif
@@ -831,7 +838,7 @@ void
 Tcl_ConditionWait(
     Tcl_Condition *condPtr,	/* Really (pthread_cond_t **) */
     Tcl_Mutex *mutexPtr,	/* Really (PMutex **) */
-    const Tcl_Time *timePtr) /* Timeout on waiting period */
+    const Tcl_Time *timePtr)	/* Timeout on waiting period */
 {
     pthread_cond_t *pcondPtr;
     PMutex *pmutexPtr;
