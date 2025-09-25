@@ -209,7 +209,8 @@ typedef enum {
    * Strip unassigned codepoints.
    */
   UTF8PROC_STRIPNA    = (1<<14),
-} utf8proc_option_t;
+} utf8proc_option_e;
+typedef int utf8proc_option_t;
 
 /** @name Error codes
  * Error codes being returned by almost all functions.

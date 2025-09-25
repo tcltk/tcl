@@ -4637,6 +4637,8 @@ TEBCresume(
 
     {
 	Tcl_HashEntry *hPtr;
+	JumptableInfo *jtPtr;
+	JumptableNumInfo *jtnPtr;
 
 	/*
 	 * Jump to location looked up in a hashtable; fall through to next
@@ -4645,7 +4647,7 @@ TEBCresume(
 
     case INST_JUMP_TABLE:
 	tblIdx = TclGetInt4AtPtr(pc + 1);
-	JumptableInfo *jtPtr = (JumptableInfo *)
+	jtPtr = (JumptableInfo *)
 		codePtr->auxDataArrayPtr[tblIdx].clientData;
 	TRACE(("%u \"%.20s\" => ", tblIdx, O2S(OBJ_AT_TOS)));
 	hPtr = Tcl_FindHashEntry(&jtPtr->hashTable, TclGetString(OBJ_AT_TOS));
@@ -4658,7 +4660,7 @@ TEBCresume(
 
     case INST_JUMP_TABLE_NUM:
 	tblIdx = TclGetInt4AtPtr(pc + 1);
-	JumptableNumInfo *jtnPtr = (JumptableNumInfo *)
+	jtnPtr = (JumptableNumInfo *)
 		codePtr->auxDataArrayPtr[tblIdx].clientData;
 	TRACE(("%u \"%.20s\" => ", tblIdx, O2S(OBJ_AT_TOS)));
 	DECACHE_STACK_INFO();
@@ -5017,9 +5019,11 @@ TEBCresume(
 	DECACHE_STACK_INFO();
 	oPtr = (Object *) Tcl_GetObjectFromObj(interp, OBJ_AT_TOS);
 	CACHE_STACK_INFO();
-	int match = oPtr != NULL;
-	TRACE_APPEND(("%d\n", match));
-	JUMP_PEEPHOLE_F(match, 1, 1);
+	{
+	    int match = oPtr != NULL;
+	    TRACE_APPEND(("%d\n", match));
+	    JUMP_PEEPHOLE_F(match, 1, 1);
+	}
     case INST_TCLOO_CLASS:
     case INST_TCLOO_NS:
     case INST_TCLOO_ID:
@@ -5161,47 +5165,49 @@ TEBCresume(
 	 */
 
 	valuePtr = OBJ_AT_TOS;
-	int encIndex = TclGetInt4AtPtr(pc + 1);
-	TRACE(("\"%.30s\" %d => ", O2S(valuePtr), encIndex));
+	{
+	    int encIndex = TclGetInt4AtPtr(pc + 1);
+	    TRACE(("\"%.30s\" %d => ", O2S(valuePtr), encIndex));
 
-	/*
-	 * Get the contents of the list, making sure that it really is a list
-	 * in the process.
-	 */
+	    /*
+	     * Get the contents of the list, making sure that it really is a list
+	     * in the process.
+	     */
 
-	/* special case for AbstractList */
-	if (TclObjTypeHasProc(valuePtr, indexProc)) {
-	    length = TclObjTypeLength(valuePtr);
+	    /* special case for AbstractList */
+	    if (TclObjTypeHasProc(valuePtr, indexProc)) {
+		length = TclObjTypeLength(valuePtr);
 
-	    /* Decode end-offset index values. */
-	    index = TclIndexDecode(encIndex, length - 1);
+		/* Decode end-offset index values. */
+		index = TclIndexDecode(encIndex, length - 1);
 
-	    if (index >= 0 && index < length) {
-		/* Compute value @ index */
-		DECACHE_STACK_INFO();
-		int code = TclObjTypeIndex(interp, valuePtr, index, &objResultPtr);
-		CACHE_STACK_INFO();
-		if (code != TCL_OK) {
-		    TRACE_ERROR(interp);
-		    goto gotError;
+		if (index >= 0 && index < length) {
+		    /* Compute value @ index */
+		    DECACHE_STACK_INFO();
+		    int code = TclObjTypeIndex(interp, valuePtr, index, &objResultPtr);
+		    CACHE_STACK_INFO();
+		    if (code != TCL_OK) {
+			TRACE_ERROR(interp);
+			goto gotError;
+		    }
+		} else {
+		    TclNewObj(objResultPtr);
 		}
-	    } else {
-		TclNewObj(objResultPtr);
+
+		pcAdjustment = 5;
+		goto lindexFastPath2;
 	    }
 
-	    pcAdjustment = 5;
-	    goto lindexFastPath2;
+	    /* List case */
+	    if (TclListObjGetElements(interp, valuePtr, &objc, &objv) != TCL_OK) {
+		TRACE_ERROR(interp);
+		goto gotError;
+	    }
+
+	    /* Decode end-offset index values. */
+
+	    index = TclIndexDecode(encIndex, objc - 1);
 	}
-
-	/* List case */
-	if (TclListObjGetElements(interp, valuePtr, &objc, &objv) != TCL_OK) {
-	    TRACE_ERROR(interp);
-	    goto gotError;
-	}
-
-	/* Decode end-offset index values. */
-
-	index = TclIndexDecode(encIndex, objc - 1);
 	pcAdjustment = 5;
 
     lindexFastPath:

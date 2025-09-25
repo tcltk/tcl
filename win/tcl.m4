@@ -723,7 +723,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		CFLAGS_WARNING="${CFLAGS_WARNING} -Wno-format"
 		;;
 	    *)
-		CFLAGS_WARNING="${CFLAGS_WARNING} -Wc++-compat -fextended-identifiers"
+		CFLAGS_WARNING="${CFLAGS_WARNING} -Wc++-compat -Wno-c++-keyword -fextended-identifiers"
 		;;
 	esac
 
@@ -945,8 +945,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	AC_DEFINE(EXCEPTION_DISPOSITION, int,
 		[Defined when cygwin/mingw does not support EXCEPTION DISPOSITION])
 	fi
-
-	AC_CHECK_HEADER(stdbool.h, [AC_DEFINE(HAVE_STDBOOL_H, 1, [Do we have <stdbool.h>?])],)
 
 	# See if the compiler supports casting to a union type.
 	# This is used to stop gcc from printing a compiler

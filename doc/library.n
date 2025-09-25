@@ -231,6 +231,7 @@ normally \fIbasenameversion\fR
 (e.g., tk8.0), but it might be
 .QW library
 when in the build hierarchies.
+The \fIpatch\fR argument is not used.
 The \fIinitScript\fR file will be sourced into the interpreter
 once it is found.  The directory in which this file is found is
 stored into the global variable \fIvarName\fR.
@@ -473,7 +474,7 @@ These variables are only used in the \fBtcl_endOfWord\fR,
 This variable contains a regular expression that is used by routines
 like \fBtcl_endOfWord\fR to identify whether a character is part of a
 word or not.  If the pattern matches a character, the character is
-considered to be a non-word character. The default value is \fB\eW\fR.
+considered to be a non-word character.  The default value is \fB\eW\fR.
 .\" VARIABLE: tcl_wordchars
 .TP
 \fBtcl_wordchars\fR
@@ -481,7 +482,7 @@ considered to be a non-word character. The default value is \fB\eW\fR.
 This variable contains a regular expression that is used by routines
 like \fBtcl_endOfWord\fR to identify whether a character is part of a
 word or not.  If the pattern matches a character, the character is
-considered to be a word character. The default value is \fB\ew\fR.
+considered to be a word character.  The default value is \fB\ew\fR.
 .SH "SEE ALSO"
 env(n), info(n), re_syntax(n)
 .SH KEYWORDS

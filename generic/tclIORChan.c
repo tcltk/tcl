@@ -391,26 +391,37 @@ static int		ForwardProc(Tcl_Event *evPtr, int mask);
 static void		SrcExitProc(void *clientData);
 
 #define FreeReceivedError(p) \
-	if ((p)->base.mustFree) {                               \
-	    Tcl_Free((p)->base.msgStr);                           \
-	}
-#define PassReceivedErrorInterp(i,p) \
-	if ((i) != NULL) {                                      \
-	    Tcl_SetChannelErrorInterp((i),                      \
-		    Tcl_NewStringObj((p)->base.msgStr, -1));    \
-	}                                                       \
-	FreeReceivedError(p)
-#define PassReceivedError(c,p) \
-	Tcl_SetChannelError((c), Tcl_NewStringObj((p)->base.msgStr, -1)); \
-	FreeReceivedError(p)
-#define ForwardSetStaticError(p,emsg) \
-	(p)->base.code = TCL_ERROR;                             \
-	(p)->base.mustFree = 0;                                 \
-	(p)->base.msgStr = (char *) (emsg)
-#define ForwardSetDynamicError(p,emsg) \
-	(p)->base.code = TCL_ERROR;                             \
-	(p)->base.mustFree = 1;                                 \
-	(p)->base.msgStr = (char *) (emsg)
+    do {							\
+	if ((p)->base.mustFree) {				\
+	    Tcl_Free((p)->base.msgStr);				\
+	}							\
+    } while (0)
+#define PassReceivedErrorInterp(interp, p) \
+    do {							\
+	if ((interp) != NULL) {					\
+	    Tcl_SetChannelErrorInterp((interp),			\
+		    Tcl_NewStringObj((p)->base.msgStr, -1));	\
+	}							\
+	FreeReceivedError(p);					\
+    } while (0)
+#define PassReceivedError(chan, p) \
+    do {							\
+	Tcl_SetChannelError((chan),				\
+		Tcl_NewStringObj((p)->base.msgStr, -1));	\
+	FreeReceivedError(p);					\
+    } while (0)
+#define ForwardSetStaticError(p, emsg) \
+    do {							\
+	(p)->base.code = TCL_ERROR;				\
+	(p)->base.mustFree = 0;					\
+	(p)->base.msgStr = (char *) (emsg);			\
+    } while (0)
+#define ForwardSetDynamicError(p, emsg) \
+    do {							\
+	(p)->base.code = TCL_ERROR;				\
+	(p)->base.mustFree = 1;					\
+	(p)->base.msgStr = (char *) (emsg);			\
+    } while (0)
 
 static void		ForwardSetObjError(ForwardParam *p, Tcl_Obj *objPtr);
 

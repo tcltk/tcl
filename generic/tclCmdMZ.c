@@ -3460,9 +3460,10 @@ TclNRSwitchObjCmd(
     int noCase;
     Tcl_Size patternLength, j;
     const char *pattern;
-    Tcl_Obj *stringObj, *indexVarObj, *matchVarObj;
+    Tcl_Obj *valueObj, *indexVarObj, *matchVarObj;
     Tcl_Obj *const *savedObjv = objv;
     Tcl_RegExp regExpr = NULL;
+    Tcl_WideInt intValue = 0, armValue;
     Interp *iPtr = (Interp *) interp;
     int pc = 0;
     int bidx = 0;		/* Index of body argument. */
@@ -3476,12 +3477,12 @@ TclNRSwitchObjCmd(
      */
 
     static const char *const options[] = {
-	"-exact", "-glob", "-indexvar", "-matchvar", "-nocase", "-regexp",
-	"--", NULL
+	"-exact", "-glob", "-indexvar", "-integer", "-matchvar", "-nocase",
+	"-regexp", "--", NULL
     };
     enum switchOptionsEnum {
-	OPT_EXACT, OPT_GLOB, OPT_INDEXV, OPT_MATCHV, OPT_NOCASE, OPT_REGEXP,
-	OPT_LAST
+	OPT_EXACT, OPT_GLOB, OPT_INDEXV, OPT_INTEGER, OPT_MATCHV, OPT_NOCASE,
+	OPT_REGEXP, OPT_LAST
     } index;
     typedef int (*strCmpFn_t)(const char *, const char *);
     strCmpFn_t strCmpFn = TclUtfCmp;
@@ -3588,8 +3589,15 @@ TclNRSwitchObjCmd(
 		"MODERESTRICTION", (char *)NULL);
 	return TCL_ERROR;
     }
+    if (noCase && mode == OPT_INTEGER) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"-nocase option cannot be used with -integer option"));
+	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "SWITCH",
+		"MODERESTRICTION", (char *)NULL);
+	return TCL_ERROR;
+    }
 
-    stringObj = objv[i];
+    valueObj = objv[i];
     objc -= i + 1;
     objv += i + 1;
     bidx = i + 1;		/* First after the match string. */
@@ -3681,6 +3689,12 @@ TclNRSwitchObjCmd(
 	return TCL_ERROR;
     }
 
+    if (mode == OPT_INTEGER) {
+	if (Tcl_GetWideIntFromObj(interp, valueObj, &intValue) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+    }
+
     for (i = 0; i < objc; i += 2) {
 	/*
 	 * See if the pattern matches the string.
@@ -3720,12 +3734,12 @@ TclNRSwitchObjCmd(
 
 	switch (mode) {
 	case OPT_EXACT:
-	    if (strCmpFn(TclGetString(stringObj), pattern) == 0) {
+	    if (strCmpFn(TclGetString(valueObj), pattern) == 0) {
 		goto matchFound;
 	    }
 	    break;
 	case OPT_GLOB:
-	    if (Tcl_StringCaseMatch(TclGetString(stringObj),pattern,noCase)) {
+	    if (Tcl_StringCaseMatch(TclGetString(valueObj),pattern,noCase)) {
 		goto matchFound;
 	    }
 	    break;
@@ -3735,7 +3749,7 @@ TclNRSwitchObjCmd(
 	    if (regExpr == NULL) {
 		return TCL_ERROR;
 	    } else {
-		int matched = Tcl_RegExpExecObj(interp, regExpr, stringObj, 0,
+		int matched = Tcl_RegExpExecObj(interp, regExpr, valueObj, 0,
 			numMatchesSaved, 0);
 
 		if (matched < 0) {
@@ -3743,6 +3757,13 @@ TclNRSwitchObjCmd(
 		} else if (matched) {
 		    goto matchFoundRegexp;
 		}
+	    }
+	    break;
+	case OPT_INTEGER:
+	    if (Tcl_GetWideIntFromObj(interp, objv[i], &armValue) != TCL_OK) {
+		return TCL_ERROR;
+	    } else if (intValue == armValue) {
+		goto matchFound;
 	    }
 	    break;
 	}
@@ -3794,7 +3815,7 @@ TclNRSwitchObjCmd(
 		Tcl_Obj *substringObj;
 
 		if (info.matches[j].end > 0) {
-		    substringObj = Tcl_GetRange(stringObj,
+		    substringObj = Tcl_GetRange(valueObj,
 			    info.matches[j].start, info.matches[j].end-1);
 		} else {
 		    TclNewObj(substringObj);

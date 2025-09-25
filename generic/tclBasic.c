@@ -2828,7 +2828,7 @@ Tcl_CreateObjCommand(
 	Namespace *dummy1, *dummy2;
 
 	TclGetNamespaceForQualName(interp, cmdName, NULL,
-	    TCL_CREATE_NS_IF_UNKNOWN, &nsPtr, &dummy1, &dummy2, &tail);
+		TCL_CREATE_NS_IF_UNKNOWN, &nsPtr, &dummy1, &dummy2, &tail);
 	if ((nsPtr == NULL) || (tail == NULL)) {
 	    return (Tcl_Command) NULL;
 	}
