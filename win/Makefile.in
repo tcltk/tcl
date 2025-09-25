@@ -720,7 +720,7 @@ install-libraries: libraries install-tzdata install-msgs
 		else true; \
 		fi; \
 	    done;
-	@for i in 8.4  8.4/platform 8.5 8.6; \
+	@for i in 8.5 8.6 8.6/platform; \
 	    do \
 	    if [ ! -d "$(MODULE_INSTALL_DIR)/$$i" ] ; then \
 		echo "Making directory $(MODULE_INSTALL_DIR)/$$i"; \
@@ -759,9 +759,9 @@ install-libraries: libraries install-tzdata install-msgs
 	@echo "Installing package tcltest 2.5.10 as a Tcl Module";
 	@$(COPY) $(ROOT_DIR)/library/tcltest/tcltest.tcl "$(MODULE_INSTALL_DIR)/8.5/tcltest-2.5.10.tm";
 	@echo "Installing package platform 1.1.0 as a Tcl Module";
-	@$(COPY) $(ROOT_DIR)/library/platform/platform.tcl "$(MODULE_INSTALL_DIR)/8.4/platform-1.1.0.tm";
+	@$(COPY) $(ROOT_DIR)/library/platform/platform.tcl "$(MODULE_INSTALL_DIR)/8.6/platform-1.1.0.tm";
 	@echo "Installing package platform::shell 1.1.4 as a Tcl Module";
-	@$(COPY) $(ROOT_DIR)/library/platform/shell.tcl "$(MODULE_INSTALL_DIR)/8.4/platform/shell-1.1.4.tm";
+	@$(COPY) $(ROOT_DIR)/library/platform/shell.tcl "$(MODULE_INSTALL_DIR)/8.6/platform/shell-1.1.4.tm";
 	@echo "Installing encodings";
 	@for i in $(ROOT_DIR)/library/encoding/*.enc ; do \
 		$(COPY) "$$i" "$(SCRIPT_INSTALL_DIR)/encoding"; \

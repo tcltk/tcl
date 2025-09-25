@@ -947,14 +947,12 @@ install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
 		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\opt0.4"
 	@if not exist "$(MODULE_INSTALL_DIR)" \
 		$(MKDIR) "$(MODULE_INSTALL_DIR)"
-	@if not exist "$(MODULE_INSTALL_DIR)\8.4" \
-		$(MKDIR) "$(MODULE_INSTALL_DIR)\8.4"
-	@if not exist "$(MODULE_INSTALL_DIR)\8.4\platform" \
-		$(MKDIR) "$(MODULE_INSTALL_DIR)\8.4\platform"
 	@if not exist "$(MODULE_INSTALL_DIR)\8.5" \
 		$(MKDIR) "$(MODULE_INSTALL_DIR)\8.5"
 	@if not exist "$(MODULE_INSTALL_DIR)\8.6" \
 		$(MKDIR) "$(MODULE_INSTALL_DIR)\8.6"
+	@if not exist "$(MODULE_INSTALL_DIR)\8.6\platform" \
+		$(MKDIR) "$(MODULE_INSTALL_DIR)\8.6\platform"
 	@if not exist "$(LIB_INSTALL_DIR)\nmake" \
 		$(MKDIR) "$(LIB_INSTALL_DIR)\nmake"
 	@echo Installing header files
@@ -992,10 +990,10 @@ install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
 	    "$(MODULE_INSTALL_DIR)\8.5\tcltest-$(PKG_TCLTEST_VER).tm"
 	@echo Installing package platform $(PKG_PLATFORM_VER) as a Tcl Module
 	@$(COPY) "$(ROOT)\library\platform\platform.tcl" \
-	    "$(MODULE_INSTALL_DIR)\8.4\platform-$(PKG_PLATFORM_VER).tm"
+	    "$(MODULE_INSTALL_DIR)\8.6\platform-$(PKG_PLATFORM_VER).tm"
 	@echo Installing package platform::shell $(PKG_SHELL_VER) as a Tcl Module
 	@$(COPY) "$(ROOT)\library\platform\shell.tcl" \
-	    "$(MODULE_INSTALL_DIR)\8.4\platform\shell-$(PKG_SHELL_VER).tm"
+	    "$(MODULE_INSTALL_DIR)\8.6\platform\shell-$(PKG_SHELL_VER).tm"
 	@echo Installing $(TCLDDELIBNAME)
 !if $(STATIC_BUILD)
 !if !$(TCL_USE_STATIC_PACKAGES)
