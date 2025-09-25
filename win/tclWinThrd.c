@@ -128,7 +128,7 @@ static DWORD tlsKey;
 
 typedef struct {
     Tcl_Mutex tlock;
-    CRITICAL_SECTION wlock;
+    WMutex wm;
 } allocMutex;
 #endif /* USE_THREAD_ALLOC */
 
@@ -1005,11 +1005,11 @@ TclpNewAllocMutex(void)
     allocMutex *lockPtr;
 
     lockPtr = (allocMutex *)malloc(sizeof(allocMutex));
+    lockPtr->tlock = (Tcl_Mutex)&lockPtr->wm;
     if (lockPtr == NULL) {
 	Tcl_Panic("could not allocate lock");
     }
-    lockPtr->tlock = (Tcl_Mutex) &lockPtr->wlock;
-    InitializeCriticalSection(&lockPtr->wlock);
+    WMutexInit(&lockPtr->wm);
     return &lockPtr->tlock;
 }
 
@@ -1019,10 +1019,11 @@ TclpFreeAllocMutex(
 {
     allocMutex *lockPtr = (allocMutex *) mutex;
 
-    if (!lockPtr) {
+    if (!lockPtr || !lockPtr->tlock) {
 	return;
     }
-    DeleteCriticalSection(&lockPtr->wlock);
+    lockPtr->tlock = NULL;
+    WMutexDestroy(&lockPtr->wm);
     free(lockPtr);
 }
 
