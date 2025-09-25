@@ -2532,7 +2532,7 @@ typedef enum {
  * TCL_PLATFORM_TRANSLATION to the native translation on that platform.
  */
 
-typedef enum TclEolTranslation {
+typedef enum {
     TCL_TRANSLATE_AUTO,		/* Eol == \r, \n and \r\n. */
     TCL_TRANSLATE_CR,		/* Eol == \r. */
     TCL_TRANSLATE_LF,		/* Eol == \n. */
@@ -2882,7 +2882,7 @@ typedef struct TclFileAttrProcs {
 
 typedef struct TclFile_ *TclFile;
 
-typedef enum Tcl_PathPart {
+typedef enum {
     TCL_PATH_DIRNAME,
     TCL_PATH_TAIL,
     TCL_PATH_EXTENSION,
@@ -4132,7 +4132,7 @@ MODULE_SCOPE Tcl_ObjCmdProc TclOOMyClassObjCmd;
  * The following enum values give the status of a spawned process.
  */
 
-typedef enum TclProcessWaitStatus {
+typedef enum {
     TCL_PROCESS_ERROR = -1,	/* Error waiting for process to exit */
     TCL_PROCESS_UNCHANGED = 0,	/* No change since the last call. */
     TCL_PROCESS_EXITED = 1,	/* Process has exited. */

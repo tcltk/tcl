@@ -37,7 +37,7 @@
  * Structure that represents a range of instructions in the bytecode.
  */
 
-typedef struct CodeRange {
+typedef struct {
     int startOffset;		/* Start offset in the bytecode array */
     int endOffset;		/* End offset in the bytecode array */
 } CodeRange;
@@ -191,7 +191,7 @@ typedef enum {
  * Description of an instruction recognized by the assembler.
  */
 
-typedef struct TalInstDesc {
+typedef struct {
     const char *name;		/* Name of instruction. */
     TalInstType instType;	/* The type of instruction */
     int tclInstCode;		/* Instruction code. For instructions having
@@ -209,7 +209,7 @@ typedef struct TalInstDesc {
  * Structure that holds the state of the assembler while generating code.
  */
 
-typedef struct AssemblyEnv {
+typedef struct {
     CompileEnv* envPtr;		/* Compilation environment being used for code
 				 * generation */
     Tcl_Parse* parsePtr;	/* Parse of the current line of source */

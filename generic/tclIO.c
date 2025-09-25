@@ -63,7 +63,7 @@ typedef struct NextChannelHandler {
  * state for a "gets" operation.
  */
 
-typedef struct GetsState {
+typedef struct {
     Tcl_Obj *objPtr;		/* The object to which UTF-8 characters
 				 * will be appended. */
     char **dstPtr;		/* Pointer into objPtr's string rep where

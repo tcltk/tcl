@@ -181,7 +181,7 @@ typedef struct ArraySearch {
  * variables to store their optional default value.
  */
 
-typedef struct ArrayVarHashTable {
+typedef struct {
     TclVarHashTable table;
     Tcl_Obj *defaultObj;
 } ArrayVarHashTable;

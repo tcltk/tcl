@@ -263,7 +263,7 @@ struct ZipEntry;
  * In-core description of mounted ZIP archive file.
  */
 
-typedef struct ZipFile {
+typedef struct {
     char *name;			/* Archive name */
     size_t nameLength;		/* Length of archive name */
     char isMemBuffer;		/* When true, not a file but a memory buffer */
@@ -332,7 +332,7 @@ enum ZipEntryFlags {
  * or may not point to allocated storage as above.
  */
 
-typedef struct ZipChannel {
+typedef struct {
     ZipFile *zipFilePtr;	/* The ZIP file holding this channel */
     ZipEntry *zipEntryPtr;	/* Pointer back to virtual file */
     Tcl_Size maxWrite;		/* Maximum size for write */

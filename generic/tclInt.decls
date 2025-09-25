@@ -559,7 +559,7 @@ declare 240 {
 }
 declare 241 {
     int TclNREvalObjEx(Tcl_Interp *interp, Tcl_Obj *objPtr, int flags,
-	    const CmdFrame *invoker, int word)
+	    const CmdFrame *invoker, Tcl_Size word)
 }
 declare 242 {
     int TclNREvalObjv(Tcl_Interp *interp, Tcl_Size objc,

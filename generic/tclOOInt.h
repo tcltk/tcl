@@ -365,19 +365,6 @@ struct Class {
 };
 
 /*
- * Master epoch counter for making unique IDs for objects that can be compared
- * cheaply.
- */
-typedef struct ThreadLocalData {
-    Tcl_Size nsCount;		/* Epoch counter is used for keeping
-				 * the values used in Tcl_Obj internal
-				 * representations sane. Must be thread-local
-				 * because Tcl_Objs can cross interpreter
-				 * boundaries within a thread (objects don't
-				 * generally cross threads). */
-} ThreadLocalData;
-
-/*
  * The foundation of the object system within an interpreter contains
  * references to the key classes and namespaces, together with a few other
  * useful bits and pieces. Probably ought to eventually go in the Interp
@@ -393,7 +380,7 @@ struct Foundation {
 				 * procedural method. */
     Tcl_Size epoch;		/* Used to invalidate method chains when the
 				 * class structure changes. */
-    ThreadLocalData *tsdPtr;	/* Counter so we can allocate a unique
+    Tcl_Size *nsCountPtr;	/* Pointer to a Counter so we can allocate a unique
 				 * namespace to each object. */
     Tcl_Obj *unknownMethodNameObj;
 				/* Shared object containing the name of the

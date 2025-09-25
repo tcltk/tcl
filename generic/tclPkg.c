@@ -43,7 +43,7 @@ typedef struct PkgName {
     char name[TCLFLEXARRAY];
 } PkgName;
 
-typedef struct PkgFiles {
+typedef struct {
     PkgName *names;		/* Package names being initialized. Must be
 				 * first field. */
     Tcl_HashTable table;	/* Table which contains files for each
@@ -67,14 +67,14 @@ typedef struct {
     const void *clientData;	/* Client data. */
 } Package;
 
-typedef struct Require {
+typedef struct {
     void *clientDataPtr;
     const char *name;
     Package *pkgPtr;
     char *versionToProvide;
 } Require;
 
-typedef struct RequireProcArgs {
+typedef struct {
     const char *name;
     void *clientDataPtr;
 } RequireProcArgs;

@@ -24,7 +24,7 @@
  * in order to return pointers into the original string.
  */
 
-typedef struct TclRegexp {
+typedef struct {
     int flags;			/* Regexp compile flags. */
     regex_t re;			/* Compiled re, includes number of
 				 * subexpressions. */

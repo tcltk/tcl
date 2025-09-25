@@ -48,13 +48,13 @@ static CRITICAL_SECTION initLock;
  * of their lock counts for condition variables.
  */
 
-typedef struct WMutex {
+typedef struct {
     CRITICAL_SECTION crit;
     volatile LONG thread;
     int counter;
 } WMutex;
 
-static struct WMutex allocLock;
+static WMutex allocLock;
 static WMutex *allocLockPtr = &allocLock;
 static int allocOnce = 0;
 

@@ -1525,7 +1525,7 @@ TclOOGetStereotypeCallChain(
     memset(callPtr, 0, sizeof(CallChain));
     callPtr->flags = flags & (PUBLIC_METHOD|PRIVATE_METHOD|FILTER_HANDLING);
     callPtr->epoch = fPtr->epoch;
-    callPtr->objectCreationEpoch = fPtr->tsdPtr->nsCount;
+    callPtr->objectCreationEpoch = *fPtr->nsCountPtr;
     callPtr->objectEpoch = clsPtr->thisPtr->epoch;
     callPtr->refCount = 1;
     callPtr->chain = callPtr->staticChain;

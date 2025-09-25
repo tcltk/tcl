@@ -37,7 +37,7 @@ static void UpdateStringOfLString(Tcl_Obj *objPtr);
  * Internal Representation of an lstring type value
  */
 
-typedef struct LString {
+typedef struct {
     char *string;		// NULL terminated utf-8 string
     Tcl_Size strlen;		// num bytes in string
     Tcl_Size allocated;		// num bytes allocated
@@ -951,7 +951,7 @@ lLStringObjCmd(
 /*
  * Internal rep for the Generate Series
  */
-typedef struct LgenSeries {
+typedef struct {
     Tcl_Interp *interp;		// used to evaluate gen script
     Tcl_Size len;		// list length
     Tcl_Size nargs;		// Number of arguments in genFn including "index"
