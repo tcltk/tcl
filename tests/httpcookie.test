@@ -24,7 +24,7 @@ testConstraint cookiejar [expr {[testConstraint sqlite3] && ![catch {
     package require cookiejar
 }]}]
 
-set COOKIEJAR_VERSION 0.2.0
+set COOKIEJAR_VERSION 0.2.1
 test http-cookiejar-1.1 "cookie storage: packaging" {cookiejar} {
     package require cookiejar
 } $COOKIEJAR_VERSION
