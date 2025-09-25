@@ -69,7 +69,7 @@ MODULE_SCOPE const char*TclpGetUserName(Tcl_DString *bufferPtr);
  *----------------------------------------------------------------------
  */
 
-typedef struct TclPipeThreadInfo {
+typedef struct {
     HANDLE evControl;		/* Auto-reset event used by the main thread to
 				 * signal when the pipe thread should attempt
 				 * to do read/write operation. Additionally

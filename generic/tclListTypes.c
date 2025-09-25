@@ -310,7 +310,7 @@ TclAbstractListUpdateString(
 	elem = Tcl_GetStringFromObj(elemObj, &length);
 	bytesNeeded += TclScanElement(elem, length, flagPtr + i);
 	if (bytesNeeded > SIZE_MAX - numElems) {
-	    Tcl_Panic("max size for a Tcl value (%" TCL_Z_MODIFIER
+	    Tcl_Panic("max size for a Tcl value (%" TCL_SIZE_MODIFIER
 		    "u bytes) exceeded",
 		    SIZE_MAX);
 	}

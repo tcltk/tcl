@@ -70,7 +70,7 @@
  * and threadlocal counters.
  */
 
-typedef struct PMutex {
+typedef struct {
     pthread_mutex_t mutex;
 #if defined(HAVE_PTHREAD_SPIN_LOCK) && !defined(HAVE_STDATOMIC_H)
     pthread_spinlock_t lock;

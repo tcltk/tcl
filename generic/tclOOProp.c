@@ -13,7 +13,7 @@
 #include "tclOOInt.h"
 
 /* Short-term cache for GetPropertyName(). */
-typedef struct GPNCache {
+typedef struct {
     Tcl_Obj *listPtr;		/* Holds references to names. */
     char *names[TCLFLEXARRAY];	/* NULL-terminated table of names. */
 } GPNCache;

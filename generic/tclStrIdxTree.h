@@ -35,7 +35,7 @@ typedef struct TclStrIdx TclStrIdx;
  * smart pointer to one of these) and is not actually a valid instance of
  * this structure.
  */
-typedef struct TclStrIdxTree {
+typedef struct {
     TclStrIdx *firstPtr;
     TclStrIdx *lastPtr;
 } TclStrIdxTree;

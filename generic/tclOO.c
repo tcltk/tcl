@@ -399,8 +399,8 @@ InitFoundation(
     Tcl_Interp *interp)
 {
     static Tcl_ThreadDataKey tsdKey;
-    ThreadLocalData *tsdPtr = (ThreadLocalData *)
-	    Tcl_GetThreadData(&tsdKey, sizeof(ThreadLocalData));
+    Tcl_Size *nsCountPtr = (Tcl_Size *)
+	    Tcl_GetThreadData(&tsdKey, sizeof(Tcl_Size));
     Foundation *fPtr = (Foundation *) Tcl_Alloc(sizeof(Foundation));
     Tcl_Namespace *define, *objdef;
     Tcl_Obj *namePtr;
@@ -423,7 +423,7 @@ InitFoundation(
 	    DeletedHelpersNamespace);
     Tcl_CreateNamespace(interp, "::oo::configuresupport", NULL, NULL);
     fPtr->epoch = 1;
-    fPtr->tsdPtr = tsdPtr;
+    fPtr->nsCountPtr = nsCountPtr;
 
     TclNewLiteralStringObj(fPtr->unknownMethodNameObj, "unknown");
     TclNewLiteralStringObj(fPtr->constructorName, "<constructor>");
@@ -893,18 +893,18 @@ AllocObject(
 	    Tcl_Free(oPtr);
 	    return NULL;
 	}
-	creationEpoch = ++fPtr->tsdPtr->nsCount;
+	creationEpoch = ++*fPtr->nsCountPtr;
 	goto configNamespace;
     }
 
     while (1) {
 	char objName[10 + TCL_INTEGER_SPACE];
 
-	snprintf(objName, sizeof(objName), "::oo::Obj%" TCL_Z_MODIFIER "u",
-		++fPtr->tsdPtr->nsCount);
+	snprintf(objName, sizeof(objName), "::oo::Obj%" TCL_SIZE_MODIFIER "u",
+		++*fPtr->nsCountPtr);
 	oPtr->namespacePtr = Tcl_CreateNamespace(interp, objName, oPtr, NULL);
 	if (oPtr->namespacePtr != NULL) {
-	    creationEpoch = fPtr->tsdPtr->nsCount;
+	    creationEpoch = *fPtr->nsCountPtr;
 	    break;
 	}
 

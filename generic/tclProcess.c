@@ -24,7 +24,7 @@ static int autopurge = 1;	/* Autopurge flag. */
  * child process ids and resolved pids, values are (ProcessInfo *).
  */
 
-typedef struct ProcessInfo {
+typedef struct {
     Tcl_Pid pid;		/* Process id. */
     Tcl_Size resolvedPid;	/* Resolved process id. */
     int purge;			/* Purge eventualy. */

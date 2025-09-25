@@ -23,11 +23,11 @@
  * Information about a single arm for [switch]. Used in an array to pass
  * information to the code-issuer functions.
  */
-typedef struct SwitchArmInfo {
+typedef struct {
     Tcl_Token *valueToken;	// The value to match for the arm.
     Tcl_WideInt valueInt;	// The value to match in integer mode.
     Tcl_Token *bodyToken;	// The body of an arm; NULL if fall-through.
-    Tcl_Size bodyLine;		// The line that the body starts on.
+    int bodyLine;		// The line that the body starts on.
     Tcl_Size *bodyContLines;	// Continuations within the body.
 } SwitchArmInfo;
 
@@ -56,15 +56,15 @@ static AuxDataPrintProc	PrintJumptableNumInfo;
 static AuxDataPrintProc	DisassembleJumptableNumInfo;
 static int		CompileAssociativeBinaryOpCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, const char *identity,
-			    int instruction, CompileEnv *envPtr);
+			    TclInstruction instruction, CompileEnv *envPtr);
 static int		CompileComparisonOpCmd(Tcl_Interp *interp,
-			    Tcl_Parse *parsePtr, int instruction,
+			    Tcl_Parse *parsePtr, TclInstruction instruction,
 			    CompileEnv *envPtr);
 static int		CompileStrictlyBinaryOpCmd(Tcl_Interp *interp,
-			    Tcl_Parse *parsePtr, int instruction,
+			    Tcl_Parse *parsePtr, TclInstruction instruction,
 			    CompileEnv *envPtr);
 static int		CompileUnaryOpCmd(Tcl_Interp *interp,
-			    Tcl_Parse *parsePtr, int instruction,
+			    Tcl_Parse *parsePtr, TclInstruction instruction,
 			    CompileEnv *envPtr);
 static void		IssueSwitchChainedTests(Tcl_Interp *interp,
 			    CompileEnv *envPtr, int mode, int noCase,
@@ -4949,7 +4949,7 @@ static int
 CompileUnaryOpCmd(
     Tcl_Interp *interp,
     Tcl_Parse *parsePtr,
-    int instruction,
+    TclInstruction instruction,
     CompileEnv *envPtr)
 {
     DefineLineInformation;	/* TIP #280 */
@@ -4991,7 +4991,7 @@ CompileAssociativeBinaryOpCmd(
     Tcl_Interp *interp,
     Tcl_Parse *parsePtr,
     const char *identity,
-    int instruction,
+    TclInstruction instruction,
     CompileEnv *envPtr)
 {
     DefineLineInformation;	/* TIP #280 */
@@ -5019,7 +5019,7 @@ CompileAssociativeBinaryOpCmd(
 	OP4(			REVERSE, words - 1);
     }
     while (--words > 1) {
-	TclEmitOpcode(instruction, envPtr);
+	TclEmitOpcode((unsigned char)instruction, envPtr);
     }
     return TCL_OK;
 }
@@ -5047,7 +5047,7 @@ static int
 CompileStrictlyBinaryOpCmd(
     Tcl_Interp *interp,
     Tcl_Parse *parsePtr,
-    int instruction,
+    TclInstruction instruction,
     CompileEnv *envPtr)
 {
     if (parsePtr->numWords != 3) {
@@ -5079,7 +5079,7 @@ static int
 CompileComparisonOpCmd(
     Tcl_Interp *interp,
     Tcl_Parse *parsePtr,
-    int instruction,
+    TclInstruction instruction,
     CompileEnv *envPtr)
 {
     DefineLineInformation;	/* TIP #280 */

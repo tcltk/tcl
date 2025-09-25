@@ -776,7 +776,7 @@ typedef struct Tcl_Namespace {
  * CallFrame structure in tclInt.h. If you change one, change the other.
  */
 
-typedef struct Tcl_CallFrame {
+typedef struct {
     Tcl_Namespace *nsPtr;	/* Current namespace for the call frame. */
     int dummy1;
     Tcl_Size dummy2;
@@ -1453,7 +1453,7 @@ typedef struct Tcl_ChannelType {
  * Enum for different types of file paths.
  */
 
-typedef enum Tcl_PathType {
+typedef enum {
     TCL_PATH_ABSOLUTE,
     TCL_PATH_RELATIVE,
     TCL_PATH_VOLUME_RELATIVE

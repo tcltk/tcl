@@ -64,7 +64,7 @@ enum ThreadSpecificDataTestFlags {
  * "thread create" Tcl command or the ThreadCreate() C function.
  */
 
-typedef struct ThreadCtrl {
+typedef struct {
     const char *script;		/* The Tcl command this thread should
 				 * execute */
     int flags;			/* Initial value of the "flags" field in the
@@ -83,7 +83,7 @@ typedef struct ThreadCtrl {
  * This is the event used to send scripts to other threads.
  */
 
-typedef struct ThreadEvent {
+typedef struct {
     Tcl_Event event;		/* Must be first */
     char *script;		/* The script to execute. */
     struct ThreadEventResult *resultPtr;
@@ -99,7 +99,7 @@ typedef struct ThreadEventResult {
     char *errorCode;		/* Copy of errorCode variable */
     Tcl_ThreadId srcThreadId;	/* Id of sending thread, in case it dies */
     Tcl_ThreadId dstThreadId;	/* Id of target thread, in case it dies */
-    struct ThreadEvent *eventPtr;	/* Back pointer */
+    ThreadEvent *eventPtr;	/* Back pointer */
     struct ThreadEventResult *nextPtr;	/* List for cleanup */
     struct ThreadEventResult *prevPtr;
 } ThreadEventResult;

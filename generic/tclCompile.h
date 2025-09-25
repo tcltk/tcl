@@ -623,7 +623,7 @@ typedef struct ByteCode {
  * tclExecute.c.
  */
 
-enum TclInstruction {
+typedef enum {
     /* Opcodes 0 to 9 */
     INST_DONE = 0,
     DEPRECATED_OPCODE(INST_PUSH1),
@@ -939,7 +939,7 @@ enum TclInstruction {
 
     /* The last opcode */
     LAST_INST_OPCODE
-};
+} TclInstruction;
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for displaying
@@ -952,7 +952,7 @@ enum TclInstruction {
 
 #define MAX_INSTRUCTION_OPERANDS 2
 
-typedef enum InstOperandType {
+typedef enum {
     OPERAND_NONE,
     OPERAND_INT1,		/* One byte signed integer. */
     OPERAND_INT4,		/* Four byte signed integer. */
@@ -978,7 +978,7 @@ typedef enum InstOperandType {
     OPERAND_LRPL1		/* Combination of TCL_LREPLACE_* flags. */
 } InstOperandType;
 
-typedef struct InstructionDesc {
+typedef struct {
     const char *name;		/* Name of instruction. */
     int numBytes;		/* Total number of bytes for instruction. */
     int stackEffect;		/* The worst-case balance stack effect of the
@@ -999,7 +999,7 @@ MODULE_SCOPE InstructionDesc const tclInstructionTable[];
  * no requirement to keep the values the same.
  */
 
-typedef enum InstStringClassType {
+typedef enum {
     STR_CLASS_ALNUM,		/* Unicode alphabet or digit characters. */
     STR_CLASS_ALPHA,		/* Unicode alphabet characters. */
     STR_CLASS_ASCII,		/* Characters in range U+000000..U+00007F. */

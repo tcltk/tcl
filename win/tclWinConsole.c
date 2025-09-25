@@ -93,7 +93,7 @@ static int gInitialized = 0;
  * Ring buffer for storing data. Actual data is from bufPtr[start]:bufPtr[size-1]
  * and bufPtr[0]:bufPtr[length - (size-start)].
  */
-typedef struct RingBuffer {
+typedef struct {
     char *bufPtr;		/* Pointer to buffer storage */
     Tcl_Size capacity;		/* Size of the buffer in RingBufferChar */
     Tcl_Size start;		/* Start of the data within the buffer. */

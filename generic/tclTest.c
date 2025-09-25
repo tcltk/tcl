@@ -4102,37 +4102,37 @@ TestlistapiCmd(
 		objPtr, Tcl_NewStringObj((var_), -1));		\
     } while (0)
 
-    Tcl_Obj *objPtr = Tcl_NewListObj(0, NULL);
-    APPENDINT(status, status);
-    APPENDINT(srcPtr, srcPtr);
-    if (srcPtr) {
-	APPENDINT(srcRefCount, srcPtr->refCount);
-	if (srcPtr->typePtr && srcPtr->typePtr->name) {
-	    APPENDSTR(srcType, srcPtr->typePtr->name);
-	}
-	else {
-	    APPENDSTR(srcType, "");
-	}
-    }
-    APPENDINT(resultPtr, resultPtr);
-    if (status == TCL_OK) {
-	if (resultPtr) {
-	    APPENDINT(resultRefCount, resultPtr->refCount);
-	    if (resultPtr->typePtr && resultPtr->typePtr->name) {
-		APPENDSTR(resultType, resultPtr->typePtr->name);
+    {
+	Tcl_Obj *objPtr = Tcl_NewListObj(0, NULL);
+	APPENDINT(status, status);
+	APPENDINT(srcPtr, srcPtr);
+	if (srcPtr) {
+	    APPENDINT(srcRefCount, srcPtr->refCount);
+	    if (srcPtr->typePtr && srcPtr->typePtr->name) {
+		APPENDSTR(srcType, srcPtr->typePtr->name);
+	    } else {
+		APPENDSTR(srcType, "");
 	    }
-	    else {
-		APPENDSTR(resultType, "");
+	}
+	APPENDINT(resultPtr, resultPtr);
+	if (status == TCL_OK) {
+	    if (resultPtr) {
+		APPENDINT(resultRefCount, resultPtr->refCount);
+		if (resultPtr->typePtr && resultPtr->typePtr->name) {
+		    APPENDSTR(resultType, resultPtr->typePtr->name);
+		} else {
+		    APPENDSTR(resultType, "");
+		}
+		Tcl_ListObjAppendElement(NULL, objPtr, Tcl_NewStringObj("result", -1));
+		Tcl_ListObjAppendElement(NULL, objPtr, resultPtr);
 	    }
+	} else {
 	    Tcl_ListObjAppendElement(NULL, objPtr, Tcl_NewStringObj("result", -1));
-	    Tcl_ListObjAppendElement(NULL, objPtr, resultPtr);
+	    Tcl_ListObjAppendElement(NULL, objPtr, Tcl_GetObjResult(interp));
+	    status = TCL_OK; /* Irrespective of what Tcl_ListObj*() returned */
 	}
-    } else {
-	Tcl_ListObjAppendElement(NULL, objPtr, Tcl_NewStringObj("result", -1));
-	Tcl_ListObjAppendElement(NULL, objPtr, Tcl_GetObjResult(interp));
-	status = TCL_OK; /* Irrespective of what Tcl_ListObj*() returned */
+	Tcl_SetObjResult(interp, objPtr);
     }
-    Tcl_SetObjResult(interp, objPtr);
 
 vamoose:
     if (srcPtr) {
@@ -8793,7 +8793,7 @@ InterpVarResolver(
     return TCL_CONTINUE;
 }
 
-typedef struct MyResolvedVarInfo {
+typedef struct {
     Tcl_ResolvedVarInfo vInfo;	/* This must be the first element. */
     Tcl_Var var;
     Tcl_Obj *nameObj;
@@ -9168,7 +9168,7 @@ TestUtfToNormalizedCmd(
 	}
     }
     int result;
-    char buffer[20] = {0x80};
+    char buffer[20] = {'\x80'};
     char *bufPtr;
     Tcl_Size bufStored = 0;
     if (bufLen > (int)sizeof(buffer)) {

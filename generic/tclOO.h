@@ -78,7 +78,7 @@ typedef int (Tcl_ObjectMapMethodNameProc)(Tcl_Interp *interp,
  * how to create a clone of it (when the object or class is copied).
  */
 
-typedef struct Tcl_MethodType {
+typedef struct {
     int version;		/* Structure version field. Always to be equal
 				 * to TCL_OO_METHOD_VERSION_(1|CURRENT) in
 				 * declarations. */
@@ -95,7 +95,7 @@ typedef struct Tcl_MethodType {
 				 * be copied directly. */
 } Tcl_MethodType;
 
-typedef struct Tcl_MethodType2 {
+typedef struct {
     int version;		/* Structure version field. Always to be equal
 				 * to TCL_OO_METHOD_VERSION_2 in
 				 * declarations. */

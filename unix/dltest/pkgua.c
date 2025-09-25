@@ -23,7 +23,7 @@
  * renamed.
  */
 
-typedef struct ThreadSpecificData {
+typedef struct {
     int interpTokenMapInitialised;
     Tcl_HashTable interpTokenMap;
 } ThreadSpecificData;

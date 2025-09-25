@@ -102,7 +102,7 @@ SetDelegateSuperclasses(
     Class *delegatePtr)
 {
     // Build new list of superclasses
-    int i, j = delegatePtr->superclasses.num, k;
+    Tcl_Size i, j = delegatePtr->superclasses.num, k;
     Class *superPtr, **supers = (Class **) Tcl_Alloc(sizeof(Class *) *
 	    (delegatePtr->superclasses.num + clsPtr->superclasses.num));
     if (delegatePtr->superclasses.num) {
@@ -618,7 +618,7 @@ TclOO_Object_Cloned(
     int objc,			// Number of arguments.
     Tcl_Obj *const *objv)	// The actual arguments.
 {
-    int skip = Tcl_ObjectContextSkippedArgs(context);
+    Tcl_Size skip = Tcl_ObjectContextSkippedArgs(context);
     if (objc != skip + 1) {
 	Tcl_WrongNumArgs(interp, skip, objv, "originObject");
 	return TCL_ERROR;
