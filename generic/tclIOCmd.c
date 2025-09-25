@@ -1063,8 +1063,8 @@ Tcl_ExecObjCmd(
 
     /* TIP 716 */
     if (encodingObj &&
-	Tcl_SetChannelOption(interp, chan, "-encoding",
-	    Tcl_GetString(encodingObj)) != TCL_OK) {
+	    Tcl_SetChannelOption(interp, chan, "-encoding",
+		    Tcl_GetString(encodingObj)) != TCL_OK) {
 	goto errorWithOpenChannel;
     }
 

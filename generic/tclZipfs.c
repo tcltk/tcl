@@ -4409,9 +4409,9 @@ TclZipfs_TclLibrary(void)
 {
     /*
      * Assumes TclZipfsLocateTclLibrary has already been called at startup
-     * through Tcl_InitSubsystems.
+     * through TclZipfs_AppHook. Custom applications that fail to do so will not
+     * have the embedded zipfs tcl library feature available.
      */
-    assert(zipfs_tcl_library_init);
     if (zipfs_literal_tcl_library) {
 	return Tcl_NewStringObj(zipfs_literal_tcl_library, -1);
     }
@@ -6427,16 +6427,17 @@ TclZipfsInitEncodingDirs(void)
     if (zipfs_literal_tcl_library == NULL) {
 	return TCL_ERROR;
     }
-    Tcl_Obj *libDirObj = Tcl_NewStringObj(zipfs_literal_tcl_library, -1);
     Tcl_Obj *subDirObj, *searchPathObj;
-
+    Tcl_Obj *libDirObj = Tcl_NewStringObj(zipfs_literal_tcl_library, -1);
+    Tcl_IncrRefCount(libDirObj);
     TclNewLiteralStringObj(subDirObj, "encoding");
     Tcl_IncrRefCount(subDirObj);
     TclNewObj(searchPathObj);
     Tcl_ListObjAppendElement(NULL, searchPathObj,
 	    Tcl_FSJoinToPath(libDirObj, 1, &subDirObj));
-    Tcl_DecrRefCount(subDirObj);
     Tcl_IncrRefCount(searchPathObj);
+    Tcl_DecrRefCount(subDirObj);
+    Tcl_DecrRefCount(libDirObj);
     Tcl_SetEncodingSearchPath(searchPathObj);
     Tcl_DecrRefCount(searchPathObj);
     /* Reinit system encoding after setting search path */
@@ -6462,7 +6463,7 @@ TclZipfs_AppHook(
     TCL_UNUSED(int *), /*argcPtr*/
 #endif
 #ifdef _WIN32
-    TCL_UNUSED(WCHAR ***)) /* argvPtr */
+    TCL_UNUSED(unsigned short ***)) /* argvPtr */
 #else /* !_WIN32 */
     char ***argvPtr)		/* Pointer to argv */
 #endif /* _WIN32 */
