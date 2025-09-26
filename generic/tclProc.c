@@ -34,14 +34,14 @@ typedef struct {
 static void		DupLambdaInternalRep(Tcl_Obj *objPtr,
 			    Tcl_Obj *copyPtr);
 static void		FreeLambdaInternalRep(Tcl_Obj *objPtr);
-static int		InitArgsAndLocals(Tcl_Interp *interp, int skip);
+static int		InitArgsAndLocals(Tcl_Interp *interp, Tcl_Size skip);
 static void		InitResolvedLocals(Tcl_Interp *interp,
 			    ByteCode *codePtr, Var *defPtr,
 			    Namespace *nsPtr);
 static void		InitLocalCache(Proc *procPtr);
 static void		ProcBodyDup(Tcl_Obj *srcPtr, Tcl_Obj *dupPtr);
 static void		ProcBodyFree(Tcl_Obj *objPtr);
-static int		ProcWrongNumArgs(Tcl_Interp *interp, int skip);
+static int		ProcWrongNumArgs(Tcl_Interp *interp, Tcl_Size skip);
 static void		MakeProcError(Tcl_Interp *interp,
 			    Tcl_Obj *procNameObj);
 static void		MakeLambdaError(Tcl_Interp *interp,
@@ -50,7 +50,6 @@ static int		SetLambdaFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 
 static Tcl_NRPostProc ApplyNR2;
 static Tcl_NRPostProc InterpProcNR2;
-static Tcl_ObjCmdProc NRInterpProc;
 
 /*
  * The ProcBodyObjType type
@@ -153,7 +152,7 @@ static const Tcl_ObjType lambdaType = {
  *----------------------------------------------------------------------
  */
 
-#undef TclObjInterpProc
+#undef TclObjInterpProc2
 int
 Tcl_ProcObjCmd(
     TCL_UNUSED(void *),
@@ -211,7 +210,7 @@ Tcl_ProcObjCmd(
     }
 
     cmd = TclNRCreateCommandInNs(interp, simpleName, (Tcl_Namespace *) nsPtr,
-	TclObjInterpProc, NRInterpProc, procPtr, TclProcDeleteProc);
+	TclObjInterpProc2, TclNRInterpProc, procPtr, TclProcDeleteProc);
 
     /*
      * Now initialize the new procedure's cmdPtr field. This will be used
@@ -782,7 +781,7 @@ TclObjGetFrame(
 				 * no frame resolution is wanted. */
 {
     Interp *iPtr = (Interp *) interp;
-    int curLevel;
+    Tcl_Size curLevel;
     int result, level;
     const Tcl_ObjInternalRep *irPtr;
     const char *name = NULL;
@@ -804,14 +803,14 @@ TclObjGetFrame(
 	/* Do nothing */
     } else if (TCL_OK == Tcl_GetIntFromObj(NULL, objPtr, &level)) {
 	TclGetWideIntFromObj(NULL, objPtr, &w);
-	if (w < 0 || w > INT_MAX || curLevel > w + INT_MAX) {
+	if (w < 0 || w > INT_MAX || curLevel > INT_MAX) {
 	    result = -1;
 	} else {
-	    level = curLevel - level;
+	    level = (int)curLevel - level;
 	    result = 1;
 	}
     } else if ((irPtr = TclFetchInternalRep(objPtr, &levelReferenceType))) {
-	level = irPtr->wideValue;
+	level = (int)irPtr->wideValue;
 	result = 1;
     } else {
 	name = TclGetString(objPtr);
@@ -850,7 +849,7 @@ TclObjGetFrame(
 		name = "1";
 		goto badLevel;
 	    }
-	    level = curLevel - 1;
+	    level = (int)curLevel - 1;
 	}
 	if (level >= 0) {
 	    CallFrame *framePtr;
@@ -914,23 +913,23 @@ int
 Tcl_UplevelObjCmd(
     void *clientData,
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    return Tcl_NRCallObjProc(interp, TclNRUplevelObjCmd, clientData, objc, objv);
+    return Tcl_NRCallObjProc2(interp, TclNRUplevelObjCmd, clientData, objc, objv);
 }
 
 int
 TclNRUplevelObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
 
     Interp *iPtr = (Interp *) interp;
     CmdFrame *invoker = NULL;
-    int word = 0;
+    Tcl_Size word = 0;
     int result;
     CallFrame *savedVarFramePtr, *framePtr;
     Tcl_Obj *objPtr;
@@ -1079,7 +1078,7 @@ TclIsProc(
 	cmdPtr = (Command *) origCmd;
     }
     if (cmdPtr->deleteProc == TclProcDeleteProc) {
-	return (Proc *)cmdPtr->objClientData;
+	return (Proc *)cmdPtr->objClientData2;
     }
     return NULL;
 }
@@ -1087,7 +1086,7 @@ TclIsProc(
 static int
 ProcWrongNumArgs(
     Tcl_Interp *interp,
-    int skip)
+    Tcl_Size skip)
 {
     CallFrame *framePtr = ((Interp *)interp)->varFramePtr;
     Proc *procPtr = framePtr->procPtr;
@@ -1171,7 +1170,7 @@ InitResolvedLocals(
     Interp *iPtr = (Interp *) interp;
     int haveResolvers = (nsPtr->compiledVarResProc || iPtr->resolverPtr);
     CompiledLocal *firstLocalPtr, *localPtr;
-    int varNum;
+    Tcl_Size varNum;
     Tcl_ResolvedVarInfo *resVarInfo;
 
     /*
@@ -1366,7 +1365,7 @@ static int
 InitArgsAndLocals(
     Tcl_Interp *interp,		/* Interpreter in which procedure was
 				 * invoked. */
-    int skip)			/* Number of initial arguments to be skipped,
+    Tcl_Size skip)			/* Number of initial arguments to be skipped,
 				 * i.e., words in the "command name". */
 {
     CallFrame *framePtr = ((Interp *)interp)->varFramePtr;
@@ -1606,7 +1605,7 @@ TclPushProcCallFrame(
 /*
  *----------------------------------------------------------------------
  *
- * TclObjInterpProc --
+ * TclObjInterpProc2/TclNRInterpProc --
  *
  *	When a Tcl procedure gets invoked during bytecode evaluation, this
  *	object-based routine gets invoked to interpret the procedure.
@@ -1621,12 +1620,12 @@ TclPushProcCallFrame(
  */
 
 int
-TclObjInterpProc(
+TclObjInterpProc2(
     void *clientData,		/* Record describing procedure to be
 				 * interpreted. */
     Tcl_Interp *interp,		/* Interpreter in which procedure was
 				 * invoked. */
-    int objc,			/* Count of number of arguments to this
+    Tcl_Size objc,			/* Count of number of arguments to this
 				 * procedure. */
     Tcl_Obj *const objv[])	/* Argument value objects. */
 {
@@ -1634,7 +1633,7 @@ TclObjInterpProc(
      * Not used much in the core; external interface for iTcl
      */
 
-    return Tcl_NRCallObjProc(interp, NRInterpProc, clientData, objc, objv);
+    return Tcl_NRCallObjProc2(interp, TclNRInterpProc, clientData, objc, objv);
 }
 
 int
@@ -1656,9 +1655,10 @@ TclNRInterpProc(
     return TclNRInterpProcCore(interp, objv[0], 1, &MakeProcError);
 }
 
+#ifndef TCL_NO_DEPRECATED
 static int
 NRInterpProc(
-    void *clientData,		/* Record describing procedure to be
+    void *clientData,	/* Record describing procedure to be
 				 * interpreted. */
     Tcl_Interp *interp,		/* Interpreter in which procedure was
 				 * invoked. */
@@ -1675,13 +1675,14 @@ NRInterpProc(
     return TclNRInterpProcCore(interp, objv[0], 1, &MakeProcError);
 }
 
-static int
-ObjInterpProc2(
+#undef TclObjInterpProc
+int
+TclObjInterpProc(
     void *clientData,		/* Record describing procedure to be
 				 * interpreted. */
-    Tcl_Interp *interp,		/* Interpreter in which procedure was
+    Tcl_Interp *interp, 	/* Interpreter in which procedure was
 				 * invoked. */
-    Tcl_Size objc,		/* Count of number of arguments to this
+    int objc,			/* Count of number of arguments to this
 				 * procedure. */
     Tcl_Obj *const objv[])	/* Argument value objects. */
 {
@@ -1689,9 +1690,11 @@ ObjInterpProc2(
      * Not used much in the core; external interface for iTcl
      */
 
-    return Tcl_NRCallObjProc2(interp, TclNRInterpProc, clientData, objc, objv);
+    return Tcl_NRCallObjProc(interp, NRInterpProc, clientData, objc, objv);
 }
-
+#endif /* TCL_NO_DEPRECATED */
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -2015,7 +2018,7 @@ TclProcCompileProc(
 	if (procPtr->numCompiledLocals > procPtr->numArgs) {
 	    CompiledLocal *clPtr = procPtr->firstLocalPtr;
 	    CompiledLocal *lastPtr = NULL;
-	    int i, numArgs = procPtr->numArgs;
+	    Tcl_Size i, numArgs = procPtr->numArgs;
 
 	    for (i = 0; i < numArgs; i++) {
 		lastPtr = clPtr;
@@ -2080,7 +2083,7 @@ TclProcCompileProc(
  *
  * MakeProcError --
  *
- *	Function called by TclObjInterpProc to create the stack information
+ *	Function called by TclObjInterpProc2 to create the stack information
  *	upon an error from a procedure.
  *
  * Results:
@@ -2282,16 +2285,15 @@ TclUpdateReturnInfo(
 /*
  *----------------------------------------------------------------------
  *
- * TclGetObjInterpProc/TclGetObjInterpProc2 --
+ * TclGetObjInterpProc2 --
  *
- *	Returns a pointer to the TclObjInterpProc/ObjInterpProc2 functions;
- *	this is different from the value obtained from the TclObjInterpProc
- *	reference on systems like Windows where import and export versions
- *	of a function exported by a DLL exist.
+ *	Returns a pointer to the TclObjInterpProc2 function; this is different
+ *	from the value obtained from the TclObjInterpProc2 reference on systems
+ *	like Windows where import and export versions of a function exported
+ *	by a DLL exist.
  *
  * Results:
- *	Returns the internal address of the TclObjInterpProc/ObjInterpProc2
- *	functions.
+ *	Returns the internal address of the TclObjInterpProc2 function.
  *
  * Side effects:
  *	None.
@@ -2299,16 +2301,18 @@ TclUpdateReturnInfo(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 Tcl_ObjCmdProc *
 TclGetObjInterpProc(void)
 {
     return TclObjInterpProc;
 }
+#endif /* TCL_NO_DEPRECATED */
 
 Tcl_ObjCmdProc2 *
 TclGetObjInterpProc2(void)
 {
-    return ObjInterpProc2;
+    return TclObjInterpProc2;
 }
 
 /*
@@ -2682,17 +2686,17 @@ int
 Tcl_ApplyObjCmd(
     void *clientData,
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    return Tcl_NRCallObjProc(interp, TclNRApplyObjCmd, clientData, objc, objv);
+    return Tcl_NRCallObjProc2(interp, TclNRApplyObjCmd, clientData, objc, objv);
 }
 
 int
 TclNRApplyObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Proc *procPtr = NULL;
@@ -2720,7 +2724,7 @@ TclNRApplyObjCmd(
 
     /*
      * Push a call frame for the lambda namespace.
-     * Note that TclObjInterpProc() will pop it.
+     * Note that TclObjInterpProc2() will pop it.
      */
 
     result = TclGetNamespaceFromObj(interp, nsObjPtr, &nsPtr);
@@ -2774,7 +2778,7 @@ ApplyNR2(
  *
  * MakeLambdaError --
  *
- *	Function called by TclObjInterpProc to create the stack information
+ *	Function called by TclObjInterpProc2 to create the stack information
  *	upon an error from a lambda term.
  *
  * Results:
@@ -2938,7 +2942,7 @@ DuplicateProc(
 
     // Create the new command backed by the procedure.
     newProc->cmdPtr = (Command *) TclNRCreateCommandInNs(interp, cmdName,
-	    (Tcl_Namespace *) nsPtr, TclObjInterpProc, NRInterpProc, newProc,
+	    (Tcl_Namespace *) nsPtr, TclObjInterpProc2, TclNRInterpProc, newProc,
 	    TclProcDeleteProc);
 
     // TIP #280: Duplicate the origin information (if we have it).
@@ -3007,7 +3011,7 @@ TclCopyNamespaceProcedures(
 	Command *cmdPtr = (Command *) Tcl_GetHashValue(entryPtr);
 
 	// For non-procedures, check if this is an import of a procedure; those
-	// also get copied.
+	// also get copied.s
 	if (!TclIsProc(cmdPtr)) {
 	    Command *realCmdPtr = (Command *)
 		    TclGetOriginalCommand((Tcl_Command) cmdPtr);
@@ -3018,7 +3022,7 @@ TclCopyNamespaceProcedures(
 	}
 
 	// Make the copy
-	Proc *procPtr = (Proc *) cmdPtr->objClientData;
+	Proc *procPtr = (Proc *) cmdPtr->objClientData2;
 	if (DuplicateProc(interp, tgtNsPtr, cmdName, procPtr, cmdPtr) != TCL_OK) {
 	    return TCL_ERROR;
 	}
