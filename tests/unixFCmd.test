@@ -30,10 +30,10 @@ cd [temporaryDirectory]
 set user {}
 if {[testConstraint unix]} {
     catch {set user [exec whoami]}
-    if {$user == ""} {
+    if {$user eq ""} {
 	catch {regexp {^[^(]*\(([^)]*)\)} [exec id] dummy user}
     }
-    if {$user == ""} {
+    if {$user eq ""} {
 	set user "root"
     }
 }

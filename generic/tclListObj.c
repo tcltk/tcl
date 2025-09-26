@@ -504,8 +504,8 @@ TclListLimitExceededError(
      */
     if (interp != NULL) {
 	TclPrintfResult(interp,
-		"max length (%" TCL_SIZE_MODIFIER
-		"d) of a Tcl list exceeded", (Tcl_Size)LIST_MAX);
+		"max length (%" TCL_SIZE_MODIFIER "d) of a Tcl list exceeded",
+		(Tcl_Size)LIST_MAX);
 	TclSetErrorCode(interp, "TCL", "MEMORY");
     }
     return TCL_ERROR;
@@ -2138,7 +2138,7 @@ Tcl_ListObjReplace(
     if (numToDelete < 0) {
 	numToDelete = 0;
     } else if (first > LIST_MAX - numToDelete /* Handle integer overflow */
-	     || origListLen < first + numToDelete) {
+	    || origListLen < first + numToDelete) {
 	numToDelete = origListLen - first;
     }
 

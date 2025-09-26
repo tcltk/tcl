@@ -45,7 +45,9 @@
 
 #ifdef _MSC_VER
 #pragma warning( disable : 4102 )
-#elif defined (__clang__) || ((__GNUC__)  && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5))))
+#elif defined (__clang__) && (__clang_major__ > 14)
+#pragma clang diagnostic ignored "-Wunused-but-set-variable"
+#elif (__GNUC__)  && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5)))
 #pragma GCC diagnostic ignored "-Wunused-but-set-variable"
 #endif
 
@@ -106,7 +108,7 @@ typedef enum _DSTMODE {
 
 %union {
     Tcl_WideInt Number;
-    enum _MERIDIAN Meridian;
+    MERIDIAN Meridian;
 }
 
 %{
@@ -716,7 +718,7 @@ TclDateerror(
 }
 
 int
-ToSeconds(
+TclToSeconds(
     int Hours,
     int Minutes,
     int Seconds,

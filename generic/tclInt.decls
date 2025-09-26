@@ -555,7 +555,7 @@ declare 239 {
 }
 declare 240 {
     int TclNRRunCallbacks(Tcl_Interp *interp, int result,
-	      struct NRE_callback *rootPtr)
+	    struct NRE_callback *rootPtr)
 }
 declare 241 {
     int TclNREvalObjEx(Tcl_Interp *interp, Tcl_Obj *objPtr, int flags,
@@ -563,7 +563,7 @@ declare 241 {
 }
 declare 242 {
     int TclNREvalObjv(Tcl_Interp *interp, Tcl_Size objc,
-	      Tcl_Obj *const objv[], int flags, Command *cmdPtr)
+	    Tcl_Obj *const objv[], int flags, Command *cmdPtr)
 }
 
 # Tcl_Obj leak detection support.
@@ -593,7 +593,7 @@ declare 248 {
 
 declare 249 {
     char *TclDoubleDigits(double dv, int ndigits, int flags,
-			  int *decpt, int *signum, char **endPtr)
+	    int *decpt, int *signum, char **endPtr)
 }
 # TIP #285: Script cancellation support.
 declare 250 {

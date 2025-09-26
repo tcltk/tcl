@@ -224,6 +224,8 @@ TCLDDELIB	= $(OUT_DIR)\$(TCLDDELIBNAME)
 TCLTEST		= $(OUT_DIR)\$(PROJECT)test$(VERSION)$(SUFX:t=).exe
 TCLTESTRAW	= $(TCLTEST:.exe=-raw.exe)
 
+UTF8PROCDIR	= $(ROOT)\utf8proc
+
 TCLSHOBJS = \
 	$(TMP_DIR)\tclAppInit.obj \
 	$(TMP_DIR)\tclsh.res
@@ -335,7 +337,8 @@ COREOBJS = \
 	$(TMP_DIR)\tclUtil.obj \
 	$(TMP_DIR)\tclVar.obj \
 	$(TMP_DIR)\tclZipfs.obj \
-	$(TMP_DIR)\tclZlib.obj
+	$(TMP_DIR)\tclZlib.obj \
+	$(TMP_DIR)\utf8proc.obj \
 
 !if $(STATIC_BUILD)
 ZLIBOBJS = \
@@ -473,7 +476,7 @@ LIBTCLVFS = $(OUT_DIR)\$(LIBTCLVFSSUBDIR)
 # Additional include and C macro definitions for the implicit rules
 # defined in rules.vc
 PRJ_INCLUDES	= -I"$(TOMMATHDIR)"
-PRJ_DEFINES	= /DMP_PREC=4 /Dinline=__inline /D_CRT_SECURE_NO_DEPRECATE /D_CRT_NONSTDC_NO_DEPRECATE /DMP_FIXED_CUTOFFS
+PRJ_DEFINES	= /DMP_PREC=4 /Dinline=__inline /D_CRT_SECURE_NO_DEPRECATE /D_CRT_NONSTDC_NO_DEPRECATE /DMP_FIXED_CUTOFFS /DUTF8PROC_STATIC
 
 !if $(STATIC_BUILD)
 PRJ_DEFINES = $(PRJ_DEFINES) /DTCL_WITH_INTERNAL_ZLIB
@@ -1023,6 +1026,11 @@ $(TCLOBJS)
 # source directory can not contain spaces in the path.  This an
 # absolute.
 #---------------------------------------------------------------------
+
+{$(UTF8PROCDIR)}.c{$(TMP_DIR)}.obj::
+	$(cc32) $(pkgcflags) -Fo$(TMP_DIR)\ @<<
+$<
+<<
 
 {$(TOMMATHDIR)}.c{$(TMP_DIR)}.obj::
 	$(cc32) $(pkgcflags) -Fo$(TMP_DIR)\ @<<

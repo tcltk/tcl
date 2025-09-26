@@ -266,12 +266,14 @@ typedef struct CmdInfo {
     int flags;			/* Various flag bits, as defined below. */
 } CmdInfo;
 
-#define CMD_IS_SAFE 1		/* Whether this command is part of the set of
+enum CmdInfoFlags {
+    CMD_IS_SAFE = 1		/* Whether this command is part of the set of
 				 * commands present by default in a safe
 				 * interpreter. */
 /* CMD_COMPILES_EXPANDED - Whether the compiler for this command can handle
  * expansion for itself rather than needing the generic layer to take care of
  * it for it. Defined in tclInt.h. */
+};
 
 /*
  * The following struct states that the command it talks about (a subcommand
@@ -728,7 +730,8 @@ BuildInfoObjCmd2(
 	}
 	return TCL_OK;
     case ID_COMPILER:
-	for (p = strchr(buildData, '.'); p++; p = strchr(p, '.')) {
+	for (p = strchr(buildData, '.'); p != NULL; p = strchr(p, '.')) {
+	    p++;
 	    /*
 	     * Does the word begin with one of the standard prefixes?
 	     */
@@ -751,7 +754,8 @@ BuildInfoObjCmd2(
     default:;		/* Boolean test for other identifiers' presence */
 	Tcl_Size len;
 	const char *arg = TclGetStringFromObj(objv[1], &len);
-	for (p = strchr(buildData, '.'); p++; p = strchr(p, '.')) {
+	for (p = strchr(buildData, '.'); p != NULL; p = strchr(p, '.')) {
+	    p++;
 	    if (!strncmp(p, arg, len)
 		    && ((p[len] == '.') || (p[len] == '-') || (p[len] == '\0'))) {
 		if (p[len] == '-') {
@@ -1147,6 +1151,7 @@ Tcl_CreateInterp(void)
     TclInitInfoCmd(interp);
     TclInitNamespaceCmd(interp);
     TclInitStringCmd(interp);
+    TclInitUnicodeCmd(interp);
     TclInitPrefixCmd(interp);
     TclInitProcessCmd(interp);
 

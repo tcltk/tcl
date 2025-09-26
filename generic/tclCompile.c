@@ -4878,7 +4878,7 @@ TclPushVarName(
 
 	name = varTokenPtr[1].start;
 	nameLen = varTokenPtr[1].size;
-	if (name[nameLen - 1] == ')') {
+	if (nameLen > 0 && name[nameLen - 1] == ')') {
 	    /*
 	     * last char is ')' => potential array reference.
 	     */

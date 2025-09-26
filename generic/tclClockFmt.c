@@ -25,6 +25,8 @@ static void		ClockFmtObj_UpdateString(Tcl_Obj *objPtr);
 static Tcl_HashEntry *	ClockFmtScnStorageAllocProc(Tcl_HashTable *, void *keyPtr);
 static void		ClockFmtScnStorageFreeProc(Tcl_HashEntry *hPtr);
 static void		ClockFmtScnStorageDelete(ClockFmtScnStorage *fss);
+static Tcl_Obj *	ClockFrmObjGetLocFmtKey(Tcl_Interp *interp, Tcl_Obj *objPtr);
+static Tcl_Obj *	ClockLocalizeFormat(ClockFmtScnCmdArgs *opts);
 
 TCL_DECLARE_MUTEX(ClockFmtMutex);	/* Serializes access to common format list. */
 
@@ -951,7 +953,7 @@ ClockLocalizeFormat(
     Tcl_IncrRefCount(keyObj);
 
     if (opts->mcDictObj == NULL) {
-	ClockMCDict(opts);
+	TclClockMCDict(opts);
 	if (opts->mcDictObj == NULL) {
 	    goto done;
 	}
@@ -1272,7 +1274,7 @@ LocaleListSearch(
     Tcl_Obj *valObj;
 
     /* get msgcat value */
-    valObj = ClockMCGet(opts, mcKey);
+    valObj = TclClockMCGet(opts, mcKey);
     if (valObj == NULL) {
 	return TCL_ERROR;
     }
@@ -1314,7 +1316,7 @@ ClockMCGetListIdxTree(
     int mcKey)
 {
     TclStrIdxTree *idxTree;
-    Tcl_Obj *objPtr = ClockMCGetIdx(opts, mcKey);
+    Tcl_Obj *objPtr = TclClockMCGetIdx(opts, mcKey);
 
     if (objPtr != NULL
 	    && (idxTree = TclStrIdxTreeGetFromObj(objPtr)) != NULL) {
@@ -1323,17 +1325,19 @@ ClockMCGetListIdxTree(
 
     /* build new index */
 
+    Tcl_Obj **lstv;
+    Tcl_Size lstc;
+    Tcl_Obj *valObj;
+
     objPtr = TclStrIdxTreeNewObj();
     if ((idxTree = TclStrIdxTreeGetFromObj(objPtr)) == NULL) {
 	goto done;	/* unexpected, but ...*/
     }
 
-    Tcl_Obj *valObj = ClockMCGet(opts, mcKey);
+    valObj = TclClockMCGet(opts, mcKey);
     if (valObj == NULL) {
 	goto done;
     }
-    Tcl_Obj **lstv;
-    Tcl_Size lstc;
     if (TclListObjGetElements(opts->interp, valObj, &lstc, &lstv) != TCL_OK) {
 	goto done;
     }
@@ -1341,7 +1345,7 @@ ClockMCGetListIdxTree(
 	goto done;
     }
 
-    ClockMCSetIdx(opts, mcKey, objPtr);
+    TclClockMCSetIdx(opts, mcKey, objPtr);
     objPtr = NULL;
 
   done:
@@ -1381,7 +1385,7 @@ ClockMCGetMultiListIdxTree(
     int *mcKeys)
 {
     TclStrIdxTree * idxTree;
-    Tcl_Obj *objPtr = ClockMCGetIdx(opts, mcKey);
+    Tcl_Obj *objPtr = TclClockMCGetIdx(opts, mcKey);
 
     if (objPtr != NULL
 	    && (idxTree = TclStrIdxTreeGetFromObj(objPtr)) != NULL) {
@@ -1396,23 +1400,35 @@ ClockMCGetMultiListIdxTree(
     }
 
     while (*mcKeys) {
-	Tcl_Obj *valObj = ClockMCGet(opts, *mcKeys);
+	Tcl_Obj *valObj = TclClockMCGet(opts, *mcKeys);
 	if (valObj == NULL) {
 	    goto done;
 	}
-	Tcl_Obj **lstv;
-	Tcl_Size lstc;
-	if (TclListObjGetElements(opts->interp, valObj, &lstc, &lstv) != TCL_OK) {
-	    goto done;
-	}
-	if (TclStrIdxTreeBuildFromList(idxTree, lstc, lstv, NULL) != TCL_OK) {
-	    goto done;
-	}
-	mcKeys++;
-    }
 
-    ClockMCSetIdx(opts, mcKey, objPtr);
-    objPtr = NULL;
+	objPtr = TclStrIdxTreeNewObj();
+	if ((idxTree = TclStrIdxTreeGetFromObj(objPtr)) == NULL) {
+	    goto done;	/* unexpected, but ...*/
+	}
+
+	while (*mcKeys) {
+	    Tcl_Obj *valObj = TclClockMCGet(opts, *mcKeys);
+	    if (valObj == NULL) {
+		goto done;
+	    }
+	    Tcl_Obj **lstv;
+	    Tcl_Size lstc;
+	    if (TclListObjGetElements(opts->interp, valObj, &lstc, &lstv) != TCL_OK) {
+		goto done;
+	    }
+	    if (TclStrIdxTreeBuildFromList(idxTree, lstc, lstv, NULL) != TCL_OK) {
+		goto done;
+	    }
+	    mcKeys++;
+	}
+
+	TclClockMCSetIdx(opts, mcKey, objPtr);
+	objPtr = NULL;
+    }
 
   done:
     if (objPtr) {
@@ -1649,8 +1665,8 @@ ClockScnToken_amPmInd_Proc(
     MinMax len = DetermineGreedySearchLen(opts, info, tok);
 
     Tcl_Obj *amPmObj[] = {
-	ClockMCGet(opts, MCLIT_AM),
-	ClockMCGet(opts, MCLIT_PM)
+	TclClockMCGet(opts, MCLIT_AM),
+	TclClockMCGet(opts, MCLIT_PM)
     };
 
     if (amPmObj[0] == NULL || amPmObj[1] == NULL) {
@@ -1681,8 +1697,8 @@ ClockScnToken_LocaleERA_Proc(
     MinMax len = DetermineGreedySearchLen(opts, info, tok);
 
     Tcl_Obj *eraObj[] = {
-	ClockMCGet(opts, MCLIT_BCE),
-	ClockMCGet(opts, MCLIT_CE),
+	TclClockMCGet(opts, MCLIT_BCE),
+	TclClockMCGet(opts, MCLIT_CE),
 	dataPtr->mcLiterals[MCLIT_BCE2],
 	dataPtr->mcLiterals[MCLIT_CE2],
 	dataPtr->mcLiterals[MCLIT_BCE3],
@@ -1880,7 +1896,7 @@ ClockScnToken_TimeZone_Proc(
     /* try to apply new time zone */
     Tcl_IncrRefCount(tzObjStor);
 
-    opts->timezoneObj = ClockSetupTimeZone(opts->dataPtr, opts->interp,
+    opts->timezoneObj = TclClockSetupTimeZone(opts->dataPtr, opts->interp,
 	    tzObjStor);
 
     Tcl_DecrRefCount(tzObjStor);
@@ -1952,7 +1968,7 @@ ClockScnToken_StarDate_Proc(
     yydate.isBce = 0;
     yydate.gregorian = 1;
 
-    if (IsGregorianLeapYear(&yydate)) {
+    if (TclIsGregorianLeapYear(&yydate)) {
 	fractYear *= 366;
     } else {
 	fractYear *= 365;
@@ -1962,7 +1978,7 @@ ClockScnToken_StarDate_Proc(
 	yydate.dayOfYear++;
     }
 
-    GetJulianDayFromEraYearDay(&yydate, GREGORIAN_CHANGE_DATE);
+    TclGetJulianDayFromEraYearDay(&yydate, GREGORIAN_CHANGE_DATE);
 
     yydate.localSeconds =
 	    -210866803200LL
@@ -2147,7 +2163,7 @@ EstimateTokenCount(
 /*
  *----------------------------------------------------------------------
  */
-ClockFmtScnStorage *
+static ClockFmtScnStorage *
 ClockGetOrParseScanFormat(
     Tcl_Interp *interp,		/* Tcl interpreter */
     Tcl_Obj *formatObj)		/* Format container */
@@ -2354,7 +2370,7 @@ ClockGetOrParseScanFormat(
  *----------------------------------------------------------------------
  */
 int
-ClockScan(
+TclClockScan(
     DateInfo *info,		/* Date fields used for parsing & converting */
     Tcl_Obj *strObj,		/* String containing the time to scan */
     ClockFmtScnCmdArgs *opts)	/* Command options */
@@ -2672,7 +2688,7 @@ ClockScan(
 
 	if (flags & CLF_TIME) {
 	    info->flags |= CLF_ASSEMBLE_SECONDS;
-	    yySecondOfDay = ToSeconds(yyHour, yyMinutes,
+	    yySecondOfDay = TclToSeconds(yyHour, yyMinutes,
 		    yySeconds, yyMeridian);
 	} else if (!(flags & (CLF_LOCALSEC | CLF_POSIXSEC))) {
 	    info->flags |= CLF_ASSEMBLE_SECONDS;
@@ -2765,9 +2781,9 @@ ClockFmtToken_AMPM_Proc(
     Tcl_Obj *mcObj;
 
     if (*val < (SECONDS_PER_DAY / 2)) {
-	mcObj = ClockMCGet(opts, MCLIT_AM);
+	mcObj = TclClockMCGet(opts, MCLIT_AM);
     } else {
-	mcObj = ClockMCGet(opts, MCLIT_PM);
+	mcObj = TclClockMCGet(opts, MCLIT_PM);
     }
     if (mcObj == NULL) {
 	return TCL_ERROR;
@@ -2798,7 +2814,7 @@ ClockFmtToken_StarDate_Proc(
     int v = dateFmt->date.dayOfYear - 1;
 
     /* Convert day of year to a fractional year */
-    if (IsGregorianLeapYear(&dateFmt->date)) {
+    if (TclIsGregorianLeapYear(&dateFmt->date)) {
 	fractYear = 1000 * v / 366;
     } else {
 	fractYear = 1000 * v / 365;
@@ -2940,7 +2956,7 @@ ClockFmtToken_TimeZone_Proc(
 	}
     } else {
 	/* convert seconds to local seconds to obtain tzName object */
-	if (ConvertUTCToLocal(opts->dataPtr, opts->interp,
+	if (TclConvertUTCToLocal(opts->dataPtr, opts->interp,
 		&dateFmt->date, opts->timezoneObj,
 		GREGORIAN_CHANGE_DATE) != TCL_OK) {
 	    return TCL_ERROR;
@@ -2967,9 +2983,9 @@ ClockFmtToken_LocaleERA_Proc(
     Tcl_Obj *mcObj;
 
     if (dateFmt->date.isBce) {
-	mcObj = ClockMCGet(opts, MCLIT_BCE);
+	mcObj = TclClockMCGet(opts, MCLIT_BCE);
     } else {
-	mcObj = ClockMCGet(opts, MCLIT_CE);
+	mcObj = TclClockMCGet(opts, MCLIT_CE);
     }
     if (mcObj == NULL) {
 	return TCL_ERROR;
@@ -2996,7 +3012,7 @@ ClockFmtToken_LocaleERAYear_Proc(
     Tcl_Obj **rowv;
 
     if (dateFmt->localeEra == NULL) {
-	Tcl_Obj *mcObj = ClockMCGet(opts, MCLIT_LOCALE_ERAS);
+	Tcl_Obj *mcObj = TclClockMCGet(opts, MCLIT_LOCALE_ERAS);
 	if (mcObj == NULL) {
 	    return TCL_ERROR;
 	}
@@ -3004,7 +3020,7 @@ ClockFmtToken_LocaleERAYear_Proc(
 	    return TCL_ERROR;
 	}
 	if (rowc != 0) {
-	    dateFmt->localeEra = LookupLastTransition(opts->interp,
+	    dateFmt->localeEra = TclClockLookupLastTransition(opts->interp,
 		    dateFmt->date.localSeconds, rowc, rowv, NULL);
 	}
 	if (dateFmt->localeEra == NULL) {
@@ -3044,7 +3060,7 @@ ClockFmtToken_LocaleERAYear_Proc(
 	    /* if year in locale numerals */
 	    if (*val >= 0 && *val < 100) {
 		/* year as integer */
-		Tcl_Obj * mcObj = ClockMCGet(opts, MCLIT_LOCALE_NUMERALS);
+		Tcl_Obj * mcObj = TclClockMCGet(opts, MCLIT_LOCALE_NUMERALS);
 		if (mcObj == NULL) {
 		    return TCL_ERROR;
 		}
@@ -3220,7 +3236,7 @@ static const ClockFormatTokenMap FmtWordTokenMap = {
 /*
  *----------------------------------------------------------------------
  */
-ClockFmtScnStorage *
+static ClockFmtScnStorage *
 ClockGetOrParseFmtFormat(
     Tcl_Interp *interp,		/* Tcl interpreter */
     Tcl_Obj *formatObj)		/* Format container */
@@ -3367,7 +3383,7 @@ ClockGetOrParseFmtFormat(
  *----------------------------------------------------------------------
  */
 int
-ClockFormat(
+TclClockFormat(
     DateFormat *dateFmt,	/* Date fields used for parsing & converting */
     ClockFmtScnCmdArgs *opts)	/* Command options */
 {
@@ -3439,7 +3455,7 @@ ClockFormat(
 		}
 	    } else {
 		const char *s;
-		Tcl_Obj * mcObj = ClockMCGet(opts, PTR2INT(map->data) /* mcKey */);
+		Tcl_Obj * mcObj = TclClockMCGet(opts, PTR2INT(map->data) /* mcKey */);
 
 		if (mcObj == NULL) {
 		    goto error;
@@ -3541,7 +3557,7 @@ ClockFormat(
 }
 
 void
-ClockFrmScnClearCaches(void)
+TclClockFrmScnClearCaches(void)
 {
     Tcl_MutexLock(&ClockFmtMutex);
     /* clear caches ... */
@@ -3549,7 +3565,7 @@ ClockFrmScnClearCaches(void)
 }
 
 void
-ClockFrmScnFinalize(void)
+TclClockFrmScnFinalize(void)
 {
     if (!initialized) {
 	return;

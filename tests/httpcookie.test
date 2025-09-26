@@ -17,7 +17,7 @@ if {"::tcltest" ni [namespace children]} {
 ::tcltest::loadTestedCommands
 
 testConstraint notMacCI [expr {![info exists ::env(MAC_CI)]}]
-testConstraint sqlite3 [expr {[testConstraint notMacCI] && ![catch {
+testConstraint sqlite3 [expr {![tcl::build-info no-deprecate] && [testConstraint notMacCI] && ![catch {
     package require sqlite3
 }]}]
 testConstraint cookiejar [expr {[testConstraint sqlite3] && ![catch {

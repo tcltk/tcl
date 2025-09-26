@@ -1950,31 +1950,10 @@ Tcl_GetBoolFromObj(
 	    }
 	    return TCL_OK;
 	}
-	/* Handle dict separately, because it doesn't have a lengthProc */
-	if (TclHasInternalRep(objPtr, &tclDictType)) {
-	    Tcl_Size length;
-	    Tcl_DictObjSize(NULL, objPtr, &length);
-	    if (length > 0) {
-		goto listRep;
-	    }
-	}
-	Tcl_ObjTypeLengthProc *lengthProc = TclObjTypeHasProc(objPtr, lengthProc);
-	if (lengthProc && lengthProc(objPtr) != 1) {
-	    goto listRep;
-	}
     } while ((ParseBoolean(objPtr) == TCL_OK) || (TCL_OK ==
 	    TclParseNumber(interp, objPtr, (flags & TCL_NULL_OK)
 		    ? "boolean value or \"\"" : "boolean value",
 		    NULL, TCL_AUTO_LENGTH, NULL, 0)));
-    return TCL_ERROR;
-
-  listRep:
-    if (interp) {
-	TclPrintfResult(interp,
-		"expected boolean value%s but got a list",
-		(flags & TCL_NULL_OK) ? " or \"\"" : "");
-	TclSetErrorCode(interp, "TCL", "VALUE", "BOOLEAN");
-    }
     return TCL_ERROR;
 }
 
@@ -2015,42 +1994,28 @@ TclSetBooleanFromAny(
     Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
     Tcl_Obj *objPtr)		/* The object to convert. */
 {
-    /*
-     * For some "pure" numeric Tcl_ObjTypes (no string rep), we can determine
-     * whether a boolean conversion is possible without generating the string
-     * rep.
-     */
-
-    if (objPtr->bytes == NULL) {
-	if (TclHasInternalRep(objPtr, &tclIntType)) {
-	    if ((Tcl_WideUInt)objPtr->internalRep.wideValue < 2) {
-		return TCL_OK;
-	    }
-	    goto badBoolean;
-	}
-
-	if (TclHasInternalRep(objPtr, &tclBignumType)) {
-	    goto badBoolean;
-	}
-
-	if (TclHasInternalRep(objPtr, &tclDoubleType)) {
-	    goto badBoolean;
-	}
-    }
-
     if (ParseBoolean(objPtr) == TCL_OK) {
 	return TCL_OK;
     }
 
-  badBoolean:
     if (interp != NULL) {
-	Tcl_Size length;
-	const char *str = Tcl_GetStringFromObj(objPtr, &length);
 	Tcl_Obj *msg;
 
-	TclNewLiteralStringObj(msg, "expected boolean value but got \"");
-	Tcl_AppendLimitedToObj(msg, str, length, 50, "");
-	Tcl_AppendToObj(msg, "\"", -1);
+	TclNewLiteralStringObj(msg, "expected boolean value but got ");
+
+	Tcl_Size argc;
+	const char **argv = NULL;
+	if (!objPtr->bytes || ((TclMaxListLength(objPtr->bytes, TCL_INDEX_NONE, NULL) > 1)
+		&& Tcl_SplitList(NULL, objPtr->bytes, &argc, &argv) == TCL_OK)) {
+	    if (argv) {
+		Tcl_Free(argv);
+	    }
+	    Tcl_AppendToObj(msg, "a list", -1);
+	} else {
+	    Tcl_AppendToObj(msg, "\"", -1);
+	    Tcl_AppendLimitedToObj(msg, objPtr->bytes, objPtr->length, 50, "");
+	    Tcl_AppendToObj(msg, "\"", -1);
+	}
 	Tcl_SetObjResult(interp, msg);
 	TclSetErrorCode(interp, "TCL", "VALUE", "BOOLEAN");
     }
@@ -2063,7 +2028,42 @@ ParseBoolean(
 {
     bool newBool;
     Tcl_Size length;
-    const char *str = Tcl_GetStringFromObj(objPtr, &length);
+    const char *str;
+
+    /*
+     * For some "pure" numeric Tcl_ObjTypes (no string rep), we can determine
+     * whether a boolean conversion is possible without generating the string
+     * rep.
+     */
+
+    if (objPtr->bytes == NULL) {
+	if (TclHasInternalRep(objPtr, &tclIntType)) {
+	    if ((Tcl_WideUInt)objPtr->internalRep.wideValue < 2) {
+		return TCL_OK;
+	    }
+	    return TCL_ERROR;
+	}
+
+	if (TclHasInternalRep(objPtr, &tclBignumType)) {
+		return TCL_ERROR;
+	}
+
+	if (TclHasInternalRep(objPtr, &tclDoubleType)) {
+		return TCL_ERROR;
+	}
+	/* Handle dict separately, because it doesn't have a lengthProc */
+	if (TclHasInternalRep(objPtr, &tclDictType)) {
+	    Tcl_DictObjSize(NULL, objPtr, &length);
+	    if (length > 0) {
+		return TCL_ERROR;
+	    }
+	}
+	Tcl_ObjTypeLengthProc *lengthProc = TclObjTypeHasProc(objPtr, lengthProc);
+	if (lengthProc && lengthProc(objPtr) != 1) {
+	    return TCL_ERROR;
+	}
+    }
+    str = Tcl_GetStringFromObj(objPtr, &length);
 
     if ((length < 1) || (length > 5)) {
 	/*
@@ -2358,27 +2358,7 @@ Tcl_GetDoubleFromObj(
 	    *dblPtr = TclBignumToDouble(&big);
 	    return TCL_OK;
 	}
-	/* Handle dict separately, because it doesn't have a lengthProc */
-	if (TclHasInternalRep(objPtr, &tclDictType)) {
-	    Tcl_Size length;
-	    Tcl_DictObjSize(NULL, objPtr, &length);
-	    if (length > 0) {
-		goto listRep;
-	    }
-	}
-	Tcl_ObjTypeLengthProc *lengthProc = TclObjTypeHasProc(objPtr, lengthProc);
-	if (lengthProc && lengthProc(objPtr) != 1) {
-	    goto listRep;
-	}
     } while (SetDoubleFromAny(interp, objPtr) == TCL_OK);
-    return TCL_ERROR;
-
-  listRep:
-    if (interp) {
-	TclPrintfResult(interp,
-		"expected floating-point number but got a list");
-	TclSetErrorCode(interp, "TCL", "VALUE", "DOUBLE");
-    }
     return TCL_ERROR;
 }
 
@@ -2630,30 +2610,18 @@ Tcl_GetLongFromObj(
 		    value = (value << CHAR_BIT) | *bytes++;
 		}
 		if (big.sign) {
-		    if (value <= 1 + (unsigned long) LONG_MAX) {
-			*longPtr = (long) (-value);
+		    if (value <= 1 + (unsigned long)LONG_MAX) {
+			*longPtr = (long)(-value);
 			return TCL_OK;
 		    }
 		} else {
-		    if (value <= (unsigned long) ULONG_MAX) {
-			*longPtr = (long) value;
+		    if (value <= (unsigned long)ULONG_MAX) {
+			*longPtr = (long)value;
 			return TCL_OK;
 		    }
 		}
 	    }
 	    goto tooLarge;
-	}
-	/* Handle dict separately, because it doesn't have a lengthProc */
-	if (TclHasInternalRep(objPtr, &tclDictType)) {
-	    Tcl_Size length;
-	    Tcl_DictObjSize(NULL, objPtr, &length);
-	    if (length > 0) {
-		goto listRep;
-	    }
-	}
-	Tcl_ObjTypeLengthProc *lengthProc = TclObjTypeHasProc(objPtr, lengthProc);
-	if (lengthProc && lengthProc(objPtr) != 1) {
-	    goto listRep;
 	}
     } while (TclParseNumber(interp, objPtr, "integer", NULL, -1, NULL,
 	    TCL_PARSE_INTEGER_ONLY)==TCL_OK);
@@ -2920,7 +2888,6 @@ Tcl_GetWideIntFromObj(
     Tcl_Obj *objPtr,		/* Object from which to get a wide int. */
     Tcl_WideInt *wideIntPtr)	/* Place to store resulting long. */
 {
-    Tcl_Size length;
     do {
 	if (TclHasInternalRep(objPtr, &tclIntType)) {
 	    *wideIntPtr = objPtr->internalRep.wideValue;
@@ -2959,17 +2926,6 @@ Tcl_GetWideIntFromObj(
 		}
 	    }
 	    goto tooLarge;
-	}
-	/* Handle dict separately, because it doesn't have a lengthProc */
-	if (TclHasInternalRep(objPtr, &tclDictType)) {
-	    Tcl_DictObjSize(NULL, objPtr, &length);
-	    if (length > 0) {
-		goto listRep;
-	    }
-	}
-	Tcl_ObjTypeLengthProc *lengthProc = TclObjTypeHasProc(objPtr, lengthProc);
-	if (lengthProc && lengthProc(objPtr) != 1) {
-	    goto listRep;
 	}
     } while (TclParseNumber(interp, objPtr, "integer", NULL, -1, NULL,
 	    TCL_PARSE_INTEGER_ONLY)==TCL_OK);
@@ -3649,7 +3605,6 @@ Tcl_GetNumberFromObj(
     void **clientDataPtr,
     int *typePtr)
 {
-    Tcl_Size length;
     do {
 	if (TclHasInternalRep(objPtr, &tclDoubleType)) {
 	    if (isnan(objPtr->internalRep.doubleValue)) {
@@ -3674,17 +3629,6 @@ Tcl_GetNumberFromObj(
 	    *typePtr = TCL_NUMBER_BIG;
 	    *clientDataPtr = bigPtr;
 	    return TCL_OK;
-	}
-	/* Handle dict separately, because it doesn't have a lengthProc */
-	if (TclHasInternalRep(objPtr, &tclDictType)) {
-	    Tcl_DictObjSize(NULL, objPtr, &length);
-	    if (length > 0) {
-		goto listRep;
-	    }
-	}
-	Tcl_ObjTypeLengthProc *lengthProc = TclObjTypeHasProc(objPtr, lengthProc);
-	if (lengthProc && lengthProc(objPtr) != 1) {
-	    goto listRep;
 	}
     } while (TCL_OK ==
 	    TclParseNumber(interp, objPtr, "number", NULL, -1, NULL, 0));
@@ -3718,14 +3662,6 @@ Tcl_GetNumber(
     }
     if (numBytes < 0) {
 	numBytes = strlen(bytes);
-    }
-    if (numBytes > INT_MAX) {
-	if (interp) {
-	    TclPrintfResult(interp,
-		    "max size for a Tcl value (%d bytes) exceeded", INT_MAX);
-	    TclSetErrorCode(interp, "TCL", "MEMORY");
-	}
-	return TCL_ERROR;
     }
 
     objPtr->bytes = (char *) bytes;

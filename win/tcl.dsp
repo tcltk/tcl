@@ -1284,10 +1284,6 @@ SOURCE=..\generic\tclTimer.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\generic\tclUniData.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\generic\tclUtf.c
 # End Source File
 # Begin Source File

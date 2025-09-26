@@ -3218,7 +3218,7 @@ NamespaceCodeCmd(
      * Take care to only check for scoping in precisely the style that
      * [::namespace code] generates it.  Anything more forgiving can have
      * the effect of failing in namespaces that contain their own custom
-     " "namespace" command.  [Bug 3202171].
+     * "namespace" command.  [Bug 3202171].
      */
 
     Tcl_Size length;
@@ -4826,7 +4826,7 @@ SetNsNameFromAny(
     const char *dummy;
     Namespace *nsPtr, *dummy1Ptr, *dummy2Ptr;
     TclGetNamespaceForQualName(interp, name, NULL, TCL_FIND_ONLY_NS,
-	     &nsPtr, &dummy1Ptr, &dummy2Ptr, &dummy);
+	    &nsPtr, &dummy1Ptr, &dummy2Ptr, &dummy);
 
     if ((nsPtr == NULL) || (nsPtr->flags & NS_DYING)) {
 	return TCL_ERROR;

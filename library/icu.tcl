@@ -25,6 +25,7 @@ namespace eval ::tcl::unsupported::icu {
 	puts stderr $message
     }
 
+    # Constructs the full mappings between Tcl and ICU names for encodings.
     proc Init {} {
 	variable tclToIcu
 	variable icuToTcl
@@ -40,11 +41,11 @@ namespace eval ::tcl::unsupported::icu {
 	}
 	# Ignore all errors. Do not want to hold up Tcl
 	# if ICU not available
-	if {[catch {
+	try {
 	    foreach tclName [encoding names] {
-		if {[catch {
+		try {
 		    set icuNames [aliases $tclName]
-		} erMsg]} {
+		} on error erMsg {
 		    LogError "Could not get aliases for $tclName: $erMsg"
 		    continue
 		}
@@ -70,7 +71,7 @@ namespace eval ::tcl::unsupported::icu {
 		    lappend icuToTcl($icuName) $tclName
 		}
 	    }
-	} errMsg]} {
+	} on error errMsg {
 	    LogError $errMsg
 	}
 	array default set tclToIcu ""
@@ -138,7 +139,6 @@ namespace eval ::tcl::unsupported::icu {
 	}
 	tclToIcu $tclName
     }
-
 
     namespace export {[a-z]*}
     namespace ensemble create

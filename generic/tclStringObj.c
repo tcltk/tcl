@@ -236,6 +236,10 @@ Tcl_NewStringObj(
 {
     return Tcl_DbNewStringObj(bytes, length, "unknown", 0);
 }
+
+// Redefine the macro
+#define Tcl_NewStringObj(bytes, len) \
+    Tcl_DbNewStringObj(bytes, len, __FILE__, __LINE__)
 #else /* if not TCL_MEM_DEBUG */
 Tcl_Obj *
 Tcl_NewStringObj(

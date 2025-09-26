@@ -390,6 +390,16 @@ may get stack overflows before reaching the limit set by the command. If
 this happens, see if there is a mechanism in your system for increasing
 the maximum size of the C stack.
 .RE
+.\" METHOD: set
+.TP
+\fBinterp set\fI path varName\fR ?\fIvalue\fR?
+.VS 9.1
+Writes to, or reads from, the variable \fIvarName\fR in the interpreter
+specifed by \fIpath\fR. If \fIvalue\fR is given, writes to the variable and
+returns its new value; if \fIvalue\fR is omitted, reads from the variable.
+As with the \fBset\fR command, traces may affect what the value of the
+variable is.
+.VE 9.1
 .\" METHOD: share
 .TP
 \fBinterp share\fI srcPath channel destPath\fR
@@ -601,6 +611,17 @@ may get stack overflows before reaching the limit set by the command. If
 this happens, see if there is a mechanism in your system for increasing
 the maximum size of the C stack.
 .RE
+.RE
+.\" METHOD: set
+.TP
+\fIchild \fBset\fR \fIvarName\fR ?\fIvalue\fR?
+.VS 9.1
+Writes to, or reads from, the variable \fIvarName\fR in the \fIchild\fR
+interpreter. If \fIvalue\fR is given, writes to the variable and
+returns its new value; if \fIvalue\fR is omitted, reads from the variable.
+As with the \fBset\fR command, traces may affect what the value of the
+variable is.
+.VE 9.1
 .SH "SAFE INTERPRETERS"
 .PP
 A safe interpreter is one with restricted functionality, so that
