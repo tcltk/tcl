@@ -139,6 +139,29 @@ static void		ThreadFreeProc(void *clientData);
 static int		ThreadDeleteEvent(Tcl_Event *eventPtr,
 			    void *clientData);
 static void		ThreadExitProc(void *clientData);
+
+
+/*
+ * Types related to Tcl_Mutex tests.
+ */
+TCL_DECLARE_MUTEX(counterTestMutex)
+static Tcl_ObjCmdProc TestMutexCmd;
+typedef struct {
+    Tcl_WideUInt numThreads;
+    Tcl_WideUInt numRecursions;
+    Tcl_WideUInt numIterations;
+    Tcl_WideUInt counter;
+    Tcl_Condition condition;
+    Tcl_ThreadId *threadIds;
+} MutexTestContext;
+static volatile int mutexThreadCount;
+static Tcl_ThreadCreateType	MutexCounterThread(void *clientData);
+static Tcl_ThreadCreateType	MutexConditionVariableThread(void *clientData);
+static int			TestMutexLock(Tcl_Interp *interp,
+				    MutexTestContext *contextPtr);
+static int			TestConditionVariable(Tcl_Interp *interp,
+				    MutexTestContext *contextPtr);
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -146,6 +169,7 @@ extern int		Tcltest_Init(Tcl_Interp *interp);
 #ifdef __cplusplus
 }
 #endif
+
 
 /*
  *----------------------------------------------------------------------
@@ -178,6 +202,7 @@ TclThread_Init(
     Tcl_MutexUnlock(&threadMutex);
 
     Tcl_CreateObjCommand(interp, "testthread", ThreadCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testmutex", TestMutexCmd, NULL, NULL);
     return TCL_OK;
 }
 
@@ -1207,8 +1232,208 @@ ThreadExitProc(
     }
     Tcl_MutexUnlock(&threadMutex);
 }
+
 #endif /* TCL_THREADS */
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestMutexCmd --
+ *
+ *	This procedure is invoked to process the "testmutex" Tcl command.
+ *
+ *	testmutex counter ?numthreads? ?numrecursions? ?numiterations?
+ *	testmutex conditionvariable ?numthreads? ?numrecursions? ?numiterations?
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestMutexCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    static const char *const mutexOptions[] = {
+	"lock", "condition", NULL
+    };
+    enum options {
+	LOCK, CONDITION
+    } option;
+    MutexTestContext context = {
+	2,		/* Number of threads */
+	1,		/* Recursive lock count */
+	1000000,	/* Number of iterations */
+	0,		/* Counter */
+	NULL,		/* Condition */
+	NULL,		/* Allocated array of thread ids */
+    };
+
+    if (objc < 2 || objc > 5) {
+	Tcl_WrongNumArgs(interp, 1, objv,
+		"option ?numthreads? ?numrecursions? ?numiterations?");
+	return TCL_ERROR;
+    }
+    if (Tcl_GetIndexFromObj(interp, objv[1], mutexOptions, "option", 0,
+	    &option) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (objc > 2) {
+	if (Tcl_GetWideUIntFromObj(interp, objv[2],
+		&context.numThreads) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if (objc > 3) {
+	    if (Tcl_GetWideUIntFromObj(interp, objv[3], 
+		    &context.numRecursions) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    if (objc > 4) {
+		if (Tcl_GetWideUIntFromObj(interp, objv[4],
+			&context.numIterations) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+	    }
+	}
+    }
+
+    if (context.numIterations == 0 || context.numRecursions == 0 ||
+	    context.numThreads == 0) {
+	Tcl_SetResult(interp,
+	    "Thread, recursion and iteration counts must not be 0.",
+	    TCL_STATIC);
+    }
+
+    context.threadIds =
+	(Tcl_ThreadId *)Tcl_Alloc(sizeof(Tcl_ThreadId) * context.numThreads);
+
+    int result;
+    switch (option) {
+    case LOCK:
+	result = TestMutexLock(interp, &context);
+	break;
+    case CONDITION:
+	result = TestConditionVariable(interp, &context);
+	break;
+    }
+    Tcl_Free(context.threadIds);
+    return result;
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * TestMutexLock --
+ *
+ *	Implements the "testmutex lock" command to test Tcl_MutexLock.
+ *
+ * Results:
+ *	A Tcl result code.
+ *
+ * Side effects:
+ *	Stores a result in the interpreter.
+ *
+ *------------------------------------------------------------------------
+ */
+static int
+TestMutexLock(
+    Tcl_Interp *interp,
+    MutexTestContext *contextPtr)
+{
+    mutexThreadCount = 0;
+    for (Tcl_WideUInt i = 0; i < contextPtr->numThreads; i++) {
+	if (Tcl_CreateThread(&contextPtr->threadIds[i], MutexCounterThread,
+		contextPtr, TCL_THREAD_STACK_DEFAULT,
+		TCL_THREAD_JOINABLE) != TCL_OK) {
+	    Tcl_Panic("Failed to create %d'th thread\n", (int) i);
+	}
+    }
+    mutexThreadCount = contextPtr->numThreads; /* Will fire off all test threads */
+
+    /* Wait for all threads */
+    for (Tcl_WideUInt i = 0; i < contextPtr->numThreads; i++) {
+	int threadResult;
+	Tcl_JoinThread(contextPtr->threadIds[i], &threadResult);
+    }
+    Tcl_SetObjResult(interp, Tcl_NewWideUIntObj(contextPtr->counter));
+    return TCL_OK;
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * TestConditionVariable --
+ *
+ *	Implements the "testmutex condition" command to test Tcl_Condition*
+ *
+ * Results:
+ *	A Tcl result code.
+ *
+ * Side effects:
+ *	Stores a result in the interpreter.
+ *
+ *------------------------------------------------------------------------
+ */
+static int
+TestConditionVariable(
+    Tcl_Interp *interp,
+    MutexTestContext *contextPtr)
+{
+    Tcl_SetResult(interp, "Not implemented", TCL_STATIC);
+    return TCL_ERROR;
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * MutexCounterThread --
+ *
+ *	Increments a shared counter a specified number of times and exits
+ *	the thread.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *------------------------------------------------------------------------
+ */
+ static Tcl_ThreadCreateType
+ MutexCounterThread(void *clientData)
+{
+    MutexTestContext *contextPtr = (MutexTestContext *)clientData;
+
+    /* Spin wait until given the run signal */
+    while (mutexThreadCount < (int) contextPtr->numThreads) {
+#ifdef _WIN32
+	Sleep(0); /* Allow other threads to run */
+#else
+	Tcl_Sleep(1);
+#endif
+    }
+
+    for (Tcl_WideUInt i = 0; i < contextPtr->numIterations; i++) {
+	for (Tcl_WideUInt j = 0; j < contextPtr->numRecursions; ++j) {
+	    Tcl_MutexLock(&counterTestMutex);
+	}
+	Tcl_WideUInt temp = contextPtr->counter;
+	/* Some delay. No one else is supposed to modify the counter */
+	for (volatile int k = 0; k < 100; k++)
+	    ;
+	contextPtr->counter = temp + 1; /* Increment orignal value read */
+	for (Tcl_WideUInt j = 0; j < contextPtr->numRecursions; ++j) {
+	    Tcl_MutexUnlock(&counterTestMutex);
+	}
+    }
+
+    Tcl_ExitThread(0);
+    TCL_THREAD_CREATE_RETURN;
+}
 /*
  * Local Variables:
  * mode: c
