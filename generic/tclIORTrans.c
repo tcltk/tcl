@@ -352,7 +352,7 @@ TCL_DECLARE_MUTEX(rtForwardMutex)
  */
 
 static void		ForwardOpToOwnerThread(ReflectedTransform *rtPtr,
-			    ForwardedOperation op, const void *param);
+			    ForwardedOperation op, void *param);
 static int		ForwardProc(Tcl_Event *evPtr, int mask);
 static void		SrcExitProc(void *clientData);
 
@@ -2345,7 +2345,7 @@ static void
 ForwardOpToOwnerThread(
     ReflectedTransform *rtPtr,	/* Channel instance */
     ForwardedOperation op,	/* Forwarded driver operation */
-    const void *param)		/* Arguments */
+    void *param)		/* Arguments */
 {
     Tcl_ThreadId dst = rtPtr->thread;
     ForwardingEvent *evPtr;
