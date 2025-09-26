@@ -12,6 +12,9 @@
 
 #include "tclInt.h"
 #include "tclFileSystem.h"
+#if !defined(NO_DLFCN_H)
+#include <dlfcn.h>
+#endif
 
 static int		NativeMatchType(Tcl_Interp *interp,
 			    const char* nativeEntry, const char* nativeName,
@@ -26,15 +29,17 @@ static int		NativeMatchType(Tcl_Interp *interp,
  *	application, given its argv[0] value. For Cygwin, argv[0] is
  *	ignored and the path is determined the same as under win32.
  *
+ *	In the case of shared Tcl library, the absolute path name of the
+ *	Tcl library is also determined.
+ *
  * Results:
  *	None.
  *
  * Side effects:
- *	The computed path name is stored as a ProcessGlobalValue.
+ *	The computed path name(s) are stored as ProcessGlobalValue entries.
  *
  *---------------------------------------------------------------------------
  */
-
 #ifdef __CYGWIN__
 void
 TclpFindExecutable(
@@ -42,7 +47,7 @@ TclpFindExecutable(
 {
     size_t length;
     wchar_t buf[PATH_MAX] = L"";
-    char name[PATH_MAX * 3 + 1];
+    char name[PATH_MAX * TCL_UTF_MAX + 1];
 
     GetModuleFileNameW(NULL, buf, PATH_MAX);
     cygwin_conv_path(3, buf, name, sizeof(name));
@@ -51,8 +56,15 @@ TclpFindExecutable(
 	/* Strip '.exe' part. */
 	length -= 4;
     }
-    TclSetObjNameOfExecutable(
-	    Tcl_NewStringObj(name, length), NULL);
+    TclSetObjNameOfExecutable(Tcl_NewStringObj(name, length), NULL);
+
+#if !defined(STATIC_BUILD)
+    HMODULE hModule = (HMODULE)TclWinGetTclInstance();
+    if (GetModuleFileNameW(hModule, buf, PATH_MAX) < PATH_MAX) {
+	cygwin_conv_path(3, buf, name, sizeof(name));
+    }
+    TclSetObjNameOfShlib(Tcl_NewStringObj(name, TCL_AUTO_LENGTH), NULL);
+#endif
 }
 #else
 void
@@ -141,7 +153,7 @@ TclpFindExecutable(
     }
     TclNewObj(obj);
     TclSetObjNameOfExecutable(obj, NULL);
-    goto done;
+    goto getShlibName;
 
     /*
      * If the name starts with "/" then just store it
@@ -157,13 +169,13 @@ TclpFindExecutable(
 	Tcl_ExternalToUtfDStringEx(NULL, NULL, name, TCL_INDEX_NONE,
 		TCL_ENCODING_PROFILE_TCL8, &utfName, NULL);
 	TclSetObjNameOfExecutable(Tcl_DStringToObj(&utfName), NULL);
-	goto done;
+	goto getShlibName;
     }
 
     if (TclpGetCwd(NULL, &cwd) == NULL) {
 	TclNewObj(obj);
 	TclSetObjNameOfExecutable(obj, NULL);
-	goto done;
+	goto getShlibName;
     }
 
     /*
@@ -193,7 +205,18 @@ TclpFindExecutable(
 	    TCL_ENCODING_PROFILE_TCL8, &utfName, NULL);
     TclSetObjNameOfExecutable(Tcl_DStringToObj(&utfName), NULL);
 
-  done:
+  getShlibName:
+#if !defined(STATIC_BUILD)
+    name = CFG_RUNTIME_LIBDIR "/" CFG_RUNTIME_DLLFILE;
+# if !defined(NO_DLFCN_H)
+    Dl_info dlinfo;
+    if (dladdr((const void *)TclpFindExecutable, &dlinfo) && dlinfo.dli_fname) {
+	name = dlinfo.dli_fname;
+    }
+# endif
+    TclSetObjNameOfShlib(Tcl_NewStringObj(name, TCL_AUTO_LENGTH), NULL);
+#endif /* STATIC_BUILD */
+
     Tcl_DStringFree(&buffer);
 }
 #endif

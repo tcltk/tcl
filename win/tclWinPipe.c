@@ -1799,7 +1799,7 @@ TclpCreateCommandChannel(
 
 	infoPtr->readable = CreateEventW(NULL, TRUE, TRUE, NULL);
 	infoPtr->readThread = CreateThread(NULL, 256, PipeReaderThread,
-	    TclPipeThreadCreateTI(&infoPtr->readTI, infoPtr), 0, NULL);
+		TclPipeThreadCreateTI(&infoPtr->readTI, infoPtr), 0, NULL);
 	SetThreadPriority(infoPtr->readThread, THREAD_PRIORITY_HIGHEST);
 	infoPtr->validMask |= TCL_READABLE;
     } else {
@@ -1813,7 +1813,7 @@ TclpCreateCommandChannel(
 
 	infoPtr->writable = CreateEventW(NULL, TRUE, TRUE, NULL);
 	infoPtr->writeThread = CreateThread(NULL, 256, PipeWriterThread,
-	    TclPipeThreadCreateTI(&infoPtr->writeTI, infoPtr), 0, NULL);
+		TclPipeThreadCreateTI(&infoPtr->writeTI, infoPtr), 0, NULL);
 	SetThreadPriority(infoPtr->writeThread, THREAD_PRIORITY_HIGHEST);
 	infoPtr->validMask |= TCL_WRITABLE;
     } else {

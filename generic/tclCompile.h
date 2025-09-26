@@ -1825,7 +1825,9 @@ TclGetInt4AtPtr(
 }
 
 static inline unsigned
-TclGetUInt4AtPtr(const unsigned char *p) {
+TclGetUInt4AtPtr(
+    const unsigned char *p)
+{
     return (unsigned) (
 	(p[0] << 24) |
 	(p[1] << 16) |
@@ -2066,7 +2068,7 @@ typedef Tcl_Size Tcl_BytecodeLabel;
  * Shorthand macros for instruction issuing.
  */
 
- // Measure the length of a string literal.
+// Measure the length of a string literal.
 #define LENGTH_OF(str) \
     ((Tcl_Size) sizeof(str "") - 1)
 

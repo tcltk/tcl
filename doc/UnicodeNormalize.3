@@ -1,0 +1,82 @@
+'\"
+'\" Copyright (c) 2025 Ashok P. Nadkarni
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH Tcl_UtfToNormalized 3 "9.1" Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_UtfToNormalized, Tcl_UtfToNormalizedDString \- procedures for Unicode normalization
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+int
+\fBTcl_UtfToNormalized\fR(\fIinterp, src, numBytes, normForm, profile, dst, dstLen, dstWrotePtr\fR)
+.sp
+int
+\fBTcl_UtfToNormalizedDString\fR(\fIinterp, src, numBytes, normForm, profile, dstPtr\fR)
+.fi
+.SH ARGUMENTS
+.AP Tcl_Interp *interp in
+Interpreter to use for error reporting, or NULL if no error reporting is
+desired.
+.AP "const char" *src in
+An array of bytes in Tcl's internal UTF-8 based encoding.
+.AP Tcl_Size numBytes in
+Length of \fIsrc\fR in bytes.  If the length is negative,
+the length includes all bytes until the first nul byte.
+.AP char *dst out
+Buffer in which the converted result will be stored.  No more than
+\fIdstLen\fR bytes will be stored in \fIdst\fR.
+.AP Tcl_Size dstLen in
+The size of the output buffer \fIdst\fR in bytes.
+.AP Tcl_Size *dstWrotePtr out
+Filled with the number of bytes in the normalized string. This number
+does not include the terminating nul character.
+May be NULL.
+.AP Tcl_UnicodeNormalizationForm normForm in
+Must be one of the \fBTcl_UnicodeNormalizationForm\fR members
+\fBTCL_NFC\fR, \fBTCL_NFD\fR, \fBTCL_NFKC\fR or \fBTCL_NFKD\fR specifying
+the Unicode normalization type.
+.AP int profile in/out
+The encoding profile as described in the \fBTcl_GetEncoding\fR documentation.
+Must be either \fBTCL_ENCODING_PROFILE_STRICT\fR
+or \fBTCL_ENCODING_PROFILE_REPLACE\fR.
+.AP Tcl_DString *dstPtr out
+Pointer to an uninitialized or free \fBTcl_DString\fR in which the converted
+result, which is also encoded in Tcl's internal UTF-8 encoding, will be stored.
+The function initializes the storage and caller must call
+\fBTcl_DStringFree\fR on success.
+.BE
+.SH DESCRIPTION
+.PP
+The \fBTcl_UtfToNormalized\fR and \fBTcl_UtfToNormalizedDString\fR functions
+transform the passed string into one of the standard normalization forms defined
+in the Unicode standard. The normalization form is specified via the
+\fInormForm\fR argument which must have one of the values \fBTCL_NFC\fR,
+\fBTCL_NFD\fR, \fBTCL_NFKC\fR or \fBTCL_NFKD\fR corresponding to the Unicode
+normalization forms \fBNormalization Form C\fR (NFC), \fBNormalization Form D\fR
+(NFD), \fBNormalization Form KC\fR (NFKC) and \fBNormalization Form KD\fR (NFKD)
+respectively. For details on the above normalization forms, refer to Section
+3.11 of the Unicode standard
+(https://www.unicode.org/versions/Unicode16.0.0/core-spec/chapter-3/).
+.PP
+The \fBTcl_UtfToNormalized\fR function stores the normalized result
+in the buffer provided by the caller through the \fIdst\fR argument. The
+result is nul terminated but the nul is not included in the count of
+stored bytes returned in \fIdstWrotePtr\fR. The function returns TCL_OK
+on success, TCL_CONVERT_NOSPACE if there is insufficient room in the output
+buffer and TCL_ERROR in case of other failures. In the latter two cases,
+an error message is stored in \fIinterp\fR if it is not NULL.
+.PP
+The \fBTcl_UtfToNormalizedDString\fR function stores the normalized result
+in \fIdstPtr\fR which must eventually be freed by caller through
+\fBTcl_DStringFree\fR. The function returns TCL_OK on success and
+TCL_ERROR on failure with an error message in \fIinterp\fR if it is not NULL.
+.SH "SEE ALSO"
+unicode(n)
+.SH KEYWORDS
+utf, Unicode, normalize

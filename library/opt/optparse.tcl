@@ -751,7 +751,7 @@ proc ::tcl::OptCheckType {arg type {typeArgs ""}} {
 	# description writer's life easy, and our's difficult :
 	# let's guess the missing arguments :-)
 
-	switch $lg {
+	switch -integer -- $lg {
 	    1 {
 		if {$isflag} {
 		    return [OptNewInst $state $varname boolflag false ""]

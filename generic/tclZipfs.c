@@ -433,9 +433,6 @@ static bool		IsCryptHeaderValid(ZipEntry *z,
 static int		DecodeCryptHeader(Tcl_Interp *interp, ZipEntry *z,
 			    unsigned long keys[3],
 			    unsigned char cryptHdr[ZIP_CRYPT_HDR_LEN]);
-#if !defined(STATIC_BUILD)
-static int		ZipfsAppHookFindTclInit(const char *archive);
-#endif
 static int		ZipFSPathInFilesystemProc(Tcl_Obj *pathPtr,
 			    void **clientDataPtr);
 static Tcl_Obj *	ZipFSFilesystemPathTypeProc(Tcl_Obj *pathPtr);
@@ -474,6 +471,7 @@ static void		ZipChannelWatchChannel(void *instanceData,
 			    int mask);
 static int		ZipChannelWrite(void *instanceData,
 			    const char *buf, int toWrite, int *errloc);
+static int		TclZipfsInitEncodingDirs(void);
 
 /*
  * Define the ZIP filesystem dispatch table.
@@ -4246,87 +4244,75 @@ ZipFSListObjCmd(
  * TclZipfsLocateTclLibrary --
  *
  *	This procedure locates the root that Tcl's library files are mounted
- *	under if they are under a zipfs file system.
+ *	under if they are under a zipfs file system archive attached to the
+ *	executable or the shared library/DLL. The archives should have been
+ *	mounted (if present) before this function is called.
+ *
+ *	If the libraries are found, the encoding directory paths are set up.
  *
  * Results:
- *	TCL_OK if the library was found, TCL_ERROR otherwise.
+ *	None.
  *
  * Side effects:
- *	Initializes the global variable zipfs_literal_tcl_library. Will
- *	never be cleared.
+ *	May initializes the global variable zipfs_literal_tcl_library. Will
+ *	never be cleared. The encoding directory paths are initialized.
  *
  *-------------------------------------------------------------------------
  */
 
-int
-TclZipfsLocateTclLibrary(void)
+static void
+TclZipfsLocateTclLibrary(
+	int appZipfsPresent,	/* non-0 if app zipfs is to be checked */
+	int shlibZipfsPresent)  /* non-0 if shared lib is to be checked */
 {
     Tcl_Obj *vfsInitScript;
     int found;
-#if (defined(_WIN32) || defined(__CYGWIN__)) && !defined(STATIC_BUILD)
-#   define LIBRARY_SIZE	    64
-    HMODULE hModule;
-    WCHAR wName[MAX_PATH + LIBRARY_SIZE];
-    char dllName[(MAX_PATH + LIBRARY_SIZE) * 3];
-#endif /* _WIN32 */
 
     if (zipfs_tcl_library_init) {
-	return zipfs_literal_tcl_library ? TCL_OK : TCL_ERROR;
+	return;
     }
 
     Tcl_MutexLock(&ZipFSLocateLibMutex);
     if (zipfs_tcl_library_init) {
-	/* Some other thread won the race */
+	/*
+	 * Some other thread won the race. Should only have one app thread
+	 * doing this, but be safe.
+	 */
 	Tcl_MutexUnlock(&ZipFSLocateLibMutex);
-	return zipfs_literal_tcl_library ? TCL_OK : TCL_ERROR;
+	return;
     }
 
-    /* Look for the library file system within the executable. */
-    vfsInitScript =
-	Tcl_NewStringObj(ZIPFS_APP_MOUNT "/tcl_library/init.tcl", -1);
-    Tcl_IncrRefCount(vfsInitScript);
-    found = Tcl_FSAccess(vfsInitScript, F_OK);
-    Tcl_DecrRefCount(vfsInitScript);
-    if (found == TCL_OK) {
-	zipfs_literal_tcl_library = ZIPFS_APP_MOUNT "/tcl_library";
-	goto unlock_and_return;
+    if (appZipfsPresent) {
+	vfsInitScript = Tcl_NewStringObj(ZIPFS_APP_MOUNT "/tcl_library/init.tcl", -1);
+	Tcl_IncrRefCount(vfsInitScript);
+	found = Tcl_FSAccess(vfsInitScript, F_OK);
+	Tcl_DecrRefCount(vfsInitScript);
+	if (found == TCL_OK) {
+	    /* Note this MUST be constant string as never deallocted */
+	    zipfs_literal_tcl_library = ZIPFS_APP_MOUNT "/tcl_library";
+	    goto unlock_and_return;
+	}
     }
-
-    /*
-     * Look for the library file system within the DLL/shared
-     * library.  Note that we must mount the zip file and dll before
-     * releasing to search.
-     */
-#if !defined(STATIC_BUILD)
-#if defined(_WIN32) || defined(__CYGWIN__)
-    hModule = (HMODULE)TclWinGetTclInstance();
-    GetModuleFileNameW(hModule, wName, MAX_PATH);
-#ifdef __CYGWIN__
-    cygwin_conv_path(3, wName, dllName, sizeof(dllName));
-#else
-    WideCharToMultiByte(CP_UTF8, 0, wName, -1, dllName, sizeof(dllName), NULL, NULL);
-#endif
-
-    if (ZipfsAppHookFindTclInit(dllName) == TCL_OK) {
-	goto unlock_and_return;
+    if (shlibZipfsPresent) {
+	vfsInitScript = Tcl_NewStringObj(ZIPFS_ZIP_MOUNT "/tcl_library/init.tcl", -1);
+	Tcl_IncrRefCount(vfsInitScript);
+	found = Tcl_FSAccess(vfsInitScript, F_OK);
+	Tcl_DecrRefCount(vfsInitScript);
+	if (found == TCL_OK) {
+	    /* Note this MUST be constant string as never deallocted */
+	    zipfs_literal_tcl_library = ZIPFS_ZIP_MOUNT "/tcl_library";
+	    goto unlock_and_return;
+	}
     }
-#elif !defined(NO_DLFCN_H)
-    Dl_info dlinfo;
-    if (dladdr((const void *)TclZipfs_TclLibrary, &dlinfo) && (dlinfo.dli_fname != NULL)
-	    && (ZipfsAppHookFindTclInit(dlinfo.dli_fname) == TCL_OK)) {
-	goto unlock_and_return;
-    }
-#else
-    if (ZipfsAppHookFindTclInit(CFG_RUNTIME_LIBDIR "/" CFG_RUNTIME_DLLFILE) == TCL_OK) {
-	goto unlock_and_return;
-    }
-#endif /* _WIN32 */
-#endif /* !defined(STATIC_BUILD) */
 
 unlock_and_return:
     zipfs_tcl_library_init = true;
     Tcl_MutexUnlock(&ZipFSLocateLibMutex);
-    return zipfs_literal_tcl_library ? TCL_OK : TCL_ERROR;
+    if (zipfs_literal_tcl_library) {
+	/* Found it, set up encoding dirs */
+	(void)TclZipfsInitEncodingDirs();
+    }
+    return;
 }
 
 /*
@@ -4349,9 +4335,9 @@ TclZipfs_TclLibrary(void)
 {
     /*
      * Assumes TclZipfsLocateTclLibrary has already been called at startup
-     * through Tcl_InitSubsystems.
+     * through TclZipfs_AppHook. Custom applications that fail to do so will not
+     * have the embedded zipfs tcl library feature available.
      */
-    assert(zipfs_tcl_library_init);
     if (zipfs_literal_tcl_library) {
 	return Tcl_NewStringObj(zipfs_literal_tcl_library, -1);
     }
@@ -4372,8 +4358,6 @@ TclZipfs_TclLibrary(void)
  *	A standard Tcl result.
  *
  * Side effects:
- *	May initialise the cache of where such library files are to be found.
- *	This cache is never cleared.
  *
  *-------------------------------------------------------------------------
  */
@@ -6319,45 +6303,6 @@ TclZipfs_Init(
     return TCL_OK;
 }
 
-#if !defined(STATIC_BUILD)
-static int
-ZipfsAppHookFindTclInit(
-    const char *archive)
-{
-    Tcl_Obj *vfsInitScript;
-    int found;
-
-    if (zipfs_literal_tcl_library) {
-	return TCL_ERROR;
-    }
-    if (TclZipfs_Mount(NULL, archive, ZIPFS_ZIP_MOUNT, NULL)) {
-	/* Either the file doesn't exist or it is not a zip archive */
-	return TCL_ERROR;
-    }
-
-    TclNewLiteralStringObj(vfsInitScript, ZIPFS_ZIP_MOUNT "/init.tcl");
-    Tcl_IncrRefCount(vfsInitScript);
-    found = Tcl_FSAccess(vfsInitScript, F_OK);
-    Tcl_DecrRefCount(vfsInitScript);
-    if (found == 0) {
-	zipfs_literal_tcl_library = ZIPFS_ZIP_MOUNT;
-	return TCL_OK;
-    }
-
-    TclNewLiteralStringObj(vfsInitScript,
-	    ZIPFS_ZIP_MOUNT "/tcl_library/init.tcl");
-    Tcl_IncrRefCount(vfsInitScript);
-    found = Tcl_FSAccess(vfsInitScript, F_OK);
-    Tcl_DecrRefCount(vfsInitScript);
-    if (found == 0) {
-	zipfs_literal_tcl_library = ZIPFS_ZIP_MOUNT "/tcl_library";
-	return TCL_OK;
-    }
-
-    return TCL_ERROR;
-}
-#endif
-
 /*
  *------------------------------------------------------------------------
  *
@@ -6420,16 +6365,17 @@ TclZipfsInitEncodingDirs(void)
     if (zipfs_literal_tcl_library == NULL) {
 	return TCL_ERROR;
     }
-    Tcl_Obj *libDirObj = Tcl_NewStringObj(zipfs_literal_tcl_library, -1);
     Tcl_Obj *subDirObj, *searchPathObj;
-
+    Tcl_Obj *libDirObj = Tcl_NewStringObj(zipfs_literal_tcl_library, -1);
+    Tcl_IncrRefCount(libDirObj);
     TclNewLiteralStringObj(subDirObj, "encoding");
     Tcl_IncrRefCount(subDirObj);
     TclNewObj(searchPathObj);
     Tcl_ListObjAppendElement(NULL, searchPathObj,
 	    Tcl_FSJoinToPath(libDirObj, 1, &subDirObj));
-    Tcl_DecrRefCount(subDirObj);
     Tcl_IncrRefCount(searchPathObj);
+    Tcl_DecrRefCount(subDirObj);
+    Tcl_DecrRefCount(libDirObj);
     Tcl_SetEncodingSearchPath(searchPathObj);
     Tcl_DecrRefCount(searchPathObj);
     /* Reinit system encoding after setting search path */
@@ -6455,7 +6401,7 @@ TclZipfs_AppHook(
     TCL_UNUSED(int *), /*argcPtr*/
 #endif
 #ifdef _WIN32
-    TCL_UNUSED(WCHAR ***)) /* argvPtr */
+    TCL_UNUSED(unsigned short ***)) /* argvPtr */
 #else /* !_WIN32 */
     char ***argvPtr)		/* Pointer to argv */
 #endif /* _WIN32 */
@@ -6470,46 +6416,45 @@ TclZipfs_AppHook(
 #endif
     archive = Tcl_GetNameOfExecutable();
     TclZipfs_Init(NULL);
-    /*
-     * Look for init.tcl in one of the locations mounted later in this
-     * function. Errors ignored as other locations may be available.
-     */
-    if (TclZipfsLocateTclLibrary() == TCL_OK) {
-	(void) TclZipfsInitEncodingDirs();
-    }
 
-    if (!TclZipfs_Mount(NULL, archive, ZIPFS_APP_MOUNT, NULL)) {
-	int found;
+    /* Always mount archives attached to the application and shared library */
+    int appZipfsPresent =
+	(TclZipfs_Mount(NULL, archive, ZIPFS_APP_MOUNT, NULL) == TCL_OK);
+    int shlibZipfsPresent = 0;
+#if !defined(STATIC_BUILD)
+    Tcl_Obj *shlibPathObj = TclGetObjNameOfShlib();
+    if (shlibPathObj &&
+	TclZipfs_Mount(NULL, Tcl_GetString(shlibPathObj), ZIPFS_ZIP_MOUNT, NULL) == TCL_OK) {
+	shlibZipfsPresent = 1;
+    }
+#endif
+
+    /*
+     * NOTE archive and shlibjPathObj both come from thread cache of process
+     * globals and liable to be changed by other initialization code. Do not
+     * hold on to them.
+     */
+
+    /*
+     * After BOTH are mounted, look for init.tcl in one of the mounts.
+     * Errors ignored as other locations may be available.
+     */
+    TclZipfsLocateTclLibrary(appZipfsPresent, shlibZipfsPresent);
+
+    if (appZipfsPresent) {
 	Tcl_Obj *vfsInitScript;
 
 	TclNewLiteralStringObj(vfsInitScript, ZIPFS_APP_MOUNT "/main.tcl");
 	Tcl_IncrRefCount(vfsInitScript);
 	if (Tcl_FSAccess(vfsInitScript, F_OK) == 0) {
-	    /*
-	     * Startup script should be set before calling Tcl_AppInit
-	     */
-
+	    /* Startup script should be set before calling Tcl_AppInit */
 	    Tcl_SetStartupScript(vfsInitScript, NULL);
 	} else {
 	    Tcl_DecrRefCount(vfsInitScript);
 	}
 
-	/*
-	 * Set Tcl Encodings
-	 */
-
-	if (!zipfs_literal_tcl_library) {
-	    TclNewLiteralStringObj(vfsInitScript,
-		    ZIPFS_APP_MOUNT "/tcl_library/init.tcl");
-	    Tcl_IncrRefCount(vfsInitScript);
-	    found = Tcl_FSAccess(vfsInitScript, F_OK);
-	    Tcl_DecrRefCount(vfsInitScript);
-	    if (found == TCL_OK) {
-		zipfs_literal_tcl_library = ZIPFS_APP_MOUNT "/tcl_library";
-		return result;
-	    }
-	}
 #ifdef SUPPORT_BUILTIN_ZIP_INSTALL
+#error "SUPPORT_BUILTIN_ZIP_INSTALL not implemented - TODO"
     } else if (*argcPtr > 1) {
 	/*
 	 * If the first argument is "install", run the supplied installer
@@ -6540,9 +6485,14 @@ TclZipfs_AppHook(
 		Tcl_SetStartupScript(vfsInitScript, NULL);
 	    }
 	    return result;
-	} else if (!TclZipfs_Mount(NULL, archive, ZIPFS_APP_MOUNT, NULL)) {
-	    int found;
+	} else if (TclZipfs_Mount(NULL, archive, ZIPFS_APP_MOUNT, NULL) == TCL_OK) {
 	    Tcl_Obj *vfsInitScript;
+
+	    if (!zipfs_literal_tcl_library) {
+		if (TclZipfsLocateTclLibrary() == TCL_OK) {
+		    (void) TclZipfsInitEncodingDirs();
+		}
+	    }
 
 	    TclNewLiteralStringObj(vfsInitScript, ZIPFS_APP_MOUNT "/main.tcl");
 	    Tcl_IncrRefCount(vfsInitScript);
@@ -6554,16 +6504,6 @@ TclZipfs_AppHook(
 		Tcl_SetStartupScript(vfsInitScript, NULL);
 	    } else {
 		Tcl_DecrRefCount(vfsInitScript);
-	    }
-	    /* Set Tcl Encodings */
-	    TclNewLiteralStringObj(vfsInitScript,
-		    ZIPFS_APP_MOUNT "/tcl_library/init.tcl");
-	    Tcl_IncrRefCount(vfsInitScript);
-	    found = Tcl_FSAccess(vfsInitScript, F_OK);
-	    Tcl_DecrRefCount(vfsInitScript);
-	    if (found == TCL_OK) {
-		zipfs_literal_tcl_library = ZIPFS_APP_MOUNT "/tcl_library";
-		return result;
 	    }
 	}
 #ifdef _WIN32

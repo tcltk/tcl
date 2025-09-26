@@ -2739,7 +2739,7 @@ Tcl_FSGetCwd(
 
 	Tcl_Obj *norm = TclFSNormalizeAbsolutePath(interp, retVal);
 	if (norm == NULL) {
-	     /*
+	    /*
 	     * 'norm' shouldn't ever be NULL, but we are careful.
 	     */
 
@@ -2750,7 +2750,7 @@ Tcl_FSGetCwd(
 	} else if (norm == tsdPtr->cwdPathPtr) {
 	    goto cdEqual;
 	} else {
-	     /*
+	    /*
 	     * Determine whether the filesystem's answer is the same as the
 	     * cached local value.  Since both 'norm' and 'tsdPtr->cwdPathPtr'
 	     * are normalized pathnames, do something more efficient than
@@ -2856,7 +2856,7 @@ Tcl_FSChdir(
 
 		retVal = 0;
 	    } else {
-		 /*
+		/*
 		 * 'Tcl_SetErrno()' has already been called.
 		 */
 	    }
@@ -2866,9 +2866,8 @@ Tcl_FSChdir(
     }
 
     if (retVal == 0) {
-
-	 /* Assume that the cwd was actually changed to the normalized value
-	  * just calculated, and cache that information. */
+	/* Assume that the cwd was actually changed to the normalized value
+	 * just calculated, and cache that information. */
 
 	/*
 	 * If the filesystem epoch changed recently, the normalized pathname or
@@ -3241,9 +3240,9 @@ Tcl_LoadFile(
 	 * load further.
 	 */
 
-	 /*
-	  * Try to delete the file we probably created and then exit.
-	  */
+	/*
+	 * Try to delete the file we probably created and then exit.
+	 */
 
 	Tcl_FSDeleteFile(copyToPtr);
 	Tcl_DecrRefCount(copyToPtr);
@@ -3263,14 +3262,14 @@ Tcl_LoadFile(
     /*
      * It might be necessary on some systems to set the appropriate permissions
      * on the file.  On Unix we could loop over the file attributes and set any
-     * that are called "-permissions" to 0700, but just do it directly instead:
+     * that are called "-permissions" to 0o700, but just do it directly instead:
      */
 
     {
 	Tcl_Size index;
 	Tcl_Obj *perm;
 
-	TclNewLiteralStringObj(perm, "0700");
+	TclNewLiteralStringObj(perm, "0o700");
 	Tcl_IncrRefCount(perm);
 	if (TclFSFileAttrIndex(copyToPtr, "-permissions", &index) == TCL_OK) {
 	    Tcl_FSFileAttrsSet(NULL, index, copyToPtr, perm);

@@ -33,8 +33,6 @@ test platform-1.0 {tcl_platform(engine)} {
 
 test platform-1.1 {TclpSetVariables: tcl_platform} {
     interp create i
-    i eval {catch {unset tcl_platform(debug)}}
-    i eval {catch {unset tcl_platform(threaded)}}
     set result [i eval {lsort [array names tcl_platform]}]
     interp delete i
     set result
@@ -71,6 +69,40 @@ test platform-4.1 {format of platform::identify result} -constraints notValgrind
 test platform-4.2 {format of platform::generic result} -match regexp -body {
     platform::generic
 } -result {^([^-]+-)+[^-]+$}
+
+test platform-5.0 {format of platform::generic result} -setup {
+    set old_machine $::tcl_platform(machine)
+    set old_os $::tcl_platform(os)
+    set old_wordsize $::tcl_platform(wordSize)
+    set old_version $tcl_platform(osVersion)
+    set ::tcl_platform(machine) arm
+    set ::tcl_platform(os) Darwin
+    set ::tcl_platform(wordSize) 8
+} -body {
+    set res {}
+    set l {macosx10.15-x86_64 macosx10.14-x86_64 macosx10.13-x86_64 macosx10.12-x86_64 macosx10.11-x86_64 macosx10.10-x86_64 macosx10.9-x86_64 tcl}
+    foreach v {20.0 21.0 22.0 23.0 24.0 25.0 26.0} {
+	set ::tcl_platform(osVersion) $v
+	set id [platform::identify]
+	set l [linsert $l 0 [string range $id 0 end-4]-x86_64]
+	set l [linsert $l 0 $id]
+	lappend res $id
+	lappend res [expr {($l eq [platform::patterns $id]) ? 1 : [platform::patterns $id]}]
+    }
+    set res
+} -cleanup {
+    set ::tcl_platform(machine) $old_machine
+    set ::tcl_platform(os) $old_os
+    set ::tcl_platform(wordSize) $old_wordsize
+    set ::tcl_platform(osVersion) $old_version
+    unset res l old_machine old_os old_wordsize old_version
+} -result {macos11-arm 1 macos12-arm 1 macos13-arm 1 macos14-arm 1 macos15-arm 1 macos26-arm 1 macos27-arm 1}
+test platform-5.1 {format of platform::patterns macos26-x86_64} -body {
+    platform::patterns macos26-x86_64
+} -result {macos26-x86_64 macos15-x86_64 macos14-x86_64 macos13-x86_64 macos12-x86_64 macos11-x86_64 macosx10.15-x86_64 macosx10.14-x86_64 macosx10.13-x86_64 macosx10.12-x86_64 macosx10.11-x86_64 macosx10.10-x86_64 macosx10.9-x86_64 tcl}
+test platform-5.2 {format of platform::patterns macos26-arm} -body {
+    platform::patterns macos26-arm
+} -result {macos26-arm macos26-x86_64 macos15-arm macos15-x86_64 macos14-arm macos14-x86_64 macos13-arm macos13-x86_64 macos12-arm macos12-x86_64 macos11-arm macos11-x86_64 macosx10.15-x86_64 macosx10.14-x86_64 macosx10.13-x86_64 macosx10.12-x86_64 macosx10.11-x86_64 macosx10.10-x86_64 macosx10.9-x86_64 tcl}
 
 # cleanup
 cleanupTests

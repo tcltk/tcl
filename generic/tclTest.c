@@ -282,6 +282,7 @@ static Tcl_ObjCmdProc	TestSizeCmd;
 static Tcl_ObjCmdProc	TeststaticlibraryCmd;
 static Tcl_ObjCmdProc	TesttranslatefilenameCmd;
 static Tcl_ObjCmdProc	TestfstildeexpandCmd;
+static Tcl_ObjCmdProc	TestuniClassCmd;
 static Tcl_ObjCmdProc	TestupvarCmd;
 static Tcl_ObjCmdProc2	TestWrongNumArgsCmd;
 static Tcl_ObjCmdProc	TestGetIndexFromObjStructCmd;
@@ -326,6 +327,8 @@ static Tcl_Obj *	SimpleRedirect(Tcl_Obj *pathPtr);
 static Tcl_FSMatchInDirectoryProc SimpleMatchInDirectory;
 static Tcl_ObjCmdProc	TestUtfNextCmd;
 static Tcl_ObjCmdProc	TestUtfPrevCmd;
+static Tcl_ObjCmdProc	TestUtfToNormalizedDStringCmd;
+static Tcl_ObjCmdProc	TestUtfToNormalizedCmd;
 static Tcl_ObjCmdProc	TestNumUtfCharsCmd;
 static Tcl_ObjCmdProc	TestGetUniCharCmd;
 static Tcl_ObjCmdProc	TestFindFirstCmd;
@@ -717,6 +720,7 @@ Tcltest_Init(
     Tcl_CreateObjCommand(interp, "testfstildeexpand",
 	    TestfstildeexpandCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testupvar", TestupvarCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testuniclass", TestuniClassCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testmainthread", TestmainthreadCmd, NULL,
 	    NULL);
     Tcl_CreateObjCommand(interp, "testsetmainloop", TestsetmainloopCmd,
@@ -737,6 +741,10 @@ Tcltest_Init(
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testlutil", TestLutilCmd,
 	    NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testutftonormalized",
+	TestUtfToNormalizedCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testutftonormalizeddstring",
+	TestUtfToNormalizedDStringCmd, NULL, NULL);
 #if defined(_WIN32)
     Tcl_CreateObjCommand(interp, "testhandlecount", TestHandleCountCmd,
 	    NULL, NULL);
@@ -2393,8 +2401,8 @@ TestencodingCmd(
 	}
 	Tcl_DString ds;
 	string = (index == ENC_GETNAMEUSER
-		      ? Tcl_GetEncodingNameForUser
-		      : Tcl_GetEncodingNameFromEnvironment)(&ds);
+		    ? Tcl_GetEncodingNameForUser
+		    : Tcl_GetEncodingNameFromEnvironment)(&ds);
 	/* Note not string compare, the actual pointer must be the same */
 	if (string != Tcl_DStringValue(&ds)) {
 	    Tcl_DStringFree(&ds);
@@ -4065,19 +4073,19 @@ TestlistapiCmd(
 	}
     }
 
-#define APPENDINT(name_, var_)                                    \
-    do {                                                           \
-	Tcl_ListObjAppendElement(                                  \
-	    NULL, objPtr, Tcl_NewStringObj((#name_), -1));      \
-	Tcl_ListObjAppendElement(                                  \
-	    NULL, objPtr, Tcl_NewWideIntObj((intptr_t)(var_))); \
+#define APPENDINT(name_, var_) \
+    do {							\
+	Tcl_ListObjAppendElement(NULL,				\
+		objPtr, Tcl_NewStringObj((#name_), -1));	\
+	Tcl_ListObjAppendElement(NULL,				\
+		objPtr, Tcl_NewWideIntObj((intptr_t)(var_)));	\
     } while (0)
-#define APPENDSTR(name_, var_)                                    \
-    do {                                                           \
-	Tcl_ListObjAppendElement(                                  \
-	    NULL, objPtr, Tcl_NewStringObj((#name_), -1));      \
-	Tcl_ListObjAppendElement(                                  \
-	    NULL, objPtr, Tcl_NewStringObj((var_), -1)); \
+#define APPENDSTR(name_, var_) \
+    do {							\
+	Tcl_ListObjAppendElement(NULL,				\
+		objPtr, Tcl_NewStringObj((#name_), -1));	\
+	Tcl_ListObjAppendElement(NULL,				\
+		objPtr, Tcl_NewStringObj((var_), -1));		\
     } while (0)
 
     Tcl_Obj *objPtr = Tcl_NewListObj(0, NULL);
@@ -4102,8 +4110,8 @@ TestlistapiCmd(
 	    else {
 		APPENDSTR(resultType, "");
 	    }
-	   Tcl_ListObjAppendElement(NULL, objPtr, Tcl_NewStringObj("result", -1));
-	   Tcl_ListObjAppendElement(NULL, objPtr, resultPtr);
+	    Tcl_ListObjAppendElement(NULL, objPtr, Tcl_NewStringObj("result", -1));
+	    Tcl_ListObjAppendElement(NULL, objPtr, resultPtr);
 	}
     } else {
 	Tcl_ListObjAppendElement(NULL, objPtr, Tcl_NewStringObj("result", -1));
@@ -5291,6 +5299,80 @@ TestupvarCmd(
 /*
  *----------------------------------------------------------------------
  *
+ * TestuniClassCmd --
+ *
+ *	This procedure implements the "testuniclass" command.  It is used
+ *	to test Tcl_UniCharToXXXX and Tcl_UniCharIsXXXX.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	Return information about the unicode class.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestuniClassCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const *objv)	/* Arguments. */
+{
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "integer");
+	return TCL_ERROR;
+    }
+
+    int value;
+    if (Tcl_GetIntFromObj(interp, objv[1], &value) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    Tcl_Obj *result = Tcl_NewObj();
+    Tcl_ListObjAppendElement(interp, result, Tcl_NewIntObj(Tcl_UniCharToLower(value)));
+    Tcl_ListObjAppendElement(interp, result, Tcl_NewIntObj(Tcl_UniCharToUpper(value)));
+    Tcl_ListObjAppendElement(interp, result, Tcl_NewIntObj(Tcl_UniCharToTitle(value)));
+    if (Tcl_UniCharIsLower(value)) {
+	Tcl_ListObjAppendElement(interp, result, Tcl_NewStringObj("lower", -1));
+    }
+    if (Tcl_UniCharIsUpper(value)) {
+	Tcl_ListObjAppendElement(interp, result, Tcl_NewStringObj("upper", -1));
+    }
+    if (Tcl_UniCharIsAlnum(value)) {
+	Tcl_ListObjAppendElement(interp, result, Tcl_NewStringObj("alnum", -1));
+    }
+    if (Tcl_UniCharIsAlpha(value)) {
+	Tcl_ListObjAppendElement(interp, result, Tcl_NewStringObj("alpha", -1));
+    }
+    if (Tcl_UniCharIsDigit(value)) {
+	Tcl_ListObjAppendElement(interp, result, Tcl_NewStringObj("digit", -1));
+    }
+    if (Tcl_UniCharIsSpace(value)) {
+	Tcl_ListObjAppendElement(interp, result, Tcl_NewStringObj("space", -1));
+    }
+    if (Tcl_UniCharIsWordChar(value)) {
+	Tcl_ListObjAppendElement(interp, result, Tcl_NewStringObj("word", -1));
+    }
+    if (Tcl_UniCharIsControl(value)) {
+	Tcl_ListObjAppendElement(interp, result, Tcl_NewStringObj("control", -1));
+    }
+    if (Tcl_UniCharIsGraph(value)) {
+	Tcl_ListObjAppendElement(interp, result, Tcl_NewStringObj("graph", -1));
+    }
+    if (Tcl_UniCharIsPrint(value)) {
+	Tcl_ListObjAppendElement(interp, result, Tcl_NewStringObj("print", -1));
+    }
+    if (Tcl_UniCharIsPunct(value)) {
+	Tcl_ListObjAppendElement(interp, result, Tcl_NewStringObj("punct", -1));
+    }
+    Tcl_SetObjResult(interp, result);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TestseterrorcodeCmd --
  *
  *	This procedure implements the "testseterrorcodeCmd".  This tests up to
@@ -6292,8 +6374,7 @@ TestChannelCmd(
 	    chan = (Tcl_Channel) NULL;
 	    for (nextPtrPtr = &firstDetached, curPtr = firstDetached;
 		    curPtr != NULL;
-		     nextPtrPtr = &(curPtr->nextPtr), curPtr = curPtr->nextPtr) {
-
+		    nextPtrPtr = &(curPtr->nextPtr), curPtr = curPtr->nextPtr) {
 		if (strcmp(Tcl_GetString(objv[2]), TclGetChannelName(curPtr->chan)) == 0) {
 		    *nextPtrPtr = curPtr->nextPtr;
 		    curPtr->nextPtr = NULL;
@@ -6591,8 +6672,8 @@ TestChannelCmd(
 	    return TCL_OK;
 	}
 	for (hPtr = Tcl_FirstHashEntry(hTblPtr, &hSearch);
-	     hPtr != NULL;
-	     hPtr = Tcl_NextHashEntry(&hSearch)) {
+		hPtr != NULL;
+		hPtr = Tcl_NextHashEntry(&hSearch)) {
 	    Tcl_AppendElement(interp, (char *)Tcl_GetHashKey(hTblPtr, hPtr));
 	}
 	return TCL_OK;
@@ -6629,8 +6710,8 @@ TestChannelCmd(
 	    return TCL_OK;
 	}
 	for (hPtr = Tcl_FirstHashEntry(hTblPtr, &hSearch);
-	     hPtr != NULL;
-	     hPtr = Tcl_NextHashEntry(&hSearch)) {
+		hPtr != NULL;
+		hPtr = Tcl_NextHashEntry(&hSearch)) {
 	    chanPtr  = (Channel *)Tcl_GetHashValue(hPtr);
 	    statePtr = chanPtr->state;
 	    if (statePtr->flags & TCL_READABLE) {
@@ -6823,8 +6904,8 @@ TestChannelEventCmd(
 	    return TCL_ERROR;
 	}
 	for (i = 0, esPtr = statePtr->scriptRecordPtr;
-	     (i < index) && (esPtr != NULL);
-	     i++, esPtr = esPtr->nextPtr) {
+		(i < index) && (esPtr != NULL);
+		i++, esPtr = esPtr->nextPtr) {
 	    /* Empty loop body. */
 	}
 	if (esPtr == NULL) {
@@ -6860,8 +6941,8 @@ TestChannelEventCmd(
 	}
 	resultListPtr = Tcl_GetObjResult(interp);
 	for (esPtr = statePtr->scriptRecordPtr;
-	     esPtr != NULL;
-	     esPtr = esPtr->nextPtr) {
+		esPtr != NULL;
+		esPtr = esPtr->nextPtr) {
 	    if (esPtr->mask) {
 		Tcl_ListObjAppendElement(interp, resultListPtr, Tcl_NewStringObj(
 		    (esPtr->mask == TCL_READABLE) ? "readable" : "writable", -1));
@@ -6881,8 +6962,8 @@ TestChannelEventCmd(
 	    return TCL_ERROR;
 	}
 	for (esPtr = statePtr->scriptRecordPtr;
-	     esPtr != NULL;
-	     esPtr = nextEsPtr) {
+		esPtr != NULL;
+		esPtr = nextEsPtr) {
 	    nextEsPtr = esPtr->nextPtr;
 	    Tcl_DeleteChannelHandler((Tcl_Channel) chanPtr,
 		    TclChannelEventScriptInvoker, esPtr);
@@ -6907,8 +6988,8 @@ TestChannelEventCmd(
 	    return TCL_ERROR;
 	}
 	for (i = 0, esPtr = statePtr->scriptRecordPtr;
-	     (i < index) && (esPtr != NULL);
-	     i++, esPtr = esPtr->nextPtr) {
+		(i < index) && (esPtr != NULL);
+		i++, esPtr = esPtr->nextPtr) {
 	    /* Empty loop body. */
 	}
 	if (esPtr == NULL) {
@@ -6955,6 +7036,12 @@ TestChannelEventCmd(
  *----------------------------------------------------------------------
  */
 
+enum TcpStateFlags {
+    TCP_ASYNC_TEST_MODE = 1<<8	/* Async testing activated.  Do not
+				 * automatically continue connection
+				 * process. */
+};
+
 static int
 TestSocketCmd(
     TCL_UNUSED(void *),
@@ -6964,11 +7051,6 @@ TestSocketCmd(
 {
     const char *cmdName;	/* Sub command. */
     Tcl_Size len;		/* Length of subcommand string. */
-    enum TclTcpTestFlags {
-	TCP_ASYNC_TEST_MODE = 1<<8	/* Async testing activated.  Do not
-					 * automatically continue connection
-					 * process. */
-    };
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "subcommand ?additional args..?");
@@ -8979,6 +9061,155 @@ vamoose:
 	Tcl_DecrRefCount(l2Obj);
     }
     return ret;
+}
+
+/*
+ * TestUtfToNormalizedCmd --
+ *
+ *	This procedure implements the "testutftonormalized" command which
+ *	provides a raw interface to the Tcl_UtfToNormalized API.
+ *      objv[1] - input byte array encoded in Tcl internal UTF-8. Use
+ *		  teststringbytes to construct.
+ *	objv[2] - normForm value to pass to Tcl_UtfToNormalized
+ *	objv[3] - profile value to pass to Tcl_UtfToNormalized
+ *	objv[4] - buffer length to pass to Tcl_UtfToNormalized.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	The interpreter result is set to the raw bytes output of the
+ *	Tcl_UtfToNormalized call.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+TestUtfToNormalizedCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Arguments. */
+{
+    if (objc != 5 && objc != 6) {
+	Tcl_WrongNumArgs(interp, 1, objv, "BYTES NORMALFORM PROFILE ?LENGTH? BUFLENGTH");
+	return TCL_ERROR;
+    }
+    Tcl_Size bufLen, len, slen;
+    unsigned char *s = Tcl_GetBytesFromObj(interp, objv[1], &slen);
+    if (s == NULL) {
+	return TCL_ERROR;
+    }
+    int normForm, profile;
+    if (Tcl_GetIntFromObj(interp, objv[2], &normForm) != TCL_OK ||
+	Tcl_GetIntFromObj(interp, objv[3], &profile) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (Tcl_GetSizeIntFromObj(interp, objv[objc-1], &bufLen) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (objc == 5) {
+	len = slen;
+    } else {
+	if (Tcl_GetSizeIntFromObj(interp, objv[4], &len) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if (len > slen) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "Passed length %" TCL_SIZE_MODIFIER
+		    "d is greater than string length %" TCL_SIZE_MODIFIER
+		    "d.", len, slen));
+	    return TCL_ERROR;
+	}
+    }
+    int result;
+    char buffer[20] = {0x80};
+    char *bufPtr;
+    Tcl_Size bufStored = 0;
+    if (bufLen > (int)sizeof(buffer)) {
+	bufPtr = (char *)Tcl_Alloc(bufLen);
+    } else {
+	bufPtr = buffer;
+    }
+    result = Tcl_UtfToNormalized(interp, (char *) s, len,
+	(Tcl_UnicodeNormalizationForm)normForm, profile, bufPtr, bufLen, &bufStored);
+    if (result == TCL_OK) {
+	/* Return as raw bytes, not string */
+	Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(
+		(unsigned char *)bufPtr, bufStored));
+    }
+    if (bufPtr != buffer) {
+	Tcl_Free(bufPtr);
+    }
+    return result;
+}
+
+/*
+ * TestUtfToNormalizedDStringCmd --
+ *
+ *	This procedure implements the "testutftonormalizedstring" command which
+ *	provides a raw interface to the Tcl_UtfToNormalizedDString API.
+ *      objv[1] - input byte array encoded in Tcl internal UTF-8. Use
+ *		  teststringbytes to construct.
+ *	objv[2] - normForm value to pass to Tcl_UtfToNormalizedDString
+ *	objv[3] - profile value to pass to Tcl_UtfToNormalizedDString
+ *	objv[4] - (optional) length to pass to Tcl_UtfToNormalizedDString. If
+ *		  not present, length of objv[1] is used.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	The interpreter result is set to the raw bytes output of the
+ *	Tcl_UtfToNormalizedDString call.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+TestUtfToNormalizedDStringCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Arguments. */
+{
+    if (objc != 4 && objc != 5) {
+	Tcl_WrongNumArgs(interp, 1, objv, "BYTES NORMALFORM PROFILE ?LENGTH?");
+    }
+    Tcl_Size len, slen;
+    unsigned char *s = Tcl_GetBytesFromObj(interp, objv[1], &slen);
+    if (s == NULL) {
+	return TCL_ERROR;
+    }
+    int normForm, profile;
+    if (Tcl_GetIntFromObj(interp, objv[2], &normForm) != TCL_OK ||
+	Tcl_GetIntFromObj(interp, objv[3], &profile) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (objc == 4) {
+	len = slen;
+    } else {
+	if (Tcl_GetSizeIntFromObj(interp, objv[5], &len) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if (len > slen) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "Passed length %" TCL_SIZE_MODIFIER
+		    "d is greater than string length %" TCL_SIZE_MODIFIER
+		    "d.", len, slen));
+	    return TCL_ERROR;
+	}
+    }
+    Tcl_DString ds;
+    int result;
+    result = Tcl_UtfToNormalizedDString(interp, (char *) s, len,
+	(Tcl_UnicodeNormalizationForm)normForm, profile, &ds);
+    if (result == TCL_OK) {
+	/* Return as raw bytes, not string */
+	Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(
+		(unsigned char *)Tcl_DStringValue(&ds),
+		Tcl_DStringLength(&ds)));
+	Tcl_DStringFree(&ds);
+    }
+    return result;
 }
 
 #ifdef _WIN32

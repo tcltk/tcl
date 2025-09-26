@@ -4617,15 +4617,17 @@ TEBCresume(
 
     {
 	Tcl_HashEntry *hPtr;
+	JumptableInfo *jtPtr;
+	JumptableNumInfo *jtnPtr;
 
 	/*
 	 * Jump to location looked up in a hashtable; fall through to next
 	 * instr if lookup fails. Lookup by string.
 	 */
 
-   case INST_JUMP_TABLE:
+    case INST_JUMP_TABLE:
 	tblIdx = TclGetInt4AtPtr(pc + 1);
-	JumptableInfo *jtPtr = (JumptableInfo *)
+	jtPtr = (JumptableInfo *)
 		codePtr->auxDataArrayPtr[tblIdx].clientData;
 	TRACE("%u \"%.20s\" => ", tblIdx, O2S(OBJ_AT_TOS));
 	hPtr = Tcl_FindHashEntry(&jtPtr->hashTable, TclGetString(OBJ_AT_TOS));
@@ -4638,7 +4640,7 @@ TEBCresume(
 
     case INST_JUMP_TABLE_NUM:
 	tblIdx = TclGetInt4AtPtr(pc + 1);
-	JumptableNumInfo *jtnPtr = (JumptableNumInfo *)
+	jtnPtr = (JumptableNumInfo *)
 		codePtr->auxDataArrayPtr[tblIdx].clientData;
 	TRACE("%u \"%.20s\" => ", tblIdx, O2S(OBJ_AT_TOS));
 	DECACHE_STACK_INFO();
@@ -4998,9 +5000,11 @@ TEBCresume(
 	DECACHE_STACK_INFO();
 	oPtr = (Object *) Tcl_GetObjectFromObj(interp, OBJ_AT_TOS);
 	CACHE_STACK_INFO();
-	int match = oPtr != NULL;
-	TRACE_APPEND("%d\n", match);
-	JUMP_PEEPHOLE_F(match, 1, 1);
+	{
+	    int match = oPtr != NULL;
+	    TRACE_APPEND("%d\n", match);
+	    JUMP_PEEPHOLE_F(match, 1, 1);
+	}
     case INST_TCLOO_CLASS:
     case INST_TCLOO_NS:
     case INST_TCLOO_ID:
@@ -7936,7 +7940,7 @@ TEBCresume(
     outOfMemory:
 	TclPrintfResult(interp, "out of memory");
 	DECACHE_STACK_INFO();
-	TclSetErrorCode(interp, "ARITH", "OUTOFMEMORY", "out of memory");
+	TclSetErrorCode(interp, "TCL", "MEMORY");
 	CACHE_STACK_INFO();
 	goto gotError;
 
