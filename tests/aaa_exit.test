@@ -16,42 +16,27 @@ if {"::tcltest" ni [namespace children]} {
     namespace import -force ::tcltest::*
 }
 
-testConstraint noappverifier [expr {
-        [llength [info commands testappverifierpresent]] == 0
-        || ![testappverifierpresent]}]
-
-test exit-1.1 {normal, quick exit} -constraints noappverifier -body {
-    set f [open "|[interpreter] << \"exec [interpreter] << {set ::env(TCL_FINALIZE_ON_EXIT) 0;exit}\"" r]
-    set aft [after 1000 {set done "Quick exit hangs !!!"}]
-    fileevent $f readable {after cancel $aft;set done OK}
+foreach {fin_on_exit testname} {0 {normal, quick exit} 1 {full-finalized exit}} {
+  test exit-1.[expr {$fin_on_exit+1}] $testname -setup {
+    set tout [expr {1000 + [::tcl::pkgconfig get mem_debug] * 5000}]
+    set tout [after $tout [list set done "Exit hangs (timeout) !!!"]]
+    set f {}
+  } -body {
+    set f [open [list | [interpreter] << "set ::env(TCL_FINALIZE_ON_EXIT) $fin_on_exit; exit"] r]
+    fileevent $f readable [namespace code {after cancel $tout; set done OK}]
     vwait done
-    if {$done != "OK"} {
-	fconfigure $f -blocking 0
-	close $f
-    } else {
+    if {$done eq "OK"} {
 	if {[catch {close $f} err]} {
-	    set done "Quick exit misbehaves: $err"
+	    set done "Exit misbehaves: $err"
 	}
     }
     set done
-} -result OK
-
-test exit-1.2 {full-finalized exit} -constraints noappverifier -body {
-    set f [open "|[interpreter] << \"exec [interpreter] << {set ::env(TCL_FINALIZE_ON_EXIT) 1;exit}\"" r]
-    set aft [after 1000 {set done "Full-finalized exit hangs !!!"}]
-    fileevent $f readable {after cancel $aft;set done OK}
-    vwait done
-    if {$done != "OK"} {
-	fconfigure $f -blocking 0
-	close $f
-    } else {
-	if {[catch {close $f} err]} {
-	    set done "Full-finalized exit misbehaves: $err"
-	}
-    }
-    set done
-} -result OK
-
+  } -cleanup {
+    after cancel $tout
+    if {$f ne {}} { catch { close $f } }
+    unset -nocomplain fin_on_exit testname done f
+  } -result OK
+}
 
 # cleanup
 ::tcltest::cleanupTests
