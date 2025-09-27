@@ -102,7 +102,7 @@ SetDelegateSuperclasses(
     Class *delegatePtr)
 {
     // Build new list of superclasses
-    int i, j = delegatePtr->superclasses.num, k;
+    Tcl_Size j = delegatePtr->superclasses.num;
     Class *superPtr, **supers = (Class **) Tcl_Alloc(sizeof(Class *) *
 	    (delegatePtr->superclasses.num + clsPtr->superclasses.num));
     if (delegatePtr->superclasses.num) {
@@ -114,7 +114,7 @@ SetDelegateSuperclasses(
 	if (!superDelegatePtr) {
 	    continue;
 	}
-	for (k=0 ; k<=j ; k++) {
+	for (Tcl_Size k=0 ; k<=j ; k++) {
 	    if (k == j) {
 		supers[j++] = superDelegatePtr;
 		TclOOAddToSubclasses(delegatePtr, superDelegatePtr);
@@ -151,7 +151,7 @@ InstallDelegateAsMixin(
     }
     Class **mixins = (Class **) TclStackAlloc(interp,
 	    sizeof(Class *) * (clsPtr->thisPtr->mixins.num + 1));
-    for (int i = 0; i < clsPtr->thisPtr->mixins.num; i++) {
+    for (Tcl_Size i = 0; i < clsPtr->thisPtr->mixins.num; i++) {
 	mixins[i] = clsPtr->thisPtr->mixins.list[i];
 	if (mixins[i] == delegatePtr) {
 	    TclStackFree(interp, (void *) mixins);
@@ -541,7 +541,7 @@ UpdateClassDelegatesAfterClone(
 
 	Tcl_Size i;
 	Class *mixin;
-	FOREACH(mixin, targetPtr->mixins) {
+	FOREACH_IDX(i, mixin, targetPtr->mixins) {
 	    if (mixin == originDelegate->classPtr) {
 		TclOORemoveFromInstances(targetPtr, originDelegate->classPtr);
 		TclOODecrRefCount(originDelegate);

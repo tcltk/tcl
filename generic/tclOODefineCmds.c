@@ -3136,7 +3136,6 @@ TclOOSetSuperclasses(
     Tcl_Size superc,
     Class **superclasses)
 {
-    Tcl_Size i;
     Class *superPtr;
 
     if (clsPtr->superclasses.num != 0) {

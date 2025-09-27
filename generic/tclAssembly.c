@@ -2040,8 +2040,7 @@ CreateMirrorNumJumpTable(
 	if (Tcl_GetWideIntFromObj(NULL, objv[i], &key) != TCL_OK) {
 	    if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
 		TclPrintfResult(interp,
-			"jump table must have 64-bit integer keys",
-			TCL_AUTO_LENGTH);
+			"jump table must have 64-bit integer keys");
 		TclSetErrorCode(interp, "TCL", "ASSEM", "BADJUMPTABLEENTRY");
 	    }
 	    goto error;

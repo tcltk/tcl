@@ -2735,7 +2735,7 @@ typedef struct ListRep {
 /* Returns the starting slot for this listRep in the contained ListStore */
 static inline Tcl_Size
 ListRepStart(
-    ListRep *listRepPtr)
+    const ListRep *listRepPtr)
 {
     return (listRepPtr->spanPtr
 	    ? listRepPtr->spanPtr->spanStart
@@ -2745,7 +2745,7 @@ ListRepStart(
 /* Returns the number of elements in this listRep */
 static inline Tcl_Size
 ListRepLength(
-    ListRep *listRepPtr)
+    const ListRep *listRepPtr)
 {
     return (listRepPtr->spanPtr
 	    ? listRepPtr->spanPtr->spanLength
@@ -2768,7 +2768,7 @@ ListRepElementsBase(
 /* Returns 1/0 whether the ListRep's ListStore is shared. */
 static inline bool
 ListRepIsShared(
-    ListRep *listRepPtr)
+    const ListRep *listRepPtr)
 {
     return listRepPtr->storePtr->refCount > 1;
 }

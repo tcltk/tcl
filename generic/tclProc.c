@@ -2915,7 +2915,7 @@ DuplicateProc(
 	memcpy(newCfPtr, origCfPtr, sizeof(CmdFrame));
 	newCfPtr->line = (int *)Tcl_Alloc(sizeof(int));
 	newCfPtr->line[0] = origCfPtr->line[0];
-	Tcl_IncrRefCount(newCfPtr->data.eval.path);
+	Tcl_IncrRefCount(newCfPtr->path);
 
 	Tcl_HashEntry *hePtr = Tcl_CreateHashEntry(iPtr->linePBodyPtr,
 		newProc, NULL);

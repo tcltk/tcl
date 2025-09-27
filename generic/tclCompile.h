@@ -1141,7 +1141,7 @@ AllocJumptable(void)
     return jtPtr;
 }
 
-static inline int
+static inline bool
 CreateJumptableEntry(
     JumptableInfo *jtPtr,
     const char *keyPtr,
@@ -1178,7 +1178,7 @@ AllocJumptableNum(void)
     return jtnPtr;
 }
 
-static inline int
+static inline bool
 CreateJumptableNumEntry(
     JumptableNumInfo *jtnPtr,
     Tcl_Size key,

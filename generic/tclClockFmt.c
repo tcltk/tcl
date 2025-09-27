@@ -1411,7 +1411,7 @@ ClockMCGetMultiListIdxTree(
 	}
 
 	while (*mcKeys) {
-	    Tcl_Obj *valObj = TclClockMCGet(opts, *mcKeys);
+	    valObj = TclClockMCGet(opts, *mcKeys);
 	    if (valObj == NULL) {
 		goto done;
 	    }
