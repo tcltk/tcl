@@ -347,7 +347,7 @@ static inline void
 ListRepFreeUnreferenced(
     const ListRep *repPtr)
 {
-    if (! ListRepIsShared(repPtr) && repPtr->spanPtr) {
+    if (!ListRepIsShared(repPtr) && repPtr->spanPtr) {
 	/* T:listrep-1.5.1 */
 	ListRepUnsharedFreeUnreferenced(repPtr);
     }
@@ -2348,7 +2348,7 @@ Tcl_ListObjReplace(
     LIST_ASSERT(origListLen == ListRepLength(&listRep));
     LIST_ASSERT(ListRepStart(&listRep) == listRep.storePtr->firstUsed);
 
-    LIST_ASSERT((numToDelete + numToInsert) > 0);
+    LIST_ASSERT(numToDelete + numToInsert > 0);
 
     /* Base of slot array holding the list elements */
     listObjs = &listRep.storePtr->slots[ListRepStart(&listRep)];

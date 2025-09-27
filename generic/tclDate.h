@@ -523,7 +523,7 @@ struct ClockFmtScnStorage {
 
 MODULE_SCOPE int	TclToSeconds(int Hours, int Minutes,
 			    int Seconds, MERIDIAN Meridian);
-MODULE_SCOPE int	TclIsGregorianLeapYear(TclDateFields *);
+MODULE_SCOPE bool	TclIsGregorianLeapYear(TclDateFields *);
 MODULE_SCOPE void	TclGetJulianDayFromEraYearDay(
 			    TclDateFields *fields, int changeover);
 MODULE_SCOPE int	TclConvertUTCToLocal(ClockClientData *dataPtr, Tcl_Interp *,

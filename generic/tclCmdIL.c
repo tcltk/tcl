@@ -3058,6 +3058,7 @@ Tcl_LsearchObjCmd(
     Tcl_Size groupOffset = 0;
     Tcl_Size start = 0;
     bool noCase = false;
+    Tcl_Obj *itemPtr = NULL;
     SortStrCmpFn_t strCmpFn = TclUtfCmp;
     SortInfo sortInfo = {
 	true,		// isIncreasing
@@ -3455,8 +3456,7 @@ Tcl_LsearchObjCmd(
 
     Tcl_Size index = -1;
     int match = 0;
-    Tcl_Size i;
-    Tcl_Obj *itemPtr = NULL;
+    Tcl_Size i = 0;
 
     if (mode == SORTED && !allMatches && !negatedMatch) {
 	/*
@@ -3594,7 +3594,7 @@ Tcl_LsearchObjCmd(
 		    goto done;
 		}
 	    } else {
-		itemPtr = listv[i+groupOffset];
+		itemPtr = listv[i + groupOffset];
 	    }
 
 	    switch (mode) {

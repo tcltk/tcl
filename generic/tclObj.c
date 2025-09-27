@@ -2642,13 +2642,6 @@ Tcl_GetLongFromObj(
 	TclSetErrorCode(interp, "TCL", "VALUE", "INTEGER");
     }
     return TCL_ERROR;
-
-  listRep:
-    if (interp) {
-	TclPrintfResult(interp, "expected integer but got a list");
-	TclSetErrorCode(interp, "TCL", "VALUE", "INTEGER");
-    }
-    return TCL_ERROR;
 }
 
 /*
@@ -2944,13 +2937,6 @@ Tcl_GetWideIntFromObj(
     if (interp != NULL) {
 	TclPrintfResult(interp, "expected integer but got \"%s\"",
 		TclGetString(objPtr));
-	TclSetErrorCode(interp, "TCL", "VALUE", "INTEGER");
-    }
-    return TCL_ERROR;
-
-  listRep:
-    if (interp) {
-	TclPrintfResult(interp, "expected integer but got a list");
 	TclSetErrorCode(interp, "TCL", "VALUE", "INTEGER");
     }
     return TCL_ERROR;
@@ -3632,13 +3618,6 @@ Tcl_GetNumberFromObj(
 	}
     } while (TCL_OK ==
 	    TclParseNumber(interp, objPtr, "number", NULL, -1, NULL, 0));
-    return TCL_ERROR;
-
-  listRep:
-    if (interp) {
-	TclPrintfResult(interp, "expected number but got a list");
-	TclSetErrorCode(interp, "TCL", "VALUE", "NUMBER");
-    }
     return TCL_ERROR;
 }
 

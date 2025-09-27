@@ -2414,7 +2414,7 @@ IssueSwitchJumpTable(
 
     for (Tcl_Size i=0 ; i<numArms ; i++) {
 	SwitchArmInfo *arm = &arms[i];
-	int isNew;
+	bool isNew;
 
 	/*
 	 * For each arm, we must first work out what to do with the match
@@ -2444,8 +2444,8 @@ IssueSwitchJumpTable(
 		Tcl_Size slength = Tcl_UtfToLower(Tcl_DStringValue(&buffer));
 		Tcl_DStringSetLength(&buffer, slength);
 	    }
-	    isNew = CreateJumptableEntry(jtPtr, Tcl_DStringValue(&buffer),
-		    CurrentOffset(envPtr) - jumpLocation);
+	    isNew = CreateJumptableEntryToHere(jtPtr, Tcl_DStringValue(&buffer),
+		    jumpLocation);
 	    Tcl_DStringFree(&buffer);
 	} else {
 	    /*
@@ -2453,168 +2453,8 @@ IssueSwitchJumpTable(
 	     * INST_JUMP_TABLE instruction to here.
 	     */
 
-	    foundDefault = 1;
-	    isNew = 1;
-	    FWDLABEL(	jumpToDefault);
-	}
-
-	/*
-	 * Now, for each arm we must deal with the body of the clause.
-	 *
-	 * If this is a continuation body (never true of a final clause,
-	 * whether default or not) we're done because the next jump target
-	 * will also point here, so we advance to the next clause.
-	 */
-
-	if (IsFallthroughArm(arm)) {
-	    mustGenerate = 1;
-	    continue;
-	}
-
-	/*
-	 * Also skip this arm if its only match clause is masked. (We could
-	 * probably be more aggressive about this, but that would be much more
-	 * difficult to get right.)
-	 */
-
-	if (!isNew && !mustGenerate) {
-	    continue;
-	}
-	mustGenerate = 0;
-
-	/*
-	 * Compile the body of the arm.
-	 */
-
-	SetSwitchLineInformation(arm);
-	TclCompileCmdWord(interp, arm->bodyToken, 1, envPtr);
-
-	/*
-	 * Compile a jump in to the end of the command if this body is
-	 * anything other than a user-supplied default arm (to either skip
-	 * over the remaining bodies or the code that generates an empty
-	 * result).
-	 */
-
-	if (i < numArms-1 || !foundDefault) {
-	    FWDJUMP(		JUMP, finalFixups[numRealBodies++]);
-	    STKDELTA(-1);
-	}
-    }
-
-    /*
-     * We're at the end. If we've not already done so through the processing
-     * of a user-supplied default clause, add in a "default" default clause
-     * now.
-     */
-
-    if (!foundDefault) {
-	FWDLABEL(	jumpToDefault);
-	PUSH(			"");
-    }
-
-    /*
-     * No more instructions to be issued; everything that needs to jump to the
-     * end of the command is fixed up at this point.
-     */
-
-    for (i=0 ; i<numRealBodies ; i++) {
-	FWDLABEL(	finalFixups[i]);
-    }
-
-    /*
-     * Clean up all our temporary space and return.
-     */
-
-    TclStackFree(interp, finalFixups);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * IssueSwitchNumJumpTable --
- *
- *	Generate instructions for a [switch] command that is to be compiled
- *	into a numeric jump table. This is only for the -integer mode.
- *
- *	We assume (because it was checked by our caller) that there's at least
- *	one body, all value tokens are parsed integers or "default", all body
- *	tokens are literals, and all fallthroughs eventually hit something real.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-IssueSwitchNumJumpTable(
-    Tcl_Interp *interp,		// Context for compiling script bodies.
-    CompileEnv *envPtr,		// Holds resulting instructions.
-    Tcl_Size numArms,		// Number of arms of the switch.
-    SwitchArmInfo *arms)	// Array of arm descriptors.
-{
-    JumptableNumInfo *jtPtr;
-    Tcl_AuxDataRef infoIndex;
-    int isNew, mustGenerate, foundDefault;
-    Tcl_Size numRealBodies = 0, i;
-    Tcl_BytecodeLabel jumpLocation, jumpToDefault, *finalFixups;
-
-    /*
-     * Compile the switch by using a jump table, which is basically a
-     * hashtable that maps from literal values to match against to the offset
-     * (relative to the INST_JUMP_TABLE instruction) to jump to. The jump
-     * table itself is independent of any invocation of the bytecode, and as
-     * such is stored in an auxData block.
-     *
-     * Start by allocating the jump table itself, plus some workspace.
-     */
-
-    jtPtr = AllocJumptableNum();
-    infoIndex = RegisterJumptableNum(jtPtr, envPtr);
-    finalFixups = (Tcl_BytecodeLabel *)TclStackAlloc(interp,
-	    sizeof(Tcl_BytecodeLabel) * numArms);
-    foundDefault = 0;
-    mustGenerate = 1;
-
-    /*
-     * Next, issue the instruction to do the jump, together with what we want
-     * to do if things do not work out (jump to either the default clause or
-     * the "default" default, which just sets the result to empty).
-     *
-     * Note that the jumpTableNum opcode enforces wide-int-ness.
-     */
-
-    BACKLABEL(		jumpLocation);
-    OP4(			JUMP_TABLE_NUM, infoIndex);
-    FWDJUMP(			JUMP, jumpToDefault);
-
-    for (i=0 ; i<numArms ; i++) {
-	SwitchArmInfo *arm = &arms[i];
-
-	/*
-	 * For each arm, we must first work out what to do with the match
-	 * term.
-	 */
-
-	if (i != numArms-1 || !HasDefaultClause(numArms, arms)) {
-	    /*
-	     * This is not a default clause, so insert the current location as
-	     * a target in the jump table (assuming it isn't already there,
-	     * which would indicate that this clause is probably masked by an
-	     * earlier one). Note that we've verified that the value is either
-	     * an integer or a _terminal_ default clause.
-	     *
-	     * The value was parsed earlier.
-	     */
-
-	    isNew = CreateJumptableNumEntry(jtPtr, arm->valueInt,
-		    CurrentOffset(envPtr) - jumpLocation);
-	} else {
-	    /*
-	     * This is a default clause, so patch up the fallthrough from the
-	     * INST_JUMP_TABLE instruction to here.
-	     */
-
 	    foundDefault = true;
-	    isNew = 1;
+	    isNew = true;
 	    FWDLABEL(	jumpToDefault);
 	}
 
@@ -2692,6 +2532,164 @@ IssueSwitchNumJumpTable(
 /*
  *----------------------------------------------------------------------
  *
+ * IssueSwitchNumJumpTable --
+ *
+ *	Generate instructions for a [switch] command that is to be compiled
+ *	into a numeric jump table. This is only for the -integer mode.
+ *
+ *	We assume (because it was checked by our caller) that there's at least
+ *	one body, all value tokens are parsed integers or "default", all body
+ *	tokens are literals, and all fallthroughs eventually hit something real.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+IssueSwitchNumJumpTable(
+    Tcl_Interp *interp,		// Context for compiling script bodies.
+    CompileEnv *envPtr,		// Holds resulting instructions.
+    Tcl_Size numArms,		// Number of arms of the switch.
+    SwitchArmInfo *arms)	// Array of arm descriptors.
+{
+    Tcl_Size numRealBodies = 0, i;
+    Tcl_BytecodeLabel jumpLocation, jumpToDefault, *finalFixups;
+
+    /*
+     * Compile the switch by using a jump table, which is basically a
+     * hashtable that maps from literal values to match against to the offset
+     * (relative to the INST_JUMP_TABLE instruction) to jump to. The jump
+     * table itself is independent of any invocation of the bytecode, and as
+     * such is stored in an auxData block.
+     *
+     * Start by allocating the jump table itself, plus some workspace.
+     */
+
+    JumptableNumInfo *jtnPtr = AllocJumptableNum();
+    Tcl_AuxDataRef infoIndex = RegisterJumptableNum(jtnPtr, envPtr);
+    finalFixups = (Tcl_BytecodeLabel *)TclStackAlloc(interp,
+	    sizeof(Tcl_BytecodeLabel) * numArms);
+    bool foundDefault = false;
+    bool mustGenerate = true;
+
+    /*
+     * Next, issue the instruction to do the jump, together with what we want
+     * to do if things do not work out (jump to either the default clause or
+     * the "default" default, which just sets the result to empty).
+     *
+     * Note that the jumpTableNum opcode enforces wide-int-ness.
+     */
+
+    BACKLABEL(		jumpLocation);
+    OP4(			JUMP_TABLE_NUM, infoIndex);
+    FWDJUMP(			JUMP, jumpToDefault);
+
+    for (i=0 ; i<numArms ; i++) {
+	SwitchArmInfo *arm = &arms[i];
+	bool isNew;
+
+	/*
+	 * For each arm, we must first work out what to do with the match
+	 * term.
+	 */
+
+	if (i != numArms-1 || !HasDefaultClause(numArms, arms)) {
+	    /*
+	     * This is not a default clause, so insert the current location as
+	     * a target in the jump table (assuming it isn't already there,
+	     * which would indicate that this clause is probably masked by an
+	     * earlier one). Note that we've verified that the value is either
+	     * an integer or a _terminal_ default clause.
+	     *
+	     * The value was parsed earlier.
+	     */
+
+	    isNew = CreateJumptableNumEntryToHere(jtnPtr, arm->valueInt,
+		    jumpLocation);
+	} else {
+	    /*
+	     * This is a default clause, so patch up the fallthrough from the
+	     * INST_JUMP_TABLE instruction to here.
+	     */
+
+	    foundDefault = true;
+	    isNew = true;
+	    FWDLABEL(	jumpToDefault);
+	}
+
+	/*
+	 * Now, for each arm we must deal with the body of the clause.
+	 *
+	 * If this is a continuation body (never true of a final clause,
+	 * whether default or not) we're done because the next jump target
+	 * will also point here, so we advance to the next clause.
+	 */
+
+	if (IsFallthroughArm(arm)) {
+	    mustGenerate = true;
+	    continue;
+	}
+
+	/*
+	 * Also skip this arm if its only match clause is masked. (We could
+	 * probably be more aggressive about this, but that would be much more
+	 * difficult to get right.)
+	 */
+
+	if (!isNew && !mustGenerate) {
+	    continue;
+	}
+	mustGenerate = false;
+
+	/*
+	 * Compile the body of the arm.
+	 */
+
+	SetSwitchLineInformation(arm);
+	TclCompileCmdWord(interp, arm->bodyToken, 1, envPtr);
+
+	/*
+	 * Compile a jump in to the end of the command if this body is
+	 * anything other than a user-supplied default arm (to either skip
+	 * over the remaining bodies or the code that generates an empty
+	 * result).
+	 */
+
+	if (i < numArms-1 || !foundDefault) {
+	    FWDJUMP(		JUMP, finalFixups[numRealBodies++]);
+	    STKDELTA(-1);
+	}
+    }
+
+    /*
+     * We're at the end. If we've not already done so through the processing
+     * of a user-supplied default clause, add in a "default" default clause
+     * now.
+     */
+
+    if (!foundDefault) {
+	FWDLABEL(	jumpToDefault);
+	PUSH(			"");
+    }
+
+    /*
+     * No more instructions to be issued; everything that needs to jump to the
+     * end of the command is fixed up at this point.
+     */
+
+    for (i=0 ; i<numRealBodies ; i++) {
+	FWDLABEL(	finalFixups[i]);
+    }
+
+    /*
+     * Clean up all our temporary space and return.
+     */
+
+    TclStackFree(interp, finalFixups);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * DupJumptableInfo, FreeJumptableInfo, etc --
  *
  *	Functions to duplicate, release and print jump-tables created for use
@@ -2756,13 +2754,12 @@ PrintJumptableInfo(
     JumptableInfo *jtPtr = (JumptableInfo *)clientData;
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
-    const char *keyPtr;
-    size_t offset, i = 0;
+    size_t i = 0;
 
     hPtr = Tcl_FirstHashEntry(&jtPtr->hashTable, &search);
     for (; hPtr ; hPtr = Tcl_NextHashEntry(&search)) {
-	keyPtr = (const char *)Tcl_GetHashKey(&jtPtr->hashTable, hPtr);
-	offset = PTR2INT(Tcl_GetHashValue(hPtr));
+	const char *keyPtr = (const char *)Tcl_GetHashKey(&jtPtr->hashTable, hPtr);
+	Tcl_Size offset = PTR2INT(Tcl_GetHashValue(hPtr));
 
 	if (i++) {
 	    Tcl_AppendToObj(appendObj, ", ", TCL_AUTO_LENGTH);
@@ -2771,7 +2768,7 @@ PrintJumptableInfo(
 	    }
 	}
 	Tcl_AppendPrintfToObj(appendObj, "\"%s\"->pc %" TCL_Z_MODIFIER "u",
-		keyPtr, pcOffset + offset);
+		keyPtr, (size_t) (pcOffset + offset));
     }
 }
 
@@ -2786,14 +2783,12 @@ DisassembleJumptableInfo(
     Tcl_Obj *mapping;
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
-    const char *keyPtr;
-    size_t offset;
-
+    
     TclNewObj(mapping);
     hPtr = Tcl_FirstHashEntry(&jtPtr->hashTable, &search);
     for (; hPtr ; hPtr = Tcl_NextHashEntry(&search)) {
-	keyPtr = (const char *)Tcl_GetHashKey(&jtPtr->hashTable, hPtr);
-	offset = PTR2INT(Tcl_GetHashValue(hPtr));
+	const char *keyPtr = (const char *)Tcl_GetHashKey(&jtPtr->hashTable, hPtr);
+	Tcl_Size offset = PTR2INT(Tcl_GetHashValue(hPtr));
 	TclDictPut(NULL, mapping, keyPtr, Tcl_NewWideIntObj(offset));
     }
     TclDictPut(NULL, dictObj, "mapping", mapping);
@@ -2829,13 +2824,12 @@ PrintJumptableNumInfo(
     JumptableNumInfo *jtnPtr = (JumptableNumInfo *)clientData;
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
-    Tcl_Size key;
-    size_t offset, i = 0;
+    size_t i = 0;
 
     hPtr = Tcl_FirstHashEntry(&jtnPtr->hashTable, &search);
     for (; hPtr ; hPtr = Tcl_NextHashEntry(&search)) {
-	key = (Tcl_Size) Tcl_GetHashKey(&jtnPtr->hashTable, hPtr);
-	offset = PTR2INT(Tcl_GetHashValue(hPtr));
+	Tcl_Size key = (Tcl_Size) Tcl_GetHashKey(&jtnPtr->hashTable, hPtr);
+	Tcl_Size offset = PTR2INT(Tcl_GetHashValue(hPtr));
 
 	if (i++) {
 	    Tcl_AppendToObj(appendObj, ", ", TCL_AUTO_LENGTH);
@@ -2844,7 +2838,7 @@ PrintJumptableNumInfo(
 	    }
 	}
 	Tcl_AppendPrintfToObj(appendObj,
-		"%" TCL_SIZE_MODIFIER "d->pc %" TCL_Z_MODIFIER "u",
+		"%" TCL_SIZE_MODIFIER "d->pc %" TCL_SIZE_MODIFIER "u",
 		key, pcOffset + offset);
     }
 }
@@ -2860,14 +2854,12 @@ DisassembleJumptableNumInfo(
     Tcl_Obj *mapping;
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
-    Tcl_Size key;
-    size_t offset;
 
     TclNewObj(mapping);
     hPtr = Tcl_FirstHashEntry(&jtnPtr->hashTable, &search);
     for (; hPtr ; hPtr = Tcl_NextHashEntry(&search)) {
-	key = (Tcl_Size) Tcl_GetHashKey(&jtnPtr->hashTable, hPtr);
-	offset = PTR2INT(Tcl_GetHashValue(hPtr));
+	Tcl_Size key = (Tcl_Size) Tcl_GetHashKey(&jtnPtr->hashTable, hPtr);
+	Tcl_Size offset = PTR2INT(Tcl_GetHashValue(hPtr));
 	// Cannot fail: keys already known to be unique
 	Tcl_DictObjPut(NULL, mapping, Tcl_NewWideIntObj(key),
 		Tcl_NewWideIntObj(offset));
