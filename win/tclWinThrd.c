@@ -548,7 +548,7 @@ WMutexInit(
     WMutex *wmPtr)
 {
     InitializeCriticalSection(&wmPtr->crit);
-    wmPtr->thread = 0;
+    InterlockedExchange(&wmPtr->thread, 0);
     wmPtr->counter = 0;
 }
 
@@ -556,9 +556,11 @@ static void
 WMutexDestroy(
     WMutex *wmPtr)
 {
+#ifndef NDEBUG
     if (InterlockedOr(&wmPtr->thread, 0) != 0) {
 	Tcl_Panic("mutex still owned");
     }
+#endif
     DeleteCriticalSection(&wmPtr->crit);
 }
 
@@ -574,7 +576,7 @@ WMutexLock(
     } else {
 	// We don't own the lock, so we can safely lock it. Then we own it.
 	EnterCriticalSection(&wmPtr->crit);
-	InterlockedExchange(&wmPtr->thread, mythread);
+	wmPtr->thread = mythread;
     }
 }
 
@@ -582,16 +584,16 @@ static void
 WMutexUnlock(
     WMutex *wmPtr)
 {
-    LONG mythread = GetCurrentThreadId();
-
-    if (InterlockedOr(&wmPtr->thread, 0) != mythread) {
+#ifndef NDEBUG
+    if (wmPtr->thread != GetCurrentThreadId()) {
 	Tcl_Panic("mutex not owned");
     }
+#endif
     if (wmPtr->counter) {
 	// It's recursive
 	wmPtr->counter--;
     } else {
-	InterlockedExchange(&wmPtr->thread, 0);
+	wmPtr->thread = 0;
 	LeaveCriticalSection(&wmPtr->crit);
     }
 }
@@ -819,7 +821,13 @@ Tcl_ConditionWait(
 
     counter = wmPtr->counter;
     wmPtr->counter = 0;
-    InterlockedExchange(&wmPtr->thread, 0);
+    LONG mythread = GetCurrentThreadId();
+#ifndef NDEBUG
+    if (wmPtr->thread != mythread) {
+	Tcl_Panic("mutex not owned");
+    }
+#endif
+    wmPtr->thread = 0;
     LeaveCriticalSection(&wmPtr->crit);
     timeout = 0;
     while (!timeout && (tsdPtr->flags & WIN_THREAD_BLOCKED)) {
@@ -865,7 +873,7 @@ Tcl_ConditionWait(
     LeaveCriticalSection(&winCondPtr->condLock);
     EnterCriticalSection(&wmPtr->crit);
     wmPtr->counter = counter;
-    InterlockedExchange(&wmPtr->thread, GetCurrentThreadId());
+    wmPtr->thread = mythread;
 }
 
 /*
