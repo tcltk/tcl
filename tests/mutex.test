@@ -17,6 +17,7 @@ if {"::tcltest" ni [namespace children]} {
 source [file join [file dirname [info script]] tcltests.tcl]
 
 ::tcltest::loadTestedCommands
+package require -exact tcl::test [info patchlevel]
 
 testConstraint testmutex [expr {[info commands testmutex] ne {}}]
 
