@@ -987,6 +987,11 @@ InstructionDesc const tclInstructionTable[] = {
 	"uplevel",		-1),
 	/* Call the script in the given stack level, and stack the result.
 	 * Stack:  ... level script => ... result */
+    TCL_INSTRUCTION_ENTRY(
+	"parentNamespace",	0),
+	/* Get the parent namespace of the given namespace. The parent of the
+	 * global namespace is considered to be an empty string.
+	 * Stack:  ... nsName => ... parentNsName */
 
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };

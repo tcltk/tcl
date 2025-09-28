@@ -3916,6 +3916,7 @@ MODULE_SCOPE CompileProc TclCompileLsetCmd;
 MODULE_SCOPE CompileProc TclCompileNamespaceCodeCmd;
 MODULE_SCOPE CompileProc TclCompileNamespaceCurrentCmd;
 MODULE_SCOPE CompileProc TclCompileNamespaceOriginCmd;
+MODULE_SCOPE CompileProc TclCompileNamespaceParentCmd;
 MODULE_SCOPE CompileProc TclCompileNamespaceQualifiersCmd;
 MODULE_SCOPE CompileProc TclCompileNamespaceTailCmd;
 MODULE_SCOPE CompileProc TclCompileNamespaceUpvarCmd;

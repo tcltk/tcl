@@ -2169,9 +2169,29 @@ TclCompileNamespaceOriginCmd(
 	return TCL_ERROR;
     }
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
-
     PUSH_TOKEN(			tokenPtr, 1);
     OP(				ORIGIN_COMMAND);
+    return TCL_OK;
+}
+
+int
+TclCompileNamespaceParentCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    TCL_UNUSED(Command *),
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    DefineLineInformation;	/* TIP #280 */
+
+    if (parsePtr->numWords != 2) {
+	// We don't compile the no-arg case: test namespace-7.9 sees difference
+	return TCL_ERROR;
+    }
+
+    Tcl_Token *tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    PUSH_TOKEN(			tokenPtr, 1);
+    OP(				NS_PARENT);
     return TCL_OK;
 }
 
