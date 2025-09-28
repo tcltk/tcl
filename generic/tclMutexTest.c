@@ -411,6 +411,9 @@ TestConditionVariable(
     Tcl_Free(producerContextsPtr);
     Tcl_Free(consumerContextsPtr);
 
+    Tcl_ConditionFinalize(&contextPtr->u.queue.canDequeue);
+    Tcl_ConditionFinalize(&contextPtr->u.queue.canEnqueue);
+
     return TCL_OK;
 }
 
