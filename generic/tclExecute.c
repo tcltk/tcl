@@ -4693,6 +4693,21 @@ TEBCresume(
 	objResultPtr = TclNewNamespaceObj(TclGetCurrentNamespace(interp));
 	TRACE_WITH_OBJ(("=> "), objResultPtr);
 	NEXT_INST_F(1, 0, 1);
+    case INST_NS_PARENT: {
+	Tcl_Namespace *nsPtr;
+	TRACE(("\"%.30s\" => ", O2S(OBJ_AT_TOS)));
+	if (TclGetNamespaceFromObj(interp, OBJ_AT_TOS, &nsPtr) != TCL_OK) {
+	    TRACE_ERROR(interp);
+	    goto gotError;
+	}
+	if (nsPtr->parentPtr) {
+	    objResultPtr = TclNewNamespaceObj(nsPtr->parentPtr);
+	} else {
+	    TclNewObj(objResultPtr); // No parent -> empty result
+	}
+	TRACE_APPEND_OBJ(objResultPtr);
+	NEXT_INST_F(1, 1, 1);
+    }
     case INST_COROUTINE_NAME: {
 	CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
 
