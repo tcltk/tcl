@@ -439,6 +439,7 @@ static const TalInstDesc TalInstructionTable[] = {
     {"numericType",	ASSEM_1BYTE,	INST_NUM_TYPE,		1,	1},
     {"originCmd",	ASSEM_1BYTE,	INST_ORIGIN_COMMAND,	1,	1},
     {"over",		ASSEM_OVER,	INST_OVER,		INT_MIN,-1-1},
+    {"parentNamespace",	ASSEM_1BYTE,	INST_NS_PARENT,		1,	1},
     {"pop",		ASSEM_1BYTE,	INST_POP,		1,	0},
     {"pushReturnCode",	ASSEM_1BYTE,	INST_PUSH_RETURN_CODE,	0,	1},
     {"pushReturnOpts",	ASSEM_1BYTE,	INST_PUSH_RETURN_OPTIONS,
@@ -3465,7 +3466,7 @@ StackCheckBasicBlock(
     }
 
     /*
-     * Update maximum stgack depth.
+     * Update maximum stack depth.
      */
 
     maxDepth = initialStackDepth + blockPtr->maxStackDepth;
