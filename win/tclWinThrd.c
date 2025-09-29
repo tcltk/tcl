@@ -12,6 +12,7 @@
  */
 
 #include "tclWinInt.h"
+#include <assert.h>
 
 /* Workaround for mingw versions which don't provide this in float.h */
 #ifndef _MCW_EM
@@ -556,11 +557,7 @@ static void
 WMutexDestroy(
     WMutex *wmPtr)
 {
-#ifndef NDEBUG
-    if (InterlockedOr(&wmPtr->thread, 0) != 0) {
-	Tcl_Panic("mutex still owned");
-    }
-#endif
+    assert(InterlockedOr(&wmPtr->thread, 0) == 0);
     DeleteCriticalSection(&wmPtr->crit);
 }
 
@@ -584,11 +581,7 @@ static void
 WMutexUnlock(
     WMutex *wmPtr)
 {
-#ifndef NDEBUG
-    if (wmPtr->thread != GetCurrentThreadId()) {
-	Tcl_Panic("mutex not owned");
-    }
-#endif
+    assert(wmPtr->thread == GetCurrentThreadId());
     if (wmPtr->counter) {
 	// It's recursive
 	wmPtr->counter--;
@@ -822,11 +815,7 @@ Tcl_ConditionWait(
     counter = wmPtr->counter;
     wmPtr->counter = 0;
     LONG mythread = GetCurrentThreadId();
-#ifndef NDEBUG
-    if (wmPtr->thread != mythread) {
-	Tcl_Panic("mutex not owned");
-    }
-#endif
+    assert(wmPtr->thread == mythread);
     wmPtr->thread = 0;
     LeaveCriticalSection(&wmPtr->crit);
     timeout = 0;
