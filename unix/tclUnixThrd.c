@@ -12,6 +12,7 @@
  */
 
 #include "tclInt.h"
+#include <assert.h>
 
 #ifdef HAVE_STDATOMIC_H
 #include <stdatomic.h>
@@ -104,17 +105,9 @@ PMutexDestroy(
     PMutex *pmutexPtr)
 {
 #ifdef HAVE_STDATOMIC_H
-# ifdef NDEBUG
-    if (__atomic_load_n(&pmutexPtr->thread, __ATOMIC_SEQ_CST) != 0) {
-	Tcl_Panic("mutex still owned");
-    }
-# endif
+    assert(__atomic_load_n(&pmutexPtr->thread, __ATOMIC_SEQ_CST) == 0);
 #else
-# ifdef NDEBUG
-    if (mutexPtr->thread != 0) {
-	Tcl_Panic("mutex still owned");
-    }
-# endif
+    assert(mutexPtr->thread == 0);
 # if defined(HAVE_PTHREAD_SPIN_LOCK)
     pthread_spin_destroy(&pmutexPtr->lock);
 # endif
@@ -144,11 +137,7 @@ static void
 PMutexUnlock(
     PMutex *pmutexPtr)
 {
-#ifndef NDEBUG
-    if (pmutexPtr->thread != pthread_self()) {
-	Tcl_Panic("mutex not owned");
-    }
-#endif
+    assert(pmutexPtr->thread == pthread_self());
     if (pmutexPtr->counter) {
 	// It's recursive
 	pmutexPtr->counter--;
@@ -195,11 +184,7 @@ PMutexUnlock(
 {
     pthread_t mythread = pthread_self();
 
-#ifndef NDEBUG
-    if (pmutexPtr->thread != mythread) {
-	Tcl_Panic("mutex not owned");
-    }
-#endif
+    assert(pmutexPtr->thread == mythread);
     if (pmutexPtr->counter) {
 	// It's recursive
 	pmutexPtr->counter--;
@@ -219,11 +204,7 @@ PCondWait(
 {
     pthread_t mythread = pthread_self();
 
-#ifndef NDEBUG
-    if (pmutexPtr->thread != mythread) {
-	Tcl_Panic("mutex not owned");
-    }
-#endif
+    assert(pmutexPtr->thread == mythread);
     int counter = pmutexPtr->counter;
     pmutexPtr->counter = 0;
     pmutexPtr->thread = 0;
@@ -240,11 +221,7 @@ PCondTimedWait(
 {
     pthread_t mythread = pthread_self();
 
-#ifndef NDEBUG
-    if (pmutexPtr->thread != mythread) {
-	Tcl_Panic("mutex not owned");
-    }
-#endif
+    assert(pmutexPtr->thread == mythread);
     int counter = pmutexPtr->counter;
     pmutexPtr->counter = 0;
     pmutexPtr->thread = 0;
