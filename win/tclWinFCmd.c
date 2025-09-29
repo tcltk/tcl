@@ -11,6 +11,9 @@
  */
 
 #include "tclWinInt.h"
+#if defined (__clang__) && (__clang_major__ > 20)
+#pragma clang diagnostic ignored "-Wc++-keyword"
+#endif
 
 /*
  * The following constants specify the type of callback when
