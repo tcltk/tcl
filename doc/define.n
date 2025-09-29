@@ -611,6 +611,7 @@ in this method; that is the responsibility of the \fBSet\fR method. A default
 implementation of this method (that just returns its \fIslotElement\fR
 argument) is provided in the \fBoo::Slot\fR class.
 .RE
+.VE TIP516
 .\" METHOD: Set
 .TP
 \fIslot\fR \fBSet \fIelementList\fR
