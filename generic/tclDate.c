@@ -227,7 +227,7 @@ union YYSTYPE
 {
 
     Tcl_WideInt Number;
-    enum _MERIDIAN Meridian;
+    MERIDIAN Meridian;
 
 
 };

@@ -309,7 +309,7 @@ void *TclWinGetTclInstance(void)
 {
     void *hInstance = NULL;
     GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
-	    (const wchar_t *)&TclWinNoBackslash, &hInstance);
+	    (const WCHAR *)&TclWinNoBackslash, &hInstance);
     return hInstance;
 }
 

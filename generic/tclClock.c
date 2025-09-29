@@ -71,7 +71,7 @@ static int		ConvertUTCToLocalUsingC(Tcl_Interp *,
 static int		ConvertLocalToUTC(ClockClientData *, Tcl_Interp *,
 			    TclDateFields *, Tcl_Obj *timezoneObj, int);
 static int		ConvertLocalToUTCUsingTable(Tcl_Interp *,
-			    TclDateFields *, int, Tcl_Obj *const[],
+			    TclDateFields *, Tcl_Size, Tcl_Obj *const[],
 			    Tcl_WideInt *rangesVal);
 static int		ConvertLocalToUTCUsingC(Tcl_Interp *,
 			    TclDateFields *, int);
@@ -1997,7 +1997,7 @@ static int
 ConvertLocalToUTCUsingTable(
     Tcl_Interp *interp,		/* Tcl interpreter */
     TclDateFields *fields,	/* Time to convert, with 'seconds' filled in */
-    int rowc,			/* Number of points at which time changes */
+    Tcl_Size rowc,			/* Number of points at which time changes */
     Tcl_Obj *const rowv[],	/* Points at which time changes */
     Tcl_WideInt *rangesVal)	/* Return bounds for time period */
 {
@@ -2540,7 +2540,7 @@ GetYearWeekDay(
     }
 
     fields->iso8601Year = temp.iso8601Year;
-    dayOfFiscalYear = fields->julianDay - temp.julianDay;
+    dayOfFiscalYear = (int)(fields->julianDay - temp.julianDay);
     fields->iso8601Week = (dayOfFiscalYear / 7) + 1;
     fields->dayOfWeek = (dayOfFiscalYear + 1) % 7;
     if (fields->dayOfWeek < 1) { /* Mon .. Sun == 1 .. 7 */
@@ -2573,8 +2573,8 @@ GetGregorianEraYearDay(
 {
     Tcl_WideInt jday = fields->julianDay;
     Tcl_WideInt day;
-    Tcl_WideInt year;
-    Tcl_WideInt n;
+    int year;
+    int n;
 
     if (jday >= changeover) {
 	/*
@@ -2590,7 +2590,7 @@ GetGregorianEraYearDay(
 	 */
 
 	day = jday - JDAY_1_JAN_1_CE_GREGORIAN;
-	n = day / FOUR_CENTURIES;
+	n = (int)(day / FOUR_CENTURIES);
 	day %= FOUR_CENTURIES;
 	if (day < 0) {
 	    day += FOUR_CENTURIES;
@@ -2603,7 +2603,7 @@ GetGregorianEraYearDay(
 	 * day = remaining days
 	 */
 
-	n = day / ONE_CENTURY_GREGORIAN;
+	n = (int)(day / ONE_CENTURY_GREGORIAN);
 	day %= ONE_CENTURY_GREGORIAN;
 	if (n > 3) {
 	    /*
@@ -2628,7 +2628,7 @@ GetGregorianEraYearDay(
      * n = number of 4-year cycles; days = remaining days.
      */
 
-    n = day / FOUR_YEARS;
+    n = (int)(day / FOUR_YEARS);
     day %= FOUR_YEARS;
     if (day < 0) {
 	day += FOUR_YEARS;
@@ -2640,7 +2640,7 @@ GetGregorianEraYearDay(
      * n = number of years; days = remaining days.
      */
 
-    n = day / ONE_YEAR;
+    n = (int)(day / ONE_YEAR);
     day %= ONE_YEAR;
     if (n > 3) {
 	/*
@@ -2663,7 +2663,7 @@ GetGregorianEraYearDay(
 	fields->isBce = 0;
 	fields->year = year;
     }
-    fields->dayOfYear = day + 1;
+    fields->dayOfYear = (int)day + 1;
 }
 
 /*
@@ -2788,8 +2788,8 @@ GetJulianDayFromEraYearMonthDay(
     TclDateFields *fields,	/* Date to convert */
     int changeover)		/* Gregorian transition date as a Julian Day */
 {
-    Tcl_WideInt year, ym1, ym1o4, ym1o100, ym1o400;
-    int month, mm1, q, r;
+    Tcl_WideInt ym1, ym1o4, ym1o100, ym1o400;
+    int year, month, mm1, q, r;
 
     if (fields->isBce) {
 	year = 1 - fields->year;
@@ -3633,7 +3633,7 @@ ClockScanObjCmd(
     }
 
     /* seconds are in localSeconds (relative base date), so reset time here */
-    yyHour = yyMinutes = yySeconds = yySecondOfDay = 0;
+    yySecondOfDay = yySeconds = yyMinutes = yyHour = 0;
     yyMeridian = MER24;
 
     /* If free scan */
@@ -4086,7 +4086,7 @@ ClockFreeScan(
 	yySecondOfDay = 0;
 	info->flags |= CLF_ASSEMBLE_SECONDS;
     } else if (info->flags & CLF_TIME) {
-	yySecondOfDay = TclToSeconds(yyHour, yyMinutes, yySeconds, yyMeridian);
+	yySecondOfDay = TclToSeconds(yyHour, yyMinutes, (int)yySeconds, yyMeridian);
 	info->flags |= CLF_ASSEMBLE_SECONDS;
     } else if ((info->flags & (CLF_DAYOFWEEK | CLF_HAVEDATE)) == CLF_DAYOFWEEK
 	    || (info->flags & CLF_ORDINALMONTH)
@@ -4164,7 +4164,7 @@ ClockCalcRelTime(
 	}
 
 	/* add the requisite number of months */
-	yyMonth += yyRelMonth - 1;
+	yyMonth += (int)yyRelMonth - 1;
 	yyYear += yyMonth / 12;
 	m = yyMonth % 12;
 	/* compiler fix for signed-mod - wrap y, m = (0, -1) -> (-1, 11) */
@@ -4535,7 +4535,7 @@ ClockAddObjCmd(
 	case CLC_ADD_WEEKDAYS:
 	    /* add number of week days (skipping Saturdays and Sundays)
 	     * to a relative days value. */
-	    offs = ClockWeekdaysOffs(yy.date.dayOfWeek, offs);
+	    offs = ClockWeekdaysOffs(yy.date.dayOfWeek, (int)offs);
 	    yyRelDay += offs;
 	    break;
 	case CLC_ADD_HOURS:
@@ -4716,7 +4716,7 @@ ClockSafeCatchCmd(
 #endif
 #define TZ_INIT_MARKER	((WCHAR *) INT2PTR(-1))
 
-typedef struct ClockTzStatic {
+typedef struct {
     WCHAR *was;			/* Previous value of TZ. */
     long long lastRefresh;	/* Used for latency before next refresh. */
     size_t epoch;		/* Epoch, signals that TZ changed. */

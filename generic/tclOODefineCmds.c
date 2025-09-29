@@ -2736,15 +2736,15 @@ static inline Tcl_Obj *
 ResolveAll(
     Tcl_Interp *interp,
     Object *slot,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const *objv)
 {
     Tcl_Obj **resolvedItems = (Tcl_Obj **) TclStackAlloc(interp,
 	    sizeof(Tcl_Obj *) * objc);
-    for (int i = 0; i < objc; i++) {
+    for (Tcl_Size i = 0; i < objc; i++) {
 	resolvedItems[i] = CallSlotResolve(interp, slot, objv[i]);
 	if (resolvedItems[i] == NULL) {
-	    for (int j = 0; j < i; j++) {
+	    for (Tcl_Size j = 0; j < i; j++) {
 		Tcl_DecrRefCount(resolvedItems[j]);
 	    }
 	    TclStackFree(interp, (void *) resolvedItems);
@@ -2779,7 +2779,7 @@ Slot_Append(
     Tcl_Obj *const *objv)
 {
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
-    int skip = Tcl_ObjectContextSkippedArgs(context);
+    Tcl_Size skip = Tcl_ObjectContextSkippedArgs(context);
     if (skip == objc) {
 	return TCL_OK;
     }
@@ -2837,7 +2837,7 @@ Slot_AppendNew(
     Tcl_Obj *const *objv)
 {
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
-    int skip = Tcl_ObjectContextSkippedArgs(context);
+    Tcl_Size skip = Tcl_ObjectContextSkippedArgs(context);
     if (skip == objc) {
 	return TCL_OK;
     }
@@ -2913,7 +2913,7 @@ Slot_Clear(
     Tcl_Obj *const *objv)
 {
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
-    int skip = Tcl_ObjectContextSkippedArgs(context);
+    Tcl_Size skip = Tcl_ObjectContextSkippedArgs(context);
     if (skip != objc) {
 	Tcl_WrongNumArgs(interp, skip, objv, NULL);
 	return TCL_ERROR;
@@ -2943,7 +2943,7 @@ Slot_Prepend(
     Tcl_Obj *const *objv)
 {
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
-    int skip = Tcl_ObjectContextSkippedArgs(context);
+    Tcl_Size skip = Tcl_ObjectContextSkippedArgs(context);
     if (skip == objc) {
 	return TCL_OK;
     }
@@ -2988,7 +2988,7 @@ Slot_Remove(
     Tcl_Obj *const *objv)
 {
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
-    int skip = Tcl_ObjectContextSkippedArgs(context);
+    Tcl_Size skip = Tcl_ObjectContextSkippedArgs(context);
     if (skip == objc) {
 	return TCL_OK;
     }
@@ -3059,7 +3059,7 @@ Slot_Resolve(
     int objc,
     Tcl_Obj *const *objv)
 {
-    int skip = Tcl_ObjectContextSkippedArgs(context);
+    Tcl_Size skip = Tcl_ObjectContextSkippedArgs(context);
     if (skip + 1 != objc) {
 	Tcl_WrongNumArgs(interp, skip, objv, "list");
 	return TCL_ERROR;
@@ -3086,7 +3086,7 @@ Slot_Set(
     Tcl_Obj *const *objv)
 {
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
-    int skip = Tcl_ObjectContextSkippedArgs(context);
+    Tcl_Size skip = Tcl_ObjectContextSkippedArgs(context);
     Tcl_Obj *list;
 
     // Resolve all values
@@ -3149,7 +3149,7 @@ Slot_Unknown(
     Tcl_Obj *const *objv)
 {
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
-    int skip = Tcl_ObjectContextSkippedArgs(context);
+    Tcl_Size skip = Tcl_ObjectContextSkippedArgs(context);
     if (skip >= objc) {
 	Tcl_Obj *args[] = {
 	    oPtr->fPtr->myName,
