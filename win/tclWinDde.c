@@ -19,6 +19,10 @@
 #include <ddeml.h>
 #include <tchar.h>
 
+#if defined (__clang__) && (__clang_major__ > 20)
+#pragma clang diagnostic ignored "-Wc++-keyword"
+#endif
+
 #if !defined(NDEBUG)
     /* test POKE server Implemented for debug mode only */
 #   undef CBF_FAIL_POKES
@@ -90,13 +94,13 @@ static int ddeIsServer = 0;
 
 TCL_DECLARE_MUTEX(ddeMutex)
 
-#if (TCL_MAJOR_VERSION < 9) && defined(TCL_MINOR_VERSION) && (TCL_MINOR_VERSION < 7)
+#if TCL_MAJOR_VERSION < 9
 # if TCL_UTF_MAX > 3
 #   define Tcl_WCharToUtfDString(a,b,c) Tcl_WinTCharToUtf((TCHAR *)(a),(b)*sizeof(WCHAR),c)
 #   define Tcl_UtfToWCharDString(a,b,c) (WCHAR *)Tcl_WinUtfToTChar(a,b,c)
 # else
-#   define Tcl_WCharToUtfDString Tcl_UniCharToUtfDString
-#   define Tcl_UtfToWCharDString Tcl_UtfToUniCharDString
+#   define Tcl_WCharToUtfDString(a,b,c) Tcl_UniCharToUtfDString((Tcl_UniChar *)(a),b,c)
+#   define Tcl_UtfToWCharDString(a,b,c) (WCHAR *)Tcl_UtfToUniCharDString(a,b,c)
 # endif
 #ifndef Tcl_Size
 #   define Tcl_Size int
