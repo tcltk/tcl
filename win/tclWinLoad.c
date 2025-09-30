@@ -12,6 +12,9 @@
  */
 
 #include "tclWinInt.h"
+#if defined (__clang__) && (__clang_major__ > 20)
+#pragma clang diagnostic ignored "-Wc++-keyword"
+#endif
 
 /*
  * Native name of the directory in the native filesystem where DLLs used in
