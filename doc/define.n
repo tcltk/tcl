@@ -9,7 +9,7 @@
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-oo::define, oo::objdefine, oo::Slot \- define and configure classes and objects
+oo::define, oo::objdefine, oo::Slot \- Define and configure classes and objects
 .SH SYNOPSIS
 .nf
 package require tcl::oo
