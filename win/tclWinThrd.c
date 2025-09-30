@@ -548,17 +548,17 @@ static void
 WMutexInit(
     WMutex *wmPtr)
 {
-    InitializeCriticalSection(&wmPtr->crit);
-    InterlockedExchange(&wmPtr->thread, 0);
+    wmPtr->thread = 0;
     wmPtr->counter = 0;
+    InitializeCriticalSection(&wmPtr->crit);
 }
 
 static void
 WMutexDestroy(
     WMutex *wmPtr)
 {
-    assert(InterlockedOr(&wmPtr->thread, 0) == 0);
     DeleteCriticalSection(&wmPtr->crit);
+    assert(wmPtr->thread == 0 && wmPtr->counter == 0);
 }
 
 static void
