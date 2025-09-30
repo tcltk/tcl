@@ -754,6 +754,9 @@ Tcltest_Init(
     if (TclThread_Init(interp) != TCL_OK) {
 	return TCL_ERROR;
     }
+    if (TclMutex_Init(interp) != TCL_OK) {
+	return TCL_ERROR;
+    }
 #endif
 
     if (Tcl_ABSListTest_Init(interp) != TCL_OK) {
