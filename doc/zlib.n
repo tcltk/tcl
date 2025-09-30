@@ -9,7 +9,7 @@
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-zlib \- compression and decompression operations
+zlib \- Compression and decompression operations
 .SH SYNOPSIS
 .nf
 \fBzlib \fIsubcommand arg ...\fR
