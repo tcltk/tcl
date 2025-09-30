@@ -15,7 +15,7 @@
 #undef BUILD_tcl
 #undef STATIC_BUILD
 #include "tcl.h"
-#if TCL_MAJOR_VERSION < 9 && TCL_MINOR_VERSION < 7
+#if TCL_MAJOR_VERSION < 9
 #   define Tcl_LibraryInitProc Tcl_PackageInitProc
 #   define Tcl_StaticLibrary Tcl_StaticPackage
 #endif
