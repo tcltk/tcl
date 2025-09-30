@@ -293,10 +293,10 @@ DEPEND_SWITCHES	= ${CFLAGS} -I${UNIX_DIR} -I${GENERIC_DIR} \
 TCLSH_OBJS = tclAppInit.o
 
 TCLTEST_OBJS = tclTestInit.o tclTest.o tclTestObj.o tclTestProcBodyObj.o \
-	tclThreadTest.o tclUnixTest.o tclTestABSList.o
+	tclMutexTest.o tclThreadTest.o tclUnixTest.o tclTestABSList.o
 
 XTTEST_OBJS = xtTestInit.o tclTest.o tclTestObj.o tclTestProcBodyObj.o \
-	tclThreadTest.o tclUnixTest.o tclXtNotify.o tclXtTest.o \
+	tclMutexTest.o tclThreadTest.o tclUnixTest.o tclXtNotify.o tclXtTest.o \
 	tclTestABSList.o
 
 GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
@@ -1610,6 +1610,9 @@ tclThreadJoin.o: $(GENERIC_DIR)/tclThreadJoin.c
 
 tclThreadStorage.o: $(GENERIC_DIR)/tclThreadStorage.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclThreadStorage.c
+
+tclMutexTest.o: $(GENERIC_DIR)/tclMutexTest.c
+	$(CC) -c $(APP_CC_SWITCHES) $(GENERIC_DIR)/tclMutexTest.c
 
 tclThreadTest.o: $(GENERIC_DIR)/tclThreadTest.c
 	$(CC) -c $(APP_CC_SWITCHES) $(GENERIC_DIR)/tclThreadTest.c
