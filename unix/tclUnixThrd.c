@@ -84,35 +84,23 @@ static void
 PMutexInit(
     PMutex *pmutexPtr)
 {
-    pthread_mutex_init(&pmutexPtr->mutex, NULL);
-#if defined(HAVE_STDATOMIC_H)
-    __atomic_store_n(&pmutexPtr->thread, 0, __ATOMIC_SEQ_CST);
-#else
-# if defined(HAVE_PTHREAD_SPIN_LOCK)
-    pthread_spin_init(&pmutexPtr->lock, PTHREAD_PROCESS_PRIVATE);
-    pthread_spin_lock(&pmutexPtr->lock);
-# endif
     pmutexPtr->thread = 0;
-# if defined(HAVE_PTHREAD_SPIN_LOCK)
-    pthread_spin_unlock(&pmutexPtr->lock);
-# endif
-#endif
     pmutexPtr->counter = 0;
+    pthread_mutex_init(&pmutexPtr->mutex, NULL);
+#if defined(HAVE_PTHREAD_SPIN_LOCK) && !defined(HAVE_STDATOMIC_H)
+    pthread_spin_init(&pmutexPtr->lock, PTHREAD_PROCESS_PRIVATE);
+#endif
 }
 
 static void
 PMutexDestroy(
     PMutex *pmutexPtr)
 {
-#ifdef HAVE_STDATOMIC_H
-    assert(__atomic_load_n(&pmutexPtr->thread, __ATOMIC_SEQ_CST) == 0);
-#else
-    assert(mutexPtr->thread == 0);
-# if defined(HAVE_PTHREAD_SPIN_LOCK)
+#if defined(HAVE_PTHREAD_SPIN_LOCK) && !defined(HAVE_STDATOMIC_H)
     pthread_spin_destroy(&pmutexPtr->lock);
-# endif
 #endif
     pthread_mutex_destroy(&pmutexPtr->mutex);
+    assert(pmutexPtr->thread == 0 && pmutexPtr->counter = 0);
 }
 
 #ifdef HAVE_STDATOMIC_H
