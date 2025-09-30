@@ -232,6 +232,7 @@ TCLTESTOBJS = \
 	$(TMP_DIR)\tclTest.obj \
 	$(TMP_DIR)\tclTestObj.obj \
 	$(TMP_DIR)\tclTestProcBodyObj.obj \
+	$(TMP_DIR)\tclMutexTest.obj \
 	$(TMP_DIR)\tclThreadTest.obj \
 	$(TMP_DIR)\tclWinTest.obj \
 	$(TMP_DIR)\tclTestABSList.obj \

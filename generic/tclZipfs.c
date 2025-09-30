@@ -25,7 +25,11 @@
 
 #include <assert.h>
 
-#ifndef _WIN32
+#ifdef _WIN32
+# if defined(_WIN32) && defined (__clang__) && (__clang_major__ > 20)
+#   pragma clang diagnostic ignored "-Wc++-keyword"
+# endif
+#else
 #include <sys/mman.h>
 #endif /* _WIN32*/
 
