@@ -4319,14 +4319,15 @@ ZipFSListObjCmd(
  *	executable or the shared library/DLL. The archives should have been
  *	mounted (if present) before this function is called.
  *
- *	If the libraries are found, the encoding directory paths are set up.
+ *	If the libraries are found, the encoding subdirectory is added to
+ *	the encoding directory search path.
  *
  * Results:
  *	None.
  *
  * Side effects:
  *	May initializes the global variable zipfs_literal_tcl_library. Will
- *	never be cleared. The encoding directory paths are initialized.
+ *	never be cleared. The encoding directory paths are modified.
  *
  *-------------------------------------------------------------------------
  */
@@ -4405,13 +4406,19 @@ Tcl_Obj *
 TclZipfs_TclLibrary(void)
 {
     /*
-     * Assumes TclZipfsLocateTclLibrary has already been called at startup
-     * through TclZipfs_AppHook. Custom applications that fail to do so will not
-     * have the embedded zipfs tcl library feature available.
+     * Ideally, TclZipfsLocateTclLibrary would already been called at
+     * startup through TclZipfs_AppHook. However, existing custom
+     * applications (e.g. tkinter - Bug [6fbabfe166]) may not do so.
+     * So if not already set, try to find it.
      */
+    if (zipfs_literal_tcl_library == NULL) {
+	TclZipfsLocateTclLibrary(1, 1);
+    }
+
     if (zipfs_literal_tcl_library) {
 	return Tcl_NewStringObj(zipfs_literal_tcl_library, -1);
     }
+
     return NULL;
 }
 
@@ -6440,10 +6447,8 @@ TclZipfsFinalize(void)
 /*
  * TclZipfsInitEncodingDirs --
  *
- *	Sets the encoding directory search path to the encoding directory
- *	under the tcl_library directory within a ZipFS mount. Overwrites the
- *	previously set encoding search path so only to be called at
- *	initialization.
+ *	Appends the encoding directory under the tcl_library directory
+ *	within a ZipFS mount to the encoding directory search path.
  */
 static int
 TclZipfsInitEncodingDirs(void)
@@ -6456,7 +6461,13 @@ TclZipfsInitEncodingDirs(void)
     Tcl_IncrRefCount(libDirObj);
     TclNewLiteralStringObj(subDirObj, "encoding");
     Tcl_IncrRefCount(subDirObj);
-    TclNewObj(searchPathObj);
+    searchPathObj = Tcl_GetEncodingSearchPath();
+    if (searchPathObj == NULL) {
+	TclNewObj(searchPathObj);
+    }
+    else {
+	searchPathObj = Tcl_DuplicateObj(searchPathObj);
+    }
     Tcl_ListObjAppendElement(NULL, searchPathObj,
 	    Tcl_FSJoinToPath(libDirObj, 1, &subDirObj));
     Tcl_IncrRefCount(searchPathObj);
