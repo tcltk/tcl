@@ -54,21 +54,33 @@ enum {
     WIN_SYSTEM_ATTRIBUTE
 };
 
-static const int attributeArray[] = {FILE_ATTRIBUTE_ARCHIVE, FILE_ATTRIBUTE_HIDDEN,
-	0, FILE_ATTRIBUTE_READONLY, 0, FILE_ATTRIBUTE_SYSTEM};
+static const int attributeArray[] = {
+    FILE_ATTRIBUTE_ARCHIVE,				// -archive
+    FILE_ATTRIBUTE_HIDDEN,				// -hidden
+    0,							// -longname
+    FILE_ATTRIBUTE_READONLY,				// -readonly
+    0,							// -shortname
+    FILE_ATTRIBUTE_SYSTEM				// -system
+};
 
 const char *const tclpFileAttrStrings[] = {
-	"-archive", "-hidden", "-longname", "-readonly",
-	"-shortname", "-system", NULL
+    "-archive",
+    "-hidden",
+    "-longname",
+    "-readonly",
+    "-shortname",
+    "-system",
+    NULL
 };
 
 const TclFileAttrProcs tclpFileAttrProcs[] = {
-	{GetWinFileAttributes, SetWinFileAttributes},
-	{GetWinFileAttributes, SetWinFileAttributes},
-	{GetWinFileLongName, CannotSetAttribute},
-	{GetWinFileAttributes, SetWinFileAttributes},
-	{GetWinFileShortName, CannotSetAttribute},
-	{GetWinFileAttributes, SetWinFileAttributes}};
+    {GetWinFileAttributes, SetWinFileAttributes},	// -archive
+    {GetWinFileAttributes, SetWinFileAttributes},	// -hidden
+    {GetWinFileLongName, CannotSetAttribute},		// -longname
+    {GetWinFileAttributes, SetWinFileAttributes},	// -readonly
+    {GetWinFileShortName, CannotSetAttribute},		// -shortname
+    {GetWinFileAttributes, SetWinFileAttributes}	// -system
+};
 
 /*
  * Prototype for the TraverseWinTree callback function.
