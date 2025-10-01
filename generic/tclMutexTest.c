@@ -27,13 +27,22 @@
 /*
  * Types related to Tcl_Mutex tests.
  */
+
 TCL_DECLARE_MUTEX(testContextMutex)
-static inline void LockTestContext(int numRecursions) {
+
+static inline void
+LockTestContext(
+    int numRecursions)
+{
     for (int j = 0; j < numRecursions; ++j) {
 	Tcl_MutexLock(&testContextMutex);
     }
 }
-static inline void UnlockTestContext(int numRecursions) {
+
+static inline void
+UnlockTestContext(
+    int numRecursions)
+{
     for (int j = 0; j < numRecursions; ++j) {
 	Tcl_MutexUnlock(&testContextMutex);
     }
@@ -48,7 +57,7 @@ typedef struct {
     Tcl_Condition canDequeue;	/* Signal consumer if queue not empty */
     Tcl_WideUInt totalEnqueued;	/* Total enqueued so far */
     Tcl_WideUInt totalDequeued;	/* Total dequeued so far */
-    int available;              /* Number of "resources" available */
+    int available;		/* Number of "resources" available */
     int capacity;		/* Max number allowed in queue */
 } ProducerConsumerQueue;
 #define CONDITION_TIMEOUT_SECS 5
@@ -59,10 +68,10 @@ typedef struct {
  * thread has access.
  */
 typedef struct {
-    int numThreads;	/* Number of threads in test run */
-    int numRecursions;	/* Number of mutex lock recursions */
-    int numIterations;	/* Number of times each thread should loop */
-    int yield;		/* Whether threads should yield when looping */
+    int numThreads;		/* Number of threads in test run */
+    int numRecursions;		/* Number of mutex lock recursions */
+    int numIterations;		/* Number of times each thread should loop */
+    int yield;			/* Whether threads should yield when looping */
     union {
 	Tcl_WideUInt counter;		/* Used in lock tests */
 	ProducerConsumerQueue queue;	/* Used in condition variable tests */
@@ -77,7 +86,7 @@ typedef struct {
     MutexSharedContext *sharedContextPtr; /* Pointer to shared context */
     Tcl_ThreadId threadId;		  /* Only access in creator */
     Tcl_WideUInt numOperations;		  /* Use is dependent on the test */
-    Tcl_WideUInt timeouts;	/* Timeouts on condition variables */
+    Tcl_WideUInt timeouts;		  /* Timeouts on condition variables */
 } MutexThreadContext;
 
 /* Used to track how many test threads running. Also used as trigger */
@@ -91,24 +100,20 @@ static int			TestConditionVariable(Tcl_Interp *interp,
 static Tcl_ThreadCreateType	ConsumerThreadProc(void *clientData);
 static Tcl_ThreadCreateType	ProducerThreadProc(void *clientData);
 
-
+static inline void
+YieldToOtherThreads(void)
+{
 #if defined(_WIN32)
-static inline void YieldToOtherThreads() {
     Sleep(0);
-}
 #elif defined(_POSIX_PRIORITY_SCHEDULING)
-static inline void YieldToOtherThreads() {
-    (void)sched_yield();
-}
+    (void) sched_yield();
 #else
-static inline void YieldToOtherThreads() {
     volatile int i;
     for (i = 0; i < 1000; ++i) {
 	/* Just some random delay */
     }
-}
 #endif
-
+}
 
 #ifdef __cplusplus
 extern "C" {
@@ -118,6 +123,9 @@ extern int		Tcltest_Init(Tcl_Interp *interp);
 }
 #endif
 
+// Get the difference (in microseconds) between two Tcl_GetTime() timestamps.
+#define USEC_DIFF(before, after) \
+    (1000000 * ((after).sec - (before).sec) + ((after).usec - (before).usec))
 
 /*
  *----------------------------------------------------------------------
@@ -165,36 +173,29 @@ TestMutexObjCmd(
 	    &option) != TCL_OK) {
 	return TCL_ERROR;
     }
-    if (objc > 2) {
-	if (Tcl_GetIntFromObj(interp, objv[2],
-		&context.numThreads) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-	if (objc > 3) {
-	    if (Tcl_GetIntFromObj(interp, objv[3],
-		    &context.numRecursions) != TCL_OK) {
-		return TCL_ERROR;
-	    }
-	    if (objc > 4) {
-		if (Tcl_GetIntFromObj(interp, objv[4],
-			&context.numIterations) != TCL_OK) {
-		    return TCL_ERROR;
-		}
-		if (objc > 5) {
-		    if (Tcl_GetIntFromObj(
-			    interp, objv[5], &context.yield) != TCL_OK) {
-			return TCL_ERROR;
-		    }
-		}
-	    }
-	}
+    if (objc > 2 && Tcl_GetIntFromObj(interp, objv[2],
+	    &context.numThreads) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (objc > 3 && Tcl_GetIntFromObj(interp, objv[3],
+	    &context.numRecursions) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (objc > 4 && Tcl_GetIntFromObj(interp, objv[4],
+	    &context.numIterations) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (objc > 5 && Tcl_GetIntFromObj(interp, objv[5],
+	    &context.yield) != TCL_OK) {
+	return TCL_ERROR;
     }
 
     if (context.numIterations <= 0 || context.numRecursions <= 0 ||
 	    context.numThreads <= 0) {
 	Tcl_SetResult(interp,
-	    "Thread, recursion and iteration counts must not be 0.",
-	    TCL_STATIC);
+		"thread, recursion and iteration counts must be positive",
+		TCL_STATIC);
+	return TCL_ERROR;
     }
 
     int result = TCL_OK;
@@ -229,9 +230,8 @@ TestMutexLock(
     Tcl_Interp *interp,
     MutexSharedContext *contextPtr)
 {
-    MutexThreadContext *threadContextsPtr =
-	(MutexThreadContext *)Tcl_Alloc(
-		sizeof(*threadContextsPtr) * contextPtr->numThreads);
+    MutexThreadContext *threadContextsPtr = (MutexThreadContext *)
+	    Tcl_Alloc(sizeof(*threadContextsPtr) * contextPtr->numThreads);
 
     contextPtr->u.counter = 0;
     mutexThreadCount = 0;
@@ -240,10 +240,8 @@ TestMutexLock(
 	threadContextsPtr[i].numOperations = 0; /* Init though not used */
 
 	if (Tcl_CreateThread(&threadContextsPtr[i].threadId,
-			     CounterThreadProc,
-			     &threadContextsPtr[i],
-			     TCL_THREAD_STACK_DEFAULT,
-			     TCL_THREAD_JOINABLE) != TCL_OK) {
+		CounterThreadProc, &threadContextsPtr[i],
+		TCL_THREAD_STACK_DEFAULT, TCL_THREAD_JOINABLE) != TCL_OK) {
 	    Tcl_Panic("Failed to create %d'th thread\n", i);
 	}
     }
@@ -276,8 +274,9 @@ TestMutexLock(
  *
  *------------------------------------------------------------------------
  */
- static Tcl_ThreadCreateType
- CounterThreadProc(void *clientData)
+static Tcl_ThreadCreateType
+CounterThreadProc(
+    void *clientData)
 {
     MutexThreadContext *threadContextPtr = (MutexThreadContext *)clientData;
     MutexSharedContext *contextPtr = threadContextPtr->sharedContextPtr;
@@ -323,7 +322,6 @@ TestConditionVariable(
     Tcl_Interp *interp,
     MutexSharedContext *contextPtr)
 {
-    Tcl_SetResult(interp, "Not implemented", TCL_STATIC);
     if (contextPtr->numThreads < 2) {
 	Tcl_SetResult(interp, "Need at least 2 threads.", TCL_STATIC);
 	return TCL_ERROR;
@@ -344,9 +342,9 @@ TestConditionVariable(
     contextPtr->u.queue.capacity = 3; /* Arbitrary for now */
 
     MutexThreadContext *consumerContextsPtr = (MutexThreadContext *)Tcl_Alloc(
-	sizeof(*consumerContextsPtr) * numConsumers);
+	    sizeof(*consumerContextsPtr) * numConsumers);
     MutexThreadContext *producerContextsPtr = (MutexThreadContext *)Tcl_Alloc(
-	sizeof(*producerContextsPtr) * numProducers);
+	    sizeof(*producerContextsPtr) * numProducers);
 
     mutexThreadCount = 0;
 
@@ -390,7 +388,7 @@ TestConditionVariable(
 	Tcl_JoinThread(producerContextsPtr[i].threadId, &threadResult);
 	producerOperations += producerContextsPtr[i].numOperations;
 	Tcl_ListObjAppendElement(NULL, results[1],
-	    Tcl_NewWideUIntObj(producerContextsPtr[i].numOperations));
+		Tcl_NewWideUIntObj(producerContextsPtr[i].numOperations));
 	producerTimeouts += producerContextsPtr[i].timeouts;
     }
     for (int i = 0; i < numConsumers; i++) {
@@ -398,7 +396,7 @@ TestConditionVariable(
 	Tcl_JoinThread(consumerContextsPtr[i].threadId, &threadResult);
 	consumerOperations += consumerContextsPtr[i].numOperations;
 	Tcl_ListObjAppendElement(NULL, results[4],
-	    Tcl_NewWideUIntObj(consumerContextsPtr[i].numOperations));
+		Tcl_NewWideUIntObj(consumerContextsPtr[i].numOperations));
 	consumerTimeouts += consumerContextsPtr[i].timeouts;
     }
 
@@ -433,7 +431,8 @@ TestConditionVariable(
  *------------------------------------------------------------------------
  */
 static Tcl_ThreadCreateType
-ProducerThreadProc(void *clientData)
+ProducerThreadProc(
+    void *clientData)
 {
     MutexThreadContext *threadContextPtr = (MutexThreadContext *)clientData;
     MutexSharedContext *contextPtr = threadContextPtr->sharedContextPtr;
@@ -453,12 +452,10 @@ ProducerThreadProc(void *clientData)
 	    Tcl_Time before, after;
 	    Tcl_Time timeout = {CONDITION_TIMEOUT_SECS, 0};
 	    Tcl_GetTime(&before);
-	    Tcl_ConditionWait(
-		&contextPtr->u.queue.canEnqueue, &testContextMutex, &timeout);
+	    Tcl_ConditionWait(&contextPtr->u.queue.canEnqueue,
+		    &testContextMutex, &timeout);
 	    Tcl_GetTime(&after);
-	    if ((1000000 * (after.sec - before.sec) +
-		 (after.usec - before.usec)) >=
-		1000000 * CONDITION_TIMEOUT_SECS) {
+	    if (USEC_DIFF(before, after) >= 1000000 * CONDITION_TIMEOUT_SECS) {
 		threadContextPtr->timeouts += 1;
 	    }
 	} else {
@@ -496,7 +493,8 @@ ProducerThreadProc(void *clientData)
  *------------------------------------------------------------------------
  */
 static Tcl_ThreadCreateType
-ConsumerThreadProc(void *clientData)
+ConsumerThreadProc(
+    void *clientData)
 {
     MutexThreadContext *threadContextPtr = (MutexThreadContext *)clientData;
     MutexSharedContext *contextPtr = threadContextPtr->sharedContextPtr;
@@ -516,12 +514,10 @@ ConsumerThreadProc(void *clientData)
 	    Tcl_Time before, after;
 	    Tcl_Time timeout = {CONDITION_TIMEOUT_SECS, 0};
 	    Tcl_GetTime(&before);
-	    Tcl_ConditionWait(
-		&contextPtr->u.queue.canDequeue, &testContextMutex, &timeout);
+	    Tcl_ConditionWait(&contextPtr->u.queue.canDequeue,
+		    &testContextMutex, &timeout);
 	    Tcl_GetTime(&after);
-	    if ((1000000 * (after.sec - before.sec) +
-		 (after.usec - before.usec)) >=
-		1000000 * CONDITION_TIMEOUT_SECS) {
+	    if (USEC_DIFF(before, after) >= 1000000 * CONDITION_TIMEOUT_SECS) {
 		threadContextPtr->timeouts += 1;
 	    }
 	} else {
@@ -542,7 +538,7 @@ ConsumerThreadProc(void *clientData)
     Tcl_ExitThread(0);
     TCL_THREAD_CREATE_RETURN;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -567,7 +563,7 @@ TclMutex_Init(
     return TCL_OK;
 }
 #endif /* TCL_THREADS */
-
+
 /*
  * Local Variables:
  * mode: c
