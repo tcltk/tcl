@@ -554,7 +554,7 @@ test: test-core test-pkgs
 test-core: tcltest
 	set TCL_LIBRARY=$(TCL_TEST_LIBRARY)
 	$(DEBUGGER) $(TCLTEST) "$(ROOT:\=/)/tests/all.tcl" $(TESTFLAGS) -loadfile <<
-		package ifneeded dde 1.4.5 [list load "$(TCLDDELIB:\=/)"]
+		package ifneeded dde 1.4.6 [list load "$(TCLDDELIB:\=/)"]
 		package ifneeded registry 1.3.7 [list load "$(TCLREGLIB:\=/)"]
 <<
 
