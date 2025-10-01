@@ -23,6 +23,8 @@ to the userbase.
  - tcltest 2.5.10
  - Thread 3.0.3
  - TDBC\* 1.1.12
+ - dde 1.4.6
+ - Unicode 17.0.0
 
 Release Tcl 9.0.2 arises from the check-in with tag `core-9-0-2`.
 
