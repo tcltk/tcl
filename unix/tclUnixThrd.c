@@ -14,10 +14,6 @@
 #include "tclInt.h"
 #include <assert.h>
 
-#ifdef HAVE_STDATOMIC_H
-#include <stdatomic.h>
-#endif /* HAVE_STDATOMIC_H */
-
 #if TCL_THREADS
 
 /*
@@ -67,15 +63,15 @@
  */
 
 /*
- * No correct native support for reentrant mutexes. Emulate them with regular mutexes
- * and threadlocal counters.
+ * No correct native support for reentrant mutexes. Emulate them with a counter.
  */
+
+#ifndef PTHREAD_NULL
+#   define PTHREAD_NULL (pthread_t)NULL
+#endif
 
 typedef struct PMutex {
     pthread_mutex_t mutex;
-#if defined(HAVE_PTHREAD_SPIN_LOCK) && !defined(HAVE_STDATOMIC_H)
-    pthread_spinlock_t lock;
-#endif
     volatile pthread_t thread;
     int counter; // Number of additional locks in the same thread.
 } PMutex;
@@ -84,26 +80,18 @@ static void
 PMutexInit(
     PMutex *pmutexPtr)
 {
-    pmutexPtr->thread = 0;
+    pmutexPtr->thread = PTHREAD_NULL;
     pmutexPtr->counter = 0;
     pthread_mutex_init(&pmutexPtr->mutex, NULL);
-#if defined(HAVE_PTHREAD_SPIN_LOCK) && !defined(HAVE_STDATOMIC_H)
-    pthread_spin_init(&pmutexPtr->lock, PTHREAD_PROCESS_PRIVATE);
-#endif
 }
 
 static void
 PMutexDestroy(
     PMutex *pmutexPtr)
 {
-#if defined(HAVE_PTHREAD_SPIN_LOCK) && !defined(HAVE_STDATOMIC_H)
-    pthread_spin_destroy(&pmutexPtr->lock);
-#endif
     pthread_mutex_destroy(&pmutexPtr->mutex);
-    assert(pmutexPtr->thread == 0 && pmutexPtr->counter == 0);
+    assert(pthread_equal(pmutexPtr->thread, PTHREAD_NULL) && !pmutexPtr->counter);
 }
-
-#ifdef HAVE_STDATOMIC_H
 
 static void
 PMutexLock(
@@ -111,7 +99,7 @@ PMutexLock(
 {
     pthread_t mythread = pthread_self();
 
-    if (__atomic_load_n(&pmutexPtr->thread, __ATOMIC_SEQ_CST) == mythread) {
+    if (pthread_equal(pmutexPtr->thread, mythread)) {
 	// We own the lock already, so it's recursive.
 	pmutexPtr->counter++;
     } else {
@@ -125,64 +113,15 @@ static void
 PMutexUnlock(
     PMutex *pmutexPtr)
 {
-    assert(pmutexPtr->thread == pthread_self());
+    assert(pthread_equal(pmutexPtr->thread, pthread_self()));
     if (pmutexPtr->counter) {
 	// It's recursive
 	pmutexPtr->counter--;
     } else {
-	pmutexPtr->thread = 0;
+	pmutexPtr->thread = PTHREAD_NULL;
 	pthread_mutex_unlock(&pmutexPtr->mutex);
     }
 }
-
-#else /* HAVE_STDATOMIC_H */
-
-static void
-PMutexLock(
-    PMutex *pmutexPtr)
-{
-    pthread_t mythread = pthread_self();
-    pthread_t mutexthread;
-
-#ifdef HAVE_PTHREAD_SPIN_LOCK
-    pthread_spin_lock(&pmutexPtr->lock);
-#endif
-    mutexthread = pmutexPtr->thread;
-#ifdef HAVE_PTHREAD_SPIN_LOCK
-    pthread_spin_unlock(&pmutexPtr->lock);
-#endif
-    if (mutexthread == mythread) {
-	// We owned the lock already, so it's recursive.
-	pmutexPtr->counter++;
-    } else {
-	pthread_mutex_lock(&pmutexPtr->mutex);
-#ifdef HAVE_PTHREAD_SPIN_LOCK
-	pthread_spin_lock(&pmutexPtr->lock);
-#endif
-	pmutexPtr->thread = mythread;
-#ifdef HAVE_PTHREAD_SPIN_LOCK
-	pthread_spin_unlock(&pmutexPtr->lock);
-#endif
-    }
-}
-
-static void
-PMutexUnlock(
-    PMutex *pmutexPtr)
-{
-    pthread_t mythread = pthread_self();
-
-    assert(pmutexPtr->thread == mythread);
-    if (pmutexPtr->counter) {
-	// It's recursive
-	pmutexPtr->counter--;
-    } else {
-	pmutexPtr->thread = 0;
-	pthread_mutex_unlock(&pmutexPtr->mutex);
-    }
-}
-
-#endif /* HAVE_STDATOMIC_H */
 
 
 static void
@@ -192,10 +131,10 @@ PCondWait(
 {
     pthread_t mythread = pthread_self();
 
-    assert(pmutexPtr->thread == mythread);
+    assert(pthread_equal(pmutexPtr->thread, mythread));
     int counter = pmutexPtr->counter;
     pmutexPtr->counter = 0;
-    pmutexPtr->thread = 0;
+    pmutexPtr->thread = PTHREAD_NULL;
     pthread_cond_wait(pcondPtr, &pmutexPtr->mutex);
     pmutexPtr->thread = mythread;
     pmutexPtr->counter = counter;
@@ -209,10 +148,10 @@ PCondTimedWait(
 {
     pthread_t mythread = pthread_self();
 
-    assert(pmutexPtr->thread == mythread);
+    assert(pthread_equal(pmutexPtr->thread, mythread));
     int counter = pmutexPtr->counter;
     pmutexPtr->counter = 0;
-    pmutexPtr->thread = 0;
+    pmutexPtr->thread = PTHREAD_NULL;
     pthread_cond_timedwait(pcondPtr, &pmutexPtr->mutex, ptime);
     pmutexPtr->thread = mythread;
     pmutexPtr->counter = counter;

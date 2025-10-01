@@ -567,7 +567,7 @@ WMutexLock(
 {
     LONG mythread = GetCurrentThreadId();
 
-    if (InterlockedOr(&wmPtr->thread, 0) == mythread) {
+    if (wmPtr->thread == mythread) {
 	// We owned the lock already, so it's recursive.
 	wmPtr->counter++;
     } else {
