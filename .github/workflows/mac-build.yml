@@ -10,7 +10,7 @@ permissions:
   contents: read
 jobs:
   xcode:
-    runs-on: macos-13
+    runs-on: macos-15-intel
     defaults:
       run:
         shell: bash
@@ -33,7 +33,7 @@ jobs:
           MAC_CI: 1
         timeout-minutes: 15
   clang:
-    runs-on: macos-13
+    runs-on: macos-15-intel
     strategy:
       matrix:
         config:
