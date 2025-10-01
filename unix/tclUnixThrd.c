@@ -100,7 +100,7 @@ PMutexDestroy(
     pthread_spin_destroy(&pmutexPtr->lock);
 #endif
     pthread_mutex_destroy(&pmutexPtr->mutex);
-    assert(pmutexPtr->thread == 0 && pmutexPtr->counter = 0);
+    assert(pmutexPtr->thread == 0 && pmutexPtr->counter == 0);
 }
 
 #ifdef HAVE_STDATOMIC_H
