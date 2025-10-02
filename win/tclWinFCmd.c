@@ -19,11 +19,12 @@
  * The following constants specify the type of callback when
  * TraverseWinTree() calls the traverseProc()
  */
-
-#define DOTREE_PRED	1	/* pre-order directory  */
-#define DOTREE_POSTD	2	/* post-order directory */
-#define DOTREE_F	3	/* regular file */
-#define DOTREE_LINK	4	/* symbolic link */
+enum TclTraverseWinTreeTypes {
+    DOTREE_PRED = 1,		/* pre-order directory */
+    DOTREE_POSTD = 2,		/* post-order directory */
+    DOTREE_F = 3,		/* regular file */
+    DOTREE_LINK = 4		/* symbolic link */
+};
 
 /*
  * Callbacks for file attributes code.
@@ -53,21 +54,33 @@ enum {
     WIN_SYSTEM_ATTRIBUTE
 };
 
-static const int attributeArray[] = {FILE_ATTRIBUTE_ARCHIVE, FILE_ATTRIBUTE_HIDDEN,
-	0, FILE_ATTRIBUTE_READONLY, 0, FILE_ATTRIBUTE_SYSTEM};
+static const int attributeArray[] = {
+    FILE_ATTRIBUTE_ARCHIVE,				// -archive
+    FILE_ATTRIBUTE_HIDDEN,				// -hidden
+    0,							// -longname
+    FILE_ATTRIBUTE_READONLY,				// -readonly
+    0,							// -shortname
+    FILE_ATTRIBUTE_SYSTEM				// -system
+};
 
 const char *const tclpFileAttrStrings[] = {
-	"-archive", "-hidden", "-longname", "-readonly",
-	"-shortname", "-system", NULL
+    "-archive",
+    "-hidden",
+    "-longname",
+    "-readonly",
+    "-shortname",
+    "-system",
+    NULL
 };
 
 const TclFileAttrProcs tclpFileAttrProcs[] = {
-	{GetWinFileAttributes, SetWinFileAttributes},
-	{GetWinFileAttributes, SetWinFileAttributes},
-	{GetWinFileLongName, CannotSetAttribute},
-	{GetWinFileAttributes, SetWinFileAttributes},
-	{GetWinFileShortName, CannotSetAttribute},
-	{GetWinFileAttributes, SetWinFileAttributes}};
+    {GetWinFileAttributes, SetWinFileAttributes},	// -archive
+    {GetWinFileAttributes, SetWinFileAttributes},	// -hidden
+    {GetWinFileLongName, CannotSetAttribute},		// -longname
+    {GetWinFileAttributes, SetWinFileAttributes},	// -readonly
+    {GetWinFileShortName, CannotSetAttribute},		// -shortname
+    {GetWinFileAttributes, SetWinFileAttributes}	// -system
+};
 
 /*
  * Prototype for the TraverseWinTree callback function.
@@ -1135,7 +1148,6 @@ DoRemoveJustDirectory(
 	}
     }
     return TCL_ERROR;
-
 }
 
 static int
@@ -1201,7 +1213,8 @@ TraverseWinTree(
 {
     DWORD sourceAttr;
     WCHAR *nativeSource, *nativeTarget, *nativeErrfile;
-    int result, found, sourceLen, targetLen = 0, oldSourceLen, oldTargetLen;
+    int result, found;
+    Tcl_Size sourceLen, oldSourceLen, oldTargetLen, targetLen = 0;
     HANDLE handle;
     WIN32_FIND_DATAW data;
 
@@ -1276,7 +1289,7 @@ TraverseWinTree(
     found = 1;
     for (; found; found = FindNextFileW(handle, &data)) {
 	WCHAR *nativeName;
-	int len;
+	size_t len;
 
 	WCHAR *wp = data.cFileName;
 	if (*wp == '.') {
@@ -1991,7 +2004,7 @@ TclpCreateTemporaryDirectory(
     Tcl_Obj *basenameObj)
 {
     Tcl_DString base, name;	/* Contains WCHARs */
-    int baseLen;
+    Tcl_Size baseLen;
     DWORD error;
     WCHAR tempBuf[MAX_PATH + 1];
     DWORD len = GetTempPathW(MAX_PATH, tempBuf);
