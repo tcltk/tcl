@@ -1944,19 +1944,26 @@ Tcl_ListObjAppendElement(
  *
  * TclListObjAppendIfAbsent --
  *
- *	Appends an element to a Tcl_Obj list object if the string value is
- *	not present. If the passed Tcl_Obj is not a list object, it will be
- *	converted and an error raised if the conversion fails.
+ *	Appends an element elemObj to list toObj if no element with the same
+ *	string representation is not already present. If toObj is not a list
+ *	object, it will be converted and an error raised if the conversion
+ *	fails.
  *
- *	The Tcl_Obj must not be shared though the internal representation
- *	may be.
+ *	Reference counting:
+ *	 - toObj must not be shared else the function will panic.
+ *	 - if elemObj is not added to the list, either because it already
+ *	   exists or because of an error, it will be freed if there are no
+ *	   references to it. Caller can therefore pass in a 0-ref elemObj and
+ *	   not have to worry about decrementing it on return. Conversely,
+ *	   this means if caller passes in a 0-ref elemObj it should NOT
+ *	   decrement the reference count on return irrespective of return
+ *	   code.
  *
  *	CAUTION: Linear search (of course)
  *
  * Results:
- *	On success, TCL_OK is returned with the specified element appended.
- *	On failure, TCL_ERROR is returned with an error message in the
- *	interpreter if not NULL.
+ *	Standard Tcl result code. Note element being already present is not
+ *	an error.
  *
  * Side effects:
  *    None.
@@ -1971,13 +1978,17 @@ TclListObjAppendIfAbsent(
 {
     Tcl_Obj **elemObjs;
     Tcl_Size numElems;
-    if (Tcl_ListObjGetElements(interp, toObj, &numElems, &elemObjs) != TCL_OK) {
-	return TCL_ERROR;
+    int result;
+
+    result = Tcl_ListObjGetElements(interp, toObj, &numElems, &elemObjs);
+    if (result != TCL_OK) {
+        goto vamoose;
     }
     /* Assume it is worth doing a pointer compare over the whole list first */
     for (Tcl_Size i = 0; i < numElems; ++i) {
 	if (elemObjs[i] == elemObj) {
-	    return TCL_OK;
+	    result = TCL_OK;
+            goto vamoose;
 	}
     }
     Tcl_Size elemLen;
@@ -1987,10 +1998,15 @@ TclListObjAppendIfAbsent(
 	Tcl_Size toLen;
 	const char *toStr = Tcl_GetStringFromObj(elemObjs[i], &toLen);
 	if (toLen == elemLen && !strncmp(elemStr, toStr, elemLen)) {
-	    return TCL_OK;
+	    result = TCL_OK;
+            goto vamoose;
 	}
     }
-    return TclListObjAppendElements(interp, toObj, 1, &elemObj);
+    result = TclListObjAppendElements(interp, toObj, 1, &elemObj);
+
+vamoose: /* Return result after freeing elemObj if unreferenced */
+    Tcl_BounceRefCount(elemObj);
+    return result;
 }
 
 /*
