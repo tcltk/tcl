@@ -2998,7 +2998,8 @@ AC_DEFUN([SC_ZIPFS_SUPPORT], [
     if test -f "$ac_cv_path_macher" ; then
 	MACHER_PROG="$ac_cv_path_macher"
 	AC_MSG_RESULT([$MACHER_PROG])
-	AC_MSG_RESULT([Found macher in environment])
+    else
+	AC_MSG_RESULT([Macher not found])
     fi
     AC_MSG_CHECKING([for zip])
     AC_CACHE_VAL(ac_cv_path_zip, [
@@ -3020,7 +3021,6 @@ AC_DEFUN([SC_ZIPFS_SUPPORT], [
 	AC_MSG_RESULT([$ZIP_PROG])
 	ZIP_PROG_OPTIONS="-rq"
 	ZIP_PROG_VFSSEARCH="*"
-	AC_MSG_RESULT([Found INFO Zip in environment])
 	# Use standard arguments for zip
     else
 	# It is not an error if an installed version of Zip can't be located.

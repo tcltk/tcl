@@ -11187,8 +11187,9 @@ fi
 	MACHER_PROG="$ac_cv_path_macher"
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $MACHER_PROG" >&5
 printf "%s\n" "$MACHER_PROG" >&6; }
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: Found macher in environment" >&5
-printf "%s\n" "Found macher in environment" >&6; }
+    else
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: Macher not found" >&5
+printf "%s\n" "Macher not found" >&6; }
     fi
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for zip" >&5
 printf %s "checking for zip... " >&6; }
@@ -11219,8 +11220,6 @@ fi
 printf "%s\n" "$ZIP_PROG" >&6; }
 	ZIP_PROG_OPTIONS="-rq"
 	ZIP_PROG_VFSSEARCH="*"
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: Found INFO Zip in environment" >&5
-printf "%s\n" "Found INFO Zip in environment" >&6; }
 	# Use standard arguments for zip
     else
 	# It is not an error if an installed version of Zip can't be located.
