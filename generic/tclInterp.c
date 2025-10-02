@@ -617,6 +617,7 @@ AddPathsInVarToList(
 		    continue;
 		}
 	    }
+            /* Note: TclListObjAppendIfAbsent handles 0 and non-0 ref counts */
 	    if (TclListObjAppendIfAbsent(interp, toListPtr, pathPtr) != TCL_OK) {
 		return TCL_ERROR;
 	    }
@@ -718,9 +719,8 @@ InitAutoPathObjCmd(
 	Tcl_IncrRefCount(dirs[2]);
 	objPtr = TclJoinPath(2, &dirs[1], 0);
 	if (objPtr != NULL) {
-	    Tcl_IncrRefCount(objPtr);
+            /* Note: TclListObjAppendIfAbsent handles 0 and non-0 ref counts */
 	    (void) TclListObjAppendIfAbsent(NULL, autoPathPtr, objPtr);
-	    Tcl_DecrRefCount(objPtr);
 	}
     }
     for (size_t i = 0; i < sizeof(dirs) / sizeof(dirs[0]); ++i) {
