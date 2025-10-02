@@ -4411,8 +4411,21 @@ TclZipfs_TclLibrary(void)
      * applications (e.g. tkinter - Bug [6fbabfe166]) may not do so.
      * So if not already set, try to find it.
      */
-    if (zipfs_literal_tcl_library == NULL) {
-	TclZipfsLocateTclLibrary(1, 1);
+    if (!zipfs_tcl_library_init) {
+	const char *archive = Tcl_GetNameOfExecutable();
+	int appZipfsPresent =
+	    (TclZipfs_Mount(NULL, archive, ZIPFS_APP_MOUNT, NULL) == TCL_OK);
+#if !defined(STATIC_BUILD)
+	int shlibZipfsPresent = 0;
+	Tcl_Obj *shlibPathObj = TclGetObjNameOfShlib();
+	if (shlibPathObj && TclZipfs_Mount(NULL,
+					   Tcl_GetString(shlibPathObj),
+					   ZIPFS_ZIP_MOUNT,
+					   NULL) == TCL_OK) {
+	    shlibZipfsPresent = 1;
+	}
+#endif
+	TclZipfsLocateTclLibrary(appZipfsPresent, shlibZipfsPresent);
     }
 
     if (zipfs_literal_tcl_library) {
@@ -6468,9 +6481,11 @@ TclZipfsInitEncodingDirs(void)
     else {
 	searchPathObj = Tcl_DuplicateObj(searchPathObj);
     }
-    Tcl_ListObjAppendElement(NULL, searchPathObj,
-	    Tcl_FSJoinToPath(libDirObj, 1, &subDirObj));
+    Tcl_Obj *fullPathObj = Tcl_FSJoinToPath(libDirObj, 1, &subDirObj);
+    Tcl_IncrRefCount(fullPathObj);
+    TclListObjAppendIfAbsent(NULL, searchPathObj, fullPathObj);
     Tcl_IncrRefCount(searchPathObj);
+    Tcl_DecrRefCount(fullPathObj);
     Tcl_DecrRefCount(subDirObj);
     Tcl_DecrRefCount(libDirObj);
     Tcl_SetEncodingSearchPath(searchPathObj);
