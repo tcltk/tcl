@@ -2496,7 +2496,7 @@ TclCompileScript(
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"too many nested compilations (infinite loop?)",
 		TCL_AUTO_LENGTH));
-	Tcl_SetErrorCode(interp, "TCL", "LIMIT", "STACK", (char *)NULL);
+	TclSetErrorCode(interp, "TCL", "LIMIT", "STACK");
 	TclCompileSyntaxError(interp, envPtr);
 	return;
     }
@@ -2517,7 +2517,7 @@ TclCompileScript(
 		    "Script length %" TCL_SIZE_MODIFIER
 		    "d exceeds max permitted length %d.",
 		    numBytes, INT_MAX - 1));
-	    Tcl_SetErrorCode(interp, "TCL", "LIMIT", "SCRIPTLENGTH", (char *)NULL);
+	    TclSetErrorCode(interp, "TCL", "LIMIT", "SCRIPTLENGTH");
 	    TclCompileSyntaxError(interp, envPtr);
 	    return;
 	}

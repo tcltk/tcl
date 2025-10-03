@@ -377,7 +377,7 @@ ThreadCmd(
 	    char buf[TCL_INTEGER_SPACE];
 
 	    snprintf(buf, sizeof(buf), "%" TCL_LL_MODIFIER "d", (long long)id);
-	    Tcl_AppendResult(interp, "cannot join thread ", buf, (char *)NULL);
+	    TclAppendResult(interp, "cannot join thread ", buf);
 	}
 	return result;
     }
@@ -515,7 +515,7 @@ ThreadCreate(
     if (Tcl_CreateThread(&id, NewTestThread, &ctrl,
 	    TCL_THREAD_STACK_DEFAULT, joinable) != TCL_OK) {
 	Tcl_MutexUnlock(&threadMutex);
-	Tcl_AppendResult(interp, "cannot create a new thread", (char *)NULL);
+	TclAppendResult(interp, "cannot create a new thread");
 	return TCL_ERROR;
     }
 
@@ -826,7 +826,7 @@ ThreadSend(
     }
     if (!found) {
 	Tcl_MutexUnlock(&threadMutex);
-	Tcl_AppendResult(interp, "invalid thread id", (char *)NULL);
+	TclAppendResult(interp, "invalid thread id");
 	return TCL_ERROR;
     }
 
@@ -920,7 +920,7 @@ ThreadSend(
 
     if (resultPtr->code != TCL_OK) {
 	if (resultPtr->errorCode) {
-	    Tcl_SetErrorCode(interp, resultPtr->errorCode, (char *)NULL);
+	    TclSetErrorCode(interp, resultPtr->errorCode);
 	    Tcl_Free(resultPtr->errorCode);
 	}
 	if (resultPtr->errorInfo) {
@@ -928,7 +928,7 @@ ThreadSend(
 	    Tcl_Free(resultPtr->errorInfo);
 	}
     }
-    Tcl_AppendResult(interp, resultPtr->result, (char *)NULL);
+    TclAppendResult(interp, resultPtr->result);
     Tcl_ConditionFinalize(&resultPtr->done);
     code = resultPtr->code;
 
@@ -979,7 +979,7 @@ ThreadCancel(
     }
     if (!found) {
 	Tcl_MutexUnlock(&threadMutex);
-	Tcl_AppendResult(interp, "invalid thread id", (char *)NULL);
+	TclAppendResult(interp, "invalid thread id");
 	return TCL_ERROR;
     }
 

@@ -948,7 +948,7 @@ Tcl_ConvertToType(
 	if (interp) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "can't convert value to type %s", typePtr->name));
-	    Tcl_SetErrorCode(interp, "TCL", "API_ABUSE", (char *)NULL);
+	    TclSetErrorCode(interp, "TCL", "API_ABUSE");
 	}
 	return TCL_ERROR;
     }
@@ -2072,7 +2072,7 @@ TclSetBooleanFromAny(
 	    Tcl_AppendToObj(msg, "\"", -1);
 	}
 	Tcl_SetObjResult(interp, msg);
-	Tcl_SetErrorCode(interp, "TCL", "VALUE", "BOOLEAN", (char *)NULL);
+	TclSetErrorCode(interp, "TCL", "VALUE", "BOOLEAN");
     }
     return TCL_ERROR;
 }
@@ -2395,8 +2395,7 @@ Tcl_GetDoubleFromObj(
 		if (interp != NULL) {
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			    "floating point value is Not a Number", -1));
-		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "DOUBLE", "NAN",
-			    (char *)NULL);
+		    TclSetErrorCode(interp, "TCL", "VALUE", "DOUBLE", "NAN");
 		}
 		return TCL_ERROR;
 	    }
@@ -2527,7 +2526,7 @@ Tcl_GetIntFromObj(
 	    const char *s =
 		    "integer value too large to represent";
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
-	    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, (char *)NULL);
+	    TclSetErrorCode(interp, "ARITH", "IOVERFLOW", s);
 	}
 	return TCL_ERROR;
     }
@@ -2649,7 +2648,7 @@ Tcl_GetLongFromObj(
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"expected integer but got \"%s\"",
 			TclGetString(objPtr)));
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", (char *)NULL);
+		TclSetErrorCode(interp, "TCL", "VALUE", "INTEGER");
 	    }
 	    return TCL_ERROR;
 	}
@@ -2693,7 +2692,7 @@ Tcl_GetLongFromObj(
 		Tcl_Obj *msg = Tcl_NewStringObj(s, -1);
 
 		Tcl_SetObjResult(interp, msg);
-		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, (char *)NULL);
+		TclSetErrorCode(interp, "ARITH", "IOVERFLOW", s);
 	    }
 	    return TCL_ERROR;
 	}
@@ -2949,7 +2948,7 @@ Tcl_GetWideIntFromObj(
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"expected integer but got \"%s\"",
 			TclGetString(objPtr)));
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", (char *)NULL);
+		TclSetErrorCode(interp, "TCL", "VALUE", "INTEGER");
 	    }
 	    return TCL_ERROR;
 	}
@@ -2987,7 +2986,7 @@ Tcl_GetWideIntFromObj(
 		Tcl_Obj *msg = Tcl_NewStringObj(s, -1);
 
 		Tcl_SetObjResult(interp, msg);
-		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, (char *)NULL);
+		TclSetErrorCode(interp, "ARITH", "IOVERFLOW", s);
 	    }
 	    return TCL_ERROR;
 	}
@@ -3031,7 +3030,7 @@ Tcl_GetWideUIntFromObj(
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			    "expected unsigned integer but got \"%s\"",
 			    TclGetString(objPtr)));
-		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", (char *)NULL);
+		    TclSetErrorCode(interp, "TCL", "VALUE", "INTEGER");
 		}
 		return TCL_ERROR;
 	    }
@@ -3070,7 +3069,7 @@ Tcl_GetWideUIntFromObj(
 		Tcl_Obj *msg = Tcl_NewStringObj(s, -1);
 
 		Tcl_SetObjResult(interp, msg);
-		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, (char *)NULL);
+		TclSetErrorCode(interp, "ARITH", "IOVERFLOW", s);
 	    }
 	    return TCL_ERROR;
 	}
@@ -3117,7 +3116,7 @@ TclGetWideBitsFromObj(
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"expected integer but got \"%s\"",
 			TclGetString(objPtr)));
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", (char *)NULL);
+		TclSetErrorCode(interp, "TCL", "VALUE", "INTEGER");
 	    }
 	    return TCL_ERROR;
 	}
@@ -3441,7 +3440,7 @@ GetBignumFromObj(
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"expected integer but got \"%s\"",
 			TclGetString(objPtr)));
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", (char *)NULL);
+		TclSetErrorCode(interp, "TCL", "VALUE", "INTEGER");
 	    }
 	    return TCL_ERROR;
 	}

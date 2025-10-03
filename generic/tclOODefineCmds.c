@@ -756,8 +756,8 @@ RenameDeleteMethod(
 	noSuchMethod:
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "method %s does not exist", TclGetString(fromPtr)));
-	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
-		    TclGetString(fromPtr), (char *)NULL);
+	    TclSetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
+		    TclGetString(fromPtr));
 	    return TCL_ERROR;
 	}
 	hPtr = Tcl_FindHashEntry(oPtr->methodsPtr, fromPtr);
@@ -889,7 +889,7 @@ TclOOUnknownDefinition(
   noMatch:
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "invalid command name \"%s\"", soughtStr));
-    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "COMMAND", soughtStr, (char *)NULL);
+    TclSetErrorCode(interp, "TCL", "LOOKUP", "COMMAND", soughtStr);
     return TCL_ERROR;
 }
 
@@ -1089,8 +1089,8 @@ GetClassInOuterContext(
     }
     if (oPtr->classPtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(errMsg, TCL_AUTO_LENGTH));
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CLASS",
-		TclGetString(className), (char *)NULL);
+	TclSetErrorCode(interp, "TCL", "LOOKUP", "CLASS",
+		TclGetString(className));
 	return NULL;
     }
     return oPtr->classPtr;
@@ -1420,8 +1420,8 @@ TclOODefineObjCmd(
     if (oPtr->classPtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"%s does not refer to a class", TclGetString(objv[1])));
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CLASS",
-		TclGetString(objv[1]), (char *)NULL);
+	TclSetErrorCode(interp, "TCL", "LOOKUP", "CLASS",
+		TclGetString(objv[1]));
 	return TCL_ERROR;
     }
 

@@ -3020,8 +3020,8 @@ TclOOObjectCmdCore(
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "impossible to invoke method \"%s\": no defined method or"
 		    " unknown method", TclGetString(methodNamePtr)));
-	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD_MAPPED",
-		    TclGetString(methodNamePtr), (char *)NULL);
+	    TclSetErrorCode(interp, "TCL", "LOOKUP", "METHOD_MAPPED",
+		    TclGetString(methodNamePtr));
 	    return TCL_ERROR;
 	}
     } else {
@@ -3037,8 +3037,8 @@ TclOOObjectCmdCore(
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "impossible to invoke method \"%s\": no defined method or"
 		    " unknown method", TclGetString(methodNamePtr)));
-	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
-		    TclGetString(methodNamePtr), (char *)NULL);
+	    TclSetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
+		    TclGetString(methodNamePtr));
 	    return TCL_ERROR;
 	}
     }
@@ -3063,8 +3063,8 @@ TclOOObjectCmdCore(
 	if (contextPtr->index >= contextPtr->callPtr->numChain) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "no valid method implementation", TCL_AUTO_LENGTH));
-	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
-		    TclGetString(methodNamePtr), (char *)NULL);
+	    TclSetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
+		    TclGetString(methodNamePtr));
 	    TclOODeleteContext(contextPtr);
 	    return TCL_ERROR;
 	}
@@ -3269,8 +3269,7 @@ Tcl_GetObjectFromObj(
   notAnObject:
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "%s does not refer to an object", TclGetString(objPtr)));
-    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "OBJECT", TclGetString(objPtr),
-	    (char *)NULL);
+    TclSetErrorCode(interp, "TCL", "LOOKUP", "OBJECT", TclGetString(objPtr));
     return NULL;
 }
 

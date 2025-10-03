@@ -1081,7 +1081,7 @@ TclOODefinePropertyCmd(
 			"missing %s to go with %s option",
 			(option == OPT_KIND ? "kind value" : "body"),
 			options[option]));
-		Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", NULL);
+		TclSetErrorCode(interp, "TCL", "WRONGARGS");
 		return TCL_ERROR;
 	    }
 	    argObj = objv[i + 2];

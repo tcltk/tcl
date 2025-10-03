@@ -1515,7 +1515,7 @@ TclGetOpenMode(
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "illegal access mode \"%s\"", modeString));
-	    Tcl_SetErrorCode(interp, "TCL", "OPENMODE", "INVALID", (char *)NULL);
+	    TclSetErrorCode(interp, "TCL", "OPENMODE", "INVALID");
 	}
 	return -1;
     }
@@ -1533,7 +1533,7 @@ TclGetOpenMode(
 		    "\n    while processing open access modes \"");
 	    Tcl_AddErrorInfo(interp, modeString);
 	    Tcl_AddErrorInfo(interp, "\"");
-	    Tcl_SetErrorCode(interp, "TCL", "OPENMODE", "INVALID", (char *)NULL);
+	    TclSetErrorCode(interp, "TCL", "OPENMODE", "INVALID");
 	}
 	if (modeArgv) {
 	    Tcl_Free((void *)modeArgv);
@@ -2061,7 +2061,7 @@ Tcl_PosixError(
     msg = Tcl_ErrnoMsg(errno);
     id = Tcl_ErrnoId();
     if (interp) {
-	Tcl_SetErrorCode(interp, "POSIX", id, msg, (char *)NULL);
+	TclSetErrorCode(interp, "POSIX", id, msg);
     }
     return msg;
 }

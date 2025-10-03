@@ -433,9 +433,9 @@ TestbooleanobjCmd(
 	}
 	Tcl_SetObjResult(interp, varPtr[varIndex]);
     } else {
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+	TclAppendStringsToObj(Tcl_GetObjResult(interp),
 		"bad option \"", Tcl_GetString(objv[1]),
-		"\": must be set, get, or not", (char *)NULL);
+		"\": must be set, get, or not");
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -550,9 +550,9 @@ TestdoubleobjCmd(
 	}
 	Tcl_SetObjResult(interp, varPtr[varIndex]);
     } else {
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+	TclAppendStringsToObj(Tcl_GetObjResult(interp),
 		"bad option \"", Tcl_GetString(objv[1]),
-		"\": must be set, get, mult10, or div10", (char *)NULL);
+		"\": must be set, get, mult10, or div10");
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -839,9 +839,9 @@ TestintobjCmd(
 	}
 	Tcl_SetObjResult(interp, varPtr[varIndex]);
     } else {
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+	TclAppendStringsToObj(Tcl_GetObjResult(interp),
 		"bad option \"", Tcl_GetString(objv[1]),
-		"\": must be set, get, get2, mult10, or div10", (char *)NULL);
+		"\": must be set, get, get2, mult10, or div10");
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -1283,8 +1283,8 @@ TestobjCmd(
 	    goto wrongNumArgs;
 	}
 	if ((targetType = Tcl_GetObjType(Tcl_GetString(objv[3]))) == NULL) {
-	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		    "no type ", Tcl_GetString(objv[3]), " found", (char *)NULL);
+	    TclAppendStringsToObj(Tcl_GetObjResult(interp),
+		    "no type ", Tcl_GetString(objv[3]), " found");
 	    return TCL_ERROR;
 	}
 	if (Tcl_ConvertToType(interp, varPtr[varIndex], targetType)
@@ -1433,10 +1433,10 @@ TeststringobjCmd(
 	    for ( ; i < 12 + 3; i++) {
 		strings[i - 3] = NULL;
 	    }
-	    Tcl_AppendStringsToObj(varPtr[varIndex], strings[0], strings[1],
+	    TclAppendStringsToObj(varPtr[varIndex], strings[0], strings[1],
 		    strings[2], strings[3], strings[4], strings[5],
 		    strings[6], strings[7], strings[8], strings[9],
-		    strings[10], strings[11], (char *)NULL);
+		    strings[10], strings[11]);
 	    Tcl_SetObjResult(interp, varPtr[varIndex]);
 	    break;
 	case 2:				/* get */
