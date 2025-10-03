@@ -4415,8 +4415,8 @@ TclZipfs_TclLibrary(void)
 	const char *archive = Tcl_GetNameOfExecutable();
 	int appZipfsPresent =
 	    (TclZipfs_Mount(NULL, archive, ZIPFS_APP_MOUNT, NULL) == TCL_OK);
-#if !defined(STATIC_BUILD)
 	int shlibZipfsPresent = 0;
+#if !defined(STATIC_BUILD)
 	Tcl_Obj *shlibPathObj = TclGetObjNameOfShlib();
 	if (shlibPathObj && TclZipfs_Mount(NULL,
 					   Tcl_GetString(shlibPathObj),
