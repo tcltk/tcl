@@ -164,7 +164,7 @@ TestfilehandlerCmd(
 	    return TCL_ERROR;
 	}
 	if (i >= MAX_PIPES) {
-	    Tcl_AppendResult(interp, "bad index ", objv[2], (char *)NULL);
+	    TclAppendResult(interp, "bad index ", objv[2]);
 	    return TCL_ERROR;
 	}
 	pipePtr = &testPipes[i];
@@ -193,7 +193,7 @@ TestfilehandlerCmd(
 	    return TCL_ERROR;
 	}
 	snprintf(buf, sizeof(buf), "%d %d", pipePtr->readCount, pipePtr->writeCount);
-	Tcl_AppendResult(interp, buf, (char *)NULL);
+	TclAppendResult(interp, buf);
     } else if (strcmp(Tcl_GetString(objv[1]), "create") == 0) {
 	if (objc != 5) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "index readMode writeMode");
@@ -201,16 +201,15 @@ TestfilehandlerCmd(
 	}
 	if (pipePtr->readFile == NULL) {
 	    if (!TclpCreatePipe(&pipePtr->readFile, &pipePtr->writeFile)) {
-		Tcl_AppendResult(interp, "couldn't open pipe: ",
-			Tcl_PosixError(interp), (char *)NULL);
+		TclAppendResult(interp, "couldn't open pipe: ",
+			Tcl_PosixError(interp));
 		return TCL_ERROR;
 	    }
 #ifdef O_NONBLOCK
 	    fcntl(GetFd(pipePtr->readFile), F_SETFL, O_NONBLOCK);
 	    fcntl(GetFd(pipePtr->writeFile), F_SETFL, O_NONBLOCK);
 #else
-	    Tcl_AppendResult(interp, "cannot make pipes non-blocking",
-		    (char *)NULL);
+	    TclAppendResult(interp, "cannot make pipes non-blocking");
 	    return TCL_ERROR;
 #endif
 	}
@@ -226,7 +225,7 @@ TestfilehandlerCmd(
 	    Tcl_CreateFileHandler(GetFd(pipePtr->readFile), 0,
 		    TestFileHandlerProc, pipePtr);
 	} else {
-	    Tcl_AppendResult(interp, "bad read mode \"", Tcl_GetString(objv[3]), "\"", (char *)NULL);
+	    TclAppendResult(interp, "bad read mode \"", Tcl_GetString(objv[3]), "\"");
 	    return TCL_ERROR;
 	}
 	if (strcmp(Tcl_GetString(objv[4]), "writable") == 0) {
@@ -238,7 +237,7 @@ TestfilehandlerCmd(
 	    Tcl_CreateFileHandler(GetFd(pipePtr->writeFile), 0,
 		    TestFileHandlerProc, pipePtr);
 	} else {
-	    Tcl_AppendResult(interp, "bad read mode \"", Tcl_GetString(objv[4]), "\"", (char *)NULL);
+	    TclAppendResult(interp, "bad read mode \"", Tcl_GetString(objv[4]), "\"");
 	    return TCL_ERROR;
 	}
     } else if (strcmp(Tcl_GetString(objv[1]), "empty") == 0) {
@@ -270,7 +269,7 @@ TestfilehandlerCmd(
 
 	memset(buffer, 'b', 10);
 	TclFormatInt(buf, write(GetFd(pipePtr->writeFile), buffer, 10));
-	Tcl_AppendResult(interp, buf, (char *)NULL);
+	TclAppendResult(interp, buf);
     } else if (strcmp(Tcl_GetString(objv[1]), "oneevent") == 0) {
 	Tcl_DoOneEvent(TCL_FILE_EVENTS|TCL_DONT_WAIT);
     } else if (strcmp(Tcl_GetString(objv[1]), "wait") == 0) {
@@ -279,7 +278,7 @@ TestfilehandlerCmd(
 	    return TCL_ERROR;
 	}
 	if (pipePtr->readFile == NULL) {
-	    Tcl_AppendResult(interp, "pipe ", Tcl_GetString(objv[2]), " doesn't exist", (char *)NULL);
+	    TclAppendResult(interp, "pipe ", Tcl_GetString(objv[2]), " doesn't exist");
 	    return TCL_ERROR;
 	}
 	if (strcmp(Tcl_GetString(objv[3]), "readable") == 0) {
@@ -302,9 +301,9 @@ TestfilehandlerCmd(
     } else if (strcmp(Tcl_GetString(objv[1]), "windowevent") == 0) {
 	Tcl_DoOneEvent(TCL_WINDOW_EVENTS|TCL_DONT_WAIT);
     } else {
-	Tcl_AppendResult(interp, "bad option \"", Tcl_GetString(objv[1]),
+	TclAppendResult(interp, "bad option \"", Tcl_GetString(objv[1]),
 		"\": must be close, clear, counts, create, empty, fill, "
-		"fillpartial, oneevent, wait, or windowevent", (char *)NULL);
+		"fillpartial, oneevent, wait, or windowevent");
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -370,14 +369,14 @@ TestfilewaitCmd(
     } else if (strcmp(Tcl_GetString(objv[2]), "both") == 0){
 	mask = TCL_WRITABLE|TCL_READABLE;
     } else {
-	Tcl_AppendResult(interp, "bad argument \"", Tcl_GetString(objv[2]),
-		"\": must be readable, writable, or both", (char *)NULL);
+	TclAppendResult(interp, "bad argument \"", Tcl_GetString(objv[2]),
+		"\": must be readable, writable, or both");
 	return TCL_ERROR;
     }
     if (Tcl_GetChannelHandle(channel,
 	    (mask & TCL_READABLE) ? TCL_READABLE : TCL_WRITABLE,
 	    (void **) &data) != TCL_OK) {
-	Tcl_AppendResult(interp, "couldn't get channel file", (char *)NULL);
+	TclAppendResult(interp, "couldn't get channel file");
 	return TCL_ERROR;
     }
     fd = (int)PTR2INT(data);
@@ -468,13 +467,12 @@ TestforkCmd(
     }
     pid = fork();
     if (pid == -1) {
-	Tcl_AppendResult(interp,
-		"Cannot fork", (char *)NULL);
+	TclAppendResult(interp, "Cannot fork");
 	return TCL_ERROR;
     }
     /* Only needed when pthread_atfork is not present,
      * should not hurt otherwise. */
-    if (pid==0) {
+    if (pid == 0) {
 	Tcl_InitNotifier();
     }
     Tcl_SetObjResult(interp, Tcl_NewWideIntObj(pid));
@@ -524,16 +522,15 @@ TestalarmCmd(
     action.sa_flags = SA_RESTART;
 
     if (sigaction(SIGALRM, &action, NULL) < 0) {
-	Tcl_AppendResult(interp, "sigaction: ", Tcl_PosixError(interp), (char *)NULL);
+	TclAppendResult(interp, "sigaction: ", Tcl_PosixError(interp));
 	return TCL_ERROR;
     }
     (void) alarm(sec);
     return TCL_OK;
 #else
 
-    Tcl_AppendResult(interp,
-	    "warning: sigaction SA_RESTART not support on this platform",
-	    (char *)NULL);
+    TclAppendResult(interp,
+	    "warning: sigaction SA_RESTART not support on this platform");
     return TCL_ERROR;
 #endif
 }
@@ -584,7 +581,7 @@ TestgotsigCmd(
     TCL_UNUSED(int) /*objc*/,
     TCL_UNUSED(Tcl_Obj *const *))
 {
-    Tcl_AppendResult(interp, gotsig, (char *)NULL);
+    TclAppendResult(interp, gotsig);
     gotsig = "0";
     return TCL_OK;
 }
@@ -640,8 +637,7 @@ TestchmodCmd(
 	}
 	Tcl_UtfToExternalDString(NULL, translated, -1, &ds);
 	if (chmod(Tcl_DStringValue(&ds), mode) != 0) {
-	    Tcl_AppendResult(interp, translated, ": ", Tcl_PosixError(interp),
-		    (char *)NULL);
+	    TclAppendResult(interp, translated, ": ", Tcl_PosixError(interp));
 	    Tcl_DStringFree(&ds);
 	    return TCL_ERROR;
 	}

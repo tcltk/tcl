@@ -735,8 +735,7 @@ EncodingDirsObjCmd(
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"expected directory list but got \"%s\"",
 		TclGetString(dirListObj)));
-	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "ENCODING", "BADPATH",
-		(char *)NULL);
+	TclSetErrorCode(interp, "TCL", "OPERATION", "ENCODING", "BADPATH");
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, dirListObj);
@@ -1958,8 +1957,8 @@ PathFilesystemCmd(
     fsInfo = Tcl_FSFileSystemInfo(objv[1]);
     if (fsInfo == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj("unrecognised path", -1));
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "FILESYSTEM",
-		TclGetString(objv[1]), (char *)NULL);
+	TclSetErrorCode(interp, "TCL", "LOOKUP", "FILESYSTEM",
+		TclGetString(objv[1]));
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, fsInfo);
@@ -2108,8 +2107,7 @@ PathSplitCmd(
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"could not read \"%s\": no such file or directory",
 		TclGetString(objv[1])));
-	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PATHSPLIT", "NONESUCH",
-		(char *)NULL);
+	TclSetErrorCode(interp, "TCL", "OPERATION", "PATHSPLIT", "NONESUCH");
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, res);
@@ -2209,8 +2207,8 @@ FilesystemSeparatorCmd(
 	if (separatorObj == NULL) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "unrecognised path", -1));
-	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "FILESYSTEM",
-		    TclGetString(objv[1]), (char *)NULL);
+	    TclSetErrorCode(interp, "TCL", "LOOKUP", "FILESYSTEM",
+		    TclGetString(objv[1]));
 	    return TCL_ERROR;
 	}
 	Tcl_SetObjResult(interp, separatorObj);
@@ -2853,11 +2851,11 @@ EachloopCmd(
 	}
 	if (statePtr->varcList[i] < 1) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"%s varlist is empty",
-		(statePtr->resultList != NULL ? "lmap" : "foreach")));
-	    Tcl_SetErrorCode(interp, "TCL", "OPERATION",
-		(statePtr->resultList != NULL ? "LMAP" : "FOREACH"),
-		"NEEDVARS", (char *)NULL);
+		    "%s varlist is empty",
+		    (statePtr->resultList != NULL ? "lmap" : "foreach")));
+	    TclSetErrorCode(interp, "TCL", "OPERATION",
+		    (statePtr->resultList != NULL ? "LMAP" : "FOREACH"),
+		    "NEEDVARS");
 	    result = TCL_ERROR;
 	    goto done;
 	}

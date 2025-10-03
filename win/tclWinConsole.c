@@ -2303,8 +2303,8 @@ ConsoleSetOptionProc(
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"bad mode \"%s\" for -inputmode: must be"
 			" normal, password, raw, or reset", value));
-		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "FCONFIGURE",
-			"VALUE", (char *)NULL);
+		TclSetErrorCode(interp, "TCL", "OPERATION", "FCONFIGURE",
+			"VALUE");
 	    }
 	    return TCL_ERROR;
 	}

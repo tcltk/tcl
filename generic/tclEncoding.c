@@ -1266,9 +1266,8 @@ Tcl_ExternalToUtfDStringEx(
 			    "unexpected byte sequence starting at index %"
 			    TCL_SIZE_MODIFIER "d: '\\x%02X'",
 			    nBytesProcessed, UCHAR(srcStart[nBytesProcessed])));
-		    Tcl_SetErrorCode(
-			    interp, "TCL", "ENCODING", "ILLEGALSEQUENCE", buf,
-			    (char *)NULL);
+		    TclSetErrorCode(interp, "TCL", "ENCODING",
+			    "ILLEGALSEQUENCE", buf);
 		}
 	    }
 	    if (result != TCL_OK) {
@@ -1589,8 +1588,8 @@ Tcl_UtfToExternalDStringEx(
 			    "unexpected character at index %" TCL_SIZE_MODIFIER
 			    "u: 'U+%06X'",
 			    pos, ucs4));
-		    Tcl_SetErrorCode(interp, "TCL", "ENCODING", "ILLEGALSEQUENCE",
-			    buf, (char *)NULL);
+		    TclSetErrorCode(interp, "TCL", "ENCODING",
+			    "ILLEGALSEQUENCE", buf);
 		}
 	    }
 	    if (result != TCL_OK) {
@@ -1844,7 +1843,7 @@ OpenEncodingFileChannel(
     if ((NULL == chan) && (interp != NULL)) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"unknown encoding \"%s\"", name));
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ENCODING", name, (char *)NULL);
+	TclSetErrorCode(interp, "TCL", "LOOKUP", "ENCODING", name);
     }
     Tcl_DecrRefCount(fileNameObj);
     Tcl_DecrRefCount(searchPath);
@@ -1918,7 +1917,7 @@ LoadEncodingFile(
     if ((encoding == NULL) && (interp != NULL)) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"invalid encoding file \"%s\"", name));
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ENCODING", name, (char *)NULL);
+	TclSetErrorCode(interp, "TCL", "LOOKUP", "ENCODING", name);
     }
     Tcl_CloseEx(NULL, chan, 0);
 
@@ -4575,15 +4574,14 @@ TclEncodingProfileNameToId(
 	Tcl_Obj *errorObj = Tcl_ObjPrintf("bad profile name \"%s\": must be",
 		profileName);
 	for (i = 0; i < (numProfiles - 1); ++i) {
-	    Tcl_AppendStringsToObj(
-		    errorObj, " ", encodingProfiles[i].name, ",", (char *)NULL);
+	    TclAppendStringsToObj(errorObj,
+		    " ", encodingProfiles[i].name, ",");
 	}
-	Tcl_AppendStringsToObj(
-		errorObj, " or ", encodingProfiles[numProfiles-1].name, (char *)NULL);
+	TclAppendStringsToObj(errorObj,
+		" or ", encodingProfiles[numProfiles-1].name);
 
 	Tcl_SetObjResult(interp, errorObj);
-	Tcl_SetErrorCode(
-		interp, "TCL", "ENCODING", "PROFILE", profileName, (char *)NULL);
+	TclSetErrorCode(interp, "TCL", "ENCODING", "PROFILE", profileName);
     }
     return TCL_ERROR;
 }
@@ -4618,8 +4616,7 @@ TclEncodingProfileIdToName(
     if (interp) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"Internal error. Bad profile id \"%d\".", profileValue));
-	Tcl_SetErrorCode(
-		interp, "TCL", "ENCODING", "PROFILEID", (char *)NULL);
+	TclSetErrorCode(interp, "TCL", "ENCODING", "PROFILEID");
     }
     return NULL;
 }
@@ -4682,23 +4679,23 @@ Utf8procErrorToTclError(
     switch (errcode) {
     case UTF8PROC_ERROR_NOMEM:
 	// Memory allocation failure can use the standard Tcl code.
-	Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+	TclSetErrorCode(interp, "TCL", "MEMORY");
 	break;
     case UTF8PROC_ERROR_OVERFLOW:
-	Tcl_SetErrorCode(interp, "TCL", "UNICODE", "OVERFLOW", NULL);
+	TclSetErrorCode(interp, "TCL", "UNICODE", "OVERFLOW");
 	break;
     case UTF8PROC_ERROR_INVALIDUTF8:
-	Tcl_SetErrorCode(interp, "TCL", "UNICODE", "INVALIDUTF8", NULL);
+	TclSetErrorCode(interp, "TCL", "UNICODE", "INVALIDUTF8");
 	break;
     case UTF8PROC_ERROR_NOTASSIGNED:
-	Tcl_SetErrorCode(interp, "TCL", "UNICODE", "NOTASSIGNED", NULL);
+	TclSetErrorCode(interp, "TCL", "UNICODE", "NOTASSIGNED");
 	break;
     case UTF8PROC_ERROR_INVALIDOPTS:
-	Tcl_SetErrorCode(interp, "TCL", "UNICODE", "INVALIDOPTS", NULL);
+	TclSetErrorCode(interp, "TCL", "UNICODE", "INVALIDOPTS");
 	break;
     default:
 	// Shouldn't happen...
-	Tcl_SetErrorCode(interp, "TCL", "UNICODE", "UNKNOWN", NULL);
+	TclSetErrorCode(interp, "TCL", "UNICODE", "UNKNOWN");
 	break;
     }
 }
@@ -4734,8 +4731,7 @@ TclUtfNormalize(
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "Invalid value %d passed for encoding profile.",
 		    profile));
-	    Tcl_SetErrorCode(
-		    interp, "TCL", "ENCODING", "PROFILEID", (char *)NULL);
+	    TclSetErrorCode(interp, "TCL", "ENCODING", "PROFILEID");
 	}
 	return -1;
     }
@@ -4759,8 +4755,7 @@ TclUtfNormalize(
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "Invalid value %d passed for normalization form.",
 		    normForm));
-	    Tcl_SetErrorCode(
-		    interp, "TCL", "ENCODING", "NORMFORM", (char *)NULL);
+	    TclSetErrorCode(interp, "TCL", "ENCODING", "NORMFORM");
 	}
 	return -1;
     }

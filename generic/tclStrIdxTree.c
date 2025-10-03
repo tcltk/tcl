@@ -504,8 +504,7 @@ TclStrIdxTreeTestObjCmd(
     }
     if (Tcl_GetIndexFromObj(interp, objv[1], options,
 	    "option", 0, &optionIndex) != TCL_OK) {
-	Tcl_SetErrorCode(interp, "CLOCK", "badOption",
-		TclGetString(objv[1]), (char *)NULL);
+	TclSetErrorCode(interp, "CLOCK", "badOption", TclGetString(objv[1]));
 	return TCL_ERROR;
     }
 

@@ -432,7 +432,7 @@ Tcl_ReadObjCmd(
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "expected non-negative integer but got \"%s\"",
 		    TclGetString(objv[i])));
-	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "NUMBER", (char *)NULL);
+	    TclSetErrorCode(interp, "TCL", "VALUE", "NUMBER");
 	    return TCL_ERROR;
 	}
     }

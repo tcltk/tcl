@@ -187,14 +187,14 @@ Tcl_ProcObjCmd(
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"can't create procedure \"%s\": unknown namespace",
 		procName));
-	Tcl_SetErrorCode(interp, "TCL", "VALUE", "COMMAND", (char *)NULL);
+	TclSetErrorCode(interp, "TCL", "VALUE", "COMMAND");
 	return TCL_ERROR;
     }
     if (simpleName == NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"can't create procedure \"%s\": bad procedure name",
 		procName));
-	Tcl_SetErrorCode(interp, "TCL", "VALUE", "COMMAND", (char *)NULL);
+	TclSetErrorCode(interp, "TCL", "VALUE", "COMMAND");
 	return TCL_ERROR;
     }
 
@@ -694,8 +694,7 @@ TclCreateProc(
 		    "procedure \"%s\": arg list contains too many (%"
 		    TCL_SIZE_MODIFIER "d) entries", procName, numArgs));
 	}
-	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
-		errorCode, (char *)NULL);
+	TclSetErrorCode(interp, "TCL", "OPERATION", "PROC", errorCode);
     }
     return TCL_ERROR;
 }
@@ -868,7 +867,7 @@ badLevel:
 	name = objPtr ? TclGetString(objPtr) : "1" ;
     }
     Tcl_SetObjResult(interp, Tcl_ObjPrintf("bad level \"%s\"", name));
-    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LEVEL", name, (char *)NULL);
+    TclSetErrorCode(interp, "TCL", "LOOKUP", "LEVEL", name);
     return -1;
 }
 
@@ -1119,8 +1118,7 @@ ProcWrongNumArgs(
 
 	    if (defPtr->value.objPtr != NULL) {
 		TclNewObj(argObj);
-		Tcl_AppendStringsToObj(argObj, "?", TclGetString(namePtr), "?",
-			(char *)NULL);
+		TclAppendStringsToObj(argObj, "?", TclGetString(namePtr), "?");
 	    } else if (defPtr->flags & VAR_IS_ARGS) {
 		numArgs--;
 		final = "?arg ...?";
@@ -1883,7 +1881,7 @@ InterpProcNR2(
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"invoked \"%s\" outside of a loop",
 		((result == TCL_BREAK) ? "break" : "continue")));
-	Tcl_SetErrorCode(interp, "TCL", "RESULT", "UNEXPECTED", (char *)NULL);
+	TclSetErrorCode(interp, "TCL", "RESULT", "UNEXPECTED");
 	result = TCL_ERROR;
 	TCL_FALLTHROUGH();
 
@@ -1964,8 +1962,8 @@ TclProcCompileProc(
 	    if ((Interp *) *codePtr->interpHandle != iPtr) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"a precompiled script jumped interps", -1));
-		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
-			"CROSSINTERPBYTECODE", (char *)NULL);
+		TclSetErrorCode(interp, "TCL", "OPERATION", "PROC",
+			"CROSSINTERPBYTECODE");
 		return TCL_ERROR;
 	    }
 	    codePtr->compileEpoch = iPtr->compileEpoch;
@@ -1990,7 +1988,7 @@ TclProcCompileProc(
 
 	    TclNewLiteralStringObj(message, "Compiling ");
 	    Tcl_IncrRefCount(message);
-	    Tcl_AppendStringsToObj(message, description, " \"", (char *)NULL);
+	    TclAppendStringsToObj(message, description, " \"");
 	    Tcl_AppendLimitedToObj(message, procName, TCL_INDEX_NONE, 50, NULL);
 	    fprintf(stdout, "%s\"\n", TclGetString(message));
 	    Tcl_DecrRefCount(message);
@@ -2483,7 +2481,7 @@ SetLambdaFromAny(
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"can't interpret \"%s\" as a lambda expression",
 		Tcl_GetString(objPtr)));
-	Tcl_SetErrorCode(interp, "TCL", "VALUE", "LAMBDA", (char *)NULL);
+	TclSetErrorCode(interp, "TCL", "VALUE", "LAMBDA");
 	return TCL_ERROR;
     }
     result = TclListObjGetElements(NULL, objPtr, &objc, &objv);
@@ -2491,7 +2489,7 @@ SetLambdaFromAny(
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"can't interpret \"%s\" as a lambda expression",
 		TclGetString(objPtr)));
-	Tcl_SetErrorCode(interp, "TCL", "VALUE", "LAMBDA", (char *)NULL);
+	TclSetErrorCode(interp, "TCL", "VALUE", "LAMBDA");
 	return TCL_ERROR;
     }
 
@@ -2984,8 +2982,7 @@ DuplicateProc(
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "procedure \"%s\": arg list contains too many (%"
 	    TCL_SIZE_MODIFIER "d) entries", cmdName, origProc->numArgs));
-    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
-	    TOOMANYARGS, (char *)NULL);
+    TclSetErrorCode(interp, "TCL", "OPERATION", "PROC", TOOMANYARGS);
     return TCL_ERROR;
 }
 

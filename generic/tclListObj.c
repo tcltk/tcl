@@ -473,7 +473,7 @@ MemoryAllocationError(
 		"list construction failed: unable to alloc %" TCL_Z_MODIFIER
 		"u bytes",
 		size));
-	Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
+	TclSetErrorCode(interp, "TCL", "MEMORY");
     }
     return TCL_ERROR;
 }
@@ -506,7 +506,7 @@ TclListLimitExceededError(
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"max length (%" TCL_SIZE_MODIFIER "d) of a Tcl list exceeded",
 		(Tcl_Size)LIST_MAX));
-	Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
+	TclSetErrorCode(interp, "TCL", "MEMORY");
     }
     return TCL_ERROR;
 }
@@ -3001,7 +3001,7 @@ TclLsetFlat(
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"index \"%s\" out of range", TclGetString(indexArray[-1])));
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", "OUTOFRANGE", (char *)NULL);
+		TclSetErrorCode(interp, "TCL", "VALUE", "INDEX", "OUTOFRANGE");
 	    }
 	    result = TCL_ERROR;
 	    break;
@@ -3190,7 +3190,7 @@ TclListObjSetElement(
 	if (interp != NULL) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"index \"%" TCL_SIZE_MODIFIER "d\" out of range", index));
-	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", "OUTOFRANGE", (char *)NULL);
+	    TclSetErrorCode(interp, "TCL", "VALUE", "INDEX", "OUTOFRANGE");
 	}
 	return TCL_ERROR;
     }
