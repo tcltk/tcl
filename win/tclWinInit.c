@@ -16,6 +16,9 @@
 #include <winnt.h>
 #include <winbase.h>
 #include <lmcons.h>
+#if defined (__clang__) && (__clang_major__ > 20)
+#pragma clang diagnostic ignored "-Wc++-keyword"
+#endif
 
 /*
  * GetUserNameW() is found in advapi32.dll

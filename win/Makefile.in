@@ -281,6 +281,7 @@ TCLTEST_OBJS = \
 	tclTestABSList.$(OBJEXT) \
 	tclTestObj.$(OBJEXT) \
 	tclTestProcBodyObj.$(OBJEXT) \
+	tclMutexTest.$(OBJEXT) \
 	tclThreadTest.$(OBJEXT) \
 	tclWinTest.$(OBJEXT)
 
