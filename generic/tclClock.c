@@ -3339,9 +3339,8 @@ ClockParseFmtScnArgs(
 	    if (operation != CLC_OP_SCN && optionIndex == CLC_ARGS_BASE) {
 		goto badOptionMsg;
 	    }
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "bad option \"%s\": doubly present",
-		    TclGetString(objv[i])));
+	    Tcl_PrintfResult(interp, "bad option \"%s\": doubly present",
+		    TclGetString(objv[i]));
 	    goto badOption;
 	}
 	switch (optionIndex) {
@@ -3442,9 +3441,9 @@ ClockParseFmtScnArgs(
 		goto baseOverflow;
 	    }
 
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    Tcl_PrintfResult(interp,
 		    "bad seconds \"%s\": must be now or integer",
-		    TclGetString(baseObj)));
+		    TclGetString(baseObj));
 	    i = baseIdx;
 	    goto badOption;
 	}
@@ -3498,9 +3497,8 @@ ClockParseFmtScnArgs(
     return TCL_OK;
 
   badOptionMsg:
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "bad option \"%s\": must be %s",
-	    TclGetString(objv[i]), syntax));
+    Tcl_PrintfResult(interp, "bad option \"%s\": must be %s",
+	    TclGetString(objv[i]), syntax);
 
   badOption:
     Tcl_SetErrorCode(interp, "CLOCK", "badOption",
@@ -3972,8 +3970,7 @@ ClockValidDate(
     return TCL_OK;
 
   error:
-    Tcl_SetObjResult(opts->interp, Tcl_ObjPrintf(
-	    "unable to convert input string: %s", errMsg));
+    TclPrintfResult(opts->interp, "unable to convert input string: %s", errMsg);
     Tcl_SetErrorCode(opts->interp, "CLOCK", "invInpStr", errCode, (char *)NULL);
     return TCL_ERROR;
 }
@@ -4015,9 +4012,9 @@ ClockFreeScan(
     yyInput = TclGetString(strObj);
 
     if (TclClockFreeScan(interp, info) != TCL_OK) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	Tcl_PrintfResult(interp,
 		"unable to convert date-time string \"%s\": %s",
-		TclGetString(strObj), Tcl_GetString(Tcl_GetObjResult(interp))));
+		TclGetString(strObj), Tcl_GetString(Tcl_GetObjResult(interp)));
 	return TCL_ERROR;
     }
 

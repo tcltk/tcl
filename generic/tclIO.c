@@ -1473,8 +1473,7 @@ Tcl_GetChannel(
     hTblPtr = GetChannelTable(interp);
     hPtr = Tcl_FindHashEntry(hTblPtr, name);
     if (hPtr == NULL) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"can not find channel named \"%s\"", chanName));
+	TclPrintfResult(interp, "can not find channel named \"%s\"", chanName);
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CHANNEL", chanName, (char *)NULL);
 	return NULL;
     }
@@ -1838,9 +1837,8 @@ Tcl_StackChannel(
 
     if (statePtr == NULL) {
 	if (interp) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "couldn't find state for channel \"%s\"",
-		    Tcl_GetChannelName(prevChan)));
+	    TclPrintfResult(interp, "couldn't find state for channel \"%s\"",
+		    Tcl_GetChannelName(prevChan));
 	}
 	return NULL;
     }
@@ -1860,9 +1858,9 @@ Tcl_StackChannel(
 
     if ((mask & GotFlag(statePtr, TCL_READABLE|TCL_WRITABLE)) == 0) {
 	if (interp) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    TclPrintfResult(interp,
 		    "reading and writing both disallowed for channel \"%s\"",
-		    Tcl_GetChannelName(prevChan)));
+		    Tcl_GetChannelName(prevChan));
 	}
 	return NULL;
     }
@@ -1889,9 +1887,9 @@ Tcl_StackChannel(
 	    statePtr->csPtrR = csPtrR;
 	    statePtr->csPtrW = csPtrW;
 	    if (interp) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		TclPrintfResult(interp,
 			"could not flush channel \"%s\"",
-			Tcl_GetChannelName(prevChan)));
+			Tcl_GetChannelName(prevChan));
 	    }
 	    return NULL;
 	}
@@ -2084,9 +2082,8 @@ Tcl_UnstackChannel(
 		 */
 
 		if (!TclChanCaughtErrorBypass(interp, chan) && interp) {
-		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			    "could not flush channel \"%s\"",
-			    Tcl_GetChannelName((Tcl_Channel) chanPtr)));
+		    TclPrintfResult(interp, "could not flush channel \"%s\"",
+			    Tcl_GetChannelName((Tcl_Channel) chanPtr));
 		}
 		return TCL_ERROR;
 	    }
@@ -2472,9 +2469,9 @@ Tcl_RemoveChannelMode(
 
   error:
     if (interp != NULL) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	TclPrintfResult(interp,
 		"Tcl_RemoveChannelMode error: %s. Channel: \"%s\"",
-		emsg, Tcl_GetChannelName((Tcl_Channel) chan)));
+		emsg, Tcl_GetChannelName((Tcl_Channel) chan));
     }
     return TCL_ERROR;
 }
@@ -3656,9 +3653,9 @@ Tcl_CloseEx(
 	return TclClose(interp, chan);
     }
     if ((flags & (TCL_READABLE | TCL_WRITABLE)) == (TCL_READABLE | TCL_WRITABLE)) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	TclPrintfResult(interp,
 		"double-close of channels not supported by %ss",
-		chanPtr->typePtr->typeName));
+		chanPtr->typePtr->typeName);
 	return TCL_ERROR;
     }
 
@@ -3667,9 +3664,8 @@ Tcl_CloseEx(
      */
 
     if (!chanPtr->typePtr->close2Proc) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"half-close of channels not supported by %ss",
-		chanPtr->typePtr->typeName));
+	TclPrintfResult(interp, "half-close of channels not supported by %ss",
+		chanPtr->typePtr->typeName);
 	return TCL_ERROR;
     }
 
@@ -3678,8 +3674,8 @@ Tcl_CloseEx(
      */
 
     if (chanPtr != statePtr->topChanPtr) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"half-close not applicable to stack of transformations", -1));
+	TclPrintfResult(interp,
+		"half-close not applicable to stack of transformations");
 	return TCL_ERROR;
     }
 
@@ -3697,9 +3693,9 @@ Tcl_CloseEx(
 	} else {
 	    msg = "write";
 	}
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	TclPrintfResult(interp,
 		"Half-close of %s-side not possible, side not opened or"
-		" already closed", msg));
+		" already closed", msg);
 	return TCL_ERROR;
     }
 
@@ -3710,9 +3706,9 @@ Tcl_CloseEx(
 
     if (GotFlag(statePtr, CHANNEL_INCLOSE)) {
 	if (interp) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+	    TclPrintfResult(interp,
 		    "illegal recursive call to close through close-handler"
-		    " of channel", -1));
+		    " of channel");
 	}
 	return TCL_ERROR;
     }
@@ -8290,10 +8286,10 @@ Tcl_SetChannelOption(
 
 	if ((newValue[0] == '\0') || !strcmp(newValue, "binary")) {
 	    if (interp) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		TclPrintfResult(interp,
 			"unknown encoding \"%s\": No longer supported.\n"
 			"\tplease use either \"-translation binary\" "
-			"or \"-encoding iso8859-1\"", newValue));
+			"or \"-encoding iso8859-1\"", newValue);
 	    }
 	    return TCL_ERROR;
 	} else {
@@ -9272,8 +9268,8 @@ Tcl_FileEventObjCmd(
     chanPtr = (Channel *) chan;
     statePtr = chanPtr->state;
     if (GotFlag(statePtr, mask) == 0) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf("channel is not %s",
-		(mask == TCL_READABLE) ? "readable" : "writable"));
+	TclPrintfResult(interp, "channel is not %s",
+		(mask == TCL_READABLE) ? "readable" : "writable");
 	return TCL_ERROR;
     }
 
@@ -9383,15 +9379,15 @@ TclCopyChannel(
 
     if (BUSY_STATE(inStatePtr, TCL_READABLE)) {
 	if (interp) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "channel \"%s\" is busy", Tcl_GetChannelName(inChan)));
+	    TclPrintfResult(interp, "channel \"%s\" is busy",
+		    Tcl_GetChannelName(inChan));
 	}
 	return TCL_ERROR;
     }
     if (BUSY_STATE(outStatePtr, TCL_WRITABLE)) {
 	if (interp) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "channel \"%s\" is busy", Tcl_GetChannelName(outChan)));
+	    TclPrintfResult(interp, "channel \"%s\" is busy",
+		    Tcl_GetChannelName(outChan));
 	}
 	return TCL_ERROR;
     }
@@ -10546,9 +10542,8 @@ SetBlockMode(
 	     */
 
 	    if (!TclChanCaughtErrorBypass(interp, (Tcl_Channel) chanPtr)) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"error setting blocking mode: %s",
-			Tcl_PosixError(interp)));
+		TclPrintfResult(interp, "error setting blocking mode: %s",
+			Tcl_PosixError(interp));
 	    }
 	} else {
 	    /*

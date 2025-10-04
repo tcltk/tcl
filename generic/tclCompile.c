@@ -2513,10 +2513,10 @@ TclCompileScript(
 	     * Note this gets -errorline as 1. Not worth figuring out which line
 	     * crosses the limit to get -errorline for this error case.
 	     */
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    TclPrintfResult(interp,
 		    "Script length %" TCL_SIZE_MODIFIER
 		    "d exceeds max permitted length %d.",
-		    numBytes, INT_MAX - 1));
+		    numBytes, INT_MAX - 1);
 	    Tcl_SetErrorCode(interp, "TCL", "LIMIT", "SCRIPTLENGTH", (char *)NULL);
 	    TclCompileSyntaxError(interp, envPtr);
 	    return;

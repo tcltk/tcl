@@ -791,9 +791,9 @@ TclNewArithSeriesObj(
   notANumber:
     description = "non-numeric floating-point value";
     Tcl_PrintDouble(NULL, isnan(dstart) ? dstart : dend, tmp);
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+    TclPrintfResult(interp,
 	    "cannot use %s \"%s\" to estimate length of arith-series",
-	    description, tmp));
+	    description, tmp);
     Tcl_SetErrorCode(interp, "ARITH", "DOMAIN", description, (char *)NULL);
     return NULL;
 }

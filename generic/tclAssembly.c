@@ -1973,9 +1973,9 @@ CreateMirrorJumpTable(
 		&isNew);
 	if (!isNew) {
 	    if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		TclPrintfResult(interp,
 			"duplicate entry in jump table for \"%s\"",
-			TclGetString(objv[i])));
+			TclGetString(objv[i]));
 		Tcl_SetErrorCode(interp, "TCL", "ASSEM", "DUPJUMPTABLEENTRY", (char *)NULL);
 	    }
 	    DeleteMirrorJumpTable(jtPtr, NULL);
@@ -2058,9 +2058,9 @@ CreateMirrorNumJumpTable(
 	hPtr = Tcl_CreateHashEntry(&jtnPtr->hashTable, INT2PTR(key), &isNew);
 	if (!isNew) {
 	    if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		TclPrintfResult(interp,
 			"duplicate entry in jump table for \"%s\"",
-			TclGetString(objv[i])));
+			TclGetString(objv[i]));
 		Tcl_SetErrorCode(interp, "TCL", "ASSEM", "DUPJUMPTABLEENTRY", (char *)NULL);
 	    }
 	    goto error;
@@ -2421,8 +2421,7 @@ CheckNamespaceQualifiers(
 
     for (p = name; p+2 < name+nameLen;  p++) {
 	if ((*p == ':') && (p[1] == ':')) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "variable \"%s\" is not local", name));
+	    TclPrintfResult(interp, "variable \"%s\" is not local", name);
 	    Tcl_SetErrorCode(interp, "TCL", "ASSEM", "NONLOCAL", name, (char *)NULL);
 	    return TCL_ERROR;
 	}
@@ -2596,8 +2595,8 @@ DefineLabel(
 	 */
 
 	if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "duplicate definition of label \"%s\"", labelName));
+	    TclPrintfResult(interp,
+		    "duplicate definition of label \"%s\"", labelName);
 	    Tcl_SetErrorCode(interp, "TCL", "ASSEM", "DUPLABEL", labelName,
 		    (char *)NULL);
 	}
@@ -2951,8 +2950,8 @@ ReportUndefinedLabel(
 				/* Tcl interpreter */
 
     if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"undefined label \"%s\"", TclGetString(jumpTarget)));
+	TclPrintfResult(interp,
+		"undefined label \"%s\"", TclGetString(jumpTarget));
 	Tcl_SetErrorCode(interp, "TCL", "ASSEM", "NOLABEL",
 		TclGetString(jumpTarget), (char *)NULL);
 	Tcl_SetErrorLine(interp, bbPtr->jumpLine);
@@ -3227,11 +3226,11 @@ CheckNonThrowingBlock(
 	     */
 
 	    if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		TclPrintfResult(interp,
 			"\"%s\" instruction may not appear in "
 			"a context where an exception has been "
 			"caught and not disposed of.",
-			tclInstructionTable[opcode].name));
+			tclInstructionTable[opcode].name);
 		Tcl_SetErrorCode(interp, "TCL", "ASSEM", "BADTHROW", (char *)NULL);
 		AddBasicBlockRangeToErrorInfo(assemEnvPtr, blockPtr);
 	    }
@@ -3583,9 +3582,9 @@ StackCheckExit(
 
 	if (depth != 1) {
 	    if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		TclPrintfResult(interp,
 			"stack is unbalanced on exit from the code (depth=%d)",
-			depth));
+			depth);
 		Tcl_SetErrorCode(interp, "TCL", "ASSEM", "BADSTACK", (char *)NULL);
 	    }
 	    return TCL_ERROR;

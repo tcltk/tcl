@@ -285,12 +285,11 @@ IcuError(
 	if (u_errorName) {
 	    codeMessage = u_errorName(code);
 	}
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"%s%sICU error (%d): %s",
+	TclPrintfResult(interp, "%s%sICU error (%d): %s",
 		message ? message : "",
 		message ? ". " : "",
 		code,
-		codeMessage ? codeMessage : ""));
+		codeMessage ? codeMessage : "");
 	Tcl_SetErrorCode(interp, "TCL", "ICU", codeMessage, NULL);
     }
     return TCL_ERROR;
@@ -571,9 +570,8 @@ IcuDetectObjCmd(
     int all = 0;
     if (objc == 3) {
 	if (strcmp("-all", Tcl_GetString(objv[2]))) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "Invalid option %s, must be \"-all\"",
-		    Tcl_GetString(objv[2])));
+	    TclPrintfResult(interp, "Invalid option %s, must be \"-all\"",
+		    Tcl_GetString(objv[2]));
 	    return TCL_ERROR;
 	}
 	all = 1;
@@ -977,9 +975,8 @@ static int IcuParseConvertOptions(
 	}
 	++i;
 	if (i == objc) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "Missing value for option %s.",
-		    Tcl_GetString(objv[i - 1])));
+	    TclPrintfResult(interp, "Missing value for option %s.",
+		    Tcl_GetString(objv[i - 1]));
 	    return TCL_ERROR;
 	}
 	const char *s = Tcl_GetString(objv[i]);
@@ -988,10 +985,10 @@ static int IcuParseConvertOptions(
 	    if (!strcmp(s, "replace")) {
 		strict = 0;
 	    } else if (strcmp(s, "strict")) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		TclPrintfResult(interp,
 			"Invalid value \"%s\" supplied for option"
 			" \"-profile\". Must be \"strict\" or \"replace\".",
-			s));
+			s);
 		return TCL_ERROR;
 	    }
 	    break;
@@ -1147,9 +1144,8 @@ IcuNormalizeObjCmd(
 	}
 	++i;
 	if (i == (objc-1)) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "Missing value for option %s.",
-		    Tcl_GetString(objv[i - 1])));
+	    TclPrintfResult(interp, "Missing value for option %s.",
+		    Tcl_GetString(objv[i - 1]));
 	    return TCL_ERROR;
 	}
 	const char *s = Tcl_GetString(objv[i]);
@@ -1158,10 +1154,10 @@ IcuNormalizeObjCmd(
 	    if (!strcmp(s, "replace")) {
 		strict = 0;
 	    } else if (strcmp(s, "strict")) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		TclPrintfResult(interp,
 			"Invalid value \"%s\" supplied for option \"-profile\". "
 			"Must be \"strict\" or \"replace\".",
-			s));
+			s);
 		return TCL_ERROR;
 	    }
 	    break;

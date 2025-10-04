@@ -811,9 +811,9 @@ TclTraceDictPath(
 	    }
 	    if ((flags & DICT_PATH_CREATE) != DICT_PATH_CREATE) {
 		if (interp != NULL) {
-		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    TclPrintfResult(interp,
 			    "key \"%s\" not known in dictionary",
-			    TclGetString(keyv[i])));
+			    TclGetString(keyv[i]));
 		    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "DICT",
 			    TclGetString(keyv[i]), (char *)NULL);
 		}
@@ -1771,9 +1771,8 @@ DictGetCmd(
 	return result;
     }
     if (valuePtr == NULL) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"key \"%s\" not known in dictionary",
-		TclGetString(objv[objc-1])));
+	TclPrintfResult(interp, "key \"%s\" not known in dictionary",
+		TclGetString(objv[objc-1]));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "DICT",
 		TclGetString(objv[objc-1]), (char *)NULL);
 	return TCL_ERROR;

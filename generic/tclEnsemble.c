@@ -1496,9 +1496,8 @@ Tcl_FindEnsemble(
 	if (token == NULL ||
 		((Command *) token)->objProc != TclEnsembleImplementationCmd) {
 	    if (flags & TCL_LEAVE_ERR_MSG) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"\"%s\" is not an ensemble command",
-			TclGetString(cmdNameObj)));
+		TclPrintfResult(interp, "\"%s\" is not an ensemble command",
+			TclGetString(cmdNameObj));
 		Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ENSEMBLE",
 			TclGetString(cmdNameObj), (char *)NULL);
 	    }
@@ -2014,10 +2013,10 @@ NsEnsembleImplementationCmdNR(
     Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "SUBCOMMAND",
 	    TclGetString(subObj), (char *)NULL);
     if (ensemblePtr->subcommandTable.numEntries == 0) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	TclPrintfResult(interp,
 		"unknown subcommand \"%s\": namespace %s does not"
 		" export any commands", TclGetString(subObj),
-		ensemblePtr->nsPtr->fullName));
+		ensemblePtr->nsPtr->fullName);
 	return TCL_ERROR;
     }
     errorObj = Tcl_ObjPrintf("unknown%s subcommand \"%s\": must be ",
