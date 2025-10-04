@@ -662,8 +662,6 @@ InitAutoPathObjCmd(
     }
     Tcl_Obj *autoPathPtr;
 
-    Tcl_DeleteCommand(interp, INIT_AUTO_PATH_CMD);
-
     autoPathPtr = Tcl_GetVar2Ex(interp, "auto_path", NULL, TCL_GLOBAL_ONLY);
 
     /* Safe interps get empty auto_path if it does not exist. */
