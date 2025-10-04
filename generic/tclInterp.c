@@ -1140,18 +1140,17 @@ NRInterpCmd(
 	iiPtr = INTERP_INFO(childInterp);
 	hPtr = Tcl_FindHashEntry(&iiPtr->child.aliasTable, aliasName);
 	if (hPtr == NULL) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "alias \"%s\" in path \"%s\" not found",
-		    aliasName, TclGetString(objv[2])));
+	    TclPrintfResult(interp, "alias \"%s\" in path \"%s\" not found",
+		    aliasName, TclGetString(objv[2]));
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ALIAS", aliasName,
 		    (char *)NULL);
 	    return TCL_ERROR;
 	}
 	aliasPtr = (Alias *) Tcl_GetHashValue(hPtr);
 	if (Tcl_GetInterpPath(interp, aliasPtr->targetInterp) != TCL_OK) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    TclPrintfResult(interp,
 		    "target interpreter for alias \"%s\" in path \"%s\" is "
-		    "not my descendant", aliasName, TclGetString(objv[2])));
+		    "not my descendant", aliasName, TclGetString(objv[2]));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP",
 		    "TARGETSHROUDED", (char *)NULL);
 	    return TCL_ERROR;
@@ -1332,8 +1331,7 @@ Tcl_GetAliasObj(
 
     hPtr = Tcl_FindHashEntry(&iiPtr->child.aliasTable, aliasName);
     if (hPtr == NULL) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"alias \"%s\" not found", aliasName));
+	TclPrintfResult(interp, "alias \"%s\" not found", aliasName);
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ALIAS", aliasName,
 		(char *)NULL);
 	return TCL_ERROR;
@@ -1423,9 +1421,9 @@ TclPreventAliasLoop(
 	     * [Bug #641195]
 	     */
 
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    TclPrintfResult(interp,
 		    "cannot define or rename alias \"%s\": interpreter deleted",
-		    Tcl_GetCommandName(cmdInterp, cmd)));
+		    Tcl_GetCommandName(cmdInterp, cmd));
 	    return TCL_ERROR;
 	}
 	cmdNamePtr = nextAliasPtr->objPtr;
@@ -1438,9 +1436,9 @@ TclPreventAliasLoop(
 	}
 	aliasCmdPtr = (Command *) aliasCmd;
 	if (aliasCmdPtr == cmdPtr) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    TclPrintfResult(interp,
 		    "cannot define or rename alias \"%s\": would create a loop",
-		    Tcl_GetCommandName(cmdInterp, cmd)));
+		    Tcl_GetCommandName(cmdInterp, cmd));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP",
 		    "ALIASLOOP", (char *)NULL);
 	    return TCL_ERROR;
@@ -1661,8 +1659,8 @@ AliasDelete(
     childPtr = &INTERP_INFO(childInterp)->child;
     hPtr = Tcl_FindHashEntry(&childPtr->aliasTable, TclGetString(namePtr));
     if (hPtr == NULL) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"alias \"%s\" not found", TclGetString(namePtr)));
+	TclPrintfResult(interp, "alias \"%s\" not found",
+		TclGetString(namePtr));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ALIAS",
 		TclGetString(namePtr), (char *)NULL);
 	return TCL_ERROR;
@@ -2313,8 +2311,8 @@ GetInterp(
 	}
     }
     if (searchInterp == NULL) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"could not find interpreter \"%s\"", TclGetString(pathPtr)));
+	TclPrintfResult(interp, "could not find interpreter \"%s\"",
+		TclGetString(pathPtr));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "INTERP",
 		TclGetString(pathPtr), (char *)NULL);
     }
@@ -2422,9 +2420,9 @@ ChildCreate(
     hPtr = Tcl_CreateHashEntry(&parentInfoPtr->parent.childTable, path,
 	    &isNew);
     if (isNew == 0) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	TclPrintfResult(interp,
 		"interpreter named \"%s\" already exists, cannot create",
-		path));
+		path);
 	return NULL;
     }
 

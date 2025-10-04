@@ -520,10 +520,10 @@ MakeByteArray(
 	    proper = 0;
 	    if (demandProper) {
 		if (interp) {
-		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    Tcl_PrintfResult(interp,
 			    "expected byte sequence but character %"
 			    TCL_Z_MODIFIER "u was '%1s' (U+%06X)",
-			    dst - byteArrayPtr->bytes, src, ch));
+			    dst - byteArrayPtr->bytes, src, ch);
 		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "BYTES", (char *)NULL);
 		}
 		Tcl_Free(byteArrayPtr);
@@ -1297,9 +1297,9 @@ BinaryFormatCmd(
 
   badValue:
     Tcl_ResetResult(interp);
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+    Tcl_PrintfResult(interp,
 	    "expected %s string but got \"%s\" instead",
-	    errorString, errorValue));
+	    errorString, errorValue);
     return TCL_ERROR;
 
   badCount:
@@ -1317,8 +1317,7 @@ BinaryFormatCmd(
 
 	TclUtfToUniChar(errorString, &ch);
 	buf[Tcl_UniCharToUtf(ch, buf)] = '\0';
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"bad field specifier \"%s\"", buf));
+	Tcl_PrintfResult(interp, "bad field specifier \"%s\"", buf);
 	return TCL_ERROR;
     }
 
@@ -1698,8 +1697,8 @@ BinaryScanCmd(
 
 	TclUtfToUniChar(errorString, &ch);
 	buf[Tcl_UniCharToUtf(ch, buf)] = '\0';
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"bad field specifier \"%s\"", buf));
+	Tcl_PrintfResult(interp,
+		"bad field specifier \"%s\"", buf);
 	return TCL_ERROR;
     }
 
@@ -2566,9 +2565,9 @@ BinaryDecodeHex(
 	TclUtfToUniChar((const char *)(data - 1), &ucs4);
     }
     TclDecrRefCount(resultObj);
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+    Tcl_PrintfResult(interp,
 	    "invalid hexadecimal digit \"%c\" (U+%06X) at position %"
-	    TCL_Z_MODIFIER "u", ucs4, ucs4, data - datastart - 1));
+	    TCL_Z_MODIFIER "u", ucs4, ucs4, data - datastart - 1);
     Tcl_SetErrorCode(interp, "TCL", "BINARY", "DECODE", "INVALID", (char *)NULL);
     return TCL_ERROR;
 }
@@ -3021,7 +3020,7 @@ BinaryDecodeUu(
     return TCL_OK;
 
   shortUu:
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf("short uuencode data"));
+    Tcl_PrintfResult(interp, "short uuencode data");
     Tcl_SetErrorCode(interp, "TCL", "BINARY", "DECODE", "SHORT", (char *)NULL);
     TclDecrRefCount(resultObj);
     return TCL_ERROR;
@@ -3032,9 +3031,9 @@ BinaryDecodeUu(
     } else {
 	TclUtfToUniChar((const char *)(data - 1), &ucs4);
     }
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+    Tcl_PrintfResult(interp,
 	    "invalid uuencode character \"%c\" (U+%06X) at position %"
-	    TCL_Z_MODIFIER "u", ucs4, ucs4, data - datastart - 1));
+	    TCL_Z_MODIFIER "u", ucs4, ucs4, data - datastart - 1);
     Tcl_SetErrorCode(interp, "TCL", "BINARY", "DECODE", "INVALID", (char *)NULL);
     TclDecrRefCount(resultObj);
     return TCL_ERROR;
@@ -3210,9 +3209,9 @@ BinaryDecode64(
 	TclUtfToUniChar((const char *)(data - 1), &ucs4);
     }
 
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+    Tcl_PrintfResult(interp,
 	    "invalid base64 character \"%c\" (U+%06X) at position %"
-	    TCL_Z_MODIFIER "u", ucs4, ucs4, data - datastart - 1));
+	    TCL_Z_MODIFIER "u", ucs4, ucs4, data - datastart - 1);
     Tcl_SetErrorCode(interp, "TCL", "BINARY", "DECODE", "INVALID", (char *)NULL);
     TclDecrRefCount(resultObj);
     return TCL_ERROR;

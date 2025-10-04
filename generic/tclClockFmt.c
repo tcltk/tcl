@@ -2718,23 +2718,22 @@ TclClockScan(
     /* Error case reporting. */
 
   overflow:
-    Tcl_SetObjResult(opts->interp, Tcl_NewStringObj(
-	    "integer value too large to represent", TCL_AUTO_LENGTH));
+    TclPrintfResult(opts->interp, "integer value too large to represent");
     Tcl_SetErrorCode(opts->interp, "CLOCK", "dateTooLarge", (char *)NULL);
     goto done;
 
   not_match:
 #if 1
-    Tcl_SetObjResult(opts->interp, Tcl_NewStringObj(
-	    "input string does not match supplied format", TCL_AUTO_LENGTH));
+    TclPrintfResult(opts->interp,
+	    "input string does not match supplied format");
 #else
     /* to debug where exactly scan breaks */
-    Tcl_SetObjResult(opts->interp, Tcl_ObjPrintf(
+    TclPrintfResult(opts->interp,
 	    "input string \"%s\" does not match supplied format \"%s\","
 	    " locale \"%s\" - token \"%s\"",
 	    info->dateStart, HashEntry4FmtScn(fss)->key.string,
 	    TclGetString(opts->localeObj),
-	    tok && tok->tokWord.start ? tok->tokWord.start : "NULL"));
+	    tok && tok->tokWord.start ? tok->tokWord.start : "NULL");
 #endif
     Tcl_SetErrorCode(opts->interp, "CLOCK", "badInputString", (char *)NULL);
     goto done;

@@ -1455,18 +1455,17 @@ Tcl_GlobObjCmd(
 		 */
 
 	    badTypesArg:
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"bad argument to \"-types\": %s",
-			TclGetString(look)));
+		TclPrintfResult(interp, "bad argument to \"-types\": %s",
+			TclGetString(look));
 		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "BAD", (char *)NULL);
 		result = TCL_ERROR;
 		join = 0;
 		goto endOfGlob;
 
 	    badMacTypesArg:
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		TclPrintfResult(interp,
 			"only one MacOS type or creator argument"
-			" to \"-types\" allowed", -1));
+			" to \"-types\" allowed");
 		result = TCL_ERROR;
 		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "BAD", (char *)NULL);
 		join = 0;

@@ -1571,8 +1571,8 @@ Tcl_VwaitObjCmd(
 	    if (++i >= objc) {
 	needArg:
 		Tcl_ResetResult(interp);
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"argument required for \"%s\"", vWaitOptionStrings[index]));
+		TclPrintfResult(interp, "argument required for \"%s\"",
+			vWaitOptionStrings[index]);
 		Tcl_SetErrorCode(interp, "TCL", "EVENT", "ARGUMENT", (char *)NULL);
 		result = TCL_ERROR;
 		goto done;
@@ -1619,9 +1619,9 @@ Tcl_VwaitObjCmd(
 		goto done;
 	    }
 	    if (!(mode & TCL_READABLE)) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		TclPrintfResult(interp,
 			"channel \"%s\" wasn't open for reading",
-			TclGetString(objv[i])));
+			TclGetString(objv[i]));
 		result = TCL_ERROR;
 		goto done;
 	    }
@@ -1643,9 +1643,9 @@ Tcl_VwaitObjCmd(
 		goto done;
 	    }
 	    if (!(mode & TCL_WRITABLE)) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		TclPrintfResult(interp,
 			"channel \"%s\" wasn't open for writing",
-			TclGetString(objv[i])));
+			TclGetString(objv[i]));
 		result = TCL_ERROR;
 		goto done;
 	    }

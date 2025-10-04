@@ -2569,8 +2569,8 @@ TEBCresume(
 		|| yieldTargetLength < 2) {
 	    TRACE_APPEND(("ERROR: no valid target list in yieldto"));
 	    // Weird case; pretend it's like no arguments given to scripts
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "wrong # args: should be \"yieldto command ?arg ...?\""));
+	    TclPrintfResult(interp,
+		    "wrong # args: should be \"yieldto command ?arg ...?\"");
 	    DECACHE_STACK_INFO();
 	    Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", (char *)NULL);
 	    CACHE_STACK_INFO();
@@ -4726,8 +4726,8 @@ TEBCresume(
 	    /* Empty loop body */
 	}
 	if (framePtr == rootFramePtr) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "bad level \"%s\"", TclGetString(OBJ_AT_TOS)));
+	    TclPrintfResult(interp, "bad level \"%s\"",
+		    TclGetString(OBJ_AT_TOS));
 	    TRACE_ERROR(interp);
 	    DECACHE_STACK_INFO();
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "STACK_LEVEL",
@@ -4764,11 +4764,11 @@ TEBCresume(
 
 	TclNewObj(objResultPtr);
 	Tcl_GetCommandFullName(interp, origCmd, objResultPtr);
-	if (TclCheckEmptyString(objResultPtr) == TCL_EMPTYSTRING_YES ) {
+	if (TclCheckEmptyString(objResultPtr) == TCL_EMPTYSTRING_YES) {
 	    Tcl_DecrRefCount(objResultPtr);
-	    instOriginError:
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "invalid command name \"%s\"", TclGetString(OBJ_AT_TOS)));
+	instOriginError:
+	    TclPrintfResult(interp, "invalid command name \"%s\"",
+		    TclGetString(OBJ_AT_TOS));
 	    DECACHE_STACK_INFO();
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "COMMAND",
 		    TclGetString(OBJ_AT_TOS), (char *)NULL);
@@ -4972,17 +4972,16 @@ TEBCresume(
 
     tclooFrameRequired:
 	TRACE_APPEND(("ERROR: no TclOO call context\n"));
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"%s may only be called from inside a method",
-		TclGetString(objv[0])));
+	TclPrintfResult(interp, "%s may only be called from inside a method",
+		TclGetString(objv[0]));
 	DECACHE_STACK_INFO();
 	OO_ERROR(interp, CONTEXT_REQUIRED);
 	CACHE_STACK_INFO();
 	goto gotError;
     tclooNoNext:
 	TRACE_APPEND(("ERROR: no TclOO next impl\n"));
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"no next %s implementation", TclOOContextTypeName(contextPtr)));
+	TclPrintfResult(interp, "no next %s implementation",
+		TclOOContextTypeName(contextPtr));
 	OO_ERROR(interp, NOTHING_NEXT);
 	CACHE_STACK_INFO();
 	goto gotError;
@@ -4998,18 +4997,18 @@ TEBCresume(
 		break;
 	    }
 	    if (miPtr->mPtr->declaringClassPtr == clsPtr) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		TclPrintfResult(interp,
 			"%s implementation by \"%s\" not reachable from here",
 			TclOOContextTypeName(contextPtr),
-			TclGetString(valuePtr)));
+			TclGetString(valuePtr));
 		OO_ERROR(interp, CLASS_NOT_REACHABLE);
 		CACHE_STACK_INFO();
 		goto gotError;
 	    }
 	}
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	TclPrintfResult(interp,
 		"%s has no non-filter implementation by \"%s\"",
-		TclOOContextTypeName(contextPtr), TclGetString(valuePtr)));
+		TclOOContextTypeName(contextPtr), TclGetString(valuePtr));
 	OO_ERROR(interp, CLASS_NOT_THERE);
 	CACHE_STACK_INFO();
 	goto gotError;
@@ -5536,8 +5535,8 @@ TEBCresume(
 	}
 	if (flags & TCL_LREPLACE_NEED_IN_RANGE) {
 	    if (fromIdx < 0 || fromIdx >= length) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"index \"%s\" out of range", Tcl_GetString(fromIdxObj)));
+		TclPrintfResult(interp, "index \"%s\" out of range",
+			Tcl_GetString(fromIdxObj));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", "OUTOFRANGE",
 			(char *)NULL);
 		CACHE_STACK_INFO();
@@ -7264,9 +7263,8 @@ TEBCresume(
 	    goto gotError;
 	}
 	if (!objResultPtr) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "key \"%s\" not known in dictionary",
-		    TclGetString(OBJ_AT_TOS)));
+	    TclPrintfResult(interp, "key \"%s\" not known in dictionary",
+		    TclGetString(OBJ_AT_TOS));
 	    DECACHE_STACK_INFO();
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "DICT",
 		    TclGetString(OBJ_AT_TOS), (char *)NULL);
@@ -9445,8 +9443,8 @@ GenerateArithSeries(
 	    useDoubles = 1;
 	    break;
 	case TCL_NUMBER_NAN:
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "domain error: argument not in valid range"));
+	    TclPrintfResult(interp,
+		    "domain error: argument not in valid range");
 	    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
 		    "domain error: argument not in valid range", NULL);
 	    goto cleanupOnError;
@@ -9462,10 +9460,10 @@ GenerateArithSeries(
 	    useDoubles = 1;
 	    break;
 	case TCL_NUMBER_NAN:
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    TclPrintfResult(interp,
 		    "cannot use non-numeric floating-point value \"%s\" to "
 		    "estimate length of arith-series",
-		    TclGetString(to)));
+		    TclGetString(to));
 	    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
 		    "domain error: argument not in valid range", NULL);
 	    goto cleanupOnError;
@@ -9481,8 +9479,8 @@ GenerateArithSeries(
 	    useDoubles = 1;
 	    break;
 	case TCL_NUMBER_NAN:
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "domain error: argument not in valid range"));
+	    TclPrintfResult(interp,
+		    "domain error: argument not in valid range");
 	    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
 		    "domain error: argument not in valid range", NULL);
 	    goto cleanupOnError;
@@ -9508,9 +9506,8 @@ GenerateArithSeries(
 	    break;
 	}
 	case TCL_NUMBER_NAN:
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "expected integer but got \"%s\"",
-		    TclGetString(count)));
+	    TclPrintfResult(interp, "expected integer but got \"%s\"",
+		    TclGetString(count));
 	    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
 		    "domain error: argument not in valid range", NULL);
 	    goto cleanupOnError;
@@ -9726,8 +9723,8 @@ IllegalExprOperandType(
 	    Tcl_DictObjSize(NULL, opndPtr, &length);
 	    if (length > 0) {
 	    listRep:
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"cannot use a list as %soperand of \"%s\"", ord, op));
+		TclPrintfResult(interp,
+			"cannot use a list as %soperand of \"%s\"", ord, op);
 		Tcl_SetErrorCode(interp, "ARITH", "DOMAIN", "list", (char *)NULL);
 		return;
 	    }
@@ -9750,9 +9747,8 @@ IllegalExprOperandType(
 	description = "(big) integer";
     }
 
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "cannot use %s \"%s\" as %soperand of \"%s\"", description,
-	    TclGetString(opndPtr), ord, op));
+    TclPrintfResult(interp, "cannot use %s \"%s\" as %soperand of \"%s\"",
+	    description, TclGetString(opndPtr), ord, op);
     Tcl_SetErrorCode(interp, "ARITH", "DOMAIN", description, (char *)NULL);
 }
 

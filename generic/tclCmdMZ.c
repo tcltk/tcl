@@ -1981,8 +1981,8 @@ StringMapCmd(
 		strncmp(string, "-nocase", length2) == 0) {
 	    nocase = 1;
 	} else {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "bad option \"%s\": must be -nocase", string));
+	    TclPrintfResult(interp,
+		    "bad option \"%s\": must be -nocase", string);
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "INDEX", "option",
 		    string, (char *)NULL);
 	    return TCL_ERROR;
@@ -2253,8 +2253,8 @@ StringMatchCmd(
 	if ((length > 1) && strncmp(string, "-nocase", length) == 0) {
 	    nocase = TCL_MATCH_NOCASE;
 	} else {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "bad option \"%s\": must be -nocase", string));
+	    TclPrintfResult(interp,
+		    "bad option \"%s\": must be -nocase", string);
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "INDEX", "option",
 		    string, (char *)NULL);
 	    return TCL_ERROR;
@@ -2674,9 +2674,9 @@ StringEqualCmd(
 		reqlength = -1;
 	    }
 	} else {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    TclPrintfResult(interp,
 		    "bad option \"%s\": must be -nocase or -length",
-		    string2));
+		    string2);
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "INDEX", "option",
 		    string2, (char *)NULL);
 	    return TCL_ERROR;
@@ -2779,9 +2779,9 @@ StringCmpOpts(
 		*reqlength = wreqlength;
 	    }
 	} else {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    TclPrintfResult(interp,
 		    "bad option \"%s\": must be -nocase or -length",
-		    string));
+		    string);
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "INDEX", "option",
 		    string, (char *)NULL);
 	    return TCL_ERROR;
@@ -3516,9 +3516,9 @@ TclNRSwitchObjCmd(
 		 * Mode already set via -exact, -glob, or -regexp.
 		 */
 
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		TclPrintfResult(interp,
 			"bad option \"%s\": %s option already found",
-			TclGetString(objv[i]), options[mode]));
+			TclGetString(objv[i]), options[mode]);
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "SWITCH",
 			"DOUBLEOPT", (char *)NULL);
 		return TCL_ERROR;
@@ -3535,9 +3535,9 @@ TclNRSwitchObjCmd(
 	case OPT_INDEXV:
 	    i++;
 	    if (i >= objc-2) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		TclPrintfResult(interp,
 			"missing variable name argument to %s option",
-			"-indexvar"));
+			"-indexvar");
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "SWITCH",
 			"NOVAR", (char *)NULL);
 		return TCL_ERROR;
@@ -3548,9 +3548,9 @@ TclNRSwitchObjCmd(
 	case OPT_MATCHV:
 	    i++;
 	    if (i >= objc-2) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		TclPrintfResult(interp,
 			"missing variable name argument to %s option",
-			"-matchvar"));
+			"-matchvar");
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "SWITCH",
 			"NOVAR", (char *)NULL);
 		return TCL_ERROR;
@@ -3568,22 +3568,22 @@ TclNRSwitchObjCmd(
 	return TCL_ERROR;
     }
     if (indexVarObj != NULL && mode != OPT_REGEXP) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"%s option requires -regexp option", "-indexvar"));
+	TclPrintfResult(interp,
+		"%s option requires -regexp option", "-indexvar");
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "SWITCH",
 		"MODERESTRICTION", (char *)NULL);
 	return TCL_ERROR;
     }
     if (matchVarObj != NULL && mode != OPT_REGEXP) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"%s option requires -regexp option", "-matchvar"));
+	TclPrintfResult(interp,
+		"%s option requires -regexp option", "-matchvar");
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "SWITCH",
 		"MODERESTRICTION", (char *)NULL);
 	return TCL_ERROR;
     }
     if (noCase && mode == OPT_INTEGER) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"-nocase option cannot be used with -integer option"));
+	TclPrintfResult(interp,
+		"-nocase option cannot be used with -integer option");
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "SWITCH",
 		"MODERESTRICTION", (char *)NULL);
 	return TCL_ERROR;
@@ -3673,9 +3673,8 @@ TclNRSwitchObjCmd(
      */
 
     if (strcmp(TclGetString(objv[objc-1]), "-") == 0) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"no body specified for pattern \"%s\"",
-		TclGetString(objv[objc-2])));
+	TclPrintfResult(interp, "no body specified for pattern \"%s\"",
+		TclGetString(objv[objc-2]));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "SWITCH", "BADARM",
 		"FALLTHROUGH", (char *)NULL);
 	return TCL_ERROR;
@@ -4857,9 +4856,8 @@ TclNRTryObjCmd(
 	    }
 	    code = 1;
 	    if (TclListObjLength(NULL, objv[i+1], &dummy) != TCL_OK) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"bad prefix '%s': must be a list",
-			TclGetString(objv[i+1])));
+		TclPrintfResult(interp, "bad prefix '%s': must be a list",
+			TclGetString(objv[i+1]));
 		Tcl_DecrRefCount(handlersObj);
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "TRY", "TRAP",
 			"EXNFORMAT", (char *)NULL);
@@ -5459,9 +5457,9 @@ TclUnicodeNormalizeCmd(
 	} else if (!strcmp(s, "strict")) {
 	    profile = TCL_ENCODING_PROFILE_STRICT;
 	} else {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    TclPrintfResult(interp,
 		    "Invalid value \"%s\" supplied for option \"-profile\". "
-		    "Must be \"strict\" or \"replace\".", s));
+		    "Must be \"strict\" or \"replace\".", s);
 	    return TCL_ERROR;
 	}
     } else if (objc != 2) {

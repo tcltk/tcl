@@ -222,9 +222,9 @@ TclNRIfObjCmd(
     Tcl_Obj *boolObj;
 
     if (objc <= 1) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	Tcl_PrintfResult(interp,
 		"wrong # args: no expression after \"%s\" argument",
-		TclGetString(objv[0])));
+		TclGetString(objv[0]));
 	Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", (char *)NULL);
 	return TCL_ERROR;
     }
@@ -313,9 +313,9 @@ IfConditionCallback(
 	 */
 
 	if (i >= objc) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    Tcl_PrintfResult(interp,
 		    "wrong # args: no expression after \"%s\" argument",
-		    clause));
+		    clause);
 	    Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", (char *)NULL);
 	    return TCL_ERROR;
 	}
@@ -357,9 +357,9 @@ IfConditionCallback(
     return TclNREvalObjEx(interp, objv[i], 0, iPtr->cmdFramePtr, i);
 
   missingScript:
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+    Tcl_PrintfResult(interp,
 	    "wrong # args: no script following \"%s\" argument",
-	    TclGetString(objv[i-1])));
+	    TclGetString(objv[i-1]));
     Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", (char *)NULL);
     return TCL_ERROR;
 }
@@ -487,8 +487,7 @@ InfoArgsCmd(
     name = TclGetString(objv[1]);
     procPtr = TclFindProc(iPtr, name);
     if (procPtr == NULL) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"\"%s\" isn't a procedure", name));
+	TclPrintfResult(interp, "\"%s\" isn't a procedure", name);
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "PROCEDURE", name, (char *)NULL);
 	return TCL_ERROR;
     }
@@ -549,8 +548,7 @@ InfoBodyCmd(
     name = TclGetString(objv[1]);
     procPtr = TclFindProc(iPtr, name);
     if (procPtr == NULL) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"\"%s\" isn't a procedure", name));
+	TclPrintfResult(interp, "\"%s\" isn't a procedure", name);
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "PROCEDURE", name, (char *)NULL);
 	return TCL_ERROR;
     }
@@ -969,8 +967,7 @@ InfoDefaultCmd(
 
     procPtr = TclFindProc(iPtr, procName);
     if (procPtr == NULL) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"\"%s\" isn't a procedure", procName));
+	TclPrintfResult(interp, "\"%s\" isn't a procedure", procName);
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "PROCEDURE", procName,
 		(char *)NULL);
 	return TCL_ERROR;
@@ -1002,9 +999,8 @@ InfoDefaultCmd(
 	}
     }
 
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "procedure \"%s\" doesn't have an argument \"%s\"",
-	    procName, argName));
+    TclPrintfResult(interp, "procedure \"%s\" doesn't have an argument \"%s\"",
+	    procName, argName);
     Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ARGUMENT", argName, (char *)NULL);
     return TCL_ERROR;
 }
@@ -1185,8 +1181,7 @@ InfoFrameCmd(
 
     if ((level > topLevel) || (level <= - topLevel)) {
     levelError:
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"bad level \"%s\"", TclGetString(objv[1])));
+	TclPrintfResult(interp, "bad level \"%s\"", TclGetString(objv[1]));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LEVEL",
 		TclGetString(objv[1]), (char *)NULL);
 	code = TCL_ERROR;
@@ -1625,8 +1620,7 @@ InfoLevelCmd(
     return TCL_ERROR;
 
   levelError:
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "bad level \"%s\"", TclGetString(objv[1])));
+    TclPrintfResult(interp, "bad level \"%s\"", TclGetString(objv[1]));
     Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LEVEL",
 	    TclGetString(objv[1]), (char *)NULL);
     return TCL_ERROR;
@@ -3338,9 +3332,8 @@ Tcl_LsearchObjCmd(
 		    result = TCL_ERROR;
 		}
 		if (encoded == (int)TCL_INDEX_NONE) {
-		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			    "index \"%s\" out of range",
-			    TclGetString(indices[j])));
+		    TclPrintfResult(interp, "index \"%s\" out of range",
+			    TclGetString(indices[j]));
 		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", "OUTOFRANGE", (char *)NULL);
 		    result = TCL_ERROR;
 		}
@@ -3912,8 +3905,8 @@ SequenceIdentifyArgument(
     if (result == TCL_OK) {
 	if (allowedArgs & LastArg) {
 	    /* keyword found, but no followed number */
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "missing \"%s\" value.", TclGetString(argPtr)));
+	    TclPrintfResult(interp, "missing \"%s\" value.",
+		    TclGetString(argPtr));
 	    return ErrArg;
 	}
 	*keywordIndexPtr = opmode;
@@ -4472,15 +4465,14 @@ Tcl_LsortObjCmd(
 			TCL_INDEX_NONE, TCL_INDEX_NONE, &encoded);
 
 		if ((result == TCL_OK) && (encoded == (int)TCL_INDEX_NONE)) {
-		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			    "index \"%s\" out of range",
-			    TclGetString(indexv[j])));
+		    TclPrintfResult(interp, "index \"%s\" out of range",
+			    TclGetString(indexv[j]));
 		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", "OUTOFRANGE", (char *)NULL);
 		    result = TCL_ERROR;
 		}
 		if (result == TCL_ERROR) {
-		    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-			    "\n    (-index option item number %" TCL_Z_MODIFIER "u)", j));
+		    TclPrintfResult(interp,
+			    "\n    (-index option item number %" TCL_Z_MODIFIER "u)", j);
 		    sortInfo.resultCode = TCL_ERROR;
 		    goto done;
 		}
@@ -4703,8 +4695,8 @@ Tcl_LsortObjCmd(
 	elementArray = (SortElement *)malloc(elmArrSize);
     }
     if (!elementArray) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"no enough memory to proccess sort of %" TCL_Z_MODIFIER "u items", length));
+	TclPrintfResult(interp,
+		"no enough memory to proccess sort of %" TCL_Z_MODIFIER "u items", length);
 	Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
 	sortInfo.resultCode = TCL_ERROR;
 	goto done;
@@ -5366,13 +5358,13 @@ SelectObjFromSublist(
 	if (currentObj == NULL) {
 	    if (index == TCL_INDEX_NONE) {
 		index = TCL_INDEX_END - infoPtr->indexv[i];
-		Tcl_SetObjResult(infoPtr->interp, Tcl_ObjPrintf(
+		TclPrintfResult(infoPtr->interp,
 			"element end-%d missing from sublist \"%s\"",
-			index, TclGetString(objPtr)));
+			index, TclGetString(objPtr));
 	    } else {
-		Tcl_SetObjResult(infoPtr->interp, Tcl_ObjPrintf(
+		TclPrintfResult(infoPtr->interp,
 			"element %d missing from sublist \"%s\"",
-			index, TclGetString(objPtr)));
+			index, TclGetString(objPtr));
 	    }
 	    Tcl_SetErrorCode(infoPtr->interp, "TCL", "OPERATION", "LSORT",
 		    "INDEXFAILED", (char *)NULL);

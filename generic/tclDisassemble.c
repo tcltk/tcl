@@ -1428,8 +1428,8 @@ Tcl_DisassembleObjCmd(
 
 	procPtr = TclFindProc((Interp *) interp, TclGetString(objv[2]));
 	if (procPtr == NULL) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "\"%s\" isn't a procedure", TclGetString(objv[2])));
+	    TclPrintfResult(interp, "\"%s\" isn't a procedure",
+		    TclGetString(objv[2]));
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "PROC",
 		    TclGetString(objv[2]), (char *)NULL);
 	    return TCL_ERROR;
@@ -1481,9 +1481,8 @@ Tcl_DisassembleObjCmd(
 
 	methodPtr = classPtr->constructorPtr;
 	if (methodPtr == NULL) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "\"%s\" has no defined constructor",
-		    TclGetString(ooWhat)));
+	    TclPrintfResult(interp, "\"%s\" has no defined constructor",
+		    TclGetString(ooWhat));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "DISASSEMBLE",
 		    "CONSRUCTOR", (char *)NULL);
 	    return TCL_ERROR;
@@ -1519,9 +1518,8 @@ Tcl_DisassembleObjCmd(
 
 	methodPtr = classPtr->destructorPtr;
 	if (methodPtr == NULL) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "\"%s\" has no defined destructor",
-		    TclGetString(ooWhat)));
+	    TclPrintfResult(interp, "\"%s\" has no defined destructor",
+		    TclGetString(ooWhat));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "DISASSEMBLE",
 		    "DESRUCTOR", (char *)NULL);
 	    return TCL_ERROR;
@@ -1585,8 +1583,8 @@ Tcl_DisassembleObjCmd(
     methodBody:
 	if (hPtr == NULL) {
 	unknownMethod:
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "unknown method \"%s\"", TclGetString(ooWhat)));
+	    TclPrintfResult(interp, "unknown method \"%s\"",
+		    TclGetString(ooWhat));
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
 		    TclGetString(ooWhat), (char *)NULL);
 	    return TCL_ERROR;
