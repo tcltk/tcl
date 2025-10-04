@@ -4757,6 +4757,7 @@ MODULE_SCOPE Tcl_LibraryInitProc TclTommath_Init;
 
 MODULE_SCOPE Tcl_LibraryInitProc TclplatformtestInit;
 MODULE_SCOPE Tcl_LibraryInitProc TclObjTest_Init;
+MODULE_SCOPE Tcl_LibraryInitProc TclMutex_Init;
 MODULE_SCOPE Tcl_LibraryInitProc TclThread_Init;
 MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_Init;
 MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_SafeInit;

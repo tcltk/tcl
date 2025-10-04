@@ -10,7 +10,7 @@
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-variable \- create and initialize a namespace variable
+variable \- Create and initialize a namespace variable
 .SH SYNOPSIS
 \fBvariable \fR\fIname\fR
 .sp

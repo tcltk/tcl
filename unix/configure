@@ -4901,12 +4901,6 @@ then :
   printf "%s\n" "#define HAVE_PTHREAD_ATFORK 1" >>confdefs.h
 
 fi
-ac_fn_c_check_func "$LINENO" "pthread_spin_lock" "ac_cv_func_pthread_spin_lock"
-if test "x$ac_cv_func_pthread_spin_lock" = xyes
-then :
-  printf "%s\n" "#define HAVE_PTHREAD_SPIN_LOCK 1" >>confdefs.h
-
-fi
 
     LIBS=$ac_saved_libs
 
@@ -7442,15 +7436,6 @@ printf "%s\n" "$tcl_cv_cc_input_charset" >&6; }
     if test $tcl_cv_cc_input_charset = yes; then
 	CFLAGS="$CFLAGS -finput-charset=UTF-8"
     fi
-
-    ac_fn_c_check_header_compile "$LINENO" "stdatomic.h" "ac_cv_header_stdatomic_h" "$ac_includes_default"
-if test "x$ac_cv_header_stdatomic_h" = xyes
-then :
-
-printf "%s\n" "#define HAVE_STDATOMIC_H 1" >>confdefs.h
-
-fi
-
 
     # Check for vfork, posix_spawnp() and friends unconditionally
     ac_fn_c_check_func "$LINENO" "vfork" "ac_cv_func_vfork"
@@ -11187,8 +11172,9 @@ fi
 	MACHER_PROG="$ac_cv_path_macher"
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $MACHER_PROG" >&5
 printf "%s\n" "$MACHER_PROG" >&6; }
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: Found macher in environment" >&5
-printf "%s\n" "Found macher in environment" >&6; }
+    else
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: Macher not found" >&5
+printf "%s\n" "Macher not found" >&6; }
     fi
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for zip" >&5
 printf %s "checking for zip... " >&6; }
@@ -11219,8 +11205,6 @@ fi
 printf "%s\n" "$ZIP_PROG" >&6; }
 	ZIP_PROG_OPTIONS="-rq"
 	ZIP_PROG_VFSSEARCH="*"
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: Found INFO Zip in environment" >&5
-printf "%s\n" "Found INFO Zip in environment" >&6; }
 	# Use standard arguments for zip
     else
 	# It is not an error if an installed version of Zip can't be located.
