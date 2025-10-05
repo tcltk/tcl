@@ -1017,8 +1017,8 @@ MakeDdeConnection(
 
 	    Tcl_DStringInit(&dString);
 	    Tcl_WCharToUtfDString(name, wcslen(name), &dString);
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "no registered server named \"%s\"", Tcl_DStringValue(&dString)));
+	    TclPrintfResult(interp, "no registered server named \"%s\"",
+		    Tcl_DStringValue(&dString));
 	    Tcl_DStringFree(&dString);
 	    Tcl_SetErrorCode(interp, "TCL", "DDE", "NO_SERVER", (char *)NULL);
 	}

@@ -361,10 +361,10 @@ ValidateFormat(
 		    format - 1, (char **)&format, 10);	/* INTL: "C" locale. */
 	    /* Note >=, not >, to leave room for a nul */
 	    if (ull >= TCL_SIZE_MAX) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		TclPrintfResult(interp,
 			"specified field width %" TCL_LL_MODIFIER
 			"u exceeds limit %" TCL_SIZE_MODIFIER "d.",
-			ull, (Tcl_Size)TCL_SIZE_MAX-1));
+			ull, (Tcl_Size)TCL_SIZE_MAX-1);
 		Tcl_SetErrorCode(
 			interp, "TCL", "FORMAT", "WIDTHLIMIT", (char *)NULL);
 		goto error;

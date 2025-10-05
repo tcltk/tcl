@@ -754,8 +754,8 @@ RenameDeleteMethod(
     if (!useClass) {
 	if (!oPtr->methodsPtr) {
 	noSuchMethod:
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "method %s does not exist", TclGetString(fromPtr)));
+	    TclPrintfResult(interp,
+		    "method %s does not exist", TclGetString(fromPtr));
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
 		    TclGetString(fromPtr), (char *)NULL);
 	    return TCL_ERROR;
@@ -775,9 +775,8 @@ RenameDeleteMethod(
 		return TCL_ERROR;
 	    } else if (!isNew) {
 	    renameToExisting:
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"method called %s already exists",
-			TclGetString(toPtr)));
+		TclPrintfResult(interp, "method called %s already exists",
+			TclGetString(toPtr));
 		OO_ERROR(interp, RENAME_OVER);
 		return TCL_ERROR;
 	    }
@@ -887,8 +886,7 @@ TclOOUnknownDefinition(
     }
 
   noMatch:
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "invalid command name \"%s\"", soughtStr));
+    TclPrintfResult(interp, "invalid command name \"%s\"", soughtStr);
     Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "COMMAND", soughtStr, (char *)NULL);
     return TCL_ERROR;
 }
@@ -1418,8 +1416,8 @@ TclOODefineObjCmd(
 	return TCL_ERROR;
     }
     if (oPtr->classPtr == NULL) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"%s does not refer to a class", TclGetString(objv[1])));
+	TclPrintfResult(interp, "%s does not refer to a class",
+		TclGetString(objv[1]));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CLASS",
 		TclGetString(objv[1]), (char *)NULL);
 	return TCL_ERROR;
@@ -3609,16 +3607,16 @@ ClassVars_Set(
 	const char *varName = TclGetString(varv[i]);
 
 	if (strstr(varName, "::") != NULL) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    TclPrintfResult(interp,
 		    "invalid declared variable name \"%s\": must not %s",
-		    varName, "contain namespace separators"));
+		    varName, "contain namespace separators");
 	    OO_ERROR(interp, BAD_DECLVAR);
 	    return TCL_ERROR;
 	}
 	if (Tcl_StringMatch(varName, "*(*)")) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    TclPrintfResult(interp,
 		    "invalid declared variable name \"%s\": must not %s",
-		    varName, "refer to an array element"));
+		    varName, "refer to an array element");
 	    OO_ERROR(interp, BAD_DECLVAR);
 	    return TCL_ERROR;
 	}
@@ -3880,16 +3878,16 @@ ObjVars_Set(
 	const char *varName = TclGetString(varv[i]);
 
 	if (strstr(varName, "::") != NULL) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    TclPrintfResult(interp,
 		    "invalid declared variable name \"%s\": must not %s",
-		    varName, "contain namespace separators"));
+		    varName, "contain namespace separators");
 	    OO_ERROR(interp, BAD_DECLVAR);
 	    return TCL_ERROR;
 	}
 	if (Tcl_StringMatch(varName, "*(*)")) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    TclPrintfResult(interp,
 		    "invalid declared variable name \"%s\": must not %s",
-		    varName, "refer to an array element"));
+		    varName, "refer to an array element");
 	    OO_ERROR(interp, BAD_DECLVAR);
 	    return TCL_ERROR;
 	}

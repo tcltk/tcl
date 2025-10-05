@@ -2499,8 +2499,7 @@ MakeTildeRelativePath(
 	dir = TclpGetUserHome(user, &dirString);
 	if (dir == NULL) {
 	    if (interp != NULL) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"user \"%s\" doesn't exist", user));
+		TclPrintfResult(interp, "user \"%s\" doesn't exist", user);
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "PATH", "NOUSER",
 			(char *)NULL);
 	    }
