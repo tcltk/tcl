@@ -830,8 +830,7 @@ Tcl_ZlibStreamInit(
 	TclDStringAppendObj(&cmdname, Tcl_GetObjResult(interp));
 	if (Tcl_FindCommand(interp, Tcl_DStringValue(&cmdname),
 		NULL, 0) != NULL) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "BUG: Stream command name already exists", TCL_AUTO_LENGTH));
+	    TclPrintfResult(interp, "BUG: Stream command name already exists");
 	    Tcl_SetErrorCode(interp, "TCL", "BUG", "EXISTING_CMD", (char *)NULL);
 	    Tcl_DStringFree(&cmdname);
 	    goto error;
@@ -1222,8 +1221,7 @@ Tcl_ZlibStreamPut(
 
     if (zshPtr->streamEnd) {
 	if (zshPtr->interp) {
-	    Tcl_SetObjResult(zshPtr->interp, Tcl_NewStringObj(
-		    "already past compressed stream end", TCL_AUTO_LENGTH));
+	    TclPrintfResult(zshPtr->interp, "already past compressed stream end");
 	    Tcl_SetErrorCode(zshPtr->interp, "TCL", "ZIP", "CLOSED", (char *)NULL);
 	}
 	return TCL_ERROR;
@@ -1452,9 +1450,9 @@ Tcl_ZlibStreamGet(
 
 	    if (zshPtr->stream.avail_in > 0) {
 		if (zshPtr->interp) {
-		    Tcl_SetObjResult(zshPtr->interp, Tcl_NewStringObj(
+		    TclPrintfResult(zshPtr->interp,
 			    "unexpected zlib internal state during"
-			    " decompression", TCL_AUTO_LENGTH));
+			    " decompression");
 		    Tcl_SetErrorCode(zshPtr->interp, "TCL", "ZIP", "STATE",
 			    (char *)NULL);
 		}
@@ -2369,8 +2367,7 @@ ZlibStreamSubcmd(
     } else if (Tcl_GetIntFromObj(interp, levelObj, &level) != TCL_OK) {
 	return TCL_ERROR;
     } else if (level < 0 || level > 9) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"level must be 0 to 9", TCL_AUTO_LENGTH));
+	TclPrintfResult(interp, "level must be 0 to 9");
 	Tcl_SetErrorCode(interp, "TCL", "VALUE", "COMPRESSIONLEVEL", (char *)NULL);
 	Tcl_AddErrorInfo(interp, "\n    (in -level option)");
 	return TCL_ERROR;
@@ -2488,16 +2485,14 @@ ZlibPushSubcmd(
      */
 
     if (mode == TCL_ZLIB_STREAM_DEFLATE && !(chanMode & TCL_WRITABLE)) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"compression may only be applied to writable channels",
-		TCL_AUTO_LENGTH));
+	TclPrintfResult(interp,
+		"compression may only be applied to writable channels");
 	Tcl_SetErrorCode(interp, "TCL", "ZIP", "UNWRITABLE", (char *)NULL);
 	return TCL_ERROR;
     }
     if (mode == TCL_ZLIB_STREAM_INFLATE && !(chanMode & TCL_READABLE)) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"decompression may only be applied to readable channels",
-		TCL_AUTO_LENGTH));
+	TclPrintfResult(interp,
+		"decompression may only be applied to readable channels");
 	Tcl_SetErrorCode(interp, "TCL", "ZIP", "UNREADABLE", (char *)NULL);
 	return TCL_ERROR;
     }
@@ -2892,9 +2887,9 @@ ZlibStreamPutCmd(
 	    break;
 	case po_dictionary:	/* -dictionary compDict */
 	    if (i == objc - 2) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		TclPrintfResult(interp,
 			"\"-dictionary\" option must be followed by"
-			" compression dictionary bytes", TCL_AUTO_LENGTH));
+			" compression dictionary bytes");
 		Tcl_SetErrorCode(interp, "TCL", "ZIP", "NOVAL", (char *)NULL);
 		return TCL_ERROR;
 	    }
@@ -2904,9 +2899,9 @@ ZlibStreamPutCmd(
 	    TCL_UNREACHABLE();
 	}
 	if (flush == -2) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+	    TclPrintfResult(interp,
 		    "\"-flush\", \"-fullflush\" and \"-finalize\" options"
-		    " are mutually exclusive", TCL_AUTO_LENGTH));
+		    " are mutually exclusive");
 	    Tcl_SetErrorCode(interp, "TCL", "ZIP", "EXCLUSIVE", (char *)NULL);
 	    return TCL_ERROR;
 	}
@@ -2953,9 +2948,8 @@ ZlibStreamHeaderCmd(
 	return TCL_ERROR;
     } else if (zshPtr->mode != TCL_ZLIB_STREAM_INFLATE
 	    || zshPtr->format != TCL_ZLIB_FORMAT_GZIP) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"only gunzip streams can produce header information",
-		TCL_AUTO_LENGTH));
+	TclPrintfResult(interp,
+		"only gunzip streams can produce header information");
 	Tcl_SetErrorCode(interp, "TCL", "ZIP", "BADOP", (char *)NULL);
 	return TCL_ERROR;
     }
@@ -3434,8 +3428,8 @@ ZlibTransformSetOption(			/* not used */
 	    if (Tcl_GetInt(interp, value, &newLimit) != TCL_OK) {
 		return TCL_ERROR;
 	    } else if (newLimit < 1 || newLimit > MAX_BUFFER_SIZE) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"-limit must be between 1 and 65536", TCL_AUTO_LENGTH));
+		TclPrintfResult(interp,
+			"-limit must be between 1 and 65536");
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "READLIMIT",
 			(char *)NULL);
 		return TCL_ERROR;

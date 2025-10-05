@@ -1012,9 +1012,8 @@ InfoClassConstrCmd(
     }
     procPtr = TclOOGetProcFromMethod(clsPtr->constructorPtr);
     if (procPtr == NULL) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"definition not available for this kind of method",
-		TCL_AUTO_LENGTH));
+	TclPrintfResult(interp,
+		"definition not available for this kind of method");
 	OO_ERROR(interp, METHOD_TYPE);
 	return TCL_ERROR;
     }
@@ -1162,9 +1161,8 @@ InfoClassDestrCmd(
     }
     procPtr = TclOOGetProcFromMethod(clsPtr->destructorPtr);
     if (procPtr == NULL) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"definition not available for this kind of method",
-		TCL_AUTO_LENGTH));
+	TclPrintfResult(interp,
+		"definition not available for this kind of method");
 	OO_ERROR(interp, METHOD_TYPE);
 	return TCL_ERROR;
     }
@@ -1725,8 +1723,7 @@ InfoObjectCallCmd(
     contextPtr = TclOOGetCallContext(oPtr, objv[2], PUBLIC_METHOD, NULL, NULL,
 	    NULL);
     if (contextPtr == NULL) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"cannot construct any call chain", TCL_AUTO_LENGTH));
+	TclPrintfResult(interp, "cannot construct any call chain");
 	OO_ERROR(interp, BAD_CALL_CHAIN);
 	return TCL_ERROR;
     }
@@ -1771,8 +1768,7 @@ InfoClassCallCmd(
 
     callPtr = TclOOGetStereotypeCallChain(clsPtr, objv[2], PUBLIC_METHOD);
     if (callPtr == NULL) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"cannot construct any call chain", TCL_AUTO_LENGTH));
+	TclPrintfResult(interp, "cannot construct any call chain");
 	OO_ERROR(interp, BAD_CALL_CHAIN);
 	return TCL_ERROR;
     }

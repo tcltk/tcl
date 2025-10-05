@@ -198,8 +198,7 @@ Tcl_LoadObjCmd(
 	}
     }
     if ((fullFileName[0] == 0) && (prefix == NULL)) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"must specify either file name or prefix", -1));
+	TclPrintfResult(interp, "must specify either file name or prefix");
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LOAD", "NOLIBRARY",
 		(char *)NULL);
 	code = TCL_ERROR;
@@ -492,7 +491,7 @@ Tcl_LoadObjCmd(
 	     * A call to Tcl_InitStubs() determined the caller extension
 	     * Stubs were introduced in Tcl 8.1, so there's only one possible reason.
 	     */
-	    Tcl_SetObjResult(target, Tcl_NewStringObj("this extension is compiled for Tcl 8.x", -1));
+	    TclPrintfResult(interp, "this extension is compiled for Tcl 8.x");
 	    iPtr->legacyResult = NULL;
 	    iPtr->legacyFreeProc = (void (*) (void))-1;
 	}
@@ -631,8 +630,7 @@ Tcl_UnloadObjCmd(
 	}
     }
     if ((fullFileName[0] == 0) && (prefix == NULL)) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"must specify either file name or prefix", -1));
+	TclPrintfResult(interp, "must specify either file name or prefix");
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "UNLOAD", "NOLIBRARY",
 		(char *)NULL);
 	code = TCL_ERROR;

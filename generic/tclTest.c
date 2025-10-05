@@ -1930,7 +1930,7 @@ TestdoubledigitsCmd(
     type = types[type];
     if (objc > 4) {
 	if (strcmp(Tcl_GetString(objv[4]), "shorten")) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj("bad flag", -1));
+	    TclPrintfResult(interp, "bad flag");
 	    return TCL_ERROR;
 	}
 	type |= TCL_DD_SHORTEST;
@@ -3788,7 +3788,7 @@ TestlinkarrayCmd(
 	    return TCL_ERROR;
 	}
 	if (Tcl_GetIntFromObj(interp, objv[i++], &size) == TCL_ERROR) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj("wrong size value", -1));
+	    TclPrintfResult(interp, "wrong size value");
 	    return TCL_ERROR;
 	}
 	name = Tcl_GetString(objv[i++]);
@@ -3799,8 +3799,7 @@ TestlinkarrayCmd(
 
 	if (i < objc) {
 	    if (Tcl_GetWideIntFromObj(interp, objv[i], &addr) == TCL_ERROR) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"wrong address value", -1));
+		TclPrintfResult(interp, "wrong address value");
 		return TCL_ERROR;
 	    }
 	} else {
@@ -4274,8 +4273,7 @@ TestmsbObjCmd(
 	return TCL_ERROR;
     }
     if (w <= 0) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"argument must be positive", -1));
+	TclPrintfResult(interp, "argument must be positive");
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, Tcl_NewIntObj(TclMSB((unsigned long long)w)));
@@ -6081,7 +6079,7 @@ TestsetbytearraylengthCmd(
 	if (obj != objv[1]) {
 	    Tcl_DecrRefCount(obj);
 	}
-	Tcl_AppendResult(interp, "expected bytes", (char *)NULL);
+	TclPrintfResult(interp, "expected bytes");
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, obj);
@@ -8353,8 +8351,7 @@ TestconcatobjCmd(
      * the end if no errors were found.
      */
 
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-	    "Tcl_ConcatObj is unsafe:", -1));
+    TclPrintfResult(interp, "Tcl_ConcatObj is unsafe:");
 
     emptyPtr = Tcl_NewObj();
 
@@ -9293,8 +9290,7 @@ TestHandleCountCmd(
 	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(count));
 	return TCL_OK;
     }
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-	    "GetProcessHandleCount failed", -1));
+    TclPrintfResult(interp, "GetProcessHandleCount failed");
     return TCL_ERROR;
 }
 

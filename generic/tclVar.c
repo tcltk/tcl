@@ -3132,8 +3132,7 @@ ArrayForNRCmd(
     }
 
     if (numVars != 2) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"must have two variable names", -1));
+	TclPrintfResult(interp, "must have two variable names");
 	Tcl_SetErrorCode(interp, "TCL", "SYNTAX", "array", "for", (char *)NULL);
 	return TCL_ERROR;
     }
@@ -3233,8 +3232,7 @@ ArrayForLoopCallback(
     if (done != TCL_CONTINUE) {
 	Tcl_ResetResult(interp);
 	if (done == TCL_ERROR) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "array changed during iteration", -1));
+	    TclPrintfResult(interp, "array changed during iteration");
 	    Tcl_SetErrorCode(interp, "TCL", "READ", "array", "for", (char *)NULL);
 	    varPtr->flags |= TCL_LEAVE_ERR_MSG;
 	    result = done;
@@ -4117,8 +4115,7 @@ ArraySetCmd(
 	    return result;
 	}
 	if (elemLen & 1) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "list must have an even number of elements", -1));
+	    TclPrintfResult(interp, "list must have an even number of elements");
 	    Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "FORMAT", (char *)NULL);
 	    return TCL_ERROR;
 	}
@@ -4290,8 +4287,7 @@ ArrayStatsCmd(
 
     stats = Tcl_HashStats((Tcl_HashTable *) varPtr->value.tablePtr);
     if (stats == NULL) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"error reading array statistics", -1));
+	TclPrintfResult(interp, "error reading array statistics");
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, Tcl_NewStringObj(stats, -1));
@@ -4703,8 +4699,8 @@ TclPtrObjMakeUpvarIdx(
     }
 
     if (varPtr == otherPtr) {
-	Tcl_SetObjResult((Tcl_Interp *) iPtr, Tcl_NewStringObj(
-		"can't upvar from variable to itself", -1));
+	TclPrintfResult((Tcl_Interp *) iPtr,
+		"can't upvar from variable to itself");
 	Tcl_SetErrorCode(interp, "TCL", "UPVAR", "SELF", (char *)NULL);
 	return TCL_ERROR;
     }
@@ -6888,8 +6884,7 @@ ArrayDefaultCmd(
 	defaultValueObj = TclGetArrayDefault(varPtr);
 	if (!defaultValueObj) {
 	    /* Array default must exist. */
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "array has no default value", -1));
+	    TclPrintfResult(interp, "array has no default value");
 	    Tcl_SetErrorCode(interp, "TCL", "READ", "ARRAY", "DEFAULT", (char *)NULL);
 	    return TCL_ERROR;
 	}

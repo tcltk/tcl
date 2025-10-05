@@ -541,8 +541,7 @@ PrefixMatchObjCmd(
 	    break;
 	case PRFMATCH_MESSAGE:
 	    if (i > objc-4) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"missing value for -message", TCL_INDEX_NONE));
+		TclPrintfResult(interp, "missing value for -message");
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "NOARG", (char *)NULL);
 		return TCL_ERROR;
 	    }
@@ -551,8 +550,7 @@ PrefixMatchObjCmd(
 	    break;
 	case PRFMATCH_ERROR:
 	    if (i > objc-4) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"missing value for -error", TCL_INDEX_NONE));
+		TclPrintfResult(interp, "missing value for -error");
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "NOARG", (char *)NULL);
 		return TCL_ERROR;
 	    }
@@ -562,9 +560,8 @@ PrefixMatchObjCmd(
 		return TCL_ERROR;
 	    }
 	    if ((errorLength % 2) != 0) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"error options must have an even number of elements",
-			-1));
+		TclPrintfResult(interp,
+			"error options must have an even number of elements");
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "DICTIONARY", (char *)NULL);
 		return TCL_ERROR;
 	    }

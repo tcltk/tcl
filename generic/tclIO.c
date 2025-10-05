@@ -1245,9 +1245,9 @@ Tcl_UnregisterChannel(
 
     if (GotFlag(statePtr, CHANNEL_INCLOSE)) {
 	if (interp != NULL) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+	    TclPrintfResult(interp,
 		    "illegal recursive call to close through close-handler"
-		    " of channel", -1));
+		    " of channel");
 	}
 	return TCL_ERROR;
     }
@@ -2697,8 +2697,7 @@ CheckForDeadChannel(
 
     Tcl_SetErrno(EINVAL);
     if (interp) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"unable to access channel: invalid channel", -1));
+	TclPrintfResult(interp, "unable to access channel: invalid channel");
     }
     return 1;
 }
@@ -3485,9 +3484,9 @@ TclClose(
 
     if (GotFlag(statePtr, CHANNEL_INCLOSE)) {
 	if (interp) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+	    TclPrintfResult(interp,
 		    "illegal recursive call to close through close-handler"
-		    " of channel", -1));
+		    " of channel");
 	}
 	return TCL_ERROR;
     }
@@ -8205,9 +8204,9 @@ Tcl_SetChannelOption(
 
     if (statePtr->csPtrR || statePtr->csPtrW) {
 	if (interp) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+	    TclPrintfResult(interp,
 		    "unable to set channel options: background copy in"
-		    " progress", -1));
+		    " progress");
 	}
 	return TCL_ERROR;
     }
@@ -8256,9 +8255,9 @@ Tcl_SetChannelOption(
 	    ResetFlag(statePtr, CHANNEL_LINEBUFFERED);
 	    SetFlag(statePtr, CHANNEL_UNBUFFERED);
 	} else if (interp) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+	    TclPrintfResult(interp,
 		    "bad value for -buffering: must be one of"
-		    " full, line, or none", -1));
+		    " full, line, or none");
 	    return TCL_ERROR;
 	}
 	return TCL_OK;
@@ -8333,9 +8332,9 @@ Tcl_SetChannelOption(
 	    }
 	} else {
 	    if (interp) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		TclPrintfResult(interp,
 			"bad value for -eofchar: must be non-NUL ASCII"
-			" character", TCL_INDEX_NONE));
+			" character");
 	    }
 	    Tcl_Free((void *)argv);
 	    return TCL_ERROR;
@@ -8380,9 +8379,9 @@ Tcl_SetChannelOption(
 	    writeMode = GotFlag(statePtr, TCL_WRITABLE) ? argv[1] : NULL;
 	} else {
 	    if (interp) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		TclPrintfResult(interp,
 			"bad value for -translation: must be a one or two"
-			" element list", -1));
+			" element list");
 	    }
 	    Tcl_Free((void *)argv);
 	    return TCL_ERROR;
@@ -8410,9 +8409,9 @@ Tcl_SetChannelOption(
 		translation = TCL_PLATFORM_TRANSLATION;
 	    } else {
 		if (interp) {
-		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    TclPrintfResult(interp,
 			    "bad value for -translation: must be one of "
-			    "auto, binary, cr, lf, crlf, or platform", -1));
+			    "auto, binary, cr, lf, crlf, or platform");
 		}
 		Tcl_Free((void *)argv);
 		return TCL_ERROR;
@@ -8459,9 +8458,9 @@ Tcl_SetChannelOption(
 		statePtr->outputTranslation = TCL_PLATFORM_TRANSLATION;
 	    } else {
 		if (interp) {
-		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    TclPrintfResult(interp,
 			    "bad value for -translation: must be one of "
-			    "auto, binary, cr, lf, crlf, or platform", -1));
+			    "auto, binary, cr, lf, crlf, or platform");
 		}
 		Tcl_Free((void *)argv);
 		return TCL_ERROR;

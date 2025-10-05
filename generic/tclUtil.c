@@ -910,7 +910,7 @@ Tcl_SplitList(
     if (!argv) {
     memerror:
 	if (interp) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj("cannot allocate", -1));
+	    TclPrintfResult(interp, "cannot allocate");
 	    Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
 	}
 	return TCL_ERROR;
@@ -934,8 +934,7 @@ Tcl_SplitList(
 	if (i >= size) {
 	    Tcl_Free((void *)argv);
 	    if (interp != NULL) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"internal error in Tcl_SplitList", -1));
+		TclPrintfResult(interp, "internal error in Tcl_SplitList");
 		Tcl_SetErrorCode(interp, "TCL", "INTERNAL", "Tcl_SplitList",
 			(char *)NULL);
 	    }

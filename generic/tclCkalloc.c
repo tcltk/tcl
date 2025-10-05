@@ -825,7 +825,7 @@ MemoryCmd(
 	result = Tcl_DumpActiveMemory(fileName);
 	Tcl_DStringFree(&buffer);
 	if (result != TCL_OK) {
-	    Tcl_PrintfResult(interp, "error accessing %s: %s",
+	    TclPrintfResult(interp, "error accessing %s: %s",
 		    TclGetString(objv[2]), Tcl_PosixError(interp));
 	    return TCL_ERROR;
 	}
@@ -843,7 +843,7 @@ MemoryCmd(
 	return TCL_OK;
     }
     if (strcmp(TclGetString(objv[1]),"info") == 0) {
-	Tcl_PrintfResult(interp,
+	TclPrintfResult(interp,
 		"%-25s %10" TCL_Z_MODIFIER "u\n%-25s %10" TCL_Z_MODIFIER "u\n%-25s %10" TCL_Z_MODIFIER "u\n%-25s %10" TCL_Z_MODIFIER "u\n%-25s %10" TCL_Z_MODIFIER "u\n%-25s %10" TCL_Z_MODIFIER "u\n",
 		"total mallocs", total_mallocs, "total frees", total_frees,
 		"current packets allocated", current_malloc_packets,
@@ -870,8 +870,7 @@ MemoryCmd(
 	}
 	fileP = fopen(fileName, "w");
 	if (fileP == NULL) {
-	    Tcl_PrintfResult(interp,
-		    "cannot open output file: %s",
+	    TclPrintfResult(interp, "cannot open output file: %s",
 		    Tcl_PosixError(interp));
 	    return TCL_ERROR;
 	}
@@ -935,7 +934,7 @@ MemoryCmd(
 	return TCL_OK;
     }
 
-    Tcl_PrintfResult(interp,
+    TclPrintfResult(interp,
 	    "bad option \"%s\": should be active, break_on_malloc, info, "
 	    "init, objs, onexit, tag, trace, trace_on_at_malloc, or validate",
 	    TclGetString(objv[1]));

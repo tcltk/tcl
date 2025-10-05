@@ -2393,8 +2393,8 @@ Tcl_GetDoubleFromObj(
 	if (TclHasInternalRep(objPtr, &tclDoubleType)) {
 	    if (isnan(objPtr->internalRep.doubleValue)) {
 		if (interp != NULL) {
-		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			    "floating point value is Not a Number", -1));
+		    TclPrintfResult(interp,
+			    "floating point value is Not a Number");
 		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "DOUBLE", "NAN",
 			    (char *)NULL);
 		}
@@ -2524,9 +2524,8 @@ Tcl_GetIntFromObj(
     }
     if ((ULONG_MAX > UINT_MAX) && ((l > UINT_MAX) || (l < INT_MIN))) {
 	if (interp != NULL) {
-	    const char *s =
-		    "integer value too large to represent";
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
+	    static const char *s = "integer value too large to represent";
+	    TclPrintfResult(interp, "%s", s);
 	    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, (char *)NULL);
 	}
 	return TCL_ERROR;

@@ -831,8 +831,8 @@ Tcl_CreateNamespace(
      */
 
     if (*name == '\0') {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj("can't create namespace"
-		" \"\": only global namespace can have empty name", -1));
+	TclPrintfResult(interp,"can't create namespace \"\": "
+		"only global namespace can have empty name");
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "NAMESPACE",
 		"CREATEGLOBAL", (char *)NULL);
 	Tcl_DStringFree(&tmpBuffer);
@@ -1714,7 +1714,7 @@ Tcl_Import(
      */
 
     if (strlen(pattern) == 0) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj("empty import pattern",-1));
+	TclPrintfResult(interp, "empty import pattern");
 	Tcl_SetErrorCode(interp, "TCL", "IMPORT", "EMPTY", (char *)NULL);
 	return TCL_ERROR;
     }

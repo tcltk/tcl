@@ -1774,10 +1774,9 @@ SerialSetOptionProc(
 	if (argc != 2) {
 	badXchar:
 	    if (interp != NULL) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		TclPrintfResult(interp,
 			"bad value for -xchar: should be a list of"
-			" two elements with each a single 8-bit character",
-			TCL_INDEX_NONE));
+			" two elements with each a single 8-bit character");
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "XCHAR", (char *)NULL);
 	    }
 	    Tcl_Free((void *)argv);
@@ -1850,8 +1849,7 @@ SerialSetOptionProc(
 		if (!EscapeCommFunction(infoPtr->handle,
 			(DWORD) (flag ? SETDTR : CLRDTR))) {
 		    if (interp != NULL) {
-			Tcl_SetObjResult(interp, Tcl_NewStringObj(
-				"can't set DTR signal", TCL_INDEX_NONE));
+			TclPrintfResult(interp, "can't set DTR signal");
 			Tcl_SetErrorCode(interp, "TCL", "OPERATION",
 				"FCONFIGURE", "TTY_SIGNAL", (char *)NULL);
 		    }
@@ -1862,8 +1860,7 @@ SerialSetOptionProc(
 		if (!EscapeCommFunction(infoPtr->handle,
 			(DWORD) (flag ? SETRTS : CLRRTS))) {
 		    if (interp != NULL) {
-			Tcl_SetObjResult(interp, Tcl_NewStringObj(
-				"can't set RTS signal", TCL_INDEX_NONE));
+			TclPrintfResult(interp, "can't set RTS signal");
 			Tcl_SetErrorCode(interp, "TCL", "OPERATION",
 				"FCONFIGURE", "TTY_SIGNAL", (char *)NULL);
 		    }
@@ -1874,8 +1871,7 @@ SerialSetOptionProc(
 		if (!EscapeCommFunction(infoPtr->handle,
 			(DWORD) (flag ? SETBREAK : CLRBREAK))) {
 		    if (interp != NULL) {
-			Tcl_SetObjResult(interp, Tcl_NewStringObj(
-				"can't set BREAK signal", TCL_INDEX_NONE));
+			TclPrintfResult(interp, "can't set BREAK signal");
 			Tcl_SetErrorCode(interp, "TCL", "OPERATION",
 				"FCONFIGURE", "TTY_SIGNAL", (char *)NULL);
 		    }
