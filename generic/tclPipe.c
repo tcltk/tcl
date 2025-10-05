@@ -356,8 +356,7 @@ TclCleanupChildren(
      */
 
     if ((abnormalExit != 0) && (anyErrorInfo == 0) && (interp != NULL)) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"child process exited abnormally", -1));
+	TclPrintfResult(interp, "child process exited abnormally");
     }
     return result;
 }
@@ -507,8 +506,8 @@ TclCreatePipeline(
 	    }
 	    if (*p == '\0') {
 		if ((i == (lastBar + 1)) || (i == (argc - 1))) {
-		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			    "illegal use of | or |& in command", -1));
+		    TclPrintfResult(interp,
+			    "illegal use of | or |& in command");
 		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "EXEC",
 			    "PIPESYNTAX", (char *)NULL);
 		    goto error;
@@ -695,8 +694,7 @@ TclCreatePipeline(
 	 * We had a bar followed only by redirections.
 	 */
 
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"illegal use of | or |& in command", -1));
+	TclPrintfResult(interp, "illegal use of | or |& in command");
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "EXEC", "PIPESYNTAX",
 		(char *)NULL);
 	goto error;
@@ -1048,17 +1046,17 @@ Tcl_OpenCommandChannel(
 
     if (flags & TCL_ENFORCE_MODE) {
 	if ((flags & TCL_STDOUT) && (outPipe == NULL)) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+	    TclPrintfResult(interp,
 		    "can't read output from command:"
-		    " standard output was redirected", -1));
+		    " standard output was redirected");
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "EXEC",
 		    "BADREDIRECT", (char *)NULL);
 	    goto error;
 	}
 	if ((flags & TCL_STDIN) && (inPipe == NULL)) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+	    TclPrintfResult(interp,
 		    "can't write input to command:"
-		    " standard input was redirected", -1));
+		    " standard input was redirected");
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "EXEC",
 		    "BADREDIRECT", (char *)NULL);
 	    goto error;
@@ -1069,8 +1067,7 @@ Tcl_OpenCommandChannel(
 	    numPids, pidPtr);
 
     if (channel == NULL) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"pipe for command could not be created", -1));
+	TclPrintfResult(interp, "pipe for command could not be created");
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "EXEC", "NOPIPE", (char *)NULL);
 	goto error;
     }

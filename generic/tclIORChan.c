@@ -923,8 +923,7 @@ TclChanPostEventObjCmd(
 	return TCL_ERROR;
     }
     if (events == 0) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"bad event list: is empty", -1));
+	TclPrintfResult(interp, "bad event list: is empty");
 	return TCL_ERROR;
     }
 

@@ -822,9 +822,9 @@ TtySetOptionProc(
 	    return TCL_ERROR;
 	} else {
 	    if (interp) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		TclPrintfResult(interp,
 			"bad value for -handshake: must be one of"
-			" xonxoff, rtscts, dtrdsr or none", -1));
+			" xonxoff, rtscts, dtrdsr or none");
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "FCONFIGURE",
 			"VALUE", (char *)NULL);
 	    }
@@ -844,9 +844,9 @@ TtySetOptionProc(
 	} else if (argc != 2) {
 	badXchar:
 	    if (interp) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		TclPrintfResult(interp,
 			"bad value for -xchar: should be a list of"
-			" two elements with each a single 8-bit character", -1));
+			" two elements with each a single 8-bit character");
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "XCHAR", (char *)NULL);
 	    }
 	    Tcl_Free(argv);
@@ -909,9 +909,9 @@ TtySetOptionProc(
 	}
 	if ((argc % 2) == 1) {
 	    if (interp) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		TclPrintfResult(interp,
 			"bad value for -ttycontrol: should be a list of"
-			" signal,value pairs", -1));
+			" signal,value pairs");
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "FCONFIGURE",
 			"VALUE", (char *)NULL);
 	    }

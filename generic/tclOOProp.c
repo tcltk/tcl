@@ -1049,8 +1049,7 @@ TclOODefinePropertyCmd(
 	return TCL_ERROR;
     }
     if (!useInstance && !oPtr->classPtr) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"attempt to misuse API", TCL_AUTO_LENGTH));
+	TclPrintfResult(interp, "attempt to misuse API");
 	OO_ERROR(interp, MONKEY_BUSINESS);
 	return TCL_ERROR;
     }

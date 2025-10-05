@@ -351,8 +351,7 @@ TclDefaultBgErrorHandlerObjCmd(
 
     result = TclDictGet(NULL, objv[2], "-level", &valuePtr);
     if (result != TCL_OK || valuePtr == NULL) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"missing return option \"-level\"", -1));
+	TclPrintfResult(interp, "missing return option \"-level\"");
 	Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", (char *)NULL);
 	return TCL_ERROR;
     }
@@ -361,8 +360,7 @@ TclDefaultBgErrorHandlerObjCmd(
     }
     result = TclDictGet(NULL, objv[2], "-code", &valuePtr);
     if (result != TCL_OK || valuePtr == NULL) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"missing return option \"-code\"", -1));
+	TclPrintfResult(interp, "missing return option \"-code\"");
 	Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", (char *)NULL);
 	return TCL_ERROR;
     }
@@ -1583,8 +1581,7 @@ Tcl_VwaitObjCmd(
 	    }
 	    if (timeout < 0) {
 		Tcl_ResetResult(interp);
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"timeout must be positive", -1));
+		TclPrintfResult(interp, "timeout must be positive");
 		Tcl_SetErrorCode(interp, "TCL", "EVENT", "NEGTIME", (char *)NULL);
 		result = TCL_ERROR;
 		goto done;
@@ -1665,16 +1662,14 @@ Tcl_VwaitObjCmd(
   endOfOptionLoop:
     if ((mask & (TCL_FILE_EVENTS | TCL_IDLE_EVENTS |
 	    TCL_TIMER_EVENTS | TCL_WINDOW_EVENTS)) == 0) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"can't wait: would block forever", -1));
+	TclPrintfResult(interp, "can't wait: would block forever");
 	Tcl_SetErrorCode(interp, "TCL", "EVENT", "NO_SOURCES", (char *)NULL);
 	result = TCL_ERROR;
 	goto done;
     }
 
     if ((timeout > 0) && ((mask & TCL_TIMER_EVENTS) == 0)) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"timer events disabled with timeout specified", -1));
+	TclPrintfResult(interp, "timer events disabled with timeout specified");
 	Tcl_SetErrorCode(interp, "TCL", "EVENT", "NO_TIME", (char *)NULL);
 	result = TCL_ERROR;
 	goto done;
@@ -1701,8 +1696,8 @@ Tcl_VwaitObjCmd(
     if (!(mask & TCL_FILE_EVENTS)) {
 	for (i = 0; i < numItems; i++) {
 	    if (vwaitItems[i].mask) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"file events disabled with channel(s) specified", -1));
+		TclPrintfResult(interp,
+			"file events disabled with channel(s) specified");
 		Tcl_SetErrorCode(interp, "TCL", "EVENT", "NO_FILE_EVENT", (char *)NULL);
 		result = TCL_ERROR;
 		goto done;
@@ -1741,7 +1736,7 @@ Tcl_VwaitObjCmd(
 	}
 	if (Tcl_LimitExceeded(interp)) {
 	    Tcl_ResetResult(interp);
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj("limit exceeded", -1));
+	    TclPrintfResult(interp, "limit exceeded");
 	    Tcl_SetErrorCode(interp, "TCL", "EVENT", "LIMIT", (char *)NULL);
 	    break;
 	}
@@ -1758,10 +1753,8 @@ Tcl_VwaitObjCmd(
 
     if (!foundEvent) {
 	Tcl_ResetResult(interp);
-	Tcl_SetObjResult(interp, Tcl_NewStringObj((numItems == 0) ?
-		"can't wait: would wait forever" :
-		"can't wait for variable(s)/channel(s): would wait forever",
-		-1));
+	TclPrintfResult(interp, "can't wait%s: would wait forever",
+		numItems ? " for variable(s)/channel(s)" : "");
 	Tcl_SetErrorCode(interp, "TCL", "EVENT", "NO_SOURCES", (char *)NULL);
 	result = TCL_ERROR;
 	goto done;
@@ -1989,7 +1982,7 @@ Tcl_UpdateObjCmd(
 	}
 	if (Tcl_LimitExceeded(interp)) {
 	    Tcl_ResetResult(interp);
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj("limit exceeded", -1));
+	    TclPrintfResult(interp, "limit exceeded");
 	    return TCL_ERROR;
 	}
     }

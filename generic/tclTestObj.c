@@ -202,14 +202,12 @@ TestbignumobjCmd(
 	}
 	string = Tcl_GetString(objv[3]);
 	if (mp_init(&bignumValue) != MP_OKAY) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "error in mp_init", -1));
+	    TclPrintfResult(interp, "error in mp_init");
 	    return TCL_ERROR;
 	}
 	if (mp_read_radix(&bignumValue, string, 10) != MP_OKAY) {
 	    mp_clear(&bignumValue);
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "error in mp_read_radix", -1));
+	    TclPrintfResult(interp, "error in mp_read_radix");
 	    return TCL_ERROR;
 	}
 
@@ -252,8 +250,7 @@ TestbignumobjCmd(
 	}
 	if (mp_mul_d(&bignumValue, 10, &bignumValue) != MP_OKAY) {
 	    mp_clear(&bignumValue);
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "error in mp_mul_d", -1));
+	    TclPrintfResult(interp, "error in mp_mul_d");
 	    return TCL_ERROR;
 	}
 	if (!Tcl_IsShared(varPtr[varIndex])) {
@@ -277,8 +274,7 @@ TestbignumobjCmd(
 	}
 	if (mp_div_d(&bignumValue, 10, &bignumValue, NULL) != MP_OKAY) {
 	    mp_clear(&bignumValue);
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "error in mp_div_d", -1));
+	    TclPrintfResult(interp, "error in mp_div_d");
 	    return TCL_ERROR;
 	}
 	if (!Tcl_IsShared(varPtr[varIndex])) {
@@ -302,8 +298,7 @@ TestbignumobjCmd(
 	}
 	if (mp_mod_2d(&bignumValue, 1, &bignumValue) != MP_OKAY) {
 	    mp_clear(&bignumValue);
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "error in mp_mod_2d", -1));
+	    TclPrintfResult(interp, "error in mp_mod_2d");
 	    return TCL_ERROR;
 	}
 	if (!Tcl_IsShared(varPtr[varIndex])) {
@@ -994,9 +989,8 @@ TestlistobjCmd(
 		return TCL_ERROR;
 	    }
 	    if (objP->refCount < 0) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"Tcl_ListObjIndex returned object with ref count < 0",
-			TCL_INDEX_NONE));
+		TclPrintfResult(interp,
+			"Tcl_ListObjIndex returned object with ref count < 0");
 		/* Keep looping since we are also looping for leaks */
 	    }
 	    Tcl_BounceRefCount(objP);
@@ -1018,9 +1012,8 @@ TestlistobjCmd(
 	    }
 	    for (i = 0; i < len; ++i) {
 		if (elems[i]->refCount <= 0) {
-		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			    "Tcl_ListObjGetElements element has ref count <= 0",
-			    TCL_INDEX_NONE));
+		    TclPrintfResult(interp,
+			    "Tcl_ListObjGetElements element has ref count <= 0");
 		    break;
 		}
 	    }
@@ -1210,7 +1203,7 @@ TestobjCmd(
 		Tcl_SetObjResult(interp, Tcl_NewStringObj("none", -1));
 	    } else {
 		typeName = objv[2]->typePtr->name;
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(typeName, -1));
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(typeName, -1));
 	    }
 	}
 	return TCL_OK;

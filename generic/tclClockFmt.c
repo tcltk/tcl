@@ -1622,8 +1622,7 @@ ClockScnToken_DayOfWeek_Proc(
 	    val = 7;
 	}
 	if (val > 7) {
-	    Tcl_SetObjResult(opts->interp, Tcl_NewStringObj(
-		    "day of week is greater than 7", TCL_AUTO_LENGTH));
+	    TclPrintfResult(opts->interp, "day of week is greater than 7");
 	    Tcl_SetErrorCode(opts->interp, "CLOCK", "badDayOfWeek", (char *)NULL);
 	    return TCL_ERROR;
 	}

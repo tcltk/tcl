@@ -190,8 +190,7 @@ TclMacOSXGetFileAttribute(
     }
     return TCL_OK;
 #else
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-	    "Mac OS X file attributes not supported", TCL_INDEX_NONE));
+    TclPrintfResult(interp, "Mac OS X file attributes not supported");
     Tcl_SetErrorCode(interp, "TCL", "UNSUPPORTED", (char *)NULL);
     return TCL_ERROR;
 #endif /* HAVE_GETATTRLIST */
@@ -319,8 +318,8 @@ TclMacOSXSetFileAttribute(
 	     */
 
 	    if (newRsrcForkSize != 0) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"setting nonzero rsrclength not supported", TCL_INDEX_NONE));
+		TclPrintfResult(interp,
+			"setting nonzero rsrclength not supported");
 		Tcl_SetErrorCode(interp, "TCL", "UNSUPPORTED", (char *)NULL);
 		return TCL_ERROR;
 	    }

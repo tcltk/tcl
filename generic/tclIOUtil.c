@@ -1051,9 +1051,8 @@ Tcl_FSMatchInDirectory(
     cwd = Tcl_FSGetCwd(NULL);
     if (cwd == NULL) {
 	if (interp != NULL) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "glob couldn't determine the current working directory",
-		    -1));
+	    TclPrintfResult(interp,
+		    "glob couldn't determine the current working directory");
 	}
 	return TCL_ERROR;
     }
@@ -1643,9 +1642,8 @@ TclGetOpenMode(
 
     if (!gotRW) {
 	if (interp != NULL) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "access mode must include either RDONLY, RDWR, or WRONLY",
-		    -1));
+	    TclPrintfResult(interp,
+		    "access mode must include either RDONLY, RDWR, or WRONLY");
 	}
 	return -1;
     }
@@ -3280,8 +3278,7 @@ Tcl_LoadFile(
 	Tcl_FSDeleteFile(copyToPtr);
 	Tcl_DecrRefCount(copyToPtr);
 	if (interp) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "couldn't load from current filesystem", -1));
+	    TclPrintfResult(interp, "couldn't load from current filesystem");
 	}
 	return TCL_ERROR;
     }
@@ -3581,9 +3578,8 @@ Tcl_FSUnloadFile(
 {
     if (handle->unloadFileProcPtr == NULL) {
 	if (interp != NULL) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "cannot unload: filesystem does not support unloading",
-		    -1));
+	    TclPrintfResult(interp,
+		    "cannot unload: filesystem does not support unloading");
 	}
 	return TCL_ERROR;
     }

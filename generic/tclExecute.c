@@ -2516,8 +2516,7 @@ TEBCresume(
 	TRACE(("%.30s => ", O2S(OBJ_AT_TOS)));
 	if (!corPtr) {
 	    TRACE_APPEND(("ERROR: yield outside coroutine\n"));
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "yield can only be called in a coroutine", -1));
+	    TclPrintfResult(interp, "yield can only be called in a coroutine");
 	    DECACHE_STACK_INFO();
 	    Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "ILLEGAL_YIELD",
 		    (char *)NULL);
@@ -2546,8 +2545,7 @@ TEBCresume(
 	TRACE(("[%.30s] => ", O2S(valuePtr)));
 	if (!corPtr) {
 	    TRACE_APPEND(("ERROR: yield outside coroutine\n"));
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "yieldto can only be called in a coroutine", -1));
+	    TclPrintfResult(interp, "yieldto can only be called in a coroutine");
 	    DECACHE_STACK_INFO();
 	    Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "ILLEGAL_YIELD",
 		    (char *)NULL);
@@ -2556,8 +2554,7 @@ TEBCresume(
 	}
 	if (((Namespace *)TclGetCurrentNamespace(interp))->flags & NS_DYING) {
 	    TRACE_APPEND(("ERROR: yield in deleted\n"));
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "yieldto called in deleted namespace", -1));
+	    TclPrintfResult(interp, "yieldto called in deleted namespace");
 	    DECACHE_STACK_INFO();
 	    Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "YIELDTO_IN_DELETED",
 		    (char *)NULL);
@@ -2643,8 +2640,8 @@ TEBCresume(
 	TRACE(("%u ", (unsigned) numArgs));
 	if (!(iPtr->varFramePtr->isProcCallFrame & 1)) {
 	    TRACE_APPEND(("=> ERROR: tailcall in non-proc context\n"));
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "tailcall can only be called from a proc or lambda", -1));
+	    TclPrintfResult(interp,
+		    "tailcall can only be called from a proc or lambda");
 	    DECACHE_STACK_INFO();
 	    Tcl_SetErrorCode(interp, "TCL", "TAILCALL", "ILLEGAL", (char *)NULL);
 	    CACHE_STACK_INFO();
@@ -2692,8 +2689,8 @@ TEBCresume(
     case INST_TAILCALL_LIST:
 	if (!(iPtr->varFramePtr->isProcCallFrame & 1)) {
 	    TRACE((" => ERROR: tailcall in non-proc context\n"));
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "tailcall can only be called from a proc or lambda", -1));
+	    TclPrintfResult(interp,
+		    "tailcall can only be called from a proc or lambda");
 	    DECACHE_STACK_INFO();
 	    Tcl_SetErrorCode(interp, "TCL", "TAILCALL", "ILLEGAL", (char *)NULL);
 	    CACHE_STACK_INFO();
@@ -4795,9 +4792,8 @@ TEBCresume(
 	contextPtr = GetTclOOCallContext(iPtr);
 	if (!contextPtr) {
 	    TRACE(("=> ERROR: no TclOO call context\n"));
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "self may only be called from inside a method",
-		    -1));
+	    TclPrintfResult(interp,
+		    "self may only be called from inside a method");
 	    DECACHE_STACK_INFO();
 	    OO_ERROR(interp, CONTEXT_REQUIRED);
 	    CACHE_STACK_INFO();
@@ -6287,8 +6283,7 @@ TEBCresume(
 
 	    case INST_RSHIFT:
 		if (w2 < 0) {
-		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			    "negative shift argument", -1));
+		    TclPrintfResult(interp, "negative shift argument");
 #ifdef ERROR_CODE_FOR_EARLY_DETECTED_ARITH_ERROR
 		    DECACHE_STACK_INFO();
 		    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
@@ -6335,8 +6330,7 @@ TEBCresume(
 
 	    case INST_LSHIFT:
 		if (w2 < 0) {
-		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			    "negative shift argument", -1));
+		    TclPrintfResult(interp, "negative shift argument");
 #ifdef ERROR_CODE_FOR_EARLY_DETECTED_ARITH_ERROR
 		    DECACHE_STACK_INFO();
 		    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
@@ -6358,8 +6352,8 @@ TEBCresume(
 		     * good place to draw the line.
 		     */
 
-		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			    "integer value too large to represent", -1));
+		    TclPrintfResult(interp,
+			    "integer value too large to represent");
 #ifdef ERROR_CODE_FOR_EARLY_DETECTED_ARITH_ERROR
 		    DECACHE_STACK_INFO();
 		    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW",
@@ -7968,14 +7962,14 @@ TEBCresume(
 	 */
 
     divideByZero:
-	Tcl_SetObjResult(interp, Tcl_NewStringObj("divide by zero", -1));
+	TclPrintfResult(interp, "divide by zero");
 	DECACHE_STACK_INFO();
 	Tcl_SetErrorCode(interp, "ARITH", "DIVZERO", "divide by zero", (char *)NULL);
 	CACHE_STACK_INFO();
 	goto gotError;
 
     outOfMemory:
-	Tcl_SetObjResult(interp, Tcl_NewStringObj("cannot allocate", -1));
+	TclPrintfResult(interp, "cannot allocate");
 	DECACHE_STACK_INFO();
 	Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
 	CACHE_STACK_INFO();
@@ -7987,8 +7981,7 @@ TEBCresume(
 	 */
 
     exponOfZero:
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"exponentiation of zero by negative power", -1));
+	TclPrintfResult(interp, "exponentiation of zero by negative power");
 	DECACHE_STACK_INFO();
 	Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
 		"exponentiation of zero by negative power", (char *)NULL);
@@ -8544,8 +8537,7 @@ ExecuteExtendedBinaryMathOp(
 	    TCL_UNREACHABLE();
 	}
 	if (invalid) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "negative shift argument", -1));
+	    TclPrintfResult(interp, "negative shift argument");
 	    return GENERAL_ARITHMETIC_ERROR;
 	}
 
@@ -8575,8 +8567,7 @@ ExecuteExtendedBinaryMathOp(
 		 * place to draw the line.
 		 */
 
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"integer value too large to represent", -1));
+		TclPrintfResult(interp, "integer value too large to represent");
 		return GENERAL_ARITHMETIC_ERROR;
 	    }
 	    shift = (int)(*((const Tcl_WideInt *)ptr2));
@@ -8819,8 +8810,7 @@ ExecuteExtendedBinaryMathOp(
 	 */
 
 	if (type2 != TCL_NUMBER_INT) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "exponent too large", -1));
+	    TclPrintfResult(interp, "exponent too large");
 	    return GENERAL_ARITHMETIC_ERROR;
 	}
 
@@ -8899,8 +8889,7 @@ ExecuteExtendedBinaryMathOp(
 	if ((TclGetWideIntFromObj(NULL, value2Ptr, &w2) != TCL_OK)
 		|| !TclHasInternalRep(value2Ptr, &tclIntType)
 		|| (Tcl_WideUInt)w2 >= (1<<28)) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "exponent too large", -1));
+	    TclPrintfResult(interp, "exponent too large");
 	    return GENERAL_ARITHMETIC_ERROR;
 	}
 	Tcl_TakeBignumFromObj(NULL, valuePtr, &big1);

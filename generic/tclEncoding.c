@@ -4674,9 +4674,8 @@ Utf8procErrorToTclError(
     utf8proc_ssize_t errcode)	// Error code to convert.
 {
     const char *errorMsg = utf8proc_errmsg(errcode);
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-	    errorMsg ? errorMsg : "Unicode normalization failed.",
-	    TCL_AUTO_LENGTH));
+    TclPrintfResult(interp, "%s",
+	    errorMsg ? errorMsg : "Unicode normalization failed.");
     switch (errcode) {
     case UTF8PROC_ERROR_NOMEM:
 	// Memory allocation failure can use the standard Tcl code.
@@ -4905,8 +4904,7 @@ Tcl_UtfToNormalized(
 	}
     }
     if (from < fromEnd) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"Output buffer too small.", -1));
+	TclPrintfResult(interp, "Output buffer too small.");
 	result = TCL_CONVERT_NOSPACE;
     } else {
 	assert(to <= toEnd);

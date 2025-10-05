@@ -267,8 +267,7 @@ FunctionNotAvailableError(
     Tcl_Interp *interp)
 {
     if (interp) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"ICU function not available", TCL_AUTO_LENGTH));
+	TclPrintfResult(interp, "ICU function not available");
 	Tcl_SetErrorCode(interp, "TCL", "ICU", "UNSUPPORTED_OP", NULL);
     }
     return TCL_ERROR;
@@ -326,8 +325,7 @@ DetectEncoding(
 	return TCL_ERROR;
     }
     if (len > INT_MAX) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"Max length supported by ICU exceeded.", TCL_INDEX_NONE));
+	TclPrintfResult(interp, "Max length supported by ICU exceeded.");
 	return TCL_ERROR;
     }
     UErrorCodex status = U_ZERO_ERRORZ;
@@ -737,8 +735,7 @@ IcuConverttoDString(
     Tcl_Size utf16len = Tcl_DStringLength(dsInPtr) / sizeof(UCharx);
     Tcl_Size dstLen, dstCapacity;
     if (utf16len > INT_MAX) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"Max length supported by ICU exceeded.", TCL_INDEX_NONE));
+	TclPrintfResult(interp, "Max length supported by ICU exceeded.");
 	return TCL_ERROR;
     }
 
@@ -801,8 +798,7 @@ IcuBytesToUCharDString(
     }
 
     if (nbytes > INT_MAX) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"Max length supported by ICU exceeded.", TCL_INDEX_NONE));
+	TclPrintfResult(interp, "Max length supported by ICU exceeded.");
 	return TCL_ERROR;
     }
 
@@ -910,8 +906,7 @@ IcuNormalizeUCharDString(
     utf16 = (UCharx *) Tcl_DStringValue(dsInPtr);
     utf16len = Tcl_DStringLength(dsInPtr) / sizeof(UCharx);
     if (utf16len > INT_MAX) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"Max length supported by ICU exceeded.", TCL_INDEX_NONE));
+	TclPrintfResult(interp, "Max length supported by ICU exceeded.");
 	return TCL_ERROR;
     }
     Tcl_DStringInit(dsOutPtr);
@@ -994,8 +989,7 @@ static int IcuParseConvertOptions(
 	    break;
 	case OPT_FAILINDEX:
 	    /* TBD */
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "Option -failindex not implemented.", TCL_INDEX_NONE));
+	    TclPrintfResult(interp, "Option -failindex not implemented.");
 	    return TCL_ERROR;
 	default:
 	    TCL_UNREACHABLE();

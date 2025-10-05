@@ -243,8 +243,7 @@ Tcl_LinkArray(
     int code;
 
     if (size < 1) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"wrong array size given", -1));
+	TclPrintfResult(interp, "wrong array size given");
 	return TCL_ERROR;
     }
 
@@ -311,8 +310,7 @@ Tcl_LinkArray(
 	break;
     default:
 	LinkFree(linkPtr);
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"bad linked array variable type", -1));
+	TclPrintfResult(interp, "bad linked array variable type");
 	return TCL_ERROR;
     }
 

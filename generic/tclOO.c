@@ -2181,8 +2181,7 @@ FinalizeAlloc(
      */
 
     if (result != TCL_ERROR && Destructing(oPtr)) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"object deleted in constructor", TCL_AUTO_LENGTH));
+	TclPrintfResult(interp, "object deleted in constructor");
 	OO_ERROR(interp, STILLBORN);
 	result = TCL_ERROR;
     }
@@ -2252,8 +2251,7 @@ Tcl_CopyObjectInstance(
      */
 
     if (IsRootClass(oPtr)) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"may not clone the class of classes", TCL_AUTO_LENGTH));
+	TclPrintfResult(interp, "may not clone the class of classes");
 	OO_ERROR(interp, CLONING_CLASS);
 	return NULL;
     }
@@ -3061,8 +3059,7 @@ TclOOObjectCmdCore(
 	    }
 	}
 	if (contextPtr->index >= contextPtr->callPtr->numChain) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "no valid method implementation", TCL_AUTO_LENGTH));
+	    TclPrintfResult(interp, "no valid method implementation");
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
 		    TclGetString(methodNamePtr), (char *)NULL);
 	    TclOODeleteContext(contextPtr);
