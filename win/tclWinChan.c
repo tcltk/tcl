@@ -937,9 +937,8 @@ FileGetOptionProc(
 	Tcl_Size dictLength;
 
 	if (dictObj == NULL) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "couldn't read file channel status: %s",
-		    Tcl_PosixError(interp)));
+	    TclPrintfResult(interp, "couldn't read file channel status: %s",
+		    Tcl_PosixError(interp));
 	    return TCL_ERROR;
 	}
 
@@ -1013,9 +1012,9 @@ TclpOpenFileChannel(
 		return NULL;
 	    }
 
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    TclPrintfResult(interp,
 		    "couldn't open \"%s\": filename is invalid on this platform",
-		    TclGetString(pathPtr)));
+		    TclGetString(pathPtr));
 	}
 	return NULL;
     }
@@ -1073,9 +1072,8 @@ TclpOpenFileChannel(
 	if (handle == INVALID_HANDLE_VALUE) {
 	    Tcl_WinConvertError(GetLastError());
 	    if (interp) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"couldn't open serial \"%s\": %s",
-			TclGetString(pathPtr), Tcl_PosixError(interp)));
+		TclPrintfResult(interp, "couldn't open serial \"%s\": %s",
+			TclGetString(pathPtr), Tcl_PosixError(interp));
 	    }
 	    return NULL;
 	}
@@ -1130,9 +1128,8 @@ TclpOpenFileChannel(
 	}
 	Tcl_WinConvertError(err);
 	if (interp) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "couldn't open \"%s\": %s",
-		    TclGetString(pathPtr), Tcl_PosixError(interp)));
+	    TclPrintfResult(interp, "couldn't open \"%s\": %s",
+		    TclGetString(pathPtr), Tcl_PosixError(interp));
 	}
 	return NULL;
     }
@@ -1154,9 +1151,8 @@ TclpOpenFileChannel(
 	if (handle == INVALID_HANDLE_VALUE) {
 	    Tcl_WinConvertError(GetLastError());
 	    if (interp) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"couldn't reopen serial \"%s\": %s",
-			TclGetString(pathPtr), Tcl_PosixError(interp)));
+		TclPrintfResult(interp, "couldn't reopen serial \"%s\": %s",
+			TclGetString(pathPtr), Tcl_PosixError(interp));
 	    }
 	    return NULL;
 	}
@@ -1191,9 +1187,8 @@ TclpOpenFileChannel(
 	 */
 
 	channel = NULL;
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"couldn't open \"%s\": bad file type",
-		TclGetString(pathPtr)));
+	TclPrintfResult(interp, "couldn't open \"%s\": bad file type",
+		TclGetString(pathPtr));
 	Tcl_SetErrorCode(interp, "TCL", "VALUE", "CHANNEL", "BAD_TYPE",
 		(char *)NULL);
 	break;

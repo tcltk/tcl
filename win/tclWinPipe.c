@@ -1035,9 +1035,8 @@ TclpCreateProcess(
     }
     if (startInfo.hStdInput == INVALID_HANDLE_VALUE) {
 	Tcl_WinConvertError(GetLastError());
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"couldn't duplicate input handle: %s",
-		Tcl_PosixError(interp)));
+	TclPrintfResult(interp, "couldn't duplicate input handle: %s",
+		Tcl_PosixError(interp));
 	goto end;
     }
 
@@ -1064,9 +1063,8 @@ TclpCreateProcess(
     }
     if (startInfo.hStdOutput == INVALID_HANDLE_VALUE) {
 	Tcl_WinConvertError(GetLastError());
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"couldn't duplicate output handle: %s",
-		Tcl_PosixError(interp)));
+	TclPrintfResult(interp, "couldn't duplicate output handle: %s",
+		Tcl_PosixError(interp));
 	goto end;
     }
 
@@ -1084,9 +1082,8 @@ TclpCreateProcess(
     }
     if (startInfo.hStdError == INVALID_HANDLE_VALUE) {
 	Tcl_WinConvertError(GetLastError());
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"couldn't duplicate error handle: %s",
-		Tcl_PosixError(interp)));
+	TclPrintfResult(interp, "couldn't duplicate error handle: %s",
+		Tcl_PosixError(interp));
 	goto end;
     }
 
@@ -1146,8 +1143,8 @@ TclpCreateProcess(
 	    NULL, NULL, TRUE, (DWORD) createFlags, NULL, NULL, &startInfo,
 	    &procInfo) == 0) {
 	Tcl_WinConvertError(GetLastError());
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf("couldn't execute \"%s\": %s",
-		argv[0], Tcl_PosixError(interp)));
+	TclPrintfResult(interp, "couldn't execute \"%s\": %s",
+		argv[0], Tcl_PosixError(interp));
 	goto end;
     }
 
@@ -1408,8 +1405,8 @@ ApplicationType(
 
     if (applType == APPL_NONE) {
 	Tcl_WinConvertError(GetLastError());
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf("couldn't execute \"%s\": %s",
-		originalName, Tcl_PosixError(interp)));
+	TclPrintfResult(interp, "couldn't execute \"%s\": %s",
+		originalName, Tcl_PosixError(interp));
 	return APPL_NONE;
     }
 
@@ -1888,8 +1885,8 @@ Tcl_CreatePipe(
 
     if (!CreatePipe(&readHandle, &writeHandle, &sec, 0)) {
 	Tcl_WinConvertError(GetLastError());
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"pipe creation failed: %s", Tcl_PosixError(interp)));
+	TclPrintfResult(interp, "pipe creation failed: %s",
+		Tcl_PosixError(interp));
 	return TCL_ERROR;
     }
 

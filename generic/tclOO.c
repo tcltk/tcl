@@ -2112,9 +2112,9 @@ TclNewObjectInstanceCommon(
 
 	hPtr = Tcl_FindHashEntry(&nsPtr->cmdTable, simpleName);
 	if (hPtr) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    TclPrintfResult(interp,
 		    "can't create object \"%s\": command already exists with"
-		    " that name", nameStr));
+		    " that name", nameStr);
 	    OO_ERROR(interp, OVERWRITE_OBJECT);
 	    return NULL;
 	}
@@ -3017,9 +3017,9 @@ TclOOObjectCmdCore(
 		callerClsPtr, methodNamePtr);
 	TclDecrRefCount(mappedMethodName);
 	if (contextPtr == NULL) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    TclPrintfResult(interp,
 		    "impossible to invoke method \"%s\": no defined method or"
-		    " unknown method", TclGetString(methodNamePtr)));
+		    " unknown method", TclGetString(methodNamePtr));
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD_MAPPED",
 		    TclGetString(methodNamePtr), (char *)NULL);
 	    return TCL_ERROR;
@@ -3034,9 +3034,9 @@ TclOOObjectCmdCore(
 		flags | (oPtr->flags & FILTER_HANDLING), callerObjPtr,
 		callerClsPtr, NULL);
 	if (contextPtr == NULL) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    TclPrintfResult(interp,
 		    "impossible to invoke method \"%s\": no defined method or"
-		    " unknown method", TclGetString(methodNamePtr)));
+		    " unknown method", TclGetString(methodNamePtr));
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
 		    TclGetString(methodNamePtr), (char *)NULL);
 	    return TCL_ERROR;
@@ -3131,8 +3131,8 @@ Tcl_ObjectContextInvokeNext(
 	if (Tcl_InterpDeleted(interp)) {
 	    return TCL_OK;
 	}
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"no next %s implementation", TclOOContextTypeName(contextPtr)));
+	TclPrintfResult(interp, "no next %s implementation",
+		TclOOContextTypeName(contextPtr));
 	OO_ERROR(interp, NOTHING_NEXT);
 	return TCL_ERROR;
     }
@@ -3189,8 +3189,8 @@ TclNRObjectContextInvokeNext(
 	if (Tcl_InterpDeleted(interp)) {
 	    return TCL_OK;
 	}
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"no next %s implementation", TclOOContextTypeName(contextPtr)));
+	TclPrintfResult(interp, "no next %s implementation",
+		TclOOContextTypeName(contextPtr));
 	OO_ERROR(interp, NOTHING_NEXT);
 	return TCL_ERROR;
     }
@@ -3267,8 +3267,8 @@ Tcl_GetObjectFromObj(
     return (Tcl_Object) cmdPtr->objClientData;
 
   notAnObject:
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "%s does not refer to an object", TclGetString(objPtr)));
+    TclPrintfResult(interp, "%s does not refer to an object",
+	    TclGetString(objPtr));
     Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "OBJECT", TclGetString(objPtr),
 	    (char *)NULL);
     return NULL;

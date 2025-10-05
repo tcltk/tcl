@@ -96,9 +96,8 @@ TclpDlopen(
     }
 
     if (handle == NULL) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"couldn't load file \"%s\": %s",
-		fileName, Tcl_PosixError(interp)));
+	TclPrintfResult(interp, "couldn't load file \"%s\": %s",
+		fileName, Tcl_PosixError(interp));
 	return TCL_ERROR;
     }
     newHandle = (Tcl_LoadHandle)Tcl_Alloc(sizeof(*newHandle));
@@ -152,9 +151,8 @@ FindSymbol(
 	Tcl_DStringFree(&newName);
     }
     if (proc == NULL && interp != NULL) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"cannot find symbol \"%s\": %s",
-		symbol, Tcl_PosixError(interp)));
+	TclPrintfResult(interp, "cannot find symbol \"%s\": %s",
+		symbol, Tcl_PosixError(interp));
     }
     return proc;
 }

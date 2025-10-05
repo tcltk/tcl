@@ -525,9 +525,9 @@ DeleteValue(
     result = RegDeleteValueW(key, (const WCHAR *)Tcl_DStringValue(&ds));
     Tcl_DStringFree(&ds);
     if (result != ERROR_SUCCESS) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	TclPrintfResult(interp,
 		"unable to delete value \"%s\" from key \"%s\": ",
-		Tcl_GetString(valueNameObj), Tcl_GetString(keyNameObj)));
+		Tcl_GetString(valueNameObj), Tcl_GetString(keyNameObj));
 	AppendSystemError(interp, result);
 	result = TCL_ERROR;
     } else {
@@ -602,9 +602,8 @@ GetKeyNames(
 	    if (result == ERROR_NO_MORE_ITEMS) {
 		result = TCL_OK;
 	    } else {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"unable to enumerate subkeys of \"%s\": ",
-			Tcl_GetString(keyNameObj)));
+		TclPrintfResult(interp, "unable to enumerate subkeys of \"%s\": ",
+			Tcl_GetString(keyNameObj));
 		AppendSystemError(interp, result);
 		result = TCL_ERROR;
 	    }
@@ -686,9 +685,9 @@ GetType(
     RegCloseKey(key);
 
     if (result != ERROR_SUCCESS) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	TclPrintfResult(interp,
 		"unable to get type of value \"%s\" from key \"%s\": ",
-		Tcl_GetString(valueNameObj), Tcl_GetString(keyNameObj)));
+		Tcl_GetString(valueNameObj), Tcl_GetString(keyNameObj));
 	AppendSystemError(interp, result);
 	return TCL_ERROR;
     }
@@ -781,9 +780,8 @@ GetValue(
     Tcl_DStringFree(&buf);
     RegCloseKey(key);
     if (result != ERROR_SUCCESS) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"unable to get value \"%s\" from key \"%s\": ",
-		Tcl_GetString(valueNameObj), Tcl_GetString(keyNameObj)));
+	TclPrintfResult(interp, "unable to get value \"%s\" from key \"%s\": ",
+		Tcl_GetString(valueNameObj), Tcl_GetString(keyNameObj));
 	AppendSystemError(interp, result);
 	Tcl_DStringFree(&data);
 	return TCL_ERROR;
@@ -1110,8 +1108,8 @@ ParseKeyName(
 	rootName = name;
     }
     if (!rootName) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"bad key \"%s\": must start with a valid root", name));
+	TclPrintfResult(interp, "bad key \"%s\": must start with a valid root",
+		name);
 	Tcl_SetErrorCode(interp, "WIN_REG", "NO_ROOT_KEY", (char *)NULL);
 	return TCL_ERROR;
     }

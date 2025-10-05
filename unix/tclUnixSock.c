@@ -810,9 +810,8 @@ TcpSetOptionProc(
 #endif
 	if (ret < 0) {
 	    if (interp) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"couldn't set socket option: %s",
-			Tcl_PosixError(interp)));
+		TclPrintfResult(interp, "couldn't set socket option: %s",
+			Tcl_PosixError(interp));
 	    }
 	    return TCL_ERROR;
 	}
@@ -834,9 +833,8 @@ TcpSetOptionProc(
 #endif
 	if (ret < 0) {
 	    if (interp) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"couldn't set socket option: %s",
-			Tcl_PosixError(interp)));
+		TclPrintfResult(interp, "couldn't set socket option: %s",
+			Tcl_PosixError(interp));
 	    }
 	    return TCL_ERROR;
 	}
@@ -959,9 +957,8 @@ TcpGetOptionProc(
 
 	    if (len) {
 		if (interp) {
-		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			    "can't get peername: %s",
-			    Tcl_PosixError(interp)));
+		    TclPrintfResult(interp, "can't get peername: %s",
+			    Tcl_PosixError(interp));
 		}
 		return TCL_ERROR;
 	    }
@@ -1002,8 +999,8 @@ TcpGetOptionProc(
 	    Tcl_DStringEndSublist(dsPtr);
 	} else {
 	    if (interp) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"can't get sockname: %s", Tcl_PosixError(interp)));
+		TclPrintfResult(interp, "can't get sockname: %s",
+			Tcl_PosixError(interp));
 	    }
 	    return TCL_ERROR;
 	}
@@ -1446,8 +1443,8 @@ TcpConnect(
 
 	if (interp != NULL) {
 	    errno = error;
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "couldn't open socket: %s", Tcl_PosixError(interp)));
+	    TclPrintfResult(interp, "couldn't open socket: %s",
+		    Tcl_PosixError(interp));
 	}
 	return TCL_ERROR;
     }
@@ -1498,8 +1495,7 @@ Tcl_OpenTcpClient(
 	    freeaddrinfo(addrlist);
 	}
 	if (interp != NULL) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "couldn't open socket: %s", errorMsg));
+	    TclPrintfResult(interp, "couldn't open socket: %s", errorMsg);
 	}
 	return NULL;
     }

@@ -1217,8 +1217,8 @@ TestcmdinfoCmd(
 	} else if (info.isNativeObjectProc == 2) {
 	    Tcl_AppendResult(interp, " nativeObjectProc2", (char *)NULL);
 	} else {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("Invalid isNativeObjectProc value %d",
-		    info.isNativeObjectProc));
+	    TclPrintfResult(interp, "Invalid isNativeObjectProc value %d",
+		    info.isNativeObjectProc);
 	    return TCL_ERROR;
 	}
 	break;
@@ -2243,10 +2243,9 @@ static int UtfExtWrapper(
 	    &dstWrote,
 	    dstCharsVar ? &dstChars : NULL);
     if (memcmp(bufPtr + bufLen - 4, "\xAB\xCD\xEF\xAB", 4)) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"%s wrote past output buffer",
+	TclPrintfResult(interp, "%s wrote past output buffer",
 		transformer == Tcl_ExternalToUtf ?
-			"Tcl_ExternalToUtf" : "Tcl_UtfToExternal"));
+			"Tcl_ExternalToUtf" : "Tcl_UtfToExternal");
 	result = TCL_ERROR;
     } else if (result != TCL_ERROR) {
 	Tcl_Obj *resultObjs[3];
@@ -7854,9 +7853,9 @@ TestUtfNextCmd(
 	bytes = Tcl_GetStringFromObj(objv[1], &numBytes);
 
     if ((size_t)numBytes > sizeof(buffer) - 4) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	TclPrintfResult(interp,
 		"\"testutfnext\" can only handle %" TCL_Z_MODIFIER "u bytes",
-		sizeof(buffer) - 4));
+		sizeof(buffer) - 4);
 	return TCL_ERROR;
     }
 
@@ -7877,9 +7876,9 @@ TestUtfNextCmd(
 	/* Run Tcl_UtfNext with many more possible bytes at src[end], all should give the same result */
 	result = Tcl_UtfNext(buffer + 1);
 	if (first != result) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    TclPrintfResult(interp,
 		    "Tcl_UtfNext is not supposed to read src[end]\n"
-		    "Different result when src[end] is %#x", UCHAR(p[-1])));
+		    "Different result when src[end] is %#x", UCHAR(p[-1]));
 	    return TCL_ERROR;
 	}
     }
@@ -9163,10 +9162,10 @@ TestUtfToNormalizedCmd(
 	    return TCL_ERROR;
 	}
 	if (len > slen) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    TclPrintfResult(interp,
 		    "Passed length %" TCL_SIZE_MODIFIER
 		    "d is greater than string length %" TCL_SIZE_MODIFIER
-		    "d.", len, slen));
+		    "d.", len, slen);
 	    return TCL_ERROR;
 	}
     }
@@ -9240,10 +9239,10 @@ TestUtfToNormalizedDStringCmd(
 	    return TCL_ERROR;
 	}
 	if (len > slen) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    TclPrintfResult(interp,
 		    "Passed length %" TCL_SIZE_MODIFIER
 		    "d is greater than string length %" TCL_SIZE_MODIFIER
-		    "d.", len, slen));
+		    "d.", len, slen);
 	    return TCL_ERROR;
 	}
     }
