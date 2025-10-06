@@ -642,7 +642,7 @@ typedef struct Var {
 				 * to in a procedure, or a variable created by
 				 * "upvar", this field points to the
 				 * referenced variable's Var struct. */
-    } value;
+    };
 } Var;
 
 typedef struct VarInHash {
@@ -807,7 +807,7 @@ enum TclVarFlags {
 
 #define TclSetVarUndefined(varPtr) \
     (varPtr)->flags &= ~(VAR_ARRAY|VAR_LINK|VAR_CONSTANT);	\
-    (varPtr)->value.objPtr = NULL
+    (varPtr)->objPtr = NULL
 
 #define TclClearVarUndefined(varPtr)
 
@@ -870,7 +870,7 @@ enum TclVarFlags {
     ((varPtr)->flags & VAR_CONSTANT)
 
 #define TclIsVarUndefined(varPtr) \
-    ((varPtr)->value.objPtr == NULL)
+    ((varPtr)->objPtr == NULL)
 
 #define TclIsVarArrayElement(varPtr) \
     ((varPtr)->flags & VAR_ARRAY_ELEMENT)
@@ -925,7 +925,7 @@ enum TclVarFlags {
 
 #define TclIsVarDirectReadable(varPtr) \
     (   (!TclIsVarTricky(varPtr,VAR_TRACED_READ))			\
-	&& (varPtr)->value.objPtr)
+	&& (varPtr)->objPtr)
 
 #define TclIsVarDirectWritable(varPtr) \
     (!TclIsVarTricky(varPtr,VAR_TRACED_WRITE|VAR_DEAD_HASH|VAR_CONSTANT))
@@ -935,7 +935,7 @@ enum TclVarFlags {
 
 #define TclIsVarDirectModifyable(varPtr) \
     (   (!TclIsVarTricky(varPtr,VAR_TRACED_READ|VAR_TRACED_WRITE|VAR_CONSTANT))	\
-	&&  (varPtr)->value.objPtr)
+	&&  (varPtr)->objPtr)
 
 #define TclIsVarDirectReadable2(varPtr, arrayPtr) \
     (TclIsVarDirectReadable(varPtr) &&					\
@@ -1390,12 +1390,12 @@ typedef struct CmdFrame {
 	struct {
 	    Tcl_Obj *path;	/* Path of the sourced file the command is
 				 * in. */
-	} eval;
+	};
 	struct {
 	    const void *codePtr;/* Byte code currently executed... */
 	    const char *pc;	/* ... and instruction pointer. */
-	} tebc;
-    } data;
+	};
+    };
     Tcl_Obj *cmdObj;
     const char *cmd;		/* The executed command, if possible... */
     Tcl_Size len;		/* ... and its length. */

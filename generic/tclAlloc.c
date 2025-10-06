@@ -35,6 +35,9 @@
 typedef size_t caddr_t;
 #endif
 
+typedef unsigned char uchar;
+typedef unsigned short ushort;
+
 /*
  * The overhead on a block is at least 8 bytes. When free, this space contains
  * a pointer to the next free block, and the bottom two bits must be zero.
@@ -46,45 +49,40 @@ typedef size_t caddr_t;
  * can not be a valid ov.next bit pattern.
  */
 
-union overhead {
+typedef union overhead {
     union overhead *next;	/* when free */
-    unsigned char padding[TCL_ALLOCALIGN];
+    uchar padding[TCL_ALLOCALIGN];
 				/* align struct to TCL_ALLOCALIGN bytes */
     struct {
-	unsigned char magic0;	/* magic number */
-	unsigned char index;	/* bucket # */
-	unsigned char unused;	/* unused */
-	unsigned char magic1;	/* other magic number */
+	uchar overMagic0;	/* magic number */
+	uchar bucketIndex;	/* bucket # */
+	uchar unused1;		/* unused */
+	uchar overMagic1;	/* other magic number */
 #ifndef NDEBUG
-	unsigned short rmagic;	/* range magic number */
-	size_t size;		/* actual block size */
-	unsigned short unused2;	/* padding to 8-byte align */
+	ushort rangeCheckMagic;	/* range magic number */
+	size_t realBlockSize;	/* actual block size */
+	ushort unused2;		/* padding to 8-byte align */
 #endif
-    } ovu;
-#define overMagic0	ovu.magic0
-#define overMagic1	ovu.magic1
-#define bucketIndex	ovu.index
-#define rangeCheckMagic	ovu.rmagic
-#define realBlockSize	ovu.size
-};
+    };
+} overhead;
 
 #define MAGIC		0xEF	/* magic # on accounting info */
 #define RMAGIC		0x5555	/* magic # on range info */
 
 #ifndef NDEBUG
-#define	RSLOP		sizeof(unsigned short)
+#define	RSLOP		sizeof(ushort)
 #else
 #define	RSLOP		0
 #endif
 
-#define OVERHEAD (sizeof(union overhead) + RSLOP)
+#define OVERHEAD (sizeof(overhead) + RSLOP)
 
 /*
  * Macro to make it easier to refer to the end-of-block guard magic.
  */
 
 #define BLOCK_END(overPtr) \
-    (*(unsigned short *)((caddr_t)((overPtr) + 1) + (overPtr)->realBlockSize))
+    (*(ushort *)((caddr_t)((overPtr) + 1) + (overPtr)->realBlockSize))
 
 /*
  * nextf[i] is the pointer to the next free block of size 2^(i+3). The
@@ -93,10 +91,10 @@ union overhead {
  */
 
 #define MINBLOCK \
-    ((sizeof(union overhead) + (TCL_ALLOCALIGN-1)) & ~(TCL_ALLOCALIGN-1))
+    ((sizeof(overhead) + (TCL_ALLOCALIGN-1)) & ~(TCL_ALLOCALIGN-1))
 #define NBUCKETS	(13 - (MINBLOCK >> 4))
 #define MAXMALLOC	((size_t)1 << (NBUCKETS+2))
-static union overhead *nextf[NBUCKETS];
+static overhead *nextf[NBUCKETS];
 
 /*
  * The following structure is used to keep track of all system memory
@@ -104,14 +102,14 @@ static union overhead *nextf[NBUCKETS];
  * to the system.
  */
 
-struct block {
+typedef struct block {
     struct block *nextPtr;	/* Linked list. */
     struct block *prevPtr;	/* Linked list for big blocks, ensures 8-byte
 				 * alignment for suballocated blocks. */
-};
+} block;
 
-static struct block *blockList;	/* Tracks the suballocated blocks. */
-static struct block bigBlocks={	/* Big blocks aren't suballocated. */
+static block *blockList;	/* Tracks the suballocated blocks. */
+static block bigBlocks = {	/* Big blocks aren't suballocated. */
     &bigBlocks, &bigBlocks
 };
 
@@ -205,7 +203,7 @@ void
 TclFinalizeAllocSubsystem(void)
 {
     unsigned int i;
-    struct block *blockPtr, *nextPtr;
+    block *blockPtr, *nextPtr;
 
     Tcl_MutexLock(allocMutexPtr);
     for (blockPtr = blockList; blockPtr != NULL; blockPtr = nextPtr) {
@@ -254,10 +252,10 @@ void *
 TclpAlloc(
     size_t numBytes)		/* Number of bytes to allocate. */
 {
-    union overhead *overPtr;
+    overhead *overPtr;
     size_t bucket;
     size_t amount;
-    struct block *bigBlockPtr = NULL;
+    block *bigBlockPtr = NULL;
 
     if (!allocInit) {
 	/*
@@ -274,9 +272,9 @@ TclpAlloc(
      */
 
     if (numBytes >= MAXMALLOC - OVERHEAD) {
-	if (numBytes <= UINT_MAX - OVERHEAD -sizeof(struct block)) {
+	if (numBytes <= UINT_MAX - OVERHEAD - sizeof(block)) {
 	    bigBlockPtr = TclpSysAlloc(
-		    sizeof(struct block) + OVERHEAD + numBytes);
+		    sizeof(block) + OVERHEAD + numBytes);
 	}
 	if (bigBlockPtr == NULL) {
 	    Tcl_MutexUnlock(allocMutexPtr);
@@ -287,7 +285,7 @@ TclpAlloc(
 	bigBlockPtr->prevPtr = &bigBlocks;
 	bigBlockPtr->nextPtr->prevPtr = bigBlockPtr;
 
-	overPtr = (union overhead *) (bigBlockPtr + 1);
+	overPtr = (overhead *) (bigBlockPtr + 1);
 	overPtr->overMagic0 = overPtr->overMagic1 = MAGIC;
 	overPtr->bucketIndex = 0xFF;
 #ifdef MSTATS
@@ -388,11 +386,11 @@ static void
 MoreCore(
     size_t bucket)		/* What bucket to allocate to. */
 {
-    union overhead *overPtr;
+    overhead *overPtr;
     size_t size;		/* size of desired block */
     size_t amount;		/* amount to allocate */
     size_t numBlocks;		/* how many blocks we get */
-    struct block *blockPtr;
+    block *blockPtr;
 
     /*
      * sbrk_size <= 0 only for big, FLUFFY, requests (about 2^30 bytes on a
@@ -406,7 +404,7 @@ MoreCore(
     numBlocks = amount / size;
     ASSERT(numBlocks*size == amount);
 
-    blockPtr = TclpSysAlloc(sizeof(struct block) + amount);
+    blockPtr = TclpSysAlloc(sizeof(block) + amount);
     /* no more room! */
     if (blockPtr == NULL) {
 	return;
@@ -414,7 +412,7 @@ MoreCore(
     blockPtr->nextPtr = blockList;
     blockList = blockPtr;
 
-    overPtr = (union overhead *) (blockPtr + 1);
+    overPtr = (overhead *) (blockPtr + 1);
 
     /*
      * Add new memory allocated to that on free list for this hash bucket.
@@ -422,8 +420,8 @@ MoreCore(
 
     nextf[bucket] = overPtr;
     while (--numBlocks > 0) {
-	overPtr->next = (union overhead *)((caddr_t)overPtr + size);
-	overPtr = (union overhead *)((caddr_t)overPtr + size);
+	overPtr->next = (overhead *)((caddr_t)overPtr + size);
+	overPtr = (overhead *)((caddr_t)overPtr + size);
     }
     overPtr->next = NULL;
 }
@@ -449,15 +447,14 @@ TclpFree(
     void *oldPtr)		/* Pointer to memory to free. */
 {
     size_t size;
-    union overhead *overPtr;
-    struct block *bigBlockPtr;
+    overhead *overPtr;
 
     if (oldPtr == NULL) {
 	return;
     }
 
     Tcl_MutexLock(allocMutexPtr);
-    overPtr = (union overhead *)((caddr_t)oldPtr - sizeof(union overhead));
+    overPtr = (overhead *)((caddr_t)oldPtr - sizeof(overhead));
 
     ASSERT(overPtr->overMagic0 == MAGIC);	/* make sure it was in use */
     ASSERT(overPtr->overMagic1 == MAGIC);
@@ -470,11 +467,12 @@ TclpFree(
     RANGE_ASSERT(BLOCK_END(overPtr) == RMAGIC);
     size = overPtr->bucketIndex;
     if (size == 0xFF) {
+	block *bigBlockPtr;
 #ifdef MSTATS
 	numMallocs[NBUCKETS]--;
 #endif
 
-	bigBlockPtr = (struct block *) overPtr - 1;
+	bigBlockPtr = (block *) overPtr - 1;
 	bigBlockPtr->prevPtr->nextPtr = bigBlockPtr->nextPtr;
 	bigBlockPtr->nextPtr->prevPtr = bigBlockPtr->prevPtr;
 	TclpSysFree(bigBlockPtr);
@@ -515,8 +513,8 @@ TclpRealloc(
     size_t numBytes)		/* New size of memory. */
 {
     int i;
-    union overhead *overPtr;
-    struct block *bigBlockPtr;
+    overhead *overPtr;
+    block *bigBlockPtr;
     int expensive;
     size_t maxSize;
 
@@ -526,7 +524,7 @@ TclpRealloc(
 
     Tcl_MutexLock(allocMutexPtr);
 
-    overPtr = (union overhead *)((caddr_t)oldPtr - sizeof(union overhead));
+    overPtr = (overhead *)((caddr_t)oldPtr - sizeof(overhead));
 
     ASSERT(overPtr->overMagic0 == MAGIC);	/* make sure it was in use */
     ASSERT(overPtr->overMagic1 == MAGIC);
@@ -544,12 +542,12 @@ TclpRealloc(
      */
 
     if (i == 0xFF) {
-	struct block *prevPtr, *nextPtr;
-	bigBlockPtr = (struct block *) overPtr - 1;
+	block *prevPtr, *nextPtr;
+	bigBlockPtr = (block *) overPtr - 1;
 	prevPtr = bigBlockPtr->prevPtr;
 	nextPtr = bigBlockPtr->nextPtr;
-	bigBlockPtr = (struct block *) TclpSysRealloc(bigBlockPtr,
-		sizeof(struct block) + OVERHEAD + numBytes);
+	bigBlockPtr = (block *) TclpSysRealloc(bigBlockPtr,
+		sizeof(block) + OVERHEAD + numBytes);
 	if (bigBlockPtr == NULL) {
 	    Tcl_MutexUnlock(allocMutexPtr);
 	    return NULL;
@@ -565,7 +563,7 @@ TclpRealloc(
 	    nextPtr->prevPtr = bigBlockPtr;
 	}
 
-	overPtr = (union overhead *) (bigBlockPtr + 1);
+	overPtr = (overhead *) (bigBlockPtr + 1);
 
 #ifdef MSTATS
 	numMallocs[NBUCKETS]++;
@@ -646,7 +644,7 @@ mstats(
     char *s)			/* Where to write info. */
 {
     unsigned int i, j;
-    union overhead *overPtr;
+    overhead *overPtr;
     size_t totalFree = 0, totalUsed = 0;
 
     Tcl_MutexLock(allocMutexPtr);

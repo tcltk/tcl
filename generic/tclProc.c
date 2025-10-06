@@ -244,17 +244,17 @@ Tcl_ProcObjCmd(
 	     * Retrieve source information from the bytecode, if possible. If
 	     * the information is retrieved successfully, context.type will be
 	     * TCL_LOCATION_SOURCE and the reference held by
-	     * context.data.eval.path will be counted.
+	     * context.path will be counted.
 	     */
 
 	    TclGetSrcInfoForPc(contextPtr);
 	} else if (contextPtr->type == TCL_LOCATION_SOURCE) {
 	    /*
 	     * The copy into 'context' up above has created another reference
-	     * to 'context.data.eval.path'; account for it.
+	     * to 'context.path'; account for it.
 	     */
 
-	    Tcl_IncrRefCount(contextPtr->data.eval.path);
+	    Tcl_IncrRefCount(contextPtr->path);
 	}
 
 	if (contextPtr->type == TCL_LOCATION_SOURCE) {
@@ -277,8 +277,8 @@ Tcl_ProcObjCmd(
 		cfPtr->framePtr = NULL;
 		cfPtr->nextPtr = NULL;
 
-		cfPtr->data.eval.path = contextPtr->data.eval.path;
-		Tcl_IncrRefCount(cfPtr->data.eval.path);
+		cfPtr->path = contextPtr->path;
+		Tcl_IncrRefCount(cfPtr->path);
 
 		cfPtr->cmd = NULL;
 		cfPtr->len = 0;
@@ -296,8 +296,8 @@ Tcl_ProcObjCmd(
 		    CmdFrame *cfOldPtr = (CmdFrame *)Tcl_GetHashValue(hePtr);
 
 		    if (cfOldPtr->type == TCL_LOCATION_SOURCE) {
-			Tcl_DecrRefCount(cfOldPtr->data.eval.path);
-			cfOldPtr->data.eval.path = NULL;
+			Tcl_DecrRefCount(cfOldPtr->path);
+			cfOldPtr->path = NULL;
 		    }
 		    Tcl_Free(cfOldPtr->line);
 		    cfOldPtr->line = NULL;
@@ -311,8 +311,8 @@ Tcl_ProcObjCmd(
 	     * that it's holding to the path name.
 	     */
 
-	    Tcl_DecrRefCount(contextPtr->data.eval.path);
-	    contextPtr->data.eval.path = NULL;
+	    Tcl_DecrRefCount(contextPtr->path);
+	    contextPtr->path = NULL;
 	}
 	TclStackFree(interp, contextPtr);
     }
@@ -1117,7 +1117,7 @@ ProcWrongNumArgs(
 	    Tcl_Obj *argObj;
 	    Tcl_Obj *namePtr = localName(framePtr, i-1);
 
-	    if (defPtr->value.objPtr != NULL) {
+	    if (defPtr->objPtr != NULL) {
 		TclNewObj(argObj);
 		Tcl_AppendStringsToObj(argObj, "?", TclGetString(namePtr), "?",
 			(char *)NULL);
@@ -1246,7 +1246,7 @@ InitResolvedLocals(
   doInitResolvedLocals:
     for (; localPtr != NULL; varPtr++, localPtr = localPtr->nextPtr) {
 	varPtr->flags = 0;
-	varPtr->value.objPtr = NULL;
+	varPtr->objPtr = NULL;
 
 	/*
 	 * Now invoke the resolvers to determine the exact variables that
@@ -1263,7 +1263,7 @@ InitResolvedLocals(
 		    VarHashRefCount(resolvedVarPtr)++;
 		}
 		varPtr->flags = VAR_LINK;
-		varPtr->value.linkPtr = resolvedVarPtr;
+		varPtr->linkPtr = resolvedVarPtr;
 	    }
 	}
     }
@@ -1330,7 +1330,7 @@ InitLocalCache(
 
 	if (i < numArgs) {
 	    varPtr->flags = (localPtr->flags & VAR_IS_ARGS);
-	    varPtr->value.objPtr = localPtr->defValuePtr;
+	    varPtr->objPtr = localPtr->defValuePtr;
 	    varPtr++;
 	    i++;
 	}
@@ -1432,7 +1432,7 @@ InitArgsAndLocals(
 	Tcl_Obj *objPtr = argObjs[i];
 
 	varPtr->flags = 0;
-	varPtr->value.objPtr = objPtr;
+	varPtr->objPtr = objPtr;
 	Tcl_IncrRefCount(objPtr);	/* Local var is a reference. */
     }
     for (; i < numArgs-1; i++, varPtr++, defPtr ? defPtr++ : defPtr) {
@@ -1441,13 +1441,13 @@ InitArgsAndLocals(
 	 * last formal is special.
 	 */
 
-	Tcl_Obj *objPtr = defPtr ? defPtr->value.objPtr : NULL;
+	Tcl_Obj *objPtr = defPtr ? defPtr->objPtr : NULL;
 
 	if (!objPtr) {
 	    goto incorrectArgs;
 	}
 	varPtr->flags = 0;
-	varPtr->value.objPtr = objPtr;
+	varPtr->objPtr = objPtr;
 	Tcl_IncrRefCount(objPtr);	/* Local var reference. */
     }
 
@@ -1460,17 +1460,17 @@ InitArgsAndLocals(
     if (defPtr && defPtr->flags & VAR_IS_ARGS) {
 	Tcl_Obj *listPtr = Tcl_NewListObj((argCt>i)? argCt-i : 0, argObjs+i);
 
-	varPtr->value.objPtr = listPtr;
+	varPtr->objPtr = listPtr;
 	Tcl_IncrRefCount(listPtr);	/* Local var is a reference. */
     } else if (argCt == numArgs) {
 	Tcl_Obj *objPtr = argObjs[i];
 
-	varPtr->value.objPtr = objPtr;
+	varPtr->objPtr = objPtr;
 	Tcl_IncrRefCount(objPtr);	/* Local var is a reference. */
-    } else if ((argCt < numArgs) && defPtr && defPtr->value.objPtr) {
-	Tcl_Obj *objPtr = defPtr->value.objPtr;
+    } else if ((argCt < numArgs) && defPtr && defPtr->objPtr) {
+	Tcl_Obj *objPtr = defPtr->objPtr;
 
-	varPtr->value.objPtr = objPtr;
+	varPtr->objPtr = objPtr;
 	Tcl_IncrRefCount(objPtr);	/* Local var is a reference. */
     } else {
 	goto incorrectArgs;
@@ -2221,8 +2221,8 @@ TclProcCleanupProc(
 
     if (cfPtr) {
 	if (cfPtr->type == TCL_LOCATION_SOURCE) {
-	    Tcl_DecrRefCount(cfPtr->data.eval.path);
-	    cfPtr->data.eval.path = NULL;
+	    Tcl_DecrRefCount(cfPtr->path);
+	    cfPtr->path = NULL;
 	}
 	Tcl_Free(cfPtr->line);
 	cfPtr->line = NULL;
@@ -2547,7 +2547,7 @@ SetLambdaFromAny(
 	    /*
 	     * Retrieve the source context from the bytecode. This call
 	     * accounts for the reference to the source file, if any, held in
-	     * 'context.data.eval.path'.
+	     * 'context.path'.
 	     */
 
 	    TclGetSrcInfoForPc(contextPtr);
@@ -2557,7 +2557,7 @@ SetLambdaFromAny(
 	     * created 'context' above. Account for the reference.
 	     */
 
-	    Tcl_IncrRefCount(contextPtr->data.eval.path);
+	    Tcl_IncrRefCount(contextPtr->path);
 
 	}
 
@@ -2587,8 +2587,8 @@ SetLambdaFromAny(
 		cfPtr->framePtr = NULL;
 		cfPtr->nextPtr = NULL;
 
-		cfPtr->data.eval.path = contextPtr->data.eval.path;
-		Tcl_IncrRefCount(cfPtr->data.eval.path);
+		cfPtr->path = contextPtr->path;
+		Tcl_IncrRefCount(cfPtr->path);
 
 		cfPtr->cmd = NULL;
 		cfPtr->len = 0;
@@ -2599,7 +2599,7 @@ SetLambdaFromAny(
 	     * it's holding to the source file path
 	     */
 
-	    Tcl_DecrRefCount(contextPtr->data.eval.path);
+	    Tcl_DecrRefCount(contextPtr->path);
 	}
 	TclStackFree(interp, contextPtr);
     }
@@ -2951,7 +2951,7 @@ DuplicateProc(
 	memcpy(newCfPtr, origCfPtr, sizeof(CmdFrame));
 	newCfPtr->line = (int *)Tcl_Alloc(sizeof(int));
 	newCfPtr->line[0] = origCfPtr->line[0];
-	Tcl_IncrRefCount(newCfPtr->data.eval.path);
+	Tcl_IncrRefCount(newCfPtr->path);
 
 	Tcl_HashEntry *hePtr = Tcl_CreateHashEntry(iPtr->linePBodyPtr,
 		newProc, NULL);

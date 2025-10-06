@@ -1870,8 +1870,8 @@ TclInitCompileEnv(
 	*ctxPtr = *invoker;
 	if (invoker->type == TCL_LOCATION_BC) {
 	    /*
-	     * Note: Type BC => ctx.data.eval.path    is not used.
-	     *			ctx.data.tebc.codePtr is used instead.
+	     * Note: Type BC => ctx.path    is not used.
+	     *			ctx.codePtr is used instead.
 	     */
 
 	    TclGetSrcInfoForPc(ctxPtr);
@@ -1892,21 +1892,21 @@ TclInitCompileEnv(
 		 * The reference made by 'TclGetSrcInfoForPc' is dead.
 		 */
 
-		Tcl_DecrRefCount(ctxPtr->data.eval.path);
+		Tcl_DecrRefCount(ctxPtr->path);
 	    }
 	} else {
 	    envPtr->line = ctxPtr->line[word];
 	    envPtr->extCmdMapPtr->type = ctxPtr->type;
 
 	    if (ctxPtr->type == TCL_LOCATION_SOURCE) {
-		envPtr->extCmdMapPtr->path = ctxPtr->data.eval.path;
+		envPtr->extCmdMapPtr->path = ctxPtr->path;
 
 		if (pc) {
 		    /*
 		     * The reference 'TclGetSrcInfoForPc' made is transfered.
 		     */
 
-		    ctxPtr->data.eval.path = NULL;
+		    ctxPtr->path = NULL;
 		} else {
 		    /*
 		     * We have a new reference here.

@@ -773,7 +773,7 @@ TclObjLookupVarEx(
 
   donePart1:
     while (TclIsVarLink(varPtr)) {
-	varPtr = varPtr->value.linkPtr;
+	varPtr = varPtr->linkPtr;
     }
 
     if (part2Ptr != NULL) {
@@ -1139,7 +1139,7 @@ TclLookupArrayElement(
     }
 
     if (createElem) {
-	varPtr = VarHashCreateVar(arrayPtr->value.tablePtr, elNamePtr,
+	varPtr = VarHashCreateVar(arrayPtr->tablePtr, elNamePtr,
 		&isNew);
 	if (varPtr == NULL) {
 	    if (flags & TCL_LEAVE_ERR_MSG) {
@@ -1155,7 +1155,7 @@ TclLookupArrayElement(
 	    TclSetVarArrayElement(varPtr);
 	}
     } else {
-	varPtr = VarHashFindVar(arrayPtr->value.tablePtr, elNamePtr);
+	varPtr = VarHashFindVar(arrayPtr->tablePtr, elNamePtr);
 	if (varPtr == NULL) {
 	    if (flags & TCL_LEAVE_ERR_MSG) {
 		TclObjVarErrMsg(interp, arrayNamePtr, elNamePtr, msg,
@@ -1439,7 +1439,7 @@ TclPtrGetVarIdx(
      */
 
     if (TclIsVarScalar(varPtr) && !TclIsVarUndefined(varPtr)) {
-	return varPtr->value.objPtr;
+	return varPtr->objPtr;
     }
 
     /*
@@ -1822,12 +1822,12 @@ ListAppendInVar(
 
 	    TclNewObj(oldValuePtr);
 	}
-	varPtr->value.objPtr = oldValuePtr;
+	varPtr->objPtr = oldValuePtr;
 	Tcl_IncrRefCount(oldValuePtr);	/* Since var is referenced. */
     } else if (Tcl_IsShared(oldValuePtr)) {
-	varPtr->value.objPtr = Tcl_DuplicateObj(oldValuePtr);
+	varPtr->objPtr = Tcl_DuplicateObj(oldValuePtr);
 	TclDecrRefCount(oldValuePtr);
-	oldValuePtr = varPtr->value.objPtr;
+	oldValuePtr = varPtr->objPtr;
 	Tcl_IncrRefCount(oldValuePtr);	/* Since var is referenced. */
     }
 
@@ -1860,7 +1860,7 @@ StringAppendInVar(
 
 		Tcl_Obj *valuePtr = Tcl_DuplicateObj(defValuePtr);
 
-		varPtr->value.objPtr = valuePtr;
+		varPtr->objPtr = valuePtr;
 		TclContinuationsCopy(valuePtr, defValuePtr);
 		Tcl_IncrRefCount(valuePtr);
 		Tcl_AppendObjToObj(valuePtr, newValuePtr);
@@ -1870,7 +1870,7 @@ StringAppendInVar(
 		return;
 	    }
 	}
-	varPtr->value.objPtr = newValuePtr;
+	varPtr->objPtr = newValuePtr;
 	Tcl_IncrRefCount(newValuePtr);
 	return;
     }
@@ -1882,12 +1882,12 @@ StringAppendInVar(
      */
 
     if (Tcl_IsShared(oldValuePtr)) {	/* Append to copy. */
-	varPtr->value.objPtr = Tcl_DuplicateObj(oldValuePtr);
+	varPtr->objPtr = Tcl_DuplicateObj(oldValuePtr);
 
-	TclContinuationsCopy(varPtr->value.objPtr, oldValuePtr);
+	TclContinuationsCopy(varPtr->objPtr, oldValuePtr);
 
 	TclDecrRefCount(oldValuePtr);
-	oldValuePtr = varPtr->value.objPtr;
+	oldValuePtr = varPtr->objPtr;
 	Tcl_IncrRefCount(oldValuePtr);	/* Since var is ref */
     }
 
@@ -2019,9 +2019,9 @@ TclPtrSetVarIdx(
      * otherwise we must create a new copy to modify: this is "copy on write".
      */
 
-    oldValuePtr = varPtr->value.objPtr;
+    oldValuePtr = varPtr->objPtr;
     if (flags & TCL_LIST_ELEMENT && !(flags & TCL_APPEND_VALUE)) {
-	varPtr->value.objPtr = NULL;
+	varPtr->objPtr = NULL;
     }
     if (flags & (TCL_APPEND_VALUE|TCL_LIST_ELEMENT)) {
 	if (flags & TCL_LIST_ELEMENT) {		/* Append list element. */
@@ -2039,7 +2039,7 @@ TclPtrSetVarIdx(
 	 * more than swap the objects.
 	 */
 
-	varPtr->value.objPtr = newValuePtr;
+	varPtr->objPtr = newValuePtr;
 	Tcl_IncrRefCount(newValuePtr);		/* Var is another ref. */
 	if (oldValuePtr != NULL) {
 	    TclDecrRefCount(oldValuePtr);	/* Discard old value. */
@@ -2066,7 +2066,7 @@ TclPtrSetVarIdx(
      */
 
     if (TclIsVarScalar(varPtr) && !TclIsVarUndefined(varPtr)) {
-	return varPtr->value.objPtr;
+	return varPtr->objPtr;
     }
 
     /*
@@ -2693,12 +2693,12 @@ UnsetVarStruct(
 	}
     }
 
-    if (TclIsVarScalar(&dummyVar) && (dummyVar.value.objPtr != NULL)) {
+    if (TclIsVarScalar(&dummyVar) && (dummyVar.objPtr != NULL)) {
 	/*
 	 * Decrement the ref count of the var's value.
 	 */
 
-	Tcl_Obj *objPtr = dummyVar.value.objPtr;
+	Tcl_Obj *objPtr = dummyVar.objPtr;
 
 	TclDecrRefCount(objPtr);
     } else if (TclIsVarArray(&dummyVar)) {
@@ -2720,7 +2720,7 @@ UnsetVarStruct(
 	 * referenced variable if it's no longer needed.
 	 */
 
-	Var *linkPtr = dummyVar.value.linkPtr;
+	Var *linkPtr = dummyVar.linkPtr;
 
 	if (TclIsVarInHash(linkPtr)) {
 	    VarHashRefCount(linkPtr)--;
@@ -3314,7 +3314,7 @@ ArrayPopulateSearch(
 	searchPtr->nextPtr = (ArraySearch *)Tcl_GetHashValue(hPtr);
     }
     searchPtr->varPtr = varPtr;
-    searchPtr->nextEntry = VarHashFirstEntry(varPtr->value.tablePtr,
+    searchPtr->nextEntry = VarHashFirstEntry(varPtr->tablePtr,
 	    &searchPtr->search);
     Tcl_SetHashValue(hPtr, searchPtr);
     searchPtr->name = Tcl_ObjPrintf("s-%d-%s", searchPtr->id,
@@ -3739,7 +3739,7 @@ ArrayGetCmd(
     TclNewObj(nameLstObj);
     Tcl_IncrRefCount(nameLstObj);
     if ((patternObj != NULL) && TclMatchIsTrivial(pattern)) {
-	varPtr2 = VarHashFindVar(varPtr->value.tablePtr, patternObj);
+	varPtr2 = VarHashFindVar(varPtr->tablePtr, patternObj);
 	if (varPtr2 == NULL) {
 	    goto searchDone;
 	}
@@ -3755,7 +3755,7 @@ ArrayGetCmd(
 	goto searchDone;
     }
 
-    for (varPtr2 = VarHashFirstVar(varPtr->value.tablePtr, &search);
+    for (varPtr2 = VarHashFirstVar(varPtr->tablePtr, &search);
 	    varPtr2; varPtr2 = VarHashNextVar(&search)) {
 	if (TclIsVarUndefined(varPtr2)) {
 	    continue;
@@ -3904,7 +3904,7 @@ ArrayNamesCmd(
     }
     if ((mode==OPT_GLOB && patternObj && TclMatchIsTrivial(pattern))
 	    || (mode==OPT_EXACT)) {
-	varPtr2 = VarHashFindVar(varPtr->value.tablePtr, patternObj);
+	varPtr2 = VarHashFindVar(varPtr->tablePtr, patternObj);
 	if ((varPtr2 != NULL) && !TclIsVarUndefined(varPtr2)) {
 	    /*
 	     * This can't fail; lappending to an empty object always works.
@@ -3920,7 +3920,7 @@ ArrayNamesCmd(
      * Must scan the array to select the elements.
      */
 
-    for (varPtr2=VarHashFirstVar(varPtr->value.tablePtr, &search);
+    for (varPtr2=VarHashFirstVar(varPtr->tablePtr, &search);
 	    varPtr2!=NULL ; varPtr2=VarHashNextVar(&search)) {
 	if (TclIsVarUndefined(varPtr2)) {
 	    continue;
@@ -3989,7 +3989,7 @@ TclFindArrayPtrElements(
 	return;
     }
 
-    for (varPtr=VarHashFirstVar(arrayPtr->value.tablePtr, &search);
+    for (varPtr=VarHashFirstVar(arrayPtr->tablePtr, &search);
 	    varPtr!=NULL ; varPtr=VarHashNextVar(&search)) {
 	Tcl_HashEntry *hPtr;
 	Tcl_Obj *nameObj;
@@ -4233,7 +4233,7 @@ ArraySizeCmd(
 	 * "undefined" entries.
 	 */
 
-	for (varPtr2=VarHashFirstVar(varPtr->value.tablePtr, &search);
+	for (varPtr2=VarHashFirstVar(varPtr->tablePtr, &search);
 		varPtr2!=NULL ; varPtr2=VarHashNextVar(&search)) {
 	    if (!TclIsVarUndefined(varPtr2)) {
 		size++;
@@ -4289,7 +4289,7 @@ ArrayStatsCmd(
 	return NotArrayError(interp, varNameObj);
     }
 
-    stats = Tcl_HashStats((Tcl_HashTable *) varPtr->value.tablePtr);
+    stats = Tcl_HashStats((Tcl_HashTable *) varPtr->tablePtr);
     if (stats == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"error reading array statistics", -1));
@@ -4367,7 +4367,7 @@ ArrayUnsetCmd(
 
     pattern = TclGetString(patternObj);
     if (TclMatchIsTrivial(pattern)) {
-	varPtr2 = VarHashFindVar(varPtr->value.tablePtr, patternObj);
+	varPtr2 = VarHashFindVar(varPtr->tablePtr, patternObj);
 	if (!varPtr2 || TclIsVarUndefined(varPtr2)) {
 	    return TCL_OK;
 	}
@@ -4384,7 +4384,7 @@ ArrayUnsetCmd(
      */
 
     protectedVarPtr = NULL;
-    for (varPtr2=VarHashFirstVar(varPtr->value.tablePtr, &search);
+    for (varPtr2=VarHashFirstVar(varPtr->tablePtr, &search);
 	    varPtr2!=NULL ; varPtr2=VarHashNextVar(&search)) {
 	/*
 	 * Drop the extra ref immediately. We don't need to free it at this
@@ -4732,7 +4732,7 @@ TclPtrObjMakeUpvarIdx(
 	    return TCL_ERROR;
 	}
 
-	linkPtr = varPtr->value.linkPtr;
+	linkPtr = varPtr->linkPtr;
 	if (linkPtr == otherPtr) {
 	    return TCL_OK;
 	}
@@ -4744,7 +4744,7 @@ TclPtrObjMakeUpvarIdx(
 	}
     }
     TclSetVarLink(varPtr);
-    varPtr->value.linkPtr = otherPtr;
+    varPtr->linkPtr = otherPtr;
     if (TclIsVarInHash(otherPtr)) {
 	VarHashRefCount(otherPtr)++;
     }
@@ -5615,12 +5615,12 @@ DeleteArray(
     Tcl_Obj *objPtr;
     VarTrace *tracePtr;
 
-    for (elPtr = VarHashFirstVar(varPtr->value.tablePtr, &search);
+    for (elPtr = VarHashFirstVar(varPtr->tablePtr, &search);
 	    elPtr != NULL; elPtr = VarHashNextVar(&search)) {
-	if (TclIsVarScalar(elPtr) && (elPtr->value.objPtr != NULL)) {
-	    objPtr = elPtr->value.objPtr;
+	if (TclIsVarScalar(elPtr) && (elPtr->objPtr != NULL)) {
+	    objPtr = elPtr->objPtr;
 	    TclDecrRefCount(objPtr);
-	    elPtr->value.objPtr = NULL;
+	    elPtr->objPtr = NULL;
 	}
 
 	/*
@@ -6767,7 +6767,7 @@ AllocVarEntry(
 	return NULL;
     }
     varPtr->flags = VAR_IN_HASHTABLE;
-    varPtr->value.objPtr = NULL;
+    varPtr->objPtr = NULL;
     VarHashRefCount(varPtr) = 1;
 
     hPtr = &(((VarInHash *) varPtr)->entry);
@@ -7006,9 +7006,9 @@ TclInitArrayVar(
      * Regular TclVarHashTable initialization.
      */
 
-    arrayPtr->value.tablePtr = (TclVarHashTable *) tablePtr;
-    TclInitVarHashTable(arrayPtr->value.tablePtr, TclGetVarNsPtr(arrayPtr));
-    arrayPtr->value.tablePtr->arrayPtr = arrayPtr;
+    arrayPtr->tablePtr = (TclVarHashTable *) tablePtr;
+    TclInitVarHashTable(arrayPtr->tablePtr, TclGetVarNsPtr(arrayPtr));
+    arrayPtr->tablePtr->arrayPtr = arrayPtr;
 
     /*
      * Default value initialization.
@@ -7025,8 +7025,7 @@ static void
 DeleteArrayVar(
     Var *arrayPtr)
 {
-    ArrayVarHashTable *tablePtr = (ArrayVarHashTable *)
-	    arrayPtr->value.tablePtr;
+    ArrayVarHashTable *tablePtr = (ArrayVarHashTable *) arrayPtr->tablePtr;
 
     /*
      * Default value cleanup.
@@ -7038,7 +7037,7 @@ DeleteArrayVar(
      * Regular TclVarHashTable cleanup.
      */
 
-    VarHashDeleteTable(arrayPtr->value.tablePtr);
+    VarHashDeleteTable(arrayPtr->tablePtr);
     Tcl_Free(tablePtr);
 }
 
@@ -7050,9 +7049,7 @@ Tcl_Obj *
 TclGetArrayDefault(
     Var *arrayPtr)
 {
-    ArrayVarHashTable *tablePtr = (ArrayVarHashTable *)
-	    arrayPtr->value.tablePtr;
-
+    ArrayVarHashTable *tablePtr = (ArrayVarHashTable *) arrayPtr->tablePtr;
     return tablePtr->defaultObj;
 }
 
@@ -7065,8 +7062,7 @@ SetArrayDefault(
     Var *arrayPtr,
     Tcl_Obj *defaultObj)
 {
-    ArrayVarHashTable *tablePtr = (ArrayVarHashTable *)
-	    arrayPtr->value.tablePtr;
+    ArrayVarHashTable *tablePtr = (ArrayVarHashTable *) arrayPtr->tablePtr;
 
     /*
      * Increment/decrement refcount twice to ensure that the object is shared,
@@ -7117,7 +7113,7 @@ CopyNSArray(
     // List the elements of the array prior to traces.
     Tcl_Obj *nameList = Tcl_NewObj();
     Tcl_HashSearch search;
-    for (Var *varPtr2 = VarHashFirstVar(srcAryPtr->value.tablePtr, &search);
+    for (Var *varPtr2 = VarHashFirstVar(srcAryPtr->tablePtr, &search);
 	    varPtr2; varPtr2 = VarHashNextVar(&search)) {
 	if (TclIsVarUndefined(varPtr2)) {
 	    continue;
@@ -7231,10 +7227,10 @@ TclCopyNamespaceVariables(
 	case VAR_LINK:
 	    // Links don't have traces
 	    while (TclIsVarLink(srcVarPtr)) {
-		srcVarPtr = srcVarPtr->value.linkPtr;
+		srcVarPtr = srcVarPtr->linkPtr;
 	    }
 	    TclSetVarLink(tgtVarPtr);
-	    tgtVarPtr->value.linkPtr = srcVarPtr;
+	    tgtVarPtr->linkPtr = srcVarPtr;
 	    if (TclIsVarInHash(srcVarPtr)) {
 		VarHashRefCount(srcVarPtr)++;
 	    }
@@ -7248,7 +7244,7 @@ TclCopyNamespaceVariables(
 	    if (!valueObj) {
 		return TCL_ERROR;
 	    }
-	    tgtVarPtr->value.objPtr = valueObj;
+	    tgtVarPtr->objPtr = valueObj;
 	    Tcl_IncrRefCount(valueObj);
 	    if (srcVarPtr->flags & VAR_CONSTANT) {
 		tgtVarPtr->flags |= VAR_CONSTANT;
@@ -7303,7 +7299,7 @@ TclCreateConstantInNS(
 	return TCL_ERROR;
     }
     if (TclIsVarUndefined(varPtr)) {
-	varPtr->value.objPtr = valueObj;
+	varPtr->objPtr = valueObj;
 	Tcl_IncrRefCount(valueObj);
 	varPtr->flags |= VAR_CONSTANT;
     }

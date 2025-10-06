@@ -1096,8 +1096,7 @@ TclInfoExistsCmd(
     varName = TclGetString(objv[1]);
     varPtr = TclVarTraceExists(interp, varName);
 
-    Tcl_SetObjResult(interp,
-	    Tcl_NewBooleanObj(varPtr && varPtr->value.objPtr));
+    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(varPtr && varPtr->objPtr));
     return TCL_OK;
 }
 
@@ -1323,8 +1322,8 @@ TclInfoFrame(
 
 	/*
 	 * Note:
-	 * Type BC => f.data.eval.path	  is not used.
-	 *	      f.data.tebc.codePtr is used instead.
+	 * Type BC => f.path	  is not used.
+	 *	      f.codePtr is used instead.
 	 */
 
 	TclGetSrcInfoForPc(fPtr);
@@ -1340,13 +1339,13 @@ TclInfoFrame(
 	}
 
 	if (fPtr->type == TCL_LOCATION_SOURCE) {
-	    ADD_PAIR("file", fPtr->data.eval.path);
+	    ADD_PAIR("file", fPtr->path);
 
 	    /*
 	     * Death of reference by TclGetSrcInfoForPc.
 	     */
 
-	    Tcl_DecrRefCount(fPtr->data.eval.path);
+	    Tcl_DecrRefCount(fPtr->path);
 	}
 
 	ADD_PAIR("cmd", TclGetSourceFromFrame(fPtr, 0, NULL));
@@ -1364,10 +1363,10 @@ TclInfoFrame(
 
 	ADD_PAIR("type", Tcl_NewStringObj(typeString[framePtr->type], -1));
 	ADD_PAIR("line", Tcl_NewWideIntObj(framePtr->line[0]));
-	ADD_PAIR("file", framePtr->data.eval.path);
+	ADD_PAIR("file", framePtr->path);
 
 	/*
-	 * Refcount framePtr->data.eval.path goes up when lv is converted into
+	 * Refcount framePtr->path goes up when lv is converted into
 	 * the result list object.
 	 */
 
