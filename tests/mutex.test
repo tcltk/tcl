@@ -25,10 +25,10 @@ namespace eval testmutex {
     namespace import ::tcltest::test
 
     proc testlock {id nthreads recursion iters yield} {
-        test $id "mutex lock $nthreads/$recursion/$iters/$yield" \
-            -constraints testmutex \
-            -body "testmutex lock $nthreads $recursion $iters $yield" \
-            -result [expr {$nthreads*$iters}]
+	    test $id "mutex lock $nthreads/$recursion/$iters/$yield" \
+	    -constraints testmutex \
+	    -body "testmutex lock $nthreads $recursion $iters $yield" \
+	    -result [expr {$nthreads*$iters}]
     }
     #                   threads recursions iterations yield
     testlock mutex-lock-1   2     1          1000000    0
@@ -39,33 +39,33 @@ namespace eval testmutex {
     testlock mutex-lock-6   4     5           400000    1
 
     proc fairness {totalOps perThreadOps} {
-        set errors {}
-        set threadTotal [tcl::mathop::+ {*}$perThreadOps]
-        if {$threadTotal ne $totalOps} {
-            append errors "Thread total $threadTotal != expected $totalOps\n"
-        }
-        # Each thread should get at least half of fair share
-        set fairShare [expr {$totalOps / [llength $perThreadOps]}]
-        foreach share $perThreadOps {
-            if {$fairShare > 4*$share} {
-                append errors "Thread share $share < 0.25 fair share $fairShare"
-            }
-        }
-        return $errors
+	set errors {}
+	set threadTotal [tcl::mathop::+ {*}$perThreadOps]
+	if {$threadTotal ne $totalOps} {
+	    append errors "Thread total $threadTotal != expected $totalOps\n"
+	}
+	# Each thread should get at least half of fair share
+	set fairShare [expr {$totalOps / [llength $perThreadOps]}]
+	foreach share $perThreadOps {
+	    if {$fairShare > 4*$share} {
+		append errors "Thread share $share < 0.25 fair share $fairShare"
+	    }
+	}
+	return $errors
     }
     proc testcondition {id nthreads recursion iters yield} {
-        set totalOps [expr {$nthreads*$iters}]
-        test $id "mutex condition $nthreads/$recursion/$iters/$yield" \
-            -constraints testmutex \
-            -body {
-                lassign \
-                    [testmutex condition $nthreads $recursion $iters $yield] \
-                    enqTotal enqPerThread enqTimeouts \
-                    deqTotal deqPerThread deqTimeouts
-                list \
-                    $enqTotal [fairness $totalOps $enqPerThread] $enqTimeouts \
-                    $deqTotal [fairness $totalOps $deqPerThread] $deqTimeouts
-            } -result [list $totalOps {} 0 $totalOps {} 0]
+	set totalOps [expr {$nthreads*$iters}]
+	test $id "mutex condition $nthreads/$recursion/$iters/$yield" \
+	    -constraints testmutex \
+	    -body {
+		lassign \
+		    [testmutex condition $nthreads $recursion $iters $yield] \
+		    enqTotal enqPerThread enqTimeouts \
+		    deqTotal deqPerThread deqTimeouts
+		list \
+		    $enqTotal [fairness $totalOps $enqPerThread] $enqTimeouts \
+		    $deqTotal [fairness $totalOps $deqPerThread] $deqTimeouts
+	    } -result [list $totalOps {} 0 $totalOps {} 0]
     }
     testcondition mutex-condition-1   2     1          100000    0
     testcondition mutex-condition-2   2     1          100000    1

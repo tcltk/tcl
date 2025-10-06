@@ -2700,7 +2700,7 @@ CallSlotGet(
 {
     Tcl_Obj *getArgs[2];
     int code;
-    
+
     getArgs[0] = slot->fPtr->myName;
     getArgs[1] = slot->fPtr->slotGetName;
     code = TclOOPrivateObjectCmd(slot, interp, 2, getArgs);
