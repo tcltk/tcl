@@ -131,7 +131,7 @@ typedef struct {
     int flags;			/* Additional flags */
 } CancelInfo;
 static Tcl_HashTable cancelTable;
-static int cancelTableInitialized = 0;	/* 0 means not yet initialized. */
+static bool cancelTableInitialized = false;
 TCL_DECLARE_MUTEX(cancelLock);
 
 /*
@@ -142,7 +142,7 @@ TCL_DECLARE_MUTEX(cancelLock);
  */
 
 static Tcl_HashTable commandTypeTable;
-static int commandTypeInit = 0;
+static bool commandTypeInit = false;
 TCL_DECLARE_MUTEX(commandTypeLock);
 
 /*
@@ -631,16 +631,16 @@ void
 TclFinalizeEvaluation(void)
 {
     Tcl_MutexLock(&cancelLock);
-    if (cancelTableInitialized == 1) {
+    if (cancelTableInitialized) {
 	Tcl_DeleteHashTable(&cancelTable);
-	cancelTableInitialized = 0;
+	cancelTableInitialized = false;
     }
     Tcl_MutexUnlock(&cancelLock);
 
     Tcl_MutexLock(&commandTypeLock);
     if (commandTypeInit) {
 	Tcl_DeleteHashTable(&commandTypeTable);
-	commandTypeInit = 0;
+	commandTypeInit = false;
     }
     Tcl_MutexUnlock(&commandTypeLock);
 }
@@ -846,18 +846,18 @@ Tcl_CreateInterp(void)
     }
 #endif
 
-    if (cancelTableInitialized == 0) {
+    if (!cancelTableInitialized) {
 	Tcl_MutexLock(&cancelLock);
-	if (cancelTableInitialized == 0) {
+	if (!cancelTableInitialized) {
 	    Tcl_InitHashTable(&cancelTable, TCL_ONE_WORD_KEYS);
-	    cancelTableInitialized = 1;
+	    cancelTableInitialized = true;
 	}
 
 	Tcl_MutexUnlock(&cancelLock);
     }
 
 #undef TclObjInterpProc
-    if (commandTypeInit == 0) {
+    if (!commandTypeInit) {
 	TclRegisterCommandTypeName(TclObjInterpProc, "proc");
 	TclRegisterCommandTypeName(TclEnsembleImplementationCmd, "ensemble");
 	TclRegisterCommandTypeName(TclAliasObjCmd, "alias");
@@ -1378,9 +1378,9 @@ TclRegisterCommandTypeName(
     Tcl_HashEntry *hPtr;
 
     Tcl_MutexLock(&commandTypeLock);
-    if (commandTypeInit == 0) {
+    if (!commandTypeInit) {
 	Tcl_InitHashTable(&commandTypeTable, TCL_ONE_WORD_KEYS);
-	commandTypeInit = 1;
+	commandTypeInit = true;
     }
     if (nameStr != NULL) {
 	int isNew;
@@ -4290,7 +4290,7 @@ Tcl_CancelEval(
     }
 
     Tcl_MutexLock(&cancelLock);
-    if (cancelTableInitialized != 1) {
+    if (!cancelTableInitialized) {
 	/*
 	 * No CancelInfo hash table (Tcl_CreateInterp has never been called?)
 	 */

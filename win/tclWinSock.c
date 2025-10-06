@@ -72,11 +72,10 @@
 
 /*
  * The following variable is used to tell whether this module has been
- * initialized.  If 1, initialization of sockets was successful, if -1 then
- * socket initialization failed (WSAStartup failed).
+ * initialized.
  */
 
-static int initialized = 0;
+static bool initialized = false;
 static const WCHAR className[] = L"TclSocket";
 TCL_DECLARE_MUTEX(socketMutex)
 
@@ -2387,7 +2386,7 @@ InitSocketWindowClass(void)
     }
     Tcl_MutexLock(&socketMutex);
     if (!initialized) {
-	initialized = 1;
+	initialized = true;
 	TclCreateLateExitHandler(SocketExitHandler, NULL);
 
 	/*
@@ -2451,7 +2450,7 @@ SocketExitHandler(
 
     TclpFinalizeSockets();
     UnregisterClassW(className, (HINSTANCE)TclWinGetTclInstance());
-    initialized = 0;
+    initialized = false;
     Tcl_MutexUnlock(&socketMutex);
 }
 

@@ -66,7 +66,7 @@
  * since they may block.
  */
 
-static int gInitialized = 0;
+static bool gInitialized = false;
 
 /*
  * INPUT_BUFFER_SIZE is size of buffer passed to ReadConsole in bytes.
@@ -646,7 +646,7 @@ ConsoleInit(void)
     if (!gInitialized) {
 	AcquireSRWLockExclusive(&gConsoleLock);
 	if (!gInitialized) {
-	    gInitialized = 1;
+	    gInitialized = true;
 	    Tcl_CreateExitHandler(ProcExitHandler, NULL);
 	}
 	ReleaseSRWLockExclusive(&gConsoleLock);
@@ -707,7 +707,7 @@ ProcExitHandler(
     TCL_UNUSED(void *))
 {
     AcquireSRWLockExclusive(&gConsoleLock);
-    gInitialized = 0;
+    gInitialized = false;
     ReleaseSRWLockExclusive(&gConsoleLock);
 }
 

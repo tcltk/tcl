@@ -180,13 +180,13 @@ TclClockInit(
     ClockClientData *data;
     int i;
 
-    static int initialized = 0;	/* global clock engine initialized (in process) */
+    static bool initialized = false;	/* global clock engine initialized (in process) */
     /*
      * Register handler to finalize clock on exit.
      */
     if (!initialized) {
 	Tcl_CreateExitHandler(ClockFinalize, NULL);
-	initialized = 1;
+	initialized = true;
     }
 
     /*

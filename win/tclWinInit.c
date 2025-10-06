@@ -605,7 +605,7 @@ TclpSetVariables(
 	OemId oemId;
     } sys;
     static OSVERSIONINFOW osInfo;
-    static int osInfoInitialized = 0;
+    static bool osInfoInitialized = false;
     Tcl_DString ds;
 
     Tcl_SetVar2Ex(interp, "tclDefaultLibrary", NULL,
@@ -620,7 +620,7 @@ TclpSetVariables(
 	if (!getVersion || getVersion(&osInfo)) {
 	    GetVersionExW(&osInfo);
 	}
-	osInfoInitialized = 1;
+	osInfoInitialized = true;
     }
     GetSystemInfo(&sys.info);
 

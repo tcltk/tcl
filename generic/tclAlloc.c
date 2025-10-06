@@ -125,7 +125,7 @@ static struct block bigBlocks={	/* Big blocks aren't suballocated. */
 #if TCL_THREADS
 static Tcl_Mutex *allocMutexPtr;
 #endif
-static int allocInit = 0;
+static bool allocInit = false;
 
 #ifdef MSTATS
 
@@ -171,7 +171,7 @@ void
 TclInitAlloc(void)
 {
     if (!allocInit) {
-	allocInit = 1;
+	allocInit = true;
 #if TCL_THREADS
 	allocMutexPtr = Tcl_GetAllocMutex();
 #endif

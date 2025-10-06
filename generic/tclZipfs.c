@@ -400,7 +400,7 @@ static const char pwrot[17] =
     "\x00\x80\x40\xC0\x20\xA0\x60\xE0"
     "\x10\x90\x50\xD0\x30\xB0\x70\xF0";
 
-static int zipfs_tcl_library_init = 0;
+static bool zipfs_tcl_library_init = false;
 static const char *zipfs_literal_tcl_library = NULL;
 
 /* Function prototypes */
@@ -4458,8 +4458,8 @@ TclZipfsLocateTclLibrary(
 	}
     }
 
-unlock_and_return:
-    zipfs_tcl_library_init = 1;
+  unlock_and_return:
+    zipfs_tcl_library_init = true;
     Tcl_MutexUnlock(&ZipFSLocateLibMutex);
     if (zipfs_literal_tcl_library) {
 	/* Found it, set up encoding dirs */

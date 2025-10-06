@@ -57,10 +57,10 @@
  * initialized.
  */
 
-static int execInitialized = 0;
+static bool execInitialized = false;
 TCL_DECLARE_MUTEX(execMutex)
 
-static int cachedInExit = 0;
+static bool cachedInExit = false;
 
 #ifdef TCL_COMPILE_DEBUG
 /*
@@ -894,7 +894,7 @@ TclCreateExecEnv(
     Tcl_MutexLock(&execMutex);
     if (!execInitialized) {
 	InitByteCodeExecution(interp);
-	execInitialized = 1;
+	execInitialized = true;
     }
     Tcl_MutexUnlock(&execMutex);
 
@@ -989,7 +989,7 @@ void
 TclFinalizeExecution(void)
 {
     Tcl_MutexLock(&execMutex);
-    execInitialized = 0;
+    execInitialized = false;
     Tcl_MutexUnlock(&execMutex);
 }
 

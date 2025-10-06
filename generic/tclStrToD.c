@@ -2028,7 +2028,7 @@ RefineApproximation(
     double quot;		/* Correction term. */
     double minincr;		/* Lower bound on the absolute value of the
 				 * correction term. */
-    int roundToEven = 0;	/* Flag == TRUE if we need to invoke
+    bool roundToEven = false;	/* Whether we need to invoke
 				 * "round to even" functionality */
     double rteSignificand;	/* Significand of the round-to-even result */
     int rteExponent;		/* Exponent of the round-to-even result */
@@ -2180,7 +2180,7 @@ RefineApproximation(
 	/*
 	 * If the error is exactly 1/2 ULP, we need to round to even.
 	 */
-	roundToEven = 1;
+	roundToEven = true;
 	break;
     case MP_GT:
 	/*

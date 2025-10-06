@@ -57,7 +57,7 @@ static short
 OpenResourceMap(
     CFBundleRef bundleRef)
 {
-    static int initialized = FALSE;
+    static bool initialized = false;
     static short (*openresourcemap)(CFBundleRef) = NULL;
 
     if (!initialized) {
@@ -72,7 +72,7 @@ OpenResourceMap(
 	    }
 #endif /* TCL_DEBUG_LOAD */
 	}
-	initialized = TRUE;
+	initialized = true;
     }
 
     if (openresourcemap) {

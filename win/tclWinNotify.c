@@ -53,7 +53,7 @@ static Tcl_ThreadDataKey dataKey;
 
 static int notifierCount = 0;
 static const WCHAR className[] = L"TclNotifier";
-static int initialized = 0;
+static bool initialized = false;
 static CRITICAL_SECTION notifierMutex;
 
 /*
@@ -86,7 +86,7 @@ TclpInitNotifier(void)
 
     TclpGlobalLock();
     if (!initialized) {
-	initialized = 1;
+	initialized = true;
 	InitializeCriticalSection(&notifierMutex);
     }
     TclpGlobalUnlock();

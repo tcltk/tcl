@@ -138,7 +138,7 @@ TestfilehandlerCmd(
 {
     Pipe *pipePtr;
     int i, mask, timeout;
-    static int initialized = 0;
+    static bool initialized = false;
     char buffer[4000];
     TclFile file;
 
@@ -151,7 +151,7 @@ TestfilehandlerCmd(
 	for (i = 0; i < MAX_PIPES; i++) {
 	    testPipes[i].readFile = NULL;
 	}
-	initialized = 1;
+	initialized = true;
     }
 
     if (objc < 2) {

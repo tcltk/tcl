@@ -518,7 +518,7 @@ ClockFmtScnStorage_GC_Out(
  * Used for fast searching by format string.
  */
 static Tcl_HashTable FmtScnHashTable;
-static int initialized = 0;
+static bool initialized = false;
 
 /*
  * Wrappers between pointers to hash entry and format storage object
@@ -842,7 +842,7 @@ FindOrCreateFmtScnStorage(
 	Tcl_InitCustomHashTable(&FmtScnHashTable, TCL_CUSTOM_TYPE_KEYS,
 		&ClockFmtScnStorageHashKeyType);
 
-	initialized = 1;
+	initialized = true;
     }
 
     /* get or create entry (and alocate storage) */
@@ -3602,7 +3602,7 @@ TclClockFrmScnFinalize(void)
     ClockFmtScnStorage_GC.count = 0;
 #endif
     if (initialized) {
-	initialized = 0;
+	initialized = false;
 	Tcl_DeleteHashTable(&FmtScnHashTable);
     }
     Tcl_MutexUnlock(&ClockFmtMutex);

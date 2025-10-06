@@ -24,9 +24,8 @@
 
 typedef struct {
     CRITICAL_SECTION cs;	/* Mutex guarding this structure. */
-    int initialized;		/* Flag == 1 if this structure is
-				 * initialized. */
-    int perfCounterAvailable;	/* Flag == 1 if the hardware has a performance
+    bool initialized;		/* True if this structure is initialized. */
+    bool perfCounterAvailable;	/* True if the hardware has a performance
 				 * counter. */
     DWORD calibrationInterv;	/* Calibration interval in seconds (start 1
 				 * sec) */
@@ -97,8 +96,8 @@ static TimeInfo timeInfo = {
  * resolution to microsecond resolution and back.
  */
 static struct {
-    int initialized;		/* 1 if initialized, 0 otherwise */
-    int perfCounter;		/* 1 if performance counter usable for wide
+    bool initialized;		/* True if initialized, false otherwise */
+    bool perfCounter;		/* True if performance counter usable for wide
 				 * clicks */
     double microsecsScale;	/* Denominator scale between clock / microsecs */
 } wideClick = {0, 0, 0.0};
@@ -259,22 +258,22 @@ TclpGetWideClicks(void)
 	 */
 
 	if (QueryPerformanceFrequency(&perfCounterFreq)) {
-	    wideClick.perfCounter = 1;
+	    wideClick.perfCounter = true;
 	    wideClick.microsecsScale = 1000000.0 / (double)perfCounterFreq.QuadPart;
 	} else {
 	    /* fallback using microseconds */
-	    wideClick.perfCounter = 0;
+	    wideClick.perfCounter = false;
 	    wideClick.microsecsScale = 1;
 	}
 
-	wideClick.initialized = 1;
+	wideClick.initialized = true;
     }
     if (wideClick.perfCounter) {
 	if (QueryPerformanceCounter(&curCounter)) {
 	    return (long long)curCounter.QuadPart;
 	}
 	/* fallback using microseconds */
-	wideClick.perfCounter = 0;
+	wideClick.perfCounter = false;
 	wideClick.microsecsScale = 1;
 	return TclpGetMicroseconds();
     } else {
@@ -427,7 +426,7 @@ NativeScaleTime(
  *	performance counter.
  *
  * Results:
- *	1 if the counter is available, 0 if not.
+ *	True if the counter is available, false if not.
  *
  * Side effects:
  *	Updates fields of the timeInfo global. Make sure you hold the lock
@@ -436,7 +435,7 @@ NativeScaleTime(
  *----------------------------------------------------------------------
  */
 
-static inline int
+static inline bool
 IsPerfCounterAvailable(void)
 {
     timeInfo.perfCounterAvailable =
@@ -497,9 +496,9 @@ IsPerfCounterAvailable(void)
 		&& (regs[3] & 0x10000000)))	/* Hyperthread */
 		&& (((regs[1]&0x00FF0000) >> 16)/* CPU count */
 			== (int)systemInfo.dwNumberOfProcessors)) {
-	    timeInfo.perfCounterAvailable = TRUE;
+	    timeInfo.perfCounterAvailable = true;
 	} else {
-	    timeInfo.perfCounterAvailable = FALSE;
+	    timeInfo.perfCounterAvailable = false;
 	}
     }
 #endif /* above code is Win32 only */
@@ -583,7 +582,7 @@ NativeGetMicroseconds(void)
 		CloseHandle(timeInfo.readyEvent);
 		Tcl_CreateExitHandler(StopCalibration, NULL);
 	    }
-	    timeInfo.initialized = TRUE;
+	    timeInfo.initialized = true;
 	}
 	TclpInitUnlock();
     }
@@ -890,7 +889,7 @@ UpdateTimeEachSecond(void)
      */
 
     if (timeInfo.curCounterFreq.QuadPart == 0){
-	timeInfo.perfCounterAvailable = 0;
+	timeInfo.perfCounterAvailable = false;
 	return;
     }
 

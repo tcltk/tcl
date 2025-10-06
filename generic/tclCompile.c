@@ -27,7 +27,7 @@
 
 #ifdef TCL_COMPILE_DEBUG
 int tclTraceCompile = TCL_TRACE_BYTECODE_COMPILE_NONE;
-static int traceInitialized = 0;
+static bool traceInitialized = false;
 #endif
 
 /*
@@ -1113,7 +1113,7 @@ TclSetByteCodeFromAny(
 	    Tcl_Panic("SetByteCodeFromAny: "
 		    "unable to create link for tcl_traceCompile variable");
 	}
-	traceInitialized = 1;
+	traceInitialized = true;
     }
 #endif
 

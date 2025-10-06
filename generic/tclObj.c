@@ -23,7 +23,7 @@
  */
 
 static Tcl_HashTable typeTable;
-static int typeTableInitialized = 0;	/* 0 means not yet initialized. */
+static bool typeTableInitialized = false;
 TCL_DECLARE_MUTEX(tableMutex)
 
 /*
@@ -371,7 +371,7 @@ void
 TclInitObjSubsystem(void)
 {
     Tcl_MutexLock(&tableMutex);
-    typeTableInitialized = 1;
+    typeTableInitialized = true;
     Tcl_InitHashTable(&typeTable, TCL_STRING_KEYS);
     Tcl_MutexUnlock(&tableMutex);
 
@@ -465,7 +465,7 @@ TclFinalizeObjects(void)
     Tcl_MutexLock(&tableMutex);
     if (typeTableInitialized) {
 	Tcl_DeleteHashTable(&typeTable);
-	typeTableInitialized = 0;
+	typeTableInitialized = false;
     }
     Tcl_MutexUnlock(&tableMutex);
 
