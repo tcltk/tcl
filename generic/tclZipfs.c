@@ -23,8 +23,6 @@
 #include "tclInt.h"
 #include "tclFileSystem.h"
 
-#include <assert.h>
-
 #ifdef _WIN32
 # if defined(_WIN32) && defined (__clang__) && (__clang_major__ > 20)
 #   pragma clang diagnostic ignored "-Wc++-keyword"
