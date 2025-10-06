@@ -1982,13 +1982,13 @@ TclListObjAppendIfAbsent(
 
     result = Tcl_ListObjGetElements(interp, toObj, &numElems, &elemObjs);
     if (result != TCL_OK) {
-        goto vamoose;
+	goto vamoose;
     }
     /* Assume it is worth doing a pointer compare over the whole list first */
     for (Tcl_Size i = 0; i < numElems; ++i) {
 	if (elemObjs[i] == elemObj) {
 	    result = TCL_OK;
-            goto vamoose;
+	    goto vamoose;
 	}
     }
     Tcl_Size elemLen;
@@ -1999,7 +1999,7 @@ TclListObjAppendIfAbsent(
 	const char *toStr = Tcl_GetStringFromObj(elemObjs[i], &toLen);
 	if (toLen == elemLen && !strncmp(elemStr, toStr, elemLen)) {
 	    result = TCL_OK;
-            goto vamoose;
+	    goto vamoose;
 	}
     }
     result = TclListObjAppendElements(interp, toObj, 1, &elemObj);
