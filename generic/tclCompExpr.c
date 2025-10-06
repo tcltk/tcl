@@ -28,7 +28,7 @@ typedef struct {
     union {
 	int parent;		/* "Pointer" to the parent operand. */
 	int prev;		/* "Pointer" joining incomplete tree stack */
-    } p;
+    };
     unsigned char lexeme;	/* Code that identifies the operator. */
     unsigned char precedence;	/* Precedence of the operator */
     unsigned char mark;		/* Mark used to control traversal. */
@@ -91,7 +91,7 @@ enum OperandTypes {
  * expression trees of great depth pose no risk of blowing the C stack.
  *
  * While the parse tree is being constructed, the same memory space is used to
- * hold the p.prev field which chains together a stack of incomplete trees
+ * hold the prev field which chains together a stack of incomplete trees
  * awaiting their right operands.
  *
  * The lexeme field is filled in with the lexeme of the operator that is
@@ -579,7 +579,7 @@ ParseExpr(
 				 * to know about it. */
     int incomplete;		/* Index of the most recent incomplete tree in
 				 * the OpNode array. Heads a stack of
-				 * incomplete trees linked by p.prev. */
+				 * incomplete trees linked by prev. */
     int complete = OT_EMPTY;	/* "Index" of the complete tree (that is, a
 				 * complete subexpression) determined at the
 				 * moment. OT_EMPTY is a nonsense value used
@@ -1086,7 +1086,7 @@ ParseExpr(
 	     * lexeme we parsed.
 	     */
 
-	    nodePtr->p.prev = incomplete;
+	    nodePtr->prev = incomplete;
 	    incomplete = lastParsed = nodesUsed;
 	    nodesUsed++;
 	    break;
@@ -1266,7 +1266,7 @@ ParseExpr(
 
 		incompletePtr->right = complete;
 		if (IsOperator(complete)) {
-		    nodes[complete].p.parent = incomplete;
+		    nodes[complete].parent = incomplete;
 		    incompletePtr->constant = incompletePtr->constant
 			    && nodes[complete].constant;
 		} else {
@@ -1302,7 +1302,7 @@ ParseExpr(
 		 */
 
 		complete = incomplete;
-		incomplete = incompletePtr->p.prev;
+		incomplete = incompletePtr->prev;
 
 		/* CLOSE_PAREN can only close one OPEN_PAREN. */
 		if (incompletePtr->lexeme == OPEN_PAREN) {
@@ -1369,7 +1369,7 @@ ParseExpr(
 	    nodePtr->constant = (lexeme != COMMA);
 
 	    if (IsOperator(complete)) {
-		nodes[complete].p.parent = nodesUsed;
+		nodes[complete].parent = nodesUsed;
 		nodePtr->constant = nodePtr->constant
 			&& nodes[complete].constant;
 	    } else {
@@ -1383,7 +1383,7 @@ ParseExpr(
 	     * Push it onto the stack of incomplete trees.
 	     */
 
-	    nodePtr->p.prev = incomplete;
+	    nodePtr->prev = incomplete;
 	    incomplete = lastParsed = nodesUsed;
 	    nodesUsed++;
 	    break;
@@ -1816,7 +1816,7 @@ ConvertTreeToTokens(
 	     * Since we're returning to parent, skip child handling code.
 	     */
 
-	    nodePtr = nodes + nodePtr->p.parent;
+	    nodePtr = nodes + nodePtr->parent;
 	    goto router;
 	}
     }
@@ -2471,7 +2471,7 @@ CompileExprTree(
 
 		return;
 	    }
-	    nodePtr = nodes + nodePtr->p.parent;
+	    nodePtr = nodes + nodePtr->parent;
 	    continue;
 	}
 
@@ -2621,7 +2621,7 @@ TclSingleOpCmd(
 	nodes[1].left = OT_LITERAL;
     }
     nodes[1].right = OT_LITERAL;
-    nodes[1].p.parent = 0;
+    nodes[1].parent = 0;
 
     return ExecConstantExprTree(interp, nodes, 0, &litObjv);
 }
@@ -2683,10 +2683,10 @@ TclSortingOpCmd(
 	    nodes[j].lexeme = AND;
 	    nodes[j].mark = MARK_LEFT;
 	    nodes[j].left = lastAnd;
-	    nodes[lastAnd].p.parent = j;
+	    nodes[lastAnd].parent = j;
 
 	    nodes[j].right = j + 1;
-	    nodes[j + 1].p.parent= j;
+	    nodes[j + 1].parent= j;
 
 	    lastAnd = j;
 	}
@@ -2698,7 +2698,7 @@ TclSortingOpCmd(
 	nodes[2 * (objc - 2) - 1].right = OT_LITERAL;
 
 	nodes[0].right = lastAnd;
-	nodes[lastAnd].p.parent = 0;
+	nodes[lastAnd].parent = 0;
 
 	code = ExecConstantExprTree(interp, nodes, 0, &litObjPtrPtr);
 
@@ -2764,7 +2764,7 @@ TclVariadicOpCmd(
 	    nodes[1].mark = MARK_LEFT;
 	    nodes[1].left = OT_LITERAL;
 	    nodes[1].right = OT_LITERAL;
-	    nodes[1].p.parent = 0;
+	    nodes[1].parent = 0;
 	} else {
 	    if (lexeme == DIVIDE) {
 		TclNewDoubleObj(litObjv[0], 1.0);
@@ -2780,7 +2780,7 @@ TclVariadicOpCmd(
 	    nodes[1].mark = MARK_LEFT;
 	    nodes[1].left = OT_LITERAL;
 	    nodes[1].right = OT_LITERAL;
-	    nodes[1].p.parent = 0;
+	    nodes[1].parent = 0;
 	}
 
 	code = ExecConstantExprTree(interp, nodes, 0, &litObjPtrPtr);
@@ -2802,7 +2802,7 @@ TclVariadicOpCmd(
 		nodes[i].left = OT_LITERAL;
 		nodes[i].right = lastOp;
 		if (lastOp >= 0) {
-		    nodes[lastOp].p.parent = i;
+		    nodes[lastOp].parent = i;
 		}
 		lastOp = i;
 	    }
@@ -2812,14 +2812,14 @@ TclVariadicOpCmd(
 		nodes[i].mark = MARK_LEFT;
 		nodes[i].left = lastOp;
 		if (lastOp >= 0) {
-		    nodes[lastOp].p.parent = i;
+		    nodes[lastOp].parent = i;
 		}
 		nodes[i].right = OT_LITERAL;
 		lastOp = i;
 	    }
 	}
 	nodes[0].right = lastOp;
-	nodes[lastOp].p.parent = 0;
+	nodes[lastOp].parent = 0;
 
 	code = ExecConstantExprTree(interp, nodes, 0, &litObjv);
 

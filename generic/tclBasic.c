@@ -549,7 +549,7 @@ typedef struct {
     union {
 	int numArgs;
 	int identity;
-    } i;
+    };
     const char *expected;	/* For error message, what argument(s)
 				 * were expected. */
 } OpCmdInfo;
@@ -1260,7 +1260,7 @@ Tcl_CreateInterp(void)
 	TclOpCmdClientData *occdPtr = (TclOpCmdClientData *)Tcl_Alloc(sizeof(TclOpCmdClientData));
 
 	occdPtr->op = opcmdInfoPtr->name;
-	occdPtr->i.numArgs = opcmdInfoPtr->i.numArgs;
+	occdPtr->i.numArgs = opcmdInfoPtr->numArgs;
 	occdPtr->expected = opcmdInfoPtr->expected;
 	strcpy(mathFuncName + MATH_OP_PREFIX_LEN, opcmdInfoPtr->name);
 	cmdPtr = (Command *) Tcl_CreateObjCommand(interp, mathFuncName,
@@ -2076,7 +2076,7 @@ DeleteInterpProc(
 	procPtr->iPtr = NULL;
 	if (cfPtr) {
 	    if (cfPtr->type == TCL_LOCATION_SOURCE) {
-		Tcl_DecrRefCount(cfPtr->data.eval.path);
+		Tcl_DecrRefCount(cfPtr->path);
 	    }
 	    Tcl_Free(cfPtr->line);
 	    Tcl_Free(cfPtr);
@@ -5283,18 +5283,18 @@ TclEvalEx(
 		code = TCL_ERROR;
 		goto error;
 	    }
-	    eeFramePtr->data.eval.path = norm;
+	    eeFramePtr->path = norm;
 	} else {
-	    TclNewLiteralStringObj(eeFramePtr->data.eval.path, "");
+	    TclNewLiteralStringObj(eeFramePtr->path, "");
 	}
-	Tcl_IncrRefCount(eeFramePtr->data.eval.path);
+	Tcl_IncrRefCount(eeFramePtr->path);
     } else {
 	/*
 	 * Set up for plain eval.
 	 */
 
 	eeFramePtr->type = TCL_LOCATION_EVAL;
-	eeFramePtr->data.eval.path = NULL;
+	eeFramePtr->path = NULL;
     }
 
     iPtr->evalFlags = 0;
@@ -5606,7 +5606,7 @@ TclEvalEx(
 
     iPtr->cmdFramePtr = iPtr->cmdFramePtr->nextPtr;
     if (eeFramePtr->type == TCL_LOCATION_SOURCE) {
-	Tcl_DecrRefCount(eeFramePtr->data.eval.path);
+	Tcl_DecrRefCount(eeFramePtr->path);
     }
     TclStackFree(interp, linesStack);
     TclStackFree(interp, expandStack);
@@ -6049,8 +6049,8 @@ TclArgumentGet(
 	CFWordBC *cfwPtr = (CFWordBC *)Tcl_GetHashValue(hPtr);
 
 	framePtr = cfwPtr->framePtr;
-	framePtr->data.tebc.pc = (char *) (((ByteCode *)
-		framePtr->data.tebc.codePtr)->codeStart + cfwPtr->pc);
+	framePtr->pc = (char *) (((ByteCode *)
+		framePtr->codePtr)->codeStart + cfwPtr->pc);
 	*cfPtrPtr = cfwPtr->framePtr;
 	*wordPtr = cfwPtr->word;
 	return;
@@ -6198,7 +6198,7 @@ TclNREvalObjEx(
 	    eoFramePtr->cmdObj = objPtr;
 	    eoFramePtr->cmd = NULL;
 	    eoFramePtr->len = 0;
-	    eoFramePtr->data.eval.path = NULL;
+	    eoFramePtr->path = NULL;
 
 	    iPtr->cmdFramePtr = eoFramePtr;
 
@@ -7973,7 +7973,7 @@ ClassifyDouble(
 	struct {
 	    unsigned int low;	/* Lower 32 bits */
 	    unsigned int high;	/* Upper 32 bits */
-	} w;			/* Interpret as unsigned integer words */
+	};			/* Interpret as unsigned integer words */
     } doubleMeaning;		/* So we can look at the representation of a
 				 * double directly. Platform (i.e., processor)
 				 * specific; this is for x86 (and most other
@@ -7997,9 +7997,9 @@ ClassifyDouble(
      */
 
     doubleMeaning.d = d;
-    exponent = (doubleMeaning.w.high >> EXPONENT_SHIFT) & EXPONENT_MASK;
-    mantissaLow = doubleMeaning.w.low;
-    mantissaHigh = doubleMeaning.w.high & MANTISSA_MASK;
+    exponent = (doubleMeaning.high >> EXPONENT_SHIFT) & EXPONENT_MASK;
+    mantissaLow = doubleMeaning.low;
+    mantissaHigh = doubleMeaning.high & MANTISSA_MASK;
     zeroMantissa = (mantissaHigh == 0 && mantissaLow == 0);
 
     /*

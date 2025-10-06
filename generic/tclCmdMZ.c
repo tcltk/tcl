@@ -3872,8 +3872,8 @@ TclNRSwitchObjCmd(
 
 	if (ctxPtr->type == TCL_LOCATION_BC) {
 	    /*
-	     * Type BC => ctxPtr->data.eval.path    is not used.
-	     *		  ctxPtr->data.tebc.codePtr is used instead.
+	     * Type BC => ctxPtr->path    is not used.
+	     *		  ctxPtr->codePtr is used instead.
 	     */
 
 	    TclGetSrcInfoForPc(ctxPtr);
@@ -3958,7 +3958,7 @@ SwitchPostProc(
 	     * Death of SrcInfo reference.
 	     */
 
-	    Tcl_DecrRefCount(ctxPtr->data.eval.path);
+	    Tcl_DecrRefCount(ctxPtr->path);
 	}
     }
 
