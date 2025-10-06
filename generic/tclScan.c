@@ -265,10 +265,6 @@ ValidateFormat(
     Tcl_UniChar ch = 0;
     int objIndex, xpgSize, nspace = numVars;
     int *nassign = (int *)TclStackAlloc(interp, nspace * sizeof(int));
-    Tcl_Obj *errorMsg;		/* Place to build an error messages. Note that
-				 * these are messy operations because we do
-				 * not want to use the formatting engine;
-				 * we're inside there! */
     char buf[5] = "";
 
     /*
