@@ -81,7 +81,7 @@ static Tcl_ThreadDataKey dataKey;
 static HSZ ddeServiceGlobal = 0;
 static DWORD ddeInstance;	/* The application instance handle given to us
 				 * by DdeInitialize. */
-static int ddeIsServer = 0;
+static bool ddeIsServer = false;
 
 #define TCL_DDE_VERSION		"1.5a1"
 #define TCL_DDE_PACKAGE_NAME	"dde"
@@ -239,13 +239,13 @@ Initialize(void)
     if ((ddeServiceGlobal == 0) && (nameFound != 0)) {
 	Tcl_MutexLock(&ddeMutex);
 	if ((ddeServiceGlobal == 0) && (nameFound != 0)) {
-	    ddeIsServer = 1;
+	    ddeIsServer = true;
 	    Tcl_CreateExitHandler(DdeExitProc, NULL);
 	    ddeServiceGlobal = DdeCreateStringHandleW(ddeInstance,
 		    TCL_DDE_SERVICE_NAME, CP_WINUNICODE);
 	    DdeNameService(ddeInstance, ddeServiceGlobal, 0L, DNS_REGISTER);
 	} else {
-	    ddeIsServer = 0;
+	    ddeIsServer = false;
 	}
 	Tcl_MutexUnlock(&ddeMutex);
     }

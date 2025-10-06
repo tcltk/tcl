@@ -23,7 +23,7 @@
  * initialized.
  */
 
-static int initialized = 0;
+static bool initialized = false;
 
 /*
  * The serialMutex locks around access to the initialized variable, and it is
@@ -198,9 +198,9 @@ static int		SerialSetOptionProc(void *instanceData,
 static DWORD WINAPI	SerialWriterThread(LPVOID arg);
 static void		SerialThreadActionProc(void *instanceData,
 			    int action);
-static int		SerialBlockingRead(SerialInfo *infoPtr, LPVOID buf,
+static bool		SerialBlockingRead(SerialInfo *infoPtr, LPVOID buf,
 			    DWORD bufSize, LPDWORD lpRead, LPOVERLAPPED osPtr);
-static int		SerialBlockingWrite(SerialInfo *infoPtr, LPVOID buf,
+static bool		SerialBlockingWrite(SerialInfo *infoPtr, LPVOID buf,
 			    DWORD bufSize, LPDWORD lpWritten,
 			    LPOVERLAPPED osPtr);
 
@@ -258,7 +258,7 @@ SerialInit(void)
     if (!initialized) {
 	Tcl_MutexLock(&serialMutex);
 	if (!initialized) {
-	    initialized = 1;
+	    initialized = true;
 	    Tcl_CreateExitHandler(ProcExitHandler, NULL);
 	}
 	Tcl_MutexUnlock(&serialMutex);
@@ -334,7 +334,7 @@ ProcExitHandler(
     TCL_UNUSED(void *))
 {
     Tcl_MutexLock(&serialMutex);
-    initialized = 0;
+    initialized = false;
     Tcl_MutexUnlock(&serialMutex);
 }
 
@@ -698,8 +698,8 @@ SerialCloseProc(
  *	many bytes were actually read, and an error indication.
  *
  * Results:
- *	A count of how many bytes were read is returned and an error
- *	indication is returned.
+ *	Whether the read succeeded; the count of how many bytes were read is
+ *	delivered by an OUT parameter.
  *
  * Side effects:
  *	Reads input from the actual channel.
@@ -707,7 +707,7 @@ SerialCloseProc(
  *----------------------------------------------------------------------
  */
 
-static int
+static bool
 SerialBlockingRead(
     SerialInfo *infoPtr,	/* Serial info structure */
     LPVOID buf,			/* The input buffer pointer */
@@ -734,14 +734,14 @@ SerialBlockingRead(
 	     * ReadFile failed, but it isn't delayed. Report error.
 	     */
 
-	    return FALSE;
+	    return false;
 	} else {
 	    /*
 	     * Read is pending, wait for completion, timeout?
 	     */
 
 	    if (!GetOverlappedResult(infoPtr->handle, osPtr, lpRead, TRUE)) {
-		return FALSE;
+		return false;
 	    }
 	}
     } else {
@@ -749,7 +749,7 @@ SerialBlockingRead(
 	 * ReadFile completed immediately.
 	 */
     }
-    return TRUE;
+    return true;
 }
 
 /*
@@ -761,8 +761,8 @@ SerialBlockingRead(
  *	many bytes were actually written, and an error indication.
  *
  * Results:
- *	A count of how many bytes were written is returned and an error
- *	indication is returned.
+ *	Whether the write succeeded; the count of how many bytes were written
+ *	is delivered by an OUT parameter.
  *
  * Side effects:
  *	Writes output to the actual channel.
@@ -770,7 +770,7 @@ SerialBlockingRead(
  *----------------------------------------------------------------------
  */
 
-static int
+static bool
 SerialBlockingWrite(
     SerialInfo *infoPtr,	/* Serial info structure */
     LPVOID buf,			/* The output buffer pointer */
@@ -814,7 +814,7 @@ SerialBlockingWrite(
 
 	    if (!GetOverlappedResult(infoPtr->handle, osPtr, lpWritten,
 		    TRUE)) {
-		return FALSE;
+		return false;
 	    }
 	    break;
 	case ERROR_COUNTER_TIMEOUT:
@@ -828,7 +828,7 @@ SerialBlockingWrite(
 	     * WriteFile failed, but it isn't delayed. Report error.
 	     */
 
-	    return FALSE;
+	    return false;
 	}
     } else {
 	/*
@@ -840,7 +840,7 @@ SerialBlockingWrite(
     infoPtr->writeQueue += (*lpWritten - bufSize);
     LeaveCriticalSection(&infoPtr->csWrite);
 
-    return TRUE;
+    return true;
 }
 
 /*
@@ -934,8 +934,8 @@ SerialInputProc(
      * checked the number of available bytes.
      */
 
-    if (SerialBlockingRead(infoPtr, (LPVOID) buf, (DWORD) bufSize, &bytesRead,
-	    &infoPtr->osRead) == FALSE) {
+    if (!SerialBlockingRead(infoPtr, (LPVOID) buf, (DWORD) bufSize, &bytesRead,
+	    &infoPtr->osRead)) {
 	Tcl_WinConvertError(GetLastError());
 	*errorCode = errno;
 	return -1;
@@ -1322,8 +1322,8 @@ SerialWriterThread(
 	    if (infoPtr->writeError) {
 		break;
 	    }
-	    if (SerialBlockingWrite(infoPtr, (LPVOID) buf, (DWORD) toWrite,
-		    &bytesWritten, &myWrite) == FALSE) {
+	    if (!SerialBlockingWrite(infoPtr, (LPVOID) buf, (DWORD) toWrite,
+		    &bytesWritten, &myWrite)) {
 		infoPtr->writeError = GetLastError();
 		break;
 	    }

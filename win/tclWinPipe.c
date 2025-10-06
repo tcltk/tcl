@@ -20,7 +20,7 @@
  * initialized.
  */
 
-static int initialized = 0;
+static bool initialized = false;
 
 /*
  * The pipeMutex locks around access to the initialized and procList
@@ -250,7 +250,7 @@ PipeInit(void)
     if (!initialized) {
 	Tcl_MutexLock(&pipeMutex);
 	if (!initialized) {
-	    initialized = 1;
+	    initialized = true;
 	    procList = NULL;
 	}
 	Tcl_MutexUnlock(&pipeMutex);

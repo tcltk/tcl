@@ -304,14 +304,14 @@ static int receivePipe = -1;	/* Output end of triggerPipe */
  * You must hold the notifierInitLock before accessing this variable.
  */
 
-static int notifierThreadRunning;
+static bool notifierThreadRunning;
 
 /*
  * The following static flag indicates that async handlers are pending.
  */
 
 #if TCL_THREADS
-static int asyncPending = 0;
+static bool asyncPending = false;
 #endif
 
 /*
@@ -365,7 +365,7 @@ static int		OnOffWaitingList(ThreadSpecificData *tsdPtr,
 			    int onList, int signalNotifier);
 
 #ifdef HAVE_PTHREAD_ATFORK
-static int atForkInit = 0;
+static bool atForkInit = false;
 static void		AtForkPrepare(void);
 static void		AtForkParent(void);
 static void		AtForkChild(void);
@@ -539,7 +539,7 @@ TclpInitNotifier(void)
 	if (result) {
 	    Tcl_Panic("Tcl_InitNotifier: %s", "pthread_atfork failed");
 	}
-	atForkInit = 1;
+	atForkInit = true;
     }
 #endif /* HAVE_PTHREAD_ATFORK */
     if (notifierCount == 0) {
@@ -575,7 +575,7 @@ TclpInitNotifier(void)
 	 * execve() when more than one thread is present).
 	 */
 
-	notifierThreadRunning = 0;
+	notifierThreadRunning = false;
     }
     notifierCount++;
     UNLOCK_NOTIFIER_INIT;
@@ -661,7 +661,7 @@ StartNotifierThread(void)
 	if (result) {
 	    Tcl_Panic("StartNotifierThread: unable to start notifier thread");
 	}
-	notifierThreadRunning = 1;
+	notifierThreadRunning = true;
 
 	/*
 	 * Restore original signal mask.
@@ -727,13 +727,13 @@ TclpFinalizeNotifier(
 		    Tcl_Panic("Tcl_FinalizeNotifier: unable to join notifier "
 			    "thread");
 		}
-		notifierThreadRunning = 0;
+		notifierThreadRunning = false;
 
 		/*
 		 * If async marks are outstanding, perform actions now.
 		 */
 		if (asyncPending) {
-		    asyncPending = 0;
+		    asyncPending = false;
 		    TclAsyncMarkFromNotifier();
 		}
 	    }
@@ -1740,7 +1740,7 @@ TclAsyncNotifier(
 	if (notifierThreadRunning) {
 	    *flagPtr = value;
 	    if (!asyncPending) {
-		asyncPending = 1;
+		asyncPending = true;
 		write(triggerPipe, "S", 1);
 	    }
 	    return 1;
@@ -1855,7 +1855,7 @@ NotifierThreadProc(
 	     * perform work on async handlers now.
 	     */
 	    if (errno == EINTR && asyncPending) {
-		asyncPending = 0;
+		asyncPending = false;
 		TclAsyncMarkFromNotifier();
 	    }
 
@@ -1948,7 +1948,7 @@ NotifierThreadProc(
 	    }
 
 	    if (asyncPending) {
-		asyncPending = 0;
+		asyncPending = false;
 		TclAsyncMarkFromNotifier();
 	    }
 	}
@@ -2046,7 +2046,7 @@ AtForkChild(void)
     UNLOCK_NOTIFIER_INIT;
 #endif
 
-    asyncPending = 0;
+    asyncPending = false;
 
     if (tsdPtr->runLoop) {
 	tsdPtr->runLoop = NULL;
@@ -2055,7 +2055,7 @@ AtForkChild(void)
     }
     if (notifierCount > 0) {
 	notifierCount = 1;
-	notifierThreadRunning = 0;
+	notifierThreadRunning = false;
 
 	/*
 	 * Restart the notifier thread for signal handling.

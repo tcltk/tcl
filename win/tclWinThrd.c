@@ -27,7 +27,7 @@ _CRTIMP unsigned int __cdecl _controlfp (unsigned int unNew, unsigned int unMask
  */
 
 static CRITICAL_SECTION globalLock;
-static int initialized = 0;
+static bool initialized = false;
 
 /*
  * This is the global lock used to serialize initialization and finalization
@@ -56,7 +56,7 @@ typedef struct WMutex {
 
 static struct WMutex allocLock;
 static WMutex *allocLockPtr = &allocLock;
-static int allocOnce = 0;
+static bool allocOnce = false;
 
 #endif /* TCL_THREADS */
 
@@ -368,7 +368,7 @@ TclpInitLock(void)
 	 * that create interpreters in parallel.
 	 */
 
-	initialized = 1;
+	initialized = true;
 	InitializeCriticalSection(&joinLock);
 	InitializeCriticalSection(&initLock);
 	InitializeCriticalSection(&globalLock);
@@ -430,7 +430,7 @@ TclpGlobalLock(void)
 	 * that create interpreters in parallel.
 	 */
 
-	initialized = 1;
+	initialized = true;
 	InitializeCriticalSection(&joinLock);
 	InitializeCriticalSection(&initLock);
 	InitializeCriticalSection(&globalLock);
@@ -486,7 +486,7 @@ Tcl_GetAllocMutex(void)
 #if TCL_THREADS
     if (!allocOnce) {
 	WMutexInit(&allocLock);
-	allocOnce = 1;
+	allocOnce = true;
     }
     return (Tcl_Mutex *) &allocLockPtr;
 #else
@@ -523,12 +523,12 @@ TclFinalizeLock(void)
      */
 
     DeleteCriticalSection(&globalLock);
-    initialized = 0;
+    initialized = false;
 
 #if TCL_THREADS
     if (allocOnce) {
 	WMutexDestroy(&allocLock);
-	allocOnce = 0;
+	allocOnce = false;
     }
 #endif
 

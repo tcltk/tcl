@@ -170,7 +170,7 @@ static ProcessGlobalValue libraryPath = {
     0, 0, NULL, NULL, TclpInitLibraryPath, NULL, NULL
 };
 
-static int encodingsInitialized = 0;
+static bool encodingsInitialized = false;
 
 /*
  * Hash table that keeps track of all loaded Encodings. Keys are the string
@@ -656,7 +656,7 @@ TclInitEncodingSubsystem(void)
     defaultEncoding	= Tcl_CreateEncoding(&type);
     systemEncoding	= Tcl_GetEncoding(NULL, type.encodingName);
 
-    encodingsInitialized = 1;
+    encodingsInitialized = true;
 }
 
 /*
@@ -682,7 +682,7 @@ TclFinalizeEncodingSubsystem(void)
     Tcl_HashEntry *hPtr;
 
     Tcl_MutexLock(&encodingMutex);
-    encodingsInitialized = 0;
+    encodingsInitialized = false;
     FreeEncoding(systemEncoding);
     systemEncoding = NULL;
     defaultEncoding = NULL;

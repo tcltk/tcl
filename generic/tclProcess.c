@@ -17,7 +17,7 @@
  * processes (see tclPipe.c).
  */
 
-static int autopurge = 1;	/* Autopurge flag. */
+static bool autopurge = true;	/* Autopurge flag. */
 
 /*
  * Hash tables that keeps track of all child process statuses. Keys are the
@@ -37,7 +37,7 @@ typedef struct ProcessInfo {
 
 static Tcl_HashTable infoTablePerPid;
 static Tcl_HashTable infoTablePerResolvedPid;
-static int infoTablesInitialized = 0;	/* 0 means not yet initialized. */
+static bool infoTablesInitialized = false;
 TCL_DECLARE_MUTEX(infoTablesMutex)
 
 /*
@@ -778,12 +778,12 @@ TclInitProcessCmd(
     };
     Tcl_Command processCmd;
 
-    if (infoTablesInitialized == 0) {
+    if (!infoTablesInitialized) {
 	Tcl_MutexLock(&infoTablesMutex);
-	if (infoTablesInitialized == 0) {
+	if (!infoTablesInitialized) {
 	    Tcl_InitHashTable(&infoTablePerPid, TCL_ONE_WORD_KEYS);
 	    Tcl_InitHashTable(&infoTablePerResolvedPid, TCL_ONE_WORD_KEYS);
-	    infoTablesInitialized = 1;
+	    infoTablesInitialized = true;
 	}
 	Tcl_MutexUnlock(&infoTablesMutex);
     }

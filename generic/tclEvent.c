@@ -103,9 +103,9 @@ TCL_DECLARE_MUTEX(exitMutex)
  * in closing of files and pipes.
  */
 
-static int inExit = 0;
+static bool inExit = false;
 
-static int subsystemsInitialized = 0;
+static bool subsystemsInitialized = false;
 
 static const char ENCODING_ERROR[] = "\n\t(encoding error in stderr)";
 
@@ -120,7 +120,7 @@ static Tcl_ExitProc *appExitPtr = NULL;
 typedef struct ThreadSpecificData {
     ExitHandler *firstExitPtr;	/* First in list of all exit handlers for this
 				 * thread. */
-    int inExit;			/* True when this thread is exiting. This is
+    bool inExit;		/* True when this thread is exiting. This is
 				 * used as a hack to decide to close the
 				 * standard channels. */
 } ThreadSpecificData;
@@ -910,7 +910,7 @@ InvokeExitHandlers(void)
     ExitHandler *exitPtr;
 
     Tcl_MutexLock(&exitMutex);
-    inExit = 1;
+    inExit = true;
 
     for (exitPtr = firstExitPtr; exitPtr != NULL; exitPtr = firstExitPtr) {
 	/*
@@ -1128,18 +1128,18 @@ static const struct {
 const char *
 Tcl_InitSubsystems(void)
 {
-    if (inExit != 0) {
+    if (inExit) {
 	Tcl_Panic("Tcl_InitSubsystems called while exiting");
     }
 
-    if (subsystemsInitialized == 0) {
+    if (!subsystemsInitialized) {
 	/*
 	 * Double check inside the mutex. There are definitely calls back into
 	 * this routine from some of the functions below.
 	 */
 
 	TclpInitLock();
-	if (subsystemsInitialized == 0) {
+	if (!subsystemsInitialized) {
 
 		/*
 	     * Initialize locks used by the memory allocators before anything
@@ -1167,7 +1167,7 @@ Tcl_InitSubsystems(void)
 	    TclInitIOSubsystem();	/* Inits a tsd key (noop). */
 	    TclInitEncodingSubsystem();	/* Process wide encoding init. */
 	    TclInitNamespaceSubsystem();/* Register ns obj type (mutexed). */
-	    subsystemsInitialized = 1;
+	    subsystemsInitialized = true;
 	}
 	TclpInitUnlock();
     }
@@ -1205,10 +1205,10 @@ Tcl_Finalize(void)
     InvokeExitHandlers();
 
     TclpInitLock();
-    if (subsystemsInitialized == 0) {
+    if (!subsystemsInitialized) {
 	goto alreadyFinalized;
     }
-    subsystemsInitialized = 0;
+    subsystemsInitialized = false;
 
     /*
      * Ensure the thread-specific data is initialised as it is used in
@@ -1400,7 +1400,7 @@ FinalizeThread(
 
     tsdPtr = (ThreadSpecificData*)TclThreadDataKeyGet(&dataKey);
     if (tsdPtr != NULL) {
-	tsdPtr->inExit = 1;
+	tsdPtr->inExit = true;
 
 	for (exitPtr = tsdPtr->firstExitPtr; exitPtr != NULL;
 		exitPtr = tsdPtr->firstExitPtr) {

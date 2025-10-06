@@ -248,7 +248,7 @@ static const LocaleTable localeTable[] = {
     {"ja",		"euc-jp"},
 #endif
     {"ja_jp",		"euc-jp"},
-	{"ja_jp.euc",	"euc-jp"},
+    {"ja_jp.euc",	"euc-jp"},
     {"ja_jp.eucjp",	"euc-jp"},
     {"ja_jp.jis",	"iso2022-jp"},
     {"ja_jp.mscode",	"shiftjis"},
@@ -764,7 +764,7 @@ TclpSetVariables(
 #ifdef __CYGWIN__
     SYSTEM_INFO sysInfo;
     static OSVERSIONINFOW osInfo;
-    static int osInfoInitialized = 0;
+    static bool osInfoInitialized = false;
     char buffer[TCL_INTEGER_SPACE * 2];
 #elif !defined(NO_UNAME)
     struct utsname name;
@@ -867,7 +867,7 @@ TclpSetVariables(
 	if (!getversion || getversion(&osInfo)) {
 	    GetVersionExW(&osInfo);
 	}
-	osInfoInitialized = 1;
+	osInfoInitialized = true;
     }
 
     GetSystemInfo(&sysInfo);

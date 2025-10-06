@@ -143,7 +143,7 @@ typedef struct {
  * Boolean flag used by the "testsetmainloop" and "testexitmainloop" commands.
  */
 
-static int exitMainLoop = 0;
+static bool exitMainLoop = false;
 
 /*
  * Event structure used in testing the event queue management procedures.
@@ -6309,7 +6309,7 @@ TestsetmainloopCmd(
     TCL_UNUSED(int) /*objc*/,
     TCL_UNUSED(Tcl_Obj *const *) /*objv*/)
 {
-    exitMainLoop = 0;
+    exitMainLoop = false;
     Tcl_SetMainLoop(MainLoop);
     return TCL_OK;
 }
@@ -6338,7 +6338,7 @@ TestexitmainloopCmd(
     TCL_UNUSED(int) /*objc*/,
     TCL_UNUSED(Tcl_Obj *const *) /*objv*/)
 {
-    exitMainLoop = 1;
+    exitMainLoop = true;
     return TCL_OK;
 }
 
