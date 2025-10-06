@@ -2790,7 +2790,7 @@ ZlibStreamAddCmd(
 	if (flush == -2) {
 	    TclPrintfResult(interp,
 		    "\"-flush\", \"-fullflush\" and \"-finalize\" options"
-		    " are mutually exclusive", TCL_AUTO_LENGTH);
+		    " are mutually exclusive");
 	    Tcl_SetErrorCode(interp, "TCL", "ZIP", "EXCLUSIVE", (char *)NULL);
 	    return TCL_ERROR;
 	}
