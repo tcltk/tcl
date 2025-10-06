@@ -151,8 +151,8 @@ TesteventloopCmd(
 	(void) Tcl_SetServiceMode(oldMode);
 	framePtr = oldFramePtr;
     } else {
-	Tcl_AppendResult(interp, "bad option \"", Tcl_GetString(objv[1]),
-		"\": must be done or wait", (char *)NULL);
+	TclPrintfResult(interp, "bad option \"%s\": must be done or wait",
+		Tcl_GetString(objv[1]));
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -205,8 +205,8 @@ TestvolumetypeCmd(
 	    VOL_BUF_SIZE);
 
     if (found == 0) {
-	Tcl_AppendResult(interp, "could not get volume type for \"",
-		(path?path:""), "\"", (char *)NULL);
+	TclPrintfResult(interp, "could not get volume type for \"%s\"",
+		(path ? path : ""));
 	Tcl_WinConvertError(GetLastError());
 	return TCL_ERROR;
     }
