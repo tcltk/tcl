@@ -4588,15 +4588,8 @@ MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
 
 /*
  *----------------------------------------------------------------
- * Macros used by the Tcl core to grow Tcl_Token arrays. They use the same
- * growth algorithm as used in tclStringObj.c for growing strings. The ANSI C
- * "prototype" for this macro is:
- *
- * MODULE_SCOPE void	TclGrowTokenArray(Tcl_Token *tokenPtr, int used,
- *				int available, int append,
- *				Tcl_Token *staticPtr);
- * MODULE_SCOPE void	TclGrowParseTokenArray(Tcl_Parse *parsePtr,
- *				int append);
+ * Inline function used by the Tcl core to grow Tcl_Token arrays. Uses the same
+ * growth algorithm as used in tclStringObj.c for growing strings.
  *----------------------------------------------------------------
  */
 
@@ -4615,37 +4608,34 @@ MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
 #define TCL_MIN_TOKEN_GROWTH TCL_MIN_GROWTH/sizeof(Tcl_Token)
 #endif
 
-/* TODO - code below does not check for integer overflow */
-#define TclGrowTokenArray(tokenPtr, used, available, append, staticPtr)	\
-    do {								\
-	Tcl_Size _needed = (used) + (append);				\
-	if (_needed > (available)) {					\
-	    Tcl_Size allocated = 2 * _needed;				\
-	    Tcl_Token *oldPtr = (tokenPtr);				\
-	    Tcl_Token *newPtr;						\
-	    if (oldPtr == (staticPtr)) {				\
-		oldPtr = NULL;						\
-	    }								\
-	    newPtr = (Tcl_Token *)Tcl_AttemptRealloc((char *) oldPtr,	\
-		    allocated * sizeof(Tcl_Token));			\
-	    if (newPtr == NULL) {					\
-		allocated = _needed + (append) + TCL_MIN_TOKEN_GROWTH;	\
-		newPtr = (Tcl_Token *)Tcl_Realloc((char *) oldPtr,	\
-			allocated * sizeof(Tcl_Token));			\
-	    }								\
-	    (available) = allocated;					\
-	    if (oldPtr == NULL) {					\
-		memcpy(newPtr, staticPtr,				\
-			(used) * sizeof(Tcl_Token));			\
-	    }								\
-	    (tokenPtr) = newPtr;					\
-	}								\
-    } while (0)
-
-#define TclGrowParseTokenArray(parsePtr, append)			\
-    TclGrowTokenArray((parsePtr)->tokenPtr, (parsePtr)->numTokens,	\
-	    (parsePtr)->tokensAvailable, (append),			\
-	    (parsePtr)->staticTokens)
+static inline void
+TclGrowParseTokenArray(
+    Tcl_Parse *parsePtr,
+    Tcl_Size append)
+{
+    Tcl_Size needed = parsePtr->numTokens + append;
+    if (needed > parsePtr->tokensAvailable) {
+	Tcl_Size allocated = 2 * needed;
+	Tcl_Token *oldPtr = parsePtr->tokenPtr;
+	Tcl_Token *newPtr;
+	if (oldPtr == parsePtr->staticTokens) {
+	    oldPtr = NULL;
+	}
+	newPtr = (Tcl_Token *)Tcl_AttemptRealloc((char *) oldPtr,
+		allocated * sizeof(Tcl_Token));
+	if (newPtr == NULL) {
+	    allocated = needed + append + TCL_MIN_TOKEN_GROWTH;
+	    newPtr = (Tcl_Token *)Tcl_Realloc((char *) oldPtr,
+		    allocated * sizeof(Tcl_Token));
+	}
+	parsePtr->tokensAvailable = allocated;
+	if (oldPtr == NULL) {
+	    memcpy(newPtr, parsePtr->staticTokens,
+		    parsePtr->numTokens * sizeof(Tcl_Token));
+	}
+	parsePtr->tokenPtr = newPtr;
+    }
+}
 
 /*
  *----------------------------------------------------------------
