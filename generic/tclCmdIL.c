@@ -21,7 +21,6 @@
 #include "tclRegexp.h"
 #include "tclTomMath.h"
 #include <math.h>
-#include <assert.h>
 
 /*
  * During execution of the "lsort" command, structures of the following type

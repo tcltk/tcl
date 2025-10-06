@@ -10,7 +10,6 @@
  */
 
 #include "tclInt.h"
-#include <assert.h>
 #include "../utf8proc/utf8proc.h" /* Relative path to ignore system include */
 
 typedef size_t (LengthProc)(const char *src);

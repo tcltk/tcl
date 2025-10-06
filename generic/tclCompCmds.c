@@ -15,7 +15,6 @@
 
 #include "tclInt.h"
 #include "tclCompile.h"
-#include <assert.h>
 
 /*
  * Prototypes for procedures defined later in this file:
