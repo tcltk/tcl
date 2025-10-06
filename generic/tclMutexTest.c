@@ -29,6 +29,8 @@
  */
 
 TCL_DECLARE_MUTEX(testContextMutex)
+TCL_DECLARE_MUTEX(threadStartMutex)
+static Tcl_Condition threadStartCond;
 
 static inline void
 LockTestContext(
@@ -88,9 +90,6 @@ typedef struct {
     Tcl_WideUInt numOperations;		  /* Use is dependent on the test */
     Tcl_WideUInt timeouts;		  /* Timeouts on condition variables */
 } MutexThreadContext;
-
-/* Used to track how many test threads running. Also used as trigger */
-static volatile int mutexThreadCount;
 
 static Tcl_ThreadCreateType	CounterThreadProc(void *clientData);
 static int			TestMutexLock(Tcl_Interp *interp,
@@ -233,8 +232,12 @@ TestMutexLock(
     MutexThreadContext *threadContextsPtr = (MutexThreadContext *)
 	    Tcl_Alloc(sizeof(*threadContextsPtr) * contextPtr->numThreads);
 
+    Tcl_MutexLock(&threadStartMutex);
+    /* Inflate threadStartCond for later */
+    Tcl_Time nullTime = { 0, 0 };
+    Tcl_ConditionWait(&threadStartCond, &threadStartMutex, &nullTime);
+
     contextPtr->u.counter = 0;
-    mutexThreadCount = 0;
     for (int i = 0; i < contextPtr->numThreads; i++) {
 	threadContextsPtr[i].sharedContextPtr = contextPtr;
 	threadContextsPtr[i].numOperations = 0; /* Init though not used */
@@ -245,7 +248,10 @@ TestMutexLock(
 	    Tcl_Panic("Failed to create %d'th thread\n", i);
 	}
     }
-    mutexThreadCount = contextPtr->numThreads; /* Will fire off all test threads */
+
+    /* Trigger start signal */
+    Tcl_ConditionNotify(&threadStartCond);
+    Tcl_MutexUnlock(&threadStartMutex);
 
     /* Wait for all threads */
     for (int i = 0; i < contextPtr->numThreads; i++) {
@@ -281,10 +287,10 @@ CounterThreadProc(
     MutexThreadContext *threadContextPtr = (MutexThreadContext *)clientData;
     MutexSharedContext *contextPtr = threadContextPtr->sharedContextPtr;
 
-    /* Spin wait until given the run signal */
-    while (mutexThreadCount < contextPtr->numThreads) {
-	YieldToOtherThreads();
-    }
+    /* Wait for start signal */
+    Tcl_MutexLock(&threadStartMutex);
+    Tcl_ConditionWait(&threadStartCond, &threadStartMutex, NULL);
+    Tcl_MutexUnlock(&threadStartMutex);
 
     for (int i = 0; i < contextPtr->numIterations; i++) {
 	LockTestContext(contextPtr->numRecursions);
@@ -346,7 +352,10 @@ TestConditionVariable(
     MutexThreadContext *producerContextsPtr = (MutexThreadContext *)Tcl_Alloc(
 	    sizeof(*producerContextsPtr) * numProducers);
 
-    mutexThreadCount = 0;
+    Tcl_MutexLock(&threadStartMutex);
+    /* Inflate threadStartCond for later */
+    Tcl_Time nullTime = { 0, 0 };
+    Tcl_ConditionWait(&threadStartCond, &threadStartMutex, &nullTime);
 
     for (int i = 0; i < numConsumers; i++) {
 	consumerContextsPtr[i].sharedContextPtr = contextPtr;
@@ -372,7 +381,9 @@ TestConditionVariable(
 	}
     }
 
-    mutexThreadCount = contextPtr->numThreads; /* Will trigger all threads */
+    /* Trigger start signal */
+    Tcl_ConditionNotify(&threadStartCond);
+    Tcl_MutexUnlock(&threadStartMutex);
 
     /* Producer total, thread, timeouts, Consumer total, thread, timeouts */
     Tcl_Obj *results[6];
@@ -441,10 +452,10 @@ ProducerThreadProc(
     Tcl_WideUInt limit;
     limit = contextPtr->numThreads * (Tcl_WideUInt) contextPtr->numIterations;
 
-    /* Spin wait until given the run signal */
-    while (mutexThreadCount < contextPtr->numThreads) {
-	YieldToOtherThreads();
-    }
+    /* Wait for start signal */
+    Tcl_MutexLock(&threadStartMutex);
+    Tcl_ConditionWait(&threadStartCond, &threadStartMutex, NULL);
+    Tcl_MutexUnlock(&threadStartMutex);
 
     LockTestContext(contextPtr->numRecursions);
     while (contextPtr->u.queue.totalEnqueued < limit) {
@@ -503,10 +514,10 @@ ConsumerThreadProc(
     Tcl_WideUInt limit;
     limit = contextPtr->numThreads * (Tcl_WideUInt) contextPtr->numIterations;
 
-    /* Spin wait until given the run signal */
-    while (mutexThreadCount < contextPtr->numThreads) {
-	YieldToOtherThreads();
-    }
+    /* Wait for start signal */
+    Tcl_MutexLock(&threadStartMutex);
+    Tcl_ConditionWait(&threadStartCond, &threadStartMutex, NULL);
+    Tcl_MutexUnlock(&threadStartMutex);
 
     LockTestContext(contextPtr->numRecursions);
     while (contextPtr->u.queue.totalDequeued < limit) {
