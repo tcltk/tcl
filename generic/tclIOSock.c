@@ -15,6 +15,9 @@
 /*
  * On Windows, we need to do proper Unicode->UTF-8 conversion.
  */
+ #if defined (__clang__) && (__clang_major__ > 20)
+#pragma clang diagnostic ignored "-Wc++-keyword"
+#endif
 
 typedef struct ThreadSpecificData_Sockets {
     bool initialized;

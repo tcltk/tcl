@@ -199,8 +199,9 @@ TclOO_Class_Constructor(
     Tcl_Obj *const *objv)
 {
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
-    size_t skip = Tcl_ObjectContextSkippedArgs(context);
-    if ((size_t) objc > skip + 1) {
+    Tcl_Size skip = Tcl_ObjectContextSkippedArgs(context);
+
+    if (objc > skip + 1) {
 	Tcl_WrongNumArgs(interp, skip, objv,
 		"?definitionScript?");
 	return TCL_ERROR;
@@ -224,7 +225,7 @@ TclOO_Class_Constructor(
      * If there's nothing else to do, we're done.
      */
 
-    if ((size_t) objc == skip) {
+    if (objc == skip) {
 	Tcl_InterpState saved = Tcl_SaveInterpState(interp, TCL_OK);
 	MixinClassDelegates(interp, oPtr, delegateName);
 	Tcl_DecrRefCount(delegateName);
@@ -611,7 +612,7 @@ TclOO_Object_Cloned(
     int objc,			// Number of arguments.
     Tcl_Obj *const *objv)	// The actual arguments.
 {
-    int skip = Tcl_ObjectContextSkippedArgs(context);
+    Tcl_Size skip = Tcl_ObjectContextSkippedArgs(context);
     if (objc != skip + 1) {
 	Tcl_WrongNumArgs(interp, skip, objv, "originObject");
 	return TCL_ERROR;
@@ -651,7 +652,7 @@ TclOO_Object_Destroy(
 {
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
 
-    if (objc != (int) Tcl_ObjectContextSkippedArgs(context)) {
+    if (objc != Tcl_ObjectContextSkippedArgs(context)) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
 		NULL);
 	return TCL_ERROR;
@@ -713,10 +714,10 @@ TclOO_Object_Eval(
 {
     CallContext *contextPtr = (CallContext *) context;
     Tcl_Object object = Tcl_ObjectContextObject(context);
-    size_t skip = Tcl_ObjectContextSkippedArgs(context);
+    Tcl_Size skip = Tcl_ObjectContextSkippedArgs(context);
     CallFrame *framePtr, **framePtrPtr = &framePtr;
 
-    if ((size_t) objc < skip + 1) {
+    if (objc < skip + 1) {
 	Tcl_WrongNumArgs(interp, skip, objv, "arg ?arg ...?");
 	return TCL_ERROR;
     }
@@ -747,7 +748,7 @@ TclOO_Object_Eval(
 
     Tcl_Obj *scriptPtr;
     CmdFrame *invoker;
-    if ((size_t) objc != skip+1) {
+    if ((Tcl_Size) objc != skip + 1) {
 	scriptPtr = Tcl_ConcatObj(objc-skip, objv+skip);
 	invoker = NULL;
     } else {
@@ -818,7 +819,7 @@ TclOO_Object_Unknown(
     Object *callerObj = NULL;
     Class *callerCls = NULL;
     Object *oPtr = contextPtr->oPtr;
-    size_t skip = Tcl_ObjectContextSkippedArgs(context);
+    Tcl_Size skip = Tcl_ObjectContextSkippedArgs(context);
     CallFrame *framePtr = ((Interp *) interp)->varFramePtr;
 
     /*
@@ -827,7 +828,7 @@ TclOO_Object_Unknown(
      * name without an error).
      */
 
-    if ((size_t) objc < skip + 1) {
+    if (objc < skip + 1) {
 	Tcl_WrongNumArgs(interp, skip, objv, "method ?arg ...?");
 	return TCL_ERROR;
     }
@@ -1136,7 +1137,7 @@ TclOO_Object_VarName(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* The actual arguments. */
 {
-    if ((int) Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
+    if (Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
 		"varName");
 	return TCL_ERROR;

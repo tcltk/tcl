@@ -3610,6 +3610,8 @@ MODULE_SCOPE Tcl_Obj *	TclListObjCopy(Tcl_Interp *interp, Tcl_Obj *listPtr);
 MODULE_SCOPE int	TclListObjAppendElements(Tcl_Interp *interp,
 			    Tcl_Obj *toObj, Tcl_Size elemCount,
 			    Tcl_Obj *const elemObjv[]);
+MODULE_SCOPE int	TclListObjAppendIfAbsent(Tcl_Interp *interp,
+			    Tcl_Obj *toObj, Tcl_Obj *elem);
 MODULE_SCOPE Tcl_Obj *	TclListObjRange(Tcl_Interp *interp, Tcl_Obj *listPtr,
 			    Tcl_Size fromIdx, Tcl_Size toIdx);
 MODULE_SCOPE Tcl_Obj *	TclLsetList(Tcl_Interp *interp, Tcl_Obj *listPtr,
@@ -4723,8 +4725,8 @@ MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
 
 /*
  *----------------------------------------------------------------
- * Inline function used by the Tcl core to grow Tcl_Token arrays. It uses the
- * same growth algorithm as used in tclStringObj.c for growing strings.
+ * Inline function used by the Tcl core to grow Tcl_Token arrays. Uses the same
+ * growth algorithm as used in tclStringObj.c for growing strings.
  *----------------------------------------------------------------
  */
 
@@ -4748,8 +4750,6 @@ TclGrowParseTokenArray(
     Tcl_Parse *parsePtr,
     Tcl_Size append)
 {
-    /* TODO - code below does not check for integer overflow */
-
     Tcl_Size needed = parsePtr->numTokens + append;
     if (needed > parsePtr->tokensAvailable) {
 	Tcl_Size allocated = 2 * needed;
@@ -4872,6 +4872,7 @@ MODULE_SCOPE Tcl_LibraryInitProc TclTommath_Init;
 
 MODULE_SCOPE Tcl_LibraryInitProc TclplatformtestInit;
 MODULE_SCOPE Tcl_LibraryInitProc TclObjTest_Init;
+MODULE_SCOPE Tcl_LibraryInitProc TclMutex_Init;
 MODULE_SCOPE Tcl_LibraryInitProc TclThread_Init;
 MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_Init;
 MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_SafeInit;

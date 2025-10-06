@@ -19,6 +19,10 @@
 #include <ddeml.h>
 #include <tchar.h>
 
+#if defined (__clang__) && (__clang_major__ > 20)
+#pragma clang diagnostic ignored "-Wc++-keyword"
+#endif
+
 #if !defined(NDEBUG)
     /* test POKE server Implemented for debug mode only */
 #   undef CBF_FAIL_POKES

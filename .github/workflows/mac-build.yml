@@ -38,7 +38,7 @@ jobs:
               "--enable-symbols=all"
             ]
   xcode:
-    runs-on: macos-15
+    runs-on: macos-26
     defaults:
       run:
         shell: bash
@@ -63,7 +63,7 @@ jobs:
           MAC_CI: 1
         timeout-minutes: 15
   clang:
-    runs-on: macos-15
+    runs-on: macos-26
     needs: plan
     strategy:
       matrix: ${{ fromJson(needs.plan.outputs.clang) }}

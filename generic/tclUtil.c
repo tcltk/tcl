@@ -4405,7 +4405,7 @@ TclSetObjNameOfShlib(
  *
  * Results:
  *	A pointer to an "fsPath" Tcl_Obj, or to an empty Tcl_Obj if the
- *	pathname of the application is unknown.
+ *	pathname of the shared library is unknown.
  *
  * Side effects:
  *	None.

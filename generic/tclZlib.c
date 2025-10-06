@@ -15,8 +15,11 @@
  */
 
 #include "tclInt.h"
-#include "zlib.h"
 #include "tclIO.h"
+#if defined(_WIN32) && defined (__clang__) && (__clang_major__ > 20)
+#pragma clang diagnostic ignored "-Wc++-keyword"
+#endif
+#include "zlib.h"
 
 /*
  * The version of the zlib "package" that this implements. Note that this

@@ -379,7 +379,7 @@ Configurable_Getter(
     Tcl_Var varPtr, aryVar;
     Tcl_Obj *valuePtr;
 
-    if ((int) Tcl_ObjectContextSkippedArgs(context) != objc) {
+    if (Tcl_ObjectContextSkippedArgs(context) != objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context),
 		objv, NULL);
 	return TCL_ERROR;
@@ -414,7 +414,7 @@ Configurable_Setter(
     Tcl_Obj *propNamePtr = (Tcl_Obj *) clientData;
     Tcl_Var varPtr, aryVar;
 
-    if ((int) Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
+    if (Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context),
 		objv, "value");
 	return TCL_ERROR;
