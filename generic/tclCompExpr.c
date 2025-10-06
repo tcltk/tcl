@@ -1465,10 +1465,10 @@ ParseExpr(
 	 */
 
 	numBytes = parsePtr->end - parsePtr->string;
-	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+	TclAppendPrintfToErrorInfo(interp,
 		"\n    (parsing expression \"%.*s%s\")",
 		(numBytes < limit) ? (int)numBytes : (int)limit - 3,
-		parsePtr->string, (numBytes < limit) ? "" : "..."));
+		parsePtr->string, (numBytes < limit) ? "" : "...");
 	if (errCode) {
 	    Tcl_SetErrorCode(interp, "TCL", "PARSE", "EXPR", errCode,
 		    subErrCode, (char *)NULL);
