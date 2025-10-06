@@ -818,9 +818,9 @@ Tcl_RegsubObjCmd(
 	    Tcl_Free(args);
 	    if (result != TCL_OK) {
 		if (result == TCL_ERROR) {
-		    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+		    TclAppendPrintfToErrorInfo(interp,
 			    "\n    (%s substitution computation script)",
-			    options[REGSUB_COMMAND]));
+			    options[REGSUB_COMMAND]);
 		}
 		goto done;
 	    }
@@ -3966,10 +3966,9 @@ SwitchPostProc(
 	int limit = 50;
 	int overflow = (patternLength > limit);
 
-	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		"\n    (\"%.*s%s\" arm line %d)",
+	TclAppendPrintfToErrorInfo(interp, "\n    (\"%.*s%s\" arm line %d)",
 		(int) (overflow ? limit : patternLength), pattern,
-		(overflow ? "..." : ""), Tcl_GetErrorLine(interp)));
+		(overflow ? "..." : ""), Tcl_GetErrorLine(interp));
     }
     TclStackFree(interp, ctxPtr);
     return result;
@@ -4960,7 +4959,7 @@ TryPostBody(
     Tcl_Interp *interp,
     int result)
 {
-    Tcl_Obj *resultObj, *options, *handlersObj, *finallyObj, *cmdObj, **objv;
+    Tcl_Obj *resultObj, *options, *handlersObj, *finallyObj, **objv;
     int code, objc;
     Tcl_Size i, numHandlers = 0;
 
@@ -4969,16 +4968,13 @@ TryPostBody(
     objv = (Tcl_Obj **)data[2];
     objc = PTR2INT(data[3]);
 
-    cmdObj = objv[0];
-
     /*
      * Check for limits/rewinding, which override normal trapping behaviour.
      */
 
     if (((Interp*) interp)->execEnvPtr->rewind || Tcl_LimitExceeded(interp)) {
-	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		"\n    (\"%s\" body line %d)", TclGetString(cmdObj),
-		Tcl_GetErrorLine(interp)));
+	TclAppendPrintfToErrorInfo(interp, "\n    (\"try\" body line %d)",
+		Tcl_GetErrorLine(interp));
 	if (handlersObj != NULL) {
 	    Tcl_DecrRefCount(handlersObj);
 	}
@@ -4991,9 +4987,8 @@ TryPostBody(
      */
 
     if (result == TCL_ERROR) {
-	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		"\n    (\"%s\" body line %d)", TclGetString(cmdObj),
-		Tcl_GetErrorLine(interp)));
+	TclAppendPrintfToErrorInfo(interp, "\n    (\"try\" body line %d)",
+		Tcl_GetErrorLine(interp));
     }
     resultObj = Tcl_GetObjResult(interp);
     Tcl_IncrRefCount(resultObj);
@@ -5139,7 +5134,7 @@ TryPostBody(
      */
 
     if (finallyObj != NULL) {
-	Tcl_NRAddCallback(interp, TryPostFinal, resultObj, options, cmdObj,
+	Tcl_NRAddCallback(interp, TryPostFinal, resultObj, options, NULL,
 		NULL);
 	return TclNREvalObjEx(interp, finallyObj, 0,
 		((Interp *) interp)->cmdFramePtr, objc - 1);
@@ -5174,7 +5169,7 @@ TryPostHandler(
     Tcl_Interp *interp,
     int result)
 {
-    Tcl_Obj *resultObj, *cmdObj, *options, *handlerKindObj, **objv;
+    Tcl_Obj *resultObj, *options, *handlerKindObj, **objv;
     Tcl_Obj *finallyObj;
     int finallyIndex;
 
@@ -5183,7 +5178,6 @@ TryPostHandler(
     handlerKindObj = (Tcl_Obj *)data[2];
     finallyIndex = PTR2INT(data[3]);
 
-    cmdObj = objv[0];
     finallyObj = finallyIndex ? objv[finallyIndex] : 0;
 
     /*
@@ -5192,9 +5186,8 @@ TryPostHandler(
 
     if (((Interp*) interp)->execEnvPtr->rewind || Tcl_LimitExceeded(interp)) {
 	options = During(interp, result, options, Tcl_ObjPrintf(
-		"\n    (\"%s ... %s\" handler line %d)",
-		TclGetString(cmdObj), TclGetString(handlerKindObj),
-		Tcl_GetErrorLine(interp)));
+		"\n    (\"try ... %s\" handler line %d)",
+		TclGetString(handlerKindObj), Tcl_GetErrorLine(interp)));
 	Tcl_DecrRefCount(options);
 	return TCL_ERROR;
     }
@@ -5207,9 +5200,8 @@ TryPostHandler(
     Tcl_IncrRefCount(resultObj);
     if (result == TCL_ERROR) {
 	options = During(interp, result, options, Tcl_ObjPrintf(
-		"\n    (\"%s ... %s\" handler line %d)",
-		TclGetString(cmdObj), TclGetString(handlerKindObj),
-		Tcl_GetErrorLine(interp)));
+		"\n    (\"try ... %s\" handler line %d)",
+		TclGetString(handlerKindObj), Tcl_GetErrorLine(interp)));
     } else {
 	Tcl_DecrRefCount(options);
 	options = Tcl_GetReturnOptions(interp, result);
@@ -5223,7 +5215,7 @@ TryPostHandler(
     if (finallyObj != NULL) {
 	Interp *iPtr = (Interp *) interp;
 
-	Tcl_NRAddCallback(interp, TryPostFinal, resultObj, options, cmdObj,
+	Tcl_NRAddCallback(interp, TryPostFinal, resultObj, options, NULL,
 		NULL);
 
 	/* The 'finally' script is always the last argument word. */
@@ -5260,11 +5252,10 @@ TryPostFinal(
     Tcl_Interp *interp,
     int result)
 {
-    Tcl_Obj *resultObj, *options, *cmdObj;
+    Tcl_Obj *resultObj, *options;
 
     resultObj = (Tcl_Obj *)data[0];
     options = (Tcl_Obj *)data[1];
-    cmdObj = (Tcl_Obj *)data[2];
 
     /*
      * If the result wasn't OK, we need to adjust the result options.
@@ -5275,8 +5266,8 @@ TryPostFinal(
 	resultObj = NULL;
 	if (result == TCL_ERROR) {
 	    options = During(interp, result, options, Tcl_ObjPrintf(
-		    "\n    (\"%s ... finally\" body line %d)",
-		    TclGetString(cmdObj), Tcl_GetErrorLine(interp)));
+		    "\n    (\"try ... finally\" body line %d)",
+		    Tcl_GetErrorLine(interp)));
 	} else {
 	    Tcl_Obj *origOptions = options;
 

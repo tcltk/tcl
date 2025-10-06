@@ -3557,11 +3557,11 @@ NsEval_Callback(
 	int overflow = (length > limit);
 	char *cmd = (char *) data[1];
 
-	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+	TclAppendPrintfToErrorInfo(interp,
 		"\n    (in namespace %s \"%.*s%s\" script line %d)",
 		cmd,
 		(overflow ? limit : (unsigned)length), namespacePtr->fullName,
-		(overflow ? "..." : ""), Tcl_GetErrorLine(interp)));
+		(overflow ? "..." : ""), Tcl_GetErrorLine(interp));
     }
 
     /*
@@ -5049,11 +5049,10 @@ TclLogCommandInfo(
 	    length = strlen(command);
 	}
 	overflow = (length > limit);
-	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		"\n    %s\n\"%.*s%s\"", ((iPtr->errorInfo == NULL)
-		? "while executing" : "invoked from within"),
+	TclAppendPrintfToErrorInfo(interp, "\n    %s\n\"%.*s%s\"",
+		((iPtr->errorInfo == NULL) ? "while executing" : "invoked from within"),
 		(overflow ? limit : (int)length), command,
-		(overflow ? "..." : "")));
+		(overflow ? "..." : ""));
 
 	varPtr = TclObjLookupVarEx(interp, iPtr->eiVar, NULL, TCL_GLOBAL_ONLY,
 		NULL, 0, 0, &arrayPtr);

@@ -1806,10 +1806,9 @@ Tcl_FSEvalFileEx(
 	int limit = 150;
 	int overflow = (length > limit);
 
-	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		"\n    (file \"%.*s%s\" line %d)",
+	TclAppendPrintfToErrorInfo(interp, "\n    (file \"%.*s%s\" line %d)",
 		(overflow ? limit : (int)length), pathString,
-		(overflow ? "..." : ""), Tcl_GetErrorLine(interp)));
+		(overflow ? "..." : ""), Tcl_GetErrorLine(interp));
     }
 
   end:
@@ -1955,10 +1954,9 @@ EvalFileCallback(
 	const int limit = 150;
 	int overflow = (length > limit);
 
-	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		"\n    (file \"%.*s%s\" line %d)",
+	TclAppendPrintfToErrorInfo(interp, "\n    (file \"%.*s%s\" line %d)",
 		(overflow ? limit : (int)length), pathString,
-		(overflow ? "..." : ""), Tcl_GetErrorLine(interp)));
+		(overflow ? "..." : ""), Tcl_GetErrorLine(interp));
     }
 
     Tcl_DecrRefCount(objPtr);

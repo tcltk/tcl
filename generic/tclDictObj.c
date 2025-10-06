@@ -2795,9 +2795,9 @@ DictForLoopCallback(
 	    Tcl_ResetResult(interp);
 	    result = TCL_OK;
 	} else if (result == TCL_ERROR) {
-	    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+	    TclAppendPrintfToErrorInfo(interp,
 		    "\n    (\"dict for\" body line %d)",
-		    Tcl_GetErrorLine(interp)));
+		    Tcl_GetErrorLine(interp));
 	}
 	goto done;
     }
@@ -2996,9 +2996,9 @@ DictMapLoopCallback(
 	    Tcl_ResetResult(interp);
 	    result = TCL_OK;
 	} else if (result == TCL_ERROR) {
-	    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+	    TclAppendPrintfToErrorInfo(interp,
 		    "\n    (\"dict map\" body line %d)",
-		    Tcl_GetErrorLine(interp)));
+		    Tcl_GetErrorLine(interp));
 	}
 	goto done;
     } else {
@@ -3424,9 +3424,9 @@ DictFilterCmd(
 		result = TCL_OK;
 		break;
 	    case TCL_ERROR:
-		Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+		TclAppendPrintfToErrorInfo(interp,
 			"\n    (\"dict filter\" script line %d)",
-			Tcl_GetErrorLine(interp)));
+			Tcl_GetErrorLine(interp));
 		TCL_FALLTHROUGH();
 	    default:
 		goto abnormalResult;
