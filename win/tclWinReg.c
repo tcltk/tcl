@@ -21,6 +21,9 @@
 #   pragma comment (lib, "advapi32.lib")
 #endif
 #include <stdlib.h>
+#if defined (__clang__) && (__clang_major__ > 20)
+#pragma clang diagnostic ignored "-Wc++-keyword"
+#endif
 
 /*
  * Ensure that we can say which registry is being accessed.

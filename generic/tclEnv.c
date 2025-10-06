@@ -18,6 +18,9 @@
 TCL_DECLARE_MUTEX(envMutex)	/* To serialize access to environ. */
 
 #if defined(_WIN32)
+#if defined (__clang__) && (__clang_major__ > 20)
+#pragma clang diagnostic ignored "-Wc++-keyword"
+#endif
 #  define tenviron _wenviron
 #  define tenviron2utfDStr(str, dsPtr) \
 	(Tcl_DStringInit(dsPtr),					\

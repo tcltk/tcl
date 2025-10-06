@@ -49,6 +49,9 @@
  */
 
 #include "tclWinInt.h"
+#if defined (__clang__) && (__clang_major__ > 20)
+#pragma clang diagnostic ignored "-Wc++-keyword"
+#endif
 
 #ifdef _MSC_VER
 #   pragma comment (lib, "ws2_32")

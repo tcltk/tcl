@@ -809,7 +809,7 @@ ExpandedOptions(
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Obj **keys,		/* Built-in keys (per thread) */
     Tcl_Obj *returnOpts,	/* Options dict we are building */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     for (;  objc > 1;  objv += 2, objc -= 2) {

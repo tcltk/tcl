@@ -97,7 +97,7 @@ typedef struct ThreadEventResult {
     char *errorCode;		/* Copy of errorCode variable */
     Tcl_ThreadId srcThreadId;	/* Id of sending thread, in case it dies */
     Tcl_ThreadId dstThreadId;	/* Id of target thread, in case it dies */
-    struct ThreadEvent *eventPtr;	/* Back pointer */
+    ThreadEvent *eventPtr;	/* Back pointer */
     struct ThreadEventResult *nextPtr;	/* List for cleanup */
     struct ThreadEventResult *prevPtr;
 } ThreadEventResult;

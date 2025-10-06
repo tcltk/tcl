@@ -38,7 +38,11 @@ static const char ENCODING_ERROR[] = "\n\t(encoding error in stderr)";
  * we have to translate that to strcmp here.
  */
 
-#ifndef _WIN32
+#ifdef _WIN32
+#   if defined (__clang__) && (__clang_major__ > 20)
+#   pragma clang diagnostic ignored "-Wc++-keyword"
+#   endif
+#else
 #   define TCHAR char
 #   define TEXT(arg) arg
 #   define _tcscmp strcmp
