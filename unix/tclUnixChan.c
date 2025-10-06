@@ -1783,9 +1783,9 @@ TclpOpenFileChannel(
 		return NULL;
 	    }
 
-	    Tcl_AppendResult(interp, "couldn't open \"",
-		    TclGetString(pathPtr),
-		    "\": filename is invalid on this platform", (char *)NULL);
+	    TclPrintfResult(interp,
+		    "couldn't open \"%s\": filename is invalid on this platform",
+		    TclGetString(pathPtr));
 	}
 	return NULL;
     }

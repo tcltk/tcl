@@ -5050,7 +5050,7 @@ TclLogCommandInfo(
 	}
 	overflow = (length > limit);
 	TclAppendPrintfToErrorInfo(interp, "\n    %s\n\"%.*s%s\"",
-		((iPtr->errorInfo == NULL) ? "while executing" : "invoked from within"),
+		(iPtr->errorInfo ? "invoked from within" : "while executing"),
 		(overflow ? limit : (int)length), command,
 		(overflow ? "..." : ""));
 
