@@ -181,10 +181,10 @@ TclCompileIfCmd(
     Tcl_Size jumpIndex = 0;	/* Avoid compiler warning. */
     Tcl_Size j, numWords, wordIdx;
     int code;
-    int realCond = 1;		/* Set to 0 for static conditions:
+    bool realCond = true;	/* Set to false for static conditions:
 				 * "if 0 {..}" */
     int boolVal;		/* Value of static condition. */
-    int compileScripts = 1;
+    bool compileScripts = true;
 
     /*
      * Only compile the "if" command if all arguments are simple words, in
@@ -252,9 +252,9 @@ TclCompileIfCmd(
 		 * A static condition.
 		 */
 
-		realCond = 0;
+		realCond = false;
 		if (!boolVal) {
-		    compileScripts = 0;
+		    compileScripts = false;
 		}
 	    } else {
 		Tcl_ResetResult(interp);
@@ -321,15 +321,15 @@ TclCompileIfCmd(
 	     * We were processing an "if 1 {...}"; stop compiling scripts.
 	     */
 
-	    compileScripts = 0;
+	    compileScripts = false;
 	} else {
 	    /*
 	     * We were processing an "if 0 {...}"; reset so that the rest
 	     * (elseif, else) is compiled correctly.
 	     */
 
-	    realCond = 1;
-	    compileScripts = 1;
+	    realCond = true;
+	    compileScripts = true;
 	}
 
 	tokenPtr = TokenAfter(tokenPtr);
@@ -430,7 +430,7 @@ TclCompileIncrCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *varTokenPtr, *incrTokenPtr;
-    int isScalar, haveImmValue;
+    bool haveImmValue, isScalar;
     Tcl_LVTIndex localIndex;
     Tcl_WideInt immValue;
 
@@ -446,7 +446,7 @@ TclCompileIncrCmd(
      * integer.
      */
 
-    haveImmValue = 0;
+    haveImmValue = false;
     immValue = 1;
     if (parsePtr->numWords == 3) {
 	Tcl_Obj *intObj;
@@ -455,7 +455,7 @@ TclCompileIncrCmd(
 	if (TclWordKnownAtCompileTime(incrTokenPtr, intObj)) {
 	    int code = TclGetWideIntFromObj(NULL, intObj, &immValue);
 	    if ((code == TCL_OK) && (-127 <= immValue) && (immValue <= 127)) {
-		haveImmValue = 1;
+		haveImmValue = true;
 	    }
 	}
 	Tcl_BounceRefCount(intObj);
@@ -464,7 +464,7 @@ TclCompileIncrCmd(
 	    CompileTokens(envPtr, incrTokenPtr, interp);
 	}
     } else {			/* No incr amount given so use 1. */
-	haveImmValue = 1;
+	haveImmValue = true;
     }
 
     /*
@@ -619,7 +619,7 @@ TclCompileInfoExistsCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr;
-    int isScalar;
+    bool isScalar;
     Tcl_LVTIndex localIndex;
 
     if (parsePtr->numWords != 2) {
@@ -812,7 +812,7 @@ TclCompileLappendCmd(
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *varTokenPtr, *valueTokenPtr;
     Tcl_Size numWords = parsePtr->numWords, i;
-    int isScalar;
+    bool isScalar;
     Tcl_LVTIndex localIndex;
 
     if (numWords < 2 || numWords > UINT_MAX) {
@@ -902,7 +902,7 @@ TclCompileLappendCmd(
 	PUSH(			"");
     } else {
 	Tcl_Size build = 0;
-	int concat = 0;
+	bool concat = false;	// Whether to concatenate after forming a list
 
 	valueTokenPtr = TokenAfter(varTokenPtr);
 	for (i = 2; i < numWords; i++) {
@@ -912,14 +912,14 @@ TclCompileLappendCmd(
 		    OP(		LIST_CONCAT);
 		}
 		build = 0;
-		concat = 1;
+		concat = true;
 	    }
 	    PUSH_TOKEN(		valueTokenPtr, i);
 	    if (valueTokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
 		if (concat) {
 		    OP(		LIST_CONCAT);
 		} else {
-		    concat = 1;
+		    concat = true;
 		}
 	    } else {
 		build++;
@@ -930,7 +930,7 @@ TclCompileLappendCmd(
 		    OP(		LIST_CONCAT);
 		}
 		build = 0;
-		concat = 1;
+		concat = true;
 	    }
 	    valueTokenPtr = TokenAfter(valueTokenPtr);
 	}
@@ -992,7 +992,7 @@ TclCompileLassignCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr;
-    int isScalar;
+    bool isScalar;
     Tcl_Size numWords = parsePtr->numWords, idx;
     Tcl_LVTIndex localIndex;
     /* TODO: Consider support for compiling expanded args. */
@@ -1186,7 +1186,7 @@ TclCompileListCmd(
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *valueTokenPtr;
     Tcl_Size i, build, numWords = parsePtr->numWords;
-    int concat;
+    bool concat;
     Tcl_Obj *listObj, *objPtr;
 
     if (numWords > UINT_MAX) {
@@ -1229,21 +1229,21 @@ TclCompileListCmd(
      */
 
     valueTokenPtr = TokenAfter(parsePtr->tokenPtr);
-    for (concat = 0, build = 0, i = 1; i < numWords; i++) {
+    for (concat = false, build = 0, i = 1; i < numWords; i++) {
 	if (valueTokenPtr->type == TCL_TOKEN_EXPAND_WORD && build > 0) {
 	    OP4(		LIST, build);
 	    if (concat) {
 		OP(		LIST_CONCAT);
 	    }
 	    build = 0;
-	    concat = 1;
+	    concat = true;
 	}
 	PUSH_TOKEN(		valueTokenPtr, i);
 	if (valueTokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
 	    if (concat) {
 		OP(		LIST_CONCAT);
 	    } else {
-		concat = 1;
+		concat = true;
 	    }
 	} else {
 	    build++;
@@ -1254,7 +1254,7 @@ TclCompileListCmd(
 		OP(		LIST_CONCAT);
 	    }
 	    build = 0;
-	    concat = 1;
+	    concat = true;
 	}
 	valueTokenPtr = TokenAfter(valueTokenPtr);
     }
@@ -1513,7 +1513,7 @@ TclCompileLeditCmd(
      */
 
     Tcl_LVTIndex varIdx;
-    int isScalar;
+    bool isScalar;
     PushVarNameWord(varTokenPtr, 0, &varIdx, &isScalar, 1);
     // Stack: varWords...
 
@@ -1639,7 +1639,8 @@ TclCompileLpopCmd(
     }
 
     Tcl_Token *idxTokenPtr = NULL;
-    int idx = TCL_INDEX_END, isSimpleIndex = 1;
+    int idx = TCL_INDEX_END;
+    bool isSimpleIndex = true;
     if (numWords == 3) {
 	idxTokenPtr = TokenAfter(varTokenPtr);
 	if (TclGetIndexFromToken(idxTokenPtr, TCL_INDEX_NONE,
@@ -1649,7 +1650,7 @@ TclCompileLpopCmd(
 	     * side effects. Need a much more conservative instruction sequence
 	     * to get order of trace-observable operations right.
 	     */
-	    isSimpleIndex = 0;
+	    isSimpleIndex = false;
 	}
     }
 
@@ -1957,7 +1958,7 @@ TclCompileLsetCmd(
     Tcl_Token *varTokenPtr;	/* Pointer to the Tcl_Token representing the
 				 * parse of the variable name. */
     Tcl_LVTIndex localIndex;	/* Index of var in local var table. */
-    int isScalar;		/* Flag == 1 if scalar, 0 if array. */
+    bool isScalar;		/* True if scalar, false if array. */
     Tcl_Size i, numWords = parsePtr->numWords;
 
     /*
@@ -2375,7 +2376,7 @@ TclCompileRegexpCmd(
 				 * parse of the RE or string. */
     size_t len;
     Tcl_Size i, numWords = parsePtr->numWords;
-    int nocase, exact, sawLast, simple;
+    bool exact, nocase, sawLast, simple;
     const char *str;
 
     /*
@@ -2389,9 +2390,9 @@ TclCompileRegexpCmd(
 	return TCL_ERROR;
     }
 
-    simple = 0;
-    nocase = 0;
-    sawLast = 0;
+    simple = false;
+    nocase = false;
+    sawLast = false;
     varTokenPtr = parsePtr->tokenPtr;
 
     /*
@@ -2403,11 +2404,11 @@ TclCompileRegexpCmd(
     for (i = 1; i < numWords - 2; i++) {
 	varTokenPtr = TokenAfter(varTokenPtr);
 	if (IS_TOKEN_LITERALLY(varTokenPtr, "--")) {
-	    sawLast++;
+	    sawLast = true;
 	    i++;
 	    break;
 	} else if (IS_TOKEN_PREFIX(varTokenPtr, 2, "-nocase")) {
-	    nocase = 1;
+	    nocase = true;
 	} else {
 	    /*
 	     * Not an option we recognize or something the compiler can't see.
@@ -2462,7 +2463,7 @@ TclCompileRegexpCmd(
 	 */
 
 	if (TclReToGlob(NULL, str, len, &ds, &exact, NULL) == TCL_OK) {
-	    simple = 1;
+	    simple = true;
 	    TclPushDString(envPtr, &ds);
 	    Tcl_DStringFree(&ds);
 	}
@@ -2552,7 +2553,8 @@ TclCompileRegsubCmd(
     Tcl_Obj *patternObj = NULL, *replacementObj = NULL;
     Tcl_DString pattern;
     const char *bytes;
-    int exact, quantified, result = TCL_ERROR;
+    bool exact, quantified;
+    int result = TCL_ERROR;
     Tcl_Size len;
 
     if (numWords < 5 || numWords > 6) {
@@ -2809,14 +2811,14 @@ TclCompileReturnCmd(
 	 */
 
 	Tcl_ExceptionRange index = envPtr->exceptArrayNext - 1;
-	int enclosingCatch = 0;
+	bool enclosingCatch = false;
 
 	while (index >= 0) {
 	    const ExceptionRange *rangePtr = &envPtr->exceptArrayPtr[index];
 
 	    if ((rangePtr->type == CATCH_EXCEPTION_RANGE)
 		    && (rangePtr->catchOffset == TCL_INDEX_NONE)) {
-		enclosingCatch = 1;
+		enclosingCatch = true;
 		break;
 	    }
 	    index--;
@@ -3137,7 +3139,7 @@ IndexTailVarIfKnown(
     const char *tailName, *p;
     Tcl_Size n = varTokenPtr->numComponents, len;
     Tcl_Token *lastTokenPtr;
-    int full;
+    bool full;
     Tcl_LVTIndex localIndex;
 
     /*
@@ -3155,10 +3157,10 @@ IndexTailVarIfKnown(
 
     TclNewObj(tailPtr);
     if (TclWordKnownAtCompileTime(varTokenPtr, tailPtr)) {
-	full = 1;
+	full = true;
 	lastTokenPtr = varTokenPtr;
     } else {
-	full = 0;
+	full = false;
 	lastTokenPtr = varTokenPtr + n;
 
 	if (lastTokenPtr->type != TCL_TOKEN_TEXT) {
@@ -3254,22 +3256,22 @@ TclCompileObjectNextCmd(
     // Concatenate all arguments into a list; handles expansion
     tokenPtr = parsePtr->tokenPtr;
     Tcl_Size build;
-    int concat;
-    for (concat = 0, build = 0, i = 0; i < numWords; i++) {
+    bool concat;
+    for (concat = false, build = 0, i = 0; i < numWords; i++) {
 	if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD && build > 0) {
 	    OP4(		LIST, build);
 	    if (concat) {
 		OP(		LIST_CONCAT);
 	    }
 	    build = 0;
-	    concat = 1;
+	    concat = true;
 	}
 	PUSH_TOKEN(		tokenPtr, i);
 	if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
 	    if (concat) {
 		OP(		LIST_CONCAT);
 	    } else {
-		concat = 1;
+		concat = true;
 	    }
 	} else {
 	    build++;
@@ -3280,7 +3282,7 @@ TclCompileObjectNextCmd(
 		OP(		LIST_CONCAT);
 	    }
 	    build = 0;
-	    concat = 1;
+	    concat = true;
 	}
 	tokenPtr = TokenAfter(tokenPtr);
     }
@@ -3336,22 +3338,22 @@ TclCompileObjectNextToCmd(
     // Concatenate all arguments into a list; handles expansion
     tokenPtr = parsePtr->tokenPtr;
     Tcl_Size build;
-    int concat;
-    for (concat = 0, build = 0, i = 0; i < numWords; i++) {
+    bool concat;
+    for (concat = false, build = 0, i = 0; i < numWords; i++) {
 	if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD && build > 0) {
 	    OP4(		LIST, build);
 	    if (concat) {
 		OP(		LIST_CONCAT);
 	    }
 	    build = 0;
-	    concat = 1;
+	    concat = true;
 	}
 	PUSH_TOKEN(		tokenPtr, i);
 	if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
 	    if (concat) {
 		OP(		LIST_CONCAT);
 	    } else {
-		concat = 1;
+		concat = true;
 	    }
 	} else {
 	    build++;
@@ -3362,7 +3364,7 @@ TclCompileObjectNextToCmd(
 		OP(		LIST_CONCAT);
 	    }
 	    build = 0;
-	    concat = 1;
+	    concat = true;
 	}
 	tokenPtr = TokenAfter(tokenPtr);
     }

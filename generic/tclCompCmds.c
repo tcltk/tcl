@@ -135,7 +135,7 @@ TclCompileAppendCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *varTokenPtr, *valueTokenPtr;
-    int isScalar;
+    bool isScalar;
     Tcl_LVTIndex localIndex;
     Tcl_Size i, numWords = parsePtr->numWords;
 
@@ -259,7 +259,7 @@ TclCompileArrayExistsCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr;
-    int isScalar;
+    bool isScalar;
     Tcl_LVTIndex localIndex;
 
     if (parsePtr->numWords != 2) {
@@ -291,7 +291,8 @@ TclCompileArraySetCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *varTokenPtr, *dataTokenPtr;
-    int isScalar, code = TCL_OK, isDataLiteral, isDataValid, isDataEven;
+    bool isScalar, isDataLiteral, isDataValid, isDataEven;
+    int code = TCL_OK;
     Tcl_Size len;
     Tcl_LVTIndex keyVar, valVar, localIndex;
     Tcl_AuxDataRef infoIndex;
@@ -449,8 +450,8 @@ TclCompileArraySetCmd(
     OP4(			STORE_ARRAY, localIndex);
     OP(				POP);
     infoPtr->loopCtTemp = offsetBack - CurrentOffset(envPtr); /*misuse */
-    OP(			FOREACH_STEP);
-    OP(			FOREACH_END);
+    OP(				FOREACH_STEP);
+    OP(				FOREACH_END);
     STKDELTA(-3);
     PUSH(			"");
 
@@ -470,7 +471,7 @@ TclCompileArrayUnsetCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr = TokenAfter(parsePtr->tokenPtr);
-    int isScalar;
+    bool isScalar;
     Tcl_LVTIndex localIndex;
     Tcl_BytecodeLabel noSuchArray, end;
 
@@ -931,7 +932,7 @@ TclCompileConstCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *varTokenPtr, *valueTokenPtr;
-    int isScalar;
+    bool isScalar;
     Tcl_LVTIndex localIndex;
 
     /*
@@ -2087,7 +2088,7 @@ TclCompileDictWithCmd(
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
-    int bodyIsEmpty = 1;
+    bool bodyIsEmpty = true;
     Tcl_Size i, numWords = parsePtr->numWords;
     Tcl_Token *varTokenPtr, *tokenPtr;
 
@@ -2125,7 +2126,7 @@ TclCompileDictWithCmd(
 	    return TclCompileBasicMin2ArgCmd(interp, parsePtr, cmdPtr,
 		    envPtr);
 	}
-	bodyIsEmpty = 0;
+	bodyIsEmpty = false;
     }
 
     /* Now we commit to issuing code. */
@@ -2683,7 +2684,7 @@ TclCompileForCmd(
     CONTINUE_TARGET(	bodyRange);
     if (!TclIsEmptyToken(nextTokenPtr)) {
 	nextRange = MAKE_LOOP_RANGE();
-	envPtr->exceptAuxArrayPtr[nextRange].supportsContinue = 0;
+	envPtr->exceptAuxArrayPtr[nextRange].supportsContinue = false;
 	CATCH_RANGE(nextRange) {
 	    BODY(		nextTokenPtr, 3);
 	}

@@ -133,7 +133,8 @@ Tcl_RegexpObjCmd(
 {
     Tcl_Size offset, stringLength, matchLength, cflags, eflags;
     Tcl_Size i;
-    int indices, match, about, all, doinline, numMatchesSaved;
+    int match, about, all, numMatchesSaved;
+    bool doinline, indices;
     Tcl_RegExp regExpr;
     Tcl_Obj *objPtr, *startIndex = NULL, *resultPtr = NULL;
     Tcl_RegExpInfo info;
@@ -148,12 +149,12 @@ Tcl_RegexpObjCmd(
 	REGEXP_NOCASE,	REGEXP_START,	REGEXP_LAST
     } index;
 
-    indices = 0;
+    indices = false;
     about = 0;
     cflags = TCL_REG_ADVANCED;
     offset = TCL_INDEX_START;
     all = 0;
-    doinline = 0;
+    doinline = false;
 
     for (i = 1; i < objc; i++) {
 	const char *name;
@@ -171,10 +172,10 @@ Tcl_RegexpObjCmd(
 	    all = 1;
 	    break;
 	case REGEXP_INDICES:
-	    indices = 1;
+	    indices = true;
 	    break;
 	case REGEXP_INLINE:
-	    doinline = 1;
+	    doinline = true;
 	    break;
 	case REGEXP_NOCASE:
 	    cflags |= TCL_REG_NOCASE;
@@ -493,7 +494,8 @@ Tcl_RegsubObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int result, cflags, all, match, command;
+    int result, cflags, match;
+    bool all, command;
     Tcl_Size idx, wlen, wsublen = 0, offset, numMatches, numParts;
     Tcl_Size start, end, subStart, subEnd;
     Tcl_RegExp regExpr;
@@ -513,9 +515,9 @@ Tcl_RegsubObjCmd(
     } index;
 
     cflags = TCL_REG_ADVANCED;
-    all = 0;
+    all = false;
     offset = TCL_INDEX_START;
-    command = 0;
+    command = false;
     resultPtr = NULL;
 
     for (idx = 1; idx < objc; idx++) {
@@ -531,13 +533,13 @@ Tcl_RegsubObjCmd(
 	}
 	switch (index) {
 	case REGSUB_ALL:
-	    all = 1;
+	    all = true;
 	    break;
 	case REGSUB_NOCASE:
 	    cflags |= TCL_REG_NOCASE;
 	    break;
 	case REGSUB_COMMAND:
-	    command = 1;
+	    command = true;
 	    break;
 	case REGSUB_EXPANDED:
 	    cflags |= TCL_REG_EXPANDED;
@@ -598,7 +600,7 @@ Tcl_RegsubObjCmd(
 	}
     }
 
-    if (all && (offset == 0) && (command == 0)
+    if (all && (offset == 0) && !command
 	    && (strpbrk(TclGetString(objv[2]), "&\\") == NULL)
 	    && (strpbrk(TclGetString(objv[0]), "*+?{}()[].\\|^$") == NULL)) {
 	/*
@@ -1529,7 +1531,8 @@ StringIsCmd(
 {
     const char *string1, *end, *stop;
     int (*chcomp)(int) = NULL;	/* The UniChar comparison function. */
-    int i, result = 1, strict = 0;
+    int i, result = 1;
+    bool strict = false;
     Tcl_Size failat = 0, length1, length2, length3;
     Tcl_Obj *objPtr, *failVarObj = NULL;
     Tcl_WideInt w;
@@ -1575,7 +1578,7 @@ StringIsCmd(
 	    }
 	    switch (idx2) {
 	    case OPT_STRICT:
-		strict = 1;
+		strict = true;
 		break;
 	    case OPT_FAILIDX:
 		if (i+1 >= objc-1) {
@@ -1964,7 +1967,7 @@ StringMapCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Size length1, length2,  mapElemc, index;
-    int nocase = 0, mapWithDict = 0, copySource = 0;
+    bool nocase = false, mapWithDict = false, copySource = false;
     Tcl_Obj **mapElemv, *sourceObj, *resultPtr;
     Tcl_UniChar *ustring1, *ustring2, *p, *end;
     int (*strCmpFn)(const Tcl_UniChar*, const Tcl_UniChar*, size_t);
@@ -1979,7 +1982,7 @@ StringMapCmd(
 
 	if ((length2 > 1) &&
 		strncmp(string, "-nocase", length2) == 0) {
-	    nocase = 1;
+	    nocase = true;
 	} else {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "bad option \"%s\": must be -nocase", string));
@@ -2016,7 +2019,7 @@ StringMapCmd(
 	}
 
 	mapElemc = 2 * i;
-	mapWithDict = 1;
+	mapWithDict = true;
 
 	/*
 	 * Copy the dictionary out into an array; that's the easiest way to
@@ -2064,7 +2067,7 @@ StringMapCmd(
 
     if (objv[objc-2] == objv[objc-1]) {
 	sourceObj = Tcl_DuplicateObj(objv[objc-1]);
-	copySource = 1;
+	copySource = true;
     } else {
 	sourceObj = objv[objc-1];
     }
@@ -3448,8 +3451,8 @@ TclNRSwitchObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int i, mode, foundmode, splitObjs, numMatchesSaved;
-    int noCase;
+    int i, mode, splitObjs, numMatchesSaved;
+    bool foundmode, noCase;
     Tcl_Size patternLength, j;
     const char *pattern;
     Tcl_Obj *valueObj, *indexVarObj, *matchVarObj;
@@ -3480,11 +3483,11 @@ TclNRSwitchObjCmd(
     strCmpFn_t strCmpFn = TclUtfCmp;
 
     mode = OPT_EXACT;
-    foundmode = 0;
+    foundmode = false;
     indexVarObj = NULL;
     matchVarObj = NULL;
     numMatchesSaved = 0;
-    noCase = 0;
+    noCase = false;
     for (i = 1; i < objc-2; i++) {
 	if (TclGetString(objv[i])[0] != '-') {
 	    break;
@@ -3503,7 +3506,7 @@ TclNRSwitchObjCmd(
 	    goto finishedOptions;
 	case OPT_NOCASE:
 	    strCmpFn = TclUtfCasecmp;
-	    noCase = 1;
+	    noCase = true;
 	    break;
 
 	    /*
@@ -3523,7 +3526,7 @@ TclNRSwitchObjCmd(
 			"DOUBLEOPT", (char *)NULL);
 		return TCL_ERROR;
 	    }
-	    foundmode = 1;
+	    foundmode = true;
 	    mode = index;
 	    break;
 
@@ -3731,7 +3734,8 @@ TclNRSwitchObjCmd(
 	    }
 	    break;
 	case OPT_GLOB:
-	    if (Tcl_StringCaseMatch(TclGetString(valueObj),pattern,noCase)) {
+	    if (Tcl_StringCaseMatch(TclGetString(valueObj), pattern,
+		    (int)noCase)) {
 		goto matchFound;
 	    }
 	    break;
@@ -4772,7 +4776,8 @@ TclNRTryObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *bodyObj, *handlersObj, *finallyObj = NULL;
-    int i, bodyShared, haveHandlers, code;
+    int i, code;
+    bool bodyShared, haveHandlers;
     Tcl_Size dummy;
     static const char *const handlerNames[] = {
 	"finally", "on", "trap", NULL
@@ -4794,8 +4799,8 @@ TclNRTryObjCmd(
     }
     bodyObj = objv[1];
     TclNewObj(handlersObj);
-    bodyShared = 0;
-    haveHandlers = 0;
+    bodyShared = false;
+    haveHandlers = false;
     for (i=2 ; i<objc ; i++) {
 	enum Handlers type;
 	Tcl_Obj *info[5];
@@ -4855,7 +4860,7 @@ TclNRTryObjCmd(
 			"ARGUMENT", (char *)NULL);
 		return TCL_ERROR;
 	    }
-	    code = 1;
+	    code = TCL_ERROR;
 	    if (TclListObjLength(NULL, objv[i+1], &dummy) != TCL_OK) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"bad prefix '%s': must be a list",
@@ -4884,7 +4889,7 @@ TclNRTryObjCmd(
 	    bodyShared = !strcmp(TclGetString(objv[i+3]), "-");
 	    Tcl_ListObjAppendElement(NULL, handlersObj,
 		    Tcl_NewListObj(5, info));
-	    haveHandlers = 1;
+	    haveHandlers = true;
 	    i += 3;
 	    break;
 	default:
@@ -5014,7 +5019,7 @@ TryPostBody(
      */
 
     if (handlersObj != NULL) {
-	int found = 0;
+	bool found = false;
 	Tcl_Obj **handlers, **info;
 
 	TclListObjGetElements(NULL, handlersObj, &numHandlers, &handlers);
@@ -5062,7 +5067,7 @@ TryPostBody(
 		    }
 		}
 
-		found = 1;
+		found = true;
 	    }
 
 	    /*

@@ -4480,17 +4480,18 @@ TclReToGlob(
     const char *reStr,
     Tcl_Size reStrLen,
     Tcl_DString *dsPtr,
-    int *exactPtr,
-    int *quantifiersFoundPtr)
+    bool *exactPtr,
+    bool *quantifiersFoundPtr)
 {
-    int anchorLeft, anchorRight, lastIsStar, numStars;
+    bool anchorLeft, anchorRight, lastIsStar;
+    int numStars;
     char *dsStr, *dsStrStart;
     const char *msg, *p, *strEnd, *code;
 
     strEnd = reStr + reStrLen;
     Tcl_DStringInit(dsPtr);
     if (quantifiersFoundPtr != NULL) {
-	*quantifiersFoundPtr = 0;
+	*quantifiersFoundPtr = false;
     }
 
     /*
@@ -4520,7 +4521,7 @@ TclReToGlob(
 	*dsStr++ = '*';
 	Tcl_DStringSetLength(dsPtr, dsStr - dsStrStart);
 	if (exactPtr) {
-	    *exactPtr = 0;
+	    *exactPtr = false;
 	}
 	return TCL_OK;
     }
@@ -4544,17 +4545,17 @@ TclReToGlob(
     msg = NULL;
     code = NULL;
     p = reStr;
-    anchorRight = 0;
-    lastIsStar = 0;
+    anchorRight = false;
+    lastIsStar = false;
     numStars = 0;
 
     if (*p == '^') {
-	anchorLeft = 1;
+	anchorLeft = true;
 	p++;
     } else {
-	anchorLeft = 0;
+	anchorLeft = false;
 	*dsStr++ = '*';
-	lastIsStar = 1;
+	lastIsStar = true;
     }
 
     for ( ; p < strEnd; p++) {
@@ -4586,12 +4587,12 @@ TclReToGlob(
 	    case 'B': case '\\':
 		*dsStr++ = '\\';
 		*dsStr++ = '\\';
-		anchorLeft = 0; /* prevent exact match */
+		anchorLeft = false; /* prevent exact match */
 		break;
 	    case '*': case '[': case ']': case '?':
 		/* Only add \ where necessary for glob */
 		*dsStr++ = '\\';
-		anchorLeft = 0; /* prevent exact match */
+		anchorLeft = false; /* prevent exact match */
 		TCL_FALLTHROUGH();
 	    case '{': case '}': case '(': case ')': case '+':
 	    case '.': case '|': case '^': case '$':
@@ -4605,15 +4606,15 @@ TclReToGlob(
 	    break;
 	case '.':
 	    if (quantifiersFoundPtr != NULL) {
-		*quantifiersFoundPtr = 1;
+		*quantifiersFoundPtr = true;
 	    }
-	    anchorLeft = 0; /* prevent exact match */
+	    anchorLeft = false; /* prevent exact match */
 	    if (p+1 < strEnd) {
 		if (p[1] == '*') {
 		    p++;
 		    if (!lastIsStar) {
 			*dsStr++ = '*';
-			lastIsStar = 1;
+			lastIsStar = true;
 			numStars++;
 		    }
 		    continue;
@@ -4621,7 +4622,7 @@ TclReToGlob(
 		    p++;
 		    *dsStr++ = '?';
 		    *dsStr++ = '*';
-		    lastIsStar = 1;
+		    lastIsStar = true;
 		    numStars++;
 		    continue;
 		}
@@ -4634,7 +4635,7 @@ TclReToGlob(
 		code = "NONANCHOR";
 		goto invalidGlob;
 	    }
-	    anchorRight = 1;
+	    anchorRight = true;
 	    break;
 	case '*': case '+': case '?': case '|': case '^':
 	case '{': case '}': case '(': case ')': case '[': case ']':
@@ -4645,7 +4646,7 @@ TclReToGlob(
 	    *dsStr++ = *p;
 	    break;
 	}
-	lastIsStar = 0;
+	lastIsStar = false;
     }
     if (numStars > 1) {
 	/*

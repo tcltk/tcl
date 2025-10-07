@@ -1153,9 +1153,9 @@ Tcl_DictObjFirst(
     cPtr = dict->entryChainHead;
     if (cPtr == NULL) {
 	searchPtr->epoch = 0;
-	*donePtr = 1;
+	*donePtr = true;
     } else {
-	*donePtr = 0;
+	*donePtr = false;
 	searchPtr->dictionaryPtr = (Tcl_Dict) dict;
 	searchPtr->epoch = dict->epoch;
 	searchPtr->next = cPtr->nextPtr;
@@ -1214,7 +1214,7 @@ Tcl_DictObjNext(
      */
 
     if (!searchPtr->epoch) {
-	*donePtr = 1;
+	*donePtr = true;
 	return;
     }
 
@@ -1230,12 +1230,12 @@ Tcl_DictObjNext(
     cPtr = (ChainEntry *)searchPtr->next;
     if (cPtr == NULL) {
 	Tcl_DictObjDone(searchPtr);
-	*donePtr = 1;
+	*donePtr = true;
 	return;
     }
 
     searchPtr->next = cPtr->nextPtr;
-    *donePtr = 0;
+    *donePtr = false;
     if (keyPtrPtr != NULL) {
 	*keyPtrPtr = (Tcl_Obj *)Tcl_GetHashKey(
 		&((Dict *)searchPtr->dictionaryPtr)->table, &cPtr->entry);
@@ -1968,8 +1968,8 @@ DictMergeCmd(
     Tcl_Obj *const *objv)
 {
     Tcl_Obj *targetObj, *keyObj = NULL, *valueObj = NULL;
-    int done, allocatedDict = 0;
-    int i;
+    int done, i;
+    bool allocatedDict = false;
     Tcl_DictSearch search;
 
     if (objc == 1) {
@@ -2004,7 +2004,7 @@ DictMergeCmd(
 
     if (Tcl_IsShared(targetObj)) {
 	targetObj = Tcl_DuplicateObj(targetObj);
-	allocatedDict = 1;
+	allocatedDict = true;
     }
     for (i=2 ; i<objc ; i++) {
 	if (Tcl_DictObjFirst(interp, objv[i], &search, &keyObj, &valueObj,
@@ -2494,7 +2494,7 @@ DictLappendCmd(
     Tcl_Obj *const *objv)
 {
     Tcl_Obj *dictPtr, *valuePtr, *resultPtr;
-    int allocatedDict = 0, allocatedValue = 0;
+    bool allocatedDict = false, allocatedValue = false;
     int i;
 
     if (objc < 3) {
@@ -2504,10 +2504,10 @@ DictLappendCmd(
 
     dictPtr = Tcl_ObjGetVar2(interp, objv[1], NULL, 0);
     if (dictPtr == NULL) {
-	allocatedDict = 1;
+	allocatedDict = true;
 	dictPtr = Tcl_NewDictObj();
     } else if (Tcl_IsShared(dictPtr)) {
-	allocatedDict = 1;
+	allocatedDict = true;
 	dictPtr = Tcl_DuplicateObj(dictPtr);
     }
 
@@ -2520,10 +2520,10 @@ DictLappendCmd(
 
     if (valuePtr == NULL) {
 	valuePtr = Tcl_NewListObj(objc-3, objv+3);
-	allocatedValue = 1;
+	allocatedValue = true;
     } else {
 	if (Tcl_IsShared(valuePtr)) {
-	    allocatedValue = 1;
+	    allocatedValue = true;
 	    valuePtr = Tcl_DuplicateObj(valuePtr);
 	}
 
@@ -2582,7 +2582,7 @@ DictAppendCmd(
     Tcl_Obj *const *objv)
 {
     Tcl_Obj *dictPtr, *valuePtr, *resultPtr;
-    int allocatedDict = 0;
+    bool allocatedDict = false;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictVarName key ?value ...?");
@@ -2591,10 +2591,10 @@ DictAppendCmd(
 
     dictPtr = Tcl_ObjGetVar2(interp, objv[1], NULL, 0);
     if (dictPtr == NULL) {
-	allocatedDict = 1;
+	allocatedDict = true;
 	dictPtr = Tcl_NewDictObj();
     } else if (Tcl_IsShared(dictPtr)) {
-	allocatedDict = 1;
+	allocatedDict = true;
 	dictPtr = Tcl_DuplicateObj(dictPtr);
     }
 
@@ -3093,7 +3093,8 @@ DictSetCmd(
     Tcl_Obj *const *objv)
 {
     Tcl_Obj *dictPtr, *resultPtr;
-    int result, allocatedDict = 0;
+    int result;
+    bool allocatedDict = false;
 
     if (objc < 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictVarName key ?key ...? value");
@@ -3102,10 +3103,10 @@ DictSetCmd(
 
     dictPtr = Tcl_ObjGetVar2(interp, objv[1], NULL, 0);
     if (dictPtr == NULL) {
-	allocatedDict = 1;
+	allocatedDict = false;
 	dictPtr = Tcl_NewDictObj();
     } else if (Tcl_IsShared(dictPtr)) {
-	allocatedDict = 1;
+	allocatedDict = false;
 	dictPtr = Tcl_DuplicateObj(dictPtr);
     }
 
@@ -3153,7 +3154,8 @@ DictUnsetCmd(
     Tcl_Obj *const *objv)
 {
     Tcl_Obj *dictPtr, *resultPtr;
-    int result, allocatedDict = 0;
+    int result;
+    bool allocatedDict = false;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictVarName key ?key ...?");
@@ -3162,10 +3164,10 @@ DictUnsetCmd(
 
     dictPtr = Tcl_ObjGetVar2(interp, objv[1], NULL, 0);
     if (dictPtr == NULL) {
-	allocatedDict = 1;
+	allocatedDict = true;
 	dictPtr = Tcl_NewDictObj();
     } else if (Tcl_IsShared(dictPtr)) {
-	allocatedDict = 1;
+	allocatedDict = true;
 	dictPtr = Tcl_DuplicateObj(dictPtr);
     }
 
@@ -3866,8 +3868,9 @@ TclDictWithFinish(
 				 * the result value from TclDictWithInit. */
 {
     Tcl_Obj *dictPtr, *leafPtr, *valPtr;
-    Tcl_Size i, allocdict, keyc;
+    Tcl_Size i, keyc;
     Tcl_Obj **keyv;
+    bool allocatedDict;
 
     /*
      * If the dictionary variable doesn't exist, drop everything silently.
@@ -3889,9 +3892,9 @@ TclDictWithFinish(
 
     if (Tcl_IsShared(dictPtr)) {
 	dictPtr = Tcl_DuplicateObj(dictPtr);
-	allocdict = 1;
+	allocatedDict = true;
     } else {
-	allocdict = 0;
+	allocatedDict = false;
     }
 
     if (pathc > 0) {
@@ -3907,13 +3910,13 @@ TclDictWithFinish(
 	leafPtr = TclTraceDictPath(interp, dictPtr, pathc, pathv,
 		DICT_PATH_EXISTS | DICT_PATH_UPDATE);
 	if (leafPtr == NULL) {
-	    if (allocdict) {
+	    if (allocatedDict) {
 		TclDecrRefCount(dictPtr);
 	    }
 	    return TCL_ERROR;
 	}
 	if (leafPtr == DICT_PATH_NON_EXISTENT) {
-	    if (allocdict) {
+	    if (allocatedDict) {
 		TclDecrRefCount(dictPtr);
 	    }
 	    return TCL_OK;
@@ -3958,7 +3961,7 @@ TclDictWithFinish(
 
     if (TclPtrSetVarIdx(interp, varPtr, arrayPtr, part1Ptr, part2Ptr,
 	    dictPtr, TCL_LEAVE_ERR_MSG, index) == NULL) {
-	if (allocdict) {
+	if (allocatedDict) {
 	    TclDecrRefCount(dictPtr);
 	}
 	return TCL_ERROR;

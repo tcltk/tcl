@@ -32,7 +32,7 @@ typedef struct {
     unsigned char lexeme;	/* Code that identifies the operator. */
     unsigned char precedence;	/* Precedence of the operator */
     unsigned char mark;		/* Mark used to control traversal. */
-    unsigned char constant;	/* Flag marking constant subexpressions. */
+    bool constant;		/* Flag marking constant subexpressions. */
 } OpNode;
 
 /*
@@ -610,7 +610,7 @@ ParseExpr(
 				 * into the string being parsed to aid in
 				 * pinpointing the location of the syntax
 				 * error in the expression. */
-    int insertMark = 0;		/* A boolean controlling whether the "mark"
+    bool insertMark = false;	/* A boolean controlling whether the "mark"
 				 * should be inserted. */
     const int limit = 25;	/* Portions of the error message are
 				 * constructed out of substrings of the
@@ -634,7 +634,7 @@ ParseExpr(
     nodes->lexeme = START;
     nodes->precedence = prec[START];
     nodes->mark = MARK_RIGHT;
-    nodes->constant = 1;
+    nodes->constant = true;
     incomplete = lastParsed = nodesUsed;
     nodesUsed++;
 
@@ -859,7 +859,7 @@ ParseExpr(
 		msg = Tcl_ObjPrintf("missing operator at %s", mark);
 		errCode = "MISSING";
 		scanned = 0;
-		insertMark = 1;
+		insertMark = true;
 
 		/*
 		 * Free any literal to avoid a memleak.
@@ -1058,7 +1058,7 @@ ParseExpr(
 	    if (NotOperator(lastParsed)) {
 		msg = Tcl_ObjPrintf("missing operator at %s", mark);
 		scanned = 0;
-		insertMark = 1;
+		insertMark = true;
 		errCode = "MISSING";
 		goto error;
 	    }
@@ -1120,7 +1120,7 @@ ParseExpr(
 		    }
 		    msg = Tcl_ObjPrintf("empty subexpression at %s", mark);
 		    scanned = 0;
-		    insertMark = 1;
+		    insertMark = true;
 		    errCode = "EMPTY";
 		    goto error;
 		}
@@ -1134,7 +1134,7 @@ ParseExpr(
 			msg = Tcl_ObjPrintf(
 				"missing function argument at %s", mark);
 			scanned = 0;
-			insertMark = 1;
+			insertMark = true;
 			errCode = "MISSING";
 		    } else if (nodePtr[-1].lexeme == START) {
 			TclNewLiteralStringObj(msg, "empty expression");
@@ -1149,13 +1149,13 @@ ParseExpr(
 		    msg = Tcl_ObjPrintf("missing function argument at %s",
 			    mark);
 		    scanned = 0;
-		    insertMark = 1;
+		    insertMark = true;
 		    errCode = "UNBALANCED";
 		}
 		if (msg == NULL) {
 		    msg = Tcl_ObjPrintf("missing operand at %s", mark);
 		    scanned = 0;
-		    insertMark = 1;
+		    insertMark = true;
 		    errCode = "MISSING";
 		}
 		goto error;
@@ -1243,7 +1243,7 @@ ParseExpr(
 			|| (nodes[complete].lexeme != COLON))) {
 		    msg = Tcl_ObjPrintf("missing operator \":\" at %s", mark);
 		    scanned = 0;
-		    insertMark = 1;
+		    insertMark = true;
 		    errCode = "MISSING";
 		    goto error;
 		}
@@ -2324,7 +2324,7 @@ CompileExprTree(
     OpNode *rootPtr = nodePtr;
     int numWords = 0;
     JumpList *jumpPtr = NULL;
-    int convert = 1;
+    bool convert = true;
 
     while (1) {
 	int next;
@@ -2334,7 +2334,7 @@ CompileExprTree(
 	    next = nodePtr->left;
 
 	    if (nodePtr->lexeme == QUESTION) {
-		convert = 1;
+		convert = true;
 	    }
 	} else if (nodePtr->mark == MARK_RIGHT) {
 	    next = nodePtr->right;
@@ -2375,7 +2375,7 @@ CompileExprTree(
 		if (convert) {
 		    jumpPtr->jump.jumpType = TCL_TRUE_JUMP;
 		}
-		convert = 1;
+		convert = true;
 		break;
 	    case AND:
 	    case OR:
@@ -2414,7 +2414,7 @@ CompileExprTree(
 		 */
 
 		numWords = nodePtr->left;
-		convert = 1;
+		convert = true;
 		break;
 	    case COMMA:
 		/*
@@ -2427,7 +2427,7 @@ CompileExprTree(
 		CLANG_ASSERT(jumpPtr);
 		if (jumpPtr->jump.jumpType == TCL_TRUE_JUMP) {
 		    jumpPtr->jump.jumpType = TCL_UNCONDITIONAL_JUMP;
-		    convert = 1;
+		    convert = true;
 		}
 		target = jumpPtr->jump.codeOffset + 5;
 		TclFixupForwardJumpToHere(envPtr, &jumpPtr->jump);
@@ -2456,14 +2456,14 @@ CompileExprTree(
 		TclFixupForwardJumpToHere(envPtr, &jumpPtr->jump);
 		PUSH_STRING(	(nodePtr->lexeme == AND) ? "0" : "1");
 		FWDLABEL(pc2);
-		convert = 0;
+		convert = false;
 		freePtr = jumpPtr;
 		jumpPtr = jumpPtr->next;
 		TclStackFree(interp, freePtr);
 		break;
 	    default:
 		TclEmitOpcode(instruction[nodePtr->lexeme], envPtr);
-		convert = 0;
+		convert = false;
 		break;
 	    }
 	    if (nodePtr == rootPtr) {
@@ -2565,7 +2565,7 @@ CompileExprTree(
 		    TclCompileSyntaxError(interp, envPtr);
 		}
 		Tcl_RestoreInterpState(interp, save);
-		convert = 0;
+		convert = false;
 	    } else {
 		nodePtr = nodes + next;
 	    }

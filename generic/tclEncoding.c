@@ -1779,11 +1779,11 @@ OpenEncodingFileChannel(
      */
 
     if (NULL != directory) {
-	int verified = 0;
+	bool verified = false;
 
 	for (i=0; i<numDirs && !verified; i++) {
 	    if (dir[i] == directory) {
-		verified = 1;
+		verified = true;
 	    }
 	}
 	if (!verified) {
@@ -1791,7 +1791,7 @@ OpenEncodingFileChannel(
 
 	    for (i=0; i<numDirs && !verified; i++) {
 		if (strcmp(dirString, TclGetString(dir[i])) == 0) {
-		    verified = 1;
+		    verified = true;
 		}
 	    }
 	}
