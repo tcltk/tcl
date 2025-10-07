@@ -142,7 +142,7 @@ TclCompileSetCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *varTokenPtr, *valueTokenPtr;
-    int isAssignment, isScalar;
+    bool isAssignment, isScalar;
     Tcl_Size numWords = parsePtr->numWords;
     Tcl_LVTIndex localIndex;
 
@@ -523,7 +523,7 @@ TclCompileStringIsCmd(
 	STR_IS_SPACE,	STR_IS_TRUE,	STR_IS_UPPER,
 	STR_IS_WIDE,	STR_IS_WORD,	STR_IS_XDIGIT
     } t;
-    int allowEmpty = 0;
+    bool allowEmpty = false;
     Tcl_ExceptionRange range;
     Tcl_BytecodeLabel end;
     InstStringClassType strClassType;
@@ -555,7 +555,7 @@ TclCompileStringIsCmd(
 
     tokenPtr = TokenAfter(tokenPtr);
     if (parsePtr->numWords == 3) {
-	allowEmpty = 1;
+	allowEmpty = true;
     } else {
 	if (!IS_TOKEN_PREFIX(tokenPtr, 2, "-strict")) {
 	    return TCL_ERROR;
@@ -794,7 +794,7 @@ TclCompileStringMatchCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr;
-    int exactMatch = 0, nocase = 0;
+    bool exactMatch = false, nocase = false;
     Tcl_Size i, numWords = parsePtr->numWords;
 
     if (numWords < 3 || numWords > 4) {
@@ -814,7 +814,7 @@ TclCompileStringMatchCmd(
 
 	    return TclCompileBasic3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
 	}
-	nocase = 1;
+	nocase = true;
 	tokenPtr = TokenAfter(tokenPtr);
     }
 
@@ -834,7 +834,7 @@ TclCompileStringMatchCmd(
 	    exactMatch = TclMatchIsTrivial(TclGetString(copy));
 	    Tcl_BounceRefCount(copy);
 	}
-	PUSH_TOKEN(		tokenPtr, i + 1 + nocase);
+	PUSH_TOKEN(		tokenPtr, i + 1 + (unsigned) nocase);
 	tokenPtr = TokenAfter(tokenPtr);
     }
 
@@ -1554,11 +1554,11 @@ TclSubstCompile(
 
 	    if (tokenPtr->numComponents > 1) {
 		Tcl_Size i;
-		int foundCommand = 0;
+		bool foundCommand = false;
 
 		for (i=2 ; i<=tokenPtr->numComponents ; i++) {
 		    if (tokenPtr[i].type == TCL_TOKEN_COMMAND) {
-			foundCommand = 1;
+			foundCommand = true;
 			break;
 		    }
 		}
@@ -1778,8 +1778,8 @@ TclCompileSwitchCmd(
     SwitchMode mode;		/* What kind of switch are we doing? */
     Tcl_Token *bodyTokenArray;	/* Array of real pattern list items. */
     SwitchArmInfo *arms;	/* Array of information about switch arms. */
-    int noCase;			/* Has the -nocase flag been given? */
-    int foundMode = 0;		/* Have we seen a mode flag yet? */
+    bool noCase;		/* Has the -nocase flag been given? */
+    bool foundMode = false;	/* Have we seen a mode flag yet? */
     Tcl_Size i, valueIndex;
     int result = TCL_ERROR;
     Tcl_Size *clNext = envPtr->clNext;
@@ -1813,7 +1813,7 @@ TclCompileSwitchCmd(
      * Check for options.
      */
 
-    noCase = 0;
+    noCase = false;
     mode = Switch_Exact;
     if (numWords == 2) {
 	/*
@@ -1846,7 +1846,7 @@ TclCompileSwitchCmd(
 		return TCL_ERROR;
 	    }
 	    mode = Switch_Exact;
-	    foundMode = 1;
+	    foundMode = true;
 	    valueIndex++;
 	    continue;
 	} else if (IS_TOKEN_PREFIX(tokenPtr, 2, "-glob")) {
@@ -1854,7 +1854,7 @@ TclCompileSwitchCmd(
 		return TCL_ERROR;
 	    }
 	    mode = Switch_Glob;
-	    foundMode = 1;
+	    foundMode = true;
 	    valueIndex++;
 	    continue;
 	} else if (IS_TOKEN_PREFIX(tokenPtr, 4, "-integer")) {
@@ -1862,7 +1862,7 @@ TclCompileSwitchCmd(
 		return TCL_ERROR;
 	    }
 	    mode = Switch_Integer;
-	    foundMode = 1;
+	    foundMode = true;
 	    valueIndex++;
 	    continue;
 	} else if (IS_TOKEN_PREFIX(tokenPtr, 2, "-regexp")) {
@@ -1870,11 +1870,11 @@ TclCompileSwitchCmd(
 		return TCL_ERROR;
 	    }
 	    mode = Switch_Regexp;
-	    foundMode = 1;
+	    foundMode = true;
 	    valueIndex++;
 	    continue;
 	} else if (IS_TOKEN_PREFIX(tokenPtr, 2, "-nocase")) {
-	    noCase = 1;
+	    noCase = true;
 	    valueIndex++;
 	    continue;
 	} else if (IS_TOKEN_LITERALLY(tokenPtr, "--")) {
@@ -1930,7 +1930,7 @@ TclCompileSwitchCmd(
 				 * and start of list for when tracking the
 				 * location. This list comes immediately after
 				 * the value we switch on. */
-	int wasDefault = 0;	/* For detecting a non-terminal "default" when
+	bool wasDefault = false;/* For detecting a non-terminal "default" when
 				 * in [switch -integer] mode, as that's an
 				 * error case. */
 
@@ -1990,7 +1990,7 @@ TclCompileSwitchCmd(
 		    // Can't use IS_TOKEN_LITERALLY; this is an unwrapped token
 		    if (arm->valueToken->size == 7 &&
 			    !memcmp(arm->valueToken->start, "default", 7)) {
-			wasDefault = 1;
+			wasDefault = true;
 		    } else {
 			// Try to parse the token as an integer. If we can't,
 			// it's an error, and we fallback to interpreted.
@@ -2045,7 +2045,7 @@ TclCompileSwitchCmd(
 	 * Multi-word definition of patterns & actions.
 	 */
 
-	int wasDefault = 0;	/* For detecting a non-terminal "default" when
+	bool wasDefault = false;/* For detecting a non-terminal "default" when
 				 * in [switch -integer] mode, as that's an
 				 * error case. */
 	bodyTokenArray = NULL;
@@ -2081,7 +2081,7 @@ TclCompileSwitchCmd(
 			result = TCL_ERROR;
 			goto freeTemporaries;
 		    } else if (IS_TOKEN_LITERALLY(tokenPtr, "default")) {
-			wasDefault = 1;
+			wasDefault = true;
 		    } else {
 			// Try to parse the token as an integer. If we can't,
 			// it's an error, and we fallback to interpreted.
@@ -2170,7 +2170,7 @@ IssueSwitchChainedTests(
     Tcl_Size numArms,		/* Number of arms of the switch. */
     SwitchArmInfo *arms)	/* Array of arm descriptors. */
 {
-    int foundDefault;		/* Flag to indicate whether a "default" clause
+    bool foundDefault;		/* Flag to indicate whether a "default" clause
 				 * is present. */
     Tcl_BytecodeLabel *fwdJumps;/* Array of forward-jump fixup locations. */
     Tcl_Size jumpCount;		/* Next cell to use in fwdJumps array. */
@@ -2181,7 +2181,7 @@ IssueSwitchChainedTests(
 				 * the current (or next) real body. */
     Tcl_Size nextArmFixupIndex;	/* Index of next issued arm to fix the jump to
 				 * the next test for, or -1 if no fix pending. */
-    int simple, exact;		/* For extracting the type of regexp. */
+    bool simple, exact;		/* For extracting the type of regexp. */
     Tcl_Size i, j;
 
     /*
@@ -2193,7 +2193,7 @@ IssueSwitchChainedTests(
     fwdJumps = (Tcl_BytecodeLabel *)TclStackAlloc(interp,
 	    sizeof(Tcl_BytecodeLabel) * numArms * 2);
     jumpCount = 0;
-    foundDefault = 0;
+    foundDefault = false;
     for (i=0 ; i<numArms ; i++) {
 	SwitchArmInfo *arm = &arms[i];
 
@@ -2222,7 +2222,7 @@ IssueSwitchChainedTests(
 		OP(		EQ);
 		break;
 	    case Switch_Regexp:
-		simple = exact = 0;
+		simple = exact = false;
 
 		/*
 		 * Keep in sync with TclCompileRegexpCmd.
@@ -2248,7 +2248,7 @@ IssueSwitchChainedTests(
 
 		    if (TclReToGlob(NULL, arm->valueToken->start,
 			    arm->valueToken->size, &ds, &exact, NULL) == TCL_OK) {
-			simple = 1;
+			simple = true;
 			TclPushDString(envPtr, &ds);
 			Tcl_DStringFree(&ds);
 		    }
@@ -2310,7 +2310,7 @@ IssueSwitchChainedTests(
 	     * verified).
 	     */
 
-	    foundDefault = 1;
+	    foundDefault = true;
 	}
 
 	/*
@@ -2398,7 +2398,7 @@ IssueSwitchJumpTable(
 {
     JumptableInfo *jtPtr;
     Tcl_AuxDataRef infoIndex;
-    int isNew, mustGenerate, foundDefault;
+    bool isNew, mustGenerate, foundDefault;
     Tcl_Size numRealBodies = 0, i;
     Tcl_BytecodeLabel jumpLocation, jumpToDefault, *finalFixups;
     Tcl_DString buffer;
@@ -2425,8 +2425,8 @@ IssueSwitchJumpTable(
     infoIndex = RegisterJumptable(jtPtr, envPtr);
     finalFixups = (Tcl_BytecodeLabel *)TclStackAlloc(interp,
 	    sizeof(Tcl_BytecodeLabel) * numArms);
-    foundDefault = 0;
-    mustGenerate = 1;
+    foundDefault = false;
+    mustGenerate = true;
 
     /*
      * Next, issue the instruction to do the jump, together with what we want
@@ -2477,8 +2477,8 @@ IssueSwitchJumpTable(
 	     * INST_JUMP_TABLE instruction to here.
 	     */
 
-	    foundDefault = 1;
-	    isNew = 1;
+	    foundDefault = true;
+	    isNew = true;
 	    FWDLABEL(	jumpToDefault);
 	}
 
@@ -2491,7 +2491,7 @@ IssueSwitchJumpTable(
 	 */
 
 	if (IsFallthroughArm(arm)) {
-	    mustGenerate = 1;
+	    mustGenerate = true;
 	    continue;
 	}
 
@@ -2504,7 +2504,7 @@ IssueSwitchJumpTable(
 	if (!isNew && !mustGenerate) {
 	    continue;
 	}
-	mustGenerate = 0;
+	mustGenerate = false;
 
 	/*
 	 * Compile the body of the arm.
@@ -2577,7 +2577,7 @@ IssueSwitchNumJumpTable(
 {
     JumptableNumInfo *jtPtr;
     Tcl_AuxDataRef infoIndex;
-    int isNew, mustGenerate, foundDefault;
+    bool isNew, mustGenerate, foundDefault;
     Tcl_Size numRealBodies = 0, i;
     Tcl_BytecodeLabel jumpLocation, jumpToDefault, *finalFixups;
 
@@ -2595,8 +2595,8 @@ IssueSwitchNumJumpTable(
     infoIndex = RegisterJumptableNum(jtPtr, envPtr);
     finalFixups = (Tcl_BytecodeLabel *)TclStackAlloc(interp,
 	    sizeof(Tcl_BytecodeLabel) * numArms);
-    foundDefault = 0;
-    mustGenerate = 1;
+    foundDefault = false;
+    mustGenerate = true;
 
     /*
      * Next, issue the instruction to do the jump, together with what we want
@@ -2637,8 +2637,8 @@ IssueSwitchNumJumpTable(
 	     * INST_JUMP_TABLE instruction to here.
 	     */
 
-	    foundDefault = 1;
-	    isNew = 1;
+	    foundDefault = true;
+	    isNew = true;
 	    FWDLABEL(	jumpToDefault);
 	}
 
@@ -2651,7 +2651,7 @@ IssueSwitchNumJumpTable(
 	 */
 
 	if (IsFallthroughArm(arm)) {
-	    mustGenerate = 1;
+	    mustGenerate = true;
 	    continue;
 	}
 
@@ -2664,7 +2664,7 @@ IssueSwitchNumJumpTable(
 	if (!isNew && !mustGenerate) {
 	    continue;
 	}
-	mustGenerate = 0;
+	mustGenerate = false;
 
 	/*
 	 * Compile the body of the arm.
@@ -2929,7 +2929,7 @@ TclCompileTailcallCmd(
     Tcl_Token *tokenPtr = parsePtr->tokenPtr;
     Tcl_Size i, numWords = parsePtr->numWords;
     Tcl_Size build = 1;
-    int concat = 0;
+    bool concat = false;
 
     if (!EnvIsProc(envPtr)) {
 	return TCL_ERROR;
@@ -2979,7 +2979,7 @@ TclCompileTailcallCmd(
 		OP(		LIST_CONCAT);
 	    }
 	    build = 0;
-	    concat = 1;
+	    concat = true;
 	}
 	// Push the word. The first one is marked for limited sharing.
 	if (i == 1 && tokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
@@ -2992,7 +2992,7 @@ TclCompileTailcallCmd(
 	    if (concat) {
 		OP(		LIST_CONCAT);
 	    } else {
-		concat = 1;
+		concat = true;
 	    }
 	} else {
 	    // Otherwise, count how many words are pending to make into a list.
@@ -3005,7 +3005,7 @@ TclCompileTailcallCmd(
 		OP(		LIST_CONCAT);
 	    }
 	    build = 0;
-	    concat = 1;
+	    concat = true;
 	}
     }
     // Anything left over? Handle now.
@@ -3392,7 +3392,7 @@ IssueTryClausesInstructions(
     DefineLineInformation;	/* TIP #280 */
     Tcl_LVTIndex resultVar, optionsVar;
     Tcl_Size i, j, len;
-    int continuationsPending = 0, trapZero = 0;
+    bool continuationsPending = false, trapZero = false;
     Tcl_ExceptionRange range;
     Tcl_BytecodeLabel afterBody = 0, pushReturnOptions = 0;
     Tcl_BytecodeLabel notCodeJumpSource, notECJumpSource, dontSpliceDuring;
@@ -3411,7 +3411,7 @@ IssueTryClausesInstructions(
 
     for (i=0 ; i<numHandlers ; i++) {
 	if (handlers[i].matchCode == 0) {
-	    trapZero = 1;
+	    trapZero = true;
 	    break;
 	}
     }
@@ -3506,12 +3506,12 @@ IssueTryClausesInstructions(
 	    OP(			POP);
 	}
 	if (!handlers[i].tokenPtr) {
-	    continuationsPending = 1;
+	    continuationsPending = true;
 	    FWDJUMP(		JUMP, continuationJumps[i]);
 	    STKDELTA(+1);
 	} else {
 	    if (continuationsPending) {
-		continuationsPending = 0;
+		continuationsPending = false;
 		for (j=0 ; j<i ; j++) {
 		    if (continuationJumps[j] != NO_PENDING_JUMP) {
 			FWDLABEL(continuationJumps[j]);
@@ -3603,7 +3603,7 @@ IssueTryTraplessClausesInstructions(
     DefineLineInformation;	/* TIP #280 */
     Tcl_LVTIndex resultVar, optionsVar;
     Tcl_Size i, j;
-    int continuationsPending = 0, trapZero = 0;
+    bool continuationsPending = false, trapZero = false;
     Tcl_ExceptionRange range;
     Tcl_BytecodeLabel afterBody = 0, pushReturnOptions = 0;
     Tcl_BytecodeLabel dontSpliceDuring, tableBase, haveOther;
@@ -3633,7 +3633,7 @@ IssueTryTraplessClausesInstructions(
 
     for (i=0 ; i<numHandlers ; i++) {
 	if (handlers[i].matchCode == 0) {
-	    trapZero = 1;
+	    trapZero = true;
 	    break;
 	}
     }
@@ -3703,11 +3703,11 @@ IssueTryTraplessClausesInstructions(
 	    OP(			POP);
 	}
 	if (!handlers[i].tokenPtr) {
-	    continuationsPending = 1;
+	    continuationsPending = true;
 	    FWDJUMP(		JUMP, continuationJumps[i]);
 	} else {
 	    if (continuationsPending) {
-		continuationsPending = 0;
+		continuationsPending = false;
 		for (j=0 ; j<i ; j++) {
 		    if (continuationJumps[j] != NO_PENDING_JUMP) {
 			FWDLABEL(continuationJumps[j]);
@@ -3796,7 +3796,7 @@ IssueTryClausesFinallyInstructions(
     DefineLineInformation;	/* TIP #280 */
     Tcl_LVTIndex resultLocal, optionsLocal;
     Tcl_Size i, j, len;
-    int forwardsNeedFixing = 0, trapZero = 0;
+    bool forwardsNeedFixing = false, trapZero = false;
     Tcl_ExceptionRange range;
     Tcl_BytecodeLabel *addrsToFix, *forwardsToFix;
     Tcl_BytecodeLabel finalOK, dontSpliceDuring;
@@ -3815,7 +3815,7 @@ IssueTryClausesFinallyInstructions(
 
     for (i=0 ; i<numHandlers ; i++) {
 	if (handlers[i].matchCode == 0) {
-	    trapZero = 1;
+	    trapZero = true;
 	    break;
 	}
     }
@@ -3929,7 +3929,7 @@ IssueTryClausesFinallyInstructions(
 
 		ExceptionRangeEnds(envPtr, range);
 		OP(		END_CATCH);
-		forwardsNeedFixing = 1;
+		forwardsNeedFixing = true;
 		FWDJUMP(	JUMP, forwardsToFix[i]);
 		goto finishTrapCatchHandling;
 	    }
@@ -3939,7 +3939,7 @@ IssueTryClausesFinallyInstructions(
 	     * checked by the caller). Chain to the next one.
 	     */
 
-	    forwardsNeedFixing = 1;
+	    forwardsNeedFixing = true;
 	    FWDJUMP(		JUMP, forwardsToFix[i]);
 	    goto endOfThisArm;
 	}
@@ -3952,7 +3952,7 @@ IssueTryClausesFinallyInstructions(
 
 	if (forwardsNeedFixing) {
 	    Tcl_BytecodeLabel bodyStart;
-	    forwardsNeedFixing = 0;
+	    forwardsNeedFixing = false;
 	    FWDJUMP(		JUMP, bodyStart);
 	    for (j=0 ; j<i ; j++) {
 		if (forwardsToFix[j] == NO_PENDING_JUMP) {
@@ -4093,7 +4093,7 @@ IssueTryTraplessClausesFinallyInstructions(
     DefineLineInformation;	/* TIP #280 */
     Tcl_LVTIndex resultLocal, optionsLocal;
     Tcl_Size i, j;
-    int forwardsNeedFixing = 0, trapZero = 0;
+    bool forwardsNeedFixing = false, trapZero = false;
     Tcl_ExceptionRange range;
     Tcl_BytecodeLabel *addrsToFix, *forwardsToFix;
     Tcl_BytecodeLabel finalOK, dontSpliceDuring, tableBase, haveOther;
@@ -4122,7 +4122,7 @@ IssueTryTraplessClausesFinallyInstructions(
 
     for (i=0 ; i<numHandlers ; i++) {
 	if (handlers[i].matchCode == 0) {
-	    trapZero = 1;
+	    trapZero = true;
 	    break;
 	}
     }
@@ -4214,7 +4214,7 @@ IssueTryTraplessClausesFinallyInstructions(
 
 		ExceptionRangeEnds(envPtr, range);
 		OP(		END_CATCH);
-		forwardsNeedFixing = 1;
+		forwardsNeedFixing = true;
 		endCatch = 0;
 		FWDJUMP(	JUMP, forwardsToFix[i]);
 		goto finishTrapCatchHandling;
@@ -4225,7 +4225,7 @@ IssueTryTraplessClausesFinallyInstructions(
 	     * checked by the caller). Chain to the next one.
 	     */
 
-	    forwardsNeedFixing = 1;
+	    forwardsNeedFixing = true;
 	    FWDJUMP(		JUMP, forwardsToFix[i]);
 	    goto endOfThisArm;
 	}
@@ -4238,7 +4238,7 @@ IssueTryTraplessClausesFinallyInstructions(
 
 	if (forwardsNeedFixing) {
 	    Tcl_BytecodeLabel bodyStart;
-	    forwardsNeedFixing = 0;
+	    forwardsNeedFixing = false;
 	    FWDJUMP(		JUMP, bodyStart);
 	    for (j=0 ; j<i ; j++) {
 		if (forwardsToFix[j] == NO_PENDING_JUMP) {
@@ -4453,7 +4453,8 @@ TclCompileUnsetCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *varTokenPtr;
-    int isScalar, flags = 1;
+    bool isScalar;
+    int flags = 1;
     Tcl_Size haveFlags = 0, i, varCount = 0;
     Tcl_LVTIndex localIndex;
 
@@ -4885,7 +4886,7 @@ TclCompileYieldToCmd(
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr = TokenAfter(parsePtr->tokenPtr);
     Tcl_Size i, numWords = parsePtr->numWords, build;
-    int concat = 0;
+    bool concat = false;
 
     OP(				NS_CURRENT);
     for (build = i = 1; i < numWords; i++) {
@@ -4895,14 +4896,14 @@ TclCompileYieldToCmd(
 		OP(		LIST_CONCAT);
 	    }
 	    build = 0;
-	    concat = 1;
+	    concat = true;
 	}
 	PUSH_TOKEN(		tokenPtr, i);
 	if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
 	    if (concat) {
 		OP(		LIST_CONCAT);
 	    } else {
-		concat = 1;
+		concat = true;
 	    }
 	} else {
 	    build++;
@@ -4913,7 +4914,7 @@ TclCompileYieldToCmd(
 		OP(		LIST_CONCAT);
 	    }
 	    build = 0;
-	    concat = 1;
+	    concat = true;
 	}
 	tokenPtr = TokenAfter(tokenPtr);
     }

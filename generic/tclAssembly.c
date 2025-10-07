@@ -3707,7 +3707,7 @@ ProcessCatchesInBasicBlock(
 				 * target */
     enum BasicBlockCatchState jumpState;
 				/* Catch state of the jump target */
-    int changed = 0;		/* Flag == 1 iff successor blocks need to be
+    bool changed = false;	/* True iff successor blocks need to be
 				 * checked because the state of this block has
 				 * changed. */
     BasicBlock* jumpTarget;	/* Basic block where a jump goes */
@@ -3718,7 +3718,7 @@ ProcessCatchesInBasicBlock(
 
     /*
      * Update the state of the current block, checking for consistency.  Set
-     * 'changed' to 1 if the state changes and successor blocks need to be
+     * 'changed' to true if the state changes and successor blocks need to be
      * rechecked.
      */
 
@@ -3736,7 +3736,7 @@ ProcessCatchesInBasicBlock(
     }
     if (state > bbPtr->catchState) {
 	bbPtr->catchState = state;
-	changed = 1;
+	changed = true;
     }
 
     /*

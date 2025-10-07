@@ -65,7 +65,9 @@ typedef struct {
  */
 
 typedef struct {
-    int *donePtr;		/* Pointer to flag to signal or NULL. */
+    int *donePtr;		/* Pointer to flag to signal or NULL; target
+				 * flag also holds sequence counter in some
+				 * cases. */
     int sequence;		/* Order of occurrence. */
     int mask;			/* 0, or TCL_READABLE/TCL_WRITABLE. */
     Tcl_Obj *sourceObj;		/* Name of the event source, either a
@@ -1505,8 +1507,9 @@ Tcl_VwaitObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int i, done = 0, timedOut = 0, foundEvent, any = 1, timeout = 0;
-    int numItems = 0, extended = 0, result, mode, mask = TCL_ALL_EVENTS;
+    int i, done = 0, timedOut = 0, timeout = 0, numItems = 0;
+    int result, mode, mask = TCL_ALL_EVENTS;
+    bool foundEvent, any = true, extended = false;
     Tcl_InterpState saved = NULL;
     Tcl_TimerToken timer = NULL;
     Tcl_Time before, after;
@@ -1550,10 +1553,10 @@ Tcl_VwaitObjCmd(
 	}
 	switch (index) {
 	case OPT_ALL:
-	    any = 0;
+	    any = false;
 	    break;
 	case OPT_EXTD:
-	    extended = 1;
+	    extended = true;
 	    break;
 	case OPT_NO_FEVTS:
 	    mask &= ~TCL_FILE_EVENTS;
@@ -1728,11 +1731,11 @@ Tcl_VwaitObjCmd(
 	 * "vwait -nofileevents -notimerevents -nowindowevents"
 	 * is equivalent to "update idletasks"
 	 */
-	any = 1;
+	any = true;
 	mask |= TCL_DONT_WAIT;
     }
 
-    foundEvent = 1;
+    foundEvent = true;
     while (!timedOut && foundEvent &&
 	    ((!any && (done < numItems)) || (any && !done))) {
 	foundEvent = Tcl_DoOneEvent(mask);
@@ -1870,6 +1873,17 @@ Tcl_VwaitObjCmd(
     return result;
 }
 
+static inline void
+MarkSequence(
+    VwaitItem *itemPtr)
+{
+    if (itemPtr->donePtr != NULL) {
+	itemPtr->sequence = *itemPtr->donePtr;
+	(*itemPtr->donePtr)++;
+	itemPtr->donePtr = NULL;
+    }
+}
+
 static void
 VwaitChannelReadProc(
     void *clientData,		/* Pointer to vwait info record. */
@@ -1880,11 +1894,7 @@ VwaitChannelReadProc(
     if (!(mask & TCL_READABLE)) {
 	return;
     }
-    if (itemPtr->donePtr != NULL) {
-	itemPtr->sequence = itemPtr->donePtr[0];
-	itemPtr->donePtr[0] += 1;
-	itemPtr->donePtr = NULL;
-    }
+    MarkSequence(itemPtr);
 }
 
 static void
@@ -1897,11 +1907,7 @@ VwaitChannelWriteProc(
     if (!(mask & TCL_WRITABLE)) {
 	return;
     }
-    if (itemPtr->donePtr != NULL) {
-	itemPtr->sequence = itemPtr->donePtr[0];
-	itemPtr->donePtr[0] += 1;
-	itemPtr->donePtr = NULL;
-    }
+    MarkSequence(itemPtr);
 }
 
 static void
@@ -1911,7 +1917,7 @@ VwaitTimeoutProc(
     VwaitItem *itemPtr = (VwaitItem *) clientData;
 
     if (itemPtr->donePtr != NULL) {
-	itemPtr->donePtr[0] = 1;
+	*itemPtr->donePtr = true;
 	itemPtr->donePtr = NULL;
     }
 }
@@ -1926,11 +1932,7 @@ VwaitVarProc(
 {
     VwaitItem *itemPtr = (VwaitItem *) clientData;
 
-    if (itemPtr->donePtr != NULL) {
-	itemPtr->sequence = itemPtr->donePtr[0];
-	itemPtr->donePtr[0] += 1;
-	itemPtr->donePtr = NULL;
-    }
+    MarkSequence(itemPtr);
     Tcl_UntraceVar2(interp, name1, name2, TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
 	    VwaitVarProc, clientData);
     return NULL;

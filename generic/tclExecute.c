@@ -203,7 +203,7 @@ VarHashFindVar(
     do {								\
 	ValidatePcAndStackTop(codePtr, pc, CURR_DEPTH,			\
 		/*checkStack*/ !(starting || auxObjList));		\
-	starting = 0;							\
+	starting = false;						\
     } while (0)
 #else
 #define CHECK_STACK()
@@ -389,7 +389,7 @@ VarHashFindVar(
  */
 
 #define CACHE_STACK_INFO() \
-    checkInterp = 1
+    checkInterp = true
 
 #define DECACHE_STACK_INFO() \
     esPtr->tosPtr = tosPtr
@@ -2179,7 +2179,7 @@ TEBCresume(
 
     Tcl_Size cleanup = PTR2INT(data[2]);
     Tcl_Obj *objResultPtr;
-    int checkInterp = 0;	/* Indicates when a check of interp readyness
+    bool checkInterp = false;	/* Indicates when a check of interp readyness
 				 * is necessary. Set by CACHE_STACK_INFO() */
 
     /*
@@ -2196,7 +2196,7 @@ TEBCresume(
     Var *varPtr, *arrayPtr;
 
 #ifdef TCL_COMPILE_DEBUG
-    int starting = 1;
+    bool starting = true;
     traceInstructions = (tclTraceExec >= TCL_TRACE_BYTECODE_EXEC_INSTRUCTIONS);
 #endif
 
@@ -2250,7 +2250,7 @@ TEBCresume(
 	}
 	if (codePtr->flags & TCL_BYTECODE_RECOMPILE) {
 	    codePtr->flags &= ~TCL_BYTECODE_RECOMPILE;
-	    checkInterp = 1;
+	    checkInterp = true;
 	    iPtr->flags |= ERR_ALREADY_LOGGED;
 	}
 
@@ -2436,7 +2436,7 @@ TEBCresume(
 		    !(codePtr->flags & TCL_BYTECODE_PRECOMPILED)) {
 		goto instStartCmdFailed;
 	    }
-	    checkInterp = 0;
+	    checkInterp = false;
 	}
 	inst = *(pc += 9);
 	goto peepholeStart;
@@ -2917,7 +2917,7 @@ TEBCresume(
 	POP_TAUX_OBJ();
 #ifdef TCL_COMPILE_DEBUG
 	/* Ugly abuse! */
-	starting = 1;
+	starting = true;
 #endif
 	TRACE(("=> drop %" SIZEd " items\n", objc));
 	NEXT_INST_V(1, objc, 0);
@@ -7149,7 +7149,8 @@ TEBCresume(
      */
 
     {
-	int allocateDict, done, allocdict;
+	bool allocateDict;
+	int done;
 	Tcl_Size i;
 	Tcl_Obj *dictPtr, *statePtr, *keyPtr, *listPtr, *varNamePtr, *keysPtr;
 	Tcl_Obj *emptyPtr, **keyPtrPtr;
@@ -7326,7 +7327,7 @@ TEBCresume(
 	}
 	if (dictPtr == NULL) {
 	    TclNewObj(dictPtr);
-	    allocateDict = 1;
+	    allocateDict = true;
 	} else {
 	    allocateDict = Tcl_IsShared(dictPtr);
 	    if (allocateDict) {
@@ -7429,7 +7430,7 @@ TEBCresume(
 	}
 	if (dictPtr == NULL) {
 	    TclNewObj(dictPtr);
-	    allocateDict = 1;
+	    allocateDict = true;
 	} else {
 	    allocateDict = Tcl_IsShared(dictPtr);
 	    if (allocateDict) {
@@ -7705,8 +7706,8 @@ TEBCresume(
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
-	allocdict = Tcl_IsShared(dictPtr);
-	if (allocdict) {
+	allocateDict = Tcl_IsShared(dictPtr);
+	if (allocateDict) {
 	    dictPtr = Tcl_DuplicateObj(dictPtr);
 	}
 	if (length > 0) {
@@ -7745,7 +7746,7 @@ TEBCresume(
 		    dictPtr, TCL_LEAVE_ERR_MSG, varIdx);
 	    CACHE_STACK_INFO();
 	    if (objResultPtr == NULL) {
-		if (allocdict) {
+		if (allocateDict) {
 		    TclDecrRefCount(dictPtr);
 		}
 		TRACE_ERROR(interp);
@@ -9413,7 +9414,8 @@ GenerateArithSeries(
     Tcl_Obj *count)		// The count value, or NULL if not supplied.
 {
     Tcl_Obj *result = NULL;
-    int type, useDoubles = 0;
+    int type;
+    bool useDoubles = false;
     void *ptr;
 
     // Hold explicit references.
@@ -9441,7 +9443,7 @@ GenerateArithSeries(
 	}
 	switch (type) {
 	case TCL_NUMBER_DOUBLE:
-	    useDoubles = 1;
+	    useDoubles = true;
 	    break;
 	case TCL_NUMBER_NAN:
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -9458,7 +9460,7 @@ GenerateArithSeries(
 	}
 	switch (type) {
 	case TCL_NUMBER_DOUBLE:
-	    useDoubles = 1;
+	    useDoubles = true;
 	    break;
 	case TCL_NUMBER_NAN:
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -9477,7 +9479,7 @@ GenerateArithSeries(
 	}
 	switch (type) {
 	case TCL_NUMBER_DOUBLE:
-	    useDoubles = 1;
+	    useDoubles = true;
 	    break;
 	case TCL_NUMBER_NAN:
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(

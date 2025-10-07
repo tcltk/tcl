@@ -517,7 +517,7 @@ TclpRealloc(
     int i;
     union overhead *overPtr;
     struct block *bigBlockPtr;
-    int expensive;
+    bool expensive;
     size_t maxSize;
 
     if (oldPtr == NULL) {
@@ -584,11 +584,11 @@ TclpRealloc(
 	return (void *)(overPtr+1);
     }
     maxSize = (size_t)1 << (i+3);
-    expensive = 0;
+    expensive = false;
     if (numBytes+OVERHEAD > maxSize) {
-	expensive = 1;
+	expensive = true;
     } else if (i>0 && numBytes+OVERHEAD < maxSize/2) {
-	expensive = 1;
+	expensive = true;
     }
 
     if (expensive) {

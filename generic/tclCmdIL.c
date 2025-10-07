@@ -59,7 +59,7 @@ typedef int (*SortMemCmpFn_t) (const void *, const void *, Tcl_Size);
  */
 
 typedef struct {
-    int isIncreasing;		/* Nonzero means sort in increasing order. */
+    bool isIncreasing;		/* True means sort in increasing order. */
     int sortMode;		/* The sort mode. One of SORTMODE_* values
 				 * defined below. */
     Tcl_Obj *compareCmdPtr;	/* The Tcl comparison command when sortMode is
@@ -74,7 +74,7 @@ typedef struct {
 				 * supplied. */
     Tcl_Size indexc;		/* Number of indexes in indexv array. */
     int singleIndex;		/* Static space for common index case. */
-    int unique;
+    bool unique;
     int numElements;
     Tcl_Interp *interp;		/* The interpreter in which the sort is being
 				 * done. */
@@ -646,7 +646,7 @@ InfoCommandsCmd(
     Namespace *globalNsPtr = (Namespace *) Tcl_GetGlobalNamespace(interp);
     Namespace *currNsPtr = (Namespace *) Tcl_GetCurrentNamespace(interp);
     Tcl_Obj *listPtr, *elemObjPtr;
-    int specificNsInPattern = 0;/* Init. to avoid compiler warning. */
+    bool specificNsInPattern = false;
     Tcl_Command cmd;
     Tcl_Size i;
 
@@ -658,7 +658,6 @@ InfoCommandsCmd(
     if (objc == 1) {
 	simplePattern = NULL;
 	nsPtr = currNsPtr;
-	specificNsInPattern = 0;
     } else if (objc == 2) {
 	/*
 	 * From the pattern, get the effective namespace and the simple
@@ -802,7 +801,7 @@ InfoCommandsCmd(
 
 	Tcl_HashTable addedCommandsTable;
 	int isNew;
-	int foundGlobal = (nsPtr == globalNsPtr);
+	bool foundGlobal = (nsPtr == globalNsPtr);
 
 	/*
 	 * We keep a hash of the objects already added to the result list.
@@ -834,7 +833,7 @@ InfoCommandsCmd(
 		continue;
 	    }
 	    if (pathNsPtr == globalNsPtr) {
-		foundGlobal = 1;
+		foundGlobal = true;
 	    }
 	    entryPtr = Tcl_FirstHashEntry(&pathNsPtr->cmdTable, &search);
 	    while (entryPtr != NULL) {
@@ -1842,7 +1841,7 @@ InfoProcsCmd(
     Namespace *nsPtr;
     Namespace *currNsPtr = (Namespace *) Tcl_GetCurrentNamespace(interp);
     Tcl_Obj *listPtr, *elemObjPtr;
-    int specificNsInPattern = 0;/* Init. to avoid compiler warning. */
+    bool specificNsInPattern = false;
     Tcl_HashEntry *entryPtr;
     Tcl_HashSearch search;
     Command *cmdPtr, *realCmdPtr;
@@ -1855,7 +1854,6 @@ InfoProcsCmd(
     if (objc == 1) {
 	simplePattern = NULL;
 	nsPtr = currNsPtr;
-	specificNsInPattern = 0;
     } else if (objc == 2) {
 	/*
 	 * From the pattern, get the effective namespace and the simple
@@ -2159,7 +2157,7 @@ Tcl_JoinObjCmd(
     Tcl_Obj *const objv[])	/* The argument objects. */
 {
     Tcl_Size length, listLen;
-    int isAbstractList = 0;
+    bool isAbstractList = false;
     Tcl_Obj *resObjPtr = NULL, *joinObjPtr, **elemPtrs;
 
     if ((objc < 2) || (objc > 3)) {
@@ -2174,7 +2172,7 @@ Tcl_JoinObjCmd(
 
     if (TclObjTypeHasProc(objv[1], getElementsProc)) {
 	listLen = TclObjTypeLength(objv[1]);
-	isAbstractList = (listLen ? 1 : 0);
+	isAbstractList = (listLen != 0);
 	if (listLen > 1 && TclObjTypeGetElements(interp, objv[1],
 		&listLen, &elemPtrs) != TCL_OK) {
 	    return TCL_ERROR;
@@ -2424,7 +2422,8 @@ Tcl_LinsertObjCmd(
 {
     Tcl_Obj *listPtr;
     Tcl_Size len, index;
-    int copied = 0, result;
+    bool copied = false;
+    int result;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "list index ?element ...?");
@@ -2458,7 +2457,7 @@ Tcl_LinsertObjCmd(
     listPtr = objv[1];
     if (Tcl_IsShared(listPtr)) {
 	listPtr = TclListObjCopy(NULL, listPtr);
-	copied = 1;
+	copied = true;
     }
 
     if ((objc == 4) && (index == len)) {
@@ -2599,7 +2598,8 @@ Tcl_LpopObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Size listLen;
-    int copied = 0, result;
+    bool copied = false;
+    int result;
     Tcl_Obj *elemPtr, *stored;
     Tcl_Obj *listPtr;
 
@@ -2656,7 +2656,7 @@ Tcl_LpopObjCmd(
     if (objc == 2) {
 	if (Tcl_IsShared(listPtr)) {
 	    listPtr = TclListObjCopy(NULL, listPtr);
-	    copied = 1;
+	    copied = true;
 	}
 	result = Tcl_ListObjReplace(interp, listPtr, listLen - 1, 1, 0, NULL);
 	if (result != TCL_OK) {
@@ -2790,7 +2790,8 @@ Tcl_LremoveObjCmd(
     Tcl_Size i, idxc, prevIdx, first, num;
     Tcl_Size *idxv, listLen;
     Tcl_Obj *listObj;
-    int copied = 0, status = TCL_OK;
+    bool copied = false;
+    int status = TCL_OK;
 
     /*
      * Parse the arguments.
@@ -2835,7 +2836,7 @@ Tcl_LremoveObjCmd(
 
     if (Tcl_IsShared(listObj)) {
 	listObj = TclListObjCopy(NULL, listObj);
-	copied = 1;
+	copied = true;
     }
     num = 0;
     first = listLen;
@@ -3104,13 +3105,12 @@ Tcl_LsearchObjCmd(
     Tcl_Obj *const objv[])	/* Argument values. */
 {
     const char *bytes, *patternBytes;
-    int match, result=TCL_OK, bisect;
+    int match, result = TCL_OK;
     Tcl_Size i, length = 0, listc, elemLen, start, index;
     Tcl_Size groupOffset, lower, upper;
-    int allocatedIndexVector = 0;
-    int isIncreasing;
+    bool allocatedIndexVector = false, isIncreasing, bisect;
+    bool allMatches, inlineReturn, negatedMatch, returnSubindices, noCase;
     Tcl_WideInt patWide, objWide, wide, groupSize;
-    int allMatches, inlineReturn, negatedMatch, returnSubindices, noCase;
     double patDouble, objDouble;
     SortInfo sortInfo;
     Tcl_Obj *patObj, **listv, *listPtr, *startPtr, *itemPtr = NULL;
@@ -3140,20 +3140,20 @@ Tcl_LsearchObjCmd(
 
     mode = GLOB;
     dataType = ASCII;
-    isIncreasing = 1;
-    allMatches = 0;
-    inlineReturn = 0;
-    returnSubindices = 0;
-    negatedMatch = 0;
-    bisect = 0;
+    isIncreasing = true;
+    allMatches = false;
+    inlineReturn = false;
+    returnSubindices = false;
+    negatedMatch = false;
+    bisect = false;
     listPtr = NULL;
     startPtr = NULL;
     groupSize = 1;
     groupOffset = 0;
     start = 0;
-    noCase = 0;
+    noCase = false;
     sortInfo.compareCmdPtr = NULL;
-    sortInfo.isIncreasing = 1;
+    sortInfo.isIncreasing = true;
     sortInfo.sortMode = 0;
     sortInfo.interp = interp;
     sortInfo.resultCode = TCL_OK;
@@ -3174,18 +3174,18 @@ Tcl_LsearchObjCmd(
 	}
 	switch (idx) {
 	case LSEARCH_ALL:		/* -all */
-	    allMatches = 1;
+	    allMatches = true;
 	    break;
 	case LSEARCH_ASCII:		/* -ascii */
 	    dataType = ASCII;
 	    break;
 	case LSEARCH_BISECT:		/* -bisect */
 	    mode = SORTED;
-	    bisect = 1;
+	    bisect = true;
 	    break;
 	case LSEARCH_DECREASING:	/* -decreasing */
-	    isIncreasing = 0;
-	    sortInfo.isIncreasing = 0;
+	    isIncreasing = false;
+	    sortInfo.isIncreasing = false;
 	    break;
 	case LSEARCH_DICTIONARY:	/* -dictionary */
 	    dataType = DICTIONARY;
@@ -3197,21 +3197,21 @@ Tcl_LsearchObjCmd(
 	    mode = GLOB;
 	    break;
 	case LSEARCH_INCREASING:	/* -increasing */
-	    isIncreasing = 1;
-	    sortInfo.isIncreasing = 1;
+	    isIncreasing = true;
+	    sortInfo.isIncreasing = true;
 	    break;
 	case LSEARCH_INLINE:		/* -inline */
-	    inlineReturn = 1;
+	    inlineReturn = true;
 	    break;
 	case LSEARCH_INTEGER:		/* -integer */
 	    dataType = INTEGER;
 	    break;
 	case LSEARCH_NOCASE:		/* -nocase */
 	    strCmpFn = TclUtfCasecmp;
-	    noCase = 1;
+	    noCase = true;
 	    break;
 	case LSEARCH_NOT:		/* -not */
-	    negatedMatch = 1;
+	    negatedMatch = true;
 	    break;
 	case LSEARCH_REAL:		/* -real */
 	    dataType = REAL;
@@ -3223,7 +3223,7 @@ Tcl_LsearchObjCmd(
 	    mode = SORTED;
 	    break;
 	case LSEARCH_SUBINDICES:	/* -subindices */
-	    returnSubindices = 1;
+	    returnSubindices = true;
 	    break;
 	case LSEARCH_START:		/* -start */
 	    /*
@@ -3287,7 +3287,7 @@ Tcl_LsearchObjCmd(
 
 	    if (allocatedIndexVector) {
 		TclStackFree(interp, sortInfo.indexv);
-		allocatedIndexVector = 0;
+		allocatedIndexVector = false;
 	    }
 	    if (i > objc-4) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
@@ -3320,8 +3320,8 @@ Tcl_LsearchObjCmd(
 	    default:
 		sortInfo.indexv = (int *)
 			TclStackAlloc(interp, sizeof(int) * sortInfo.indexc);
-		allocatedIndexVector = 1; /* Cannot use indexc field, as it
-					   * might be decreased by 1 later. */
+		allocatedIndexVector = true; /* Cannot use indexc field, as it
+					      * might be decreased by 1 later. */
 	    }
 
 	    /*
@@ -4211,7 +4211,7 @@ Tcl_LseqObjCmd(
      * Success!  Now lets create the series object.
      */
     arithSeriesPtr = TclNewArithSeriesObj(interp,
-	    useDoubles, start, end, step, elementCount);
+	    (bool) useDoubles, start, end, step, elementCount);
 
     status = TCL_ERROR;
     if (arithSeriesPtr) {
@@ -4357,9 +4357,11 @@ Tcl_LsortObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument values. */
 {
-    int indices, nocase = 0, indexc;
+    int indexc;
+    bool indices, nocase = false;
     int sortMode = SORTMODE_ASCII;
-    int group, allocatedIndexVector = 0;
+    int group;
+    bool allocatedIndexVector = false;
     Tcl_Size j, idx, groupOffset, length;
     Tcl_WideInt wide, groupSize;
     Tcl_Obj *resultPtr, *cmdPtr, **listObjPtrs, *listObj, *indexPtr;
@@ -4394,15 +4396,15 @@ Tcl_LsortObjCmd(
      * Parse arguments to set up the mode for the sort.
      */
 
-    sortInfo.isIncreasing = 1;
+    sortInfo.isIncreasing = true;
     sortInfo.sortMode = SORTMODE_ASCII;
     sortInfo.indexv = NULL;
     sortInfo.indexc = 0;
-    sortInfo.unique = 0;
+    sortInfo.unique = false;
     sortInfo.interp = interp;
     sortInfo.resultCode = TCL_OK;
     cmdPtr = NULL;
-    indices = 0;
+    indices = false;
     group = 0;
     groupSize = 1;
     groupOffset = 0;
@@ -4431,13 +4433,13 @@ Tcl_LsortObjCmd(
 	    i++;
 	    break;
 	case LSORT_DECREASING:
-	    sortInfo.isIncreasing = 0;
+	    sortInfo.isIncreasing = false;
 	    break;
 	case LSORT_DICTIONARY:
 	    sortInfo.sortMode = SORTMODE_DICTIONARY;
 	    break;
 	case LSORT_INCREASING:
-	    sortInfo.isIncreasing = 1;
+	    sortInfo.isIncreasing = true;
 	    break;
 	case LSORT_INDEX: {
 	    Tcl_Size sortindex;
@@ -4492,16 +4494,16 @@ Tcl_LsortObjCmd(
 	    sortInfo.sortMode = SORTMODE_INTEGER;
 	    break;
 	case LSORT_NOCASE:
-	    nocase = 1;
+	    nocase = true;
 	    break;
 	case LSORT_REAL:
 	    sortInfo.sortMode = SORTMODE_REAL;
 	    break;
 	case LSORT_UNIQUE:
-	    sortInfo.unique = 1;
+	    sortInfo.unique = true;
 	    break;
 	case LSORT_INDICES:
-	    indices = 1;
+	    indices = true;
 	    break;
 	case LSORT_STRIDE:
 	    if (i == objc-2) {
@@ -4556,7 +4558,7 @@ Tcl_LsortObjCmd(
 	default:
 	    sortInfo.indexv = (int *)
 		    TclStackAlloc(interp, sizeof(int) * sortInfo.indexc);
-	    allocatedIndexVector = 1;	/* Cannot use indexc field, as it
+	    allocatedIndexVector = true;/* Cannot use indexc field, as it
 					 * might be decreased by 1 later. */
 	}
 	for (j=0 ; j<sortInfo.indexc ; j++) {
@@ -4878,7 +4880,7 @@ Tcl_LeditObjCmd(
 {
     Tcl_Obj *listPtr;		/* Pointer to the list being altered. */
     Tcl_Obj *finalValuePtr;	/* Value finally assigned to the variable. */
-    int createdNewObj;
+    bool createdNewObj;
     int result;
     Tcl_Size first;
     Tcl_Size last;
@@ -4933,13 +4935,13 @@ Tcl_LeditObjCmd(
 
     if (Tcl_IsShared(listPtr)) {
 	listPtr = TclListObjCopy(NULL, listPtr);
-	createdNewObj = 1;
+	createdNewObj = true;
     } else {
-	createdNewObj = 0;
+	createdNewObj = false;
     }
 
-    result =
-	Tcl_ListObjReplace(interp, listPtr, first, numToDelete, objc - 4, objv + 4);
+    result = Tcl_ListObjReplace(interp, listPtr, first, numToDelete,
+	    objc - 4, objv + 4);
     if (result != TCL_OK) {
 	if (createdNewObj) {
 	    Tcl_DecrRefCount(listPtr);
@@ -4951,8 +4953,8 @@ Tcl_LeditObjCmd(
      * Tcl_ObjSetVar2 may return a value different from listPtr in the
      * presence of traces etc.
      */
-    finalValuePtr =
-	Tcl_ObjSetVar2(interp, objv[1], NULL, listPtr, TCL_LEAVE_ERR_MSG);
+    finalValuePtr = Tcl_ObjSetVar2(interp, objv[1], NULL, listPtr,
+	    TCL_LEAVE_ERR_MSG);
     if (finalValuePtr == NULL) {
 	return TCL_ERROR;
     }

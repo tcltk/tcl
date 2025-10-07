@@ -1779,22 +1779,22 @@ TclInitCompileEnv(
     envPtr->codeStart = envPtr->staticCodeSpace;
     envPtr->codeNext = envPtr->codeStart;
     envPtr->codeEnd = envPtr->codeStart + COMPILEENV_INIT_CODE_BYTES;
-    envPtr->mallocedCodeArray = 0;
+    envPtr->mallocedCodeArray = false;
 
     envPtr->literalArrayPtr = envPtr->staticLiteralSpace;
     envPtr->literalArrayNext = 0;
     envPtr->literalArrayEnd = COMPILEENV_INIT_NUM_OBJECTS;
-    envPtr->mallocedLiteralArray = 0;
+    envPtr->mallocedLiteralArray = false;
 
     envPtr->exceptArrayPtr = envPtr->staticExceptArraySpace;
     envPtr->exceptAuxArrayPtr = envPtr->staticExAuxArraySpace;
     envPtr->exceptArrayNext = 0;
     envPtr->exceptArrayEnd = COMPILEENV_INIT_EXCEPT_RANGES;
-    envPtr->mallocedExceptArray = 0;
+    envPtr->mallocedExceptArray = false;
 
     envPtr->cmdMapPtr = envPtr->staticCmdMapSpace;
     envPtr->cmdMapEnd = COMPILEENV_INIT_CMD_MAP_SIZE;
-    envPtr->mallocedCmdMap = 0;
+    envPtr->mallocedCmdMap = false;
     envPtr->atCmdStart = 1;
     envPtr->expandCount = 0;
 
@@ -1932,7 +1932,7 @@ TclInitCompileEnv(
     envPtr->auxDataArrayPtr = envPtr->staticAuxDataArraySpace;
     envPtr->auxDataArrayNext = 0;
     envPtr->auxDataArrayEnd = COMPILEENV_INIT_AUX_DATA_SIZE;
-    envPtr->mallocedAuxDataArray = 0;
+    envPtr->mallocedAuxDataArray = false;
 }
 
 /*
@@ -2750,7 +2750,7 @@ TclCompileTokens(
     Tcl_Size length;
     unsigned char *entryCodeNext = envPtr->codeNext;
 #define NUM_STATIC_POS 20
-    int isLiteral;
+    bool isLiteral;
     Tcl_Size maxNumCL, numCL;
     Tcl_Size *clPosition = NULL;
     Tcl_Size depth = TclGetStackDepth(envPtr);
@@ -2770,11 +2770,11 @@ TclCompileTokens(
 
     numCL = 0;
     maxNumCL = 0;
-    isLiteral = 1;
+    isLiteral = true;
     for (i=0 ; i < count; i++) {
 	if ((tokenPtr[i].type != TCL_TOKEN_TEXT)
 		&& (tokenPtr[i].type != TCL_TOKEN_BS)) {
-	    isLiteral = 0;
+	    isLiteral = false;
 	    break;
 	}
     }
@@ -3479,7 +3479,7 @@ TclExpandCodeArray(
 
 	memcpy(newPtr, envPtr->codeStart, currBytes);
 	envPtr->codeStart = newPtr;
-	envPtr->mallocedCodeArray = 1;
+	envPtr->mallocedCodeArray = true;
     }
 
     envPtr->codeNext = envPtr->codeStart + currBytes;
@@ -3548,7 +3548,7 @@ EnterCmdStartData(
 
 	    memcpy(newPtr, envPtr->cmdMapPtr, currBytes);
 	    envPtr->cmdMapPtr = newPtr;
-	    envPtr->mallocedCmdMap = 1;
+	    envPtr->mallocedCmdMap = true;
 	}
 	envPtr->cmdMapEnd = newElems;
     }
@@ -3761,7 +3761,7 @@ TclCreateExceptRange(
 	    memcpy(newPtr2, envPtr->exceptAuxArrayPtr, currBytes2);
 	    envPtr->exceptArrayPtr = newPtr;
 	    envPtr->exceptAuxArrayPtr = newPtr2;
-	    envPtr->mallocedExceptArray = 1;
+	    envPtr->mallocedExceptArray = true;
 	}
 	envPtr->exceptArrayEnd = newElems;
     }
@@ -3776,7 +3776,7 @@ TclCreateExceptRange(
     rangePtr->continueOffset = TCL_INDEX_NONE;
     rangePtr->catchOffset = TCL_INDEX_NONE;
     auxPtr = &envPtr->exceptAuxArrayPtr[index];
-    auxPtr->supportsContinue = 1;
+    auxPtr->supportsContinue = true;
     auxPtr->stackDepth = envPtr->currStackDepth;
     auxPtr->expandTarget = envPtr->expandCount;
     auxPtr->expandTargetDepth = TCL_INDEX_NONE;
@@ -4117,7 +4117,7 @@ TclCreateAuxData(
 
 	    memcpy(newPtr, envPtr->auxDataArrayPtr, currBytes);
 	    envPtr->auxDataArrayPtr = newPtr;
-	    envPtr->mallocedAuxDataArray = 1;
+	    envPtr->mallocedAuxDataArray = true;
 	}
 	envPtr->auxDataArrayEnd = newElems;
     }
@@ -4155,7 +4155,7 @@ TclInitJumpFixupArray(
     fixupArrayPtr->fixup = fixupArrayPtr->staticFixupSpace;
     fixupArrayPtr->next = 0;
     fixupArrayPtr->end = JUMPFIXUP_INIT_ENTRIES - 1;
-    fixupArrayPtr->mallocedArray = 0;
+    fixupArrayPtr->mallocedArray = false;
 }
 
 /*
@@ -4206,7 +4206,7 @@ TclExpandJumpFixupArray(
 
 	memcpy(newPtr, fixupArrayPtr->fixup, currBytes);
 	fixupArrayPtr->fixup = newPtr;
-	fixupArrayPtr->mallocedArray = 1;
+	fixupArrayPtr->mallocedArray = true;
     }
     fixupArrayPtr->end = newElems;
 }
@@ -4858,7 +4858,7 @@ TclLocalScalarFromToken(
     Tcl_Token *tokenPtr,
     CompileEnv *envPtr)
 {
-    int isScalar;
+    bool isScalar;
     Tcl_LVTIndex index;
 
     TclPushVarName(NULL, tokenPtr, envPtr, TCL_NO_ELEMENT, &index, &isScalar);
@@ -4897,13 +4897,13 @@ TclLocalScalar(
  *	the caller what the instructions emitted by this routine will do:
  *
  *	*isScalarPtr	(*localIndexPtr < 0)
- *	1		1	Push the varname on the stack. (Stack +1)
- *	1		0	*localIndexPtr is the index of the compiled
+ *	true		1	Push the varname on the stack. (Stack +1)
+ *	true		0	*localIndexPtr is the index of the compiled
  *				local for this varname.  No instructions
  *				emitted.	(Stack +0)
- *	0		1	Push part1 and part2 names of array element
+ *	false		1	Push part1 and part2 names of array element
  *				on the stack.	(Stack +2)
- *	0		0	*localIndexPtr is the index of the compiled
+ *	false		0	*localIndexPtr is the index of the compiled
  *				local for this array.  Element name is pushed
  *				on the stack.	(Stack +1)
  *
@@ -4920,13 +4920,13 @@ TclPushVarName(
     CompileEnv *envPtr,		/* Holds resulting instructions. */
     int flags,			/* TCL_NO_ELEMENT. */
     Tcl_Size *localIndexPtr,	/* Must not be NULL. */
-    int *isScalarPtr)		/* Must not be NULL. */
+    bool *isScalarPtr)		/* Must not be NULL. */
 {
     const char *p;
     const char *last, *name, *elName;
     Tcl_Token *elemTokenPtr = NULL;
     Tcl_Size nameLen, elNameLen, n;
-    int simpleVarName = 0, allocedTokens = 0;
+    bool simpleVarName = false, allocedTokens = false;
     Tcl_Size elemTokenCount = 0, removedParen = 0;
     Tcl_LVTIndex localIndex;
 
@@ -4948,7 +4948,7 @@ TclPushVarName(
 	 * strings. If it is not a local variable, look it up at runtime.
 	 */
 
-	simpleVarName = 1;
+	simpleVarName = true;
 
 	name = varTokenPtr[1].start;
 	nameLen = varTokenPtr[1].size;
@@ -4976,7 +4976,7 @@ TclPushVarName(
 		 */
 
 		elemTokenPtr = (Tcl_Token *)TclStackAlloc(interp, sizeof(Tcl_Token));
-		allocedTokens = 1;
+		allocedTokens = true;
 		elemTokenPtr->type = TCL_TOKEN_TEXT;
 		elemTokenPtr->start = elName;
 		elemTokenPtr->size = elNameLen;
@@ -4992,11 +4992,11 @@ TclPushVarName(
 	 * Check for parentheses inside first token.
 	 */
 
-	simpleVarName = 0;
+	simpleVarName = false;
 	for (p = varTokenPtr[1].start, last = p + varTokenPtr[1].size;
 		p < last;  p++) {
 	    if (*p == '(') {
-		simpleVarName = 1;
+		simpleVarName = true;
 		break;
 	    }
 	}
@@ -5031,7 +5031,7 @@ TclPushVarName(
 
 		    elemTokenPtr = (Tcl_Token *)TclStackAlloc(interp,
 			    n * sizeof(Tcl_Token));
-		    allocedTokens = 1;
+		    allocedTokens = true;
 		    elemTokenPtr->type = TCL_TOKEN_TEXT;
 		    elemTokenPtr->start = elName;
 		    elemTokenPtr->size = remainingLen;
@@ -5061,11 +5061,11 @@ TclPushVarName(
 	 * See whether name has any namespace separators (::'s).
 	 */
 
-	int hasNsQualifiers = 0;
+	bool hasNsQualifiers = false;
 
 	for (p = name, last = p + nameLen-1;  p < last;  p++) {
 	    if ((p[0] == ':') && (p[1] == ':')) {
-		hasNsQualifiers = 1;
+		hasNsQualifiers = true;
 		break;
 	    }
 	}

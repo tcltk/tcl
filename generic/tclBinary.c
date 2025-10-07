@@ -494,12 +494,12 @@ Tcl_SetByteArrayLength(
  *----------------------------------------------------------------------
  */
 
-static int
+static bool
 MakeByteArray(
     Tcl_Interp *interp,
     Tcl_Obj *objPtr,
     Tcl_Size limit,
-    int demandProper,
+    bool demandProper,
     ByteArray **byteArrayPtrPtr)
 {
     Tcl_Size length;
@@ -509,14 +509,14 @@ MakeByteArray(
     unsigned char *dst = byteArrayPtr->bytes;
     unsigned char *dstEnd = dst + numBytes;
     const char *srcEnd = src + length;
-    int proper = 1;
+    bool proper = true;
 
     for (; src < srcEnd && dst < dstEnd; ) {
 	int ch;
 	Tcl_Size count = TclUtfToUniChar(src, &ch);
 
 	if (ch > 255) {
-	    proper = 0;
+	    proper = false;
 	    if (demandProper) {
 		if (interp) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -548,7 +548,7 @@ TclNarrowToBytes(
 	Tcl_ObjInternalRep ir;
 	ByteArray *byteArrayPtr;
 
-	if (0 == MakeByteArray(NULL, objPtr, TCL_INDEX_NONE, 0, &byteArrayPtr)) {
+	if (!MakeByteArray(NULL, objPtr, TCL_INDEX_NONE, false, &byteArrayPtr)) {
 	    TclNewObj(objPtr);
 	    TclInvalidateStringRep(objPtr);
 	}
@@ -584,7 +584,7 @@ SetByteArrayFromAny(
     ByteArray *byteArrayPtr;
     Tcl_ObjInternalRep ir;
 
-    if (0 == MakeByteArray(interp, objPtr, limit, 1, &byteArrayPtr)) {
+    if (!MakeByteArray(interp, objPtr, limit, true, &byteArrayPtr)) {
 	return TCL_ERROR;
     }
 
@@ -2484,7 +2484,8 @@ BinaryDecodeHex(
     Tcl_Obj *resultObj = NULL;
     unsigned char *data, *datastart, *dataend;
     unsigned char *begin, *cursor, c;
-    int i, index, value, pure = 1, strict = 0;
+    int i, index, value;
+    bool pure = true, strict = false;
     Tcl_Size size, cut = 0, count = 0;
     int ucs4;
     enum {OPT_STRICT };
@@ -2501,7 +2502,7 @@ BinaryDecodeHex(
 	}
 	switch (index) {
 	case OPT_STRICT:
-	    strict = 1;
+	    strict = true;
 	    break;
 	default:
 	    TCL_UNREACHABLE();
@@ -2511,7 +2512,7 @@ BinaryDecodeHex(
     TclNewObj(resultObj);
     data = Tcl_GetBytesFromObj(NULL, objv[objc - 1], &count);
     if (data == NULL) {
-	pure = 0;
+	pure = false;
 	data = (unsigned char *)TclGetStringFromObj(objv[objc - 1], &count);
     }
     datastart = data;
@@ -2613,7 +2614,8 @@ BinaryEncode64(
     Tcl_WideInt maxlen = 0;
     const char *wrapchar = "\n";
     Tcl_Size wrapcharlen = 1;
-    int index, purewrap = 1;
+    int index;
+    bool purewrap = true;
     Tcl_Size i, offset, size, outindex = 0, count = 0;
     enum { OPT_MAXLEN, OPT_WRAPCHAR };
     static const char *const optStrings[] = { "-maxlen", "-wrapchar", NULL };
@@ -2645,7 +2647,7 @@ BinaryEncode64(
 	    wrapchar = (const char *)Tcl_GetBytesFromObj(NULL,
 		    objv[i + 1], &wrapcharlen);
 	    if (wrapchar == NULL) {
-		purewrap = 0;
+		purewrap = false;
 		wrapchar = TclGetStringFromObj(objv[i + 1], &wrapcharlen);
 	    }
 	    break;
@@ -2674,7 +2676,7 @@ BinaryEncode64(
 	    }
 	    size = adjusted;
 
-	    if (purewrap == 0) {
+	    if (!purewrap) {
 		/* Wrapchar is (possibly) non-byte, so build result as
 		 * general string, not bytearray */
 		Tcl_SetObjLength(resultObj, size);
@@ -2889,7 +2891,8 @@ BinaryDecodeUu(
     Tcl_Obj *resultObj = NULL;
     unsigned char *data, *datastart, *dataend;
     unsigned char *begin, *cursor;
-    int i, index, pure = 1, strict = 0, lineLen;
+    int i, index, lineLen;
+    bool pure = true, strict = false;
     Tcl_Size size, count = 0;
     unsigned char c;
     int ucs4;
@@ -2907,7 +2910,7 @@ BinaryDecodeUu(
 	}
 	switch (index) {
 	case OPT_STRICT:
-	    strict = 1;
+	    strict = true;
 	    break;
 	default:
 	    TCL_UNREACHABLE();
@@ -2917,7 +2920,7 @@ BinaryDecodeUu(
     TclNewObj(resultObj);
     data = Tcl_GetBytesFromObj(NULL, objv[objc - 1], &count);
     if (data == NULL) {
-	pure = 0;
+	pure = false;
 	data = (unsigned char *) TclGetStringFromObj(objv[objc - 1], &count);
     }
     datastart = data;
@@ -3066,7 +3069,7 @@ BinaryDecode64(
     unsigned char *data, *datastart, *dataend, c = '\0';
     unsigned char *begin = NULL;
     unsigned char *cursor = NULL;
-    int pure = 1, strict = 0;
+    bool pure = true, strict = false;
     int i, index, cut = 0;
     Tcl_Size size, count = 0;
     int ucs4;
@@ -3084,7 +3087,7 @@ BinaryDecode64(
 	}
 	switch (index) {
 	case OPT_STRICT:
-	    strict = 1;
+	    strict = true;
 	    break;
 	default:
 	    TCL_UNREACHABLE();
@@ -3094,7 +3097,7 @@ BinaryDecode64(
     TclNewObj(resultObj);
     data = Tcl_GetBytesFromObj(NULL, objv[objc - 1], &count);
     if (data == NULL) {
-	pure = 0;
+	pure = false;
 	data = (unsigned char *) TclGetStringFromObj(objv[objc - 1], &count);
     }
     datastart = data;

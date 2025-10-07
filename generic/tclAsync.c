@@ -48,7 +48,7 @@ typedef struct ThreadSpecificData {
 				 * checked elsewhere in the application by
 				 * calling Tcl_AsyncReady to see if
 				 * Tcl_AsyncInvoke should be invoked. */
-    int asyncActive;		/* Indicates whether Tcl_AsyncInvoke is
+    bool asyncActive;		/* Indicates whether Tcl_AsyncInvoke is
 				 * currently working. If so then we won't set
 				 * asyncReady again until Tcl_AsyncInvoke
 				 * returns. */
@@ -313,9 +313,9 @@ Tcl_AsyncInvoke(
 	return code;
     }
     tsdPtr->asyncReady = 0;
-    tsdPtr->asyncActive = 1;
+    tsdPtr->asyncActive = true;
     if (interp == NULL) {
-	code = 0;
+	code = TCL_OK;
     }
 
     /*
@@ -346,7 +346,7 @@ Tcl_AsyncInvoke(
 	code = asyncPtr->proc(asyncPtr->clientData, interp, code);
 	Tcl_MutexLock(&asyncMutex);
     }
-    tsdPtr->asyncActive = 0;
+    tsdPtr->asyncActive = false;
     Tcl_MutexUnlock(&asyncMutex);
     return code;
 }

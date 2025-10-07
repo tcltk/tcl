@@ -49,7 +49,7 @@
 typedef struct {
     Tcl_Size len;
     Tcl_Obj **elements;
-    int isDouble;
+    bool isDouble;
     Tcl_Size refCount;
 } ArithSeries;
 
@@ -510,7 +510,7 @@ NewArithSeriesInt(
     arithSeriesRepPtr = (ArithSeriesInt *) Tcl_Alloc(sizeof(ArithSeriesInt));
     arithSeriesRepPtr->base.len = length;
     arithSeriesRepPtr->base.elements = NULL;
-    arithSeriesRepPtr->base.isDouble = 0;
+    arithSeriesRepPtr->base.isDouble = false;
     arithSeriesRepPtr->base.refCount = 1;
     arithSeriesRepPtr->start = start;
     arithSeriesRepPtr->step = step;
@@ -568,7 +568,7 @@ NewArithSeriesDbl(
     arithSeriesRepPtr = (ArithSeriesDbl *) Tcl_Alloc(sizeof(ArithSeriesDbl));
     arithSeriesRepPtr->base.len = length;
     arithSeriesRepPtr->base.elements = NULL;
-    arithSeriesRepPtr->base.isDouble = 1;
+    arithSeriesRepPtr->base.isDouble = true;
     arithSeriesRepPtr->base.refCount = 1;
     arithSeriesRepPtr->start = start;
     arithSeriesRepPtr->step = step;
@@ -604,7 +604,7 @@ NewArithSeriesDbl(
 static int
 assignNumber(
     Tcl_Interp *interp,
-    int useDoubles,
+    bool useDoubles,
     Tcl_WideInt *intNumberPtr,
     double *dblNumberPtr,
     Tcl_Obj *numberObj)
@@ -666,7 +666,7 @@ assignNumber(
 Tcl_Obj *
 TclNewArithSeriesObj(
     Tcl_Interp *interp,		/* For error reporting */
-    int useDoubles,		/* Flag indicates values start,
+    bool useDoubles,		/* Flag indicates values start,
 				 * end, step, are treated as doubles */
     Tcl_Obj *startObj,		/* Starting value */
     Tcl_Obj *endObj,		/* Ending limit */

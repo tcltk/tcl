@@ -427,11 +427,11 @@ static Tcl_Obj *
 NormTimezoneObj(
     ClockClientData *dataPtr,	/* Client data containing literal pool */
     Tcl_Obj *timezoneObj,	/* Name of zone to find */
-    int *loaded)		/* Used to recognized TZ was loaded */
+    bool *loaded)		/* Used to recognized TZ was loaded */
 {
     const char *tz;
 
-    *loaded = 1;
+    *loaded = true;
     if (timezoneObj == dataPtr->lastSetupTimeZoneUnnorm
 	    && dataPtr->lastSetupTimeZone != NULL) {
 	return dataPtr->lastSetupTimeZone;
@@ -469,12 +469,12 @@ NormTimezoneObj(
     if (strcmp(tz, Literals[LIT_GMT]) == 0) {
 	TclSetObjRef(dataPtr->gmtSetupTimeZoneUnnorm, timezoneObj);
 	if (dataPtr->gmtSetupTimeZone == NULL) {
-	    *loaded = 0;
+	    *loaded = false;
 	}
 	return dataPtr->literals[LIT_GMT];
     }
     /* unknown/unloaded tz - recache/revalidate later as last-setup if needed */
-    *loaded = 0;
+    *loaded = false;
     return timezoneObj;
 }
 
@@ -1005,7 +1005,7 @@ ClockConfigureObjCmd(
 	}
 	case CLOCK_SETUP_TZ:
 	    if (i < objc) {
-		int loaded;
+		bool loaded;
 		Tcl_Obj *timezoneObj = NormTimezoneObj(dataPtr, objv[i], &loaded);
 
 		if (!loaded) {
@@ -1297,7 +1297,7 @@ TclClockSetupTimeZone(
     Tcl_Interp *interp,		/* Tcl interpreter */
     Tcl_Obj *timezoneObj)
 {
-    int loaded;
+    bool loaded;
     Tcl_Obj *callargs[2];
 
     /* if cached (if already setup this one) */
@@ -1418,7 +1418,7 @@ ClockConvertlocaltoutcObjCmd(
     Tcl_Obj *dict;
     int changeover;
     TclDateFields fields;
-    int created = 0;
+    bool created = false;
     int status;
 
     fields.tzName = NULL;
@@ -1453,7 +1453,7 @@ ClockConvertlocaltoutcObjCmd(
 
     if (Tcl_IsShared(dict)) {
 	dict = Tcl_DuplicateObj(dict);
-	created = 1;
+	created = true;
 	Tcl_IncrRefCount(dict);
     }
     status = Tcl_DictObjPut(interp, dict, dataPtr->literals[LIT_SECONDS],
@@ -1702,7 +1702,7 @@ ClockGetjuliandayfromerayearmonthdayObjCmd(
     ClockClientData *data = (ClockClientData *)clientData;
     Tcl_Obj *const *lit = data->literals;
     int changeover;
-    int copied = 0;
+    bool copied = false;
     int status;
     int isBce = 0;
 
@@ -1742,7 +1742,7 @@ ClockGetjuliandayfromerayearmonthdayObjCmd(
     if (Tcl_IsShared(dict)) {
 	dict = Tcl_DuplicateObj(dict);
 	Tcl_IncrRefCount(dict);
-	copied = 1;
+	copied = true;
     }
     status = Tcl_DictObjPut(interp, dict, lit[LIT_JULIANDAY],
 	    Tcl_NewWideIntObj(fields.julianDay));
@@ -1788,7 +1788,7 @@ ClockGetjuliandayfromerayearweekdayObjCmd(
     ClockClientData *data = (ClockClientData *)clientData;
     Tcl_Obj *const *lit = data->literals;
     int changeover;
-    int copied = 0;
+    bool copied = false;
     int status;
     int isBce = 0;
 
@@ -1828,7 +1828,7 @@ ClockGetjuliandayfromerayearweekdayObjCmd(
     if (Tcl_IsShared(dict)) {
 	dict = Tcl_DuplicateObj(dict);
 	Tcl_IncrRefCount(dict);
-	copied = 1;
+	copied = true;
     }
     status = Tcl_DictObjPut(interp, dict, lit[LIT_JULIANDAY],
 	    Tcl_NewWideIntObj(fields.julianDay));
@@ -3797,7 +3797,7 @@ ClockValidDate(
 {
     const char *errMsg = "", *errCode = "";
     TclDateFields temp;
-    int tempCpyFlg = 0;
+    bool tempCpyFlg = false;
     ClockClientData *dataPtr = opts->dataPtr;
 
 #if 0
@@ -3881,7 +3881,7 @@ ClockValidDate(
 	    == (CLF_DAYOFYEAR|CLF_DAYOFMONTH|CLF_MONTH)) {
 	if (!tempCpyFlg) {
 	    memcpy(&temp, &yydate, sizeof(temp));
-	    tempCpyFlg = 1;
+	    tempCpyFlg = true;
 	}
 	TclGetJulianDayFromEraYearDay(&temp, GREGORIAN_CHANGE_DATE);
 	if (temp.julianDay != yydate.julianDay) {
@@ -3959,7 +3959,7 @@ ClockValidDate(
     if (info->flags & CLF_DAYOFWEEK) {
 	if (!tempCpyFlg) {
 	    memcpy(&temp, &yydate, sizeof(temp));
-	    tempCpyFlg = 1;
+	    tempCpyFlg = true;
 	}
 	GetYearWeekDay(&temp, GREGORIAN_CHANGE_DATE);
 	if (temp.dayOfWeek != yyDayOfWeek) {

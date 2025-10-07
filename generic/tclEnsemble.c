@@ -266,7 +266,7 @@ InitEnsembleFromOptions(
     Namespace *altFoundNsPtr, *actualCxtPtr;
     const char *name = nsPtr->name;
     Tcl_Size len;
-    int allocatedMapFlag = 0;
+    bool allocatedMapFlag = false;
     enum EnsCreateOpts index;
     Tcl_Command token;		/* The created ensemble command. */
     Namespace *foundNsPtr;
@@ -276,7 +276,7 @@ InitEnsembleFromOptions(
      */
     Tcl_Obj *subcmdObj = NULL;
     Tcl_Obj *mapObj = NULL;
-    int permitPrefix = 1;
+    int permitPrefix = true;
     Tcl_Obj *unknownObj = NULL;
     Tcl_Obj *paramObj = NULL;
 
@@ -364,7 +364,7 @@ InitEnsembleFromOptions(
 	    }
 	    mapObj = (patchedDict ? patchedDict : objv[1]);
 	    if (patchedDict) {
-		allocatedMapFlag = 1;
+		allocatedMapFlag = true;
 	    }
 	    continue;
 	mapError:
@@ -592,7 +592,7 @@ SetEnsembleConfigOptions(
     Tcl_Obj *const objv[])	/* Option-related arguments. */
 {
     Tcl_Size len;
-    int allocatedMapFlag = 0;
+    bool allocatedMapFlag = false;
     Tcl_Obj *subcmdObj = NULL, *mapObj = NULL, *paramObj = NULL,
 	    *unknownObj = NULL;	/* Defaults, silence gcc 4 warnings */
     Tcl_Obj *listObj;
@@ -689,7 +689,7 @@ SetEnsembleConfigOptions(
 	    }
 	    mapObj = (patchedDict ? patchedDict : objv[1]);
 	    if (patchedDict) {
-		allocatedMapFlag = 1;
+		allocatedMapFlag = true;
 	    }
 	    continue;
 
@@ -2994,8 +2994,8 @@ TclCompileEnsemble(
     Tcl_Obj *replaced, *replacement;
     Tcl_Command ensemble = (Tcl_Command) cmdPtr;
     Command *oldCmdPtr = cmdPtr, *newCmdPtr;
-    int result, flags = 0, depth = 1, invokeAnyway = 0;
-    int ourResult = TCL_ERROR;
+    int result, flags = 0, depth = 1, ourResult = TCL_ERROR;
+    bool invokeAnyway = false;
     Tcl_Size i, len, numBytes;
     const char *word;
 
@@ -3174,7 +3174,7 @@ TclCompileEnsemble(
 	 */
 
 	if (matched != 1) {
-	    invokeAnyway = 1;
+	    invokeAnyway = true;
 	    goto tryCompileToInv;
 	}
     }
@@ -3249,7 +3249,7 @@ TclCompileEnsemble(
      * invoke at runtime.
      */
 
-    invokeAnyway = 1;
+    invokeAnyway = true;
     if (TCL_OK == TclAttemptCompileProc(interp, parsePtr, depth, cmdPtr,
 	    envPtr)) {
 	ourResult = TCL_OK;
