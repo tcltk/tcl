@@ -2177,7 +2177,9 @@ Tcl_StringCaseMatch(
 	     * Skip all successive *'s in the pattern
 	     */
 
-	    while (*(++pattern) == '*');
+	    while (*(++pattern) == '*') {
+		// Empty body
+	    }
 	    p = *pattern;
 	    if (p == '\0') {
 		return 1;
