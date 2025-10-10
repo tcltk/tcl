@@ -3827,6 +3827,7 @@ MODULE_SCOPE Tcl_ObjCmdProc Tcl_RegsubObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_RenameObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_RepresentationCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_ReturnObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc TclSafeCatchCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_ScanObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_SeekObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_SetObjCmd;
