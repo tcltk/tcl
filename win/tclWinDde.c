@@ -207,7 +207,7 @@ Dde_SafeInit(
 static void
 Initialize(void)
 {
-    int nameFound = 0;
+    bool nameFound = false;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     /*
@@ -217,7 +217,7 @@ Initialize(void)
      */
 
     if (tsdPtr->interpListPtr != NULL) {
-	nameFound = 1;
+	nameFound = true;
     }
 
     /*
@@ -236,9 +236,9 @@ Initialize(void)
 	}
 	Tcl_MutexUnlock(&ddeMutex);
     }
-    if ((ddeServiceGlobal == 0) && (nameFound != 0)) {
+    if ((ddeServiceGlobal == 0) && nameFound) {
 	Tcl_MutexLock(&ddeMutex);
-	if ((ddeServiceGlobal == 0) && (nameFound != 0)) {
+	if ((ddeServiceGlobal == 0) && nameFound) {
 	    ddeIsServer = true;
 	    Tcl_CreateExitHandler(DdeExitProc, NULL);
 	    ddeServiceGlobal = DdeCreateStringHandleW(ddeInstance,

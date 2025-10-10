@@ -149,14 +149,14 @@ TclUtfFindEqualNCInLwr(
 	    Tcl_DecrRefCount(obj);					\
 	    obj = NULL;							\
 	}								\
-    } while (0)
+    } while (false)
 #define TclInitObjRef(obj, val) \
     do {								\
 	obj = (val);							\
 	if (obj) {							\
 	    Tcl_IncrRefCount(obj);					\
 	}								\
-    } while (0)
+    } while (false)
 #define TclSetObjRef(obj, val) \
     do {								\
 	Tcl_Obj *nval = (val);						\
@@ -167,7 +167,7 @@ TclUtfFindEqualNCInLwr(
 		Tcl_DecrRefCount(prev);					\
 	    }								\
 	}								\
-    } while (0)
+    } while (false)
 
 /*
  * Prototypes of module functions.

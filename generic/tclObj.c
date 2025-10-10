@@ -2080,7 +2080,7 @@ static int
 ParseBoolean(
     Tcl_Obj *objPtr)		/* The object to parse/convert. */
 {
-    int newBool;
+    bool newBool;
     char lowerCase[6];
     Tcl_Size i, length;
     const char *str;
@@ -2131,13 +2131,13 @@ ParseBoolean(
     switch (str[0]) {
     case '0':
 	if (length == 1) {
-	    newBool = 0;
+	    newBool = false;
 	    goto numericBoolean;
 	}
 	return TCL_ERROR;
     case '1':
 	if (length == 1) {
-	    newBool = 1;
+	    newBool = true;
 	    goto numericBoolean;
 	}
 	return TCL_ERROR;
@@ -2171,25 +2171,25 @@ ParseBoolean(
 	 * Checking the 'y' is redundant, but makes the code clearer.
 	 */
 	if (strncmp(lowerCase, "yes", length) == 0) {
-	    newBool = 1;
+	    newBool = true;
 	    goto goodBoolean;
 	}
 	return TCL_ERROR;
     case 'n':
 	if (strncmp(lowerCase, "no", length) == 0) {
-	    newBool = 0;
+	    newBool = false;
 	    goto goodBoolean;
 	}
 	return TCL_ERROR;
     case 't':
 	if (strncmp(lowerCase, "true", length) == 0) {
-	    newBool = 1;
+	    newBool = true;
 	    goto goodBoolean;
 	}
 	return TCL_ERROR;
     case 'f':
 	if (strncmp(lowerCase, "false", length) == 0) {
-	    newBool = 0;
+	    newBool = false;
 	    goto goodBoolean;
 	}
 	return TCL_ERROR;
@@ -2198,10 +2198,10 @@ ParseBoolean(
 	    return TCL_ERROR;
 	}
 	if (strncmp(lowerCase, "on", length) == 0) {
-	    newBool = 1;
+	    newBool = true;
 	    goto goodBoolean;
 	} else if (strncmp(lowerCase, "off", length) == 0) {
-	    newBool = 0;
+	    newBool = false;
 	    goto goodBoolean;
 	}
 	return TCL_ERROR;
@@ -4106,7 +4106,7 @@ TclCompareObjKeys(
      * OPT: this comparison was moved to the caller
 
 	if (objPtr1 == objPtr2) {
-	    return 1;
+	    return true;
 	}
      */
 
@@ -4130,12 +4130,12 @@ TclCompareObjKeys(
 		break;
 	    }
 	    if (l1 == 0) {
-		return 1;
+		return true;
 	    }
 	}
     }
 
-    return 0;
+    return false;
 }
 
 /*

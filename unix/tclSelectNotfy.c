@@ -82,7 +82,7 @@ typedef struct ThreadSpecificData {
 				 * more than highest fd for which
 				 * Tcl_WatchFile has been called). */
 #if TCL_THREADS
-    int onList;			/* True if it is in this list */
+    bool onList;		/* True if it is in this list */
     unsigned int pollState;	/* pollState is used to implement a polling
 				 * handshake between each thread and the
 				 * notifier thread. Bits defined below. */
@@ -103,9 +103,9 @@ typedef struct ThreadSpecificData {
 				 * event is ready to be processed by signaling
 				 * this condition variable. */
 #endif /* __CYGWIN__ */
-    int waitCVinitialized;	/* Variable to flag initialization of the
+    bool waitCVinitialized;	/* Variable to flag initialization of the
 				 * structure. */
-    int eventReady;		/* True if an event is ready to be processed.
+    bool eventReady;		/* True if an event is ready to be processed.
 				 * Used as condition flag together with waitCV
 				 * above. */
 #endif /* TCL_THREADS */
@@ -315,13 +315,13 @@ TclpInitNotifier(void)
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
 #if TCL_THREADS
-    tsdPtr->eventReady = 0;
+    tsdPtr->eventReady = false;
 
     /*
      * Initialize thread specific condition variable for this thread.
      */
 
-    if (tsdPtr->waitCVinitialized == 0) {
+    if (!tsdPtr->waitCVinitialized) {
 #ifdef __CYGWIN__
 	WNDCLASSW clazz;
 
@@ -345,7 +345,7 @@ TclpInitNotifier(void)
 #else /* !__CYGWIN__ */
 	pthread_cond_init(&tsdPtr->waitCV, NULL);
 #endif /* __CYGWIN__ */
-	tsdPtr->waitCVinitialized = 1;
+	tsdPtr->waitCVinitialized = true;
     }
 
     pthread_mutex_lock(&notifierInitMutex);
@@ -445,7 +445,7 @@ TclpFinalizeNotifier(
 #else /* !__CYGWIN__ */
     pthread_cond_destroy(&tsdPtr->waitCV);
 #endif /* __CYGWIN__ */
-    tsdPtr->waitCVinitialized = 0;
+    tsdPtr->waitCVinitialized = false;
 
     pthread_mutex_unlock(&notifierInitMutex);
 #endif /* TCL_THREADS */
@@ -613,7 +613,7 @@ NotifierProc(
      * Process all of the runnable events.
      */
 
-    tsdPtr->eventReady = 1;
+    tsdPtr->eventReady = true;
     Tcl_ServiceAll();
     return 0;
 }
@@ -646,7 +646,7 @@ TclpWaitForEvent(
     Tcl_Time vTime;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 #if TCL_THREADS
-    int waitForFiles;
+    bool waitForFiles;
 #   ifdef __CYGWIN__
     MSG msg;
 #   endif /* __CYGWIN__ */
@@ -728,7 +728,7 @@ TclpWaitForEvent(
 	 * We block until that happens.
 	 */
 
-	waitForFiles = 1;
+	waitForFiles = true;
 	tsdPtr->pollState = POLL_WANT;
 	timePtr = NULL;
     } else {
@@ -749,7 +749,7 @@ TclpWaitForEvent(
 	}
 	tsdPtr->prevPtr = 0;
 	waitingListPtr = tsdPtr;
-	tsdPtr->onList = 1;
+	tsdPtr->onList = true;
 
 	if ((write(triggerPipe, "", 1) == -1) && (errno != EAGAIN)) {
 	    Tcl_Panic("Tcl_WaitForEvent: %s",
@@ -794,7 +794,7 @@ TclpWaitForEvent(
 	}
 #endif /* __CYGWIN__ */
     }
-    tsdPtr->eventReady = 0;
+    tsdPtr->eventReady = false;
 
 #ifdef __CYGWIN__
     while (PeekMessageW(&msg, NULL, 0, 0, 0)) {
@@ -832,7 +832,7 @@ TclpWaitForEvent(
 	    tsdPtr->nextPtr->prevPtr = tsdPtr->prevPtr;
 	}
 	tsdPtr->nextPtr = tsdPtr->prevPtr = NULL;
-	tsdPtr->onList = 0;
+	tsdPtr->onList = false;
 	if ((write(triggerPipe, "", 1) == -1) && (errno != EAGAIN)) {
 	    Tcl_Panic("Tcl_WaitForEvent: %s",
 		    "unable to write to triggerPipe");
@@ -995,7 +995,7 @@ NotifierThreadProc(
     fd_set writableMask;
     fd_set exceptionMask;
     int i, fds[2], receivePipe, ret;
-    long found;
+    bool found;
     struct timeval poll = {0, 0}, *timePtr;
     char buf[2];
     int numFdBits = 0;
@@ -1050,7 +1050,7 @@ NotifierThreadProc(
      * Look for file events and report them to interested threads.
      */
 
-    while (1) {
+    while (true) {
 	FD_ZERO(&readableMask);
 	FD_ZERO(&writableMask);
 	FD_ZERO(&exceptionMask);
@@ -1145,23 +1145,23 @@ NotifierThreadProc(
 
 	pthread_mutex_lock(&notifierMutex);
 	for (tsdPtr = waitingListPtr; tsdPtr; tsdPtr = tsdPtr->nextPtr) {
-	    found = 0;
+	    found = false;
 
 	    for (i = tsdPtr->numFdBits - 1; i >= 0; --i) {
 		if (FD_ISSET(i, &tsdPtr->checkMasks.readable)
 			&& FD_ISSET(i, &readableMask)) {
 		    FD_SET(i, &tsdPtr->readyMasks.readable);
-		    found = 1;
+		    found = true;
 		}
 		if (FD_ISSET(i, &tsdPtr->checkMasks.writable)
 			&& FD_ISSET(i, &writableMask)) {
 		    FD_SET(i, &tsdPtr->readyMasks.writable);
-		    found = 1;
+		    found = true;
 		}
 		if (FD_ISSET(i, &tsdPtr->checkMasks.exception)
 			&& FD_ISSET(i, &exceptionMask)) {
 		    FD_SET(i, &tsdPtr->readyMasks.exception);
-		    found = 1;
+		    found = true;
 		}
 	    }
 
@@ -1177,7 +1177,7 @@ NotifierThreadProc(
 	 * avoid a race condition we only read one at a time.
 	 */
 
-	do {
+	while (true) {
 	    i = (int)read(receivePipe, buf, 1);
 	    if (i <= 0) {
 		break;
@@ -1190,7 +1190,7 @@ NotifierThreadProc(
 
 		break;
 	    }
-	} while (1);
+	}
 
 	if (asyncPending) {
 	    asyncPending = false;

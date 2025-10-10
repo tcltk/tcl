@@ -776,7 +776,7 @@ ConsoleSetupProc(
 {
     ConsoleChannelInfo *chanInfoPtr;
     Tcl_Time blockTime = { 0, 0 };
-    int block = 1;
+    bool block = true;
 
     if (!(flags & TCL_FILE_EVENTS)) {
 	return;
@@ -797,12 +797,12 @@ ConsoleSetupProc(
 	    if (chanInfoPtr->watchMask & TCL_READABLE) {
 		if (RingBufferLength(&handleInfoPtr->buffer) > 0
 			|| handleInfoPtr->lastError != ERROR_SUCCESS) {
-		    block = 0; /* Input data available */
+		    block = false; /* Input data available */
 		}
 	    } else if (chanInfoPtr->watchMask & TCL_WRITABLE) {
 		if (RingBufferHasFreeSpace(&handleInfoPtr->buffer)) {
 		    /* TCL_WRITABLE */
-		    block = 0; /* Output space available */
+		    block = false; /* Output space available */
 		}
 	    }
 	    ReleaseSRWLockShared(&handleInfoPtr->lock);
@@ -840,7 +840,7 @@ ConsoleCheckProc(
 {
     ConsoleChannelInfo *chanInfoPtr;
     Tcl_ThreadId me;
-    int needEvent;
+    bool needEvent;
 
     if (!(flags & TCL_FILE_EVENTS)) {
 	return;
@@ -878,13 +878,13 @@ ConsoleCheckProc(
 	    continue;
 	}
 
-	needEvent = 0;
+	needEvent = false;
 	AcquireSRWLockShared(&handleInfoPtr->lock);
 	/* Rememeber channel is read or write, never both */
 	if (chanInfoPtr->watchMask & TCL_READABLE) {
 	    if (RingBufferLength(&handleInfoPtr->buffer) > 0
 		    || handleInfoPtr->lastError != ERROR_SUCCESS) {
-		needEvent = 1; /* Input data available or error/EOF */
+		needEvent = true; /* Input data available or error/EOF */
 	    }
 	    /*
 	     * TCL_READABLE watch means someone is looking out for data being
@@ -895,7 +895,7 @@ ConsoleCheckProc(
 	    WakeConditionVariable(&handleInfoPtr->consoleThreadCV);
 	} else if (chanInfoPtr->watchMask & TCL_WRITABLE) {
 	    if (RingBufferHasFreeSpace(&handleInfoPtr->buffer)) {
-		needEvent = 1; /* Output space available */
+		needEvent = true; /* Output space available */
 	    }
 	}
 	ReleaseSRWLockShared(&handleInfoPtr->lock);
@@ -982,7 +982,7 @@ ConsoleCloseProc(
     ConsoleHandleInfo *handleInfoPtr;
     int errorCode = 0;
     ConsoleChannelInfo **nextPtrPtr;
-    int closeHandle;
+    bool closeHandle;
 
     if ((flags & (TCL_CLOSE_READ | TCL_CLOSE_WRITE)) != 0) {
 	return EINVAL;
@@ -997,9 +997,9 @@ ConsoleCloseProc(
 	    || (   (GetStdHandle(STD_INPUT_HANDLE) != chanInfoPtr->handle)
 		&& (GetStdHandle(STD_OUTPUT_HANDLE) != chanInfoPtr->handle)
 		&& (GetStdHandle(STD_ERROR_HANDLE) != chanInfoPtr->handle))) {
-	closeHandle = 1;
+	closeHandle = true;
     } else {
-	closeHandle = 0;
+	closeHandle = false;
     }
 
     AcquireSRWLockExclusive(&gConsoleLock);
@@ -1119,7 +1119,7 @@ ConsoleInputProc(
     AcquireSRWLockExclusive(&handleInfoPtr->lock);
     ReleaseSRWLockShared(&gConsoleLock); /* AFTER acquiring handleInfoPtr->lock */
 
-    while (1) {
+    while (true) {
 	numRead = RingBufferOut(&handleInfoPtr->buffer, bufPtr, bufSize, 1);
 	/*
 	 * Note: even if channel is closed or has an error, as long there is
@@ -1279,7 +1279,7 @@ ConsoleOutputProc(
 
     /* Keep looping until all written. Break out for async and errors */
     numWritten = 0;
-    while (1) {
+    while (true) {
 	/* Check for error and closing on every loop. */
 	if (handleInfoPtr->lastError != 0) {
 	    Tcl_WinConvertError(handleInfoPtr->lastError);
@@ -1385,7 +1385,7 @@ ConsoleEventProc(
 {
     ConsoleEvent *consoleEvPtr = (ConsoleEvent *) evPtr;
     ConsoleChannelInfo *chanInfoPtr;
-    int freeChannel;
+    bool freeChannel;
     int mask = 0;
 
     if (!(flags & TCL_FILE_EVENTS)) {
@@ -1451,10 +1451,10 @@ ConsoleEventProc(
     /* Remove the reference to the channel from event record */
     if (chanInfoPtr->numRefs > 1) {
 	chanInfoPtr->numRefs -= 1;
-	freeChannel = 0;
+	freeChannel = false;
     } else {
 	assert(chanInfoPtr->channel == NULL);
-	freeChannel = 1;
+	freeChannel = true;
     }
 
     if (freeChannel) {
@@ -1656,7 +1656,7 @@ ConsoleReaderThread(
     /* This thread is holding a reference so pointer is safe */
     AcquireSRWLockExclusive(&handleInfoPtr->lock);
 
-    while (1) {
+    while (true) {
 
 	if (handleInfoPtr->numRefs == 1) {
 	    /*
@@ -1863,7 +1863,7 @@ ConsoleWriterThread(
 
     /* This thread is holding a reference so pointer is safe */
     AcquireSRWLockExclusive(&handleInfoPtr->lock);
-    while (1) {
+    while (true) {
 	/* handleInfoPtr->lock must be held on entry to loop */
 
 	Tcl_Size offset;
@@ -2353,7 +2353,7 @@ ConsoleGetOptionProc(
     Tcl_DString *dsPtr)		/* Where to store value(s). */
 {
     ConsoleChannelInfo *chanInfoPtr = (ConsoleChannelInfo *)instanceData;
-    int valid = 0;		/* Flag if valid option parsed. */
+    bool valid = false;		/* Flag if valid option parsed. */
     size_t len;
     char buf[TCL_INTEGER_SPACE];
 
@@ -2377,7 +2377,7 @@ ConsoleGetOptionProc(
 	if (len==0 || (len>1 && strncmp(optionName, "-inputmode", len)==0)) {
 	    DWORD mode;
 
-	    valid = 1;
+	    valid = true;
 	    if (GetConsoleMode(chanInfoPtr->handle, &mode) == 0) {
 		Tcl_WinConvertError(GetLastError());
 		if (interp != NULL) {
@@ -2410,7 +2410,7 @@ ConsoleGetOptionProc(
 	if (len == 0 || (len > 1 && strncmp(optionName, "-winsize", len) == 0)) {
 	    CONSOLE_SCREEN_BUFFER_INFO consoleInfo;
 
-	    valid = 1;
+	    valid = true;
 	    if (!GetConsoleScreenBufferInfo(chanInfoPtr->handle,
 		    &consoleInfo)) {
 		Tcl_WinConvertError(GetLastError());

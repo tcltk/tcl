@@ -15,12 +15,12 @@
 /*
  * On Windows, we need to do proper Unicode->UTF-8 conversion.
  */
- #if defined (__clang__) && (__clang_major__ > 20)
+#if defined (__clang__) && (__clang_major__ > 20)
 #pragma clang diagnostic ignored "-Wc++-keyword"
 #endif
 
 typedef struct {
-    int initialized;
+    bool initialized;
     Tcl_DString errorMsg;	/* UTF-8 encoded error-message */
 } ThreadSpecificData;
 static Tcl_ThreadDataKey dataKey;
@@ -36,7 +36,7 @@ gai_strerror(
 	Tcl_DStringSetLength(&tsdPtr->errorMsg, 0);
     } else {
 	Tcl_DStringInit(&tsdPtr->errorMsg);
-	tsdPtr->initialized = 1;
+	tsdPtr->initialized = true;
     }
     Tcl_WCharToUtfDString(gai_strerrorW(code), -1, &tsdPtr->errorMsg);
     return Tcl_DStringValue(&tsdPtr->errorMsg);

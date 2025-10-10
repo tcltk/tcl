@@ -1704,7 +1704,7 @@ ClockGetjuliandayfromerayearmonthdayObjCmd(
     int changeover;
     bool copied = false;
     int status;
-    int isBce = 0;
+    int isBce = false;
 
     fields.tzName = NULL;
 
@@ -1790,7 +1790,7 @@ ClockGetjuliandayfromerayearweekdayObjCmd(
     int changeover;
     bool copied = false;
     int status;
-    int isBce = 0;
+    int isBce = false;
 
     fields.tzName = NULL;
 
@@ -2026,7 +2026,7 @@ ConvertLocalToUTCUsingTable(
 
     fields->tzOffset = 0;
     fields->seconds = fields->localSeconds;
-    while (1) {
+    while (true) {
 	row = TclClockLookupLastTransition(interp, fields->seconds, rowc, rowv,
 		rangesVal);
 	if ((row == NULL)
@@ -2368,7 +2368,7 @@ ConvertUTCToLocalUsingC(
      * Fill in the date in 'fields' and use it to derive Julian Day.
      */
 
-    fields->isBce = 0;
+    fields->isBce = false;
     fields->year = timeVal->tm_year + 1900;
     fields->month = timeVal->tm_mon + 1;
     fields->dayOfMonth = timeVal->tm_mday;
@@ -2584,7 +2584,7 @@ GetGregorianEraYearDay(
 	 * Gregorian calendar.
 	 */
 
-	fields->gregorian = 1;
+	fields->gregorian = true;
 	year = 1;
 
 	/*
@@ -2622,7 +2622,7 @@ GetGregorianEraYearDay(
 	 * Julian calendar.
 	 */
 
-	fields->gregorian = 0;
+	fields->gregorian = false;
 	year = 1;
 	day = jday - JDAY_1_JAN_1_CE_JULIAN;
     }
@@ -2660,10 +2660,10 @@ GetGregorianEraYearDay(
      */
 
     if (year <= 0) {
-	fields->isBce = 1;
+	fields->isBce = true;
 	fields->year = 1 - year;
     } else {
-	fields->isBce = 0;
+	fields->isBce = false;
 	fields->year = year;
     }
     fields->dayOfYear = (int)day + 1;
@@ -2698,7 +2698,7 @@ GetMonthDay(
      */
     month = (day*12) / dipm[12];
     /* then do forwards backwards correction */
-    while (1) {
+    while (true) {
 	if (day > dipm[month]) {
 	    if (month >= 11 || day <= dipm[month + 1]) {
 		break;
@@ -2820,12 +2820,12 @@ GetJulianDayFromEraYearMonthDay(
      * Adjust the year after reducing the month.
      */
 
-    fields->gregorian = 1;
+    fields->gregorian = true;
     if (year < 1) {
-	fields->isBce = 1;
+	fields->isBce = true;
 	fields->year = 1 - year;
     } else {
-	fields->isBce = 0;
+	fields->isBce = false;
 	fields->year = year;
     }
 
@@ -2871,7 +2871,7 @@ GetJulianDayFromEraYearMonthDay(
      */
 
     if (fields->julianDay < changeover) {
-	fields->gregorian = 0;
+	fields->gregorian = false;
 	fields->julianDay = JDAY_1_JAN_1_CE_JULIAN - 1
 		+ fields->dayOfMonth
 		+ daysInPriorMonths[year%4 == 0][month - 1]
@@ -2914,7 +2914,7 @@ TclGetJulianDayFromEraYearDay(
     ym1 = year - 1;
 
     /* Try the Gregorian calendar first. */
-    fields->gregorian = 1;
+    fields->gregorian = true;
     fields->julianDay =
 	    1721425
 	    + fields->dayOfYear
@@ -2926,7 +2926,7 @@ TclGetJulianDayFromEraYearDay(
     /* If the date is before the Gregorian change, use the Julian calendar. */
 
     if (fields->julianDay < changeover) {
-	fields->gregorian = 0;
+	fields->gregorian = false;
 	fields->julianDay =
 		1721423
 		+ fields->dayOfYear
@@ -2958,15 +2958,15 @@ TclIsGregorianLeapYear(
 	year = 1 - year;
     }
     if (year % 4 != 0) {
-	return 0;
+	return false;
     } else if (!(fields->gregorian)) {
-	return 1;
+	return true;
     } else if (year % 400 == 0) {
-	return 1;
+	return true;
     } else if (year % 100 == 0) {
-	return 0;
+	return false;
     } else {
-	return 1;
+	return true;
     }
 }
 
@@ -3303,7 +3303,7 @@ ClockParseFmtScnArgs(
 	CLC_ARGS_TIMEZONE, CLC_ARGS_VALIDATE
     };
     int optionIndex;		/* Index of an option. */
-    int saw = 0;		/* Flag == 1 if option was seen already. */
+    int saw = 0;		/* Bitmask: 1 if option was seen already. */
     Tcl_Size i, baseIdx;
     Tcl_WideInt baseVal;	/* Base time, expressed in seconds from the Epoch */
 
@@ -4034,7 +4034,7 @@ ClockFreeScan(
 	    }
 	    yyYear += dataPtr->currentYearCentury;
 	}
-	yydate.isBce = 0;
+	yydate.isBce = false;
 	info->flags |= CLF_ASSEMBLE_JULIANDAY|CLF_ASSEMBLE_SECONDS;
     }
 
@@ -4251,7 +4251,7 @@ ClockCalcRelTime(
 	    info->flags &= ~CLF_ASSEMBLE_JULIANDAY;
 	}
 
-	yydate.isBce = 0;
+	yydate.isBce = false;
 	yydate.julianDay = WeekdayOnOrBefore(yyDayOfWeek, yydate.julianDay + 6)
 		+ 7 * yyDayOrdinal;
 	if (yyDayOrdinal > 0) {

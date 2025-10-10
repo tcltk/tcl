@@ -63,7 +63,7 @@ typedef struct {
 typedef struct {
     Tcl_Interp *interp;
     z_stream stream;		/* The interface to the zlib library. */
-    int streamEnd;		/* If we've got to end-of-stream. */
+    bool streamEnd;		/* If we've got to end-of-stream. */
     Tcl_Obj *inData, *outData;	/* Input / output buffers (lists) */
     Tcl_Obj *currentInput;	/* Pointer to what is currently being
 				 * inflated. */
@@ -785,7 +785,7 @@ Tcl_ZlibStreamInit(
     zshPtr->level = level;
     zshPtr->wbits = wbits;
     zshPtr->currentInput = NULL;
-    zshPtr->streamEnd = 0;
+    zshPtr->streamEnd = false;
     zshPtr->compDictObj = NULL;
     zshPtr->flags = 0;
     zshPtr->gzHeaderPtr = gzHeaderPtr;
@@ -1036,7 +1036,7 @@ Tcl_ZlibStreamReset(
     }
 
     zshPtr->outPos = 0;
-    zshPtr->streamEnd = 0;
+    zshPtr->streamEnd = false;
     memset(&zshPtr->stream, 0, sizeof(z_stream));
 
     /*
@@ -1268,7 +1268,7 @@ Tcl_ZlibStreamPut(
 	}
 	dataTmp = (char *) Tcl_Alloc(outSize);
 
-	while (1) {
+	while (true) {
 	    e = Deflate(&zshPtr->stream, dataTmp, outSize, flush, &toStore);
 
 	    /*
@@ -1513,7 +1513,7 @@ Tcl_ZlibStreamGet(
 	    return TCL_ERROR;
 	}
 	if (e == Z_STREAM_END) {
-	    zshPtr->streamEnd = 1;
+	    zshPtr->streamEnd = true;
 	    if (zshPtr->currentInput) {
 		Tcl_DecrRefCount(zshPtr->currentInput);
 		zshPtr->currentInput = 0;
@@ -1850,7 +1850,7 @@ Tcl_ZlibInflate(
      * Start the decompression cycle.
      */
 
-    while (1) {
+    while (true) {
 	e = inflate(&stream, Z_FINISH);
 	if (e != Z_BUF_ERROR) {
 	    break;

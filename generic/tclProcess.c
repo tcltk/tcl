@@ -27,7 +27,7 @@ static bool autopurge = true;	/* Autopurge flag. */
 typedef struct ProcessInfo {
     Tcl_Pid pid;		/* Process id. */
     Tcl_Size resolvedPid;	/* Resolved process id. */
-    int purge;			/* Purge eventualy. */
+    bool purge;			/* Purge eventualy. */
     TclProcessWaitStatus status;/* Process status. */
     int code;			/* Error code, exit status or signal
 				 * number. */
@@ -47,7 +47,7 @@ TCL_DECLARE_MUTEX(infoTablesMutex)
 static void		InitProcessInfo(ProcessInfo *info, Tcl_Pid pid,
 			    Tcl_Size resolvedPid);
 static void		FreeProcessInfo(ProcessInfo *info);
-static int		RefreshProcessInfo(ProcessInfo *info, int options);
+static bool		RefreshProcessInfo(ProcessInfo *info, int options);
 static TclProcessWaitStatus WaitProcessStatus(Tcl_Pid pid, Tcl_Size resolvedPid,
 			    int options, int *codePtr, Tcl_Obj **msgPtr,
 			    Tcl_Obj **errorObjPtr);
@@ -81,7 +81,7 @@ InitProcessInfo(
 {
     info->pid = pid;
     info->resolvedPid = resolvedPid;
-    info->purge = 0;
+    info->purge = false;
     info->status = TCL_PROCESS_UNCHANGED;
     info->code = 0;
     info->msg = NULL;
@@ -134,7 +134,7 @@ FreeProcessInfo(
  *	Refresh process info.
  *
  * Results:
- *	Nonzero if state changed, else zero.
+ *	True if state changed, else false.
  *
  * Side effects:
  *	May call WaitProcessStatus, which can block if WNOHANG option is set.
@@ -142,7 +142,7 @@ FreeProcessInfo(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 RefreshProcessInfo(
     ProcessInfo *info,		/* Structure to refresh. */
     int options)		/* Options passed to WaitProcessStatus. */
@@ -166,7 +166,7 @@ RefreshProcessInfo(
 	 * No change.
 	 */
 
-	return 0;
+	return false;
     }
 }
 
@@ -980,7 +980,7 @@ TclProcessWait(
 	 * TCL_PROCESS_UNCHANGED.
 	 */
 
-	info->purge = 1;
+	info->purge = true;
     }
     Tcl_MutexUnlock(&infoTablesMutex);
     return result;

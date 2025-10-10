@@ -132,7 +132,7 @@ static Cache *	GetCache(void);
 static void	LockBucket(Cache *cachePtr, int bucket);
 static void	UnlockBucket(Cache *cachePtr, int bucket);
 static void	PutBlocks(Cache *cachePtr, int bucket, size_t numMove);
-static int	GetBlocks(Cache *cachePtr, int bucket);
+static bool	GetBlocks(Cache *cachePtr, int bucket);
 static Block *	Ptr2Block(void *ptr);
 static void *	Block2Ptr(Block *blockPtr, int bucket, size_t reqSize);
 static void	MoveObjs(Cache *fromPtr, Cache *toPtr, size_t numMove);
@@ -157,7 +157,7 @@ static __thread Cache *tcachePtr;
 	    tcachePtr = GetCache();		\
 	}					\
 	(cachePtr) = tcachePtr;			\
-    } while (0)
+    } while (false)
 #else
 # define GETCACHE(cachePtr)			\
     do {					\
@@ -165,7 +165,7 @@ static __thread Cache *tcachePtr;
 	if ((cachePtr) == NULL) {		\
 	    (cachePtr) = GetCache();		\
 	}					\
-    } while (0)
+    } while (false)
 #endif
 
 /*
@@ -920,7 +920,7 @@ PutBlocks(
  *	Get more blocks for a bucket.
  *
  * Results:
- *	1 if blocks where allocated, 0 otherwise.
+ *	Whether blocks were allocated.
  *
  * Side effects:
  *	Cache may be filled with available blocks.
@@ -928,7 +928,7 @@ PutBlocks(
  *----------------------------------------------------------------------
  */
 
-static int
+static bool
 GetBlocks(
     Cache *cachePtr,
     int bucket)
@@ -1007,7 +1007,7 @@ GetBlocks(
 	    size = MAXALLOC;
 	    blockPtr = (Block*)TclpSysAlloc(size);
 	    if (blockPtr == NULL) {
-		return 0;
+		return false;
 	    }
 	}
 
@@ -1026,7 +1026,7 @@ GetBlocks(
 	cachePtr->buckets[bucket].lastPtr = blockPtr;
 	blockPtr->nextBlock = NULL;
     }
-    return 1;
+    return true;
 }
 
 /*

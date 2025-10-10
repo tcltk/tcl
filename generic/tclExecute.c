@@ -136,12 +136,12 @@ typedef struct {
 	esPtr->tosPtr = tosPtr;						\
 	TclNRAddCallback(interp, TEBCresume,				\
 		TD, pc, INT2PTR(cleanup), NULL);			\
-    } while (0)
+    } while (false)
 
 #define TEBC_DATA_DIG() \
     do {								\
 	tosPtr = esPtr->tosPtr;						\
-    } while (0)
+    } while (false)
 
 #define PUSH_TAUX_OBJ(objPtr) \
     do {								\
@@ -150,14 +150,14 @@ typedef struct {
 	}								\
 	(objPtr)->internalRep.twoPtrValue.ptr1 = auxObjList;		\
 	auxObjList = (objPtr);						\
-    } while (0)
+    } while (false)
 
 #define POP_TAUX_OBJ() \
     do {								\
 	tmpPtr = auxObjList;						\
 	auxObjList = (Tcl_Obj *)tmpPtr->internalRep.twoPtrValue.ptr1;	\
 	Tcl_DecrRefCount(tmpPtr);					\
-    } while (0)
+    } while (false)
 
 /*
  * These variable-access macros have to coincide with those in tclVar.c
@@ -204,7 +204,7 @@ VarHashFindVar(
 	ValidatePcAndStackTop(codePtr, pc, CURR_DEPTH,			\
 		/*checkStack*/ !(starting || auxObjList));		\
 	starting = false;						\
-    } while (0)
+    } while (false)
 #else
 #define CHECK_STACK()
 #endif // TCL_COMPILE_DEBUG
@@ -241,7 +241,7 @@ VarHashFindVar(
 	    default: TCL_UNREACHABLE();					\
 	    }								\
 	}								\
-    } while (0)
+    } while (false)
 
 /* Cut down version of NEXT_INST_F() for resultHandling==0 case. */
 #define NEXT_INST_F0(pcAdjustment, nCleanup) \
@@ -255,7 +255,7 @@ VarHashFindVar(
 	case 2: goto cleanup2;						\
 	default: TCL_UNREACHABLE();					\
 	}								\
-    } while (0)
+    } while (false)
 
 #define NEXT_INST_V(pcAdjustment, nCleanup, resultHandling) \
     CHECK_STACK();							\
@@ -271,7 +271,7 @@ VarHashFindVar(
 	    goto cleanupV;						\
 	}								\
 	TCL_UNREACHABLE();						\
-    } while (0)
+    } while (false)
 
 #ifndef TCL_COMPILE_DEBUG
 #ifndef REMOVE_DEPRECATED_OPCODES
@@ -296,7 +296,7 @@ VarHashFindVar(
 	    NEXT_INST_F(0, (cleanup), 1);				\
 	}								\
 	TCL_UNREACHABLE();						\
-    } while (0)
+    } while (false)
 #define JUMP_PEEPHOLE_V(condition, pcAdjustment, cleanup) \
     do {								\
 	pc += (pcAdjustment);						\
@@ -318,7 +318,7 @@ VarHashFindVar(
 	    NEXT_INST_V(0, (cleanup), 1);				\
 	}								\
 	TCL_UNREACHABLE();						\
-    } while (0)
+    } while (false)
 #else // REMOVE_DEPRECATED_OPCODES
 #define JUMP_PEEPHOLE_F(condition, pcAdjustment, cleanup) \
     do {								\
@@ -337,7 +337,7 @@ VarHashFindVar(
 	    NEXT_INST_F(0, (cleanup), 1);				\
 	}								\
 	TCL_UNREACHABLE();						\
-    } while (0)
+    } while (false)
 #define JUMP_PEEPHOLE_V(condition, pcAdjustment, cleanup) \
     do {								\
 	pc += (pcAdjustment);						\
@@ -355,7 +355,7 @@ VarHashFindVar(
 	    NEXT_INST_V(0, (cleanup), 1);				\
 	}								\
 	TCL_UNREACHABLE();						\
-    } while (0)
+    } while (false)
 #endif // REMOVE_DEPRECATED_OPCODES
 #else // TCL_COMPILE_DEBUG
 #define JUMP_PEEPHOLE_F(condition, pcAdjustment, cleanup) \
@@ -367,7 +367,7 @@ VarHashFindVar(
 	}								\
 	NEXT_INST_F((pcAdjustment), (cleanup), 1);			\
 	TCL_UNREACHABLE();						\
-    } while (0)
+    } while (false)
 #define JUMP_PEEPHOLE_V(condition, pcAdjustment, cleanup) \
     do{									\
 	if ((condition) < 0) {						\
@@ -377,7 +377,7 @@ VarHashFindVar(
 	}								\
 	NEXT_INST_V((pcAdjustment), (cleanup), 1);			\
 	TCL_UNREACHABLE();						\
-    } while (0)
+    } while (false)
 #endif // TCL_COMPILE_DEBUG
 
 /*
@@ -510,13 +510,13 @@ VarHashFindVar(
 	    TCL_DTRACE_INST_START(tclInstructionTable[*pc].name,	\
 			CURR_DEPTH, tosPtr);				\
 	}								\
-    } while (0)
+    } while (false)
 #define TCL_DTRACE_INST_LAST() \
     do {								\
 	if (TCL_DTRACE_INST_DONE_ENABLED() && curInstName) {		\
 	    TCL_DTRACE_INST_DONE(curInstName, CURR_DEPTH, tosPtr);	\
 	}								\
-    } while (0)
+    } while (false)
 
 /*
  * Macro used in this file to save a function call for common uses of
@@ -1708,7 +1708,7 @@ TclCompileObj(
 		return codePtr;
 	    }
 	    ExtCmdLoc *eclPtr = (ExtCmdLoc *)Tcl_GetHashValue(hePtr);
-	    int redo = 0;
+	    bool redo = false;
 	    CmdFrame *ctxCopyPtr = (CmdFrame *)
 		    TclStackAlloc(interp, sizeof(CmdFrame));
 	    *ctxCopyPtr = *invoker;
@@ -8714,7 +8714,7 @@ ExecuteExtendedBinaryMathOp(
 	WIDE_RESULT(wResult);
 
     case INST_EXPON: {
-	int oddExponent = 0, negativeExponent = 0;
+	bool oddExponent = false, negativeExponent = false;
 	unsigned short base;
 
 	if ((type1 == TCL_NUMBER_DOUBLE) || (type2 == TCL_NUMBER_DOUBLE)) {

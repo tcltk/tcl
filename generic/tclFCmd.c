@@ -19,12 +19,12 @@
 
 static int		CopyRenameOneFile(Tcl_Interp *interp,
 			    Tcl_Obj *srcPathPtr, Tcl_Obj *destPathPtr,
-			    int copyFlag, int force);
+			    bool copyFlag, bool force);
 static Tcl_Obj *	FileBasename(Tcl_Interp *interp, Tcl_Obj *pathPtr);
 static int		FileCopyRename(Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[], int copyFlag);
+			    int objc, Tcl_Obj *const objv[], bool copyFlag);
 static int		FileForceOption(Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[], int *forcePtr);
+			    int objc, Tcl_Obj *const objv[], bool *forcePtr);
 
 /*
  *---------------------------------------------------------------------------
@@ -135,10 +135,11 @@ FileCopyRename(
     Tcl_Interp *interp,		/* Used for error reporting. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[],	/* Argument strings passed to Tcl_FileCmd. */
-    int copyFlag)		/* If non-zero, copy source(s). Otherwise,
+    bool copyFlag)		/* If true, copy source(s). Otherwise,
 				 * rename them. */
 {
-    int i, result, force;
+    int i, result;
+    bool force;
     Tcl_StatBuf statBuf;
     Tcl_Obj *target;
 
@@ -379,7 +380,8 @@ TclFileDeleteCmd(
     int objc,			/* Number of arguments */
     Tcl_Obj *const objv[])	/* Argument strings passed to Tcl_FileCmd. */
 {
-    int i, force, result;
+    int i, result;
+    bool force;
     Tcl_Obj *errfile;
     Tcl_Obj *errorBuffer = NULL;
 
@@ -418,7 +420,7 @@ TclFileDeleteCmd(
 
 	    result = Tcl_FSRemoveDirectory(objv[i], force, &errorBuffer);
 	    if (result != TCL_OK) {
-		if ((force == 0) && (errno == EEXIST)) {
+		if (!force && (errno == EEXIST)) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			    "error deleting \"%s\": directory not empty",
 			    TclGetString(objv[i])));
@@ -511,9 +513,9 @@ CopyRenameOneFile(
 				 * translated. */
     Tcl_Obj *target,		/* Pathname of file to create/overwrite. May
 				 * need to be translated. */
-    int copyFlag,		/* If non-zero, copy files. Otherwise, rename
+    bool copyFlag,		/* If true, copy files. Otherwise, rename
 				 * them. */
-    int force)			/* If non-zero, overwrite target file if it
+    bool force)			/* If true, overwrite target file if it
 				 * exists. Otherwise, error if target already
 				 * exists. */
 {
@@ -623,7 +625,7 @@ CopyRenameOneFile(
 	}
     }
 
-    if (copyFlag == 0) {
+    if (!copyFlag) {
 	result = Tcl_FSRenameFile(source, target);
 	if (result == TCL_OK) {
 	    goto done;
@@ -684,7 +686,7 @@ CopyRenameOneFile(
 	} else {
 	    int counter = 0;
 
-	    while (1) {
+	    while (true) {
 		Tcl_Obj *path = Tcl_FSLink(actualSource, NULL, 0);
 		if (path == NULL) {
 		    break;
@@ -795,7 +797,7 @@ CopyRenameOneFile(
 	 */
 	Tcl_ResetResult(interp);
     }
-    if ((copyFlag == 0) && (result == TCL_OK)) {
+    if (!copyFlag && (result == TCL_OK)) {
 	if (S_ISDIR(sourceStatBuf.st_mode)) {
 	    result = Tcl_FSRemoveDirectory(source, 1, &errorBuffer);
 	    if (result != TCL_OK) {
@@ -867,15 +869,16 @@ FileForceOption(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[],	/* Argument strings.  First command line
 				 * option, if it exists, begins at 0. */
-    int *forcePtr)		/* If the "-force" was specified, *forcePtr is
-				 * filled with 1, otherwise with 0. */
+    bool *forcePtr)		/* If the "-force" was specified, *forcePtr is
+				 * filled with true, otherwise with false. */
 {
-    int force, i, idx;
+    int i, idx;
+    bool force;
     static const char *const options[] = {
 	"-force", "--", NULL
     };
 
-    force = 0;
+    force = false;
     for (i = 0; i < objc; i++) {
 	if (TclGetString(objv[i])[0] != '-') {
 	    break;
@@ -885,7 +888,7 @@ FileForceOption(
 	    return -1;
 	}
 	if (idx == 0 /* -force */) {
-	    force = 1;
+	    force = true;
 	} else { /* -- */
 	    i++;
 	    break;

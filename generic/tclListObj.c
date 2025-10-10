@@ -50,13 +50,13 @@
     do {								\
 	Tcl_Size idx_ = (idxarg_); /* To guard against ++ etc. */	\
 	LIST_ASSERT(idx_ >= 0 && idx_ < LIST_MAX);			\
-    } while (0)
+    } while (false)
 /* Ditto for counts except upper limit is different */
 #define LIST_COUNT_ASSERT(countarg_) \
     do {								\
 	Tcl_Size count_ = (countarg_); /* To guard against ++ etc. */	\
 	LIST_ASSERT(count_ >= 0 && count_ <= LIST_MAX);			\
-    } while (0)
+    } while (false)
 
 #else // !ENABLE_LIST_ASSERTS
 #define LIST_ASSERT(cond_)		((void) 0)
@@ -165,7 +165,7 @@ const Tcl_ObjType tclListType = {
 	if ((repPtr_)->spanPtr) {		\
 	    (repPtr_)->spanPtr->refCount++;	\
 	}					\
-    } while (0)
+    } while (false)
 
 /* Returns number of free unused slots at the back of the ListRep's ListStore */
 #define ListRepNumFreeTail(repPtr_) \
@@ -203,13 +203,13 @@ const Tcl_ObjType tclListType = {
 	(objPtr_)->internalRep.twoPtrValue.ptr1 = (repPtr_)->storePtr;	\
 	(objPtr_)->internalRep.twoPtrValue.ptr2 = (repPtr_)->spanPtr;	\
 	(objPtr_)->typePtr = &tclListType;				\
-    } while (0)
+    } while (false)
 
 #define ListObjOverwriteRep(objPtr_, repPtr_) \
     do {								\
 	ListRepIncrRefs(repPtr_);					\
 	ListObjStompRep(objPtr_, repPtr_);				\
-    } while (0)
+    } while (false)
 
 #define ListObjReplaceRepAndInvalidate(objPtr_, repPtr_) \
     do {								\
@@ -218,7 +218,7 @@ const Tcl_ObjType tclListType = {
 	TclFreeInternalRep(objPtr_);					\
 	TclInvalidateStringRep(objPtr_);				\
 	ListObjStompRep(objPtr_, repPtr_);				\
-    } while (0)
+    } while (false)
 
 /*
  *------------------------------------------------------------------------
@@ -295,7 +295,7 @@ ListSpanDecrRefs(
  *
  *------------------------------------------------------------------------
  */
-static inline int
+static inline bool
 ListSpanMerited(
     Tcl_Size length,		/* Length of the proposed span */
     Tcl_Size usedStorageLength,	/* Number of slots currently in used */
@@ -311,16 +311,16 @@ ListSpanMerited(
      */
 
     if (length < LIST_SPAN_THRESHOLD) {
-	return 0;/* No span for small lists */
+	return false;	/* No span for small lists */
     }
     if (length < (allocatedStorageLength / 2 - allocatedStorageLength / 8)) {
-	return 0; /* No span if less than 3/8 of allocation */
+	return false;	/* No span if less than 3/8 of allocation */
     }
     if (length < usedStorageLength / 2) {
-	return 0; /* No span if less than half current storage */
+	return false;	/* No span if less than half current storage */
     }
 
-    return 1;
+    return true;
 }
 
 /*
@@ -651,7 +651,7 @@ ListRepValidate(
 	    condition = #cond_;						\
 	    goto failure;						\
 	}								\
-    } while (0)
+    } while (false)
 
     /* Separate each condition so line number gives exact reason for failure */
     INVARIANT(storePtr != NULL);

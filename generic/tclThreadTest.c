@@ -450,7 +450,7 @@ ThreadCmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, "");
 	    return TCL_ERROR;
 	}
-	while (1) {
+	while (true) {
 	    /*
 	     * If the script has been unwound, bail out immediately. This does
 	     * not follow the recommended guidelines for how extensions should

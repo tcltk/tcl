@@ -470,7 +470,7 @@ Tcl_UpdateLinkedVar(
  *----------------------------------------------------------------------
  */
 
-static inline int
+static inline bool
 GetInt(
     Tcl_Obj *objPtr,
     int *intPtr)
@@ -488,11 +488,11 @@ GetWide(
 	int intValue;
 
 	if (GetInvalidIntFromObj(objPtr, &intValue) != TCL_OK) {
-	    return 1;
+	    return TCL_ERROR;
 	}
 	*widePtr = intValue;
     }
-    return 0;
+    return TCL_OK;
 }
 
 static inline int
@@ -504,11 +504,11 @@ GetUWide(
 	int intValue;
 
 	if (GetInvalidIntFromObj(objPtr, &intValue) != TCL_OK) {
-	    return 1;
+	    return TCL_ERROR;
 	}
 	*uwidePtr = intValue;
     }
-    return 0;
+    return TCL_OK;
 }
 
 static inline int
@@ -517,21 +517,21 @@ GetDouble(
     double *dblPtr)
 {
     if (Tcl_GetDoubleFromObj(NULL, objPtr, dblPtr) == TCL_OK) {
-	return 0;
+	return TCL_OK;
     } else {
 #ifdef ACCEPT_NAN
 	Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(objPtr, &tclDoubleType);
 
 	if (irPtr != NULL) {
 	    *dblPtr = irPtr->doubleValue;
-	    return 0;
+	    return TCL_OK;
 	}
 #endif /* ACCEPT_NAN */
 	return GetInvalidDoubleFromObj(objPtr, dblPtr) != TCL_OK;
     }
 }
 
-static inline int
+static inline bool
 EqualDouble(
     double a,
     double b)
@@ -543,7 +543,7 @@ EqualDouble(
 	;
 }
 
-static inline int
+static inline bool
 IsSpecial(
     double a)
 {
@@ -687,7 +687,7 @@ LinkTraceProc(
     int flags)			/* Miscellaneous additional information. */
 {
     Link *linkPtr = (Link *)clientData;
-    int changed;
+    bool changed;
     Tcl_Size valueLength = 0;
     const char *value;
     char **pp;
@@ -778,10 +778,10 @@ LinkTraceProc(
 	    case TCL_LINK_STRING:
 	    case TCL_LINK_CHARS:
 	    case TCL_LINK_BINARY:
-		changed = 1;
+		changed = true;
 		break;
 	    default:
-		changed = 0;
+		changed = false;
 		/* return (char *) "internal error: bad linked variable type"; */
 	    }
 	}

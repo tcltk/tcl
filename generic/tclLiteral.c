@@ -180,7 +180,7 @@ TclCreateLiteral(
     Tcl_Size length,		/* Number of bytes in the string. */
     size_t hash,		/* The string's hash. If the value is
 				 * TCL_INDEX_NONE, it will be computed here. */
-    int *newPtr,
+    bool *newPtr,
     Namespace *nsPtr,
     int flags,
     LiteralEntry **globalPtrPtr)
@@ -220,7 +220,7 @@ TclCreateLiteral(
 		 */
 
 		if (newPtr) {
-		    *newPtr = 0;
+		    *newPtr = false;
 		}
 		if (globalPtrPtr) {
 		    *globalPtrPtr = globalPtr;
@@ -300,15 +300,16 @@ TclCreateLiteral(
     TclVerifyGlobalLiteralTable(iPtr);
     {
 	LiteralEntry *entryPtr;
-	int found;
+	bool found;
 	size_t i;
 
-	found = 0;
-	for (i=0 ; i<globalTablePtr->numBuckets ; i++) {
+	found = false;
+	for (i=0 ; i<globalTablePtr->numBuckets && !found ; i++) {
 	    for (entryPtr=globalTablePtr->buckets[i]; entryPtr!=NULL ;
 		    entryPtr=entryPtr->nextPtr) {
 		if ((entryPtr == globalPtr) && (entryPtr->objPtr == objPtr)) {
-		    found = 1;
+		    found = true;
+		    break;
 		}
 	    }
 	}
@@ -329,7 +330,7 @@ TclCreateLiteral(
     if (globalPtrPtr) {
 	*globalPtrPtr = globalPtr;
     }
-    *newPtr = 1;
+    *newPtr = true;
     return objPtr;
 }
 
@@ -409,7 +410,7 @@ TclRegisterLiteral(
     LiteralEntry *globalPtr, *localPtr;
     Tcl_Obj *objPtr;
     size_t hash, localHash, objIndex;
-    int isNew;
+    bool isNew;
     Namespace *nsPtr;
 
     if (length < 0) {
@@ -744,16 +745,17 @@ AddLocalLiteralEntry(
     TclVerifyLocalLiteralTable(envPtr);
     {
 	char *bytes;
-	int found;
+	bool found;
 	size_t i;
 	Tcl_Size length;
 
-	found = 0;
-	for (i=0 ; i<localTablePtr->numBuckets ; i++) {
+	found = false;
+	for (i=0 ; i<localTablePtr->numBuckets && !found ; i++) {
 	    for (localPtr=localTablePtr->buckets[i] ; localPtr!=NULL ;
 		    localPtr=localPtr->nextPtr) {
 		if (localPtr->objPtr == objPtr) {
-		    found = 1;
+		    found = true;
+		    break;
 		}
 	    }
 	}
@@ -822,7 +824,7 @@ ExpandLocalLiteralArray(
 
 	newArrayPtr = (LiteralEntry *)Tcl_Alloc(newSize);
 	memcpy(newArrayPtr, currArrayPtr, currBytes);
-	envPtr->mallocedLiteralArray = 1;
+	envPtr->mallocedLiteralArray = true;
     }
 
     /*

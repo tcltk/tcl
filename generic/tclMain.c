@@ -702,11 +702,11 @@ MODULE_SCOPE int
 TclFullFinalizationRequested(void)
 {
 #ifdef PURIFY
-    return 1;
+    return true;
 #else
     const char *fin;
     Tcl_DString ds;
-    int finalize = 0;
+    bool finalize = false;
 
     fin = TclGetEnv("TCL_FINALIZE_ON_EXIT", &ds);
     finalize = ((fin != NULL) && strcmp(fin, "0"));

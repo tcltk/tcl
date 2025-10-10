@@ -1009,7 +1009,7 @@ static void		EnterCmdStartData(CompileEnv *envPtr,
 static void		FreeByteCodeInternalRep(Tcl_Obj *objPtr);
 static void		FreeSubstCodeInternalRep(Tcl_Obj *objPtr);
 static int		GetCmdLocEncodingSize(CompileEnv *envPtr);
-static int		IsCompactibleCompileEnv(CompileEnv *envPtr);
+static bool		IsCompactibleCompileEnv(CompileEnv *envPtr);
 static void		PreventCycle(Tcl_Obj *objPtr, CompileEnv *envPtr);
 #ifdef TCL_COMPILE_STATS
 static void		RecordByteCodeStats(ByteCode *codePtr);
@@ -1482,7 +1482,7 @@ CleanupByteCode(
  * ---------------------------------------------------------------------
  */
 
-static int
+static bool
 IsCompactibleCompileEnv(
     CompileEnv *envPtr)
 {
@@ -1500,7 +1500,7 @@ IsCompactibleCompileEnv(
 
 	if (nsPtr && (strcmp(nsPtr->fullName, "::tcl") == 0
 		|| strncmp(nsPtr->fullName, "::tcl::", 7) == 0)) {
-	    return 1;
+	    return true;
 	}
     }
 
@@ -1519,18 +1519,18 @@ IsCompactibleCompileEnv(
 	case INST_INVOKE_STK:
 	case INST_INVOKE_EXPANDED:
 	case INST_INVOKE_REPLACE:
-	    return 0;
+	    return false;
 	    /* Runtime evals */
 	case INST_EVAL_STK:
 	case INST_EXPR_STK:
 	case INST_YIELD:
 	case INST_YIELD_TO_INVOKE:
-	    return 0;
+	    return false;
 	    /* Upvars */
 	case INST_UPVAR:
 	case INST_NSUPVAR:
 	case INST_VARIABLE:
-	    return 0;
+	    return false;
 	    /* TclOO::next is NOT a problem: puts stack frame out of way.
 	     * There's a way to do it, but it's beneath the threshold of
 	     * likelihood. */
@@ -1543,7 +1543,7 @@ IsCompactibleCompileEnv(
 	}
     }
 
-    return 1;
+    return true;
 }
 
 /*
@@ -2038,7 +2038,7 @@ TclFreeCompileEnv(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 TclWordKnownAtCompileTime(
     Tcl_Token *tokenPtr,	/* Points to Tcl_Token we should check */
     Tcl_Obj *valuePtr)		/* If not NULL, points to an unshared Tcl_Obj
@@ -2052,10 +2052,10 @@ TclWordKnownAtCompileTime(
 	if (valuePtr != NULL) {
 	    Tcl_AppendToObj(valuePtr, tokenPtr[1].start, tokenPtr[1].size);
 	}
-	return 1;
+	return true;
     }
     if (tokenPtr->type != TCL_TOKEN_WORD) {
-	return 0;
+	return false;
     }
     tokenPtr++;
     if (valuePtr != NULL) {
@@ -2084,7 +2084,7 @@ TclWordKnownAtCompileTime(
 	    if (tempPtr != NULL) {
 		Tcl_DecrRefCount(tempPtr);
 	    }
-	    return 0;
+	    return false;
 	}
 	tokenPtr++;
     }
@@ -2092,7 +2092,7 @@ TclWordKnownAtCompileTime(
 	Tcl_AppendObjToObj(valuePtr, tempPtr);
 	Tcl_DecrRefCount(tempPtr);
     }
-    return 1;
+    return true;
 }
 
 /*
@@ -2113,7 +2113,7 @@ TclWordKnownAtCompileTime(
  *----------------------------------------------------------------------
  */
 
-static int
+static bool
 ExpandRequested(
     Tcl_Token *tokenPtr,
     Tcl_Size numWords)
@@ -2121,11 +2121,11 @@ ExpandRequested(
     /* Determine whether any words of the command require expansion */
     while (numWords--) {
 	if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
-	    return 1;
+	    return true;
 	}
 	tokenPtr = TokenAfter(tokenPtr);
     }
-    return 0;
+    return false;
 }
 
 static void
@@ -4815,7 +4815,7 @@ EncodeCmdLocMap(
  *
  *----------------------------------------------------------------------
  */
-int
+bool
 TclIsEmptyToken(
     const Tcl_Token *tokenPtr)
 {
@@ -4827,10 +4827,10 @@ TclIsEmptyToken(
 	chLen = TclUtfToUniChar(ptr, &ucs4);
 	// Can't use Tcl_UniCharIsSpace; see test dict-22.24
 	if (!TclIsSpaceProcM((unsigned) ucs4)) {
-	    return 0;
+	    return false;
 	}
     }
-    return 1;
+    return true;
 }
 
 /*

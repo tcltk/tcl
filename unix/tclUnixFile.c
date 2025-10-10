@@ -115,7 +115,7 @@ TclpFindExecutable(
      * argv[0] is in one of them. If so, use that file name.
      */
 
-    while (1) {
+    while (true) {
 	while (TclIsSpaceProcM(*p)) {
 	    p++;
 	}
@@ -402,7 +402,7 @@ TclpMatchInDirectory(
 	    }
 	    utfname = Tcl_DStringValue(&utfDs);
 	    if (Tcl_StringCaseMatch(utfname, pattern, 0)) {
-		int typeOk = 1;
+		bool typeOk = true;
 
 		if (types != NULL) {
 		    Tcl_DStringSetLength(&ds, nativeDirLen);

@@ -25,7 +25,7 @@
 	fprintf(stderr, "%s:%d: %s(): " m ".\n",			\
 		strrchr(__FILE__, '/')+1, __LINE__, __func__,		\
 		##__VA_ARGS__);						\
-    } while (0)
+    } while (false)
 #else
 #define TclLoadDbgMsg(m, ...)
 #endif /* TCL_DEBUG_LOAD */

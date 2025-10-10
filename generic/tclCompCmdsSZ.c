@@ -1732,7 +1732,7 @@ IsFallthroughArm(
     do {								\
 	envPtr->line = (arm)->bodyLine;		/* TIP #280 */		\
 	envPtr->clNext = (arm)->bodyContLines;	/* TIP #280 */		\
-    } while (0)
+    } while (false)
 
 /*
  *----------------------------------------------------------------------

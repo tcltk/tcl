@@ -99,7 +99,7 @@ static const unsigned char complete[256] = {
  * Functions used only in this module.
  */
 
-static int		Invalid(const char *src);
+static bool		Invalid(const char *src);
 
 /*
  *---------------------------------------------------------------------------
@@ -171,7 +171,7 @@ static const unsigned char bounds[28] = {
     0x80, 0x8F  /* \xF4\x90 and higher are invalid prefixes */
 };
 
-static int
+static bool
 Invalid(
     const char *src)	/* Points to lead byte of a UTF-8 byte sequence */
 {
@@ -183,10 +183,10 @@ Invalid(
 	index = (byte - 0xC0) >> 1;
 	if (UCHAR(src[1]) < bounds[index] || UCHAR(src[1]) > bounds[index+1]) {
 	    /* Out of bounds - report invalid. */
-	    return 1;
+	    return true;
 	}
     }
-    return 0;
+    return false;
 }
 
 /*
@@ -533,9 +533,10 @@ Tcl_UtfToUniChar(
 
 Tcl_Size
 Tcl_UtfToChar16(
-    const char *src,	/* The UTF-8 string. */
-    unsigned short *chPtr)/* Filled with the Tcl_UniChar represented by
-				 * the UTF-8 string. This could be a surrogate too. */
+    const char *src,		/* The UTF-8 string. */
+    unsigned short *chPtr)	/* Filled with the Tcl_UniChar represented by
+				 * the UTF-8 string. This could be a surrogate
+				 * too. */
 {
     unsigned short byte;
 
@@ -937,7 +938,7 @@ Tcl_UtfFindFirst(
     const char *src,		/* The UTF-8 string to be searched. */
     int ch)			/* The Unicode character to search for. */
 {
-    while (1) {
+    while (true) {
 	int find, len = TclUtfToUniChar(src, &find);
 
 	if (find == ch) {
@@ -976,7 +977,7 @@ Tcl_UtfFindLast(
 {
     const char *last = NULL;
 
-    while (1) {
+    while (true) {
 	int find, len = TclUtfToUniChar(src, &find);
 
 	if (find == ch) {
@@ -2205,7 +2206,7 @@ Tcl_UniCharIsSpace(
 	return TclIsSpaceProcM((char) ch);
     } else if (ch == 0x0085 || ch == 0x180E || ch == 0x200B
 	    || ch == 0x202F || ch == 0x2060 || ch == 0xFEFF) {
-	return 1;
+	return true;
     } else {
 	return (UTF8PROC_SPACE_BITS >> utf8proc_category(ch)) & 1;
     }
@@ -2290,7 +2291,7 @@ TclUniCharCaseMatch(
 {
     Tcl_UniChar ch1 = 0, p;
 
-    while (1) {
+    while (true) {
 	p = *uniPattern;
 
 	/*
@@ -2303,7 +2304,7 @@ TclUniCharCaseMatch(
 	    return (*uniStr == 0);
 	}
 	if ((*uniStr == 0) && (p != '*')) {
-	    return 0;
+	    return false;
 	}
 
 	/*
@@ -2324,12 +2325,12 @@ TclUniCharCaseMatch(
 	    }
 	    p = *uniPattern;
 	    if (p == 0) {
-		return 1;
+		return true;
 	    }
 	    if (nocase) {
 		p = Tcl_UniCharToLower(p);
 	    }
-	    while (1) {
+	    while (true) {
 		/*
 		 * Optimization for matching - cruise through the string
 		 * quickly if the next char in the pattern isn't a special
@@ -2349,10 +2350,10 @@ TclUniCharCaseMatch(
 		    }
 		}
 		if (TclUniCharCaseMatch(uniStr, uniPattern, nocase)) {
-		    return 1;
+		    return true;
 		}
 		if (*uniStr == 0) {
-		    return 0;
+		    return false;
 		}
 		uniStr++;
 	    }
@@ -2381,9 +2382,9 @@ TclUniCharCaseMatch(
 	    uniPattern++;
 	    ch1 = (nocase ? Tcl_UniCharToLower(*uniStr) : *uniStr);
 	    uniStr++;
-	    while (1) {
+	    while (true) {
 		if ((*uniPattern == ']') || (*uniPattern == 0)) {
-		    return 0;
+		    return false;
 		}
 		startChar = (nocase ? Tcl_UniCharToLower(*uniPattern)
 			: *uniPattern);
@@ -2391,7 +2392,7 @@ TclUniCharCaseMatch(
 		if (*uniPattern == '-') {
 		    uniPattern++;
 		    if (*uniPattern == 0) {
-			return 0;
+			return false;
 		    }
 		    endChar = (nocase ? Tcl_UniCharToLower(*uniPattern)
 			    : *uniPattern);
@@ -2425,7 +2426,7 @@ TclUniCharCaseMatch(
 
 	if (p == '\\') {
 	    if (*(++uniPattern) == '\0') {
-		return 0;
+		return false;
 	    }
 	}
 
@@ -2437,10 +2438,10 @@ TclUniCharCaseMatch(
 	if (nocase) {
 	    if (Tcl_UniCharToLower(*uniStr) !=
 		    Tcl_UniCharToLower(*uniPattern)) {
-		return 0;
+		return false;
 	    }
 	} else if (*uniStr != *uniPattern) {
-	    return 0;
+	    return false;
 	}
 	uniStr++;
 	uniPattern++;
@@ -2483,7 +2484,7 @@ TclUniCharMatch(
     stringEnd = string + strLen;
     patternEnd = pattern + ptnLen;
 
-    while (1) {
+    while (true) {
 	/*
 	 * See if we're at the end of both the pattern and the string. If so,
 	 * we succeeded. If we're at the end of the pattern but not at the end
@@ -2495,7 +2496,7 @@ TclUniCharMatch(
 	}
 	p = *pattern;
 	if ((string == stringEnd) && (p != '*')) {
-	    return 0;
+	    return false;
 	}
 
 	/*
@@ -2515,13 +2516,13 @@ TclUniCharMatch(
 		/* empty body */
 	    }
 	    if (pattern == patternEnd) {
-		return 1;
+		return true;
 	    }
 	    p = *pattern;
 	    if (nocase) {
 		p = Tcl_UniCharToLower(p);
 	    }
-	    while (1) {
+	    while (true) {
 		/*
 		 * Optimization for matching - cruise through the string
 		 * quickly if the next char in the pattern isn't a special
@@ -2542,10 +2543,10 @@ TclUniCharMatch(
 		}
 		if (TclUniCharMatch(string, stringEnd - string,
 			pattern, patternEnd - pattern, nocase)) {
-		    return 1;
+		    return true;
 		}
 		if (string == stringEnd) {
-		    return 0;
+		    return false;
 		}
 		string++;
 	    }
@@ -2574,16 +2575,16 @@ TclUniCharMatch(
 	    pattern++;
 	    ch1 = (nocase ? Tcl_UniCharToLower(*string) : *string);
 	    string++;
-	    while (1) {
+	    while (true) {
 		if ((*pattern == ']') || (pattern == patternEnd)) {
-		    return 0;
+		    return false;
 		}
 		startChar = (nocase ? Tcl_UniCharToLower(*pattern) : *pattern);
 		pattern++;
 		if (*pattern == '-') {
 		    pattern++;
 		    if (pattern == patternEnd) {
-			return 0;
+			return false;
 		    }
 		    endChar = (nocase ? Tcl_UniCharToLower(*pattern)
 			    : *pattern);
@@ -2617,7 +2618,7 @@ TclUniCharMatch(
 
 	if (p == '\\') {
 	    if (++pattern == patternEnd) {
-		return 0;
+		return false;
 	    }
 	}
 
@@ -2628,10 +2629,10 @@ TclUniCharMatch(
 
 	if (nocase) {
 	    if (Tcl_UniCharToLower(*string) != Tcl_UniCharToLower(*pattern)) {
-		return 0;
+		return false;
 	    }
 	} else if (*string != *pattern) {
-	    return 0;
+	    return false;
 	}
 	string++;
 	pattern++;

@@ -211,7 +211,7 @@ TclListContainsValue(
     }
 
     if (haySize == 0) {
-	*foundPtr = 0;
+	*foundPtr = false;
 	return TCL_OK;
     }
 
@@ -245,11 +245,11 @@ TclListContainsValue(
 	const char *hayElem = TclGetStringFromObj(hayElemObj, &hayElemLen);
 	if (needleLen == hayElemLen &&
 		memcmp(needle, hayElem, needleLen) == 0) {
-	    *foundPtr = 1;
+	    *foundPtr = true;
 	    return TCL_OK;
 	}
     }
-    *foundPtr = 0;
+    *foundPtr = false;
     return TCL_OK;
 }
 

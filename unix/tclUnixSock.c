@@ -682,12 +682,12 @@ TcpClose2Proc(
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wstrict-aliasing"
 #endif
-static inline int
+static inline bool
 IPv6AddressNeedsNumericRendering(
     struct in6_addr addr)
 {
     if (IN6_ARE_ADDR_EQUAL(&addr, &in6addr_any)) {
-	return 1;
+	return true;
     }
 
     /*
@@ -696,7 +696,7 @@ IPv6AddressNeedsNumericRendering(
      */
 
     if (!IN6_IS_ADDR_V4MAPPED(&addr)) {
-	return 0;
+	return false;
     }
 
     return (addr.s6_addr[12] == 0 && addr.s6_addr[13] == 0
@@ -973,7 +973,7 @@ TcpGetOptionProc(
 	TcpFdList *fds;
 	address sockname;
 	socklen_t size;
-	int found = 0;
+	bool found = false;
 
 	WaitForConnect(statePtr, NULL);
 	if (len == 0) {
@@ -985,12 +985,12 @@ TcpGetOptionProc(
 	     * In async connect output an empty string
 	     */
 
-	    found = 1;
+	    found = true;
 	} else {
 	    for (fds = &statePtr->fds; fds != NULL; fds = fds->next) {
 		size = sizeof(sockname);
 		if (getsockname(fds->fd, &(sockname.sa), &size) >= 0) {
-		    found = 1;
+		    found = true;
 		    TcpHostPortList(interp, dsPtr, sockname, size);
 		}
 	    }

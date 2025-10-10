@@ -235,7 +235,7 @@ Tcl_AsyncMarkFromSignal(
     (void)sigNumber;
 
     Tcl_AsyncMark(async);
-    return 1;
+    return true;
 #endif
 }
 
@@ -328,7 +328,7 @@ Tcl_AsyncInvoke(
      * safe to continue down the list anyway.
      */
 
-    while (1) {
+    while (true) {
 	for (asyncPtr = firstHandler; asyncPtr != NULL;
 		asyncPtr = asyncPtr->nextPtr) {
 	    if (asyncPtr->originThrdId != self) {

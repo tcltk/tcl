@@ -202,7 +202,7 @@ TclpGetPwNam(
 	tsdPtr->pbuf = (char *)Tcl_Alloc(tsdPtr->pbuflen);
 	Tcl_CreateThreadExitHandler(FreePwBuf, NULL);
     }
-    while (1) {
+    while (true) {
 	int e = getpwnam_r(name, &tsdPtr->pwd, tsdPtr->pbuf, tsdPtr->pbuflen,
 		&pwPtr);
 
@@ -282,7 +282,7 @@ TclpGetPwUid(
 	tsdPtr->pbuf = (char *)Tcl_Alloc(tsdPtr->pbuflen);
 	Tcl_CreateThreadExitHandler(FreePwBuf, NULL);
     }
-    while (1) {
+    while (true) {
 	int e = getpwuid_r(uid, &tsdPtr->pwd, tsdPtr->pbuf, tsdPtr->pbuflen,
 		&pwPtr);
 
@@ -385,7 +385,7 @@ TclpGetGrNam(
 	tsdPtr->gbuf = (char *)Tcl_Alloc(tsdPtr->gbuflen);
 	Tcl_CreateThreadExitHandler(FreeGrBuf, NULL);
     }
-    while (1) {
+    while (true) {
 	int e = getgrnam_r(name, &tsdPtr->grp, tsdPtr->gbuf, tsdPtr->gbuflen,
 		&grPtr);
 
@@ -465,7 +465,7 @@ TclpGetGrGid(
 	tsdPtr->gbuf = (char *)Tcl_Alloc(tsdPtr->gbuflen);
 	Tcl_CreateThreadExitHandler(FreeGrBuf, NULL);
     }
-    while (1) {
+    while (true) {
 	int e = getgrgid_r(gid, &tsdPtr->grp, tsdPtr->gbuf, tsdPtr->gbuflen,
 		&grPtr);
 

@@ -33,9 +33,9 @@ TCL_DECLARE_MUTEX(pipeMutex)	/* Guard access to detList. */
  */
 
 static TclFile		FileForRedirect(Tcl_Interp *interp, const char *spec,
-			    int atOk, const char *arg, const char *nextArg,
-			    int flags, int *skipPtr, int *closePtr,
-			    int *releasePtr);
+			    bool atOk, const char *arg, const char *nextArg,
+			    int flags, int *skipPtr, bool *closePtr,
+			    bool *releasePtr);
 
 /*
  *----------------------------------------------------------------------
@@ -63,8 +63,8 @@ FileForRedirect(
     Tcl_Interp *interp,		/* Interpreter to use for error reporting. */
     const char *spec,		/* Points to character just after redirection
 				 * character. */
-    int atOK,			/* Non-zero means that '@' notation can be
-				 * used to specify a channel, zero means that
+    bool atOK,			/* True means that '@' notation can be
+				 * used to specify a channel, false means that
 				 * it isn't. */
     const char *arg,		/* Pointer to entire argument containing spec:
 				 * used for error reporting. */
@@ -75,17 +75,17 @@ FileForRedirect(
 				 * mode for channel. */
     int *skipPtr,		/* Filled with 1 if redirection target was in
 				 * spec, 2 if it was in nextArg. */
-    int *closePtr,		/* Filled with one if the caller should close
-				 * the file when done with it, zero
+    bool *closePtr,		/* Filled with true if the caller should close
+				 * the file when done with it, false
 				 * otherwise. */
-    int *releasePtr)
+    bool *releasePtr)
 {
     int writing = (flags & O_WRONLY);
     Tcl_Channel chan;
     TclFile file;
 
     *skipPtr = 1;
-    if ((atOK != 0) && (*spec == '@')) {
+    if (atOK && (*spec == '@')) {
 	spec++;
 	if (*spec == '\0') {
 	    spec = nextArg;
@@ -115,7 +115,7 @@ FileForRedirect(
 	    }
 	    return NULL;
 	}
-	*releasePtr = 1;
+	*releasePtr = true;
 	if (writing) {
 	    /*
 	     * Be sure to flush output to the file, so that anything written
@@ -148,7 +148,7 @@ FileForRedirect(
 		    Tcl_PosixError(interp)));
 	    return NULL;
 	}
-	*closePtr = 1;
+	*closePtr = true;
     }
     return file;
 
@@ -274,13 +274,13 @@ TclCleanupChildren(
 				 * from pipeline. NULL means there isn't any
 				 * stderr output. */
 {
-    int result = TCL_OK;
-    int code, abnormalExit, anyErrorInfo;
+    int result = TCL_OK, code;
+    bool abnormalExit, anyErrorInfo;
     TclProcessWaitStatus waitStatus;
     Tcl_Size i;
     Tcl_Obj *msg, *error;
 
-    abnormalExit = 0;
+    abnormalExit = false;
     for (i = 0; i < numPids; i++) {
 	waitStatus = TclProcessWait(pidPtr[i], 0, &code, &msg, &error);
 	if (waitStatus == TCL_PROCESS_ERROR) {
@@ -307,7 +307,7 @@ TclCleanupChildren(
 		if (interp != NULL) {
 		    Tcl_SetObjErrorCode(interp, error);
 		}
-		abnormalExit = 1;
+		abnormalExit = true;
 	    } else if (interp != NULL) {
 		Tcl_SetObjErrorCode(interp, error);
 		Tcl_SetObjResult(interp, msg);
@@ -322,7 +322,7 @@ TclCleanupChildren(
      * error and add the file's contents to the result string.
      */
 
-    anyErrorInfo = 0;
+    anyErrorInfo = false;
     if (errorChan != NULL) {
 	/*
 	 * Make sure we start at the beginning of the file.
@@ -343,7 +343,7 @@ TclCleanupChildren(
 			"error reading stderr output file: %s",
 			Tcl_PosixError(interp)));
 	    } else if (count > 0) {
-		anyErrorInfo = 1;
+		anyErrorInfo = true;
 		Tcl_SetObjResult(interp, objPtr);
 		result = TCL_ERROR;
 	    } else {
@@ -358,7 +358,7 @@ TclCleanupChildren(
      * all, generate an error message here.
      */
 
-    if ((abnormalExit != 0) && (anyErrorInfo == 0) && (interp != NULL)) {
+    if (abnormalExit && !anyErrorInfo && (interp != NULL)) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"child process exited abnormally", -1));
     }
@@ -442,24 +442,25 @@ TclCreatePipeline(
     TclFile inputFile = NULL;	/* If != NULL, gives file to use as input for
 				 * first process in pipeline (specified via <
 				 * or <@). */
-    int inputClose = 0;		/* If non-zero, then inputFile should be
+    bool inputClose = false;	/* If true, then inputFile should be
 				 * closed when cleaning up. */
-    int inputRelease = 0;
+    bool inputRelease = false;
     TclFile outputFile = NULL;	/* Writable file for output from last command
 				 * in pipeline (could be file or pipe). NULL
 				 * means use stdout. */
-    int outputClose = 0;	/* If non-zero, then outputFile should be
+    bool outputClose = false;	/* If true, then outputFile should be
 				 * closed when cleaning up. */
-    int outputRelease = 0;
+    bool outputRelease = false;
     TclFile errorFile = NULL;	/* Writable file for error output from all
 				 * commands in pipeline. NULL means use
 				 * stderr. */
-    int errorClose = 0;		/* If non-zero, then errorFile should be
+    bool errorClose = false;	/* If non-zero, then errorFile should be
 				 * closed when cleaning up. */
-    int errorRelease = 0;
+    bool errorRelease = false;
     const char *p;
     const char *nextArg;
-    int skip, atOK, flags, needCmd, errorToOutput = 0;
+    int skip, flags, errorToOutput = 0;
+    bool atOK, needCmd;
     Tcl_Size i, j, lastArg, lastBar;
     Tcl_DString execBuffer;
     TclFile pipeIn;
@@ -498,7 +499,7 @@ TclCreatePipeline(
 
     lastBar = -1;
     cmdCount = 1;
-    needCmd = 1;
+    needCmd = true;
     for (i = 0; i < argc; i++) {
 	errorToOutput = 0;
 	skip = 0;
@@ -519,16 +520,16 @@ TclCreatePipeline(
 	    }
 	    lastBar = i;
 	    cmdCount++;
-	    needCmd = 1;
+	    needCmd = true;
 	    break;
 
 	case '<':
-	    if (inputClose != 0) {
-		inputClose = 0;
+	    if (inputClose) {
+		inputClose = false;
 		TclpCloseFile(inputFile);
 	    }
-	    if (inputRelease != 0) {
-		inputRelease = 0;
+	    if (inputRelease) {
+		inputRelease = false;
 		TclpReleaseFile(inputFile);
 	    }
 	    if (*p == '<') {
@@ -550,7 +551,7 @@ TclCreatePipeline(
 	    } else {
 		nextArg = ((i + 1) == argc) ? NULL : argv[i + 1];
 		inputLiteral = NULL;
-		inputFile = FileForRedirect(interp, p, 1, argv[i], nextArg,
+		inputFile = FileForRedirect(interp, p, true, argv[i], nextArg,
 			O_RDONLY, &skip, &inputClose, &inputRelease);
 		if (inputFile == NULL) {
 		    goto error;
@@ -559,11 +560,11 @@ TclCreatePipeline(
 	    break;
 
 	case '>':
-	    atOK = 1;
+	    atOK = true;
 	    flags = O_WRONLY | O_CREAT | O_TRUNC;
 	    if (*p == '>') {
 		p++;
-		atOK = 0;
+		atOK = false;
 
 		/*
 		 * Note that the O_APPEND flag only has an effect on POSIX
@@ -573,8 +574,8 @@ TclCreatePipeline(
 		flags = O_WRONLY | O_CREAT | O_APPEND;
 	    }
 	    if (*p == '&') {
-		if (errorClose != 0) {
-		    errorClose = 0;
+		if (errorClose) {
+		    errorClose = false;
 		    TclpCloseFile(errorFile);
 		}
 		errorToOutput = 1;
@@ -586,18 +587,18 @@ TclCreatePipeline(
 	     * also using it.
 	     */
 
-	    if (outputClose != 0) {
-		outputClose = 0;
+	    if (outputClose) {
+		outputClose = false;
 		if (errorFile == outputFile) {
-		    errorClose = 1;
+		    errorClose = true;
 		} else {
 		    TclpCloseFile(outputFile);
 		}
 	    }
-	    if (outputRelease != 0) {
-		outputRelease = 0;
+	    if (outputRelease) {
+		outputRelease = false;
 		if (errorFile == outputFile) {
-		    errorRelease = 1;
+		    errorRelease = true;
 		} else {
 		    TclpReleaseFile(outputFile);
 		}
@@ -609,12 +610,12 @@ TclCreatePipeline(
 		goto error;
 	    }
 	    if (errorToOutput) {
-		if (errorClose != 0) {
-		    errorClose = 0;
+		if (errorClose) {
+		    errorClose = false;
 		    TclpCloseFile(errorFile);
 		}
-		if (errorRelease != 0) {
-		    errorRelease = 0;
+		if (errorRelease) {
+		    errorRelease = false;
 		    TclpReleaseFile(errorFile);
 		}
 		errorFile = outputFile;
@@ -626,11 +627,11 @@ TclCreatePipeline(
 		break;
 	    }
 	    p++;
-	    atOK = 1;
+	    atOK = true;
 	    flags = O_WRONLY | O_CREAT | O_TRUNC;
 	    if (*p == '>') {
 		p++;
-		atOK = 0;
+		atOK = false;
 
 		/*
 		 * Note that the O_APPEND flag only has an effect on POSIX
@@ -639,12 +640,12 @@ TclCreatePipeline(
 
 		flags = O_WRONLY | O_CREAT | O_APPEND;
 	    }
-	    if (errorClose != 0) {
-		errorClose = 0;
+	    if (errorClose) {
+		errorClose = false;
 		TclpCloseFile(errorFile);
 	    }
-	    if (errorRelease != 0) {
-		errorRelease = 0;
+	    if (errorRelease) {
+		errorRelease = false;
 		TclpReleaseFile(errorFile);
 	    }
 	    if (atOK && p[0] == '@' && p[1] == '1' && p[2] == '\0') {
@@ -680,7 +681,7 @@ TclCreatePipeline(
 	     * Got a command word, not a redirection.
 	     */
 
-	    needCmd = 0;
+	    needCmd = false;
 	    break;
 	}
 
@@ -720,7 +721,7 @@ TclCreatePipeline(
 			Tcl_PosixError(interp)));
 		goto error;
 	    }
-	    inputClose = 1;
+	    inputClose = true;
 	} else if (inPipePtr != NULL) {
 	    /*
 	     * The input for the first process in the pipeline is to come from
@@ -733,7 +734,7 @@ TclCreatePipeline(
 			Tcl_PosixError(interp)));
 		goto error;
 	    }
-	    inputClose = 1;
+	    inputClose = true;
 	} else {
 	    /*
 	     * The input for the first process comes from stdin.
@@ -743,7 +744,7 @@ TclCreatePipeline(
 	    if (channel != NULL) {
 		inputFile = TclpMakeFile(channel, TCL_READABLE);
 		if (inputFile != NULL) {
-		    inputRelease = 1;
+		    inputRelease = true;
 		}
 	    }
 	}
@@ -762,7 +763,7 @@ TclCreatePipeline(
 			Tcl_PosixError(interp)));
 		goto error;
 	    }
-	    outputClose = 1;
+	    outputClose = true;
 	} else {
 	    /*
 	     * The output for the last process goes to stdout.
@@ -772,7 +773,7 @@ TclCreatePipeline(
 	    if (channel) {
 		outputFile = TclpMakeFile(channel, TCL_WRITABLE);
 		if (outputFile != NULL) {
-		    outputRelease = 1;
+		    outputRelease = true;
 		}
 	    }
 	}
@@ -812,7 +813,7 @@ TclCreatePipeline(
 	    if (channel) {
 		errorFile = TclpMakeFile(channel, TCL_WRITABLE);
 		if (errorFile != NULL) {
-		    errorRelease = 1;
+		    errorRelease = true;
 		}
 	    }
 	}
@@ -829,7 +830,8 @@ TclCreatePipeline(
     curInFile = inputFile;
 
     for (i = 0; i < argc; i = lastArg + 1) {
-	int result, joinThisError;
+	int result;
+	bool joinThisError;
 	Tcl_Pid pid;
 	const char *oldName;
 
@@ -845,7 +847,7 @@ TclCreatePipeline(
 	 * Find the end of the current segment of the pipeline.
 	 */
 
-	joinThisError = 0;
+	joinThisError = false;
 	for (lastArg = i; lastArg < argc; lastArg++) {
 	    if (argv[lastArg][0] != '|') {
 		continue;
@@ -854,7 +856,7 @@ TclCreatePipeline(
 		break;
 	    }
 	    if ((argv[lastArg][1] == '&') && (argv[lastArg][2] == '\0')) {
-		joinThisError = 1;
+		joinThisError = true;
 		break;
 	    }
 	}
@@ -876,7 +878,7 @@ TclCreatePipeline(
 	    }
 	}
 
-	if (joinThisError != 0) {
+	if (joinThisError) {
 	    curErrFile = curOutFile;
 	} else {
 	    curErrFile = errorFile;

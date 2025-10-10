@@ -3904,7 +3904,7 @@ TestlistrepCmd(
 		Tcl_NewStringObj(#fld_, -1));				\
 	Tcl_ListObjAppendElement(interp, (targetObj_),			\
 		Tcl_NewWideIntObj((structPtr_)->fld_));			\
-    } while (0)
+    } while (false)
 	if (objc != 3) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "object");
 	    return TCL_ERROR;
@@ -4096,14 +4096,14 @@ TestlistapiCmd(
 		objPtr, Tcl_NewStringObj((#name_), -1));	\
 	Tcl_ListObjAppendElement(NULL,				\
 		objPtr, Tcl_NewWideIntObj((intptr_t)(var_)));	\
-    } while (0)
+    } while (false)
 #define APPENDSTR(name_, var_) \
     do {							\
 	Tcl_ListObjAppendElement(NULL,				\
 		objPtr, Tcl_NewStringObj((#name_), -1));	\
 	Tcl_ListObjAppendElement(NULL,				\
 		objPtr, Tcl_NewStringObj((var_), -1));		\
-    } while (0)
+    } while (false)
 
     {
 	Tcl_Obj *objPtr = Tcl_NewListObj(0, NULL);

@@ -2423,7 +2423,7 @@ StoreStatData(
 	    return TCL_ERROR;						\
 	}								\
 	TclDecrRefCount(field);						\
-    } while (0)
+    } while (false)
 
     /*
      * Watch out porters; the inode is meant to be an *unsigned* value, so the

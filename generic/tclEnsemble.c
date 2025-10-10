@@ -99,7 +99,7 @@ static const Tcl_ObjType ensembleCmdType = {
 	ir.twoPtrValue.ptr1 = (ecRepPtr);				\
 	ir.twoPtrValue.ptr2 = NULL;					\
 	Tcl_StoreInternalRep((objPtr), &ensembleCmdType, &ir);		\
-    } while (0)
+    } while (false)
 
 #define ECRGetInternalRep(objPtr, ecRepPtr) \
     do {								\
@@ -107,7 +107,7 @@ static const Tcl_ObjType ensembleCmdType = {
 	irPtr = TclFetchInternalRep((objPtr), &ensembleCmdType);	\
 	(ecRepPtr) = irPtr ? (EnsembleCmdRep *)				\
 		irPtr->twoPtrValue.ptr1 : NULL;				\
-    } while (0)
+    } while (false)
 
 /*
  * The internal rep for caching ensemble subcommand lookups and spelling
@@ -1533,13 +1533,13 @@ Tcl_IsEnsemble(
     Command *cmdPtr = (Command *) token;
 
     if (cmdPtr->objProc == TclEnsembleImplementationCmd) {
-	return 1;
+	return true;
     }
     cmdPtr = (Command *) TclGetOriginalCommand((Tcl_Command) cmdPtr);
     if (cmdPtr == NULL || cmdPtr->objProc != TclEnsembleImplementationCmd) {
-	return 0;
+	return false;
     }
-    return 1;
+    return true;
 }
 
 /*

@@ -1258,12 +1258,12 @@ ArithSeriesInOperation(
     if (repPtr->isDouble) {
 	ArithSeriesDbl *dblRepPtr = (ArithSeriesDbl *) repPtr;
 	double y;
-	int test = 0;
+	bool test = false;
 
 	incr = 0; // Check index+incr where incr is 0 and 1
 	status = Tcl_GetDoubleFromObj(interp, valueObj, &y);
 	if (status != TCL_OK) {
-	    test = 0;
+	    test = false;
 	} else {
 	    const char *vstr = TclGetStringFromObj(valueObj, &vlen);
 	    index = (y - dblRepPtr->start) / dblRepPtr->step;

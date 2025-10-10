@@ -578,14 +578,14 @@ typedef struct ByteCode {
 	ir.twoPtrValue.ptr1 = (codePtr);				\
 	ir.twoPtrValue.ptr2 = NULL;					\
 	Tcl_StoreInternalRep((objPtr), (typePtr), &ir);			\
-    } while (0)
+    } while (false)
 
 #define ByteCodeGetInternalRep(objPtr, typePtr, codePtr) \
     do {								\
 	const Tcl_ObjInternalRep *irPtr;				\
 	irPtr = TclFetchInternalRep((objPtr), (typePtr));		\
 	(codePtr) = irPtr ? (ByteCode*)irPtr->twoPtrValue.ptr1 : NULL;	\
-    } while (0)
+    } while (false)
 
 /*
  * A special macro to allow an opcode in the TclInstruction enum to be marked
@@ -1285,7 +1285,7 @@ MODULE_SCOPE Tcl_ExceptionRange TclCreateExceptRange(ExceptionRangeType type,
 			    CompileEnv *envPtr);
 MODULE_SCOPE ExecEnv *	TclCreateExecEnv(Tcl_Interp *interp, size_t size);
 MODULE_SCOPE Tcl_Obj *	TclCreateLiteral(Interp *iPtr, const char *bytes,
-			    Tcl_Size length, size_t hash, int *newPtr,
+			    Tcl_Size length, size_t hash, bool *newPtr,
 			    Namespace *nsPtr, int flags,
 			    LiteralEntry **globalPtrPtr);
 MODULE_SCOPE void	TclDeleteExecEnv(ExecEnv *eePtr);
@@ -1318,7 +1318,7 @@ MODULE_SCOPE void	TclInitJumpFixupArray(JumpFixupArray *fixupArrayPtr);
 MODULE_SCOPE void	TclInitLiteralTable(LiteralTable *tablePtr);
 MODULE_SCOPE ExceptionRange *TclGetInnermostExceptionRange(CompileEnv *envPtr,
 			    int returnCode, ExceptionAux **auxPtrPtr);
-MODULE_SCOPE int	TclIsEmptyToken(const Tcl_Token *tokenPtr);
+MODULE_SCOPE bool	TclIsEmptyToken(const Tcl_Token *tokenPtr);
 MODULE_SCOPE void	TclAddLoopBreakFixup(CompileEnv *envPtr,
 			    ExceptionAux *auxPtr);
 MODULE_SCOPE void	TclAddLoopContinueFixup(CompileEnv *envPtr,
@@ -1364,7 +1364,7 @@ MODULE_SCOPE Tcl_ObjCmdProc	TclNoIdentOpCmd;
 MODULE_SCOPE void	TclVerifyGlobalLiteralTable(Interp *iPtr);
 MODULE_SCOPE void	TclVerifyLocalLiteralTable(CompileEnv *envPtr);
 #endif
-MODULE_SCOPE int	TclWordKnownAtCompileTime(Tcl_Token *tokenPtr,
+MODULE_SCOPE bool	TclWordKnownAtCompileTime(Tcl_Token *tokenPtr,
 			    Tcl_Obj *valuePtr);
 MODULE_SCOPE void	TclLogCommandInfo(Tcl_Interp *interp,
 			    const char *script, const char *command,
@@ -1744,13 +1744,13 @@ TclStoreInt4AtPtrImpl(
     do {								\
 	*(pc) = UCHAR(op);						\
 	TclStoreInt1AtPtr((i), ((pc)+1));				\
-    } while (0)
+    } while (false)
 
 #define TclUpdateInstInt4AtPc(op, i, pc) \
     do {								\
 	*(pc) = UCHAR(op);						\
 	TclStoreInt4AtPtr((i), ((pc)+1));				\
-    } while (0)
+    } while (false)
 
 /*
  * Inline func to fix up a forward jump to point to the current code-generation
@@ -1974,14 +1974,14 @@ ExceptionRangeEnds(
 	ECL *eclPtr = &ExtCmdLocation;					\
 	envPtr->line = eclPtr->line[(word)];				\
 	envPtr->clNext = eclPtr->next[(word)];				\
-    } while (0)
+    } while (false)
 
 #define PushVarNameWord(varTokenPtr,flags,localIndexPtr,isScalarPtr,wordIndex) \
     do {								\
 	SetLineInformation(wordIndex);					\
 	TclPushVarName(interp, varTokenPtr, envPtr, flags,		\
 		localIndexPtr, isScalarPtr);				\
-    } while (0)
+    } while (false)
 
 #define ClearFailedCompile(envPtr) \
     TclClearFailedCompile((envPtr), &lineInfo)
@@ -2119,7 +2119,7 @@ typedef Tcl_Size Tcl_BytecodeLabel;
     do {								\
 	SetLineInformation(index);					\
 	TclCompileExprWords(interp, (tokenPtr), 1, envPtr);		\
-    } while (0)
+    } while (false)
 // Compile the body of a command (e.g., [if], [while])
 #define BODY(tokenPtr, index) \
     do {								\
@@ -2127,7 +2127,7 @@ typedef Tcl_Size Tcl_BytecodeLabel;
 	TclCompileCmdWord(interp,					\
 		(tokenPtr)+1, (tokenPtr)->numComponents,		\
 		envPtr);						\
-    } while (0)
+    } while (false)
 
 // Set the label to the current address. Typically paired with BACKJUMP.
 #define BACKLABEL(var) \
@@ -2350,7 +2350,7 @@ MODULE_SCOPE void TclDTraceInfo(Tcl_Obj *info, const char **args, Tcl_Size *args
 		    (_t < 64 ? 64 - _t : 1), "", ##__VA_ARGS__);	\
 	    fflush(tclDTraceDebugLog);					\
 	}								\
-    } while (0)
+    } while (false)
 
 #define TCL_DTRACE_PROC_ENTRY_ENABLED()	    1
 #define TCL_DTRACE_PROC_RETURN_ENABLED()    1
@@ -2405,7 +2405,7 @@ MODULE_SCOPE void TclDTraceInfo(Tcl_Obj *info, const char **args, Tcl_Size *args
 	tclDTraceDebugEnabled = 1;					\
 	TclDTraceDbgMsg(" | tcl-probe", "%s %s %s %s %s %s %s %s %s %s", a0, \
 		a1, a2, a3, a4, a5, a6, a7, a8, a9);			\
-    } while (0)
+    } while (false)
 
 #endif /* TCL_DTRACE_DEBUG */
 

@@ -248,7 +248,7 @@ static int		WaitForConnect(TcpState *statePtr, int *errorCodePtr);
 static int		WaitForSocketEvent(TcpState *statePtr, int events,
 			    int *errorCodePtr);
 static void		AddSocketInfoFd(TcpState *statePtr, SOCKET socket);
-static int		FindFDInList(TcpState *statePtr, SOCKET socket);
+static bool		FindFDInList(TcpState *statePtr, SOCKET socket);
 static DWORD WINAPI	SocketThread(LPVOID arg);
 static void		TcpThreadActionProc(void *instanceData,
 			    int action);
@@ -653,7 +653,7 @@ WaitForConnect(
      * Loop in the blocking case until the connect signal is present
      */
 
-    while (1) {
+    while (true) {
 	/*
 	 * Get the statePtr lock.
 	 */
@@ -827,7 +827,7 @@ TcpInputProc(
      * using non-blocking sockets.
      */
 
-    while (1) {
+    while (true) {
 	SendSelectMessage(tsdPtr, UNSELECT, statePtr);
 
 	/*
@@ -943,7 +943,7 @@ TcpOutputProc(
 	return -1;
     }
 
-    while (1) {
+    while (true) {
 	SendSelectMessage(tsdPtr, UNSELECT, statePtr);
 
 	/*
@@ -1413,7 +1413,7 @@ TcpGetOptionProc(
 	TcpFdList *fds;
 	address sockname;
 	socklen_t size;
-	int found = 0;
+	bool found = false;
 
 	if (len == 0) {
 	    Tcl_DStringAppendElement(dsPtr, "-sockname");
@@ -1424,7 +1424,7 @@ TcpGetOptionProc(
 	     * In async connect output an empty string
 	     */
 
-	    found = 1;
+	    found = true;
 	} else {
 	    for (fds = statePtr->sockets; fds != NULL; fds = fds->next) {
 		sock = fds->fd;
@@ -1432,7 +1432,7 @@ TcpGetOptionProc(
 		if (getsockname(sock, &(sockname.sa), &size) >= 0) {
 		    int flags = reverseDNS;
 
-		    found = 1;
+		    found = true;
 		    getnameinfo(&sockname.sa, size, host, sizeof(host),
 			    NULL, 0, NI_NUMERICHOST);
 		    Tcl_DStringAppendElement(dsPtr, host);
@@ -1747,7 +1747,7 @@ TcpConnect(
 
 	    if (async_connect) {
 		TcpState *statePtr2;
-		int in_socket_list = 0;
+		bool in_socket_list = false;
 
 		/*
 		 * Get statePtr lock.
@@ -1769,7 +1769,7 @@ TcpConnect(
 		for (statePtr2 = tsdPtr->socketList; statePtr2 != NULL;
 			statePtr2 = statePtr2->nextPtr) {
 		    if (statePtr2 == statePtr) {
-			in_socket_list = 1;
+			in_socket_list = true;
 			break;
 		    }
 		}
@@ -2919,7 +2919,7 @@ WaitForSocketEvent(
     SendSelectMessage(tsdPtr, UNSELECT, statePtr);
     SendSelectMessage(tsdPtr, SELECT, statePtr);
 
-    while (1) {
+    while (true) {
 	int event_found;
 
 	/*
@@ -3060,7 +3060,7 @@ SocketProc(
     int event, error;
     SOCKET socket;
     TcpState *statePtr;
-    int info_found = 0;
+    bool info_found = false;
     TcpFdList *fds = NULL;
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *)
 #ifdef _WIN64
@@ -3108,7 +3108,7 @@ SocketProc(
 	for (statePtr = tsdPtr->socketList; statePtr != NULL;
 		statePtr = statePtr->nextPtr) {
 	    if (FindFDInList(statePtr, socket)) {
-		info_found = 1;
+		info_found = true;
 		break;
 	    }
 	}
@@ -3121,7 +3121,7 @@ SocketProc(
 		&& tsdPtr->pendingTcpState != NULL
 		&& FindFDInList(tsdPtr->pendingTcpState, socket)) {
 	    statePtr = tsdPtr->pendingTcpState;
-	    info_found = 1;
+	    info_found = true;
 	}
 	if (info_found) {
 	    /*
@@ -3206,7 +3206,7 @@ SocketProc(
  *----------------------------------------------------------------------
  */
 
-static int
+static bool
 FindFDInList(
     TcpState *statePtr,
     SOCKET socket)
@@ -3214,10 +3214,10 @@ FindFDInList(
     TcpFdList *fds;
     for (fds = statePtr->sockets; fds != NULL; fds = fds->next) {
 	if (fds->fd == socket) {
-	    return 1;
+	    return true;
 	}
     }
-    return 0;
+    return false;
 }
 
 /*
@@ -3268,7 +3268,7 @@ TcpThreadActionProc(
 	notifyCmd = SELECT;
     } else {
 	TcpState **nextPtrPtr;
-	int removed = 0;
+	bool removed = false;
 
 	tsdPtr = TCL_TSD_INIT(&dataKey);
 
@@ -3282,7 +3282,7 @@ TcpThreadActionProc(
 		nextPtrPtr = &((*nextPtrPtr)->nextPtr)) {
 	    if ((*nextPtrPtr) == statePtr) {
 		(*nextPtrPtr) = statePtr->nextPtr;
-		removed = 1;
+		removed = true;
 		break;
 	    }
 	}

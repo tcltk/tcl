@@ -74,14 +74,14 @@ const Tcl_ObjType tclProcBodyType = {
 	ir.twoPtrValue.ptr1 = (procPtr);				\
 	ir.twoPtrValue.ptr2 = NULL;					\
 	Tcl_StoreInternalRep((objPtr), &tclProcBodyType, &ir);		\
-    } while (0)
+    } while (false)
 
 #define ProcGetInternalRep(objPtr, procPtr) \
     do {								\
 	const Tcl_ObjInternalRep *irPtr;				\
 	irPtr = TclFetchInternalRep((objPtr), &tclProcBodyType);	\
 	(procPtr) = irPtr ? (Proc *)irPtr->twoPtrValue.ptr1 : NULL;	\
-    } while (0)
+    } while (false)
 
 /*
  * The [upvar]/[uplevel] level reference type. Uses the wideValue field
@@ -125,7 +125,7 @@ static const Tcl_ObjType lambdaType = {
 	ir.twoPtrValue.ptr2 = (nsObjPtr);				\
 	Tcl_IncrRefCount((nsObjPtr));					\
 	Tcl_StoreInternalRep((objPtr), &lambdaType, &ir);		\
-    } while (0)
+    } while (false)
 
 #define LambdaGetInternalRep(objPtr, procPtr, nsObjPtr) \
     do {								\
@@ -133,7 +133,7 @@ static const Tcl_ObjType lambdaType = {
 	irPtr = TclFetchInternalRep((objPtr), &lambdaType);		\
 	(procPtr) = irPtr ? (Proc *)irPtr->twoPtrValue.ptr1 : NULL;	\
 	(nsObjPtr) = irPtr ? (Tcl_Obj *)irPtr->twoPtrValue.ptr2 : NULL;	\
-    } while (0)
+    } while (false)
 
 /*
  *----------------------------------------------------------------------
@@ -414,7 +414,8 @@ TclCreateProc(
     Tcl_Size i, numArgs;
     CompiledLocal *localPtr = NULL;
     Tcl_Obj **argArray;
-    int precompiled = 0, result;
+    bool precompiled = false;
+    int result;
     const char *errorCode = NULL;
 
     ProcGetInternalRep(bodyPtr, procPtr);
@@ -433,7 +434,7 @@ TclCreateProc(
 
 	procPtr->iPtr = iPtr;
 	procPtr->refCount++;
-	precompiled = 1;
+	precompiled = true;
     } else {
 	/*
 	 * If the procedure's body object is shared because its string value
@@ -1300,7 +1301,7 @@ InitLocalCache(
     Var *varPtr;
     LocalCache *localCachePtr;
     CompiledLocal *localPtr;
-    int isNew;
+    bool isNew;
 
     ByteCodeGetInternalRep(procPtr->bodyPtr, &tclByteCodeType, codePtr);
 

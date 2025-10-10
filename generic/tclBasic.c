@@ -2560,7 +2560,7 @@ Tcl_CreateCommand(
      * until we've deleted one command and that didn't finish the job.
      */
 
-    while (1) {
+    while (true) {
 	/*
 	 * Determine where the command should reside. If its name contains
 	 * namespace qualifiers, we put it in the specified namespace;
@@ -2860,7 +2860,7 @@ TclCreateObjCommandInNs(
      * one command and that didn't finish the job.
      */
 
-    while (1) {
+    while (true) {
 	hPtr = Tcl_CreateHashEntry(&nsPtr->cmdTable, cmdName, &isNew);
 
 	if (isNew || deleted) {
@@ -6911,7 +6911,7 @@ Tcl_VarEval(
      */
 
     Tcl_DStringInit(&buf);
-    while (1) {
+    while (true) {
 	string = va_arg(argList, char *);
 	if (string == NULL) {
 	    break;
