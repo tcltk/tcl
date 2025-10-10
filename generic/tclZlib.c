@@ -1440,7 +1440,7 @@ Tcl_ZlibStreamGet(
 		DictWasSet(zshPtr);
 		e = inflate(&zshPtr->stream, zshPtr->flush);
 	    }
-	};
+	}
 	TclListObjLength(NULL, zshPtr->inData, &listLen);
 
 	while ((zshPtr->stream.avail_out > 0)

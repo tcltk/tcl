@@ -4944,7 +4944,7 @@ Tcl_ConstObjCmd(
 	    CleanupVar(varPtr, arrayPtr);
 	}
 	return TCL_ERROR;
-    };
+    }
     TclSetVarConstant(varPtr);
     return TCL_OK;
 }
