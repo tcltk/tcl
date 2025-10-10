@@ -66,7 +66,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           repository: create-dmg/create-dmg
-          ref: v1.0.8
+          ref: v1.2.2
           path: create-dmg
       - name: Prepare
         run: |
