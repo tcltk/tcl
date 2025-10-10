@@ -39,32 +39,31 @@
 
 #ifdef ENABLE_LIST_ASSERTS
 
-#define LIST_ASSERT(cond_) assert(cond_)
+#define LIST_ASSERT(cond_) \
+    assert(cond_)
 /*
  * LIST_INDEX_ASSERT is to catch errors with negative indices and counts
  * being passed AFTER validation. On Tcl9 length types are unsigned hence
  * the checks against LIST_MAX. On Tcl8 length types are signed hence the
  * also checks against 0.
  */
-#define LIST_INDEX_ASSERT(idxarg_)                                 \
-    do {                                                           \
-	Tcl_Size idx_ = (idxarg_); /* To guard against ++ etc. */ \
-	LIST_ASSERT(idx_ >= 0 && idx_ < LIST_MAX);                 \
+#define LIST_INDEX_ASSERT(idxarg_) \
+    do {								\
+	Tcl_Size idx_ = (idxarg_); /* To guard against ++ etc. */	\
+	LIST_ASSERT(idx_ >= 0 && idx_ < LIST_MAX);			\
     } while (0)
 /* Ditto for counts except upper limit is different */
-#define LIST_COUNT_ASSERT(countarg_)                                   \
-    do {                                                               \
-	Tcl_Size count_ = (countarg_); /* To guard against ++ etc. */ \
-	LIST_ASSERT(count_ >= 0 && count_ <= LIST_MAX);                \
+#define LIST_COUNT_ASSERT(countarg_) \
+    do {								\
+	Tcl_Size count_ = (countarg_); /* To guard against ++ etc. */	\
+	LIST_ASSERT(count_ >= 0 && count_ <= LIST_MAX);			\
     } while (0)
 
-#else
-
-#define LIST_ASSERT(cond_) ((void) 0)
-#define LIST_INDEX_ASSERT(idx_) ((void) 0)
-#define LIST_COUNT_ASSERT(count_) ((void) 0)
-
-#endif
+#else // !ENABLE_LIST_ASSERTS
+#define LIST_ASSERT(cond_)		((void) 0)
+#define LIST_INDEX_ASSERT(idx_)		((void) 0)
+#define LIST_COUNT_ASSERT(count_)	((void) 0)
+#endif // ENABLE_LIST_ASSERTS
 
 /* Checks for when caller should have already converted to internal list type */
 #define LIST_ASSERT_TYPE(listObj_) \
@@ -105,13 +104,15 @@
  * - Finally if LISTREP_SPACE_ONLY_BACK is present, ALL extra space is at
  *   the back.
  */
-#define LISTREP_PANIC_ON_FAIL         0x00000001
-#define LISTREP_SPACE_FAVOR_FRONT     0x00000002
-#define LISTREP_SPACE_FAVOR_BACK      0x00000004
-#define LISTREP_SPACE_ONLY_BACK       0x00000008
+enum ListRepresentationFlags {
+    LISTREP_PANIC_ON_FAIL = 1,
+    LISTREP_SPACE_FAVOR_FRONT = 2,
+    LISTREP_SPACE_FAVOR_BACK = 4,
+    LISTREP_SPACE_ONLY_BACK = 8
+};
 #define LISTREP_SPACE_FAVOR_NONE \
     (LISTREP_SPACE_FAVOR_FRONT | LISTREP_SPACE_FAVOR_BACK)
-#define LISTREP_SPACE_FLAGS                               \
+#define LISTREP_SPACE_FLAGS \
     (LISTREP_SPACE_FAVOR_FRONT | LISTREP_SPACE_FAVOR_BACK \
      | LISTREP_SPACE_ONLY_BACK)
 
@@ -119,7 +120,6 @@
  * Prototypes for non-inline static functions defined later in this file:
  */
 static int	MemoryAllocationError(Tcl_Interp *, size_t size);
-static int	ListLimitExceededError(Tcl_Interp *);
 static ListStore *ListStoreNew(Tcl_Size objc, Tcl_Obj *const objv[], int flags);
 static int	ListRepInit(Tcl_Size objc, Tcl_Obj *const objv[], int flags, ListRep *);
 static int	ListRepInitAttempt(Tcl_Interp *,
@@ -199,26 +199,26 @@ const Tcl_ObjType tclListType = {
  * passed ListRep) and frees it first. Additionally invalidates the string
  * representation. Generally used when modifying a Tcl_Obj value.
  */
-#define ListObjStompRep(objPtr_, repPtr_)                              \
-    do {                                                               \
-	(objPtr_)->internalRep.twoPtrValue.ptr1 = (repPtr_)->storePtr; \
-	(objPtr_)->internalRep.twoPtrValue.ptr2 = (repPtr_)->spanPtr;  \
-	(objPtr_)->typePtr = &tclListType;                             \
+#define ListObjStompRep(objPtr_, repPtr_) \
+    do {								\
+	(objPtr_)->internalRep.twoPtrValue.ptr1 = (repPtr_)->storePtr;	\
+	(objPtr_)->internalRep.twoPtrValue.ptr2 = (repPtr_)->spanPtr;	\
+	(objPtr_)->typePtr = &tclListType;				\
     } while (0)
 
 #define ListObjOverwriteRep(objPtr_, repPtr_) \
-    do {                                      \
-	ListRepIncrRefs(repPtr_);             \
-	ListObjStompRep(objPtr_, repPtr_);    \
+    do {								\
+	ListRepIncrRefs(repPtr_);					\
+	ListObjStompRep(objPtr_, repPtr_);				\
     } while (0)
 
-#define ListObjReplaceRepAndInvalidate(objPtr_, repPtr_)           \
-    do {                                                           \
-	/* Note order important, don't use ListObjOverwriteRep! */ \
-	ListRepIncrRefs(repPtr_);                                  \
-	TclFreeInternalRep(objPtr_);                               \
-	TclInvalidateStringRep(objPtr_);                           \
-	ListObjStompRep(objPtr_, repPtr_);                         \
+#define ListObjReplaceRepAndInvalidate(objPtr_, repPtr_) \
+    do {								\
+	/* Note order important, don't use ListObjOverwriteRep! */	\
+	ListRepIncrRefs(repPtr_);					\
+	TclFreeInternalRep(objPtr_);					\
+	TclInvalidateStringRep(objPtr_);				\
+	ListObjStompRep(objPtr_, repPtr_);				\
     } while (0)
 
 /*
@@ -239,8 +239,8 @@ const Tcl_ObjType tclListType = {
  */
 static inline ListSpan *
 ListSpanNew(
-    Tcl_Size firstSlot, /* Starting slot index of the span */
-    Tcl_Size numSlots)  /* Number of slots covered by the span */
+    Tcl_Size firstSlot,		/* Starting slot index of the span */
+    Tcl_Size numSlots)		/* Number of slots covered by the span */
 {
     ListSpan *spanPtr = (ListSpan *) Tcl_Alloc(sizeof(*spanPtr));
     spanPtr->refCount = 0;
@@ -298,8 +298,8 @@ ListSpanDecrRefs(
  */
 static inline int
 ListSpanMerited(
-    Tcl_Size length,                 /* Length of the proposed span */
-    Tcl_Size usedStorageLength,      /* Number of slots currently in used */
+    Tcl_Size length,		/* Length of the proposed span */
+    Tcl_Size usedStorageLength,	/* Number of slots currently in used */
     Tcl_Size allocatedStorageLength) /* Length of the currently allocation */
 {
     /*
@@ -370,9 +370,9 @@ ListRepFreeUnreferenced(
  */
 static inline void
 ObjArrayIncrRefs(
-    Tcl_Obj * const *objv,  /* Pointer to the array */
-    Tcl_Size startIdx,     /* Starting index of subarray within objv */
-    Tcl_Size count)        /* Number of elements in the subarray */
+    Tcl_Obj * const *objv,	/* Pointer to the array */
+    Tcl_Size startIdx,		/* Starting index of subarray within objv */
+    Tcl_Size count)		/* Number of elements in the subarray */
 {
     Tcl_Obj *const *end;
     LIST_INDEX_ASSERT(startIdx);
@@ -402,9 +402,9 @@ ObjArrayIncrRefs(
  */
 static inline void
 ObjArrayDecrRefs(
-    Tcl_Obj * const *objv, /* Pointer to the array */
-    Tcl_Size startIdx,    /* Starting index of subarray within objv */
-    Tcl_Size count)       /* Number of elements in the subarray */
+    Tcl_Obj * const *objv,	/* Pointer to the array */
+    Tcl_Size startIdx,		/* Starting index of subarray within objv */
+    Tcl_Size count)		/* Number of elements in the subarray */
 {
     Tcl_Obj * const *end;
     LIST_INDEX_ASSERT(startIdx);
@@ -434,9 +434,9 @@ ObjArrayDecrRefs(
  */
 static inline void
 ObjArrayCopy(
-    Tcl_Obj **to,          /* Destination */
-    Tcl_Size count,       /* Number of pointers to copy */
-    Tcl_Obj *const from[]) /* Source array of Tcl_Obj* */
+    Tcl_Obj **to,		/* Destination */
+    Tcl_Size count,		/* Number of pointers to copy */
+    Tcl_Obj *const from[])	/* Source array of Tcl_Obj* */
 {
     Tcl_Obj **end;
     LIST_COUNT_ASSERT(count);
@@ -465,8 +465,8 @@ ObjArrayCopy(
  */
 static int
 MemoryAllocationError(
-    Tcl_Interp *interp, /* Interpreter for error message. May be NULL */
-    size_t size)        /* Size of attempted allocation that failed */
+    Tcl_Interp *interp,		/* Interpreter for error message. May be NULL */
+    size_t size)		/* Size of attempted allocation that failed */
 {
     if (interp != NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -481,7 +481,7 @@ MemoryAllocationError(
 /*
  *------------------------------------------------------------------------
  *
- * ListLimitExceeded --
+ * TclListLimitExceededError --
  *
  *    Generates an error for exceeding maximum list size.
  *
@@ -493,13 +493,19 @@ MemoryAllocationError(
  *
  *------------------------------------------------------------------------
  */
-static int
-ListLimitExceededError(
+int
+TclListLimitExceededError(
     Tcl_Interp *interp)
 {
+    /*
+     * As an aside, note there is no parameter passed for the bad length
+     * because the cverflow is computationally detected and does not fit
+     * in Tcl_Size.
+     */
     if (interp != NULL) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"max length of a Tcl list exceeded", -1));
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"max length (%" TCL_SIZE_MODIFIER "d) of a Tcl list exceeded",
+		(Tcl_Size)LIST_MAX));
 	Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
     }
     return TCL_ERROR;
@@ -640,12 +646,12 @@ ListRepValidate(
 
     (void)storePtr; /* To stop gcc from whining about unused vars */
 
-#define INVARIANT(cond_)        \
-    do {                        \
-	if (!(cond_)) {         \
-	    condition = #cond_; \
-	    goto failure;       \
-	}                       \
+#define INVARIANT(cond_) \
+    do {								\
+	if (!(cond_)) {							\
+	    condition = #cond_;						\
+	    goto failure;						\
+	}								\
     } while (0)
 
     /* Separate each condition so line number gives exact reason for failure */
@@ -671,14 +677,11 @@ ListRepValidate(
     INVARIANT(ListRepStart(repPtr) <= (storePtr->firstUsed + storePtr->numUsed - ListRepLength(repPtr)));
 
 #undef INVARIANT
-
     return;
 
-failure:
+  failure:
     Tcl_Panic("List internal failure in %s line %d. Condition: %s",
-	      file,
-	      lineNum,
-	      condition);
+	    file, lineNum, condition);
 }
 
 /*
@@ -705,7 +708,7 @@ TclListObjValidate(
     ListRep listRep;
     if (TclListObjGetRep(interp, listObj, &listRep) != TCL_OK) {
 	Tcl_Panic("Object passed to TclListObjValidate cannot be converted to "
-		  "a list object.");
+		"a list object.");
     }
     ListRepValidate(&listRep, __FILE__, __LINE__);
 }
@@ -942,7 +945,7 @@ ListRepInitAttempt(
 
     if (result != TCL_OK && interp != NULL) {
 	if (objc > LIST_MAX) {
-	    ListLimitExceededError(interp);
+	    TclListLimitExceededError(interp);
 	} else {
 	    MemoryAllocationError(interp, LIST_SIZE(objc));
 	}
@@ -1197,6 +1200,7 @@ Tcl_DbNewListObj(
  *
  *------------------------------------------------------------------------
  */
+#if 0
 Tcl_Obj *
 TclNewListObj2(
     Tcl_Size objc1,		/* Count of objects referenced by objv1. */
@@ -1230,6 +1234,7 @@ TclNewListObj2(
     storePtr->numUsed = objc;
     return listObj;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -1258,10 +1263,10 @@ TclNewListObj2(
 
 static int
 TclListObjGetRep(
-    Tcl_Interp *interp, /* Used to report errors if not NULL. */
-    Tcl_Obj *listObj,   /* List object for which an element array is
-			 * to be returned. */
-    ListRep *repPtr)	/* Location to store descriptor */
+    Tcl_Interp *interp,		/* Used to report errors if not NULL. */
+    Tcl_Obj *listObj,		/* List object for which an element array is
+				 * to be returned. */
+    ListRep *repPtr)		/* Location to store descriptor */
 {
     if (!TclHasInternalRep(listObj, &tclListType)) {
 	int result;
@@ -1457,10 +1462,10 @@ ListRepRange(
     if (rangeStart == 0 && rangeEnd == (numSrcElems-1)) {
 	/* Option 0 - entire list. This may be used to canonicalize */
 	/* T:listrep-1.10.1,2.8.1 */
-	*rangeRepPtr = *srcRepPtr; /* Not ref counts not incremented */
+	*rangeRepPtr = *srcRepPtr; /* Note ref counts not incremented */
     } else if (rangeStart == 0 && (!preserveSrcRep)
 	    && (!ListRepIsShared(srcRepPtr) && srcRepPtr->spanPtr == NULL)) {
-	/* Option 1 - Special case unshared, exclude end elements, no span  */
+	/* Option 1 - Special case unshared, exclude end elements, no span */
 	LIST_ASSERT(srcRepPtr->storePtr->firstUsed == 0); /* If no span */
 	ListRepElements(srcRepPtr, numSrcElems, srcElems);
 	numAfterRangeEnd = numSrcElems - (rangeEnd + 1);
@@ -1754,8 +1759,8 @@ Tcl_ListObjAppendList(
  *
  *------------------------------------------------------------------------
  */
- int
- TclListObjAppendElements (
+int
+TclListObjAppendElements(
     Tcl_Interp *interp,		/* Used to report errors if not NULL. */
     Tcl_Obj *toObj,		/* List object to append */
     Tcl_Size elemCount,		/* Number of elements in elemObjs[] */
@@ -1792,7 +1797,7 @@ Tcl_ListObjAppendList(
 
     ListRepElements(&listRep, toLen, toObjv);
     if (elemCount > LIST_MAX || toLen > (LIST_MAX - elemCount)) {
-	return ListLimitExceededError(interp);
+	return TclListLimitExceededError(interp);
     }
 
     finalLen = toLen + elemCount;
@@ -1977,13 +1982,13 @@ TclListObjAppendIfAbsent(
 
     result = Tcl_ListObjGetElements(interp, toObj, &numElems, &elemObjs);
     if (result != TCL_OK) {
-        goto vamoose;
+	goto vamoose;
     }
     /* Assume it is worth doing a pointer compare over the whole list first */
     for (Tcl_Size i = 0; i < numElems; ++i) {
 	if (elemObjs[i] == elemObj) {
 	    result = TCL_OK;
-            goto vamoose;
+	    goto vamoose;
 	}
     }
     Tcl_Size elemLen;
@@ -1994,7 +1999,7 @@ TclListObjAppendIfAbsent(
 	const char *toStr = Tcl_GetStringFromObj(elemObjs[i], &toLen);
 	if (toLen == elemLen && !strncmp(elemStr, toStr, elemLen)) {
 	    result = TCL_OK;
-            goto vamoose;
+	    goto vamoose;
 	}
     }
     result = TclListObjAppendElements(interp, toObj, 1, &elemObj);
@@ -2087,9 +2092,9 @@ Tcl_ListObjIndex(
 #undef Tcl_ListObjLength
 int
 Tcl_ListObjLength(
-    Tcl_Interp *interp,	/* Used to report errors if not NULL. */
-    Tcl_Obj *listObj,	/* List object whose #elements to return. */
-    Tcl_Size *lenPtr)	/* The resulting length is stored here. */
+    Tcl_Interp *interp,		/* Used to report errors if not NULL. */
+    Tcl_Obj *listObj,		/* List object whose #elements to return. */
+    Tcl_Size *lenPtr)		/* The resulting length is stored here. */
 {
     ListRep listRep;
 
@@ -2203,12 +2208,12 @@ Tcl_ListObjReplace(
     if (numToDelete < 0) {
 	numToDelete = 0;
     } else if (first > LIST_MAX - numToDelete /* Handle integer overflow */
-	     || origListLen < first + numToDelete) {
+	    || origListLen < first + numToDelete) {
 	numToDelete = origListLen - first;
     }
 
     if (numToInsert > LIST_MAX - (origListLen - numToDelete)) {
-	return ListLimitExceededError(interp);
+	return TclListLimitExceededError(interp);
     }
 
     if ((first+numToDelete) >= origListLen) {
@@ -2805,7 +2810,7 @@ TclLindexFlat(
 		if (!TclHasInternalRep(listObj, &tclListType)) {
 		    status = SetListFromAny(interp, listObj);
 		    if (status != TCL_OK) {
-			/* The list is not a list at all => error.  */
+			/* The list is not a list at all => error. */
 			Tcl_DecrRefCount(listObj);
 			return NULL;
 		    }
@@ -2862,10 +2867,10 @@ TclLsetList(
     Tcl_Obj *indexArgObj,	/* Index or index-list arg to 'lset'. */
     Tcl_Obj *valueObj)		/* Value arg to 'lset' or NULL to 'lpop'. */
 {
-    Tcl_Size indexCount = 0;   /* Number of indices in the index list. */
+    Tcl_Size indexCount = 0;	/* Number of indices in the index list. */
     Tcl_Obj **indices = NULL;	/* Vector of indices in the index list. */
     Tcl_Obj *retValueObj;	/* Pointer to the list to be returned. */
-    Tcl_Size index;            /* Current index in the list - discarded. */
+    Tcl_Size index;		/* Current index in the list - discarded. */
     Tcl_Obj *indexListCopy;
 
     /*
@@ -3235,7 +3240,7 @@ TclListObjSetElement(
 				 * element. */
 {
     ListRep listRep;
-    Tcl_Obj **elemPtrs;         /* Pointers to elements of the list. */
+    Tcl_Obj **elemPtrs;		/* Pointers to elements of the list. */
     Tcl_Size elemCount;		/* Number of elements in the list. */
 
     /* Ensure that the listObj parameter designates an unshared list. */
@@ -3616,7 +3621,8 @@ UpdateStringOfList(
 	elem = TclGetStringFromObj(elemPtrs[i], &length);
 	bytesNeeded += TclScanElement(elem, length, flagPtr+i);
 	if (bytesNeeded > SIZE_MAX - numElems) {
-	    Tcl_Panic("max size for a Tcl value (%" TCL_Z_MODIFIER "u bytes) exceeded", SIZE_MAX);
+	    Tcl_Panic("max size for a Tcl value (%" TCL_Z_MODIFIER "u bytes) exceeded",
+		    SIZE_MAX);
 	}
     }
     bytesNeeded += numElems - 1;
@@ -3628,7 +3634,9 @@ UpdateStringOfList(
     start = dst = Tcl_InitStringRep(listObj, NULL, bytesNeeded);
     TclOOM(dst, bytesNeeded);
     for (i = 0; i < numElems; i++) {
-	flagPtr[i] |= (i ? TCL_DONT_QUOTE_HASH : 0);
+	if (i) {
+	    flagPtr[i] |= TCL_DONT_QUOTE_HASH;
+	}
 	elem = TclGetStringFromObj(elemPtrs[i], &length);
 	dst += TclConvertElement(elem, length, dst, flagPtr[i]);
 	*dst++ = ' ';
@@ -3695,7 +3703,7 @@ TclListTestObj(
     ListObjReplaceRepAndInvalidate(listObj, &listRep);
     return listObj;
 }
-
+
 /*
  * Local Variables:
  * mode: c

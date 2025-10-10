@@ -108,7 +108,7 @@ typedef enum _DSTMODE {
 
 %union {
     Tcl_WideInt Number;
-    enum _MERIDIAN Meridian;
+    MERIDIAN Meridian;
 }
 
 %{
@@ -718,7 +718,7 @@ TclDateerror(
 }
 
 int
-ToSeconds(
+TclToSeconds(
     int Hours,
     int Minutes,
     int Seconds,

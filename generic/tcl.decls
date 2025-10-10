@@ -635,7 +635,7 @@ declare 198 {
 }
 declare 199 {
     Tcl_Channel Tcl_OpenTcpClient(Tcl_Interp *interp, int port,
-	    const char *address, const char *myaddr, int myport, int flags)
+	    const char *address, const char *myaddr, int myport, int async)
 }
 declare 200 {
     Tcl_Channel Tcl_OpenTcpServer(Tcl_Interp *interp, int port,
