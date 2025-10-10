@@ -4197,6 +4197,7 @@ MODULE_SCOPE Tcl_Size	TclIndexDecode(int encoded, Tcl_Size endValue);
 /*
  * Error message utility functions
  */
+MODULE_SCOPE int	TclListLimitExceededError(Tcl_Interp *interp);
 MODULE_SCOPE int	TclCommandWordLimitError(Tcl_Interp *interp,
 			    Tcl_Size count);
 

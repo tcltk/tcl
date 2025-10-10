@@ -81,6 +81,8 @@ static int		ConvertLocalToUTCUsingC(Tcl_Interp *,
 static Tcl_ObjCmdProc	ClockConfigureObjCmd;
 static void		GetYearWeekDay(TclDateFields *, int);
 static void		GetGregorianEraYearDay(TclDateFields *, int);
+static void		GetJulianDayFromEraYearMonthDay(
+			    TclDateFields *fields, int changeover);
 static void		GetMonthDay(TclDateFields *);
 static Tcl_WideInt	WeekdayOnOrBefore(int, Tcl_WideInt);
 static Tcl_ObjCmdProc	ClockClicksObjCmd;
@@ -88,6 +90,8 @@ static Tcl_ObjCmdProc	ClockConvertlocaltoutcObjCmd;
 static int		ClockGetDateFields(ClockClientData *,
 			    Tcl_Interp *interp, TclDateFields *fields,
 			    Tcl_Obj *timezoneObj, int changeover);
+static void		GetJulianDayFromEraYearWeekDay(
+			    TclDateFields *fields, int changeover);
 static Tcl_ObjCmdProc	ClockGetdatefieldsObjCmd;
 static Tcl_ObjCmdProc	ClockGetjuliandayfromerayearmonthdayObjCmd;
 static Tcl_ObjCmdProc	ClockGetjuliandayfromerayearweekdayObjCmd;
@@ -292,7 +296,7 @@ static void
 ClockConfigureClear(
     ClockClientData *data)
 {
-    ClockFrmScnClearCaches();
+    TclClockFrmScnClearCaches();
 
     data->lastTZEpoch = 0;
     TclUnsetObjRef(data->systemTimeZone);
@@ -677,7 +681,7 @@ NormLocaleObj(
 /*
  *----------------------------------------------------------------------
  *
- * ClockMCDict --
+ * TclClockMCDict --
  *
  *	Retrieves a localized storage dictionary object for the given
  *	locale object.
@@ -690,9 +694,8 @@ NormLocaleObj(
  *
  *----------------------------------------------------------------------
  */
-
 Tcl_Obj *
-ClockMCDict(
+TclClockMCDict(
     ClockFmtScnCmdArgs *opts)
 {
     ClockClientData *dataPtr = opts->dataPtr;
@@ -788,7 +791,7 @@ ClockMCDict(
 /*
  *----------------------------------------------------------------------
  *
- * ClockMCGet --
+ * TclClockMCGet --
  *
  *	Retrieves a msgcat value for the given literal integer mcKey
  *	from localized storage (corresponding given locale object)
@@ -799,16 +802,15 @@ ClockMCDict(
  *
  *----------------------------------------------------------------------
  */
-
 Tcl_Obj *
-ClockMCGet(
+TclClockMCGet(
     ClockFmtScnCmdArgs *opts,
     int mcKey)
 {
     Tcl_Obj *valObj = NULL;
 
     if (opts->mcDictObj == NULL) {
-	ClockMCDict(opts);
+	TclClockMCDict(opts);
 	if (opts->mcDictObj == NULL) {
 	    return NULL;
 	}
@@ -822,7 +824,7 @@ ClockMCGet(
 /*
  *----------------------------------------------------------------------
  *
- * ClockMCGetIdx --
+ * TclClockMCGetIdx --
  *
  *	Retrieves an indexed msgcat value for the given literal integer mcKey
  *	from localized storage (corresponding given locale object)
@@ -833,9 +835,8 @@ ClockMCGet(
  *
  *----------------------------------------------------------------------
  */
-
-MODULE_SCOPE Tcl_Obj *
-ClockMCGetIdx(
+Tcl_Obj *
+TclClockMCGetIdx(
     ClockFmtScnCmdArgs *opts,
     int mcKey)
 {
@@ -843,7 +844,7 @@ ClockMCGetIdx(
     Tcl_Obj *valObj = NULL;
 
     if (opts->mcDictObj == NULL) {
-	ClockMCDict(opts);
+	TclClockMCDict(opts);
 	if (opts->mcDictObj == NULL) {
 	    return NULL;
 	}
@@ -864,7 +865,7 @@ ClockMCGetIdx(
 /*
  *----------------------------------------------------------------------
  *
- * ClockMCSetIdx --
+ * TclClockMCSetIdx --
  *
  *	Sets an indexed msgcat value for the given literal integer mcKey
  *	in localized storage (corresponding given locale object)
@@ -875,9 +876,8 @@ ClockMCGetIdx(
  *
  *----------------------------------------------------------------------
  */
-
 int
-ClockMCSetIdx(
+TclClockMCSetIdx(
     ClockFmtScnCmdArgs *opts,
     int mcKey,
     Tcl_Obj *valObj)
@@ -885,7 +885,7 @@ ClockMCSetIdx(
     ClockClientData *dataPtr = opts->dataPtr;
 
     if (opts->mcDictObj == NULL) {
-	ClockMCDict(opts);
+	TclClockMCDict(opts);
 	if (opts->mcDictObj == NULL) {
 	    return TCL_ERROR;
 	}
@@ -1281,7 +1281,7 @@ ClockGetSystemTimeZone(
 /*
  *----------------------------------------------------------------------
  *
- * ClockSetupTimeZone --
+ * TclClockSetupTimeZone --
  *
  *	Sets up the timezone. Loads tzdata, etc.
  *
@@ -1292,7 +1292,7 @@ ClockGetSystemTimeZone(
  */
 
 Tcl_Obj *
-ClockSetupTimeZone(
+TclClockSetupTimeZone(
     ClockClientData *dataPtr,	/* Pointer to literal pool, etc. */
     Tcl_Interp *interp,		/* Tcl interpreter */
     Tcl_Obj *timezoneObj)
@@ -1357,8 +1357,7 @@ ClockSetupTimeZone(
  *
  *----------------------------------------------------------------------
  */
-
-Tcl_Obj *
+static Tcl_Obj *
 ClockFormatNumericTimeZone(
     int z)
 {
@@ -1607,7 +1606,7 @@ ClockGetDateFields(
      * Convert UTC time to local.
      */
 
-    if (ConvertUTCToLocal(dataPtr, interp, fields, timezoneObj,
+    if (TclConvertUTCToLocal(dataPtr, interp, fields, timezoneObj,
 	    changeover) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -2028,7 +2027,7 @@ ConvertLocalToUTCUsingTable(
     fields->tzOffset = 0;
     fields->seconds = fields->localSeconds;
     while (1) {
-	row = LookupLastTransition(interp, fields->seconds, rowc, rowv,
+	row = TclClockLookupLastTransition(interp, fields->seconds, rowc, rowv,
 		rangesVal);
 	if ((row == NULL)
 		|| TclListObjGetElements(interp, row, &cellc,
@@ -2138,7 +2137,7 @@ ConvertLocalToUTCUsingC(
 /*
  *----------------------------------------------------------------------
  *
- * ConvertUTCToLocal --
+ * TclConvertUTCToLocal --
  *
  *	Converts a time (in a TclDateFields structure) from UTC to local time.
  *
@@ -2152,7 +2151,7 @@ ConvertLocalToUTCUsingC(
  */
 
 int
-ConvertUTCToLocal(
+TclConvertUTCToLocal(
     ClockClientData *dataPtr,	/* Literal pool, etc. */
     Tcl_Interp *interp,		/* Tcl interpreter */
     TclDateFields *fields,	/* Fields of the time */
@@ -2298,7 +2297,7 @@ ConvertUTCToLocalUsingTable(
      * Look up the nearest transition time.
      */
 
-    row = LookupLastTransition(interp, fields->seconds, rowc, rowv, rangesVal);
+    row = TclClockLookupLastTransition(interp, fields->seconds, rowc, rowv, rangesVal);
     if (row == NULL
 	    || TclListObjGetElements(interp, row, &cellc, &cellv) != TCL_OK
 	    || TclGetIntFromObj(interp, cellv[1], &fields->tzOffset) != TCL_OK) {
@@ -2409,7 +2408,7 @@ ConvertUTCToLocalUsingC(
 /*
  *----------------------------------------------------------------------
  *
- * LookupLastTransition --
+ * TclClockLookupLastTransition --
  *
  *	Given a UTC time and a tzdata array, looks up the last transition on
  *	or before the given time.
@@ -2421,7 +2420,7 @@ ConvertUTCToLocalUsingC(
  */
 
 Tcl_Obj *
-LookupLastTransition(
+TclClockLookupLastTransition(
     Tcl_Interp *interp,		/* Interpreter for error messages */
     Tcl_WideInt tick,		/* Time from the epoch */
     Tcl_Size rowc,		/* Number of rows of tzdata */
@@ -2544,7 +2543,7 @@ GetYearWeekDay(
     }
 
     fields->iso8601Year = temp.iso8601Year;
-    dayOfFiscalYear = fields->julianDay - temp.julianDay;
+    dayOfFiscalYear = (int)(fields->julianDay - temp.julianDay);
     fields->iso8601Week = (dayOfFiscalYear / 7) + 1;
     fields->dayOfWeek = (dayOfFiscalYear + 1) % 7;
     if (fields->dayOfWeek < 1) { /* Mon .. Sun == 1 .. 7 */
@@ -2577,8 +2576,8 @@ GetGregorianEraYearDay(
 {
     Tcl_WideInt jday = fields->julianDay;
     Tcl_WideInt day;
-    Tcl_WideInt year;
-    Tcl_WideInt n;
+    int year;
+    int n;
 
     if (jday >= changeover) {
 	/*
@@ -2594,7 +2593,7 @@ GetGregorianEraYearDay(
 	 */
 
 	day = jday - JDAY_1_JAN_1_CE_GREGORIAN;
-	n = day / FOUR_CENTURIES;
+	n = (int)(day / FOUR_CENTURIES);
 	day %= FOUR_CENTURIES;
 	if (day < 0) {
 	    day += FOUR_CENTURIES;
@@ -2607,7 +2606,7 @@ GetGregorianEraYearDay(
 	 * day = remaining days
 	 */
 
-	n = day / ONE_CENTURY_GREGORIAN;
+	n = (int)(day / ONE_CENTURY_GREGORIAN);
 	day %= ONE_CENTURY_GREGORIAN;
 	if (n > 3) {
 	    /*
@@ -2632,7 +2631,7 @@ GetGregorianEraYearDay(
      * n = number of 4-year cycles; days = remaining days.
      */
 
-    n = day / FOUR_YEARS;
+    n = (int)(day / FOUR_YEARS);
     day %= FOUR_YEARS;
     if (day < 0) {
 	day += FOUR_YEARS;
@@ -2644,7 +2643,7 @@ GetGregorianEraYearDay(
      * n = number of years; days = remaining days.
      */
 
-    n = day / ONE_YEAR;
+    n = (int)(day / ONE_YEAR);
     day %= ONE_YEAR;
     if (n > 3) {
 	/*
@@ -2667,7 +2666,7 @@ GetGregorianEraYearDay(
 	fields->isBce = 0;
 	fields->year = year;
     }
-    fields->dayOfYear = day + 1;
+    fields->dayOfYear = (int)day + 1;
 }
 
 /*
@@ -2692,7 +2691,7 @@ GetMonthDay(
 {
     int day = fields->dayOfYear;
     int month;
-    const int *dipm = daysInPriorMonths[IsGregorianLeapYear(fields)];
+    const int *dipm = daysInPriorMonths[TclIsGregorianLeapYear(fields)];
 
     /*
      * Estimate month by calculating `dayOfYear / (365/12)`
@@ -2792,8 +2791,8 @@ GetJulianDayFromEraYearMonthDay(
     TclDateFields *fields,	/* Date to convert */
     int changeover)		/* Gregorian transition date as a Julian Day */
 {
-    Tcl_WideInt year, ym1, ym1o4, ym1o100, ym1o400;
-    int month, mm1, q, r;
+    Tcl_WideInt ym1, ym1o4, ym1o100, ym1o400;
+    int year, month, mm1, q, r;
 
     if (fields->isBce) {
 	year = 1 - fields->year;
@@ -2860,7 +2859,7 @@ GetJulianDayFromEraYearMonthDay(
     }
     fields->julianDay = JDAY_1_JAN_1_CE_GREGORIAN - 1
 	    + fields->dayOfMonth
-	    + daysInPriorMonths[IsGregorianLeapYear(fields)][month - 1]
+	    + daysInPriorMonths[TclIsGregorianLeapYear(fields)][month - 1]
 	    + (ONE_YEAR * ym1)
 	    + ym1o4
 	    - ym1o100
@@ -2884,7 +2883,7 @@ GetJulianDayFromEraYearMonthDay(
 /*
  *----------------------------------------------------------------------
  *
- * GetJulianDayFromEraYearDay --
+ * TclGetJulianDayFromEraYearDay --
  *
  *	Given era, year, and dayOfYear (in TclDateFields), and the
  *	Gregorian transition date, computes the Julian Day Number.
@@ -2899,7 +2898,7 @@ GetJulianDayFromEraYearMonthDay(
  */
 
 void
-GetJulianDayFromEraYearDay(
+TclGetJulianDayFromEraYearDay(
     TclDateFields *fields,	/* Date to convert */
     int changeover)		/* Gregorian transition date as a Julian Day */
 {
@@ -2938,7 +2937,7 @@ GetJulianDayFromEraYearDay(
 /*
  *----------------------------------------------------------------------
  *
- * IsGregorianLeapYear --
+ * TclIsGregorianLeapYear --
  *
  *	Tests whether a given year is a leap year, in either Julian or
  *	Gregorian calendar.
@@ -2950,7 +2949,7 @@ GetJulianDayFromEraYearDay(
  */
 
 int
-IsGregorianLeapYear(
+TclIsGregorianLeapYear(
     TclDateFields *fields)	/* Date to test */
 {
     Tcl_WideInt year = fields->year;
@@ -3413,7 +3412,7 @@ ClockParseFmtScnArgs(
 
     /* Setup timezone (normalize object if needed and load TZ on demand) */
 
-    opts->timezoneObj = ClockSetupTimeZone(dataPtr, interp, opts->timezoneObj);
+    opts->timezoneObj = TclClockSetupTimeZone(dataPtr, interp, opts->timezoneObj);
     if (opts->timezoneObj == NULL) {
 	return TCL_ERROR;
     }
@@ -3487,7 +3486,7 @@ ClockParseFmtScnArgs(
 	/* extact fields from base */
 	date->seconds = baseVal;
 	if (ClockGetDateFields(dataPtr, interp, date, opts->timezoneObj,
-	      GREGORIAN_CHANGE_DATE) != TCL_OK) {
+		GREGORIAN_CHANGE_DATE) != TCL_OK) {
 	    /* TODO - GREGORIAN_CHANGE_DATE should be locale-dependent */
 	    return TCL_ERROR;
 	}
@@ -3571,7 +3570,7 @@ ClockFormatObjCmd(
     }
 
     /* Use compiled version of Format - */
-    ret = ClockFormat(&dateFmt, &opts);
+    ret = TclClockFormat(&dateFmt, &opts);
 
   done:
     TclUnsetObjRef(dateFmt.date.tzName);
@@ -3637,7 +3636,7 @@ ClockScanObjCmd(
     }
 
     /* seconds are in localSeconds (relative base date), so reset time here */
-    yyHour = yyMinutes = yySeconds = yySecondOfDay = 0;
+    yySecondOfDay = yySeconds = yyMinutes = yyHour = 0;
     yyMeridian = MER24;
 
     /* If free scan */
@@ -3657,7 +3656,7 @@ ClockScanObjCmd(
     } else {
 	/* Use compiled version of Scan - */
 
-	ret = ClockScan(&yy, objv[1], &opts);
+	ret = TclClockScan(&yy, objv[1], &opts);
     }
 
     if (ret != TCL_OK) {
@@ -3729,7 +3728,7 @@ ClockScanCommit(
 		== (CLF_DAYOFMONTH|CLF_MONTH)) {
 	    GetJulianDayFromEraYearMonthDay(&yydate, GREGORIAN_CHANGE_DATE);
 	} else {
-	    GetJulianDayFromEraYearDay(&yydate, GREGORIAN_CHANGE_DATE);
+	    TclGetJulianDayFromEraYearDay(&yydate, GREGORIAN_CHANGE_DATE);
 	}
 	info->flags |= CLF_ASSEMBLE_SECONDS;
 	info->flags &= ~CLF_ASSEMBLE_JULIANDAY;
@@ -3859,7 +3858,7 @@ ClockValidDate(
 	    goto error;
 	}
 	if ((info->flags & CLF_MONTH)) {
-	    const int *h = hath[IsGregorianLeapYear(&yydate)];
+	    const int *h = hath[TclIsGregorianLeapYear(&yydate)];
 
 	    if (yyDay > h[yyMonth - 1]) {
 		errMsg = "invalid day";
@@ -3870,7 +3869,7 @@ ClockValidDate(
     }
     if (info->flags & CLF_DAYOFYEAR) {
 	if (yydate.dayOfYear < 1
-		|| yydate.dayOfYear > daysInPriorMonths[IsGregorianLeapYear(&yydate)][12]) {
+		|| yydate.dayOfYear > daysInPriorMonths[TclIsGregorianLeapYear(&yydate)][12]) {
 	    errMsg = "invalid day of year";
 	    errCode = "day of year";
 	    goto error;
@@ -3884,7 +3883,7 @@ ClockValidDate(
 	    memcpy(&temp, &yydate, sizeof(temp));
 	    tempCpyFlg = 1;
 	}
-	GetJulianDayFromEraYearDay(&temp, GREGORIAN_CHANGE_DATE);
+	TclGetJulianDayFromEraYearDay(&temp, GREGORIAN_CHANGE_DATE);
 	if (temp.julianDay != yydate.julianDay) {
 	    errMsg = "ambiguous day";
 	    errCode = "day";
@@ -3920,7 +3919,7 @@ ClockValidDate(
 	    errCode = "minutes";
 	    goto error;
 	}
-	/* oldscan could return secondOfDay -1 by invalid time (see ToSeconds) */
+	/* oldscan could return secondOfDay -1 by invalid time (see TclToSeconds) */
 	if (yySeconds < 0 || yySeconds > 59 || yySecondOfDay <= -1) {
 	    errMsg = "invalid time";
 	    errCode = "seconds";
@@ -4055,12 +4054,12 @@ ClockFreeScan(
 		    60 * minEast + 3600 * dstFlag);
 	    Tcl_IncrRefCount(tzObjStor);
 
-	    opts->timezoneObj = ClockSetupTimeZone(dataPtr, interp, tzObjStor);
+	    opts->timezoneObj = TclClockSetupTimeZone(dataPtr, interp, tzObjStor);
 
 	    Tcl_DecrRefCount(tzObjStor);
 	} else {
 	    /* simplest case - GMT / UTC */
-	    opts->timezoneObj = ClockSetupTimeZone(dataPtr, interp,
+	    opts->timezoneObj = TclClockSetupTimeZone(dataPtr, interp,
 		    dataPtr->literals[LIT_GMT]);
 	}
 	if (opts->timezoneObj == NULL) {
@@ -4090,7 +4089,7 @@ ClockFreeScan(
 	yySecondOfDay = 0;
 	info->flags |= CLF_ASSEMBLE_SECONDS;
     } else if (info->flags & CLF_TIME) {
-	yySecondOfDay = ToSeconds(yyHour, yyMinutes, yySeconds, yyMeridian);
+	yySecondOfDay = TclToSeconds(yyHour, yyMinutes, (int)yySeconds, yyMeridian);
 	info->flags |= CLF_ASSEMBLE_SECONDS;
     } else if ((info->flags & (CLF_DAYOFWEEK | CLF_HAVEDATE)) == CLF_DAYOFWEEK
 	    || (info->flags & CLF_ORDINALMONTH)
@@ -4168,7 +4167,7 @@ ClockCalcRelTime(
 	}
 
 	/* add the requisite number of months */
-	yyMonth += yyRelMonth - 1;
+	yyMonth += (int)yyRelMonth - 1;
 	yyYear += yyMonth / 12;
 	m = yyMonth % 12;
 	/* compiler fix for signed-mod - wrap y, m = (0, -1) -> (-1, 11) */
@@ -4179,7 +4178,7 @@ ClockCalcRelTime(
 	yyMonth = m + 1;
 
 	/* if the day doesn't exist in the current month, repair it */
-	h = hath[IsGregorianLeapYear(&yydate)][m];
+	h = hath[TclIsGregorianLeapYear(&yydate)][m];
 	if (yyDay > h) {
 	    yyDay = h;
 	}
@@ -4279,7 +4278,7 @@ ClockCalcRelTime(
 	    yyRelSeconds = 0;
 	    /* Convert it back */
 	    if (ClockGetDateFields(opts->dataPtr, opts->interp, &yydate,
-		  opts->timezoneObj, GREGORIAN_CHANGE_DATE) != TCL_OK) {
+		    opts->timezoneObj, GREGORIAN_CHANGE_DATE) != TCL_OK) {
 		/* TODO - GREGORIAN_CHANGE_DATE should be locale-dependent */
 		return TCL_ERROR;
 	    }
@@ -4539,7 +4538,7 @@ ClockAddObjCmd(
 	case CLC_ADD_WEEKDAYS:
 	    /* add number of week days (skipping Saturdays and Sundays)
 	     * to a relative days value. */
-	    offs = ClockWeekdaysOffs(yy.date.dayOfWeek, offs);
+	    offs = ClockWeekdaysOffs(yy.date.dayOfWeek, (int)offs);
 	    yyRelDay += offs;
 	    break;
 	case CLC_ADD_HOURS:
@@ -4720,7 +4719,7 @@ ClockSafeCatchCmd(
 #endif
 #define TZ_INIT_MARKER	((WCHAR *) INT2PTR(-1))
 
-typedef struct ClockTzStatic {
+typedef struct {
     WCHAR *was;			/* Previous value of TZ. */
 #if TCL_MAJOR_VERSION > 8
     long long lastRefresh;	/* Used for latency before next refresh. */
@@ -4791,7 +4790,7 @@ static void
 ClockFinalize(
     TCL_UNUSED(void *))
 {
-    ClockFrmScnFinalize();
+    TclClockFrmScnFinalize();
 
     if (tz.was && tz.was != TZ_INIT_MARKER) {
 	Tcl_Free(tz.was);
