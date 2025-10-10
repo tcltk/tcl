@@ -1213,7 +1213,8 @@ TraverseWinTree(
 {
     DWORD sourceAttr;
     WCHAR *nativeSource, *nativeTarget, *nativeErrfile;
-    int result, found;
+    int result;
+    BOOL found;
     Tcl_Size sourceLen, oldSourceLen, oldTargetLen, targetLen = 0;
     HANDLE handle;
     WIN32_FIND_DATAW data;
@@ -1286,7 +1287,7 @@ TraverseWinTree(
 	Tcl_DStringSetLength(targetPtr, targetLen);
     }
 
-    found = 1;
+    found = TRUE;
     for (; found; found = FindNextFileW(handle, &data)) {
 	WCHAR *nativeName;
 	size_t len;

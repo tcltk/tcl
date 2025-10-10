@@ -316,7 +316,7 @@ PipeSetupProc(
 {
     PipeInfo *infoPtr;
     Tcl_Time blockTime = { 0, 0 };
-    int block = 1;
+    bool block = true;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     if (!(flags & TCL_FILE_EVENTS)) {
@@ -331,12 +331,12 @@ PipeSetupProc(
 	    infoPtr = infoPtr->nextPtr) {
 	if (infoPtr->watchMask & TCL_WRITABLE) {
 	    if (WaitForSingleObject(infoPtr->writable, 0) != WAIT_TIMEOUT) {
-		block = 0;
+		block = false;
 	    }
 	}
 	if (infoPtr->watchMask & TCL_READABLE) {
 	    if (WaitForRead(infoPtr, 0) >= 0) {
-		block = 0;
+		block = false;
 	    }
 	}
     }
@@ -369,7 +369,7 @@ PipeCheckProc(
 {
     PipeInfo *infoPtr;
     PipeEvent *evPtr;
-    int needEvent;
+    bool needEvent;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     if (!(flags & TCL_FILE_EVENTS)) {
@@ -390,15 +390,15 @@ PipeCheckProc(
 	 * Queue an event if the pipe is signaled for reading or writing.
 	 */
 
-	needEvent = 0;
+	needEvent = false;
 	if ((infoPtr->watchMask & TCL_WRITABLE) &&
 		(WaitForSingleObject(infoPtr->writable, 0) != WAIT_TIMEOUT)) {
-	    needEvent = 1;
+	    needEvent = true;
 	}
 
 	if ((infoPtr->watchMask & TCL_READABLE) &&
 		(WaitForRead(infoPtr, 0) >= 0)) {
-	    needEvent = 1;
+	    needEvent = true;
 	}
 
 	if (needEvent) {
@@ -2834,7 +2834,7 @@ WaitForRead(
     DWORD timeout, count;
     HANDLE handle = ((WinFile *) infoPtr->readFile)->handle;
 
-    while (1) {
+    while (true) {
 	/*
 	 * Synchronize with the reader thread.
 	 */
@@ -2947,7 +2947,7 @@ PipeReaderThread(
     PipeInfo *infoPtr = NULL;	/* access info only after success init/wait */
     HANDLE handle = NULL;
     DWORD count, err;
-    int done = 0;
+    bool done = false;
 
     while (!done) {
 	/*
@@ -2982,9 +2982,9 @@ PipeReaderThread(
 	    err = GetLastError();
 	    if (err == ERROR_BROKEN_PIPE) {
 		infoPtr->readFlags |= PIPE_EOF;
-		done = 1;
+		done = true;
 	    } else if (err == ERROR_INVALID_HANDLE) {
-		done = 1;
+		done = true;
 	    }
 	} else if (count == 0) {
 	    if (ReadFile(handle, &(infoPtr->extraByte), 1, &count, NULL)
@@ -3004,9 +3004,9 @@ PipeReaderThread(
 		     */
 
 		    infoPtr->readFlags |= PIPE_EOF;
-		    done = 1;
+		    done = true;
 		} else if (err == ERROR_INVALID_HANDLE) {
-		    done = 1;
+		    done = true;
 		}
 	    }
 	}
@@ -3071,7 +3071,7 @@ PipeWriterThread(
     HANDLE handle = NULL;
     DWORD count, toWrite;
     char *buf;
-    int done = 0;
+    bool done = false;
 
     while (!done) {
 	/*
@@ -3097,7 +3097,7 @@ PipeWriterThread(
 	while (toWrite > 0) {
 	    if (WriteFile(handle, buf, toWrite, &count, NULL) == FALSE) {
 		infoPtr->writeError = GetLastError();
-		done = 1;
+		done = true;
 		break;
 	    } else {
 		toWrite -= count;
@@ -3324,16 +3324,16 @@ TclPipeThreadCreateTI(
  *	Wait for work/stop signals inside pipe worker.
  *
  * Results:
- *	1 if signaled to work, 0 if signaled to stop.
+ *	true if signaled to work, false if signaled to stop.
  *
  * Side effects:
- *	If this function returns 0, TI-structure pointer given via pipeTIPtr
+ *	If this function returns false, TI-structure pointer given via pipeTIPtr
  *	may be NULL, so not accessible (can be owned by main thread).
  *
  *----------------------------------------------------------------------
  */
 
-int
+bool
 TclPipeThreadWaitForSignal(
     TclPipeThreadInfo **pipeTIPtr)
 {
@@ -3342,7 +3342,7 @@ TclPipeThreadWaitForSignal(
     DWORD waitResult;
 
     if (!pipeTI) {
-	return 0;
+	return false;
     }
 
     /*
@@ -3395,7 +3395,7 @@ TclPipeThreadWaitForSignal(
      * Signaled to work.
      */
 
-    return 1;
+    return true;
 
   end:
     /*
@@ -3405,7 +3405,7 @@ TclPipeThreadWaitForSignal(
     if (state != PTI_STATE_STOP) {
 	*pipeTIPtr = NULL;
     }
-    return 0;
+    return false;
 }
 
 /*
@@ -3419,12 +3419,13 @@ TclPipeThreadWaitForSignal(
  *	may be NULL.
  *
  * Results:
- *	1 if signaled (or pipe-thread is down), 0 if pipe thread still working.
+ *	true if signaled (or pipe-thread is down), false if pipe thread still
+ *	working.
  *
  *----------------------------------------------------------------------
  */
 
-int
+bool
 TclPipeThreadStopSignal(
     TclPipeThreadInfo **pipeTIPtr)
 {
@@ -3433,7 +3434,7 @@ TclPipeThreadStopSignal(
     int state;
 
     if (!pipeTI) {
-	return 1;
+	return true;
     }
     evControl = pipeTI->evControl;
     state = InterlockedCompareExchange(&pipeTI->state, PTI_STATE_STOP,
@@ -3448,7 +3449,7 @@ TclPipeThreadStopSignal(
 	*pipeTIPtr = NULL;
 	TCL_FALLTHROUGH();
     case PTI_STATE_DOWN:
-	return 1;
+	return true;
 
     default:
 	/*
@@ -3461,7 +3462,7 @@ TclPipeThreadStopSignal(
 	break;
     }
 
-    return 0;
+    return false;
 }
 
 /*

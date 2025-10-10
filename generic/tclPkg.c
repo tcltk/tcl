@@ -86,13 +86,13 @@ typedef struct RequireProcArgs {
 static int		CheckVersionAndConvert(Tcl_Interp *interp,
 			    const char *string, char **internal, int *stable);
 static int		CompareVersions(char *v1i, char *v2i,
-			    int *isMajorPtr);
+			    bool *isMajorPtr);
 static int		CheckRequirement(Tcl_Interp *interp,
 			    const char *string);
 static int		CheckAllRequirements(Tcl_Interp *interp, Tcl_Size reqc,
 			    Tcl_Obj *const reqv[]);
-static int		RequirementSatisfied(char *havei, const char *req);
-static int		SomeRequirementSatisfied(char *havei, Tcl_Size reqc,
+static bool		RequirementSatisfied(char *havei, const char *req);
+static bool		SomeRequirementSatisfied(char *havei, Tcl_Size reqc,
 			    Tcl_Obj *const reqv[]);
 static void		AddRequirementsToResult(Tcl_Interp *interp, Tcl_Size reqc,
 			    Tcl_Obj *const reqv[]);
@@ -120,7 +120,7 @@ static int		TclNRPackageObjCmdCleanup(void *data[], Tcl_Interp *interp, int resu
     do { \
 	size_t local__len = strlen(s) + 1; \
 	DupBlock((v),(s),local__len); \
-    } while (0)
+    } while (false)
 
 /*
  *----------------------------------------------------------------------
@@ -1078,7 +1078,8 @@ TclNRPackageObjCmd(
 	PKG_VERSIONS, PKG_VSATISFIES
     } optionIndex;
     Interp *iPtr = (Interp *) interp;
-    int exact, satisfies;
+    int satisfies;
+    bool exact;
     Tcl_Size i, newobjc;
     PkgAvail *availPtr, *prevPtr;
     Package *pkgPtr;
@@ -1265,10 +1266,10 @@ TclNRPackageObjCmd(
 	    if (objc != 5) {
 		goto requireSyntax;
 	    }
-	    exact = 1;
+	    exact = true;
 	    name = TclGetString(objv[3]);
 	} else {
-	    exact = 0;
+	    exact = false;
 	    name = argv2;
 	}
 
@@ -1666,7 +1667,7 @@ CheckVersionAndConvert(
 {
     const char *p = string;
     char prevChar;
-    int hasunstable = 0;
+    bool hasunstable = false;
     /*
      * 4* assuming that each char is a separator (a,b become ' -x ').
      * 4+ to have space for an additional -2 at the end
@@ -1705,7 +1706,7 @@ CheckVersionAndConvert(
 	}
 
 	if (*p == 'a' || *p == 'b') {
-	    hasunstable = 1;
+	    hasunstable = true;
 	}
 
 	/*
@@ -1778,11 +1779,12 @@ static int
 CompareVersions(
     char *v1, char *v2,		/* Versions strings, of form 2.1.3 (any number
 				 * of version numbers). */
-    int *isMajorPtr)		/* If non-null, the word pointed to is filled
-				 * in with a 0/1 value. 1 means that the
+    bool *isMajorPtr)		/* If non-null, the word pointed to is filled
+				 * in with a bool value. true means that the
 				 * difference occurred in the first element. */
 {
-    int thisIsMajor, res, flip;
+    int res;
+    bool thisIsMajor, flip;
     char *s1, *e1, *s2, *e2, o1, o2;
 
     /*
@@ -1805,11 +1807,11 @@ CompareVersions(
      * work. This change breaks through the 32bit-limit on version numbers.
      */
 
-    thisIsMajor = 1;
+    thisIsMajor = true;
     s1 = v1;
     s2 = v2;
 
-    while (1) {
+    while (true) {
 	/*
 	 * Parse one decimal number from the front of each string. Skip
 	 * leading zeros. Terminate found number for upcoming string-wise
@@ -1846,9 +1848,9 @@ CompareVersions(
 	    /* a < b => -a > -b, etc. */
 	    s1++;
 	    s2++;
-	    flip = 1;
+	    flip = true;
 	} else {
-	    flip = 0;
+	    flip = false;
 	}
 
 	/*
@@ -1923,7 +1925,7 @@ CompareVersions(
 	if (*s2 != 0) {
 	    s2++;
 	}
-	thisIsMajor = 0;
+	thisIsMajor = false;
     }
 
     if (isMajorPtr != NULL) {
@@ -2126,7 +2128,7 @@ AddRequirementsToDString(
  *	of a set of requirements.
  *
  * Results:
- *	If the requirements are satisfied 1 is returned. Otherwise 0 is
+ *	If the requirements are satisfied true is returned. Otherwise false is
  *	returned. The function assumes that all pieces have valid syntax. And
  *	is allowed to make that assumption.
  *
@@ -2136,7 +2138,7 @@ AddRequirementsToDString(
  *----------------------------------------------------------------------
  */
 
-static int
+static bool
 SomeRequirementSatisfied(
     char *availVersionI,	/* Candidate version to check against the
 				 * requirements. */
@@ -2149,10 +2151,10 @@ SomeRequirementSatisfied(
 
     for (i = 0; i < reqc; i++) {
 	if (RequirementSatisfied(availVersionI, TclGetString(reqv[i]))) {
-	    return 1;
+	    return true;
 	}
     }
-    return 0;
+    return false;
 }
 
 /*
@@ -2173,7 +2175,7 @@ SomeRequirementSatisfied(
  *----------------------------------------------------------------------
  */
 
-static int
+static bool
 RequirementSatisfied(
     char *havei,		/* Version string, of candidate package we
 				 * have. */
@@ -2184,7 +2186,7 @@ RequirementSatisfied(
      * The have candidate is already in internal rep.
      */
 
-    int satisfied, res;
+    bool satisfied;
     char *dash = NULL, *buf, *min, *max;
 
     dash = (char *)strchr(req, '-');
@@ -2197,7 +2199,8 @@ RequirementSatisfied(
 	 */
 
 	char *reqi = NULL;
-	int thisIsMajor;
+	bool thisIsMajor;
+	int res;
 
 	CheckVersionAndConvert(NULL, req, &reqi, NULL);
 	strcat(reqi, " -2");

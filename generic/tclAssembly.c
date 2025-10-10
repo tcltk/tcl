@@ -250,7 +250,7 @@ static int		ValidateJumpTargets(AssemblyEnv*);
 static int		CheckForUnclosedCatches(AssemblyEnv*);
 static int		CheckForThrowInWrongContext(AssemblyEnv*);
 static int		CheckNonThrowingBlock(AssemblyEnv*, BasicBlock*);
-static int		BytecodeMightThrow(unsigned char);
+static bool		BytecodeMightThrow(unsigned char);
 static int		CheckJumpTableLabels(AssemblyEnv*, BasicBlock*);
 static int		CheckNamespaceQualifiers(Tcl_Interp*, const char*,
 			    Tcl_Size);
@@ -3249,13 +3249,13 @@ CheckNonThrowingBlock(
  *	Tests if a given bytecode instruction might throw an exception.
  *
  * Results:
- *	Returns 1 if the bytecode might throw an exception, 0 if the
+ *	Returns true if the bytecode might throw an exception, false if the
  *	instruction is known never to throw.
  *
  *-----------------------------------------------------------------------------
  */
 
-static int
+static bool
 BytecodeMightThrow(
     unsigned char opcode)
 {
@@ -3280,11 +3280,11 @@ BytecodeMightThrow(
 	     * Opcode is nonthrowing.
 	     */
 
-	    return 0;
+	    return false;
 	}
     }
 
-    return 1;
+    return true;
 }
 
 /*

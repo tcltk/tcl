@@ -50,7 +50,7 @@ typedef struct FilesystemRecord {
  */
 
 typedef struct {
-    int initialized;
+    bool initialized;
     size_t cwdPathEpoch;	/* Compared with the global cwdPathEpoch to
 				 * determine whether cwdPathPtr is stale. */
     size_t filesystemEpoch;
@@ -441,7 +441,7 @@ FsThrExitProc(
 	fsRecPtr = tmpFsRecPtr;
     }
     tsdPtr->filesystemList = NULL;
-    tsdPtr->initialized = 0;
+    tsdPtr->initialized = false;
 }
 
 int
@@ -452,13 +452,15 @@ TclFSCwdIsNative(void)
     /* if not yet initialized - ensure we'll once obtain cwd */
     if (!tsdPtr->cwdPathEpoch) {
 	Tcl_Obj *temp = Tcl_FSGetCwd(NULL);
-	if (temp) { Tcl_DecrRefCount(temp); }
+	if (temp) {
+	    Tcl_DecrRefCount(temp);
+	}
     }
 
     if (tsdPtr->cwdClientData != NULL) {
-	return 1;
+	return true;
     } else {
-	return 0;
+	return false;
     }
 }
 
@@ -513,9 +515,9 @@ TclFSCwdPointerEquals(
     }
     Tcl_MutexUnlock(&cwdMutex);
 
-    if (tsdPtr->initialized == 0) {
+    if (!tsdPtr->initialized) {
 	Tcl_CreateThreadExitHandler(FsThrExitProc, tsdPtr);
-	tsdPtr->initialized = 1;
+	tsdPtr->initialized = true;
     }
 
     if (pathPtrPtr == NULL) {
@@ -523,7 +525,7 @@ TclFSCwdPointerEquals(
     }
 
     if (tsdPtr->cwdPathPtr == *pathPtrPtr) {
-	return 1;
+	return true;
     } else {
 	Tcl_Size len1, len2;
 	const char *str1, *str2;
@@ -539,9 +541,9 @@ TclFSCwdPointerEquals(
 	    Tcl_DecrRefCount(*pathPtrPtr);
 	    *pathPtrPtr = tsdPtr->cwdPathPtr;
 	    Tcl_IncrRefCount(*pathPtrPtr);
-	    return 1;
+	    return true;
 	} else {
-	    return 0;
+	    return false;
 	}
     }
 }
@@ -605,9 +607,9 @@ FsRecacheFilesystemList(void)
      * Make sure the above gets released on thread exit.
      */
 
-    if (tsdPtr->initialized == 0) {
+    if (!tsdPtr->initialized) {
 	Tcl_CreateThreadExitHandler(FsThrExitProc, tsdPtr);
-	tsdPtr->initialized = 1;
+	tsdPtr->initialized = true;
     }
 }
 
@@ -1127,7 +1129,7 @@ FsAddMountsToGlobResult(
     for (i=0 ; i<mLength ; i++) {
 	Tcl_Obj *mElt;
 	Tcl_Size j;
-	int found = 0;
+	bool found = false;
 
 	Tcl_ListObjIndex(NULL, mounts, i, &mElt);
 
@@ -1136,7 +1138,7 @@ FsAddMountsToGlobResult(
 
 	    Tcl_ListObjIndex(NULL, resultPtr, j, &gElt);
 	    if (Tcl_FSEqualPaths(mElt, gElt)) {
-		found = 1;
+		found = true;
 		if (!dir) {
 		    /*
 		     * We don't want to list this.
@@ -1326,9 +1328,8 @@ TclFSNormalizeToUniquePath(
 				 * the byte just after the separator. */
 {
     FilesystemRecord *fsRecPtr, *firstFsRecPtr;
-
     Tcl_Size i;
-    int isVfsPath = 0;
+    bool isVfsPath = false;
     const char *path;
 
     /*
@@ -1354,7 +1355,7 @@ TclFSNormalizeToUniquePath(
 	}
 	--i;
 	if (path[i] == ':') {
-	    isVfsPath = 1;
+	    isVfsPath = true;
 	}
     }
 
@@ -1447,7 +1448,8 @@ TclGetOpenMode(
     const char *modeString,	/* Mode string, e.g. "r+" or "RDONLY CREAT" */
     int *modeFlagsPtr)
 {
-    int mode, c, gotRW;
+    int mode, c;
+    bool gotRW;
     Tcl_Size modeArgc, i;
     const char **modeArgv = NULL, *flag;
 
@@ -1541,7 +1543,7 @@ TclGetOpenMode(
 	return -1;
     }
 
-    gotRW = 0;
+    gotRW = false;
     for (i = 0; i < modeArgc; i++) {
 	flag = modeArgv[i];
 	c = flag[0];
@@ -1556,19 +1558,19 @@ TclGetOpenMode(
 		goto invAccessMode;
 	    }
 	    mode = (mode & ~O_ACCMODE) | O_RDONLY;
-	    gotRW = 1;
+	    gotRW = true;
 	} else if ((c == 'W') && (strcmp(flag, "WRONLY") == 0)) {
 	    if (gotRW) {
 		goto invRW;
 	    }
 	    mode = (mode & ~O_ACCMODE) | O_WRONLY;
-	    gotRW = 1;
+	    gotRW = true;
 	} else if ((c == 'R') && (strcmp(flag, "RDWR") == 0)) {
 	    if (gotRW) {
 		goto invRW;
 	    }
 	    mode = (mode & ~O_ACCMODE) | O_RDWR;
-	    gotRW = 1;
+	    gotRW = true;
 	} else if ((c == 'A') && (strcmp(flag, "APPEND") == 0)) {
 	    if (mode & O_APPEND) {
 	    accessFlagRepeated:

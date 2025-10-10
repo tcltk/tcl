@@ -264,7 +264,7 @@ IfConditionCallback(
     }
     TclDecrRefCount(boolObj);
 
-    while (1) {
+    while (true) {
 	i++;
 	if (i >= objc) {
 	    goto missingScript;
@@ -5203,7 +5203,7 @@ DictionaryCompare(
     int diff, zeros;
     int secondaryDiff = 0;
 
-    while (1) {
+    while (true) {
 	if (isdigit(UCHAR(*right))		/* INTL: digit */
 		&& isdigit(UCHAR(*left))) {	/* INTL: digit */
 	    /*
@@ -5234,7 +5234,7 @@ DictionaryCompare(
 	     */
 
 	    diff = 0;
-	    while (1) {
+	    while (true) {
 		if (diff == 0) {
 		    diff = UCHAR(*left) - UCHAR(*right);
 		}

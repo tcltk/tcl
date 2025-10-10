@@ -71,7 +71,7 @@ StartNotifierThread(
 	    }
 	    pthread_mutex_unlock(&notifierMutex);
 
-	    notifierThreadRunning = 1;
+	    notifierThreadRunning = true;
 	}
 	pthread_mutex_unlock(&notifierInitMutex);
     }
@@ -398,7 +398,7 @@ AlertSingleThread(
 static void
 AtForkChild(void)
 {
-    if (notifierThreadRunning == 1) {
+    if (notifierThreadRunning) {
 	pthread_cond_destroy(&notifierCV);
     }
     pthread_mutex_init(&notifierInitMutex, NULL);
@@ -410,7 +410,7 @@ AtForkChild(void)
 #endif
 
     /*
-     * notifierThreadRunning == 1: thread is running, (there might be data in
+     * notifierThreadRunning == true: thread is running, (there might be data in
      *		notifier lists)
      * atForkInit == 0: InitNotifier was never called
      * notifierCount != 0: unbalanced InitNotifier() / FinalizeNotifier calls
@@ -420,9 +420,9 @@ AtForkChild(void)
     if (atForkInit == 1) {
 
 	notifierCount = 0;
-	if (notifierThreadRunning == 1) {
+	if (notifierThreadRunning) {
 	    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-	    notifierThreadRunning = 0;
+	    notifierThreadRunning = false;
 
 	    close(triggerPipe);
 	    triggerPipe = -1;

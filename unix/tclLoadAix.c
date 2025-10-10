@@ -86,7 +86,7 @@ static ModulePtr modList;
  */
 
 static char errbuf[BUFSIZ];
-static int errvalid;
+static bool errvalid;
 
 static void caterr(char *);
 static int readExports(ModulePtr);
@@ -128,7 +128,7 @@ dlopen(
 
     mp = (ModulePtr) calloc(1, sizeof(*mp));
     if (mp == NULL) {
-	errvalid++;
+	errvalid = true;
 	strcpy(errbuf, "calloc: ");
 	strcat(errbuf, strerror(errno));
 	return NULL;
@@ -146,7 +146,7 @@ dlopen(
     if (mp->entry == NULL) {
 	free(mp->name);
 	free(mp);
-	errvalid++;
+	errvalid = true;
 	strcpy(errbuf, "dlopen: ");
 	strcat(errbuf, path);
 	strcat(errbuf, ": ");
@@ -179,7 +179,7 @@ dlopen(
     if (loadbind(0, mainModule, mp->entry) == -1) {
     loadbindFailure:
 	dlclose(mp);
-	errvalid++;
+	errvalid = true;
 	strcpy(errbuf, "loadbind: ");
 	strcat(errbuf, strerror(errno));
 	return NULL;
@@ -214,7 +214,7 @@ dlopen(
 	    mp->info->init();
 	}
     } else {
-	errvalid = 0;
+	errvalid = false;
     }
 
     /*
@@ -228,7 +228,7 @@ dlopen(
 	    mp->cdtors++;
 	}
     } else {
-	errvalid = 0;
+	errvalid = false;
     }
 
     return (void *)mp;
@@ -297,7 +297,7 @@ dlsym(
 	}
     }
 
-    errvalid++;
+    errvalid = true;
     strcpy(errbuf, "dlsym: undefined symbol ");
     strcat(errbuf, symbol);
     return NULL;
@@ -307,7 +307,7 @@ char *
 dlerror(void)
 {
     if (errvalid) {
-	errvalid = 0;
+	errvalid = false;
 	return errbuf;
     }
     return NULL;
@@ -338,7 +338,7 @@ dlclose(
 
     result = unload(mp->entry);
     if (result == -1) {
-	errvalid++;
+	errvalid = true;
 	strcpy(errbuf, strerror(errno));
     }
 
@@ -412,7 +412,7 @@ readExports(
 	 * Search for the loaded module using L_GETINFO.
 	 */
 
-	while (1) {
+	while (true) {
 	    size += 4 * 1024;
 	    buf = malloc(size);
 	    if (buf == NULL) {
@@ -559,7 +559,7 @@ readExports(
      */
 
   error:
-    errvalid++;
+    errvalid = true;
     strcpy(errbuf, "readExports: ");
     strcat(errbuf, errMsg);
 
@@ -615,7 +615,7 @@ findMain(void)
     return ret;
 
   error:
-    errvalid++;
+    errvalid = true;
     strcpy(errbuf, "findMain: ");
     strcat(errbuf, strerror(errno));
     return NULL;

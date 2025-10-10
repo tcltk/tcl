@@ -205,7 +205,7 @@ static const double pow_10_2_n[] = {	/* Inexact higher powers of ten. */
     1.0e+256
 };
 
-static int n770_fp;		/* Flag is 1 on Nokia N770 floating point.
+static bool n770_fp;		/* Flag is true on Nokia N770 floating point.
 				 * Nokia's floating point has the words
 				 * reversed: if big-endian is 7654 3210,
 				 * and little-endian is       0123 4567,
@@ -295,8 +295,8 @@ static const Tcl_WideUInt wuipow5[] = {
  * Static functions defined in this file.
  */
 
-static int		AccumulateDecimalDigit(unsigned, int,
-			    Tcl_WideUInt *, mp_int *, int);
+static bool		AccumulateDecimalDigit(unsigned, int,
+			    Tcl_WideUInt *, mp_int *, bool);
 static double		MakeHighPrecisionDouble(int signum,
 			    mp_int *significand, int nSigDigs, int exponent);
 static double		MakeLowPrecisionDouble(int signum,
@@ -316,7 +316,7 @@ static void		TakeAbsoluteValue(Double *, int *);
 static char *		FormatInfAndNaN(Double *, int *, char **);
 static char *		FormatZero(int *, char **);
 static int		ApproximateLog10(Tcl_WideUInt, int, int);
-static int		BetterLog10(double, int, int *);
+static int		BetterLog10(double, int, bool *);
 static void		ComputeScale(int, int, int *, int *, int *, int *);
 static void		SetPrecisionLimits(int, int, int *, int *, int *,
 			    int *);
@@ -326,7 +326,7 @@ static char *		ShorteningQuickFormat(double, int, int, double,
 			    char *, int *);
 static char *		StrictQuickFormat(double, int, int, double,
 			    char *, int *);
-static char *		QuickConversion(double, int, int, int, int, int, int,
+static char *		QuickConversion(double, int, bool, int, int, int, int,
 			    int *, char **);
 static void		CastOutPowersOf2(int *, int *, int *);
 static char *		ShorteningInt64Conversion(Double *, Tcl_WideUInt,
@@ -335,9 +335,9 @@ static char *		ShorteningInt64Conversion(Double *, Tcl_WideUInt,
 static char *		StrictInt64Conversion(Tcl_WideUInt,
 			    int, int, int, int, int, int,
 			    int, int, int *, char **);
-static int		ShouldBankerRoundUpPowD(mp_int *, int, int);
-static int		ShouldBankerRoundUpToNextPowD(mp_int *, mp_int *,
-			    int, int, mp_int *);
+static bool		ShouldBankerRoundUpPowD(mp_int *, int, bool);
+static bool		ShouldBankerRoundUpToNextPowD(mp_int *, mp_int *,
+			    int, bool, mp_int *);
 static char *		ShorteningBignumConversionPowD(Double *dPtr,
 			    Tcl_WideUInt bw, int b2, int b5,
 			    int m2plus, int m2minus, int m5,
@@ -349,9 +349,9 @@ static char *		StrictBignumConversionPowD(
 			    int sd, int k, int len,
 			    int ilim, int ilim1, int *decpt,
 			    char **endPtr);
-static int		ShouldBankerRoundUp(mp_int *, mp_int *, int);
-static int		ShouldBankerRoundUpToNext(mp_int *, mp_int *,
-			    mp_int *, int);
+static bool		ShouldBankerRoundUp(mp_int *, mp_int *, bool);
+static bool		ShouldBankerRoundUpToNext(mp_int *, mp_int *,
+			    mp_int *, bool);
 static char *		ShorteningBignumConversion(Double *dPtr,
 			    Tcl_WideUInt bw, int b2,
 			    int m2plus, int m2minus,
@@ -508,7 +508,7 @@ TclParseNumber(
 				 * no overflow). */
     mp_int significandBig;	/* Significand of the number being parsed (if
 				 * it overflows significandWide). */
-    int significandOverflow = 0;/* Flag==1 iff significandBig is used. */
+    bool significandOverflow = false;/* True iff significandBig is used. */
     Tcl_WideUInt octalSignificandWide = 0;
 				/* Significand of an octal number; needed
 				 * because we don't know whether a number with
@@ -516,8 +516,8 @@ TclParseNumber(
 				 * we've scanned forward to a '.' or 'e'. */
     mp_int octalSignificandBig;	/* Significand of octal number once
 				 * octalSignificandWide overflows. */
-    int octalSignificandOverflow = 0;
-				/* Flag==1 if octalSignificandBig is used. */
+    bool octalSignificandOverflow = false;
+				/* Flag if octalSignificandBig is used. */
     int numSigDigs = 0;		/* Number of significant digits in the decimal
 				 * significand. */
     int numTrailZeros = 0;	/* Number of trailing zeroes at the current
@@ -564,7 +564,7 @@ TclParseNumber(
     len = numBytes;
     acceptPoint = p;
     acceptLen = len;
-    while (1) {
+    while (true) {
 	char c = len ? *p : '\0';
 
 	/*
@@ -791,7 +791,7 @@ TclParseNumber(
 					CHAR_BIT*sizeof(Tcl_WideUInt))
 				|| (octalSignificandWide >
 					(UWIDE_MAX >> shift)))) {
-			    octalSignificandOverflow = 1;
+			    octalSignificandOverflow = true;
 			    err = mp_init_u64(&octalSignificandBig,
 				    octalSignificandWide);
 			}
@@ -872,7 +872,7 @@ TclParseNumber(
 		    if (significandWide != 0 &&
 			    ((size_t)shift >= CHAR_BIT*sizeof(Tcl_WideUInt) ||
 			    significandWide > (UWIDE_MAX >> shift))) {
-			significandOverflow = 1;
+			significandOverflow = true;
 			err = mp_init_u64(&significandBig,
 				significandWide);
 		    }
@@ -929,7 +929,7 @@ TclParseNumber(
 		    if (significandWide != 0 &&
 			    ((size_t)shift >= CHAR_BIT*sizeof(Tcl_WideUInt) ||
 			    significandWide > (UWIDE_MAX >> shift))) {
-			significandOverflow = 1;
+			significandOverflow = true;
 			err = mp_init_u64(&significandBig,
 				significandWide);
 		    }
@@ -1290,7 +1290,7 @@ TclParseNumber(
 	    if (!significandOverflow && significandWide != 0 &&
 		    ((size_t)shift >= CHAR_BIT*sizeof(Tcl_WideUInt) ||
 		    significandWide > (MOST_BITS + signum) >> shift)) {
-		significandOverflow = 1;
+		significandOverflow = true;
 		err = mp_init_u64(&significandBig, significandWide);
 	    }
 	    if (shift) {
@@ -1322,7 +1322,7 @@ TclParseNumber(
 	    if (!significandOverflow && significandWide !=0 &&
 		    ((size_t)shift >= CHAR_BIT*sizeof(Tcl_WideUInt) ||
 		    significandWide > (MOST_BITS + signum) >> shift)) {
-		significandOverflow = 1;
+		significandOverflow = true;
 		err = mp_init_u64(&significandBig, significandWide);
 	    }
 	    if (shift) {
@@ -1354,7 +1354,7 @@ TclParseNumber(
 	    if (!octalSignificandOverflow && octalSignificandWide != 0 &&
 		    ((size_t)shift >= CHAR_BIT*sizeof(Tcl_WideUInt) ||
 		    octalSignificandWide > (MOST_BITS + signum) >> shift)) {
-		octalSignificandOverflow = 1;
+		octalSignificandOverflow = true;
 		err = mp_init_u64(&octalSignificandBig,
 			octalSignificandWide);
 	    }
@@ -1378,7 +1378,7 @@ TclParseNumber(
 		if ((err == MP_OKAY) && (octalSignificandWide > (MOST_BITS + signum))) {
 		    err = mp_init_u64(&octalSignificandBig,
 			    octalSignificandWide);
-		    octalSignificandOverflow = 1;
+		    octalSignificandOverflow = true;
 		} else {
 		    objPtr->typePtr = &tclIntType;
 		    if (signum) {
@@ -1406,7 +1406,7 @@ TclParseNumber(
 	    significandOverflow = AccumulateDecimalDigit(0, numTrailZeros-1,
 		    &significandWide, &significandBig, significandOverflow);
 	    if ((err == MP_OKAY) && !significandOverflow && (significandWide > MOST_BITS+signum)) {
-		significandOverflow = 1;
+		significandOverflow = true;
 		err = mp_init_u64(&significandBig, significandWide);
 	    }
 	returnInteger:
@@ -1414,7 +1414,7 @@ TclParseNumber(
 		if ((err == MP_OKAY) && (significandWide > MOST_BITS+signum)) {
 		    err = mp_init_u64(&significandBig,
 			    significandWide);
-		    significandOverflow = 1;
+		    significandOverflow = true;
 		} else {
 		    objPtr->typePtr = &tclIntType;
 		    if (signum) {
@@ -1563,8 +1563,8 @@ formaterr:
  *	Consume a decimal digit in a number being scanned.
  *
  * Results:
- *	Returns 1 if the number has overflowed to a bignum, 0 if it still fits
- *	in a wide integer.
+ *	Returns true if the number has overflowed to a bignum, false if it
+ *	still fits in a wide integer.
  *
  * Side effects:
  *	Updates either the wide or bignum representation.
@@ -1572,7 +1572,7 @@ formaterr:
  *----------------------------------------------------------------------
  */
 
-static int
+static bool
 AccumulateDecimalDigit(
     unsigned digit,		/* Digit being scanned. */
     int numZeros,		/* Count of zero digits preceding the digit
@@ -1581,7 +1581,7 @@ AccumulateDecimalDigit(
 				 * wide integer. */
     mp_int *bignumRepPtr,	/* Representation of the partial number as a
 				 * bignum. */
-    int bignumFlag)		/* Flag == 1 if the number overflowed previous
+    bool bignumFlag)		/* True if the number overflowed previous
 				 * to this digit. */
 {
     int i, n;
@@ -1599,7 +1599,7 @@ AccumulateDecimalDigit(
 	     */
 
 	    *wideRepPtr = digit;
-	    return 0;
+	    return false;
 	} else if (numZeros >= maxpow10_wide
 		|| w > (UWIDE_MAX-digit)/pow10_wide[numZeros+1]) {
 	    /*
@@ -1608,7 +1608,7 @@ AccumulateDecimalDigit(
 	     */
 
 	    if (mp_init_u64(bignumRepPtr, w) != MP_OKAY) {
-		return 0;
+		return false;
 	    }
 	} else {
 	    /*
@@ -1616,7 +1616,7 @@ AccumulateDecimalDigit(
 	     */
 
 	    *wideRepPtr = w * pow10_wide[numZeros+1] + digit;
-	    return 0;
+	    return false;
 	}
     }
 
@@ -1631,8 +1631,9 @@ AccumulateDecimalDigit(
 
 	if ((mp_mul_d(bignumRepPtr, (mp_digit) pow10_wide[numZeros+1],
 		bignumRepPtr) != MP_OKAY)
-		|| (mp_add_d(bignumRepPtr, (mp_digit) digit, bignumRepPtr) != MP_OKAY))
-	return 0;
+		|| (mp_add_d(bignumRepPtr, (mp_digit) digit, bignumRepPtr) != MP_OKAY)) {
+	    return false;
+	}
     } else {
 	mp_err err;
 	/*
@@ -1658,11 +1659,11 @@ AccumulateDecimalDigit(
 	if ((err != MP_OKAY)
 		|| (mp_mul_2d(bignumRepPtr, (int)(numZeros+1)&~0x7, bignumRepPtr) != MP_OKAY)
 		|| (mp_add_d(bignumRepPtr, (mp_digit) digit, bignumRepPtr) != MP_OKAY)) {
-	    return 0;
+	    return false;
 	}
     }
 
-    return 1;
+    return true;
 }
 
 /*
@@ -2581,7 +2582,7 @@ BetterLog10(
     double d,			/* Original number to format. */
     int k,			/* Characteristic(Log base 10) of the
 				 * number. */
-    int *k_check)		/* Flag == 1 if k is inexact. */
+    bool *k_check)		/* Flag if k is inexact. */
 {
     /*
      * Performance hack. If k is in the range 0..TEN_PMAX, then we can use a
@@ -2592,9 +2593,9 @@ BetterLog10(
 	if (d < tens[k]) {
 	    k--;
 	}
-	*k_check = 0;
+	*k_check = false;
     } else {
-	*k_check = 1;
+	*k_check = true;
     }
     return k;
 }
@@ -2996,7 +2997,7 @@ static inline char *
 QuickConversion(
     double e,			/* Number to format. */
     int k,			/* floor(log10(d)), approximately. */
-    int k_check,		/* 0 if k is exact, 1 if it may be too high */
+    bool k_check,		/* false if k is exact, true if it may be too high */
     int flags,			/* Flags passed to dtoa:
 				 *    TCL_DD_SHORTEST */
     int len,			/* Length of the return value. */
@@ -3407,30 +3408,30 @@ StrictInt64Conversion(
  *	2**MP_DIGIT_BIT.
  *
  * Results:
- *	Returns 1 iff the fraction is more than 1/2, or if the fraction is
+ *	Returns true iff the fraction is more than 1/2, or if the fraction is
  *	exactly 1/2 and the digit is odd.
  *
  *----------------------------------------------------------------------
  */
 
-static inline int
+static inline bool
 ShouldBankerRoundUpPowD(
     mp_int *b,			/* Numerator of the fraction. */
     int sd,			/* Denominator is 2**(sd*MP_DIGIT_BIT). */
-    int isodd)			/* 1 if the digit is odd, 0 if even. */
+    bool isodd)			/* True if the digit is odd. */
 {
     int i;
     static const mp_digit topbit = ((mp_digit)1) << (MP_DIGIT_BIT - 1);
 
     if (b->used < sd || (b->dp[sd-1] & topbit) == 0) {
-	return 0;
+	return false;
     }
     if (b->dp[sd-1] != topbit) {
-	return 1;
+	return true;
     }
     for (i = sd-2; i >= 0; --i) {
 	if (b->dp[i] != 0) {
-	    return 1;
+	    return true;
 	}
     }
     return isodd;
@@ -3445,18 +3446,18 @@ ShouldBankerRoundUpPowD(
  *	a power of 2**MP_DIGIT" case.
  *
  * Results:
- *	Returns 1 if the rounding will be performed - which increases the
- *	digit by one - and 0 otherwise.
+ *	Returns true if the rounding will be performed - which increases the
+ *	digit by one - and false otherwise.
  *
  *----------------------------------------------------------------------
  */
 
-static inline int
+static inline bool
 ShouldBankerRoundUpToNextPowD(
     mp_int *b,			/* Numerator of the fraction. */
     mp_int *m,			/* Numerator of the rounding tolerance. */
     int sd,			/* Common denominator is 2**(sd*MP_DIGIT_BIT). */
-    int isodd,			/* 1 if the integer significand is odd. */
+    bool isodd,			/* True if the integer significand is odd. */
     mp_int *temp)		/* Work area for the calculation. */
 {
     int i;
@@ -3469,16 +3470,16 @@ ShouldBankerRoundUpToNextPowD(
 
     if ((mp_add(b, m, temp) != MP_OKAY) || (temp->used <= sd)) {
 	/* Too few digits to be > s */
-	return 0;
+	return false;
     }
     if (temp->used > sd+1 || temp->dp[sd] > 1) {
 				/* >= 2s */
-	return 1;
+	return true;
     }
     for (i = sd-1; i >= 0; --i) {
 				/* Check for ==s */
 	if (temp->dp[i] != 0) {	/* > s */
-	    return 1;
+	    return true;
 	}
     }
     return isodd;
@@ -3832,17 +3833,17 @@ StrictBignumConversionPowD(
  *	bignum-based floating point conversion.
  *
  * Results:
- *	Returns 1 if the number needs to be rounded up, 0 otherwise.
+ *	Returns true if the number needs to be rounded up, false otherwise.
  *
  *----------------------------------------------------------------------
  */
 
-static inline int
+static inline bool
 ShouldBankerRoundUp(
     mp_int *twor,		/* 2x the remainder from thd division that
 				 * produced the last digit. */
     mp_int *S,			/* Denominator. */
-    int isodd)			/* Flag == 1 if the last digit is odd. */
+    bool isodd)			/* Flag if the last digit is odd. */
 {
     int r = mp_cmp_mag(twor, S);
 
@@ -3850,9 +3851,9 @@ ShouldBankerRoundUp(
     case MP_EQ:
 	return isodd;
     case MP_GT:
-	return 1;
+	return true;
     default:
-	return 0;
+	return false;
     }
 }
 
@@ -3865,18 +3866,18 @@ ShouldBankerRoundUp(
  *	next higher digit.
  *
  * Results:
- *	Returns 1 if the number should be rounded up, 0 otherwise.
+ *	Returns true if the number should be rounded up, false otherwise.
  *
  *----------------------------------------------------------------------
  */
 
-static inline int
+static inline bool
 ShouldBankerRoundUpToNext(
     mp_int *b,			/* Remainder from the division that produced
 				 * the last digit. */
     mp_int *m,			/* Numerator of the rounding tolerance. */
     mp_int *S,			/* Denominator. */
-    int isodd)			/* 1 if the integer significand is odd. */
+    bool isodd)			/* Flag if the integer significand is odd. */
 {
     int r;
     mp_int temp;
@@ -3886,7 +3887,7 @@ ShouldBankerRoundUpToNext(
      */
 
     if ((mp_init(&temp) != MP_OKAY) || (mp_add(b, m, &temp) != MP_OKAY)) {
-	return 0;
+	return false;
     }
     r = mp_cmp_mag(&temp, S);
     mp_clear(&temp);
@@ -3894,9 +3895,9 @@ ShouldBankerRoundUpToNext(
     case MP_EQ:
 	return isodd;
     case MP_GT:
-	return 1;
+	return true;
     default:
-	return 0;
+	return false;
     }
 }
 
@@ -4390,10 +4391,9 @@ TclDoubleDigits(
     Tcl_WideUInt bw;		/* Integer significand. */
     int be;			/* Power of 2 by which b must be multiplied */
     int bbits;			/* Number of bits needed to represent b. */
-    int denorm;			/* Flag == 1 iff the input number was
-				 * denormalized. */
+    bool denorm;		/* Whether the input number was denormalized. */
     int k;			/* Estimate of floor(log10(d)). */
-    int k_check;		/* Flag == 1 if d is near enough to a power of
+    bool k_check;		/* Flag if d is near enough to a power of
 				 * ten that k must be checked. */
     int b2, b5, s2, s5;		/* Powers of 2 and 5 in the numerator and
 				 * denominator of intermediate results. */
@@ -4437,8 +4437,9 @@ TclDoubleDigits(
      *	  d is the number to convert.
      *    bw are significand and exponent: d == bw*2**be,
      *    bbits is the length of bw: 2**bbits-1 <= bw < 2**bbits
-     *	  k is either ceil(log10(d)) or ceil(log10(d))+1. k_check is 0 if we
-     *      know that k is exactly ceil(log10(d)) and 1 if we need to check.
+     *	  k is either ceil(log10(d)) or ceil(log10(d))+1. k_check is false if
+     *      we know that k is exactly ceil(log10(d)) and true if we need to
+     *      check.
      *    We want a rational number
      *      r = b * 10**(1-k) = bw * 2**b2 * 5**b5 / (2**s2 / 5**s5),
      *    with b2, b5, s2, s5 >= 0.  Note that the most significant decimal
@@ -4756,9 +4757,9 @@ TclInitDoubleConversion(void)
     bitwhack.dv = 1.000000238418579;
 				/* 3ff0 0000 4000 0000 */
     if ((bitwhack.iv >> 32) == 0x3FF00000) {
-	n770_fp = 0;
+	n770_fp = false;
     } else if ((bitwhack.iv & 0xFFFFFFFF) == 0x3FF00000) {
-	n770_fp = 1;
+	n770_fp = true;
     } else {
 	Tcl_Panic("unknown floating point word order on this machine");
     }
@@ -5016,7 +5017,8 @@ TclCeil(
 	if (bits > DBL_MAX_EXP*log2FLT_RADIX) {
 	    r = HUGE_VAL;
 	} else {
-	    int i, exact = 1, shift = mantBits - bits;
+	    int i, shift = mantBits - bits;
+	    bool exact = true;
 
 	    if (err != MP_OKAY) {
 		/* just skip */

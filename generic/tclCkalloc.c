@@ -167,7 +167,7 @@ TclDumpMemoryInfo(
     char buf[1024];
 
     if (clientData == NULL) {
-	return 0;
+	return false;
     }
     snprintf(buf, sizeof(buf),
 	    "total mallocs             %10" TCL_Z_MODIFIER "u\n"
@@ -188,7 +188,7 @@ TclDumpMemoryInfo(
 	/* Assume objPtr to append to */
 	Tcl_AppendToObj((Tcl_Obj *) clientData, buf, -1);
     }
-    return 1;
+    return true;
 }
 
 /*
@@ -1222,7 +1222,7 @@ TclDumpMemoryInfo(
     TCL_UNUSED(void *),
     TCL_UNUSED(int) /*flags*/)
 {
-    return 1;
+    return true;
 }
 
 #endif	/* TCL_MEM_DEBUG */

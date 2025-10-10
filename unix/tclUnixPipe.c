@@ -1345,7 +1345,7 @@ Tcl_WaitPid(
     int result;
     pid_t real_pid = (pid_t) PTR2INT(pid);
 
-    while (1) {
+    while (true) {
 	result = (int) waitpid(real_pid, statPtr, options);
 	if ((result != -1) || (errno != EINTR)) {
 	    return (Tcl_Pid)INT2PTR(result);

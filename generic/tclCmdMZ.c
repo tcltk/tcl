@@ -304,7 +304,7 @@ Tcl_RegexpObjCmd(
      * loop when the starting offset is past the end of the string.
      */
 
-    while (1) {
+    while (true) {
 	/*
 	 * Pass either 0 or TCL_REG_NOTBOL in the eflags. Passing
 	 * TCL_REG_NOTBOL indicates that the character at offset should not be
@@ -4431,7 +4431,7 @@ Tcl_TimeRateObjCmd(
      */
 
     if (maxcnt > 0) {
-	while (1) {
+	while (true) {
 	    /*
 	     * Evaluate a single iteration.
 	     */

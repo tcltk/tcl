@@ -25,7 +25,7 @@ static void		FreeFsPathInternalRep(Tcl_Obj *pathPtr);
 static void		UpdateStringOfFsPath(Tcl_Obj *pathPtr);
 static int		SetFsPathFromAny(Tcl_Interp *interp, Tcl_Obj *pathPtr);
 static Tcl_Size		FindSplitPos(const char *path, int separator);
-static int		IsSeparatorOrNull(int ch);
+static bool		IsSeparatorOrNull(int ch);
 static Tcl_Obj *	GetExtension(Tcl_Obj *pathPtr);
 static int		MakePathFromNormalized(Tcl_Interp *interp,
 			    Tcl_Obj *pathPtr);
@@ -97,7 +97,7 @@ enum FsPathFlags {
 	ir.twoPtrValue.ptr1 = (void *) (fsPathPtr);			\
 	ir.twoPtrValue.ptr2 = NULL;					\
 	Tcl_StoreInternalRep((pathPtr), &fsPathType, &ir);		\
-    } while (0)
+    } while (false)
 #define PATHFLAGS(pathPtr) (PATHOBJ(pathPtr)->flags)
 
 /*
@@ -141,7 +141,7 @@ TclFSNormalizeAbsolutePath(
     Tcl_Obj *pathPtr)		/* Absolute path to normalize */
 {
     const char *dirSep, *oldDirSep;
-    int first = 1;		/* Set to zero once we've passed the first
+    bool first = true;		/* Set to false once we've passed the first
 				 * directory separator - we can't use '..' to
 				 * remove the volume in a path. */
     Tcl_Obj *retVal = NULL;
@@ -364,7 +364,7 @@ TclFSNormalizeAbsolutePath(
 		continue;
 	    }
 	}
-	first = 0;
+	first = false;
 	if (retVal != NULL) {
 	    Tcl_AppendToObj(retVal, oldDirSep, dirSep - oldDirSep);
 	}
@@ -402,16 +402,16 @@ TclFSNormalizeAbsolutePath(
      * Likewise for zipfs volumes.
      */
     if (zipVolumeLen || (tclPlatform == TCL_PLATFORM_WINDOWS)) {
-	int needTrailingSlash = 0;
+	bool needTrailingSlash = false;
 	Tcl_Size len;
 	const char *path = TclGetStringFromObj(retVal, &len);
 	if (zipVolumeLen) {
 	    if (len == (zipVolumeLen - 1)) {
-		needTrailingSlash = 1;
+		needTrailingSlash = true;
 	    }
 	} else {
 	    if (len == 2 && path[0] != 0 && path[1] == ':') {
-		needTrailingSlash = 1;
+		needTrailingSlash = true;
 	    }
 	}
 	if (needTrailingSlash) {
@@ -1066,7 +1066,7 @@ TclJoinPath(
 	    TclpNativeJoinPath(res, strElt);
 	} else {
 	    char separator = '/';
-	    int needsSep = 0;
+	    bool needsSep = false;
 
 	    if (fsPtr->filesystemSeparatorProc != NULL) {
 		Tcl_Obj *sep = fsPtr->filesystemSeparatorProc(res);
@@ -1102,7 +1102,7 @@ TclJoinPath(
 		    }
 		} else {
 		    *ptr++ = *strElt;
-		    needsSep = 1;
+		    needsSep = true;
 		}
 	    }
 	    length = ptr - TclGetString(res);
@@ -1167,20 +1167,20 @@ Tcl_FSConvertToPathType(
  * Helper function for normalization.
  */
 
-static int
+static bool
 IsSeparatorOrNull(
     int ch)
 {
     if (ch == 0) {
-	return 1;
+	return true;
     }
     switch (tclPlatform) {
     case TCL_PLATFORM_UNIX:
-	return (ch == '/' ? 1 : 0);
+	return ch == '/';
     case TCL_PLATFORM_WINDOWS:
-	return ((ch == '/' || ch == '\\') ? 1 : 0);
+	return (ch == '/') || (ch == '\\');
     }
-    return 0;
+    return false;
 }
 
 /*
@@ -2143,16 +2143,16 @@ Tcl_FSEqualPaths(
     int tempErrno;
 
     if (firstPtr == secondPtr) {
-	return 1;
+	return true;
     }
 
     if (firstPtr == NULL || secondPtr == NULL) {
-	return 0;
+	return false;
     }
     firstStr = TclGetStringFromObj(firstPtr, &firstLen);
     secondStr = TclGetStringFromObj(secondPtr, &secondLen);
     if ((firstLen == secondLen) && !memcmp(firstStr, secondStr, firstLen)) {
-	return 1;
+	return true;
     }
 
     /*
@@ -2166,7 +2166,7 @@ Tcl_FSEqualPaths(
     Tcl_SetErrno(tempErrno);
 
     if (firstPtr == NULL || secondPtr == NULL) {
-	return 0;
+	return false;
     }
 
     firstStr = TclGetStringFromObj(firstPtr, &firstLen);

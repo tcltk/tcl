@@ -282,14 +282,14 @@ static const Tcl_ObjType encodingType = {
 	ir.twoPtrValue.ptr1 = (encoding);				\
 	ir.twoPtrValue.ptr2 = NULL;					\
 	Tcl_StoreInternalRep((objPtr), &encodingType, &ir);		\
-    } while (0)
+    } while (false)
 
 #define EncodingGetInternalRep(objPtr, encoding) \
     do {								\
 	const Tcl_ObjInternalRep *irPtr;				\
 	irPtr = TclFetchInternalRep ((objPtr), &encodingType);		\
 	(encoding) = irPtr ? (Tcl_Encoding)irPtr->twoPtrValue.ptr1 : NULL; \
-    } while (0)
+    } while (false)
 
 /*
  *----------------------------------------------------------------------
@@ -1216,7 +1216,7 @@ Tcl_ExternalToUtfDStringEx(
 	flags |= ENCODING_INPUT;
     }
 
-    while (1) {
+    while (true) {
 	int srcChunkLen, srcChunkRead;
 	int dstChunkLen, dstChunkWrote, dstChunkChars;
 
@@ -1398,7 +1398,7 @@ Tcl_ExternalToUtf(
     if (encodingPtr->toUtfProc == UtfToUtfProc) {
 	flags |= ENCODING_INPUT;
     }
-    do {
+    while (true) {
 	Tcl_EncodingState savedState = *statePtr;
 
 	result = encodingPtr->toUtfProc(encodingPtr->clientData, src, srcLen,
@@ -1409,7 +1409,7 @@ Tcl_ExternalToUtf(
 	}
 	dstLen = Tcl_UtfAtIndex(dst, maxChars) - dst + (TCL_UTF_MAX - 1);
 	*statePtr = savedState;
-    } while (1);
+    }
     if (!noTerminate) {
 	/* ...and then append it */
 
@@ -1531,7 +1531,7 @@ Tcl_UtfToExternalDStringEx(
 
     flags &= ~TCL_ENCODING_END;
     flags |= TCL_ENCODING_START;
-    while (1) {
+    while (true) {
 	int srcChunkLen, srcChunkRead;
 	int dstChunkLen, dstChunkWrote, dstChunkChars;
 
@@ -1888,7 +1888,7 @@ LoadEncodingFile(
 
     Tcl_SetChannelOption(NULL, chan, "-encoding", "utf-8");
 
-    while (1) {
+    while (true) {
 	Tcl_DString ds;
 
 	Tcl_DStringInit(&ds);
@@ -2265,7 +2265,7 @@ LoadEscapeEncoding(
     final[0] = '\0';
     Tcl_DStringInit(&escapeData);
 
-    while (1) {
+    while (true) {
 	Tcl_Size argc;
 	const char **argv;
 	char *line;
@@ -2510,7 +2510,7 @@ UtfToUtfProc(
 	assert(!PROFILE_STRICT(profile));				\
 	dst += Tcl_UniCharToUtf(high, dst);				\
 	*statePtr = 0; /* Reset state */				\
-    } while (0)
+    } while (false)
 
     /*
      * Macro to check for isolated surrogate and either break with

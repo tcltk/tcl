@@ -50,7 +50,7 @@ static const Tcl_ObjType instNameType = {
 	Tcl_ObjInternalRep ir;						\
 	ir.wideValue = (inst);						\
 	Tcl_StoreInternalRep((objPtr), &instNameType, &ir);		\
-    } while (0)
+    } while (false)
 
 #define InstNameGetInternalRep(objPtr, inst) \
     do {								\
@@ -58,7 +58,7 @@ static const Tcl_ObjType instNameType = {
 	irPtr = TclFetchInternalRep((objPtr), &instNameType);		\
 	assert(irPtr != NULL);						\
 	(inst) = irPtr->wideValue;					\
-    } while (0)
+    } while (false)
 
 /*
  *----------------------------------------------------------------------

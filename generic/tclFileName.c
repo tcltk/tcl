@@ -29,7 +29,7 @@ TclPlatformType tclPlatform = TCL_PLATFORM_UNIX;
 static const char *	ExtractWinRoot(const char *path,
 			    Tcl_DString *resultPtr, int offset,
 			    Tcl_PathType *typePtr);
-static int		SkipToChar(char **stringPtr, int match);
+static bool		SkipToChar(char **stringPtr, int match);
 static Tcl_Obj *	SplitWinPath(const char *path);
 static Tcl_Obj *	SplitUnixPath(const char *path);
 static int		DoGlob(Tcl_Interp *interp, Tcl_Obj *resultPtr,
@@ -806,7 +806,7 @@ TclpNativeJoinPath(
     Tcl_Obj *prefix,
     const char *joining)
 {
-    int needsSep;
+    bool needsSep;
     Tcl_Size length;
     char *dest;
     const char *p;
@@ -842,7 +842,7 @@ TclpNativeJoinPath(
 	    Tcl_AppendToObj(prefix, "/", 1);
 	    (void)TclGetStringFromObj(prefix, &length);
 	}
-	needsSep = 0;
+	needsSep = false;
 
 	/*
 	 * Append the element, eliminating duplicate and trailing slashes.
@@ -861,7 +861,7 @@ TclpNativeJoinPath(
 		}
 	    } else {
 		*dest++ = *p;
-		needsSep = 1;
+		needsSep = true;
 	    }
 	}
 	length = dest - TclGetString(prefix);
@@ -878,7 +878,7 @@ TclpNativeJoinPath(
 	    Tcl_AppendToObj(prefix, "/", 1);
 	    (void)TclGetStringFromObj(prefix, &length);
 	}
-	needsSep = 0;
+	needsSep = false;
 
 	/*
 	 * Append the element, eliminating duplicate and trailing slashes.
@@ -896,7 +896,7 @@ TclpNativeJoinPath(
 		}
 	    } else {
 		*dest++ = *p;
-		needsSep = 1;
+		needsSep = true;
 	    }
 	}
 	length = dest - TclGetString(prefix);
@@ -1117,7 +1117,8 @@ Tcl_GlobObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int i, globFlags, join, dir, result;
+    int i, globFlags, dir, result;
+    bool join;
     Tcl_Size length;
     char *string;
     const char *separators;
@@ -1136,7 +1137,7 @@ Tcl_GlobObjCmd(
     Tcl_GlobTypeData *globTypes = NULL;
 
     globFlags = 0;
-    join = 0;
+    join = false;
     dir = PATH_NONE;
     typePtr = NULL;
     for (i = 1; i < objc; i++) {
@@ -1191,7 +1192,7 @@ Tcl_GlobObjCmd(
 	    i++;
 	    break;
 	case GLOB_JOIN:				/* -join */
-	    join = 1;
+	    join = true;
 	    break;
 	case GLOB_TAILS:				/* -tails */
 	    globFlags |= TCL_GLOBMODE_TAILS;
@@ -1460,7 +1461,7 @@ Tcl_GlobObjCmd(
 			TclGetString(look)));
 		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "BAD", (char *)NULL);
 		result = TCL_ERROR;
-		join = 0;
+		join = false;
 		goto endOfGlob;
 
 	    badMacTypesArg:
@@ -1469,7 +1470,7 @@ Tcl_GlobObjCmd(
 			" to \"-types\" allowed", -1));
 		result = TCL_ERROR;
 		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "BAD", (char *)NULL);
-		join = 0;
+		join = false;
 		goto endOfGlob;
 	    }
 	}
@@ -1882,8 +1883,8 @@ TclGlob(
  *
  * Results:
  *	Updates stringPtr to point to the matching character, or to the end of
- *	the string if nothing matched. The return value is 1 if a match was
- *	found at the top level, otherwise it is 0.
+ *	the string if nothing matched. The return value is true if a match was
+ *	found at the top level, otherwise it is false.
  *
  * Side effects:
  *	None.
@@ -1891,36 +1892,37 @@ TclGlob(
  *----------------------------------------------------------------------
  */
 
-static int
+static bool
 SkipToChar(
     char **stringPtr,		/* Pointer string to check. */
     int match)			/* Character to find. */
 {
-    int quoted, level;
+    int level;
+    bool quoted;
     char *p;
 
-    quoted = 0;
+    quoted = false;
     level = 0;
 
     for (p = *stringPtr; *p != '\0'; p++) {
 	if (quoted) {
-	    quoted = 0;
+	    quoted = false;
 	    continue;
 	}
 	if ((level == 0) && (*p == match)) {
 	    *stringPtr = p;
-	    return 1;
+	    return true;
 	}
 	if (*p == '{') {
 	    level++;
 	} else if (*p == '}') {
 	    level--;
 	} else if (*p == '\\') {
-	    quoted = 1;
+	    quoted = true;
 	}
     }
     *stringPtr = p;
-    return 0;
+    return false;
 }
 
 /*
@@ -1969,7 +1971,8 @@ DoGlob(
 				 * types. May be NULL. */
 {
     Tcl_Size baseLength;
-    int quoted, result = TCL_OK;
+    int result = TCL_OK;
+    bool quoted;
     char *name, *p, *openBrace, *closeBrace, *firstSpecialChar;
     Tcl_Obj *joinedPtr;
 
@@ -2005,13 +2008,13 @@ DoGlob(
      */
 
     openBrace = closeBrace = NULL;
-    quoted = 0;
+    quoted = false;
     for (p = pattern; *p != '\0'; p++) {
 	if (quoted) {
-	    quoted = 0;
+	    quoted = false;
 
 	} else if (*p == '\\') {
-	    quoted = 1;
+	    quoted = true;
 	    if (strchr(separators, p[1]) != NULL) {
 		/*
 		 * Quoted directory separator.

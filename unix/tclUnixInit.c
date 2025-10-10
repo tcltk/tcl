@@ -769,7 +769,7 @@ TclpSetVariables(
 #elif !defined(NO_UNAME)
     struct utsname name;
 #endif
-    int unameOK;
+    bool unameOK;
     const char *p, *q;
     Tcl_Obj *pkgListObj = Tcl_NewObj();
 
@@ -856,9 +856,9 @@ TclpSetVariables(
     Tcl_SetVar2(interp, "tcl_platform", "platform", "unix", TCL_GLOBAL_ONLY);
 #endif
 
-    unameOK = 0;
+    unameOK = false;
 #ifdef __CYGWIN__
-	unameOK = 1;
+    unameOK = true;
     if (!osInfoInitialized) {
 	void *handle = GetModuleHandleW(L"NTDLL");
 	int(*getversion)(void *) =
@@ -889,7 +889,7 @@ TclpSetVariables(
 	const char *native;
 	Tcl_DString ds;
 
-	unameOK = 1;
+	unameOK = true;
 
 	native = Tcl_ExternalToUtfDString(NULL, name.sysname, TCL_INDEX_NONE, &ds);
 	Tcl_SetVar2(interp, "tcl_platform", "os", native, TCL_GLOBAL_ONLY);

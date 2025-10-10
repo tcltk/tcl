@@ -303,7 +303,7 @@ static int
 DetectEncoding(
     Tcl_Interp *interp,
     Tcl_Obj *objPtr,
-    int all)
+    bool all)
 {
     Tcl_Size len;
     const char *bytes;
@@ -453,7 +453,7 @@ static int
 IcuObjToUCharDString(
     Tcl_Interp *interp,
     Tcl_Obj *objPtr,
-    int strict,
+    bool strict,
     Tcl_DString *dsPtr)
 {
     Tcl_Encoding encoding;
@@ -504,7 +504,7 @@ static Tcl_Obj *
 IcuObjFromUCharDString(
     Tcl_Interp *interp,
     Tcl_DString *dsPtr,
-    int strict)
+    bool strict)
 {
     Tcl_Encoding encoding;
 
@@ -568,7 +568,7 @@ IcuDetectObjCmd(
 	return DetectableEncodings(interp);
     }
 
-    int all = 0;
+    bool all = false;
     if (objc == 3) {
 	if (strcmp("-all", Tcl_GetString(objv[2]))) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -576,7 +576,7 @@ IcuDetectObjCmd(
 		    Tcl_GetString(objv[2])));
 	    return TCL_ERROR;
 	}
-	all = 1;
+	all = true;
     }
 
     return DetectEncoding(interp, objv[1], all);
@@ -713,7 +713,7 @@ IcuConverttoDString(
     Tcl_Interp *interp,
     Tcl_DString *dsInPtr,	/* Input UTF16 */
     const char *icuEncName,
-    int strict,
+    bool strict,
     Tcl_DString *dsOutPtr)	/* Output encoded string. */
 {
     if (ucnv_open == NULL || ucnv_close == NULL ||
@@ -794,7 +794,7 @@ IcuBytesToUCharDString(
     const unsigned char *bytes,
     Tcl_Size nbytes,
     const char *icuEncName,
-    int strict,
+    bool strict,
     Tcl_DString *dsOutPtr)	/* Output UChar string. */
 {
     if (ucnv_open == NULL || ucnv_close == NULL ||
@@ -951,11 +951,12 @@ IcuNormalizeUCharDString(
 /*
  * Common function for parsing convert options.
  */
-static int IcuParseConvertOptions(
+static int
+IcuParseConvertOptions(
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[],
-    int *strictPtr,
+    bool *strictPtr,
     Tcl_Obj **failindexVarPtr)
 {
     if (objc < 3) {
@@ -969,7 +970,7 @@ static int IcuParseConvertOptions(
     static const char *optNames[] = {"-profile", "-failindex", NULL};
     enum { OPT_PROFILE, OPT_FAILINDEX } opt;
     int i;
-    int strict = 1;
+    bool strict = true;
     for (i = 1; i < objc; ++i) {
 	if (Tcl_GetIndexFromObj(
 		interp, objv[i], optNames, "option", 0, &opt) != TCL_OK) {
@@ -986,7 +987,7 @@ static int IcuParseConvertOptions(
 	switch (opt) {
 	case OPT_PROFILE:
 	    if (!strcmp(s, "replace")) {
-		strict = 0;
+		strict = false;
 	    } else if (strcmp(s, "strict")) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"Invalid value \"%s\" supplied for option"
@@ -1033,7 +1034,7 @@ IcuConvertfromObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int strict;
+    bool strict;
     Tcl_Obj *failindexVar;
 
     if (IcuParseConvertOptions(interp, objc, objv, &strict, &failindexVar) != TCL_OK) {
@@ -1084,7 +1085,7 @@ IcuConverttoObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int strict;
+    bool strict;
     Tcl_Obj *failindexVar;
 
     if (IcuParseConvertOptions(interp, objc, objv, &strict, &failindexVar) != TCL_OK) {
@@ -1138,7 +1139,7 @@ IcuNormalizeObjCmd(
     }
 
     int i;
-    int strict = 1;
+    bool strict = true;
     NormalizationMode mode = MODE_NFC;
     for (i = 1; i < objc - 1; ++i) {
 	if (Tcl_GetIndexFromObj(
@@ -1156,7 +1157,7 @@ IcuNormalizeObjCmd(
 	switch (opt) {
 	case OPT_PROFILE:
 	    if (!strcmp(s, "replace")) {
-		strict = 0;
+		strict = false;
 	    } else if (strcmp(s, "strict")) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"Invalid value \"%s\" supplied for option \"-profile\". "
@@ -1411,7 +1412,7 @@ TclIcuInit(
     do {								\
 	icu_fns._##name = (fn_##name)					\
 		IcuFindSymbol(icu_fns.libs[0], #name, icuversion);	\
-    } while (0)
+    } while (false)
 
 	if (icu_fns.libs[0] != NULL) {
 	    ICUUC_SYM(u_cleanup);
@@ -1458,7 +1459,7 @@ TclIcuInit(
     do {								\
 	icu_fns._##name = (fn_##name)					\
 		IcuFindSymbol(icu_fns.libs[1], #name, icuversion);	\
-    } while (0)
+    } while (false)
 
 	if (icu_fns.libs[1] != NULL) {
 	    ICUIN_SYM(ucsdet_close);

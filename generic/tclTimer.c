@@ -568,7 +568,7 @@ TimerHandlerEventProc(
     tsdPtr->timerPending = 0;
     currentTimerId = tsdPtr->lastTimerId;
     Tcl_GetTime(&time);
-    while (1) {
+    while (true) {
 	nextPtrPtr = &tsdPtr->firstTimerHandlerPtr;
 	timerHandlerPtr = tsdPtr->firstTimerHandlerPtr;
 	if (timerHandlerPtr == NULL) {

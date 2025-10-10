@@ -1715,9 +1715,9 @@ ClockScnToken_LocaleERA_Proc(
     }
 
     if (val & 1) {
-	yydate.isBce = 0;
+	yydate.isBce = false;
     } else {
-	yydate.isBce = 1;
+	yydate.isBce = true;
     }
 
     return TCL_OK;
@@ -1976,8 +1976,8 @@ ClockScnToken_StarDate_Proc(
     /* Build a date from year and fraction. */
 
     yydate.year = year + RODDENBERRY;
-    yydate.isBce = 0;
-    yydate.gregorian = 1;
+    yydate.isBce = false;
+    yydate.gregorian = true;
 
     if (TclIsGregorianLeapYear(&yydate)) {
 	fractYear *= 366;

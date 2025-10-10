@@ -1478,7 +1478,7 @@ TclInThreadExit(void)
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
 
     if (tsdPtr == NULL) {
-	return 0;
+	return false;
     }
     return tsdPtr->inExit;
 }

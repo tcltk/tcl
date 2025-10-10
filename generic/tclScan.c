@@ -48,7 +48,7 @@ typedef struct {
  */
 
 static const char *	BuildCharSet(CharSet *cset, const char *format);
-static int		CharInSet(CharSet *cset, int ch);
+static bool		CharInSet(CharSet *cset, int ch);
 static void		ReleaseCharSet(CharSet *cset);
 static int		ValidateFormat(Tcl_Interp *interp, const char *format,
 			    int numVars, int *totalVars);
@@ -173,7 +173,7 @@ BuildCharSet(
  *	Check to see if a character matches the given set.
  *
  * Results:
- *	Returns non-zero if the character matches the given set.
+ *	Returns true if the character matches the given set.
  *
  * Side effects:
  *	None.
@@ -181,25 +181,26 @@ BuildCharSet(
  *----------------------------------------------------------------------
  */
 
-static int
+static bool
 CharInSet(
     CharSet *cset,
     int c)			/* Character to test, passed as int because of
 				 * non-ANSI prototypes. */
 {
     Tcl_UniChar ch = (Tcl_UniChar) c;
-    int i, match = 0;
+    int i;
+    bool match = false;
 
     for (i = 0; i < cset->nchars; i++) {
 	if (cset->chars[i] == ch) {
-	    match = 1;
+	    match = true;
 	    break;
 	}
     }
     if (!match) {
 	for (i = 0; i < cset->nranges; i++) {
 	    if ((cset->ranges[i].start <= ch) && (ch <= cset->ranges[i].end)) {
-		match = 1;
+		match = true;
 		break;
 	    }
 	}
@@ -259,7 +260,8 @@ ValidateFormat(
     int *totalSubs)		/* The number of variables that will be
 				 * required. */
 {
-    int gotXpg, gotSequential, i, flags;
+    bool gotXpg, gotSequential;
+    int i, flags;
     char *end;
     Tcl_UniChar ch = 0;
     int objIndex, xpgSize, nspace = numVars;
@@ -280,7 +282,8 @@ ValidateFormat(
 	nassign[i] = 0;
     }
 
-    xpgSize = objIndex = gotXpg = gotSequential = 0;
+    xpgSize = objIndex = 0;
+    gotXpg = gotSequential = false;
 
     while (*format != '\0') {
 	format += TclUtfToUniChar(format, &ch);
@@ -314,7 +317,7 @@ ValidateFormat(
 	    }
 	    format = end+1;
 	    format += TclUtfToUniChar(format, &ch);
-	    gotXpg = 1;
+	    gotXpg = true;
 	    if (gotSequential) {
 		goto mixedXPG;
 	    }
@@ -338,7 +341,7 @@ ValidateFormat(
 	}
 
     notXpg:
-	gotSequential = 1;
+	gotSequential = true;
 	if (gotXpg) {
 	mixedXPG:
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
@@ -604,7 +607,7 @@ Tcl_ScanObjCmd(
     int value;
     const char *string, *end, *baseString;
     char op = 0;
-    int underflow = 0;
+    bool underflow = false;
     Tcl_Size width;
     Tcl_WideInt wideValue;
     Tcl_UniChar ch = 0, sch = 0;
@@ -675,7 +678,7 @@ Tcl_ScanObjCmd(
 	if (ch != '%') {
 	literal:
 	    if (*string == '\0') {
-		underflow = 1;
+		underflow = true;
 		goto done;
 	    }
 	    string += TclUtfToUniChar(string, &sch);
@@ -825,7 +828,7 @@ Tcl_ScanObjCmd(
 	 */
 
 	if (*string == '\0') {
-	    underflow = 1;
+	    underflow = true;
 	    goto done;
 	}
 
@@ -843,7 +846,7 @@ Tcl_ScanObjCmd(
 		string += offset;
 	    }
 	    if (*string == '\0') {
-		underflow = 1;
+		underflow = true;
 		goto done;
 	    }
 	}
@@ -946,11 +949,11 @@ Tcl_ScanObjCmd(
 		Tcl_DecrRefCount(objPtr);
 		if (width < 0) {
 		    if (*end == '\0') {
-			underflow = 1;
+			underflow = true;
 		    }
 		} else {
 		    if (end == string + width) {
-			underflow = 1;
+			underflow = true;
 		    }
 		}
 		goto done;
@@ -1049,11 +1052,11 @@ Tcl_ScanObjCmd(
 		Tcl_DecrRefCount(objPtr);
 		if (width < 0) {
 		    if (*end == '\0') {
-			underflow = 1;
+			underflow = true;
 		    }
 		} else {
 		    if (end == string + width) {
-			underflow = 1;
+			underflow = true;
 		    }
 		}
 		goto done;

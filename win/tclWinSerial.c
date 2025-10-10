@@ -89,8 +89,8 @@ typedef struct SerialInfo {
 				 * TCL_WRITABLE, or TCL_EXCEPTION: indicates
 				 * which events should be reported. */
     int flags;			/* State flags, see above for a list. */
-    int readable;		/* Flag that the channel is readable. */
-    int writable;		/* Flag that the channel is writable. */
+    bool readable;		/* Flag that the channel is readable. */
+    bool writable;		/* Flag that the channel is writable. */
     int blockTime;		/* Maximum blocktime in msec. */
     unsigned long long lastEventTime;
 				/* Time in milliseconds since last readable
@@ -419,7 +419,7 @@ SerialSetupProc(
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
     SerialInfo *infoPtr;
-    int block = 1;
+    bool block = true;
     int msec = INT_MAX;		/* min. found block time */
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
@@ -436,12 +436,12 @@ SerialSetupProc(
 	    infoPtr=infoPtr->nextPtr) {
 	if (infoPtr->watchMask & TCL_WRITABLE) {
 	    if (WaitForSingleObject(infoPtr->evWritable, 0) != WAIT_TIMEOUT) {
-		block = 0;
+		block = false;
 		msec = min(msec, infoPtr->blockTime);
 	    }
 	}
 	if (infoPtr->watchMask & TCL_READABLE) {
-	    block = 0;
+	    block = false;
 	    msec = min(msec, infoPtr->blockTime);
 	}
     }
@@ -475,7 +475,7 @@ SerialCheckProc(
 {
     SerialInfo *infoPtr;
     SerialEvent *evPtr;
-    int needEvent;
+    bool needEvent;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     COMSTAT cStat;
     unsigned long long time;
@@ -495,7 +495,7 @@ SerialCheckProc(
 	    continue;
 	}
 
-	needEvent = 0;
+	needEvent = false;
 
 	/*
 	 * If WRITABLE watch mask is set look for infoPtr->evWritable object.
@@ -503,8 +503,8 @@ SerialCheckProc(
 
 	if (infoPtr->watchMask & TCL_WRITABLE &&
 		WaitForSingleObject(infoPtr->evWritable, 0) != WAIT_TIMEOUT) {
-	    infoPtr->writable = 1;
-	    needEvent = 1;
+	    infoPtr->writable = true;
+	    needEvent = true;
 	}
 
 	/*
@@ -526,11 +526,11 @@ SerialCheckProc(
 
 		    if ((cStat.cbInQue > 0) ||
 			    (infoPtr->error & SERIAL_READ_ERRORS)) {
-			infoPtr->readable = 1;
+			infoPtr->readable = true;
 			time = SerialGetMilliseconds();
 			if ((time - infoPtr->lastEventTime)
 				>= (unsigned long long) infoPtr->blockTime) {
-			    needEvent = 1;
+			    needEvent = true;
 			    infoPtr->lastEventTime = time;
 			}
 		    }
@@ -1163,14 +1163,14 @@ SerialEventProc(
     if (infoPtr->watchMask & TCL_WRITABLE) {
 	if (infoPtr->writable) {
 	    mask |= TCL_WRITABLE;
-	    infoPtr->writable = 0;
+	    infoPtr->writable = false;
 	}
     }
 
     if (infoPtr->watchMask & TCL_READABLE) {
 	if (infoPtr->readable) {
 	    mask |= TCL_READABLE;
-	    infoPtr->readable = 0;
+	    infoPtr->readable = false;
 	}
     }
 
@@ -1469,8 +1469,8 @@ TclWinOpenSerialChannel(
     infoPtr->validMask = permissions & (TCL_READABLE|TCL_WRITABLE);
     infoPtr->handle = handle;
     infoPtr->channel = (Tcl_Channel) NULL;
-    infoPtr->readable = 0;
-    infoPtr->writable = 1;
+    infoPtr->readable = false;
+    infoPtr->writable = true;
     infoPtr->toWrite = infoPtr->writeQueue = 0;
     infoPtr->blockTime = SERIAL_DEFAULT_BLOCKTIME;
     infoPtr->lastEventTime = 0;
@@ -2049,7 +2049,7 @@ SerialGetOptionProc(
     SerialInfo *infoPtr = (SerialInfo *) instanceData;
     DCB dcb;
     size_t len;
-    int valid = 0;		/* Flag if valid option parsed. */
+    bool valid = false;		/* Flag if valid option parsed. */
 
     if (optionName == NULL) {
 	len = 0;
@@ -2099,7 +2099,7 @@ SerialGetOptionProc(
 	    return TCL_ERROR;
 	}
 
-	valid = 1;
+	valid = true;
 	parity = 'n';
 	if (dcb.Parity <= 4) {
 	    parity = "noems"[dcb.Parity];
@@ -2122,7 +2122,7 @@ SerialGetOptionProc(
     if (len==0 || (len>1 && strncmp(optionName, "-pollinterval", len)==0)) {
 	char buf[TCL_INTEGER_SPACE + 1];
 
-	valid = 1;
+	valid = true;
 	snprintf(buf, sizeof(buf), "%d", infoPtr->blockTime);
 	Tcl_DStringAppendElement(dsPtr, buf);
     }
@@ -2137,7 +2137,7 @@ SerialGetOptionProc(
     }
     if (len==0 || (len>1 && strncmp(optionName, "-sysbuffer", len) == 0)) {
 	char buf[TCL_INTEGER_SPACE + 1];
-	valid = 1;
+	valid = true;
 
 	snprintf(buf, sizeof(buf), "%ld", infoPtr->sysBufRead);
 	Tcl_DStringAppendElement(dsPtr, buf);
@@ -2158,7 +2158,7 @@ SerialGetOptionProc(
     }
     if (len==0 || (len>1 && strncmp(optionName, "-xchar", len) == 0)) {
 	char buf[4];
-	valid = 1;
+	valid = true;
 
 	if (!GetCommState(infoPtr->handle, &dcb)) {
 	    if (interp != NULL) {
@@ -2185,7 +2185,7 @@ SerialGetOptionProc(
      */
 
     if (len>1 && strncmp(optionName, "-lasterror", len)==0) {
-	valid = 1;
+	valid = true;
 	SerialErrorStr(infoPtr->lastError, dsPtr);
     }
 
@@ -2201,7 +2201,7 @@ SerialGetOptionProc(
 	DWORD error;
 	int inBuffered, outBuffered, count;
 
-	valid = 1;
+	valid = true;
 
 	/*
 	 * Query the pending data in Tcl's internal queues.
@@ -2246,7 +2246,7 @@ SerialGetOptionProc(
 	    }
 	    return TCL_ERROR;
 	}
-	valid = 1;
+	valid = true;
 	SerialModemStatusStr(status, dsPtr);
     }
 

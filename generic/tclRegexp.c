@@ -66,7 +66,7 @@
 #define NUM_REGEXPS 30
 
 typedef struct {
-    int initialized;		/* Set to 1 when the module is initialized. */
+    bool initialized;		/* Set true when the module is initialized. */
     char *patterns[NUM_REGEXPS];/* Strings corresponding to compiled regular
 				 * expression patterns. NULL means that this
 				 * slot isn't used. Malloc-ed. */
@@ -117,14 +117,14 @@ const Tcl_ObjType tclRegexpType = {
 	ir.twoPtrValue.ptr1 = (rePtr);					\
 	ir.twoPtrValue.ptr2 = NULL;					\
 	Tcl_StoreInternalRep((objPtr), &tclRegexpType, &ir);		\
-    } while (0)
+    } while (false)
 
 #define RegexpGetInternalRep(objPtr, rePtr) \
     do {								\
 	const Tcl_ObjInternalRep *irPtr;				\
 	irPtr = TclFetchInternalRep((objPtr), &tclRegexpType);		\
 	(rePtr) = irPtr ? (TclRegexp *)irPtr->twoPtrValue.ptr1 : NULL;	\
-    } while (0)
+    } while (false)
 
 /*
  *----------------------------------------------------------------------
@@ -862,13 +862,14 @@ CompileRegexp(
 {
     TclRegexp *regexpPtr;
     const Tcl_UniChar *uniString;
-    int status, i, exact;
+    int status, i;
+    bool exact;
     Tcl_Size numChars;
     Tcl_DString stringBuf;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     if (!tsdPtr->initialized) {
-	tsdPtr->initialized = 1;
+	tsdPtr->initialized = true;
 	Tcl_CreateThreadExitHandler(FinalizeRegexp, NULL);
     }
 
@@ -1073,7 +1074,7 @@ FinalizeRegexp(
      * invokes regexps.
      */
 
-    tsdPtr->initialized = 0;
+    tsdPtr->initialized = false;
 }
 
 /*

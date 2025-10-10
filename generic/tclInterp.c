@@ -236,7 +236,7 @@ static int		ChildBgerror(Tcl_Interp *interp,
 			    Tcl_Interp *childInterp, Tcl_Size objc,
 			    Tcl_Obj *const objv[]);
 static Tcl_Interp *	ChildCreate(Tcl_Interp *interp, Tcl_Obj *pathPtr,
-			    int safe);
+			    bool safe);
 static int		ChildDebugCmd(Tcl_Interp *interp,
 			    Tcl_Interp *childInterp,
 			    Tcl_Size objc, Tcl_Obj *const objv[]);
@@ -799,7 +799,7 @@ NRInterpCmd(
 	return Tcl_CancelEval(childInterp, resultObjPtr, 0, flags);
     }
     case OPT_CREATE: {
-	int last, safe;
+	bool last, safe;
 	Tcl_Obj *childPtr;
 	char buf[16 + TCL_INTEGER_SPACE];
 	static const char *const createOptions[] = {
@@ -816,19 +816,19 @@ NRInterpCmd(
 	 */
 
 	childPtr = NULL;
-	last = 0;
+	last = false;
 	for (i = 2; i < objc; i++) {
-	    if ((last == 0) && (TclGetString(objv[i])[0] == '-')) {
+	    if (!last && (TclGetString(objv[i])[0] == '-')) {
 		if (Tcl_GetIndexFromObj(interp, objv[i], createOptions,
 			"option", 0, &idx) != TCL_OK) {
 		    return TCL_ERROR;
 		}
 		if (idx == OPT_SAFE) {
-		    safe = 1;
+		    safe = true;
 		    continue;
 		}
 		i++;
-		last = 1;
+		last = true;
 	    }
 	    if (childPtr != NULL) {
 		Tcl_WrongNumArgs(interp, 2, objv, "?-safe? ?--? ?path?");
@@ -919,7 +919,7 @@ NRInterpCmd(
 	return ChildSet(interp, childInterp, objv[3],
 		objc > 4 ? objv[4] : NULL);
     case OPT_EXISTS: {
-	int exists = 1;
+	bool exists = true;
 
 	childInterp = GetInterp2(interp, objc, objv);
 	if (childInterp == NULL) {
@@ -927,7 +927,7 @@ NRInterpCmd(
 		return TCL_ERROR;
 	    }
 	    Tcl_ResetResult(interp);
-	    exists = 0;
+	    exists = false;
 	}
 	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(exists));
 	return TCL_OK;
@@ -1409,7 +1409,7 @@ TclPreventAliasLoop(
 
     aliasPtr = (Alias *) cmdPtr->objClientData;
     nextAliasPtr = aliasPtr;
-    while (1) {
+    while (true) {
 	Tcl_Obj *cmdNamePtr;
 
 	/*
@@ -1565,7 +1565,7 @@ TclAliasCreate(
      */
 
     childPtr = &INTERP_INFO(childInterp)->child;
-    while (1) {
+    while (true) {
 	Tcl_Obj *newToken;
 	const char *string;
 
@@ -2386,7 +2386,7 @@ static Tcl_Interp *
 ChildCreate(
     Tcl_Interp *interp,		/* Interp. to start search from. */
     Tcl_Obj *pathPtr,		/* Path (name) of child to create. */
-    int safe)			/* Should we make it "safe"? */
+    bool safe)			/* Should we make it "safe"? */
 {
     Tcl_Interp *parentInterp, *childInterp;
     Child *childPtr;
@@ -2414,7 +2414,7 @@ ChildCreate(
 	}
 	path = TclGetString(objv[objc - 1]);
     }
-    if (safe == 0) {
+    if (!safe) {
 	safe = Tcl_IsSafe(parentInterp);
     }
 
@@ -3274,9 +3274,9 @@ Tcl_IsSafe(
     Interp *iPtr = (Interp *) interp;
 
     if (iPtr == NULL) {
-	return 0;
+	return false;
     }
-    return (iPtr->flags & SAFE_INTERP) ? 1 : 0;
+    return (iPtr->flags & SAFE_INTERP) ? true : false;
 }
 
 /*
@@ -3440,15 +3440,15 @@ Tcl_LimitReady(
 	if ((iPtr->limit.active & TCL_LIMIT_COMMANDS) &&
 		((iPtr->limit.cmdGranularity == 1) ||
 		    (ticker % iPtr->limit.cmdGranularity == 0))) {
-	    return 1;
+	    return true;
 	}
 	if ((iPtr->limit.active & TCL_LIMIT_TIME) &&
 		((iPtr->limit.timeGranularity == 1) ||
 		    (ticker % iPtr->limit.timeGranularity == 0))) {
-	    return 1;
+	    return true;
 	}
     }
-    return 0;
+    return false;
 }
 
 /*

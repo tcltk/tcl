@@ -101,7 +101,7 @@ static void		FileThreadActionProc(void *instanceData,
 static int		FileTruncateProc(void *instanceData,
 			    long long length);
 static DWORD		FileGetType(HANDLE handle);
-static int		NativeIsComPort(const WCHAR *nativeName);
+static bool		NativeIsComPort(const WCHAR *nativeName);
 static Tcl_Channel	OpenFileChannel(HANDLE handle, char *channelName,
 			    int permissions, int appendMode);
 
@@ -1704,12 +1704,12 @@ FileGetType(
  *	    \\.\COM[0-9]+
  *
  * Results:
- *	1 = serial port, 0 = not.
+ *	true = serial port, false = not.
  *
  *----------------------------------------------------------------------
  */
 
-static int
+static bool
 NativeIsComPort(
     const WCHAR *nativePath)	/* Path of file to access, native encoding. */
 {
@@ -1726,9 +1726,9 @@ NativeIsComPort(
 	 */
 
 	if ((p[3] < '1') || (p[3] > '9')) {
-	    return 0;
+	    return false;
 	}
-	return 1;
+	return true;
     }
 
     /*
@@ -1742,12 +1742,12 @@ NativeIsComPort(
 
 	for (i=7; i<len; i++) {
 	    if ((p[i] < '0') || (p[i] > '9')) {
-		return 0;
+		return false;
 	    }
 	}
-	return 1;
+	return true;
     }
-    return 0;
+    return false;
 }
 
 /*

@@ -244,14 +244,14 @@ static const DeclaredSlotMethod slotMethods[] = {
  * ----------------------------------------------------------------------
  */
 
-static inline int
+static inline bool
 IsPrivateDefine(
     Tcl_Interp *interp)
 {
     Interp *iPtr = (Interp *) interp;
 
     if (!iPtr->varFramePtr) {
-	return 0;
+	return false;
     }
     return iPtr->varFramePtr->isProcCallFrame == PRIVATE_FRAME;
 }
@@ -1267,7 +1267,7 @@ GetOrCreateMethod(
     }
 }
 
-static int
+static bool
 ExportMethod(
     Class *clsPtr,
     Tcl_Obj *namePtr)
@@ -1277,7 +1277,7 @@ ExportMethod(
     if (isNew || !(mPtr->flags & (PUBLIC_METHOD | PRIVATE_METHOD))) {
 	mPtr->flags |= PUBLIC_METHOD;
 	mPtr->flags &= ~TRUE_PRIVATE_METHOD;
-	isNew = 1;
+	isNew = true;
     }
     return isNew;
 }
@@ -1291,7 +1291,7 @@ UnexportMethod(
     Method *mPtr = GetOrCreateMethod(&clsPtr->classMethods, namePtr, &isNew);
     if (isNew || mPtr->flags & (PUBLIC_METHOD | TRUE_PRIVATE_METHOD)) {
 	mPtr->flags &= ~(PUBLIC_METHOD | TRUE_PRIVATE_METHOD);
-	isNew = 1;
+	isNew = true;
     }
     return isNew;
 }
@@ -1320,7 +1320,7 @@ ExportInstanceMethod(
     if (isNew || !(mPtr->flags & (PUBLIC_METHOD | PRIVATE_METHOD))) {
 	mPtr->flags |= PUBLIC_METHOD;
 	mPtr->flags &= ~TRUE_PRIVATE_METHOD;
-	isNew = 1;
+	isNew = true;
     }
     return isNew;
 }
@@ -1336,7 +1336,7 @@ UnexportInstanceMethod(
     Method *mPtr = GetOrCreateMethod(oPtr->methodsPtr, namePtr, &isNew);
     if (isNew || mPtr->flags & (PUBLIC_METHOD | TRUE_PRIVATE_METHOD)) {
 	mPtr->flags &= ~(PUBLIC_METHOD | TRUE_PRIVATE_METHOD);
-	isNew = 1;
+	isNew = true;
     }
     return isNew;
 }
@@ -1347,9 +1347,9 @@ TclOOExportMethods(
     ...)
 {
     va_list argList;
-    int changed = 0;
+    bool changed = false;
     va_start(argList, clsPtr);
-    while (1) {
+    while (true) {
 	const char *name = va_arg(argList, char *);
 	if (!name) {
 	    break;
@@ -1368,9 +1368,9 @@ TclOOUnexportMethods(
     ...)
 {
     va_list argList;
-    int changed = 0;
+    bool changed = false;
     va_start(argList, clsPtr);
-    while (1) {
+    while (true) {
 	const char *name = va_arg(argList, char *);
 	if (!name) {
 	    break;
@@ -2093,8 +2093,8 @@ TclOODefineExportObjCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    int isInstanceExport = (clientData != NULL);
-    int i, changed = 0;
+    bool isInstanceExport = (clientData != NULL), changed = false;
+    int i;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name ?name ...?");
@@ -2289,7 +2289,7 @@ TclOODefineMethodObjCmd(
 	MODE_UNEXPORT
     } exportMode;
 
-    int isInstanceMethod = (clientData != NULL);
+    bool isInstanceMethod = (clientData != NULL);
     Object *oPtr;
     int isPublic = 0;
 
@@ -2494,10 +2494,10 @@ TclOODefineUnexportObjCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    int isInstanceUnexport = (clientData != NULL);
+    bool isInstanceUnexport = (clientData != NULL), changed = false;
     Object *oPtr;
     Class *clsPtr;
-    int i, changed = 0;
+    int i;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name ?name ...?");
@@ -4205,22 +4205,23 @@ Configurable_ObjectWritableProps_Set(
  * ----------------------------------------------------------------------
  */
 
-static int
+static bool
 BuildPropertyList(
     PropertyList *propsList,	/* Property list to scan. */
     Tcl_Obj *propName,		/* Property to add/remove. */
     int addingProp,		/* True if we're adding, false if removing. */
     Tcl_Obj *listObj)		/* The list of property names we're building */
 {
-    int present = 0, changed = 0, i;
+    bool present = false, changed = false;
+    int i;
     Tcl_Obj *other;
 
     Tcl_SetListObj(listObj, 0, NULL);
     FOREACH(other, *propsList) {
 	if (!TclStringCmp(propName, other, 1, 0, TCL_INDEX_NONE)) {
-	    present = 1;
+	    present = true;
 	    if (!addingProp) {
-		changed = 1;
+		changed = true;
 		continue;
 	    }
 	}
@@ -4228,7 +4229,7 @@ BuildPropertyList(
     }
     if (!present && addingProp) {
 	Tcl_ListObjAppendElement(NULL, listObj, propName);
-	changed = 1;
+	changed = true;
     }
     return changed;
 }
@@ -4280,20 +4281,20 @@ TclOORegisterProperty(
     Tcl_Obj *listObj = Tcl_NewObj();	/* Working buffer. */
     Tcl_Obj **objv;
     Tcl_Size count;
-    int changed = 0;
+    bool changed = false;
 
     if (BuildPropertyList(&clsPtr->properties.readable, propName,
 	    registerReader, listObj)) {
 	TclListObjGetElements(NULL, listObj, &count, &objv);
 	TclOOInstallReadableProperties(&clsPtr->properties, count, objv);
-	changed = 1;
+	changed = true;
     }
 
     if (BuildPropertyList(&clsPtr->properties.writable, propName,
 	    registerWriter, listObj)) {
 	TclListObjGetElements(NULL, listObj, &count, &objv);
 	TclOOInstallWritableProperties(&clsPtr->properties, count, objv);
-	changed = 1;
+	changed = true;
     }
     Tcl_BounceRefCount(listObj);
     if (changed) {

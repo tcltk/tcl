@@ -342,7 +342,7 @@ DoRenameFile(
 		&& (strncmp(srcPath, dstPath, strlen(srcPath)) != 0)) {
 	    dirPtr = TclOSopendir(dst);			/* INTL: Native. */
 	    if (dirPtr != NULL) {
-		while (1) {
+		while (true) {
 		    dirEntPtr = TclOSreaddir(dirPtr);	/* INTL: Native. */
 		    if (dirEntPtr == NULL) {
 			break;
@@ -575,7 +575,7 @@ TclUnixCopyFile(
 	blockSize = DEFAULT_COPY_BLOCK_SIZE;
     }
     buffer = (char *)Tcl_Alloc(blockSize);
-    while (1) {
+    while (true) {
 	nread = read(srcFd, buffer, blockSize);
 	if ((nread == -1) || (nread == 0)) {
 	    break;
@@ -1748,7 +1748,8 @@ GetModeFromPermString(
     mode_t oldMode;		/* Storage for the value of the old mode (that
 				 * is passed in), to allow for the chmod style
 				 * manipulation. */
-    int i,n, who, op, what, op_found, who_found;
+    int i,n, who, op, what;
+    bool who_found, op_found;
 
     /*
      * We start off checking for an "rwxrwxrwx" style permissions string
@@ -1824,7 +1825,8 @@ GetModeFromPermString(
 
     for (n = 0 ; modeStringPtr[n] != '\0' ; n += i) {
 	oldMode = *modePtr;
-	who = op = what = op_found = who_found = 0;
+	who = op = what = 0;
+	who_found = op_found = false;
 	for (i = 0 ; modeStringPtr[n + i] != '\0' ; i++ ) {
 	    if (!who_found) {
 		/* who */
@@ -1843,7 +1845,7 @@ GetModeFromPermString(
 		    continue;
 		}
 	    }
-	    who_found = 1;
+	    who_found = true;
 	    if (who == 0) {
 		who = 0xFFF;
 	    }
@@ -1852,15 +1854,15 @@ GetModeFromPermString(
 		switch (modeStringPtr[n + i]) {
 		case '+':
 		    op = 1;
-		    op_found = 1;
+		    op_found = true;
 		    continue;
 		case '-':
 		    op = 2;
-		    op_found = 1;
+		    op_found = true;
 		    continue;
 		case '=':
 		    op = 3;
-		    op_found = 1;
+		    op_found = true;
 		    continue;
 		default:
 		    return TCL_ERROR;
@@ -1991,7 +1993,7 @@ TclpObjNormalizePath(
      */
 #endif
 
-    while (1) {
+    while (true) {
 	cur = *currentPathEndPosition;
 	if ((cur == '/') && (path != currentPathEndPosition)) {
 	    /*

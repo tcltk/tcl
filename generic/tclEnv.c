@@ -430,7 +430,7 @@ Tcl_PutEnv(
 	     * be NULL and will be initialized by the first _wgetenv() call.
 	     */
 
-	(void) _wgetenv(L"WINDIR");
+	    (void) _wgetenv(L"WINDIR");
 	}
 #endif
 	TclSetEnv(name, value+1);

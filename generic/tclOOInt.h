@@ -560,7 +560,7 @@ MODULE_SCOPE void	TclOOAddToMixinSubs(Class *subPtr, Class *mixinPtr);
 MODULE_SCOPE void	TclOOAddToSubclasses(Class *subPtr, Class *superPtr);
 MODULE_SCOPE Class *	TclOOAllocClass(Tcl_Interp *interp,
 			    Object *useThisObj);
-MODULE_SCOPE int	TclMethodIsType(Tcl_Method method,
+MODULE_SCOPE bool	TclMethodIsType(Tcl_Method method,
 			    const Tcl_MethodType *typePtr,
 			    void **clientDataPtr);
 MODULE_SCOPE Tcl_Method TclNewInstanceMethod(Tcl_Interp *interp,
@@ -580,8 +580,8 @@ MODULE_SCOPE Object *	TclNewObjectInstanceCommon(Tcl_Interp *interp,
 			    Class *classPtr,
 			    const char *nameStr,
 			    const char *nsNameStr);
-MODULE_SCOPE int	TclOODecrRefCount(Object *oPtr);
-MODULE_SCOPE int	TclOOObjectDestroyed(Object *oPtr);
+MODULE_SCOPE bool	TclOODecrRefCount(Object *oPtr);
+MODULE_SCOPE bool	TclOOObjectDestroyed(Object *oPtr);
 MODULE_SCOPE const char *TclOOContextTypeName(CallContext *contextPtr);
 MODULE_SCOPE int	TclOODefineSlots(Foundation *fPtr);
 MODULE_SCOPE void	TclOODeleteChain(CallChain *callPtr);

@@ -60,7 +60,7 @@ typedef struct {
 static struct NotifierState {
     XtAppContext appContext;	/* The context used by the Xt notifier. Can be
 				 * set with TclSetAppContext. */
-    int appContextCreated;	/* Was it created by us? */
+    bool appContextCreated;	/* Was it created by us? */
     XtIntervalId currentTimeout;/* Handle of current timer. */
     FileHandler *firstFileHandlerPtr;
 				/* Pointer to head of file handler list. */
@@ -147,14 +147,14 @@ TclSetAppContext(
 	     */
 
 	    notifier.appContext = XtCreateApplicationContext();
-	    notifier.appContextCreated = 1;
+	    notifier.appContextCreated = true;
 	} else {
 	    /*
 	     * Otherwise we remember the context that our caller gave us and
 	     * use it.
 	     */
 
-	    notifier.appContextCreated = 0;
+	    notifier.appContextCreated = false;
 	    notifier.appContext = appContext;
 	}
     }
@@ -239,7 +239,7 @@ NotifierExitHandler(
     }
     if (notifier.appContextCreated) {
 	XtDestroyApplicationContext(notifier.appContext);
-	notifier.appContextCreated = 0;
+	notifier.appContextCreated = false;
 	notifier.appContext = NULL;
     }
     initialized = false;

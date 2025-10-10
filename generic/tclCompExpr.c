@@ -645,7 +645,7 @@ ParseExpr(
      * completed the parse and we return to the caller.
      */
 
-    while (1) {
+    while (true) {
 	OpNode *nodePtr;	/* Points to the OpNode we may fill this pass
 				 * through the loop. */
 	unsigned char lexeme;	/* The lexeme we parse this iteration. */
@@ -954,7 +954,7 @@ ParseExpr(
 
 		end = start + numBytes;
 		start++;
-		while (1) {
+		while (true) {
 		    code = Tcl_ParseCommand(interp, start, end - start, 1,
 			    nestedPtr);
 		    if (code != TCL_OK) {
@@ -1191,7 +1191,7 @@ ParseExpr(
 	     * and "1+2*3-".
 	     */
 
-	    while (1) {
+	    while (true) {
 		incompletePtr = nodes + incomplete;
 
 		if (incompletePtr->precedence < precedence) {
@@ -1513,7 +1513,7 @@ ConvertTreeToTokens(
     OpNode *nodePtr = nodes;
     int next = nodePtr->right;
 
-    while (1) {
+    while (true) {
 	Tcl_Token *subExprTokenPtr;
 	Tcl_Size scanned, parentIdx;
 	unsigned char lexeme;
@@ -2326,7 +2326,7 @@ CompileExprTree(
     JumpList *jumpPtr = NULL;
     bool convert = true;
 
-    while (1) {
+    while (true) {
 	int next;
 	JumpList *freePtr, *newJump;
 

@@ -36,10 +36,10 @@ typedef struct {
 				 * notifier. */
     HANDLE event;		/* Event object used to wake up the notifier
 				 * thread. */
-    int pending;		/* Alert message pending, this field is locked
+    bool pending;		/* Alert message pending, this field is locked
 				 * by the notifierMutex. */
     HWND hwnd;			/* Messaging window. */
-    int timerActive;		/* 1 if interval timer is running. */
+    bool timerActive;		/* 1 if interval timer is running. */
 } ThreadSpecificData;
 
 static Tcl_ThreadDataKey dataKey;
@@ -119,8 +119,8 @@ TclpInitNotifier(void)
     notifierCount++;
     LeaveCriticalSection(&notifierMutex);
 
-    tsdPtr->pending = 0;
-    tsdPtr->timerActive = 0;
+    tsdPtr->pending = false;
+    tsdPtr->timerActive = false;
 
     InitializeCriticalSection(&tsdPtr->crit);
 
@@ -240,7 +240,7 @@ TclpAlertNotifier(
 	if (!tsdPtr->pending) {
 	    PostMessageW(tsdPtr->hwnd, WM_WAKEUP, 0, 0);
 	}
-	tsdPtr->pending = 1;
+	tsdPtr->pending = true;
 	LeaveCriticalSection(&tsdPtr->crit);
     } else {
 	SetEvent(tsdPtr->event);
@@ -297,10 +297,10 @@ TclpSetTimer(
     }
 
     if (timeout != 0) {
-	tsdPtr->timerActive = 1;
+	tsdPtr->timerActive = true;
 	SetTimer(tsdPtr->hwnd, INTERVAL_TIMER, timeout, NULL);
     } else {
-	tsdPtr->timerActive = 0;
+	tsdPtr->timerActive = false;
 	KillTimer(tsdPtr->hwnd, INTERVAL_TIMER);
     }
 }
@@ -409,7 +409,7 @@ NotifierProc(
 
     if (message == WM_WAKEUP) {
 	EnterCriticalSection(&tsdPtr->crit);
-	tsdPtr->pending = 0;
+	tsdPtr->pending = false;
 	LeaveCriticalSection(&tsdPtr->crit);
     } else if (message != WM_TIMER) {
 	return DefWindowProcW(hwnd, message, wParam, lParam);

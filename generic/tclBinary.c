@@ -61,7 +61,7 @@ static void		DupProperByteArrayInternalRep(Tcl_Obj *srcPtr,
 static int		FormatNumber(Tcl_Interp *interp, int type,
 			    Tcl_Obj *src, unsigned char **cursorPtr);
 static void		FreeProperByteArrayInternalRep(Tcl_Obj *objPtr);
-static int		GetFormatSpec(const char **formatPtr, char *cmdPtr,
+static bool		GetFormatSpec(const char **formatPtr, char *cmdPtr,
 			    Tcl_Size *countPtr, int *flagsPtr);
 static Tcl_Obj *	ScanNumber(unsigned char *buffer, int type,
 			    int flags, Tcl_HashTable **numberCachePtr);
@@ -1719,8 +1719,8 @@ BinaryScanCmd(
  *	Moves the formatPtr to the start of the next command. Returns the
  *	current command character and count in cmdPtr and countPtr. The count
  *	is set to BINARY_ALL if the count character was '*' or BINARY_NOCOUNT
- *	if no count was specified. Returns 1 on success, or 0 if the string
- *	did not have a format specifier.
+ *	if no count was specified. Returns true on success, or false if the
+ *	string did not have a format specifier.
  *
  * Side effects:
  *	None.
@@ -1728,7 +1728,7 @@ BinaryScanCmd(
  *----------------------------------------------------------------------
  */
 
-static int
+static bool
 GetFormatSpec(
     const char **formatPtr,	/* Pointer to format string. */
     char *cmdPtr,		/* Pointer to location of command char. */
@@ -1748,7 +1748,7 @@ GetFormatSpec(
      */
 
     if (!(**formatPtr)) {
-	return 0;
+	return false;
     }
 
     /*
@@ -1777,7 +1777,7 @@ GetFormatSpec(
     } else {
 	*countPtr = BINARY_NOCOUNT;
     }
-    return 1;
+    return true;
 }
 
 /*
@@ -2600,7 +2600,7 @@ BinaryDecodeHex(
 	if (cursor > limit) {				\
 	    Tcl_Panic("limit hit");			\
 	}						\
-    } while (0)
+    } while (false)
 
 static int
 BinaryEncode64(

@@ -52,7 +52,7 @@ static inline void		InitChainTable(struct Dict *dict);
 static inline void		DeleteChainTable(struct Dict *dict);
 static inline Tcl_HashEntry *	CreateChainEntry(struct Dict *dict,
 					Tcl_Obj *keyPtr, int *newPtr);
-static inline int		DeleteChainEntry(struct Dict *dict,
+static inline bool		DeleteChainEntry(struct Dict *dict,
 					Tcl_Obj *keyPtr);
 static Tcl_NRPostProc		FinalizeDictUpdate;
 static Tcl_NRPostProc		FinalizeDictWith;
@@ -155,14 +155,14 @@ const Tcl_ObjType tclDictType = {
 	ir.twoPtrValue.ptr1 = (dictRepPtr);                             \
 	ir.twoPtrValue.ptr2 = NULL;                                     \
 	Tcl_StoreInternalRep((objPtr), &tclDictType, &ir);		\
-    } while (0)
+    } while (false)
 
 #define DictGetInternalRep(objPtr, dictRepPtr)				\
     do {                                                                \
 	const Tcl_ObjInternalRep *irPtr;				\
 	irPtr = TclFetchInternalRep((objPtr), &tclDictType);		\
 	(dictRepPtr) = irPtr ? (Dict *)irPtr->twoPtrValue.ptr1 : NULL;	\
-    } while (0)
+    } while (false)
 
 /*
  * The type of the specially adapted version of the Tcl_Obj*-containing hash
@@ -297,7 +297,7 @@ CreateChainEntry(
     return &cPtr->entry;
 }
 
-static inline int
+static inline bool
 DeleteChainEntry(
     Dict *dict,
     Tcl_Obj *keyPtr)
@@ -306,7 +306,7 @@ DeleteChainEntry(
 	    Tcl_FindHashEntry(&dict->table, keyPtr);
 
     if (cPtr == NULL) {
-	return 0;
+	return false;
     } else {
 	Tcl_Obj *valuePtr = (Tcl_Obj *)Tcl_GetHashValue(&cPtr->entry);
 
@@ -329,7 +329,7 @@ DeleteChainEntry(
     }
 
     Tcl_DeleteHashEntry(&cPtr->entry);
-    return 1;
+    return true;
 }
 
 /*

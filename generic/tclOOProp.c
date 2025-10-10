@@ -627,10 +627,10 @@ FindObjectProps(
 static Tcl_Obj *
 GetAllClassProperties(
     Class *clsPtr,		/* The class to inspect. Must exist. */
-    int writable,		/* Whether to get writable properties. If
+    bool writable,		/* Whether to get writable properties. If
 				 * false, readable properties will be returned
 				 * instead. */
-    int *allocated)		/* Address of variable to set to true if a
+    bool *allocated)		/* Address of variable to set to true if a
 				 * Tcl_Obj was allocated and may be safely
 				 * modified by the caller. */
 {
@@ -645,12 +645,12 @@ GetAllClassProperties(
     if (clsPtr->properties.epoch == clsPtr->thisPtr->fPtr->epoch) {
 	if (writable) {
 	    if (clsPtr->properties.allWritableCache) {
-		*allocated = 0;
+		*allocated = false;
 		return clsPtr->properties.allWritableCache;
 	    }
 	} else {
 	    if (clsPtr->properties.allReadableCache) {
-		*allocated = 0;
+		*allocated = false;
 		return clsPtr->properties.allReadableCache;
 	    }
 	}
@@ -660,7 +660,7 @@ GetAllClassProperties(
      * Gather the information. Unsorted! (Caller will sort.)
      */
 
-    *allocated = 1;
+    *allocated = true;
     Tcl_InitObjHashTable(&hashTable);
     FindClassProps(clsPtr, writable, &hashTable);
     TclNewObj(result);
@@ -1197,7 +1197,8 @@ TclOOInfoClassPropCmd(
     Tcl_Obj *const objv[])
 {
     Class *clsPtr;
-    int i, idx, all = 0, writable = 0, allocated = 0;
+    int i, idx;
+    bool all = false, writable = false, allocated = false;
     Tcl_Obj *result;
 
     if (objc < 2) {
@@ -1215,13 +1216,13 @@ TclOOInfoClassPropCmd(
 	}
 	switch (idx) {
 	case PROP_ALL:
-	    all = 1;
+	    all = true;
 	    break;
 	case PROP_READABLE:
-	    writable = 0;
+	    writable = false;
 	    break;
 	case PROP_WRITABLE:
-	    writable = 1;
+	    writable = true;
 	    break;
 	default:
 	    TCL_UNREACHABLE();
@@ -1257,7 +1258,8 @@ TclOOInfoObjectPropCmd(
     Tcl_Obj *const objv[])
 {
     Object *oPtr;
-    int i, idx, all = 0, writable = 0;
+    int i, idx;
+    bool all = false, writable = false;
     Tcl_Obj *result;
 
     if (objc < 2) {
@@ -1275,13 +1277,13 @@ TclOOInfoObjectPropCmd(
 	}
 	switch (idx) {
 	case PROP_ALL:
-	    all = 1;
+	    all = true;
 	    break;
 	case PROP_READABLE:
-	    writable = 0;
+	    writable = false;
 	    break;
 	case PROP_WRITABLE:
-	    writable = 1;
+	    writable = true;
 	    break;
 	default:
 	    TCL_UNREACHABLE();

@@ -720,9 +720,9 @@ Tcl_ConditionWait(
     WinCondition *winCondPtr;	/* Per-condition queue head */
     WMutex *wmPtr;		/* Caller's Mutex, after casting */
     DWORD wtime;		/* Windows time value */
-    int timeout;		/* True if we got a timeout */
+    bool timeout;		/* True if we got a timeout */
     int counter;		/* Caller's Mutex counter */
-    int doExit = 0;		/* True if we need to do exit setup */
+    bool doExit = false;	/* True if we need to do exit setup */
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     /*
@@ -743,7 +743,7 @@ Tcl_ConditionWait(
 	    tsdPtr->nextPtr = NULL;
 	    tsdPtr->prevPtr = NULL;
 	    tsdPtr->flags = WIN_THREAD_RUNNING;
-	    doExit = 1;
+	    doExit = true;
 	}
 	TclpGlobalUnlock();
 
@@ -817,13 +817,13 @@ Tcl_ConditionWait(
     assert(wmPtr->thread == mythread);
     wmPtr->thread = 0;
     LeaveCriticalSection(&wmPtr->crit);
-    timeout = 0;
+    timeout = false;
     while (!timeout && (tsdPtr->flags & WIN_THREAD_BLOCKED)) {
 	ResetEvent(tsdPtr->condEvent);
 	LeaveCriticalSection(&winCondPtr->condLock);
 	if (WaitForSingleObjectEx(tsdPtr->condEvent, wtime,
 		TRUE) == WAIT_TIMEOUT) {
-	    timeout = 1;
+	    timeout = true;
 	}
 	EnterCriticalSection(&winCondPtr->condLock);
     }
@@ -835,7 +835,7 @@ Tcl_ConditionWait(
 
     if (timeout) {
 	if (tsdPtr->flags & WIN_THREAD_RUNNING) {
-	    timeout = 0;
+	    timeout = false;
 	} else {
 	    /*
 	     * When dequeueing, we can leave the tsdPtr->nextPtr and

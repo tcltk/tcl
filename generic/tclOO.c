@@ -222,7 +222,7 @@ MODULE_SCOPE const TclOOStubs tclOOStubs;
     do {						\
 	Remove ## type ((lst).list, (lst).num, i);	\
 	(lst).num--;					\
-    } while (0)
+    } while (false)
 
 /*
  * ----------------------------------------------------------------------
@@ -897,7 +897,7 @@ AllocObject(
 	goto configNamespace;
     }
 
-    while (1) {
+    while (true) {
 	char objName[10 + TCL_INTEGER_SPACE];
 
 	snprintf(objName, sizeof(objName), "::oo::Obj%" TCL_Z_MODIFIER "u",
@@ -1590,13 +1590,13 @@ ObjectNamespaceDeleted(
  * TclOODecrRefCount --
  *
  *	Decrement the refcount of an object and deallocate storage then object
- *	is no longer referenced.  Returns 1 if storage was deallocated, and 0
- *	otherwise.
+ *	is no longer referenced.  Returns true if storage was deallocated, and
+ *	false otherwise.
  *
  * ----------------------------------------------------------------------
  */
 
-int
+bool
 TclOODecrRefCount(
     Object *oPtr)
 {
@@ -1605,9 +1605,9 @@ TclOODecrRefCount(
 	    Tcl_Free(oPtr->classPtr);
 	}
 	Tcl_Free(oPtr);
-	return 1;
+	return true;
     }
-    return 0;
+    return false;
 }
 
 /*
@@ -1615,12 +1615,12 @@ TclOODecrRefCount(
  *
  * TclOOObjectDestroyed --
  *
- *	Returns TCL_OK if an object is entirely deleted, i.e. the destruction
+ *	Returns true if an object is entirely deleted, i.e. the destruction
  *	sequence has completed.
  *
  * ----------------------------------------------------------------------
  */
-int
+bool
 TclOOObjectDestroyed(
     Object *oPtr)
 {
@@ -3295,7 +3295,7 @@ TclOOIsReachable(
 
   tailRecurse:
     if (startPtr == targetPtr) {
-	return 1;
+	return true;
     }
     if (startPtr->superclasses.num == 1 && startPtr->mixins.num == 0) {
 	startPtr = startPtr->superclasses.list[0];
@@ -3303,15 +3303,15 @@ TclOOIsReachable(
     }
     FOREACH(superPtr, startPtr->superclasses) {
 	if (TclOOIsReachable(targetPtr, superPtr)) {
-	    return 1;
+	    return true;
 	}
     }
     FOREACH(superPtr, startPtr->mixins) {
 	if (TclOOIsReachable(targetPtr, superPtr)) {
-	    return 1;
+	    return true;
 	}
     }
-    return 0;
+    return false;
 }
 
 /*
