@@ -1272,9 +1272,9 @@ typedef struct CallFrame {
 				/* Value of interp->varFramePtr when this
 				 * procedure was invoked (i.e. determines
 				 * variable scoping within caller). Same as
-				 * callerPtr unless an "uplevel" command or
-				 * something equivalent was active in the
-				 * caller). */
+				 * callerPtr unless an "uplevel" command (or
+				 * something equivalent) was active in the
+				 * caller. */
     Tcl_Size level;		/* Level of this procedure, for "uplevel"
 				 * purposes (i.e. corresponds to nesting of
 				 * callerVarPtr's, not callerPtr's). 1 for
@@ -4671,7 +4671,10 @@ TclGrowParseTokenArray(
     do {								\
 	Tcl_Size _count, _i = (numBytes);				\
 	unsigned char *_str = (unsigned char *) (bytes);		\
-	while (_i > 0 && (*_str < 0xC0)) { _i--; _str++; }		\
+	while (_i > 0 && (*_str < 0xC0)) {				\
+	    _i--;							\
+	    _str++;							\
+	}								\
 	_count = (numBytes) - _i;					\
 	if (_i) {							\
 	    _count += Tcl_NumUtfChars((bytes) + _count, _i);		\
