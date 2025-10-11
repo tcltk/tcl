@@ -11,7 +11,6 @@
 
 #include "tclInt.h"
 #include <assert.h>
-#include "tclStrIdxTree.h"
 
 /*
  * Indices of the standard return options dictionary keys.
