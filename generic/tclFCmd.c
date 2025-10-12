@@ -201,7 +201,6 @@ FileCopyRename(
      */
 
     for ( ; i<objc-1 ; i++) {
-	Tcl_Obj *jargv[2];
 	Tcl_Obj *source, *newFileName;
 
 	source = FileBasename(interp, objv[i]);
@@ -209,8 +208,10 @@ FileCopyRename(
 	    result = TCL_ERROR;
 	    break;
 	}
-	jargv[0] = objv[objc - 1];
-	jargv[1] = source;
+	Tcl_Obj *jargv[] = {
+	    objv[objc - 1],
+	    source
+	};
 	newFileName = TclJoinPath(2, jargv, 1);
 	Tcl_IncrRefCount(newFileName);
 	result = CopyRenameOneFile(interp, objv[i], newFileName, copyFlag,

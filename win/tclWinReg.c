@@ -191,16 +191,17 @@ Registry_Unload(
     int flags)			/* Flags passed by the unload system */
 {
     Tcl_Command cmd;
-    Tcl_Obj *objv[3];
     (void)flags;
 
     /*
      * Unregister the registry package. There is no Tcl_PkgForget()
      */
 
-    objv[0] = Tcl_NewStringObj("package", -1);
-    objv[1] = Tcl_NewStringObj("forget", -1);
-    objv[2] = Tcl_NewStringObj("registry", -1);
+    Tcl_Obj *objv[] = {
+	Tcl_NewStringObj("package", -1),
+	Tcl_NewStringObj("forget", -1),
+	Tcl_NewStringObj("registry", -1)
+    };
     Tcl_EvalObjv(interp, 3, objv, TCL_EVAL_GLOBAL);
 
     /*
