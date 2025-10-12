@@ -4295,36 +4295,6 @@ TclScaleTime(
 	}								\
     }
 
-/*
- * Primitives to safe set, reset and free references.
- */
-
-#define TclUnsetObjRef(obj) \
-    do {								\
-	if (obj != NULL) {						\
-	    Tcl_DecrRefCount(obj);					\
-	    obj = NULL;							\
-	}								\
-    } while (0)
-#define TclInitObjRef(obj, val) \
-    do {								\
-	obj = (val);							\
-	if (obj) {							\
-	    Tcl_IncrRefCount(obj);					\
-	}								\
-    } while (0)
-#define TclSetObjRef(obj, val) \
-    do {								\
-	Tcl_Obj *nval = (val);						\
-	if (obj != nval) {						\
-	    Tcl_Obj *prev = obj;					\
-	    TclInitObjRef(obj, nval);					\
-	    if (prev != NULL) {						\
-		Tcl_DecrRefCount(prev);					\
-	    }								\
-	}								\
-    } while (0)
-
 #if TCL_THREADS && !defined(USE_THREAD_ALLOC)
 #   define USE_THREAD_ALLOC 1
 #endif
@@ -4458,6 +4428,36 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 
 #undef USE_THREAD_ALLOC
 #endif /* TCL_MEM_DEBUG */
+
+/*
+ * Primitives to safe set, reset and free references.
+ */
+
+#define TclUnsetObjRef(obj) \
+    do {								\
+	if (obj != NULL) {						\
+	    Tcl_DecrRefCount(obj);					\
+	    obj = NULL;							\
+	}								\
+    } while (0)
+#define TclInitObjRef(obj, val) \
+    do {								\
+	obj = (val);							\
+	if (obj) {							\
+	    Tcl_IncrRefCount(obj);					\
+	}								\
+    } while (0)
+#define TclSetObjRef(obj, val) \
+    do {								\
+	Tcl_Obj *nval = (val);						\
+	if (obj != nval) {						\
+	    Tcl_Obj *prev = obj;					\
+	    TclInitObjRef(obj, nval);					\
+	    if (prev != NULL) {						\
+		Tcl_DecrRefCount(prev);					\
+	    }								\
+	}								\
+    } while (0)
 
 /*
  *----------------------------------------------------------------
