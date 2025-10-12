@@ -137,7 +137,7 @@ typedef struct {
      * CT = Belongs to the 'Command handler Thread'.
      */
 
-    int argc;			/* Number of preallocated words - 2. */
+    Tcl_Size argc;		/* Number of preallocated words - 2. */
     Tcl_Obj **argv;		/* Preallocated array for calling the handler.
 				 * args[0] is placeholder for cmd word.
 				 * Followed by the arguments in the prefix,
@@ -497,7 +497,7 @@ int
 TclChanPushObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const *objv)
 {
     ReflectedTransform *rtPtr;	/* Instance data of the new (transform)
@@ -740,7 +740,7 @@ int
 TclChanPopObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const *objv)
 {
     /*
@@ -1089,7 +1089,7 @@ ReflectInput(
 	 * below, possibly EOF).
 	 */
 
-	copied = ResultCopy(&rtPtr->result, UCHARP(buf), toRead);
+	copied = (int)ResultCopy(&rtPtr->result, UCHARP(buf), toRead);
 	toRead -= copied;
 	buf += copied;
 	gotBytes += copied;
@@ -1137,7 +1137,7 @@ ReflectInput(
 	    goto stop;
 	}
 
-	readBytes = Tcl_ReadRaw(rtPtr->parent,
+	readBytes = (int)Tcl_ReadRaw(rtPtr->parent,
 		(char *) Tcl_SetByteArrayLength(bufObj, toRead), toRead);
 	if (readBytes < 0) {
 	    if (Tcl_InputBlocked(rtPtr->parent) && (gotBytes > 0)) {
@@ -1840,7 +1840,7 @@ static void
 FreeReflectedTransformArgs(
     ReflectedTransform *rtPtr)
 {
-    int i, n = rtPtr->argc - 2;
+    Tcl_Size i, n = rtPtr->argc - 2;
 
     if (n < 0) {
 	return;
@@ -1911,7 +1911,7 @@ InvokeTclMethod(
     Tcl_Obj *argTwoObj,		/* NULL'able */
     Tcl_Obj **resultObjPtr)	/* NULL'able */
 {
-    int cmdc;			/* #words in constructed command */
+    Tcl_Size cmdc;			/* #words in constructed command */
     Tcl_Obj *methObj = NULL;	/* Method name in object form */
     Tcl_InterpState sr;		/* State of handler interp */
     int result;			/* Result code of method invocation */
@@ -3006,7 +3006,7 @@ ResultCopy(
 
 	memcpy(buf, rPtr->buf, toRead);
 	rPtr->used = 0;
-	copied = toRead;
+	copied = (int)toRead;
     } else if (rPtr->used > (size_t)toRead) {
 	/*
 	 * The internal buffer contains more than requested. Copy the
@@ -3017,7 +3017,7 @@ ResultCopy(
 	memmove(rPtr->buf, rPtr->buf + toRead, rPtr->used - toRead);
 
 	rPtr->used -= toRead;
-	copied = toRead;
+	copied = (int)toRead;
     } else {
 	/*
 	 * There is not enough in the buffer to satisfy the caller, so take
@@ -3027,7 +3027,7 @@ ResultCopy(
 	memcpy(buf, rPtr->buf, rPtr->used);
 	toRead = rPtr->used;
 	rPtr->used = 0;
-	copied = toRead;
+	copied = (int)toRead;
     }
 
     /* -- common postwork code ------- */
@@ -3099,7 +3099,7 @@ TransformWrite(
     Tcl_Obj *resObj;
     Tcl_Size bytec = 0;		/* Number of returned bytes */
     unsigned char *bytev;	/* Array of returned bytes */
-    int res;
+    Tcl_Size res;
 
     /*
      * Are we in the correct thread?
@@ -3109,7 +3109,7 @@ TransformWrite(
     if (rtPtr->thread != Tcl_GetCurrentThread()) {
 	ForwardParam p;
 
-	p.transform.buf = (char *) buf;
+	p.transform.buf = (char *)buf;
 	p.transform.size = toWrite;
 
 	ForwardOpToOwnerThread(rtPtr, ForwardedOutput, &p);
@@ -3215,7 +3215,7 @@ TransformFlush(
     Tcl_Obj *resObj;
     Tcl_Size bytec = 0;		/* Number of returned bytes */
     unsigned char *bytev;	/* Array of returned bytes */
-    int res;
+    Tcl_Size res;
 
     /*
      * Are we in the correct thread?
