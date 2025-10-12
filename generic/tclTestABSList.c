@@ -259,10 +259,11 @@ my_LStringObjIndex(
     (void)interp;
 
     if (index < lstringRepPtr->strlen) {
-	char cchar[2];
-	cchar[0] = lstringRepPtr->string[index];
-	cchar[1] = 0;
-	*charObjPtr = Tcl_NewStringObj(cchar,1);
+	char cchar[] = {
+	    lstringRepPtr->string[index],
+	    0
+	};
+	*charObjPtr = Tcl_NewStringObj(cchar, 1);
     } else {
 	*charObjPtr = NULL;
     }

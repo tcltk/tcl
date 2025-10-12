@@ -654,7 +654,7 @@ ThreadErrorProc(
     Tcl_Interp *interp)		/* Interp that failed */
 {
     Tcl_Channel errChannel;
-    const char *errorInfo, *argv[3];
+    const char *errorInfo;
     char *script;
     char buf[TCL_DOUBLE_SPACE+1];
 
@@ -669,9 +669,11 @@ ThreadErrorProc(
 	Tcl_WriteChars(errChannel, errorInfo, -1);
 	Tcl_WriteChars(errChannel, "\n", 1);
     } else {
-	argv[0] = errorProcString;
-	argv[1] = buf;
-	argv[2] = errorInfo;
+	const char *argv[] = {
+	    errorProcString,
+	    buf,
+	    errorInfo
+	};
 	script = Tcl_Merge(3, argv);
 	ThreadSend(interp, errorThreadId, script, 0);
 	Tcl_Free(script);

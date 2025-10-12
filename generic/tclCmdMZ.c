@@ -371,7 +371,6 @@ Tcl_RegexpObjCmd(
 
 	    if (indices) {
 		Tcl_Size start, end;
-		Tcl_Obj *objs[2];
 
 		/*
 		 * Only adjust the match area if there was a match for that
@@ -395,10 +394,10 @@ Tcl_RegexpObjCmd(
 		    end = TCL_INDEX_NONE;
 		}
 
-		TclNewIndexObj(objs[0], start);
-		TclNewIndexObj(objs[1], end);
-
-		newPtr = Tcl_NewListObj(2, objs);
+		newPtr = Tcl_NewListObj(2, (Tcl_Obj *[]) {
+		    Tcl_NewWideIntObj(start),
+		    Tcl_NewWideIntObj(end)
+		});
 	    } else {
 		if ((i <= info.nsubs) && (info.matches[i].end > 0)) {
 		    newPtr = Tcl_GetRange(objPtr,
@@ -4065,8 +4064,7 @@ Tcl_TimeObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_Obj *objPtr;
-    Tcl_Obj *objs[4];
+    Tcl_Obj *objPtr, *msObj;
     int i, result;
     int count;
     double totalMicroSec;
@@ -4115,9 +4113,9 @@ Tcl_TimeObjCmd(
 	 * Use int obj since we know time is not fractional. [Bug 1202178]
 	 */
 
-	TclNewIntObj(objs[0], (count <= 0) ? 0 : (Tcl_WideInt)totalMicroSec);
+	TclNewIntObj(msObj, (count <= 0) ? 0 : (Tcl_WideInt)totalMicroSec);
     } else {
-	TclNewDoubleObj(objs[0], totalMicroSec/count);
+	TclNewDoubleObj(msObj, totalMicroSec/count);
     }
 
     /*
@@ -4125,11 +4123,12 @@ Tcl_TimeObjCmd(
      * as such (extracting the first element, typically).
      */
 
-    TclNewLiteralStringObj(objs[1], "microseconds");
-    TclNewLiteralStringObj(objs[2], "per");
-    TclNewLiteralStringObj(objs[3], "iteration");
-    Tcl_SetObjResult(interp, Tcl_NewListObj(4, objs));
-
+    Tcl_SetObjResult(interp, Tcl_NewListObj(4, (Tcl_Obj *[]) {
+	msObj,
+	Tcl_NewStringObj("microseconds", -1),
+	Tcl_NewStringObj("per", -1),
+	Tcl_NewStringObj("iteration", -1)
+    }));
     return TCL_OK;
 }
 

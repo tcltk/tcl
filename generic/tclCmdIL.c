@@ -5113,7 +5113,7 @@ SortCompare(
 	b = elemPtr2->collationKey.doubleValue;
 	order = ((a >= b) - (a <= b));
     } else {
-	Tcl_Obj **objv, *paramObjv[2];
+	Tcl_Obj **objv;
 	Tcl_Size objc;
 	Tcl_Obj *objPtr1, *objPtr2;
 
@@ -5129,8 +5129,10 @@ SortCompare(
 	objPtr1 = elemPtr1->collationKey.objValuePtr;
 	objPtr2 = elemPtr2->collationKey.objValuePtr;
 
-	paramObjv[0] = objPtr1;
-	paramObjv[1] = objPtr2;
+	Tcl_Obj *paramObjv[] = {
+	    objPtr1,
+	    objPtr2
+	};
 
 	/*
 	 * We made space in the command list for the two things to compare.

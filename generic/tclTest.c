@@ -984,7 +984,6 @@ AsyncHandlerProc(
 {
     TestAsyncHandler *asyncPtr;
     int id = (int)PTR2INT(clientData);
-    const char *listArgv[4];
     char *cmd;
     char string[TCL_INTEGER_SPACE];
 
@@ -1003,10 +1002,12 @@ AsyncHandlerProc(
     }
 
     TclFormatInt(string, code);
-    listArgv[0] = asyncPtr->command;
-    listArgv[1] = Tcl_GetStringResult(interp);
-    listArgv[2] = string;
-    listArgv[3] = NULL;
+    const char *listArgv[] = {
+	asyncPtr->command,
+	Tcl_GetStringResult(interp),
+	string,
+	NULL,
+    };
     cmd = Tcl_Merge(3, listArgv);
     if (interp != NULL) {
 	code = Tcl_EvalEx(interp, cmd, TCL_INDEX_NONE, 0);
@@ -8254,10 +8255,11 @@ NREUnwind_callback(
 	Tcl_NRAddCallback(interp, NREUnwind_callback, data[0], data[1],
 		cStackPtr, NULL);
     } else {
-	Tcl_Obj *idata[3];
-	idata[0] = Tcl_NewWideIntObj(((char *)data[1] - (char *)data[0]));
-	idata[1] = Tcl_NewWideIntObj(((char *)data[2] - (char *)data[0]));
-	idata[2] = Tcl_NewWideIntObj(((char *)cStackPtr - (char *)data[0]));
+	Tcl_Obj *idata[] = {
+	    Tcl_NewWideIntObj(((char *)data[1] - (char *)data[0])),
+	    Tcl_NewWideIntObj(((char *)data[2] - (char *)data[0])),
+	    Tcl_NewWideIntObj(((char *)cStackPtr - (char *)data[0]))
+	};
 	Tcl_SetObjResult(interp, Tcl_NewListObj(3, idata));
     }
     return TCL_OK;
@@ -8291,7 +8293,6 @@ TestNRELevels(
     Interp *iPtr = (Interp *) interp;
     static Tcl_Size *refDepth = NULL;
     Tcl_Size depth;
-    Tcl_Obj *levels[6];
     Tcl_Size i = 0;
     NRE_callback *cbPtr = iPtr->execEnvPtr->callbackPtr;
 
@@ -8301,12 +8302,15 @@ TestNRELevels(
 
     depth = (refDepth - (ptrdiff_t *)TclGetCStackPtr());
 
-    levels[0] = Tcl_NewWideIntObj(depth);
-    levels[1] = Tcl_NewWideIntObj(iPtr->numLevels);
-    levels[2] = Tcl_NewWideIntObj(iPtr->cmdFramePtr->level);
-    levels[3] = Tcl_NewWideIntObj(iPtr->varFramePtr->level);
-    levels[4] = Tcl_NewWideIntObj(iPtr->execEnvPtr->execStackPtr->tosPtr
-	    - iPtr->execEnvPtr->execStackPtr->stackWords);
+    Tcl_Obj *levels[] = {
+	Tcl_NewWideIntObj(depth),
+	Tcl_NewWideIntObj(iPtr->numLevels),
+	Tcl_NewWideIntObj(iPtr->cmdFramePtr->level),
+	Tcl_NewWideIntObj(iPtr->varFramePtr->level),
+	Tcl_NewWideIntObj(iPtr->execEnvPtr->execStackPtr->tosPtr
+		- iPtr->execEnvPtr->execStackPtr->stackWords),
+	NULL
+    };
 
     while (cbPtr) {
 	i++;
@@ -8664,7 +8668,7 @@ TestparseargsCmd(
     static int foo = 0;
     const char *media = NULL, *color = NULL;
     Tcl_Size count = objc;
-    Tcl_Obj **remObjv, *result[5];
+    Tcl_Obj **remObjv;
     const Tcl_ArgvInfo argTable[] = {
 	{TCL_ARGV_CONSTANT, "-bool", INT2PTR(1), &foo, "booltest", NULL},
 	{TCL_ARGV_STRING,  "-colormode" ,  NULL, &color,  "color mode", NULL},
@@ -8676,11 +8680,13 @@ TestparseargsCmd(
     if (Tcl_ParseArgsObjv(interp, argTable, &count, objv, &remObjv)!=TCL_OK) {
 	return TCL_ERROR;
     }
-    result[0] = Tcl_NewWideIntObj(foo);
-    result[1] = Tcl_NewWideIntObj(count);
-    result[2] = Tcl_NewListObj(count, remObjv);
-    result[3] = Tcl_NewStringObj(color ? color : "NULL", -1);
-    result[4] = Tcl_NewStringObj(media ? media : "NULL", -1);
+    Tcl_Obj *result[] = {
+	Tcl_NewWideIntObj(foo),
+	Tcl_NewWideIntObj(count),
+	Tcl_NewListObj(count, remObjv),
+	Tcl_NewStringObj(color ? color : "NULL", -1),
+	Tcl_NewStringObj(media ? media : "NULL", -1)
+    };
     Tcl_SetObjResult(interp, Tcl_NewListObj(5, result));
     Tcl_Free(remObjv);
     return TCL_OK;
@@ -8965,26 +8971,28 @@ TestApplyLambdaCmd(
     TCL_UNUSED(int),		/* objc. */
     TCL_UNUSED(Tcl_Obj *const *)) /* objv. */
 {
-    Tcl_Obj *lambdaObjs[2];
-    Tcl_Obj *evalObjs[2];
     Tcl_Obj *lambdaObj;
     int result;
 
     /* Create a lambda {{} {set a 42}} */
-    lambdaObjs[0] = Tcl_NewObj(); /* No parameters */
-    lambdaObjs[1] = Tcl_NewStringObj("set a 42", -1); /* Body */
+    Tcl_Obj *lambdaObjs[] = {
+	Tcl_NewObj(),				/* No parameters */
+	Tcl_NewStringObj("set a 42", -1)	/* Body */
+    };
     lambdaObj = Tcl_NewListObj(2, lambdaObjs);
     Tcl_IncrRefCount(lambdaObj);
 
     /* Create the command "apply {{} {set a 42}" */
-    evalObjs[0] = Tcl_NewStringObj("apply", -1);
+    Tcl_Obj *evalObjs[] = {
+	Tcl_NewStringObj("apply", -1),
+	/*
+	 * NOTE: IMPORTANT TO EXHIBIT THE BUG. We duplicate the lambda because
+	 * it will get shimmered to a Lambda internal representation but we
+	 * want to hold on to our list representation.
+	 */
+	Tcl_DuplicateObj(lambdaObj)
+    };
     Tcl_IncrRefCount(evalObjs[0]);
-    /*
-     * NOTE: IMPORTANT TO EXHIBIT THE BUG. We duplicate the lambda because
-     * it will get shimmered to a Lambda internal representation but we
-     * want to hold on to our list representation.
-     */
-    evalObjs[1] = Tcl_DuplicateObj(lambdaObj);
     Tcl_IncrRefCount(evalObjs[1]);
 
     /* Evaluate it */

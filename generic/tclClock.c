@@ -742,10 +742,10 @@ TclClockMCDict(
 
 	    if (opts->mcDictObj == NULL) {
 		/* get msgcat dictionary - ::tcl::clock::mcget locale */
-		Tcl_Obj *callargs[2];
-
-		callargs[0] = dataPtr->literals[LIT_MCGET];
-		callargs[1] = opts->localeObj;
+		Tcl_Obj *callargs[] = {
+		    dataPtr->literals[LIT_MCGET],
+		    opts->localeObj
+		};
 
 		if (Tcl_EvalObjv(opts->interp, 2, callargs, 0) != TCL_OK) {
 		    return NULL;

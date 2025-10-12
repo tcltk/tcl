@@ -1882,10 +1882,10 @@ InitClassPath(
     Foundation *fPtr = GetFoundation(interp);
 
     if (fPtr->helpersNs != NULL) {
-	Tcl_Namespace *path[2];
-
-	path[0] = fPtr->helpersNs;
-	path[1] = fPtr->ooNs;
+	Tcl_Namespace *path[] = {
+	    fPtr->helpersNs,
+	    fPtr->ooNs
+	};
 	TclSetNsPath((Namespace *) clsPtr->thisPtr->namespacePtr, 2, path);
     } else {
 	TclSetNsPath((Namespace *) clsPtr->thisPtr->namespacePtr, 1,
@@ -1963,7 +1963,6 @@ Tcl_NewObjectInstance(
 {
     Class *classPtr = (Class *) cls;
     Object *oPtr;
-    void *clientData[4];
 
     oPtr = TclNewObjectInstanceCommon(interp, classPtr, nameStr, nsNameStr);
     if (oPtr == NULL) {
@@ -1999,11 +1998,12 @@ Tcl_NewObjectInstance(
 		TclResetRewriteEnsemble(interp, 1);
 	    }
 
-	    clientData[0] = contextPtr;
-	    clientData[1] = oPtr;
-	    clientData[2] = state;
-	    clientData[3] = &oPtr;
-
+	    void *clientData[] = {
+		contextPtr,
+		oPtr,
+		state,
+		&oPtr
+	    };
 	    result = FinalizeAlloc(clientData, interp, result);
 	    if (result != TCL_OK) {
 		return NULL;
@@ -2242,7 +2242,7 @@ Tcl_CopyObjectInstance(
     Method *mPtr;
     Class *mixinPtr;
     CallContext *contextPtr;
-    Tcl_Obj *keyPtr, *filterObj, *variableObj, *args[3];
+    Tcl_Obj *keyPtr, *filterObj, *variableObj;
     PrivateVariableMapping *privateVariable;
     Tcl_Size i;
     int result;
@@ -2519,9 +2519,11 @@ Tcl_CopyObjectInstance(
     contextPtr = TclOOGetCallContext(o2Ptr, oPtr->fPtr->clonedName, 0, NULL,
 	    NULL, NULL);
     if (contextPtr) {
-	args[0] = TclOOObjectName(interp, o2Ptr);
-	args[1] = oPtr->fPtr->clonedName;
-	args[2] = TclOOObjectName(interp, oPtr);
+	Tcl_Obj * args[] = {
+	    TclOOObjectName(interp, o2Ptr),
+	    oPtr->fPtr->clonedName,
+	    TclOOObjectName(interp, oPtr)
+	};
 	Tcl_IncrRefCount(args[0]);
 	Tcl_IncrRefCount(args[1]);
 	Tcl_IncrRefCount(args[2]);

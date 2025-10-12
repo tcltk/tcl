@@ -1873,7 +1873,7 @@ TclOORenderCallChain(
     CallChain *callPtr)
 {
     Tcl_Obj *filterLiteral, *methodLiteral, *objectLiteral, *privateLiteral;
-    Tcl_Obj *resultObj, *descObjs[4], **objv;
+    Tcl_Obj *resultObj, **objv;
     Foundation *fPtr = TclOOGetFoundation(interp);
     Tcl_Size i;
 
@@ -1903,23 +1903,20 @@ TclOORenderCallChain(
     for (i = 0 ; i < callPtr->numChain ; i++) {
 	MInvoke *miPtr = &callPtr->chain[i];
 
-	descObjs[0] =
+	objv[i] = Tcl_NewListObj(4, (Tcl_Obj *[]) {
 	    miPtr->isFilter ? filterLiteral :
-	    callPtr->flags & OO_UNKNOWN_METHOD ? fPtr->unknownMethodNameObj :
-	    IS_PRIVATE(miPtr->mPtr) ? privateLiteral :
-		    methodLiteral;
-	descObjs[1] =
+		callPtr->flags & OO_UNKNOWN_METHOD ? fPtr->unknownMethodNameObj :
+		IS_PRIVATE(miPtr->mPtr) ? privateLiteral :
+		    methodLiteral,
 	    callPtr->flags & CONSTRUCTOR ? fPtr->constructorName :
-	    callPtr->flags & DESTRUCTOR ? fPtr->destructorName :
-		    miPtr->mPtr->namePtr;
-	descObjs[2] = miPtr->mPtr->declaringClassPtr
+		callPtr->flags & DESTRUCTOR ? fPtr->destructorName :
+		    miPtr->mPtr->namePtr,
+	    miPtr->mPtr->declaringClassPtr
 		? Tcl_GetObjectName(interp,
 			(Tcl_Object) miPtr->mPtr->declaringClassPtr->thisPtr)
-		: objectLiteral;
-	descObjs[3] = Tcl_NewStringObj(miPtr->mPtr->typePtr->name,
-		TCL_AUTO_LENGTH);
-
-	objv[i] = Tcl_NewListObj(4, descObjs);
+		: objectLiteral,
+	    Tcl_NewStringObj(miPtr->mPtr->typePtr->name, TCL_AUTO_LENGTH)
+	});
     }
 
     /*

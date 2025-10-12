@@ -1424,16 +1424,17 @@ AcceptCallbackProc(
 
     if (acceptCallbackPtr->interp != NULL) {
 	Tcl_Interp *interp = acceptCallbackPtr->interp;
-	Tcl_Obj *script, *objv[2];
+	Tcl_Obj *script;
 	int result = TCL_OK;
 
-	objv[0] = acceptCallbackPtr->script;
-	objv[1] = Tcl_NewListObj(3, NULL);
-	Tcl_ListObjAppendElement(NULL, objv[1], Tcl_NewStringObj(
-		Tcl_GetChannelName(chan), -1));
-	Tcl_ListObjAppendElement(NULL, objv[1], Tcl_NewStringObj(address, -1));
-	Tcl_ListObjAppendElement(NULL, objv[1], Tcl_NewWideIntObj(port));
-
+	Tcl_Obj *objv[] = {
+	    acceptCallbackPtr->script,
+	    Tcl_NewListObj(3, (Tcl_Obj *[]) {
+		Tcl_NewStringObj(Tcl_GetChannelName(chan), -1),
+		Tcl_NewStringObj(address, -1),
+		Tcl_NewWideIntObj(port)
+	    })
+	};
 	script = Tcl_ConcatObj(2, objv);
 	Tcl_IncrRefCount(script);
 	Tcl_DecrRefCount(objv[1]);
@@ -2021,8 +2022,6 @@ ChanPipeObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Channel rchan, wchan;
-    const char *channelNames[2];
-    Tcl_Obj *resultPtr;
 
     if (objc != 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, "");
@@ -2033,16 +2032,10 @@ ChanPipeObjCmd(
 	return TCL_ERROR;
     }
 
-    channelNames[0] = Tcl_GetChannelName(rchan);
-    channelNames[1] = Tcl_GetChannelName(wchan);
-
-    TclNewObj(resultPtr);
-    Tcl_ListObjAppendElement(NULL, resultPtr,
-	    Tcl_NewStringObj(channelNames[0], -1));
-    Tcl_ListObjAppendElement(NULL, resultPtr,
-	    Tcl_NewStringObj(channelNames[1], -1));
-    Tcl_SetObjResult(interp, resultPtr);
-
+    Tcl_SetObjResult(interp, Tcl_NewListObj(2, (Tcl_Obj *[]) {
+	Tcl_NewStringObj(Tcl_GetChannelName(rchan), -1),
+	Tcl_NewStringObj(Tcl_GetChannelName(wchan), -1)
+    }));
     return TCL_OK;
 }
 

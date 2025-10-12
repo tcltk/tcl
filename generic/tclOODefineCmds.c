@@ -2236,16 +2236,15 @@ TclOODefineInitialiseObjCmd(
     if (object == NULL) {
 	return TCL_ERROR;
     }
-    Tcl_Obj *lambdaWords[] = {
-	Tcl_NewObj(),
-	objv[1],
-	TclNewNamespaceObj(Tcl_GetObjectNamespace(object))
-    };
 
     // Delegate to [apply] to run it
     Tcl_Obj *applyArgs[] = {
 	Tcl_NewStringObj("apply", -1),
-	Tcl_NewListObj(3, lambdaWords)
+	Tcl_NewListObj(3, (Tcl_Obj *[]) {
+	    Tcl_NewObj(),
+	    objv[1],
+	    TclNewNamespaceObj(Tcl_GetObjectNamespace(object))
+	})
     };
     Tcl_IncrRefCount(applyArgs[0]);
     Tcl_IncrRefCount(applyArgs[1]);
@@ -2405,11 +2404,10 @@ TclOODefineClassMethodObjCmd(
     if (IsPrivateDefine(interp)) {
 	isPublic = TRUE_PRIVATE_METHOD;
     }
-    Tcl_Obj *forwardArgs[] = {
+    Tcl_Obj *prefixObj = Tcl_NewListObj(2, (Tcl_Obj *[]) {
 	Tcl_NewStringObj("myclass", -1),
 	objv[1]
-    };
-    Tcl_Obj *prefixObj = Tcl_NewListObj(2, forwardArgs);
+    });
     Method *mPtr = TclOONewForwardMethod(interp, clsPtr, isPublic,
 	    objv[1], prefixObj);
     if (mPtr == NULL) {
@@ -2630,12 +2628,11 @@ TclOODefineSlots(
 
     // If a slot can't figure out what method to call directly, it uses
     // --default-operation. That defaults to -append; we set that here.
-    Tcl_Obj *defaults[] = {
-	fPtr->myName,
-	Tcl_NewStringObj("-append", TCL_AUTO_LENGTH)
-    };
-    TclOONewForwardMethod(interp, (Class *) slotCls, 0,
-	    fPtr->slotDefOpName, Tcl_NewListObj(2, defaults));
+    TclOONewForwardMethod(interp, (Class *) slotCls, 0, fPtr->slotDefOpName,
+	    Tcl_NewListObj(2, (Tcl_Obj *[]) {
+		fPtr->myName,
+		Tcl_NewStringObj("-append", TCL_AUTO_LENGTH)
+	    }));
 
     // Hide the destroy method. (We're definitely taking a ref to the name.)
     UnexportMethod((Class *) slotCls,
@@ -2657,12 +2654,11 @@ TclOODefineSlots(
 		    &slotPtr->resolverType, NULL);
 	}
 	if (slotPtr->defaultOp) {
-	    Tcl_Obj *slotDefaults[] = {
-		fPtr->myName,
-		Tcl_NewStringObj(slotPtr->defaultOp, TCL_AUTO_LENGTH)
-	    };
 	    TclOONewForwardInstanceMethod(interp, (Object *) slotObject, 0,
-		    fPtr->slotDefOpName, Tcl_NewListObj(2, slotDefaults));
+		    fPtr->slotDefOpName, Tcl_NewListObj(2, (Tcl_Obj *[]) {
+			fPtr->myName,
+			Tcl_NewStringObj(slotPtr->defaultOp, TCL_AUTO_LENGTH)
+		    }));
 	}
     }
     return TCL_OK;

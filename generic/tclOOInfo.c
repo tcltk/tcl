@@ -269,7 +269,6 @@ InfoObjectDefnCmd(
     Object *oPtr;
     Tcl_HashEntry *hPtr;
     Proc *procPtr;
-    Tcl_Obj *resultObjs[2];
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "objName methodName");
@@ -297,9 +296,10 @@ InfoObjectDefnCmd(
      * We now have the method to describe the definition of.
      */
 
-    resultObjs[0] = DescribeMethodArgs(procPtr);
-    resultObjs[1] = TclOOGetMethodBody((Method *) Tcl_GetHashValue(hPtr));
-    Tcl_SetObjResult(interp, Tcl_NewListObj(2, resultObjs));
+    Tcl_SetObjResult(interp, Tcl_NewListObj(2, (Tcl_Obj *[]) {
+	DescribeMethodArgs(procPtr),
+	TclOOGetMethodBody((Method *) Tcl_GetHashValue(hPtr))
+    }));
     return TCL_OK;
 
     /*
@@ -1004,7 +1004,6 @@ InfoClassConstrCmd(
     Tcl_Obj *const objv[])
 {
     Proc *procPtr;
-    Tcl_Obj *resultObjs[2];
     Class *clsPtr;
 
     if (objc != 2) {
@@ -1027,9 +1026,10 @@ InfoClassConstrCmd(
 	return TCL_ERROR;
     }
 
-    resultObjs[0] = DescribeMethodArgs(procPtr);
-    resultObjs[1] = TclOOGetMethodBody(clsPtr->constructorPtr);
-    Tcl_SetObjResult(interp, Tcl_NewListObj(2, resultObjs));
+    Tcl_SetObjResult(interp, Tcl_NewListObj(2, (Tcl_Obj *[]) {
+	DescribeMethodArgs(procPtr),
+	TclOOGetMethodBody(clsPtr->constructorPtr)
+    }));
     return TCL_OK;
 }
 
@@ -1052,7 +1052,6 @@ InfoClassDefnCmd(
 {
     Tcl_HashEntry *hPtr;
     Proc *procPtr;
-    Tcl_Obj *resultObjs[2];
     Class *clsPtr;
 
     if (objc != 3) {
@@ -1081,9 +1080,10 @@ InfoClassDefnCmd(
 	return TCL_ERROR;
     }
 
-    resultObjs[0] = DescribeMethodArgs(procPtr);
-    resultObjs[1] = TclOOGetMethodBody((Method *) Tcl_GetHashValue(hPtr));
-    Tcl_SetObjResult(interp, Tcl_NewListObj(2, resultObjs));
+    Tcl_SetObjResult(interp, Tcl_NewListObj(2, (Tcl_Obj *[]) {
+	DescribeMethodArgs(procPtr),
+	TclOOGetMethodBody((Method *) Tcl_GetHashValue(hPtr))
+    }));
     return TCL_OK;
 }
 
