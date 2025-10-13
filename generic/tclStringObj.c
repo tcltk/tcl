@@ -236,6 +236,27 @@ Tcl_NewStringObj(
     return Tcl_DbNewStringObj(bytes, length, "unknown", 0);
 }
 
+Tcl_Obj *
+Tcl_AttemptNewStringObj(
+    const char *bytes,		/* Points to the first of the length bytes
+				 * used to initialize the new object. */
+    Tcl_Size length)		/* The number of bytes to copy from "bytes"
+				 * when initializing the new object. If
+				 * TCL_INDEX_NONE, use bytes up to the first NUL
+				 * byte. */
+{
+    Tcl_Obj *objPtr;
+    if (length == TCL_INDEX_NONE) {
+	length = (bytes? strlen(bytes) : 0);
+    }
+    TclDbNewObj(objPtr, "unknown", 0);
+    if (!TclAttemptInitStringRep(objPtr, bytes, length)) {
+	TclFreeObj(objPtr);
+	objPtr = NULL;
+    }
+    return objPtr;
+}
+
 // Redefine the macro
 #define Tcl_NewStringObj(bytes, len) \
     Tcl_DbNewStringObj(bytes, len, __FILE__, __LINE__)
@@ -256,7 +277,25 @@ Tcl_NewStringObj(
     TclNewStringObj(objPtr, bytes, length);
     return objPtr;
 }
+
+Tcl_Obj *
+Tcl_AttemptNewStringObj(
+    const char *bytes,		/* Points to the first of the length bytes
+				 * used to initialize the new object. */
+    Tcl_Size length)		/* The number of bytes to copy from "bytes"
+				 * when initializing the new object. If -1,
+				 * use bytes up to the first NUL byte. */
+{
+    Tcl_Obj *objPtr;
+
+    if (length < 0) {
+	length = (bytes? strlen(bytes) : 0);
+    }
+    TclAttemptNewStringObj(objPtr, bytes, length);
+    return objPtr;
+}
 #endif /* TCL_MEM_DEBUG */
+
 
 /*
  *----------------------------------------------------------------------
@@ -382,6 +421,20 @@ Tcl_GetCharLength(
     Tcl_Obj *objPtr)		/* The String object to get the num chars
 				 * of. */
 {
+    Tcl_Size result = Tcl_AttemptGetCharLength(objPtr);
+    if (result < 0) {
+	    Tcl_Panic("cannot allocate %" TCL_SIZE_MODIFIER "d bytes for type '%s' ",
+		    objPtr->length + 1, objPtr->typePtr->name);
+    }
+    return result;
+}
+
+
+Tcl_Size
+Tcl_AttemptGetCharLength(
+    Tcl_Obj *objPtr)		/* The String object to get the num chars
+				 * of. */
+{
     String *stringPtr;
     Tcl_Size numChars = 0;
 
@@ -406,7 +459,9 @@ Tcl_GetCharLength(
      */
 
     if (TclIsPureByteArray(objPtr)) {
-	(void) Tcl_GetBytesFromObj(NULL, objPtr, &numChars);
+	if (Tcl_GetBytesFromObj(NULL, objPtr, &numChars) == NULL) {
+	    return -1;
+	}
 	return numChars;
     }
 
@@ -414,7 +469,9 @@ Tcl_GetCharLength(
      * OK, need to work with the object as a string.
      */
 
-    SetStringFromAny(NULL, objPtr);
+    if (SetStringFromAny(NULL, objPtr) != TCL_OK) {
+	return -1;
+    }
     stringPtr = GET_STRING(objPtr);
     numChars = stringPtr->numChars;
 
@@ -563,7 +620,9 @@ Tcl_GetUniChar(
      * OK, need to work with the object as a string.
      */
 
-    SetStringFromAny(NULL, objPtr);
+    if (SetStringFromAny(NULL, objPtr) != TCL_OK) {
+	return -1;
+    }
     stringPtr = GET_STRING(objPtr);
 
     if (stringPtr->hasUnicode == 0) {
@@ -659,7 +718,9 @@ TclGetUnicodeFromObj(
 {
     String *stringPtr;
 
-    SetStringFromAny(NULL, objPtr);
+    if (SetStringFromAny(NULL, objPtr) != TCL_OK) {
+	return NULL;
+    }
     stringPtr = GET_STRING(objPtr);
 
     if (stringPtr->hasUnicode == 0) {
@@ -688,7 +749,9 @@ Tcl_GetUnicodeFromObj(
 {
     String *stringPtr;
 
-    SetStringFromAny(NULL, objPtr);
+    if (SetStringFromAny(NULL, objPtr) != TCL_OK) {
+	return NULL;
+    }
     stringPtr = GET_STRING(objPtr);
 
     if (stringPtr->hasUnicode == 0) {
@@ -761,7 +824,9 @@ Tcl_GetRange(
      * OK, need to work with the object as a string.
      */
 
-    SetStringFromAny(NULL, objPtr);
+    if (SetStringFromAny(NULL, objPtr) != TCL_OK) {
+	return NULL;
+    }
     stringPtr = GET_STRING(objPtr);
 
     if (stringPtr->hasUnicode == 0) {
@@ -786,7 +851,10 @@ Tcl_GetRange(
 	     * Since we know the char length of the result, store it.
 	     */
 
-	    SetStringFromAny(NULL, newObjPtr);
+	    if (SetStringFromAny(NULL, newObjPtr) != TCL_OK) {
+		return NULL;
+	    }
+
 	    stringPtr = GET_STRING(newObjPtr);
 	    stringPtr->numChars = newObjPtr->length;
 	    return newObjPtr;
@@ -905,6 +973,58 @@ Tcl_SetStringObj(
 /*
  *----------------------------------------------------------------------
  *
+ * Tcl_AttemptSetStringObj --
+ *
+ *	Modify an object to hold a string that is a copy of the bytes
+ *	indicated by the byte pointer and length arguments.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The object's string representation will be set to a copy of the
+ *	"length" bytes starting at "bytes". If "length" is TCL_INDEX_NONE, use bytes
+ *	up to the first NUL byte; i.e., assume "bytes" points to a C-style
+ *	NUL-terminated string. The object's old string and internal
+ *	representations are freed and the object's type is set NULL.
+ *
+ *----------------------------------------------------------------------
+ */
+
+char *
+Tcl_AttemptSetStringObj(
+    Tcl_Obj *objPtr,		/* Object whose internal rep to init. */
+    const char *bytes,		/* Points to the first of the length bytes
+				 * used to initialize the object. */
+    Tcl_Size length)		/* The number of bytes to copy from "bytes"
+				 * when initializing the object. If -1,
+				 * use bytes up to the first NUL byte.*/
+{
+    if (Tcl_IsShared(objPtr)) {
+	Tcl_Panic("%s called with shared object", "Tcl_SetStringObj");
+    }
+
+    /*
+     * Set the type to NULL and free any internal rep for the old type.
+     */
+
+    TclFreeInternalRep(objPtr);
+
+    /*
+     * Free any old string rep, then set the string rep to a copy of the
+     * length bytes starting at "bytes".
+     */
+
+    TclInvalidateStringRep(objPtr);
+    if (length == TCL_INDEX_NONE) {
+	length = (bytes ? strlen(bytes) : 0);
+    }
+    return TclAttemptInitStringRep(objPtr, bytes, length);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_SetObjLength --
  *
  *	Changes the length of the string representation of objPtr.
@@ -946,7 +1066,10 @@ Tcl_SetObjLength(
 	return;
     }
 
-    SetStringFromAny(NULL, objPtr);
+    if (SetStringFromAny(NULL, objPtr) != TCL_OK) {
+	Tcl_Panic("cannot allocate unicode rep");
+	return;
+    }
     stringPtr = GET_STRING(objPtr);
 
     if (objPtr->bytes != NULL) {
@@ -1041,7 +1164,9 @@ Tcl_AttemptSetObjLength(
 	return 1;
     }
 
-    SetStringFromAny(NULL, objPtr);
+    if (SetStringFromAny(NULL, objPtr) != TCL_OK) {
+	return 0;
+    }
     stringPtr = GET_STRING(objPtr);
 
     if (objPtr->bytes != NULL) {
@@ -1254,7 +1379,10 @@ Tcl_AppendLimitedToObj(
 	Tcl_Panic("%s called with shared object", "Tcl_AppendLimitedToObj");
     }
 
-    SetStringFromAny(NULL, objPtr);
+    if (SetStringFromAny(NULL, objPtr) != TCL_OK) {
+	Tcl_Panic("cannot allocate unicode rep");
+	return;
+    }
     stringPtr = GET_STRING(objPtr);
 
     /* If appended string starts with a continuation byte or a lower surrogate,
@@ -1345,7 +1473,10 @@ Tcl_AppendUnicodeToObj(
 	return;
     }
 
-    SetStringFromAny(NULL, objPtr);
+    if (SetStringFromAny(NULL, objPtr) != TCL_OK) {
+	Tcl_Panic("cannot allocate unicode rep");
+	return;
+    }
     stringPtr = GET_STRING(objPtr);
 
     /*
@@ -1457,7 +1588,10 @@ Tcl_AppendObjToObj(
      * Must append as strings.
      */
 
-    SetStringFromAny(NULL, objPtr);
+    if (SetStringFromAny(NULL, objPtr) != TCL_OK) {
+	Tcl_Panic("cannot allocate unicode rep");
+	return;
+    }
     stringPtr = GET_STRING(objPtr);
 
     /* If appended string starts with a continuation byte or a lower surrogate,
@@ -1544,7 +1678,10 @@ AppendUnicodeToUnicodeRep(
 	return;
     }
 
-    SetStringFromAny(NULL, objPtr);
+    if (SetStringFromAny(NULL, objPtr) != TCL_OK) {
+	Tcl_Panic("cannot allocate unicode rep");
+	return;
+    }
     stringPtr = GET_STRING(objPtr);
 
     /*
@@ -1785,7 +1922,10 @@ TclAppendUtfToUtf(
 	Tcl_Panic("%s called with shared object", "TclAppendUtfToUtf");
     }
 
-    SetStringFromAny(NULL, objPtr);
+    if (SetStringFromAny(NULL, objPtr) != TCL_OK) {
+	Tcl_Panic("cannot allocate unicode rep");
+	return;
+    }
 
     AppendUtfToUtfRep(objPtr, bytes, numBytes);
 }
@@ -3108,13 +3248,23 @@ TclStringRepeat(
 	 */
 
 	if (!inPlace || Tcl_IsShared(objPtr)) {
-	    objResultPtr = Tcl_NewStringObj(TclGetString(objPtr), length);
+	    char *str = TclAttemptGetString(objPtr);
+	    if (!str) {
+		count = 1;
+		goto allocoverflow;
+	    }
+	    objResultPtr = Tcl_AttemptNewStringObj(str, length);
+	    if (!objResultPtr) {
+		count = 1;
+		goto allocoverflow;
+	    }
 	} else {
 	    TclFreeInternalRep(objPtr);
 	    objResultPtr = objPtr;
 	}
 	/* TODO - overflow check */
 	if (0 == Tcl_AttemptSetObjLength(objResultPtr, count*length)) {
+	allocoverflow:
 	    if (interp) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"string size overflow: unable to alloc %" TCL_SIZE_MODIFIER "d bytes",
@@ -3731,7 +3881,7 @@ TclStringCmp(
 		case -1:
 		    s1 = "";
 		    s1len = 0;
-		    s2 = TclGetStringFromObj(value2Ptr, &s2len);
+		    s2 = TclAttemptGetStringFromObj(value2Ptr, &s2len);
 		    break;
 		case 0:
 		    match = -1;
@@ -3746,7 +3896,7 @@ TclStringCmp(
 		case -1:
 		    s2 = "";
 		    s2len = 0;
-		    s1 = TclGetStringFromObj(value1Ptr, &s1len);
+		    s1 = TclAttemptGetStringFromObj(value1Ptr, &s1len);
 		    break;
 		case 0:
 		    match = 1;
@@ -3757,8 +3907,11 @@ TclStringCmp(
 		    goto matchdone;
 		}
 	    } else {
-		s1 = TclGetStringFromObj(value1Ptr, &s1len);
-		s2 = TclGetStringFromObj(value2Ptr, &s2len);
+		s1 = TclAttemptGetStringFromObj(value1Ptr, &s1len);
+		s2 = TclAttemptGetStringFromObj(value2Ptr, &s2len);
+	    }
+	    if (!s1 || !s2) {
+		return INT_MIN;
 	    }
 	    if (!nocase && checkEq && reqlength < 0) {
 		/*
@@ -3859,6 +4012,8 @@ TclStringFirst(
 	 * Whenever this routine is turned into a proper substring
 	 * finder, change to `return start` after limits imposed. */
 	goto firstEnd;
+    } else if (ln == -1) {
+	return NULL;
     }
 
     if (TclIsPureByteArray(needle) && TclIsPureByteArray(haystack)) {
@@ -4078,7 +4233,9 @@ TclStringReverse(
 	return objPtr;
     }
 
-    SetStringFromAny(NULL, objPtr);
+    if (SetStringFromAny(NULL, objPtr) != TCL_OK) {
+	return NULL;
+    }
     stringPtr = GET_STRING(objPtr);
 
     if (stringPtr->hasUnicode) {
@@ -4501,7 +4658,7 @@ DupStringInternalRep(
  *	Create an internal representation of type "String" for an object.
  *
  * Results:
- *	This operation always succeeds and returns TCL_OK.
+ *	This operation returns TCL_OK, or TCL_ERROR on an allocation error.
  *
  * Side effects:
  *	Any old internal representation for objPtr is freed and the internal
@@ -4512,7 +4669,7 @@ DupStringInternalRep(
 
 static int
 SetStringFromAny(
-    TCL_UNUSED(Tcl_Interp *),
+    Tcl_Interp *interp,
     Tcl_Obj *objPtr)		/* The object to convert. */
 {
     if (!TclHasInternalRep(objPtr, &tclStringType)) {
@@ -4522,7 +4679,10 @@ SetStringFromAny(
 	 * Convert whatever we have into an untyped value. Just A String.
 	 */
 
-	(void) TclGetString(objPtr);
+	(void)TclAttemptGetString(objPtr);
+	if (!objPtr->bytes) {
+	    return TclCannotAllocateError(interp, objPtr);
+	}
 	TclFreeInternalRep(objPtr);
 
 	/*
@@ -4623,7 +4783,11 @@ ExtendStringRepWithUnicode(
 	size += TclUtfCount(unicode[i]);
     }
     if (size < 0) {
-	Tcl_Panic("max size for a Tcl value (%" TCL_SIZE_MODIFIER "d bytes) exceeded", TCL_SIZE_MAX);
+	if (objPtr->bytes) {
+	    Tcl_Free(objPtr->bytes);
+	    objPtr->bytes = NULL;
+	}
+    return TCL_ERROR;
     }
 
     /*

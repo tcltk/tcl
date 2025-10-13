@@ -5678,7 +5678,11 @@ TEBCresume(
 
     case INST_STR_LEN:
 	valuePtr = OBJ_AT_TOS;
-	slength = Tcl_GetCharLength(valuePtr);
+	slength = Tcl_AttemptGetCharLength(valuePtr);
+	if (slength < 0) {
+		TclCannotAllocateError(interp, valuePtr);
+		goto gotError;
+	}
 	TclNewIntObj(objResultPtr, slength);
 	TRACE(("\"%.30s\" => %" SIZEu "\n", O2S(valuePtr), slength));
 	NEXT_INST_F(1, 1, 1);

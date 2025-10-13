@@ -695,15 +695,14 @@ UpdateStringOfByteArray(
     }
 
     if (size == length) {
-	char *dst = Tcl_InitStringRep(objPtr, (char *)src, size);
-
-	TclOOM(dst, size);
+	Tcl_InitStringRep(objPtr, (char *)src, size);
     } else {
 	char *dst = Tcl_InitStringRep(objPtr, NULL, size);
 
-	TclOOM(dst, size);
-	for (i = 0; i < length; i++) {
-	    dst += Tcl_UniCharToUtf(src[i], dst);
+	if (dst) {
+	    for (i = 0; i < length; i++) {
+		dst += Tcl_UniCharToUtf(src[i], dst);
+	    }
 	}
     }
 }
