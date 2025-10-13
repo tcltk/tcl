@@ -195,6 +195,8 @@ TclNewInstanceMethod(
     oPtr->epoch++;
     return (Tcl_Method) mPtr;
 }
+
+#undef Tcl_NewInstanceMethod
 Tcl_Method
 Tcl_NewInstanceMethod(
     TCL_UNUSED(Tcl_Interp *),
@@ -309,6 +311,7 @@ TclNewMethod(
     return (Tcl_Method) mPtr;
 }
 
+#undef Tcl_NewMethod
 Tcl_Method
 Tcl_NewMethod(
     TCL_UNUSED(Tcl_Interp *),
@@ -1798,6 +1801,7 @@ TclMethodIsType(
     return 0;
 }
 
+#undef Tcl_MethodIsType
 int
 Tcl_MethodIsType(
     Tcl_Method method,

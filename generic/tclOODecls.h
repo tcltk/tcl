@@ -270,4 +270,49 @@ extern const TclOOStubs *tclOOStubsPtr;
 
 /* !END!: Do not edit above this line. */
 
+#ifdef USE_TCLOO_STUBS
+
+#undef Tcl_MethodIsType
+#define Tcl_MethodIsType(method, typePtr, clientDataPtr) \
+    (_Generic((typePtr), \
+        const Tcl_MethodType *: tclOOStubsPtr->tcl_MethodIsType, \
+        const Tcl_MethodType2 *: tclOOStubsPtr->tcl_MethodIsType2) \
+	((method), (typePtr), (clientDataPtr)))
+
+#undef Tcl_NewInstanceMethod
+#define Tcl_NewInstanceMethod(interp, object, nameObj, flags, typePtr, clientData) \
+    (_Generic((typePtr), \
+        const Tcl_MethodType *: tclOOStubsPtr->tcl_NewInstanceMethod, \
+        const Tcl_MethodType2 *: tclOOStubsPtr->tcl_NewInstanceMethod2) \
+	((interp), (object), (nameObj), (flags), (typePtr), (clientData)))
+
+#undef Tcl_NewMethod
+#define Tcl_NewMethod(interp, cls, nameObj, flags, typePtr, clientData) \
+    (_Generic((typePtr), \
+        const Tcl_MethodType *: tclOOStubsPtr->tcl_NewMethod, \
+        const Tcl_MethodType2 *: tclOOStubsPtr->tcl_NewMethod2) \
+	((interp), (cls), (nameObj), (flags), (typePtr), (clientData)))
+
+#else
+
+#define Tcl_MethodIsType(method, typePtr, clientDataPtr) \
+    (_Generic((typePtr), \
+        const Tcl_MethodType *: Tcl_MethodIsType, \
+        const Tcl_MethodType2 *: Tcl_MethodIsType2) \
+	((method), (typePtr), (clientDataPtr)))
+
+#define Tcl_NewInstanceMethod(interp, object, nameObj, flags, typePtr, clientData) \
+    (_Generic((typePtr), \
+        const Tcl_MethodType *: Tcl_NewInstanceMethod, \
+        const Tcl_MethodType2 *: Tcl_NewInstanceMethod2) \
+	((interp), (object), (nameObj), (flags), (typePtr), (clientData)))
+
+#define Tcl_NewMethod(interp, cls, nameObj, flags, typePtr, clientData) \
+    (_Generic((typePtr), \
+        const Tcl_MethodType *: Tcl_NewMethod, \
+        const Tcl_MethodType2 *: Tcl_NewMethod2) \
+	((interp), (cls), (nameObj), (flags), (typePtr), (clientData)))
+
+#endif
+
 #endif /* _TCLOODECLS */
