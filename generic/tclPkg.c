@@ -1037,6 +1037,74 @@ Tcl_PkgPresentEx(
 /*
  *----------------------------------------------------------------------
  *
+ * TclForgetPackage --
+ *
+ *	This function is the core of "package forget". It makes Tcl forget
+ *	what it knows about a package (including whether it is loaded and
+ *	what versions of the package exist). It does not remove the
+ *	implementation of the package from either filesystem or interpreter.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Records of package details are removed if they exist.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+ForgetPackage(
+    Interp *iPtr,
+    PkgFiles *pkgFiles,
+    const char *pkgName)
+{
+    Tcl_HashEntry *hPtr;
+    if (pkgFiles) {
+	hPtr = Tcl_FindHashEntry(&pkgFiles->table, pkgName);
+	if (hPtr) {
+	    Tcl_Obj *obj = (Tcl_Obj *)Tcl_GetHashValue(hPtr);
+	    Tcl_DeleteHashEntry(hPtr);
+	    Tcl_DecrRefCount(obj);
+	}
+    }
+
+    hPtr = Tcl_FindHashEntry(&iPtr->packageTable, pkgName);
+    if (hPtr == NULL) {
+	return;
+    }
+    Package *pkgPtr = (Package *)Tcl_GetHashValue(hPtr);
+    Tcl_DeleteHashEntry(hPtr);
+    if (pkgPtr->version != NULL) {
+	Tcl_DecrRefCount(pkgPtr->version);
+    }
+    while (pkgPtr->availPtr != NULL) {
+	PkgAvail *availPtr = pkgPtr->availPtr;
+	pkgPtr->availPtr = availPtr->nextPtr;
+	Tcl_EventuallyFree(availPtr->version, TCL_DYNAMIC);
+	Tcl_EventuallyFree(availPtr->script, TCL_DYNAMIC);
+	if (availPtr->pkgIndex) {
+	    Tcl_EventuallyFree(availPtr->pkgIndex, TCL_DYNAMIC);
+	    availPtr->pkgIndex = NULL;
+	}
+	Tcl_Free(availPtr);
+    }
+    Tcl_Free(pkgPtr);
+}
+
+void
+TclForgetPackage(
+    Tcl_Interp *interp,
+    Tcl_Obj *pkgName)
+{
+    PkgFiles *pkgFiles = (PkgFiles *)
+	    Tcl_GetAssocData(interp, ASSOC_KEY, NULL);
+    ForgetPackage((Interp *) interp, pkgFiles, TclGetString(pkgName));
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_PackageObjCmd --
  *
  *	This function is invoked to process the "package" Tcl command. See the
@@ -1122,37 +1190,7 @@ TclNRPackageObjCmd(
 		Tcl_GetAssocData(interp, ASSOC_KEY, NULL);
 
 	for (i = 2; i < objc; i++) {
-	    const char *keyString = TclGetString(objv[i]);
-	    if (pkgFiles) {
-		hPtr = Tcl_FindHashEntry(&pkgFiles->table, keyString);
-		if (hPtr) {
-		    Tcl_Obj *obj = (Tcl_Obj *)Tcl_GetHashValue(hPtr);
-		    Tcl_DeleteHashEntry(hPtr);
-		    Tcl_DecrRefCount(obj);
-		}
-	    }
-
-	    hPtr = Tcl_FindHashEntry(&iPtr->packageTable, keyString);
-	    if (hPtr == NULL) {
-		continue;
-	    }
-	    pkgPtr = (Package *)Tcl_GetHashValue(hPtr);
-	    Tcl_DeleteHashEntry(hPtr);
-	    if (pkgPtr->version != NULL) {
-		Tcl_DecrRefCount(pkgPtr->version);
-	    }
-	    while (pkgPtr->availPtr != NULL) {
-		availPtr = pkgPtr->availPtr;
-		pkgPtr->availPtr = availPtr->nextPtr;
-		Tcl_EventuallyFree(availPtr->version, TCL_DYNAMIC);
-		Tcl_EventuallyFree(availPtr->script, TCL_DYNAMIC);
-		if (availPtr->pkgIndex) {
-		    Tcl_EventuallyFree(availPtr->pkgIndex, TCL_DYNAMIC);
-		    availPtr->pkgIndex = NULL;
-		}
-		Tcl_Free(availPtr);
-	    }
-	    Tcl_Free(pkgPtr);
+	    ForgetPackage(iPtr, pkgFiles, TclGetString(objv[i]));
 	}
 	break;
     }
