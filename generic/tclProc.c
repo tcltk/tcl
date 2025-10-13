@@ -1003,8 +1003,7 @@ TclNRUplevelObjCmd(
 	objPtr = Tcl_ConcatObj(objc, objv);
     }
 
-    TclNRAddCallback(interp, TclUplevelCallback, savedVarFramePtr, NULL, NULL,
-	    NULL);
+    TclNRAddCallback(interp, TclUplevelCallback, savedVarFramePtr);
     return TclNREvalObjEx(interp, objPtr, 0, invoker, word);
   uplevelSyntax:
     Tcl_WrongNumArgs(interp, 1, objv, "?level? command ?arg ...?");
@@ -1501,7 +1500,7 @@ InitArgsAndLocals(
   incorrectArgs:
     if ((skip != 1) &&
 	    TclInitRewriteEnsemble(interp, skip-1, 0, framePtr->objv)) {
-	TclNRAddCallback(interp, TclClearRootEnsemble, NULL, NULL, NULL, NULL);
+	TclNRAddCallback(interp, TclClearRootEnsemble);
     }
     memset(varPtr, 0,
 	    ((framePtr->compiledLocals + localCt)-varPtr) * sizeof(Var));
@@ -1803,8 +1802,7 @@ TclNRInterpProcCore(
     procPtr->refCount++;
     ByteCodeGetInternalRep(procPtr->bodyPtr, &tclByteCodeType, codePtr);
 
-    TclNRAddCallback(interp, InterpProcNR2, procNameObj, errorProc,
-	    NULL, NULL);
+    TclNRAddCallback(interp, InterpProcNR2, procNameObj, errorProc);
     return TclNRExecuteByteCode(interp, codePtr);
 }
 
@@ -2751,7 +2749,7 @@ TclNRApplyObjCmd(
 
     result = TclPushProcCallFrame(procPtr, interp, objc, objv, 1);
     if (result == TCL_OK) {
-	TclNRAddCallback(interp, ApplyNR2, extraPtr, NULL, NULL, NULL);
+	TclNRAddCallback(interp, ApplyNR2, extraPtr);
 	result = TclNRInterpProcCore(interp, objv[1], 2, &MakeLambdaError);
     }
     return result;

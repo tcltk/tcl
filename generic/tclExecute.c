@@ -1365,8 +1365,7 @@ Tcl_ExprObj(
     Tcl_Obj *resultPtr;
 
     TclNewObj(resultPtr);
-    TclNRAddCallback(interp, CopyCallback, resultPtrPtr, resultPtr,
-	    NULL, NULL);
+    TclNRAddCallback(interp, CopyCallback, resultPtrPtr, resultPtr);
     Tcl_NRExprObj(interp, objPtr, resultPtr);
     return TclNRRunCallbacks(interp, TCL_OK, rootPtr);
 }
@@ -1422,8 +1421,7 @@ Tcl_NRExprObj(
 
     Tcl_ResetResult(interp);
     ByteCode *codePtr = CompileExprObj(interp, objPtr);
-    Tcl_NRAddCallback(interp, ExprObjCallback, state, resultPtr,
-	    NULL, NULL);
+    TclNRAddCallback(interp, ExprObjCallback, state, resultPtr);
     return TclNRExecuteByteCode(interp, codePtr);
 }
 
@@ -2619,7 +2617,7 @@ TEBCresume(
 	cleanup = 1;
 	TEBC_YIELD();
 	TclNRAddCallback(interp, TclNRCoroutineActivateCallback, corPtr,
-		yieldParameter, NULL, NULL);
+		yieldParameter);
 	return TCL_OK;
     }
 
@@ -2772,9 +2770,8 @@ TEBCresume(
 	    fflush(stdout);
 	}
 #endif // TCL_COMPILE_DEBUG
-	TclNRAddCallback(interp, TclUplevelCallback, iPtr->varFramePtr,
-		NULL, NULL, NULL);
-	TclNRAddCallback(interp, TclNRPostInvoke, NULL, NULL, NULL, NULL);
+	TclNRAddCallback(interp, TclUplevelCallback, iPtr->varFramePtr);
+	TclNRAddCallback(interp, TclNRPostInvoke);
 	iPtr->varFramePtr = framePtr;
 	iPtr->numLevels++;
 	return TclNREvalObjEx(interp, scriptObj, 0, invoker, word);
@@ -3142,9 +3139,9 @@ TEBCresume(
 	TEBC_YIELD();
 
 	TclMarkTailcall(interp);
-	TclNRAddCallback(interp, TclClearRootEnsemble, NULL, NULL, NULL, NULL);
+	TclNRAddCallback(interp, TclClearRootEnsemble);
 	TclListObjGetElements(NULL, objPtr, &objc, &objv);
-	TclNRAddCallback(interp, TclNRReleaseValues, objPtr, NULL, NULL, NULL);
+	TclNRAddCallback(interp, TclNRReleaseValues, objPtr);
 	return TclNREvalObjv(interp, objc, objv, TCL_EVAL_INVOKE, NULL);
 
     /*

@@ -5117,11 +5117,18 @@ typedef struct NRE_callback {
 
 /*
  * Inline version of Tcl_NRAddCallback.
+ * This checks that there are between zero and four data* arguments; unsupplied
+ * arguments will be NULL.
+ *
+ * If postProcPtr is non-constant, use Tcl_NRAddCallback to get a runtime check
+ * for sanity.
  */
-
-#define TclNRAddCallback(interp,postProcPtr,data0,data1,data2,data3) \
+#define TclNRAddCallback(interp,...) \
+    TclNRAddCallbackImpl(interp, __VA_ARGS__, NULL,NULL,NULL,NULL,NULL)
+#define TclNRAddCallbackImpl(interp,postProcPtr,data0,data1,data2,data3,dummy,...) \
     do {								\
 	NRE_callback *_callbackPtr;					\
+	TCL_CT_ASSERT(!(dummy));\
 	TCLNR_ALLOC((interp), (_callbackPtr));				\
 	_callbackPtr->procPtr = (postProcPtr);				\
 	_callbackPtr->data[0] = (void *)(data0);			\
