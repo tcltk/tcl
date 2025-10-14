@@ -74,6 +74,7 @@ typedef struct {
     int numRecursions;		/* Number of mutex lock recursions */
     int numIterations;		/* Number of times each thread should loop */
     int yield;			/* Whether threads should yield when looping */
+    int numStarted;		/* Number of threads which are started */
     int run;			/* Whether threads should start */
     union {
 	Tcl_WideUInt counter;		/* Used in lock tests */
@@ -238,6 +239,7 @@ TestMutexLock(
     Tcl_Time nullTime = { 0, 0 };
     Tcl_ConditionWait(&threadStartCond, &threadStartMutex, &nullTime);
 
+    contextPtr->numStarted = 0;
     contextPtr->run = 0;
     contextPtr->u.counter = 0;
     for (int i = 0; i < contextPtr->numThreads; i++) {
@@ -251,6 +253,10 @@ TestMutexLock(
 	}
     }
 
+    /* Wait for all threads being ready */
+    while (contextPtr->numStarted < contextPtr->numThreads) {
+	Tcl_ConditionWait(&threadStartCond, &threadStartMutex, NULL);
+    }
     /* Trigger start signal */
     contextPtr->run = 1;
     Tcl_ConditionNotify(&threadStartCond);
@@ -292,6 +298,8 @@ CounterThreadProc(
 
     /* Wait for start signal */
     Tcl_MutexLock(&threadStartMutex);
+    contextPtr->numStarted++;
+    Tcl_ConditionNotify(&threadStartCond);
     while (!contextPtr->run) {
 	Tcl_ConditionWait(&threadStartCond, &threadStartMutex, NULL);
     }
@@ -340,6 +348,7 @@ TestConditionVariable(
     int numProducers = contextPtr->numThreads / 2;
     int numConsumers = contextPtr->numThreads - numProducers;
 
+    contextPtr->numStarted = 0;
     contextPtr->run = 0;
     contextPtr->u.queue.canDequeue = NULL;
     contextPtr->u.queue.canEnqueue = NULL;
@@ -387,6 +396,10 @@ TestConditionVariable(
 	}
     }
 
+    /* Wait for all threads being ready */
+    while (contextPtr->numStarted < numConsumers + numProducers) {
+	Tcl_ConditionWait(&threadStartCond, &threadStartMutex, NULL);
+    }
     /* Trigger start signal */
     contextPtr->run = 1;
     Tcl_ConditionNotify(&threadStartCond);
@@ -461,6 +474,8 @@ ProducerThreadProc(
 
     /* Wait for start signal */
     Tcl_MutexLock(&threadStartMutex);
+    contextPtr->numStarted++;
+    Tcl_ConditionNotify(&threadStartCond);
     while (!contextPtr->run) {
 	Tcl_ConditionWait(&threadStartCond, &threadStartMutex, NULL);
     }
@@ -525,6 +540,8 @@ ConsumerThreadProc(
 
     /* Wait for start signal */
     Tcl_MutexLock(&threadStartMutex);
+    contextPtr->numStarted++;
+    Tcl_ConditionNotify(&threadStartCond);
     while (!contextPtr->run) {
 	Tcl_ConditionWait(&threadStartCond, &threadStartMutex, NULL);
     }
