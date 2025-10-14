@@ -88,7 +88,6 @@ jobs:
         timeout-minutes: 5
       - name: Run Tests ${{ matrix.config }}
         run: |
-          Write-Output "::add-matcher::tcltest.json"
           &nmake -f makefile.vc ${{ matrix.config }} test
           if ($lastexitcode -ne 0) {
              throw "nmake exit code: $lastexitcode"
@@ -137,9 +136,7 @@ jobs:
           ulimit -a || echo 'get limit failed'
           make runtest SCRIPT=../.github/workflows/info.tcl || echo 'get info failed'
       - name: Run Tests
-        run: |
-          echo "::add-matcher::tcltest.json"
-          make test
+        run: make test
         timeout-minutes: 30
         env:
           ERROR_ON_FAILURES: 1
