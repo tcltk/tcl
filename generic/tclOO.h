@@ -66,8 +66,6 @@ typedef int (Tcl_MethodCallProc)(void *clientData, Tcl_Interp *interp,
 #if TCL_MAJOR_VERSION > 8
 typedef int (Tcl_MethodCallProc2)(void *clientData, Tcl_Interp *interp,
 	Tcl_ObjectContext objectContext, Tcl_Size objc, Tcl_Obj *const *objv);
-#else
-#define Tcl_MethodCallProc2 Tcl_MethodCallProc
 #endif
 typedef void (Tcl_MethodDeleteProc)(void *clientData);
 typedef int (Tcl_CloneProc)(Tcl_Interp *interp, void *oldClientData,
@@ -116,8 +114,6 @@ typedef struct Tcl_MethodType2 {
 				 * data, or NULL if the type-specific data can
 				 * be copied directly. */
 } Tcl_MethodType2;
-#else
-#define Tcl_MethodType2 Tcl_MethodType
 #endif
 
 /*
@@ -126,10 +122,13 @@ typedef struct Tcl_MethodType2 {
  * binary compatibility.
  */
 enum TclOOMethodVersion {
+    TCL_OO_METHOD_VERSION_CURRENT = 1
+#if TCL_MAJOR_VERSION > 8
+    ,
     TCL_OO_METHOD_VERSION_1 = 1,
     TCL_OO_METHOD_VERSION_2 = 2
+#endif
 };
-#define TCL_OO_METHOD_VERSION_CURRENT TCL_OO_METHOD_VERSION_1
 
 /*
  * Visibility constants for the flags parameter to Tcl_NewMethod and
@@ -167,9 +166,9 @@ typedef struct Tcl_ObjectMetadataType {
  */
 
 enum TclOOMetadataVersion {
+    TCL_OO_METADATA_VERSION_CURRENT = 1,
     TCL_OO_METADATA_VERSION_1 = 1
 };
-#define TCL_OO_METADATA_VERSION_CURRENT TCL_OO_METADATA_VERSION_1
 
 /*
  * Include all the public API, generated from tclOO.decls.
