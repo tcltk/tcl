@@ -270,47 +270,41 @@ extern const TclOOStubs *tclOOStubsPtr;
 
 /* !END!: Do not edit above this line. */
 
+#ifndef TclOOGeneric
+/* Select method based on type of argument. */
+#define TclOOGeneric(typePtr, impl1, impl2) \
+    _Generic(typePtr, const Tcl_MethodType *: impl1, const Tcl_MethodType2 *: impl2)
+#endif
+
 #ifdef USE_TCLOO_STUBS
 
 #undef Tcl_MethodIsType
 #define Tcl_MethodIsType(method, typePtr, clientDataPtr) \
-    (_Generic((typePtr), \
-        const Tcl_MethodType *: tclOOStubsPtr->tcl_MethodIsType, \
-        const Tcl_MethodType2 *: tclOOStubsPtr->tcl_MethodIsType2) \
+    (TclOOGeneric((typePtr), tclOOStubsPtr->tcl_MethodIsType, tclOOStubsPtr->tcl_MethodIsType2) \
 	((method), (typePtr), (clientDataPtr)))
 
 #undef Tcl_NewInstanceMethod
 #define Tcl_NewInstanceMethod(interp, object, nameObj, flags, typePtr, clientData) \
-    (_Generic((typePtr), \
-        const Tcl_MethodType *: tclOOStubsPtr->tcl_NewInstanceMethod, \
-        const Tcl_MethodType2 *: tclOOStubsPtr->tcl_NewInstanceMethod2) \
+    (TclOOGeneric((typePtr), tclOOStubsPtr->tcl_NewInstanceMethod, tclOOStubsPtr->tcl_NewInstanceMethod2) \
 	((interp), (object), (nameObj), (flags), (typePtr), (clientData)))
 
 #undef Tcl_NewMethod
 #define Tcl_NewMethod(interp, cls, nameObj, flags, typePtr, clientData) \
-    (_Generic((typePtr), \
-        const Tcl_MethodType *: tclOOStubsPtr->tcl_NewMethod, \
-        const Tcl_MethodType2 *: tclOOStubsPtr->tcl_NewMethod2) \
+    (TclOOGeneric((typePtr), tclOOStubsPtr->tcl_NewMethod, tclOOStubsPtr->tcl_NewMethod2) \
 	((interp), (cls), (nameObj), (flags), (typePtr), (clientData)))
 
 #else
 
 #define Tcl_MethodIsType(method, typePtr, clientDataPtr) \
-    (_Generic((typePtr), \
-        const Tcl_MethodType *: Tcl_MethodIsType, \
-        const Tcl_MethodType2 *: Tcl_MethodIsType2) \
+    (TclOOGeneric((typePtr), Tcl_MethodIsType, Tcl_MethodIsType2) \
 	((method), (typePtr), (clientDataPtr)))
 
 #define Tcl_NewInstanceMethod(interp, object, nameObj, flags, typePtr, clientData) \
-    (_Generic((typePtr), \
-        const Tcl_MethodType *: Tcl_NewInstanceMethod, \
-        const Tcl_MethodType2 *: Tcl_NewInstanceMethod2) \
+    (TclOOGeneric((typePtr), Tcl_NewInstanceMethod, Tcl_NewInstanceMethod2) \
 	((interp), (object), (nameObj), (flags), (typePtr), (clientData)))
 
 #define Tcl_NewMethod(interp, cls, nameObj, flags, typePtr, clientData) \
-    (_Generic((typePtr), \
-        const Tcl_MethodType *: Tcl_NewMethod, \
-        const Tcl_MethodType2 *: Tcl_NewMethod2) \
+    (TclOOGeneric((typePtr), Tcl_NewMethod, Tcl_NewMethod2) \
 	((interp), (cls), (nameObj), (flags), (typePtr), (clientData)))
 
 #endif
