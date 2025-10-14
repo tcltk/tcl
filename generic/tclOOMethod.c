@@ -613,6 +613,7 @@ InitCmdFrame(
  * ----------------------------------------------------------------------
  */
 
+#undef TclOOMakeProcInstanceMethod
 Tcl_Method
 TclOOMakeProcInstanceMethod(
     Tcl_Interp *interp,		/* The interpreter containing the object. */
@@ -704,6 +705,7 @@ TclOOMakeProcInstanceMethod2(
  * ----------------------------------------------------------------------
  */
 
+#undef TclOOMakeProcMethod
 Tcl_Method
 TclOOMakeProcMethod(
     Tcl_Interp *interp,		/* The interpreter containing the class. */
