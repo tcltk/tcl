@@ -85,7 +85,7 @@ jobs:
           make runtest SCRIPT=../.github/workflows/info.tcl || echo 'get info failed'
       - name: Run Tests
         run: |
-          echo "::add-matcher::tcltest.json"
+          echo "::add-matcher::.github/tcltest.json"
           make test
           echo "::remove-matcher::tcltest"
         env:
