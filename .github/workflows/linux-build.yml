@@ -87,7 +87,7 @@ jobs:
         run: |
           echo "::add-matcher::.github/tcltest.json"
           make test
-          echo "::remove-matcher::tcltest"
+          echo "::remove-matcher::.github/tcltest.json"
         env:
           ERROR_ON_FAILURES: 1
         timeout-minutes: 30
