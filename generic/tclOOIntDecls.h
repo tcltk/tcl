@@ -188,6 +188,8 @@ extern const TclOOIntStubs *tclOOIntStubsPtr;
 
 #if TCL_MAJOR_VERSION < 9
 #undef Tcl_MethodType2
+#undef TclOOMakeProcInstanceMethod2
+#undef TclOOMakeProcMethod2
 #endif
 
 #endif /* _TCLOOINTDECLS */
