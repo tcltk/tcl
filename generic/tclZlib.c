@@ -196,8 +196,6 @@ static inline int	Deflate(z_streamp strm, void *bufferPtr,
 static void		ExtractHeader(gz_header *headerPtr, Tcl_Obj *dictObj);
 static int		GenerateHeader(Tcl_Interp *interp, Tcl_Obj *dictObj,
 			    GzipHeader *headerPtr, int *extraSizePtr);
-static int		ZlibPushSubcmd(Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
 static int		ResultDecompress(ZlibChannelData *chanDataPtr,
 			    char *buf, int toRead, int flush,
 			    int *errorCodePtr);
@@ -206,8 +204,6 @@ static Tcl_Channel	ZlibStackChannelTransform(Tcl_Interp *interp,
 			    Tcl_Channel channel, Tcl_Obj *gzipHeaderDictPtr,
 			    Tcl_Obj *compDictObj);
 static void		ZlibStreamCleanup(ZlibStreamHandle *zshPtr);
-static int		ZlibStreamSubcmd(Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
 static inline void	ZlibTransformEventTimerKill(
 			    ZlibChannelData *chanDataPtr);
 static void		ZlibTransformTimerRun(void *clientData);
@@ -758,10 +754,11 @@ Tcl_ZlibStreamInit(
 		    "TCL_ZLIB_FORMAT_ZLIB, TCL_ZLIB_FORMAT_GZIP or "
 		    "TCL_ZLIB_FORMAT_RAW");
 	}
-	if (level < -1 || level > 9) {
-	    Tcl_Panic("compression level should be between 0 (no compression)"
-		    " and 9 (best compression) or -1 for default compression "
-		    "level");
+	if (level < Z_DEFAULT_COMPRESSION || level > Z_BEST_COMPRESSION) {
+	    Tcl_Panic("compression level should be between %d (no compression)"
+		    " and %d (best compression) or %d for default compression "
+		    "level", Z_NO_COMPRESSION, Z_BEST_COMPRESSION,
+		    Z_DEFAULT_COMPRESSION);
 	}
 	break;
     case TCL_ZLIB_STREAM_INFLATE:
@@ -1676,9 +1673,10 @@ Tcl_ZlibDeflate(
 		"TCL_ZLIB_FORMAT_GZIP or TCL_ZLIB_FORMAT_ZLIB");
     }
 
-    if (level < -1 || level > 9) {
-	Tcl_Panic("compression level should be between 0 (uncompressed) and "
-		"9 (best compression) or -1 for default compression level");
+    if (level < Z_DEFAULT_COMPRESSION || level > Z_BEST_COMPRESSION) {
+	Tcl_Panic("compression level should be between %d (uncompressed) and "
+		"%d (best compression) or %d for default compression level",
+		Z_NO_COMPRESSION, Z_BEST_COMPRESSION, Z_DEFAULT_COMPRESSION);
     }
 
     /*
@@ -1980,6 +1978,84 @@ Tcl_ZlibAdler32(
 /*
  *----------------------------------------------------------------------
  *
+ * GetLevelFromObj --
+ *
+ *	Helper for getting the compression level for compression operations.
+ *
+ *	levelPtr is assumed to point to a variable that has been initialised
+ *	to Z_DEFAULT_COMPRESSION (or that will be initialised to that on code
+ *	paths that don't go through this function); the default compression
+ *	level is to be selected by *not* invoking this function.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+GetLevelFromObj(
+    Tcl_Interp *interp,		/* Where to put error messages. NULLable. */
+    Tcl_Obj *levelObj,		/* Value to parse. NULL for default. */
+    int *levelPtr)		/* Where to write the compression level. */
+{
+    int level;
+
+    if (levelObj == NULL) {
+	*levelPtr = Z_DEFAULT_COMPRESSION;
+	return TCL_OK;
+    }
+    if (TclGetIntFromObj(interp, levelObj, &level) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (level < Z_NO_COMPRESSION || level > Z_BEST_COMPRESSION) {
+	if (interp) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "level must be %d to %d",
+		    Z_NO_COMPRESSION, Z_BEST_COMPRESSION));
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "COMPRESSIONLEVEL", (char *)NULL);
+	}
+	return TCL_ERROR;
+    }
+    *levelPtr = level;
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetBufferSizeFromObj --
+ *
+ *	Helper for getting the buffer size for decompression operations.
+ *
+ *	Not intended for streaming decompression operations, where buffer
+ *	sizes can be smaller.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+GetBufferSizeFromObj(
+    Tcl_Interp *interp,		/* Where to put error messages. NULLable. */
+    Tcl_Obj *bufferSizeObj,	/* Value to parse. */
+    size_t *bufferSizePtr)	/* Where to write the buffer size. */
+{
+    Tcl_WideInt wideLen;
+
+    if (TclGetWideIntFromObj(interp, bufferSizeObj, &wideLen) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (wideLen < MIN_NONSTREAM_BUFFER_SIZE || wideLen > MAX_BUFFER_SIZE) {
+	if (interp) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "buffer size must be %d to %d",
+		    MIN_NONSTREAM_BUFFER_SIZE, MAX_BUFFER_SIZE));
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "BUFFERSIZE", (char *)NULL);
+	}
+	return TCL_ERROR;
+    }
+    *bufferSizePtr = (size_t) wideLen;
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * ZlibAdler32Cmd --
  *
  *	Implementation of the [zlib adler32] command.
@@ -2069,22 +2145,14 @@ ZlibDeflateCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    int level = Z_DEFAULT_COMPRESSION;
+    int level;
 
     if (objc < 2 || objc > 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "data ?level?");
 	return TCL_ERROR;
     }
-    if (objc > 2) {
-	if (Tcl_GetIntFromObj(interp, objv[2], &level) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-	if (level < Z_NO_COMPRESSION || level > Z_BEST_COMPRESSION) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "level must be 0 to 9", TCL_AUTO_LENGTH));
-	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "COMPRESSIONLEVEL", (char *)NULL);
-	    return TCL_ERROR;
-	}
+    if (GetLevelFromObj(interp, (objc > 2 ? objv[2] : NULL), &level) != TCL_OK) {
+	return TCL_ERROR;
     }
     return Tcl_ZlibDeflate(interp, TCL_ZLIB_FORMAT_RAW, objv[1], level, NULL);
 }
@@ -2105,22 +2173,14 @@ ZlibCompressCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    int level = Z_DEFAULT_COMPRESSION;
+    int level;
 
     if (objc < 2 || objc > 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "data ?level?");
 	return TCL_ERROR;
     }
-    if (objc > 2) {
-	if (Tcl_GetIntFromObj(interp, objv[2], &level) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-	if (level < Z_NO_COMPRESSION || level > Z_BEST_COMPRESSION) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "level must be 0 to 9", TCL_AUTO_LENGTH));
-	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "COMPRESSIONLEVEL", (char *)NULL);
-	    return TCL_ERROR;
-	}
+    if (GetLevelFromObj(interp, (objc > 2 ? objv[2] : NULL), &level) != TCL_OK) {
+	return TCL_ERROR;
     }
     return Tcl_ZlibDeflate(interp, TCL_ZLIB_FORMAT_ZLIB, objv[1], level, NULL);
 }
@@ -2146,16 +2206,15 @@ ZlibGzipCmd(
     };
     Tcl_Obj *headerDictObj = NULL;
     int level = Z_DEFAULT_COMPRESSION, i, option;
-    const char *extraInfoStr;
 
     /*
      * Legacy argument format support.
      */
 
     if (objc == 3 && Tcl_GetIntFromObj(NULL, objv[2], &level) == TCL_OK) {
-	if (level < Z_NO_COMPRESSION || level > Z_BEST_COMPRESSION) {
-	    extraInfoStr = "\n    (in level parameter)";
-	    goto badLevel;
+	if (GetLevelFromObj(interp, objv[2], &level) != TCL_OK) {
+	    Tcl_AddErrorInfo(interp, "\n    (in level parameter)");
+	    return TCL_ERROR;
 	}
 	return Tcl_ZlibDeflate(interp, TCL_ZLIB_FORMAT_GZIP, objv[1],
 		level, NULL);
@@ -2176,14 +2235,9 @@ ZlibGzipCmd(
 	    headerDictObj = objv[i + 1];
 	    break;
 	case 1:		// -level
-	    if (Tcl_GetIntFromObj(interp, objv[i + 1], &level) != TCL_OK) {
-
+	    if (GetLevelFromObj(interp, objv[i + 1], &level) != TCL_OK) {
+		Tcl_AddErrorInfo(interp, "\n    (in -level option)");
 		return TCL_ERROR;
-	    }
-	    if (level < TCL_ZLIB_COMPRESS_NONE
-		    || level > TCL_ZLIB_COMPRESS_BEST) {
-		extraInfoStr = "\n    (in -level option)";
-		goto badLevel;
 	    }
 	    break;
 	default:
@@ -2192,13 +2246,6 @@ ZlibGzipCmd(
     }
     return Tcl_ZlibDeflate(interp, TCL_ZLIB_FORMAT_GZIP, objv[1], level,
 	    headerDictObj);
-
-  badLevel:
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-	    "level must be 0 to 9", TCL_AUTO_LENGTH));
-    Tcl_SetErrorCode(interp, "TCL", "VALUE", "COMPRESSIONLEVEL", (char *)NULL);
-    Tcl_AddErrorInfo(interp, extraInfoStr);
-    return TCL_ERROR;
 }
 
 /*
@@ -2222,19 +2269,8 @@ ZlibInflateCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "data ?bufferSize?");
 	return TCL_ERROR;
     }
-    if (objc > 2) {
-	Tcl_WideInt wideLen;
-	if (TclGetWideIntFromObj(interp, objv[2], &wideLen) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-	if (wideLen < MIN_NONSTREAM_BUFFER_SIZE || wideLen > MAX_BUFFER_SIZE) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "buffer size must be %d to %d",
-		    MIN_NONSTREAM_BUFFER_SIZE, MAX_BUFFER_SIZE));
-	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "BUFFERSIZE", (char *)NULL);
-	    return TCL_ERROR;
-	}
-	buffersize = wideLen;
+    if (objc > 2 && GetBufferSizeFromObj(interp, objv[2], &buffersize) != TCL_OK) {
+	return TCL_ERROR;
     }
     return Tcl_ZlibInflate(interp, TCL_ZLIB_FORMAT_RAW, objv[1], buffersize, NULL);
 }
@@ -2260,19 +2296,8 @@ ZlibDecompressCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "data ?bufferSize?");
 	return TCL_ERROR;
     }
-    if (objc > 2) {
-	Tcl_WideInt wideLen;
-	if (TclGetWideIntFromObj(interp, objv[2], &wideLen) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-	if (wideLen < MIN_NONSTREAM_BUFFER_SIZE || wideLen > MAX_BUFFER_SIZE) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "buffer size must be %d to %d",
-		    MIN_NONSTREAM_BUFFER_SIZE, MAX_BUFFER_SIZE));
-	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "BUFFERSIZE", (char *)NULL);
-	    return TCL_ERROR;
-	}
-	buffersize = wideLen;
+    if (objc > 2 && GetBufferSizeFromObj(interp, objv[2], &buffersize) != TCL_OK) {
+	return TCL_ERROR;
     }
     return Tcl_ZlibInflate(interp, TCL_ZLIB_FORMAT_ZLIB, objv[1], buffersize, NULL);
 }
@@ -2299,7 +2324,6 @@ ZlibGunzipCmd(
     Tcl_Obj *headerVarObj = NULL, *headerDictObj = NULL;
     size_t buffersize = 0;
     int i, option;
-    Tcl_WideInt wideLen;
 
     if (objc < 2 || objc > 6 || (objc & 1)) {
 	Tcl_WrongNumArgs(interp, 2, objv, "data ?-headerVar varName?");
@@ -2313,17 +2337,9 @@ ZlibGunzipCmd(
 	}
 	switch (option) {
 	case 0:		// -buffersize
-	    if (TclGetWideIntFromObj(interp, objv[i + 1], &wideLen) != TCL_OK) {
+	    if (GetBufferSizeFromObj(interp, objv[i + 1], &buffersize) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    if (wideLen < MIN_NONSTREAM_BUFFER_SIZE || wideLen > MAX_BUFFER_SIZE) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"buffer size must be %d to %d",
-			MIN_NONSTREAM_BUFFER_SIZE, MAX_BUFFER_SIZE));
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "BUFFERSIZE", (char *)NULL);
-		return TCL_ERROR;
-	    }
-	    buffersize = wideLen;
 	    break;
 	case 1:		// -headerVar
 	    headerVarObj = objv[i + 1];
@@ -2474,14 +2490,7 @@ ZlibStreamCmd(
      * use the default.
      */
 
-    if (levelObj == NULL) {
-	level = Z_DEFAULT_COMPRESSION;
-    } else if (Tcl_GetIntFromObj(interp, levelObj, &level) != TCL_OK) {
-	return TCL_ERROR;
-    } else if (level < 0 || level > 9) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"level must be 0 to 9", TCL_AUTO_LENGTH));
-	Tcl_SetErrorCode(interp, "TCL", "VALUE", "COMPRESSIONLEVEL", (char *)NULL);
+    if (GetLevelFromObj(interp, levelObj, &level) != TCL_OK) {
 	Tcl_AddErrorInfo(interp, "\n    (in -level option)");
 	return TCL_ERROR;
     }
@@ -2636,19 +2645,12 @@ ZlibPushCmd(
 	    }
 	    break;
 	case poLevel:		/* -level compLevel */
-	    if (Tcl_GetIntFromObj(interp, objv[i], (int *) &level) != TCL_OK) {
-		goto genericOptionError;
-	    }
-	    if (level < Z_NO_COMPRESSION || level > Z_BEST_COMPRESSION) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"level must be 0 to 9", TCL_AUTO_LENGTH));
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "COMPRESSIONLEVEL",
-			(char *)NULL);
+	    if (GetLevelFromObj(interp, objv[i], &level) != TCL_OK) {
 		goto genericOptionError;
 	    }
 	    break;
 	case poLimit:		/* -limit numBytes */
-	    if (Tcl_GetIntFromObj(interp, objv[i], (int *) &limit) != TCL_OK) {
+	    if (Tcl_GetIntFromObj(interp, objv[i], &limit) != TCL_OK) {
 		goto genericOptionError;
 	    }
 	    if (limit < 1 || limit > MAX_BUFFER_SIZE) {
