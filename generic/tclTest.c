@@ -1152,7 +1152,7 @@ TestcmdinfoCmd(
 	    return TCL_ERROR;
 	}
 	if (cmdObjc == 0) {
-	    Tcl_AppendResult(interp, "No command name given", NULL);
+	    Tcl_AppendResult(interp, "No command name given", (char *)NULL);
 	    return TCL_ERROR;
 	}
 	if (Tcl_GetCommandInfo(interp, Tcl_GetString(cmdObjv[0]), &info) == 0) {
