@@ -5,6 +5,10 @@
 #ifndef _TCLOOINTDECLS
 #define _TCLOOINTDECLS
 
+#if TCL_MAJOR_VERSION < 9
+# define Tcl_MethodType2 void
+#endif
+
 /* !BEGIN!: Do not edit below this line. */
 
 #ifdef __cplusplus
@@ -181,5 +185,9 @@ extern const TclOOIntStubs *tclOOIntStubsPtr;
 #endif /* defined(USE_TCLOO_STUBS) */
 
 /* !END!: Do not edit above this line. */
+
+#if TCL_MAJOR_VERSION < 9
+#undef Tcl_MethodType2
+#endif
 
 #endif /* _TCLOOINTDECLS */
