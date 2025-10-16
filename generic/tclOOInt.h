@@ -51,7 +51,9 @@ typedef struct PropertyStorage PropertyStorage;
 struct Method {
     union {
 	const Tcl_MethodType *typePtr;
+#if TCL_MAJOR_VERSION > 8
 	const Tcl_MethodType2 *type2Ptr;
+#endif
     };				/* The type of method. If NULL, this is a
 				 * special flag record which is just used for
 				 * the setting of the flags field. Note that
