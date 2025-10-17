@@ -6547,8 +6547,7 @@ TclZipfsInitEncodingDirs(void)
     searchPathObj = Tcl_GetEncodingSearchPath();
     if (searchPathObj == NULL) {
 	TclNewObj(searchPathObj);
-    }
-    else {
+    } else {
 	searchPathObj = Tcl_DuplicateObj(searchPathObj);
     }
     Tcl_Obj *fullPathObj = Tcl_FSJoinToPath(libDirObj, 1, &subDirObj);
