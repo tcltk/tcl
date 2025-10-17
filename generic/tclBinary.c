@@ -772,8 +772,12 @@ TclAppendBytesToByteArray(
     if (needed > byteArrayPtr->allocated) {
 	Tcl_Size newCapacity;
 	byteArrayPtr = (ByteArray *)
-		TclReallocElemsEx(byteArrayPtr, needed, 1,
+		TclAttemptReallocElemsEx(byteArrayPtr, needed, 1,
 		offsetof(ByteArray, bytes), &newCapacity);
+	if (!byteArrayPtr) {
+	    Tcl_Panic("Failed to reallocate %" TCL_Z_MODIFIER "d bytes.",
+		    offsetof(ByteArray, bytes));
+	}
 	byteArrayPtr->allocated = newCapacity;
 	SET_BYTEARRAY(irPtr, byteArrayPtr);
     }

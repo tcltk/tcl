@@ -8,7 +8,7 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_NewStringObj, Tcl_AttemptNewStringObj, Tcl_NewUnicodeObj, Tcl_SetStringObj, Tcl_AttemptSetStringObj, Tcl_SetUnicodeObj, Tcl_GetStringFromObj, Tcl_GetString, Tcl_GetUnicodeFromObj, Tcl_GetUnicode, Tcl_GetUniChar, Tcl_GetCharLength, Tcl_AttemptGetCharLength, Tcl_GetRange, Tcl_AppendToObj, Tcl_AppendUnicodeToObj, Tcl_AppendObjToObj, Tcl_AppendStringsToObj, Tcl_AppendLimitedToObj, Tcl_Format, Tcl_AppendFormatToObj, Tcl_ObjPrintf, Tcl_AppendPrintfToObj, Tcl_SetObjLength, Tcl_AttemptSetObjLength, Tcl_ConcatObj, Tcl_IsEmpty \- manipulate Tcl values as strings
+Tcl_NewStringObj, Tcl_AttemptNewStringObj, Tcl_NewUnicodeObj, Tcl_SetStringObj, Tcl_AttemptSetStringObj, Tcl_SetUnicodeObj, Tcl_GetStringFromObj, Tcl_GetString, Tcl_AttemptGetUnicode, Tcl_AttemptGetUnicodeFromObj, Tcl_GetUnicodeFromObj, Tcl_GetUnicode, Tcl_GetUniChar, Tcl_GetCharLength, Tcl_AttemptGetCharLength, Tcl_GetRange, Tcl_AppendToObj, Tcl_AppendUnicodeToObj, Tcl_AppendObjToObj, Tcl_AppendStringsToObj, Tcl_AppendLimitedToObj, Tcl_Format, Tcl_AppendFormatToObj, Tcl_ObjPrintf, Tcl_AppendPrintfToObj, Tcl_SetObjLength, Tcl_AttemptSetObjLength, Tcl_ConcatObj, Tcl_IsEmpty \- manipulate Tcl values as strings
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -41,7 +41,13 @@ Tcl_UniChar *
 \fBTcl_GetUnicodeFromObj\fR(\fIobjPtr, lengthPtr\fR)
 .sp
 Tcl_UniChar *
+\fBTcl_AttemptGetUnicodeFromObj\fR(\fIobjPtr, lengthPtr\fR)
+.sp
+Tcl_UniChar *
 \fBTcl_GetUnicode\fR(\fIobjPtr\fR)
+.sp
+Tcl_UniChar *
+\fBTcl_AttemptGetUnicode\fR(\fIobjPtr\fR)
 .sp
 int
 \fBTcl_GetUniChar\fR(\fIobjPtr, index\fR)
@@ -208,14 +214,16 @@ The procedure \fBTcl_GetString\fR is used in the common case
 where the caller does not need the length of the string
 representation.
 .PP
-\fBTcl_GetUnicodeFromObj\fR and \fBTcl_GetUnicode\fR return a value's
+\fBTcl_AttemptGetUnicodeFromObj\fR, \fBTcl_GetUnicodeFromObj\fR,
+\fBTcl_AttemptGetUnicode\fR and \fBTcl_GetUnicode\fR return a value's
 value as a Unicode string.  This is given by the returned pointer and
 (for \fBTcl_GetUnicodeFromObj\fR) length, which is stored in
 \fIlengthPtr\fR if it is non-NULL.  The storage referenced by the returned
 byte pointer is owned by the value manager and should not be modified by
 the caller.  The procedure \fBTcl_GetUnicode\fR is used in the common case
 where the caller does not need the length of the unicode string
-representation.
+representation. The \fB*Attempt*\fR versions return NULL when
+an allocation error occurs.
 .PP
 \fBTcl_GetUniChar\fR returns the \fIindex\fR'th character in the
 value's Unicode representation. If the index is out of range

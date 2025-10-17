@@ -563,7 +563,7 @@ UpdateStringOfDict(
 
     dst = Tcl_InitStringRep(dictPtr, NULL, bytesNeeded - 1);
     if (!dst) {
-	dictPtr->length = bytesNeeded;
+	dictPtr->length = bytesNeeded - 1;
 	goto allocError;
     }
     for (i=0,cPtr=dict->entryChainHead; i<numElems; i+=2,cPtr=cPtr->nextPtr) {

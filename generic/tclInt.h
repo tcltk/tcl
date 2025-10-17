@@ -3015,11 +3015,6 @@ TclUpsizeRetry(
     }
 }
 
-MODULE_SCOPE void *	TclAllocElemsEx(Tcl_Size elemCount, Tcl_Size elemSize,
-			    Tcl_Size leadSize, Tcl_Size *capacityPtr);
-MODULE_SCOPE void *	TclReallocElemsEx(void *oldPtr, Tcl_Size elemCount,
-			    Tcl_Size elemSize, Tcl_Size leadSize,
-			    Tcl_Size *capacityPtr);
 MODULE_SCOPE void *	TclAttemptReallocElemsEx(void *oldPtr,
 			    Tcl_Size elemCount, Tcl_Size elemSize,
 			    Tcl_Size leadSize, Tcl_Size *capacityPtr);
@@ -3039,30 +3034,11 @@ TclAttemptAllocElemsEx(
 
 /* Alloc numByte bytes, returning actual capacity in *capacityPtr. */
 static inline void *
-TclAllocEx(
-    Tcl_Size numBytes,
-    Tcl_Size *capacityPtr)
-{
-    return TclAllocElemsEx(numBytes, 1, 0, capacityPtr);
-}
-
-/* Alloc numByte bytes, returning actual capacity in *capacityPtr. */
-static inline void *
 TclAttemptAllocEx(
     Tcl_Size numBytes,
     Tcl_Size *capacityPtr)
 {
     return TclAttemptAllocElemsEx(numBytes, 1, 0, capacityPtr);
-}
-
-/* Realloc numByte bytes, returning actual capacity in *capacityPtr. */
-static inline void *
-TclReallocEx(
-    void *oldPtr,
-    Tcl_Size numBytes,
-    Tcl_Size *capacityPtr)
-{
-    return TclReallocElemsEx(oldPtr, numBytes, 1, 0, capacityPtr);
 }
 
 /* Realloc numByte bytes, returning actual capacity in *capacityPtr. */
