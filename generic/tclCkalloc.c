@@ -1234,41 +1234,6 @@ TclDumpMemoryInfo(
 /*
  *------------------------------------------------------------------------
  *
- * TclAllocElemsEx --
- *
- *    See TclAttemptAllocElemsEx. This function differs in that it panics
- *    on failure.
- *
- * Results:
- *    Non-NULL pointer to allocated memory block.
- *
- * Side effects:
- *    Panics if memory of at least the requested size could not be
- *    allocated.
- *
- *------------------------------------------------------------------------
- */
-void *
-TclAllocElemsEx(
-    Tcl_Size elemCount,		/* Allocation will store at least these many... */
-    Tcl_Size elemSize,		/* ...elements of this size */
-    Tcl_Size leadSize,		/* Additional leading space in bytes */
-    Tcl_Size *capacityPtr)	/* OUTPUT: Actual capacity is stored here if
-				 * non-NULL. Only modified on success */
-{
-    void *ptr = TclAttemptReallocElemsEx(
-	    NULL, elemCount, elemSize, leadSize, capacityPtr);
-    if (ptr == NULL) {
-	Tcl_Panic("Failed to allocate %" TCL_SIZE_MODIFIER
-		"d elements of size %" TCL_SIZE_MODIFIER "d bytes.",
-		elemCount, elemSize);
-    }
-    return ptr;
-}
-
-/*
- *------------------------------------------------------------------------
- *
  * TclAttemptReallocElemsEx --
  *
  *    Attempts to allocate (oldPtr == NULL) or reallocate memory of the
@@ -1331,42 +1296,6 @@ TclAttemptReallocElemsEx(
     }
     if (ptr && capacityPtr) {
 	*capacityPtr = attempt;
-    }
-    return ptr;
-}
-
-/*
- *------------------------------------------------------------------------
- *
- * TclReallocElemsEx --
- *
- *    See TclAttemptReallocElemsEx. This function differs in that it panics
- *    on failure.
- *
- * Results:
- *    Non-NULL pointer to allocated memory block.
- *
- * Side effects:
- *    Panics if memory of at least the requested size could not be
- *    allocated.
- *
- *------------------------------------------------------------------------
- */
-void *
-TclReallocElemsEx(
-    void *oldPtr,		/* Pointer to memory block to reallocate */
-    Tcl_Size elemCount,		/* Allocation will store at least these many... */
-    Tcl_Size elemSize,		/* ...elements of this size */
-    Tcl_Size leadSize,		/* Additional leading space in bytes */
-    Tcl_Size *capacityPtr)	/* OUTPUT: Actual capacity is stored here if
-				 * non-NULL. Only modified on success */
-{
-    void *ptr = TclAttemptReallocElemsEx(
-	    oldPtr, elemCount, elemSize, leadSize, capacityPtr);
-    if (ptr == NULL) {
-	Tcl_Panic("Failed to reallocate %" TCL_SIZE_MODIFIER
-		"d elements of size %" TCL_SIZE_MODIFIER "d bytes.",
-		elemCount, elemSize);
     }
     return ptr;
 }

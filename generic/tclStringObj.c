@@ -59,7 +59,7 @@ static void		ExtendUnicodeRepWithString(Tcl_Obj *objPtr,
 			    Tcl_Size numAppendChars);
 static void		FillUnicodeRep(Tcl_Obj *objPtr);
 static void		FreeStringInternalRep(Tcl_Obj *objPtr);
-static void		GrowStringBuffer(Tcl_Obj *objPtr, Tcl_Size needed, int flag);
+static void		GrowStringBuffer(Tcl_Obj *objPtr, Tcl_Size needed, bool flag);
 static void		GrowUnicodeBuffer(Tcl_Obj *objPtr, Tcl_Size needed);
 static int		SetStringFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void		SetUnicodeObj(Tcl_Obj *objPtr,
@@ -125,7 +125,7 @@ static void
 GrowStringBuffer(
     Tcl_Obj *objPtr,
     Tcl_Size needed,		/* Not including terminating nul */
-    int flag)			/* If 0, try to overallocate */
+    bool exact)			/* If false, try to overallocate */
 {
     /*
      * Preconditions:
@@ -148,14 +148,16 @@ GrowStringBuffer(
      * In code below, note 'capacity' and 'needed' include terminating nul,
      * while stringPtr->allocated does not.
      */
-    if (flag == 0 || stringPtr->allocated > 0) {
-	ptr = (char *)TclReallocEx(objPtr->bytes, needed, &capacity);
+    if (!exact || stringPtr->allocated > 0) {
+	ptr = (char *)TclAttemptReallocEx(objPtr->bytes, needed, &capacity);
     } else {
 	/* Allocate exact size */
-	ptr = (char *)Tcl_Realloc(objPtr->bytes, needed);
+	ptr = (char *)Tcl_AttemptRealloc(objPtr->bytes, needed);
 	capacity = needed;
     }
-
+	if (!ptr) {
+	    Tcl_Panic("cannot allocate");
+	}
     objPtr->bytes = ptr;
     stringPtr->allocated = capacity - 1; /* Does not include slot for end nul */
 }
@@ -181,16 +183,22 @@ GrowUnicodeBuffer(
     }
     if (stringPtr->maxChars > 0) {
 	/* Expansion - try allocating extra space */
-	stringPtr = (String *) TclReallocElemsEx(stringPtr,
+	stringPtr = (String *) TclAttemptReallocElemsEx(stringPtr,
 		needed + 1, /* +1 for nul */
 		sizeof(Tcl_UniChar), offsetof(String, unicode), &maxChars);
+	if (!stringPtr) {
+	    Tcl_Panic("cannot grow buffer: allocation failed");
+	}
 	maxChars -= 1; /* End nul not included */
     } else {
 	/*
 	 * First allocation - just big enough. Note needed does
 	 * not include terminating nul but STRING_SIZE does
 	 */
-	stringPtr = (String *)Tcl_Realloc(stringPtr, STRING_SIZE(needed));
+	stringPtr = (String *)Tcl_AttemptRealloc(stringPtr, STRING_SIZE(needed));
+	if (!stringPtr) {
+	    Tcl_Panic("cannot grow buffer: allocation failed");
+	}
 	maxChars = needed;
     }
     stringPtr->maxChars = maxChars;
@@ -764,6 +772,21 @@ Tcl_GetUnicodeFromObj(
     }
     return stringPtr->unicode;
 }
+
+Tcl_UniChar *
+Tcl_AttemptGetUnicodeFromObj(
+    Tcl_Obj *objPtr,		/* The object to find the unicode string
+				 * for. */
+    Tcl_Size *lengthPtr)	/* If non-NULL, the location where the string
+				 * rep's unichar length should be stored. If
+				 * NULL, no length is stored. */
+{
+    (void)objPtr;
+    (void)lengthPtr;
+    Tcl_Panic("Not implemented yet");
+    return NULL;
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -1260,6 +1283,23 @@ Tcl_SetUnicodeObj(
     }
     TclFreeInternalRep(objPtr);
     SetUnicodeObj(objPtr, unicode, numChars);
+}
+
+Tcl_UniChar *
+Tcl_AttemptSetUnicodeObj(
+    Tcl_Obj *objPtr,		/* The object to set the string of. */
+    const Tcl_UniChar *unicode,	/* The Unicode string used to initialize the
+				 * object. */
+    Tcl_Size numChars)		/* Number of characters in the Unicode
+				 * string. */
+{
+    if (Tcl_IsShared(objPtr)) {
+	Tcl_Panic("%s called with shared object", "Tcl_SetUnicodeObj");
+    }
+    TclFreeInternalRep(objPtr);
+    SetUnicodeObj(objPtr, unicode, numChars);
+	Tcl_Panic("Not yet implemented");
+	return NULL;
 }
 
 static Tcl_Size
@@ -1869,7 +1909,7 @@ AppendUtfToUtfRep(
 	 * would make test stringObj-8.1 fail.
 	 */
 
-	GrowStringBuffer(objPtr, newLength, 0);
+	GrowStringBuffer(objPtr, newLength, false);
 
 	/*
 	 * Relocate bytes if needed; see above.
@@ -4679,8 +4719,7 @@ SetStringFromAny(
 	 * Convert whatever we have into an untyped value. Just A String.
 	 */
 
-	(void)TclAttemptGetString(objPtr);
-	if (!objPtr->bytes) {
+	if (!TclAttemptGetString(objPtr)) {
 	    return TclCannotAllocateError(interp, objPtr);
 	}
 	TclFreeInternalRep(objPtr);
@@ -4795,7 +4834,7 @@ ExtendStringRepWithUnicode(
      */
 
     if (size > stringPtr->allocated) {
-	GrowStringBuffer(objPtr, size, 1);
+	GrowStringBuffer(objPtr, size, true);
     }
 
   copyBytes:

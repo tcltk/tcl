@@ -860,7 +860,7 @@ const TclStubs tclStubs = {
     Tcl_NewDoubleObj, /* 51 */
     0, /* 52 */
     Tcl_NewListObj, /* 53 */
-    0, /* 54 */
+    Tcl_AttemptGetUnicodeFromObj, /* 54 */
     Tcl_NewObj, /* 55 */
     Tcl_NewStringObj, /* 56 */
     Tcl_AttemptNewStringObj, /* 57 */
@@ -872,7 +872,7 @@ const TclStubs tclStubs = {
     0, /* 63 */
     Tcl_SetObjLength, /* 64 */
     Tcl_SetStringObj, /* 65 */
-    0, /* 66 */
+    Tcl_AttemptSetUnicodeObj, /* 66 */
     0, /* 67 */
     Tcl_AllowExceptions, /* 68 */
     Tcl_AppendElement, /* 69 */
@@ -901,7 +901,7 @@ const TclStubs tclStubs = {
     Tcl_CreateEventSource, /* 92 */
     Tcl_CreateExitHandler, /* 93 */
     Tcl_CreateInterp, /* 94 */
-    0, /* 95 */
+    Tcl_DStringAttemptAppendElement, /* 95 */
     Tcl_CreateObjCommand, /* 96 */
     Tcl_CreateChild, /* 97 */
     Tcl_CreateTimerHandler, /* 98 */
