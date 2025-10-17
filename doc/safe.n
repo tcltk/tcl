@@ -513,7 +513,7 @@ own value is also specified:
 safe::interpCreate foo -accessPath {
     /usr/local/TclHome/lib/tcl9.0
     /usr/local/TclHome/lib/tcl9.0/http1.0
-    /usr/local/TclHome/lib/tcl9.0/opt0.5
+    /usr/local/TclHome/lib/tcl9.0/opt0.4
     /usr/local/TclHome/lib/tcl9.0/msgs
     /usr/local/TclHome/lib/tcl9.0/encoding
     /usr/local/TclHome/lib
@@ -531,7 +531,7 @@ safe::interpConfigure foo -autoPath {
 safe::interpCreate foo -accessPath {
     /usr/local/TclHome/lib/tcl9.0
     /usr/local/TclHome/lib/tcl9.0/http1.0
-    /usr/local/TclHome/lib/tcl9.0/opt0.5
+    /usr/local/TclHome/lib/tcl9.0/opt0.4
     /usr/local/TclHome/lib/tcl9.0/msgs
     /usr/local/TclHome/lib/tcl9.0/encoding
     /usr/local/TclHome/lib

@@ -1098,10 +1098,10 @@ install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
 	@$(CPY) "$(ROOT)\library\cookiejar\*.gz" \
 	    "$(SCRIPT_INSTALL_DIR)\cookiejar0.2\"
 	@echo Installing package opt $(PKG_OPT_VER)
-	@if not exist "$(SCRIPT_INSTALL_DIR)\opt0.5" \
-	    $(MKDIR) "$(SCRIPT_INSTALL_DIR)\opt0.5"
+	@if not exist "$(SCRIPT_INSTALL_DIR)\opt0.4" \
+	    $(MKDIR) "$(SCRIPT_INSTALL_DIR)\opt0.4"
 	@$(CPY) "$(ROOT)\library\opt\*.tcl" \
-	    "$(SCRIPT_INSTALL_DIR)\opt0.5\"
+	    "$(SCRIPT_INSTALL_DIR)\opt0.4\"
 	@if not exist "$(MODULE_INSTALL_DIR)" \
 	    $(MKDIR) "$(MODULE_INSTALL_DIR)"
 	@echo Installing package http $(PKG_HTTP_VER) as a Tcl Module
