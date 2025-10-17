@@ -939,7 +939,7 @@ install-libraries: libraries install-tzdata install-msgs
 	    done;
 	@echo "Installing package http 2.10.1 as a Tcl Module";
 	@$(COPY) $(ROOT_DIR)/library/http/http.tcl "$(MODULE_INSTALL_DIR)/9.0/http-2.10.1.tm";
-	@echo "Installing package opt 0.5.0";
+	@echo "Installing package opt 0.4.10";
 	@for j in $(ROOT_DIR)/library/opt/*.tcl; do \
 	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/opt0.5"; \
 	    done;

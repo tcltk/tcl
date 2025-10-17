@@ -18,7 +18,7 @@ to the userbase.
 
 # Updated bundled packages, libraries, standards, data
  - http 2.10.1
- - opt 0.5.0
+ - opt 0.4.10
  - platform 1.1.0
  - sqlite3 3.50.4
  - tcltest 2.5.10
