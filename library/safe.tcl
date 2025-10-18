@@ -712,13 +712,10 @@ proc ::safe::interpDelete {child} {
 
 proc ::safe::setLogCmd {args} {
     variable Log
-    set la [llength $args]
-    if {$la == 0} {
-	return $Log
-    } elseif {$la == 1} {
-	set Log [lindex $args 0]
-    } else {
-	set Log $args
+    switch -integer -- [llength $args] {
+	0 { return $Log }
+	1 { lassign $args Log }
+	default { set Log $args }
     }
 
     if {$Log eq ""} {
