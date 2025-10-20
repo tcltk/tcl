@@ -192,7 +192,8 @@ test parseOld-5.11 {array variable substitution} {
 } {a$!}
 test parseOld-5.12 {empty array name support} {
     list [catch {set b a$()} msg] $msg
-} {1 {can't read "()": no such variable}}
+} {1 {empty expression
+in expression ""}}
 unset -nocomplain a
 test parseOld-5.13 {array variable substitution} {
     unset -nocomplain a
