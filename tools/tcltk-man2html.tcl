@@ -1,6 +1,8 @@
 #!/usr/bin/env tclsh
 
-if {[catch {package require Tcl 8.6-} msg]} {
+if {[catch {
+    package require Tcl 9.0-
+} msg]} {
     puts stderr "ERROR: $msg"
     puts stderr "If running this script from 'make html', set the\
 	NATIVE_TCLSH environment\nvariable to point to an installed\
@@ -30,43 +32,59 @@ set ::CSSFILE "docs.css"
 ## implementation of the transformation from nroff to html.
 ##
 source -encoding utf-8 [file join [file dirname [info script]] tcltk-man2html-utils.tcl]
+
+##
+## Source the static configuration information.
+##
+source -encoding utf-8 [file join [file dirname [info script]] tcltk-man2html-config.tcl]
 
-proc getversion {tclh {name {}}} {
+##
+## Parse a C header file to extract the version number from a *_VERSION macro.
+## The results (if found) are returned as a two-element list.
+##
+proc get-version {tclh {name ""}} {
     if {[file exists $tclh]} {
 	set chan [open $tclh]
-	set data [read $chan]
-	close $chan
+	try {
+	    set data [read $chan]
+	} finally {
+	    close $chan
+	}
 	if {$name eq ""} {
 	    set name [string toupper [file root [file tail $tclh]]]
 	}
 	# backslash isn't required in front of quote, but it keeps syntax
 	# highlighting straight in some editors
 	if {[regexp -lineanchor \
-	    [string map [list @name@ $name] \
-		{^#\s*define\s+@name@_VERSION\s+\"([^.])+\.([^.\"]+)}] \
-	    $data -> major minor]} {
-		return [list $major $minor]
+		[string map [list @name@ $name] \
+			{^#\s*define\s+@name@_VERSION\s+\"([^.])+\.([^.\"]+)}] \
+		$data -> major minor]} {
+	    return [list $major $minor]
 	}
     }
 }
-proc findversion {top name useversion} {
+
+##
+## Look for version information within a directory structure.
+##
+proc find-version {top name useversion} {
     # Default search version is a glob pattern, switch it for string match:
-    if {$useversion eq {{,[8-9].[0-9]{,[.ab][0-9]{,[0-9]}}}}} {
+    if { $useversion eq {{,[8-9].[0-9]{,[.ab][0-9]{,[0-9]}}}} } {
 	set useversion {[8-9].[0-9]}
     }
     # Search:
     set upper [string toupper $name]
-    foreach top1 [list $top $top/..] sub {{} generic} {
+    foreach top1 [list $top $top/..] sub "{} generic" {
 	foreach dirname [
 	    glob -nocomplain -tails -type d -directory $top1 *] {
 
-	    set tclh [join [list $top1 $dirname {*}$sub ${name}.h] /]
-	    set v [getversion $tclh $upper]
+	    set tclh [join [list $top1 $dirname {*}$sub ${name}.h] "/"]
+	    set v [get-version $tclh $upper]
 	    if {[llength $v]} {
 		lassign $v major minor
 		# to do
 		#     use glob matching instead of string matching or add
-		#     brace handling to [string matcch]
+		#     brace handling to [string match]
 		if {$useversion eq "" || [string match $useversion $major.$minor]} {
 		    set top [file dirname [file dirname $tclh]]
 		    set prefix [file dirname $top]
@@ -76,7 +94,7 @@ proc findversion {top name useversion} {
 	}
     }
 }
-
+
 proc parse_command_line {} {
     global argv Version
 
@@ -161,7 +179,7 @@ proc parse_command_line {} {
     }
 
     if {!$build_tcl && !$build_tk} {
-	set build_tcl 1;
+	set build_tcl 1
 	set build_tk 1
     }
 
@@ -174,9 +192,9 @@ proc parse_command_line {} {
 		-directory $tcltkdir tcl$useversion]] end]
 	if {$tcldir ne ""} {
 	    # obtain version from generic header if we can:
-	    lassign [getversion [file join $tcltkdir $tcldir generic tcl.h]] major minor
+	    lassign [get-version [file join $tcltkdir $tcldir generic tcl.h]] major minor
 	} else {
-	    lassign [findversion $tcltkdir tcl $useversion] tcltkdir tcldir major minor
+	    lassign [find-version $tcltkdir tcl $useversion] tcltkdir tcldir major minor
 	}
 	if {$tcldir eq "" && $opt_build_tcl} {
 	    puts stderr "tcltk-man-html: couldn't find Tcl below $tcltkdir"
@@ -193,10 +211,10 @@ proc parse_command_line {} {
 	if {$tkdir ne ""} {
 	    if {$major eq ""} {
 		# obtain version from generic header if we can:
-		lassign [getversion [file join $tcltkdir $tkdir generic tk.h]] major minor
+		lassign [get-version [file join $tcltkdir $tkdir generic tk.h]] major minor
 	    }
 	} else {
-	    lassign [findversion $tcltkdir tk $useversion] tcltkdir tkdir major minor
+	    lassign [find-version $tcltkdir tk $useversion] tcltkdir tkdir major minor
 	}
 	if {$tkdir eq "" && $opt_build_tk} {
 	    puts stderr "tcltk-man-html: couldn't find Tk below $tcltkdir"
@@ -239,82 +257,45 @@ proc css-style args {
     set tokens [join [lrange $args 0 end-1] ", "]
     append style $tokens " \{" $body "\}\n"
 }
-proc css-stylesheet {} {
-    set hBd "1px dotted #11577B"
-
-    css-style body div p th td li dd ul ol dl dt blockquote {
-	font-family: Verdana, sans-serif;
-    }
-    css-style pre code {
-	font-family: 'Courier New', Courier, monospace;
-    }
-    css-style pre {
-	background-color:  #F6FCEC;
-	border-top:        1px solid #6A6A6A;
-	border-bottom:     1px solid #6A6A6A;
-	padding:           1em;
-	overflow:          auto;
-    }
-    css-style body {
-	background-color:  #FFFFFF;
-	font-size:         12px;
-	line-height:       1.25;
-	letter-spacing:    .2px;
-	padding-left:      .5em;
-    }
-    css-style h1 h2 h3 h4 {
-	font-family:       Georgia, serif;
-	padding-left:      1em;
-	margin-top:        1em;
-    }
-    css-style h1 {
-	font-size:         18px;
-	color:             #11577B;
-	border-bottom:     $hBd;
-	margin-top:        0px;
-    }
-    css-style h2 {
-	font-size:         14px;
-	color:             #11577B;
-	background-color:  #C5DCE8;
-	padding-left:      1em;
-	border:            1px solid #6A6A6A;
-    }
-    css-style h3 h4 {
-	color:             #1674A4;
-	background-color:  #E8F2F6;
-	border-bottom:     $hBd;
-	border-top:        $hBd;
-    }
-    css-style h3 {
-	font-size: 12px;
-    }
-    css-style h4 {
-	font-size: 11px;
-    }
-    css-style ".keylist dt" ".arguments dt" {
-	width: 25em;
-	float: left;
-	padding: 2px;
-	border-top: 1px solid #999999;
-    }
-    css-style ".keylist dt" { font-weight: bold; }
-    css-style ".keylist dd" ".arguments dd" {
-	margin-left: 25em;
-	padding: 2px;
-	border-top: 1px solid #999999;
-    }
-    css-style .copy {
-	background-color:  #F6FCFC;
-	white-space:       pre;
-	font-size:         80%;
-	border-top:        1px solid #6A6A6A;
-	margin-top:        2em;
-    }
-    css-style .tablecell {
-	font-size:	   12px;
-	padding-left:	   .5em;
-	padding-right:	   .5em;
+
+##
+## Generate a specific keyword file.
+##
+proc write-keyword-file {html keyheader letter keys} {
+    global tcltkdesc overall_title manual
+    set afp [open $html/Keywords/$letter.html w]
+    try {
+	fconfigure $afp -translation lf -encoding utf-8
+	puts $afp [htmlhead "$tcltkdesc Keywords - $letter" \
+		"$tcltkdesc Keywords - $letter" \
+		$overall_title "../[indexfile]"]
+	puts $afp $keyheader
+	puts $afp "<dl class=\"keylist\">"
+	foreach k [lsort -dictionary $keys] {
+	    # Remove keyword- prefix
+	    set keyword [string range $k 8 end]
+	    puts $afp "<dt><a name=\"[nospace-text $keyword]\" id=\"[nospace-text $keyword]\">$keyword</a></dt>"
+	    set refs {}
+	    foreach man $manual($k) {
+		lassign $man name file
+		if {[info exists manual(tooltip-$file)]} {
+		    set tooltip $manual(tooltip-$file)
+		    if {[string match {*[<>""]*} $tooltip]} {
+			manerror "bad tooltip for $file: \"$tooltip\""
+		    }
+		    lappend refs "<a href=\"../$file\" title=\"$tooltip\">$name</a>"
+		} else {
+		    lappend refs "<a href=\"../$file\">$name</a>"
+		}
+	    }
+	    puts $afp "<dd>[join $refs {, }]</dd>"
+	}
+	puts $afp "</dl>"
+	# insert merged copyrights
+	puts $afp [copyout $manual(merge-copyrights)]
+	puts $afp "</body></html>"
+    } finally {
+	close $afp
     }
 }
 
@@ -326,12 +307,16 @@ proc css-stylesheet {} {
 proc make-man-pages {html args} {
     global manual overall_title tcltkdesc verbose
     global excluded_pages forced_index_pages process_first_patterns
+    set letters {A B C D E F G H I J K L M N O P Q R S T U V W X Y Z}
 
     makedirhier $html
     set cssfd [open $html/$::CSSFILE w]
-    fconfigure $cssfd -translation lf -encoding utf-8
-    puts $cssfd [css-stylesheet]
-    close $cssfd
+    try {
+	fconfigure $cssfd -translation lf -encoding utf-8
+	puts $cssfd [css-stylesheet]
+    } finally {
+	close $cssfd
+    }
     set manual(short-toc-n) 1
     set manual(short-toc-fp) [open $html/[indexfile] w]
     fconfigure $manual(short-toc-fp) -translation lf -encoding utf-8
@@ -372,66 +357,37 @@ proc make-man-pages {html args} {
     file delete -force -- $html/Keywords
     makedirhier $html/Keywords
     set keyfp [open $html/Keywords/[indexfile] w]
-    fconfigure $keyfp -translation lf -encoding utf-8
-    puts $keyfp [htmlhead "$tcltkdesc Keywords" "$tcltkdesc Keywords" \
-		     $overall_title "../[indexfile]"]
-    set letters {A B C D E F G H I J K L M N O P Q R S T U V W X Y Z}
-    # Create header first
-    set keyheader {}
-    foreach a $letters {
-	set keys [array names manual "keyword-\[[string totitle $a$a]\]*"]
-	if {[llength $keys]} {
-	    lappend keyheader "<a href=\"$a.html\">$a</a>"
-	} else {
-	    # No keywords for this letter
-	    lappend keyheader $a
-	}
-    }
-    set keyheader <h3>[join $keyheader " |\n"]</h3>
-    puts $keyfp $keyheader
-    foreach a $letters {
-	set keys [array names manual "keyword-\[[string totitle $a$a]\]*"]
-	if {![llength $keys]} {
-	    continue
-	}
-	# Per-keyword page
-	set afp [open $html/Keywords/$a.html w]
-	fconfigure $afp -translation lf -encoding utf-8
-	puts $afp [htmlhead "$tcltkdesc Keywords - $a" \
-		       "$tcltkdesc Keywords - $a" \
-		       $overall_title "../[indexfile]"]
-	puts $afp $keyheader
-	puts $afp "<dl class=\"keylist\">"
-	foreach k [lsort -dictionary $keys] {
-	    set k [string range $k 8 end]
-	    puts $afp "<dt><a name=\"[nospace-text $k]\" id=\"[nospace-text $k]\">$k</a></dt>"
-	    puts $afp "<dd>"
-	    set refs {}
-	    foreach man $manual(keyword-$k) {
-		set name [lindex $man 0]
-		set file [lindex $man 1]
-		if {[info exists manual(tooltip-$file)]} {
-		    set tooltip $manual(tooltip-$file)
-		    if {[string match {*[<>""]*} $tooltip]} {
-			manerror "bad tooltip for $file: \"$tooltip\""
-		    }
-		    lappend refs "<a href=\"../$file\" title=\"$tooltip\">$name</a>"
-		} else {
-		    lappend refs "<a href=\"../$file\">$name</a>"
-		}
+    try {
+	fconfigure $keyfp -translation lf -encoding utf-8
+	puts $keyfp [htmlhead "$tcltkdesc Keywords" "$tcltkdesc Keywords" \
+		$overall_title "../[indexfile]"]
+	# Create header first
+	set keyheader {}
+	foreach a $letters {
+	    set keys [array names manual "keyword-\[[string totitle $a$a]\]*"]
+	    if {[llength $keys]} {
+		lappend keyheader "<a href=\"$a.html\">$a</a>"
+	    } else {
+		# No keywords for this letter
+		lappend keyheader $a
 	    }
-	    puts $afp "[join $refs {, }]</dd>"
 	}
-	puts $afp "</dl>"
+	set keyheader <h3>[join $keyheader " |\n"]</h3>
+	puts $keyfp $keyheader
+	foreach a $letters {
+	    set keys [array names manual "keyword-\[[string totitle $a$a]\]*"]
+	    if {![llength $keys]} {
+		continue
+	    }
+	    # Per-keyword page
+	    write-keyword-file $html $keyheader $a $keys
+	}
 	# insert merged copyrights
-	puts $afp [copyout $manual(merge-copyrights)]
-	puts $afp "</body></html>"
-	close $afp
+	puts $keyfp [copyout $manual(merge-copyrights)]
+	puts $keyfp "</body></html>"
+    } finally {
+	close $keyfp
     }
-    # insert merged copyrights
-    puts $keyfp [copyout $manual(merge-copyrights)]
-    puts $keyfp "</body></html>"
-    close $keyfp
 
     ##
     ## finish off short table of contents
@@ -516,9 +472,12 @@ proc plus-base {var root glob name dir desc} {
     if {$var} {
 	if {[file exists $tcltkdir/$root/README.md]} {
 	    set f [open $tcltkdir/$root/README.md]
-	    fconfigure $f -encoding utf-8
-	    set d [read $f]
-	    close $f
+	    try {
+		fconfigure $f -encoding utf-8
+		set d [read $f]
+	    } finally {
+		close $f
+	    }
 	    if {[regexp {This is the \*\*\w+ (\S+)\*\* source distribution} $d -> version]} {
 	       append name ", version $version"
 	    }
@@ -575,135 +534,40 @@ proc plus-pkgs {type args} {
 }
 
 ##
-## Set up some special cases. It would be nice if we didn't have them,
-## but we do...
+## Helper for extracting the name and version of a contributed package
+## from its source tree.
 ##
-set excluded_pages {}
-set forced_index_pages {GetDash}
-set process_first_patterns {*/ttk_widget.n */options.n}
-set ensemble_commands {
-    after array binary chan clock dde dict encoding file history info interp
-    memory namespace package registry self string trace update zlib
-    clipboard console font grab grid image option pack place selection tk
-    tkwait ttk::style winfo wm itcl::delete itcl::find itcl::is
-}
-array set remap_link_target {
-    stdin  Tcl_GetStdChannel
-    stdout Tcl_GetStdChannel
-    stderr Tcl_GetStdChannel
-    style  ttk::style
-    {style map} ttk::style
-    {tk busy}   busy
-    library     auto_execok
-    safe-tcl    safe
-    tclvars     env
-    tcl_break   catch
-    tcl_continue catch
-    tcl_error   catch
-    tcl_ok      catch
-    tcl_return  catch
-    int()       mathfunc
-    wide()      mathfunc
-    packagens   pkg::create
-    pkgMkIndex  pkg_mkIndex
-    pkg_mkIndex pkg_mkIndex
-    Tcl_Obj     Tcl_NewObj
-    Tcl_ObjType Tcl_RegisterObjType
-    Tcl_OpenFileChannelProc Tcl_FSOpenFileChannel
-    errorinfo	env
-    errorcode	env
-    tcl_pkgpath env
-    Tcl_Command Tcl_CreateObjCommand
-    Tcl_CmdProc Tcl_CreateObjCommand
-    Tcl_CmdDeleteProc Tcl_CreateObjCommand
-    Tcl_ObjCmdProc Tcl_CreateObjCommand
-    Tcl_Channel Tcl_OpenFileChannel
-    Tcl_WideInt Tcl_NewIntObj
-    Tcl_ChannelType Tcl_CreateChannel
-    Tcl_DString Tcl_DStringInit
-    Tcl_Namespace Tcl_AppendExportList
-    Tcl_Object  Tcl_NewObjectInstance
-    Tcl_Class   Tcl_GetObjectAsClass
-    Tcl_Event   Tcl_QueueEvent
-    Tcl_Time	Tcl_GetTime
-    Tcl_ThreadId Tcl_CreateThread
-    Tk_Window	Tk_WindowId
-    Tk_3DBorder Tk_Get3DBorder
-    Tk_Anchor	Tk_GetAnchor
-    Tk_Cursor	Tk_GetCursor
-    Tk_Dash	Tk_GetDash
-    Tk_Font	Tk_GetFont
-    Tk_Image	Tk_GetImage
-    Tk_ImageMaster Tk_GetImage
-    Tk_ImageModel Tk_GetImage
-    Tk_ItemType Tk_CreateItemType
-    Tk_Justify	Tk_GetJustify
-    Ttk_Theme	Ttk_GetTheme
-}
-array set exclude_refs_map {
-    bind.n		{button destroy option}
-    clock.n		{next}
-    history.n		{exec}
-    next.n		{unknown}
-    zlib.n		{binary close filename text}
-    canvas.n		{bitmap text}
-    console.n		{eval}
-    checkbutton.n	{image}
-    clipboard.n		{string}
-    entry.n		{string}
-    event.n		{return}
-    font.n		{menu}
-    getOpenFile.n	{file open text}
-    grab.n		{global}
-    interp.n		{time}
-    menu.n		{checkbutton radiobutton}
-    messageBox.n	{error info}
-    options.n		{bitmap image set}
-    radiobutton.n	{image}
-    safe.n		{join split}
-    scale.n		{label variable}
-    scrollbar.n		{set}
-    selection.n		{string}
-    tcltest.n		{error}
-    text.n		{bind image lower raise}
-    tkvars.n		{tk}
-    tkwait.n		{variable}
-    tm.n		{exec}
-    ttk_checkbutton.n	{variable}
-    ttk_combobox.n	{selection}
-    ttk_entry.n		{focus variable}
-    ttk_intro.n		{focus text}
-    ttk_label.n		{font text}
-    ttk_labelframe.n	{text}
-    ttk_menubutton.n	{flush}
-    ttk_notebook.n	{image text}
-    ttk_progressbar.n	{variable}
-    ttk_radiobutton.n	{variable}
-    ttk_scale.n		{variable}
-    ttk_scrollbar.n	{set}
-    ttk_spinbox.n	{format}
-    ttk_treeview.n	{text open focus selection}
-    ttk_widget.n	{image text variable}
-    TclZlib.3		{binary flush filename text}
-}
-array set exclude_when_followed_by_map {
-    canvas.n {
-	bind widget
-	focus widget
-	image are
-	lower widget
-	raise widget
+proc extract-package-version {pkgsDir dir} {
+    set description [split $dir -]
+    if {2 != [llength $description]} {
+	regexp {([^0-9]*)(.*)} $dir -> n v
+	set description [list $n $v]
     }
-    selection.n {
-	clipboard selection
-	clipboard ;
+
+    # ... but try to extract (name, version) from subdir contents
+    try {
+	try {
+	    set f [open [file join $pkgsDir $dir configure.in]]
+	} trap {POSIX ENOENT} {} {
+	    set f [open [file join $pkgsDir $dir configure.ac]]
+	}
+	fconfigure $f -encoding utf-8
+	foreach line [split [read $f] "\n"] {
+	    if {[regexp {^AC_INIT\(\s*\[(.*?)\]\s*,\s*\[(.*?)\]\s*\)\s*$} $line -> n v]} {
+		return [list $n $v]
+	    }
+	}
+    } on error {} {
+	puts "package folder without package ignored: $dir"
+	# No can do! Empty means skip this one.
+	return
+    } finally {
+	catch {close $f}
     }
-    ttk_image.n {
-	image imageSpec
-    }
-    fontchooser.n {
-	tk fontchooser
-    }
+
+    # Have to use the guess derived from the directory name as a fallback;
+    # the configure script appears to be ill-defined.
+    return $description
 }
 
 try {
@@ -711,7 +575,9 @@ try {
     parse_command_line
 
     # Some strings depend on what options are specified
-    set tcltkdesc ""; set cmdesc ""; set appdir ""
+    set tcltkdesc ""
+    set cmdesc ""
+    set appdir ""
     if {$build_tcl} {
 	append tcltkdesc "Tcl"
 	append cmdesc "Tcl"
@@ -728,7 +594,7 @@ try {
 	append appdir "$tkdir"
     }
 
-    apply {{} {
+    apply { {} {
     global packageBuildList tcltkdir tcldir build_tcl
 
     # When building docs for Tcl, try to build docs for bundled packages too
@@ -736,39 +602,13 @@ try {
     if {$build_tcl} {
 	set pkgsDir [file join $tcltkdir $tcldir pkgs]
 	set subdirs [glob -nocomplain -types d -tails -directory $pkgsDir *]
-
 	foreach dir [lsort $subdirs] {
-	    # Parse the subdir name into (name, version) as fallback...
-	    set description [split $dir -]
-	    if {2 != [llength $description]} {
-		regexp {([^0-9]*)(.*)} $dir -> n v
-		set description [list $n $v]
-	    }
+	    # Get the package name, version from the package contents.
+	    set description [extract-package-version $pkgsDir $dir]
 
-	    # ... but try to extract (name, version) from subdir contents
-	    try {
-		try {
-		    set f [open [file join $pkgsDir $dir configure.in]]
-		} trap {POSIX ENOENT} {} {
-		    set f [open [file join $pkgsDir $dir configure.ac]]
-		}
-		fconfigure $f -encoding utf-8
-		foreach line [split [read $f] \n] {
-		    if {2 == [scan $line \
-			    { AC_INIT ( [%[^]]] , [%[^]]] ) } n v]} {
-			set description [list $n $v]
-			break
-		    }
-		}
-	    } on error {} {
-		puts "package folder without package ignored: $dir"
-		continue
-	    } finally {
-		catch {close $f; unset f}
-	    }
-
-	    if {[file exists [file join $pkgsDir $dir configure]]} {
+	    if {[llength $description] && [file exists [file join $pkgsDir $dir configure]]} {
 		# Looks like a package, record our best extraction attempt
+		# Records a triple: directory, name, version
 		lappend packageBuildList $dir {*}$description
 	    }
 	}
@@ -780,8 +620,8 @@ try {
 	set packageDirNameMap {}
 	if {$build_tcl} {
 	    set f [open $tcltkdir/$tcldir/pkgs/package.list.txt]
-	    fconfigure $f -encoding utf-8
 	    try {
+		fconfigure $f -encoding utf-8
 		foreach line [split [read $f] \n] {
 		    if {[string trim $line] eq ""} continue
 		    if {[string match #* $line]} continue
@@ -793,11 +633,7 @@ try {
 	    }
 	}
     } trap {POSIX ENOENT} {} {
-	set packageDirNameMap {
-	    itcl {[incr Tcl]}
-	    tdbc {TDBC}
-	    thread Thread
-	}
+	set packageDirNameMap $::default_package_dir_name_map
     }
 
     # Convert to human readable names, if applicable
