@@ -1490,7 +1490,7 @@ Tcl_ParseVarName(
 	// Create synthetic command: "[expr {expression}]"
 	Tcl_Size exprLen = exprEnd - exprStart;
 	Tcl_Size syntheticLen = exprLen + 9;  // "[expr {" + expr + "}]"
-	char *synthetic = Tcl_Alloc(syntheticLen + 1);
+	char *synthetic = (char *)Tcl_Alloc(syntheticLen + 1);
 
 	memcpy(synthetic, "[expr {", 7);
 	memcpy(synthetic + 7, exprStart, exprLen);
