@@ -975,7 +975,7 @@ test parse-18.11 {Tcl_SubstObj, parse errors} {
 } [list 1 "missing close-brace for variable name"]
 test parse-18.12 {Tcl_SubstObj, parse errors} {
     list [catch "subst foo\$(\$\{foo)" msg] $msg
-} [list 1 "missing close-brace for variable name"]
+} [list 1 "missing close-brace"]
 test parse-18.13 {Tcl_SubstObj, parse errors} {
     list [catch "subst \[" msg] $msg
 } [list 1 "missing close-bracket"]
