@@ -3356,7 +3356,7 @@ TclSubstOptions(
 	TCL_SUBST_BACKSLASHES << 16,	/* -nobackslashes */
 	TCL_SUBST_COMMANDS    << 16,	/* -nocommands */
 	TCL_SUBST_EXPRS       << 16,	/* -noexprs */
-	TCL_SUBST_VARIABLES,   << 16	/* -novariables */
+	TCL_SUBST_VARIABLES   << 16,	/* -novariables */
 	TCL_SUBST_VARIABLES		/* -variables */
     };
     int flags = numOpts ? 0 : TCL_SUBST_ALL;
@@ -3406,8 +3406,8 @@ TclNRSubstObjCmd(
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv,
-		"?-backslashes? ?-commands? ?-variables? "
-		"?-nobackslashes? ?-nocommands? ?-novariables? string");
+		"?-backslashes? ?-commands? ?-exprs? ?-nobackslashes? "
+		"?-nocommands? ?-noexprs? ?-novariables? ?-variables? string");
 	return TCL_ERROR;
     }
 

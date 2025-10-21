@@ -1104,12 +1104,13 @@ ParseTokens(
 	     * the dirty work of parsing the name.
 	     */
 
-	    varToken = parsePtr->numTokens;
-	    if (Tcl_ParseVarName(parsePtr->interp, src, numBytes, parsePtr,
-		    1) != TCL_OK) {
-		return TCL_ERROR;
-	    }
-	    if ((numBytes > 1) && (src[1] == '(')) {
+	    int isExprSubst = (numBytes > 1 && src[1] == '(');
+		varToken = parsePtr->numTokens;
+		if (Tcl_ParseVarName(parsePtr->interp, src, numBytes, parsePtr, 1) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+
+	    if (isExprSubst) {
 		// For $(expr), the COMMAND token has synthetic string length
 		// but we need to advance by original $(...)  length
 		// Difference is always: "[expr {" (7 chars) + "}]" (2 chars) - "$(" (2 chars) - ")" (1 char) = 6
@@ -1442,6 +1443,7 @@ Tcl_ParseVarName(
 	const char *exprEnd;
 	int parenDepth = 1;
 	int bracketDepth = 0;
+	int betweenQuotes = 0; // only important if using string relationals, eq, ne, etc. and using "literal \("
 	const char *dollarParenStart = src - 1;  // Points to the '$'
 
 	src++;
@@ -1456,16 +1458,22 @@ Tcl_ParseVarName(
 	    }
 
 	    if (ch == '(') {
-		if(bracketDepth<=0) parenDepth++; // parens inside command substitutions [...] don't count for balancing, and won't need escaping
+		if (bracketDepth<=0 && betweenQuotes == 0) {
+		    parenDepth++; // parens inside command substitutions [...] don't count for balancing, or with "xxx" and won't need escaping
+		}
+	    } else if (bracketDepth == 0 && ch == '"') {
+		betweenQuotes = 1 - betweenQuotes;
 	    } else if (ch == ')') {
-		if(bracketDepth<=0) parenDepth--;
+		if (bracketDepth <= 0 && betweenQuotes == 0) {
+		    parenDepth--;
+		}
 		if (parenDepth == 0) {
 		    break;
 		}
-	    } else if (ch == ']') {
-		bracketDepth--;  // these 2 checks tell us if we're in a [...] command substitution
-	    } else if (ch == '[') {
-		bracketDepth++;
+	    } else if (ch == ']'  && betweenQuotes == 0) {
+		bracketDepth--;  // these 2 checks tell us if we're in a [...] command substitution, don't adjust if inside quotes
+	    } else if (ch == '['  && betweenQuotes == 0) {
+		bracketDepth++;  
 	    } else if (ch == '\\' && numBytes > 1) {
 		src++;
 		numBytes--;
@@ -1478,7 +1486,7 @@ Tcl_ParseVarName(
 	    // Error: unmatched paren
 	    if (parsePtr->interp != NULL) {
 		Tcl_SetObjResult(parsePtr->interp,
-		    Tcl_NewStringObj("missing close-paren for $(", -1));
+			Tcl_NewStringObj("missing close-paren for $(", -1));
 	    }
 	    parsePtr->errorType = TCL_PARSE_MISSING_PAREN;
 	    parsePtr->term = tokenPtr->start - 1;
@@ -1504,7 +1512,7 @@ Tcl_ParseVarName(
 		0, &nestedParse) != TCL_OK) {
 	    Tcl_Free(synthetic);
 
-        // Copy error information but adjust pointers back to original
+	    // Copy error information but adjust pointers back to original
 	    parsePtr->errorType = nestedParse.errorType;
 	    parsePtr->term = dollarParenStart;  // Point to original $( location, not synthetic
 	    parsePtr->incomplete = nestedParse.incomplete;
