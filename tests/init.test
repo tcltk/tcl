@@ -168,7 +168,7 @@ test init-3.0 {random stuff in the auto_index, should still work} {
 # same.
 
 set count 0
-foreach arg [subst -nocommands -novariables {
+foreach arg [subst -nocommands -novariables -noexprs {
     c
     {argument
 		which spans

@@ -3346,16 +3346,18 @@ TclSubstOptions(
     int *flagPtr)
 {
     static const char *const substOptions[] = {
-	"-backslashes", "-commands", "-variables",
-	"-nobackslashes", "-nocommands", "-novariables", NULL
+	"-backslashes", "-commands", "-exprs", "-nobackslashes",
+	"-nocommands", "-noexprs", "-novariables", "-variables", NULL
     };
     static const int optionFlags[] = {
 	TCL_SUBST_BACKSLASHES,		/* -backslashes */
 	TCL_SUBST_COMMANDS,		/* -commands */
-	TCL_SUBST_VARIABLES,		/* -variables */
+	TCL_SUBST_EXPRS,		/* -exprs */
 	TCL_SUBST_BACKSLASHES << 16,	/* -nobackslashes */
 	TCL_SUBST_COMMANDS    << 16,	/* -nocommands */
-	TCL_SUBST_VARIABLES   << 16	/* -novariables */
+	TCL_SUBST_EXPRS       << 16,	/* -noexprs */
+	TCL_SUBST_VARIABLES,   << 16	/* -novariables */
+	TCL_SUBST_VARIABLES		/* -variables */
     };
     int flags = numOpts ? 0 : TCL_SUBST_ALL;
 
