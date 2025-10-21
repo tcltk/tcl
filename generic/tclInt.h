@@ -2440,7 +2440,7 @@ enum InterpFlags {
 				 * replacing and uses different intermediate
 				 * text. */
     ERR_LEGACY_COPY = 0x800,
-    CANCELED = 0x1000		/* The script in progress should be canceled
+    CANCELED = 0x1000,		/* The script in progress should be canceled
 				 * as soon as possible. This can be checked by
 				 * extensions (and the core itself) by calling
 				 * Tcl_Canceled and checking if TCL_ERROR is
@@ -2451,6 +2451,8 @@ enum InterpFlags {
 				 * that the script in progress has been
 				 * canceled thereby allowing the evaluation
 				 * stack for the interp to be fully unwound. */
+    EXPR_SUBST = 0x10000		/* The current interp knows
+				 * about expr substitutions in the form $(expr). */
 };
 
 /*

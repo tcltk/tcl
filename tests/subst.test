@@ -22,10 +22,10 @@ testConstraint testbytestring [llength [info commands testbytestring]]
 
 test subst-1.1 {basics} -returnCodes error -body {
     subst
-} -result {wrong # args: should be "subst ?-backslashes? ?-commands? ?-variables? ?-nobackslashes? ?-nocommands? ?-novariables? string"}
+} -result {wrong # args: should be "subst ?-backslashes? ?-commands? ?-exprs? ?-nobackslashes? ?-nocommands? ?-noexprs? ?-novariables? ?-variables? string"}
 test subst-1.2 {basics} -returnCodes error -body {
     subst a b c
-} -result {bad option "a": must be -backslashes, -commands, -variables, -nobackslashes, -nocommands, or -novariables}
+} -result {bad option "a": must be -backslashes, -commands, -exprs, -nobackslashes, -nocommands, -noexprs, -novariables, or -variables}
 
 test subst-2.1 {simple strings} {
     subst {}
@@ -123,13 +123,13 @@ test subst-6.1 {clear the result after command substitution} -body {
 
 test subst-7.1 {switches} -returnCodes error -body {
     subst foo bar
-} -result {bad option "foo": must be -backslashes, -commands, -variables, -nobackslashes, -nocommands, or -novariables}
+} -result {bad option "foo": must be -backslashes, -commands, -exprs, -nobackslashes, -nocommands, -noexprs, -novariables, or -variables}
 test subst-7.2 {switches} -returnCodes error -body {
     subst -no bar
-} -result {ambiguous option "-no": must be -backslashes, -commands, -variables, -nobackslashes, -nocommands, or -novariables}
+} -result {ambiguous option "-no": must be -backslashes, -commands, -exprs, -nobackslashes, -nocommands, -noexprs, -novariables, or -variables}
 test subst-7.3 {switches} -returnCodes error -body {
     subst -bogus bar
-} -result {bad option "-bogus": must be -backslashes, -commands, -variables, -nobackslashes, -nocommands, or -novariables}
+} -result {bad option "-bogus": must be -backslashes, -commands, -exprs, -nobackslashes, -nocommands, -noexprs, -novariables, or -variables}
 test subst-7.4 {switches} {
     set x 123
     subst -nobackslashes {abc $x [expr {1 + 2}] \\\x41}

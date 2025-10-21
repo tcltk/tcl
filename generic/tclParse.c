@@ -1045,7 +1045,7 @@ ParseTokens(
 				 * CHAR_TYPE contains any of the bits in
 				 * mask. */
     int flags,			/* OR-ed bits indicating what substitutions to
-				 * perform: TCL_SUBST_COMMANDS,
+				 * perform: TCL_SUBST_COMMANDS, TCL_SUBST_EXPRS
 				 * TCL_SUBST_VARIABLES, and
 				 * TCL_SUBST_BACKSLASHES */
     Tcl_Parse *parsePtr)	/* Information about parse in progress.
@@ -1055,6 +1055,7 @@ ParseTokens(
     char type;
     Tcl_Size originalTokens;
     int noSubstCmds = !(flags & TCL_SUBST_COMMANDS);
+    int noSubstExprs = !(flags & TCL_SUBST_EXPRS);
     int noSubstVars = !(flags & TCL_SUBST_VARIABLES);
     int noSubstBS = !(flags & TCL_SUBST_BACKSLASHES);
     Tcl_Token *tokenPtr;
@@ -1089,7 +1090,7 @@ ParseTokens(
 	} else if (*src == '$') {
 	    Tcl_Size varToken;
 
-	    if (noSubstVars) {
+	    if ((src[1] == '(') ? noSubstExprs : noSubstVars) {
 		tokenPtr->type = TCL_TOKEN_TEXT;
 		tokenPtr->size = 1;
 		parsePtr->numTokens++;
@@ -1099,7 +1100,7 @@ ParseTokens(
 	    }
 
 	    /*
-	     * This is a variable reference. Call Tcl_ParseVarName to do all
+	     * This is a expr or variable reference. Call Tcl_ParseVarName to do all
 	     * the dirty work of parsing the name.
 	     */
 
@@ -1975,7 +1976,7 @@ Tcl_ParseQuotedString(
  *	'numBytes' bytes starting at 'bytes'. Parsing is controlled by the
  *	flags argument to provide support for the -nobackslashes, -nocommands,
  *	and -novariables options, as represented by the flag values
- *	TCL_SUBST_BACKSLASHES, TCL_SUBST_COMMANDS, TCL_SUBST_VARIABLES.
+ *	TCL_SUBST_BACKSLASHES, TCL_SUBST_COMMANDS, TCL_SUBST_EXPRS, TCL_SUBST_VARIABLES.
  *
  * Results:
  *	None.

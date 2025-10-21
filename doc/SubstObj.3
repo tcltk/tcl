@@ -42,10 +42,14 @@ event of an error occurring during the execution of a command or
 variable substitution, the function returns NULL and an error message
 is left in \fIinterp\fR's result.
 .PP
-Three kinds of substitutions are supported.  When the
+Four kinds of substitutions are supported.  When the
 \fBTCL_SUBST_BACKSLASHES\fR bit is set in \fIflags\fR, sequences that
 look like backslash substitutions for Tcl commands are replaced by
 their corresponding character.
+.PP
+When the \fBTCL_SUBST_EXPRS\fR bit is set in \fIflags\fR,
+sequences that look like expr substitutions for Tcl commands are
+replaced by the result of the expression.
 .PP
 When the \fBTCL_SUBST_VARIABLES\fR bit is set in \fIflags\fR,
 sequences that look like variable substitutions for Tcl commands are

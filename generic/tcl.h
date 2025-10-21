@@ -510,10 +510,11 @@ typedef struct stat *Tcl_OldStat_;
  * Flags to control what substitutions are performed by Tcl_SubstObj():
  */
 
-#define TCL_SUBST_COMMANDS	001
-#define TCL_SUBST_VARIABLES	002
-#define TCL_SUBST_BACKSLASHES	004
-#define TCL_SUBST_ALL		007
+#define TCL_SUBST_COMMANDS	0x01
+#define TCL_SUBST_VARIABLES	0x02
+#define TCL_SUBST_BACKSLASHES	0x04
+#define TCL_SUBST_EXPRS		0x08
+#define TCL_SUBST_ALL		0x0F
 
 /*
  * Forward declaration of Tcl_Obj to prevent an error when the forward
