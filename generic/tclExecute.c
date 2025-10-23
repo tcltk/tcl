@@ -5038,7 +5038,7 @@ TEBCresume(
 	    goto gotError;
 	}
 	TclNewIntObj(objResultPtr, length);
-	TRACE_APPEND("%" SIZEd "\n", length);
+	TRACE_APPEND_NUM_OBJ(objResultPtr);
 	NEXT_INST_F(1, 1, 1);
 
     case INST_LIST_INDEX:	/* lindex with objc == 3 */
@@ -7787,7 +7787,7 @@ TEBCresume(
 	    TCL_UNREACHABLE();
 	}
 	TclNewIntObj(objResultPtr, wval);
-	TRACE_APPEND_OBJ(objResultPtr);
+	TRACE_APPEND_NUM_OBJ(objResultPtr);
 	NEXT_INST_F(2, 0, 1);
     }
 
