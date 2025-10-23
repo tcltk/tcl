@@ -2102,6 +2102,16 @@ TclNRExecuteByteCode(
     return TCL_OK;
 }
 
+static inline Var *
+FollowLinks(
+    Var *varPtr)
+{
+    while (TclIsVarLink(varPtr)) {
+	varPtr = varPtr->value.linkPtr;
+    }
+    return varPtr;
+}
+
 static int
 TEBCresume(
     void *data[],
@@ -2150,6 +2160,7 @@ TEBCresume(
 
 #define LOCAL(i)	(&compiledLocals[(i)])
 #define TCONST(i)	(constants[(i)])
+#define LOCALVAR(i)	FollowLinks(LOCAL(i))
 
     /*
      * These macros are just meant to save some global variables that are not
@@ -3160,10 +3171,7 @@ TEBCresume(
     case INST_LOAD_SCALAR1:
 	DEPRECATED_OPCODE_MARK(INST_LOAD_SCALAR1);
 	varIdx = TclGetUInt1AtPtr(pc + 1);
-	varPtr = LOCAL(varIdx);
-	while (TclIsVarLink(varPtr)) {
-	    varPtr = varPtr->value.linkPtr;
-	}
+	varPtr = LOCALVAR(varIdx);
 	TRACE(("%u => ", (unsigned) varIdx));
 	if (TclIsVarDirectReadable(varPtr)) {
 	    /*
@@ -3184,10 +3192,7 @@ TEBCresume(
     case INST_LOAD_SCALAR:
     instLoadScalar:
 	varIdx = TclGetUInt4AtPtr(pc + 1);
-	varPtr = LOCAL(varIdx);
-	while (TclIsVarLink(varPtr)) {
-	    varPtr = varPtr->value.linkPtr;
-	}
+	varPtr = LOCALVAR(varIdx);
 	TRACE(("%u => ", (unsigned) varIdx));
 	if (TclIsVarDirectReadable(varPtr)) {
 	    /*
@@ -3219,10 +3224,7 @@ TEBCresume(
 #endif
 	part1Ptr = NULL;
 	part2Ptr = OBJ_AT_TOS;
-	arrayPtr = LOCAL(varIdx);
-	while (TclIsVarLink(arrayPtr)) {
-	    arrayPtr = arrayPtr->value.linkPtr;
-	}
+	arrayPtr = LOCALVAR(varIdx);
 	TRACE(("%u \"%.30s\" => ", (unsigned) varIdx, O2S(part2Ptr)));
 	if (TclIsVarArray(arrayPtr) && !ReadTraced(arrayPtr)) {
 	    varPtr = VarHashFindVar(arrayPtr->value.tablePtr, part2Ptr);
@@ -3332,12 +3334,9 @@ TEBCresume(
 #endif
 	valuePtr = OBJ_AT_TOS;
 	part2Ptr = OBJ_UNDER_TOS;
-	arrayPtr = LOCAL(varIdx);
+	arrayPtr = LOCALVAR(varIdx);
 	TRACE(("%u \"%.30s\" <- \"%.30s\" => ", (unsigned) varIdx, O2S(part2Ptr),
 		O2S(valuePtr)));
-	while (TclIsVarLink(arrayPtr)) {
-	    arrayPtr = arrayPtr->value.linkPtr;
-	}
 	if (TclIsVarArray(arrayPtr) && !WriteTraced(arrayPtr)) {
 	    varPtr = VarHashFindVar(arrayPtr->value.tablePtr, part2Ptr);
 	    if (varPtr && TclIsVarDirectWritable(varPtr)) {
@@ -3368,11 +3367,8 @@ TEBCresume(
     doStoreScalarDirect:
 #endif
 	valuePtr = OBJ_AT_TOS;
-	varPtr = LOCAL(varIdx);
+	varPtr = LOCALVAR(varIdx);
 	TRACE(("%u <- \"%.30s\" => ", (unsigned) varIdx, O2S(valuePtr)));
-	while (TclIsVarLink(varPtr)) {
-	    varPtr = varPtr->value.linkPtr;
-	}
 	if (!TclIsVarDirectWritable(varPtr)) {
 	    storeFlags = TCL_LEAVE_ERR_MSG;
 	    part1Ptr = NULL;
@@ -3501,12 +3497,9 @@ TEBCresume(
     doStoreArray:
 	valuePtr = OBJ_AT_TOS;
 	part2Ptr = OBJ_UNDER_TOS;
-	arrayPtr = LOCAL(varIdx);
+	arrayPtr = LOCALVAR(varIdx);
 	TRACE(("%u \"%.30s\" <- \"%.30s\" => ", (unsigned) varIdx, O2S(part2Ptr),
 		O2S(valuePtr)));
-	while (TclIsVarLink(arrayPtr)) {
-	    arrayPtr = arrayPtr->value.linkPtr;
-	}
 	cleanup = 2;
 	part1Ptr = NULL;
 
@@ -3553,11 +3546,8 @@ TEBCresume(
 
     doStoreScalar:
 	valuePtr = OBJ_AT_TOS;
-	varPtr = LOCAL(varIdx);
+	varPtr = LOCALVAR(varIdx);
 	TRACE(("%u <- \"%.30s\" => ", (unsigned) varIdx, O2S(valuePtr)));
-	while (TclIsVarLink(varPtr)) {
-	    varPtr = varPtr->value.linkPtr;
-	}
 	cleanup = 1;
 	arrayPtr = NULL;
 	part1Ptr = part2Ptr = NULL;
@@ -3582,12 +3572,9 @@ TEBCresume(
     case INST_LAPPEND_LIST:
 	varIdx = TclGetUInt4AtPtr(pc + 1);
 	valuePtr = OBJ_AT_TOS;
-	varPtr = LOCAL(varIdx);
+	varPtr = LOCALVAR(varIdx);
 	cleanup = 1;
 	pcAdjustment = 5;
-	while (TclIsVarLink(varPtr)) {
-	    varPtr = varPtr->value.linkPtr;
-	}
 	TRACE(("%u <- \"%.30s\" => ", (unsigned) varIdx, O2S(valuePtr)));
 	if (TclListObjGetElements(interp, valuePtr, &objc, &objv)
 		!= TCL_OK) {
@@ -3607,12 +3594,9 @@ TEBCresume(
 	valuePtr = OBJ_AT_TOS;
 	part1Ptr = NULL;
 	part2Ptr = OBJ_UNDER_TOS;
-	arrayPtr = LOCAL(varIdx);
+	arrayPtr = LOCALVAR(varIdx);
 	cleanup = 2;
 	pcAdjustment = 5;
-	while (TclIsVarLink(arrayPtr)) {
-	    arrayPtr = arrayPtr->value.linkPtr;
-	}
 	TRACE(("%u \"%.30s\" \"%.30s\" => ",
 		(unsigned) varIdx, O2S(part2Ptr), O2S(valuePtr)));
 	if (TclListObjGetElements(interp, valuePtr, &objc, &objv)
@@ -3868,11 +3852,8 @@ TEBCresume(
     doIncrArray:
 	part1Ptr = NULL;
 	part2Ptr = OBJ_AT_TOS;
-	arrayPtr = LOCAL(varIdx);
+	arrayPtr = LOCALVAR(varIdx);
 	cleanup = 1;
-	while (TclIsVarLink(arrayPtr)) {
-	    arrayPtr = arrayPtr->value.linkPtr;
-	}
 	TRACE(("%u \"%.30s\" (by %ld) => ", (unsigned) varIdx, O2S(part2Ptr),
 		increment));
 	varPtr = TclLookupArrayElement(interp, part1Ptr, part2Ptr,
@@ -3900,10 +3881,7 @@ TEBCresume(
     doIncrScalarImm:
 #endif
 	cleanup = 0;
-	varPtr = LOCAL(varIdx);
-	while (TclIsVarLink(varPtr)) {
-	    varPtr = varPtr->value.linkPtr;
-	}
+	varPtr = LOCALVAR(varIdx);
 
 	if (TclIsVarDirectModifyable(varPtr)) {
 	    void *ptr;
@@ -3981,10 +3959,7 @@ TEBCresume(
 	Tcl_IncrRefCount(incrPtr);
 
     doIncrScalar:
-	varPtr = LOCAL(varIdx);
-	while (TclIsVarLink(varPtr)) {
-	    varPtr = varPtr->value.linkPtr;
-	}
+	varPtr = LOCALVAR(varIdx);
 	arrayPtr = NULL;
 	part1Ptr = part2Ptr = NULL;
 	cleanup = 0;
@@ -4038,10 +4013,7 @@ TEBCresume(
 	cleanup = 0;
 	pcAdjustment = 5;
 	varIdx = TclGetUInt4AtPtr(pc + 1);
-	varPtr = LOCAL(varIdx);
-	while (TclIsVarLink(varPtr)) {
-	    varPtr = varPtr->value.linkPtr;
-	}
+	varPtr = LOCALVAR(varIdx);
 	TRACE(("%u => ", (unsigned) varIdx));
 	if (ReadTraced(varPtr)) {
 	    DECACHE_STACK_INFO();
@@ -4060,10 +4032,7 @@ TEBCresume(
 	pcAdjustment = 5;
 	varIdx = TclGetUInt4AtPtr(pc + 1);
 	part2Ptr = OBJ_AT_TOS;
-	arrayPtr = LOCAL(varIdx);
-	while (TclIsVarLink(arrayPtr)) {
-	    arrayPtr = arrayPtr->value.linkPtr;
-	}
+	arrayPtr = LOCALVAR(varIdx);
 	TRACE(("%u \"%.30s\" => ", (unsigned)varIdx, O2S(part2Ptr)));
 	if (TclIsVarArray(arrayPtr) && !ReadTraced(arrayPtr)) {
 	    varPtr = VarHashFindVar(arrayPtr->value.tablePtr, part2Ptr);
@@ -4141,10 +4110,7 @@ TEBCresume(
     case INST_UNSET_SCALAR:
 	flags = TclGetUInt1AtPtr(pc + 1) ? TCL_LEAVE_ERR_MSG : 0;
 	varIdx = TclGetUInt4AtPtr(pc + 2);
-	varPtr = LOCAL(varIdx);
-	while (TclIsVarLink(varPtr)) {
-	    varPtr = varPtr->value.linkPtr;
-	}
+	varPtr = LOCALVAR(varIdx);
 	TRACE(("%s %u => ", (flags ? "normal" : "noerr"), (unsigned)varIdx));
 	if (TclIsVarDirectUnsettable(varPtr) && !TclIsVarInHash(varPtr)) {
 	    /*
@@ -4175,10 +4141,7 @@ TEBCresume(
 	flags = TclGetUInt1AtPtr(pc + 1) ? TCL_LEAVE_ERR_MSG : 0;
 	varIdx = TclGetUInt4AtPtr(pc + 2);
 	part2Ptr = OBJ_AT_TOS;
-	arrayPtr = LOCAL(varIdx);
-	while (TclIsVarLink(arrayPtr)) {
-	    arrayPtr = arrayPtr->value.linkPtr;
-	}
+	arrayPtr = LOCALVAR(varIdx);
 	TRACE(("%s %u \"%.30s\" => ",
 		(flags ? "normal" : "noerr"), (unsigned)varIdx, O2S(part2Ptr)));
 	if (TclIsVarArray(arrayPtr) && !UnsetTraced(arrayPtr)
@@ -4272,11 +4235,8 @@ TEBCresume(
 	part1Ptr = NULL;
 	objPtr = OBJ_AT_TOS;
 	TRACE(("%u \"%.30s\" => \n", (unsigned) varIdx, O2S(objPtr)));
-	varPtr = LOCAL(varIdx);
+	varPtr = LOCALVAR(varIdx);
 	arrayPtr = NULL;
-	while (TclIsVarLink(varPtr)) {
-	    varPtr = varPtr->value.linkPtr;
-	}
 	goto doConst;
     case INST_CONST_STK:
 	varIdx = -1;
@@ -4341,10 +4301,7 @@ TEBCresume(
 	part1Ptr = NULL;
 	arrayPtr = NULL;
 	TRACE(("%u => ", (unsigned)varIdx));
-	varPtr = LOCAL(varIdx);
-	while (TclIsVarLink(varPtr)) {
-	    varPtr = varPtr->value.linkPtr;
-	}
+	varPtr = LOCALVAR(varIdx);
 	goto doArrayExists;
     case INST_ARRAY_EXISTS_STK:
 	varIdx = -1;
@@ -4377,10 +4334,7 @@ TEBCresume(
 	part1Ptr = NULL;
 	arrayPtr = NULL;
 	TRACE(("%u => ", (unsigned)varIdx));
-	varPtr = LOCAL(varIdx);
-	while (TclIsVarLink(varPtr)) {
-	    varPtr = varPtr->value.linkPtr;
-	}
+	varPtr = LOCALVAR(varIdx);
 	goto doArrayMake;
     case INST_ARRAY_MAKE_STK:
 	varIdx = -1;
@@ -6967,10 +6921,7 @@ TEBCresume(
 		    }
 
 		    varIndex = varListPtr->varIndexes[j];
-		    varPtr = LOCAL(varIndex);
-		    while (TclIsVarLink(varPtr)) {
-			varPtr = varPtr->value.linkPtr;
-		    }
+		    varPtr = LOCALVAR(varIndex);
 		    if (TclIsVarDirectWritable(varPtr)) {
 			value2Ptr = varPtr->value.objPtr;
 			if (valuePtr != value2Ptr) {
@@ -7312,10 +7263,7 @@ TEBCresume(
 	numArgs = TclGetUInt4AtPtr(pc + 1);
 	varIdx = TclGetUInt4AtPtr(pc + 5);
 
-	varPtr = LOCAL(varIdx);
-	while (TclIsVarLink(varPtr)) {
-	    varPtr = varPtr->value.linkPtr;
-	}
+	varPtr = LOCALVAR(varIdx);
 	TRACE(("%u %u => ", (unsigned)numArgs, (unsigned)varIdx));
 	if (TclIsVarDirectReadable(varPtr)) {
 	    dictPtr = varPtr->value.objPtr;
@@ -7415,10 +7363,7 @@ TEBCresume(
     case INST_DICT_APPEND:
     case INST_DICT_LAPPEND:
 	varIdx = TclGetUInt4AtPtr(pc + 1);
-	varPtr = LOCAL(varIdx);
-	while (TclIsVarLink(varPtr)) {
-	    varPtr = varPtr->value.linkPtr;
-	}
+	varPtr = LOCALVAR(varIdx);
 	TRACE(("%u => ", (unsigned)varIdx));
 	if (TclIsVarDirectReadable(varPtr)) {
 	    dictPtr = varPtr->value.objPtr;
@@ -7569,6 +7514,7 @@ TEBCresume(
 	    ir.twoPtrValue.ptr2 = dictPtr;
 	    Tcl_StoreInternalRep(statePtr, &dictIteratorType, &ir);
 	}
+	// Special var; never linked
 	varPtr = LOCAL(varIdx);
 	if (varPtr->value.objPtr) {
 	    if (TclHasInternalRep(varPtr->value.objPtr, &dictIteratorType)) {
@@ -7584,6 +7530,7 @@ TEBCresume(
     case INST_DICT_NEXT:
 	varIdx = TclGetUInt4AtPtr(pc + 1);
 	TRACE(("%u => ", (unsigned)varIdx));
+	// Special var; never linked
 	statePtr = (*LOCAL(varIdx)).value.objPtr;
 	{
 	    const Tcl_ObjInternalRep *irPtr;
@@ -7622,11 +7569,8 @@ TEBCresume(
 	varIdx = TclGetUInt4AtPtr(pc + 1);
 	tblIdx = TclGetUInt4AtPtr(pc + 5);
 	TRACE(("%u %u => ", (unsigned)varIdx, tblIdx));
-	varPtr = LOCAL(varIdx);
+	varPtr = LOCALVAR(varIdx);
 	duiPtr = (DictUpdateInfo *)codePtr->auxDataArrayPtr[tblIdx].clientData;
-	while (TclIsVarLink(varPtr)) {
-	    varPtr = varPtr->value.linkPtr;
-	}
 	if (TclIsVarDirectReadable(varPtr)) {
 	    dictPtr = varPtr->value.objPtr;
 	} else {
@@ -7656,10 +7600,7 @@ TEBCresume(
 		Tcl_DecrRefCount(dictPtr);
 		goto gotError;
 	    }
-	    varPtr = LOCAL(duiPtr->varIndices[i]);
-	    while (TclIsVarLink(varPtr)) {
-		varPtr = varPtr->value.linkPtr;
-	    }
+	    varPtr = LOCALVAR(duiPtr->varIndices[i]);
 	    DECACHE_STACK_INFO();
 	    if (valuePtr == NULL) {
 		TclObjUnsetVar2(interp,
@@ -7683,11 +7624,8 @@ TEBCresume(
 	varIdx = TclGetUInt4AtPtr(pc + 1);
 	tblIdx = TclGetUInt4AtPtr(pc + 5);
 	TRACE(("%u %u => ", (unsigned)varIdx, tblIdx));
-	varPtr = LOCAL(varIdx);
+	varPtr = LOCALVAR(varIdx);
 	duiPtr = (DictUpdateInfo *)codePtr->auxDataArrayPtr[tblIdx].clientData;
-	while (TclIsVarLink(varPtr)) {
-	    varPtr = varPtr->value.linkPtr;
-	}
 	if (TclIsVarDirectReadable(varPtr)) {
 	    dictPtr = varPtr->value.objPtr;
 	} else {
@@ -7714,11 +7652,9 @@ TEBCresume(
 	    TclInvalidateStringRep(dictPtr);
 	}
 	for (i=0 ; i<length ; i++) {
-	    Var *var2Ptr = LOCAL(duiPtr->varIndices[i]);
-
-	    while (TclIsVarLink(var2Ptr)) {
-		var2Ptr = var2Ptr->value.linkPtr;
-	    }
+	    Var *var2Ptr;
+	    
+	    var2Ptr = LOCALVAR(duiPtr->varIndices[i]);
 	    if (TclIsVarDirectReadable(var2Ptr)) {
 		valuePtr = var2Ptr->value.objPtr;
 	    } else {
@@ -7806,15 +7742,12 @@ TEBCresume(
 	varIdx = TclGetUInt4AtPtr(pc + 1);
 	listPtr = OBJ_UNDER_TOS;
 	keysPtr = OBJ_AT_TOS;
-	varPtr = LOCAL(varIdx);
+	varPtr = LOCALVAR(varIdx);
 	TRACE(("%u <- \"%.30s\" \"%.30s\" => ", (unsigned)varIdx, O2S(valuePtr),
 		O2S(keysPtr)));
 	if (TclListObjGetElements(interp, listPtr, &objc, &objv) != TCL_OK) {
 	    TRACE_ERROR(interp);
 	    goto gotError;
-	}
-	while (TclIsVarLink(varPtr)) {
-	    varPtr = varPtr->value.linkPtr;
 	}
 	DECACHE_STACK_INFO();
 	result = TclDictWithFinish(interp, varPtr, NULL, NULL, NULL, varIdx,
