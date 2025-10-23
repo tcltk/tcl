@@ -2455,6 +2455,10 @@ enum InterpFlags {
 				 * about expr substitutions in the form $(expr). */
 };
 
+#define TclSubstAll(interp) (((interp && ((Interp *)(interp))->flags & EXPR_SUBST)) \
+	? (TCL_SUBST_ALL|TCL_SUBST_EXPRS) \
+	: TCL_SUBST_ALL)
+
 /*
  * Default maximum number of levels of nesting permitted in Tcl commands (used
  * to catch infinite recursion).
@@ -3532,6 +3536,9 @@ MODULE_SCOPE int	TclParseNumber(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    Tcl_Size numBytes, const char **endPtrPtr, int flags);
 MODULE_SCOPE void	TclParseInit(Tcl_Interp *interp, const char *string,
 			    Tcl_Size numBytes, Tcl_Parse *parsePtr);
+MODULE_SCOPE int	TclParseExprSubst(Tcl_Interp *interp,
+				const char *start, Tcl_Size numBytes,
+				Tcl_Parse *parsePtr, int append);
 MODULE_SCOPE Tcl_Size	TclParseAllWhiteSpace(const char *src, Tcl_Size numBytes);
 MODULE_SCOPE int	TclProcessReturn(Tcl_Interp *interp,
 			    int code, int level, Tcl_Obj *returnOpts);

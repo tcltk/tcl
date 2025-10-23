@@ -1,0 +1,633 @@
+# This file contains a collection of tests for the procedures in the
+# file tclParse.c.  Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
+#
+# Copyright © 1997 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+set mytest 0
+
+if {!$::mytest} { ;# change to incoporate with official testing
+    # Official test suite mode
+    if {"::tcltest" ni [namespace children]} {
+        package require tcltest 2.5
+        namespace import -force ::tcltest::*
+    }
+    
+    ::tcltest::loadTestedCommands
+    catch [list package require -exact tcl::test [info patchlevel]]
+    
+    
+} else {
+
+set testCount 0
+set passCount 0
+set failCount 0
+namespace eval ::tcl::test::subexpr {
+proc test {name description body expected} {
+	global testCount passCount failCount
+	incr testCount
+	puts "\n=========================================="
+	puts "Test $testCount: $name"
+	puts "=========================================="
+	puts "Description: $description"
+	puts ""
+	puts "Code:"
+	foreach line [split $body "\n"] {
+		set line [string trim $line]
+		if {$line ne ""} {
+			puts "  $line"
+		}
+	}
+	puts ""
+	set result ""
+	set status "PASS"
+	uplevel 1 {unset -nocomplain msg}
+	if {[catch {uplevel 1 $body} result]} {
+		set status "FAIL"
+		puts "Result: ERROR - $result"
+		puts "Expected: $expected"
+	} else {
+
+
+
+		if {$result eq $expected} {
+		    puts "Result: $result"
+		    if {[uplevel 1 {info exists msg}]} {
+		        puts "Captured: [string range [string map {\n <nl>} [uplevel 1 {set msg}]] 0 79]"
+		    }
+		    puts "Expected: $expected"
+
+		} else {
+			set status "FAIL"
+			puts "Result: $result"
+			puts "Expected: $expected"
+		}
+	}
+	puts ""
+	puts "Status: $status"
+	if {$status eq "PASS"} {
+		incr passCount
+	} else {
+		incr failCount
+	}
+}
+
+} ;# end namespace subexpr
+} ;# end of local testing on $mytest
+
+
+namespace eval ::tcl::test::subexpr {
+
+# ==========================================
+# Test Cases
+# ==========================================
+
+#!/usr/bin/env tclsh
+
+# [Keep your test runner proc exactly as-is from before]
+
+if { $::mytest } {
+puts "======================================================"
+puts "Test Suite for TIP 672: \$(expr) Syntax"
+puts "======================================================"
+}
+
+# ==========================================
+# Basic Tests
+# ==========================================
+
+
+testConstraint testsubstexpr     [interp exprsubst]
+
+test basic-1.1 {Basic addition with two variables} testsubstexpr {
+    set a 5
+    set b 10
+    set result $($a + $b)
+}  15
+
+test basic-1.2 {Subtraction of two variables} testsubstexpr {
+    set x 20
+    set y 7
+    set result $($x - $y)
+}  13
+
+test basic-1.3 {Multiplication of two variables} testsubstexpr {
+    set m 6
+    set n 7
+    set result $($m * $n)
+}  42
+
+test basic-1.4 {Division of two variables} testsubstexpr {
+    set p 100
+    set q 4
+    set result $($p / $q)
+}  25
+
+test basic-1.5 {Modulo operation} testsubstexpr {
+    set x 17
+    set y 5
+    set result $($x % $y)
+}  2
+
+test string-2.1 {Expression embedded in quoted string} testsubstexpr {
+    set x 3
+    set y 7
+    set msg "The sum is $($x + $y)"
+}  "The sum is 10"
+
+test compare-2.2 {Less than comparison} testsubstexpr {
+    set a 5
+    set b 10
+    set result $($a < $b)
+}  1
+
+test compare-2.3 {Equality comparison} testsubstexpr {
+    set m 7
+    set n 7
+    set result $($m == $n)
+}  1
+
+test nested-3.1 {Nested parentheses in expression} testsubstexpr {
+    set a 2
+    set b 3
+    set c 4
+    set result $(($a + $b) * ($c - 1))
+}  15
+
+test edge-3.2 {Negative numbers} testsubstexpr {
+    set x -5
+    set y 10
+    set result $($x + $y)
+}  5
+
+
+
+
+
+
+
+
+test edge-3.3 {Floating point arithmetic} testsubstexpr {
+    set a 3.5
+    set b 2.0
+    set result $($a * $b)
+}  7.0
+
+test edge-3.4 {Expression with zero} testsubstexpr {
+    set x 0
+    set y 42
+    set result $($x + $y)
+}  42
+
+test edge-3.5 {Single variable in expression} testsubstexpr {
+    set value 99
+    set result $($value)
+}  99
+
+test edge-3.6 {Expression with many spaces} testsubstexpr {
+    set a 10
+    set b 20
+    set result $(   $a   +   $b   )
+}  30
+
+test edge-3.7 {Very long expression} testsubstexpr {
+    set a 1
+    set b 2
+    set c 3
+    set d 4
+    set e 5
+    set result $($a + $b + $c + $d + $e)
+}  15
+
+
+
+
+
+
+
+test error-4.1 {Undefined variable in expression} {
+    catch {$($undefined_var + 5)} msg
+    string match "*no such variable*" $msg
+}  1
+
+test error-4.2 {Missing closing parenthesis} testsubstexpr {
+    catch {set x $($a + $b} msg
+    string match "*missing close-paren*" $msg
+}  1
+
+test error-4.3 {Division by zero} testsubstexpr {
+    set a 10
+    set b 0
+    catch {$($a / $b)} msg
+    string match "*divide by zero*" $msg
+}  1
+
+test error-4.4 {Invalid syntax in expression} testsubstexpr {
+    set a 5
+    catch {$($a +)} msg
+    string match "*missing operand*" $msg
+}  1
+
+test error-4.5 {Mismatched nested parentheses} testsubstexpr {
+    set a 2
+    set b 3
+    catch {$(($a + $b)} msg
+    string match "*missing close-paren*" $msg
+}  1
+
+
+# ==========================================
+# Paren-matching: Quoted strings
+# ==========================================
+
+test subexpr-4.6 {Paren inside quoted string} testsubstexpr {
+    set x "("
+    set result $($x eq "(")
+} 1
+
+test subexpr-4.7 {Closing paren inside quoted string} testsubstexpr {
+    set x ")"
+    set result $($x eq ")")
+} 1
+
+test subexpr-4.8 {Both parens inside quoted string} testsubstexpr {
+    set x "()"
+    set result $($x eq "()")
+} 1
+
+test subexpr-4.9 {Expression with quoted paren on left} testsubstexpr {
+    set result $("(" eq "(")
+} 1
+
+test subexpr-4.10 {Expression with quoted paren on right} testsubstexpr {
+    set result $("x" eq ")")
+} 0
+
+# ==========================================
+# Paren-matching: Escaped quotes
+# ==========================================
+
+test subexpr-4.11 {Escaped quote before paren} testsubstexpr {
+    set result $("\"(" eq "\"(")
+} 1
+
+test subexpr-4.12 {Escaped quote after paren} testsubstexpr {
+    set result $("(\"" eq "(\"")
+} 1
+
+test subexpr-4.13 {Multiple escaped quotes} testsubstexpr {
+    set result $("\"\"(" eq "\"\"(")
+} 1
+
+test subexpr-4.14 {Escaped backslash before paren} testsubstexpr {
+    set result $("\\(" eq "\\(")
+} 1
+
+test subexpr-4.15 {Escaped backslash and quote} testsubstexpr {
+    set result $("\\\"(" eq "\\\"(")
+} 1
+
+
+
+
+
+# ==========================================
+# Paren-matching: Quoted strings
+# ==========================================
+
+test subexpr-4.6 {Paren inside quoted string} testsubstexpr {
+    set x "("
+    set result $($x eq "(")
+} 1
+
+test subexpr-4.7 {Closing paren inside quoted string} testsubstexpr {
+    set x ")"
+    set result $($x eq ")")
+} 1
+
+test subexpr-4.8 {Both parens inside quoted string} testsubstexpr {
+    set x "()"
+    set result $($x eq "()")
+} 1
+
+test subexpr-4.9 {Expression with quoted paren on left} testsubstexpr {
+    set result $("(" eq "(")
+} 1
+
+test subexpr-4.10 {Expression with quoted paren on right} testsubstexpr {
+    set result $("x" eq ")")
+} 0
+
+# ==========================================
+# Paren-matching: Escaped quotes
+# ==========================================
+
+test subexpr-4.11 {Escaped quote before paren} testsubstexpr {
+    set result $("\"(" eq "\"(")
+} 1
+
+test subexpr-4.12 {Escaped quote after paren} testsubstexpr {
+    set result $("(\"" eq "(\"")
+} 1
+
+test subexpr-4.13 {Multiple escaped quotes} testsubstexpr {
+    set result $("\"\"(" eq "\"\"(")
+} 1
+
+test subexpr-4.14 {Escaped backslash before paren} testsubstexpr {
+    set result $("\\(" eq "\\(")
+} 1
+
+test subexpr-4.15 {Escaped backslash and quote} testsubstexpr {
+    set result $("\\\"(" eq "\\\"(")
+} 1
+
+# ==========================================
+# Paren-matching: Command substitutions
+# ==========================================
+
+test subexpr-4.16 {Command sub returning paren} testsubstexpr {
+    set result $([string index "(" 0] eq "(")
+} 1
+
+test subexpr-4.17 {Command sub with parens in it} testsubstexpr {
+    set result $([string length "(test)"] + 1)
+} 7
+
+test subexpr-4.18 {Nested command sub with string match} testsubstexpr {
+    set result $([string match "(*)" "(x)"] == 1)
+} 1
+
+test subexpr-4.19 {Command sub using expr with parens} testsubstexpr {
+    set result $([expr {1 + 1}] + (2 * 3))
+} 8
+
+test subexpr-4.20 {Multiple command subs with parens} testsubstexpr {
+    set result $([string index "(" 0] eq [string index ")" 0])
+} 0
+
+
+
+
+# ==========================================
+# Deeply nested parens (20-30 levels)
+# ==========================================
+
+test subexpr-4.21 {Deeply nested parens - 20 levels} testsubstexpr {
+    set result $((((((((((((((((((((1 + 1))))))))))))))))))))
+} 2
+
+test subexpr-4.22 {Deeply nested parens - 25 levels with arithmetic} testsubstexpr {
+    set result $(((((((((((((((((((((((((2 * 3)))))))))))))))))))))))))
+} 6
+
+test subexpr-4.23 {Deeply nested parens - 30 levels} testsubstexpr {
+    set result $((((((((((((((((((((((((((((((5 + 10))))))))))))))))))))))))))))))
+} 15
+
+test subexpr-4.24 {Deeply nested with variables - 20 levels} testsubstexpr {
+    set a 7
+    set b 3
+    set result $(((((((((((((((((((($a - $b))))))))))))))))))))
+} 4
+
+test subexpr-4.25 {Deeply nested complex expression - 25 levels} testsubstexpr {
+    set x 2
+    set result $((((((((((((((((((((((((($x * $x * $x)))))))))))))))))))))))))
+} 8
+
+# ==========================================
+# Mixed: quotes, escapes, and command subs
+# ==========================================
+
+test subexpr-4.26 {Command sub with quoted paren comparison} testsubstexpr {
+    set x "("
+    set result $([string match "(" $x] && ")" eq ")")
+} 1
+
+test subexpr-4.27 {Quoted paren with command sub result} testsubstexpr {
+    set result $("(" eq [string index "test" 0])
+} 0
+
+test subexpr-4.28 {Command sub returning paren in comparison} testsubstexpr {
+    set result $([string index "()" 0] eq "(")
+} 1
+
+test subexpr-4.29 {Multiple command subs with quoted parens} testsubstexpr {
+    set result $([string length "("] + [string length ")"] == 2)
+} 1
+
+test subexpr-4.30 {Escaped quote with command sub and parens} testsubstexpr {
+    set result $("\"(" eq [string range "\"(test" 0 1])
+} 1
+
+
+
+# ==========================================
+# Whitespace and formatting edge cases
+# ==========================================
+
+test subexpr-4.31 {Extra spaces around nested parens} testsubstexpr {
+    set result $(  (  1  +  2  )  )
+} 3
+
+test subexpr-4.32 {Command sub with tabs in quoted string} testsubstexpr {
+    set result $([string length "\t\t\t"] == 3)
+} 1
+
+test subexpr-4.33 {Newlines in expression} testsubstexpr {
+    set result $((
+        1 + 2
+    ))
+} 3
+
+test subexpr-4.34 {Multiple newlines with nested parens} testsubstexpr {
+    set a 5
+    set b 10
+    set result $((
+        (
+            $a + $b
+        )
+    ))
+} 15
+
+test subexpr-4.35 {Whitespace before closing paren} testsubstexpr {
+    set result $(1 + 2   )
+} 3
+
+test subexpr-4.36 {No whitespace at all} testsubstexpr {
+    set result $((1+2)*(3+4))
+} 21
+
+test subexpr-4.37 {Mixed whitespace with quotes} testsubstexpr {
+    set result $(  "("  eq  "("  )
+} 1
+
+test subexpr-4.38 {Whitespace in command sub with parens} testsubstexpr {
+    set result $( [string length "( )"] + 1 )
+} 4
+
+test subexpr-4.39 {Extreme whitespace} testsubstexpr {
+    set result $(   (   (   1   )   )   )
+} 1
+
+test subexpr-4.40 {Newlines with command subs} testsubstexpr {
+    set result $([string index "()" 0] 
+        eq 
+        "(")
+} 1
+
+
+
+# ==========================================
+# Braces inside expressions
+# ==========================================
+
+test subexpr-4.41 {Braces around literal number} testsubstexpr {
+    set result $(1 + {2})
+} 3
+
+test subexpr-4.42 {Multiple braced literals} testsubstexpr {
+    set result $({1} + {2})
+} 3
+
+test subexpr-4.43 {Braced literal with parens} testsubstexpr {
+    set result $(({1} + {2}) * 3)
+} 9
+
+# ==========================================
+# Special characters in quoted strings
+# ==========================================
+
+test subexpr-4.44 {Dollar sign in quoted string} testsubstexpr {
+    set result $("$" eq "$")
+} 1
+
+test subexpr-4.45 {Backslash in quoted string} testsubstexpr {
+    set result $("\\" eq "\\")
+} 1
+
+test subexpr-4.46 {Mixed parens in quotes} testsubstexpr {
+    set result $("()" eq "()")
+} 1
+
+test subexpr-4.47 {Semicolon in quoted string} testsubstexpr {
+    set result $(";" eq ";")
+} 1
+
+
+
+
+
+
+
+
+
+
+
+# ==========================================
+# Error conditions - missing close paren
+# ==========================================
+
+test subexpr-error-4.48 {Missing close paren} testsubstexpr {
+    catch {set result $(1 + 2} msg
+    string match "*missing close-paren*" $msg
+} 1
+
+test subexpr-error-4.49 {Missing close paren with quotes} testsubstexpr {
+    catch {set result $("test" eq "test"} msg
+    string match "*missing close-paren*" $msg
+} 1
+
+test subexpr-error-4.50 {Missing close paren with nested parens} testsubstexpr {
+    catch {set result $((1 + 2)} msg
+    string match "*missing close-paren*" $msg
+} 1
+
+test subexpr-error-4.51 {Missing close paren with command sub} testsubstexpr {
+    catch {set result $([string length "test"]} msg
+    string match "*missing close-paren*" $msg
+} 1
+
+# ==========================================
+# Error conditions - unbalanced quotes
+# ==========================================
+
+test subexpr-error-4.52 {Unbalanced quote in expression} {
+    catch {set result $("test eq "test")} msg
+    expr {$msg ne ""}
+} 1
+
+test subexpr-error-4.53 {Unclosed quote at end} {
+    catch {set result $(1 + "test)} msg
+    expr {$msg ne ""}
+} 1
+
+# ==========================================
+# Error conditions - invalid expressions
+# ==========================================
+
+test subexpr-error-4.54 {Empty expression} testsubstexpr {
+    catch {set result $()} msg
+    string match "*empty expression*" $msg
+} 1
+
+test subexpr-error-4.55 {Just whitespace} testsubstexpr {
+    catch {set result $(   )} msg
+    string match "*empty expression*" $msg
+} 1
+
+test subexpr-error-4.56 {Double plus interpreted as unary} testsubstexpr {
+    catch {set result $(1 ++ 2)} msg
+    expr {$msg eq "3"}
+} 1
+
+test subexpr-error-4.57 {Unbalanced nested parens - too many open} testsubstexpr {
+    catch {set result $(((1 + 2))} msg
+    string match "*missing close-paren*" $msg
+} 1
+
+test subexpr-edge-4.58 {bare string with unescaped $. and no (} { ;# these two below assume mode 2 with =, but should work in any case
+    catch {set result $=} msg
+    expr {$msg eq "\$\="}
+} 1
+
+
+test subexpr-edge-4.59 {bare string with unescaped $. and no ( inside quotes} {
+    catch {set result "$="} msg
+    expr {$msg eq "\$\="}
+} 1
+
+
+} ;# end namespace
+
+# ==========================================
+# Summary
+# ==========================================
+
+if { $::mytest } {
+	puts "\n======================================================"
+	puts "Test Summary"
+	puts "======================================================"
+	puts "Total tests: $testCount"
+	puts "Passed: $passCount"
+	puts "Failed: $failCount"
+	puts "======================================================"
+	
+	if {$failCount > 0} {
+		exit 1
+	}
+} else {
+	
+		cleanupTests
+	
+	
+} ;# end mytest
+catch {namespace delete ::tcl::test::subexpr}
+return
+
+

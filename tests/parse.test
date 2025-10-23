@@ -101,7 +101,7 @@ test parse-3.6 {Tcl_ParseCommand procedure, words in braces} testparser {
 } {- {foo {a $b [concat foo]} {c d}} 3 simple foo 1 text foo 0 simple {{a $b [concat foo]}} 1 text {a $b [concat foo]} 0 simple {{c d}} 1 text {c d} 0 {}}
 test parse-3.7 {Tcl_ParseCommand procedure, error in unquoted word} testparser {
     list [catch {testparser "foo \$\{abc" 0} msg] $msg $::errorInfo
-} {1 {missing close-brace for variable name} missing\ close-brace\ for\ variable\ name\n\ \ \ \ (remainder\ of\ script:\ \"\{abc\")\n\ \ \ \ invoked\ from\ within\n\"testparser\ \"foo\ \\\$\\\{abc\"\ 0\"}
+} {1 {missing close-brace} missing\ close-brace\n\ \ \ \ (remainder\ of\ script:\ \"\{abc\")\n\ \ \ \ invoked\ from\ within\n\"testparser\ \"foo\ \\\$\\\{abc\"\ 0\"}
 
 test parse-4.1 {Tcl_ParseCommand procedure, simple words} testparser {
     testparser {foo} 0
@@ -605,13 +605,13 @@ test parse-12.7 {Tcl_ParseVarName procedure, braced variable name} testparser {
 } {- {${{\\}} } 1 word {${{\\}}} 2 variable {${{\\}}} 1 text {{\\}} 0 {}}
 test parse-12.8 {Tcl_ParseVarName procedure, missing close brace} testparser {
     list [catch {testparser "$\{abc" 0} msg] $msg $::errorInfo
-} {1 {missing close-brace for variable name} missing\ close-brace\ for\ variable\ name\n\ \ \ \ (remainder\ of\ script:\ \"\{abc\")\n\ \ \ \ invoked\ from\ within\n\"testparser\ \"\$\\\{abc\"\ 0\"}
+} {1 {missing close-brace} missing\ close-brace\n\ \ \ \ (remainder\ of\ script:\ \"\{abc\")\n\ \ \ \ invoked\ from\ within\n\"testparser\ \"\$\\\{abc\"\ 0\"}
 test parse-12.9 {Tcl_ParseVarName procedure, missing close brace} testparsevarname {
     list [catch {testparsevarname {${bcd}} 4 0} msg] $msg
-} {1 {missing close-brace for variable name}}
+} {1 {missing close-brace}}
 test parse-12.10 {Tcl_ParseVarName procedure, missing close brace} testparsevarname {
     list [catch {testparsevarname {${bc}} 4 0} msg] $msg
-} {1 {missing close-brace for variable name}}
+} {1 {missing close-brace}}
 test parse-12.11 {Tcl_ParseVarName procedure, simple variable name} testparser {
     testparser {$az_AZ.} 0
 } {- {$az_AZ.} 1 word {$az_AZ.} 3 variable {$az_AZ} 1 text az_AZ 0 text . 0 {}}
@@ -966,13 +966,13 @@ test parse-18.8 {Tcl_SubstObj, ParseTokens flags} {
 
 test parse-18.9 {Tcl_SubstObj, parse errors} {
     list [catch "subst foo\$\{foo" msg] $msg
-} [list 1 "missing close-brace for variable name"]
+} [list 1 "missing close-brace"]
 test parse-18.10 {Tcl_SubstObj, parse errors} {
     list [catch "subst foo\[set \$\{foo]" msg] $msg
-} [list 1 "missing close-brace for variable name"]
+} [list 1 "missing close-brace"]
 test parse-18.11 {Tcl_SubstObj, parse errors} {
     list [catch "subst foo\$array(\$\{foo)" msg] $msg
-} [list 1 "missing close-brace for variable name"]
+} [list 1 "missing close-brace"]
 test parse-18.12 {Tcl_SubstObj, parse errors} {
     list [catch "subst foo\$(\$\{foo)" msg] $msg
 } [list 1 "missing close-brace"]

@@ -964,7 +964,11 @@ Tcl_CreateInterp(void)
     iPtr->resolverPtr = NULL;
     iPtr->evalFlags = 0;
     iPtr->scriptFile = NULL;
+#ifdef TCL_NO_DEPRECATED
+    iPtr->flags = EXPR_SUBST;
+#else
     iPtr->flags = 0;
+#endif
     iPtr->tracePtr = NULL;
     iPtr->tracesForbiddingInline = 0;
     iPtr->activeCmdTracePtr = NULL;
