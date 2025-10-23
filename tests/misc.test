@@ -56,8 +56,8 @@ test misc-1.2 {error in variable ref. in command in array reference} {
     set msg {}
     join [list [catch tstProc msg] $msg $::errorInfo] \n
 } [subst -novariables -nocommands -noexprs {1
-missing close-brace for variable name
-missing close-brace for variable name
+missing close-brace
+missing close-brace
     while executing
 "set tst $a([winfo name $\{"
     (procedure "tstProc" line 4)

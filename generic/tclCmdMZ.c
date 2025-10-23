@@ -3359,7 +3359,7 @@ TclSubstOptions(
 	TCL_SUBST_VARIABLES   << 16,	/* -novariables */
 	TCL_SUBST_VARIABLES		/* -variables */
     };
-    int flags = numOpts ? 0 : TCL_SUBST_ALL;
+    int flags = numOpts ? 0 : TclSubstAll(interp);
 
     for (Tcl_Size i = 0; i < numOpts; i++) {
 	int optionIndex;
@@ -3379,7 +3379,7 @@ TclSubstOptions(
 	    return TCL_ERROR;
 	}
 	/* mask default flags using negative options */
-	flags = TCL_SUBST_ALL & ~(flags >> 16);
+	flags = TclSubstAll(interp) & ~(flags >> 16);
     }
     *flagPtr = flags;
     return TCL_OK;

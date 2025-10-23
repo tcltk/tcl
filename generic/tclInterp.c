@@ -635,8 +635,8 @@ NRInterpCmd(
     static const char *const options[] = {
 	"alias",	"aliases",	"bgerror",	"cancel",
 	"children",	"create",	"debug",	"delete",
-	"eval",		"exists",	"expose",	"hide",
-	"hidden",	"issafe",	"invokehidden",
+	"eval",		"exists",	"expose",	"exprsubst",
+	"hide",		"hidden",	"issafe",	"invokehidden",
 	"limit",	"marktrusted",	"recursionlimit",
 	"set",		"share",
 #ifndef TCL_NO_DEPRECATED
@@ -647,17 +647,17 @@ NRInterpCmd(
     static const char *const optionsNoSlaves[] = {
 	"alias",	"aliases",	"bgerror",	"cancel",
 	"children",	"create",	"debug",	"delete",
-	"eval",		"exists",	"expose",
-	"hide",		"hidden",	"issafe",
-	"invokehidden",	"limit",	"marktrusted",	"recursionlimit",
+	"eval",		"exists",	"expose",	"exprsubst",
+	"hide",		"hidden",	"issafe",	"invokehidden",
+	"limit",	"marktrusted",	"recursionlimit",
 	"set",		"share",	"target",	"transfer",
 	NULL
     };
     enum interpOptionEnum {
 	OPT_ALIAS,	OPT_ALIASES,	OPT_BGERROR,	OPT_CANCEL,
 	OPT_CHILDREN,	OPT_CREATE,	OPT_DEBUG,	OPT_DELETE,
-	OPT_EVAL,	OPT_EXISTS,	OPT_EXPOSE,	OPT_HIDE,
-	OPT_HIDDEN,	OPT_ISSAFE,	OPT_INVOKEHID,
+	OPT_EVAL,	OPT_EXISTS,	OPT_EXPOSE,	OPT_EXPRSUBST,
+	OPT_HIDE, OPT_HIDDEN,	OPT_ISSAFE,	OPT_INVOKEHID,
 	OPT_LIMIT,	OPT_MARKTRUSTED, OPT_RECLIMIT,	OPT_SET,
 	OPT_SHARE,
 #ifndef TCL_NO_DEPRECATED
@@ -716,6 +716,25 @@ NRInterpCmd(
 	    return TCL_ERROR;
 	}
 	return AliasList(interp, childInterp);
+    case OPT_EXPRSUBST:
+	if (objc != 2 && objc != 3) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "?bool?");
+	    return TCL_ERROR;
+	}
+	if (objc == 3) {
+		bool exprsubst;
+		Interp *iPtr = (Interp *)interp;
+		if (Tcl_GetBooleanFromObj(interp, objv[2], &exprsubst) != TCL_OK) {
+			return TCL_ERROR;
+		}
+		if (exprsubst) {
+		    iPtr->flags |= EXPR_SUBST;
+		} else {
+		    iPtr->flags &= ~EXPR_SUBST;
+		}
+	}
+	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(((Interp *)interp)->flags & EXPR_SUBST));
+	return TCL_OK;	
     case OPT_BGERROR:
 	if (objc != 3 && objc != 4) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "path ?cmdPrefix?");
@@ -2446,6 +2465,13 @@ ChildCreate(
     ((Interp *) childInterp)->maxNestingDepth =
 	    ((Interp *) parentInterp)->maxNestingDepth;
 
+    /*
+     * Inherit the exprsubst flag.
+     */
+
+    ((Interp *) childInterp)->flags |=
+	    (((Interp *) parentInterp)->flags & EXPR_SUBST);
+
     if (safe) {
 	MakeSafe(childInterp);
     } else {
@@ -2534,13 +2560,13 @@ NRChildCmd(
     Tcl_Interp *childInterp = (Tcl_Interp *) clientData;
     static const char *const options[] = {
 	"alias",	"aliases",	"bgerror",	"debug",
-	"eval",		"expose",	"hide",		"hidden",
+	"eval",		"expose",	"exprsubst",	"hide",		"hidden",
 	"issafe",	"invokehidden",	"limit",	"marktrusted",
 	"recursionlimit", "set",	NULL
     };
     enum childCmdOptionsEnum {
 	OPT_ALIAS,	OPT_ALIASES,	OPT_BGERROR,	OPT_DEBUG,
-	OPT_EVAL,	OPT_EXPOSE,	OPT_HIDE,	OPT_HIDDEN,
+	OPT_EVAL,	OPT_EXPOSE,	OPT_EXPRSUBST,	OPT_HIDE,	OPT_HIDDEN,
 	OPT_ISSAFE,	OPT_INVOKEHIDDEN, OPT_LIMIT,	OPT_MARKTRUSTED,
 	OPT_RECLIMIT,	OPT_SET
     } index;
@@ -2581,6 +2607,25 @@ NRChildCmd(
 	    return TCL_ERROR;
 	}
 	return AliasList(interp, childInterp);
+    case OPT_EXPRSUBST:
+	if (objc != 1 && objc != 2) {
+	    Tcl_WrongNumArgs(interp, 1, objv, "?bool?");
+	    return TCL_ERROR;
+	}
+	if (objc == 1) {
+		bool exprsubst;
+		Interp *iPtr = (Interp *)interp;
+		if (Tcl_GetBooleanFromObj(interp, objv[1], &exprsubst) != TCL_OK) {
+			return TCL_ERROR;
+		}
+		if (exprsubst) {
+		    iPtr->flags |= EXPR_SUBST;
+		} else {
+		    iPtr->flags &= ~EXPR_SUBST;
+		}
+	}
+	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(((Interp *)interp)->flags & EXPR_SUBST));
+	return TCL_OK;
     case OPT_BGERROR:
 	if (objc != 2 && objc != 3) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "?cmdPrefix?");

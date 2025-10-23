@@ -783,7 +783,7 @@ test parseExpr-21.11 {error messages} -body {
 in expression "$"}
 test parseExpr-21.12 {error messages} -body {
     expr {$(}
-} -returnCodes error -result {missing close-paren for $(
+} -returnCodes error -result {missing )
 in expression "$("}
 test parseExpr-21.13 {error messages} -body {
     expr {[""x]}
@@ -915,7 +915,7 @@ test parseExpr-21.42 {error message} -body {
 in expression "...012345678901234567890*"abcdefghijklmnopqrstuv..."}
 test parseExpr-21.43 {error message} -body {
     expr "123456789012345678901234567890*\"foobar\$\{abcdefghijklmnopqrstuvwxyz\""
-} -returnCodes error -result "missing close-brace for variable name
+} -returnCodes error -result "missing close-brace
 in expression \"...8901234567890*\"foobar\$\{abcdefghijklmnopqrstuv...\""
 test parseExpr-21.44 {error message} -body {
     expr {123456789012345678901234567890*"foo$bar(abcdefghijklmnopqrstuvwxyz"}
@@ -949,7 +949,7 @@ test parseExpr-21.50 {error message} -body {
 in expression "...678901234567890*$foo(["abcdefghijklmnopqrstuv..."}
 test parseExpr-21.51 {error message} -body {
     expr "123456789012345678901234567890*\$\{abcdefghijklmnopqrstuvwxyz"
-} -returnCodes error -result "missing close-brace for variable name
+} -returnCodes error -result "missing close-brace
 in expression \"...12345678901234567890*\$\{abcdefghijklmnopqrstuv...\""
 test parseExpr-21.52 {error message} -body {
     expr {123456789012345678901234567890*$bar(abcdefghijklmnopqrstuvwxyz}
@@ -978,7 +978,7 @@ test parseExpr-21.57 {error message} -body {
 in expression "...12345678901234567890*["abcdefghijklmnopqrstuv..."}
 test parseExpr-21.58 {error message} -body {
     expr "123456789012345678901234567890*\[\$\{abcdefghijklmnopqrstuvwxyz]"
-} -returnCodes error -result "missing close-brace for variable name
+} -returnCodes error -result "missing close-brace
 in expression \"...2345678901234567890*\[\$\{abcdefghijklmnopqrstuv...\""
 test parseExpr-21.59 {error message} -body {
     expr {123456789012345678901234567890*[$bar(abcdefghijklmnopqrstuvwxyz]}
