@@ -9,7 +9,6 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#include <assert.h>
 #include "tclInt.h"
 #include "tclTomMath.h"
 

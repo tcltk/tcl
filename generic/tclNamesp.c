@@ -25,7 +25,6 @@
 
 #include "tclInt.h"
 #include "tclCompile.h" /* for TclLogCommandInfo visibility */
-#include <assert.h>
 
 /*
  * Thread-local storage used to avoid having a global lock on data that is not
@@ -143,14 +142,14 @@ static const Tcl_ObjType nsNameType = {
 	ir.twoPtrValue.ptr1 = (nnPtr);					\
 	ir.twoPtrValue.ptr2 = NULL;					\
 	Tcl_StoreInternalRep((objPtr), &nsNameType, &ir);		\
-    } while (0)
+    } while (false)
 
 #define NsNameGetInternalRep(objPtr, nnPtr) \
     do {								\
 	const Tcl_ObjInternalRep *irPtr;				\
 	irPtr = TclFetchInternalRep((objPtr), &nsNameType);		\
 	(nnPtr) = irPtr ? (ResolvedNsName *) irPtr->twoPtrValue.ptr1 : NULL; \
-    } while (0)
+    } while (false)
 
 /*
  * Array of values describing how to implement each standard subcommand of the
@@ -1188,7 +1187,7 @@ TclDeleteNamespaceChildren(
     Tcl_Interp *interp = nsPtr->interp;
     Tcl_HashEntry *entryPtr;
     size_t i;
-    int unchecked;
+    bool unchecked;
     Tcl_HashSearch search;
 
     /*
@@ -1218,10 +1217,10 @@ TclDeleteNamespaceChildren(
 	    children[i]->refCount++;
 	    i++;
 	}
-	unchecked = 0;
+	unchecked = false;
 	for (i = 0 ; i < length ; i++) {
 	    if (!(children[i]->flags & NS_DYING)) {
-		unchecked = 1;
+		unchecked = true;
 		Tcl_DeleteNamespace((Tcl_Namespace *) children[i]);
 		TclNsDecrRefCount(children[i]);
 	    }
@@ -2839,7 +2838,8 @@ TclResetShadowedCmdRefs(
     Namespace *nsPtr;
     Namespace *trailNsPtr, *shadowNsPtr;
     Namespace *globalNsPtr = (Namespace *) TclGetGlobalNamespace(interp);
-    int found, i;
+    int i;
+    bool found;
     int trailFront = -1;
     int trailSize = 5;		/* Formerly NUM_TRAIL_ELEMS. */
     Namespace **trailPtr = (Namespace **) TclStackAlloc(interp,
@@ -2875,7 +2875,7 @@ TclResetShadowedCmdRefs(
 	 * contains a command cmdName.
 	 */
 
-	found = 1;
+	found = true;
 	shadowNsPtr = globalNsPtr;
 
 	for (i = trailFront;  i >= 0;  i--) {
@@ -2884,7 +2884,7 @@ TclResetShadowedCmdRefs(
 	    if (hPtr != NULL) {
 		shadowNsPtr = (Namespace *) Tcl_GetHashValue(hPtr);
 	    } else {
-		found = 0;
+		found = false;
 		break;
 	    }
 	}
@@ -3807,7 +3807,7 @@ NamespaceImportCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int allowOverwrite = 0;
+    bool allowOverwrite = false;
     const char *string, *pattern;
     int i, firstArg;
     int result;
@@ -3825,7 +3825,7 @@ NamespaceImportCmd(
     if (firstArg < objc) {
 	string = TclGetString(objv[firstArg]);
 	if ((*string == '-') && (strcmp(string, "-force") == 0)) {
-	    allowOverwrite = 1;
+	    allowOverwrite = true;
 	    firstArg++;
 	}
     } else {
