@@ -24,7 +24,6 @@
 #include "tclOOInt.h"
 #include "tclTomMath.h"
 #include <math.h>
-#include <assert.h>
 
 #if defined(__GNUC__) && (__GNUC__ > 4) && defined(_WIN32) && defined(TCL_COMPILE_DEBUG)
 // These are FAR too noisy when we're using the MSVC runtime.
