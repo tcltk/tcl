@@ -12,7 +12,6 @@
  */
 
 #include "tclWinInt.h"
-#include <assert.h>
 #include <winnt.h>
 #include <winbase.h>
 #include <lmcons.h>
@@ -530,7 +529,8 @@ TclpSetInitialEncodings(void)
 }
 
 const char *
-Tcl_GetEncodingNameForUser(Tcl_DString *bufPtr)
+Tcl_GetEncodingNameForUser(
+    Tcl_DString *bufPtr)
 {
     Tcl_DStringInit(bufPtr);
     Tcl_DStringAppend(bufPtr, TclpGetCodePage(), -1);

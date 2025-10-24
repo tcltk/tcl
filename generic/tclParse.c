@@ -15,7 +15,6 @@
 
 #include "tclInt.h"
 #include "tclParse.h"
-#include <assert.h>
 
 /*
  * The following table provides parsing information about each possible 8-bit

@@ -15,7 +15,6 @@
 
 #include "tclInt.h"
 #include "tclCompile.h"
-#include <assert.h>
 
 /*
  * Variables that are part of the [apply] command implementation and which

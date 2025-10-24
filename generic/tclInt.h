@@ -63,12 +63,14 @@
 #include "tclPort.h"
 
 #include <stdio.h>
-
+#include <assert.h>
 #include <ctype.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stdint.h>
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ < 202311L
 #include <stdbool.h>
+#endif
 #include <string.h>
 #include <locale.h>
 
@@ -5077,7 +5079,6 @@ MODULE_SCOPE Tcl_LibraryInitProc Tcl_ABSListTest_Init;
 void Tcl_Panic(const char *, ...) __attribute__((analyzer_noreturn));
 #endif
 #if !defined(CLANG_ASSERT)
-#include <assert.h>
 #define CLANG_ASSERT(x) assert(x)
 #endif
 #elif !defined(CLANG_ASSERT)

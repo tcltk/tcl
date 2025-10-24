@@ -10,7 +10,6 @@
  */
 
 #include "tclInt.h"
-#include <assert.h>
 
 typedef size_t (LengthProc)(const char *src);
 

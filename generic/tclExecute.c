@@ -20,7 +20,6 @@
 #include "tclOOInt.h"
 #include "tclTomMath.h"
 #include <math.h>
-#include <assert.h>
 
 /*
  * Hack to determine whether we may expect IEEE floating point. The hack is

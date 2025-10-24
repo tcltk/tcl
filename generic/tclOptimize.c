@@ -11,7 +11,6 @@
 
 #include "tclInt.h"
 #include "tclCompile.h"
-#include <assert.h>
 
 /*
  * Forward declarations.

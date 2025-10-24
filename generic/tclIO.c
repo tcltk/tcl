@@ -14,7 +14,6 @@
 
 #include "tclInt.h"
 #include "tclIO.h"
-#include <assert.h>
 
 /*
  * For each channel handler registered in a call to Tcl_CreateChannelHandler,
