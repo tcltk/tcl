@@ -7652,7 +7652,7 @@ TEBCresume(
 	}
 	for (i=0 ; i<length ; i++) {
 	    Var *var2Ptr;
-	    
+
 	    var2Ptr = LOCALVAR(duiPtr->varIndices[i]);
 	    if (TclIsVarDirectReadable(var2Ptr)) {
 		valuePtr = var2Ptr->value.objPtr;
