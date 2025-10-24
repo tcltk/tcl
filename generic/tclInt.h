@@ -3476,7 +3476,7 @@ MODULE_SCOPE void	TclInitNamespaceSubsystem(void);
 MODULE_SCOPE void	TclInitNotifier(void);
 MODULE_SCOPE void	TclInitObjSubsystem(void);
 MODULE_SCOPE int	TclInterpReady(Tcl_Interp *interp);
-MODULE_SCOPE int	TclIsBareword(int byte);
+MODULE_SCOPE bool	TclIsBareword(int byte);
 MODULE_SCOPE Tcl_Obj *	TclJoinPath(Tcl_Size elements, Tcl_Obj * const objv[],
 			    int forceRelative);
 MODULE_SCOPE Tcl_Obj *	TclGetHomeDirObj(Tcl_Interp *interp, const char *user);
@@ -3726,7 +3726,7 @@ MODULE_SCOPE void	TclSetObjNameOfShlib(Tcl_Obj *namePtr, Tcl_Encoding);
  * optimization (fragile on changes) in one place.
  */
 
-MODULE_SCOPE int	TclIsSpaceProc(int byte);
+MODULE_SCOPE bool	TclIsSpaceProc(int byte);
 #define TclIsSpaceProcM(byte) \
     (((unsigned)(byte) > 0x20) ? 0 : TclIsSpaceProc(byte))
 
