@@ -15,7 +15,6 @@
 #endif
 
 #include "tclWinInt.h"
-#include <assert.h>
 #include <ctype.h>
 
 /*
@@ -193,7 +192,7 @@ typedef struct ConsoleChannelInfo {
     Tcl_Channel channel;	/* Pointer to channel structure. */
     DWORD initMode;		/* Initial console mode. */
     int numRefs;		/* See comments above */
-    int permissions;            /* OR'ed combination of TCL_READABLE,
+    int permissions;		/* OR'ed combination of TCL_READABLE,
 				 * TCL_WRITABLE, or TCL_EXCEPTION: indicates
 				 * which operations are valid on the file. */
     int watchMask;		/* OR'ed combination of TCL_READABLE,

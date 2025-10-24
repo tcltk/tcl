@@ -14,7 +14,6 @@
 
 #include "tclInt.h"
 #include "tclCompile.h"
-#include <assert.h>
 
 /*
  * Variable that controls whether compilation tracing is enabled and, if so,

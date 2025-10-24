@@ -12,7 +12,6 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#include <assert.h>
 #include "tclInt.h"
 #include "tclParse.h"
 #include "tclStringTrim.h"
