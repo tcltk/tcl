@@ -1160,7 +1160,7 @@ TestcmdinfoCmd(
 	    return TCL_ERROR;
 	}
 	if (cmdObjc == 0) {
-	    Tcl_AppendResult(interp, "No command name given", NULL);
+	    Tcl_AppendResult(interp, "No command name given", (char *)NULL);
 	    return TCL_ERROR;
 	}
 	if (Tcl_GetCommandInfo(interp, Tcl_GetString(cmdObjv[0]), &info) == 0) {
@@ -1173,7 +1173,7 @@ TestcmdinfoCmd(
 	     * We do not do that here just so we can test what happens if the
 	     * caller mistakenly passes more arguments.
 	     */
-	    return info.objProc(info.objClientData, interp, cmdObjc, cmdObjv);
+	    return info.objProc(info.objClientData, interp, (int)cmdObjc, cmdObjv);
 	} else {
 	    return info.objProc2(info.objClientData2, interp, cmdObjc, cmdObjv);
 	}

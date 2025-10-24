@@ -138,36 +138,6 @@ TclUtfFindEqualNCInLwr(
     } while ((ret = cs) < cse && cin < cine);
     return ret;
 }
-
-/*
- * Primitives to safe set, reset and free references.
- */
-
-#define TclUnsetObjRef(obj) \
-    do {								\
-	if (obj != NULL) {						\
-	    Tcl_DecrRefCount(obj);					\
-	    obj = NULL;							\
-	}								\
-    } while (false)
-#define TclInitObjRef(obj, val) \
-    do {								\
-	obj = (val);							\
-	if (obj) {							\
-	    Tcl_IncrRefCount(obj);					\
-	}								\
-    } while (false)
-#define TclSetObjRef(obj, val) \
-    do {								\
-	Tcl_Obj *nval = (val);						\
-	if (obj != nval) {						\
-	    Tcl_Obj *prev = obj;					\
-	    TclInitObjRef(obj, nval);					\
-	    if (prev != NULL) {						\
-		Tcl_DecrRefCount(prev);					\
-	    }								\
-	}								\
-    } while (false)
 
 /*
  * Prototypes of module functions.

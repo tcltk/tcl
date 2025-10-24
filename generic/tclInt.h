@@ -1274,9 +1274,9 @@ typedef struct CallFrame {
 				/* Value of interp->varFramePtr when this
 				 * procedure was invoked (i.e. determines
 				 * variable scoping within caller). Same as
-				 * callerPtr unless an "uplevel" command or
-				 * something equivalent was active in the
-				 * caller). */
+				 * callerPtr unless an "uplevel" command (or
+				 * something equivalent) was active in the
+				 * caller. */
     Tcl_Size level;		/* Level of this procedure, for "uplevel"
 				 * purposes (i.e. corresponds to nesting of
 				 * callerVarPtr's, not callerPtr's). 1 for
@@ -3829,6 +3829,7 @@ MODULE_SCOPE Tcl_ObjCmdProc Tcl_RegsubObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_RenameObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_RepresentationCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_ReturnObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc TclSafeCatchCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_ScanObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_SeekObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_SetObjCmd;
@@ -4431,6 +4432,36 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 #endif /* TCL_MEM_DEBUG */
 
 /*
+ * Primitives to safe set, reset and free references.
+ */
+
+#define TclUnsetObjRef(obj) \
+    do {								\
+	if (obj != NULL) {						\
+	    Tcl_DecrRefCount(obj);					\
+	    obj = NULL;							\
+	}								\
+    } while (false)
+#define TclInitObjRef(obj, val) \
+    do {								\
+	obj = (val);							\
+	if (obj) {							\
+	    Tcl_IncrRefCount(obj);					\
+	}								\
+    } while (false)
+#define TclSetObjRef(obj, val) \
+    do {								\
+	Tcl_Obj *nval = (val);						\
+	if (obj != nval) {						\
+	    Tcl_Obj *prev = obj;					\
+	    TclInitObjRef(obj, nval);					\
+	    if (prev != NULL) {						\
+		Tcl_DecrRefCount(prev);					\
+	    }								\
+	}								\
+    } while (false)
+
+/*
  *----------------------------------------------------------------
  * Macros used by the Tcl core to set a Tcl_Obj's string representation to a
  * copy of the "len" bytes starting at "bytePtr". The value of "len" must
@@ -4462,7 +4493,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 	TclInitEmptyStringRep(objPtr);					\
     } else {								\
 	(objPtr)->bytes = (char *)Tcl_Alloc((len) + 1U);		\
-	memcpy((objPtr)->bytes, (bytePtr) ? (bytePtr) : &tclEmptyString, (len)); \
+	memcpy((objPtr)->bytes, ((bytePtr) != NULL) ? (bytePtr) : &tclEmptyString, (len)); \
 	(objPtr)->bytes[len] = '\0';					\
 	(objPtr)->length = (len);					\
     }
@@ -4473,7 +4504,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
     ) : (								\
 	(objPtr)->bytes = (char *)Tcl_AttemptAlloc((len) + 1U),		\
 	(objPtr)->length = ((objPtr)->bytes) ?				\
-		(memcpy((objPtr)->bytes, (bytePtr) ? (bytePtr) : &tclEmptyString, (len)), \
+		(memcpy((objPtr)->bytes, ((bytePtr) != NULL) ? (bytePtr) : &tclEmptyString, (len)), \
 		(objPtr)->bytes[len] = '\0', (Tcl_Size)(len)) : (-1)		\
     )), (objPtr)->bytes)
 
@@ -4673,7 +4704,10 @@ TclGrowParseTokenArray(
     do {								\
 	Tcl_Size _count, _i = (numBytes);				\
 	unsigned char *_str = (unsigned char *) (bytes);		\
-	while (_i > 0 && (*_str < 0xC0)) { _i--; _str++; }		\
+	while (_i > 0 && (*_str < 0xC0)) {				\
+	    _i--;							\
+	    _str++;							\
+	}								\
 	_count = (numBytes) - _i;					\
 	if (_i) {							\
 	    _count += Tcl_NumUtfChars((bytes) + _count, _i);		\

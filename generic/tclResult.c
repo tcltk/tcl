@@ -1209,6 +1209,63 @@ Tcl_TransferResult(
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
+ * TclSafeCatchCmd --
+ *
+ *	Same as "::catch" command but avoids overwriting of interp state.
+ *
+ *	See [554117edde] for more info (and proper solution).
+ *
+ *----------------------------------------------------------------------
+ */
+int
+TclSafeCatchCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Interp *iPtr = (Interp *)interp;
+    int ret, flags = 0;
+    InterpState *statePtr;
+
+    if (objc == 1) {
+	/* wrong # args : */
+	return Tcl_CatchObjCmd(NULL, interp, objc, objv);
+    }
+
+    statePtr = (InterpState *)Tcl_SaveInterpState(interp, 0);
+    if (!statePtr->errorInfo) {
+	/* todo: avoid traced get of errorInfo here */
+	TclInitObjRef(statePtr->errorInfo,
+		Tcl_ObjGetVar2(interp, iPtr->eiVar, NULL, 0));
+	flags |= ERR_LEGACY_COPY;
+    }
+    if (!statePtr->errorCode) {
+	/* todo: avoid traced get of errorCode here */
+	TclInitObjRef(statePtr->errorCode,
+		Tcl_ObjGetVar2(interp, iPtr->ecVar, NULL, 0));
+	flags |= ERR_LEGACY_COPY;
+    }
+
+    /* original catch */
+    ret = Tcl_CatchObjCmd(NULL, interp, objc, objv);
+
+    if (ret == TCL_ERROR) {
+	Tcl_DiscardInterpState((Tcl_InterpState)statePtr);
+	return TCL_ERROR;
+    }
+    /* overwrite result in state with catch result */
+    TclSetObjRef(statePtr->objResult, Tcl_GetObjResult(interp));
+    /* set result (together with restore state) to interpreter */
+    (void) Tcl_RestoreInterpState(interp, (Tcl_InterpState)statePtr);
+    /* todo: unless ERR_LEGACY_COPY not set in restore (branch [bug-554117edde] not merged yet) */
+    iPtr->flags |= (flags & ERR_LEGACY_COPY);
+    return ret;
+}
+
+/*
  * Local Variables:
  * mode: c
  * c-basic-offset: 4
