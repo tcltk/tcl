@@ -35,10 +35,7 @@ if {[testConstraint testnrelevels]} {
 	proc depthDiff {} {
 	    variable last
 	    set depth [testnrelevels]
-	    set res {}
-	    foreach t $depth l $last {
-		lappend res [expr {$t-$l}]
-	    }
+	    set res [lmap t $depth l $last {expr {$t - $l}}]
 	    set last $depth
 	    return $res
 	}
@@ -217,6 +214,16 @@ test nre-6.2 {[uplevel] is not recursive} -setup {
     setabs
     proc a i [makebody {uplevel 1 "set x $i; a $i"}]
 } -body {
+    a 0
+} -cleanup {
+    rename a {}
+} -constraints {
+    testnrelevels
+} -result {{0 2 2 0} 0}
+test nre-6.3 {[uplevel] is not recursive} -setup {
+    proc a i [makebody {uplevel [list a $i]}]
+} -body {
+    setabs
     a 0
 } -cleanup {
     rename a {}

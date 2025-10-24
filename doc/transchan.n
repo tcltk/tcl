@@ -9,7 +9,7 @@
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-transchan \- command handler API of channel transforms
+transchan \- Command handler API for channel transforms implemented in Tcl code
 .SH SYNOPSIS
 .nf
 \fBchan push \fIchannel cmdPrefix\fR

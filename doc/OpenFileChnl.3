@@ -9,7 +9,7 @@
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-Tcl_OpenFileChannel, Tcl_OpenCommandChannel, Tcl_MakeFileChannel, Tcl_GetChannel, Tcl_GetChannelNames, Tcl_GetChannelNamesEx, Tcl_RegisterChannel, Tcl_UnregisterChannel, Tcl_DetachChannel, Tcl_IsStandardChannel, Tcl_Close, Tcl_ReadChars, Tcl_Read, Tcl_GetsObj, Tcl_Gets, Tcl_WriteObj, Tcl_WriteChars, Tcl_Write, Tcl_Flush, Tcl_Seek, Tcl_Tell, Tcl_TruncateChannel, Tcl_GetChannelOption, Tcl_SetChannelOption, Tcl_Eof, Tcl_InputBlocked, Tcl_InputBuffered, Tcl_OutputBuffered, Tcl_Ungets, Tcl_ReadRaw, Tcl_WriteRaw \- buffered I/O facilities using channels
+Tcl_OpenFileChannel, Tcl_OpenCommandChannel, Tcl_MakeFileChannel, Tcl_GetChannel, Tcl_GetChannelNames, Tcl_GetChannelNamesEx, Tcl_RegisterChannel, Tcl_UnregisterChannel, Tcl_DetachChannel, Tcl_IsStandardChannel, Tcl_Close, Tcl_CloseEx, Tcl_ReadChars, Tcl_Read, Tcl_GetsObj, Tcl_Gets, Tcl_WriteObj, Tcl_WriteChars, Tcl_Write, Tcl_Flush, Tcl_Seek, Tcl_Tell, Tcl_TruncateChannel, Tcl_GetChannelOption, Tcl_SetChannelOption, Tcl_Eof, Tcl_InputBlocked, Tcl_InputBuffered, Tcl_OutputBuffered, Tcl_Ungets, Tcl_ReadRaw, Tcl_WriteRaw \- buffered I/O facilities using channels
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -45,6 +45,9 @@ int
 .sp
 int
 \fBTcl_Close\fR(\fIinterp, channel\fR)
+.sp
+int
+\fBTcl_CloseEx\fR(\fIinterp, channel, closeFlags\fR)
 .sp
 Tcl_Size
 \fBTcl_ReadChars\fR(\fIchannel, readObjPtr, charsToRead, appendFlag\fR)
@@ -157,6 +160,10 @@ channel.
 The number of characters to read from the channel.  If the channel's encoding
 is \fBbinary\fR, this is equivalent to the number of bytes to read from the
 channel.
+.AP int closeFlags in
+If \fB0\fR, the channel is closed in both directions. If \fBTCL_CLOSE_READ\fR,
+the channel is only closed for reading. If \fBTCL_CLOSE_WRITE\fR, the channel
+is only closed for writing. These flags must not be combined.
 .AP int appendFlag in
 If non-zero, data read from the channel will be appended to the value.
 Otherwise, the data will replace the existing contents of the value.
@@ -369,7 +376,7 @@ If so, it returns 1, otherwise 0.
 .PP
 No attempt is made to check whether the given channel or the standard
 channels are initialized or otherwise valid.
-.SH TCL_CLOSE
+.SH "TCL_CLOSE AND TCL_CLOSEEX"
 .PP
 \fBTcl_Close\fR destroys the channel \fIchannel\fR, which must denote a
 currently open channel. The channel should not be registered in any
@@ -383,16 +390,23 @@ immediately; output is flushed in the background and the channel will be
 closed once all of the buffered data has been output.  In this case errors
 during flushing are not reported.
 .PP
-If the channel was closed successfully, \fBTcl_Close\fR returns \fBTCL_OK\fR.
-If an error occurs, \fBTcl_Close\fR returns \fBTCL_ERROR\fR and records a
-POSIX error code that can be retrieved with \fBTcl_GetErrno\fR.
+\fBTcl_CloseEx\fR allows for both full closing and half-closing of channels
+depending on its \fBcloseFlags\fR parameter. See the description of the
+parameter above. It is an error to attempt to close the channel for
+a direction for which it is not open. The channel is destroyed only when
+it has been closed for both reading and writing. Only socket and command
+pipe channels support half-closing.
+.PP
+If the channel was closed successfully, \fBTcl_Close\fR and \fBTcl_CloseEx\fR
+return \fBTCL_OK\fR. If an error occurs, they return \fBTCL_ERROR\fR and record
+a POSIX error code that can be retrieved with \fBTcl_GetErrno\fR.
 If the channel is being closed synchronously and an error occurs during
 closing of the channel and \fIinterp\fR is not NULL, an error message is
 left in the interpreter's result.
 .PP
-Note that it is not safe to call \fBTcl_Close\fR on a channel that has been
-registered using \fBTcl_RegisterChannel\fR; see the documentation for
-\fBTcl_RegisterChannel\fR, above, for details. If the channel has ever
+Note that it is not safe to call the channel closing functions on a channel
+that has been registered using \fBTcl_RegisterChannel\fR; see the documentation
+for \fBTcl_RegisterChannel\fR, above, for details. If the channel has ever
 been given as the \fBchan\fR argument in a call to
 \fBTcl_RegisterChannel\fR, you should instead use
 \fBTcl_UnregisterChannel\fR, which will internally call \fBTcl_Close\fR

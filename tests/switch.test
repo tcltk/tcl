@@ -99,7 +99,7 @@ test switch-3.5 {-exact vs. -glob vs. -regexp} {
 } exact
 test switch-3.6 {-exact vs. -glob vs. -regexp} -body {
     switch -foo a b c
-} -returnCodes error -result {bad option "-foo": must be -exact, -glob, -indexvar, -matchvar, -nocase, -regexp, or --}
+} -returnCodes error -result {bad option "-foo": must be -exact, -glob, -indexvar, -integer, -matchvar, -nocase, -regexp, or --}
 test switch-3.7 {-exact vs. -glob vs. -regexp with -nocase} {
     switch -exact -nocase aaaab {
 	^a*b$	{subst regexp}
@@ -157,6 +157,15 @@ test switch-3.17 {-exact vs. -glob vs. -regexp} -body {
 test switch-3.18 {-exact vs. -glob vs. -regexp} -body {
     switch -regexp -glob Foo Foo {set result OK}
 } -returnCodes error -result {bad option "-glob": -regexp option already found}
+test switch-3.19 {-exact vs. -glob vs. -regexp} -body {
+    switch -glob -integer Foo Foo {set result OK}
+} -returnCodes error -result {bad option "-integer": -glob option already found}
+test switch-3.20 {-exact vs. -glob vs. -regexp} -body {
+    switch -integer -glob Foo Foo {set result OK}
+} -returnCodes error -result {bad option "-glob": -integer option already found}
+test switch-3.21 {-exact vs. -glob vs. -regexp} -body {
+    switch -integer -nocase Foo Foo {set result OK}
+} -returnCodes error -result {-nocase option cannot be used with -integer option}
 
 test switch-4.1 {error in executed command} {
     list [catch {switch a a {error "Just a test"} default {subst 1}} msg] \
@@ -768,6 +777,94 @@ test switch-15.1 {coroutine safety of non-bytecoded switch} {*}{
 	rename coro {}
     }
 }
+
+test switch-16.1 {switch -integer: interp, polyarg} {
+    switch -integer 0x1 01 {string cat ok}
+} ok
+test switch-16.2 {switch -integer: interp, polyarg} {
+    switch -integer 0x1 0 {error early} 01 {string cat ok}
+} ok
+test switch-16.3 {switch -integer: interp, polyarg} {
+    switch -integer 0x1 0 {error early} 01 {string cat ok} default {error late}
+} ok
+test switch-16.4 {switch -integer: interp, polyarg} {
+    switch -integer 0x1 0 {error early} default {string cat ok}
+} ok
+test switch-16.5 {switch -integer: interp, polyarg} {
+    switch -integer 0x1 0 {error body}
+} {}
+test switch-16.6 {switch -integer: interp, polyarg} -returnCodes error -body {
+    switch -integer 0x1 gorp {error body}
+} -result {expected integer but got "gorp"}
+test switch-16.7 {switch -integer: interp, polyarg} -returnCodes error -body {
+    switch -integer gorp 0 {error body}
+} -result {expected integer but got "gorp"}
+
+test switch-17.1 {switch -integer: interp, splitlist} {
+    switch -integer 0x1 {01 {string cat ok}}
+} ok
+test switch-17.2 {switch -integer: interp, splitlist} {
+    switch -integer 0x1 {0 {error early} 01 {string cat ok}}
+} ok
+test switch-17.3 {switch -integer: interp, splitlist} {
+    switch -integer 0x1 {0 {error early} 01 {string cat ok} default {error late}}
+} ok
+test switch-17.4 {switch -integer: interp, splitlist} {
+    switch -integer 0x1 {0 {error early} default {string cat ok}}
+} ok
+test switch-17.5 {switch -integer: interp, splitlist} {
+    switch -integer 0x1 {0 {error body}}
+} {}
+test switch-17.6 {switch -integer: interp, splitlist} -returnCodes error -body {
+    switch -integer 0x1 {gorp {error body}}
+} -result {expected integer but got "gorp"}
+test switch-17.7 {switch -integer: interp, splitlist} -returnCodes error -body {
+    switch -integer gorp {0 {error body}}
+} -result {expected integer but got "gorp"}
+
+test switch-18.1 {switch -integer: compiled, polyarg} {
+    switch -integer -- 0x1 01 {string cat ok}
+} ok
+test switch-18.2 {switch -integer: compiled, polyarg} {
+    switch -integer -- 0x1 0 {error early} 01 {string cat ok}
+} ok
+test switch-18.3 {switch -integer: compiled, polyarg} {
+    switch -integer -- 0x1 0 {error early} 01 {string cat ok} default {error late}
+} ok
+test switch-18.4 {switch -integer: compiled, polyarg} {
+    switch -integer -- 0x1 0 {error early} default {string cat ok}
+} ok
+test switch-18.5 {switch -integer: compiled, polyarg} {
+    switch -integer -- 0x1 0 {error body}
+} {}
+test switch-18.6 {switch -integer: compiled, polyarg} -returnCodes error -body {
+    switch -integer -- 0x1 gorp {error body}
+} -result {expected integer but got "gorp"}
+test switch-18.7 {switch -integer: compiled, polyarg} -returnCodes error -body {
+    switch -integer -- gorp 0 {error body}
+} -result {expected integer but got "gorp"}
+
+test switch-19.1 {switch -integer: compiled, splitlist} {
+    switch -integer -- 0x1 {01 {string cat ok}}
+} ok
+test switch-19.2 {switch -integer: compiled, splitlist} {
+    switch -integer -- 0x1 {0 {error early} 01 {string cat ok}}
+} ok
+test switch-19.3 {switch -integer: compiled, splitlist} {
+    switch -integer -- 0x1 {0 {error early} 01 {string cat ok} default {error late}}
+} ok
+test switch-19.4 {switch -integer: compiled, splitlist} {
+    switch -integer -- 0x1 {0 {error early} default {string cat ok}}
+} ok
+test switch-19.5 {switch -integer: compiled, splitlist} {
+    switch -integer -- 0x1 {0 {error body}}
+} {}
+test switch-19.6 {switch -integer: compiled, splitlist} -returnCodes error -body {
+    switch -integer -- 0x1 {gorp {error body}}
+} -result {expected integer but got "gorp"}
+test switch-19.7 {switch -integer: compiled, splitlist} -returnCodes error -body {
+    switch -integer -- gorp {0 {error body}}
+} -result {expected integer but got "gorp"}
 
 # cleanup
 catch {rename foo {}}

@@ -203,7 +203,7 @@ CatchObjCmdCallback(
     int result)
 {
     Interp *iPtr = (Interp *) interp;
-    int objc = PTR2INT(data[0]);
+    Tcl_Size objc = PTR2INT(data[0]);
     Tcl_Obj *varNamePtr = (Tcl_Obj *)data[1];
     Tcl_Obj *optionVarNamePtr = (Tcl_Obj *)data[2];
     int rewind = iPtr->execEnvPtr->rewind;
@@ -551,14 +551,14 @@ EncodingConvertfromObjCmd(
     result = Tcl_ExternalToUtfDStringEx(interp, encoding, bytesPtr, length, flags,
 	    &ds, failVarObj ? &errorLocation : NULL);
     /* NOTE: ds must be freed beyond this point even on error */
+
     switch (result) {
     case TCL_OK:
 	errorLocation = TCL_INDEX_NONE;
 	break;
     case TCL_ERROR:
 	/* Error in parameters. Should not happen. interp will have error */
-	Tcl_DStringFree(&ds);
-	return TCL_ERROR;
+	goto done;
     default:
 	/*
 	 * One of the TCL_CONVERT_* errors. If we were not interested in the
@@ -567,8 +567,8 @@ EncodingConvertfromObjCmd(
 	 * what could be decoded and the returned error location.
 	 */
 	if (failVarObj == NULL) {
-	    Tcl_DStringFree(&ds);
-	    return TCL_ERROR;
+	    result = TCL_ERROR;
+	    goto done;
 	}
 	break;
     }
@@ -582,8 +582,8 @@ EncodingConvertfromObjCmd(
 	TclNewIndexObj(failIndex, errorLocation);
 	if (Tcl_ObjSetVar2(interp, failVarObj, NULL, failIndex,
 		TCL_LEAVE_ERR_MSG) == NULL) {
-	    Tcl_DStringFree(&ds);
-	    return TCL_ERROR;
+	    result = TCL_ERROR;
+	    goto done;
 	}
     }
     /*
@@ -592,11 +592,14 @@ EncodingConvertfromObjCmd(
      */
 
     Tcl_SetObjResult(interp, Tcl_DStringToObj(&ds));
+    result = TCL_OK;
 
-    /* We're done with the encoding */
-
-    Tcl_FreeEncoding(encoding);
-    return TCL_OK;
+done:
+    Tcl_DStringFree(&ds);
+    if (encoding) {
+	Tcl_FreeEncoding(encoding);
+    }
+    return result;
 }
 
 /*
@@ -650,8 +653,7 @@ EncodingConverttoObjCmd(
 	break;
     case TCL_ERROR:
 	/* Error in parameters. Should not happen. interp will have error */
-	Tcl_DStringFree(&ds);
-	return TCL_ERROR;
+	goto done;
     default:
 	/*
 	 * One of the TCL_CONVERT_* errors. If we were not interested in the
@@ -660,8 +662,8 @@ EncodingConverttoObjCmd(
 	 * what could be decoded and the returned error location.
 	 */
 	if (failVarObj == NULL) {
-	    Tcl_DStringFree(&ds);
-	    return TCL_ERROR;
+	    result = TCL_ERROR;
+	    goto done;
 	}
 	break;
     }
@@ -675,20 +677,23 @@ EncodingConverttoObjCmd(
 	TclNewIndexObj(failIndex, errorLocation);
 	if (Tcl_ObjSetVar2(interp, failVarObj, NULL, failIndex,
 		TCL_LEAVE_ERR_MSG) == NULL) {
-	    Tcl_DStringFree(&ds);
-	    return TCL_ERROR;
+	    result = TCL_ERROR;
+	    goto done;
 	}
     }
 
     Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(
 	    (unsigned char*) Tcl_DStringValue(&ds),
 	    Tcl_DStringLength(&ds)));
+
+    result = TCL_OK;
+
+done:
     Tcl_DStringFree(&ds);
-
-    /* We're done with the encoding */
-
-    Tcl_FreeEncoding(encoding);
-    return TCL_OK;
+    if (encoding) {
+	Tcl_FreeEncoding(encoding);
+    }
+    return result;
 }
 
 /*
@@ -2841,7 +2846,7 @@ EachloopCmd(
 	    goto done;
 	}
 	result = TclListObjLength(interp, statePtr->vCopyList[i],
-	    &statePtr->varcList[i]);
+		&statePtr->varcList[i]);
 	if (result != TCL_OK) {
 	    result = TCL_ERROR;
 	    goto done;
@@ -2857,7 +2862,7 @@ EachloopCmd(
 	    goto done;
 	}
 	TclListObjGetElements(NULL, statePtr->vCopyList[i],
-	    &statePtr->varcList[i], &statePtr->varvList[i]);
+		&statePtr->varcList[i], &statePtr->varvList[i]);
 
 	/* Values */
 	if (TclObjTypeHasProc(objv[2+i*2],indexProc)) {

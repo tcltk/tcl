@@ -35,7 +35,7 @@
 #include "tclInt.h"
 #include "tclTomMath.h"
 #include "tclStringRep.h"
-#include <assert.h>
+
 /*
  * Prototypes for functions defined later in this file:
  */
@@ -235,6 +235,10 @@ Tcl_NewStringObj(
 {
     return Tcl_DbNewStringObj(bytes, length, "unknown", 0);
 }
+
+// Redefine the macro
+#define Tcl_NewStringObj(bytes, len) \
+    Tcl_DbNewStringObj(bytes, len, __FILE__, __LINE__)
 #else /* if not TCL_MEM_DEBUG */
 Tcl_Obj *
 Tcl_NewStringObj(
@@ -394,7 +398,7 @@ Tcl_GetCharLength(
      * Optimize the case where we're really dealing with a byte-array object;
      * we don't need to convert to a string to perform the get-length operation.
      *
-     * Starting in Tcl 8.7, we check for a "pure" byte-array, because the
+     * Starting in Tcl 9.0, we check for a "pure" byte-array, because the
      * machinery behind that test is using a proper byte-array ObjType.  We
      * could also compute length of an improper byte-array without shimmering
      * but there's no value in that. We *want* to shimmer an improper byte-array
@@ -445,7 +449,7 @@ TclGetCharLength(
      * Optimize the case where we're really dealing with a byte-array object;
      * we don't need to convert to a string to perform the get-length operation.
      *
-     * Starting in Tcl 8.7, we check for a "pure" byte-array, because the
+     * Starting in Tcl 9.0, we check for a "pure" byte-array, because the
      * machinery behind that test is using a proper byte-array ObjType.  We
      * could also compute length of an improper byte-array without shimmering
      * but there's no value in that. We *want* to shimmer an improper byte-array

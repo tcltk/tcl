@@ -31,7 +31,6 @@
 #include "tclInt.h"
 #include "tclCompile.h"
 #include "tclOOInt.h"
-#include <assert.h>
 
 /*
  * Structure that represents a range of instructions in the bytecode.
@@ -919,9 +918,9 @@ TclCompileAssembleCmd(
     Tcl_Size numCommands = envPtr->numCommands;
     Tcl_Size offset = CurrentOffset(envPtr);
     Tcl_Size depth = envPtr->currStackDepth;
-    size_t numExnRanges = envPtr->exceptArrayNext;
-    size_t numAuxRanges = envPtr->auxDataArrayNext;
-    size_t exceptDepth = envPtr->exceptDepth;
+    Tcl_Size numExnRanges = envPtr->exceptArrayNext;
+    Tcl_Size numAuxRanges = envPtr->auxDataArrayNext;
+    Tcl_Size exceptDepth = envPtr->exceptDepth;
 
     /*
      * Make sure that the command has a single arg that is a simple word.
@@ -950,7 +949,15 @@ TclCompileAssembleCmd(
 	envPtr->codeNext = envPtr->codeStart + offset;
 	envPtr->currStackDepth = depth;
 	envPtr->exceptArrayNext = numExnRanges;
-	envPtr->auxDataArrayNext = numAuxRanges;
+	while (envPtr->auxDataArrayNext > numAuxRanges) {
+	    Tcl_Size auxIdx = --envPtr->auxDataArrayNext;
+	    AuxData *auxDataPtr = &envPtr->auxDataArrayPtr[auxIdx];
+	    if (auxDataPtr->type && auxDataPtr->type->freeProc) {
+		auxDataPtr->type->freeProc(auxDataPtr->clientData);
+	    }
+	    auxDataPtr->clientData = NULL;
+	    auxDataPtr->type = NULL;
+	}
 	envPtr->exceptDepth = exceptDepth;
 	TclCompileSyntaxError(interp, envPtr);
     }
@@ -2047,7 +2054,7 @@ CreateMirrorNumJumpTable(
 	    }
 	    goto error;
 	}
-	hPtr = Tcl_CreateHashEntry(&jtnPtr->hashTable, (void*)key, &isNew);
+	hPtr = Tcl_CreateHashEntry(&jtnPtr->hashTable, INT2PTR(key), &isNew);
 	if (!isNew) {
 	    if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -3457,7 +3464,7 @@ StackCheckBasicBlock(
     }
 
     /*
-     * Update maximum stgack depth.
+     * Update maximum stack depth.
      */
 
     maxDepth = initialStackDepth + blockPtr->maxStackDepth;

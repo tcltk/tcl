@@ -491,8 +491,7 @@ EXTERN int		TclEvalObjEx(Tcl_Interp *interp, Tcl_Obj *objPtr,
 /* 233 */
 EXTERN void		TclGetSrcInfoForPc(CmdFrame *contextPtr);
 /* 234 */
-TCL_DEPRECATED("Not used in Tcl, not in any extension any more")
-Var *			TclVarHashCreateVar(TclVarHashTable *tablePtr,
+EXTERN Var *		TclVarHashCreateVar(TclVarHashTable *tablePtr,
 				const char *key, int *newPtr);
 /* 235 */
 EXTERN void		TclInitVarHashTable(TclVarHashTable *tablePtr,
@@ -509,7 +508,7 @@ EXTERN int		TclNRInterpProcCore(Tcl_Interp *interp,
 				ProcErrorProc *errorProc);
 /* 240 */
 EXTERN int		TclNRRunCallbacks(Tcl_Interp *interp, int result,
-				struct NRE_callback *rootPtr);
+				NRE_callback *rootPtr);
 /* 241 */
 EXTERN int		TclNREvalObjEx(Tcl_Interp *interp, Tcl_Obj *objPtr,
 				int flags, const CmdFrame *invoker, int word);
@@ -815,13 +814,13 @@ typedef struct TclIntStubs {
     int (*tclGetNamespaceFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Namespace **nsPtrPtr); /* 231 */
     int (*tclEvalObjEx) (Tcl_Interp *interp, Tcl_Obj *objPtr, int flags, const CmdFrame *invoker, int word); /* 232 */
     void (*tclGetSrcInfoForPc) (CmdFrame *contextPtr); /* 233 */
-    TCL_DEPRECATED_API("Not used in Tcl, not in any extension any more") Var * (*tclVarHashCreateVar) (TclVarHashTable *tablePtr, const char *key, int *newPtr); /* 234 */
+    Var * (*tclVarHashCreateVar) (TclVarHashTable *tablePtr, const char *key, int *newPtr); /* 234 */
     void (*tclInitVarHashTable) (TclVarHashTable *tablePtr, Namespace *nsPtr); /* 235 */
     void (*reserved236)(void);
     int (*tclResetCancellation) (Tcl_Interp *interp, int force); /* 237 */
     int (*tclNRInterpProc) (void *clientData, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[]); /* 238 */
     int (*tclNRInterpProcCore) (Tcl_Interp *interp, Tcl_Obj *procNameObj, Tcl_Size skip, ProcErrorProc *errorProc); /* 239 */
-    int (*tclNRRunCallbacks) (Tcl_Interp *interp, int result, struct NRE_callback *rootPtr); /* 240 */
+    int (*tclNRRunCallbacks) (Tcl_Interp *interp, int result, NRE_callback *rootPtr); /* 240 */
     int (*tclNREvalObjEx) (Tcl_Interp *interp, Tcl_Obj *objPtr, int flags, const CmdFrame *invoker, int word); /* 241 */
     int (*tclNREvalObjv) (Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[], int flags, Command *cmdPtr); /* 242 */
     void (*tclDbDumpActiveObjects) (FILE *outFile); /* 243 */
@@ -1274,10 +1273,6 @@ extern const TclIntStubs *tclIntStubsPtr;
 #undef TclUnusedStubEntry
 #define TclObjInterpProc TclGetObjInterpProc()
 #define TclObjInterpProc2 TclGetObjInterpProc2()
-
-#ifdef TCL_NO_DEPRECATED
-#   undef TclVarHashCreateVar
-#endif
 
 #undef TCL_STORAGE_CLASS
 #define TCL_STORAGE_CLASS DLLIMPORT
