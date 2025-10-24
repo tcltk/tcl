@@ -22,7 +22,6 @@
 #include "tclCompile.h"
 #include "tclTomMath.h"
 #include <math.h>
-#include <assert.h>
 
 /*
  * TCL_FPCLASSIFY_MODE:

@@ -63,12 +63,14 @@
 #include "tclPort.h"
 
 #include <stdio.h>
-
+#include <assert.h>
 #include <ctype.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stdint.h>
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ < 202311L
 #include <stdbool.h>
+#endif
 #include <string.h>
 #include <locale.h>
 
@@ -3480,7 +3482,7 @@ MODULE_SCOPE void	TclInitNamespaceSubsystem(void);
 MODULE_SCOPE void	TclInitNotifier(void);
 MODULE_SCOPE void	TclInitObjSubsystem(void);
 MODULE_SCOPE int	TclInterpReady(Tcl_Interp *interp);
-MODULE_SCOPE int	TclIsBareword(int byte);
+MODULE_SCOPE bool	TclIsBareword(int byte);
 MODULE_SCOPE Tcl_Obj *	TclJoinPath(Tcl_Size elements, Tcl_Obj * const objv[],
 			    int forceRelative);
 MODULE_SCOPE Tcl_Obj *	TclGetHomeDirObj(Tcl_Interp *interp, const char *user);
@@ -3536,9 +3538,6 @@ MODULE_SCOPE int	TclParseNumber(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    Tcl_Size numBytes, const char **endPtrPtr, int flags);
 MODULE_SCOPE void	TclParseInit(Tcl_Interp *interp, const char *string,
 			    Tcl_Size numBytes, Tcl_Parse *parsePtr);
-MODULE_SCOPE int	TclParseExprSubst(Tcl_Interp *interp,
-				const char *start, Tcl_Size numBytes,
-				Tcl_Parse *parsePtr, int append);
 MODULE_SCOPE Tcl_Size	TclParseAllWhiteSpace(const char *src, Tcl_Size numBytes);
 MODULE_SCOPE int	TclProcessReturn(Tcl_Interp *interp,
 			    int code, int level, Tcl_Obj *returnOpts);
@@ -3733,7 +3732,7 @@ MODULE_SCOPE void	TclSetObjNameOfShlib(Tcl_Obj *namePtr, Tcl_Encoding);
  * optimization (fragile on changes) in one place.
  */
 
-MODULE_SCOPE int	TclIsSpaceProc(int byte);
+MODULE_SCOPE bool	TclIsSpaceProc(int byte);
 #define TclIsSpaceProcM(byte) \
     (((unsigned)(byte) > 0x20) ? 0 : TclIsSpaceProc(byte))
 
@@ -5091,7 +5090,6 @@ MODULE_SCOPE Tcl_LibraryInitProc Tcl_ABSListTest_Init;
 void Tcl_Panic(const char *, ...) __attribute__((analyzer_noreturn));
 #endif
 #if !defined(CLANG_ASSERT)
-#include <assert.h>
 #define CLANG_ASSERT(x) assert(x)
 #endif
 #elif !defined(CLANG_ASSERT)
