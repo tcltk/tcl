@@ -116,6 +116,26 @@ const unsigned char tclCharTypeTable[] = {
     TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
 };
 
+// ===== Configuration for expression substitution syntax =====
+#define EXPR_SUBST_MODE 1           // 1 = $(expr), 2 = $=(expr), 3 = $((expr))
+
+#if EXPR_SUBST_MODE == 1
+    static const char EXPR_TRIGGER_CHAR = '(';
+    static const int EXPR_SRC_ADVANCE = 1;
+    static const int EXPR_SIZE_DIFF = 6;
+    static const char* EXPR_ERROR_MSG = "missing close-paren for $(";
+#elif EXPR_SUBST_MODE == 2
+    static const char EXPR_TRIGGER_CHAR = '=';
+    static const int EXPR_SRC_ADVANCE = 2;
+    static const int EXPR_SIZE_DIFF = 5;
+    static const char* EXPR_ERROR_MSG = "missing close-paren for $=(";
+#else  // Mode 3
+    static const char EXPR_TRIGGER_CHAR = '(';
+    static const int EXPR_SRC_ADVANCE = 2;
+    static const int EXPR_SIZE_DIFF = 4;
+    static const char* EXPR_ERROR_MSG = "missing close-paren expected )) at end of $(( expression";
+#endif
+
 /*
  * Prototypes for local functions defined in this file:
  */
@@ -1089,15 +1109,21 @@ ParseTokens(
 	    parsePtr->numTokens++;
 	} else if (*src == '$') {
 	    Tcl_Size varToken = parsePtr->numTokens;
-	    if (!noSubstExprs && (numBytes > 1) && (src[1] == '(')) {
+	    if (!noSubstExprs && (numBytes > 1 && src[1] == EXPR_TRIGGER_CHAR
+#if EXPR_SUBST_MODE > 1
+		    && numBytes > 2 && src[2] == '('
+#endif
+	    )) {
 		// For $(expr), the COMMAND token has synthetic string length
 		// but we need to advance by original $(...)  length
-		// Difference is always: "[expr {" (7 chars) + "}]" (2 chars) - "$(" (2 chars) - ")" (1 char) = 6
+		// Mode 1: "[expr {" (7) + "}]" (2) -  "$(" (2) - ")"  (1) = 6
+		// Mode 2: "[expr {" (7) + "}]" (2) - "$=(" (3) - ")"  (1) = 5
+		// Mode 3: "[expr {" (7) + "}]" (2) - "$((" (3) - "))" (2) = 4
 		if (TclParseExprSubst(parsePtr->interp, src, numBytes, parsePtr, 1) != TCL_OK) {
 		    return TCL_ERROR;
 		}
 		Tcl_Size syntheticSize = parsePtr->tokenPtr[varToken].size;
-		Tcl_Size originalSize = syntheticSize - 6;
+		Tcl_Size originalSize = syntheticSize - EXPR_SIZE_DIFF;
 		src += originalSize;
 		numBytes -= originalSize;
 	    } else if (!noSubstVars) {
@@ -1568,15 +1594,15 @@ TclParseExprSubst(
     tokenPtr->start = src;
     tokenPtr->numComponents = 0;
 
-    const char *exprStart = src + 1;
+    const char *exprStart = src + EXPR_SRC_ADVANCE;
     const char *exprEnd;
     int parenDepth = 1;
     int bracketDepth = 0;
     int betweenQuotes = 0; // only important if using string relationals, eq, ne, etc. and using "literal \("
     const char *dollarParenStart = src - 1;  // Points to the '$'
 
-    src++;
-    numBytes--;
+    src += EXPR_SRC_ADVANCE;
+    numBytes -= EXPR_SRC_ADVANCE;
     // Find matching close paren
     while (numBytes > 0 && parenDepth > 0) {
 	char ch = *src;
@@ -1615,7 +1641,7 @@ TclParseExprSubst(
 	    // Error: unmatched paren
 	    if (parsePtr->interp != NULL) {
 		Tcl_SetObjResult(parsePtr->interp,
-			Tcl_NewStringObj("missing )", -1));
+			Tcl_NewStringObj(EXPR_ERROR_MSG, -1));
 	    }
 	    parsePtr->errorType = TCL_PARSE_MISSING_PAREN;
 	    parsePtr->term = tokenPtr->start - 1;
