@@ -804,10 +804,10 @@ DOTSEPARATED=$(DOTSEPARATED:b=.)
 # MSVCRT  - 1 -> link to dynamic C runtime even when building static Tcl build
 #           0 -> link to static C runtime for static Tcl build.
 #           Does not impact shared Tcl builds (STATIC_BUILD == 0)
-#           Default: 1 for Tcl 8.7 and up, 0 otherwise.
+#           Default: 1 for Tcl 9.0 and up, 0 otherwise.
 # TCL_USE_STATIC_PACKAGES - 1 -> statically link the registry and dde extensions
 #           in the Tcl and Wish shell. 0 -> keep them as shared libraries. Does
-#           not impact shared Tcl builds. Implied by STATIC_BUILD since Tcl 8.7.
+#           not impact shared Tcl builds. Implied by STATIC_BUILD since Tcl 9.0.
 # USE_THREAD_ALLOC - 1 -> Use a shared global free pool for allocation.
 #           0 -> Use the non-thread allocator.
 # UNCHECKED - 1 -> when doing a debug build with symbols, use the release
@@ -1042,7 +1042,7 @@ WARNINGS		    = $(WARNINGS) -Wp64
 # different compilers, build configurations etc.,
 #
 # Naming convention (suffixes):
-#   t = full thread support. (Not used for Tcl >= 8.7)
+#   t = full thread support. (Not used for Tcl >= 9.0)
 #   s = static library (as opposed to an import library)
 #   g = linked to the debug enabled C run-time.
 #   x = special static build when it links to the dynamic C run-time.
@@ -1173,7 +1173,7 @@ TCLSTUBLIB	= $(_TCLDIR)\lib\tclstub.lib
 !endif
 TCLIMPLIB	= $(_TCLDIR)\lib\tcl$(TCL_VERSION)$(SUFX:t=).lib
 # When building extensions, may be linking against Tcl that does not add
-# "t" suffix (e.g. 8.5 or 8.7). If lib not found check for that possibility.
+# "t" suffix (e.g. 8.6). If lib not found check for that possibility.
 !if !exist("$(TCLIMPLIB)")
 TCLIMPLIB	= $(_TCLDIR)\lib\tcl$(TCL_VERSION)t$(SUFX:t=).lib
 !endif
@@ -1197,7 +1197,7 @@ TCLSTUBLIB	= $(_TCLDIR)\win\$(BUILDDIRTOP)\tclstub.lib
 !endif
 TCLIMPLIB	= $(_TCLDIR)\win\$(BUILDDIRTOP)\tcl$(TCL_VERSION)$(SUFX:t=).lib
 # When building extensions, may be linking against Tcl that does not add
-# "t" suffix (e.g. 8.5 or 8.7). If lib not found check for that possibility.
+# "t" suffix (e.g. 8.6). If lib not found check for that possibility.
 !if !exist("$(TCLIMPLIB)")
 TCLIMPLIB	= $(_TCLDIR)\win\$(BUILDDIRTOP)\tcl$(TCL_VERSION)t$(SUFX:t=).lib
 !endif
@@ -1262,7 +1262,7 @@ WISH		= $(_TKDIR)\bin\$(WISHNAME)
 TKSTUBLIB	= $(_TKDIR)\lib\$(TKSTUBLIBNAME)
 TKIMPLIB	= $(_TKDIR)\lib\$(TKIMPLIBNAME)
 # When building extensions, may be linking against Tk that does not add
-# "t" suffix (e.g. 8.5 or 8.7). If lib not found check for that possibility.
+# "t" suffix (e.g. 8.6). If lib not found check for that possibility.
 !if !exist("$(TKIMPLIB)")
 TKIMPLIBNAME	= tk$(TK_VERSION)$(SUFX:t=).lib
 TKIMPLIB	= $(_TKDIR)\lib\$(TKIMPLIBNAME)
@@ -1276,7 +1276,7 @@ WISH		= $(_TKDIR)\win\$(BUILDDIRTOP)\$(WISHNAME)
 TKSTUBLIB	= $(_TKDIR)\win\$(BUILDDIRTOP)\$(TKSTUBLIBNAME)
 TKIMPLIB	= $(_TKDIR)\win\$(BUILDDIRTOP)\$(TKIMPLIBNAME)
 # When building extensions, may be linking against Tk that does not add
-# "t" suffix (e.g. 8.5 or 8.7). If lib not found check for that possibility.
+# "t" suffix (e.g. 8.6). If lib not found check for that possibility.
 !if !exist("$(TKIMPLIB)")
 TKIMPLIBNAME	= tk$(TK_VERSION)$(SUFX:t=).lib
 TKIMPLIB	= $(_TKDIR)\win\$(BUILDDIRTOP)\$(TKIMPLIBNAME)

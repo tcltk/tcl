@@ -1,0 +1,146 @@
+# See the file LICENSE for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import ::tcltest::*
+}
+tcltest::loadTestedCommands
+package require tcl::test
+
+testConstraint teststringobj [llength [info commands teststringobj]]
+tcltest::testConstraint haveUnicodeIsCmds [expr {![catch {unicode is lower A}]}]
+tcltest::testConstraint haveUnicodeToCmds [expr {![catch {unicode tolower A}]}]
+
+source [file join [file dirname [info script]] ucdUtils.tcl]
+
+namespace eval unicode::test {
+    namespace path ::tcltests::ucd
+
+    # We use teststringobj in below tests as it allows us to create invalid
+    # code points as well.
+
+    test string-is-lower-ucd "string is lower vs UCD" -setup {
+ 	set lowerChars [getLowercaseChars]
+    } -cleanup {
+        unset -nocomplain lowerChars
+    } -body {
+        set mismatches {Lower case mismatches:}
+        foreach codePoint [lseq 0 $::tcltests::ucd::maxCodepoint] {
+            set ch [format %c $codePoint]
+            if {[dict exists $lowerChars $ch] != [string is lower $ch]} {
+                append mismatches " " U+[format %x $codePoint]
+            }
+        }
+        set mismatches
+    } -constraints {ucdproperties bug_1ecea011} -result {Lower case mismatches:}
+
+    test string-is-lower-outofrange "string is lower out of range" -cleanup {
+        testobj freeallvars
+    } -body {
+    	string is lower [teststringobj newunicode 1 0x110000]
+    } -constraints teststringobj -result 0
+
+    test string-is-upper-ucd "string is upper vs UCD" -setup {
+        set upperChars [getUppercaseChars]
+    } -cleanup {
+        unset -nocomplain upperChars
+    } -body {
+        set mismatches {Upper case mismatches:}
+        foreach codePoint [lseq 0 $::tcltests::ucd::maxCodepoint] {
+            set ch [format %c $codePoint]
+            if {[dict exists $upperChars $ch] != [string is upper $ch]} {
+                append mismatches " " U+[format %x $codePoint]
+            }
+        }
+        set mismatches
+    } -constraints {ucdproperties bug_1ecea011} -result {Upper case mismatches:}
+
+    test string-is-upper-outofrange "string is upper out of range" -cleanup {
+        testobj freeallvars
+    } -body {
+    	string is upper [teststringobj newunicode 1 0x110000]
+    } -constraints teststringobj -result 0
+
+    test unicode-is-lower-ucd "unicode is lower vs UCD" -setup {
+        set lowerChars [getLowercaseChars]
+    } -cleanup {
+        unset -nocomplain lowerChars
+    } -body {
+        set mismatches {Lower case mismatches:}
+        foreach codePoint [lseq 0 $::tcltests::ucd::maxCodepoint] {
+            set ch [format %c $codePoint]
+            if {[dict exists $lowerChars $ch] != [unicode is lower $ch]} {
+                append mismatches " " U+[format %x $codePoint]
+            }
+        }
+        set mismatches
+    } -constraints {ucdproperties haveUnicodeIsCmds bug_1ecea011} -result {Lower case mismatches:}
+
+    test unicode-is-lower-outofrange "unicode is lower out of range" -cleanup {
+        testobj freeallvars
+    } -body {
+    	unicode is lower [teststringobj newunicode 1 0x110000]
+    } -constraints {ucdproperties haveUnicodeIsCmds bug_1ecea011} -result 0
+
+    test unicode-is-upper-ucd "unicode is upper vs UCD" -setup {
+        set upperChars [getUppercaseChars]
+    } -cleanup {
+        unset -nocomplain upperChars
+    } -body {
+        set mismatches {Upper case mismatches:}
+        foreach codePoint [lseq 0 1+$::tcltests::ucd::maxCodepoint] {
+            set ch [format %c $codePoint]
+            if {[dict exists $upperChars $ch] != [unicode is upper $ch]} {
+                append mismatches " " U+[format %x $codePoint]
+            }
+        }
+        set mismatches
+    } -constraints {ucdproperties haveUnicodeIsCmds bug_1ecea011} -result {Upper case mismatches:}
+
+    test unicode-is-upper-outofrange "unicode is upper out of range" -cleanup {
+        testobj freeallvars
+    } -body {
+    	unicode is upper [teststringobj newunicode 1 0x110000]
+    } -constraints {haveUnicodeIsCmds teststringobj} -result 0
+
+	###
+    # Compatibility tests between the string and unicode commands.
+	proc testStringUnicodeCompatibility {class} {
+        set mismatches "is $class mismatches:"
+        foreach codePoint [lseq 0 $::tcltests::ucd::maxCodepoint] {
+            set ch [format %c $codePoint]
+            if {[string is $class $ch] != [unicode is $class $ch]} {
+                append mismatches " " U+[format %x $codePoint]
+            }
+        }
+        return $mismatches
+    }
+
+    foreach class {alpha alnum control digit graph lower print space upper wordchar} {
+    	test string-vs-unicode-is-$class "string is $class vs unicode" -body {
+            testStringUnicodeCompatibility $class
+		} -constraints haveUnicodeIsCmds -result "is $class mismatches:"
+    }
+
+	proc testStringUnicodeCaseConvertCompatibility {tocase} {
+        set mismatches "$tocase mismatches:"
+        foreach codePoint [lseq 0 $::tcltests::ucd::maxCodepoint] {
+            set ch [format %c $codePoint]
+            if {[string $tocase $ch] != [unicode $tocase $ch]} {
+                append mismatches " " U+[format %x $codePoint]
+            break
+            }
+        }
+        return $mismatches
+    }
+    foreach tocase {tolower toupper totitle} {
+    	test string-vs-unicode-$tocase "string $tocase vs unicode" -body {
+            testStringUnicodeCaseConvertCompatibility $tocase
+		} -constraints haveUnicodeToCmds -result "$tocase mismatches:"
+    }
+}
+
+::tcltest::cleanupTests
+namespace delete unicode::test
+return

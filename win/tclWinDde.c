@@ -19,6 +19,10 @@
 #include <ddeml.h>
 #include <tchar.h>
 
+#if defined (__clang__) && (__clang_major__ > 20)
+#pragma clang diagnostic ignored "-Wc++-keyword"
+#endif
+
 #if !defined(NDEBUG)
     /* test POKE server Implemented for debug mode only */
 #   undef CBF_FAIL_POKES
@@ -79,7 +83,7 @@ static DWORD ddeInstance;	/* The application instance handle given to us
 				 * by DdeInitialize. */
 static int ddeIsServer = 0;
 
-#define TCL_DDE_VERSION		"1.5a0"
+#define TCL_DDE_VERSION		"1.5a1"
 #define TCL_DDE_PACKAGE_NAME	"dde"
 #define TCL_DDE_SERVICE_NAME	L"TclEval"
 #define TCL_DDE_EXECUTE_RESULT	L"$TCLEVAL$EXECUTE$RESULT"

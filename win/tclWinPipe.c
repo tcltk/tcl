@@ -11,6 +11,9 @@
  */
 
 #include "tclWinInt.h"
+#if defined (__clang__) && (__clang_major__ > 20)
+#pragma clang diagnostic ignored "-Wc++-keyword"
+#endif
 
 /*
  * The following variable is used to tell whether this module has been
@@ -1818,8 +1821,7 @@ TclpCreateCommandChannel(
 
 	infoPtr->readable = CreateEventW(NULL, TRUE, TRUE, NULL);
 	infoPtr->readThread = CreateThread(NULL, 256, PipeReaderThread,
-	    TclPipeThreadCreateTI(&infoPtr->readTI, infoPtr, infoPtr->readable),
-	    0, NULL);
+		TclPipeThreadCreateTI(&infoPtr->readTI, infoPtr), 0, NULL);
 	SetThreadPriority(infoPtr->readThread, THREAD_PRIORITY_HIGHEST);
 	infoPtr->validMask |= TCL_READABLE;
     } else {
@@ -1833,8 +1835,7 @@ TclpCreateCommandChannel(
 
 	infoPtr->writable = CreateEventW(NULL, TRUE, TRUE, NULL);
 	infoPtr->writeThread = CreateThread(NULL, 256, PipeWriterThread,
-	    TclPipeThreadCreateTI(&infoPtr->writeTI, infoPtr, infoPtr->writable),
-	    0, NULL);
+		TclPipeThreadCreateTI(&infoPtr->writeTI, infoPtr), 0, NULL);
 	SetThreadPriority(infoPtr->writeThread, THREAD_PRIORITY_HIGHEST);
 	infoPtr->validMask |= TCL_WRITABLE;
     } else {
@@ -2055,7 +2056,7 @@ PipeClose2Proc(
 	    if ((pipePtr->flags & PIPE_ASYNC) && inExit) {
 
 		/* give it a chance to leave honorably */
-		TclPipeThreadStopSignal(&pipePtr->writeTI, pipePtr->writable);
+		TclPipeThreadStopSignal(&pipePtr->writeTI);
 
 		if (WaitForSingleObject(pipePtr->writable, 20) == WAIT_TIMEOUT) {
 		    return EWOULDBLOCK;
@@ -3301,8 +3302,7 @@ TclpOpenTemporaryFile(
 TclPipeThreadInfo *
 TclPipeThreadCreateTI(
     TclPipeThreadInfo **pipeTIPtr,
-    void *clientData,
-    HANDLE wakeEvent)
+    void *clientData)
 {
     TclPipeThreadInfo *pipeTI;
 #ifndef _PTI_USE_CKALLOC
@@ -3313,7 +3313,6 @@ TclPipeThreadCreateTI(
     pipeTI->evControl = CreateEventW(NULL, FALSE, FALSE, NULL);
     pipeTI->state = PTI_STATE_IDLE;
     pipeTI->clientData = clientData;
-    pipeTI->evWakeUp = wakeEvent;
     return (*pipeTIPtr = pipeTI);
 }
 
@@ -3341,13 +3340,10 @@ TclPipeThreadWaitForSignal(
     TclPipeThreadInfo *pipeTI = *pipeTIPtr;
     LONG state;
     DWORD waitResult;
-    HANDLE wakeEvent;
 
     if (!pipeTI) {
 	return 0;
     }
-
-    wakeEvent = pipeTI->evWakeUp;
 
     /*
      * Wait for the main thread to signal before attempting to do the work.
@@ -3408,11 +3404,6 @@ TclPipeThreadWaitForSignal(
 
     if (state != PTI_STATE_STOP) {
 	*pipeTIPtr = NULL;
-    } else {
-	pipeTI->evWakeUp = NULL;
-    }
-    if (wakeEvent) {
-	SetEvent(wakeEvent);
     }
     return 0;
 }
@@ -3435,8 +3426,7 @@ TclPipeThreadWaitForSignal(
 
 int
 TclPipeThreadStopSignal(
-    TclPipeThreadInfo **pipeTIPtr,
-    HANDLE wakeEvent)
+    TclPipeThreadInfo **pipeTIPtr)
 {
     TclPipeThreadInfo *pipeTI = *pipeTIPtr;
     HANDLE evControl;
@@ -3446,7 +3436,6 @@ TclPipeThreadStopSignal(
 	return 1;
     }
     evControl = pipeTI->evControl;
-    pipeTI->evWakeUp = wakeEvent;
     state = InterlockedCompareExchange(&pipeTI->state, PTI_STATE_STOP,
 	    PTI_STATE_IDLE);
     switch (state) {
@@ -3510,7 +3499,6 @@ TclPipeThreadStop(
     }
     pipeTI = *pipeTIPtr;
     evControl = pipeTI->evControl;
-    pipeTI->evWakeUp = NULL;
 
     /*
      * Try to sane stop the pipe worker, corresponding its current state
@@ -3662,9 +3650,6 @@ TclPipeThreadStop(
 
     *pipeTIPtr = NULL;
     if (pipeTI) {
-	if (pipeTI->evWakeUp) {
-	    SetEvent(pipeTI->evWakeUp);
-	}
 	CloseHandle(pipeTI->evControl);
 #ifndef _PTI_USE_CKALLOC
 	free(pipeTI);
@@ -3713,9 +3698,6 @@ TclPipeThreadExit(
     state = InterlockedExchange(&pipeTI->state, PTI_STATE_DOWN);
     if (state == PTI_STATE_STOP) {
 	CloseHandle(pipeTI->evControl);
-	if (pipeTI->evWakeUp) {
-	    SetEvent(pipeTI->evWakeUp);
-	}
 #ifndef _PTI_USE_CKALLOC
 	free(pipeTI);
 #else

@@ -18,7 +18,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Prepare
         run: |
           touch generic/tclStubInit.c generic/tclOOStubInit.c
@@ -54,25 +54,25 @@ jobs:
       url: ${{ steps.upload.outputs.artifact-url }}
   macos:
     name: macOS
-    runs-on: macos-13
+    runs-on: macos-15-intel
     defaults:
       run:
         shell: bash
     timeout-minutes: 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Checkout create-dmg
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: create-dmg/create-dmg
-          ref: v1.0.8
+          ref: v1.2.2
           path: create-dmg
       - name: Prepare
         run: |
           mkdir 1dist
           touch generic/tclStubInit.c generic/tclOOStubInit.c || true
-          wget https://github.com/culler/macher/releases/download/v1.7/macher
+          wget https://github.com/culler/macher/releases/download/v1.8/macher
           sudo cp macher /usr/local/bin
           sudo chmod a+x /usr/local/bin/macher
           echo "VER_PATH=$(cd tools; pwd)/addVerToFile.tcl" >> $GITHUB_ENV
@@ -139,7 +139,7 @@ jobs:
           msystem: UCRT64
           install: git mingw-w64-ucrt-x86_64-toolchain make zip
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Prepare
         run: |
           touch generic/tclStubInit.c generic/tclOOStubInit.c
@@ -194,7 +194,7 @@ jobs:
         run: |
           mkdir data
       - name: Get Linux build
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           path: data
           # Can't download by artifact ID; stupid missing feature!
@@ -205,7 +205,7 @@ jobs:
         working-directory: data
       - name: Transfer built files
         # https://github.com/marketplace/actions/rsync-deployments-action
-        uses: burnett01/rsync-deployments@7.0.2
+        uses: burnett01/rsync-deployments@7.1.0
         id: rsync
         if: false  # Disabled... for now
         with:
