@@ -54,7 +54,7 @@ if {[string match *zipfs:/* [info library]]} {
 
 # Directory of opt for tests 7.4, 9.10, 9.12 for "package require opt".
 if {[file exists [file join [info library] opt0.4]]} {
-    # Installed files in lib8.7/opt0.4
+    # Installed files in lib9.0/opt0.4
     set pkgOptDir opt0.4
 } elseif {[file exists [file join [info library] opt]]} {
     # Installed files in zipfs, or source files used by "make test"

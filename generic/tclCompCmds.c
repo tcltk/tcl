@@ -35,7 +35,7 @@ static int		CompileEachloopCmd(Tcl_Interp *interp,
 			    CompileEnv *envPtr, int collect);
 static int		CompileDictEachCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
-			    struct CompileEnv *envPtr, int collect);
+			    CompileEnv *envPtr, int collect);
 static inline void	IssueDictWithEmpty(Tcl_Interp *interp,
 			    Tcl_Size numWords, Tcl_Token *varTokenPtr,
 			    CompileEnv *envPtr);
