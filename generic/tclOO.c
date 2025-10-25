@@ -1219,7 +1219,6 @@ TclOOReleaseClassContents(
     Tcl_Interp *interp,		/* The interpreter containing the class. */
     Object *oPtr)		/* The object representing the class. */
 {
-    FOREACH_HASH_DECLS;
     Tcl_Size i;
     Class *clsPtr = oPtr->classPtr, *tmpClsPtr;
     Method *mPtr;
@@ -1345,7 +1344,7 @@ TclOOReleaseClassContents(
     TclOODelMethodRef(clsPtr->constructorPtr);
     TclOODelMethodRef(clsPtr->destructorPtr);
 
-    FOREACH(variableObj, clsPtr->variables) {
+    FOREACH_IDX(i, variableObj, clsPtr->variables) {
 	TclDecrRefCount(variableObj);
     }
     if (i) {
@@ -1385,7 +1384,6 @@ ObjectNamespaceDeleted(
 {
     Object *oPtr = (Object *) clientData;
     Foundation *fPtr = oPtr->fPtr;
-    FOREACH_HASH_DECLS;
     Class *mixinPtr;
     Method *mPtr;
     Tcl_Obj *filterObj, *variableObj;
@@ -1493,7 +1491,7 @@ ObjectNamespaceDeleted(
 	}
     }
 
-    FOREACH(filterObj, oPtr->filters) {
+    FOREACH_IDX(i, filterObj, oPtr->filters) {
 	TclDecrRefCount(filterObj);
     }
     if (i) {
@@ -1512,7 +1510,7 @@ ObjectNamespaceDeleted(
 	Tcl_Free(oPtr->methodsPtr);
     }
 
-    FOREACH(variableObj, oPtr->variables) {
+    FOREACH_IDX(i, variableObj, oPtr->variables) {
 	TclDecrRefCount(variableObj);
     }
     if (i) {
@@ -1648,7 +1646,7 @@ TclOORemoveFromInstances(
     int res = 0;
     Object *instPtr;
 
-    FOREACH(instPtr, clsPtr->instances) {
+    FOREACH_IDX(i, instPtr, clsPtr->instances) {
 	if (oPtr == instPtr) {
 	    RemoveItem(Object, clsPtr->instances, i);
 	    TclOODecrRefCount(oPtr);
@@ -1713,7 +1711,7 @@ TclOORemoveFromMixins(
     int res = 0;
     Class *mixPtr;
 
-    FOREACH(mixPtr, oPtr->mixins) {
+    FOREACH_IDX(i, mixPtr, oPtr->mixins) {
 	if (mixinPtr == mixPtr) {
 	    RemoveItem(Class, oPtr->mixins, i);
 	    TclOODecrRefCount(mixPtr->thisPtr);
@@ -1749,7 +1747,7 @@ TclOORemoveFromSubclasses(
     int res = 0;
     Class *subclsPtr;
 
-    FOREACH(subclsPtr, superPtr->subclasses) {
+    FOREACH_IDX(i, subclsPtr, superPtr->subclasses) {
 	if (subPtr == subclsPtr) {
 	    RemoveItem(Class, superPtr->subclasses, i);
 	    TclOODecrRefCount(subPtr->thisPtr);
@@ -1816,7 +1814,7 @@ TclOORemoveFromMixinSubs(
     int res = 0;
     Class *subclsPtr;
 
-    FOREACH(subclsPtr, superPtr->mixinSubs) {
+    FOREACH_IDX(i, subclsPtr, superPtr->mixinSubs) {
 	if (subPtr == subclsPtr) {
 	    RemoveItem(Class, superPtr->mixinSubs, i);
 	    TclOODecrRefCount(subPtr->thisPtr);
@@ -2238,13 +2236,11 @@ Tcl_CopyObjectInstance(
     const char *targetNamespaceName)
 {
     Object *oPtr = (Object *) sourceObject, *o2Ptr;
-    FOREACH_HASH_DECLS;
     Method *mPtr;
     Class *mixinPtr;
     CallContext *contextPtr;
     Tcl_Obj *keyPtr, *filterObj, *variableObj, *args[3];
     PrivateVariableMapping *privateVariable;
-    Tcl_Size i;
     int result;
 
     /*
@@ -3290,7 +3286,6 @@ TclOOIsReachable(
     Class *targetPtr,
     Class *startPtr)
 {
-    Tcl_Size i;
     Class *superPtr;
 
   tailRecurse:

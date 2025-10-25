@@ -227,7 +227,6 @@ InfoObjectClassCmd(
 	return TCL_OK;
     } else {
 	Class *mixinPtr, *o2clsPtr;
-	Tcl_Size i;
 
 	o2clsPtr = TclOOGetClassFromObj(interp, objv[2]);
 	if (o2clsPtr == NULL) {
@@ -339,7 +338,6 @@ InfoObjectFiltersCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    Tcl_Size i;
     Tcl_Obj *filterObj, *resultObj;
     Object *oPtr;
 
@@ -456,7 +454,6 @@ InfoObjectIsACmd(
     } idx;
     Object *oPtr, *o2Ptr;
     int result = 0;
-    Tcl_Size i;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "category objName ?arg ...?");
@@ -588,7 +585,6 @@ InfoObjectMethodsCmd(
     };
     Object *oPtr;
     int flag = PUBLIC_METHOD, recurse = 0, scope = SCOPE_DEFAULT;
-    FOREACH_HASH_DECLS;
     Tcl_Obj *namePtr, *resultObj;
     Method *mPtr;
 
@@ -779,7 +775,6 @@ InfoObjectMixinsCmd(
     Class *mixinPtr;
     Object *oPtr;
     Tcl_Obj *resultObj;
-    Tcl_Size i;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "objName");
@@ -885,7 +880,6 @@ InfoObjectVariablesCmd(
 {
     Object *oPtr;
     Tcl_Obj *resultObj;
-    Tcl_Size i;
     int isPrivate = 0;
 
     if (objc != 2 && objc != 3) {
@@ -944,7 +938,6 @@ InfoObjectVarsCmd(
 {
     Object *oPtr;
     const char *pattern = NULL;
-    FOREACH_HASH_DECLS;
     VarInHash *vihPtr;
     Tcl_Obj *nameObj, *resultObj;
 
@@ -1199,7 +1192,6 @@ InfoClassFiltersCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    Tcl_Size i;
     Tcl_Obj *filterObj, *resultObj;
     Class *clsPtr;
 
@@ -1290,7 +1282,6 @@ InfoClassInstancesCmd(
 {
     Object *oPtr;
     Class *clsPtr;
-    Tcl_Size i;
     const char *pattern = NULL;
     Tcl_Obj *resultObj;
 
@@ -1428,8 +1419,6 @@ InfoClassMethodsCmd(
 	    Tcl_Free((void *)names);
 	}
     } else {
-	FOREACH_HASH_DECLS;
-
 	if (scope == SCOPE_DEFAULT) {
 	    /*
 	     * Handle legacy-mode matching. [Bug 36e5517a6850]
@@ -1527,7 +1516,6 @@ InfoClassMixinsCmd(
 {
     Class *clsPtr, *mixinPtr;
     Tcl_Obj *resultObj;
-    Tcl_Size i;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "className");
@@ -1569,7 +1557,6 @@ InfoClassSubsCmd(
 {
     Class *clsPtr, *subclassPtr;
     Tcl_Obj *resultObj;
-    Tcl_Size i;
     const char *pattern = NULL;
 
     if (objc != 2 && objc != 3) {
@@ -1624,7 +1611,6 @@ InfoClassSupersCmd(
 {
     Class *clsPtr, *superPtr;
     Tcl_Obj *resultObj;
-    Tcl_Size i;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "className");
@@ -1663,7 +1649,6 @@ InfoClassVariablesCmd(
 {
     Class *clsPtr;
     Tcl_Obj *resultObj;
-    Tcl_Size i;
     int isPrivate = 0;
 
     if (objc != 2 && objc != 3) {
