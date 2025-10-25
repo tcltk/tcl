@@ -9431,4 +9431,6 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 
 2025-09-30 (new) dde => 1.4.6
 
+2025-10-25 (new) Add IWYU export pragma annotations for improved clangd and clang-tidy diagnostics
+
 - (to be) Released 8.6.18, Apr ??, 2026 - details at https://core.tcl-lang.org/tcl/ -
