@@ -15,6 +15,7 @@ to the userbase.
  - [interp creation resets encoding directory search path](https://core.tcl-lang.org/tcl/tktview/87b697)
  - [Pointer arithmetic with NULL in buildInfoObjCmd()](https://core.tcl-lang.org/tcl/tktview/85fc8b)
  - [TclPushVarName(): pointer overflow](https://core.tcl-lang.org/tcl/tktview/77059c)
+ - [Add IWYU export pragma annotations](https://core.tcl-lang.org/tcl/tktview/c7dc59)
 
 # Updated bundled packages, libraries, standards, data
  - http 2.10.1
