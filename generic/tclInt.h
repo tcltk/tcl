@@ -152,7 +152,7 @@
 #elif defined(__GNUC__)
 #define TCL_UNREACHABLE()	__builtin_unreachable()
 #elif defined(_MSC_VER)
-#define TCL_UNREACHABLE()	__assume(false)
+#define TCL_UNREACHABLE()	__assume(0)
 #else
 #define TCL_UNREACHABLE()	((void) 0)
 #endif
