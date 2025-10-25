@@ -102,7 +102,7 @@ SetDelegateSuperclasses(
     Class *delegatePtr)
 {
     // Build new list of superclasses
-    Tcl_Size i, j = delegatePtr->superclasses.num, k;
+    Tcl_Size i = delegatePtr->superclasses.num;
     Class *superPtr, **supers = (Class **) Tcl_Alloc(sizeof(Class *) *
 	    (delegatePtr->superclasses.num + clsPtr->superclasses.num));
     if (delegatePtr->superclasses.num) {
@@ -114,13 +114,13 @@ SetDelegateSuperclasses(
 	if (!superDelegatePtr) {
 	    continue;
 	}
-	for (k=0 ; k<=j ; k++) {
-	    if (k == j) {
-		supers[j++] = superDelegatePtr;
+	for (Tcl_Size j=0 ; j<=i ; j++) {
+	    if (j == i) {
+		supers[i++] = superDelegatePtr;
 		TclOOAddToSubclasses(delegatePtr, superDelegatePtr);
 		AddRef(superDelegatePtr->thisPtr);
 		break;
-	    } else if (supers[k] == superDelegatePtr) {
+	    } else if (supers[j] == superDelegatePtr) {
 		break;
 	    }
 	}
@@ -131,7 +131,7 @@ SetDelegateSuperclasses(
 	Tcl_Free(delegatePtr->superclasses.list);
     }
     delegatePtr->superclasses.list = supers;
-    delegatePtr->superclasses.num = j;
+    delegatePtr->superclasses.num = i;
 
     // Definitely don't need to bump any epoch here
 }
@@ -548,7 +548,7 @@ UpdateClassDelegatesAfterClone(
 
 	Tcl_Size i;
 	Class *mixin;
-	FOREACH(mixin, targetPtr->mixins) {
+	FOREACH_IDX(i, mixin, targetPtr->mixins) {
 	    if (mixin == originDelegate->classPtr) {
 		TclOORemoveFromInstances(targetPtr, originDelegate->classPtr);
 		TclOODecrRefCount(originDelegate);
@@ -1069,7 +1069,6 @@ TclOOLookupObjectVar(
 	    Method *mPtr = callerContext->callPtr->chain[
 		    callerContext->index].mPtr;
 	    PrivateVariableMapping *pvPtr;
-	    Tcl_Size i;
 
 	    if (mPtr->declaringObjectPtr == oPtr) {
 		FOREACH_STRUCT(pvPtr, oPtr->privateVariables) {
