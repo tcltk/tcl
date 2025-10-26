@@ -1166,6 +1166,7 @@ Tcl_CreateInterp(void)
     TclInitUnicodeCmd(interp);
     TclInitPrefixCmd(interp);
     TclInitProcessCmd(interp);
+    TclInitTimerCmd(interp);
 
     /*
      * Register "clock" subcommands. These *do* go through

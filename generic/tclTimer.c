@@ -165,6 +165,17 @@ static void		TimerExitProc(void *clientData);
 static int		TimerHandlerEventProc(Tcl_Event *evPtr, int flags);
 static void		TimerCheckProc(void *clientData, int flags);
 static void		TimerSetupProc(void *clientData, int flags);
+static int		TimerAtCmd(void *clientData, Tcl_Interp *interp,
+			    int obj, Tcl_Obj *const objv[]);
+
+/*
+ * How to construct the ensembles.
+ */
+
+static const EnsembleImplMap timerMap[] = {
+    { "at", TimerAtCmd, TclCompileBasicMin1ArgCmd, NULL, NULL, 0 },
+    { NULL, NULL, NULL, NULL, NULL, 0 }
+};
 
 /*
  *----------------------------------------------------------------------
@@ -1273,6 +1284,183 @@ AfterCleanupProc(
 	Tcl_Free(afterPtr);
     }
     Tcl_Free(assocPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclInitTimerCmd --
+ *
+ *	This function is called to create the "timer" Tcl command. See the
+ *	user documentation for details on what it does.
+ *
+ * Results:
+ *	A command token for the new command.
+ *
+ * Side effects:
+ *	Creates a new timer command as a mapped ensemble.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Command
+TclInitTimerCmd(
+    Tcl_Interp *interp)
+{
+    Tcl_Command timerEnsemble;
+
+    timerEnsemble = TclMakeEnsemble(interp, "timer", timerMap);
+    return timerEnsemble;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TimerAtCmd --
+ *
+ *	This procedure implements the "timer at" Tcl command.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TimerAtCmd(
+    TCL_UNUSED(void *),		/* Client data. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    Tcl_WideInt seconds = 0;		/* Time point in seconds to wait */
+    Tcl_WideInt microSeconds = 0;	/* Time point in milliSeconds to wait */
+    Tcl_WideInt milliSeconds;
+    Tcl_Time now;
+    Tcl_Time wakeup;
+    AfterInfo *afterPtr;
+    AfterAssocData *assocPtr;
+    ThreadSpecificData *tsdPtr = InitTimer();
+
+    if (objc < 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "seconds ?microseconds? ?script?");
+	return TCL_ERROR;
+    }
+
+    /*
+     * Create the joined "after" and "timer" information associated for this interpreter, if it
+     * doesn't already exist.
+     */
+
+    assocPtr = (AfterAssocData *)Tcl_GetAssocData(interp, ASSOC_KEY, NULL);
+    if (assocPtr == NULL) {
+	assocPtr = (AfterAssocData *)Tcl_Alloc(sizeof(AfterAssocData));
+	assocPtr->interp = interp;
+	assocPtr->firstAfterPtr = NULL;
+	Tcl_SetAssocData(interp, ASSOC_KEY, AfterCleanupProc, assocPtr);
+    }
+
+    /*
+     * Get the time point in seconds to wait and check for negative value
+     */
+    if (TclGetWideIntFromObj(interp, objv[1], &seconds) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if ( seconds < 0 ) {
+	Tcl_SetObjResult(interp,
+		Tcl_NewStringObj("seconds may not be negative",-1));
+	Tcl_SetErrorCode(interp, "TCL", "TIMER", "ARGS", (char *)NULL);
+	return TCL_ERROR;
+    }
+
+    /*
+     * Get the time point in microSeconds to wait
+     */
+    if (objc >= 3) {
+	if (TclGetWideIntFromObj(interp, objv[2], &microSeconds) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+
+	/*
+	 * Be sure to have only value 0 ... 999. Any overflow is added to seconds.
+	 */
+	
+	if ( microSeconds < 0 ) {
+	    Tcl_SetObjResult(interp,
+		    Tcl_NewStringObj("microSeconds may not be negative",-1));
+	    Tcl_SetErrorCode(interp, "TCL", "TIMER", "ARGS", (char *)NULL);
+	    return TCL_ERROR;
+	}
+	if ( microSeconds >= 1000000 ) {
+	    seconds += (microSeconds / 1000000);
+	    microSeconds %= 1000000;
+	}
+    } else {
+
+	/*
+	 * microSeconds parameter not given
+	 */
+
+	microSeconds = 0;
+    }
+
+
+    if (objc < 4) {
+	/*
+	 * No script given - wait until given time point
+	 */
+
+	/*
+	* Get the time delay by substracting the current time point.
+	*/
+
+	Tcl_GetTime(&now);
+	seconds -= (Tcl_WideInt) now.sec;
+	microSeconds -= now.usec;
+	if (microSeconds < 0) {
+	    microSeconds += 1000000;
+	    seconds --;
+	}
+	if (seconds < 0) {
+	    milliSeconds=0;
+	} else {
+	    milliSeconds = seconds * 1000 + microSeconds / 1000;
+	}
+	return AfterDelay(interp, milliSeconds);
+    }
+    afterPtr = (AfterInfo *)Tcl_Alloc(sizeof(AfterInfo));
+    afterPtr->assocPtr = assocPtr;
+    if (objc == 4) {
+	afterPtr->commandPtr = objv[3];
+    } else {
+	afterPtr->commandPtr = Tcl_ConcatObj(objc-3, objv+3);
+    }
+    Tcl_IncrRefCount(afterPtr->commandPtr);
+    
+    /*
+     * The variable below is used to generate unique identifiers for after
+     * commands. This id can wrap around, which can potentially cause
+     * problems. However, there are not likely to be problems in practice,
+     * because after commands can only be requested to about a month in
+     * the future, and wrap-around is unlikely to occur in less than about
+     * 1-10 years. Thus it's unlikely that any old ids will still be
+     * around when wrap-around occurs.
+     */
+    
+    afterPtr->id = tsdPtr->afterId;
+    tsdPtr->afterId += 1;
+    Tcl_GetTime(&wakeup);
+    wakeup.sec=seconds;
+    wakeup.usec=microSeconds;
+    afterPtr->token = TclCreateAbsoluteTimerHandler(&wakeup,
+	    AfterProc, afterPtr);
+    afterPtr->nextPtr = assocPtr->firstAfterPtr;
+    assocPtr->firstAfterPtr = afterPtr;
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf("after#%d", afterPtr->id));
+    return TCL_OK;
 }
 
 /*
