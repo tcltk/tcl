@@ -131,7 +131,7 @@ typedef struct {
  * Include all the public API, generated from tclOO.decls.
  */
 
-#include "tclOODecls.h"
+#include "tclOODecls.h"  /* IWYU pragma: export */
 
 #ifdef __cplusplus
 }

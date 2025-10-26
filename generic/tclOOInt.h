@@ -554,7 +554,7 @@ MODULE_SCOPE void	TclOOSetupVariableResolver(Tcl_Namespace *nsPtr);
  * Include all the private API, generated from tclOO.decls.
  */
 
-#include "tclOOIntDecls.h"
+#include "tclOOIntDecls.h"  /* IWYU pragma: export */
 
 /*
  * Alternatives to Tcl_Preserve/Tcl_EventuallyFree/Tcl_Release.
