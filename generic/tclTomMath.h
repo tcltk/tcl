@@ -1136,6 +1136,6 @@ mp_err mp_fwrite(const mp_int *a, int radix, FILE *stream) MP_WUR;
 }
 #endif
 
-#include "tclTomMathDecls.h"
+#include "tclTomMathDecls.h"  /* IWYU pragma: export */
 
 #endif
