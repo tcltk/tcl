@@ -2542,10 +2542,15 @@ typedef enum TclEolTranslation {
 } TclEolTranslation;
 
 /*
- * Obsolete: flags for TclObjInvoke:
+ * Obsolete: flags for TclObjInvoke. Only TCL_INVOKE_HIDDEN was supported at
+ * all in 9.0, and then just as something to Tcl_Panic over if not given.
  */
 enum TclInvokeFlags {
-    TCL_INVOKE_HIDDEN = 1,	/* Invoke a hidden command. Ignored. */
+    TCL_INVOKE_HIDDEN = 1,	/* Invoke a hidden command. */
+    TCL_INVOKE_NO_UNKNOWN = 2,	/* "unknown" is not invoked if the command to
+				 * be invoked is not found. */
+    TCL_INVOKE_NO_TRACEBACK = 4	/* Do not record traceback information if the
+				 * invoked command returns an error. */
 };
 
 /*
