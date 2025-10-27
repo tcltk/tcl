@@ -23,8 +23,6 @@
 #include "tclInt.h"
 #include "tclFileSystem.h"
 
-#include <assert.h>
-
 #ifdef _WIN32
 # if defined(_WIN32) && defined (__clang__) && (__clang_major__ > 20)
 #   pragma clang diagnostic ignored "-Wc++-keyword"
@@ -6547,8 +6545,7 @@ TclZipfsInitEncodingDirs(void)
     searchPathObj = Tcl_GetEncodingSearchPath();
     if (searchPathObj == NULL) {
 	TclNewObj(searchPathObj);
-    }
-    else {
+    } else {
 	searchPathObj = Tcl_DuplicateObj(searchPathObj);
     }
     Tcl_Obj *fullPathObj = Tcl_FSJoinToPath(libDirObj, 1, &subDirObj);
