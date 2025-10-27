@@ -3280,7 +3280,7 @@ Tcl_IsSafe(
     if (iPtr == NULL) {
 	return false;
     }
-    return (iPtr->flags & SAFE_INTERP) ? true : false;
+    return (iPtr->flags & SAFE_INTERP) != 0;
 }
 
 /*
