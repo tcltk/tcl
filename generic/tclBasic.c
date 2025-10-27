@@ -22,7 +22,6 @@
 #include "tclCompile.h"
 #include "tclTomMath.h"
 #include <math.h>
-#include <assert.h>
 
 /*
  * TCL_FPCLASSIFY_MODE:
@@ -3308,10 +3307,10 @@ InvokeObj2Command(
 	return TclCommandWordLimitError(interp, objc);
     }
     if (cmdPtr->objProc != NULL) {
-	result = cmdPtr->objProc(cmdPtr->objClientData, interp, objc, objv);
+	result = cmdPtr->objProc(cmdPtr->objClientData, interp, (int)objc, objv);
     } else {
 	result = Tcl_NRCallObjProc(interp, cmdPtr->nreProc,
-		cmdPtr->objClientData, objc, objv);
+		cmdPtr->objClientData, (int)objc, objv);
     }
     return result;
 }
@@ -3327,7 +3326,7 @@ CmdWrapper2Proc(
     if (objc > INT_MAX) {
 	return TclCommandWordLimitError(interp, objc);
     }
-    return cmdPtr->objProc(cmdPtr->objClientData, interp, objc, objv);
+    return cmdPtr->objProc(cmdPtr->objClientData, interp, (int)objc, objv);
 }
 
 int
@@ -4639,7 +4638,7 @@ Dispatch(
 #endif /* USE_DTRACE */
 
     iPtr->cmdCount++;
-    return objProc(clientData, interp, objc, objv);
+    return objProc(clientData, interp, (int)objc, objv);
 }
 
 int
@@ -6034,7 +6033,7 @@ TclArgumentGet(
     if (hPtr) {
 	CFWord *cfwPtr = (CFWord *)Tcl_GetHashValue(hPtr);
 
-	*wordPtr = cfwPtr->word;
+	*wordPtr = (int)cfwPtr->word;
 	*cfPtrPtr = cfwPtr->framePtr;
 	return;
     }
@@ -6052,7 +6051,7 @@ TclArgumentGet(
 	framePtr->data.tebc.pc = (char *) (((ByteCode *)
 		framePtr->data.tebc.codePtr)->codeStart + cfwPtr->pc);
 	*cfPtrPtr = cfwPtr->framePtr;
-	*wordPtr = cfwPtr->word;
+	*wordPtr = (int)cfwPtr->word;
 	return;
     }
 }
@@ -8181,8 +8180,8 @@ ExprIsUnorderedFunc(
 	return TCL_ERROR;
     }
 
-    if (DoubleObjClass(interp, objv[1], &dCls) != TCL_OK ||
-	    DoubleObjClass(interp, objv[2], &dCls2) != TCL_OK) {
+    if (DoubleObjClass(interp, objv[1], &dCls) != TCL_OK
+	    || DoubleObjClass(interp, objv[2], &dCls2) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -8475,7 +8474,7 @@ WrapperNRObjProc(
     if (objc < 0) {
 	objc = -1;
     }
-    return proc(clientData, interp, (Tcl_Size) objc, objv);
+    return proc(clientData, interp, objc, objv);
 }
 
 int

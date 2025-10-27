@@ -63,12 +63,14 @@
 #include "tclPort.h"
 
 #include <stdio.h>
-
+#include <assert.h>
 #include <ctype.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stdint.h>
+#if defined(_MSC_VER) || (defined(__STDC_VERSION__) && (__STDC_VERSION__ < 202311L))
 #include <stdbool.h>
+#endif
 #include <string.h>
 #include <locale.h>
 
@@ -150,7 +152,7 @@
 #elif defined(__GNUC__)
 #define TCL_UNREACHABLE()	__builtin_unreachable()
 #elif defined(_MSC_VER)
-#define TCL_UNREACHABLE()	__assume(false)
+#define TCL_UNREACHABLE()	__assume(0)
 #else
 #define TCL_UNREACHABLE()	((void) 0)
 #endif
@@ -1272,9 +1274,9 @@ typedef struct CallFrame {
 				/* Value of interp->varFramePtr when this
 				 * procedure was invoked (i.e. determines
 				 * variable scoping within caller). Same as
-				 * callerPtr unless an "uplevel" command or
-				 * something equivalent was active in the
-				 * caller). */
+				 * callerPtr unless an "uplevel" command (or
+				 * something equivalent) was active in the
+				 * caller. */
     Tcl_Size level;		/* Level of this procedure, for "uplevel"
 				 * purposes (i.e. corresponds to nesting of
 				 * callerVarPtr's, not callerPtr's). 1 for
@@ -3477,7 +3479,7 @@ MODULE_SCOPE void	TclInitNamespaceSubsystem(void);
 MODULE_SCOPE void	TclInitNotifier(void);
 MODULE_SCOPE void	TclInitObjSubsystem(void);
 MODULE_SCOPE int	TclInterpReady(Tcl_Interp *interp);
-MODULE_SCOPE int	TclIsBareword(int byte);
+MODULE_SCOPE bool	TclIsBareword(int byte);
 MODULE_SCOPE Tcl_Obj *	TclJoinPath(Tcl_Size elements, Tcl_Obj * const objv[],
 			    int forceRelative);
 MODULE_SCOPE Tcl_Obj *	TclGetHomeDirObj(Tcl_Interp *interp, const char *user);
@@ -3730,7 +3732,7 @@ MODULE_SCOPE Tcl_Size	TclGetObjExecutableAncestors(Tcl_Interp *interp,
  * optimization (fragile on changes) in one place.
  */
 
-MODULE_SCOPE int	TclIsSpaceProc(int byte);
+MODULE_SCOPE bool	TclIsSpaceProc(int byte);
 #define TclIsSpaceProcM(byte) \
     (((unsigned)(byte) > 0x20) ? 0 : TclIsSpaceProc(byte))
 
@@ -3833,6 +3835,7 @@ MODULE_SCOPE Tcl_ObjCmdProc Tcl_RegsubObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_RenameObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_RepresentationCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_ReturnObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc TclSafeCatchCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_ScanObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_SeekObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_SetObjCmd;
@@ -4435,6 +4438,36 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 #endif /* TCL_MEM_DEBUG */
 
 /*
+ * Primitives to safe set, reset and free references.
+ */
+
+#define TclUnsetObjRef(obj) \
+    do {								\
+	if (obj != NULL) {						\
+	    Tcl_DecrRefCount(obj);					\
+	    obj = NULL;							\
+	}								\
+    } while (0)
+#define TclInitObjRef(obj, val) \
+    do {								\
+	obj = (val);							\
+	if (obj) {							\
+	    Tcl_IncrRefCount(obj);					\
+	}								\
+    } while (0)
+#define TclSetObjRef(obj, val) \
+    do {								\
+	Tcl_Obj *nval = (val);						\
+	if (obj != nval) {						\
+	    Tcl_Obj *prev = obj;					\
+	    TclInitObjRef(obj, nval);					\
+	    if (prev != NULL) {						\
+		Tcl_DecrRefCount(prev);					\
+	    }								\
+	}								\
+    } while (0)
+
+/*
  *----------------------------------------------------------------
  * Macros used by the Tcl core to set a Tcl_Obj's string representation to a
  * copy of the "len" bytes starting at "bytePtr". The value of "len" must
@@ -4466,7 +4499,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 	TclInitEmptyStringRep(objPtr);					\
     } else {								\
 	(objPtr)->bytes = (char *)Tcl_Alloc((len) + 1U);		\
-	memcpy((objPtr)->bytes, (bytePtr) ? (bytePtr) : &tclEmptyString, (len)); \
+	memcpy((objPtr)->bytes, ((bytePtr) != NULL) ? (bytePtr) : &tclEmptyString, (len)); \
 	(objPtr)->bytes[len] = '\0';					\
 	(objPtr)->length = (len);					\
     }
@@ -4477,7 +4510,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
     ) : (								\
 	(objPtr)->bytes = (char *)Tcl_AttemptAlloc((len) + 1U),		\
 	(objPtr)->length = ((objPtr)->bytes) ?				\
-		(memcpy((objPtr)->bytes, (bytePtr) ? (bytePtr) : &tclEmptyString, (len)), \
+		(memcpy((objPtr)->bytes, ((bytePtr) != NULL) ? (bytePtr) : &tclEmptyString, (len)), \
 		(objPtr)->bytes[len] = '\0', (Tcl_Size)(len)) : (-1)		\
     )), (objPtr)->bytes)
 
@@ -4594,15 +4627,8 @@ MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
 
 /*
  *----------------------------------------------------------------
- * Macros used by the Tcl core to grow Tcl_Token arrays. They use the same
- * growth algorithm as used in tclStringObj.c for growing strings. The ANSI C
- * "prototype" for this macro is:
- *
- * MODULE_SCOPE void	TclGrowTokenArray(Tcl_Token *tokenPtr, int used,
- *				int available, int append,
- *				Tcl_Token *staticPtr);
- * MODULE_SCOPE void	TclGrowParseTokenArray(Tcl_Parse *parsePtr,
- *				int append);
+ * Inline function used by the Tcl core to grow Tcl_Token arrays. Uses the same
+ * growth algorithm as used in tclStringObj.c for growing strings.
  *----------------------------------------------------------------
  */
 
@@ -4621,37 +4647,34 @@ MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
 #define TCL_MIN_TOKEN_GROWTH TCL_MIN_GROWTH/sizeof(Tcl_Token)
 #endif
 
-/* TODO - code below does not check for integer overflow */
-#define TclGrowTokenArray(tokenPtr, used, available, append, staticPtr)	\
-    do {								\
-	Tcl_Size _needed = (used) + (append);				\
-	if (_needed > (available)) {					\
-	    Tcl_Size allocated = 2 * _needed;				\
-	    Tcl_Token *oldPtr = (tokenPtr);				\
-	    Tcl_Token *newPtr;						\
-	    if (oldPtr == (staticPtr)) {				\
-		oldPtr = NULL;						\
-	    }								\
-	    newPtr = (Tcl_Token *)Tcl_AttemptRealloc((char *) oldPtr,	\
-		    allocated * sizeof(Tcl_Token));			\
-	    if (newPtr == NULL) {					\
-		allocated = _needed + (append) + TCL_MIN_TOKEN_GROWTH;	\
-		newPtr = (Tcl_Token *)Tcl_Realloc((char *) oldPtr,	\
-			allocated * sizeof(Tcl_Token));			\
-	    }								\
-	    (available) = allocated;					\
-	    if (oldPtr == NULL) {					\
-		memcpy(newPtr, staticPtr,				\
-			(used) * sizeof(Tcl_Token));			\
-	    }								\
-	    (tokenPtr) = newPtr;					\
-	}								\
-    } while (0)
-
-#define TclGrowParseTokenArray(parsePtr, append)			\
-    TclGrowTokenArray((parsePtr)->tokenPtr, (parsePtr)->numTokens,	\
-	    (parsePtr)->tokensAvailable, (append),			\
-	    (parsePtr)->staticTokens)
+static inline void
+TclGrowParseTokenArray(
+    Tcl_Parse *parsePtr,
+    Tcl_Size append)
+{
+    Tcl_Size needed = parsePtr->numTokens + append;
+    if (needed > parsePtr->tokensAvailable) {
+	Tcl_Size allocated = 2 * needed;
+	Tcl_Token *oldPtr = parsePtr->tokenPtr;
+	Tcl_Token *newPtr;
+	if (oldPtr == parsePtr->staticTokens) {
+	    oldPtr = NULL;
+	}
+	newPtr = (Tcl_Token *)Tcl_AttemptRealloc((char *) oldPtr,
+		allocated * sizeof(Tcl_Token));
+	if (newPtr == NULL) {
+	    allocated = needed + append + TCL_MIN_TOKEN_GROWTH;
+	    newPtr = (Tcl_Token *)Tcl_Realloc((char *) oldPtr,
+		    allocated * sizeof(Tcl_Token));
+	}
+	parsePtr->tokensAvailable = allocated;
+	if (oldPtr == NULL) {
+	    memcpy(newPtr, parsePtr->staticTokens,
+		    parsePtr->numTokens * sizeof(Tcl_Token));
+	}
+	parsePtr->tokenPtr = newPtr;
+    }
+}
 
 /*
  *----------------------------------------------------------------
@@ -4687,7 +4710,10 @@ MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
     do {								\
 	Tcl_Size _count, _i = (numBytes);				\
 	unsigned char *_str = (unsigned char *) (bytes);		\
-	while (_i > 0 && (*_str < 0xC0)) { _i--; _str++; }		\
+	while (_i > 0 && (*_str < 0xC0)) {				\
+	    _i--;							\
+	    _str++;							\
+	}								\
 	_count = (numBytes) - _i;					\
 	if (_i) {							\
 	    _count += Tcl_NumUtfChars((bytes) + _count, _i);		\
@@ -5064,7 +5090,6 @@ MODULE_SCOPE Tcl_LibraryInitProc Tcl_ABSListTest_Init;
 void Tcl_Panic(const char *, ...) __attribute__((analyzer_noreturn));
 #endif
 #if !defined(CLANG_ASSERT)
-#include <assert.h>
 #define CLANG_ASSERT(x) assert(x)
 #endif
 #elif !defined(CLANG_ASSERT)
