@@ -905,7 +905,7 @@ Tcl_DoOneEvent(
 				 * TCL_TIMER_EVENTS, TCL_IDLE_EVENTS, or
 				 * others defined by event sources. */
 {
-    bool result = false;
+    int result = 0;
     int oldMode;
     EventSource *sourcePtr;
     Tcl_Time *timePtr;
@@ -959,7 +959,7 @@ Tcl_DoOneEvent(
 	 */
 
 	if (Tcl_ServiceEvent(flags)) {
-	    result = true;
+	    result = 1;
 	    break;
 	}
 
@@ -1003,7 +1003,7 @@ Tcl_DoOneEvent(
 
 	result = Tcl_WaitForEvent(timePtr);
 	if (result < 0) {
-	    result = false;
+	    result = 0;
 	    break;
 	}
 
@@ -1023,7 +1023,7 @@ Tcl_DoOneEvent(
 	 */
 
 	if (Tcl_ServiceEvent(flags)) {
-	    result = true;
+	    result = 1;
 	    break;
 	}
 
@@ -1036,7 +1036,7 @@ Tcl_DoOneEvent(
     idleEvents:
 	if (flags & TCL_IDLE_EVENTS) {
 	    if (TclServiceIdle()) {
-		result = true;
+		result = 1;
 		break;
 	    }
 	}
