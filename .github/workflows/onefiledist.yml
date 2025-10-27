@@ -194,7 +194,7 @@ jobs:
         run: |
           mkdir data
       - name: Get Linux build
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           path: data
           # Can't download by artifact ID; stupid missing feature!
