@@ -6625,7 +6625,8 @@ Tcl_ExprBooleanObj(
  * TclObjInvoke --
  *
  *	Invokes a Tcl command, given an objv/objc, from the hidden set of
- *	commands in the given interpreter.
+ *	commands in the given interpreter. Only supported for calls via
+ *	"internal" stub table.
  *
  * Results:
  *	A standard Tcl object result.
@@ -6643,7 +6644,11 @@ TclObjInvoke(
     Tcl_Size objc,		/* Count of arguments. */
     Tcl_Obj *const objv[],	/* Argument objects; objv[0] points to the
 				 * name of the command to invoke. */
-    TCL_UNUSED(int) /*flags*/)
+    int flags)			/* Combination of flags controlling the call:
+				 * TCL_INVOKE_HIDDEN, TCL_INVOKE_NO_UNKNOWN,
+				 * or TCL_INVOKE_NO_TRACEBACK. Only
+				 * TCL_INVOKE_HIDDEN is now supported, and
+				 * must be supplied. */
 {
     if (interp == NULL) {
 	return TCL_ERROR;
@@ -6652,6 +6657,9 @@ TclObjInvoke(
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"illegal argument vector", TCL_INDEX_NONE));
 	return TCL_ERROR;
+    }
+    if (flags != TCL_INVOKE_HIDDEN) {
+	Tcl_Panic("TclObjInvoke: called without just TCL_INVOKE_HIDDEN");
     }
     return Tcl_NRCallObjProc(interp, TclNRInvoke, NULL, objc, objv);
 }
