@@ -4044,11 +4044,9 @@ static void
 ClearHash(
     Tcl_HashTable *tablePtr)
 {
-    Tcl_HashSearch search;
     Tcl_HashEntry *hPtr;
 
-    for (hPtr = Tcl_FirstHashEntry(tablePtr, &search); hPtr != NULL;
-	    hPtr = Tcl_NextHashEntry(&search)) {
+    FOREACH_HASH_ENTRY(hPtr, tablePtr) {
 	Tcl_Obj *objPtr = (Tcl_Obj *)Tcl_GetHashValue(hPtr);
 
 	Tcl_DecrRefCount(objPtr);

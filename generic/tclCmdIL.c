@@ -640,8 +640,6 @@ InfoCommandsCmd(
 {
     const char *cmdName, *pattern;
     const char *simplePattern;
-    Tcl_HashEntry *entryPtr;
-    Tcl_HashSearch search;
     Namespace *nsPtr;
     Namespace *globalNsPtr = (Namespace *) Tcl_GetGlobalNamespace(interp);
     Namespace *currNsPtr = (Namespace *) Tcl_GetCurrentNamespace(interp);
@@ -705,7 +703,7 @@ InfoCommandsCmd(
 	 * special characters. This lets us avoid scans of any hash tables.
 	 */
 
-	entryPtr = Tcl_FindHashEntry(&nsPtr->cmdTable, simplePattern);
+	Tcl_HashEntry *entryPtr = Tcl_FindHashEntry(&nsPtr->cmdTable, simplePattern);
 	if (entryPtr != NULL) {
 	    if (specificNsInPattern) {
 		cmd = (Tcl_Command)Tcl_GetHashValue(entryPtr);
@@ -753,13 +751,10 @@ InfoCommandsCmd(
 	 * old matching scheme is perfect.
 	 */
 
-	entryPtr = Tcl_FirstHashEntry(&nsPtr->cmdTable, &search);
-	while (entryPtr != NULL) {
-	    cmdName = (const char *)Tcl_GetHashKey(&nsPtr->cmdTable, entryPtr);
+	FOREACH_HASH(cmdName, cmd, &nsPtr->cmdTable) {
 	    if ((simplePattern == NULL)
 		    || Tcl_StringMatch(cmdName, simplePattern)) {
 		if (specificNsInPattern) {
-		    cmd = (Tcl_Command)Tcl_GetHashValue(entryPtr);
 		    TclNewObj(elemObjPtr);
 		    Tcl_GetCommandFullName(interp, cmd, elemObjPtr);
 		} else {
@@ -767,7 +762,6 @@ InfoCommandsCmd(
 		}
 		Tcl_ListObjAppendElement(interp, listPtr, elemObjPtr);
 	    }
-	    entryPtr = Tcl_NextHashEntry(&search);
 	}
 
 	/*
@@ -779,9 +773,7 @@ InfoCommandsCmd(
 	 */
 
 	if ((nsPtr != globalNsPtr) && !specificNsInPattern) {
-	    entryPtr = Tcl_FirstHashEntry(&globalNsPtr->cmdTable, &search);
-	    while (entryPtr != NULL) {
-		cmdName = (const char *)Tcl_GetHashKey(&globalNsPtr->cmdTable, entryPtr);
+	    FOREACH_HASH_KEY(cmdName, &globalNsPtr->cmdTable) {
 		if ((simplePattern == NULL)
 			|| Tcl_StringMatch(cmdName, simplePattern)) {
 		    if (Tcl_FindHashEntry(&nsPtr->cmdTable,cmdName) == NULL) {
@@ -789,7 +781,6 @@ InfoCommandsCmd(
 				Tcl_NewStringObj(cmdName, -1));
 		    }
 		}
-		entryPtr = Tcl_NextHashEntry(&search);
 	    }
 	}
     } else {
@@ -810,9 +801,7 @@ InfoCommandsCmd(
 
 	Tcl_InitObjHashTable(&addedCommandsTable);
 
-	entryPtr = Tcl_FirstHashEntry(&nsPtr->cmdTable, &search);
-	while (entryPtr != NULL) {
-	    cmdName = (const char *)Tcl_GetHashKey(&nsPtr->cmdTable, entryPtr);
+	FOREACH_HASH_KEY(cmdName, &nsPtr->cmdTable) {
 	    if ((simplePattern == NULL)
 		    || Tcl_StringMatch(cmdName, simplePattern)) {
 		elemObjPtr = Tcl_NewStringObj(cmdName, -1);
@@ -820,7 +809,6 @@ InfoCommandsCmd(
 		(void) Tcl_CreateHashEntry(&addedCommandsTable,
 			elemObjPtr, NULL);
 	    }
-	    entryPtr = Tcl_NextHashEntry(&search);
 	}
 
 	/*
@@ -836,9 +824,7 @@ InfoCommandsCmd(
 	    if (pathNsPtr == globalNsPtr) {
 		foundGlobal = 1;
 	    }
-	    entryPtr = Tcl_FirstHashEntry(&pathNsPtr->cmdTable, &search);
-	    while (entryPtr != NULL) {
-		cmdName = (const char *)Tcl_GetHashKey(&pathNsPtr->cmdTable, entryPtr);
+	    FOREACH_HASH_KEY(cmdName, &pathNsPtr->cmdTable) {
 		if ((simplePattern == NULL)
 			|| Tcl_StringMatch(cmdName, simplePattern)) {
 		    elemObjPtr = Tcl_NewStringObj(cmdName, -1);
@@ -850,7 +836,6 @@ InfoCommandsCmd(
 			TclDecrRefCount(elemObjPtr);
 		    }
 		}
-		entryPtr = Tcl_NextHashEntry(&search);
 	    }
 	}
 
@@ -863,9 +848,7 @@ InfoCommandsCmd(
 	 */
 
 	if (!foundGlobal) {
-	    entryPtr = Tcl_FirstHashEntry(&globalNsPtr->cmdTable, &search);
-	    while (entryPtr != NULL) {
-		cmdName = (const char *)Tcl_GetHashKey(&globalNsPtr->cmdTable, entryPtr);
+	    FOREACH_HASH_KEY(cmdName, &globalNsPtr->cmdTable) {
 		if ((simplePattern == NULL)
 			|| Tcl_StringMatch(cmdName, simplePattern)) {
 		    elemObjPtr = Tcl_NewStringObj(cmdName, -1);
@@ -876,7 +859,6 @@ InfoCommandsCmd(
 			TclDecrRefCount(elemObjPtr);
 		    }
 		}
-		entryPtr = Tcl_NextHashEntry(&search);
 	    }
 	}
 
@@ -1843,8 +1825,6 @@ InfoProcsCmd(
     Namespace *currNsPtr = (Namespace *) Tcl_GetCurrentNamespace(interp);
     Tcl_Obj *listPtr, *elemObjPtr;
     int specificNsInPattern = 0;/* Init. to avoid compiler warning. */
-    Tcl_HashEntry *entryPtr;
-    Tcl_HashSearch search;
     Command *cmdPtr, *realCmdPtr;
 
     /*
@@ -1892,7 +1872,7 @@ InfoProcsCmd(
 
     listPtr = Tcl_NewListObj(0, NULL);
     if (simplePattern != NULL && TclMatchIsTrivial(simplePattern)) {
-	entryPtr = Tcl_FindHashEntry(&nsPtr->cmdTable, simplePattern);
+	Tcl_HashEntry *entryPtr = Tcl_FindHashEntry(&nsPtr->cmdTable, simplePattern);
 	if (entryPtr != NULL) {
 	    cmdPtr = (Command *)Tcl_GetHashValue(entryPtr);
 
@@ -1915,13 +1895,9 @@ InfoProcsCmd(
 	    }
 	}
     } else {
-	entryPtr = Tcl_FirstHashEntry(&nsPtr->cmdTable, &search);
-	while (entryPtr != NULL) {
-	    cmdName = (const char *)Tcl_GetHashKey(&nsPtr->cmdTable, entryPtr);
+	FOREACH_HASH(cmdName, cmdPtr, &nsPtr->cmdTable) {
 	    if ((simplePattern == NULL)
 		    || Tcl_StringMatch(cmdName, simplePattern)) {
-		cmdPtr = (Command *)Tcl_GetHashValue(entryPtr);
-
 		if (!TclIsProc(cmdPtr)) {
 		    realCmdPtr = (Command *)
 			    TclGetOriginalCommand((Tcl_Command) cmdPtr);
@@ -1940,7 +1916,6 @@ InfoProcsCmd(
 		    Tcl_ListObjAppendElement(interp, listPtr, elemObjPtr);
 		}
 	    }
-	    entryPtr = Tcl_NextHashEntry(&search);
 	}
     }
 

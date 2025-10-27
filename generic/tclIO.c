@@ -997,7 +997,6 @@ DeleteChannelTable(
     Tcl_Interp *interp)		/* The interpreter being deleted. */
 {
     Tcl_HashTable *hTblPtr;	/* The hash table. */
-    Tcl_HashSearch hSearch;	/* Search variable. */
     Tcl_HashEntry *hPtr;	/* Search variable. */
     Channel *chanPtr;		/* Channel being deleted. */
     ChannelState *statePtr;	/* State of Channel being deleted. */
@@ -1012,8 +1011,7 @@ DeleteChannelTable(
      */
 
     hTblPtr = (Tcl_HashTable *)clientData;
-    for (hPtr = Tcl_FirstHashEntry(hTblPtr, &hSearch); hPtr != NULL;
-	    hPtr = Tcl_FirstHashEntry(hTblPtr, &hSearch)) {
+    FOREACH_HASH_ENTRY_REINIT(hPtr, hTblPtr) {
 	chanPtr = (Channel *)Tcl_GetHashValue(hPtr);
 	statePtr = chanPtr->state;
 
@@ -1055,7 +1053,6 @@ DeleteChannelTable(
 		(void) Tcl_CloseEx(interp, (Tcl_Channel) chanPtr, 0);
 	    }
 	}
-
     }
     Tcl_DeleteHashTable(hTblPtr);
     Tcl_Free(hTblPtr);
@@ -10616,12 +10613,10 @@ Tcl_GetChannelNamesEx(
     const char *pattern)	/* Pattern to filter on. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    ChannelState *statePtr;
+    Channel *chanPtr;
     const char *name;		/* Name for channel */
     Tcl_Obj *resultPtr;		/* Pointer to result object */
     Tcl_HashTable *hTblPtr;	/* Hash table of channels. */
-    Tcl_HashEntry *hPtr;	/* Search variable. */
-    Tcl_HashSearch hSearch;	/* Search variable. */
 
     if (interp == NULL) {
 	return TCL_OK;
@@ -10645,9 +10640,8 @@ Tcl_GetChannelNamesEx(
 	goto done;
     }
 
-    for (hPtr = Tcl_FirstHashEntry(hTblPtr, &hSearch); hPtr != NULL;
-	    hPtr = Tcl_NextHashEntry(&hSearch)) {
-	statePtr = ((Channel *) Tcl_GetHashValue(hPtr))->state;
+    FOREACH_HASH_VALUE(chanPtr, hTblPtr) {
+	ChannelState *statePtr = chanPtr->state;
 
 	if (statePtr->topChanPtr == (Channel *) tsdPtr->stdinChannel) {
 	    name = "stdin";
@@ -10667,15 +10661,16 @@ Tcl_GetChannelNamesEx(
 	if (((pattern == NULL) || Tcl_StringMatch(name, pattern)) &&
 		(Tcl_ListObjAppendElement(interp, resultPtr,
 			Tcl_NewStringObj(name, -1)) != TCL_OK)) {
-	error:
-	    TclDecrRefCount(resultPtr);
-	    return TCL_ERROR;
+	    goto error;
 	}
     }
 
   done:
     Tcl_SetObjResult(interp, resultPtr);
     return TCL_OK;
+  error:
+    TclDecrRefCount(resultPtr);
+    return TCL_ERROR;
 }
 
 /*

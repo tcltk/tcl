@@ -1279,9 +1279,6 @@ ContainsMountPoint(
     const char *path,
     int pathLen)
 {
-    Tcl_HashEntry *hPtr;
-    Tcl_HashSearch search;
-
     if (ZipFS.zipHash.numEntries == 0) {
 	return 0;
     }
@@ -1293,10 +1290,9 @@ ContainsMountPoint(
      * We are looking for the case where the path is //zipfs:/a/b
      * and there is a mount point //zipfs:/a/b/c/.. below it
      */
-    for (hPtr = Tcl_FirstHashEntry(&ZipFS.zipHash, &search); hPtr;
-	    hPtr = Tcl_NextHashEntry(&search)) {
-	ZipFile *zf = (ZipFile *) Tcl_GetHashValue(hPtr);
 
+    ZipFile *zf;
+    FOREACH_HASH_VALUE(zf, &ZipFS.zipHash) {
 	if (zf->mountPointLen == 0) {
 	    /*
 	     * Enumerate the contents of the ZIP; it's mounted on the root.
@@ -2252,8 +2248,6 @@ static int
 ListMountPoints(
     Tcl_Interp *interp)
 {
-    Tcl_HashEntry *hPtr;
-    Tcl_HashSearch search;
     ZipFile *zf;
     Tcl_Obj *resultList;
 
@@ -2267,9 +2261,7 @@ ListMountPoints(
     }
 
     TclNewObj(resultList);
-    for (hPtr = Tcl_FirstHashEntry(&ZipFS.zipHash, &search); hPtr;
-	    hPtr = Tcl_NextHashEntry(&search)) {
-	zf = (ZipFile *) Tcl_GetHashValue(hPtr);
+    FOREACH_HASH_VALUE(zf, &ZipFS.zipHash) {
 	Tcl_ListObjAppendElement(NULL, resultList, Tcl_NewStringObj(
 		zf->mountPoint, -1));
 	Tcl_ListObjAppendElement(NULL, resultList, Tcl_NewStringObj(
@@ -3434,7 +3426,6 @@ ZipFSMkZipOrImg(
     Tcl_Obj **lobjv, *list = mappingList;
     ZipEntry *z;
     Tcl_HashEntry *hPtr;
-    Tcl_HashSearch search;
     Tcl_HashTable fileHash;
     char *strip = NULL, *pw = NULL, passBuf[264], buf[4096];
     unsigned char *start = (unsigned char *) buf;
@@ -3523,9 +3514,7 @@ ZipFSMkZipOrImg(
 	 */
 
 	WriteLock();
-	for (hPtr = Tcl_FirstHashEntry(&ZipFS.zipHash, &search); hPtr;
-		hPtr = Tcl_NextHashEntry(&search)) {
-	    zf = (ZipFile *) Tcl_GetHashValue(hPtr);
+	FOREACH_HASH_VALUE(zf, &ZipFS.zipHash) {
 	    if (strcmp(zf->name, imgName) == 0) {
 		isMounted = 1;
 		zf->numOpen++;
@@ -3688,8 +3677,7 @@ ZipFSMkZipOrImg(
 	Tcl_Close(interp, out);
     }
     Tcl_DecrRefCount(list);
-    for (hPtr = Tcl_FirstHashEntry(&fileHash, &search); hPtr;
-	    hPtr = Tcl_NextHashEntry(&search)) {
+    FOREACH_HASH_ENTRY(hPtr, &fileHash) {
 	z = (ZipEntry *) Tcl_GetHashValue(hPtr);
 	Tcl_Free(z);
 	Tcl_DeleteHashEntry(hPtr);
@@ -4209,11 +4197,10 @@ ZipFSListObjCmd(
 {
     char *pattern = NULL;
     Tcl_RegExp regexp = NULL;
-    Tcl_HashEntry *hPtr;
-    Tcl_HashSearch search;
     Tcl_Obj *result = Tcl_GetObjResult(interp);
     const char *options[] = {"-glob", "-regexp", NULL};
     enum list_options { OPT_GLOB, OPT_REGEXP };
+    ZipEntry *z;
 
     /*
      * Parse arguments.
@@ -4253,30 +4240,21 @@ ZipFSListObjCmd(
 
     ReadLock();
     if (pattern) {
-	for (hPtr = Tcl_FirstHashEntry(&ZipFS.fileHash, &search);
-		hPtr != NULL; hPtr = Tcl_NextHashEntry(&search)) {
-	    ZipEntry *z = (ZipEntry *) Tcl_GetHashValue(hPtr);
-
+	FOREACH_HASH_VALUE(z, &ZipFS.fileHash) {
 	    if (Tcl_StringMatch(z->name, pattern)) {
 		Tcl_ListObjAppendElement(interp, result,
 			Tcl_NewStringObj(z->name, -1));
 	    }
 	}
     } else if (regexp) {
-	for (hPtr = Tcl_FirstHashEntry(&ZipFS.fileHash, &search);
-		hPtr; hPtr = Tcl_NextHashEntry(&search)) {
-	    ZipEntry *z = (ZipEntry *) Tcl_GetHashValue(hPtr);
-
+	FOREACH_HASH_VALUE(z, &ZipFS.fileHash) {
 	    if (Tcl_RegExpExec(interp, regexp, z->name, z->name)) {
 		Tcl_ListObjAppendElement(interp, result,
 			Tcl_NewStringObj(z->name, -1));
 	    }
 	}
     } else {
-	for (hPtr = Tcl_FirstHashEntry(&ZipFS.fileHash, &search);
-		hPtr; hPtr = Tcl_NextHashEntry(&search)) {
-	    ZipEntry *z = (ZipEntry *) Tcl_GetHashValue(hPtr);
-
+	FOREACH_HASH_VALUE(z, &ZipFS.fileHash) {
 	    Tcl_ListObjAppendElement(interp, result,
 		    Tcl_NewStringObj(z->name, -1));
 	}
@@ -5838,13 +5816,8 @@ ZipFSMatchInDirectoryProc(
     notDuplicate = 0;
     Tcl_InitHashTable(&duplicates, TCL_STRING_KEYS);
 
-    Tcl_HashEntry *hPtr;
-    Tcl_HashSearch search;
     if (foundInHash) {
-	for (hPtr = Tcl_FirstHashEntry(&ZipFS.fileHash, &search); hPtr;
-		hPtr = Tcl_NextHashEntry(&search)) {
-	    z = (ZipEntry *)Tcl_GetHashValue(hPtr);
-
+	FOREACH_HASH_VALUE(z, &ZipFS.fileHash) {
 	    if ((wanted == (TCL_GLOB_TYPE_DIR | TCL_GLOB_TYPE_FILE)) ||
 		    (wanted == TCL_GLOB_TYPE_DIR && z->isDirectory) ||
 		    (wanted == TCL_GLOB_TYPE_FILE && !z->isDirectory)) {
@@ -5867,10 +5840,9 @@ ZipFSMatchInDirectoryProc(
 	 * //zipfs:/a/b/d
 	 */
 	Tcl_DString ds;
+	ZipFile *zf;
 	Tcl_DStringInit(&ds);
-	for (hPtr = Tcl_FirstHashEntry(&ZipFS.zipHash, &search); hPtr;
-		hPtr = Tcl_NextHashEntry(&search)) {
-	    ZipFile *zf = (ZipFile *)Tcl_GetHashValue(hPtr);
+	FOREACH_HASH_VALUE(zf, &ZipFS.zipHash) {
 	    if (Tcl_StringCaseMatch(zf->mountPoint, pat, 0)) {
 		const char *tail = zf->mountPoint + len;
 		if (*tail == '\0') {
@@ -5881,10 +5853,10 @@ ZipFSMatchInDirectoryProc(
 			end ? (Tcl_Size)(end - zf->mountPoint) : -1);
 		const char *matchedPath = Tcl_DStringValue(&ds);
 		(void)Tcl_CreateHashEntry(
-		    &duplicates, matchedPath, &notDuplicate);
+			&duplicates, matchedPath, &notDuplicate);
 		if (notDuplicate) {
-		    AppendWithPrefix(
-			result, prefixBuf, matchedPath, Tcl_DStringLength(&ds));
+		    AppendWithPrefix(result, prefixBuf, matchedPath,
+			    Tcl_DStringLength(&ds));
 		}
 		Tcl_DStringFree(&ds);
 	    }
@@ -5928,12 +5900,11 @@ ZipFSMatchMountPoints(
 				 * filenames, or NULL if no prefix is to be
 				 * used. */
 {
-    Tcl_HashEntry *hPtr;
-    Tcl_HashSearch search;
     int l;
     Tcl_Size normLength;
     const char *path = TclGetStringFromObj(normPathPtr, &normLength);
     Tcl_Size len = normLength;
+    ZipFile *zf;
 
     if (len < 1) {
 	/*
@@ -5952,10 +5923,7 @@ ZipFSMatchMountPoints(
 	pattern = "*";
     }
 
-    for (hPtr = Tcl_FirstHashEntry(&ZipFS.zipHash, &search); hPtr;
-	    hPtr = Tcl_NextHashEntry(&search)) {
-	ZipFile *zf = (ZipFile *) Tcl_GetHashValue(hPtr);
-
+    FOREACH_HASH_VALUE(zf, &ZipFS.zipHash) {
 	if (zf->mountPointLen == 0) {
 	    ZipEntry *z;
 
@@ -6503,9 +6471,7 @@ TclZipfsFinalize(void)
     }
 
     Tcl_HashEntry *hPtr;
-    Tcl_HashSearch zipSearch;
-    for (hPtr = Tcl_FirstHashEntry(&ZipFS.zipHash, &zipSearch); hPtr;
-	    hPtr = Tcl_NextHashEntry(&zipSearch)) {
+    FOREACH_HASH_ENTRY(hPtr, &ZipFS.zipHash) {
 	ZipFile *zf = (ZipFile *) Tcl_GetHashValue(hPtr);
 	Tcl_DeleteHashEntry(hPtr);
 	CleanupMount(zf); /* Frees file entries belonging to the archive */

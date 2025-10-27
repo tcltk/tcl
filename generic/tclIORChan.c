@@ -2581,7 +2581,6 @@ DeleteReflectedChannelMap(
 {
     ReflectedChannelMap *rcmPtr = (ReflectedChannelMap *)clientData;
 				/* The map */
-    Tcl_HashSearch hSearch;	/* Search variable. */
     Tcl_HashEntry *hPtr;	/* Search variable. */
     ReflectedChannel *rcPtr;
     Tcl_Channel chan;
@@ -2603,9 +2602,7 @@ DeleteReflectedChannelMap(
      * this interp.
      */
 
-    for (hPtr = Tcl_FirstHashEntry(&rcmPtr->map, &hSearch);
-	    hPtr != NULL;
-	    hPtr = Tcl_FirstHashEntry(&rcmPtr->map, &hSearch)) {
+    FOREACH_HASH_ENTRY_REINIT(hPtr, &rcmPtr->map) {
 	chan = (Tcl_Channel)Tcl_GetHashValue(hPtr);
 	rcPtr = (ReflectedChannel *)Tcl_GetChannelInstanceData(chan);
 
@@ -2681,9 +2678,7 @@ DeleteReflectedChannelMap(
      */
 
     rcmPtr = GetThreadReflectedChannelMap();
-    for (hPtr = Tcl_FirstHashEntry(&rcmPtr->map, &hSearch);
-	    hPtr != NULL;
-	    hPtr = Tcl_NextHashEntry(&hSearch)) {
+    FOREACH_HASH_ENTRY(hPtr, &rcmPtr->map) {
 	chan = (Tcl_Channel)Tcl_GetHashValue(hPtr);
 	rcPtr = (ReflectedChannel *)Tcl_GetChannelInstanceData(chan);
 
@@ -2757,7 +2752,6 @@ static void
 DeleteThreadReflectedChannelMap(
     TCL_UNUSED(void *))
 {
-    Tcl_HashSearch hSearch;	 /* Search variable. */
     Tcl_HashEntry *hPtr;	 /* Search variable. */
     Tcl_ThreadId self = Tcl_GetCurrentThread();
     ReflectedChannelMap *rcmPtr; /* The map */
@@ -2843,9 +2837,7 @@ DeleteThreadReflectedChannelMap(
 
     rcmPtr = GetThreadReflectedChannelMap();
     tsdPtr->rcmPtr = NULL;
-    for (hPtr = Tcl_FirstHashEntry(&rcmPtr->map, &hSearch);
-	    hPtr != NULL;
-	    hPtr = Tcl_FirstHashEntry(&rcmPtr->map, &hSearch)) {
+    FOREACH_HASH_ENTRY_REINIT(hPtr, &rcmPtr->map) {
 	Tcl_Channel chan = (Tcl_Channel)Tcl_GetHashValue(hPtr);
 	ReflectedChannel *rcPtr = (ReflectedChannel *)Tcl_GetChannelInstanceData(chan);
 

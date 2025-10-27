@@ -707,41 +707,6 @@ MODULE_SCOPE void	TclOORegisterInstanceProperty(Object *oPtr,
     FOREACH_STRUCT_CORE(JOIN(i_,__LINE__),var,ary)
 
 /*
- * Convenience macros for iterating through hash tables. FOREACH_HASH_DECLS
- * sets up the declarations needed for the main macro, FOREACH_HASH, which
- * does the actual iteration. FOREACH_HASH_KEY and FOREACH_HASH_VALUE are
- * restricted versions that only iterate over keys or values respectively.
- */
-
-typedef struct HashIter {
-    Tcl_HashEntry *hPtr;
-    Tcl_HashSearch search;
-} HashIter;
-
-static inline HashIter
-TclFirstHashEntryEx(
-    Tcl_HashTable *tablePtr)
-{
-    Tcl_HashSearch search;
-    Tcl_HashEntry *hPtr = Tcl_FirstHashEntry(tablePtr, &search);
-    return (HashIter){ hPtr, search };
-}
-
-#define FOREACH_HASH(key, val, tablePtr) \
-    for (HashIter hi = TclFirstHashEntryEx(tablePtr); hi.hPtr ?		\
-	    (*(void **)&(key) = Tcl_GetHashKey((tablePtr), hi.hPtr),	\
-	    *(void **)&(val) = Tcl_GetHashValue(hi.hPtr), 1) : 0;	\
-	    hi.hPtr = Tcl_NextHashEntry(&hi.search))
-#define FOREACH_HASH_KEY(key, tablePtr) \
-    for (HashIter hi = TclFirstHashEntryEx(tablePtr); hi.hPtr ?		\
-	    (*(void **)&(key) = Tcl_GetHashKey((tablePtr), hi.hPtr), 1) : 0; \
-	    hi.hPtr = Tcl_NextHashEntry(&hi.search))
-#define FOREACH_HASH_VALUE(val, tablePtr) \
-    for (HashIter hi = TclFirstHashEntryEx(tablePtr); hi.hPtr ?		\
-	    (*(void **)&(val) = Tcl_GetHashValue(hi.hPtr), 1) : 0;	\
-	    hi.hPtr = Tcl_NextHashEntry(&hi.search))
-
-/*
  * Convenience macro for duplicating a list. Needs no external declaration,
  * but all arguments are used multiple times and so must have no side effects.
  */

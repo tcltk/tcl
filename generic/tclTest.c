@@ -6368,8 +6368,7 @@ TestChannelCmd(
 {
     const char *cmdName;	/* Sub command. */
     Tcl_HashTable *hTblPtr;	/* Hash table of channels. */
-    Tcl_HashSearch hSearch;	/* Search variable. */
-    Tcl_HashEntry *hPtr;	/* Search variable. */
+    char *chanName;		/* The name of a channel */
     Channel *chanPtr;		/* The actual channel. */
     ChannelState *statePtr;	/* state info for channel */
     Tcl_Channel chan;		/* The opaque type. */
@@ -6694,10 +6693,8 @@ TestChannelCmd(
 	if (hTblPtr == NULL) {
 	    return TCL_OK;
 	}
-	for (hPtr = Tcl_FirstHashEntry(hTblPtr, &hSearch);
-		hPtr != NULL;
-		hPtr = Tcl_NextHashEntry(&hSearch)) {
-	    Tcl_AppendElement(interp, (char *)Tcl_GetHashKey(hTblPtr, hPtr));
+	FOREACH_HASH_KEY(chanName, hTblPtr) {
+	    Tcl_AppendElement(interp, chanName);
 	}
 	return TCL_OK;
     }
@@ -6732,13 +6729,10 @@ TestChannelCmd(
 	if (hTblPtr == NULL) {
 	    return TCL_OK;
 	}
-	for (hPtr = Tcl_FirstHashEntry(hTblPtr, &hSearch);
-		hPtr != NULL;
-		hPtr = Tcl_NextHashEntry(&hSearch)) {
-	    chanPtr  = (Channel *)Tcl_GetHashValue(hPtr);
+	FOREACH_HASH(chanName, chanPtr, hTblPtr) {
 	    statePtr = chanPtr->state;
 	    if (statePtr->flags & TCL_READABLE) {
-		Tcl_AppendElement(interp, (char *)Tcl_GetHashKey(hTblPtr, hPtr));
+		Tcl_AppendElement(interp, chanName);
 	    }
 	}
 	return TCL_OK;
@@ -6790,12 +6784,10 @@ TestChannelCmd(
 	if (hTblPtr == NULL) {
 	    return TCL_OK;
 	}
-	for (hPtr = Tcl_FirstHashEntry(hTblPtr, &hSearch);
-		hPtr != NULL; hPtr = Tcl_NextHashEntry(&hSearch)) {
-	    chanPtr = (Channel *)Tcl_GetHashValue(hPtr);
+	FOREACH_HASH(chanName, chanPtr, hTblPtr) {
 	    statePtr = chanPtr->state;
 	    if (statePtr->flags & TCL_WRITABLE) {
-		Tcl_AppendElement(interp, (char *)Tcl_GetHashKey(hTblPtr, hPtr));
+		Tcl_AppendElement(interp, chanName);
 	    }
 	}
 	return TCL_OK;

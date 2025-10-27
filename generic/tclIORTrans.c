@@ -2106,7 +2106,6 @@ DeleteReflectedTransformMap(
     Tcl_Interp *interp)		/* The interpreter being deleted. */
 {
     ReflectedTransformMap *rtmPtr; /* The map */
-    Tcl_HashSearch hSearch;	/* Search variable. */
     Tcl_HashEntry *hPtr;	/* Search variable. */
     ReflectedTransform *rtPtr;
 #if TCL_THREADS
@@ -2130,9 +2129,7 @@ DeleteReflectedTransformMap(
      */
 
     rtmPtr = (ReflectedTransformMap *)clientData;
-    for (hPtr = Tcl_FirstHashEntry(&rtmPtr->map, &hSearch);
-	    hPtr != NULL;
-	    hPtr = Tcl_FirstHashEntry(&rtmPtr->map, &hSearch)) {
+    FOREACH_HASH_ENTRY_REINIT(hPtr, &rtmPtr->map) {
 	rtPtr = (ReflectedTransform *)Tcl_GetHashValue(hPtr);
 
 	rtPtr->dead = 1;
@@ -2154,9 +2151,7 @@ DeleteReflectedTransformMap(
      */
 
     rtmPtr = GetThreadReflectedTransformMap();
-    for (hPtr = Tcl_FirstHashEntry(&rtmPtr->map, &hSearch);
-	    hPtr != NULL;
-	    hPtr = Tcl_NextHashEntry(&hSearch)) {
+    FOREACH_HASH_ENTRY(hPtr, &rtmPtr->map) {
 	rtPtr = (ReflectedTransform *)Tcl_GetHashValue(hPtr);
 
 	if (rtPtr->interp != interp) {
@@ -2268,7 +2263,6 @@ static void
 DeleteThreadReflectedTransformMap(
     TCL_UNUSED(void *))
 {
-    Tcl_HashSearch hSearch;	   /* Search variable. */
     Tcl_HashEntry *hPtr;	   /* Search variable. */
     Tcl_ThreadId self = Tcl_GetCurrentThread();
     ReflectedTransformMap *rtmPtr; /* The map */
@@ -2287,9 +2281,7 @@ DeleteThreadReflectedTransformMap(
      */
 
     rtmPtr = GetThreadReflectedTransformMap();
-    for (hPtr = Tcl_FirstHashEntry(&rtmPtr->map, &hSearch);
-	    hPtr != NULL;
-	    hPtr = Tcl_FirstHashEntry(&rtmPtr->map, &hSearch)) {
+    FOREACH_HASH_ENTRY_REINIT(hPtr, &rtmPtr->map) {
 	ReflectedTransform *rtPtr = (ReflectedTransform *)Tcl_GetHashValue(hPtr);
 
 	rtPtr->dead = 1;

@@ -2995,16 +2995,12 @@ TclCopyNamespaceProcedures(
     Namespace *srcNsPtr,	// Where to copy from.
     Namespace *tgtNsPtr)	// Where to copy to.
 {
-    Tcl_HashSearch search;
     if (srcNsPtr == tgtNsPtr) {
 	Tcl_Panic("cannot copy procedures from one namespace to itself");
     }
-    for (Tcl_HashEntry *entryPtr = Tcl_FirstHashEntry(&srcNsPtr->cmdTable, &search);
-	    entryPtr; entryPtr = Tcl_NextHashEntry(&search)) {
-	const char *cmdName = (const char *)
-		Tcl_GetHashKey(&srcNsPtr->cmdTable, entryPtr);
-	Command *cmdPtr = (Command *) Tcl_GetHashValue(entryPtr);
-
+    const char *cmdName;
+    Command *cmdPtr;
+    FOREACH_HASH(cmdName, cmdPtr, &srcNsPtr->cmdTable) {
 	// For non-procedures, check if this is an import of a procedure; those
 	// also get copied.
 	if (!TclIsProc(cmdPtr)) {

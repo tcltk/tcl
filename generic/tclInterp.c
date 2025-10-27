@@ -1064,9 +1064,7 @@ NRInterpCmd(
     case OPT_CHILDREN: {
 	InterpInfo *iiPtr;
 	Tcl_Obj *resultPtr;
-	Tcl_HashEntry *hPtr;
-	Tcl_HashSearch hashSearch;
-	char *string;
+	const char *string;
 
 	childInterp = GetInterp2(interp, objc, objv);
 	if (childInterp == NULL) {
@@ -1074,9 +1072,7 @@ NRInterpCmd(
 	}
 	iiPtr = INTERP_INFO(childInterp);
 	TclNewObj(resultPtr);
-	hPtr = Tcl_FirstHashEntry(&iiPtr->parent.childTable, &hashSearch);
-	for ( ; hPtr != NULL; hPtr = Tcl_NextHashEntry(&hashSearch)) {
-	    string = (char *) Tcl_GetHashKey(&iiPtr->parent.childTable, hPtr);
+	FOREACH_HASH_KEY(string, &iiPtr->parent.childTable) {
 	    Tcl_ListObjAppendElement(NULL, resultPtr,
 		    Tcl_NewStringObj(string, -1));
 	}
@@ -1739,8 +1735,6 @@ AliasList(
     Tcl_Interp *interp,		/* Interp for data return. */
     Tcl_Interp *childInterp)	/* Interp whose aliases to compute. */
 {
-    Tcl_HashEntry *entryPtr;
-    Tcl_HashSearch hashSearch;
     Tcl_Obj *resultPtr;
     Alias *aliasPtr;
     Child *childPtr;
@@ -1748,9 +1742,7 @@ AliasList(
     TclNewObj(resultPtr);
     childPtr = &INTERP_INFO(childInterp)->child;
 
-    entryPtr = Tcl_FirstHashEntry(&childPtr->aliasTable, &hashSearch);
-    for ( ; entryPtr != NULL; entryPtr = Tcl_NextHashEntry(&hashSearch)) {
-	aliasPtr = (Alias *) Tcl_GetHashValue(entryPtr);
+    FOREACH_HASH_VALUE(aliasPtr, &childPtr->aliasTable) {
 	Tcl_ListObjAppendElement(NULL, resultPtr, aliasPtr->token);
     }
     Tcl_SetObjResult(interp, resultPtr);
@@ -2177,10 +2169,7 @@ TclSetChildCancelFlags(
 				 * of resetting the cancellation flags. */
 {
     Parent *parentPtr;		/* Parent record of given interpreter. */
-    Tcl_HashEntry *hPtr;	/* Search element. */
-    Tcl_HashSearch hashSearch;	/* Search variable. */
     Child *childPtr;		/* Child record of interpreter. */
-    Interp *iPtr;
 
     if (interp == NULL) {
 	return;
@@ -2190,10 +2179,8 @@ TclSetChildCancelFlags(
 
     parentPtr = &INTERP_INFO(interp)->parent;
 
-    hPtr = Tcl_FirstHashEntry(&parentPtr->childTable, &hashSearch);
-    for ( ; hPtr != NULL; hPtr = Tcl_NextHashEntry(&hashSearch)) {
-	childPtr = (Child *) Tcl_GetHashValue(hPtr);
-	iPtr = (Interp *) childPtr->childInterp;
+    FOREACH_HASH_VALUE(childPtr, &parentPtr->childTable) {
+	Interp *iPtr = (Interp *) childPtr->childInterp;
 
 	if (iPtr == NULL) {
 	    continue;
@@ -3117,18 +3104,14 @@ ChildHidden(
 {
     Tcl_Obj *listObjPtr;	/* Local object pointer. */
     Tcl_HashTable *hTblPtr;	/* For local searches. */
-    Tcl_HashEntry *hPtr;	/* For local searches. */
-    Tcl_HashSearch hSearch;	/* For local searches. */
 
     TclNewObj(listObjPtr);
     hTblPtr = ((Interp *) childInterp)->hiddenCmdTablePtr;
     if (hTblPtr != NULL) {
-	for (hPtr = Tcl_FirstHashEntry(hTblPtr, &hSearch);
-		hPtr != NULL;
-		hPtr = Tcl_NextHashEntry(&hSearch)) {
+	const char *hiddenName;
+	FOREACH_HASH_KEY(hiddenName, hTblPtr) {
 	    Tcl_ListObjAppendElement(NULL, listObjPtr,
-		    Tcl_NewStringObj((const char *)
-			    Tcl_GetHashKey(hTblPtr, hPtr), -1));
+		    Tcl_NewStringObj(hiddenName, -1));
 	}
     }
     Tcl_SetObjResult(interp, listObjPtr);
@@ -4386,17 +4369,12 @@ TclRemoveScriptLimitCallbacks(
     Tcl_Interp *interp)
 {
     Interp *iPtr = (Interp *) interp;
-    Tcl_HashEntry *hashPtr;
-    Tcl_HashSearch search;
     ScriptLimitCallbackKey *keyPtr;
+    void *clientData;
 
-    hashPtr = Tcl_FirstHashEntry(&iPtr->limit.callbacks, &search);
-    while (hashPtr != NULL) {
-	keyPtr = (ScriptLimitCallbackKey *)
-		Tcl_GetHashKey(&iPtr->limit.callbacks, hashPtr);
+    FOREACH_HASH(keyPtr, clientData, &iPtr->limit.callbacks) {
 	Tcl_LimitRemoveHandler(keyPtr->interp, (int)keyPtr->type,
-		CallScriptLimitCallback, Tcl_GetHashValue(hashPtr));
-	hashPtr = Tcl_NextHashEntry(&search);
+		CallScriptLimitCallback, clientData);
     }
     Tcl_DeleteHashTable(&iPtr->limit.callbacks);
 }

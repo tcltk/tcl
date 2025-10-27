@@ -2549,13 +2549,9 @@ ClearTable(
     Tcl_HashTable *hash = &ensemblePtr->subcommandTable;
 
     if (hash->numEntries != 0) {
-	Tcl_HashSearch search;
-	Tcl_HashEntry *hPtr = Tcl_FirstHashEntry(hash, &search);
-
-	while (hPtr != NULL) {
-	    Tcl_Obj *prefixObj = (Tcl_Obj *) Tcl_GetHashValue(hPtr);
+	Tcl_Obj *prefixObj;
+	FOREACH_HASH_VALUE(prefixObj, hash) {
 	    Tcl_DecrRefCount(prefixObj);
-	    hPtr = Tcl_NextHashEntry(&search);
 	}
 	Tcl_Free(ensemblePtr->subcommandArrayPtr);
     }
@@ -2767,11 +2763,8 @@ BuildEnsembleConfig(
 	 * place them in the hash too for even faster matching.
 	 */
 
-	hPtr = Tcl_FirstHashEntry(&ensemblePtr->nsPtr->cmdTable, &search);
-	for (; hPtr!= NULL ; hPtr=Tcl_NextHashEntry(&search)) {
-	    char *nsCmdName = (char *)	/* Name of command in namespace. */
-		    Tcl_GetHashKey(&ensemblePtr->nsPtr->cmdTable, hPtr);
-
+	char *nsCmdName;		/* Name of command in namespace. */
+	FOREACH_HASH_KEY(nsCmdName, &ensemblePtr->nsPtr->cmdTable) {
 	    for (i=0 ; i<ensemblePtr->nsPtr->numExportPatterns ; i++) {
 		if (Tcl_StringMatch(nsCmdName,
 			ensemblePtr->nsPtr->exportArrayPtr[i])) {
