@@ -68,7 +68,7 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stdint.h>
-#if defined(__STDC_VERSION__) && __STDC_VERSION__ < 202311L
+#if defined(_MSC_VER) || (defined(__STDC_VERSION__) && (__STDC_VERSION__ < 202311L))
 #include <stdbool.h>
 #endif
 #include <string.h>
@@ -152,7 +152,7 @@
 #elif defined(__GNUC__)
 #define TCL_UNREACHABLE()	__builtin_unreachable()
 #elif defined(_MSC_VER)
-#define TCL_UNREACHABLE()	__assume(false)
+#define TCL_UNREACHABLE()	__assume(0)
 #else
 #define TCL_UNREACHABLE()	((void) 0)
 #endif
