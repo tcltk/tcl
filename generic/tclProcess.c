@@ -424,8 +424,6 @@ ProcessListObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *list;
-    Tcl_HashEntry *entry;
-    Tcl_HashSearch search;
     ProcessInfo *info;
 
     if (objc != 1) {
@@ -439,9 +437,7 @@ ProcessListObjCmd(
 
     list = Tcl_NewListObj(0, NULL);
     Tcl_MutexLock(&infoTablesMutex);
-    for (entry = Tcl_FirstHashEntry(&infoTablePerResolvedPid, &search);
-	    entry != NULL; entry = Tcl_NextHashEntry(&search)) {
-	info = (ProcessInfo *) Tcl_GetHashValue(entry);
+    FOREACH_HASH_VALUE(info, &infoTablePerResolvedPid) {
 	Tcl_ListObjAppendElement(interp, list,
 		Tcl_NewWideIntObj(info->resolvedPid));
     }
@@ -477,7 +473,6 @@ ProcessStatusObjCmd(
     Tcl_Obj *dict;
     int options = WNOHANG;
     Tcl_HashEntry *entry;
-    Tcl_HashSearch search;
     ProcessInfo *info;
     Tcl_Size i, numPids;
     Tcl_Obj **pidObjs;
@@ -520,8 +515,7 @@ ProcessStatusObjCmd(
 
 	dict = Tcl_NewDictObj();
 	Tcl_MutexLock(&infoTablesMutex);
-	for (entry = Tcl_FirstHashEntry(&infoTablePerResolvedPid, &search);
-		entry != NULL; entry = Tcl_NextHashEntry(&search)) {
+	FOREACH_HASH_ENTRY(entry, &infoTablePerResolvedPid) {
 	    info = (ProcessInfo *) Tcl_GetHashValue(entry);
 	    RefreshProcessInfo(info, options);
 
@@ -623,7 +617,6 @@ ProcessPurgeObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_HashEntry *entry;
-    Tcl_HashSearch search;
     ProcessInfo *info;
     Tcl_Size i, numPids;
     Tcl_Obj **pidObjs;
@@ -646,8 +639,7 @@ ProcessPurgeObjCmd(
 	 */
 
 	Tcl_MutexLock(&infoTablesMutex);
-	for (entry = Tcl_FirstHashEntry(&infoTablePerResolvedPid, &search);
-		entry != NULL; entry = Tcl_NextHashEntry(&search)) {
+	FOREACH_HASH_ENTRY(entry, &infoTablePerResolvedPid) {
 	    info = (ProcessInfo *) Tcl_GetHashValue(entry);
 	    if (info->purge) {
 		Tcl_DeleteHashEntry(entry);

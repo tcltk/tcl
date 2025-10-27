@@ -55,9 +55,8 @@ LocateTargetAddresses(
 {
     unsigned char *currentInstPtr, *targetInstPtr;
     int isNew;
-    Tcl_Size i;
-    Tcl_HashEntry *hPtr;
-    Tcl_HashSearch hSearch;
+    Tcl_Size i, offset;
+    Tcl_HashTable *jumpTablePtr;
 
     Tcl_InitHashTable(tablePtr, TCL_ONE_WORD_KEYS);
 
@@ -99,18 +98,15 @@ LocateTargetAddresses(
 	    DefineTargetAddress(tablePtr, targetInstPtr);
 	    break;
 	case INST_JUMP_TABLE_NUM:
-	    hPtr = Tcl_FirstHashEntry(
-		    &JUMPTABLENUMINFO(envPtr, currentInstPtr+1)->hashTable,
-		    &hSearch);
+	    jumpTablePtr =
+		    &JUMPTABLENUMINFO(envPtr, currentInstPtr+1)->hashTable;
 	    goto storeJumpTableTargets;
 	case INST_JUMP_TABLE:
-	    hPtr = Tcl_FirstHashEntry(
-		    &JUMPTABLEINFO(envPtr, currentInstPtr+1)->hashTable,
-		    &hSearch);
+	    jumpTablePtr =
+		    &JUMPTABLEINFO(envPtr, currentInstPtr+1)->hashTable;
 	storeJumpTableTargets:
-	    for (; hPtr ; hPtr = Tcl_NextHashEntry(&hSearch)) {
-		targetInstPtr = currentInstPtr +
-			PTR2INT(Tcl_GetHashValue(hPtr));
+	    FOREACH_HASH_VALUE(offset, jumpTablePtr) {
+		targetInstPtr = currentInstPtr + offset;
 		DefineTargetAddress(tablePtr, targetInstPtr);
 	    }
 	    break;

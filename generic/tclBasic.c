@@ -1609,17 +1609,14 @@ Tcl_DontCallWhenDeleted(
 {
     Interp *iPtr = (Interp *) interp;
     Tcl_HashTable *hTablePtr;
-    Tcl_HashSearch hSearch;
     Tcl_HashEntry *hPtr;
-    AssocData *dPtr;
 
     hTablePtr = iPtr->assocData;
     if (hTablePtr == NULL) {
 	return;
     }
-    for (hPtr = Tcl_FirstHashEntry(hTablePtr, &hSearch); hPtr != NULL;
-	    hPtr = Tcl_NextHashEntry(&hSearch)) {
-	dPtr = (AssocData *)Tcl_GetHashValue(hPtr);
+    FOREACH_HASH_ENTRY(hPtr, hTablePtr) {
+	AssocData *dPtr = (AssocData *) Tcl_GetHashValue(hPtr);
 	if ((dPtr->proc == proc) && (dPtr->clientData == clientData)) {
 	    Tcl_Free(dPtr);
 	    Tcl_DeleteHashEntry(hPtr);
@@ -1866,7 +1863,6 @@ DeleteInterpProc(
     Tcl_Interp *interp = (Tcl_Interp *) blockPtr;
     Interp *iPtr = (Interp *) interp;
     Tcl_HashEntry *hPtr;
-    Tcl_HashSearch search;
     Tcl_HashTable *hTablePtr;
     ResolverScheme *resPtr, *nextResPtr;
     Tcl_Size i;
@@ -1962,26 +1958,22 @@ DeleteInterpProc(
 	 * hiddenCmdTablePtr.
 	 */
 
-	hPtr = Tcl_FirstHashEntry(hTablePtr, &search);
-	for (; hPtr != NULL; hPtr = Tcl_NextHashEntry(&search)) {
-	    Tcl_DeleteCommandFromToken(interp, (Tcl_Command)Tcl_GetHashValue(hPtr));
+	Tcl_Command cmd;
+	FOREACH_HASH_VALUE(cmd, hTablePtr) {
+	    Tcl_DeleteCommandFromToken(interp, cmd);
 	}
 	Tcl_DeleteHashTable(hTablePtr);
 	Tcl_Free(hTablePtr);
     }
 
     if (iPtr->assocData != NULL) {
-	AssocData *dPtr;
-
 	hTablePtr = iPtr->assocData;
 	/*
 	 * Invoke deletion callbacks; note that a callback can create new
 	 * callbacks, so we iterate.
 	 */
-	for (hPtr = Tcl_FirstHashEntry(hTablePtr, &search);
-		hPtr != NULL;
-		hPtr = Tcl_FirstHashEntry(hTablePtr, &search)) {
-	    dPtr = (AssocData *)Tcl_GetHashValue(hPtr);
+	FOREACH_HASH_ENTRY_REINIT(hPtr, hTablePtr) {
+	    AssocData *dPtr = (AssocData *)Tcl_GetHashValue(hPtr);
 	    Tcl_DeleteHashEntry(hPtr);
 	    if (dPtr->proc != NULL) {
 		dPtr->proc(dPtr->clientData, interp);
@@ -2066,9 +2058,7 @@ DeleteInterpProc(
      * contents.
      */
 
-    for (hPtr = Tcl_FirstHashEntry(iPtr->linePBodyPtr, &search);
-	    hPtr != NULL;
-	    hPtr = Tcl_NextHashEntry(&search)) {
+    FOREACH_HASH_ENTRY(hPtr, iPtr->linePBodyPtr) {
 	CmdFrame *cfPtr = (CmdFrame *)Tcl_GetHashValue(hPtr);
 	Proc *procPtr = (Proc *) Tcl_GetHashKey(iPtr->linePBodyPtr, hPtr);
 
@@ -2090,9 +2080,7 @@ DeleteInterpProc(
      * See also tclCompile.c, TclCleanupByteCode
      */
 
-    for (hPtr = Tcl_FirstHashEntry(iPtr->lineBCPtr, &search);
-	    hPtr != NULL;
-	    hPtr = Tcl_NextHashEntry(&search)) {
+    FOREACH_HASH_ENTRY(hPtr, iPtr->lineBCPtr) {
 	ExtCmdLoc *eclPtr = (ExtCmdLoc *)Tcl_GetHashValue(hPtr);
 
 	if (eclPtr->type == TCL_LOCATION_SOURCE) {
@@ -9702,20 +9690,16 @@ TclNRCoroutineObjCmd(
      */
 
     {
-	Tcl_HashSearch hSearch;
-	Tcl_HashEntry *hePtr;
+	Tcl_Obj *word;
+	ExtCmdLoc *eclPtr;
 
 	corPtr->lineLABCPtr = (Tcl_HashTable *)Tcl_Alloc(sizeof(Tcl_HashTable));
 	Tcl_InitHashTable(corPtr->lineLABCPtr, TCL_ONE_WORD_KEYS);
 
-	for (hePtr = Tcl_FirstHashEntry(iPtr->lineLABCPtr,&hSearch);
-		hePtr; hePtr = Tcl_NextHashEntry(&hSearch)) {
+	FOREACH_HASH(word, eclPtr, iPtr->lineLABCPtr) {
 	    Tcl_HashEntry *newPtr =
-		    Tcl_CreateHashEntry(corPtr->lineLABCPtr,
-		    Tcl_GetHashKey(iPtr->lineLABCPtr, hePtr),
-		    NULL);
-
-	    Tcl_SetHashValue(newPtr, Tcl_GetHashValue(hePtr));
+		    Tcl_CreateHashEntry(corPtr->lineLABCPtr, word, NULL);
+	    Tcl_SetHashValue(newPtr, eclPtr);
 	}
     }
 

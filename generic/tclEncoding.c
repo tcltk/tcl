@@ -678,7 +678,6 @@ TclInitEncodingSubsystem(void)
 void
 TclFinalizeEncodingSubsystem(void)
 {
-    Tcl_HashSearch search;
     Tcl_HashEntry *hPtr;
 
     Tcl_MutexLock(&encodingMutex);
@@ -691,17 +690,15 @@ TclFinalizeEncodingSubsystem(void)
     FreeEncoding(tclUtf8Encoding);
     tclUtf8Encoding = NULL;
 
-    hPtr = Tcl_FirstHashEntry(&encodingTable, &search);
-    while (hPtr != NULL) {
+    FOREACH_HASH_ENTRY_REINIT(hPtr, &encodingTable) {
 	/*
 	 * Call FreeEncoding instead of doing it directly to handle refcounts
 	 * like escape encodings use. [Bug 524674] Make sure to call
-	 * Tcl_FirstHashEntry repeatedly so that all encodings are eventually
-	 * cleaned up.
+	 * Tcl_FirstHashEntry repeatedly (via FOREACH_HASH_ENTRY_REINIT) so
+	 * that all encodings are eventually cleaned up.
 	 */
 
 	FreeEncoding((Tcl_Encoding)Tcl_GetHashValue(hPtr));
-	hPtr = Tcl_FirstHashEntry(&encodingTable, &search);
     }
 
     Tcl_DeleteHashTable(&encodingTable);
@@ -877,8 +874,6 @@ Tcl_GetEncodingNames(
     Tcl_Interp *interp)		/* Interp to hold result. */
 {
     Tcl_HashTable table;
-    Tcl_HashSearch search;
-    Tcl_HashEntry *hPtr;
     Tcl_Obj *map, *name, *result;
     Tcl_DictSearch mapSearch;
     int done = 0;
@@ -891,10 +886,8 @@ Tcl_GetEncodingNames(
      */
 
     Tcl_MutexLock(&encodingMutex);
-    for (hPtr = Tcl_FirstHashEntry(&encodingTable, &search); hPtr != NULL;
-	    hPtr = Tcl_NextHashEntry(&search)) {
-	Encoding *encodingPtr = (Encoding *)Tcl_GetHashValue(hPtr);
-
+    Encoding *encodingPtr;
+    FOREACH_HASH_VALUE(encodingPtr, &encodingTable) {
 	Tcl_CreateHashEntry(&table,
 		Tcl_NewStringObj(encodingPtr->name, TCL_INDEX_NONE), NULL);
     }
@@ -916,10 +909,8 @@ Tcl_GetEncodingNames(
      * Pull all encoding names from table into the result list.
      */
 
-    for (hPtr = Tcl_FirstHashEntry(&table, &search); hPtr != NULL;
-	    hPtr = Tcl_NextHashEntry(&search)) {
-	Tcl_ListObjAppendElement(NULL, result,
-		(Tcl_Obj *) Tcl_GetHashKey(&table, hPtr));
+    FOREACH_HASH_KEY(name, &table) {
+	Tcl_ListObjAppendElement(NULL, result, name);
     }
     Tcl_SetObjResult(interp, result);
     Tcl_DeleteHashTable(&table);

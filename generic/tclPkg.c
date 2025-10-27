@@ -233,8 +233,7 @@ PkgFilesCleanupProc(
     TCL_UNUSED(Tcl_Interp *))
 {
     PkgFiles *pkgFiles = (PkgFiles *) clientData;
-    Tcl_HashSearch search;
-    Tcl_HashEntry *entry;
+    Tcl_Obj *objPtr;
 
     while (pkgFiles->names) {
 	PkgName *name = pkgFiles->names;
@@ -242,12 +241,8 @@ PkgFilesCleanupProc(
 	pkgFiles->names = name->nextPtr;
 	Tcl_Free(name);
     }
-    entry = Tcl_FirstHashEntry(&pkgFiles->table, &search);
-    while (entry) {
-	Tcl_Obj *obj = (Tcl_Obj *)Tcl_GetHashValue(entry);
-
-	Tcl_DecrRefCount(obj);
-	entry = Tcl_NextHashEntry(&search);
+    FOREACH_HASH_VALUE(objPtr, &pkgFiles->table) {
+	Tcl_DecrRefCount(objPtr);
     }
     Tcl_DeleteHashTable(&pkgFiles->table);
     Tcl_Free(pkgFiles);
@@ -1083,8 +1078,6 @@ TclNRPackageObjCmd(
     PkgAvail *availPtr, *prevPtr;
     Package *pkgPtr;
     Tcl_HashEntry *hPtr;
-    Tcl_HashSearch search;
-    Tcl_HashTable *tablePtr;
     const char *version;
     const char *argv2, *argv3, *argv4;
     char *iva = NULL, *ivb = NULL;
@@ -1240,15 +1233,13 @@ TclNRPackageObjCmd(
 	    return TCL_ERROR;
 	} else {
 	    Tcl_Obj *resultObj;
+	    const char *pkgName;
 
 	    TclNewObj(resultObj);
-	    tablePtr = &iPtr->packageTable;
-	    for (hPtr = Tcl_FirstHashEntry(tablePtr, &search); hPtr != NULL;
-		    hPtr = Tcl_NextHashEntry(&search)) {
-		pkgPtr = (Package *)Tcl_GetHashValue(hPtr);
+	    FOREACH_HASH(pkgName, pkgPtr, &iPtr->packageTable) {
 		if ((pkgPtr->version != NULL) || (pkgPtr->availPtr != NULL)) {
-		    Tcl_ListObjAppendElement(NULL,resultObj, Tcl_NewStringObj(
-			    (char *)Tcl_GetHashKey(tablePtr, hPtr), -1));
+		    Tcl_ListObjAppendElement(NULL, resultObj,
+			    Tcl_NewStringObj(pkgName, -1));
 		}
 	    }
 	    Tcl_SetObjResult(interp, resultObj);
@@ -1606,18 +1597,13 @@ TclFreePackageInfo(
     Interp *iPtr)		/* Interpreter that is being deleted. */
 {
     Package *pkgPtr;
-    Tcl_HashSearch search;
-    Tcl_HashEntry *hPtr;
-    PkgAvail *availPtr;
 
-    for (hPtr = Tcl_FirstHashEntry(&iPtr->packageTable, &search);
-	    hPtr != NULL; hPtr = Tcl_NextHashEntry(&search)) {
-	pkgPtr = (Package *)Tcl_GetHashValue(hPtr);
+    FOREACH_HASH_VALUE(pkgPtr, &iPtr->packageTable) {
 	if (pkgPtr->version != NULL) {
 	    Tcl_DecrRefCount(pkgPtr->version);
 	}
 	while (pkgPtr->availPtr != NULL) {
-	    availPtr = pkgPtr->availPtr;
+	    PkgAvail *availPtr = pkgPtr->availPtr;
 	    pkgPtr->availPtr = availPtr->nextPtr;
 	    Tcl_EventuallyFree(availPtr->version, TCL_DYNAMIC);
 	    Tcl_EventuallyFree(availPtr->script, TCL_DYNAMIC);

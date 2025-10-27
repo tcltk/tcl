@@ -103,8 +103,6 @@ TclSetupEnv(
     Tcl_Obj *varNamePtr;
     Tcl_DString envString;
     Tcl_HashTable namesHash;
-    Tcl_HashEntry *hPtr;
-    Tcl_HashSearch search;
 
     /*
      * Synchronize the values in the environ array with the contents of the
@@ -198,7 +196,7 @@ TclSetupEnv(
 	    Tcl_IncrRefCount(obj1);
 	    Tcl_IncrRefCount(obj2);
 	    Tcl_ObjSetVar2(interp, varNamePtr, obj1, obj2, TCL_GLOBAL_ONLY);
-	    hPtr = Tcl_FindHashEntry(&namesHash, obj1);
+	    Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&namesHash, obj1);
 	    if (hPtr != NULL) {
 		Tcl_DeleteHashEntry(hPtr);
 	    }
@@ -213,10 +211,8 @@ TclSetupEnv(
      * counterparts in the environment array.
      */
 
-    for (hPtr=Tcl_FirstHashEntry(&namesHash, &search); hPtr!=NULL;
-	    hPtr=Tcl_NextHashEntry(&search)) {
-	Tcl_Obj *elemName = (Tcl_Obj *)Tcl_GetHashValue(hPtr);
-
+    Tcl_Obj *elemName;
+    FOREACH_HASH_VALUE(elemName, &namesHash) {
 	TclObjUnsetVar2(interp, varNamePtr, elemName, TCL_GLOBAL_ONLY);
     }
     Tcl_DeleteHashTable(&namesHash);

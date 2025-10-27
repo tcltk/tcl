@@ -5149,6 +5149,57 @@ typedef struct NRE_callback {
 #define NRE_ASSERT(expr)
 #endif
 
+/*
+ * Convenience macros for iterating through hash tables. FOREACH_HASH_DECLS
+ * sets up the declarations needed for the main macro, FOREACH_HASH, which
+ * does the actual iteration. FOREACH_HASH_KEY and FOREACH_HASH_VALUE are
+ * restricted versions that only iterate over keys or values respectively.
+ */
+
+typedef struct TclHashIter {
+    Tcl_HashEntry *hPtr;
+    Tcl_HashSearch search;
+} TclHashIter;
+
+static inline TclHashIter
+TclFirstHashEntryEx1(
+    Tcl_HashTable *tablePtr)
+{
+    Tcl_HashSearch search;
+    Tcl_HashEntry *hPtr = Tcl_FirstHashEntry(tablePtr, &search);
+    return (TclHashIter){ hPtr, search };
+}
+
+static inline Tcl_HashSearch
+TclFirstHashEntryEx2(
+    Tcl_HashTable *tablePtr,
+    Tcl_HashEntry **hPtrPtr)
+{
+    Tcl_HashSearch search;
+    *hPtrPtr = Tcl_FirstHashEntry(tablePtr, &search);
+    return search;
+}
+
+#define FOREACH_HASH(key, val, tablePtr) \
+    for (TclHashIter hi = TclFirstHashEntryEx1(tablePtr); hi.hPtr ?	\
+	    (*(void **)&(key) = Tcl_GetHashKey((tablePtr), hi.hPtr),	\
+	    *(void **)&(val) = Tcl_GetHashValue(hi.hPtr), 1) : 0;	\
+	    hi.hPtr = Tcl_NextHashEntry(&hi.search))
+#define FOREACH_HASH_KEY(key, tablePtr) \
+    for (TclHashIter hi = TclFirstHashEntryEx1(tablePtr); hi.hPtr ?	\
+	    (*(void **)&(key) = Tcl_GetHashKey((tablePtr), hi.hPtr), 1) : 0; \
+	    hi.hPtr = Tcl_NextHashEntry(&hi.search))
+#define FOREACH_HASH_VALUE(val, tablePtr) \
+    for (TclHashIter hi = TclFirstHashEntryEx1(tablePtr); hi.hPtr ?	\
+	    (*(void **)&(val) = Tcl_GetHashValue(hi.hPtr), 1) : 0;	\
+	    hi.hPtr = Tcl_NextHashEntry(&hi.search))
+#define FOREACH_HASH_ENTRY(hPtr, tablePtr) \
+    for (Tcl_HashSearch search = TclFirstHashEntryEx2((tablePtr), &(hPtr)); \
+	    (hPtr); (hPtr) = Tcl_NextHashEntry(&search))
+#define FOREACH_HASH_ENTRY_REINIT(hPtr, tablePtr) \
+    for (Tcl_HashSearch search = TclFirstHashEntryEx2((tablePtr), &(hPtr)); \
+	    (hPtr); (hPtr) = Tcl_FirstHashEntry((tablePtr), &search))
+
 #include "tclIntDecls.h"
 #include "tclIntPlatDecls.h"
 

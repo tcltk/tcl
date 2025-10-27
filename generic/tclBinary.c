@@ -2373,21 +2373,15 @@ DeleteScanNumberCache(
 				 * the cache has already been deleted due to
 				 * overflow.) */
 {
-    Tcl_HashEntry *hEntry;
-    Tcl_HashSearch search;
-
     if (numberCachePtr == NULL) {
 	return;
     }
 
-    hEntry = Tcl_FirstHashEntry(numberCachePtr, &search);
-    while (hEntry != NULL) {
-	Tcl_Obj *value = (Tcl_Obj *)Tcl_GetHashValue(hEntry);
-
+    Tcl_Obj *value;
+    FOREACH_HASH_VALUE(value, numberCachePtr) {
 	if (value != NULL) {
 	    Tcl_DecrRefCount(value);
 	}
-	hEntry = Tcl_NextHashEntry(&search);
     }
     Tcl_DeleteHashTable(numberCachePtr);
 }

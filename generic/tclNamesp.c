@@ -1258,7 +1258,6 @@ TclTeardownNamespace(
 {
     Tcl_Interp *interp = nsPtr->interp;
     Tcl_HashEntry *entryPtr;
-    Tcl_HashSearch search;
     Tcl_Size i;
 
     /*
@@ -1282,13 +1281,11 @@ TclTeardownNamespace(
     while (nsPtr->cmdTable.numEntries > 0) {
 	Tcl_Size length = nsPtr->cmdTable.numEntries;
 	Command **cmds = (Command **)TclStackAlloc(interp,
-		sizeof(Command *) * length);
+		sizeof(Command *) * length), *cmd;
 
 	i = 0;
-	for (entryPtr = Tcl_FirstHashEntry(&nsPtr->cmdTable, &search);
-		entryPtr != NULL;
-		entryPtr = Tcl_NextHashEntry(&search)) {
-	    cmds[i] = (Command *) Tcl_GetHashValue(entryPtr);
+	FOREACH_HASH_VALUE(cmd, &nsPtr->cmdTable) {
+	    cmds[i] = cmd;
 	    cmds[i]->refCount++;
 	    i++;
 	}
@@ -1666,7 +1663,6 @@ Tcl_Import(
     Namespace *nsPtr, *importNsPtr, *dummyPtr;
     const char *simplePattern;
     Tcl_HashEntry *hPtr;
-    Tcl_HashSearch search;
 
     /*
      * If the specified namespace is NULL, use the current namespace.
@@ -1756,8 +1752,7 @@ Tcl_Import(
 	return DoImport(interp, nsPtr, hPtr, simplePattern, pattern,
 		importNsPtr, allowOverwrite);
     }
-    for (hPtr = Tcl_FirstHashEntry(&importNsPtr->cmdTable, &search);
-	    (hPtr != NULL); hPtr = Tcl_NextHashEntry(&search)) {
+    FOREACH_HASH_ENTRY(hPtr, &importNsPtr->cmdTable) {
 	char *cmdName = (char *) Tcl_GetHashKey(&importNsPtr->cmdTable, hPtr);
 
 	if (Tcl_StringMatch(cmdName, simplePattern) &&
@@ -1946,8 +1941,6 @@ Tcl_ForgetImport(
     Namespace *nsPtr, *sourceNsPtr, *dummyPtr;
     const char *simplePattern;
     char *cmdName;
-    Tcl_HashEntry *hPtr;
-    Tcl_HashSearch search;
 
     /*
      * If the specified namespace is NULL, use the current namespace.
@@ -1980,25 +1973,23 @@ Tcl_ForgetImport(
 	 * The pattern is simple. Delete any imported commands that match it.
 	 */
 
-	if (TclMatchIsTrivial(simplePattern)) {
-	    hPtr = Tcl_FindHashEntry(&nsPtr->cmdTable, simplePattern);
-	    if (hPtr != NULL) {
-		Command *cmdPtr = (Command *) Tcl_GetHashValue(hPtr);
+	Command *cmdPtr;
 
+	if (TclMatchIsTrivial(simplePattern)) {
+	    Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&nsPtr->cmdTable,
+		    simplePattern);
+	    if (hPtr != NULL) {
+		cmdPtr = (Command *) Tcl_GetHashValue(hPtr);
 		if (cmdPtr && (cmdPtr->deleteProc == DeleteImportedCmd)) {
 		    Tcl_DeleteCommandFromToken(interp, (Tcl_Command) cmdPtr);
 		}
 	    }
 	    return TCL_OK;
 	}
-	for (hPtr = Tcl_FirstHashEntry(&nsPtr->cmdTable, &search);
-		(hPtr != NULL); hPtr = Tcl_NextHashEntry(&search)) {
-	    Command *cmdPtr = (Command *) Tcl_GetHashValue(hPtr);
-
+	FOREACH_HASH(cmdName, cmdPtr, &nsPtr->cmdTable) {
 	    if (cmdPtr->deleteProc != DeleteImportedCmd) {
 		continue;
 	    }
-	    cmdName = (char *) Tcl_GetHashKey(&nsPtr->cmdTable, hPtr);
 	    if (Tcl_StringMatch(cmdName, simplePattern)) {
 		Tcl_DeleteCommandFromToken(interp, (Tcl_Command) cmdPtr);
 	    }
@@ -2010,10 +2001,9 @@ Tcl_ForgetImport(
      * The pattern was namespace-qualified.
      */
 
-    for (hPtr = Tcl_FirstHashEntry(&nsPtr->cmdTable, &search); (hPtr != NULL);
-	    hPtr = Tcl_NextHashEntry(&search)) {
+    Tcl_Command token;
+    FOREACH_HASH_VALUE(token, &nsPtr->cmdTable) {
 	Tcl_CmdInfo info;
-	Tcl_Command token = (Tcl_Command) Tcl_GetHashValue(hPtr);
 	Tcl_Command origin = TclGetOriginalCommand(token);
 
 	if (Tcl_GetCommandInfoFromToken(origin, &info) == 0) {
@@ -3834,19 +3824,16 @@ NamespaceImportCmd(
 	 * form to return list of imported commands.
 	 */
 
-	Tcl_HashEntry *hPtr;
-	Tcl_HashSearch search;
 	Namespace *nsPtr = (Namespace *) TclGetCurrentNamespace(interp);
 	Tcl_Obj *listPtr;
+	const char *cmdName;
+	Command *cmdPtr;
 
 	TclNewObj(listPtr);
-	for (hPtr = Tcl_FirstHashEntry(&nsPtr->cmdTable, &search);
-		hPtr != NULL; hPtr = Tcl_NextHashEntry(&search)) {
-	    Command *cmdPtr = (Command *) Tcl_GetHashValue(hPtr);
-
+	FOREACH_HASH(cmdName, cmdPtr, &nsPtr->cmdTable) {
 	    if (cmdPtr->deleteProc == DeleteImportedCmd) {
 		Tcl_ListObjAppendElement(NULL, listPtr, Tcl_NewStringObj(
-			(char *) Tcl_GetHashKey(&nsPtr->cmdTable, hPtr), -1));
+			cmdName, -1));
 	    }
 	}
 	Tcl_SetObjResult(interp, listPtr);

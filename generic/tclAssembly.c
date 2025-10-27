@@ -2097,15 +2097,12 @@ DeleteMirrorJumpTable(
     JumptableNumInfo* jtnPtr)
 {
     Tcl_HashTable* hashPtr;	/* Hash table pointer */
-    Tcl_HashSearch search;	/* Hash search control */
     Tcl_HashEntry* entry;	/* Hash table entry containing a jump label */
     Tcl_Obj* label;		/* Jump label from the hash table */
 
     if (jtPtr) {
 	hashPtr = &jtPtr->hashTable;
-	for (entry = Tcl_FirstHashEntry(hashPtr, &search);
-		entry != NULL;
-		entry = Tcl_NextHashEntry(&search)) {
+	FOREACH_HASH_ENTRY(entry, hashPtr) {
 	    label = (Tcl_Obj*)Tcl_GetHashValue(entry);
 	    Tcl_DecrRefCount(label);
 	    Tcl_SetHashValue(entry, NULL);
@@ -2115,9 +2112,7 @@ DeleteMirrorJumpTable(
     }
     if (jtnPtr) {
 	hashPtr = &jtnPtr->hashTable;
-	for (entry = Tcl_FirstHashEntry(hashPtr, &search);
-		entry != NULL;
-		entry = Tcl_NextHashEntry(&search)) {
+	FOREACH_HASH_ENTRY(entry, hashPtr) {
 	    label = (Tcl_Obj*)Tcl_GetHashValue(entry);
 	    Tcl_DecrRefCount(label);
 	    Tcl_SetHashValue(entry, NULL);
@@ -2876,8 +2871,6 @@ CheckJumpTableLabels(
     BasicBlock* bbPtr)		/* Basic block that ends in a jump table */
 {
     Tcl_HashTable* symHash;	/* Hash table with the symbols */
-    Tcl_HashSearch search;	/* Hash table iterator */
-    Tcl_HashEntry* symEntryPtr;	/* Hash entry for the symbols */
     Tcl_Obj* symbolObj;		/* Jump target */
     Tcl_HashEntry* valEntryPtr;	/* Hash entry for the resolutions */
 
@@ -2887,32 +2880,26 @@ CheckJumpTableLabels(
 
     DEBUG_PRINT("check jump table labels %p {\n", bbPtr);
     if (bbPtr->jtPtr) {
+	char *label;
 	symHash = &bbPtr->jtPtr->hashTable;
-	for (symEntryPtr = Tcl_FirstHashEntry(symHash, &search);
-		symEntryPtr != NULL;
-		symEntryPtr = Tcl_NextHashEntry(&search)) {
-	    symbolObj = (Tcl_Obj*)Tcl_GetHashValue(symEntryPtr);
+	FOREACH_HASH(label, symbolObj, symHash) {
 	    valEntryPtr = Tcl_FindHashEntry(&assemEnvPtr->labelHash,
 		    TclGetString(symbolObj));
 	    DEBUG_PRINT("  %s -> %s (%d)\n",
-		    (char *)Tcl_GetHashKey(symHash, symEntryPtr),
-		    TclGetString(symbolObj), (valEntryPtr != NULL));
+		    label, TclGetString(symbolObj), (valEntryPtr != NULL));
 	    if (valEntryPtr == NULL) {
 		ReportUndefinedLabel(assemEnvPtr, bbPtr, symbolObj);
 		return TCL_ERROR;
 	    }
 	}
     } else {
+	Tcl_Size label;
 	symHash = &bbPtr->jtnPtr->hashTable;
-	for (symEntryPtr = Tcl_FirstHashEntry(symHash, &search);
-		symEntryPtr != NULL;
-		symEntryPtr = Tcl_NextHashEntry(&search)) {
-	    symbolObj = (Tcl_Obj*)Tcl_GetHashValue(symEntryPtr);
+	FOREACH_HASH(label, symbolObj, symHash) {
 	    valEntryPtr = Tcl_FindHashEntry(&assemEnvPtr->labelHash,
 		    TclGetString(symbolObj));
 	    DEBUG_PRINT("  %" TCL_SIZE_MODIFIER "d -> %s (%d)\n",
-		    (Tcl_Size)Tcl_GetHashKey(symHash, symEntryPtr),
-		    TclGetString(symbolObj), (valEntryPtr != NULL));
+		    label, TclGetString(symbolObj), (valEntryPtr != NULL));
 	    if (valEntryPtr == NULL) {
 		ReportUndefinedLabel(assemEnvPtr, bbPtr, symbolObj);
 		return TCL_ERROR;
@@ -3022,8 +3009,6 @@ ResolveJumpTableTargets(
     CompileEnv* envPtr = assemEnvPtr->envPtr;
 				/* Compilation environment */
     Tcl_HashTable* symHash;	/* Hash table with the symbols */
-    Tcl_HashSearch search;	/* Hash table iterator */
-    Tcl_HashEntry* symEntryPtr;	/* Hash entry for the symbols */
     Tcl_Obj* symbolObj;		/* Jump target */
     Tcl_HashEntry* valEntryPtr;	/* Hash entry for the resolutions */
     Tcl_HashTable* realJumpHashPtr;
@@ -3038,6 +3023,7 @@ ResolveJumpTableTargets(
 	int auxDataIndex;	/* Index of the auxdata */
 	JumptableInfo* realJumpTablePtr;
 				/* Jump table in the actual code */
+	char *labelName;
 
 	symHash = &bbPtr->jtPtr->hashTable;
 	auxDataIndex = TclGetInt4AtPtr(
@@ -3053,21 +3039,16 @@ ResolveJumpTableTargets(
 	 */
 
 	DEBUG_PRINT("resolve jump table {\n");
-	for (symEntryPtr = Tcl_FirstHashEntry(symHash, &search);
-		symEntryPtr != NULL;
-		symEntryPtr = Tcl_NextHashEntry(&search)) {
-	    symbolObj = (Tcl_Obj*)Tcl_GetHashValue(symEntryPtr);
+	FOREACH_HASH(labelName, symbolObj, symHash) {
 	    DEBUG_PRINT("     symbol %s\n", TclGetString(symbolObj));
 
 	    valEntryPtr = Tcl_FindHashEntry(&assemEnvPtr->labelHash,
 		    TclGetString(symbolObj));
 	    jumpTargetBBPtr = (BasicBlock*)Tcl_GetHashValue(valEntryPtr);
 
-	    realJumpEntryPtr = Tcl_CreateHashEntry(realJumpHashPtr,
-		    Tcl_GetHashKey(symHash, symEntryPtr), NULL);
+	    realJumpEntryPtr = Tcl_CreateHashEntry(realJumpHashPtr, labelName, NULL);
 	    DEBUG_PRINT("  %s -> %s -> bb %p (pc %d)    hash entry %p\n",
-		    (char *)Tcl_GetHashKey(symHash, symEntryPtr),
-		    TclGetString(symbolObj), jumpTargetBBPtr,
+		    labelName, TclGetString(symbolObj), jumpTargetBBPtr,
 		    jumpTargetBBPtr->startOffset, realJumpEntryPtr);
 
 	    Tcl_SetHashValue(realJumpEntryPtr,
@@ -3078,6 +3059,7 @@ ResolveJumpTableTargets(
 	int auxDataIndex;	/* Index of the auxdata */
 	JumptableNumInfo* realNumJumpTablePtr;
 				/* Jump table in the actual code */
+	Tcl_Size labelValue;
 
 	assert(bbPtr->jtnPtr);
 	symHash = &bbPtr->jtnPtr->hashTable;
@@ -3094,10 +3076,7 @@ ResolveJumpTableTargets(
 	 */
 
 	DEBUG_PRINT("resolve jump table {\n");
-	for (symEntryPtr = Tcl_FirstHashEntry(symHash, &search);
-		symEntryPtr != NULL;
-		symEntryPtr = Tcl_NextHashEntry(&search)) {
-	    symbolObj = (Tcl_Obj*)Tcl_GetHashValue(symEntryPtr);
+	FOREACH_HASH(labelValue, symbolObj, symHash) {
 	    DEBUG_PRINT("     symbol %s\n", TclGetString(symbolObj));
 
 	    valEntryPtr = Tcl_FindHashEntry(&assemEnvPtr->labelHash,
@@ -3105,12 +3084,11 @@ ResolveJumpTableTargets(
 	    jumpTargetBBPtr = (BasicBlock*)Tcl_GetHashValue(valEntryPtr);
 
 	    realJumpEntryPtr = Tcl_CreateHashEntry(realJumpHashPtr,
-		    Tcl_GetHashKey(symHash, symEntryPtr), NULL);
+		    (void *) labelValue, NULL);
 	    DEBUG_PRINT(
 		    "  %" TCL_SIZE_MODIFIER "d -> %s -> bb %p (pc %d)"
 		    "    hash entry %p\n",
-		    (Tcl_Size) Tcl_GetHashKey(symHash, symEntryPtr),
-		    TclGetString(symbolObj), jumpTargetBBPtr,
+		    labelValue, TclGetString(symbolObj), jumpTargetBBPtr,
 		    jumpTargetBBPtr->startOffset, realJumpEntryPtr);
 
 	    Tcl_SetHashValue(realJumpEntryPtr,
@@ -3388,8 +3366,6 @@ StackCheckBasicBlock(
     int stackDepth;		/* Current stack depth */
     int maxDepth;		/* Maximum stack depth so far */
     int result;			/* Tcl status return */
-    Tcl_HashSearch jtSearch;	/* Search structure for the jump table */
-    Tcl_HashEntry* jtEntry;	/* Hash entry in the jump table */
     Tcl_Obj* targetLabel;	/* Target label from the jump table */
     Tcl_HashEntry* entry;	/* Hash entry in the label table */
 
@@ -3499,10 +3475,7 @@ StackCheckBasicBlock(
     if (blockPtr->flags & BB_JUMPTABLE) {
 	Tcl_HashTable *tablePtr = (blockPtr->jtPtr ?
 		&blockPtr->jtPtr->hashTable : &blockPtr->jtnPtr->hashTable);
-	for (jtEntry = Tcl_FirstHashEntry(tablePtr, &jtSearch);
-		result == TCL_OK && jtEntry != NULL;
-		jtEntry = Tcl_NextHashEntry(&jtSearch)) {
-	    targetLabel = (Tcl_Obj*)Tcl_GetHashValue(jtEntry);
+	FOREACH_HASH_VALUE(targetLabel, tablePtr)  {
 	    entry = Tcl_FindHashEntry(&assemEnvPtr->labelHash,
 		    TclGetString(targetLabel));
 	    jumpTarget = (BasicBlock*)Tcl_GetHashValue(entry);
@@ -3711,8 +3684,6 @@ ProcessCatchesInBasicBlock(
 				 * checked because the state of this block has
 				 * changed. */
     BasicBlock* jumpTarget;	/* Basic block where a jump goes */
-    Tcl_HashSearch jtSearch;	/* Hash search control for a jumptable */
-    Tcl_HashEntry* jtEntry;	/* Entry in a jumptable */
     Tcl_Obj* targetLabel;	/* Target label from a jumptable */
     Tcl_HashEntry* entry;	/* Entry from the label table */
 
@@ -3823,10 +3794,7 @@ ProcessCatchesInBasicBlock(
     if (bbPtr->flags & BB_JUMPTABLE) {
 	Tcl_HashTable *tablePtr = (bbPtr->jtPtr ?
 		&bbPtr->jtPtr->hashTable : &bbPtr->jtnPtr->hashTable);
-	for (jtEntry = Tcl_FirstHashEntry(tablePtr, &jtSearch);
-		result == TCL_OK && jtEntry != NULL;
-		jtEntry = Tcl_NextHashEntry(&jtSearch)) {
-	    targetLabel = (Tcl_Obj*)Tcl_GetHashValue(jtEntry);
+	FOREACH_HASH_VALUE(targetLabel, tablePtr) {
 	    entry = Tcl_FindHashEntry(&assemEnvPtr->labelHash,
 		    TclGetString(targetLabel));
 	    jumpTarget = (BasicBlock*)Tcl_GetHashValue(entry);

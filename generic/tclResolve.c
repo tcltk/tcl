@@ -257,24 +257,16 @@ static void
 BumpCmdRefEpochs(
     Namespace *nsPtr)		/* Namespace being modified. */
 {
-    Tcl_HashEntry *entry;
-    Tcl_HashSearch search;
-
+    Namespace *childNsPtr;
     nsPtr->cmdRefEpoch++;
 
 #ifndef BREAK_NAMESPACE_COMPAT
-    for (entry = Tcl_FirstHashEntry(&nsPtr->childTable, &search);
-	    entry != NULL; entry = Tcl_NextHashEntry(&search)) {
-	Namespace *childNsPtr = (Namespace *)Tcl_GetHashValue(entry);
-
+    FOREACH_HASH_VALUE(childNsPtr, &nsPtr->childTable) {
 	BumpCmdRefEpochs(childNsPtr);
     }
 #else
     if (nsPtr->childTablePtr != NULL) {
-	for (entry = Tcl_FirstHashEntry(nsPtr->childTablePtr, &search);
-		entry != NULL; entry = Tcl_NextHashEntry(&search)) {
-	    Namespace *childNsPtr = (Namespace *)Tcl_GetHashValue(entry);
-
+	FOREACH_HASH_VALUE(childNsPtr, nsPtr->childTablePtr) {
 	    BumpCmdRefEpochs(childNsPtr);
 	}
     }

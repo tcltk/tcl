@@ -420,21 +420,16 @@ void
 TclFinalizeThreadObjects(void)
 {
 #if TCL_THREADS && defined(TCL_MEM_DEBUG)
-    Tcl_HashEntry *hPtr;
-    Tcl_HashSearch hSearch;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     Tcl_HashTable *tablePtr = tsdPtr->objThreadMap;
 
     if (tablePtr != NULL) {
-	for (hPtr = Tcl_FirstHashEntry(tablePtr, &hSearch);
-		hPtr != NULL; hPtr = Tcl_NextHashEntry(&hSearch)) {
-	    ObjData *objData = (ObjData *)Tcl_GetHashValue(hPtr);
-
+	ObjData *objData;
+	FOREACH_HASH_VALUE(objData, tablePtr) {
 	    if (objData != NULL) {
 		Tcl_Free(objData);
 	    }
 	}
-
 	Tcl_DeleteHashTable(tablePtr);
 	Tcl_Free(tablePtr);
 	tsdPtr->objThreadMap = NULL;
@@ -773,10 +768,8 @@ TclThreadFinalizeContLines(
 
     ThreadSpecificData *tsdPtr = TclGetContLineTable();
     Tcl_HashEntry *hPtr;
-    Tcl_HashSearch hSearch;
 
-    for (hPtr = Tcl_FirstHashEntry(tsdPtr->lineCLPtr, &hSearch);
-	    hPtr != NULL; hPtr = Tcl_NextHashEntry(&hSearch)) {
+    FOREACH_HASH_ENTRY(hPtr, tsdPtr->lineCLPtr) {
 	Tcl_Free(Tcl_GetHashValue(hPtr));
 	Tcl_DeleteHashEntry(hPtr);
     }
@@ -847,8 +840,6 @@ Tcl_AppendAllObjTypes(
 				 * name of each registered type is appended as
 				 * a list element. */
 {
-    Tcl_HashEntry *hPtr;
-    Tcl_HashSearch search;
     Tcl_Size numElems;
 
     /*
@@ -865,10 +856,9 @@ Tcl_AppendAllObjTypes(
      */
 
     Tcl_MutexLock(&tableMutex);
-    for (hPtr = Tcl_FirstHashEntry(&typeTable, &search);
-	    hPtr != NULL; hPtr = Tcl_NextHashEntry(&search)) {
-	Tcl_ListObjAppendElement(NULL, objPtr,
-		Tcl_NewStringObj((char *)Tcl_GetHashKey(&typeTable, hPtr), -1));
+    const char *typeName;
+    FOREACH_HASH_KEY(typeName, &typeTable) {
+	Tcl_ListObjAppendElement(NULL, objPtr, Tcl_NewStringObj(typeName, -1));
     }
     Tcl_MutexUnlock(&tableMutex);
     return TCL_OK;
@@ -977,27 +967,20 @@ void
 TclDbDumpActiveObjects(
     FILE *outFile)
 {
-    Tcl_HashSearch hSearch;
-    Tcl_HashEntry *hPtr;
-    Tcl_HashTable *tablePtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-
-    tablePtr = tsdPtr->objThreadMap;
+    Tcl_HashTable *tablePtr = tsdPtr->objThreadMap;
 
     if (tablePtr != NULL) {
 	fprintf(outFile, "total objects: %" TCL_SIZE_MODIFIER "d\n", tablePtr->numEntries);
-	for (hPtr = Tcl_FirstHashEntry(tablePtr, &hSearch); hPtr != NULL;
-		hPtr = Tcl_NextHashEntry(&hSearch)) {
-	    ObjData *objData = (ObjData *)Tcl_GetHashValue(hPtr);
-
+	void *ptr;
+	ObjData *objData;
+	FOREACH_HASH(ptr, objData, tablePtr) {
 	    if (objData != NULL) {
 		fprintf(outFile,
 			"key = 0x%p, objPtr = 0x%p, file = %s, line = %d\n",
-			Tcl_GetHashKey(tablePtr, hPtr), objData->objPtr,
-			objData->file, objData->line);
+			ptr, objData->objPtr, objData->file, objData->line);
 	    } else {
-		fprintf(outFile, "key = 0x%p\n",
-			Tcl_GetHashKey(tablePtr, hPtr));
+		fprintf(outFile, "key = 0x%p\n", ptr);
 	    }
 	}
     }

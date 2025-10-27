@@ -2748,14 +2748,13 @@ DupJumptableInfo(
 {
     JumptableInfo *jtPtr = (JumptableInfo *)clientData;
     JumptableInfo *newJtPtr = AllocJumptable();
-    Tcl_HashEntry *hPtr, *newHPtr;
-    Tcl_HashSearch search;
+    char *label;
+    Tcl_Size offset;
 
-    hPtr = Tcl_FirstHashEntry(&jtPtr->hashTable, &search);
-    for (; hPtr ; hPtr = Tcl_NextHashEntry(&search)) {
-	newHPtr = Tcl_CreateHashEntry(&newJtPtr->hashTable,
-		Tcl_GetHashKey(&jtPtr->hashTable, hPtr), NULL);
-	Tcl_SetHashValue(newHPtr, Tcl_GetHashValue(hPtr));
+    FOREACH_HASH(label, offset, &jtPtr->hashTable) {
+	Tcl_HashEntry *newHPtr = Tcl_CreateHashEntry(&newJtPtr->hashTable,
+		label, NULL);
+	Tcl_SetHashValue(newHPtr, INT2PTR(offset));
     }
     return newJtPtr;
 }
@@ -2778,16 +2777,10 @@ PrintJumptableInfo(
     size_t pcOffset)
 {
     JumptableInfo *jtPtr = (JumptableInfo *)clientData;
-    Tcl_HashEntry *hPtr;
-    Tcl_HashSearch search;
     const char *keyPtr;
-    size_t offset, i = 0;
+    Tcl_Size offset, i = 0;
 
-    hPtr = Tcl_FirstHashEntry(&jtPtr->hashTable, &search);
-    for (; hPtr ; hPtr = Tcl_NextHashEntry(&search)) {
-	keyPtr = (const char *)Tcl_GetHashKey(&jtPtr->hashTable, hPtr);
-	offset = PTR2INT(Tcl_GetHashValue(hPtr));
-
+    FOREACH_HASH(keyPtr, offset, &jtPtr->hashTable) {
 	if (i++) {
 	    Tcl_AppendToObj(appendObj, ", ", TCL_AUTO_LENGTH);
 	    if (i % 4 == 0) {
@@ -2795,7 +2788,7 @@ PrintJumptableInfo(
 	    }
 	}
 	Tcl_AppendPrintfToObj(appendObj, "\"%s\"->pc %" TCL_Z_MODIFIER "u",
-		keyPtr, pcOffset + offset);
+		keyPtr, (size_t)(pcOffset + offset));
     }
 }
 
@@ -2808,16 +2801,11 @@ DisassembleJumptableInfo(
 {
     JumptableInfo *jtPtr = (JumptableInfo *)clientData;
     Tcl_Obj *mapping;
-    Tcl_HashEntry *hPtr;
-    Tcl_HashSearch search;
     const char *keyPtr;
-    size_t offset;
+    Tcl_Size offset;
 
     TclNewObj(mapping);
-    hPtr = Tcl_FirstHashEntry(&jtPtr->hashTable, &search);
-    for (; hPtr ; hPtr = Tcl_NextHashEntry(&search)) {
-	keyPtr = (const char *)Tcl_GetHashKey(&jtPtr->hashTable, hPtr);
-	offset = PTR2INT(Tcl_GetHashValue(hPtr));
+    FOREACH_HASH(keyPtr, offset, &jtPtr->hashTable) {
 	TclDictPut(NULL, mapping, keyPtr, Tcl_NewWideIntObj(offset));
     }
     TclDictPut(NULL, dictObj, "mapping", mapping);
@@ -2829,14 +2817,12 @@ DupJumptableNumInfo(
 {
     JumptableNumInfo *jtnPtr = (JumptableNumInfo *) clientData;
     JumptableNumInfo *newJtnPtr = AllocJumptableNum();
-    Tcl_HashEntry *hPtr, *newHPtr;
-    Tcl_HashSearch search;
+    Tcl_Size label, offset;
 
-    hPtr = Tcl_FirstHashEntry(&jtnPtr->hashTable, &search);
-    for (; hPtr ; hPtr = Tcl_NextHashEntry(&search)) {
-	newHPtr = Tcl_CreateHashEntry(&newJtnPtr->hashTable,
-		Tcl_GetHashKey(&jtnPtr->hashTable, hPtr), NULL);
-	Tcl_SetHashValue(newHPtr, Tcl_GetHashValue(hPtr));
+    FOREACH_HASH(label, offset, &jtnPtr->hashTable) {
+	Tcl_HashEntry *newHPtr = Tcl_CreateHashEntry(&newJtnPtr->hashTable,
+		(void *) label, NULL);
+	Tcl_SetHashValue(newHPtr, INT2PTR(offset));
     }
     return newJtnPtr;
 }
@@ -2851,16 +2837,9 @@ PrintJumptableNumInfo(
     size_t pcOffset)
 {
     JumptableNumInfo *jtnPtr = (JumptableNumInfo *)clientData;
-    Tcl_HashEntry *hPtr;
-    Tcl_HashSearch search;
-    Tcl_Size key;
-    size_t offset, i = 0;
+    Tcl_Size key, offset, i = 0;
 
-    hPtr = Tcl_FirstHashEntry(&jtnPtr->hashTable, &search);
-    for (; hPtr ; hPtr = Tcl_NextHashEntry(&search)) {
-	key = (Tcl_Size) Tcl_GetHashKey(&jtnPtr->hashTable, hPtr);
-	offset = PTR2INT(Tcl_GetHashValue(hPtr));
-
+    FOREACH_HASH(key, offset, &jtnPtr->hashTable) {
 	if (i++) {
 	    Tcl_AppendToObj(appendObj, ", ", TCL_AUTO_LENGTH);
 	    if (i%4==0) {
@@ -2869,7 +2848,7 @@ PrintJumptableNumInfo(
 	}
 	Tcl_AppendPrintfToObj(appendObj,
 		"%" TCL_SIZE_MODIFIER "d->pc %" TCL_Z_MODIFIER "u",
-		key, pcOffset + offset);
+		key, (size_t)(pcOffset + offset));
     }
 }
 
@@ -2882,16 +2861,10 @@ DisassembleJumptableNumInfo(
 {
     JumptableNumInfo *jtnPtr = (JumptableNumInfo *)clientData;
     Tcl_Obj *mapping;
-    Tcl_HashEntry *hPtr;
-    Tcl_HashSearch search;
-    Tcl_Size key;
-    size_t offset;
+    Tcl_Size key, offset;
 
     TclNewObj(mapping);
-    hPtr = Tcl_FirstHashEntry(&jtnPtr->hashTable, &search);
-    for (; hPtr ; hPtr = Tcl_NextHashEntry(&search)) {
-	key = (Tcl_Size) Tcl_GetHashKey(&jtnPtr->hashTable, hPtr);
-	offset = PTR2INT(Tcl_GetHashValue(hPtr));
+    FOREACH_HASH(key, offset, &jtnPtr->hashTable) {
 	// Cannot fail: keys already known to be unique
 	Tcl_DictObjPut(NULL, mapping, Tcl_NewWideIntObj(key),
 		Tcl_NewWideIntObj(offset));
