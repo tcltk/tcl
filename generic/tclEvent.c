@@ -463,7 +463,7 @@ TclDefaultBgErrorHandlerObjCmd(
 
 	if (Tcl_IsSafe(interp)) {
 	    Tcl_RestoreInterpState(interp, saved);
-	    TclObjInvoke(interp, 2, tempObjv, TCL_INVOKE_HIDDEN);
+	    Tcl_NRCallObjProc(interp, TclNRInvoke, NULL, 2, tempObjv);
 	} else {
 	    Tcl_Channel errChannel = Tcl_GetStdChannel(TCL_STDERR);
 

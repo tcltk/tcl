@@ -125,7 +125,7 @@ static Tcl_Size		ParseComment(const char *src, Tcl_Size numBytes,
 static int		ParseTokens(const char *src, Tcl_Size numBytes, int mask,
 			    int flags, Tcl_Parse *parsePtr);
 static Tcl_Size		ParseWhiteSpace(const char *src, Tcl_Size numBytes,
-			    int *incompletePtr, char *typePtr);
+			    int *incompletePtr, unsigned char *typePtr);
 static Tcl_Size		ParseAllWhiteSpace(const char *src, Tcl_Size numBytes,
 			    int *incompletePtr);
 static Tcl_Size		ParseHex(const char *src, Tcl_Size numBytes,
@@ -210,7 +210,7 @@ Tcl_ParseCommand(
 {
     const char *src;		/* Points to current character in the
 				 * command. */
-    char type;			/* Result returned by CHAR_TYPE(*src). */
+    unsigned char type;		/* Result returned by CHAR_TYPE(*src). */
     Tcl_Token *tokenPtr;	/* Pointer to token being filled in. */
     Tcl_Size wordIndex;		/* Index of word token for current word. */
     int terminators;		/* CHAR_TYPE bits that indicate the end of a
@@ -552,11 +552,11 @@ Tcl_ParseCommand(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 TclIsSpaceProc(
     int byte)
 {
-    return CHAR_TYPE(byte) & (TYPE_SPACE) || byte == '\n';
+    return (CHAR_TYPE(byte) & TYPE_SPACE) || (byte == '\n');
 }
 
 /*
@@ -626,10 +626,10 @@ ParseWhiteSpace(
     Tcl_Size numBytes,		/* Max number of bytes to scan. */
     int *incompletePtr,		/* Set this boolean memory to true if parsing
 				 * indicates an incomplete command. */
-    char *typePtr)		/* Points to location to store character type
+    unsigned char *typePtr)		/* Points to location to store character type
 				 * of character that ends run of whitespace */
 {
-    char type = TYPE_NORMAL;
+    unsigned char type = TYPE_NORMAL;
     const char *p = src;
 
     while (true) {
@@ -680,7 +680,7 @@ ParseAllWhiteSpace(
     Tcl_Size numBytes,		/* Max number of byes to scan */
     int *incompletePtr)		/* Set true if parse is incomplete. */
 {
-    char type;
+    unsigned char type;
     const char *p = src;
 
     do {
@@ -1000,7 +1000,7 @@ ParseComment(
 		    break;
 		}
 	    }
-	    incomplete = (*p == '\n');
+	    incomplete = (*p == '\n') ? 1 : 0;
 	    p++;
 	    numBytes--;
 	}
@@ -1051,11 +1051,8 @@ ParseTokens(
 				 * Updated with additional tokens and
 				 * termination information. */
 {
-    char type;
+    unsigned char type;
     Tcl_Size originalTokens;
-    int noSubstCmds = !(flags & TCL_SUBST_COMMANDS);
-    int noSubstVars = !(flags & TCL_SUBST_VARIABLES);
-    int noSubstBS = !(flags & TCL_SUBST_BACKSLASHES);
     Tcl_Token *tokenPtr;
 
     /*
@@ -1088,7 +1085,7 @@ ParseTokens(
 	} else if (*src == '$') {
 	    Tcl_Size varToken;
 
-	    if (noSubstVars) {
+	    if (!(flags & TCL_SUBST_VARIABLES)) {
 		tokenPtr->type = TCL_TOKEN_TEXT;
 		tokenPtr->size = 1;
 		parsePtr->numTokens++;
@@ -1112,7 +1109,7 @@ ParseTokens(
 	} else if (*src == '[') {
 	    Tcl_Parse *nestedPtr;
 
-	    if (noSubstCmds) {
+	    if (!(flags & TCL_SUBST_COMMANDS)) {
 		tokenPtr->type = TCL_TOKEN_TEXT;
 		tokenPtr->size = 1;
 		parsePtr->numTokens++;
@@ -1174,7 +1171,7 @@ ParseTokens(
 	    tokenPtr->size = src - tokenPtr->start;
 	    parsePtr->numTokens++;
 	} else if (*src == '\\') {
-	    if (noSubstBS) {
+	    if (!(flags & TCL_SUBST_BACKSLASHES)) {
 		tokenPtr->type = TCL_TOKEN_TEXT;
 		tokenPtr->size = 1;
 		parsePtr->numTokens++;

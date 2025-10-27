@@ -68,7 +68,7 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stdint.h>
-#if defined(__STDC_VERSION__) && __STDC_VERSION__ < 202311L
+#if defined(_MSC_VER) || (defined(__STDC_VERSION__) && (__STDC_VERSION__ < 202311L))
 #include <stdbool.h>
 #endif
 #include <string.h>
@@ -152,7 +152,7 @@
 #elif defined(__GNUC__)
 #define TCL_UNREACHABLE()	__builtin_unreachable()
 #elif defined(_MSC_VER)
-#define TCL_UNREACHABLE()	__assume(false)
+#define TCL_UNREACHABLE()	__assume(0)
 #else
 #define TCL_UNREACHABLE()	((void) 0)
 #endif
@@ -2542,19 +2542,15 @@ typedef enum TclEolTranslation {
 } TclEolTranslation;
 
 /*
- * Flags for TclInvoke:
+ * Obsolete: flags for TclObjInvoke. Only TCL_INVOKE_HIDDEN was supported at
+ * all in 9.0, and then just as something to Tcl_Panic over if not given.
  */
 enum TclInvokeFlags {
-    TCL_INVOKE_HIDDEN = 1,	/* Invoke a hidden command; if not set, invokes
-				 * an exposed command. */
+    TCL_INVOKE_HIDDEN = 1,	/* Invoke a hidden command. */
     TCL_INVOKE_NO_UNKNOWN = 2,	/* "unknown" is not invoked if the command to
-				 * be invoked is not found. Only has an effect
-				 * if invoking an exposed command, i.e. if
-				 * TCL_INVOKE_HIDDEN is not also set. */
-    TCL_INVOKE_NO_TRACEBACK = 4	/* Does not record traceback information if the
-				 * invoked command returns an error. Used if the
-				 * caller plans on recording its own traceback
-				 * information. */
+				 * be invoked is not found. */
+    TCL_INVOKE_NO_TRACEBACK = 4	/* Do not record traceback information if the
+				 * invoked command returns an error. */
 };
 
 /*
@@ -3520,9 +3516,6 @@ MODULE_SCOPE int	TclNamespaceDeleted(Namespace *nsPtr);
 MODULE_SCOPE void	TclObjVarErrMsg(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
 			    Tcl_Obj *part2Ptr, const char *operation,
 			    const char *reason, Tcl_Size index);
-MODULE_SCOPE int	TclObjInvokeNamespace(Tcl_Interp *interp,
-			    Tcl_Size objc, Tcl_Obj *const objv[],
-			    Tcl_Namespace *nsPtr, int flags);
 MODULE_SCOPE int	TclObjUnsetVar2(Tcl_Interp *interp,
 			    Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, int flags);
 MODULE_SCOPE Tcl_Size TclParseBackslash(const char *src,
@@ -3726,7 +3719,7 @@ MODULE_SCOPE void	TclSetObjNameOfShlib(Tcl_Obj *namePtr, Tcl_Encoding);
  * optimization (fragile on changes) in one place.
  */
 
-MODULE_SCOPE int	TclIsSpaceProc(int byte);
+MODULE_SCOPE bool	TclIsSpaceProc(int byte);
 #define TclIsSpaceProcM(byte) \
     (((unsigned)(byte) > 0x20) ? 0 : TclIsSpaceProc(byte))
 
