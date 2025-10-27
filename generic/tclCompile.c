@@ -3014,7 +3014,7 @@ TclCompileExprWords(
      */
 
     if ((numWords == 1) && (tokenPtr->type == TCL_TOKEN_SIMPLE_WORD)) {
-	TclCompileExpr(interp, tokenPtr[1].start,tokenPtr[1].size, envPtr, 1);
+	TclCompileExpr(interp, tokenPtr[1].start,tokenPtr[1].size, envPtr, true);
 	return;
     }
 
@@ -3338,8 +3338,8 @@ TclFindCompiledLocal(
 				 * scalar or array variable. If NULL, a
 				 * temporary var should be created. */
     Tcl_Size nameBytes,		/* Number of bytes in the name. */
-    int create,			/* If 1, allocate a local frame entry for the
-				 * variable if it is new. */
+    bool create,		/* If true, allocate a local frame entry for
+				 * the variable if it is new. */
     CompileEnv *envPtr)		/* Points to the current compile environment*/
 {
     CompiledLocal *localPtr;
@@ -5078,7 +5078,7 @@ TclPushVarName(
 	 */
 
 	if (!hasNsQualifiers) {
-	    localIndex = TclFindCompiledLocal(name, nameLen, 1, envPtr);
+	    localIndex = TclFindCompiledLocal(name, nameLen, true, envPtr);
 	}
 	if (interp && localIndex < 0) {
 	    PushLiteral(envPtr, name, nameLen);

@@ -401,7 +401,7 @@ TclpMatchInDirectory(
 		break;
 	    }
 	    utfname = Tcl_DStringValue(&utfDs);
-	    if (Tcl_StringCaseMatch(utfname, pattern, 0)) {
+	    if (Tcl_StringCaseMatch(utfname, pattern, false)) {
 		bool typeOk = true;
 
 		if (types != NULL) {

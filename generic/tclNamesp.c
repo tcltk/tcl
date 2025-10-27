@@ -1177,7 +1177,7 @@ int
 TclNamespaceDeleted(
     Namespace *nsPtr)
 {
-    return (nsPtr->flags & NS_DYING) ? 1 : 0;
+    return (nsPtr->flags & NS_DYING) ? true : false;
 }
 
 void

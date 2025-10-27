@@ -10752,7 +10752,7 @@ Tcl_IsChannelShared(
     ChannelState *statePtr = ((Channel *) chan)->state;
 				/* State of real channel structure. */
 
-    return ((statePtr->refCount > 1) ? 1 : 0);
+    return (statePtr->refCount > 1) ? true : false;
 }
 
 /*

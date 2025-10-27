@@ -81,7 +81,7 @@ TclFileRenameCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument strings passed to Tcl_FileCmd. */
 {
-    return FileCopyRename(interp, objc, objv, 0);
+    return FileCopyRename(interp, objc, objv, false);
 }
 
 /*
@@ -110,7 +110,7 @@ TclFileCopyCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument strings passed to Tcl_FileCmd. */
 {
-    return FileCopyRename(interp, objc, objv, 1);
+    return FileCopyRename(interp, objc, objv, true);
 }
 
 /*

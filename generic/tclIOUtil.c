@@ -3099,7 +3099,7 @@ Tcl_FSLoadFile(
 #define WCHAR char
 #endif
 
-static int
+static bool
 SkipUnlink(
     Tcl_Obj *shlibFile)
 {
@@ -3117,12 +3117,12 @@ SkipUnlink(
 
 #ifdef hpux
     (void)shlibFile;
-    return 1;
+    return true;
 #else
     WCHAR *skipstr = getenv("TCL_TEMPLOAD_NO_UNLINK");
 
     if (skipstr && (skipstr[0] != '\0')) {
-	return atoi(skipstr);
+	return atoi(skipstr) > 0;
     }
 
 #ifndef TCL_TEMPLOAD_NO_UNLINK
@@ -3149,7 +3149,7 @@ SkipUnlink(
 #endif /* AUFS_SUPER_MAGIC */
 	if ((statfs(TclGetString(shlibFile), &fs) == 0)
 		&& (fs.f_type == AUFS_SUPER_MAGIC)) {
-	    return 1;
+	    return true;
 	}
     }
 #endif /* ... NO_FSTATFS */
@@ -3159,7 +3159,7 @@ SkipUnlink(
      * No HPUX, environment variable override, or AUFS detected.  Perform
      * unlink.
      */
-    return 0;
+    return false;
 #endif /* hpux */
 }
 

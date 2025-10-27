@@ -789,11 +789,11 @@ TclpCreatePipe(
     if (CreatePipe(&readHandle, &writeHandle, NULL, 0) != 0) {
 	*readPipe = TclWinMakeFile(readHandle);
 	*writePipe = TclWinMakeFile(writeHandle);
-	return 1;
+	return true;
     }
 
     Tcl_WinConvertError(GetLastError());
-    return 0;
+    return false;
 }
 
 /*
@@ -2384,7 +2384,7 @@ PipeEventProc(
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     if (!(flags & TCL_FILE_EVENTS)) {
-	return 0;
+	return false;
     }
 
     /*
@@ -2407,7 +2407,7 @@ PipeEventProc(
      */
 
     if (!infoPtr) {
-	return 1;
+	return true;
     }
 
     /*
@@ -2435,7 +2435,7 @@ PipeEventProc(
      */
 
     Tcl_NotifyChannel(infoPtr->channel, infoPtr->watchMask & mask);
-    return 1;
+    return true;
 }
 
 /*

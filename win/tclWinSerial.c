@@ -1127,7 +1127,7 @@ SerialEventProc(
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     if (!(flags & TCL_FILE_EVENTS)) {
-	return 0;
+	return false;
     }
 
     /*
@@ -1150,7 +1150,7 @@ SerialEventProc(
      */
 
     if (!infoPtr) {
-	return 1;
+	return true;
     }
 
     /*
@@ -1179,7 +1179,7 @@ SerialEventProc(
      */
 
     Tcl_NotifyChannel(infoPtr->channel, infoPtr->watchMask & mask);
-    return 1;
+    return true;
 }
 
 /*

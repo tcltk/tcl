@@ -905,7 +905,8 @@ Tcl_DoOneEvent(
 				 * TCL_TIMER_EVENTS, TCL_IDLE_EVENTS, or
 				 * others defined by event sources. */
 {
-    int result = 0, oldMode;
+    bool result = false;
+    int oldMode;
     EventSource *sourcePtr;
     Tcl_Time *timePtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -916,7 +917,7 @@ Tcl_DoOneEvent(
 
     if (Tcl_AsyncReady()) {
 	(void) Tcl_AsyncInvoke(NULL, 0);
-	return 1;
+	return true;
     }
 
     /*
@@ -958,7 +959,7 @@ Tcl_DoOneEvent(
 	 */
 
 	if (Tcl_ServiceEvent(flags)) {
-	    result = 1;
+	    result = true;
 	    break;
 	}
 
@@ -1002,7 +1003,7 @@ Tcl_DoOneEvent(
 
 	result = Tcl_WaitForEvent(timePtr);
 	if (result < 0) {
-	    result = 0;
+	    result = false;
 	    break;
 	}
 
@@ -1022,7 +1023,7 @@ Tcl_DoOneEvent(
 	 */
 
 	if (Tcl_ServiceEvent(flags)) {
-	    result = 1;
+	    result = true;
 	    break;
 	}
 
@@ -1035,7 +1036,7 @@ Tcl_DoOneEvent(
     idleEvents:
 	if (flags & TCL_IDLE_EVENTS) {
 	    if (TclServiceIdle()) {
-		result = 1;
+		result = true;
 		break;
 	    }
 	}

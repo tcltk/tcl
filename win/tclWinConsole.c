@@ -1389,7 +1389,7 @@ ConsoleEventProc(
     int mask = 0;
 
     if (!(flags & TCL_FILE_EVENTS)) {
-	return 0;
+	return false;
     }
 
     chanInfoPtr = consoleEvPtr->chanInfoPtr;
@@ -1461,7 +1461,7 @@ ConsoleEventProc(
 	Tcl_Free(chanInfoPtr);
     }
 
-    return 1;
+    return true;
 }
 
 /*

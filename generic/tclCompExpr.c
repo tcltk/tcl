@@ -497,7 +497,7 @@ typedef struct JumpList {
 static void		CompileExprTree(Tcl_Interp *interp, OpNode *nodes,
 			    int index, Tcl_Obj *const **litObjvPtr,
 			    Tcl_Obj *const *funcObjv, Tcl_Token *tokenPtr,
-			    CompileEnv *envPtr, int optimize);
+			    CompileEnv *envPtr, bool optimize);
 static void		ConvertTreeToTokens(const char *start, Tcl_Size numBytes,
 			    OpNode *nodes, Tcl_Token *tokenPtr,
 			    Tcl_Parse *parsePtr);
@@ -2194,7 +2194,7 @@ TclCompileExpr(
     const char *script,		/* The source script to compile. */
     Tcl_Size numBytes,		/* Number of bytes in script. */
     CompileEnv *envPtr,		/* Holds resulting instructions. */
-    int optimize)		/* 0 for one-off expressions. */
+    bool optimize)		/* false for one-off expressions. */
 {
     OpNode *opTree = NULL;	/* Will point to the tree of operators */
     Tcl_Obj *litList;		/* List to hold the literals */
@@ -2275,7 +2275,7 @@ ExecConstantExprTree(
     envPtr = (CompileEnv *)TclStackAlloc(interp, sizeof(CompileEnv));
     TclInitCompileEnv(interp, envPtr, NULL, 0, NULL, 0);
     CompileExprTree(interp, nodes, index, litObjvPtr, NULL, NULL, envPtr,
-	    0 /* optimize */);
+	    false /* optimize */);
     OP(				DONE);
     byteCodePtr = TclInitByteCode(envPtr);
     TclFreeCompileEnv(envPtr);
@@ -2318,7 +2318,7 @@ CompileExprTree(
     Tcl_Obj *const *funcObjv,
     Tcl_Token *tokenPtr,
     CompileEnv *envPtr,
-    int optimize)
+    bool optimize)
 {
     OpNode *nodePtr = nodes + index;
     OpNode *rootPtr = nodePtr;

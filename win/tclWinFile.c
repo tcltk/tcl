@@ -1151,7 +1151,7 @@ TclpMatchInDirectory(
 	     * the system.
 	     */
 
-	    if (Tcl_StringCaseMatch(utfname, pattern, 1)) {
+	    if (Tcl_StringCaseMatch(utfname, pattern, true)) {
 		/*
 		 * If the file matches, then we need to process the remainder
 		 * of the path.

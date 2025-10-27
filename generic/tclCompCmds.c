@@ -388,7 +388,7 @@ TclCompileArraySetCmd(
 	 */
 
 	localIndex = TclFindCompiledLocal(varTokenPtr->start,
-		varTokenPtr->size, 1, envPtr);
+		varTokenPtr->size, true, envPtr);
 	PUSH(			"0");
 	OP(			SWAP);
 	OP4(			UPVAR, localIndex);

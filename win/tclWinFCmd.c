@@ -95,7 +95,7 @@ typedef int (TraversalProc)(const WCHAR *srcPtr, const WCHAR *dstPtr,
 
 static void		StatError(Tcl_Interp *interp, Tcl_Obj *fileName);
 static int		ConvertFileNameFormat(Tcl_Interp *interp,
-			    int objIndex, Tcl_Obj *fileName, int longShort,
+			    Tcl_Obj *fileName, bool longShort,
 			    Tcl_Obj **attributePtrPtr);
 static int		DoCopyFile(const WCHAR *srcPtr, const WCHAR *dstPtr);
 static int		DoCreateDirectory(const WCHAR *pathPtr);
@@ -1629,9 +1629,8 @@ GetWinFileAttributes(
 static int
 ConvertFileNameFormat(
     Tcl_Interp *interp,		/* The interp we are using for errors. */
-    TCL_UNUSED(int) /*objIndex*/,
     Tcl_Obj *fileName,		/* The name of the file. */
-    int longShort,		/* 0 to short name, 1 to long name. */
+    bool longShort,		/* false to short name, true to long name. */
     Tcl_Obj **attributePtrPtr)	/* A pointer to return the object with. */
 {
     Tcl_Size pathc, i, length;
@@ -1805,12 +1804,11 @@ ConvertFileNameFormat(
 static int
 GetWinFileLongName(
     Tcl_Interp *interp,		/* The interp we are using for errors. */
-    int objIndex,		/* The index of the attribute. */
+    TCL_UNUSED(int), /*objIndex*/
     Tcl_Obj *fileName,		/* The name of the file. */
     Tcl_Obj **attributePtrPtr)	/* A pointer to return the object with. */
 {
-    return ConvertFileNameFormat(interp, objIndex, fileName, 1,
-	    attributePtrPtr);
+    return ConvertFileNameFormat(interp, fileName, true, attributePtrPtr);
 }
 
 /*
@@ -1834,12 +1832,11 @@ GetWinFileLongName(
 static int
 GetWinFileShortName(
     Tcl_Interp *interp,		/* The interp we are using for errors. */
-    int objIndex,		/* The index of the attribute. */
+    TCL_UNUSED(int) /*objIndex*/,
     Tcl_Obj *fileName,		/* The name of the file. */
     Tcl_Obj **attributePtrPtr)	/* A pointer to return the object with. */
 {
-    return ConvertFileNameFormat(interp, objIndex, fileName, 0,
-	    attributePtrPtr);
+    return ConvertFileNameFormat(interp, fileName, false, attributePtrPtr);
 }
 
 /*

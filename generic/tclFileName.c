@@ -33,8 +33,9 @@ static bool		SkipToChar(char **stringPtr, int match);
 static Tcl_Obj *	SplitWinPath(const char *path);
 static Tcl_Obj *	SplitUnixPath(const char *path);
 static int		DoGlob(Tcl_Interp *interp, Tcl_Obj *resultPtr,
-			    const char *separators, Tcl_Obj *pathPtr, int flags,
-			    char *pattern, Tcl_GlobTypeData *types);
+			    const char *separators, Tcl_Obj *pathPtr,
+			    bool pathIsDir, char *pattern,
+			    Tcl_GlobTypeData *types);
 static int		TclGlob(Tcl_Interp *interp, char *pattern,
 			    Tcl_Obj *pathPrefix, int globFlags,
 			    Tcl_GlobTypeData *types);
@@ -67,6 +68,7 @@ static int		TclGlob(Tcl_Interp *interp, char *pattern,
  *
  * Side effects:
  *	May modify the Tcl_DString.
+ *
  *----------------------------------------------------------------------
  */
 
@@ -1966,7 +1968,7 @@ DoGlob(
 				 * should be used to identify globbing
 				 * boundaries. */
     Tcl_Obj *pathPtr,		/* Completely expanded prefix. */
-    int flags,			/* If non-zero then pathPtr is a directory */
+    bool pathIsDir,		/* If true then pathPtr is a directory */
     char *pattern,		/* The pattern to match against. Must not be a
 				 * pointer to a static string. */
     Tcl_GlobTypeData *types)	/* List object containing list of acceptable
@@ -2082,7 +2084,7 @@ DoGlob(
 	    Tcl_DStringSetLength(&newName, baseLength);
 	    Tcl_DStringAppend(&newName, element, p-element);
 	    Tcl_DStringAppend(&newName, closeBrace+1, -1);
-	    result = DoGlob(interp, matchesObj, separators, pathPtr, flags,
+	    result = DoGlob(interp, matchesObj, separators, pathPtr, pathIsDir,
 		    Tcl_DStringValue(&newName), types);
 	    if (result != TCL_OK) {
 		break;
@@ -2165,7 +2167,7 @@ DoGlob(
 		Tcl_Obj *copy = NULL;
 
 		result = DoGlob(interp, matchesObj, separators, subdirv[i],
-			1, p+1, types);
+			true, p+1, types);
 		if (copy) {
 		    Tcl_Size end;
 
@@ -2251,7 +2253,7 @@ DoGlob(
 
 	if (pathPtr == NULL) {
 	    joinedPtr = Tcl_DStringToObj(&append);
-	} else if (flags) {
+	} else if (pathIsDir) {
 	    joinedPtr = TclNewFSPathObj(pathPtr, Tcl_DStringValue(&append),
 		    Tcl_DStringLength(&append));
 	} else {
@@ -2285,7 +2287,7 @@ DoGlob(
 
     if (pathPtr == NULL) {
 	joinedPtr = Tcl_NewStringObj(pattern, p-pattern);
-    } else if (flags) {
+    } else if (pathIsDir) {
 	joinedPtr = TclNewFSPathObj(pathPtr, pattern, p-pattern);
     } else {
 	joinedPtr = Tcl_DuplicateObj(pathPtr);
@@ -2311,7 +2313,7 @@ DoGlob(
     }
 
     Tcl_IncrRefCount(joinedPtr);
-    result = DoGlob(interp, matchesObj, separators, joinedPtr, 1, p, types);
+    result = DoGlob(interp, matchesObj, separators, joinedPtr, true, p, types);
     Tcl_DecrRefCount(joinedPtr);
 
     return result;

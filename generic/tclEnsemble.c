@@ -2047,7 +2047,7 @@ TclClearRootEnsemble(
     Tcl_Interp *interp,
     int result)
 {
-    TclResetRewriteEnsemble(interp, 1);
+    TclResetRewriteEnsemble(interp, true);
     return result;
 }
 
@@ -2079,7 +2079,7 @@ TclInitRewriteEnsemble(
 {
     Interp *iPtr = (Interp *) interp;
 
-    int isRootEnsemble = (iPtr->ensembleRewrite.sourceObjs == NULL);
+    bool isRootEnsemble = (iPtr->ensembleRewrite.sourceObjs == NULL);
 
     if (isRootEnsemble) {
 	iPtr->ensembleRewrite.sourceObjs = objv;
