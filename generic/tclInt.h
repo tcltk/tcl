@@ -3559,9 +3559,9 @@ MODULE_SCOPE void	TclInitSockets(void);
 #define TclInitSockets() /* do nothing */
 #endif
 struct addrinfo; /* forward declaration, needed for TclCreateSocketAddress */
-MODULE_SCOPE int	TclCreateSocketAddress(Tcl_Interp *interp,
+MODULE_SCOPE bool	TclCreateSocketAddress(Tcl_Interp *interp,
 			    struct addrinfo **addrlist,
-			    const char *host, int port, int willBind,
+			    const char *host, int port, bool willBind,
 			    const char **errorMsgPtr);
 MODULE_SCOPE int	TclpThreadCreate(Tcl_ThreadId *idPtr,
 			    Tcl_ThreadCreateProc *proc, void *clientData,

@@ -1262,7 +1262,8 @@ MODULE_SCOPE void	TclCompileCmdWord(Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, Tcl_Size count,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCompileExpr(Tcl_Interp *interp, const char *script,
-			    Tcl_Size numBytes, CompileEnv *envPtr, int optimize);
+			    Tcl_Size numBytes, CompileEnv *envPtr,
+			    bool optimize);
 MODULE_SCOPE void	TclCompileExprWords(Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, size_t numWords,
 			    CompileEnv *envPtr);
@@ -1301,7 +1302,7 @@ MODULE_SCOPE int	TclNRExecuteByteCode(Tcl_Interp *interp,
 			    ByteCode *codePtr);
 MODULE_SCOPE Tcl_Obj *	TclFetchLiteral(CompileEnv *envPtr, Tcl_Size index);
 MODULE_SCOPE Tcl_LVTIndex TclFindCompiledLocal(const char *name, Tcl_Size nameChars,
-			    int create, CompileEnv *envPtr);
+			    bool create, CompileEnv *envPtr);
 MODULE_SCOPE void	TclFixupForwardJump(CompileEnv *envPtr,
 			    JumpFixup *jumpFixupPtr, Tcl_Size jumpDist);
 MODULE_SCOPE void	TclFreeCompileEnv(CompileEnv *envPtr);
@@ -1992,7 +1993,7 @@ ExceptionRangeEnds(
  */
 
 #define AnonymousLocal(envPtr) \
-    (TclFindCompiledLocal(NULL, /*nameChars*/ 0, /*create*/ 1, (envPtr)))
+    (TclFindCompiledLocal(NULL, /*nameChars*/ 0, /*create*/ true, (envPtr)))
 #define LocalScalar(chars,len,envPtr) \
     TclLocalScalar(chars, len, envPtr)
 #define LocalScalarFromToken(tokenPtr,envPtr) \

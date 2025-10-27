@@ -1795,7 +1795,7 @@ CompileEmbeddedScript(
 	TclCompileScript(interp, tokenPtr->start, tokenPtr->size, envPtr);
 	break;
     case INST_EXPR_STK:
-	TclCompileExpr(interp, tokenPtr->start, tokenPtr->size, envPtr, 1);
+	TclCompileExpr(interp, tokenPtr->start, tokenPtr->size, envPtr, true);
 	break;
     default:
 	Tcl_Panic("no ASSEM_EVAL case for %s (%d), can't happen",
@@ -2380,7 +2380,7 @@ FindLocalVar(
 	Tcl_DecrRefCount(varNameObj);
 	return TCL_INDEX_NONE;
     }
-    localVar = TclFindCompiledLocal(varNameStr, varNameLen, 1, envPtr);
+    localVar = TclFindCompiledLocal(varNameStr, varNameLen, true, envPtr);
     Tcl_DecrRefCount(varNameObj);
     if (localVar < 0) {
 	if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {

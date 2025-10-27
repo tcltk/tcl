@@ -349,7 +349,7 @@ FileEventProc(
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     if (!TEST_FLAG(flags, TCL_FILE_EVENTS)) {
-	return 0;
+	return false;
     }
 
     /*
@@ -367,7 +367,7 @@ FileEventProc(
 	    break;
 	}
     }
-    return 1;
+    return true;
 }
 
 /*

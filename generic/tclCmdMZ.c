@@ -3735,7 +3735,7 @@ TclNRSwitchObjCmd(
 	    break;
 	case OPT_GLOB:
 	    if (Tcl_StringCaseMatch(TclGetString(valueObj), pattern,
-		    (int)noCase)) {
+		    noCase)) {
 		goto matchFound;
 	    }
 	    break;

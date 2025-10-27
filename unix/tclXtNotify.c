@@ -643,7 +643,7 @@ WaitForEvent(
 	    if (XtAppPending(notifier.appContext)) {
 		goto process;
 	    } else {
-		return 0;
+		return false;
 	    }
 	} else {
 	    Tcl_SetTimer(timePtr);
@@ -652,7 +652,7 @@ WaitForEvent(
 
   process:
     XtAppProcessEvent(notifier.appContext, XtIMAll);
-    return 1;
+    return true;
 }
 
 /*

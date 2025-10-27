@@ -1904,7 +1904,7 @@ TclAliasObjCmd(
      */
 
     if (isRootEnsemble) {
-	TclResetRewriteEnsemble(targetInterp, 1);
+	TclResetRewriteEnsemble(targetInterp, true);
     }
 
     /*
@@ -1982,7 +1982,7 @@ TclLocalAliasObjCmd(
      */
 
     if (isRootEnsemble) {
-	TclResetRewriteEnsemble(interp, 1);
+	TclResetRewriteEnsemble(interp, true);
     }
 
     for (i=0; i<cmdc; i++) {
@@ -3175,7 +3175,7 @@ ChildInvokeHidden(
     Tcl_Preserve(childInterp);
     Tcl_AllowExceptions(childInterp);
 
-    // Push the namespace if one has been requested. 
+    // Push the namespace if one has been requested.
     Tcl_CallFrame *framePtr = NULL;
     if (namespaceName != NULL) {
 	Namespace *nsPtr, *dummy1, *dummy2;

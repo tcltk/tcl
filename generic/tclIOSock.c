@@ -161,8 +161,8 @@ TclSockMinimumBuffers(
  *	This function initializes a sockaddr structure for a host and port.
  *
  * Results:
- *	1 if the host was valid, 0 if the host could not be converted to an IP
- *	address.
+ *	True if the host was valid, false if the host could not be converted
+ *	to an IP address.
  *
  * Side effects:
  *	Fills in the *sockaddrPtr structure.
@@ -170,14 +170,14 @@ TclSockMinimumBuffers(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 TclCreateSocketAddress(
     Tcl_Interp *interp,		/* Interpreter for querying the desired socket
 				 * family */
     struct addrinfo **addrlist,	/* Socket address list */
     const char *host,		/* Host. NULL implies INADDR_ANY */
     int port,			/* Port number */
-    int willBind,		/* Is this an address to bind() to or to
+    bool willBind,		/* Is this an address to bind() to or to
 				 * connect() to? */
     const char **errorMsgPtr)	/* Place to store the error message detail, if
 				 * available. */
@@ -194,8 +194,8 @@ TclCreateSocketAddress(
     if (host != NULL) {
 	if (Tcl_UtfToExternalDStringEx(interp, NULL, host, -1, 0, &ds,
 		NULL) != TCL_OK) {
-		Tcl_DStringFree(&ds);
-	    return 0;
+	    Tcl_DStringFree(&ds);
+	    return false;
 	}
 	native = Tcl_DStringValue(&ds);
     }
@@ -266,7 +266,7 @@ TclCreateSocketAddress(
 		(result == EAI_SYSTEM) ? Tcl_PosixError(interp) :
 #endif /* EAI_SYSTEM */
 		gai_strerror(result);
-	return 0;
+	return false;
     }
 
     /*
@@ -304,7 +304,7 @@ TclCreateSocketAddress(
 	    *addrlist = v4head;
 	}
     }
-    return 1;
+    return true;
 }
 
 /*

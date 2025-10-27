@@ -1966,7 +1966,7 @@ TclOOGetDefineContextNamespace(
     Tcl_Interp *interp,		/* In what interpreter should namespace names
 				 * actually be resolved. */
     Object *oPtr,		/* The object to get the context for. */
-    int forClass)		/* What sort of context are we looking for.
+    bool forClass)		/* What sort of context are we looking for.
 				 * If true, we are going to use this for
 				 * [oo::define], otherwise, we are going to
 				 * use this for [oo::objdefine]. */

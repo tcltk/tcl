@@ -3403,7 +3403,7 @@ ComputeNameInArchive(
 static int
 ZipFSMkZipOrImg(
     Tcl_Interp *interp,		/* Current interpreter. */
-    int isImg,			/* Are we making an image? */
+    bool isImg,			/* Are we making an image? */
     Tcl_Obj *targetFile,	/* What file are we making? */
     Tcl_Obj *dirRoot,		/* What directory do we take files from? Do
 				 * not specify at the same time as
@@ -3928,7 +3928,7 @@ ZipFSMkZipObjCmd(
 
     stripPrefix = (objc > 3 ? objv[3] : NULL);
     password = (objc > 4 ? objv[4] : NULL);
-    return ZipFSMkZipOrImg(interp, 0, objv[1], objv[2], NULL, NULL,
+    return ZipFSMkZipOrImg(interp, false, objv[1], objv[2], NULL, NULL,
 	    stripPrefix, password);
 }
 
@@ -3952,7 +3952,7 @@ ZipFSLMkZipObjCmd(
     }
 
     password = (objc > 3 ? objv[3] : NULL);
-    return ZipFSMkZipOrImg(interp, 0, objv[1], NULL, objv[2], NULL,
+    return ZipFSMkZipOrImg(interp, false, objv[1], NULL, objv[2], NULL,
 	    NULL, password);
 }
 
@@ -3996,7 +3996,7 @@ ZipFSMkImgObjCmd(
     originFile = (objc > 5 ? objv[5] : NULL);
     stripPrefix = (objc > 3 ? objv[3] : NULL);
     password = (objc > 4 ? objv[4] : NULL);
-    return ZipFSMkZipOrImg(interp, 1, objv[1], objv[2], NULL,
+    return ZipFSMkZipOrImg(interp, true, objv[1], objv[2], NULL,
 	    originFile, stripPrefix, password);
 }
 
@@ -4021,7 +4021,7 @@ ZipFSLMkImgObjCmd(
 
     originFile = (objc > 4 ? objv[4] : NULL);
     password = (objc > 3 ? objv[3] : NULL);
-    return ZipFSMkZipOrImg(interp, 1, objv[1], NULL, objv[2],
+    return ZipFSMkZipOrImg(interp, true, objv[1], NULL, objv[2],
 	    originFile, NULL, password);
 }
 
@@ -5852,7 +5852,7 @@ ZipFSMatchInDirectoryProc(
 		    (wanted == TCL_GLOB_TYPE_FILE && !z->isDirectory)) {
 		if ((z->depth == scnt) &&
 			((z->flags & ZE_F_VOLUME) == 0) /* Bug 14db54d81e */
-			&& Tcl_StringCaseMatch(z->name, pat, 0)) {
+			&& Tcl_StringMatch(z->name, pat)) {
 		    Tcl_CreateHashEntry(&duplicates, z->name + strip,
 			    &notDuplicate);
 		    assert(notDuplicate);
@@ -5873,7 +5873,7 @@ ZipFSMatchInDirectoryProc(
 	for (hPtr = Tcl_FirstHashEntry(&ZipFS.zipHash, &search); hPtr;
 		hPtr = Tcl_NextHashEntry(&search)) {
 	    ZipFile *zf = (ZipFile *)Tcl_GetHashValue(hPtr);
-	    if (Tcl_StringCaseMatch(zf->mountPoint, pat, 0)) {
+	    if (Tcl_StringMatch(zf->mountPoint, pat)) {
 		const char *tail = zf->mountPoint + len;
 		if (*tail == '\0') {
 		    continue;
@@ -5973,7 +5973,7 @@ ZipFSMatchMountPoints(
 		if ((lenz > len + 1) && (strncmp(z->name, path, len) == 0)
 			&& (z->name[len] == '/')
 			&& ((int) CountSlashes(z->name) == l)
-			&& Tcl_StringCaseMatch(z->name + len + 1, pattern, 0)) {
+			&& Tcl_StringMatch(z->name + len + 1, pattern)) {
 		    AppendWithPrefix(result, prefix, z->name, lenz);
 		}
 	    }
@@ -5981,8 +5981,7 @@ ZipFSMatchMountPoints(
 		&& (strncmp(zf->mountPoint, path, len) == 0)
 		&& (zf->mountPoint[len] == '/')
 		&& ((int) CountSlashes(zf->mountPoint) == l)
-		&& Tcl_StringCaseMatch(zf->mountPoint + len + 1,
-			pattern, 0)) {
+		&& Tcl_StringMatch(zf->mountPoint + len + 1, pattern)) {
 	    /*
 	     * Standard mount; append if it matches.
 	     */

@@ -939,12 +939,12 @@ TclAsyncNotifier(
 		asyncPending = true;
 		if (write(triggerPipe, "S", 1) != 1) {
 		    asyncPending = false;
-		    return 0;
+		    return false;
 		}
 	    }
-	    return 1;
+	    return true;
 	}
-	return 0;
+	return false;
     }
 
     /*
@@ -957,7 +957,7 @@ TclAsyncNotifier(
     (void)flagPtr;
     (void)value;
 #endif
-    return 0;
+    return false;
 }
 
 /*

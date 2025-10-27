@@ -328,7 +328,7 @@ TclpCreatePipe(
     int pipeIds[2];
 
     if (pipe(pipeIds) != 0) {
-	return 0;
+	return false;
     }
 
     fcntl(pipeIds[0], F_SETFD, FD_CLOEXEC);
@@ -336,7 +336,7 @@ TclpCreatePipe(
 
     *readPipe = MakeFile(pipeIds[0]);
     *writePipe = MakeFile(pipeIds[1]);
-    return 1;
+    return true;
 }
 
 /*
@@ -793,7 +793,7 @@ SetupStdFile(
 	fd = GetFd(file);
 	if (fd != targetFd) {
 	    if (dup2(fd, targetFd) == -1) {
-		return 0;
+		return false;
 	    }
 
 	    /*
@@ -814,7 +814,7 @@ SetupStdFile(
     } else {
 	close(targetFd);
     }
-    return 1;
+    return true;
 }
 
 /*

@@ -98,7 +98,7 @@ typedef struct {
     TimerHandler *firstTimerHandlerPtr;	/* First event in queue. */
     int lastTimerId;		/* Timer identifier of most recently created
 				 * timer. */
-    int timerPending;		/* 1 if a timer event is in the queue. */
+    bool timerPending;		/* true if a timer event is in the queue. */
     IdleHandler *idleList;	/* First in list of all idle handlers. */
     IdleHandler *lastIdlePtr;	/* Last in list (or NULL for empty list). */
     int idleGeneration;		/* Used to fill in the "generation" fields of
@@ -490,7 +490,7 @@ TimerCheckProc(
 
 	if (blockTime.sec == 0 && blockTime.usec == 0 &&
 		!tsdPtr->timerPending) {
-	    tsdPtr->timerPending = 1;
+	    tsdPtr->timerPending = true;
 	    timerEvPtr = (Tcl_Event *)Tcl_Alloc(sizeof(Tcl_Event));
 	    timerEvPtr->proc = TimerHandlerEventProc;
 	    Tcl_QueueEvent(timerEvPtr, TCL_QUEUE_TAIL);
@@ -537,7 +537,7 @@ TimerHandlerEventProc(
      */
 
     if (!(flags & TCL_TIMER_EVENTS)) {
-	return 0;
+	return false;
     }
 
     /*
@@ -565,7 +565,7 @@ TimerHandlerEventProc(
      *	  timers appearing before later ones.
      */
 
-    tsdPtr->timerPending = 0;
+    tsdPtr->timerPending = false;
     currentTimerId = tsdPtr->lastTimerId;
     Tcl_GetTime(&time);
     while (true) {
@@ -597,7 +597,7 @@ TimerHandlerEventProc(
 	Tcl_Free(timerHandlerPtr);
     }
     TimerSetupProc(NULL, TCL_TIMER_EVENTS);
-    return 1;
+    return true;
 }
 
 /*
@@ -720,7 +720,7 @@ TclServiceIdle(void)
     ThreadSpecificData *tsdPtr = InitTimer();
 
     if (tsdPtr->idleList == NULL) {
-	return 0;
+	return false;
     }
 
     oldGeneration = tsdPtr->idleGeneration;
@@ -759,7 +759,7 @@ TclServiceIdle(void)
 	blockTime.usec = 0;
 	Tcl_SetMaxBlockTime(&blockTime);
     }
-    return 1;
+    return true;
 }
 
 /*

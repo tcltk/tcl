@@ -2144,7 +2144,7 @@ Tcl_StringCaseMatch(
     const char *str,		/* String. */
     const char *pattern,	/* Pattern, which may contain special
 				 * characters. */
-    int nocase)			/* 0 for case sensitive, 1 for insensitive */
+    int/*bool*/ nocase)		/* 0 for case sensitive, 1 for insensitive */
 {
     Tcl_Size charLen;
     int p, ch1 = 0, ch2 = 0;

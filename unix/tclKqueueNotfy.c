@@ -805,9 +805,9 @@ TclAsyncNotifier(
 	if (tsdPtr != NULL && !tsdPtr->asyncPending) {
 	    tsdPtr->asyncPending = 1;
 	    TclpAlertNotifier(tsdPtr);
-	    return 1;
+	    return true;
 	}
-	return 0;
+	return false;
     }
 
     /*
@@ -822,7 +822,7 @@ TclAsyncNotifier(
     (void)flagPtr;
     (void)value;
 #endif
-    return 0;
+    return false;
 }
 
 #endif /* NOTIFIER_KQUEUE && TCL_THREADS */

@@ -1086,7 +1086,7 @@ Tcl_CreateInterp(void)
      * Initialize the ensemble error message rewriting support.
      */
 
-    TclResetRewriteEnsemble(interp, 1);
+    TclResetRewriteEnsemble(interp, true);
 
     /*
      * TIP#143: Initialise the resource limit support.
@@ -1782,7 +1782,7 @@ int
 Tcl_InterpDeleted(
     Tcl_Interp *interp)
 {
-    return (((Interp *) interp)->flags & DELETED) ? 1 : 0;
+    return (((Interp *) interp)->flags & DELETED) ? true : false;
 }
 
 /*
@@ -3339,7 +3339,7 @@ Tcl_SetCommandInfoFromToken(
     Command *cmdPtr;		/* Internal representation of the command */
 
     if (cmd == NULL) {
-	return 0;
+	return false;
     }
 
     /*
@@ -3390,7 +3390,7 @@ Tcl_SetCommandInfoFromToken(
 	    cmdPtr->deleteData = infoPtr->deleteData;
 	}
     }
-    return 1;
+    return true;
 }
 
 /*
@@ -3451,7 +3451,7 @@ Tcl_GetCommandInfoFromToken(
     Command *cmdPtr;		/* Internal representation of the command */
 
     if (cmd == NULL) {
-	return 0;
+	return false;
     }
 
     /*
@@ -3461,8 +3461,7 @@ Tcl_GetCommandInfoFromToken(
      */
 
     cmdPtr = (Command *) cmd;
-    infoPtr->isNativeObjectProc =
-	    (cmdPtr->objProc != InvokeStringCommand);
+    infoPtr->isNativeObjectProc = (cmdPtr->objProc != InvokeStringCommand);
     infoPtr->objProc = cmdPtr->objProc;
     infoPtr->objClientData = cmdPtr->objClientData;
     infoPtr->proc = cmdPtr->proc;
@@ -3483,7 +3482,7 @@ Tcl_GetCommandInfoFromToken(
 	infoPtr->objClientData2 = cmdPtr;
     }
     infoPtr->namespacePtr = (Tcl_Namespace *) cmdPtr->nsPtr;
-    return 1;
+    return true;
 }
 
 /*
@@ -4498,7 +4497,7 @@ EvalObjvCore(
 	 * TCL_EVAL_INVOKE was not set: clear rewrite rules
 	 */
 
-	TclResetRewriteEnsemble(interp, 1);
+	TclResetRewriteEnsemble(interp, true);
 
 	if (flags & TCL_EVAL_GLOBAL) {
 	    TEOV_SwitchVarFrame(interp);

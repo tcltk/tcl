@@ -416,7 +416,7 @@ InitFoundation(
     ((Interp *) interp)->objectFoundation = fPtr;
     fPtr->interp = interp;
     fPtr->ooNs = Tcl_CreateNamespace(interp, "::oo", fPtr, NULL);
-    Tcl_Export(interp, fPtr->ooNs, "[a-z]*", 1);
+    Tcl_Export(interp, fPtr->ooNs, "[a-z]*", true);
     define = Tcl_CreateNamespace(interp, "::oo::define", fPtr, NULL);
     objdef = Tcl_CreateNamespace(interp, "::oo::objdefine", fPtr, NULL);
     fPtr->helpersNs = Tcl_CreateNamespace(interp, "::oo::Helpers", fPtr,
@@ -1996,7 +1996,7 @@ Tcl_NewObjectInstance(
 		    objc, objv);
 
 	    if (isRoot) {
-		TclResetRewriteEnsemble(interp, 1);
+		TclResetRewriteEnsemble(interp, true);
 	    }
 
 	    clientData[0] = contextPtr;
@@ -2515,7 +2515,7 @@ Tcl_CopyObjectInstance(
 	}
     }
 
-    TclResetRewriteEnsemble(interp, 1);
+    TclResetRewriteEnsemble(interp, true);
     contextPtr = TclOOGetCallContext(o2Ptr, oPtr->fPtr->clonedName, 0, NULL,
 	    NULL, NULL);
     if (contextPtr) {

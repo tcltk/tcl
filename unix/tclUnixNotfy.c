@@ -286,7 +286,7 @@ FileHandlerEventProc(
     ThreadSpecificData *tsdPtr;
 
     if (!(flags & TCL_FILE_EVENTS)) {
-	return 0;
+	return false;
     }
 
     /*
@@ -323,7 +323,7 @@ FileHandlerEventProc(
 	}
 	break;
     }
-    return 1;
+    return true;
 }
 
 #ifdef NOTIFIER_SELECT

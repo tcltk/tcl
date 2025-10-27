@@ -1990,8 +1990,8 @@ Tcl_OpenTcpClient(
      * Do the name lookups for the local and remote addresses.
      */
 
-    if (!TclCreateSocketAddress(interp, &addrlist, host, port, 0, &errorMsg)
-	    || !TclCreateSocketAddress(interp, &myaddrlist, myaddr, myport, 1,
+    if (!TclCreateSocketAddress(interp, &addrlist, host, port, false, &errorMsg)
+	    || !TclCreateSocketAddress(interp, &myaddrlist, myaddr, myport, true,
 		    &errorMsg)) {
 	if (addrlist != NULL) {
 	    freeaddrinfo(addrlist);
@@ -2132,7 +2132,7 @@ Tcl_OpenTcpServerEx(
 	goto error;
     }
 
-    if (!TclCreateSocketAddress(interp, &addrlist, myHost, port, 1,
+    if (!TclCreateSocketAddress(interp, &addrlist, myHost, port, true,
 	    &errorMsg)) {
 	goto error;
     }
@@ -2588,7 +2588,7 @@ SocketEventProc(
     int len;
 
     if (!GOT_BITS(flags, TCL_FILE_EVENTS)) {
-	return 0;
+	return false;
     }
 
     /*
@@ -2609,7 +2609,7 @@ SocketEventProc(
 
     if (!statePtr) {
 	SetEvent(tsdPtr->socketListLock);
-	return 1;
+	return true;
     }
 
     /*
@@ -2638,7 +2638,7 @@ SocketEventProc(
 	    CLEAR_BITS(statePtr->readyEvents, FD_CONNECT);
 	    SetEvent(tsdPtr->socketListLock);
 	}
-	return 1;
+	return true;
     }
 
     /*
@@ -2694,7 +2694,7 @@ SocketEventProc(
 	     */
 
 	    TcpAccept(fds, newSocket, addr);
-	    return 1;
+	    return true;
 	}
 
 	/*
@@ -2708,7 +2708,7 @@ SocketEventProc(
 	CLEAR_BITS(statePtr->readyEvents, FD_ACCEPT);
 
 	SetEvent(tsdPtr->socketListLock);
-	return 1;
+	return true;
     }
 
     SetEvent(tsdPtr->socketListLock);
@@ -2785,7 +2785,7 @@ SocketEventProc(
     if (mask) {
 	Tcl_NotifyChannel(statePtr->channel, mask);
     }
-    return 1;
+    return true;
 }
 
 /*

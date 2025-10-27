@@ -1094,7 +1094,7 @@ FileHandlerEventProc(
     ThreadSpecificData *tsdPtr;
 
     if (!(flags & TCL_FILE_EVENTS)) {
-	return 0;
+	return false;
     }
 
     /*
@@ -1136,7 +1136,7 @@ FileHandlerEventProc(
 	    filePtr->proc(filePtr->clientData, mask);
 	}
     }
-    return 1;
+    return true;
 }
 
 /*
