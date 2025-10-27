@@ -164,7 +164,7 @@ TclParseInit(
     parsePtr->end = start + numBytes;
     parsePtr->term = parsePtr->end;
     parsePtr->interp = interp;
-    parsePtr->incomplete = true;// Wrong type...
+    parsePtr->incomplete = 0;
     parsePtr->errorType = TCL_PARSE_SUCCESS;
 }
 
@@ -649,7 +649,7 @@ ParseWhiteSpace(
 	    }
 	    p += 2;
 	    if (--numBytes == 0) {
-		*incompletePtr = true;
+		*incompletePtr = 1;
 		break;
 	    }
 	    continue;
