@@ -1034,7 +1034,7 @@ TclArithSeriesGetElements(
 		for (i = 0; i < objc; i++) {
 		    int status = TclArithSeriesObjIndex(interp, objPtr, i, &objv[i]);
 
-		    if (status) {
+		    if (status != TCL_OK) {
 			return TCL_ERROR;
 		    }
 		    Tcl_IncrRefCount(objv[i]);
