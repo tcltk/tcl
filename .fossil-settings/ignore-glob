@@ -61,6 +61,7 @@ unix/Tclsh-Info.plist
 unix/pkgs/*
 win/Debug*
 win/Release*
+win/tcl.pc
 win/*.manifest
 win/pkgs/*
 win/coffbase.txt

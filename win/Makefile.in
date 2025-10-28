@@ -707,6 +707,9 @@ install-binaries: binaries
 	    echo Installing $(REG_LIB_FILE); \
 	    $(COPY) $(REG_LIB_FILE) "$(LIB_INSTALL_DIR)/reg${REGDOTVER}"; \
 	    fi
+	@echo "Installing pkg-config file to $(LIB_INSTALL_DIR)/pkgconfig/"
+	@$(INSTALL_DATA_DIR) "$(LIB_INSTALL_DIR)/pkgconfig"
+	@$(INSTALL_DATA) tcl.pc "$(LIB_INSTALL_DIR)/pkgconfig/tcl.pc"
 
 install-libraries: libraries install-tzdata install-msgs
 	@for i in "$(prefix)/lib" "$(INCLUDE_INSTALL_DIR)" \
