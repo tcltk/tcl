@@ -212,7 +212,7 @@ FileCopyRename(
 	}
 	jargv[0] = objv[objc - 1];
 	jargv[1] = source;
-	newFileName = TclJoinPath(2, jargv, 1);
+	newFileName = TclJoinPath(2, jargv, true);
 	Tcl_IncrRefCount(newFileName);
 	result = CopyRenameOneFile(interp, objv[i], newFileName, copyFlag,
 		force);
@@ -799,7 +799,7 @@ CopyRenameOneFile(
     }
     if (!copyFlag && (result == TCL_OK)) {
 	if (S_ISDIR(sourceStatBuf.st_mode)) {
-	    result = Tcl_FSRemoveDirectory(source, 1, &errorBuffer);
+	    result = Tcl_FSRemoveDirectory(source, true, &errorBuffer);
 	    if (result != TCL_OK) {
 		errfile = errorBuffer;
 		if (Tcl_FSEqualPaths(errfile, source) == 0) {

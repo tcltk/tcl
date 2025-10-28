@@ -2169,7 +2169,7 @@ IssueDictWithEmpty(
 {
     Tcl_Token *tokenPtr;
     DefineLineInformation;	/* TIP #280 */
-    int gotPath;
+    bool gotPath;
     Tcl_Size i;
     Tcl_LVTIndex dictVar;
 
@@ -2260,7 +2260,7 @@ IssueDictWithBodied(
 
     Tcl_LVTIndex dictVar, keysTmp;
     Tcl_LVTIndex varNameTmp = TCL_INDEX_NONE, pathTmp = TCL_INDEX_NONE;
-    int gotPath;
+    bool gotPath;
     Tcl_Size i;
     Tcl_BytecodeLabel done;
     Tcl_ExceptionRange range;

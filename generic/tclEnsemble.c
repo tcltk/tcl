@@ -588,7 +588,7 @@ static int
 SetEnsembleConfigOptions(
     Tcl_Interp *interp,
     Tcl_Command token,		/* The ensemble to configure. */
-    Tcl_Size objc,			/* The count of option-related arguments. */
+    Tcl_Size objc,		/* The count of option-related arguments. */
     Tcl_Obj *const objv[])	/* Option-related arguments. */
 {
     Tcl_Size len;

@@ -74,7 +74,7 @@ static void		DeleteImportedCmd(void *clientData);
 static int		DoImport(Tcl_Interp *interp,
 			    Namespace *nsPtr, Tcl_HashEntry *hPtr,
 			    const char *cmdName, const char *pattern,
-			    Namespace *importNsPtr, int allowOverwrite);
+			    Namespace *importNsPtr, bool allowOverwrite);
 static void		DupNsNameInternalRep(Tcl_Obj *objPtr,
 			    Tcl_Obj *copyPtr);
 static char *		ErrorCodeRead(void *clientData, Tcl_Interp *interp,
@@ -1796,7 +1796,7 @@ DoImport(
     const char *cmdName,
     const char *pattern,
     Namespace *importNsPtr,
-    int allowOverwrite)
+    bool allowOverwrite)
 {
     Tcl_Size i = 0, exported = 0;
     Tcl_HashEntry *found;
@@ -3686,7 +3686,7 @@ NamespaceExportCmd(
 
     firstArg = 1;
     if (strcmp("-clear", TclGetString(objv[firstArg])) == 0) {
-	Tcl_Export(interp, NULL, "::", 1);
+	Tcl_Export(interp, NULL, "::", true);
 	Tcl_ResetResult(interp);
 	firstArg++;
     }
@@ -4693,7 +4693,7 @@ NamespaceUpvarCmd(
 	iPtr->varFramePtr->nsPtr = (Namespace *) nsPtr;
 	otherPtr = TclObjLookupVarEx(interp, objv[0], NULL,
 		(TCL_NAMESPACE_ONLY|TCL_LEAVE_ERR_MSG|TCL_AVOID_RESOLVERS),
-		"access", /*createPart1*/ 1, /*createPart2*/ 1, &arrayPtr);
+		"access", /*createPart1*/ true, /*createPart2*/ true, &arrayPtr);
 	iPtr->varFramePtr->nsPtr = (Namespace *) savedNsPtr;
 	if (otherPtr == NULL) {
 	    return TCL_ERROR;
@@ -5060,7 +5060,7 @@ TclLogCommandInfo(
 		(overflow ? "..." : "")));
 
 	varPtr = TclObjLookupVarEx(interp, iPtr->eiVar, NULL, TCL_GLOBAL_ONLY,
-		NULL, 0, 0, &arrayPtr);
+		NULL, false, false, &arrayPtr);
 	if ((varPtr == NULL) || !TclIsVarTraced(varPtr)) {
 	    /*
 	     * Should not happen.

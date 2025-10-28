@@ -981,8 +981,8 @@ TclOO_Object_LinkVar(
 	savedNsPtr = iPtr->varFramePtr->nsPtr;
 	iPtr->varFramePtr->nsPtr = (Namespace *)
 		Tcl_GetObjectNamespace(object);
-	varPtr = TclObjLookupVar(interp, objv[i], NULL, TCL_NAMESPACE_ONLY,
-		"define", 1, 0, &aryPtr);
+	varPtr = TclObjLookupVarEx(interp, objv[i], NULL, TCL_NAMESPACE_ONLY,
+		"define", true, false, &aryPtr);
 	iPtr->varFramePtr->nsPtr = savedNsPtr;
 
 	if (varPtr == NULL || aryPtr != NULL) {
@@ -1073,7 +1073,7 @@ TclOOLookupObjectVar(
 
 	    if (mPtr->declaringObjectPtr == oPtr) {
 		FOREACH_STRUCT(pvPtr, oPtr->privateVariables) {
-		    if (!TclStringCmp(pvPtr->variableObj, varName, 1, 0,
+		    if (!TclStringCmp(pvPtr->variableObj, varName, true, false,
 			    TCL_INDEX_NONE)) {
 			varName = pvPtr->fullNameObj;
 			break;
@@ -1095,8 +1095,8 @@ TclOOLookupObjectVar(
 		}
 		if (isInstance) {
 		    FOREACH_STRUCT(pvPtr, clsPtr->privateVariables) {
-			if (!TclStringCmp(pvPtr->variableObj, varName, 1, 0,
-				TCL_INDEX_NONE)) {
+			if (!TclStringCmp(pvPtr->variableObj, varName, true,
+				false, TCL_INDEX_NONE)) {
 			    varName = pvPtr->fullNameObj;
 			    break;
 			}
@@ -1110,8 +1110,8 @@ TclOOLookupObjectVar(
 		namespacePtr->fullName, TclGetString(varName));
     }
     Tcl_IncrRefCount(varNamePtr);
-    Tcl_Var var = (Tcl_Var) TclObjLookupVar(interp, varNamePtr, NULL,
-	    TCL_NAMESPACE_ONLY|TCL_LEAVE_ERR_MSG, "refer to", 1, 1,
+    Tcl_Var var = (Tcl_Var) TclObjLookupVarEx(interp, varNamePtr, NULL,
+	    TCL_NAMESPACE_ONLY|TCL_LEAVE_ERR_MSG, "refer to", true, true,
 	    (Var **) aryPtr);
     Tcl_DecrRefCount(varNamePtr);
     if (var == NULL) {
@@ -1866,7 +1866,7 @@ TclOOClassVariableObjCmd(
 	iPtr->varFramePtr->nsPtr = (Namespace *) clsNsPtr;
 	Var *arrayPtr, *otherPtr = TclObjLookupVarEx(interp, objv[i], NULL,
 		(TCL_NAMESPACE_ONLY|TCL_LEAVE_ERR_MSG|TCL_AVOID_RESOLVERS),
-		"access", /*createPart1*/ 1, /*createPart2*/ 0, &arrayPtr);
+		"access", /*createPart1*/ true, /*createPart2*/ false, &arrayPtr);
 	iPtr->varFramePtr->nsPtr = (Namespace *) ourNsPtr;
 	if (otherPtr == NULL) {
 	    return TCL_ERROR;

@@ -20,11 +20,11 @@
  * number of calls in effect.
  */
 
-typedef struct {
+typedef struct Reference {
     void *clientData;		/* Address of preserved block. */
     size_t refCount;		/* Number of Tcl_Preserve calls in effect for
 				 * block. */
-    int mustFree;		/* Non-zero means Tcl_EventuallyFree was
+    bool mustFree;		/* True means Tcl_EventuallyFree was
 				 * called while a Tcl_Preserve call was in
 				 * effect, so the structure must be freed when
 				 * refCount becomes zero. */
@@ -154,7 +154,7 @@ Tcl_Preserve(
     refPtr = &refArray[inUse];
     refPtr->clientData = clientData;
     refPtr->refCount = 1;
-    refPtr->mustFree = 0;
+    refPtr->mustFree = false;
     refPtr->freeProc = 0;
     inUse += 1;
     Tcl_MutexUnlock(&preserveMutex);
@@ -188,7 +188,7 @@ Tcl_Release(
 
     Tcl_MutexLock(&preserveMutex);
     for (i=0, refPtr=refArray ; i<inUse ; i++, refPtr++) {
-	int mustFree;
+	bool mustFree;
 	Tcl_FreeProc *freeProc;
 
 	if (refPtr->clientData != clientData) {
@@ -279,7 +279,7 @@ Tcl_EventuallyFree(
 	if (refPtr->mustFree) {
 	    Tcl_Panic("Tcl_EventuallyFree called twice for %p", clientData);
 	}
-	refPtr->mustFree = 1;
+	refPtr->mustFree = true;
 	refPtr->freeProc = freeProc;
 	Tcl_MutexUnlock(&preserveMutex);
 	return;

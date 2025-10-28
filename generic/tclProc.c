@@ -1535,7 +1535,7 @@ TclPushProcCallFrame(
     Tcl_Size objc,		/* Count of number of arguments to this
 				 * procedure. */
     Tcl_Obj *const objv[],	/* Argument value objects. */
-    int isLambda)		/* 1 if this is a call by ApplyObjCmd: it
+    bool isLambda)		/* true if this is a call by ApplyObjCmd: it
 				 * needs special rules for error msg */
 {
     Proc *procPtr = (Proc *)clientData;
@@ -1648,7 +1648,7 @@ TclNRInterpProc(
     Tcl_Obj *const objv[])	/* Argument value objects. */
 {
     int result = TclPushProcCallFrame(clientData, interp, objc, objv,
-	    /*isLambda*/ 0);
+	    /*isLambda*/ false);
 
     if (result != TCL_OK) {
 	return TCL_ERROR;
@@ -1667,7 +1667,7 @@ NRInterpProc(
     Tcl_Obj *const objv[])	/* Argument value objects. */
 {
     int result = TclPushProcCallFrame(clientData, interp, objc, objv,
-	    /*isLambda*/ 0);
+	    /*isLambda*/ false);
 
     if (result != TCL_OK) {
 	return TCL_ERROR;
@@ -2749,7 +2749,7 @@ TclNRApplyObjCmd(
     extraPtr->efi.fields[0].clientData = lambdaPtr;
     extraPtr->cmd.clientData = &extraPtr->efi;
 
-    result = TclPushProcCallFrame(procPtr, interp, objc, objv, 1);
+    result = TclPushProcCallFrame(procPtr, interp, objc, objv, true);
     if (result == TCL_OK) {
 	TclNRAddCallback(interp, ApplyNR2, extraPtr, NULL, NULL, NULL);
 	result = TclNRInterpProcCore(interp, objv[1], 2, &MakeLambdaError);

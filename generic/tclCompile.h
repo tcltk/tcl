@@ -1295,8 +1295,6 @@ MODULE_SCOPE void	TclDeleteLiteralTable(Tcl_Interp *interp,
 MODULE_SCOPE void	TclEmitForwardJump(CompileEnv *envPtr,
 			    TclJumpType jumpType, JumpFixup *jumpFixupPtr);
 MODULE_SCOPE void	TclEmitInvoke(CompileEnv *envPtr, int opcode, ...);
-MODULE_SCOPE ExceptionRange * TclGetExceptionRangeForPc(unsigned char *pc,
-			    int catchOnly, ByteCode *codePtr);
 MODULE_SCOPE void	TclExpandJumpFixupArray(JumpFixupArray *fixupArrayPtr);
 MODULE_SCOPE int	TclNRExecuteByteCode(Tcl_Interp *interp,
 			    ByteCode *codePtr);
@@ -1376,7 +1374,7 @@ MODULE_SCOPE Tcl_Obj *	TclGetInnerContext(Tcl_Interp *interp,
 MODULE_SCOPE Tcl_Obj *	TclNewInstNameObj(unsigned char inst);
 MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
 			    Tcl_Interp *interp, Tcl_Size objc,
-			    Tcl_Obj *const objv[], int isLambda);
+			    Tcl_Obj *const objv[], bool isLambda);
 
 /*
  *----------------------------------------------------------------

@@ -143,7 +143,7 @@ static int		CmpStr(const void *ptr1, const void *ptr2);
 static void		DupMethodNameRep(Tcl_Obj *srcPtr, Tcl_Obj *dstPtr);
 static Tcl_NRPostProc	FinalizeMethodRefs;
 static void		FreeMethodNameRep(Tcl_Obj *objPtr);
-static inline int	IsStillValid(CallChain *callPtr, Object *oPtr,
+static inline bool	IsStillValid(CallChain *callPtr, Object *oPtr,
 			    int flags, int reuseMask);
 static Tcl_NRPostProc	ResetFilterFlags;
 static Tcl_NRPostProc	SetFilterFlags;
@@ -326,7 +326,7 @@ TclOOInvokeContext(
 {
     CallContext *const contextPtr = (CallContext *) clientData;
     Method *const mPtr = contextPtr->callPtr->chain[contextPtr->index].mPtr;
-    const int isFilter =
+    const bool isFilter =
 	    contextPtr->callPtr->chain[contextPtr->index].isFilter;
 
     /*
@@ -1137,7 +1137,7 @@ InitCallChain(
  * ----------------------------------------------------------------------
  */
 
-static inline int
+static inline bool
 IsStillValid(
     CallChain *callPtr,
     Object *oPtr,

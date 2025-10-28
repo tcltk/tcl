@@ -80,7 +80,7 @@ FileForRedirect(
 				 * otherwise. */
     bool *releasePtr)
 {
-    int writing = (flags & O_WRONLY);
+    bool writing = (flags & O_WRONLY);
     Tcl_Channel chan;
     TclFile file;
 
@@ -109,7 +109,7 @@ FileForRedirect(
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"channel \"%s\" wasn't opened for %s",
 			Tcl_GetChannelName(chan),
-			((writing) ? "writing" : "reading")));
+			(writing ? "writing" : "reading")));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "EXEC",
 			"BADCHAN", (char *)NULL);
 	    }

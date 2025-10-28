@@ -31,7 +31,7 @@ static Tcl_NRPostProc	TryPostHandler;
 static int		UniCharIsAscii(int character);
 static int		UniCharIsHexDigit(int character);
 static int		StringCmpOpts(Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[], int *nocase,
+			    Tcl_Obj *const objv[], bool *nocase,
 			    Tcl_Size *reqlength);
 
 /*
@@ -609,12 +609,11 @@ Tcl_RegsubObjCmd(
 	 */
 
 	Tcl_Size slen;
-	int nocase, wsrclc;
 	int (*strCmpFn)(const Tcl_UniChar*,const Tcl_UniChar*,size_t);
 	Tcl_UniChar *p;
 
 	numMatches = 0;
-	nocase = (cflags & TCL_REG_NOCASE);
+	bool nocase = (cflags & TCL_REG_NOCASE);
 	strCmpFn = nocase ? TclUniCharNcasecmp : TclUniCharNcmp;
 
 	wsrc = Tcl_GetUnicodeFromObj(objv[0], &slen);
@@ -640,7 +639,7 @@ Tcl_RegsubObjCmd(
 		wlen = 0;
 	    }
 	} else {
-	    wsrclc = Tcl_UniCharToLower(*wsrc);
+	    int wsrclc = Tcl_UniCharToLower(*wsrc);
 	    for (p = wfirstChar = wstring; wstring < wend; wstring++) {
 		if ((*wstring == *wsrc ||
 			(nocase && Tcl_UniCharToLower(*wstring)==wsrclc)) &&
@@ -2649,7 +2648,8 @@ StringEqualCmd(
      */
 
     const char *string2;
-    int i, match, nocase = 0;
+    int i, match;
+    bool nocase = false;
     Tcl_Size length;
     Tcl_WideInt reqlength = -1;
 
@@ -2663,7 +2663,7 @@ StringEqualCmd(
     for (i = 1; i < objc-2; i++) {
 	string2 = TclGetStringFromObj(objv[i], &length);
 	if ((length > 1) && !strncmp(string2, "-nocase", length)) {
-	    nocase = 1;
+	    nocase = true;
 	} else if ((length > 1)
 		&& !strncmp(string2, "-length", length)) {
 	    if (i+1 >= objc-2) {
@@ -2692,8 +2692,8 @@ StringEqualCmd(
      */
 
     objv += objc-2;
-    match = TclStringCmp(objv[0], objv[1], 1, nocase, reqlength);
-    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(match ? 0 : 1));
+    match = TclStringCmp(objv[0], objv[1], true, nocase, reqlength);
+    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(!match));
     return TCL_OK;
 }
 
@@ -2728,16 +2728,15 @@ StringCmpCmd(
      * the expr string comparison in INST_EQ/INST_NEQ/INST_LT/...).
      */
 
-    int match, nocase, status;
+    bool nocase;
     Tcl_Size reqlength = -1;
-
-    status = StringCmpOpts(interp, objc, objv, &nocase, &reqlength);
+    int status = StringCmpOpts(interp, objc, objv, &nocase, &reqlength);
     if (status != TCL_OK) {
 	return status;
     }
 
     objv += objc-2;
-    match = TclStringCmp(objv[0], objv[1], 0, nocase, reqlength);
+    int match = TclStringCmp(objv[0], objv[1], false, nocase, reqlength);
     Tcl_SetObjResult(interp, Tcl_NewWideIntObj(match));
     return TCL_OK;
 }
@@ -2747,7 +2746,7 @@ StringCmpOpts(
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[],	/* Argument objects. */
-    int *nocase,
+    bool *nocase,
     Tcl_Size *reqlength)
 {
     int i;
@@ -2755,7 +2754,7 @@ StringCmpOpts(
     const char *string;
     Tcl_WideInt wreqlength = -1;
 
-    *nocase = 0;
+    *nocase = false;
     if (objc < 3 || objc > 6) {
     str_cmp_args:
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -2766,7 +2765,7 @@ StringCmpOpts(
     for (i = 1; i < objc-2; i++) {
 	string = TclGetStringFromObj(objv[i], &length);
 	if ((length > 1) && !strncmp(string, "-nocase", length)) {
-	    *nocase = 1;
+	    *nocase = true;
 	} else if ((length > 1)
 		&& !strncmp(string, "-length", length)) {
 	    if (i+1 >= objc-2) {
@@ -5055,7 +5054,7 @@ TryPostBody(
 			continue;
 		    }
 		    for (j=0 ; j<len1 ; j++) {
-			if (TclStringCmp(bits1[j], bits2[j], 1, 0,
+			if (TclStringCmp(bits1[j], bits2[j], true, false,
 				TCL_INDEX_NONE) != 0) {
 			    /*
 			     * Really want 'continue outerloop;', but C does

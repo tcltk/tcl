@@ -2352,7 +2352,7 @@ CompileCommandTokens(
     Tcl_Obj *cmdObj;
     Command *cmdPtr = NULL;
     int code = TCL_ERROR, expand = -1;
-    int cmdKnown;
+    bool cmdKnown;
     int *wlines;
     Tcl_Size wlineat, numWords = parsePtr->numWords;
     int cmdLine = envPtr->line;

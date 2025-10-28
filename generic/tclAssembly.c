@@ -292,7 +292,7 @@ static void		ReportUndefinedLabel(AssemblyEnv*, BasicBlock*,
 static void		RestoreEmbeddedExceptionRanges(AssemblyEnv*);
 static int		StackCheckBasicBlock(AssemblyEnv*, BasicBlock *,
 			    BasicBlock *, int);
-static BasicBlock*	StartBasicBlock(AssemblyEnv*, int fallthrough,
+static BasicBlock*	StartBasicBlock(AssemblyEnv*, int flags,
 			    Tcl_Obj* jumpLabel);
 /* static int		AdvanceIp(const unsigned char *pc); */
 static int		StackCheckBasicBlock(AssemblyEnv*, BasicBlock *,

@@ -67,10 +67,10 @@ static int		CompileUnaryOpCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, int instruction,
 			    CompileEnv *envPtr);
 static void		IssueSwitchChainedTests(Tcl_Interp *interp,
-			    CompileEnv *envPtr, int mode, int noCase,
+			    CompileEnv *envPtr, int mode, bool noCase,
 			    Tcl_Size numArms, SwitchArmInfo *arms);
 static void		IssueSwitchJumpTable(Tcl_Interp *interp,
-			    CompileEnv *envPtr, int noCase, Tcl_Size numArms,
+			    CompileEnv *envPtr, bool noCase, Tcl_Size numArms,
 			    SwitchArmInfo *arms);
 static void		IssueSwitchNumJumpTable(Tcl_Interp *interp,
 			    CompileEnv *envPtr, Tcl_Size numArms,
@@ -1961,7 +1961,8 @@ TclCompileSwitchCmd(
 
 	while (numBytes > 0) {
 	    const char *prevBytes = bytes;
-	    int literal, isProcessingBody = (int)(numWords & 1);
+	    int literal;
+	    bool isProcessingBody = (numWords & 1);
 	    SwitchArmInfo *arm = &arms[numWords >> 1];
 	    Tcl_Token *fakeToken = &bodyTokenArray[numWords];
 
@@ -2058,7 +2059,7 @@ TclCompileSwitchCmd(
 	     * traces, etc.
 	     */
 
-	    int isProcessingBody = (int) (i & 1);
+	    bool isProcessingBody = (i & 1);
 	    SwitchArmInfo *arm = &arms[i >> 1];
 
 	    if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
@@ -2166,7 +2167,7 @@ IssueSwitchChainedTests(
     Tcl_Interp *interp,		/* Context for compiling script bodies. */
     CompileEnv *envPtr,		/* Holds resulting instructions. */
     int mode,			/* Exact, Glob or Regexp */
-    int noCase,			/* Case-insensitivity flag. */
+    bool noCase,		/* Case-insensitivity flag. */
     Tcl_Size numArms,		/* Number of arms of the switch. */
     SwitchArmInfo *arms)	/* Array of arm descriptors. */
 {
@@ -2392,7 +2393,7 @@ static void
 IssueSwitchJumpTable(
     Tcl_Interp *interp,		/* Context for compiling script bodies. */
     CompileEnv *envPtr,		/* Holds resulting instructions. */
-    int noCase,			/* Whether to do case-insensitive matches. */
+    bool noCase,		/* Whether to do case-insensitive matches. */
     Tcl_Size numArms,		/* Number of arms of the switch. */
     SwitchArmInfo *arms)	/* Array of arm descriptors. */
 {
@@ -3154,7 +3155,8 @@ TclCompileTryCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Size numHandlers, numWords = parsePtr->numWords;
-    int result = TCL_ERROR, anyTrapClauses = 0;
+    int result = TCL_ERROR;
+    bool anyTrapClauses = false;
     Tcl_Token *bodyToken, *finallyToken, *tokenPtr;
     TryHandlerInfo staticHandler, *handlers = &staticHandler;
     Tcl_Size handlerIdx = 0;
@@ -3207,7 +3209,7 @@ TclCompileTryCmd(
 		Tcl_ListObjReplace(NULL, tmpObj, 0, 0, 0, NULL);
 		Tcl_IncrRefCount(tmpObj);
 		handlers[handlerIdx].matchClause = tmpObj;
-		anyTrapClauses = 1;
+		anyTrapClauses = true;
 	    } else if (IS_TOKEN_LITERALLY(tokenPtr, "on")) {
 		int code;
 
@@ -4689,8 +4691,8 @@ TclCompileWhileCmd(
     Tcl_BytecodeLabel jumpEvalCond, bodyCodeOffset;
     Tcl_ExceptionRange range;
     int code, boolVal;
-    int loopMayEnd = 1;		/* This is set to 0 if it is recognized as an
-				 * infinite loop. */
+    bool loopMayEnd = true;	/* This is set to false if it is recognized as
+				 * an infinite loop. */
     Tcl_Obj *boolObj;
 
     if (parsePtr->numWords != 3) {
@@ -4731,7 +4733,7 @@ TclCompileWhileCmd(
 	     * efficient body.
 	     */
 
-	    loopMayEnd = 0;
+	    loopMayEnd = false;
 	} else {
 	    /*
 	     * This is an empty loop: "while 0 {...}" or such. Compile no

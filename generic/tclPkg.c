@@ -84,7 +84,7 @@ typedef struct RequireProcArgs {
  */
 
 static int		CheckVersionAndConvert(Tcl_Interp *interp,
-			    const char *string, char **internal, int *stable);
+			    const char *string, char **internal, bool *stable);
 static int		CompareVersions(char *v1i, char *v2i,
 			    bool *isMajorPtr);
 static int		CheckRequirement(Tcl_Interp *interp,
@@ -650,7 +650,6 @@ SelectPackage(
     PkgAvail *availPtr, *bestPtr, *bestStablePtr;
     char *availVersion, *bestVersion, *bestStableVersion;
 				/* Internal rep. of versions */
-    int availStable, satisfies;
     Require *reqPtr = (Require *)data[0];
     Tcl_Size reqc = PTR2INT(data[1]);
     Tcl_Obj **const reqv = (Tcl_Obj **)data[2];
@@ -687,6 +686,7 @@ SelectPackage(
 
     for (availPtr = pkgPtr->availPtr; availPtr != NULL;
 	    availPtr = availPtr->nextPtr) {
+	bool availStable;
 	if (CheckVersionAndConvert(interp, availPtr->version,
 		&availVersion, &availStable) != TCL_OK) {
 	    /*
@@ -704,7 +704,7 @@ SelectPackage(
 	 */
 
 	if (reqc > 0) {
-	    satisfies = SomeRequirementSatisfied(availVersion, reqc, reqv);
+	    bool satisfies = SomeRequirementSatisfied(availVersion, reqc, reqv);
 	    if (!satisfies) {
 		Tcl_Free(availVersion);
 		availVersion = NULL;
@@ -1078,7 +1078,6 @@ TclNRPackageObjCmd(
 	PKG_VERSIONS, PKG_VSATISFIES
     } optionIndex;
     Interp *iPtr = (Interp *) interp;
-    int satisfies;
     bool exact;
     Tcl_Size i, newobjc;
     PkgAvail *availPtr, *prevPtr;
@@ -1521,7 +1520,7 @@ TclNRPackageObjCmd(
 	    return TCL_ERROR;
 	}
 
-	satisfies = SomeRequirementSatisfied(argv2i, objc-3, objv+3);
+	bool satisfies = SomeRequirementSatisfied(argv2i, objc-3, objv+3);
 	Tcl_Free(argv2i);
 
 	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(satisfies));
@@ -1663,7 +1662,7 @@ CheckVersionAndConvert(
 				 * groups of decimal digits separated by
 				 * dots. */
     char **internal,		/* Internal normalized representation */
-    int *stable)		/* Flag: Version is (un)stable. */
+    bool *stable)		/* Flag: Version is (un)stable. Nullable. */
 {
     const char *p = string;
     char prevChar;

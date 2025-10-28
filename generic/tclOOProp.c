@@ -48,12 +48,14 @@ static int		Configurable_Setter(void *clientData,
 static void		DetailsDeleter(void *clientData);
 static int		DetailsCloner(Tcl_Interp *, void *oldClientData,
 			    void **newClientData);
+static Tcl_Obj *	GetAllObjectProperties(Object *oPtr,
+			    bool writable);
 static void		ImplementObjectProperty(Tcl_Object targetObject,
-			    Tcl_Obj *propNamePtr, int installGetter,
-			    int installSetter);
+			    Tcl_Obj *propNamePtr, bool installGetter,
+			    bool installSetter);
 static void		ImplementClassProperty(Tcl_Class targetObject,
-			    Tcl_Obj *propNamePtr, int installGetter,
-			    int installSetter);
+			    Tcl_Obj *propNamePtr, bool installGetter,
+			    bool installSetter);
 
 /*
  * Method descriptors
@@ -170,7 +172,7 @@ GetPropertyName(
 				 * with Tcl_Free if the cache is used. */
 {
     Tcl_Size objc, index, i;
-    Tcl_Obj *listPtr = TclOOGetAllObjectProperties(
+    Tcl_Obj *listPtr = GetAllObjectProperties(
 	    oPtr, flags & GPN_WRITABLE);
     Tcl_Obj **objv;
     GPNCache *tablePtr;
@@ -278,7 +280,7 @@ TclOO_Configurable_Configure(
 	 * Read all properties.
 	 */
 
-	Tcl_Obj *listPtr = TclOOGetAllObjectProperties(oPtr, 0);
+	Tcl_Obj *listPtr = GetAllObjectProperties(oPtr, false);
 	Tcl_Obj *resultPtr = Tcl_NewObj(), **namev;
 
 	Tcl_IncrRefCount(listPtr);
@@ -473,8 +475,8 @@ void
 ImplementObjectProperty(
     Tcl_Object targetObject,	/* What to install into. */
     Tcl_Obj *propNamePtr,	/* Property name. */
-    int installGetter,		/* Whether to install a standard getter. */
-    int installSetter)		/* Whether to install a standard setter. */
+    bool installGetter,		/* Whether to install a standard getter. */
+    bool installSetter)		/* Whether to install a standard setter. */
 {
     const char *propName = TclGetString(propNamePtr);
 
@@ -501,8 +503,8 @@ void
 ImplementClassProperty(
     Tcl_Class targetClass,	/* What to install into. */
     Tcl_Obj *propNamePtr,	/* Property name. */
-    int installGetter,		/* Whether to install a standard getter. */
-    int installSetter)		/* Whether to install a standard setter. */
+    bool installGetter,		/* Whether to install a standard getter. */
+    bool installSetter)		/* Whether to install a standard setter. */
 {
     const char *propName = TclGetString(propNamePtr);
 
@@ -538,7 +540,7 @@ ImplementClassProperty(
 static void
 FindClassProps(
     Class *clsPtr,		/* The object to inspect. Must exist. */
-    int writable,		/* Whether we're after the readable or writable
+    bool writable,		/* Whether we're after the readable or writable
 				 * property set. */
     Tcl_HashTable *accumulator)	/* Where to gather the names. */
 {
@@ -589,7 +591,7 @@ FindClassProps(
 static void
 FindObjectProps(
     Object *oPtr,		/* The object to inspect. Must exist. */
-    int writable,		/* Whether we're after the readable or writable
+    bool writable,		/* Whether we're after the readable or writable
 				 * property set. */
     Tcl_HashTable *accumulator)	/* Where to gather the names. */
 {
@@ -712,7 +714,7 @@ PropNameCompare(
     Tcl_Obj *first = *(Tcl_Obj **) a;
     Tcl_Obj *second = *(Tcl_Obj **) b;
 
-    return TclStringCmp(first, second, 0, 0, TCL_INDEX_NONE);
+    return TclStringCmp(first, second, false, false, TCL_INDEX_NONE);
 }
 
 static inline void
@@ -733,7 +735,7 @@ SortPropList(
 /*
  * ----------------------------------------------------------------------
  *
- * TclOOGetAllObjectProperties --
+ * GetAllObjectProperties --
  *
  *	Get the sorted list of all properties known to an object, including to
  *	its classes. Manages a cache so this operation is usually cheap.
@@ -741,10 +743,10 @@ SortPropList(
  * ----------------------------------------------------------------------
  */
 
-Tcl_Obj *
-TclOOGetAllObjectProperties(
+static Tcl_Obj *
+GetAllObjectProperties(
     Object *oPtr,		/* The object to inspect. Must exist. */
-    int writable)		/* Whether to get writable properties. If
+    bool writable)		/* Whether to get writable properties. If
 				 * false, readable properties will be returned
 				 * instead. */
 {
@@ -954,8 +956,8 @@ TclOOInstallStdPropertyImpls(
     void *useInstance,
     Tcl_Interp *interp,
     Tcl_Obj *propName,
-    int readable,
-    int writable)
+    bool readable,
+    bool writable)
 {
     const char *name, *reason;
     Tcl_Size len;
@@ -1295,7 +1297,7 @@ TclOOInfoObjectPropCmd(
      */
 
     if (all) {
-	result = TclOOGetAllObjectProperties(oPtr, writable);
+	result = GetAllObjectProperties(oPtr, writable);
     } else {
 	if (writable) {
 	    result = TclOOGetPropertyList(&oPtr->properties.writable);

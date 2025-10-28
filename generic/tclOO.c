@@ -1980,10 +1980,7 @@ Tcl_NewObjectInstance(
 		TclOOGetCallContext(oPtr, NULL, CONSTRUCTOR, NULL, NULL, NULL);
 
 	if (contextPtr != NULL) {
-	    int isRoot, result;
-	    Tcl_InterpState state;
-
-	    state = Tcl_SaveInterpState(interp, TCL_OK);
+	    Tcl_InterpState state = Tcl_SaveInterpState(interp, TCL_OK);
 	    contextPtr->callPtr->flags |= CONSTRUCTOR;
 	    contextPtr->skip = skip;
 
@@ -1991,8 +1988,8 @@ Tcl_NewObjectInstance(
 	     * Adjust the ensemble tracking record if necessary. [Bug 3514761]
 	     */
 
-	    isRoot = TclInitRewriteEnsemble(interp, skip, skip, objv);
-	    result = Tcl_NRCallObjProc(interp, TclOOInvokeContext, contextPtr,
+	    bool isRoot = TclInitRewriteEnsemble(interp, skip, skip, objv);
+	    int result = Tcl_NRCallObjProc(interp, TclOOInvokeContext, contextPtr,
 		    objc, objv);
 
 	    if (isRoot) {

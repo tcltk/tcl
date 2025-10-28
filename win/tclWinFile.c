@@ -481,7 +481,7 @@ TclWinSymLinkCopyDirectory(
 int
 TclWinSymLinkDelete(
     const WCHAR *linkOrigPath,
-    int linkOnly)
+    bool linkOnly)
 {
     /*
      * It is a symbolic link - remove it.
