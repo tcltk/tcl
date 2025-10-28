@@ -62,5 +62,6 @@ win/*.manifest
 win/pkgs/*
 win/coffbase.txt
 win/tcl.hpj
+win/tcl.pc
 win/nmakehlp.out
 win/nmhlp-out.txt
