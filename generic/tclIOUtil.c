@@ -1113,7 +1113,7 @@ FsAddMountsToGlobResult(
 				 * directory flag is particularly significant. */
 {
     Tcl_Size mLength, gLength, i;
-    int dir = (types == NULL || (types->type & TCL_GLOB_TYPE_DIR));
+    bool dir = (types == NULL || (types->type & TCL_GLOB_TYPE_DIR));
     Tcl_Obj *mounts = FsListMounts(pathPtr, pattern);
 
     if (mounts == NULL) {
@@ -1812,8 +1812,8 @@ Tcl_FSEvalFileEx(
 	 */
 
 	const char *pathString = TclGetStringFromObj(pathPtr, &length);
-	int limit = 150;
-	int overflow = (length > limit);
+	const int limit = 150;
+	bool overflow = (length > limit);
 
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 		"\n    (file \"%.*s%s\" line %d)",
@@ -1966,7 +1966,7 @@ EvalFileCallback(
 	Tcl_Size length;
 	const char *pathString = TclGetStringFromObj(pathPtr, &length);
 	const int limit = 150;
-	int overflow = (length > limit);
+	bool overflow = (length > limit);
 
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 		"\n    (file \"%.*s%s\" line %d)",

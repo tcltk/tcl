@@ -696,7 +696,7 @@ static void		PrintByteCodeInfo(ByteCode *codePtr);
 static const char *	StringForResultCode(int result);
 static void		ValidatePcAndStackTop(ByteCode *codePtr,
 			    const unsigned char *pc, size_t stackTop,
-			    int checkStack);
+			    bool checkStack);
 #endif /* TCL_COMPILE_DEBUG */
 static ByteCode *	CompileExprObj(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void		DeleteExecStack(ExecStack *esPtr);
@@ -716,7 +716,7 @@ static const char *	GetSrcInfoForPc(const unsigned char *pc,
 			    ByteCode *codePtr, Tcl_Size *lengthPtr,
 			    const unsigned char **pcBeg, Tcl_Size *cmdIdxPtr);
 static Tcl_Obj **	GrowEvaluationStack(ExecEnv *eePtr, size_t growth,
-			    int move);
+			    bool move);
 static void		IllegalExprOperandType(Tcl_Interp *interp, const char *ord,
 			    const unsigned char *pc, Tcl_Obj *opndPtr);
 static void		InitByteCodeExecution(Tcl_Interp *interp);
@@ -1051,7 +1051,7 @@ GrowEvaluationStack(
 				 * stack to enlarge. */
     size_t growth1,		/* How much larger than the current used
 				 * size. */
-    int move)			/* 1 if move words since last marker. */
+    bool move)			/* true if move words since last marker. */
 {
     ExecStack *esPtr = eePtr->execStackPtr, *oldPtr = NULL;
     size_t newBytes;
@@ -1209,7 +1209,7 @@ StackAllocWords(
 
     Interp *iPtr = (Interp *) interp;
     ExecEnv *eePtr = iPtr->execEnvPtr;
-    Tcl_Obj **resPtr = GrowEvaluationStack(eePtr, numWords, 0);
+    Tcl_Obj **resPtr = GrowEvaluationStack(eePtr, numWords, false);
 
     eePtr->execStackPtr->tosPtr += numWords;
     return resPtr;
@@ -1222,7 +1222,7 @@ StackReallocWords(
 {
     Interp *iPtr = (Interp *) interp;
     ExecEnv *eePtr = iPtr->execEnvPtr;
-    Tcl_Obj **resPtr = GrowEvaluationStack(eePtr, numWords, 1);
+    Tcl_Obj **resPtr = GrowEvaluationStack(eePtr, numWords, true);
 
     eePtr->execStackPtr->tosPtr += numWords;
     return resPtr;
@@ -2045,7 +2045,7 @@ TclNRExecuteByteCode(
      * execution stack is large enough to execute this ByteCode.
      */
 
-    TEBCdata *TD = (TEBCdata *) GrowEvaluationStack(iPtr->execEnvPtr, numWords, 0);
+    TEBCdata *TD = (TEBCdata *) GrowEvaluationStack(iPtr->execEnvPtr, numWords, false);
     esPtr->tosPtr = initTosPtr;
 
     TD->codePtr     = codePtr;
@@ -2150,7 +2150,7 @@ TEBCresume(
 				 * recognise an interrupt. */
     const char *curInstName;
 #ifdef TCL_COMPILE_DEBUG
-    int traceInstructions;	/* Whether we are doing instruction-level
+    bool traceInstructions;	/* Whether we are doing instruction-level
 				 * tracing or not. */
 #endif
 
@@ -2964,7 +2964,7 @@ TEBCresume(
 	    Tcl_Size oldCatchTopOff = catchTop - initCatchTop;
 	    Tcl_Size oldTosPtrOff = tosPtr - initTosPtr;
 	    TEBCdata *newTD = (TEBCdata *)
-		    GrowEvaluationStack(iPtr->execEnvPtr, length, 1);
+		    GrowEvaluationStack(iPtr->execEnvPtr, length, true);
 	    if (newTD != TD) {
 		/*
 		 * Change the global data to point to the new stack: move the
@@ -3238,7 +3238,7 @@ TEBCresume(
 	    }
 	}
 	varPtr = TclLookupArrayElement(interp, part1Ptr, part2Ptr,
-		TCL_LEAVE_ERR_MSG, "read", 0, 1, arrayPtr, varIdx);
+		TCL_LEAVE_ERR_MSG, "read", false, true, arrayPtr, varIdx);
 	if (varPtr == NULL) {
 	    TRACE_ERROR(interp);
 	    goto gotError;
@@ -3266,7 +3266,7 @@ TEBCresume(
     doLoadStk:
 	part1Ptr = objPtr;
 	varPtr = TclObjLookupVarEx(interp, part1Ptr, part2Ptr,
-		TCL_LEAVE_ERR_MSG, "read", /*createPart1*/0, /*createPart2*/1,
+		TCL_LEAVE_ERR_MSG, "read", /*createPart1*/false, /*createPart2*/true,
 		&arrayPtr);
 	if (!varPtr) {
 	    TRACE_ERROR(interp);
@@ -3451,7 +3451,7 @@ TEBCresume(
 	}
 #endif
 	varPtr = TclObjLookupVarEx(interp, objPtr, part2Ptr, TCL_LEAVE_ERR_MSG,
-		"set", /*createPart1*/ 1, /*createPart2*/ 1, &arrayPtr);
+		"set", /*createPart1*/ true, /*createPart2*/ true, &arrayPtr);
 	if (!varPtr) {
 	    TRACE_ERROR(interp);
 	    goto gotError;
@@ -3504,7 +3504,7 @@ TEBCresume(
 
     doStoreArrayDirectFailed:
 	varPtr = TclLookupArrayElement(interp, part1Ptr, part2Ptr,
-		TCL_LEAVE_ERR_MSG, "set", 1, 1, arrayPtr, varIdx);
+		TCL_LEAVE_ERR_MSG, "set", true, true, arrayPtr, varIdx);
 	if (!varPtr) {
 	    TRACE_ERROR(interp);
 	    goto gotError;
@@ -3612,7 +3612,7 @@ TEBCresume(
 	    }
 	}
 	varPtr = TclLookupArrayElement(interp, part1Ptr, part2Ptr,
-		TCL_LEAVE_ERR_MSG, "set", 1, 1, arrayPtr, varIdx);
+		TCL_LEAVE_ERR_MSG, "set", true, true, arrayPtr, varIdx);
 	if (varPtr == NULL) {
 	    TRACE_ERROR(interp);
 	    goto gotError;
@@ -3667,7 +3667,7 @@ TEBCresume(
 	}
 	DECACHE_STACK_INFO();
 	varPtr = TclObjLookupVarEx(interp, part1Ptr, part2Ptr,
-		TCL_LEAVE_ERR_MSG, "set", 1, 1, &arrayPtr);
+		TCL_LEAVE_ERR_MSG, "set", true, true, &arrayPtr);
 	CACHE_STACK_INFO();
 	if (!varPtr) {
 	    TRACE_ERROR(interp);
@@ -3817,7 +3817,7 @@ TEBCresume(
 	part1Ptr = objPtr;
 	varIdx = -1;
 	varPtr = TclObjLookupVarEx(interp, objPtr, part2Ptr,
-		TCL_LEAVE_ERR_MSG, "read", 1, 1, &arrayPtr);
+		TCL_LEAVE_ERR_MSG, "read", true, true, &arrayPtr);
 	if (!varPtr) {
 	    DECACHE_STACK_INFO();
 	    Tcl_AddErrorInfo(interp,
@@ -3856,7 +3856,7 @@ TEBCresume(
 	TRACE(("%u \"%.30s\" (by %ld) => ", (unsigned) varIdx, O2S(part2Ptr),
 		increment));
 	varPtr = TclLookupArrayElement(interp, part1Ptr, part2Ptr,
-		TCL_LEAVE_ERR_MSG, "read", 1, 1, arrayPtr, varIdx);
+		TCL_LEAVE_ERR_MSG, "read", true, true, arrayPtr, varIdx);
 	if (!varPtr) {
 	    TRACE_ERROR(interp);
 	    Tcl_DecrRefCount(incrPtr);
@@ -4040,7 +4040,7 @@ TEBCresume(
 	    }
 	}
 	varPtr = TclLookupArrayElement(interp, NULL, part2Ptr, 0, "access",
-		0, 1, arrayPtr, varIdx);
+		false, true, arrayPtr, varIdx);
 	if (varPtr) {
 	    if (ReadTraced(varPtr) || (arrayPtr && ReadTraced(arrayPtr))) {
 		DECACHE_STACK_INFO();
@@ -4072,7 +4072,7 @@ TEBCresume(
 
     doExistStk:
 	varPtr = TclObjLookupVarEx(interp, part1Ptr, part2Ptr, 0, "access",
-		/*createPart1*/0, /*createPart2*/1, &arrayPtr);
+		/*createPart1*/false, /*createPart2*/true, &arrayPtr);
 	if (varPtr) {
 	    if (ReadTraced(varPtr) || (arrayPtr && ReadTraced(arrayPtr))) {
 		DECACHE_STACK_INFO();
@@ -4174,7 +4174,7 @@ TEBCresume(
     slowUnsetArray:
 	DECACHE_STACK_INFO();
 	varPtr = TclLookupArrayElement(interp, NULL, part2Ptr, flags, "unset",
-		0, 0, arrayPtr, varIdx);
+		false, false, arrayPtr, varIdx);
 	if (!varPtr) {
 	    if (flags & TCL_LEAVE_ERR_MSG) {
 		goto errorInUnset;
@@ -4245,7 +4245,7 @@ TEBCresume(
 	objPtr = OBJ_AT_TOS;
 	TRACE(("\"%.30s\" \"%.30s\" => ", O2S(part1Ptr), O2S(objPtr)));
 	varPtr = TclObjLookupVarEx(interp, part1Ptr, NULL, 0, NULL,
-		/*createPart1*/1, /*createPart2*/0, &arrayPtr);
+		/*createPart1*/true, /*createPart2*/false, &arrayPtr);
     doConst:
 	if (TclIsVarConstant(varPtr)) {
 	    TRACE_APPEND(("already constant\n"));
@@ -4309,7 +4309,7 @@ TEBCresume(
 	part1Ptr = OBJ_AT_TOS;
 	TRACE(("\"%.30s\" => ", O2S(part1Ptr)));
 	varPtr = TclObjLookupVarEx(interp, part1Ptr, NULL, 0, NULL,
-		/*createPart1*/0, /*createPart2*/0, &arrayPtr);
+		/*createPart1*/false, /*createPart2*/false, &arrayPtr);
     doArrayExists:
 	DECACHE_STACK_INFO();
 	result = TclCheckArrayTraces(interp, varPtr, arrayPtr, part1Ptr, varIdx);
@@ -4342,7 +4342,7 @@ TEBCresume(
 	part1Ptr = OBJ_AT_TOS;
 	TRACE(("\"%.30s\" => ", O2S(part1Ptr)));
 	varPtr = TclObjLookupVarEx(interp, part1Ptr, NULL, TCL_LEAVE_ERR_MSG,
-		"set", /*createPart1*/1, /*createPart2*/0, &arrayPtr);
+		"set", /*createPart1*/true, /*createPart2*/false, &arrayPtr);
 	if (varPtr == NULL) {
 	    TRACE_ERROR(interp);
 	    goto gotError;
@@ -4399,8 +4399,8 @@ TEBCresume(
 	savedFramePtr = iPtr->varFramePtr;
 	iPtr->varFramePtr = framePtr;
 	otherPtr = TclObjLookupVarEx(interp, OBJ_AT_TOS, NULL,
-		TCL_LEAVE_ERR_MSG, "access", /*createPart1*/ 1,
-		/*createPart2*/ 1, &varPtr);
+		TCL_LEAVE_ERR_MSG, "access", /*createPart1*/ true,
+		/*createPart2*/ true, &varPtr);
 	iPtr->varFramePtr = savedFramePtr;
 	if (!otherPtr) {
 	    TRACE_ERROR(interp);
@@ -4424,7 +4424,7 @@ TEBCresume(
 	iPtr->varFramePtr->nsPtr = (Namespace *) nsPtr;
 	otherPtr = TclObjLookupVarEx(interp, OBJ_AT_TOS, NULL,
 		(TCL_NAMESPACE_ONLY|TCL_LEAVE_ERR_MSG|TCL_AVOID_RESOLVERS),
-		"access", /*createPart1*/ 1, /*createPart2*/ 1, &varPtr);
+		"access", /*createPart1*/ true, /*createPart2*/ true, &varPtr);
 	iPtr->varFramePtr->nsPtr = savedNsPtr;
 	if (!otherPtr) {
 	    TRACE_ERROR(interp);
@@ -4436,7 +4436,7 @@ TEBCresume(
 	TRACE(("%u, %.30s => ", TclGetUInt4AtPtr(pc + 1), O2S(OBJ_AT_TOS)));
 	otherPtr = TclObjLookupVarEx(interp, OBJ_AT_TOS, NULL,
 		(TCL_NAMESPACE_ONLY | TCL_LEAVE_ERR_MSG), "access",
-		/*createPart1*/ 1, /*createPart2*/ 1, &varPtr);
+		/*createPart1*/ true, /*createPart2*/ true, &varPtr);
 	if (!otherPtr) {
 	    TRACE_ERROR(interp);
 	    goto gotError;
@@ -5386,7 +5386,7 @@ TEBCresume(
 	    match = 0;
 	    if (length > 0) {
 		Tcl_Size i = 0;
-		int isAbstractList = TclObjTypeHasProc(value2Ptr, indexProc) != NULL;
+		bool isAbstractList = TclObjTypeHasProc(value2Ptr, indexProc) != NULL;
 
 		/*
 		 * An empty list doesn't match anything.
@@ -5582,9 +5582,9 @@ TEBCresume(
 	valuePtr = OBJ_UNDER_TOS;
 
 	{
-	    int checkEq = ((*pc == INST_EQ) || (*pc == INST_NEQ)
+	    bool checkEq = ((*pc == INST_EQ) || (*pc == INST_NEQ)
 		    || (*pc == INST_STR_EQ) || (*pc == INST_STR_NEQ));
-	    match = TclStringCmp(valuePtr, value2Ptr, checkEq, 0, -1);
+	    match = TclStringCmp(valuePtr, value2Ptr, checkEq, false, -1);
 	}
 
 	/*
@@ -7083,7 +7083,7 @@ TEBCresume(
 	    Tcl_Obj *a = ((Tcl_Size) index < aObjc) ? aObjv[index] : NULL;
 	    Tcl_Obj *b = ((Tcl_Size) index < bObjc) ? bObjv[index] : NULL;
 	    if (a && b) {
-		match = TclStringCmp(a, b, 1, 0, -1) == 0;
+		match = TclStringCmp(a, b, true, false, -1) == 0;
 	    } else if (a) {
 		match = TclGetString(a)[0] == '\0';
 	    } else if (b) {
@@ -7131,15 +7131,15 @@ TEBCresume(
 	    dictPtr = TclTraceDictPath(NULL, dictPtr, numArgs-1,
 		    &OBJ_AT_DEPTH(numArgs-1), DICT_PATH_EXISTS);
 	    if (dictPtr == NULL || dictPtr == DICT_PATH_NON_EXISTENT) {
-		found = 0;
+		found = false;
 		goto afterDictExists;
 	    }
 	}
 	if (Tcl_DictObjGet(NULL, dictPtr, OBJ_AT_TOS,
 		&objResultPtr) == TCL_OK) {
-	    found = (objResultPtr ? 1 : 0);
+	    found = (objResultPtr ? true : false);
 	} else {
-	    found = 0;
+	    found = false;
 	}
     afterDictExists:
 	TRACE_APPEND(("%d\n", found));
@@ -7720,7 +7720,7 @@ TEBCresume(
 	    goto gotError;
 	}
 	varPtr = TclObjLookupVarEx(interp, varNamePtr, NULL,
-		TCL_LEAVE_ERR_MSG, "set", 1, 1, &arrayPtr);
+		TCL_LEAVE_ERR_MSG, "set", true, true, &arrayPtr);
 	if (varPtr == NULL) {
 	    TRACE_ERROR(interp);
 	    TclDecrRefCount(keysPtr);
@@ -9571,7 +9571,7 @@ ValidatePcAndStackTop(
     size_t stackTop,		/* Current stack top. Must be between
 				 * stackLowerBound and stackUpperBound
 				 * (inclusive). */
-    int checkStack)		/* 0 if the stack depth check should be
+    bool checkStack)		/* 0 if the stack depth check should be
 				 * skipped. */
 {
     size_t stackUpperBound = codePtr->maxStackDepth;

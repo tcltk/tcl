@@ -506,7 +506,7 @@ static int		ExecConstantExprTree(Tcl_Interp *interp, OpNode *nodes,
 static int		ParseExpr(Tcl_Interp *interp, const char *start,
 			    Tcl_Size numBytes, OpNode **opTreePtr,
 			    Tcl_Obj *litList, Tcl_Obj *funcList,
-			    Tcl_Parse *parsePtr, int parseOnly);
+			    Tcl_Parse *parsePtr, bool parseOnly);
 static Tcl_Size		ParseLexeme(const char *start, Tcl_Size numBytes,
 			    unsigned char *lexemePtr, Tcl_Obj **literalPtr);
 
@@ -553,7 +553,7 @@ ParseExpr(
     Tcl_Parse *parsePtr,	/* Structure to fill with tokens representing
 				 * those operands that require run time
 				 * substitutions. */
-    int parseOnly)		/* A boolean indicating whether the caller's
+    bool parseOnly)		/* A boolean indicating whether the caller's
 				 * aim is just a parse, or whether it will go
 				 * on to compile the expression. Different
 				 * optimizations are appropriate for the two
@@ -1873,7 +1873,7 @@ Tcl_ParseExpr(
     }
 
     code = ParseExpr(interp, start, numBytes, &opTree, litList, funcList,
-	    exprParsePtr, 1 /* parseOnly */);
+	    exprParsePtr, true /*parseOnly*/);
     Tcl_DecrRefCount(funcList);
     Tcl_DecrRefCount(litList);
 
@@ -2206,7 +2206,7 @@ TclCompileExpr(
     TclNewObj(litList);
     TclNewObj(funcList);
     code = ParseExpr(interp, script, numBytes, &opTree, litList,
-	    funcList, parsePtr, 0 /* parseOnly */);
+	    funcList, parsePtr, false /*parseOnly*/);
 
     if (code == TCL_OK) {
 	/*

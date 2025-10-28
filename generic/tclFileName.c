@@ -766,24 +766,24 @@ Tcl_FSJoinToPath(
     Tcl_Obj *const objv[])	/* Path elements to join. */
 {
     if (pathPtr == NULL) {
-	return TclJoinPath(objc, objv, 0);
+	return TclJoinPath(objc, objv, false);
     }
     if (objc == 0) {
-	return TclJoinPath(1, &pathPtr, 0);
+	return TclJoinPath(1, &pathPtr, false);
     }
     if (objc == 1) {
 	Tcl_Obj *pair[2];
 
 	pair[0] = pathPtr;
 	pair[1] = objv[0];
-	return TclJoinPath(2, pair, 0);
+	return TclJoinPath(2, pair, false);
     } else {
 	Tcl_Size elemc = objc + 1;
 	Tcl_Obj *ret, **elemv = (Tcl_Obj**)Tcl_Alloc(elemc*sizeof(Tcl_Obj *));
 
 	elemv[0] = pathPtr;
 	memcpy(elemv+1, objv, objc*sizeof(Tcl_Obj *));
-	ret = TclJoinPath(elemc, elemv, 0);
+	ret = TclJoinPath(elemc, elemv, false);
 	Tcl_Free(elemv);
 	return ret;
     }

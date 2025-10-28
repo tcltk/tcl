@@ -6222,7 +6222,7 @@ TclNREvalObjEx(
 	 * We transfer this to the byte code compiler.
 	 */
 
-	int allowExceptions = (iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS);
+	bool allowExceptions = (iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS);
 	ByteCode *codePtr;
 	CallFrame *savedVarFramePtr = NULL;	/* Saves old copy of
 						 * iPtr->varFramePtr in case
@@ -6297,7 +6297,7 @@ TEOEx_ByteCodeCallback(
     Interp *iPtr = (Interp *) interp;
     CallFrame *savedVarFramePtr = (CallFrame *)data[0];
     Tcl_Obj *objPtr = (Tcl_Obj *)data[1];
-    int allowExceptions = (int)PTR2INT(data[2]);
+    bool allowExceptions = PTR2INT(data[2]);
 
     if (iPtr->numLevels == 0) {
 	if (result == TCL_RETURN) {
@@ -7937,7 +7937,7 @@ ClassifyDouble(
 				 * untested). */
     unsigned int exponent, mantissaLow, mantissaHigh;
 				/* The pieces extracted from the double. */
-    int zeroMantissa;		/* Was the mantissa zero? That's special. */
+    bool zeroMantissa;		/* Was the mantissa zero? That's special. */
 
     /*
      * Shifts and masks to use with the doubleMeaning variable above.

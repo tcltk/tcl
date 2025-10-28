@@ -1851,7 +1851,7 @@ TclAliasObjCmd(
     Tcl_Size prefc, cmdc, i;
     Tcl_Obj **prefv, **cmdv;
     Tcl_Obj *cmdArr[ALIAS_CMDV_PREALLOC];
-    int isRootEnsemble;
+    bool isRootEnsemble;
 
     /*
      * Append the arguments to the command prefix and invoke the command in
@@ -1941,7 +1941,7 @@ TclLocalAliasObjCmd(
     Tcl_Size prefc, cmdc, i;
     Tcl_Obj **prefv, **cmdv;
     Tcl_Obj *cmdArr[ALIAS_CMDV_PREALLOC];
-    int isRootEnsemble;
+    bool isRootEnsemble;
 
     /*
      * Append the arguments to the command prefix and invoke the command in

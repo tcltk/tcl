@@ -4369,10 +4369,10 @@ Write(
     ChannelState *statePtr = chanPtr->state;
 				/* State info for channel */
     char *nextNewLine = NULL;
-    int endEncoding, needNlFlush = 0;
+    int endEncoding;
     Tcl_Size saved = 0, total = 0, flushed = 0;
     char safe[BUFFER_PADDING];
-    int encodingError = 0;
+    bool encodingError = false, needNlFlush = false;
 
     if (srcLen) {
 	WillWrite(chanPtr);
@@ -4441,7 +4441,7 @@ Write(
 		 * We're reading from invalid/incomplete UTF-8.
 		 */
 		((result != TCL_OK) && (srcRead + dstWrote == 0))) {
-	    encodingError = 1;
+	    encodingError = true;
 	    result = TCL_OK;
 	}
 
@@ -4488,7 +4488,7 @@ Write(
 	    dst += dstWrote;
 	    dstLen -= dstWrote;
 	    nextNewLine = (char *)memchr(src, '\n', srcLen);
-	    needNlFlush = 1;
+	    needNlFlush = true;
 	}
 
 	if (IsBufferOverflowing(bufPtr)) {
@@ -4527,7 +4527,7 @@ Write(
 	     */
 
 	    if (needNlFlush && (saved == 0 || src[-1] != '\n')) {
-		needNlFlush = 0;
+		needNlFlush = false;
 	    }
 	}
     }
@@ -5961,7 +5961,7 @@ DoReadChars(
     Tcl_Size copied;
     int result;
     Tcl_Encoding encoding = statePtr->encoding;
-    int binaryMode;
+    bool binaryMode;
 #define UTF_EXPANSION_FACTOR	1024
     int factor = UTF_EXPANSION_FACTOR;
 
@@ -6017,7 +6017,7 @@ DoReadChars(
 
     if (appendFlag) {
 	if (binaryMode && (NULL == Tcl_GetBytesFromObj(NULL, objPtr, (Tcl_Size *)NULL))) {
-	    binaryMode = 0;
+	    binaryMode = false;
 	}
     } else {
 	if (binaryMode) {

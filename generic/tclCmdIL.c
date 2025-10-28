@@ -4206,7 +4206,6 @@ Tcl_LseqObjCmd(
 	}
     }
 
-
     /*
      * Success!  Now lets create the series object.
      */

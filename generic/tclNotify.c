@@ -97,7 +97,7 @@ TCL_DECLARE_MUTEX(listLock)
  * Declarations for routines used only in this file.
  */
 
-static int		QueueEvent(ThreadSpecificData *tsdPtr,
+static bool		QueueEvent(ThreadSpecificData *tsdPtr,
 			    Tcl_Event *evPtr, int position);
 
 /*
@@ -477,7 +477,7 @@ Tcl_ThreadQueueEvent(
  *----------------------------------------------------------------------
  */
 
-static int
+static bool
 QueueEvent(
     ThreadSpecificData *tsdPtr,	/* Handle to thread local data that indicates
 				 * which event queue to use. */
@@ -489,7 +489,7 @@ QueueEvent(
     int position)		/* One of TCL_QUEUE_TAIL, TCL_QUEUE_HEAD, TCL_QUEUE_MARK,
 				 * possibly combined with TCL_QUEUE_ALERT_IF_EMPTY */
 {
-    int wasEmpty = 0;
+    bool wasEmpty = false;
 
     Tcl_MutexLock(&(tsdPtr->queueMutex));
     if ((position & 3) == TCL_QUEUE_TAIL) {
@@ -905,8 +905,7 @@ Tcl_DoOneEvent(
 				 * TCL_TIMER_EVENTS, TCL_IDLE_EVENTS, or
 				 * others defined by event sources. */
 {
-    int result = 0;
-    int oldMode;
+    int result = 0, oldMode;
     EventSource *sourcePtr;
     Tcl_Time *timePtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);

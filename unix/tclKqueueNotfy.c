@@ -112,7 +112,7 @@ static Tcl_ThreadDataKey dataKey;
  */
 
 static void		PlatformEventsControl(FileHandler *filePtr,
-			    ThreadSpecificData *tsdPtr, int op, int isNew);
+			    ThreadSpecificData *tsdPtr, int op, bool isNew);
 static int		PlatformEventsTranslate(struct kevent *eventPtr);
 static int		PlatformEventsWait(struct kevent *events,
 			    size_t numEvents, struct timeval *timePtr);
@@ -158,7 +158,7 @@ PlatformEventsControl(
     FileHandler *filePtr,
     ThreadSpecificData *tsdPtr,
     int op,
-    int isNew)
+    bool isNew)
 {
     int numChanges;
     struct kevent changeList[2];
@@ -361,7 +361,7 @@ TclpInitNotifier(void)
     filePtr = (FileHandler *) Tcl_Alloc(sizeof(FileHandler));
     filePtr->fd = tsdPtr->triggerPipe[0];
     filePtr->mask = TCL_READABLE;
-    PlatformEventsControl(filePtr, tsdPtr, EV_ADD, 1);
+    PlatformEventsControl(filePtr, tsdPtr, EV_ADD, true);
     if (!tsdPtr->readyEvents) {
 	tsdPtr->maxReadyEvents = 512;
 	tsdPtr->readyEvents = (struct kevent *) Tcl_Alloc(
@@ -521,7 +521,7 @@ TclpCreateFileHandler(
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     FileHandler *filePtr = LookUpFileHandler(tsdPtr, fd, NULL);
-    int isNew = (filePtr == NULL);
+    bool isNew = (filePtr == NULL);
 
     if (isNew) {
 	filePtr = (FileHandler *) Tcl_Alloc(sizeof(FileHandler));
@@ -578,7 +578,7 @@ TclpDeleteFileHandler(
      * Update the check masks for this file.
      */
 
-    PlatformEventsControl(filePtr, tsdPtr, EV_DELETE, 0);
+    PlatformEventsControl(filePtr, tsdPtr, EV_DELETE, false);
     if (filePtr->pedPtr) {
 	Tcl_Free(filePtr->pedPtr);
     }

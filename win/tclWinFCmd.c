@@ -790,7 +790,7 @@ TclpDeleteFile(
 		    /*
 		     * It is a symbolic link - remove it.
 		     */
-		    if (TclWinSymLinkDelete(path, 0) == 0) {
+		    if (TclWinSymLinkDelete(path, false) == 0) {
 			return TCL_OK;
 		    }
 		}
@@ -1079,7 +1079,7 @@ DoRemoveJustDirectory(
 	/*
 	 * It is a symbolic link - remove it.
 	 */
-	if (TclWinSymLinkDelete(nativePath, 0) == 0) {
+	if (TclWinSymLinkDelete(nativePath, false) == 0) {
 	    return TCL_OK;
 	}
     } else {
@@ -1112,7 +1112,7 @@ DoRemoveJustDirectory(
 		 * It is a symbolic link - remove it.
 		 */
 
-		if (TclWinSymLinkDelete(nativePath, 1) != 0) {
+		if (TclWinSymLinkDelete(nativePath, true) != 0) {
 		    goto end;
 		}
 	    }

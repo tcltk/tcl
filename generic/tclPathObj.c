@@ -830,7 +830,7 @@ Tcl_FSJoinPath(
 
     elements = ((elements >= 0) && (elements <= objc)) ? elements : objc;
     TclListObjGetElements(NULL, listObj, &objc, &objv);
-    res = TclJoinPath(elements, objv, 0);
+    res = TclJoinPath(elements, objv, false);
     return res;
 }
 
@@ -838,7 +838,7 @@ Tcl_Obj *
 TclJoinPath(
     Tcl_Size elements,		/* Number of elements to use */
     Tcl_Obj * const objv[],	/* Path elements to join */
-    int forceRelative)		/* If non-zero, assume all more paths are
+    bool forceRelative)		/* If true, assume all more paths are
 				 * relative (e.g. simple normalization) */
 {
     Tcl_Obj *res = NULL;
@@ -2219,7 +2219,7 @@ SetFsPathFromAny(
      */
 
     TclGetStringFromObj(pathPtr, &len); /* TODO: Is this needed? */
-    transPtr = TclJoinPath(1, &pathPtr, 1);
+    transPtr = TclJoinPath(1, &pathPtr, true);
 
     /*
      * Now we have a translated filename in 'transPtr'. This will have forward

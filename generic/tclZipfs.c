@@ -475,8 +475,8 @@ static void		ZipChannelWatchChannel(void *instanceData,
 static int		ZipChannelWrite(void *instanceData,
 			    const char *buf, int toWrite, int *errloc);
 static int		TclZipfsInitEncodingDirs(void);
-static int		TclZipfsMountExe(void);
-static int		TclZipfsMountShlib(void);
+static bool		TclZipfsMountExe(void);
+static bool		TclZipfsMountShlib(void);
 
 /*
  * Define the ZIP filesystem dispatch table.
@@ -1452,7 +1452,7 @@ ZipFSCloseArchive(
  * ZipFSFindTOC --
  *
  *	This function takes a memory mapped zip file and indexes the contents.
- *	When "needZip" is zero an embedded ZIP archive in an executable file
+ *	When "needZip" is false an embedded ZIP archive in an executable file
  *	is accepted. Note that we do not support ZIP64.
  *
  * Results:
@@ -1470,7 +1470,7 @@ ZipFSCloseArchive(
 static int
 ZipFSFindTOC(
     Tcl_Interp *interp,		/* Current interpreter. NULLable. */
-    int needZip,
+    bool needZip,
     ZipFile *zf)
 {
     size_t i, minoff;
@@ -1674,7 +1674,7 @@ static int
 ZipFSOpenArchive(
     Tcl_Interp *interp,		/* Current interpreter. NULLable. */
     const char *zipname,	/* Path to ZIP file to open. */
-    int needZip,
+    bool needZip,
     ZipFile *zf)
 {
     size_t i;
@@ -2438,7 +2438,7 @@ TclZipfs_Mount(
 		if (zf == NULL) {
 		    ret = TCL_ERROR;
 		} else {
-		    ret = ZipFSOpenArchive(interp, normPath, 1, zf);
+		    ret = ZipFSOpenArchive(interp, normPath, true, zf);
 		    if (ret != TCL_OK) {
 			Tcl_Free(zf);
 		    } else {
@@ -2544,7 +2544,7 @@ TclZipfs_MountBuffer(
 	zf->data = (unsigned char *)data;
 	zf->ptrToFree = NULL;
     }
-    ret = ZipFSFindTOC(interp, 1, zf);
+    ret = ZipFSFindTOC(interp, true, zf);
     if (ret != TCL_OK) {
 	Tcl_Free(zf);
     } else {
@@ -2727,7 +2727,7 @@ ZipFSMountBufferObjCmd(
     if (data == NULL) {
 	return TCL_ERROR;
     }
-    return TclZipfs_MountBuffer(interp, data, length, mountPoint, 1);
+    return TclZipfs_MountBuffer(interp, data, length, mountPoint, true);
 }
 
 /*
@@ -3539,7 +3539,7 @@ ZipFSMkZipOrImg(
 	    zf = &zf0;
 	    memset(&zf0, 0, sizeof(ZipFile));
 	}
-	if (isMounted || ZipFSOpenArchive(interp, imgName, 0, zf) == TCL_OK) {
+	if (isMounted || ZipFSOpenArchive(interp, imgName, false, zf) == TCL_OK) {
 	    /*
 	     * Copy everything up to the ZIP-related suffix.
 	     */
@@ -4298,29 +4298,28 @@ ZipFSListObjCmd(
  *	Caller should not be holding any locks	when calling this function.
  *
  * Results:
- *	1 -> if an archive is present on ZIPFS_APP_MOUNT
- *	0 -> otherwise
+ *	true  -> if an archive is present on ZIPFS_APP_MOUNT
+ *	false -> otherwise
  *
  * Side effects:
  *	May mount the archive at the ZIPFS_APP_MOUNT mount point.
  *
  *-------------------------------------------------------------------------
  */
-static int
-TclZipfsMountExe()
+static bool
+TclZipfsMountExe(void)
 {
     WriteLock();
     if (!ZipFS.initialized) {
 	ZipfsSetup();
     }
-    int mounted = (ZipFSLookupZip(ZIPFS_APP_MOUNT) != NULL);
+    bool mounted = (ZipFSLookupZip(ZIPFS_APP_MOUNT) != NULL);
     Unlock();
 
     if (!mounted) {
 	const char *exe = Tcl_GetNameOfExecutable();
 	if (exe && *exe) {
-	    mounted =
-		(TclZipfs_Mount(NULL, exe, ZIPFS_APP_MOUNT, NULL) == TCL_OK);
+	    mounted = (TclZipfs_Mount(NULL, exe, ZIPFS_APP_MOUNT, NULL) == TCL_OK);
 	    if (!mounted) {
 		/*
 		 * Even if TclZipFS_Mount returns error, it could be some
@@ -4347,26 +4346,26 @@ TclZipfsMountExe()
  *	Caller should not be holding any locks	when calling this function.
  *
  * Results:
- *	1 -> if an archive is present on ZIPFS_ZIP_MOUNT
- *	0 -> otherwise
+ *	true  -> if an archive is present on ZIPFS_ZIP_MOUNT
+ *	false -> otherwise
  *
  * Side effects:
  *	May mount the archive at the ZIPFS_ZIP_MOUNT mount point.
  *
  *-------------------------------------------------------------------------
  */
-static int
-TclZipfsMountShlib()
+static bool
+TclZipfsMountShlib(void)
 {
-#if defined(STATIC_BUILD)
+#ifdef STATIC_BUILD
     /* Static builds have no shared library */
-    return 0;
+    return false;
 #else
     WriteLock();
     if (!ZipFS.initialized) {
 	ZipfsSetup();
     }
-    int mounted = (ZipFSLookupZip(ZIPFS_ZIP_MOUNT) != NULL);
+    bool mounted = (ZipFSLookupZip(ZIPFS_ZIP_MOUNT) != NULL);
     Unlock();
 
     if (!mounted) {
@@ -4416,8 +4415,8 @@ TclZipfsMountShlib()
 
 static void
 TclZipfsLocateTclLibrary(
-	int appZipfsPresent,	/* non-0 if app zipfs is to be checked */
-	int shlibZipfsPresent)  /* non-0 if shared lib is to be checked */
+    bool appZipfsPresent,	/* non-0 if app zipfs is to be checked */
+    bool shlibZipfsPresent)	/* non-0 if shared lib is to be checked */
 {
     Tcl_Obj *vfsInitScript;
     int found;
@@ -6353,7 +6352,7 @@ ZipFSLoadFile(
 		    TCL_PATH_DIRNAME);
 	}
 	if (objs[0]) {
-	    altPath = TclJoinPath(2, objs, 0);
+	    altPath = TclJoinPath(2, objs, false);
 	    if (altPath) {
 		Tcl_IncrRefCount(altPath);
 		if (Tcl_FSAccess(altPath, R_OK) == 0) {
@@ -6597,8 +6596,8 @@ TclZipfs_AppHook(
     TclZipfs_Init(NULL);
 
     /* Always mount archives attached to the application and shared library */
-    int appZipfsPresent = TclZipfsMountExe();
-    int shlibZipfsPresent = TclZipfsMountShlib();
+    bool appZipfsPresent = TclZipfsMountExe();
+    bool shlibZipfsPresent = TclZipfsMountShlib();
 
     /*
      * After BOTH are mounted, look for init.tcl in one of the mounts.
