@@ -118,13 +118,8 @@ const unsigned char tclCharTypeTable[] = {
 // ===== Configuration for expression substitution syntax =====
 #define EXPR_SUBST_MODE 2           // 1 = $(expr), 2 = $((expr))
 
-#if EXPR_SUBST_MODE == 1
-    static const int EXPR_SRC_ADVANCE = 1;
-    static const int EXPR_SIZE_DIFF = 6;
-#else  // Mode 2
-    static const int EXPR_SRC_ADVANCE = 2;
-    static const int EXPR_SIZE_DIFF = 4;
-#endif
+static const int EXPR_SRC_ADVANCE = 1;
+static const int EXPR_SIZE_DIFF = 6;
 
 /*
  * Prototypes for local functions defined in this file:
@@ -1618,11 +1613,7 @@ ParseExprSubst(
 
     if (parenDepth != 0) {
 	    // Error: unmatched paren
-	    if (parsePtr->interp != NULL
-#if EXPR_SUBST_MODE > 1
-		    || numBytes <= 1 || src[1] != ')'
-#endif
-	    ) {
+	    if (parsePtr->interp != NULL) {
 		Tcl_SetObjResult(parsePtr->interp,
 			Tcl_NewStringObj("missing close-paren for $(", -1));
 	    }
