@@ -2534,7 +2534,7 @@ IssueSwitchJumpTable(
 
     if (!foundDefault) {
 	FWDLABEL(	jumpToDefault);
-	PUSH(			"");
+	OP(			PUSH_EMPTY);
     }
 
     /*
