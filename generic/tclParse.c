@@ -116,7 +116,7 @@ const unsigned char tclCharTypeTable[] = {
 };
 
 // ===== Configuration for expression substitution syntax =====
-#define EXPR_SUBST_MODE 1           // 1 = $(expr), 2 = $((expr))
+#define EXPR_SUBST_MODE 2           // 1 = $(expr), 2 = $((expr))
 
 #if EXPR_SUBST_MODE == 1
     static const int EXPR_SRC_ADVANCE = 1;
@@ -377,7 +377,7 @@ Tcl_ParseCommand(
 	     */
 
 	    if (ParseTokens(src, numBytes, TYPE_SPACE|terminators,
-		    TclSubstAll(interp), parsePtr) != TCL_OK) {
+		    TCL_SUBST_ALL, parsePtr) != TCL_OK) {
 		goto error;
 	    }
 	    src = parsePtr->term;
@@ -1483,7 +1483,7 @@ Tcl_ParseVarName(
 	     */
 
 	    if (TCL_OK != ParseTokens(src+1, numBytes-1, TYPE_BAD_ARRAY_INDEX,
-		    TclSubstAll(interp), parsePtr)) {
+		    TCL_SUBST_ALL, parsePtr)) {
 		goto error;
 	    }
 	    if (parsePtr->term == src+numBytes){
@@ -2020,7 +2020,7 @@ Tcl_ParseQuotedString(
 	return TCL_ERROR;
     }
 
-    if (TCL_OK != ParseTokens(start+1, numBytes-1, TYPE_QUOTE, TclSubstAll(interp),
+    if (TCL_OK != ParseTokens(start+1, numBytes-1, TYPE_QUOTE, TCL_SUBST_ALL,
 	    parsePtr)) {
 	goto error;
     }
