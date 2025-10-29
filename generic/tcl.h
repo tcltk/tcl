@@ -2344,7 +2344,7 @@ EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
  * table.
  */
 
-#include "tclDecls.h"
+#include "tclDecls.h"  /* IWYU pragma: export */
 
 /*
  * Include platform specific public function declarations that are accessible
@@ -2357,7 +2357,7 @@ EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
 #   define TCLAPI MODULE_SCOPE
 #endif
 
-#include "tclPlatDecls.h"
+#include "tclPlatDecls.h"  /* IWYU pragma: export */
 
 /*
  *----------------------------------------------------------------------------
