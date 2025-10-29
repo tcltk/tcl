@@ -928,11 +928,11 @@ mergeins(
     struct nfa * nfa,
     struct state * s,
     struct arc ** arcarray,
-    int arccount)
+    size_t arccount)
 {
     struct arc *na;
-    int	i;
-    int	j;
+    size_t i;
+    size_t j;
 
     if (arccount <= 0) {
 	return;
@@ -1875,7 +1875,7 @@ fixempties(
     size_t totalinarcs;
     struct arc **inarcsorig;
     struct arc **arcarray;
-    int arccount;
+    size_t arccount;
     size_t prevnins;
     size_t nskip;
 

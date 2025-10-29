@@ -21,7 +21,6 @@
 #include "tclRegexp.h"
 #include "tclTomMath.h"
 #include <math.h>
-#include <assert.h>
 
 /*
  * During execution of the "lsort" command, structures of the following type
@@ -88,13 +87,14 @@ typedef struct {
  * The "sortMode" field of the SortInfo structure can take on any of the
  * following values.
  */
-
-#define SORTMODE_ASCII		0
-#define SORTMODE_INTEGER	1
-#define SORTMODE_REAL		2
-#define SORTMODE_COMMAND	3
-#define SORTMODE_DICTIONARY	4
-#define SORTMODE_ASCII_NC	8
+enum SortModes {
+    SORTMODE_ASCII = 0,
+    SORTMODE_INTEGER = 1,
+    SORTMODE_REAL = 2,
+    SORTMODE_COMMAND = 3,
+    SORTMODE_DICTIONARY = 4,
+    SORTMODE_ASCII_NC = 8
+};
 
 /*
  * Definitions for [lseq] command
@@ -106,7 +106,7 @@ typedef enum {
     LSEQ_DOTS, LSEQ_TO, LSEQ_COUNT, LSEQ_BY
 } SequenceOperators;
 typedef enum {
-     NoneArg, NumericArg, RangeKeywordArg, ErrArg, LastArg = 8
+    NoneArg, NumericArg, RangeKeywordArg, ErrArg, LastArg = 8
 } SequenceDecoded;
 
 /*
@@ -247,9 +247,9 @@ IfConditionCallback(
     int result)
 {
     Interp *iPtr = (Interp *) interp;
-    int objc = PTR2INT(data[0]);
+    Tcl_Size objc = PTR2INT(data[0]);
     Tcl_Obj *const *objv = (Tcl_Obj *const *)data[1];
-    int i = PTR2INT(data[2]);
+    Tcl_Size i = PTR2INT(data[2]);
     Tcl_Obj *boolObj = (Tcl_Obj *)data[3];
     int value, thenScriptIndex = 0;
     const char *clause;
@@ -1607,7 +1607,7 @@ InfoLevelCmd(
 	}
 	for (framePtr=iPtr->varFramePtr ; framePtr!=rootFramePtr;
 		framePtr=framePtr->callerVarPtr) {
-	    if ((int)framePtr->level == level) {
+	    if (framePtr->level == level) {
 		break;
 	    }
 	}
@@ -3882,11 +3882,11 @@ Tcl_LsearchObjCmd(
 
 static SequenceDecoded
 SequenceIdentifyArgument(
-     Tcl_Interp *interp,	/* for error reporting */
-     Tcl_Obj *argPtr,		/* Argument to decode */
-     int allowedArgs,		/* Flags if keyword or numeric allowed. */
-     Tcl_Obj **numValuePtr,	/* Return numeric value */
-     int *keywordIndexPtr)	/* Return keyword enum */
+    Tcl_Interp *interp,		/* for error reporting */
+    Tcl_Obj *argPtr,		/* Argument to decode */
+    int allowedArgs,		/* Flags if keyword or numeric allowed. */
+    Tcl_Obj **numValuePtr,	/* Return numeric value */
+    int *keywordIndexPtr)	/* Return keyword enum */
 {
     int result = TCL_ERROR;
     SequenceOperators opmode;
@@ -4608,7 +4608,7 @@ Tcl_LsortObjCmd(
 	    TclObjTypeGetElements(interp, listObj, &length, &listObjPtrs);
     } else {
 	sortInfo.resultCode = TclListObjGetElements(interp, listObj,
-	    &length, &listObjPtrs);
+		&length, &listObjPtrs);
     }
     if (sortInfo.resultCode != TCL_OK || length <= 0) {
 	goto done;

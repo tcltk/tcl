@@ -12,46 +12,55 @@
 .SH NAME
 switch \- Evaluate one of several scripts, depending on a given value
 .SH SYNOPSIS
-\fBswitch \fR?\fIoptions\fR?\fI string pattern body \fR?\fIpattern body \fR...?
+\fBswitch \fR?\fIoptions\fR?\fI value pattern body \fR?\fIpattern body \fR...?
 .sp
-\fBswitch \fR?\fIoptions\fR?\fI string \fR{\fIpattern body \fR?\fIpattern body \fR...?}
+\fBswitch \fR?\fIoptions\fR?\fI value \fR{\fIpattern body \fR?\fIpattern body \fR...?}
 .BE
 .SH DESCRIPTION
 .PP
-The \fBswitch\fR command matches its \fIstring\fR argument against each of
+The \fBswitch\fR command matches its \fIvalue\fR argument against each of
 the \fIpattern\fR arguments in order.
-As soon as it finds a \fIpattern\fR that matches \fIstring\fR it
+As soon as it finds a \fIpattern\fR that matches \fIvalue\fR it
 evaluates the following \fIbody\fR argument by passing it recursively
 to the Tcl interpreter and returns the result of that evaluation.
 If the last \fIpattern\fR argument is \fBdefault\fR then it matches
 anything.
 If no \fIpattern\fR argument
-matches \fIstring\fR and no default is given, then the \fBswitch\fR
+matches \fIvalue\fR and no default is given, then the \fBswitch\fR
 command returns an empty string.
 .PP
 If the initial arguments to \fBswitch\fR start with \fB\-\fR then
 they are treated as options
 unless there are exactly two arguments to \fBswitch\fR (in which case the
-first must the \fIstring\fR and the second must be the
+first must the \fIvalue\fR and the second must be the
 \fIpattern\fR/\fIbody\fR list).
 The following options are currently supported:
 .\" OPTION: -exact
 .TP 10
 \fB\-exact\fR
 .
-Use exact matching when comparing \fIstring\fR to a pattern.  This
+Use exact matching when comparing \fIvalue\fR to a pattern.  This
 is the default.
 .\" OPTION: -glob
 .TP 10
 \fB\-glob\fR
 .
-When matching \fIstring\fR to the patterns, use glob-style matching
+When matching \fIvalue\fR to the patterns, use glob-style matching
 (i.e. the same as implemented by the \fBstring match\fR command).
+.\" OPTION: -integer
+.TP 10
+\fB\-integer\fR
+.VS 9.1
+.\" TIP #730
+When matching \fIvalue\fR to the patterns, use integer comparisons. Note
+that this makes using a non-integer \fIvalue\fR or \fIpattern\fR (other
+than a final \fBdefault\fR) into an error.
+.VE 9.1
 .\" OPTION: -regexp
 .TP 10
 \fB\-regexp\fR
 .
-When matching \fIstring\fR to the patterns, use regular
+When matching \fIvalue\fR to the patterns, use regular
 expression matching
 (as described in the \fBre_syntax\fR reference page).
 .\" OPTION: -nocase
@@ -59,6 +68,7 @@ expression matching
 \fB\-nocase\fR
 .
 Causes comparisons to be handled in a case-insensitive manner.
+Not supported with the \fB\-integer\fR option.
 .\" OPTION: -matchvar
 .TP 10
 \fB\-matchvar\fI varName\fR
@@ -67,7 +77,7 @@ This option (only legal when \fB\-regexp\fR is also specified)
 specifies the name of a variable into which the list of matches
 found by the regular expression engine will be written.  The first
 element of the list written will be the overall substring of the input
-string (i.e. the \fIstring\fR argument to \fBswitch\fR) matched, the
+string (i.e. the \fIvalue\fR argument to \fBswitch\fR) matched, the
 second element of the list will be the substring matched by the first
 capturing parenthesis in the regular expression that matched, and so
 on.  When a \fBdefault\fR branch is taken, the variable will have the
@@ -84,7 +94,7 @@ found by the regular expression engine will be written.  The first
 element of the list written will be a two-element list specifying the
 index of the start and index of the first character after the end of
 the overall substring of the input
-string (i.e. the \fIstring\fR argument to \fBswitch\fR) matched, in a
+string (i.e. the \fIvalue\fR argument to \fBswitch\fR) matched, in a
 similar way to the \fB\-indices\fR option to the \fBregexp\fR can
 obtain.  Similarly, the second element of the list refers to the first
 capturing parenthesis in the regular expression that matched, and so
@@ -96,7 +106,7 @@ time as the \fB\-matchvar\fR option.
 \fB\-\|\-\fR
 .
 Marks the end of options.  The argument following this one will
-be treated as \fIstring\fR even if it starts with a \fB\-\fR.
+be treated as \fIvalue\fR even if it starts with a \fB\-\fR.
 This is not required when the matching patterns and bodies are grouped
 together in a single argument.
 .PP
@@ -184,6 +194,26 @@ exactly matched is easily obtained using the \fB\-matchvar\fR option:
     }
 }
 .CE
+.PP
+.VS 9.1
+Deciding what to do with a procedure based on the number of arguments:
+.PP
+.CS
+proc example args {
+    \fBswitch\fR -integer -- [llength $args] {
+        0 {
+            puts "no arguments"
+        }
+        1 {
+            puts "one argument: [lindex $args 0]"
+        }
+        default {
+            puts "many arguments: $args"
+        }
+    }
+}
+.CE
+.VE 9.1
 .SH "SEE ALSO"
 for(n), if(n), regexp(n)
 .SH KEYWORDS

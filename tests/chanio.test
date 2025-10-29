@@ -19,8 +19,8 @@ if {"::tcltest" ni [namespace children]} {
 }
 
 testConstraint noappverifier [expr {
-        [llength [info commands testappverifierpresent]] == 0
-        || ![testappverifierpresent]}]
+	[llength [info commands testappverifierpresent]] == 0
+	|| ![testappverifierpresent]}]
 
 namespace eval ::tcl::test::io {
 
@@ -84,7 +84,7 @@ namespace eval ::tcl::test::io {
 
     set path(cat) [makeFile {
 	set f stdin
-	if {$argv != ""} {
+	if {$argv ne ""} {
 	    set f [open [lindex $argv 0]]
 	}
 	chan configure $f -translation binary -blocking 0 -eofchar \x1A

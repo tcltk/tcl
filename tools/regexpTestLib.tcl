@@ -17,7 +17,7 @@ proc readInputFile {} {
 
 	set len [string length $line]
 
-	if {($len > 0) && ([string index $line [expr {$len - 1}]] == "\\")} {
+	if {($len > 0) && ([string index $line [expr {$len - 1}]] eq "\\")} {
 	    if {[info exists lineArray(c$i)] == 0} {
 		set lineArray(c$i) 1
 	    } else {
@@ -129,7 +129,7 @@ proc writeOutputFile {numLines fcn} {
 
 	# copy comment string to output file and continue
 
-	if {[string index $currentLine 0] == "#"} {
+	if {[string index $currentLine 0] eq "#"} {
 	    puts $fileId $currentLine
 	    incr srcLineNum $lineArray(c$lineNum)
 	    incr lineNum

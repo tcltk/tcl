@@ -9,7 +9,7 @@
 
 proc writeFile {args} {
     # Parse the arguments
-    switch [llength $args] {
+    switch -integer -- [llength $args] {
 	2 {
 	    lassign $args filename data
 	    set mode text

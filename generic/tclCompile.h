@@ -1820,7 +1820,9 @@ TclGetInt4AtPtr(
 }
 
 static inline unsigned
-TclGetUInt4AtPtr(const unsigned char *p) {
+TclGetUInt4AtPtr(
+    const unsigned char *p)
+{
     return (unsigned) (
 	(p[0] << 24) |
 	(p[1] << 16) |
@@ -1880,12 +1882,12 @@ TokenAfter(
  * of LOOP ranges is an interesting datum for debugging purposes, and that is
  * what we compute now.
  *
- * static int	ExceptionRangeStarts(CompileEnv *envPtr, Tcl_Size index);
+ * static Tcl_Size	ExceptionRangeStarts(CompileEnv *envPtr, Tcl_Size index);
  * static void	ExceptionRangeEnds(CompileEnv *envPtr, Tcl_Size index);
  * static void	ExceptionRangeTarget(CompileEnv *envPtr, Tcl_Size index, LABEL);
  */
 
-static inline int
+static inline Tcl_Size
 ExceptionRangeStarts(
     CompileEnv *envPtr,
     Tcl_ExceptionRange index)
@@ -1897,7 +1899,7 @@ ExceptionRangeStarts(
 	    envPtr->maxExceptDepth);
     offset = CurrentOffset(envPtr);
     envPtr->exceptArrayPtr[index].codeOffset = offset;
-    return (int) offset;
+    return offset;
 }
 
 static inline void
@@ -2061,7 +2063,7 @@ typedef Tcl_Size Tcl_BytecodeLabel;
  * Shorthand macros for instruction issuing.
  */
 
- // Measure the length of a string literal.
+// Measure the length of a string literal.
 #define LENGTH_OF(str) \
     ((Tcl_Size) sizeof(str "") - 1)
 
@@ -2338,7 +2340,9 @@ MODULE_SCOPE void TclDTraceInfo(Tcl_Obj *info, const char **args, Tcl_Size *args
     do {								\
 	if (tclDTraceDebugEnabled) {					\
 	    int _l, _t = 0;						\
-	    if (!tclDTraceDebugLog) { TclDTraceOpenDebugLog(); }	\
+	    if (!tclDTraceDebugLog) {					\
+		TclDTraceOpenDebugLog();				\
+	    }								\
 	    fprintf(tclDTraceDebugLog, "%.12s:%.4d:%n",			\
 		    strrchr(__FILE__, '/')+1, __LINE__, &_l); _t += _l; \
 	    fprintf(tclDTraceDebugLog, " %.*s():%n",			\
