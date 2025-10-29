@@ -116,23 +116,14 @@ const unsigned char tclCharTypeTable[] = {
 };
 
 // ===== Configuration for expression substitution syntax =====
-#define EXPR_SUBST_MODE 1           // 1 = $(expr), 2 = $=(expr), 3 = $((expr))
+#define EXPR_SUBST_MODE 1           // 1 = $(expr), 2 = $((expr))
 
 #if EXPR_SUBST_MODE == 1
-    static const char EXPR_TRIGGER_CHAR = '(';
     static const int EXPR_SRC_ADVANCE = 1;
     static const int EXPR_SIZE_DIFF = 6;
-    static const char* EXPR_ERROR_MSG = "missing close-paren for $(";
-#elif EXPR_SUBST_MODE == 2
-    static const char EXPR_TRIGGER_CHAR = '=';
-    static const int EXPR_SRC_ADVANCE = 2;
-    static const int EXPR_SIZE_DIFF = 5;
-    static const char* EXPR_ERROR_MSG = "missing close-paren for $=(";
-#else  // Mode 3
-    static const char EXPR_TRIGGER_CHAR = '(';
+#else  // Mode 2
     static const int EXPR_SRC_ADVANCE = 2;
     static const int EXPR_SIZE_DIFF = 4;
-    static const char* EXPR_ERROR_MSG = "missing close-paren expected )) at end of $(( expression";
 #endif
 
 /*
@@ -1106,7 +1097,7 @@ ParseTokens(
 	    parsePtr->numTokens++;
 	} else if (*src == '$') {
 	    Tcl_Size varToken = parsePtr->numTokens;
-	    if ((flags & TCL_SUBST_EXPRS) && (numBytes > 1) && (src[1] == EXPR_TRIGGER_CHAR)
+	    if ((flags & TCL_SUBST_EXPRS) && (numBytes > 1) && (src[1] == '(')
 #if EXPR_SUBST_MODE > 1
 		    && (numBytes > 2) && (src[2] == '(')
 #endif
@@ -1616,7 +1607,7 @@ ParseExprSubst(
 	} else if (ch == ']'  && betweenQuotes == 0) {
 	    bracketDepth--;  // these 2 checks tell us if we're in a [...] command substitution, don't adjust if inside quotes
 	} else if (ch == '['  && betweenQuotes == 0) {
-	    bracketDepth++;  
+	    bracketDepth++;
 	} else if (ch == '\\' && numBytes > 1) {
 	    src++;
 	    numBytes--;
@@ -1627,9 +1618,13 @@ ParseExprSubst(
 
     if (parenDepth != 0) {
 	    // Error: unmatched paren
-	    if (parsePtr->interp != NULL) {
+	    if (parsePtr->interp != NULL
+#if EXPR_SUBST_MODE > 1
+		    || numBytes <= 1 || src[1] != ')'
+#endif
+	    ) {
 		Tcl_SetObjResult(parsePtr->interp,
-			Tcl_NewStringObj(EXPR_ERROR_MSG, -1));
+			Tcl_NewStringObj("missing close-paren for $(", -1));
 	    }
 	    parsePtr->errorType = TCL_PARSE_MISSING_PAREN;
 	    parsePtr->term = tokenPtr->start - 1;
