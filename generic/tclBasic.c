@@ -6626,58 +6626,11 @@ Tcl_ExprBooleanObj(
 /*
  *----------------------------------------------------------------------
  *
- * TclObjInvokeNamespace --
- *
- *	Object version: Invokes a Tcl command, given an objv/objc, from either
- *	the exposed or hidden set of commands in the given interpreter.
- *
- *	NOTE: The command is invoked in the global stack frame of the
- *	interpreter or namespace, thus it cannot see any current state on the
- *	stack of that interpreter.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	Whatever the command does.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclObjInvokeNamespace(
-    Tcl_Interp *interp,		/* Interpreter in which command is to be
-				 * invoked. */
-    Tcl_Size objc,		/* Count of arguments. */
-    Tcl_Obj *const objv[],	/* Argument objects; objv[0] points to the
-				 * name of the command to invoke. */
-    Tcl_Namespace *nsPtr,	/* The namespace to use. */
-    int flags)			/* Combination of flags controlling the call:
-				 * TCL_INVOKE_HIDDEN, TCL_INVOKE_NO_UNKNOWN,
-				 * or TCL_INVOKE_NO_TRACEBACK. */
-{
-    int result;
-    Tcl_CallFrame *framePtr;
-
-    /*
-     * Make the specified namespace the current namespace and invoke the
-     * command.
-     */
-
-    (void) TclPushStackFrame(interp, &framePtr, nsPtr, /*isProcFrame*/0);
-    result = TclObjInvoke(interp, objc, objv, flags);
-
-    TclPopStackFrame(interp);
-    return result;
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * TclObjInvoke --
  *
- *	Invokes a Tcl command, given an objv/objc, from either the exposed or
- *	the hidden sets of commands in the given interpreter.
+ *	Invokes a Tcl command, given an objv/objc, from the hidden set of
+ *	commands in the given interpreter. Only supported for calls via
+ *	"internal" stub table.
  *
  * Results:
  *	A standard Tcl object result.
@@ -6697,7 +6650,9 @@ TclObjInvoke(
 				 * name of the command to invoke. */
     int flags)			/* Combination of flags controlling the call:
 				 * TCL_INVOKE_HIDDEN, TCL_INVOKE_NO_UNKNOWN,
-				 * or TCL_INVOKE_NO_TRACEBACK. */
+				 * or TCL_INVOKE_NO_TRACEBACK. Only
+				 * TCL_INVOKE_HIDDEN is now supported, and
+				 * must be supplied. */
 {
     if (interp == NULL) {
 	return TCL_ERROR;
@@ -6707,8 +6662,8 @@ TclObjInvoke(
 		"illegal argument vector", TCL_INDEX_NONE));
 	return TCL_ERROR;
     }
-    if ((flags & TCL_INVOKE_HIDDEN) == 0) {
-	Tcl_Panic("TclObjInvoke: called without TCL_INVOKE_HIDDEN");
+    if (flags != TCL_INVOKE_HIDDEN) {
+	Tcl_Panic("TclObjInvoke: called without just TCL_INVOKE_HIDDEN");
     }
     return Tcl_NRCallObjProc(interp, TclNRInvoke, NULL, objc, objv);
 }
