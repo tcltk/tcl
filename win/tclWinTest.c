@@ -568,8 +568,8 @@ TestplatformChmod(
     newAclSize = sizeof(ACL);
     /* Add in size required for each ACE entry in the ACL */
     for (i = 0; i < nSids; ++i) {
-	newAclSize +=
-	    (DWORD)offsetof(ACCESS_ALLOWED_ACE, SidStart) + aceEntry[i].sidLen;
+	newAclSize += (DWORD)
+	    offsetof(ACCESS_ALLOWED_ACE, SidStart) + aceEntry[i].sidLen;
     }
     newAcl = (PACL)Tcl_Alloc(newAclSize);
     if (!InitializeAcl(newAcl, newAclSize, ACL_REVISION)) {
@@ -641,7 +641,8 @@ TestchmodCmd(
     int objc,			/* Parameter count */
     Tcl_Obj *const * objv)	/* Parameter vector */
 {
-    int i, mode;
+    Tcl_Size i;
+    int mode;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "mode file ?file ...?");

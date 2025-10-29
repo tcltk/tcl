@@ -607,38 +607,6 @@ PACKAGE_BUGREPORT=''
 PACKAGE_URL=''
 
 ac_unique_file="../generic/tcl.h"
-# Factoring default headers for most tests.
-ac_includes_default="\
-#include <stddef.h>
-#ifdef HAVE_STDIO_H
-# include <stdio.h>
-#endif
-#ifdef HAVE_STDLIB_H
-# include <stdlib.h>
-#endif
-#ifdef HAVE_STRING_H
-# include <string.h>
-#endif
-#ifdef HAVE_INTTYPES_H
-# include <inttypes.h>
-#endif
-#ifdef HAVE_STDINT_H
-# include <stdint.h>
-#endif
-#ifdef HAVE_STRINGS_H
-# include <strings.h>
-#endif
-#ifdef HAVE_SYS_TYPES_H
-# include <sys/types.h>
-#endif
-#ifdef HAVE_SYS_STAT_H
-# include <sys/stat.h>
-#endif
-#ifdef HAVE_UNISTD_H
-# include <unistd.h>
-#endif"
-
-ac_header_c_list=
 ac_subst_vars='LTLIBOBJS
 LIBOBJS
 RES
@@ -1570,41 +1538,6 @@ fi
 
 } # ac_fn_c_try_compile
 
-# ac_fn_c_check_header_compile LINENO HEADER VAR INCLUDES
-# -------------------------------------------------------
-# Tests whether HEADER exists and can be compiled using the include files in
-# INCLUDES, setting the cache variable VAR accordingly.
-ac_fn_c_check_header_compile ()
-{
-  as_lineno=${as_lineno-"$1"} as_lineno_stack=as_lineno_stack=$as_lineno_stack
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $2" >&5
-printf %s "checking for $2... " >&6; }
-if eval test \${$3+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-$4
-#include <$2>
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"
-then :
-  eval "$3=yes"
-else case e in #(
-  e) eval "$3=no" ;;
-esac
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext ;;
-esac
-fi
-eval ac_res=\$$3
-	       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-printf "%s\n" "$ac_res" >&6; }
-  eval $as_lineno_stack; ${as_lineno_stack:+:} unset as_lineno
-
-} # ac_fn_c_check_header_compile
-
 # ac_fn_c_check_type LINENO TYPE VAR INCLUDES
 # -------------------------------------------
 # Tests whether TYPE exists after having included INCLUDES, setting cache
@@ -2322,15 +2255,6 @@ main (int argc, char **argv)
 }
 "
 
-as_fn_append ac_header_c_list " stdio.h stdio_h HAVE_STDIO_H"
-as_fn_append ac_header_c_list " stdlib.h stdlib_h HAVE_STDLIB_H"
-as_fn_append ac_header_c_list " string.h string_h HAVE_STRING_H"
-as_fn_append ac_header_c_list " inttypes.h inttypes_h HAVE_INTTYPES_H"
-as_fn_append ac_header_c_list " stdint.h stdint_h HAVE_STDINT_H"
-as_fn_append ac_header_c_list " strings.h strings_h HAVE_STRINGS_H"
-as_fn_append ac_header_c_list " sys/stat.h sys_stat_h HAVE_SYS_STAT_H"
-as_fn_append ac_header_c_list " sys/types.h sys_types_h HAVE_SYS_TYPES_H"
-as_fn_append ac_header_c_list " unistd.h unistd_h HAVE_UNISTD_H"
 # Check that the precious variables saved in the cache have kept the same
 # value.
 ac_cache_corrupted=false
@@ -2411,7 +2335,7 @@ SHELL=/bin/sh
 TCL_VERSION=9.1
 TCL_MAJOR_VERSION=9
 TCL_MINOR_VERSION=1
-TCL_PATCH_LEVEL="a0"
+TCL_PATCH_LEVEL="a1"
 VER=$TCL_MAJOR_VERSION$TCL_MINOR_VERSION
 
 TCL_DDE_VERSION=1.5
@@ -3944,35 +3868,6 @@ printf "%s\n" "#define STATIC_BUILD 1" >>confdefs.h
 # after SC_ENABLE_SHARED checks the configure switches.
 #--------------------------------------------------------------------
 
-ac_header= ac_cache=
-for ac_item in $ac_header_c_list
-do
-  if test $ac_cache; then
-    ac_fn_c_check_header_compile "$LINENO" $ac_header ac_cv_header_$ac_cache "$ac_includes_default"
-    if eval test \"x\$ac_cv_header_$ac_cache\" = xyes; then
-      printf "%s\n" "#define $ac_item 1" >> confdefs.h
-    fi
-    ac_header= ac_cache=
-  elif test $ac_header; then
-    ac_cache=$ac_item
-  else
-    ac_header=$ac_item
-  fi
-done
-
-
-
-
-
-
-
-
-if test $ac_cv_header_stdlib_h = yes && test $ac_cv_header_string_h = yes
-then :
-
-printf "%s\n" "#define STDC_HEADERS 1" >>confdefs.h
-
-fi
 
 
     # Step 0: Enable 64 bit support?
@@ -4326,8 +4221,6 @@ printf "%s\n" "$ac_cv_municode" >&6; }
 	CFLAGS=$hold_cflags
 	if test "$ac_cv_municode" = "yes" ; then
 	    extra_ldflags="$extra_ldflags -municode"
-	else
-	    extra_cflags="$extra_cflags -DTCL_BROKEN_MAINARGS"
 	fi
 	hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -fno-lto"
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for working -fno-lto" >&5
@@ -4366,6 +4259,44 @@ printf "%s\n" "$ac_cv_nolto" >&6; }
 	else
 	    CFLAGS_NOLTO=""
 	fi
+
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if the linker understands --disable-high-entropy-va" >&5
+printf %s "checking if the linker understands --disable-high-entropy-va... " >&6; }
+if test ${tcl_cv_ld_high_entropy+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e)
+	    hold_cflags=$CFLAGS; CFLAGS="$CFLAGS  -Wl,--disable-high-entropy-va"
+	    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  tcl_cv_ld_high_entropy=yes
+else case e in #(
+  e) tcl_cv_ld_high_entropy=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+	    CFLAGS=$hold_cflags ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $tcl_cv_ld_high_entropy" >&5
+printf "%s\n" "$tcl_cv_ld_high_entropy" >&6; }
+	if test $tcl_cv_ld_high_entropy = yes; then
+	    extra_ldflags="$extra_ldflags -Wl,--disable-high-entropy-va"
+	fi
+
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if the compiler understands -finput-charset" >&5
 printf %s "checking if the compiler understands -finput-charset... " >&6; }
 if test ${tcl_cv_cc_input_charset+y}
@@ -4421,14 +4352,15 @@ main (void)
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_enable_auto_image_base=yes
 else case e in #(
   e) ac_cv_enable_auto_image_base=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
      ;;
 esac
 fi
@@ -4446,7 +4378,7 @@ printf %s "checking compiler flags... " >&6; }
 	SHLIB_LD_LIBS='${LIBS}'
 	LIBS="-lnetapi32 -lkernel32 -luser32 -ladvapi32 -luserenv -lws2_32"
 	# mingw needs to link ole32 and oleaut32 for [send], but MSVC doesn't
-	LIBS_GUI="-lgdi32 -lcomdlg32 -limm32 -lcomctl32 -lshell32 -luuid -lole32 -loleaut32 -lwinspool"
+	LIBS_GUI="-lgdi32 -lcomdlg32 -limm32 -lcomctl32 -lshell32 -luuid -loleacc -lole32 -loleaut32 -lwinspool -luxtheme -luiautomationcore"
 	STLIB_LD='${AR} cr'
 	RC_OUT=-o
 	RC_TYPE=
@@ -4660,7 +4592,7 @@ printf "%s\n" "   Using 64-bit $MACHINE mode" >&6; }
 	    LINKBIN="link"
 	fi
 
-	LIBS_GUI="gdi32.lib comdlg32.lib imm32.lib comctl32.lib shell32.lib uuid.lib winspool.lib"
+	LIBS_GUI="gdi32.lib comdlg32.lib imm32.lib comctl32.lib shell32.lib uuid.lib winspool.lib uxtheme.lib oleacc.lib ole32.lib uiautomationcore.lib"
 
 	SHLIB_LD="${LINKBIN} -dll -incremental:no ${lflags}"
 	SHLIB_LD_LIBS='${LIBS}'
@@ -4849,15 +4781,6 @@ printf "%s\n" "$tcl_cv_eh_disposition" >&6; }
 printf "%s\n" "#define EXCEPTION_DISPOSITION int" >>confdefs.h
 
 	fi
-
-	ac_fn_c_check_header_compile "$LINENO" "stdbool.h" "ac_cv_header_stdbool_h" "$ac_includes_default"
-if test "x$ac_cv_header_stdbool_h" = xyes
-then :
-
-printf "%s\n" "#define HAVE_STDBOOL_H 1" >>confdefs.h
-
-fi
-
 
 	# See if the compiler supports casting to a union type.
 	# This is used to stop gcc from printing a compiler

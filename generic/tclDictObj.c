@@ -12,7 +12,6 @@
 
 #include "tclInt.h"
 #include "tclTomMath.h"
-#include <assert.h>
 
 /*
  * Forward declaration.
@@ -3231,7 +3230,7 @@ DictFilterCmd(
 	return TCL_ERROR;
     }
     if (Tcl_GetIndexFromObj(interp, objv[2], filters, "filterType",
-	     0, &index) != TCL_OK) {
+	    0, &index) != TCL_OK) {
 	return TCL_ERROR;
     }
 

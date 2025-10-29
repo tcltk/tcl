@@ -1798,7 +1798,7 @@ ConvertTreeToTokens(
 		 */
 
 		subExprTokenPtr->numComponents =
-			((int)parsePtr->numTokens - subExprTokenIdx) - 1;
+			(parsePtr->numTokens - subExprTokenIdx) - 1;
 
 		/*
 		 * Finally, as we return up the tree to our parent, pop the
@@ -2690,7 +2690,7 @@ TclSortingOpCmd(
 
 	    lastAnd = j;
 	}
-	litObjv[2 *(objc - 2) - 1] = objv[objc - 1];
+	litObjv[2 * (objc - 2) - 1] = objv[objc - 1];
 
 	nodes[2 * (objc - 2) - 1].lexeme = lexeme;
 	nodes[2 * (objc - 2) - 1].mark = MARK_LEFT;

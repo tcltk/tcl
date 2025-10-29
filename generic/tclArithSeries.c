@@ -11,7 +11,6 @@
  */
 
 #include "tclInt.h"
-#include <assert.h>
 #include <math.h>
 
 /*
@@ -85,8 +84,6 @@ static void		DupArithSeriesInternalRep(Tcl_Obj *srcPtr,
 			    Tcl_Obj *copyPtr);
 static void		FreeArithSeriesInternalRep(Tcl_Obj *arithSeriesObjPtr);
 static void		UpdateStringOfArithSeries(Tcl_Obj *arithSeriesObjPtr);
-static int		SetArithSeriesFromAny(Tcl_Interp *interp,
-			    Tcl_Obj *objPtr);
 static int		ArithSeriesInOperation(Tcl_Interp *interp,
 			    Tcl_Obj *valueObj, Tcl_Obj *arithSeriesObj,
 			    int *boolResult);
@@ -98,7 +95,7 @@ static const Tcl_ObjType arithSeriesType = {
     FreeArithSeriesInternalRep,		/* freeIntRepProc */
     DupArithSeriesInternalRep,		/* dupIntRepProc */
     UpdateStringOfArithSeries,		/* updateStringProc */
-    SetArithSeriesFromAny,		/* setFromAnyProc */
+    NULL,				/* setFromAnyProc */
     TCL_OBJTYPE_V2(
     ArithSeriesObjLength,
     TclArithSeriesObjIndex,
@@ -682,6 +679,7 @@ TclNewArithSeriesObj(
     Tcl_Obj *objPtr;
     unsigned precision = (unsigned)-1; /* unknown precision */
     const char *description;
+    char tmp[TCL_DOUBLE_SPACE + 2] = {0};
 
     if (startObj) {
 	if (assignNumber(interp, useDoubles, &start, &dstart, startObj) != TCL_OK) {
@@ -790,8 +788,6 @@ TclNewArithSeriesObj(
     return NULL;
 
   notANumber:
-    char tmp[TCL_DOUBLE_SPACE + 2] = {0};
-
     description = "non-numeric floating-point value";
     Tcl_PrintDouble(NULL, isnan(dstart) ? dstart : dend, tmp);
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -866,33 +862,6 @@ ArithSeriesObjLength(
     ArithSeries *arithSeriesRepPtr = (ArithSeries *)
 	    arithSeriesObj->internalRep.twoPtrValue.ptr1;
     return arithSeriesRepPtr->len;
-}
-
-/*
- * SetArithSeriesFromAny --
- *
- *	The Arithmetic Series object is just an way to optimize
- *	Lists space complexity, so no one should try to convert
- *	a string to an Arithmetic Series object.
- *
- *	This function is here just to populate the Type structure.
- *
- * Results:
- *	The result is always TCL_ERROR. But see Side Effects.
- *
- * Side effects:
- *	Tcl Panic if called.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-SetArithSeriesFromAny(
-    TCL_UNUSED(Tcl_Interp *),		/* Used for error reporting if not NULL. */
-    TCL_UNUSED(Tcl_Obj *))		/* The object to convert. */
-{
-    Tcl_Panic("SetArithSeriesFromAny: should never be called");
-    return TCL_ERROR;
 }
 
 /*

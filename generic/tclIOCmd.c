@@ -952,8 +952,7 @@ Tcl_ExecObjCmd(
 	    break;
 	case EXEC_ENCODING:
 	    if (++skip >= objc) {
-		Tcl_SetResult(interp, "No value given for option -encoding.",
-			TCL_STATIC);
+		Tcl_SetObjResult(interp, Tcl_NewStringObj("No value given for option -encoding", -1));
 		return TCL_ERROR;
 	    } else {
 		Tcl_Encoding encoding;
@@ -1034,8 +1033,8 @@ Tcl_ExecObjCmd(
 
     /* TIP 716 */
     if (encodingObj &&
-	Tcl_SetChannelOption(interp, chan, "-encoding",
-	    Tcl_GetString(encodingObj)) != TCL_OK) {
+	    Tcl_SetChannelOption(interp, chan, "-encoding",
+		    Tcl_GetString(encodingObj)) != TCL_OK) {
 	goto errorWithOpenChannel;
     }
 

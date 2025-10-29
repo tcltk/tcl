@@ -10,7 +10,7 @@
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-link \- create link from command to method of object
+link \- Create link from command to method of object
 .SH SYNOPSIS
 .nf
 package require tcl::oo
@@ -109,7 +109,7 @@ oo::class create Ex {
 }
 
 set o [Ex new]
-$o 3 5 7
+$o call 3 5 7
         \fI\(-> This is a\fR
         \fI\(-> This is b(3)\fR
         \fI\(-> This is c(5,7)\fR

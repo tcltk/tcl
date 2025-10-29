@@ -14,7 +14,6 @@
 #include "tclInt.h"
 #include "tclRegexp.h"
 #include "tclTomMath.h"
-#include <assert.h>
 
 /*
  *----------------------------------------------------------------------
@@ -74,7 +73,7 @@ typedef struct {
     size_t patLengths[NUM_REGEXPS];/* Number of non-null characters in
 				 * corresponding entry in patterns. -1 means
 				 * entry isn't used. */
-    struct TclRegexp *regexps[NUM_REGEXPS];
+    TclRegexp *regexps[NUM_REGEXPS];
 				/* Compiled forms of above strings. Also
 				 * malloc-ed, or NULL if not in use yet. */
 } ThreadSpecificData;

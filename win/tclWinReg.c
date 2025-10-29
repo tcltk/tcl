@@ -21,6 +21,9 @@
 #   pragma comment (lib, "advapi32.lib")
 #endif
 #include <stdlib.h>
+#if defined (__clang__) && (__clang_major__ > 20)
+#pragma clang diagnostic ignored "-Wc++-keyword"
+#endif
 
 /*
  * Ensure that we can say which registry is being accessed.
@@ -163,7 +166,7 @@ Registry_Init(
     cmd = Tcl_CreateObjCommand2(interp, "registry", RegistryObjCmd,
 	    interp, DeleteCmd);
     Tcl_SetAssocData(interp, REGISTRY_ASSOC_KEY, NULL, cmd);
-    return Tcl_PkgProvideEx(interp, "registry", "1.4a0", NULL);
+    return Tcl_PkgProvideEx(interp, "registry", "1.4a1", NULL);
 }
 
 /*
@@ -816,7 +819,9 @@ GetValue(
 		    Tcl_NewStringObj(Tcl_DStringValue(&buf),
 			    Tcl_DStringLength(&buf)));
 
-	    while (*wp++ != 0); /* empty loop body */
+	    while (*wp++ != 0) {
+		// Empty body
+	    }
 	    p = (char *) wp;
 	    Tcl_DStringFree(&buf);
 	}

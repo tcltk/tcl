@@ -17,8 +17,8 @@ if {"::tcltest" ni [namespace children]} {
 }
 
 testConstraint noappverifier [expr {
-        [llength [info commands testappverifierpresent]] == 0
-        || ![testappverifierpresent]}]
+	[llength [info commands testappverifierpresent]] == 0
+	|| ![testappverifierpresent]}]
 
 namespace eval ::tcl::test::cmdMZ {
     namespace import ::tcltest::cleanupTests
@@ -202,7 +202,7 @@ test cmdMZ-return-2.19 {return option handling} -body {
 } -returnCodes continue -result {}
 test cmdMZ-return-2.20 {return option handling} {
     list [catch {
-	return -level 0 -options {-foo 1} -options {-bar 2} 
+	return -level 0 -options {-foo 1} -options {-bar 2}
     } -> foo] $foo
 } {0 {-foo 1 -bar 2 -code 0 -level 0}}
 test cmdMZ-return-2.21 {return option handling} {

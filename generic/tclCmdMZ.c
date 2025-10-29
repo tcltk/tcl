@@ -132,7 +132,8 @@ Tcl_RegexpObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Size offset, stringLength, matchLength, cflags, eflags;
-    int i, indices, match, about, all, doinline, numMatchesSaved;
+    Tcl_Size i;
+    int indices, match, about, all, doinline, numMatchesSaved;
     Tcl_RegExp regExpr;
     Tcl_Obj *objPtr, *startIndex = NULL, *resultPtr = NULL;
     Tcl_RegExpInfo info;
@@ -377,7 +378,7 @@ Tcl_RegexpObjCmd(
 		 * area. (Scriptics Bug 4391/SF Bug #219232)
 		 */
 
-		if (i <= (int)info.nsubs && info.matches[i].start >= 0) {
+		if (i <= info.nsubs && info.matches[i].start >= 0) {
 		    start = offset + info.matches[i].start;
 		    end = offset + info.matches[i].end;
 
@@ -399,7 +400,7 @@ Tcl_RegexpObjCmd(
 
 		newPtr = Tcl_NewListObj(2, objs);
 	    } else {
-		if ((i <= (int)info.nsubs) && (info.matches[i].end > 0)) {
+		if ((i <= info.nsubs) && (info.matches[i].end > 0)) {
 		    newPtr = Tcl_GetRange(objPtr,
 			    offset + info.matches[i].start,
 			    offset + info.matches[i].end - 1);
@@ -3451,9 +3452,10 @@ TclNRSwitchObjCmd(
     int noCase;
     Tcl_Size patternLength, j;
     const char *pattern;
-    Tcl_Obj *stringObj, *indexVarObj, *matchVarObj;
+    Tcl_Obj *valueObj, *indexVarObj, *matchVarObj;
     Tcl_Obj *const *savedObjv = objv;
     Tcl_RegExp regExpr = NULL;
+    Tcl_WideInt intValue = 0, armValue;
     Interp *iPtr = (Interp *) interp;
     int pc = 0;
     int bidx = 0;		/* Index of body argument. */
@@ -3467,12 +3469,12 @@ TclNRSwitchObjCmd(
      */
 
     static const char *const options[] = {
-	"-exact", "-glob", "-indexvar", "-matchvar", "-nocase", "-regexp",
-	"--", NULL
+	"-exact", "-glob", "-indexvar", "-integer", "-matchvar", "-nocase",
+	"-regexp", "--", NULL
     };
     enum switchOptionsEnum {
-	OPT_EXACT, OPT_GLOB, OPT_INDEXV, OPT_MATCHV, OPT_NOCASE, OPT_REGEXP,
-	OPT_LAST
+	OPT_EXACT, OPT_GLOB, OPT_INDEXV, OPT_INTEGER, OPT_MATCHV, OPT_NOCASE,
+	OPT_REGEXP, OPT_LAST
     } index;
     typedef int (*strCmpFn_t)(const char *, const char *);
     strCmpFn_t strCmpFn = TclUtfCmp;
@@ -3579,8 +3581,15 @@ TclNRSwitchObjCmd(
 		"MODERESTRICTION", (char *)NULL);
 	return TCL_ERROR;
     }
+    if (noCase && mode == OPT_INTEGER) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"-nocase option cannot be used with -integer option"));
+	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "SWITCH",
+		"MODERESTRICTION", (char *)NULL);
+	return TCL_ERROR;
+    }
 
-    stringObj = objv[i];
+    valueObj = objv[i];
     objc -= i + 1;
     objv += i + 1;
     bidx = i + 1;		/* First after the match string. */
@@ -3672,6 +3681,12 @@ TclNRSwitchObjCmd(
 	return TCL_ERROR;
     }
 
+    if (mode == OPT_INTEGER) {
+	if (Tcl_GetWideIntFromObj(interp, valueObj, &intValue) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+    }
+
     for (i = 0; i < objc; i += 2) {
 	/*
 	 * See if the pattern matches the string.
@@ -3711,12 +3726,12 @@ TclNRSwitchObjCmd(
 
 	switch (mode) {
 	case OPT_EXACT:
-	    if (strCmpFn(TclGetString(stringObj), pattern) == 0) {
+	    if (strCmpFn(TclGetString(valueObj), pattern) == 0) {
 		goto matchFound;
 	    }
 	    break;
 	case OPT_GLOB:
-	    if (Tcl_StringCaseMatch(TclGetString(stringObj),pattern,noCase)) {
+	    if (Tcl_StringCaseMatch(TclGetString(valueObj),pattern,noCase)) {
 		goto matchFound;
 	    }
 	    break;
@@ -3726,7 +3741,7 @@ TclNRSwitchObjCmd(
 	    if (regExpr == NULL) {
 		return TCL_ERROR;
 	    } else {
-		int matched = Tcl_RegExpExecObj(interp, regExpr, stringObj, 0,
+		int matched = Tcl_RegExpExecObj(interp, regExpr, valueObj, 0,
 			numMatchesSaved, 0);
 
 		if (matched < 0) {
@@ -3734,6 +3749,13 @@ TclNRSwitchObjCmd(
 		} else if (matched) {
 		    goto matchFoundRegexp;
 		}
+	    }
+	    break;
+	case OPT_INTEGER:
+	    if (Tcl_GetWideIntFromObj(interp, objv[i], &armValue) != TCL_OK) {
+		return TCL_ERROR;
+	    } else if (intValue == armValue) {
+		goto matchFound;
 	    }
 	    break;
 	}
@@ -3785,7 +3807,7 @@ TclNRSwitchObjCmd(
 		Tcl_Obj *substringObj;
 
 		if (info.matches[j].end > 0) {
-		    substringObj = Tcl_GetRange(stringObj,
+		    substringObj = Tcl_GetRange(valueObj,
 			    info.matches[j].start, info.matches[j].end-1);
 		} else {
 		    TclNewObj(substringObj);
@@ -4299,7 +4321,7 @@ Tcl_TimeRateObjCmd(
 	    maxms = -1000;
 	    do {
 		lastMeasureOverhead = measureOverhead;
-		TclNewIntObj(clobjv[i], (int) maxms);
+		TclNewIntObj(clobjv[i], maxms);
 		Tcl_IncrRefCount(clobjv[i]);
 		result = Tcl_TimeRateObjCmd(NULL, interp, i + 1, clobjv);
 		Tcl_DecrRefCount(clobjv[i]);
@@ -5402,6 +5424,88 @@ TclListLines(
 	}
     }
 }
+
+/*
+ * TclUnicodeNormalizeCmd --
+ *
+ *	This procedure implements the "unicode tonfc|tonfd|tonfkc|tonfkd"
+ *	commands. See the user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	Stores the normalized string in the interpreter result.
+ */
+static int
+TclUnicodeNormalizeCmd(
+    void *clientData,		/* TCL_{NFC,NFD,NFKC,NFKD} */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    static const char *optNames[] = {"-profile", NULL};
+    enum { OPT_PROFILE } opt;
+    int profile = TCL_ENCODING_PROFILE_STRICT;
+
+    if (objc == 4) {
+	if (Tcl_GetIndexFromObj(interp, objv[1], optNames, "option", 0, &opt) !=
+	    TCL_OK) {
+	    return TCL_ERROR;
+	}
+	const char *s = Tcl_GetString(objv[2]);
+	if (!strcmp(s, "replace")) {
+	    profile = TCL_ENCODING_PROFILE_REPLACE;
+	} else if (!strcmp(s, "strict")) {
+	    profile = TCL_ENCODING_PROFILE_STRICT;
+	} else {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "Invalid value \"%s\" supplied for option \"-profile\". "
+		    "Must be \"strict\" or \"replace\".", s));
+	    return TCL_ERROR;
+	}
+    } else if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?-profile PROFILE? STRING");
+	return TCL_ERROR;
+    }
+
+    Tcl_DString ds;
+    if (Tcl_UtfToNormalizedDString(interp, Tcl_GetString(objv[objc - 1]),
+	    TCL_INDEX_NONE, (Tcl_UnicodeNormalizationForm)PTR2INT(clientData), profile,
+	    &ds) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    Tcl_DStringResult(interp, &ds);
+    return TCL_OK;
+}
+
+/*
+ * TclInitUnicodeCmd --
+ *
+ *	This procedure creates the "unicode" Tcl ensemble command. See user
+ *	documentation for details on implemented commands.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	Stores the result in the interpreter result.
+ */
+Tcl_Command
+TclInitUnicodeCmd(
+    Tcl_Interp *interp)
+{
+    static const EnsembleImplMap unicodeImplMap[] = {
+	{"tonfc", TclUnicodeNormalizeCmd, NULL, NULL, (void *)TCL_NFC, 0},
+	{"tonfd", TclUnicodeNormalizeCmd, NULL, NULL, (void *)TCL_NFD, 0},
+	{"tonfkc", TclUnicodeNormalizeCmd, NULL, NULL, (void *)TCL_NFKC, 0},
+	{"tonfkd", TclUnicodeNormalizeCmd, NULL, NULL, (void *)TCL_NFKD, 0},
+	{NULL, NULL, NULL, NULL, NULL, 0}
+    };
+    return TclMakeEnsemble(interp, "unicode", unicodeImplMap);
+}
+
 
 /*
  * Local Variables:

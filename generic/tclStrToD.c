@@ -547,19 +547,15 @@ TclParseNumber(
      */
 
     if (bytes == NULL) {
-	if (interp == NULL && endPtrPtr == NULL) {
-	    if (TclHasInternalRep(objPtr, &tclDictType)) {
-		/* A dict can never be a (single) number */
-		return TCL_ERROR;
-	    }
-	    if (TclHasInternalRep(objPtr, &tclListType)) {
-		Tcl_Size length;
-		/* A list can only be a (single) number if its length == 1 */
-		TclListObjLength(NULL, objPtr, &length);
-		if (length != 1) {
-		    return TCL_ERROR;
-		}
-	    }
+	if (TclHasInternalRep(objPtr, &tclDictType)) {
+	    /* A dict can never be a (single) number */
+	    status = TCL_ERROR;
+	    goto formaterr;
+	}
+	Tcl_ObjTypeLengthProc *lengthProc = TclObjTypeHasProc(objPtr, lengthProc);
+	if (lengthProc && lengthProc(objPtr) > 1) {
+	    status = TCL_ERROR;
+	    goto formaterr;
 	}
 	bytes = TclGetString(objPtr);
     }
@@ -1523,15 +1519,18 @@ TclParseNumber(
      * Format an error message when an invalid number is encountered.
      */
 
+formaterr:
     if (status != TCL_OK) {
 	if (interp != NULL) {
 	    Tcl_Obj *msg = Tcl_ObjPrintf("expected %s but got ",
 		    expected);
 	    Tcl_Size argc;
-	    const char **argv;
-	    if ((TclMaxListLength(bytes, TCL_INDEX_NONE, NULL) > 1)
-		    && Tcl_SplitList(NULL, bytes, &argc, &argv) == TCL_OK) {
-		Tcl_Free(argv);
+	    const char **argv = NULL;
+	    if (!bytes || ((TclMaxListLength(bytes, TCL_INDEX_NONE, NULL) > 1)
+		    && Tcl_SplitList(NULL, bytes, &argc, &argv) == TCL_OK)) {
+		if (argv) {
+		    Tcl_Free(argv);
+		}
 		Tcl_AppendToObj(msg, "a list", -1);
 	    } else {
 		Tcl_AppendToObj(msg, "\"", -1);
