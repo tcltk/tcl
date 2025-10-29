@@ -2457,10 +2457,6 @@ enum InterpFlags {
 				 * about expr substitutions in the form $(expr). */
 };
 
-#define TclSubstAll(interp) (((interp && ((Interp *)(interp))->flags & EXPR_SUBST)) \
-	? (TCL_SUBST_ALL|TCL_SUBST_EXPRS) \
-	: TCL_SUBST_ALL)
-
 /*
  * Default maximum number of levels of nesting permitted in Tcl commands (used
  * to catch infinite recursion).
