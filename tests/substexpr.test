@@ -153,7 +153,7 @@ test nested-3.1 {Nested parentheses in expression} {
     set a 2
     set b 3
     set c 4
-    set result $((($a + $b) * ($c - 1))
+    set result $((($a + $b) * ($c - 1)))
 } 15
 
 test edge-3.2 {Negative numbers} {
@@ -212,7 +212,7 @@ test error-4.1 {Undefined variable in expression} -body {
     string match "*no such variable*" $msg
 } -result 1
 
-test error-4.2 {Missing closing parenthesis} -constraints knownBug -body {
+test error-4.2 {Missing closing parenthesis} -body {
     catch {set x $(($a + $b)} msg
     string match "*missing close-paren*" $msg
 }  -result 1
@@ -226,11 +226,11 @@ test error-4.3 {Division by zero} -body {
 
 test error-4.4 {Invalid syntax in expression} -body {
     set a 5
-    catch {$(($a +)} msg
+    catch {$(($a +))} msg
     string match "*missing operand*" $msg
 } -result 1
 
-test error-4.5 {Mismatched nested parentheses} -constraints knownBug -body {
+test error-4.5 {Mismatched nested parentheses} -body {
     set a 2
     set b 3
     catch {$((($a + $b))} msg
@@ -531,13 +531,12 @@ test subexpr-4.47 {Semicolon in quoted string} {
 # Error conditions - missing close paren
 # ==========================================
 
-test subexpr-error-4.48 {Missing close paren} -constraints knownBug -body {
+test subexpr-error-4.48 {Missing close paren} -body {
     catch {set result $((1 + 2)} msg
     string match "*missing close-paren*" $msg
-    set msg
 } -result 1
 
-test subexpr-error-4.49 {Missing close paren with quotes} -constraints knownBug -body {
+test subexpr-error-4.49 {Missing close paren with quotes} -body {
     catch {set result $(("test" eq "test")} msg
     string match "*missing close-paren*" $msg
 } -result 1
@@ -547,7 +546,7 @@ test subexpr-error-4.50 {Missing close paren with nested parens} -body {
     string match "*missing close-paren*" $msg
 } -result 1
 
-test subexpr-error-4.51 {Missing close paren with command sub} -constraints knownBug -body {
+test subexpr-error-4.51 {Missing close paren with command sub} -body {
     catch {set result $(([string length "test"])} msg
     string match "*missing close-paren*" $msg
 } -result 1
@@ -572,12 +571,12 @@ test subexpr-error-4.53 {Unclosed quote at end} -body {
 
 test subexpr-error-4.54 {Empty expression} -body {
     catch {set result $(())} msg
-    string match "*empty expression*" $msg
+    string match "*empty subexpression*" $msg
 } -result 1
 
 test subexpr-error-4.55 {Just whitespace} -body {
     catch {set result $((   ))} msg
-    string match "*empty expression*" $msg
+    string match "*empty subexpression*" $msg
 } -result 1
 
 test subexpr-error-4.56 {Double plus interpreted as unary} -body {
@@ -585,7 +584,7 @@ test subexpr-error-4.56 {Double plus interpreted as unary} -body {
     expr {$msg eq "3"}
 } -result 1
 
-test subexpr-error-4.57 {Unbalanced nested parens - too many open} -constraints knownBug -body {
+test subexpr-error-4.57 {Unbalanced nested parens - too many open} -body {
     catch {set result $((((1 + 2)))} msg
     string match "*missing close-paren*" $msg
 } -result 1
