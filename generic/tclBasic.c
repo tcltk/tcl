@@ -22,7 +22,6 @@
 #include "tclCompile.h"
 #include "tclTomMath.h"
 #include <math.h>
-#include <assert.h>
 
 /*
  * TCL_FPCLASSIFY_MODE:
@@ -3318,10 +3317,10 @@ InvokeObj2Command(
 	return TclCommandWordLimitError(interp, objc);
     }
     if (cmdPtr->objProc != NULL) {
-	result = cmdPtr->objProc(cmdPtr->objClientData, interp, objc, objv);
+	result = cmdPtr->objProc(cmdPtr->objClientData, interp, (int)objc, objv);
     } else {
 	result = Tcl_NRCallObjProc(interp, cmdPtr->nreProc,
-		cmdPtr->objClientData, objc, objv);
+		cmdPtr->objClientData, (int)objc, objv);
     }
     return result;
 }
@@ -3337,7 +3336,7 @@ CmdWrapper2Proc(
     if (objc > INT_MAX) {
 	return TclCommandWordLimitError(interp, objc);
     }
-    return cmdPtr->objProc(cmdPtr->objClientData, interp, objc, objv);
+    return cmdPtr->objProc(cmdPtr->objClientData, interp, (int)objc, objv);
 }
 
 int
@@ -4649,7 +4648,7 @@ Dispatch(
 #endif /* USE_DTRACE */
 
     iPtr->cmdCount++;
-    return objProc(clientData, interp, objc, objv);
+    return objProc(clientData, interp, (int)objc, objv);
 }
 
 int
@@ -6044,7 +6043,7 @@ TclArgumentGet(
     if (hPtr) {
 	CFWord *cfwPtr = (CFWord *)Tcl_GetHashValue(hPtr);
 
-	*wordPtr = cfwPtr->word;
+	*wordPtr = (int)cfwPtr->word;
 	*cfPtrPtr = cfwPtr->framePtr;
 	return;
     }
@@ -6062,7 +6061,7 @@ TclArgumentGet(
 	framePtr->data.tebc.pc = (char *) (((ByteCode *)
 		framePtr->data.tebc.codePtr)->codeStart + cfwPtr->pc);
 	*cfPtrPtr = cfwPtr->framePtr;
-	*wordPtr = cfwPtr->word;
+	*wordPtr = (int)cfwPtr->word;
 	return;
     }
 }
@@ -6633,58 +6632,11 @@ Tcl_ExprBooleanObj(
 /*
  *----------------------------------------------------------------------
  *
- * TclObjInvokeNamespace --
- *
- *	Object version: Invokes a Tcl command, given an objv/objc, from either
- *	the exposed or hidden set of commands in the given interpreter.
- *
- *	NOTE: The command is invoked in the global stack frame of the
- *	interpreter or namespace, thus it cannot see any current state on the
- *	stack of that interpreter.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	Whatever the command does.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclObjInvokeNamespace(
-    Tcl_Interp *interp,		/* Interpreter in which command is to be
-				 * invoked. */
-    Tcl_Size objc,		/* Count of arguments. */
-    Tcl_Obj *const objv[],	/* Argument objects; objv[0] points to the
-				 * name of the command to invoke. */
-    Tcl_Namespace *nsPtr,	/* The namespace to use. */
-    int flags)			/* Combination of flags controlling the call:
-				 * TCL_INVOKE_HIDDEN, TCL_INVOKE_NO_UNKNOWN,
-				 * or TCL_INVOKE_NO_TRACEBACK. */
-{
-    int result;
-    Tcl_CallFrame *framePtr;
-
-    /*
-     * Make the specified namespace the current namespace and invoke the
-     * command.
-     */
-
-    (void) TclPushStackFrame(interp, &framePtr, nsPtr, /*isProcFrame*/0);
-    result = TclObjInvoke(interp, objc, objv, flags);
-
-    TclPopStackFrame(interp);
-    return result;
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * TclObjInvoke --
  *
- *	Invokes a Tcl command, given an objv/objc, from either the exposed or
- *	the hidden sets of commands in the given interpreter.
+ *	Invokes a Tcl command, given an objv/objc, from the hidden set of
+ *	commands in the given interpreter. Only supported for calls via
+ *	"internal" stub table.
  *
  * Results:
  *	A standard Tcl object result.
@@ -6704,7 +6656,9 @@ TclObjInvoke(
 				 * name of the command to invoke. */
     int flags)			/* Combination of flags controlling the call:
 				 * TCL_INVOKE_HIDDEN, TCL_INVOKE_NO_UNKNOWN,
-				 * or TCL_INVOKE_NO_TRACEBACK. */
+				 * or TCL_INVOKE_NO_TRACEBACK. Only
+				 * TCL_INVOKE_HIDDEN is now supported, and
+				 * must be supplied. */
 {
     if (interp == NULL) {
 	return TCL_ERROR;
@@ -6714,8 +6668,8 @@ TclObjInvoke(
 		"illegal argument vector", TCL_INDEX_NONE));
 	return TCL_ERROR;
     }
-    if ((flags & TCL_INVOKE_HIDDEN) == 0) {
-	Tcl_Panic("TclObjInvoke: called without TCL_INVOKE_HIDDEN");
+    if (flags != TCL_INVOKE_HIDDEN) {
+	Tcl_Panic("TclObjInvoke: called without just TCL_INVOKE_HIDDEN");
     }
     return Tcl_NRCallObjProc(interp, TclNRInvoke, NULL, objc, objv);
 }
@@ -8191,8 +8145,8 @@ ExprIsUnorderedFunc(
 	return TCL_ERROR;
     }
 
-    if (DoubleObjClass(interp, objv[1], &dCls) != TCL_OK ||
-	    DoubleObjClass(interp, objv[2], &dCls2) != TCL_OK) {
+    if (DoubleObjClass(interp, objv[1], &dCls) != TCL_OK
+	    || DoubleObjClass(interp, objv[2], &dCls2) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -8485,7 +8439,7 @@ WrapperNRObjProc(
     if (objc < 0) {
 	objc = -1;
     }
-    return proc(clientData, interp, (Tcl_Size) objc, objv);
+    return proc(clientData, interp, objc, objv);
 }
 
 int

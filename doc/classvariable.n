@@ -10,7 +10,7 @@
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-classvariable \- create link from local variable to variable in class
+classvariable \- Create link from local variable to variable in class
 .SH SYNOPSIS
 .nf
 package require tcl::oo

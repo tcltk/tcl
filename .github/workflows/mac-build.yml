@@ -38,7 +38,7 @@ jobs:
               "--enable-symbols=all"
             ]
   xcode:
-    runs-on: macos-15
+    runs-on: macos-26
     defaults:
       run:
         shell: bash
@@ -57,13 +57,15 @@ jobs:
           CFLAGS: -arch x86_64 -arch arm64
         timeout-minutes: 15
       - name: Run Tests
-        run: make -j4 test styles=develop
+        run: |
+          echo "::add-matcher::.github/tcltest.json"
+          make -j4 test styles=develop
         env:
           ERROR_ON_FAILURES: 1
           MAC_CI: 1
         timeout-minutes: 15
   clang:
-    runs-on: macos-15
+    runs-on: macos-26
     needs: plan
     strategy:
       matrix: ${{ fromJson(needs.plan.outputs.clang) }}
@@ -99,6 +101,7 @@ jobs:
           make runtest SCRIPT=../.github/workflows/info.tcl || echo 'get info failed'
       - name: Run Tests
         run: |
+          echo "::add-matcher::.github/tcltest.json"
           make test
         env:
           ERROR_ON_FAILURES: 1
