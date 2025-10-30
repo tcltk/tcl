@@ -452,7 +452,9 @@ TclFSCwdIsNative(void)
     /* if not yet initialized - ensure we'll once obtain cwd */
     if (!tsdPtr->cwdPathEpoch) {
 	Tcl_Obj *temp = Tcl_FSGetCwd(NULL);
-	if (temp) { Tcl_DecrRefCount(temp); }
+	if (temp) {
+	    Tcl_DecrRefCount(temp);
+	}
     }
 
     if (tsdPtr->cwdClientData != NULL) {
@@ -2927,7 +2929,9 @@ Tcl_FSChdir(
 	    Tcl_SetErrno(ENOENT);
 	    return -1;
 	}
-	if (normDirName != pathPtr) { Tcl_IncrRefCount(normDirName); }
+	if (normDirName != pathPtr) {
+	    Tcl_IncrRefCount(normDirName);
+	}
 
 	if (fsPtr == &tclNativeFilesystem) {
 	    void *cd;
@@ -2979,7 +2983,9 @@ Tcl_FSChdir(
 	     */
 	    Tcl_FSMountsChanged(NULL);
 	}
-	if (normDirName != pathPtr) { Tcl_DecrRefCount(normDirName); }
+	if (normDirName != pathPtr) {
+	    Tcl_DecrRefCount(normDirName);
+	}
     } else {
 	/*
 	 * The current directory is now changed or an error occurred and an

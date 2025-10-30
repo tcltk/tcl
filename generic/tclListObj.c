@@ -9,7 +9,6 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#include <assert.h>
 #include "tclInt.h"
 #include "tclTomMath.h"
 
@@ -503,9 +502,9 @@ TclListLimitExceededError(
      * in Tcl_Size.
      */
     if (interp != NULL) {
-	Tcl_SetObjResult(interp,
-	    Tcl_ObjPrintf("max length (%" TCL_SIZE_MODIFIER
-		"d) of a Tcl list exceeded", (Tcl_Size)LIST_MAX));
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"max length (%" TCL_SIZE_MODIFIER "d) of a Tcl list exceeded",
+		(Tcl_Size)LIST_MAX));
 	Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
     }
     return TCL_ERROR;
@@ -1937,6 +1936,76 @@ Tcl_ListObjAppendElement(
      * element case
      */
     return TclListObjAppendElements(interp, toObj, 1, &elemObj);
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * TclListObjAppendIfAbsent --
+ *
+ *	Appends an element elemObj to list toObj if no element with the same
+ *	string representation is not already present. If toObj is not a list
+ *	object, it will be converted and an error raised if the conversion
+ *	fails.
+ *
+ *	Reference counting:
+ *	 - toObj must not be shared else the function will panic.
+ *	 - if elemObj is not added to the list, either because it already
+ *	   exists or because of an error, it will be freed if there are no
+ *	   references to it. Caller can therefore pass in a 0-ref elemObj and
+ *	   not have to worry about decrementing it on return. Conversely,
+ *	   this means if caller passes in a 0-ref elemObj it should NOT
+ *	   decrement the reference count on return irrespective of return
+ *	   code.
+ *
+ *	CAUTION: Linear search (of course)
+ *
+ * Results:
+ *	Standard Tcl result code. Note element being already present is not
+ *	an error.
+ *
+ * Side effects:
+ *    None.
+ *
+ *------------------------------------------------------------------------
+ */
+int
+TclListObjAppendIfAbsent(
+    Tcl_Interp *interp,		/* Used to report errors if not NULL. */
+    Tcl_Obj *toObj,		/* List object to append */
+    Tcl_Obj *elemObj)		/* Element to append to toObj's list. */
+{
+    Tcl_Obj **elemObjs;
+    Tcl_Size numElems;
+    int result;
+
+    result = Tcl_ListObjGetElements(interp, toObj, &numElems, &elemObjs);
+    if (result != TCL_OK) {
+	goto vamoose;
+    }
+    /* Assume it is worth doing a pointer compare over the whole list first */
+    for (Tcl_Size i = 0; i < numElems; ++i) {
+	if (elemObjs[i] == elemObj) {
+	    result = TCL_OK;
+	    goto vamoose;
+	}
+    }
+    Tcl_Size elemLen;
+    const char *elemStr;
+    elemStr = Tcl_GetStringFromObj(elemObj, &elemLen);
+    for (Tcl_Size i = 0; i < numElems; ++i) {
+	Tcl_Size toLen;
+	const char *toStr = Tcl_GetStringFromObj(elemObjs[i], &toLen);
+	if (toLen == elemLen && !strncmp(elemStr, toStr, elemLen)) {
+	    result = TCL_OK;
+	    goto vamoose;
+	}
+    }
+    result = TclListObjAppendElements(interp, toObj, 1, &elemObj);
+
+vamoose: /* Return result after freeing elemObj if unreferenced */
+    Tcl_BounceRefCount(elemObj);
+    return result;
 }
 
 /*

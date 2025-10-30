@@ -762,6 +762,9 @@ Tcltest_Init(
     if (TclThread_Init(interp) != TCL_OK) {
 	return TCL_ERROR;
     }
+    if (TclMutex_Init(interp) != TCL_OK) {
+	return TCL_ERROR;
+    }
 #endif
 
     if (Tcl_ABSListTest_Init(interp) != TCL_OK) {
@@ -1157,7 +1160,7 @@ TestcmdinfoCmd(
 	    return TCL_ERROR;
 	}
 	if (cmdObjc == 0) {
-	    Tcl_AppendResult(interp, "No command name given", NULL);
+	    Tcl_AppendResult(interp, "No command name given", (char *)NULL);
 	    return TCL_ERROR;
 	}
 	if (Tcl_GetCommandInfo(interp, Tcl_GetString(cmdObjv[0]), &info) == 0) {
@@ -1170,7 +1173,7 @@ TestcmdinfoCmd(
 	     * We do not do that here just so we can test what happens if the
 	     * caller mistakenly passes more arguments.
 	     */
-	    return info.objProc(info.objClientData, interp, cmdObjc, cmdObjv);
+	    return info.objProc(info.objClientData, interp, (int)cmdObjc, cmdObjv);
 	} else {
 	    return info.objProc2(info.objClientData2, interp, cmdObjc, cmdObjv);
 	}
@@ -2441,7 +2444,7 @@ EncodingToUtfProc(
     int *dstWrotePtr,		/* Filled with number of bytes stored. */
     int *dstCharsPtr)		/* Filled with number of chars stored. */
 {
-    int len;
+    Tcl_Size len;
     TclEncoding *encodingPtr;
 
     encodingPtr = (TclEncoding *) clientData;
@@ -2455,8 +2458,8 @@ EncodingToUtfProc(
     Tcl_ResetResult(encodingPtr->interp);
 
     *srcReadPtr = srcLen;
-    *dstWrotePtr = len;
-    *dstCharsPtr = len;
+    *dstWrotePtr = (int)len;
+    *dstCharsPtr = (int)len;
     return TCL_OK;
 }
 
@@ -2473,7 +2476,7 @@ EncodingFromUtfProc(
     int *dstWrotePtr,		/* Filled with number of bytes stored. */
     int *dstCharsPtr)		/* Filled with number of chars stored. */
 {
-    int len;
+    Tcl_Size len;
     TclEncoding *encodingPtr;
 
     encodingPtr = (TclEncoding *) clientData;
@@ -2487,8 +2490,8 @@ EncodingFromUtfProc(
     Tcl_ResetResult(encodingPtr->interp);
 
     *srcReadPtr = srcLen;
-    *dstWrotePtr = len;
-    *dstCharsPtr = len;
+    *dstWrotePtr = (int)len;
+    *dstCharsPtr = (int)len;
     return TCL_OK;
 }
 
@@ -2829,11 +2832,11 @@ ExitProcOdd(
     void *clientData)		/* Integer value to print. */
 {
     char buf[16 + TCL_INTEGER_SPACE];
-    int len;
+    Tcl_Size len;
 
     snprintf(buf, sizeof(buf), "odd %d\n", (int)PTR2INT(clientData));
     len = strlen(buf);
-    if (len != (int) write(1, buf, len)) {
+    if (len != write(1, buf, (int)len)) {
 	Tcl_Panic("ExitProcOdd: unable to write to stdout");
     }
 }
@@ -2843,11 +2846,11 @@ ExitProcEven(
     void *clientData)		/* Integer value to print. */
 {
     char buf[16 + TCL_INTEGER_SPACE];
-    int len;
+    Tcl_Size len;
 
     snprintf(buf, sizeof(buf), "even %d\n", (int)PTR2INT(clientData));
     len = strlen(buf);
-    if (len != (int) write(1, buf, len)) {
+    if (len != write(1, buf, (int)len)) {
 	Tcl_Panic("ExitProcEven: unable to write to stdout");
     }
 }
@@ -4087,52 +4090,52 @@ TestlistapiCmd(
 	}
     }
 
-#define APPENDINT(name_, var_)                                    \
-    do {                                                           \
-	Tcl_ListObjAppendElement(                                  \
-	    NULL, objPtr, Tcl_NewStringObj((#name_), -1));      \
-	Tcl_ListObjAppendElement(                                  \
-	    NULL, objPtr, Tcl_NewWideIntObj((intptr_t)(var_))); \
+#define APPENDINT(name_, var_) \
+    do {							\
+	Tcl_ListObjAppendElement(NULL,				\
+		objPtr, Tcl_NewStringObj((#name_), -1));	\
+	Tcl_ListObjAppendElement(NULL,				\
+		objPtr, Tcl_NewWideIntObj((intptr_t)(var_)));	\
     } while (0)
-#define APPENDSTR(name_, var_)                                    \
-    do {                                                           \
-	Tcl_ListObjAppendElement(                                  \
-	    NULL, objPtr, Tcl_NewStringObj((#name_), -1));      \
-	Tcl_ListObjAppendElement(                                  \
-	    NULL, objPtr, Tcl_NewStringObj((var_), -1)); \
+#define APPENDSTR(name_, var_) \
+    do {							\
+	Tcl_ListObjAppendElement(NULL,				\
+		objPtr, Tcl_NewStringObj((#name_), -1));	\
+	Tcl_ListObjAppendElement(NULL,				\
+		objPtr, Tcl_NewStringObj((var_), -1));		\
     } while (0)
 
-    Tcl_Obj *objPtr = Tcl_NewListObj(0, NULL);
-    APPENDINT(status, status);
-    APPENDINT(srcPtr, srcPtr);
-    if (srcPtr) {
-	APPENDINT(srcRefCount, srcPtr->refCount);
-	if (srcPtr->typePtr && srcPtr->typePtr->name) {
-	    APPENDSTR(srcType, srcPtr->typePtr->name);
-	}
-	else {
-	    APPENDSTR(srcType, "");
-	}
-    }
-    APPENDINT(resultPtr, resultPtr);
-    if (status == TCL_OK) {
-	if (resultPtr) {
-	    APPENDINT(resultRefCount, resultPtr->refCount);
-	    if (resultPtr->typePtr && resultPtr->typePtr->name) {
-		APPENDSTR(resultType, resultPtr->typePtr->name);
+    {
+	Tcl_Obj *objPtr = Tcl_NewListObj(0, NULL);
+	APPENDINT(status, status);
+	APPENDINT(srcPtr, srcPtr);
+	if (srcPtr) {
+	    APPENDINT(srcRefCount, srcPtr->refCount);
+	    if (srcPtr->typePtr && srcPtr->typePtr->name) {
+		APPENDSTR(srcType, srcPtr->typePtr->name);
+	    } else {
+		APPENDSTR(srcType, "");
 	    }
-	    else {
-		APPENDSTR(resultType, "");
+	}
+	APPENDINT(resultPtr, resultPtr);
+	if (status == TCL_OK) {
+	    if (resultPtr) {
+		APPENDINT(resultRefCount, resultPtr->refCount);
+		if (resultPtr->typePtr && resultPtr->typePtr->name) {
+		    APPENDSTR(resultType, resultPtr->typePtr->name);
+		} else {
+		    APPENDSTR(resultType, "");
+		}
+		Tcl_ListObjAppendElement(NULL, objPtr, Tcl_NewStringObj("result", -1));
+		Tcl_ListObjAppendElement(NULL, objPtr, resultPtr);
 	    }
+	} else {
 	    Tcl_ListObjAppendElement(NULL, objPtr, Tcl_NewStringObj("result", -1));
-	    Tcl_ListObjAppendElement(NULL, objPtr, resultPtr);
+	    Tcl_ListObjAppendElement(NULL, objPtr, Tcl_GetObjResult(interp));
+	    status = TCL_OK; /* Irrespective of what Tcl_ListObj*() returned */
 	}
-    } else {
-	Tcl_ListObjAppendElement(NULL, objPtr, Tcl_NewStringObj("result", -1));
-	Tcl_ListObjAppendElement(NULL, objPtr, Tcl_GetObjResult(interp));
-	status = TCL_OK; /* Irrespective of what Tcl_ListObj*() returned */
+	Tcl_SetObjResult(interp, objPtr);
     }
-    Tcl_SetObjResult(interp, objPtr);
 
 vamoose:
     if (srcPtr) {
@@ -4306,7 +4309,7 @@ TestparserCmd(
 {
     const char *script;
     Tcl_Size dummy;
-    int length;
+    Tcl_Size length;
     Tcl_Parse parse;
 
     if (objc != 3) {
@@ -4314,7 +4317,7 @@ TestparserCmd(
 	return TCL_ERROR;
     }
     script = Tcl_GetStringFromObj(objv[1], &dummy);
-    if (Tcl_GetIntFromObj(interp, objv[2], &length)) {
+    if (Tcl_GetSizeIntFromObj(interp, objv[2], &length)) {
 	return TCL_ERROR;
     }
     if (length == 0) {
@@ -4363,7 +4366,7 @@ TestexprparserCmd(
 {
     const char *script;
     Tcl_Size dummy;
-    int length;
+    Tcl_Size length;
     Tcl_Parse parse;
 
     if (objc != 3) {
@@ -4371,7 +4374,7 @@ TestexprparserCmd(
 	return TCL_ERROR;
     }
     script = Tcl_GetStringFromObj(objv[1], &dummy);
-    if (Tcl_GetIntFromObj(interp, objv[2], &length)) {
+    if (Tcl_GetSizeIntFromObj(interp, objv[2], &length)) {
 	return TCL_ERROR;
     }
     if (length == 0) {
@@ -4552,8 +4555,8 @@ TestparsevarnameCmd(
     Tcl_Obj *const objv[])	/* The argument objects. */
 {
     const char *script;
-    int length, append;
-    Tcl_Size dummy;
+    int append;
+    Tcl_Size length, dummy;
     Tcl_Parse parse;
 
     if (objc != 4) {
@@ -4561,13 +4564,13 @@ TestparsevarnameCmd(
 	return TCL_ERROR;
     }
     script = Tcl_GetStringFromObj(objv[1], &dummy);
-    if (Tcl_GetIntFromObj(interp, objv[2], &length)) {
+    if (Tcl_GetSizeIntFromObj(interp, objv[2], &length)) {
 	return TCL_ERROR;
     }
     if (length == 0) {
 	length = dummy;
     }
-    if (Tcl_GetIntFromObj(interp, objv[3], &append)) {
+    if (Tcl_GetBooleanFromObj(interp, objv[3], &append)) {
 	return TCL_ERROR;
     }
     if (Tcl_ParseVarName(interp, script, length, &parse, append) != TCL_OK) {
@@ -5145,7 +5148,7 @@ syntax:
  *	A standard Tcl result.
  *
  * Side effects:
- *	When the package given by objv[1] is loaded into an interpreter,
+ *	When the package given by Tcl_GetString(objv[1]) is loaded into an interpreter,
  *	variable "x" in that interpreter is set to "loaded".
  *
  *----------------------------------------------------------------------
@@ -5345,7 +5348,7 @@ TestuniClassCmd(
 
     int value;
     if (Tcl_GetIntFromObj(interp, objv[1], &value) != TCL_OK) {
-    	return TCL_ERROR;
+	return TCL_ERROR;
     }
     Tcl_Obj *result = Tcl_NewObj();
     Tcl_ListObjAppendElement(interp, result, Tcl_NewIntObj(Tcl_UniCharToLower(value)));
@@ -5759,7 +5762,7 @@ GetTimesCmd(
 	Tcl_Free(objPtr);
     }
     Tcl_GetTime(&stop);
-    timePer = (stop.sec - start.sec)*1000000 + (stop.usec - start.usec);
+    timePer = (double)((stop.sec - start.sec)*1000000 + (stop.usec - start.usec));
     fprintf(stderr, "   %.3f usec per alloc+free\n", timePer/100000);
 
     /* alloc 5000 times */
@@ -5770,7 +5773,7 @@ GetTimesCmd(
 	objv[i] = (Tcl_Obj *)Tcl_Alloc(sizeof(Tcl_Obj));
     }
     Tcl_GetTime(&stop);
-    timePer = (stop.sec - start.sec)*1000000 + (stop.usec - start.usec);
+    timePer = (double)((stop.sec - start.sec)*1000000 + (stop.usec - start.usec));
     fprintf(stderr, "   %.3f usec per alloc\n", timePer/5000);
 
     /* free 5000 times */
@@ -5780,7 +5783,7 @@ GetTimesCmd(
 	Tcl_Free(objv[i]);
     }
     Tcl_GetTime(&stop);
-    timePer = (stop.sec - start.sec)*1000000 + (stop.usec - start.usec);
+    timePer = (double)((stop.sec - start.sec)*1000000 + (stop.usec - start.usec));
     fprintf(stderr, "   %.3f usec per free\n", timePer/5000);
 
     /* Tcl_NewObj 5000 times */
@@ -5790,7 +5793,7 @@ GetTimesCmd(
 	objv[i] = Tcl_NewObj();
     }
     Tcl_GetTime(&stop);
-    timePer = (stop.sec - start.sec)*1000000 + (stop.usec - start.usec);
+    timePer = (double)((stop.sec - start.sec)*1000000 + (stop.usec - start.usec));
     fprintf(stderr, "   %.3f usec per Tcl_NewObj\n", timePer/5000);
 
     /* Tcl_DecrRefCount 5000 times */
@@ -5801,7 +5804,7 @@ GetTimesCmd(
 	Tcl_DecrRefCount(objPtr);
     }
     Tcl_GetTime(&stop);
-    timePer = (stop.sec - start.sec)*1000000 + (stop.usec - start.usec);
+    timePer = (double)((stop.sec - start.sec)*1000000 + (stop.usec - start.usec));
     fprintf(stderr, "   %.3f usec per Tcl_DecrRefCount\n", timePer/5000);
     Tcl_Free(objv);
 
@@ -5813,7 +5816,7 @@ GetTimesCmd(
 	(void) TclGetString(objPtr);
     }
     Tcl_GetTime(&stop);
-    timePer = (stop.sec - start.sec)*1000000 + (stop.usec - start.usec);
+    timePer = (double)((stop.sec - start.sec)*1000000 + (stop.usec - start.usec));
     fprintf(stderr, "   %.3f usec per Tcl_GetStringFromObj of \"12345\"\n",
 	    timePer/100000);
 
@@ -5826,7 +5829,7 @@ GetTimesCmd(
 	}
     }
     Tcl_GetTime(&stop);
-    timePer = (stop.sec - start.sec)*1000000 + (stop.usec - start.usec);
+    timePer = (double)((stop.sec - start.sec)*1000000 + (stop.usec - start.usec));
     fprintf(stderr, "   %.3f usec per Tcl_GetIntFromObj of \"12345\"\n",
 	    timePer/100000);
     Tcl_DecrRefCount(objPtr);
@@ -5840,7 +5843,7 @@ GetTimesCmd(
 	}
     }
     Tcl_GetTime(&stop);
-    timePer = (stop.sec - start.sec)*1000000 + (stop.usec - start.usec);
+    timePer = (double)((stop.sec - start.sec)*1000000 + (stop.usec - start.usec));
     fprintf(stderr, "   %.3f usec per Tcl_GetInt of \"12345\"\n",
 	    timePer/100000);
 
@@ -5851,7 +5854,7 @@ GetTimesCmd(
 	snprintf(newString, sizeof(newString), "%d", 12345);
     }
     Tcl_GetTime(&stop);
-    timePer = (stop.sec - start.sec)*1000000 + (stop.usec - start.usec);
+    timePer = (double)((stop.sec - start.sec)*1000000 + (stop.usec - start.usec));
     fprintf(stderr, "   %.3f usec per snprintf of 12345\n",
 	    timePer/100000);
 
@@ -5862,7 +5865,7 @@ GetTimesCmd(
 	(void) Tcl_FindHashEntry(&iPtr->globalNsPtr->cmdTable, "gettimes");
     }
     Tcl_GetTime(&stop);
-    timePer = (stop.sec - start.sec)*1000000 + (stop.usec - start.usec);
+    timePer = (double)((stop.sec - start.sec)*1000000 + (stop.usec - start.usec));
     fprintf(stderr, "   %.3f usec per hashtable lookup of \"gettimes\"\n",
 	    timePer/100000);
 
@@ -5876,7 +5879,7 @@ GetTimesCmd(
 	}
     }
     Tcl_GetTime(&stop);
-    timePer = (stop.sec - start.sec)*1000000 + (stop.usec - start.usec);
+    timePer = (double)((stop.sec - start.sec)*1000000 + (stop.usec - start.usec));
     fprintf(stderr, "   %.3f usec per Tcl_SetVar of a to \"12345\"\n",
 	    timePer/100000);
 
@@ -5890,7 +5893,7 @@ GetTimesCmd(
 	}
     }
     Tcl_GetTime(&stop);
-    timePer = (stop.sec - start.sec)*1000000 + (stop.usec - start.usec);
+    timePer = (double)((stop.sec - start.sec)*1000000 + (stop.usec - start.usec));
     fprintf(stderr, "   %.3f usec per Tcl_GetVar of a==\"12345\"\n",
 	    timePer/100000);
 
@@ -8793,7 +8796,7 @@ InterpVarResolver(
     return TCL_CONTINUE;
 }
 
-typedef struct MyResolvedVarInfo {
+typedef struct {
     Tcl_ResolvedVarInfo vInfo;	/* This must be the first element. */
     Tcl_Var var;
     Tcl_Obj *nameObj;
@@ -9160,8 +9163,7 @@ TestUtfToNormalizedCmd(
 	    return TCL_ERROR;
 	}
 	if (len > slen) {
-	    Tcl_SetObjResult(interp,
-		Tcl_ObjPrintf(
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "Passed length %" TCL_SIZE_MODIFIER
 		    "d is greater than string length %" TCL_SIZE_MODIFIER
 		    "d.", len, slen));
@@ -9169,7 +9171,7 @@ TestUtfToNormalizedCmd(
 	}
     }
     int result;
-    char buffer[20] = {0x80};
+    char buffer[20] = {'\x80'};
     char *bufPtr;
     Tcl_Size bufStored = 0;
     if (bufLen > (int)sizeof(buffer)) {
@@ -9181,8 +9183,8 @@ TestUtfToNormalizedCmd(
 	(Tcl_UnicodeNormalizationForm)normForm, profile, bufPtr, bufLen, &bufStored);
     if (result == TCL_OK) {
 	/* Return as raw bytes, not string */
-	Tcl_SetObjResult(interp,
-	    Tcl_NewByteArrayObj((unsigned char *)bufPtr, bufStored));
+	Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(
+		(unsigned char *)bufPtr, bufStored));
     }
     if (bufPtr != buffer) {
 	Tcl_Free(bufPtr);
@@ -9238,8 +9240,7 @@ TestUtfToNormalizedDStringCmd(
 	    return TCL_ERROR;
 	}
 	if (len > slen) {
-	    Tcl_SetObjResult(interp,
-		Tcl_ObjPrintf(
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "Passed length %" TCL_SIZE_MODIFIER
 		    "d is greater than string length %" TCL_SIZE_MODIFIER
 		    "d.", len, slen));
@@ -9252,8 +9253,8 @@ TestUtfToNormalizedDStringCmd(
 	(Tcl_UnicodeNormalizationForm)normForm, profile, &ds);
     if (result == TCL_OK) {
 	/* Return as raw bytes, not string */
-	Tcl_SetObjResult(interp,
-	    Tcl_NewByteArrayObj((unsigned char *)Tcl_DStringValue(&ds),
+	Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(
+		(unsigned char *)Tcl_DStringValue(&ds),
 		Tcl_DStringLength(&ds)));
 	Tcl_DStringFree(&ds);
     }

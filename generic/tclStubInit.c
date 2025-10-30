@@ -184,7 +184,7 @@ int TclGetAliasObj(Tcl_Interp *interp, const char *childCmd,
     if (objcPtr) {
 	if ((sizeof(int) != sizeof(Tcl_Size)) && (result == TCL_OK) && (n > INT_MAX)) {
 	    if (interp) {
-		Tcl_AppendResult(interp, "List too large to be processed", NULL);
+		Tcl_AppendResult(interp, "List too large to be processed", (char *)NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -309,7 +309,7 @@ void *TclWinGetTclInstance(void)
 {
     void *hInstance = NULL;
     GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
-	    (const wchar_t *)&TclWinNoBackslash, &hInstance);
+	    (const WCHAR *)&TclWinNoBackslash, &hInstance);
     return hInstance;
 }
 

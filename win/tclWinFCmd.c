@@ -11,6 +11,9 @@
  */
 
 #include "tclWinInt.h"
+#if defined (__clang__) && (__clang_major__ > 20)
+#pragma clang diagnostic ignored "-Wc++-keyword"
+#endif
 
 /*
  * The following constants specify the type of callback when
@@ -51,21 +54,33 @@ enum {
     WIN_SYSTEM_ATTRIBUTE
 };
 
-static const int attributeArray[] = {FILE_ATTRIBUTE_ARCHIVE, FILE_ATTRIBUTE_HIDDEN,
-	0, FILE_ATTRIBUTE_READONLY, 0, FILE_ATTRIBUTE_SYSTEM};
+static const int attributeArray[] = {
+    FILE_ATTRIBUTE_ARCHIVE,				// -archive
+    FILE_ATTRIBUTE_HIDDEN,				// -hidden
+    0,							// -longname
+    FILE_ATTRIBUTE_READONLY,				// -readonly
+    0,							// -shortname
+    FILE_ATTRIBUTE_SYSTEM				// -system
+};
 
 const char *const tclpFileAttrStrings[] = {
-	"-archive", "-hidden", "-longname", "-readonly",
-	"-shortname", "-system", NULL
+    "-archive",
+    "-hidden",
+    "-longname",
+    "-readonly",
+    "-shortname",
+    "-system",
+    NULL
 };
 
 const TclFileAttrProcs tclpFileAttrProcs[] = {
-	{GetWinFileAttributes, SetWinFileAttributes},
-	{GetWinFileAttributes, SetWinFileAttributes},
-	{GetWinFileLongName, CannotSetAttribute},
-	{GetWinFileAttributes, SetWinFileAttributes},
-	{GetWinFileShortName, CannotSetAttribute},
-	{GetWinFileAttributes, SetWinFileAttributes}};
+    {GetWinFileAttributes, SetWinFileAttributes},	// -archive
+    {GetWinFileAttributes, SetWinFileAttributes},	// -hidden
+    {GetWinFileLongName, CannotSetAttribute},		// -longname
+    {GetWinFileAttributes, SetWinFileAttributes},	// -readonly
+    {GetWinFileShortName, CannotSetAttribute},		// -shortname
+    {GetWinFileAttributes, SetWinFileAttributes}	// -system
+};
 
 /*
  * Prototype for the TraverseWinTree callback function.
@@ -909,13 +924,19 @@ TclpObjCopyDirectory(
     if (normSrcPtr == NULL) {
 	return TCL_ERROR;
     }
-    if (normSrcPtr != srcPathPtr) { Tcl_IncrRefCount(normSrcPtr); }
+    if (normSrcPtr != srcPathPtr) {
+	Tcl_IncrRefCount(normSrcPtr);
+    }
     normDestPtr = Tcl_FSGetNormalizedPath(NULL,destPathPtr);
     if (normDestPtr == NULL) {
-	if (normSrcPtr != srcPathPtr) { Tcl_DecrRefCount(normSrcPtr); }
+	if (normSrcPtr != srcPathPtr) {
+	    Tcl_DecrRefCount(normSrcPtr);
+	}
 	return TCL_ERROR;
     }
-    if (normDestPtr != destPathPtr) { Tcl_IncrRefCount(normDestPtr); }
+    if (normDestPtr != destPathPtr) {
+	Tcl_IncrRefCount(normDestPtr);
+    }
 
     Tcl_DStringInit(&srcString);
     Tcl_DStringInit(&dstString);
@@ -939,8 +960,12 @@ TclpObjCopyDirectory(
 	Tcl_IncrRefCount(*errorPtr);
     }
 
-    if (normSrcPtr != srcPathPtr) { Tcl_DecrRefCount(normSrcPtr); }
-    if (normDestPtr != destPathPtr) { Tcl_DecrRefCount(normDestPtr); }
+    if (normSrcPtr != srcPathPtr) {
+	Tcl_DecrRefCount(normSrcPtr);
+    }
+    if (normDestPtr != destPathPtr) {
+	Tcl_DecrRefCount(normDestPtr);
+    }
     return ret;
 }
 
@@ -995,7 +1020,9 @@ TclpObjRemoveDirectory(
 	if (normPtr == NULL) {
 	    return TCL_ERROR;
 	}
-	if (normPtr != pathPtr) { Tcl_IncrRefCount(normPtr); }
+	if (normPtr != pathPtr) {
+	    Tcl_IncrRefCount(normPtr);
+	}
 	Tcl_DStringInit(&native);
 	Tcl_UtfToWCharDString(TclGetString(normPtr), TCL_INDEX_NONE, &native);
 	ret = DoRemoveDirectory(&native, recursive, &ds);
@@ -1016,7 +1043,9 @@ TclpObjRemoveDirectory(
 	}
 	Tcl_DStringFree(&ds);
     }
-    if (normPtr && normPtr != pathPtr) { Tcl_DecrRefCount(normPtr); }
+    if (normPtr && normPtr != pathPtr) {
+	Tcl_DecrRefCount(normPtr);
+    }
 
     return ret;
 }

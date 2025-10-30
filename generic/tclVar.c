@@ -198,7 +198,7 @@ static void		ArrayPopulateSearch(Tcl_Interp *interp,
 			    ArraySearch *searchPtr);
 static void		ArrayDoneSearch(Interp *iPtr, Var *varPtr,
 			    ArraySearch *searchPtr);
-static Tcl_NRPostProc   ArrayForLoopCallback;
+static Tcl_NRPostProc	ArrayForLoopCallback;
 static Tcl_ObjCmdProc	ArrayForNRCmd;
 static void		DeleteSearches(Interp *iPtr, Var *arrayVarPtr);
 static void		DeleteArray(Interp *iPtr, Tcl_Obj *arrayNamePtr,
@@ -267,7 +267,9 @@ static const Tcl_ObjType localVarNameType = {
     do {								\
 	Tcl_ObjInternalRep ir;						\
 	Tcl_Obj *ptr = (namePtr);					\
-	if (ptr) {Tcl_IncrRefCount(ptr);}				\
+	if (ptr) {							\
+	    Tcl_IncrRefCount(ptr);					\
+	}								\
 	ir.twoPtrValue.ptr1 = ptr;					\
 	ir.twoPtrValue.ptr2 = INT2PTR(index);				\
 	Tcl_StoreInternalRep((objPtr), &localVarNameType, &ir);		\
@@ -292,8 +294,12 @@ static const Tcl_ObjType parsedVarNameType = {
 	Tcl_ObjInternalRep ir;						\
 	Tcl_Obj *ptr1 = (arrayPtr);					\
 	Tcl_Obj *ptr2 = (elem);						\
-	if (ptr1) {Tcl_IncrRefCount(ptr1);}				\
-	if (ptr2) {Tcl_IncrRefCount(ptr2);}				\
+	if (ptr1) {							\
+	    Tcl_IncrRefCount(ptr1);					\
+	}								\
+	if (ptr2) {							\
+	    Tcl_IncrRefCount(ptr2);					\
+	}								\
 	ir.twoPtrValue.ptr1 = ptr1;					\
 	ir.twoPtrValue.ptr2 = ptr2;					\
 	Tcl_StoreInternalRep((objPtr), &parsedVarNameType, &ir);	\
@@ -4938,7 +4944,7 @@ Tcl_ConstObjCmd(
 	    CleanupVar(varPtr, arrayPtr);
 	}
 	return TCL_ERROR;
-    };
+    }
     TclSetVarConstant(varPtr);
     return TCL_OK;
 }

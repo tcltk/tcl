@@ -15,7 +15,6 @@
 
 #include "tclInt.h"
 #include "tclCompile.h"
-#include <assert.h>
 
 /*
  * Variables that are part of the [apply] command implementation and which
@@ -2906,6 +2905,7 @@ DuplicateProc(
     const Command *origCmd)
 {
     Interp *iPtr = (Interp *) interp;
+    Tcl_HashEntry *origHePtr;
 
     // Duplicate the string of body, not the bytecode.
     Tcl_Size length;
@@ -2941,7 +2941,7 @@ DuplicateProc(
 	    TclProcDeleteProc);
 
     // TIP #280: Duplicate the origin information (if we have it).
-    Tcl_HashEntry *origHePtr = Tcl_FindHashEntry(iPtr->linePBodyPtr, origProc);
+    origHePtr = Tcl_FindHashEntry(iPtr->linePBodyPtr, origProc);
     if (origHePtr) {
 	CmdFrame *newCfPtr = (CmdFrame *) Tcl_Alloc(sizeof(CmdFrame));
 	const CmdFrame *origCfPtr = (CmdFrame *) Tcl_GetHashValue(origHePtr);
