@@ -140,6 +140,9 @@ jobs:
         timeout-minutes: 30
         env:
           ERROR_ON_FAILURES: 1
+      - name: Install
+        run: make install
+        timeout-minutes: 5
 
 # If you add builds with Wine, be sure to define the environment variable
 # CI_USING_WINE when running them so that broken tests know not to run.

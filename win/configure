@@ -661,6 +661,7 @@ TCL_STUB_LIB_SPEC
 TCL_STUB_LIB_FLAG
 TCL_STUB_LIB_FILE
 TCL_LIB_SPEC
+TCL_LIBS
 TCL_IMPORT_LIB_FLAG
 TCL_IMPORT_LIB_FILE
 TCL_STATIC_LIB_FLAG
@@ -5823,6 +5824,7 @@ eval "TCL_SRC_DIR=\"`cd $srcdir/..; $CYGPATH $(pwd)`\""
 
 eval "TCL_DLL_FILE=tcl${VER}${DLLSUFFIX}"
 
+eval "TCL_LIB_FLAG=\"-ltcl${VER}${LIBFLAGSUFFIX}\""
 eval "TCL_STUB_LIB_FILE=\"${LIBPREFIX}tclstub${LIBSUFFIX}\""
 eval "TCL_STUB_LIB_FLAG=\"-ltclstub${LIBFLAGSUFFIX}\""
 eval "TCL_BUILD_STUB_LIB_SPEC=\"-L`$CYGPATH $(pwd)` ${TCL_STUB_LIB_FLAG}\""
@@ -5915,6 +5917,7 @@ TCL_WIN_VERSION="$TCL_VERSION.$TCL_RELEASE_LEVEL.`echo $TCL_PATCH_LEVEL | tr -d 
 
 
 
+
 # win/tcl.m4 doesn't set (CFLAGS)
 
 
@@ -5971,7 +5974,7 @@ TCL_WIN_VERSION="$TCL_VERSION.$TCL_RELEASE_LEVEL.`echo $TCL_PATCH_LEVEL | tr -d 
 
 
 
-ac_config_files="$ac_config_files Makefile tclConfig.sh tclsh.exe.manifest"
+ac_config_files="$ac_config_files Makefile tclConfig.sh tclsh.exe.manifest tcl.pc:../unix/tcl.pc.in"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -6677,6 +6680,7 @@ do
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
     "tclConfig.sh") CONFIG_FILES="$CONFIG_FILES tclConfig.sh" ;;
     "tclsh.exe.manifest") CONFIG_FILES="$CONFIG_FILES tclsh.exe.manifest" ;;
+    "tcl.pc") CONFIG_FILES="$CONFIG_FILES tcl.pc:../unix/tcl.pc.in" ;;
 
   *) as_fn_error $? "invalid argument: '$ac_config_target'" "$LINENO" 5;;
   esac
