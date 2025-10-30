@@ -5142,8 +5142,8 @@ typedef struct NRE_callback {
 #define NRE_ASSERT(expr)
 #endif
 
-#include "tclIntDecls.h"
-#include "tclIntPlatDecls.h"
+#include "tclIntDecls.h"  /* IWYU pragma: export */
+#include "tclIntPlatDecls.h"  /* IWYU pragma: export */
 
 #if !defined(USE_TCL_STUBS) && !defined(TCL_MEM_DEBUG)
 #define Tcl_AttemptAlloc	TclpAlloc
