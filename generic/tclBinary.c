@@ -15,7 +15,6 @@
 #include "tclTomMath.h"
 
 #include <math.h>
-#include <assert.h>
 
 /*
  * The following constants are used by GetFormatSpec to indicate various

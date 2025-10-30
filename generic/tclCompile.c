@@ -15,7 +15,6 @@
 #include "tclInt.h"
 #define ALLOW_DEPRECATED_OPCODES
 #include "tclCompile.h"
-#include <assert.h>
 
 /*
  * Variable that controls whether compilation tracing is enabled and, if so,
@@ -2356,7 +2355,7 @@ CompileCommandTokens(
     int cmdKnown;
     int *wlines;
     Tcl_Size wlineat, numWords = parsePtr->numWords;
-    Tcl_Size cmdLine = envPtr->line;
+    int cmdLine = envPtr->line;
     Tcl_Size *clNext = envPtr->clNext;
     Tcl_Size cmdIdx = envPtr->numCommands;
     Tcl_Size startCodeOffset = CurrentOffset(envPtr);
@@ -4821,7 +4820,8 @@ TclIsEmptyToken(
     const Tcl_Token *tokenPtr)
 {
     const char *ptr, *end;
-    int ucs4, chLen = 0;
+    int ucs4;
+    Tcl_Size chLen = 0;
 
     end = tokenPtr[1].start + tokenPtr[1].size;
     for (ptr = tokenPtr[1].start; ptr < end; ptr += chLen) {
@@ -4953,7 +4953,7 @@ TclPushVarName(
 
 	name = varTokenPtr[1].start;
 	nameLen = varTokenPtr[1].size;
-	if (name[nameLen - 1] == ')') {
+	if (nameLen > 0 && name[nameLen - 1] == ')') {
 	    /*
 	     * last char is ')' => potential array reference.
 	     */

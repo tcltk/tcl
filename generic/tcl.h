@@ -2297,7 +2297,7 @@ EXTERN void		Tcl_StaticLibrary(Tcl_Interp *interp,
 #endif
 EXTERN Tcl_ExitProc *	Tcl_SetExitProc(Tcl_ExitProc *proc);
 #ifdef _WIN32
-EXTERN const char *TclZipfs_AppHook(int *argc, wchar_t ***argv);
+EXTERN const char *TclZipfs_AppHook(int *argc, unsigned short ***argv);
 #else
 EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
 #endif
@@ -2306,7 +2306,7 @@ EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
 #   define Tcl_FindExecutable(arg) ((Tcl_FindExecutable)((const char *)(arg)))
 #endif
 #   define Tcl_MainEx Tcl_MainExW
-    EXTERN TCL_NORETURN void Tcl_MainExW(Tcl_Size argc, wchar_t **argv,
+    EXTERN TCL_NORETURN void Tcl_MainExW(Tcl_Size argc, unsigned short **argv,
 	    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
 #endif
 #if defined(USE_TCL_STUBS)
@@ -2343,7 +2343,7 @@ EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
  * table.
  */
 
-#include "tclDecls.h"
+#include "tclDecls.h"  /* IWYU pragma: export */
 
 /*
  * Include platform specific public function declarations that are accessible
@@ -2356,7 +2356,7 @@ EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
 #   define TCLAPI MODULE_SCOPE
 #endif
 
-#include "tclPlatDecls.h"
+#include "tclPlatDecls.h"  /* IWYU pragma: export */
 
 /*
  *----------------------------------------------------------------------------

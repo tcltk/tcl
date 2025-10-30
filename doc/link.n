@@ -10,7 +10,7 @@
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-link \- create link from command to method of object
+link \- Create link from command to method of object
 .SH SYNOPSIS
 .nf
 package require tcl::oo

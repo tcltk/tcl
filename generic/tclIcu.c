@@ -1094,13 +1094,13 @@ IcuConverttoObjCmd(
     Tcl_DString dsIn;
     Tcl_DString dsOut;
     if (IcuObjToUCharDString(interp, objv[objc - 1], strict, &dsIn) != TCL_OK ||
-	IcuConverttoDString(interp, &dsIn,
-	    Tcl_GetString(objv[objc-2]), strict, &dsOut) != TCL_OK) {
+	    IcuConverttoDString(interp, &dsIn,
+		    Tcl_GetString(objv[objc-2]), strict, &dsOut) != TCL_OK) {
 	return TCL_ERROR;
     }
-    Tcl_SetObjResult(interp,
-	Tcl_NewByteArrayObj((unsigned char *)Tcl_DStringValue(&dsOut),
-			    Tcl_DStringLength(&dsOut)));
+    Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(
+	    (unsigned char *)Tcl_DStringValue(&dsOut),
+	    Tcl_DStringLength(&dsOut)));
     Tcl_DStringFree(&dsOut);
     return TCL_OK;
 }
@@ -1188,8 +1188,7 @@ IcuNormalizeObjCmd(
     if (objPtr) {
 	Tcl_SetObjResult(interp, objPtr);
 	return TCL_OK;
-    }
-    else {
+    } else {
 	return TCL_ERROR;
     }
 }

@@ -102,7 +102,7 @@ SetDelegateSuperclasses(
     Class *delegatePtr)
 {
     // Build new list of superclasses
-    int i, j = delegatePtr->superclasses.num, k;
+    Tcl_Size i, j = delegatePtr->superclasses.num, k;
     Class *superPtr, **supers = (Class **) Tcl_Alloc(sizeof(Class *) *
 	    (delegatePtr->superclasses.num + clsPtr->superclasses.num));
     if (delegatePtr->superclasses.num) {
@@ -199,9 +199,9 @@ TclOO_Class_Constructor(
     Tcl_Obj *const *objv)
 {
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
+    Tcl_Size skip = Tcl_ObjectContextSkippedArgs(context);
 
-    size_t skip = Tcl_ObjectContextSkippedArgs(context);
-    if ((size_t) objc > skip + 1) {
+    if (objc > skip + 1) {
 	Tcl_WrongNumArgs(interp, skip, objv,
 		"?definitionScript?");
 	return TCL_ERROR;
@@ -225,7 +225,7 @@ TclOO_Class_Constructor(
      * If there's nothing else to do, we're done.
      */
 
-    if ((size_t) objc == skip) {
+    if (objc == skip) {
 	Tcl_InterpState saved = Tcl_SaveInterpState(interp, TCL_OK);
 	MixinClassDelegates(interp, oPtr, delegateName);
 	Tcl_DecrRefCount(delegateName);
@@ -618,7 +618,7 @@ TclOO_Object_Cloned(
     int objc,			// Number of arguments.
     Tcl_Obj *const *objv)	// The actual arguments.
 {
-    int skip = Tcl_ObjectContextSkippedArgs(context);
+    Tcl_Size skip = Tcl_ObjectContextSkippedArgs(context);
     if (objc != skip + 1) {
 	Tcl_WrongNumArgs(interp, skip, objv, "originObject");
 	return TCL_ERROR;
@@ -659,7 +659,7 @@ TclOO_Object_Destroy(
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
     CallContext *contextPtr;
 
-    if (objc != (int) Tcl_ObjectContextSkippedArgs(context)) {
+    if (objc != Tcl_ObjectContextSkippedArgs(context)) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
 		NULL);
 	return TCL_ERROR;
@@ -722,12 +722,12 @@ TclOO_Object_Eval(
 {
     CallContext *contextPtr = (CallContext *) context;
     Tcl_Object object = Tcl_ObjectContextObject(context);
-    size_t skip = Tcl_ObjectContextSkippedArgs(context);
+    Tcl_Size skip = Tcl_ObjectContextSkippedArgs(context);
     CallFrame *framePtr, **framePtrPtr = &framePtr;
     Tcl_Obj *scriptPtr;
     CmdFrame *invoker;
 
-    if ((size_t) objc < skip + 1) {
+    if (objc < skip + 1) {
 	Tcl_WrongNumArgs(interp, skip, objv, "arg ?arg ...?");
 	return TCL_ERROR;
     }
@@ -756,7 +756,7 @@ TclOO_Object_Eval(
      * object when it decrements its refcount after eval'ing it.
      */
 
-    if ((size_t) objc != skip+1) {
+    if (objc != skip+1) {
 	scriptPtr = Tcl_ConcatObj(objc-skip, objv+skip);
 	invoker = NULL;
     } else {
@@ -829,7 +829,7 @@ TclOO_Object_Unknown(
     Object *oPtr = contextPtr->oPtr;
     const char **methodNames;
     int numMethodNames, i;
-    size_t skip = Tcl_ObjectContextSkippedArgs(context);
+    Tcl_Size skip = Tcl_ObjectContextSkippedArgs(context);
     CallFrame *framePtr = ((Interp *) interp)->varFramePtr;
     Tcl_Obj *errorMsg;
 
@@ -839,7 +839,7 @@ TclOO_Object_Unknown(
      * name without an error).
      */
 
-    if ((size_t) objc < skip + 1) {
+    if (objc < skip + 1) {
 	Tcl_WrongNumArgs(interp, skip, objv, "method ?arg ...?");
 	return TCL_ERROR;
     }
@@ -1150,7 +1150,7 @@ TclOO_Object_VarName(
     Tcl_Var varPtr, aryVar;
     Tcl_Obj *varNamePtr;
 
-    if ((int) Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
+    if (Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
 		"varName");
 	return TCL_ERROR;

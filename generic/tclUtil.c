@@ -12,7 +12,6 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#include <assert.h>
 #include "tclInt.h"
 #include "tclParse.h"
 #include "tclStringTrim.h"
@@ -2177,7 +2176,9 @@ Tcl_StringCaseMatch(
 	     * Skip all successive *'s in the pattern
 	     */
 
-	    while (*(++pattern) == '*');
+	    while (*(++pattern) == '*') {
+		// Empty body
+	    }
 	    p = *pattern;
 	    if (p == '\0') {
 		return 1;
@@ -4417,7 +4418,7 @@ TclSetObjNameOfShlib(
  *
  * Results:
  *	A pointer to an "fsPath" Tcl_Obj, or to an empty Tcl_Obj if the
- *	pathname of the application is unknown.
+ *	pathname of the shared library is unknown.
  *
  * Side effects:
  *	None.

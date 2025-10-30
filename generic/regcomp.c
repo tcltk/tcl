@@ -128,7 +128,7 @@ static void sortouts(struct nfa *, struct state *);
 static int sortouts_cmp(const void *, const void *);
 static void moveins(struct nfa *, struct state *, struct state *);
 static void copyins(struct nfa *, struct state *, struct state *);
-static void mergeins(struct nfa *, struct state *, struct arc **, int);
+static void mergeins(struct nfa *, struct state *, struct arc **, size_t);
 static void moveouts(struct nfa *, struct state *, struct state *);
 static void copyouts(struct nfa *, struct state *, struct state *);
 static void cloneouts(struct nfa *, struct state *, struct state *, struct state *, int);

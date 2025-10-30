@@ -84,7 +84,7 @@ namespace eval ::tcl::test::io {
 
     set path(cat) [makeFile {
 	set f stdin
-	if {$argv != ""} {
+	if {$argv ne ""} {
 	    set f [open [lindex $argv 0]]
 	}
 	chan configure $f -translation binary -blocking 0 -eofchar \x1A

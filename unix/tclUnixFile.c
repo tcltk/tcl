@@ -46,7 +46,7 @@ TclpFindExecutable(
     TCL_UNUSED(const char *) /*argv0*/)
 {
     size_t length;
-    wchar_t buf[PATH_MAX] = L"";
+    WCHAR buf[PATH_MAX] = L"";
     char name[PATH_MAX * TCL_UTF_MAX + 1];
 
     GetModuleFileNameW(NULL, buf, PATH_MAX);

@@ -21,6 +21,9 @@
 #   pragma comment (lib, "advapi32.lib")
 #endif
 #include <stdlib.h>
+#if defined (__clang__) && (__clang_major__ > 20)
+#pragma clang diagnostic ignored "-Wc++-keyword"
+#endif
 
 /*
  * Ensure that we can say which registry is being accessed.
@@ -816,7 +819,9 @@ GetValue(
 		    Tcl_NewStringObj(Tcl_DStringValue(&buf),
 			    Tcl_DStringLength(&buf)));
 
-	    while (*wp++ != 0); /* empty loop body */
+	    while (*wp++ != 0) {
+		// Empty body
+	    }
 	    p = (char *) wp;
 	    Tcl_DStringFree(&buf);
 	}
