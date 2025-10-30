@@ -611,7 +611,6 @@ may get stack overflows before reaching the limit set by the command. If
 this happens, see if there is a mechanism in your system for increasing
 the maximum size of the C stack.
 .RE
-.RE
 .\" METHOD: set
 .TP
 \fIchild \fBset\fR \fIvarName\fR ?\fIvalue\fR?
