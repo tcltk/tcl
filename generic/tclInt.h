@@ -68,9 +68,6 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stdint.h>
-#if defined(_MSC_VER) || (defined(__STDC_VERSION__) && (__STDC_VERSION__ < 202311L))
-#include <stdbool.h>
-#endif
 #include <string.h>
 #include <locale.h>
 

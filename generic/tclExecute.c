@@ -6051,7 +6051,7 @@ TEBCresume(
     }
     }
     case INST_IS_EMPTY: {
-	int empty = Tcl_IsEmpty(OBJ_AT_TOS);
+	int empty = Tcl_IsEmpty(OBJ_AT_TOS) ? 1 : 0;
 	TRACE(("\"%.30s\" => %d", O2S(OBJ_AT_TOS), empty));
 	JUMP_PEEPHOLE_F(empty, 1, 1);
     }

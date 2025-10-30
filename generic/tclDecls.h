@@ -1871,7 +1871,7 @@ EXTERN Tcl_Obj *	Tcl_NewWideUIntObj(Tcl_WideUInt wideValue);
 EXTERN void		Tcl_SetWideUIntObj(Tcl_Obj *objPtr,
 				Tcl_WideUInt uwideValue);
 /* 690 */
-EXTERN int		Tcl_IsEmpty(Tcl_Obj *obj);
+EXTERN bool		Tcl_IsEmpty(Tcl_Obj *obj);
 /* 691 */
 EXTERN const char *	Tcl_GetEncodingNameForUser(Tcl_DString *bufPtr);
 /* 692 */
@@ -2600,7 +2600,7 @@ typedef struct TclStubs {
     int (*tcl_UtfNcasecmp) (const char *s1, const char *s2, size_t n); /* 687 */
     Tcl_Obj * (*tcl_NewWideUIntObj) (Tcl_WideUInt wideValue); /* 688 */
     void (*tcl_SetWideUIntObj) (Tcl_Obj *objPtr, Tcl_WideUInt uwideValue); /* 689 */
-    int (*tcl_IsEmpty) (Tcl_Obj *obj); /* 690 */
+    bool (*tcl_IsEmpty) (Tcl_Obj *obj); /* 690 */
     const char * (*tcl_GetEncodingNameForUser) (Tcl_DString *bufPtr); /* 691 */
     int (*tcl_ListObjReverse) (Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Obj **resultPtrPtr); /* 692 */
     int (*tcl_ListObjRepeat) (Tcl_Interp *interp, Tcl_Size repeatCount, Tcl_Size objc, Tcl_Obj *const objv[], Tcl_Obj **resultPtrPtr); /* 693 */
