@@ -400,9 +400,7 @@ LocatePreInitScript(Tcl_Interp *interp)
     Tcl_Obj *dirPtr;
     Tcl_Obj *searchedDirs;
     Tcl_Obj *initScriptPathPtr = NULL;
-    Tcl_Obj *ancestors[2] = {NULL, NULL};
-    Tcl_Obj *literals[] = {NULL, NULL, NULL, NULL, NULL};
-    enum { INITLIT, VERSIONLIT, PATCHLIT, LIBLIT, LIBRARYLIT };
+    Tcl_Obj *pathParts[3] = {NULL, NULL, NULL};
 
     /*
      * Need to track checked directories for error reporting. As a side
@@ -411,22 +409,10 @@ LocatePreInitScript(Tcl_Interp *interp)
      */
     searchedDirs = Tcl_NewListObj(0, NULL);
 
-    literals[INITLIT] = Tcl_NewStringObj("init.tcl", 8);
-    Tcl_IncrRefCount(literals[INITLIT]);
-
-    dirPtr = Tcl_GetVar2Ex(interp, "tcl_library", NULL, TCL_GLOBAL_ONLY);
-    if (dirPtr != NULL) {
-	Tcl_ListObjAppendElement(NULL, searchedDirs, dirPtr);
-	initScriptPathPtr = CheckForFileInDir(dirPtr, literals[INITLIT]);
-	/*
-	 * As per documentation and historical behavior do not search further
-	 * even on failure in the case of tcl_library being set.
-	 */
-	goto done;
-    }
+    Tcl_Obj *initNamePtr = Tcl_NewStringObj("init.tcl", 8);
+    Tcl_IncrRefCount(initNamePtr);
 
     /*
-     * For remaining paths, failure means we just go on to the next one.
      * Would be more elegant to use a loop over possible paths and check
      * file existence in the body but that means paths that never get used
      * are constructed. Instead we use a macro to reduce code duplication.
@@ -439,7 +425,7 @@ LocatePreInitScript(Tcl_Interp *interp)
 	    /* Tcl_IsEmpty check - bug 465d4546e2 */              \
 	    if (!Tcl_IsEmpty(dirPtr)) {                           \
 		initScriptPathPtr =                               \
-		    CheckForFileInDir(dirPtr, literals[INITLIT]); \
+		    CheckForFileInDir(dirPtr, initNamePtr);       \
 		if (initScriptPathPtr != NULL) {                  \
 		    goto done;                                    \
 		}                                                 \
@@ -447,83 +433,59 @@ LocatePreInitScript(Tcl_Interp *interp)
 	}                                                         \
     } while (0)
 
-    /*
-     * As documented, we do not check subdirectories of TCL_LIBRARY.
-     * This differs from the behavior of tcl 9.0.
-     */
+    TRY_PATH(Tcl_GetVar2Ex(interp, "tcl_library", NULL, TCL_GLOBAL_ONLY));
+    if (dirPtr && !Tcl_IsEmpty(dirPtr)) {
+	/* Do not look further irrespective of whether init.tcl was found. */
+	goto done;
+    }
+
     TRY_PATH(Tcl_GetVar2Ex(interp, "env", "TCL_LIBRARY", TCL_GLOBAL_ONLY));
+    if (dirPtr && !Tcl_IsEmpty(dirPtr)) {
+	/* Do not look further irrespective of whether init.tcl was found. */
+	goto done;
+    }
 
     TRY_PATH(TclZipfs_TclLibrary());
 
     TRY_PATH(Tcl_GetVar2Ex(interp, "tclDefaultLibrary", NULL, TCL_GLOBAL_ONLY));
-    if (dirPtr == NULL) {
-	/*
-	 * tcl::pkgconfig get scriptdir,runtime. Why only if
-	 * tclDefaultLibrary is not set? Historical compatibility
-	 */
+    /* tcl::pkgconfig get scriptdir,runtime */
 #ifdef CFG_RUNTIME_SCRDIR
 	TRY_PATH(Tcl_NewStringObj(CFG_RUNTIME_SCRDIR, -1));
 #endif
-    }
 
     assert(initScriptPathPtr == NULL);
 
-    /*
-     * Now try ancestor directories of the executable. If "parent" is the
-     * parent of the directory containing the exe, paths are searched
-     * in the following order in the original Tcl 9.0 implementation:
-     *   1. parent/lib/tclVERSION
-     *   2. parent/../lib/tclVERSION
-     *   3. parent/library
-     *   4. parent/../library
-     *   5. parent/../tclVERSION/library
-     *   6. parent/../tclPATCHLEVEL/library
-     *   7. parent/../../tclPATCHLEVEL/library
-     * Heck! Why not search the whole damn disk!
-     * Pending further discussion, we only do 1-4, and further always
-     * prioritize parent over grandparent.
-     */
-
-    literals[VERSIONLIT] = Tcl_NewStringObj("tcl" TCL_VERSION, -1);
-    Tcl_IncrRefCount(literals[VERSIONLIT]);
-    literals[LIBLIT] = Tcl_NewStringObj("lib", 3);
-    Tcl_IncrRefCount(literals[LIBLIT]);
-    literals[LIBRARYLIT] = Tcl_NewStringObj("library", 7);
-    Tcl_IncrRefCount(literals[LIBRARYLIT]);
+    /* Try parent/lib/tclVERSION */
 
     /* Reminder - TclGetObjNameOfExecutable return need not be released */
     Tcl_Obj *exePtr = TclGetObjNameOfExecutable();
     if (exePtr == NULL) {
 	goto done;
     }
-    exePtr = TclPathPart(interp, exePtr, TCL_PATH_DIRNAME);
-    if (exePtr == NULL) {
-	goto done;
-    }
-    ancestors[0] = TclPathPart(interp, exePtr, TCL_PATH_DIRNAME);
-    Tcl_DecrRefCount(exePtr);
-    if (ancestors[0] == NULL) {
-	goto done;
-    }
-    ancestors[1] = TclPathPart(interp, ancestors[0], TCL_PATH_DIRNAME);
-    if (ancestors[1] == NULL) {
+    Tcl_Obj *exeDirPtr = TclPathPart(interp, exePtr, TCL_PATH_DIRNAME);
+    if (exeDirPtr == NULL) {
 	goto done;
     }
     /*
-     * Note: ancestors[] are freed at function end. TclPathPart returns
-     * Tcl_Obj with ref count incremented so do not incr ref it here.
+     * pathParts[0] is the parent of the directory containing the
+     * executable (i.e. "parent" in the above comment).
      */
-
-    Tcl_Obj *paths[3];
-    for (size_t i = 0; i < sizeof(ancestors) / sizeof(ancestors[0]); ++i) {
-	paths[0] = ancestors[i];
-	paths[1] = literals[LIBLIT];
-	paths[2] = literals[VERSIONLIT];
-	TRY_PATH(TclJoinPath(3, paths, 0));
-
-	paths[1] = literals[LIBRARYLIT];
-	TRY_PATH(TclJoinPath(2, paths, 0));
+    pathParts[0] = TclPathPart(interp, exeDirPtr, TCL_PATH_DIRNAME);
+    Tcl_DecrRefCount(exeDirPtr);
+    /*
+     * Note: pathParts[] freed at function end. TclPathPart returns
+     * Tcl_Obj with ref count incremented so do not incr ref pathParts[0] here.
+     */
+    if (pathParts[0] == NULL) {
+	goto done;
     }
+
+    pathParts[1] = Tcl_NewStringObj("lib", 3);
+    Tcl_IncrRefCount(pathParts[1]);
+    pathParts[2] = Tcl_NewStringObj("tcl" TCL_VERSION, -1);
+    Tcl_IncrRefCount(pathParts[2]);
+
+    TRY_PATH(TclJoinPath(3, pathParts, 0));
 
 done: /* initScriptPtr != NULL => dirPtr holds dir of init.tcl */
     if (initScriptPathPtr == NULL) {
@@ -536,14 +498,12 @@ done: /* initScriptPtr != NULL => dirPtr holds dir of init.tcl */
     } else {
 	Tcl_SetVar2Ex(interp, "tcl_library", NULL, dirPtr, TCL_GLOBAL_ONLY);
     }
-    for (size_t i = 0; i < sizeof(ancestors) / sizeof(ancestors[0]); ++i) {
-	if (ancestors[i]) {
-	    Tcl_DecrRefCount(ancestors[i]);
-	}
+    if (initNamePtr != NULL) {
+	Tcl_DecrRefCount(initNamePtr);
     }
-    for (size_t i = 0; i < sizeof(literals)/sizeof(literals[0]); i++) {
-	if (literals[i] != NULL) {
-	    Tcl_DecrRefCount(literals[i]);
+    for (size_t i = 0; i < sizeof(pathParts)/sizeof(pathParts[0]); i++) {
+	if (pathParts[i] != NULL) {
+	    Tcl_DecrRefCount(pathParts[i]);
 	}
     }
     /* Note all examined dirPtr values get freed with searchedDirs */
@@ -644,10 +604,6 @@ AddPathsInVarToList(
  *
  * Results:
  *	A standard Tcl result.
- *
- * Side effects:
- *	The command deletes itself as it should not be called more than once
- *	for an interpreter.
  */
 int
 InitAutoPathObjCmd(

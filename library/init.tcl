@@ -23,8 +23,6 @@ package require -exact tcl 9.1a1
 # The environment variable TCLLIBPATH
 #
 # tcl_library, which is the directory containing this init.tcl script.
-# [tclInit] (Tcl_Init()) searches around for the directory containing this
-# init.tcl and defines tcl_library to that location before sourcing it.
 #
 # The parent directory of tcl_library. Adding the parent
 # means that packages in peer directories will be found automatically.
