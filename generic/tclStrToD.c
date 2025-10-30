@@ -557,7 +557,10 @@ TclParseNumber(
 	    status = TCL_ERROR;
 	    goto formaterr;
 	}
-	bytes = TclGetString(objPtr);
+	bytes = TclAttemptGetString(objPtr);
+	if (bytes == NULL) {
+	    return TclCannotAllocateError(interp, objPtr);
+	}
     }
 
     p = bytes;
