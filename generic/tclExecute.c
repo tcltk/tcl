@@ -7100,7 +7100,7 @@ TEBCresume(
      */
 
     {
-	int allocateDict, done, allocdict;
+	int allocateDict, done;
 	Tcl_Size i;
 	Tcl_Obj *dictPtr, *statePtr, *keyPtr, *listPtr, *varNamePtr, *keysPtr;
 	Tcl_Obj *emptyPtr, **keyPtrPtr;
@@ -7643,8 +7643,8 @@ TEBCresume(
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
-	allocdict = Tcl_IsShared(dictPtr);
-	if (allocdict) {
+	allocateDict = Tcl_IsShared(dictPtr);
+	if (allocateDict) {
 	    dictPtr = Tcl_DuplicateObj(dictPtr);
 	}
 	if (length > 0) {
@@ -7681,7 +7681,7 @@ TEBCresume(
 		    dictPtr, TCL_LEAVE_ERR_MSG, varIdx);
 	    CACHE_STACK_INFO();
 	    if (objResultPtr == NULL) {
-		if (allocdict) {
+		if (allocateDict) {
 		    TclDecrRefCount(dictPtr);
 		}
 		TRACE_ERROR(interp);
