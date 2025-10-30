@@ -16,6 +16,8 @@ to the userbase.
  - [Pointer arithmetic with NULL in buildInfoObjCmd()](https://core.tcl-lang.org/tcl/tktview/85fc8b)
  - [TclPushVarName(): pointer overflow](https://core.tcl-lang.org/tcl/tktview/77059c)
  - [Add IWYU export pragma annotations](https://core.tcl-lang.org/tcl/tktview/c7dc59)
+ - [Windows: Install man pages](https://core.tcl-lang.org/tcl/tktview/3161b7)
+ - [Windows: Install pkgconfig](https://core.tcl-lang.org/tcl/tktview/1cf49a)
 
 # Updated bundled packages, libraries, standards, data
  - http 2.10.1
