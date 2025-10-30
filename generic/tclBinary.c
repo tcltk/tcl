@@ -694,15 +694,14 @@ UpdateStringOfByteArray(
     }
 
     if (size == length) {
-	char *dst = Tcl_InitStringRep(objPtr, (char *)src, size);
-
-	TclOOM(dst, size);
+	Tcl_InitStringRep(objPtr, (char *)src, size);
     } else {
 	char *dst = Tcl_InitStringRep(objPtr, NULL, size);
 
-	TclOOM(dst, size);
-	for (i = 0; i < length; i++) {
-	    dst += Tcl_UniCharToUtf(src[i], dst);
+	if (dst) {
+	    for (i = 0; i < length; i++) {
+		dst += Tcl_UniCharToUtf(src[i], dst);
+	    }
 	}
     }
 }
@@ -772,8 +771,12 @@ TclAppendBytesToByteArray(
     if (needed > byteArrayPtr->allocated) {
 	Tcl_Size newCapacity;
 	byteArrayPtr = (ByteArray *)
-		TclReallocElemsEx(byteArrayPtr, needed, 1,
+		TclAttemptReallocElemsEx(byteArrayPtr, needed, 1,
 		offsetof(ByteArray, bytes), &newCapacity);
+	if (!byteArrayPtr) {
+	    Tcl_Panic("Failed to reallocate %" TCL_Z_MODIFIER "d bytes.",
+		    offsetof(ByteArray, bytes));
+	}
 	byteArrayPtr->allocated = newCapacity;
 	SET_BYTEARRAY(irPtr, byteArrayPtr);
     }
