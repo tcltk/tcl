@@ -2369,7 +2369,7 @@ declare 689 {
 
 # TIP 711
 declare 690 {
-    int Tcl_IsEmpty(Tcl_Obj *obj)
+    bool Tcl_IsEmpty(Tcl_Obj *obj)
 }
 
 # TIP 716

@@ -4395,7 +4395,7 @@ ExtendUnicodeRepWithString(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Tcl_IsEmpty(
     Tcl_Obj *objPtr)
 {
