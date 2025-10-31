@@ -168,6 +168,8 @@ static void		TimerSetupProc(void *clientData, int flags);
 static int		TimerAtCmd(void *clientData, Tcl_Interp *interp,
 			    int obj, Tcl_Obj *const objv[]);
 static int		TimerAtDelay(Tcl_Interp *interp, Tcl_Time endTime);
+static int		TimerCancelCmd(void *clientData, Tcl_Interp *interp,
+			    int obj, Tcl_Obj *const objv[]);
 
 /*
  * How to construct the ensembles.
@@ -175,6 +177,7 @@ static int		TimerAtDelay(Tcl_Interp *interp, Tcl_Time endTime);
 
 static const EnsembleImplMap timerMap[] = {
     { "at", TimerAtCmd, TclCompileBasicMin1ArgCmd, NULL, NULL, 0 },
+    {"cancel", TimerCancelCmd, TclCompileBasicMin1ArgCmd, NULL, NULL, 0 },
     { NULL, NULL, NULL, NULL, NULL, 0 }
 };
 
@@ -1042,6 +1045,94 @@ AfterDelay(
 /*
  *----------------------------------------------------------------------
  *
+ * TimerAtDelay --
+ *
+ *	Implements the blocking delay behaviour of [timer at $time]. Tricky
+ *	because it has to take into account any time limit that has been set.
+ *
+ * Results:
+ *	Standard Tcl result code (with error set if an error occurred due to a
+ *	time limit being exceeded or being canceled).
+ *
+ * Side effects:
+ *	May adjust the time limit granularity marker.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TimerAtDelay(
+    Tcl_Interp *interp,
+    Tcl_Time endTime)
+{
+    Interp *iPtr = (Interp *) interp;
+
+    Tcl_Time now;
+    Tcl_WideInt diff;
+
+    Tcl_GetTime(&now);
+
+    do {
+	if (Tcl_AsyncReady()) {
+	    if (Tcl_AsyncInvoke(interp, TCL_OK) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	}
+	if (Tcl_Canceled(interp, TCL_LEAVE_ERR_MSG) == TCL_ERROR) {
+	    return TCL_ERROR;
+	}
+	if (iPtr->limit.timeEvent != NULL
+		&& TCL_TIME_BEFORE(iPtr->limit.time, now)) {
+	    iPtr->limit.granularityTicker = 0;
+	    if (Tcl_LimitCheck(interp) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	}
+	if (iPtr->limit.timeEvent == NULL
+		|| TCL_TIME_BEFORE(endTime, iPtr->limit.time)) {
+	    diff = TCL_TIME_DIFF_MS_CEILING(endTime, now);
+	    if (diff > TCL_TIME_MAXIMUM_SLICE) {
+		diff = TCL_TIME_MAXIMUM_SLICE;
+	    }
+	    if (diff == 0 && TCL_TIME_BEFORE(now, endTime)) {
+		diff = 1;
+	    }
+	    if (diff > 0) {
+		Tcl_Sleep((int) diff);
+		if (diff < SLEEP_OFFLOAD_GETTIMEOFDAY) {
+		    break;
+		}
+	    } else {
+		break;
+	    }
+	} else {
+	    diff = TCL_TIME_DIFF_MS(iPtr->limit.time, now);
+	    if (diff > TCL_TIME_MAXIMUM_SLICE) {
+		diff = TCL_TIME_MAXIMUM_SLICE;
+	    }
+	    if (diff > 0) {
+		Tcl_Sleep((int) diff);
+	    }
+	    if (Tcl_AsyncReady()) {
+		if (Tcl_AsyncInvoke(interp, TCL_OK) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+	    }
+	    if (Tcl_Canceled(interp, TCL_LEAVE_ERR_MSG) == TCL_ERROR) {
+		return TCL_ERROR;
+	    }
+	    if (Tcl_LimitCheck(interp) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	}
+	Tcl_GetTime(&now);
+    } while (TCL_TIME_BEFORE(now, endTime));
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * GetAfterEvent --
  *
  *	This function parses an "after" id such as "after#4" and returns a
@@ -1417,88 +1508,84 @@ TimerAtCmd(
 /*
  *----------------------------------------------------------------------
  *
- * TimerAtDelay --
+ * TimerCancelCmd --
  *
- *	Implements the blocking delay behaviour of [timer at $time]. Tricky
- *	because it has to take into account any time limit that has been set.
+ *	This function is invoked to process the "timer cancel" Tcl command. 
+ *	See the user documentation for details on what it does.
  *
  * Results:
- *	Standard Tcl result code (with error set if an error occurred due to a
- *	time limit being exceeded or being canceled).
+ *	A standard Tcl result.
  *
  * Side effects:
- *	May adjust the time limit granularity marker.
+ *	See the user documentation.
  *
  *----------------------------------------------------------------------
  */
 
-static int
-TimerAtDelay(
-    Tcl_Interp *interp,
-    Tcl_Time endTime)
+int
+TimerCancelCmd(
+    TCL_UNUSED(void *),		/* Client data. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Interp *iPtr = (Interp *) interp;
+    Tcl_Obj *commandPtr;
+    const char *command, *tempCommand;
+    Tcl_Size tempLength;
 
-    Tcl_Time now;
-    Tcl_WideInt diff;
+    Tcl_WideInt ms = 0;		/* Number of milliseconds to wait */
+    AfterInfo *afterPtr;
+    AfterAssocData *assocPtr;
+    Tcl_Size length;
+    int index = -1;
+    ThreadSpecificData *tsdPtr = InitTimer();
 
-    Tcl_GetTime(&now);
+    /*
+     * Create the "after" information associated for this interpreter, if it
+     * doesn't already exist.
+     */
 
-    do {
-	if (Tcl_AsyncReady()) {
-	    if (Tcl_AsyncInvoke(interp, TCL_OK) != TCL_OK) {
-		return TCL_ERROR;
-	    }
+    assocPtr = (AfterAssocData *)Tcl_GetAssocData(interp, ASSOC_KEY, NULL);
+    if (assocPtr == NULL) {
+	assocPtr = (AfterAssocData *)Tcl_Alloc(sizeof(AfterAssocData));
+	assocPtr->interp = interp;
+	assocPtr->firstAfterPtr = NULL;
+	Tcl_SetAssocData(interp, ASSOC_KEY, AfterCleanupProc, assocPtr);
+    }
+
+    if (objc < 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "id|command");
+	return TCL_ERROR;
+    }
+    if (objc == 2) {
+	commandPtr = objv[1];
+    } else {
+	commandPtr = Tcl_ConcatObj(objc-1, objv+1);
+    }
+    command = TclGetStringFromObj(commandPtr, &length);
+    for (afterPtr = assocPtr->firstAfterPtr;  afterPtr != NULL;
+	    afterPtr = afterPtr->nextPtr) {
+	tempCommand = TclGetStringFromObj(afterPtr->commandPtr,
+		&tempLength);
+	if ((length == tempLength)
+		&& !memcmp(command, tempCommand, length)) {
+	    break;
 	}
-	if (Tcl_Canceled(interp, TCL_LEAVE_ERR_MSG) == TCL_ERROR) {
-	    return TCL_ERROR;
-	}
-	if (iPtr->limit.timeEvent != NULL
-		&& TCL_TIME_BEFORE(iPtr->limit.time, now)) {
-	    iPtr->limit.granularityTicker = 0;
-	    if (Tcl_LimitCheck(interp) != TCL_OK) {
-		return TCL_ERROR;
-	    }
-	}
-	if (iPtr->limit.timeEvent == NULL
-		|| TCL_TIME_BEFORE(endTime, iPtr->limit.time)) {
-	    diff = TCL_TIME_DIFF_MS_CEILING(endTime, now);
-	    if (diff > TCL_TIME_MAXIMUM_SLICE) {
-		diff = TCL_TIME_MAXIMUM_SLICE;
-	    }
-	    if (diff == 0 && TCL_TIME_BEFORE(now, endTime)) {
-		diff = 1;
-	    }
-	    if (diff > 0) {
-		Tcl_Sleep((int) diff);
-		if (diff < SLEEP_OFFLOAD_GETTIMEOFDAY) {
-		    break;
-		}
-	    } else {
-		break;
-	    }
+    }
+    if (afterPtr == NULL) {
+	afterPtr = GetAfterEvent(assocPtr, commandPtr);
+    }
+    if (objc != 2) {
+	Tcl_DecrRefCount(commandPtr);
+    }
+    if (afterPtr != NULL) {
+	if (afterPtr->token != NULL) {
+	    Tcl_DeleteTimerHandler(afterPtr->token);
 	} else {
-	    diff = TCL_TIME_DIFF_MS(iPtr->limit.time, now);
-	    if (diff > TCL_TIME_MAXIMUM_SLICE) {
-		diff = TCL_TIME_MAXIMUM_SLICE;
-	    }
-	    if (diff > 0) {
-		Tcl_Sleep((int) diff);
-	    }
-	    if (Tcl_AsyncReady()) {
-		if (Tcl_AsyncInvoke(interp, TCL_OK) != TCL_OK) {
-		    return TCL_ERROR;
-		}
-	    }
-	    if (Tcl_Canceled(interp, TCL_LEAVE_ERR_MSG) == TCL_ERROR) {
-		return TCL_ERROR;
-	    }
-	    if (Tcl_LimitCheck(interp) != TCL_OK) {
-		return TCL_ERROR;
-	    }
+	    Tcl_CancelIdleCall(AfterProc, afterPtr);
 	}
-	Tcl_GetTime(&now);
-    } while (TCL_TIME_BEFORE(now, endTime));
+	FreeAfterPtr(afterPtr);
+    }
     return TCL_OK;
 }
 
