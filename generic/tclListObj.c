@@ -2875,10 +2875,11 @@ TclLsetList(
     /*
      * Determine whether the index arg designates a list or a single index.
      * We have to be careful about the order of the checks to avoid repeated
-     * shimmering; see TIP #22 and #23 for details.
+     * shimmering; see TIP #22 and #23 for details. Don't allow "" as single
+     * index here, since it cannot be distinguished from an empty list.
      */
 
-    if (!TclHasInternalRep(indexArgObj, &tclListType)
+    if (!TclHasInternalRep(indexArgObj, &tclListType) && !Tcl_IsEmpty(indexArgObj)
 	    && TclGetIntForIndexM(NULL, indexArgObj, TCL_SIZE_MAX - 1, &index)
 		== TCL_OK) {
 	if (TclObjTypeHasProc(listObj, setElementProc)) {
