@@ -167,6 +167,7 @@ static void		TimerCheckProc(void *clientData, int flags);
 static void		TimerSetupProc(void *clientData, int flags);
 static int		TimerAtCmd(void *clientData, Tcl_Interp *interp,
 			    int obj, Tcl_Obj *const objv[]);
+static int		TimerAtDelay(Tcl_Interp *interp, Tcl_Time endTime);
 
 /*
  * How to construct the ensembles.
@@ -1003,8 +1004,7 @@ Tcl_AfterObjCmd(
  *
  * AfterDelay --
  *
- *	Implements the blocking delay behaviour of [after $time]. Tricky
- *	because it has to take into account any time limit that has been set.
+ *	Implements the blocking delay behaviour of [after $time].
  *
  * Results:
  *	Standard Tcl result code (with error set if an error occurred due to a
@@ -1021,10 +1021,12 @@ AfterDelay(
     Tcl_Interp *interp,
     Tcl_WideInt ms)
 {
-    Interp *iPtr = (Interp *) interp;
-
     Tcl_Time endTime, now;
-    Tcl_WideInt diff;
+
+    /*
+     * Foreward to [timer at] implementation by calculating the end time
+     * Tcl_Time value and pass it to TimerAtDelay.
+     */
 
     Tcl_GetTime(&now);
     endTime = now;
@@ -1034,63 +1036,7 @@ AfterDelay(
 	endTime.sec++;
 	endTime.usec -= 1000000;
     }
-
-    do {
-	if (Tcl_AsyncReady()) {
-	    if (Tcl_AsyncInvoke(interp, TCL_OK) != TCL_OK) {
-		return TCL_ERROR;
-	    }
-	}
-	if (Tcl_Canceled(interp, TCL_LEAVE_ERR_MSG) == TCL_ERROR) {
-	    return TCL_ERROR;
-	}
-	if (iPtr->limit.timeEvent != NULL
-		&& TCL_TIME_BEFORE(iPtr->limit.time, now)) {
-	    iPtr->limit.granularityTicker = 0;
-	    if (Tcl_LimitCheck(interp) != TCL_OK) {
-		return TCL_ERROR;
-	    }
-	}
-	if (iPtr->limit.timeEvent == NULL
-		|| TCL_TIME_BEFORE(endTime, iPtr->limit.time)) {
-	    diff = TCL_TIME_DIFF_MS_CEILING(endTime, now);
-	    if (diff > TCL_TIME_MAXIMUM_SLICE) {
-		diff = TCL_TIME_MAXIMUM_SLICE;
-	    }
-	    if (diff == 0 && TCL_TIME_BEFORE(now, endTime)) {
-		diff = 1;
-	    }
-	    if (diff > 0) {
-		Tcl_Sleep((int) diff);
-		if (diff < SLEEP_OFFLOAD_GETTIMEOFDAY) {
-		    break;
-		}
-	    } else {
-		break;
-	    }
-	} else {
-	    diff = TCL_TIME_DIFF_MS(iPtr->limit.time, now);
-	    if (diff > TCL_TIME_MAXIMUM_SLICE) {
-		diff = TCL_TIME_MAXIMUM_SLICE;
-	    }
-	    if (diff > 0) {
-		Tcl_Sleep((int) diff);
-	    }
-	    if (Tcl_AsyncReady()) {
-		if (Tcl_AsyncInvoke(interp, TCL_OK) != TCL_OK) {
-		    return TCL_ERROR;
-		}
-	    }
-	    if (Tcl_Canceled(interp, TCL_LEAVE_ERR_MSG) == TCL_ERROR) {
-		return TCL_ERROR;
-	    }
-	    if (Tcl_LimitCheck(interp) != TCL_OK) {
-		return TCL_ERROR;
-	    }
-	}
-	Tcl_GetTime(&now);
-    } while (TCL_TIME_BEFORE(now, endTime));
-    return TCL_OK;
+    return TimerAtDelay(interp, endTime);
 }
 
 /*
@@ -1338,8 +1284,6 @@ TimerAtCmd(
 {
     Tcl_WideInt seconds = 0;		/* Time point in seconds to wait */
     Tcl_WideInt microSeconds = 0;	/* Time point in milliSeconds to wait */
-    Tcl_WideInt milliSeconds;
-    Tcl_Time now;
     Tcl_Time wakeup;
     AfterInfo *afterPtr;
     AfterAssocData *assocPtr;
@@ -1364,15 +1308,9 @@ TimerAtCmd(
     }
 
     /*
-     * Get the time point in seconds to wait and check for negative value
+     * Get the time point in seconds to wait
      */
     if (TclGetWideIntFromObj(interp, objv[1], &seconds) != TCL_OK) {
-	return TCL_ERROR;
-    }
-    if ( seconds < 0 ) {
-	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("seconds may not be negative",-1));
-	Tcl_SetErrorCode(interp, "TCL", "TIMER", "ARGS", (char *)NULL);
 	return TCL_ERROR;
     }
 
@@ -1385,16 +1323,29 @@ TimerAtCmd(
 	}
 
 	/*
-	 * Be sure to have only value 0 ... 999. Any overflow is added to seconds.
+	 * Be sure to have only value 0 ... 999999. Any overflow is added to
+	 * seconds.
 	 */
 	
 	if ( microSeconds < 0 ) {
-	    Tcl_SetObjResult(interp,
-		    Tcl_NewStringObj("microSeconds may not be negative",-1));
-	    Tcl_SetErrorCode(interp, "TCL", "TIMER", "ARGS", (char *)NULL);
-	    return TCL_ERROR;
-	}
-	if ( microSeconds >= 1000000 ) {
+
+	    /*
+	     * Negative microseconds value.
+	     * Operation "/" and "%" round direction 0
+	     * Example: ms= -1_000_002 (-1s -2us)
+	     * seconds -= 2
+	     * ms = 999_998
+	     * -1_000_002 % 1_000_000 = -2
+	     * -1_000_002 / 1_000_000 = -1
+	     */
+
+	    seconds += (microSeconds / 1000000);
+	    microSeconds %= 1000000;
+	    if (microSeconds < 0) {
+		microSeconds += 1000000;
+		seconds -= 1;
+	    }
+	} else if ( microSeconds >= 1000000 ) {
 	    seconds += (microSeconds / 1000000);
 	    microSeconds %= 1000000;
 	}
@@ -1407,6 +1358,21 @@ TimerAtCmd(
 	microSeconds = 0;
     }
 
+    /*
+     * Adjust negative seconds to 0
+     */
+
+    if (seconds < 0) {
+	seconds = 0;
+	microSeconds=0;
+    }
+    
+    /*
+     * Store end time in time structure to call APIs
+     */
+
+    wakeup.sec=seconds;
+    wakeup.usec=microSeconds;
 
     if (objc < 4) {
 	/*
@@ -1417,19 +1383,7 @@ TimerAtCmd(
 	* Get the time delay by substracting the current time point.
 	*/
 
-	Tcl_GetTime(&now);
-	seconds -= (Tcl_WideInt) now.sec;
-	microSeconds -= now.usec;
-	if (microSeconds < 0) {
-	    microSeconds += 1000000;
-	    seconds --;
-	}
-	if (seconds < 0) {
-	    milliSeconds=0;
-	} else {
-	    milliSeconds = seconds * 1000 + microSeconds / 1000;
-	}
-	return AfterDelay(interp, milliSeconds);
+	return TimerAtDelay(interp, wakeup);
     }
     afterPtr = (AfterInfo *)Tcl_Alloc(sizeof(AfterInfo));
     afterPtr->assocPtr = assocPtr;
@@ -1452,14 +1406,99 @@ TimerAtCmd(
     
     afterPtr->id = tsdPtr->afterId;
     tsdPtr->afterId += 1;
-    Tcl_GetTime(&wakeup);
-    wakeup.sec=seconds;
-    wakeup.usec=microSeconds;
     afterPtr->token = TclCreateAbsoluteTimerHandler(&wakeup,
 	    AfterProc, afterPtr);
     afterPtr->nextPtr = assocPtr->firstAfterPtr;
     assocPtr->firstAfterPtr = afterPtr;
     Tcl_SetObjResult(interp, Tcl_ObjPrintf("after#%d", afterPtr->id));
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TimerAtDelay --
+ *
+ *	Implements the blocking delay behaviour of [timer at $time]. Tricky
+ *	because it has to take into account any time limit that has been set.
+ *
+ * Results:
+ *	Standard Tcl result code (with error set if an error occurred due to a
+ *	time limit being exceeded or being canceled).
+ *
+ * Side effects:
+ *	May adjust the time limit granularity marker.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TimerAtDelay(
+    Tcl_Interp *interp,
+    Tcl_Time endTime)
+{
+    Interp *iPtr = (Interp *) interp;
+
+    Tcl_Time now;
+    Tcl_WideInt diff;
+
+    Tcl_GetTime(&now);
+
+    do {
+	if (Tcl_AsyncReady()) {
+	    if (Tcl_AsyncInvoke(interp, TCL_OK) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	}
+	if (Tcl_Canceled(interp, TCL_LEAVE_ERR_MSG) == TCL_ERROR) {
+	    return TCL_ERROR;
+	}
+	if (iPtr->limit.timeEvent != NULL
+		&& TCL_TIME_BEFORE(iPtr->limit.time, now)) {
+	    iPtr->limit.granularityTicker = 0;
+	    if (Tcl_LimitCheck(interp) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	}
+	if (iPtr->limit.timeEvent == NULL
+		|| TCL_TIME_BEFORE(endTime, iPtr->limit.time)) {
+	    diff = TCL_TIME_DIFF_MS_CEILING(endTime, now);
+	    if (diff > TCL_TIME_MAXIMUM_SLICE) {
+		diff = TCL_TIME_MAXIMUM_SLICE;
+	    }
+	    if (diff == 0 && TCL_TIME_BEFORE(now, endTime)) {
+		diff = 1;
+	    }
+	    if (diff > 0) {
+		Tcl_Sleep((int) diff);
+		if (diff < SLEEP_OFFLOAD_GETTIMEOFDAY) {
+		    break;
+		}
+	    } else {
+		break;
+	    }
+	} else {
+	    diff = TCL_TIME_DIFF_MS(iPtr->limit.time, now);
+	    if (diff > TCL_TIME_MAXIMUM_SLICE) {
+		diff = TCL_TIME_MAXIMUM_SLICE;
+	    }
+	    if (diff > 0) {
+		Tcl_Sleep((int) diff);
+	    }
+	    if (Tcl_AsyncReady()) {
+		if (Tcl_AsyncInvoke(interp, TCL_OK) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+	    }
+	    if (Tcl_Canceled(interp, TCL_LEAVE_ERR_MSG) == TCL_ERROR) {
+		return TCL_ERROR;
+	    }
+	    if (Tcl_LimitCheck(interp) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	}
+	Tcl_GetTime(&now);
+    } while (TCL_TIME_BEFORE(now, endTime));
     return TCL_OK;
 }
 
