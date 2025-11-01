@@ -26,8 +26,6 @@ typedef struct {
     CRITICAL_SECTION cs;	/* Mutex guarding this structure. */
     int initialized;		/* Flag == 1 if this structure is
 				 * initialized. */
-    int perfCounterAvailable;	/* Flag == 1 if the hardware has a performance
-				 * counter. */
     DWORD calibrationInterv;	/* Calibration interval in seconds (start 1
 				 * sec) */
     HANDLE calibrationThread;	/* Handle to the thread that keeps the virtual
@@ -68,7 +66,6 @@ typedef struct {
 
 static TimeInfo timeInfo = {
     { NULL, 0, 0, NULL, NULL, 0 },
-    0,
     0,
     1,
     (HANDLE) NULL,
@@ -258,28 +255,13 @@ TclpGetWideClicks(void)
 	 * only be queried upon application initialization.
 	 */
 
-	if (QueryPerformanceFrequency(&perfCounterFreq)) {
-	    wideClick.perfCounter = 1;
-	    wideClick.microsecsScale = 1000000.0 / (double)perfCounterFreq.QuadPart;
-	} else {
-	    /* fallback using microseconds */
-	    wideClick.perfCounter = 0;
-	    wideClick.microsecsScale = 1;
-	}
-
+	QueryPerformanceFrequency(&perfCounterFreq);
+	wideClick.perfCounter = 1;
+	wideClick.microsecsScale = 1000000.0 / (double)perfCounterFreq.QuadPart;
 	wideClick.initialized = 1;
     }
-    if (wideClick.perfCounter) {
-	if (QueryPerformanceCounter(&curCounter)) {
-	    return (long long)curCounter.QuadPart;
-	}
-	/* fallback using microseconds */
-	wideClick.perfCounter = 0;
-	wideClick.microsecsScale = 1;
-	return TclpGetMicroseconds();
-    } else {
-	return TclpGetMicroseconds();
-    }
+    QueryPerformanceCounter(&curCounter);
+    return (long long)curCounter.QuadPart;
 }
 
 /*
@@ -420,96 +402,6 @@ NativeScaleTime(
 /*
  *----------------------------------------------------------------------
  *
- * IsPerfCounterAvailable --
- *
- *	Tests whether the performance counter is available, which is a gnarly
- *	problem on 32-bit systems. Also retrieves the nominal frequency of the
- *	performance counter.
- *
- * Results:
- *	1 if the counter is available, 0 if not.
- *
- * Side effects:
- *	Updates fields of the timeInfo global. Make sure you hold the lock
- *	before calling this.
- *
- *----------------------------------------------------------------------
- */
-
-static inline int
-IsPerfCounterAvailable(void)
-{
-    timeInfo.perfCounterAvailable =
-	    QueryPerformanceFrequency(&timeInfo.nominalFreq);
-
-    /*
-     * Some hardware abstraction layers use the CPU clock in place of the
-     * real-time clock as a performance counter reference. This results in:
-     *    - inconsistent results among the processors on multi-processor
-     *      systems.
-     *    - unpredictable changes in performance counter frequency on
-     *      "gearshift" processors such as Transmeta and SpeedStep.
-     *
-     * There seems to be no way to test whether the performance counter is
-     * reliable, but a useful heuristic is that if its frequency is 1.193182
-     * MHz or 3.579545 MHz, it's derived from a colorburst crystal and is
-     * therefore the RTC rather than the TSC.
-     *
-     * A sloppier but serviceable heuristic is that the RTC crystal is
-     * normally less than 15 MHz while the TSC crystal is virtually assured to
-     * be greater than 100 MHz. Since Win98SE appears to fiddle with the
-     * definition of the perf counter frequency (perhaps in an attempt to
-     * calibrate the clock?), we use the latter rule rather than an exact
-     * match.
-     *
-     * We also assume (perhaps questionably) that the vendors have gotten
-     * their act together on Win64, so bypass all this rubbish on that
-     * platform.
-     */
-
-#if !defined(_WIN64)
-    if (timeInfo.perfCounterAvailable &&
-	    /*
-	     * The following lines would do an exact match on crystal
-	     * frequency:
-	     *
-	     *	timeInfo.nominalFreq.QuadPart != (long long) 1193182 &&
-	     *	timeInfo.nominalFreq.QuadPart != (long long) 3579545 &&
-	     */
-	    timeInfo.nominalFreq.QuadPart > (long long) 15000000) {
-	/*
-	 * As an exception, if every logical processor on the system is on the
-	 * same chip, we use the performance counter anyway, presuming that
-	 * everyone's TSC is locked to the same oscillator.
-	 */
-
-	SYSTEM_INFO systemInfo;
-	int regs[4];
-
-	GetSystemInfo(&systemInfo);
-	if (TclWinCPUID(0, regs) == TCL_OK
-		&& regs[1] == 0x756E6547	/* "Genu" */
-		&& regs[3] == 0x49656E69	/* "ineI" */
-		&& regs[2] == 0x6C65746E	/* "ntel" */
-		&& TclWinCPUID(1, regs) == TCL_OK
-		&& ((regs[0]&0x00000F00) == 0x00000F00 /* Pentium 4 */
-		|| ((regs[0] & 0x00F00000)	/* Extended family */
-		&& (regs[3] & 0x10000000)))	/* Hyperthread */
-		&& (((regs[1]&0x00FF0000) >> 16)/* CPU count */
-			== (int)systemInfo.dwNumberOfProcessors)) {
-	    timeInfo.perfCounterAvailable = TRUE;
-	} else {
-	    timeInfo.perfCounterAvailable = FALSE;
-	}
-    }
-#endif /* above code is Win32 only */
-
-    return timeInfo.perfCounterAvailable;
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * NativeGetMicroseconds --
  *
  *	Gets the current system time in microseconds since the beginning
@@ -558,37 +450,34 @@ NativeGetMicroseconds(void)
 	    timeInfo.posixEpoch.HighPart = 0x019DB1DE;
 
 	    /*
-	     * If the performance counter is available, start a thread to
-	     * calibrate it.
+	     * Start a thread to calibrate the performance counter.
 	     */
 
-	    if (IsPerfCounterAvailable()) {
-		DWORD id;
+	    DWORD id;
 
-		InitializeCriticalSection(&timeInfo.cs);
-		timeInfo.readyEvent = CreateEventW(NULL, FALSE, FALSE, NULL);
-		timeInfo.exitEvent = CreateEventW(NULL, FALSE, FALSE, NULL);
-		timeInfo.calibrationThread = CreateThread(NULL, 256,
-			CalibrationThread, (LPVOID) NULL, 0, &id);
-		SetThreadPriority(timeInfo.calibrationThread,
-			THREAD_PRIORITY_HIGHEST);
+	    InitializeCriticalSection(&timeInfo.cs);
+	    timeInfo.readyEvent = CreateEventW(NULL, FALSE, FALSE, NULL);
+	    timeInfo.exitEvent = CreateEventW(NULL, FALSE, FALSE, NULL);
+	    timeInfo.calibrationThread = CreateThread(NULL, 256,
+		    CalibrationThread, (LPVOID) NULL, 0, &id);
+	    SetThreadPriority(timeInfo.calibrationThread,
+		    THREAD_PRIORITY_HIGHEST);
 
-		/*
-		 * Wait for the thread just launched to start running, and
-		 * create an exit handler that kills it so that it doesn't
-		 * outlive unloading tclXX.dll
-		 */
+	    /*
+	     * Wait for the thread just launched to start running, and
+	     * create an exit handler that kills it so that it doesn't
+	     * outlive unloading tclXX.dll
+	     */
 
-		WaitForSingleObject(timeInfo.readyEvent, INFINITE);
-		CloseHandle(timeInfo.readyEvent);
-		Tcl_CreateExitHandler(StopCalibration, NULL);
-	    }
+	    WaitForSingleObject(timeInfo.readyEvent, INFINITE);
+	    CloseHandle(timeInfo.readyEvent);
+	    Tcl_CreateExitHandler(StopCalibration, NULL);
 	    timeInfo.initialized = TRUE;
 	}
 	TclpInitUnlock();
     }
 
-    if (timeInfo.perfCounterAvailable && timeInfo.curCounterFreq.QuadPart!=0) {
+    if (timeInfo.curCounterFreq.QuadPart!=0) {
 	/*
 	 * Query the performance counter and use it to calculate the current
 	 * time.
@@ -801,7 +690,7 @@ CalibrationThread(
      * Run the calibration once a second.
      */
 
-    while (timeInfo.perfCounterAvailable) {
+    while (1) {
 	/*
 	 * If the exitEvent is set, break out of the loop.
 	 */
@@ -884,13 +773,11 @@ UpdateTimeEachSecond(void)
      * We divide by timeInfo.curCounterFreq.QuadPart in several places. That
      * value should always be positive on a correctly functioning system. But
      * it is good to be defensive about such matters. So if something goes
-     * wrong and the value does goes to zero, we clear the
-     * timeInfo.perfCounterAvailable in order to cause the calibration thread
-     * to shut itself down, then return without additional processing.
+     * wrong and the value does goes to zero, we panic here for instance.
      */
 
     if (timeInfo.curCounterFreq.QuadPart == 0){
-	timeInfo.perfCounterAvailable = 0;
+	Tcl_Panic("Quadratic part of current counter is 0");
 	return;
     }
 
