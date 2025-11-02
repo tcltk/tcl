@@ -448,6 +448,7 @@ NativeGetMicroseconds(void)
 	if (!timeInfo.initialized) {
 	    timeInfo.posixEpoch.LowPart = 0xD53E8000;
 	    timeInfo.posixEpoch.HighPart = 0x019DB1DE;
+	    QueryPerformanceFrequency(&timeInfo.nominalFreq);
 
 	    /*
 	     * Start a thread to calibrate the performance counter.
