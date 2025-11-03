@@ -772,10 +772,16 @@ UpdateTimeEachSecond(void)
 
     /*
      * We divide by timeInfo.curCounterFreq.QuadPart in several places. That
-     * value should always be positive on a correctly functioning system. 
+     * value should always be positive on a correctly functioning system. But
+     * it is good to be defensive about such matters. So if something goes
+     * wrong and the value does goes to zero, we panic here for instance.
      */
 
-    assert(timeInfo.curCounterFreq.QuadPart != 0);
+    if (timeInfo.curCounterFreq.QuadPart == 0){
+	Tcl_Panic("Quadratic part of current counter is 0");
+	return;
+    }
+
 
     /*
      * Several things may have gone wrong here that have to be checked for.
