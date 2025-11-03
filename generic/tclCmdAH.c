@@ -38,7 +38,12 @@ struct ForeachState {
     Tcl_Obj **aCopyList;	/* Copies of value list arguments. */
     Tcl_Obj *resultList;	/* List of result values from the loop body,
 				 * or NULL if we're not collecting them
-				 * ([lmap] vs [foreach]). */
+				 * ([lmap]/[lfilter] vs [foreach]). */
+    Tcl_Obj *primeValueObj;	/* If not NULL, the value to be appended to
+				 * the resultList if the expression of
+				 * [lfilter] is true. */
+    Tcl_Obj *exprResult;	/* The object that the result of the expression
+				 * will be written to in [lfilter] mode. */
 };
 
 /*
@@ -2774,6 +2779,26 @@ TclNRLmapCmd(
     return EachloopCmd(interp, TCL_EACH_COLLECT, objc, objv);
 }
 
+int
+Tcl_LfilterObjCmd(
+    void *clientData,
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    return Tcl_NRCallObjProc(interp, TclNRLfilterCmd, clientData, objc, objv);
+}
+
+int
+TclNRLfilterCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    return EachloopCmd(interp, TCL_EACH_FILTER, objc, objv);
+}
+
 static int
 EachloopCmd(
     Tcl_Interp *interp,		/* Our context for variables and script
@@ -2789,8 +2814,13 @@ EachloopCmd(
     Tcl_Size j;
 
     if (objc < 4 || (objc%2 != 0)) {
-	Tcl_WrongNumArgs(interp, 1, objv,
-		"varList list ?varList list ...? command");
+	if (collect == TCL_EACH_FILTER) {
+	    Tcl_WrongNumArgs(interp, 1, objv,
+		    "varList list ?varList list ...? expression");
+	} else {
+	    Tcl_WrongNumArgs(interp, 1, objv,
+		    "varList list ?varList list ...? command");
+	}
 	return TCL_ERROR;
     }
 
@@ -2822,15 +2852,21 @@ EachloopCmd(
     statePtr->index = (Tcl_Size *) (statePtr->aCopyList + numLists);
     statePtr->varcList = statePtr->index + numLists;
     statePtr->argcList = statePtr->varcList + numLists;
+    statePtr->primeValueObj = NULL;
+    statePtr->exprResult = NULL;
 
     statePtr->numLists = numLists;
     statePtr->bodyPtr = objv[objc - 1];
     statePtr->bodyIdx = objc - 1;
 
-    if (collect == TCL_EACH_COLLECT) {
+    if (collect != TCL_EACH_KEEP_NONE) {
 	statePtr->resultList = Tcl_NewListObj(0, NULL);
     } else {
 	statePtr->resultList = NULL;
+    }
+    if (collect == TCL_EACH_FILTER) {
+	TclNewObj(statePtr->exprResult);
+	Tcl_IncrRefCount(statePtr->exprResult);
     }
 
     /*
@@ -2853,11 +2889,13 @@ EachloopCmd(
 	}
 	if (statePtr->varcList[i] < 1) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"%s varlist is empty",
-		(statePtr->resultList != NULL ? "lmap" : "foreach")));
+		    "%s varlist is empty",
+		    (statePtr->exprResult ? "lfilter" :
+			statePtr->resultList ? "lmap" : "foreach")));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION",
-		(statePtr->resultList != NULL ? "LMAP" : "FOREACH"),
-		"NEEDVARS", (char *)NULL);
+		    (statePtr->exprResult ? "LFILTER" :
+			statePtr->resultList ? "LMAP" : "FOREACH"),
+		    "NEEDVARS", (char *)NULL);
 	    result = TCL_ERROR;
 	    goto done;
 	}
@@ -2909,8 +2947,12 @@ EachloopCmd(
 	}
 
 	TclNRAddCallback(interp, ForeachLoopStep, statePtr, NULL, NULL, NULL);
-	return TclNREvalObjEx(interp, objv[objc-1], 0,
-		((Interp *) interp)->cmdFramePtr, objc-1);
+	if (statePtr->primeValueObj) {
+	    return Tcl_NRExprObj(interp, objv[objc-1], statePtr->exprResult);
+	} else {
+	    return TclNREvalObjEx(interp, objv[objc-1], 0,
+		    ((Interp *) interp)->cmdFramePtr, objc-1);
+	}
     }
 
     /*
@@ -2946,9 +2988,24 @@ ForeachLoopStep(
 	result = TCL_OK;
 	break;
     case TCL_OK:
-	if (statePtr->resultList != NULL) {
+	if (statePtr->primeValueObj) {
+	    int filterAccepts;
+	    result = Tcl_GetBooleanFromObj(interp, statePtr->exprResult,
+		    &filterAccepts);
+	    if (result != TCL_OK) {
+		goto done;
+	    }
+	    if (!filterAccepts) {
+		break;
+	    }
 	    result = Tcl_ListObjAppendElement(
-		interp, statePtr->resultList, Tcl_GetObjResult(interp));
+		    interp, statePtr->resultList, statePtr->primeValueObj);
+	    if (result != TCL_OK) {
+		goto done;
+	    }
+	} else if (statePtr->resultList != NULL) {
+	    result = Tcl_ListObjAppendElement(
+		    interp, statePtr->resultList, Tcl_GetObjResult(interp));
 	    if (result != TCL_OK) {
 		/* e.g. memory alloc failure on big data tests */
 		goto done;
@@ -2961,7 +3018,8 @@ ForeachLoopStep(
     case TCL_ERROR:
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 		"\n    (\"%s\" body line %d)",
-		(statePtr->resultList != NULL ? "lmap" : "foreach"),
+		(statePtr->exprResult ? "lfilter" :
+		    statePtr->resultList ? "lmap" : "foreach"),
 		Tcl_GetErrorLine(interp)));
 	TCL_FALLTHROUGH();
     default:
@@ -2980,8 +3038,12 @@ ForeachLoopStep(
 	}
 
 	TclNRAddCallback(interp, ForeachLoopStep, statePtr, NULL, NULL, NULL);
-	return TclNREvalObjEx(interp, statePtr->bodyPtr, 0,
-		((Interp *) interp)->cmdFramePtr, statePtr->bodyIdx);
+	if (statePtr->primeValueObj) {
+	    return Tcl_NRExprObj(interp, statePtr->bodyPtr, statePtr->exprResult);
+	} else {
+	    return TclNREvalObjEx(interp, statePtr->bodyPtr, 0,
+		    ((Interp *) interp)->cmdFramePtr, statePtr->bodyIdx);
+	}
     }
 
     /*
@@ -3022,10 +3084,12 @@ ForeachAssignments(
 	    k = statePtr->index[i]++;
 	    if (k < statePtr->argcList[i]) {
 		if (isAbstractList) {
-		    if (TclObjTypeIndex(interp, statePtr->aCopyList[i], k, &valuePtr) != TCL_OK) {
+		    if (TclObjTypeIndex(interp, statePtr->aCopyList[i], k,
+			    &valuePtr) != TCL_OK) {
 			Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 				"\n    (setting %s loop variable \"%s\")",
-				(statePtr->resultList != NULL ? "lmap" : "foreach"),
+				(statePtr->exprResult ? "lfilter" :
+				    statePtr->resultList ? "lmap" : "foreach"),
 				TclGetString(statePtr->varvList[i][v])));
 			return TCL_ERROR;
 		    }
@@ -3036,13 +3100,23 @@ ForeachAssignments(
 		TclNewObj(valuePtr);	/* Empty string */
 	    }
 
+	    if (statePtr->exprResult && i==0 && v==0) {
+		if (statePtr->primeValueObj) {
+		    Tcl_DecrRefCount(statePtr->primeValueObj);
+		}
+		statePtr->primeValueObj = valuePtr;
+		if (valuePtr) {
+		    Tcl_IncrRefCount(valuePtr);
+		}
+	    }
 	    varValuePtr = Tcl_ObjSetVar2(interp, statePtr->varvList[i][v],
 		    NULL, valuePtr, TCL_LEAVE_ERR_MSG);
 
 	    if (varValuePtr == NULL) {
 		Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 			"\n    (setting %s loop variable \"%s\")",
-			(statePtr->resultList != NULL ? "lmap" : "foreach"),
+			(statePtr->exprResult ? "lfilter" :
+			    statePtr->resultList ? "lmap" : "foreach"),
 			TclGetString(statePtr->varvList[i][v])));
 		return TCL_ERROR;
 	    }
@@ -3071,7 +3145,13 @@ ForeachCleanup(
 	    TclDecrRefCount(statePtr->aCopyList[i]);
 	}
     }
-    if (statePtr->resultList != NULL) {
+    if (statePtr->primeValueObj) {
+	TclDecrRefCount(statePtr->primeValueObj);
+    }
+    if (statePtr->exprResult) {
+	TclDecrRefCount(statePtr->exprResult);
+    }
+    if (statePtr->resultList) {
 	TclDecrRefCount(statePtr->resultList);
     }
     TclStackFree(interp, statePtr);

@@ -335,6 +335,7 @@ static const CmdInfo builtInCmds[] = {
     {"lappend",		Tcl_LappendObjCmd,	TclCompileLappendCmd,	NULL,	CMD_IS_SAFE|CMD_COMPILES_EXPANDED},
     {"lassign",		Tcl_LassignObjCmd,	TclCompileLassignCmd,	NULL,	CMD_IS_SAFE},
     {"ledit",		Tcl_LeditObjCmd,	TclCompileLeditCmd,	NULL,	CMD_IS_SAFE},
+    {"lfilter",		Tcl_LfilterObjCmd,	TclCompileLfilterCmd,	TclNRLfilterCmd,	CMD_IS_SAFE},
     {"lindex",		Tcl_LindexObjCmd,	TclCompileLindexCmd,	NULL,	CMD_IS_SAFE},
     {"linsert",		Tcl_LinsertObjCmd,	TclCompileLinsertCmd,	NULL,	CMD_IS_SAFE},
     {"list",		Tcl_ListObjCmd,		TclCompileListCmd,	NULL,	CMD_IS_SAFE|CMD_COMPILES_EXPANDED},

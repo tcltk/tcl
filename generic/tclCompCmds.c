@@ -2784,6 +2784,36 @@ TclCompileLmapCmd(
 /*
  *----------------------------------------------------------------------
  *
+ * TclCompileLfilterCmd --
+ *
+ *	Procedure called to compile the "lfilter" command.
+ *
+ * Results:
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to runtime.
+ *
+ * Side effects:
+ *	Instructions are added to envPtr to execute the "lfilter" command at
+ *	runtime.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclCompileLfilterCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to the definition of the command
+				 *  being compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    return TCL_ERROR; // FIXME: Not yet implemented
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * CompileEachloopCmd --
  *
  *	Procedure called to compile the "foreach" and "lmap" commands.
