@@ -20,6 +20,7 @@ to the userbase.
  - [Windows: Install pkgconfig](https://core.tcl-lang.org/tcl/tktview/1cf49a)
 
 # Updated bundled packages, libraries, standards, data
+ - Itcl 4.3.5
  - http 2.10.1
  - opt 0.4.10
  - platform 1.1.0
