@@ -25,7 +25,7 @@ to the userbase.
  - platform 1.1.0
  - sqlite3 3.51.0
  - tcltest 2.5.10
- - Thread 3.0.3
+ - Thread 3.0.4
  - TDBC\* 1.1.13
  - dde 1.4.6
  - Unicode 17.0.0
