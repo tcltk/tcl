@@ -23,7 +23,7 @@ to the userbase.
  - http 2.10.1
  - opt 0.4.10
  - platform 1.1.0
- - sqlite3 3.50.4
+ - sqlite3 3.51.0
  - tcltest 2.5.10
  - Thread 3.0.3
  - TDBC\* 1.1.13
