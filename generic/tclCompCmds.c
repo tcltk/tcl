@@ -2784,36 +2784,6 @@ TclCompileLmapCmd(
 /*
  *----------------------------------------------------------------------
  *
- * TclCompileLfilterCmd --
- *
- *	Procedure called to compile the "lfilter" command.
- *
- * Results:
- *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
- *	evaluation to runtime.
- *
- * Side effects:
- *	Instructions are added to envPtr to execute the "lfilter" command at
- *	runtime.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclCompileLfilterCmd(
-    Tcl_Interp *interp,		/* Used for error reporting. */
-    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
-				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to the definition of the command
-				 *  being compiled. */
-    CompileEnv *envPtr)		/* Holds resulting instructions. */
-{
-    return TCL_ERROR; // FIXME: Not yet implemented
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * CompileEachloopCmd --
  *
  *	Procedure called to compile the "foreach" and "lmap" commands.
@@ -3016,6 +2986,222 @@ CompileEachloopCmd(
     if (collect != TCL_EACH_COLLECT) {
 	PUSH(			"");
     }
+
+  done:
+    if (code == TCL_ERROR) {
+	FreeForeachInfo(infoPtr);
+    }
+    Tcl_DecrRefCount(varListObj);
+    return code;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclCompileLfilterCmd --
+ *
+ *	Procedure called to compile the "lfilter" command.
+ *
+ * Results:
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to runtime.
+ *
+ * Side effects:
+ *	Instructions are added to envPtr to execute the "lfilter" command at
+ *	runtime.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclCompileLfilterCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to the definition of the command
+				 *  being compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    DefineLineInformation;	/* TIP #280 */
+    ForeachInfo *infoPtr=NULL;	/* Points to the structure describing this
+				 * foreach command. Stored in a AuxData
+				 * record in the ByteCode. */
+
+    Tcl_Token *tokenPtr, *bodyTokenPtr;
+    Tcl_Size jumpBackOffset, numWords, numLists, i, j;
+    Tcl_LVTIndex leadVarIndex = -1;
+    Tcl_BytecodeLabel continueTarget;
+    Tcl_AuxDataRef infoIndex;
+    Tcl_ExceptionRange range;
+    int code = TCL_OK;
+    Tcl_Obj *varListObj = NULL;
+
+    /*
+     * If the foreach command isn't in a procedure, don't compile it inline:
+     * the payoff is too small.
+     */
+
+    if (!EnvIsProc(envPtr)) {
+	return TCL_ERROR;
+    }
+
+    numWords = parsePtr->numWords;
+    if ((numWords < 4) || (numWords > UINT_MAX) || (numWords%2 != 0)) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Bail out if the body requires substitutions in order to ensure correct
+     * behaviour. [Bug 219166]
+     */
+
+    for (i = 0, tokenPtr = parsePtr->tokenPtr; i < numWords-1; i++) {
+	tokenPtr = TokenAfter(tokenPtr);
+    }
+    bodyTokenPtr = tokenPtr;
+    if (bodyTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Create and initialize the ForeachInfo and ForeachVarList data
+     * structures describing this command. Then create a AuxData record
+     * pointing to the ForeachInfo structure.
+     */
+
+    numLists = (numWords - 2)/2;
+    infoPtr = (ForeachInfo *)Tcl_Alloc(offsetof(ForeachInfo, varLists)
+	    + numLists * sizeof(ForeachVarList *));
+    infoPtr->numLists = 0;	/* Count this up as we go */
+
+    /*
+     * Parse each var list into sequence of var names.  Don't
+     * compile the foreach inline if any var name needs substitutions or isn't
+     * a scalar, or if any var list needs substitutions.
+     */
+
+    TclNewObj(varListObj);
+    for (i = 0, tokenPtr = parsePtr->tokenPtr;
+	    i < numWords-1;
+	    i++, tokenPtr = TokenAfter(tokenPtr)) {
+	ForeachVarList *varListPtr;
+	Tcl_Size numVars;
+
+	if (i%2 != 1) {
+	    continue;
+	}
+
+	fprintf(stderr, "DEBUG: token[%d] = '%.*s'\n", i, tokenPtr->size, tokenPtr->start);
+	/*
+	 * If the variable list is empty, we can enter an infinite loop when
+	 * the interpreted version would not.  Take care to ensure this does
+	 * not happen.  [Bug 1671138]
+	 */
+
+	if (!TclWordKnownAtCompileTime(tokenPtr, varListObj) ||
+		TCL_OK != TclListObjLength(NULL, varListObj, &numVars) ||
+		numVars == 0) {
+	    code = TCL_ERROR;
+	    goto done;
+	}
+
+	varListPtr = (ForeachVarList *)Tcl_Alloc(offsetof(ForeachVarList, varIndexes)
+		+ numVars * sizeof(varListPtr->varIndexes[0]));
+	varListPtr->numVars = numVars;
+	infoPtr->varLists[i / 2] = varListPtr;
+	infoPtr->numLists++;
+
+	for (j = 0;  j < numVars;  j++) {
+	    Tcl_Obj *varNameObj;
+	    const char *bytes;
+	    Tcl_LVTIndex varIndex;
+	    Tcl_Size length;
+
+	    Tcl_ListObjIndex(NULL, varListObj, j, &varNameObj);
+	    bytes = TclGetStringFromObj(varNameObj, &length);
+	    varIndex = LocalScalar(bytes, length, envPtr);
+	    if (varIndex < 0) {
+		code = TCL_ERROR;
+		goto done;
+	    }
+	    varListPtr->varIndexes[j] = varIndex;
+	    if (i == 1 && j == 0) {
+		leadVarIndex = varIndex;
+	    }
+	}
+	Tcl_SetObjLength(varListObj, 0);
+    }
+
+    assert(leadVarIndex >= 0);
+
+    /*
+     * We will compile the foreach command.
+     */
+
+    infoIndex = TclCreateAuxData(infoPtr, &newForeachInfoType, envPtr);
+
+    /*
+     * Create the collecting object, unshared.
+     */
+
+    OP4(			LIST, 0);
+
+    /*
+     * Evaluate each value list and leave it on stack.
+     */
+
+    for (i = 0, tokenPtr = parsePtr->tokenPtr;
+	    i < numWords-1;
+	    i++, tokenPtr = TokenAfter(tokenPtr)) {
+	if ((i%2 == 0) && (i > 0)) {
+	    PUSH_TOKEN(		tokenPtr, i);
+	}
+    }
+
+    OP4(			FOREACH_START, infoIndex);
+
+    /*
+     * Inline compile the loop body.
+     */
+
+    range = MAKE_LOOP_RANGE();
+
+    CATCH_RANGE(range) {
+	Tcl_BytecodeLabel collectVal;
+	// FIXME: Don't want a variable read for this...
+	OP4(			LOAD_SCALAR, leadVarIndex);
+	// Don't bother with the constant optimisation of [if]
+	PUSH_EXPR_TOKEN(	bodyTokenPtr, numWords - 1);
+	FWDJUMP(		JUMP_TRUE, collectVal);
+	OP(			POP);
+	FWDJUMP(		JUMP, continueTarget);
+	STKDELTA(+1);
+	FWDLABEL(	collectVal);
+    }
+
+    OP(				LMAP_COLLECT);
+
+    /*
+     * Bottom of loop code: assign each loop variable and check whether
+     * to terminate the loop. Set the loop's break target.
+     */
+
+    CONTINUE_TARGET(	range);
+    FWDLABEL(		continueTarget);
+    OP(				FOREACH_STEP);
+    BREAK_TARGET(	range);
+    FINALIZE_LOOP(range);
+    OP(				FOREACH_END);
+    STKDELTA(-(numLists + 2));
+
+    /*
+     * Set the jumpback distance from INST_FOREACH_STEP to the start of the
+     * body's code. Misuse loopCtTemp for storing the jump size.
+     */
+
+    jumpBackOffset = envPtr->exceptArrayPtr[range].continueOffset -
+	    envPtr->exceptArrayPtr[range].codeOffset;
+    infoPtr->loopCtTemp = -jumpBackOffset;
 
   done:
     if (code == TCL_ERROR) {
