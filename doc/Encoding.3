@@ -148,21 +148,27 @@ A path to the location of the encoding file.
 .BE
 .SH INTRODUCTION
 .PP
-These routines convert between Tcl's internal character representation,
-UTF-8, and character representations used by various operating systems or
-file systems, such as Unicode, ASCII, or Shift-JIS.  When operating on
-strings, such as such as obtaining the names of files or displaying
-characters using international fonts, the strings must be translated into
-one or possibly multiple formats that the various system calls can use.  For
-instance, on a Japanese Unix workstation, a user might obtain a filename
-represented in the EUC-JP file encoding and then translate the characters to
-the jisx0208 font encoding in order to display the filename in a Tk widget.
-The purpose of the encoding package is to help bridge the translation gap.
-UTF-8 provides an intermediate staging ground for all the various
-encodings.  In the example above, text would be translated into UTF-8 from
-whatever file encoding the operating system is using.  Then it would be
-translated from UTF-8 into whatever font encoding the display routines
-require.
+N.B. The use of the term \fIUTF-8\fR in this documentation refers to the
+modified UTF-8 encoding used internally by Tcl. This differs from the UTF-8
+encoding defined in the Unicode standard with respect to the encoding of the NUL
+character U+0000 which Tcl encodes internally as the byte sequence 0xC0 0x80 and
+not a single 0x00 bytes as per the standard. The term \fIUTF-8 byte sequence\fR
+refers to a byte sequence representing one or more Unicode code points encoded
+using this modified UTF-8. The term \fIcharacter\fR refers to a Unicode code
+point and is used interchangeably with it.
+.PP
+These routines convert between Tcl's \fIinternal\fR modified UTF-8 based
+character representation and character representations using encodings such as
+standard UTF-8, UTF-16, ASCII, or Shift-JIS that might be expected by system
+interfaces or other software components. For instance, on a Japanese Unix
+workstation, a user might obtain a filename represented in the EUC-JP file
+encoding and then translate the characters to the jisx0208 font encoding in
+order to display the filename in a Tk widget. The purpose of the encoding
+package is to help bridge the translation gap. UTF-8 provides an intermediate
+staging ground for all the various encodings. In the example above, text would
+be translated into UTF-8 from whatever file encoding the operating system is
+using. Then it would be translated from UTF-8 into whatever font encoding the
+display routines require.
 .PP
 Some basic encodings are compiled into Tcl.  Others can be defined by the
 user or dynamically loaded from encoding files in a
