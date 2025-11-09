@@ -27,8 +27,6 @@
 #endif
 #include "tclStringRep.h"
 
-#include <assert.h>
-
 /*
  * Forward declarations for functions defined later in this file:
  */

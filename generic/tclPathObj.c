@@ -13,7 +13,6 @@
 
 #include "tclInt.h"
 #include "tclFileSystem.h"
-#include <assert.h>
 
 /*
  * Prototypes for functions defined later in this file.

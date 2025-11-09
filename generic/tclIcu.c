@@ -1178,8 +1178,7 @@ IcuNormalizeObjCmd(
     if (objPtr) {
 	Tcl_SetObjResult(interp, objPtr);
 	return TCL_OK;
-    }
-    else {
+    } else {
 	return TCL_ERROR;
     }
 }
