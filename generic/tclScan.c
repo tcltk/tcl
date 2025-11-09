@@ -11,7 +11,6 @@
 
 #include "tclInt.h"
 #include "tclTomMath.h"
-#include <assert.h>
 
 /*
  * Flag values used by Tcl_ScanObjCmd.

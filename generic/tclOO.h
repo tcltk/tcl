@@ -118,10 +118,10 @@ typedef struct Tcl_MethodType2 {
  * binary compatibility.
  */
 enum TclOOMethodVersion {
+    TCL_OO_METHOD_VERSION_CURRENT = 1,
     TCL_OO_METHOD_VERSION_1 = 1,
     TCL_OO_METHOD_VERSION_2 = 2
 };
-#define TCL_OO_METHOD_VERSION_CURRENT TCL_OO_METHOD_VERSION_1
 
 /*
  * Visibility constants for the flags parameter to Tcl_NewMethod and
@@ -159,15 +159,15 @@ typedef struct Tcl_ObjectMetadataType {
  */
 
 enum TclOOMetadataVersion {
+    TCL_OO_METADATA_VERSION_CURRENT = 1,
     TCL_OO_METADATA_VERSION_1 = 1
 };
-#define TCL_OO_METADATA_VERSION_CURRENT TCL_OO_METADATA_VERSION_1
 
 /*
  * Include all the public API, generated from tclOO.decls.
  */
 
-#include "tclOODecls.h"
+#include "tclOODecls.h"  /* IWYU pragma: export */
 
 #ifdef __cplusplus
 }

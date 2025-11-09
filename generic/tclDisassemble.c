@@ -16,7 +16,6 @@
 #define ALLOW_DEPRECATED_OPCODES
 #include "tclCompile.h"
 #include "tclOOInt.h"
-#include <assert.h>
 
 /*
  * Prototypes for procedures defined later in this file:

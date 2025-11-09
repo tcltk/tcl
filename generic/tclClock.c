@@ -113,7 +113,6 @@ static int		ClockValidDate(DateInfo *,
 static struct tm *	ThreadSafeLocalTime(const time_t *);
 static size_t		TzsetIfNecessary(void);
 static void		ClockDeleteCmdProc(void *);
-static Tcl_ObjCmdProc	ClockSafeCatchCmd;
 static void		ClockFinalize(void *);
 /*
  * Structure containing description of "native" clock commands to create.
@@ -146,7 +145,7 @@ static const struct ClockCommand clockCommands[] = {
 		ClockGetjuliandayfromerayearmonthdayObjCmd,	NULL, NULL},
     {"GetJulianDayFromEraYearWeekDay",
 		ClockGetjuliandayfromerayearweekdayObjCmd,	NULL, NULL},
-    {"catch",		ClockSafeCatchCmd,	TclCompileBasicMin1ArgCmd, NULL},
+    {"catch",		TclSafeCatchCmd,	TclCompileBasicMin1ArgCmd, NULL},
     {NULL, NULL, NULL, NULL}
 };
 
@@ -4606,76 +4605,6 @@ ClockSecondsObjCmd(
 
     Tcl_SetObjResult(interp, timeObj);
     return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * ClockSafeCatchCmd --
- *
- *	Same as "::catch" command but avoids overwriting of interp state.
- *
- *	See [554117edde] for more info (and proper solution).
- *
- *----------------------------------------------------------------------
- */
-int
-ClockSafeCatchCmd(
-    TCL_UNUSED(void *),
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
-{
-    typedef struct {
-	int status;		/* return code status */
-	int flags;		/* Each remaining field saves the */
-	int returnLevel;	/* corresponding field of the Interp */
-	int returnCode;		/* struct. These fields taken together are */
-	Tcl_Obj *errorInfo;	/* the "state" of the interp. */
-	Tcl_Obj *errorCode;
-	Tcl_Obj *returnOpts;
-	Tcl_Obj *objResult;
-	Tcl_Obj *errorStack;
-	int resetErrorStack;
-    } InterpState;
-
-    Interp *iPtr = (Interp *)interp;
-    int ret, flags = 0;
-    InterpState *statePtr;
-
-    if (objc == 1) {
-	/* wrong # args : */
-	return Tcl_CatchObjCmd(NULL, interp, objc, objv);
-    }
-
-    statePtr = (InterpState *)Tcl_SaveInterpState(interp, 0);
-    if (!statePtr->errorInfo) {
-	/* todo: avoid traced get of errorInfo here */
-	TclInitObjRef(statePtr->errorInfo,
-		Tcl_ObjGetVar2(interp, iPtr->eiVar, NULL, 0));
-	flags |= ERR_LEGACY_COPY;
-    }
-    if (!statePtr->errorCode) {
-	/* todo: avoid traced get of errorCode here */
-	TclInitObjRef(statePtr->errorCode,
-		Tcl_ObjGetVar2(interp, iPtr->ecVar, NULL, 0));
-	flags |= ERR_LEGACY_COPY;
-    }
-
-    /* original catch */
-    ret = Tcl_CatchObjCmd(NULL, interp, objc, objv);
-
-    if (ret == TCL_ERROR) {
-	Tcl_DiscardInterpState((Tcl_InterpState)statePtr);
-	return TCL_ERROR;
-    }
-    /* overwrite result in state with catch result */
-    TclSetObjRef(statePtr->objResult, Tcl_GetObjResult(interp));
-    /* set result (together with restore state) to interpreter */
-    (void) Tcl_RestoreInterpState(interp, (Tcl_InterpState)statePtr);
-    /* todo: unless ERR_LEGACY_COPY not set in restore (branch [bug-554117edde] not merged yet) */
-    iPtr->flags |= (flags & ERR_LEGACY_COPY);
-    return ret;
 }
 
 /*

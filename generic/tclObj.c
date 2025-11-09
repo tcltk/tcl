@@ -17,7 +17,6 @@
 #include "tclInt.h"
 #include "tclTomMath.h"
 #include <math.h>
-#include <assert.h>
 
 /*
  * Table of all object types.

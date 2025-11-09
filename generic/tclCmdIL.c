@@ -21,7 +21,6 @@
 #include "tclRegexp.h"
 #include "tclTomMath.h"
 #include <math.h>
-#include <assert.h>
 
 /*
  * During execution of the "lsort" command, structures of the following type
@@ -247,9 +246,9 @@ IfConditionCallback(
     int result)
 {
     Interp *iPtr = (Interp *) interp;
-    int objc = PTR2INT(data[0]);
+    Tcl_Size objc = PTR2INT(data[0]);
     Tcl_Obj *const *objv = (Tcl_Obj *const *)data[1];
-    int i = PTR2INT(data[2]);
+    Tcl_Size i = PTR2INT(data[2]);
     Tcl_Obj *boolObj = (Tcl_Obj *)data[3];
     int value, thenScriptIndex = 0;
     const char *clause;
