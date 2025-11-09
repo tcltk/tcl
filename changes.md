@@ -18,6 +18,7 @@ to the userbase.
  - [Add IWYU export pragma annotations](https://core.tcl-lang.org/tcl/tktview/c7dc59)
  - [Windows: Install man pages](https://core.tcl-lang.org/tcl/tktview/3161b7)
  - [Windows: Install pkgconfig](https://core.tcl-lang.org/tcl/tktview/1cf49a)
+ - [Non-existent variables are ignored if re is {}](https://core.tcl-lang.org/tcl/tktview/cb03e5)
 
 # Updated bundled packages, libraries, standards, data
  - Itcl 4.3.5
