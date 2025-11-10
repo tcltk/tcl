@@ -8765,6 +8765,13 @@ TclCompareTwoNumbers(
     double d1, d2, tmp;
     Tcl_WideInt w1, w2;
 
+    if (valuePtr == value2Ptr) {
+	/* 
+	 * Bug https://core.tcl-lang.org/tcl/tktview/8dd28070. Protect
+	 * multiple mp_clear's of the same bignum.
+	 */
+	return MP_EQ;
+}
     (void) GetNumberFromObj(NULL, valuePtr, &ptr1, &type1);
     (void) GetNumberFromObj(NULL, value2Ptr, &ptr2, &type2);
 
