@@ -3466,7 +3466,11 @@ GetBignumFromObj(
 {
     do {
 	if (TclHasInternalRep(objPtr, &tclBignumType)) {
-	    if (copy || Tcl_IsShared(objPtr)) {
+	    /* 
+	     * Don't allow to move bignum if object is shared or there is no
+	     * string representation (it contains bignum only, see [8dd2807066d7]).
+	     */
+	    if (copy || Tcl_IsShared(objPtr) || (objPtr->bytes == NULL)) {
 		mp_int temp;
 
 		TclUnpackBignum(objPtr, temp);
@@ -3480,13 +3484,8 @@ GetBignumFromObj(
 		objPtr->internalRep.twoPtrValue.ptr2 = NULL;
 		objPtr->typePtr = NULL;
 		/*
-		 * TODO: If objPtr has a string rep, this leaves
-		 * it undisturbed.  Not clear that's proper. Pure
-		 * bignum values are converted to empty string.
+		 * objPtr retains a string rep.
 		 */
-		if (objPtr->bytes == NULL) {
-		    TclInitEmptyStringRep(objPtr);
-		}
 	    }
 	    return TCL_OK;
 	}
