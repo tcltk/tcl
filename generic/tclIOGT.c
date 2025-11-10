@@ -63,19 +63,18 @@ static int		ExecuteCallback(TransformChannelData *ctrl,
  * Action codes to give to 'ExecuteCallback' (argument 'transmit'), telling
  * the procedure what to do with the result of the script it calls.
  */
-
-enum TransmitParameter {
+enum ExecuteCallbackActionCodes {
     TRANSMIT_DONT = 0,		/* No transfer to do. */
     TRANSMIT_DOWN = 1,		/* Transfer to the underlying channel. */
     TRANSMIT_SELF = 2,		/* Transfer into our channel. */
     TRANSMIT_IBUF = 3,		/* Transfer to internal input buffer. */
-    TRANSMIT_NUM = 4,		/* Transfer number to 'maxRead'. */
+    TRANSMIT_NUM = 4		/* Transfer number to 'maxRead'. */
 };
 
 /*
  * Codes for 'preserve' of 'ExecuteCallback'.
  */
-enum PreserveParameter {
+enum ExecuteCallbackPreserveFlag {
     P_PRESERVE = 1,
     P_NO_PRESERVE = 0
 };
@@ -141,7 +140,7 @@ static const Tcl_ChannelType transformChannelType = {
  * Possible values for 'flags' field in control structure, see below.
  */
 enum TransformChannelDataFlags {
-    CHANNEL_ASYNC = 1 << 0	/* Non-blocking mode. */
+    CHANNEL_ASYNC = (1<<0)	/* Non-blocking mode. */
 };
 
 /*

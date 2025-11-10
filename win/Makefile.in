@@ -85,7 +85,7 @@ CFLAGS_OPTIMIZE	= @CFLAGS_OPTIMIZE@
 #CFLAGS =		$(CFLAGS_DEBUG)
 #CFLAGS =		$(CFLAGS_OPTIMIZE)
 #CFLAGS =		$(CFLAGS_DEBUG) $(CFLAGS_OPTIMIZE)
-CFLAGS =		@CFLAGS@ @CFLAGS_DEFAULT@ -DMP_FIXED_CUTOFFS -D__USE_MINGW_ANSI_STDIO=0
+CFLAGS =		@CFLAGS@ @CFLAGS_DEFAULT@ -DMP_FIXED_CUTOFFS -DUTF8PROC_STATIC -D__USE_MINGW_ANSI_STDIO=0
 
 # To compile without backward compatibility and deprecated code uncomment the
 # following
@@ -104,12 +104,14 @@ TOP_DIR			= $(shell cd @srcdir@/..; pwd -W 2>/dev/null || pwd -P)
 BUILD_DIR		= @builddir@
 GENERIC_DIR		= $(TOP_DIR)/generic
 WIN_DIR			= $(TOP_DIR)/win
+UNIX_DIR		= $(TOP_DIR)/unix
 COMPAT_DIR		= $(TOP_DIR)/compat
 PKGS_DIR		= $(TOP_DIR)/pkgs
 TOOL_DIR		= $(TOP_DIR)/tools
 ZLIB_DIR		= $(COMPAT_DIR)/zlib
 MINIZIP_DIR		= $(ZLIB_DIR)/contrib/minizip
 TOMMATH_DIR		= $(TOP_DIR)/libtommath
+UTF8PROC_DIR		= $(TOP_DIR)/utf8proc
 
 # Converts a POSIX path to a Windows native path.
 CYGPATH			= @CYGPATH@
@@ -158,8 +160,8 @@ TEST_DLL_FILE		= tcltest$(VER)${DLLSUFFIX}
 TEST_EXE_FILE		= tcltest${EXESUFFIX}
 TEST_LIB_FILE		= @LIBPREFIX@tcltest$(VER)${DLLSUFFIX}${LIBSUFFIX}
 TEST_LOAD_PRMS		= lappend ::auto_path {$(ROOT_DIR_WIN_NATIVE)/tests};\
-			  package ifneeded dde 1.5a0 [list load ${DDE_DLL_FILE}];\
-			  package ifneeded registry 1.4a0 [list load ${REG_DLL_FILE}]
+			  package ifneeded dde 1.5a1 [list load ${DDE_DLL_FILE}];\
+			  package ifneeded registry 1.4a1 [list load ${REG_DLL_FILE}]
 TEST_LOAD_FACILITIES	= package ifneeded tcl::test ${VERSION}@TCL_PATCH_LEVEL@ [list load ${TEST_DLL_FILE} Tcltest];\
 			  $(TEST_LOAD_PRMS)
 ZLIB_DLL_FILE		= zlib1.dll
@@ -214,6 +216,11 @@ RM		= rm -f
 COPY		= cp
 LN		= ln
 GDB		= gdb
+INSTALL			= $(SHELL) $(UNIX_DIR)/install-sh -c
+INSTALL_PROGRAM		= ${INSTALL}
+INSTALL_LIBRARY		= ${INSTALL}
+INSTALL_DATA		= ${INSTALL} -m 644
+INSTALL_DATA_DIR	= ${INSTALL} -d -m 755
 
 ###
 # Tip 430 - ZipFS Modifications
@@ -280,6 +287,7 @@ TCLTEST_OBJS = \
 	tclTestABSList.$(OBJEXT) \
 	tclTestObj.$(OBJEXT) \
 	tclTestProcBodyObj.$(OBJEXT) \
+	tclMutexTest.$(OBJEXT) \
 	tclThreadTest.$(OBJEXT) \
 	tclWinTest.$(OBJEXT)
 
@@ -450,6 +458,7 @@ TOMMATH_OBJS = \
 	bn_s_mp_toom_mul.${OBJEXT} \
 	bn_s_mp_toom_sqr.${OBJEXT}
 
+UTF8PROC_OBJS = utf8proc.${OBJEXT}
 
 WIN_OBJS = \
 	tclWin32Dll.$(OBJEXT) \
@@ -494,7 +503,7 @@ ZLIB_OBJS = \
 	uncompr.$(OBJEXT) \
 	zutil.$(OBJEXT)
 
-TCL_OBJS = ${GENERIC_OBJS} ${WIN_OBJS} @ZLIB_OBJS@ @TOMMATH_OBJS@
+TCL_OBJS = ${GENERIC_OBJS} ${UTF8PROC_OBJS} ${WIN_OBJS} @ZLIB_OBJS@ @TOMMATH_OBJS@
 
 TCL_DOCS = "$(ROOT_DIR_NATIVE)"/doc/*.[13n]
 
@@ -684,6 +693,8 @@ tclZipfs.${OBJEXT}: $(GENERIC_DIR)/tclZipfs.c
 	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl \
 	$(ZLIB_INCLUDE) -I$(MINIZIP_DIR_NATIVE)  @DEPARG@ $(CC_OBJNAME)
 
+utf8proc.${OBJEXT}: $(UTF8PROC_DIR)/utf8proc.c
+	$(CC) -c $(CC_SWITCHES) -DUNICODE -D_UNICODE @DEPARG@ $(CC_OBJNAME)
 
 # TIP #59, embedding of configuration information into the binary library.
 #
@@ -757,8 +768,6 @@ tclWinPanic.${OBJEXT}: tclWinPanic.c
 
 .rc.$(RES):
 	$(RC) @RC_OUT@ $@ @RC_TYPE@ @RC_DEFINES@ @RC_INCLUDE@ "$(GENERIC_DIR_NATIVE)" @RC_INCLUDE@ "$(WIN_DIR_NATIVE)" @DEPARG@
-
-
 
 #--------------------------------------------------------------------------
 # Minizip implementation
@@ -885,6 +894,9 @@ install-binaries: binaries
 	    echo Installing $(REG_LIB_FILE); \
 	    $(COPY) $(REG_LIB_FILE) "$(LIB_INSTALL_DIR)/registry${REGDOTVER}"; \
 	    fi
+	@echo "Installing pkg-config file to $(LIB_INSTALL_DIR)/pkgconfig/"
+	@$(INSTALL_DATA_DIR) "$(LIB_INSTALL_DIR)/pkgconfig"
+	@$(INSTALL_DATA) tcl.pc "$(LIB_INSTALL_DIR)/pkgconfig/tcl.pc"
 
 install-libraries: libraries install-tzdata install-msgs
 	@for i in "$(prefix)/lib" "$(INCLUDE_INSTALL_DIR)" \
@@ -921,18 +933,18 @@ install-libraries: libraries install-tzdata install-msgs
 		  $(ROOT_DIR)/library/cookiejar/*.gz; do \
 	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/cookiejar0.2"; \
 	    done;
-	@echo "Installing package http 2.10.0 as a Tcl Module";
-	@$(COPY) $(ROOT_DIR)/library/http/http.tcl "$(MODULE_INSTALL_DIR)/9.0/http-2.10.0.tm";
-	@echo "Installing package opt 0.4.7";
+	@echo "Installing package http 2.10.1 as a Tcl Module";
+	@$(COPY) $(ROOT_DIR)/library/http/http.tcl "$(MODULE_INSTALL_DIR)/9.0/http-2.10.1.tm";
+	@echo "Installing package opt 0.4.10";
 	@for j in $(ROOT_DIR)/library/opt/*.tcl; do \
 	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/opt0.4"; \
 	    done;
 	@echo "Installing package msgcat 1.7.1 as a Tcl Module";
 	@$(COPY) $(ROOT_DIR)/library/msgcat/msgcat.tcl "$(MODULE_INSTALL_DIR)/9.0/msgcat-1.7.1.tm";
-	@echo "Installing package tcltest 2.5.9 as a Tcl Module";
-	@$(COPY) $(ROOT_DIR)/library/tcltest/tcltest.tcl "$(MODULE_INSTALL_DIR)/9.0/tcltest-2.5.9.tm";
-	@echo "Installing package platform 1.0.19 as a Tcl Module";
-	@$(COPY) $(ROOT_DIR)/library/platform/platform.tcl "$(MODULE_INSTALL_DIR)/9.0/platform-1.0.19.tm";
+	@echo "Installing package tcltest 2.5.10 as a Tcl Module";
+	@$(COPY) $(ROOT_DIR)/library/tcltest/tcltest.tcl "$(MODULE_INSTALL_DIR)/9.0/tcltest-2.5.10.tm";
+	@echo "Installing package platform 1.1.0 as a Tcl Module";
+	@$(COPY) $(ROOT_DIR)/library/platform/platform.tcl "$(MODULE_INSTALL_DIR)/9.0/platform-1.1.0.tm";
 	@echo "Installing package platform::shell 1.1.4 as a Tcl Module";
 	@$(COPY) $(ROOT_DIR)/library/platform/shell.tcl "$(MODULE_INSTALL_DIR)/9.0/platform/shell-1.1.4.tm";
 	@echo "Installing encodings";
@@ -951,7 +963,27 @@ install-msgs:
 	    "$(ROOT_DIR)/library/msgs" "$(SCRIPT_INSTALL_DIR_NATIVE)/msgs"
 
 install-doc: doc
-
+	@for i in "$(MAN_INSTALL_DIR)" "$(MAN1_INSTALL_DIR)" "$(MAN3_INSTALL_DIR)" "$(MANN_INSTALL_DIR)" ; \
+	    do \
+	    if [ ! -d "$$i" ] ; then \
+		echo "Making directory $$i"; \
+		$(INSTALL_DATA_DIR) "$$i"; \
+		else true; \
+		fi; \
+	    done;
+	@echo "Installing and cross-linking top-level (.1) docs to $(MAN1_INSTALL_DIR)/";
+	@for i in $(TOP_DIR)/doc/*.1; do \
+	    $(SHELL) $(UNIX_DIR)/installManPage $(MAN_FLAGS) $$i "$(MAN1_INSTALL_DIR)"; \
+	done
+	@echo "Installing and cross-linking C API (.3) docs to $(MAN3_INSTALL_DIR)/";
+	@for i in $(TOP_DIR)/doc/*.3; do \
+	    $(SHELL) $(UNIX_DIR)/installManPage $(MAN_FLAGS) $$i "$(MAN3_INSTALL_DIR)"; \
+	done
+	@echo "Installing and cross-linking command (.n) docs to $(MANN_INSTALL_DIR)/";
+	@for i in $(TOP_DIR)/doc/*.n; do \
+	    $(SHELL) $(UNIX_DIR)/installManPage $(MAN_FLAGS) $$i "$(MANN_INSTALL_DIR)"; \
+	done
+ 
 install-headers:
 	@for i in "$(INCLUDE_INSTALL_DIR)"; \
 	    do \
@@ -1138,11 +1170,6 @@ $(GENERIC_DIR)/tclStubInit.c: $(GENERIC_DIR)/tcl.decls \
 	@echo "Developers may want to run \"make genstubs\" to regenerate."
 	@echo "This warning can be safely ignored, do not report as a bug!"
 
-$(GENERIC_DIR)/tclOOScript.h: $(TOOL_DIR)/tclOOScript.tcl
-	@echo "Warning: tclOOScript.h may be out of date."
-	@echo "Developers may want to run \"make genscript\" to regenerate."
-	@echo "This warning can be safely ignored, do not report as a bug!"
-
 genstubs:
 	$(TCL_EXE) "$(TOOL_DIR_NATIVE)/genStubs.tcl" \
 	    "$(GENERIC_DIR_NATIVE)" \
@@ -1152,11 +1179,6 @@ genstubs:
 	$(TCL_EXE) "$(TOOL_DIR_NATIVE)/genStubs.tcl" \
 	    "$(GENERIC_DIR_NATIVE)" \
 	    "$(GENERIC_DIR_NATIVE)/tclOO.decls"
-
-genscript:
-	$(TCL_EXE) "$(TOOL_DIR_NATIVE)/makeHeader.tcl" \
-		"$(TOOL_DIR_NATIVE)/tclOOScript.tcl" \
-		"$(GENERIC_DIR_NATIVE)/tclOOScript.h"
 
 #
 # This target creates the HTML folder for Tcl & Tk and places it in

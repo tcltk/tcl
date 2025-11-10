@@ -28,6 +28,7 @@ testConstraint notValgrind   [expr {![testConstraint valgrind]}]
 
 namespace eval ::tcltests {
 
+    variable TCL_SIZE_MAX [expr {(2**(8*$::tcl_platform(pointerSize)-1))-1}]
 
     proc init {} {
 	if {[namespace which ::tcl::file::tempdir] eq {}} {
@@ -135,6 +136,7 @@ namespace eval ::tcltests {
 		return [windowscodepage]
 	    }
 	}
+
     }
 
     init

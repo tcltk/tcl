@@ -4,11 +4,11 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-.TH Tcl_ListObj 3 8.0 Tcl "Tcl Library Procedures"
+.TH Tcl_ListObj 3 9.1 Tcl "Tcl Library Procedures"
 .so man.macros
 .BS
 .SH NAME
-Tcl_ListObjAppendList, Tcl_ListObjAppendElement, Tcl_NewListObj, Tcl_SetListObj, Tcl_ListObjGetElements, Tcl_ListObjLength, Tcl_ListObjIndex, Tcl_ListObjReplace \- manipulate Tcl values as lists
+Tcl_ListObjAppendList, Tcl_ListObjAppendElement, Tcl_NewListObj, Tcl_SetListObj, Tcl_ListObjGetElements, Tcl_ListObjLength, Tcl_ListObjIndex, Tcl_ListObjReplace, Tcl_ListObjRange, Tcl_ListObjRepeat, Tcl_ListObjReverse \- manipulate Tcl values as lists
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -35,6 +35,15 @@ int
 .sp
 int
 \fBTcl_ListObjReplace\fR(\fIinterp, listPtr, first, count, objc, objv\fR)
+.sp
+int
+\fBTcl_ListObjRange\fR(\fIinterp, listPtr, first, last, objPtrPtr\fR)
+.sp
+int
+\fBTcl_ListObjRepeat\fR(\fIinterp, count, objc, objv, objPtrPtr\fR)
+.sp
+int
+\fBTcl_ListObjReverse\fR(\fIinterp, listPtr, objPtrPtr\fR)
 .fi
 .SH ARGUMENTS
 .AS "Tcl_Obj *const" *elemListPtr in/out
@@ -43,9 +52,12 @@ If an error occurs while converting a value to be a list value,
 an error message is left in the interpreter's result value
 unless \fIinterp\fR is NULL.
 .AP Tcl_Obj *listPtr in/out
-Points to the list value to be manipulated.
+Points to the input list value.
 If \fIlistPtr\fR does not already point to a list value,
 an attempt will be made to convert it to one.
+Some functions may store a reference to it internally so
+care must be taken when managing its reference count.
+See the \fBREFERENCE COUNT MANAGEMENT\fR section below.
 .AP Tcl_Obj *elemListPtr in/out
 For \fBTcl_ListObjAppendList\fR, this points to a list value
 containing elements to be appended onto \fIlistPtr\fR.
@@ -72,16 +84,9 @@ trigger proper error-handling), otherwise expect it to crash.
 A location where \fBTcl_ListObjGetElements\fR stores a pointer to an array
 of pointers to the element values of \fIlistPtr\fR.
 .AP Tcl_Size objc in
-The number of Tcl values that \fBTcl_NewListObj\fR
-will insert into a new list value,
-and \fBTcl_ListObjReplace\fR will insert into \fIlistPtr\fR.
-For \fBTcl_SetListObj\fR,
-the number of Tcl values to insert into \fIobjPtr\fR.
+The number of Tcl values in the \fIobjv\fR array.
 .AP "Tcl_Obj *const" objv[] in
-An array of pointers to values.
-\fBTcl_NewListObj\fR will insert these values into a new list value
-and \fBTcl_ListObjReplace\fR will insert them into an existing \fIlistPtr\fR.
-Each value will become a separate list element.
+An array of pointers to Tcl values.
 .AP "Tcl_Size \&| int" *lengthPtr out
 Points to location where \fBTcl_ListObjLength\fR
 stores the length of the list.
@@ -95,23 +100,22 @@ Index of the list element that \fBTcl_ListObjIndex\fR
 is to return.
 The first element has index 0.
 .AP Tcl_Obj **objPtrPtr out
-Points to place where \fBTcl_ListObjIndex\fR is to store
-a pointer to the resulting list element value.
+Points to location to store an output list or element value. No assumptions
+should be made about the reference count of the returned value.
+See the \fBREFERENCE COUNT MANAGEMENT\fR section below.
 .AP Tcl_Size first in
-Index of the starting list element that \fBTcl_ListObjReplace\fR
-is to replace.
-The list's first element has index 0.
+Index of the first element in a range of elements in a list.
+.AP Tcl_Size last in
+Index of the last element in a range of elements in a list.
 .AP Tcl_Size count in
-The number of elements that \fBTcl_ListObjReplace\fR
-is to replace.
+The number of elements to be operated on or a repetition count.
 .BE
-
 .SH DESCRIPTION
 .PP
 Tcl list values have an internal representation that supports
 the efficient indexing and appending.
 The procedures described in this man page are used to
-create, modify, index, and append to Tcl list values from C code.
+create, modify, access, and transform Tcl list values from C code.
 .PP
 \fBTcl_ListObjAppendList\fR and \fBTcl_ListObjAppendElement\fR
 both add one or more values
@@ -209,7 +213,6 @@ change from Tcl 8 where all list elements always have a reference
 count of at least 1. (See \fBABSTRACT LIST TYPES\fR, \fBSTORAGE
 MANAGEMENT OF VALUES\fR, Tcl_BounceRefCount(3), and lseq(n) for more
 information.)
-
 .PP
 \fBTcl_ListObjReplace\fR replaces zero or more elements
 of the list referenced by \fIlistPtr\fR
@@ -268,7 +271,43 @@ with a NULL \fIobjvPtr\fR:
 result = \fBTcl_ListObjReplace\fR(interp, listPtr, first, count,
         0, NULL);
 .CE
+.PP
+\fBTcl_ListObjRange\fR stores in \fIobjPtrPtr\fR a pointer to a list value
+containing all elements in the passed input list \fIlistPtr\fR at indices
+between \fIfirst\fR and \fIlast\fR, both inclusive. An empty
+list is returned in the case of \fIfirst\fR being greater than \fIlast\fR.
+.PP
+\fBTcl_ListObjRepeat\fR stores in \fIobjPtrPtr\fR a pointer to a list value
+whose elements are the \fIobjc\fR elements passed in \fIobjv\fR, repeated
+\fIcount\fR number of times. An error is raised if \fIcount\fR is negative.
+.PP
+\fBTcl_ListObjReverse\fR stores in \fIobjPtrPtr\fR a pointer to a list value
+containing all elements of the input list \fIlistPtr\fR in reverse order.
+.PP
+For all three functions, \fBTcl_ListObjRange\fR, \fBTcl_ListObjRepeat\fR and
+\fBTcl_ListObjReverse\fR, the value passed in \fIlistPtr\fR need not be unshared.
+The pointer stored at \fIobjPtrPtr\fR is guaranteed to be different from
+\fIlistPtr\fR but no assumptions should be made about its reference count.
+In case of errors, the location addressed by \fIobjPtrPtr\fR may have been
+modified and should be treated by the caller as undefined.
 .SH "REFERENCE COUNT MANAGEMENT"
+.PP
+Care must be taken by callers when managing the reference count
+of values passed in as well as values returned from the above functions.
+.PP
+Unless specified otherwise below, the above functions may internally
+keep a reference to the value passed in \fIlistPtr\fR and increment its
+reference count. Therefore, if \fIlistPtr\fR is newly allocated and has
+a zero reference count, it should not be freed after the call with
+\fBTcl_DecrRefCount\fR. Rather, use \fBTcl_BounceRefCount\fR instead.
+Furthermore, if \fIlistPtr\fR was retrieved from the interpreter result
+(e.g. via \fBTcl_GetObjResult\fR) and that is the only reference to the
+value, it may be deleted if a function sets the interpreter result on
+error. The more general and safe method for passing values is to
+increment their reference counts with \fBTcl_IncrRefCount\fR prior to
+the call and release them with \fBTcl_DecrRefCount\fR when the call
+returns. However, this may preclude certain optimizations based on
+modifying unshared values in-place.
 .PP
 \fBTcl_NewListObj\fR always returns a zero-reference object, much like
 \fBTcl_NewObj\fR. If a non-NULL \fIobjv\fR argument is given, the reference
@@ -279,20 +318,31 @@ argument, but does require that the object be unshared. The reference counts
 of the first \fIobjc\fR values in the \fIobjv\fR array are incremented.
 .PP
 \fBTcl_ListObjGetElements\fR, \fBTcl_ListObjIndex\fR, and
-\fBTcl_ListObjLength\fR do not modify the reference count of their
-\fIlistPtr\fR arguments; they only read. Note however that these three
-functions may set the interpreter result; if that is the only place that is
-holding a reference to the object, it will be deleted.
+\fBTcl_ListObjLength\fR do not modify the reference count of the
+\fIlistPtr\fR argument except on error when the interpreter
+result holds a reference to it as described earlier.
 .PP
 \fBTcl_ListObjAppendList\fR, \fBTcl_ListObjAppendElement\fR, and
 \fBTcl_ListObjReplace\fR require an unshared \fIlistPtr\fR argument.
 \fBTcl_ListObjAppendList\fR only reads its \fIelemListPtr\fR argument.
 \fBTcl_ListObjAppendElement\fR increments the reference count of its
-\fIobjPtr\fR on success. \fBTcl_ListObjReplace\fR increments the reference
-count of the first \fIobjc\fR values in the \fIobjv\fR array on success.  Note
-however that all these three functions may set the interpreter result on
-failure; if that is the only place that is holding a reference to the object,
-it will be deleted.
+\fIobjPtr\fR on success. \fBTcl_ListObjReplace\fR increments the
+reference count of the first \fIobjc\fR values in the \fIobjv\fR array
+on success. Note that the same caveat stated earlier applies if the
+interpreter result holds a reference to \fIlistPtr\fR.
+.PP
+The pointer to a result value returned in \fIobjPtrPtr\fR by the
+functions \fBTcl_ListObjRange\fR,
+\fBTcl_ListObjRepeat\fR and \fBTcl_ListObjReverse\fR is guaranteed
+to be different from the \fBlistPtr\fR passed in. It is therefore
+safe to manage its reference count independently from that of
+\fBlistPtr\fR. No assumptions should be made about its reference
+count and the standard reference counting idiom should be followed.
+The caller can pass it to a function such as \fBTcl_SetObjResult\fR,
+\fBTcl_ListObjAppendElement\fR etc. which take ownership of
+its reference count management or dispose of the value itself
+with either a \fBTcl_IncrRefCount\fR/\fBTcl_DecrRefCount\fR pair or
+\fBTcl_BounceRefCount\fR.
 .SH "SEE ALSO"
 Tcl_NewObj(3), Tcl_DecrRefCount(3), Tcl_IncrRefCount(3), Tcl_GetObjResult(3)
 .SH KEYWORDS

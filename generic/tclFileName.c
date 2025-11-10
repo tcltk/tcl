@@ -584,7 +584,9 @@ Tcl_SplitPath(
 
     for (i = 0; i < *argcPtr; i++) {
 	(*argvPtr)[i] = p;
-	while (*(p++) != '\0');
+	while (*(p++) != '\0') {
+	    // Empty body
+	}
     }
     (*argvPtr)[i] = NULL;
 

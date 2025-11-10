@@ -17,36 +17,66 @@
 #include "tclOOInt.h"
 
 /*
+ * Commands in oo and oo::Helpers.
+ */
+
+static const struct StdCommands {
+    const char *name;
+    Tcl_ObjCmdProc *objProc;
+    Tcl_ObjCmdProc *nreProc;
+    CompileProc *compileProc;
+    int flags;
+} ooCmds[] = {
+    {"define",		TclOODefineObjCmd, NULL, NULL, 0},
+    {"objdefine",	TclOOObjDefObjCmd, NULL, NULL, 0},
+    {"copy",		TclOOCopyObjectCmd, NULL, NULL, 0},
+    {"DelegateName",	TclOODelegateNameObjCmd, NULL, NULL, 0},
+    {NULL, NULL, NULL, NULL, 0}
+}, helpCmds[] = {
+    {"callback",	TclOOCallbackObjCmd, NULL, NULL, 0},
+    {"mymethod",	TclOOCallbackObjCmd, NULL, NULL, 0},
+    {"classvariable",	TclOOClassVariableObjCmd, NULL, NULL, 0},
+    {"link",		TclOOLinkObjCmd, NULL, NULL, 0},
+    {"next",		NULL, TclOONextObjCmd, TclCompileObjectNextCmd, CMD_COMPILES_EXPANDED},
+    {"nextto",		NULL, TclOONextToObjCmd, TclCompileObjectNextToCmd, CMD_COMPILES_EXPANDED},
+    {"self",		TclOOSelfObjCmd, NULL, TclCompileObjectSelfCmd, 0},
+    {NULL, NULL, NULL, NULL, 0}
+};
+
+/*
  * Commands in oo::define and oo::objdefine.
  */
 
-static const struct {
+static const struct DefineCommands {
     const char *name;
     Tcl_ObjCmdProc *objProc;
     int flag;
 } defineCmds[] = {
-    {"constructor", TclOODefineConstructorObjCmd, 0},
+    {"classmethod",	TclOODefineClassMethodObjCmd, 0},
+    {"constructor",	TclOODefineConstructorObjCmd, 0},
     {"definitionnamespace", TclOODefineDefnNsObjCmd, 0},
-    {"deletemethod", TclOODefineDeleteMethodObjCmd, 0},
-    {"destructor", TclOODefineDestructorObjCmd, 0},
-    {"export", TclOODefineExportObjCmd, 0},
-    {"forward", TclOODefineForwardObjCmd, 0},
-    {"method", TclOODefineMethodObjCmd, 0},
-    {"private", TclOODefinePrivateObjCmd, 0},
-    {"renamemethod", TclOODefineRenameMethodObjCmd, 0},
-    {"self", TclOODefineSelfObjCmd, 0},
-    {"unexport", TclOODefineUnexportObjCmd, 0},
+    {"deletemethod",	TclOODefineDeleteMethodObjCmd, 0},
+    {"destructor",	TclOODefineDestructorObjCmd, 0},
+    {"export",		TclOODefineExportObjCmd, 0},
+    {"forward",		TclOODefineForwardObjCmd, 0},
+    {"initialise",	TclOODefineInitialiseObjCmd, 0},
+    {"initialize",	TclOODefineInitialiseObjCmd, 0},
+    {"method",		TclOODefineMethodObjCmd, 0},
+    {"private",		TclOODefinePrivateObjCmd, 0},
+    {"renamemethod",	TclOODefineRenameMethodObjCmd, 0},
+    {"self",		TclOODefineSelfObjCmd, 0},
+    {"unexport",	TclOODefineUnexportObjCmd, 0},
     {NULL, NULL, 0}
 }, objdefCmds[] = {
-    {"class", TclOODefineClassObjCmd, 1},
-    {"deletemethod", TclOODefineDeleteMethodObjCmd, 1},
-    {"export", TclOODefineExportObjCmd, 1},
-    {"forward", TclOODefineForwardObjCmd, 1},
-    {"method", TclOODefineMethodObjCmd, 1},
-    {"private", TclOODefinePrivateObjCmd, 1},
-    {"renamemethod", TclOODefineRenameMethodObjCmd, 1},
-    {"self", TclOODefineObjSelfObjCmd, 0},
-    {"unexport", TclOODefineUnexportObjCmd, 1},
+    {"class",		TclOODefineClassObjCmd, 1},
+    {"deletemethod",	TclOODefineDeleteMethodObjCmd, 1},
+    {"export",		TclOODefineExportObjCmd, 1},
+    {"forward",		TclOODefineForwardObjCmd, 1},
+    {"method",		TclOODefineMethodObjCmd, 1},
+    {"private",		TclOODefinePrivateObjCmd, 1},
+    {"renamemethod",	TclOODefineRenameMethodObjCmd, 1},
+    {"self",		TclOODefineObjSelfObjCmd, 0},
+    {"unexport",	TclOODefineUnexportObjCmd, 1},
     {NULL, NULL, 0}
 };
 
@@ -67,7 +97,7 @@ static int		CloneClassMethod(Tcl_Interp *interp, Class *clsPtr,
 			    Method **newMPtrPtr);
 static int		CloneObjectMethod(Tcl_Interp *interp, Object *oPtr,
 			    Method *mPtr, Tcl_Obj *namePtr);
-static void		DeletedHelpersNamespace(void *clientData);
+static Tcl_NamespaceDeleteProc	DeletedHelpersNamespace;
 static Tcl_NRPostProc	FinalizeAlloc;
 static Tcl_NRPostProc	FinalizeNext;
 static Tcl_NRPostProc	FinalizeObjectCall;
@@ -76,23 +106,20 @@ static void		InitClassSystemRoots(Tcl_Interp *interp,
 			    Foundation *fPtr);
 static int		InitFoundation(Tcl_Interp *interp);
 static Tcl_InterpDeleteProc	KillFoundation;
-static void		MyDeleted(void *clientData);
-static void		ObjectNamespaceDeleted(void *clientData);
+static void		MakeAdditionalClasses(Foundation *fPtr,
+			    Tcl_Namespace *defineNs,
+			    Tcl_Namespace *objDefineNs);
+static Tcl_CmdDeleteProc	MyDeleted;
+static Tcl_NamespaceDeleteProc	ObjectNamespaceDeleted;
 static Tcl_CommandTraceProc	ObjectRenamedTrace;
 static inline void	RemoveClass(Class **list, size_t num, size_t idx);
 static inline void	RemoveObject(Object **list, size_t num, size_t idx);
 static inline void	SquelchCachedName(Object *oPtr);
 
-static int		PublicNRObjectCmd(void *clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const *objv);
-static int		PrivateNRObjectCmd(void *clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const *objv);
-static int		MyClassNRObjCmd(void *clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const *objv);
-static void		MyClassDeleted(void *clientData);
+static Tcl_ObjCmdProc	PublicNRObjectCmd;
+static Tcl_ObjCmdProc	PrivateNRObjectCmd;
+static Tcl_ObjCmdProc	MyClassNRObjCmd;
+static Tcl_CmdDeleteProc	MyClassDeleted;
 
 /*
  * Methods in the oo::object and oo::class classes. First, we define a helper
@@ -107,6 +134,7 @@ static void		MyClassDeleted(void *clientData);
 	{TCL_OO_METHOD_VERSION_CURRENT,"core method: "#name,proc,NULL,NULL}}
 
 static const DeclaredClassMethod objMethods[] = {
+    DCM("<cloned>", 0,	TclOO_Object_Cloned),
     DCM("destroy", 1,	TclOO_Object_Destroy),
     DCM("eval", 0,	TclOO_Object_Eval),
     DCM("unknown", 0,	TclOO_Object_Unknown),
@@ -114,12 +142,20 @@ static const DeclaredClassMethod objMethods[] = {
     DCM("varname", 0,	TclOO_Object_VarName),
     {NULL, 0, {0, NULL, NULL, NULL, NULL}}
 }, clsMethods[] = {
+    DCM("<cloned>", 0,	TclOO_Class_Cloned),
     DCM("create", 1,	TclOO_Class_Create),
     DCM("new", 1,	TclOO_Class_New),
     DCM("createWithNamespace", 0, TclOO_Class_CreateNs),
     {NULL, 0, {0, NULL, NULL, NULL, NULL}}
 }, cfgMethods[] = {
     DCM("configure", 1, TclOO_Configurable_Configure),
+    {NULL, 0, {0, NULL, NULL, NULL, NULL}}
+}, singletonMethods[] = {
+    DCM("new", 1,	TclOO_Singleton_New),
+    {NULL, 0, {0, NULL, NULL, NULL, NULL}}
+}, singletonInstanceMethods[] = {
+    DCM("<cloned>", 0,	TclOO_SingletonInstance_Cloned),
+    DCM("destroy", 1,	TclOO_SingletonInstance_Destroy),
     {NULL, 0, {0, NULL, NULL, NULL, NULL}}
 };
 
@@ -134,25 +170,25 @@ static const Tcl_MethodType classConstructor = {
 };
 
 /*
- * Scripted parts of TclOO. First, the main script (cannot be outside this
- * file).
+ * And the oo::configurable constructor...
+ */
+
+static const Tcl_MethodType configurableConstructor = {
+    TCL_OO_METHOD_VERSION_CURRENT,
+    "oo::configurable constructor",
+    TclOO_Configurable_Constructor, NULL, NULL
+};
+
+/*
+ * The scripted part of TclOO: (legacy) package registration. There's no C API
+ * at all for doing this, not even internally to Tcl.
  */
 
 static const char initScript[] =
 #ifndef TCL_NO_DEPRECATED
 "package ifneeded TclOO " TCLOO_PATCHLEVEL " {# Already present, OK?};"
 #endif
-"package ifneeded tcl::oo " TCLOO_PATCHLEVEL " {# Already present, OK?};"
-"namespace eval ::oo { variable version " TCLOO_VERSION " };"
-"namespace eval ::oo { variable patchlevel " TCLOO_PATCHLEVEL " };";
-/* "tcl_findLibrary tcloo $oo::version $oo::version" */
-/* " tcloo.tcl OO_LIBRARY oo::library;"; */
-
-/*
- * The scripted part of the definitions of TclOO.
- */
-
-#include "tclOOScript.h"
+"package ifneeded tcl::oo " TCLOO_PATCHLEVEL " {# Already present, OK?};";
 
 /*
  * The actual definition of the variable holding the TclOO stub table.
@@ -181,6 +217,7 @@ MODULE_SCOPE const TclOOStubs tclOOStubs;
 #define IsRootClass(ocPtr)	((ocPtr)->flags & ROOT_CLASS)
 #define IsRoot(ocPtr)		((ocPtr)->flags & (ROOT_OBJECT|ROOT_CLASS))
 
+/* Wrapper for removing an item from a "flexible" item list. */
 #define RemoveItem(type, lst, i) \
     do {						\
 	Remove ## type ((lst).list, (lst).num, i);	\
@@ -322,6 +359,32 @@ CreateCmdInNS(
 /*
  * ----------------------------------------------------------------------
  *
+ * CreateConstantInNSStr --
+ *
+ *	Wrapper around TclCreateConstantInNS to make using it with string
+ *	constants easier.
+ *
+ * ----------------------------------------------------------------------
+ */
+static inline void
+CreateConstantInNSStr(
+    Tcl_Interp *interp,
+    Tcl_Namespace *namespacePtr,// The namespace to contain the constant.
+    const char *nameStr,	// The unqualified name of the constant.
+    const char *valueStr)	// The value to put in the constant.
+{
+    Tcl_Obj *nameObj = Tcl_NewStringObj(nameStr, TCL_AUTO_LENGTH);
+    Tcl_IncrRefCount(nameObj);
+    Tcl_Obj *valueObj = Tcl_NewStringObj(valueStr, TCL_AUTO_LENGTH);
+    Tcl_IncrRefCount(valueObj);
+    TclCreateConstantInNS(interp, (Namespace *) namespacePtr, nameObj, valueObj);
+    Tcl_DecrRefCount(nameObj);
+    Tcl_DecrRefCount(valueObj);
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
  * InitFoundation --
  *
  *	Set up the core of the OO core class system. This is a structure
@@ -368,14 +431,20 @@ InitFoundation(
     TclNewLiteralStringObj(fPtr->clonedName, "<cloned>");
     TclNewLiteralStringObj(fPtr->defineName, "::oo::define");
     TclNewLiteralStringObj(fPtr->myName, "my");
-    TclNewLiteralStringObj(fPtr->mcdName, "::oo::MixinClassDelegates");
+    TclNewLiteralStringObj(fPtr->slotGetName, "Get");
+    TclNewLiteralStringObj(fPtr->slotSetName, "Set");
+    TclNewLiteralStringObj(fPtr->slotResolveName, "Resolve");
+    TclNewLiteralStringObj(fPtr->slotDefOpName, "--default-operation");
     Tcl_IncrRefCount(fPtr->unknownMethodNameObj);
     Tcl_IncrRefCount(fPtr->constructorName);
     Tcl_IncrRefCount(fPtr->destructorName);
     Tcl_IncrRefCount(fPtr->clonedName);
     Tcl_IncrRefCount(fPtr->defineName);
     Tcl_IncrRefCount(fPtr->myName);
-    Tcl_IncrRefCount(fPtr->mcdName);
+    Tcl_IncrRefCount(fPtr->slotGetName);
+    Tcl_IncrRefCount(fPtr->slotSetName);
+    Tcl_IncrRefCount(fPtr->slotResolveName);
+    Tcl_IncrRefCount(fPtr->slotDefOpName);
 
     TclCreateObjCommandInNs(interp, "UnknownDefinition", fPtr->ooNs,
 	    TclOOUnknownDefinition, NULL, NULL);
@@ -430,16 +499,16 @@ InitFoundation(
      * ensemble.
      */
 
-    CreateCmdInNS(interp, fPtr->helpersNs, "next",
-	    NULL, TclOONextObjCmd, TclCompileObjectNextCmd, CMD_COMPILES_EXPANDED);
-    CreateCmdInNS(interp, fPtr->helpersNs, "nextto",
-	    NULL, TclOONextToObjCmd, TclCompileObjectNextToCmd, CMD_COMPILES_EXPANDED);
-    CreateCmdInNS(interp, fPtr->helpersNs, "self",
-	    TclOOSelfObjCmd, NULL, TclCompileObjectSelfCmd, 0);
-
-    CreateCmdInNS(interp, fPtr->ooNs, "define", TclOODefineObjCmd, NULL, NULL, 0);
-    CreateCmdInNS(interp, fPtr->ooNs, "objdefine", TclOOObjDefObjCmd, NULL, NULL, 0);
-    CreateCmdInNS(interp, fPtr->ooNs, "copy", TclOOCopyObjectCmd, NULL, NULL, 0);
+    for (i = 0 ; helpCmds[i].name ; i++) {
+	CreateCmdInNS(interp, fPtr->helpersNs, helpCmds[i].name,
+		helpCmds[i].objProc, helpCmds[i].nreProc,
+		helpCmds[i].compileProc, helpCmds[i].flags);
+    }
+    for (i = 0 ; ooCmds[i].name ; i++) {
+	CreateCmdInNS(interp, fPtr->ooNs, ooCmds[i].name,
+		ooCmds[i].objProc, ooCmds[i].nreProc,
+		ooCmds[i].compileProc, ooCmds[i].flags);
+    }
 
     TclOOInitInfo(interp);
 
@@ -451,33 +520,13 @@ InitFoundation(
 	return TCL_ERROR;
     }
 
-    /*
-     * Make the configurable class and install its standard defined method.
-     */
+    MakeAdditionalClasses(fPtr, define, objdef);
 
-    Tcl_Object cfgCls = Tcl_NewObjectInstance(interp,
-	    (Tcl_Class) fPtr->classCls, "::oo::configuresupport::configurable",
-	    NULL, TCL_INDEX_NONE, NULL, 0);
-    TclOODefineBasicMethods(((Object *) cfgCls)->classPtr, cfgMethods);
-
-    /*
-     * Don't have handles to these namespaces, so use Tcl_CreateObjCommand.
-     */
-
-    Tcl_CreateObjCommand(interp,
-	    "::oo::configuresupport::configurableobject::property",
-	    TclOODefinePropertyCmd, INT2PTR(1) /*useInstance*/, NULL);
-    Tcl_CreateObjCommand(interp,
-	    "::oo::configuresupport::configurableclass::property",
-	    TclOODefinePropertyCmd, INT2PTR(0) /*useInstance*/, NULL);
-
-    /*
-     * Evaluate the remaining definitions, which are a compiled-in Tcl script.
-     */
-
-    return Tcl_EvalEx(interp, tclOOSetupScript, TCL_INDEX_NONE, 0);
+    CreateConstantInNSStr(interp, fPtr->ooNs, "version", TCLOO_VERSION);
+    CreateConstantInNSStr(interp, fPtr->ooNs, "patchlevel", TCLOO_PATCHLEVEL);
+    return TCL_OK;
 }
-
+
 /*
  * ----------------------------------------------------------------------
  *
@@ -572,6 +621,154 @@ InitClassSystemRoots(
 /*
  * ----------------------------------------------------------------------
  *
+ * MarkAsMetaclass --
+ *
+ *	Make a simple class into a metaclass by making it into a subclass of
+ *	oo::class. Assumes that the previous class it had can be ignored.
+ *
+ * ----------------------------------------------------------------------
+ */
+static inline void
+MarkAsMetaclass(
+    Foundation *fPtr,
+    Class *classPtr)
+{
+    Class **supers = (Class **) Tcl_Alloc(sizeof(Class *));
+    supers[0] = fPtr->classCls;
+    AddRef(supers[0]->thisPtr);
+    TclOOSetSuperclasses(classPtr, 1, supers);
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * MakeAdditionalClasses --
+ *
+ *	Make the extra classes in TclOO that aren't core to how it functions.
+ *
+ * ----------------------------------------------------------------------
+ */
+static void
+MakeAdditionalClasses(
+    Foundation *fPtr,
+    Tcl_Namespace *defineNs,
+    Tcl_Namespace *objDefineNs)
+{
+    Tcl_Interp *interp = fPtr->interp;
+
+    /*
+     * Make the singleton class, the SingletonInstance class, and install their
+     * standard defined methods.
+     */
+
+    // A metaclass that is used to make classes that only permit one instance
+    // of them to exist. See singleton(n).
+    Object *singletonObj = (Object *) Tcl_NewObjectInstance(interp,
+	    (Tcl_Class) fPtr->classCls, "::oo::singleton",
+	    NULL, TCL_INDEX_NONE, NULL, 0);
+    Class *singletonCls = singletonObj->classPtr;
+    TclOODefineBasicMethods(singletonCls, singletonMethods);
+    // Set the superclass to oo::class
+    MarkAsMetaclass(fPtr, singletonCls);
+    // Unexport methods
+    TclOOUnexportMethods(singletonCls, "create", "createWithNamespace", NULL);
+
+    // A mixin used to make an object so it won't be destroyed or cloned (or
+    // at least not easily).
+    Object *singletonInst = (Object *) Tcl_NewObjectInstance(interp,
+	    (Tcl_Class) fPtr->classCls, "::oo::SingletonInstance",
+	    NULL, TCL_INDEX_NONE, NULL, 0);
+    TclOODefineBasicMethods(singletonInst->classPtr, singletonInstanceMethods);
+
+    /*
+     * Make the abstract class.
+     */
+
+    // A metaclass that is used to make classes that can't be directly
+    // instantiated. See abstract(n).
+    Object *abstractCls = (Object *) Tcl_NewObjectInstance(interp,
+	    (Tcl_Class) fPtr->classCls, "::oo::abstract",
+	    NULL, TCL_INDEX_NONE, NULL, 0);
+    // Set the superclass to oo::class
+    MarkAsMetaclass(fPtr, abstractCls->classPtr);
+    // Unexport methods
+    TclOOUnexportMethods(abstractCls->classPtr,
+	    "create", "createWithNamespace", "new", NULL);
+
+    /*
+     * Make the configurable class and install its standard defined method.
+     */
+
+    // The class that contains the implementation of the actual
+    // 'configure' method (mixed into actually configurable classes).
+    // The 'configure' method is in tclOOBasic.c.
+    Object *cfgSupObj = (Object *) Tcl_NewObjectInstance(interp,
+	    (Tcl_Class) fPtr->classCls, "::oo::configuresupport::configurable",
+	    NULL, TCL_INDEX_NONE, NULL, 0);
+    Class *cfgSupCls = cfgSupObj->classPtr;
+    TclOODefineBasicMethods(cfgSupCls, cfgMethods);
+
+    // Namespaces used as implementation vectors for oo::define and
+    // oo::objdefine when the class/instance is configurable.
+    // Note that these also contain commands implemented in C,
+    // especially the [property] definition command.
+
+    Tcl_Namespace *cfgObjNs = Tcl_CreateNamespace(interp,
+	    "::oo::configuresupport::configurableobject", NULL, NULL);
+    TclCreateObjCommandInNs(interp, "property", cfgObjNs,
+	    TclOODefinePropertyCmd, INT2PTR(1) /*useInstance*/, NULL);
+    TclCreateObjCommandInNs(interp, "properties", cfgObjNs,
+	    TclOODefinePropertyCmd, INT2PTR(1) /*useInstance*/, NULL);
+    Tcl_Export(interp, cfgObjNs, "property", /*reset*/1);
+    TclSetNsPath((Namespace *) cfgObjNs, 1, &objDefineNs);
+
+    Tcl_Namespace *cfgClsNs = Tcl_CreateNamespace(interp,
+	    "::oo::configuresupport::configurableclass", NULL, NULL);
+    TclCreateObjCommandInNs(interp, "property", cfgClsNs,
+	    TclOODefinePropertyCmd, INT2PTR(0) /*useInstance*/, NULL);
+    TclCreateObjCommandInNs(interp, "properties", cfgClsNs,
+	    TclOODefinePropertyCmd, INT2PTR(0) /*useInstance*/, NULL);
+    Tcl_Export(interp, cfgClsNs, "property", /*reset*/1);
+    TclSetNsPath((Namespace *) cfgClsNs, 1, &defineNs);
+
+    // A metaclass that is used to make classes that can be configured in
+    // their creation phase (and later too). All the metaclass itself does is
+    // arrange for the class created to have a 'configure' method and for
+    // oo::define and oo::objdefine (on the class and its instances) to have
+    // a property definition for setting things up for 'configure'.
+    Object *configurableObj = (Object *) Tcl_NewObjectInstance(interp,
+	    (Tcl_Class) fPtr->classCls, "::oo::configurable",
+	    NULL, TCL_INDEX_NONE, NULL, 0);
+    Class *configurableCls = configurableObj->classPtr;
+    MarkAsMetaclass(fPtr, configurableCls);
+    Tcl_ClassSetConstructor(interp, (Tcl_Class) configurableCls, TclNewMethod(
+	    (Tcl_Class) configurableCls, NULL, 0, &configurableConstructor, NULL));
+
+    Tcl_Obj *nsName = Tcl_NewStringObj("::oo::configuresupport::configurableclass",
+	    TCL_AUTO_LENGTH);
+    Tcl_IncrRefCount(nsName);
+    if (cfgSupCls->clsDefinitionNs != NULL) {
+	Tcl_DecrRefCount(cfgSupCls->clsDefinitionNs);
+    }
+    cfgSupCls->clsDefinitionNs = nsName;
+    Tcl_IncrRefCount(nsName);
+    if (configurableCls->clsDefinitionNs != NULL) {
+	Tcl_DecrRefCount(configurableCls->clsDefinitionNs);
+    }
+    configurableCls->clsDefinitionNs = nsName;
+
+    nsName = Tcl_NewStringObj("::oo::configuresupport::configurableobject",
+	    TCL_AUTO_LENGTH);
+    Tcl_IncrRefCount(nsName);
+    if (cfgSupCls->objDefinitionNs != NULL) {
+	Tcl_DecrRefCount(cfgSupCls->objDefinitionNs);
+    }
+    cfgSupCls->objDefinitionNs = nsName;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
  * DeletedHelpersNamespace --
  *
  *	Simple helper used to clear fields of the foundation when they no
@@ -614,7 +811,10 @@ KillFoundation(
     TclDecrRefCount(fPtr->clonedName);
     TclDecrRefCount(fPtr->defineName);
     TclDecrRefCount(fPtr->myName);
-    TclDecrRefCount(fPtr->mcdName);
+    TclDecrRefCount(fPtr->slotGetName);
+    TclDecrRefCount(fPtr->slotSetName);
+    TclDecrRefCount(fPtr->slotResolveName);
+    TclDecrRefCount(fPtr->slotDefOpName);
     TclOODecrRefCount(fPtr->objectCls->thisPtr);
     TclOODecrRefCount(fPtr->classCls->thisPtr);
 
@@ -798,6 +998,7 @@ AllocObject(
     oPtr->myclassCommand = TclNRCreateCommandInNs(interp, "myclass",
 	    oPtr->namespacePtr, TclOOMyClassObjCmd, MyClassNRObjCmd, oPtr,
 	    MyClassDeleted);
+    oPtr->linkedCmdsList = NULL;
     return oPtr;
 }
 
@@ -842,6 +1043,17 @@ MyDeleted(
 {
     Object *oPtr = (Object *) clientData;
 
+    if (oPtr->linkedCmdsList) {
+	Tcl_Size linkc, i;
+	Tcl_Obj **linkv;
+	TclListObjGetElements(NULL, oPtr->linkedCmdsList, &linkc, &linkv);
+	for (i=0 ; i<linkc ; i++) {
+	    Tcl_Obj *link = linkv[i];
+	    (void) Tcl_DeleteCommand(oPtr->fPtr->interp, TclGetString(link));
+	}
+	Tcl_DecrRefCount(oPtr->linkedCmdsList);
+	oPtr->linkedCmdsList = NULL;
+    }
     oPtr->myCommand = NULL;
 }
 
@@ -1242,7 +1454,7 @@ ObjectNamespaceDeleted(
      * freed memory.
      */
 
-    if (((Command *) oPtr->command)->flags && CMD_DYING) {
+    if (((Command *) oPtr->command)->flags & CMD_DYING) {
 	/*
 	 * Something has already started the command deletion process. We can
 	 * go ahead and clean up the namespace,
@@ -1389,7 +1601,6 @@ TclOODecrRefCount(
     Object *oPtr)
 {
     if (oPtr->refCount-- <= 1) {
-
 	if (oPtr->classPtr != NULL) {
 	    Tcl_Free(oPtr->classPtr);
 	}
@@ -1867,6 +2078,16 @@ TclNRNewObjectInstance(
     return TclOOInvokeContext(contextPtr, interp, objc, objv);
 }
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclNewObjectInstanceCommon --
+ *
+ *	Common code for handling object allocation. Does the basic object
+ *	structure and class structure allocation.
+ *
+ * ----------------------------------------------------------------------
+ */
 Object *
 TclNewObjectInstanceCommon(
     Tcl_Interp *interp,
@@ -1932,6 +2153,17 @@ TclNewObjectInstanceCommon(
     return oPtr;
 }
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * FinalizeAlloc --
+ *
+ *	Final stage of NR-aware object allocation, running after the
+ *	constructor has been called to decide whether the construction
+ *	succeeded or failed.
+ *
+ * ----------------------------------------------------------------------
+ */
 static int
 FinalizeAlloc(
     void *data[],
@@ -3118,6 +3350,30 @@ Tcl_GetObjectName(
     Tcl_Object object)
 {
     return TclOOObjectName(interp, (Object *) object);
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclOOObjectMyName --
+ *
+ *	Utility function that returns the name of the object's [my], or NULL
+ *	if it has been deleted (or otherwise doesn't exist).
+ *
+ * ----------------------------------------------------------------------
+ */
+Tcl_Obj *
+TclOOObjectMyName(
+    Tcl_Interp *interp,
+    Object *oPtr)
+{
+    if (!oPtr->myCommand) {
+	return NULL;
+    }
+    Tcl_Obj *namePtr;
+    TclNewObj(namePtr);
+    Tcl_GetCommandFullName(interp, oPtr->myCommand, namePtr);
+    return namePtr;
 }
 
 /*

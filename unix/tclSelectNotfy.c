@@ -180,17 +180,15 @@ static pthread_cond_t notifierCV = PTHREAD_COND_INITIALIZER;
 
 /*
  * The pollState bits:
- *
- * POLL_WANT is set by each thread before it waits on its condition variable.
- *	It is checked by the notifier before it does select.
- *
- * POLL_DONE is set by the notifier if it goes into select after seeing
- *	POLL_WANT. The idea is to ensure it tries a select with the same bits
- *	the initial thread had set.
  */
 enum SelectPollStateFlags {
-    POLL_WANT = 0x1,
-    POLL_DONE = 0x2
+    POLL_WANT = 0x1,		/* Set by each thread before it waits on its
+				 * condition variable. Checked by the notifier
+				 * before it does select(). */
+    POLL_DONE = 0x2		/* Set by the notifier if it goes into select()
+				 * after seeing POLL_WANT. The idea is to
+				 * ensure it tries a select() with the same
+				 * bits the initial thread had set. */
 };
 
 /*
@@ -255,36 +253,33 @@ typedef struct {
     const void *lpszClassName;
 } WNDCLASSW;
 
-#ifdef __clang__
-#pragma clang diagnostic ignored "-Wignored-attributes"
-#endif
-extern void __stdcall	CloseHandle(void *);
-extern void *__stdcall	CreateEventW(void *, unsigned char, unsigned char,
+extern void CloseHandle(void *);
+extern void *CreateEventW(void *, unsigned char, unsigned char,
 			    void *);
-extern void *__stdcall	CreateWindowExW(void *, const void *, const void *,
+extern void *CreateWindowExW(void *, const void *, const void *,
 			    unsigned int, int, int, int, int, void *, void *,
 			    void *, void *);
-extern unsigned int __stdcall	DefWindowProcW(void *, int, void *, void *);
-extern unsigned char __stdcall	DestroyWindow(void *);
-extern int __stdcall	DispatchMessageW(const MSG *);
-extern unsigned char __stdcall	GetMessageW(MSG *, void *, int, int);
-extern void __stdcall	MsgWaitForMultipleObjects(unsigned int, void *,
+extern unsigned int DefWindowProcW(void *, int, void *, void *);
+extern unsigned char DestroyWindow(void *);
+extern int DispatchMessageW(const MSG *);
+extern unsigned char GetMessageW(MSG *, void *, int, int);
+extern void MsgWaitForMultipleObjects(unsigned int, void *,
 			    unsigned char, unsigned int, unsigned int);
-extern unsigned char __stdcall	PeekMessageW(MSG *, void *, int, int, int);
-extern unsigned char __stdcall	PostMessageW(void *, unsigned int, void *,
+extern unsigned char PeekMessageW(MSG *, void *, int, int, int);
+extern unsigned char PostMessageW(void *, unsigned int, void *,
 				    void *);
-extern void __stdcall	PostQuitMessage(int);
-extern void *__stdcall	RegisterClassW(const WNDCLASSW *);
-extern unsigned char __stdcall	ResetEvent(void *);
-extern unsigned char __stdcall	TranslateMessage(const MSG *);
+extern void PostQuitMessage(int);
+extern void *RegisterClassW(const WNDCLASSW *);
+extern unsigned char ResetEvent(void *);
+extern unsigned char TranslateMessage(const MSG *);
 
 /*
  * Threaded-cygwin specific constants and functions in this file:
  */
 
 #if TCL_THREADS && defined(__CYGWIN__)
-static const wchar_t className[] = L"TclNotifier";
-static unsigned int __stdcall	NotifierProc(void *hwnd, unsigned int message,
+static const WCHAR className[] = L"TclNotifier";
+static unsigned int NotifierProc(void *hwnd, unsigned int message,
 			    void *wParam, void *lParam);
 #endif /* TCL_THREADS && defined(__CYGWIN__) */
 #ifdef __cplusplus
@@ -601,7 +596,7 @@ TclpDeleteFileHandler(
 
 #if TCL_THREADS && defined(__CYGWIN__)
 
-static unsigned int __stdcall
+static unsigned int
 NotifierProc(
     void *hwnd,
     unsigned int message,
@@ -945,7 +940,7 @@ TclAsyncNotifier(
 		if (write(triggerPipe, "S", 1) != 1) {
 		    asyncPending = 0;
 		    return 0;
-		};
+		}
 	    }
 	    return 1;
 	}

@@ -765,12 +765,12 @@ test tailcall-15.3 {tailcall memory leak check} -constraints memory -setup {
 } -body {
     list [
 	apply {args {
-	    tailcall foo 1 2 {*}$args 3 4 {*}$args 5 
+	    tailcall foo 1 2 {*}$args 3 4 {*}$args 5
 	}} a b c
     ] [
 	leaktest {
 	    apply {args {
-		tailcall foo 1 2 {*}$args 3 4 {*}$args 5 
+		tailcall foo 1 2 {*}$args 3 4 {*}$args 5
 	    }} a b c
 	}
     ]

@@ -245,9 +245,9 @@ test abstractlist-3.3 {shimmer lrange} {testobj lstring} {
 	set start [expr {$i+1}]
 	set w
     }]
-    set l-isa3 [testobj objtype $l]; # lrange defaults to list behavior
+    set l-isa3 [testobj objtype $l]
     list ${l-isa} $il ${l-isa2} ${l-isa3} $words
-} {lstring {2 6 10 15 20 25 30 34 40 44 48 55 62 66 74 77 80 85} lstring list {If you can keep your head when all about you Are losing theirs and blaming it on you,}}
+} {lstring {2 6 10 15 20 25 30 34 40 44 48 55 62 66 74 77 80 85} lstring lstring {If you can keep your head when all about you Are losing theirs and blaming it on you,}}
 
 test abstractlist-3.4 {no shimmer foreach} {testobj lstring} {
     set l [lstring -not SLICE $str]
@@ -307,11 +307,11 @@ test abstractlist-3.7 {no shimmer linsert} {testobj lstring} {
 test abstractlist-3.8 {shimmer lassign} {testobj lstring} {
     set l [lstring -not SLICE Inconceivable]
     set l-isa [testobj objtype $l]
-    set l2 [lassign $l i n c] ;# must be using lrange internally
+    set l2 [lassign $l i n c]
     set l-isa2 [testobj objtype $l]
     set l2-isa [testobj objtype $l2]
     list $l ${l-isa} $l2 ${l-isa2} ${l2-isa}
-} {{I n c o n c e i v a b l e} lstring {o n c e i v a b l e} list list}
+} {{I n c o n c e i v a b l e} lstring {o n c e i v a b l e} lstring list}
 
 test abstractlist-3.9 {no shimmer lremove} {testobj lstring} {
     set l [lstring -not SLICE Inconceivable]

@@ -668,14 +668,17 @@ proc ::tcl::clock::EnterLocale { locale } {
 
 #----------------------------------------------------------------------
 #
+# _registryExists --
 # _hasRegistry --
 #
-#	Helper that checks whether registry module is available (Windows only)
+#	Helpers that checks whether registry module is available (Windows only)
 #	and loads it on demand.
 #
+# Side effects:
+#	_hasRegistry does it only once, and hereafter simply returns 1 or 0.
+#
 #----------------------------------------------------------------------
-proc ::tcl::clock::_hasRegistry {} {
-    set res 0
+proc ::tcl::clock::_registryExists {} {
     if { $::tcl_platform(platform) eq {windows} } {
 	if { [catch { package require registry 1.3 }] } {
 	    # try to load registry directly from root (if uninstalled / development env):
@@ -687,9 +690,13 @@ proc ::tcl::clock::_hasRegistry {} {
 	    }}
 	}
 	if { [namespace which -command ::registry] ne "" } {
-	    set res 1
+	    return 1
 	}
     }
+    return 0
+}
+proc ::tcl::clock::_hasRegistry {} {
+    set res [_registryExists]
     proc ::tcl::clock::_hasRegistry {} [list return $res]
     return $res
 }

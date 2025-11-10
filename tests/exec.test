@@ -203,7 +203,7 @@ test exec-2.7 {handle count redirecting input from immediate source} -constraint
 } -body {
     set numHandles [testhandlecount]
     list [exec [interpreter] $path(cat) | [interpreter] $path(cat) << "Sample text"] \
-        [expr {[testhandlecount] - $numHandles}]
+	[expr {[testhandlecount] - $numHandles}]
 } -result [list {Sample text} 0]
 
 # I/O redirection: output to file.
@@ -253,7 +253,7 @@ test exec-3.8 {handle count redirecting output to file} -constraints {
     set numHandles [testhandlecount]
     exec > $path(gorp.file) [interpreter] $path(echo) "Different simple words" | [interpreter] $path(cat) | [interpreter] $path(cat)
     list [exec [interpreter] $path(cat) $path(gorp.file)] \
-        [expr {[testhandlecount] - $numHandles}]
+	[expr {[testhandlecount] - $numHandles}]
 } -result [list "Different simple words" 0]
 
 # I/O redirection: output and stderr to file.
@@ -331,7 +331,7 @@ test exec-5.8 {handle count redirecting input from file} -constraints {
 } -body {
     set numHandles [testhandlecount]
     list [exec [interpreter] $path(cat) | [interpreter] $path(cat) < $path(gorp.file)] \
-        [expr {[testhandlecount] - $numHandles}]
+	[expr {[testhandlecount] - $numHandles}]
 } -result [list {Just a few thoughts} 0]
 
 # I/O redirection: standard error through a pipeline.
@@ -825,10 +825,10 @@ unset cmdBuiltin
 # ----------------------------------------------------------------------
 # cleanup
 
-foreach file {gorp.file gorp.file2 echo echo2 cat wc sh sh2 sleep exit err} {
+foreach file {gorp.file gorp.file2 echo echo2 echobin cat wc sh sh2 sleep exit err} {
     removeFile $file
 }
-unset -nocomplain path
+unset -nocomplain path tmp
 
 ::tcltest::cleanupTests
 return

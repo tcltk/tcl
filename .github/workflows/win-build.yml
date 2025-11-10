@@ -67,7 +67,7 @@ jobs:
     # Using powershell means we need to explicitly stop on failure
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         timeout-minutes: 5
       - name: Init MSVC
         uses: ilammy/msvc-dev-cmd@v1
@@ -88,6 +88,7 @@ jobs:
         timeout-minutes: 5
       - name: Run Tests ${{ matrix.config }}
         run: |
+          Write-Output "::add-matcher::.github/tcltest.json"
           &nmake -f makefile.vc ${{ matrix.config }} test
           if ($lastexitcode -ne 0) {
              throw "nmake exit code: $lastexitcode"
@@ -112,7 +113,7 @@ jobs:
           install: git mingw-w64-x86_64-toolchain make
         timeout-minutes: 10
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         timeout-minutes: 5
       - name: Prepare
         run: |
@@ -136,10 +137,15 @@ jobs:
           ulimit -a || echo 'get limit failed'
           make runtest SCRIPT=../.github/workflows/info.tcl || echo 'get info failed'
       - name: Run Tests
-        run: make test
+        run: |
+          echo "::add-matcher::.github/tcltest.json"
+          make test
         timeout-minutes: 30
         env:
           ERROR_ON_FAILURES: 1
+      - name: Install
+        run: make install
+        timeout-minutes: 5
 
 # If you add builds with Wine, be sure to define the environment variable
 # CI_USING_WINE when running them so that broken tests know not to run.

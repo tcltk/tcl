@@ -9,7 +9,7 @@
 .BS
 .\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-refchan \- command handler API of reflected channels
+refchan \- Command handler API for channels implemented in Tcl code
 .SH SYNOPSIS
 .nf
 \fBchan create \fImode cmdPrefix\fR

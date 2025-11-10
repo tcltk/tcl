@@ -96,7 +96,9 @@
 
 #ifdef _MSC_VER
 #pragma warning( disable : 4102 )
-#elif defined (__clang__) || ((__GNUC__)  && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5))))
+#elif defined (__clang__) && (__clang_major__ > 14)
+#pragma clang diagnostic ignored "-Wunused-but-set-variable"
+#elif (__GNUC__)  && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5)))
 #pragma GCC diagnostic ignored "-Wunused-but-set-variable"
 #endif
 
@@ -225,7 +227,7 @@ union YYSTYPE
 {
 
     Tcl_WideInt Number;
-    enum _MERIDIAN Meridian;
+    MERIDIAN Meridian;
 
 
 };
@@ -718,14 +720,14 @@ static const yytype_int8 yytranslate[] =
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_int16 yyrline[] =
 {
-       0,   171,   171,   172,   176,   179,   182,   185,   188,   191,
-     194,   197,   201,   204,   209,   215,   221,   226,   230,   234,
-     238,   242,   246,   252,   253,   256,   260,   264,   268,   272,
-     276,   282,   288,   292,   297,   298,   303,   307,   312,   316,
-     321,   328,   332,   338,   338,   340,   345,   350,   352,   357,
-     359,   360,   368,   379,   393,   398,   401,   404,   407,   410,
-     413,   416,   421,   424,   429,   433,   437,   443,   446,   449,
-     454,   472,   475
+       0,   175,   175,   176,   180,   183,   186,   189,   193,   197,
+     200,   203,   207,   210,   215,   221,   227,   232,   236,   240,
+     244,   248,   252,   258,   259,   262,   266,   270,   274,   278,
+     282,   288,   294,   298,   303,   304,   309,   313,   318,   322,
+     327,   334,   338,   344,   344,   346,   351,   356,   358,   363,
+     365,   366,   374,   385,   400,   405,   408,   411,   414,   417,
+     420,   423,   428,   431,   436,   441,   446,   453,   456,   459,
+     464,   482,   485
 };
 #endif
 
@@ -2346,7 +2348,7 @@ TclDateerror(
 }
 
 int
-ToSeconds(
+TclToSeconds(
     int Hours,
     int Minutes,
     int Seconds,

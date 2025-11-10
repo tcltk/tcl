@@ -1,0 +1,66 @@
+'\"
+'\" Copyright (c) 2025 Ashok P. Nadkarni.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH unicode n "9.1" Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+.SH NAME
+unicode \- Unicode character transforms
+.SH SYNOPSIS
+\fBunicode \fIfunction\fR ?\fIoptions\fR? \fIstring\fR
+.BE
+.SH DESCRIPTION
+.PP
+The command performs one of several Unicode character transformations, depending on
+\fIfunction\fR which may take the values described below.
+.\" METHOD: tonfc
+.VS "TIP726"
+.TP
+\fBunicode tonfc\fR ?\fB-profile\fR \fIprofile\fR \fIstring\fR
+.VE "TIP726"
+.
+Returns \fIstring\fR normalized as per Unicode \fBNormalization Form C\fR (NFC).
+.PP
+.\" METHOD: tonfd
+.VS "TIP726"
+.TP
+\fBunicode tonfd\fR ?\fB-profile\fR \fIprofile\fR \fIstring\fR
+.VE "TIP726"
+.
+Returns \fIstring\fR normalized as per Unicode \fBNormalization Form D\fR (NFD).
+.PP
+.\" METHOD: tonfkc
+.VS "TIP726"
+.TP
+\fBunicode tonfkc\fR ?\fB-profile\fR \fIprofile\fR \fIstring\fR
+.VE "TIP726"
+.
+Returns \fIstring\fR normalized as per Unicode \fBNormalization Form KC\fR (NFKC).
+.PP
+.\" METHOD: tonfkd
+.VS "TIP726"
+.TP
+\fBunicode tonfkd\fR ?\fB-profile\fR \fIprofile\fR \fIstring\fR
+.VE "TIP726"
+.
+Returns \fIstring\fR normalized as per Unicode \fBNormalization Form KD\fR (NFKD).
+.PP
+The normalization forms NFC, NFD, NFKC and NFKD referenced above are defined
+in \fBSection 3.11\fR of the Unicode standard
+(see https://www.unicode.org/versions/Unicode16.0.0/core-spec/chapter-3/).
+.PP
+The \fB-profile\fR option determines the command behavior in the presence
+of conversion errors. The passed profile must be \fBstrict\fR or \fBreplace\fR.
+See the \fBPROFILES\fR section in the documentation
+of the \fBencoding\fR command for details on profiles.
+.PP
+.SH "SEE ALSO"
+Tcl_UtfToNormalized(3)
+.SH KEYWORDS
+Unicode, normalize
+.\" Local Variables:
+.\" mode: nroff
+.\" End:

@@ -545,7 +545,7 @@ EXTERN Tcl_Channel	Tcl_OpenFileChannel(Tcl_Interp *interp,
 /* 199 */
 EXTERN Tcl_Channel	Tcl_OpenTcpClient(Tcl_Interp *interp, int port,
 				const char *address, const char *myaddr,
-				int myport, int flags);
+				int myport, int async);
 /* 200 */
 EXTERN Tcl_Channel	Tcl_OpenTcpServer(Tcl_Interp *interp, int port,
 				const char *host,
@@ -1875,6 +1875,29 @@ EXTERN int		Tcl_IsEmpty(Tcl_Obj *obj);
 /* 691 */
 EXTERN const char *	Tcl_GetEncodingNameForUser(Tcl_DString *bufPtr);
 /* 692 */
+EXTERN int		Tcl_ListObjReverse(Tcl_Interp *interp,
+				Tcl_Obj *objPtr, Tcl_Obj **resultPtrPtr);
+/* 693 */
+EXTERN int		Tcl_ListObjRepeat(Tcl_Interp *interp,
+				Tcl_Size repeatCount, Tcl_Size objc,
+				Tcl_Obj *const objv[],
+				Tcl_Obj **resultPtrPtr);
+/* 694 */
+EXTERN int		Tcl_ListObjRange(Tcl_Interp *interp, Tcl_Obj *objPtr,
+				Tcl_Size start, Tcl_Size end,
+				Tcl_Obj **resultPtrPtr);
+/* 695 */
+EXTERN int		Tcl_UtfToNormalizedDString(Tcl_Interp *interp,
+				const char *bytes, Tcl_Size length,
+				Tcl_UnicodeNormalizationForm normForm,
+				int profile, Tcl_DString *dsPtr);
+/* 696 */
+EXTERN int		Tcl_UtfToNormalized(Tcl_Interp *interp,
+				const char *bytes, Tcl_Size length,
+				Tcl_UnicodeNormalizationForm normForm,
+				int profile, char *bufPtr, Tcl_Size bufLen,
+				Tcl_Size *lengthPtr);
+/* 697 */
 EXTERN void		TclUnusedStubEntry(void);
 
 typedef struct {
@@ -2086,7 +2109,7 @@ typedef struct TclStubs {
     Tcl_Obj * (*tcl_ObjSetVar2) (Tcl_Interp *interp, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, Tcl_Obj *newValuePtr, int flags); /* 196 */
     Tcl_Channel (*tcl_OpenCommandChannel) (Tcl_Interp *interp, Tcl_Size argc, const char **argv, int flags); /* 197 */
     Tcl_Channel (*tcl_OpenFileChannel) (Tcl_Interp *interp, const char *fileName, const char *modeString, int permissions); /* 198 */
-    Tcl_Channel (*tcl_OpenTcpClient) (Tcl_Interp *interp, int port, const char *address, const char *myaddr, int myport, int flags); /* 199 */
+    Tcl_Channel (*tcl_OpenTcpClient) (Tcl_Interp *interp, int port, const char *address, const char *myaddr, int myport, int async); /* 199 */
     Tcl_Channel (*tcl_OpenTcpServer) (Tcl_Interp *interp, int port, const char *host, Tcl_TcpAcceptProc *acceptProc, void *callbackData); /* 200 */
     void (*tcl_Preserve) (void *data); /* 201 */
     void (*tcl_PrintDouble) (Tcl_Interp *interp, double value, char *dst); /* 202 */
@@ -2579,7 +2602,12 @@ typedef struct TclStubs {
     void (*tcl_SetWideUIntObj) (Tcl_Obj *objPtr, Tcl_WideUInt uwideValue); /* 689 */
     int (*tcl_IsEmpty) (Tcl_Obj *obj); /* 690 */
     const char * (*tcl_GetEncodingNameForUser) (Tcl_DString *bufPtr); /* 691 */
-    void (*tclUnusedStubEntry) (void); /* 692 */
+    int (*tcl_ListObjReverse) (Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Obj **resultPtrPtr); /* 692 */
+    int (*tcl_ListObjRepeat) (Tcl_Interp *interp, Tcl_Size repeatCount, Tcl_Size objc, Tcl_Obj *const objv[], Tcl_Obj **resultPtrPtr); /* 693 */
+    int (*tcl_ListObjRange) (Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Size start, Tcl_Size end, Tcl_Obj **resultPtrPtr); /* 694 */
+    int (*tcl_UtfToNormalizedDString) (Tcl_Interp *interp, const char *bytes, Tcl_Size length, Tcl_UnicodeNormalizationForm normForm, int profile, Tcl_DString *dsPtr); /* 695 */
+    int (*tcl_UtfToNormalized) (Tcl_Interp *interp, const char *bytes, Tcl_Size length, Tcl_UnicodeNormalizationForm normForm, int profile, char *bufPtr, Tcl_Size bufLen, Tcl_Size *lengthPtr); /* 696 */
+    void (*tclUnusedStubEntry) (void); /* 697 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3913,8 +3941,18 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_IsEmpty) /* 690 */
 #define Tcl_GetEncodingNameForUser \
 	(tclStubsPtr->tcl_GetEncodingNameForUser) /* 691 */
+#define Tcl_ListObjReverse \
+	(tclStubsPtr->tcl_ListObjReverse) /* 692 */
+#define Tcl_ListObjRepeat \
+	(tclStubsPtr->tcl_ListObjRepeat) /* 693 */
+#define Tcl_ListObjRange \
+	(tclStubsPtr->tcl_ListObjRange) /* 694 */
+#define Tcl_UtfToNormalizedDString \
+	(tclStubsPtr->tcl_UtfToNormalizedDString) /* 695 */
+#define Tcl_UtfToNormalized \
+	(tclStubsPtr->tcl_UtfToNormalized) /* 696 */
 #define TclUnusedStubEntry \
-	(tclStubsPtr->tclUnusedStubEntry) /* 692 */
+	(tclStubsPtr->tclUnusedStubEntry) /* 697 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
