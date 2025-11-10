@@ -2455,6 +2455,7 @@ enum InterpFlags {
 				 * stack for the interp to be fully unwound. */
 };
 
+#ifndef MAX_NESTING_DEPTH
 /*
  * Default maximum number of levels of nesting permitted in Tcl commands (used
  * to catch infinite recursion).
