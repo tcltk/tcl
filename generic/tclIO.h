@@ -229,19 +229,19 @@ typedef struct ChannelState {
  */
 enum ChannelStateFlags {
     CHANNEL_NONBLOCKING = 1<<6,	/* Channel is currently in nonblocking mode. */
-    BG_FLUSH_SCHEDULED = 1<<7,	/* A background flush of the queued
-				 * output buffers has been scheduled. */
+    BG_FLUSH_SCHEDULED = 1<<7,	/* A background flush of the queued output
+				 * buffers has been scheduled. */
     CHANNEL_CLOSED = 1<<8,	/* Channel has been closed. No further
 				 * Tcl-level IO on the channel is allowed. */
-    CHANNEL_EOF = 1<<9,		/* EOF occurred on this channel. This bit
-				 * is cleared before every input operation. */
-    CHANNEL_STICKY_EOF = 1<<10,	/* EOF occurred on this channel because we
-				 * saw the input eofChar. This bit prevents
+    CHANNEL_EOF = 1<<9,		/* EOF occurred on this channel. This bit is
+				 * cleared before every input operation. */
+    CHANNEL_STICKY_EOF = 1<<10,	/* EOF occurred on this channel because we saw
+				 * the input eofChar. This bit prevents
 				 * clearing of the EOF bit before every input
 				 * operation. */
-    CHANNEL_BLOCKED = 1<<11,	/* EWOULDBLOCK or EAGAIN occurred on
-				 * this channel. This bit is cleared
-				 * before every input or output operation. */
+    CHANNEL_BLOCKED = 1<<11,	/* EWOULDBLOCK or EAGAIN occurred on this
+				 * channel. This bit is cleared before every
+				 * input or output operation. */
     INPUT_SAW_CR = 1<<12,	/* Channel is in CRLF eol input translation
 				 * mode and the last byte seen was a "\r". */
     CHANNEL_DEAD = 1<<13,	/* The channel has been closed by the exit
@@ -260,22 +260,22 @@ enum ChannelStateFlags {
 				 * data until the state of the channel
 				 * changes. */
     CHANNEL_ENCODING_ERROR = 1<<15,
-				/* Set if channel encountered an encoding
-				 * error. */
+				/* Set if the channel encountered an
+				 * encoding error. */
     CHANNEL_RAW_MODE = 1<<16,	/* When set, notes that the Raw API is
 				 * being used. */
     CHANNEL_LINEBUFFERED = 1<<17,
-				/* Output to the channel must be
-				 * flushed after every newline. */
-    CHANNEL_UNBUFFERED = 1<<18,	/* Output to the channel must always
-				 * be flushed immediately. */
-    CHANNEL_INCLOSE = 1<<19,	/* Channel is currently being closed.
-				 * Its structures are still live and
-				 * usable, but it may not be closed
-				 * again from within the close handler. */
-    CHANNEL_CLOSEDWRITE = 1<<21	/* Channel write side has been closed.
-				 * No further Tcl-level write IO on
-				 * the channel is allowed. */
+				/* Output to the channel must be flushed
+				 * after every newline. */
+    CHANNEL_UNBUFFERED = 1<<18,	/* Output to the channel must always be
+				 * flushed immediately. */
+    CHANNEL_INCLOSE = 1<<19,	/* Channel is currently being closed. Its
+				 * structures are still live and usable, but
+				 * it may not be closed again from within the
+				 * close handler. */
+    CHANNEL_CLOSEDWRITE = 1<<21	/* Channel write side has been closed. No
+				 * further Tcl-level write IO on the channel
+				 * is allowed. */
 };
 
 /*

@@ -1683,7 +1683,7 @@ test dict-22.25 {dict with in uplevel: bug fa7995bdf2} {
 		    string cat "$a,$b"
 		}
 	    }
-	}} 
+	}}
     }}
 } 1,2
 

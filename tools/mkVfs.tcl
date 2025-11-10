@@ -66,7 +66,7 @@ set TKVER          [lindex $argv 4]
 puts "Building [file tail $TCL_SCRIPT_DIR] for $PLATFORM"
 copyDir ${TCLSRC_ROOT}/library ${TCL_SCRIPT_DIR}
 
-if {$PLATFORM == "windows"} {
+if {$PLATFORM eq "windows"} {
     set ddedll [glob -nocomplain ${TCLSRC_ROOT}/win/tcldde*.dll]
     puts "DDE DLL $ddedll"
     if {$ddedll != {}} {

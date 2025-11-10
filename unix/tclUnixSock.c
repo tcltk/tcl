@@ -84,16 +84,17 @@ struct TcpState {
  * These bits may be OR'ed together into the "flags" field of a TcpState
  * structure.
  */
-enum UnixTcpStateFlags {
-    TCP_NONBLOCKING = 1<<0,	/* Socket with non-blocking I/O. */
+enum TcpStateFlags {
+    TCP_NONBLOCKING = 1<<0,	/* Socket with non-blocking I/O */
     TCP_ASYNC_CONNECT = 1<<1,	/* Async connect in progress. */
     TCP_ASYNC_PENDING = 1<<4,	/* TcpConnect was called to process an async
-				 * connect. This flag indicates that reentry is
-				 * still pending. */
-    TCP_ASYNC_FAILED = 1<<5,	/* An async connect finally failed */
+				 * connect. This flag indicates that reentry
+				 * is still pending */
+    TCP_ASYNC_FAILED = 1<<5,	/* An async connect finally failed. */
 
     TCP_ASYNC_TEST_MODE = 1<<8	/* Async testing activated.  Do not
-				 * automatically continue connection process. */
+				 * automatically continue connection
+				 * process. */
 };
 
 /*

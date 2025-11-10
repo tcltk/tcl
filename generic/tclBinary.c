@@ -15,7 +15,6 @@
 #include "tclTomMath.h"
 
 #include <math.h>
-#include <assert.h>
 
 /*
  * The following constants are used by GetFormatSpec to indicate various
@@ -29,7 +28,7 @@ enum GetFormatSpecSpecialCounts {
 /*
  * The following flags may be OR'ed together and returned by GetFormatSpec
  */
-enum GetFormatSpecSignedness {
+enum GetFormatSpecFlags {
     BINARY_SIGNED = 0,		/* Field to be read as signed data */
     BINARY_UNSIGNED = 1		/* Field to be read as unsigned data */
 };

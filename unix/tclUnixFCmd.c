@@ -54,7 +54,7 @@
  * The following constants specify the type of callback when
  * TraverseUnixTree() calls the traverseProc()
  */
-enum TraverseCallbackTypes {
+enum TraverseProcCallbackType {
     DOTREE_PRED = 1,		/* pre-order directory */
     DOTREE_POSTD = 2,		/* post-order directory */
     DOTREE_F = 3		/* regular file */
@@ -744,8 +744,8 @@ TclpObjCopyDirectory(
     } else {
 	transPtr = Tcl_FSGetTranslatedPath(NULL,destPathPtr);
 	ret = Tcl_UtfToExternalDStringEx(NULL, NULL,
-	    (transPtr != NULL ? TclGetString(transPtr) : NULL),
-	    -1, TCL_ENCODING_PROFILE_TCL8, &dstString, NULL);
+		(transPtr != NULL ? TclGetString(transPtr) : NULL),
+		-1, TCL_ENCODING_PROFILE_TCL8, &dstString, NULL);
 	if (transPtr != NULL) {
 	    Tcl_DecrRefCount(transPtr);
 	}

@@ -31,7 +31,6 @@
 #include "tclInt.h"
 #include "tclCompile.h"
 #include "tclOOInt.h"
-#include <assert.h>
 
 /*
  * Structure that represents a range of instructions in the bytecode.
@@ -2055,7 +2054,7 @@ CreateMirrorNumJumpTable(
 	    }
 	    goto error;
 	}
-	hPtr = Tcl_CreateHashEntry(&jtnPtr->hashTable, (void*)key, &isNew);
+	hPtr = Tcl_CreateHashEntry(&jtnPtr->hashTable, INT2PTR(key), &isNew);
 	if (!isNew) {
 	    if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -3465,7 +3464,7 @@ StackCheckBasicBlock(
     }
 
     /*
-     * Update maximum stgack depth.
+     * Update maximum stack depth.
      */
 
     maxDepth = initialStackDepth + blockPtr->maxStackDepth;
