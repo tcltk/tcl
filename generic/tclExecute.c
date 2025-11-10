@@ -8760,31 +8760,57 @@ TclCompareTwoNumbers(
     Tcl_Obj *value2Ptr)
 {
     int type1 = TCL_NUMBER_NAN, type2 = TCL_NUMBER_NAN, compare;
-    void *ptr1, *ptr2;
+    void *ptr;
     mp_int big1, big2;
     double d1, d2, tmp;
     Tcl_WideInt w1, w2;
 
     if (valuePtr == value2Ptr) {
-	/* 
-	 * Bug https://core.tcl-lang.org/tcl/tktview/8dd28070. Protect
-	 * multiple mp_clear's of the same bignum.
+	/*
+	 * Protect against Tcl_TakeBignumFromObj resetting internal rep of
+	 * value2 when both args are the same object.
 	 */
 	return MP_EQ;
-}
-    (void) GetNumberFromObj(NULL, valuePtr, &ptr1, &type1);
-    (void) GetNumberFromObj(NULL, value2Ptr, &ptr2, &type2);
+    }
+
+    /*
+     * Bug https://core.tcl-lang.org/tcl/tktview/8dd28070. Extract value1
+     * before value2 type check as GetNumberFromObj can result in *ptr (the
+     * internal location returned) being overwritten.
+     */
+    (void) GetNumberFromObj(NULL, valuePtr, &ptr, &type1);
+    switch (type1) {
+    case TCL_NUMBER_INT:
+	w1 = *((const Tcl_WideInt *)ptr);
+	break;
+    case TCL_NUMBER_DOUBLE:
+	d1 = *((const double *)ptr);
+	break;
+    case TCL_NUMBER_BIG:
+	Tcl_TakeBignumFromObj(NULL, valuePtr, &big1);
+	break;
+    }
+
+    (void) GetNumberFromObj(NULL, value2Ptr, &ptr, &type2);
+    switch (type2) {
+    case TCL_NUMBER_INT:
+	w2 = *((const Tcl_WideInt *)ptr);
+	break;
+    case TCL_NUMBER_DOUBLE:
+	d2 = *((const double *)ptr);
+	break;
+    case TCL_NUMBER_BIG:
+	Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
+	break;
+    }
 
     switch (type1) {
     case TCL_NUMBER_INT:
-	w1 = *((const Tcl_WideInt *)ptr1);
 	switch (type2) {
 	case TCL_NUMBER_INT:
-	    w2 = *((const Tcl_WideInt *)ptr2);
 	wideCompare:
 	    return (w1 < w2) ? MP_LT : ((w1 > w2) ? MP_GT : MP_EQ);
 	case TCL_NUMBER_DOUBLE:
-	    d2 = *((const double *)ptr2);
 	    d1 = (double) w1;
 
 	    /*
@@ -8819,7 +8845,6 @@ TclCompareTwoNumbers(
 	    w2 = (Tcl_WideInt)d2;
 	    goto wideCompare;
 	case TCL_NUMBER_BIG:
-	    Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
 	    if (mp_isneg(&big2)) {
 		compare = MP_GT;
 	    } else {
@@ -8831,14 +8856,11 @@ TclCompareTwoNumbers(
     break;
 
     case TCL_NUMBER_DOUBLE:
-	d1 = *((const double *)ptr1);
 	switch (type2) {
 	case TCL_NUMBER_DOUBLE:
-	    d2 = *((const double *)ptr2);
 	doubleCompare:
 	    return (d1 < d2) ? MP_LT : ((d1 > d2) ? MP_GT : MP_EQ);
 	case TCL_NUMBER_INT:
-	    w2 = *((const Tcl_WideInt *)ptr2);
 	    d2 = (double) w2;
 	    if (DBL_MANT_DIG > CHAR_BIT*sizeof(Tcl_WideInt)
 		    || w2 == (Tcl_WideInt)d2 || modf(d1, &tmp) != 0.0) {
@@ -8856,7 +8878,6 @@ TclCompareTwoNumbers(
 	    if (isinf(d1)) {
 		return (d1 > 0.0) ? MP_GT : MP_LT;
 	    }
-	    Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
 	    if ((d1 < (double)WIDE_MAX) && (d1 > (double)WIDE_MIN)) {
 		if (mp_isneg(&big2)) {
 		    compare = MP_GT;
@@ -8878,14 +8899,12 @@ TclCompareTwoNumbers(
     break;
 
     case TCL_NUMBER_BIG:
-	Tcl_TakeBignumFromObj(NULL, valuePtr, &big1);
 	switch (type2) {
 	case TCL_NUMBER_INT:
 	    compare = mp_cmp_d(&big1, 0);
 	    mp_clear(&big1);
 	    return compare;
 	case TCL_NUMBER_DOUBLE:
-	    d2 = *((const double *)ptr2);
 	    if (isinf(d2)) {
 		compare = (d2 > 0.0) ? MP_LT : MP_GT;
 		mp_clear(&big1);
@@ -8905,7 +8924,6 @@ TclCompareTwoNumbers(
 	    Tcl_InitBignumFromDouble(NULL, d2, &big2);
 	    goto bigCompare;
 	case TCL_NUMBER_BIG:
-	    Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
 	bigCompare:
 	    compare = mp_cmp(&big1, &big2);
 	    mp_clear(&big1);
