@@ -35,7 +35,7 @@
 #include "tclInt.h"
 #include "tclTomMath.h"
 #include "tclStringRep.h"
-#include <assert.h>
+
 /*
  * Prototypes for functions defined later in this file:
  */
