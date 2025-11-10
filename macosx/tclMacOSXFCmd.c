@@ -48,7 +48,7 @@ enum TclCopyfileFlags {
  * tclUnixFCmd.c !
  */
 
-enum FCmdAttributes {
+enum TclMacosFCmdAttributes {
     UNIX_GROUP_ATTRIBUTE,
     UNIX_OWNER_ATTRIBUTE,
     UNIX_PERMISSIONS_ATTRIBUTE,
