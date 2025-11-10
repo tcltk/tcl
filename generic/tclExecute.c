@@ -8765,6 +8765,13 @@ TclCompareTwoNumbers(
     double d1, d2, tmp;
     Tcl_WideInt w1, w2;
 
+    /*
+     * NOTE: Use Tcl_GetNumberFromObj() in the code below, not
+     * Tcl_TakeNumberFromObj() as the latter can modify the value of
+     * unshared objects which would be a problem when valuePtr==value2Ptr
+     * and unshared. Bug [8dd2807066].
+     */
+
     (void) GetNumberFromObj(NULL, valuePtr, &ptr1, &type1);
     (void) GetNumberFromObj(NULL, value2Ptr, &ptr2, &type2);
 
@@ -8812,7 +8819,7 @@ TclCompareTwoNumbers(
 	    w2 = (Tcl_WideInt)d2;
 	    goto wideCompare;
 	case TCL_NUMBER_BIG:
-	    Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
+	    Tcl_GetBignumFromObj(NULL, value2Ptr, &big2);
 	    if (mp_isneg(&big2)) {
 		compare = MP_GT;
 	    } else {
@@ -8849,7 +8856,7 @@ TclCompareTwoNumbers(
 	    if (isinf(d1)) {
 		return (d1 > 0.0) ? MP_GT : MP_LT;
 	    }
-	    Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
+	    Tcl_GetBignumFromObj(NULL, value2Ptr, &big2);
 	    if ((d1 < (double)WIDE_MAX) && (d1 > (double)WIDE_MIN)) {
 		if (mp_isneg(&big2)) {
 		    compare = MP_GT;
@@ -8871,7 +8878,7 @@ TclCompareTwoNumbers(
     break;
 
     case TCL_NUMBER_BIG:
-	Tcl_TakeBignumFromObj(NULL, valuePtr, &big1);
+	Tcl_GetBignumFromObj(NULL, valuePtr, &big1);
 	switch (type2) {
 	case TCL_NUMBER_INT:
 	    compare = mp_cmp_d(&big1, 0);
@@ -8898,7 +8905,7 @@ TclCompareTwoNumbers(
 	    Tcl_InitBignumFromDouble(NULL, d2, &big2);
 	    goto bigCompare;
 	case TCL_NUMBER_BIG:
-	    Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
+	    Tcl_GetBignumFromObj(NULL, value2Ptr, &big2);
 	bigCompare:
 	    compare = mp_cmp(&big1, &big2);
 	    mp_clear(&big1);
