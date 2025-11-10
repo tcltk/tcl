@@ -154,7 +154,8 @@ typedef struct ConsoleHandleInfo {
 } ConsoleHandleInfo;
 
 enum ConsoleHandleInfoFlags {
-    CONSOLE_DATA_AWAITED = 1	/* An interpreter is awaiting data */
+   CONSOLE_NOTIFY_ON_INPUT = 1, /* Notify when input data available */
+   CONSOLE_READ_PENDING = 2	/* An interpreter is awaiting data */
 };
 
 /*
@@ -169,7 +170,7 @@ enum ConsoleHandleInfoFlags {
  * from under the console thread. Access to individual fields does not need
  * to be controlled because
  *   - the console thread does not write to any fields
- *   - changes to the nextWatchingChannelPtr field
+ *   - changes to the nextWatchingChannelPtr field are under gConsoleLock
  *   - changes to other fields do not matter because after being read for
  *     queueing events, they are verified again when the event is received
  *     in the interpreter thread (since they could have changed anyways while
@@ -795,8 +796,9 @@ ConsoleSetupProc(
 	    AcquireSRWLockShared(&handleInfoPtr->lock);
 	    /* Remember at most one of READABLE, WRITABLE set */
 	    if (chanInfoPtr->watchMask & TCL_READABLE) {
-		if (RingBufferLength(&handleInfoPtr->buffer) > 0
-			|| handleInfoPtr->lastError != ERROR_SUCCESS) {
+		if (RingBufferLength(&handleInfoPtr->buffer) > 0 ||
+			handleInfoPtr->lastError != ERROR_SUCCESS ||
+			ConsoleDataAvailable(handleInfoPtr->console)) {
 		    block = 0; /* Input data available */
 		}
 	    } else if (chanInfoPtr->watchMask & TCL_WRITABLE) {
@@ -882,8 +884,9 @@ ConsoleCheckProc(
 	AcquireSRWLockShared(&handleInfoPtr->lock);
 	/* Rememeber channel is read or write, never both */
 	if (chanInfoPtr->watchMask & TCL_READABLE) {
-	    if (RingBufferLength(&handleInfoPtr->buffer) > 0
-		    || handleInfoPtr->lastError != ERROR_SUCCESS) {
+	    if (RingBufferLength(&handleInfoPtr->buffer) > 0 ||
+		handleInfoPtr->lastError != ERROR_SUCCESS ||
+		ConsoleDataAvailable(handleInfoPtr->console)) {
 		needEvent = 1; /* Input data available or error/EOF */
 	    }
 	    /*
@@ -891,7 +894,7 @@ ConsoleCheckProc(
 	     * available, let reader thread know. Note channel need not be
 	     * ASYNC! (Bug [baa51423c2])
 	     */
-	    handleInfoPtr->flags |= CONSOLE_DATA_AWAITED;
+	    handleInfoPtr->flags |= CONSOLE_NOTIFY_ON_INPUT;
 	    WakeConditionVariable(&handleInfoPtr->consoleThreadCV);
 	} else if (chanInfoPtr->watchMask & TCL_WRITABLE) {
 	    if (RingBufferHasFreeSpace(&handleInfoPtr->buffer)) {
@@ -1206,7 +1209,7 @@ ConsoleInputProc(
 	 * holds a reference count on handleInfoPtr, it will not
 	 * be deallocated while the lock is released.
 	 */
-	handleInfoPtr->flags |= CONSOLE_DATA_AWAITED;
+	handleInfoPtr->flags |= CONSOLE_READ_PENDING;
 	WakeConditionVariable(&handleInfoPtr->consoleThreadCV);
 	if (!SleepConditionVariableSRW(&handleInfoPtr->interpThreadCV,
 		&handleInfoPtr->lock, INFINITE, 0)) {
@@ -1220,9 +1223,14 @@ ConsoleInputProc(
     }
 
     /* We read data. Ask for more if either async or watching for reads */
-    if ((chanInfoPtr->flags & CONSOLE_ASYNC)
-	    || (chanInfoPtr->watchMask & TCL_READABLE)) {
-	handleInfoPtr->flags |= CONSOLE_DATA_AWAITED;
+    if (chanInfoPtr->watchMask & TCL_READABLE) {
+	handleInfoPtr->flags |= CONSOLE_NOTIFY_ON_INPUT;
+    }
+    if (chanInfoPtr->flags & CONSOLE_ASYNC) {
+	handleInfoPtr->flags |= CONSOLE_READ_PENDING;
+	WakeConditionVariable(&handleInfoPtr->consoleThreadCV);
+    }
+    if (handleInfoPtr->flags & (CONSOLE_NOTIFY_ON_INPUT|CONSOLE_READ_PENDING)) {
 	WakeConditionVariable(&handleInfoPtr->consoleThreadCV);
     }
 
@@ -1423,11 +1431,13 @@ ConsoleEventProc(
 	} else {
 	    AcquireSRWLockShared(&handleInfoPtr->lock);
 	    /* Remember at most one of READABLE, WRITABLE set */
-	    if ((chanInfoPtr->watchMask & TCL_READABLE)
-		    && RingBufferLength(&handleInfoPtr->buffer)) {
+	    if ((chanInfoPtr->watchMask & TCL_READABLE) &&
+		(RingBufferLength(&handleInfoPtr->buffer) ||
+		 ConsoleDataAvailable(handleInfoPtr->console))) {
 		mask = TCL_READABLE;
-	    } else if ((chanInfoPtr->watchMask & TCL_WRITABLE)
-		    && RingBufferHasFreeSpace(&handleInfoPtr->buffer)) {
+	    }
+	    else if ((chanInfoPtr->watchMask & TCL_WRITABLE) &&
+		     RingBufferHasFreeSpace(&handleInfoPtr->buffer)) {
 		/* Generate write event space available */
 		mask = TCL_WRITABLE;
 	    }
@@ -1513,7 +1523,7 @@ ConsoleWatchProc(
 	    ConsoleHandleInfo *handleInfoPtr = FindConsoleInfo(chanInfoPtr);
 	    if (handleInfoPtr) {
 		AcquireSRWLockExclusive(&handleInfoPtr->lock);
-		handleInfoPtr->flags |= CONSOLE_DATA_AWAITED;
+		handleInfoPtr->flags |= CONSOLE_NOTIFY_ON_INPUT;
 		WakeConditionVariable(&handleInfoPtr->consoleThreadCV);
 		ReleaseSRWLockExclusive(&handleInfoPtr->lock);
 	    }
@@ -1646,6 +1656,7 @@ ConsoleReaderThread(
     Tcl_Size lastReadSize = 0;
     DWORD sleepTime;
     char inputChars[INPUT_BUFFER_SIZE];
+    HANDLE consoleHandle;
 
     /*
      * Keep looping until one of the following happens.
@@ -1673,7 +1684,6 @@ ConsoleReaderThread(
 	 * notify the interp threads.
 	 */
 	if (inputLen > 0 || handleInfoPtr->lastError != 0) {
-	    HANDLE consoleHandle;
 	    if (inputLen > 0) {
 		/* Private buffer has data. Copy it over. */
 		Tcl_Size nStored;
@@ -1704,7 +1714,8 @@ ConsoleReaderThread(
 	     * requests if needed. (In a properly designed app, at most one
 	     * thread should be reading standard input but...)
 	     */
-	    handleInfoPtr->flags &= ~CONSOLE_DATA_AWAITED;
+	    handleInfoPtr->flags &=
+		~(CONSOLE_NOTIFY_ON_INPUT | CONSOLE_READ_PENDING);
 	    /* Wake synchronous channels */
 	    WakeAllConditionVariable(&handleInfoPtr->interpThreadCV);
 	    /*
@@ -1739,15 +1750,16 @@ ConsoleReaderThread(
 	 *    input. So only do so if at least one interpreter has requested
 	 *    data.
 	 */
-	if (lastReadSize == sizeof(inputChars)
-		|| ((handleInfoPtr->flags & CONSOLE_DATA_AWAITED)
-		&& ConsoleDataAvailable(handleInfoPtr->console))) {
+	int dataAvailable = ConsoleDataAvailable(handleInfoPtr->console);
+	if (lastReadSize == sizeof(inputChars) ||
+	    ((handleInfoPtr->flags & CONSOLE_READ_PENDING) && dataAvailable)) {
 	    DWORD error;
 	    /* Do not hold the lock while blocked in console */
 	    ReleaseSRWLockExclusive(&handleInfoPtr->lock);
 	    error = ReadConsoleChars(handleInfoPtr->console,
-		    (WCHAR *)inputChars, sizeof(inputChars) / sizeof(WCHAR),
-		    &inputLen);
+				     (WCHAR *)inputChars,
+				     sizeof(inputChars) / sizeof(WCHAR),
+				     &inputLen);
 	    AcquireSRWLockExclusive(&handleInfoPtr->lock);
 	    if (error == 0) {
 		inputLen *= sizeof(WCHAR);
@@ -1763,6 +1775,12 @@ ConsoleReaderThread(
 		    handleInfoPtr->console = INVALID_HANDLE_VALUE;
 		}
 	    }
+	}
+	else if ((handleInfoPtr->flags & CONSOLE_NOTIFY_ON_INPUT) && dataAvailable)  {
+	    consoleHandle = handleInfoPtr->console;
+	    ReleaseSRWLockExclusive(&handleInfoPtr->lock);
+	    NudgeWatchers(consoleHandle);
+	    AcquireSRWLockExclusive(&handleInfoPtr->lock);
 	} else {
 	    /*
 	     * Either no one was asking for data, or no data was available.
@@ -1771,8 +1789,10 @@ ConsoleReaderThread(
 	     * poll since ReadConsole does not support async operation.
 	     * So sleep for a short while and loop back to retry.
 	     */
-	    sleepTime =
-		handleInfoPtr->flags & CONSOLE_DATA_AWAITED ? 50 : INFINITE;
+	    sleepTime = handleInfoPtr->flags &
+				(CONSOLE_NOTIFY_ON_INPUT | CONSOLE_READ_PENDING)
+			  ? 50
+			  : INFINITE;
 	    SleepConditionVariableSRW(&handleInfoPtr->consoleThreadCV,
 		    &handleInfoPtr->lock, sleepTime, 0);
 	}
