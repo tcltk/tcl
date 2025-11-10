@@ -31,7 +31,6 @@
 #include "tclInt.h"
 #include "tclCompile.h"
 #include "tclOOInt.h"
-#include <assert.h>
 
 /*
  * Structure that represents a range of instructions in the bytecode.
