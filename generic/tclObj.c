@@ -3392,7 +3392,11 @@ GetBignumFromObj(
 {
     do {
 	if (objPtr->typePtr == &tclBignumType) {
-	    if (copy || Tcl_IsShared(objPtr)) {
+	    /* 
+	     * Don't allow to move bignum if object is shared or there is no
+	     * string representation (it contains bignum only, see [8dd2807066d7]).
+	     */
+	    if (copy || Tcl_IsShared(objPtr) || (objPtr->bytes == NULL)) {
 		mp_int temp;
 
 		UNPACK_BIGNUM(objPtr, temp);
@@ -3409,9 +3413,6 @@ GetBignumFromObj(
 		objPtr->internalRep.twoPtrValue.ptr1 = NULL;
 		objPtr->internalRep.twoPtrValue.ptr2 = NULL;
 		objPtr->typePtr = NULL;
-		if (objPtr->bytes == NULL) {
-		    TclInitStringRep(objPtr, tclEmptyStringRep, 0);
-		}
 	    }
 	    return TCL_OK;
 	}
