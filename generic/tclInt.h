@@ -1768,7 +1768,7 @@ typedef struct ByteCodeStats {
  * whose 'name' is NULL.
  */
 
-typedef struct {
+typedef struct EnsembleImplMap {
     const char *name;		/* The name of the subcommand. */
     Tcl_ObjCmdProc *proc;	/* The implementation of the subcommand. */
     CompileProc *compileProc;	/* The compiler for the subcommand. */
@@ -3143,6 +3143,28 @@ MODULE_SCOPE const Tcl_HashKeyType tclStringHashKeyType;
 MODULE_SCOPE const Tcl_HashKeyType tclObjHashKeyType;
 
 /*
+ * Tables ("implementation maps") used to declare ensembles.
+ */
+
+MODULE_SCOPE const EnsembleImplMap tclArrayImplMap[];
+MODULE_SCOPE const EnsembleImplMap tclBinaryImplMap[];
+MODULE_SCOPE const EnsembleImplMap tclBinaryEncodeImplMap[];
+MODULE_SCOPE const EnsembleImplMap tclBinaryDecodeImplMap[];
+MODULE_SCOPE const EnsembleImplMap tclChanImplMap[];
+MODULE_SCOPE const EnsembleImplMap tclClockImplMap[];
+MODULE_SCOPE const EnsembleImplMap tclDictImplMap[];
+MODULE_SCOPE const EnsembleImplMap tclEncodingImplMap[];
+MODULE_SCOPE const EnsembleImplMap tclFileImplMap[];
+MODULE_SCOPE const EnsembleImplMap tclInfoImplMap[];
+MODULE_SCOPE const EnsembleImplMap tclNamespaceImplMap[];
+MODULE_SCOPE const EnsembleImplMap tclPrefixImplMap[];
+MODULE_SCOPE const EnsembleImplMap tclProcessImplMap[];
+MODULE_SCOPE const EnsembleImplMap tclStringImplMap[];
+MODULE_SCOPE const EnsembleImplMap tclUnicodeImplMap[];
+MODULE_SCOPE const EnsembleImplMap tclZipfsImplMap[];
+MODULE_SCOPE const EnsembleImplMap tclZlibImplMap[];
+
+/*
  * The head of the list of free Tcl objects, and the total number of Tcl
  * objects ever allocated and freed.
  */
@@ -3732,12 +3754,11 @@ MODULE_SCOPE bool	TclIsSpaceProc(int byte);
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_AfterObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_AppendObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_ApplyObjCmd;
-MODULE_SCOPE Tcl_Command TclInitArrayCmd(Tcl_Interp *interp);
-MODULE_SCOPE Tcl_Command TclInitBinaryCmd(Tcl_Interp *interp);
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_BreakObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_CatchObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_CdObjCmd;
-MODULE_SCOPE Tcl_Command TclInitChanCmd(Tcl_Interp *interp);
+MODULE_SCOPE int	TclSetUpChanCmd(Tcl_Interp *interp,
+			    Tcl_Command chanEnsemble);
 MODULE_SCOPE Tcl_ObjCmdProc TclChanCreateObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclChanPostEventObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclChanPopObjCmd;
@@ -3752,7 +3773,6 @@ MODULE_SCOPE Tcl_TimerToken TclCreateAbsoluteTimerHandler(
 			    Tcl_Time *timePtr, Tcl_TimerProc *proc,
 			    void *clientData);
 MODULE_SCOPE Tcl_ObjCmdProc TclDefaultBgErrorHandlerObjCmd;
-MODULE_SCOPE Tcl_Command TclInitDictCmd(Tcl_Interp *interp);
 MODULE_SCOPE int	TclDictWithFinish(Tcl_Interp *interp, Var *varPtr,
 			    Var *arrayPtr, Tcl_Obj *part1Ptr,
 			    Tcl_Obj *part2Ptr, Tcl_Size index, Tcl_Size pathc,
@@ -3775,7 +3795,6 @@ MODULE_SCOPE Tcl_ObjCmdProc Tcl_ExprObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_FblockedObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_FconfigureObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_FcopyObjCmd;
-MODULE_SCOPE Tcl_Command TclInitFileCmd(Tcl_Interp *interp);
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_FileEventObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_FlushObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_ForObjCmd;
@@ -3786,7 +3805,6 @@ MODULE_SCOPE Tcl_ObjCmdProc Tcl_GlobalObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_GlobObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_IfObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_IncrObjCmd;
-MODULE_SCOPE Tcl_Command TclInitInfoCmd(Tcl_Interp *interp);
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_InterpObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_JoinObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_LappendObjCmd;
@@ -3808,12 +3826,12 @@ MODULE_SCOPE Tcl_ObjCmdProc Tcl_LsearchObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_LseqObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_LsetObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_LsortObjCmd;
-MODULE_SCOPE Tcl_Command TclInitNamespaceCmd(Tcl_Interp *interp);
 MODULE_SCOPE Tcl_ObjCmdProc TclNamespaceEnsembleCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_OpenObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_PackageObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_PidObjCmd;
-MODULE_SCOPE Tcl_Command TclInitPrefixCmd(Tcl_Interp *interp);
+MODULE_SCOPE int	TclSetUpPrefixCmd(Tcl_Interp *interp,
+				Tcl_Command prefixEnsemble);
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_PutsObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_PwdObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_ReadObjCmd;
@@ -3829,8 +3847,6 @@ MODULE_SCOPE Tcl_ObjCmdProc Tcl_SetObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_SplitObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_SocketObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_SourceObjCmd;
-MODULE_SCOPE Tcl_Command TclInitStringCmd(Tcl_Interp *interp);
-MODULE_SCOPE Tcl_Command TclInitUnicodeCmd(Tcl_Interp *interp);
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_SubstObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_SwitchObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_TellObjCmd;
@@ -4140,7 +4156,8 @@ typedef enum TclProcessWaitStatus {
 				/* Child wait status didn't make sense. */
 } TclProcessWaitStatus;
 
-MODULE_SCOPE Tcl_Command TclInitProcessCmd(Tcl_Interp *interp);
+MODULE_SCOPE int	TclSetUpProcessCmd(Tcl_Interp *interp,
+			    Tcl_Command processEnsemble);
 MODULE_SCOPE void	TclProcessCreated(Tcl_Pid pid);
 MODULE_SCOPE TclProcessWaitStatus TclProcessWait(Tcl_Pid pid, int options,
 			    int *codePtr, Tcl_Obj **msgObjPtr,
