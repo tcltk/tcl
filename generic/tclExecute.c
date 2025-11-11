@@ -754,7 +754,7 @@ static ByteCode *	CompileExprObj(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void		DeleteExecStack(ExecStack *esPtr);
 static void		DupExprCodeInternalRep(Tcl_Obj *srcPtr,
 			    Tcl_Obj *copyPtr);
-MODULE_SCOPE int	TclCompareTwoNumbers(Tcl_Obj *valuePtr,
+static int	CompareTwoNumbers(Tcl_Obj *valuePtr,
 			    Tcl_Obj *value2Ptr);
 static Tcl_Obj *	ExecuteExtendedBinaryMathOp(Tcl_Interp *interp,
 			    int opcode, Tcl_Obj **constants,
@@ -6166,7 +6166,7 @@ TEBCresume(
 	    l2 = *((const long *)ptr2);
 	    compare = (l1 < l2) ? MP_LT : ((l1 > l2) ? MP_GT : MP_EQ);
 	} else {
-	    compare = TclCompareTwoNumbers(valuePtr, value2Ptr);
+	    compare = CompareTwoNumbers(valuePtr, value2Ptr);
 	}
 
 	/*
@@ -9337,7 +9337,9 @@ ExecuteExtendedUnaryMathOp(
  * CompareTwoNumbers --
  *
  *	This function compares a pair of numbers in Tcl_Objs. Each argument
- *	must already be known to be numeric and not NaN.
+ *	must already be known to be numeric and not NaN. Also, valuePtr
+ *	and value2Ptr are destructive: they might lose their internal
+ *	representation.
  *
  * Results:
  *	One of MP_LT, MP_EQ or MP_GT, depending on whether valuePtr is less
@@ -9350,7 +9352,7 @@ ExecuteExtendedUnaryMathOp(
  */
 
 int
-TclCompareTwoNumbers(
+CompareTwoNumbers(
     Tcl_Obj *valuePtr,
     Tcl_Obj *value2Ptr)
 {
