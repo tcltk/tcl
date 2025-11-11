@@ -6965,6 +6965,20 @@ TEBCresume(
 	TRACE(("=> loop terminated\n"));
 	NEXT_INST_V(1, numLists + 2, 0);
 
+    case INST_FOREACH_INDEX: {
+	Tcl_Size idx1 = TclGetInt4AtPtr(pc + 1), idx2 = TclGetInt4AtPtr(pc + 5);
+	TRACE(("%u %u => ", (unsigned)idx1, (unsigned)idx2));
+
+	tmpPtr = OBJ_AT_TOS;
+	infoPtr = (ForeachInfo *)tmpPtr->internalRep.twoPtrValue.ptr1;
+	tmpPtr = OBJ_AT_DEPTH(1);
+	iterNum = (size_t)tmpPtr->internalRep.twoPtrValue.ptr1;
+
+	objResultPtr = Tcl_NewIntObj(infoPtr->varLists[idx1]->numVars * iterNum + idx2);
+	TRACE_APPEND_NUM_OBJ(objResultPtr);
+	NEXT_INST_F(9, 0, 1);
+    }
+
     case INST_LMAP_COLLECT:
 	/*
 	 * This instruction is only issued by lmap. The stack is:

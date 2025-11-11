@@ -3029,7 +3029,6 @@ TclCompileLfilterCmd(
 
     Tcl_Token *tokenPtr, *bodyTokenPtr;
     Tcl_Size jumpBackOffset, numWords, numLists, i, j;
-    Tcl_LVTIndex leadVarIndex = -1;
     Tcl_BytecodeLabel continueTarget;
     Tcl_AuxDataRef infoIndex;
     Tcl_ExceptionRange range;
@@ -3091,7 +3090,6 @@ TclCompileLfilterCmd(
 	    continue;
 	}
 
-	fprintf(stderr, "DEBUG: token[%d] = '%.*s'\n", i, tokenPtr->size, tokenPtr->start);
 	/*
 	 * If the variable list is empty, we can enter an infinite loop when
 	 * the interpreted version would not.  Take care to ensure this does
@@ -3125,14 +3123,9 @@ TclCompileLfilterCmd(
 		goto done;
 	    }
 	    varListPtr->varIndexes[j] = varIndex;
-	    if (i == 1 && j == 0) {
-		leadVarIndex = varIndex;
-	    }
 	}
 	Tcl_SetObjLength(varListObj, 0);
     }
-
-    assert(leadVarIndex >= 0);
 
     /*
      * We will compile the foreach command.
@@ -3168,8 +3161,11 @@ TclCompileLfilterCmd(
 
     CATCH_RANGE(range) {
 	Tcl_BytecodeLabel collectVal;
-	// FIXME: Don't want a variable read for this...
-	OP4(			LOAD_SCALAR, leadVarIndex);
+	// Get the value that went into the lead variable
+	OP44(			FOREACH_INDEX, 0, 0);
+	OP4(			OVER, numLists + 3);
+	OP(			SWAP);
+	OP(			LIST_INDEX);
 	// Don't bother with the constant optimisation of [if]
 	PUSH_EXPR_TOKEN(	bodyTokenPtr, numWords - 1);
 	FWDJUMP(		JUMP_TRUE, collectVal);
