@@ -232,7 +232,7 @@ static const Tcl_ChannelType zlibChannelType = {
     NULL			/* Truncate proc. */
 };
 
-static const EnsembleImplMap zlibImplMap[] = {
+const EnsembleImplMap tclZlibImplMap[] = {
     {"adler32",		ZlibAdler32Cmd,	NULL, NULL, NULL, 0},
     {"compress",	ZlibCompressCmd,	NULL, NULL, NULL, 0},
     {"crc32",		ZlibCRC32Cmd,	NULL, NULL, NULL, 0},
@@ -4111,7 +4111,10 @@ ResultDecompress(
 
 /*
  *----------------------------------------------------------------------
- *	Finally, the TclZlibInit function. Used to install the zlib API.
+ *
+ *	Finally, the TclZlibInit function. Used to install the zlib API apart
+ *	from the ensemble command.
+ *
  *----------------------------------------------------------------------
  */
 
@@ -4129,12 +4132,6 @@ TclZlibInit(
 
     Tcl_EvalEx(interp, "namespace eval ::tcl::zlib {variable cmdcounter 0}",
 	    TCL_AUTO_LENGTH, 0);
-
-    /*
-     * Create the public scripted interface to this file's functionality.
-     */
-
-    TclMakeEnsemble(interp, "zlib", zlibImplMap);
 
     /*
      * Store the underlying configuration information.
