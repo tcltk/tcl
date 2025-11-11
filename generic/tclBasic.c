@@ -7614,7 +7614,7 @@ ExprMaxMinFunc(
 	    Tcl_GetDoubleFromObj(interp, objv[i], &d);
 	    return TCL_ERROR;
 	}
-	if (TclCompareTwoNumbers(objv[i], res) == op) {
+	if (i > 1 && TclCompareTwoNumbers(objv[i], res) == op) {
 	    res = objv[i];
 	}
     }
