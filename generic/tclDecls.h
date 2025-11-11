@@ -4037,8 +4037,10 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_GetUnicode(objPtr) \
 	Tcl_GetUnicodeFromObj(objPtr, (Tcl_Size *)NULL)
 #undef Tcl_GetIndexFromObjStruct
-#undef Tcl_GetBooleanFromObj
-#undef Tcl_GetBoolean
+#if TCL_MAJOR_VERSION > 8
+#   undef Tcl_GetBooleanFromObj
+#   undef Tcl_GetBoolean
+#endif
 #if !defined(TCLBOOLWARNING)
 #if !defined(__cplusplus) && !defined(BUILD_tcl) && !defined(BUILD_tk) && defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 201112L)
 #	define TCLBOOLWARNING(boolPtr) (void)(sizeof(struct {_Static_assert(sizeof(*(boolPtr)) <= sizeof(int), "sizeof(boolPtr) too large");int dummy;})),
@@ -4053,26 +4055,26 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, offset, msg, flags, indexPtr) \
 	(tclStubsPtr->tcl_GetIndexFromObjStruct((interp), (objPtr), (tablePtr), (offset), (msg), \
 		(flags)|(int)(sizeof(*(indexPtr))<<1), (indexPtr)))
+#if TCL_MAJOR_VERSION > 8
 #define Tcl_GetBooleanFromObj(interp, objPtr, boolPtr) \
-	((sizeof(*(boolPtr)) == sizeof(int) && (TCL_MAJOR_VERSION == 8)) ? tclStubsPtr->tcl_GetBooleanFromObj(interp, objPtr, (int *)(boolPtr)) : \
 	((sizeof(*(boolPtr)) <= sizeof(int)) ? Tcl_GetBoolFromObj(interp, objPtr, (TCL_NULL_OK-2)&(int)sizeof((*(boolPtr))), (char *)(boolPtr)) : \
-	(TCLBOOLWARNING(boolPtr)Tcl_Panic("sizeof(%s) must be <= sizeof(int)", & #boolPtr [1]),TCL_ERROR)))
+	(TCLBOOLWARNING(boolPtr)Tcl_Panic("sizeof(%s) must be <= sizeof(int)", & #boolPtr [1]),TCL_ERROR))
 #define Tcl_GetBoolean(interp, src, boolPtr) \
-	((sizeof(*(boolPtr)) == sizeof(int) && (TCL_MAJOR_VERSION == 8)) ? tclStubsPtr->tcl_GetBoolean(interp, src, (int *)(boolPtr)) : \
 	((sizeof(*(boolPtr)) <= sizeof(int)) ? Tcl_GetBool(interp, src, (TCL_NULL_OK-2)&(int)sizeof((*(boolPtr))), (char *)(boolPtr)) : \
-	(TCLBOOLWARNING(boolPtr)Tcl_Panic("sizeof(%s) must be <= sizeof(int)", & #boolPtr [1]),TCL_ERROR)))
+	(TCLBOOLWARNING(boolPtr)Tcl_Panic("sizeof(%s) must be <= sizeof(int)", & #boolPtr [1]),TCL_ERROR))
+#endif
 #else
 #define Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, offset, msg, flags, indexPtr) \
 	((Tcl_GetIndexFromObjStruct)((interp), (objPtr), (tablePtr), (offset), (msg), \
 		(flags)|(int)(sizeof(*(indexPtr))<<1), (indexPtr)))
+#if TCL_MAJOR_VERSION > 8
 #define Tcl_GetBooleanFromObj(interp, objPtr, boolPtr) \
-	((sizeof(*(boolPtr)) == sizeof(int) && (TCL_MAJOR_VERSION == 8)) ? Tcl_GetBooleanFromObj(interp, objPtr, (int *)(boolPtr)) : \
 	((sizeof(*(boolPtr)) <= sizeof(int)) ? Tcl_GetBoolFromObj(interp, objPtr, (TCL_NULL_OK-2)&(int)sizeof((*(boolPtr))), (char *)(boolPtr)) : \
-	(TCLBOOLWARNING(boolPtr)Tcl_Panic("sizeof(%s) must be <= sizeof(int)", & #boolPtr [1]),TCL_ERROR)))
+	(TCLBOOLWARNING(boolPtr)Tcl_Panic("sizeof(%s) must be <= sizeof(int)", & #boolPtr [1]),TCL_ERROR))
 #define Tcl_GetBoolean(interp, src, boolPtr) \
-	((sizeof(*(boolPtr)) == sizeof(int) && (TCL_MAJOR_VERSION == 8)) ? Tcl_GetBoolean(interp, src, (int *)(boolPtr)) : \
 	((sizeof(*(boolPtr)) <= sizeof(int)) ? Tcl_GetBool(interp, src, (TCL_NULL_OK-2)&(int)sizeof((*(boolPtr))), (char *)(boolPtr)) : \
-	(TCLBOOLWARNING(boolPtr)Tcl_Panic("sizeof(%s) must be <= sizeof(int)", & #boolPtr [1]),TCL_ERROR)))
+	(TCLBOOLWARNING(boolPtr)Tcl_Panic("sizeof(%s) must be <= sizeof(int)", & #boolPtr [1]),TCL_ERROR))
+#endif
 #endif
 
 #ifdef TCL_MEM_DEBUG
