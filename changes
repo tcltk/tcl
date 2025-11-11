@@ -9433,4 +9433,10 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 
 2025-10-25 (new) Add IWYU export pragma annotations for improved clangd and clang-tidy diagnostics
 
+2025-10-30 (bug) Install man-pages and pkg-config on Windows
+
+2025-11-08 (bug) some tests will fail if the system encoding is iso8859-1
+
+2025-11-11 (bug) raise error on empty regexp for unresolved variable
+
 - (to be) Released 8.6.18, Apr ??, 2026 - details at https://core.tcl-lang.org/tcl/ -

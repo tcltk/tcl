@@ -1134,6 +1134,11 @@ test regexp-26.12 {regexp with -line option} {
 test regexp-26.13 {regexp without -line option} {
     regexp -all -inline -- {a*} "b\n"
 } {{} {}}
+
+test regexp-28.1 {bug cb03e57a7b} -returnCodes error -body {
+	regexp {} $nosuchvar
+} -result {can't read "nosuchvar": no such variable}
+
 
 # cleanup
 ::tcltest::cleanupTests
