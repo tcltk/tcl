@@ -38,6 +38,15 @@ must have been the result of a previous call to \fBTcl_NewObj\fR.
 .BE
 .SH INTRODUCTION
 .PP
+N.B. The use of the term \fITUTF-8\fR in this documentation refers to the
+modified UTF-8 encoding used internally by Tcl. This differs from the UTF-8
+encoding defined in the Unicode standard with respect to the encoding of the NUL
+character U+0000 which Tcl encodes internally as the byte sequence 0xC0 0x80 and
+not a single 0x00 byte as per the standard. The term \fITUTF-8 byte sequence\fR
+refers to a byte sequence representing one or more Unicode code points encoded
+in TUTF-8. The term \fIcharacter\fR refers to a Unicode code
+point and is used interchangeably with it.
+.PP
 This man page presents an overview of Tcl values (called \fBTcl_Obj\fRs for
 historical reasons) and how they are used.
 It also describes generic procedures for managing Tcl values.
@@ -140,9 +149,7 @@ typedef struct {
 .CE
 .PP
 The \fIbytes\fR and the \fIlength\fR members together hold
-a value's UTF-8 string representation,
-which is a \fIcounted string\fR not containing null bytes (UTF-8 null
-characters should be encoded as a two byte sequence: 192, 128.)
+a value's TUTF-8 byte sequence representation.
 \fIbytes\fR points to the first byte of the string representation.
 The \fIlength\fR member gives the number of bytes.
 The byte array must always have a null byte after the last data byte,
