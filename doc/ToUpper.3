@@ -36,10 +36,19 @@ Tcl_Size
 .AP int ch in
 The Unicode character to be converted.
 .AP char *str in/out
-Pointer to UTF-8 string to be converted in place.
+Pointer to the TUTF-8 byte sequence to be converted in place.
 .BE
 
 .SH DESCRIPTION
+.PP
+N.B. The use of the term \fITUTF-8\fR in this documentation refers to the
+modified UTF-8 encoding used internally by Tcl. This differs from the UTF-8
+encoding defined in the Unicode standard with respect to the encoding of the NUL
+character U+0000 which Tcl encodes internally as the byte sequence 0xC0 0x80 and
+not a single 0x00 byte as per the standard. The term \fITUTF-8 byte sequence\fR
+refers to a byte sequence representing one or more Unicode code points encoded
+in TUTF-8. The term \fIcharacter\fR refers to a Unicode code
+point and is used interchangeably with it.
 .PP
 The first three routines convert the case of individual Unicode characters:
 .PP
@@ -61,10 +70,10 @@ defined, it returns the character unchanged.  Title-case is defined
 for a small number of characters that have a different appearance when
 they are at the beginning of a capitalized word.
 .PP
-The next three routines convert the case of UTF-8 strings in place in
-memory:
+The next three routines convert the case of null-terminated TUTF-8
+byte sequences in place in memory:
 .PP
-\fBTcl_UtfToUpper\fR changes every UTF-8 character in \fIstr\fR to
+\fBTcl_UtfToUpper\fR changes every TUTF-8 encoded character in \fIstr\fR to
 upper-case.  Because changing the case of a character may change its
 size, the byte offset of each character in the resulting string may
 differ from its original location.  \fBTcl_UtfToUpper\fR writes a null

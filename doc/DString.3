@@ -65,6 +65,15 @@ dynamic string.
 
 .SH DESCRIPTION
 .PP
+N.B. The use of the term \fITUTF-8\fR in this documentation refers to the
+modified UTF-8 encoding used internally by Tcl. This differs from the UTF-8
+encoding defined in the Unicode standard with respect to the encoding of the NUL
+character U+0000 which Tcl encodes internally as the byte sequence 0xC0 0x80 and
+not a single 0x00 byte as per the standard. The term \fITUTF-8 byte sequence\fR
+refers to a byte sequence representing one or more Unicode code points encoded
+in TUTF-8. The term \fIcharacter\fR refers to a Unicode code
+point and is used interchangeably with it.
+.PP
 Dynamic strings provide a mechanism for building up arbitrarily long
 strings by gradually appending information.  If the dynamic string is
 short then there will be no memory allocation overhead;  as the string
@@ -144,7 +153,7 @@ an empty string.
 Since the dynamic string is reinitialized, there is no need to
 further call \fBTcl_DStringFree\fR on it and it can be reused without
 calling \fBTcl_DStringInit\fR. The caller must ensure that the dynamic
-string stored in \fIdsPtr\fR is encoded in Tcl's internal UTF-8 format.
+string stored in \fIdsPtr\fR is encoded in TUTF-8.
 .PP
 \fBTcl_DStringGetResult\fR does the opposite of \fBTcl_DStringResult\fR.
 It sets the value of \fIdsPtr\fR to the result of \fIinterp\fR and
@@ -160,7 +169,7 @@ copying the string. Since the dynamic string is reinitialized, there is no need
 to further call \fBTcl_DStringFree\fR on it and it can be reused without calling
 \fBTcl_DStringInit\fR. The returned \fBTcl_Obj\fR has a reference count of 0.
 The caller must ensure that the dynamic string stored in \fIdsPtr\fR is encoded
-in Tcl's internal UTF-8 format.
+in TUTF-8.
 
 .SH KEYWORDS
 append, dynamic string, free, result
