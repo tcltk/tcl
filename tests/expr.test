@@ -7278,6 +7278,10 @@ test expr-52.1 {
 		::tcl::unsupported::representation $a]]
 } {0 0 1 1}
 
+test expr-bug-8dd2807066 {Bug 8dd2807066} {
+    expr {max(abs(-668336881543038127783364011867))}
+} 668336881543038127783364011867
+
 # Bug e3dcab1d14
 proc do-one-test-expr-63 {e p float athreshold} {
     # e - power of 2 to test
@@ -7315,14 +7319,12 @@ proc run-test-expr-63 {} {
     rename run-test-expr-63 {}
 }
 run-test-expr-63
-
-
+
 # cleanup
-if {[info exists a]} {
-    unset a
-}
-catch {unset min}
-catch {unset max}
+unset -nocomplain a
+unset -nocomplain min
+unset -nocomplain max
+
 ::tcltest::cleanupTests
 return
 

@@ -5232,7 +5232,7 @@ a better first place to look now.
 	deletion of traces is not optimized out...
 
 	* generic/tclExecute.c (ExecuteExtendedBinaryMathOp)
-	(TclCompareTwoNumbers,ExecuteExtendedUnaryMathOp,TclExecuteByteCode):
+	(CompareTwoNumbers,ExecuteExtendedUnaryMathOp,TclExecuteByteCode):
 	[Patch 2981677]: Move the less common arithmetic operations (i.e.,
 	exponentiation and operations on non-longs) out of TEBC for a big drop
 	in the overall size of the stack frame for most code. Net effect on
