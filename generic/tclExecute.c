@@ -9170,7 +9170,7 @@ TclCompareTwoNumbers(
 	    w2 = (Tcl_WideInt)d2;
 	    goto wideCompare;
 	case TCL_NUMBER_BIG:
-	    Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
+	    Tcl_GetBignumFromObj(NULL, value2Ptr, &big2);
 	    if (mp_isneg(&big2)) {
 		compare = MP_GT;
 	    } else {
@@ -9208,7 +9208,7 @@ TclCompareTwoNumbers(
 	    if (isinf(d1)) {
 		return (d1 > 0.0) ? MP_GT : MP_LT;
 	    }
-	    Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
+	    Tcl_GetBignumFromObj(NULL, value2Ptr, &big2);
 	    if ((d1 < (double)WIDE_MAX) && (d1 > (double)WIDE_MIN)) {
 		if (mp_isneg(&big2)) {
 		    compare = MP_GT;
@@ -9231,7 +9231,7 @@ TclCompareTwoNumbers(
 	}
 
     case TCL_NUMBER_BIG:
-	Tcl_TakeBignumFromObj(NULL, valuePtr, &big1);
+	Tcl_GetBignumFromObj(NULL, valuePtr, &big1);
 	switch (type2) {
 	case TCL_NUMBER_INT:
 	    compare = mp_cmp_d(&big1, 0);
@@ -9258,7 +9258,7 @@ TclCompareTwoNumbers(
 	    Tcl_InitBignumFromDouble(NULL, d2, &big2);
 	    goto bigCompare;
 	case TCL_NUMBER_BIG:
-	    Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
+	    Tcl_GetBignumFromObj(NULL, value2Ptr, &big2);
 	bigCompare:
 	    compare = mp_cmp(&big1, &big2);
 	    mp_clear(&big1);
