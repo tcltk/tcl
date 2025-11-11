@@ -986,6 +986,13 @@ InstructionDesc const tclInstructionTable[] = {
 	"uplevel",		-1),
 	/* Call the script in the given stack level, and stack the result.
 	 * Stack:  ... level script => ... result */
+    TCL_INSTRUCTION_ENTRY2(
+	"foreach_index", 9,	+1,	  OPERAND_UINT4, OPERAND_UINT4),
+	/* Get the step counter for the current iteration of foreach loop.
+	 * The stepIdx will be the index of the value of the opnd1'th variable
+	 * of the opnd0'th list of variables.
+	 * Stack: ... listObjs... iterTracker info =>
+	 *			... listObjs... iterTracker info stepIdx */
 
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };
