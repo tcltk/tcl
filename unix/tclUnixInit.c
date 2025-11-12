@@ -27,14 +27,11 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#ifdef __clang__
-#pragma clang diagnostic ignored "-Wignored-attributes"
-#endif
-DLLIMPORT extern __stdcall unsigned char GetVersionExW(void *);
-DLLIMPORT extern __stdcall void *GetModuleHandleW(const void *);
-DLLIMPORT extern __stdcall void FreeLibrary(void *);
-DLLIMPORT extern __stdcall void *GetProcAddress(void *, const char *);
-DLLIMPORT extern __stdcall void GetSystemInfo(void *);
+DLLIMPORT extern unsigned char GetVersionExW(void *);
+DLLIMPORT extern void *GetModuleHandleW(const void *);
+DLLIMPORT extern void FreeLibrary(void *);
+DLLIMPORT extern void *GetProcAddress(void *, const char *);
+DLLIMPORT extern void GetSystemInfo(void *);
 #ifdef __cplusplus
 }
 #endif
@@ -70,7 +67,7 @@ typedef struct {
     unsigned int dwMinorVersion;
     unsigned int dwBuildNumber;
     unsigned int dwPlatformId;
-    wchar_t szCSDVersion[128];
+    WCHAR szCSDVersion[128];
 } OSVERSIONINFOW;
 #endif
 
@@ -441,9 +438,13 @@ TclpInitLibraryPath(
      */
 
     str = getenv("TCL_LIBRARY");			/* INTL: Native. */
-    Tcl_ExternalToUtfDStringEx(NULL, NULL, str, TCL_INDEX_NONE,
-	    TCL_ENCODING_PROFILE_TCL8, &buffer, NULL);
-    str = Tcl_DStringValue(&buffer);
+    if (str != NULL) {
+	Tcl_ExternalToUtfDStringEx(NULL, NULL, str, TCL_INDEX_NONE,
+		TCL_ENCODING_PROFILE_TCL8, &buffer, NULL);
+	str = Tcl_DStringValue(&buffer);
+    } else {
+	Tcl_DStringInit(&buffer);
+    }
 
     if ((str != NULL) && (str[0] != '\0')) {
 	Tcl_DString ds;
@@ -694,6 +695,12 @@ Tcl_GetEncodingNameFromEnvironment(
     return Tcl_DStringAppend(bufPtr, TCL_DEFAULT_ENCODING, TCL_INDEX_NONE);
 }
 
+const char *
+Tcl_GetEncodingNameForUser(Tcl_DString *bufPtr)
+{
+    return Tcl_GetEncodingNameFromEnvironment(bufPtr);
+}
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -854,8 +861,8 @@ TclpSetVariables(
 	unameOK = 1;
     if (!osInfoInitialized) {
 	void *handle = GetModuleHandleW(L"NTDLL");
-	int(__stdcall *getversion)(void *) =
-		(int(__stdcall *)(void *))GetProcAddress(handle, "RtlGetVersion");
+	int(*getversion)(void *) =
+		(int(*)(void *))GetProcAddress(handle, "RtlGetVersion");
 	osInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOW);
 	if (!getversion || getversion(&osInfo)) {
 	    GetVersionExW(&osInfo);

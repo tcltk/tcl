@@ -748,7 +748,7 @@ IcuConverttoDString(
     Tcl_DStringInit(dsOutPtr);
     Tcl_DStringSetLength(dsOutPtr, dstCapacity);
     dstLen = ucnv_fromUChars(ucnvPtr, Tcl_DStringValue(dsOutPtr), (int)dstCapacity,
-			     utf16, (int)utf16len, &status);
+	    utf16, (int)utf16len, &status);
     if (U_FAILURE(status)) {
 	switch (status) {
 	case U_STRING_NOT_TERMINATED_WARNING:
@@ -757,11 +757,11 @@ IcuConverttoDString(
 	    Tcl_DStringSetLength(dsOutPtr, (int)dstLen);
 	    status = U_ZERO_ERRORZ; /* Reset before call */
 	    dstLen = ucnv_fromUChars(ucnvPtr, Tcl_DStringValue(dsOutPtr), (int)dstLen,
-				     utf16, (int)utf16len, &status);
+		    utf16, (int)utf16len, &status);
 	    if (U_SUCCESS(status)) {
 		break;
 	    }
-	    /* FALLTHRU */
+	    TCL_FALLTHROUGH();
 	default:
 	    Tcl_DStringFree(dsOutPtr);
 	    ucnv_close(ucnvPtr);
@@ -841,7 +841,7 @@ IcuBytesToUCharDString(
 	    if (U_SUCCESS(status)) {
 		break;
 	    }
-	    /* FALLTHRU */
+	    TCL_FALLTHROUGH();
 	default:
 	    Tcl_DStringFree(dsOutPtr);
 	    ucnv_close(ucnvPtr);
@@ -937,7 +937,7 @@ IcuNormalizeUCharDString(
 	    if (U_SUCCESS(status)) {
 		break;
 	    }
-	    /* FALLTHRU */
+	    TCL_FALLTHROUGH();
 	default:
 	    Tcl_DStringFree(dsOutPtr);
 	    return IcuError(interp, "String normalization failed", status);
@@ -1000,6 +1000,8 @@ static int IcuParseConvertOptions(
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "Option -failindex not implemented.", TCL_INDEX_NONE));
 	    return TCL_ERROR;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
     *strictPtr = strict;
@@ -1092,13 +1094,13 @@ IcuConverttoObjCmd(
     Tcl_DString dsIn;
     Tcl_DString dsOut;
     if (IcuObjToUCharDString(interp, objv[objc - 1], strict, &dsIn) != TCL_OK ||
-	IcuConverttoDString(interp, &dsIn,
-	    Tcl_GetString(objv[objc-2]), strict, &dsOut) != TCL_OK) {
+	    IcuConverttoDString(interp, &dsIn,
+		    Tcl_GetString(objv[objc-2]), strict, &dsOut) != TCL_OK) {
 	return TCL_ERROR;
     }
-    Tcl_SetObjResult(interp,
-	Tcl_NewByteArrayObj((unsigned char *)Tcl_DStringValue(&dsOut),
-			    Tcl_DStringLength(&dsOut)));
+    Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(
+	    (unsigned char *)Tcl_DStringValue(&dsOut),
+	    Tcl_DStringLength(&dsOut)));
     Tcl_DStringFree(&dsOut);
     return TCL_OK;
 }
@@ -1169,6 +1171,8 @@ IcuNormalizeObjCmd(
 		return TCL_ERROR;
 	    }
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
 
@@ -1184,8 +1188,7 @@ IcuNormalizeObjCmd(
     if (objPtr) {
 	Tcl_SetObjResult(interp, objPtr);
 	return TCL_OK;
-    }
-    else {
+    } else {
 	return TCL_ERROR;
     }
 }
@@ -1323,7 +1326,8 @@ TclIcuInit(
 	/* Going back down to ICU version 60 */
 	while ((icu_fns.libs[0] == NULL) && (icuversion[1] >= '6')) {
 	    if (--icuversion[2] < '0') {
-		icuversion[1]--; icuversion[2] = '9';
+		icuversion[1]--;
+		icuversion[2] = '9';
 	    }
 #if defined(__CYGWIN__)
 	    i = 2;

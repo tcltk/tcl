@@ -35,13 +35,22 @@ typedef struct {
 static Tcl_ThreadDataKey dataKey;
 
 /*
+ * Key for looking up the table of registered TCP accept callbacks, a hash
+ * table indexed by AcceptCallback references, used as a set (values are
+ * meaningless).
+ */
+#define ASSOC_KEY "tclTCPAcceptCallbacks"
+
+/*
  * Static functions for this file:
  */
 
-static Tcl_ExitProc		FinalizeIOCmdTSD;
-static Tcl_TcpAcceptProc	AcceptCallbackProc;
-static Tcl_ObjCmdProc		ChanPendingObjCmd;
-static Tcl_ObjCmdProc		ChanTruncateObjCmd;
+static Tcl_ExitProc	FinalizeIOCmdTSD;
+static Tcl_TcpAcceptProc AcceptCallbackProc;
+static Tcl_ObjCmdProc	ChanIsBinaryCmd;
+static Tcl_ObjCmdProc	ChanPendingObjCmd;
+static Tcl_ObjCmdProc	ChanPipeObjCmd;
+static Tcl_ObjCmdProc	ChanTruncateObjCmd;
 static void		RegisterTcpServerInterpCleanup(
 			    Tcl_Interp *interp,
 			    AcceptCallback *acceptCallbackPtr);
@@ -50,6 +59,34 @@ static void		TcpServerCloseProc(void *callbackData);
 static void		UnregisterTcpServerInterpCleanupProc(
 			    Tcl_Interp *interp,
 			    AcceptCallback *acceptCallbackPtr);
+
+/*
+ * The basic description of the parts of the [chan] ensemble.
+ * Also contains [chan configure], which is [fconfigure].
+ */
+const EnsembleImplMap tclChanImplMap[] = {
+    {"blocked",		Tcl_FblockedObjCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
+    {"close",		Tcl_CloseObjCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
+    {"copy",		Tcl_FcopyObjCmd,	NULL,			NULL, NULL, 0},
+    {"create",		TclChanCreateObjCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},	   /* TIP #219 */
+    {"eof",		Tcl_EofObjCmd,		TclCompileBasic1ArgCmd, NULL, NULL, 0},
+    {"event",		Tcl_FileEventObjCmd,	TclCompileBasic2Or3ArgCmd, NULL, NULL, 0},
+    {"flush",		Tcl_FlushObjCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
+    {"gets",		Tcl_GetsObjCmd,		TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
+    {"isbinary",	ChanIsBinaryCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
+    {"names",		TclChannelNamesCmd,	TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
+    {"pending",		ChanPendingObjCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},	   /* TIP #287 */
+    {"pipe",		ChanPipeObjCmd,		TclCompileBasic0ArgCmd, NULL, NULL, 0},	   /* TIP #304 */
+    {"pop",		TclChanPopObjCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},    /* TIP #230 */
+    {"postevent",	TclChanPostEventObjCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},	   /* TIP #219 */
+    {"push",		TclChanPushObjCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},	   /* TIP #230 */
+    {"puts",		Tcl_PutsObjCmd,		NULL,			NULL, NULL, 0},
+    {"read",		Tcl_ReadObjCmd,		NULL,			NULL, NULL, 0},
+    {"seek",		Tcl_SeekObjCmd,		TclCompileBasic2Or3ArgCmd, NULL, NULL, 0},
+    {"tell",		Tcl_TellObjCmd,		TclCompileBasic1ArgCmd, NULL, NULL, 0},
+    {"truncate",	ChanTruncateObjCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, 0}, /* TIP #208 */
+    {NULL, NULL, NULL, NULL, NULL, 0}
+};
 
 /*
  *----------------------------------------------------------------------
@@ -135,7 +172,7 @@ Tcl_PutsObjCmd(
 	    string = objv[3];
 	    break;
 	}
-	/* Fall through */
+	TCL_FALLTHROUGH();
     default:			/* [puts] or
 				 * [puts some bad number of arguments...] */
 	Tcl_WrongNumArgs(interp, 1, objv, "?-nonewline? ?channel? string");
@@ -910,11 +947,12 @@ Tcl_ExecObjCmd(
     int argc, background, i, index, keepNewline, result, skip, ignoreStderr;
     Tcl_Size length;
     static const char *const options[] = {
-	"-ignorestderr", "-keepnewline", "--", NULL
+	"-ignorestderr", "-keepnewline", "-encoding", "--", NULL
     };
     enum execOptionsEnum {
-	EXEC_IGNORESTDERR, EXEC_KEEPNEWLINE, EXEC_LAST
+	EXEC_IGNORESTDERR, EXEC_KEEPNEWLINE, EXEC_ENCODING, EXEC_LAST
     };
+    Tcl_Obj *encodingObj = NULL;
 
     /*
      * Check for any leading option arguments.
@@ -931,12 +969,31 @@ Tcl_ExecObjCmd(
 		TCL_EXACT, &index) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	if (index == EXEC_KEEPNEWLINE) {
-	    keepNewline = 1;
-	} else if (index == EXEC_IGNORESTDERR) {
-	    ignoreStderr = 1;
-	} else {
+	if (index == EXEC_LAST) {
 	    skip++;
+	    break;
+	}
+	switch (index) {
+	case EXEC_KEEPNEWLINE:
+	    keepNewline = 1;
+	    break;
+	case EXEC_IGNORESTDERR:
+	    ignoreStderr = 1;
+	    break;
+	case EXEC_ENCODING:
+	    if (++skip >= objc) {
+		Tcl_SetObjResult(interp, Tcl_NewStringObj("No value given for option -encoding", -1));
+		return TCL_ERROR;
+	    } else {
+		Tcl_Encoding encoding;
+		encodingObj = objv[skip];
+		/* Verify validity - bug [da5e1bc7bc] */
+		if (Tcl_GetEncodingFromObj(interp, encodingObj, &encoding)
+			!= TCL_OK) {
+		    return TCL_ERROR;
+		}
+		Tcl_FreeEncoding(encoding);
+	    }
 	    break;
 	}
     }
@@ -986,11 +1043,6 @@ Tcl_ExecObjCmd(
 	return TCL_ERROR;
     }
 
-    /* Bug [0f1ddc0df7] - encoding errors - use replace profile */
-    if (Tcl_SetChannelOption(NULL, chan, "-profile", "replace") != TCL_OK) {
-	return TCL_ERROR;
-    }
-
     if (background) {
 	/*
 	 * Store the list of PIDs from the pipeline in interp's result and
@@ -1002,6 +1054,18 @@ Tcl_ExecObjCmd(
 	    return TCL_ERROR;
 	}
 	return TCL_OK;
+    }
+
+    /* Bug [0f1ddc0df7] - encoding errors - use replace profile */
+    if (Tcl_SetChannelOption(interp, chan, "-profile", "replace") != TCL_OK) {
+	goto errorWithOpenChannel;
+    }
+
+    /* TIP 716 */
+    if (encodingObj &&
+	    Tcl_SetChannelOption(interp, chan, "-encoding",
+		    Tcl_GetString(encodingObj)) != TCL_OK) {
+	goto errorWithOpenChannel;
     }
 
     TclNewObj(resultPtr);
@@ -1020,7 +1084,7 @@ Tcl_ExecObjCmd(
 			Tcl_PosixError(interp)));
 		Tcl_DecrRefCount(resultPtr);
 	    }
-	    return TCL_ERROR;
+	    goto errorWithOpenChannel;
 	}
     }
 
@@ -1047,6 +1111,11 @@ Tcl_ExecObjCmd(
     Tcl_SetObjResult(interp, resultPtr);
 
     return result;
+
+errorWithOpenChannel:
+    /* Interpreter should already contain error. Pass NULL to not overwrite */
+    (void)Tcl_CloseEx(NULL, chan, 0);
+    return TCL_ERROR;
 }
 
 /*
@@ -1291,12 +1360,12 @@ RegisterTcpServerInterpCleanup(
     Tcl_HashEntry *hPtr;	/* Entry for this record. */
     int isNew;			/* Is the entry new? */
 
-    hTblPtr = (Tcl_HashTable *)Tcl_GetAssocData(interp, "tclTCPAcceptCallbacks", NULL);
+    hTblPtr = (Tcl_HashTable *)Tcl_GetAssocData(interp, ASSOC_KEY, NULL);
 
     if (hTblPtr == NULL) {
 	hTblPtr = (Tcl_HashTable *)Tcl_Alloc(sizeof(Tcl_HashTable));
 	Tcl_InitHashTable(hTblPtr, TCL_ONE_WORD_KEYS);
-	Tcl_SetAssocData(interp, "tclTCPAcceptCallbacks",
+	Tcl_SetAssocData(interp, ASSOC_KEY,
 		TcpAcceptCallbacksDeleteProc, hTblPtr);
     }
 
@@ -1337,7 +1406,7 @@ UnregisterTcpServerInterpCleanupProc(
     Tcl_HashTable *hTblPtr;
     Tcl_HashEntry *hPtr;
 
-    hTblPtr = (Tcl_HashTable *)Tcl_GetAssocData(interp, "tclTCPAcceptCallbacks", NULL);
+    hTblPtr = (Tcl_HashTable *)Tcl_GetAssocData(interp, ASSOC_KEY, NULL);
     if (hTblPtr == NULL) {
 	return;
     }
@@ -1605,7 +1674,7 @@ Tcl_SocketObjCmd(
 	    }
 	    break;
 	default:
-	    Tcl_Panic("Tcl_SocketObjCmd: bad option index to SocketOptions");
+	    TCL_UNREACHABLE();
 	}
     }
     if (server) {
@@ -1810,6 +1879,8 @@ Tcl_FcopyObjCmd(
 	case FcopyCommand:
 	    cmdPtr = objv[i+1];
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
 
@@ -1876,6 +1947,8 @@ ChanPendingObjCmd(
 	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(Tcl_OutputBuffered(chan)));
 	}
 	break;
+    default:
+	TCL_UNREACHABLE();
     }
     return TCL_OK;
 }
@@ -2039,73 +2112,35 @@ TclChannelNamesCmd(
 /*
  *----------------------------------------------------------------------
  *
- * TclInitChanCmd --
+ * TclSetUpChanCmd --
  *
- *	This function is invoked to create the "chan" Tcl command. See the
+ *	This function is invoked to set up the "chan" Tcl command. See the
  *	user documentation for details on what it does.
  *
  * Results:
- *	A Tcl command handle.
+ *	Tcl result code.
  *
  * Side effects:
- *	None (since nothing is byte-compiled).
+ *	None.
  *
  *----------------------------------------------------------------------
  */
 
-Tcl_Command
-TclInitChanCmd(
-    Tcl_Interp *interp)
+int
+TclSetUpChanCmd(
+    Tcl_Interp *interp,
+    Tcl_Command ensemble)
 {
     /*
      * Most commands are plugged directly together, but some are done via
      * alias-like rewriting; [chan configure] is this way for security reasons
-     * (want overwriting of [fconfigure] to control that nicely), and [chan
-     * names] because the functionality isn't available as a separate command
-     * function at the moment.
+     * (want overwriting of [fconfigure] to control that nicely).
      */
-    static const EnsembleImplMap initMap[] = {
-	{"blocked",	Tcl_FblockedObjCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
-	{"close",	Tcl_CloseObjCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
-	{"copy",	Tcl_FcopyObjCmd,	NULL, NULL, NULL, 0},
-	{"create",	TclChanCreateObjCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},		/* TIP #219 */
-	{"eof",		Tcl_EofObjCmd,		TclCompileBasic1ArgCmd, NULL, NULL, 0},
-	{"event",	Tcl_FileEventObjCmd,	TclCompileBasic2Or3ArgCmd, NULL, NULL, 0},
-	{"flush",	Tcl_FlushObjCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
-	{"gets",	Tcl_GetsObjCmd,		TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
-	{"isbinary",	ChanIsBinaryCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
-	{"names",	TclChannelNamesCmd,	TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
-	{"pending",	ChanPendingObjCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},		/* TIP #287 */
-	{"pipe",	ChanPipeObjCmd,		TclCompileBasic0ArgCmd, NULL, NULL, 0},		/* TIP #304 */
-	{"pop",		TclChanPopObjCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},		/* TIP #230 */
-	{"postevent",	TclChanPostEventObjCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},	/* TIP #219 */
-	{"push",	TclChanPushObjCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},		/* TIP #230 */
-	{"puts",	Tcl_PutsObjCmd,		NULL, NULL, NULL, 0},
-	{"read",	Tcl_ReadObjCmd,		NULL, NULL, NULL, 0},
-	{"seek",	Tcl_SeekObjCmd,		TclCompileBasic2Or3ArgCmd, NULL, NULL, 0},
-	{"tell",	Tcl_TellObjCmd,		TclCompileBasic1ArgCmd, NULL, NULL, 0},
-	{"truncate",	ChanTruncateObjCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},		/* TIP #208 */
-	{NULL, NULL, NULL, NULL, NULL, 0}
-    };
-    static const char *const extras[] = {
-	"configure",	"::fconfigure",
-	NULL
-    };
-    Tcl_Command ensemble;
+
     Tcl_Obj *mapObj;
-    int i;
-
-    ensemble = TclMakeEnsemble(interp, "chan", initMap);
     Tcl_GetEnsembleMappingDict(NULL, ensemble, &mapObj);
-    for (i=0 ; extras[i] ; i+=2) {
-	/*
-	 * Can assume that reference counts are all incremented.
-	 */
-
-	TclDictPutString(NULL, mapObj, extras[i], extras[i + 1]);
-    }
-    Tcl_SetEnsembleMappingDict(interp, ensemble, mapObj);
-    return ensemble;
+    TclDictPutString(NULL, mapObj, "configure", "::fconfigure");
+    return Tcl_SetEnsembleMappingDict(interp, ensemble, mapObj);
 }
 
 /*

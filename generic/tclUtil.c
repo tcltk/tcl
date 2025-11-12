@@ -12,7 +12,6 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#include <assert.h>
 #include "tclInt.h"
 #include "tclParse.h"
 #include "tclStringTrim.h"
@@ -32,6 +31,11 @@
 static ProcessGlobalValue executableName = {
     0, 0, NULL, NULL, NULL, NULL, NULL
 };
+#if !defined(STATIC_BUILD)
+static ProcessGlobalValue shlibName = {
+    0, 0, NULL, NULL, NULL, NULL, NULL
+};
+#endif
 
 /*
  * The following values are used in the flags arguments of Tcl*Scan*Element
@@ -863,7 +867,7 @@ TclCopyAndCollapse(
  *	with the number of valid elements in the array. A single block of
  *	memory is dynamically allocated to hold both the argv array and a copy
  *	of the list (with backslashes and braces removed in the standard way).
- *	The caller must eventually free this memory by calling free() on
+ *	The caller must eventually free this memory by calling Tcl_Free() on
  *	*argvPtr. Note: *argvPtr and *argcPtr are only modified if the
  *	function returns normally.
  *
@@ -899,7 +903,19 @@ Tcl_SplitList(
 
     size = TclMaxListLength(list, TCL_INDEX_NONE, &end) + 1;
     length = end - list;
-    argv = (const char **)Tcl_Alloc((size * sizeof(char *)) + length + 1);
+    if (size >= (Tcl_Size) (TCL_SIZE_MAX/sizeof(char *)) ||
+	    length > (Tcl_Size) (TCL_SIZE_MAX - 1 - (size * sizeof(char *)))) {
+	goto memerror;
+    }
+    argv = (const char **)Tcl_AttemptAlloc((size * sizeof(char *)) + length + 1);
+    if (!argv) {
+    memerror:
+	if (interp) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj("cannot allocate", -1));
+	    Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
+	}
+	return TCL_ERROR;
+    }
 
     for (i = 0, p = ((char *) argv) + size*sizeof(char *);
 	    *list != 0;  i++) {
@@ -1133,7 +1149,7 @@ TclScanElement(
 		preferEscape = 1;
 		break;
 #else
-		/* FLOW THROUGH */
+		TCL_FALLTHROUGH();
 #endif /* COMPAT */
 	    case '[':	/* TYPE_SUBS */
 	    case '$':	/* TYPE_SUBS */
@@ -2160,7 +2176,9 @@ Tcl_StringCaseMatch(
 	     * Skip all successive *'s in the pattern
 	     */
 
-	    while (*(++pattern) == '*');
+	    while (*(++pattern) == '*') {
+		// Empty body
+	    }
 	    p = *pattern;
 	    if (p == '\0') {
 		return 1;
@@ -4369,6 +4387,52 @@ Tcl_GetNameOfExecutable(void)
     return bytes;
 }
 
+#if !defined(STATIC_BUILD)
+/*
+ * TclSetObjNameOfShlib --
+ *
+ *	This function stores the absolute pathname of the Tcl shared library.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Stores the shared library name in the process global database.
+ */
+
+void
+TclSetObjNameOfShlib(
+    Tcl_Obj *name,
+    TCL_UNUSED(Tcl_Encoding))
+{
+    TclSetProcessGlobalValue(&shlibName, name);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclGetObjNameOfShlib --
+ *
+ *	This function retrieves the absolute pathname of the Tcl shared
+ *	library.
+ *
+ * Results:
+ *	A pointer to an "fsPath" Tcl_Obj, or to an empty Tcl_Obj if the
+ *	pathname of the shared library is unknown.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+TclGetObjNameOfShlib(void)
+{
+    return TclGetProcessGlobalValue(&shlibName);
+}
+
+#endif /* !STATIC_BUILD - Tcl{Get,Set}NameOfShlib */
 /*
  *----------------------------------------------------------------------
  *
@@ -4449,7 +4513,7 @@ TclReToGlob(
 	    case '\\': case '*': case '[': case ']': case '?':
 		/* Only add \ where necessary for glob */
 		*dsStr++ = '\\';
-		/* fall through */
+		TCL_FALLTHROUGH();
 	    default:
 		*dsStr++ = *p;
 		break;
@@ -4530,7 +4594,7 @@ TclReToGlob(
 		/* Only add \ where necessary for glob */
 		*dsStr++ = '\\';
 		anchorLeft = 0; /* prevent exact match */
-		/* fall through */
+		TCL_FALLTHROUGH();
 	    case '{': case '}': case '(': case ')': case '+':
 	    case '.': case '|': case '^': case '$':
 		*dsStr++ = *p;

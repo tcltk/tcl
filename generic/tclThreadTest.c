@@ -54,8 +54,9 @@ static ThreadSpecificData *threadList = NULL;
  * The following bit-values are legal for the "flags" field of the
  * ThreadSpecificData structure.
  */
-
-#define TP_Dying		0x001 /* This thread is being canceled */
+enum ThreadSpecificDataTestFlags {
+    TP_Dying = 0x001		/* This thread is being canceled */
+};
 
 /*
  * An instance of the following structure contains all information that is
@@ -98,7 +99,7 @@ typedef struct ThreadEventResult {
     char *errorCode;		/* Copy of errorCode variable */
     Tcl_ThreadId srcThreadId;	/* Id of sending thread, in case it dies */
     Tcl_ThreadId dstThreadId;	/* Id of target thread, in case it dies */
-    struct ThreadEvent *eventPtr;	/* Back pointer */
+    ThreadEvent *eventPtr;	/* Back pointer */
     struct ThreadEventResult *nextPtr;	/* List for cleanup */
     struct ThreadEventResult *prevPtr;
 } ThreadEventResult;
@@ -138,7 +139,13 @@ static void		ThreadFreeProc(void *clientData);
 static int		ThreadDeleteEvent(Tcl_Event *eventPtr,
 			    void *clientData);
 static void		ThreadExitProc(void *clientData);
+#ifdef __cplusplus
+extern "C" {
+#endif
 extern int		Tcltest_Init(Tcl_Interp *interp);
+#ifdef __cplusplus
+}
+#endif
 
 /*
  *----------------------------------------------------------------------

@@ -21,7 +21,6 @@
 #include "tclRegexp.h"
 #include "tclTomMath.h"
 #include <math.h>
-#include <assert.h>
 
 /*
  * During execution of the "lsort" command, structures of the following type
@@ -88,13 +87,14 @@ typedef struct {
  * The "sortMode" field of the SortInfo structure can take on any of the
  * following values.
  */
-
-#define SORTMODE_ASCII		0
-#define SORTMODE_INTEGER	1
-#define SORTMODE_REAL		2
-#define SORTMODE_COMMAND	3
-#define SORTMODE_DICTIONARY	4
-#define SORTMODE_ASCII_NC	8
+enum SortModes {
+    SORTMODE_ASCII = 0,
+    SORTMODE_INTEGER = 1,
+    SORTMODE_REAL = 2,
+    SORTMODE_COMMAND = 3,
+    SORTMODE_DICTIONARY = 4,
+    SORTMODE_ASCII_NC = 8
+};
 
 /*
  * Definitions for [lseq] command
@@ -106,7 +106,7 @@ typedef enum {
     LSEQ_DOTS, LSEQ_TO, LSEQ_COUNT, LSEQ_BY
 } SequenceOperators;
 typedef enum {
-     NoneArg, NumericArg, RangeKeywordArg, ErrArg, LastArg = 8
+    NoneArg, NumericArg, RangeKeywordArg, ErrArg, LastArg = 8
 } SequenceDecoded;
 
 /*
@@ -149,7 +149,7 @@ static Tcl_Obj *	SelectObjFromSublist(Tcl_Obj *firstPtr,
  * "info" command.
  */
 
-static const EnsembleImplMap defaultInfoMap[] = {
+const EnsembleImplMap tclInfoImplMap[] = {
     {"args",		   InfoArgsCmd,		    TclCompileBasic1ArgCmd, NULL, NULL, 0},
     {"body",		   InfoBodyCmd,		    TclCompileBasic1ArgCmd, NULL, NULL, 0},
     {"cmdcount",	   InfoCmdCountCmd,	    TclCompileBasic0ArgCmd, NULL, NULL, 0},
@@ -247,9 +247,9 @@ IfConditionCallback(
     int result)
 {
     Interp *iPtr = (Interp *) interp;
-    int objc = PTR2INT(data[0]);
+    Tcl_Size objc = PTR2INT(data[0]);
     Tcl_Obj *const *objv = (Tcl_Obj *const *)data[1];
-    int i = PTR2INT(data[2]);
+    Tcl_Size i = PTR2INT(data[2]);
     Tcl_Obj *boolObj = (Tcl_Obj *)data[3];
     int value, thenScriptIndex = 0;
     const char *clause;
@@ -419,30 +419,6 @@ Tcl_IncrObjCmd(
 
     Tcl_SetObjResult(interp, newValuePtr);
     return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclInitInfoCmd --
- *
- *	This function is called to create the "info" Tcl command. See the user
- *	documentation for details on what it does.
- *
- * Results:
- *	Handle for the info command, or NULL on failure.
- *
- * Side effects:
- *	none
- *
- *----------------------------------------------------------------------
- */
-
-Tcl_Command
-TclInitInfoCmd(
-    Tcl_Interp *interp)		/* Current interpreter. */
-{
-    return TclMakeEnsemble(interp, "info", defaultInfoMap);
 }
 
 /*
@@ -1607,7 +1583,7 @@ InfoLevelCmd(
 	}
 	for (framePtr=iPtr->varFramePtr ; framePtr!=rootFramePtr;
 		framePtr=framePtr->callerVarPtr) {
-	    if ((int)framePtr->level == level) {
+	    if (framePtr->level == level) {
 		break;
 	    }
 	}
@@ -3352,6 +3328,8 @@ Tcl_LsearchObjCmd(
 	    }
 	    break;
 	}
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
 
@@ -3880,11 +3858,11 @@ Tcl_LsearchObjCmd(
 
 static SequenceDecoded
 SequenceIdentifyArgument(
-     Tcl_Interp *interp,	/* for error reporting */
-     Tcl_Obj *argPtr,		/* Argument to decode */
-     int allowedArgs,		/* Flags if keyword or numeric allowed. */
-     Tcl_Obj **numValuePtr,	/* Return numeric value */
-     int *keywordIndexPtr)	/* Return keyword enum */
+    Tcl_Interp *interp,		/* for error reporting */
+    Tcl_Obj *argPtr,		/* Argument to decode */
+    int allowedArgs,		/* Flags if keyword or numeric allowed. */
+    Tcl_Obj **numValuePtr,	/* Return numeric value */
+    int *keywordIndexPtr)	/* Return keyword enum */
 {
     int result = TCL_ERROR;
     SequenceOperators opmode;
@@ -4126,10 +4104,8 @@ Tcl_LseqObjCmd(
 	case LSEQ_BY:
 	    /* Error case */
 	    goto syntax;
-	    break;
 	default:
 	    goto syntax;
-	    break;
 	}
 	break;
 
@@ -4147,7 +4123,6 @@ Tcl_LseqObjCmd(
 	case LSEQ_COUNT:
 	default:
 	    goto syntax;
-	    break;
 	}
 	break;
 
@@ -4162,7 +4137,6 @@ Tcl_LseqObjCmd(
 	    break;
 	default:
 	    goto syntax;
-	    break;
 	}
 	opmode = (SequenceOperators)values[1];
 	switch (opmode) {
@@ -4177,7 +4151,6 @@ Tcl_LseqObjCmd(
 	    break;
 	default:
 	    goto syntax;
-	    break;
 	}
 	break;
 
@@ -4186,7 +4159,6 @@ Tcl_LseqObjCmd(
     syntax:
 	Tcl_WrongNumArgs(interp, 1, objv, "n ??op? n ??by? n??");
 	goto done;
-	break;
     }
 
     /* Count needs to be integer, so try to convert if possible */
@@ -4532,6 +4504,8 @@ Tcl_LsortObjCmd(
 	    group = 1;
 	    i++;
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
     if (nocase && (sortInfo.sortMode == SORTMODE_ASCII)) {
@@ -4610,7 +4584,7 @@ Tcl_LsortObjCmd(
 	    TclObjTypeGetElements(interp, listObj, &length, &listObjPtrs);
     } else {
 	sortInfo.resultCode = TclListObjGetElements(interp, listObj,
-	    &length, &listObjPtrs);
+		&length, &listObjPtrs);
     }
     if (sortInfo.resultCode != TCL_OK || length <= 0) {
 	goto done;
