@@ -3163,7 +3163,7 @@ TclCompileLfilterCmd(
 	Tcl_BytecodeLabel collectVal;
 	// Get the value that went into the lead variable
 	OP44(			FOREACH_INDEX, 0, 0);
-	OP4(			OVER, numLists + 3);
+	OP4(			OVER, numLists + 2);
 	OP(			SWAP);
 	OP(			LIST_INDEX);
 	// Don't bother with the constant optimisation of [if]
