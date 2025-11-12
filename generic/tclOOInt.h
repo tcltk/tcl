@@ -255,6 +255,7 @@ struct Object {
     PropertyStorage properties;	/* Information relating to the lists of
 				 * properties that this object *claims* to
 				 * support. */
+    Tcl_Obj *linkedCmdsList;	/* List of names of linked commands. */
 };
 
 enum ObjectFlags {
@@ -405,8 +406,10 @@ struct Foundation {
 				 * "<cloned>" pseudo-constructor. */
     Tcl_Obj *defineName;	/* Fully qualified name of oo::define. */
     Tcl_Obj *myName;		/* The "my" shared object. */
-    Tcl_Obj *mcdName;		/* The shared object for calling the helper to
-				 * mix in class delegates. */
+    Tcl_Obj *slotGetName;	/* The "Get" name used by slots. */
+    Tcl_Obj *slotSetName;	/* The "Set" name used by slots. */
+    Tcl_Obj *slotResolveName;	/* The "Resolve" name used by slots. */
+    Tcl_Obj *slotDefOpName;	/* The "--default-operation" name used by slots. */
 };
 
 /*
@@ -498,12 +501,14 @@ struct DeclaredClassMethod {
 MODULE_SCOPE int		TclOOInit(Tcl_Interp *interp);
 MODULE_SCOPE Tcl_ObjCmdProc	TclOODefineObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOOObjDefObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc	TclOODefineClassMethodObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOODefineConstructorObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOODefineDefnNsObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOODefineDeleteMethodObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOODefineDestructorObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOODefineExportObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOODefineForwardObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc	TclOODefineInitialiseObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOODefineMethodObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOODefineRenameMethodObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOODefineUnexportObjCmd;
@@ -513,7 +518,11 @@ MODULE_SCOPE Tcl_ObjCmdProc	TclOODefineObjSelfObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOODefinePrivateObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOODefinePropertyCmd;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOOUnknownDefinition;
+MODULE_SCOPE Tcl_ObjCmdProc	TclOOCallbackObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc	TclOOClassVariableObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOOCopyObjectCmd;
+MODULE_SCOPE Tcl_ObjCmdProc	TclOODelegateNameObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc	TclOOLinkObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOONextObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOONextToObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOOSelfObjCmd;
@@ -524,16 +533,22 @@ MODULE_SCOPE Tcl_ObjCmdProc	TclOOInfoClassPropCmd;
  * Method implementations (in tclOOBasic.c).
  */
 
+MODULE_SCOPE Tcl_MethodCallProc	TclOO_Class_Cloned;
 MODULE_SCOPE Tcl_MethodCallProc	TclOO_Class_Constructor;
 MODULE_SCOPE Tcl_MethodCallProc	TclOO_Class_Create;
 MODULE_SCOPE Tcl_MethodCallProc	TclOO_Class_CreateNs;
 MODULE_SCOPE Tcl_MethodCallProc	TclOO_Class_New;
+MODULE_SCOPE Tcl_MethodCallProc	TclOO_Object_Cloned;
 MODULE_SCOPE Tcl_MethodCallProc	TclOO_Object_Destroy;
 MODULE_SCOPE Tcl_MethodCallProc	TclOO_Object_Eval;
 MODULE_SCOPE Tcl_MethodCallProc	TclOO_Object_LinkVar;
 MODULE_SCOPE Tcl_MethodCallProc	TclOO_Object_Unknown;
 MODULE_SCOPE Tcl_MethodCallProc	TclOO_Object_VarName;
 MODULE_SCOPE Tcl_MethodCallProc TclOO_Configurable_Configure;
+MODULE_SCOPE Tcl_MethodCallProc TclOO_Configurable_Constructor;
+MODULE_SCOPE Tcl_MethodCallProc TclOO_Singleton_New;
+MODULE_SCOPE Tcl_MethodCallProc TclOO_SingletonInstance_Cloned;
+MODULE_SCOPE Tcl_MethodCallProc TclOO_SingletonInstance_Destroy;
 
 /*
  * Private definitions, some of which perhaps ought to be exposed properly or
@@ -567,6 +582,7 @@ MODULE_SCOPE Object *	TclNewObjectInstanceCommon(Tcl_Interp *interp,
 			    const char *nsNameStr);
 MODULE_SCOPE int	TclOODecrRefCount(Object *oPtr);
 MODULE_SCOPE int	TclOOObjectDestroyed(Object *oPtr);
+MODULE_SCOPE const char *TclOOContextTypeName(CallContext *contextPtr);
 MODULE_SCOPE int	TclOODefineSlots(Foundation *fPtr);
 MODULE_SCOPE void	TclOODeleteChain(CallChain *callPtr);
 MODULE_SCOPE void	TclOODeleteChainCache(Tcl_HashTable *tablePtr);
@@ -574,6 +590,7 @@ MODULE_SCOPE void	TclOODeleteContext(CallContext *contextPtr);
 MODULE_SCOPE void	TclOODeleteDescendants(Tcl_Interp *interp,
 			    Object *oPtr);
 MODULE_SCOPE void	TclOODelMethodRef(Method *method);
+MODULE_SCOPE int	TclOOExportMethods(Class *clsPtr, ...);
 MODULE_SCOPE CallContext *TclOOGetCallContext(Object *oPtr,
 			    Tcl_Obj *methodNameObj, int flags,
 			    Object *contextObjPtr, Class *contextClsPtr,
@@ -608,6 +625,7 @@ MODULE_SCOPE int	TclNRObjectContextInvokeNext(Tcl_Interp *interp,
 MODULE_SCOPE void	TclOODefineBasicMethods(Class *clsPtr,
 			    const DeclaredClassMethod *dcm);
 MODULE_SCOPE Tcl_Obj *	TclOOObjectName(Tcl_Interp *interp, Object *oPtr);
+MODULE_SCOPE Tcl_Obj *	TclOOObjectMyName(Tcl_Interp *interp, Object *oPtr);
 MODULE_SCOPE void	TclOOReleaseClassContents(Tcl_Interp *interp,
 			    Object *oPtr);
 MODULE_SCOPE int	TclOORemoveFromInstances(Object *oPtr, Class *clsPtr);
@@ -618,11 +636,14 @@ MODULE_SCOPE int	TclOORemoveFromSubclasses(Class *subPtr,
 			    Class *superPtr);
 MODULE_SCOPE Tcl_Obj *	TclOORenderCallChain(Tcl_Interp *interp,
 			    CallChain *callPtr);
+MODULE_SCOPE void	TclOOSetSuperclasses(Class *clsPtr, Tcl_Size superc,
+			    Class **superclasses);
 MODULE_SCOPE void	TclOOStashContext(Tcl_Obj *objPtr,
 			    CallContext *contextPtr);
+MODULE_SCOPE void	TclOOSetupVariableResolver(Tcl_Namespace *nsPtr);
+MODULE_SCOPE int	TclOOUnexportMethods(Class *clsPtr, ...);
 MODULE_SCOPE Tcl_Obj *	TclOOGetAllObjectProperties(Object *oPtr,
 			    int writable);
-MODULE_SCOPE void	TclOOSetupVariableResolver(Tcl_Namespace *nsPtr);
 MODULE_SCOPE Tcl_Obj *	TclOOGetPropertyList(PropertyList *propList);
 MODULE_SCOPE void	TclOOReleasePropertyStorage(PropertyStorage *propsPtr);
 MODULE_SCOPE void	TclOOInstallReadableProperties(PropertyStorage *props,
@@ -641,7 +662,7 @@ MODULE_SCOPE void	TclOORegisterInstanceProperty(Object *oPtr,
  * Include all the private API, generated from tclOO.decls.
  */
 
-#include "tclOOIntDecls.h"
+#include "tclOOIntDecls.h"  /* IWYU pragma: export */
 
 /*
  * Alternatives to Tcl_Preserve/Tcl_EventuallyFree/Tcl_Release.

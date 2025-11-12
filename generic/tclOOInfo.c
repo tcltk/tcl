@@ -47,8 +47,7 @@ static Tcl_ObjCmdProc InfoClassVariablesCmd;
 /*
  * List of commands that are used to implement the [info object] subcommands.
  */
-
-static const EnsembleImplMap infoObjectCmds[] = {
+static const EnsembleImplMap infoObjectImplMap[] = {
     {"call",	   InfoObjectCallCmd,	    TclCompileBasic2ArgCmd, NULL, NULL, 0},
     {"class",	   InfoObjectClassCmd,	    TclCompileInfoObjectClassCmd, NULL, NULL, 0},
     {"creationid", InfoObjectIdCmd,	    TclCompileInfoObjectCreationIdCmd, NULL, NULL, 0},
@@ -69,8 +68,7 @@ static const EnsembleImplMap infoObjectCmds[] = {
 /*
  * List of commands that are used to implement the [info class] subcommands.
  */
-
-static const EnsembleImplMap infoClassCmds[] = {
+static const EnsembleImplMap infoClassImplMap[] = {
     {"call",	     InfoClassCallCmd,		TclCompileBasic2ArgCmd, NULL, NULL, 0},
     {"constructor",  InfoClassConstrCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
     {"definition",   InfoClassDefnCmd,		TclCompileBasic2ArgCmd, NULL, NULL, 0},
@@ -145,11 +143,14 @@ TclOOInitInfo(
      * Build the ensembles used to implement [info object] and [info class].
      */
 
-    TclMakeEnsemble(interp, "::oo::InfoObject", infoObjectCmds);
-    TclMakeEnsemble(interp, "::oo::InfoClass", infoClassCmds);
+    TclMakeEnsemble(interp, "::oo::InfoObject", infoObjectImplMap);
+    TclMakeEnsemble(interp, "::oo::InfoClass", infoClassImplMap);
 
     /*
      * Install into the [info] ensemble.
+     * We keep the subcommands with their existing names instead of the
+     * auto-generated ones supported by the ensemble guts because we're
+     * somewhat documented to work this way.
      */
 
     infoCmd = Tcl_FindCommand(interp, "info", NULL, TCL_GLOBAL_ONLY);
@@ -488,6 +489,8 @@ InfoObjectIsACmd(
 	    return TCL_ERROR;
 	}
 	break;
+    default:
+	TCL_UNREACHABLE();
     }
 
     /*
@@ -541,6 +544,8 @@ InfoObjectIsACmd(
 	    result = TclOOIsReachable(o2Ptr->classPtr, oPtr->selfCls);
 	}
 	break;
+    default:
+	TCL_UNREACHABLE();
     }
     Tcl_SetObjResult(interp, Tcl_NewBooleanObj(result));
     return TCL_OK;
@@ -631,6 +636,8 @@ InfoObjectMethodsCmd(
 		    return TCL_ERROR;
 		}
 		break;
+	    default:
+		TCL_UNREACHABLE();
 	    }
 	}
     }
@@ -1120,9 +1127,9 @@ InfoClassDefnNsCmd(
 	return TCL_ERROR;
     }
 
-    if (kind) {
+    if (kind) {			// -instance
 	nsNamePtr = clsPtr->objDefinitionNs;
-    } else {
+    } else {			// -class
 	nsNamePtr = clsPtr->clsDefinitionNs;
     }
     if (nsNamePtr) {
@@ -1387,6 +1394,8 @@ InfoClassMethodsCmd(
 		    return TCL_ERROR;
 		}
 		break;
+	    default:
+		TCL_UNREACHABLE();
 	    }
 	}
     }
@@ -1402,6 +1411,8 @@ InfoClassMethodsCmd(
 	case SCOPE_UNEXPORTED:
 	    flag = 0;
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
 

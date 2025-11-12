@@ -221,10 +221,6 @@ enum LimitHandlerFlags {
  * Prototypes for local static functions:
  */
 
-static int		AliasCreate(Tcl_Interp *interp,
-			    Tcl_Interp *childInterp, Tcl_Interp *parentInterp,
-			    Tcl_Obj *namePtr, Tcl_Obj *targetPtr, Tcl_Size objc,
-			    Tcl_Obj *const objv[]);
 static int		AliasDelete(Tcl_Interp *interp,
 			    Tcl_Interp *childInterp, Tcl_Obj *namePtr);
 static int		AliasDescribe(Tcl_Interp *interp,
@@ -260,6 +256,9 @@ static int		ChildInvokeHidden(Tcl_Interp *interp,
 static int		ChildMarkTrusted(Tcl_Interp *interp,
 			    Tcl_Interp *childInterp);
 static Tcl_CmdDeleteProc	ChildObjCmdDeleteProc;
+static int		ChildSet(Tcl_Interp *interp,
+			    Tcl_Interp *childInterp, Tcl_Obj *varNameObj,
+			    Tcl_Obj *valueObj);
 static int		ChildRecursionLimit(Tcl_Interp *interp,
 			    Tcl_Interp *childInterp, Tcl_Size objc,
 			    Tcl_Obj *const objv[]);
@@ -447,7 +446,9 @@ Tcl_Init(
 "	if {[set tcl_library [eval $script]] eq \"\"} continue\n"
 "	set tclfile [file join $tcl_library init.tcl]\n"
 "	if {[file exists $tclfile]} {\n"
-"	    if {[catch {uplevel #0 [list source $tclfile]} msg opts]} {\n"
+"	    try {\n"
+"		uplevel #0 [list source $tclfile]\n"
+"	    } on error {msg opts} {\n"
 "		append errors \"$tclfile: $msg\n\"\n"
 "		append errors \"[dict get $opts -errorinfo]\n\"\n"
 "		continue\n"
@@ -639,7 +640,7 @@ NRInterpCmd(
 	"eval",		"exists",	"expose",	"hide",
 	"hidden",	"issafe",	"invokehidden",
 	"limit",	"marktrusted",	"recursionlimit",
-	"share",
+	"set",		"share",
 #ifndef TCL_NO_DEPRECATED
 	"slaves",
 #endif
@@ -651,7 +652,7 @@ NRInterpCmd(
 	"eval",		"exists",	"expose",
 	"hide",		"hidden",	"issafe",
 	"invokehidden",	"limit",	"marktrusted",	"recursionlimit",
-	"share",	"target",	"transfer",
+	"set",		"share",	"target",	"transfer",
 	NULL
     };
     enum interpOptionEnum {
@@ -659,7 +660,8 @@ NRInterpCmd(
 	OPT_CHILDREN,	OPT_CREATE,	OPT_DEBUG,	OPT_DELETE,
 	OPT_EVAL,	OPT_EXISTS,	OPT_EXPOSE,	OPT_HIDE,
 	OPT_HIDDEN,	OPT_ISSAFE,	OPT_INVOKEHID,
-	OPT_LIMIT,	OPT_MARKTRUSTED, OPT_RECLIMIT, OPT_SHARE,
+	OPT_LIMIT,	OPT_MARKTRUSTED, OPT_RECLIMIT,	OPT_SET,
+	OPT_SHARE,
 #ifndef TCL_NO_DEPRECATED
 	OPT_SLAVES,
 #endif
@@ -701,7 +703,7 @@ NRInterpCmd(
 		return TCL_ERROR;
 	    }
 
-	    return AliasCreate(interp, childInterp, parentInterp, objv[3],
+	    return TclAliasCreate(interp, childInterp, parentInterp, objv[3],
 		    objv[5], objc - 6, objv + 6);
 	}
 
@@ -756,6 +758,8 @@ NRInterpCmd(
 	    case OPT_LAST:
 		i++;
 		goto endOfForLoop;
+	    default:
+		TCL_UNREACHABLE();
 	    }
 	}
 
@@ -905,6 +909,17 @@ NRInterpCmd(
 	    return TCL_ERROR;
 	}
 	return ChildEval(interp, childInterp, objc - 3, objv + 3);
+    case OPT_SET:
+	if (objc < 4 || objc > 5) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "path varName ?value?");
+	    return TCL_ERROR;
+	}
+	childInterp = GetInterp(interp, objv[2]);
+	if (childInterp == NULL) {
+	    return TCL_ERROR;
+	}
+	return ChildSet(interp, childInterp, objv[3],
+		objc > 4 ? objv[4] : NULL);
     case OPT_EXISTS: {
 	int exists = 1;
 
@@ -1022,8 +1037,7 @@ NRInterpCmd(
 	case LIMIT_TYPE_TIME:
 	    return ChildTimeLimitCmd(interp, childInterp, 4, objc, objv);
 	default:
-	    Tcl_Panic("unreachable");
-	    return TCL_ERROR;
+	    TCL_UNREACHABLE();
 	}
     }
     case OPT_MARKTRUSTED:
@@ -1147,8 +1161,7 @@ NRInterpCmd(
 	return TCL_OK;
     }
     default:
-	Tcl_Panic("unreachable");
-	return TCL_ERROR;
+	TCL_UNREACHABLE();
     }
 }
 
@@ -1232,7 +1245,7 @@ Tcl_CreateAlias(
     targetObjPtr = Tcl_NewStringObj(targetCmd, -1);
     Tcl_IncrRefCount(targetObjPtr);
 
-    result = AliasCreate(childInterp, childInterp, targetInterp, childObjPtr,
+    result = TclAliasCreate(childInterp, childInterp, targetInterp, childObjPtr,
 	    targetObjPtr, argc, objv);
 
     for (i = 0; i < argc; i++) {
@@ -1279,7 +1292,7 @@ Tcl_CreateAliasObj(
     targetObjPtr = Tcl_NewStringObj(targetCmd, -1);
     Tcl_IncrRefCount(targetObjPtr);
 
-    result = AliasCreate(childInterp, childInterp, targetInterp, childObjPtr,
+    result = TclAliasCreate(childInterp, childInterp, targetInterp, childObjPtr,
 	    targetObjPtr, objc, objv);
 
     Tcl_DecrRefCount(childObjPtr);
@@ -1452,7 +1465,7 @@ TclPreventAliasLoop(
 /*
  *----------------------------------------------------------------------
  *
- * AliasCreate --
+ * TclAliasCreate --
  *
  *	Helper function to do the work to actually create an alias.
  *
@@ -1466,8 +1479,8 @@ TclPreventAliasLoop(
  *----------------------------------------------------------------------
  */
 
-static int
-AliasCreate(
+int
+TclAliasCreate(
     Tcl_Interp *interp,		/* Interp for error reporting. */
     Tcl_Interp *childInterp,	/* Interp where alias cmd will live or from
 				 * which alias will be deleted. */
@@ -2468,7 +2481,7 @@ ChildCreate(
 
 	TclNewLiteralStringObj(clockObj, "clock");
 	Tcl_IncrRefCount(clockObj);
-	status = AliasCreate(interp, childInterp, parentInterp, clockObj,
+	status = TclAliasCreate(interp, childInterp, parentInterp, clockObj,
 		clockObj, 0, NULL);
 	Tcl_DecrRefCount(clockObj);
 	if (status != TCL_OK) {
@@ -2525,13 +2538,13 @@ NRChildCmd(
 	"alias",	"aliases",	"bgerror",	"debug",
 	"eval",		"expose",	"hide",		"hidden",
 	"issafe",	"invokehidden",	"limit",	"marktrusted",
-	"recursionlimit", NULL
+	"recursionlimit", "set",	NULL
     };
     enum childCmdOptionsEnum {
 	OPT_ALIAS,	OPT_ALIASES,	OPT_BGERROR,	OPT_DEBUG,
 	OPT_EVAL,	OPT_EXPOSE,	OPT_HIDE,	OPT_HIDDEN,
 	OPT_ISSAFE,	OPT_INVOKEHIDDEN, OPT_LIMIT,	OPT_MARKTRUSTED,
-	OPT_RECLIMIT
+	OPT_RECLIMIT,	OPT_SET
     } index;
 
     if (childInterp == NULL) {
@@ -2558,7 +2571,7 @@ NRChildCmd(
 		    return AliasDelete(interp, childInterp, objv[2]);
 		}
 	    } else {
-		return AliasCreate(interp, childInterp, interp, objv[2],
+		return TclAliasCreate(interp, childInterp, interp, objv[2],
 			objv[3], objc - 4, objv + 4);
 	    }
 	}
@@ -2677,9 +2690,10 @@ NRChildCmd(
 	    return ChildCommandLimitCmd(interp, childInterp, 3, objc,objv);
 	case LIMIT_TYPE_TIME:
 	    return ChildTimeLimitCmd(interp, childInterp, 3, objc, objv);
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
-    break;
     case OPT_MARKTRUSTED:
 	if (objc != 2) {
 	    Tcl_WrongNumArgs(interp, 2, objv, NULL);
@@ -2692,6 +2706,14 @@ NRChildCmd(
 	    return TCL_ERROR;
 	}
 	return ChildRecursionLimit(interp, childInterp, objc - 2, objv + 2);
+    case OPT_SET:
+	if (objc < 3 || objc > 4) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "varName ?value?");
+	    return TCL_ERROR;
+	}
+	return ChildSet(interp, childInterp, objv[2], objc>3 ? objv[3] : NULL);
+    default:
+	TCL_UNREACHABLE();
     }
 
     return TCL_ERROR;
@@ -2875,6 +2897,51 @@ ChildEval(
     }
     Tcl_TransferResult(childInterp, result, interp);
 
+    Tcl_Release(childInterp);
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ChildSet --
+ *
+ *	Helper function to read and write a variable in a child interpreter.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	Depends on whether the variable has traces. If so, this can have
+ *	extensive arbitrary side effects.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+ChildSet(
+    Tcl_Interp *interp,
+    Tcl_Interp *childInterp,
+    Tcl_Obj *varNameObj,
+    Tcl_Obj *valueObj)
+{
+    int result = TCL_ERROR;
+    Tcl_Obj *resultObj;
+    Tcl_Preserve(childInterp);
+
+    // Modelled after the guts of Tcl_SetObjCmd().
+    if (valueObj) {
+	resultObj = Tcl_ObjSetVar2(childInterp, varNameObj, NULL, valueObj,
+		TCL_LEAVE_ERR_MSG);
+    } else {
+	resultObj = Tcl_ObjGetVar2(childInterp, varNameObj, NULL,
+		TCL_LEAVE_ERR_MSG);
+    }
+    if (resultObj) {
+	Tcl_SetObjResult(childInterp, resultObj);
+	result = TCL_OK;
+    }
+
+    Tcl_TransferResult(childInterp, result, interp);
     Tcl_Release(childInterp);
     return result;
 }
@@ -3095,8 +3162,6 @@ ChildInvokeHidden(
     Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int result;
-
     if (Tcl_IsSafe(interp)) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"not allowed to invoke hidden commands from safe interpreter",
@@ -3105,33 +3170,35 @@ ChildInvokeHidden(
 		(char *)NULL);
 	return TCL_ERROR;
     }
+    if (objc < 1) {
+	Tcl_Panic("need at least one word: hidden command name");
+    }
 
     Tcl_Preserve(childInterp);
     Tcl_AllowExceptions(childInterp);
 
-    if (namespaceName == NULL) {
-	NRE_callback *rootPtr = TOP_CB(childInterp);
-
-	Tcl_NRAddCallback(interp, NRPostInvokeHidden, childInterp,
-		rootPtr, NULL, NULL);
-	return TclNRInvoke(NULL, childInterp, objc, objv);
-    } else {
+    // Push the namespace if one has been requested. 
+    Tcl_CallFrame *framePtr = NULL;
+    if (namespaceName != NULL) {
 	Namespace *nsPtr, *dummy1, *dummy2;
 	const char *tail;
 
-	result = TclGetNamespaceForQualName(childInterp, namespaceName, NULL,
+	int result = TclGetNamespaceForQualName(childInterp, namespaceName, NULL,
 		TCL_FIND_ONLY_NS | TCL_GLOBAL_ONLY | TCL_LEAVE_ERR_MSG
 		| TCL_CREATE_NS_IF_UNKNOWN, &nsPtr, &dummy1, &dummy2, &tail);
-	if (result == TCL_OK) {
-	    result = TclObjInvokeNamespace(childInterp, objc, objv,
-		    (Tcl_Namespace *) nsPtr, TCL_INVOKE_HIDDEN);
+	if (result != TCL_OK) {
+	    Tcl_TransferResult(childInterp, result, interp);
+	    Tcl_Release(childInterp);
+	    return result;
 	}
+
+	(void) TclPushStackFrame(childInterp, &framePtr, (Tcl_Namespace *) nsPtr,
+		/*isProcFrame*/ 0);
     }
 
-    Tcl_TransferResult(childInterp, result, interp);
-
-    Tcl_Release(childInterp);
-    return result;
+    Tcl_NRAddCallback(interp, NRPostInvokeHidden, childInterp,
+	    TOP_CB(childInterp), framePtr, NULL);
+    return TclNRInvoke(NULL, childInterp, objc, objv);
 }
 
 static int
@@ -3142,10 +3209,14 @@ NRPostInvokeHidden(
 {
     Tcl_Interp *childInterp = (Tcl_Interp *) data[0];
     NRE_callback *rootPtr = (NRE_callback *) data[1];
+    CallFrame *framePtr = (CallFrame *) data[2];
 
     if (interp != childInterp) {
 	result = TclNRRunCallbacks(childInterp, result, rootPtr);
 	Tcl_TransferResult(childInterp, result, interp);
+    }
+    if (framePtr) {
+	TclPopStackFrame(childInterp);
     }
     Tcl_Release(childInterp);
     return result;
@@ -4529,6 +4600,8 @@ ChildCommandLimitCmd(
 			Tcl_NewWideIntObj(Tcl_LimitGetCommands(childInterp)));
 	    }
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
 	return TCL_OK;
     } else if ((objc-consumedObjc) & 1 /* isOdd(objc-consumedObjc) */) {
@@ -4537,7 +4610,8 @@ ChildCommandLimitCmd(
     } else {
 	Tcl_Size i, scriptLen = 0, limitLen = 0;
 	Tcl_Obj *scriptObj = NULL, *granObj = NULL, *limitObj = NULL;
-	int gran = 0, limit = 0;
+	int gran = 0;
+	Tcl_Size limit = 0;
 
 	for (i=consumedObjc ; i<objc ; i+=2) {
 	    if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0,
@@ -4568,7 +4642,7 @@ ChildCommandLimitCmd(
 		if (limitLen == 0) {
 		    break;
 		}
-		if (TclGetIntFromObj(interp, objv[i+1], &limit) != TCL_OK) {
+		if (Tcl_GetSizeIntFromObj(interp, objv[i+1], &limit) != TCL_OK) {
 		    return TCL_ERROR;
 		}
 		if (limit < 0) {
@@ -4579,6 +4653,8 @@ ChildCommandLimitCmd(
 		    return TCL_ERROR;
 		}
 		break;
+	    default:
+		TCL_UNREACHABLE();
 	    }
 	}
 	if (scriptObj != NULL) {
@@ -4729,6 +4805,8 @@ ChildTimeLimitCmd(
 		Tcl_SetObjResult(interp, Tcl_NewWideIntObj(limitMoment.sec));
 	    }
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
 	return TCL_OK;
     } else if ((objc-consumedObjc) & 1 /* isOdd(objc-consumedObjc) */) {
@@ -4802,6 +4880,8 @@ ChildTimeLimitCmd(
 		}
 		limitMoment.sec = (long long) tmp;
 		break;
+	    default:
+		TCL_UNREACHABLE();
 	    }
 	}
 	if (milliObj != NULL || secObj != NULL) {

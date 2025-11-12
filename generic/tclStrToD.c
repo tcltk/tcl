@@ -547,19 +547,15 @@ TclParseNumber(
      */
 
     if (bytes == NULL) {
-	if (interp == NULL && endPtrPtr == NULL) {
-	    if (TclHasInternalRep(objPtr, &tclDictType)) {
-		/* A dict can never be a (single) number */
-		return TCL_ERROR;
-	    }
-	    if (TclHasInternalRep(objPtr, &tclListType)) {
-		Tcl_Size length;
-		/* A list can only be a (single) number if its length == 1 */
-		TclListObjLength(NULL, objPtr, &length);
-		if (length != 1) {
-		    return TCL_ERROR;
-		}
-	    }
+	if (TclHasInternalRep(objPtr, &tclDictType)) {
+	    /* A dict can never be a (single) number */
+	    status = TCL_ERROR;
+	    goto formaterr;
+	}
+	Tcl_ObjTypeLengthProc *lengthProc = TclObjTypeHasProc(objPtr, lengthProc);
+	if (lengthProc && lengthProc(objPtr) > 1) {
+	    status = TCL_ERROR;
+	    goto formaterr;
 	}
 	bytes = TclGetString(objPtr);
     }
@@ -672,7 +668,7 @@ TclParseNumber(
 		state = SIGNUM;
 		break;
 	    }
-	    /* FALLTHROUGH */
+	    TCL_FALLTHROUGH();
 
 	case SIGNUM:
 	    /*
@@ -768,7 +764,7 @@ TclParseNumber(
 	    acceptState = state;
 	    acceptPoint = p;
 	    acceptLen = len;
-	    /* FALLTHROUGH */
+	    TCL_FALLTHROUGH();
 	case ZERO_O:
 	zeroo:
 	    if (c == '0') {
@@ -847,7 +843,7 @@ TclParseNumber(
 	    acceptState = state;
 	    acceptPoint = p;
 	    acceptLen = len;
-	    /* FALLTHROUGH */
+	    TCL_FALLTHROUGH();
 
 	case ZERO_X:
 	zerox:
@@ -911,7 +907,7 @@ TclParseNumber(
 	    acceptState = state;
 	    acceptPoint = p;
 	    acceptLen = len;
-	    /* FALLTHRU */
+	    TCL_FALLTHROUGH();
 	case ZERO_B:
 	zerob:
 	    if (c == '0') {
@@ -972,7 +968,7 @@ TclParseNumber(
 	    }
 	    state = DECIMAL;
 	    flags |= TCL_PARSE_INTEGER_ONLY;
-	    /* FALLTHROUGH */
+	    TCL_FALLTHROUGH();
 
 	case DECIMAL:
 	    /*
@@ -1024,7 +1020,7 @@ TclParseNumber(
 		state = EXPONENT_START;
 		break;
 	    }
-	    /* FALLTHROUGH */
+	    TCL_FALLTHROUGH();
 
 	case LEADING_RADIX_POINT:
 	    if (c == '0') {
@@ -1066,7 +1062,7 @@ TclParseNumber(
 		state = EXPONENT_SIGNUM;
 		break;
 	    }
-	    /* FALLTHROUGH */
+	    TCL_FALLTHROUGH();
 
 	case EXPONENT_SIGNUM:
 	    /*
@@ -1186,7 +1182,7 @@ TclParseNumber(
 		state = sNANFINISH;
 		break;
 	    }
-	    /* FALLTHROUGH */
+	    TCL_FALLTHROUGH();
 	case sNANPAREN:
 	    if (TclIsSpaceProcM(c)) {
 		break;
@@ -1515,7 +1511,7 @@ TclParseNumber(
 #endif
 	case INITIAL:
 	    /* This case only to silence compiler warning. */
-	    Tcl_Panic("TclParseNumber: state INITIAL can't happen here");
+	    TCL_UNREACHABLE();
 	}
     }
 
@@ -1523,15 +1519,18 @@ TclParseNumber(
      * Format an error message when an invalid number is encountered.
      */
 
+formaterr:
     if (status != TCL_OK) {
 	if (interp != NULL) {
 	    Tcl_Obj *msg = Tcl_ObjPrintf("expected %s but got ",
 		    expected);
 	    Tcl_Size argc;
-	    const char **argv;
-	    if ((TclMaxListLength(bytes, TCL_INDEX_NONE, NULL) > 1)
-		    && Tcl_SplitList(NULL, bytes, &argc, &argv) == TCL_OK) {
-		Tcl_Free(argv);
+	    const char **argv = NULL;
+	    if (!bytes || ((TclMaxListLength(bytes, TCL_INDEX_NONE, NULL) > 1)
+		    && Tcl_SplitList(NULL, bytes, &argc, &argv) == TCL_OK)) {
+		if (argv) {
+		    Tcl_Free(argv);
+		}
 		Tcl_AppendToObj(msg, "a list", -1);
 	    } else {
 		Tcl_AppendToObj(msg, "\"", -1);
@@ -2312,22 +2311,28 @@ NormalizeRightward(
     Tcl_WideUInt w = *wPtr;
 
     if (!(w & (Tcl_WideUInt) 0xFFFFFFFF)) {
-	w >>= 32; rv += 32;
+	w >>= 32;
+	rv += 32;
     }
     if (!(w & (Tcl_WideUInt) 0xFFFF)) {
-	w >>= 16; rv += 16;
+	w >>= 16;
+	rv += 16;
     }
     if (!(w & (Tcl_WideUInt) 0xFF)) {
-	w >>= 8; rv += 8;
+	w >>= 8;
+	rv += 8;
     }
     if (!(w & (Tcl_WideUInt) 0xF)) {
-	w >>= 4; rv += 4;
+	w >>= 4;
+	rv += 4;
     }
     if (!(w & 0x3)) {
-	w >>= 2; rv += 2;
+	w >>= 2;
+	rv += 2;
     }
     if (!(w & 0x1)) {
-	w >>= 1; ++rv;
+	w >>= 1;
+	++rv;
     }
     *wPtr = w;
     return rv;
@@ -3175,7 +3180,9 @@ ShorteningInt64Conversion(
 
     if (b < S) {
 	b = 10 * b;
-	++m2plus; ++m2minus; ++m5;
+	++m2plus;
+	++m2minus;
+	++m5;
 	ilim = ilim1;
 	--k;
     }
@@ -3554,7 +3561,9 @@ ShorteningBignumConversionPowD(
 
     if ((err == MP_OKAY) && (b.used <= sd)) {
 	err = mp_mul_d(&b, 10, &b);
-	++m2plus; ++m2minus; ++m5;
+	++m2plus;
+	++m2minus;
+	++m5;
 	ilim = ilim1;
 	--k;
     }
@@ -3594,7 +3603,8 @@ ShorteningBignumConversionPowD(
 	    if (b.used > sd+1 || digit >= 10) {
 		Tcl_Panic("wrong digit!");
 	    }
-	    --b.used; mp_clamp(&b);
+	    --b.used;
+	    mp_clamp(&b);
 	}
 
 	/*
@@ -4570,9 +4580,11 @@ TclDoubleDigits(
 	 */
 
 	if (b2 >= s2 && s2 > 0) {
-	    b2 -= s2; s2 = 0;
+	    b2 -= s2;
+	    s2 = 0;
 	} else if (s2 >= b2 && b2 > 0) {
-	    s2 -= b2; b2 = 0;
+	    s2 -= b2;
+	    b2 = 0;
 	}
 
 	if (s5+1 < N_LOG2POW5 && s2+1 + log2pow5[s5+1] < 64) {

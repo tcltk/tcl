@@ -230,9 +230,8 @@ TclNamespaceEnsembleCmd(
 	}
 
     default:
-	Tcl_Panic("unexpected ensemble command");
+	TCL_UNREACHABLE();
     }
-    return TCL_OK;
 }
 
 /*
@@ -387,6 +386,8 @@ InitEnsembleFromOptions(
 	    }
 	    unknownObj = (len > 0 ? objv[1] : NULL);
 	    continue;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
 
@@ -485,6 +486,8 @@ ReadOneEnsembleOption(
 	    Tcl_SetObjResult(interp, resultObj);
 	}
 	break;
+    default:
+	TCL_UNREACHABLE();
     }
     return TCL_OK;
 }
@@ -715,6 +718,8 @@ SetEnsembleConfigOptions(
 	    }
 	    unknownObj = (len > 0 ? objv[1] : NULL);
 	    continue;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
 

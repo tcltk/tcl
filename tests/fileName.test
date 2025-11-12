@@ -14,7 +14,7 @@ if {"::tcltest" ni [namespace children]} {
     package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
-
+set existingGlobals [info globals]
 
 ::tcltest::loadTestedCommands
 catch [list package require -exact tcl::test [info patchlevel]]
@@ -1273,12 +1273,17 @@ test filename-14.22 {asterisks, question marks, and brackets} -body {
 test filename-14.23 {slash globbing} {unix} {
     glob /
 } /
+
+# NOTE: [The string index x/ 1] construction is a workaround for the
+# testsetplatform calls above interacting with normalized path caching
+# in -singleproc 1 runs. See ticket [8c63606802].
 test filename-14.23.2 {slash globbing} {win} {
     glob /
-} [file norm /]
+} [file normalize [string index x/ 1]]
 test filename-14.24 {slash globbing} {win} {
     glob {\\}
-} [file norm /]
+} [file normalize [string index x/ 1]]
+
 test filename-14.25 {type specific globbing} {unix} {
     lsort [glob -dir globTest -types f *]
 } [lsort [list \
@@ -1697,7 +1702,11 @@ if {[testConstraint testsetplatform]} {
     testsetplatform $platform
     catch {unset platform}
 }
-catch {unset oldhome temp result globPreResult}
+unset -nocomplain {*}[lmap x [info globals] {
+    if {$x in $existingGlobals} {continue}
+    set x
+}]
+
 ::tcltest::cleanupTests
 return
 

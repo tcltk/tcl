@@ -61,7 +61,6 @@
 # define TclGetStringFromObj 0
 # define TclGetBytesFromObj 0
 # define TclGetUnicodeFromObj 0
-# define TclVarHashCreateVar 0
 #endif
 #undef Tcl_Close
 #define Tcl_Close 0
@@ -185,7 +184,7 @@ int TclGetAliasObj(Tcl_Interp *interp, const char *childCmd,
     if (objcPtr) {
 	if ((sizeof(int) != sizeof(Tcl_Size)) && (result == TCL_OK) && (n > INT_MAX)) {
 	    if (interp) {
-		Tcl_AppendResult(interp, "List too large to be processed", NULL);
+		Tcl_AppendResult(interp, "List too large to be processed", (char *)NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -310,7 +309,7 @@ void *TclWinGetTclInstance(void)
 {
     void *hInstance = NULL;
     GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
-	    (const wchar_t *)&TclWinNoBackslash, &hInstance);
+	    (const WCHAR *)&TclWinNoBackslash, &hInstance);
     return hInstance;
 }
 
@@ -1498,7 +1497,13 @@ const TclStubs tclStubs = {
     Tcl_NewWideUIntObj, /* 688 */
     Tcl_SetWideUIntObj, /* 689 */
     Tcl_IsEmpty, /* 690 */
-    TclUnusedStubEntry, /* 691 */
+    Tcl_GetEncodingNameForUser, /* 691 */
+    Tcl_ListObjReverse, /* 692 */
+    Tcl_ListObjRepeat, /* 693 */
+    Tcl_ListObjRange, /* 694 */
+    Tcl_UtfToNormalizedDString, /* 695 */
+    Tcl_UtfToNormalized, /* 696 */
+    TclUnusedStubEntry, /* 697 */
 };
 
 /* !END!: Do not edit above this line. */

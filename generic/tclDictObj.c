@@ -12,7 +12,6 @@
 
 #include "tclInt.h"
 #include "tclTomMath.h"
-#include <assert.h>
 
 /*
  * Forward declaration.
@@ -66,7 +65,7 @@ static Tcl_NRPostProc		DictMapLoopCallback;
  * Table of dict subcommand names and implementations.
  */
 
-static const EnsembleImplMap implementationMap[] = {
+const EnsembleImplMap tclDictImplMap[] = {
     {"append",	DictAppendCmd,	TclCompileDictAppendCmd, NULL, NULL, 0 },
     {"create",	DictCreateCmd,	TclCompileDictCreateCmd, NULL, NULL, 0 },
     {"exists",	DictExistsCmd,	TclCompileDictExistsCmd, NULL, NULL, 0 },
@@ -3231,7 +3230,7 @@ DictFilterCmd(
 	return TCL_ERROR;
     }
     if (Tcl_GetIndexFromObj(interp, objv[2], filters, "filterType",
-	     0, &index) != TCL_OK) {
+	    0, &index) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -3424,7 +3423,7 @@ DictFilterCmd(
 
 		Tcl_ResetResult(interp);
 		Tcl_DictObjDone(&search);
-	    /* FALLTHRU */
+		TCL_FALLTHROUGH();
 	    case TCL_CONTINUE:
 		result = TCL_OK;
 		break;
@@ -3432,6 +3431,7 @@ DictFilterCmd(
 		Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 			"\n    (\"dict filter\" script line %d)",
 			Tcl_GetErrorLine(interp)));
+		TCL_FALLTHROUGH();
 	    default:
 		goto abnormalResult;
 	    }
@@ -3457,20 +3457,18 @@ DictFilterCmd(
 	    TclDecrRefCount(resultObj);
 	}
 	return result;
-
-    abnormalResult:
-	Tcl_DictObjDone(&search);
-	TclDecrRefCount(keyObj);
-	TclDecrRefCount(valueObj);
-	TclDecrRefCount(keyVarObj);
-	TclDecrRefCount(valueVarObj);
-	TclDecrRefCount(scriptObj);
-	TclDecrRefCount(resultObj);
-	return result;
     }
-    Tcl_Panic("unexpected fallthrough");
-    /* Control never reaches this point. */
-    return TCL_ERROR;
+    TCL_UNREACHABLE();
+
+  abnormalResult:
+    Tcl_DictObjDone(&search);
+    TclDecrRefCount(keyObj);
+    TclDecrRefCount(valueObj);
+    TclDecrRefCount(keyVarObj);
+    TclDecrRefCount(valueVarObj);
+    TclDecrRefCount(scriptObj);
+    TclDecrRefCount(resultObj);
+    return result;
 }
 
 /*
@@ -3968,31 +3966,6 @@ TclDictWithFinish(
     return TCL_OK;
 }
 
-/*
- *----------------------------------------------------------------------
- *
- * TclInitDictCmd --
- *
- *	This function is create the "dict" Tcl command. See the user
- *	documentation for details on what it does, and TIP#111 for the formal
- *	specification.
- *
- * Results:
- *	A Tcl command handle.
- *
- * Side effects:
- *	May advance compilation epoch.
- *
- *----------------------------------------------------------------------
- */
-
-Tcl_Command
-TclInitDictCmd(
-    Tcl_Interp *interp)
-{
-    return TclMakeEnsemble(interp, "dict", implementationMap);
-}
-
 /*
  * Local Variables:
  * mode: c

@@ -5,19 +5,47 @@ on:
     - "main"
     - "core-9-0-branch"
     tags:
-    - "core-**"
+    - "core-*"
 permissions:
   contents: read
 jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      clang: ${{ steps.matrix.outputs.clang }}
+    steps:
+      - name: Select build matrix based on branch name
+        id: matrix
+        run: |
+          (
+            echo clang=$(jq -nc '{config: (if env.IsMatched == "true" then env.FULL else env.PARTIAL end) | fromjson }' )
+          ) | tee -a $GITHUB_OUTPUT
+        env:
+          IsMatched: ${{ github.ref_name == 'main' || github.ref_name == 'core-9-0-branch' }}
+          # DO NOT CHANGE THIS MATRIX SPEC; IT AFFECTS OUR COST CONTROLS
+          FULL: >
+            [
+              "",
+              "--disable-shared",
+              "--disable-zipfs",
+              "--enable-symbols",
+              "--enable-symbols=mem",
+              "--enable-symbols=all"
+            ]
+          PARTIAL: >
+            [
+              "",
+              "--enable-symbols=all"
+            ]
   xcode:
-    runs-on: macos-15
+    runs-on: macos-26
     defaults:
       run:
         shell: bash
         working-directory: macosx
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         timeout-minutes: 5
       - name: Prepare
         run: |
@@ -29,29 +57,25 @@ jobs:
           CFLAGS: -arch x86_64 -arch arm64
         timeout-minutes: 15
       - name: Run Tests
-        run: make -j4 test styles=develop
+        run: |
+          echo "::add-matcher::.github/tcltest.json"
+          make -j4 test styles=develop
         env:
           ERROR_ON_FAILURES: 1
           MAC_CI: 1
         timeout-minutes: 15
   clang:
-    runs-on: macos-15
+    runs-on: macos-26
+    needs: plan
     strategy:
-      matrix:
-        config:
-          - ""
-          - "--disable-shared"
-          - "--disable-zipfs"
-          - "--enable-symbols"
-          - "--enable-symbols=mem"
-          - "--enable-symbols=all"
+      matrix: ${{ fromJson(needs.plan.outputs.clang) }}
     defaults:
       run:
         shell: bash
         working-directory: unix
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         timeout-minutes: 5
       - name: Prepare
         run: |
@@ -74,9 +98,10 @@ jobs:
       - name: Info
         run: |
           ulimit -a || echo 'get limit failed'
-          echo 'puts exe:\t[info nameofexecutable]\nver:\t[info patchlevel]\t[if {![catch tcl::build-info ret]} {set ret}]\nlib:\t[info library]\nplat:\t[lsort -dictionary -stride 2 [array get tcl_platform]]' | make runtest || echo 'get info failed'
+          make runtest SCRIPT=../.github/workflows/info.tcl || echo 'get info failed'
       - name: Run Tests
         run: |
+          echo "::add-matcher::.github/tcltest.json"
           make test
         env:
           ERROR_ON_FAILURES: 1

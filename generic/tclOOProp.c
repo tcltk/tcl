@@ -211,10 +211,10 @@ GetPropertyName(
 	 * We use a recursive call to look this up.
 	 */
 
-	Tcl_InterpState foo = Tcl_SaveInterpState(interp, result);
+	Tcl_InterpState state = Tcl_SaveInterpState(interp, result);
 	Tcl_Obj *otherName = GetPropertyName(interp, oPtr,
 		flags ^ (GPN_WRITABLE | GPN_FALLING_BACK), namePtr, NULL);
-	result = Tcl_RestoreInterpState(interp, foo);
+	result = Tcl_RestoreInterpState(interp, state);
 	if (otherName != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "property \"%s\" is %s only",
@@ -380,7 +380,7 @@ Configurable_Getter(
     Tcl_Var varPtr, aryVar;
     Tcl_Obj *valuePtr;
 
-    if ((int) Tcl_ObjectContextSkippedArgs(context) != objc) {
+    if (Tcl_ObjectContextSkippedArgs(context) != objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context),
 		objv, NULL);
 	return TCL_ERROR;
@@ -415,7 +415,7 @@ Configurable_Setter(
     Tcl_Obj *propNamePtr = (Tcl_Obj *) clientData;
     Tcl_Var varPtr, aryVar;
 
-    if ((int) Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
+    if (Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context),
 		objv, "value");
 	return TCL_ERROR;
@@ -1099,6 +1099,8 @@ TclOODefinePropertyCmd(
 		    return TCL_ERROR;
 		}
 		break;
+	    default:
+		TCL_UNREACHABLE();
 	    }
 	}
 
@@ -1221,6 +1223,8 @@ TclOOInfoClassPropCmd(
 	case PROP_WRITABLE:
 	    writable = 1;
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
 
@@ -1279,6 +1283,8 @@ TclOOInfoObjectPropCmd(
 	case PROP_WRITABLE:
 	    writable = 1;
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
 

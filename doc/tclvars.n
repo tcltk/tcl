@@ -330,9 +330,6 @@ general operating environment of the machine.
 .IP \fBpointerSize\fR
 This gives the size of the native-machine pointer in bytes (strictly, it
 is same as the result of evaluating \fIsizeof(void*)\fR in C.)
-.IP \fBthreaded\fR
-If this variable exists, then the interpreter
-was compiled with threads enabled.
 .IP \fBuser\fR
 This identifies the
 current user based on the login information available on the platform.
