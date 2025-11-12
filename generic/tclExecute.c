@@ -6964,7 +6964,8 @@ TEBCresume(
 	tmpPtr = OBJ_AT_TOS;
 	infoPtr = (ForeachInfo *)tmpPtr->internalRep.twoPtrValue.ptr1;
 	tmpPtr = OBJ_AT_DEPTH(1);
-	iterNum = (size_t)tmpPtr->internalRep.twoPtrValue.ptr1;
+	// Called when the step's already been advanced to the next one...
+	iterNum = (size_t)tmpPtr->internalRep.twoPtrValue.ptr1 - 1;
 
 	objResultPtr = Tcl_NewIntObj(infoPtr->varLists[idx1]->numVars * iterNum + idx2);
 	TRACE_APPEND_NUM_OBJ(objResultPtr);
