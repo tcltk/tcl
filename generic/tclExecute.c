@@ -5505,9 +5505,7 @@ TEBCresume(
 		goto gotError;
 	    }
 	}
-	if (fromIdx == TCL_INDEX_NONE) {
-	    fromIdx = 0;
-	} else if (fromIdx > length) {
+	if (fromIdx > length) {
 	    fromIdx = length;
 	}
 	size_t numToDelete = 0;
@@ -5519,17 +5517,23 @@ TEBCresume(
 		goto gotError;
 	    }
 	    if ((toIdx == -1) && Tcl_IsEmpty(toIdxObj)) {
-		/* TIP #615: empty string for 'last' means 'end' */
-		toIdx = length;
+		/* TIP #615: empty string for 'last' means 'end' or 'first' */
+		toIdx = (fromIdx == -1) ? (length - 1) : fromIdx;
 	    }
 	    if (toIdx != TCL_INDEX_NONE) {
 		if (toIdx > length) {
 		    toIdx = length;
 		}
+		if (fromIdx == TCL_INDEX_NONE) {
+		    fromIdx = 0;
+		}
 		if (toIdx >= fromIdx) {
 		    numToDelete = (size_t)toIdx - (size_t)fromIdx + 1;
 		}
 	    }
+	}
+	if (fromIdx == TCL_INDEX_NONE) {
+	    fromIdx = 0;
 	}
 
 	CACHE_STACK_INFO();

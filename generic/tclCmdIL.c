@@ -4906,8 +4906,8 @@ Tcl_LeditObjCmd(
 	return result;
     }
     if ((last == -1) && Tcl_IsEmpty(objv[3])) {
-	/* TIP #615: empty string for 'last' means 'end' */
-	last = listLen - 1;
+	/* TIP #615: empty string for 'last' means 'end' or 'first' */
+	last = (first == -1) ? (listLen - 1) : first;
     }
 
     if (first < 0) {
