@@ -11,7 +11,7 @@
 .SH NAME
 ledit \- Replace elements of a list stored in variable
 .SH SYNOPSIS
-\fBledit \fIlistVar first last \fR?\fIvalue value ...\fR?
+\fBledit  \fIlistVar\fR ?\fIfirst\fR? ?\fIlast\fR? ?\fIvalue value ...\fR?
 .BE
 .SH DESCRIPTION
 .PP
