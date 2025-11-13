@@ -3018,8 +3018,8 @@ TclCompileLfilterCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to the definition of the command
-				 *  being compiled. */
+    TCL_UNUSED(Command *),	/* Points to the definition of the command
+				 * being compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
