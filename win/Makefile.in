@@ -85,7 +85,7 @@ CFLAGS_OPTIMIZE	= @CFLAGS_OPTIMIZE@
 #CFLAGS =		$(CFLAGS_DEBUG)
 #CFLAGS =		$(CFLAGS_OPTIMIZE)
 #CFLAGS =		$(CFLAGS_DEBUG) $(CFLAGS_OPTIMIZE)
-CFLAGS =		@CFLAGS@ @CFLAGS_DEFAULT@ -DMP_FIXED_CUTOFFS -DUTF8PROC_STATIC -D__USE_MINGW_ANSI_STDIO=0
+CFLAGS =		@CFLAGS@ @CFLAGS_DEFAULT@ -DMP_FIXED_CUTOFFS -DUTF8PROC_STATIC -D__USE_MINGW_ANSI_STDIO=0 -DTCL_LOAD_FROM_MEMORY
 
 # To compile without backward compatibility and deprecated code uncomment the
 # following
@@ -538,7 +538,10 @@ tcltest.cmd: Makefile
 
 tcltest.sh: tcltest.cmd
 
-tcltest: binaries $(TEST_EXE_FILE) $(TEST_DLL_FILE) $(CAT32) tcltest.cmd
+thrower.dll:	dltest/thrower.dll
+	cp dltest/thrower.dll .
+
+tcltest: binaries $(TEST_EXE_FILE) $(TEST_DLL_FILE) $(CAT32) tcltest.cmd thrower.dll
 
 binaries: $(TCL_STUB_LIB_FILE) @LIBRARIES@ winextensions ${TCL_ZIP_FILE} $(TCLSH)
 
@@ -666,6 +669,9 @@ tclTestMain.${OBJEXT}: tclAppInit.c
 
 tclWinInit.${OBJEXT}: tclWinInit.c
 	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl $(EXTFLAGS) @DEPARG@ $(CC_OBJNAME)
+
+tclWinLoad.${OBJEXT}: tclWinLoad.c
+	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl -DUNICODE -D_UNICODE $(EXTFLAGS) @DEPARG@ $(CC_OBJNAME)
 
 tclWinPipe.${OBJEXT}: tclWinPipe.c
 	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl $(EXTFLAGS) @DEPARG@ $(CC_OBJNAME)
