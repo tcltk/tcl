@@ -1,0 +1,156 @@
+# Commands covered:  lfilter
+#
+# This file contains a collection of tests for one or more of the Tcl
+# built-in commands.  Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
+#
+# Copyright © 2025 Donal K. Fellows
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+#
+
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
+    namespace import -force ::tcltest::*
+}
+
+# Basic "lfilter" operation (non-compiled)
+test lfilter-1.1 {basic lfilter tests} {
+    lfilter x {1 2 3 4 5 6} {
+	$x > 2 && $x < 5
+    }
+} {3 4}
+test lfilter-1.2 {basic lfilter tests} {
+    lfilter y {a b c d e f} x {1 2 3 4 5 6} {
+	$x > 2 && $x < 5
+    }
+} {c d}
+test lfilter-1.3 {basic lfilter tests} {
+    lfilter {x y} {1 2 3 4 5 6 7 8} {
+	$x > 2 && $x < 7
+    }
+} {3 5}
+test lfilter-1.4 {lfilter differential list lengths} {
+    lfilter x {1 2 3 4 5} y {2 2 2} {
+	$x > $y
+    }
+} {3 4 5}
+test lfilter-1.5 {lfilter differential list lengths} {
+    lfilter x {1 2 3} y {2 2 2 2 {}} {
+	$x >= $y
+    }
+} {2 3 {}}
+
+# Interpreted exceptional cases
+test lfilter-2.1 {lfilter syntax errors} -returnCodes error -body {
+    lfilter
+} -result {wrong # args: should be "lfilter varList list ?varList list ...? expression"}
+test lfilter-2.2 {lfilter syntax errors} -returnCodes error -body {
+    lfilter a b
+} -result {wrong # args: should be "lfilter varList list ?varList list ...? expression"}
+test lfilter-2.3 {lfilter syntax errors} -returnCodes error -body {
+    lfilter a b c d
+} -result {wrong # args: should be "lfilter varList list ?varList list ...? expression"}
+test lfilter-2.4 {lfilter body exceptions} -returnCodes error -body {
+    lfilter x 0 {[error gorp]}
+} -result gorp
+test lfilter-2.5 {lfilter body exceptions} -body {
+    lfilter x [lseq 5] {$x != 2 || [break]}
+} -result {0 1}
+test lfilter-2.6 {lfilter body exceptions} -body {
+    lfilter x [lseq 5] {$x != 2 || [continue]}
+} -result {0 1 3 4}
+test lfilter-2.7 {lfilter wrong expression} -returnCodes error -body {
+    lfilter x [lseq 5] {"gorp"}
+} -result {expected boolean value but got "gorp"}
+test lfilter-2.8 {lfilter wrong expression, but not evaluated} -body {
+    lfilter x {} {"gorp"}
+} -result {}
+
+# Basic "lfilter" operation (compiled)
+test lfilter-3.1 {basic lfilter tests} {
+    apply {{} {
+	lfilter x {1 2 3 4 5 6} {
+	    $x > 2 && $x < 5
+	}
+    }}
+} {3 4}
+test lfilter-3.2 {basic lfilter tests} {
+    apply {{} {
+	lfilter y {a b c d e f} x {1 2 3 4 5 6} {
+	    $x > 2 && $x < 5
+	}
+    }}
+} {c d}
+test lfilter-3.3 {basic lfilter tests} {
+    apply {{} {
+	lfilter {x y} {1 2 3 4 5 6 7 8} {
+	    $x > 2 && $x < 7
+	}
+    }}
+} {3 5}
+test lfilter-3.4 {lfilter differential list lengths} {
+    apply {{} {
+	lfilter x {1 2 3 4 5} y {2 2 2} {
+	    $x > $y
+	}
+    }}
+} {3 4 5}
+test lfilter-3.5 {lfilter differential list lengths} {
+    apply {{} {
+	lfilter x {1 2 3} y {2 2 2 2 {}} {
+	    $x >= $y
+	}
+    }}
+} {2 3 {}}
+
+# Compiled exceptional cases
+test lfilter-2.4 {lfilter syntax errors} -returnCodes error -body {
+    apply {{} {
+	lfilter
+    }}
+} -result {wrong # args: should be "lfilter varList list ?varList list ...? expression"}
+test lfilter-2.5 {lfilter syntax errors} -returnCodes error -body {
+    apply {{} {
+	lfilter a b
+    }}
+} -result {wrong # args: should be "lfilter varList list ?varList list ...? expression"}
+test lfilter-2.6 {lfilter syntax errors} -returnCodes error -body {
+    apply {{} {
+	lfilter a b c d
+    }}
+} -result {wrong # args: should be "lfilter varList list ?varList list ...? expression"}
+test lfilter-2.7 {lfilter body exceptions} -returnCodes error -body {
+    apply {{} {
+	lfilter x 0 {[error gorp]}
+    }}
+} -result gorp
+test lfilter-2.8 {lfilter body exceptions} -body {
+    apply {{} {
+	lfilter x [lseq 5] {$x != 2 || [break]}
+    }}
+} -result {0 1}
+test lfilter-2.9 {lfilter body exceptions} -body {
+    apply {{} {
+	lfilter x [lseq 5] {$x != 2 || [continue]}
+    }}
+} -result {0 1 3 4}
+test lfilter-2.10 {lfilter wrong expression} -returnCodes error -body {
+    apply {{} {
+	lfilter x [lseq 5] {"gorp"}
+    }}
+} -result {expected boolean value but got "gorp"}
+test lfilter-2.11 {lfilter wrong expression, but not evaluated} -body {
+    apply {{} {
+	lfilter x {} {"gorp"}
+    }}
+} -result {}
+
+# cleanup
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# End:
