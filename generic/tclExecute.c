@@ -5518,6 +5518,10 @@ TEBCresume(
 		TRACE_ERROR(interp);
 		goto gotError;
 	    }
+	    if ((toIdx == -1) && Tcl_IsEmpty(toIdxObj)) {
+		/* TIP #615: empty string for 'last' means 'end' */
+		toIdx = length;
+	    }
 	    if (toIdx != TCL_INDEX_NONE) {
 		if (toIdx > length) {
 		    toIdx = length;
@@ -5736,6 +5740,11 @@ TEBCresume(
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
+	if ((toIdx == -1) && Tcl_IsEmpty(OBJ_AT_TOS)) {
+	    /* TIP #615: empty string for 'last' means 'end' */
+	    toIdx = slength - 1;
+	}
+
 	CACHE_STACK_INFO();
 
 	if (toIdx == TCL_INDEX_NONE) {
@@ -5789,6 +5798,10 @@ TEBCresume(
 	    TclDecrRefCount(value3Ptr);
 	    TRACE_ERROR(interp);
 	    goto gotError;
+	}
+	if ((toIdx == -1) && Tcl_IsEmpty(OBJ_AT_TOS)) {
+	    /* TIP #615: empty string for 'last' means 'end' */
+	    toIdx = slength - 1;
 	}
 	CACHE_STACK_INFO();
 	TclDecrRefCount(OBJ_AT_TOS);

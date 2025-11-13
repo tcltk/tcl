@@ -2693,9 +2693,9 @@ Tcl_LrangeObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int result;
-    Tcl_Size listLen, first, last;
-    if (objc != 4) {
-	Tcl_WrongNumArgs(interp, 1, objv, "list first last");
+    Tcl_Size listLen, first = 0, last;
+    if (objc < 2 || objc > 4) {
+	Tcl_WrongNumArgs(interp, 1, objv, "list ?first? ?last?");
 	return TCL_ERROR;
     }
 
@@ -2704,16 +2704,26 @@ Tcl_LrangeObjCmd(
 	return result;
     }
 
-    result = TclGetIntForIndexM(interp, objv[2], /*endValue*/ listLen - 1,
-	    &first);
-    if (result != TCL_OK) {
-	return result;
+    if (objc > 2) {
+	result = TclGetIntForIndexM(interp, objv[2], /*endValue*/ listLen - 1,
+		&first);
+	if (result != TCL_OK) {
+	    return result;
+	}
     }
 
+    if (objc > 3) {
     result = TclGetIntForIndexM(interp, objv[3], /*endValue*/ listLen - 1,
 	    &last);
-    if (result != TCL_OK) {
-	return result;
+	if (result != TCL_OK) {
+	    return result;
+	}
+	if ((last == -1) && Tcl_IsEmpty(objv[3])) {
+	    /* TIP #615: empty string for 'last' means 'end' */
+	    last = listLen - 1;
+	}
+    } else {
+	last = listLen - 1;
     }
 
     Tcl_Obj *resultObj;
@@ -2969,6 +2979,10 @@ Tcl_LreplaceObjCmd(
     result = TclGetIntForIndexM(interp, objv[3], /*end*/ listLen-1, &last);
     if (result != TCL_OK) {
 	return result;
+    }
+    if ((last == -1) && Tcl_IsEmpty(objv[3])) {
+	/* TIP #615: empty string for 'last' means 'end' */
+	last = listLen - 1;
     }
 
     if (first < 0) {
@@ -4890,6 +4904,10 @@ Tcl_LeditObjCmd(
     result = TclGetIntForIndexM(interp, objv[3], /*end*/ listLen-1, &last);
     if (result != TCL_OK) {
 	return result;
+    }
+    if ((last == -1) && Tcl_IsEmpty(objv[3])) {
+	/* TIP #615: empty string for 'last' means 'end' */
+	last = listLen - 1;
     }
 
     if (first < 0) {

@@ -13,7 +13,7 @@
 .SH NAME
 lrange \- Return one or more adjacent elements from a list
 .SH SYNOPSIS
-\fBlrange \fIlist first last\fR
+\fBlrange \fIlist\fR ?\fIfirst\fR? ?\fIlast\fR?
 .BE
 .SH DESCRIPTION
 .PP
@@ -24,8 +24,8 @@ The index values \fIfirst\fR and \fIlast\fR are interpreted
 the same as index values for the command \fBstring index\fR,
 supporting simple index arithmetic and indices relative to the
 end of the list.
-If \fIfirst\fR is less than zero, it is treated as if it were zero.
-If \fIlast\fR is greater than or equal to the number of elements
+If \fIfirst\fR is missing or less than zero, it is treated as if it were zero.
+If \fIlast\fR is missing or greater than or equal to the number of elements
 in the list, then it is treated as if it were \fBend\fR.
 If \fIfirst\fR is greater than \fIlast\fR then an empty string
 is returned.

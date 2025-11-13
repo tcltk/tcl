@@ -1602,17 +1602,17 @@ StringIsCmd(
     static const char *const isClasses[] = {
 	"alnum",	"alpha",	"ascii",	"control",
 	"boolean",	"dict",		"digit",	"double",
-	"entier",	"false",	"graph",	"integer",
-	"list",		"lower",	"print",	"punct",
-	"space",	"true",		"upper",
+	"entier",	"false",	"graph",	"index",
+	"integer",	"list",		"lower",	"print",
+	"punct",	"space",	"true",		"upper",
 	"wideinteger", "wordchar",	"xdigit",	NULL
     };
     enum isClassesEnum {
 	STR_IS_ALNUM,	STR_IS_ALPHA,	STR_IS_ASCII,	STR_IS_CONTROL,
 	STR_IS_BOOL,	STR_IS_DICT,	STR_IS_DIGIT,	STR_IS_DOUBLE,
-	STR_IS_ENTIER,	STR_IS_FALSE,	STR_IS_GRAPH,	STR_IS_INT,
-	STR_IS_LIST,	STR_IS_LOWER,	STR_IS_PRINT,	STR_IS_PUNCT,
-	STR_IS_SPACE,	STR_IS_TRUE,	STR_IS_UPPER,
+	STR_IS_ENTIER,	STR_IS_FALSE,	STR_IS_GRAPH,	STR_IS_INDEX,
+	STR_IS_INT,		STR_IS_LIST,	STR_IS_LOWER,	STR_IS_PRINT,
+	STR_IS_PUNCT,	STR_IS_SPACE,	STR_IS_TRUE,	STR_IS_UPPER,
 	STR_IS_WIDE,	STR_IS_WORD,	STR_IS_XDIGIT
     } index;
     static const char *const isOptions[] = {
@@ -1780,6 +1780,17 @@ StringIsCmd(
     case STR_IS_GRAPH:
 	chcomp = Tcl_UniCharIsGraph;
 	break;
+    case STR_IS_INDEX: {
+	Tcl_Size idx;
+	if ((strict && Tcl_IsEmpty(objPtr))
+		|| (!TclHasInternalRep(objPtr, &tclIntType)
+		&& !TclHasInternalRep(objPtr, &tclEndOffsetType)
+		&& !TclHasInternalRep(objPtr, &tclBignumType)
+		&& TclGetIntForIndexM(NULL, objPtr, 0, &idx) != TCL_OK)) {
+	    result = 0;
+	}
+	break;
+    }
     case STR_IS_INT:
     case STR_IS_ENTIER:
 	if (TclHasInternalRep(objPtr, &tclIntType) ||
@@ -2355,10 +2366,10 @@ StringRangeCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_Size first, last, end;
+    Tcl_Size first = 0, last, end;
 
-    if (objc != 4) {
-	Tcl_WrongNumArgs(interp, 1, objv, "string first last");
+    if (objc < 2 || objc > 4) {
+	Tcl_WrongNumArgs(interp, 1, objv, "string ?first? ?last?");
 	return TCL_ERROR;
     }
 
@@ -2367,11 +2378,15 @@ StringRangeCmd(
      * 'end' refers to the last character, not one past it.
      */
 
-    end = Tcl_GetCharLength(objv[1]) - 1;
+    last = end = Tcl_GetCharLength(objv[1]) - 1;
 
-    if (TclGetIntForIndexM(interp, objv[2], end, &first) != TCL_OK ||
-	    TclGetIntForIndexM(interp, objv[3], end, &last) != TCL_OK) {
+    if (((objc > 2) && TclGetIntForIndexM(interp, objv[2], end, &first) != TCL_OK)
+	    || ((objc > 3) && TclGetIntForIndexM(interp, objv[3], end, &last) != TCL_OK)) {
 	return TCL_ERROR;
+    }
+    if ((last == -1) && (objc > 3) && Tcl_IsEmpty(objv[3])) {
+	/* TIP #615: empty string for 'last' means 'end' */
+	last = end;
     }
 
     if (last >= 0) {
@@ -2461,18 +2476,22 @@ StringRplcCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_Size first, last, end;
+    Tcl_Size first = 0, last, end;
 
-    if (objc < 4 || objc > 5) {
-	Tcl_WrongNumArgs(interp, 1, objv, "string first last ?string?");
+    if (objc < 2 || objc > 5) {
+	Tcl_WrongNumArgs(interp, 1, objv, "string ?first? ?last? ?string?");
 	return TCL_ERROR;
     }
 
-    end = Tcl_GetCharLength(objv[1]) - 1;
+    last = end = Tcl_GetCharLength(objv[1]) - 1;
 
-    if (TclGetIntForIndexM(interp, objv[2], end, &first) != TCL_OK ||
-	    TclGetIntForIndexM(interp, objv[3], end, &last) != TCL_OK) {
+    if (((objc > 2) && TclGetIntForIndexM(interp, objv[2], end, &first) != TCL_OK)
+	    || ((objc > 3) && TclGetIntForIndexM(interp, objv[3], end, &last) != TCL_OK)) {
 	return TCL_ERROR;
+    }
+    if ((last == -1) && (objc > 3) && Tcl_IsEmpty(objv[3])) {
+	/* TIP #615: empty string for 'last' means 'end' */
+	last = end;
     }
 
     /*
@@ -2502,7 +2521,7 @@ StringRplcCmd(
 	}
 
 	resultPtr = TclStringReplace(interp, objv[1], first,
-		last + 1 - first, (objc == 5) ? objv[4] : NULL,
+		last + 1 - first, (objc > 4) ? objv[4] : NULL,
 		TCL_STRING_IN_PLACE);
 
 	if (resultPtr == NULL) {
@@ -2988,10 +3007,18 @@ StringLowerCmd(
 	    first = 0;
 	}
 	last = first;
+	if (Tcl_IsEmpty(objv[2])) {
+	    /* TIP #615: empty string for 'first' means until 'end' */
+	    last = length1;
+	}
 
-	if ((objc == 4) && (TclGetIntForIndexM(interp, objv[3], length1,
+	if ((objc > 3) && (TclGetIntForIndexM(interp, objv[3], length1,
 		&last) != TCL_OK)) {
 	    return TCL_ERROR;
+	}
+	if ((last == -1) && (objc > 3) && Tcl_IsEmpty(objv[3])) {
+	    /* TIP #615: empty string for 'last' means 'end' */
+	    last = length1;
 	}
 
 	if (last >= length1) {
@@ -3073,10 +3100,18 @@ StringUpperCmd(
 	    first = 0;
 	}
 	last = first;
+	if (Tcl_IsEmpty(objv[2])) {
+	    /* TIP #615: empty string for 'first' means until 'end' */
+	    last = length1;
+	}
 
-	if ((objc == 4) && (TclGetIntForIndexM(interp, objv[3], length1,
+	if ((objc > 3) && (TclGetIntForIndexM(interp, objv[3], length1,
 		&last) != TCL_OK)) {
 	    return TCL_ERROR;
+	}
+	if ((last == -1) && (objc > 3) && Tcl_IsEmpty(objv[3])) {
+	    /* TIP #615: empty string for 'last' means 'end' */
+	    last = length1;
 	}
 
 	if (last >= length1) {
@@ -3158,10 +3193,18 @@ StringTitleCmd(
 	    first = 0;
 	}
 	last = first;
+	if (Tcl_IsEmpty(objv[2])) {
+	    /* TIP #615: empty string for 'first' means until 'end' */
+	    last = length1;
+	}
 
-	if ((objc == 4) && (TclGetIntForIndexM(interp, objv[3], length1,
+	if ((objc > 3) && (TclGetIntForIndexM(interp, objv[3], length1,
 		&last) != TCL_OK)) {
 	    return TCL_ERROR;
+	}
+	if ((last == -1) && (objc > 3) && Tcl_IsEmpty(objv[3])) {
+	    /* TIP #615: empty string for 'last' means 'end' */
+	    last = length1;
 	}
 
 	if (last >= length1) {
