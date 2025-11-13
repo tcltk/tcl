@@ -1,0 +1,87 @@
+'\"
+'\" Copyright (c) 2025 Donal K. Fellows
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH lfilter n "" Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+lfilter \- Select elements from a list based on an expression
+.SH SYNOPSIS
+\fBlfilter \fIvarname list expression\fR
+.br
+\fBlfilter \fIvarlist1 list1\fR ?\fIvarlist2 list2 ...\fR? \fIexpression\fR
+.BE
+.SH DESCRIPTION
+.PP
+The \fBlfilter\fR command implements a loop where the loop variable(s) take on
+values from one or more lists, and the loop returns a list of values from the
+(first) list where the \fIexpression\fR evaluates to a true value.
+.PP
+In the simplest case there is one loop variable, \fIvarname\fR, and one list,
+\fIlist\fR, that is a list of values to assign to \fIvarname\fR. The
+\fIexpression\fR argument is a Tcl expression. For each element of \fIlist\fR
+(in order from first to last), \fBlfilter\fR assigns the contents of the
+element to \fIvarname\fR as if the \fBlindex\fR command had been used to
+extract the element, then calls the Tcl interpreter to execute \fIexpression\fR.
+If execution of the expression completes normally and produces a true value,
+that element of \fIlist\fR is appended to an accumulator list. \fBlmap\fR
+returns the accumulator list.
+.PP
+In the general case there can be more than one value list (e.g., \fIlist1\fR
+and \fIlist2\fR), and each value list can be associated with a list of loop
+variables (e.g., \fIvarlist1\fR and \fIvarlist2\fR). During each iteration of
+the loop the variables of each \fIvarlist\fR are assigned consecutive values
+from the corresponding \fIlist\fR. Values in each \fIlist\fR are used in order
+from first to last, and each value is used exactly once. The total number of
+loop iterations is large enough to use up all the values from all the value
+lists. If a value list does not contain enough elements for each of its loop
+variables in each iteration, empty values are used for the missing elements.
+For each iteration, the value that is appended when \fIexpression\fR yields
+a true value (i.e., anything accepted by \fBTcl_GetBooleanFromObj\fR as a
+boolean) is the value that was assigned to the first variable of the first
+list of variables; all other values are not collected.
+.PP
+The \fBbreak\fR and \fBcontinue\fR statements may be invoked inside
+\fIbody\fR, with the same effect as in the \fBfor\fR and \fBforeach\fR
+commands. In these cases the body does not complete normally and the lead value
+is not appended to the accumulator list.
+.SH EXAMPLES
+.PP
+Select the elements of the list that are odd:
+.PP
+.CS
+\fBlfilter\fR x {0 2 4 1 3 5 10 8 6 11 9 7} {
+    ($x % 2) == 1
+}
+# The result is "1 3 5 11 9 7"
+.CE
+.PP
+Select elements of a list according to a condition in another list:
+.PP
+.CS
+\fBlfilter\fR x [lseq 10] y [lseq 0 .. 1 by 0.1] {
+    $y > 0.3 && $y < 0.7
+}
+# The result is "4 5 6"
+.CE
+.PP
+Select the elements containing at least five characters:
+.PP
+.CS
+set sentence "The quick brown fox jumps over the lazy dog."
+\fBlfilter\fR word [split $sentence] {
+    [string length $word] >= 5
+}
+# The result is "quick brown jumps"
+.CE
+.SH "SEE ALSO"
+foreach(n), lmap(n), lsearch(n)
+.SH KEYWORDS
+foreach, iteration, list, loop, expression
+'\" Local Variables:
+'\" mode: nroff
+'\" End:
