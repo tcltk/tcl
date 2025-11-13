@@ -18,7 +18,7 @@
  *- More instructions:
  *-   done - alternate exit point (affects stack and exception range checking)
  *-   break and continue - if exception ranges can be sorted out.
- *-   foreach_start4, foreach_step4
+ *-   foreach_start, foreach_step, foreach_index, foreach_end
  *-   returnImm, returnStk
  *-   expandStart, expandStkTop, invokeExpanded, expandDrop
  *-   dictFirst, dictNext, dictDone
