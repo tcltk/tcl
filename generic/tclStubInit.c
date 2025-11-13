@@ -1503,7 +1503,9 @@ const TclStubs tclStubs = {
     Tcl_ListObjRange, /* 694 */
     Tcl_UtfToNormalizedDString, /* 695 */
     Tcl_UtfToNormalized, /* 696 */
-    TclUnusedStubEntry, /* 697 */
+    Tcl_GetMonotonicTime, /* 697 */
+    Tcl_SleepMonotonic, /* 698 */
+    TclUnusedStubEntry, /* 699 */
 };
 
 /* !END!: Do not edit above this line. */

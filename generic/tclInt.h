@@ -3119,6 +3119,12 @@ MODULE_SCOPE Tcl_ScaleTimeProc *tclScaleTimeProcPtr;
 MODULE_SCOPE void *tclTimeClientData;
 
 /*
+ * TIP #723 (Monotonic Time)
+ */
+
+MODULE_SCOPE Tcl_GetMonotonicTimeProc *tclGetMonotonicTimeProcPtr;
+
+/*
  * Variables denoting the Tcl object types defined in the core.
  */
 
@@ -3757,7 +3763,7 @@ MODULE_SCOPE Tcl_ObjCmdProc Tcl_ConstObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_ContinueObjCmd;
 MODULE_SCOPE Tcl_TimerToken TclCreateAbsoluteTimerHandler(
 			    Tcl_Time *timePtr, Tcl_TimerProc *proc,
-			    void *clientData);
+			    void *clientData, bool monotonic);
 MODULE_SCOPE Tcl_ObjCmdProc TclDefaultBgErrorHandlerObjCmd;
 MODULE_SCOPE Tcl_Command TclInitDictCmd(Tcl_Interp *interp);
 MODULE_SCOPE int	TclDictWithFinish(Tcl_Interp *interp, Var *varPtr,

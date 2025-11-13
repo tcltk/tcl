@@ -480,6 +480,11 @@ TclpWaitForEvent(
 
     if (timePtr) {
 	/*
+	 * ToDo: here is the implementation without TIP 233:
+	 * https://core.tcl-lang.org/tcl/info/8ea9c4081c39b8bf
+	 */
+
+	/*
 	 * TIP #233 (Virtualized Time). Convert virtual domain delay to
 	 * real-time.
 	 */
@@ -629,6 +634,32 @@ Tcl_Sleep(
 
 	TclScaleTime(&vdelay);
 	sleepTime = (DWORD)vdelay.sec * 1000 + (unsigned long)vdelay.usec / 1000;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_SleepMonotonic --
+ *
+ *	Delay execution for the specified number of milliseconds
+ *	using the monotonic time.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Time passes.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_SleepMonotonic(
+    int ms)			/* Number of milliseconds to sleep. */
+{
+    if (ms > 0) {
+	SleepEx(ms, TRUE);
     }
 }
 

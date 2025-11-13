@@ -127,7 +127,7 @@ static void		NativeGetTime(Tcl_Time* timebuf,
 Tcl_GetTimeProc *tclGetTimeProcPtr = NativeGetTime;
 Tcl_ScaleTimeProc *tclScaleTimeProcPtr = NativeScaleTime;
 void *tclTimeClientData = NULL;
-
+
 /*
  * Inlined version of Tcl_GetTime.
  */
@@ -144,6 +144,7 @@ IsTimeNative(void)
 {
     return tclGetTimeProcPtr == NativeGetTime;
 }
+
 
 /*
  *----------------------------------------------------------------------
@@ -388,6 +389,38 @@ Tcl_GetTime(
     } else {
 	GetTime(timePtr);
     }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_GetMonotonicTime --
+ *
+ *	Gets the current monotonic time in seconds and microseconds.
+ *	In the Windows case, this is the time elapsed since system
+ *	startup.
+ *	The current resolution is 10 to 16 milli-seconds. The implementation
+ *	may be enhanced for more resolution.
+ *	Thanks to Christian Werner for the implementation.
+ *
+ * Results:
+ *	Returns the monotonic time in timePtr.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_GetMonotonicTime(
+    Tcl_Time *timePtr)		/* Location to store time information. */
+{
+    ULONGLONG ms;
+
+    ms = GetTickCount64();
+    timePtr->sec = (long)(ms/1000);
+    timePtr->usec = ((long)(ms%1000))*1000;
 }
 
 /*
