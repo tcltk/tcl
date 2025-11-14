@@ -2767,6 +2767,11 @@ GetJulianDayFromEraYearWeekDay(
 
     fields->julianDay = firstMonday + 7 * (fields->iso8601Week - 1)
 	    + fields->dayOfWeek - 1;
+    if (fields->julianDay >= changeover) {
+	fields->gregorian = 1;
+    } else {
+	fields->gregorian = 0;
+    }
 }
 
 /*
