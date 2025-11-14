@@ -151,7 +151,7 @@ test safe-2.3 {creating safe interpreters, should have no unexpected aliases} -s
     lsort [a aliases]
 } -cleanup {
     interp delete a
-} -result {clock}
+} -result {::tcl::clock::add ::tcl::clock::format ::tcl::clock::scan}
 
 ###  3. Simple use of interpCreate, interpInit.
 ###     Aliases in a new "interpCreate/interpInit" interpreter.
@@ -172,7 +172,7 @@ test safe-3.2 {calling safe::interpCreate on trusted interp} -setup {
     lsort [a aliases]
 } -cleanup {
     safe::interpDelete a
-} -result {::tcl::encoding::system ::tcl::file::dirname ::tcl::file::extension ::tcl::file::rootname ::tcl::file::tail ::tcl::info::nameofexecutable clock encoding exit file glob load source}
+} -result {::tcl::clock::add ::tcl::clock::format ::tcl::clock::scan ::tcl::encoding::system ::tcl::file::dirname ::tcl::file::extension ::tcl::file::rootname ::tcl::file::tail ::tcl::info::nameofexecutable encoding exit file glob load source}
 test safe-3.3 {calling safe::interpCreate on trusted interp} -setup {
     catch {safe::interpDelete a}
 } -body {
