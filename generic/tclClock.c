@@ -2875,7 +2875,7 @@ GetJulianDayFromEraYearMonthDay(
 	fields->julianDay = JDAY_1_JAN_1_CE_JULIAN - 1
 		+ fields->dayOfMonth
 		+ daysInPriorMonths[year%4 == 0][month - 1]
-		+ (365 * ym1)
+		+ (ONE_YEAR * ym1)
 		+ ym1o4;
     }
 }
@@ -2916,9 +2916,9 @@ TclGetJulianDayFromEraYearDay(
     /* Try the Gregorian calendar first. */
     fields->gregorian = 1;
     fields->julianDay =
-	    1721425
+	    JDAY_1_JAN_1_CE_GREGORIAN - 1
 	    + fields->dayOfYear
-	    + (365 * ym1)
+	    + (ONE_YEAR * ym1)
 	    + (ym1 / 4)
 	    - (ym1 / 100)
 	    + (ym1 / 400);
@@ -2928,9 +2928,9 @@ TclGetJulianDayFromEraYearDay(
     if (fields->julianDay < changeover) {
 	fields->gregorian = 0;
 	fields->julianDay =
-		1721423
+		JDAY_1_JAN_1_CE_JULIAN - 1
 		+ fields->dayOfYear
-		+ (365 * ym1)
+		+ (ONE_YEAR * ym1)
 		+ (ym1 / 4);
     }
 }
@@ -3689,6 +3689,39 @@ ClockScanObjCmd(
 
 /*----------------------------------------------------------------------
  *
+ * ClockAssembleJulianDay --
+ *
+ *	Assembles julianDay using year, month, etc. Thereby it'd also update
+ *	gregorian flag.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+ClockAssembleJulianDay(
+    DateInfo *info)		/* Clock scan info structure */
+{
+    /* Assemble julianDay (and also gregorian flag) */
+    if (info->flags & CLF_ISO8601WEEK) {
+	GetJulianDayFromEraYearWeekDay(&yydate, GREGORIAN_CHANGE_DATE);
+    } else if (!(info->flags & CLF_DAYOFYEAR) /* no day of year */
+	    || (info->flags & (CLF_DAYOFMONTH|CLF_MONTH)) /* yymmdd over yyddd */
+	    == (CLF_DAYOFMONTH|CLF_MONTH)) {
+	GetJulianDayFromEraYearMonthDay(&yydate, GREGORIAN_CHANGE_DATE);
+    } else {
+	TclGetJulianDayFromEraYearDay(&yydate, GREGORIAN_CHANGE_DATE);
+    }
+    info->flags |= CLF_ASSEMBLE_SECONDS;
+}
+
+/*----------------------------------------------------------------------
+ *
  * ClockScanCommit --
  *
  *	Converts date info structure into UTC seconds.
@@ -3721,16 +3754,7 @@ ClockScanCommit(
 
     /* If needed assemble julianDay using year, month, etc. */
     if (info->flags & CLF_ASSEMBLE_JULIANDAY) {
-	if (info->flags & CLF_ISO8601WEEK) {
-	    GetJulianDayFromEraYearWeekDay(&yydate, GREGORIAN_CHANGE_DATE);
-	} else if (!(info->flags & CLF_DAYOFYEAR) /* no day of year */
-		|| (info->flags & (CLF_DAYOFMONTH|CLF_MONTH)) /* yymmdd over yyddd */
-		== (CLF_DAYOFMONTH|CLF_MONTH)) {
-	    GetJulianDayFromEraYearMonthDay(&yydate, GREGORIAN_CHANGE_DATE);
-	} else {
-	    TclGetJulianDayFromEraYearDay(&yydate, GREGORIAN_CHANGE_DATE);
-	}
-	info->flags |= CLF_ASSEMBLE_SECONDS;
+	ClockAssembleJulianDay(info);
 	info->flags &= ~CLF_ASSEMBLE_JULIANDAY;
     }
 
@@ -3850,6 +3874,14 @@ ClockValidDate(
 	    goto error;
 	}
     }
+
+    /* To check day in leap year correct, validation may need gregorian flag,
+     * so assemble julianDay and gregorian flag from date tokens. */
+    if (info->flags & CLF_ASSEMBLE_JULIANDAY) {
+	ClockAssembleJulianDay(info);
+	info->flags &= ~CLF_ASSEMBLE_JULIANDAY;
+    }
+
     /* day of month */
     if (info->flags & (CLF_DAYOFMONTH|CLF_DAYOFWEEK)) {
 	if (yyDay < 1 || yyDay > 31) {
