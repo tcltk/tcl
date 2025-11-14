@@ -1421,13 +1421,24 @@ Tcl_ExternalToUtf(
 }
 
 /*
+ *-------------------------------------------------------------------------
+ *
  * Tcl_ExternalToUtfEx --
  *
- * Like Tcl_ExternalToUtf but uses 64-bit counters for
- * srcReadPtr, dstWrotePtr and dstCharsPtr. Because individual encoding
- * conversion procs still use 'int' for counts, the conversion is done
- * by repeatedly calling the toUtfProc in chunks.
+ *	Convert a source buffer from the specified encoding into Tcl internal
+ *	UTF-8 representation, using 64-bit counters for lengths.
+ *
+ * Results:
+ *	The return value is one of TCL_OK, TCL_CONVERT_MULTIBYTE,
+ *	TCL_CONVERT_SYNTAX, TCL_CONVERT_UNKNOWN, or TCL_CONVERT_NOSPACE, as
+ *	documented in tcl.h.
+ *
+ * Side effects:
+ *	The converted bytes are stored in the output buffer.
+ *
+ *-------------------------------------------------------------------------
  */
+
 int
 Tcl_ExternalToUtfEx(
     TCL_UNUSED(Tcl_Interp *),	 /* TODO: Re-examine this. */
@@ -1455,9 +1466,12 @@ Tcl_ExternalToUtfEx(
     Tcl_Size *dstWrotePtr,	 /* Filled with the number of bytes that were
 				  * stored in the output buffer as a result of
 				  * the conversion. */
-    Tcl_Size *dstCharsPtr)	 /* Filled with the number of characters that
+    Tcl_Size *dstCharsPtr,	 /* Filled with the number of characters that
 				  * correspond to the bytes stored in the
 				  * output buffer. */
+    Tcl_Size *errorLocPtr)	/* Where to store the error location
+				 * (or TCL_INDEX_NONE if no error). May
+				 * be NULL. */
 {
     const Encoding *encodingPtr;
     int result = TCL_OK;
