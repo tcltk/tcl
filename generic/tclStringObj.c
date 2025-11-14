@@ -214,7 +214,7 @@ GrowUnicodeBuffer(
  *
  * Side effects:
  *	The new object's internal string representation will be set to a copy
- *	of the length bytes starting at "bytes". If "length" is TCL_INDEX_NONE, use
+ *	of the length bytes starting at "bytes". If "length" is < 0, use
  *	bytes up to the first NUL byte; i.e., assume "bytes" points to a
  *	C-style NUL-terminated string. The object's type is set to NULL. An
  *	extra NUL is added to the end of the new object's byte array.
@@ -230,7 +230,7 @@ Tcl_NewStringObj(
 				 * used to initialize the new object. */
     Tcl_Size length)		/* The number of bytes to copy from "bytes"
 				 * when initializing the new object. If
-				 * TCL_INDEX_NONE, use bytes up to the first NUL
+				 * < 0, use bytes up to the first NUL
 				 * byte. */
 {
     return Tcl_DbNewStringObj(bytes, length, "unknown", 0);
@@ -279,7 +279,7 @@ Tcl_NewStringObj(
  *
  * Side effects:
  *	The new object's internal string representation will be set to a copy
- *	of the length bytes starting at "bytes". If "length" is TCL_INDEX_NONE, use
+ *	of the length bytes starting at "bytes". If "length" is < 0, use
  *	bytes up to the first NUL byte; i.e., assume "bytes" points to a
  *	C-style NUL-terminated string. The object's type is set to NULL. An
  *	extra NUL is added to the end of the new object's byte array.
@@ -293,7 +293,7 @@ Tcl_DbNewStringObj(
     const char *bytes,		/* Points to the first of the length bytes
 				 * used to initialize the new object. */
     Tcl_Size length,		/* The number of bytes to copy from "bytes"
-				 * when initializing the new object. If -1,
+				 * when initializing the new object. If <0,
 				 * use bytes up to the first NUL byte. */
     const char *file,		/* The name of the source file calling this
 				 * function; used for debugging. */
@@ -302,7 +302,7 @@ Tcl_DbNewStringObj(
 {
     Tcl_Obj *objPtr;
 
-    if (length == TCL_INDEX_NONE) {
+    if (length < 0) {
 	length = (bytes? strlen(bytes) : 0);
     }
     TclDbNewObj(objPtr, file, line);
@@ -710,9 +710,9 @@ Tcl_GetUnicodeFromObj(
  *	Create a Tcl Object that contains the chars between first
  *	and last of the object indicated by "objPtr". If the object
  *	is not a byte-array object, and not already a String object,
- *	convert it to a String object. If first is TCL_INDEX_NONE,
+ *	convert it to a String object. If first is < 0,
  *	the returned string start at the beginning of objPtr. If
- *	last is TCL_INDEX_NONE, the returned string ends at the
+ *	last is < 0, the returned string ends at the
  *	end of objPtr.
  *
  * Results:
@@ -863,7 +863,7 @@ TclGetRange(
  *
  * Side effects:
  *	The object's string representation will be set to a copy of the
- *	"length" bytes starting at "bytes". If "length" is TCL_INDEX_NONE, use bytes
+ *	"length" bytes starting at "bytes". If "length" is < 0, use bytes
  *	up to the first NUL byte; i.e., assume "bytes" points to a C-style
  *	NUL-terminated string. The object's old string and internal
  *	representations are freed and the object's type is set NULL.
@@ -877,7 +877,7 @@ Tcl_SetStringObj(
     const char *bytes,		/* Points to the first of the length bytes
 				 * used to initialize the object. */
     Tcl_Size length)		/* The number of bytes to copy from "bytes"
-				 * when initializing the object. If -1,
+				 * when initializing the object. If < 0,
 				 * use bytes up to the first NUL byte.*/
 {
     if (Tcl_IsShared(objPtr)) {
@@ -896,7 +896,7 @@ Tcl_SetStringObj(
      */
 
     TclInvalidateStringRep(objPtr);
-    if (length == TCL_INDEX_NONE) {
+    if (length < 0) {
 	length = (bytes? strlen(bytes) : 0);
     }
     TclInitStringRep(objPtr, bytes, length);
@@ -1208,7 +1208,7 @@ Tcl_AppendLimitedToObj(
     const char *bytes,		/* Points to the bytes to append to the
 				 * object. */
     Tcl_Size length,		/* The number of bytes available to be
-				 * appended from "bytes". If -1, then
+				 * appended from "bytes". If < 0, then
 				 * all bytes up to a NUL byte are available. */
     Tcl_Size limit,		/* The maximum number of bytes to append to
 				 * the object. */
@@ -1304,7 +1304,7 @@ Tcl_AppendToObj(
     const char *bytes,		/* Points to the bytes to append to the
 				 * object. */
     Tcl_Size length)		/* The number of bytes to append from "bytes".
-				 * If TCL_INDEX_NONE, then append all bytes up to NUL
+				 * If < 0, then append all bytes up to NUL
 				 * byte. */
 {
     Tcl_AppendLimitedToObj(objPtr, bytes, length, TCL_SIZE_MAX, NULL);
@@ -3652,7 +3652,7 @@ TclStringCmp(
     int checkEq,		/* comparison is only for equality */
     int nocase,			/* comparison is not case sensitive */
     Tcl_Size reqlength)		/* requested length in characters;
-				 * TCL_INDEX_NONE to compare whole strings */
+				 * negative value to compare whole strings */
 {
     const char *s1, *s2;
     int empty, match;
