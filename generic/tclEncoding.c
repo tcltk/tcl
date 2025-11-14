@@ -1206,7 +1206,7 @@ Tcl_ExternalToUtfDStringEx(
 
     if (src == NULL) {
 	srcLen = 0;
-    } else if (srcLen == TCL_INDEX_NONE) {
+    } else if (srcLen < 0) {
 	srcLen = encodingPtr->lengthProc(src);
     }
 
@@ -1313,7 +1313,7 @@ Tcl_ExternalToUtf(
 				 * for the default system encoding. */
     const char *src,		/* Source string in specified encoding. */
     Tcl_Size srcLen,		/* Source string length in bytes, or
-				 * TCL_INDEX_NONE for encoding-specific string
+				 * negative for encoding-specific string
 				 * length. */
     int flags,			/* Conversion control flags. */
     Tcl_EncodingState *statePtr,/* Place for conversion routine to store state
@@ -1351,7 +1351,7 @@ Tcl_ExternalToUtf(
 
     if (src == NULL) {
 	srcLen = 0;
-    } else if (srcLen == TCL_INDEX_NONE) {
+    } else if (srcLen < 0) {
 	srcLen = encodingPtr->lengthProc(src);
     }
     if (statePtr == NULL) {
@@ -1525,7 +1525,7 @@ Tcl_UtfToExternalDStringEx(
 
     if (src == NULL) {
 	srcLen = 0;
-    } else if (srcLen == TCL_INDEX_NONE) {
+    } else if (srcLen < 0) {
 	srcLen = strlen(src);
     }
 
@@ -1635,7 +1635,7 @@ Tcl_UtfToExternal(
 				 * NULL for the default system encoding. */
     const char *src,		/* Source string in UTF-8. */
     Tcl_Size srcLen,		/* Source string length in bytes, or
-				 * TCL_INDEX_NONE for strlen(). */
+				 * < 0 for strlen(). */
     int flags,			/* Conversion control flags. */
     Tcl_EncodingState *statePtr,/* Place for conversion routine to store state
 				 * information used during a piecewise
@@ -1669,7 +1669,7 @@ Tcl_UtfToExternal(
 
     if (src == NULL) {
 	srcLen = 0;
-    } else if (srcLen == TCL_INDEX_NONE) {
+    } else if (srcLen < 0) {
 	srcLen = strlen(src);
     }
     if (statePtr == NULL) {

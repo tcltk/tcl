@@ -413,7 +413,7 @@ TclLengthOne(
  *
  *	Given 'bytes' pointing to 'numBytes' bytes, scan through them and
  *	count the number of whitespace runs that could be list element
- *	separators. If 'numBytes' is TCL_INDEX_NONE, scan to the terminating
+ *	separators. If 'numBytes' is < 0, scan to the terminating
  *	'\0'. Not a full list parser. Typically used to get a quick and dirty
  *	overestimate of length size in order to allocate space for an actual
  *	list parser to operate with.
@@ -437,7 +437,7 @@ TclMaxListLength(
 {
     Tcl_Size count = 0;
 
-    if ((numBytes == 0) || ((numBytes == TCL_INDEX_NONE) && (*bytes == '\0'))) {
+    if ((numBytes == 0) || ((numBytes < 0) && (*bytes == '\0'))) {
 	/* Empty string case - quick exit */
 	goto done;
     }
@@ -1046,7 +1046,7 @@ Tcl_ScanCountedElement(
  *	This function is a companion function to TclConvertElement. It scans a
  *	string to see what needs to be done to it (e.g. add backslashes or
  *	enclosing braces) to make the string into a valid Tcl list element. If
- *	length is TCL_INDEX_NONE, then the string is scanned from src up to the first null
+ *	length is < 0, then the string is scanned from src up to the first null
  *	byte. A NULL value for src is treated as an empty string. The incoming
  *	value of *flagPtr is a report from the caller what additional flags it
  *	will pass to TclConvertElement().
@@ -1071,7 +1071,8 @@ Tcl_ScanCountedElement(
 Tcl_Size
 TclScanElement(
     const char *src,		/* String to convert to Tcl list element. */
-    Tcl_Size length,		/* Number of bytes in src, or TCL_INDEX_NONE. */
+    Tcl_Size length,		/* Number of bytes in src,
+				 * < 0 means null terminated */
     char *flagPtr)		/* Where to store information to guide
 				 * Tcl_ConvertElement. */
 {
@@ -1092,7 +1093,7 @@ TclScanElement(
     int braceCount = 0;		/* Count of all braces '{' '}' seen. */
 #endif /* COMPAT */
 
-    if ((p == NULL) || (length == 0) || ((*p == '\0') && (length == TCL_INDEX_NONE))) {
+    if ((p == NULL) || (length == 0) || ((*p == '\0') && (length < 0))) {
 	/*
 	 * Empty string element must be brace quoted.
 	 */
@@ -1175,7 +1176,7 @@ TclScanElement(
 	    case '\\':	/* TYPE_SUBS */
 		extra++;			/* Escape '\' => '\\' */
 		if ((length == 1) ||
-			((length == TCL_INDEX_NONE) && (p[1] == '\0'))) {
+			((length < 0) && (p[1] == '\0'))) {
 		    /*
 		     * Final backslash. Cannot format with brace quoting.
 		     */
@@ -1206,7 +1207,7 @@ TclScanElement(
 #endif /* COMPAT */
 		break;
 	    case '\0':	/* TYPE_SUBS */
-		if (length == TCL_INDEX_NONE) {
+		if (length < 0) {
 		    goto endOfString;
 		}
 		/* TODO: Panic on improper encoding? */
@@ -1436,7 +1437,8 @@ Tcl_ConvertCountedElement(
 Tcl_Size
 TclConvertElement(
     const char *src,		/* Source information for list element. */
-    Tcl_Size length,		/* Number of bytes in src, or TCL_INDEX_NONE. */
+    Tcl_Size length,		/* Number of bytes in src, or
+				 * < 0 if null terminated */
     char *dst,			/* Place to put list-ified element. */
     int flags)			/* Flags produced by Tcl_ScanElement. */
 {
@@ -1455,7 +1457,7 @@ TclConvertElement(
      * No matter what the caller demands, empty string must be braced!
      */
 
-    if ((src == NULL) || (length == 0) || (*src == '\0' && length == TCL_INDEX_NONE)) {
+    if ((src == NULL) || (length == 0) || (*src == '\0' && length < 0)) {
 	p[0] = '{';
 	p[1] = '}';
 	return 2;
@@ -1482,7 +1484,7 @@ TclConvertElement(
      */
 
     if (conversion == CONVERT_NONE) {
-	if (length == TCL_INDEX_NONE) {
+	if (length < 0) {
 	    /* TODO: INT_MAX overflow? */
 	    while (*src) {
 		*p++ = *src++;
@@ -1501,7 +1503,7 @@ TclConvertElement(
     if (conversion == CONVERT_BRACE) {
 	*p = '{';
 	p++;
-	if (length == TCL_INDEX_NONE) {
+	if (length < 0) {
 	    /* TODO: INT_MAX overflow? */
 	    while (*src) {
 		*p++ = *src++;
@@ -1574,7 +1576,7 @@ TclConvertElement(
 	    p++;
 	    continue;
 	case '\0':
-	    if (length == TCL_INDEX_NONE) {
+	    if (length < 0) {
 		return (p - dst);
 	    }
 
@@ -2650,11 +2652,10 @@ Tcl_DStringInit(
 char *
 Tcl_DStringAppend(
     Tcl_DString *dsPtr,		/* Structure describing dynamic string. */
-    const char *bytes,		/* String to append. If length is
-				 * TCL_INDEX_NONE then this must be
-				 * null-terminated. */
+    const char *bytes,		/* String to append. If length is < 0
+				 * then this must be null-terminated. */
     Tcl_Size length)		/* Number of bytes from "bytes" to append. If
-				 * TCL_INDEX_NONE, then append all of bytes, up
+				 * < 0, then append all of bytes, up
 				 * to null at end. */
 {
     Tcl_Size newSize;
