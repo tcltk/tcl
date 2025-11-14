@@ -21,7 +21,7 @@ catch [list package require -exact tcl::test [info patchlevel]]
 testConstraint testinterpdelete [llength [info commands testinterpdelete]]
 
 set hidden_cmds [list {*}{
-    cd clock encoding exec exit fconfigure file glob load open pwd socket source
+    cd encoding exec exit fconfigure file glob load open pwd socket source
 
     tcl:clock:add tcl:clock:format tcl:clock:scan
 
@@ -1889,7 +1889,7 @@ test interp-23.2 {testing hiding vs aliases: safe interp} -setup {
     lappend l [lsort [interp aliases a]] [lsort [interp hidden a]]
 } -cleanup {
     interp delete a
-} -result [list $hidden_cmds {bar clock} $hidden_cmds {bar clock} [lsort [concat $hidden_cmds bar]] {clock} $hidden_cmds]
+} -result [list $hidden_cmds {::tcl::clock::add ::tcl::clock::format ::tcl::clock::scan bar} $hidden_cmds {::tcl::clock::add ::tcl::clock::format ::tcl::clock::scan bar} [lsort [concat $hidden_cmds bar]] {::tcl::clock::add ::tcl::clock::format ::tcl::clock::scan} $hidden_cmds]
 
 test interp-24.1 {result resetting on error} -setup {
     catch {interp delete a}
