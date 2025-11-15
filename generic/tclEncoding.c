@@ -1345,7 +1345,7 @@ Tcl_ExternalToUtf(
     } else if (srcLen < 0) {
 	Encoding *encodingPtr = (Encoding *)encoding;
 	if (encodingPtr == NULL) {
-	    encoding = (Encoding *)systemEncoding;
+	    encodingPtr = (Encoding *)systemEncoding;
 	}
 	srcLen = encodingPtr->lengthProc(src);
     }
@@ -1487,9 +1487,9 @@ Tcl_ExternalToUtfEx(
      * are part of the public API, that cannot be changed easily. So we are
      * forced to loop over chunks of max size INT_MAX.
      */
-    Tcl_Size srcTotalRead = 0;
-    Tcl_Size dstTotalWritten = 0;
-    Tcl_Size dstTotalChars = 0;
+    Tcl_Size srcBytesRead = 0;
+    Tcl_Size dstBytesWritten = 0;
+    Tcl_Size dstCharsWritten = 0;
     Tcl_Size srcBytesLeft = srcLen;
     Tcl_Size dstSpaceLeft = dstLen;
 
@@ -1510,15 +1510,15 @@ Tcl_ExternalToUtfEx(
             /* For the last chunk we pass on the original TCL_ENCODING_END flag */
 	    chunkSrcLen = (int)srcBytesLeft;
 	}
-	if (srcTotalRead > 0) {
+	if (srcBytesRead > 0) {
 	    chunkFlags &= ~TCL_ENCODING_START;
 	}
 
 	if (charLimited) {
 	    assert(chunkFlags & TCL_ENCODING_CHAR_LIMIT);
 	    assert(dstCharsPtr != NULL);
-	    assert(*dstCharsPtr >= dstTotalChars);
-	    Tcl_Size remainingChars = *dstCharsPtr - dstTotalChars;
+	    assert(*dstCharsPtr >= dstCharsWritten);
+	    Tcl_Size remainingChars = *dstCharsPtr - dstCharsWritten;
 	    if (remainingChars <= 0) {
 		/* Limit already reached */
 		break;
@@ -1538,16 +1538,16 @@ Tcl_ExternalToUtfEx(
 
         assert(chunkSrcRead <= srcBytesLeft);
 	srcBytesLeft -= chunkSrcRead;
-	srcTotalRead += chunkSrcRead;
+	srcBytesRead += chunkSrcRead;
 	src += chunkSrcRead;
 
 	assert(chunkDstWritten <= dstSpaceLeft);
 	dstSpaceLeft -= chunkDstWritten;
-	dstTotalWritten += chunkDstWritten;
+	dstBytesWritten += chunkDstWritten;
         dst += chunkDstWritten;
 
 	assert(chunkDstChars <= chunkCharLimit); /* NOT necessarily true in 9.0! */
-	dstTotalChars += chunkDstChars;
+	dstCharsWritten += chunkDstChars;
 
 	/*
 	 * We know the entire input data has been SEEN by the encoder when
@@ -1629,24 +1629,32 @@ Tcl_ExternalToUtfEx(
 	}
     } /* End while (1) */
 
-    assert(dstTotalWritten >= 0 && dstTotalWritten <= dstLen);
+    assert(dstBytesWritten >= 0 && dstBytesWritten <= dstLen);
     if (terminate) {
-	dstStart[dstTotalWritten] = '\0'; /* Already reserved space earlier */
+	dstStart[dstBytesWritten] = '\0'; /* Already reserved space earlier */
     }
 
+    assert(srcBytesRead >= 0 && srcBytesRead <= srcLen);
+    assert((srcBytesRead + srcBytesLeft) == srcLen);
     if (srcReadPtr) {
-	*srcReadPtr = srcTotalRead;
+	*srcReadPtr = srcBytesRead;
     }
+
+    assert(dstBytesWritten >= 0 && dstBytesWritten <= dstLen);
+    assert((dstBytesWritten + dstSpaceLeft) == dstLen);
     if (dstWrotePtr) {
-	*dstWrotePtr = dstTotalWritten;
+	*dstWrotePtr = dstBytesWritten;
     }
+
     if (dstCharsPtr) {
-	*dstCharsPtr = dstTotalChars;
+	assert(dstCharsWritten >= 0);
+	assert(!charLimited || dstCharsWritten <= *dstCharsPtr);
+	*dstCharsPtr = dstCharsWritten;
     }
 
     if (errorLocPtr) {
 	/* If errorLocPtr specified, interpreter result is not to be set */
-	*errorLocPtr = result == TCL_OK ? -1 : srcTotalRead;
+	*errorLocPtr = result == TCL_OK ? -1 : srcBytesRead;
     } else {
 	/*
 	 * interp result is set for all results other than TCL_OK, even
@@ -1657,11 +1665,11 @@ Tcl_ExternalToUtfEx(
 	if (result != TCL_OK && interp != NULL) {
 	    char buf[TCL_INTEGER_SPACE];
 	    snprintf(buf, sizeof(buf), "%" TCL_SIZE_MODIFIER "d",
-		srcTotalRead);
+		srcBytesRead);
 	    Tcl_SetObjResult(interp,
 		Tcl_ObjPrintf("unexpected byte sequence starting at index "
 			      "%" TCL_SIZE_MODIFIER "d: '\\x%02X'",
-		    srcTotalRead, UCHAR(srcStart[srcTotalRead])));
+		    srcBytesRead, UCHAR(srcStart[srcBytesRead])));
 	    Tcl_SetErrorCode(interp, "TCL", "ENCODING", "ILLEGALSEQUENCE", buf,
 		(char *)NULL);
 	}
