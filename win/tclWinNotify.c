@@ -642,7 +642,7 @@ Tcl_Sleep(
  *
  * Tcl_SleepMonotonic --
  *
- *	Delay execution for the specified number of milliseconds
+ *	Delay execution for the specified number of micro-seconds
  *	using the monotonic time.
  *
  * Results:
@@ -656,10 +656,16 @@ Tcl_Sleep(
 
 void
 Tcl_SleepMonotonic(
-    int ms)			/* Number of milliseconds to sleep. */
+    Tcl_WideInt microSeconds)	/* Number of micro-seconds to sleep. */
 {
-    if (ms > 0) {
-	SleepEx(ms, TRUE);
+    /*
+     * Get milliseconds, which is the current API resolution.
+     * ToDo: find a way to get microSeconds resolution.
+     */
+
+    microSeconds /= 1000;
+    if (microSeconds > 0) {
+	SleepEx(microSeconds, TRUE);
     }
 }
 

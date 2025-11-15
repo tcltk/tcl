@@ -1900,7 +1900,7 @@ EXTERN int		Tcl_UtfToNormalized(Tcl_Interp *interp,
 /* 697 */
 EXTERN void		Tcl_GetMonotonicTime(Tcl_Time *timeBuf);
 /* 698 */
-EXTERN void		Tcl_SleepMonotonic(int ms);
+EXTERN void		Tcl_SleepMonotonic(Tcl_WideInt microSeconds);
 /* 699 */
 EXTERN void		TclUnusedStubEntry(void);
 
@@ -2612,7 +2612,7 @@ typedef struct TclStubs {
     int (*tcl_UtfToNormalizedDString) (Tcl_Interp *interp, const char *bytes, Tcl_Size length, Tcl_UnicodeNormalizationForm normForm, int profile, Tcl_DString *dsPtr); /* 695 */
     int (*tcl_UtfToNormalized) (Tcl_Interp *interp, const char *bytes, Tcl_Size length, Tcl_UnicodeNormalizationForm normForm, int profile, char *bufPtr, Tcl_Size bufLen, Tcl_Size *lengthPtr); /* 696 */
     void (*tcl_GetMonotonicTime) (Tcl_Time *timeBuf); /* 697 */
-    void (*tcl_SleepMonotonic) (int ms); /* 698 */
+    void (*tcl_SleepMonotonic) (Tcl_WideInt microSeconds); /* 698 */
     void (*tclUnusedStubEntry) (void); /* 699 */
 } TclStubs;
 

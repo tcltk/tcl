@@ -24,7 +24,6 @@ typedef struct TimerHandler {
     void *clientData;		/* Argument to pass to proc. */
     Tcl_TimerToken token;	/* Identifies handler so it can be deleted.
 				 * NULL for [after/timer idle]. */
-    bool monotonic;		/* true if monotonic timer, false otherwise */
     struct TimerHandler *nextPtr;
 				/* Next event in queue, or NULL for end of
 				 * queue. */
@@ -85,6 +84,15 @@ typedef struct IdleHandler {
 } IdleHandler;
 
 /*
+ * Create an enum to index the firstTimeHandlerPtr array below.
+ * There are 3 queues: monotonic, wall clock and idle.
+ * The idle queue is (still) handled separately, but may eventually be added here.
+ */
+ 
+enum timeHandlerType {timeHandlerMonotonic=0,
+	timeHandlerWallclock=1};
+
+/*
  * The timer and idle queues are per-thread because they are associated with
  * the notifier, which is also per-thread.
  *
@@ -97,13 +105,15 @@ typedef struct IdleHandler {
  */
 
 typedef struct {
-    TimerHandler *firstTimerHandlerPtr[2];
-				/* [0]: First event in wallclock/idle queue. */
-				/* [1] First event in monotonic queue. */
+    TimerHandler *firstTimerHandlerPtr[3];
+				/* [0] First event in monotonic queue. */
+				/* [1]: First event in wallclock queue. */
     int lastTimerId;		/* Timer identifier of most recently created
 				 * timer. */
     int timerPending;		/* 1 if a timer event is in the queue. */
-    int wallOrMonotonicIndex;	/* 0 for wall clock pending, 1 for monotonic */
+    enum timeHandlerType timeHandlerIndex;
+				/* Index into firstTimeHandlerPtr for pending
+				 * event. */
     IdleHandler *idleList;	/* First in list of all idle handlers. */
     IdleHandler *lastIdlePtr;	/* Last in list (or NULL for empty list). */
     int idleGeneration;		/* Used to fill in the "generation" fields of
@@ -257,12 +267,13 @@ TimerExitProc(
 	 * Loop over wallclock and monotonic clock queue
 	 */
 
-	for (int index=0;index <2;index++) {
-	    timerHandlerPtr = tsdPtr->firstTimerHandlerPtr[index];
+	for (int timeHandlerIndex=timeHandlerMonotonic;
+		timeHandlerIndex <=timeHandlerWallclock; timeHandlerIndex++) {
+	    timerHandlerPtr = tsdPtr->firstTimerHandlerPtr[timeHandlerIndex];
 	    while (timerHandlerPtr != NULL) {
-		tsdPtr->firstTimerHandlerPtr[index] = timerHandlerPtr->nextPtr;
+		tsdPtr->firstTimerHandlerPtr[timeHandlerIndex] = timerHandlerPtr->nextPtr;
 		Tcl_Free(timerHandlerPtr);
-		timerHandlerPtr = tsdPtr->firstTimerHandlerPtr[index];
+		timerHandlerPtr = tsdPtr->firstTimerHandlerPtr[timeHandlerIndex];
 	    }
 	}
     }
@@ -337,6 +348,7 @@ TclCreateAbsoluteTimerHandler(
 {
     TimerHandler *timerHandlerPtr, *tPtr2, *prevPtr;
     ThreadSpecificData *tsdPtr = InitTimer();
+    enum timeHandlerType timeHandlerIndex;
 
     timerHandlerPtr = (TimerHandler *)Tcl_Alloc(sizeof(TimerHandler));
 
@@ -349,14 +361,15 @@ TclCreateAbsoluteTimerHandler(
     timerHandlerPtr->clientData = clientData;
     tsdPtr->lastTimerId++;
     timerHandlerPtr->token = (Tcl_TimerToken) INT2PTR(tsdPtr->lastTimerId);
-    timerHandlerPtr->monotonic = monotonic;
 
     /*
      * Add the event to the corresponding queue in the correct position
      * (ordered by event firing time).
      */
 
-    tPtr2 = tsdPtr->firstTimerHandlerPtr[(monotonic?1:0)];
+    timeHandlerIndex = ( monotonic ? timeHandlerMonotonic
+	    : timeHandlerWallclock );
+    tPtr2 = tsdPtr->firstTimerHandlerPtr[timeHandlerIndex];
     for (prevPtr = NULL; tPtr2 != NULL;
 	    prevPtr = tPtr2, tPtr2 = tPtr2->nextPtr) {
 	if (TCL_TIME_BEFORE(timerHandlerPtr->time, tPtr2->time)) {
@@ -365,7 +378,7 @@ TclCreateAbsoluteTimerHandler(
     }
     timerHandlerPtr->nextPtr = tPtr2;
     if (prevPtr == NULL) {
-	tsdPtr->firstTimerHandlerPtr[(monotonic?1:0)] = timerHandlerPtr;
+	tsdPtr->firstTimerHandlerPtr[timeHandlerIndex] = timerHandlerPtr;
     } else {
 	prevPtr->nextPtr = timerHandlerPtr;
     }
@@ -405,15 +418,16 @@ Tcl_DeleteTimerHandler(
 	return;
     }
 
-    for (int index = 0; index < 2; index++ ) {
-	for (timerHandlerPtr = tsdPtr->firstTimerHandlerPtr[index], prevPtr = NULL;
+    for (int timeHandlerIndex = timeHandlerMonotonic;
+	    timeHandlerIndex <= timeHandlerWallclock; timeHandlerIndex++ ) {
+	for (timerHandlerPtr = tsdPtr->firstTimerHandlerPtr[timeHandlerIndex], prevPtr = NULL;
 		timerHandlerPtr != NULL; prevPtr = timerHandlerPtr,
 		timerHandlerPtr = timerHandlerPtr->nextPtr) {
 	    if (timerHandlerPtr->token != token) {
 		continue;
 	    }
 	    if (prevPtr == NULL) {
-		tsdPtr->firstTimerHandlerPtr[index] = timerHandlerPtr->nextPtr;
+		tsdPtr->firstTimerHandlerPtr[timeHandlerIndex] = timerHandlerPtr->nextPtr;
 	    } else {
 		prevPtr->nextPtr = timerHandlerPtr->nextPtr;
 	    }
@@ -458,7 +472,8 @@ TimerSetupProc(
 	blockTime.sec = 0;
 	blockTime.usec = 0;
     } else if ((flags & TCL_TIMER_EVENTS) &&
-	    (tsdPtr->firstTimerHandlerPtr[0] || tsdPtr->firstTimerHandlerPtr[1])) {
+	    (tsdPtr->firstTimerHandlerPtr[timeHandlerMonotonic]
+	    || tsdPtr->firstTimerHandlerPtr[timeHandlerWallclock])) {
 	Tcl_Time myBlockTime, myTime;
 	bool blockTimePresent = false;
 	/*
@@ -466,19 +481,20 @@ TimerSetupProc(
 	 * of the next wallclock and/or monotonic timer on the list.
 	 */
 
-	for (int index = 0; index < 2; index++ ) {
-	    TimerHandler *firstTimerHandlerPtr;
-	    firstTimerHandlerPtr = tsdPtr->firstTimerHandlerPtr[index];
-	    if (firstTimerHandlerPtr == NULL) {
+	for (int timeHandlerIndex = timeHandlerMonotonic;
+		timeHandlerIndex <= timeHandlerWallclock; timeHandlerIndex++ ) {
+	    TimerHandler *firstTimerHandlerPtrCur;
+	    firstTimerHandlerPtrCur = tsdPtr->firstTimerHandlerPtr[timeHandlerIndex];
+	    if (firstTimerHandlerPtrCur == NULL) {
 		continue;
 	    }
-	    if (index ==0) {
+	    if (timeHandlerIndex ==timeHandlerMonotonic) {
 		Tcl_GetTime(&myTime);
 	    } else {
 		Tcl_GetMonotonicTime(&myTime);
 	    }
-	    myBlockTime.sec = firstTimerHandlerPtr->time.sec - myTime.sec;
-	    myBlockTime.usec = firstTimerHandlerPtr->time.usec - myTime.usec;
+	    myBlockTime.sec = firstTimerHandlerPtrCur->time.sec - myTime.sec;
+	    myBlockTime.usec = firstTimerHandlerPtrCur->time.usec - myTime.usec;
 	    if (myBlockTime.usec < 0) {
 		myBlockTime.sec -= 1;
 		myBlockTime.usec += 1000000;
@@ -530,26 +546,29 @@ TimerCheckProc(
     Tcl_Time blockTime;
     ThreadSpecificData *tsdPtr = InitTimer();
 
-    if ((flags & TCL_TIMER_EVENTS) && tsdPtr->firstTimerHandlerPtr) {
+    if ((flags & TCL_TIMER_EVENTS) &&
+		(tsdPtr->firstTimerHandlerPtr[timeHandlerMonotonic]
+		|| tsdPtr->firstTimerHandlerPtr[timeHandlerWallclock])) {
 
 	/*
 	 * Compute the timeout for the next timer on one of the lists.
 	 * Try wallclock and monotonic list.
 	 */
 
-	for (int index = 0; index < 2; index++ ) {
-	    TimerHandler *firstTimerHandlerPtr;
-	    firstTimerHandlerPtr = tsdPtr->firstTimerHandlerPtr[index];
-	    if (firstTimerHandlerPtr == NULL) {
+	for (int timeHandlerIndex = timeHandlerMonotonic;
+		timeHandlerIndex <= timeHandlerWallclock; timeHandlerIndex++ ) {
+	    TimerHandler *firstTimerHandlerPtrCur;
+	    firstTimerHandlerPtrCur = tsdPtr->firstTimerHandlerPtr[timeHandlerIndex];
+	    if (firstTimerHandlerPtrCur == NULL) {
 		continue;
 	    }
-	    if (index ==0) {
-		Tcl_GetTime(&blockTime);
-	    } else {
+	    if (timeHandlerIndex == timeHandlerMonotonic) {
 		Tcl_GetMonotonicTime(&blockTime);
+	    } else {
+		Tcl_GetTime(&blockTime);
 	    }
-	    blockTime.sec = firstTimerHandlerPtr->time.sec - blockTime.sec;
-	    blockTime.usec = firstTimerHandlerPtr->time.usec -
+	    blockTime.sec = firstTimerHandlerPtrCur->time.sec - blockTime.sec;
+	    blockTime.usec = firstTimerHandlerPtrCur->time.usec -
 		    blockTime.usec;
 	    if (blockTime.usec < 0) {
 		blockTime.sec -= 1;
@@ -567,7 +586,7 @@ TimerCheckProc(
 	    if (blockTime.sec == 0 && blockTime.usec == 0 &&
 		    !tsdPtr->timerPending) {
 		tsdPtr->timerPending = 1;
-		tsdPtr->wallOrMonotonicIndex = index;
+		tsdPtr->timeHandlerIndex = timeHandlerIndex;
 		timerEvPtr = (Tcl_Event *)Tcl_Alloc(sizeof(Tcl_Event));
 		timerEvPtr->proc = TimerHandlerEventProc;
 		Tcl_QueueEvent(timerEvPtr, TCL_QUEUE_TAIL);
@@ -607,7 +626,7 @@ TimerHandlerEventProc(
     TimerHandler *timerHandlerPtr, **nextPtrPtr;
     Tcl_Time time;
     int currentTimerId;
-    int index;
+    int timeHandlerIndex;
     ThreadSpecificData *tsdPtr = InitTimer();
 
     /*
@@ -647,16 +666,16 @@ TimerHandlerEventProc(
 
     if ( !tsdPtr->timerPending ) {return 0;}
     tsdPtr->timerPending = 0;
-    index = tsdPtr->wallOrMonotonicIndex;
+    timeHandlerIndex = tsdPtr->timeHandlerIndex;
     currentTimerId = tsdPtr->lastTimerId;
-    if (index == 0) {
-	Tcl_GetTime(&time);
-    } else {
+    if (timeHandlerIndex == timeHandlerMonotonic) {
 	Tcl_GetMonotonicTime(&time);
+    } else {
+	Tcl_GetTime(&time);
     }
     while (1) {
-	nextPtrPtr = &tsdPtr->firstTimerHandlerPtr[index];
-	timerHandlerPtr = tsdPtr->firstTimerHandlerPtr[index];
+	nextPtrPtr = &tsdPtr->firstTimerHandlerPtr[timeHandlerIndex];
+	timerHandlerPtr = tsdPtr->firstTimerHandlerPtr[timeHandlerIndex];
 	if (timerHandlerPtr == NULL) {
 	    break;
 	}
@@ -1054,13 +1073,20 @@ TimerAtDelay(
 {
     Interp *iPtr = (Interp *) interp;
 
-    Tcl_Time now;
-    Tcl_WideInt diff;
+    Tcl_Time nowLimit;
+    Tcl_Time nowEvent;
+    Tcl_WideInt diff, diffLimit;
+    bool limitDiff;
 
+    /*
+     * Interpreter limits are expressed in wallclock time
+     */
+
+    Tcl_GetTime(&nowLimit);
     if (monotonic) {
-	Tcl_GetMonotonicTime(&now);
+	Tcl_GetMonotonicTime(&nowEvent);
     } else {
-	Tcl_GetTime(&now);
+	nowEvent = nowLimit;
     }
 
     do {
@@ -1073,45 +1099,66 @@ TimerAtDelay(
 	    return TCL_ERROR;
 	}
 	if (iPtr->limit.timeEvent != NULL
-		&& TCL_TIME_BEFORE(iPtr->limit.time, now)) {
+		&& TCL_TIME_BEFORE(iPtr->limit.time, nowLimit)) {
 	    iPtr->limit.granularityTicker = 0;
 	    if (Tcl_LimitCheck(interp) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	}
-	if (iPtr->limit.timeEvent == NULL
-		|| TCL_TIME_BEFORE(endTime, iPtr->limit.time)) {
-	    diff = TCL_TIME_DIFF_MS_CEILING(endTime, now);
-	    if (diff > TCL_TIME_MAXIMUM_SLICE) {
-		diff = TCL_TIME_MAXIMUM_SLICE;
+	
+	/*
+	 * Find event delay in micro-seconds
+	 */
+
+	diff = TCL_TIME_DIFF_MS_CEILING(endTime, nowEvent);
+	
+	/*
+	 * Remember, that the event limit is active
+	 */
+
+	limitDiff = false;
+	
+	/*
+	 * Check for interpreter wall clock time limit
+	 */ 
+	 
+	if (iPtr->limit.timeEvent != NULL) {
+	    diffLimit = TCL_TIME_DIFF_MS_CEILING(iPtr->limit.time, nowLimit);
+	    if (diffLimit < diff) {
+		
+		/*
+		 * Interpreter limit time will fire before the event limit.
+		 * Update waiting time and remember, that the interpreter
+		 * limit was the reason.
+		 */
+
+		diff = diffLimit;
+		limitDiff = true;
 	    }
-	    if (diff == 0 && TCL_TIME_BEFORE(now, endTime)) {
-		diff = 1;
-	    }
-	    if (diff > 0) {
-		if (monotonic) {
-		    Tcl_SleepMonotonic((int) diff);
-		} else {
-		    Tcl_Sleep((int) diff);
-		}
-		if (diff < SLEEP_OFFLOAD_GETTIMEOFDAY) {
-		    break;
-		}
-	    } else {
-		break;
-	    }
-	} else {
-	    diff = TCL_TIME_DIFF_MS(iPtr->limit.time, now);
-	    if (diff > TCL_TIME_MAXIMUM_SLICE) {
-		diff = TCL_TIME_MAXIMUM_SLICE;
-	    }
-	    if (diff > 0) {
-		if (monotonic) {
-		    Tcl_SleepMonotonic((int) diff);
-		} else {
-		    Tcl_Sleep((int) diff);
-		}
-	    }
+	}
+	if (diff > TCL_TIME_MAXIMUM_SLICE) {
+	    diff = TCL_TIME_MAXIMUM_SLICE;
+	}
+	
+	/*
+	 * If event timing was overwritten by limit, we wait at least 1ms.
+	 */
+
+	if (diff == 0 && limitDiff) {
+	    diff = 1;
+	}
+
+	if (diff > 0) {
+	    Tcl_SleepMonotonic(diff * 1000);
+	}
+
+	if (limitDiff) {
+
+	    /*
+	     * Interpreter time limit limited the sleep time.
+	     * Normally, we should exit below for the limit check.
+	     */
+
 	    if (Tcl_AsyncReady()) {
 		if (Tcl_AsyncInvoke(interp, TCL_OK) != TCL_OK) {
 		    return TCL_ERROR;
@@ -1123,13 +1170,33 @@ TimerAtDelay(
 	    if (Tcl_LimitCheck(interp) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	}
-	if (monotonic) {
-	    Tcl_GetMonotonicTime(&now);
 	} else {
-	    Tcl_GetTime(&now);
+	    
+	    /*
+	     * Event limit gave the sleep time.
+	     * Check, if we slept correctly only, if sleep time is above
+	     * this limit.
+	     * This is for performance reasons to not call the time functions
+	     * again below for no gain.
+	     */
+
+	    if (diff < SLEEP_OFFLOAD_GETTIMEOFDAY) {
+		break;
+	    }
 	}
-    } while (TCL_TIME_BEFORE(now, endTime));
+	
+	/*
+	 * We slept. Get new time base, to be compared below.
+	 */
+	
+	Tcl_GetTime(&nowLimit);
+	if (monotonic) {
+	    Tcl_GetMonotonicTime(&nowEvent);
+	} else {
+	    nowEvent = nowLimit;
+	}
+	
+    } while (TCL_TIME_BEFORE(nowEvent, endTime));
     return TCL_OK;
 }
 
