@@ -416,11 +416,32 @@ void
 Tcl_GetMonotonicTime(
     Tcl_Time *timePtr)		/* Location to store time information. */
 {
-    ULONGLONG ms;
+    LARGE_INTEGER Frequency, PerformanceCount;
 
-    ms = GetTickCount64();
-    timePtr->sec = (long)(ms/1000);
-    timePtr->usec = ((long)(ms%1000))*1000;
+    /*
+     * The implementation is verbatim from here:
+     * https://learn.microsoft.com/en-us/windows/win32/sysinfo/acquiring-high-resolution-time-stamps#using-qpc-in-native-code
+     */
+
+    if (0 != QueryPerformanceFrequency(&Frequency)
+	    && 0 != QueryPerformanceCounter(&PerformanceCount)) {
+	ULONGLONG microSeconds;
+	microSeconds = ((PerformanceCount.QuadPart) * 1000000) / Frequency.QuadPart;
+	timePtr->sec = (long)(microSeconds/1000000);
+	timePtr->usec = (long)(microSeconds%1000000);
+    } else {
+
+	/*
+	 * Following the documentation, this does not happen since Windows XP
+	 * So, this legacy branch is IMHO obsolete.
+	 * The resolution is only 10 to 16 ms.
+	 */
+
+	ULONGLONG ms;
+	ms = GetTickCount64();
+	timePtr->sec = (long)(ms/1000);
+	timePtr->usec = ((long)(ms%1000))*1000;
+    }
 }
 
 /*

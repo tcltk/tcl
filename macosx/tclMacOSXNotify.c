@@ -1547,6 +1547,87 @@ Tcl_Sleep(
 /*
  *----------------------------------------------------------------------
  *
+ * Tcl_SleepMonotonic --
+ *
+ *	Delay execution for the specified number of micro-seconds
+ *	using the monotonic time.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Time passes.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_SleepMonotonic(
+    Tcl_WideInt microSeconds)	/* Number of micro-seconds to sleep. */
+{
+    Tcl_Time vdelay;
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+
+    if (microSeconds <= 0) {
+	return;
+    }
+
+    vdelay.sec = ms / 1000000;
+    vdelay.usec = (ms % 1000000);
+
+    if (tsdPtr->runLoop) {
+	CFTimeInterval waitTime;
+	CFRunLoopTimerRef runLoopTimer = tsdPtr->runLoopTimer;
+	CFAbsoluteTime nextTimerFire = 0, waitEnd, now;
+	SInt32 runLoopStatus;
+
+	waitTime = vdelay.sec + 1.0e-6 * vdelay.usec;
+	now = CFAbsoluteTimeGetCurrent();
+	waitEnd = now + waitTime;
+
+	if (runLoopTimer) {
+	    nextTimerFire = CFRunLoopTimerGetNextFireDate(runLoopTimer);
+	    if (nextTimerFire < waitEnd) {
+		CFRunLoopTimerSetNextFireDate(runLoopTimer, now +
+			CF_TIMEINTERVAL_FOREVER);
+	    } else {
+		runLoopTimer = NULL;
+	    }
+	}
+	tsdPtr->sleeping = 1;
+	do {
+	    runLoopStatus = CFRunLoopRunInMode(kCFRunLoopDefaultMode,
+		    waitTime, FALSE);
+	    switch (runLoopStatus) {
+	    case kCFRunLoopRunFinished:
+		Tcl_Panic("Tcl_Sleep: CFRunLoop finished");
+		break;
+	    case kCFRunLoopRunStopped:
+		waitTime = waitEnd - CFAbsoluteTimeGetCurrent();
+		break;
+	    case kCFRunLoopRunTimedOut:
+		waitTime = 0;
+		break;
+	    }
+	} while (waitTime > 0);
+	tsdPtr->sleeping = 0;
+	if (runLoopTimer) {
+	    CFRunLoopTimerSetNextFireDate(runLoopTimer, nextTimerFire);
+	}
+    } else {
+	struct timespec waitTime;
+
+	waitTime.tv_sec = vdelay.sec;
+	waitTime.tv_nsec = vdelay.usec * 1000;
+	while (nanosleep(&waitTime, &waitTime)) {
+	    // Empty body
+	}
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclUnixWaitForFile --
  *
  *	This function waits synchronously for a file to become readable or

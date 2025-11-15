@@ -312,6 +312,62 @@ Tcl_GetTime(
 /*
  *----------------------------------------------------------------------
  *
+ * Tcl_GetMonotonicTime --
+ *
+ *	Gets the current monotonic time in seconds and microseconds.
+ *	In the Windows case, this is the time elapsed since system
+ *	startup.
+ *	The current resolution is 10 to 16 milli-seconds. The implementation
+ *	may be enhanced for more resolution.
+ *	Thanks to Christian Werner for the implementation.
+ *
+ * Results:
+ *	Returns the monotonic time in timePtr.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_GetMonotonicTime(
+    Tcl_Time *timePtr)		/* Location to store time information. */
+{
+#ifdef HAVE_CLOCK_GETTIME
+    int ret;
+    struct timespec ts;
+    static int useMonoClock = -1;
+
+    if (useMonoClock) {
+	ret = (clock_gettime(CLOCK_MONOTONIC, &ts) == 0);
+	if (useMonoClock < 0) {
+	    useMonoClock = ret;
+	    if (!ret) {
+		(void) clock_gettime(CLOCK_REALTIME, &ts);
+	    }
+	} else if (!ret) {
+	    Tcl_Panic("clock_gettime(CLOCK_MONOTONIC) failed");
+	}
+    } else {
+	(void) clock_gettime(CLOCK_REALTIME, &ts);
+	ret = 0;
+    }
+    timePtr->sec = ts.tv_sec;
+    timePtr->usec = ts.tv_nsec / 1000;
+    return ret;
+#else
+    struct timeval tv;
+
+    (void) gettimeofday(&tv, NULL);
+    timePtr->sec = tv.tv_sec;
+    timePtr->usec = tv.tv_usec;
+    return 0;
+#endif}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_SetTimeProc --
  *
  *	TIP #233 (Virtualized Time): Registers two handlers for the
