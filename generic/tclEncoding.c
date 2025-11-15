@@ -1408,34 +1408,34 @@ Tcl_ExternalToUtf(
 
 int
 Tcl_ExternalToUtfEx(
-    TCL_UNUSED(Tcl_Interp *),	 /* TODO: Re-examine this. */
-    Tcl_Encoding encoding,	 /* The encoding for the source string, or NULL
-				  * for the default system encoding. */
-    const char *src,		 /* Source string in specified encoding. */
-    Tcl_Size srcLen,		 /* Source string length in bytes, or
-				  * TCL_INDEX_NONE for encoding-specific string
-				  * length. */
-    int flags,			 /* Conversion control flags. */
-    Tcl_EncodingState *statePtr, /* Place for conversion routine to store state
-				  * information used during a piecewise
-				  * conversion. Contents of statePtr are
-				  * initialized and/or reset by conversion
-				  * routine under control of flags argument. */
-    char *dst,			 /* Output buffer in which converted string is
-				  * stored. */
-    Tcl_Size dstLen,		 /* The maximum length of output buffer in
-				  * bytes. */
-    Tcl_Size *srcReadPtr,	 /* Filled with the number of bytes from the
-				  * source string that were converted. This may
-				  * be less than the original source length if
-				  * there was a problem converting some source
-				  * characters. */
-    Tcl_Size *dstWrotePtr,	 /* Filled with the number of bytes that were
-				  * stored in the output buffer as a result of
-				  * the conversion. */
-    Tcl_Size *dstCharsPtr,	 /* Filled with the number of characters that
-				  * correspond to the bytes stored in the
-				  * output buffer. */
+    Tcl_Interp *interp,		/* TODO: Re-examine this. */
+    Tcl_Encoding encoding,	/* The encoding for the source string, or NULL
+				 * for the default system encoding. */
+    const char *src,		/* Source string in specified encoding. */
+    Tcl_Size srcLen,		/* Source string length in bytes, or
+				 * TCL_INDEX_NONE for encoding-specific string
+				 * length. */
+    int flags,			/* Conversion control flags. */
+    Tcl_EncodingState *statePtr,/* Place for conversion routine to store state
+				 * information used during a piecewise
+				 * conversion. Contents of statePtr are
+				 * initialized and/or reset by conversion
+				 * routine under control of flags argument. */
+    char *dst,			/* Output buffer in which converted string is
+				 * stored. */
+    Tcl_Size dstLen,		/* The maximum length of output buffer in
+				 * bytes. */
+    Tcl_Size *srcReadPtr,	/* Filled with the number of bytes from the
+				 * source string that were converted. This may
+				 * be less than the original source length if
+				 * there was a problem converting some source
+				 * characters. */
+    Tcl_Size *dstWrotePtr,	/* Filled with the number of bytes that were
+				 * stored in the output buffer as a result of
+				 * the conversion. */
+    Tcl_Size *dstCharsPtr,	/* Filled with the number of characters that
+				 * correspond to the bytes stored in the
+				 * output buffer. */
     Tcl_Size *errorLocPtr)	/* Where to store the error location
 				 * (or TCL_INDEX_NONE if no error). May
 				 * be NULL. */
@@ -1642,6 +1642,29 @@ Tcl_ExternalToUtfEx(
     }
     if (dstCharsPtr) {
 	*dstCharsPtr = dstTotalChars;
+    }
+
+    if (errorLocPtr) {
+	/* If errorLocPtr specified, interpreter result is not to be set */
+	*errorLocPtr = result == TCL_OK ? -1 : srcTotalRead;
+    } else {
+	/*
+	 * interp result is set for all results other than TCL_OK, even
+	 * those that are not really error conditions like
+	 * TCL_CONVERT_MULTIBYTE when there is more data coming
+	 * (indicated by TCL_ENCODING_END is not set).
+	 */
+	if (result != TCL_OK && interp != NULL) {
+	    char buf[TCL_INTEGER_SPACE];
+	    snprintf(buf, sizeof(buf), "%" TCL_SIZE_MODIFIER "d",
+		srcTotalRead);
+	    Tcl_SetObjResult(interp,
+		Tcl_ObjPrintf("unexpected byte sequence starting at index "
+			      "%" TCL_SIZE_MODIFIER "d: '\\x%02X'",
+		    srcTotalRead, UCHAR(srcStart[srcTotalRead])));
+	    Tcl_SetErrorCode(interp, "TCL", "ENCODING", "ILLEGALSEQUENCE", buf,
+		(char *)NULL);
+	}
     }
 
     return result;
@@ -1937,6 +1960,64 @@ Tcl_UtfToExternal(
     return result;
 }
 
+/*
+ *-------------------------------------------------------------------------
+ *
+ * Tcl_UtfToExternalEx --
+ *
+ *	Convert a source buffer from the Tcl internal UTF-8 encoding to
+ *	the specified encoding, using 64-bit counters for lengths.
+ *
+ * Results:
+ *	The return value is one of TCL_OK, TCL_CONVERT_MULTIBYTE,
+ *	TCL_CONVERT_SYNTAX, TCL_CONVERT_UNKNOWN, or TCL_CONVERT_NOSPACE, as
+ *	documented in tcl.h.
+ *
+ * Side effects:
+ *	The converted bytes are stored in the output buffer.
+ *
+ *-------------------------------------------------------------------------
+ */
+int
+Tcl_UtfToExternalEx(
+    Tcl_Interp *interp,		/* TODO: Re-examine this. */
+    Tcl_Encoding encoding,	/* The encoding for the source string, or NULL
+				 * for the default system encoding. */
+    const char *src,		/* Source string in specified encoding. */
+    Tcl_Size srcLen,		/* Source string length in bytes, or
+				 * TCL_INDEX_NONE for encoding-specific string
+				 * length. */
+    int flags,			/* Conversion control flags. */
+    Tcl_EncodingState *statePtr,/* Place for conversion routine to store state
+				 * information used during a piecewise
+				 * conversion. Contents of statePtr are
+				 * initialized and/or reset by conversion
+				 * routine under control of flags argument. */
+    char *dst,			/* Output buffer in which converted string is
+				 * stored. */
+    Tcl_Size dstLen,		/* The maximum length of output buffer in
+				 * bytes. */
+    Tcl_Size *srcReadPtr,	/* Filled with the number of bytes from the
+				 * source string that were converted. This may
+				 * be less than the original source length if
+				 * there was a problem converting some source
+				 * characters. */
+    Tcl_Size *dstWrotePtr,	/* Filled with the number of bytes that were
+				 * stored in the output buffer as a result of
+				 * the conversion. */
+    Tcl_Size *dstCharsPtr,	/* Filled with the number of characters that
+				 * correspond to the bytes stored in the
+				 * output buffer. */
+    Tcl_Size *errorLocPtr)	/* Where to store the error location
+				 * (or TCL_INDEX_NONE if no error). May
+				 * be NULL. */
+{
+    if (interp) {
+	Tcl_SetResult(interp, "not implemented", TCL_STATIC);
+    }
+    return TCL_ERROR;
+}
+
 /*
  *---------------------------------------------------------------------------
  *
