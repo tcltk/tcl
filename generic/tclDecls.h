@@ -545,7 +545,7 @@ EXTERN Tcl_Channel	Tcl_OpenFileChannel(Tcl_Interp *interp,
 /* 199 */
 EXTERN Tcl_Channel	Tcl_OpenTcpClient(Tcl_Interp *interp, int port,
 				const char *address, const char *myaddr,
-				int myport, int flags);
+				int myport, int async);
 /* 200 */
 EXTERN Tcl_Channel	Tcl_OpenTcpServer(Tcl_Interp *interp, int port,
 				const char *host,
@@ -2109,7 +2109,7 @@ typedef struct TclStubs {
     Tcl_Obj * (*tcl_ObjSetVar2) (Tcl_Interp *interp, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, Tcl_Obj *newValuePtr, int flags); /* 196 */
     Tcl_Channel (*tcl_OpenCommandChannel) (Tcl_Interp *interp, Tcl_Size argc, const char **argv, int flags); /* 197 */
     Tcl_Channel (*tcl_OpenFileChannel) (Tcl_Interp *interp, const char *fileName, const char *modeString, int permissions); /* 198 */
-    Tcl_Channel (*tcl_OpenTcpClient) (Tcl_Interp *interp, int port, const char *address, const char *myaddr, int myport, int flags); /* 199 */
+    Tcl_Channel (*tcl_OpenTcpClient) (Tcl_Interp *interp, int port, const char *address, const char *myaddr, int myport, int async); /* 199 */
     Tcl_Channel (*tcl_OpenTcpServer) (Tcl_Interp *interp, int port, const char *host, Tcl_TcpAcceptProc *acceptProc, void *callbackData); /* 200 */
     void (*tcl_Preserve) (void *data); /* 201 */
     void (*tcl_PrintDouble) (Tcl_Interp *interp, double value, char *dst); /* 202 */
@@ -4056,8 +4056,6 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_GetUnicode(objPtr) \
 	Tcl_GetUnicodeFromObj(objPtr, (Tcl_Size *)NULL)
 #undef Tcl_GetIndexFromObjStruct
-#undef Tcl_GetBooleanFromObj
-#undef Tcl_GetBoolean
 #if !defined(TCLBOOLWARNING)
 #if !defined(__cplusplus) && !defined(BUILD_tcl) && !defined(BUILD_tk) && defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 201112L)
 #	define TCLBOOLWARNING(boolPtr) (void)(sizeof(struct {_Static_assert(sizeof(*(boolPtr)) <= sizeof(int), "sizeof(boolPtr) too large");int dummy;})),

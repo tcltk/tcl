@@ -16,7 +16,6 @@
 #endif
 #include "tclInt.h"
 #include "tclOOInt.h"
-#include <assert.h>
 
 /*
  * Structure containing a CallChain and any other values needed only during

@@ -99,6 +99,58 @@ static Tcl_ObjCmdProc PathRootNameCmd;
 static Tcl_ObjCmdProc PathSplitCmd;
 static Tcl_ObjCmdProc PathTailCmd;
 static Tcl_ObjCmdProc PathTypeCmd;
+
+const EnsembleImplMap tclEncodingImplMap[] = {
+    {"convertfrom",	EncodingConvertfromObjCmd, TclCompileBasic1To3ArgCmd, NULL, NULL, 0},
+    {"convertto",	EncodingConverttoObjCmd,   TclCompileBasic1To3ArgCmd, NULL, NULL, 0},
+    {"dirs",		EncodingDirsObjCmd,        TclCompileBasic0Or1ArgCmd, NULL, NULL, 1},
+    {"names",		EncodingNamesObjCmd,       TclCompileBasic0ArgCmd,    NULL, NULL, 0},
+    {"profiles",	EncodingProfilesObjCmd,    TclCompileBasic0ArgCmd,    NULL, NULL, 0},
+    {"system",		EncodingSystemObjCmd,      TclCompileBasic0Or1ArgCmd, NULL, NULL, 1},
+    {"user",		EncodingUserObjCmd,        TclCompileBasic0ArgCmd,    NULL, NULL, 0},
+    {NULL, NULL, NULL, NULL, NULL, 0}
+};
+
+const EnsembleImplMap tclFileImplMap[] = {
+    {"atime",		FileAttrAccessTimeCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, 1},
+    {"attributes",	TclFileAttrsCmd,	NULL, NULL, NULL, 1},
+    {"channels",	TclChannelNamesCmd,	TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
+    {"copy",		TclFileCopyCmd,		NULL, NULL, NULL, 1},
+    {"delete",		TclFileDeleteCmd,	TclCompileBasicMin0ArgCmd, NULL, NULL, 1},
+    {"dirname",		PathDirNameCmd,		TclCompileBasic1ArgCmd, NULL, NULL, 1},
+    {"executable",	FileAttrIsExecutableCmd, TclCompileBasic1ArgCmd, NULL, NULL, 1},
+    {"exists",		FileAttrIsExistingCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 1},
+    {"extension",	PathExtensionCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 1},
+    {"home",		TclFileHomeCmd,		TclCompileBasic0Or1ArgCmd, NULL, NULL, 1},
+    {"isdirectory",	FileAttrIsDirectoryCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 1},
+    {"isfile",		FileAttrIsFileCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 1},
+    {"join",		PathJoinCmd,		TclCompileBasicMin1ArgCmd, NULL, NULL, 0},
+    {"link",		TclFileLinkCmd,		TclCompileBasic1To3ArgCmd, NULL, NULL, 1},
+    {"lstat",		FileAttrLinkStatCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 1},
+    {"mtime",		FileAttrModifyTimeCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, 1},
+    {"mkdir",		TclFileMakeDirsCmd,	TclCompileBasicMin0ArgCmd, NULL, NULL, 1},
+    {"nativename",	PathNativeNameCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 1},
+    {"normalize",	PathNormalizeCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 1},
+    {"owned",		FileAttrIsOwnedCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 1},
+    {"pathtype",	PathTypeCmd,		TclCompileBasic1ArgCmd, NULL, NULL, 0},
+    {"readable",	FileAttrIsReadableCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 1},
+    {"readlink",	TclFileReadLinkCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 1},
+    {"rename",		TclFileRenameCmd,	NULL, NULL, NULL, 1},
+    {"rootname",	PathRootNameCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 1},
+    {"separator",	FilesystemSeparatorCmd,	TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
+    {"size",		FileAttrSizeCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 1},
+    {"split",		PathSplitCmd,		TclCompileBasic1ArgCmd, NULL, NULL, 0},
+    {"stat",		FileAttrStatCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 1},
+    {"system",		PathFilesystemCmd,	TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
+    {"tail",		PathTailCmd,		TclCompileBasic1ArgCmd, NULL, NULL, 1},
+    {"tempdir",		TclFileTempDirCmd,	TclCompileBasic0Or1ArgCmd, NULL, NULL, 1},
+    {"tempfile",	TclFileTemporaryCmd,	TclCompileBasic0To2ArgCmd, NULL, NULL, 1},
+    {"tildeexpand",	TclFileTildeExpandCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 1},
+    {"type",		FileAttrTypeCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 1},
+    {"volumes",		FilesystemVolumesCmd,	TclCompileBasic0ArgCmd, NULL, NULL, 1},
+    {"writable",	FileAttrIsWritableCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 1},
+    {NULL, NULL, NULL, NULL, NULL, 0}
+};
 
 /*
  *----------------------------------------------------------------------
@@ -203,7 +255,7 @@ CatchObjCmdCallback(
     int result)
 {
     Interp *iPtr = (Interp *) interp;
-    int objc = PTR2INT(data[0]);
+    Tcl_Size objc = PTR2INT(data[0]);
     Tcl_Obj *varNamePtr = (Tcl_Obj *)data[1];
     Tcl_Obj *optionVarNamePtr = (Tcl_Obj *)data[2];
     bool rewind = iPtr->execEnvPtr->rewind;
@@ -367,40 +419,6 @@ Tcl_ContinueObjCmd(
 	return TCL_ERROR;
     }
     return TCL_CONTINUE;
-}
-
-/*
- *-----------------------------------------------------------------------------
- *
- * TclInitEncodingCmd --
- *
- *	This function creates the 'encoding' ensemble.
- *
- * Results:
- *	Returns the Tcl_Command so created.
- *
- * Side effects:
- *	The ensemble is initialized.
- *
- * This command is hidden in a safe interpreter.
- */
-
-Tcl_Command
-TclInitEncodingCmd(
-    Tcl_Interp* interp)		/* Tcl interpreter */
-{
-    static const EnsembleImplMap encodingImplMap[] = {
-	{"convertfrom", EncodingConvertfromObjCmd, TclCompileBasic1To3ArgCmd, NULL, NULL, false},
-	{"convertto",   EncodingConverttoObjCmd,   TclCompileBasic1To3ArgCmd, NULL, NULL, false},
-	{"dirs",        EncodingDirsObjCmd,        TclCompileBasic0Or1ArgCmd, NULL, NULL, true},
-	{"names",       EncodingNamesObjCmd,       TclCompileBasic0ArgCmd,    NULL, NULL, false},
-	{"profiles",    EncodingProfilesObjCmd,    TclCompileBasic0ArgCmd,    NULL, NULL, false},
-	{"system",      EncodingSystemObjCmd,      TclCompileBasic0Or1ArgCmd, NULL, NULL, true},
-	{"user",        EncodingUserObjCmd,        TclCompileBasic0ArgCmd,    NULL, NULL, true},
-	{NULL,          NULL,                      NULL,                      NULL, NULL, false}
-    };
-
-    return TclMakeEnsemble(interp, "encoding", encodingImplMap);
 }
 
 /*
@@ -1108,80 +1126,6 @@ ExprCallback(
     }
     Tcl_DecrRefCount(resultPtr);
     return result;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclInitFileCmd --
- *
- *	This function builds the "file" Tcl command ensemble. See the user
- *	documentation for details on what that ensemble does.
- *
- *	PLEASE NOTE THAT THIS FAILS WITH FILENAMES AND PATHS WITH EMBEDDED
- *	NULLS. With the object-based Tcl_FS APIs, the above NOTE may no longer
- *	be true. In any case this assertion should be tested.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	See the user documentation.
- *
- *----------------------------------------------------------------------
- */
-
-Tcl_Command
-TclInitFileCmd(
-    Tcl_Interp *interp)
-{
-    /*
-     * Note that most subcommands are unsafe because either they manipulate
-     * the native filesystem or because they reveal information about the
-     * native filesystem.
-     */
-
-    static const EnsembleImplMap initMap[] = {
-	{"atime",	FileAttrAccessTimeCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, true},
-	{"attributes",	TclFileAttrsCmd,	NULL, NULL, NULL, true},
-	{"channels",	TclChannelNamesCmd,	TclCompileBasic0Or1ArgCmd, NULL, NULL, false},
-	{"copy",	TclFileCopyCmd,		NULL, NULL, NULL, true},
-	{"delete",	TclFileDeleteCmd,	TclCompileBasicMin0ArgCmd, NULL, NULL, true},
-	{"dirname",	PathDirNameCmd,		TclCompileBasic1ArgCmd, NULL, NULL, true},
-	{"executable",	FileAttrIsExecutableCmd, TclCompileBasic1ArgCmd, NULL, NULL, true},
-	{"exists",	FileAttrIsExistingCmd,	TclCompileBasic1ArgCmd, NULL, NULL, true},
-	{"extension",	PathExtensionCmd,	TclCompileBasic1ArgCmd, NULL, NULL, true},
-	{"home",	TclFileHomeCmd,		TclCompileBasic0Or1ArgCmd, NULL, NULL, true},
-	{"isdirectory",	FileAttrIsDirectoryCmd,	TclCompileBasic1ArgCmd, NULL, NULL, true},
-	{"isfile",	FileAttrIsFileCmd,	TclCompileBasic1ArgCmd, NULL, NULL, true},
-	{"join",	PathJoinCmd,		TclCompileBasicMin1ArgCmd, NULL, NULL, false},
-	{"link",	TclFileLinkCmd,		TclCompileBasic1To3ArgCmd, NULL, NULL, true},
-	{"lstat",	FileAttrLinkStatCmd,	TclCompileBasic2ArgCmd, NULL, NULL, true},
-	{"mtime",	FileAttrModifyTimeCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, true},
-	{"mkdir",	TclFileMakeDirsCmd,	TclCompileBasicMin0ArgCmd, NULL, NULL, true},
-	{"nativename",	PathNativeNameCmd,	TclCompileBasic1ArgCmd, NULL, NULL, true},
-	{"normalize",	PathNormalizeCmd,	TclCompileBasic1ArgCmd, NULL, NULL, true},
-	{"owned",	FileAttrIsOwnedCmd,	TclCompileBasic1ArgCmd, NULL, NULL, true},
-	{"pathtype",	PathTypeCmd,		TclCompileBasic1ArgCmd, NULL, NULL, false},
-	{"readable",	FileAttrIsReadableCmd,	TclCompileBasic1ArgCmd, NULL, NULL, true},
-	{"readlink",	TclFileReadLinkCmd,	TclCompileBasic1ArgCmd, NULL, NULL, true},
-	{"rename",	TclFileRenameCmd,	NULL, NULL, NULL, true},
-	{"rootname",	PathRootNameCmd,	TclCompileBasic1ArgCmd, NULL, NULL, true},
-	{"separator",	FilesystemSeparatorCmd,	TclCompileBasic0Or1ArgCmd, NULL, NULL, false},
-	{"size",	FileAttrSizeCmd,	TclCompileBasic1ArgCmd, NULL, NULL, true},
-	{"split",	PathSplitCmd,		TclCompileBasic1ArgCmd, NULL, NULL, false},
-	{"stat",	FileAttrStatCmd,	TclCompileBasic2ArgCmd, NULL, NULL, true},
-	{"system",	PathFilesystemCmd,	TclCompileBasic0Or1ArgCmd, NULL, NULL, false},
-	{"tail",	PathTailCmd,		TclCompileBasic1ArgCmd, NULL, NULL, true},
-	{"tempdir",	TclFileTempDirCmd,	TclCompileBasic0Or1ArgCmd, NULL, NULL, true},
-	{"tempfile",	TclFileTemporaryCmd,	TclCompileBasic0To2ArgCmd, NULL, NULL, true},
-	{"tildeexpand",	TclFileTildeExpandCmd,	TclCompileBasic1ArgCmd, NULL, NULL, true},
-	{"type",	FileAttrTypeCmd,	TclCompileBasic1ArgCmd, NULL, NULL, true},
-	{"volumes",	FilesystemVolumesCmd,	TclCompileBasic0ArgCmd, NULL, NULL, true},
-	{"writable",	FileAttrIsWritableCmd,	TclCompileBasic1ArgCmd, NULL, NULL, true},
-	{NULL, NULL, NULL, NULL, NULL, false}
-    };
-    return TclMakeEnsemble(interp, "file", initMap);
 }
 
 /*

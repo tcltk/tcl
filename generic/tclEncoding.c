@@ -10,7 +10,6 @@
  */
 
 #include "tclInt.h"
-#include <assert.h>
 #include "../utf8proc/utf8proc.h" /* Relative path to ignore system include */
 
 typedef size_t (LengthProc)(const char *src);
@@ -1220,7 +1219,7 @@ Tcl_ExternalToUtfDStringEx(
 
     if (src == NULL) {
 	srcLen = 0;
-    } else if (srcLen == TCL_INDEX_NONE) {
+    } else if (srcLen < 0) {
 	srcLen = encodingPtr->lengthProc(src);
     }
 
@@ -1327,7 +1326,7 @@ Tcl_ExternalToUtf(
 				 * for the default system encoding. */
     const char *src,		/* Source string in specified encoding. */
     Tcl_Size srcLen,		/* Source string length in bytes, or
-				 * TCL_INDEX_NONE for encoding-specific string
+				 * negative for encoding-specific string
 				 * length. */
     int flags,			/* Conversion control flags. */
     Tcl_EncodingState *statePtr,/* Place for conversion routine to store state
@@ -1364,7 +1363,7 @@ Tcl_ExternalToUtf(
 
     if (src == NULL) {
 	srcLen = 0;
-    } else if (srcLen == TCL_INDEX_NONE) {
+    } else if (srcLen < 0) {
 	srcLen = encodingPtr->lengthProc(src);
     }
     if (statePtr == NULL) {
@@ -1534,7 +1533,7 @@ Tcl_UtfToExternalDStringEx(
 
     if (src == NULL) {
 	srcLen = 0;
-    } else if (srcLen == TCL_INDEX_NONE) {
+    } else if (srcLen < 0) {
 	srcLen = strlen(src);
     }
 
@@ -1645,7 +1644,7 @@ Tcl_UtfToExternal(
 				 * NULL for the default system encoding. */
     const char *src,		/* Source string in UTF-8. */
     Tcl_Size srcLen,		/* Source string length in bytes, or
-				 * TCL_INDEX_NONE for strlen(). */
+				 * < 0 for strlen(). */
     int flags,			/* Conversion control flags. */
     Tcl_EncodingState *statePtr,/* Place for conversion routine to store state
 				 * information used during a piecewise
@@ -1678,7 +1677,7 @@ Tcl_UtfToExternal(
 
     if (src == NULL) {
 	srcLen = 0;
-    } else if (srcLen == TCL_INDEX_NONE) {
+    } else if (srcLen < 0) {
 	srcLen = strlen(src);
     }
     if (statePtr == NULL) {
@@ -4605,23 +4604,23 @@ Utf8procErrorToTclError(
     switch (errcode) {
     case UTF8PROC_ERROR_NOMEM:
 	// Memory allocation failure can use the standard Tcl code.
-	Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+	TclSetErrorCode(interp, "TCL", "MEMORY");
 	break;
     case UTF8PROC_ERROR_OVERFLOW:
-	Tcl_SetErrorCode(interp, "TCL", "UNICODE", "OVERFLOW", NULL);
+	TclSetErrorCode(interp, "TCL", "UNICODE", "OVERFLOW");
 	break;
     case UTF8PROC_ERROR_INVALIDUTF8:
-	Tcl_SetErrorCode(interp, "TCL", "UNICODE", "INVALIDUTF8", NULL);
+	TclSetErrorCode(interp, "TCL", "UNICODE", "INVALIDUTF8");
 	break;
     case UTF8PROC_ERROR_NOTASSIGNED:
-	Tcl_SetErrorCode(interp, "TCL", "UNICODE", "NOTASSIGNED", NULL);
+	TclSetErrorCode(interp, "TCL", "UNICODE", "NOTASSIGNED");
 	break;
     case UTF8PROC_ERROR_INVALIDOPTS:
-	Tcl_SetErrorCode(interp, "TCL", "UNICODE", "INVALIDOPTS", NULL);
+	TclSetErrorCode(interp, "TCL", "UNICODE", "INVALIDOPTS");
 	break;
     default:
 	// Shouldn't happen...
-	Tcl_SetErrorCode(interp, "TCL", "UNICODE", "UNKNOWN", NULL);
+	TclSetErrorCode(interp, "TCL", "UNICODE", "UNKNOWN");
 	break;
     }
 }
@@ -4654,11 +4653,10 @@ TclUtfNormalize(
     if (profile != TCL_ENCODING_PROFILE_REPLACE &&
 	    profile != TCL_ENCODING_PROFILE_STRICT) {
 	if (interp) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    TclPrintfResult(interp,
 		    "Invalid value %d passed for encoding profile.",
-		    profile));
-	    Tcl_SetErrorCode(
-		    interp, "TCL", "ENCODING", "PROFILEID", (char *)NULL);
+		    profile);
+	    TclSetErrorCode(interp, "TCL", "ENCODING", "PROFILEID");
 	}
 	return -1;
     }
@@ -4679,11 +4677,10 @@ TclUtfNormalize(
 	break;
     default:
 	if (interp) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    TclPrintfResult(interp,
 		    "Invalid value %d passed for normalization form.",
-		    normForm));
-	    Tcl_SetErrorCode(
-		    interp, "TCL", "ENCODING", "NORMFORM", (char *)NULL);
+		    normForm);
+	    TclSetErrorCode(interp, "TCL", "ENCODING", "NORMFORM");
 	}
 	return -1;
     }
@@ -4830,8 +4827,7 @@ Tcl_UtfToNormalized(
 	}
     }
     if (from < fromEnd) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"Output buffer too small.", -1));
+	TclPrintfResult(interp, "Output buffer too small.");
 	result = TCL_CONVERT_NOSPACE;
     } else {
 	assert(to <= toEnd);

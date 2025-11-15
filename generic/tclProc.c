@@ -15,7 +15,6 @@
 
 #include "tclInt.h"
 #include "tclCompile.h"
-#include <assert.h>
 
 /*
  * Variables that are part of the [apply] command implementation and which
@@ -2945,11 +2944,10 @@ DuplicateProc(
     }
     Tcl_Free(newProc);
     // Complain about the failure to allocate.
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+    TclPrintfResult(interp,
 	    "procedure \"%s\": arg list contains too many (%"
-	    TCL_SIZE_MODIFIER "d) entries", cmdName, origProc->numArgs));
-    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
-	    TOOMANYARGS, (char *)NULL);
+	    TCL_SIZE_MODIFIER "d) entries", cmdName, origProc->numArgs);
+    TclSetErrorCode(interp, "TCL", "OPERATION", "PROC", TOOMANYARGS);
     return TCL_ERROR;
 }
 

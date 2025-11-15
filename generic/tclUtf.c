@@ -370,7 +370,7 @@ Tcl_Char16ToUtfDString(
     const unsigned short *w, *wEnd;
     char *p, *string;
     Tcl_Size oldLength;
-    int len = 1;
+    Tcl_Size len = 1;
 
     /*
      * UTF-8 string length in bytes will be <= Utf16 string length * 3.
@@ -576,7 +576,7 @@ Tcl_UtfToChar16(
 	     * Two-byte-character lead-byte followed by a trail-byte.
 	     */
 
-	    *chPtr = (((byte & 0x1F) << 6) | (src[1] & 0x3F));
+	    *chPtr = (unsigned short)(((byte & 0x1F) << 6) | (src[1] & 0x3F));
 	    if ((unsigned)(*chPtr - 1) >= (UNICODE_SELF - 1)) {
 		return 2;
 	    }
@@ -592,7 +592,7 @@ Tcl_UtfToChar16(
 	     * Three-byte-character lead byte followed by two trail bytes.
 	     */
 
-	    *chPtr = (((byte & 0x0F) << 12)
+	    *chPtr = (unsigned short)(((byte & 0x0F) << 12)
 		    | ((src[1] & 0x3F) << 6) | (src[2] & 0x3F));
 	    if (*chPtr > 0x7FF) {
 		return 3;
@@ -937,7 +937,8 @@ Tcl_UtfFindFirst(
     int ch)			/* The Unicode character to search for. */
 {
     while (true) {
-	int find, len = TclUtfToUniChar(src, &find);
+	int find;
+	Tcl_Size len = TclUtfToUniChar(src, &find);
 
 	if (find == ch) {
 	    return src;
@@ -976,7 +977,8 @@ Tcl_UtfFindLast(
     const char *last = NULL;
 
     while (true) {
-	int find, len = TclUtfToUniChar(src, &find);
+	int find;
+	Tcl_Size len = TclUtfToUniChar(src, &find);
 
 	if (find == ch) {
 	    last = src;
@@ -1196,8 +1198,7 @@ Tcl_UniCharAtIndex(
 	return -1;
     }
     while (index--) {
-	i = TclUtfToUniChar(src, &ch);
-	src += i;
+	src += TclUtfToUniChar(src, &ch);
     }
     TclUtfToUniChar(src, &i);
     return i;
@@ -1290,7 +1291,7 @@ Tcl_UtfBackslash(
 {
 #define LINE_LENGTH 128
     Tcl_Size numRead;
-    int result;
+    Tcl_Size result;
 
     result = TclParseBackslash(src, LINE_LENGTH, &numRead, dst);
     if (numRead == LINE_LENGTH) {
@@ -1301,7 +1302,7 @@ Tcl_UtfBackslash(
 	result = TclParseBackslash(src, strlen(src), &numRead, dst);
     }
     if (readPtr != NULL) {
-	*readPtr = numRead;
+	*readPtr = (int)numRead;
     }
     return result;
 }

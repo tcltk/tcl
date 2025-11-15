@@ -12,7 +12,6 @@
  */
 
 #include "tclWinInt.h"
-#include <assert.h>
 
 /* Workaround for mingw versions which don't provide this in float.h */
 #ifndef _MCW_EM

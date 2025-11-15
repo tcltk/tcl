@@ -24,7 +24,6 @@
 #include "tclOOInt.h"
 #include "tclTomMath.h"
 #include <math.h>
-#include <assert.h>
 
 #if defined(__GNUC__) && (__GNUC__ > 4) && defined(_WIN32) && defined(TCL_COMPILE_DEBUG)
 // These are FAR too noisy when we're using the MSVC runtime.
@@ -446,20 +445,23 @@ VarHashFindVar(
 		CURR_DEPTH,						\
 		PC_REL,							\
 		GetOpcodeName(pc));					\
-	fprintf(stderr, __VA_ARGS__);					\
+	fprintf(stdout, __VA_ARGS__);					\
 	break;								\
     }
 #   define TRACE_APPEND(...) \
     while (traceInstructions) {						\
-	fprintf(stderr, __VA_ARGS__);					\
+	fprintf(stdout, __VA_ARGS__);					\
 	break;								\
     }
 #else // !TCL_COMPILE_DEBUG
 #   define TRACE(...)
 #   define TRACE_APPEND(...)
 #endif // TCL_COMPILE_DEBUG
+
 #define O2S(objPtr) \
     (objPtr ? TclGetString(objPtr) : "")
+#define TY2S(typePtr) \
+    (typePtr ? typePtr->name : "null")
 #define TRACE_APPEND_OBJ(objPtr) \
     TRACE_APPEND("\"%.30s\"\n", O2S(objPtr))
 #define TRACE_APPEND_NUM_OBJ(objPtr) \
@@ -2083,6 +2085,16 @@ TclNRExecuteByteCode(
     return TCL_OK;
 }
 
+static inline Var *
+FollowLinks(
+    Var *varPtr)
+{
+    while (TclIsVarLink(varPtr)) {
+	varPtr = varPtr->value.linkPtr;
+    }
+    return varPtr;
+}
+
 static int
 TEBCresume(
     void *data[],
@@ -2131,6 +2143,7 @@ TEBCresume(
 
 #define LOCAL(i)	(&compiledLocals[(i)])
 #define TCONST(i)	(constants[(i)])
+#define LOCALVAR(i)	FollowLinks(LOCAL(i))
 
     /*
      * These macros are just meant to save some global variables that are not
@@ -2499,7 +2512,8 @@ TEBCresume(
 	TRACE("%.30s => ", O2S(OBJ_AT_TOS));
 	if (!corPtr) {
 	    TRACE_APPEND("ERROR: yield outside coroutine\n");
-	    TclPrintfResult(interp, "yield can only be called in a coroutine");
+	    TclPrintfResult(interp,
+		    "yield can only be called in a coroutine");
 	    DECACHE_STACK_INFO();
 	    TclSetErrorCode(interp, "TCL", "COROUTINE", "ILLEGAL_YIELD");
 	    CACHE_STACK_INFO();
@@ -2527,7 +2541,8 @@ TEBCresume(
 	TRACE("[%.30s] => ", O2S(valuePtr));
 	if (!corPtr) {
 	    TRACE_APPEND("ERROR: yield outside coroutine\n");
-	    TclPrintfResult(interp, "yieldto can only be called in a coroutine");
+	    TclPrintfResult(interp,
+		    "yieldto can only be called in a coroutine");
 	    DECACHE_STACK_INFO();
 	    TclSetErrorCode(interp, "TCL", "COROUTINE", "ILLEGAL_YIELD");
 	    CACHE_STACK_INFO();
@@ -2668,7 +2683,7 @@ TEBCresume(
     case INST_TAILCALL_LIST:
 	TRACE("%s", "");
 	if (!(iPtr->varFramePtr->isProcCallFrame & 1)) {
-	    TRACE_APPEND("ERROR: tailcall in non-proc context\n");
+	    TRACE_APPEND(" => ERROR: tailcall in non-proc context\n");
 	    TclPrintfResult(interp,
 		    "tailcall can only be called from a proc or lambda");
 	    DECACHE_STACK_INFO();
@@ -3143,10 +3158,7 @@ TEBCresume(
 	DEPRECATED_OPCODE_MARK(INST_LOAD_SCALAR1);
 	varIdx = TclGetUInt1AtPtr(pc + 1);
 	TRACE("%u => ", (unsigned) varIdx);
-	varPtr = LOCAL(varIdx);
-	while (TclIsVarLink(varPtr)) {
-	    varPtr = varPtr->value.linkPtr;
-	}
+	varPtr = LOCALVAR(varIdx);
 	if (TclIsVarDirectReadable(varPtr)) {
 	    /*
 	     * No errors, no traces: just get the value.
@@ -3167,10 +3179,7 @@ TEBCresume(
     instLoadScalar:
 	varIdx = TclGetUInt4AtPtr(pc + 1);
 	TRACE("%u => ", (unsigned) varIdx);
-	varPtr = LOCAL(varIdx);
-	while (TclIsVarLink(varPtr)) {
-	    varPtr = varPtr->value.linkPtr;
-	}
+	varPtr = LOCALVAR(varIdx);
 	if (TclIsVarDirectReadable(varPtr)) {
 	    /*
 	     * No errors, no traces: just get the value.
@@ -3201,11 +3210,8 @@ TEBCresume(
 #endif
 	part1Ptr = NULL;
 	part2Ptr = OBJ_AT_TOS;
-	arrayPtr = LOCAL(varIdx);
-	while (TclIsVarLink(arrayPtr)) {
-	    arrayPtr = arrayPtr->value.linkPtr;
-	}
 	TRACE("%u \"%.30s\" => ", (unsigned) varIdx, O2S(part2Ptr));
+	arrayPtr = LOCALVAR(varIdx);
 	if (TclIsVarArray(arrayPtr) && !ReadTraced(arrayPtr)) {
 	    varPtr = VarHashFindVar(arrayPtr->value.tablePtr, part2Ptr);
 	    if (varPtr && TclIsVarDirectReadable(varPtr)) {
@@ -3314,12 +3320,9 @@ TEBCresume(
 #endif
 	valuePtr = OBJ_AT_TOS;
 	part2Ptr = OBJ_UNDER_TOS;
-	arrayPtr = LOCAL(varIdx);
 	TRACE("%u \"%.30s\" <- \"%.30s\" => ", (unsigned) varIdx, O2S(part2Ptr),
 		O2S(valuePtr));
-	while (TclIsVarLink(arrayPtr)) {
-	    arrayPtr = arrayPtr->value.linkPtr;
-	}
+	arrayPtr = LOCALVAR(varIdx);
 	if (TclIsVarArray(arrayPtr) && !WriteTraced(arrayPtr)) {
 	    varPtr = VarHashFindVar(arrayPtr->value.tablePtr, part2Ptr);
 	    if (varPtr && TclIsVarDirectWritable(varPtr)) {
@@ -3350,11 +3353,8 @@ TEBCresume(
     doStoreScalarDirect:
 #endif
 	valuePtr = OBJ_AT_TOS;
-	varPtr = LOCAL(varIdx);
 	TRACE("%u <- \"%.30s\" => ", (unsigned) varIdx, O2S(valuePtr));
-	while (TclIsVarLink(varPtr)) {
-	    varPtr = varPtr->value.linkPtr;
-	}
+	varPtr = LOCALVAR(varIdx);
 	if (!TclIsVarDirectWritable(varPtr)) {
 	    storeFlags = TCL_LEAVE_ERR_MSG;
 	    part1Ptr = NULL;
@@ -3483,12 +3483,9 @@ TEBCresume(
     doStoreArray:
 	valuePtr = OBJ_AT_TOS;
 	part2Ptr = OBJ_UNDER_TOS;
-	arrayPtr = LOCAL(varIdx);
 	TRACE("%u \"%.30s\" <- \"%.30s\" => ", (unsigned) varIdx, O2S(part2Ptr),
 		O2S(valuePtr));
-	while (TclIsVarLink(arrayPtr)) {
-	    arrayPtr = arrayPtr->value.linkPtr;
-	}
+	arrayPtr = LOCALVAR(varIdx);
 	cleanup = 2;
 	part1Ptr = NULL;
 
@@ -3535,11 +3532,8 @@ TEBCresume(
 
     doStoreScalar:
 	valuePtr = OBJ_AT_TOS;
-	varPtr = LOCAL(varIdx);
 	TRACE("%u <- \"%.30s\" => ", (unsigned) varIdx, O2S(valuePtr));
-	while (TclIsVarLink(varPtr)) {
-	    varPtr = varPtr->value.linkPtr;
-	}
+	varPtr = LOCALVAR(varIdx);
 	cleanup = 1;
 	arrayPtr = NULL;
 	part1Ptr = part2Ptr = NULL;
@@ -3564,13 +3558,10 @@ TEBCresume(
     case INST_LAPPEND_LIST:
 	varIdx = TclGetUInt4AtPtr(pc + 1);
 	valuePtr = OBJ_AT_TOS;
-	varPtr = LOCAL(varIdx);
+	TRACE("%u <- \"%.30s\" => ", (unsigned) varIdx, O2S(valuePtr));
+	varPtr = LOCALVAR(varIdx);
 	cleanup = 1;
 	pcAdjustment = 5;
-	while (TclIsVarLink(varPtr)) {
-	    varPtr = varPtr->value.linkPtr;
-	}
-	TRACE("%u <- \"%.30s\" => ", (unsigned) varIdx, O2S(valuePtr));
 	if (TclListObjGetElements(interp, valuePtr, &objc, &objv)
 		!= TCL_OK) {
 	    TRACE_ERROR(interp);
@@ -3589,14 +3580,11 @@ TEBCresume(
 	valuePtr = OBJ_AT_TOS;
 	part1Ptr = NULL;
 	part2Ptr = OBJ_UNDER_TOS;
-	arrayPtr = LOCAL(varIdx);
-	cleanup = 2;
-	pcAdjustment = 5;
-	while (TclIsVarLink(arrayPtr)) {
-	    arrayPtr = arrayPtr->value.linkPtr;
-	}
 	TRACE("%u \"%.30s\" \"%.30s\" => ",
 		(unsigned) varIdx, O2S(part2Ptr), O2S(valuePtr));
+	arrayPtr = LOCALVAR(varIdx);
+	cleanup = 2;
+	pcAdjustment = 5;
 	if (TclListObjGetElements(interp, valuePtr, &objc, &objv)
 		!= TCL_OK) {
 	    TRACE_ERROR(interp);
@@ -3850,13 +3838,10 @@ TEBCresume(
     doIncrArray:
 	part1Ptr = NULL;
 	part2Ptr = OBJ_AT_TOS;
-	arrayPtr = LOCAL(varIdx);
-	cleanup = 1;
-	while (TclIsVarLink(arrayPtr)) {
-	    arrayPtr = arrayPtr->value.linkPtr;
-	}
 	TRACE("%u \"%.30s\" (by %ld) => ", (unsigned) varIdx, O2S(part2Ptr),
 		increment);
+	arrayPtr = LOCALVAR(varIdx);
+	cleanup = 1;
 	varPtr = TclLookupArrayElement(interp, part1Ptr, part2Ptr,
 		TCL_LEAVE_ERR_MSG, "read", true, true, arrayPtr, varIdx);
 	if (!varPtr) {
@@ -3882,14 +3867,12 @@ TEBCresume(
     doIncrScalarImm:
 #endif
 	cleanup = 0;
-	varPtr = LOCAL(varIdx);
-	while (TclIsVarLink(varPtr)) {
-	    varPtr = varPtr->value.linkPtr;
-	}
+	varPtr = LOCALVAR(varIdx);
 
 	if (TclIsVarDirectModifyable(varPtr)) {
 	    void *ptr;
 	    int type;
+	    TRACE("%u %ld => ", (unsigned)varIdx, increment);
 
 	    objPtr = varPtr->value.objPtr;
 	    if (GetNumberFromObj(NULL, objPtr, &ptr, &type) == TCL_OK) {
@@ -3962,14 +3945,11 @@ TEBCresume(
 	Tcl_IncrRefCount(incrPtr);
 
     doIncrScalar:
-	varPtr = LOCAL(varIdx);
-	while (TclIsVarLink(varPtr)) {
-	    varPtr = varPtr->value.linkPtr;
-	}
+	TRACE("%u %s => ", (unsigned)varIdx, TclGetString(incrPtr));
+	varPtr = LOCALVAR(varIdx);
 	arrayPtr = NULL;
 	part1Ptr = part2Ptr = NULL;
 	cleanup = 0;
-	TRACE("%u %s => ", (unsigned)varIdx, TclGetString(incrPtr));
 
     doIncrVar:
 	if (TclIsVarDirectModifyable2(varPtr, arrayPtr)) {
@@ -4019,11 +3999,8 @@ TEBCresume(
 	cleanup = 0;
 	pcAdjustment = 5;
 	varIdx = TclGetUInt4AtPtr(pc + 1);
-	varPtr = LOCAL(varIdx);
-	while (TclIsVarLink(varPtr)) {
-	    varPtr = varPtr->value.linkPtr;
-	}
 	TRACE("%u => ", (unsigned) varIdx);
+	varPtr = LOCALVAR(varIdx);
 	if (ReadTraced(varPtr)) {
 	    DECACHE_STACK_INFO();
 	    TclObjCallVarTraces(iPtr, NULL, varPtr, NULL, NULL,
@@ -4041,11 +4018,8 @@ TEBCresume(
 	pcAdjustment = 5;
 	varIdx = TclGetUInt4AtPtr(pc + 1);
 	part2Ptr = OBJ_AT_TOS;
-	arrayPtr = LOCAL(varIdx);
-	while (TclIsVarLink(arrayPtr)) {
-	    arrayPtr = arrayPtr->value.linkPtr;
-	}
 	TRACE("%u \"%.30s\" => ", (unsigned)varIdx, O2S(part2Ptr));
+	arrayPtr = LOCALVAR(varIdx);
 	if (TclIsVarArray(arrayPtr) && !ReadTraced(arrayPtr)) {
 	    varPtr = VarHashFindVar(arrayPtr->value.tablePtr, part2Ptr);
 	    if (!varPtr || !ReadTraced(varPtr)) {
@@ -4122,11 +4096,8 @@ TEBCresume(
     case INST_UNSET_SCALAR:
 	flags = TclGetUInt1AtPtr(pc + 1) ? TCL_LEAVE_ERR_MSG : 0;
 	varIdx = TclGetUInt4AtPtr(pc + 2);
-	varPtr = LOCAL(varIdx);
-	while (TclIsVarLink(varPtr)) {
-	    varPtr = varPtr->value.linkPtr;
-	}
 	TRACE("%s %u => ", (flags ? "normal" : "noerr"), (unsigned)varIdx);
+	varPtr = LOCALVAR(varIdx);
 	if (TclIsVarDirectUnsettable(varPtr) && !TclIsVarInHash(varPtr)) {
 	    /*
 	     * No errors, no traces, no searches: just make the variable cease
@@ -4156,12 +4127,9 @@ TEBCresume(
 	flags = TclGetUInt1AtPtr(pc + 1) ? TCL_LEAVE_ERR_MSG : 0;
 	varIdx = TclGetUInt4AtPtr(pc + 2);
 	part2Ptr = OBJ_AT_TOS;
-	arrayPtr = LOCAL(varIdx);
-	while (TclIsVarLink(arrayPtr)) {
-	    arrayPtr = arrayPtr->value.linkPtr;
-	}
 	TRACE("%s %u \"%.30s\" => ",
 		(flags ? "normal" : "noerr"), (unsigned)varIdx, O2S(part2Ptr));
+	arrayPtr = LOCALVAR(varIdx);
 	if (TclIsVarArray(arrayPtr) && !UnsetTraced(arrayPtr)
 		&& !(arrayPtr->flags & VAR_SEARCH_ACTIVE)) {
 	    varPtr = VarHashFindVar(arrayPtr->value.tablePtr, part2Ptr);
@@ -4203,6 +4171,7 @@ TEBCresume(
 	    goto errorInUnset;
 	}
 	CACHE_STACK_INFO();
+	TRACE_APPEND("OK\n");
 	NEXT_INST_F0(6, 1);
 
     case INST_UNSET_ARRAY_STK:
@@ -4253,11 +4222,8 @@ TEBCresume(
 	part1Ptr = NULL;
 	objPtr = OBJ_AT_TOS;
 	TRACE("%u \"%.30s\" => ", (unsigned) varIdx, O2S(objPtr));
-	varPtr = LOCAL(varIdx);
+	varPtr = LOCALVAR(varIdx);
 	arrayPtr = NULL;
-	while (TclIsVarLink(varPtr)) {
-	    varPtr = varPtr->value.linkPtr;
-	}
 	goto doConst;
     case INST_CONST_STK:
 	varIdx = -1;
@@ -4297,7 +4263,7 @@ TEBCresume(
 	    }
 	}
 	TclSetVarConstant(varPtr);
-	TRACE_APPEND("\n");
+	TRACE_APPEND("OK\n");
 	NEXT_INST_V(pcAdjustment, cleanup, 0);
 
     constError:
@@ -4322,10 +4288,7 @@ TEBCresume(
 	part1Ptr = NULL;
 	arrayPtr = NULL;
 	TRACE("%u => ", (unsigned)varIdx);
-	varPtr = LOCAL(varIdx);
-	while (TclIsVarLink(varPtr)) {
-	    varPtr = varPtr->value.linkPtr;
-	}
+	varPtr = LOCALVAR(varIdx);
 	goto doArrayExists;
     case INST_ARRAY_EXISTS_STK:
 	varIdx = -1;
@@ -4358,10 +4321,7 @@ TEBCresume(
 	part1Ptr = NULL;
 	arrayPtr = NULL;
 	TRACE("%u => ", (unsigned)varIdx);
-	varPtr = LOCAL(varIdx);
-	while (TclIsVarLink(varPtr)) {
-	    varPtr = varPtr->value.linkPtr;
-	}
+	varPtr = LOCALVAR(varIdx);
 	goto doArrayMake;
     case INST_ARRAY_MAKE_STK:
 	varIdx = -1;
@@ -4542,7 +4502,8 @@ TEBCresume(
 
     case INST_JUMP:
 	pcAdjustment = TclGetInt4AtPtr(pc + 1);
-	TRACE("%d => new pc %" SIZEd "\n", pcAdjustment, PC_REL + pcAdjustment);
+	TRACE("%d => new pc %" SIZEd "\n", pcAdjustment,
+		PC_REL + pcAdjustment);
 	NEXT_INST_F0(pcAdjustment, 0);
 
     {
@@ -4674,18 +4635,19 @@ TEBCresume(
 	objResultPtr = TclNewNamespaceObj(TclGetCurrentNamespace(interp));
 	TRACE_APPEND_OBJ(objResultPtr);
 	NEXT_INST_F(1, 0, 1);
-    case INST_COROUTINE_NAME: {
-	CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
-
+    case INST_COROUTINE_NAME:
+	TRACE("=> ");
 	TRACE("=> ");
 	TclNewObj(objResultPtr);
-	if (corPtr && !(corPtr->cmdPtr->flags & CMD_DYING)) {
-	    Tcl_GetCommandFullName(interp, (Tcl_Command) corPtr->cmdPtr,
-		    objResultPtr);
+	{
+	    CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
+	    if (corPtr && !(corPtr->cmdPtr->flags & CMD_DYING)) {
+		Tcl_GetCommandFullName(interp, (Tcl_Command) corPtr->cmdPtr,
+			objResultPtr);
+	    }
 	}
 	TRACE_APPEND_OBJ(objResultPtr);
 	NEXT_INST_F(1, 0, 1);
-    }
     case INST_INFO_LEVEL_NUM:
 	TRACE("=> ");
 	TclNewIntObj(objResultPtr, (int)iPtr->varFramePtr->level);
@@ -4748,7 +4710,7 @@ TEBCresume(
 
 	TclNewObj(objResultPtr);
 	Tcl_GetCommandFullName(interp, origCmd, objResultPtr);
-	if (TclCheckEmptyString(objResultPtr) == TCL_EMPTYSTRING_YES ) {
+	if (TclCheckEmptyString(objResultPtr) == TCL_EMPTYSTRING_YES) {
 	    Tcl_DecrRefCount(objResultPtr);
 	instOriginError:
 	    TclPrintfResult(interp, "invalid command name \"%s\"",
@@ -4970,7 +4932,8 @@ TEBCresume(
 	CACHE_STACK_INFO();
 	goto gotError;
     tclooNoTargetClass:
-	TRACE_APPEND("ERROR: \"%.30s\" not on reachable chain\n", O2S(valuePtr));
+	TRACE_APPEND("ERROR: \"%.30s\" not on reachable chain\n",
+		O2S(valuePtr));
 	// Decide what error message to issue
 	for (Tcl_Size i = contextPtr->index ; i >= 0 ; i--) {
 	    MInvoke *miPtr = contextPtr->callPtr->chain + i;
@@ -5063,7 +5026,7 @@ TEBCresume(
 	    goto gotError;
 	}
 	TclNewIntObj(objResultPtr, length);
-	TRACE_APPEND("%" SIZEd "\n", length);
+	TRACE_APPEND_NUM_OBJ(objResultPtr);
 	NEXT_INST_F(1, 1, 1);
 
     case INST_LIST_INDEX:	/* lindex with objc == 3 */
@@ -5148,47 +5111,49 @@ TEBCresume(
 	 */
 
 	valuePtr = OBJ_AT_TOS;
-	int encIndex = TclGetInt4AtPtr(pc + 1);
-	TRACE("\"%.30s\" %d => ", O2S(valuePtr), encIndex);
+	{
+	    int encIndex = TclGetInt4AtPtr(pc + 1);
+	    TRACE("\"%.30s\" %d => ", O2S(valuePtr), encIndex);
 
-	/*
-	 * Get the contents of the list, making sure that it really is a list
-	 * in the process.
-	 */
+	    /*
+	     * Get the contents of the list, making sure that it really is a list
+	     * in the process.
+	     */
 
-	/* special case for AbstractList */
-	if (TclObjTypeHasProc(valuePtr, indexProc)) {
-	    length = TclObjTypeLength(valuePtr);
+	    /* special case for AbstractList */
+	    if (TclObjTypeHasProc(valuePtr, indexProc)) {
+		length = TclObjTypeLength(valuePtr);
 
-	    /* Decode end-offset index values. */
-	    index = TclIndexDecode(encIndex, length - 1);
+		/* Decode end-offset index values. */
+		index = TclIndexDecode(encIndex, length - 1);
 
-	    if (index >= 0 && index < length) {
-		/* Compute value @ index */
-		DECACHE_STACK_INFO();
-		int code = TclObjTypeIndex(interp, valuePtr, index, &objResultPtr);
-		CACHE_STACK_INFO();
-		if (code != TCL_OK) {
-		    TRACE_ERROR(interp);
-		    goto gotError;
+		if (index >= 0 && index < length) {
+		    /* Compute value @ index */
+		    DECACHE_STACK_INFO();
+		    int code = TclObjTypeIndex(interp, valuePtr, index, &objResultPtr);
+		    CACHE_STACK_INFO();
+		    if (code != TCL_OK) {
+			TRACE_ERROR(interp);
+			goto gotError;
+		    }
+		} else {
+		    TclNewObj(objResultPtr);
 		}
-	    } else {
-		TclNewObj(objResultPtr);
+
+		pcAdjustment = 5;
+		goto lindexFastPath2;
 	    }
 
-	    pcAdjustment = 5;
-	    goto lindexFastPath2;
+	    /* List case */
+	    if (TclListObjGetElements(interp, valuePtr, &objc, &objv) != TCL_OK) {
+		TRACE_ERROR(interp);
+		goto gotError;
+	    }
+
+	    /* Decode end-offset index values. */
+
+	    index = TclIndexDecode(encIndex, objc - 1);
 	}
-
-	/* List case */
-	if (TclListObjGetElements(interp, valuePtr, &objc, &objv) != TCL_OK) {
-	    TRACE_ERROR(interp);
-	    goto gotError;
-	}
-
-	/* Decode end-offset index values. */
-
-	index = TclIndexDecode(encIndex, objc - 1);
 	pcAdjustment = 5;
 
     lindexFastPath:
@@ -5396,9 +5361,9 @@ TEBCresume(
     case INST_LIST_NOT_IN:	/* Basic list containment operators. */
 	value2Ptr = OBJ_AT_TOS;
 	valuePtr = OBJ_UNDER_TOS;
+	TRACE("\"%.30s\" \"%.30s\" => ", O2S(valuePtr), O2S(value2Ptr));
 
 	s1 = TclGetStringFromObj(valuePtr, &s1len);
-	TRACE("\"%.30s\" \"%.30s\" => ", O2S(valuePtr), O2S(value2Ptr));
 
 	if (TclObjTypeHasProc(value2Ptr, inOperProc) != NULL) {
 	    int status = TclObjTypeInOperator(interp, valuePtr, value2Ptr, &match);
@@ -5503,6 +5468,9 @@ TEBCresume(
 	int endIndicator = (flags & TCL_LREPLACE_END_IS_LAST) != 0;
 	Tcl_Obj *fromIdxObj = OBJ_AT_DEPTH(numArgs - 2);
 	Tcl_Obj *toIdxObj = haveSecondIndex ? OBJ_AT_DEPTH(numArgs - 3) : NULL;
+	TRACE("\"%.30s\" %.30s %.30s ...[%u] => ",
+		O2S(valuePtr), O2S(fromIdxObj), O2S(toIdxObj),
+		(unsigned)numNewElems);
 	if (Tcl_ListObjLength(interp, valuePtr, &length) != TCL_OK) {
 	    TRACE_ERROR(interp);
 	    goto gotError;
@@ -5577,10 +5545,11 @@ TEBCresume(
 	Tcl_Obj *step =  (mask & TCL_ARITHSERIES_STEP)  ? OBJ_AT_DEPTH(1) : NULL;
 	Tcl_Obj *to =    (mask & TCL_ARITHSERIES_TO)    ? OBJ_AT_DEPTH(2) : NULL;
 	Tcl_Obj *from =  (mask & TCL_ARITHSERIES_FROM)  ? OBJ_AT_DEPTH(3) : NULL;
-	TRACE("0x%x \"%s\" \"%s\" \"%s\" \"%s\" => ",
+	TRACE("0x%x \"%.30s\" \"%.30s\" \"%.30s\" \"%.30s\" => ",
 		mask, O2S(from), O2S(to), O2S(step), O2S(count));
 	DECACHE_STACK_INFO();
 	// Decode arguments and construct the series.
+	// Note that arguments may be expressions and reenter TEBC.
 	objResultPtr = GenerateArithSeries(interp, from, to, step, count);
 	CACHE_STACK_INFO();
 	if (objResultPtr == NULL) {
@@ -5608,7 +5577,7 @@ TEBCresume(
 	valuePtr = OBJ_UNDER_TOS;
 	TRACE("\"%.20s\" \"%.20s\" => ", O2S(valuePtr), O2S(value2Ptr));
 
-    stringCompare:;
+    stringCompare:;		// Semicolon *required* by Clang
 	{
 	    bool checkEq = ((*pc == INST_EQ) || (*pc == INST_NEQ)
 		    || (*pc == INST_STR_EQ) || (*pc == INST_STR_NEQ));
@@ -6194,8 +6163,7 @@ TEBCresume(
 
 	if ((GetNumberFromObj(NULL, valuePtr, &ptr1, &type1) != TCL_OK)
 		|| (type1==TCL_NUMBER_DOUBLE) || (type1==TCL_NUMBER_NAN)) {
-	    TRACE_APPEND("ILLEGAL 1st TYPE %s\n", (valuePtr->typePtr?
-		    valuePtr->typePtr->name : "null"));
+	    TRACE_APPEND("ILLEGAL 1st TYPE %s\n", TY2S(valuePtr->typePtr));
 	    DECACHE_STACK_INFO();
 	    IllegalExprOperandType(interp, "left ", pc, valuePtr);
 	    CACHE_STACK_INFO();
@@ -6204,8 +6172,7 @@ TEBCresume(
 
 	if ((GetNumberFromObj(NULL, value2Ptr, &ptr2, &type2) != TCL_OK)
 		|| (type2==TCL_NUMBER_DOUBLE) || (type2==TCL_NUMBER_NAN)) {
-	    TRACE_APPEND("ILLEGAL 2nd TYPE %s\n", (value2Ptr->typePtr?
-		    value2Ptr->typePtr->name : "null"));
+	    TRACE_APPEND("ILLEGAL 2nd TYPE %s\n", TY2S(value2Ptr->typePtr));
 	    DECACHE_STACK_INFO();
 	    IllegalExprOperandType(interp, "right ", pc, value2Ptr);
 	    CACHE_STACK_INFO();
@@ -6268,6 +6235,7 @@ TEBCresume(
 			    "domain error: argument not in valid range");
 		    CACHE_STACK_INFO();
 #endif /* ERROR_CODE_FOR_EARLY_DETECTED_ARITH_ERROR */
+		    TRACE_ERROR(interp);
 		    goto gotError;
 		} else if (w1 == 0) {
 		    objResultPtr = TCONST(0);
@@ -6312,6 +6280,7 @@ TEBCresume(
 			    "domain error: argument not in valid range");
 		    CACHE_STACK_INFO();
 #endif /* ERROR_CODE_FOR_EARLY_DETECTED_ARITH_ERROR */
+		    TRACE_ERROR(interp);
 		    goto gotError;
 		} else if (w1 == 0) {
 		    objResultPtr = TCONST(0);
@@ -6332,6 +6301,7 @@ TEBCresume(
 			    "integer value too large to represent");
 		    CACHE_STACK_INFO();
 #endif /* ERROR_CODE_FOR_EARLY_DETECTED_ARITH_ERROR */
+		    TRACE_ERROR(interp);
 		    goto gotError;
 		} else {
 		    int shift = (int) w2;
@@ -6399,8 +6369,7 @@ TEBCresume(
 
 	if ((GetNumberFromObj(NULL, valuePtr, &ptr1, &type1) != TCL_OK)
 		|| IsErroringNaNType(type1)) {
-	    TRACE_APPEND("ILLEGAL 1st TYPE %s\n",
-		    (valuePtr->typePtr? valuePtr->typePtr->name: "null"));
+	    TRACE_APPEND("ILLEGAL 1st TYPE %s\n", TY2S(valuePtr->typePtr));
 	    DECACHE_STACK_INFO();
 	    IllegalExprOperandType(interp, "left ", pc, valuePtr);
 	    CACHE_STACK_INFO();
@@ -6413,14 +6382,14 @@ TEBCresume(
 	     * NaN first argument -> result is also NaN.
 	     */
 
+	    TRACE_APPEND("NaN\n");
 	    NEXT_INST_F0(1, 1);
 	}
 #endif
 
 	if ((GetNumberFromObj(NULL, value2Ptr, &ptr2, &type2) != TCL_OK)
 		|| IsErroringNaNType(type2)) {
-	    TRACE_APPEND("ILLEGAL 2nd TYPE %s\n",
-		    (value2Ptr->typePtr? value2Ptr->typePtr->name: "null"));
+	    TRACE_APPEND("ILLEGAL 2nd TYPE %s\n", TY2S(value2Ptr->typePtr));
 	    DECACHE_STACK_INFO();
 	    IllegalExprOperandType(interp, "right ", pc, value2Ptr);
 	    CACHE_STACK_INFO();
@@ -6434,6 +6403,7 @@ TEBCresume(
 	     */
 
 	    objResultPtr = value2Ptr;
+	    TRACE_APPEND("NaN\n");
 	    NEXT_INST_F(1, 2, 1);
 	}
 #endif
@@ -6551,14 +6521,13 @@ TEBCresume(
 
     case INST_LNOT: {
 	valuePtr = OBJ_AT_TOS;
-	TRACE("%s => ", O2S(valuePtr));
+	TRACE("\"%.20s\" => ", O2S(valuePtr));
 
 	/* TODO - check claim that taking address of b harms performance */
 	/* TODO - consider optimization search for constants */
 	int b;
 	if (TclGetBooleanFromObj(NULL, valuePtr, &b) != TCL_OK) {
-	    TRACE_APPEND("ERROR: illegal type %s\n",
-		    (valuePtr->typePtr? valuePtr->typePtr->name : "null"));
+	    TRACE_APPEND("ERROR: illegal type %s\n", TY2S(valuePtr->typePtr));
 	    DECACHE_STACK_INFO();
 	    IllegalExprOperandType(interp, "", pc, valuePtr);
 	    CACHE_STACK_INFO();
@@ -6579,8 +6548,7 @@ TEBCresume(
 	     * ... ~$NonInteger => raise an error.
 	     */
 
-	    TRACE_APPEND("ERROR: illegal type %s\n",
-		    (valuePtr->typePtr? valuePtr->typePtr->name : "null"));
+	    TRACE_APPEND("ERROR: illegal type %s\n", TY2S(valuePtr->typePtr));
 	    DECACHE_STACK_INFO();
 	    IllegalExprOperandType(interp, "", pc, valuePtr);
 	    CACHE_STACK_INFO();
@@ -6611,8 +6579,7 @@ TEBCresume(
 	TRACE("\"%.20s\" => ", O2S(valuePtr));
 	if ((GetNumberFromObj(NULL, valuePtr, &ptr1, &type1) != TCL_OK)
 		|| IsErroringNaNType(type1)) {
-	    TRACE_APPEND("ERROR: illegal type %s\n",
-		    (valuePtr->typePtr? valuePtr->typePtr->name : "null"));
+	    TRACE_APPEND("ERROR: illegal type %s\n", TY2S(valuePtr->typePtr));
 	    DECACHE_STACK_INFO();
 	    IllegalExprOperandType(interp, "", pc, valuePtr);
 	    CACHE_STACK_INFO();
@@ -6666,7 +6633,7 @@ TEBCresume(
 		 */
 
 		TRACE_APPEND("ERROR: illegal type %s\n",
-			(valuePtr->typePtr? valuePtr->typePtr->name:"null"));
+			TY2S(valuePtr->typePtr));
 		DECACHE_STACK_INFO();
 		IllegalExprOperandType(interp, "", pc, valuePtr);
 		CACHE_STACK_INFO();
@@ -6684,7 +6651,7 @@ TEBCresume(
 		 */
 
 		TRACE_APPEND("ERROR: illegal type %s\n",
-			(valuePtr->typePtr ? valuePtr->typePtr->name : "null"));
+			TY2S(valuePtr->typePtr));
 		DECACHE_STACK_INFO();
 		IllegalExprOperandType(interp, "", pc, valuePtr);
 		CACHE_STACK_INFO();
@@ -6742,7 +6709,7 @@ TEBCresume(
     case INST_TRY_CVT_TO_BOOLEAN:
 	valuePtr = OBJ_AT_TOS;
 	TRACE("\"%.30s\" => ", O2S(valuePtr));
-	if (TclHasInternalRep(valuePtr,  &tclBooleanType)) {
+	if (TclHasInternalRep(valuePtr, &tclBooleanType)) {
 	    objResultPtr = TCONST(1);
 	} else {
 	    int res = (TclSetBooleanFromAny(NULL, valuePtr) == TCL_OK);
@@ -6926,10 +6893,7 @@ TEBCresume(
 		    }
 
 		    varIndex = varListPtr->varIndexes[j];
-		    varPtr = LOCAL(varIndex);
-		    while (TclIsVarLink(varPtr)) {
-			varPtr = varPtr->value.linkPtr;
-		    }
+		    varPtr = LOCALVAR(varIndex);
 		    if (TclIsVarDirectWritable(varPtr)) {
 			value2Ptr = varPtr->value.objPtr;
 			if (valuePtr != value2Ptr) {
@@ -6988,7 +6952,7 @@ TEBCresume(
 	tmpPtr = OBJ_AT_DEPTH(1);
 	infoPtr = (ForeachInfo *)tmpPtr->internalRep.twoPtrValue.ptr1;
 	numLists = infoPtr->numLists;
-	TRACE_APPEND("=> appending to list at depth %" SIZEd "\n", 3 + numLists);
+	TRACE("=> appending to list at depth %" SIZEd "\n", 3 + numLists);
 
 	objPtr = OBJ_AT_DEPTH(3 + numLists);
 	Tcl_ListObjAppendElement(NULL, objPtr, OBJ_AT_TOS);
@@ -7112,7 +7076,7 @@ TEBCresume(
 
     {
 	bool allocateDict;
-	int done;
+	Tcl_Size i;
 	Tcl_Obj *dictPtr, *statePtr, *keyPtr, *listPtr, *varNamePtr, *keysPtr;
 	Tcl_Obj *emptyPtr, **keyPtrPtr;
 	Tcl_DictSearch *searchPtr;
@@ -7271,11 +7235,8 @@ TEBCresume(
 	numArgs = TclGetUInt4AtPtr(pc + 1);
 	varIdx = TclGetUInt4AtPtr(pc + 5);
 
-	varPtr = LOCAL(varIdx);
-	while (TclIsVarLink(varPtr)) {
-	    varPtr = varPtr->value.linkPtr;
-	}
 	TRACE("%u %u => ", (unsigned)numArgs, (unsigned)varIdx);
+	varPtr = LOCALVAR(varIdx);
 	if (TclIsVarDirectReadable(varPtr)) {
 	    dictPtr = varPtr->value.objPtr;
 	} else {
@@ -7374,11 +7335,8 @@ TEBCresume(
     case INST_DICT_APPEND:
     case INST_DICT_LAPPEND:
 	varIdx = TclGetUInt4AtPtr(pc + 1);
-	varPtr = LOCAL(varIdx);
-	while (TclIsVarLink(varPtr)) {
-	    varPtr = varPtr->value.linkPtr;
-	}
 	TRACE("%u => ", (unsigned)varIdx);
+	varPtr = LOCALVAR(varIdx);
 	if (TclIsVarDirectReadable(varPtr)) {
 	    dictPtr = varPtr->value.objPtr;
 	} else {
@@ -7508,6 +7466,7 @@ TEBCresume(
 	TRACE("%u => ", (unsigned) varIdx);
 	dictPtr = POP_OBJECT();
 	searchPtr = (Tcl_DictSearch *)Tcl_Alloc(sizeof(Tcl_DictSearch));
+	int done;
 	if (Tcl_DictObjFirst(interp, dictPtr, searchPtr, &keyPtr,
 		&valuePtr, &done) != TCL_OK) {
 	    /*
@@ -7528,6 +7487,7 @@ TEBCresume(
 	    ir.twoPtrValue.ptr2 = dictPtr;
 	    Tcl_StoreInternalRep(statePtr, &dictIteratorType, &ir);
 	}
+	// Special var; never linked
 	varPtr = LOCAL(varIdx);
 	if (varPtr->value.objPtr) {
 	    if (TclHasInternalRep(varPtr->value.objPtr, &dictIteratorType)) {
@@ -7543,6 +7503,7 @@ TEBCresume(
     case INST_DICT_NEXT:
 	varIdx = TclGetUInt4AtPtr(pc + 1);
 	TRACE("%u => ", (unsigned)varIdx);
+	// Special var; never linked
 	statePtr = (*LOCAL(varIdx)).value.objPtr;
 	{
 	    const Tcl_ObjInternalRep *irPtr;
@@ -7581,11 +7542,8 @@ TEBCresume(
 	varIdx = TclGetUInt4AtPtr(pc + 1);
 	tblIdx = TclGetUInt4AtPtr(pc + 5);
 	TRACE("%u %u => ", (unsigned)varIdx, tblIdx);
-	varPtr = LOCAL(varIdx);
+	varPtr = LOCALVAR(varIdx);
 	duiPtr = (DictUpdateInfo *)codePtr->auxDataArrayPtr[tblIdx].clientData;
-	while (TclIsVarLink(varPtr)) {
-	    varPtr = varPtr->value.linkPtr;
-	}
 	if (TclIsVarDirectReadable(varPtr)) {
 	    dictPtr = varPtr->value.objPtr;
 	} else {
@@ -7615,10 +7573,7 @@ TEBCresume(
 		Tcl_DecrRefCount(dictPtr);
 		goto gotError;
 	    }
-	    varPtr = LOCAL(duiPtr->varIndices[i]);
-	    while (TclIsVarLink(varPtr)) {
-		varPtr = varPtr->value.linkPtr;
-	    }
+	    varPtr = LOCALVAR(duiPtr->varIndices[i]);
 	    DECACHE_STACK_INFO();
 	    if (valuePtr == NULL) {
 		TclObjUnsetVar2(interp,
@@ -7642,11 +7597,8 @@ TEBCresume(
 	varIdx = TclGetUInt4AtPtr(pc + 1);
 	tblIdx = TclGetUInt4AtPtr(pc + 5);
 	TRACE("%u %u => ", (unsigned)varIdx, tblIdx);
-	varPtr = LOCAL(varIdx);
+	varPtr = LOCALVAR(varIdx);
 	duiPtr = (DictUpdateInfo *)codePtr->auxDataArrayPtr[tblIdx].clientData;
-	while (TclIsVarLink(varPtr)) {
-	    varPtr = varPtr->value.linkPtr;
-	}
 	if (TclIsVarDirectReadable(varPtr)) {
 	    dictPtr = varPtr->value.objPtr;
 	} else {
@@ -7673,11 +7625,7 @@ TEBCresume(
 	    TclInvalidateStringRep(dictPtr);
 	}
 	for (Tcl_Size i=0 ; i<length ; i++) {
-	    Var *var2Ptr = LOCAL(duiPtr->varIndices[i]);
-
-	    while (TclIsVarLink(var2Ptr)) {
-		var2Ptr = var2Ptr->value.linkPtr;
-	    }
+	    Var *var2Ptr = LOCALVAR(duiPtr->varIndices[i]);
 	    if (TclIsVarDirectReadable(var2Ptr)) {
 		valuePtr = var2Ptr->value.objPtr;
 	    } else {
@@ -7765,15 +7713,12 @@ TEBCresume(
 	varIdx = TclGetUInt4AtPtr(pc + 1);
 	listPtr = OBJ_UNDER_TOS;
 	keysPtr = OBJ_AT_TOS;
-	varPtr = LOCAL(varIdx);
 	TRACE("%u <- \"%.30s\" \"%.30s\" => ", (unsigned)varIdx, O2S(valuePtr),
 		O2S(keysPtr));
+	varPtr = LOCALVAR(varIdx);
 	if (TclListObjGetElements(interp, listPtr, &objc, &objv) != TCL_OK) {
 	    TRACE_ERROR(interp);
 	    goto gotError;
-	}
-	while (TclIsVarLink(varPtr)) {
-	    varPtr = varPtr->value.linkPtr;
 	}
 	DECACHE_STACK_INFO();
 	result = TclDictWithFinish(interp, varPtr, NULL, NULL, NULL, varIdx,
@@ -7822,7 +7767,7 @@ TEBCresume(
 	    TCL_UNREACHABLE();
 	}
 	TclNewIntObj(objResultPtr, wval);
-	TRACE_APPEND_OBJ(objResultPtr);
+	TRACE_APPEND_NUM_OBJ(objResultPtr);
 	NEXT_INST_F(2, 0, 1);
     }
 
@@ -9194,7 +9139,7 @@ TclCompareTwoNumbers(
 	    w2 = (Tcl_WideInt)d2;
 	    goto wideCompare;
 	case TCL_NUMBER_BIG:
-	    Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
+	    Tcl_GetBignumFromObj(NULL, value2Ptr, &big2);
 	    if (mp_isneg(&big2)) {
 		compare = MP_GT;
 	    } else {
@@ -9232,7 +9177,7 @@ TclCompareTwoNumbers(
 	    if (isinf(d1)) {
 		return (d1 > 0.0) ? MP_GT : MP_LT;
 	    }
-	    Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
+	    Tcl_GetBignumFromObj(NULL, value2Ptr, &big2);
 	    if ((d1 < (double)WIDE_MAX) && (d1 > (double)WIDE_MIN)) {
 		if (mp_isneg(&big2)) {
 		    compare = MP_GT;
@@ -9255,7 +9200,7 @@ TclCompareTwoNumbers(
 	}
 
     case TCL_NUMBER_BIG:
-	Tcl_TakeBignumFromObj(NULL, valuePtr, &big1);
+	Tcl_GetBignumFromObj(NULL, valuePtr, &big1);
 	switch (type2) {
 	case TCL_NUMBER_INT:
 	    compare = mp_cmp_d(&big1, 0);
@@ -9282,7 +9227,7 @@ TclCompareTwoNumbers(
 	    Tcl_InitBignumFromDouble(NULL, d2, &big2);
 	    goto bigCompare;
 	case TCL_NUMBER_BIG:
-	    Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
+	    Tcl_GetBignumFromObj(NULL, value2Ptr, &big2);
 	bigCompare:
 	    compare = mp_cmp(&big1, &big2);
 	    mp_clear(&big1);

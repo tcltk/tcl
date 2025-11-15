@@ -22,6 +22,9 @@
 #pragma clang diagnostic ignored "-Wc++-keyword"
 #endif
 
+/* The namespace containing the [clock] internals. */
+#define TCL_CLOCK_NS	"::tcl::clock"
+
 /*
  * Table of the days in each month, leap and common years
  */
@@ -113,12 +116,11 @@ static int		ClockValidDate(DateInfo *,
 static struct tm *	ThreadSafeLocalTime(const time_t *);
 static size_t		TzsetIfNecessary(void);
 static void		ClockDeleteCmdProc(void *);
-static Tcl_ObjCmdProc	ClockSafeCatchCmd;
 static void		ClockFinalize(void *);
+
 /*
  * Structure containing description of "native" clock commands to create.
  */
-
 struct ClockCommand {
     const char *name;		/* The tail of the command name. The full name
 				 * is "::tcl::clock::<name>". When NULL marks
@@ -127,27 +129,46 @@ struct ClockCommand {
 				 * will always have the ClockClientData sent
 				 * to it, but may well ignore this data. */
     CompileProc *compileProc;	/* The compiler for the command. */
-    void *clientData;		/* Any clientData to give the command (if NULL
-				 * a reference to ClockClientData will be sent) */
+    int useClientData;		/* Whether to use the shared ClockClientData
+				 * with this command. */
 };
 
+/*
+ * Table of command created by this file, excluding the compiled parts of the
+ * [clock] ensemble, as those are defined below (and never need access to the
+ * ClockClientData).
+ */
 static const struct ClockCommand clockCommands[] = {
-    {"add",		ClockAddObjCmd,		TclCompileBasicMin1ArgCmd, NULL},
-    {"clicks",		ClockClicksObjCmd,	TclCompileClockClicksCmd,  NULL},
-    {"format",		ClockFormatObjCmd,	TclCompileBasicMin1ArgCmd, NULL},
-    {"getenv",		ClockGetenvObjCmd,	TclCompileBasicMin1ArgCmd, NULL},
-    {"microseconds",	ClockMicrosecondsObjCmd,TclCompileClockReadingCmd, INT2PTR(CLOCK_READ_MICROS)},
-    {"milliseconds",	ClockMillisecondsObjCmd,TclCompileClockReadingCmd, INT2PTR(CLOCK_READ_MILLIS)},
-    {"scan",		ClockScanObjCmd,	TclCompileBasicMin1ArgCmd, NULL},
-    {"seconds",		ClockSecondsObjCmd,	TclCompileClockReadingCmd, INT2PTR(CLOCK_READ_SECS)},
-    {"ConvertLocalToUTC", ClockConvertlocaltoutcObjCmd,		NULL, NULL},
-    {"GetDateFields",	  ClockGetdatefieldsObjCmd,		NULL, NULL},
+    {"add",		ClockAddObjCmd,		TclCompileBasicMin1ArgCmd, 1},
+    {"format",		ClockFormatObjCmd,	TclCompileBasicMin1ArgCmd, 1},
+    {"getenv",		ClockGetenvObjCmd,	NULL, 1},
+    {"scan",		ClockScanObjCmd,	TclCompileBasicMin1ArgCmd, 1},
+    {"ConvertLocalToUTC", ClockConvertlocaltoutcObjCmd, NULL, 1},
+    {"GetDateFields",	ClockGetdatefieldsObjCmd, NULL, 1},
     {"GetJulianDayFromEraYearMonthDay",
-		ClockGetjuliandayfromerayearmonthdayObjCmd,	NULL, NULL},
+			ClockGetjuliandayfromerayearmonthdayObjCmd, NULL, 1},
     {"GetJulianDayFromEraYearWeekDay",
-		ClockGetjuliandayfromerayearweekdayObjCmd,	NULL, NULL},
-    {"catch",		ClockSafeCatchCmd,	TclCompileBasicMin1ArgCmd, NULL},
-    {NULL, NULL, NULL, NULL}
+			ClockGetjuliandayfromerayearweekdayObjCmd, NULL, 1},
+    {"catch",		TclSafeCatchCmd,	NULL, 0},
+    {NULL, NULL, NULL, 0}
+};
+
+/*
+ * Definition of the [clock] ensemble.
+ *
+ * [clock add], [clock format] and [clock scan] have special clientData, so
+ * we just tell the ensemble that they'll be there instead of maxing them at
+ * this point.
+ */
+const EnsembleImplMap tclClockImplMap[] = {
+    {"add",		NULL,			NULL, NULL, NULL, 1},
+    {"clicks",		ClockClicksObjCmd,	TclCompileClockClicksCmd, NULL, NULL, 0},
+    {"format",		NULL,			NULL, NULL, NULL, 1},
+    {"microseconds",	ClockMicrosecondsObjCmd,TclCompileClockReadingCmd, NULL, INT2PTR(CLOCK_READ_MICROS), 0},
+    {"milliseconds",	ClockMillisecondsObjCmd,TclCompileClockReadingCmd, NULL, INT2PTR(CLOCK_READ_MILLIS), 0},
+    {"scan",		NULL,			NULL, NULL, NULL, 1},
+    {"seconds",		ClockSecondsObjCmd,	TclCompileClockReadingCmd, NULL, INT2PTR(CLOCK_READ_SECS), 0},
+    {NULL, NULL, NULL, NULL, NULL, 0}
 };
 
 /*
@@ -172,14 +193,8 @@ void
 TclClockInit(
     Tcl_Interp *interp)		/* Tcl interpreter */
 {
-    const struct ClockCommand *clockCmdPtr;
-    char cmdName[50];		/* Buffer large enough to hold the string
-				 *::tcl::clock::GetJulianDayFromEraYearMonthDay
-				 * plus a terminating NUL. */
-    Command *cmdPtr;
-    ClockClientData *data;
-
     static bool initialized = false;	/* global clock engine initialized (in process) */
+
     /*
      * Register handler to finalize clock on exit.
      */
@@ -201,7 +216,7 @@ TclClockInit(
      * Create the client data, which is a refcounted literal pool.
      */
 
-    data = (ClockClientData *)Tcl_Alloc(sizeof(ClockClientData));
+    ClockClientData *data = (ClockClientData *)Tcl_Alloc(sizeof(ClockClientData));
     data->refCount = 0;
     data->literals = (Tcl_Obj **)Tcl_Alloc(LIT__END * sizeof(Tcl_Obj*));
     for (int i = 0; i < LIT__END; ++i) {
@@ -253,27 +268,22 @@ TclClockInit(
      * Install the commands.
      */
 
-#define TCL_CLOCK_PREFIX_LEN 14 /* == strlen("::tcl::clock::") */
-    memcpy(cmdName, "::tcl::clock::", TCL_CLOCK_PREFIX_LEN);
+    Tcl_Namespace *nsPtr = Tcl_FindNamespace(interp, TCL_CLOCK_NS, NULL, 0);
+    const struct ClockCommand *clockCmdPtr;
     for (clockCmdPtr=clockCommands ; clockCmdPtr->name!=NULL ; clockCmdPtr++) {
-	void *clientData;
-
-	strcpy(cmdName + TCL_CLOCK_PREFIX_LEN, clockCmdPtr->name);
-	if (!(clientData = clockCmdPtr->clientData)) {
+	void *clientData = NULL;
+	if (clockCmdPtr->useClientData) {
 	    clientData = data;
 	    data->refCount++;
 	}
-	cmdPtr = (Command *)Tcl_CreateObjCommand(interp, cmdName,
-		clockCmdPtr->objCmdProc, clientData,
-		clockCmdPtr->clientData ? NULL : ClockDeleteCmdProc);
-	cmdPtr->compileProc = clockCmdPtr->compileProc ?
-		clockCmdPtr->compileProc : TclCompileBasicMin0ArgCmd;
+	Command *cmdPtr = (Command *)TclCreateObjCommandInNs(interp,
+		clockCmdPtr->name, nsPtr, clockCmdPtr->objCmdProc, clientData,
+		clientData ? ClockDeleteCmdProc : NULL);
+	cmdPtr->compileProc = clockCmdPtr->compileProc;
     }
-    cmdPtr = (Command *) Tcl_CreateObjCommand(interp,
-	    "::tcl::unsupported::clock::configure",
+    Tcl_CreateObjCommand(interp, "::tcl::unsupported::clock::configure",
 	    ClockConfigureObjCmd, data, ClockDeleteCmdProc);
     data->refCount++;
-    cmdPtr->compileProc = TclCompileBasicMin0ArgCmd;
 }
 
 /*
@@ -953,16 +963,16 @@ ClockConfigureObjCmd(
 {
     ClockClientData *dataPtr = (ClockClientData *)clientData;
     static const char *const options[] = {
-	"-default-locale",	"-clear",	  "-current-locale",
-	"-year-century",  "-century-switch",
-	"-min-year", "-max-year", "-max-jdn", "-validate",
-	"-init-complete",	  "-setup-tz", "-system-tz", NULL
+	"-default-locale",	"-clear",	"-current-locale",
+	"-year-century",	"-century-switch",
+	"-min-year",		"-max-year",	"-max-jdn",
+	"-validate",		"-setup-tz",	"-system-tz", NULL
     };
     enum optionInd {
 	CLOCK_DEFAULT_LOCALE, CLOCK_CLEAR_CACHE, CLOCK_CURRENT_LOCALE,
 	CLOCK_YEAR_CENTURY, CLOCK_CENTURY_SWITCH,
 	CLOCK_MIN_YEAR, CLOCK_MAX_YEAR, CLOCK_MAX_JDN, CLOCK_VALIDATE,
-	CLOCK_INIT_COMPLETE,  CLOCK_SETUP_TZ, CLOCK_SYSTEM_TZ
+	CLOCK_SETUP_TZ, CLOCK_SYSTEM_TZ
     };
 
     for (int i = 1; i < objc; i++) {
@@ -1133,26 +1143,6 @@ ClockConfigureObjCmd(
 	case CLOCK_CLEAR_CACHE:
 	    ClockConfigureClear(dataPtr);
 	    break;
-	case CLOCK_INIT_COMPLETE: {
-	    /*
-	     * Init completed.
-	     * Compile clock ensemble (performance purposes).
-	     */
-	    Tcl_Command token = Tcl_FindCommand(interp, "::clock",
-		    NULL, TCL_GLOBAL_ONLY);
-	    if (!token) {
-		return TCL_ERROR;
-	    }
-	    int ensFlags = 0;
-	    if (Tcl_GetEnsembleFlags(interp, token, &ensFlags) != TCL_OK) {
-		return TCL_ERROR;
-	    }
-	    ensFlags |= ENSEMBLE_COMPILE;
-	    if (Tcl_SetEnsembleFlags(interp, token, ensFlags) != TCL_OK) {
-		return TCL_ERROR;
-	    }
-	    break;
-	}
 	default:
 	    TCL_UNREACHABLE();
 	}
@@ -1412,7 +1402,6 @@ ClockConvertlocaltoutcObjCmd(
     int changeover;
     TclDateFields fields;
     bool created = false;
-    int status;
 
     fields.tzName = NULL;
     /*
@@ -1448,15 +1437,15 @@ ClockConvertlocaltoutcObjCmd(
 	created = true;
 	Tcl_IncrRefCount(dict);
     }
-    status = Tcl_DictObjPut(interp, dict, dataPtr->literals[LIT_SECONDS],
+    int result = Tcl_DictObjPut(interp, dict, dataPtr->literals[LIT_SECONDS],
 	    Tcl_NewWideIntObj(fields.seconds));
-    if (status == TCL_OK) {
+    if (result == TCL_OK) {
 	Tcl_SetObjResult(interp, dict);
     }
     if (created) {
 	Tcl_DecrRefCount(dict);
     }
-    return status;
+    return result;
 }
 
 /*
@@ -1732,15 +1721,15 @@ ClockGetjuliandayfromerayearmonthdayObjCmd(
 	Tcl_IncrRefCount(dict);
 	copied = true;
     }
-    int status = Tcl_DictObjPut(interp, dict, lit[LIT_JULIANDAY],
+    int result = Tcl_DictObjPut(interp, dict, lit[LIT_JULIANDAY],
 	    Tcl_NewWideIntObj(fields.julianDay));
-    if (status == TCL_OK) {
+    if (result == TCL_OK) {
 	Tcl_SetObjResult(interp, dict);
     }
     if (copied) {
 	Tcl_DecrRefCount(dict);
     }
-    return status;
+    return result;
 }
 
 /*
@@ -1775,7 +1764,7 @@ ClockGetjuliandayfromerayearweekdayObjCmd(
     Tcl_Obj *dict;
     ClockClientData *data = (ClockClientData *)clientData;
     Tcl_Obj *const *lit = data->literals;
-    int changeover, status;
+    int changeover;
     bool copied = false, isBce = false;
 
     fields.tzName = NULL;
@@ -1816,15 +1805,15 @@ ClockGetjuliandayfromerayearweekdayObjCmd(
 	Tcl_IncrRefCount(dict);
 	copied = true;
     }
-    status = Tcl_DictObjPut(interp, dict, lit[LIT_JULIANDAY],
+    int result = Tcl_DictObjPut(interp, dict, lit[LIT_JULIANDAY],
 	    Tcl_NewWideIntObj(fields.julianDay));
-    if (status == TCL_OK) {
+    if (result == TCL_OK) {
 	Tcl_SetObjResult(interp, dict);
     }
     if (copied) {
 	Tcl_DecrRefCount(dict);
     }
-    return status;
+    return result;
 }
 
 /*
@@ -4586,75 +4575,6 @@ ClockSecondsObjCmd(
 
     Tcl_SetObjResult(interp, timeObj);
     return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * ClockSafeCatchCmd --
- *
- *	Same as "::catch" command but avoids overwriting of interp state.
- *
- *	See [554117edde] for more info (and proper solution).
- *
- *----------------------------------------------------------------------
- */
-int
-ClockSafeCatchCmd(
-    TCL_UNUSED(void *),
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
-{
-    typedef struct {
-	int status;		/* return code status */
-	int flags;		/* Each remaining field saves the */
-	int returnLevel;	/* corresponding field of the Interp */
-	int returnCode;		/* struct. These fields taken together are */
-	Tcl_Obj *errorInfo;	/* the "state" of the interp. */
-	Tcl_Obj *errorCode;
-	Tcl_Obj *returnOpts;
-	Tcl_Obj *objResult;
-	Tcl_Obj *errorStack;
-	bool resetErrorStack;
-    } InterpState;
-
-    Interp *iPtr = (Interp *)interp;
-    int flags = 0;
-
-    if (objc == 1) {
-	/* wrong # args : */
-	return Tcl_CatchObjCmd(NULL, interp, objc, objv);
-    }
-
-    InterpState *statePtr = (InterpState *)Tcl_SaveInterpState(interp, 0);
-    if (!statePtr->errorInfo) {
-	/* todo: avoid traced get of errorInfo here */
-	TclInitObjRef(statePtr->errorInfo,
-		Tcl_ObjGetVar2(interp, iPtr->eiVar, NULL, 0));
-	flags |= ERR_LEGACY_COPY;
-    }
-    if (!statePtr->errorCode) {
-	/* todo: avoid traced get of errorCode here */
-	TclInitObjRef(statePtr->errorCode,
-		Tcl_ObjGetVar2(interp, iPtr->ecVar, NULL, 0));
-	flags |= ERR_LEGACY_COPY;
-    }
-
-    /* original catch */
-    int ret = Tcl_CatchObjCmd(NULL, interp, objc, objv);
-
-    if (ret == TCL_ERROR) {
-	Tcl_DiscardInterpState((Tcl_InterpState)statePtr);
-	return TCL_ERROR;
-    }
-    /* overwrite result in state with catch result */
-    TclSetObjRef(statePtr->objResult, Tcl_GetObjResult(interp));
-    /* set result (together with restore state) to interpreter */
-    (void) Tcl_RestoreInterpState(interp, (Tcl_InterpState)statePtr);
-    /* todo: unless ERR_LEGACY_COPY not set in restore (branch [bug-554117edde] not merged yet) */
-    iPtr->flags |= (flags & ERR_LEGACY_COPY);
-    return ret;
 }
 
 /*

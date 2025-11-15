@@ -761,7 +761,7 @@ Block2Ptr(
     size_t reqSize)
 {
     blockPtr->magicNum1 = blockPtr->magicNum2 = MAGIC;
-    blockPtr->sourceBucket = bucket;
+    blockPtr->sourceBucket = (unsigned char)bucket;
     blockPtr->blockReqSize = reqSize;
     void *ptr = ((void *) (blockPtr + 1));
 #if RCHECK

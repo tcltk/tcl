@@ -12,7 +12,6 @@
  */
 
 #include "tclInt.h"
-#include <assert.h>
 
 #if TCL_THREADS
 
