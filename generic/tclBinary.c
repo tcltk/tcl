@@ -15,7 +15,6 @@
 #include "tclTomMath.h"
 
 #include <math.h>
-#include <assert.h>
 
 /*
  * The following constants are used by GetFormatSpec to indicate various
@@ -128,20 +127,20 @@ static const char B64Digits[65] = {
  * How to construct the ensembles.
  */
 
-static const EnsembleImplMap binaryMap[] = {
+const EnsembleImplMap tclBinaryImplMap[] = {
     { "format", BinaryFormatCmd, TclCompileBasicMin1ArgCmd, NULL, NULL, false },
-    { "scan",   BinaryScanCmd, TclCompileBasicMin2ArgCmd, NULL, NULL, false },
+    { "scan",   BinaryScanCmd, TclCompileBasicMin2ArgCmd, NULL, NULL, false }, // TODO: compile?
     { "encode", NULL, NULL, NULL, NULL, false },
     { "decode", NULL, NULL, NULL, NULL, false },
     { NULL, NULL, NULL, NULL, NULL, false }
 };
-static const EnsembleImplMap encodeMap[] = {
+const EnsembleImplMap tclBinaryEncodeImplMap[] = {
     { "hex",      BinaryEncodeHex, TclCompileBasic1ArgCmd, NULL, NULL, false },
     { "uuencode", BinaryEncodeUu,  NULL, NULL, NULL, false },
     { "base64",   BinaryEncode64,  NULL, NULL, NULL, false },
     { NULL, NULL, NULL, NULL, NULL, false }
 };
-static const EnsembleImplMap decodeMap[] = {
+const EnsembleImplMap tclBinaryDecodeImplMap[] = {
     { "hex",      BinaryDecodeHex, TclCompileBasic1Or2ArgCmd, NULL, NULL, false },
     { "uuencode", BinaryDecodeUu,  TclCompileBasic1Or2ArgCmd, NULL, NULL, false },
     { "base64",   BinaryDecode64,  TclCompileBasic1Or2ArgCmd, NULL, NULL, false },
@@ -779,33 +778,6 @@ TclAppendBytesToByteArray(
     }
     byteArrayPtr->used += len;
     TclInvalidateStringRep(objPtr);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclInitBinaryCmd --
- *
- *	This function is called to create the "binary" Tcl command. See the
- *	user documentation for details on what it does.
- *
- * Results:
- *	A command token for the new command.
- *
- * Side effects:
- *	Creates a new binary command as a mapped ensemble.
- *
- *----------------------------------------------------------------------
- */
-
-Tcl_Command
-TclInitBinaryCmd(
-    Tcl_Interp *interp)
-{
-    Tcl_Command binaryEnsemble = TclMakeEnsemble(interp, "binary", binaryMap);
-    TclMakeEnsemble(interp, "binary encode", encodeMap);
-    TclMakeEnsemble(interp, "binary decode", decodeMap);
-    return binaryEnsemble;
 }
 
 /*
@@ -1667,7 +1639,7 @@ BinaryScanCmd(
   badField:;
     Tcl_UniChar ch = 0;
     char buf[5] = "";
-    
+
     TclUtfToUniChar(errorString, &ch);
     buf[Tcl_UniCharToUtf(ch, buf)] = '\0';
     TclPrintfResult(interp, "bad field specifier \"%s\"", buf);

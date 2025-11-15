@@ -12,7 +12,6 @@
 
 #include "tclInt.h"
 #include "tclTomMath.h"
-#include <assert.h>
 
 /*
  * Forward declaration.
@@ -66,7 +65,7 @@ static Tcl_NRPostProc		DictMapLoopCallback;
  * Table of dict subcommand names and implementations.
  */
 
-static const EnsembleImplMap implementationMap[] = {
+const EnsembleImplMap tclDictImplMap[] = {
     {"append",	DictAppendCmd,	TclCompileDictAppendCmd, NULL, NULL, false},
     {"create",	DictCreateCmd,	TclCompileDictCreateCmd, NULL, NULL, false},
     {"exists",	DictExistsCmd,	TclCompileDictExistsCmd, NULL, NULL, false},
@@ -3932,31 +3931,6 @@ TclDictWithFinish(
     return TCL_OK;
 }
 
-/*
- *----------------------------------------------------------------------
- *
- * TclInitDictCmd --
- *
- *	This function is create the "dict" Tcl command. See the user
- *	documentation for details on what it does, and TIP#111 for the formal
- *	specification.
- *
- * Results:
- *	A Tcl command handle.
- *
- * Side effects:
- *	May advance compilation epoch.
- *
- *----------------------------------------------------------------------
- */
-
-Tcl_Command
-TclInitDictCmd(
-    Tcl_Interp *interp)
-{
-    return TclMakeEnsemble(interp, "dict", implementationMap);
-}
-
 /*
  * Local Variables:
  * mode: c

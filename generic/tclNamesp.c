@@ -25,7 +25,6 @@
 
 #include "tclInt.h"
 #include "tclCompile.h" /* for TclLogCommandInfo visibility */
-#include <assert.h>
 
 /*
  * Thread-local storage used to avoid having a global lock on data that is not
@@ -143,34 +142,34 @@ static const Tcl_ObjType nsNameType = {
 	ir.twoPtrValue.ptr1 = (nnPtr);					\
 	ir.twoPtrValue.ptr2 = NULL;					\
 	Tcl_StoreInternalRep((objPtr), &nsNameType, &ir);		\
-    } while (0)
+    } while (false)
 
 #define NsNameGetInternalRep(objPtr, nnPtr) \
     do {								\
 	const Tcl_ObjInternalRep *irPtr;				\
 	irPtr = TclFetchInternalRep((objPtr), &nsNameType);		\
 	(nnPtr) = irPtr ? (ResolvedNsName *) irPtr->twoPtrValue.ptr1 : NULL; \
-    } while (0)
+    } while (false)
 
 /*
  * Array of values describing how to implement each standard subcommand of the
  * "namespace" command.
  */
 
-static const EnsembleImplMap defaultNamespaceMap[] = {
+const EnsembleImplMap tclNamespaceImplMap[] = {
     {"children",   NamespaceChildrenCmd, TclCompileBasic0To2ArgCmd, NULL, NULL, false},
     {"code",	   NamespaceCodeCmd,	TclCompileNamespaceCodeCmd, NULL, NULL, false},
     {"current",	   NamespaceCurrentCmd,	TclCompileNamespaceCurrentCmd, NULL, NULL, false},
     {"delete",	   NamespaceDeleteCmd,	TclCompileBasicMin0ArgCmd, NULL, NULL, false},
     {"ensemble",   TclNamespaceEnsembleCmd, NULL, NULL, NULL, false},
     {"eval",	   NamespaceEvalCmd,	NULL, NRNamespaceEvalCmd, NULL, false},
-    {"exists",	   NamespaceExistsCmd,	TclCompileBasic1ArgCmd, NULL, NULL, false},
+    {"exists",	   NamespaceExistsCmd,	TclCompileBasic1ArgCmd, NULL, NULL, false}, // TODO: compile?
     {"export",	   NamespaceExportCmd,	TclCompileBasicMin0ArgCmd, NULL, NULL, false},
     {"forget",	   NamespaceForgetCmd,	TclCompileBasicMin0ArgCmd, NULL, NULL, false},
     {"import",	   NamespaceImportCmd,	TclCompileBasicMin0ArgCmd, NULL, NULL, false},
     {"inscope",	   NamespaceInscopeCmd,	NULL, NRNamespaceInscopeCmd, NULL, false},
     {"origin",	   NamespaceOriginCmd,	TclCompileNamespaceOriginCmd, NULL, NULL, false},
-    {"parent",	   NamespaceParentCmd,	TclCompileBasic0Or1ArgCmd, NULL, NULL, false},
+    {"parent",	   NamespaceParentCmd,	TclCompileBasic0Or1ArgCmd, NULL, NULL, false}, // TODO: compile?
     {"path",	   NamespacePathCmd,	TclCompileBasic0Or1ArgCmd, NULL, NULL, false},
     {"qualifiers", NamespaceQualifiersCmd, TclCompileNamespaceQualifiersCmd, NULL, NULL, false},
     {"tail",	   NamespaceTailCmd,	TclCompileNamespaceTailCmd, NULL, NULL, false},
@@ -2527,7 +2526,7 @@ TclEnsureNamespace(
 {
     Namespace *nsPtr = (Namespace *) namespacePtr;
     if (!(nsPtr->flags & NS_DYING)) {
-	    return namespacePtr;
+	return namespacePtr;
     }
     return Tcl_CreateNamespace(interp, nsPtr->fullName, NULL, NULL);
 }
@@ -3037,30 +3036,6 @@ TclNewNamespaceObj(
 	NsNameSetInternalRep(objPtr, resNamePtr);
     }
     return objPtr;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclInitNamespaceCmd --
- *
- *	This function is called to create the "namespace" Tcl command. See the
- *	user documentation for details on what it does.
- *
- * Results:
- *	Handle for the namespace command, or NULL on failure.
- *
- * Side effects:
- *	none
- *
- *----------------------------------------------------------------------
- */
-
-Tcl_Command
-TclInitNamespaceCmd(
-    Tcl_Interp *interp)		/* Current interpreter. */
-{
-    return TclMakeEnsemble(interp, "namespace", defaultNamespaceMap);
 }
 
 /*

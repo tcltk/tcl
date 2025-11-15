@@ -940,7 +940,7 @@ TclAsyncNotifier(
 		if (write(triggerPipe, "S", 1) != 1) {
 		    asyncPending = false;
 		    return false;
-		};
+		}
 	    }
 	    return true;
 	}

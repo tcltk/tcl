@@ -15,7 +15,6 @@
 #include "tclInt.h"
 #define ALLOW_DEPRECATED_OPCODES
 #include "tclCompile.h"
-#include <assert.h>
 
 /*
  * Variable that controls whether compilation tracing is enabled and, if so,
@@ -2341,7 +2340,7 @@ CompileCommandTokens(
     Command *cmdPtr = NULL;
     int code = TCL_ERROR, expand = -1;
     Tcl_Size numWords = parsePtr->numWords;
-    Tcl_Size cmdLine = envPtr->line;
+    int cmdLine = envPtr->line;
     Tcl_Size *clNext = envPtr->clNext;
     Tcl_Size cmdIdx = envPtr->numCommands;
     Tcl_Size startCodeOffset = CurrentOffset(envPtr);
@@ -4754,7 +4753,8 @@ bool
 TclIsEmptyToken(
     const Tcl_Token *tokenPtr)
 {
-    int ucs4, chLen = 0;
+    int ucs4;
+    Tcl_Size chLen = 0;
     const char *end = tokenPtr[1].start + tokenPtr[1].size;
     for (const char *ptr = tokenPtr[1].start; ptr < end; ptr += chLen) {
 	chLen = TclUtfToUniChar(ptr, &ucs4);

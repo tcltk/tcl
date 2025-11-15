@@ -47,6 +47,71 @@ static int		UniCharIsHexDigit(int character);
 static int		StringCmpOpts(Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[], bool *nocase,
 			    Tcl_Size *reqlength);
+static Tcl_ObjCmdProc	StringCatCmd;
+static Tcl_ObjCmdProc	StringCmpCmd;
+static Tcl_ObjCmdProc	StringEqualCmd;
+static Tcl_ObjCmdProc	StringFirstCmd;
+static Tcl_ObjCmdProc	StringIndexCmd;
+static Tcl_ObjCmdProc	StringInsertCmd;
+static Tcl_ObjCmdProc	StringIsCmd;
+static Tcl_ObjCmdProc	StringLastCmd;
+static Tcl_ObjCmdProc	StringLenCmd;
+static Tcl_ObjCmdProc	StringMapCmd;
+static Tcl_ObjCmdProc	StringMatchCmd;
+static Tcl_ObjCmdProc	StringRangeCmd;
+static Tcl_ObjCmdProc	StringReptCmd;
+static Tcl_ObjCmdProc	StringRplcCmd;
+static Tcl_ObjCmdProc	StringRevCmd;
+static Tcl_ObjCmdProc	StringLowerCmd;
+static Tcl_ObjCmdProc	StringUpperCmd;
+static Tcl_ObjCmdProc	StringTitleCmd;
+static Tcl_ObjCmdProc	StringTrimCmd;
+static Tcl_ObjCmdProc	StringTrimLCmd;
+static Tcl_ObjCmdProc	StringTrimRCmd;
+static Tcl_ObjCmdProc	StringEndCmd;
+static Tcl_ObjCmdProc	StringStartCmd;
+static Tcl_ObjCmdProc	TclUnicodeNormalizeCmd;
+
+/*
+ * Definition of the contents of the [string] ensemble.
+ */
+const EnsembleImplMap tclStringImplMap[] = {
+    {"cat",		StringCatCmd,	TclCompileStringCatCmd,		NULL, NULL, 0},
+    {"compare",		StringCmpCmd,	TclCompileStringCmpCmd,		NULL, NULL, 0},
+    {"equal",		StringEqualCmd,	TclCompileStringEqualCmd,	NULL, NULL, 0},
+    {"first",		StringFirstCmd,	TclCompileStringFirstCmd,	NULL, NULL, 0},
+    {"index",		StringIndexCmd,	TclCompileStringIndexCmd,	NULL, NULL, 0},
+    {"insert",		StringInsertCmd, TclCompileStringInsertCmd,	NULL, NULL, 0},
+    {"is",		StringIsCmd,	TclCompileStringIsCmd,		NULL, NULL, 0},
+    {"last",		StringLastCmd,	TclCompileStringLastCmd,	NULL, NULL, 0},
+    {"length",		StringLenCmd,	TclCompileStringLenCmd,		NULL, NULL, 0},
+    {"map",		StringMapCmd,	TclCompileStringMapCmd,		NULL, NULL, 0},
+    {"match",		StringMatchCmd,	TclCompileStringMatchCmd,	NULL, NULL, 0},
+    {"range",		StringRangeCmd,	TclCompileStringRangeCmd,	NULL, NULL, 0},
+    {"repeat",		StringReptCmd,	TclCompileBasic2ArgCmd,		NULL, NULL, 0},
+    {"replace",		StringRplcCmd,	TclCompileStringReplaceCmd,	NULL, NULL, 0},
+    {"reverse",		StringRevCmd,	TclCompileBasic1ArgCmd,		NULL, NULL, 0},
+    {"tolower",		StringLowerCmd,	TclCompileStringToLowerCmd,	NULL, NULL, 0},
+    {"toupper",		StringUpperCmd,	TclCompileStringToUpperCmd,	NULL, NULL, 0},
+    {"totitle",		StringTitleCmd,	TclCompileStringToTitleCmd,	NULL, NULL, 0},
+    {"trim",		StringTrimCmd,	TclCompileStringTrimCmd,	NULL, NULL, 0},
+    {"trimleft",	StringTrimLCmd,	TclCompileStringTrimLCmd,	NULL, NULL, 0},
+    {"trimright",	StringTrimRCmd,	TclCompileStringTrimRCmd,	NULL, NULL, 0},
+    {"wordend",		StringEndCmd,	TclCompileBasic2ArgCmd,		NULL, NULL, 0},
+    {"wordstart",	StringStartCmd,	TclCompileBasic2ArgCmd,		NULL, NULL, 0},
+    {NULL, NULL, NULL, NULL, NULL, 0}
+};
+
+/*
+ * Definition of the contents of the [unicode] ensemble.
+ */
+const EnsembleImplMap tclUnicodeImplMap[] = {
+    {"tonfc",	TclUnicodeNormalizeCmd, NULL, NULL, (void *)TCL_NFC,  0},
+    {"tonfd",	TclUnicodeNormalizeCmd, NULL, NULL, (void *)TCL_NFD,  0},
+    {"tonfkc",	TclUnicodeNormalizeCmd, NULL, NULL, (void *)TCL_NFKC, 0},
+    {"tonfkd",	TclUnicodeNormalizeCmd, NULL, NULL, (void *)TCL_NFKD, 0},
+    {NULL, NULL, NULL, NULL, NULL, 0}
+};
 
 /*
  * Default set of characters to trim in [string trim] and friends. This is a
@@ -3219,63 +3284,6 @@ StringTrimRCmd(
 /*
  *----------------------------------------------------------------------
  *
- * TclInitStringCmd --
- *
- *	This procedure creates the "string" Tcl command. See the user
- *	documentation for details on what it does. Note that this command only
- *	functions correctly on properly formed Tcl UTF strings.
- *
- *	Also note that the primary methods here (equal, compare, match, ...)
- *	have bytecode equivalents. You will find the code for those in
- *	tclExecute.c. The code here will only be used in the non-bc case (like
- *	in an 'eval').
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	See the user documentation.
- *
- *----------------------------------------------------------------------
- */
-
-Tcl_Command
-TclInitStringCmd(
-    Tcl_Interp *interp)		/* Current interpreter. */
-{
-    static const EnsembleImplMap stringImplMap[] = {
-	{"cat",		StringCatCmd,	TclCompileStringCatCmd, NULL, NULL, false},
-	{"compare",	StringCmpCmd,	TclCompileStringCmpCmd, NULL, NULL, false},
-	{"equal",	StringEqualCmd,	TclCompileStringEqualCmd, NULL, NULL, false},
-	{"first",	StringFirstCmd,	TclCompileStringFirstCmd, NULL, NULL, false},
-	{"index",	StringIndexCmd,	TclCompileStringIndexCmd, NULL, NULL, false},
-	{"insert",	StringInsertCmd, TclCompileStringInsertCmd, NULL, NULL, false},
-	{"is",		StringIsCmd,	TclCompileStringIsCmd, NULL, NULL, false},
-	{"last",	StringLastCmd,	TclCompileStringLastCmd, NULL, NULL, false},
-	{"length",	StringLenCmd,	TclCompileStringLenCmd, NULL, NULL, false},
-	{"map",		StringMapCmd,	TclCompileStringMapCmd, NULL, NULL, false},
-	{"match",	StringMatchCmd,	TclCompileStringMatchCmd, NULL, NULL, false},
-	{"range",	StringRangeCmd,	TclCompileStringRangeCmd, NULL, NULL, false},
-	{"repeat",	StringReptCmd,	TclCompileBasic2ArgCmd, NULL, NULL, false},
-	{"replace",	StringRplcCmd,	TclCompileStringReplaceCmd, NULL, NULL, false},
-	{"reverse",	StringRevCmd,	TclCompileBasic1ArgCmd, NULL, NULL, false},
-	{"tolower",	StringLowerCmd,	TclCompileStringToLowerCmd, NULL, NULL, false},
-	{"toupper",	StringUpperCmd,	TclCompileStringToUpperCmd, NULL, NULL, false},
-	{"totitle",	StringTitleCmd,	TclCompileStringToTitleCmd, NULL, NULL, false},
-	{"trim",	StringTrimCmd,	TclCompileStringTrimCmd, NULL, NULL, false},
-	{"trimleft",	StringTrimLCmd,	TclCompileStringTrimLCmd, NULL, NULL, false},
-	{"trimright",	StringTrimRCmd,	TclCompileStringTrimRCmd, NULL, NULL, false},
-	{"wordend",	StringEndCmd,	TclCompileBasic2ArgCmd, NULL, NULL, false},
-	{"wordstart",	StringStartCmd,	TclCompileBasic2ArgCmd, NULL, NULL, false},
-	{NULL, NULL, NULL, NULL, NULL, false}
-    };
-
-    return TclMakeEnsemble(interp, "string", stringImplMap);
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * Tcl_SubstObjCmd --
  *
  *	This procedure is invoked to process the "subst" Tcl command. See the
@@ -3533,10 +3541,10 @@ TclNRSwitchObjCmd(
 	return TCL_ERROR;
     }
     if (noCase && mode == OPT_INTEGER) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"-nocase option cannot be used with -integer option"));
-	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "SWITCH",
-		"MODERESTRICTION", (char *)NULL);
+	TclPrintfResult(interp,
+		"-nocase option cannot be used with -integer option");
+	TclSetErrorCode(interp, "TCL", "OPERATION", "SWITCH",
+		"MODERESTRICTION");
 	return TCL_ERROR;
     }
 
@@ -5366,9 +5374,9 @@ TclUnicodeNormalizeCmd(
 	} else if (!strcmp(s, "strict")) {
 	    profile = TCL_ENCODING_PROFILE_STRICT;
 	} else {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    TclPrintfResult(interp,
 		    "Invalid value \"%s\" supplied for option \"-profile\". "
-		    "Must be \"strict\" or \"replace\".", s));
+		    "Must be \"strict\" or \"replace\".", s);
 	    return TCL_ERROR;
 	}
     } else if (objc != 2) {
@@ -5386,33 +5394,6 @@ TclUnicodeNormalizeCmd(
     Tcl_DStringResult(interp, &ds);
     return TCL_OK;
 }
-
-/*
- * TclInitUnicodeCmd --
- *
- *	This procedure creates the "unicode" Tcl ensemble command. See user
- *	documentation for details on implemented commands.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	Stores the result in the interpreter result.
- */
-Tcl_Command
-TclInitUnicodeCmd(
-    Tcl_Interp *interp)
-{
-    static const EnsembleImplMap unicodeImplMap[] = {
-	{"tonfc", TclUnicodeNormalizeCmd, NULL, NULL, (void *)TCL_NFC, 0},
-	{"tonfd", TclUnicodeNormalizeCmd, NULL, NULL, (void *)TCL_NFD, 0},
-	{"tonfkc", TclUnicodeNormalizeCmd, NULL, NULL, (void *)TCL_NFKC, 0},
-	{"tonfkd", TclUnicodeNormalizeCmd, NULL, NULL, (void *)TCL_NFKD, 0},
-	{NULL, NULL, NULL, NULL, NULL, 0}
-    };
-    return TclMakeEnsemble(interp, "unicode", unicodeImplMap);
-}
-
 
 /*
  * Local Variables:

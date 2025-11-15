@@ -14,7 +14,6 @@
 
 #include "tclInt.h"
 #include "tclIO.h"
-#include <assert.h>
 
 /*
  * For each channel handler registered in a call to Tcl_CreateChannelHandler,
@@ -4075,7 +4074,7 @@ Tcl_Write(
 	return TCL_INDEX_NONE;
     }
 
-    if (srcLen == TCL_INDEX_NONE) {
+    if (srcLen < 0) {
 	srcLen = strlen(src);
     }
     if (WriteBytes(chanPtr, src, srcLen) == -1) {
@@ -4125,7 +4124,7 @@ Tcl_WriteRaw(
 	return TCL_INDEX_NONE;
     }
 
-    if (srcLen == TCL_INDEX_NONE) {
+    if (srcLen < 0) {
 	srcLen = strlen(src);
     }
 
@@ -4184,7 +4183,7 @@ Tcl_WriteChars(
 
     chanPtr = statePtr->topChanPtr;
 
-    if (len == TCL_INDEX_NONE) {
+    if (len < 0) {
 	len = strlen(src);
     }
     if (statePtr->encoding) {

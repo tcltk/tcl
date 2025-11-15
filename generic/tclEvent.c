@@ -459,7 +459,7 @@ TclDefaultBgErrorHandlerObjCmd(
 
 	if (Tcl_IsSafe(interp)) {
 	    Tcl_RestoreInterpState(interp, saved);
-	    TclObjInvoke(interp, 2, tempObjv, TCL_INVOKE_HIDDEN);
+	    Tcl_NRCallObjProc(interp, TclNRInvoke, NULL, 2, tempObjv);
 	} else {
 	    Tcl_Channel errChannel = Tcl_GetStdChannel(TCL_STDERR);
 
@@ -1095,6 +1095,9 @@ static const struct {
 #endif
 #ifdef STATIC_BUILD
 	    ".static"
+#endif
+#if (defined(__MSVCRT__) || defined(_UCRT)) && (!defined(__USE_MINGW_ANSI_STDIO) || __USE_MINGW_ANSI_STDIO)
+	    ".stdio-mingw"
 #endif
 #ifndef TCL_WITH_EXTERNAL_TOMMATH
 	    ".tommath-0103"
@@ -1741,10 +1744,8 @@ Tcl_VwaitObjCmd(
 
     if (!foundEvent) {
 	Tcl_ResetResult(interp);
-	Tcl_SetObjResult(interp, Tcl_NewStringObj((numItems == 0) ?
-		"can't wait: would wait forever" :
-		"can't wait for variable(s)/channel(s): would wait forever",
-		-1));
+	TclPrintfResult(interp, "can't wait%s: would wait forever",
+		numItems ? " for variable(s)/channel(s)" : "");
 	TclSetErrorCode(interp, "TCL", "EVENT", "NO_SOURCES");
 	result = TCL_ERROR;
 	goto done;
