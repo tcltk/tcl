@@ -120,20 +120,20 @@ static const char B64Digits[65] = {
  * How to construct the ensembles.
  */
 
-static const EnsembleImplMap binaryMap[] = {
+const EnsembleImplMap tclBinaryImplMap[] = {
     { "format", BinaryFormatCmd, TclCompileBasicMin1ArgCmd, NULL, NULL, 0 },
-    { "scan",   BinaryScanCmd, TclCompileBasicMin2ArgCmd, NULL, NULL, 0 },
+    { "scan",   BinaryScanCmd, TclCompileBasicMin2ArgCmd, NULL, NULL, 0 }, // TODO: compile?
     { "encode", NULL, NULL, NULL, NULL, 0 },
     { "decode", NULL, NULL, NULL, NULL, 0 },
     { NULL, NULL, NULL, NULL, NULL, 0 }
 };
-static const EnsembleImplMap encodeMap[] = {
+const EnsembleImplMap tclBinaryEncodeImplMap[] = {
     { "hex",      BinaryEncodeHex, TclCompileBasic1ArgCmd, NULL, NULL, 0 },
     { "uuencode", BinaryEncodeUu,  NULL, NULL, NULL, 0 },
     { "base64",   BinaryEncode64,  NULL, NULL, NULL, 0 },
     { NULL, NULL, NULL, NULL, NULL, 0 }
 };
-static const EnsembleImplMap decodeMap[] = {
+const EnsembleImplMap tclBinaryDecodeImplMap[] = {
     { "hex",      BinaryDecodeHex, TclCompileBasic1Or2ArgCmd, NULL, NULL, 0 },
     { "uuencode", BinaryDecodeUu,  TclCompileBasic1Or2ArgCmd, NULL, NULL, 0 },
     { "base64",   BinaryDecode64,  TclCompileBasic1Or2ArgCmd, NULL, NULL, 0 },
@@ -783,35 +783,6 @@ TclAppendBytesToByteArray(
     }
     byteArrayPtr->used += len;
     TclInvalidateStringRep(objPtr);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclInitBinaryCmd --
- *
- *	This function is called to create the "binary" Tcl command. See the
- *	user documentation for details on what it does.
- *
- * Results:
- *	A command token for the new command.
- *
- * Side effects:
- *	Creates a new binary command as a mapped ensemble.
- *
- *----------------------------------------------------------------------
- */
-
-Tcl_Command
-TclInitBinaryCmd(
-    Tcl_Interp *interp)
-{
-    Tcl_Command binaryEnsemble;
-
-    binaryEnsemble = TclMakeEnsemble(interp, "binary", binaryMap);
-    TclMakeEnsemble(interp, "binary encode", encodeMap);
-    TclMakeEnsemble(interp, "binary decode", decodeMap);
-    return binaryEnsemble;
 }
 
 /*
