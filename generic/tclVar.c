@@ -193,13 +193,25 @@ typedef struct ArrayVarHashTable {
 static void		AppendLocals(Tcl_Interp *interp, Tcl_Obj *listPtr,
 			    Tcl_Obj *patternPtr, int includeLinks,
 			    int justConstants);
+static Tcl_ObjCmdProc	ArrayAnyMoreCmd;
+static Tcl_ObjCmdProc	ArrayDoneSearchCmd;
+static Tcl_ObjCmdProc	ArrayNextElementCmd;
+static Tcl_ObjCmdProc	ArrayStartSearchCmd;
 static void		ArrayPopulateSearch(Tcl_Interp *interp,
 			    Tcl_Obj *arrayNameObj, Var *varPtr,
 			    ArraySearch *searchPtr);
 static void		ArrayDoneSearch(Interp *iPtr, Var *varPtr,
 			    ArraySearch *searchPtr);
-static Tcl_NRPostProc	ArrayForLoopCallback;
+static Tcl_ObjCmdProc	ArrayExistsCmd;
+static Tcl_ObjCmdProc	ArrayForObjCmd;
+static Tcl_NRPostProc   ArrayForLoopCallback;
 static Tcl_ObjCmdProc	ArrayForNRCmd;
+static Tcl_ObjCmdProc	ArrayGetCmd;
+static Tcl_ObjCmdProc	ArrayNamesCmd;
+static Tcl_ObjCmdProc	ArraySetCmd;
+static Tcl_ObjCmdProc	ArraySizeCmd;
+static Tcl_ObjCmdProc	ArrayStatsCmd;
+static Tcl_ObjCmdProc	ArrayUnsetCmd;
 static void		DeleteSearches(Interp *iPtr, Var *arrayVarPtr);
 static void		DeleteArray(Interp *iPtr, Tcl_Obj *arrayNamePtr,
 			    Var *varPtr, int flags, Tcl_Size index);
@@ -241,6 +253,23 @@ static Tcl_FreeInternalRepProc	FreeLocalVarName;
 
 static Tcl_FreeInternalRepProc	FreeParsedVarName;
 static Tcl_DupInternalRepProc	DupParsedVarName;
+
+const EnsembleImplMap tclArrayImplMap[] = {
+    {"anymore",		ArrayAnyMoreCmd,	TclCompileBasic2ArgCmd,		NULL,		NULL, 0},
+    {"default",		ArrayDefaultCmd,	TclCompileBasic2Or3ArgCmd,	NULL,		NULL, 0},
+    {"donesearch",	ArrayDoneSearchCmd,	TclCompileBasic2ArgCmd,		NULL,		NULL, 0},
+    {"exists",		ArrayExistsCmd,		TclCompileArrayExistsCmd,	NULL,		NULL, 0},
+    {"for",		ArrayForObjCmd,		TclCompileBasic3ArgCmd,		ArrayForNRCmd,	NULL, 0}, // TODO: compile?
+    {"get",		ArrayGetCmd,		TclCompileBasic1Or2ArgCmd,	NULL,		NULL, 0},
+    {"names",		ArrayNamesCmd,		TclCompileBasic1To3ArgCmd,	NULL,		NULL, 0},
+    {"nextelement",	ArrayNextElementCmd,	TclCompileBasic2ArgCmd,		NULL,		NULL, 0},
+    {"set",		ArraySetCmd,		TclCompileArraySetCmd,		NULL,		NULL, 0},
+    {"size",		ArraySizeCmd,		TclCompileBasic1ArgCmd,		NULL,		NULL, 0},
+    {"startsearch",	ArrayStartSearchCmd,	TclCompileBasic1ArgCmd,		NULL,		NULL, 0},
+    {"statistics",	ArrayStatsCmd,		TclCompileBasic1ArgCmd,		NULL,		NULL, 0},
+    {"unset",		ArrayUnsetCmd,		TclCompileArrayUnsetCmd,	NULL,		NULL, 0},
+    {NULL, NULL, NULL, NULL, NULL, 0}
+};
 
 /*
  * Types of Tcl_Objs used to cache variable lookups.
@@ -4441,46 +4470,6 @@ ArrayUnsetCmd(
 	}
     }
     return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclInitArrayCmd --
- *
- *	This creates the ensemble for the "array" command.
- *
- * Results:
- *	The handle for the created ensemble.
- *
- * Side effects:
- *	Creates a command in the global namespace.
- *
- *----------------------------------------------------------------------
- */
-
-Tcl_Command
-TclInitArrayCmd(
-    Tcl_Interp *interp)		/* Current interpreter. */
-{
-    static const EnsembleImplMap arrayImplMap[] = {
-	{"anymore",	ArrayAnyMoreCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
-	{"default",	ArrayDefaultCmd,	TclCompileBasic2Or3ArgCmd, NULL, NULL, 0},
-	{"donesearch",	ArrayDoneSearchCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
-	{"exists",	ArrayExistsCmd,		TclCompileArrayExistsCmd, NULL, NULL, 0},
-	{"for",		ArrayForObjCmd,		TclCompileBasic3ArgCmd, ArrayForNRCmd, NULL, 0},
-	{"get",		ArrayGetCmd,		TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
-	{"names",	ArrayNamesCmd,		TclCompileBasic1To3ArgCmd, NULL, NULL, 0},
-	{"nextelement",	ArrayNextElementCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
-	{"set",		ArraySetCmd,		TclCompileArraySetCmd, NULL, NULL, 0},
-	{"size",	ArraySizeCmd,		TclCompileBasic1ArgCmd, NULL, NULL, 0},
-	{"startsearch",	ArrayStartSearchCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
-	{"statistics",	ArrayStatsCmd,		TclCompileBasic1ArgCmd, NULL, NULL, 0},
-	{"unset",	ArrayUnsetCmd,		TclCompileArrayUnsetCmd, NULL, NULL, 0},
-	{NULL, NULL, NULL, NULL, NULL, 0}
-    };
-
-    return TclMakeEnsemble(interp, "array", arrayImplMap);
 }
 
 /*
