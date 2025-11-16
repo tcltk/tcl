@@ -809,7 +809,7 @@ Instruct Tcl to always send output to \fBstdout\fR immediately,
 whether or not it is to a terminal:
 .PP
 .CS
-\fBfconfigure\fR stdout -buffering none
+\fBchan configure\fR stdout -buffering none
 .CE
 .PP
 In the following example a file is opened using the encoding CP1252, which is

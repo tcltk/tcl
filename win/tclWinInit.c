@@ -12,7 +12,6 @@
  */
 
 #include "tclWinInt.h"
-#include <assert.h>
 #include <winnt.h>
 #include <winbase.h>
 #include <lmcons.h>

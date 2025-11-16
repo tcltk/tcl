@@ -2338,7 +2338,9 @@ MODULE_SCOPE void TclDTraceInfo(Tcl_Obj *info, const char **args, Tcl_Size *args
     do {								\
 	if (tclDTraceDebugEnabled) {					\
 	    int _l, _t = 0;						\
-	    if (!tclDTraceDebugLog) { TclDTraceOpenDebugLog(); }	\
+	    if (!tclDTraceDebugLog) {					\
+		TclDTraceOpenDebugLog();				\
+	    }								\
 	    fprintf(tclDTraceDebugLog, "%.12s:%.4d:%n",			\
 		    strrchr(__FILE__, '/')+1, __LINE__, &_l); _t += _l; \
 	    fprintf(tclDTraceDebugLog, " %.*s():%n",			\

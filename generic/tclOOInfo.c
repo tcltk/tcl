@@ -47,8 +47,7 @@ static Tcl_ObjCmdProc InfoClassVariablesCmd;
 /*
  * List of commands that are used to implement the [info object] subcommands.
  */
-
-static const EnsembleImplMap infoObjectCmds[] = {
+static const EnsembleImplMap infoObjectImplMap[] = {
     {"call",	   InfoObjectCallCmd,	    TclCompileBasic2ArgCmd, NULL, NULL, 0},
     {"class",	   InfoObjectClassCmd,	    TclCompileInfoObjectClassCmd, NULL, NULL, 0},
     {"creationid", InfoObjectIdCmd,	    TclCompileInfoObjectCreationIdCmd, NULL, NULL, 0},
@@ -69,8 +68,7 @@ static const EnsembleImplMap infoObjectCmds[] = {
 /*
  * List of commands that are used to implement the [info class] subcommands.
  */
-
-static const EnsembleImplMap infoClassCmds[] = {
+static const EnsembleImplMap infoClassImplMap[] = {
     {"call",	     InfoClassCallCmd,		TclCompileBasic2ArgCmd, NULL, NULL, 0},
     {"constructor",  InfoClassConstrCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
     {"definition",   InfoClassDefnCmd,		TclCompileBasic2ArgCmd, NULL, NULL, 0},
@@ -145,11 +143,14 @@ TclOOInitInfo(
      * Build the ensembles used to implement [info object] and [info class].
      */
 
-    TclMakeEnsemble(interp, "::oo::InfoObject", infoObjectCmds);
-    TclMakeEnsemble(interp, "::oo::InfoClass", infoClassCmds);
+    TclMakeEnsemble(interp, "::oo::InfoObject", infoObjectImplMap);
+    TclMakeEnsemble(interp, "::oo::InfoClass", infoClassImplMap);
 
     /*
      * Install into the [info] ensemble.
+     * We keep the subcommands with their existing names instead of the
+     * auto-generated ones supported by the ensemble guts because we're
+     * somewhat documented to work this way.
      */
 
     infoCmd = Tcl_FindCommand(interp, "info", NULL, TCL_GLOBAL_ONLY);
