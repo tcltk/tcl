@@ -489,9 +489,9 @@ TimerSetupProc(
 		continue;
 	    }
 	    if (timeHandlerIndex ==timeHandlerMonotonic) {
-		Tcl_GetTime(&myTime);
-	    } else {
 		Tcl_GetMonotonicTime(&myTime);
+	    } else {
+		Tcl_GetTime(&myTime);
 	    }
 	    myBlockTime.sec = firstTimerHandlerPtrCur->time.sec - myTime.sec;
 	    myBlockTime.usec = firstTimerHandlerPtrCur->time.usec - myTime.usec;
@@ -1037,7 +1037,7 @@ AfterDelay(
     Tcl_GetTime(&now);
     endTime = now;
     endTime.sec += (ms / 1000);
-    endTime.usec += (ms % 1000);
+    endTime.usec += (ms % 1000)*1000;
     if (endTime.usec >= 1000000) {
 	endTime.sec++;
 	endTime.usec -= 1000000;
