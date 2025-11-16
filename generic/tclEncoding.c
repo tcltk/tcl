@@ -1442,11 +1442,13 @@ Tcl_ExternalToUtfEx(
 {
     const Encoding *encodingPtr;
     int result = TCL_OK;
-    int terminate = (flags & TCL_ENCODING_NO_TERMINATE) == 0;
-    int charLimited = (flags & TCL_ENCODING_CHAR_LIMIT) && (dstCharsPtr != NULL);
+    int terminatorLength = (flags & TCL_ENCODING_NO_TERMINATE) == 0;
     Tcl_EncodingState localState;
     const char *srcStart = src;
     char *dstStart = dst;
+    Tcl_Size srcBytesRead = 0;
+    Tcl_Size dstBytesWritten = 0;
+    Tcl_Size dstCharsWritten = 0;
 
     if (encoding == NULL) {
 	encoding = systemEncoding;
@@ -1459,22 +1461,28 @@ Tcl_ExternalToUtfEx(
 	srcLen = encodingPtr->lengthProc(src);
     }
 
+    /* Need to initialize these before any jumps to storeResult */
+    Tcl_Size srcBytesLeft = srcLen;
+    Tcl_Size dstSpaceLeft = dstLen;
+
     /* If caller cannot preserve state, assume not a fragment */
     if (statePtr == NULL) {
 	flags |= TCL_ENCODING_START | TCL_ENCODING_END;
 	statePtr = &localState;
     }
 
-    if (terminate) {
-	/* Reserve space for terminating nul */
-	if (dstLen < 1) {
-	    return TCL_CONVERT_NOSPACE;
-	}
-	--dstLen;
-    } else {
-	if (dstLen <= 0 && srcLen > 0) {
-	    return TCL_CONVERT_NOSPACE;
-	}
+    /* Note two separate checks to handle intermediate underflow */
+    if (terminatorLength > dstLen) {
+	terminatorLength = 0; /* So we do not try to store before returning */
+	result = TCL_CONVERT_NOSPACE;
+	goto storeResult;
+    }
+    dstLen -= terminatorLength;
+    dstSpaceLeft = dstLen;
+
+    if (dstLen <= 0 && srcLen > 0) {
+	result = TCL_CONVERT_NOSPACE;
+	goto storeResult;
     }
 
     if (encodingPtr->toUtfProc == UtfToUtfProc) {
@@ -1482,16 +1490,13 @@ Tcl_ExternalToUtfEx(
 	flags |= ENCODING_INPUT;
     }
 
+    int charLimited = (flags & TCL_ENCODING_CHAR_LIMIT) && (dstCharsPtr != NULL);
+
     /*
      * The low level encoding routines only take int arguments. Since they
      * are part of the public API, that cannot be changed easily. So we are
      * forced to loop over chunks of max size INT_MAX.
      */
-    Tcl_Size srcBytesRead = 0;
-    Tcl_Size dstBytesWritten = 0;
-    Tcl_Size dstCharsWritten = 0;
-    Tcl_Size srcBytesLeft = srcLen;
-    Tcl_Size dstSpaceLeft = dstLen;
 
     while (1) {
 	int chunkSrcLen;
@@ -1572,8 +1577,8 @@ Tcl_ExternalToUtfEx(
 	 *
 	 * TCL_OK - successfully processed current chunk.
 	 *
-	 *    1a If entire input has been seen by the encoder, we are done
-	 *       and return TCL_OK.
+	 *    1a If entire input has been seen by the encoder or character
+	 *       limit has been reached, we are done and return TCL_OK.
 	 *    1b If entire input has not been seen by the encoder,
 	 *       continue with the loop to process next chunk.
 	 *
@@ -1591,7 +1596,7 @@ Tcl_ExternalToUtfEx(
 	 *    2c If entire input has not been processed, continue the loop
 	 *       and pass next chunk which would complete the multibyte unit.
 	 *
-	 * TCL_CONVERT_NOSPACE - Destination chunk buffer had insufficient space.
+	 * TCL_CONVERT_NOSPACE - Insufficient space in destination chunk
 	 *    3a If we had passed in the entire original caller buffer,
 	 *       return TCL_CONVERT_NOSPACE.
 	 *    3c Else loop around again with the additional space.
@@ -1605,8 +1610,10 @@ Tcl_ExternalToUtfEx(
 
 	/* Handle the most likely cases first */
 	if (result == TCL_OK) {
-	    if (allInputSeen)
+	    if (allInputSeen ||
+		(charLimited && dstCharsWritten >= *dstCharsPtr)) {
 		break; /* 1a */
+	    }
 	    /* else 1b continue loop */
 	} else if (result == TCL_CONVERT_MULTIBYTE) {
 	    if (allInputSeen) {
@@ -1629,8 +1636,9 @@ Tcl_ExternalToUtfEx(
 	}
     } /* End while (1) */
 
+storeResult:
     assert(dstBytesWritten >= 0 && dstBytesWritten <= dstLen);
-    if (terminate) {
+    if (terminatorLength != 0) {
 	dstStart[dstBytesWritten] = '\0'; /* Already reserved space earlier */
     }
 
@@ -1640,7 +1648,6 @@ Tcl_ExternalToUtfEx(
 	*srcReadPtr = srcBytesRead;
     }
 
-    assert(dstBytesWritten >= 0 && dstBytesWritten <= dstLen);
     assert((dstBytesWritten + dstSpaceLeft) == dstLen);
     if (dstWrotePtr) {
 	*dstWrotePtr = dstBytesWritten;
@@ -1889,7 +1896,7 @@ Tcl_UtfToExternalDStringEx(
 
 int
 Tcl_UtfToExternal(
-    TCL_UNUSED(Tcl_Interp *),	/* TODO: Re-examine this. */
+    Tcl_Interp *interp,		/* TODO: Re-examine this. */
     Tcl_Encoding encoding,	/* The encoding for the converted string, or
 				 * NULL for the default system encoding. */
     const char *src,		/* Source string in UTF-8. */
@@ -1917,53 +1924,54 @@ Tcl_UtfToExternal(
 				 * correspond to the bytes stored in the
 				 * output buffer. */
 {
-    const Encoding *encodingPtr;
-    int result, srcRead, dstWrote, dstChars;
-    Tcl_EncodingState state;
-
-    if (encoding == NULL) {
-	encoding = systemEncoding;
-    }
-    encodingPtr = (Encoding *) encoding;
+    int result;
+    Tcl_Size srcRead, dstWrote, dstChars;
 
     if (src == NULL) {
 	srcLen = 0;
     } else if (srcLen < 0) {
 	srcLen = strlen(src);
     }
-    if (statePtr == NULL) {
-	flags |= TCL_ENCODING_START | TCL_ENCODING_END;
-	statePtr = &state;
+
+    /*
+     * Tcl 9.0 did not handle all cases where input lengths were greater
+     * than INT_MAX correctly because the underlying conversion functions
+     * use int. Clamping lengths cannot not fix certain corner cases as the
+     * wrong result code was returned. So we now return an error in such
+     * cases and ask the user to use Tcl_UtfToExternalEx.
+     */
+    if (srcLen > INT_MAX || dstLen > INT_MAX) {
+	if (interp) {
+	    Tcl_SetResult(interp,
+		"Tcl_UtfToExternal does not support lengths greater than "
+		    "INT_MAX. Use Tcl_UtfToExternalEx instead.",
+		TCL_STATIC);
+	}
+	return TCL_ERROR;
     }
-    if (srcLen > INT_MAX) {
-	srcLen = INT_MAX;
-	flags &= ~TCL_ENCODING_END;
-    }
-    if (dstLen > INT_MAX) {
-	dstLen = INT_MAX;
-    }
-    if (srcReadPtr == NULL) {
-	srcReadPtr = &srcRead;
-    }
-    if (dstWrotePtr == NULL) {
-	dstWrotePtr = &dstWrote;
-    }
-    if (dstCharsPtr == NULL) {
-	dstCharsPtr = &dstChars;
+    /* TODO - low level encoders do not support CHAR_LIMIT. For future */
+    if (dstCharsPtr && (flags & TCL_ENCODING_CHAR_LIMIT)) {
+	dstChars = *dstCharsPtr;
     }
 
-    if (dstLen < encodingPtr->nullSize) {
-	return TCL_CONVERT_NOSPACE;
+    result = Tcl_UtfToExternalEx(interp, encoding, src, srcLen, flags,
+		statePtr, dst, dstLen,
+		srcReadPtr ? &srcRead : NULL,
+		dstWrotePtr ? &dstWrote : NULL,
+		dstCharsPtr ? &dstChars : NULL,
+		NULL);
+    if (srcReadPtr) {
+	assert(srcRead >= 0 && srcRead <= srcLen);
+	*srcReadPtr = (int)srcRead;
     }
-    dstLen -= encodingPtr->nullSize;
-    result = encodingPtr->fromUtfProc(encodingPtr->clientData, src, srcLen,
-	    flags, statePtr, dst, dstLen, srcReadPtr,
-	    dstWrotePtr, dstCharsPtr);
-    /*
-     * Buffer is terminated irrespective of result. Not sure this is
-     * reasonable but keep for historical/compatibility reasons.
-     */
-    memset(&dst[*dstWrotePtr], '\0', encodingPtr->nullSize);
+    if (dstWrotePtr) {
+	assert(dstWrote >= 0 && dstWrote <= dstLen);
+	*dstWrotePtr = (int)dstWrote;
+    }
+    if (dstCharsPtr) {
+	assert(dstChars >= 0 && dstChars <= INT_MAX);
+	*dstCharsPtr = (int)dstChars;
+    }
 
     return result;
 }
@@ -2020,10 +2028,257 @@ Tcl_UtfToExternalEx(
 				 * (or TCL_INDEX_NONE if no error). May
 				 * be NULL. */
 {
-    if (interp) {
-	Tcl_SetResult(interp, "not implemented", TCL_STATIC);
+    const Encoding *encodingPtr;
+    int result = TCL_OK;
+    int terminatorLength = (flags & TCL_ENCODING_NO_TERMINATE) == 0;
+    Tcl_EncodingState localState;
+    const char *srcStart = src;
+    char *dstStart = dst;
+    Tcl_Size srcBytesRead = 0;
+    Tcl_Size dstBytesWritten = 0;
+    Tcl_Size dstCharsWritten = 0;
+
+    if (encoding == NULL) {
+	encoding = systemEncoding;
     }
-    return TCL_ERROR;
+    encodingPtr = (Encoding *) encoding;
+    terminatorLength =
+	(flags & TCL_ENCODING_NO_TERMINATE) ? 0 : encodingPtr->nullSize;
+
+    if (src == NULL) {
+	srcLen = 0;
+    } else if (srcLen < 0) {
+	srcLen = strlen(src); /* strlen works for TUTF-8 */
+    }
+
+    /* Need to initialize these before any jumps to storeResult */
+    Tcl_Size dstSpaceLeft = dstLen;
+    Tcl_Size srcBytesLeft = srcLen;
+
+    /* If caller cannot preserve state, assume not a fragment */
+    if (statePtr == NULL) {
+	flags |= TCL_ENCODING_START | TCL_ENCODING_END;
+	statePtr = &localState;
+    }
+
+    /* Note two separate checks to handle intermediate underflow */
+    if (terminatorLength > dstLen) {
+	terminatorLength = 0; /* So we do not try to store before returning */
+	result = TCL_CONVERT_NOSPACE;
+	goto storeResult;
+    }
+    dstLen -= terminatorLength;
+    dstSpaceLeft = dstLen;
+
+    if (dstLen <= 0 && srcLen > 0) {
+	result = TCL_CONVERT_NOSPACE;
+	goto storeResult;
+    }
+
+    if (encodingPtr->toUtfProc == UtfToUtfProc) {
+        /* TUTF-8 -> UTF-8 */
+	flags &= ~ENCODING_INPUT; /* Ensure bit not set */
+    }
+
+    /*
+     * TODO - The fromUtf routines do not support the
+     * TCL_ENCODING_CHAR_LIMIT flag. Ignore if present. However, for future
+     * support, the looping code is prepared to handle it.
+     */
+    flags &= ~TCL_ENCODING_CHAR_LIMIT;
+    int charLimited = (flags & TCL_ENCODING_CHAR_LIMIT) && (dstCharsPtr != NULL);
+
+    /*
+     * The low level encoding routines only take int arguments. Since they
+     * are part of the public API, that cannot be changed easily. So we are
+     * forced to loop over chunks of max size INT_MAX.
+     */
+    while (1) {
+	int chunkSrcLen;
+	int chunkDstLen;
+	int chunkSrcRead = 0, chunkDstWritten = 0, chunkDstChars = 0;
+	int chunkFlags = flags;
+	int chunkCharLimit = INT_MAX;
+
+        /* Determine chunk sizes */
+	chunkDstLen = dstSpaceLeft > INT_MAX ? INT_MAX : (int)dstSpaceLeft;
+	if (srcBytesLeft > INT_MAX) {
+	    chunkSrcLen = INT_MAX;
+	    /* not last chunk: ensure END not set */
+	    chunkFlags &= ~TCL_ENCODING_END;
+	} else {
+            /* For last chunk we pass on the original TCL_ENCODING_END flag */
+	    chunkSrcLen = (int)srcBytesLeft;
+	}
+	if (srcBytesRead > 0) {
+	    chunkFlags &= ~TCL_ENCODING_START;
+	}
+
+	if (charLimited) {
+	    assert(chunkFlags & TCL_ENCODING_CHAR_LIMIT);
+	    assert(dstCharsPtr != NULL);
+	    assert(*dstCharsPtr >= dstCharsWritten);
+	    Tcl_Size remainingChars = *dstCharsPtr - dstCharsWritten;
+	    if (remainingChars <= 0) {
+		/* Limit already reached */
+		break;
+	    }
+	    if (remainingChars > INT_MAX) {
+		chunkCharLimit = INT_MAX;
+	    } else {
+		chunkCharLimit = (int)remainingChars;
+	    }
+	    chunkDstChars = chunkCharLimit; /* Limit for this iteration */
+	}
+
+	result = encodingPtr->fromUtfProc(encodingPtr->clientData, src,
+	    chunkSrcLen, chunkFlags, statePtr, dst, chunkDstLen, &chunkSrcRead,
+	    &chunkDstWritten, &chunkDstChars);
+
+        assert(chunkSrcRead <= srcBytesLeft);
+	srcBytesLeft -= chunkSrcRead;
+	srcBytesRead += chunkSrcRead;
+	src += chunkSrcRead;
+
+	assert(chunkDstWritten <= dstSpaceLeft);
+	dstSpaceLeft -= chunkDstWritten;
+	dstBytesWritten += chunkDstWritten;
+        dst += chunkDstWritten;
+
+	assert(chunkDstChars <= chunkCharLimit); /* NOT necessarily true in 9.0! */
+	dstCharsWritten += chunkDstChars;
+
+	/*
+	 * We know the entire input data has been SEEN by the encoder when
+	 *    chunkSrcLen == srcLen (input fit in single chunk)
+	 *    chunkSrcLen < INT_MAX (last chunk was passed to encoder)
+	 * Note this does NOT mean entire input data has been
+	 * PROCESSED by the encoder as it may be forced to abort due to
+	 * encoding errors, insufficient output space, or incomplete
+	 * multibyte at end of the data. This condition of all input having
+	 * been PROCESSED is indicated by srcBytesLeft == 0.
+	 *
+	 * Similarly, we know the entire output buffer has been made available
+	 * to the encoder when
+	 *    chunkDstLen == dstLen (entire output buffer in single pass)
+	 *    chunkDstLen < INT_MAX (last part of output buffer was passed)
+	 */
+	int allInputSeen = (chunkSrcLen < INT_MAX) || (chunkSrcLen == srcLen);
+	int allOutputSeen = (chunkDstLen < INT_MAX) || (chunkDstLen == dstLen);
+
+	 /*
+	 * The encoder may return any of the following result codes.
+	 *
+	 * TCL_OK - successfully processed current chunk.
+	 *
+	 *    1a If entire input has been seen by the encoder or character
+	 *       limit has been reached, we are done and return TCL_OK.
+	 *    1b If entire input has not been seen by the encoder,
+	 *       continue with the loop to process next chunk.
+	 *
+	 * TCL_CONVERT_MULTIBYTE - end of chunk had an incomplete character
+	 *
+	 *    2a If entire input has been processed by the encoder
+	 *       AND caller has indicated there is no more
+	 *       data (TCL_ENCODING_END), return TCL_CONVERT_SYNTAX. The
+	 *       encoder returns are not consistent in handling this case.
+	 *       Some return *_MULTIBYTE and some return *_SYNTAX so we map
+	 *       the former to the latter.
+	 *    2b If entire input has been processed by the encoder AND
+	 *       caller has indicated there is more data (TCL_ENCODING_END
+	 *       not set) return TCL_CONVERT_MULTIBYTE.
+	 *    2c If entire input has not been processed, continue the loop
+	 *       and pass next chunk which would complete the multibyte unit.
+	 *
+	 * TCL_CONVERT_NOSPACE - Insufficient space in destination chunk
+	 *    3a If we had passed in the entire original caller buffer,
+	 *       return TCL_CONVERT_NOSPACE.
+	 *    3c Else loop around again with the additional space.
+	 *
+	 * TCL_CONVERT_SYNTAX - encoding error
+	 *    4 Return the error
+	 *
+	 * TCL_CONVERT_UNKNOWN - unencodable character
+	 *    5 Return the error
+	 */
+
+	/* Handle the most likely cases first */
+	if (result == TCL_OK) {
+	    if (allInputSeen ||
+		(charLimited && dstCharsWritten >= *dstCharsPtr)) {
+		break; /* 1a */
+	    }
+	    /* else 1b continue loop */
+	} else if (result == TCL_CONVERT_MULTIBYTE) {
+	    if (allInputSeen) {
+		/* 2a, 2b */
+		if (flags & TCL_ENCODING_END) {
+		    result = TCL_CONVERT_SYNTAX; /* 2a */
+		}
+		break;
+	    }
+	    /* else 2c continue loop */
+	} else if (result == TCL_CONVERT_NOSPACE) {
+	    if (allOutputSeen) {
+		break; /* 3a */
+	    }
+	    /* else 3b continue loop */
+	} else {
+	    assert(result == TCL_CONVERT_SYNTAX ||
+		   result == TCL_CONVERT_UNKNOWN);
+	    break; /* 4, 5 */
+	}
+    } /* End while (1) */
+
+storeResult:
+    assert(dstBytesWritten >= 0 && dstBytesWritten <= dstLen);
+    if (terminatorLength != 0) {
+	/* Space was already preserved before the loop */
+	memset(&dstStart[dstBytesWritten], '\0', terminatorLength);
+    }
+
+    assert(srcBytesRead >= 0 && srcBytesRead <= srcLen);
+    assert((srcBytesRead + srcBytesLeft) == srcLen);
+    if (srcReadPtr) {
+	*srcReadPtr = srcBytesRead;
+    }
+
+    assert(dstBytesWritten >= 0 && dstBytesWritten <= dstLen);
+    assert((dstBytesWritten + dstSpaceLeft) == dstLen);
+    if (dstWrotePtr) {
+	*dstWrotePtr = dstBytesWritten;
+    }
+
+    if (dstCharsPtr) {
+	assert(dstCharsWritten >= 0);
+	assert(!charLimited || dstCharsWritten <= *dstCharsPtr);
+	*dstCharsPtr = dstCharsWritten;
+    }
+
+    if (errorLocPtr) {
+	/* If errorLocPtr specified, interpreter result is not to be set */
+	*errorLocPtr = result == TCL_OK ? -1 : srcBytesRead;
+    } else {
+	/*
+	 * interp result is set for all results other than TCL_OK, even
+	 * those that are not really error conditions like
+	 * TCL_CONVERT_MULTIBYTE when there is more data coming
+	 * (indicated by TCL_ENCODING_END is not set).
+	 */
+	if (result != TCL_OK && interp != NULL) {
+	    char buf[TCL_INTEGER_SPACE];
+	    snprintf(buf, sizeof(buf), "%" TCL_SIZE_MODIFIER "d",
+		srcBytesRead);
+	    Tcl_SetObjResult(interp,
+		Tcl_ObjPrintf("unexpected byte sequence starting at index "
+			      "%" TCL_SIZE_MODIFIER "d: '\\x%02X'",
+		    srcBytesRead, UCHAR(srcStart[srcBytesRead])));
+	    Tcl_SetErrorCode(interp, "TCL", "ENCODING", "ILLEGALSEQUENCE", buf,
+		(char *)NULL);
+	}
+    }
+
+    return result;
 }
 
 /*
