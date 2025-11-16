@@ -295,9 +295,7 @@ namespace eval utftest {
 
 	    # Test TCL_ENCODING_NO_TERMINATE
 	    testutf toutf $enc $comment $hex $utfhex -flags {start end noterminate}
-	    # noterminate is specific to ExternalToUtf,
-	    # should have no effect in other direction
-	    testutf fromutf $enc $comment $utfhex $hex$encnuls -flags {start end noterminate}
+	    testutf fromutf $enc $comment $utfhex $hex -flags {start end noterminate}
 
 	    # Fragments
 	    testfragment toutf $enc $comment $hex $utfhex $externalfragindex
