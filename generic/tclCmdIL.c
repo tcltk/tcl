@@ -21,7 +21,6 @@
 #include "tclRegexp.h"
 #include "tclTomMath.h"
 #include <math.h>
-#include <assert.h>
 
 /*
  * During execution of the "lsort" command, structures of the following type
@@ -150,7 +149,7 @@ static Tcl_Obj *	SelectObjFromSublist(Tcl_Obj *firstPtr,
  * "info" command.
  */
 
-static const EnsembleImplMap defaultInfoMap[] = {
+const EnsembleImplMap tclInfoImplMap[] = {
     {"args",		   InfoArgsCmd,		    TclCompileBasic1ArgCmd, NULL, NULL, 0},
     {"body",		   InfoBodyCmd,		    TclCompileBasic1ArgCmd, NULL, NULL, 0},
     {"cmdcount",	   InfoCmdCountCmd,	    TclCompileBasic0ArgCmd, NULL, NULL, 0},
@@ -248,9 +247,9 @@ IfConditionCallback(
     int result)
 {
     Interp *iPtr = (Interp *) interp;
-    int objc = PTR2INT(data[0]);
+    Tcl_Size objc = PTR2INT(data[0]);
     Tcl_Obj *const *objv = (Tcl_Obj *const *)data[1];
-    int i = PTR2INT(data[2]);
+    Tcl_Size i = PTR2INT(data[2]);
     Tcl_Obj *boolObj = (Tcl_Obj *)data[3];
     int value, thenScriptIndex = 0;
     const char *clause;
@@ -420,30 +419,6 @@ Tcl_IncrObjCmd(
 
     Tcl_SetObjResult(interp, newValuePtr);
     return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclInitInfoCmd --
- *
- *	This function is called to create the "info" Tcl command. See the user
- *	documentation for details on what it does.
- *
- * Results:
- *	Handle for the info command, or NULL on failure.
- *
- * Side effects:
- *	none
- *
- *----------------------------------------------------------------------
- */
-
-Tcl_Command
-TclInitInfoCmd(
-    Tcl_Interp *interp)		/* Current interpreter. */
-{
-    return TclMakeEnsemble(interp, "info", defaultInfoMap);
 }
 
 /*
