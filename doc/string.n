@@ -298,7 +298,7 @@ the special interpretation of the characters \fB*?[]\e\fR in
 .RE
 .\" METHOD: range
 .TP
-\fBstring range \fIstring first last\fR
+\fBstring range \fIstring\fR ?\fIfirst\fR? ?\fIlast\fR?
 .
 Returns a range of consecutive characters from \fIstring\fR, starting
 with the character whose index is \fIfirst\fR and ending with the
@@ -306,8 +306,8 @@ character whose index is \fIlast\fR (using the forms described in
 \fBSTRING INDICES\fR). An index of \fB0\fR refers to the first
 character of the string; an index of \fBend\fR refers to last
 character of the string.  \fIfirst\fR and \fIlast\fR may be specified
-as for the \fBindex\fR method.  If \fIfirst\fR is less than zero then
-it is treated as if it were zero, and if \fIlast\fR is greater than or
+as for the \fBindex\fR method.  If \fIfirst\fR is missing or less than zero then
+it is treated as if it were zero, and if \fIlast\fR is missing or greater than or
 equal to the length of the string then it is treated as if it were
 \fBend\fR.  If \fIfirst\fR is greater than \fIlast\fR then an empty
 string is returned.
@@ -320,7 +320,7 @@ Returns a string consisting of \fIstring\fR concatenated with itself
 returned.
 .\" METHOD: replace
 .TP
-\fBstring replace \fIstring first last\fR ?\fInewstring\fR?
+\fBstring replace \fIstring\fR ?\fIfirst\fR? ?\fIlast\fR? ?\fInewstring\fR?
 .
 Removes a range of consecutive characters from \fIstring\fR, starting
 with the character whose index is \fIfirst\fR and ending with the
@@ -348,7 +348,7 @@ characters in the reverse order.
 Returns a value equal to \fIstring\fR except that all upper (or title)
 case letters have been converted to lower case.  If \fIfirst\fR is
 specified, it refers to the first char index in the string to start
-modifying.  If \fIlast\fR is not specified, only the character at position
+modifying.  If \fIlast\fR is not specified or the empty string, only the character at position
 \fIfirst\fR is converted, otherwise \fIlast\fR refers to the char index
 in the string to stop at (inclusive).  \fIfirst\fR and \fIlast\fR may be
 specified using the forms described in \fBSTRING INDICES\fR.
@@ -361,7 +361,7 @@ in \fIstring\fR is converted to its Unicode title case variant (or
 upper case if there is no title case variant) and the rest of the
 string is converted to lower case.  If \fIfirst\fR is specified, it
 refers to the first char index in the string to start modifying.  If
-\fIlast\fR is not specified, only the character at position \fIfirst\fR
+\fIlast\fR is not specified or the empty string, only the character at position \fIfirst\fR
 is converted, otherwise \fIlast\fR refers to the char index in
 the string to stop at (inclusive).  \fIfirst\fR and \fIlast\fR may be
 specified using the forms described in \fBSTRING INDICES\fR.
@@ -372,7 +372,7 @@ specified using the forms described in \fBSTRING INDICES\fR.
 Returns a value equal to \fIstring\fR except that all lower (or title)
 case letters have been converted to upper case.  If \fIfirst\fR is
 specified, it refers to the first char index in the string to start
-modifying.  If \fIlast\fR is not specified, only the character at position
+modifying.  If \fIlast\fR is not specified or the empty string, only the character at position
 \fIfirst\fR is converted, otherwise \fIlast\fR refers to the char index
 in the string to stop at (inclusive).  \fIfirst\fR and \fIlast\fR may be
 specified using the forms described in \fBSTRING INDICES\fR.
@@ -430,11 +430,16 @@ these.
 When referring to indices into a string (e.g., for \fBstring index\fR
 or \fBstring range\fR) the following formats are supported:
 .IP \fIinteger\fR 10
-For any index value that passes \fBstring is integer \-strict\fR,
+For any index value that passes \fBstring is integer\fR,
 the char specified at this integral index (e.g., \fB2\fR would refer to the
 .QW c
 in
-.QW abcd ).
+.QW abcd
+). A negative value or the empty string refers to a position
+outside the range of the string. When referring to the last index
+in a range, the empty string means that the range only consists
+of a single character, except when \fBstart\fR is negative or the
+empty string too: In that case, it's equivalent to \fBend\fR
 .IP \fBend\fR 10
 The last char of the string (e.g., \fBend\fR would refer to the
 .QW d

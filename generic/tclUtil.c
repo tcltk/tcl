@@ -142,20 +142,32 @@ static int		FindElement(Tcl_Interp *interp, const char *string,
  * performance optimization in Tcl_GetIntForIndex. The internal rep is
  * stored directly in the wideValue, so no memory management is required
  * for it. This is a caching internalrep, keeping the result of a parse
- * around. This type is only created from a pre-existing string, so an
- * updateStringProc will never be called and need not exist. The type
- * is unregistered, so has no need of a setFromAnyProc either.
+ * around. The type is unregistered, so has no need of a setFromAnyProc.
  */
 
-static const Tcl_ObjType endOffsetType = {
+static void
+UpdateStringOfIndex(
+    Tcl_Obj *objPtr)	/* Index object whose string rep to update. */
+{
+    /* The only situation that the string rep can be missing is when it
+     * represents TCL_INDEX_NONE. In all other situations, the string
+     * rep is never thrown away. See TclNewIndexObj() */
+    if ((objPtr)->internalRep.wideValue != WIDE_MIN) {
+	Tcl_Panic("String rep of index %" TCL_LL_MODIFIER "d cannot be generated",
+		(long long)(objPtr)->internalRep.wideValue);
+    }
+    TclInitStringRep(objPtr, NULL, 0);
+}
+
+const Tcl_ObjType tclEndOffsetType = {
     "end-offset",			/* name */
     NULL,				/* freeIntRepProc */
     NULL,				/* dupIntRepProc */
-    NULL,				/* updateStringProc */
+    UpdateStringOfIndex,		/* updateStringProc */
     NULL,				/* setFromAnyProc */
     TCL_OBJTYPE_V1(TclLengthOne)
 };
-
+
 Tcl_Size
 TclLengthOne(
     TCL_UNUSED(Tcl_Obj *))
@@ -3547,7 +3559,7 @@ GetEndOffsetFromObj(
     Tcl_WideInt offset = -1;	/* Offset in the "end-offset" expression - 1 */
     void *cd;
 
-    while ((irPtr = TclFetchInternalRep(objPtr, &endOffsetType)) == NULL) {
+    while ((irPtr = TclFetchInternalRep(objPtr, &tclEndOffsetType)) == NULL) {
 	Tcl_ObjInternalRep ir;
 	Tcl_Size length;
 	const char *bytes = TclGetStringFromObj(objPtr, &length);
@@ -3558,6 +3570,11 @@ GetEndOffsetFromObj(
 	    int t1 = 0, t2 = 0;
 
 	    /* Value doesn't start with "e" */
+
+	    if (length == 0) {
+		offset = WIDE_MIN;
+		goto parseOK;
+	    }
 
 	    /* If we reach here, the string rep of objPtr exists. */
 
@@ -3732,7 +3749,7 @@ GetEndOffsetFromObj(
     parseOK:
 	/* Success. Store the new internal rep. */
 	ir.wideValue = offset;
-	Tcl_StoreInternalRep(objPtr, &endOffsetType, &ir);
+	Tcl_StoreInternalRep(objPtr, &tclEndOffsetType, &ir);
     }
 
     offset = irPtr->wideValue;
@@ -3847,6 +3864,12 @@ TclIndexEncode(
     const Tcl_WideInt ENDVALUE = 2 * (Tcl_WideInt) INT_MAX;
 
     assert(ENDVALUE < WIDE_MAX);
+    if (Tcl_IsEmpty(objPtr)) {
+	if (interp) {
+	    Tcl_AppendResult(interp, "Empty string cannot be compiled as index", (char *)NULL);
+	}
+	return TCL_ERROR;
+    }
     if (TCL_OK != GetWideForIndex(interp, objPtr, ENDVALUE, &wide)) {
 	return TCL_ERROR;
     }
@@ -3881,7 +3904,7 @@ TclIndexEncode(
      */
 
     const Tcl_ObjInternalRep *irPtr =
-	TclFetchInternalRep(objPtr, &endOffsetType);
+	TclFetchInternalRep(objPtr, &tclEndOffsetType);
 
     if (irPtr && irPtr->wideValue >= 0) {
 	/*

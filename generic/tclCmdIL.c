@@ -2693,9 +2693,9 @@ Tcl_LrangeObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int result;
-    Tcl_Size listLen, first, last;
-    if (objc != 4) {
-	Tcl_WrongNumArgs(interp, 1, objv, "list first last");
+    Tcl_Size listLen, first = -1, last = -1;
+    if (objc < 2 || objc > 4) {
+	Tcl_WrongNumArgs(interp, 1, objv, "list ?first? ?last?");
 	return TCL_ERROR;
     }
 
@@ -2704,16 +2704,24 @@ Tcl_LrangeObjCmd(
 	return result;
     }
 
-    result = TclGetIntForIndexM(interp, objv[2], /*endValue*/ listLen - 1,
-	    &first);
-    if (result != TCL_OK) {
-	return result;
+    if (objc > 2) {
+	result = TclGetIntForIndexM(interp, objv[2], /*endValue*/ listLen - 1,
+		&first);
+	if (result != TCL_OK) {
+	    return result;
+	}
     }
 
+    if (objc > 3) {
     result = TclGetIntForIndexM(interp, objv[3], /*endValue*/ listLen - 1,
 	    &last);
-    if (result != TCL_OK) {
-	return result;
+	if (result != TCL_OK) {
+	    return result;
+	}
+    }
+    if ((last == -1) && ((objc < 4) || Tcl_IsEmpty(objv[3]))) {
+	/* TIP #615: empty string for 'last' means 'end' or 'first' */
+	last = (first == -1) ? (listLen - 1) : first;
     }
 
     Tcl_Obj *resultObj;
@@ -2941,12 +2949,12 @@ Tcl_LreplaceObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *listPtr;
-    Tcl_Size numToDelete, listLen, first, last;
+    Tcl_Size numToDelete, listLen, first = -1, last = -1;
     int result;
 
-    if (objc < 4) {
+    if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv,
-		"list first last ?element ...?");
+		"list ?first? ?last? ?element ...?");
 	return TCL_ERROR;
     }
 
@@ -2961,14 +2969,22 @@ Tcl_LreplaceObjCmd(
      * included for deletion.
      */
 
-    result = TclGetIntForIndexM(interp, objv[2], /*end*/ listLen-1, &first);
-    if (result != TCL_OK) {
-	return result;
+    if (objc > 2) {
+	result = TclGetIntForIndexM(interp, objv[2], /*end*/ listLen-1, &first);
+	if (result != TCL_OK) {
+	    return result;
+	}
     }
 
-    result = TclGetIntForIndexM(interp, objv[3], /*end*/ listLen-1, &last);
-    if (result != TCL_OK) {
-	return result;
+    if (objc > 3) {
+	result = TclGetIntForIndexM(interp, objv[3], /*end*/ listLen-1, &last);
+	if (result != TCL_OK) {
+	    return result;
+	}
+    }
+    if ((last == -1) && ((objc < 4) || Tcl_IsEmpty(objv[3]))) {
+	/* TIP #615: empty string for 'last' means 'end' or 'first' */
+	last = (first == -1) ? (listLen - 1) : first;
     }
 
     if (first < 0) {
@@ -3005,7 +3021,7 @@ Tcl_LreplaceObjCmd(
      */
 
     if (TCL_OK != Tcl_ListObjReplace(interp, listPtr, first, numToDelete,
-	    objc-4, objv+4)) {
+	    (objc > 3) ? objc-4 : 0, objv+4)) {
 	Tcl_DecrRefCount(listPtr);
 	return TCL_ERROR;
     }
@@ -3308,7 +3324,9 @@ Tcl_LsearchObjCmd(
 
 	    for (j=0 ; j<sortInfo.indexc ; j++) {
 		int encoded = 0;
-		if (TclIndexEncode(interp, indices[j], TCL_INDEX_NONE,
+		if (Tcl_IsEmpty(indices[j])) {
+		    encoded = (int)TCL_INDEX_NONE;
+		} else if (TclIndexEncode(interp, indices[j], TCL_INDEX_NONE,
 			TCL_INDEX_NONE, &encoded) != TCL_OK) {
 		    result = TCL_ERROR;
 		}
@@ -4856,8 +4874,8 @@ Tcl_LeditObjCmd(
     Tcl_Obj *finalValuePtr;	/* Value finally assigned to the variable. */
     int createdNewObj;
     int result;
-    Tcl_Size first;
-    Tcl_Size last;
+    Tcl_Size first = -1;
+    Tcl_Size last = -1;
     Tcl_Size listLen;
     Tcl_Size numToDelete;
 
@@ -4882,14 +4900,22 @@ Tcl_LeditObjCmd(
 	return result;
     }
 
-    result = TclGetIntForIndexM(interp, objv[2], /*end*/ listLen-1, &first);
-    if (result != TCL_OK) {
-	return result;
+    if (objc > 2) {
+	result = TclGetIntForIndexM(interp, objv[2], /*end*/ listLen-1, &first);
+	if (result != TCL_OK) {
+	    return result;
+	}
     }
 
-    result = TclGetIntForIndexM(interp, objv[3], /*end*/ listLen-1, &last);
-    if (result != TCL_OK) {
-	return result;
+    if (objc > 3) {
+	result = TclGetIntForIndexM(interp, objv[3], /*end*/ listLen-1, &last);
+	if (result != TCL_OK) {
+	    return result;
+	}
+    }
+    if ((last == -1) && ((objc < 4) || Tcl_IsEmpty(objv[3]))) {
+	/* TIP #615: empty string for 'last' means 'end' or 'first' */
+	last = (first == -1) ? (listLen - 1) : first;
     }
 
     if (first < 0) {
@@ -4915,7 +4941,7 @@ Tcl_LeditObjCmd(
     }
 
     result =
-	Tcl_ListObjReplace(interp, listPtr, first, numToDelete, objc - 4, objv + 4);
+	Tcl_ListObjReplace(interp, listPtr, first, numToDelete, (objc > 3) ? objc-4 : 0, objv + 4);
     if (result != TCL_OK) {
 	if (createdNewObj) {
 	    Tcl_DecrRefCount(listPtr);

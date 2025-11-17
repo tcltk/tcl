@@ -110,13 +110,25 @@ test lreplace-1.29 {lreplace command} -body {
 test lreplace-1.30 {lreplace command} -body {
     lreplace {not {}alist} 0 0 [error foo]
 } -returnCodes 1 -result {foo}
+test lreplace-1.31 {lreplace command} -body {
+    lreplace {a b c} 1
+} -result {a c}
+test lreplace-1.32 {lreplace command} -body {
+    lreplace {a b c} 1 {}
+} -result {a c}
+test lreplace-1.33 {lreplace command} -body {
+    lreplace {a b c} {} {}
+} -result {}
+test lreplace-1.33 {lreplace command} -body {
+    lreplace {a b c}
+} -result {}
 
 test lreplace-2.1 {lreplace errors} -body {
     list [catch lreplace msg] $msg
-} -result {1 {wrong # args: should be "lreplace list first last ?element ...?"}}
+} -result {1 {wrong # args: should be "lreplace list ?first? ?last? ?element ...?"}}
 test lreplace-2.2 {lreplace errors} -body {
     list [catch {lreplace a b} msg] $msg
-} -result {1 {wrong # args: should be "lreplace list first last ?element ...?"}}
+} -result {1 {bad index "b": must be integer?[+-]integer? or end?[+-]integer?}}
 test lreplace-2.3 {lreplace errors} -body {
     list [catch {lreplace x a 10} msg] $msg
 } -result {1 {bad index "a": must be integer?[+-]integer? or end?[+-]integer?}}
@@ -365,6 +377,18 @@ test ledit-1.31 {ledit command} -body {
     set arr(x) {a b}
     list [ledit arr(x) 0 0 c] $arr(x)
 } -result {{c b} {c b}}
+test ledit-1.32 {ledit command, TIP #615} -body {
+    set l [list a b c]
+    list [ledit l 1 {} y] $l
+} -result {{a y c} {a y c}}
+test ledit-1.33 {ledit command, TIP #615} -body {
+    set l [list a b c]
+    list [ledit l {} {} y] $l
+} -result {y y}
+test ledit-1.34 {ledit command, TIP #615} -body {
+    set l [list a b c]
+    list [ledit l {} 1 y] $l
+} -result {{y c} {y c}}
 
 test ledit-2.1 {ledit errors} -body {
     list [catch ledit msg] $msg
