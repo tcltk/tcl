@@ -46,7 +46,7 @@ test lpop-1.6 {interpreted: error conditions} -returnCodes error -body {
 test lpop-1.7 {interpreted: error conditions} -returnCodes error -body {
     set l "x y"
     lpop l {}
-} -match glob -result {bad index *}
+} -result {index "" out of range}
 test lpop-1.8 {interpreted: error conditions} -returnCodes error -body {
     set l "x y"
     lpop l 0 0 0 0 1
@@ -127,7 +127,7 @@ test lpop-4.7 {compiled: error conditions} -returnCodes error -body {
     apply {l {
 	lpop l {}
     }} "x y"
-} -match glob -result {bad index *}
+} -result {index "" out of range}
 test lpop-4.8 {compiled: error conditions} -returnCodes error -body {
     apply {l {
 	lpop l 0 0 0 0 1
