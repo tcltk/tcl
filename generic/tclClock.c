@@ -1544,9 +1544,9 @@ ClockGetdatefieldsObjCmd(
     Tcl_DictObjPut(NULL, dict, lit[LIT_JULIANDAY],
 	    Tcl_NewWideIntObj(fields.julianDay));
     Tcl_DictObjPut(NULL, dict, lit[LIT_GREGORIAN],
-	    Tcl_NewWideIntObj(fields.gregorian));
+	    Tcl_NewWideIntObj(!(fields.flags & CLF_BGREG)));
     Tcl_DictObjPut(NULL, dict, lit[LIT_ERA],
-	    lit[fields.isBce ? LIT_BCE : LIT_CE]);
+	    lit[(fields.flags & CLF_BCE) ? LIT_BCE : LIT_CE]);
     Tcl_DictObjPut(NULL, dict, lit[LIT_YEAR],
 	    Tcl_NewWideIntObj(fields.year));
     Tcl_DictObjPut(NULL, dict, lit[LIT_DAYOFYEAR],
@@ -1715,7 +1715,11 @@ ClockGetjuliandayfromerayearmonthdayObjCmd(
 	    || TclGetIntFromObj(interp, objv[2], &changeover) != TCL_OK) {
 	return TCL_ERROR;
     }
-    fields.isBce = isBce;
+    if (isBce) {
+	fields.flags |= CLF_BCE;
+    } else {
+	fields.flags &= ~CLF_BCE;
+    }
 
     /*
      * Get Julian day.
@@ -1800,7 +1804,11 @@ ClockGetjuliandayfromerayearweekdayObjCmd(
 	    || TclGetIntFromObj(interp, objv[2], &changeover) != TCL_OK) {
 	return TCL_ERROR;
     }
-    fields.isBce = isBce;
+    if (isBce) {
+	fields.flags |= CLF_BCE;
+    } else {
+	fields.flags &= ~CLF_BCE;
+    }
 
     /*
      * Get Julian day.
@@ -2355,7 +2363,7 @@ ConvertUTCToLocalUsingC(
      * Fill in the date in 'fields' and use it to derive Julian Day.
      */
 
-    fields->isBce = 0;
+    fields->flags &= ~CLF_BCE;
     fields->year = timeVal->tm_year + 1900;
     fields->month = timeVal->tm_mon + 1;
     fields->dayOfMonth = timeVal->tm_mday;
@@ -2505,7 +2513,7 @@ GetYearWeekDay(
 
     temp.julianDay = fields->julianDay - 3;
     GetGregorianEraYearDay(&temp, changeover);
-    if (temp.isBce) {
+    if (temp.flags & CLF_BCE) {
 	temp.iso8601Year = temp.year - 1;
     } else {
 	temp.iso8601Year = temp.year + 1;
@@ -2521,7 +2529,7 @@ GetYearWeekDay(
      */
 
     if (fields->julianDay < temp.julianDay) {
-	if (temp.isBce) {
+	if (temp.flags & CLF_BCE) {
 	    temp.iso8601Year += 1;
 	} else {
 	    temp.iso8601Year -= 1;
@@ -2571,7 +2579,7 @@ GetGregorianEraYearDay(
 	 * Gregorian calendar.
 	 */
 
-	fields->gregorian = 1;
+	fields->flags &= ~CLF_BGREG;
 	year = 1;
 
 	/*
@@ -2609,7 +2617,7 @@ GetGregorianEraYearDay(
 	 * Julian calendar.
 	 */
 
-	fields->gregorian = 0;
+	fields->flags |= CLF_BGREG;
 	year = 1;
 	day = jday - JDAY_1_JAN_1_CE_JULIAN;
     }
@@ -2647,10 +2655,10 @@ GetGregorianEraYearDay(
      */
 
     if (year <= 0) {
-	fields->isBce = 1;
+	fields->flags |= CLF_BCE;
 	fields->year = 1 - year;
     } else {
-	fields->isBce = 0;
+	fields->flags &= ~CLF_BCE;
 	fields->year = year;
     }
     fields->dayOfYear = (int)day + 1;
@@ -2736,7 +2744,7 @@ GetJulianDayFromEraYearWeekDay(
      * Find January 4 in the ISO8601 year, which will always be in week 1.
      */
 
-    firstWeek.isBce = fields->isBce;
+    firstWeek.flags = (fields->flags & CLF_BCE);
     firstWeek.year = fields->iso8601Year;
     firstWeek.month = 1;
     firstWeek.dayOfMonth = 4;
@@ -2754,6 +2762,11 @@ GetJulianDayFromEraYearWeekDay(
 
     fields->julianDay = firstMonday + 7 * (fields->iso8601Week - 1)
 	    + fields->dayOfWeek - 1;
+    if (fields->julianDay >= changeover) {
+	fields->flags &= ~CLF_BGREG;
+    } else {
+	fields->flags |= CLF_BGREG;
+    }
 }
 
 /*
@@ -2781,7 +2794,7 @@ GetJulianDayFromEraYearMonthDay(
     Tcl_WideInt ym1, ym1o4, ym1o100, ym1o400;
     int year, month, mm1, q, r;
 
-    if (fields->isBce) {
+    if (fields->flags & CLF_BCE) {
 	year = 1 - fields->year;
     } else {
 	year = fields->year;
@@ -2807,12 +2820,12 @@ GetJulianDayFromEraYearMonthDay(
      * Adjust the year after reducing the month.
      */
 
-    fields->gregorian = 1;
+    fields->flags &= ~CLF_BGREG;
     if (year < 1) {
-	fields->isBce = 1;
+	fields->flags |= CLF_BCE;
 	fields->year = 1 - year;
     } else {
-	fields->isBce = 0;
+	fields->flags &= ~CLF_BCE;
 	fields->year = year;
     }
 
@@ -2858,11 +2871,11 @@ GetJulianDayFromEraYearMonthDay(
      */
 
     if (fields->julianDay < changeover) {
-	fields->gregorian = 0;
+	fields->flags |= CLF_BGREG;
 	fields->julianDay = JDAY_1_JAN_1_CE_JULIAN - 1
 		+ fields->dayOfMonth
 		+ daysInPriorMonths[year%4 == 0][month - 1]
-		+ (365 * ym1)
+		+ (ONE_YEAR * ym1)
 		+ ym1o4;
     }
 }
@@ -2892,7 +2905,7 @@ TclGetJulianDayFromEraYearDay(
     Tcl_WideInt year, ym1;
 
     /* Get absolute year number from the civil year */
-    if (fields->isBce) {
+    if (fields->flags & CLF_BCE) {
 	year = 1 - fields->year;
     } else {
 	year = fields->year;
@@ -2901,11 +2914,11 @@ TclGetJulianDayFromEraYearDay(
     ym1 = year - 1;
 
     /* Try the Gregorian calendar first. */
-    fields->gregorian = 1;
+    fields->flags &= ~CLF_BGREG;
     fields->julianDay =
-	    1721425
+	    JDAY_1_JAN_1_CE_GREGORIAN - 1
 	    + fields->dayOfYear
-	    + (365 * ym1)
+	    + (ONE_YEAR * ym1)
 	    + (ym1 / 4)
 	    - (ym1 / 100)
 	    + (ym1 / 400);
@@ -2913,11 +2926,11 @@ TclGetJulianDayFromEraYearDay(
     /* If the date is before the Gregorian change, use the Julian calendar. */
 
     if (fields->julianDay < changeover) {
-	fields->gregorian = 0;
+	fields->flags |= CLF_BGREG;
 	fields->julianDay =
-		1721423
+		JDAY_1_JAN_1_CE_JULIAN - 1
 		+ fields->dayOfYear
-		+ (365 * ym1)
+		+ (ONE_YEAR * ym1)
 		+ (ym1 / 4);
     }
 }
@@ -2941,12 +2954,13 @@ TclIsGregorianLeapYear(
 {
     Tcl_WideInt year = fields->year;
 
-    if (fields->isBce) {
+    if (fields->flags & CLF_BCE) {
 	year = 1 - year;
     }
     if (year % 4 != 0) {
 	return 0;
-    } else if (!(fields->gregorian)) {
+    } else if (fields->flags & CLF_BGREG) {
+	/* Before Gregorian leap year didn't follow y/100 and y/400 logic. */
 	return 1;
     } else if (year % 400 == 0) {
 	return 1;
@@ -3676,6 +3690,39 @@ ClockScanObjCmd(
 
 /*----------------------------------------------------------------------
  *
+ * ClockAssembleJulianDay --
+ *
+ *	Assembles julianDay using year, month, etc. Thereby it'd also update
+ *	gregorian flag.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+ClockAssembleJulianDay(
+    DateInfo *info)		/* Clock scan info structure */
+{
+    /* Assemble julianDay (and also gregorian flag) */
+    if (info->flags & CLF_ISO8601WEEK) {
+	GetJulianDayFromEraYearWeekDay(&yydate, GREGORIAN_CHANGE_DATE);
+    } else if (!(info->flags & CLF_DAYOFYEAR) /* no day of year */
+	    || (info->flags & (CLF_DAYOFMONTH|CLF_MONTH)) /* yymmdd over yyddd */
+	    == (CLF_DAYOFMONTH|CLF_MONTH)) {
+	GetJulianDayFromEraYearMonthDay(&yydate, GREGORIAN_CHANGE_DATE);
+    } else {
+	TclGetJulianDayFromEraYearDay(&yydate, GREGORIAN_CHANGE_DATE);
+    }
+    info->flags |= CLF_ASSEMBLE_SECONDS;
+}
+
+/*----------------------------------------------------------------------
+ *
  * ClockScanCommit --
  *
  *	Converts date info structure into UTC seconds.
@@ -3708,16 +3755,7 @@ ClockScanCommit(
 
     /* If needed assemble julianDay using year, month, etc. */
     if (info->flags & CLF_ASSEMBLE_JULIANDAY) {
-	if (info->flags & CLF_ISO8601WEEK) {
-	    GetJulianDayFromEraYearWeekDay(&yydate, GREGORIAN_CHANGE_DATE);
-	} else if (!(info->flags & CLF_DAYOFYEAR) /* no day of year */
-		|| (info->flags & (CLF_DAYOFMONTH|CLF_MONTH)) /* yymmdd over yyddd */
-		== (CLF_DAYOFMONTH|CLF_MONTH)) {
-	    GetJulianDayFromEraYearMonthDay(&yydate, GREGORIAN_CHANGE_DATE);
-	} else {
-	    TclGetJulianDayFromEraYearDay(&yydate, GREGORIAN_CHANGE_DATE);
-	}
-	info->flags |= CLF_ASSEMBLE_SECONDS;
+	ClockAssembleJulianDay(info);
 	info->flags &= ~CLF_ASSEMBLE_JULIANDAY;
     }
 
@@ -3837,6 +3875,14 @@ ClockValidDate(
 	    goto error;
 	}
     }
+
+    /* To check day in leap year correct, validation may need gregorian flag,
+     * so assemble julianDay and gregorian flag from date tokens. */
+    if (info->flags & CLF_ASSEMBLE_JULIANDAY) {
+	ClockAssembleJulianDay(info);
+	info->flags &= ~CLF_ASSEMBLE_JULIANDAY;
+    }
+
     /* day of month */
     if (info->flags & (CLF_DAYOFMONTH|CLF_DAYOFWEEK)) {
 	if (yyDay < 1 || yyDay > 31) {
@@ -4021,7 +4067,7 @@ ClockFreeScan(
 	    }
 	    yyYear += dataPtr->currentYearCentury;
 	}
-	yydate.isBce = 0;
+	yydate.flags &= ~CLF_BCE;
 	info->flags |= CLF_ASSEMBLE_JULIANDAY|CLF_ASSEMBLE_SECONDS;
     }
 
@@ -4238,7 +4284,7 @@ ClockCalcRelTime(
 	    info->flags &= ~CLF_ASSEMBLE_JULIANDAY;
 	}
 
-	yydate.isBce = 0;
+	yydate.flags &= ~CLF_BCE;
 	yydate.julianDay = WeekdayOnOrBefore(yyDayOfWeek, yydate.julianDay + 6)
 		+ 7 * yyDayOrdinal;
 	if (yyDayOrdinal > 0) {
