@@ -10,7 +10,6 @@
  */
 
 #include "tclInt.h"
-#include <assert.h>
 
 /*
  * Indices of the standard return options dictionary keys.

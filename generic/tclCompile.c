@@ -15,7 +15,6 @@
 #include "tclInt.h"
 #define ALLOW_DEPRECATED_OPCODES
 #include "tclCompile.h"
-#include <assert.h>
 
 /*
  * Variable that controls whether compilation tracing is enabled and, if so,

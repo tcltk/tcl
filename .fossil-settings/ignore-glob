@@ -64,6 +64,7 @@ unix/pkgs8/*
 unix/pkgs/*
 win/Debug*
 win/Release*
+win/tcl.pc
 win/*.manifest
 win/pkgs8/*
 win/pkgs/*
