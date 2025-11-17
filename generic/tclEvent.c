@@ -461,7 +461,7 @@ TclDefaultBgErrorHandlerObjCmd(
 
 	if (Tcl_IsSafe(interp)) {
 	    Tcl_RestoreInterpState(interp, saved);
-	    TclObjInvoke(interp, 2, tempObjv, TCL_INVOKE_HIDDEN);
+	    Tcl_NRCallObjProc(interp, TclNRInvoke, NULL, 2, tempObjv);
 	} else {
 	    Tcl_Channel errChannel = Tcl_GetStdChannel(TCL_STDERR);
 
@@ -1108,6 +1108,9 @@ static const struct {
 #endif
 #ifdef STATIC_BUILD
 	    ".static"
+#endif
+#if (defined(__MSVCRT__) || defined(_UCRT)) && (!defined(__USE_MINGW_ANSI_STDIO) || __USE_MINGW_ANSI_STDIO)
+	    ".stdio-mingw"
 #endif
 #ifndef TCL_WITH_EXTERNAL_TOMMATH
 	    ".tommath-0103"

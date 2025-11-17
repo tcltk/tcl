@@ -3049,9 +3049,27 @@ test binary-80.4 {Tcl_GetBytesFromObj} -constraints testbytestring -returnCodes 
     testbytestring [testbytestring "\xC0\x80\xA0\xA0\xA0\xF0\x9F\x98\x81"]
 } -result "expected byte sequence but character 4 was '\U01F601' (U+01F601)"
 test binary-80.5 {Tcl_GetBytesFromObj} -constraints {
-	bigmem testbytestring pointerIs64bit deprecated
+    bigmem testbytestring pointerIs64bit deprecated
 } -body {
-    testbytestring [string repeat A [expr 2**31]]
+    # dynamic constraint - ensure the data segment is large enough on this box for this test:
+    if {
+      [testConstraint unix] &&
+      ![catch { exec sh -c {ulimit -d} } dssz] &&
+      $dssz ne "unlimited" && $dssz <= 4400000
+    } {
+	tcltest::Skip "DBIGMEM: too small data seg size limit ($dssz <= 4400000)"
+    }
+    # dynamic constraint - ensure we're able to allocate such large block:
+    if {[catch { string repeat A [expr 2**31] } ret opt]} {
+	if {[string match "*unable to alloc*" $ret]} {
+	    tcltest::Skip "DBIGMEM: $ret"
+	}
+	return {*}$opt $ret
+    }
+    # test:
+    testbytestring $ret
+} -cleanup {
+    unset -nocomplain opt ret dssz
 } -returnCodes 1 -result "byte sequence length exceeds INT_MAX"
 
 # ----------------------------------------------------------------------
