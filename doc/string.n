@@ -438,8 +438,8 @@ in
 ). A negative value or the empty string refers to a position
 outside the range of the string. When referring to the last index
 in a range, the empty string means that the range only consists
-of a single character, except when \fBstart\fR is the empty string
-too: In that case, it's equivalent to \fBend\fR
+of a single character, except when \fBstart\fR is negative or the
+empty string too: In that case, it's equivalent to \fBend\fR
 .IP \fBend\fR 10
 The last char of the string (e.g., \fBend\fR would refer to the
 .QW d

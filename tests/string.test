@@ -1572,6 +1572,16 @@ test string-12.25.$noComp {bignum index arithmetic} -setup {
 } -body {
     demo 0x10000000000000000-0xffffffffffffffff 3
 } -result uba
+test string-12.26.$noComp {string range} {
+    run {string range abcd {}}
+} {abcd}
+test string-12.27.$noComp {string range} {
+    run {string range abcd {} {}}
+} {abcd}
+test string-12.28.$noComp {string range} {
+    run {string range abcd 1 {}}
+} {b}
+
 
 test string-13.1.$noComp {string repeat} {
     list [catch {run {string repeat}} msg] $msg
@@ -1732,6 +1742,19 @@ test stringComp-14.25.$noComp {repeated unicode} {
 test stringComp-14.26.$noComp {expression indices} {
     run {string replace abcd 0x10000000000000000-0xffffffffffffffff 2 e}
 } aed
+test string-14.27.$noComp {string replace} {
+    run {string replace abcd}
+} {}
+test string-14.28.$noComp {string replace} {
+    run {string replace abcd {}}
+} {}
+test string-14.29.$noComp {string replace} {
+    run {string replace abcd {} {}}
+} {}
+test string-14.30.$noComp {string replace} {
+    run {string replace abcd 1 {}}
+} {acd}
+
 
 test string-15.1.$noComp {string tolower not enough args} {
     list [catch {run {string tolower}} msg] $msg

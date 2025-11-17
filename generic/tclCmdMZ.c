@@ -1611,7 +1611,7 @@ StringIsCmd(
 	STR_IS_ALNUM,	STR_IS_ALPHA,	STR_IS_ASCII,	STR_IS_CONTROL,
 	STR_IS_BOOL,	STR_IS_DICT,	STR_IS_DIGIT,	STR_IS_DOUBLE,
 	STR_IS_ENTIER,	STR_IS_FALSE,	STR_IS_GRAPH,	STR_IS_INDEX,
-	STR_IS_INT,		STR_IS_LIST,	STR_IS_LOWER,	STR_IS_PRINT,
+	STR_IS_INT,	STR_IS_LIST,	STR_IS_LOWER,	STR_IS_PRINT,
 	STR_IS_PUNCT,	STR_IS_SPACE,	STR_IS_TRUE,	STR_IS_UPPER,
 	STR_IS_WIDE,	STR_IS_WORD,	STR_IS_XDIGIT
     } index;
@@ -2476,7 +2476,7 @@ StringRplcCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_Size first = 0, last = -1, end;
+    Tcl_Size first = -1, last = -1, end;
 
     if (objc < 2 || objc > 5) {
 	Tcl_WrongNumArgs(interp, 1, objv, "string ?first? ?last? ?string?");
