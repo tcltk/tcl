@@ -1699,9 +1699,9 @@ ClockScnToken_LocaleERA_Proc(
     }
 
     if (val & 1) {
-	yydate.isBce = 0;
+	yydate.flags &= ~CLF_BCE;
     } else {
-	yydate.isBce = 1;
+	yydate.flags |= CLF_BCE;
     }
 
     return TCL_OK;
@@ -1960,8 +1960,7 @@ ClockScnToken_StarDate_Proc(
     /* Build a date from year and fraction. */
 
     yydate.year = year + RODDENBERRY;
-    yydate.isBce = 0;
-    yydate.gregorian = 1;
+    yydate.flags &= ~(CLF_BCE|CLF_BGREG);
 
     if (IsGregorianLeapYear(&yydate)) {
 	fractYear *= 366;
@@ -2985,7 +2984,7 @@ ClockFmtToken_LocaleERA_Proc(
     const char *s;
     Tcl_Size len;
 
-    if (dateFmt->date.isBce) {
+    if (dateFmt->date.flags & CLF_BCE) {
 	mcObj = ClockMCGet(opts, MCLIT_BCE);
     } else {
 	mcObj = ClockMCGet(opts, MCLIT_CE);
