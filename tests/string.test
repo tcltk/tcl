@@ -594,10 +594,10 @@ test string-6.4.$noComp {string is, too many args} {
 } {1 {wrong # args: should be "string is class ?-strict? ?-failindex var? str"}}
 test string-6.5.$noComp {string is, class check} {
     list [catch {run {string is bogus str}} msg] $msg
-} {1 {bad class "bogus": must be alnum, alpha, ascii, control, boolean, dict, digit, double, entier, false, graph, integer, list, lower, print, punct, space, true, upper, wideinteger, wordchar, or xdigit}}
+} {1 {bad class "bogus": must be alnum, alpha, ascii, control, boolean, dict, digit, double, entier, false, graph, index, integer, list, lower, print, punct, space, true, upper, wideinteger, wordchar, or xdigit}}
 test string-6.6.$noComp {string is, ambiguous class} {
     list [catch {run {string is al str}} msg] $msg
-} {1 {ambiguous class "al": must be alnum, alpha, ascii, control, boolean, dict, digit, double, entier, false, graph, integer, list, lower, print, punct, space, true, upper, wideinteger, wordchar, or xdigit}}
+} {1 {ambiguous class "al": must be alnum, alpha, ascii, control, boolean, dict, digit, double, entier, false, graph, index, integer, list, lower, print, punct, space, true, upper, wideinteger, wordchar, or xdigit}}
 test string-6.7.$noComp {string is alpha, all ok} {
     run {string is alpha -strict -failindex var abc}
 } 1
@@ -1473,13 +1473,13 @@ test stringComp-12.1.0.$noComp {Bug 3588366: end-offsets before start} {
 } {}
 test string-12.1.$noComp {string range} {
     list [catch {run {string range}} msg] $msg
-} {1 {wrong # args: should be "string range string first last"}}
+} {1 {wrong # args: should be "string range string ?first? ?last?"}}
 test string-12.2.$noComp {string range} {
     list [catch {run {string range a 1}} msg] $msg
-} {1 {wrong # args: should be "string range string first last"}}
+} {0 {}}
 test string-12.3.$noComp {string range} {
     list [catch {run {string range a 1 2 3}} msg] $msg
-} {1 {wrong # args: should be "string range string first last"}}
+} {1 {wrong # args: should be "string range string ?first? ?last?"}}
 test string-12.4.$noComp {string range} {
     run {string range abcdefghijklmnop 2 14}
 } {cdefghijklmno}
@@ -1572,6 +1572,16 @@ test string-12.25.$noComp {bignum index arithmetic} -setup {
 } -body {
     demo 0x10000000000000000-0xffffffffffffffff 3
 } -result uba
+test string-12.26.$noComp {string range} {
+    run {string range abcd {}}
+} {abcd}
+test string-12.27.$noComp {string range} {
+    run {string range abcd {} {}}
+} {abcd}
+test string-12.28.$noComp {string range} {
+    run {string range abcd 1 {}}
+} {b}
+
 
 test string-13.1.$noComp {string repeat} {
     list [catch {run {string repeat}} msg] $msg
@@ -1619,13 +1629,13 @@ test string-13.14.$noComp {string repeat} {
 
 test string-14.1.$noComp {string replace} {
     list [catch {run {string replace}} msg] $msg
-} {1 {wrong # args: should be "string replace string first last ?string?"}}
+} {1 {wrong # args: should be "string replace string ?first? ?last? ?string?"}}
 test string-14.2.$noComp {string replace} {
     list [catch {run {string replace a 1}} msg] $msg
-} {1 {wrong # args: should be "string replace string first last ?string?"}}
+} {0 a}
 test string-14.3.$noComp {string replace} {
     list [catch {run {string replace a 1 2 3 4}} msg] $msg
-} {1 {wrong # args: should be "string replace string first last ?string?"}}
+} {1 {wrong # args: should be "string replace string ?first? ?last? ?string?"}}
 test string-14.4.$noComp {string replace} {
 } {}
 test string-14.5.$noComp {string replace} {
@@ -1732,6 +1742,19 @@ test stringComp-14.25.$noComp {repeated unicode} {
 test stringComp-14.26.$noComp {expression indices} {
     run {string replace abcd 0x10000000000000000-0xffffffffffffffff 2 e}
 } aed
+test string-14.27.$noComp {string replace} {
+    run {string replace abcd}
+} {}
+test string-14.28.$noComp {string replace} {
+    run {string replace abcd {}}
+} {}
+test string-14.29.$noComp {string replace} {
+    run {string replace abcd {} {}}
+} {}
+test string-14.30.$noComp {string replace} {
+    run {string replace abcd 1 {}}
+} {acd}
+
 
 test string-15.1.$noComp {string tolower not enough args} {
     list [catch {run {string tolower}} msg] $msg
@@ -1766,6 +1789,12 @@ test string-15.10.$noComp {string tolower, unicode} {
 test string-15.11.$noComp {string tolower, compiled} {
     lindex [run {string tolower [list A B [list C]]}] 1
 } b
+test string-15.12.$noComp {string tolower} {
+    run {string tolower ABC {}}
+} abc
+test string-15.13.$noComp {string tolower} {
+    run {string tolower ABC {} {}}
+} abc
 
 test string-16.1.$noComp {string toupper} {
     list [catch {run {string toupper}} msg] $msg
@@ -1800,6 +1829,12 @@ test string-16.10.$noComp {string toupper, unicode} {
 test string-16.11.$noComp {string toupper, compiled} {
     lindex [run {string toupper [list a b [list c]]}] 1
 } B
+test string-16.12.$noComp {string toupper} {
+    run {string toupper abc {}}
+} ABC
+test string-16.13.$noComp {string toupper} {
+    run {string toupper abc {} {}}
+} ABC
 
 test string-17.1.$noComp {string totitle} {
     list [catch {run {string totitle}} msg] $msg
@@ -1829,6 +1864,12 @@ test string-17.9.$noComp {string totitle, surrogates, bug [11ae2be95dac9417]} {
     run {list [string totitle a\U118c0c 1 1] [string totitle a\U118c0c 2 2] \
 	[string totitle a\U118c0c 3 3]}
 } [list a\U118a0c a\U118c0C a\U118c0c]
+test string-17.10.$noComp {string totitle} {
+    run {string totitle "abc xYz" {}}
+} {Abc xyz}
+test string-17.11.$noComp {string totitle} {
+    run {string totitle "abc xYz" {} {}}
+} {Abc xyz}
 
 test string-18.1.$noComp {string trim} {
     list [catch {run {string trim}} msg] $msg
@@ -2068,6 +2109,7 @@ test string-23.1.$noComp {string is command with empty string} {
 	[run {string is double $s}] \
 	[run {string is false $s}] \
 	[run {string is graph $s}] \
+	[run {string is index $s}] \
 	[run {string is integer $s}] \
 	[run {string is lower $s}] \
 	[run {string is print $s}] \
@@ -2078,7 +2120,7 @@ test string-23.1.$noComp {string is command with empty string} {
 	[run {string is wordchar $s}] \
 	[run {string is xdigit $s}] \
 
-} {1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1}
+} {1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1}
 test string-23.2.$noComp {string is command with empty string} {
     set s ""
     list \
@@ -2091,6 +2133,7 @@ test string-23.2.$noComp {string is command with empty string} {
 	[run {string is double -strict $s}] \
 	[run {string is false -strict $s}] \
 	[run {string is graph -strict $s}] \
+	[run {string is index -strict $s}] \
 	[run {string is integer -strict $s}] \
 	[run {string is lower -strict $s}] \
 	[run {string is print -strict $s}] \
@@ -2101,7 +2144,7 @@ test string-23.2.$noComp {string is command with empty string} {
 	[run {string is wordchar -strict $s}] \
 	[run {string is xdigit -strict $s}] \
 
-} {0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}
+} {0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}
 
 test string-24.1.$noComp {string reverse command} -body {
     run {string reverse}

@@ -70,13 +70,25 @@ test lrange-1.15 {range of list elements} {
 test lrange-1.16 {list element quoting} {
     lrange {[append a .b]} 0 end
 } {{[append} a .b\]}
+test lrange-1.17 {range of list elements} {
+    lrange "a b c d"
+} "a b c d"
+test lrange-1.18 {range of list elements} {
+    lrange "a b c d" {}
+} "a b c d"
+test lrange-1.19 {range of list elements} {
+    lrange "a b c d" {} {}
+} "a b c d"
+test lrange-1.20 {range of list elements} {
+    lrange "a b c d" 1 {}
+} "b"
 
 test lrange-2.1 {error conditions} {
     list [catch {lrange a b} msg] $msg
-} {1 {wrong # args: should be "lrange list first last"}}
+} {1 {bad index "b": must be integer?[+-]integer? or end?[+-]integer?}}
 test lrange-2.2 {error conditions} {
     list [catch {lrange a b 6 7} msg] $msg
-} {1 {wrong # args: should be "lrange list first last"}}
+} {1 {wrong # args: should be "lrange list ?first? ?last?"}}
 test lrange-2.3 {error conditions} {
     list [catch {lrange a b 6} msg] $msg
 } {1 {bad index "b": must be integer?[+-]integer? or end?[+-]integer?}}
