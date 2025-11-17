@@ -3864,6 +3864,12 @@ TclIndexEncode(
     const Tcl_WideInt ENDVALUE = 2 * (Tcl_WideInt) INT_MAX;
 
     assert(ENDVALUE < WIDE_MAX);
+    if (Tcl_IsEmpty(objPtr)) {
+	if (interp) {
+	    Tcl_AppendResult(interp, "Empty string cannot be compiled as index", (char *)NULL);
+	}
+	return TCL_ERROR;
+    }
     if (TCL_OK != GetWideForIndex(interp, objPtr, ENDVALUE, &wide)) {
 	return TCL_ERROR;
     }
