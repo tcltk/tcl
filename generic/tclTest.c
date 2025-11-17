@@ -2126,16 +2126,22 @@ typedef int
 UtfTransformFn(Tcl_Interp *interp, Tcl_Encoding encoding, const char *src,
 	Tcl_Size srcLen, int flags, Tcl_EncodingState *statePtr, char *dst,
 	Tcl_Size dstLen, int *srcReadPtr, int *dstWrotePtr, int *dstCharsPtr);
+typedef enum { 
+	UTF_TO_EXTERNAL,
+	EXTERNAL_TO_UTF,
+	UTF_TO_EXTERNAL_EX,
+	EXTERNAL_TO_UTF_EX
+} UtfTransformType;
 
 static int UtfExtWrapper(
-    Tcl_Interp *interp, UtfTransformFn *transformer, int objc, Tcl_Obj *const objv[])
+    Tcl_Interp *interp, UtfTransformType transform, int objc, Tcl_Obj *const objv[])
 {
     Tcl_Encoding encoding;
     Tcl_EncodingState encState, *encStatePtr;
     Tcl_Size srcLen, bufLen;
     const unsigned char *bytes;
     unsigned char *bufPtr;
-    int srcRead, dstLen, dstWrote, dstChars;
+    Tcl_Size srcRead, dstLen, dstWrote, dstChars;
     Tcl_Obj *srcReadVar, *dstWroteVar, *dstCharsVar;
     int result;
     int flags;
@@ -2196,7 +2202,7 @@ static int UtfExtWrapper(
 	return TCL_ERROR;
     }
 
-    if (Tcl_GetIntFromObj(interp, objv[6], &dstLen) != TCL_OK) {
+    if (Tcl_GetSizeIntFromObj(interp, objv[6], &dstLen) != TCL_OK) {
 	return TCL_ERROR;
     }
     srcReadVar = NULL;
@@ -2229,7 +2235,7 @@ static int UtfExtWrapper(
 		    "TCL_ENCODING_CHAR_LIMIT set in flags.", TCL_STATIC);
 	    return TCL_ERROR;
 	}
-	if (Tcl_GetIntFromObj(interp, valueObj, &dstChars) != TCL_OK) {
+	if (Tcl_GetSizeIntFromObj(interp, valueObj, &dstChars) != TCL_OK) {
 	    return TCL_ERROR;
 	}
     } else {
@@ -2241,15 +2247,48 @@ static int UtfExtWrapper(
     memset(bufPtr, 0xFF, dstLen); /* Need to check nul terminator */
     memmove(bufPtr + dstLen, "\xAB\xCD\xEF\xAB", 4);   /* overflow detection */
     bytes = Tcl_GetByteArrayFromObj(objv[3], &srcLen); /* Last! to avoid shimmering */
-    result = (*transformer)(interp, encoding, (const char *)bytes, srcLen, flags,
-	    encStatePtr, (char *)bufPtr, dstLen,
-	    srcReadVar ? &srcRead : NULL,
-	    &dstWrote,
-	    dstCharsVar ? &dstChars : NULL);
+    switch (transform) {
+    case UTF_TO_EXTERNAL:
+    case EXTERNAL_TO_UTF:
+	{
+	    int dstWrote32 = 0, dstChars32 = 0, srcRead32 = 0;
+	    if ((flags & TCL_ENCODING_CHAR_LIMIT) && (dstChars > INT_MAX)) {
+		Tcl_SetResult(interp,
+		    "dstChars too large for Tcl_UtfToExternal/Tcl_ExternalToUtf",
+		    TCL_STATIC);
+		result = TCL_ERROR;
+		goto done;
+	    }
+	    dstChars32 = (int)dstChars;
+	    result = (transform == UTF_TO_EXTERNAL ?
+			Tcl_UtfToExternal : Tcl_ExternalToUtf) (
+				interp, encoding, (const char *)bytes,
+				srcLen, flags, encStatePtr,
+				(char *)bufPtr, dstLen,
+				srcReadVar ? &srcRead32 : NULL, &dstWrote32,
+				dstCharsVar ? &dstChars32 : NULL);
+	    srcRead = (Tcl_Size)srcRead32;
+	    dstWrote = (Tcl_Size)dstWrote32;
+	    dstChars = (Tcl_Size)dstChars32;
+	    break;
+	}
+    case EXTERNAL_TO_UTF_EX:
+	result = Tcl_ExternalToUtfEx(interp, encoding, (const char *)bytes, srcLen,
+		flags, encStatePtr, (char *)bufPtr, dstLen,
+	    	srcReadVar ? &srcRead : NULL, &dstWrote,
+	    	dstCharsVar ? &dstChars : NULL, NULL);
+	break;
+    case UTF_TO_EXTERNAL_EX:
+	result = Tcl_UtfToExternalEx(interp, encoding, (const char *)bytes, srcLen,
+		flags, encStatePtr, (char *)bufPtr, dstLen,
+	    	srcReadVar ? &srcRead : NULL, &dstWrote,
+	    	dstCharsVar ? &dstChars : NULL, NULL);
+	break;
+    }
     if (memcmp(bufPtr + bufLen - 4, "\xAB\xCD\xEF\xAB", 4)) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"%s wrote past output buffer",
-		transformer == Tcl_ExternalToUtf ?
+		transform == EXTERNAL_TO_UTF ?
 			"Tcl_ExternalToUtf" : "Tcl_UtfToExternal"));
 	result = TCL_ERROR;
     } else if (result != TCL_ERROR) {
@@ -2298,7 +2337,7 @@ static int UtfExtWrapper(
 	}
 	Tcl_SetObjResult(interp, Tcl_NewListObj(3, resultObjs));
     }
-
+done:
     Tcl_Free(bufPtr);
     Tcl_FreeEncoding(encoding); /* Free returned reference */
     return result;
@@ -2333,11 +2372,15 @@ TestencodingCmd(
     const char *string;
     TclEncoding *encodingPtr;
     static const char *const optionStrings[] = {
-	"create", "delete", "nullength", "Tcl_ExternalToUtf", "Tcl_UtfToExternal",
+	"create", "delete", "nullength", 
+	"Tcl_ExternalToUtf", "Tcl_UtfToExternal",
+	"Tcl_ExternalToUtfEx", "Tcl_UtfToExternalEx",
 	"Tcl_GetEncodingNameFromEnvironment", "Tcl_GetEncodingNameForUser", NULL
     };
     enum options {
-	ENC_CREATE, ENC_DELETE, ENC_NULLENGTH, ENC_EXTTOUTF, ENC_UTFTOEXT,
+	ENC_CREATE, ENC_DELETE, ENC_NULLENGTH,
+	ENC_EXTTOUTF, ENC_UTFTOEXT,
+	ENC_EXTTOUTF_EX, ENC_UTFTOEXT_EX,
 	ENC_GETNAMEENV, ENC_GETNAMEUSER
     } index;
 
@@ -2409,9 +2452,13 @@ TestencodingCmd(
 	Tcl_FreeEncoding(encoding);
 	break;
     case ENC_EXTTOUTF:
-	return UtfExtWrapper(interp,Tcl_ExternalToUtf,objc,objv);
+	return UtfExtWrapper(interp,EXTERNAL_TO_UTF,objc,objv);
     case ENC_UTFTOEXT:
-	return UtfExtWrapper(interp,Tcl_UtfToExternal,objc,objv);
+	return UtfExtWrapper(interp,UTF_TO_EXTERNAL,objc,objv);
+    case ENC_EXTTOUTF_EX:
+	return UtfExtWrapper(interp,EXTERNAL_TO_UTF_EX,objc,objv);
+    case ENC_UTFTOEXT_EX:
+	return UtfExtWrapper(interp,UTF_TO_EXTERNAL_EX,objc,objv);
     case ENC_GETNAMEUSER:
     case ENC_GETNAMEENV:
 	if (objc != 2) {
