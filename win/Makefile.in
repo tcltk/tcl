@@ -721,6 +721,11 @@ tclPkgConfig.${OBJEXT}: tclPkgConfig.c
 		-DBUILD_tcl \
 		@DEPARG@ $(CC_OBJNAME)
 
+# tclDate.h dependencies:
+tclClock.${OBJEXT}: tclClock.c tclDate.h
+tclClockFmt.${OBJEXT}: tclClockFmt.c tclDate.h
+tclDate.${OBJEXT}: tclDate.c tclDate.h
+
 tclEvent.${OBJEXT}: tclEvent.c tclUuid.h
 
 tclTest.${OBJEXT}: tclTest.c tclUuid.h
