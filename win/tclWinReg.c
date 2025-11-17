@@ -819,7 +819,9 @@ GetValue(
 		    Tcl_NewStringObj(Tcl_DStringValue(&buf),
 			    Tcl_DStringLength(&buf)));
 
-	    while (*wp++ != 0); /* empty loop body */
+	    while (*wp++ != 0) {
+		// Empty body
+	    }
 	    p = (char *) wp;
 	    Tcl_DStringFree(&buf);
 	}

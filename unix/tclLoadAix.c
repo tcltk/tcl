@@ -394,7 +394,11 @@ readExports(
     ExportPtr ep;
     const char *errMsg;
 
-#define Error(msg) do{errMsg=(msg);goto error;}while(0)
+#define Error(msg) \
+    do {			\
+	errMsg = (msg);		\
+	goto error;		\
+    } while (0)
 #define SysErr() Error(strerror(errno))
 
     ldp = ldopen(mp->name, ldp);

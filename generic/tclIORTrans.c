@@ -18,7 +18,6 @@
 
 #include "tclInt.h"
 #include "tclIO.h"
-#include <assert.h>
 
 #ifndef EINVAL
 #define EINVAL	9

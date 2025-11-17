@@ -20,7 +20,7 @@
 #
 
 # Needed utilities package
-package require opt 0.4.9
+package require opt 0.4.10
 
 # Create the safe namespace
 namespace eval ::safe {
@@ -32,12 +32,9 @@ namespace eval ::safe {
 # Helper function to resolve the dual way of specifying staticsok (either
 # by -noStatics or -statics 0)
 proc ::safe::InterpStatics {} {
-    foreach v {Args statics noStatics} {
-	upvar $v $v
-    }
-    set flag [::tcl::OptProcArgGiven -noStatics]
-    if {$flag && (!$noStatics == !$statics)
-	&& ([::tcl::OptProcArgGiven -statics])} {
+    upvar 1 Args Args statics statics noStatics noStatics
+    set flag [expr {"-noStatics" in $Args}]
+    if {$flag && (!$noStatics == !$statics) && ("-statics" in $Args)} {
 	return -code error\
 	    "conflicting values given for -statics and -noStatics"
     }
@@ -51,14 +48,11 @@ proc ::safe::InterpStatics {} {
 # Helper function to resolve the dual way of specifying nested loading
 # (either by -nestedLoadOk or -nested 1)
 proc ::safe::InterpNested {} {
-    foreach v {Args nested nestedLoadOk} {
-	upvar $v $v
-    }
-    set flag [::tcl::OptProcArgGiven -nestedLoadOk]
+    upvar 1 Args Args nested nested nestedLoadOk nestedLoadOk
+    set flag [expr {"-nestedLoadOk" in $Args}]
     # note that the test here is the opposite of the "InterpStatics" one
     # (it is not -noNested... because of the wanted default value)
-    if {$flag && (!$nestedLoadOk != !$nested)
-	&& ([::tcl::OptProcArgGiven -nested])} {
+    if {$flag && (!$nestedLoadOk != !$nested) && ("-nested" in $Args)} {
 	return -code error\
 	    "conflicting values given for -nested and -nestedLoadOk"
     }
@@ -85,7 +79,7 @@ proc ::safe::interpCreate {args} {
     set Args [::tcl::OptKeyParse ::safe::interpCreate $args]
     RejectExcessColons $child
 
-    set withAutoPath [::tcl::OptProcArgGiven -autoPath]
+    set withAutoPath [expr {"-autoPath" in $Args}]
     InterpCreate $child $accessPath \
 	[InterpStatics] [InterpNested] $deleteHook $autoPath $withAutoPath
 }
@@ -101,7 +95,7 @@ proc ::safe::interpInit {args} {
     }
     RejectExcessColons $child
 
-    set withAutoPath [::tcl::OptProcArgGiven -autoPath]
+    set withAutoPath [expr {"-autoPath" in $Args}]
     InterpInit $child $accessPath \
 	[InterpStatics] [InterpNested] $deleteHook $autoPath $withAutoPath
 }
@@ -218,39 +212,33 @@ proc ::safe::interpConfigure {args} {
 
 	    # Get the current (and not the default) values of whatever has
 	    # not been given:
-	    if {![::tcl::OptProcArgGiven -accessPath]} {
+	    if {"-accessPath" ni $Args} {
 		set doreset 0
 		set accessPath $state(access_path)
 	    } else {
 		set doreset 1
 	    }
-	    if {(!$AutoPathSync) && (![::tcl::OptProcArgGiven -autoPath])} {
+	    if {(!$AutoPathSync) && ("-autoPath" ni $Args)} {
 		set autoPath $state(auto_path)
 	    } elseif {$AutoPathSync} {
 		set autoPath {}
 	    } else {
 	    }
-	    if {
-		![::tcl::OptProcArgGiven -statics]
-		&& ![::tcl::OptProcArgGiven -noStatics]
-	    } then {
+	    if {("-statics" ni $Args) && ("-noStatics" ni $Args)} {
 		set statics    $state(staticsok)
 	    } else {
 		set statics    [InterpStatics]
 	    }
-	    if {
-		[::tcl::OptProcArgGiven -nested] ||
-		[::tcl::OptProcArgGiven -nestedLoadOk]
-	    } then {
+	    if {("-nested" in $Args) || ("-nestedLoadOk" in $Args)} {
 		set nested     [InterpNested]
 	    } else {
 		set nested     $state(nestedok)
 	    }
-	    if {![::tcl::OptProcArgGiven -deleteHook]} {
+	    if {"-deleteHook" ni $Args} {
 		set deleteHook $state(cleanupHook)
 	    }
 	    # Now reconfigure
-	    set withAutoPath [::tcl::OptProcArgGiven -autoPath]
+	    set withAutoPath [expr {"-autoPath" in $Args}]
 	    InterpSetConfig $child $accessPath $statics $nested $deleteHook $autoPath $withAutoPath
 
 	    # auto_reset the child (to completely sync the new access_path) tests safe-9.8 safe-9.9
@@ -361,14 +349,13 @@ proc ::safe::InterpSetConfig {child access_path staticsok nestedok deletehook au
 	set where [lsearch -exact $access_path [info library]]
 	if {$where < 0} {
 	    # not found, add it.
-	    set access_path [linsert $access_path 0 [info library]]
+	    ledit access_path 0 -1 [info library]
 	    Log $child "tcl_library was not in auto_path,\
 			added it to child's access_path" NOTICE
-	} elseif {$where != 0} {
+	} elseif {$where > 0} {
 	    # not first, move it first
-	    set access_path [linsert \
-				 [lreplace $access_path $where $where] \
-				 0 [info library]]
+	    ledit access_path $where $where;       # Remove
+	    ledit access_path 0 -1 [info library]; # Insert at beginning
 	    Log $child "tcl_libray was not in first in auto_path,\
 			moved it to front of child's access_path" NOTICE
 	}
@@ -410,10 +397,10 @@ proc ::safe::InterpSetConfig {child access_path staticsok nestedok deletehook au
     set i 0
     foreach dir $access_path {
 	set token [PathToken $i]
-	lappend child_access_path  $token
-	lappend map_access_path    $token $dir
-	lappend remap_access_path  $dir $token
-	lappend norm_access_path   [file normalize $dir]
+	lappend  child_access_path  $token
+	dict set map_access_path    $token $dir
+	dict set remap_access_path  $dir $token
+	lappend  norm_access_path   [file normalize $dir]
 	incr i
     }
 
@@ -451,11 +438,11 @@ proc ::safe::InterpSetConfig {child access_path staticsok nestedok deletehook au
 	    }
 
 	    set token [PathToken $i]
-	    lappend access_path        $dir
-	    lappend child_access_path  $token
-	    lappend map_access_path    $token $dir
-	    lappend remap_access_path  $dir $token
-	    lappend norm_access_path   [file normalize $dir]
+	    lappend  access_path        $dir
+	    lappend  child_access_path  $token
+	    dict set map_access_path    $token $dir
+	    dict set remap_access_path  $dir $token
+	    lappend  norm_access_path   [file normalize $dir]
 	    if {$firstpass} {
 		# $dir is in [::tcl::tm::list] and belongs in the child_tm_path.
 		# Later passes handle subdirectories, which belong in the
@@ -503,15 +490,9 @@ proc ::safe::InterpSetConfig {child access_path staticsok nestedok deletehook au
 proc ::safe::DetokPath {child tokenPath} {
     namespace upvar ::safe [VarName $child] state
 
-    set childPath {}
-    foreach token $tokenPath {
-	if {[dict exists $state(access_path,map) $token]} {
-	    lappend childPath [dict get $state(access_path,map) $token]
-	} else {
-	    lappend childPath $token
-	}
-    }
-    return $childPath
+    return [lmap token $tokenPath {
+	dict getdef $state(access_path,map) $token $token
+    }]
 }
 
 #
@@ -550,11 +531,11 @@ proc ::safe::interpAddToAccessPath {child path} {
     # new one, add it:
     set token [PathToken [llength $state(access_path)]]
 
-    lappend state(access_path)       $path
-    lappend state(access_path,child) $token
-    lappend state(access_path,map)   $token $path
-    lappend state(access_path,remap) $path $token
-    lappend state(access_path,norm)  [file normalize $path]
+    lappend  state(access_path)       $path
+    lappend  state(access_path,child) $token
+    dict set state(access_path,map)   $token $path
+    dict set state(access_path,remap) $path $token
+    lappend  state(access_path,norm)  [file normalize $path]
 
     SyncAccessPath $child
     return $token
@@ -622,16 +603,16 @@ proc ::safe::InterpInit {
     # Source init.tcl and tm.tcl into the child, to get auto_load and
     # other procedures defined:
 
-    if {[catch {::interp eval $child {
+    try {::interp eval $child {
 	source [file join $tcl_library init.tcl]
-    }} msg opt]} {
+    }} on error {msg opt} {
 	Log $child "can't source init.tcl ($msg)"
 	return -options $opt "can't source init.tcl into child $child ($msg)"
     }
 
-    if {[catch {::interp eval $child {
+    try {::interp eval $child {
 	source [file join $tcl_library tm.tcl]
-    }} msg opt]} {
+    }} on error {msg opt} {
 	Log $child "can't source tm.tcl ($msg)"
 	return -options $opt "can't source tm.tcl into child $child ($msg)"
     }
@@ -731,13 +712,10 @@ proc ::safe::interpDelete {child} {
 
 proc ::safe::setLogCmd {args} {
     variable Log
-    set la [llength $args]
-    if {$la == 0} {
-	return $Log
-    } elseif {$la == 1} {
-	set Log [lindex $args 0]
-    } else {
-	set Log $args
+    switch -integer -- [llength $args] {
+	0 { return $Log }
+	1 { lassign $args Log }
+	default { set Log $args }
     }
 
     if {$Log eq ""} {
@@ -905,7 +883,7 @@ proc ::safe::AliasGlob {child args} {
 	    return -code error "permission denied"
 	}
 	if {$got(--)} {
-	    set cmd [linsert $cmd end-1 -directory $dir]
+	    ledit cmd end -1 -directory $dir
 	} else {
 	    lappend cmd -directory $dir
 	}
@@ -920,7 +898,7 @@ proc ::safe::AliasGlob {child args} {
 
     # Apply the -join semantics ourselves (hence -join not copied to $cmd)
     if {$got(-join)} {
-	set args [lreplace $args $at end [join [lrange $args $at end] "/"]]
+	ledit args $at end [join [lrange $args $at end] "/"]
     }
 
     # Process the pattern arguments.  If we've done a join there is only one
@@ -1042,17 +1020,17 @@ proc ::safe::AliasSource {child args} {
     set file [lindex $args $at]
 
     # get the real path from the virtual one.
-    if {[catch {
+    try {
 	set realfile [TranslatePath $child $file]
-    } msg]} {
+    } on error msg {
 	Log $child $msg
 	return -code error "permission denied"
     }
 
     # check that the path is in the access path of that child
-    if {[catch {
+    try {
 	FileInAccessPath $child $realfile
-    } msg]} {
+    } on error msg {
 	Log $child $msg
 	return -code error "permission denied"
     }
@@ -1061,9 +1039,9 @@ proc ::safe::AliasSource {child args} {
     # this -errorcode so that caller in tclPkgUnknown does not write a message
     # to tclLog.  Has no effect on other callers of ::source, which are in
     # "package ifneeded" scripts.
-    if {[catch {
+    try {
 	CheckFileName $child $realfile
-    } msg]} {
+    } on error msg {
 	Log $child "$realfile:$msg"
 	return -code error -errorcode {POSIX EACCES} $msg
     }
@@ -1108,14 +1086,13 @@ proc ::safe::AliasLoad {child file args} {
 	return -code error $msg
     }
 
-    # prefix (can be empty if file is not).
-    set prefix [lindex $args 0]
-
     namespace upvar ::safe [VarName $child] state
+
+    # prefix (can be empty if file is not).
+    lassign $args prefix target
 
     # Determine where to load. load use a relative interp path and {}
     # means self, so we can directly and safely use passed arg.
-    set target [lindex $args 1]
     if {$target ne ""} {
 	# we will try to load into a sub sub interp; check that we want to
 	# authorize that.
@@ -1164,7 +1141,7 @@ proc ::safe::AliasLoad {child file args} {
     } on error msg {
 	# Some libraries return no error message.
 	set msg0 "load of library for prefix $prefix failed"
-	if {$msg eq {}} {
+	if {$msg eq ""} {
 	    set msg $msg0
 	} else {
 	    set msg "$msg0: $msg"
@@ -1228,16 +1205,12 @@ proc ::safe::BadSubcommand {child command subcommand args} {
 # AliasEncodingSystem is the target of the "encoding system" alias in safe
 # interpreters.
 proc ::safe::AliasEncodingSystem {child args} {
-    try {
-	# Must not pass extra arguments; safe interpreters may not set the
-	# system encoding but they may read it.
-	if {[llength $args]} {
-	    return -code error -errorcode {TCL WRONGARGS} \
-		"wrong # args: should be \"encoding system\""
-	}
-    } on error {msg options} {
+    # Must not pass extra arguments; safe interpreters may not set the
+    # system encoding but they may read it.
+    if {[llength $args]} {
+	set msg "wrong # args: should be \"encoding system\""
 	Log $child $msg
-	return -options $options $msg
+	return -code error -errorcode {TCL WRONGARGS} $msg
     }
     tailcall ::interp invokehidden $child tcl:encoding:system
 }
@@ -1282,14 +1255,14 @@ proc ::safe::AliasExeName {child} {
 
 proc ::safe::RejectExcessColons {child} {
     set stripped [regsub -all -- {:::*} $child ::]
-    if {[string range $stripped end-1 end] eq {::}} {
+    if {[string match *:: $stripped]} {
 	return -code error {interpreter name must not end in "::"}
     }
     if {$stripped ne $child} {
 	set msg {interpreter name has excess colons in namespace separators}
 	return -code error $msg
     }
-    if {[string range $stripped 0 1] eq {::}} {
+    if {[string match ::* $stripped]} {
 	return -code error {interpreter name must not begin "::"}
     }
     return
@@ -1374,31 +1347,35 @@ proc ::safe::Setup {} {
 proc ::safe::setSyncMode {args} {
     variable AutoPathSync
 
-    if {[llength $args] == 0} {
-    } elseif {[llength $args] == 1} {
-	set newValue [lindex $args 0]
-	if {![string is boolean -strict $newValue]} {
-	    return -code error "new value must be a valid boolean"
+    switch -integer -- [llength $args] {
+	0 {
+	    return $AutoPathSync
 	}
-	set args [expr {$newValue && $newValue}]
-	if {([info vars ::safe::S*] ne {}) && ($args != $AutoPathSync)} {
-	    return -code error \
-		    "cannot set new value while Safe Base child interpreters exist"
+	1 {
+	    lassign $args newValue
+	    if {![string is boolean -strict $newValue]} {
+		return -code error "new value must be a valid boolean"
+	    }
+	    set newValue [expr {!!$newValue}]
+	    if {([info vars ::safe::S*] ne {}) && ($newValue != $AutoPathSync)} {
+		return -code error \
+			"cannot set new value while Safe Base child interpreters exist"
+	    }
+	    if {$newValue != $AutoPathSync} {
+		set AutoPathSync $newValue
+		::tcl::OptKeyDelete ::safe::interpCreate
+		::tcl::OptKeyDelete ::safe::interpIC
+		set TmpLog [setLogCmd]
+		Setup
+		setLogCmd $TmpLog
+	    }
+	    return $AutoPathSync
 	}
-	if {($args != $AutoPathSync)} {
-	    set AutoPathSync {*}$args
-	    ::tcl::OptKeyDelete ::safe::interpCreate
-	    ::tcl::OptKeyDelete ::safe::interpIC
-	    set TmpLog [setLogCmd]
-	    Setup
-	    setLogCmd $TmpLog
+	default {
+	    set msg {wrong # args: should be "safe::setSyncMode ?newValue?"}
+	    return -code error $msg
 	}
-    } else {
-	set msg {wrong # args: should be "safe::setSyncMode ?newValue?"}
-	return -code error $msg
     }
-
-    return $AutoPathSync
 }
 
 namespace eval ::safe {

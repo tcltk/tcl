@@ -12,7 +12,6 @@
 #include "tclInt.h"
 #define ALLOW_DEPRECATED_OPCODES
 #include "tclCompile.h"
-#include <assert.h>
 
 /*
  * Forward declarations.

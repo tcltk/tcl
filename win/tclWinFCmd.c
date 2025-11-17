@@ -45,7 +45,7 @@ static int		CannotSetAttribute(Tcl_Interp *interp, int objIndex,
  * Constants and variables necessary for file attributes subcommand.
  */
 
-enum {
+enum TclWinFCmdAttributes {
     WIN_ARCHIVE_ATTRIBUTE,
     WIN_HIDDEN_ATTRIBUTE,
     WIN_LONGNAME_ATTRIBUTE,
@@ -924,13 +924,19 @@ TclpObjCopyDirectory(
     if (normSrcPtr == NULL) {
 	return TCL_ERROR;
     }
-    if (normSrcPtr != srcPathPtr) { Tcl_IncrRefCount(normSrcPtr); }
+    if (normSrcPtr != srcPathPtr) {
+	Tcl_IncrRefCount(normSrcPtr);
+    }
     normDestPtr = Tcl_FSGetNormalizedPath(NULL,destPathPtr);
     if (normDestPtr == NULL) {
-	if (normSrcPtr != srcPathPtr) { Tcl_DecrRefCount(normSrcPtr); }
+	if (normSrcPtr != srcPathPtr) {
+	    Tcl_DecrRefCount(normSrcPtr);
+	}
 	return TCL_ERROR;
     }
-    if (normDestPtr != destPathPtr) { Tcl_IncrRefCount(normDestPtr); }
+    if (normDestPtr != destPathPtr) {
+	Tcl_IncrRefCount(normDestPtr);
+    }
 
     Tcl_DStringInit(&srcString);
     Tcl_DStringInit(&dstString);
@@ -954,8 +960,12 @@ TclpObjCopyDirectory(
 	Tcl_IncrRefCount(*errorPtr);
     }
 
-    if (normSrcPtr != srcPathPtr) { Tcl_DecrRefCount(normSrcPtr); }
-    if (normDestPtr != destPathPtr) { Tcl_DecrRefCount(normDestPtr); }
+    if (normSrcPtr != srcPathPtr) {
+	Tcl_DecrRefCount(normSrcPtr);
+    }
+    if (normDestPtr != destPathPtr) {
+	Tcl_DecrRefCount(normDestPtr);
+    }
     return ret;
 }
 
@@ -1010,7 +1020,9 @@ TclpObjRemoveDirectory(
 	if (normPtr == NULL) {
 	    return TCL_ERROR;
 	}
-	if (normPtr != pathPtr) { Tcl_IncrRefCount(normPtr); }
+	if (normPtr != pathPtr) {
+	    Tcl_IncrRefCount(normPtr);
+	}
 	Tcl_DStringInit(&native);
 	Tcl_UtfToWCharDString(TclGetString(normPtr), TCL_INDEX_NONE, &native);
 	ret = DoRemoveDirectory(&native, recursive, &ds);
@@ -1031,7 +1043,9 @@ TclpObjRemoveDirectory(
 	}
 	Tcl_DStringFree(&ds);
     }
-    if (normPtr && normPtr != pathPtr) { Tcl_DecrRefCount(normPtr); }
+    if (normPtr && normPtr != pathPtr) {
+	Tcl_DecrRefCount(normPtr);
+    }
 
     return ret;
 }
