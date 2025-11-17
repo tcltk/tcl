@@ -44,6 +44,6 @@
 #elif !defined(BN_H_) /* If BN_H_ already defined, don't try to include tommath.h again. */
 #   include "tommath.h"
 #endif
-#include "tclTomMathDecls.h"
+#include "tclTomMathDecls.h"  /* IWYU pragma: export */
 
 #endif

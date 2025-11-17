@@ -446,7 +446,9 @@ Tcl_Init(
 "	if {[set tcl_library [eval $script]] eq \"\"} continue\n"
 "	set tclfile [file join $tcl_library init.tcl]\n"
 "	if {[file exists $tclfile]} {\n"
-"	    if {[catch {uplevel #0 [list source $tclfile]} msg opts]} {\n"
+"	    try {\n"
+"		uplevel #0 [list source $tclfile]\n"
+"	    } on error {msg opts} {\n"
 "		append errors \"$tclfile: $msg\n\"\n"
 "		append errors \"[dict get $opts -errorinfo]\n\"\n"
 "		continue\n"
@@ -3153,8 +3155,6 @@ ChildInvokeHidden(
     Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int result;
-
     if (Tcl_IsSafe(interp)) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"not allowed to invoke hidden commands from safe interpreter",
@@ -3162,33 +3162,35 @@ ChildInvokeHidden(
 	TclSetErrorCode(interp, "TCL", "OPERATION", "INTERP", "UNSAFE");
 	return TCL_ERROR;
     }
+    if (objc < 1) {
+	Tcl_Panic("need at least one word: hidden command name");
+    }
 
     Tcl_Preserve(childInterp);
     Tcl_AllowExceptions(childInterp);
 
-    if (namespaceName == NULL) {
-	NRE_callback *rootPtr = TOP_CB(childInterp);
-
-	Tcl_NRAddCallback(interp, NRPostInvokeHidden, childInterp,
-		rootPtr, NULL, NULL);
-	return TclNRInvoke(NULL, childInterp, objc, objv);
-    } else {
+    // Push the namespace if one has been requested. 
+    Tcl_CallFrame *framePtr = NULL;
+    if (namespaceName != NULL) {
 	Namespace *nsPtr, *dummy1, *dummy2;
 	const char *tail;
 
-	result = TclGetNamespaceForQualName(childInterp, namespaceName, NULL,
+	int result = TclGetNamespaceForQualName(childInterp, namespaceName, NULL,
 		TCL_FIND_ONLY_NS | TCL_GLOBAL_ONLY | TCL_LEAVE_ERR_MSG
 		| TCL_CREATE_NS_IF_UNKNOWN, &nsPtr, &dummy1, &dummy2, &tail);
-	if (result == TCL_OK) {
-	    result = TclObjInvokeNamespace(childInterp, objc, objv,
-		    (Tcl_Namespace *) nsPtr, TCL_INVOKE_HIDDEN);
+	if (result != TCL_OK) {
+	    Tcl_TransferResult(childInterp, result, interp);
+	    Tcl_Release(childInterp);
+	    return result;
 	}
+
+	(void) TclPushStackFrame(childInterp, &framePtr, (Tcl_Namespace *) nsPtr,
+		/*isProcFrame*/ 0);
     }
 
-    Tcl_TransferResult(childInterp, result, interp);
-
-    Tcl_Release(childInterp);
-    return result;
+    Tcl_NRAddCallback(interp, NRPostInvokeHidden, childInterp,
+	    TOP_CB(childInterp), framePtr, NULL);
+    return TclNRInvoke(NULL, childInterp, objc, objv);
 }
 
 static int
@@ -3199,10 +3201,14 @@ NRPostInvokeHidden(
 {
     Tcl_Interp *childInterp = (Tcl_Interp *) data[0];
     NRE_callback *rootPtr = (NRE_callback *) data[1];
+    CallFrame *framePtr = (CallFrame *) data[2];
 
     if (interp != childInterp) {
 	result = TclNRRunCallbacks(childInterp, result, rootPtr);
 	Tcl_TransferResult(childInterp, result, interp);
+    }
+    if (framePtr) {
+	TclPopStackFrame(childInterp);
     }
     Tcl_Release(childInterp);
     return result;

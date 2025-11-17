@@ -15,7 +15,6 @@
 #endif
 
 #include "tclWinInt.h"
-#include <assert.h>
 #include <ctype.h>
 
 /*

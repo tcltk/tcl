@@ -636,7 +636,7 @@ TestchmodCmd(
 	    return TCL_ERROR;
 	}
 	Tcl_UtfToExternalDString(NULL, translated, -1, &ds);
-	if (chmod(Tcl_DStringValue(&ds), mode) != 0) {
+	if (chmod(Tcl_DStringValue(&ds), (mode_t)mode) != 0) {
 	    TclAppendResult(interp, translated, ": ", Tcl_PosixError(interp));
 	    Tcl_DStringFree(&ds);
 	    return TCL_ERROR;
