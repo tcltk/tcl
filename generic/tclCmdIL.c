@@ -3324,7 +3324,9 @@ Tcl_LsearchObjCmd(
 
 	    for (j=0 ; j<sortInfo.indexc ; j++) {
 		int encoded = 0;
-		if (TclIndexEncode(interp, indices[j], TCL_INDEX_NONE,
+		if (Tcl_IsEmpty(indices[j])) {
+		    encoded = (int)TCL_INDEX_NONE;
+		} else if (TclIndexEncode(interp, indices[j], TCL_INDEX_NONE,
 			TCL_INDEX_NONE, &encoded) != TCL_OK) {
 		    result = TCL_ERROR;
 		}

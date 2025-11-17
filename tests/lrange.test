@@ -79,6 +79,9 @@ test lrange-1.18 {range of list elements} {
 test lrange-1.19 {range of list elements} {
     lrange "a b c d" {} {}
 } "a b c d"
+test lrange-1.20 {range of list elements} {
+    lrange "a b c d" 1 {}
+} "b"
 
 test lrange-2.1 {error conditions} {
     list [catch {lrange a b} msg] $msg
