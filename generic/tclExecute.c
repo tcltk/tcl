@@ -5746,7 +5746,7 @@ TEBCresume(
 	}
 	if ((toIdx == -1) && Tcl_IsEmpty(OBJ_AT_TOS)) {
 	    /* TIP #615: empty string for 'last' means 'end' or 'first' */
-	    toIdx = (fromIdx == -1) ? (slength - 1) : fromIdx;
+	    toIdx = (fromIdx == -1) ? slength : fromIdx;
 	}
 
 	CACHE_STACK_INFO();
@@ -5805,7 +5805,7 @@ TEBCresume(
 	}
 	if ((toIdx == -1) && Tcl_IsEmpty(OBJ_AT_TOS)) {
 	    /* TIP #615: empty string for 'last' means 'end' or 'first' */
-	    toIdx = (fromIdx == -1) ? (slength - 1) : fromIdx;
+	    toIdx = (fromIdx == -1) ? slength : fromIdx;
 	}
 	CACHE_STACK_INFO();
 	TclDecrRefCount(OBJ_AT_TOS);
