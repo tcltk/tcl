@@ -1726,8 +1726,8 @@ int
 TclAsyncNotifier(
     int sigNumber,		/* Signal number. */
     TCL_UNUSED(Tcl_ThreadId),	/* Target thread. */
-    TCL_UNUSED(void *),	/* Notifier data. */
-    int *flagPtr,		/* Flag to mark. */
+    TCL_UNUSED(void *),		/* Notifier data. */
+    int *restrict flagPtr,	/* Flag to mark. */
     int value)			/* Value of mark. */
 {
 #if TCL_THREADS

@@ -3212,7 +3212,7 @@ TclpOpenTemporaryFile(
     TCL_UNUSED(Tcl_Obj *) /*dirObj*/,
     Tcl_Obj *basenameObj,
     TCL_UNUSED(Tcl_Obj *) /*extensionObj*/,
-    Tcl_Obj *resultingNameObj)
+    Tcl_Obj *restrict resultingNameObj)
 {
     WCHAR name[MAX_PATH];
     char *namePtr;

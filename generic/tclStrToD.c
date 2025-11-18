@@ -485,7 +485,8 @@ TclParseNumber(
 				 * scan. */
     Tcl_Size numBytes,		/* Maximum number of bytes to scan, see
 				 * above. */
-    const char **endPtrPtr,	/* Place to store pointer to the character
+    const char **restrict endPtrPtr,
+				/* Place to store pointer to the character
 				 * that terminated the scan. */
     int flags)			/* Flags governing the parse. */
 {

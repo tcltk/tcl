@@ -21,7 +21,8 @@
 
 static int		GetIndexFromObjList(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, Tcl_Obj *tableObjPtr,
-			    const char *msg, int flags, Tcl_Size *indexPtr);
+			    const char *msg, int flags,
+			    Tcl_Size *restrict indexPtr);
 static void		UpdateStringOfIndex(Tcl_Obj *objPtr);
 static void		DupIndex(Tcl_Obj *srcPtr, Tcl_Obj *dupPtr);
 static void		FreeIndex(Tcl_Obj *objPtr);
@@ -113,7 +114,7 @@ GetIndexFromObjList(
     const char *msg,		/* Identifying word to use in error
 				 * messages. */
     int flags,			/* 0 or TCL_EXACT */
-    Tcl_Size *indexPtr)		/* Place to store resulting index. */
+    Tcl_Size *restrict indexPtr)/* Place to store resulting index. */
 {
 
     Tcl_Size objc, t;
@@ -482,7 +483,7 @@ FreeIndex(
 int
 TclSetUpPrefixCmd(
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Command ensemble)	/* The prefix ensemble. */ 
+    Tcl_Command ensemble)	/* The prefix ensemble. */
 {
     return Tcl_Export(interp, (Tcl_Namespace*)((Command *)ensemble)->nsPtr,
 	    "prefix", 0);
@@ -1362,7 +1363,7 @@ int
 TclGetCompletionCodeFromObj(
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Obj *value,
-    int *codePtr)		/* Argument objects. */
+    int *restrict codePtr)	/* Argument objects. */
 {
     static const char *const returnCodes[] = {
 	"ok", "error", "return", "break", "continue", NULL

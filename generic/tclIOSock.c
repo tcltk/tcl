@@ -174,12 +174,14 @@ int
 TclCreateSocketAddress(
     Tcl_Interp *interp,		/* Interpreter for querying the desired socket
 				 * family */
-    struct addrinfo **addrlist,	/* Socket address list */
+    struct addrinfo **restrict addrlist,
+				/* Socket address list */
     const char *host,		/* Host. NULL implies INADDR_ANY */
     int port,			/* Port number */
     int willBind,		/* Is this an address to bind() to or to
 				 * connect() to? */
-    const char **errorMsgPtr)	/* Place to store the error message detail, if
+    const char **restrict errorMsgPtr)
+				/* Place to store the error message detail, if
 				 * available. */
 {
     struct addrinfo hints;

@@ -2966,7 +2966,7 @@ Tcl_ObjPrintf(
 char *
 TclGetStringStorage(
     Tcl_Obj *objPtr,
-    Tcl_Size *sizePtr)
+    Tcl_Size *restrict sizePtr)
 {
     String *stringPtr;
 

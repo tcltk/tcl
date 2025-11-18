@@ -31,8 +31,8 @@ static Tcl_NRPostProc	TryPostHandler;
 static int		UniCharIsAscii(int character);
 static int		UniCharIsHexDigit(int character);
 static int		StringCmpOpts(Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[], int *nocase,
-			    Tcl_Size *reqlength);
+			    Tcl_Obj *const objv[], int *restrict nocase,
+			    Tcl_Size *restrict reqlength);
 static Tcl_ObjCmdProc	StringCatCmd;
 static Tcl_ObjCmdProc	StringCmpCmd;
 static Tcl_ObjCmdProc	StringEqualCmd;
@@ -2809,8 +2809,8 @@ StringCmpOpts(
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[],	/* Argument objects. */
-    int *nocase,
-    Tcl_Size *reqlength)
+    int *restrict nocase,
+    Tcl_Size *restrict reqlength)
 {
     int i;
     Tcl_Size length;
@@ -3351,7 +3351,7 @@ TclSubstOptions(
     Tcl_Interp *interp,
     Tcl_Size numOpts,
     Tcl_Obj *const opts[],
-    int *flagPtr)
+    int *restrict flagPtr)
 {
     static const char *const substOptions[] = {
 	"-backslashes", "-commands", "-variables",
@@ -5398,9 +5398,9 @@ TclListLines(
     Tcl_Obj *listObj,		/* Pointer to obj holding a string with list
 				 * structure. Assumed to be valid. Assumed to
 				 * contain n elements. */
-    int line,		/* Line the list as a whole starts on. */
+    int line,			/* Line the list as a whole starts on. */
     Tcl_Size n,			/* #elements in lines */
-    int *lines,		/* Array of line numbers, to fill. */
+    int *restrict lines,	/* Array of line numbers, to fill. */
     Tcl_Obj *const *elems)	/* The list elems as Tcl_Obj*, in need of
 				 * derived continuation data */
 {

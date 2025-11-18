@@ -51,9 +51,9 @@ static Tcl_AllocHashEntryProc	AllocChainEntry;
 static inline void		InitChainTable(struct Dict *dict);
 static inline void		DeleteChainTable(struct Dict *dict);
 static inline Tcl_HashEntry *	CreateChainEntry(struct Dict *dict,
-					Tcl_Obj *keyPtr, int *newPtr);
+				    Tcl_Obj *keyPtr, int *restrict newPtr);
 static inline int		DeleteChainEntry(struct Dict *dict,
-					Tcl_Obj *keyPtr);
+				    Tcl_Obj *keyPtr);
 static Tcl_NRPostProc		FinalizeDictUpdate;
 static Tcl_NRPostProc		FinalizeDictWith;
 static Tcl_ObjCmdProc		DictForNRCmd;
@@ -272,7 +272,7 @@ static inline Tcl_HashEntry *
 CreateChainEntry(
     Dict *dict,
     Tcl_Obj *keyPtr,
-    int *newPtr)
+    int *restrict newPtr)
 {
     ChainEntry *cPtr = (ChainEntry *)
 	    Tcl_CreateHashEntry(&dict->table, keyPtr, newPtr);
@@ -1515,7 +1515,8 @@ TclDictGet(
     Tcl_Interp *interp,
     Tcl_Obj *dictPtr,
     const char *key,		/* The key in a C string. */
-    Tcl_Obj **valuePtrPtr)	/* Where to write the value. */
+    Tcl_Obj **restrict valuePtrPtr)
+				/* Where to write the value. */
 {
     Tcl_Obj *keyPtr = Tcl_NewStringObj(key, -1);
     int code;

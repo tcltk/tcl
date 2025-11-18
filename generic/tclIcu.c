@@ -955,8 +955,8 @@ static int IcuParseConvertOptions(
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[],
-    int *strictPtr,
-    Tcl_Obj **failindexVarPtr)
+    int *restrict strictPtr,
+    Tcl_Obj **restrict failindexVarPtr)
 {
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?-profile PROFILE? ICUENCNAME STRING");

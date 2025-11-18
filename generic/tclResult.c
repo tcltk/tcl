@@ -854,12 +854,13 @@ TclMergeReturnOptions(
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[],	/* Argument objects. */
-    Tcl_Obj **optionsPtrPtr,	/* If not NULL, points to space for a (Tcl_Obj
+    Tcl_Obj **restrict optionsPtrPtr,
+				/* If not NULL, points to space for a (Tcl_Obj
 				 * *) where the pointer to the merged return
 				 * options dictionary should be written. */
-    int *codePtr,		/* If not NULL, points to space where the
+    int *restrict codePtr,	/* If not NULL, points to space where the
 				 * -code value should be written. */
-    int *levelPtr)		/* If not NULL, points to space where the
+    int *restrict levelPtr)	/* If not NULL, points to space where the
 				 * -level value should be written. */
 {
     int code = TCL_OK;

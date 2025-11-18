@@ -26,7 +26,8 @@ static Tcl_Obj *	DisassembleByteCodeObj(Tcl_Obj *objPtr);
 static int		FormatInstruction(ByteCode *codePtr,
 			    const unsigned char *pc, Tcl_Obj *bufferObj);
 static void		GetLocationInformation(Proc *procPtr,
-			    Tcl_Obj **fileObjPtr, int *linePtr);
+			    Tcl_Obj **restrict fileObjPtr,
+			    int *restrict linePtr);
 static void		PrintSourceToObj(Tcl_Obj *appendObj,
 			    const char *stringPtr, Tcl_Size maxChars);
 static void		UpdateStringOfInstName(Tcl_Obj *objPtr);
@@ -80,13 +81,14 @@ static const Tcl_ObjType instNameType = {
 static void
 GetLocationInformation(
     Proc *procPtr,		/* What to look up the information for. */
-    Tcl_Obj **fileObjPtr,	/* Where to write the information about what
+    Tcl_Obj **restrict fileObjPtr,
+				/* Where to write the information about what
 				 * file the code came from. Will be written
 				 * to, either with the object (assume shared!)
 				 * that describes what the file was, or with
 				 * NULL if the information is not
 				 * available. */
-    int *linePtr)		/* Where to write the information about what
+    int *restrict linePtr)	/* Where to write the information about what
 				 * line number represented the start of the
 				 * code in question. Will be written to,
 				 * either with the line number or with -1 if

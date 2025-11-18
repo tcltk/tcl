@@ -62,7 +62,7 @@ static int		FormatNumber(Tcl_Interp *interp, int type,
 			    Tcl_Obj *src, unsigned char **cursorPtr);
 static void		FreeProperByteArrayInternalRep(Tcl_Obj *objPtr);
 static int		GetFormatSpec(const char **formatPtr, char *cmdPtr,
-			    Tcl_Size *countPtr, int *flagsPtr);
+			    Tcl_Size *restrict countPtr, int *restrict flagsPtr);
 static Tcl_Obj *	ScanNumber(unsigned char *buffer, int type,
 			    int flags, Tcl_HashTable **numberCachePtr);
 static int		SetByteArrayFromAny(Tcl_Interp *interp, Tcl_Size limit,
@@ -70,7 +70,7 @@ static int		SetByteArrayFromAny(Tcl_Interp *interp, Tcl_Size limit,
 static void		UpdateStringOfByteArray(Tcl_Obj *listPtr);
 static void		DeleteScanNumberCache(Tcl_HashTable *numberCachePtr);
 static int		NeedReversing(int format);
-static void		CopyNumber(const void *from, void *to,
+static void		CopyNumber(const void *from, void *restrict to,
 			    size_t length, int type);
 /* Binary ensemble commands */
 static Tcl_ObjCmdProc	BinaryFormatCmd;
@@ -1703,8 +1703,8 @@ static int
 GetFormatSpec(
     const char **formatPtr,	/* Pointer to format string. */
     char *cmdPtr,		/* Pointer to location of command char. */
-    Tcl_Size *countPtr,		/* Pointer to repeat count value. */
-    int *flagsPtr)		/* Pointer to field flags */
+    Tcl_Size *restrict countPtr,/* Pointer to repeat count value. */
+    int *restrict flagsPtr)	/* Pointer to field flags */
 {
     /*
      * Skip any leading blanks.
@@ -1868,7 +1868,7 @@ NeedReversing(
 static void
 CopyNumber(
     const void *from,		/* source */
-    void *to,			/* destination */
+    void *restrict to,		/* destination */
     size_t length,		/* Number of bytes to copy */
     int type)			/* What type of thing are we copying? */
 {
