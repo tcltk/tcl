@@ -2099,19 +2099,22 @@ static void SpecialFree(
  *    these functions (i/o command cannot test all combinations)
  *    The arguments at the script level are roughly those of the above
  *    functions:
- *	encodingname srcbytes flags state dstlen ?srcreadvar? ?dstwrotevar? ?dstcharsvar?
- *
- * Results:
- *    TCL_OK or TCL_ERROR. This indicates any errors running the test, NOT the
- *    result of Tcl_UtfToExternal or Tcl_ExternalToUtf.
- *
- * Side effects:
+ *	encodingname srcbytes flags state dstlen prefixlen ?srcreadvar? ?dstwrotevar? ?dstcharsvar?
  *
  *    The result in the interpreter is a list of the return code from the
  *    Tcl_UtfToExternal/Tcl_ExternalToUtf functions, the encoding state, and
  *    an encoded binary string of length dstLen. Note the string is the
  *    entire output buffer, not just the part containing the decoded
  *    portion. This allows for additional checks at test script level.
+ *
+ *    The prefixlen argument indicates how many bytes of the prefix to
+ *    prepend to the source string. The prefix byte is the character 'A'.
+ *    The main purpose of the prefix is to allow testing of very large
+ *    strings without the caller having to allocate at the script level
+ *    which is slow and memory intensive. The source string is appended to
+ *    the prefix in the buffer before calling the transform function.
+ *    Generally, it is used to test conditions at the INT_MAX length
+ *    boundary.
  *
  *    If any of the srcreadvar, dstwrotevar and dstcharsvar are specified and
  *    not empty, they are treated as names of variables where the *srcRead,
@@ -2120,6 +2123,11 @@ static void SpecialFree(
  *    The function also checks internally whether nuls are correctly
  *    appended as requested but the TCL_ENCODING_NO_TERMINATE flag
  *    and that no buffer overflows occur.
+ *
+ * Results:
+ *    TCL_OK or TCL_ERROR. This indicates any errors running the test, NOT the
+ *    result of Tcl_UtfToExternal or Tcl_ExternalToUtf.
+ *
  *------------------------------------------------------------------------
  */
 typedef int
@@ -2140,9 +2148,10 @@ static int UtfExtWrapper(
     Tcl_EncodingState encState, *encStatePtr;
     Tcl_Size srcLen, bufLen;
     const unsigned char *bytes;
-    unsigned char *bufPtr;
-    Tcl_Size srcRead, dstLen, dstWrote, dstChars;
-    Tcl_Obj *srcReadVar, *dstWroteVar, *dstCharsVar;
+    char *dstBufPtr = NULL;
+    char *srcBufPtr = NULL;
+    Tcl_Size srcRead, prefixLen, dstLen, dstWrote, dstChars;
+    Tcl_Obj *srcReadVar, *dstWroteVar, *dstCharsVar, *errorLocVar;
     int result;
     int flags;
     Tcl_Obj **flagObjs;
@@ -2163,9 +2172,9 @@ static int UtfExtWrapper(
     Tcl_Size i;
     Tcl_WideInt wide;
 
-    if (objc < 7 || objc > 10) {
+    if (objc < 7 || objc > 12) {
 	Tcl_WrongNumArgs(interp, 2, objv,
-		"encoding srcbytes flags state dstlen ?srcreadvar? ?dstwrotevar? ?dstcharsvar?");
+		"encoding srcbytes flags state dstlen ?prefixLen? ?srcreadvar? ?dstwrotevar? ?dstcharsvar? ?errorLocVar?");
 	return TCL_ERROR;
     }
     if (Tcl_GetEncodingFromObj(interp, objv[2], &encoding) != TCL_OK) {
@@ -2175,6 +2184,7 @@ static int UtfExtWrapper(
     /* Flags may be specified as list of integers and keywords */
     flags = 0;
     if (Tcl_ListObjGetElements(interp, objv[4], &nflags, &flagObjs) != TCL_OK) {
+	Tcl_FreeEncoding(encoding);
 	return TCL_ERROR;
     }
 
@@ -2186,6 +2196,7 @@ static int UtfExtWrapper(
 	    int idx;
 	    if (Tcl_GetIndexFromObjStruct(interp, flagObjs[i], flagMap, sizeof(flagMap[0]),
 		    "flag", 0, &idx) != TCL_OK) {
+		Tcl_FreeEncoding(encoding);
 		return TCL_ERROR;
 	    }
 	    flags |= flagMap[idx].flag;
@@ -2203,24 +2214,45 @@ static int UtfExtWrapper(
     }
 
     if (Tcl_GetSizeIntFromObj(interp, objv[6], &dstLen) != TCL_OK) {
+	Tcl_FreeEncoding(encoding);
 	return TCL_ERROR;
     }
+
+    prefixLen = 0;
     srcReadVar = NULL;
     dstWroteVar = NULL;
     dstCharsVar = NULL;
+    errorLocVar = NULL;
     if (objc > 7) {
-	/* Has caller requested srcRead? */
-	if (Tcl_GetCharLength(objv[7])) {
-	    srcReadVar = objv[7];
+	if (Tcl_GetSizeIntFromObj(interp, objv[7], &prefixLen) != TCL_OK) {
+	    Tcl_FreeEncoding(encoding);
+	    return TCL_ERROR;
+	}
+	if (prefixLen < 0) {
+	    Tcl_SetResult(interp, "prefixLen must be non-negative", TCL_STATIC);
+	    Tcl_FreeEncoding(encoding);
+	    return TCL_ERROR;
 	}
 	if (objc > 8) {
-	    /* Ditto for dstWrote */
+	    /* Has caller requested srcRead? */
 	    if (Tcl_GetCharLength(objv[8])) {
-		dstWroteVar = objv[8];
+		srcReadVar = objv[8];
 	    }
 	    if (objc > 9) {
+		/* Ditto for dstWrote */
 		if (Tcl_GetCharLength(objv[9])) {
-		    dstCharsVar = objv[9];
+		    dstWroteVar = objv[9];
+		}
+		if (objc > 10) {
+		    if (Tcl_GetCharLength(objv[10])) {
+			dstCharsVar = objv[10];
+		    }
+		    if (objc > 11) {
+			/* Ditto for errorLoc */
+			if (Tcl_GetCharLength(objv[11])) {
+			    errorLocVar = objv[11];
+			}
+		    }
 		}
 	    }
 	}
@@ -2242,11 +2274,18 @@ static int UtfExtWrapper(
 	dstChars = 0; /* Only used for output */
     }
 
+    /* Set up output buffer */
     bufLen = dstLen + 4; /* 4 -> overflow detection */
-    bufPtr = (unsigned char *) Tcl_Alloc(bufLen);
-    memset(bufPtr, 0xFF, dstLen); /* Need to check nul terminator */
-    memmove(bufPtr + dstLen, "\xAB\xCD\xEF\xAB", 4);   /* overflow detection */
-    bytes = Tcl_GetByteArrayFromObj(objv[3], &srcLen); /* Last! to avoid shimmering */
+    dstBufPtr = (char *) Tcl_Alloc(bufLen);
+    memset(dstBufPtr, 0xFF, dstLen); /* Need to check nul terminator */
+    memmove(dstBufPtr + dstLen, "\xAB\xCD\xEF\xAB", 4);   /* overflow detection */
+
+    /* Set up input buffer, including prefix if one has been specified */
+    bytes = Tcl_GetByteArrayFromObj(objv[3], &srcLen);
+    Tcl_Size srcBufLen = prefixLen + srcLen;
+    srcBufPtr = (char *) Tcl_Alloc(srcBufLen+1); /* +1 to ensure not 0 */
+    memset(srcBufPtr, '.', prefixLen);
+    memmove(srcBufPtr + prefixLen, bytes, srcLen);
     switch (transform) {
     case UTF_TO_EXTERNAL:
     case EXTERNAL_TO_UTF:
@@ -2262,9 +2301,9 @@ static int UtfExtWrapper(
 	    dstChars32 = (int)dstChars;
 	    result = (transform == UTF_TO_EXTERNAL ?
 			Tcl_UtfToExternal : Tcl_ExternalToUtf) (
-				interp, encoding, (const char *)bytes,
-				srcLen, flags, encStatePtr,
-				(char *)bufPtr, dstLen,
+				interp, encoding, (const char *)srcBufPtr,
+				srcBufLen, flags, encStatePtr,
+				(char *)dstBufPtr, dstLen,
 				srcReadVar ? &srcRead32 : NULL, &dstWrote32,
 				dstCharsVar ? &dstChars32 : NULL);
 	    srcRead = (Tcl_Size)srcRead32;
@@ -2273,19 +2312,19 @@ static int UtfExtWrapper(
 	    break;
 	}
     case EXTERNAL_TO_UTF_EX:
-	result = Tcl_ExternalToUtfEx(interp, encoding, (const char *)bytes, srcLen,
-		flags, encStatePtr, (char *)bufPtr, dstLen,
+	result = Tcl_ExternalToUtfEx(interp, encoding, (const char *)srcBufPtr,
+		srcBufLen, flags, encStatePtr, (char *)dstBufPtr, dstLen,
 	    	srcReadVar ? &srcRead : NULL, &dstWrote,
 	    	dstCharsVar ? &dstChars : NULL, NULL);
 	break;
     case UTF_TO_EXTERNAL_EX:
-	result = Tcl_UtfToExternalEx(interp, encoding, (const char *)bytes, srcLen,
-		flags, encStatePtr, (char *)bufPtr, dstLen,
+	result = Tcl_UtfToExternalEx(interp, encoding, (const char *)srcBufPtr,
+		srcBufLen, flags, encStatePtr, (char *)dstBufPtr, dstLen,
 	    	srcReadVar ? &srcRead : NULL, &dstWrote,
 	    	dstCharsVar ? &dstChars : NULL, NULL);
 	break;
     }
-    if (memcmp(bufPtr + bufLen - 4, "\xAB\xCD\xEF\xAB", 4)) {
+    if (memcmp(dstBufPtr + bufLen - 4, "\xAB\xCD\xEF\xAB", 4)) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"%s wrote past output buffer",
 		transform == EXTERNAL_TO_UTF ?
@@ -2316,7 +2355,7 @@ static int UtfExtWrapper(
 	result = TCL_OK;
 	resultObjs[1] =
 	    encStatePtr ? Tcl_NewWideIntObj((Tcl_WideInt)(size_t)encState) : Tcl_NewObj();
-	resultObjs[2] = Tcl_NewByteArrayObj(bufPtr, dstLen);
+	resultObjs[2] = Tcl_NewByteArrayObj(dstBufPtr, dstLen);
 	if (srcReadVar) {
 	    if (Tcl_ObjSetVar2(interp, srcReadVar, NULL, Tcl_NewIntObj(srcRead),
 		    TCL_LEAVE_ERR_MSG) == NULL) {
@@ -2338,7 +2377,12 @@ static int UtfExtWrapper(
 	Tcl_SetObjResult(interp, Tcl_NewListObj(3, resultObjs));
     }
 done:
-    Tcl_Free(bufPtr);
+    if (srcBufPtr) {
+	Tcl_Free(srcBufPtr);
+    }
+    if (dstBufPtr) {
+	Tcl_Free(dstBufPtr);
+    }
     Tcl_FreeEncoding(encoding); /* Free returned reference */
     return result;
 }

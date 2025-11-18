@@ -107,17 +107,20 @@ namespace eval utftest {
 
     # The C wrapper fills entire destination buffer with FF.
     # Anything beyond expected output should have FF's
-    proc fill {bin buflen} {
-	return [string range "$bin[string repeat \xFF $buflen]" 0 $buflen-1]
+    proc fill {bin buflen {prefixlen 0}} {
+        return [string range "$bin[string repeat \xFF $buflen]" 0 $buflen-1]
+	return [string cat [string repeat . $prefixlen] [string range "$bin[string repeat \xFF $buflen]" 0 $buflen-1]]
     }
 
     proc testutf {direction enc comment hexin hexout args} {
+        # See comments in UtfTransformFn in tclTest.c
 	set id $comment-[join $hexin ""]
-	if {$direction eq "toutf"} {
-	    set cmd Tcl_ExternalToUtf
-	} else {
-	    set cmd Tcl_UtfToExternal
-	}
+        set cmd [dict get {
+            toutf Tcl_ExternalToUtf
+            toutfex Tcl_ExternalToUtfEx
+            fromutf Tcl_UtfToExternal
+            fromutfex Tcl_UtfToExternalEx
+        } $direction]
 	set in [binary decode hex $hexin]
 	set out [binary decode hex $hexout]
 	set dstlen 40 ;# Should be enough for all encoding tests
@@ -126,13 +129,15 @@ namespace eval utftest {
 	set flags [list start end]
 	set constraints [list testencoding]
 	set profiles [encoding profiles]
+        set prefixlen 0
 	while {[llength $args] > 1} {
 	    set opt [lpop args 0]
 	    switch $opt {
 		-flags       { set flags [lpop args 0] }
 		-constraints { lappend constraints {*}[lpop args 0] }
 		-profiles    { set profiles [lpop args 0] }
-		-status      { set status [lpop args 0]}
+		-status      { set status [lpop args 0] }
+                -prefixlen   { set prefixlen [lpop args 0] }
 		default {
 		    error "Unknown option \"$opt\""
 		}
@@ -142,16 +147,16 @@ namespace eval utftest {
 	    error "No value supplied for option [lindex $args 0]."
 	}
 
-	set result [list $status {} [fill $out $dstlen]]
-
-	test $cmd-$enc-$id-[join $flags -] "$cmd - $enc - $hexin - $flags" -body \
-	    [list testencoding $cmd $enc $in $flags {} $dstlen] \
-	    -result $result -constraints $constraints
+	set expected [list $status {} [fill $out $dstlen $prefixlen]]
+        set totaldstspace [expr {$prefixlen+$dstlen}]
+	test $cmd-$enc-$id-[join $flags -] "$cmd - $enc - $hexin - $flags" -body {
+	    testencoding $cmd $enc $in $flags {} $totaldstspace $prefixlen
+        } -result $expected -constraints $constraints
 	foreach profile $profiles {
 	    set flags2 [linsert $flags end $profile]
 	    test $cmd-$enc-$id-[join $flags2 -] "$cmd - $enc - $hexin - $flags2" -body \
-		[list testencoding $cmd $enc $in $flags2 {} $dstlen] \
-		-result $result -constraints $constraints
+		[list testencoding $cmd $enc $in $flags2 {} $totaldstspace $prefixlen] \
+		-result $expected -constraints $constraints
 	}
     }
 
@@ -170,10 +175,12 @@ namespace eval utftest {
 	}
 
 	set status1 multibyte; # Return status to expect after first call
+        set prefixlen 0
 	while {[llength $args] > 1} {
 	    set opt [lpop args 0]
 	    switch $opt {
 		-status1  { set status1 [lpop args 0]}
+                -prefixlen   { set prefixlen [lpop args 0] }
 		default {
 		    error "Unknown option \"$opt\""
 		}
@@ -186,9 +193,9 @@ namespace eval utftest {
 	set dstlen 40 ;# Should be enough for all encoding tests
 
 	test $cmd-$enc-$id-0 "$cmd - $enc - $hexin - frag=$fragindex" -constraints testencoding -body {
-	    set frag1Result [testencoding $cmd $enc [string range $in 0 $fragindex-1] {start} 0 $dstlen frag1Read frag1Written]
+	    set frag1Result [testencoding $cmd $enc [string range $in 0 $fragindex-1] {start} 0 $dstlen $prefixlen frag1Read frag1Written]
 	    lassign $frag1Result frag1Status frag1State frag1Decoded
-	    set frag2Result [testencoding $cmd $enc [string range $in $frag1Read end] {end} $frag1State $dstlen frag2Read frag2Written]
+	    set frag2Result [testencoding $cmd $enc [string range $in $frag1Read end] {end} $frag1State $dstlen $prefixlen frag2Read frag2Written]
 	    lassign $frag2Result frag2Status frag2State frag2Decoded
 	    set decoded [string cat [string range $frag1Decoded 0 $frag1Written-1] [string range $frag2Decoded 0 $frag2Written-1]]
 	    list $frag1Status [expr {$frag1Read <= $fragindex}] \
@@ -200,7 +207,7 @@ namespace eval utftest {
 	    # Fragmentation but with no more data.
 	    # Only check status. Content output is already checked in above test.
 	    test $cmd-$enc-$id-1 "$cmd - $enc - $hexin - frag=$fragindex - no more data" -constraints testencoding -body {
-		set frag1Result [testencoding $cmd $enc [string range $in 0 $fragindex-1] {start end} 0 $dstlen frag1Read frag1Written]
+		set frag1Result [testencoding $cmd $enc [string range $in 0 $fragindex-1] {start end} 0 $dstlen $prefixlen frag1Read frag1Written]
 		lassign $frag1Result frag1Status frag1State frag1Decoded
 		set frag1Status
 	    } -result syntax
@@ -208,6 +215,7 @@ namespace eval utftest {
     }
 
     proc testcharlimit {direction enc comment hexin hexout} {
+        set prefixlen 0
 	set id $comment-[join $hexin ""]-charlimit
 
 	if {$direction eq "toutf"} {
@@ -227,7 +235,7 @@ namespace eval utftest {
 	    test $cmd-$enc-$id-$nchars "$cmd - $enc - $hexin - nchars $nchars" -constraints testencoding -body {
 		set charlimit $nchars
 		lassign [testencoding $cmd $enc $in \
-			     {start end charlimit} 0 $dstlen nread nwritten charlimit] \
+			     {start end charlimit} 0 $dstlen $prefixlen nread nwritten charlimit] \
 		    status state buf
 		list $status $nwritten [string range $buf 0 $nwritten-1]
 	    } -result [list ok $expected_nwritten $expected_bytes]
@@ -235,6 +243,7 @@ namespace eval utftest {
     }
 
     proc testspacelimit {direction enc comment hexin hexout} {
+        set prefixlen 0
 	set id $comment-[join $hexin ""]-spacelimit
 
 	# Triple the input to avoid pathological short input case where
@@ -271,7 +280,7 @@ namespace eval utftest {
 	test $cmd-$enc-$id-[join $flags -] "$cmd - $enc - $hexin - $flags" \
 	    -constraints $constraints \
 	    -body {
-	    lassign [testencoding $cmd $enc $in $flags {} $dstlen nread nwritten nchars] status state buf
+	    lassign [testencoding $cmd $enc $in $flags {} $dstlen $prefixlen nread nwritten nchars] status state buf
 	    list \
 		$status \
 		[expr {$nread < [string length $in]}] \
@@ -284,12 +293,12 @@ namespace eval utftest {
     #
     # Basic tests
     foreach {enc testcases} $utfExtMap {
+        set encnuls [hexnuls $enc]
 	foreach testcase $testcases {
 	    lassign $testcase {*}{comment utfhex hex internalfragindex externalfragindex}
 
 	    # Basic test - TCL_ENCODING_START|TCL_ENCODING_END
 	    # Note by default output should be terminated with \0
-	    set encnuls [hexnuls $enc]
 	    testutf toutf $enc $comment $hex ${utfhex}00
 	    testutf fromutf $enc $comment $utfhex $hex$encnuls
 
@@ -308,6 +317,9 @@ namespace eval utftest {
 	    testspacelimit toutf $enc $comment $hex $utfhex
 	    testspacelimit fromutf $enc $comment $utfhex $hex
 	}
+        #lassign [lindex $testcases 0] {*}{comment utfhex hex internalfragindex externalfragindex}
+        #testutf toutfex $enc $comment $hex ${utfhex}00 -prefixlen 0x7ffffffe
+
     }
 
 
@@ -318,57 +330,57 @@ namespace eval utftest {
 
     # Bug regression tests
     test Tcl_UtfToExternal-bug-183a1adcc0 {buffer overflow} -body {
-	testencoding Tcl_UtfToExternal utf-16 A {start end} {} 1
+	testencoding Tcl_UtfToExternal utf-16 A {start end} {} 1 0
     } -result [list nospace {} \xFF] -constraints testencoding
 
     test Tcl_ExternalToUtf-bug-5be203d6ca {
 	truncated prefix in table encoding
     } -body {
 	set src \x82\x4F\x82\x50\x82
-	set result [list [testencoding Tcl_ExternalToUtf shiftjis $src {start tcl8} 0 16 srcRead dstWritten charsWritten] $srcRead $dstWritten $charsWritten]
-	lappend result {*}[list [testencoding Tcl_ExternalToUtf shiftjis [string range $src $srcRead end] {end tcl8} 0 10 srcRead dstWritten charsWritten] $srcRead $dstWritten $charsWritten]
+	set result [list [testencoding Tcl_ExternalToUtf shiftjis $src {start tcl8} 0 16 0 srcRead dstWritten charsWritten] $srcRead $dstWritten $charsWritten]
+	lappend result {*}[list [testencoding Tcl_ExternalToUtf shiftjis [string range $src $srcRead end] {end tcl8} 0 10 0 srcRead dstWritten charsWritten] $srcRead $dstWritten $charsWritten]
     } -result [list [list multibyte 0 \xEF\xBC\x90\xEF\xBC\x91\x00\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF] 4 6 2 [list ok 0 \xC2\x82\x00\xFF\xFF\xFF\xFF\xFF\xFF\xFF] 1 2 1] -constraints testencoding
 
     test Tcl_ExternalToUtf-bug-7346adc50f-strict-0 {
 	truncated input in escape encoding (strict)
     } -body {
 	set src [binary decode hex 1b2442242a3b6e24]
-	list {*}[testencoding Tcl_ExternalToUtf iso2022-jp $src {start end strict} 0 16 srcRead dstWritten charsWritten] $srcRead $dstWritten $charsWritten
+	list {*}[testencoding Tcl_ExternalToUtf iso2022-jp $src {start end strict} 0 16 0 srcRead dstWritten charsWritten] $srcRead $dstWritten $charsWritten
     } -result [list syntax 2 [binary decode hex e3818ae8a9a600ffffffffffffffffff] 7 6 2]
 
     test Tcl_ExternalToUtf-bug-7346adc50f-strict-1 {
 	truncated input in escape encoding (strict, partial)
     } -body {
 	set src [binary decode hex 1b2442242a3b6e24]
-	list {*}[testencoding Tcl_ExternalToUtf iso2022-jp $src {start strict} 0 16 srcRead dstWritten charsWritten] $srcRead $dstWritten $charsWritten
+	list {*}[testencoding Tcl_ExternalToUtf iso2022-jp $src {start strict} 0 16 0 srcRead dstWritten charsWritten] $srcRead $dstWritten $charsWritten
     } -result [list multibyte 2 [binary decode hex e3818ae8a9a600ffffffffffffffffff] 7 6 2]
 
     test Tcl_ExternalToUtf-bug-7346adc50f-replace-0 {
 	truncated input in escape encoding (replace)
     } -body {
 	set src [binary decode hex 1b2442242a3b6e24]
-	list {*}[testencoding Tcl_ExternalToUtf iso2022-jp $src {start end replace} 0 16 srcRead dstWritten charsWritten] $srcRead $dstWritten $charsWritten
+	list {*}[testencoding Tcl_ExternalToUtf iso2022-jp $src {start end replace} 0 16 0 srcRead dstWritten charsWritten] $srcRead $dstWritten $charsWritten
     } -result [list ok 2 [binary decode hex e3818ae8a9a6efbfbd00ffffffffffff] 8 9 3]
 
     test Tcl_ExternalToUtf-bug-7346adc50f-replace-1 {
 	truncated input in escape encoding (replace, partial)
     } -body {
 	set src [binary decode hex 1b2442242a3b6e24]
-	list {*}[testencoding Tcl_ExternalToUtf iso2022-jp $src {start replace} 0 16 srcRead dstWritten charsWritten] $srcRead $dstWritten $charsWritten
+	list {*}[testencoding Tcl_ExternalToUtf iso2022-jp $src {start replace} 0 16 0 srcRead dstWritten charsWritten] $srcRead $dstWritten $charsWritten
     } -result [list multibyte 2 [binary decode hex e3818ae8a9a600ffffffffffffffffff] 7 6 2]
 
     test Tcl_ExternalToUtf-bug-7346adc50f-tcl8-0 {
 	truncated input in escape encoding (tcl8)
     } -body {
 	set src [binary decode hex 1b2442242a3b6e24]
-	list {*}[testencoding Tcl_ExternalToUtf iso2022-jp $src {start end tcl8} 0 16 srcRead dstWritten charsWritten] $srcRead $dstWritten $charsWritten
+	list {*}[testencoding Tcl_ExternalToUtf iso2022-jp $src {start end tcl8} 0 16 0 srcRead dstWritten charsWritten] $srcRead $dstWritten $charsWritten
     } -result [list ok 2 [binary decode hex e3818ae8a9a6efbfbd00ffffffffffff] 8 9 3]
 
     test Tcl_ExternalToUtf-bug-7346adc50f-tcl8-1 {
 	truncated input in escape encoding (tcl8, partial)
     } -body {
 	set src [binary decode hex 1b2442242a3b6e24]
-	list {*}[testencoding Tcl_ExternalToUtf iso2022-jp $src {start tcl8} 0 16 srcRead dstWritten charsWritten] $srcRead $dstWritten $charsWritten
+	list {*}[testencoding Tcl_ExternalToUtf iso2022-jp $src {start tcl8} 0 16 0 srcRead dstWritten charsWritten] $srcRead $dstWritten $charsWritten
     } -result [list multibyte 2 [binary decode hex e3818ae8a9a600ffffffffffffffffff] 7 6 2]
 }
 
