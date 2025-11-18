@@ -105,7 +105,7 @@ enum timeHandlerType {timeHandlerMonotonic=0,
  */
 
 typedef struct {
-    TimerHandler *firstTimerHandlerPtr[3];
+    TimerHandler *firstTimerHandlerPtr[2];
 				/* [0] First event in monotonic queue. */
 				/* [1]: First event in wallclock queue. */
     int lastTimerId;		/* Timer identifier of most recently created
@@ -157,7 +157,7 @@ static Tcl_ThreadDataKey dataKey;
 #define SLEEP_OFFLOAD_GETTIMEOFDAY 20
 
 /*
- * The maximum number of milliseconds for each Tcl_Sleep call in AfterDelay.
+ * The maximum number of milliseconds for each Tcl_Sleep call in TimerAtDelay.
  * This is used to limit the maximum lag between interp limit and script
  * cancellation checks.
  */
@@ -170,7 +170,6 @@ static Tcl_ThreadDataKey dataKey;
 
 static void		AfterCleanupProc(void *clientData,
 			    Tcl_Interp *interp);
-static int		AfterDelay(Tcl_Interp *interp, Tcl_WideInt ms);
 static void		AfterProc(void *clientData);
 static void		FreeAfterPtr(AfterInfo *afterPtr);
 static AfterInfo *	GetAfterEvent(AfterAssocData *assocPtr,
@@ -930,15 +929,36 @@ Tcl_AfterObjCmd(
     case -1: {
 	Tcl_Time wakeup;
 	AfterInfo *afterPtr;
-	AfterAssocData *assocPtr = TimerAssocDataGet(interp);
-	ThreadSpecificData *tsdPtr = InitTimer();
+	AfterAssocData *assocPtr;
+	ThreadSpecificData *tsdPtr;
 
 	if (ms < 0) {
 	    ms = 0;
 	}
-	if (objc == 2) {
-	    return AfterDelay(interp, ms);
+
+	Tcl_GetMonotonicTime(&wakeup);
+	wakeup.sec += ms / 1000;
+	wakeup.usec += ms % 1000 * 1000;
+	if (wakeup.usec > 1000000) {
+	    wakeup.sec++;
+	    wakeup.usec -= 1000000;
 	}
+
+	if (objc == 2) {
+
+	    /*
+	     * No command given: wait the given monotonic time.
+	     */
+
+	    return TimerAtDelay(interp, wakeup, true);
+	}
+	
+	/*
+	 * Invoke command after given monotonic time distance.
+	 */
+
+	assocPtr = TimerAssocDataGet(interp);
+	tsdPtr = InitTimer();
 	afterPtr = (AfterInfo *)Tcl_Alloc(sizeof(AfterInfo));
 	afterPtr->assocPtr = assocPtr;
 	if (objc == 3) {
@@ -960,15 +980,8 @@ Tcl_AfterObjCmd(
 
 	afterPtr->id = tsdPtr->afterId;
 	tsdPtr->afterId += 1;
-	Tcl_GetTime(&wakeup);
-	wakeup.sec += ms / 1000;
-	wakeup.usec += ms % 1000 * 1000;
-	if (wakeup.usec > 1000000) {
-	    wakeup.sec++;
-	    wakeup.usec -= 1000000;
-	}
 	afterPtr->token = TclCreateAbsoluteTimerHandler(&wakeup,
-		AfterProc, afterPtr, false);
+		AfterProc, afterPtr, true);
 	afterPtr->nextPtr = assocPtr->firstAfterPtr;
 	assocPtr->firstAfterPtr = afterPtr;
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf("after#%d", afterPtr->id));
@@ -1003,46 +1016,6 @@ Tcl_AfterObjCmd(
 	TCL_UNREACHABLE();
     }
     return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * AfterDelay --
- *
- *	Implements the blocking delay behaviour of [after $time].
- *
- * Results:
- *	Standard Tcl result code (with error set if an error occurred due to a
- *	time limit being exceeded or being canceled).
- *
- * Side effects:
- *	May adjust the time limit granularity marker.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-AfterDelay(
-    Tcl_Interp *interp,
-    Tcl_WideInt ms)
-{
-    Tcl_Time endTime, now;
-
-    /*
-     * Foreward to [timer at] implementation by calculating the end time
-     * Tcl_Time value and pass it to TimerAtDelay.
-     */
-
-    Tcl_GetTime(&now);
-    endTime = now;
-    endTime.sec += (ms / 1000);
-    endTime.usec += (ms % 1000)*1000;
-    if (endTime.usec >= 1000000) {
-	endTime.sec++;
-	endTime.usec -= 1000000;
-    }
-    return TimerAtDelay(interp, endTime, false);
 }
 
 /*
@@ -1302,7 +1275,7 @@ AfterProc(
     Tcl_Preserve(interp);
     result = Tcl_EvalObjEx(interp, afterPtr->commandPtr, TCL_EVAL_GLOBAL);
     if (result != TCL_OK) {
-	Tcl_AddErrorInfo(interp, "\n    (\"after/timer\" script)");
+	Tcl_AddErrorInfo(interp, "\n    (\"after\" script)");
 	Tcl_BackgroundException(interp, result);
     }
     Tcl_Release(interp);
@@ -1526,10 +1499,6 @@ TimerAtCmd(
 	/*
 	 * No script given - wait until given time point
 	 */
-
-	/*
-	* Get the time delay by substracting the current time point.
-	*/
 
 	return TimerAtDelay(interp, wakeup, false);
     }
