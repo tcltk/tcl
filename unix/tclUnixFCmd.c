@@ -2153,7 +2153,7 @@ TclpOpenTemporaryFile(
     Tcl_Obj *dirObj,
     Tcl_Obj *basenameObj,
     Tcl_Obj *extensionObj,
-    Tcl_Obj *resultingNameObj)
+    Tcl_Obj *restrict resultingNameObj)
 {
     int fd = TclUnixOpenTemporaryFile(dirObj, basenameObj, extensionObj,
 	    resultingNameObj);

@@ -28,7 +28,8 @@ static int		SetEnsembleConfigOptions(Tcl_Interp *interp,
 			    Tcl_Obj *const objv[]);
 static inline int	EnsembleUnknownCallback(Tcl_Interp *interp,
 			    EnsembleConfig *ensemblePtr, int objc,
-			    Tcl_Obj *const objv[], Tcl_Obj **prefixObjPtr);
+			    Tcl_Obj *const objv[],
+			    Tcl_Obj **restrict prefixObjPtr);
 static int		NsEnsembleImplementationCmdNR(void *clientData,
 			    Tcl_Interp *interp,int objc,Tcl_Obj *const objv[]);
 static void		BuildEnsembleConfig(EnsembleConfig *ensemblePtr);
@@ -2349,7 +2350,8 @@ EnsembleUnknownCallback(
     EnsembleConfig *ensemblePtr,/* The ensemble structure. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[],	/* Actual arguments. */
-    Tcl_Obj **prefixObjPtr)	/* Where to write the prefix suggested by the
+    Tcl_Obj **restrict prefixObjPtr)
+				/* Where to write the prefix suggested by the
 				 * unknown callback. Must not be NULL. Only has
 				 * a meaningful value on TCL_OK. */
 {

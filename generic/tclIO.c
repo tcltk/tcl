@@ -215,12 +215,12 @@ static Tcl_Encoding	GetBinaryEncoding(void);
 static void		FreeBinaryEncoding(void);
 static Tcl_HashTable *	GetChannelTable(Tcl_Interp *interp);
 static int		GetInput(Channel *chanPtr);
-static void		PeekAhead(Channel *chanPtr, char **dstEndPtr,
+static void		PeekAhead(Channel *chanPtr, char **restrict dstEndPtr,
 			    GetsState *gsPtr);
 static int		ReadBytes(ChannelState *statePtr, Tcl_Obj *objPtr,
 			    int charsLeft);
 static int		ReadChars(ChannelState *statePtr, Tcl_Obj *objPtr,
-			    int charsLeft, int *factorPtr);
+			    int charsLeft, int *restrict factorPtr);
 static void		RecycleBuffer(ChannelState *statePtr,
 			    ChannelBuffer *bufPtr, int mustDiscard);
 static int		StackSetBlockMode(Channel *chanPtr, int mode);
@@ -228,8 +228,9 @@ static int		SetBlockMode(Tcl_Interp *interp, Channel *chanPtr,
 			    int mode);
 static void		StopCopy(CopyState *csPtr);
 static void		CopyDecrRefCount(CopyState *csPtr);
-static void		TranslateInputEOL(ChannelState *statePtr, char *dst,
-			    const char *src, int *dstLenPtr, int *srcLenPtr);
+static void		TranslateInputEOL(ChannelState *statePtr,
+			    char *restrict dst, const char *src,
+			    int *restrict dstLenPtr, int *restrict srcLenPtr);
 static void		UpdateInterest(Channel *chanPtr);
 static Tcl_Size		Write(Channel *chanPtr, const char *src,
 			    Tcl_Size srcLen, Tcl_Encoding encoding);
@@ -1519,7 +1520,7 @@ TclGetChannelFromObj(
 				 * channel. */
     Tcl_Obj *objPtr,
     Tcl_Channel *channelPtr,
-    int *modePtr,		/* Where to store the mode in which the
+    int *restrict modePtr,	/* Where to store the mode in which the
 				 * channel was opened? Will contain an OR'ed
 				 * combination of TCL_READABLE and
 				 * TCL_WRITABLE, if non-NULL. */
@@ -5577,7 +5578,7 @@ FilterInputBytes(
 static void
 PeekAhead(
     Channel *chanPtr,		/* The channel to read. */
-    char **dstEndPtr,		/* Filled with pointer to end of new range of
+    char **restrict dstEndPtr,	/* Filled with pointer to end of new range of
 				 * UTF-8 characters. */
     GetsState *gsPtr)		/* Current state of gets operation. */
 {
@@ -6257,7 +6258,7 @@ ReadChars(
 				 * buffer.  In that case, a recursive call
 				 * effectively obtains chars from the
 				 * second buffer. */
-    int *factorPtr)		/* On input, contains a guess of how many
+    int *restrict factorPtr)	/* On input, contains a guess of how many
 				 * bytes need to be allocated to hold the
 				 * result of converting N source bytes to
 				 * UTF-8. On output, contains another guess
@@ -6656,14 +6657,14 @@ static void
 TranslateInputEOL(
     ChannelState *statePtr,	/* Channel being read, for EOL translation and
 				 * EOF character. */
-    char *dstStart,		/* Output buffer filled with chars by applying
+    char *restrict dstStart,	/* Output buffer filled with chars by applying
 				 * appropriate EOL translation to source
 				 * characters. */
     const char *srcStart,	/* Source characters. */
-    int *dstLenPtr,		/* On entry, the maximum length of output
+    int *restrict dstLenPtr,	/* On entry, the maximum length of output
 				 * buffer in bytes. On exit, the number of
 				 * bytes actually used in output buffer. */
-    int *srcLenPtr)		/* On entry, the length of source buffer. On
+    int *restrict srcLenPtr)	/* On entry, the length of source buffer. On
 				 * exit, the number of bytes read from the
 				 * source buffer. */
 {

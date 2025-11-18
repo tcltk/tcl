@@ -508,7 +508,8 @@ static int		ParseExpr(Tcl_Interp *interp, const char *start,
 			    Tcl_Obj *litList, Tcl_Obj *funcList,
 			    Tcl_Parse *parsePtr, int parseOnly);
 static Tcl_Size		ParseLexeme(const char *start, Tcl_Size numBytes,
-			    unsigned char *lexemePtr, Tcl_Obj **literalPtr);
+			    unsigned char *restrict lexemePtr,
+			    Tcl_Obj **restrict literalPtr);
 
 /*
  *----------------------------------------------------------------------
@@ -1913,9 +1914,11 @@ static Tcl_Size
 ParseLexeme(
     const char *start,		/* Start of lexeme to parse. */
     Tcl_Size numBytes,		/* Number of bytes in string. */
-    unsigned char *lexemePtr,	/* Write code of parsed lexeme to this
+    unsigned char *restrict lexemePtr,
+				/* Write code of parsed lexeme to this
 				 * storage. */
-    Tcl_Obj **literalPtr)	/* Write corresponding literal value to this
+    Tcl_Obj **restrict literalPtr)
+				/* Write corresponding literal value to this
 				 * storage, if non-NULL. */
 {
     const char *end;

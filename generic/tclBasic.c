@@ -5168,7 +5168,7 @@ TclEvalEx(
     int flags,			/* Collection of OR-ed bits that control the
 				 * evaluation of the script. Only
 				 * TCL_EVAL_GLOBAL is currently supported. */
-    int line,		/* The line the script starts on. */
+    int line,			/* The line the script starts on. */
     Tcl_Size *clNextOuter,	/* Information about an outer context for */
     const char *outerScript)	/* continuation line data. This is set only in
 				 * TclSubstTokens(), to properly handle
@@ -5646,7 +5646,7 @@ TclEvalEx(
 
 void
 TclAdvanceLines(
-    int *line,
+    int *restrict line,
     const char *start,
     const char *end)
 {
@@ -5681,8 +5681,8 @@ TclAdvanceLines(
 
 void
 TclAdvanceContinuations(
-    int *line,
-    Tcl_Size **clNextPtrPtr,
+    int *restrict line,
+    Tcl_Size **restrict clNextPtrPtr,
     Tcl_Size loc)
 {
     /*
@@ -6016,8 +6016,8 @@ void
 TclArgumentGet(
     Tcl_Interp *interp,
     Tcl_Obj *obj,
-    CmdFrame **cfPtrPtr,
-    int *wordPtr)
+    CmdFrame **restrict cfPtrPtr,
+    int *restrict wordPtr)
 {
     Interp *iPtr = (Interp *) interp;
     Tcl_HashEntry *hPtr;

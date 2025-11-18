@@ -421,7 +421,7 @@ Tcl_Size
 TclMaxListLength(
     const char *bytes,
     Tcl_Size numBytes,
-    const char **endPtr)
+    const char **restrict endPtr)
 {
     Tcl_Size count = 0;
 
@@ -555,15 +555,17 @@ TclFindDictElement(
 				 * more keys and values (possibly in
 				 * braces). */
     Tcl_Size dictLength,	/* Number of bytes in the dict's string. */
-    const char **elementPtr,	/* Where to put address of first significant
+    const char **restrict elementPtr,
+				/* Where to put address of first significant
 				 * character in the first element (i.e., key
 				 * or value) of dict. */
-    const char **nextPtr,	/* Fill in with location of character just
+    const char **restrict nextPtr,
+				/* Fill in with location of character just
 				 * after all white space following end of
 				 * element (next arg or end of list). */
-    Tcl_Size *sizePtr,		/* If non-zero, fill in with size of
+    Tcl_Size *restrict sizePtr,	/* If non-zero, fill in with size of
 				 * element. */
-    int *literalPtr)		/* If non-zero, fill in with non-zero/zero to
+    int *restrict literalPtr)	/* If non-zero, fill in with non-zero/zero to
 				 * indicate that the substring of *sizePtr
 				 * bytes starting at **elementPtr is/is not
 				 * the literal key or value and therefore
@@ -588,14 +590,16 @@ FindElement(
 				 * parsing, for error messages. */
     const char *typeCode,	/* The type code for thing we are parsing, for
 				 * error messages. */
-    const char **elementPtr,	/* Where to put address of first significant
+    const char **restrict elementPtr,
+				/* Where to put address of first significant
 				 * character in first element. */
-    const char **nextPtr,	/* Fill in with location of character just
+    const char **restrict nextPtr,
+				/* Fill in with location of character just
 				 * after all white space following end of
 				 * argument (next arg or end of list/dict). */
-    Tcl_Size *sizePtr,		/* If non-zero, fill in with size of
+    Tcl_Size *restrict sizePtr,	/* If non-zero, fill in with size of
 				 * element. */
-    int *literalPtr)		/* If non-zero, fill in with non-zero/zero to
+    int *restrict literalPtr)	/* If non-zero, fill in with non-zero/zero to
 				 * indicate that the substring of *sizePtr
 				 * bytes starting at **elementPtr is/is not
 				 * the literal list/dict element and therefore
@@ -1061,7 +1065,7 @@ TclScanElement(
     const char *src,		/* String to convert to Tcl list element. */
     Tcl_Size length,		/* Number of bytes in src,
 				 * < 0 means null terminated */
-    char *flagPtr)		/* Where to store information to guide
+    char *restrict flagPtr)	/* Where to store information to guide
 				 * Tcl_ConvertElement. */
 {
     const char *p = src;
@@ -1427,7 +1431,7 @@ TclConvertElement(
     const char *src,		/* Source information for list element. */
     Tcl_Size length,		/* Number of bytes in src, or
 				 * < 0 if null terminated */
-    char *dst,			/* Place to put list-ified element. */
+    char *restrict dst,		/* Place to put list-ified element. */
     int flags)			/* Flags produced by Tcl_ScanElement. */
 {
     int conversion = flags & CONVERT_MASK;
@@ -1846,7 +1850,8 @@ TclTrim(
     Tcl_Size numTrim,		/* ...and its length in bytes */
 				/* Calls in this routine
 				 * rely on (trim[numTrim] == '\0'). */
-    Tcl_Size *trimRightPtr)	/* Offset from the end of the string. */
+    Tcl_Size *restrict trimRightPtr)
+				/* Offset from the end of the string. */
 {
     Tcl_Size trimLeft = 0, trimRight = 0;
 
@@ -3840,7 +3845,7 @@ TclIndexEncode(
     Tcl_Obj *objPtr,		/* Index value to parse */
     int before,			/* Value to return for index before beginning */
     int after,			/* Value to return for index after end */
-    int *indexPtr)		/* Where to write the encoded answer, not NULL */
+    int *restrict indexPtr)	/* Where to write the encoded answer, not NULL */
 {
     Tcl_WideInt wide;
     int idx;
@@ -4482,9 +4487,9 @@ TclReToGlob(
     Tcl_Interp *interp,
     const char *reStr,
     Tcl_Size reStrLen,
-    Tcl_DString *dsPtr,
-    int *exactPtr,
-    int *quantifiersFoundPtr)
+    Tcl_DString *restrict dsPtr,
+    int *restrict exactPtr,
+    int *restrict quantifiersFoundPtr)
 {
     int anchorLeft, anchorRight, lastIsStar, numStars;
     char *dsStr, *dsStrStart;

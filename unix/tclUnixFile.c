@@ -1249,7 +1249,8 @@ TclNativeDupInternalRep(
 int
 TclpUtime(
     Tcl_Obj *pathPtr,		/* File to modify */
-    struct utimbuf *tval)	/* New modification date structure */
+    struct utimbuf *restrict tval)
+				/* New modification date structure */
 {
     return utime((const char *)Tcl_FSGetNativePath(pathPtr), tval);
 }

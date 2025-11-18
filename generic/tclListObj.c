@@ -1761,9 +1761,9 @@ Tcl_ListObjAppendList(
 int
 TclListObjAppendElements(
     Tcl_Interp *interp,		/* Used to report errors if not NULL. */
-    Tcl_Obj *toObj,		/* List object to append */
+    Tcl_Obj *restrict toObj,	/* List object to append to. */
     Tcl_Size elemCount,		/* Number of elements in elemObjs[] */
-    Tcl_Obj * const elemObjv[])	/* Objects to append to toObj's list. */
+    Tcl_Obj *const elemObjv[])	/* Objects to append to toObj's list. */
 {
     ListRep listRep;
     Tcl_Obj **toObjv;
@@ -1972,7 +1972,7 @@ Tcl_ListObjAppendElement(
 int
 TclListObjAppendIfAbsent(
     Tcl_Interp *interp,		/* Used to report errors if not NULL. */
-    Tcl_Obj *toObj,		/* List object to append */
+    Tcl_Obj *restrict toObj,	/* List object to append to. */
     Tcl_Obj *elemObj)		/* Element to append to toObj's list. */
 {
     Tcl_Obj **elemObjs;
@@ -2003,7 +2003,7 @@ TclListObjAppendIfAbsent(
     }
     result = TclListObjAppendElements(interp, toObj, 1, &elemObj);
 
-vamoose: /* Return result after freeing elemObj if unreferenced */
+  vamoose: /* Return result after freeing elemObj if unreferenced */
     Tcl_BounceRefCount(elemObj);
     return result;
 }

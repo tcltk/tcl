@@ -1025,7 +1025,7 @@ static void		StartExpanding(CompileEnv *envPtr);
 static void		EnterCmdWordData(ExtCmdLoc *eclPtr, Tcl_Size srcOffset,
 			    Tcl_Token *tokenPtr, const char *cmd,
 			    Tcl_Size numWords, int line,
-			    Tcl_Size *clNext, int **lines,
+			    Tcl_Size *clNext, int **restrict lines,
 			    CompileEnv *envPtr);
 static void		ReleaseCmdWordData(ExtCmdLoc *eclPtr);
 
@@ -3646,7 +3646,7 @@ EnterCmdWordData(
     Tcl_Size numWords,
     int line,
     Tcl_Size *clNext,
-    int **wlines,
+    int **restrict wlines,
     CompileEnv *envPtr)
 {
     ECL *ePtr;

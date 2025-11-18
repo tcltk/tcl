@@ -154,7 +154,7 @@ TclParseInit(
     Tcl_Size numBytes,		/* Total number of bytes in string. If -1,
 				 * the script consists of all bytes up to the
 				 * first null character. */
-    Tcl_Parse *parsePtr)	/* Points to struct to initialize */
+    Tcl_Parse *restrict parsePtr)/* Points to struct to initialize */
 {
     parsePtr->numWords = 0;
     parsePtr->tokenPtr = parsePtr->staticTokens;
@@ -783,9 +783,9 @@ TclParseBackslash(
     const char *src,		/* Points to the backslash character of a
 				 * backslash sequence. */
     Tcl_Size numBytes,		/* Max number of bytes to scan. */
-    Tcl_Size *readPtr,		/* NULL, or points to storage where the number
+    Tcl_Size *restrict readPtr,	/* NULL, or points to storage where the number
 				 * of bytes scanned should be written. */
-    char *dst)			/* NULL, or points to buffer where the UTF-8
+    char *restrict dst)		/* NULL, or points to buffer where the UTF-8
 				 * encoding of the backslash sequence is to be
 				 * written. At most 4 bytes will be written there. */
 {

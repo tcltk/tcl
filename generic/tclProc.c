@@ -2637,7 +2637,7 @@ Proc *
 TclGetLambdaFromObj(
     Tcl_Interp *interp,
     Tcl_Obj *objPtr,
-    Tcl_Obj **nsObjPtrPtr)
+    Tcl_Obj **restrict nsObjPtrPtr)
 {
     Proc *procPtr;
     Tcl_Obj *nsObjPtr;

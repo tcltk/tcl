@@ -643,7 +643,7 @@ TclObjLookupVarEx(
     int createPart2,		/* If 1, create hash table entry for part 2 of
 				 * name, if it doesn't already exist. If 0,
 				 * return error if it doesn't exist. */
-    Var **arrayPtrPtr)		/* If the name refers to an element of an
+    Var **restrict arrayPtrPtr)	/* If the name refers to an element of an
 				 * array, *arrayPtrPtr gets filled in with
 				 * address of array variable. Otherwise this
 				 * is set to NULL. */

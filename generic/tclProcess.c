@@ -884,14 +884,16 @@ TclProcessWaitStatus
 TclProcessWait(
     Tcl_Pid pid,		/* Process id. */
     int options,		/* Options passed to WaitProcessStatus. */
-    int *codePtr,		/* If non-NULL, will receive either:
+    int *restrict codePtr,	/* If non-NULL, will receive either:
 				 *  - 0 for normal exit.
 				 *  - errno in case of error.
 				 *  - non-zero exit code for abormal exit.
 				 *  - signal number if killed or suspended.
 				 *  - Tcl_WaitPid status in all other cases. */
-    Tcl_Obj **msgObjPtr,	/* If non-NULL, will receive error message. */
-    Tcl_Obj **errorObjPtr)	/* If non-NULL, will receive error code. */
+    Tcl_Obj **restrict msgObjPtr,
+				/* If non-NULL, will receive error message. */
+    Tcl_Obj **restrict errorObjPtr)
+				/* If non-NULL, will receive error code. */
 {
     Tcl_HashEntry *entry;
     ProcessInfo *info;

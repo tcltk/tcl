@@ -81,10 +81,11 @@ TclpDlopen(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Obj *pathPtr,		/* Name of the file containing the desired
 				 * code (UTF-8). */
-    Tcl_LoadHandle *loadHandle,	/* Filled with token for dynamically loaded
+    Tcl_LoadHandle *restrict loadHandle,
+				/* Filled with token for dynamically loaded
 				 * file which will be passed back to
 				 * (*unloadProcPtr)() to unload the file. */
-    Tcl_FSUnloadFileProc **unloadProcPtr,
+    Tcl_FSUnloadFileProc **restrict unloadProcPtr,
 				/* Filled with address of Tcl_FSUnloadFileProc
 				 * function which should be used for this
 				 * file. */

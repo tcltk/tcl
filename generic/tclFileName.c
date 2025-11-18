@@ -27,8 +27,8 @@ TclPlatformType tclPlatform = TCL_PLATFORM_UNIX;
  */
 
 static const char *	ExtractWinRoot(const char *path,
-			    Tcl_DString *resultPtr, int offset,
-			    Tcl_PathType *typePtr);
+			    Tcl_DString *restrict resultPtr, int offset,
+			    Tcl_PathType *restrict typePtr);
 static int		SkipToChar(char **stringPtr, int match);
 static Tcl_Obj *	SplitWinPath(const char *path);
 static Tcl_Obj *	SplitUnixPath(const char *path);
@@ -107,10 +107,12 @@ SetResultLength(
 static const char *
 ExtractWinRoot(
     const char *path,		/* Path to parse. */
-    Tcl_DString *resultPtr,	/* Buffer to hold result. */
+    Tcl_DString *restrict resultPtr,
+				/* Buffer to hold result. */
     int offset,			/* Offset in buffer where result should be
 				 * stored. */
-    Tcl_PathType *typePtr)	/* Where to store pathType result */
+    Tcl_PathType *restrict typePtr)
+				/* Where to store pathType result */
 {
     int extended = 0;
 
@@ -466,7 +468,7 @@ TclpGetNativePathType(
 Tcl_Obj *
 TclpNativeSplitPath(
     Tcl_Obj *pathPtr,		/* Path to split. */
-    Tcl_Size *lenPtr)		/* int to store number of path elements. */
+    Tcl_Size *restrict lenPtr)	/* int to store number of path elements. */
 {
     Tcl_Obj *resultPtr = NULL;	/* Needed only to prevent gcc warnings. */
 

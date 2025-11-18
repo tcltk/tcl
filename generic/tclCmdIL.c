@@ -138,11 +138,11 @@ static Tcl_ObjCmdProc	InfoSharedlibCmd;
 static Tcl_ObjCmdProc	InfoCmdTypeCmd;
 static Tcl_ObjCmdProc	InfoTclVersionCmd;
 static SortElement *	MergeLists(SortElement *leftPtr, SortElement *rightPtr,
-			    SortInfo *infoPtr);
+			    SortInfo *restrict infoPtr);
 static int		SortCompare(SortElement *firstPtr, SortElement *second,
-			    SortInfo *infoPtr);
+			    SortInfo *restrict infoPtr);
 static Tcl_Obj *	SelectObjFromSublist(Tcl_Obj *firstPtr,
-			    SortInfo *infoPtr);
+			    SortInfo *restrict infoPtr);
 
 /*
  * Array of values describing how to implement each standard subcommand of the
@@ -4973,7 +4973,7 @@ static SortElement *
 MergeLists(
     SortElement *leftPtr,	/* First list to be merged; may be NULL. */
     SortElement *rightPtr,	/* Second list to be merged; may be NULL. */
-    SortInfo *infoPtr)		/* Information needed by the comparison
+    SortInfo *restrict infoPtr)	/* Information needed by the comparison
 				 * operator. */
 {
     SortElement *headPtr, *tailPtr;
@@ -5061,7 +5061,7 @@ static int
 SortCompare(
     SortElement *elemPtr1, SortElement *elemPtr2,
 				/* Values to be compared. */
-    SortInfo *infoPtr)		/* Information passed from the top-level
+    SortInfo *restrict infoPtr)	/* Information passed from the top-level
 				 * "lsort" command. */
 {
     int order = 0;
@@ -5303,7 +5303,7 @@ DictionaryCompare(
 static Tcl_Obj *
 SelectObjFromSublist(
     Tcl_Obj *objPtr,		/* Obj to select sublist from. */
-    SortInfo *infoPtr)		/* Information passed from the top-level
+    SortInfo *restrict infoPtr)	/* Information passed from the top-level
 				 * "lsearch" or "lsort" command. */
 {
     Tcl_Size i;

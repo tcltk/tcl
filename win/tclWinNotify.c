@@ -373,9 +373,9 @@ int
 TclAsyncNotifier(
     TCL_UNUSED(int),		/* Signal number. */
     TCL_UNUSED(Tcl_ThreadId),	/* Target thread. */
-    TCL_UNUSED(void *),	/* Notifier data. */
-    TCL_UNUSED(int *),		/* Flag to mark. */
-    TCL_UNUSED(int))			/* Value of mark. */
+    TCL_UNUSED(void *),		/* Notifier data. */
+    TCL_UNUSED(int *restrict),	/* Flag to mark. */
+    TCL_UNUSED(int))		/* Value of mark. */
 {
     return 0;
 }

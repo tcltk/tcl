@@ -698,7 +698,7 @@ TclContinuationsEnterDerived(
 
 void
 TclContinuationsCopy(
-    Tcl_Obj *objPtr,
+    Tcl_Obj *restrict objPtr,
     Tcl_Obj *originObjPtr)
 {
     ThreadSpecificData *tsdPtr = TclGetContLineTable();
@@ -3104,7 +3104,7 @@ int
 TclGetWideBitsFromObj(
     Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
     Tcl_Obj *objPtr,		/* Object from which to get a wide int. */
-    Tcl_WideInt *wideIntPtr)	/* Place to store resulting wide integer. */
+    Tcl_WideInt *restrict wideIntPtr)	/* Place to store resulting wide integer. */
 {
     do {
 	if (TclHasInternalRep(objPtr, &tclIntType)) {
@@ -3591,8 +3591,8 @@ Tcl_SetBignumObj(
 
 void
 TclSetBignumInternalRep(
-    Tcl_Obj *objPtr,
-    void *big)
+    Tcl_Obj *restrict objPtr,
+    void *restrict big)
 {
     mp_int *bignumValue = (mp_int *)big;
     objPtr->typePtr = &tclBignumType;
