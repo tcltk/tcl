@@ -3110,15 +3110,6 @@ MODULE_SCOPE const char *TclEncodingProfileIdToName(Tcl_Interp *interp,
 MODULE_SCOPE void	TclGetEncodingProfiles(Tcl_Interp *interp);
 
 /*
- * TIP #233 (Virtualized Time)
- * Data for the time hooks, if any.
- */
-
-MODULE_SCOPE Tcl_GetTimeProc *tclGetTimeProcPtr;
-MODULE_SCOPE Tcl_ScaleTimeProc *tclScaleTimeProcPtr;
-MODULE_SCOPE void *tclTimeClientData;
-
-/*
  * TIP #723 (Monotonic Time)
  */
 
@@ -4187,37 +4178,6 @@ MODULE_SCOPE int	TclListLimitExceededError(Tcl_Interp *interp);
 /* Constants used in index value encoding routines. */
 #define TCL_INDEX_END	((Tcl_Size)-2)
 #define TCL_INDEX_START	((Tcl_Size)0)
-
-/*
- *----------------------------------------------------------------------
- *
- * TclScaleTime --
- *
- *	TIP #233 (Virtualized Time): Wrapper around the time virutalisation
- *	rescale function to hide the binding of the clientData.
- *
- *	This is static inline code; it's like a macro, but a function. It's
- *	used because this is a piece of code that ends up in places that are a
- *	bit performance sensitive.
- *
- * Results:
- *	None
- *
- * Side effects:
- *	Updates the time structure (given as an argument) with what the time
- *	should be after virtualisation.
- *
- *----------------------------------------------------------------------
- */
-
-static inline void
-TclScaleTime(
-    Tcl_Time *timePtr)
-{
-    if (timePtr != NULL) {
-	tclScaleTimeProcPtr(timePtr, tclTimeClientData);
-    }
-}
 
 /*
  *----------------------------------------------------------------

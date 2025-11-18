@@ -51,9 +51,6 @@ Tcl_Sleep(
 	after.sec += 1;
     }
     while (1) {
-	/*
-	 * TIP #233: Scale from virtual time to real-time for select.
-	 */
 
 	vdelay.sec  = after.sec  - before.sec;
 	vdelay.usec = after.usec - before.usec;
@@ -61,10 +58,6 @@ Tcl_Sleep(
 	if (vdelay.usec < 0) {
 	    vdelay.usec += 1000000;
 	    vdelay.sec  -= 1;
-	}
-
-	if ((vdelay.sec != 0) || (vdelay.usec != 0)) {
-	    TclScaleTime(&vdelay);
 	}
 
 	delay.tv_sec  = vdelay.sec;

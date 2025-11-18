@@ -479,26 +479,11 @@ TclpWaitForEvent(
      */
 
     if (timePtr) {
-	/*
-	 * ToDo: here is the implementation without TIP 233:
-	 * https://core.tcl-lang.org/tcl/info/8ea9c4081c39b8bf
-	 */
 
-	/*
-	 * TIP #233 (Virtualized Time). Convert virtual domain delay to
-	 * real-time.
-	 */
-
-	Tcl_Time myTime;
-
-	myTime.sec  = timePtr->sec;
-	myTime.usec = timePtr->usec;
-
-	if (myTime.sec != 0 || myTime.usec != 0) {
-	    TclScaleTime(&myTime);
+	timeout = (DWORD)timePtr->sec * 1000 + (unsigned long)timePtr->usec / 1000;
+	if (timeout == INFINITE) {
+	    timeout--;
 	}
-
-	timeout = (DWORD)myTime.sec * 1000 + (unsigned long)myTime.usec / 1000;
     } else {
 	timeout = INFINITE;
     }
@@ -613,11 +598,6 @@ Tcl_Sleep(
 	desired.usec -= 1000000;
     }
 
-    /*
-     * TIP #233: Scale delay from virtual to real-time.
-     */
-
-    TclScaleTime(&vdelay);
     sleepTime = (DWORD)vdelay.sec * 1000 + (unsigned long)vdelay.usec / 1000;
 
     for (;;) {
@@ -632,7 +612,6 @@ Tcl_Sleep(
 	vdelay.sec  = desired.sec  - now.sec;
 	vdelay.usec = desired.usec - now.usec;
 
-	TclScaleTime(&vdelay);
 	sleepTime = (DWORD)vdelay.sec * 1000 + (unsigned long)vdelay.usec / 1000;
     }
 }

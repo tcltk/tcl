@@ -837,7 +837,6 @@ TclpSetTimer(
 	Tcl_Time vTime = *timePtr;
 
 	if (vTime.sec != 0 || vTime.usec != 0) {
-	    TclScaleTime(&vTime);
 	    waitTime = vTime.sec + 1.0e-6 * vTime.usec;
 	} else {
 	    waitTime = 0;
@@ -1206,14 +1205,7 @@ TclpWaitForEvent(
     if (timePtr) {
 	Tcl_Time vTime = *timePtr;
 
-	/*
-	 * TIP #233 (Virtualized Time). Is virtual time in effect? And do we
-	 * actually have something to scale? If yes to both then we call the
-	 * handler to do this scaling.
-	 */
-
 	if (vTime.sec != 0 || vTime.usec != 0) {
-	    TclScaleTime(&vTime);
 	    waitTime = vTime.sec + 1.0e-6 * vTime.usec;
 	} else {
 	    /*
@@ -1486,13 +1478,8 @@ Tcl_Sleep(
 	return;
     }
 
-    /*
-     * TIP #233: Scale from virtual time to real-time.
-     */
-
     vdelay.sec = ms / 1000;
     vdelay.usec = (ms % 1000) * 1000;
-    TclScaleTime(&vdelay);
 
     if (tsdPtr->runLoop) {
 	CFTimeInterval waitTime;
