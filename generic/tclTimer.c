@@ -1897,6 +1897,59 @@ TimerInfoCmd(
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_SetTimeProc --
+ *
+ *	TIP #233 (Virtualized Time): Registers two handlers for the
+ *	virtualization of Tcl's access to time information.
+ *	Not supported, so call panic.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Remembers the handlers, alters core behaviour.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_SetTimeProc(
+    Tcl_GetTimeProc *getProc,
+    Tcl_ScaleTimeProc *scaleProc,
+    void *clientData)
+{
+    Tcl_Panic("Tcl_SetTimeProc is not supported in TCL 9.1");
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_QueryTimeProc --
+ *
+ *	TIP #233 (Virtualized Time): Query which time handlers are registered.
+ *	Not supported, so call panic.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_QueryTimeProc(
+    Tcl_GetTimeProc **getProc,
+    Tcl_ScaleTimeProc **scaleProc,
+    void **clientData)
+{
+    Tcl_Panic("Tcl_QueryTimeProc is not supported in TCL 9.1");
+}
+
+/*
  * Local Variables:
  * mode: c
  * c-basic-offset: 4

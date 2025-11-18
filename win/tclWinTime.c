@@ -114,38 +114,9 @@ static void		ResetCounterSamples(unsigned long long fileTime,
 			    long long perfCounter, long long perfFreq);
 static long long	AccumulateSample(long long perfCounter,
 			    unsigned long long fileTime);
-static void		NativeScaleTime(Tcl_Time* timebuf,
-			    void *clientData);
 static long long	NativeGetMicroseconds(void);
-static void		NativeGetTime(Tcl_Time* timebuf,
-			    void *clientData);
+void			GetTime(Tcl_Time *timePtr);
 
-/*
- * TIP #233 (Virtualized Time): Data for the time hooks, if any.
- */
-
-Tcl_GetTimeProc *tclGetTimeProcPtr = NativeGetTime;
-Tcl_ScaleTimeProc *tclScaleTimeProcPtr = NativeScaleTime;
-void *tclTimeClientData = NULL;
-
-/*
- * Inlined version of Tcl_GetTime.
- */
-
-static inline void
-GetTime(
-    Tcl_Time *timePtr)
-{
-    tclGetTimeProcPtr(timePtr, tclTimeClientData);
-}
-
-static inline int
-IsTimeNative(void)
-{
-    return tclGetTimeProcPtr == NativeGetTime;
-}
-
-
 /*
  *----------------------------------------------------------------------
  *
@@ -172,7 +143,7 @@ TclpGetSeconds(void)
      * Try to use high resolution timer
      */
 
-    if (IsTimeNative() && (usecSincePosixEpoch = NativeGetMicroseconds())) {
+    if (usecSincePosixEpoch = NativeGetMicroseconds()) {
 	return usecSincePosixEpoch / 1000000;
     } else {
 	Tcl_Time t;
@@ -210,7 +181,7 @@ TclpGetClicks(void)
      * Try to use high resolution timer.
      */
 
-    if (IsTimeNative() && (usecSincePosixEpoch = NativeGetMicroseconds())) {
+    if (usecSincePosixEpoch = NativeGetMicroseconds()) {
 	return (Tcl_WideUInt) usecSincePosixEpoch;
     } else {
 	/*
@@ -336,7 +307,7 @@ TclpGetMicroseconds(void)
      * Try to use high resolution timer.
      */
 
-    if (IsTimeNative() && (usecSincePosixEpoch = NativeGetMicroseconds())) {
+    if (usecSincePosixEpoch = NativeGetMicroseconds()) {
 	return usecSincePosixEpoch;
     } else {
 	/*
@@ -383,7 +354,7 @@ Tcl_GetTime(
      * Try to use high resolution timer.
      */
 
-    if (IsTimeNative() && (usecSincePosixEpoch = NativeGetMicroseconds())) {
+    if (usecSincePosixEpoch = NativeGetMicroseconds()) {
 	timePtr->sec = usecSincePosixEpoch / 1000000;
 	timePtr->usec = (long)(usecSincePosixEpoch % 1000000);
     } else {
@@ -442,33 +413,6 @@ Tcl_GetMonotonicTime(
 	timePtr->sec = (long)(ms/1000);
 	timePtr->usec = ((long)(ms%1000))*1000;
     }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * NativeScaleTime --
- *
- *	TIP #233: Scale from virtual time to the real-time. For native scaling
- *	the relationship is 1:1 and nothing has to be done.
- *
- * Results:
- *	Scales the time in timePtr.
- *
- * Side effects:
- *	See above.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-NativeScaleTime(
-    TCL_UNUSED(Tcl_Time *),
-    TCL_UNUSED(void *))
-{
-    /*
-     * Native scale is 1:1. Nothing is done.
-     */
 }
 
 /*
@@ -713,9 +657,9 @@ NativeGetMicroseconds(void)
 /*
  *----------------------------------------------------------------------
  *
- * NativeGetTime --
+ * GetTime --
  *
- *	TIP #233: Gets the current system time in seconds and microseconds
+ *	Gets the current system time in seconds and microseconds
  *	since the beginning of the epoch: 00:00 UCT, January 1, 1970.
  *
  * Results:
@@ -728,9 +672,8 @@ NativeGetMicroseconds(void)
  */
 
 static void
-NativeGetTime(
-    Tcl_Time *timePtr,
-    TCL_UNUSED(void *))
+GetTime(
+    Tcl_Time *timePtr)
 {
     long long usecSincePosixEpoch;
 
@@ -1227,67 +1170,6 @@ AccumulateSample(
 	}
 
 	return estFreq;
-    }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_SetTimeProc --
- *
- *	TIP #233 (Virtualized Time): Registers two handlers for the
- *	virtualization of Tcl's access to time information.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Remembers the handlers, alters core behaviour.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Tcl_SetTimeProc(
-    Tcl_GetTimeProc *getProc,
-    Tcl_ScaleTimeProc *scaleProc,
-    void *clientData)
-{
-    tclGetTimeProcPtr = getProc;
-    tclScaleTimeProcPtr = scaleProc;
-    tclTimeClientData = clientData;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_QueryTimeProc --
- *
- *	TIP #233 (Virtualized Time): Query which time handlers are registered.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Tcl_QueryTimeProc(
-    Tcl_GetTimeProc **getProc,
-    Tcl_ScaleTimeProc **scaleProc,
-    void **clientData)
-{
-    if (getProc) {
-	*getProc = tclGetTimeProcPtr;
-    }
-    if (scaleProc) {
-	*scaleProc = tclScaleTimeProcPtr;
-    }
-    if (clientData) {
-	*clientData = tclTimeClientData;
     }
 }
 
