@@ -115,7 +115,7 @@ static void		ResetCounterSamples(unsigned long long fileTime,
 static long long	AccumulateSample(long long perfCounter,
 			    unsigned long long fileTime);
 static long long	NativeGetMicroseconds(void);
-void			GetTime(Tcl_Time *timePtr);
+static void		GetTime(Tcl_Time *timePtr);
 
 /*
  *----------------------------------------------------------------------
@@ -143,7 +143,7 @@ TclpGetSeconds(void)
      * Try to use high resolution timer
      */
 
-    if (usecSincePosixEpoch = NativeGetMicroseconds()) {
+    if ( (usecSincePosixEpoch = NativeGetMicroseconds()) ) {
 	return usecSincePosixEpoch / 1000000;
     } else {
 	Tcl_Time t;
@@ -181,7 +181,7 @@ TclpGetClicks(void)
      * Try to use high resolution timer.
      */
 
-    if (usecSincePosixEpoch = NativeGetMicroseconds()) {
+    if ( (usecSincePosixEpoch = NativeGetMicroseconds()) ) {
 	return (Tcl_WideUInt) usecSincePosixEpoch;
     } else {
 	/*
@@ -307,7 +307,7 @@ TclpGetMicroseconds(void)
      * Try to use high resolution timer.
      */
 
-    if (usecSincePosixEpoch = NativeGetMicroseconds()) {
+    if ( (usecSincePosixEpoch = NativeGetMicroseconds()) ) {
 	return usecSincePosixEpoch;
     } else {
 	/*
@@ -354,7 +354,7 @@ Tcl_GetTime(
      * Try to use high resolution timer.
      */
 
-    if (usecSincePosixEpoch = NativeGetMicroseconds()) {
+    if ( (usecSincePosixEpoch = NativeGetMicroseconds()) ) {
 	timePtr->sec = usecSincePosixEpoch / 1000000;
 	timePtr->usec = (long)(usecSincePosixEpoch % 1000000);
     } else {
