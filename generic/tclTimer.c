@@ -283,8 +283,8 @@ TimerExitProc(
  *
  * Tcl_CreateTimerHandler --
  *
- *	Arrange for a given function to be invoked at a particular time in the
- *	future.
+ *	Arrange for a given function to be invoked after a given monotonic
+ *	time interval.
  *
  * Results:
  *	The return value is a token for the timer event, which may be used to
@@ -309,14 +309,14 @@ Tcl_CreateTimerHandler(
      * Compute when the event should fire.
      */
 
-    Tcl_GetTime(&time);
+    Tcl_GetMonotonicTime(&time);
     time.sec += milliseconds/1000;
     time.usec += (milliseconds%1000)*1000;
     if (time.usec >= 1000000) {
 	time.usec -= 1000000;
 	time.sec += 1;
     }
-    return TclCreateAbsoluteTimerHandler(&time, proc, clientData, false);
+    return TclCreateAbsoluteTimerHandler(&time, proc, clientData, true);
 }
 
 /*
@@ -1122,7 +1122,7 @@ TimerAtDelay(
 	}
 
 	if (diff > 0) {
-	    Tcl_SleepMonotonic(diff * 1000);
+	    Tcl_Sleep(diff);
 	}
 
 	if (limitDiff) {

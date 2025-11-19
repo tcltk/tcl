@@ -42,72 +42,6 @@ Tcl_Sleep(
      * time really has elapsed.  If it's too early, go back to sleep again.
      */
 
-    Tcl_GetTime(&before);
-    after = before;
-    after.sec += ms/1000;
-    after.usec += (ms%1000)*1000;
-    if (after.usec > 1000000) {
-	after.usec -= 1000000;
-	after.sec += 1;
-    }
-    while (1) {
-
-	vdelay.sec  = after.sec  - before.sec;
-	vdelay.usec = after.usec - before.usec;
-
-	if (vdelay.usec < 0) {
-	    vdelay.usec += 1000000;
-	    vdelay.sec  -= 1;
-	}
-
-	delay.tv_sec  = vdelay.sec;
-	delay.tv_usec = vdelay.usec;
-
-	/*
-	 * Special note: must convert delay.tv_sec to int before comparing to
-	 * zero, since delay.tv_usec is unsigned on some platforms.
-	 */
-
-	if ((((int) delay.tv_sec) < 0)
-		|| ((delay.tv_usec == 0) && (delay.tv_sec == 0))) {
-	    break;
-	}
-	(void) select(0, (SELECT_MASK *) 0, (SELECT_MASK *) 0,
-		(SELECT_MASK *) 0, &delay);
-	Tcl_GetTime(&before);
-    }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_SleepMonotonic --
- *
- *	Delay execution for the specified number of micro-seconds
- *	using the monotonic time.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Time passes.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Tcl_SleepMonotonic(
-    Tcl_WideInt microSeconds)	/* Number of micro-seconds to sleep. */
-{
-    struct timeval delay;
-    Tcl_Time before, after, vdelay;
-
-    /*
-     * The only trick here is that select appears to return early under some
-     * conditions, so we have to check to make sure that the right amount of
-     * time really has elapsed.  If it's too early, go back to sleep again.
-     */
-
     Tcl_GetMonotonicTime(&before);
     after = before;
     after.sec += microSeconds/1000000;

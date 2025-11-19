@@ -572,6 +572,9 @@ Tcl_Sleep(
     int ms)			/* Number of milliseconds to sleep. */
 {
     /*
+     * HaO 2025-11-19: this comment is probably solved by the use of monotonic
+     * time. So, the loop may eventually be removed.
+     *
      * Simply calling 'Sleep' for the requisite number of milliseconds can
      * make the process appear to wake up early because it isn't synchronized
      * with the CPU performance counter that is used in tclWinTime.c. This
@@ -590,7 +593,7 @@ Tcl_Sleep(
     vdelay.sec  = ms / 1000;
     vdelay.usec = (ms % 1000) * 1000;
 
-    Tcl_GetTime(&now);
+    Tcl_GetMonotonicTime(&now);
     desired.sec  = now.sec  + vdelay.sec;
     desired.usec = now.usec + vdelay.usec;
     if (desired.usec > 1000000) {
@@ -602,7 +605,7 @@ Tcl_Sleep(
 
     for (;;) {
 	SleepEx(sleepTime, TRUE);
-	Tcl_GetTime(&now);
+	Tcl_GetMonotonicTime(&now);
 	if (now.sec > desired.sec) {
 	    break;
 	} else if ((now.sec == desired.sec) && (now.usec >= desired.usec)) {
@@ -613,38 +616,6 @@ Tcl_Sleep(
 	vdelay.usec = desired.usec - now.usec;
 
 	sleepTime = (DWORD)vdelay.sec * 1000 + (unsigned long)vdelay.usec / 1000;
-    }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_SleepMonotonic --
- *
- *	Delay execution for the specified number of micro-seconds
- *	using the monotonic time.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Time passes.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Tcl_SleepMonotonic(
-    Tcl_WideInt microSeconds)	/* Number of micro-seconds to sleep. */
-{
-    /*
-     * Get milliseconds, which is the current API resolution.
-     * ToDo: find a way to get microSeconds resolution.
-     */
-
-    microSeconds /= 1000;
-    if (microSeconds > 0) {
-	SleepEx(microSeconds, TRUE);
     }
 }
 
