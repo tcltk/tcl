@@ -2721,7 +2721,7 @@ Tcl_LrangeObjCmd(
     }
     if ((last == -1) && ((objc < 4) || Tcl_IsEmpty(objv[3]))) {
 	/* TIP #615: empty string for 'last' means 'end' or 'first' */
-	last = (first == -1) ? (listLen - 1) : first;
+	last = ((objc < 3) || Tcl_IsEmpty(objv[2])) ? (listLen - 1) : first;
     }
 
     Tcl_Obj *resultObj;
@@ -2984,7 +2984,7 @@ Tcl_LreplaceObjCmd(
     }
     if ((last == -1) && ((objc < 4) || Tcl_IsEmpty(objv[3]))) {
 	/* TIP #615: empty string for 'last' means 'end' or 'first' */
-	last = (first == -1) ? (listLen - 1) : first;
+	last = ((objc < 3) || Tcl_IsEmpty(objv[2])) ? (listLen - 1) : first;
     }
 
     if (first < 0) {
@@ -4915,7 +4915,7 @@ Tcl_LeditObjCmd(
     }
     if ((last == -1) && ((objc < 4) || Tcl_IsEmpty(objv[3]))) {
 	/* TIP #615: empty string for 'last' means 'end' or 'first' */
-	last = (first == -1) ? (listLen - 1) : first;
+	last = ((objc < 3) || Tcl_IsEmpty(objv[2])) ? (listLen - 1) : first;
     }
 
     if (first < 0) {

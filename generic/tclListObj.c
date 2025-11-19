@@ -2665,7 +2665,7 @@ TclLindexList(
      * shimmering; if internal rep is already a list do not shimmer it.
      * see TIP#22 and TIP#33 for the details.
      */
-    if (!TclHasInternalRep(argObj, &tclListType)
+    if (!TclHasInternalRep(argObj, &tclListType) && !Tcl_IsEmpty(argObj)
 	    && TclGetIntForIndexM(NULL, argObj, TCL_SIZE_MAX - 1,
 		    &index) == TCL_OK) {
 	/*

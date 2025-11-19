@@ -2386,7 +2386,7 @@ StringRangeCmd(
     }
     if ((last == -1) && ((objc < 4) || Tcl_IsEmpty(objv[3]))) {
 	/* TIP #615: empty string for 'last' means 'end' or 'first' */
-	last = (first == -1) ? end : first;
+	last = ((objc < 3) || Tcl_IsEmpty(objv[2])) ? end : first;
     }
 
     if (last >= 0) {
@@ -2491,7 +2491,7 @@ StringRplcCmd(
     }
     if ((last == -1) && ((objc < 4) || Tcl_IsEmpty(objv[3]))) {
 	/* TIP #615: empty string for 'last' means 'end' or 'first' */
-	last = (first == -1) ? end : first;
+	last = ((objc < 3) || Tcl_IsEmpty(objv[2])) ? end : first;
     }
 
     /*
@@ -3009,7 +3009,7 @@ StringLowerCmd(
 	}
 	if ((last == -1) && ((objc < 4) || Tcl_IsEmpty(objv[3]))) {
 	    /* TIP #615: empty string for 'last' means 'end' or 'first' */
-	    last = (first == -1) ? length1 : first;
+	    last = ((objc < 3) || Tcl_IsEmpty(objv[2])) ? length1 : first;
 	}
 
 	if (first < 0) {
@@ -3096,7 +3096,7 @@ StringUpperCmd(
 	}
 	if ((last == -1) && ((objc < 4) || Tcl_IsEmpty(objv[3]))) {
 	    /* TIP #615: empty string for 'last' means 'end' or 'first' */
-	    last = (first == -1) ? length1 : first;
+	    last = ((objc < 3) || Tcl_IsEmpty(objv[2])) ? length1 : first;
 	}
 
 	if (first < 0) {
@@ -3183,7 +3183,7 @@ StringTitleCmd(
 	}
 	if ((last == -1) && ((objc < 4) || Tcl_IsEmpty(objv[3]))) {
 	    /* TIP #615: empty string for 'last' means 'end' or 'first' */
-	    last = (first == -1) ? length1 : first;
+	    last = ((objc < 3) || Tcl_IsEmpty(objv[2])) ? length1 : first;
 	}
 
 	if (first < 0) {

@@ -159,13 +159,19 @@ UpdateStringOfIndex(
     TclInitStringRep(objPtr, NULL, 0);
 }
 
+static Tcl_Size EndOffsetLength(
+    Tcl_Obj *objPtr)
+{
+    return (objPtr)->internalRep.wideValue != WIDE_MIN;
+}
+
 const Tcl_ObjType tclEndOffsetType = {
     "end-offset",			/* name */
     NULL,				/* freeIntRepProc */
     NULL,				/* dupIntRepProc */
     UpdateStringOfIndex,		/* updateStringProc */
     NULL,				/* setFromAnyProc */
-    TCL_OBJTYPE_V1(TclLengthOne)
+    TCL_OBJTYPE_V1(EndOffsetLength)
 };
 
 Tcl_Size
