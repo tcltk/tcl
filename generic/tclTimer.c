@@ -266,7 +266,7 @@ TimerExitProc(
 	 * Loop over wallclock and monotonic clock queue
 	 */
 
-	for (int timeHandlerIndex=timeHandlerMonotonic;
+	for (enum timeHandlerType timeHandlerIndex=timeHandlerMonotonic;
 		timeHandlerIndex <=timeHandlerWallclock; timeHandlerIndex++) {
 	    timerHandlerPtr = tsdPtr->firstTimerHandlerPtr[timeHandlerIndex];
 	    while (timerHandlerPtr != NULL) {
@@ -554,7 +554,7 @@ TimerCheckProc(
 	 * Try wallclock and monotonic list.
 	 */
 
-	for (int timeHandlerIndex = timeHandlerMonotonic;
+	for (enum timeHandlerType timeHandlerIndex = timeHandlerMonotonic;
 		timeHandlerIndex <= timeHandlerWallclock; timeHandlerIndex++ ) {
 	    TimerHandler *firstTimerHandlerPtrCur;
 	    firstTimerHandlerPtrCur = tsdPtr->firstTimerHandlerPtr[timeHandlerIndex];
@@ -625,7 +625,7 @@ TimerHandlerEventProc(
     TimerHandler *timerHandlerPtr, **nextPtrPtr;
     Tcl_Time time;
     int currentTimerId;
-    int timeHandlerIndex;
+    enum timeHandlerType timeHandlerIndex;
     ThreadSpecificData *tsdPtr = InitTimer();
 
     /*
@@ -1737,11 +1737,9 @@ TimerCancelCmd(
     const char *command, *tempCommand;
     Tcl_Size tempLength;
 
-    Tcl_WideInt ms = 0;		/* Number of milliseconds to wait */
     AfterInfo *afterPtr;
     AfterAssocData *assocPtr = TimerAssocDataGet(interp);
     Tcl_Size length;
-    int index = -1;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "id|command");
@@ -1855,7 +1853,6 @@ TimerInfoCmd(
 {
     AfterInfo *afterPtr;
     AfterAssocData *assocPtr = TimerAssocDataGet(interp);
-    ThreadSpecificData *tsdPtr = InitTimer();
 
     if (objc == 1) {
 	Tcl_Obj *resultObj;
@@ -1916,9 +1913,9 @@ TimerInfoCmd(
 
 void
 Tcl_SetTimeProc(
-    Tcl_GetTimeProc *getProc,
-    Tcl_ScaleTimeProc *scaleProc,
-    void *clientData)
+    TCL_UNUSED(Tcl_GetTimeProc *),
+    TCL_UNUSED(Tcl_ScaleTimeProc *),
+    TCL_UNUSED(void *))
 {
     Tcl_Panic("Tcl_SetTimeProc is not supported in TCL 9.1");
 }
@@ -1942,9 +1939,9 @@ Tcl_SetTimeProc(
 
 void
 Tcl_QueryTimeProc(
-    Tcl_GetTimeProc **getProc,
-    Tcl_ScaleTimeProc **scaleProc,
-    void **clientData)
+    TCL_UNUSED(Tcl_GetTimeProc **),
+    TCL_UNUSED(Tcl_ScaleTimeProc **),
+    TCL_UNUSED(void **))
 {
     Tcl_Panic("Tcl_QueryTimeProc is not supported in TCL 9.1");
 }

@@ -311,8 +311,8 @@ Tcl_GetMonotonicTime(
     (void) gettimeofday(&tv, NULL);
     timePtr->sec = tv.tv_sec;
     timePtr->usec = tv.tv_usec;
-    return 0;
-#endif}
+#endif
+}
 
 /*
  *----------------------------------------------------------------------
