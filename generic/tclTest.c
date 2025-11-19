@@ -2107,8 +2107,7 @@ static void SpecialFree(
  *    entire output buffer, not just the part containing the decoded
  *    portion. This allows for additional checks at test script level.
  *
- *    The prefixlen argument indicates how many bytes of the prefix to
- *    prepend to the source string. The prefix byte is the character 'A'.
+ *    The prefixUnit argument indicates the bytes to use as a prefix unit.
  *    The main purpose of the prefix is to allow testing of very large
  *    strings without the caller having to allocate at the script level
  *    which is slow and memory intensive. The source string is appended to
@@ -2151,32 +2150,61 @@ static int UtfExtWrapper(
     char *dstBufPtr = NULL;
     char *srcBufPtr = NULL;
     Tcl_Size srcRead, prefixLen, dstLen, dstWrote, dstChars;
-    Tcl_Obj *srcReadVar, *dstWroteVar, *dstCharsVar, *errorLocVar;
     int result;
     int flags;
     Tcl_Obj **flagObjs;
     Tcl_Size nflags;
+    const char *opts[] = {"-srcreadvar", "-dstwrotevar", "-dstcharsvar",
+	"-errorlocvar", "-prefix", "-prefixlen", NULL};
+    enum {SRCREADVAR, DSTWROTEVAR, DSTCHARSVAR, ERRORLOCVAR,
+	PREFIX, PREFIXLEN } optIndex;
+    Tcl_Obj *optObjs[(sizeof(opts) / sizeof(opts[0])) - 1];
     static const struct {
 	const char *flagKey;
 	int flag;
-    } flagMap[] = {
-	{"start", TCL_ENCODING_START},
-	{"end", TCL_ENCODING_END},
+    } flagMap[] = {{"start", TCL_ENCODING_START}, {"end", TCL_ENCODING_END},
 	{"noterminate", TCL_ENCODING_NO_TERMINATE},
 	{"charlimit", TCL_ENCODING_CHAR_LIMIT},
 	{"tcl8", TCL_ENCODING_PROFILE_TCL8},
 	{"strict", TCL_ENCODING_PROFILE_STRICT},
-	{"replace", TCL_ENCODING_PROFILE_REPLACE},
-	{NULL, 0}
-    };
+	{"replace", TCL_ENCODING_PROFILE_REPLACE}, {NULL, 0}};
     Tcl_Size i;
     Tcl_WideInt wide;
 
-    if (objc < 7 || objc > 12) {
+    if (objc < 7) {
 	Tcl_WrongNumArgs(interp, 2, objv,
-		"encoding srcbytes flags state dstlen ?prefixLen? ?srcreadvar? ?dstwrotevar? ?dstcharsvar? ?errorLocVar?");
+	    "encoding srcbytes flags state dstlen ?-prefix prefix? ?-prefixlen "
+	    "prefixLen? ?-srcreadvar srcreadvar? ?-dstwrotevar dstwrotevar? "
+	    "?-dstcharsvar dstcharsvar? ?-errorlocvar errorLocVar?");
 	return TCL_ERROR;
     }
+    for (i = 0; i < (sizeof(optObjs) / sizeof(optObjs[0])); ++i) {
+	optObjs[i] = NULL;
+    }
+    for (i = 7; i < objc; ++i) {
+	if (Tcl_GetIndexFromObj(interp, objv[i], opts, "option", 0,
+		&optIndex) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if (++i == objc) {
+	    Tcl_SetObjResult(interp,
+		Tcl_ObjPrintf("missing value for option \"%s\"",
+		    opts[optIndex]));
+	    return TCL_ERROR;
+	}
+	optObjs[optIndex] = objv[i];
+    }
+    prefixLen = 0;
+    if (optObjs[PREFIXLEN] != NULL && optObjs[PREFIX] != NULL) {
+	if (Tcl_GetSizeIntFromObj(interp, optObjs[PREFIXLEN], &prefixLen) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if (prefixLen < 0) {
+	    Tcl_SetResult(interp, "prefixLen must be non-negative", TCL_STATIC);
+	    return TCL_ERROR;
+	}
+    }
+
     if (Tcl_GetEncodingFromObj(interp, objv[2], &encoding) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -2218,53 +2246,15 @@ static int UtfExtWrapper(
 	return TCL_ERROR;
     }
 
-    prefixLen = 0;
-    srcReadVar = NULL;
-    dstWroteVar = NULL;
-    dstCharsVar = NULL;
-    errorLocVar = NULL;
-    if (objc > 7) {
-	if (Tcl_GetSizeIntFromObj(interp, objv[7], &prefixLen) != TCL_OK) {
-	    Tcl_FreeEncoding(encoding);
-	    return TCL_ERROR;
-	}
-	if (prefixLen < 0) {
-	    Tcl_SetResult(interp, "prefixLen must be non-negative", TCL_STATIC);
-	    Tcl_FreeEncoding(encoding);
-	    return TCL_ERROR;
-	}
-	if (objc > 8) {
-	    /* Has caller requested srcRead? */
-	    if (Tcl_GetCharLength(objv[8])) {
-		srcReadVar = objv[8];
-	    }
-	    if (objc > 9) {
-		/* Ditto for dstWrote */
-		if (Tcl_GetCharLength(objv[9])) {
-		    dstWroteVar = objv[9];
-		}
-		if (objc > 10) {
-		    if (Tcl_GetCharLength(objv[10])) {
-			dstCharsVar = objv[10];
-		    }
-		    if (objc > 11) {
-			/* Ditto for errorLoc */
-			if (Tcl_GetCharLength(objv[11])) {
-			    errorLocVar = objv[11];
-			}
-		    }
-		}
-	    }
-	}
-    }
     if (flags & TCL_ENCODING_CHAR_LIMIT) {
 	/* Caller should have specified the dest char limit */
 	Tcl_Obj *valueObj;
-	if (dstCharsVar == NULL ||
-		(valueObj = Tcl_ObjGetVar2(interp, dstCharsVar, NULL, 0)) == NULL) {
+	if (optObjs[DSTCHARSVAR] == NULL ||
+		(valueObj = Tcl_ObjGetVar2(interp, optObjs[DSTCHARSVAR], NULL, 0)) == NULL) {
 	    Tcl_SetResult(interp,
-		    "dstCharsVar must be specified with integer value if "
-		    "TCL_ENCODING_CHAR_LIMIT set in flags.", TCL_STATIC);
+		"-dstcharsvar DSTCHARSVAR must be specified with integer value "
+		"in DSTCHARSVAR if TCL_ENCODING_CHAR_LIMIT set in flags.",
+		TCL_STATIC);
 	    return TCL_ERROR;
 	}
 	if (Tcl_GetSizeIntFromObj(interp, valueObj, &dstChars) != TCL_OK) {
@@ -2284,7 +2274,26 @@ static int UtfExtWrapper(
     bytes = Tcl_GetByteArrayFromObj(objv[3], &srcLen);
     Tcl_Size srcBufLen = prefixLen + srcLen;
     srcBufPtr = (char *) Tcl_Alloc(srcBufLen+1); /* +1 to ensure not 0 */
-    memset(srcBufPtr, '.', prefixLen);
+    if (prefixLen != 0) {
+	const unsigned char *prefixBytes;
+	Tcl_Size nbytes;
+	if (Tcl_GetBytesFromObj(interp, optObjs[PREFIX], &nbytes) == NULL) {
+	    result = TCL_ERROR;
+	    goto done;
+	}
+	if (nbytes == 1) {
+	    memset(srcBufPtr, *prefixBytes, prefixLen);
+	} else if (nbytes > 1) {
+	    Tcl_Size units = prefixLen / nbytes;
+	    unsigned char *to = srcBufPtr;
+	    while (units--) {
+		memmove(to, prefixBytes, nbytes);
+		to += nbytes;
+	    }
+	} else {
+	    prefixLen = 0;
+	}
+    }
     memmove(srcBufPtr + prefixLen, bytes, srcLen);
     switch (transform) {
     case UTF_TO_EXTERNAL:
@@ -2304,8 +2313,9 @@ static int UtfExtWrapper(
 				interp, encoding, (const char *)srcBufPtr,
 				srcBufLen, flags, encStatePtr,
 				(char *)dstBufPtr, dstLen,
-				srcReadVar ? &srcRead32 : NULL, &dstWrote32,
-				dstCharsVar ? &dstChars32 : NULL);
+				optObjs[SRCREADVAR] ? &srcRead32 : NULL,
+				&dstWrote32,
+				optObjs[DSTCHARSVAR] ? &dstChars32 : NULL);
 	    srcRead = (Tcl_Size)srcRead32;
 	    dstWrote = (Tcl_Size)dstWrote32;
 	    dstChars = (Tcl_Size)dstChars32;
@@ -2314,14 +2324,16 @@ static int UtfExtWrapper(
     case EXTERNAL_TO_UTF_EX:
 	result = Tcl_ExternalToUtfEx(interp, encoding, (const char *)srcBufPtr,
 		srcBufLen, flags, encStatePtr, (char *)dstBufPtr, dstLen,
-	    	srcReadVar ? &srcRead : NULL, &dstWrote,
-	    	dstCharsVar ? &dstChars : NULL, NULL);
+	    	optObjs[SRCREADVAR] ? &srcRead : NULL, 
+		&dstWrote,
+	    	optObjs[DSTCHARSVAR] ? &dstChars : NULL, NULL);
 	break;
     case UTF_TO_EXTERNAL_EX:
 	result = Tcl_UtfToExternalEx(interp, encoding, (const char *)srcBufPtr,
 		srcBufLen, flags, encStatePtr, (char *)dstBufPtr, dstLen,
-	    	srcReadVar ? &srcRead : NULL, &dstWrote,
-	    	dstCharsVar ? &dstChars : NULL, NULL);
+	    	optObjs[SRCREADVAR] ? &srcRead : NULL,
+		&dstWrote,
+	    	optObjs[DSTCHARSVAR] ? &dstChars : NULL, NULL);
 	break;
     }
     if (memcmp(dstBufPtr + bufLen - 4, "\xAB\xCD\xEF\xAB", 4)) {
@@ -2356,20 +2368,20 @@ static int UtfExtWrapper(
 	resultObjs[1] =
 	    encStatePtr ? Tcl_NewWideIntObj((Tcl_WideInt)(size_t)encState) : Tcl_NewObj();
 	resultObjs[2] = Tcl_NewByteArrayObj(dstBufPtr, dstLen);
-	if (srcReadVar) {
-	    if (Tcl_ObjSetVar2(interp, srcReadVar, NULL, Tcl_NewIntObj(srcRead),
+	if (optObjs[SRCREADVAR]) {
+	    if (Tcl_ObjSetVar2(interp, optObjs[SRCREADVAR], NULL, Tcl_NewWideIntObj(srcRead),
 		    TCL_LEAVE_ERR_MSG) == NULL) {
 		result = TCL_ERROR;
 	    }
 	}
-	if (dstWroteVar) {
-	    if (Tcl_ObjSetVar2(interp, dstWroteVar, NULL, Tcl_NewIntObj(dstWrote),
+	if (optObjs[DSTWROTEVAR]) {
+	    if (Tcl_ObjSetVar2(interp, optObjs[DSTWROTEVAR], NULL, Tcl_NewWideIntObj(dstWrote),
 		    TCL_LEAVE_ERR_MSG) == NULL) {
 		result = TCL_ERROR;
 	    }
 	}
-	if (dstCharsVar) {
-	    if (Tcl_ObjSetVar2(interp, dstCharsVar, NULL, Tcl_NewIntObj(dstChars),
+	if (optObjs[DSTCHARSVAR]) {
+	    if (Tcl_ObjSetVar2(interp, optObjs[DSTCHARSVAR], NULL, Tcl_NewWideIntObj(dstChars),
 		    TCL_LEAVE_ERR_MSG) == NULL) {
 		result = TCL_ERROR;
 	    }
