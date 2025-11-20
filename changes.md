@@ -4,6 +4,15 @@ changes to the Tcl source code at
 
 > [Tcl Source Code](https://core.tcl-lang.org/tcl/timeline)
 
+Release Tcl 9.0.4 arises from the check-in with tag `core-9-0-4`.
+
+Tcl patch releases have the primary purpose of delivering bug fixes
+to the userbase.
+
+# Bug fixes
+
+# Updated bundled packages, libraries, standards, data
+
 Release Tcl 9.0.3 arises from the check-in with tag `core-9-0-3`.
 
 Tcl patch releases have the primary purpose of delivering bug fixes
@@ -18,6 +27,8 @@ to the userbase.
  - [Add IWYU export pragma annotations](https://core.tcl-lang.org/tcl/tktview/c7dc59)
  - [Windows: Install man pages](https://core.tcl-lang.org/tcl/tktview/3161b7)
  - [Windows: Install pkgconfig](https://core.tcl-lang.org/tcl/tktview/1cf49a)
+ - [Non-existent variables are ignored if re is {}](https://core.tcl-lang.org/tcl/tktview/cb03e5)
+ - [bug in single-argument 'max' with bignums](https://core.tcl-lang.org/tcl/tktview/8dd280)
 
 # Updated bundled packages, libraries, standards, data
  - Itcl 4.3.5
