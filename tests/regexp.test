@@ -1199,6 +1199,11 @@ test regexp-27.12 {regsub -command representation smash} {
     set s {list (.+)}
     regsub -command $s {list list} $s
 } {(.+) {list list} list}
+
+test regexp-28.1 {bug cb03e57a7b} -returnCodes error -body {
+	regexp {} $nosuchvar
+} -result {can't read "nosuchvar": no such variable}
+
 
 # cleanup
 ::tcltest::cleanupTests
