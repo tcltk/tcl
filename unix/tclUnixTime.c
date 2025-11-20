@@ -19,8 +19,6 @@
  * Static functions declared in this file.
  */
 
-void			GetTime(Tcl_Time *timePtr);
-
 /*
  *----------------------------------------------------------------------
  *
@@ -66,7 +64,7 @@ TclpGetMicroseconds(void)
 {
     Tcl_Time time;
 
-    GetTime(&time);
+    Tcl_GetTime(&time);
     return time.sec * 1000000 + time.usec;
 }
 
@@ -106,7 +104,7 @@ TclpGetClicks(void)
 #else /* !NO_GETTOD */
     Tcl_Time time;
 
-    GetTime(&time);
+    Tcl_GetTime(&time);
     now = ((unsigned long long)(time.sec)*1000000ULL) +
 	    (unsigned long long)(time.usec);
 #endif /* NO_GETTOD */
@@ -234,33 +232,6 @@ TclpWideClickInMicrosec(void)
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_GetTime --
- *
- *	Gets the current system time in seconds and microseconds since the
- *	beginning of the epoch: 00:00 UCT, January 1, 1970.
- *
- *	This function is hooked, allowing users to specify their own virtual
- *	system time.
- *
- * Results:
- *	Returns the current time in timePtr.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Tcl_GetTime(
-    Tcl_Time *timePtr)		/* Location to store time information. */
-{
-    GetTime(timePtr);
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * Tcl_GetMonotonicTime --
  *
  *	Gets the current monotonic time in seconds and microseconds.
@@ -317,10 +288,13 @@ Tcl_GetMonotonicTime(
 /*
  *----------------------------------------------------------------------
  *
- * GetTime --
+ * Tcl_GetTime --
  *
- *	Gets the current system time in seconds and microseconds
- *	since the beginning of the epoch: 00:00 UCT, January 1, 1970.
+ *	Gets the current system time in seconds and microseconds since the
+ *	beginning of the epoch: 00:00 UCT, January 1, 1970.
+ *
+ *	This function is hooked, allowing users to specify their own virtual
+ *	system time.
  *
  * Results:
  *	Returns the current time in timePtr.
@@ -331,8 +305,8 @@ Tcl_GetMonotonicTime(
  *----------------------------------------------------------------------
  */
 
-static void
-GetTime(
+void
+Tcl_GetTime(
     Tcl_Time *timePtr)
 {
     struct timeval tv;

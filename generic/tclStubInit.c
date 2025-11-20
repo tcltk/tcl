@@ -1504,7 +1504,7 @@ const TclStubs tclStubs = {
     Tcl_UtfToNormalizedDString, /* 695 */
     Tcl_UtfToNormalized, /* 696 */
     Tcl_GetMonotonicTime, /* 697 */
-    TclUnusedStubEntry, /* 698 */
+    TclUnusedStubEntry /* 698 */
 };
 
 /* !END!: Do not edit above this line. */

@@ -44,8 +44,8 @@ Tcl_Sleep(
 
     Tcl_GetMonotonicTime(&before);
     after = before;
-    after.sec += microSeconds/1000000;
-    after.usec += (microSeconds%1000000);
+    after.sec += ms/1000;
+    after.usec += (ms%1000)*1000;
     if (after.usec > 1000000) {
 	after.usec -= 1000000;
 	after.sec += 1;
