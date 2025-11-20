@@ -115,7 +115,6 @@ static void		ResetCounterSamples(unsigned long long fileTime,
 static long long	AccumulateSample(long long perfCounter,
 			    unsigned long long fileTime);
 static long long	NativeGetMicroseconds(void);
-static void		GetTime(Tcl_Time *timePtr);
 
 /*
  *----------------------------------------------------------------------
@@ -148,7 +147,7 @@ TclpGetSeconds(void)
     } else {
 	Tcl_Time t;
 
-	GetTime(&t);
+	Tcl_GetTime(&t);
 	return (unsigned long long)t.sec;
     }
 }
@@ -191,7 +190,7 @@ TclpGetClicks(void)
 
 	Tcl_Time now;		/* Current Tcl time */
 
-	GetTime(&now);
+	Tcl_GetTime(&now);
 	return ((unsigned long long)(now.sec)*1000000ULL) +
 		(unsigned long long)(now.usec);
     }
@@ -317,48 +316,8 @@ TclpGetMicroseconds(void)
 
 	Tcl_Time now;
 
-	GetTime(&now);
+	Tcl_GetTime(&now);
 	return now.sec * 1000000 + now.usec;
-    }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_GetTime --
- *
- *	Gets the current system time in seconds and microseconds since the
- *	beginning of the epoch: 00:00 UCT, January 1, 1970.
- *
- * Results:
- *	Returns the current time in timePtr.
- *
- * Side effects:
- *	On the first call, initializes a set of static variables to keep track
- *	of the base value of the performance counter, the corresponding wall
- *	clock (obtained through ftime) and the frequency of the performance
- *	counter. Also spins a thread whose function is to wake up periodically
- *	and monitor these values, adjusting them as necessary to correct for
- *	drift in the performance counter's oscillator.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Tcl_GetTime(
-    Tcl_Time *timePtr)		/* Location to store time information. */
-{
-    long long usecSincePosixEpoch;
-
-    /*
-     * Try to use high resolution timer.
-     */
-
-    if ( (usecSincePosixEpoch = NativeGetMicroseconds()) ) {
-	timePtr->sec = usecSincePosixEpoch / 1000000;
-	timePtr->usec = (long)(usecSincePosixEpoch % 1000000);
-    } else {
-	GetTime(timePtr);
     }
 }
 
@@ -657,22 +616,27 @@ NativeGetMicroseconds(void)
 /*
  *----------------------------------------------------------------------
  *
- * GetTime --
+ * Tcl_GetTime --
  *
- *	Gets the current system time in seconds and microseconds
- *	since the beginning of the epoch: 00:00 UCT, January 1, 1970.
+ *	Gets the current system time in seconds and microseconds since the
+ *	beginning of the epoch: 00:00 UCT, January 1, 1970.
  *
  * Results:
  *	Returns the current time in timePtr.
  *
  * Side effects:
- *	See NativeGetMicroseconds for more information.
+ *	On the first call, initializes a set of static variables to keep track
+ *	of the base value of the performance counter, the corresponding wall
+ *	clock (obtained through ftime) and the frequency of the performance
+ *	counter. Also spins a thread whose function is to wake up periodically
+ *	and monitor these values, adjusting them as necessary to correct for
+ *	drift in the performance counter's oscillator.
  *
  *----------------------------------------------------------------------
  */
 
-static void
-GetTime(
+void
+Tcl_GetTime(
     Tcl_Time *timePtr)
 {
     long long usecSincePosixEpoch;
