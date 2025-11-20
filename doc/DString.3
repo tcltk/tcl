@@ -65,14 +65,8 @@ dynamic string.
 
 .SH DESCRIPTION
 .PP
-N.B. The use of the term \fITUTF-8\fR in this documentation refers to the
-modified UTF-8 encoding used internally by Tcl. This differs from the UTF-8
-encoding defined in the Unicode standard with respect to the encoding of the NUL
-character U+0000 which Tcl encodes internally as the byte sequence 0xC0 0x80 and
-not a single 0x00 byte as per the standard. The term \fITUTF-8 byte sequence\fR
-refers to a byte sequence representing one or more Unicode code points encoded
-in TUTF-8. The term \fIcharacter\fR refers to a Unicode code
-point and is used interchangeably with it.
+N.B. Refer to the \fBTcl_UniChar\fR documentation page for a description of the
+\fITUTF-8\fR encoding and related terms referenced here.
 .PP
 Dynamic strings provide a mechanism for building up arbitrarily long
 strings by gradually appending information.  If the dynamic string is
