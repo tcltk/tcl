@@ -3282,6 +3282,7 @@ TclCompileFormatCmd(
     Tcl_Obj **objv, *formatObj, *tmpObj;
     const char *bytes, *start;
     Tcl_Size i, j, numWords = parsePtr->numWords;
+    /* TODO: Consider support for runtime formats. */
     /* TODO: Consider support for compiling expanded args. */
 
     /*
