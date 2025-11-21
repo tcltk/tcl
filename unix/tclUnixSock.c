@@ -84,18 +84,18 @@ struct TcpState {
  * These bits may be OR'ed together into the "flags" field of a TcpState
  * structure.
  */
+enum TcpStateFlags {
+    TCP_NONBLOCKING = 1<<0,	/* Socket with non-blocking I/O */
+    TCP_ASYNC_CONNECT = 1<<1,	/* Async connect in progress. */
+    TCP_ASYNC_PENDING = 1<<4,	/* TcpConnect was called to process an async
+				 * connect. This flag indicates that reentry
+				 * is still pending */
+    TCP_ASYNC_FAILED = 1<<5,	/* An async connect finally failed. */
 
-#define TCP_NONBLOCKING		(1<<0)	/* Socket with non-blocking I/O */
-#define TCP_ASYNC_CONNECT	(1<<1)	/* Async connect in progress. */
-#define TCP_ASYNC_PENDING	(1<<4)	/* TcpConnect was called to
-					 * process an async connect. This
-					 * flag indicates that reentry is
-					 * still pending */
-#define TCP_ASYNC_FAILED	(1<<5)	/* An async connect finally failed */
-
-#define TCP_ASYNC_TEST_MODE	(1<<8)	/* Async testing activated.  Do not
-					 * automatically continue connection
-					 * process. */
+    TCP_ASYNC_TEST_MODE = 1<<8	/* Async testing activated.  Do not
+				 * automatically continue connection
+				 * process. */
+};
 
 /*
  * The following defines the maximum length of the listen queue. This is the
@@ -180,24 +180,6 @@ static TclInitProcessGlobalValueProc InitializeHostName;
 static ProcessGlobalValue hostName =
 	{0, 0, NULL, NULL, InitializeHostName, NULL, NULL};
 
-#if 0
-/* printf debugging */
-void
-printaddrinfo(
-    struct addrinfo *addrlist,
-    char *prefix)
-{
-    char host[NI_MAXHOST], port[NI_MAXSERV];
-    struct addrinfo *ai;
-
-    for (ai = addrlist; ai != NULL; ai = ai->ai_next) {
-	getnameinfo(ai->ai_addr, ai->ai_addrlen,
-		host, sizeof(host), port, sizeof(port),
-		NI_NUMERICHOST|NI_NUMERICSERV);
-	fprintf(stderr,"%s: %s:%s\n", prefix, host, port);
-    }
-}
-#endif
 /*
  * ----------------------------------------------------------------------
  *

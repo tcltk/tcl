@@ -1726,10 +1726,10 @@ test stringComp-14.24.$noComp {Bug 1af8de570511} {
 	string replace $val[unset val] 1 1 $y
     }} 4 x
 } 0x00
-test stringComp-14.25.$noComp {} {
+test stringComp-14.25.$noComp {repeated unicode} {
     string length [string replace [string repeat a\xFE 2] 3 end {}]
 } 3
-test stringComp-14.26.$noComp {} {
+test stringComp-14.26.$noComp {expression indices} {
     run {string replace abcd 0x10000000000000000-0xffffffffffffffff 2 e}
 } aed
 

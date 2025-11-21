@@ -78,7 +78,7 @@ close $f
 
 set path(cat) [makeFile {
     set f stdin
-    if {$argv != ""} {
+    if {$argv ne ""} {
 	set f [open [lindex $argv 0]]
     }
     fconfigure $f -translation binary -blocking 0 -eofchar \x1A
@@ -1887,7 +1887,7 @@ test io-13.14 {Translation crlf: \r followed by encoding error after buffer boun
 # Tcl_SetStdChannel and Tcl_GetStdChannel. Incidentally we are
 # also testing channel table management.
 
-if {[info commands testchannel] != ""} {
+if {[info commands testchannel] ne ""} {
     set consoleFileNames [lsort [testchannel open]]
 } else {
     # just to avoid an error
@@ -8767,7 +8767,7 @@ test io-54.2 {Testing for busy-wait in recursive channel events} {socket fileeve
 
 	incr counter
 	set l [gets $s]
-	if {"$l" == ""} {
+	if {"$l" eq ""} {
 	    fileevent $s readable [namespace code "doit1 $s"]
 	    set after [after 1000 [namespace code newline]]
 	}

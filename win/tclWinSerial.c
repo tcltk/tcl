@@ -13,6 +13,10 @@
  */
 
 #include "tclWinInt.h"
+#if defined (__clang__) && (__clang_major__ > 20)
+#pragma clang diagnostic ignored "-Wc++-keyword"
+#endif
+
 
 /*
  * The following variable is used to tell whether this module has been
@@ -1506,8 +1510,7 @@ TclWinOpenSerialChannel(
 	infoPtr->osWrite.hEvent = CreateEventW(NULL, TRUE, FALSE, NULL);
 	infoPtr->evWritable = CreateEventW(NULL, TRUE, TRUE, NULL);
 	infoPtr->writeThread = CreateThread(NULL, 256, SerialWriterThread,
-		TclPipeThreadCreateTI(&infoPtr->writeTI, infoPtr,
-			infoPtr->evWritable), 0, NULL);
+		TclPipeThreadCreateTI(&infoPtr->writeTI, infoPtr), 0, NULL);
     }
 
     Tcl_SetChannelOption(NULL, infoPtr->channel, "-translation", "auto");

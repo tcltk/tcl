@@ -9,7 +9,7 @@
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-oo::configurable, configure, property \- class that makes configurable classes and objects, and supports making configurable properties
+oo::configurable, configure, property \- A class that makes configurable classes and objects, and supports making configurable properties
 .SH SYNOPSIS
 .nf
 \fBpackage require TclOO\fR

@@ -61,7 +61,7 @@ proc createChildProcess {ddeServerName args} {
 	# Define a restricted handler.
 	proc Handler1 {cmd} {
 	    if {$cmd eq "stop"} {set ::done 1}
-	    if {$cmd == ""} {
+	    if {$cmd eq ""} {
 		set cmd "null data"
 	    }
 	    puts $cmd ; flush stdout
@@ -105,7 +105,7 @@ proc createChildProcess {ddeServerName args} {
 # -------------------------------------------------------------------------
 test winDde-1.0 {check if we are testing the right dll} {win dde} {
     set ::ddever
-} {1.5a0}
+} {1.5a1}
 
 test winDde-1.1 {Settings the server's topic name} -constraints dde -body {
     list [dde servername foobar] [dde servername] [dde servername self]

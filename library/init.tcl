@@ -15,7 +15,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 
-package require -exact tcl 9.1a0
+package require -exact tcl 9.1a1
 
 # Compute the auto path to use in this interpreter.
 # The values on the path come from several locations:
@@ -92,8 +92,6 @@ namespace eval tcl::Pkg {}
 
 
 # Setup the unknown package handler
-
-
 if {[interp issafe]} {
     package unknown {::tcl::tm::UnknownHandler ::tclPkgUnknown}
 } else {
@@ -106,18 +104,6 @@ if {[interp issafe]} {
     } else {
 	package unknown {::tcl::tm::UnknownHandler ::tclPkgUnknown}
     }
-
-    # Set up the 'clock' ensemble
-
-    apply {{} {
-	set cmdmap [dict create]
-	foreach cmd {add clicks format microseconds milliseconds scan seconds} {
-	    dict set cmdmap $cmd ::tcl::clock::$cmd
-	}
-	namespace inscope ::tcl::clock [list namespace ensemble create -command \
-	    ::clock -map $cmdmap]
-	::tcl::unsupported::clock::configure -init-complete
-    }}
 }
 
 # Conditionalize for presence of exec.
@@ -591,9 +577,9 @@ proc auto_execok name {
     set auto_execs($name) ""
 
     set shellBuiltins [list assoc call cd cls color copy date del dir echo \
-                           erase exit ftype for if md mkdir mklink move path \
-                           pause prompt rd ren rename rmdir set start time \
-                           title type ver vol]
+			   erase exit ftype for if md mkdir mklink move path \
+			   pause prompt rd ren rename rmdir set start time \
+			   title type ver vol]
     if {[info exists env(PATHEXT)]} {
 	# Add an initial ; to have the {} extension check first.
 	set execExtensions [split ";$env(PATHEXT)" ";"]

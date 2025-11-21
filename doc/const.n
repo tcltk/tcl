@@ -9,7 +9,7 @@
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-const \- create and initialize a constant
+const \- Create and initialize a constant
 .SH SYNOPSIS
 \fBconst \fIvarName value\fR
 .BE

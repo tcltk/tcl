@@ -931,6 +931,11 @@ enum TclInstruction {
     INST_DICT_REMOVE,
     INST_IS_EMPTY,
     INST_JUMP_TABLE_NUM,
+    INST_TAILCALL_LIST,
+    INST_TCLOO_NEXT_LIST,
+    INST_TCLOO_NEXT_CLASS_LIST,
+    INST_ARITH_SERIES,
+    INST_UPLEVEL,
 
     /* The last opcode */
     LAST_INST_OPCODE
@@ -970,7 +975,7 @@ typedef enum InstOperandType {
     OPERAND_SCLS1,		/* Index into tclStringClassTable. */
     OPERAND_UNSF1,		/* Flags for [unset] */
     OPERAND_CLK1,		/* Index into [clock] types. */
-    OPERAND_LRPL1		/* Combination of TCL_LREPLACE4_* flags. */
+    OPERAND_LRPL1		/* Combination of TCL_LREPLACE_* flags. */
 } InstOperandType;
 
 typedef struct InstructionDesc {
@@ -1378,6 +1383,9 @@ MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
  * modules inside the Tcl core but not used outside.
  *----------------------------------------------------------------
  */
+
+// Point at which we issue a LIST_CONCAT anyway when doing an expansion sequence
+#define LIST_CONCAT_THRESHOLD	(1 << 15)
 
 /*
  * Simplified form to access AuxData.
@@ -1810,7 +1818,9 @@ TclGetInt4AtPtr(
 }
 
 static inline unsigned
-TclGetUInt4AtPtr(const unsigned char *p) {
+TclGetUInt4AtPtr(
+    const unsigned char *p)
+{
     return (unsigned) (
 	(p[0] << 24) |
 	(p[1] << 16) |
@@ -1870,12 +1880,12 @@ TokenAfter(
  * of LOOP ranges is an interesting datum for debugging purposes, and that is
  * what we compute now.
  *
- * static int	ExceptionRangeStarts(CompileEnv *envPtr, Tcl_Size index);
+ * static Tcl_Size	ExceptionRangeStarts(CompileEnv *envPtr, Tcl_Size index);
  * static void	ExceptionRangeEnds(CompileEnv *envPtr, Tcl_Size index);
  * static void	ExceptionRangeTarget(CompileEnv *envPtr, Tcl_Size index, LABEL);
  */
 
-static inline int
+static inline Tcl_Size
 ExceptionRangeStarts(
     CompileEnv *envPtr,
     Tcl_ExceptionRange index)
@@ -1887,7 +1897,7 @@ ExceptionRangeStarts(
 	    envPtr->maxExceptDepth);
     offset = CurrentOffset(envPtr);
     envPtr->exceptArrayPtr[index].codeOffset = offset;
-    return (int) offset;
+    return offset;
 }
 
 static inline void
@@ -1909,6 +1919,9 @@ ExceptionRangeEnds(
 
 #define EnvHasLVT(envPtr) \
     (envPtr->procPtr || envPtr->iPtr->varFramePtr->localCachePtr)
+// Stricter than EnvHasLVT; guarantees AnonymousLocal won't fail
+#define EnvIsProc(envPtr) \
+    (envPtr->procPtr != NULL)
 
 /*
  * Macros for making it easier to deal with tokens and DStrings.
@@ -2000,8 +2013,17 @@ enum PushVarNameFlags {
  * Flags bits used by lreplace4 instruction
  */
 enum Lreplace4Flags {
-    TCL_LREPLACE4_END_IS_LAST = 1,	/* "end" refers to last element */
-    TCL_LREPLACE4_SINGLE_INDEX = 2	/* Second index absent (pure insert) */
+    TCL_LREPLACE_END_IS_LAST = 1,	/* "end" refers to last element */
+    TCL_LREPLACE_SINGLE_INDEX = 2,	/* Second index absent (pure insert) */
+    TCL_LREPLACE_NEED_IN_RANGE = 4	/* First index must resolve to real list index */
+};
+
+/* Flags bits used by arithSeries instruction */
+enum ArithSeqriesFlags {
+    TCL_ARITHSERIES_FROM = 1 << 0,	// from is defined (conventionally empty otherwise)
+    TCL_ARITHSERIES_TO = 1 << 1,	// to is defined (conventionally empty otherwise)
+    TCL_ARITHSERIES_STEP = 1 << 2,	// step is defined (conventionally empty otherwise)
+    TCL_ARITHSERIES_COUNT = 1 << 3,	// count is defined (conventionally empty otherwise)
 };
 
 /*
@@ -2039,7 +2061,7 @@ typedef Tcl_Size Tcl_BytecodeLabel;
  * Shorthand macros for instruction issuing.
  */
 
- // Measure the length of a string literal.
+// Measure the length of a string literal.
 #define LENGTH_OF(str) \
     ((Tcl_Size) sizeof(str "") - 1)
 
@@ -2077,6 +2099,11 @@ typedef Tcl_Size Tcl_BytecodeLabel;
 // Push a string from a TCL_TOKEN_SIMPLE_WORD token.
 #define PUSH_SIMPLE_TOKEN(tokenPtr) \
     PushLiteral(envPtr, (tokenPtr)[1].start, (tokenPtr)[1].size)
+// Push a string from a TCL_TOKEN_SIMPLE_WORD token where that is a command.
+#define PUSH_COMMAND_TOKEN(tokenPtr) \
+    TclEmitPush(TclRegisterLiteral(envPtr,				\
+	    (tokenPtr)[1].start, (tokenPtr)[1].size, LITERAL_CMD_NAME),	\
+	    envPtr)
 // Take a reference to a Tcl_Obj and arrange for it to be pushed.
 #define PUSH_OBJ(objPtr) \
     TclEmitPush(TclAddLiteralObj(envPtr, (objPtr), NULL), envPtr)
@@ -2311,7 +2338,9 @@ MODULE_SCOPE void TclDTraceInfo(Tcl_Obj *info, const char **args, Tcl_Size *args
     do {								\
 	if (tclDTraceDebugEnabled) {					\
 	    int _l, _t = 0;						\
-	    if (!tclDTraceDebugLog) { TclDTraceOpenDebugLog(); }	\
+	    if (!tclDTraceDebugLog) {					\
+		TclDTraceOpenDebugLog();				\
+	    }								\
 	    fprintf(tclDTraceDebugLog, "%.12s:%.4d:%n",			\
 		    strrchr(__FILE__, '/')+1, __LINE__, &_l); _t += _l; \
 	    fprintf(tclDTraceDebugLog, " %.*s():%n",			\

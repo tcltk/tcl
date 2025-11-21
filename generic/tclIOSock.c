@@ -15,6 +15,9 @@
 /*
  * On Windows, we need to do proper Unicode->UTF-8 conversion.
  */
+ #if defined (__clang__) && (__clang_major__ > 20)
+#pragma clang diagnostic ignored "-Wc++-keyword"
+#endif
 
 typedef struct {
     int initialized;
@@ -335,6 +338,25 @@ Tcl_OpenTcpServer(
     return Tcl_OpenTcpServerEx(interp, portbuf, host, TCL_TCPSERVER_REUSEADDR,
 	    -1, acceptProc, callbackData);
 }
+
+#ifdef TCL_SOCK_PRINTF_DEBUGGING
+/* printf debugging */
+void
+printaddrinfo(
+    struct addrinfo *addrlist,
+    char *prefix)
+{
+    char host[NI_MAXHOST], port[NI_MAXSERV];
+    struct addrinfo *ai;
+
+    for (ai = addrlist; ai != NULL; ai = ai->ai_next) {
+	getnameinfo(ai->ai_addr, ai->ai_addrlen,
+		host, sizeof(host), port, sizeof(port),
+		NI_NUMERICHOST|NI_NUMERICSERV);
+	fprintf(stderr,"%s: %s:%s\n", prefix, host, port);
+    }
+}
+#endif
 
 /*
  * Local Variables:

@@ -9,7 +9,6 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#include <assert.h>
 #include "tclInt.h"
 #include "tclTomMath.h"
 
@@ -104,10 +103,12 @@
  * - Finally if LISTREP_SPACE_ONLY_BACK is present, ALL extra space is at
  *   the back.
  */
-#define LISTREP_PANIC_ON_FAIL         0x00000001
-#define LISTREP_SPACE_FAVOR_FRONT     0x00000002
-#define LISTREP_SPACE_FAVOR_BACK      0x00000004
-#define LISTREP_SPACE_ONLY_BACK       0x00000008
+enum ListRepresentationFlags {
+    LISTREP_PANIC_ON_FAIL = 1,
+    LISTREP_SPACE_FAVOR_FRONT = 2,
+    LISTREP_SPACE_FAVOR_BACK = 4,
+    LISTREP_SPACE_ONLY_BACK = 8
+};
 #define LISTREP_SPACE_FAVOR_NONE \
     (LISTREP_SPACE_FAVOR_FRONT | LISTREP_SPACE_FAVOR_BACK)
 #define LISTREP_SPACE_FLAGS \
@@ -118,7 +119,6 @@
  * Prototypes for non-inline static functions defined later in this file:
  */
 static int	MemoryAllocationError(Tcl_Interp *, size_t size);
-static int	ListLimitExceededError(Tcl_Interp *);
 static ListStore *ListStoreNew(Tcl_Size objc, Tcl_Obj *const objv[], int flags);
 static int	ListRepInit(Tcl_Size objc, Tcl_Obj *const objv[], int flags, ListRep *);
 static int	ListRepInitAttempt(Tcl_Interp *,
@@ -480,7 +480,7 @@ MemoryAllocationError(
 /*
  *------------------------------------------------------------------------
  *
- * ListLimitExceeded --
+ * TclListLimitExceededError --
  *
  *    Generates an error for exceeding maximum list size.
  *
@@ -492,13 +492,19 @@ MemoryAllocationError(
  *
  *------------------------------------------------------------------------
  */
-static int
-ListLimitExceededError(
+int
+TclListLimitExceededError(
     Tcl_Interp *interp)
 {
+    /*
+     * As an aside, note there is no parameter passed for the bad length
+     * because the cverflow is computationally detected and does not fit
+     * in Tcl_Size.
+     */
     if (interp != NULL) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"max length of a Tcl list exceeded", -1));
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"max length (%" TCL_SIZE_MODIFIER "d) of a Tcl list exceeded",
+		(Tcl_Size)LIST_MAX));
 	Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
     }
     return TCL_ERROR;
@@ -938,7 +944,7 @@ ListRepInitAttempt(
 
     if (result != TCL_OK && interp != NULL) {
 	if (objc > LIST_MAX) {
-	    ListLimitExceededError(interp);
+	    TclListLimitExceededError(interp);
 	} else {
 	    MemoryAllocationError(interp, LIST_SIZE(objc));
 	}
@@ -1790,7 +1796,7 @@ TclListObjAppendElements(
 
     ListRepElements(&listRep, toLen, toObjv);
     if (elemCount > LIST_MAX || toLen > (LIST_MAX - elemCount)) {
-	return ListLimitExceededError(interp);
+	return TclListLimitExceededError(interp);
     }
 
     finalLen = toLen + elemCount;
@@ -1930,6 +1936,76 @@ Tcl_ListObjAppendElement(
      * element case
      */
     return TclListObjAppendElements(interp, toObj, 1, &elemObj);
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * TclListObjAppendIfAbsent --
+ *
+ *	Appends an element elemObj to list toObj if no element with the same
+ *	string representation is not already present. If toObj is not a list
+ *	object, it will be converted and an error raised if the conversion
+ *	fails.
+ *
+ *	Reference counting:
+ *	 - toObj must not be shared else the function will panic.
+ *	 - if elemObj is not added to the list, either because it already
+ *	   exists or because of an error, it will be freed if there are no
+ *	   references to it. Caller can therefore pass in a 0-ref elemObj and
+ *	   not have to worry about decrementing it on return. Conversely,
+ *	   this means if caller passes in a 0-ref elemObj it should NOT
+ *	   decrement the reference count on return irrespective of return
+ *	   code.
+ *
+ *	CAUTION: Linear search (of course)
+ *
+ * Results:
+ *	Standard Tcl result code. Note element being already present is not
+ *	an error.
+ *
+ * Side effects:
+ *    None.
+ *
+ *------------------------------------------------------------------------
+ */
+int
+TclListObjAppendIfAbsent(
+    Tcl_Interp *interp,		/* Used to report errors if not NULL. */
+    Tcl_Obj *toObj,		/* List object to append */
+    Tcl_Obj *elemObj)		/* Element to append to toObj's list. */
+{
+    Tcl_Obj **elemObjs;
+    Tcl_Size numElems;
+    int result;
+
+    result = Tcl_ListObjGetElements(interp, toObj, &numElems, &elemObjs);
+    if (result != TCL_OK) {
+	goto vamoose;
+    }
+    /* Assume it is worth doing a pointer compare over the whole list first */
+    for (Tcl_Size i = 0; i < numElems; ++i) {
+	if (elemObjs[i] == elemObj) {
+	    result = TCL_OK;
+	    goto vamoose;
+	}
+    }
+    Tcl_Size elemLen;
+    const char *elemStr;
+    elemStr = Tcl_GetStringFromObj(elemObj, &elemLen);
+    for (Tcl_Size i = 0; i < numElems; ++i) {
+	Tcl_Size toLen;
+	const char *toStr = Tcl_GetStringFromObj(elemObjs[i], &toLen);
+	if (toLen == elemLen && !strncmp(elemStr, toStr, elemLen)) {
+	    result = TCL_OK;
+	    goto vamoose;
+	}
+    }
+    result = TclListObjAppendElements(interp, toObj, 1, &elemObj);
+
+vamoose: /* Return result after freeing elemObj if unreferenced */
+    Tcl_BounceRefCount(elemObj);
+    return result;
 }
 
 /*
@@ -2131,12 +2207,12 @@ Tcl_ListObjReplace(
     if (numToDelete < 0) {
 	numToDelete = 0;
     } else if (first > LIST_MAX - numToDelete /* Handle integer overflow */
-	     || origListLen < first + numToDelete) {
+	    || origListLen < first + numToDelete) {
 	numToDelete = origListLen - first;
     }
 
     if (numToInsert > LIST_MAX - (origListLen - numToDelete)) {
-	return ListLimitExceededError(interp);
+	return TclListLimitExceededError(interp);
     }
 
     if ((first+numToDelete) >= origListLen) {
@@ -3544,7 +3620,8 @@ UpdateStringOfList(
 	elem = TclGetStringFromObj(elemPtrs[i], &length);
 	bytesNeeded += TclScanElement(elem, length, flagPtr+i);
 	if (bytesNeeded > SIZE_MAX - numElems) {
-	    Tcl_Panic("max size for a Tcl value (%" TCL_Z_MODIFIER "u bytes) exceeded", SIZE_MAX);
+	    Tcl_Panic("max size for a Tcl value (%" TCL_Z_MODIFIER "u bytes) exceeded",
+		    SIZE_MAX);
 	}
     }
     bytesNeeded += numElems - 1;
@@ -3625,7 +3702,7 @@ TclListTestObj(
     ListObjReplaceRepAndInvalidate(listObj, &listRep);
     return listObj;
 }
-
+
 /*
  * Local Variables:
  * mode: c

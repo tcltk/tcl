@@ -9,7 +9,7 @@
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-self \- method call internal introspection
+self \- Current method call introspection
 .SH SYNOPSIS
 .nf
 \fBpackage require tcl::oo\fR

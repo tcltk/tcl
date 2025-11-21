@@ -452,7 +452,9 @@ TclFSCwdIsNative(void)
     /* if not yet initialized - ensure we'll once obtain cwd */
     if (!tsdPtr->cwdPathEpoch) {
 	Tcl_Obj *temp = Tcl_FSGetCwd(NULL);
-	if (temp) { Tcl_DecrRefCount(temp); }
+	if (temp) {
+	    Tcl_DecrRefCount(temp);
+	}
     }
 
     if (tsdPtr->cwdClientData != NULL) {
@@ -2782,7 +2784,7 @@ Tcl_FSGetCwd(
 	norm = TclFSNormalizeAbsolutePath(interp, retVal);
 
 	if (norm == NULL) {
-	     /*
+	    /*
 	     * 'norm' shouldn't ever be NULL, but we are careful.
 	     */
 
@@ -2793,7 +2795,7 @@ Tcl_FSGetCwd(
 	} else if (norm == tsdPtr->cwdPathPtr) {
 	    goto cdEqual;
 	} else {
-	     /*
+	    /*
 	     * Determine whether the filesystem's answer is the same as the
 	     * cached local value.  Since both 'norm' and 'tsdPtr->cwdPathPtr'
 	     * are normalized pathnames, do something more efficient than
@@ -2899,7 +2901,7 @@ Tcl_FSChdir(
 
 		retVal = 0;
 	    } else {
-		 /*
+		/*
 		 * 'Tcl_SetErrno()' has already been called.
 		 */
 	    }
@@ -2909,9 +2911,8 @@ Tcl_FSChdir(
     }
 
     if (retVal == 0) {
-
-	 /* Assume that the cwd was actually changed to the normalized value
-	  * just calculated, and cache that information. */
+	/* Assume that the cwd was actually changed to the normalized value
+	 * just calculated, and cache that information. */
 
 	/*
 	 * If the filesystem epoch changed recently, the normalized pathname or
@@ -2927,6 +2928,9 @@ Tcl_FSChdir(
 	    /* Not really true, but what else to do? */
 	    Tcl_SetErrno(ENOENT);
 	    return -1;
+	}
+	if (normDirName != pathPtr) {
+	    Tcl_IncrRefCount(normDirName);
 	}
 
 	if (fsPtr == &tclNativeFilesystem) {
@@ -2978,6 +2982,9 @@ Tcl_FSChdir(
 	     * FsPath objects.
 	     */
 	    Tcl_FSMountsChanged(NULL);
+	}
+	if (normDirName != pathPtr) {
+	    Tcl_DecrRefCount(normDirName);
 	}
     } else {
 	/*
@@ -3093,7 +3100,7 @@ Tcl_FSLoadFile(
 #endif
 
 static int
-skipUnlink(
+SkipUnlink(
     Tcl_Obj *shlibFile)
 {
     /*
@@ -3283,9 +3290,9 @@ Tcl_LoadFile(
 	 * load further.
 	 */
 
-	 /*
-	  * Try to delete the file we probably created and then exit.
-	  */
+	/*
+	 * Try to delete the file we probably created and then exit.
+	 */
 
 	Tcl_FSDeleteFile(copyToPtr);
 	Tcl_DecrRefCount(copyToPtr);
@@ -3306,14 +3313,14 @@ Tcl_LoadFile(
     /*
      * It might be necessary on some systems to set the appropriate permissions
      * on the file.  On Unix we could loop over the file attributes and set any
-     * that are called "-permissions" to 0700, but just do it directly instead:
+     * that are called "-permissions" to 0o700, but just do it directly instead:
      */
 
     {
 	Tcl_Size index;
 	Tcl_Obj *perm;
 
-	TclNewLiteralStringObj(perm, "0700");
+	TclNewLiteralStringObj(perm, "0o700");
 	Tcl_IncrRefCount(perm);
 	if (TclFSFileAttrIndex(copyToPtr, "-permissions", &index) == TCL_OK) {
 	    Tcl_FSFileAttrsSet(NULL, index, copyToPtr, perm);
@@ -3344,7 +3351,7 @@ Tcl_LoadFile(
      * and it avoids leaving the copy laying around after exit.
      */
 
-    if (!skipUnlink(copyToPtr) &&
+    if (!SkipUnlink(copyToPtr) &&
 	    (Tcl_FSDeleteFile(copyToPtr) == TCL_OK)) {
 	Tcl_DecrRefCount(copyToPtr);
 

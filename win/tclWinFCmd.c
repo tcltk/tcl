@@ -11,16 +11,20 @@
  */
 
 #include "tclWinInt.h"
+#if defined (__clang__) && (__clang_major__ > 20)
+#pragma clang diagnostic ignored "-Wc++-keyword"
+#endif
 
 /*
  * The following constants specify the type of callback when
  * TraverseWinTree() calls the traverseProc()
  */
-
-#define DOTREE_PRED	1	/* pre-order directory */
-#define DOTREE_POSTD	2	/* post-order directory */
-#define DOTREE_F	3	/* regular file */
-#define DOTREE_LINK	4	/* symbolic link */
+enum TclTraverseWinTreeTypes {
+    DOTREE_PRED = 1,		/* pre-order directory */
+    DOTREE_POSTD = 2,		/* post-order directory */
+    DOTREE_F = 3,		/* regular file */
+    DOTREE_LINK = 4		/* symbolic link */
+};
 
 /*
  * Callbacks for file attributes code.
@@ -41,7 +45,7 @@ static int		CannotSetAttribute(Tcl_Interp *interp, int objIndex,
  * Constants and variables necessary for file attributes subcommand.
  */
 
-enum {
+enum TclWinFCmdAttributes {
     WIN_ARCHIVE_ATTRIBUTE,
     WIN_HIDDEN_ATTRIBUTE,
     WIN_LONGNAME_ATTRIBUTE,
@@ -50,21 +54,33 @@ enum {
     WIN_SYSTEM_ATTRIBUTE
 };
 
-static const int attributeArray[] = {FILE_ATTRIBUTE_ARCHIVE, FILE_ATTRIBUTE_HIDDEN,
-	0, FILE_ATTRIBUTE_READONLY, 0, FILE_ATTRIBUTE_SYSTEM};
+static const int attributeArray[] = {
+    FILE_ATTRIBUTE_ARCHIVE,				// -archive
+    FILE_ATTRIBUTE_HIDDEN,				// -hidden
+    0,							// -longname
+    FILE_ATTRIBUTE_READONLY,				// -readonly
+    0,							// -shortname
+    FILE_ATTRIBUTE_SYSTEM				// -system
+};
 
 const char *const tclpFileAttrStrings[] = {
-	"-archive", "-hidden", "-longname", "-readonly",
-	"-shortname", "-system", NULL
+    "-archive",
+    "-hidden",
+    "-longname",
+    "-readonly",
+    "-shortname",
+    "-system",
+    NULL
 };
 
 const TclFileAttrProcs tclpFileAttrProcs[] = {
-	{GetWinFileAttributes, SetWinFileAttributes},
-	{GetWinFileAttributes, SetWinFileAttributes},
-	{GetWinFileLongName, CannotSetAttribute},
-	{GetWinFileAttributes, SetWinFileAttributes},
-	{GetWinFileShortName, CannotSetAttribute},
-	{GetWinFileAttributes, SetWinFileAttributes}};
+    {GetWinFileAttributes, SetWinFileAttributes},	// -archive
+    {GetWinFileAttributes, SetWinFileAttributes},	// -hidden
+    {GetWinFileLongName, CannotSetAttribute},		// -longname
+    {GetWinFileAttributes, SetWinFileAttributes},	// -readonly
+    {GetWinFileShortName, CannotSetAttribute},		// -shortname
+    {GetWinFileAttributes, SetWinFileAttributes}	// -system
+};
 
 /*
  * Prototype for the TraverseWinTree callback function.
@@ -905,9 +921,21 @@ TclpObjCopyDirectory(
     int ret;
 
     normSrcPtr = Tcl_FSGetNormalizedPath(NULL,srcPathPtr);
-    normDestPtr = Tcl_FSGetNormalizedPath(NULL,destPathPtr);
-    if ((normSrcPtr == NULL) || (normDestPtr == NULL)) {
+    if (normSrcPtr == NULL) {
 	return TCL_ERROR;
+    }
+    if (normSrcPtr != srcPathPtr) {
+	Tcl_IncrRefCount(normSrcPtr);
+    }
+    normDestPtr = Tcl_FSGetNormalizedPath(NULL,destPathPtr);
+    if (normDestPtr == NULL) {
+	if (normSrcPtr != srcPathPtr) {
+	    Tcl_DecrRefCount(normSrcPtr);
+	}
+	return TCL_ERROR;
+    }
+    if (normDestPtr != destPathPtr) {
+	Tcl_IncrRefCount(normDestPtr);
     }
 
     Tcl_DStringInit(&srcString);
@@ -930,6 +958,13 @@ TclpObjCopyDirectory(
 	}
 	Tcl_DStringFree(&ds);
 	Tcl_IncrRefCount(*errorPtr);
+    }
+
+    if (normSrcPtr != srcPathPtr) {
+	Tcl_DecrRefCount(normSrcPtr);
+    }
+    if (normDestPtr != destPathPtr) {
+	Tcl_DecrRefCount(normDestPtr);
     }
     return ret;
 }
@@ -985,6 +1020,9 @@ TclpObjRemoveDirectory(
 	if (normPtr == NULL) {
 	    return TCL_ERROR;
 	}
+	if (normPtr != pathPtr) {
+	    Tcl_IncrRefCount(normPtr);
+	}
 	Tcl_DStringInit(&native);
 	Tcl_UtfToWCharDString(TclGetString(normPtr), TCL_INDEX_NONE, &native);
 	ret = DoRemoveDirectory(&native, recursive, &ds);
@@ -1004,6 +1042,9 @@ TclpObjRemoveDirectory(
 	    Tcl_IncrRefCount(*errorPtr);
 	}
 	Tcl_DStringFree(&ds);
+    }
+    if (normPtr && normPtr != pathPtr) {
+	Tcl_DecrRefCount(normPtr);
     }
 
     return ret;

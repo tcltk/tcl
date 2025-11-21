@@ -9,7 +9,7 @@
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-tcl::prefix \- facilities for prefix matching
+tcl::prefix \- Facilities for prefix matching
 .SH SYNOPSIS
 .nf
 \fB::tcl::prefix all\fI table string\fR

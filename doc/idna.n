@@ -75,7 +75,7 @@ This returns the version of the \fBtcl::idna\fR package.
 This is an example of how punycoding of a string works:
 .PP
 .CS
-package require tcl::idna
+\fBpackage require tcl::idna\fR
 
 puts [\fBtcl::idna puny encode\fR "abc\(->def"]
 #    prints: \fIabcdef-kn2c\fR

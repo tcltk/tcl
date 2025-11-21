@@ -9,7 +9,7 @@
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-oo::class \- class of all classes
+oo::class \- The class of all classes
 .SH SYNOPSIS
 .nf
 \fBpackage require tcl::oo\fR

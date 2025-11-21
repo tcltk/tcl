@@ -29,6 +29,34 @@ static int		FileForceOption(Tcl_Interp *interp,
 /*
  *---------------------------------------------------------------------------
  *
+ * CheckFilenameEncodable
+ *
+ *	This checks if a filename can be encoded on the target platform,
+ *	disallowing things like naked surrogates, etc.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	May update the interpreter result with an error message on failure.
+ *
+ *---------------------------------------------------------------------------
+ */
+static inline int
+CheckFilenameEncodable(
+    Tcl_Interp *interp,
+    Tcl_Obj *fileName)
+{
+    Tcl_DString ds;
+    int code = Tcl_UtfToExternalDStringEx(interp, TCLFSENCODING,
+	    TclGetString(fileName), TCL_INDEX_NONE, 0, &ds, NULL);
+    Tcl_DStringFree(&ds);
+    return code == TCL_OK ? TCL_OK : TCL_ERROR;
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
  * TclFileRenameCmd
  *
  *	This function implements the "rename" subcommand of the "file"
@@ -113,7 +141,6 @@ FileCopyRename(
     int i, result, force;
     Tcl_StatBuf statBuf;
     Tcl_Obj *target;
-    Tcl_DString ds;
 
     i = FileForceOption(interp, objc - 1, objv + 1, &force);
     if (i < 0) {
@@ -135,12 +162,9 @@ FileCopyRename(
     if (Tcl_FSConvertToPathType(interp, target) != TCL_OK) {
 	return TCL_ERROR;
     }
-    if (Tcl_UtfToExternalDStringEx(interp, TCLFSENCODING, TclGetString(target),
-	    TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
-	Tcl_DStringFree(&ds);
+    if (CheckFilenameEncodable(interp, target) != TCL_OK) {
 	return TCL_ERROR;
     }
-    Tcl_DStringFree(&ds);
 
     result = TCL_OK;
 
@@ -232,7 +256,6 @@ TclFileMakeDirsCmd(
     Tcl_Obj *split = NULL;
     Tcl_Obj *target = NULL;
     Tcl_StatBuf statBuf;
-    Tcl_DString ds;
 
     result = TCL_OK;
     for (i = 1; i < objc; i++) {
@@ -240,13 +263,10 @@ TclFileMakeDirsCmd(
 	    result = TCL_ERROR;
 	    break;
 	}
-	if (Tcl_UtfToExternalDStringEx(interp, TCLFSENCODING, TclGetString(objv[i]),
-		TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
-	    Tcl_DStringFree(&ds);
+	if (CheckFilenameEncodable(interp, objv[i]) != TCL_OK) {
 	    result = TCL_ERROR;
 	    break;
 	}
-	Tcl_DStringFree(&ds);
 
 	split = Tcl_FSSplitPath(objv[i], &pobjc);
 	Tcl_IncrRefCount(split);
@@ -362,7 +382,6 @@ TclFileDeleteCmd(
     int i, force, result;
     Tcl_Obj *errfile;
     Tcl_Obj *errorBuffer = NULL;
-    Tcl_DString ds;
 
     i = FileForceOption(interp, objc - 1, objv + 1, &force);
     if (i < 0) {
@@ -380,13 +399,10 @@ TclFileDeleteCmd(
 	    result = TCL_ERROR;
 	    goto done;
 	}
-	if (Tcl_UtfToExternalDStringEx(interp, TCLFSENCODING, TclGetString(objv[i]),
-		TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
-	    Tcl_DStringFree(&ds);
+	if (CheckFilenameEncodable(interp, objv[i]) != TCL_OK) {
 	    result = TCL_ERROR;
 	    goto done;
 	}
-	Tcl_DStringFree(&ds);
 
 	/*
 	 * Call lstat() to get info so can delete symbolic link itself.
@@ -506,26 +522,19 @@ CopyRenameOneFile(
     Tcl_Obj *actualSource=NULL;	/* If source is a link, then this is the real
 				 * file/directory. */
     Tcl_StatBuf sourceStatBuf, targetStatBuf;
-    Tcl_DString ds;
 
     if (Tcl_FSConvertToPathType(interp, source) != TCL_OK) {
 	return TCL_ERROR;
     }
-    if (Tcl_UtfToExternalDStringEx(interp, TCLFSENCODING, TclGetString(source),
-	    TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
-	Tcl_DStringFree(&ds);
+    if (CheckFilenameEncodable(interp, source) != TCL_OK) {
 	return TCL_ERROR;
     }
-    Tcl_DStringFree(&ds);
     if (Tcl_FSConvertToPathType(interp, target) != TCL_OK) {
 	return TCL_ERROR;
     }
-    if (Tcl_UtfToExternalDStringEx(interp, TCLFSENCODING, TclGetString(target),
-	    TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
-	Tcl_DStringFree(&ds);
+    if (CheckFilenameEncodable(interp, target) != TCL_OK) {
 	return TCL_ERROR;
     }
-    Tcl_DStringFree(&ds);
 
     errfile = NULL;
     errorBuffer = NULL;
@@ -985,7 +994,6 @@ TclFileAttrsCmd(
     Tcl_Obj *objStrings = NULL;
     Tcl_Size numObjStrings = TCL_INDEX_NONE;
     Tcl_Obj *filePtr;
-    Tcl_DString ds;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name ?-option value ...?");
@@ -996,12 +1004,9 @@ TclFileAttrsCmd(
     if (Tcl_FSConvertToPathType(interp, filePtr) != TCL_OK) {
 	return TCL_ERROR;
     }
-    if (Tcl_UtfToExternalDStringEx(interp, TCLFSENCODING, TclGetString(filePtr),
-	    TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
-	Tcl_DStringFree(&ds);
+    if (CheckFilenameEncodable(interp, filePtr) != TCL_OK) {
 	return TCL_ERROR;
     }
-    Tcl_DStringFree(&ds);
 
     objc -= 2;
     objv += 2;
@@ -1204,7 +1209,6 @@ TclFileLinkCmd(
 {
     Tcl_Obj *contents;
     int index;
-    Tcl_DString ds;
 
     if (objc < 2 || objc > 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?-linktype? linkname ?target?");
@@ -1247,12 +1251,9 @@ TclFileLinkCmd(
 	if (Tcl_FSConvertToPathType(interp, objv[index]) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	if (Tcl_UtfToExternalDStringEx(interp, TCLFSENCODING, TclGetString(objv[index]),
-		TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
-	    Tcl_DStringFree(&ds);
+	if (CheckFilenameEncodable(interp, objv[index]) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	Tcl_DStringFree(&ds);
 
 	/*
 	 * Create link from source to target.
@@ -1310,12 +1311,9 @@ TclFileLinkCmd(
 	if (Tcl_FSConvertToPathType(interp, objv[index]) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	if (Tcl_UtfToExternalDStringEx(interp, TCLFSENCODING, TclGetString(objv[index]),
-		TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
-	    Tcl_DStringFree(&ds);
+	if (CheckFilenameEncodable(interp, objv[index]) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	Tcl_DStringFree(&ds);
 
 	/*
 	 * Read link
@@ -1367,7 +1365,6 @@ TclFileReadLinkCmd(
     Tcl_Obj *const objv[])
 {
     Tcl_Obj *contents;
-    Tcl_DString ds;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name");
@@ -1377,12 +1374,9 @@ TclFileReadLinkCmd(
     if (Tcl_FSConvertToPathType(interp, objv[1]) != TCL_OK) {
 	return TCL_ERROR;
     }
-    if (Tcl_UtfToExternalDStringEx(interp, TCLFSENCODING, TclGetString(objv[1]),
-	    TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
-	Tcl_DStringFree(&ds);
+    if (CheckFilenameEncodable(interp, objv[1]) != TCL_OK) {
 	return TCL_ERROR;
     }
-    Tcl_DStringFree(&ds);
 
     contents = Tcl_FSLink(objv[1], NULL, 0);
 

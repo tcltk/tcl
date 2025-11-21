@@ -25,6 +25,13 @@ if {[testConstraint win]} {
     }
 }
 
+# Application Verifier hooks system calls in a way that locale
+# detection fails. Disable tests that depend on that if
+# it is running.
+testConstraint noappverifier [expr {
+	[llength [info commands testappverifierpresent]] == 0
+	|| ![testappverifierpresent]}]
+
 package require msgcat 1.4
 
 testConstraint detroit \
@@ -262,7 +269,6 @@ namespace eval ::testClock {
 		  DaylightStart \x00\x00\x03\x00\x02\x00\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00]]
 }
 
-
 proc ::testClock::registry { cmd path key } {
     variable reg
     if { $cmd ne {get} } {
@@ -273,6 +279,50 @@ proc ::testClock::registry { cmd path key } {
     }
     return [dict get $reg $path $key]
 }
+proc ::testClock::_setupRegistry {} {
+    rename ::tcl::clock::_hasRegistry ::tcl::clock::_org_hasRegistry
+    proc ::tcl::clock::_hasRegistry {} {return 1}
+    namespace eval ::tcl::clock {
+	namespace import -force ::testClock::registry
+    }
+    ::tcl::clock::ClearCaches
+}
+proc ::testClock::_cleanupRegistry {} {
+    if {[namespace which -command ::tcl::clock::registry] ne ""} {
+	rename ::tcl::clock::registry {}
+    }
+    rename ::tcl::clock::_hasRegistry {}
+    rename ::tcl::clock::_org_hasRegistry ::tcl::clock::_hasRegistry
+    ::tcl::clock::ClearCaches
+}
+
+proc ::testClock::_setupNoTZ {} {
+    if { [info exists ::env(TZ)] } {
+	variable orgTZ $::env(TZ)
+	unset ::env(TZ)
+    }
+    if { [info exists ::env(TCL_TZ)] } {
+	variable orgTclTZ $::env(TCL_TZ)
+	unset ::env(TCL_TZ)
+    }
+}
+proc ::testClock::_cleanupNoTZ {} {
+    variable orgTclTZ
+    if { [info exists orgTclTZ] } {
+	set ::env(TCL_TZ) $orgTclTZ
+    } else {
+	unset -nocomplain ::env(TCL_TZ)
+    }
+    variable orgTZ
+    if { [info exists orgTZ] } {
+	set ::env(TZ) $orgTZ
+    } else {
+	unset -nocomplain ::env(TZ)
+    }
+}
+
+# Don't confuse all following tests with TZ or TCL_TZ environment vars (unset them here):
+::testClock::_setupNoTZ
 
 # Base test cases:
 
@@ -35943,181 +35993,85 @@ test clock-30.34 {regression test - clock add jump over DST hole with TZ (1 day 
 
 
 test clock-31.1 {system locale} \
-    -constraints win \
+    -constraints {win noappverifier} \
     -setup {
-	namespace eval ::tcl::clock {
-	    namespace import -force ::testClock::registry
-	}
-	set noreg [info exists ::tcl::clock::NoRegistry]
-	if {$noreg} {unset ::tcl::clock::NoRegistry}
-	::tcl::clock::ClearCaches
+	::testClock::_setupRegistry
     } \
     -body {
 	clock format 0 -timezone :UTC -locale system -format %x
     } \
     -cleanup {
-	namespace eval ::tcl::clock {
-	    rename registry {}
-	}
-	if {$noreg} {set ::tcl::clock::NoRegistry {}}
-	::tcl::clock::ClearCaches
+	::testClock::_cleanupRegistry
     } \
     -result [clock format 0 -timezone :UTC -locale current \
 		 -format {%d-%b-%Y}]
 
 test clock-31.2 {system locale} \
-    -constraints win \
+    -constraints {win noappverifier} \
     -setup {
-	namespace eval ::tcl::clock {
-	    namespace import -force ::testClock::registry
-	}
-	set noreg [info exists ::tcl::clock::NoRegistry]
-	if {$noreg} {unset ::tcl::clock::NoRegistry}
-	::tcl::clock::ClearCaches
+	::testClock::_setupRegistry
     } \
     -body {
 	clock format 0 -timezone :UTC -locale system -format %Ex
     } \
     -cleanup {
-	namespace eval ::tcl::clock {
-	    rename registry {}
-	}
-	if {$noreg} {set ::tcl::clock::NoRegistry {}}
-	::tcl::clock::ClearCaches
+	::testClock::_cleanupRegistry
     } \
     -result [clock format 0 -timezone :UTC -locale current \
 		 -format {the %d' day of %B %Y}]
 
 test clock-31.3 {system locale} \
-    -constraints win \
+    -constraints {win noappverifier} \
     -setup {
-	namespace eval ::tcl::clock {
-	    namespace import -force ::testClock::registry
-	}
-	set noreg [info exists ::tcl::clock::NoRegistry]
-	if {$noreg} {unset ::tcl::clock::NoRegistry}
-	::tcl::clock::ClearCaches
+	::testClock::_setupRegistry
     } \
     -body {
 	clock format 0 -timezone :UTC -locale system -format %X
     } \
     -cleanup {
-	namespace eval ::tcl::clock {
-	    rename registry {}
-	}
-	if {$noreg} {set ::tcl::clock::NoRegistry {}}
-	::tcl::clock::ClearCaches
+	::testClock::_cleanupRegistry
     } \
     -result [clock format 0 -timezone :UTC -locale current \
 		 -format {%l:%M:%S %p}]
 
 test clock-31.4 {system locale} \
-    -constraints win \
+    -constraints {win noappverifier} \
     -setup {
-	namespace eval ::tcl::clock {
-	    namespace import -force ::testClock::registry
-	}
-	set noreg [info exists ::tcl::clock::NoRegistry]
-	if {$noreg} {unset ::tcl::clock::NoRegistry}
-	if { [info exists env(TZ)] } {
-	    set oldTZ $env(TZ)
-	    unset env(TZ)
-	}
-	if { [info exists env(TCL_TZ)] } {
-	    set oldTclTZ $env(TCL_TZ)
-	    unset env(TCL_TZ)
-	}
-	::tcl::clock::ClearCaches
+	::testClock::_setupRegistry
     } \
     -body {
 	clock format 0 -locale system -format %x
     } \
     -cleanup {
-	namespace eval ::tcl::clock {
-	    rename registry {}
-	}
-	if { [info exists oldTclTZ] } {
-	    set env(TCL_TZ) $oldTclTZ
-	}
-	if { [info exists oldTZ] } {
-	    set env(TZ) $oldTZ
-	}
-	if {$noreg} {set ::tcl::clock::NoRegistry {}}
-	::tcl::clock::ClearCaches
+	::testClock::_cleanupRegistry
     } \
     -result [clock format 0 -locale current -timezone EST5 \
 		 -format {%d-%b-%Y}]
 
 test clock-31.5 {system locale} \
-    -constraints win \
+    -constraints {win noappverifier} \
     -setup {
-	namespace eval ::tcl::clock {
-	    namespace import -force ::testClock::registry
-	}
-	set noreg [info exists ::tcl::clock::NoRegistry]
-	if {$noreg} {unset ::tcl::clock::NoRegistry}
-	if { [info exists env(TZ)] } {
-	    set oldTZ $env(TZ)
-	    unset env(TZ)
-	}
-	if { [info exists env(TCL_TZ)] } {
-	    set oldTclTZ $env(TCL_TZ)
-	    unset env(TCL_TZ)
-	}
-	::tcl::clock::ClearCaches
+	::testClock::_setupRegistry
     } \
     -body {
 	clock format 0 -locale system -format %Ex
     } \
     -cleanup {
-	namespace eval ::tcl::clock {
-	    rename registry {}
-	}
-	if {$noreg} {set ::tcl::clock::NoRegistry {}}
-	if { [info exists oldTclTZ] } {
-	    set env(TCL_TZ) $oldTclTZ
-	}
-	if { [info exists oldTZ] } {
-	    set env(TZ) $oldTZ
-	}
-	::tcl::clock::ClearCaches
+	::testClock::_cleanupRegistry
     } \
     -result [clock format 0 -locale current -timezone EST5 \
 		 -format {the %d' day of %B %Y}]
 
 test clock-31.6 {system locale} \
-    -constraints win \
+    -constraints {win noappverifier} \
     -setup {
-	namespace eval ::tcl::clock {
-	    namespace import -force ::testClock::registry
-	}
-	set noreg [info exists ::tcl::clock::NoRegistry]
-	if {$noreg} {unset ::tcl::clock::NoRegistry}
-	if { [info exists env(TZ)] } {
-	    set oldTZ $env(TZ)
-	    unset env(TZ)
-	}
-	if { [info exists env(TCL_TZ)] } {
-	    set oldTclTZ $env(TCL_TZ)
-	    unset env(TCL_TZ)
-	}
-	::tcl::clock::ClearCaches
+	::testClock::_setupRegistry
     } \
     -body {
 	clock format 0 -locale system -format "%X %Z"
     } \
     -cleanup {
-	namespace eval ::tcl::clock {
-	    rename registry {}
-	}
-	if {$noreg} {set ::tcl::clock::NoRegistry {}}
-	if { [info exists oldTclTZ] } {
-	    set env(TCL_TZ) $oldTclTZ
-	}
-	if { [info exists oldTZ] } {
-	    set env(TZ) $oldTZ
-	}
-	::tcl::clock::ClearCaches
+	::testClock::_cleanupRegistry
     } \
     -result [clock format 0 -locale current -timezone EST5 \
 		 -format {%l:%M:%S %p %Z}]
@@ -36157,6 +36111,52 @@ test clock-32.1 {scan/format across the Gregorian change} {
     }
     set problems
 } {}
+# year 1500, 1700 is still in julian calendar in en locale (< 1752), so not affected by y/100 & y/400 logic yet, thus it is leap year,
+# but years 1800, 1900 and 2000 are in gregorian calendar, so 1800 and 1900 are not leap years, but year 2000 is a leap year:
+test clock-32.2 {scan/format: leap year of old date (considering julian-gregorian transition)} {
+    # leap years:
+    list [clock format [clock scan "29.02.1500" -format {%d.%m.%Y} -gmt 1 -locale en] -format {%d.%m.%Y} -gmt 1 -locale en] \
+	 [clock format [clock scan "29.02.1600" -format {%d.%m.%Y} -gmt 1 -locale en] -format {%d.%m.%Y} -gmt 1 -locale en] \
+	 [clock format [clock scan "29.02.1700" -format {%d.%m.%Y} -gmt 1 -locale en] -format {%d.%m.%Y} -gmt 1 -locale en] \
+	 [clock format [clock scan "29.02.2000" -format {%d.%m.%Y} -gmt 1 -locale en] -format {%d.%m.%Y} -gmt 1 -locale en]
+} {29.02.1500 29.02.1600 29.02.1700 29.02.2000}
+test clock-32.3 {scan/format: leap year of old date (considering julian-gregorian transition)} {
+    # not leap years, so 29 Feb is invalid if valid mode, and results to 01 Mar otherwise:
+    list [catch {clock format [clock scan "29.02.1800" -format {%d.%m.%Y} -gmt 1 -locale en] -format {%d.%m.%Y} -gmt 1 -locale en} v] $v \
+	 [catch {clock format [clock scan "29.02.1900" -format {%d.%m.%Y} -gmt 1 -locale en] -format {%d.%m.%Y} -gmt 1 -locale en} v] $v
+} [list \
+    [expr {$valid_mode}] [expr {$valid_mode ? "unable to convert input string: invalid day" : "01.03.1800"}] \
+    [expr {$valid_mode}] [expr {$valid_mode ? "unable to convert input string: invalid day" : "01.03.1900"}]
+]
+test clock-32.4 {freescan/format: leap year of old date (considering julian-gregorian transition)} -setup {
+    # currently locale is unsupported by freescan, so temporary change global locale:
+    package require msgcat
+    set current [msgcat::mclocale]
+    msgcat::mclocale en_us
+} -body {
+    # leap years:
+    list [clock format [clock scan "02/29/1500" -gmt 1] -format {%m/%d/%Y} -gmt 1] \
+	 [clock format [clock scan "02/29/1600" -gmt 1] -format {%m/%d/%Y} -gmt 1] \
+	 [clock format [clock scan "02/29/1700" -gmt 1] -format {%m/%d/%Y} -gmt 1] \
+	 [clock format [clock scan "02/29/2000" -gmt 1] -format {%m/%d/%Y} -gmt 1]
+} -cleanup {
+    msgcat::mclocale $current
+} -result {02/29/1500 02/29/1600 02/29/1700 02/29/2000}
+test clock-32.5 {freescan/format: leap year of old date (considering julian-gregorian transition)} -setup {
+    # currently locale is unsupported by freescan, so temporary change global locale:
+    package require msgcat
+    set current [msgcat::mclocale]
+    msgcat::mclocale en_us
+} -body {
+    # not leap years, so 29 Feb is invalid if valid mode, and results to 01 Mar otherwise:
+    list [catch {clock format [clock scan "02/29/1800" -gmt 1] -format {%m/%d/%Y} -gmt 1} v] $v \
+	 [catch {clock format [clock scan "02/29/1900" -gmt 1] -format {%m/%d/%Y} -gmt 1} v] $v
+} -cleanup {
+    msgcat::mclocale $current
+} -result [list \
+    [expr {$valid_mode}] [expr {$valid_mode ? "unable to convert input string: invalid day" : "03/01/1800"}] \
+    [expr {$valid_mode}] [expr {$valid_mode ? "unable to convert input string: invalid day" : "03/01/1900"}]
+]
 
 # Legacy tests
 
@@ -36968,62 +36968,32 @@ test clock-37.3 {%Es gmt testing CEST} {
 
 test clock-38.1 {regression - convertUTCToLocalViaC - east of Greenwich} \
     -setup {
-	if { [info exists env(TZ)] } {
-	    set oldTZ $env(TZ)
-	}
 	set env(TZ) CET-01:00CEST-02:00,M3.5.0/02:00,M10.5.0/03:00
     } \
     -body {
 	clock format 0 -format %H:%M:%S -timezone :localtime
     } \
     -cleanup {
-	if { [info exists oldTZ] } {
-	    set env(TZ) $oldTZ
-	    unset oldTZ
-	} else {
-	    unset env(TZ)
-	}
+	unset -nocomplain env(TZ)
     } \
     -result {01:00:00}
 
 test clock-38.2 {make sure TZ is not cached after unset} \
-    -setup {
-	if { [info exists env(TZ)] } {
-	    set oldTZ $env(TZ)
-	    unset env(TZ)
-	}
-	if { [info exists env(TCL_TZ)] } {
-	    set oldTCLTZ $env(TCL_TZ)
-	    unset env(TCL_TZ)
-	}
-    } \
     -body {
-	set t1 [clock format 0]
+	set t1 [clock format 0 -locale en]
 	# a time zone that is unlikely to anywhere
 	set env(TZ) "+04:20"
-	set t2 [clock format 0]
-	unset env(TZ)
-	set t3 [clock format 0]
-	expr {$t1 eq $t3 && $t1 ne $t2}
+	set t2 [clock format 0 -locale en]
+	unset -nocomplain env(TZ)
+	set t3 [clock format 0 -locale en]
+	list [expr {$t1 eq $t3 && $t1 ne $t2}] [subst {"$t1" eq "$t3" && "$t1" ne "$t2"}]
     } \
     -cleanup {
-	if { [info exists oldTZ] } {
-	    set env(TZ) $oldTZ
-	    unset oldTZ
-	}
-	if { [info exists oldTclTZ] } {
-	    set env(TCL_TZ) $oldTclTZ
-	    unset oldTclTZ
-	}
+	unset -nocomplain env(TZ)
     } \
-    -result 1
+    -match glob -result {1 *}
 
 test clock-38.3sc {ensure cache of base is correct for :localtime if TZ-env changing / scan} \
-    -setup {
-	if { [info exists env(TZ)] } {
-	    set oldTZ $env(TZ)
-	}
-    } \
     -body {
 	set res {}
 	foreach env(TZ) {GMT-11:30 GMT-07:30 GMT-03:30 GMT} \
@@ -37034,20 +37004,10 @@ test clock-38.3sc {ensure cache of base is correct for :localtime if TZ-env chan
 	set res
     } \
     -cleanup {
-	if { [info exists oldTZ] } {
-	    set env(TZ) $oldTZ
-	    unset oldTZ
-	} else {
-	    unset env(TZ)
-	}
+	unset -nocomplain env(TZ)
     } \
     -result [lrepeat 4 [expr {20*60*60}]]
 test clock-38.3fm {ensure cache of base is correct for :localtime if TZ-env changing / format} \
-    -setup {
-	if { [info exists env(TZ)] } {
-	    set oldTZ $env(TZ)
-	}
-    } \
     -body {
 	set res {}
 	foreach env(TZ) {GMT-11:30 GMT-07:30 GMT-03:30 GMT} {
@@ -37056,14 +37016,58 @@ test clock-38.3fm {ensure cache of base is correct for :localtime if TZ-env chan
 	set res
     } \
     -cleanup {
-	if { [info exists oldTZ] } {
-	    set env(TZ) $oldTZ
-	    unset oldTZ
-	} else {
-	    unset env(TZ)
-	}
+	unset -nocomplain env(TZ)
     } \
     -result {{1970-01-02T07:30:00 +1130} {1970-01-02T03:30:00 +0730} {1970-01-01T23:30:00 +0330} {1970-01-01T20:00:00 +0000}}
+
+test clock-38.4sc {ensure cache of base is correct for :localtime if TZ-env changing / scan (system TZ, no registry)} \
+    -setup {
+	::testClock::_setupRegistry
+	# simulate we have no registry, so system TZ and :localtime get +HHMM format
+	proc ::tcl::clock::_hasRegistry {} {return 0}
+    } -body {
+	# force epoch switch and set first TZ (a time zone that is unlikely to anywhere) and use :localtime
+	set env(TZ) "+03:20"
+	clock scan "12:00:00" -format "%H:%M:%S" -base [expr {20*60*60}] -timezone :localtime -locale en
+	# force epoch switch, with unset TZ, it shall be system timezone now
+	unset -nocomplain env(TZ)
+	set t1 [clock scan "12:00:00" -format "%H:%M:%S" -base [expr {20*60*60}] -locale en]
+	# force epoch switch and set another TZ (a time zone that is unlikely to anywhere) and use system timezone
+	set env(TZ) "+04:20"
+	set t2 [clock scan "12:00:00" -format "%H:%M:%S" -base [expr {20*60*60}] -locale en]
+	# force epoch switch, with unset TZ, it shall be again system timezone
+	unset -nocomplain env(TZ)
+	set t3 [clock scan "12:00:00" -format "%H:%M:%S" -base [expr {20*60*60}] -locale en]
+	# compare scanned values (t1 must be equal t3 and not equal t2):
+	list [expr {$t1 == $t3 && $t1 != $t2}] [subst {$t1 == $t3 && $t1 != $t2}]
+    } -cleanup {
+	unset -nocomplain env(TZ)
+	::testClock::_cleanupRegistry
+    } -match glob -result {1 *}
+test clock-38.4fm {ensure cache of base is correct for :localtime if TZ-env changing / format (system TZ, no registry)} \
+    -setup {
+	::testClock::_setupRegistry
+	# simulate we have no registry, so system TZ and :localtime get +HHMM format
+	proc ::tcl::clock::_hasRegistry {} {return 0}
+    } -body {
+	# force epoch switch and set first TZ (a time zone that is unlikely to anywhere) and use :localtime
+	set env(TZ) "+03:20"
+	clock format 0  -timezone :localtime -locale en
+	# force epoch switch, with unset TZ, it shall be system timezone now
+	unset -nocomplain env(TZ)
+	set t1 [clock format 0 -locale en]
+	# force epoch switch and set another TZ (a time zone that is unlikely to anywhere) and use system timezone
+	set env(TZ) "+04:20"
+	set t2 [clock format 0 -locale en]
+	# force epoch switch, with unset TZ, it shall be again system timezone
+	unset -nocomplain env(TZ)
+	set t3 [clock format 0 -locale en]
+	# compare formatted values (t1 must be equal t3 and not equal t2):
+	list [expr {$t1 eq $t3 && $t1 ne $t2}] [subst {"$t1" eq "$t3" && "$t1" ne "$t2"}]
+    } -cleanup {
+	unset -nocomplain env(TZ)
+	::testClock::_cleanupRegistry
+    } -match glob -result {1 *}
 
 test clock-39.1 {regression - synonym timezones} {
     clock format 0 -format {%H:%M:%S} -timezone :US/Eastern
@@ -37071,9 +37075,6 @@ test clock-39.1 {regression - synonym timezones} {
 
 test clock-40.1 {regression - bad month with -timezone :localtime} \
     -setup {
-	if { [info exists env(TZ)] } {
-	    set oldTZ $env(TZ)
-	}
 	set env(TZ) UTC0
     } \
     -body {
@@ -37081,12 +37082,7 @@ test clock-40.1 {regression - bad month with -timezone :localtime} \
 	    -format %Y-%m-%dT%H:%M:%S
     } \
     -cleanup {
-	if { [info exists oldTZ] } {
-	    set env(TZ) $oldTZ
-	    unset oldTZ
-	} else {
-	    unset env(TZ)
-	}
+	unset -nocomplain env(TZ)
     } \
     -result 946684800
 
@@ -37096,21 +37092,13 @@ test clock-41.1 {regression test - format group %k when hour is 0 } {
 
 test clock-42.1 {regression test - %z in :localtime when west of Greenwich } \
     -setup {
-	if { [info exists env(TZ)] } {
-	    set oldTZ $env(TZ)
-	}
 	set env(TZ) EST5
     } \
     -body {
 	clock format 0 -format %z -timezone :localtime
     } \
     -cleanup {
-	if { [info exists oldTZ] } {
-	    set env(TZ) $oldTZ
-	    unset oldTZ
-	} else {
-	    unset env(TZ)
-	}
+	unset -nocomplain env(TZ)
     } \
     -result {-0500}
 
@@ -37118,21 +37106,13 @@ test clock-42.1 {regression test - %z in :localtime when west of Greenwich } \
 
 test clock-44.1 {regression test - time zone name containing hyphen } \
     -setup {
-	if { [info exists env(TZ)] } {
-	    set oldTZ $env(TZ)
-	}
 	set env(TZ) US/East-Indiana
     } \
     -body {
 	clock format 1098466496 -format %H:%M:%S%z -timezone US/East-Indiana
     } \
     -cleanup {
-	if { [info exists oldTZ] } {
-	    set env(TZ) $oldTZ
-	    unset oldTZ
-	} else {
-	    unset env(TZ)
-	}
+	unset -nocomplain env(TZ)
     } \
     -result {12:34:56-0500}
 
@@ -37548,22 +37528,10 @@ test clock-49.1 {regression test - localtime with negative arg (Bug 1237907)} \
     -result {0 1969|1 {localtime failed \(clock value may be too large/small to represent\)}}
 
 test clock-49.2 {regression test - missing time zone file (Bug 1237907)} \
-    -constraints win \
+    -constraints {win noappverifier} \
     -setup {
 	# override the registry so that the test takes place in New York time
-	namespace eval ::tcl::clock {
-	    namespace import -force ::testClock::registry
-	}
-	set noreg [info exists ::tcl::clock::NoRegistry]
-	if {$noreg} {unset ::tcl::clock::NoRegistry}
-	if { [info exists env(TZ)] } {
-	    set oldTZ $env(TZ)
-	    unset env(TZ)
-	}
-	if { [info exists env(TCL_TZ)] } {
-	    set oldTclTZ $env(TCL_TZ)
-	    unset env(TCL_TZ)
-	}
+	::testClock::_setupRegistry
 	# make it so New York time is a missing file
 	dict set ::tcl::clock::WinZoneInfo \
 	    {-18000 0 3600 0 11 0 1 2 0 0 0 0 3 0 2 2 0 0 0} \
@@ -37577,16 +37545,7 @@ test clock-49.2 {regression test - missing time zone file (Bug 1237907)} \
     } \
     -cleanup {
 	# restore the registry and environment
-	namespace eval ::tcl::clock {
-	    rename registry {}
-	}
-	if {$noreg} {set ::tcl::clock::NoRegistry {}}
-	if { [info exists oldTclTZ] } {
-	    set env(TCL_TZ) $oldTclTZ
-	}
-	if { [info exists oldTZ] } {
-	    set env(TZ) $oldTZ
-	}
+	::testClock::_cleanupRegistry
 	# put New York back on the map
 	dict set ::tcl::clock::WinZoneInfo \
 	    {-18000 0 3600 0 11 0 1 2 0 0 0 0 3 0 2 2 0 0 0} \
@@ -38618,8 +38577,9 @@ if {!$valid_mode && [info exists ::tcltest::skippedBecause(!valid_off)]} {
     incr ::tcltest::numTests(Skipped) -$::tcltest::skippedBecause(!valid_off)
     unset ::tcltest::skippedBecause(!valid_off)
 }
-::tcltest::cleanupTests
+::testClock::_cleanupNoTZ
 namespace delete ::testClock
+::tcltest::cleanupTests
 unset valid_mode
 
 return

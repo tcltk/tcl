@@ -22,7 +22,6 @@
 #include "tclCompile.h"
 #include "tclTomMath.h"
 #include <math.h>
-#include <assert.h>
 
 /*
  * TCL_FPCLASSIFY_MODE:
@@ -168,6 +167,7 @@ TCL_DECLARE_MUTEX(commandTypeLock);
  */
 
 static Tcl_ObjCmdProc	BadEnsembleSubcommand;
+static Tcl_CmdDeleteProc BadEnsembleSubcommandCleanup;
 static char *		CallCommandTraces(Interp *iPtr, Command *cmdPtr,
 			    const char *oldName, const char *newName,
 			    int flags);
@@ -237,7 +237,6 @@ static Tcl_NRPostProc	TEOV_RunLeaveTraces;
 static Tcl_NRPostProc	EvalObjvCore;
 static Tcl_NRPostProc	Dispatch;
 
-static Tcl_NRPostProc NRPostInvoke;
 static Tcl_ObjCmdProc CoroTypeObjCmd;
 static Tcl_ObjCmdProc TclNRCoroInjectObjCmd;
 static Tcl_ObjCmdProc TclNRCoroProbeObjCmd;
@@ -250,56 +249,64 @@ MODULE_SCOPE const TclStubs tclStubs;
  * Magical counts for the number of arguments accepted by a coroutine command
  * after particular kinds of [yield].
  */
-
-#define CORO_ACTIVATE_YIELD	NULL
-#define CORO_ACTIVATE_YIELDM	INT2PTR(1)
-
-#define COROUTINE_ARGUMENTS_SINGLE_OPTIONAL	(-1)
-#define COROUTINE_ARGUMENTS_ARBITRARY		(-2)
+enum CoroutineArgumentTypes {
+    COROUTINE_ARGUMENTS_SINGLE_OPTIONAL = -1,
+    COROUTINE_ARGUMENTS_ARBITRARY = -2
+};
 
 /*
  * The following structure define the commands in the Tcl core.
  */
 
 typedef struct {
-    const char *name;		/* Name of object-based command. */
-    Tcl_ObjCmdProc *objProc;	/* Object-based function for command. */
-    CompileProc *compileProc;	/* Function called to compile command. */
-    Tcl_ObjCmdProc *nreProc;	/* NR-based function for command */
-    int flags;			/* Various flag bits, as defined below. */
+    const char *name;		// Name of object-based command.
+    Tcl_ObjCmdProc *objProc;	// Object-based function for command.
+    CompileProc *compileProc;	// Function called to compile command.
+    Tcl_ObjCmdProc *nreProc;	// NR-based function for command.
+    int flags;			// Various flag bits, as defined below.
 } CmdInfo;
 
-#define CMD_IS_SAFE 1		/* Whether this command is part of the set of
+enum CmdInfoFlags {
+    CMD_IS_SAFE = 1		/* Whether this command is part of the set of
 				 * commands present by default in a safe
 				 * interpreter. */
 /* CMD_COMPILES_EXPANDED - Whether the compiler for this command can handle
  * expansion for itself rather than needing the generic layer to take care of
  * it for it. Defined in tclInt.h. */
+};
 
 /*
- * The following struct states that the command it talks about (a subcommand
- * of one of Tcl's built-in ensembles) is unsafe and must be hidden when an
- * interpreter is made safe. (TclHideUnsafeCommands accesses an array of these
- * structs.) Alas, we can't sensibly just store the information directly in
- * the commands.
+ * Description of commands in ::tcl::unsupported.
+ *
  */
+typedef struct UnsupportedCmdInfo {
+    const char *name;		// Name of command in ::tcl::unsupported.
+    Tcl_ObjCmdProc *objProc;	// Object-based function for command.
+    CompileProc *compileProc;	// Function called to compile command.
+    Tcl_ObjCmdProc *nreProc;	// NR-based function for command.
+    void *clientData;		// ClientData to use for the command.
+    int flags;			// Various flag bits, as defined for CmdInfo.
+} UnsupportedCmdInfo;
 
-typedef struct {
-    const char *ensembleNsName;	/* The ensemble's name within ::tcl. NULL for
-				 * the end of the list of commands to hide. */
-    const char *commandName;	/* The name of the command within the
-				 * ensemble. If this is NULL, we want to also
-				 * make the overall command be hidden, an ugly
-				 * hack because it is expected by security
-				 * policies in the wild. */
-} UnsafeEnsembleInfo;
+// A function that can configure an ensemble after it is created.
+typedef int (EnsembleConfigurer)(Tcl_Interp *interp, Tcl_Command ensemble);
+
+typedef struct EnsembleSetup {
+    const char *name;		// Name of ensemble.
+    const EnsembleImplMap *implMap; // Ensemble contents descriptor.
+    EnsembleConfigurer *configurerProc; // Optional callback for customisation.
+    int flags;			/* Ensemble commands are never technically
+				 * unsafe (though their subcommands may well
+				 * be so), but some code expects them to be
+				 * so. This flag lets us mark those cases. */
+} EnsembleSetup;
 
 /*
  * The built-in commands, and the functions that implement them:
  */
 
 static int
-procObjCmd(
+ProcObjCmd(
     void *clientData,
     Tcl_Interp *interp,
     int objc,
@@ -310,7 +317,7 @@ procObjCmd(
 
 static const CmdInfo builtInCmds[] = {
     /*
-     * Commands in the generic core.
+     * Commands in the generic core. All are safe.
      */
 
     {"append",		Tcl_AppendObjCmd,	TclCompileAppendCmd,	NULL,	CMD_IS_SAFE},
@@ -336,24 +343,24 @@ static const CmdInfo builtInCmds[] = {
     {"join",		Tcl_JoinObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
     {"lappend",		Tcl_LappendObjCmd,	TclCompileLappendCmd,	NULL,	CMD_IS_SAFE|CMD_COMPILES_EXPANDED},
     {"lassign",		Tcl_LassignObjCmd,	TclCompileLassignCmd,	NULL,	CMD_IS_SAFE},
-    {"ledit",		Tcl_LeditObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
+    {"ledit",		Tcl_LeditObjCmd,	TclCompileLeditCmd,	NULL,	CMD_IS_SAFE},
     {"lindex",		Tcl_LindexObjCmd,	TclCompileLindexCmd,	NULL,	CMD_IS_SAFE},
     {"linsert",		Tcl_LinsertObjCmd,	TclCompileLinsertCmd,	NULL,	CMD_IS_SAFE},
     {"list",		Tcl_ListObjCmd,		TclCompileListCmd,	NULL,	CMD_IS_SAFE|CMD_COMPILES_EXPANDED},
     {"llength",		Tcl_LlengthObjCmd,	TclCompileLlengthCmd,	NULL,	CMD_IS_SAFE},
     {"lmap",		Tcl_LmapObjCmd,		TclCompileLmapCmd,	TclNRLmapCmd,	CMD_IS_SAFE},
-    {"lpop",		Tcl_LpopObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
+    {"lpop",		Tcl_LpopObjCmd,		TclCompileLpopCmd,	NULL,	CMD_IS_SAFE},
     {"lrange",		Tcl_LrangeObjCmd,	TclCompileLrangeCmd,	NULL,	CMD_IS_SAFE},
     {"lremove",		Tcl_LremoveObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
     {"lrepeat",		Tcl_LrepeatObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
     {"lreplace",	Tcl_LreplaceObjCmd,	TclCompileLreplaceCmd,	NULL,	CMD_IS_SAFE},
     {"lreverse",	Tcl_LreverseObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
     {"lsearch",		Tcl_LsearchObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
-    {"lseq",		Tcl_LseqObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
+    {"lseq",		Tcl_LseqObjCmd,		TclCompileLseqCmd,	NULL,	CMD_IS_SAFE},
     {"lset",		Tcl_LsetObjCmd,		TclCompileLsetCmd,	NULL,	CMD_IS_SAFE},
     {"lsort",		Tcl_LsortObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
     {"package",		Tcl_PackageObjCmd,	NULL,			TclNRPackageObjCmd,	CMD_IS_SAFE},
-    {"proc",		procObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
+    {"proc",		ProcObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
     {"regexp",		Tcl_RegexpObjCmd,	TclCompileRegexpCmd,	NULL,	CMD_IS_SAFE},
     {"regsub",		Tcl_RegsubObjCmd,	TclCompileRegsubCmd,	NULL,	CMD_IS_SAFE},
     {"rename",		Tcl_RenameObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
@@ -363,17 +370,17 @@ static const CmdInfo builtInCmds[] = {
     {"split",		Tcl_SplitObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
     {"subst",		Tcl_SubstObjCmd,	TclCompileSubstCmd,	TclNRSubstObjCmd,	CMD_IS_SAFE},
     {"switch",		Tcl_SwitchObjCmd,	TclCompileSwitchCmd,	TclNRSwitchObjCmd, CMD_IS_SAFE},
-    {"tailcall",	NULL,			TclCompileTailcallCmd,	TclNRTailcallObjCmd,	CMD_IS_SAFE},
+    {"tailcall",	NULL,			TclCompileTailcallCmd,	TclNRTailcallObjCmd,	CMD_IS_SAFE|CMD_COMPILES_EXPANDED},
     {"throw",		Tcl_ThrowObjCmd,	TclCompileThrowCmd,	NULL,	CMD_IS_SAFE},
     {"trace",		Tcl_TraceObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
     {"try",		Tcl_TryObjCmd,		TclCompileTryCmd,	TclNRTryObjCmd,	CMD_IS_SAFE},
     {"unset",		Tcl_UnsetObjCmd,	TclCompileUnsetCmd,	NULL,	CMD_IS_SAFE},
-    {"uplevel",		Tcl_UplevelObjCmd,	NULL,			TclNRUplevelObjCmd,	CMD_IS_SAFE},
+    {"uplevel",		Tcl_UplevelObjCmd,	TclCompileUplevelCmd,	TclNRUplevelObjCmd,	CMD_IS_SAFE},
     {"upvar",		Tcl_UpvarObjCmd,	TclCompileUpvarCmd,	NULL,	CMD_IS_SAFE},
     {"variable",	Tcl_VariableObjCmd,	TclCompileVariableCmd,	NULL,	CMD_IS_SAFE},
     {"while",		Tcl_WhileObjCmd,	TclCompileWhileCmd,	TclNRWhileObjCmd,	CMD_IS_SAFE},
     {"yield",		NULL,			TclCompileYieldCmd,	TclNRYieldObjCmd,	CMD_IS_SAFE},
-    {"yieldto",		NULL,			TclCompileYieldToCmd,	TclNRYieldToObjCmd,	CMD_IS_SAFE},
+    {"yieldto",		NULL,			TclCompileYieldToCmd,	TclNRYieldToObjCmd,	CMD_IS_SAFE|CMD_COMPILES_EXPANDED},
 
     /*
      * Commands in the OS-interface. Note that many of these are unsafe.
@@ -410,78 +417,37 @@ static const CmdInfo builtInCmds[] = {
     {NULL,		NULL,			NULL,			NULL,	0}
 };
 
-/*
- * Information about which pieces of ensembles to hide when making an
- * interpreter safe:
- */
+static const UnsupportedCmdInfo unsupportedCmds[] = {
+    {"disassemble",	Tcl_DisassembleObjCmd,	NULL,			NULL,	INT2PTR(0), 0},
+    {"getbytecode",	Tcl_DisassembleObjCmd,	NULL,			NULL,	INT2PTR(1), 0},
+    {"representation",	Tcl_RepresentationCmd,	NULL,			NULL,	NULL, 0},
+    {"assemble",	Tcl_AssembleObjCmd,	TclCompileAssembleCmd,	TclNRAssembleObjCmd, NULL, CMD_IS_SAFE},
+    {"corotype",	CoroTypeObjCmd,		NULL,			NULL,	NULL, CMD_IS_SAFE},
+    {"loadIcu",		TclLoadIcuObjCmd,	NULL,			NULL,	NULL, 0}, // TODO: Is this supposed to be callable from safe interps?
+    {NULL, NULL, NULL, NULL, NULL, 0}
+};
 
-static const UnsafeEnsembleInfo unsafeEnsembleCommands[] = {
-    /* [encoding] has two unsafe commands. Assumed by older security policies
-     * to be overall unsafe; it isn't but... */
-    {"encoding", NULL},
-    {"encoding", "dirs"},
-    {"encoding", "system"},
-    /* [file] has MANY unsafe commands! Assumed by older security policies to
-     * be overall unsafe; it isn't but... */
-    {"file", NULL},
-    {"file", "atime"},
-    {"file", "attributes"},
-    {"file", "copy"},
-    {"file", "delete"},
-    {"file", "dirname"},
-    {"file", "executable"},
-    {"file", "exists"},
-    {"file", "extension"},
-    {"file", "home"},
-    {"file", "isdirectory"},
-    {"file", "isfile"},
-    {"file", "link"},
-    {"file", "lstat"},
-    {"file", "mtime"},
-    {"file", "mkdir"},
-    {"file", "nativename"},
-    {"file", "normalize"},
-    {"file", "owned"},
-    {"file", "readable"},
-    {"file", "readlink"},
-    {"file", "rename"},
-    {"file", "rootname"},
-    {"file", "size"},
-    {"file", "stat"},
-    {"file", "tail"},
-    {"file", "tempdir"},
-    {"file", "tempfile"},
-    {"file", "tildeexpand"},
-    {"file", "type"},
-    {"file", "volumes"},
-    {"file", "writable"},
-    /* [info] has two unsafe commands */
-    {"info", "cmdtype"},
-    {"info", "nameofexecutable"},
-    /* [tcl::process] has ONLY unsafe commands! */
-    {"process", "list"},
-    {"process", "status"},
-    {"process", "purge"},
-    {"process", "autopurge"},
-    /*
-     * [zipfs] perhaps has some safe commands. But like file make it inaccessible
-     * until they are analyzed to be safe.
-     */
-    {"zipfs", NULL},
-    {"zipfs", "canonical"},
-    {"zipfs", "exists"},
-    {"zipfs", "info"},
-    {"zipfs", "list"},
-    {"zipfs", "lmkimg"},
-    {"zipfs", "lmkzip"},
-    {"zipfs", "mkimg"},
-    {"zipfs", "mkkey"},
-    {"zipfs", "mkzip"},
-    {"zipfs", "mount"},
-    {"zipfs", "mountdata"},
-    {"zipfs", "root"},
-    {"zipfs", "unmount"},
-    {NULL, NULL}
+// Table of definitions of ensemble commands.
+static const EnsembleSetup ensembleCommands[] = {
+    {"array",		tclArrayImplMap,	NULL, CMD_IS_SAFE},
+    {"binary",		tclBinaryImplMap,	NULL, CMD_IS_SAFE},
+    {"binary encode",	tclBinaryEncodeImplMap, NULL, CMD_IS_SAFE},
+    {"binary decode",	tclBinaryDecodeImplMap, NULL, CMD_IS_SAFE},
+    {"chan",		tclChanImplMap,		TclSetUpChanCmd, CMD_IS_SAFE},
+    // TODO: Sort out why setup of [clock] is so weird
+    {"clock",		tclClockImplMap,	NULL, 0},
+    {"dict",		tclDictImplMap,		NULL, CMD_IS_SAFE},
+    {"encoding",	tclEncodingImplMap,	NULL, 0},
+    {"file",		tclFileImplMap,		NULL, 0},
+    {"info",		tclInfoImplMap,		NULL, CMD_IS_SAFE},
+    {"namespace",	tclNamespaceImplMap,	NULL, CMD_IS_SAFE},
+    {"string",		tclStringImplMap,	NULL, CMD_IS_SAFE},
+    {"::tcl::prefix",	tclPrefixImplMap,	TclSetUpPrefixCmd, CMD_IS_SAFE},
+    {"::tcl::process",	tclProcessImplMap,	TclSetUpProcessCmd, CMD_IS_SAFE},
+    {"unicode",		tclUnicodeImplMap,	NULL, CMD_IS_SAFE},
+    {"zipfs",		tclZipfsImplMap,	NULL, 0},
+    {"zlib",		tclZlibImplMap,		NULL, CMD_IS_SAFE},
+    {NULL, NULL, NULL, 0}
 };
 
 /*
@@ -650,7 +616,7 @@ TclFinalizeEvaluation(void)
 /*
  *----------------------------------------------------------------------
  *
- * buildInfoObjCmd --
+ * BuildInfoObjCmd --
  *
  *	Implements tcl::build-info command.
  *
@@ -664,7 +630,7 @@ TclFinalizeEvaluation(void)
  */
 
 static int
-buildInfoObjCmd2(
+BuildInfoObjCmd2(
     void *clientData,
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
@@ -731,7 +697,8 @@ buildInfoObjCmd2(
 	}
 	return TCL_OK;
     case ID_COMPILER:
-	for (p = strchr(buildData, '.'); p++; p = strchr(p, '.')) {
+	for (p = strchr(buildData, '.'); p != NULL; p = strchr(p, '.')) {
+	    p++;
 	    /*
 	     * Does the word begin with one of the standard prefixes?
 	     */
@@ -752,7 +719,8 @@ buildInfoObjCmd2(
 	break;
     default:		/* Boolean test for other identifiers' presence */
 	arg = TclGetStringFromObj(objv[1], &len);
-	for (p = strchr(buildData, '.'); p++; p = strchr(p, '.')) {
+	for (p = strchr(buildData, '.'); p != NULL; p = strchr(p, '.')) {
+	    p++;
 	    if (!strncmp(p, arg, len)
 		    && ((p[len] == '.') || (p[len] == '-') || (p[len] == '\0'))) {
 		if (p[len] == '-') {
@@ -776,13 +744,13 @@ buildInfoObjCmd2(
 }
 
 static int
-buildInfoObjCmd(
+BuildInfoObjCmd(
     void *clientData,
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    return buildInfoObjCmd2(clientData, interp, objc, objv);
+    return BuildInfoObjCmd2(clientData, interp, objc, objv);
 }
 
 /*
@@ -1108,6 +1076,13 @@ Tcl_CreateInterp(void)
     iPtr->asyncReadyPtr = TclGetAsyncReadyPtr();
     iPtr->deferredCallbacks = NULL;
 
+    // Create the namespace for unsupported bits and pieces.
+    Tcl_Namespace *unsupportedNs = Tcl_CreateNamespace(interp,
+	    "::tcl::unsupported", NULL, NULL);
+    if (unsupportedNs == NULL) {
+	Tcl_Panic("couldn't find ::tcl::unsupported");
+    }
+
     /*
      * Create the core commands. Do it here, rather than calling Tcl_CreateObjCommand,
      * because it's faster (there's no need to check for a preexisting command
@@ -1148,23 +1123,23 @@ Tcl_CreateInterp(void)
     }
 
     /*
-     * Create the "array", "binary", "chan", "clock", "dict", "encoding",
-     * "file", "info", "namespace" and "string" ensembles. Note that all these
-     * commands (and their subcommands that are not present in the global
-     * namespace) are wholly safe *except* for "clock", "encoding" and "file".
+     * Create the standard ensembles "array", "binary", "chan", "clock",
+     * "dict", "encoding", "file", "info", "namespace", "string", etc. Note
+     * that most of these commands (and their subcommands that are not present
+     * in the global namespace) are wholly safe *except*  as marked.
      */
 
-    TclInitArrayCmd(interp);
-    TclInitBinaryCmd(interp);
-    TclInitChanCmd(interp);
-    TclInitDictCmd(interp);
-    TclInitEncodingCmd(interp);
-    TclInitFileCmd(interp);
-    TclInitInfoCmd(interp);
-    TclInitNamespaceCmd(interp);
-    TclInitStringCmd(interp);
-    TclInitPrefixCmd(interp);
-    TclInitProcessCmd(interp);
+    const EnsembleSetup *ensSetupPtr;
+    for (ensSetupPtr=ensembleCommands; ensSetupPtr->name; ensSetupPtr++) {
+	Tcl_Command ensemble = TclMakeEnsemble(interp, ensSetupPtr->name,
+		ensSetupPtr->implMap);
+	if (ensSetupPtr->configurerProc) {
+	    if (ensSetupPtr->configurerProc(interp, ensemble) != TCL_OK) {
+		Tcl_Panic("failed to set up %s: %s", ensSetupPtr->name,
+			Tcl_GetStringResult(interp));
+	    }
+	}
+    }
 
     /*
      * Register "clock" subcommands. These *do* go through
@@ -1190,32 +1165,15 @@ Tcl_CreateInterp(void)
      * Create unsupported commands for debugging bytecode and objects.
      */
 
-    Tcl_CreateObjCommand(interp, "::tcl::unsupported::disassemble",
-	    Tcl_DisassembleObjCmd, INT2PTR(0), NULL);
-    Tcl_CreateObjCommand(interp, "::tcl::unsupported::getbytecode",
-	    Tcl_DisassembleObjCmd, INT2PTR(1), NULL);
-    Tcl_CreateObjCommand(interp, "::tcl::unsupported::representation",
-	    Tcl_RepresentationCmd, NULL, NULL);
-
-    /* Adding the bytecode assembler command */
-    cmdPtr = (Command *) Tcl_NRCreateCommand(interp,
-	    "::tcl::unsupported::assemble", Tcl_AssembleObjCmd,
-	    TclNRAssembleObjCmd, NULL, NULL);
-    cmdPtr->compileProc = &TclCompileAssembleCmd;
-
-    /* Coroutine monkeybusiness */
-    Tcl_CreateObjCommand(interp, "::tcl::unsupported::corotype",
-	    CoroTypeObjCmd, NULL, NULL);
-
-    /* Load and intialize ICU */
-    Tcl_CreateObjCommand(interp, "::tcl::unsupported::loadIcu",
-	    TclLoadIcuObjCmd, NULL, NULL);
-
-    /* Export unsupported commands */
-    nsPtr = Tcl_FindNamespace(interp, "::tcl::unsupported", NULL, 0);
-    if (nsPtr) {
-	Tcl_Export(interp, nsPtr, "*", 1);
+    const UnsupportedCmdInfo *unsCmdInfoPtr;
+    for (unsCmdInfoPtr=unsupportedCmds; unsCmdInfoPtr->name; unsCmdInfoPtr++) {
+	cmdPtr = (Command *) TclCreateObjCommandInNs(interp,
+		unsCmdInfoPtr->name, unsupportedNs, unsCmdInfoPtr->objProc,
+		unsCmdInfoPtr->clientData, NULL);
+	cmdPtr->nreProc = unsCmdInfoPtr->nreProc;
+	cmdPtr->compileProc = unsCmdInfoPtr->compileProc;
     }
+    Tcl_Export(interp, unsupportedNs, "*", 1);
 
 #ifdef USE_DTRACE
     /*
@@ -1229,7 +1187,7 @@ Tcl_CreateInterp(void)
      * Register the builtin math functions.
      */
 
-    nsPtr = Tcl_CreateNamespace(interp, "::tcl::mathfunc", NULL,NULL);
+    nsPtr = Tcl_CreateNamespace(interp, "::tcl::mathfunc", NULL, NULL);
     if (nsPtr == NULL) {
 	Tcl_Panic("Can't create math function namespace");
     }
@@ -1325,9 +1283,9 @@ Tcl_CreateInterp(void)
     Tcl_PkgProvideEx(interp, "tcl", TCL_PATCH_LEVEL, &tclStubs);
     Tcl_CmdInfo info2;
     Tcl_Command buildInfoCmd = Tcl_CreateObjCommand(interp, "::tcl::build-info",
-	    buildInfoObjCmd, (void *)version, NULL);
+	    BuildInfoObjCmd, (void *)version, NULL);
     Tcl_GetCommandInfoFromToken(buildInfoCmd, &info2);
-    info2.objProc2 = buildInfoObjCmd2;
+    info2.objProc2 = BuildInfoObjCmd2;
     info2.objClientData2 = (void *)version;
     Tcl_SetCommandInfoFromToken(buildInfoCmd, &info2);
 
@@ -1385,8 +1343,8 @@ TclRegisterCommandTypeName(
 	int isNew;
 
 	hPtr = Tcl_CreateHashEntry(&commandTypeTable,
-		implementationProc, &isNew);
-	Tcl_SetHashValue(hPtr, (void *) nameStr);
+		(void *)implementationProc, &isNew);
+	Tcl_SetHashValue(hPtr, nameStr);
     } else {
 	hPtr = Tcl_FindHashEntry(&commandTypeTable,
 		implementationProc);
@@ -1437,12 +1395,44 @@ TclGetCommandTypeName(
  *----------------------------------------------------------------------
  */
 
+static void
+HideCommandInTclNs(
+    Tcl_Interp *interp,
+    const char *nsName,
+    const char *name,
+    Tcl_Obj *publicNameTuple)
+{
+    Tcl_Obj *cmdName = Tcl_ObjPrintf("::tcl::%s::%s", nsName, name);
+    Tcl_Obj *hideName = Tcl_ObjPrintf("tcl:%s:%s", nsName, name);
+
+#define INTERIM_HACK_NAME "___tmp"
+    // TODO: Fix the hiding machinery to handle namespaced commands.
+
+    if (TclRenameCommand(interp, TclGetString(cmdName),
+		INTERIM_HACK_NAME) != TCL_OK
+	    || Tcl_HideCommand(interp, INTERIM_HACK_NAME,
+		    TclGetString(hideName)) != TCL_OK) {
+	Tcl_Panic("problem making '%s %s' safe: %s",
+		nsName, name, Tcl_GetStringResult(interp));
+    }
+    if (publicNameTuple) {
+	Tcl_IncrRefCount(publicNameTuple);
+	Tcl_CreateObjCommand(interp, TclGetString(cmdName),
+		BadEnsembleSubcommand, (void *)publicNameTuple,
+		BadEnsembleSubcommandCleanup);
+    }
+    TclDecrRefCount(cmdName);
+    TclDecrRefCount(hideName);
+}
+
 int
 TclHideUnsafeCommands(
     Tcl_Interp *interp)		/* Hide commands in this interpreter. */
 {
     const CmdInfo *cmdInfoPtr;
-    const UnsafeEnsembleInfo *unsafePtr;
+    const EnsembleSetup *ensSetupPtr;
+    const EnsembleImplMap *implMapPtr;
+    const UnsupportedCmdInfo *unsCmdInfoPtr;
 
     if (interp == NULL) {
 	return TCL_ERROR;
@@ -1453,43 +1443,37 @@ TclHideUnsafeCommands(
 	}
     }
 
-    for (unsafePtr = unsafeEnsembleCommands;
-	    unsafePtr->ensembleNsName; unsafePtr++) {
-	if (unsafePtr->commandName) {
+    for (ensSetupPtr = ensembleCommands; ensSetupPtr->name; ensSetupPtr++) {
+	for (implMapPtr=ensSetupPtr->implMap; implMapPtr->name; implMapPtr++) {
+	    if (!implMapPtr->unsafe) {
+		continue;
+	    }
 	    /*
 	     * Hide an ensemble subcommand.
 	     */
 
-	    Tcl_Obj *cmdName = Tcl_ObjPrintf("::tcl::%s::%s",
-		    unsafePtr->ensembleNsName, unsafePtr->commandName);
-	    Tcl_Obj *hideName = Tcl_ObjPrintf("tcl:%s:%s",
-		    unsafePtr->ensembleNsName, unsafePtr->commandName);
-
-#define INTERIM_HACK_NAME "___tmp"
-
-	    if (TclRenameCommand(interp, TclGetString(cmdName),
-			INTERIM_HACK_NAME) != TCL_OK
-		    || Tcl_HideCommand(interp, INTERIM_HACK_NAME,
-			    TclGetString(hideName)) != TCL_OK) {
-		Tcl_Panic("problem making '%s %s' safe: %s",
-			unsafePtr->ensembleNsName, unsafePtr->commandName,
-			Tcl_GetStringResult(interp));
+	    const char *ensembleNsName = ensSetupPtr->name, *sub;
+	    while ((sub = strstr(ensembleNsName, "::")) != NULL) {
+		ensembleNsName = sub + 2;
 	    }
-	    Tcl_CreateObjCommand(interp, TclGetString(cmdName),
-		    BadEnsembleSubcommand, (void *)unsafePtr, NULL);
-	    TclDecrRefCount(cmdName);
-	    TclDecrRefCount(hideName);
-	} else {
+	    HideCommandInTclNs(interp, ensembleNsName, implMapPtr->name,
+		    Tcl_NewListObj(2, ((Tcl_Obj*[]) {
+			Tcl_NewStringObj(ensSetupPtr->name, TCL_AUTO_LENGTH),
+			Tcl_NewStringObj(implMapPtr->name, TCL_AUTO_LENGTH)
+		    })));
+	}
+
+	if (!(ensSetupPtr->flags & CMD_IS_SAFE)) {
 	    /*
-	     * Hide an ensemble main command (for compatibility).
+	     * Hide a main command (for compatibility).
 	     */
+	    Tcl_HideCommand(interp, ensSetupPtr->name, ensSetupPtr->name);
+	}
+    }
 
-	    if (Tcl_HideCommand(interp, unsafePtr->ensembleNsName,
-		    unsafePtr->ensembleNsName) != TCL_OK) {
-		Tcl_Panic("problem making '%s' safe: %s",
-			unsafePtr->ensembleNsName,
-			Tcl_GetStringResult(interp));
-	    }
+    for (unsCmdInfoPtr=unsupportedCmds; unsCmdInfoPtr->name; unsCmdInfoPtr++) {
+	if (!(unsCmdInfoPtr->flags & CMD_IS_SAFE)) {
+	    HideCommandInTclNs(interp, "unsupported", unsCmdInfoPtr->name, NULL);
 	}
     }
 
@@ -1521,13 +1505,40 @@ BadEnsembleSubcommand(
     TCL_UNUSED(int) /*objc*/,
     TCL_UNUSED(Tcl_Obj *const *) /* objv */)
 {
-    const UnsafeEnsembleInfo *infoPtr = (const UnsafeEnsembleInfo *)clientData;
+    Tcl_Obj *publicNameTuple = (Tcl_Obj *)clientData;
+    Tcl_Obj *ensembleName = TclListObjGetElement(publicNameTuple, 0);
+    Tcl_Obj *commandName = TclListObjGetElement(publicNameTuple, 1);
 
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "not allowed to invoke subcommand %s of %s",
-	    infoPtr->commandName, infoPtr->ensembleNsName));
+	    TclGetString(commandName), TclGetString(ensembleName)));
     Tcl_SetErrorCode(interp, "TCL", "SAFE", "SUBCOMMAND", (char *)NULL);
     return TCL_ERROR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * BadEnsembleSubcommandCleanup --
+ *
+ *	Cleans up data used by BadEnsembleSubcommand() when an instance of it
+ *	is deleted.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Releases a memory reference.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+BadEnsembleSubcommandCleanup(
+    void *clientData)
+{
+    Tcl_Obj *publicNameTuple = (Tcl_Obj *)clientData;
+    Tcl_DecrRefCount(publicNameTuple);
 }
 
 /*
@@ -2724,7 +2735,7 @@ typedef struct {
 } CmdWrapperInfo;
 
 static int
-cmdWrapperProc(
+CmdWrapperProc(
     void *clientData,
     Tcl_Interp *interp,
     int objc,
@@ -2738,7 +2749,7 @@ cmdWrapperProc(
 }
 
 static void
-cmdWrapperDeleteProc(
+CmdWrapperDeleteProc(
     void *clientData)
 {
     CmdWrapperInfo *info = (CmdWrapperInfo *) clientData;
@@ -2774,8 +2785,8 @@ Tcl_CreateObjCommand2(
     info->deleteData = clientData;
 
     return Tcl_CreateObjCommand(interp, cmdName,
-	    (proc ? cmdWrapperProc : NULL),
-	    info, cmdWrapperDeleteProc);
+	    (proc ? CmdWrapperProc : NULL),
+	    info, CmdWrapperDeleteProc);
 }
 
 Tcl_Command
@@ -2816,7 +2827,7 @@ Tcl_CreateObjCommand(
 	Namespace *dummy1, *dummy2;
 
 	TclGetNamespaceForQualName(interp, cmdName, NULL,
-	    TCL_CREATE_NS_IF_UNKNOWN, &nsPtr, &dummy1, &dummy2, &tail);
+		TCL_CREATE_NS_IF_UNKNOWN, &nsPtr, &dummy1, &dummy2, &tail);
 	if ((nsPtr == NULL) || (tail == NULL)) {
 	    return (Tcl_Command) NULL;
 	}
@@ -3293,7 +3304,7 @@ Tcl_SetCommandInfo(
  */
 
 static int
-invokeObj2Command(
+InvokeObj2Command(
     void *clientData,		/* Points to command's Command structure. */
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
@@ -3306,16 +3317,16 @@ invokeObj2Command(
 	return TclCommandWordLimitError(interp, objc);
     }
     if (cmdPtr->objProc != NULL) {
-	result = cmdPtr->objProc(cmdPtr->objClientData, interp, objc, objv);
+	result = cmdPtr->objProc(cmdPtr->objClientData, interp, (int)objc, objv);
     } else {
 	result = Tcl_NRCallObjProc(interp, cmdPtr->nreProc,
-		cmdPtr->objClientData, objc, objv);
+		cmdPtr->objClientData, (int)objc, objv);
     }
     return result;
 }
 
 static int
-cmdWrapper2Proc(
+CmdWrapper2Proc(
     void *clientData,
     Tcl_Interp *interp,
     Tcl_Size objc,
@@ -3325,7 +3336,7 @@ cmdWrapper2Proc(
     if (objc > INT_MAX) {
 	return TclCommandWordLimitError(interp, objc);
     }
-    return cmdPtr->objProc(cmdPtr->objClientData, interp, objc, objv);
+    return cmdPtr->objProc(cmdPtr->objClientData, interp, (int)objc, objv);
 }
 
 int
@@ -3357,10 +3368,10 @@ Tcl_SetCommandInfoFromToken(
 	}
 	cmdPtr->objClientData = infoPtr->objClientData;
     }
-    if (cmdPtr->deleteProc == cmdWrapperDeleteProc) {
+    if (cmdPtr->deleteProc == CmdWrapperDeleteProc) {
 	CmdWrapperInfo *info = (CmdWrapperInfo *) cmdPtr->deleteData;
 	if (infoPtr->objProc2 == NULL) {
-	    info->proc = invokeObj2Command;
+	    info->proc = InvokeObj2Command;
 	    info->clientData = cmdPtr;
 	    info->nreProc = NULL;
 	} else {
@@ -3373,14 +3384,14 @@ Tcl_SetCommandInfoFromToken(
 	info->deleteProc = infoPtr->deleteProc;
 	info->deleteData = infoPtr->deleteData;
     } else {
-	if ((infoPtr->objProc2 != NULL) && (infoPtr->objProc2 != cmdWrapper2Proc)) {
+	if ((infoPtr->objProc2 != NULL) && (infoPtr->objProc2 != CmdWrapper2Proc)) {
 	    CmdWrapperInfo *info = (CmdWrapperInfo *)Tcl_Alloc(sizeof(CmdWrapperInfo));
 	    info->proc = infoPtr->objProc2;
 	    info->clientData = infoPtr->objClientData2;
 	    info->nreProc = NULL;
 	    info->deleteProc = infoPtr->deleteProc;
 	    info->deleteData = infoPtr->deleteData;
-	    cmdPtr->deleteProc = cmdWrapperDeleteProc;
+	    cmdPtr->deleteProc = CmdWrapperDeleteProc;
 	    cmdPtr->deleteData = info;
 	} else {
 	    cmdPtr->deleteProc = infoPtr->deleteProc;
@@ -3464,19 +3475,19 @@ Tcl_GetCommandInfoFromToken(
     infoPtr->objClientData = cmdPtr->objClientData;
     infoPtr->proc = cmdPtr->proc;
     infoPtr->clientData = cmdPtr->clientData;
-    if (cmdPtr->deleteProc == cmdWrapperDeleteProc) {
+    if (cmdPtr->deleteProc == CmdWrapperDeleteProc) {
 	CmdWrapperInfo *info = (CmdWrapperInfo *)cmdPtr->deleteData;
 	infoPtr->deleteProc = info->deleteProc;
 	infoPtr->deleteData = info->deleteData;
 	infoPtr->objProc2 = info->proc;
 	infoPtr->objClientData2 = info->clientData;
-	if (cmdPtr->objProc == cmdWrapperProc) {
+	if (cmdPtr->objProc == CmdWrapperProc) {
 	    infoPtr->isNativeObjectProc = 2;
 	}
     } else {
 	infoPtr->deleteProc = cmdPtr->deleteProc;
 	infoPtr->deleteData = cmdPtr->deleteData;
-	infoPtr->objProc2 = cmdWrapper2Proc;
+	infoPtr->objProc2 = CmdWrapper2Proc;
 	infoPtr->objClientData2 = cmdPtr;
     }
     infoPtr->namespacePtr = (Tcl_Namespace *) cmdPtr->nsPtr;
@@ -4637,7 +4648,7 @@ Dispatch(
 #endif /* USE_DTRACE */
 
     iPtr->cmdCount++;
-    return objProc(clientData, interp, objc, objv);
+    return objProc(clientData, interp, (int)objc, objv);
 }
 
 int
@@ -6032,7 +6043,7 @@ TclArgumentGet(
     if (hPtr) {
 	CFWord *cfwPtr = (CFWord *)Tcl_GetHashValue(hPtr);
 
-	*wordPtr = cfwPtr->word;
+	*wordPtr = (int)cfwPtr->word;
 	*cfPtrPtr = cfwPtr->framePtr;
 	return;
     }
@@ -6050,7 +6061,7 @@ TclArgumentGet(
 	framePtr->data.tebc.pc = (char *) (((ByteCode *)
 		framePtr->data.tebc.codePtr)->codeStart + cfwPtr->pc);
 	*cfPtrPtr = cfwPtr->framePtr;
-	*wordPtr = cfwPtr->word;
+	*wordPtr = (int)cfwPtr->word;
 	return;
     }
 }
@@ -6621,58 +6632,11 @@ Tcl_ExprBooleanObj(
 /*
  *----------------------------------------------------------------------
  *
- * TclObjInvokeNamespace --
- *
- *	Object version: Invokes a Tcl command, given an objv/objc, from either
- *	the exposed or hidden set of commands in the given interpreter.
- *
- *	NOTE: The command is invoked in the global stack frame of the
- *	interpreter or namespace, thus it cannot see any current state on the
- *	stack of that interpreter.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	Whatever the command does.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclObjInvokeNamespace(
-    Tcl_Interp *interp,		/* Interpreter in which command is to be
-				 * invoked. */
-    Tcl_Size objc,		/* Count of arguments. */
-    Tcl_Obj *const objv[],	/* Argument objects; objv[0] points to the
-				 * name of the command to invoke. */
-    Tcl_Namespace *nsPtr,	/* The namespace to use. */
-    int flags)			/* Combination of flags controlling the call:
-				 * TCL_INVOKE_HIDDEN, TCL_INVOKE_NO_UNKNOWN,
-				 * or TCL_INVOKE_NO_TRACEBACK. */
-{
-    int result;
-    Tcl_CallFrame *framePtr;
-
-    /*
-     * Make the specified namespace the current namespace and invoke the
-     * command.
-     */
-
-    (void) TclPushStackFrame(interp, &framePtr, nsPtr, /*isProcFrame*/0);
-    result = TclObjInvoke(interp, objc, objv, flags);
-
-    TclPopStackFrame(interp);
-    return result;
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * TclObjInvoke --
  *
- *	Invokes a Tcl command, given an objv/objc, from either the exposed or
- *	the hidden sets of commands in the given interpreter.
+ *	Invokes a Tcl command, given an objv/objc, from the hidden set of
+ *	commands in the given interpreter. Only supported for calls via
+ *	"internal" stub table.
  *
  * Results:
  *	A standard Tcl object result.
@@ -6692,7 +6656,9 @@ TclObjInvoke(
 				 * name of the command to invoke. */
     int flags)			/* Combination of flags controlling the call:
 				 * TCL_INVOKE_HIDDEN, TCL_INVOKE_NO_UNKNOWN,
-				 * or TCL_INVOKE_NO_TRACEBACK. */
+				 * or TCL_INVOKE_NO_TRACEBACK. Only
+				 * TCL_INVOKE_HIDDEN is now supported, and
+				 * must be supplied. */
 {
     if (interp == NULL) {
 	return TCL_ERROR;
@@ -6702,8 +6668,8 @@ TclObjInvoke(
 		"illegal argument vector", TCL_INDEX_NONE));
 	return TCL_ERROR;
     }
-    if ((flags & TCL_INVOKE_HIDDEN) == 0) {
-	Tcl_Panic("TclObjInvoke: called without TCL_INVOKE_HIDDEN");
+    if (flags != TCL_INVOKE_HIDDEN) {
+	Tcl_Panic("TclObjInvoke: called without just TCL_INVOKE_HIDDEN");
     }
     return Tcl_NRCallObjProc(interp, TclNRInvoke, NULL, objc, objv);
 }
@@ -6740,7 +6706,7 @@ TclNRInvoke(
      */
 
     iPtr->numLevels++;
-    Tcl_NRAddCallback(interp, NRPostInvoke, NULL, NULL, NULL, NULL);
+    Tcl_NRAddCallback(interp, TclNRPostInvoke, NULL, NULL, NULL, NULL);
 
     /*
      * Normal command resolution of objv[0] isn't going to find cmdPtr.
@@ -6751,8 +6717,8 @@ TclNRInvoke(
     return TclNREvalObjv(interp, objc, objv, TCL_EVAL_NORESOLVE, cmdPtr);
 }
 
-static int
-NRPostInvoke(
+int
+TclNRPostInvoke(
     TCL_UNUSED(void **),
     Tcl_Interp *interp,
     int result)
@@ -7658,7 +7624,7 @@ ExprMaxMinFunc(
 	    Tcl_GetDoubleFromObj(interp, objv[i], &d);
 	    return TCL_ERROR;
 	}
-	if (TclCompareTwoNumbers(objv[i], res) == op) {
+	if (i > 1 && TclCompareTwoNumbers(objv[i], res) == op) {
 	    res = objv[i];
 	}
     }
@@ -8179,8 +8145,8 @@ ExprIsUnorderedFunc(
 	return TCL_ERROR;
     }
 
-    if (DoubleObjClass(interp, objv[1], &dCls) != TCL_OK ||
-	    DoubleObjClass(interp, objv[2], &dCls2) != TCL_OK) {
+    if (DoubleObjClass(interp, objv[1], &dCls) != TCL_OK
+	    || DoubleObjClass(interp, objv[2], &dCls2) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -8460,7 +8426,7 @@ Tcl_NRCallObjProc(
 }
 
 static int
-wrapperNRObjProc(
+WrapperNRObjProc(
     void *clientData,
     Tcl_Interp *interp,
     int objc,
@@ -8473,7 +8439,7 @@ wrapperNRObjProc(
     if (objc < 0) {
 	objc = -1;
     }
-    return proc(clientData, interp, (Tcl_Size) objc, objv);
+    return proc(clientData, interp, objc, objv);
 }
 
 int
@@ -8494,7 +8460,7 @@ Tcl_NRCallObjProc2(
     info->clientData = clientData;
     info->proc = objProc;
 
-    TclNRAddCallback(interp, Dispatch, wrapperNRObjProc, info,
+    TclNRAddCallback(interp, Dispatch, WrapperNRObjProc, info,
 	    INT2PTR(objc), objv);
     return TclNRRunCallbacks(interp, TCL_OK, rootPtr);
 }
@@ -8528,7 +8494,7 @@ Tcl_NRCallObjProc2(
  */
 
 static int
-cmdWrapperNreProc(
+CmdWrapperNreProc(
     void *clientData,
     Tcl_Interp *interp,
     int objc,
@@ -8569,9 +8535,9 @@ Tcl_NRCreateCommand2(
     info->deleteProc = deleteProc;
     info->deleteData = clientData;
     return Tcl_NRCreateCommand(interp, cmdName,
-	    (proc ? cmdWrapperProc : NULL),
-	    (nreProc ? cmdWrapperNreProc : NULL),
-	    info, cmdWrapperDeleteProc);
+	    (proc ? CmdWrapperProc : NULL),
+	    (nreProc ? CmdWrapperNreProc : NULL),
+	    info, CmdWrapperDeleteProc);
 }
 
 Tcl_Command
@@ -8817,6 +8783,7 @@ TclNRTailcallObjCmd(
 
 	listPtr = Tcl_NewListObj(objc, objv);
 	TclListObjSetElement(NULL, listPtr, 0, TclNewNamespaceObj(nsPtr));
+	Tcl_IncrRefCount(listPtr);
 
 	iPtr->varFramePtr->tailcallPtr = listPtr;
     }

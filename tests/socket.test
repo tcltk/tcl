@@ -701,7 +701,7 @@ test socket_$af-2.11 {detecting new data} -constraints [list socket supported_$a
     close $s
     close $sock
 } -result {a:one b: c:two}
-test socket_$af-2.12 {} [list socket stdio supported_$af] {
+test socket_$af-2.12 {Bug 1758a0b603?} [list socket stdio supported_$af] {
     file delete $path(script)
     set f [open $path(script) w]
     puts $f {
@@ -2451,7 +2451,7 @@ test socket-14.12 {[socket -async] background progress triggered by [fconfigure 
 	set s [socket -async localhost [randport]]
 	for {set i 0} {$i < 50} {incr i} {
 	    set x [fconfigure $s -error]
-	    if {$x != ""} break
+	    if {$x ne ""} break
 	    after 200
 	}
 	set x

@@ -49,6 +49,9 @@
  */
 
 #include "tclWinInt.h"
+#if defined (__clang__) && (__clang_major__ > 20)
+#pragma clang diagnostic ignored "-Wc++-keyword"
+#endif
 
 #ifdef _MSC_VER
 #   pragma comment (lib, "ws2_32")
@@ -318,35 +321,6 @@ SendSelectMessage(
 }
 
 /*
- * Address print debug functions
- */
-#if 0
-static inline void
-printaddrinfo(
-    struct addrinfo *ai,
-    char *prefix)
-{
-    char host[NI_MAXHOST], port[NI_MAXSERV];
-
-    getnameinfo(ai->ai_addr, ai->ai_addrlen,
-	    host, sizeof(host), port, sizeof(port),
-	    NI_NUMERICHOST | NI_NUMERICSERV);
-}
-
-static void
-printaddrinfolist(
-    struct addrinfo *addrlist,
-    char *prefix)
-{
-    struct addrinfo *ai;
-
-    for (ai = addrlist; ai != NULL; ai = ai->ai_next) {
-	printaddrinfo(ai, prefix);
-    }
-}
-#endif
-
-/*
  *----------------------------------------------------------------------
  *
  * InitializeHostName --
@@ -546,7 +520,7 @@ TclpFinalizeSockets(void)
 	     * completely cleaned up before we leave this function.
 	     */
 
-	    WaitForSingleObject(tsdPtr->readyEvent, INFINITE);
+	    WaitForSingleObject(tsdPtr->socketThread, INFINITE);
 	    tsdPtr->hwnd = NULL;
 	}
 	CloseHandle(tsdPtr->socketThread);
@@ -2221,6 +2195,7 @@ Tcl_OpenTcpServerEx(
 		(socklen_t)addrPtr->ai_addrlen) == SOCKET_ERROR) {
 	    Tcl_WinConvertError((DWORD) WSAGetLastError());
 	    closesocket(sock);
+	    sock = INVALID_SOCKET; /* Bug [40b1814b93] */
 	    continue;
 	}
 	if (port == 0 && chosenport == 0) {
@@ -2249,6 +2224,7 @@ Tcl_OpenTcpServerEx(
 	if (listen(sock, backlog) == SOCKET_ERROR) {
 	    Tcl_WinConvertError((DWORD) WSAGetLastError());
 	    closesocket(sock);
+	    sock = INVALID_SOCKET; /* Bug [40b1814b93] */
 	    continue;
 	}
 

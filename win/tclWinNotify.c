@@ -19,8 +19,11 @@
 
 #define INTERVAL_TIMER	1	/* Handle of interval timer. */
 
-#define WM_WAKEUP	WM_USER	/* Message that is send by
+enum TclWinNotifyMessages {
+    WM_WAKEUP = WM_USER		/* Message that is send by
 				 * Tcl_AlertNotifier. */
+};
+
 /*
  * The following static structure contains the state information for the
  * Windows implementation of the Tcl notifier. One of these structures is
