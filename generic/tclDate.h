@@ -391,9 +391,9 @@ typedef struct ClockClientData {
 typedef struct ClockScanToken ClockScanToken;
 
 typedef int ClockScanTokenProc(
-	ClockFmtScnCmdArgs *opts,
-	DateInfo *info,
-	const ClockScanToken *tok);
+	ClockFmtScnCmdArgs *restrict opts,
+	DateInfo *restrict info,
+	const ClockScanToken *restrict tok);
 
 typedef enum {
    CTOKT_INT = 1, CTOKT_WIDE, CTOKT_PARSER, CTOKT_SPACE, CTOKT_WORD, CTOKT_CHAR,
@@ -447,10 +447,10 @@ enum ClockFormatTokenMapFlags {
 typedef struct ClockFormatToken ClockFormatToken;
 
 typedef int ClockFormatTokenProc(
-	ClockFmtScnCmdArgs *opts,
-	DateFormat *dateFmt,
-	ClockFormatToken *tok,
-	int *val);
+	ClockFmtScnCmdArgs *restrict opts,
+	DateFormat *restrict dateFmt,
+	ClockFormatToken *restrict tok,
+	int *restrict val);
 
 typedef struct ClockFormatTokenMap {
     unsigned short type;
@@ -549,10 +549,10 @@ MODULE_SCOPE int	TclAtoWIe(Tcl_WideInt *out, const char *p, const char *e, int s
 
 MODULE_SCOPE ClockFmtScnStorage *Tcl_GetClockFrmScnFromObj(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr);
-MODULE_SCOPE int	TclClockScan(DateInfo *info, Tcl_Obj *strObj,
-			    ClockFmtScnCmdArgs *opts);
-MODULE_SCOPE int	TclClockFormat(DateFormat *dateFmt,
-			    ClockFmtScnCmdArgs *opts);
+MODULE_SCOPE int	TclClockScan(DateInfo *restrict info, Tcl_Obj *strObj,
+			    ClockFmtScnCmdArgs *restrict opts);
+MODULE_SCOPE int	TclClockFormat(DateFormat *restrict dateFmt,
+			    ClockFmtScnCmdArgs *restrict opts);
 MODULE_SCOPE void	TclClockFrmScnClearCaches(void);
 MODULE_SCOPE void	TclClockFrmScnFinalize();
 

@@ -229,7 +229,7 @@ static int		SetBlockMode(Tcl_Interp *interp, Channel *chanPtr,
 static void		StopCopy(CopyState *csPtr);
 static void		CopyDecrRefCount(CopyState *csPtr);
 static void		TranslateInputEOL(ChannelState *statePtr,
-			    char *restrict dst, const char *src,
+			    char *dst, const char *src,
 			    int *restrict dstLenPtr, int *restrict srcLenPtr);
 static void		UpdateInterest(Channel *chanPtr);
 static Tcl_Size		Write(Channel *chanPtr, const char *src,
@@ -6657,7 +6657,7 @@ static void
 TranslateInputEOL(
     ChannelState *statePtr,	/* Channel being read, for EOL translation and
 				 * EOF character. */
-    char *restrict dstStart,	/* Output buffer filled with chars by applying
+    char *dstStart,		/* Output buffer filled with chars by applying
 				 * appropriate EOL translation to source
 				 * characters. */
     const char *srcStart,	/* Source characters. */

@@ -166,11 +166,13 @@ static unsigned short	NativeStatMode(DWORD attr, int checkLinks,
 			    int isExec);
 static int		NativeIsExec(const WCHAR *path);
 static int		NativeReadReparse(const WCHAR *LinkDirectory,
-			    REPARSE_DATA_BUFFER *buffer, DWORD desiredAccess);
+			    REPARSE_DATA_BUFFER *restrict buffer,
+			    DWORD desiredAccess);
 static int		NativeWriteReparse(const WCHAR *LinkDirectory,
-			    REPARSE_DATA_BUFFER *buffer);
+			    REPARSE_DATA_BUFFER *restrict buffer);
 static int		NativeMatchType(int isDrive, DWORD attr,
-			    const WCHAR *nativeName, Tcl_GlobTypeData *types);
+			    const WCHAR *nativeName,
+			    const Tcl_GlobTypeData *types);
 static int		WinIsDrive(const char *name, size_t nameLen);
 static size_t		WinIsReserved(const char *path);
 static Tcl_Obj *	WinReadLink(const WCHAR *LinkSource);
@@ -683,7 +685,8 @@ WinReadLinkDirectory(
 static int
 NativeReadReparse(
     const WCHAR *linkDirPath,	/* The junction to read */
-    REPARSE_DATA_BUFFER *buffer,/* Pointer to buffer. Cannot be NULL */
+    REPARSE_DATA_BUFFER *restrict buffer,
+				/* Pointer to buffer. Cannot be NULL */
     DWORD desiredAccess)
 {
     HANDLE hFile;
@@ -740,7 +743,7 @@ NativeReadReparse(
 static int
 NativeWriteReparse(
     const WCHAR *linkDirPath,
-    REPARSE_DATA_BUFFER *buffer)
+    REPARSE_DATA_BUFFER *restrict buffer)
 {
     HANDLE hFile;
     DWORD returnedLength;
@@ -1337,7 +1340,8 @@ NativeMatchType(
     DWORD attr,			/* We already know the attributes for the
 				 * file. */
     const WCHAR *nativeName,	/* Native path to check. */
-    Tcl_GlobTypeData *types)	/* Type description to match against. */
+    const Tcl_GlobTypeData *types)
+				/* Type description to match against. */
 {
     /*
      * 'attr' represents the attributes of the file, but we only want to

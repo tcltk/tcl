@@ -34,8 +34,8 @@ TCL_DECLARE_MUTEX(pipeMutex)	/* Guard access to detList. */
 
 static TclFile		FileForRedirect(Tcl_Interp *interp, const char *spec,
 			    int atOk, const char *arg, const char *nextArg,
-			    int flags, int *skipPtr, int *closePtr,
-			    int *releasePtr);
+			    int flags, int *restrict skipPtr,
+			    int *restrict closePtr, int *restrict releasePtr);
 
 /*
  *----------------------------------------------------------------------
@@ -73,12 +73,12 @@ FileForRedirect(
 				 * NULL. */
     int flags,			/* Flags to use for opening file or to specify
 				 * mode for channel. */
-    int *skipPtr,		/* Filled with 1 if redirection target was in
+    int *restrict skipPtr,	/* Filled with 1 if redirection target was in
 				 * spec, 2 if it was in nextArg. */
-    int *closePtr,		/* Filled with one if the caller should close
+    int *restrict closePtr,	/* Filled with one if the caller should close
 				 * the file when done with it, zero
 				 * otherwise. */
-    int *releasePtr)
+    int *restrict releasePtr)
 {
     int writing = (flags & O_WRONLY);
     Tcl_Channel chan;

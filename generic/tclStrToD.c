@@ -296,7 +296,7 @@ static const Tcl_WideUInt wuipow5[] = {
  */
 
 static int		AccumulateDecimalDigit(unsigned, int,
-			    Tcl_WideUInt *, mp_int *, int);
+			    Tcl_WideUInt *restrict, mp_int *restrict, int);
 static double		MakeHighPrecisionDouble(int signum,
 			    mp_int *significand, int nSigDigs, int exponent);
 static double		MakeLowPrecisionDouble(int signum,
@@ -310,45 +310,47 @@ static double		RefineApproximation(double approx,
 static mp_err		MulPow5(mp_int *, unsigned, mp_int *) MP_WUR;
 static int		NormalizeRightward(Tcl_WideUInt *);
 static int		RequiredPrecision(Tcl_WideUInt);
-static void		DoubleToExpAndSig(double, Tcl_WideUInt *, int *,
-			    int *);
-static void		TakeAbsoluteValue(Double *, int *);
-static char *		FormatInfAndNaN(Double *, int *, char **);
-static char *		FormatZero(int *, char **);
+static void		DoubleToExpAndSig(double, Tcl_WideUInt *restrict,
+			    int *restrict, int *restrict);
+static void		TakeAbsoluteValue(Double *, int *restrict);
+static char *		FormatInfAndNaN(Double *, int *, char **restrict);
+static char *		FormatZero(int *restrict, char **restrict);
 static int		ApproximateLog10(Tcl_WideUInt, int, int);
-static int		BetterLog10(double, int, int *);
-static void		ComputeScale(int, int, int *, int *, int *, int *);
-static void		SetPrecisionLimits(int, int, int *, int *, int *,
-			    int *);
+static int		BetterLog10(double, int, int *restrict);
+static void		ComputeScale(int, int, int *restrict, int *restrict,
+			    int *restrict, int *restrict);
+static void		SetPrecisionLimits(int, int, int *restrict,
+			    int *restrict, int *restrict, int *restrict);
 static char *		BumpUp(char *, char *, int *);
 static int		AdjustRange(double *, int);
 static char *		ShorteningQuickFormat(double, int, int, double,
-			    char *, int *);
+			    char *restrict, int *restrict);
 static char *		StrictQuickFormat(double, int, int, double,
-			    char *, int *);
+			    char *restrict, int *restrict);
 static char *		QuickConversion(double, int, int, int, int, int, int,
-			    int *, char **);
-static void		CastOutPowersOf2(int *, int *, int *);
+			    int *restrict, char **restrict);
+static void		CastOutPowersOf2(int *restrict, int *restrict,
+			    int *restrict);
 static char *		ShorteningInt64Conversion(Double *, Tcl_WideUInt,
 			    int, int, int, int, int, int, int, int, int,
-			    int, int, int *, char **);
+			    int, int, int *restrict, char **restrict);
 static char *		StrictInt64Conversion(Tcl_WideUInt,
 			    int, int, int, int, int, int,
-			    int, int, int *, char **);
+			    int, int, int *restrict, char **restrict);
 static int		ShouldBankerRoundUpPowD(mp_int *, int, int);
-static int		ShouldBankerRoundUpToNextPowD(mp_int *, mp_int *,
-			    int, int, mp_int *);
+static int		ShouldBankerRoundUpToNextPowD(mp_int *restrict,
+			    mp_int *restrict, int, int, mp_int *restrict);
 static char *		ShorteningBignumConversionPowD(Double *dPtr,
 			    Tcl_WideUInt bw, int b2, int b5,
 			    int m2plus, int m2minus, int m5,
 			    int sd, int k, int len,
-			    int ilim, int ilim1, int *decpt,
-			    char **endPtr);
+			    int ilim, int ilim1, int *restrict decpt,
+			    char **restrict endPtr);
 static char *		StrictBignumConversionPowD(
 			    Tcl_WideUInt bw, int b2, int b5,
 			    int sd, int k, int len,
-			    int ilim, int ilim1, int *decpt,
-			    char **endPtr);
+			    int ilim, int ilim1, int *restrict decpt,
+			    char **restrict endPtr);
 static int		ShouldBankerRoundUp(mp_int *, mp_int *, int);
 static int		ShouldBankerRoundUpToNext(mp_int *, mp_int *,
 			    mp_int *, int);
@@ -356,16 +358,17 @@ static char *		ShorteningBignumConversion(Double *dPtr,
 			    Tcl_WideUInt bw, int b2,
 			    int m2plus, int m2minus,
 			    int s2, int s5, int k, int len,
-			    int ilim, int ilim1, int *decpt,
-			    char **endPtr);
+			    int ilim, int ilim1, int *restrict decpt,
+			    char **restrict endPtr);
 static char *		StrictBignumConversion(
 			    Tcl_WideUInt bw, int b2,
 			    int s2, int s5, int k, int len,
-			    int ilim, int ilim1, int *decpt,
-			    char **endPtr);
-static double		BignumToBiasedFrExp(const mp_int *big, int *machexp);
+			    int ilim, int ilim1, int *restrict decpt,
+			    char **restrict endPtr);
+static double		BignumToBiasedFrExp(const mp_int *big,
+			    int *restrict machexp);
 static double		Pow10TimesFrExp(int exponent, double fraction,
-			    int *machexp);
+			    int *restrict machexp);
 static double		SafeLdExp(double fraction, int exponent);
 #ifdef IEEE_FLOATING_POINT
 static Tcl_WideUInt	Nokia770Twiddle(Tcl_WideUInt w);
@@ -1578,9 +1581,11 @@ AccumulateDecimalDigit(
     unsigned digit,		/* Digit being scanned. */
     int numZeros,		/* Count of zero digits preceding the digit
 				 * being scanned. */
-    Tcl_WideUInt *wideRepPtr,	/* Representation of the partial number as a
+    Tcl_WideUInt *restrict wideRepPtr,
+				/* Representation of the partial number as a
 				 * wide integer. */
-    mp_int *bignumRepPtr,	/* Representation of the partial number as a
+    mp_int *restrict bignumRepPtr,
+				/* Representation of the partial number as a
 				 * bignum. */
     int bignumFlag)		/* Flag == 1 if the number overflowed previous
 				 * to this digit. */
@@ -2381,10 +2386,11 @@ RequiredPrecision(
 static inline void
 DoubleToExpAndSig(
     double dv,			/* Number to convert. */
-    Tcl_WideUInt *significand,	/* OUTPUT: Significand of the number. */
-    int *expon,			/* OUTPUT: Exponent to multiply the number
+    Tcl_WideUInt *restrict significand,
+				/* OUTPUT: Significand of the number. */
+    int *restrict expon,	/* OUTPUT: Exponent to multiply the number
 				 * by. */
-    int *bits)			/* OUTPUT: Number of significant bits. */
+    int *restrict bits)		/* OUTPUT: Number of significant bits. */
 {
     Double d;			/* Number being converted. */
     Tcl_WideUInt z;		/* Significand under construction. */
@@ -2429,7 +2435,7 @@ DoubleToExpAndSig(
 static inline void
 TakeAbsoluteValue(
     Double *d,			/* Number to replace with absolute value. */
-    int *sign)			/* Place to put the signum. */
+    int *restrict sign)		/* Place to put the signum. */
 {
     if (d->w.word0 & SIGN_BIT) {
 	*sign = 1;
@@ -2461,7 +2467,7 @@ static inline char *
 FormatInfAndNaN(
     Double *d,			/* Exceptional number to format. */
     int *decpt,			/* Decimal point to set to a bogus value. */
-    char **endPtr)		/* Pointer to the end of the formatted data */
+    char **restrict endPtr)	/* Pointer to the end of the formatted data */
 {
     char *retval;
 
@@ -2501,8 +2507,8 @@ FormatInfAndNaN(
 
 static inline char *
 FormatZero(
-    int *decpt,			/* Location of the decimal point. */
-    char **endPtr)		/* Pointer to the end of the formatted data */
+    int *restrict decpt,	/* Location of the decimal point. */
+    char **restrict endPtr)	/* Pointer to the end of the formatted data */
 {
     char *retval = (char *)Tcl_Alloc(2);
 
@@ -2582,7 +2588,7 @@ BetterLog10(
     double d,			/* Original number to format. */
     int k,			/* Characteristic(Log base 10) of the
 				 * number. */
-    int *k_check)		/* Flag == 1 if k is inexact. */
+    int *restrict k_check)	/* Flag == 1 if k is inexact. */
 {
     /*
      * Performance hack. If k is in the range 0..TEN_PMAX, then we can use a
@@ -2624,10 +2630,10 @@ static inline void
 ComputeScale(
     int be,			/* Exponent part of number: d = bw * 2**be. */
     int k,			/* Characteristic of log10(number). */
-    int *b2,			/* OUTPUT: Power of 2 in the numerator. */
-    int *b5,			/* OUTPUT: Power of 5 in the numerator. */
-    int *s2,			/* OUTPUT: Power of 2 in the denominator. */
-    int *s5)			/* OUTPUT: Power of 5 in the denominator. */
+    int *restrict b2,		/* OUTPUT: Power of 2 in the numerator. */
+    int *restrict b5,		/* OUTPUT: Power of 5 in the numerator. */
+    int *restrict s2,		/* OUTPUT: Power of 2 in the denominator. */
+    int *restrict s5)		/* OUTPUT: Power of 5 in the denominator. */
 {
     /*
      * Scale numerator and denominator powers of 2 so that the input binary
@@ -2688,12 +2694,12 @@ SetPrecisionLimits(
     int flags,			/* Type of conversion: TCL_DD_SHORTEST,
 				 * TCL_DD_E_FMT, TCL_DD_F_FMT. */
     int k,			/* Floor(log10(number to convert)) */
-    int *ndigitsPtr,		/* IN/OUT: Number of digits requested (will be
+    int *restrict ndigitsPtr,	/* IN/OUT: Number of digits requested (will be
 				 *         adjusted if needed). */
-    int *iPtr,			/* OUT: Maximum number of digits to return. */
-    int *iLimPtr,		/* OUT: Number of digits of significance if
+    int *restrict iPtr,		/* OUT: Maximum number of digits to return. */
+    int *restrict iLimPtr,	/* OUT: Number of digits of significance if
 				 *      the bignum method is used.*/
-    int *iLim1Ptr)		/* OUT: Number of digits of significance if
+    int *restrict iLim1Ptr)	/* OUT: Number of digits of significance if
 				 *      the quick method is used. */
 {
     switch (flags & TCL_DD_CONVERSION_TYPE_MASK) {
@@ -2850,8 +2856,8 @@ ShorteningQuickFormat(
     int k,			/* floor(log10(d)) */
     int ilim,			/* Number of significant digits to return. */
     double eps,			/* Estimated roundoff error. */
-    char *retval,		/* Buffer to receive the digit string. */
-    int *kPtr)			/* Pointer to stash the position of the
+    char *restrict retval,	/* Buffer to receive the digit string. */
+    int *restrict kPtr)		/* Pointer to stash the position of the
 				 * decimal point. */
 {
     char *s = retval;		/* Cursor in the return value. */
@@ -2925,8 +2931,8 @@ StrictQuickFormat(
     int k,			/* floor(log10(d)) */
     int ilim,			/* Number of significant digits to return. */
     double eps,			/* Estimated roundoff error. */
-    char *retval,		/* Start of the digit string. */
-    int *kPtr)			/* Pointer to stash the position of the
+    char *restrict retval,	/* Start of the digit string. */
+    int *restrict kPtr)		/* Pointer to stash the position of the
 				 * decimal point. */
 {
     char *s = retval;		/* Cursor in the return value. */
@@ -3004,8 +3010,8 @@ QuickConversion(
     int ilim,			/* Number of digits to store. */
     int ilim1,			/* Number of digits to store if we misguessed
 				 * k. */
-    int *decpt,			/* OUTPUT: Location of the decimal point. */
-    char **endPtr)		/* OUTPUT: Pointer to the terminal null
+    int *restrict decpt,	/* OUTPUT: Location of the decimal point. */
+    char **restrict endPtr)	/* OUTPUT: Pointer to the terminal null
 				 * byte. */
 {
     int ieps;			/* Number of 1-ulp roundoff errors that have
@@ -3100,9 +3106,9 @@ QuickConversion(
 
 static inline void
 CastOutPowersOf2(
-    int *b2,			/* Power of 2 to multiply the significand. */
-    int *m2,			/* Power of 2 to multiply 1/2 ulp. */
-    int *s2)			/* Power of 2 to multiply the common
+    int *restrict b2,		/* Power of 2 to multiply the significand. */
+    int *restrict m2,		/* Power of 2 to multiply 1/2 ulp. */
+    int *restrict s2)		/* Power of 2 to multiply the common
 				 * denominator. */
 {
     int i;
@@ -3157,8 +3163,8 @@ ShorteningInt64Conversion(
     int len,			/* Number of digits to allocate. */
     int ilim,			/* Number of digits to convert if b >= s */
     int ilim1,			/* Number of digits to convert if b < s */
-    int *decpt,			/* OUTPUT: Position of the decimal point. */
-    char **endPtr)		/* OUTPUT: Position of the terminal '\0' at
+    int *restrict decpt,	/* OUTPUT: Position of the decimal point. */
+    char **restrict endPtr)	/* OUTPUT: Position of the terminal '\0' at
 				 *	   the end of the returned string. */
 {
     char *retval = (char *)Tcl_Alloc(len + 1);
@@ -3322,8 +3328,8 @@ StrictInt64Conversion(
     int len,			/* Number of digits to allocate. */
     int ilim,			/* Number of digits to convert if b >= s */
     int ilim1,			/* Number of digits to convert if b < s */
-    int *decpt,			/* OUTPUT: Position of the decimal point. */
-    char **endPtr)		/* OUTPUT: Position of the terminal '\0' at
+    int *restrict decpt,	/* OUTPUT: Position of the decimal point. */
+    char **restrict endPtr)	/* OUTPUT: Position of the terminal '\0' at
 				 *	   the end of the returned string. */
 {
     char *retval = (char *)Tcl_Alloc(len + 1);
@@ -3454,11 +3460,11 @@ ShouldBankerRoundUpPowD(
 
 static inline int
 ShouldBankerRoundUpToNextPowD(
-    mp_int *b,			/* Numerator of the fraction. */
-    mp_int *m,			/* Numerator of the rounding tolerance. */
+    mp_int *restrict b,		/* Numerator of the fraction. */
+    mp_int *restrict m,		/* Numerator of the rounding tolerance. */
     int sd,			/* Common denominator is 2**(sd*MP_DIGIT_BIT). */
     int isodd,			/* 1 if the integer significand is odd. */
-    mp_int *temp)		/* Work area for the calculation. */
+    mp_int *restrict temp)	/* Work area for the calculation. */
 {
     int i;
 
@@ -3523,8 +3529,8 @@ ShorteningBignumConversionPowD(
     int len,			/* Number of digits to allocate. */
     int ilim,			/* Number of digits to convert if b >= s */
     int ilim1,			/* Number of digits to convert if b < s */
-    int *decpt,			/* OUTPUT: Position of the decimal point. */
-    char **endPtr)		/* OUTPUT: Position of the terminal '\0' at
+    int *restrict decpt,	/* OUTPUT: Position of the decimal point. */
+    char **restrict endPtr)	/* OUTPUT: Position of the terminal '\0' at
 				 *	   the end of the returned string. */
 {
     char *retval = (char *)Tcl_Alloc(len + 1);
@@ -3733,8 +3739,8 @@ StrictBignumConversionPowD(
     int len,			/* Number of digits to allocate. */
     int ilim,			/* Number of digits to convert if b >= s */
     int ilim1,			/* Number of digits to convert if b < s */
-    int *decpt,			/* OUTPUT: Position of the decimal point. */
-    char **endPtr)		/* OUTPUT: Position of the terminal '\0' at
+    int *restrict decpt,	/* OUTPUT: Position of the decimal point. */
+    char **restrict endPtr)	/* OUTPUT: Position of the terminal '\0' at
 				 *	   the end of the returned string. */
 {
     char *retval = (char *)Tcl_Alloc(len + 1);
@@ -3930,8 +3936,8 @@ ShorteningBignumConversion(
     int len,			/* Size of the digit buffer to allocate. */
     int ilim,			/* Number of digits to convert if b >= s */
     int ilim1,			/* Number of digits to convert if b < s */
-    int *decpt,			/* OUTPUT: Position of the decimal point. */
-    char **endPtr)		/* OUTPUT: Pointer to the end of the number */
+    int *restrict decpt,	/* OUTPUT: Position of the decimal point. */
+    char **restrict endPtr)	/* OUTPUT: Pointer to the end of the number */
 {
     char *retval = (char *)Tcl_Alloc(len+1);
 				/* Buffer of digits to return. */
@@ -4164,8 +4170,8 @@ StrictBignumConversion(
     int len,			/* Size of the digit buffer to allocate. */
     int ilim,			/* Number of digits to convert if b >= s */
     int ilim1,			/* Number of digits to convert if b < s */
-    int *decpt,			/* OUTPUT: Position of the decimal point. */
-    char **endPtr)		/* OUTPUT: Pointer to the end of the number */
+    int *restrict decpt,	/* OUTPUT: Position of the decimal point. */
+    char **restrict endPtr)	/* OUTPUT: Pointer to the end of the number */
 {
     char *retval = (char *)Tcl_Alloc(len+1);
 				/* Buffer of digits to return. */
@@ -5128,7 +5134,7 @@ TclFloor(
 static double
 BignumToBiasedFrExp(
     const mp_int *a,		/* Integer to convert. */
-    int *machexp)		/* Power of two. */
+    int *restrict machexp)	/* Power of two. */
 {
     mp_int b;
     int bits;
@@ -5199,7 +5205,7 @@ static double
 Pow10TimesFrExp(
     int exponent,		/* Power of 10 to multiply by. */
     double fraction,		/* Significand of multiplicand. */
-    int *machexp)		/* On input, exponent of multiplicand. On
+    int *restrict machexp)	/* On input, exponent of multiplicand. On
 				 * output, exponent of result. */
 {
     int i, j;

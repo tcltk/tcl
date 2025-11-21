@@ -31,15 +31,15 @@ enum TclTraverseWinTreeTypes {
  */
 
 static int		GetWinFileAttributes(Tcl_Interp *interp, int objIndex,
-			    Tcl_Obj *fileName, Tcl_Obj **attributePtrPtr);
+			    Tcl_Obj *fileName, Tcl_Obj **restrict attributePtrPtr);
 static int		GetWinFileLongName(Tcl_Interp *interp, int objIndex,
-			    Tcl_Obj *fileName, Tcl_Obj **attributePtrPtr);
+			    Tcl_Obj *fileName, Tcl_Obj **restrict attributePtrPtr);
 static int		GetWinFileShortName(Tcl_Interp *interp, int objIndex,
-			    Tcl_Obj *fileName, Tcl_Obj **attributePtrPtr);
+			    Tcl_Obj *fileName, Tcl_Obj **restrict attributePtrPtr);
 static int		SetWinFileAttributes(Tcl_Interp *interp, int objIndex,
-			    Tcl_Obj *fileName, Tcl_Obj *attributePtr);
+			    Tcl_Obj *fileName, Tcl_Obj *restrict attributePtr);
 static int		CannotSetAttribute(Tcl_Interp *interp, int objIndex,
-			    Tcl_Obj *fileName, Tcl_Obj *attributePtr);
+			    Tcl_Obj *fileName, Tcl_Obj *restrict attributePtr);
 
 /*
  * Constants and variables necessary for file attributes subcommand.
@@ -96,23 +96,23 @@ typedef int (TraversalProc)(const WCHAR *srcPtr, const WCHAR *dstPtr,
 static void		StatError(Tcl_Interp *interp, Tcl_Obj *fileName);
 static int		ConvertFileNameFormat(Tcl_Interp *interp,
 			    int objIndex, Tcl_Obj *fileName, int longShort,
-			    Tcl_Obj **attributePtrPtr);
+			    Tcl_Obj **restrict attributePtrPtr);
 static int		DoCopyFile(const WCHAR *srcPtr, const WCHAR *dstPtr);
 static int		DoCreateDirectory(const WCHAR *pathPtr);
 static int		DoRemoveJustDirectory(const WCHAR *nativeSrc,
-			    int ignoreError, Tcl_DString *errorPtr);
+			    int ignoreError, Tcl_DString *restrict errorPtr);
 static int		DoRemoveDirectory(Tcl_DString *pathPtr, int recursive,
-			    Tcl_DString *errorPtr);
+			    Tcl_DString *restrict errorPtr);
 static int		DoRenameFile(const WCHAR *nativeSrc,
 			    const WCHAR *dstPtr);
 static int		TraversalCopy(const WCHAR *srcPtr, const WCHAR *dstPtr,
-			    int type, Tcl_DString *errorPtr);
+			    int type, Tcl_DString *restrict errorPtr);
 static int		TraversalDelete(const WCHAR *srcPtr,
 			    const WCHAR *dstPtr, int type,
-			    Tcl_DString *errorPtr);
+			    Tcl_DString *restrict errorPtr);
 static int		TraverseWinTree(TraversalProc *traverseProc,
-			    Tcl_DString *sourcePtr, Tcl_DString *dstPtr,
-			    Tcl_DString *errorPtr);
+			    Tcl_DString *sourcePtr, Tcl_DString *restrict dstPtr,
+			    Tcl_DString *restrict errorPtr);
 
 /*
  *---------------------------------------------------------------------------
@@ -1056,7 +1056,8 @@ DoRemoveJustDirectory(
 				 * (native). */
     int ignoreError,		/* If non-zero, don't initialize the errorPtr
 				 * under some circumstances on return. */
-    Tcl_DString *errorPtr)	/* If non-NULL, uninitialized or free DString
+    Tcl_DString *restrict errorPtr)
+				/* If non-NULL, uninitialized or free DString
 				 * filled with UTF-8 name of file causing
 				 * error. */
 {
@@ -1171,7 +1172,8 @@ DoRemoveDirectory(
     int recursive,		/* If non-zero, removes directories that are
 				 * nonempty. Otherwise, will only remove empty
 				 * directories. */
-    Tcl_DString *errorPtr)	/* If non-NULL, uninitialized or free DString
+    Tcl_DString *restrict errorPtr)
+				/* If non-NULL, uninitialized or free DString
 				 * filled with UTF-8 name of file causing
 				 * error. */
 {
@@ -1218,10 +1220,12 @@ TraverseWinTree(
 				 * directory in source hierarchy. */
     Tcl_DString *sourcePtr,	/* Pathname of source directory to be
 				 * traversed (native). */
-    Tcl_DString *targetPtr,	/* Pathname of directory to traverse in
+    Tcl_DString *restrict targetPtr,
+				/* Pathname of directory to traverse in
 				 * parallel with source directory (native),
 				 * may be NULL. */
-    Tcl_DString *errorPtr)	/* If non-NULL, uninitialized or free DString
+    Tcl_DString *restrict errorPtr)
+				/* If non-NULL, uninitialized or free DString
 				 * filled with UTF-8 name of file causing
 				 * error. */
 {
@@ -1401,7 +1405,8 @@ TraversalCopy(
     const WCHAR *nativeSrc,	/* Source pathname to copy. */
     const WCHAR *nativeDst,	/* Destination pathname of copy. */
     int type,			/* Reason for call - see TraverseWinTree() */
-    Tcl_DString *errorPtr)	/* If non-NULL, initialized DString filled
+    Tcl_DString *restrict errorPtr)
+				/* If non-NULL, initialized DString filled
 				 * with UTF-8 name of file causing error. */
 {
     switch (type) {
@@ -1467,7 +1472,8 @@ TraversalDelete(
     const WCHAR *nativeSrc,	/* Source pathname to delete. */
     TCL_UNUSED(const WCHAR *) /*dstPtr*/,
     int type,			/* Reason for call - see TraverseWinTree() */
-    Tcl_DString *errorPtr)	/* If non-NULL, initialized DString filled
+    Tcl_DString *restrict errorPtr)
+				/* If non-NULL, initialized DString filled
 				 * with UTF-8 name of file causing error. */
 {
     switch (type) {
@@ -1549,7 +1555,8 @@ GetWinFileAttributes(
     Tcl_Interp *interp,		/* The interp we are using for errors. */
     int objIndex,		/* The index of the attribute. */
     Tcl_Obj *fileName,		/* The name of the file. */
-    Tcl_Obj **attributePtrPtr)	/* A pointer to return the object with. */
+    Tcl_Obj **restrict attributePtrPtr)
+				/* A pointer to return the object with. */
 {
     DWORD result;
     const WCHAR *nativeName;
@@ -1631,7 +1638,8 @@ ConvertFileNameFormat(
     TCL_UNUSED(int) /*objIndex*/,
     Tcl_Obj *fileName,		/* The name of the file. */
     int longShort,		/* 0 to short name, 1 to long name. */
-    Tcl_Obj **attributePtrPtr)	/* A pointer to return the object with. */
+    Tcl_Obj **restrict attributePtrPtr)
+				/* A pointer to return the object with. */
 {
     Tcl_Size pathc, i, length;
     Tcl_Obj *splitPath;
@@ -1806,7 +1814,8 @@ GetWinFileLongName(
     Tcl_Interp *interp,		/* The interp we are using for errors. */
     int objIndex,		/* The index of the attribute. */
     Tcl_Obj *fileName,		/* The name of the file. */
-    Tcl_Obj **attributePtrPtr)	/* A pointer to return the object with. */
+    Tcl_Obj **restrict attributePtrPtr)
+				/* A pointer to return the object with. */
 {
     return ConvertFileNameFormat(interp, objIndex, fileName, 1,
 	    attributePtrPtr);
@@ -1835,7 +1844,8 @@ GetWinFileShortName(
     Tcl_Interp *interp,		/* The interp we are using for errors. */
     int objIndex,		/* The index of the attribute. */
     Tcl_Obj *fileName,		/* The name of the file. */
-    Tcl_Obj **attributePtrPtr)	/* A pointer to return the object with. */
+    Tcl_Obj **restrict attributePtrPtr)
+				/* A pointer to return the object with. */
 {
     return ConvertFileNameFormat(interp, objIndex, fileName, 0,
 	    attributePtrPtr);

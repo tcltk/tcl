@@ -38,7 +38,7 @@ static const Tcl_HashKeyType tclVarHashKeyType = {
 };
 
 static inline Var *	VarHashCreateVar(TclVarHashTable *tablePtr,
-			    Tcl_Obj *key, int *newPtr);
+			    Tcl_Obj *key, int *restrict newPtr);
 static inline Var *	VarHashFirstVar(TclVarHashTable *tablePtr,
 			    Tcl_HashSearch *searchPtr);
 static inline Var *	VarHashNextVar(Tcl_HashSearch *searchPtr);
@@ -58,7 +58,7 @@ static inline Var *
 VarHashCreateVar(
     TclVarHashTable *tablePtr,
     Tcl_Obj *key,
-    int *newPtr)
+    int *restrict newPtr)
 {
     Tcl_HashEntry *hPtr = Tcl_AttemptCreateHashEntry(&tablePtr->table, key, newPtr);
 
@@ -216,7 +216,7 @@ static void		DeleteSearches(Interp *iPtr, Var *arrayVarPtr);
 static void		DeleteArray(Interp *iPtr, Tcl_Obj *arrayNamePtr,
 			    Var *varPtr, int flags, Tcl_Size index);
 static int		LocateArray(Tcl_Interp *interp, Tcl_Obj *name,
-			    Var **varPtrPtr, int *isArrayPtr);
+			    Var **restrict varPtrPtr, int *restrict isArrayPtr);
 static int		NotArrayError(Tcl_Interp *interp, Tcl_Obj *name);
 static Tcl_Var		ObjFindNamespaceVar(Tcl_Interp *interp,
 			    Tcl_Obj *namePtr, Tcl_Namespace *contextNsPtr,
@@ -246,7 +246,8 @@ static void		SetArrayDefault(Var *arrayPtr, Tcl_Obj *defaultObj);
 
 MODULE_SCOPE Var *	TclLookupSimpleVar(Tcl_Interp *interp,
 			    Tcl_Obj *varNamePtr, int flags, int create,
-			    const char **errMsgPtr, Tcl_Size *indexPtr);
+			    const char **restrict errMsgPtr,
+			    Tcl_Size *restrict indexPtr);
 
 static Tcl_DupInternalRepProc	DupLocalVarName;
 static Tcl_FreeInternalRepProc	FreeLocalVarName;
@@ -364,8 +365,8 @@ static int
 LocateArray(
     Tcl_Interp *interp,
     Tcl_Obj *name,
-    Var **varPtrPtr,
-    int *isArrayPtr)
+    Var **restrict varPtrPtr,
+    int *restrict isArrayPtr)
 {
     Var *arrayPtr, *varPtr = TclObjLookupVarEx(interp, name, NULL, /*flags*/ 0,
 	    /*msg*/ 0, /*createPart1*/ 0, /*createPart2*/ 0, &arrayPtr);
@@ -877,8 +878,8 @@ TclLookupSimpleVar(
     int create,			/* If 1, create hash table entry for varname,
 				 * if it doesn't already exist. If 0, return
 				 * error if it doesn't exist. */
-    const char **errMsgPtr,
-    Tcl_Size *indexPtr)
+    const char **restrict errMsgPtr,
+    Tcl_Size *restrict indexPtr)
 {
     Interp *iPtr = (Interp *) interp;
     CallFrame *varFramePtr = iPtr->varFramePtr;

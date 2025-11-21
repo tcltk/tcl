@@ -99,46 +99,47 @@ enum NameTableValues {
  */
 
 static void		AddClassFiltersToCallContext(Object *const oPtr,
-			    Class *clsPtr, ChainBuilder *const cbPtr,
-			    Tcl_HashTable *const doneFilters, int flags);
+			    Class *clsPtr, ChainBuilder *restrict const cbPtr,
+			    Tcl_HashTable *restrict const doneFilters,
+			    int flags);
 static void		AddClassMethodNames(Class *clsPtr, int flags,
-			    Tcl_HashTable *const namesPtr,
-			    Tcl_HashTable *const examinedClassesPtr);
+			    Tcl_HashTable *restrict const namesPtr,
+			    Tcl_HashTable *restrict const examinedClassesPtr);
 static inline void	AddDefinitionNamespaceToChain(Class *const definerCls,
 			    Tcl_Obj *const namespaceName,
-			    DefineChain *const definePtr, int flags);
+			    DefineChain *restrict const definePtr, int flags);
 static inline void	AddMethodToCallChain(Method *const mPtr,
-			    ChainBuilder *const cbPtr,
-			    Tcl_HashTable *const doneFilters,
+			    ChainBuilder *restrict const cbPtr,
+			    Tcl_HashTable *restrict const doneFilters,
 			    Class *const filterDecl, int flags);
 static inline int	AddInstancePrivateToCallContext(Object *const oPtr,
 			    Tcl_Obj *const methodNameObj,
-			    ChainBuilder *const cbPtr, int flags);
+			    ChainBuilder *restrict const cbPtr, int flags);
 static inline void	AddStandardMethodName(int flags, Tcl_Obj *namePtr,
 			    Method *mPtr, Tcl_HashTable *namesPtr);
 static inline void	AddPrivateMethodNames(Tcl_HashTable *methodsTablePtr,
-			    Tcl_HashTable *namesPtr);
+			    Tcl_HashTable *restrict namesPtr);
 static inline int	AddSimpleChainToCallContext(Object *const oPtr,
 			    Class *const contextCls,
 			    Tcl_Obj *const methodNameObj,
-			    ChainBuilder *const cbPtr,
-			    Tcl_HashTable *const doneFilters, int flags,
-			    Class *const filterDecl);
+			    ChainBuilder *restrict const cbPtr,
+			    Tcl_HashTable *restrict const doneFilters,
+			    int flags, Class *const filterDecl);
 static int		AddPrivatesFromClassChainToCallContext(Class *classPtr,
 			    Class *const contextCls,
 			    Tcl_Obj *const methodNameObj,
-			    ChainBuilder *const cbPtr,
-			    Tcl_HashTable *const doneFilters, int flags,
-			    Class *const filterDecl);
+			    ChainBuilder *restrict const cbPtr,
+			    Tcl_HashTable *restrict const doneFilters,
+			    int flags, Class *const filterDecl);
 static int		AddSimpleClassChainToCallContext(Class *classPtr,
 			    Tcl_Obj *const methodNameObj,
-			    ChainBuilder *const cbPtr,
-			    Tcl_HashTable *const doneFilters, int flags,
-			    Class *const filterDecl);
+			    ChainBuilder *restrict const cbPtr,
+			    Tcl_HashTable *restrict const doneFilters,
+			    int flags, Class *const filterDecl);
 static void		AddSimpleClassDefineNamespaces(Class *classPtr,
-			    DefineChain *const definePtr, int flags);
+			    DefineChain *restrict const definePtr, int flags);
 static inline void	AddSimpleDefineNamespaces(Object *const oPtr,
-			    DefineChain *const definePtr, int flags);
+			    DefineChain *restrict const definePtr, int flags);
 static int		CmpStr(const void *ptr1, const void *ptr2);
 static void		DupMethodNameRep(Tcl_Obj *srcPtr, Tcl_Obj *dstPtr);
 static Tcl_NRPostProc	FinalizeMethodRefs;
@@ -148,7 +149,7 @@ static inline int	IsStillValid(CallChain *callPtr, Object *oPtr,
 static Tcl_NRPostProc	ResetFilterFlags;
 static Tcl_NRPostProc	SetFilterFlags;
 static size_t		SortMethodNames(Tcl_HashTable *namesPtr, int flags,
-			    const char ***stringsPtr);
+			    const char ***restrict stringsPtr);
 static inline void	StashCallChain(Tcl_Obj *objPtr, CallChain *callPtr);
 
 /*
@@ -619,7 +620,8 @@ SortMethodNames(
     int flags,			/* Whether we are looking for unexported
 				 * methods. Full private methods are handled
 				 * on insertion to the table. */
-    const char ***stringsPtr)	/* Where to store the sorted list of strings
+    const char ***restrict stringsPtr)
+				/* Where to store the sorted list of strings
 				 * that we produce. Tcl_Alloced() */
 {
     const char **strings;
@@ -704,14 +706,14 @@ AddClassMethodNames(
     Class *clsPtr,		/* Class to get method names from. */
     int flags,			/* Whether we are interested in just the
 				 * public method names. */
-    Tcl_HashTable *const namesPtr,
+    Tcl_HashTable *restrict const namesPtr,
 				/* Reference to the hash table to put the
 				 * information in. The hash table maps the
 				 * Tcl_Obj * method name to an integral value
 				 * describing whether the method is wanted.
 				 * This ensures that public/private override
 				 * semantics are handled correctly. */
-    Tcl_HashTable *const examinedClassesPtr)
+    Tcl_HashTable *restrict const examinedClassesPtr)
 				/* Hash table that tracks what classes have
 				 * already been looked at. The keys are the
 				 * pointers to the classes, and the values are
@@ -790,7 +792,7 @@ AddClassMethodNames(
 static inline void
 AddPrivateMethodNames(
     Tcl_HashTable *methodsTablePtr,
-    Tcl_HashTable *namesPtr)
+    Tcl_HashTable *restrict namesPtr)
 {
     FOREACH_HASH_DECLS;
     Method *mPtr;
@@ -850,7 +852,8 @@ AddInstancePrivateToCallContext(
     Object *const oPtr,		/* Object to add call chain entries for. */
     Tcl_Obj *const methodName,	/* Name of method to add the call chain
 				 * entries for. */
-    ChainBuilder *const cbPtr,	/* Where to add the call chain entries. */
+    ChainBuilder *restrict const cbPtr,
+				/* Where to add the call chain entries. */
     int flags)			/* What sort of call chain are we building. */
 {
     Tcl_HashEntry *hPtr;
@@ -892,8 +895,9 @@ AddSimpleChainToCallContext(
     Tcl_Obj *const methodNameObj,
 				/* Name of method to add the call chain
 				 * entries for. */
-    ChainBuilder *const cbPtr,	/* Where to add the call chain entries. */
-    Tcl_HashTable *const doneFilters,
+    ChainBuilder *restrict const cbPtr,
+				/* Where to add the call chain entries. */
+    Tcl_HashTable *restrict const doneFilters,
 				/* Where to record what call chain entries
 				 * have been processed. */
     int flags,			/* What sort of call chain are we building. */
@@ -978,9 +982,10 @@ static inline void
 AddMethodToCallChain(
     Method *const mPtr,		/* Actual method implementation to add to call
 				 * chain (or NULL, a no-op). */
-    ChainBuilder *const cbPtr,	/* The call chain to add the method
+    ChainBuilder *restrict const cbPtr,
+				/* The call chain to add the method
 				 * implementation to. */
-    Tcl_HashTable *const doneFilters,
+    Tcl_HashTable *restrict const doneFilters,
 				/* Where to record what filters have been
 				 * processed. If NULL, not processing filters.
 				 * Note that this function does not update
@@ -1604,8 +1609,9 @@ static void
 AddClassFiltersToCallContext(
     Object *const oPtr,		/* Object that the filters operate on. */
     Class *clsPtr,		/* Class to get the filters from. */
-    ChainBuilder *const cbPtr,	/* Context to fill with call chain entries. */
-    Tcl_HashTable *const doneFilters,
+    ChainBuilder *restrict const cbPtr,
+				/* Context to fill with call chain entries. */
+    Tcl_HashTable *restrict const doneFilters,
 				/* Where to record what filters have been
 				 * processed. Keys are objects, values are
 				 * ignored. */
@@ -1692,8 +1698,9 @@ AddPrivatesFromClassChainToCallContext(
 				 * also be added. */
     Tcl_Obj *const methodName,	/* Name of method to add the call chain
 				 * entries for. */
-    ChainBuilder *const cbPtr,	/* Where to add the call chain entries. */
-    Tcl_HashTable *const doneFilters,
+    ChainBuilder *restrict const cbPtr,
+				/* Where to add the call chain entries. */
+    Tcl_HashTable *restrict const doneFilters,
 				/* Where to record what call chain entries
 				 * have been processed. */
     int flags,			/* What sort of call chain are we building. */
@@ -1776,8 +1783,9 @@ AddSimpleClassChainToCallContext(
     Tcl_Obj *const methodNameObj,
 				/* Name of method to add the call chain
 				 * entries for. */
-    ChainBuilder *const cbPtr,	/* Where to add the call chain entries. */
-    Tcl_HashTable *const doneFilters,
+    ChainBuilder *restrict const cbPtr,
+				/* Where to add the call chain entries. */
+    Tcl_HashTable *restrict const doneFilters,
 				/* Where to record what call chain entries
 				 * have been processed. */
     int flags,			/* What sort of call chain are we building. */
@@ -2022,7 +2030,7 @@ TclOOGetDefineContextNamespace(
 static inline void
 AddSimpleDefineNamespaces(
     Object *const oPtr,		/* Object to add define chain entries for. */
-    DefineChain *const definePtr,
+    DefineChain *restrict const definePtr,
 				/* Where to add the define chain entries. */
     int flags)			/* What sort of define chain are we
 				 * building. */
@@ -2052,7 +2060,7 @@ AddSimpleDefineNamespaces(
 static void
 AddSimpleClassDefineNamespaces(
     Class *classPtr,		/* Class to add the define chain entries for. */
-    DefineChain *const definePtr,
+    DefineChain *restrict const definePtr,
 				/* Where to add the define chain entries. */
     int flags)			/* What sort of define chain are we
 				 * building. */
@@ -2110,7 +2118,7 @@ AddDefinitionNamespaceToChain(
     Tcl_Obj *const namespaceName,
 				/* The name for this entry (or NULL, a
 				 * no-op). */
-    DefineChain *const definePtr,
+    DefineChain *restrict const definePtr,
 				/* The define chain to add the method
 				 * implementation to. */
     int flags)			/* Used to check if we're mixin-consistent

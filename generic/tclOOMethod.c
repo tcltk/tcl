@@ -50,7 +50,7 @@ typedef struct OOResVarInfo {
 static Tcl_Obj **	InitEnsembleRewrite(Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv, int toRewrite,
 			    int rewriteLength, Tcl_Obj *const *rewriteObjs,
-			    int *lengthPtr);
+			    int *restrict lengthPtr);
 static int		InvokeProcedureMethod(void *clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
@@ -59,7 +59,7 @@ static Tcl_NRPostProc	FinalizePMCall;
 static int		PushMethodCallFrame(Tcl_Interp *interp,
 			    CallContext *contextPtr, ProcedureMethod *pmPtr,
 			    int objc, Tcl_Obj *const *objv,
-			    PMFrameData *fdPtr);
+			    PMFrameData *restrict fdPtr);
 static void		DeleteProcedureMethodRecord(ProcedureMethod *pmPtr);
 static void		DeleteProcedureMethod(void *clientData);
 static int		CloneProcedureMethod(Tcl_Interp *interp,
@@ -943,7 +943,7 @@ PushMethodCallFrame(
 				 * method. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const *objv,	/* Array of arguments. */
-    PMFrameData *fdPtr)		/* Place to store information about the call
+    PMFrameData *restrict fdPtr)/* Place to store information about the call
 				 * frame. */
 {
     Namespace *nsPtr = (Namespace *) contextPtr->oPtr->namespacePtr;
@@ -1725,7 +1725,7 @@ InitEnsembleRewrite(
     int toRewrite,		/* Number of real arguments to replace. */
     int rewriteLength,		/* Number of arguments to insert instead. */
     Tcl_Obj *const *rewriteObjs,/* Arguments to insert instead. */
-    int *lengthPtr)		/* Where to write the resulting length of the
+    int *restrict lengthPtr)	/* Where to write the resulting length of the
 				 * array of rewritten arguments. */
 {
     size_t len = rewriteLength + objc - toRewrite;

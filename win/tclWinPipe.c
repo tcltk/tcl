@@ -171,9 +171,9 @@ typedef struct {
  */
 
 static int		ApplicationType(Tcl_Interp *interp,
-			    const char *fileName, char *fullName);
+			    const char *fileName, char *restrict fullName);
 static void		BuildCommandLine(const char *executable, size_t argc,
-			    const char **argv, Tcl_DString *linePtr);
+			    const char **argv, Tcl_DString *restrict linePtr);
 static BOOL		HasConsole(void);
 static int		PipeBlockModeProc(void *instanceData, int mode);
 static void		PipeCheckProc(void *clientData, int flags);
@@ -1262,7 +1262,7 @@ static int
 ApplicationType(
     Tcl_Interp *interp,		/* Interp, for error message. */
     const char *originalName,	/* Name of the application to find. */
-    char fullName[])		/* Filled with complete path to
+    char *restrict fullName)	/* Filled with complete path to
 				 * application. */
 {
     int applType, i, found;
@@ -1558,7 +1558,8 @@ BuildCommandLine(
 				 * extension). Replacement for argv[0]. */
     size_t argc,		/* Number of arguments. */
     const char **argv,		/* Argument strings in UTF. */
-    Tcl_DString *linePtr)	/* Initialized Tcl_DString that receives the
+    Tcl_DString *restrict linePtr)
+				/* Initialized Tcl_DString that receives the
 				 * command line (WCHAR). */
 {
     const char *arg, *start, *special, *bspos;

@@ -112,13 +112,14 @@ static int		GetValue(Tcl_Interp *interp, Tcl_Obj *keyNameObj,
 static int		GetValueNames(Tcl_Interp *interp, Tcl_Obj *keyNameObj,
 			    Tcl_Obj *patternObj, REGSAM mode);
 static int		OpenKey(Tcl_Interp *interp, Tcl_Obj *keyNameObj,
-			    REGSAM mode, int flags, HKEY *keyPtr);
+			    REGSAM mode, int flags, HKEY *restrict keyPtr);
 static DWORD		OpenSubKey(char *hostName, HKEY rootKey,
 			    char *keyName, REGSAM mode, int flags,
-			    HKEY *keyPtr);
+			    HKEY *restrict keyPtr);
 static int		ParseKeyName(Tcl_Interp *interp, char *name,
-			    char **hostNamePtr, HKEY *rootKeyPtr,
-			    char **keyNamePtr);
+			    char **restrict hostNamePtr,
+			    HKEY *restrict rootKeyPtr,
+			    char **restrict keyNamePtr);
 static DWORD		RecursiveDeleteKey(HKEY hStartKey,
 			    const WCHAR * pKeyName, REGSAM mode);
 static int		RegistryObjCmd(void *clientData,
@@ -950,7 +951,7 @@ OpenKey(
     Tcl_Obj *keyNameObj,	/* Key to open. */
     REGSAM mode,		/* Access mode. */
     int flags,			/* 0 or REG_CREATE. */
-    HKEY *keyPtr)		/* Returned HKEY. */
+    HKEY *restrict keyPtr)	/* Returned HKEY. */
 {
     char *keyName, *buffer, *hostName;
     HKEY rootKey;
@@ -1003,7 +1004,7 @@ OpenSubKey(
     char *keyName,		/* Subkey name. */
     REGSAM mode,		/* Access mode. */
     int flags,			/* 0 or REG_CREATE. */
-    HKEY *keyPtr)		/* Returned HKEY. */
+    HKEY *restrict keyPtr)	/* Returned HKEY. */
 {
     DWORD result;
     Tcl_DString buf;
@@ -1085,9 +1086,9 @@ static int
 ParseKeyName(
     Tcl_Interp *interp,		/* Current interpreter. */
     char *name,
-    char **hostNamePtr,
-    HKEY *rootKeyPtr,
-    char **keyNamePtr)
+    char **restrict hostNamePtr,
+    HKEY *restrict rootKeyPtr,
+    char **restrict keyNamePtr)
 {
     char *rootName;
     int result, index;

@@ -143,11 +143,12 @@ TclUtfFindEqualNCInLwr(
  * Prototypes of module functions.
  */
 
-MODULE_SCOPE const char*TclStrIdxTreeSearch(TclStrIdxTree **foundParent,
-			    TclStrIdx **foundItem, TclStrIdxTree *tree,
+MODULE_SCOPE const char*TclStrIdxTreeSearch(TclStrIdxTree **restrict foundParent,
+			    TclStrIdx **restrict foundItem, TclStrIdxTree *tree,
 			    const char *start, const char *end);
-MODULE_SCOPE int	TclStrIdxTreeBuildFromList(TclStrIdxTree *idxTree,
-			    Tcl_Size lstc, Tcl_Obj **lstv, void **values);
+MODULE_SCOPE int	TclStrIdxTreeBuildFromList(TclStrIdxTree *restrict idxTree,
+			    Tcl_Size lstc, Tcl_Obj **restrict lstv,
+			    void **restrict values);
 MODULE_SCOPE Tcl_Obj *	TclStrIdxTreeNewObj(void);
 MODULE_SCOPE TclStrIdxTree*TclStrIdxTreeGetFromObj(Tcl_Obj *objPtr);
 

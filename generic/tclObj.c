@@ -200,7 +200,7 @@ static void		FreeBignum(Tcl_Obj *objPtr);
 static void		DupBignum(Tcl_Obj *objPtr, Tcl_Obj *copyPtr);
 static void		UpdateStringOfBignum(Tcl_Obj *objPtr);
 static int		GetBignumFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-			    int copy, mp_int *bignumValue);
+			    int copy, mp_int *restrict bignumValue);
 
 /*
  * Prototypes for the array hash key methods.
@@ -3400,7 +3400,7 @@ GetBignumFromObj(
     Tcl_Interp *interp,		/* Tcl interpreter for error reporting */
     Tcl_Obj *objPtr,		/* Object to read */
     int copy,			/* Whether to copy the returned bignum value */
-    mp_int *bignumValue)	/* Returned bignum value. */
+    mp_int *restrict bignumValue) /* Returned bignum value. */
 {
     do {
 	if (TclHasInternalRep(objPtr, &tclBignumType)) {

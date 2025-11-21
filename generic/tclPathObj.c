@@ -31,7 +31,7 @@ static int		MakePathFromNormalized(Tcl_Interp *interp,
 			    Tcl_Obj *pathPtr);
 static int		MakeTildeRelativePath(Tcl_Interp *interp,
 			    const char *user, const char *subPath,
-			    Tcl_DString *dsPtr);
+			    Tcl_DString *restrict dsPtr);
 
 /*
  * Define the 'path' object type, which Tcl uses to represent file paths
@@ -2470,7 +2470,7 @@ MakeTildeRelativePath(
     Tcl_Interp *interp,		/* May be NULL. Only used for error messages */
     const char *user,		/* User name. NULL -> current user */
     const char *subPath,	/* Rest of path. May be NULL */
-    Tcl_DString *dsPtr)		/* Output. Is initialized by the function. Must
+    Tcl_DString *restrict dsPtr)/* Output. Is initialized by the function. Must
 				 * be freed on success */
 {
     const char *dir;

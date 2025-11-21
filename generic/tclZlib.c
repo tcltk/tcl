@@ -191,14 +191,15 @@ static Tcl_ObjCmdProc		ZlibStreamPutCmd;
 static void		ConvertError(Tcl_Interp *interp, int code,
 			    uLong adler);
 static Tcl_Obj *	ConvertErrorToList(int code, uLong adler);
-static inline int	Deflate(z_streamp strm, void *bufferPtr,
-			    size_t bufferSize, int flush, size_t *writtenPtr);
+static inline int	Deflate(z_streamp strm, void *restrict bufferPtr,
+			    size_t bufferSize, int flush,
+			    size_t *restrict writtenPtr);
 static void		ExtractHeader(gz_header *headerPtr, Tcl_Obj *dictObj);
 static int		GenerateHeader(Tcl_Interp *interp, Tcl_Obj *dictObj,
-			    GzipHeader *headerPtr, int *extraSizePtr);
+			    GzipHeader *headerPtr, int *restrict extraSizePtr);
 static int		ResultDecompress(ZlibChannelData *chanDataPtr,
-			    char *buf, int toRead, int flush,
-			    int *errorCodePtr);
+			    char *restrict buf, int toRead, int flush,
+			    int *restrict errorCodePtr);
 static Tcl_Channel	ZlibStackChannelTransform(Tcl_Interp *interp,
 			    int mode, int format, int level, int limit,
 			    Tcl_Channel channel, Tcl_Obj *gzipHeaderDictPtr,
@@ -446,7 +447,7 @@ GenerateHeader(
     Tcl_Obj *dictObj,		/* The dictionary whose contents are to be
 				 * parsed. */
     GzipHeader *headerPtr,	/* Where to store the parsed-out values. */
-    int *extraSizePtr)		/* Variable to add the length of header
+    int *restrict extraSizePtr)	/* Variable to add the length of header
 				 * strings (filename, comment) to. */
 {
     Tcl_Obj *value;
@@ -657,10 +658,10 @@ SetDeflateDictionary(
 static inline int
 Deflate(
     z_streamp strm,
-    void *bufferPtr,
+    void *restrict bufferPtr,
     size_t bufferSize,
     int flush,
-    size_t *writtenPtr)
+    size_t *restrict writtenPtr)
 {
     strm->next_out = (Bytef *) bufferPtr;
     strm->avail_out = bufferSize;
@@ -4006,10 +4007,10 @@ ZlibStackChannelTransform(
 static int
 ResultDecompress(
     ZlibChannelData *chanDataPtr,
-    char *buf,
+    char *restrict buf,
     int toRead,
     int flush,
-    int *errorCodePtr)
+    int *restrict errorCodePtr)
 {
     int e, written, resBytes = 0;
     Tcl_Obj *errObj;
