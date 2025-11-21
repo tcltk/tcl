@@ -185,7 +185,7 @@ The simplest way of using a cookie jar is to just permanently configure it at
 the start of the application.
 .PP
 .CS
-package require http
+\fBpackage require http\fR
 \fBpackage require cookiejar\fR
 
 set cookiedb [file join [file home] cookiejar]
@@ -200,7 +200,7 @@ want to enable a particular host to create and manipulate sessions, create a
 subclass that imposes that policy.
 .PP
 .CS
-package require http
+\fBpackage require http\fR
 \fBpackage require cookiejar\fR
 
 oo::class create MyCookieJar {
