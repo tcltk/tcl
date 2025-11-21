@@ -137,7 +137,7 @@ is determined using the same rules as for \fBstring match\fR.
 .TP
 \fBfile copy \fR?\fB\-force\fR? ?\fB\-\|\-\fR? \fIsource target\fR
 .TP
-\fBfile copy \fR?\fB\-force\fR? ?\fB\-\|\-\fR? \fIsource\fR ?\fIsource\fR ...? \fItargetDir\fR
+\fBfile copy \fR?\fB\-force\fR? ?\fB\-\|\-\fR? \fIsource\fR ?\fIsource ...\fR? \fItargetDir\fR
 .
 The first form makes a copy of the file or directory \fIsource\fR under
 the pathname \fItarget\fR. If \fItarget\fR is an existing directory,
@@ -158,7 +158,7 @@ the end of switches; the argument following the \fB\-\|\-\fR will be
 treated as a \fIsource\fR even if it starts with a \fB\-\fR.
 .\" METHOD: delete
 .TP
-\fBfile delete \fR?\fB\-force\fR? ?\fB\-\|\-\fR? ?\fIpathname\fR ... ?
+\fBfile delete \fR?\fB\-force\fR? ?\fB\-\|\-\fR? ?\fIpathname ...\fR?
 .
 Removes the file or directory specified by each \fIpathname\fR
 argument.  Non-empty directories will be removed only if the
@@ -318,7 +318,7 @@ symbolic links this option behaves exactly the same as the
 \fBstat\fR option.
 .\" METHOD: mkdir
 .TP
-\fBfile mkdir\fR ?\fIdir\fR ...?
+\fBfile mkdir\fR ?\fIdir ...\fR?
 .
 Creates each directory specified.  For each pathname \fIdir\fR specified,
 this command will create all non-existing parent directories as
@@ -401,7 +401,7 @@ support symbolic links this option is undefined.
 .TP
 \fBfile rename \fR?\fB\-force\fR? ?\fB\-\|\-\fR? \fIsource target\fR
 .TP
-\fBfile rename \fR?\fB\-force\fR? ?\fB\-\|\-\fR? \fIsource\fR ?\fIsource\fR ...? \fItargetDir\fR
+\fBfile rename \fR?\fB\-force\fR? ?\fB\-\|\-\fR? \fIsource\fR ?\fIsource ...\fR? \fItargetDir\fR
 .
 The first form takes the file or directory specified by pathname
 \fIsource\fR and renames it to \fItarget\fR, moving the file if the
