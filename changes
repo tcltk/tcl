@@ -9439,4 +9439,6 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 
 2025-11-11 (bug) raise error on empty regexp for unresolved variable
 
+2025-11-21 (bug) tcl_wordchars and tcl_nonwordchars documentation in two places
+
 - (to be) Released 8.6.18, Apr ??, 2026 - details at https://core.tcl-lang.org/tcl/ -

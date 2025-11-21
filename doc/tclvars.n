@@ -10,7 +10,7 @@
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-argc, argv, argv0, auto_path, env, errorCode, errorInfo, tcl_interactive, tcl_library, tcl_nonwordchars, tcl_patchLevel, tcl_pkgPath, tcl_platform, tcl_precision, tcl_rcFileName, tcl_traceCompile, tcl_traceExec, tcl_wordchars, tcl_version \- Variables used by Tcl
+argc, argv, argv0, auto_path, env, errorCode, errorInfo, tcl_interactive, tcl_library, tcl_patchLevel, tcl_pkgPath, tcl_platform, tcl_precision, tcl_rcFileName, tcl_traceCompile, tcl_traceExec, tcl_version \- Variables used by Tcl
 .BE
 .SH DESCRIPTION
 .PP
@@ -452,30 +452,7 @@ and interpreter.
 This variable and functionality only exist if
 \fBTCL_COMPILE_DEBUG\fR was defined during Tcl's compilation.
 .RE
-.\" VARIABLE: tcl_wordchars
-.TP
-\fBtcl_wordchars\fR
-.
-The value of this variable is a regular expression that can be set to
-control what are considered
-.QW word
-characters, for instances like
-selecting a word by double-clicking in text in Tk.  It is platform
-dependent.  On Windows, it defaults to \fB\eS\fR, meaning anything
-but a Unicode space character.  Otherwise it defaults to \fB\ew\fR,
-which is any Unicode word character (number, letter, or underscore).
-.\" VARIABLE: tcl_nonwordchars
-.TP
-\fBtcl_nonwordchars\fR
-.
-The value of this variable is a regular expression that can be set to
-control what are considered
-.QW non-word
-characters, for instances like
-selecting a word by double-clicking in text in Tk.  It is platform
-dependent.  On Windows, it defaults to \fB\es\fR, meaning any Unicode space
-character.  Otherwise it defaults to \fB\eW\fR, which is anything but a
-Unicode word character (number, letter, or underscore).
+.\" VARIABLE: tcl_version
 .TP
 \fBtcl_version\fR
 .
