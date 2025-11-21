@@ -12,7 +12,7 @@
 mathop \- Mathematical operators as Tcl commands
 .SH SYNOPSIS
 .nf
-package require \fBTcl 8.5-\fR
+\fBpackage require Tcl 8.5-\fR
 
 \fB::tcl::mathop::!\fI number\fR
 \fB::tcl::mathop::~\fI number\fR

@@ -855,8 +855,8 @@ For example,
 .RS
 .PP
 .CS
-package require http
-package require tls
+\fBpackage require http\fR
+\fBpackage require tls\fR
 
 ::http::register https 443 ::tls::socket ::tls::socketCmd 1 1
 
