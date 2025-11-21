@@ -94,7 +94,7 @@ static Object *		AllocObject(Tcl_Interp *interp, const char *nameStr,
 			    Namespace *nsPtr, const char *nsNameStr);
 static int		CloneClassMethod(Tcl_Interp *interp, Class *clsPtr,
 			    Method *mPtr, Tcl_Obj *namePtr,
-			    Method **newMPtrPtr);
+			    Method **restrict newMPtrPtr);
 static int		CloneObjectMethod(Tcl_Interp *interp, Object *oPtr,
 			    Method *mPtr, Tcl_Obj *namePtr);
 static Tcl_NamespaceDeleteProc	DeletedHelpersNamespace;
@@ -2588,7 +2588,7 @@ CloneClassMethod(
     Class *clsPtr,
     Method *mPtr,
     Tcl_Obj *namePtr,
-    Method **m2PtrPtr)
+    Method **restrict m2PtrPtr)
 {
     Method *m2Ptr;
 

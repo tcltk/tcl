@@ -1102,11 +1102,11 @@ FindTokenBegin(
 
 static void
 DetermineGreedySearchLen(
-    ClockFmtScnCmdArgs *opts,
-    DateInfo *info,
-    const ClockScanToken *tok,
-    int *minLenPtr,
-    int *maxLenPtr)
+    const ClockFmtScnCmdArgs *restrict opts,
+    const DateInfo *restrict info,
+    const ClockScanToken *restrict tok,
+    int *restrict minLenPtr,
+    int *restrict maxLenPtr)
 {
     int minLen = tok->map->minSize;
     int maxLen;
@@ -1380,7 +1380,7 @@ static TclStrIdxTree *
 ClockMCGetMultiListIdxTree(
     ClockFmtScnCmdArgs *opts,
     int	mcKey,
-    int *mcKeys)
+    int *restrict mcKeys)
 {
     TclStrIdxTree * idxTree;
     Tcl_Obj *objPtr = TclClockMCGetIdx(opts, mcKey);
@@ -1529,9 +1529,9 @@ FindWordEnd(
 
 static int
 ClockScnToken_Month_Proc(
-    ClockFmtScnCmdArgs *opts,
-    DateInfo *info,
-    const ClockScanToken *tok)
+    ClockFmtScnCmdArgs *restrict opts,
+    DateInfo *restrict info,
+    const ClockScanToken *restrict tok)
 {
 #if 0
 /* currently unused, test purposes only */
@@ -1579,9 +1579,9 @@ ClockScnToken_Month_Proc(
 
 static int
 ClockScnToken_DayOfWeek_Proc(
-    ClockFmtScnCmdArgs *opts,
-    DateInfo *info,
-    const ClockScanToken *tok)
+    ClockFmtScnCmdArgs *restrict opts,
+    DateInfo *restrict info,
+    const ClockScanToken *restrict tok)
 {
     static int dowKeys[] = {MCLIT_DAYS_OF_WEEK_ABBREV, MCLIT_DAYS_OF_WEEK_FULL, 0};
 
@@ -1653,9 +1653,9 @@ ClockScnToken_DayOfWeek_Proc(
 
 static int
 ClockScnToken_amPmInd_Proc(
-    ClockFmtScnCmdArgs *opts,
-    DateInfo *info,
-    const ClockScanToken *tok)
+    ClockFmtScnCmdArgs *restrict opts,
+    DateInfo *restrict info,
+    const ClockScanToken *restrict tok)
 {
     int ret, val;
     int minLen, maxLen;
@@ -1686,9 +1686,9 @@ ClockScnToken_amPmInd_Proc(
 
 static int
 ClockScnToken_LocaleERA_Proc(
-    ClockFmtScnCmdArgs *opts,
-    DateInfo *info,
-    const ClockScanToken *tok)
+    ClockFmtScnCmdArgs *restrict opts,
+    DateInfo *restrict info,
+    const ClockScanToken *restrict tok)
 {
     ClockClientData *dataPtr = opts->dataPtr;
 
@@ -1725,9 +1725,9 @@ ClockScnToken_LocaleERA_Proc(
 
 static int
 ClockScnToken_LocaleListMatcher_Proc(
-    ClockFmtScnCmdArgs *opts,
-    DateInfo *info,
-    const ClockScanToken *tok)
+    ClockFmtScnCmdArgs *restrict opts,
+    DateInfo *restrict info,
+    const ClockScanToken *restrict tok)
 {
     int ret, val;
     int minLen, maxLen;
@@ -1756,9 +1756,9 @@ ClockScnToken_LocaleListMatcher_Proc(
 
 static int
 ClockScnToken_JDN_Proc(
-    ClockFmtScnCmdArgs *opts,
-    DateInfo *info,
-    const ClockScanToken *tok)
+    ClockFmtScnCmdArgs *restrict opts,
+    DateInfo *restrict info,
+    const ClockScanToken *restrict tok)
 {
     int minLen, maxLen;
     const char *p = yyInput, *end, *s;
@@ -1827,9 +1827,9 @@ ClockScnToken_JDN_Proc(
 
 static int
 ClockScnToken_TimeZone_Proc(
-    ClockFmtScnCmdArgs *opts,
-    DateInfo *info,
-    const ClockScanToken *tok)
+    ClockFmtScnCmdArgs *restrict opts,
+    DateInfo *restrict info,
+    const ClockScanToken *restrict tok)
 {
     int minLen, maxLen;
     int len = 0;
@@ -1919,9 +1919,9 @@ ClockScnToken_TimeZone_Proc(
 
 static int
 ClockScnToken_StarDate_Proc(
-    ClockFmtScnCmdArgs *opts,
-    DateInfo *info,
-    const ClockScanToken *tok)
+    ClockFmtScnCmdArgs *restrict opts,
+    DateInfo *restrict info,
+    const ClockScanToken *restrict tok)
 {
     int minLen, maxLen;
     const char *p = yyInput, *end, *s;
@@ -2382,9 +2382,10 @@ ClockGetOrParseScanFormat(
  */
 int
 TclClockScan(
-    DateInfo *info,		/* Date fields used for parsing & converting */
+    DateInfo *restrict info,	/* Date fields used for parsing & converting */
     Tcl_Obj *strObj,		/* String containing the time to scan */
-    ClockFmtScnCmdArgs *opts)	/* Command options */
+    ClockFmtScnCmdArgs *restrict opts)
+				/* Command options */
 {
     ClockClientData *dataPtr = opts->dataPtr;
     const ClockFmtScnStorage *fss;
@@ -2775,10 +2776,10 @@ FrmResultAllocate(
 
 static int
 ClockFmtToken_HourAMPM_Proc(
-    TCL_UNUSED(ClockFmtScnCmdArgs *),
-    TCL_UNUSED(DateFormat *),
-    TCL_UNUSED(ClockFormatToken *),
-    int *val)
+    TCL_UNUSED(ClockFmtScnCmdArgs *restrict),
+    TCL_UNUSED(DateFormat *restrict),
+    TCL_UNUSED(ClockFormatToken *restrict),
+    int *restrict val)
 {
     *val = ((*val + SECONDS_PER_DAY - 3600) / 3600) % 12 + 1;
     return TCL_OK;
@@ -2786,10 +2787,10 @@ ClockFmtToken_HourAMPM_Proc(
 
 static int
 ClockFmtToken_AMPM_Proc(
-    ClockFmtScnCmdArgs *opts,
-    DateFormat *dateFmt,
-    ClockFormatToken *tok,
-    int *val)
+    ClockFmtScnCmdArgs *restrict opts,
+    DateFormat *restrict dateFmt,
+    ClockFormatToken *restrict tok,
+    int *restrict val)
 {
     Tcl_Obj *mcObj;
     const char *s;
@@ -2818,10 +2819,10 @@ ClockFmtToken_AMPM_Proc(
 
 static int
 ClockFmtToken_StarDate_Proc(
-    TCL_UNUSED(ClockFmtScnCmdArgs *),
-    DateFormat *dateFmt,
-    TCL_UNUSED(ClockFormatToken *),
-    TCL_UNUSED(int *))
+    TCL_UNUSED(ClockFmtScnCmdArgs *restrict),
+    DateFormat *restrict dateFmt,
+    TCL_UNUSED(ClockFormatToken *restrict),
+    TCL_UNUSED(int *restrict))
 {
     int fractYear;
     /* Get day of year, zero based */
@@ -2855,10 +2856,10 @@ ClockFmtToken_StarDate_Proc(
 }
 static int
 ClockFmtToken_WeekOfYear_Proc(
-    TCL_UNUSED(ClockFmtScnCmdArgs *),
-    DateFormat *dateFmt,
-    ClockFormatToken *tok,
-    int *val)
+    TCL_UNUSED(ClockFmtScnCmdArgs *restrict),
+    DateFormat *restrict dateFmt,
+    ClockFormatToken *restrict tok,
+    int *restrict val)
 {
     int dow = dateFmt->date.dayOfWeek;
 
@@ -2873,10 +2874,10 @@ ClockFmtToken_WeekOfYear_Proc(
 }
 static int
 ClockFmtToken_JDN_Proc(
-    TCL_UNUSED(ClockFmtScnCmdArgs *),
-    DateFormat *dateFmt,
-    ClockFormatToken *tok,
-    TCL_UNUSED(int *))
+    TCL_UNUSED(ClockFmtScnCmdArgs *restrict),
+    DateFormat *restrict dateFmt,
+    ClockFormatToken *restrict tok,
+    TCL_UNUSED(int *restrict))
 {
     Tcl_WideInt intJD = dateFmt->date.julianDay;
     int fractJD;
@@ -2945,10 +2946,10 @@ ClockFmtToken_JDN_Proc(
 }
 static int
 ClockFmtToken_TimeZone_Proc(
-    ClockFmtScnCmdArgs *opts,
-    DateFormat *dateFmt,
-    ClockFormatToken *tok,
-    TCL_UNUSED(int *))
+    ClockFmtScnCmdArgs *restrict opts,
+    DateFormat *restrict dateFmt,
+    ClockFormatToken *restrict tok,
+    TCL_UNUSED(int *restrict))
 {
     if (*tok->tokWord.start == 'z') {
 	int z = dateFmt->date.tzOffset;
@@ -2993,10 +2994,10 @@ ClockFmtToken_TimeZone_Proc(
 
 static int
 ClockFmtToken_LocaleERA_Proc(
-    ClockFmtScnCmdArgs *opts,
-    DateFormat *dateFmt,
-    TCL_UNUSED(ClockFormatToken *),
-    TCL_UNUSED(int *))
+    ClockFmtScnCmdArgs *restrict opts,
+    DateFormat *restrict dateFmt,
+    TCL_UNUSED(ClockFormatToken *restrict),
+    TCL_UNUSED(int *restrict))
 {
     Tcl_Obj *mcObj;
     const char *s;
@@ -3022,10 +3023,10 @@ ClockFmtToken_LocaleERA_Proc(
 
 static int
 ClockFmtToken_LocaleERAYear_Proc(
-    ClockFmtScnCmdArgs *opts,
-    DateFormat *dateFmt,
-    ClockFormatToken *tok,
-    int *val)
+    ClockFmtScnCmdArgs *restrict opts,
+    DateFormat *restrict dateFmt,
+    ClockFormatToken *restrict tok,
+    int *restrict val)
 {
     Tcl_Size rowc;
     Tcl_Obj **rowv;
@@ -3406,8 +3407,8 @@ ClockGetOrParseFmtFormat(
  */
 int
 TclClockFormat(
-    DateFormat *dateFmt,	/* Date fields used for parsing & converting */
-    ClockFmtScnCmdArgs *opts)	/* Command options */
+    DateFormat *restrict dateFmt,	/* Date fields used for parsing & converting */
+    ClockFmtScnCmdArgs *restrict opts)	/* Command options */
 {
     ClockFmtScnStorage *fss;
     ClockFormatToken *tok;
@@ -3579,7 +3580,6 @@ TclClockFormat(
     return TCL_ERROR;
 }
 
-
 void
 TclClockFrmScnClearCaches(void)
 {
@@ -3608,6 +3608,7 @@ TclClockFrmScnFinalize(void)
     Tcl_MutexUnlock(&ClockFmtMutex);
     Tcl_MutexFinalize(&ClockFmtMutex);
 }
+
 /*
  * Local Variables:
  * mode: c

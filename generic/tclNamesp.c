@@ -74,7 +74,7 @@ static void		DeleteImportedCmd(void *clientData);
 static int		DoImport(Tcl_Interp *interp,
 			    Namespace *nsPtr, Tcl_HashEntry *hPtr,
 			    const char *cmdName, const char *pattern,
-			    Namespace *importNsPtr, int allowOverwrite);
+			    const Namespace *importNsPtr, int allowOverwrite);
 static void		DupNsNameInternalRep(Tcl_Obj *objPtr,
 			    Tcl_Obj *copyPtr);
 static char *		ErrorCodeRead(void *clientData, Tcl_Interp *interp,
@@ -89,7 +89,7 @@ static char *		EstablishErrorInfoTraces(void *clientData,
 			    const char *name2, int flags);
 static void		FreeNsNameInternalRep(Tcl_Obj *objPtr);
 static int		GetNamespaceFromObj(Tcl_Interp *interp,
-			    Tcl_Obj *objPtr, Tcl_Namespace **nsPtrPtr);
+			    Tcl_Obj *objPtr, Tcl_Namespace **restrict nsPtrPtr);
 static int		InvokeImportedNRCmd(void *clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
@@ -1795,7 +1795,7 @@ DoImport(
     Tcl_HashEntry *hPtr,
     const char *cmdName,
     const char *pattern,
-    Namespace *importNsPtr,
+    const Namespace *importNsPtr,
     int allowOverwrite)
 {
     Tcl_Size i = 0, exported = 0;
@@ -2989,7 +2989,8 @@ GetNamespaceFromObj(
     Tcl_Interp *interp,		/* The current interpreter. */
     Tcl_Obj *objPtr,		/* The object to be resolved as the name of a
 				 * namespace. */
-    Tcl_Namespace **nsPtrPtr)	/* Result namespace pointer goes here. */
+    Tcl_Namespace **restrict nsPtrPtr)
+				/* Result namespace pointer goes here. */
 {
     ResolvedNsName *resNamePtr;
 

@@ -117,7 +117,7 @@ static void		DeleteProc(void *clientData);
 static Tcl_Obj *	ExecuteRemoteObject(RegisteredInterp *riPtr,
 			    Tcl_Obj *ddeObjectPtr);
 static int		MakeDdeConnection(Tcl_Interp *interp,
-			    const WCHAR *name, HCONV *ddeConvPtr);
+			    const WCHAR *name, HCONV *restrict ddeConvPtr);
 static void		SetDdeError(Tcl_Interp *interp);
 static int		DdeObjCmd(void *clientData,
 			    Tcl_Interp *interp, Tcl_Size objc,
@@ -999,7 +999,7 @@ static int
 MakeDdeConnection(
     Tcl_Interp *interp,		/* Used to report errors. */
     const WCHAR *name,		/* The connection to use. */
-    HCONV *ddeConvPtr)
+    HCONV *restrict ddeConvPtr)
 {
     HSZ ddeTopic, ddeService;
     HCONV ddeConv;

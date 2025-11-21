@@ -130,12 +130,13 @@ static struct {
 
 static Cache *	GetCache(void);
 static void	LockBucket(Cache *cachePtr, int bucket);
-static void	UnlockBucket(Cache *cachePtr, int bucket);
+static void	UnlockBucket(Cache *, int bucket);
 static void	PutBlocks(Cache *cachePtr, int bucket, size_t numMove);
 static int	GetBlocks(Cache *cachePtr, int bucket);
 static Block *	Ptr2Block(void *ptr);
 static void *	Block2Ptr(Block *blockPtr, int bucket, size_t reqSize);
-static void	MoveObjs(Cache *fromPtr, Cache *toPtr, size_t numMove);
+static void	MoveObjs(Cache *restrict fromPtr, Cache *restrict toPtr,
+		    size_t numMove);
 static void	PutObjs(Cache *fromPtr, size_t numMove);
 
 /*
@@ -678,8 +679,8 @@ Tcl_GetMemoryInfo(
 
 static void
 MoveObjs(
-    Cache *fromPtr,
-    Cache *toPtr,
+    Cache *restrict fromPtr,
+    Cache *restrict toPtr,
     size_t numMove)
 {
     Tcl_Obj *objPtr = fromPtr->firstObjPtr;

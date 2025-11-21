@@ -418,18 +418,21 @@ static int		ContainsMountPoint(const char *path, int pathLen);
 static void		CleanupMount(ZipFile *zf);
 static void		SerializeCentralDirectoryEntry(
 			    const unsigned char *start,
-			    const unsigned char *end, unsigned char *buf,
+			    const unsigned char *end,
+			    unsigned char *restrict buf,
 			    ZipEntry *z, size_t nameLength,
 			    long long dataStartOffset);
 static void		SerializeCentralDirectorySuffix(
 			    const unsigned char *start,
-			    const unsigned char *end, unsigned char *buf,
+			    const unsigned char *end,
+			    unsigned char *restrict buf,
 			    int entryCount, long long dataStartOffset,
 			    long long directoryStartOffset,
 			    long long suffixStartOffset);
 static void		SerializeLocalEntryHeader(
 			    const unsigned char *start,
-			    const unsigned char *end, unsigned char *buf,
+			    const unsigned char *end,
+			    unsigned char *restrict buf,
 			    ZipEntry *z, int nameLength, int align);
 static int		IsCryptHeaderValid(ZipEntry *z,
 			    unsigned char cryptHdr[ZIP_CRYPT_HDR_LEN]);
@@ -449,31 +452,32 @@ static int		ZipFSMatchInDirectoryProc(Tcl_Interp *interp,
 			    const char *pattern, Tcl_GlobTypeData *types);
 static void		ZipFSMatchMountPoints(Tcl_Obj *result,
 			    Tcl_Obj *normPathPtr, const char *pattern,
-			    Tcl_DString *prefix);
+			    Tcl_DString *restrict prefix);
 static Tcl_Obj *	ZipFSListVolumesProc(void);
 static const char *const *ZipFSFileAttrStringsProc(Tcl_Obj *pathPtr,
 			    Tcl_Obj **objPtrRef);
 static int		ZipFSFileAttrsGetProc(Tcl_Interp *interp, int index,
-			    Tcl_Obj *pathPtr, Tcl_Obj **objPtrRef);
+			    Tcl_Obj *pathPtr, Tcl_Obj **restrict objPtrRef);
 static int		ZipFSFileAttrsSetProc(Tcl_Interp *interp, int index,
 			    Tcl_Obj *pathPtr, Tcl_Obj *objPtr);
 static int		ZipFSLoadFile(Tcl_Interp *interp, Tcl_Obj *path,
-			    Tcl_LoadHandle *loadHandle,
-			    Tcl_FSUnloadFileProc **unloadProcPtr, int flags);
+			    Tcl_LoadHandle *restrict loadHandle,
+			    Tcl_FSUnloadFileProc **restrict unloadProcPtr,
+			    int flags);
 static int		ZipMapArchive(Tcl_Interp *interp, ZipFile *zf,
 			    void *handle);
 static void		ZipfsSetup(void);
 static int		ZipChannelClose(void *instanceData,
 			    Tcl_Interp *interp, int flags);
 static Tcl_DriverGetHandleProc	ZipChannelGetFile;
-static int		ZipChannelRead(void *instanceData, char *buf,
-			    int toRead, int *errloc);
+static int		ZipChannelRead(void *instanceData, char *restrict buf,
+			    int toRead, int *restrict errloc);
 static long long	ZipChannelWideSeek(void *instanceData,
-			    long long offset, int mode, int *errloc);
+			    long long offset, int mode, int *restrict errloc);
 static void		ZipChannelWatchChannel(void *instanceData,
 			    int mask);
 static int		ZipChannelWrite(void *instanceData,
-			    const char *buf, int toWrite, int *errloc);
+			    const char *buf, int toWrite, int *restrict errloc);
 static int		TclZipfsInitEncodingDirs(void);
 static int		TclZipfsMountExe(void);
 static int		TclZipfsMountShlib(void);
@@ -3836,7 +3840,7 @@ static void
 SerializeLocalEntryHeader(
     const unsigned char *start,	/* The start of writable memory. */
     const unsigned char *end,	/* The end of writable memory. */
-    unsigned char *buf,		/* Where to serialize to */
+    unsigned char *restrict buf,/* Where to serialize to */
     ZipEntry *z,		/* The description of what to serialize. */
     int nameLength,		/* The length of the name. */
     int align)			/* The number of alignment bytes. */
@@ -3863,7 +3867,7 @@ static void
 SerializeCentralDirectoryEntry(
     const unsigned char *start,	/* The start of writable memory. */
     const unsigned char *end,	/* The end of writable memory. */
-    unsigned char *buf,		/* Where to serialize to */
+    unsigned char *restrict buf,/* Where to serialize to */
     ZipEntry *z,		/* The description of what to serialize. */
     size_t nameLength,		/* The length of the name. */
     long long dataStartOffset)	/* The overall file offset of the start of the
@@ -3900,7 +3904,7 @@ static void
 SerializeCentralDirectorySuffix(
     const unsigned char *start,	/* The start of writable memory. */
     const unsigned char *end,	/* The end of writable memory. */
-    unsigned char *buf,		/* Where to serialize to */
+    unsigned char *restrict buf,/* Where to serialize to */
     int entryCount,		/* The number of entries in the directory */
     long long dataStartOffset,	/* The overall file offset of the start of the
 				 * data file. */
@@ -4671,9 +4675,9 @@ ZipChannelClose(
 static int
 ZipChannelRead(
     void *instanceData,
-    char *buf,
+    char *restrict buf,
     int toRead,
-    int *errloc)
+    int *restrict errloc)
 {
     ZipChannel *info = (ZipChannel *) instanceData;
     Tcl_Size nextpos;
@@ -4750,7 +4754,7 @@ ZipChannelWrite(
     void *instanceData,
     const char *buf,
     int toWrite,
-    int *errloc)
+    int *restrict errloc)
 {
     ZipChannel *info = (ZipChannel *) instanceData;
     unsigned long nextpos;
@@ -4832,7 +4836,7 @@ ZipChannelWideSeek(
     void *instanceData,
     long long offset,
     int mode,
-    int *errloc)
+    int *restrict errloc)
 {
     ZipChannel *info = (ZipChannel *) instanceData;
     Tcl_Size end;
@@ -5959,7 +5963,8 @@ ZipFSMatchMountPoints(
     Tcl_Obj *normPathPtr,	/* Where we're looking from. */
     const char *pattern,	/* What we're looking for. NULL for a full
 				 * list. */
-    Tcl_DString *prefix)	/* Workspace filled with a prefix for all the
+    Tcl_DString *restrict prefix)
+				/* Workspace filled with a prefix for all the
 				 * filenames, or NULL if no prefix is to be
 				 * used. */
 {
@@ -6190,7 +6195,7 @@ ZipFSFileAttrsGetProc(
     Tcl_Interp *interp,		/* Current interpreter. */
     int index,
     Tcl_Obj *pathPtr,
-    Tcl_Obj **objPtrRef)
+    Tcl_Obj **restrict objPtrRef)
 {
     Tcl_Size len;
     int ret = TCL_OK;
@@ -6322,8 +6327,8 @@ static int
 ZipFSLoadFile(
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Obj *path,
-    Tcl_LoadHandle *loadHandle,
-    Tcl_FSUnloadFileProc **unloadProcPtr,
+    Tcl_LoadHandle *restrict loadHandle,
+    Tcl_FSUnloadFileProc **restrict unloadProcPtr,
     int flags)
 {
     Tcl_FSLoadFileProc2 *loadFileProc;

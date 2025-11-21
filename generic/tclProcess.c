@@ -49,8 +49,9 @@ static void		InitProcessInfo(ProcessInfo *info, Tcl_Pid pid,
 static void		FreeProcessInfo(ProcessInfo *info);
 static int		RefreshProcessInfo(ProcessInfo *info, int options);
 static TclProcessWaitStatus WaitProcessStatus(Tcl_Pid pid, Tcl_Size resolvedPid,
-			    int options, int *codePtr, Tcl_Obj **msgPtr,
-			    Tcl_Obj **errorObjPtr);
+			    int options, int *restrict codePtr,
+			    Tcl_Obj **restrict msgPtr,
+			    Tcl_Obj **restrict errorObjPtr);
 static Tcl_Obj *	BuildProcessStatusObj(ProcessInfo *info);
 static Tcl_ObjCmdProc	ProcessListObjCmd;
 static Tcl_ObjCmdProc	ProcessStatusObjCmd;
@@ -199,14 +200,16 @@ WaitProcessStatus(
     Tcl_Pid pid,		/* Process id. */
     Tcl_Size resolvedPid,	/* Resolved process id. */
     int options,		/* Options passed to Tcl_WaitPid. */
-    int *codePtr,		/* If non-NULL, will receive either:
+    int *restrict codePtr,	/* If non-NULL, will receive either:
 				 *  - 0 for normal exit.
 				 *  - errno in case of error.
 				 *  - non-zero exit code for abormal exit.
 				 *  - signal number if killed or suspended.
 				 *  - Tcl_WaitPid status in all other cases. */
-    Tcl_Obj **msgObjPtr,	/* If non-NULL, will receive error message. */
-    Tcl_Obj **errorObjPtr)	/* If non-NULL, will receive error code. */
+    Tcl_Obj **restrict msgObjPtr,
+				/* If non-NULL, will receive error message. */
+    Tcl_Obj **restrict errorObjPtr)
+				/* If non-NULL, will receive error code. */
 {
     int waitStatus;
     Tcl_Obj *errorStrings[5];

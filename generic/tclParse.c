@@ -125,11 +125,12 @@ static Tcl_Size		ParseComment(const char *src, Tcl_Size numBytes,
 static int		ParseTokens(const char *src, Tcl_Size numBytes, int mask,
 			    int flags, Tcl_Parse *parsePtr);
 static Tcl_Size		ParseWhiteSpace(const char *src, Tcl_Size numBytes,
-			    int *incompletePtr, unsigned char *typePtr);
+			    int *restrict incompletePtr,
+			    unsigned char *restrict typePtr);
 static Tcl_Size		ParseAllWhiteSpace(const char *src, Tcl_Size numBytes,
-			    int *incompletePtr);
+			    int *restrict incompletePtr);
 static Tcl_Size		ParseHex(const char *src, Tcl_Size numBytes,
-			    int *resultPtr);
+			    int *restrict resultPtr);
 
 /*
  *----------------------------------------------------------------------
@@ -624,9 +625,10 @@ static Tcl_Size
 ParseWhiteSpace(
     const char *src,		/* First character to parse. */
     Tcl_Size numBytes,		/* Max number of bytes to scan. */
-    int *incompletePtr,		/* Set this boolean memory to true if parsing
+    int *restrict incompletePtr,/* Set this boolean memory to true if parsing
 				 * indicates an incomplete command. */
-    unsigned char *typePtr)		/* Points to location to store character type
+    unsigned char *restrict typePtr)
+				/* Points to location to store character type
 				 * of character that ends run of whitespace */
 {
     unsigned char type = TYPE_NORMAL;
@@ -678,7 +680,7 @@ static Tcl_Size
 ParseAllWhiteSpace(
     const char *src,		/* First character to parse. */
     Tcl_Size numBytes,		/* Max number of byes to scan */
-    int *incompletePtr)		/* Set true if parse is incomplete. */
+    int *restrict incompletePtr)/* Set true if parse is incomplete. */
 {
     unsigned char type;
     const char *p = src;
@@ -689,7 +691,7 @@ ParseAllWhiteSpace(
 	p += scanned;
 	numBytes -= scanned;
     } while (numBytes && (*p == '\n') && (p++, --numBytes));
-    return (p-src);
+    return (p - src);
 }
 
 Tcl_Size
@@ -727,7 +729,7 @@ Tcl_Size
 ParseHex(
     const char *src,		/* First character to parse. */
     Tcl_Size numBytes,		/* Max number of byes to scan */
-    int *resultPtr)		/* Points to storage provided by caller where
+    int *restrict resultPtr)	/* Points to storage provided by caller where
 				 * the character resulting from the
 				 * conversion is to be written. */
 {

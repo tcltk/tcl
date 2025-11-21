@@ -245,9 +245,10 @@ static void		SocketExitHandler(void *clientData);
 static LRESULT CALLBACK	SocketProc(HWND hwnd, UINT message, WPARAM wParam,
 			    LPARAM lParam);
 static void		TcpAccept(TcpFdList *fds, SOCKET newSocket, address addr);
-static int		WaitForConnect(TcpState *statePtr, int *errorCodePtr);
+static int		WaitForConnect(TcpState *statePtr,
+			    int *restrict errorCodePtr);
 static int		WaitForSocketEvent(TcpState *statePtr, int events,
-			    int *errorCodePtr);
+			    int *restrict errorCodePtr);
 static void		AddSocketInfoFd(TcpState *statePtr, SOCKET socket);
 static int		FindFDInList(TcpState *statePtr, SOCKET socket);
 static DWORD WINAPI	SocketThread(LPVOID arg);
@@ -605,7 +606,7 @@ TcpBlockModeProc(
 static int
 WaitForConnect(
     TcpState *statePtr,		/* State of the socket. */
-    int *errorCodePtr)		/* Where to store errors? A passed
+    int *restrict errorCodePtr)	/* Where to store errors? A passed
 				 * null-pointer activates background mode. */
 {
     int result;
@@ -2630,7 +2631,7 @@ SocketEventProc(
 	     */
 
 	    SetEvent(tsdPtr->socketListLock);
-	    WaitForConnect(statePtr,NULL);
+	    WaitForConnect(statePtr, NULL);
 	} else {
 	    /*
 	     * No async connect reenter pending. Just clear event.
@@ -2900,7 +2901,7 @@ WaitForSocketEvent(
     TcpState *statePtr,		/* Information about this socket. */
     int events,			/* Events to look for. May be one of
 				 * FD_READ or FD_WRITE. */
-    int *errorCodePtr)		/* Where to store errors? */
+    int *restrict errorCodePtr)	/* Where to store errors? */
 {
     int result = 1;
     int oldMode;

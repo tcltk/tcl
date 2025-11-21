@@ -84,19 +84,20 @@ typedef struct RequireProcArgs {
  */
 
 static int		CheckVersionAndConvert(Tcl_Interp *interp,
-			    const char *string, char **internal, int *stable);
-static int		CompareVersions(char *v1i, char *v2i,
-			    int *isMajorPtr);
+			    const char *string, char **restrict internal,
+			    int *restrict stable);
+static int		CompareVersions(char *restrict v1i, char *restrict v2i,
+			    int *restrict isMajorPtr);
 static int		CheckRequirement(Tcl_Interp *interp,
 			    const char *string);
 static int		CheckAllRequirements(Tcl_Interp *interp, Tcl_Size reqc,
 			    Tcl_Obj *const reqv[]);
-static int		RequirementSatisfied(char *havei, const char *req);
-static int		SomeRequirementSatisfied(char *havei, Tcl_Size reqc,
-			    Tcl_Obj *const reqv[]);
+static int		RequirementSatisfied(char *restrict havei, const char *req);
+static int		SomeRequirementSatisfied(char *restrict havei,
+			    Tcl_Size reqc, Tcl_Obj *const reqv[]);
 static void		AddRequirementsToResult(Tcl_Interp *interp, Tcl_Size reqc,
 			    Tcl_Obj *const reqv[]);
-static void		AddRequirementsToDString(Tcl_DString *dstring,
+static void		AddRequirementsToDString(Tcl_DString *restrict dstring,
 			    int reqc, Tcl_Obj *const reqv[]);
 static Package *	FindPackage(Tcl_Interp *interp, const char *name);
 static int		PkgRequireCore(void *data[], Tcl_Interp *interp, int result);
@@ -1661,8 +1662,8 @@ CheckVersionAndConvert(
     const char *string,		/* Supposedly a version number, which is
 				 * groups of decimal digits separated by
 				 * dots. */
-    char **internal,		/* Internal normalized representation */
-    int *stable)		/* Flag: Version is (un)stable. */
+    char **restrict internal,	/* Internal normalized representation */
+    int *restrict stable)	/* Flag: Version is (un)stable. */
 {
     const char *p = string;
     char prevChar;
@@ -1776,9 +1777,10 @@ CheckVersionAndConvert(
 
 static int
 CompareVersions(
-    char *v1, char *v2,		/* Versions strings, of form 2.1.3 (any number
+    char *restrict v1, char *restrict v2,
+				/* Versions strings, of form 2.1.3 (any number
 				 * of version numbers). */
-    int *isMajorPtr)		/* If non-null, the word pointed to is filled
+    int *restrict isMajorPtr)	/* If non-null, the word pointed to is filled
 				 * in with a 0/1 value. 1 means that the
 				 * difference occurred in the first element. */
 {
@@ -2099,7 +2101,7 @@ AddRequirementsToResult(
 
 static void
 AddRequirementsToDString(
-    Tcl_DString *dsPtr,
+    Tcl_DString *restrict dsPtr,
     int reqc,			/* Requirements constraining the desired
 				 * version. */
     Tcl_Obj *const reqv[])	/* 0 means to use the latest version
@@ -2138,9 +2140,10 @@ AddRequirementsToDString(
 
 static int
 SomeRequirementSatisfied(
-    char *availVersionI,	/* Candidate version to check against the
+    char *restrict availVersionI,
+				/* Candidate version to check against the
 				 * requirements. */
-    Tcl_Size reqc,			/* Requirements constraining the desired
+    Tcl_Size reqc,		/* Requirements constraining the desired
 				 * version. */
     Tcl_Obj *const reqv[])	/* 0 means to use the latest version
 				 * available. */
@@ -2175,7 +2178,7 @@ SomeRequirementSatisfied(
 
 static int
 RequirementSatisfied(
-    char *havei,		/* Version string, of candidate package we
+    char *restrict havei,	/* Version string, of candidate package we
 				 * have. */
     const char *req)		/* Requirement string the candidate has to
 				 * satisfy. */

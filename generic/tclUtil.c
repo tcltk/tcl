@@ -127,15 +127,17 @@ static void		ClearHash(Tcl_HashTable *tablePtr);
 static void		FreeProcessGlobalValue(void *clientData);
 static void		FreeThreadHash(void *clientData);
 static int		GetEndOffsetFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-			    Tcl_WideInt endValue, Tcl_WideInt *indexPtr);
+			    Tcl_WideInt endValue, Tcl_WideInt *restrict indexPtr);
 static Tcl_HashTable *	GetThreadHash(Tcl_ThreadDataKey *keyPtr);
 static int		GetWideForIndex(Tcl_Interp *interp, Tcl_Obj *objPtr,
-			    Tcl_WideInt endValue, Tcl_WideInt *widePtr);
+			    Tcl_WideInt endValue, Tcl_WideInt *restrict widePtr);
 static int		FindElement(Tcl_Interp *interp, const char *string,
 			    Tcl_Size stringLength, const char *typeStr,
-			    const char *typeCode, const char **elementPtr,
-			    const char **nextPtr, Tcl_Size *sizePtr,
-			    int *literalPtr);
+			    const char *typeCode,
+			    const char **restrict elementPtr,
+			    const char **restrict nextPtr,
+			    Tcl_Size *restrict sizePtr,
+			    int *restrict literalPtr);
 /*
  * The following is the Tcl object type definition for an object that
  * represents a list index in the form, "end-offset". It is used as a
@@ -3414,7 +3416,8 @@ GetWideForIndex(
     Tcl_WideInt endValue,	/* The value to be stored at *widePtr if
 				 * objPtr holds "end".
 				 * NOTE: this value may be TCL_INDEX_NONE. */
-    Tcl_WideInt *widePtr)	/* Location filled in with a wide integer
+    Tcl_WideInt *restrict widePtr)
+				/* Location filled in with a wide integer
 				 * representing an index. */
 {
     int numType;
@@ -3545,7 +3548,8 @@ GetEndOffsetFromObj(
     Tcl_Obj *objPtr,		/* Pointer to the object to parse */
     Tcl_WideInt endValue,	/* The value to be stored at "widePtr" if
 				 * "objPtr" holds "end". */
-    Tcl_WideInt *widePtr)	/* Location filled in with an integer
+    Tcl_WideInt *restrict widePtr)
+				/* Location filled in with an integer
 				 * representing an index. */
 {
     Tcl_ObjInternalRep *irPtr;

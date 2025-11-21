@@ -249,10 +249,10 @@ static void		ConsoleWatchProc(void *instanceData, int mask);
 static void		ProcExitHandler(void *clientData);
 static void		ConsoleThreadActionProc(void *instanceData, int action);
 static DWORD		ReadConsoleChars(HANDLE hConsole, WCHAR *lpBuffer,
-			    Tcl_Size nChars, Tcl_Size *nCharsReadPtr);
+			    Tcl_Size nChars, Tcl_Size *restrict nCharsReadPtr);
 static DWORD		WriteConsoleChars(HANDLE hConsole,
 			    const WCHAR *lpBuffer, Tcl_Size nChars,
-			    Tcl_Size *nCharsWritten);
+			    Tcl_Size *restrict nCharsWritten);
 static void		RingBufferInit(RingBuffer *ringPtr, Tcl_Size capacity);
 static void		RingBufferClear(RingBuffer *ringPtr);
 static Tcl_Size		RingBufferIn(RingBuffer *ringPtr, const char *srcPtr,
@@ -545,7 +545,7 @@ ReadConsoleChars(
     HANDLE hConsole,
     WCHAR *lpBuffer,
     Tcl_Size nChars,
-    Tcl_Size *nCharsReadPtr)
+    Tcl_Size *restrict nCharsReadPtr)
 {
     DWORD nRead;
 
@@ -603,7 +603,7 @@ WriteConsoleChars(
     HANDLE hConsole,
     const WCHAR *lpBuffer,
     Tcl_Size nChars,
-    Tcl_Size *nCharsWrittenPtr)
+    Tcl_Size *restrict nCharsWrittenPtr)
 {
     DWORD nCharsWritten;
 

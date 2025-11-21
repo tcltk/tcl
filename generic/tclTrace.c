@@ -3040,7 +3040,7 @@ TraceVarEx(
     const char *part2,		/* Name of element within array; NULL means
 				 * trace applies to scalar variable or array
 				 * as-a-whole. */
-    VarTrace *tracePtr)/* Structure containing flags, traceProc and
+    VarTrace *tracePtr)		/* Structure containing flags, traceProc and
 				 * clientData fields. Others should be left
 				 * blank. Will be Tcl_Free()d (eventually) if
 				 * this function returns TCL_OK, and up to

@@ -51,7 +51,7 @@ static const char *	BuildCharSet(CharSet *cset, const char *format);
 static int		CharInSet(CharSet *cset, int ch);
 static void		ReleaseCharSet(CharSet *cset);
 static int		ValidateFormat(Tcl_Interp *interp, const char *format,
-			    int numVars, int *totalVars);
+			    int numVars, int *restrict totalVars);
 
 /*
  *----------------------------------------------------------------------
@@ -256,7 +256,7 @@ ValidateFormat(
     const char *format,		/* The format string. */
     int numVars,		/* The number of variables passed to the scan
 				 * command. */
-    int *totalSubs)		/* The number of variables that will be
+    int *restrict totalSubs)	/* The number of variables that will be
 				 * required. */
 {
     int gotXpg, gotSequential, i, flags;

@@ -888,9 +888,9 @@ TclClockMCGetIdx(
  */
 int
 TclClockMCSetIdx(
-    ClockFmtScnCmdArgs *opts,
+    ClockFmtScnCmdArgs *restrict opts,
     int mcKey,
-    Tcl_Obj *valObj)
+    Tcl_Obj *restrict valObj)
 {
     ClockClientData *dataPtr = opts->dataPtr;
 

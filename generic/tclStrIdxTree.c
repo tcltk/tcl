@@ -89,8 +89,10 @@ static const Tcl_ObjType StrIdxTreeObjType = {
  */
 const char *
 TclStrIdxTreeSearch(
-    TclStrIdxTree **foundParent,/* Return value of found sub tree (used for tree build) */
-    TclStrIdx **foundItem,	/* Return value of found item */
+    TclStrIdxTree **restrict foundParent,
+				/* Return value of found sub tree (used for tree build) */
+    TclStrIdx **restrict foundItem,
+				/* Return value of found item */
     TclStrIdxTree *tree,	/* Index tree will be browsed */
     const char *start,		/* UTF string to find in tree */
     const char *end)		/* End of string */
@@ -122,7 +124,7 @@ TclStrIdxTreeSearch(
 
 	    /* if match item, go deeper as long as possible */
 	    if (offs >= item->length && item->childTree.firstPtr) {
-		/* save previuosly found item (if not ambigous) for
+		/* save previously found item (if not ambigous) for
 		 * possible fallback (few greedy match) */
 		if (item->value != NULL) {
 		    prevf = f;
@@ -241,10 +243,10 @@ TclStrIdxTreeAppend(
  */
 int
 TclStrIdxTreeBuildFromList(
-    TclStrIdxTree *idxTree,
+    TclStrIdxTree *restrict idxTree,
     Tcl_Size lstc,
-    Tcl_Obj **lstv,
-    void **values)
+    Tcl_Obj **restrict lstv,
+    void **restrict values)
 {
     Tcl_Obj **lwrv;
     Tcl_Size i;
