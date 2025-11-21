@@ -665,14 +665,10 @@ InfoObjectMethodsCmd(
 
     TclNewObj(resultObj);
     if (recurse) {
-	const char **names;
-	int i, numNames = TclOOGetSortedMethodList(oPtr, NULL, NULL, flag,
-		&names);
+	Tcl_Obj **names;
+	int numNames = TclOOGetSortedMethodList(oPtr, NULL, NULL, flag, &names);
 
-	for (i=0 ; i<numNames ; i++) {
-	    Tcl_ListObjAppendElement(NULL, resultObj,
-		    Tcl_NewStringObj(names[i], TCL_AUTO_LENGTH));
-	}
+	TclListObjAppendElements(NULL, resultObj, numNames, names);
 	if (numNames > 0) {
 	    Tcl_Free((void *)names);
 	}
@@ -1418,13 +1414,10 @@ InfoClassMethodsCmd(
 
     TclNewObj(resultObj);
     if (recurse) {
-	const char **names;
-	Tcl_Size i, numNames = TclOOGetSortedClassMethodList(clsPtr, flag, &names);
+	Tcl_Obj **names;
+	Tcl_Size numNames = TclOOGetSortedClassMethodList(clsPtr, flag, &names);
 
-	for (i=0 ; i<numNames ; i++) {
-	    Tcl_ListObjAppendElement(NULL, resultObj,
-		    Tcl_NewStringObj(names[i], TCL_AUTO_LENGTH));
-	}
+	TclListObjAppendElements(NULL, resultObj, numNames, names);
 	if (numNames > 0) {
 	    Tcl_Free((void *)names);
 	}
