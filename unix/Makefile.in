@@ -154,8 +154,8 @@ INSTALL_STRIP_PROGRAM	= strip
 INSTALL_STRIP_LIBRARY	= strip -x
 
 INSTALL			= $(SHELL) $(UNIX_DIR)/install-sh -c
-INSTALL_PROGRAM		= ${INSTALL}
-INSTALL_LIBRARY		= ${INSTALL}
+INSTALL_PROGRAM		= ${INSTALL} -m 755
+INSTALL_LIBRARY		= ${INSTALL} -m 755
 INSTALL_DATA		= ${INSTALL} -m 644
 INSTALL_DATA_DIR	= ${INSTALL} -d -m 755
 
@@ -241,6 +241,7 @@ ZLIB_DIR		= ${COMPAT_DIR}/zlib
 ZLIB_INCLUDE		= @ZLIB_INCLUDE@
 TOMMATH_DIR		= $(TOP_DIR)/libtommath
 TOMMATH_INCLUDE		= @TOMMATH_INCLUDE@
+UTF8PROC_DIR		= $(TOP_DIR)/utf8proc
 
 CC			= @CC@
 OBJEXT			= @OBJEXT@
@@ -281,7 +282,7 @@ STUB_CC_SWITCHES = -I"${BUILD_DIR}" -I${UNIX_DIR} -I${GENERIC_DIR} -I${TOMMATH_D
 	${AC_FLAGS} ${ENV_FLAGS} ${EXTRA_CFLAGS} @EXTRA_CC_SWITCHES@ \
 	${NO_DEPRECATED_FLAGS} -DMP_FIXED_CUTOFFS
 
-CC_SWITCHES = $(STUB_CC_SWITCHES) -DBUILD_tcl
+CC_SWITCHES = $(STUB_CC_SWITCHES) -DBUILD_tcl -DUTF8PROC_STATIC
 
 APP_CC_SWITCHES = $(STUB_CC_SWITCHES) @EXTRA_APP_CC_SWITCHES@
 
@@ -293,10 +294,10 @@ DEPEND_SWITCHES	= ${CFLAGS} -I${UNIX_DIR} -I${GENERIC_DIR} \
 TCLSH_OBJS = tclAppInit.o
 
 TCLTEST_OBJS = tclTestInit.o tclTest.o tclTestObj.o tclTestProcBodyObj.o \
-	tclThreadTest.o tclUnixTest.o tclTestABSList.o
+	tclMutexTest.o tclThreadTest.o tclUnixTest.o tclTestABSList.o
 
 XTTEST_OBJS = xtTestInit.o tclTest.o tclTestObj.o tclTestProcBodyObj.o \
-	tclThreadTest.o tclUnixTest.o tclXtNotify.o tclXtTest.o \
+	tclMutexTest.o tclThreadTest.o tclUnixTest.o tclXtNotify.o tclXtTest.o \
 	tclTestABSList.o
 
 GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
@@ -348,6 +349,8 @@ TOMMATH_OBJS = bn_s_mp_reverse.o bn_s_mp_mul_digs_fast.o \
 	bn_mp_ubin_size.o bn_mp_xor.o bn_mp_zero.o bn_s_mp_add.o \
 	bn_s_mp_mul_digs.o bn_s_mp_sqr.o bn_s_mp_sub.o
 
+UTF8PROC_OBJS = utf8proc.o
+
 STUB_LIB_OBJS = tclStubLib.o \
 	tclStubCall.o \
 	tclStubLibTbl.o \
@@ -374,7 +377,7 @@ ZLIB_OBJS = Zadler32.o Zcompress.o Zcrc32.o Zdeflate.o Zinfback.o \
 TCL_OBJS = ${GENERIC_OBJS} ${UNIX_OBJS} ${NOTIFY_OBJS} ${COMPAT_OBJS} \
 	${OO_OBJS} @DL_OBJS@ @PLAT_OBJS@
 
-OBJS = ${TCL_OBJS} @DTRACE_OBJ@ @ZLIB_OBJS@ @TOMMATH_OBJS@
+OBJS = ${TCL_OBJS} ${UTF8PROC_OBJS} @DTRACE_OBJ@ @ZLIB_OBJS@ @TOMMATH_OBJS@
 
 TCL_DECLS = \
 	$(GENERIC_DIR)/tcl.decls \
@@ -720,12 +723,16 @@ ZLIB_SRCS = \
 	$(ZLIB_DIR)/uncompr.c \
 	$(ZLIB_DIR)/zutil.c
 
+UTF8PROC_SRCS = \
+	$(UTF8PROC_DIR)/utf8proc.c
+
 # Note: don't include DL_SRCS or MAC_OSX_SRCS in SRCS: most of those files
 # won't compile on the current machine, and they will cause problems for
 # things like "make depend".
 
 SRCS = $(GENERIC_SRCS) $(UNIX_SRCS) $(NOTIFY_SRCS) \
-	$(OO_SRCS) $(STUB_SRCS) @PLAT_SRCS@ @ZLIB_SRCS@ @TOMMATH_SRCS@
+	$(OO_SRCS) $(UTF8PROC_SRCS) $(STUB_SRCS) \
+	@PLAT_SRCS@ @ZLIB_SRCS@ @TOMMATH_SRCS@
 
 ###
 # Tip 430 - ZipFS Modifications
@@ -1022,7 +1029,6 @@ install-binaries: binaries
 	done
 	@echo "Installing $(LIB_FILE) to $(DLL_INSTALL_DIR)/"
 	@@INSTALL_LIB@
-	@chmod 555 "$(DLL_INSTALL_DIR)/$(LIB_FILE)"
 	@echo "Installing ${TCL_EXE} as $(BIN_INSTALL_DIR)/tclsh$(VERSION)${EXE_SUFFIX}"
 	@$(INSTALL_PROGRAM) ${TCL_EXE} "$(BIN_INSTALL_DIR)/tclsh$(VERSION)${EXE_SUFFIX}"
 	@echo "Installing tclConfig.sh to $(CONFIG_INSTALL_DIR)/"
@@ -1073,9 +1079,9 @@ install-libraries: libraries
 	    do \
 	    $(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)/cookiejar0.2"; \
 	    done
-	@echo "Installing package http 2.10.0 as a Tcl Module"
+	@echo "Installing package http 2.10.1 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/http/http.tcl \
-		"$(MODULE_INSTALL_DIR)/9.0/http-2.10.0.tm"
+		"$(MODULE_INSTALL_DIR)/9.0/http-2.10.1.tm"
 	@echo "Installing package opt0.4 files to $(SCRIPT_INSTALL_DIR)/opt0.4/"
 	@for i in $(TOP_DIR)/library/opt/*.tcl; do \
 	    $(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)/opt0.4"; \
@@ -1083,12 +1089,12 @@ install-libraries: libraries
 	@echo "Installing package msgcat 1.7.1 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/msgcat/msgcat.tcl \
 		"$(MODULE_INSTALL_DIR)/9.0/msgcat-1.7.1.tm"
-	@echo "Installing package tcltest 2.5.9 as a Tcl Module"
+	@echo "Installing package tcltest 2.5.10 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/tcltest/tcltest.tcl \
-		"$(MODULE_INSTALL_DIR)/9.0/tcltest-2.5.9.tm"
-	@echo "Installing package platform 1.0.19 as a Tcl Module"
+		"$(MODULE_INSTALL_DIR)/9.0/tcltest-2.5.10.tm"
+	@echo "Installing package platform 1.1.0 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/platform.tcl \
-		"$(MODULE_INSTALL_DIR)/9.0/platform-1.0.19.tm"
+		"$(MODULE_INSTALL_DIR)/9.0/platform-1.1.0.tm"
 	@echo "Installing package platform::shell 1.1.4 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/shell.tcl \
 		"$(MODULE_INSTALL_DIR)/9.0/platform/shell-1.1.4.tm"
@@ -1098,7 +1104,17 @@ install-libraries: libraries
 	done
 	@if [ -n "$(TCL_MODULE_PATH)" -a -f $(TOP_DIR)/library/tm.tcl ] ; then \
 	    echo "Customizing tcl module path"; \
-	    echo "if {![interp issafe]} { ::tcl::tm::roots [list $(TCL_MODULE_PATH)] }" >> \
+	    echo "if {![interp issafe]} {" >> \
+		"$(SCRIPT_INSTALL_DIR)/tm.tcl"; \
+	    echo "    ::tcl::tm::roots [lmap p [split {$(TCL_MODULE_PATH)} :] {" >> \
+		"$(SCRIPT_INSTALL_DIR)/tm.tcl"; \
+	    echo "	if {[catch {file tildeexpand [set p]} p]} continue" >> \
+		"$(SCRIPT_INSTALL_DIR)/tm.tcl"; \
+	    echo "	set p" >> \
+		"$(SCRIPT_INSTALL_DIR)/tm.tcl"; \
+	    echo "    }]" >> \
+		"$(SCRIPT_INSTALL_DIR)/tm.tcl"; \
+	    echo "}" >> \
 		"$(SCRIPT_INSTALL_DIR)/tm.tcl"; \
 	fi
 
@@ -1459,7 +1475,7 @@ tclNamesp.o: $(GENERIC_DIR)/tclNamesp.c $(COMPILEHDR)
 tclNotify.o: $(GENERIC_DIR)/tclNotify.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclNotify.c
 
-tclOO.o: $(GENERIC_DIR)/tclOO.c $(GENERIC_DIR)/tclOOScript.h
+tclOO.o: $(GENERIC_DIR)/tclOO.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclOO.c
 
 tclOOBasic.o: $(GENERIC_DIR)/tclOOBasic.c
@@ -1563,7 +1579,7 @@ tclTrace.o: $(GENERIC_DIR)/tclTrace.c
 tclUtil.o: $(GENERIC_DIR)/tclUtil.c $(PARSEHDR) $(TRIMHDR)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclUtil.c
 
-tclUtf.o: $(GENERIC_DIR)/tclUtf.c $(GENERIC_DIR)/tclUniData.c
+tclUtf.o: $(GENERIC_DIR)/tclUtf.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclUtf.c
 
 tclVar.o: $(GENERIC_DIR)/tclVar.c
@@ -1605,6 +1621,9 @@ tclThreadJoin.o: $(GENERIC_DIR)/tclThreadJoin.c
 
 tclThreadStorage.o: $(GENERIC_DIR)/tclThreadStorage.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclThreadStorage.c
+
+tclMutexTest.o: $(GENERIC_DIR)/tclMutexTest.c
+	$(CC) -c $(APP_CC_SWITCHES) $(GENERIC_DIR)/tclMutexTest.c
 
 tclThreadTest.o: $(GENERIC_DIR)/tclThreadTest.c
 	$(CC) -c $(APP_CC_SWITCHES) $(GENERIC_DIR)/tclThreadTest.c
@@ -1829,7 +1848,11 @@ tclUnixFCmd.o: $(UNIX_DIR)/tclUnixFCmd.c
 	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclUnixFCmd.c
 
 tclUnixFile.o: $(UNIX_DIR)/tclUnixFile.c $(FSHDR)
-	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclUnixFile.c
+	$(CC) -c $(CC_SWITCHES) \
+		-D_GNU_SOURCE \
+		-DCFG_RUNTIME_DLLFILE="\"$(TCL_LIB_FILE)\"" \
+		-DCFG_RUNTIME_LIBDIR="\"$(libdir)\"" \
+		$(UNIX_DIR)/tclUnixFile.c
 
 tclEpollNotfy.o: $(UNIX_DIR)/tclEpollNotfy.c $(UNIX_DIR)/tclUnixNotfy.c
 	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclEpollNotfy.c
@@ -1861,6 +1884,9 @@ tclUnixInit.o: $(UNIX_DIR)/tclUnixInit.c tclConfig.sh
 tclUnixCompat.o: $(UNIX_DIR)/tclUnixCompat.c
 	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclUnixCompat.c
 
+utf8proc.o: $(UTF8PROC_DIR)/utf8proc.c
+	$(CC) -c $(CC_SWITCHES) $(UTF8PROC_DIR)/utf8proc.c
+
 # The following are Mac OS X only sources:
 tclMacOSXBundle.o: $(MAC_OSX_DIR)/tclMacOSXBundle.c
 	$(CC) -c $(CC_SWITCHES) $(MAC_OSX_DIR)/tclMacOSXBundle.c
@@ -1877,7 +1903,7 @@ tclWinError.o: $(TOP_DIR)/win/tclWinError.c
 
 # DTrace support
 
-$(TCL_OBJS) $(STUB_LIB_OBJS) $(TCLSH_OBJS) $(TCLTEST_OBJS) $(XTTEST_OBJS) $(TOMMATH_OBJS): @DTRACE_HDR@
+$(TCL_OBJS) $(STUB_LIB_OBJS) $(TCLSH_OBJS) $(TCLTEST_OBJS) $(XTTEST_OBJS) $(TOMMATH_OBJS) $(UTF8PROC_OBJS): @DTRACE_HDR@
 
 $(DTRACE_HDR): $(DTRACE_SRC)
 	$(DTRACE) -h $(DTRACE_SWITCHES) -o $@ -s $(DTRACE_SRC)
@@ -2139,7 +2165,6 @@ dist-packages: configure-packages
 # the .c file.
 
 #
-# Remark: see [54a305cb88]. tclDate.c is manually edited, removing the unused "yynerrs" variable
 gendate:
 	bison --output-file=$(GENERIC_DIR)/tclDate.c \
 		--no-lines \
@@ -2172,21 +2197,12 @@ $(GENERIC_DIR)/tclOOStubInit.c: $(GENERIC_DIR)/tclOO.decls
 	@echo "Developers may want to run \"make genstubs\" to regenerate."
 	@echo "This warning can be safely ignored, do not report as a bug!"
 
-$(GENERIC_DIR)/tclOOScript.h: $(TOOL_DIR)/tclOOScript.tcl
-	@echo "Warning: tclOOScript.h may be out of date."
-	@echo "Developers may want to run \"make genscript\" to regenerate."
-	@echo "This warning can be safely ignored, do not report as a bug!"
-
 genstubs:
 	$(NATIVE_TCLSH) $(TOOL_DIR)/genStubs.tcl $(GENERIC_DIR) \
 		$(GENERIC_DIR)/tcl.decls $(GENERIC_DIR)/tclInt.decls \
 		$(GENERIC_DIR)/tclTomMath.decls
 	$(NATIVE_TCLSH) $(TOOL_DIR)/genStubs.tcl $(GENERIC_DIR) \
 		$(GENERIC_DIR)/tclOO.decls
-
-genscript:
-	$(NATIVE_TCLSH) $(TOOL_DIR)/makeHeader.tcl \
-		$(TOOL_DIR)/tclOOScript.tcl $(GENERIC_DIR)/tclOOScript.h
 
 #
 # Target to check that all exported functions have an entry in the stubs
@@ -2354,6 +2370,8 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in gen
 	@( cd $(TOP_DIR)/libtommath; find . -type f -print ) \
 	    | ( cd $(TOP_DIR)/libtommath ; xargs tar cf - ) \
 	    | ( cd $(DISTDIR)/libtommath ; tar xfp - )
+	$(INSTALL_DATA_DIR) $(DISTDIR)/utf8proc
+	$(DIST_INSTALL_DATA) $(UTF8PROC_DIR)/*.[ch] $(DISTDIR)/utf8proc
 	$(INSTALL_DATA_DIR) $(DISTDIR)/tests
 	$(DIST_INSTALL_DATA) $(TOP_DIR)/license.terms $(DISTDIR)/tests
 	$(DIST_INSTALL_DATA) $(TOP_DIR)/tests/*.test $(TOP_DIR)/tests/README \

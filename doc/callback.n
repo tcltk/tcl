@@ -9,7 +9,7 @@
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-callback, mymethod \- generate callbacks to methods
+callback, mymethod \- Generate callbacks to methods
 .SH SYNOPSIS
 .nf
 \fBpackage require tcl::oo\fR

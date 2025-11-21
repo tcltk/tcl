@@ -82,7 +82,7 @@ enum DateInfoFlags {
  * Enumeration of the string literals used in [clock]
  */
 
-typedef enum ClockLiteral {
+typedef enum {
     LIT__NIL,
     LIT__DEFAULT_FORMAT,
     LIT_SYSTEM,		LIT_CURRENT,		LIT_C,
@@ -129,7 +129,7 @@ typedef enum ClockLiteral {
  * Enumeration of the msgcat literals used in [clock]
  */
 
-typedef enum ClockMsgCtLiteral {
+typedef enum {
     MCLIT__NIL, /* placeholder */
     MCLIT_MONTHS_FULL,	MCLIT_MONTHS_ABBREV,  MCLIT_MONTHS_COMB,
     MCLIT_DAYS_OF_WEEK_FULL,  MCLIT_DAYS_OF_WEEK_ABBREV,  MCLIT_DAYS_OF_WEEK_COMB,
@@ -159,10 +159,12 @@ typedef enum ClockMsgCtLiteral {
  */
 
 enum TclDateFieldsFlags {
-    CLF_CTZ = (1 << 4)
+    CLF_BCE = (1 << 1),		/* set if BCE */
+    CLF_BGREG = (1 << 2),	/* set if the date is before Gregorian (Julian yet) */
+    CLF_CTZ = (1 << 4)		/* (special) revalidate TZ epoch next time used */
 };
 
-typedef struct TclDateFields {
+typedef struct {
     /* Cacheable fields:	 */
 
     Tcl_WideInt seconds;	/* Time expressed in seconds from the Posix
@@ -172,8 +174,6 @@ typedef struct TclDateFields {
     int tzOffset;		/* Time zone offset in seconds east of
 				 * Greenwich */
     Tcl_WideInt julianDay;	/* Julian Day Number in local time zone */
-    int isBce;			/* 1 if BCE */
-    int gregorian;		/* Flag == 1 if the date is Gregorian */
     int year;			/* Year of the era */
     int dayOfYear;		/* Day of the year (1 January == 1) */
     int month;			/* Month number */
@@ -186,7 +186,7 @@ typedef struct TclDateFields {
     Tcl_WideInt secondOfMin;	/* Seconds of minute (in-between time only calculation) */
     Tcl_WideInt secondOfDay;	/* Seconds of day (in-between time only calculation) */
 
-    int flags;			/* 0 or CLF_CTZ */
+    int flags;			/* 0 or some of TclDateFieldsFlags */
 
     /* Non cacheable fields:	 */
 
@@ -201,7 +201,7 @@ typedef struct TclDateFields {
  * Meridian: am, pm, or 24-hour style.
  */
 
-typedef enum _MERIDIAN {
+typedef enum {
     MERam, MERpm, MER24
 } MERIDIAN;
 
@@ -395,7 +395,7 @@ typedef int ClockScanTokenProc(
 	DateInfo *info,
 	const ClockScanToken *tok);
 
-typedef enum _CLCKTOK_TYPE {
+typedef enum {
    CTOKT_INT = 1, CTOKT_WIDE, CTOKT_PARSER, CTOKT_SPACE, CTOKT_WORD, CTOKT_CHAR,
    CFMTT_PROC
 } CLCKTOK_TYPE;
@@ -521,29 +521,25 @@ struct ClockFmtScnStorage {
  * Prototypes of module functions.
  */
 
-MODULE_SCOPE int	ToSeconds(int Hours, int Minutes,
+MODULE_SCOPE int	TclToSeconds(int Hours, int Minutes,
 			    int Seconds, MERIDIAN Meridian);
-MODULE_SCOPE int	IsGregorianLeapYear(TclDateFields *);
-MODULE_SCOPE void	GetJulianDayFromEraYearWeekDay(
+MODULE_SCOPE int	TclIsGregorianLeapYear(TclDateFields *);
+MODULE_SCOPE void	TclGetJulianDayFromEraYearDay(
 			    TclDateFields *fields, int changeover);
-MODULE_SCOPE void	GetJulianDayFromEraYearMonthDay(
-			    TclDateFields *fields, int changeover);
-MODULE_SCOPE void	GetJulianDayFromEraYearDay(
-			    TclDateFields *fields, int changeover);
-MODULE_SCOPE int	ConvertUTCToLocal(ClockClientData *dataPtr, Tcl_Interp *,
+MODULE_SCOPE int	TclConvertUTCToLocal(ClockClientData *dataPtr, Tcl_Interp *,
 			    TclDateFields *, Tcl_Obj *timezoneObj, int);
-MODULE_SCOPE Tcl_Obj *	LookupLastTransition(Tcl_Interp *, Tcl_WideInt,
+MODULE_SCOPE Tcl_Obj *	TclClockLookupLastTransition(Tcl_Interp *, Tcl_WideInt,
 			    Tcl_Size, Tcl_Obj *const *, Tcl_WideInt *rangesVal);
 MODULE_SCOPE int	TclClockFreeScan(Tcl_Interp *interp, DateInfo *info);
 
 /* tclClock.c module declarations */
 
-MODULE_SCOPE Tcl_Obj *	ClockSetupTimeZone(ClockClientData *dataPtr,
+MODULE_SCOPE Tcl_Obj *	TclClockSetupTimeZone(ClockClientData *dataPtr,
 			    Tcl_Interp *interp, Tcl_Obj *timezoneObj);
-MODULE_SCOPE Tcl_Obj *	ClockMCDict(ClockFmtScnCmdArgs *opts);
-MODULE_SCOPE Tcl_Obj *	ClockMCGet(ClockFmtScnCmdArgs *opts, int mcKey);
-MODULE_SCOPE Tcl_Obj *	ClockMCGetIdx(ClockFmtScnCmdArgs *opts, int mcKey);
-MODULE_SCOPE int	ClockMCSetIdx(ClockFmtScnCmdArgs *opts, int mcKey,
+MODULE_SCOPE Tcl_Obj *	TclClockMCDict(ClockFmtScnCmdArgs *opts);
+MODULE_SCOPE Tcl_Obj *	TclClockMCGet(ClockFmtScnCmdArgs *opts, int mcKey);
+MODULE_SCOPE Tcl_Obj *	TclClockMCGetIdx(ClockFmtScnCmdArgs *opts, int mcKey);
+MODULE_SCOPE int	TclClockMCSetIdx(ClockFmtScnCmdArgs *opts, int mcKey,
 			    Tcl_Obj *valObj);
 
 /* tclClockFmt.c module declarations */
@@ -551,16 +547,13 @@ MODULE_SCOPE int	ClockMCSetIdx(ClockFmtScnCmdArgs *opts, int mcKey,
 MODULE_SCOPE char *	TclItoAw(char *buf, int val, char padchar, unsigned short width);
 MODULE_SCOPE int	TclAtoWIe(Tcl_WideInt *out, const char *p, const char *e, int sign);
 
-MODULE_SCOPE Tcl_Obj*	ClockFrmObjGetLocFmtKey(Tcl_Interp *interp,
-			    Tcl_Obj *objPtr);
 MODULE_SCOPE ClockFmtScnStorage *Tcl_GetClockFrmScnFromObj(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr);
-MODULE_SCOPE Tcl_Obj *	ClockLocalizeFormat(ClockFmtScnCmdArgs *opts);
-MODULE_SCOPE int	ClockScan(DateInfo *info, Tcl_Obj *strObj,
+MODULE_SCOPE int	TclClockScan(DateInfo *info, Tcl_Obj *strObj,
 			    ClockFmtScnCmdArgs *opts);
-MODULE_SCOPE int	ClockFormat(DateFormat *dateFmt,
+MODULE_SCOPE int	TclClockFormat(DateFormat *dateFmt,
 			    ClockFmtScnCmdArgs *opts);
-MODULE_SCOPE void	ClockFrmScnClearCaches(void);
-MODULE_SCOPE void	ClockFrmScnFinalize();
+MODULE_SCOPE void	TclClockFrmScnClearCaches(void);
+MODULE_SCOPE void	TclClockFrmScnFinalize();
 
 #endif /* _TCLCLOCK_H */

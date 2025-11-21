@@ -9,7 +9,7 @@
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-oo::copy \- create copies of objects and classes
+oo::copy \- Create copies of objects and classes
 .SH SYNOPSIS
 .nf
 \fBpackage require tcl::oo\fR

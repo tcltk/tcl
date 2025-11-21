@@ -76,7 +76,6 @@ typedef struct TclPipeThreadInfo {
 				 * used as signal to stop (state set to -1) */
     volatile LONG state;	/* Indicates current state of the thread */
     void *clientData;		/* Referenced data of the main thread */
-    HANDLE evWakeUp;		/* Optional wake-up event worker set by shutdown */
 } TclPipeThreadInfo;
 
 /* If pipe-workers will use some tcl subsystem, we can use Tcl_Alloc without
@@ -101,7 +100,7 @@ enum PipeWorkerStates {
 
 MODULE_SCOPE
 TclPipeThreadInfo *	TclPipeThreadCreateTI(TclPipeThreadInfo **pipeTIPtr,
-			    void *clientData, HANDLE wakeEvent);
+			    void *clientData);
 MODULE_SCOPE int	TclPipeThreadWaitForSignal(
 			    TclPipeThreadInfo **pipeTIPtr);
 
@@ -123,8 +122,7 @@ TclPipeThreadIsAlive(
     return (pipeTI && pipeTI->state != PTI_STATE_DOWN);
 };
 
-MODULE_SCOPE int	TclPipeThreadStopSignal(TclPipeThreadInfo **pipeTIPtr,
-			    HANDLE wakeEvent);
+MODULE_SCOPE int	TclPipeThreadStopSignal(TclPipeThreadInfo **pipeTIPtr);
 MODULE_SCOPE void	TclPipeThreadStop(TclPipeThreadInfo **pipeTIPtr,
 			    HANDLE hThread);
 MODULE_SCOPE void	TclPipeThreadExit(TclPipeThreadInfo **pipeTIPtr);

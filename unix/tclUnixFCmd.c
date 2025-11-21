@@ -54,10 +54,11 @@
  * The following constants specify the type of callback when
  * TraverseUnixTree() calls the traverseProc()
  */
-
-#define DOTREE_PRED	1	/* pre-order directory */
-#define DOTREE_POSTD	2	/* post-order directory */
-#define DOTREE_F	3	/* regular file */
+enum TraverseProcCallbackType {
+    DOTREE_PRED = 1,		/* pre-order directory */
+    DOTREE_POSTD = 2,		/* post-order directory */
+    DOTREE_F = 3		/* regular file */
+};
 
 /*
  * Fallback temporary file location the temporary file generation code. Can be
@@ -113,7 +114,7 @@ typedef int (TraversalProc)(Tcl_DString *srcPtr, Tcl_DString *dstPtr,
 
 #ifndef DJGPP
 
-enum {
+enum TclUnixFCmdAttributes {
 #if defined(__CYGWIN__)
     UNIX_ARCHIVE_ATTRIBUTE,
 #endif
@@ -743,8 +744,8 @@ TclpObjCopyDirectory(
     } else {
 	transPtr = Tcl_FSGetTranslatedPath(NULL,destPathPtr);
 	ret = Tcl_UtfToExternalDStringEx(NULL, NULL,
-	    (transPtr != NULL ? TclGetString(transPtr) : NULL),
-	    -1, TCL_ENCODING_PROFILE_TCL8, &dstString, NULL);
+		(transPtr != NULL ? TclGetString(transPtr) : NULL),
+		-1, TCL_ENCODING_PROFILE_TCL8, &dstString, NULL);
 	if (transPtr != NULL) {
 	    Tcl_DecrRefCount(transPtr);
 	}

@@ -15,22 +15,23 @@
 #include "tclTomMath.h"
 
 #include <math.h>
-#include <assert.h>
 
 /*
  * The following constants are used by GetFormatSpec to indicate various
  * special conditions in the parsing of a format specifier.
  */
-
-#define BINARY_ALL -1		/* Use all elements in the argument. */
-#define BINARY_NOCOUNT -2	/* No count was specified in format. */
+enum GetFormatSpecSpecialCounts {
+    BINARY_ALL = -1,		/* Use all elements in the argument. */
+    BINARY_NOCOUNT = -2		/* No count was specified in format. */
+};
 
 /*
  * The following flags may be OR'ed together and returned by GetFormatSpec
  */
-
-#define BINARY_SIGNED 0		/* Field to be read as signed data */
-#define BINARY_UNSIGNED 1	/* Field to be read as unsigned data */
+enum GetFormatSpecFlags {
+    BINARY_SIGNED = 0,		/* Field to be read as signed data */
+    BINARY_UNSIGNED = 1		/* Field to be read as unsigned data */
+};
 
 /*
  * The following defines the maximum number of different (integer) numbers
@@ -119,20 +120,20 @@ static const char B64Digits[65] = {
  * How to construct the ensembles.
  */
 
-static const EnsembleImplMap binaryMap[] = {
+const EnsembleImplMap tclBinaryImplMap[] = {
     { "format", BinaryFormatCmd, TclCompileBasicMin1ArgCmd, NULL, NULL, 0 },
-    { "scan",   BinaryScanCmd, TclCompileBasicMin2ArgCmd, NULL, NULL, 0 },
+    { "scan",   BinaryScanCmd, TclCompileBasicMin2ArgCmd, NULL, NULL, 0 }, // TODO: compile?
     { "encode", NULL, NULL, NULL, NULL, 0 },
     { "decode", NULL, NULL, NULL, NULL, 0 },
     { NULL, NULL, NULL, NULL, NULL, 0 }
 };
-static const EnsembleImplMap encodeMap[] = {
+const EnsembleImplMap tclBinaryEncodeImplMap[] = {
     { "hex",      BinaryEncodeHex, TclCompileBasic1ArgCmd, NULL, NULL, 0 },
     { "uuencode", BinaryEncodeUu,  NULL, NULL, NULL, 0 },
     { "base64",   BinaryEncode64,  NULL, NULL, NULL, 0 },
     { NULL, NULL, NULL, NULL, NULL, 0 }
 };
-static const EnsembleImplMap decodeMap[] = {
+const EnsembleImplMap tclBinaryDecodeImplMap[] = {
     { "hex",      BinaryDecodeHex, TclCompileBasic1Or2ArgCmd, NULL, NULL, 0 },
     { "uuencode", BinaryDecodeUu,  TclCompileBasic1Or2ArgCmd, NULL, NULL, 0 },
     { "base64",   BinaryDecode64,  TclCompileBasic1Or2ArgCmd, NULL, NULL, 0 },
@@ -782,35 +783,6 @@ TclAppendBytesToByteArray(
     }
     byteArrayPtr->used += len;
     TclInvalidateStringRep(objPtr);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclInitBinaryCmd --
- *
- *	This function is called to create the "binary" Tcl command. See the
- *	user documentation for details on what it does.
- *
- * Results:
- *	A command token for the new command.
- *
- * Side effects:
- *	Creates a new binary command as a mapped ensemble.
- *
- *----------------------------------------------------------------------
- */
-
-Tcl_Command
-TclInitBinaryCmd(
-    Tcl_Interp *interp)
-{
-    Tcl_Command binaryEnsemble;
-
-    binaryEnsemble = TclMakeEnsemble(interp, "binary", binaryMap);
-    TclMakeEnsemble(interp, "binary encode", encodeMap);
-    TclMakeEnsemble(interp, "binary decode", decodeMap);
-    return binaryEnsemble;
 }
 
 /*
@@ -2737,13 +2709,13 @@ BinaryEncodeUu(
 {
     Tcl_Obj *resultObj;
     unsigned char *data, *start, *cursor;
-    int i, bits, index;
+    int i, bits;
     unsigned int n;
     int lineLength = 61;
     const unsigned char SingleNewline[] = { UCHAR('\n') };
     const unsigned char *wrapchar = SingleNewline;
     Tcl_Size j, rawLength, offset, count = 0, wrapcharlen = sizeof(SingleNewline);
-    enum { OPT_MAXLEN, OPT_WRAPCHAR };
+    enum { OPT_MAXLEN, OPT_WRAPCHAR } index;
     static const char *const optStrings[] = { "-maxlen", "-wrapchar", NULL };
 
     if (objc < 2 || objc % 2 != 0) {
@@ -2802,8 +2774,6 @@ BinaryEncodeUu(
 		return TCL_ERROR;
 	    }
 	    break;
-	default:
-	    TCL_UNREACHABLE();
 	}
     }
 

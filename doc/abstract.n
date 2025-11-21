@@ -9,7 +9,7 @@
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-oo::abstract \- a class that does not allow direct instances of itself
+oo::abstract \- A class that does not allow direct instances of itself
 .SH SYNOPSIS
 .nf
 \fBpackage require tcl::oo\fR

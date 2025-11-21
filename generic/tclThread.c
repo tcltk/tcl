@@ -338,7 +338,8 @@ Tcl_ConditionFinalize(
  */
 
 void
-TclFinalizeThreadData(int quick)
+TclFinalizeThreadData(
+    int quick)
 {
     TclFinalizeThreadDataThread();
 #if TCL_THREADS && defined(USE_THREAD_ALLOC)
