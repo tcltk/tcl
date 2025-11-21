@@ -538,8 +538,8 @@ array set remap_link_target {
     Tcl_Obj     Tcl_NewObj
     Tcl_ObjType Tcl_RegisterObjType
     Tcl_OpenFileChannelProc Tcl_FSOpenFileChannel
-    errorinfo 	env
-    errorcode 	env
+    errorinfo	env
+    errorcode	env
     tcl_pkgpath env
     Tcl_Command Tcl_CreateObjCommand
     Tcl_CmdProc Tcl_CreateObjCommand
@@ -714,7 +714,9 @@ try {
 		    if {[string trim $line] eq ""} continue
 		    if {[string match #* $line]} continue
 		    lassign $line dir name
-		    lappend packageDirNameMap $dir $name
+		    dict append packageDirNameMap [string tolower $dir] $name
+		    dict append packageDirNameMap [string toupper $dir] $name
+		    dict append packageDirNameMap [string totitle $dir] $name
 		}
 	    } finally {
 		close $f
