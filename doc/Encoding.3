@@ -78,11 +78,11 @@ Name of encoding to get token for.
 Points to storage where encoding token is to be written.
 .AP "const char" *src in
 For the \fBTcl_ExternalToUtf\fR functions, an array of bytes in the
-specified encoding that are to be converted to UTF-8.  For the
-\fBTcl_UtfToExternal\fR function, an array of
-UTF-8 characters to be converted to the specified encoding.
+specified encoding that are to be converted to TUTF-8.  For the
+\fBTcl_UtfToExternal\fR function, a TUTF-8 byte sequence
+to be converted to the specified encoding.
 .AP "const TCHAR" *tsrc in
-An array of Windows TCHAR characters to convert to UTF-8.
+An array of Windows TCHAR characters to convert to TUTF-8.
 .AP Tcl_Size srcLen in
 Length of \fIsrc\fR or \fItsrc\fR in bytes.  If the length is negative, the
 encoding-specific length of the string is used.
@@ -104,7 +104,6 @@ control the encoding profile to be used for dealing with invalid data or
 other errors in the encoding transform.
 The flag \fBTCL_ENCODING_STOPONERROR\fR has no effect,
 it only has meaning in Tcl 8.x.
-.PP
 Some flags bits may not be usable with some functions as noted in the
 function descriptions below.
 .AP Tcl_EncodingState *statePtr in/out
@@ -146,25 +145,24 @@ A path to the location of the encoding file.
 .BE
 .SH INTRODUCTION
 .PP
-These routines convert between Tcl's internal character representation,
-UTF-8, and character representations used by various operating systems or
-file systems, such as Unicode, ASCII, or Shift-JIS.  When operating on
-strings, such as such as obtaining the names of files or displaying
-characters using international fonts, the strings must be translated into
-one or possibly multiple formats that the various system calls can use.  For
-instance, on a Japanese Unix workstation, a user might obtain a filename
-represented in the EUC-JP file encoding and then translate the characters to
-the jisx0208 font encoding in order to display the filename in a Tk widget.
-The purpose of the encoding package is to help bridge the translation gap.
-UTF-8 provides an intermediate staging ground for all the various
-encodings.  In the example above, text would be translated into UTF-8 from
-whatever file encoding the operating system is using.  Then it would be
-translated from UTF-8 into whatever font encoding the display routines
-require.
+N.B. Refer to the \fBTcl_UniChar\fR documentation page for a description of the
+\fITUTF-8\fR encoding and related terms referenced here.
 .PP
-Some basic encodings are compiled into Tcl.  Others can be defined by the
-user or dynamically loaded from encoding files in a
-platform-independent manner.
+These routines convert between TUTF-8
+and character representations using encodings such as
+standard UTF-8, UTF-16, ASCII, or Shift-JIS that might be expected by system
+interfaces or other software components. For instance, on a Japanese Unix
+workstation, a user might obtain a filename represented in the EUC-JP file
+encoding and then translate the characters to the jisx0208 font encoding in
+order to display the filename in a Tk widget. The purpose of the encoding
+package is to help bridge the translation gap. TUTF-8 provides an intermediate
+staging ground for all the various encodings. In the example above, text would
+be translated into TUTF-8 from whatever file encoding the operating system is
+using. Then it would be translated from TUTF-8 into whatever font encoding the
+display routines require.
+.PP
+Some basic encodings are compiled into Tcl. Others can be defined by the user or
+dynamically loaded from encoding files in a platform-independent manner.
 .SH DESCRIPTION
 .PP
 \fBTcl_GetEncoding\fR finds an encoding given its \fIname\fR.  The name may
@@ -202,7 +200,7 @@ on the resulting encoding token when that token will no longer be
 used.
 .PP
 \fBTcl_ExternalToUtfDString\fR converts a source buffer \fIsrc\fR from the
-specified \fIencoding\fR into UTF-8.  The converted bytes are stored in
+specified \fIencoding\fR into TUTF-8.  The converted bytes are stored in
 \fIdstPtr\fR, which is then null-terminated.  The caller should eventually
 call \fBTcl_DStringFree\fR to free any information stored in \fIdstPtr\fR.
 When converting, if any of the characters in the source buffer cannot be
@@ -231,7 +229,7 @@ The caller must call \fBTcl_DStringFree\fR to free up the \fB*dstPtr\fR resource
 irrespective of the return value from the function.
 .PP
 \fBTcl_ExternalToUtf\fR converts a source buffer \fIsrc\fR from the specified
-\fIencoding\fR into UTF-8.  Up to \fIsrcLen\fR bytes are converted from the
+\fIencoding\fR into TUTF-8.  Up to \fIsrcLen\fR bytes are converted from the
 source buffer and up to \fIdstLen\fR converted bytes are stored in \fIdst\fR.
 In all cases, \fI*srcReadPtr\fR is filled with the number of bytes that were
 successfully converted from \fIsrc\fR and \fI*dstWrotePtr\fR is filled with
@@ -259,7 +257,7 @@ The source buffer contained a character that could not be represented in
 the target encoding.
 .RE
 .LP
-\fBTcl_UtfToExternalDString\fR converts a source buffer \fIsrc\fR from UTF-8
+\fBTcl_UtfToExternalDString\fR converts a source buffer \fIsrc\fR from TUTF-8
 into the specified \fIencoding\fR.  The converted bytes are stored in
 \fIdstPtr\fR, which is then terminated with the appropriate encoding-specific
 null.  The caller should eventually call \fBTcl_DStringFree\fR to free any
@@ -269,7 +267,7 @@ encoding, a default fallback character will be used.  The return value is
 a pointer to the value stored in the DString.
 .PP
 \fBTcl_UtfToExternalDStringEx\fR is an enhanced version of
-\fBTcl_UtfToExternalDString\fR that transforms UTF-8 encoded source data to a
+\fBTcl_UtfToExternalDString\fR that transforms TUTF-8 encoded source data to a
 specified \fIencoding\fR. Except for the direction of the transform, the
 parameters and return values are identical to those of
 \fBTcl_ExternalToUtfDStringEx\fR. See
@@ -278,7 +276,7 @@ that function above for details about the same.
 Irrespective of the return code from the function, the caller must free
 resources associated with \fB*dstPtr\fR when the function returns.
 .PP
-\fBTcl_UtfToExternal\fR converts a source buffer \fIsrc\fR from UTF-8 into
+\fBTcl_UtfToExternal\fR converts a source buffer \fIsrc\fR from TUTF-8 into
 the specified \fIencoding\fR.  Up to \fIsrcLen\fR bytes are converted from
 the source buffer and up to \fIdstLen\fR converted bytes are stored in
 \fIdst\fR.  In all cases, \fI*srcReadPtr\fR is filled with the number of
@@ -322,7 +320,7 @@ exist.
 .PP
 \fBTcl_CreateEncoding\fR defines a new encoding and registers the C
 procedures that are called back to convert between the encoding and
-UTF-8.  Encodings created by \fBTcl_CreateEncoding\fR are thereafter
+TUTF-8.  Encodings created by \fBTcl_CreateEncoding\fR are thereafter
 visible in the database used by \fBTcl_GetEncoding\fR.  Just as with the
 \fBTcl_GetEncoding\fR procedure, the return value is a token that
 represents the encoding and can be used in subsequent calls to other
@@ -335,7 +333,7 @@ encoding procedures.
 .PP
 The \fItypePtr\fR argument to \fBTcl_CreateEncoding\fR contains information
 about the name of the encoding and the procedures that will be called to
-convert between this encoding and UTF-8.  It is defined as follows:
+convert between this encoding and TUTF-8.  It is defined as follows:
 .PP
 .CS
 typedef struct {
@@ -351,9 +349,9 @@ typedef struct {
 The \fIencodingName\fR provides a string name for the encoding, by
 which it can be referred in other procedures such as
 \fBTcl_GetEncoding\fR.  The \fItoUtfProc\fR refers to a callback
-procedure to invoke to convert text from this encoding into UTF-8.
+procedure to invoke to convert text from this encoding into TUTF-8.
 The \fIfromUtfProc\fR refers to a callback procedure to invoke to
-convert text from UTF-8 into this encoding.  The \fIfreeProc\fR refers
+convert text from TUTF-8 into this encoding.  The \fIfreeProc\fR refers
 to a callback procedure to invoke when this encoding is deleted.  The
 \fIfreeProc\fR field may be NULL.  The \fIclientData\fR contains an
 arbitrary one-word value passed to \fItoUtfProc\fR, \fIfromUtfProc\fR,
@@ -513,7 +511,7 @@ FF0400A200A3FF05FF03FF06FF0AFF2000A72606260525CB25CF25CE25C725C6
 .CE
 .PP
 The third line of the file is three numbers.  The first number is the
-fallback character (in base 16) to use when converting from UTF-8 to this
+fallback character (in base 16) to use when converting from TUTF-8 to this
 encoding.  The second number is a \fB1\fR if this file represents the
 encoding for a symbol font, or \fB0\fR otherwise.  The last number (in base
 10) is how many pages of data follow.
