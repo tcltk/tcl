@@ -2277,7 +2277,8 @@ static int UtfExtWrapper(
     if (prefixLen != 0) {
 	const unsigned char *prefixBytes;
 	Tcl_Size nbytes;
-	if (Tcl_GetBytesFromObj(interp, optObjs[PREFIX], &nbytes) == NULL) {
+	prefixBytes = Tcl_GetBytesFromObj(interp, optObjs[PREFIX], &nbytes);
+	if (prefixBytes == NULL) {
 	    result = TCL_ERROR;
 	    goto done;
 	}
@@ -2285,6 +2286,7 @@ static int UtfExtWrapper(
 	    memset(srcBufPtr, *prefixBytes, prefixLen);
 	} else if (nbytes > 1) {
 	    Tcl_Size units = prefixLen / nbytes;
+	    prefixLen = units * nbytes;
 	    unsigned char *to = srcBufPtr;
 	    while (units--) {
 		memmove(to, prefixBytes, nbytes);

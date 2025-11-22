@@ -103,16 +103,12 @@ namespace eval utftest {
 	}
     }
 
-    # The "." character is used as a prefix filler to test long strings.
+    # The "." character is used as a prefix filler to test long strings except
+    # for encodings that do not support the ASCII character set.
     # Generate the encoded versions of this
-    variable prefixChar "."
-    variable encodedPrefixChar
-    foreach {enc testcases} $utfExtMap {
-        if {$enc eq "jis0208"} {
-            continue; # Has no characters shared with ASCII
-        }
-        set encodedPrefixChar($enc) [encoding convertto $enc $prefixChar]
-    }
+    variable prefixChars
+    array default set prefixChars .
+    set prefixChars(jis0208) \u4e4e
 
     # Return a binary string containing nul terminator for encoding
     proc hexnuls {enc} {
@@ -123,28 +119,55 @@ namespace eval utftest {
     # Anything beyond expected output should have FF's
     proc fill {bin buflen {prefixlen 0}} {
         return [string range "$bin[string repeat \xFF $buflen]" 0 $buflen-1]
-	return [string cat [string repeat . $prefixlen] [string range "$bin[string repeat \xFF $buflen]" 0 $buflen-1]]
+    }
+
+
+    proc testutf_verify {result expectedOut bufLen prefixCharBytes numPrefixChars} {
+        # result - the result returned from [testencoding]
+        # expectedOut - expected encoded output not including prefix and trailing
+        #   buffer fills
+        # bufLen - the buffer length that was passed to [testencoding]
+        #   and does not include space for prefix
+        # prefixCharBytes - byte sequence for the prefix character in the output
+        # numPrefixChars - number of prefix characters
+
+        lassign $result status state output
+        # The output includes trailing FF fillers
+        set expectedOut [fill $expectedOut $bufLen]
+        if {$numPrefixChars == 0} {
+            set good [string equal $output $expectedOut]
+        } else {
+            # prefixes are generally very long so cannot afford to do full compare
+            set prefixCharLen [string length $prefixCharBytes]
+            # The actual prefix is a multiple of the prefixcharlen. Get the offset
+            # to end of prefix. Note assumes at least one prefix character.
+            set prefixEnd [expr {$prefixCharLen * $numPrefixChars}]
+            # Check the tail consisting of one prefix char and encoding test sample
+            set expectedTail [string cat $prefixCharBytes $expectedOut]
+            set good [string equal \
+                          [string range $output $prefixEnd-$prefixCharLen end] \
+                          $expectedTail]
+        }
+        return [list $status $state $good]
     }
 
     proc testutf {direction enc comment hexin hexout args} {
+        variable prefixChars
+
         # See comments in UtfTransformFn in tclTest.c
 	set id $comment-[join $hexin ""]
-        set cmd [dict get {
-            toutf Tcl_ExternalToUtf
-            toutfex Tcl_ExternalToUtfEx
-            fromutf Tcl_UtfToExternal
-            fromutfex Tcl_UtfToExternalEx
-        } $direction]
+
 	set in [binary decode hex $hexin]
 	set out [binary decode hex $hexout]
-	set dstlen 40 ;# Should be enough for all encoding tests
+	set dstlen 40 ;# Should be enough for all encoding tests excluding prefix
 
 	set status ok
 	set flags [list start end]
 	set constraints [list testencoding]
 	set profiles [encoding profiles]
+        # prefixlen - is the total number of *bytes* of prefix that [testencoding]
+        #   that should be prepended to the input bytes
         set prefixlen 0
-        set prefixchar ""
 	while {[llength $args] > 1} {
 	    set opt [lpop args 0]
 	    switch $opt {
@@ -153,7 +176,7 @@ namespace eval utftest {
 		-profiles    { set profiles [lpop args 0] }
 		-status      { set status [lpop args 0] }
                 -prefixlen   { set prefixlen [lpop args 0] }
-                -prefixchar  { set prefixChar [lpop args 0] }
+                -prefixchar  { set prefixchar [lpop args 0] }
 		default {
 		    error "Unknown option \"$opt\""
 		}
@@ -163,16 +186,54 @@ namespace eval utftest {
 	    error "No value supplied for option [lindex $args 0]."
 	}
 
-	set expected [list $status {} [fill $out $dstlen $prefixlen]]
-        set totaldstspace [expr {$prefixlen+$dstlen}]
+        switch $direction {
+            toutf -
+            toutfex {
+                set srcPrefixChar [encoding convertto $enc $prefixChars($enc)]
+                set dstPrefixChar [encoding convertto utf-8 $prefixChars($enc)]
+                if {$direction eq "toutf"} {
+                    set cmd Tcl_ExternalToUtf
+                } else {
+                    set cmd Tcl_ExternalToUtfEx
+                }
+            }
+            fromutf -
+            fromutfex {
+                set srcPrefixChar [encoding convertto utf-8 $prefixChars($enc)]
+                set dstPrefixChar [encoding convertto $enc $prefixChars($enc)]
+                if {$direction eq "fromutf"} {
+                    set cmd Tcl_UtfToExternal
+                } else {
+                    set cmd Tcl_UtfToExternalEx
+                }
+            }
+        }
+        set srcPrefixCharSize [string length $srcPrefixChar]
+        set dstPrefixCharSize [string length $dstPrefixChar]
+
+        # source prefixlen should be multiple of prefix char size in src encoding
+        set numPrefixChars [expr {$prefixlen/$srcPrefixCharSize}]
+        set srcPrefixLength [expr {$numPrefixChars * $srcPrefixCharSize}]
+
+        set dstPrefixLength [expr {$numPrefixChars*$dstPrefixCharSize}]
+        set totalDstSpace [expr {$dstlen+$dstPrefixLength}]
+
 	test $cmd-$enc-$id-[join $flags -] "$cmd - $enc - $hexin - $flags" -body {
-	    testencoding $cmd $enc $in $flags {} $totaldstspace -prefixlen $prefixlen -prefix $prefixchar
-        } -result $expected -constraints $constraints
+	    testutf_verify \
+                [testencoding $cmd $enc $in $flags {} \
+                                      $totalDstSpace -prefixlen $srcPrefixLength \
+                                      -prefix $srcPrefixChar] \
+                $out $dstlen $dstPrefixChar $numPrefixChars
+        } -result [list $status {} 1] -constraints $constraints
 	foreach profile $profiles {
 	    set flags2 [linsert $flags end $profile]
-	    test $cmd-$enc-$id-[join $flags2 -] "$cmd - $enc - $hexin - $flags2" -body \
-		[list testencoding $cmd $enc $in $flags2 {} $totaldstspace] \
-		-result $expected -constraints $constraints
+	    test $cmd-$enc-$id-[join $flags2 -] "$cmd - $enc - $hexin - $flags2" -body {
+                testutf_verify \
+                    [testencoding $cmd $enc $in $flags2 {} \
+                         $totalDstSpace -prefixlen $srcPrefixLength \
+                         -prefix $srcPrefixChar] \
+                    $out $dstlen $dstPrefixChar $numPrefixChars
+            } -result [list $status {} 1] -constraints $constraints
 	}
     }
 
@@ -333,12 +394,12 @@ namespace eval utftest {
 	    testspacelimit toutf $enc $comment $hex $utfhex
 	    testspacelimit fromutf $enc $comment $utfhex $hex
 	}
-        if {$enc eq "ascii"} {
-            puts "Bigdata"
-            lassign [lindex $testcases 0] {*}{comment utfhex hex internalfragindex externalfragindex}
-            testutf toutfex $enc $comment $hex ${utfhex}00 -prefixlen 0x7f -prefixchar $encodedPrefixChar($enc)
-        }
 
+        foreach n {0x7ffffffe 0xfffffffe} {
+            lassign [lindex $testcases 0] {*}{comment utfhex hex internalfragindex externalfragindex}
+            testutf toutfex $enc $comment $hex ${utfhex}00 -prefixlen $n
+            testutf fromutfex $enc $comment $utfhex $hex$encnuls -prefixlen $n
+        }
     }
 
 
