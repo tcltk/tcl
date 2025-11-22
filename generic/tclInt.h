@@ -3767,6 +3767,7 @@ MODULE_SCOPE Tcl_ObjCmdProc Tcl_AssembleObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRAssembleObjCmd;
 MODULE_SCOPE Tcl_Command TclInitEncodingCmd(Tcl_Interp *interp);
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_EofObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc Tcl_EqualsObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_ErrorObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_EvalObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_ExecObjCmd;

@@ -2862,6 +2862,330 @@ TclNoIdentOpCmd(
     }
     return TclVariadicOpCmd(clientData, interp, objc, objv);
 }
+
+// Compilation support for the Equals '=' command.
+
+// EqInput holds the current state of scanning the input expression.
+typedef struct EqInput {
+    int argc;			/* Argument count. */
+    Tcl_Obj *const *argv;	/* Argument objects. */
+    int argpos;			/* Current argument. */
+    int charpos;		/* Character position within current argument. */
+    unsigned char lex;		/* Current Lexeme. */
+    Tcl_Obj *lit;		/* Current Literal. */
+    const char *lastStart;	/* Start of the last lexeme scanned */
+    Tcl_Size lastLen;		/* Length of the last lexeme scanned */
+    const char *errorFound;	/* If set, describes error encountered. */
+} EqInput;
+
+// Get the next lexeme of the input, setting in->lex and in->lit.
+// Also advances in->argpos and/or in->charpos
+// and sets in->lastStart and in->lastLen.
+void EqNextLex(
+    EqInput *in)
+{
+    const char *start;
+    Tcl_Size numBytes;
+    Tcl_Size scanned;
+
+    while (1) {
+        // Check if we're at the end.
+        if (in->argpos >= in->argc) {
+	    in->lex = 0;
+	    return;
+        }
+        // If this argument already has a numeric internal rep, preserve that.
+        Tcl_Obj *const thisArg = in->argv[in->argpos];
+        if (in->charpos==0 && (
+	    TclHasInternalRep(thisArg, &tclIntType) ||
+	    TclHasInternalRep(thisArg, &tclBignumType) ||
+	    TclHasInternalRep(thisArg, &tclBooleanType) ||
+	    TclHasInternalRep(thisArg, &tclDoubleType)
+        ) ) {
+	    in->lex = NUMBER;
+	    in->lit = in->argv[in->argpos++];
+	    return;
+        }
+        // Otherwise treat the argument as a string and scan it.
+        start = TclGetStringFromObj(thisArg, &numBytes);
+        start += in->charpos;
+        numBytes -= in->charpos;
+
+        scanned = TclParseAllWhiteSpace(start, numBytes);
+        start += scanned;
+        numBytes -= scanned;
+        in->charpos += scanned;
+
+	if (numBytes > 0) break;
+	in->argpos++;
+	in->charpos = 0;
+    }
+
+    in->lastStart = start;
+    scanned = ParseLexeme(start, numBytes, &(in->lex), &(in->lit));
+    start += scanned;
+    numBytes -= scanned;
+
+    // Special cases that we treat as BAREWORD
+    switch (in->lex) {
+	// Double colon introduces a global variable, single is for ternary op.
+	case COLON:
+	    if ((numBytes < 1) || (start[0] != ':')) break;
+	    scanned++;
+	    start++;
+	    numBytes--;
+	// We don't support the string/list operators, convert them to literals.
+	case STREQ:
+	case STRNEQ:
+	case IN_LIST:
+	case NOT_IN_LIST:
+	case STR_LT:
+	case STR_GT:
+	case STR_LEQ:
+	case STR_GEQ:
+	    in->lex = BAREWORD;
+	    in->lit = Tcl_NewStringObj(in->lastStart, scanned);
+    }
+    // Collect the whole of a namespaced name.
+    if (in->lex == BAREWORD) {
+	while (numBytes) {
+	    if (TclIsBareword(*start)) {
+		start++;
+		numBytes--;
+		continue;
+	    }
+	    if (*start==':' && numBytes>1 && start[1]==':') {
+		start += 2;
+		numBytes -= 2;
+		continue;
+	    }
+	    break;
+	}
+	const char *extraStart = in->lastStart+scanned;
+	Tcl_Size extraLen = start-extraStart;
+	if (extraLen) {
+	    Tcl_AppendToObj(in->lit, extraStart, extraLen);
+	}
+    }
+    scanned = start - in->lastStart;
+    in->charpos += scanned;
+    in->lastLen = scanned;
+
+    if (numBytes <= 0) {
+	in->argpos++;
+	in->charpos = 0;
+    }
+    return;
+}
+
+// The following EqParse* routines implement a simple Pratt Parser loosely
+// based on https://www.rosettacode.org/wiki/Arithmetic_evaluation#Nim
+
+// Forward declarations:
+void EqParsePrefix(EqInput *in, CompileEnv *envPtr);
+void EqParseFuncArgs(EqInput *in, CompileEnv *envPtr);
+void EqParseTernary(EqInput *in, CompileEnv *envPtr);
+
+// Record a parsing error
+void EqParseSetError(
+    EqInput *in,
+    const char *expected)
+{
+    //printf("ERROR: argpos=%d charpos=%d lex=%d\n", in->argpos, in->charpos, in->lex);
+
+    // Only record the first error.
+    if (in->errorFound) return;
+    in->errorFound = expected;
+    in->lex = 0;
+}
+
+// Report a parsing error
+Tcl_Obj *EqParseGetError(
+    EqInput *in)
+{
+    if (!in->errorFound) return NULL;
+
+    if (in->lex == NUMBER) {
+	// A pre-existing number might not have been scanned
+        in->lastStart = TclGetStringFromObj(in->lit, &in->lastLen);
+    }
+    return Tcl_ObjPrintf("Expected %s but found '%.*s'",
+		    in->errorFound, (int)in->lastLen, in->lastStart);
+}
+
+// Parse the expression until we find an operator with precedence lower than
+// or equal to minPrec. Calls EqNextLex to get successive input lexemes from
+// *in. Generates bytecode in *envPtr to evaluate the expression.
+void EqParse(
+    EqInput *in,
+    CompileEnv *envPtr,
+    int minPrec)
+{
+    unsigned char inLex;
+    EqParsePrefix(in, envPtr);
+    while ((inLex = in->lex)) {
+	// PLUS or MINUS here has to be a binary operator
+	if (inLex==PLUS) {inLex = BINARY_PLUS;}
+	if (inLex==MINUS) {inLex = BINARY_MINUS;}
+
+	const unsigned char inPrec = prec[inLex];
+	if (inPrec==0) {EqParseSetError(in, "operator"); return;}
+	if (inPrec < minPrec) return;
+
+	// Binary ops are left-associative except for **
+	// so exceptionally we continue for repeated exponentiation.
+	if (inPrec == minPrec && inLex != EXPON) return;
+
+	EqNextLex(in);
+	// if-then-else needs special handling
+	if (inLex == QUESTION) {
+	    EqParseTernary(in, envPtr);
+	} else {
+	    EqParse(in, envPtr, inPrec);
+	    TclEmitOpcode(instruction[inLex], envPtr);
+	}
+    }
+}
+
+// Parse expression up to the first operator at the same level of parentheses.
+// Generates bytecode in *envPtr to evaluate the subexpression.
+void EqParsePrefix(
+    EqInput *in,
+    CompileEnv *envPtr)
+{
+    //EqNextLex(in);
+    unsigned char inLex = in->lex;
+    Tcl_Obj *inLit = in->lit;
+    EqNextLex(in);
+    switch (inLex) {
+	// Number?
+	case NUMBER:
+	    PUSH_OBJ(inLit);
+	    return;
+
+	// Parenthesised subexpression?
+	case OPEN_PAREN:
+	    EqParse(in, envPtr, PREC_OPEN_PAREN);
+	    if (in->lex == CLOSE_PAREN) {
+		EqNextLex(in);
+		return;
+	    }
+	    EqParseSetError(in, "')'");
+	    return;
+
+	// Unary operator?
+	case PLUS:
+	case MINUS:
+	    inLex |= UNARY;
+	case NOT:
+	case BIT_NOT:
+	    EqParse(in, envPtr, PREC_UNARY);
+	    TclEmitOpcode(instruction[inLex], envPtr);
+	    return;
+
+	// Some kind of name?
+	case BAREWORD:
+	    // Function call?
+	    if (in->lex == OPEN_PAREN) {
+		Tcl_Obj *funcName = Tcl_NewStringObj("tcl::mathfunc::", -1);
+		Tcl_AppendObjToObj(funcName, inLit);
+	        PUSH_OBJ(funcName);
+		EqNextLex(in);
+	        EqParseFuncArgs(in, envPtr);
+	        return;
+	    }
+	    // Variable reference?
+	    PUSH_OBJ(inLit);
+	    OP(LOAD_STK);
+	    return;
+    }
+    EqParseSetError(in, "start of expression");
+}
+
+// Parse zero or more arguments to a math function. The arguments are
+// expressions separated by commas and terminated by a closing parenthesis.
+// Generates bytecode in *envPtr to evaluate the arguments and call the function.
+void EqParseFuncArgs(
+    EqInput *in,
+    CompileEnv *envPtr)
+{
+    int numWords = 1;
+    while (in->lex) {
+	if (in->lex == CLOSE_PAREN) {
+	    EqNextLex(in);
+	    INVOKE4(INVOKE_STK, numWords);
+	    return;
+	}
+	EqParse(in, envPtr, PREC_COMMA);
+	numWords++;
+
+	switch (in->lex) {
+	    case COMMA:
+		EqNextLex(in);
+	    case CLOSE_PAREN:
+		continue;
+	}
+	EqParseSetError(in, "')' or ','");
+    }
+}
+
+void EqParseTernary(
+    EqInput *in,
+    CompileEnv *envPtr)
+{
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_EqualsObjCmd --
+ *	Implements the command =
+ *
+ * Results:
+ *	A standard Tcl return code and result left in interp.
+ *
+ * Side effects:
+ *	May call user-defined mathfunc procs which could have side-effects.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_EqualsObjCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    if (objc < 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "arg ?arg ...?");
+	return TCL_ERROR;
+    }
+    Tcl_Obj *retVal;
+    EqInput input = {objc, objv, 1, 0, 0, 0, 0, 0, 0};
+    CompileEnv compEnv;		/* Compilation environment structure */
+    CompileEnv *envPtr = &compEnv;
+    TclInitCompileEnv(interp, envPtr, NULL, 0, NULL, 0);
+
+    EqNextLex(&input);
+    EqParse(&input,envPtr,0);
+
+    Tcl_Obj *errMsg = EqParseGetError(&input);
+    if (errMsg) {
+	Tcl_SetObjResult(interp, errMsg);
+	return TCL_ERROR;
+    }
+
+    OP(				DONE);
+    ByteCode *byteCodePtr = TclInitByteCode(envPtr);
+    TclFreeCompileEnv(envPtr);
+    TclNRExecuteByteCode(interp, byteCodePtr);
+    NRE_callback *rootPtr = TOP_CB(interp);
+    int code = TclNRRunCallbacks(interp, TCL_OK, rootPtr);
+    TclReleaseByteCode(byteCodePtr);
+    return code;
+}
+
 /*
  * Local Variables:
  * mode: c
