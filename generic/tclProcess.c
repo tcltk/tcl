@@ -52,11 +52,19 @@ static TclProcessWaitStatus WaitProcessStatus(Tcl_Pid pid, Tcl_Size resolvedPid,
 			    int options, int *codePtr, Tcl_Obj **msgPtr,
 			    Tcl_Obj **errorObjPtr);
 static Tcl_Obj *	BuildProcessStatusObj(ProcessInfo *info);
-static Tcl_ObjCmdProc ProcessListObjCmd;
-static Tcl_ObjCmdProc ProcessStatusObjCmd;
-static Tcl_ObjCmdProc ProcessPurgeObjCmd;
-static Tcl_ObjCmdProc ProcessAutopurgeObjCmd;
+static Tcl_ObjCmdProc	ProcessListObjCmd;
+static Tcl_ObjCmdProc	ProcessStatusObjCmd;
+static Tcl_ObjCmdProc	ProcessPurgeObjCmd;
+static Tcl_ObjCmdProc	ProcessAutopurgeObjCmd;
 
+const EnsembleImplMap tclProcessImplMap[] = {
+    {"list",		ProcessListObjCmd,	TclCompileBasic0ArgCmd, NULL, NULL, 1},
+    {"status",		ProcessStatusObjCmd,	TclCompileBasicMin0ArgCmd, NULL, NULL, 1},
+    {"purge",		ProcessPurgeObjCmd,	TclCompileBasic0Or1ArgCmd, NULL, NULL, 1},
+    {"autopurge",	ProcessAutopurgeObjCmd,	TclCompileBasic0Or1ArgCmd, NULL, NULL, 1},
+    {NULL, NULL, NULL, NULL, NULL, 0}
+};
+
 /*
  *----------------------------------------------------------------------
  *
@@ -751,13 +759,13 @@ ProcessAutopurgeObjCmd(
 /*
  *----------------------------------------------------------------------
  *
- * TclInitProcessCmd --
+ * TclSetUpProcessCmd --
  *
- *	This procedure creates the "tcl::process" Tcl command. See the user
+ *	This procedure sets up the "tcl::process" Tcl command. See the user
  *	documentation for details on what it does.
  *
  * Results:
- *	A standard Tcl result.
+ *	Tcl result code.
  *
  * Side effects:
  *	See the user documentation.
@@ -765,19 +773,11 @@ ProcessAutopurgeObjCmd(
  *----------------------------------------------------------------------
  */
 
-Tcl_Command
-TclInitProcessCmd(
-    Tcl_Interp *interp)		/* Current interpreter. */
+int
+TclSetUpProcessCmd(
+    Tcl_Interp *interp,		/* Current interpreter. */
+    Tcl_Command ensemble)	/* The ensemble to set up. */
 {
-    static const EnsembleImplMap processImplMap[] = {
-	{"list", ProcessListObjCmd, TclCompileBasic0ArgCmd, NULL, NULL, 1},
-	{"status", ProcessStatusObjCmd, TclCompileBasicMin0ArgCmd, NULL, NULL, 1},
-	{"purge", ProcessPurgeObjCmd, TclCompileBasic0Or1ArgCmd, NULL, NULL, 1},
-	{"autopurge", ProcessAutopurgeObjCmd, TclCompileBasic0Or1ArgCmd, NULL, NULL, 1},
-	{NULL, NULL, NULL, NULL, NULL, 0}
-    };
-    Tcl_Command processCmd;
-
     if (infoTablesInitialized == 0) {
 	Tcl_MutexLock(&infoTablesMutex);
 	if (infoTablesInitialized == 0) {
@@ -788,10 +788,8 @@ TclInitProcessCmd(
 	Tcl_MutexUnlock(&infoTablesMutex);
     }
 
-    processCmd = TclMakeEnsemble(interp, "::tcl::process", processImplMap);
-    Tcl_Export(interp, Tcl_FindNamespace(interp, "::tcl", NULL, 0),
+    return Tcl_Export(interp, (Tcl_Namespace*)((Command *)ensemble)->nsPtr,
 	    "process", 0);
-    return processCmd;
 }
 
 /*

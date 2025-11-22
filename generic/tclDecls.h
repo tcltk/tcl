@@ -4056,8 +4056,6 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_GetUnicode(objPtr) \
 	Tcl_GetUnicodeFromObj(objPtr, (Tcl_Size *)NULL)
 #undef Tcl_GetIndexFromObjStruct
-#undef Tcl_GetBooleanFromObj
-#undef Tcl_GetBoolean
 #if !defined(TCLBOOLWARNING)
 #if !defined(__cplusplus) && !defined(BUILD_tcl) && !defined(BUILD_tk) && defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 201112L)
 #	define TCLBOOLWARNING(boolPtr) (void)(sizeof(struct {_Static_assert(sizeof(*(boolPtr)) <= sizeof(int), "sizeof(boolPtr) too large");int dummy;})),

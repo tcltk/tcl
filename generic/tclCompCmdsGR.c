@@ -2447,14 +2447,11 @@ TclCompileRegexpCmd(
 	    return TCL_ERROR;
 	}
 
-	if (len == 0) {
-	    /*
-	     * The semantics of regexp are always match on re == "".
-	     */
-
-	    PUSH(		"1");
-	    return TCL_OK;
-	}
+	/*
+	 * Note: do not optimize for len == 0, as error should be generated
+	 * at runtime if operand is not a resolvable variable.
+	 * Bug https://core.tcl-lang.org/tcl/info/cb03e57a7b24d22c
+	 */
 
 	/*
 	 * Attempt to convert pattern to glob.  If successful, push the

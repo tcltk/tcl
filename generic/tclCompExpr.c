@@ -2934,6 +2934,7 @@ void EqNextLex(
 	    scanned++;
 	    start++;
 	    numBytes--;
+	    TCL_FALLTHROUGH();
 	// We don't support the string/list operators, convert them to literals.
 	case STREQ:
 	case STRNEQ:
@@ -2984,6 +2985,8 @@ void EqNextLex(
 // Forward declarations:
 void EqParsePrefix(EqInput *in, CompileEnv *envPtr);
 void EqParseFuncArgs(EqInput *in, CompileEnv *envPtr);
+void EqParseAnd(EqInput *in, CompileEnv *envPtr);
+void EqParseOr(EqInput *in, CompileEnv *envPtr);
 void EqParseTernary(EqInput *in, CompileEnv *envPtr);
 
 // Record a parsing error
@@ -3037,12 +3040,21 @@ void EqParse(
 	if (inPrec == minPrec && inLex != EXPON) return;
 
 	EqNextLex(in);
-	// if-then-else needs special handling
-	if (inLex == QUESTION) {
-	    EqParseTernary(in, envPtr);
-	} else {
-	    EqParse(in, envPtr, inPrec);
-	    TclEmitOpcode(instruction[inLex], envPtr);
+	// && || ?: need special handling for lazy evaluation
+	switch (inLex) {
+	    case AND:
+		EqParseAnd(in, envPtr);
+		break;
+	    case OR:
+		EqParseOr(in, envPtr);
+		break;
+	    case QUESTION:
+		EqParseTernary(in, envPtr);
+		break;
+	    default:
+		EqParse(in, envPtr, inPrec);
+		TclEmitOpcode(instruction[inLex], envPtr);
+
 	}
     }
 }
@@ -3077,6 +3089,7 @@ void EqParsePrefix(
 	case PLUS:
 	case MINUS:
 	    inLex |= UNARY;
+	    TCL_FALLTHROUGH();
 	case NOT:
 	case BIT_NOT:
 	    EqParse(in, envPtr, PREC_UNARY);
@@ -3129,10 +3142,60 @@ void EqParseFuncArgs(
     }
 }
 
+// We just saw && so parse its second operand and generate code
+// to evaluate it only if needed.
+void EqParseAnd(
+    EqInput *in,
+    CompileEnv *envPtr)
+{
+    Tcl_BytecodeLabel false1, false2, end;
+    FWDJUMP(JUMP_FALSE, false1);
+    EqParse(in, envPtr, PREC_AND);
+    FWDJUMP(JUMP_FALSE, false2);
+    PUSH_STRING("1");
+    FWDJUMP(JUMP, end);
+    FWDLABEL(false1);
+    FWDLABEL(false2);
+    PUSH_STRING("0");
+    FWDLABEL(end);
+}
+
+// We just saw || so parse its second operand and generate code
+// to evaluate it only if needed.
+void EqParseOr(
+    EqInput *in,
+    CompileEnv *envPtr)
+{
+    Tcl_BytecodeLabel true1, true2, end;
+    FWDJUMP(JUMP_TRUE, true1);
+    EqParse(in, envPtr, PREC_OR);
+    FWDJUMP(JUMP_TRUE, true2);
+    PUSH_STRING("0");
+    FWDJUMP(JUMP, end);
+    FWDLABEL(true1);
+    FWDLABEL(true2);
+    PUSH_STRING("1");
+    FWDLABEL(end);
+}
+
+// We just saw ? so parse its second and third operands and generate code
+// to evaluate only the appropriate one.
 void EqParseTernary(
     EqInput *in,
     CompileEnv *envPtr)
 {
+    Tcl_BytecodeLabel lelse, lend;
+    FWDJUMP(JUMP_FALSE, lelse);
+    EqParse(in, envPtr, PREC_CONDITIONAL);
+    if (in->lex != COLON) {
+	EqParseSetError(in, "':'");
+	return;
+    }
+    FWDJUMP(JUMP, lend);
+    FWDLABEL(lelse);
+    EqNextLex(in);
+    EqParse(in, envPtr, PREC_CONDITIONAL);
+    FWDLABEL(lend);
 }
 
 /*
@@ -3161,7 +3224,6 @@ Tcl_EqualsObjCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "arg ?arg ...?");
 	return TCL_ERROR;
     }
-    Tcl_Obj *retVal;
     EqInput input = {objc, objv, 1, 0, 0, 0, 0, 0, 0};
     CompileEnv compEnv;		/* Compilation environment structure */
     CompileEnv *envPtr = &compEnv;
@@ -3176,7 +3238,7 @@ Tcl_EqualsObjCmd(
 	return TCL_ERROR;
     }
 
-    OP(				DONE);
+    OP(DONE);
     ByteCode *byteCodePtr = TclInitByteCode(envPtr);
     TclFreeCompileEnv(envPtr);
     TclNRExecuteByteCode(interp, byteCodePtr);

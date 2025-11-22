@@ -159,7 +159,9 @@ typedef enum {
  */
 
 enum TclDateFieldsFlags {
-    CLF_CTZ = (1 << 4)
+    CLF_BCE = (1 << 1),		/* set if BCE */
+    CLF_BGREG = (1 << 2),	/* set if the date is before Gregorian (Julian yet) */
+    CLF_CTZ = (1 << 4)		/* (special) revalidate TZ epoch next time used */
 };
 
 typedef struct {
@@ -172,8 +174,6 @@ typedef struct {
     int tzOffset;		/* Time zone offset in seconds east of
 				 * Greenwich */
     Tcl_WideInt julianDay;	/* Julian Day Number in local time zone */
-    int isBce;			/* 1 if BCE */
-    int gregorian;		/* Flag == 1 if the date is Gregorian */
     int year;			/* Year of the era */
     int dayOfYear;		/* Day of the year (1 January == 1) */
     int month;			/* Month number */
@@ -186,7 +186,7 @@ typedef struct {
     Tcl_WideInt secondOfMin;	/* Seconds of minute (in-between time only calculation) */
     Tcl_WideInt secondOfDay;	/* Seconds of day (in-between time only calculation) */
 
-    int flags;			/* 0 or CLF_CTZ */
+    int flags;			/* 0 or some of TclDateFieldsFlags */
 
     /* Non cacheable fields:	 */
 

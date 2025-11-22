@@ -7456,6 +7456,14 @@ test expr-62.10 {TIP 582: comments can go inside function calls} {
 	     (1,2)}
 } 2
 
+test expr-bug-8dd2807066 {Bug 8dd2807066} {
+    expr {max(abs(-668336881543038127783364011867))}
+} 668336881543038127783364011867
+
+test expr-bug-8dd2807066-1 {Bug 8dd2807066, more elaborate} {
+    expr {max(abs(-668336881543038127783364011867),0)}
+} 668336881543038127783364011867
+
 # Bug e3dcab1d14 TODO: Need to work out a test case that fails
 # without tcl_precision, which has been eliminated in 9.0
 
