@@ -399,14 +399,13 @@ namespace eval utftest {
 
 	# Cannot afford to test every single encoding for large strings. Test
 	# only the first two cases at the INT_MAX and UINT_MAX boundaries.
-	foreach testcase [lrange $testcases 0 1] {
-	    lassign $testcase {*}{comment utfhex hex internalfragindex externalfragindex}
-	    foreach n {0x7ffffffe 0xfffffffe} {
-puts $enc:$n:$comment
-	        testutf toutfex $enc $comment $hex ${utfhex}00 -prefixlen $n -constraints bigdata
-	        testutf fromutfex $enc $comment $utfhex $hex$encnuls -prefixlen $n -constraints bigdata
-	    }
-	}
+        foreach testcase [lrange $testcases 0 1] {
+            lassign $testcase {*}{comment utfhex hex internalfragindex externalfragindex}
+            foreach n {0x7ffffffe 0xfffffffe} {
+                testutf toutfex $enc $comment $hex ${utfhex}00 -prefixlen $n -constraints bigdata
+                testutf fromutfex $enc $comment $utfhex $hex$encnuls -prefixlen $n -constraints bigdata
+            }
+        }
     }
 
 
