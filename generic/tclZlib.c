@@ -31,6 +31,19 @@
 #define TCL_ZLIB_VERSION	"2.0.1"
 
 /*
+ * "Global" information stored in the interpreter AssocData.
+ */
+typedef struct ZlibInterpData {
+    int counter;		// Counter used to issue stream commands.
+    Tcl_Obj *nsNameObj;		// Name of stream namespace.
+} ZlibInterpData;
+
+/*
+ * Key used to look up the ZlibInterpData for an interpreter.
+ */
+#define ASSOC_KEY		"tcl::zlib"
+
+/*
  * Magic flags used with wbits fields to indicate that we're handling the gzip
  * format or automatic detection of format. Putting it here is slightly less
  * gross!
@@ -55,6 +68,27 @@ typedef struct {
     char nativeFilenameBuf[MAXPATHLEN];
     char nativeCommentBuf[MAX_COMMENT_LEN];
 } GzipHeader;
+
+/*
+ * Operating system values for gzip. Defined by RFC 1952.
+ */
+enum GzipOperatingSystems {
+    GZIP_OS_MSDOS = 0,		// FAT filesystem (MS-DOS, OS/2, NT/Win32)
+    GZIP_OS_AMIGA = 1,		// Amiga
+    GZIP_OS_VMS = 2,		// VMS (or OpenVMS)
+    GZIP_OS_UNIX = 3,		// Unix
+    GZIP_OS_VM_CMS = 4,		// VM/CMS
+    GZIP_OS_ATARI_TOS = 5,	// Atari TOS
+    GZIP_OS_OS2 = 6,		// HPFS filesystem (OS/2, NT)
+    GZIP_OS_MAC = 7,		// Macintosh
+    GZIP_OS_Z_SYSTEM = 8,	// Z-System
+    GZIP_OS_CPM = 9,		// CP/M
+    GZIP_OS_TOPS = 10,		// TOPS-20
+    GZIP_OS_WIN = 11,		// NTFS filesystem (NT)
+    GZIP_OS_QDOS = 12,		// QDOS
+    GZIP_OS_RISCOS = 13,	// Acorn RISCOS
+    GZIP_OS_UNKNOWN = 255	// unknown
+};
 
 /*
  * Structure used for the Tcl_ZlibStream* commands and [zlib stream ...]
@@ -524,6 +558,26 @@ GenerateHeader(
 	}
     }
 
+    /*
+     * Set a default for the OS based on what Tcl was built for. Then let the
+     * user override.
+     */
+
+    if (Tcl_IsSafe(interp)) {
+	headerPtr->header.os = GZIP_OS_UNKNOWN;
+    } else {
+	headerPtr->header.os =
+#ifdef _WIN32
+		GZIP_OS_WIN;
+#elif defined(__APPLE__)
+		GZIP_OS_MAC;
+#elif defined(_POSIX_C_SOURCE)
+		GZIP_OS_UNIX;
+#else
+		GZIP_OS_UNKNOWN;
+#endif
+    }
+
     if (TclDictGet(interp, dictObj, "os", &value) != TCL_OK) {
 	goto error;
     } else if (value != NULL && Tcl_GetIntFromObj(interp, value,
@@ -600,7 +654,7 @@ ExtractHeader(
 		TCL_AUTO_LENGTH, &tmp);
 	TclDictPut(NULL, dictObj, "filename", Tcl_DStringToObj(&tmp));
     }
-    if (headerPtr->os != 255) {
+    if (headerPtr->os != GZIP_OS_UNKNOWN) {
 	TclDictPut(NULL, dictObj, "os", Tcl_NewWideIntObj(headerPtr->os));
     }
     if (headerPtr->time != 0 /* magic - no time */) {
@@ -720,7 +774,6 @@ Tcl_ZlibStreamInit(
     int wbits = 0;
     int e;
     ZlibStreamHandle *zshPtr = NULL;
-    Tcl_DString cmdname;
     GzipHeader *gzHeaderPtr = NULL;
 
     switch (mode) {
@@ -836,36 +889,39 @@ Tcl_ZlibStreamInit(
 	goto error;
     }
 
-    /*
-     * I could do all this in C, but this is easier.
-     */
-
     if (interp != NULL) {
-	if (Tcl_EvalEx(interp, "::incr ::tcl::zlib::cmdcounter",
-		TCL_AUTO_LENGTH, 0) != TCL_OK) {
+	ZlibInterpData *interpData = (ZlibInterpData *)
+		Tcl_GetAssocData(interp, ASSOC_KEY, NULL);
+	// NOT CACHED IN INTERPDATA DIRECTLY! User might delete it...
+	Tcl_Namespace *nsPtr;
+	if (TclGetNamespaceFromObj(interp, interpData->nsNameObj,
+		&nsPtr) != TCL_OK) {
 	    goto error;
 	}
-	Tcl_DStringInit(&cmdname);
-	TclDStringAppendLiteral(&cmdname, "::tcl::zlib::streamcmd_");
-	TclDStringAppendObj(&cmdname, Tcl_GetObjResult(interp));
-	if (Tcl_FindCommand(interp, Tcl_DStringValue(&cmdname),
-		NULL, 0) != NULL) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "BUG: Stream command name already exists", TCL_AUTO_LENGTH));
-	    Tcl_SetErrorCode(interp, "TCL", "BUG", "EXISTING_CMD", (char *)NULL);
-	    Tcl_DStringFree(&cmdname);
-	    goto error;
-	}
-	Tcl_ResetResult(interp);
 
 	/*
-	 * Create the command.
+	 * Search for a free command ID.
 	 */
 
-	zshPtr->cmd = Tcl_CreateObjCommand(interp, Tcl_DStringValue(&cmdname),
-		ZlibStreamImplCmd, zshPtr, ZlibStreamCmdDelete);
-	Tcl_DStringFree(&cmdname);
-	if (zshPtr->cmd == NULL) {
+	while (1) {
+	    Tcl_Obj *cmdNameObj = Tcl_ObjPrintf("streamcmd_%d",
+		    interpData->counter++);
+	    const char *cmdName = TclGetString(cmdNameObj);
+
+	    if (!Tcl_FindCommand(interp, cmdName, nsPtr, 0)) {
+		/*
+		* Create the command.
+		*/
+
+		zshPtr->cmd = TclCreateObjCommandInNs(interp,
+			TclGetString(cmdNameObj), nsPtr,
+			ZlibStreamImplCmd, zshPtr, ZlibStreamCmdDelete);
+		Tcl_BounceRefCount(cmdNameObj);
+		break;
+	    }
+	    Tcl_BounceRefCount(cmdNameObj);
+	}
+	if (!zshPtr->cmd) {
 	    goto error;
 	}
     } else {
@@ -4118,20 +4174,38 @@ ResultDecompress(
  *----------------------------------------------------------------------
  */
 
+static void
+ZlibDeleteInterpData(
+    void *clientData,
+    TCL_UNUSED(Tcl_Interp *))
+{
+    ZlibInterpData *interpData = (ZlibInterpData *) clientData;
+    Tcl_DecrRefCount(interpData->nsNameObj);
+    Tcl_Free(clientData);
+}
+
 int
 TclZlibInit(
     Tcl_Interp *interp)
 {
     Tcl_Config cfg[2];
+    ZlibInterpData *interpData = (ZlibInterpData *)
+	    Tcl_Alloc(sizeof(ZlibInterpData));
 
     /*
-     * This does two things. It creates a counter used in the creation of
-     * stream commands, and it creates the namespace that will contain those
-     * commands.
+     * Set up a counter used in the creation of stream commands.
      */
 
-    Tcl_EvalEx(interp, "namespace eval ::tcl::zlib {variable cmdcounter 0}",
-	    TCL_AUTO_LENGTH, 0);
+    interpData->counter = 0;
+    TclNewLiteralStringObj(interpData->nsNameObj, "::tcl::zlib");
+    Tcl_IncrRefCount(interpData->nsNameObj);
+    Tcl_SetAssocData(interp, ASSOC_KEY, ZlibDeleteInterpData, interpData);
+
+    /*
+     * Create the namespace that will contain the stream commands.
+     */
+
+    Tcl_CreateNamespace(interp, "::tcl::zlib", NULL, NULL);
 
     /*
      * Store the underlying configuration information.
