@@ -9,14 +9,14 @@
 clock \- Obtain and manipulate dates and times
 .SH "SYNOPSIS"
 .nf
-package require \fBTcl 8.5-\fR
+\fBpackage require Tcl 8.5-\fR
 
-\fBclock add\fI timeVal\fR ?\fIcount unit...\fR? ?\fI\-option value\fR?
+\fBclock add\fI timeVal\fR ?\fIcount unit ...\fR? ?\fI\-option value\fR?
 \fBclock clicks\fR ?\fI\-option\fR?
-\fBclock format\fI timeVal\fR ?\fI\-option value\fR...?
+\fBclock format\fI timeVal\fR ?\fI\-option value ...\fR?
 \fBclock microseconds\fR
 \fBclock milliseconds\fR
-\fBclock scan\fI inputString\fR ?\fI\-option value\fR...?
+\fBclock scan\fI inputString\fR ?\fI\-option value ...\fR?
 \fBclock seconds\fR
 .fi
 .BE
@@ -54,7 +54,7 @@ considered the preferred way of obtaining a count of microseconds.
 .RE
 .\" METHOD: format
 .TP
-\fBclock format\fI timeVal\fR ?\fI\-option value\fR...?
+\fBclock format\fI timeVal\fR ?\fI\-option value ...\fR?
 .
 Formats a time that is expressed as an integer number of seconds into a format
 intended for consumption by users or external programs.
@@ -73,7 +73,7 @@ Returns the current time as an integer number of milliseconds.
 See \fBHIGH RESOLUTION TIMERS\fR for a full description.
 .\" METHOD: scan
 .TP
-\fBclock scan\fI inputString\fR ?\fI\-option value\fR...?
+\fBclock scan\fI inputString\fR ?\fI\-option value ...\fR?
 .
 Scans a time that is expressed as a character string and produces an
 integer number of seconds.
