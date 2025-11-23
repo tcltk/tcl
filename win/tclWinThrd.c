@@ -540,8 +540,6 @@ WMutexUnlock(
     }
 }
 
-/* locally used prototype */
-static void		FinalizeConditionEvent(void *data);
 
 /*
  *----------------------------------------------------------------------
@@ -700,7 +698,7 @@ Tcl_ConditionWait(
 	DWORD err = GetLastError();
 	if (err != ERROR_TIMEOUT) {
 	    Tcl_Panic(
-		"Tcl_ConditionWait: SleepConditionVariableCS error %d",
+		"Tcl_ConditionWait: SleepConditionVariableCS error %lu",
 		err);
 	}
     }
