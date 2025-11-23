@@ -2178,7 +2178,7 @@ static int UtfExtWrapper(
 	    "?-dstcharsvar dstcharsvar? ?-errorlocvar errorLocVar?");
 	return TCL_ERROR;
     }
-    for (i = 0; i < (sizeof(optObjs) / sizeof(optObjs[0])); ++i) {
+    for (i = 0; i < (Tcl_Size) (sizeof(optObjs) / sizeof(optObjs[0])); ++i) {
 	optObjs[i] = NULL;
     }
     for (i = 7; i < objc; ++i) {
@@ -2287,7 +2287,7 @@ static int UtfExtWrapper(
 	} else if (nbytes > 1) {
 	    Tcl_Size units = prefixLen / nbytes;
 	    prefixLen = units * nbytes;
-	    unsigned char *to = srcBufPtr;
+	    char *to = srcBufPtr;
 	    while (units--) {
 		memmove(to, prefixBytes, nbytes);
 		to += nbytes;
@@ -2312,9 +2312,9 @@ static int UtfExtWrapper(
 	    dstChars32 = (int)dstChars;
 	    result = (transform == UTF_TO_EXTERNAL ?
 			Tcl_UtfToExternal : Tcl_ExternalToUtf) (
-				interp, encoding, (const char *)srcBufPtr,
+				interp, encoding, srcBufPtr,
 				srcBufLen, flags, encStatePtr,
-				(char *)dstBufPtr, dstLen,
+				dstBufPtr, dstLen,
 				optObjs[SRCREADVAR] ? &srcRead32 : NULL,
 				&dstWrote32,
 				optObjs[DSTCHARSVAR] ? &dstChars32 : NULL);
@@ -2324,15 +2324,15 @@ static int UtfExtWrapper(
 	    break;
 	}
     case EXTERNAL_TO_UTF_EX:
-	result = Tcl_ExternalToUtfEx(interp, encoding, (const char *)srcBufPtr,
-		srcBufLen, flags, encStatePtr, (char *)dstBufPtr, dstLen,
+	result = Tcl_ExternalToUtfEx(interp, encoding, srcBufPtr,
+		srcBufLen, flags, encStatePtr, dstBufPtr, dstLen,
 	    	optObjs[SRCREADVAR] ? &srcRead : NULL, 
 		&dstWrote,
 	    	optObjs[DSTCHARSVAR] ? &dstChars : NULL, NULL);
 	break;
     case UTF_TO_EXTERNAL_EX:
-	result = Tcl_UtfToExternalEx(interp, encoding, (const char *)srcBufPtr,
-		srcBufLen, flags, encStatePtr, (char *)dstBufPtr, dstLen,
+	result = Tcl_UtfToExternalEx(interp, encoding, srcBufPtr,
+		srcBufLen, flags, encStatePtr, dstBufPtr, dstLen,
 	    	optObjs[SRCREADVAR] ? &srcRead : NULL,
 		&dstWrote,
 	    	optObjs[DSTCHARSVAR] ? &dstChars : NULL, NULL);
@@ -2369,7 +2369,7 @@ static int UtfExtWrapper(
 	result = TCL_OK;
 	resultObjs[1] =
 	    encStatePtr ? Tcl_NewWideIntObj((Tcl_WideInt)(size_t)encState) : Tcl_NewObj();
-	resultObjs[2] = Tcl_NewByteArrayObj(dstBufPtr, dstLen);
+	resultObjs[2] = Tcl_NewByteArrayObj((const unsigned char *)dstBufPtr, dstLen);
 	if (optObjs[SRCREADVAR]) {
 	    if (Tcl_ObjSetVar2(interp, optObjs[SRCREADVAR], NULL, Tcl_NewWideIntObj(srcRead),
 		    TCL_LEAVE_ERR_MSG) == NULL) {
@@ -9230,20 +9230,26 @@ vamoose:
  * Channel is always ready so no-op :-)
  */
 static int
-TestChanBlockMode(ClientData instanceData, int mode)
+TestChanBlockMode(
+    TCL_UNUSED(ClientData), /* instanceData */
+    TCL_UNUSED(int))	    /* mode */
 {
     return 0;
 }
 
 static void
-TestChanSourceWatch(ClientData instanceData, int mask)
+TestChanSourceWatch(
+    TCL_UNUSED(ClientData), /* instanceData */
+    int mask)
 {
     if (mask)
 	Tcl_Panic("WatchModeProc not implemented for testchansource");
 }
 
 static void
-TestChanSinkWatch(ClientData instanceData, int mask)
+TestChanSinkWatch(
+    TCL_UNUSED(ClientData), /* instanceData */
+    int mask)
 {
     if (mask)
 	Tcl_Panic("WatchModeProc not implemented for testchansink");
@@ -9261,7 +9267,7 @@ TestChanSourceInput(
     ClientData instanceData,
     char *outPtr,      /* Where to store data. Assumed aligned */
     const int maxReadCount, /* Maximum number of bytes to read. */
-    int *errorCodePtr) /* Where to store error codes. */
+    TCL_UNUSED(int *)) /* errorCodePtr - Where to store error codes. */
 {
     TestChanSourceState *chanPtr = (TestChanSourceState *)instanceData;
 
@@ -9371,7 +9377,7 @@ static int
 TestChanSinkClose2 (
     TCL_UNUSED(ClientData),	/* Instance data */
     TCL_UNUSED(Tcl_Interp *),	/* interp */
-    int flags)
+    TCL_UNUSED(int))		/* flags */
 {
     return 0;
 }
@@ -9451,10 +9457,10 @@ TestChanCreateCmd(
     static const char *cmds[] = {"source", "sink", NULL};
     enum { SOURCE, SINK } cmd;
     int ret;
-    int flags;
-    void *instancePtr;
-    Tcl_ChannelType *dispatchPtr;
-    unsigned char *bytes = NULL;
+    int flags = 0;
+    void *instancePtr = NULL;
+    Tcl_ChannelType *dispatchPtr = NULL;
+    const unsigned char *bytes = NULL;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "source|sink ...");
@@ -9490,11 +9496,11 @@ TestChanCreateCmd(
 	}
 	if (len == 0) {
 	    len = 1;
-	    bytes = "\0";
+	    bytes = (const unsigned char *)"\0";
 	}
 	TestChanSourceState *sourceStatePtr;
-	sourceStatePtr = Tcl_Alloc(sizeof(TestChanSourceState) + len -
-				   sizeof(sourceStatePtr->data));
+	sourceStatePtr = (TestChanSourceState *) Tcl_Alloc(
+	    sizeof(TestChanSourceState) + len - sizeof(sourceStatePtr->data));
 	sourceStatePtr->numSourced = 0;
 	sourceStatePtr->len = len;
 	memmove(sourceStatePtr->data, bytes, len);
