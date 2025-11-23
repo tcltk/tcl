@@ -2411,7 +2411,7 @@ declare 697 {
 	    Tcl_Interp *interp, Tcl_Encoding encoding, const char *src,
 	    Tcl_Size srcLen, int flags, Tcl_EncodingState *statePtr, char *dst,
 	    Tcl_Size dstLen, Tcl_Size *srcReadPtr, Tcl_Size *dstWrotePtr,
-	    Tcl_Size *dstCharsPtr, Tcl_Size *errorLocPtr)
+	    Tcl_Size *dstCharsPtr)
 }
 
 declare 698 {
@@ -2419,7 +2419,7 @@ declare 698 {
 	    Tcl_Interp *interp, Tcl_Encoding encoding, const char *src,
 	    Tcl_Size srcLen, int flags, Tcl_EncodingState *statePtr, char *dst,
 	    Tcl_Size dstLen, Tcl_Size *srcReadPtr, Tcl_Size *dstWrotePtr,
-	    Tcl_Size *dstCharsPtr, Tcl_Size *errorLocPtr)
+	    Tcl_Size *dstCharsPtr)
 }
 
 # ----- BASELINE -- FOR -- 9.1.0 ----- #
