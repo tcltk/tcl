@@ -112,7 +112,7 @@ Pkgt_Init(
     if (code != TCL_OK) {
 	return code;
     }
-    Tcl_CreateObjCommand2(interp, "pkgt_eq", Pkgt_EqObjCmd2, NULL, NULL);
-    Tcl_CreateObjTrace2(interp, 0, 0, TraceProc2, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "pkgt_eq", Pkgt_EqObjCmd2, NULL, NULL);
+    Tcl_CreateObjTrace(interp, 0, 0, TraceProc2, NULL, NULL);
     return TCL_OK;
 }

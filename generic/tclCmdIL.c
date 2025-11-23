@@ -208,7 +208,7 @@ Tcl_IfObjCmd(
     Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    return Tcl_NRCallObjProc2(interp, TclNRIfObjCmd, clientData, objc, objv);
+    return Tcl_NRCallObjProc(interp, TclNRIfObjCmd, clientData, objc, objv);
 }
 
 int

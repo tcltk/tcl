@@ -742,7 +742,7 @@ Tcl_AssembleObjCmd(
      * because there needs to be one in place to execute bytecode.
      */
 
-    return Tcl_NRCallObjProc2(interp, TclNRAssembleObjCmd, clientData,
+    return Tcl_NRCallObjProc(interp, TclNRAssembleObjCmd, clientData,
 	    objc, objv);
 }
 

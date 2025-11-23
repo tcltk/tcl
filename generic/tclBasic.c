@@ -1075,7 +1075,7 @@ Tcl_CreateInterp(void)
     }
 
     /*
-     * Create the core commands. Do it here, rather than calling Tcl_CreateObjCommand2,
+     * Create the core commands. Do it here, rather than calling Tcl_CreateObjCommand,
      * because it's faster (there's no need to check for a preexisting command
      * by the same name). Set the Tcl_CmdProc to NULL.
      */
@@ -1149,7 +1149,7 @@ Tcl_CreateInterp(void)
      * Register the default [interp bgerror] handler.
      */
 
-    Tcl_CreateObjCommand2(interp, "::tcl::Bgerror",
+    Tcl_CreateObjCommand(interp, "::tcl::Bgerror",
 	    TclDefaultBgErrorHandlerObjCmd, NULL, NULL);
 
     /*
@@ -1171,7 +1171,7 @@ Tcl_CreateInterp(void)
      * Register the tcl::dtrace command.
      */
 
-    Tcl_CreateObjCommand2(interp, "::tcl::dtrace", DTraceObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "::tcl::dtrace", DTraceObjCmd, NULL, NULL);
 #endif /* USE_DTRACE */
 
     /*
@@ -1187,7 +1187,7 @@ Tcl_CreateInterp(void)
     for (builtinFuncPtr = BuiltinFuncTable; builtinFuncPtr->name != NULL;
 	    builtinFuncPtr++) {
 	strcpy(mathFuncName + MATH_FUNC_PREFIX_LEN, builtinFuncPtr->name);
-	Tcl_CreateObjCommand2(interp, mathFuncName,
+	Tcl_CreateObjCommand(interp, mathFuncName,
 		builtinFuncPtr->objCmdProc, (void *)builtinFuncPtr->fn, NULL);
 	Tcl_Export(interp, nsPtr, builtinFuncPtr->name, 0);
     }
@@ -1210,7 +1210,7 @@ Tcl_CreateInterp(void)
 	occdPtr->i.numArgs = opcmdInfoPtr->i.numArgs;
 	occdPtr->expected = opcmdInfoPtr->expected;
 	strcpy(mathFuncName + MATH_OP_PREFIX_LEN, opcmdInfoPtr->name);
-	cmdPtr = (Command *) Tcl_CreateObjCommand2(interp, mathFuncName,
+	cmdPtr = (Command *) Tcl_CreateObjCommand(interp, mathFuncName,
 		opcmdInfoPtr->objProc, occdPtr, DeleteOpCmdClientData);
 	if (cmdPtr == NULL) {
 	    Tcl_Panic("failed to create math operator %s",
@@ -1273,7 +1273,7 @@ Tcl_CreateInterp(void)
     Tcl_PkgProvideEx(interp, "Tcl", TCL_PATCH_LEVEL, &tclStubs);
     Tcl_PkgProvideEx(interp, "tcl", TCL_PATCH_LEVEL, &tclStubs);
 #ifdef TCL_NO_DEPRECATED
-    Tcl_CreateObjCommand2(interp, "::tcl::build-info",
+    Tcl_CreateObjCommand(interp, "::tcl::build-info",
 	    BuildInfoObjCmd2, (void *)version, NULL);
 #else
     Tcl_CmdInfo info2;
@@ -1413,7 +1413,7 @@ HideCommandInTclNs(
     }
     if (publicNameTuple) {
 	Tcl_IncrRefCount(publicNameTuple);
-	Tcl_CreateObjCommand2(interp, TclGetString(cmdName),
+	Tcl_CreateObjCommand(interp, TclGetString(cmdName),
 		BadEnsembleSubcommand, (void *)publicNameTuple,
 		BadEnsembleSubcommandCleanup);
     }
@@ -2760,6 +2760,7 @@ CmdWrapperDeleteProc(
     }
 }
 
+#undef Tcl_CreateObjCommand
 Tcl_Command
 Tcl_CreateObjCommand(
     Tcl_Interp *interp,		/* Token for command interpreter (returned by
@@ -3322,7 +3323,7 @@ InvokeObj2Command(
     if (cmdPtr->objProc2 != NULL) {
 	result = cmdPtr->objProc2(cmdPtr->objClientData2, interp, objc, objv);
     } else {
-	result = Tcl_NRCallObjProc2(interp, cmdPtr->nreProc2,
+	result = Tcl_NRCallObjProc(interp, cmdPtr->nreProc2,
 		cmdPtr->objClientData2, objc, objv);
     }
     return result;
@@ -6671,7 +6672,7 @@ TclObjInvoke(
     if (flags != TCL_INVOKE_HIDDEN) {
 	Tcl_Panic("TclObjInvoke: called without just TCL_INVOKE_HIDDEN");
     }
-    return Tcl_NRCallObjProc2(interp, TclNRInvoke, NULL, objc, objv);
+    return Tcl_NRCallObjProc(interp, TclNRInvoke, NULL, objc, objv);
 }
 
 int
@@ -8440,6 +8441,7 @@ WrapperNRObjProc(
     return proc(clientData, interp, (int)objc, objv);
 }
 
+#undef Tcl_NRCallObjProc
 int
 Tcl_NRCallObjProc(
     Tcl_Interp *interp,
@@ -8505,6 +8507,7 @@ CmdWrapperNreProc(
     return info->nreProc(info->clientData, interp, (int)objc, objv);
 }
 
+#undef Tcl_NRCreateCommand
 Tcl_Command
 Tcl_NRCreateCommand(
     Tcl_Interp *interp,		/* Token for command interpreter (returned by

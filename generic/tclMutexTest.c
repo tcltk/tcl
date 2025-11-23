@@ -559,7 +559,7 @@ int
 TclMutex_Init(
     Tcl_Interp *interp)		/* The current Tcl interpreter */
 {
-    Tcl_CreateObjCommand2(interp, "testmutex", TestMutexObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testmutex", TestMutexObjCmd, NULL, NULL);
     return TCL_OK;
 }
 #endif /* TCL_THREADS */

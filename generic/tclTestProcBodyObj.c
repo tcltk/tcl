@@ -154,7 +154,7 @@ RegisterCommand(
     }
 
     snprintf(buf, sizeof(buf), "%s::%s", namesp, cmdTablePtr->cmdName);
-    Tcl_CreateObjCommand2(interp, buf, cmdTablePtr->proc, 0, 0);
+    Tcl_CreateObjCommand(interp, buf, cmdTablePtr->proc, 0, 0);
     return TCL_OK;
 }
 

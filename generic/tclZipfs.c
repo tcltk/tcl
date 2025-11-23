@@ -6478,7 +6478,7 @@ TclZipfs_Init(
 	    Tcl_LinkVar(interp, "::tcl::zipfs::fallbackEntryEncoding",
 		    (char *) &ZipFS.fallbackEntryEncoding, TCL_LINK_STRING);
 	}
-	Tcl_CreateObjCommand2(interp, "::tcl::zipfs::tcl_library_init",
+	Tcl_CreateObjCommand(interp, "::tcl::zipfs::tcl_library_init",
 		ZipFSTclLibraryObjCmd, NULL, NULL);
     }
     return TCL_OK;

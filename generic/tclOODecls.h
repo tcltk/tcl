@@ -281,4 +281,44 @@ extern const TclOOStubs *tclOOStubsPtr;
 #   undef Tcl_NewMethod
 #endif
 
+
+#ifndef TclOOGeneric
+/* Select method based on type of argument. */
+#define TclOOGeneric(typePtr, impl) \
+    _Generic(typePtr, default: impl, const Tcl_MethodType2 *: impl ## 2)
+#endif
+
+#ifdef USE_TCLOO_STUBS
+
+#undef Tcl_MethodIsType
+#define Tcl_MethodIsType(method, typePtr, clientDataPtr) \
+    (TclOOGeneric((typePtr), tclOOStubsPtr->tcl_MethodIsType) \
+	((method), (typePtr), (clientDataPtr)))
+
+#undef Tcl_NewInstanceMethod
+#define Tcl_NewInstanceMethod(interp, object, nameObj, flags, typePtr, clientData) \
+    (TclOOGeneric((typePtr), tclOOStubsPtr->tcl_NewInstanceMethod) \
+	((interp), (object), (nameObj), (flags), (typePtr), (clientData)))
+
+#undef Tcl_NewMethod
+#define Tcl_NewMethod(interp, cls, nameObj, flags, typePtr, clientData) \
+    (TclOOGeneric((typePtr), tclOOStubsPtr->tcl_NewMethod) \
+	((interp), (cls), (nameObj), (flags), (typePtr), (clientData)))
+
+#else
+
+#define Tcl_MethodIsType(method, typePtr, clientDataPtr) \
+    (TclOOGeneric((typePtr), Tcl_MethodIsType) \
+	((method), (typePtr), (clientDataPtr)))
+
+#define Tcl_NewInstanceMethod(interp, object, nameObj, flags, typePtr, clientData) \
+    (TclOOGeneric((typePtr), Tcl_NewInstanceMethod) \
+	((interp), (object), (nameObj), (flags), (typePtr), (clientData)))
+
+#define Tcl_NewMethod(interp, cls, nameObj, flags, typePtr, clientData) \
+    (TclOOGeneric((typePtr), Tcl_NewMethod) \
+	((interp), (cls), (nameObj), (flags), (typePtr), (clientData)))
+
+#endif
+
 #endif /* _TCLOODECLS */

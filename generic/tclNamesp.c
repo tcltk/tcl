@@ -1865,7 +1865,7 @@ DoImport(
 	}
 
 	dataPtr = (ImportedCmdData *) Tcl_Alloc(sizeof(ImportedCmdData));
-	importedCmd = Tcl_NRCreateCommand2(interp, Tcl_DStringValue(&ds),
+	importedCmd = Tcl_NRCreateCommand(interp, Tcl_DStringValue(&ds),
 		TclInvokeImportedCmd, InvokeImportedNRCmd, dataPtr,
 		DeleteImportedCmd);
 	dataPtr->realCmdPtr = cmdPtr;
@@ -2127,7 +2127,7 @@ TclInvokeImportedCmd(
     Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* The argument objects. */
 {
-    return Tcl_NRCallObjProc2(interp, InvokeImportedNRCmd, clientData,
+    return Tcl_NRCallObjProc(interp, InvokeImportedNRCmd, clientData,
 	    objc, objv);
 }
 
@@ -3436,7 +3436,7 @@ NamespaceEvalCmd(
     Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    return Tcl_NRCallObjProc2(interp, NRNamespaceEvalCmd, clientData, objc,
+    return Tcl_NRCallObjProc(interp, NRNamespaceEvalCmd, clientData, objc,
 	    objv);
 }
 
@@ -3886,7 +3886,7 @@ NamespaceInscopeCmd(
     Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    return Tcl_NRCallObjProc2(interp, NRNamespaceInscopeCmd, clientData, objc,
+    return Tcl_NRCallObjProc(interp, NRNamespaceInscopeCmd, clientData, objc,
 	    objv);
 }
 

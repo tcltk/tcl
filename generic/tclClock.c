@@ -282,7 +282,7 @@ TclClockInit(
 		clientData ? ClockDeleteCmdProc : NULL);
 	cmdPtr->compileProc = clockCmdPtr->compileProc;
     }
-    Tcl_CreateObjCommand2(interp, "::tcl::unsupported::clock::configure",
+    Tcl_CreateObjCommand(interp, "::tcl::unsupported::clock::configure",
 	    ClockConfigureObjCmd, data, ClockDeleteCmdProc);
     data->refCount++;
 }

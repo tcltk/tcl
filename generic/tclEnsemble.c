@@ -1679,7 +1679,7 @@ TclMakeEnsemble(
 
 		if (map[i].unsafe && Tcl_IsSafe(interp)) {
 		    cmdPtr = (Command *)
-			    Tcl_NRCreateCommand2(interp, "___tmp", map[i].proc2,
+			    Tcl_NRCreateCommand(interp, "___tmp", map[i].proc2,
 			    map[i].nreProc2, map[i].clientData, NULL);
 		    Tcl_DStringSetLength(&hiddenBuf, hiddenLen);
 		    if (Tcl_HideCommand(interp, "___tmp",
@@ -1695,7 +1695,7 @@ TclMakeEnsemble(
 		     */
 
 		    cmdPtr = (Command *)
-			    Tcl_NRCreateCommand2(interp, TclGetString(toObj),
+			    Tcl_NRCreateCommand(interp, TclGetString(toObj),
 			    map[i].proc2, map[i].nreProc2, map[i].clientData,
 			    NULL);
 		    cmdPtr->compileProc = map[i].compileProc;
@@ -1742,7 +1742,7 @@ TclEnsembleImplementationCmd(
     Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
-    return Tcl_NRCallObjProc2(interp, NsEnsembleImplementationCmdNR,
+    return Tcl_NRCallObjProc(interp, NsEnsembleImplementationCmdNR,
 	    clientData, objc, objv);
 }
 

@@ -3134,7 +3134,7 @@ ArrayForObjCmd(
     Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    return Tcl_NRCallObjProc2(interp, ArrayForNRCmd, clientData, objc, objv);
+    return Tcl_NRCallObjProc(interp, ArrayForNRCmd, clientData, objc, objv);
 }
 
 static int

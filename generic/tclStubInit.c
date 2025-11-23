@@ -64,6 +64,12 @@
 #define TclUnusedStubEntry 0
 
 #ifdef TCL_NO_DEPRECATED
+#   undef Tcl_CreateObjCommand
+#   undef Tcl_CreateTrace
+#   undef Tcl_CreateObjTrace
+#   undef Tcl_NRCallObjProc
+#   undef Tcl_NRCreateCommand
+#   undef TclGetObjInterpProc
 #   define Tcl_CreateObjCommand 0
 #   define Tcl_CreateTrace 0
 #   define Tcl_CreateObjTrace 0

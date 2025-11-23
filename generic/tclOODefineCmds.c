@@ -2552,7 +2552,7 @@ TclOODefineSlots(
 
     for (const DeclaredSlotMethod *smPtr = slotMethods; smPtr->name; smPtr++) {
 	Tcl_Obj *name = Tcl_NewStringObj(smPtr->name, -1);
-	Tcl_NewMethod2(interp, slotCls, name, smPtr->flags,
+	Tcl_NewMethod(interp, slotCls, name, smPtr->flags,
 		&smPtr->implType, NULL);
 	Tcl_BounceRefCount(name);
     }

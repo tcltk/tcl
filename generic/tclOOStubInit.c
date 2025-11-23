@@ -15,6 +15,11 @@ MODULE_SCOPE const TclOOStubs tclOOStubs;
 #endif
 
 #ifdef TCL_NO_DEPRECATED
+#   undef Tcl_MethodIsType
+#   undef Tcl_NewInstanceMethod
+#   undef Tcl_NewMethod
+#   undef TclOOMakeProcInstanceMethod
+#   undef TclOOMakeProcMethod
 #   define Tcl_MethodIsType 0
 #   define Tcl_NewInstanceMethod 0
 #   define Tcl_NewMethod 0
