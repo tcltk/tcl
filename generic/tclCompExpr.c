@@ -2887,11 +2887,14 @@ void EqNextLex(
     const char *start;
     Tcl_Size numBytes;
     Tcl_Size scanned;
+    if (in->errorFound) return;
 
     while (1) {
         // Check if we're at the end.
         if (in->argpos >= in->argc) {
 	    in->lex = 0;
+	    in->lastStart = "";
+	    in->lastLen = 0;
 	    return;
         }
         // If this argument already has a numeric internal rep, preserve that.
@@ -3012,7 +3015,7 @@ Tcl_Obj *EqParseGetError(
 	// A pre-existing number might not have been scanned
         in->lastStart = TclGetStringFromObj(in->lit, &in->lastLen);
     }
-    return Tcl_ObjPrintf("Expected %s but found '%.*s'",
+    return Tcl_ObjPrintf("= Expected %s but found '%.*s'",
 		    in->errorFound, (int)in->lastLen, in->lastStart);
 }
 
@@ -3065,18 +3068,18 @@ void EqParsePrefix(
     EqInput *in,
     CompileEnv *envPtr)
 {
-    //EqNextLex(in);
     unsigned char inLex = in->lex;
     Tcl_Obj *inLit = in->lit;
-    EqNextLex(in);
     switch (inLex) {
 	// Number?
 	case NUMBER:
 	    PUSH_OBJ(inLit);
+	    EqNextLex(in);
 	    return;
 
 	// Parenthesised subexpression?
 	case OPEN_PAREN:
+	    EqNextLex(in);
 	    EqParse(in, envPtr, PREC_OPEN_PAREN);
 	    if (in->lex == CLOSE_PAREN) {
 		EqNextLex(in);
@@ -3092,12 +3095,14 @@ void EqParsePrefix(
 	    TCL_FALLTHROUGH();
 	case NOT:
 	case BIT_NOT:
+	    EqNextLex(in);
 	    EqParse(in, envPtr, PREC_UNARY);
 	    TclEmitOpcode(instruction[inLex], envPtr);
 	    return;
 
 	// Some kind of name?
 	case BAREWORD:
+	    EqNextLex(in);
 	    // Function call?
 	    if (in->lex == OPEN_PAREN) {
 		Tcl_Obj *funcName = Tcl_NewStringObj("tcl::mathfunc::", -1);
@@ -3123,23 +3128,22 @@ void EqParseFuncArgs(
     CompileEnv *envPtr)
 {
     int numWords = 1;
-    while (in->lex) {
-	if (in->lex == CLOSE_PAREN) {
-	    EqNextLex(in);
-	    INVOKE4(INVOKE_STK, numWords);
-	    return;
-	}
-	EqParse(in, envPtr, PREC_COMMA);
-	numWords++;
+    if (in->lex != CLOSE_PAREN) {
+        while (in->lex) {
 
-	switch (in->lex) {
-	    case COMMA:
-		EqNextLex(in);
-	    case CLOSE_PAREN:
-		continue;
-	}
-	EqParseSetError(in, "')' or ','");
+	    EqParse(in, envPtr, PREC_COMMA);
+	    numWords++;
+
+	    if (in->lex == CLOSE_PAREN) break;
+	    if (in->lex != COMMA) {
+	        EqParseSetError(in, "')' or ','");
+	        return;
+	    }
+	    EqNextLex(in);
+        }
     }
+    INVOKE4(INVOKE_STK, numWords);
+    EqNextLex(in);
 }
 
 // We just saw && so parse its second operand and generate code
@@ -3184,18 +3188,18 @@ void EqParseTernary(
     EqInput *in,
     CompileEnv *envPtr)
 {
-    Tcl_BytecodeLabel lelse, lend;
-    FWDJUMP(JUMP_FALSE, lelse);
+    Tcl_BytecodeLabel false1, end;
+    FWDJUMP(JUMP_FALSE, false1);
     EqParse(in, envPtr, PREC_CONDITIONAL);
     if (in->lex != COLON) {
 	EqParseSetError(in, "':'");
 	return;
     }
-    FWDJUMP(JUMP, lend);
-    FWDLABEL(lelse);
+    FWDJUMP(JUMP, end);
+    FWDLABEL(false1);
     EqNextLex(in);
     EqParse(in, envPtr, PREC_CONDITIONAL);
-    FWDLABEL(lend);
+    FWDLABEL(end);
 }
 
 /*
@@ -3234,6 +3238,7 @@ Tcl_EqualsObjCmd(
 
     Tcl_Obj *errMsg = EqParseGetError(&input);
     if (errMsg) {
+	TclFreeCompileEnv(envPtr);
 	Tcl_SetObjResult(interp, errMsg);
 	return TCL_ERROR;
     }
