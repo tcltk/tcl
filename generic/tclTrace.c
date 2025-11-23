@@ -1810,7 +1810,7 @@ TraceExecutionProc(
 	    tcmdPtr->startCmd = (char *)Tcl_Alloc(len);
 	    memcpy(tcmdPtr->startCmd, command, len);
 	    tcmdPtr->refCount++;
-	    tcmdPtr->stepTrace = Tcl_CreateObjTrace2(interp, 0,
+	    tcmdPtr->stepTrace = Tcl_CreateObjTrace(interp, 0,
 		    (tcmdPtr->flags & TCL_TRACE_ANY_EXEC) >> 2,
 		    TraceExecutionProc, tcmdPtr, CommandObjTraceDeleted);
 	}
@@ -2032,6 +2032,7 @@ TraceWrapperDelProc(
     Tcl_Free(info);
 }
 
+#undef Tcl_CreateObjTrace
 Tcl_Trace
 Tcl_CreateObjTrace(
     Tcl_Interp *interp,		/* Tcl interpreter */

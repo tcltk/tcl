@@ -1481,11 +1481,11 @@ TclIcuInit(
 
 	    /* Ref count number of commands */
 	    icu_fns.nopen += 3;
-	    Tcl_CreateObjCommand2(interp,  "::tcl::unsupported::icu::convertto",
+	    Tcl_CreateObjCommand(interp,  "::tcl::unsupported::icu::convertto",
 		    IcuConverttoObjCmd, 0, TclIcuCleanup);
-	    Tcl_CreateObjCommand2(interp,  "::tcl::unsupported::icu::convertfrom",
+	    Tcl_CreateObjCommand(interp,  "::tcl::unsupported::icu::convertfrom",
 		    IcuConvertfromObjCmd, 0, TclIcuCleanup);
-	    Tcl_CreateObjCommand2(interp,  "::tcl::unsupported::icu::detect",
+	    Tcl_CreateObjCommand(interp,  "::tcl::unsupported::icu::detect",
 		    IcuDetectObjCmd, 0, TclIcuCleanup);
 	}
 
@@ -1493,11 +1493,11 @@ TclIcuInit(
 
 	/* Ref count number of commands */
 	icu_fns.nopen += 3; /* UPDATE AS CMDS ADDED/DELETED BELOW */
-	Tcl_CreateObjCommand2(interp, "::tcl::unsupported::icu::converters",
+	Tcl_CreateObjCommand(interp, "::tcl::unsupported::icu::converters",
 		IcuConverterNamesObjCmd, 0, TclIcuCleanup);
-	Tcl_CreateObjCommand2(interp, "::tcl::unsupported::icu::aliases",
+	Tcl_CreateObjCommand(interp, "::tcl::unsupported::icu::aliases",
 		IcuConverterAliasesObjCmd, 0, TclIcuCleanup);
-	Tcl_CreateObjCommand2(interp, "::tcl::unsupported::icu::normalize",
+	Tcl_CreateObjCommand(interp, "::tcl::unsupported::icu::normalize",
 		IcuNormalizeObjCmd, 0, TclIcuCleanup);
     }
 

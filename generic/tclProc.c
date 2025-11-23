@@ -915,7 +915,7 @@ Tcl_UplevelObjCmd(
     Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    return Tcl_NRCallObjProc2(interp, TclNRUplevelObjCmd, clientData, objc, objv);
+    return Tcl_NRCallObjProc(interp, TclNRUplevelObjCmd, clientData, objc, objv);
 }
 
 int
@@ -1632,7 +1632,7 @@ TclObjInterpProc2(
      * Not used much in the core; external interface for iTcl
      */
 
-    return Tcl_NRCallObjProc2(interp, TclNRInterpProc, clientData, objc, objv);
+    return Tcl_NRCallObjProc(interp, TclNRInterpProc, clientData, objc, objv);
 }
 
 int
@@ -2688,7 +2688,7 @@ Tcl_ApplyObjCmd(
     Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    return Tcl_NRCallObjProc2(interp, TclNRApplyObjCmd, clientData, objc, objv);
+    return Tcl_NRCallObjProc(interp, TclNRApplyObjCmd, clientData, objc, objv);
 }
 
 int

@@ -95,19 +95,19 @@ int
 TclplatformtestInit(
     Tcl_Interp *interp)		/* Interpreter to add commands to. */
 {
-    Tcl_CreateObjCommand2(interp, "testchmod", TestchmodCmd,
+    Tcl_CreateObjCommand(interp, "testchmod", TestchmodCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand2(interp, "testfilehandler", TestfilehandlerCmd,
+    Tcl_CreateObjCommand(interp, "testfilehandler", TestfilehandlerCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand2(interp, "testfilewait", TestfilewaitCmd,
+    Tcl_CreateObjCommand(interp, "testfilewait", TestfilewaitCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand2(interp, "testfindexecutable", TestfindexecutableCmd,
+    Tcl_CreateObjCommand(interp, "testfindexecutable", TestfindexecutableCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand2(interp, "testfork", TestforkCmd,
+    Tcl_CreateObjCommand(interp, "testfork", TestforkCmd,
 	NULL, NULL);
-    Tcl_CreateObjCommand2(interp, "testalarm", TestalarmCmd,
+    Tcl_CreateObjCommand(interp, "testalarm", TestalarmCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand2(interp, "testgotsig", TestgotsigCmd,
+    Tcl_CreateObjCommand(interp, "testgotsig", TestgotsigCmd,
 	    NULL, NULL);
     return TCL_OK;
 }

@@ -71,13 +71,13 @@ TclplatformtestInit(
      * Add commands for platform specific tests for Windows here.
      */
 
-    Tcl_CreateObjCommand2(interp, "testchmod", TestchmodCmd, NULL, NULL);
-    Tcl_CreateObjCommand2(interp, "testeventloop", TesteventloopCmd, NULL, NULL);
-    Tcl_CreateObjCommand2(interp, "testvolumetype", TestvolumetypeCmd,
+    Tcl_CreateObjCommand(interp, "testchmod", TestchmodCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testeventloop", TesteventloopCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testvolumetype", TestvolumetypeCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand2(interp, "testwinclock", TestwinclockCmd, NULL, NULL);
-    Tcl_CreateObjCommand2(interp, "testwinsleep", TestwinsleepCmd, NULL, NULL);
-    Tcl_CreateObjCommand2(interp, "testexcept", TestExceptionCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testwinclock", TestwinclockCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testwinsleep", TestwinsleepCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testexcept", TestExceptionCmd, NULL, NULL);
     return TCL_OK;
 }
 

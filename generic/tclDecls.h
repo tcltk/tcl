@@ -4308,6 +4308,45 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_GetByteArrayFromObj(objPtr, sizePtr) \
 	Tcl_GetBytesFromObj(NULL, (objPtr), (sizePtr))
 
+/* Select method based on type of argument. */
+#define TclProc2Generic(typePtr, impl) \
+    _Generic(typePtr, Tcl_ObjCmdProc2 *: impl ## 2, default: impl)
+#define TclTraceProc2Generic(typePtr, impl) \
+    _Generic(typePtr, Tcl_CmdObjTraceProc2 *: impl ## 2, default: impl)
+
+#ifdef USE_TCL_STUBS
+
+#undef Tcl_CreateObjCommand
+#define Tcl_CreateObjCommand(interp, cmdName, typePtr, clientData, deleteProc) \
+    (TclProc2Generic((typePtr), tclStubsPtr->tcl_CreateObjCommand) \
+	((interp), (cmdName), (typePtr), (clientData), (deleteProc)))
+#undef Tcl_CreateObjTrace
+#define Tcl_CreateObjTrace(interp, level, flags, typePtr, clientData, deleteProc) \
+    (TclTraceProc2Generic((typePtr), tclStubsPtr->tcl_CreateObjTrace) \
+	((interp), (level), (flags), (typePtr), (clientData), (deleteProc)))
+#undef Tcl_NRCreateCommand
+#define Tcl_NRCreateCommand(interp, cmdName, typePtr, nreProc, clientData, deleteProc) \
+    (TclProc2Generic((typePtr), tclStubsPtr->tcl_NRCreateCommand) \
+	((interp), (cmdName), (typePtr), (nreProc), (clientData), (deleteProc)))
+#undef Tcl_NRCallObjProc
+#define Tcl_NRCallObjProc(interp, typePtr, clientData, objc, objv) \
+    (TclProc2Generic((typePtr), tclStubsPtr->tcl_NRCallObjProc) \
+	((interp), (typePtr), (clientData), (objc), (objv)))
+#else
+#define Tcl_CreateObjCommand(interp, cmdName, typePtr, clientData, deleteProc) \
+    (TclProc2Generic((typePtr), Tcl_CreateObjCommand) \
+	((interp), (cmdName), (typePtr), (clientData), (deleteProc)))
+#define Tcl_CreateObjTrace(interp, level, flags, typePtr, clientData, deleteProc) \
+    (TclTraceProc2Generic((typePtr), Tcl_CreateObjTrace) \
+	((interp), (level), (flags), (typePtr), (clientData), (deleteProc)))
+#define Tcl_NRCreateCommand(interp, cmdName, typePtr, nreProc, clientData, deleteProc) \
+    (TclProc2Generic((typePtr), Tcl_NRCreateCommand) \
+	((interp), (cmdName), (typePtr), (nreProc), (clientData), (deleteProc)))
+#define Tcl_NRCallObjProc(interp, typePtr, clientData, objc, objv) \
+    (TclProc2Generic((typePtr), Tcl_NRCallObjProc) \
+	((interp), (typePtr), (clientData), (objc), (objv)))
+#endif
+
 #if TCL_MINOR_VERSION < 1
 #   undef Tcl_IsEmpty
 #endif

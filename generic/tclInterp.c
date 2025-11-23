@@ -514,7 +514,7 @@ TclInterpInit(
     childPtr->interpCmd		= NULL;
     Tcl_InitHashTable(&childPtr->aliasTable, TCL_STRING_KEYS);
 
-    Tcl_NRCreateCommand2(interp, "interp", Tcl_InterpObjCmd, NRInterpCmd,
+    Tcl_NRCreateCommand(interp, "interp", Tcl_InterpObjCmd, NRInterpCmd,
 	    NULL, NULL);
 
     Tcl_CallWhenDeleted(interp, InterpInfoDeleteProc, NULL);
@@ -623,7 +623,7 @@ Tcl_InterpObjCmd(
     Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    return Tcl_NRCallObjProc2(interp, NRInterpCmd, clientData, objc, objv);
+    return Tcl_NRCallObjProc(interp, NRInterpCmd, clientData, objc, objv);
 }
 
 static int
@@ -1519,11 +1519,11 @@ TclAliasCreate(
     Tcl_Preserve(parentInterp);
 
     if (childInterp == parentInterp) {
-	aliasPtr->childCmd = Tcl_NRCreateCommand2(childInterp,
+	aliasPtr->childCmd = Tcl_NRCreateCommand(childInterp,
 		TclGetString(namePtr), TclLocalAliasObjCmd, AliasNRCmd,
 		aliasPtr, AliasObjCmdDeleteProc);
     } else {
-	aliasPtr->childCmd = Tcl_CreateObjCommand2(childInterp,
+	aliasPtr->childCmd = Tcl_CreateObjCommand(childInterp,
 		TclGetString(namePtr), TclAliasObjCmd, aliasPtr,
 		AliasObjCmdDeleteProc);
     }
@@ -2435,7 +2435,7 @@ ChildCreate(
     childPtr->parentInterp = parentInterp;
     childPtr->childEntryPtr = hPtr;
     childPtr->childInterp = childInterp;
-    childPtr->interpCmd = Tcl_NRCreateCommand2(parentInterp, path,
+    childPtr->interpCmd = Tcl_NRCreateCommand(parentInterp, path,
 	    TclChildObjCmd, NRChildCmd, childInterp, ChildObjCmdDeleteProc);
     Tcl_InitHashTable(&childPtr->aliasTable, TCL_STRING_KEYS);
     Tcl_SetHashValue(hPtr, childPtr);
@@ -2523,7 +2523,7 @@ TclChildObjCmd(
     Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    return Tcl_NRCallObjProc2(interp, NRChildCmd, clientData, objc, objv);
+    return Tcl_NRCallObjProc(interp, NRChildCmd, clientData, objc, objv);
 }
 
 static int

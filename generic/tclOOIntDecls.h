@@ -192,4 +192,34 @@ extern const TclOOIntStubs *tclOOIntStubsPtr;
 #   undef tclOOMakeProcMethod
 #endif
 
+#ifndef TclOOGeneric
+/* Select method based on type of argument. */
+#define TclOOGeneric(typePtr, impl) \
+    _Generic(typePtr, default: impl, const Tcl_MethodType2 *: impl ## 2)
+#endif
+
+#ifdef USE_TCLOO_STUBS
+
+#undef TclOOMakeProcInstanceMethod
+#define TclOOMakeProcInstanceMethod(interp, oPtr, flags, nameObj, argsObj, bodyObj, typePtr, clientData, procPtrPtr) \
+    (TclOOGeneric((typePtr), tclOOIntStubsPtr->tclOOMakeProcInstanceMethod) \
+	((interp), (oPtr), (flags), (nameObj), (argsObj), (bodyObj), (typePtr), (clientData), (procPtrPtr)))
+
+#undef TclOOMakeProcMethod
+#define TclOOMakeProcMethod(interp, clsPtr, flags, nameObj, namePtr, argsObj, bodyObj, typePtr, clientData, procPtrPtr) \
+    (TclOOGeneric((typePtr), tclOOIntStubsPtr->tclOOMakeProcMethod) \
+	((interp), (clsPtr), (flags), (nameObj), (namePtr), (argsObj), (bodyObj), (typePtr), (clientData), (procPtrPtr)))
+
+#else
+
+#define TclOOMakeProcInstanceMethod(interp, oPtr, flags, nameObj, argsObj, bodyObj, typePtr, clientData, procPtrPtr) \
+    (TclOOGeneric((typePtr), TclOOMakeProcInstanceMethod) \
+	((interp), (oPtr), (flags), (nameObj), (argsObj), (bodyObj), (typePtr), (clientData), (procPtrPtr)))
+
+#define TclOOMakeProcMethod(interp, clsPtr, flags, nameObj, namePtr, argsObj, bodyObj, typePtr, clientData, procPtrPtr) \
+    (TclOOGeneric((typePtr), TclOOMakeProcMethod) \
+	((interp), (clsPtr), (flags), (nameObj), (namePtr), (argsObj), (bodyObj), (typePtr), (clientData), (procPtrPtr)))
+
+#endif
+
 #endif /* _TCLOOINTDECLS */

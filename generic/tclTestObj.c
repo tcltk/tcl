@@ -117,25 +117,25 @@ TclObjTest_Init(
 	varPtr[i] = NULL;
     }
 
-    Tcl_CreateObjCommand2(interp, "testbignumobj", TestbignumobjCmd,
+    Tcl_CreateObjCommand(interp, "testbignumobj", TestbignumobjCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand2(interp, "testbooleanobj", TestbooleanobjCmd,
+    Tcl_CreateObjCommand(interp, "testbooleanobj", TestbooleanobjCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand2(interp, "testdoubleobj", TestdoubleobjCmd,
+    Tcl_CreateObjCommand(interp, "testdoubleobj", TestdoubleobjCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand2(interp, "testintobj", TestintobjCmd,
+    Tcl_CreateObjCommand(interp, "testintobj", TestintobjCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand2(interp, "testindexobj", TestindexobjCmd,
+    Tcl_CreateObjCommand(interp, "testindexobj", TestindexobjCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand2(interp, "testlistobj", TestlistobjCmd,
+    Tcl_CreateObjCommand(interp, "testlistobj", TestlistobjCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand2(interp, "testobj", TestobjCmd, NULL, NULL);
-    Tcl_CreateObjCommand2(interp, "teststringobj", TeststringobjCmd,
+    Tcl_CreateObjCommand(interp, "testobj", TestobjCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "teststringobj", TeststringobjCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand2(interp, "testisempty", TestisemptyCmd,
+    Tcl_CreateObjCommand(interp, "testisempty", TestisemptyCmd,
 	    NULL, NULL);
     if (sizeof(Tcl_Size) == sizeof(Tcl_WideInt)) {
-	Tcl_CreateObjCommand2(interp, "testbigdata", TestbigdataCmd,
+	Tcl_CreateObjCommand(interp, "testbigdata", TestbigdataCmd,
 		NULL, NULL);
     }
     return TCL_OK;

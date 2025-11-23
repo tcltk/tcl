@@ -1437,7 +1437,7 @@ ObjectNamespaceDeleted(
 	    contextPtr->callPtr->flags |= DESTRUCTOR;
 	    contextPtr->skip = 0;
 	    state = Tcl_SaveInterpState(interp, TCL_OK);
-	    result = Tcl_NRCallObjProc2(interp, TclOOInvokeContext,
+	    result = Tcl_NRCallObjProc(interp, TclOOInvokeContext,
 		    contextPtr, 0, NULL);
 	    if (result != TCL_OK) {
 		Tcl_BackgroundException(interp, result);
@@ -1992,7 +1992,7 @@ Tcl_NewObjectInstance(
 	     */
 
 	    isRoot = TclInitRewriteEnsemble(interp, skip, skip, objv);
-	    result = Tcl_NRCallObjProc2(interp, TclOOInvokeContext, contextPtr,
+	    result = Tcl_NRCallObjProc(interp, TclOOInvokeContext, contextPtr,
 		    objc, objv);
 
 	    if (isRoot) {
@@ -2525,7 +2525,7 @@ Tcl_CopyObjectInstance(
 	Tcl_IncrRefCount(args[0]);
 	Tcl_IncrRefCount(args[1]);
 	Tcl_IncrRefCount(args[2]);
-	result = Tcl_NRCallObjProc2(interp, TclOOInvokeContext, contextPtr, 3,
+	result = Tcl_NRCallObjProc(interp, TclOOInvokeContext, contextPtr, 3,
 		args);
 	TclDecrRefCount(args[0]);
 	TclDecrRefCount(args[1]);
@@ -2823,7 +2823,7 @@ TclOOPublicObjectCmd(
     Tcl_Size objc,
     Tcl_Obj *const *objv)
 {
-    return Tcl_NRCallObjProc2(interp, PublicNRObjectCmd, clientData, objc, objv);
+    return Tcl_NRCallObjProc(interp, PublicNRObjectCmd, clientData, objc, objv);
 }
 
 static int
@@ -2844,7 +2844,7 @@ TclOOPrivateObjectCmd(
     Tcl_Size objc,
     Tcl_Obj *const *objv)
 {
-    return Tcl_NRCallObjProc2(interp, PrivateNRObjectCmd, clientData, objc, objv);
+    return Tcl_NRCallObjProc(interp, PrivateNRObjectCmd, clientData, objc, objv);
 }
 
 static int
@@ -2905,7 +2905,7 @@ TclOOMyClassObjCmd(
     Tcl_Size objc,
     Tcl_Obj *const *objv)
 {
-    return Tcl_NRCallObjProc2(interp, MyClassNRObjCmd, clientData, objc, objv);
+    return Tcl_NRCallObjProc(interp, MyClassNRObjCmd, clientData, objc, objv);
 }
 
 static int
@@ -3154,7 +3154,7 @@ Tcl_ObjectContextInvokeNext(
      * Invoke the (advanced) method call context in the caller context.
      */
 
-    int result = Tcl_NRCallObjProc2(interp, TclOOInvokeContext, contextPtr,
+    int result = Tcl_NRCallObjProc(interp, TclOOInvokeContext, contextPtr,
 	    objc, objv);
 
     /*

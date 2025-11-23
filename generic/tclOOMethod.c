@@ -197,6 +197,7 @@ TclNewInstanceMethod(
 }
 
 #ifndef TCL_NO_DEPRECATED
+#undef Tcl_NewInstanceMethod
 Tcl_Method
 Tcl_NewInstanceMethod(
     TCL_UNUSED(Tcl_Interp *),
@@ -314,6 +315,7 @@ TclNewMethod(
 }
 
 #ifndef TCL_NO_DEPRECATED
+#undef Tcl_NewMethod
 Tcl_Method
 Tcl_NewMethod(
     TCL_UNUSED(Tcl_Interp *),
@@ -449,7 +451,7 @@ TclOONewProcInstanceMethod(
 	return NULL;
     }
     pmPtr = AllocProcedureMethodRecord(flags);
-    method = TclOOMakeProcInstanceMethod2(interp, oPtr, flags, nameObj,
+    method = TclOOMakeProcInstanceMethod(interp, oPtr, flags, nameObj,
 	    argsObj, bodyObj, &procMethodType, pmPtr, &pmPtr->procPtr);
     if (method == NULL) {
 	Tcl_Free(pmPtr);
@@ -505,7 +507,7 @@ TclOONewProcMethod(
     }
 
     pmPtr = AllocProcedureMethodRecord(flags);
-    method = TclOOMakeProcMethod2(interp, clsPtr, flags, nameObj, procName,
+    method = TclOOMakeProcMethod(interp, clsPtr, flags, nameObj, procName,
 	    argsObj, bodyObj, &procMethodType, pmPtr, &pmPtr->procPtr);
 
     if (argsLen == TCL_INDEX_NONE) {
@@ -617,6 +619,7 @@ InitCmdFrame(
  */
 
 #ifndef TCL_NO_DEPRECATED
+#undef TclOOMakeProcInstanceMethod
 Tcl_Method
 TclOOMakeProcInstanceMethod(
     Tcl_Interp *interp,		/* The interpreter containing the object. */
@@ -710,6 +713,7 @@ TclOOMakeProcInstanceMethod2(
  */
 
 #ifndef TCL_NO_DEPRECATED
+#undef TclOOMakeProcMethod
 Tcl_Method
 TclOOMakeProcMethod(
     Tcl_Interp *interp,		/* The interpreter containing the class. */
@@ -1809,6 +1813,7 @@ TclMethodIsType(
 }
 
 #ifndef TCL_NO_DEPRECATED
+#undef Tcl_MethodIsType
 int
 Tcl_MethodIsType(
     Tcl_Method method,
