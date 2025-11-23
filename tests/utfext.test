@@ -378,6 +378,8 @@ namespace eval utftest {
 	    # Note by default output should be terminated with \0
 	    testutf toutf $enc $comment $hex ${utfhex}00
 	    testutf fromutf $enc $comment $utfhex $hex$encnuls
+            testutf toutfex $enc $comment $hex ${utfhex}00
+            testutf fromutfex $enc $comment $utfhex $hex$encnuls
 
 	    # Test TCL_ENCODING_NO_TERMINATE
 	    testutf toutf $enc $comment $hex $utfhex -flags {start end noterminate}
@@ -395,11 +397,16 @@ namespace eval utftest {
 	    testspacelimit fromutf $enc $comment $utfhex $hex
 	}
 
-        foreach n {0x7ffffffe 0xfffffffe} {
-            lassign [lindex $testcases 0] {*}{comment utfhex hex internalfragindex externalfragindex}
-            testutf toutfex $enc $comment $hex ${utfhex}00 -prefixlen $n
-            testutf fromutfex $enc $comment $utfhex $hex$encnuls -prefixlen $n
-        }
+	# Cannot afford to test every single encoding for large strings. Test
+	# only the first two cases at the INT_MAX and UINT_MAX boundaries.
+	foreach testcase [lrange $testcases 0 1] {
+	    lassign $testcase {*}{comment utfhex hex internalfragindex externalfragindex}
+	    foreach n {0x7ffffffe 0xfffffffe} {
+puts $enc:$n:$comment
+	        testutf toutfex $enc $comment $hex ${utfhex}00 -prefixlen $n -constraints bigdata
+	        testutf fromutfex $enc $comment $utfhex $hex$encnuls -prefixlen $n -constraints bigdata
+	    }
+	}
     }
 
 
