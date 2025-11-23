@@ -2155,8 +2155,8 @@ static int UtfExtWrapper(
     Tcl_Obj **flagObjs;
     Tcl_Size nflags;
     const char *opts[] = {"-srcreadvar", "-dstwrotevar", "-dstcharsvar",
-	"-errorlocvar", "-prefix", "-prefixlen", NULL};
-    enum {SRCREADVAR, DSTWROTEVAR, DSTCHARSVAR, ERRORLOCVAR,
+	"-prefix", "-prefixlen", NULL};
+    enum {SRCREADVAR, DSTWROTEVAR, DSTCHARSVAR,
 	PREFIX, PREFIXLEN } optIndex;
     Tcl_Obj *optObjs[(sizeof(opts) / sizeof(opts[0])) - 1];
     static const struct {
@@ -2175,7 +2175,7 @@ static int UtfExtWrapper(
 	Tcl_WrongNumArgs(interp, 2, objv,
 	    "encoding srcbytes flags state dstlen ?-prefix prefix? ?-prefixlen "
 	    "prefixLen? ?-srcreadvar srcreadvar? ?-dstwrotevar dstwrotevar? "
-	    "?-dstcharsvar dstcharsvar? ?-errorlocvar errorLocVar?");
+	    "?-dstcharsvar dstcharsvar?");
 	return TCL_ERROR;
     }
     for (i = 0; i < (Tcl_Size) (sizeof(optObjs) / sizeof(optObjs[0])); ++i) {
@@ -2328,14 +2328,14 @@ static int UtfExtWrapper(
 		srcBufLen, flags, encStatePtr, dstBufPtr, dstLen,
 	    	optObjs[SRCREADVAR] ? &srcRead : NULL, 
 		&dstWrote,
-	    	optObjs[DSTCHARSVAR] ? &dstChars : NULL, NULL);
+	    	optObjs[DSTCHARSVAR] ? &dstChars : NULL);
 	break;
     case UTF_TO_EXTERNAL_EX:
 	result = Tcl_UtfToExternalEx(interp, encoding, srcBufPtr,
 		srcBufLen, flags, encStatePtr, dstBufPtr, dstLen,
 	    	optObjs[SRCREADVAR] ? &srcRead : NULL,
 		&dstWrote,
-	    	optObjs[DSTCHARSVAR] ? &dstChars : NULL, NULL);
+	    	optObjs[DSTCHARSVAR] ? &dstChars : NULL);
 	break;
     }
     if (memcmp(dstBufPtr + bufLen - 4, "\xAB\xCD\xEF\xAB", 4)) {

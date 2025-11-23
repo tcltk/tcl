@@ -1373,8 +1373,7 @@ Tcl_ExternalToUtf(
 		statePtr, dst, dstLen,
 		srcReadPtr ? &srcRead : NULL,
 		dstWrotePtr ? &dstWrote : NULL,
-		dstCharsPtr ? &dstChars : NULL,
-		NULL);
+		dstCharsPtr ? &dstChars : NULL);
     if (srcReadPtr) {
 	*srcReadPtr = (int)srcRead;
     }
@@ -1408,7 +1407,7 @@ Tcl_ExternalToUtf(
 
 int
 Tcl_ExternalToUtfEx(
-    Tcl_Interp *interp,		/* TODO: Re-examine this. */
+    TCL_UNUSED(Tcl_Interp *),
     Tcl_Encoding encoding,	/* The encoding for the source string, or NULL
 				 * for the default system encoding. */
     const char *src,		/* Source string in specified encoding. */
@@ -1433,12 +1432,9 @@ Tcl_ExternalToUtfEx(
     Tcl_Size *dstWrotePtr,	/* Filled with the number of bytes that were
 				 * stored in the output buffer as a result of
 				 * the conversion. */
-    Tcl_Size *dstCharsPtr,	/* Filled with the number of characters that
+    Tcl_Size *dstCharsPtr)	/* Filled with the number of characters that
 				 * correspond to the bytes stored in the
 				 * output buffer. */
-    Tcl_Size *errorLocPtr)	/* Where to store the error location
-				 * (or TCL_INDEX_NONE if no error). May
-				 * be NULL. */
 {
     const Encoding *encodingPtr;
     int result = TCL_OK;
@@ -1657,29 +1653,6 @@ storeResult:
 	assert(dstCharsWritten >= 0);
 	assert(!charLimited || dstCharsWritten <= *dstCharsPtr);
 	*dstCharsPtr = dstCharsWritten;
-    }
-
-    if (errorLocPtr) {
-	/* If errorLocPtr specified, interpreter result is not to be set */
-	*errorLocPtr = result == TCL_OK ? -1 : srcBytesRead;
-    } else {
-	/*
-	 * interp result is set for all results other than TCL_OK, even
-	 * those that are not really error conditions like
-	 * TCL_CONVERT_MULTIBYTE when there is more data coming
-	 * (indicated by TCL_ENCODING_END is not set).
-	 */
-	if (result != TCL_OK && interp != NULL) {
-	    char buf[TCL_INTEGER_SPACE];
-	    snprintf(buf, sizeof(buf), "%" TCL_SIZE_MODIFIER "d",
-		srcBytesRead);
-	    Tcl_SetObjResult(interp,
-		Tcl_ObjPrintf("unexpected byte sequence starting at index "
-			      "%" TCL_SIZE_MODIFIER "d: '\\x%02X'",
-		    srcBytesRead, UCHAR(srcStart[srcBytesRead])));
-	    Tcl_SetErrorCode(interp, "TCL", "ENCODING", "ILLEGALSEQUENCE", buf,
-		(char *)NULL);
-	}
     }
 
     return result;
@@ -1958,8 +1931,7 @@ Tcl_UtfToExternal(
 		statePtr, dst, dstLen,
 		srcReadPtr ? &srcRead : NULL,
 		dstWrotePtr ? &dstWrote : NULL,
-		dstCharsPtr ? &dstChars : NULL,
-		NULL);
+		dstCharsPtr ? &dstChars : NULL);
     if (srcReadPtr) {
 	assert(srcRead >= 0 && srcRead <= srcLen);
 	*srcReadPtr = (int)srcRead;
@@ -1996,7 +1968,7 @@ Tcl_UtfToExternal(
  */
 int
 Tcl_UtfToExternalEx(
-    Tcl_Interp *interp,		/* TODO: Re-examine this. */
+    TCL_UNUSED(Tcl_Interp *),
     Tcl_Encoding encoding,	/* The encoding for the source string, or NULL
 				 * for the default system encoding. */
     const char *src,		/* Source string in specified encoding. */
@@ -2021,12 +1993,9 @@ Tcl_UtfToExternalEx(
     Tcl_Size *dstWrotePtr,	/* Filled with the number of bytes that were
 				 * stored in the output buffer as a result of
 				 * the conversion. */
-    Tcl_Size *dstCharsPtr,	/* Filled with the number of characters that
+    Tcl_Size *dstCharsPtr)	/* Filled with the number of characters that
 				 * correspond to the bytes stored in the
 				 * output buffer. */
-    Tcl_Size *errorLocPtr)	/* Where to store the error location
-				 * (or TCL_INDEX_NONE if no error). May
-				 * be NULL. */
 {
     const Encoding *encodingPtr;
     int result = TCL_OK;
@@ -2253,29 +2222,6 @@ storeResult:
 	assert(dstCharsWritten >= 0);
 	assert(!charLimited || dstCharsWritten <= *dstCharsPtr);
 	*dstCharsPtr = dstCharsWritten;
-    }
-
-    if (errorLocPtr) {
-	/* If errorLocPtr specified, interpreter result is not to be set */
-	*errorLocPtr = result == TCL_OK ? -1 : srcBytesRead;
-    } else {
-	/*
-	 * interp result is set for all results other than TCL_OK, even
-	 * those that are not really error conditions like
-	 * TCL_CONVERT_MULTIBYTE when there is more data coming
-	 * (indicated by TCL_ENCODING_END is not set).
-	 */
-	if (result != TCL_OK && interp != NULL) {
-	    char buf[TCL_INTEGER_SPACE];
-	    snprintf(buf, sizeof(buf), "%" TCL_SIZE_MODIFIER "d",
-		srcBytesRead);
-	    Tcl_SetObjResult(interp,
-		Tcl_ObjPrintf("unexpected byte sequence starting at index "
-			      "%" TCL_SIZE_MODIFIER "d: '\\x%02X'",
-		    srcBytesRead, UCHAR(srcStart[srcBytesRead])));
-	    Tcl_SetErrorCode(interp, "TCL", "ENCODING", "ILLEGALSEQUENCE", buf,
-		(char *)NULL);
-	}
     }
 
     return result;
