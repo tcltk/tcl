@@ -2261,6 +2261,7 @@ Tcl_CopyObjectInstance(
     PrivateVariableMapping *privateVariable;
     Tcl_Size i;
     int result;
+    unsigned depth = oPtr->selfCls->inheritanceDepth;
 
     /*
      * Sanity check.
@@ -2271,6 +2272,17 @@ Tcl_CopyObjectInstance(
 		"may not clone the class of classes", TCL_AUTO_LENGTH));
 	OO_ERROR(interp, CLONING_CLASS);
 	return NULL;
+    }
+
+    if (oPtr->classPtr) {
+	unsigned cd = oPtr->classPtr->inheritanceDepth + 1;
+	depth = depth > cd ? depth : cd;
+	if (depth > MAX_INHERITANCE_DEPTH) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "maximum inheritance depth reached"));
+	    OO_ERROR(interp, MAX_INHERIT);
+	    return NULL;
+	}
     }
 
     /*
@@ -2398,6 +2410,7 @@ Tcl_CopyObjectInstance(
 	 */
 
 	cls2Ptr->flags = clsPtr->flags;
+	cls2Ptr->inheritanceDepth = depth;
 
 	/*
 	 * Ensure that the new class's superclass structure is the same as the

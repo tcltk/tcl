@@ -373,7 +373,7 @@ struct Class {
  * deeper. This default value allows for plenty of depth for normal uses, even
  * with prototype inheritance, without allowing for stack-busting shenanigans.
  */
-#define MAX_INHERITANCE_DEPTH	100
+#define MAX_INHERITANCE_DEPTH	500
 #endif
 
 /*

@@ -460,7 +460,7 @@ test oo-1.23 {basic test of OO functionality: deep nested ownership} -setup {
 } -result 0
 test oo-1.24 {basic test of OO functionality: deep nested ownership} -setup {
     oo::class create parent
-} -constraints knownBug -body {
+} -body {
     oo::class create abc {
 	superclass parent
 	self method make {} {oo::copy [self] xyz}
