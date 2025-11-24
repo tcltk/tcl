@@ -381,7 +381,7 @@ static const CmdInfo builtInCmds[] = {
     {"while",		Tcl_WhileObjCmd,	TclCompileWhileCmd,	TclNRWhileObjCmd,	CMD_IS_SAFE},
     {"yield",		NULL,			TclCompileYieldCmd,	TclNRYieldObjCmd,	CMD_IS_SAFE},
     {"yieldto",		NULL,			TclCompileYieldToCmd,	TclNRYieldToObjCmd,	CMD_IS_SAFE|CMD_COMPILES_EXPANDED},
-    {"=",		Tcl_EqualsObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
+    {"=",		Tcl_EqualsObjCmd,	TclCompileEqualsCmd,			NULL,	CMD_IS_SAFE},
 
     /*
      * Commands in the OS-interface. Note that many of these are unsafe.

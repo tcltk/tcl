@@ -3899,6 +3899,7 @@ MODULE_SCOPE CompileProc TclCompileDictUnsetCmd;
 MODULE_SCOPE CompileProc TclCompileDictUpdateCmd;
 MODULE_SCOPE CompileProc TclCompileDictWithCmd;
 MODULE_SCOPE CompileProc TclCompileEnsemble;
+MODULE_SCOPE CompileProc TclCompileEqualsCmd;
 MODULE_SCOPE CompileProc TclCompileErrorCmd;
 MODULE_SCOPE CompileProc TclCompileExprCmd;
 MODULE_SCOPE CompileProc TclCompileForCmd;
