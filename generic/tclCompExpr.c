@@ -3224,6 +3224,7 @@ Tcl_EqualsObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
+    //printf("Tcl_EqualsObjCmd CALLED\n");
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "arg ?arg ...?");
 	return TCL_ERROR;
@@ -3251,6 +3252,69 @@ Tcl_EqualsObjCmd(
     int code = TclNRRunCallbacks(interp, TCL_OK, rootPtr);
     TclReleaseByteCode(byteCodePtr);
     return code;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclCompileEqualsCmd --
+ *
+ *	Procedure called to compile the "=" command.
+ *	Only handles the case where all arguments are literals with no
+ *	pre-substitutions.
+ *
+ * Results:
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to runtime.
+ *
+ * Side effects:
+ *	Instructions are added to envPtr to execute the "=" command at
+ *	runtime.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclCompileEqualsCmd(
+    TCL_UNUSED(Tcl_Interp *),
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    TCL_UNUSED(Command *),
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    //printf("TclCompileEqualsCmd CALLED\n");
+    Tcl_Obj *objPtr, *listObj, **objs;
+    Tcl_Size len, i, numWords = parsePtr->numWords;
+    Tcl_Token *tokenPtr;
+
+    if (numWords == 1 || numWords > UINT_MAX) {
+	return TCL_ERROR;
+    }
+
+    // Following the example of TclCompileConcatCmd here...
+    TclNewObj(listObj);
+    for (i = 1, tokenPtr = parsePtr->tokenPtr; i < numWords; i++) {
+	tokenPtr = TokenAfter(tokenPtr);
+	TclNewObj(objPtr);
+	if (!TclWordKnownAtCompileTime(tokenPtr, objPtr)) {
+	    // Pre-substitution detected, give up on compilation
+	    Tcl_BounceRefCount(objPtr);
+	    Tcl_BounceRefCount(listObj);
+	    return TCL_ERROR;
+	}
+	(void) Tcl_ListObjAppendElement(NULL, listObj, objPtr);
+    }
+
+    TclListObjGetElements(NULL, listObj, &len, &objs);
+    //printf("TclCompileEqualsCmd COMPILABLE, %ld args\n", len);
+    EqInput input = {len, objs, 0, 0, 0, 0, 0, 0, 0};
+    EqNextLex(&input);
+    EqParse(&input,envPtr,0);
+    Tcl_BounceRefCount(listObj);
+
+    if (input.errorFound) return TCL_ERROR;
+
+    return TCL_OK;
 }
 
 /*
