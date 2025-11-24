@@ -92,7 +92,8 @@ jobs:
              throw "nmake exit code: $lastexitcode"
           }
         timeout-minutes: 5
-      - name: Run Tests ${{ matrix.config }}
+      - name: Run Tests ${{ matrix.config }} ${{ matrix.arch }}
+        if: ${{ matrix.arch == 'amd64' }}
         run: |
           Write-Output "::add-matcher::.github/tcltest.json"
           &nmake -f makefile.vc ${{ matrix.config }} test
