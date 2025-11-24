@@ -30,18 +30,17 @@
 
 #define TCL_ZLIB_VERSION	"2.0.1"
 
-/*
- * "Global" information stored in the interpreter AssocData.
- */
+// "Global" information stored in the interpreter AssocData.
 typedef struct ZlibInterpData {
     int counter;		// Counter used to issue stream commands.
     Tcl_Obj *nsNameObj;		// Name of stream namespace.
 } ZlibInterpData;
 
-/*
- * Key used to look up the ZlibInterpData for an interpreter.
- */
+// Key used to look up the ZlibInterpData for an interpreter.
 #define ASSOC_KEY		"tcl::zlib"
+
+// The name of the namespace where stream commands are created.
+#define ZLIB_STREAM_NS "::tcl::zlib"
 
 /*
  * Magic flags used with wbits fields to indicate that we're handling the gzip
@@ -69,9 +68,7 @@ typedef struct {
     char nativeCommentBuf[MAX_COMMENT_LEN];
 } GzipHeader;
 
-/*
- * Operating system values for gzip. Defined by RFC 1952.
- */
+// Operating system values for gzip. Defined by RFC 1952.
 enum GzipOperatingSystems {
     GZIP_OS_MSDOS = 0,		// FAT filesystem (MS-DOS, OS/2, NT/Win32)
     GZIP_OS_AMIGA = 1,		// Amiga
@@ -90,10 +87,7 @@ enum GzipOperatingSystems {
     GZIP_OS_UNKNOWN = 255	// unknown
 };
 
-/*
- * Structure used for the Tcl_ZlibStream* commands and [zlib stream ...]
- */
-
+// Structure used for the Tcl_ZlibStream* commands and [zlib stream ...]
 typedef struct {
     Tcl_Interp *interp;
     z_stream stream;		/* The interface to the zlib library. */
@@ -134,10 +128,7 @@ enum ZlibStreamHandleFlags {
 #define HaveDictToSet(zshPtr)	((zshPtr)->flags & DICT_TO_SET)
 #define DictWasSet(zshPtr)	((zshPtr)->flags |= ~DICT_TO_SET)
 
-/*
- * Structure used for stacked channel compression and decompression.
- */
-
+// Structure used for stacked channel compression and decompression.
 typedef struct {
     Tcl_Channel chan;		/* Reference to the channel itself. */
     Tcl_Channel parent;		/* The underlying source and sink of bytes. */
@@ -168,9 +159,7 @@ typedef struct {
 				 * necessary. */
 } ZlibChannelData;
 
-/*
- * Value bits for the ZlibChannelData::flags field.
- */
+// Value bits for the ZlibChannelData::flags field.
 enum ZlibChannelDataFlags {
     ASYNC = 0x01,		/* Set if this is an asynchronous channel. */
     IN_HEADER = 0x02,		/* Set if the inHeader field has been
@@ -242,10 +231,7 @@ static inline void	ZlibTransformEventTimerKill(
 			    ZlibChannelData *chanDataPtr);
 static void		ZlibTransformTimerRun(void *clientData);
 
-/*
- * Type of zlib-based compressing and decompressing channels.
- */
-
+// Type of zlib-based compressing and decompressing channels.
 static const Tcl_ChannelType zlibChannelType = {
     "zlib",
     TCL_CHANNEL_VERSION_5,
@@ -889,6 +875,10 @@ Tcl_ZlibStreamInit(
 	goto error;
     }
 
+    /*
+     * If we're given an interpreter, install a stream command into it.
+     */
+
     if (interp != NULL) {
 	ZlibInterpData *interpData = (ZlibInterpData *)
 		Tcl_GetAssocData(interp, ASSOC_KEY, NULL);
@@ -899,20 +889,14 @@ Tcl_ZlibStreamInit(
 	    goto error;
 	}
 
-	/*
-	 * Search for a free command ID.
-	 */
-
+	// Search for a free command ID.
 	while (1) {
 	    Tcl_Obj *cmdNameObj = Tcl_ObjPrintf("streamcmd_%d",
 		    interpData->counter++);
 	    const char *cmdName = TclGetString(cmdNameObj);
 
 	    if (!Tcl_FindCommand(interp, cmdName, nsPtr, 0)) {
-		/*
-		* Create the command.
-		*/
-
+		// Create the command.
 		zshPtr->cmd = TclCreateObjCommandInNs(interp,
 			TclGetString(cmdNameObj), nsPtr,
 			ZlibStreamImplCmd, zshPtr, ZlibStreamCmdDelete);
@@ -1172,7 +1156,7 @@ Tcl_ZlibStreamGetCommandName(
     ZlibStreamHandle *zshPtr = (ZlibStreamHandle *) zshandle;
     Tcl_Obj *objPtr;
 
-    if (!zshPtr->interp) {
+    if (!zshPtr->interp || !zshPtr->cmd) {
 	return NULL;
     }
 
@@ -4193,11 +4177,12 @@ TclZlibInit(
 	    Tcl_Alloc(sizeof(ZlibInterpData));
 
     /*
-     * Set up a counter used in the creation of stream commands.
+     * Set up a counter used in the creation of stream commands, plus a more
+     * efficient way to search for and make stream commands.
      */
 
     interpData->counter = 0;
-    TclNewLiteralStringObj(interpData->nsNameObj, "::tcl::zlib");
+    TclNewLiteralStringObj(interpData->nsNameObj, ZLIB_STREAM_NS);
     Tcl_IncrRefCount(interpData->nsNameObj);
     Tcl_SetAssocData(interp, ASSOC_KEY, ZlibDeleteInterpData, interpData);
 
@@ -4205,7 +4190,7 @@ TclZlibInit(
      * Create the namespace that will contain the stream commands.
      */
 
-    Tcl_CreateNamespace(interp, "::tcl::zlib", NULL, NULL);
+    Tcl_CreateNamespace(interp, ZLIB_STREAM_NS, NULL, NULL);
 
     /*
      * Store the underlying configuration information.
