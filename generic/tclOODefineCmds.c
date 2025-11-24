@@ -86,6 +86,9 @@ static inline int	InitDefineContext(Tcl_Interp *interp,
 			    Tcl_Namespace *namespacePtr, Object *oPtr,
 			    int objc, Tcl_Obj *const objv[]);
 static inline void	RecomputeClassCacheFlag(Object *oPtr);
+static unsigned		RecomputeInheritanceDepth(Class *clsPtr,
+			    Tcl_Size superCount, Class *supers[],
+			    Tcl_Size mixinCount, Class *mixins[]);
 static int		RenameDeleteMethod(Tcl_Interp *interp, Object *oPtr,
 			    int useClass, Tcl_Obj *const fromPtr,
 			    Tcl_Obj *const toPtr);
@@ -3170,6 +3173,55 @@ TclOOSetSuperclasses(
 /*
  * ----------------------------------------------------------------------
  *
+ * RecomputeInheritanceDepth --
+ *
+ *	Compute the "inheritance depth" of a class after a proposed set of
+ *	changes to its superclasses and mixins are applied.
+ *
+ * ----------------------------------------------------------------------
+ */
+static unsigned
+RecomputeInheritanceDepth(
+    Class *clsPtr,
+    Tcl_Size superCount,
+    Class *supers[],
+    Tcl_Size mixinCount,
+    Class *mixins[])
+{
+    unsigned depth = 0;
+    Tcl_Size i;
+    Class *superPtr;
+
+    if (superCount) {
+	for (i = 0; i < superCount; i++) {
+	    unsigned sd = supers[i]->inheritanceDepth + 1;
+	    depth = depth > sd ? depth : sd;
+	}
+    } else {
+	FOREACH(superPtr, clsPtr->superclasses) {
+	    unsigned sd = superPtr->inheritanceDepth + 1;
+	    depth = depth > sd ? depth : sd;
+	}
+    }
+
+    if (mixinCount) {
+	for (i = 0; i < mixinCount; i++) {
+	    unsigned md = mixins[i]->inheritanceDepth + 1;
+	    depth = depth > md ? depth : md;
+	}
+    } else {
+	FOREACH(superPtr, clsPtr->mixins) {
+	    unsigned md = superPtr->inheritanceDepth + 1;
+	    depth = depth > md ? depth : md;
+	}
+    }
+
+    return depth;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
  * ClassFilter_Get, ClassFilter_Set --
  *
  *	Implementation of the "filter" slot accessors of the "oo::define"
@@ -3334,6 +3386,20 @@ ClassMixin_Set(
 	}
     }
 
+    /*
+     * Check that the new inheritance depth doesn't exceed our fixed limit.
+     */
+
+    unsigned id = RecomputeInheritanceDepth(clsPtr,
+	    0, NULL, mixinc, mixins);
+    if (id > MAX_INHERITANCE_DEPTH) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"maximum inheritance depth reached"));
+	OO_ERROR(interp, MAX_INHERIT);
+	goto freeAndError;
+    }
+    clsPtr->inheritanceDepth = id;
+
     TclOOClassSetMixins(interp, clsPtr, mixinc, mixins);
     Tcl_DeleteHashTable(&uniqueCheck);
     TclStackFree(interp, mixins);
@@ -3463,12 +3529,7 @@ ClassSuper_Set(
 			"attempt to form circular dependency graph",
 			TCL_AUTO_LENGTH));
 		OO_ERROR(interp, CIRCULARITY);
-	    failedAfterAlloc:
-		for (; i-- > 0 ;) {
-		    TclOODecrRefCount(superclasses[i]->thisPtr);
-		}
-		Tcl_Free(superclasses);
-		return TCL_ERROR;
+		goto failedAfterAlloc;
 	    }
 
 	    /*
@@ -3481,6 +3542,20 @@ ClassSuper_Set(
     }
 
     /*
+     * Check that the new inheritance depth doesn't exceed our fixed limit.
+     */
+
+    unsigned id = RecomputeInheritanceDepth(clsPtr,
+	    superc, superclasses, 0, NULL);
+    if (id > MAX_INHERITANCE_DEPTH) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"maximum inheritance depth reached"));
+	OO_ERROR(interp, MAX_INHERIT);
+	goto failedAfterAlloc;
+    }
+    clsPtr->inheritanceDepth = id;
+
+    /*
      * Install the list of superclasses into the class. Note that this also
      * involves splicing the class out of the superclasses' subclass list that
      * it used to be a member of and splicing it into the new superclasses'
@@ -3491,6 +3566,13 @@ ClassSuper_Set(
     BumpGlobalEpoch(interp, clsPtr);
 
     return TCL_OK;
+
+  failedAfterAlloc:
+    for (; i-- > 0 ;) {
+	TclOODecrRefCount(superclasses[i]->thisPtr);
+    }
+    Tcl_Free(superclasses);
+    return TCL_ERROR;
 }
 
 /*
