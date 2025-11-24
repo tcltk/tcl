@@ -557,6 +557,7 @@ InitClassSystemRoots(
 	    AllocObject(interp, "object", (Namespace *) fPtr->ooNs, NULL));
     // Corresponding TclOODecrRefCount in KillFoundation
     AddRef(fPtr->objectCls->thisPtr);
+    fPtr->objectCls->inheritanceDepth = 0;
 
     /*
      * This is why it is unnecessary in this routine to replace the
@@ -582,6 +583,7 @@ InitClassSystemRoots(
 	    AllocObject(interp, "class", (Namespace *) fPtr->ooNs, NULL));
     // Corresponding TclOODecrRefCount in KillFoundation
     AddRef(fPtr->classCls->thisPtr);
+    fPtr->classCls->inheritanceDepth = 1;
 
     /*
      * Increment reference counts for each reference because these
@@ -637,6 +639,10 @@ MarkAsMetaclass(
     supers[0] = fPtr->classCls;
     AddRef(supers[0]->thisPtr);
     TclOOSetSuperclasses(classPtr, 1, supers);
+    // Cannot exceed the max depth; runs before user control granted
+    if (classPtr->inheritanceDepth <= fPtr->classCls->inheritanceDepth) {
+	classPtr->inheritanceDepth = fPtr->classCls->inheritanceDepth + 1;
+    }
 }
 
 /*
@@ -2101,6 +2107,7 @@ TclNewObjectInstanceCommon(
     const char *simpleName = NULL;
     Namespace *nsPtr = NULL, *dummy;
     Namespace *inNsPtr = (Namespace *) TclGetCurrentNamespace(interp);
+    int makingClass;
 
     if (nameStr) {
 	TclGetNamespaceForQualName(interp, nameStr, inNsPtr,
@@ -2118,6 +2125,13 @@ TclNewObjectInstanceCommon(
 	    OO_ERROR(interp, OVERWRITE_OBJECT);
 	    return NULL;
 	}
+    }
+    makingClass = TclOOIsReachable(fPtr->classCls, classPtr);
+    if (makingClass && classPtr->inheritanceDepth >= MAX_INHERITANCE_DEPTH) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"maximum inheritance depth reached"));
+	OO_ERROR(interp, MAX_INHERIT);
+	return NULL;
     }
 
     /*
@@ -2137,7 +2151,7 @@ TclNewObjectInstanceCommon(
      * class structure as well.
      */
 
-    if (TclOOIsReachable(fPtr->classCls, classPtr)) {
+    if (makingClass) {
 	/*
 	 * Is a class, so attach a class structure. Note that the
 	 * TclOOAllocClass function splices the structure into the object, so
@@ -2147,6 +2161,7 @@ TclNewObjectInstanceCommon(
 
 	TclOOAllocClass(interp, oPtr);
 	TclOOAddToSubclasses(oPtr->classPtr, fPtr->objectCls);
+	oPtr->classPtr->inheritanceDepth = classPtr->inheritanceDepth + 1;
     } else {
 	oPtr->classPtr = NULL;
     }

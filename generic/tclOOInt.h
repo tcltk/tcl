@@ -202,7 +202,7 @@ struct PropertyStorage {
 				 * exposed by this object or class (in its
 				 * stereotypical instances). Contains a sorted
 				 * unique list if not NULL. */
-    Tcl_Size epoch;			/* The epoch that the caches are valid for. */
+    Tcl_Size epoch;		/* The epoch that the caches are valid for. */
 };
 
 /*
@@ -362,7 +362,19 @@ struct Class {
     PropertyStorage properties;	/* Information relating to the lists of
 				 * properties that this class *claims* to
 				 * support. */
+    unsigned inheritanceDepth;	/* The "depth" of the inheritance for this
+				 * class. */
 };
+
+#ifndef MAX_INHERITANCE_DEPTH
+/*
+ * The maximum value of the Class::inheritanceDepth field, i.e., the maximum
+ * number of inheritance links before the system refuses to make things go
+ * deeper. This default value allows for plenty of depth for normal uses, even
+ * with prototype inheritance, without allowing for stack-busting shenanigans.
+ */
+#define MAX_INHERITANCE_DEPTH	100
+#endif
 
 /*
  * Master epoch counter for making unique IDs for objects that can be compared

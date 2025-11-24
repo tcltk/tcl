@@ -603,6 +603,10 @@ TclOO_Configurable_Constructor(
 	return TCL_ERROR;
     }
     TclOOClassSetMixins(interp, oPtr->classPtr, 1, &mixin);
+    if (oPtr->classPtr->inheritanceDepth <= mixin->inheritanceDepth) {
+	// Assume this never fails
+	oPtr->classPtr->inheritanceDepth = mixin->inheritanceDepth + 1;
+    }
     return TclNRObjectContextInvokeNext(interp, context, objc, objv, skip);
 }
 
