@@ -64,6 +64,10 @@ jobs:
         working-directory: win
     strategy:
       matrix: ${{ fromJson(needs.plan.outputs.msvc) }}
+        arch:
+          - amd64
+          - amd64_x86
+          - amd64_arm64
     # Using powershell means we need to explicitly stop on failure
     steps:
       - name: Checkout
@@ -71,6 +75,8 @@ jobs:
         timeout-minutes: 5
       - name: Init MSVC
         uses: ilammy/msvc-dev-cmd@v1
+          with:
+            arch: ${{ matrix.arch }}
         timeout-minutes: 5
       - name: Build ${{ matrix.config }}
         run: |
