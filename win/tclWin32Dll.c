@@ -26,6 +26,26 @@
 
 static HINSTANCE hInstance;	/* HINSTANCE of this DLL. */
 
+#if defined(__GNUC__)
+
+/*
+ * Need to add noinline flag to DllMain declaration so that gcc -O3 does not
+ * inline asm code into DllEntryPoint and cause a compile time error because
+ * of redefined local labels.
+ */
+
+BOOL APIENTRY		DllMain(HINSTANCE hInst, DWORD reason,
+			    LPVOID reserved) __attribute__ ((noinline));
+
+#else /* !__GNUC__ */
+
+/*
+ * The following declaration is for the VC++ DLL entry point.
+ */
+
+BOOL APIENTRY		DllMain(HINSTANCE hInst, DWORD reason,
+			    LPVOID reserved);
+
 /*
  * VC++ 5.x has no 'cpuid' assembler instruction, so we must emulate it
  */
@@ -34,12 +54,7 @@ static HINSTANCE hInstance;	/* HINSTANCE of this DLL. */
 #define cpuid	__asm __emit 0fh __asm __emit 0a2h
 #endif
 
-/*
- * The following declaration is for the VC++ DLL entry point.
- */
-
-BOOL APIENTRY		DllMain(HINSTANCE hInst, DWORD reason,
-			    LPVOID reserved);
+#endif /* __GNUC__ */
 
 /*
  * The following structure and linked list is to allow us to map between
