@@ -1454,10 +1454,10 @@ OnOffWaitingList(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_Sleep --
+ * Tcl_SleepMicroSeconds --
  *
  *	Delay execution for the specified number of monotonic
- *	milliseconds.
+ *	micro-seconds.
  *
  * Results:
  *	None.
@@ -1469,18 +1469,18 @@ OnOffWaitingList(
  */
 
 void
-Tcl_Sleep(
-    int ms)			/* Number of milliseconds to sleep. */
+Tcl_SleepMicroSeconds(
+    Tcl_WideInt microSeconds)	/* Number of micro-seconds to sleep. */
 {
     Tcl_Time vdelay;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
-    if (ms <= 0) {
+    if (microSeconds <= 0) {
 	return;
     }
 
-    vdelay.sec = ms / 1000;
-    vdelay.usec = (ms % 1000) * 1000;
+    vdelay.sec = microSeconds / 1000000;
+    vdelay.usec = microSeconds % 1000000;
 
     if (tsdPtr->runLoop) {
 	CFTimeInterval waitTime;

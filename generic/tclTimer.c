@@ -281,6 +281,47 @@ TimerExitProc(
 /*
  *--------------------------------------------------------------
  *
+ * Tcl_CreateTimerHandlerMicroSeconds --
+ *
+ *	Arrange for a given function to be invoked after a given monotonic
+ *	time interval in micro seconds.
+ *
+ * Results:
+ *	The return value is a token for the timer event, which may be used to
+ *	delete the event before it fires.
+ *
+ * Side effects:
+ *	When micro-seconds have elapsed, proc will be invoked exactly once.
+ *
+ *--------------------------------------------------------------
+ */
+
+Tcl_TimerToken
+Tcl_CreateTimerHandlerMicroSeconds(
+    Tcl_WideInt microSeconds,	/* How many micro-seconds to wait before
+				 * invoking proc. */
+    Tcl_TimerProc *proc,	/* Function to invoke. */
+    void *clientData)		/* Arbitrary data to pass to proc. */
+{
+    Tcl_Time time;
+
+    /*
+     * Compute when the event should fire.
+     */
+
+    Tcl_GetMonotonicTime(&time);
+    time.sec += microSeconds/1000000;
+    time.usec += microSeconds%1000000;
+    if (time.usec >= 1000000) {
+	time.usec -= 1000000;
+	time.sec += 1;
+    }
+    return TclCreateAbsoluteTimerHandler(&time, proc, clientData, true);
+}
+
+/*
+ *--------------------------------------------------------------
+ *
  * Tcl_CreateTimerHandler --
  *
  *	Arrange for a given function to be invoked after a given monotonic
