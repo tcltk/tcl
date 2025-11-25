@@ -190,7 +190,7 @@ DoRenameFile(
      * arguments is a char block device.
      */
 
-    if ((*MoveFileW)(nativeSrc, nativeDst) != FALSE) {
+    if (MoveFileW(nativeSrc, nativeDst) != FALSE) {
 	retval = TCL_OK;
     }
 
