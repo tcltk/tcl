@@ -554,9 +554,10 @@ TclpWaitForEvent(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_Sleep --
+ * Tcl_SleepMicroSeconds --
  *
- *	Delay execution for the specified number of milliseconds.
+ *	Delay execution for the specified number of monotonic
+ *	micro-seconds.
  *
  * Results:
  *	None.
@@ -568,8 +569,8 @@ TclpWaitForEvent(
  */
 
 void
-Tcl_Sleep(
-    int ms)			/* Number of milliseconds to sleep. */
+Tcl_SleepMicroSeconds(
+    Tcl_WideInt microSeconds)	/* Number of micro-seconds to sleep. */
 {
     /*
      * HaO 2025-11-19: this comment is probably solved by the use of monotonic
@@ -590,8 +591,8 @@ Tcl_Sleep(
 				 * real. */
     DWORD sleepTime;		/* Time to sleep, real-time */
 
-    vdelay.sec  = ms / 1000;
-    vdelay.usec = (ms % 1000) * 1000;
+    vdelay.sec = microSeconds / 1000000;
+    vdelay.usec = microSeconds % 1000000;
 
     Tcl_GetMonotonicTime(&now);
     desired.sec  = now.sec  + vdelay.sec;
@@ -617,6 +618,30 @@ Tcl_Sleep(
 
 	sleepTime = (DWORD)vdelay.sec * 1000 + (unsigned long)vdelay.usec / 1000;
     }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_Sleep --
+ *
+ *	Delay execution for the specified number of monotonic
+ *	milliseconds.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Time passes.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_Sleep(
+    int ms)			/* Number of milliseconds to sleep. */
+{
+    Tcl_SleepMicroSeconds(ms*1000);
 }
 
 /*

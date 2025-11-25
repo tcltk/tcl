@@ -16,9 +16,10 @@
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_Sleep --
+ * Tcl_SleepMicroSeconds --
  *
- *	Delay execution for the specified number of milliseconds.
+ *	Delay execution for the specified number of monotonic
+ *	micro-seconds.
  *
  * Results:
  *	None.
@@ -30,8 +31,8 @@
  */
 
 void
-Tcl_Sleep(
-    int ms)			/* Number of milliseconds to sleep. */
+Tcl_SleepMicroSeconds(
+    Tcl_WideInt microSeconds)	/* Number of micro-seconds to sleep. */
 {
     struct timeval delay;
     Tcl_Time before, after, vdelay;
@@ -44,8 +45,8 @@ Tcl_Sleep(
 
     Tcl_GetMonotonicTime(&before);
     after = before;
-    after.sec += ms/1000;
-    after.usec += (ms%1000)*1000;
+    after.sec += microSeconds / 1000000;
+    after.usec += microSeconds % 1000000;
     if (after.usec > 1000000) {
 	after.usec -= 1000000;
 	after.sec += 1;
@@ -80,6 +81,32 @@ Tcl_Sleep(
 #else
 TCL_MAC_EMPTY_FILE(unix_tclUnixEvent_c)
 #endif /* HAVE_COREFOUNDATION */
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_Sleep --
+ *
+ *	Delay execution for the specified number of monotonic
+ *	milliseconds.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Time passes.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_Sleep(
+    int ms)			/* Number of milliseconds to sleep. */
+{
+    Tcl_SleepMicroSeconds(ms*1000);
+}
+
+
 /*
  * Local Variables:
  * mode: c

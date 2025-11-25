@@ -1900,6 +1900,11 @@ EXTERN int		Tcl_UtfToNormalized(Tcl_Interp *interp,
 /* 697 */
 EXTERN void		Tcl_GetMonotonicTime(Tcl_Time *timeBuf);
 /* 698 */
+EXTERN Tcl_TimerToken	Tcl_CreateTimerHandlerMicroSeconds(Tcl_WideInt microSeconds,
+				Tcl_TimerProc *proc, void *clientData);
+/* 699 */
+EXTERN void		Tcl_SleepMicroSeconds(Tcl_WideInt microSeconds);
+/* 700 */
 EXTERN void		TclUnusedStubEntry(void);
 
 typedef struct {
@@ -2610,8 +2615,9 @@ typedef struct TclStubs {
     int (*tcl_UtfToNormalizedDString) (Tcl_Interp *interp, const char *bytes, Tcl_Size length, Tcl_UnicodeNormalizationForm normForm, int profile, Tcl_DString *dsPtr); /* 695 */
     int (*tcl_UtfToNormalized) (Tcl_Interp *interp, const char *bytes, Tcl_Size length, Tcl_UnicodeNormalizationForm normForm, int profile, char *bufPtr, Tcl_Size bufLen, Tcl_Size *lengthPtr); /* 696 */
     void (*tcl_GetMonotonicTime) (Tcl_Time *timeBuf); /* 697 */
-    void (*tcl_SleepMonotonic) (Tcl_WideInt microSeconds); /* 698 */
-    void (*tclUnusedStubEntry) (void); /* 699 */
+    Tcl_TimerToken (*tcl_CreateTimerHandlerMicroSeconds) (Tcl_WideInt microSeconds, Tcl_TimerProc *proc, void *clientData); /* 698 */
+    void (*tcl_SleepMicroSeconds) (Tcl_WideInt microSeconds); /* 699 */
+    void (*tclUnusedStubEntry) (void); /* 700 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3957,8 +3963,12 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_UtfToNormalized) /* 696 */
 #define Tcl_GetMonotonicTime \
 	(tclStubsPtr->tcl_GetMonotonicTime) /* 697 */
+#define Tcl_CreateTimerHandlerMicroSeconds \
+	(tclStubsPtr->tcl_CreateTimerHandlerMicroSeconds) /* 698 */
+#define Tcl_SleepMicroSeconds \
+	(tclStubsPtr->tcl_SleepMicroSeconds) /* 699 */
 #define TclUnusedStubEntry \
-	(tclStubsPtr->tclUnusedStubEntry) /* 698 */
+	(tclStubsPtr->tclUnusedStubEntry) /* 700 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
