@@ -282,7 +282,7 @@ DoRenameFile(
 #ifndef HAVE_NO_SEH
     __try {
 #endif
-	if ((*MoveFileW)(nativeSrc, nativeDst) != FALSE) {
+	if (MoveFileW(nativeSrc, nativeDst) != FALSE) {
 	    retval = TCL_OK;
 	}
 #ifndef HAVE_NO_SEH
