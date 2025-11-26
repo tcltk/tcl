@@ -15,13 +15,12 @@ link \- Create link from command to method of object
 .nf
 \fBpackage require tcl::oo\fR
 
-\fBlink\fI methodName\fR ?...?
-\fBlink\fR \fB{\fIcommandName methodName\fB}\fR ?...?
+\fBlink\fR \fImethod\fR ?\fImethod ...\fR?
 .fi
 .BE
 .SH DESCRIPTION
 The \fBlink\fR command is available within methods. It takes a series of one
-or more method names and makes the named methods available as commands without
+or more methods and makes these methods available as commands without
 requiring the explicit use of the name of the object or the \fBmy\fR command.
 The method does not need to exist at the time that the link is made. If the
 link command is invoked when the method does not exist, the standard
