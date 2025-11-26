@@ -173,20 +173,20 @@ static Tcl_DriverInputProc	ZlibTransformInput;
 static Tcl_DriverOutputProc	ZlibTransformOutput;
 static Tcl_DriverSetOptionProc	ZlibTransformSetOption;
 static Tcl_DriverWatchProc	ZlibTransformWatch;
-static Tcl_ObjCmdProc		ZlibAdler32Cmd;
-static Tcl_ObjCmdProc		ZlibCompressCmd;
-static Tcl_ObjCmdProc		ZlibCRC32Cmd;
-static Tcl_ObjCmdProc		ZlibDecompressCmd;
-static Tcl_ObjCmdProc		ZlibDeflateCmd;
-static Tcl_ObjCmdProc		ZlibGunzipCmd;
-static Tcl_ObjCmdProc		ZlibGzipCmd;
-static Tcl_ObjCmdProc		ZlibInflateCmd;
-static Tcl_ObjCmdProc		ZlibPushCmd;
-static Tcl_ObjCmdProc		ZlibStreamCmd;
-static Tcl_ObjCmdProc		ZlibStreamImplCmd;
-static Tcl_ObjCmdProc		ZlibStreamAddCmd;
-static Tcl_ObjCmdProc		ZlibStreamHeaderCmd;
-static Tcl_ObjCmdProc		ZlibStreamPutCmd;
+static Tcl_ObjCmdProc2		ZlibAdler32Cmd;
+static Tcl_ObjCmdProc2		ZlibCompressCmd;
+static Tcl_ObjCmdProc2		ZlibCRC32Cmd;
+static Tcl_ObjCmdProc2		ZlibDecompressCmd;
+static Tcl_ObjCmdProc2		ZlibDeflateCmd;
+static Tcl_ObjCmdProc2		ZlibGunzipCmd;
+static Tcl_ObjCmdProc2		ZlibGzipCmd;
+static Tcl_ObjCmdProc2		ZlibInflateCmd;
+static Tcl_ObjCmdProc2		ZlibPushCmd;
+static Tcl_ObjCmdProc2		ZlibStreamCmd;
+static Tcl_ObjCmdProc2		ZlibStreamImplCmd;
+static Tcl_ObjCmdProc2		ZlibStreamAddCmd;
+static Tcl_ObjCmdProc2		ZlibStreamHeaderCmd;
+static Tcl_ObjCmdProc2		ZlibStreamPutCmd;
 
 static void		ConvertError(Tcl_Interp *interp, int code,
 			    uLong adler);
@@ -862,7 +862,7 @@ Tcl_ZlibStreamInit(
 	 * Create the command.
 	 */
 
-	zshPtr->cmd = Tcl_CreateObjCommand(interp, Tcl_DStringValue(&cmdname),
+	zshPtr->cmd = Tcl_CreateObjCommand2(interp, Tcl_DStringValue(&cmdname),
 		ZlibStreamImplCmd, zshPtr, ZlibStreamCmdDelete);
 	Tcl_DStringFree(&cmdname);
 	if (zshPtr->cmd == NULL) {
@@ -2066,7 +2066,7 @@ static int
 ZlibAdler32Cmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Tcl_Size dlen = 0;
@@ -2104,7 +2104,7 @@ static int
 ZlibCRC32Cmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Tcl_Size dlen = 0;
@@ -2142,7 +2142,7 @@ static int
 ZlibDeflateCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     int level;
@@ -2170,7 +2170,7 @@ static int
 ZlibCompressCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     int level;
@@ -2198,7 +2198,7 @@ static int
 ZlibGzipCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     static const char *const gzipopts[] = {
@@ -2261,7 +2261,7 @@ static int
 ZlibInflateCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     size_t buffersize = 0;
@@ -2288,7 +2288,7 @@ static int
 ZlibDecompressCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     size_t buffersize = 0;
@@ -2315,7 +2315,7 @@ static int
 ZlibGunzipCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     static const char *const gunzipopts[] = {
@@ -2378,7 +2378,7 @@ static int
 ZlibStreamCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     static const char *const stream_formats[] = {
@@ -2532,7 +2532,7 @@ static int
 ZlibPushCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     static const char *const stream_formats[] = {
@@ -2708,7 +2708,7 @@ static int
 ZlibStreamImplCmd(
     void *clientData,
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Tcl_ZlibStream zstream = (Tcl_ZlibStream) clientData;
@@ -2834,7 +2834,7 @@ static int
 ZlibStreamAddCmd(
     void *clientData,
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Tcl_ZlibStream zstream = (Tcl_ZlibStream) clientData;
@@ -2963,7 +2963,7 @@ static int
 ZlibStreamPutCmd(
     void *clientData,
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Tcl_ZlibStream zstream = (Tcl_ZlibStream) clientData;
@@ -3056,7 +3056,7 @@ static int
 ZlibStreamHeaderCmd(
     void *clientData,
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     ZlibStreamHandle *zshPtr = (ZlibStreamHandle *) clientData;

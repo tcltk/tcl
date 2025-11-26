@@ -105,7 +105,7 @@ static int		PkgRequireCoreCleanup(void *data[], Tcl_Interp *interp, int result);
 static int		PkgRequireCoreStep1(void *data[], Tcl_Interp *interp, int result);
 static int		PkgRequireCoreStep2(void *data[], Tcl_Interp *interp, int result);
 static int		TclNRPkgRequireProc(void *clientData, Tcl_Interp *interp,
-			    int reqc, Tcl_Obj *const reqv[]);
+			    Tcl_Size reqc, Tcl_Obj *const reqv[]);
 static int		SelectPackage(void *data[], Tcl_Interp *interp, int result);
 static int		SelectPackageFinal(void *data[], Tcl_Interp *interp, int result);
 static int		TclNRPackageObjCmdCleanup(void *data[], Tcl_Interp *interp, int result);
@@ -439,7 +439,7 @@ Tcl_PkgRequireProc(
 
     args.name = name;
     args.clientDataPtr = clientDataPtr;
-    return Tcl_NRCallObjProc(interp,
+    return Tcl_NRCallObjProc2(interp,
 	    TclNRPkgRequireProc, (void *) &args, reqc, reqv);
 }
 
@@ -447,7 +447,7 @@ static int
 TclNRPkgRequireProc(
     void *clientData,
     Tcl_Interp *interp,
-    int reqc,
+    Tcl_Size reqc,
     Tcl_Obj *const reqv[])
 {
     RequireProcArgs *args = (RequireProcArgs *)clientData;
@@ -1054,17 +1054,17 @@ int
 Tcl_PackageObjCmd(
     void *clientData,
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    return Tcl_NRCallObjProc(interp, TclNRPackageObjCmd, clientData, objc, objv);
+    return Tcl_NRCallObjProc2(interp, TclNRPackageObjCmd, clientData, objc, objv);
 }
 
 int
 TclNRPackageObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     static const char *const pkgOptions[] = {

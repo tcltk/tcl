@@ -150,7 +150,7 @@ The following is a minimal extension:
 #include <tcl.h>
 #include <stdio.h>
 static int fooCmd(void *clientData,
-        Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]) {
+        Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[]) {
     printf("called with %d arguments\en", objc);
     return TCL_OK;
 }
@@ -159,7 +159,7 @@ int Foo_Init(Tcl_Interp *interp) {
 	return TCL_ERROR;
     }
     printf("creating foo command");
-    Tcl_CreateObjCommand(interp, "foo", fooCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "foo", fooCmd, NULL, NULL);
     return TCL_OK;
 }
 .CE
