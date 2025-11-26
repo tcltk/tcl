@@ -1440,7 +1440,6 @@ Tcl_ExternalToUtfEx(
     int result = TCL_OK;
     int terminatorLength = (flags & TCL_ENCODING_NO_TERMINATE) == 0;
     Tcl_EncodingState localState;
-    const char *srcStart = src;
     char *dstStart = dst;
     Tcl_Size srcBytesRead = 0;
     Tcl_Size dstBytesWritten = 0;
@@ -2001,7 +2000,6 @@ Tcl_UtfToExternalEx(
     int result = TCL_OK;
     int terminatorLength = (flags & TCL_ENCODING_NO_TERMINATE) == 0;
     Tcl_EncodingState localState;
-    const char *srcStart = src;
     char *dstStart = dst;
     Tcl_Size srcBytesRead = 0;
     Tcl_Size dstBytesWritten = 0;
