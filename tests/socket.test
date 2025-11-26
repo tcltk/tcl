@@ -1682,22 +1682,32 @@ test socket_$af-12.1 {testing inheritance of server sockets} -setup {
     puts $f [list set delay $path(script1)]
     puts $f [list set localhost $localhost]
     puts $f {
+	after 10000 exit
 	set f [socket -server accept -myaddr $localhost 0]
 	proc accept { file addr port } {
 	    close $file
 	}
-	exec $tcltest $delay &
-	puts [lindex [fconfigure $f -sockname] 2]
+	set hlppipe [open [list | $tcltest $delay] w]
+	puts [lindex [fconfigure $f -sockname] 2]; flush stdout
+	fileevent stdin readable { fileevent stdin readable {}; set ::done 1 }
+	vwait ::done
+	gets stdin
 	close $f
+	puts srv-closed; flush stdout
+	gets stdin; # wait for close pipe (so we can close helper process)
+	close $hlppipe
 	exit
     }
     close $f
 } -constraints [list socket supported_$af stdio exec] -body {
     # Launch script2 and wait 5 seconds
     ### exec [interpreter] script2 &
-    set p [open "|[list [interpreter] $path(script2)]" r]
-    # If we can still connect to the server, the socket got inherited.
-    if {[catch {close [socket $localhost $listen]}]} {
+    set p [open [list | [interpreter] $path(script2)] r+]
+    gets $p port
+    puts $p done ; flush $p
+    if {[set ln [gets $p]] ne "srv-closed"} {error "sequence error - $ln."}
+    # now listener is closed in child, if we can still connect to the server, the socket got inherited by another helper child.
+    if {[catch {close [socket $localhost $port]}]} {
 	return {server socket was not inherited}
     } else {
 	return {server socket was inherited}
@@ -1726,10 +1736,12 @@ test socket_$af-12.2 {testing inheritance of client sockets} -setup {
     puts $f [list set localhost $localhost]
     puts $f {
 	gets stdin port
-	set f [socket $localhost $port]
-	exec $tcltest $delay &
-	puts $f testing
-	flush $f
+	set s [socket $localhost $port]
+	set hlppipe [open [list | $tcltest $delay] w]
+	puts $s testing
+	close $s
+	gets stdin; # wait for close
+	close $hlppipe
 	exit
     }
     close $f
@@ -1764,9 +1776,10 @@ test socket_$af-12.2 {testing inheritance of client sockets} -setup {
     }
     # Launch the script2 process
     ### exec [interpreter] script2 &
-    set p [open "|[list [interpreter] $path(script2)]" w]
+    set p [open [list | [interpreter] $path(script2)] w]
     puts $p [lindex [fconfigure $server -sockname] 2] ; flush $p
     vwait x
+    puts $p done ; flush $p
     return $x
 } -cleanup {
     fconfigure $f -blocking 1
@@ -1789,22 +1802,25 @@ test socket_$af-12.3 {testing inheritance of accepted sockets} -setup {
     puts $f [list set delay $path(script1)]
     puts $f [list set localhost $localhost]
     puts $f {
+	fileevent stdin readable exit
+	after 10000 exit
 	set server [socket -server accept -myaddr $localhost 0]
 	proc accept { file host port } {
 	    global tcltest delay
 	    puts $file {test data on socket}
-	    exec $tcltest $delay &
-	    after idle exit
+	    set ::hlppipe [open [list | $tcltest $delay] w]
+	    after idle {set ::done 1}
 	}
 	puts stdout [lindex [fconfigure $server -sockname] 2]
-	vwait forever
+	vwait ::done
+	close $::hlppipe
     }
     close $f
 } -constraints [list socket supported_$af stdio exec] -body {
     # Launch the script2 process and connect to it. See how long the socket
     # stays open
     ## exec [interpreter] script2 &
-    set p [open "|[list [interpreter] $path(script2)]" r]
+    set p [open [list | [interpreter] $path(script2)] r]
     gets $p listen
     set f [socket $localhost $listen]
     fconfigure $f -buffering full -blocking 0
