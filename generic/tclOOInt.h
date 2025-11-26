@@ -607,10 +607,10 @@ MODULE_SCOPE Tcl_Obj *	TclOOGetFwdFromMethod(Method *mPtr);
 MODULE_SCOPE Proc *	TclOOGetProcFromMethod(Method *mPtr);
 MODULE_SCOPE Tcl_Obj *	TclOOGetMethodBody(Method *mPtr);
 MODULE_SCOPE size_t	TclOOGetSortedClassMethodList(Class *clsPtr,
-			    int flags, const char ***stringsPtr);
+			    int flags, Tcl_Obj ***namesLstPtr);
 MODULE_SCOPE Tcl_Size	TclOOGetSortedMethodList(Object *oPtr,
 			    Object *contextObj, Class *contextCls, int flags,
-			    const char ***stringsPtr);
+			    Tcl_Obj ***namesLstPtr);
 MODULE_SCOPE int	TclOOInit(Tcl_Interp *interp);
 MODULE_SCOPE void	TclOOInitInfo(Tcl_Interp *interp);
 MODULE_SCOPE int	TclOOInvokeContext(void *clientData,
@@ -663,6 +663,45 @@ MODULE_SCOPE void	TclOORegisterInstanceProperty(Object *oPtr,
  */
 
 #include "tclOOIntDecls.h"  /* IWYU pragma: export */
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclOOGetContextFromCurrentStackFrame --
+ *
+ *	Get the object context from the stack frame that invoked the command
+ *	that called this helper function. If a command name is supplied, will
+ *	write an error message into the interpreter if the frame doesn't
+ *	contain an object context.
+ *
+ * ----------------------------------------------------------------------
+ */
+static inline CallContext *
+TclOOGetContextFromCurrentStackFrame(
+    Tcl_Interp *interp,		/* How to get the stack frame and report
+				 * problems. */
+    const char *commandName)	/* If not NULL, used in problem reports. */
+{
+    CallFrame *framePtr = ((Interp *) interp)->varFramePtr;
+
+    /*
+     * Sanity checks on the calling context to make sure that we are invoked
+     * from a suitable method context. If so, we can safely get the handle to
+     * the object call context.
+     */
+
+    if (framePtr == NULL || !(framePtr->isProcCallFrame & FRAME_IS_METHOD)) {
+	if (commandName != NULL) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "%s may only be called from inside a method",
+		    commandName));
+	    Tcl_SetErrorCode(interp, "TCL", "OO", "CONTEXT_REQUIRED",
+		    (char *)NULL);
+	}
+	return NULL;
+    }
+    return (CallContext *) framePtr->clientData;
+}
 
 /*
  * Alternatives to Tcl_Preserve/Tcl_EventuallyFree/Tcl_Release.

@@ -1959,33 +1959,6 @@ FindTclOOMethodIndex(
 /*
  *----------------------------------------------------------------------
  *
- * GetTclOOCallContext --
- *
- *	A helper for INST_TCLOO_NEXT in TEBC. Returns the call context if one
- *	exists.
- *
- * Results:
- *	The call context, or NULL if not found.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-static inline CallContext *
-GetTclOOCallContext(
-    Interp *iPtr)
-{
-    CallFrame *framePtr = iPtr->varFramePtr;
-    if (!framePtr || !(framePtr->isProcCallFrame & FRAME_IS_METHOD)) {
-	return NULL;
-    }
-    return (CallContext *) framePtr->clientData;
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * TclNRExecuteByteCode --
  *
  *	This procedure executes the instructions of a ByteCode structure. It
@@ -4747,17 +4720,13 @@ TEBCresume(
 
     case INST_TCLOO_SELF:
 	TRACE("=> ");
-	contextPtr = GetTclOOCallContext(iPtr);
+	DECACHE_STACK_INFO();
+	contextPtr = TclOOGetContextFromCurrentStackFrame(interp, "self");
 	if (!contextPtr) {
-	    TRACE_APPEND("ERROR: no TclOO call context\n");
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "self may only be called from inside a method",
-		    -1));
-	    DECACHE_STACK_INFO();
-	    OO_ERROR(interp, CONTEXT_REQUIRED);
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
+	CACHE_STACK_INFO();
 
 	/*
 	 * Call out to get the name; it's expensive to compute but cached.
@@ -4799,12 +4768,13 @@ TEBCresume(
 	TRACE("%u => ", (unsigned)numArgs);
     invokeNextClass:
 	skip = 2;
-	contextPtr = GetTclOOCallContext(iPtr);
+	DECACHE_STACK_INFO();
+	contextPtr = TclOOGetContextFromCurrentStackFrame(interp,
+		TclGetString(objv[0]));
 	if (!contextPtr) {
 	    goto tclooFrameRequired;
 	}
 
-	DECACHE_STACK_INFO();
 	clsPtr = TclOOGetClassFromObj(interp, valuePtr);
 	if (clsPtr == NULL) {
 	    TRACE_APPEND("ERROR: \"%.30s\" not class\n", O2S(valuePtr));
@@ -4847,12 +4817,13 @@ TEBCresume(
 	TRACE("%u => ", (unsigned)numArgs);
     invokeNext:
 	skip = 1;
-	contextPtr = GetTclOOCallContext(iPtr);
+	DECACHE_STACK_INFO();
+	contextPtr = TclOOGetContextFromCurrentStackFrame(interp,
+		TclGetString(objv[0]));
 	if (!contextPtr) {
 	    goto tclooFrameRequired;
 	}
 
-	DECACHE_STACK_INFO();
 	newDepth = contextPtr->index + 1;
 	if (newDepth >= contextPtr->callPtr->numChain) {
 	    /*
@@ -4927,11 +4898,6 @@ TEBCresume(
 
     tclooFrameRequired:
 	TRACE_APPEND("ERROR: no TclOO call context\n");
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"%s may only be called from inside a method",
-		TclGetString(objv[0])));
-	DECACHE_STACK_INFO();
-	OO_ERROR(interp, CONTEXT_REQUIRED);
 	CACHE_STACK_INFO();
 	goto gotError;
     tclooNoNext:

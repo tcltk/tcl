@@ -139,7 +139,7 @@ static void		AddSimpleClassDefineNamespaces(Class *classPtr,
 			    DefineChain *const definePtr, int flags);
 static inline void	AddSimpleDefineNamespaces(Object *const oPtr,
 			    DefineChain *const definePtr, int flags);
-static int		CmpStr(const void *ptr1, const void *ptr2);
+static int		CmpNames(const void *ptr1, const void *ptr2);
 static void		DupMethodNameRep(Tcl_Obj *srcPtr, Tcl_Obj *dstPtr);
 static Tcl_NRPostProc	FinalizeMethodRefs;
 static void		FreeMethodNameRep(Tcl_Obj *objPtr);
@@ -148,7 +148,7 @@ static inline int	IsStillValid(CallChain *callPtr, Object *oPtr,
 static Tcl_NRPostProc	ResetFilterFlags;
 static Tcl_NRPostProc	SetFilterFlags;
 static size_t		SortMethodNames(Tcl_HashTable *namesPtr, int flags,
-			    const char ***stringsPtr);
+			    Tcl_Obj ***stringsPtr);
 static inline void	StashCallChain(Tcl_Obj *objPtr, CallChain *callPtr);
 
 /*
@@ -472,8 +472,8 @@ TclOOGetSortedMethodList(
 				 * flags can override this. */
     int flags,			/* Whether we just want the public method
 				 * names. */
-    const char ***stringsPtr)	/* Where to write a pointer to the array of
-				 * strings to. */
+    Tcl_Obj ***namesLstPtr)	/* Where to write a pointer to the array of
+				 * names to. */
 {
     Tcl_HashTable names;	/* Tcl_Obj* method name to "wanted in list"
 				 * mapping. */
@@ -547,7 +547,7 @@ TclOOGetSortedMethodList(
      */
 
     Tcl_DeleteHashTable(&examinedClasses);
-    numStrings = SortMethodNames(&names, flags, stringsPtr);
+    numStrings = SortMethodNames(&names, flags, namesLstPtr);
     Tcl_DeleteHashTable(&names);
     return numStrings;
 }
@@ -557,7 +557,7 @@ TclOOGetSortedClassMethodList(
     Class *clsPtr,		/* The class to get the method names for. */
     int flags,			/* Whether we just want the public method
 				 * names. */
-    const char ***stringsPtr)	/* Where to write a pointer to the array of
+    Tcl_Obj ***namesLstPtr)	/* Where to write a pointer to the array of
 				 * strings to. */
 {
     Tcl_HashTable names;	/* Tcl_Obj* method name to "wanted in list"
@@ -592,7 +592,7 @@ TclOOGetSortedClassMethodList(
      * them (processing export layering).
      */
 
-    numStrings = SortMethodNames(&names, flags, stringsPtr);
+    numStrings = SortMethodNames(&names, flags, namesLstPtr);
     Tcl_DeleteHashTable(&names);
     return numStrings;
 }
@@ -613,16 +613,16 @@ TclOOGetSortedClassMethodList(
 
 static size_t
 SortMethodNames(
-    Tcl_HashTable *namesPtr,	/* The table of names; unsorted, but contains
+    Tcl_HashTable *namesTbl,	/* The table of names; unsorted, but contains
 				 * whether the names are wanted and under what
 				 * circumstances. */
     int flags,			/* Whether we are looking for unexported
 				 * methods. Full private methods are handled
 				 * on insertion to the table. */
-    const char ***stringsPtr)	/* Where to store the sorted list of strings
+    Tcl_Obj ***namesLstPtr)	/* Where to store the sorted list of strings
 				 * that we produce. Tcl_Alloced() */
 {
-    const char **strings;
+    Tcl_Obj **namesLst;
     FOREACH_HASH_DECLS;
     Tcl_Obj *namePtr;
     void *isWanted;
@@ -633,8 +633,8 @@ SortMethodNames(
      * should not) try to sort the list of them.
      */
 
-    if (namesPtr->numEntries == 0) {
-	*stringsPtr = NULL;
+    if (namesTbl->numEntries == 0) {
+	*namesLstPtr = NULL;
 	return 0;
     }
 
@@ -644,13 +644,13 @@ SortMethodNames(
      * sorted when it is long enough to matter.
      */
 
-    strings = (const char **) Tcl_Alloc(sizeof(char *) * namesPtr->numEntries);
-    FOREACH_HASH(namePtr, isWanted, namesPtr) {
+    namesLst = (Tcl_Obj **) Tcl_Alloc(sizeof(Tcl_Obj *) * namesTbl->numEntries);
+    FOREACH_HASH(namePtr, isWanted, namesTbl) {
 	if (!WANT_PUBLIC(flags) || (PTR2INT(isWanted) & IN_LIST)) {
 	    if (PTR2INT(isWanted) & NO_IMPLEMENTATION) {
 		continue;
 	    }
-	    strings[i++] = TclGetString(namePtr);
+	    namesLst[i++] = namePtr;
 	}
     }
 
@@ -662,29 +662,28 @@ SortMethodNames(
 
     if (i > 0) {
 	if (i > 1) {
-	    qsort((void *) strings, i, sizeof(char *), CmpStr);
+	    qsort((void *) namesLst, i, sizeof(char *), CmpNames);
 	}
-	*stringsPtr = strings;
+	*namesLstPtr = namesLst;
     } else {
-	Tcl_Free((void *)strings);
-	*stringsPtr = NULL;
+	Tcl_Free((void *)namesLst);
+	*namesLstPtr = NULL;
     }
     return i;
 }
 
 /*
- * Comparator for SortMethodNames
+ * Comparator for SortMethodNames()
  */
-
 static int
-CmpStr(
+CmpNames(
     const void *ptr1,
     const void *ptr2)
 {
-    const char **strPtr1 = (const char **) ptr1;
-    const char **strPtr2 = (const char **) ptr2;
+    Tcl_Obj **namePtr1 = (Tcl_Obj **) ptr1;
+    Tcl_Obj **namePtr2 = (Tcl_Obj **) ptr2;
 
-    return TclpUtfNcmp2(*strPtr1, *strPtr2, strlen(*strPtr1) + 1);
+    return TclStringCmp(*namePtr1, *namePtr2, 0, 0, -1);
 }
 
 /*
