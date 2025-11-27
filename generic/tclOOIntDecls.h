@@ -192,7 +192,7 @@ extern const TclOOIntStubs *tclOOIntStubsPtr;
 #   undef tclOOMakeProcMethod
 #endif
 
-#if 0
+#if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 201112L)
 #ifndef TclOOGeneric
 /* Select method based on type of argument. */
 #define TclOOGeneric(typePtr, impl) \
