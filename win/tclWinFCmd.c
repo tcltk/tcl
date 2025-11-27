@@ -171,9 +171,6 @@ DoRenameFile(
     const WCHAR *nativeDst)	/* New pathname for file or directory
 				 * (native). */
 {
-#if defined(HAVE_NO_SEH) && !defined(_WIN64)
-    TCLEXCEPTION_REGISTRATION registration;
-#endif
     DWORD srcAttr, dstAttr;
     int retval = -1;
 
@@ -193,102 +190,9 @@ DoRenameFile(
      * arguments is a char block device.
      */
 
-#if defined(HAVE_NO_SEH) && !defined(_WIN64)
-    /*
-     * Don't have SEH available, do things the hard way. Note that this needs
-     * to be one block of asm, to avoid stack imbalance; also, it is illegal
-     * for one asm block to contain a jump to another.
-     */
-
-    __asm__ __volatile__ (
-	/*
-	 * Pick up params before messing with the stack.
-	 */
-
-	"movl	    %[nativeDst],   %%ebx"	    "\n\t"
-	"movl	    %[nativeSrc],   %%ecx"	    "\n\t"
-
-	/*
-	 * Construct an TCLEXCEPTION_REGISTRATION to protect the call to
-	 * MoveFile.
-	 */
-
-	"leal	    %[registration], %%edx"	    "\n\t"
-	"movl	    %%fs:0,	    %%eax"	    "\n\t"
-	"movl	    %%eax,	    0x0(%%edx)"	    "\n\t" /* link */
-	"leal	    1f,		    %%eax"	    "\n\t"
-	"movl	    %%eax,	    0x4(%%edx)"	    "\n\t" /* handler */
-	"movl	    %%ebp,	    0x8(%%edx)"	    "\n\t" /* ebp */
-	"movl	    %%esp,	    0xC(%%edx)"	    "\n\t" /* esp */
-	"movl	    $0,		    0x10(%%edx)"    "\n\t" /* status */
-
-	/*
-	 * Link the TCLEXCEPTION_REGISTRATION on the chain.
-	 */
-
-	"movl	    %%edx,	    %%fs:0"	    "\n\t"
-
-	/*
-	 * Call MoveFileW(nativeSrc, nativeDst)
-	 */
-
-	"pushl	    %%ebx"			    "\n\t"
-	"pushl	    %%ecx"			    "\n\t"
-	"movl	    %[moveFileW],    %%eax"	    "\n\t"
-	"call	    *%%eax"			    "\n\t"
-
-	/*
-	 * Come here on normal exit. Recover the TCLEXCEPTION_REGISTRATION and
-	 * put the status return from MoveFile into it.
-	 */
-
-	"movl	    %%fs:0,	    %%edx"	    "\n\t"
-	"movl	    %%eax,	    0x10(%%edx)"    "\n\t"
-	"jmp	    2f"				    "\n"
-
-	/*
-	 * Come here on an exception. Recover the TCLEXCEPTION_REGISTRATION
-	 */
-
-	"1:"					    "\t"
-	"movl	    %%fs:0,	    %%edx"	    "\n\t"
-	"movl	    0x8(%%edx),	    %%edx"	    "\n\t"
-
-	/*
-	 * Come here however we exited. Restore context from the
-	 * TCLEXCEPTION_REGISTRATION in case the stack is unbalanced.
-	 */
-
-	"2:"					    "\t"
-	"movl	    0xC(%%edx),	    %%esp"	    "\n\t"
-	"movl	    0x8(%%edx),	    %%ebp"	    "\n\t"
-	"movl	    0x0(%%edx),	    %%eax"	    "\n\t"
-	"movl	    %%eax,	    %%fs:0"	    "\n\t"
-
-	:
-	/* No outputs */
-	:
-	[registration]	"m"	(registration),
-	[nativeDst]	"m"	(nativeDst),
-	[nativeSrc]	"m"	(nativeSrc),
-	[moveFileW]	"r"	(MoveFileW)
-	:
-	"%eax", "%ebx", "%ecx", "%edx", "memory"
-	);
-    if (registration.status != FALSE) {
+    if (MoveFileW(nativeSrc, nativeDst) != FALSE) {
 	retval = TCL_OK;
     }
-#else
-#ifndef HAVE_NO_SEH
-    __try {
-#endif
-	if (MoveFileW(nativeSrc, nativeDst) != FALSE) {
-	    retval = TCL_OK;
-	}
-#ifndef HAVE_NO_SEH
-    } __except (EXCEPTION_EXECUTE_HANDLER) {}
-#endif
-#endif
 
     if (retval != -1) {
 	return retval;
@@ -560,9 +464,6 @@ DoCopyFile(
     const WCHAR *nativeSrc,	/* Pathname of file to be copied (native). */
     const WCHAR *nativeDst)	/* Pathname of file to copy to (native). */
 {
-#if defined(HAVE_NO_SEH) && !defined(_WIN64)
-    TCLEXCEPTION_REGISTRATION registration;
-#endif
     int retval = -1;
 
     /*
@@ -581,104 +482,9 @@ DoCopyFile(
      * arguments is a char block device.
      */
 
-#if defined(HAVE_NO_SEH) && !defined(_WIN64)
-    /*
-     * Don't have SEH available, do things the hard way. Note that this needs
-     * to be one block of asm, to avoid stack imbalance; also, it is illegal
-     * for one asm block to contain a jump to another.
-     */
-
-    __asm__ __volatile__ (
-
-	/*
-	 * Pick up parameters before messing with the stack
-	 */
-
-	"movl	    %[nativeDst],   %%ebx"	    "\n\t"
-	"movl	    %[nativeSrc],   %%ecx"	    "\n\t"
-
-	/*
-	 * Construct an TCLEXCEPTION_REGISTRATION to protect the call to
-	 * CopyFile.
-	 */
-
-	"leal	    %[registration], %%edx"	    "\n\t"
-	"movl	    %%fs:0,	    %%eax"	    "\n\t"
-	"movl	    %%eax,	    0x0(%%edx)"	    "\n\t" /* link */
-	"leal	    1f,		    %%eax"	    "\n\t"
-	"movl	    %%eax,	    0x4(%%edx)"	    "\n\t" /* handler */
-	"movl	    %%ebp,	    0x8(%%edx)"	    "\n\t" /* ebp */
-	"movl	    %%esp,	    0xC(%%edx)"	    "\n\t" /* esp */
-	"movl	    $0,		    0x10(%%edx)"    "\n\t" /* status */
-
-	/*
-	 * Link the TCLEXCEPTION_REGISTRATION on the chain.
-	 */
-
-	"movl	    %%edx,	    %%fs:0"	    "\n\t"
-
-	/*
-	 * Call CopyFileW(nativeSrc, nativeDst, 0)
-	 */
-
-	"movl	    %[copyFileW],    %%eax"	    "\n\t"
-	"pushl	    $0"				    "\n\t"
-	"pushl	    %%ebx"			    "\n\t"
-	"pushl	    %%ecx"			    "\n\t"
-	"call	    *%%eax"			    "\n\t"
-
-	/*
-	 * Come here on normal exit. Recover the TCLEXCEPTION_REGISTRATION and
-	 * put the status return from CopyFile into it.
-	 */
-
-	"movl	    %%fs:0,	    %%edx"	    "\n\t"
-	"movl	    %%eax,	    0x10(%%edx)"    "\n\t"
-	"jmp	    2f"				    "\n"
-
-	/*
-	 * Come here on an exception. Recover the TCLEXCEPTION_REGISTRATION
-	 */
-
-	"1:"					    "\t"
-	"movl	    %%fs:0,	    %%edx"	    "\n\t"
-	"movl	    0x8(%%edx),	    %%edx"	    "\n\t"
-
-	/*
-	 * Come here however we exited. Restore context from the
-	 * TCLEXCEPTION_REGISTRATION in case the stack is unbalanced.
-	 */
-
-	"2:"					    "\t"
-	"movl	    0xC(%%edx),	    %%esp"	    "\n\t"
-	"movl	    0x8(%%edx),	    %%ebp"	    "\n\t"
-	"movl	    0x0(%%edx),	    %%eax"	    "\n\t"
-	"movl	    %%eax,	    %%fs:0"	    "\n\t"
-
-	:
-	/* No outputs */
-	:
-	[registration]	"m"	(registration),
-	[nativeDst]	"m"	(nativeDst),
-	[nativeSrc]	"m"	(nativeSrc),
-	[copyFileW]	"r"	(CopyFileW)
-	:
-	"%eax", "%ebx", "%ecx", "%edx", "memory"
-	);
-    if (registration.status != FALSE) {
+    if (CopyFileW(nativeSrc, nativeDst, 0) != FALSE) {
 	retval = TCL_OK;
     }
-#else
-#ifndef HAVE_NO_SEH
-    __try {
-#endif
-	if (CopyFileW(nativeSrc, nativeDst, 0) != FALSE) {
-	    retval = TCL_OK;
-	}
-#ifndef HAVE_NO_SEH
-    } __except (EXCEPTION_EXECUTE_HANDLER) {}
-#endif
-#endif
 
     if (retval != -1) {
 	return retval;
