@@ -61,7 +61,8 @@ typedef struct AfterInfo {
 typedef struct AfterAssocData {
     Tcl_Interp *interp;		/* The interpreter for which this data is
 				 * registered. */
-    AfterInfo *firstAfterPtr;	/* First in list of all "wallclock" or "idle"
+    AfterInfo *firstAfterPtr;	/* First in list of all "monotonic", "wallclock"
+				 * or "idle"
 				 * commands still pending for this interpreter, or
 				 * NULL if none. */
 } AfterAssocData;
@@ -110,10 +111,10 @@ typedef struct {
 				/* [1]: First event in wallclock queue. */
     int lastTimerId;		/* Timer identifier of most recently created
 				 * timer. */
-    int timerPending;		/* 1 if a timer event is in the queue. */
-    enum timeHandlerType timeHandlerIndex;
-				/* Index into firstTimeHandlerPtr for pending
-				 * event. */
+    int lastTimerIdQueue[2];	/* Last timer ID for each queue. This is
+				 * compared to fired event to check, if there
+				 * were newer events added. */
+    int timerPendingQueue[2];	/* 1 if a timer event is in the given queue. */
     IdleHandler *idleList;	/* First in list of all idle handlers. */
     IdleHandler *lastIdlePtr;	/* Last in list (or NULL for empty list). */
     int idleGeneration;		/* Used to fill in the "generation" fields of
@@ -367,6 +368,8 @@ Tcl_CreateTimerHandler(
  *
  *	Arrange for a given function to be invoked at a particular time in the
  *	future.
+ *	The parameter 'monotonic' controls, if the monotonic clock ot
+ *	the wall clock is used.
  *
  * Results:
  *	The return value is a token for the timer event, which may be used to
@@ -390,6 +393,9 @@ TclCreateAbsoluteTimerHandler(
     ThreadSpecificData *tsdPtr = InitTimer();
     enum timeHandlerType timeHandlerIndex;
 
+    timeHandlerIndex = ( monotonic ? timeHandlerMonotonic
+	    : timeHandlerWallclock );
+
     timerHandlerPtr = (TimerHandler *)Tcl_Alloc(sizeof(TimerHandler));
 
     /*
@@ -400,6 +406,7 @@ TclCreateAbsoluteTimerHandler(
     timerHandlerPtr->proc = proc;
     timerHandlerPtr->clientData = clientData;
     tsdPtr->lastTimerId++;
+    tsdPtr->lastTimerIdQueue[timeHandlerIndex] = tsdPtr->lastTimerId;
     timerHandlerPtr->token = (Tcl_TimerToken) INT2PTR(tsdPtr->lastTimerId);
 
     /*
@@ -407,8 +414,6 @@ TclCreateAbsoluteTimerHandler(
      * (ordered by event firing time).
      */
 
-    timeHandlerIndex = ( monotonic ? timeHandlerMonotonic
-	    : timeHandlerWallclock );
     tPtr2 = tsdPtr->firstTimerHandlerPtr[timeHandlerIndex];
     for (prevPtr = NULL; tPtr2 != NULL;
 	    prevPtr = tPtr2, tPtr2 = tPtr2->nextPtr) {
@@ -504,7 +509,9 @@ TimerSetupProc(
     ThreadSpecificData *tsdPtr = InitTimer();
 
     if (((flags & TCL_IDLE_EVENTS) && tsdPtr->idleList)
-	    || ((flags & TCL_TIMER_EVENTS) && tsdPtr->timerPending)) {
+	    || ((flags & TCL_TIMER_EVENTS)
+		&& ( tsdPtr->timerPendingQueue[timeHandlerMonotonic]
+		    || tsdPtr->timerPendingQueue[timeHandlerWallclock]))) {
 	/*
 	 * There is an idle handler or a pending timer event, so just poll.
 	 */
@@ -590,6 +597,7 @@ TimerCheckProc(
 		(tsdPtr->firstTimerHandlerPtr[timeHandlerMonotonic]
 		|| tsdPtr->firstTimerHandlerPtr[timeHandlerWallclock])) {
 
+	bool queueEvent = false;
 	/*
 	 * Compute the timeout for the next timer on one of the lists.
 	 * Try wallclock and monotonic list.
@@ -624,14 +632,15 @@ TimerCheckProc(
 	     */
 
 	    if (blockTime.sec == 0 && blockTime.usec == 0 &&
-		    !tsdPtr->timerPending) {
-		tsdPtr->timerPending = 1;
-		tsdPtr->timeHandlerIndex = timeHandlerIndex;
-		timerEvPtr = (Tcl_Event *)Tcl_Alloc(sizeof(Tcl_Event));
-		timerEvPtr->proc = TimerHandlerEventProc;
-		Tcl_QueueEvent(timerEvPtr, TCL_QUEUE_TAIL);
-		return;
+		    !tsdPtr->timerPendingQueue[timeHandlerIndex]) {
+		tsdPtr->timerPendingQueue[timeHandlerIndex] = 1;
+		queueEvent = true;
 	    }
+	}
+	if (queueEvent) {
+	    timerEvPtr = (Tcl_Event *)Tcl_Alloc(sizeof(Tcl_Event));
+	    timerEvPtr->proc = TimerHandlerEventProc;
+	    Tcl_QueueEvent(timerEvPtr, TCL_QUEUE_TAIL);
 	}
     }
 }
@@ -663,10 +672,6 @@ TimerHandlerEventProc(
     int flags)			/* Flags that indicate what events to handle,
 				 * such as TCL_FILE_EVENTS. */
 {
-    TimerHandler *timerHandlerPtr, **nextPtrPtr;
-    Tcl_Time time;
-    int currentTimerId;
-    enum timeHandlerType timeHandlerIndex;
     ThreadSpecificData *tsdPtr = InitTimer();
 
     /*
@@ -704,42 +709,59 @@ TimerHandlerEventProc(
      *	  timers appearing before later ones.
      */
 
-    if ( !tsdPtr->timerPending ) {return 0;}
-    tsdPtr->timerPending = 0;
-    timeHandlerIndex = tsdPtr->timeHandlerIndex;
-    currentTimerId = tsdPtr->lastTimerId;
-    if (timeHandlerIndex == timeHandlerMonotonic) {
-	Tcl_GetMonotonicTime(&time);
-    } else {
-	Tcl_GetTime(&time);
-    }
-    while (1) {
-	nextPtrPtr = &tsdPtr->firstTimerHandlerPtr[timeHandlerIndex];
-	timerHandlerPtr = tsdPtr->firstTimerHandlerPtr[timeHandlerIndex];
-	if (timerHandlerPtr == NULL) {
-	    break;
-	}
+    for (enum timeHandlerType timeHandlerIndex = timeHandlerMonotonic;
+	    timeHandlerIndex <= timeHandlerWallclock; timeHandlerIndex++ ) {
 
-	if (TCL_TIME_BEFORE(time, timerHandlerPtr->time)) {
-	    break;
+	TimerHandler *timerHandlerPtr, **nextPtrPtr;
+	Tcl_Time time;
+	int currentTimerId;
+
+	if ( !tsdPtr->timerPendingQueue[timeHandlerIndex] ) {
+	    continue;
 	}
+	tsdPtr->timerPendingQueue[timeHandlerIndex] = 0;
 
 	/*
-	 * Bail out if the next timer is of a newer generation.
+	 * As the queues are independent, but the timer ids are used for both,
+	 * its creation time should be compared per queue.
+	 * Thus, use the queues latest id.
 	 */
 
-	if ((currentTimerId - PTR2INT(timerHandlerPtr->token)) < 0) {
-	    break;
+	currentTimerId = tsdPtr->lastTimerIdQueue[timeHandlerIndex];
+
+	if (timeHandlerIndex == timeHandlerMonotonic) {
+	    Tcl_GetMonotonicTime(&time);
+	} else {
+	    Tcl_GetTime(&time);
 	}
+	while (1) {
+	    nextPtrPtr = &tsdPtr->firstTimerHandlerPtr[timeHandlerIndex];
+	    timerHandlerPtr = tsdPtr->firstTimerHandlerPtr[timeHandlerIndex];
+	    if (timerHandlerPtr == NULL) {
+		break;
+	    }
 
-	/*
-	 * Remove the handler from the queue before invoking it, to avoid
-	 * potential reentrancy problems.
-	 */
+	    if (TCL_TIME_BEFORE(time, timerHandlerPtr->time)) {
+		break;
+	    }
 
-	*nextPtrPtr = timerHandlerPtr->nextPtr;
-	timerHandlerPtr->proc(timerHandlerPtr->clientData);
-	Tcl_Free(timerHandlerPtr);
+	    /*
+	     * Bail out if the next timer is of a newer generation.
+	     */
+
+	    if ((currentTimerId - PTR2INT(timerHandlerPtr->token)) < 0) {
+		break;
+	    }
+
+	    /*
+	     * Remove the handler from the queue before invoking it, to avoid
+	     * potential reentrancy problems.
+	     */
+
+	    *nextPtrPtr = timerHandlerPtr->nextPtr;
+	    timerHandlerPtr->proc(timerHandlerPtr->clientData);
+	    Tcl_Free(timerHandlerPtr);
+	}
     }
     TimerSetupProc(NULL, TCL_TIMER_EVENTS);
     return 1;
