@@ -1532,7 +1532,7 @@ INCLUDES = $(INCLUDES) -I"$(GENERICDIR)" -I"$(WIN_DIR)" -I"$(COMPATDIR)"
 # post-reform build logs
 
 # cflags contains generic flags used for building practically all object files
-cflags = -nologo -std:c11 -c $(COMPILERFLAGS) $(carch) $(cwarn) -Fp$(TMP_DIR)^\ $(cdebug)
+cflags = -nologo -c $(COMPILERFLAGS) $(carch) $(cwarn) -Fp$(TMP_DIR)^\ $(cdebug)
 
 !if $(TCL_MAJOR_VERSION) == 8 && $(TCL_MINOR_VERSION) < 7
 cflags = $(cflags) -DTcl_Size=int

@@ -4308,7 +4308,7 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_GetByteArrayFromObj(objPtr, sizePtr) \
 	Tcl_GetBytesFromObj(NULL, (objPtr), (sizePtr))
 
-#if 0
+#if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 201112L)
 /* Select method based on type of argument. */
 #define TclProc2Generic(typePtr, impl) \
     _Generic(typePtr, Tcl_ObjCmdProc2 *: impl ## 2, default: impl)
