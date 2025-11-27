@@ -1470,7 +1470,7 @@ OnOffWaitingList(
 
 void
 Tcl_SleepMicroSeconds(
-    Tcl_WideInt microSeconds)	/* Number of micro-seconds to sleep. */
+    long long microSeconds)	/* Number of micro-seconds to sleep. */
 {
     Tcl_Time vdelay;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
