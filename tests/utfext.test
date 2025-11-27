@@ -528,7 +528,7 @@ namespace eval utftest {
     }
 
 
-    # Special cases - cesu2 high and low surrogates in separate fragments
+    # Special case - cesu2 high and low surrogates in separate fragments
     # This will (correctly) return "ok", not "multibyte" after first frag
     testfragment toutf cesu-8 nonbmp-split-surr \
 	{41 eda0bd edb880 42} {41 f09f9880 42} 4 -status1 ok
@@ -587,6 +587,32 @@ namespace eval utftest {
 	set src [binary decode hex 1b2442242a3b6e24]
 	list {*}[testencoding Tcl_ExternalToUtf iso2022-jp $src {start tcl8} 0 16 -srcreadvar srcRead -dstwrotevar dstWritten -dstcharsvar charsWritten] $srcRead $dstWritten $charsWritten
     } -result [list multibyte 2 [binary decode hex e3818ae8a9a600ffffffffffffffffff] 7 6 2]
+
+    # 9.0 compatibility tests. Detect errors on counter overflow
+    test Tcl_ExternalToUtf-srcread-overflow-0 {
+        Test error generated if srcRead does not fit in int and srcRead specified
+    } -constraints {testencoding bigdata} -body {
+        lindex [testencoding Tcl_ExternalToUtf utf-32le X\0\0\0 {start end} 0 0x40000000 -srcreadvar srcRead -prefix [encoding convertto utf-32le .] -prefixlen 0x80000000] 0
+    } -returnCodes error -result "Tcl_ExternalToUtf does not support lengths greater than INT_MAX. Use Tcl_ExternalToUtfEx instead."
+
+    test Tcl_ExternalToUtf-srcread-overflow-1 {
+        Success if srcRead does not fit in int but srcRead not specified
+    } -constraints {testencoding bigdata} -body {
+        lindex [testencoding Tcl_ExternalToUtf utf-32le X\0\0\0 {start end} 0 0x40000000 -prefix [encoding convertto utf-32le .] -prefixlen 0x80000000] 0
+    } -result ok
+
+    test Tcl_UtfToExternal-dstwrote-overflow-0 {
+        Test error generated if dstWrote does not fit in int and dstWrote specified
+    } -constraints {testencoding bigdata} -body {
+        lindex [testencoding Tcl_UtfToExternal utf-32le X {start end} 0 0x80000100 -dstwrote dstWritten -prefix . -prefixlen 0x20000000] 0
+    } -returnCodes error -result "Tcl_UtfToExternal does not support lengths greater than INT_MAX. Use Tcl_UtfToExternalEx instead."
+
+    test Tcl_UtfToExternal-dstwrote-overflow-1 {
+        Success if dstWrote does not fit in int but dstWrote not specified
+    } -constraints {testencoding bigdata} -body {
+        lindex [testencoding Tcl_UtfToExternal utf-32le X {start end} 0 0x80000100 -prefix . -prefixlen 0x20000000] 0
+    } -result ok
+
 }
 
 namespace delete utftest
