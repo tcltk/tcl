@@ -570,7 +570,7 @@ TclpWaitForEvent(
 
 void
 Tcl_SleepMicroSeconds(
-    Tcl_WideInt microSeconds)	/* Number of micro-seconds to sleep. */
+    long long microSeconds)	/* Number of micro-seconds to sleep. */
 {
     /*
      * HaO 2025-11-19: this comment is probably solved by the use of monotonic

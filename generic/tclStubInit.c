@@ -1146,9 +1146,9 @@ const TclStubs tclStubs = {
     Tcl_UtfToUpper, /* 337 */
     Tcl_WriteChars, /* 338 */
     Tcl_WriteObj, /* 339 */
-    0, /* 340 */
-    0, /* 341 */
-    0, /* 342 */
+    Tcl_GetMonotonicTime, /* 340 */
+    Tcl_CreateTimerHandlerMicroSeconds, /* 341 */
+    Tcl_SleepMicroSeconds, /* 342 */
     Tcl_AlertNotifier, /* 343 */
     Tcl_ServiceModeHook, /* 344 */
     Tcl_UniCharIsAlnum, /* 345 */
@@ -1503,10 +1503,7 @@ const TclStubs tclStubs = {
     Tcl_ListObjRange, /* 694 */
     Tcl_UtfToNormalizedDString, /* 695 */
     Tcl_UtfToNormalized, /* 696 */
-    Tcl_GetMonotonicTime, /* 697 */
-    Tcl_CreateTimerHandlerMicroSeconds, /* 698 */
-    Tcl_SleepMicroSeconds, /* 699 */
-    TclUnusedStubEntry /* 700 */
+    TclUnusedStubEntry, /* 697 */
 };
 
 /* !END!: Do not edit above this line. */
