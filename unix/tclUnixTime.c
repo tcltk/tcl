@@ -275,7 +275,6 @@ Tcl_GetMonotonicTime(
     }
     timePtr->sec = ts.tv_sec;
     timePtr->usec = ts.tv_nsec / 1000;
-    return ret;
 #else
     struct timeval tv;
 
