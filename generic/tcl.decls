@@ -1038,6 +1038,16 @@ declare 338 {
 declare 339 {
     Tcl_Size Tcl_WriteObj(Tcl_Channel chan, Tcl_Obj *objPtr)
 }
+declare 340 {
+    void Tcl_GetMonotonicTime(Tcl_Time *timeBuf)
+}
+declare 341 {
+    Tcl_TimerToken  Tcl_CreateTimerHandlerMicroSeconds(long long microSeconds,
+	    Tcl_TimerProc *proc, void *clientData)
+}
+declare 342 {
+    void Tcl_SleepMicroSeconds(long long microSeconds)
+}
 declare 343 {
     void Tcl_AlertNotifier(void *clientData)
 }

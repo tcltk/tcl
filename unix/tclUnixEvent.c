@@ -32,7 +32,7 @@
 
 void
 Tcl_SleepMicroSeconds(
-    Tcl_WideInt microSeconds)	/* Number of micro-seconds to sleep. */
+    long long microSeconds)	/* Number of micro-seconds to sleep. */
 {
     struct timeval delay;
     Tcl_Time before, after, vdelay;

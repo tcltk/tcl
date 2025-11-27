@@ -894,9 +894,14 @@ EXTERN Tcl_Size		Tcl_WriteChars(Tcl_Channel chan, const char *src,
 				Tcl_Size srcLen);
 /* 339 */
 EXTERN Tcl_Size		Tcl_WriteObj(Tcl_Channel chan, Tcl_Obj *objPtr);
-/* Slot 340 is reserved */
-/* Slot 341 is reserved */
-/* Slot 342 is reserved */
+/* 340 */
+EXTERN void		Tcl_GetMonotonicTime(Tcl_Time *timeBuf);
+/* 341 */
+EXTERN Tcl_TimerToken	Tcl_CreateTimerHandlerMicroSeconds(
+				long long microSeconds, Tcl_TimerProc *proc,
+				void *clientData);
+/* 342 */
+EXTERN void		Tcl_SleepMicroSeconds(long long microSeconds);
 /* 343 */
 EXTERN void		Tcl_AlertNotifier(void *clientData);
 /* 344 */
@@ -1898,13 +1903,6 @@ EXTERN int		Tcl_UtfToNormalized(Tcl_Interp *interp,
 				int profile, char *bufPtr, Tcl_Size bufLen,
 				Tcl_Size *lengthPtr);
 /* 697 */
-EXTERN void		Tcl_GetMonotonicTime(Tcl_Time *timeBuf);
-/* 698 */
-EXTERN Tcl_TimerToken	Tcl_CreateTimerHandlerMicroSeconds(Tcl_WideInt microSeconds,
-				Tcl_TimerProc *proc, void *clientData);
-/* 699 */
-EXTERN void		Tcl_SleepMicroSeconds(Tcl_WideInt microSeconds);
-/* 700 */
 EXTERN void		TclUnusedStubEntry(void);
 
 typedef struct {
@@ -2257,9 +2255,9 @@ typedef struct TclStubs {
     Tcl_Size (*tcl_UtfToUpper) (char *src); /* 337 */
     Tcl_Size (*tcl_WriteChars) (Tcl_Channel chan, const char *src, Tcl_Size srcLen); /* 338 */
     Tcl_Size (*tcl_WriteObj) (Tcl_Channel chan, Tcl_Obj *objPtr); /* 339 */
-    void (*reserved340)(void);
-    void (*reserved341)(void);
-    void (*reserved342)(void);
+    void (*tcl_GetMonotonicTime) (Tcl_Time *timeBuf); /* 340 */
+    Tcl_TimerToken (*tcl_CreateTimerHandlerMicroSeconds) (long long microSeconds, Tcl_TimerProc *proc, void *clientData); /* 341 */
+    void (*tcl_SleepMicroSeconds) (long long microSeconds); /* 342 */
     void (*tcl_AlertNotifier) (void *clientData); /* 343 */
     void (*tcl_ServiceModeHook) (int mode); /* 344 */
     int (*tcl_UniCharIsAlnum) (int ch); /* 345 */
@@ -2614,10 +2612,7 @@ typedef struct TclStubs {
     int (*tcl_ListObjRange) (Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Size start, Tcl_Size end, Tcl_Obj **resultPtrPtr); /* 694 */
     int (*tcl_UtfToNormalizedDString) (Tcl_Interp *interp, const char *bytes, Tcl_Size length, Tcl_UnicodeNormalizationForm normForm, int profile, Tcl_DString *dsPtr); /* 695 */
     int (*tcl_UtfToNormalized) (Tcl_Interp *interp, const char *bytes, Tcl_Size length, Tcl_UnicodeNormalizationForm normForm, int profile, char *bufPtr, Tcl_Size bufLen, Tcl_Size *lengthPtr); /* 696 */
-    void (*tcl_GetMonotonicTime) (Tcl_Time *timeBuf); /* 697 */
-    Tcl_TimerToken (*tcl_CreateTimerHandlerMicroSeconds) (Tcl_WideInt microSeconds, Tcl_TimerProc *proc, void *clientData); /* 698 */
-    void (*tcl_SleepMicroSeconds) (Tcl_WideInt microSeconds); /* 699 */
-    void (*tclUnusedStubEntry) (void); /* 700 */
+    void (*tclUnusedStubEntry) (void); /* 697 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3260,9 +3255,12 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_WriteChars) /* 338 */
 #define Tcl_WriteObj \
 	(tclStubsPtr->tcl_WriteObj) /* 339 */
-/* Slot 340 is reserved */
-/* Slot 341 is reserved */
-/* Slot 342 is reserved */
+#define Tcl_GetMonotonicTime \
+	(tclStubsPtr->tcl_GetMonotonicTime) /* 340 */
+#define Tcl_CreateTimerHandlerMicroSeconds \
+	(tclStubsPtr->tcl_CreateTimerHandlerMicroSeconds) /* 341 */
+#define Tcl_SleepMicroSeconds \
+	(tclStubsPtr->tcl_SleepMicroSeconds) /* 342 */
 #define Tcl_AlertNotifier \
 	(tclStubsPtr->tcl_AlertNotifier) /* 343 */
 #define Tcl_ServiceModeHook \
@@ -3961,14 +3959,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_UtfToNormalizedDString) /* 695 */
 #define Tcl_UtfToNormalized \
 	(tclStubsPtr->tcl_UtfToNormalized) /* 696 */
-#define Tcl_GetMonotonicTime \
-	(tclStubsPtr->tcl_GetMonotonicTime) /* 697 */
-#define Tcl_CreateTimerHandlerMicroSeconds \
-	(tclStubsPtr->tcl_CreateTimerHandlerMicroSeconds) /* 698 */
-#define Tcl_SleepMicroSeconds \
-	(tclStubsPtr->tcl_SleepMicroSeconds) /* 699 */
 #define TclUnusedStubEntry \
-	(tclStubsPtr->tclUnusedStubEntry) /* 700 */
+	(tclStubsPtr->tclUnusedStubEntry) /* 697 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
