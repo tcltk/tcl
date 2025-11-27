@@ -2272,8 +2272,7 @@ static int UtfExtWrapper(
 
     /* Set up input buffer, including prefix if one has been specified */
     bytes = Tcl_GetByteArrayFromObj(objv[3], &srcLen);
-    Tcl_Size srcBufLen = prefixLen + srcLen;
-    srcBufPtr = (char *) Tcl_Alloc(srcBufLen+1); /* +1 to ensure not 0 */
+    srcBufPtr = (char *) Tcl_Alloc(prefixLen+srcLen+1); /* +1 to ensure not 0 */
     if (prefixLen != 0) {
 	const unsigned char *prefixBytes;
 	Tcl_Size nbytes;
@@ -2296,6 +2295,7 @@ static int UtfExtWrapper(
 	    prefixLen = 0;
 	}
     }
+    Tcl_Size srcNumBytes = prefixLen + srcLen;
     memmove(srcBufPtr + prefixLen, bytes, srcLen);
     switch (transform) {
     case UTF_TO_EXTERNAL:
@@ -2313,7 +2313,7 @@ static int UtfExtWrapper(
 	    result = (transform == UTF_TO_EXTERNAL ?
 			Tcl_UtfToExternal : Tcl_ExternalToUtf) (
 				interp, encoding, srcBufPtr,
-				srcBufLen, flags, encStatePtr,
+				srcNumBytes, flags, encStatePtr,
 				dstBufPtr, dstLen,
 				optObjs[SRCREADVAR] ? &srcRead32 : NULL,
 				&dstWrote32,
@@ -2325,14 +2325,14 @@ static int UtfExtWrapper(
 	}
     case EXTERNAL_TO_UTF_EX:
 	result = Tcl_ExternalToUtfEx(interp, encoding, srcBufPtr,
-		srcBufLen, flags, encStatePtr, dstBufPtr, dstLen,
+		srcNumBytes, flags, encStatePtr, dstBufPtr, dstLen,
 	    	optObjs[SRCREADVAR] ? &srcRead : NULL, 
 		&dstWrote,
 	    	optObjs[DSTCHARSVAR] ? &dstChars : NULL);
 	break;
     case UTF_TO_EXTERNAL_EX:
 	result = Tcl_UtfToExternalEx(interp, encoding, srcBufPtr,
-		srcBufLen, flags, encStatePtr, dstBufPtr, dstLen,
+		srcNumBytes, flags, encStatePtr, dstBufPtr, dstLen,
 	    	optObjs[SRCREADVAR] ? &srcRead : NULL,
 		&dstWrote,
 	    	optObjs[DSTCHARSVAR] ? &dstChars : NULL);

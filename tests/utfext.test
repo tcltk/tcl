@@ -343,30 +343,58 @@ namespace eval utftest {
 	}
     }
 
-    proc testcharlimit {direction enc comment hexin hexout} {
-        set prefixlen 0
+    proc testcharlimit {direction enc comment hexin hexout args} {
+	if {$direction in "fromutf fromutfex"} {
+            error "Tcl_UtfToExternal and Tcl_UtfToExternalEx do not support char limits"
+	}
+
 	set id $comment-[join $hexin ""]-charlimit
 
-	if {$direction eq "toutf"} {
-	    set cmd Tcl_ExternalToUtf
-	} else {
-	    set cmd Tcl_UtfToExternal
+	set constraints [list testencoding]
+        set prefixlen 0
+	while {[llength $args] > 1} {
+	    set opt [lpop args 0]
+	    switch $opt {
+		-constraints { lappend constraints {*}[lpop args 0] }
+                -prefixlen   { set prefixlen [lpop args 0] }
+		default {
+		    error "Unknown option \"$opt\""
+		}
+	    }
 	}
+	if {[llength $args]} {
+	    error "No value supplied for option [lindex $args 0]."
+	}
+        lassign [testparams $direction $enc $prefixlen] \
+            cmd numPrefixChars srcPrefixChar srcPrefixLength \
+            dstPrefixChar dstPrefixLength
 
 	set maxchars [llength $hexout]
 	set in [binary decode hex $hexin]
 	set out [binary decode hex $hexout]
 	set dstlen 40 ;# Should be enough for all encoding tests
+        set totalDstSpace [expr {$dstlen+$dstPrefixLength}]
 
 	for {set nchars 0} {$nchars <= $maxchars} {incr nchars} {
+            if {$prefixlen != 0 && $nchars != ($maxchars-1)} {
+                # For prefixes, only do one test for test run time reasons
+                continue
+            }
 	    set expected_bytes [binary decode hex [lrange $hexout 0 $nchars-1]]
-	    set expected_nwritten [string length $expected_bytes]
-	    test $cmd-$enc-$id-$nchars "$cmd - $enc - $hexin - nchars $nchars" -constraints testencoding -body {
-		set charlimit $nchars
-		lassign [testencoding $cmd $enc $in \
-			     {start end charlimit} 0 $dstlen -srcreadvar nread -dstwrotevar nwritten -dstcharsvar charlimit] \
-		    status state buf
-		list $status $nwritten [string range $buf 0 $nwritten-1]
+            set expected_nwritten \
+                [expr {
+                       $dstPrefixLength+[string length $expected_bytes]
+                   }]
+	    test $cmd-$enc-$id-$nchars-prefix-$prefixlen "$cmd - $enc - $hexin - nchars $nchars - $prefixlen" -constraints $constraints -body {
+		set charlimit [expr {$numPrefixChars+$nchars}]
+                lassign \
+                    [testencoding $cmd $enc $in \
+                         {start end charlimit} 0 $totalDstSpace \
+                         -srcreadvar nread -dstwrotevar nwritten \
+                         -dstcharsvar charlimit -prefix $srcPrefixChar \
+                         -prefixlen $prefixlen] \
+                    status state buf
+		list $status $nwritten [string range $buf $dstPrefixLength $nwritten-1]
 	    } -result [list ok $expected_nwritten $expected_bytes]
 	}
     }
@@ -464,6 +492,7 @@ namespace eval utftest {
 
 	    # Char limits - note no fromutf as Tcl_UtfToExternal does not support it
 	    testcharlimit toutf $enc $comment $hex $utfhex
+	    testcharlimit toutfex $enc $comment $hex $utfhex
 
 	    # Space limits
 	    testspacelimit toutf $enc $comment $hex $utfhex
@@ -476,21 +505,24 @@ namespace eval utftest {
 	# only the first two cases at the INT_MAX and UINT_MAX boundaries.
         foreach testcase [lrange $testcases 0 1] {
             lassign $testcase {*}{comment utfhex hex internalfragindex externalfragindex}
-            foreach n {0x7fffffff 0xfffffffe} {
+            foreach prefixlen {0x7ffffffe 0xfffffffe} {
                 # Basic tests
-                testutf toutfex $enc $comment $hex ${utfhex}00 -prefixlen $n -constraints bigdata
-                testutf fromutfex $enc $comment $utfhex $hex$encnuls -prefixlen $n -constraints bigdata
+                testutf toutfex $enc $comment $hex ${utfhex}00 -prefixlen $prefixlen -constraints bigdata
+                testutf fromutfex $enc $comment $utfhex $hex$encnuls -prefixlen $prefixlen -constraints bigdata
                 testutf toutfex $enc $comment $hex $utfhex \
-                    -flags {start end noterminate} -prefixlen $n -constraints bigdata
+                    -flags {start end noterminate} -prefixlen $prefixlen -constraints bigdata
                 testutf fromutfex $enc $comment $utfhex $hex \
-                    -flags {start end noterminate} -prefixlen $n -constraints bigdata
+                    -flags {start end noterminate} -prefixlen $prefixlen -constraints bigdata
                 # Test fragments across chunks
-                testfragment toutfex $enc $comment $hex $utfhex $externalfragindex -prefixlen $n -constraints bigdata
-                testfragment fromutfex $enc $comment $utfhex $hex $internalfragindex -prefixlen $n -constraints bigdata
+                testfragment toutfex $enc $comment $hex $utfhex $externalfragindex -prefixlen $prefixlen -constraints bigdata
+                testfragment fromutfex $enc $comment $utfhex $hex $internalfragindex -prefixlen $prefixlen -constraints bigdata
+
+                # Char limits - no fromutf as Tcl_UtfToExternalEx does not support it
+                testcharlimit toutfex $enc $comment $hex $utfhex -prefixlen $prefixlen -constraints bigdata
 
                 # Test space limits at INT_MAX/UINT_MAX
-                testspacelimit toutfex $enc $comment $hex $utfhex -prefixlen $n -constraints bigdata
-                testspacelimit fromutfex $enc $comment $utfhex $hex -prefixlen $n -constraints bigdata
+                testspacelimit toutfex $enc $comment $hex $utfhex -prefixlen $prefixlen -constraints bigdata
+                testspacelimit fromutfex $enc $comment $utfhex $hex -prefixlen $prefixlen -constraints bigdata
             }
         }
     }
