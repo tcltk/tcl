@@ -36,6 +36,43 @@ test timer-1.1 {Tcl_CreateTimerHandler procedure} -setup {
     }
 } -result {50 100 150 200}
 
+test timer-1.1.1 {Tcl_CreateTimerHandler procedure - timer in} -setup {
+    foreach i [timer info] {
+	timer cancel $i
+    }
+} -body {
+    set x ""
+    foreach i {100 200 1000 50 150} {
+	timer in 0 [expr {$i*1000}] lappend x $i
+    }
+    timer in 0 200_000 set done 1
+    vwait done
+    return $x
+} -cleanup {
+    foreach i [after info] {
+	after cancel $i
+    }
+} -result {50 100 150 200}
+
+test timer-1.1.2 {Tcl_CreateTimerHandler procedure - timer at} -setup {
+    foreach i [timer info] {
+	timer cancel $i
+    }
+} -body {
+    set x ""
+    set us [clock microseconds]
+    foreach i {100 200 1000 50 150} {
+	timer at 0 [expr {$i*1000+$us}] lappend x $i
+    }
+    timer at 0 [expr {$us+200_000}] set done 1
+    vwait done
+    return $x
+} -cleanup {
+    foreach i [after info] {
+	after cancel $i
+    }
+} -result {50 100 150 200}
+
 test timer-2.1 {Tcl_DeleteTimerHandler procedure} -setup {
     foreach i [after info] {
 	after cancel $i
@@ -52,6 +89,39 @@ test timer-2.1 {Tcl_DeleteTimerHandler procedure} -setup {
     return $x
 } -result {100 200}
 
+test timer-2.1.1 {Tcl_DeleteTimerHandler procedure - timer in} -setup {
+    foreach i [timer info] {
+	timer cancel $i
+    }
+} -body {
+    set x ""
+    foreach i {100 200 1000 50 150} {
+	timer in 0 [expr {$i*1000}] lappend x $i
+    }
+    timer cancel lappend x 150
+    timer cancel lappend x 50
+    timer in 0 200_000 set done 1
+    vwait done
+    return $x
+} -result {100 200}
+
+test timer-2.1.2 {Tcl_DeleteTimerHandler procedure - timer at} -setup {
+    foreach i [timer info] {
+	timer cancel $i
+    }
+} -body {
+    set x ""
+    set us [clock microseconds]
+    foreach i {100 200 1000 50 150} {
+	timer at 0 [expr {$i*1000+$us}] lappend x $i
+    }
+    timer cancel lappend x 150
+    timer cancel lappend x 50
+    timer at 0 [expr {200_000+$us}] set done 1
+    vwait done
+    return $x
+} -result {100 200}
+
 # No tests for Tcl_ServiceTimer or ResetTimer, since it is already tested
 # above.
 
@@ -64,6 +134,28 @@ test timer-3.1 {TimerHandlerEventProc procedure: event masks} {
     update
     lappend result $x
 } {start fired}
+
+test timer-3.1.1 {TimerHandlerEventProc procedure: event masks - timer in} {
+    set x start
+    timer in 0 100_000 { set x fired }
+    update idletasks
+    set result $x
+    timer in 0 200_000
+    update
+    lappend result $x
+} {start fired}
+
+test timer-3.1.2 {TimerHandlerEventProc procedure: event masks - timer at} {
+    set x start
+    set us [clock microseconds]
+    timer at 0 [expr {100_000+$us}] { set x fired }
+    update idletasks
+    set result $x
+    timer at 0 [expr {200_000+$us}]
+    update
+    lappend result $x
+} {start fired}
+
 test timer-3.2 {TimerHandlerEventProc procedure: multiple timers} -setup {
     foreach i [after info] {
 	after cancel $i
@@ -84,6 +176,28 @@ test timer-3.2 {TimerHandlerEventProc procedure: multiple timers} -setup {
     update
     lappend result $x
 } -result {200 {200 600} {200 600 1000}}
+
+test timer-3.2.1 {TimerHandlerEventProc procedure: multiple timers - mixed} -setup {
+    foreach i [after info] {
+	after cancel $i
+    }
+} -body {
+    after 200 lappend x 200
+    timer in 0 600_000 lappend x 600
+    timer at 1 [clock microseconds] lappend x 1000
+    after 200
+    set result ""
+    set x ""
+    update
+    lappend result $x
+    timer in 0 400_000
+    update
+    lappend result $x
+    timer at 0 [expr {400_000+[clock microseconds]}]
+    update
+    lappend result $x
+} -result {200 {200 600} {200 600 1000}}
+
 test timer-3.3 {TimerHandlerEventProc procedure: reentrant timer deletion} -setup {
     foreach i [after info] {
 	after cancel $i
@@ -97,7 +211,39 @@ test timer-3.3 {TimerHandlerEventProc procedure: reentrant timer deletion} -setu
     update
     return $x
 } -result 100
-test timer-3.4 {TimerHandlerEventProc procedure: all expired timers fire} -setup {
+
+test timer-3.3.1 {TimerHandlerEventProc procedure: reentrant timer deletion - timer in} -setup {
+    foreach i [timer info] {
+	timer cancel $i
+    }
+} -body {
+    set x {}
+    timer in 0 100_000 lappend x 100
+    set i [timer in 0 300_000 lappend x 300]
+    # When waiting in a delay, always the monotonic clock fires first
+    # As a consequence, timer at may not be used here, as it would fire as last event
+    timer in 0 200_000 after cancel $i
+    timer in 0 400_000
+    update
+    return $x
+} -result 100
+
+test timer-3.3.2 {TimerHandlerEventProc procedure: reentrant timer deletion - timer at} -setup {
+    foreach i [timer info] {
+	timer cancel $i
+    }
+} -body {
+    set x {}
+    set ms [clock microseconds]
+    timer at 0 [expr {$ms+100_000}] lappend x 100
+    set i [timer at 0 [expr {$ms+300_000}] lappend x 300]
+    timer at 0 [expr {$ms+200_000}] after cancel $i
+    timer at 0 [expr {$ms+400_000}]
+    update
+    return $x
+} -result 100
+
+test timer-3.4 {TimerHandlerEventProc procedure: all expired timers fire- monotonic queue} -setup {
     foreach i [after info] {
 	after cancel $i
     }
@@ -110,6 +256,36 @@ test timer-3.4 {TimerHandlerEventProc procedure: all expired timers fire} -setup
     vwait x
     return $x
 } -result {a b c}
+
+test timer-3.4.1 {TimerHandlerEventProc procedure: all expired timers fire - timer at queue} -setup {
+    foreach i [after info] {
+	timer cancel $i
+    }
+} -body {
+    set x {}
+    set us [clock microseconds]
+    timer at 0 [expr {$us+100_000}] lappend x a
+    timer at 0 [expr {$us+200_000}] lappend x b
+    timer at 0 [expr {$us+300_000}] lappend x c
+    after 400
+    vwait x
+    return $x
+} -result {a b c}
+
+test timer-3.4.2 {TimerHandlerEventProc procedure: all expired timers fire - both queues} -setup {
+    foreach i [after info] {
+	timer cancel $i
+    }
+} -body {
+    set x {}
+    after 100 lappend x a
+    timer in 0 200_000 lappend x b
+    timer at 0 [expr {[clock microseconds]+300_000}] lappend x c
+    after 300
+    vwait x
+    return $x
+} -result {a b c}
+
 test timer-3.5 {TimerHandlerEventProc procedure: reentrantly added timers don't fire} -setup {
     foreach i [after info] {
 	after cancel $i
