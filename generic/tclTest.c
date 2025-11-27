@@ -2316,7 +2316,7 @@ static int UtfExtWrapper(
 				srcNumBytes, flags, encStatePtr,
 				dstBufPtr, dstLen,
 				optObjs[SRCREADVAR] ? &srcRead32 : NULL,
-				&dstWrote32,
+				optObjs[DSTWROTEVAR] ? &dstWrote32 : NULL,
 				optObjs[DSTCHARSVAR] ? &dstChars32 : NULL);
 	    srcRead = (Tcl_Size)srcRead32;
 	    dstWrote = (Tcl_Size)dstWrote32;
@@ -2324,11 +2324,11 @@ static int UtfExtWrapper(
 	    break;
 	}
     case EXTERNAL_TO_UTF_EX:
-	result = Tcl_ExternalToUtfEx(interp, encoding, srcBufPtr,
-		srcNumBytes, flags, encStatePtr, dstBufPtr, dstLen,
-	    	optObjs[SRCREADVAR] ? &srcRead : NULL, 
-		&dstWrote,
-	    	optObjs[DSTCHARSVAR] ? &dstChars : NULL);
+	result = Tcl_ExternalToUtfEx(interp, encoding, srcBufPtr, srcNumBytes,
+	    flags, encStatePtr, dstBufPtr, dstLen,
+	    optObjs[SRCREADVAR] ? &srcRead : NULL,
+	    optObjs[DSTWROTEVAR] ? &dstWrote : NULL,
+	    optObjs[DSTCHARSVAR] ? &dstChars : NULL);
 	break;
     case UTF_TO_EXTERNAL_EX:
 	result = Tcl_UtfToExternalEx(interp, encoding, srcBufPtr,

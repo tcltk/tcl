@@ -1350,22 +1350,6 @@ Tcl_ExternalToUtf(
 	srcLen = encodingPtr->lengthProc(src);
     }
 
-    /*
-     * Tcl 9.0 did not handle all cases where input lengths were greater
-     * than INT_MAX correctly because the underlying conversion functions
-     * use int. Clamping lengths cannot not fix certain corner cases as the
-     * wrong result code was returned. So we now return an error in such
-     * cases and ask the user to use Tcl_ExternalToUtfEx.
-     */
-    if (srcLen > INT_MAX || dstLen > INT_MAX) {
-	if (interp) {
-	    Tcl_SetResult(interp,
-		"Tcl_ExternalToUtf does not support lengths greater than "
-		    "INT_MAX. Use Tcl_ExternalToUtfEx instead.",
-		TCL_STATIC);
-	}
-	return TCL_ERROR;
-    }
     if (dstCharsPtr && (flags & TCL_ENCODING_CHAR_LIMIT)) {
 	dstChars = *dstCharsPtr;
     }
@@ -1374,6 +1358,32 @@ Tcl_ExternalToUtf(
 		srcReadPtr ? &srcRead : NULL,
 		dstWrotePtr ? &dstWrote : NULL,
 		dstCharsPtr ? &dstChars : NULL);
+
+    if ((srcReadPtr && srcRead > INT_MAX) ||
+	(dstWrotePtr && dstWrote > INT_MAX) ||
+	(dstCharsPtr && dstChars > INT_MAX)) {
+	/* An output count is too large for integer width */
+	srcRead = 0;
+	dstWrote = 0;
+	dstChars = 0;
+	if (statePtr) {
+	    statePtr = 0;
+	}
+	if (interp) {
+	    Tcl_SetResult(interp,
+		"Tcl_ExternalToUtf does not support lengths greater than "
+		    "INT_MAX. Use Tcl_ExternalToUtfEx instead.",
+		TCL_STATIC);
+	}
+	/*
+	 * This is a incompatibility with 9.0 as TCL_ERROR is not documented
+	 * as a return value but no choice as no other value would be correct.
+	 * This is a very low probability event in practice.
+	 */
+	result = TCL_ERROR;
+    }
+
+
     if (srcReadPtr) {
 	*srcReadPtr = (int)srcRead;
     }
@@ -1905,23 +1915,7 @@ Tcl_UtfToExternal(
 	srcLen = strlen(src);
     }
 
-    /*
-     * Tcl 9.0 did not handle all cases where input lengths were greater
-     * than INT_MAX correctly because the underlying conversion functions
-     * use int. Clamping lengths cannot not fix certain corner cases as the
-     * wrong result code was returned. So we now return an error in such
-     * cases and ask the user to use Tcl_UtfToExternalEx.
-     */
-    if (srcLen > INT_MAX || dstLen > INT_MAX) {
-	if (interp) {
-	    Tcl_SetResult(interp,
-		"Tcl_UtfToExternal does not support lengths greater than "
-		    "INT_MAX. Use Tcl_UtfToExternalEx instead.",
-		TCL_STATIC);
-	}
-	return TCL_ERROR;
-    }
-    /* TODO - low level encoders do not support CHAR_LIMIT. For future */
+    /* Low level encoders do not support CHAR_LIMIT. Future-proofing */
     if (dstCharsPtr && (flags & TCL_ENCODING_CHAR_LIMIT)) {
 	dstChars = *dstCharsPtr;
     }
@@ -1931,6 +1925,31 @@ Tcl_UtfToExternal(
 		srcReadPtr ? &srcRead : NULL,
 		dstWrotePtr ? &dstWrote : NULL,
 		dstCharsPtr ? &dstChars : NULL);
+
+    if ((srcReadPtr && srcRead > INT_MAX) ||
+	(dstWrotePtr && dstWrote > INT_MAX) ||
+	(dstCharsPtr && dstChars > INT_MAX)) {
+	/* An output count is too large for integer width */
+	srcRead = 0;
+	dstWrote = 0;
+	dstChars = 0;
+	if (statePtr) {
+	    statePtr = 0;
+	}
+	if (interp) {
+	    Tcl_SetResult(interp,
+		"Tcl_UtfToExternal does not support lengths greater than "
+		    "INT_MAX. Use Tcl_UtfToExternalEx instead.",
+		TCL_STATIC);
+	}
+	/*
+	 * This is a incompatibility with 9.0 as TCL_ERROR is not documented
+	 * as a return value but no choice as no other value would be correct.
+	 * This is a very low probability event in practice.
+	 */
+	result = TCL_ERROR;
+    }
+
     if (srcReadPtr) {
 	assert(srcRead >= 0 && srcRead <= srcLen);
 	*srcReadPtr = (int)srcRead;
