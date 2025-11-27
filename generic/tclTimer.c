@@ -1523,15 +1523,39 @@ TimerAtCmd(
 	     * -1_000_002 / 1_000_000 = -1
 	     */
 
+	    bool secondsPositive = (seconds >= 0);
 	    seconds += (microSeconds / 1000000);
 	    microSeconds %= 1000000;
 	    if (microSeconds < 0) {
 		microSeconds += 1000000;
 		seconds -= 1;
 	    }
+
+	    /*
+	     * Check for numerical overflow, e.g. seconds got positive
+	     */
+
+	    if (seconds >= 0 && ! secondsPositive) {
+		seconds = 0;
+		microSeconds = 0;
+	    }
 	} else if ( microSeconds >= 1000000 ) {
+	    bool secondsPositive = (seconds >= 0);
 	    seconds += (microSeconds / 1000000);
 	    microSeconds %= 1000000;
+
+	    /*
+	     * Check for numerical overflow, e.g. seconds got negative
+	     */
+
+	    if (seconds < 0 && secondsPositive) {
+		if (interp != NULL) {
+		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			    "given time to far away", -1));
+		    Tcl_SetErrorCode(interp, "TCL","TIME","OVERFLOW", (char *)NULL);
+		}
+		return TCL_ERROR;
+	    }
 	}
     } else {
 
@@ -1661,15 +1685,39 @@ TimerInCmd(
 	     * -1_000_002 / 1_000_000 = -1
 	     */
 
+	    bool secondsPositive = (seconds >= 0);
 	    seconds += (microSeconds / 1000000);
 	    microSeconds %= 1000000;
 	    if (microSeconds < 0) {
 		microSeconds += 1000000;
 		seconds -= 1;
 	    }
+
+	    /*
+	     * Check for numerical overflow, e.g. seconds got positive
+	     */
+
+	    if (seconds >= 0 && ! secondsPositive) {
+		seconds = 0;
+		microSeconds = 0;
+	    }
 	} else if ( microSeconds >= 1000000 ) {
+	    bool secondsPositive = (seconds >= 0);
 	    seconds += (microSeconds / 1000000);
 	    microSeconds %= 1000000;
+
+	    /*
+	     * Check for numerical overflow, e.g. seconds got negative
+	     */
+
+	    if (seconds < 0 && secondsPositive) {
+		if (interp != NULL) {
+		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			    "given time to far away", -1));
+		    Tcl_SetErrorCode(interp, "TCL","TIME","OVERFLOW", (char *)NULL);
+		}
+		return TCL_ERROR;
+	    }
 	}
     } else {
 
@@ -1699,6 +1747,19 @@ TimerInCmd(
     if (wakeup.usec >= 1000000) {
 	wakeup.sec++;
 	wakeup.usec %= 1000000;
+    }
+
+    /*
+     * Check for numerical overflow, e.g. seconds got negative
+     */
+
+    if (wakeup.sec < 0) {
+	if (interp != NULL) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "given time to far away", -1));
+	    Tcl_SetErrorCode(interp, "TCL","TIME","OVERFLOW", (char *)NULL);
+	}
+	return TCL_ERROR;
     }
 
     if (objc < 4) {
@@ -1869,7 +1930,7 @@ TimerIdleCmd(
     ThreadSpecificData *tsdPtr = InitTimer();
 
     if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 2, objv, "script ?script ...?");
+	Tcl_WrongNumArgs(interp, 1, objv, "script ?script ...?");
 	return TCL_ERROR;
     }
     afterPtr = (AfterInfo *)Tcl_Alloc(sizeof(AfterInfo));
@@ -1932,7 +1993,7 @@ TimerInfoCmd(
 	return TCL_OK;
     }
     if (objc != 2) {
-	Tcl_WrongNumArgs(interp, 2, objv, "?id?");
+	Tcl_WrongNumArgs(interp, 1, objv, "?id?");
 	return TCL_ERROR;
     }
     afterPtr = GetAfterEvent(assocPtr, objv[1]);
