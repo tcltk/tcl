@@ -193,6 +193,7 @@ static int		TimerIdleCmd(void *clientData, Tcl_Interp *interp,
 			    int obj, Tcl_Obj *const objv[]);
 static int		TimerInfoCmd(void *clientData, Tcl_Interp *interp,
 			    int obj, Tcl_Obj *const objv[]);
+static void		TimeToFarError(Tcl_Interp *interp);
 
 /*
  * How to construct the ensembles.
@@ -1514,48 +1515,53 @@ TimerAtCmd(
 	if ( microSeconds < 0 ) {
 
 	    /*
-	     * Negative microseconds value.
-	     * Operation "/" and "%" round direction 0
-	     * Example: ms= -1_000_002 (-1s -2us)
-	     * seconds -= 2
-	     * ms = 999_998
-	     * -1_000_002 % 1_000_000 = -2
-	     * -1_000_002 / 1_000_000 = -1
+	     * First handle the both negative case, as this is anyway 0,0.
+	     * So, we don't need any overflow handling below.
 	     */
 
-	    bool secondsPositive = (seconds >= 0);
-	    seconds += (microSeconds / 1000000);
-	    microSeconds %= 1000000;
-	    if (microSeconds < 0) {
-		microSeconds += 1000000;
-		seconds -= 1;
-	    }
-
-	    /*
-	     * Check for numerical overflow, e.g. seconds got positive
-	     */
-
-	    if (seconds >= 0 && ! secondsPositive) {
+	    if (seconds < 0) {
 		seconds = 0;
 		microSeconds = 0;
+	    } else {
+
+		/*
+		 * Negative microseconds value.
+		 * Operation "/" and "%" round direction 0
+		 * Example: ms= -1_000_002 (-1s -2us)
+		 * seconds -= 2
+		 * ms = 999_998
+		 * -1_000_002 % 1_000_000 = -2
+		 * -1_000_002 / 1_000_000 = -1
+		 */
+
+		seconds += (microSeconds / 1000000);
+		microSeconds %= 1000000;
+		if (microSeconds < 0) {
+		    microSeconds += 1000000;
+		    seconds -= 1;
+		}
 	    }
+
 	} else if ( microSeconds >= 1000000 ) {
-	    bool secondsPositive = (seconds >= 0);
-	    seconds += (microSeconds / 1000000);
+
+	    Tcl_WideInt secondsAdd;
+
+	    secondsAdd = (microSeconds / 1000000);
 	    microSeconds %= 1000000;
 
 	    /*
-	     * Check for numerical overflow, e.g. seconds got negative
+	     * Check for numerical overflow.
+	     * Overflow handling is complicated, as an overflow of the sum of
+	     * two signed values is undefined. In consequence, gcc optimizes
+	     * out any error handling code.
+	     * So, check in advance, if an overflow might happen.
 	     */
 
-	    if (seconds < 0 && secondsPositive) {
-		if (interp != NULL) {
-		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			    "given time to far away", -1));
-		    Tcl_SetErrorCode(interp, "TCL","TIME","OVERFLOW", (char *)NULL);
-		}
+	    if (seconds > 0 && LLONG_MAX - seconds < secondsAdd) {
+		TimeToFarError(interp);
 		return TCL_ERROR;
 	    }
+	    seconds += secondsAdd;
 	}
     } else {
 
@@ -1618,6 +1624,34 @@ TimerAtCmd(
     return TCL_OK;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TimeToFarError --
+ *
+ *	Set the time to far error in the interpreter.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+TimeToFarError(
+    Tcl_Interp *interp)		/* Current interpreter. */
+{
+    if (interp != NULL) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"given time to far away", -1));
+	Tcl_SetErrorCode(interp, "TCL","TIME","OVERFLOW", (char *)NULL);
+    }
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1676,48 +1710,53 @@ TimerInCmd(
 	if ( microSeconds < 0 ) {
 
 	    /*
-	     * Negative microseconds value.
-	     * Operation "/" and "%" round direction 0
-	     * Example: ms= -1_000_002 (-1s -2us)
-	     * seconds -= 2
-	     * ms = 999_998
-	     * -1_000_002 % 1_000_000 = -2
-	     * -1_000_002 / 1_000_000 = -1
+	     * First handle the both negative case, as this is anyway 0,0.
+	     * So, we don't need any overflow handling below.
 	     */
 
-	    bool secondsPositive = (seconds >= 0);
-	    seconds += (microSeconds / 1000000);
-	    microSeconds %= 1000000;
-	    if (microSeconds < 0) {
-		microSeconds += 1000000;
-		seconds -= 1;
-	    }
-
-	    /*
-	     * Check for numerical overflow, e.g. seconds got positive
-	     */
-
-	    if (seconds >= 0 && ! secondsPositive) {
+	    if (seconds < 0) {
 		seconds = 0;
 		microSeconds = 0;
+	    } else {
+
+		/*
+		 * Negative microseconds value.
+		 * Operation "/" and "%" round direction 0
+		 * Example: ms= -1_000_002 (-1s -2us)
+		 * seconds -= 2
+		 * ms = 999_998
+		 * -1_000_002 % 1_000_000 = -2
+		 * -1_000_002 / 1_000_000 = -1
+		 */
+
+		seconds += (microSeconds / 1000000);
+		microSeconds %= 1000000;
+		if (microSeconds < 0) {
+		    microSeconds += 1000000;
+		    seconds -= 1;
+		}
 	    }
+
 	} else if ( microSeconds >= 1000000 ) {
-	    bool secondsPositive = (seconds >= 0);
-	    seconds += (microSeconds / 1000000);
+
+	    Tcl_WideInt secondsAdd;
+
+	    secondsAdd = (microSeconds / 1000000);
 	    microSeconds %= 1000000;
 
 	    /*
-	     * Check for numerical overflow, e.g. seconds got negative
+	     * Check for numerical overflow.
+	     * Overflow handling is complicated, as an overflow of the sum of
+	     * two signed values is undefined. In consequence, gcc optimizes
+	     * out any error handling code.
+	     * So, check in advance, if an overflow might happen.
 	     */
 
-	    if (seconds < 0 && secondsPositive) {
-		if (interp != NULL) {
-		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			    "given time to far away", -1));
-		    Tcl_SetErrorCode(interp, "TCL","TIME","OVERFLOW", (char *)NULL);
-		}
+	    if (seconds > 0 && LLONG_MAX - seconds < secondsAdd) {
+		TimeToFarError(interp);
 		return TCL_ERROR;
 	    }
+	    seconds += secondsAdd;
 	}
     } else {
 
@@ -1742,25 +1781,21 @@ TimerInCmd(
      */
 
     Tcl_GetMonotonicTime(&wakeup);
-    wakeup.sec += seconds;
     wakeup.usec += microSeconds;
     if (wakeup.usec >= 1000000) {
+	if (wakeup.sec == LLONG_MAX) {
+	    TimeToFarError(interp);
+	    return TCL_ERROR;
+	}
 	wakeup.sec++;
 	wakeup.usec %= 1000000;
     }
 
-    /*
-     * Check for numerical overflow, e.g. seconds got negative
-     */
-
-    if (wakeup.sec < 0) {
-	if (interp != NULL) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "given time to far away", -1));
-	    Tcl_SetErrorCode(interp, "TCL","TIME","OVERFLOW", (char *)NULL);
-	}
+    if ( LLONG_MAX - wakeup.sec < seconds ) {
+	TimeToFarError(interp);
 	return TCL_ERROR;
     }
+    wakeup.sec += seconds;
 
     if (objc < 4) {
 
@@ -1768,9 +1803,9 @@ TimerInCmd(
 	 * No script given - just wait the monotonic time
 	 */
 
-
 	return TimerAtDelay(interp, wakeup, true);
     }
+
     afterPtr = (AfterInfo *)Tcl_Alloc(sizeof(AfterInfo));
     afterPtr->assocPtr = assocPtr;
     if (objc == 4) {
