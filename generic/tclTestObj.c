@@ -31,10 +31,12 @@
  * Forward declarations for functions defined later in this file:
  */
 
-static int		CheckIfVarUnset(Tcl_Interp *interp, Tcl_Obj **varPtr, Tcl_Size varIndex);
+static int		CheckIfVarUnset(Tcl_Interp *interp, Tcl_Obj **varPtr,
+			    Tcl_Size varIndex);
 static int		GetVariableIndex(Tcl_Interp *interp,
 			    Tcl_Obj *obj, Tcl_Size *indexPtr);
-static void		SetVarToObj(Tcl_Obj **varPtr, Tcl_Size varIndex, Tcl_Obj *objPtr);
+static void		SetVarToObj(Tcl_Obj **varPtr, Tcl_Size varIndex,
+			    Tcl_Obj *objPtr);
 static Tcl_ObjCmdProc	TestbignumobjCmd;
 static Tcl_ObjCmdProc	TestbooleanobjCmd;
 static Tcl_ObjCmdProc	TestdoubleobjCmd;
@@ -1064,11 +1066,15 @@ TestlistobjCmd(
  *----------------------------------------------------------------------
  */
 
-static Tcl_Size V1TestListObjLength(TCL_UNUSED(Tcl_Obj *)) {
+static Tcl_Size
+V1TestListObjLength(
+    TCL_UNUSED(Tcl_Obj *))
+{
     return 100;
 }
 
-static int V1TestListObjIndex(
+static int
+V1TestListObjIndex(
     TCL_UNUSED(Tcl_Interp *),
     TCL_UNUSED(Tcl_Obj *),
     TCL_UNUSED(Tcl_Size),
@@ -1090,9 +1096,7 @@ static const Tcl_ObjType v1TestListType = {
     NULL, NULL, NULL, NULL, NULL, NULL
 };
 
-
-static
-void
+static void
 HugeUpdateString(
     TCL_UNUSED(Tcl_Obj *))
 {
@@ -1109,8 +1113,7 @@ static const Tcl_ObjType hugeType = {
     NULL,			/* setFromAnyProc */
     TCL_OBJTYPE_V0
 };
-
-
+
 static int
 TestobjCmd(
     TCL_UNUSED(void *),
@@ -1648,7 +1651,7 @@ TeststringobjCmd(
  *------------------------------------------------------------------------
  */
 static int
-TestbigdataCmd (
+TestbigdataCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
@@ -1759,7 +1762,7 @@ TestbigdataCmd (
     }
     return TCL_OK;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1869,7 +1872,7 @@ CheckIfVarUnset(
 }
 
 static int
-TestisemptyCmd (
+TestisemptyCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
@@ -1882,16 +1885,16 @@ TestisemptyCmd (
     }
     result = Tcl_NewIntObj(Tcl_IsEmpty(objv[1]));
     if (!objv[1]->bytes) {
-    Tcl_AppendToObj(result, " pure", TCL_INDEX_NONE);
+	Tcl_AppendToObj(result, " pure", TCL_INDEX_NONE);
     }
     if (objv[1]->typePtr) {
-    Tcl_AppendToObj(result, " ", TCL_INDEX_NONE);
-    Tcl_AppendToObj(result, objv[1]->typePtr->name, TCL_INDEX_NONE);
+	Tcl_AppendToObj(result, " ", TCL_INDEX_NONE);
+	Tcl_AppendToObj(result, objv[1]->typePtr->name, TCL_INDEX_NONE);
     }
     Tcl_SetObjResult(interp, result);
     return TCL_OK;
 }
-
+
 /*
  * Local Variables:
  * mode: c

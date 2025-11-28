@@ -96,7 +96,7 @@ typedef struct {
 
 static Tcl_ThreadDataKey dataKey;
 
-static void             TclThreadFinalizeContLines(void *clientData);
+static void		TclThreadFinalizeContLines(void *clientData);
 static ThreadSpecificData *TclGetContLineTable(void);
 
 /*
