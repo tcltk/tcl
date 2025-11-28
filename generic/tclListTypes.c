@@ -377,19 +377,19 @@ static Tcl_ObjTypeInOperatorProc LreverseTypeInOper;
  * modification.
  */
 static const Tcl_ObjType lreverseType = {
-    "reversedList",                     /* name */
-    LreverseFreeIntrep,                 /* freeIntRepProc */
-    LreverseDupIntrep,                  /* dupIntRepProc */
-    TclAbstractListUpdateString,        /* updateStringProc */
-    NULL,                               /* setFromAnyProc */
-    TCL_OBJTYPE_V2(LreverseTypeLength,  /* lengthProc */
-		   LreverseTypeIndex,   /* indexProc */
-		   NULL,                /* sliceProc */
-		   LreverseTypeReverse, /* reverseProc */
-		   NULL,                /* getElementsProc */
-		   NULL,                /* setElementProc - FUTURES */
-		   NULL,                /* replaceProc - FUTURES */
-		   LreverseTypeInOper)  /* inOperProc */
+    "reversedList",			// name
+    LreverseFreeIntrep,			// freeIntRepProc
+    LreverseDupIntrep,			// dupIntRepProc
+    TclAbstractListUpdateString,	// updateStringProc
+    NULL,				// setFromAnyProc
+    TCL_OBJTYPE_V2(LreverseTypeLength,	// lengthProc
+		   LreverseTypeIndex,	// indexProc
+		   NULL,		// sliceProc
+		   LreverseTypeReverse,	// reverseProc
+		   NULL,		// getElementsProc
+		   NULL,		// setElementProc - FUTURES
+		   NULL,		// replaceProc - FUTURES
+		   LreverseTypeInOper)	// inOperProc
 };
 
 static void
@@ -584,19 +584,19 @@ static Tcl_ObjTypeInOperatorProc LrepeatTypeInOper;
  * may be shared must be checked before modification.
  */
 static const Tcl_ObjType lrepeatType = {
-    "repeatedList",                   /* name */
-    LrepeatFreeIntrep,                /* freeIntRepProc */
-    LrepeatDupIntrep,                 /* dupIntRepProc */
-    TclAbstractListUpdateString,      /* updateStringProc */
-    NULL,                             /* setFromAnyProc */
-    TCL_OBJTYPE_V2(LrepeatTypeLength, /* lengthProc */
-		   LrepeatTypeIndex,  /* indexProc */
-		   NULL,              /* sliceProc */
-		   NULL,              /* Must be NULL - see above comment */
-		   NULL,              /* getElementsProc */
-		   NULL,              /* Must be NULL - see above comment */
-		   NULL,              /* Must be NULL - see above comment */
-		   LrepeatTypeInOper) /* inOperProc */
+    "repeatedList",			// name
+    LrepeatFreeIntrep,			// freeIntRepProc
+    LrepeatDupIntrep,			// dupIntRepProc
+    TclAbstractListUpdateString,	// updateStringProc
+    NULL,				// setFromAnyProc
+    TCL_OBJTYPE_V2(LrepeatTypeLength,	// lengthProc
+		   LrepeatTypeIndex,	// indexProc
+		   NULL,		// sliceProc
+		   NULL,		// Must be NULL - see above comment
+		   NULL,		// getElementsProc
+		   NULL,		// Must be NULL - see above comment
+		   NULL,		// Must be NULL - see above comment
+		   LrepeatTypeInOper)	// inOperProc
 };
 
 static void
@@ -796,19 +796,19 @@ static Tcl_ObjTypeSliceProc LrangeSlice;
  * may be shared and must be checked before modification.
  */
 static const Tcl_ObjType lrangeType = {
-    "rangeList",                     /* name */
-    LrangeFreeIntrep,                /* freeIntRepProc */
-    LrangeDupIntrep,                 /* dupIntRepProc */
-    TclAbstractListUpdateString,     /* updateStringProc */
-    NULL,                            /* setFromAnyProc */
-    TCL_OBJTYPE_V2(LrangeTypeLength, /* lengthProc */
-		   LrangeTypeIndex,  /* indexProc */
-		   LrangeSlice,      /* sliceProc */
-		   NULL,             /* reverseProc, see above comment */
-		   NULL,             /* getElementsProc */
-		   NULL,             /* setElementProc, see above comment */
-		   NULL,             /* replaceProc, see above comment */
-		   NULL)             /* inOperProc */
+    "rangeList",			// name
+    LrangeFreeIntrep,			// freeIntRepProc
+    LrangeDupIntrep,			// dupIntRepProc
+    TclAbstractListUpdateString,	// updateStringProc
+    NULL,				// setFromAnyProc
+    TCL_OBJTYPE_V2(LrangeTypeLength,	// lengthProc
+		   LrangeTypeIndex,	// indexProc
+		   LrangeSlice,		// sliceProc
+		   NULL,		// reverseProc, see above comment
+		   NULL,		// getElementsProc
+		   NULL,		// setElementProc, see above comment
+		   NULL,		// replaceProc, see above comment
+		   NULL)		// inOperProc
 };
 
 static inline int
