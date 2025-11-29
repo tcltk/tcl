@@ -3091,6 +3091,8 @@ void EqParsePrefix(
 {
     unsigned char inLex = in->lex;
     Tcl_Obj *inLit = in->lit;
+    Tcl_LVTIndex localIndex;
+
     switch (inLex) {
 	// Number?
 	case NUMBER:
@@ -3133,7 +3135,18 @@ void EqParsePrefix(
 	        EqParseFuncArgs(in, envPtr);
 	        return;
 	    }
-	    // Variable reference?
+	    // Local variable reference?
+	    if (EnvHasLVT(envPtr)) {
+		Tcl_Size nameLen;
+		const char *name = TclGetStringFromObj(inLit, &nameLen);
+		localIndex = TclFindCompiledLocal(name, nameLen, 0, envPtr);
+		if (localIndex != TCL_INDEX_NONE) {
+		    //printf("EqParsePrefix COMPILING LOCAL VARIABLE %ld\n", localIndex);
+		    OP4(LOAD_SCALAR, localIndex);
+		    return;
+		}
+	    }
+	    // Other variable reference.
 	    PUSH_OBJ(inLit);
 	    OP(LOAD_STK);
 	    return;
@@ -3143,8 +3156,8 @@ void EqParsePrefix(
 	    const Tcl_ObjInternalRep *irPtr;
 	    irPtr = TclFetchInternalRep(inLit, &eqPresubType);
 	    assert(irPtr != NULL);
-	    Tcl_LVTIndex tmpIndex = irPtr->wideValue;
-	    OP4(LOAD_SCALAR, tmpIndex);
+	    localIndex = irPtr->wideValue;
+	    OP4(LOAD_SCALAR, localIndex);
 	    EqNextLex(in);
 	    return;
     }
