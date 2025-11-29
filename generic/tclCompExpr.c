@@ -2865,6 +2865,17 @@ TclNoIdentOpCmd(
 
 // Compilation support for the Equals '=' command.
 
+// Custom Object Type for compiling an expression with pre-substitutions.
+// The InternalRep will hold the Tcl_LVTIndex of the runtime value.
+static const Tcl_ObjType eqPresubType = {
+    "presub",			/* name */
+    NULL,			/* freeIntRepProc */
+    NULL,			/* dupIntRepProc */
+    NULL,			/* updateStringProc */
+    NULL,			/* setFromAnyProc */
+    TCL_OBJTYPE_V0
+};
+
 // EqInput holds the current state of scanning the input expression.
 typedef struct EqInput {
     int argc;			/* Argument count. */
@@ -2906,6 +2917,16 @@ void EqNextLex(
 	    TclHasInternalRep(thisArg, &tclDoubleType)
         ) ) {
 	    in->lex = NUMBER;
+	    in->lit = in->argv[in->argpos++];
+	    return;
+        }
+	// Check if we are compiling but hit a value needing pre-substitution.
+        if (in->charpos==0 && (
+	    TclHasInternalRep(thisArg, &eqPresubType)
+        ) ) {
+	    // Not necessarily a script but some kind of value we need to
+	    // generate code to get at runtime.
+	    in->lex = SCRIPT;
 	    in->lit = in->argv[in->argpos++];
 	    return;
         }
@@ -3116,6 +3137,16 @@ void EqParsePrefix(
 	    PUSH_OBJ(inLit);
 	    OP(LOAD_STK);
 	    return;
+
+	// Numeric value substituted at runtime?
+	case SCRIPT:
+	    const Tcl_ObjInternalRep *irPtr;
+	    irPtr = TclFetchInternalRep(inLit, &eqPresubType);
+	    assert(irPtr != NULL);
+	    Tcl_LVTIndex tmpIndex = irPtr->wideValue;
+	    OP4(LOAD_SCALAR, tmpIndex);
+	    EqNextLex(in);
+	    return;
     }
     EqParseSetError(in, "start of expression");
 }
@@ -3260,8 +3291,6 @@ Tcl_EqualsObjCmd(
  * TclCompileEqualsCmd --
  *
  *	Procedure called to compile the "=" command.
- *	Only handles the case where all arguments are literals with no
- *	pre-substitutions.
  *
  * Results:
  *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
@@ -3276,44 +3305,120 @@ Tcl_EqualsObjCmd(
 
 int
 TclCompileEqualsCmd(
-    TCL_UNUSED(Tcl_Interp *),
+    Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
     TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
-    //printf("TclCompileEqualsCmd CALLED\n");
+    DefineLineInformation;
     Tcl_Obj *objPtr, *listObj, **objs;
     Tcl_Size len, i, numWords = parsePtr->numWords;
     Tcl_Token *tokenPtr;
+    Tcl_Size depth = TclGetStackDepth(envPtr);
+    //printf("TclCompileEqualsCmd CALLED, numWords=%ld\n", numWords);
 
     if (numWords == 1 || numWords > UINT_MAX) {
 	return TCL_ERROR;
     }
 
-    // Following the example of TclCompileConcatCmd here...
     TclNewObj(listObj);
+    // Use this to allocate local variables for pre-substituted values:
+    Tcl_LVTIndex presubIndex = TCL_INDEX_NONE;
+    // Local variable to track if all pre-substitutions produce numbers:
+    Tcl_LVTIndex allNumericIndex = TCL_INDEX_NONE;
+
+    // Following the example of TclCompileConcatCmd here...
     for (i = 1, tokenPtr = parsePtr->tokenPtr; i < numWords; i++) {
 	tokenPtr = TokenAfter(tokenPtr);
 	TclNewObj(objPtr);
 	if (!TclWordKnownAtCompileTime(tokenPtr, objPtr)) {
-	    // Pre-substitution detected, give up on compilation
-	    Tcl_BounceRefCount(objPtr);
-	    Tcl_BounceRefCount(listObj);
-	    return TCL_ERROR;
+	    // Pre-substitution detected, we need a Local Variable Table
+	    // to handle this case.
+	    if (!EnvHasLVT(envPtr)) {
+		//printf("Presub and no LVT, abandoning compilation.\n");
+		Tcl_BounceRefCount(objPtr);
+		Tcl_BounceRefCount(listObj);
+		return TCL_ERROR;
+	    }
+	    //printf("Presub and have LVT, continuing compilation.\n");
+
+	    // Generate code to get the value  and check that it's numeric.
+	    presubIndex = AnonymousLocal(envPtr);
+	    Tcl_ObjInternalRep ir;
+	    ir.wideValue = presubIndex;
+	    Tcl_StoreInternalRep(objPtr, &eqPresubType, &ir);
+
+	    PUSH_TOKEN(tokenPtr, i);
+	    OP4(STORE_SCALAR, presubIndex);
+	    OP(NUM_TYPE);
+	    if (allNumericIndex == TCL_INDEX_NONE) {
+		allNumericIndex = AnonymousLocal(envPtr);
+	    } else {
+		OP4(LOAD_SCALAR, allNumericIndex);
+		OP(BITAND);
+	    }
+	    OP4(STORE_SCALAR, allNumericIndex);
+	    OP(POP);
 	}
 	(void) Tcl_ListObjAppendElement(NULL, listObj, objPtr);
     }
+    Tcl_BytecodeLabel noncompiled, end;
+    if (allNumericIndex != TCL_INDEX_NONE) {
+	// If we found any pre-substituted values which are non-numeric,
+	// skip to the non-compiled implementation.
+	OP4(LOAD_SCALAR, allNumericIndex);
+	FWDJUMP(JUMP_FALSE, noncompiled);
+	//printf("TclCompileEqualsCmd COMPILING PRE-SUBSTITUTION CHECK\n");
+    }
 
+    // Compile the expression, asssuming that any pre-substitutions
+    // will give numeric values.
     TclListObjGetElements(NULL, listObj, &len, &objs);
-    //printf("TclCompileEqualsCmd COMPILABLE, %ld args\n", len);
+    //printf("TclCompileEqualsCmd SIMPLE COMPILATION, %ld args\n", len);
     EqInput input = {len, objs, 0, 0, 0, 0, 0, 0, 0};
     EqNextLex(&input);
     EqParse(&input,envPtr,0);
+    if (input.errorFound) {
+	Tcl_BounceRefCount(listObj);
+	return TCL_ERROR;
+    }
+    TclCheckStackDepth(depth+1, envPtr);
+    // If there are no pre-substitutions we are done.
+    if (allNumericIndex == TCL_INDEX_NONE) {
+	Tcl_BounceRefCount(listObj);
+	return TCL_OK;
+    }
+    FWDJUMP(JUMP, end);
+    FWDLABEL(noncompiled);
+    TclSetStackDepth(depth, envPtr);
+
+    // The expression has pre-substitutions. If any of these turn out
+    // to give non-numeric values at runtime, we will fall back to the
+    // uncompiled implementation, so we set up to call that here.
+    // We push the command name, followed by all the arguments.
+    // Note that pre-substituted arguments will have been computed
+    // before reaching this code, we should not compute them again
+    // in case that has side-effects.
+    PUSH_OBJ(Tcl_NewStringObj("=", -1));
+
+    for (i = 0; i < len; i++) {
+	objPtr = objs[i];
+        if (TclHasInternalRep(objPtr, &eqPresubType)) {
+	    // Load the pre-substituted value.
+	    const Tcl_ObjInternalRep *irPtr;
+	    irPtr = TclFetchInternalRep(objPtr, &eqPresubType);
+	    assert(irPtr != NULL);
+	    presubIndex = irPtr->wideValue;
+	    OP4(LOAD_SCALAR, presubIndex);
+	} else {
+	    PUSH_OBJ(objPtr);
+	}
+    }
+    INVOKE4(INVOKE_STK, numWords);
+    FWDLABEL(end);
+
     Tcl_BounceRefCount(listObj);
-
-    if (input.errorFound) return TCL_ERROR;
-
     return TCL_OK;
 }
 
