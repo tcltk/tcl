@@ -159,8 +159,8 @@ static const Tcl_ObjType methodNameType = {
     "TclOO method name",
     FreeMethodNameRep,
     DupMethodNameRep,
-    NULL,
-    NULL,
+    NULL,			// UpdateString
+    NULL,			// SetFromAny
     TCL_OBJTYPE_V0
 };
 
