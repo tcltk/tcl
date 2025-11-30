@@ -74,6 +74,23 @@ Internally the same code is used and so should always give the same results.
 The string operators \fBeq ne in ni lt le gt ge\fR are not available.
 .SH "SAFETY AND PERFORMANCE CONSIDERATIONS"
 .PP
+In general, it is both safer and more efficient to write all variables used in
+\fB=\fR \fIwithout $\fR.  Writing variables with \fB$\fR exposes
+the program to similar issues of double-substitution to writing unbraced
+expressions with \fBexpr\fR.  This is particularly risky if calculations are
+done with unverified user input.  E.g. if a user can enter "::admin_password"
+where a number was expected and this is stored in variable input and then used as
+.CS
+[= $input/100]
+.CE
+this will try to use the value of ::admin_password as a
+variable name and generate an error message exposing that value. However if the
+calculation is written as
+.CS
+[= input/100]
+.CE
+it will just give an error saying that "::admin_password" is not a valid number.
+.PP
 This command will not substitute array elements without \fB$\fR as these
 cannot be distinguished from function calls.  If an expression needs to
 use an array element, that can be written with \fB$\fR and it will then
