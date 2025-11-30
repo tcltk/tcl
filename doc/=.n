@@ -1,0 +1,130 @@
+'\"
+'\" Copyright (c) 2025 Colin G. Macleod.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH = n 9.1 Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+= \- Evaluate a concise form of numerical and/or logical expression
+.SH SYNOPSIS
+\fB= \fIarg \fR?\fIarg arg ...\fR?
+.BE
+.SH DESCRIPTION
+.PP
+This command takes the \fIarg\fRs given as a numerical and/or logical expression
+and evaluates that expression, returning its value.
+The \fB=\fR command can be used as a concise alternative to \fBexpr\fR when the
+expression does not involve string values.
+For example, if variable \fIa\fR has value 6, the command
+.PP
+.CS
+\fB=\fR 8.2 + a
+.CE
+.PP
+returns 14.2.
+.PP
+An expression consists of a combination of operands, operators, parentheses and
+commas, possibly with whitespace between any of these elements, which is
+ignored.  Operands are always interpreted as numeric values.
+.SS OPERANDS
+.PP
+Each operand has one of the following forms:
+.RS
+.TP
+A literal \fBnumeric value\fR
+.
+Any of the forms accepted by \fBstring is integer\fR or \fBstring is double\fR.
+This is compatible with \fBexpr\fR.
+.TP
+A \fBvariable\fR
+.
+Any sequence of characters which starts with an alphabetic character and
+continues with alphanumeric characters, underscores or colons and \fIdoes not\fR
+terminate with \fB(\fR will be treated as a variable name and its value
+will be substituted into the expression.
+It is an error for that value to be non-numeric.
+This is \fInot\fR compatible with \fBexpr\fR, which requires \fB$\fR in
+front of each variable name.
+.TP
+A function call.
+.
+Any sequence of characters which starts with an alphabetic character and
+continues with alphanumeric characters, underscores or colons and \fIdoes\fR
+terminate with \fB(\fR will be treated as a function call, and should be
+followed by any arguments it takes, separated by commas and terminated by \fB)\fR.
+This is a mathematical function such as \fBsin(x)\fR, whose arguments have any of
+the above forms for operands.
+All the standard functions listed at \fBmathfunc\fR(n) can be used,
+and new functions can be defined as described in \fBexpr\fR(n).
+This is compatible with \fBexpr\fR.
+.RE
+.PP
+Because \fB=\fR does not perform the same substitutions as \fBTcl\fR,
+it is not necessary to enclose expressions in braces to avoid double substitution.
+.PP
+.SS OPERATORS
+.PP
+Any of the numeric and logical operators described in \fBexpr\fR(n) can be used,
+with the same precedence and associativity. 
+Internally the same code is used and so should always give the same results.
+The string operators \fBeq ne in ni lt le gt ge\fR are not available.
+.SH "SAFETY AND PERFORMANCE CONSIDERATIONS"
+.PP
+This command will not substitute array elements without \fB$\fR as these
+cannot be distinguished from function calls.  If an expression needs to
+use an array element, that can be written with \fB$\fR and it will then
+be substituted by \fBTcl\fR before the \fB=\fR command runs, assuming
+the arguments are not braced.
+\fBBeware\fR, the array element's value should be numeric;
+if it is alphanumeric it will be treated as a variable name by \fB=\fR.
+More efficient code can be generated if such an array reference is
+written as a distinct argument, i.e. separated by space from the rest
+of the expression, e.g.
+.CS
+set x [= 2* $foo(bar) -1]
+.CE
+rather than
+.CS
+set x [= 2*$foo(bar)-1]
+.CE
+.PP
+Similarly, the \fB=\fR command will not do \fB[]\fR command substitutions
+internally as \fBexpr\fR does, but these can be done before \fB=\fR runs.
+The same caveats apply: the result should be numeric, and writing the
+\fB[]\fR substitution as a separate argument will allow more efficient
+execution.
+.SH EXAMPLES
+.PP
+Calculate distance in 2-D coordinates:
+.PP
+.CS
+set r [\fB=\fR sqrt(x**2 + y**2)]
+.CE
+.PP
+Take reciprocal of x, guarding against division by zero:
+.PP
+.CS
+set rx [\fB=\fR x==0 ? 0 : 1.0/x]
+.CE
+.PP
+Calculate arguments for a \fBTk\fR image command:
+.PP
+.CS
+my_img put $shade -to [\fB=\fR left+i] $top [\fB=\fR left+i+1] $bottom
+.CE
+.SH "SEE ALSO"
+expr(n), mathfunc(n), mathop(n), Tcl(n)
+.SH KEYWORDS
+arithmetic, boolean, compare, expression, integer value
+.SH COPYRIGHT
+.nf
+Copyright \(co 2025 Colin G. Macleod.
+.fi
+'\" Local Variables:
+'\" mode: nroff
+'\" fill-column: 78
+'\" End:

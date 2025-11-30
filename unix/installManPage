@@ -121,6 +121,9 @@ for n in $Specials; do
 	Names="$n $Names"
     fi
 done
+if [ "$Name" = "=" ] ; then
+    Names="$Name"
+fi
 
 First=""
 for Target in $Names; do
