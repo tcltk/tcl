@@ -37,11 +37,11 @@ static void		UpdateStringOfInstName(Tcl_Obj *objPtr);
  */
 
 static const Tcl_ObjType instNameType = {
-    "instname",			/* name */
-    NULL,			/* freeIntRepProc */
-    NULL,			/* dupIntRepProc */
-    UpdateStringOfInstName,	/* updateStringProc */
-    NULL,			/* setFromAnyProc */
+    "instname",
+    NULL,			// FreeIntRep
+    NULL,			// DupIntRep
+    UpdateStringOfInstName,
+    NULL,			// SetFromAny
     TCL_OBJTYPE_V0
 };
 

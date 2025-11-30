@@ -142,10 +142,10 @@ typedef struct Dict {
 
 const Tcl_ObjType tclDictType = {
     "dict",
-    FreeDictInternalRep,	/* freeIntRepProc */
-    DupDictInternalRep,		/* dupIntRepProc */
-    UpdateStringOfDict,		/* updateStringProc */
-    SetDictFromAny,		/* setFromAnyProc */
+    FreeDictInternalRep,
+    DupDictInternalRep,
+    UpdateStringOfDict,
+    SetDictFromAny,
     TCL_OBJTYPE_V0
 };
 
