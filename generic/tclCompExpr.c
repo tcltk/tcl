@@ -2970,6 +2970,10 @@ void EqNextLex(
 	case STR_GEQ:
 	    in->lex = BAREWORD;
 	    in->lit = Tcl_NewStringObj(in->lastStart, scanned);
+	    break;
+	case SCRIPT:
+	    in->lex = INVALID;
+	    in->lit = Tcl_NewStringObj(in->lastStart, scanned);
     }
     // Collect the whole of a namespaced name.
     if (in->lex == BAREWORD) {
@@ -3063,21 +3067,29 @@ void EqParse(
 	// so exceptionally we continue for repeated exponentiation.
 	if (inPrec == minPrec && inLex != EXPON) return;
 
-	EqNextLex(in);
 	// && || ?: need special handling for lazy evaluation
 	switch (inLex) {
 	    case AND:
+		EqNextLex(in);
 		EqParseAnd(in, envPtr);
 		break;
 	    case OR:
+		EqNextLex(in);
 		EqParseOr(in, envPtr);
 		break;
 	    case QUESTION:
+		EqNextLex(in);
 		EqParseTernary(in, envPtr);
 		break;
 	    default:
-		EqParse(in, envPtr, inPrec);
-		TclEmitOpcode(instruction[inLex], envPtr);
+		if (instruction[inLex]) {
+		    EqNextLex(in);
+		    EqParse(in, envPtr, inPrec);
+		    TclEmitOpcode(instruction[inLex], envPtr);
+		} else {
+		    EqParseSetError(in, "operator");
+		    return;
+		}
 
 	}
     }
@@ -3273,7 +3285,7 @@ Tcl_EqualsObjCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "arg ?arg ...?");
 	return TCL_ERROR;
     }
-    EqInput input = {objc, objv, 1, 0, 0, 0, 0, 0, 0};
+    EqInput input = {objc, objv, 1, 0, 0, 0, "", 0, 0};
     CompileEnv compEnv;		/* Compilation environment structure */
     CompileEnv *envPtr = &compEnv;
     TclInitCompileEnv(interp, envPtr, NULL, 0, NULL, 0);
@@ -3389,7 +3401,7 @@ TclCompileEqualsCmd(
     // will give numeric values.
     TclListObjGetElements(NULL, listObj, &len, &objs);
     //printf("TclCompileEqualsCmd SIMPLE COMPILATION, %ld args\n", len);
-    EqInput input = {len, objs, 0, 0, 0, 0, 0, 0, 0};
+    EqInput input = {len, objs, 0, 0, 0, 0, "", 0, 0};
     EqNextLex(&input);
     EqParse(&input,envPtr,0);
     if (input.errorFound) {
