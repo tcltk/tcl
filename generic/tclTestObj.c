@@ -1085,14 +1085,14 @@ V1TestListObjIndex(
 }
 
 static const Tcl_ObjType v1TestListType = {
-    "testlist",			/* name */
-    NULL,			/* freeIntRepProc */
-    NULL,			/* dupIntRepProc */
-    NULL,			/* updateStringProc */
-    NULL,			/* setFromAnyProc */
-    offsetof(Tcl_ObjType, indexProc), /* This is a V1 objType, which doesn't have an indexProc */
-    V1TestListObjLength,	/* always return 100, doesn't really matter */
-    V1TestListObjIndex,		/* should never be accessed, because this objType = V1*/
+    "testlist",
+    NULL,			// FreeIntRep
+    NULL,			// DupIntRep
+    NULL,			// UpdateString
+    NULL,			// SetFromAny
+    offsetof(Tcl_ObjType, indexProc), // This is a V1 objType, which doesn't have an indexProc
+    V1TestListObjLength,	// always returns 100, doesn't really matter
+    V1TestListObjIndex,		// should never be accessed, because this objType = V1
     NULL, NULL, NULL, NULL, NULL, NULL
 };
 
@@ -1106,11 +1106,11 @@ HugeUpdateString(
 }
 
 static const Tcl_ObjType hugeType = {
-    "huge",			/* name */
-    NULL,			/* freeIntRepProc */
-    NULL,			/* dupIntRepProc */
-    HugeUpdateString,		/* updateStringProc */
-    NULL,			/* setFromAnyProc */
+    "huge",
+    NULL,			// FreeIntRep
+    NULL,			// DupIntRep
+    HugeUpdateString,
+    NULL,			// SetFromAny
     TCL_OBJTYPE_V0
 };
 

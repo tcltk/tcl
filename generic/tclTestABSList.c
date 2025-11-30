@@ -55,176 +55,176 @@ static const Tcl_ObjType lstringTypes[11] = {
 	freeRep,
 	DupLStringRep,
 	UpdateStringOfLString,
-	NULL,
+	NULL,			// SetFromAny
 	TCL_OBJTYPE_V2(
-	    my_LStringObjLength,   /* Length */
-	    my_LStringObjIndex,    /* Index */
-	    my_LStringObjRange,    /* Slice */
-	    my_LStringObjReverse,  /* Reverse */
-	    my_LStringGetElements, /* GetElements */
-	    my_LStringObjSetElem,  /* SetElement */
-	    my_LStringReplace,     /* Replace */
-	    NULL)		   /* "in" operator */
+	    my_LStringObjLength,
+	    my_LStringObjIndex,
+	    my_LStringObjRange,
+	    my_LStringObjReverse,
+	    my_LStringGetElements,
+	    my_LStringObjSetElem,
+	    my_LStringReplace,
+	    NULL)		// "in" operator
 	},
     {/*1*/
 	"lstring",
 	freeRep,
 	DupLStringRep,
 	UpdateStringOfLString,
-	NULL,
+	NULL,			// SetFromAny
 	TCL_OBJTYPE_V2(
-	    NULL,   /* Length */
-	    my_LStringObjIndex,    /* Index */
-	    my_LStringObjRange,    /* Slice */
-	    my_LStringObjReverse,  /* Reverse */
-	    my_LStringGetElements, /* GetElements */
-	    my_LStringObjSetElem,  /* SetElement */
-	    my_LStringReplace,     /* Replace */
-	    NULL)		   /* "in" operator */
+	    NULL,		// Length
+	    my_LStringObjIndex,
+	    my_LStringObjRange,
+	    my_LStringObjReverse,
+	    my_LStringGetElements,
+	    my_LStringObjSetElem,
+	    my_LStringReplace,
+	    NULL)		// "in" operator
     },
     {/*2*/
 	"lstring",
 	freeRep,
 	DupLStringRep,
 	UpdateStringOfLString,
-	NULL,
+	NULL,			// SetFromAny
 	TCL_OBJTYPE_V2(
-	    my_LStringObjLength,   /* Length */
-	    NULL,		   /* Index */
-	    my_LStringObjRange,    /* Slice */
-	    my_LStringObjReverse,  /* Reverse */
-	    my_LStringGetElements, /* GetElements */
-	    my_LStringObjSetElem,  /* SetElement */
-	    my_LStringReplace,     /* Replace */
-	    NULL)		   /* "in" operator */
+	    my_LStringObjLength,
+	    NULL,		// Index
+	    my_LStringObjRange,
+	    my_LStringObjReverse,
+	    my_LStringGetElements,
+	    my_LStringObjSetElem,
+	    my_LStringReplace,
+	    NULL)		// "in" operator
     },
     {/*3*/
 	"lstring",
 	freeRep,
 	DupLStringRep,
 	UpdateStringOfLString,
-	NULL,
+	NULL,			// SetFromAny
 	TCL_OBJTYPE_V2(
-	    my_LStringObjLength,   /* Length */
-	    my_LStringObjIndex,    /* Index */
-	    NULL,		   /* Slice */
-	    my_LStringObjReverse,  /* Reverse */
-	    my_LStringGetElements, /* GetElements */
-	    my_LStringObjSetElem,  /* SetElement */
-	    my_LStringReplace,     /* Replace */
-	    NULL)		   /* "in" operator */
+	    my_LStringObjLength,
+	    my_LStringObjIndex,
+	    NULL,		// Slice
+	    my_LStringObjReverse,
+	    my_LStringGetElements,
+	    my_LStringObjSetElem,
+	    my_LStringReplace,
+	    NULL)		// "in" operator
     },
     {/*4*/
 	"lstring",
 	freeRep,
 	DupLStringRep,
 	UpdateStringOfLString,
-	NULL,
+	NULL,			// SetFromAny
 	TCL_OBJTYPE_V2(
-	    my_LStringObjLength,   /* Length */
-	    my_LStringObjIndex,    /* Index */
-	    my_LStringObjRange,    /* Slice */
-	    NULL,		   /* Reverse */
-	    my_LStringGetElements, /* GetElements */
-	    my_LStringObjSetElem,  /* SetElement */
-	    my_LStringReplace,     /* Replace */
-	    NULL)		   /* "in" operator */
+	    my_LStringObjLength,
+	    my_LStringObjIndex,
+	    my_LStringObjRange,
+	    NULL,		// Reverse
+	    my_LStringGetElements,
+	    my_LStringObjSetElem,
+	    my_LStringReplace,
+	    NULL)		// "in" operator
     },
     {/*5*/
 	"lstring",
 	freeRep,
 	DupLStringRep,
 	UpdateStringOfLString,
-	NULL,
+	NULL,			// SetFromAny
 	TCL_OBJTYPE_V2(
-	    my_LStringObjLength,   /* Length */
-	    my_LStringObjIndex,    /* Index */
-	    my_LStringObjRange,    /* Slice */
-	    my_LStringObjReverse,  /* Reverse */
-	    NULL,		   /* GetElements */
-	    my_LStringObjSetElem,  /* SetElement */
-	    my_LStringReplace,     /* Replace */
-	    NULL)		   /* "in" operator */
+	    my_LStringObjLength,
+	    my_LStringObjIndex,
+	    my_LStringObjRange,
+	    my_LStringObjReverse,
+	    NULL,		// GetElements
+	    my_LStringObjSetElem,
+	    my_LStringReplace,
+	    NULL)		// "in" operator
     },
     {/*6*/
 	"lstring",
 	freeRep,
 	DupLStringRep,
 	UpdateStringOfLString,
-	NULL,
+	NULL,			// SetFromAny
 	TCL_OBJTYPE_V2(
-	    my_LStringObjLength,   /* Length */
-	    my_LStringObjIndex,    /* Index */
-	    my_LStringObjRange,    /* Slice */
-	    my_LStringObjReverse,  /* Reverse */
-	    my_LStringGetElements, /* GetElements */
-	    NULL,		   /* SetElement */
-	    my_LStringReplace,     /* Replace */
-	    NULL)		   /* "in" operator */
+	    my_LStringObjLength,
+	    my_LStringObjIndex,
+	    my_LStringObjRange,
+	    my_LStringObjReverse,
+	    my_LStringGetElements,
+	    NULL,		// SetElement
+	    my_LStringReplace,
+	    NULL)		// "in" operator
     },
     {/*7*/
 	"lstring",
 	freeRep,
 	DupLStringRep,
 	UpdateStringOfLString,
-	NULL,
+	NULL,			// SetFromAny
 	TCL_OBJTYPE_V2(
-	    my_LStringObjLength,   /* Length */
-	    my_LStringObjIndex,    /* Index */
-	    my_LStringObjRange,    /* Slice */
-	    my_LStringObjReverse,  /* Reverse */
-	    my_LStringGetElements, /* GetElements */
-	    my_LStringObjSetElem,  /* SetElement */
-	    NULL,		   /* Replace */
-	    NULL)		   /* "in" operator */
+	    my_LStringObjLength,
+	    my_LStringObjIndex,
+	    my_LStringObjRange,
+	    my_LStringObjReverse,
+	    my_LStringGetElements,
+	    my_LStringObjSetElem,
+	    NULL,		// Replace
+	    NULL)		// "in" operator
     },
     {/*8*/
 	"lstring",
 	freeRep,
 	DupLStringRep,
 	UpdateStringOfLString,
-	NULL,
+	NULL,			// SetFromAny
 	TCL_OBJTYPE_V2(
-	    my_LStringObjLength,   /* Length */
-	    my_LStringObjIndex,    /* Index */
-	    my_LStringObjRange,    /* Slice */
-	    my_LStringObjReverse,  /* Reverse */
-	    my_LStringGetElements, /* GetElements */
-	    my_LStringObjSetElem,  /* SetElement */
-	    my_LStringReplace,     /* Replace */
-	    NULL)		   /* "in" operator */
+	    my_LStringObjLength,
+	    my_LStringObjIndex,
+	    my_LStringObjRange,
+	    my_LStringObjReverse,
+	    my_LStringGetElements,
+	    my_LStringObjSetElem,
+	    my_LStringReplace,
+	    NULL)		// "in" operator
     },
     {/*9*/
 	"lstring",
 	freeRep,
 	DupLStringRep,
 	UpdateStringOfLString,
-	NULL,
+	NULL,			// SetFromAny
 	TCL_OBJTYPE_V2(
-	    my_LStringObjLength,   /* Length */
-	    my_LStringObjIndex,    /* Index */
-	    my_LStringObjRange,    /* Slice */
-	    my_LStringObjReverse,  /* Reverse */
-	    my_LStringGetElements, /* GetElements */
-	    my_LStringObjSetElem,  /* SetElement */
-	    my_LStringReplace,     /* Replace */
-	    NULL)		   /* "in" operator */
+	    my_LStringObjLength,
+	    my_LStringObjIndex,
+	    my_LStringObjRange,
+	    my_LStringObjReverse,
+	    my_LStringGetElements,
+	    my_LStringObjSetElem,
+	    my_LStringReplace,
+	    NULL)		// "in" operator
     },
     {/*10*/
 	"lstring",
 	freeRep,
 	DupLStringRep,
 	UpdateStringOfLString,
-	NULL,
+	NULL,			// SetFromAny
 	TCL_OBJTYPE_V2(
-	    my_LStringObjLength,   /* Length */
-	    my_LStringObjIndex,    /* Index */
-	    my_LStringObjRange,    /* Slice */
-	    my_LStringObjReverse,  /* Reverse */
-	    my_LStringGetElements, /* GetElements */
-	    my_LStringObjSetElem,  /* SetElement */
-	    my_LStringReplace,     /* Replace */
-	    NULL)		   /* "in" operator */
+	    my_LStringObjLength,
+	    my_LStringObjIndex,
+	    my_LStringObjRange,
+	    my_LStringObjReverse,
+	    my_LStringGetElements,
+	    my_LStringObjSetElem,
+	    my_LStringReplace,
+	    NULL)		// "in" operator
     }
 };
 
@@ -1099,16 +1099,16 @@ static const Tcl_ObjType lgenType = {
     FreeLgenInternalRep,
     DupLgenSeriesRep,
     UpdateStringOfLgen,
-    NULL, /* SetFromAnyProc */
+    NULL,			// SetFromAny
     TCL_OBJTYPE_V2(
 	lgenSeriesObjLength,
 	lgenSeriesObjIndex,
-	NULL, /* slice */
-	NULL, /* reverse */
-	NULL, /* get elements */
-	NULL, /* set element */
-	NULL, /* replace */
-	NULL) /* "in" operator */
+	NULL,			// Slice
+	NULL,			// Reverse
+	NULL,			// Get elements
+	NULL,			// Set element
+	NULL,			// Replace
+	NULL)			// "in" operator
 };
 
 /*

@@ -44,11 +44,11 @@ const EnsembleImplMap tclPrefixImplMap[] = {
  */
 
 const Tcl_ObjType tclIndexType = {
-    "index",			/* name */
-    FreeIndex,			/* freeIntRepProc */
-    DupIndex,			/* dupIntRepProc */
-    UpdateStringOfIndex,	/* updateStringProc */
-    NULL,			/* setFromAnyProc */
+    "index",
+    FreeIndex,
+    DupIndex,
+    UpdateStringOfIndex,
+    NULL,			// SetFromAny
     TCL_OBJTYPE_V0
 };
 
@@ -482,7 +482,7 @@ FreeIndex(
 int
 TclSetUpPrefixCmd(
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Command ensemble)	/* The prefix ensemble. */ 
+    Tcl_Command ensemble)	/* The prefix ensemble. */
 {
     return Tcl_Export(interp, (Tcl_Namespace*)((Command *)ensemble)->nsPtr,
 	    "prefix", 0);
