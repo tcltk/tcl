@@ -1727,6 +1727,25 @@ InfoLoadedCmd(
  *----------------------------------------------------------------------
  */
 
+#ifndef LC_ADDRESS
+#   define LC_ADDRESS -1
+#endif
+#ifndef LC_IDENTIFICATION
+#   define LC_IDENTIFICATION -1
+#endif
+#ifndef LC_MEASUREMENT
+#   define LC_MEASUREMENT -1
+#endif
+#ifndef LC_NAME
+#   define LC_NAME -1
+#endif
+#ifndef LC_PAPER
+#   define LC_PAPER -1
+#endif
+#ifndef LC_TELEPHONE
+#   define LC_TELEPHONE -1
+#endif
+
 static int
 InfoLocaleCmd(
     TCL_UNUSED(void *),
@@ -1737,10 +1756,12 @@ InfoLocaleCmd(
     int index = 5;
     const char *locale = NULL;
     static const char *const optionStrings[] = {
-	"-collate", "-ctype", "-monetary",	"-numeric", "-time", NULL
+	"-adress", "-collate", "-ctype", "-identification", "-measurement", "-messages",
+	"-monetary", "-name", "-numeric", "-paper", "-telephone", "-time", NULL
     };
     static const int lcTypes[] = {
-	LC_COLLATE, LC_CTYPE, LC_MONETARY, LC_NUMERIC, LC_TIME, LC_ALL
+	LC_ADDRESS, LC_COLLATE, LC_CTYPE, LC_IDENTIFICATION, LC_MEASUREMENT, LC_MESSAGES,
+	LC_MONETARY, LC_NAME, LC_NUMERIC, LC_PAPER, LC_TELEPHONE, LC_TIME, LC_ALL
     };
 
     if (objc > 3) {
@@ -1761,6 +1782,11 @@ InfoLocaleCmd(
 	    if (Tcl_IsSafe(interp) && (objc > 2)) {
 	    notSafeError:
 		Tcl_AppendResult(interp, "Setting locale not allowed in safe interp", (char *)NULL);
+		return TCL_ERROR;
+	    }
+	    if (lcTypes[index] < 0) {
+		Tcl_AppendResult(interp, "option not supported by this platform", (char *)NULL);
+		return TCL_ERROR;
 	    }
 	    locale = setlocale(lcTypes[index], (objc > 2) ? Tcl_GetString(objv[2]) : NULL);
 	}
