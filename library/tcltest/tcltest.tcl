@@ -1405,12 +1405,8 @@ proc tcltest::DefineConstraintInitializers {} {
 
     # Check for internationalization
     ConstraintInitializer hasIsoLocale {
-	if {[llength [info commands testlocale]] == 0} {
-	    set code 0
-	} else {
-	    set code [string length [SetIso8859_1_Locale]]
-	    RestoreLocale
-	}
+	set code [string length [SetIso8859_1_Locale]]
+	RestoreLocale
 	set code
     }
 
@@ -3400,7 +3396,7 @@ proc tcltest::LeakFiles {old} {
 
 # tcltest::SetIso8859_1_Locale --
 #
-#	used in cmdIL.test, uses testlocale
+#	used in cmdIL.test
 #
 # Arguments:
 #	None.
@@ -3414,16 +3410,14 @@ proc tcltest::LeakFiles {old} {
 proc tcltest::SetIso8859_1_Locale {} {
     variable previousLocale
     variable isoLocale
-    if {[info commands testlocale] != ""} {
-	set previousLocale [testlocale ctype]
-	testlocale ctype $isoLocale
-    }
+    set previousLocale [info locale -ctype]
+    info locale -ctype $isoLocale
     return
 }
 
 # tcltest::RestoreLocale --
 #
-#	used in cmdIL.test, uses testlocale
+#	used in cmdIL.test
 #
 # Arguments:
 #	None.
@@ -3436,9 +3430,7 @@ proc tcltest::SetIso8859_1_Locale {} {
 
 proc tcltest::RestoreLocale {} {
     variable previousLocale
-    if {[info commands testlocale] != ""} {
-	testlocale ctype $previousLocale
-    }
+    info locale -ctype $previousLocale
     return
 }
 
