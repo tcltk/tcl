@@ -87,6 +87,10 @@ test timer-2.1 {Tcl_DeleteTimerHandler procedure} -setup {
     after 200 set done 1
     vwait done
     return $x
+} -cleanup {
+    foreach i [after info] {
+	after cancel $i
+    }
 } -result {100 200}
 
 test timer-2.1.1 {Tcl_DeleteTimerHandler procedure - timer in} -setup {
@@ -103,6 +107,10 @@ test timer-2.1.1 {Tcl_DeleteTimerHandler procedure - timer in} -setup {
     timer in 0 200_000 set done 1
     vwait done
     return $x
+} -cleanup {
+    foreach i [after info] {
+	after cancel $i
+    }
 } -result {100 200}
 
 test timer-2.1.2 {Tcl_DeleteTimerHandler procedure - timer at} -setup {
@@ -120,6 +128,10 @@ test timer-2.1.2 {Tcl_DeleteTimerHandler procedure - timer at} -setup {
     timer at 0 [expr {200_000+$us}] set done 1
     vwait done
     return $x
+} -cleanup {
+    foreach i [after info] {
+	after cancel $i
+    }
 } -result {100 200}
 
 # No tests for Tcl_ServiceTimer or ResetTimer, since it is already tested
@@ -175,6 +187,10 @@ test timer-3.2 {TimerHandlerEventProc procedure: multiple timers} -setup {
     after 400
     update
     lappend result $x
+} -cleanup {
+    foreach i [after info] {
+	after cancel $i
+    }
 } -result {200 {200 600} {200 600 1000}}
 
 test timer-3.2.1 {TimerHandlerEventProc procedure: multiple timers - mixed} -setup {
