@@ -31,17 +31,24 @@ static Tcl_ObjCmdProc PrefixMatchObjCmd;
 static void		PrintUsage(Tcl_Interp *interp,
 			    const Tcl_ArgvInfo *argTable);
 
+const EnsembleImplMap tclPrefixImplMap[] = {
+    {"all",	PrefixAllObjCmd,	TclCompileBasic2ArgCmd,    NULL, NULL, 0},
+    {"longest",	PrefixLongestObjCmd,	TclCompileBasic2ArgCmd,    NULL, NULL, 0},
+    {"match",	PrefixMatchObjCmd,	TclCompileBasicMin2ArgCmd, NULL, NULL, 0},
+    {NULL, NULL, NULL, NULL, NULL, 0}
+};
+
 /*
  * The structure below defines the index Tcl object type by means of functions
  * that can be invoked by generic object code.
  */
 
 const Tcl_ObjType tclIndexType = {
-    "index",			/* name */
-    FreeIndex,			/* freeIntRepProc */
-    DupIndex,			/* dupIntRepProc */
-    UpdateStringOfIndex,	/* updateStringProc */
-    NULL,			/* setFromAnyProc */
+    "index",
+    FreeIndex,
+    DupIndex,
+    UpdateStringOfIndex,
+    NULL,			// SetFromAny
     TCL_OBJTYPE_V0
 };
 
@@ -458,13 +465,13 @@ FreeIndex(
 /*
  *----------------------------------------------------------------------
  *
- * TclInitPrefixCmd --
+ * TclSetUpPrefixCmd --
  *
- *	This procedure creates the "prefix" Tcl command. See the user
+ *	This procedure sets up the "prefix" Tcl command. See the user
  *	documentation for details on what it does.
  *
  * Results:
- *	A standard Tcl result.
+ *	Tcl result code.
  *
  * Side effects:
  *	See the user documentation.
@@ -472,22 +479,13 @@ FreeIndex(
  *----------------------------------------------------------------------
  */
 
-Tcl_Command
-TclInitPrefixCmd(
-    Tcl_Interp *interp)		/* Current interpreter. */
+int
+TclSetUpPrefixCmd(
+    Tcl_Interp *interp,		/* Current interpreter. */
+    Tcl_Command ensemble)	/* The prefix ensemble. */
 {
-    static const EnsembleImplMap prefixImplMap[] = {
-	{"all",	    PrefixAllObjCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
-	{"longest", PrefixLongestObjCmd,TclCompileBasic2ArgCmd, NULL, NULL, 0},
-	{"match",   PrefixMatchObjCmd,	TclCompileBasicMin2ArgCmd, NULL, NULL, 0},
-	{NULL, NULL, NULL, NULL, NULL, 0}
-    };
-    Tcl_Command prefixCmd;
-
-    prefixCmd = TclMakeEnsemble(interp, "::tcl::prefix", prefixImplMap);
-    Tcl_Export(interp, Tcl_FindNamespace(interp, "::tcl", NULL, 0),
+    return Tcl_Export(interp, (Tcl_Namespace*)((Command *)ensemble)->nsPtr,
 	    "prefix", 0);
-    return prefixCmd;
 }
 
 /*----------------------------------------------------------------------

@@ -17,6 +17,10 @@ string \- Manipulate strings
 .SH DESCRIPTION
 .PP
 Performs one of several string operations, depending on \fIoption\fR.
+.PP
+\fBFollowing common usage, the command descriptions below use the
+term \fIcharacter\fB in place of the more accurate term \fIcode point\fR.
+.PP
 The legal \fIoption\fRs (which may be abbreviated) are:
 .\" METHOD: cat
 .TP

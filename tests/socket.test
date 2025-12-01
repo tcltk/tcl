@@ -1778,9 +1778,73 @@ test socket_$af-12.3 {testing inheritance of accepted sockets} -setup {
     file delete $path(script1)
     file delete $path(script2)
     set f [open $path(script1) w]
+    # SEGVs on Windows, but works when changed to as in *-12.4 below
     puts $f {
 	fileevent stdin readable exit
 	after 10000 exit
+	vwait forever
+    }
+    close $f
+    set f [open $path(script2) w]
+    puts $f [list set tcltest [interpreter]]
+    puts $f [list set delay $path(script1)]
+    puts $f [list set localhost $localhost]
+    puts $f {
+	set server [socket -server accept -myaddr $localhost 0]
+	proc accept { file host port } {
+	    global tcltest delay
+	    puts $file {test data on socket}
+	    exec $tcltest $delay &
+	    after idle exit
+	}
+	puts stdout [lindex [fconfigure $server -sockname] 2]
+	vwait forever
+    }
+    close $f
+} -constraints [list socket supported_$af stdio exec knownBug] -body {
+    # Launch the script2 process and connect to it. See how long the socket
+    # stays open
+    ## exec [interpreter] script2 &
+    set p [open "|[list [interpreter] $path(script2)]" r]
+    gets $p listen
+    set f [socket $localhost $listen]
+    fconfigure $f -buffering full -blocking 0
+    fileevent $f readable [list getdata $f]
+    # If the socket is still open after 5 seconds, the script1 process must
+    # have inherited the accepted socket.
+    set failed 0
+    set after [after 5000 [list set x "accepted socket was inherited"]]
+    proc getdata { file } {
+	# Read handler on the client socket.
+	global x
+	global failed
+	set status [catch {read $file} data]
+	if {$status != 0} {
+	    set x "read failed, error was $data"
+	} elseif {[string compare {} $data]} {
+	} elseif {[fblocked $file]} {
+	} elseif {[eof $file]} {
+	    set x "accepted socket was not inherited"
+	} else {
+	    set x "impossible case"
+	}
+	return
+    }
+    vwait x
+    set x
+} -cleanup {
+    fconfigure $f -blocking 1
+    close $f
+    after cancel $after
+    close $p
+} -result {accepted socket was not inherited}
+test socket_$af-12.4 {testing inheritance of accepted sockets} -setup {
+    file delete $path(script1)
+    file delete $path(script2)
+    set f [open $path(script1) w]
+    puts $f {
+	fileevent stdin readable {set forever 0}
+	after 10000 {set forever 1}
 	vwait forever
     }
     close $f

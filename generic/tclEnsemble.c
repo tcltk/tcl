@@ -85,11 +85,11 @@ enum EnsConfigOpts {
  */
 
 static const Tcl_ObjType ensembleCmdType = {
-    "ensembleCommand",		/* the type's name */
-    FreeEnsembleCmdRep,		/* freeIntRepProc */
-    DupEnsembleCmdRep,		/* dupIntRepProc */
-    NULL,			/* updateStringProc */
-    NULL,			/* setFromAnyProc */
+    "ensembleCommand",
+    FreeEnsembleCmdRep,
+    DupEnsembleCmdRep,
+    NULL,			// UpdateString
+    NULL,			// SetFromAny
     TCL_OBJTYPE_V0
 };
 

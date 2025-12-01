@@ -192,7 +192,7 @@ test winpipe-4.1 {Tcl_WaitPid} {win exec cat32} {
 	    set result "$result$line"
 	}
     }
-    set f [open "|[list $cat32] < $path(big) 2> $path(stderr)" r]
+    set f [open "|[list $cat32 < $path(big) 2> $path(stderr)]" r]
     fconfigure $f  -buffering none -blocking 0
     fileevent $f readable "readResults $f"
     set x 0
@@ -326,7 +326,7 @@ proc _testExecArgs {flags args} {
 	} echoArgs.tcl]
     }
     if {![info exists path(echoArgs.bat)] || ![file exists $path(echoArgs.bat)]} {
-	set path(echoArgs.bat) [makeFile "@[file native [interpreter]] $path(echoArgs.tcl) %*" "echoArgs.bat"]
+	set path(echoArgs.bat) [makeFile "@\"[file native [interpreter]]\" \"$path(echoArgs.tcl)\" %*" "echoArgs.bat"]
     }
     set cmds [list [list [interpreter] $path(echoArgs.tcl)]]
     if {"exe-only" ni $flags} {
@@ -335,7 +335,7 @@ proc _testExecArgs {flags args} {
 	} else {
 	    if {![info exists path(echoArgs2.bat)] || ![file exists $path(echoArgs2.bat)]} {
 		set path(echoArgs2.bat) [makeFile \
-		    "@[file native [interpreter]] $path(echoArgs.tcl) %*" \
+		    "@\"[file native [interpreter]]\" \"$path(echoArgs.tcl)\" %*" \
 		    "echo(Cmd)Test Args & Batch.bat" [makeDirectory test(Dir)Check]]
 	    }
 	    lappend cmds [list $path(echoArgs2.bat)]
