@@ -3208,9 +3208,11 @@ void EqParseAnd(
     EqInput *in,
     CompileEnv *envPtr)
 {
+    Tcl_Size depth = TclGetStackDepth(envPtr);
     Tcl_BytecodeLabel false1, false2, end;
     FWDJUMP(JUMP_FALSE, false1);
     EqParse(in, envPtr, PREC_AND);
+    if (in->errorFound) return;
     FWDJUMP(JUMP_FALSE, false2);
     PUSH_STRING("1");
     FWDJUMP(JUMP, end);
@@ -3218,6 +3220,8 @@ void EqParseAnd(
     FWDLABEL(false2);
     PUSH_STRING("0");
     FWDLABEL(end);
+    TclCheckStackDepth(depth+1, envPtr);
+    TclSetStackDepth(depth, envPtr);
 }
 
 // We just saw || so parse its second operand and generate code
@@ -3226,9 +3230,11 @@ void EqParseOr(
     EqInput *in,
     CompileEnv *envPtr)
 {
+    Tcl_Size depth = TclGetStackDepth(envPtr);
     Tcl_BytecodeLabel true1, true2, end;
     FWDJUMP(JUMP_TRUE, true1);
     EqParse(in, envPtr, PREC_OR);
+    if (in->errorFound) return;
     FWDJUMP(JUMP_TRUE, true2);
     PUSH_STRING("0");
     FWDJUMP(JUMP, end);
@@ -3236,6 +3242,8 @@ void EqParseOr(
     FWDLABEL(true2);
     PUSH_STRING("1");
     FWDLABEL(end);
+    TclCheckStackDepth(depth+1, envPtr);
+    TclSetStackDepth(depth, envPtr);
 }
 
 // We just saw ? so parse its second and third operands and generate code
@@ -3244,6 +3252,7 @@ void EqParseTernary(
     EqInput *in,
     CompileEnv *envPtr)
 {
+    Tcl_Size depth = TclGetStackDepth(envPtr);
     Tcl_BytecodeLabel false1, end;
     FWDJUMP(JUMP_FALSE, false1);
     EqParse(in, envPtr, PREC_CONDITIONAL);
@@ -3255,7 +3264,10 @@ void EqParseTernary(
     FWDLABEL(false1);
     EqNextLex(in);
     EqParse(in, envPtr, PREC_CONDITIONAL);
+    if (in->errorFound) return;
     FWDLABEL(end);
+    TclCheckStackDepth(depth+1, envPtr);
+    TclSetStackDepth(depth, envPtr);
 }
 
 /*
