@@ -212,6 +212,10 @@ test timer-3.2.1 {TimerHandlerEventProc procedure: multiple timers - mixed} -set
     timer at 0 [expr {400_000+[clock microseconds]}]
     update
     lappend result $x
+} -cleanup {
+    foreach i [after info] {
+	after cancel $i
+    }
 } -result {200 {200 600} {200 600 1000}}
 
 test timer-3.3 {TimerHandlerEventProc procedure: reentrant timer deletion} -setup {
