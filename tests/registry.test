@@ -28,8 +28,7 @@ testConstraint notWine [expr {![info exists ::env(CI_USING_WINE)]}]
 
 # determine the current locale
 testConstraint english [expr {
-    [llength [info commands testlocale]]
-    && [string match "English*" [testlocale all ""]]
+    [string match "English*" [info locale]]
 }]
 
 test registry-1.0 {check if we are testing the right dll} {win reg} {
