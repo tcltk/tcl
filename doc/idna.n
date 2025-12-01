@@ -12,7 +12,7 @@
 tcl::idna \- Support for normalization of Internationalized Domain Names
 .SH SYNOPSIS
 .nf
-package require tcl::idna 1.0
+\fBpackage require tcl::idna 1.0\fR
 
 \fBtcl::idna decode\fI hostname\fR
 \fBtcl::idna encode\fI hostname\fR
@@ -75,7 +75,7 @@ This returns the version of the \fBtcl::idna\fR package.
 This is an example of how punycoding of a string works:
 .PP
 .CS
-package require tcl::idna
+\fBpackage require tcl::idna\fR
 
 puts [\fBtcl::idna puny encode\fR "abc\(->def"]
 #    prints: \fIabcdef-kn2c\fR

@@ -103,8 +103,8 @@ one takes precedence.  The default is \fB\-ascii\fR.
 .TP
 \fB\-ascii\fR
 .
-The list elements are to be examined as Unicode strings (the name is
-for backward-compatibility reasons.)
+The list elements are to be examined as Tcl strings (i.e. sequences of
+Unicode code points; the name is for backward-compatibility reasons.)
 .\" OPTION: -dictionary
 .TP
 \fB\-dictionary\fR

@@ -22,6 +22,9 @@
 #pragma clang diagnostic ignored "-Wc++-keyword"
 #endif
 
+/* The namespace containing the [clock] internals. */
+#define TCL_CLOCK_NS	"::tcl::clock"
+
 /*
  * Table of the days in each month, leap and common years
  */
@@ -114,10 +117,10 @@ static struct tm *	ThreadSafeLocalTime(const time_t *);
 static size_t		TzsetIfNecessary(void);
 static void		ClockDeleteCmdProc(void *);
 static void		ClockFinalize(void *);
+
 /*
  * Structure containing description of "native" clock commands to create.
  */
-
 struct ClockCommand {
     const char *name;		/* The tail of the command name. The full name
 				 * is "::tcl::clock::<name>". When NULL marks
@@ -126,27 +129,46 @@ struct ClockCommand {
 				 * will always have the ClockClientData sent
 				 * to it, but may well ignore this data. */
     CompileProc *compileProc;	/* The compiler for the command. */
-    void *clientData;		/* Any clientData to give the command (if NULL
-				 * a reference to ClockClientData will be sent) */
+    int useClientData;		/* Whether to use the shared ClockClientData
+				 * with this command. */
 };
 
+/*
+ * Table of command created by this file, excluding the compiled parts of the
+ * [clock] ensemble, as those are defined below (and never need access to the
+ * ClockClientData).
+ */
 static const struct ClockCommand clockCommands[] = {
-    {"add",		ClockAddObjCmd,		TclCompileBasicMin1ArgCmd, NULL},
-    {"clicks",		ClockClicksObjCmd,	TclCompileClockClicksCmd,  NULL},
-    {"format",		ClockFormatObjCmd,	TclCompileBasicMin1ArgCmd, NULL},
-    {"getenv",		ClockGetenvObjCmd,	TclCompileBasicMin1ArgCmd, NULL},
-    {"microseconds",	ClockMicrosecondsObjCmd,TclCompileClockReadingCmd, INT2PTR(CLOCK_READ_MICROS)},
-    {"milliseconds",	ClockMillisecondsObjCmd,TclCompileClockReadingCmd, INT2PTR(CLOCK_READ_MILLIS)},
-    {"scan",		ClockScanObjCmd,	TclCompileBasicMin1ArgCmd, NULL},
-    {"seconds",		ClockSecondsObjCmd,	TclCompileClockReadingCmd, INT2PTR(CLOCK_READ_SECS)},
-    {"ConvertLocalToUTC", ClockConvertlocaltoutcObjCmd,		NULL, NULL},
-    {"GetDateFields",	  ClockGetdatefieldsObjCmd,		NULL, NULL},
+    {"add",		ClockAddObjCmd,		TclCompileBasicMin1ArgCmd, 1},
+    {"format",		ClockFormatObjCmd,	TclCompileBasicMin1ArgCmd, 1},
+    {"getenv",		ClockGetenvObjCmd,	NULL, 1},
+    {"scan",		ClockScanObjCmd,	TclCompileBasicMin1ArgCmd, 1},
+    {"ConvertLocalToUTC", ClockConvertlocaltoutcObjCmd, NULL, 1},
+    {"GetDateFields",	ClockGetdatefieldsObjCmd, NULL, 1},
     {"GetJulianDayFromEraYearMonthDay",
-		ClockGetjuliandayfromerayearmonthdayObjCmd,	NULL, NULL},
+			ClockGetjuliandayfromerayearmonthdayObjCmd, NULL, 1},
     {"GetJulianDayFromEraYearWeekDay",
-		ClockGetjuliandayfromerayearweekdayObjCmd,	NULL, NULL},
-    {"catch",		TclSafeCatchCmd,	TclCompileBasicMin1ArgCmd, NULL},
-    {NULL, NULL, NULL, NULL}
+			ClockGetjuliandayfromerayearweekdayObjCmd, NULL, 1},
+    {"catch",		TclSafeCatchCmd,	NULL, 0},
+    {NULL, NULL, NULL, 0}
+};
+
+/*
+ * Definition of the [clock] ensemble.
+ *
+ * [clock add], [clock format] and [clock scan] have special clientData, so
+ * we just tell the ensemble that they'll be there instead of maxing them at
+ * this point.
+ */
+const EnsembleImplMap tclClockImplMap[] = {
+    {"add",		NULL,			NULL, NULL, NULL, 1},
+    {"clicks",		ClockClicksObjCmd,	TclCompileClockClicksCmd, NULL, NULL, 0},
+    {"format",		NULL,			NULL, NULL, NULL, 1},
+    {"microseconds",	ClockMicrosecondsObjCmd,TclCompileClockReadingCmd, NULL, INT2PTR(CLOCK_READ_MICROS), 0},
+    {"milliseconds",	ClockMillisecondsObjCmd,TclCompileClockReadingCmd, NULL, INT2PTR(CLOCK_READ_MILLIS), 0},
+    {"scan",		NULL,			NULL, NULL, NULL, 1},
+    {"seconds",		ClockSecondsObjCmd,	TclCompileClockReadingCmd, NULL, INT2PTR(CLOCK_READ_SECS), 0},
+    {NULL, NULL, NULL, NULL, NULL, 0}
 };
 
 /*
@@ -171,15 +193,8 @@ void
 TclClockInit(
     Tcl_Interp *interp)		/* Tcl interpreter */
 {
-    const struct ClockCommand *clockCmdPtr;
-    char cmdName[50];		/* Buffer large enough to hold the string
-				 *::tcl::clock::GetJulianDayFromEraYearMonthDay
-				 * plus a terminating NUL. */
-    Command *cmdPtr;
-    ClockClientData *data;
-    int i;
-
     static int initialized = 0;	/* global clock engine initialized (in process) */
+
     /*
      * Register handler to finalize clock on exit.
      */
@@ -201,9 +216,10 @@ TclClockInit(
      * Create the client data, which is a refcounted literal pool.
      */
 
-    data = (ClockClientData *)Tcl_Alloc(sizeof(ClockClientData));
+    ClockClientData *data = (ClockClientData *)Tcl_Alloc(sizeof(ClockClientData));
     data->refCount = 0;
     data->literals = (Tcl_Obj **)Tcl_Alloc(LIT__END * sizeof(Tcl_Obj*));
+    int i;
     for (i = 0; i < LIT__END; ++i) {
 	TclInitObjRef(data->literals[i], Tcl_NewStringObj(
 		Literals[i], TCL_AUTO_LENGTH));
@@ -253,27 +269,22 @@ TclClockInit(
      * Install the commands.
      */
 
-#define TCL_CLOCK_PREFIX_LEN 14 /* == strlen("::tcl::clock::") */
-    memcpy(cmdName, "::tcl::clock::", TCL_CLOCK_PREFIX_LEN);
+    Tcl_Namespace *nsPtr = Tcl_FindNamespace(interp, TCL_CLOCK_NS, NULL, 0);
+    const struct ClockCommand *clockCmdPtr;
     for (clockCmdPtr=clockCommands ; clockCmdPtr->name!=NULL ; clockCmdPtr++) {
-	void *clientData;
-
-	strcpy(cmdName + TCL_CLOCK_PREFIX_LEN, clockCmdPtr->name);
-	if (!(clientData = clockCmdPtr->clientData)) {
+	void *clientData = NULL;
+	if (clockCmdPtr->useClientData) {
 	    clientData = data;
 	    data->refCount++;
 	}
-	cmdPtr = (Command *)Tcl_CreateObjCommand(interp, cmdName,
-		clockCmdPtr->objCmdProc, clientData,
-		clockCmdPtr->clientData ? NULL : ClockDeleteCmdProc);
-	cmdPtr->compileProc = clockCmdPtr->compileProc ?
-		clockCmdPtr->compileProc : TclCompileBasicMin0ArgCmd;
+	Command *cmdPtr = (Command *)TclCreateObjCommandInNs(interp,
+		clockCmdPtr->name, nsPtr, clockCmdPtr->objCmdProc, clientData,
+		clientData ? ClockDeleteCmdProc : NULL);
+	cmdPtr->compileProc = clockCmdPtr->compileProc;
     }
-    cmdPtr = (Command *) Tcl_CreateObjCommand(interp,
-	    "::tcl::unsupported::clock::configure",
+    Tcl_CreateObjCommand(interp, "::tcl::unsupported::clock::configure",
 	    ClockConfigureObjCmd, data, ClockDeleteCmdProc);
     data->refCount++;
-    cmdPtr->compileProc = TclCompileBasicMin0ArgCmd;
 }
 
 /*
@@ -959,16 +970,16 @@ ClockConfigureObjCmd(
 {
     ClockClientData *dataPtr = (ClockClientData *)clientData;
     static const char *const options[] = {
-	"-default-locale",	"-clear",	  "-current-locale",
-	"-year-century",  "-century-switch",
-	"-min-year", "-max-year", "-max-jdn", "-validate",
-	"-init-complete",	  "-setup-tz", "-system-tz", NULL
+	"-default-locale",	"-clear",	"-current-locale",
+	"-year-century",	"-century-switch",
+	"-min-year",		"-max-year",	"-max-jdn",
+	"-validate",		"-setup-tz",	"-system-tz", NULL
     };
     enum optionInd {
 	CLOCK_DEFAULT_LOCALE, CLOCK_CLEAR_CACHE, CLOCK_CURRENT_LOCALE,
 	CLOCK_YEAR_CENTURY, CLOCK_CENTURY_SWITCH,
 	CLOCK_MIN_YEAR, CLOCK_MAX_YEAR, CLOCK_MAX_JDN, CLOCK_VALIDATE,
-	CLOCK_INIT_COMPLETE,  CLOCK_SETUP_TZ, CLOCK_SYSTEM_TZ
+	CLOCK_SETUP_TZ, CLOCK_SYSTEM_TZ
     };
     int optionIndex;		/* Index of an option. */
     Tcl_Size i;
@@ -1140,26 +1151,6 @@ ClockConfigureObjCmd(
 	case CLOCK_CLEAR_CACHE:
 	    ClockConfigureClear(dataPtr);
 	    break;
-	case CLOCK_INIT_COMPLETE: {
-	    /*
-	     * Init completed.
-	     * Compile clock ensemble (performance purposes).
-	     */
-	    Tcl_Command token = Tcl_FindCommand(interp, "::clock",
-		    NULL, TCL_GLOBAL_ONLY);
-	    if (!token) {
-		return TCL_ERROR;
-	    }
-	    int ensFlags = 0;
-	    if (Tcl_GetEnsembleFlags(interp, token, &ensFlags) != TCL_OK) {
-		return TCL_ERROR;
-	    }
-	    ensFlags |= ENSEMBLE_COMPILE;
-	    if (Tcl_SetEnsembleFlags(interp, token, ensFlags) != TCL_OK) {
-		return TCL_ERROR;
-	    }
-	    break;
-	}
 	default:
 	    TCL_UNREACHABLE();
 	}
@@ -1418,7 +1409,6 @@ ClockConvertlocaltoutcObjCmd(
     int changeover;
     TclDateFields fields;
     int created = 0;
-    int status;
 
     fields.tzName = NULL;
     /*
@@ -1455,15 +1445,15 @@ ClockConvertlocaltoutcObjCmd(
 	created = 1;
 	Tcl_IncrRefCount(dict);
     }
-    status = Tcl_DictObjPut(interp, dict, dataPtr->literals[LIT_SECONDS],
+    int result = Tcl_DictObjPut(interp, dict, dataPtr->literals[LIT_SECONDS],
 	    Tcl_NewWideIntObj(fields.seconds));
-    if (status == TCL_OK) {
+    if (result == TCL_OK) {
 	Tcl_SetObjResult(interp, dict);
     }
     if (created) {
 	Tcl_DecrRefCount(dict);
     }
-    return status;
+    return result;
 }
 
 /*
@@ -1554,9 +1544,9 @@ ClockGetdatefieldsObjCmd(
     Tcl_DictObjPut(NULL, dict, lit[LIT_JULIANDAY],
 	    Tcl_NewWideIntObj(fields.julianDay));
     Tcl_DictObjPut(NULL, dict, lit[LIT_GREGORIAN],
-	    Tcl_NewWideIntObj(fields.gregorian));
+	    Tcl_NewWideIntObj(!(fields.flags & CLF_BGREG)));
     Tcl_DictObjPut(NULL, dict, lit[LIT_ERA],
-	    lit[fields.isBce ? LIT_BCE : LIT_CE]);
+	    lit[(fields.flags & CLF_BCE) ? LIT_BCE : LIT_CE]);
     Tcl_DictObjPut(NULL, dict, lit[LIT_YEAR],
 	    Tcl_NewWideIntObj(fields.year));
     Tcl_DictObjPut(NULL, dict, lit[LIT_DAYOFYEAR],
@@ -1702,7 +1692,6 @@ ClockGetjuliandayfromerayearmonthdayObjCmd(
     Tcl_Obj *const *lit = data->literals;
     int changeover;
     int copied = 0;
-    int status;
     int isBce = 0;
 
     fields.tzName = NULL;
@@ -1726,7 +1715,11 @@ ClockGetjuliandayfromerayearmonthdayObjCmd(
 	    || TclGetIntFromObj(interp, objv[2], &changeover) != TCL_OK) {
 	return TCL_ERROR;
     }
-    fields.isBce = isBce;
+    if (isBce) {
+	fields.flags |= CLF_BCE;
+    } else {
+	fields.flags &= ~CLF_BCE;
+    }
 
     /*
      * Get Julian day.
@@ -1743,15 +1736,15 @@ ClockGetjuliandayfromerayearmonthdayObjCmd(
 	Tcl_IncrRefCount(dict);
 	copied = 1;
     }
-    status = Tcl_DictObjPut(interp, dict, lit[LIT_JULIANDAY],
+    int result = Tcl_DictObjPut(interp, dict, lit[LIT_JULIANDAY],
 	    Tcl_NewWideIntObj(fields.julianDay));
-    if (status == TCL_OK) {
+    if (result == TCL_OK) {
 	Tcl_SetObjResult(interp, dict);
     }
     if (copied) {
 	Tcl_DecrRefCount(dict);
     }
-    return status;
+    return result;
 }
 
 /*
@@ -1788,7 +1781,6 @@ ClockGetjuliandayfromerayearweekdayObjCmd(
     Tcl_Obj *const *lit = data->literals;
     int changeover;
     int copied = 0;
-    int status;
     int isBce = 0;
 
     fields.tzName = NULL;
@@ -1812,7 +1804,11 @@ ClockGetjuliandayfromerayearweekdayObjCmd(
 	    || TclGetIntFromObj(interp, objv[2], &changeover) != TCL_OK) {
 	return TCL_ERROR;
     }
-    fields.isBce = isBce;
+    if (isBce) {
+	fields.flags |= CLF_BCE;
+    } else {
+	fields.flags &= ~CLF_BCE;
+    }
 
     /*
      * Get Julian day.
@@ -1829,15 +1825,15 @@ ClockGetjuliandayfromerayearweekdayObjCmd(
 	Tcl_IncrRefCount(dict);
 	copied = 1;
     }
-    status = Tcl_DictObjPut(interp, dict, lit[LIT_JULIANDAY],
+    int result = Tcl_DictObjPut(interp, dict, lit[LIT_JULIANDAY],
 	    Tcl_NewWideIntObj(fields.julianDay));
-    if (status == TCL_OK) {
+    if (result == TCL_OK) {
 	Tcl_SetObjResult(interp, dict);
     }
     if (copied) {
 	Tcl_DecrRefCount(dict);
     }
-    return status;
+    return result;
 }
 
 /*
@@ -2367,7 +2363,7 @@ ConvertUTCToLocalUsingC(
      * Fill in the date in 'fields' and use it to derive Julian Day.
      */
 
-    fields->isBce = 0;
+    fields->flags &= ~CLF_BCE;
     fields->year = timeVal->tm_year + 1900;
     fields->month = timeVal->tm_mon + 1;
     fields->dayOfMonth = timeVal->tm_mday;
@@ -2517,7 +2513,7 @@ GetYearWeekDay(
 
     temp.julianDay = fields->julianDay - 3;
     GetGregorianEraYearDay(&temp, changeover);
-    if (temp.isBce) {
+    if (temp.flags & CLF_BCE) {
 	temp.iso8601Year = temp.year - 1;
     } else {
 	temp.iso8601Year = temp.year + 1;
@@ -2533,7 +2529,7 @@ GetYearWeekDay(
      */
 
     if (fields->julianDay < temp.julianDay) {
-	if (temp.isBce) {
+	if (temp.flags & CLF_BCE) {
 	    temp.iso8601Year += 1;
 	} else {
 	    temp.iso8601Year -= 1;
@@ -2583,7 +2579,7 @@ GetGregorianEraYearDay(
 	 * Gregorian calendar.
 	 */
 
-	fields->gregorian = 1;
+	fields->flags &= ~CLF_BGREG;
 	year = 1;
 
 	/*
@@ -2621,7 +2617,7 @@ GetGregorianEraYearDay(
 	 * Julian calendar.
 	 */
 
-	fields->gregorian = 0;
+	fields->flags |= CLF_BGREG;
 	year = 1;
 	day = jday - JDAY_1_JAN_1_CE_JULIAN;
     }
@@ -2659,10 +2655,10 @@ GetGregorianEraYearDay(
      */
 
     if (year <= 0) {
-	fields->isBce = 1;
+	fields->flags |= CLF_BCE;
 	fields->year = 1 - year;
     } else {
-	fields->isBce = 0;
+	fields->flags &= ~CLF_BCE;
 	fields->year = year;
     }
     fields->dayOfYear = (int)day + 1;
@@ -2748,7 +2744,7 @@ GetJulianDayFromEraYearWeekDay(
      * Find January 4 in the ISO8601 year, which will always be in week 1.
      */
 
-    firstWeek.isBce = fields->isBce;
+    firstWeek.flags = (fields->flags & CLF_BCE);
     firstWeek.year = fields->iso8601Year;
     firstWeek.month = 1;
     firstWeek.dayOfMonth = 4;
@@ -2766,6 +2762,11 @@ GetJulianDayFromEraYearWeekDay(
 
     fields->julianDay = firstMonday + 7 * (fields->iso8601Week - 1)
 	    + fields->dayOfWeek - 1;
+    if (fields->julianDay >= changeover) {
+	fields->flags &= ~CLF_BGREG;
+    } else {
+	fields->flags |= CLF_BGREG;
+    }
 }
 
 /*
@@ -2793,7 +2794,7 @@ GetJulianDayFromEraYearMonthDay(
     Tcl_WideInt ym1, ym1o4, ym1o100, ym1o400;
     int year, month, mm1, q, r;
 
-    if (fields->isBce) {
+    if (fields->flags & CLF_BCE) {
 	year = 1 - fields->year;
     } else {
 	year = fields->year;
@@ -2819,12 +2820,12 @@ GetJulianDayFromEraYearMonthDay(
      * Adjust the year after reducing the month.
      */
 
-    fields->gregorian = 1;
+    fields->flags &= ~CLF_BGREG;
     if (year < 1) {
-	fields->isBce = 1;
+	fields->flags |= CLF_BCE;
 	fields->year = 1 - year;
     } else {
-	fields->isBce = 0;
+	fields->flags &= ~CLF_BCE;
 	fields->year = year;
     }
 
@@ -2870,11 +2871,11 @@ GetJulianDayFromEraYearMonthDay(
      */
 
     if (fields->julianDay < changeover) {
-	fields->gregorian = 0;
+	fields->flags |= CLF_BGREG;
 	fields->julianDay = JDAY_1_JAN_1_CE_JULIAN - 1
 		+ fields->dayOfMonth
 		+ daysInPriorMonths[year%4 == 0][month - 1]
-		+ (365 * ym1)
+		+ (ONE_YEAR * ym1)
 		+ ym1o4;
     }
 }
@@ -2904,7 +2905,7 @@ TclGetJulianDayFromEraYearDay(
     Tcl_WideInt year, ym1;
 
     /* Get absolute year number from the civil year */
-    if (fields->isBce) {
+    if (fields->flags & CLF_BCE) {
 	year = 1 - fields->year;
     } else {
 	year = fields->year;
@@ -2913,11 +2914,11 @@ TclGetJulianDayFromEraYearDay(
     ym1 = year - 1;
 
     /* Try the Gregorian calendar first. */
-    fields->gregorian = 1;
+    fields->flags &= ~CLF_BGREG;
     fields->julianDay =
-	    1721425
+	    JDAY_1_JAN_1_CE_GREGORIAN - 1
 	    + fields->dayOfYear
-	    + (365 * ym1)
+	    + (ONE_YEAR * ym1)
 	    + (ym1 / 4)
 	    - (ym1 / 100)
 	    + (ym1 / 400);
@@ -2925,11 +2926,11 @@ TclGetJulianDayFromEraYearDay(
     /* If the date is before the Gregorian change, use the Julian calendar. */
 
     if (fields->julianDay < changeover) {
-	fields->gregorian = 0;
+	fields->flags |= CLF_BGREG;
 	fields->julianDay =
-		1721423
+		JDAY_1_JAN_1_CE_JULIAN - 1
 		+ fields->dayOfYear
-		+ (365 * ym1)
+		+ (ONE_YEAR * ym1)
 		+ (ym1 / 4);
     }
 }
@@ -2953,12 +2954,13 @@ TclIsGregorianLeapYear(
 {
     Tcl_WideInt year = fields->year;
 
-    if (fields->isBce) {
+    if (fields->flags & CLF_BCE) {
 	year = 1 - year;
     }
     if (year % 4 != 0) {
 	return 0;
-    } else if (!(fields->gregorian)) {
+    } else if (fields->flags & CLF_BGREG) {
+	/* Before Gregorian leap year didn't follow y/100 and y/400 logic. */
 	return 1;
     } else if (year % 400 == 0) {
 	return 1;
@@ -3688,6 +3690,39 @@ ClockScanObjCmd(
 
 /*----------------------------------------------------------------------
  *
+ * ClockAssembleJulianDay --
+ *
+ *	Assembles julianDay using year, month, etc. Thereby it'd also update
+ *	gregorian flag.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+ClockAssembleJulianDay(
+    DateInfo *info)		/* Clock scan info structure */
+{
+    /* Assemble julianDay (and also gregorian flag) */
+    if (info->flags & CLF_ISO8601WEEK) {
+	GetJulianDayFromEraYearWeekDay(&yydate, GREGORIAN_CHANGE_DATE);
+    } else if (!(info->flags & CLF_DAYOFYEAR) /* no day of year */
+	    || (info->flags & (CLF_DAYOFMONTH|CLF_MONTH)) /* yymmdd over yyddd */
+	    == (CLF_DAYOFMONTH|CLF_MONTH)) {
+	GetJulianDayFromEraYearMonthDay(&yydate, GREGORIAN_CHANGE_DATE);
+    } else {
+	TclGetJulianDayFromEraYearDay(&yydate, GREGORIAN_CHANGE_DATE);
+    }
+    info->flags |= CLF_ASSEMBLE_SECONDS;
+}
+
+/*----------------------------------------------------------------------
+ *
  * ClockScanCommit --
  *
  *	Converts date info structure into UTC seconds.
@@ -3720,16 +3755,7 @@ ClockScanCommit(
 
     /* If needed assemble julianDay using year, month, etc. */
     if (info->flags & CLF_ASSEMBLE_JULIANDAY) {
-	if (info->flags & CLF_ISO8601WEEK) {
-	    GetJulianDayFromEraYearWeekDay(&yydate, GREGORIAN_CHANGE_DATE);
-	} else if (!(info->flags & CLF_DAYOFYEAR) /* no day of year */
-		|| (info->flags & (CLF_DAYOFMONTH|CLF_MONTH)) /* yymmdd over yyddd */
-		== (CLF_DAYOFMONTH|CLF_MONTH)) {
-	    GetJulianDayFromEraYearMonthDay(&yydate, GREGORIAN_CHANGE_DATE);
-	} else {
-	    TclGetJulianDayFromEraYearDay(&yydate, GREGORIAN_CHANGE_DATE);
-	}
-	info->flags |= CLF_ASSEMBLE_SECONDS;
+	ClockAssembleJulianDay(info);
 	info->flags &= ~CLF_ASSEMBLE_JULIANDAY;
     }
 
@@ -3849,6 +3875,14 @@ ClockValidDate(
 	    goto error;
 	}
     }
+
+    /* To check day in leap year correct, validation may need gregorian flag,
+     * so assemble julianDay and gregorian flag from date tokens. */
+    if (info->flags & CLF_ASSEMBLE_JULIANDAY) {
+	ClockAssembleJulianDay(info);
+	info->flags &= ~CLF_ASSEMBLE_JULIANDAY;
+    }
+
     /* day of month */
     if (info->flags & (CLF_DAYOFMONTH|CLF_DAYOFWEEK)) {
 	if (yyDay < 1 || yyDay > 31) {
@@ -4033,7 +4067,7 @@ ClockFreeScan(
 	    }
 	    yyYear += dataPtr->currentYearCentury;
 	}
-	yydate.isBce = 0;
+	yydate.flags &= ~CLF_BCE;
 	info->flags |= CLF_ASSEMBLE_JULIANDAY|CLF_ASSEMBLE_SECONDS;
     }
 
@@ -4250,7 +4284,7 @@ ClockCalcRelTime(
 	    info->flags &= ~CLF_ASSEMBLE_JULIANDAY;
 	}
 
-	yydate.isBce = 0;
+	yydate.flags &= ~CLF_BCE;
 	yydate.julianDay = WeekdayOnOrBefore(yyDayOfWeek, yydate.julianDay + 6)
 		+ 7 * yyDayOrdinal;
 	if (yyDayOrdinal > 0) {
