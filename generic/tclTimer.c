@@ -312,11 +312,25 @@ Tcl_CreateTimerHandlerMicroSeconds(
      */
 
     Tcl_GetMonotonicTime(&time);
-    time.sec += microSeconds/1000000;
-    time.usec += microSeconds%1000000;
-    if (time.usec >= 1000000) {
-	time.usec -= 1000000;
-	time.sec += 1;
+    if (microSeconds <= 0) {
+	microSeconds = 0;
+    } else {
+	long long seconds;
+	seconds = microSeconds/1000000;
+	if (LLONG_MAX - seconds < time.sec) {
+	    /* here might be an assertion */
+	    return NULL;
+	}
+	time.sec += seconds;
+	time.usec += microSeconds%1000000;
+	if (time.usec >= 1000000) {
+	    if (time.sec == LLONG_MAX) {
+		/* here might be an assertion */
+		return NULL;
+	    }
+	    time.usec -= 1000000;
+	    time.sec += 1;
+	}
     }
     return TclCreateAbsoluteTimerHandler(&time, proc, clientData, true);
 }
@@ -369,7 +383,7 @@ Tcl_CreateTimerHandler(
  *
  *	Arrange for a given function to be invoked at a particular time in the
  *	future.
- *	The parameter 'monotonic' controls, if the monotonic clock ot
+ *	The parameter 'monotonic' controls, if the monotonic clock or
  *	the wall clock is used.
  *
  * Results:
