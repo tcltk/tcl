@@ -1753,10 +1753,10 @@ InfoLocaleCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int index = 5;
+    int index = 12;
     const char *locale = NULL;
     static const char *const optionStrings[] = {
-	"-adress", "-collate", "-ctype", "-identification", "-measurement", "-messages",
+	"-address", "-collate", "-ctype", "-identification", "-measurement", "-messages",
 	"-monetary", "-name", "-numeric", "-paper", "-telephone", "-time", NULL
     };
     static const int lcTypes[] = {
