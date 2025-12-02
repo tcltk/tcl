@@ -1001,6 +1001,8 @@ Tcl_Exit(
 	     */
 
 	    FinalizeThread(/* quick */ 1);
+	    /* Since Tcl_Finalize not called for quick exit */
+	    TclpFinalizeLoad();
 	}
     }
 
