@@ -318,7 +318,7 @@ TclpTempFileNameForLibrary(
     Tcl_AppendObjToObj(fileName, tail);
     return fileName;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -397,6 +397,51 @@ InitDLLDirectoryName(void)
     wcscpy(dllDirectoryName, name);
     return TCL_OK;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpFinalizeLoad --
+ *
+ *	Arranges for the temporary directory created for storing embedded DLL's
+ *	to be removed. Should be called on process exit.
+ *	Caller must not hold dllDirectoryNameMutex.
+ *
+ * Results:
+ *	None.
+ *
+ * Side-effects:
+ *	Creates a process that will delete the directory after a delay
+ *      to allow current process to completely exit.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+TclpFinalizeLoad()
+{
+    Tcl_MutexLock(&dllDirectoryNameMutex);
+    if (dllDirectoryName) {
+	/* Ask cmd to wait 3 seconds before deletion to permit process exit*/
+#define DELCMD L"cmd /C timeout /T 3 /NOBREAK && rmdir/s/q"
+	WCHAR cmd[sizeof(DELCMD) / sizeof(WCHAR)
+	    + 2 /* Space and quote */
+	    + MAX_PATH
+	    + 2 /* quote and nul */];
+	HRESULT hr;
+	hr = StringCbPrintfW(
+	    cmd, sizeof(cmd), L"%s \"%s\"", DELCMD, dllDirectoryName);
+	if (SUCCEEDED(hr)) {
+	    STARTUPINFOW si = {0};
+	    PROCESS_INFORMATION pi = {0};
+	    (void)CreateProcessW(NULL, cmd, NULL, NULL, FALSE,
+	              CREATE_NO_WINDOW, NULL, NULL, &si, &pi);
+	}
+	Tcl_Free(dllDirectoryName);
+	dllDirectoryName = NULL;
+    }
+    Tcl_MutexUnlock(&dllDirectoryNameMutex);
+}
+
 
 /*
  * These functions are fallbacks if we somehow determine that the platform can

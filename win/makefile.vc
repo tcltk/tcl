@@ -224,6 +224,10 @@ TCLDDELIB	= $(OUT_DIR)\$(TCLDDELIBNAME)
 TCLTEST		= $(OUT_DIR)\$(PROJECT)test$(VERSION)$(SUFX:t=).exe
 TCLTESTRAW	= $(TCLTEST:.exe=-raw.exe)
 
+TCLWINTESTEXTNAME	= tclwintestextension.dll
+TCLWINTESTEXTPATH 	= $(OUT_DIR)\$(TCLWINTESTEXTNAME)
+TCLWINTESTEXTZIP	= $(TCLWINTESTEXTPATH:dll=zip)
+
 UTF8PROCDIR	= $(ROOT)\utf8proc
 
 TCLSHOBJS = \
@@ -542,7 +546,7 @@ shell:      libtclzip
 dlls:	    setup $(TCLREGLIB) $(TCLDDELIB) $(OUT_DIR)\zlib1.dll $(OUT_DIR)\libtommath.dll
 libtclzip:  $(TCLSCRIPTZIP)
 
-tcltest:    setup core $(TCLTEST) dlls
+tcltest:    setup core $(TCLTEST) $(TCLWINTESTEXTZIP) dlls
 !if $(TCL_EMBED_SCRIPTS) && $(STATIC_BUILD)
 tcltest:      libtclzip
 	@$(COPY) /b "$(TCLTESTRAW)"+"$(TCLSCRIPTZIP)" "$(TCLTEST)"
@@ -603,7 +607,6 @@ $(TCLSH): $(TCLSHOBJS) $(TCLSTUBLIB) $(TCLIMPLIB)
 	$(COPY) $@ $(TCLSHRAW)
 !endif
 
-
 $(TCLTEST): $(TCLTESTOBJS) $(TCLSTUBLIB) $(TCLIMPLIB)
 	$(CONEXECMD) -stack:2300000 $**
 	copy $(TMP_DIR)\tclsh.exe.manifest $(TCLTEST).manifest
@@ -629,6 +632,14 @@ $(TCLREGLIB): $(TMP_DIR)\tclWinReg.obj $(TCLSTUBLIB)
 	$(DLLCMD) $**
 	$(_VC_MANIFEST_EMBED_DLL)
 !endif
+
+$(TCLWINTESTEXTZIP): $(TCLWINTESTEXTPATH)
+	cd $(OUT_DIR)
+	@echo zipfs lmkzip {$(@F)} {$(TCLWINTESTEXTNAME) $(TCLWINTESTEXTNAME)} | $(TCLSH_NATIVE)
+
+$(TCLWINTESTEXTPATH): $(TMP_DIR)\tclWinTestExtension.obj $(TCLSTUBLIB)
+	$(DLLCMD) $**
+	$(_VC_MANIFEST_EMBED_DLL)
 
 !if "$(MACHINE)" == "ARM64"
 $(OUT_DIR)\zlib1.dll:	$(COMPATDIR)\zlib\win64-arm\zlib1.dll
@@ -675,6 +686,7 @@ $(TCLSCRIPTZIP): $(TCLLIB) $(TCLSH) dlls
 	@echo file delete -force {$(@F)} >> "$(OUT_DIR)\zipper.tcl"
 	@echo zipfs mkzip {$(@F)} {$(LIBTCLVFSSUBDIR)} {$(LIBTCLVFSSUBDIR)} >> "$(OUT_DIR)\zipper.tcl"
 	@$(TCLSH_NATIVE) "$(OUT_DIR)/zipper.tcl"
+	@del "$(OUT_DIR)\zipper.tcl"
 
 pkgs:
 	@for /d %d in ($(PKGSDIR)\*) do \

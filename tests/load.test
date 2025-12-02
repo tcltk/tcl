@@ -44,6 +44,9 @@ testConstraint teststaticlibrary [llength [info commands teststaticlibrary]]
 
 testConstraint testsimplefilesystem \
 	[llength [info commands testsimplefilesystem]]
+
+# Tests to check proper cleanup of temp files on Windows
+testConstraint tclwintestextension [file exists [file join [file dirname [info nameofexecutable]] tclwintestextension.zip]]
 
 test load-1.1 {basic errors} -returnCodes error -body {
     load
@@ -241,6 +244,33 @@ test load-11.1 {Load TclOO extension using Stubs (Bug [f51efe99a7])} \
     load [file join $testDir tcl9pkgooa$ext]
     list [pkgooa_stubsok] [lsort [info commands pkgooa_*]]
 } {1 pkgooa_stubsok}
+
+# TIP 741
+test load-12.1 {
+    Test cleanup of temp files on Windows
+} -constraints {win tclwintestextension} -body {
+    set fd [open |[list [interpreter]] w+]
+    set result {}
+    try {
+        chan configure $fd -buffering line
+        puts $fd {chan configure stdout -buffering line}
+        puts $fd {zipfs mount [file join [file dirname [info nameofexecutable]] tclwintestextension.zip] //zipfs:/test}
+        puts $fd {load //zipfs:/test/tclwintestextension.dll}
+        puts $fd {puts [wintestextension::path]}
+        set dlldir [file dirname [gets $fd]]
+        lappend result [file exists $dlldir]
+        puts $fd {exit 0}
+        close $fd
+        # Clean up happens 3 seconds after exit so wait a bit
+        after 4000
+        lappend result [file exists $dlldir]
+    } finally {
+        catch {close $fd}
+    }
+    set result
+} -cleanup {
+    unset -nocomplain fd dlldir result
+} -result {1 0}
 
 # cleanup
 unset ext

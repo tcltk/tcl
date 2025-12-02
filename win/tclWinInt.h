@@ -13,6 +13,7 @@
 #define _TCLWININT
 
 #include "tclInt.h"
+#include <strsafe.h>
 
 /*
  * Declarations of functions that are not accessible by way of the
