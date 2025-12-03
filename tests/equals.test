@@ -13,8 +13,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 # The equals-* tests here are adapted from the corresponding tests for expr.
-# The calc-* tests were contributed by Eric Taylor, they verify = results
-# against expr results.
+# The calc-* tests were contributed by Eric Taylor.
 
 if {"::tcltest" ni [namespace children]} {
     package require tcltest 2.5
@@ -95,21 +94,11 @@ test equals-1.12 {TclCompileExprCmd: inlined = inside catch} {
 	set a [= 10*a]
     }
 } 1
-#test equals-1.13 {TclCompileExprCmd: second level of substitutions in expr not in braces with single var reference} {
-#    set a xxx
-#    set x 27;  set bool {$x};  if $bool {set a foo}
-#    set a
-#} foo
 test equals-1.14 {TclCompileExprCmd: second level of substitutions in = with comparison as top-level operator} {
     set a xxx
     set x 2;  set b {x};  set a [= $b==2]
     set a
 } 1
-#test equals-1.15 {TclCompileExprCmd: second level of substitutions in expr with comparison as top-level operator} {
-#    set a xxx
-#    set x 2;  set b {$x};  set a [expr "$b eq 2"]
-#    set a
-#} 1
 
 test equals-2.1 {are builtin functions registered?} {
     = double(5*[llength "6 2"])
@@ -120,9 +109,6 @@ test equals-2.2 {error in expression} -body {
 test equals-2.3 {junk after legal expression} -body {
     = 7*[llength "a b"]foo
 } -returnCodes error -match glob -result *
-#test equals-2.4 {numeric expr string rep == formatted int rep} {
-#    expr {0001}
-#} 1
 
 test equals-3.1 {CompileCond: just lor expr} {= 3||0} 1
 test equals-3.2 {CompileCond: error in lor expr} -body {
@@ -136,13 +122,6 @@ test equals-3.5 {CompileCond: test false arm} {= 2>3?44:66} 66
 test equals-3.6 {CompileCond: error compiling false arm} -body {
     = 2>3?44:2***3
 } -returnCodes error -match glob -result *
-#test expr-3.7 {CompileCondExpr: long arms & nested cond exprs} {
-#    hello_world
-#} {Hello world}
-#test expr-3.8 {CompileCondExpr: long arms & nested cond exprs} unix {
-#    # Fails with a stack overflow on threaded Windows builds
-#    do_twelve_days
-#} 2358
 
 test equals-4.1 {CompileLor: just land expr} {= 1.3&&3.3} 1
 test equals-4.2 {CompileLor: error in land expr} -body {
@@ -228,7 +207,6 @@ test equals-6.10 {CompileBitXor: runtime error in bitxor arm} {
 test equals-7.1 {CompileBitAnd: just equality expr} {= 3==2} 0
 test equals-7.2 {CompileBitAnd: just equality expr} {= 2.0==2} 1
 test equals-7.3 {CompileBitAnd: just equality expr} {= 3.2!=2.2} 1
-#test equals-7.4 {CompileBitAnd: just equality expr} {expr {"abc" == "abd"}} 0
 test equals-7.5 {CompileBitAnd: error in equality expr} -body {
     = $==3
 } -returnCodes error -match glob -result *
@@ -249,8 +227,6 @@ test equals-7.13 {CompileBitAnd: runtime error in bitand arm} {
     set v1 a; set v2 b
     list [catch {= v1&v2} msg] $msg
 } {1 {cannot use non-numeric string "a" as left operand of "&"}}
-#test equals-7.14 {CompileBitAnd: equality expr} {expr 3eq2} 0
-#test equals-7.18 {CompileBitAnd: equality expr} {expr {"abc" eq "abd"}} 0
 test equals-7.20 {CompileBitAnd: error in equality expr} -body {
     = 2ne3
 } -returnCodes error -match glob -result *
@@ -258,41 +234,17 @@ test equals-7.20 {CompileBitAnd: error in equality expr} -body {
 test equals-8.1 {CompileEquality: just relational expr} {= 3>=2} 1
 test equals-8.2 {CompileEquality: just relational expr} {= 2<=2.1} 1
 test equals-8.3 {CompileEquality: just relational expr} {= 3.2> "2.2"} 1
-#test equals-8.4 {CompileEquality: just relational expr} {= "0y" < "0x12"} 0
 test equals-8.5 {CompileEquality: error in relational expr} -body {
     = $>3
 } -returnCodes error -match glob -result *
 test equals-8.6 {CompileEquality: simple equality exprs} {= 7==0x13} 0
 test equals-8.7 {CompileEquality: simple equality exprs} {= -0xf2!=0x53} 1
-#test equals-8.8 {CompileEquality: simple equality exprs} {= {"12398712938788234-1298379" != ""}} 1
-#test equals-8.9 {CompileEquality: simple equality exprs} {= -1!="abc"} 1
 test equals-8.10 {CompileEquality: error compiling equality arm} -body {
     = 2***3==6
 } -returnCodes error -match glob -result *
 test equals-8.11 {CompileEquality: error compiling equality arm} -body {
     = 2!=$
 } -returnCodes error -match glob -result *
-#test expr-8.12 {CompileBitAndExpr: equality expr} {expr {"a"eq"a"}} 1
-#test expr-8.13 {CompileBitAndExpr: equality expr} {expr {"\374" eq [set s \xFC]}} 1
-#test expr-8.14 {CompileBitAndExpr: equality expr} {expr 3eq2} 0
-#test expr-8.15 {CompileBitAndExpr: equality expr} {expr 2.0eq2} 0
-#test expr-8.16 {CompileBitAndExpr: equality expr} {expr 3.2ne2.2} 1
-#test expr-8.17 {CompileBitAndExpr: equality expr} {expr 01eq1} 0
-#test expr-8.18 {CompileBitAndExpr: equality expr} {expr {"abc" eq "abd"}} 0
-#test expr-8.19 {CompileBitAndExpr: equality expr} {expr {"abc" ne "abd"}} 1
-#test expr-8.20 {CompileBitAndExpr: error in equality expr} -body {
-#    expr x ne3
-#} -returnCodes error -match glob -result *
-#test expr-8.21 {CompileBitAndExpr: error in equality expr} -body {
-#    # These should be ""ed to avoid the error
-#    expr a eq b
-#} -returnCodes error -match glob -result *
-#test expr-8.22 {CompileBitAndExpr: error in equality expr} -body {
-#    expr {false eqfalse}
-#} -returnCodes error -match glob -result *
-#test expr-8.23 {CompileBitAndExpr: error in equality expr} -body {
-#    expr {false nefalse}
-#} -returnCodes error -match glob -result *
 test equals-8.24 {CompileEqualityExpr: simple equality exprs} {
     set x 12398712938788234
     = {x == 100}
@@ -300,24 +252,9 @@ test equals-8.24 {CompileEqualityExpr: simple equality exprs} {
 test equals-8.25 {CompileEqualityExpr: simple equality exprs} {
     = "0x12 " == "0x12"
 } 1
-#test expr-8.26 {CompileEqualityExpr: simple equality exprs} {
-#    expr {"0x12 " eq "0x12"}
-#} 0
 test equals-8.27 {CompileEqualityExpr: simple equality exprs} {
     = "1.0e100000000" == "0.0"
 } 0
-#test expr-8.28 {CompileEqualityExpr: just relational expr} {
-#    expr {"0y" == "0x0"}
-#} 0
-#test expr-8.29 {CompileEqualityExpr: just relational expr} {
-#    # Compare original strings from variables.
-#    set v1 "0y"
-#    set v2 "0x12"
-#    expr {$v1 < $v2}
-#} 0
-#test expr-8.30 {CompileEqualityExpr: simple equality exprs} {
-#    expr {"fake" != "bob"}
-#} 1
 test expr-8.31 {expr edge cases} -body {
     = {1e}
 } -returnCodes error -match glob -result *
@@ -333,26 +270,6 @@ test expr-8.34 {expr edge cases} -body {
 test expr-8.35 {expr edge cases} -body {
     = {1ea}
 } -returnCodes error -match glob -result *
-#test expr-8.36 {CompileEqualtyExpr: string comparison ops} {
-#    set x 012
-#    set y 0x0
-#    list [expr {$x < $y}] [expr {$x lt $y}] [expr {$x lt $x}]
-#} {0 1 0}
-#test expr-8.37 {CompileEqualtyExpr: string comparison ops} {
-#    set x 012
-#    set y 0x0
-#    list [expr {$x <= $y}] [expr {$x le $y}] [expr {$x le $x}]
-#} {0 1 1}
-#test expr-8.38 {CompileEqualtyExpr: string comparison ops} {
-#    set x 012
-#    set y 0x0
-#    list [expr {$x > $y}] [expr {$x gt $y}] [expr {$x gt $x}]
-#} {1 0 0}
-#test expr-8.39 {CompileEqualtyExpr: string comparison ops} {
-#    set x 012
-#    set y 0x0
-#    list [expr {$x >= $y}] [expr {$x ge $y}] [expr {$x ge $x}]
-#} {1 0 1}
 
 test equals-9.1 {CompileRelational: just shift expr} {= 3<<2} 12
 test equals-9.2 {CompileRelational: just shift expr} {= 0xff>>2} 63
@@ -498,10 +415,6 @@ test equals-13.16 {CompileUnary: error in primary expr} {
     catch {= [set]} msg
     set msg
 } {wrong # args: should be "set varName ?newValue?"}
-#test equals-13.17 {CompileUnary: negating non-numeric boolean literals} {
-#    set a1 yes; set a0 no; set b1 true; set b0 false
-#    list [expr {!$a1}] [expr {!$a0}] [expr {!$b1}] [expr {!$b0}]
-#} {0 1 0 1}
 
 test equals-14.1 {CompilePrimary: literal primary} {= 1} 1
 test equals-14.2 {CompilePrimary: literal primary} {= 123} 123
@@ -511,19 +424,11 @@ test equals-14.5 {CompilePrimary: literal primary} {= 62.0} 62.0
 test equals-14.6 {CompilePrimary: literal primary} {
     = 3.1400000
 } 3.1400000
-#test expr-14.7 {CompilePrimaryExpr: literal primary} {expr {{abcde}<{abcdef}}} 1
-#test expr-14.8 {CompilePrimaryExpr: literal primary} {expr {{abc\
-#def} < {abcdef}}} 1
-#test expr-14.9 {CompilePrimaryExpr: literal primary} {expr {{abc\tde} > {abc\tdef}}} 0
 test equals-14.10 {CompilePrimary: literal primary} {= {123}} 123
 test equals-14.11 {CompilePrimary: var reference primary} {
     set i 789
     list [= {i}] [= i]
 } {789 789}
-#test equals-14.12 {CompilePrimary: var reference primary} {
-#    set i {789}    ;# test expr's aggressive conversion to numeric semantics
-#    list [expr {$i}] [expr $i]
-#} {789 789}
 test equals-14.13 {CompilePrimary: var reference primary} {
     catch {unset a}
     set a(foo) 789
@@ -566,18 +471,6 @@ test equals-14.21 {CompilePrimary: error in quoted string primary} {
     catch {= "[set]"} msg
     set msg
 } {wrong # args: should be "set varName ?newValue?"}
-#test equals-14.22 {CompilePrimary: subcommand primary} {
-#    expr {[set i 123; set i]}
-#} 123
-#test expr-14.23 {CompilePrimaryExpr: error in subcommand primary} -body {
-#    catch {expr {[set]}} msg
-#    set ::errorInfo
-#} -match glob -result {wrong # args: should be "set varName ?newValue?"
-#    while *ing
-#"set"*}
-#test expr-14.24 {CompilePrimaryExpr: error in subcommand primary} -body {
-#    expr {[set i}
-#} -returnCodes error -match glob -result *
 test equals-14.25 {CompilePrimary: math function primary} {
     format %.6g [= exp(1.0)]
 } 2.71828
@@ -648,9 +541,6 @@ test equals-16.1 {GetToken: checks whether integer token starting with "0x" (e.g
     }
     set i
 } {}
-#test expr-16.2 {GetToken: check for string literal in braces} {
-#    expr {{1}}
-#} {1}
 
 # Check "=" and computed command names.
 
@@ -669,9 +559,6 @@ test equals-18.1 {= and conversion of operands to numbers} {
     catch {= int(x)}
     = {x}
 } 11
-#test expr-18.2 {whitespace strings should not be == 0 (buggy strtol/strtoul)} {
-#    expr {" "}
-#} { }
 
 # Check "=" and interpreter result object resetting before appending
 # an error msg during evaluation of exprs not in {}s
@@ -736,106 +623,38 @@ test equals-20.5 {proper double evaluation compilation, working case} {
     set a 77
     = 1?$a:0
 } 77
-#test expr-20.6 {handling of compile error in trial compile} {
-#    list [catch {expr + {[incr]}} msg] $msg
-#} {1 {wrong # args: should be "incr varName ?increment?"}}
-#test expr-20.7 {handling of compile error in runtime case} {
-#    list [catch {expr + {[error foo]}} msg] $msg
-#} {1 foo}
-
-# Test for non-numeric boolean literal handling
-#test expr-21.1	{non-numeric boolean literals} {expr false } false
-#test expr-21.2	{non-numeric boolean literals} {expr true  } true
-#test expr-21.3	{non-numeric boolean literals} {expr off   } off
-#test expr-21.4	{non-numeric boolean literals} {expr on    } on
-#test expr-21.5	{non-numeric boolean literals} {expr no    } no
-#test expr-21.6	{non-numeric boolean literals} {expr yes   } yes
-#test expr-21.7	{non-numeric boolean literals} {expr !false} 1
-#test expr-21.8	{non-numeric boolean literals} {expr !true } 0
-#test expr-21.9	{non-numeric boolean literals} {expr !off  } 1
-#test expr-21.10 {non-numeric boolean literals} {expr !on   } 0
-#test expr-21.11 {non-numeric boolean literals} {expr !no   } 1
-#test expr-21.12 {non-numeric boolean literals} {expr !yes  } 0
-#test expr-21.13 {non-numeric boolean literals} -body {
-#    expr !truef
-#} -returnCodes error -match glob -result *
-#test expr-21.14 {non-numeric boolean literals} {
-#    list [catch {expr !"truef"} err] $err
-#} {1 {cannot use non-numeric string "truef" as operand of "!"}}
 test equals-21.15 {non-numeric boolean variables} {
     set v truef
     list [catch {= {!v}} err] $err
 } {1 {cannot use non-numeric string "truef" as operand of "!"}}
-#test expr-21.16 {non-numeric boolean variables} {
-#    set v "true "
-#    list [catch {expr {!$v}} err] $err
-#} {1 {cannot use non-numeric string "true " as operand of "!"}}
-#test expr-21.17 {non-numeric boolean variables} {
-#    set v "tru"
-#    list [catch {expr {!$v}} err] $err
-#} {0 0}
-#test expr-21.18 {non-numeric boolean variables} {
-#    set v "fal"
-#    list [catch {expr {!$v}} err] $err
-#} {0 1}
-#test expr-21.19 {non-numeric boolean variables} {
-#    set v "y"
-#    list [catch {expr {!$v}} err] $err
-#} {0 0}
-#test expr-21.20 {non-numeric boolean variables} {
-#    set v "of"
-#    list [catch {expr {!$v}} err] $err
-#} {0 1}
-#test expr-21.21 {non-numeric boolean variables} {
-#    set v "o"
-#    list [catch {expr {!$v}} err] $err
-#} {1 {cannot use non-numeric string "o" as operand of "!"}}
-#test expr-21.22 {non-numeric boolean variables} {
-#    set v ""
-#    list [catch {expr {!$v}} err] $err
-#} {1 {cannot use non-numeric string "" as operand of "!"}}
 
 # Test for non-numeric float handling.
-test equals-22.1 {non-numeric floats} {
+test equals-22.1 {literal nan not supported} {
     list [catch {= {NaN + 1}} msg] $msg
-} {1 {cannot use non-numeric floating-point value "NaN" as left operand of "+"}}
-test equals-22.2 {non-numeric floats} !ieeeFloatingPoint {
+} {1 {can't read "NaN": no such variable}}
+test equals-22.2 {literal inf not supported} {
     list [catch {= {Inf + 1}} msg] $msg
-} {1 {can't use infinite floating-point value as operand of "+"}}
+} {1 {can't read "Inf": no such variable}}
 test equals-22.3 {non-numeric floats} {
-    set nana NaN
-    list [catch {= {nana + 1}} msg] $msg
+    set v1 NaN
+    list [catch {= {v1 + 1}} msg] $msg
 } {1 {cannot use non-numeric floating-point value "NaN" as left operand of "+"}}
 test equals-22.4 {non-numeric floats} !ieeeFloatingPoint {
     set v1 Inf
     list [catch {= v1 + 1} msg] $msg
 } {1 {can't use infinite floating-point value as operand of "+"}}
-#test equals-22.5 {non-numeric floats} {
-#    list [catch {expr NaN} msg] $msg
-#} {1 {domain error: argument not in valid range}}
-#test equals-22.6 {non-numeric floats} !ieeeFloatingPoint {
-#    list [catch {expr Inf} msg] $msg
-#} {1 {floating-point value too large to represent}}
 test equals-22.7 {non-numeric floats} {
-    list [catch {= {1 / NaN}} msg] $msg
+    set v1 NaN
+    list [catch {= {1 / v1}} msg] $msg
 } {1 {cannot use non-numeric floating-point value "NaN" as right operand of "/"}}
 test equals-22.8 {non-numeric floats} !ieeeFloatingPoint {
-    list [catch {= {1 / Inf}} msg] $msg
+    set v1 Inf
+    list [catch {= {1 / v1}} msg] $msg
 } {1 {can't use infinite floating-point value as operand of "/"}}
-# Make sure [Bug 761471] stays fixed.
 test equals-22.9 {non-numeric floats: shared object equality and NaN} {
     set x NaN
     = {x == x}
 } 0
-# Make sure [Bug d0f7ba56f0] stays fixed.
-#test expr-22.10 {non-numeric arguments: equality and NaN} {
-#    set x NaN
-#    expr {$x > "Gran"}
-#} 1
-#test expr-22.11 {non-numeric arguments: equality and NaN} {
-#    set x NaN
-#    expr {"Gran" < $x}
-#} 1
 
 # Tests for exponentiation handling
 test equals-23.1 {CompileExponentialExpr: just exponential expr} {= 4**2} 16
@@ -1266,7 +1085,8 @@ test equals-47.2 {isqrt() - non-number} {
 } {1 {expected number but got "rubbish"}}
 
 test equals-47.3 {isqrt() - NaN} ieeeFloatingPoint {
-    list [catch {= {isqrt(NaN)}} result] $result
+    set v1 NaN
+    list [catch {= {isqrt(v1)}} result] $result
 } {1 {floating point value is Not a Number}}
 
 test equals-47.4 {isqrt() of negative floating point number} {
@@ -1482,7 +1302,7 @@ test calc-7.2 {sqrt with expression} -setup {
 }
 
 test calc-7.3 {sin function} -setup {
-    set angle 90
+    set angle 0.5
 } -body {
     expr {[= sin(angle)] == [expr {sin($angle)}]}
 } -result 1 -cleanup {
@@ -1841,17 +1661,17 @@ test calc-24.8 {abs with variable} -setup {
 
 # ---------- Trigonometric Functions ----------
 
-test calc-25.1 {sin(0)} -body {
-    = sin(0)
-} -result [expr {sin(0)}]
+test calc-25.1 {sin(0.2)} -body {
+    = sin(0.2)
+} -result [expr {sin(0.2)}]
 
-test calc-25.2 {cos(0)} -body {
-    = cos(0)
-} -result [expr {cos(0)}]
+test calc-25.2 {cos(0.2)} -body {
+    = cos(0.2)
+} -result [expr {cos(0.2)}]
 
-test calc-25.3 {tan(0)} -body {
-    = tan(0)
-} -result [expr {tan(0)}]
+test calc-25.3 {tan(0.2)} -body {
+    = tan(0.2)
+} -result [expr {tan(0.2)}]
 
 test calc-25.4 {sin(pi)} -setup {
     set pi 3.14159265359
@@ -2181,7 +2001,6 @@ test calc-37.1 {local variables in proc} -body {
     proc test_locals {} {
         set x 5
         set y 12
-        global calcCmd
         set result [= sqrt(x*x + y*y)]
         set expected [expr {sqrt($x*$x + $y*$y)}]
         expr {$result == $expected}
@@ -2196,7 +2015,6 @@ test calc-37.2 {global with :: prefix} -setup {
     set ::gy 200
 } -body {
     proc test_global_colon {} {
-        global calcCmd
         set result [= max(::gx, ::gy)]
         set expected [expr {max($::gx, $::gy)}]
         expr {$result == $expected}
@@ -2212,7 +2030,7 @@ test calc-37.3 {global with declaration} -setup {
     set ::gb 75
 } -body {
     proc test_global_declared {} {
-        global ga gb calcCmd
+        global ga gb
         set result [= min(ga, gb)]
         set expected [expr {min($ga, $gb)}]
         expr {$result == $expected}
@@ -2228,7 +2046,7 @@ test calc-37.4 {mix of local and global} -setup {
 } -body {
     proc test_mixed {} {
         set height 20
-        global radius calcCmd
+        global radius
         set result [= pow(radius, 2) + height]
         set expected [expr {pow($radius, 2) + $height}]
         expr {$result == $expected}
@@ -2244,7 +2062,6 @@ test calc-37.5 {namespace variables} -body {
         variable data 42
         proc test_namespace {} {
             variable data
-            global calcCmd
             set result [= sqrt(::myns::data)]
             set expected [expr {sqrt($::myns::data)}]
             expr {$result == $expected}

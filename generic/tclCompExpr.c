@@ -13,6 +13,7 @@
 
 #include "tclInt.h"
 #include "tclCompile.h"		/* CompileEnv */
+#include <math.h>
 
 /*
  * Expression parsing takes place in the routine ParseExpr(). It takes a
@@ -2952,6 +2953,20 @@ void EqNextLex(
 
     // Special cases that we treat as BAREWORD
     switch (in->lex) {
+	// Don't treat NAN or INF as numbers.
+	case NUMBER:
+	    if (! TclHasInternalRep(in->lit, &tclDoubleType)) break;
+	    if (isnan(in->lit->internalRep.doubleValue) ||
+		isinf(in->lit->internalRep.doubleValue)
+	    ) {
+		// Make sure it's literal "nan" or "inf"
+		const char c = *in->lastStart;
+		if (c=='n' || c=='N' || c=='i' || c=='I') {
+		    in->lex = BAREWORD;
+		    Tcl_SetStringObj(in->lit, in->lastStart, scanned);
+		}
+	    }
+	    break;
 	// Double colon introduces a global variable, single is for ternary op.
 	case COLON:
 	    if ((numBytes < 1) || (start[0] != ':')) break;
