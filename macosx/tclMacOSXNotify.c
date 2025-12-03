@@ -161,7 +161,7 @@ typedef struct FileHandler {
 				 * for this file. */
     Tcl_FileProc *proc;		/* Function to call, in the style of
 				 * Tcl_CreateFileHandler. */
-    void *clientData;	/* Argument to pass to proc. */
+    void *clientData;		/* Argument to pass to proc. */
     struct FileHandler *nextPtr;/* Next in list of all files we care about. */
 } FileHandler;
 
@@ -296,7 +296,7 @@ static ThreadSpecificData *waitingListPtr = NULL;
  */
 
 static int triggerPipe = -1;
-static int receivePipe = -1; /* Output end of triggerPipe */
+static int receivePipe = -1;	/* Output end of triggerPipe */
 
 /*
  * The following static indicates if the notifier thread is running.
@@ -656,7 +656,7 @@ StartNotifierThread(void)
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 	pthread_attr_setstacksize(&attr, 60 * 1024);
 	result = pthread_create(&notifierThread, &attr,
-		(void * (*)(void *)) NotifierThreadProc, NULL);
+		(void * (*)(void *))(void *)NotifierThreadProc, NULL);
 	pthread_attr_destroy(&attr);
 	if (result) {
 	    Tcl_Panic("StartNotifierThread: unable to start notifier thread");
@@ -794,7 +794,7 @@ void
 TclpAlertNotifier(
     void *clientData)
 {
-    ThreadSpecificData *tsdPtr = (ThreadSpecificData *) clientData;
+    ThreadSpecificData *tsdPtr = (ThreadSpecificData *)clientData;
 
     LOCK_NOTIFIER_TSD;
     if (tsdPtr->runLoop) {
@@ -822,7 +822,7 @@ TclpAlertNotifier(
 
 void
 TclpSetTimer(
-    const Tcl_Time *timePtr)		/* Timeout value, may be NULL. */
+    const Tcl_Time *timePtr)	/* Timeout value, may be NULL. */
 {
     ThreadSpecificData *tsdPtr;
     CFRunLoopTimerRef runLoopTimer;
@@ -936,13 +936,13 @@ TclpCreateFileHandler(
 				 * called. */
     Tcl_FileProc *proc,		/* Function to call for each selected
 				 * event. */
-    void *clientData)	/* Arbitrary data to pass to proc. */
+    void *clientData)		/* Arbitrary data to pass to proc. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     FileHandler *filePtr = LookUpFileHandler(tsdPtr, fd, NULL);
 
     if (filePtr == NULL) {
-	filePtr = (FileHandler *) Tcl_Alloc(sizeof(FileHandler));
+	filePtr = (FileHandler *)Tcl_Alloc(sizeof(FileHandler));
 	filePtr->fd = fd;
 	filePtr->readyMask = 0;
 	filePtr->nextPtr = tsdPtr->firstFileHandlerPtr;
@@ -1183,7 +1183,7 @@ TclpNotifierData(void)
 
 int
 TclpWaitForEvent(
-    const Tcl_Time *timePtr)		/* Maximum block time, or NULL. */
+    const Tcl_Time *timePtr)	/* Maximum block time, or NULL. */
 {
     int result, polling, runLoopRunning;
     CFTimeInterval waitTime;
@@ -1300,7 +1300,7 @@ QueueFileEvents(
 {
     SelectMasks readyMasks;
     FileHandler *filePtr;
-    ThreadSpecificData *tsdPtr = (ThreadSpecificData *) info;
+    ThreadSpecificData *tsdPtr = (ThreadSpecificData *)info;
 
     /*
      * Queue all detected file events.
@@ -1373,7 +1373,7 @@ UpdateWaitingListAndServiceEvents(
     CFRunLoopActivity activity,
     void *info)
 {
-    ThreadSpecificData *tsdPtr = (ThreadSpecificData *) info;
+    ThreadSpecificData *tsdPtr = (ThreadSpecificData *)info;
 
     if (tsdPtr->sleeping) {
 	return;
@@ -1538,7 +1538,9 @@ Tcl_Sleep(
 
 	waitTime.tv_sec = vdelay.sec;
 	waitTime.tv_nsec = vdelay.usec * 1000;
-	while (nanosleep(&waitTime, &waitTime));
+	while (nanosleep(&waitTime, &waitTime)) {
+	    /* Empty body */
+	}
     }
 }
 
@@ -1935,7 +1937,7 @@ NotifierThreadProc(
 	 */
 
 	if (FD_ISSET(receivePipe, &readableMask)) {
-	    i = read(receivePipe, buf, 1);
+	    i = (int)read(receivePipe, buf, 1);
 
 	    if ((i == 0) || ((i == 1) && (buf[0] == 'q'))) {
 		/*
