@@ -159,6 +159,8 @@ REG_LIB_FILE		= @LIBPREFIX@tclregistry$(REGVER)${DLLSUFFIX}${LIBSUFFIX}
 TEST_DLL_FILE		= tcltest$(VER)${DLLSUFFIX}
 TEST_EXE_FILE		= tcltest${EXESUFFIX}
 TEST_LIB_FILE		= @LIBPREFIX@tcltest$(VER)${DLLSUFFIX}${LIBSUFFIX}
+TEST_WINTESTEXT_FILE	= tclwintestextension${DLLSUFFIX}
+TEST_WINTESTZIP_FILE	= tclwintestextension.zip
 TEST_LOAD_PRMS		= lappend ::auto_path {$(ROOT_DIR_WIN_NATIVE)/tests};\
 			  package ifneeded dde 1.5a1 [list load ${DDE_DLL_FILE}];\
 			  package ifneeded registry 1.4a1 [list load ${REG_DLL_FILE}]
@@ -538,7 +540,7 @@ tcltest.cmd: Makefile
 
 tcltest.sh: tcltest.cmd
 
-tcltest: binaries $(TEST_EXE_FILE) $(TEST_DLL_FILE) $(CAT32) tcltest.cmd
+tcltest: binaries $(TEST_EXE_FILE) $(TEST_DLL_FILE) $(CAT32) tcltest.cmd $(TEST_WINTESTZIP_FILE)
 
 binaries: $(TCL_STUB_LIB_FILE) @LIBRARIES@ winextensions ${TCL_ZIP_FILE} $(TCLSH)
 
@@ -627,6 +629,12 @@ ${TEST_EXE_FILE}: @LIBRARIES@ ${TCL_STUB_LIB_FILE} ${TCLTEST_OBJS} tclTestMain.$
 	$(CC) $(CFLAGS) $(TCLTEST_OBJS) tclTestMain.$(OBJEXT) $(TCL_LIB_FILE) $(TCL_STUB_LIB_FILE) $(LIBS) \
 	tclsh.$(RES) $(CC_EXENAME) $(LDFLAGS_CONSOLE)
 	$(COPY) tclsh.exe.manifest ${TEST_EXE_FILE}.manifest
+
+${TEST_WINTESTZIP_FILE}: ${TCLSH} ${TEST_WINTESTEXT_FILE}
+	echo 'zipfs lmkzip ${TEST_WINTESTZIP_FILE} "$(TEST_WINTESTEXT_FILE) $(TEST_WINTESTEXT_FILE)"' | ./$(TCLSH)
+
+${TEST_WINTESTEXT_FILE}: ${TCL_STUB_LIB_FILE} tclWinTestExtension.$(OBJEXT)
+	@MAKE_DLL@ tclwintestextension.$(OBJEXT) $(TCL_STUB_LIB_FILE) $(SHLIB_LD_LIBS)
 
 # use prebuilt zlib1.dll
 ${ZLIB_DLL_FILE}: ${TCL_STUB_LIB_FILE}
@@ -729,6 +737,9 @@ tclDate.${OBJEXT}: tclDate.c tclDate.h
 tclEvent.${OBJEXT}: tclEvent.c tclUuid.h
 
 tclTest.${OBJEXT}: tclTest.c tclUuid.h
+
+tclWinTestExtension.${OBJEXT}: tclWinTestExtension.c
+	$(CC) -c $(CC_SWITCHES) $(EXTFLAGS) @DEPARG@ $(CC_OBJNAME)
 
 $(TOP_DIR)/manifest.uuid:
 	printf "git-" >$(TOP_DIR)/manifest.uuid
