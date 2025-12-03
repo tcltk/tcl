@@ -422,19 +422,28 @@ TclpFinalizeLoad()
     Tcl_MutexLock(&dllDirectoryNameMutex);
     if (dllDirectoryName) {
 	/* Ask cmd to wait 3 seconds before deletion to permit process exit*/
-#define DELCMD L"cmd /C timeout /T 3 /NOBREAK && rmdir/s/q"
-	WCHAR cmd[sizeof(DELCMD) / sizeof(WCHAR)
-	    + 2 /* Space and quote */
-	    + MAX_PATH
-	    + 2 /* quote and nul */];
+	WCHAR systemDir[MAX_PATH];
+	WCHAR cmd[2048];
 	HRESULT hr;
-	hr = StringCbPrintfW(
-	    cmd, sizeof(cmd), L"%s \"%s\"", DELCMD, dllDirectoryName);
-	if (SUCCEEDED(hr)) {
-	    STARTUPINFOW si = {0};
-	    PROCESS_INFORMATION pi = {0};
-	    (void)CreateProcessW(NULL, cmd, NULL, NULL, FALSE,
-	              CREATE_NO_WINDOW, NULL, NULL, &si, &pi);
+	UINT sysDirLen =
+	    GetSystemDirectoryW(systemDir, sizeof(systemDir) / sizeof(WCHAR));
+	if (sysDirLen > 0 || sysDirLen < (sizeof(systemDir) / sizeof(WCHAR))) {
+	    hr = StringCbPrintfW(
+		cmd, sizeof(cmd), L"%s\\cmd.exe /C %s\\timeout.exe /T 3 /NOBREAK && rmdir/s/q \"%s\"", systemDir, systemDir, dllDirectoryName);
+	    if (SUCCEEDED(hr)) {
+		STARTUPINFOW si = {0};
+		PROCESS_INFORMATION pi = {0};
+		(void)CreateProcessW(NULL,
+				     cmd,
+				     NULL,
+				     NULL,
+				     FALSE,
+				     CREATE_NO_WINDOW,
+				     NULL,
+				     NULL,
+				     &si,
+				     &pi);
+	    }
 	}
 	Tcl_Free(dllDirectoryName);
 	dllDirectoryName = NULL;
