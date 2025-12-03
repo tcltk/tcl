@@ -37,13 +37,13 @@ Each operand has one of the following forms:
 .TP
 A literal \fBnumeric value\fR
 .
-Any of the forms accepted by \fBstring is integer\fR or \fBstring is double\fR.
-This is compatible with \fBexpr\fR.
+Any of the forms accepted by \fBstring is integer\fR or \fBstring is double\fR
+\fIexcept\fR "inf", "infinity" or "nan" in any capitalization.
 .TP
 A \fBvariable\fR
 .
-Any sequence of characters which starts with an alphabetic character and
-continues with alphanumeric characters, underscores or colons and \fIdoes not\fR
+Any sequence of alphanumeric characters, underscores or colons
+which \fIdoes not\fR
 terminate with \fB(\fR will be treated as a variable name and its value
 will be substituted into the expression.
 It is an error for that value to be non-numeric.
@@ -52,8 +52,7 @@ front of each variable name.
 .TP
 A function call.
 .
-Any sequence of characters which starts with an alphabetic character and
-continues with alphanumeric characters, underscores or colons and \fIdoes\fR
+Any sequence of alphanumeric characters, underscores or colons which \fIdoes\fR
 terminate with \fB(\fR will be treated as a function call, and should be
 followed by any arguments it takes, separated by commas and terminated by \fB)\fR.
 This is a mathematical function such as \fBsin(x)\fR, whose arguments have any of
