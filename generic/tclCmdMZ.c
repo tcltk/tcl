@@ -28,8 +28,8 @@ static Tcl_NRPostProc	SwitchPostProc;
 static Tcl_NRPostProc	TryPostBody;
 static Tcl_NRPostProc	TryPostFinal;
 static Tcl_NRPostProc	TryPostHandler;
-static int		UniCharIsAscii(int character);
-static int		UniCharIsHexDigit(int character);
+static bool		UniCharIsAscii(int character);
+static bool		UniCharIsHexDigit(int character);
 static int		StringCmpOpts(Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[], int *nocase,
 			    Tcl_Size *reqlength);
@@ -1593,7 +1593,7 @@ StringIsCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     const char *string1, *end, *stop;
-    int (*chcomp)(int) = NULL;	/* The UniChar comparison function. */
+    bool (*chcomp)(int) = NULL;	/* The UniChar comparison function. */
     int i, result = 1, strict = 0;
     Tcl_Size failat = 0, length1, length2, length3;
     Tcl_Obj *objPtr, *failVarObj = NULL;
@@ -1989,14 +1989,14 @@ StringIsCmd(
     return TCL_OK;
 }
 
-static int
+static bool
 UniCharIsAscii(
     int character)
 {
     return (character >= 0) && (character < 0x80);
 }
 
-static int
+static bool
 UniCharIsHexDigit(
     int character)
 {

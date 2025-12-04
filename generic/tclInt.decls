@@ -401,7 +401,7 @@ declare 172 {
     int TclInThreadExit(void)
 }
 declare 173 {
-    int TclUniCharMatch(const Tcl_UniChar *string, Tcl_Size strLen,
+    bool TclUniCharMatch(const Tcl_UniChar *string, Tcl_Size strLen,
 	    const Tcl_UniChar *pattern, Tcl_Size ptnLen, int flags)
 }
 declare 175 {
@@ -690,7 +690,7 @@ declare 15 {
 	    TclFile errorFile, Tcl_Pid *pidPtr)
 }
 declare 16 {
-    int TclpIsAtty(int fd)
+    bool TclpIsAtty(int fd)
 }
 declare 17 {
     int TclUnixCopyFile(const char *src, const char *dst,

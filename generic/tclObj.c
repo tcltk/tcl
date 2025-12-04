@@ -3775,7 +3775,7 @@ TclUndoRefCount(
  */
 
 #undef Tcl_IsShared
-int
+bool
 Tcl_IsShared(
     Tcl_Obj *objPtr)	/* The object to test for being shared. */
 {
@@ -3954,7 +3954,7 @@ Tcl_DbDecrRefCount(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Tcl_DbIsShared(
     Tcl_Obj *objPtr,		/* The object to test for being shared. */
 #ifdef TCL_MEM_DEBUG

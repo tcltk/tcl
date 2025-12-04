@@ -68,9 +68,6 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stdint.h>
-#if defined(_MSC_VER) || (defined(__STDC_VERSION__) && (__STDC_VERSION__ < 202311L))
-#include <stdbool.h>
-#endif
 #include <string.h>
 #include <locale.h>
 
@@ -2283,7 +2280,7 @@ typedef struct Interp {
     void *pendingObjDataPtr;	/* Pointer to the Cache and PendingObjData
 				 * structs for this interp's thread; see
 				 * tclObj.c and tclThreadAlloc.c */
-    int *asyncReadyPtr;		/* Pointer to the asyncReady indicator for
+    bool *asyncReadyPtr;		/* Pointer to the asyncReady indicator for
 				 * this interp's thread; see tclAsync.c */
     /*
      * The pointer to the object system root ekeko. c.f. TIP #257.
@@ -3331,7 +3328,7 @@ MODULE_SCOPE int	TclAsyncNotifier(int sigNumber, Tcl_ThreadId threadId,
 			    void *clientData, int *flagPtr, int value);
 MODULE_SCOPE void	TclAsyncMarkFromNotifier(void);
 MODULE_SCOPE double	TclBignumToDouble(const void *bignum);
-MODULE_SCOPE int	TclByteArrayMatch(const unsigned char *string,
+MODULE_SCOPE bool	TclByteArrayMatch(const unsigned char *string,
 			    Tcl_Size strLen, const unsigned char *pattern,
 			    Tcl_Size ptnLen, int flags);
 MODULE_SCOPE double	TclCeil(const void *a);
@@ -3448,7 +3445,7 @@ MODULE_SCOPE Tcl_Command TclNRCreateCommandInNs(Tcl_Interp *interp,
 			    void *clientData, Tcl_CmdDeleteProc *deleteProc);
 MODULE_SCOPE int	TclNREvalFile(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 			    const char *encodingName);
-MODULE_SCOPE int *	TclGetAsyncReadyPtr(void);
+MODULE_SCOPE bool *	TclGetAsyncReadyPtr(void);
 MODULE_SCOPE Tcl_Obj *	TclGetBgErrorHandler(Tcl_Interp *interp);
 MODULE_SCOPE int	TclGetChannelFromObj(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, Tcl_Channel *chanPtr,
@@ -3660,7 +3657,7 @@ MODULE_SCOPE int	TclStringCmp(Tcl_Obj *value1Ptr, Tcl_Obj *value2Ptr,
 			    int checkEq, int nocase, Tcl_Size reqlength);
 MODULE_SCOPE int	TclStringMatch(const char *str, Tcl_Size strLen,
 			    const char *pattern, int ptnLen, int flags);
-MODULE_SCOPE int	TclStringMatchObj(Tcl_Obj *stringObj,
+MODULE_SCOPE bool	TclStringMatchObj(Tcl_Obj *stringObj,
 			    Tcl_Obj *patternObj, int flags);
 MODULE_SCOPE void	TclSubstCompile(Tcl_Interp *interp, const char *bytes,
 			    Tcl_Size numBytes, int flags, int line,
@@ -4122,7 +4119,7 @@ MODULE_SCOPE int	TclUniCharNcmp(const Tcl_UniChar *ucs,
 			    const Tcl_UniChar *uct, size_t numChars);
 MODULE_SCOPE int	TclUniCharNcasecmp(const Tcl_UniChar *ucs,
 			    const Tcl_UniChar *uct, size_t numChars);
-MODULE_SCOPE int	TclUniCharCaseMatch(const Tcl_UniChar *uniStr,
+MODULE_SCOPE bool	TclUniCharCaseMatch(const Tcl_UniChar *uniStr,
 			    const Tcl_UniChar *uniPattern, int nocase);
 
 /*
@@ -4736,11 +4733,11 @@ TclGrowParseTokenArray(
  * but we don't do that at the moment since this is purely about efficiency.
  * The ANSI C "prototype" for this macro is:
  *
- * MODULE_SCOPE int	TclIsPureByteArray(Tcl_Obj *objPtr);
+ * MODULE_SCOPE bool	TclIsPureByteArray(Tcl_Obj *objPtr);
  *----------------------------------------------------------------
  */
 
-MODULE_SCOPE int	TclIsPureByteArray(Tcl_Obj *objPtr);
+MODULE_SCOPE bool	TclIsPureByteArray(Tcl_Obj *objPtr);
 #define TclIsPureDict(objPtr) \
     (((objPtr)->bytes == NULL) && TclHasInternalRep((objPtr), &tclDictType))
 #define TclHasInternalRep(objPtr, type) \
