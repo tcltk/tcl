@@ -38,12 +38,13 @@ Each operand has one of the following forms:
 A literal \fBnumeric value\fR
 .
 Any of the forms accepted by \fBstring is integer\fR or \fBstring is double\fR
-\fIexcept\fR "inf", "infinity" or "nan" in any capitalization.
+\fIunless\fR it starts with a letter.
+Exceptional values like "inf" or "nan" are not accepted.
 .TP
 A \fBvariable\fR
 .
-Any sequence of alphanumeric characters, underscores or colons
-which \fIdoes not\fR
+Any sequence of characters which starts with an alphabetic character and
+continues with alphanumeric characters, underscores or colons and \fIdoes not\fR
 terminate with \fB(\fR will be treated as a variable name and its value
 will be substituted into the expression.
 It is an error for that value to be non-numeric.
@@ -52,7 +53,8 @@ front of each variable name.
 .TP
 A function call.
 .
-Any sequence of alphanumeric characters, underscores or colons which \fIdoes\fR
+Any sequence of characters which starts with an alphabetic character and
+continues with alphanumeric characters, underscores or colons and \fIdoes\fR
 terminate with \fB(\fR will be treated as a function call, and should be
 followed by any arguments it takes, separated by commas and terminated by \fB)\fR.
 This is a mathematical function such as \fBsin(x)\fR, whose arguments have any of
@@ -75,7 +77,7 @@ The string operators \fBeq ne in ni lt le gt ge\fR are not available.
 .PP
 In general, it is both safer and more efficient to write all variables used in
 \fB=\fR \fIwithout $\fR.  Writing variables with \fB$\fR exposes
-the program to similar issues of double-substitution to writing unbraced
+the program to similar issues of double-substitution as writing unbraced
 expressions with \fBexpr\fR.  This is particularly risky if calculations are
 done with unverified user input.  E.g. if a user can enter "::admin_password"
 where a number was expected and this is stored in variable input and then used as
