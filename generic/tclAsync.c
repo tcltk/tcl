@@ -42,13 +42,13 @@ typedef struct AsyncHandler {
 } AsyncHandler;
 
 typedef struct ThreadSpecificData {
-    int asyncReady;		/* This is set to 1 whenever a handler becomes
+    bool asyncReady;		/* This is set to 1 whenever a handler becomes
 				 * ready and it is cleared to zero whenever
 				 * Tcl_AsyncInvoke is called. It can be
 				 * checked elsewhere in the application by
 				 * calling Tcl_AsyncReady to see if
 				 * Tcl_AsyncInvoke should be invoked. */
-    int asyncActive;		/* Indicates whether Tcl_AsyncInvoke is
+    bool asyncActive;		/* Indicates whether Tcl_AsyncInvoke is
 				 * currently working. If so then we won't set
 				 * asyncReady again until Tcl_AsyncInvoke
 				 * returns. */
@@ -197,7 +197,7 @@ Tcl_AsyncMark(
     Tcl_MutexLock(&asyncMutex);
     token->ready = 1;
     if (!token->originTsd->asyncActive) {
-	token->originTsd->asyncReady = 1;
+	token->originTsd->asyncReady = true;
 	Tcl_ThreadAlert(token->originThrdId);
     }
     Tcl_MutexUnlock(&asyncMutex);
@@ -267,7 +267,7 @@ TclAsyncMarkFromNotifier(void)
 	if (token->ready == -1) {
 	    token->ready = 1;
 	    if (!token->originTsd->asyncActive) {
-		token->originTsd->asyncReady = 1;
+		token->originTsd->asyncReady = true;
 		Tcl_ThreadAlert(token->originThrdId);
 	    }
 	}
@@ -308,12 +308,12 @@ Tcl_AsyncInvoke(
 
     Tcl_MutexLock(&asyncMutex);
 
-    if (tsdPtr->asyncReady == 0) {
+    if (!tsdPtr->asyncReady) {
 	Tcl_MutexUnlock(&asyncMutex);
 	return code;
     }
-    tsdPtr->asyncReady = 0;
-    tsdPtr->asyncActive = 1;
+    tsdPtr->asyncReady = false;
+    tsdPtr->asyncActive = true;
     if (interp == NULL) {
 	code = 0;
     }
@@ -346,7 +346,7 @@ Tcl_AsyncInvoke(
 	code = asyncPtr->proc(asyncPtr->clientData, interp, code);
 	Tcl_MutexLock(&asyncMutex);
     }
-    tsdPtr->asyncActive = 0;
+    tsdPtr->asyncActive = false;
     Tcl_MutexUnlock(&asyncMutex);
     return code;
 }
@@ -427,14 +427,14 @@ Tcl_AsyncDelete(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Tcl_AsyncReady(void)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     return tsdPtr->asyncReady;
 }
 
-int *
+bool *
 TclGetAsyncReadyPtr(void)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);

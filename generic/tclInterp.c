@@ -3273,16 +3273,16 @@ ChildMarkTrusted(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Tcl_IsSafe(
     Tcl_Interp *interp)		/* Is this interpreter "safe" ? */
 {
     Interp *iPtr = (Interp *) interp;
 
     if (iPtr == NULL) {
-	return 0;
+	return false;
     }
-    return (iPtr->flags & SAFE_INTERP) ? 1 : 0;
+    return (iPtr->flags & SAFE_INTERP) != 0;
 }
 
 /*

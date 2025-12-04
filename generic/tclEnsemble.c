@@ -1526,20 +1526,20 @@ Tcl_FindEnsemble(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Tcl_IsEnsemble(
     Tcl_Command token)		/* The command to check. */
 {
     Command *cmdPtr = (Command *) token;
 
     if (cmdPtr->objProc == TclEnsembleImplementationCmd) {
-	return 1;
+	return true;
     }
     cmdPtr = (Command *) TclGetOriginalCommand((Tcl_Command) cmdPtr);
     if (cmdPtr == NULL || cmdPtr->objProc != TclEnsembleImplementationCmd) {
-	return 0;
+	return false;
     }
-    return 1;
+    return true;
 }
 
 /*

@@ -425,7 +425,7 @@ struct Foundation {
 struct MInvoke {
     Method *mPtr;		/* Reference to the method implementation
 				 * record. */
-    int isFilter;		/* Whether this is a filter invocation. */
+    bool isFilter;		/* Whether this is a filter invocation. */
     Class *filterDeclarer;	/* What class decided to add the filter; if
 				 * NULL, it was added by the object. */
 };

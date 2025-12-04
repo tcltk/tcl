@@ -1883,7 +1883,7 @@ TestisemptyCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "value");
 	return TCL_ERROR;
     }
-    result = Tcl_NewIntObj(Tcl_IsEmpty(objv[1]));
+    result = Tcl_NewBooleanObj(Tcl_IsEmpty(objv[1]));
     if (!objv[1]->bytes) {
 	Tcl_AppendToObj(result, " pure", TCL_INDEX_NONE);
     }

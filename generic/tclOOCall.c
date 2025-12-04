@@ -326,7 +326,7 @@ TclOOInvokeContext(
 {
     CallContext *const contextPtr = (CallContext *) clientData;
     Method *const mPtr = contextPtr->callPtr->chain[contextPtr->index].mPtr;
-    const int isFilter =
+    const bool isFilter =
 	    contextPtr->callPtr->chain[contextPtr->index].isFilter;
 
     /*

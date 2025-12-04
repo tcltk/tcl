@@ -45,7 +45,7 @@ TCLAPI int		TclOOObjectCmdCore(Object *oPtr, Tcl_Interp *interp,
 				Tcl_Size objc, Tcl_Obj *const *objv,
 				int publicOnly, Class *startCls);
 /* 6 */
-TCLAPI int		TclOOIsReachable(Class *targetPtr, Class *startPtr);
+TCLAPI bool		TclOOIsReachable(Class *targetPtr, Class *startPtr);
 /* 7 */
 TCLAPI Method *		TclOONewForwardMethod(Tcl_Interp *interp,
 				Class *clsPtr, int isPublic,
@@ -115,7 +115,7 @@ typedef struct TclOOIntStubs {
     Method * (*tclOONewProcInstanceMethod) (Tcl_Interp *interp, Object *oPtr, int flags, Tcl_Obj *nameObj, Tcl_Obj *argsObj, Tcl_Obj *bodyObj, ProcedureMethod **pmPtrPtr); /* 3 */
     Method * (*tclOONewProcMethod) (Tcl_Interp *interp, Class *clsPtr, int flags, Tcl_Obj *nameObj, Tcl_Obj *argsObj, Tcl_Obj *bodyObj, ProcedureMethod **pmPtrPtr); /* 4 */
     int (*tclOOObjectCmdCore) (Object *oPtr, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const *objv, int publicOnly, Class *startCls); /* 5 */
-    int (*tclOOIsReachable) (Class *targetPtr, Class *startPtr); /* 6 */
+    bool (*tclOOIsReachable) (Class *targetPtr, Class *startPtr); /* 6 */
     Method * (*tclOONewForwardMethod) (Tcl_Interp *interp, Class *clsPtr, int isPublic, Tcl_Obj *nameObj, Tcl_Obj *prefixObj); /* 7 */
     Method * (*tclOONewForwardInstanceMethod) (Tcl_Interp *interp, Object *oPtr, int isPublic, Tcl_Obj *nameObj, Tcl_Obj *prefixObj); /* 8 */
     Tcl_Method (*tclOONewProcInstanceMethodEx) (Tcl_Interp *interp, Tcl_Object oPtr, TclOO_PreCallProc *preCallPtr, TclOO_PostCallProc *postCallPtr, ProcErrorProc *errProc, void *clientData, Tcl_Obj *nameObj, Tcl_Obj *argsObj, Tcl_Obj *bodyObj, int flags, void **internalTokenPtr); /* 9 */
