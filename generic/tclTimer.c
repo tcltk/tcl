@@ -158,7 +158,7 @@ static Tcl_ThreadDataKey dataKey;
 #define SLEEP_OFFLOAD_GETTIMEOFDAY 20
 
 /*
- * The maximum number of milliseconds for each Tcl_Sleep call in TimerAtDelay.
+ * The maximum number of milliseconds for each Tcl_Sleep call in TimerDelay.
  * This is used to limit the maximum lag between interp limit and script
  * cancellation checks.
  */
@@ -184,7 +184,7 @@ static int		TimerAtCmd(void *clientData, Tcl_Interp *interp,
 			    int obj, Tcl_Obj *const objv[]);
 static int		TimerInCmd(void *clientData, Tcl_Interp *interp,
 			    int obj, Tcl_Obj *const objv[]);
-static int		TimerAtDelay(Tcl_Interp *interp, Tcl_Time endTime,
+static int		TimerDelay(Tcl_Interp *interp, Tcl_Time endTime,
 			    bool monotonic);
 static int		TimerCancelCmd(void *clientData, Tcl_Interp *interp,
 			    int obj, Tcl_Obj *const objv[]);
@@ -194,6 +194,8 @@ static int		TimerIdleCmd(void *clientData, Tcl_Interp *interp,
 static int		TimerInfoCmd(void *clientData, Tcl_Interp *interp,
 			    int obj, Tcl_Obj *const objv[]);
 static void		TimeToFarError(Tcl_Interp *interp);
+static int		ParseTimeUnit(Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[], Tcl_Time *wakeupPtr);
 
 /*
  * How to construct the ensembles.
@@ -207,6 +209,7 @@ static const EnsembleImplMap timerMap[] = {
     {"info", TimerInfoCmd, TclCompileBasicMin1ArgCmd, NULL, NULL, 0 },
     { NULL, NULL, NULL, NULL, NULL, 0 }
 };
+
 
 /*
  *----------------------------------------------------------------------
@@ -1009,15 +1012,34 @@ Tcl_AfterObjCmd(
 	AfterInfo *afterPtr;
 	AfterAssocData *assocPtr;
 	ThreadSpecificData *tsdPtr;
+	Tcl_WideInt seconds;
 
 	if (ms < 0) {
 	    ms = 0;
 	}
 
 	Tcl_GetMonotonicTime(&wakeup);
-	wakeup.sec += ms / 1000;
+	seconds = ms / 1000;
+	/*
+	* Check for numerical overflow.
+	 * Overflow handling is complicated, as an overflow of the sum of
+	 * two signed values is undefined. In consequence, gcc optimizes
+	 * out any error handling code.
+	 * So, check in advance, if an overflow might happen.
+	 */
+
+	if (LLONG_MAX - seconds < wakeup.sec) {
+	    TimeToFarError(interp);
+	    return TCL_ERROR;
+	}
+	
+	wakeup.sec += seconds;
 	wakeup.usec += ms % 1000 * 1000;
 	if (wakeup.usec > 1000000) {
+	    if (LLONG_MAX == wakeup.usec) {
+		TimeToFarError(interp);
+		return TCL_ERROR;
+	    }
 	    wakeup.sec++;
 	    wakeup.usec -= 1000000;
 	}
@@ -1028,7 +1050,7 @@ Tcl_AfterObjCmd(
 	     * No command given: wait the given monotonic time.
 	     */
 
-	    return TimerAtDelay(interp, wakeup, true);
+	    return TimerDelay(interp, wakeup, true);
 	}
 
 	/*
@@ -1099,7 +1121,7 @@ Tcl_AfterObjCmd(
 /*
  *----------------------------------------------------------------------
  *
- * TimerAtDelay --
+ * TimerDelay --
  *
  *	Implements the blocking delay behaviour of [timer at $time],
  *	[timer in $delay] and [after $delay].
@@ -1117,7 +1139,7 @@ Tcl_AfterObjCmd(
  */
 
 static int
-TimerAtDelay(
+TimerDelay(
     Tcl_Interp *interp,
     Tcl_Time endTime,
     bool monotonic)
@@ -1474,6 +1496,88 @@ TclInitTimerCmd(
 /*
  *----------------------------------------------------------------------
  *
+ * ParseTimeUnit --
+ *
+ *	Parse a value and unit time argument and return it as Tcl_Time.
+ *
+ * Results:
+ *	Standard TCL result.
+ *
+ * Side effects:
+ *	On TCL_ERROR, an error message is left in the interpreter.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+ParseTimeUnit(
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[],	/* Argument objects. */
+    Tcl_Time *wakeupPtr)	/* Output time */
+{
+    Tcl_WideInt timeArg;
+    int unitIndex;
+
+    static const char *const unitItems[] = {
+	    "us", "microseconds", "milliseconds", "ms", "s", "seconds", NULL
+};
+    enum unitEnum {UNIT_US, UNIT_MICROSECONDS, UNIT_MILLISECONDS, UNIT_MS,
+	    UNIT_S, UNIT_SECONDS};
+
+    if (objc < 3 || objc > 4) {
+	Tcl_WrongNumArgs(interp, 1, objv, "time unit ?script?");
+	return TCL_ERROR;
+    }
+
+    /*
+     * Get the time point to wait
+     */
+
+    if (TclGetWideIntFromObj(interp, objv[1], &timeArg) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (timeArg < 0) {
+	timeArg = 0;
+    }
+
+    /*
+     * Get the unit of the time point
+     */
+
+    if (Tcl_GetIndexFromObj(interp, objv[2], unitItems, "unit", 1, &unitIndex)
+	    != TCL_OK) {
+	return TCL_ERROR;
+    }
+    
+    /*
+     * Transfer to Tcl_Timer structure
+     */
+
+    
+    switch(unitIndex) {
+    case UNIT_MICROSECONDS:
+    case UNIT_US:
+	wakeupPtr->sec = timeArg / 1000000;
+	wakeupPtr->usec = timeArg % 1000000;
+	break;
+    case UNIT_MILLISECONDS:
+    case UNIT_MS:
+	wakeupPtr->sec = timeArg / 1000;
+	wakeupPtr->usec = (timeArg % 1000)*1000;
+	break;
+    default:
+	wakeupPtr->sec = timeArg;
+	wakeupPtr->usec = 0;
+	break;
+    }
+    return TCL_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TimerAtCmd --
  *
  *	This procedure implements the "timer at" Tcl command.
@@ -1494,128 +1598,26 @@ TimerAtCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_WideInt seconds = 0;		/* Time point in seconds to wait */
-    Tcl_WideInt microSeconds = 0;	/* Time point in milliSeconds to wait */
+    Tcl_WideInt timeArg = 0;	/* Time point to wait */
     Tcl_Time wakeup;
     AfterInfo *afterPtr;
     AfterAssocData *assocPtr = TimerAssocDataGet(interp);
     ThreadSpecificData *tsdPtr = InitTimer();
 
-    if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "seconds ?microseconds? ?script?");
+    if (TCL_OK != ParseTimeUnit(interp, objc, objv, &wakeup)) {
 	return TCL_ERROR;
     }
-
-    /*
-     * Get the time point in seconds to wait
-     */
-    if (TclGetWideIntFromObj(interp, objv[1], &seconds) != TCL_OK) {
-	return TCL_ERROR;
-    }
-
-    /*
-     * Get the time point in microSeconds to wait
-     */
-    if (objc >= 3) {
-	if (TclGetWideIntFromObj(interp, objv[2], &microSeconds) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-
-	/*
-	 * Be sure to have only value 0 ... 999999. Any overflow is added to
-	 * seconds.
-	 */
-
-	if ( microSeconds < 0 ) {
-
-	    /*
-	     * First handle the both negative case, as this is anyway 0,0.
-	     * So, we don't need any overflow handling below.
-	     */
-
-	    if (seconds < 0) {
-		seconds = 0;
-		microSeconds = 0;
-	    } else {
-
-		/*
-		 * Negative microseconds value.
-		 * Operation "/" and "%" round direction 0
-		 * Example: ms= -1_000_002 (-1s -2us)
-		 * seconds -= 2
-		 * ms = 999_998
-		 * -1_000_002 % 1_000_000 = -2
-		 * -1_000_002 / 1_000_000 = -1
-		 */
-
-		seconds += (microSeconds / 1000000);
-		microSeconds %= 1000000;
-		if (microSeconds < 0) {
-		    microSeconds += 1000000;
-		    seconds -= 1;
-		}
-	    }
-
-	} else if ( microSeconds >= 1000000 ) {
-
-	    Tcl_WideInt secondsAdd;
-
-	    secondsAdd = (microSeconds / 1000000);
-	    microSeconds %= 1000000;
-
-	    /*
-	     * Check for numerical overflow.
-	     * Overflow handling is complicated, as an overflow of the sum of
-	     * two signed values is undefined. In consequence, gcc optimizes
-	     * out any error handling code.
-	     * So, check in advance, if an overflow might happen.
-	     */
-
-	    if (seconds > 0 && LLONG_MAX - seconds < secondsAdd) {
-		TimeToFarError(interp);
-		return TCL_ERROR;
-	    }
-	    seconds += secondsAdd;
-	}
-    } else {
-
-	/*
-	 * microSeconds parameter not given
-	 */
-
-	microSeconds = 0;
-    }
-
-    /*
-     * Adjust negative seconds to 0
-     */
-
-    if (seconds < 0) {
-	seconds = 0;
-	microSeconds=0;
-    }
-
-    /*
-     * Store end time in time structure to call APIs
-     */
-
-    wakeup.sec=seconds;
-    wakeup.usec=microSeconds;
 
     if (objc < 4) {
 	/*
 	 * No script given - wait until given time point
 	 */
 
-	return TimerAtDelay(interp, wakeup, false);
+	return TimerDelay(interp, wakeup, false);
     }
     afterPtr = (AfterInfo *)Tcl_Alloc(sizeof(AfterInfo));
     afterPtr->assocPtr = assocPtr;
-    if (objc == 4) {
-	afterPtr->commandPtr = objv[3];
-    } else {
-	afterPtr->commandPtr = Tcl_ConcatObj(objc-3, objv+3);
-    }
+    afterPtr->commandPtr = objv[3];
     Tcl_IncrRefCount(afterPtr->commandPtr);
 
     /*
@@ -1689,127 +1691,37 @@ TimerInCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_WideInt seconds = 0;		/* Time point in seconds to wait */
-    Tcl_WideInt microSeconds = 0;	/* Time point in milliSeconds to wait */
-    Tcl_Time wakeup;
+    Tcl_Time wakeupArg, wakeup;
     AfterInfo *afterPtr;
     AfterAssocData *assocPtr = TimerAssocDataGet(interp);
     ThreadSpecificData *tsdPtr = InitTimer();
 
-    if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "seconds ?microseconds? ?script?");
+    if (TCL_OK != ParseTimeUnit(interp, objc, objv, &wakeupArg)) {
 	return TCL_ERROR;
     }
 
     /*
-     * Get the time point in seconds to wait
-     */
-    if (TclGetWideIntFromObj(interp, objv[1], &seconds) != TCL_OK) {
-	return TCL_ERROR;
-    }
-
-    /*
-     * Get the time point in microSeconds to wait
-     */
-    if (objc >= 3) {
-	if (TclGetWideIntFromObj(interp, objv[2], &microSeconds) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-
-	/*
-	 * Be sure to have only value 0 ... 999999. Any overflow is added to
-	 * seconds.
-	 */
-
-	if ( microSeconds < 0 ) {
-
-	    /*
-	     * First handle the both negative case, as this is anyway 0,0.
-	     * So, we don't need any overflow handling below.
-	     */
-
-	    if (seconds < 0) {
-		seconds = 0;
-		microSeconds = 0;
-	    } else {
-
-		/*
-		 * Negative microseconds value.
-		 * Operation "/" and "%" round direction 0
-		 * Example: ms= -1_000_002 (-1s -2us)
-		 * seconds -= 2
-		 * ms = 999_998
-		 * -1_000_002 % 1_000_000 = -2
-		 * -1_000_002 / 1_000_000 = -1
-		 */
-
-		seconds += (microSeconds / 1000000);
-		microSeconds %= 1000000;
-		if (microSeconds < 0) {
-		    microSeconds += 1000000;
-		    seconds -= 1;
-		}
-	    }
-
-	} else if ( microSeconds >= 1000000 ) {
-
-	    Tcl_WideInt secondsAdd;
-
-	    secondsAdd = (microSeconds / 1000000);
-	    microSeconds %= 1000000;
-
-	    /*
-	     * Check for numerical overflow.
-	     * Overflow handling is complicated, as an overflow of the sum of
-	     * two signed values is undefined. In consequence, gcc optimizes
-	     * out any error handling code.
-	     * So, check in advance, if an overflow might happen.
-	     */
-
-	    if (seconds > 0 && LLONG_MAX - seconds < secondsAdd) {
-		TimeToFarError(interp);
-		return TCL_ERROR;
-	    }
-	    seconds += secondsAdd;
-	}
-    } else {
-
-	/*
-	 * microSeconds parameter not given
-	 */
-
-	microSeconds = 0;
-    }
-
-    /*
-     * Adjust negative seconds to 0
-     */
-
-    if (seconds < 0) {
-	seconds = 0;
-	microSeconds=0;
-    }
-
-    /*
-     * Store end time in time structure to call APIs
+     * Sum current time and time argument
      */
 
     Tcl_GetMonotonicTime(&wakeup);
-    wakeup.usec += microSeconds;
+    
+    if ( LLONG_MAX - wakeup.sec < wakeupArg.sec ) {
+	TimeToFarError(interp);
+	return TCL_ERROR;
+    }
+    wakeup.sec += wakeupArg.sec;
+    wakeup.usec += wakeupArg.usec;
     if (wakeup.usec >= 1000000) {
 	if (wakeup.sec == LLONG_MAX) {
 	    TimeToFarError(interp);
 	    return TCL_ERROR;
 	}
 	wakeup.sec++;
-	wakeup.usec %= 1000000;
+	wakeup.usec -= 1000000;
     }
 
-    if ( LLONG_MAX - wakeup.sec < seconds ) {
-	TimeToFarError(interp);
-	return TCL_ERROR;
-    }
-    wakeup.sec += seconds;
+    
 
     if (objc < 4) {
 
@@ -1817,16 +1729,12 @@ TimerInCmd(
 	 * No script given - just wait the monotonic time
 	 */
 
-	return TimerAtDelay(interp, wakeup, true);
+	return TimerDelay(interp, wakeup, true);
     }
 
     afterPtr = (AfterInfo *)Tcl_Alloc(sizeof(AfterInfo));
     afterPtr->assocPtr = assocPtr;
-    if (objc == 4) {
-	afterPtr->commandPtr = objv[3];
-    } else {
-	afterPtr->commandPtr = Tcl_ConcatObj(objc-3, objv+3);
-    }
+    afterPtr->commandPtr = objv[3];
     Tcl_IncrRefCount(afterPtr->commandPtr);
 
     /*

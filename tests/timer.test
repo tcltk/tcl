@@ -43,9 +43,9 @@ test timer-1.1.1 {Tcl_CreateTimerHandler procedure - timer in} -setup {
 } -body {
     set x ""
     foreach i {100 200 1000 50 150} {
-	timer in 0 [expr {$i*1000}] lappend x $i
+	timer in $i ms [list lappend x $i]
     }
-    timer in 0 200_000 set done 1
+    timer in 200 ms set done 1
     vwait done
     return $x
 } -cleanup {
@@ -62,9 +62,9 @@ test timer-1.1.2 {Tcl_CreateTimerHandler procedure - timer at} -setup {
     set x ""
     set us [clock microseconds]
     foreach i {100 200 1000 50 150} {
-	timer at 0 [expr {$i*1000+$us}] lappend x $i
+	timer at [expr {$i*1000+$us}] us [list lappend x $i]
     }
-    timer at 0 [expr {$us+200_000}] set done 1
+    timer at [expr {$us+200_000}] us {set done 1}
     vwait done
     return $x
 } -cleanup {
@@ -100,11 +100,11 @@ test timer-2.1.1 {Tcl_DeleteTimerHandler procedure - timer in} -setup {
 } -body {
     set x ""
     foreach i {100 200 1000 50 150} {
-	timer in 0 [expr {$i*1000}] lappend x $i
+	timer in $i ms [list lappend x $i]
     }
     timer cancel lappend x 150
     timer cancel lappend x 50
-    timer in 0 200_000 set done 1
+    timer in 200 ms {set done 1}
     vwait done
     return $x
 } -cleanup {
@@ -121,11 +121,11 @@ test timer-2.1.2 {Tcl_DeleteTimerHandler procedure - timer at} -setup {
     set x ""
     set us [clock microseconds]
     foreach i {100 200 1000 50 150} {
-	timer at 0 [expr {$i*1000+$us}] lappend x $i
+	timer at [expr {$i*1000+$us}] us [list lappend x $i]
     }
     timer cancel lappend x 150
     timer cancel lappend x 50
-    timer at 0 [expr {200_000+$us}] set done 1
+    timer at [expr {200_000+$us}] us {set done 1}
     vwait done
     return $x
 } -cleanup {
@@ -149,10 +149,10 @@ test timer-3.1 {TimerHandlerEventProc procedure: event masks} {
 
 test timer-3.1.1 {TimerHandlerEventProc procedure: event masks - timer in} {
     set x start
-    timer in 0 100_000 { set x fired }
+    timer in 100 ms { set x fired }
     update idletasks
     set result $x
-    timer in 0 200_000
+    timer in 200 ms
     update
     lappend result $x
 } {start fired}
@@ -160,10 +160,10 @@ test timer-3.1.1 {TimerHandlerEventProc procedure: event masks - timer in} {
 test timer-3.1.2 {TimerHandlerEventProc procedure: event masks - timer at} {
     set x start
     set us [clock microseconds]
-    timer at 0 [expr {100_000+$us}] { set x fired }
+    timer at [expr {100_000+$us}] us { set x fired }
     update idletasks
     set result $x
-    timer at 0 [expr {200_000+$us}]
+    timer at [expr {200_000+$us}] us
     update
     lappend result $x
 } {start fired}
@@ -199,17 +199,17 @@ test timer-3.2.1 {TimerHandlerEventProc procedure: multiple timers - mixed} -set
     }
 } -body {
     after 200 lappend x 200
-    timer in 0 600_000 lappend x 600
-    timer at 1 [clock microseconds] lappend x 1000
+    timer in 600 ms {lappend x 600}
+    timer at [expr {1000_000+[clock microseconds]}] us {lappend x 1000}
     after 200
     set result ""
     set x ""
     update
     lappend result $x
-    timer in 0 400_000
+    timer in 400 ms
     update
     lappend result $x
-    timer at 0 [expr {400_000+[clock microseconds]}]
+    timer at [expr {400_000+[clock microseconds]}] us
     update
     lappend result $x
 } -cleanup {
@@ -238,12 +238,12 @@ test timer-3.3.1 {TimerHandlerEventProc procedure: reentrant timer deletion - ti
     }
 } -body {
     set x {}
-    timer in 0 100_000 lappend x 100
-    set i [timer in 0 300_000 lappend x 300]
+    timer in 100 ms {lappend x 100}
+    set i [timer in 300 ms {lappend x 300}]
     # When waiting in a delay, always the monotonic clock fires first
     # As a consequence, timer at may not be used here, as it would fire as last event
-    timer in 0 200_000 after cancel $i
-    timer in 0 400_000
+    timer in 200 ms [list after cancel $i]
+    timer in 400 ms
     update
     return $x
 } -result 100
@@ -255,10 +255,10 @@ test timer-3.3.2 {TimerHandlerEventProc procedure: reentrant timer deletion - ti
 } -body {
     set x {}
     set ms [clock microseconds]
-    timer at 0 [expr {$ms+100_000}] lappend x 100
-    set i [timer at 0 [expr {$ms+300_000}] lappend x 300]
-    timer at 0 [expr {$ms+200_000}] after cancel $i
-    timer at 0 [expr {$ms+400_000}]
+    timer at [expr {$ms+100_000}] us {lappend x 100}
+    set i [timer at [expr {$ms+300_000}] us {lappend x 300}]
+    timer at [expr {$ms+200_000}] us [list after cancel $i]
+    timer at [expr {$ms+400_000}] us
     update
     return $x
 } -result 100
@@ -284,9 +284,9 @@ test timer-3.4.1 {TimerHandlerEventProc procedure: all expired timers fire - tim
 } -body {
     set x {}
     set us [clock microseconds]
-    timer at 0 [expr {$us+100_000}] lappend x a
-    timer at 0 [expr {$us+200_000}] lappend x b
-    timer at 0 [expr {$us+300_000}] lappend x c
+    timer at [expr {$us+100_000}] us {lappend x a}
+    timer at [expr {$us+200_000}] us {lappend x b}
+    timer at [expr {$us+300_000}] us {lappend x c}
     after 400
     vwait x
     return $x
@@ -299,8 +299,8 @@ test timer-3.4.2 {TimerHandlerEventProc procedure: all expired timers fire - bot
 } -body {
     set x {}
     after 100 lappend x a
-    timer in 0 200_000 lappend x b
-    timer at 0 [expr {[clock microseconds]+300_000}] lappend x c
+    timer in 200 ms {lappend x b}
+    timer at [expr {[clock microseconds]+300_000}] us {lappend x c}
     after 300
     vwait x
     return $x
@@ -324,8 +324,8 @@ test timer-3.5.1 {TimerHandlerEventProc procedure: reentrantly added timers don'
     }
 } -body {
     set x {}
-    timer at 0 [expr {[clock microseconds]+100_000}] {lappend x a; timer at 0 0 lappend x b}
-    timer at 0 [expr {[clock microseconds]+100_000}]
+    timer at [expr {[clock microseconds]+100_000}] us {lappend x a; timer at 0 us {lappend x b}}
+    timer at [expr {[clock microseconds]+100_000}] us
     vwait x
     return $x
 } -cleanup {
@@ -340,8 +340,8 @@ test timer-3.5.2 {TimerHandlerEventProc procedure: reentrantly added timers don'
     }
 } -body {
     set x {}
-    timer at 0 [expr {[clock microseconds]+100_000}] {lappend x a; timer in 0 0 lappend x b}
-    timer at 0 [expr {[clock microseconds]+100_000}]
+    timer at [expr {[clock microseconds]+100_000}] us {lappend x a; timer in 0 ms {lappend x b}}
+    timer at [expr {[clock microseconds]+100_000}] us
     vwait x
     return $x
 } -cleanup {
@@ -356,8 +356,8 @@ test timer-3.5.3 {TimerHandlerEventProc procedure: reentrantly added timers don'
     }
 } -body {
     set x {}
-    timer in 0 100_000 {lappend x a; timer at 0 0 lappend x b}
-    timer in 0 100_000
+    timer in 100 ms {lappend x a; timer at 0 us {lappend x b}}
+    timer in 100 ms
     vwait x
     return $x
 } -cleanup {
@@ -386,8 +386,8 @@ test timer-3.6.1 {TimerHandlerEventProc procedure: reentrantly added timers don'
     }
 } -body {
     set x {}
-    timer at 0 [expr {[clock microseconds]+100_000}] {lappend x a; timer at 0 [expr {[clock microseconds]+100_000}] lappend x b; timer at 0 [expr {[clock microseconds]+100_000}]}
-    timer at 0 [expr {[clock microseconds]+100_000}]
+    timer at [expr {[clock microseconds]+100_000}] us {lappend x a; timer at [expr {[clock microseconds]+100_000}] us {lappend x b}; timer at [expr {[clock microseconds]+100_000}] us}
+    timer at [expr {[clock microseconds]+100_000}] us
     vwait x
     set result $x
     vwait x
@@ -400,8 +400,8 @@ test timer-3.6.2 {TimerHandlerEventProc procedure: reentrantly added timers don'
     }
 } -body {
     set x {}
-    timer in 0 100_000 {lappend x a; timer at 0 [expr {[clock microseconds]+100_000}] lappend x b; timer in 0 100_000}
-    timer in 0 100_000
+    timer in 100 ms {lappend x a; timer at [expr {[clock microseconds]+100_000}] us {lappend x b}; timer in 100 ms}
+    timer in 100 ms
     vwait x
     set result $x
     vwait x
@@ -414,8 +414,8 @@ test timer-3.6.3 {TimerHandlerEventProc procedure: reentrantly added timers don'
     }
 } -body {
     set x {}
-    timer at 0 [expr {[clock microseconds]+100_000}] {lappend x a; timer in 0 100_000 lappend x b; timer in 0 100_000}
-    timer at 0 [expr {[clock microseconds]+100_000}]
+    timer at [expr {[clock microseconds]+100_000}] us {lappend x a; timer in 100 ms {lappend x b}; timer in 100 ms}
+    timer at [expr {[clock microseconds]+100_000}] us
     vwait x
     set result $x
     vwait x
@@ -484,20 +484,28 @@ test timer-6.2 {Tcl_AfterCmd procedure, basics} -returnCodes error -body {
 } -result {bad argument "2x": must be cancel, idle, info, or an integer}
 
 test timer-6.2.1 {timer in, basics} -returnCodes error -body {
-    timer in 2x
+    timer in 2x us
 } -result {expected integer but got "2x"}
 
 test timer-6.2.2 {timer in, basics} -returnCodes error -body {
-    timer in 0 2x
-} -result {expected integer but got "2x"}
+    timer in 0 bla
+} -result {bad unit "bla": must be us, microseconds, milliseconds, ms, s, or seconds}
 
 test timer-6.2.3 {timer at, basics} -returnCodes error -body {
-    timer at 2x
+    timer at 2x us
 } -result {expected integer but got "2x"}
 
 test timer-6.2.4 {timer at, basics} -returnCodes error -body {
-    timer at 0 2x
-} -result {expected integer but got "2x"}
+    timer at 0 bla
+} -result {bad unit "bla": must be us, microseconds, milliseconds, ms, s, or seconds}
+
+test timer-6.2.5 {timer at, basics} -returnCodes error -body {
+    timer at 0 ms cmd junk
+} -result {wrong # args: should be "::tcl::timer::at time unit ?script?"}
+
+test timer-6.2.6 {timer at, basics} -returnCodes error -body {
+    timer in 0 ms cmd junk
+} -result {wrong # args: should be "::tcl::timer::in time unit ?script?"}
 
 test timer-6.3 {Tcl_AfterCmd procedure, basics} -returnCodes error -body {
     after gorp
@@ -520,11 +528,11 @@ test timer-6.4 {Tcl_AfterCmd procedure, ms argument} {
 
 test timer-6.4.1 {timer in, us argument} {
     set x before
-    timer in 0 400_000 {set x after}
-    timer in 0 200_000
+    timer in 400 ms {set x after}
+    timer in 200 ms
     update
     set y $x
-    timer in 0 400_000
+    timer in 400 ms
     update
     list $y $x
 } {before after}
@@ -532,11 +540,11 @@ test timer-6.4.1 {timer in, us argument} {
 test timer-6.4.2 {timer at, us argument} {
     set x before
     set us [clock microseconds]
-    timer at 0 [expr {$us+400_000}] {set x after}
-    timer at 0 [expr {$us+200_000}]
+    timer at [expr {$us+400_000}] us {set x after}
+    timer at [expr {$us+200_000}] us
     update
     set y $x
-    timer at 0 [expr {$us+600_000}]
+    timer at [expr {$us+600_000}] us
     update
     list $y $x
 } {before after}
@@ -596,9 +604,9 @@ test timer-6.9.1 {timer cancel option} -setup {
     }
 } -body {
     set x before
-    set y [timer in 0 100_000 set x after]
+    set y [timer in 100 ms {set x after}]
     timer cancel $y
-    timer in 0 200_000
+    timer in 200 ms
     update
     return $x
 } -result {before}
@@ -622,9 +630,9 @@ test timer-6.10.1 {timer cancel option} -setup {
     }
 } -body {
     set x before
-    timer in 0 100_000 set x after
+    timer in 100 ms {set x after}
     timer cancel {set x after}
-    timer in 0 200_000
+    timer in 200 ms
     update
     return $x
 } -result {before}
@@ -653,14 +661,14 @@ test timer-6.11.1 {timer cancel option} -setup {
     }
 } -body {
     set x before
-    timer in 0 100_000 set x after
-    set id [timer in 0 300_000 set x after]
+    timer in 100 ms {set x after}
+    set id [timer in 300 ms {set x after}]
     timer cancel $id
-    timer in 0 200_000
+    timer in 200 ms
     update
     set y $x
     set x cleared
-    timer in 0 200_000
+    timer in 200 ms
     update
     list $y $x
 } -result {after cleared}
@@ -745,7 +753,7 @@ test timer-6.14.1 {timer cancel during handler} -setup {
     }
 } -body {
     set id [
-	timer in 0 100_000 {
+	timer in 100 ms {
 	    set x done
 	    timer cancel $id
 	}
@@ -838,7 +846,7 @@ test timer-6.19 {Tcl_AfterCmd, info option} -setup {
 
 test timer-6.19.1 {timer info} -setup {
     set event1 [timer idle event 1]
-    set event2 [timer in 0 1000_000 event 2]
+    set event2 [timer in 1 s {event 2}]
 } -body {
     expr {[lsort [timer info]] eq [lsort "$event1 $event2"]}
 } -cleanup {
@@ -875,7 +883,7 @@ test timer-6.22 {Tcl_AfterCmd, info option} -setup {
 
 test timer-6.22.1 {timer info} -setup {
     set event1 [timer idle event 1]
-    set event2 [timer in 0 1000_000 event 2]
+    set event2 [timer in 1 seconds {event 2}]
 } -body {
     list [timer info $event1] [timer info $event2]
 } -cleanup {
@@ -901,8 +909,8 @@ test timer-6.23.1 {timer in, script with NUL} -setup {
     }
 } -body {
     set x "hello world"
-    timer in 0 1000 "set x ab\x00cd"
-    timer in 0 10_000
+    timer in 1 ms "set x ab\x00cd"
+    timer in 10 ms
     update
     string length $x
 } -result {5}
@@ -914,8 +922,8 @@ test timer-6.23.2 {timer at, script with NUL} -setup {
 } -body {
     set x "hello world"
     set us [clock microseconds]
-    timer at 0 [expr {$us+1000}] "set x ab\x00cd"
-    timer at 0 [expr {$us+10_000}]
+    timer at [expr {$us+1000}] us "set x ab\x00cd"
+    timer at [expr {$us+10_000}] us
     update
     string length $x
 } -result {5}
@@ -954,7 +962,7 @@ test timer-6.25.1 {timer cancel, script with NUL} -setup {
     }
 } -body {
     set x "hello world"
-    timer in 0 1000 set x ab\x00cd
+    timer in 1 ms "set x ab\x00cd"
     timer cancel "set x ab\x00ef"
     llength [timer info]
 } -cleanup {
@@ -1037,7 +1045,7 @@ test timer-6.29.1 {timer info, script with NUL} -setup {
 } -body {
     set x "hello world"
     set id junk
-    set id [timer in 0 10_000 set x ab\x00cd]
+    set id [timer in 10 ms "set x ab\x00cd"]
     update
     string length [lindex [lindex [timer info $id] 0] 2]
 } -cleanup {
@@ -1115,8 +1123,8 @@ test timer-8.1.1 {timer procedure} {
     set x before
     proc foo {} {
 	set x untouched
-	timer in 0 100_000 {set x after}
-	timer in 0 200_000
+	timer in 100 ms {set x after}
+	timer in 200 ms
 	update
 	return $x
     }
@@ -1151,8 +1159,8 @@ test timer-8.2.1 {timer procedure} -setup {
     set handler [interp bgerror {}]
     interp bgerror {} [namespace which myHandler]
 } -body {
-    timer in 0 100_000 {error "After error"}
-    timer in 0 200_000
+    timer in 100 ms {error "After error"}
+    timer in 200 ms
     set y $x
     update
     list $y $x
@@ -1196,7 +1204,7 @@ test timer-8.3.1 {timer procedure, deleting handler from itself} -setup {
 	timer cancel foo
     }
     timer idle foo
-    timer in 0 1000_000 {error "I shouldn't ever have executed"}
+    timer in 1 seconds {error "I shouldn't ever have executed"}
     update idletasks
     return $x
 } -result {{{error "I shouldn't ever have executed"} timer}}
@@ -1256,23 +1264,23 @@ test timer-9.1.1 {timer AfterCleanupProc procedure} -setup {
     catch {interp delete x}
 } -body {
     interp create x
-    x eval {timer in 0 200_000 {
+    x eval {timer in 200 ms {
 	lappend x after
 	puts "part 1: this message should not appear"
     }}
-    timer in 0 200_000 {lappend x after2}
-    x eval {timer in 0 200_000 {
+    timer in 200 ms {lappend x after2}
+    x eval {timer in 200 ms {
 	lappend x after3
 	puts "part 2: this message should not appear"
     }}
-    timer in 0 200_000 {lappend x after4}
-    x eval {timer in 0 200_000 {
+    timer in 200 ms {lappend x after4}
+    x eval {timer in 200 ms {
 	lappend x after5
 	puts "part 3: this message should not appear"
     }}
     interp delete x
     set x before
-    timer in 0 300_000
+    timer in 300 ms
     update
     return $x
 } -result {before after2 after4}
@@ -1294,7 +1302,7 @@ test timer-10.1.1 {[timer] overwrites imports} -setup {
     child eval namespace export timer
     child eval namespace eval foo namespace import ::timer
 } -body {
-    child eval foo::timer in 0 1_000
+    child eval foo::timer in 1 seconds
     child eval namespace origin foo::timer
 } -cleanup {
     interp delete child
@@ -1320,12 +1328,12 @@ test timer-11.2 {Bug 1350293: [after] negative argument} -body {
 
 ## timer in
 
-test timer-12.1 {timer in, sec - us arithmetics} -setup {
+test timer-12.1 {timer in, unit} -setup {
     set x ""
 } -body {
-    timer in 1 -900_000 lappend x ok
-    timer in 1 -700_000 lappend x late
-    timer in 0 200_000
+    timer in 100_000 microseconds {lappend x ok}
+    timer in 300 ms {lappend x late}
+    timer in 200 ms
     update
     set x
 } -cleanup {
@@ -1334,12 +1342,12 @@ test timer-12.1 {timer in, sec - us arithmetics} -setup {
     }
 } -result ok
 
-test timer-12.2 {timer in, sec - us arithmetics} -setup {
+test timer-12.2 {timer in, unit} -setup {
     set x ""
 } -body {
-    timer in -1 1_100_000 lappend x ok
-    timer in -1 1_300_000 lappend x late
-    timer in 0 200_000
+    timer in 100 milliseconds {lappend x ok}
+    timer in 300 ms {lappend x late}
+    timer in 200 ms
     update
     set x
 } -cleanup {
@@ -1347,110 +1355,15 @@ test timer-12.2 {timer in, sec - us arithmetics} -setup {
 	timer cancel $i
     }
 } -result ok
-
-test timer-12.2 {timer in, sec - us arithmetics} -setup {
-    set x ""
-} -body {
-    timer in -1 1_100_000 lappend x ok
-    timer in -1 1_300_000 lappend x late
-    timer in 0 200_000
-    update
-    set x
-} -cleanup {
-    foreach i [timer info] {
-	timer cancel $i
-    }
-} -result ok
-
-test timer-12.3 {timer in, max wide us} -setup {
-} -body {
-    set widemax 9223372036854775807
-    timer in 0 $widemax set x 1
-} -cleanup {
-    foreach i [timer info] {
-	timer cancel $i
-    }
-} -match glob -result "after#*"
-
-test timer-12.4 {timer in, max wide us overflow} -setup {
-} -body {
-    set widemax 9223372036854775807
-    incr widemax
-    timer in 0 $widemax set x 1
-} -cleanup {
-    foreach i [timer info] {
-	timer cancel $i
-    }
-}  -returnCodes error -result "integer value too large to represent"
-
-test timer-12.5 {timer in, min wide us} -setup {
-} -body {
-    set widemin -9223372036854775808
-    timer in 0 $widemin set x 1
-} -cleanup {
-    foreach i [timer info] {
-	timer cancel $i
-    }
-} -match glob -result after#*
-
-test timer-12.6 {timer in, min wide us overflow} -setup {
-} -body {
-    set widemin -9223372036854775808
-    incr widemin -1
-    timer in 0 $widemin set x 1
-} -cleanup {
-    foreach i [timer info] {
-	timer cancel $i
-    }
-}  -returnCodes error -result "integer value too large to represent"
-
-test timer-12.7 {timer in, max wide us, sum sec+us overflow} -setup {
-} -body {
-    set widemax 9223372036854775807
-    timer in $widemax $widemax set x 1
-} -cleanup {
-    foreach i [timer info] {
-	timer cancel $i
-    }
-}  -returnCodes error -result "given time to far away"
-
-test timer-12.8 {timer in, min wide us, sum sec+us underflow} -setup {
-    set x ""
-} -body {
-    set widemin -9223372036854775808
-    # Negative overflow is set to 0
-    timer in $widemin $widemin lappend x ok
-    timer in 0 100_000
-    update
-    set x
-} -cleanup {
-    foreach i [timer info] {
-	timer cancel $i
-    }
-} -result ok
-
-test timer-12.9 {timer in, high value, sum with time overflow} -setup {
-    set x ""
-} -body {
-    set widemax 9223372036854775807
-    timer in $widemax 999_999 set x 1
-} -cleanup {
-    foreach i [timer info] {
-	timer cancel $i
-    }
-}  -returnCodes error -result "given time to far away"
 
 ## timer at
 
-test timer-13.1 {timer at, sec - us arithmetics} -setup {
-    set x ""
+test timer-13.1 {timer at, unit sec} -setup {
 } -body {
-    set us [clock microseconds]
-    set sec [expr {$us / 1000_000}]
-    set us [expr {$us % 1000_000}]
-    timer at $sec [expr {100_000+$us}] lappend x ok
-    timer at $sec [expr {300_000+$us}] lappend x late
-    timer at $sec [expr {$us+200_000}]
+    set x ""
+    timer at [expr {[clock seconds]+1}] seconds {lappend x ok}
+    timer in 1200 ms {lappend x late}
+    timer in 1100 ms
     update
     set x
 } -cleanup {
@@ -1459,15 +1372,12 @@ test timer-13.1 {timer at, sec - us arithmetics} -setup {
     }
 } -result ok
 
-test timer-13.2 {timer at, sec - us arithmetics} -setup {
-    set x ""
+test timer-13.2 {timer at, unit ms} -setup {
 } -body {
-    set us [clock microseconds]
-    set sec [expr {$us / 1000_000+1}]
-    set us [expr {$us % 1000_000}]
-    timer at $sec [expr {$us-900_000}] lappend x ok
-    timer at $sec [expr {300_000+$us}] lappend x late
-    timer at $sec [expr {$us+200_000}]
+    set x ""
+    timer at [expr {[clock milliseconds]+100}] milliseconds {lappend x ok}
+    timer in 300 ms {lappend x late}
+    timer in 200 ms
     update
     set x
 } -cleanup {
@@ -1476,65 +1386,12 @@ test timer-13.2 {timer at, sec - us arithmetics} -setup {
     }
 } -result ok
 
-test timer-13.3 {timer at, max wide us} -setup {
+test timer-13.3 {timer at, unit us} -setup {
 } -body {
-    set widemax 9223372036854775807
-    timer at 0 $widemax set x 1
-} -cleanup {
-    foreach i [timer info] {
-	timer cancel $i
-    }
-} -match glob -result "after#*"
-
-test timer-13.4 {timer at, max wide us overflow} -setup {
-} -body {
-    set widemax 9223372036854775807
-    incr widemax
-    timer at 0 $widemax set x 1
-} -cleanup {
-    foreach i [timer info] {
-	timer cancel $i
-    }
-}  -returnCodes error -result "integer value too large to represent"
-
-test timer-13.5 {timer at, min wide us} -setup {
-} -body {
-    set widemin -9223372036854775808
-    timer at 0 $widemin set x 1
-} -cleanup {
-    foreach i [timer info] {
-	timer cancel $i
-    }
-} -match glob -result after#*
-
-test timer-13.6 {timer at, min wide us overflow} -setup {
-} -body {
-    set widemin -9223372036854775808
-    incr widemin -1
-    timer at 0 $widemin set x 1
-} -cleanup {
-    foreach i [timer info] {
-	timer cancel $i
-    }
-}  -returnCodes error -result "integer value too large to represent"
-
-test timer-13.7 {timer at, max wide us, sum sec+us overflow} -setup {
-} -body {
-    set widemax 9223372036854775807
-    timer at $widemax $widemax set x 1
-} -cleanup {
-    foreach i [timer info] {
-	timer cancel $i
-    }
-}  -returnCodes error -result "given time to far away"
-
-test timer-13.8 {timer at, min wide us, sum sec+us underflow} -setup {
     set x ""
-} -body {
-    set widemin -9223372036854775808
-    # Negative overflow is set to 0
-    timer at $widemin $widemin lappend x ok
-    timer in 0 100_000
+    timer at [expr {[clock microseconds]+100_000}] microseconds {lappend x ok}
+    timer in 300 ms {lappend x late}
+    timer in 200 ms
     update
     set x
 } -cleanup {
