@@ -2951,20 +2951,13 @@ void EqNextLex(
     start += scanned;
     numBytes -= scanned;
 
-    // Special cases that we treat as BAREWORD
+    // Special cases that we need to modify.
     switch (in->lex) {
-	// Don't treat NAN or INF as numbers.
+	// Don't treat NAN, INF, etc. as numbers.
 	case NUMBER:
-	    if (! TclHasInternalRep(in->lit, &tclDoubleType)) break;
-	    if (isnan(in->lit->internalRep.doubleValue) ||
-		isinf(in->lit->internalRep.doubleValue)
-	    ) {
-		// Make sure it's literal "nan" or "inf"
-		const char c = *in->lastStart;
-		if (c=='n' || c=='N' || c=='i' || c=='I') {
-		    in->lex = BAREWORD;
-		    Tcl_SetStringObj(in->lit, in->lastStart, scanned);
-		}
+	    if (isalpha(*in->lastStart)) {
+		in->lex = BAREWORD;
+		Tcl_SetStringObj(in->lit, in->lastStart, scanned);
 	    }
 	    break;
 	// Double colon introduces a global variable, single is for ternary op.
@@ -2986,6 +2979,11 @@ void EqNextLex(
 	    in->lex = BAREWORD;
 	    in->lit = Tcl_NewStringObj(in->lastStart, scanned);
 	    break;
+	// BAREWORD will become a variable or function name,
+	// but only if it starts with a letter.
+	case BAREWORD:
+	    if (isalpha(*in->lastStart)) break;
+	    TCL_FALLTHROUGH();
 	case SCRIPT:
 	    in->lex = INVALID;
 	    in->lit = Tcl_NewStringObj(in->lastStart, scanned);
