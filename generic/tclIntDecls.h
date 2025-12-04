@@ -367,7 +367,7 @@ EXTERN int		TclCheckExecutionTraces(Tcl_Interp *interp,
 /* 172 */
 EXTERN int		TclInThreadExit(void);
 /* 173 */
-EXTERN int		TclUniCharMatch(const Tcl_UniChar *string,
+EXTERN bool		TclUniCharMatch(const Tcl_UniChar *string,
 				Tcl_Size strLen, const Tcl_UniChar *pattern,
 				Tcl_Size ptnLen, int flags);
 /* Slot 174 is reserved */
@@ -753,7 +753,7 @@ typedef struct TclIntStubs {
     int (*tclCheckInterpTraces) (Tcl_Interp *interp, const char *command, Tcl_Size numChars, Command *cmdPtr, int result, int traceFlags, Tcl_Size objc, Tcl_Obj *const objv[]); /* 170 */
     int (*tclCheckExecutionTraces) (Tcl_Interp *interp, const char *command, Tcl_Size numChars, Command *cmdPtr, int result, int traceFlags, Tcl_Size objc, Tcl_Obj *const objv[]); /* 171 */
     int (*tclInThreadExit) (void); /* 172 */
-    int (*tclUniCharMatch) (const Tcl_UniChar *string, Tcl_Size strLen, const Tcl_UniChar *pattern, Tcl_Size ptnLen, int flags); /* 173 */
+    bool (*tclUniCharMatch) (const Tcl_UniChar *string, Tcl_Size strLen, const Tcl_UniChar *pattern, Tcl_Size ptnLen, int flags); /* 173 */
     void (*reserved174)(void);
     int (*tclCallVarTraces) (Interp *iPtr, Var *arrayPtr, Var *varPtr, const char *part1, const char *part2, int flags, int leaveErrMsg); /* 175 */
     void (*tclCleanupVar) (Var *varPtr, Var *arrayPtr); /* 176 */

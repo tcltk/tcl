@@ -1135,19 +1135,15 @@ CheckForStdChannelsBeingClosed(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Tcl_IsStandardChannel(
     Tcl_Channel chan)		/* Channel to check. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
-    if ((chan == tsdPtr->stdinChannel)
+    return ((chan == tsdPtr->stdinChannel)
 	    || (chan == tsdPtr->stdoutChannel)
-	    || (chan == tsdPtr->stderrChannel)) {
-	return 1;
-    } else {
-	return 0;
-    }
+	    || (chan == tsdPtr->stderrChannel));
 }
 
 /*
@@ -10695,7 +10691,7 @@ Tcl_GetChannelNamesEx(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Tcl_IsChannelRegistered(
     Tcl_Interp *interp,		/* The interp to query of the channel */
     Tcl_Channel chan)		/* The channel to check */
@@ -10715,17 +10711,13 @@ Tcl_IsChannelRegistered(
 
     hTblPtr = (Tcl_HashTable *)Tcl_GetAssocData(interp, ASSOC_KEY, NULL);
     if (hTblPtr == NULL) {
-	return 0;
+	return false;
     }
     hPtr = Tcl_FindHashEntry(hTblPtr, statePtr->channelName);
     if (hPtr == NULL) {
-	return 0;
+	return false;
     }
-    if ((Channel *) Tcl_GetHashValue(hPtr) != chanPtr) {
-	return 0;
-    }
-
-    return 1;
+    return ((Channel *)Tcl_GetHashValue(hPtr) == chanPtr);
 }
 
 /*
@@ -10744,14 +10736,14 @@ Tcl_IsChannelRegistered(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Tcl_IsChannelShared(
     Tcl_Channel chan)		/* The channel to query */
 {
     ChannelState *statePtr = ((Channel *) chan)->state;
 				/* State of real channel structure. */
 
-    return ((statePtr->refCount > 1) ? 1 : 0);
+    return (statePtr->refCount > 1);
 }
 
 /*
@@ -10772,7 +10764,7 @@ Tcl_IsChannelShared(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Tcl_IsChannelExisting(
     const char *chanName)	/* The name of the channel to look for. */
 {
@@ -10796,11 +10788,11 @@ Tcl_IsChannelExisting(
 
 	if ((*chanName == *name) &&
 		(memcmp(name, chanName, chanNameLen + 1) == 0)) {
-	    return 1;
+	    return true;
 	}
     }
 
-    return 0;
+    return false;
 }
 
 /*

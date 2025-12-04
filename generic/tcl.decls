@@ -102,7 +102,7 @@ declare 20 {
     void Tcl_DbIncrRefCount(Tcl_Obj *objPtr, const char *file, int line)
 }
 declare 21 {
-    int Tcl_DbIsShared(Tcl_Obj *objPtr, const char *file, int line)
+    bool Tcl_DbIsShared(Tcl_Obj *objPtr, const char *file, int line)
 }
 declare 23 {
     Tcl_Obj *Tcl_DbNewByteArrayObj(const unsigned char *bytes,
@@ -235,7 +235,7 @@ declare 74 {
     void Tcl_AsyncMark(Tcl_AsyncHandler async)
 }
 declare 75 {
-    int Tcl_AsyncReady(void)
+    bool Tcl_AsyncReady(void)
 }
 declare 78 {
     int Tcl_BadChannelOption(Tcl_Interp *interp, const char *optionName,
@@ -569,7 +569,7 @@ declare 184 {
     int Tcl_InterpDeleted(Tcl_Interp *interp)
 }
 declare 185 {
-    int Tcl_IsSafe(Tcl_Interp *interp)
+    bool Tcl_IsSafe(Tcl_Interp *interp)
 }
 # Obsolete, use Tcl_FSJoinPath
 declare 186 {
@@ -1045,25 +1045,25 @@ declare 344 {
     void Tcl_ServiceModeHook(int mode)
 }
 declare 345 {
-    int Tcl_UniCharIsAlnum(int ch)
+    bool Tcl_UniCharIsAlnum(int ch)
 }
 declare 346 {
-    int Tcl_UniCharIsAlpha(int ch)
+    bool Tcl_UniCharIsAlpha(int ch)
 }
 declare 347 {
-    int Tcl_UniCharIsDigit(int ch)
+    bool Tcl_UniCharIsDigit(int ch)
 }
 declare 348 {
-    int Tcl_UniCharIsLower(int ch)
+    bool Tcl_UniCharIsLower(int ch)
 }
 declare 349 {
-    int Tcl_UniCharIsSpace(int ch)
+    bool Tcl_UniCharIsSpace(int ch)
 }
 declare 350 {
-    int Tcl_UniCharIsUpper(int ch)
+    bool Tcl_UniCharIsUpper(int ch)
 }
 declare 351 {
-    int Tcl_UniCharIsWordChar(int ch)
+    bool Tcl_UniCharIsWordChar(int ch)
 }
 declare 352 {
     Tcl_Size Tcl_Char16Len(const unsigned short *uniStr)
@@ -1133,16 +1133,16 @@ declare 371 {
     int Tcl_StringCaseMatch(const char *str, const char *pattern, int nocase)
 }
 declare 372 {
-    int Tcl_UniCharIsControl(int ch)
+    bool Tcl_UniCharIsControl(int ch)
 }
 declare 373 {
-    int Tcl_UniCharIsGraph(int ch)
+    bool Tcl_UniCharIsGraph(int ch)
 }
 declare 374 {
-    int Tcl_UniCharIsPrint(int ch)
+    bool Tcl_UniCharIsPrint(int ch)
 }
 declare 375 {
-    int Tcl_UniCharIsPunct(int ch)
+    bool Tcl_UniCharIsPunct(int ch)
 }
 declare 376 {
     int Tcl_RegExpExecObj(Tcl_Interp *interp, Tcl_RegExp regexp,
@@ -1268,10 +1268,10 @@ declare 412 {
     int Tcl_JoinThread(Tcl_ThreadId threadId, int *result)
 }
 declare 413 {
-    int Tcl_IsChannelShared(Tcl_Channel channel)
+    bool Tcl_IsChannelShared(Tcl_Channel channel)
 }
 declare 414 {
-    int Tcl_IsChannelRegistered(Tcl_Interp *interp, Tcl_Channel channel)
+    bool Tcl_IsChannelRegistered(Tcl_Interp *interp, Tcl_Channel channel)
 }
 declare 415 {
     void Tcl_CutChannel(Tcl_Channel channel)
@@ -1283,7 +1283,7 @@ declare 417 {
     void Tcl_ClearChannelHandlers(Tcl_Channel channel)
 }
 declare 418 {
-    int Tcl_IsChannelExisting(const char *channelName)
+    bool Tcl_IsChannelExisting(const char *channelName)
 }
 declare 421 {
     Tcl_HashEntry *Tcl_DbCreateHashEntry(Tcl_HashTable *tablePtr,
@@ -1350,7 +1350,7 @@ declare 438 {
     int Tcl_DetachChannel(Tcl_Interp *interp, Tcl_Channel channel)
 }
 declare 439 {
-    int Tcl_IsStandardChannel(Tcl_Channel channel)
+    bool Tcl_IsStandardChannel(Tcl_Channel channel)
 }
 declare 440 {
     int	Tcl_FSCopyFile(Tcl_Obj *srcPathPtr, Tcl_Obj *destPathPtr)
@@ -1724,7 +1724,7 @@ declare 539 {
 
 # TIP#235 (ensembles) dkf
 declare 540 {
-    int Tcl_IsEnsemble(Tcl_Command token)
+    bool Tcl_IsEnsemble(Tcl_Command token)
 }
 declare 541 {
     Tcl_Command Tcl_CreateEnsemble(Tcl_Interp *interp, const char *name,
@@ -2157,7 +2157,7 @@ declare 642 {
 }
 
 declare 643 {
-    int Tcl_IsShared(Tcl_Obj *objPtr)
+    bool Tcl_IsShared(Tcl_Obj *objPtr)
 }
 
 # TIP#312 New Tcl_LinkArray() function
@@ -2369,7 +2369,7 @@ declare 689 {
 
 # TIP 711
 declare 690 {
-    int Tcl_IsEmpty(Tcl_Obj *obj)
+    bool Tcl_IsEmpty(Tcl_Obj *obj)
 }
 
 # TIP 716

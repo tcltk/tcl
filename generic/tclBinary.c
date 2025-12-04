@@ -193,7 +193,7 @@ typedef struct {
 #define SET_BYTEARRAY(irPtr, baPtr) \
 		(irPtr)->twoPtrValue.ptr1 = (baPtr)
 
-int
+bool
 TclIsPureByteArray(
     Tcl_Obj * objPtr)
 {

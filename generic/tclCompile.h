@@ -1021,7 +1021,7 @@ typedef enum InstStringClassType {
 
 typedef struct StringClassDesc {
     char name[8];		/* Name of the class. */
-    int (*comparator)(int);	/* Function to test if a single unicode
+    bool (*comparator)(int);	/* Function to test if a single unicode
 				 * character is a member of the class. */
 } StringClassDesc;
 

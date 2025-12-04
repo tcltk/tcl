@@ -3285,7 +3285,7 @@ Tcl_GetObjectFromObj(
  * ----------------------------------------------------------------------
  */
 
-int
+bool
 TclOOIsReachable(
     Class *targetPtr,
     Class *startPtr)
@@ -3295,7 +3295,7 @@ TclOOIsReachable(
 
   tailRecurse:
     if (startPtr == targetPtr) {
-	return 1;
+	return true;
     }
     if (startPtr->superclasses.num == 1 && startPtr->mixins.num == 0) {
 	startPtr = startPtr->superclasses.list[0];
@@ -3303,15 +3303,15 @@ TclOOIsReachable(
     }
     FOREACH(superPtr, startPtr->superclasses) {
 	if (TclOOIsReachable(targetPtr, superPtr)) {
-	    return 1;
+	    return true;
 	}
     }
     FOREACH(superPtr, startPtr->mixins) {
 	if (TclOOIsReachable(targetPtr, superPtr)) {
-	    return 1;
+	    return true;
 	}
     }
-    return 0;
+    return false;
 }
 
 /*
@@ -3392,7 +3392,7 @@ Tcl_ObjectContextMethod(
     return (Tcl_Method) contextPtr->callPtr->chain[contextPtr->index].mPtr;
 }
 
-int
+bool
 Tcl_ObjectContextIsFiltering(
     Tcl_ObjectContext context)
 {
