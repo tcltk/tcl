@@ -1736,6 +1736,12 @@ InfoLoadedCmd(
 #ifndef LC_MEASUREMENT
 #   define LC_MEASUREMENT -1
 #endif
+#ifndef LC_MESSAGES
+#   define LC_MESSAGES -1
+#endif
+#ifndef LC_MONETARY
+#   define LC_MONETARY -1
+#endif
 #ifndef LC_NAME
 #   define LC_NAME -1
 #endif
