@@ -39,7 +39,6 @@ static int ExtensionPathObjCmd(
     WCHAR wpath[MAX_PATH];
     DWORD len;
     Tcl_DString ds;
-    const char *utfPath;
     (void)clientData;
     (void)objc;
     (void)objv;
@@ -47,21 +46,23 @@ static int ExtensionPathObjCmd(
     if (!GetModuleHandleExW(
             GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
             GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
-            (LPCVOID) ExtensionPathObjCmd, &hModule)) {
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(
-            "unable to get module handle", -1));
-        return TCL_ERROR;
+            (LPCWSTR) ExtensionPathObjCmd, &hModule)) {
+	Tcl_SetObjResult(
+	    interp,
+	    Tcl_ObjPrintf("unable to get module handle: Windows error %lu", GetLastError()));
+	return TCL_ERROR;
     }
 
     len = GetModuleFileNameW(hModule, wpath, MAX_PATH);
     if (len == 0) {
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(
-            "unable to get module filename", -1));
+	Tcl_SetObjResult(
+	    interp,
+	    Tcl_ObjPrintf("unable to get module handle: Windows error %lu", GetLastError()));
         return TCL_ERROR;
     }
 
     Tcl_DStringInit(&ds);
-    utfPath = Tcl_Char16ToUtfDString(wpath, len, &ds);
+    Tcl_Char16ToUtfDString(wpath, len, &ds);
     Tcl_DStringResult(interp, &ds);
 
     return TCL_OK;
@@ -87,8 +88,6 @@ int
 Tclwintestextension_Init(
     Tcl_Interp *interp)
 {
-    Tcl_Command cmd;
-
     if (Tcl_InitStubs(interp, TCL_VERSION, 0) == NULL) {
 	return TCL_ERROR;
     }
