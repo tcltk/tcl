@@ -65,7 +65,7 @@ static Tcl_NRPostProc		DictMapLoopCallback;
  * Table of dict subcommand names and implementations.
  */
 
-static const EnsembleImplMap implementationMap[] = {
+const EnsembleImplMap tclDictImplMap[] = {
     {"append",	DictAppendCmd,	TclCompileDictAppendCmd, NULL, NULL, 0 },
     {"create",	DictCreateCmd,	TclCompileDictCreateCmd, NULL, NULL, 0 },
     {"exists",	DictExistsCmd,	TclCompileDictExistsCmd, NULL, NULL, 0 },
@@ -142,23 +142,23 @@ typedef struct Dict {
 
 const Tcl_ObjType tclDictType = {
     "dict",
-    FreeDictInternalRep,	/* freeIntRepProc */
-    DupDictInternalRep,		/* dupIntRepProc */
-    UpdateStringOfDict,		/* updateStringProc */
-    SetDictFromAny,		/* setFromAnyProc */
+    FreeDictInternalRep,
+    DupDictInternalRep,
+    UpdateStringOfDict,
+    SetDictFromAny,
     TCL_OBJTYPE_V0
 };
 
-#define DictSetInternalRep(objPtr, dictRepPtr)				\
-    do {                                                                \
+#define DictSetInternalRep(objPtr, dictRepPtr) \
+    do {								\
 	Tcl_ObjInternalRep ir;						\
-	ir.twoPtrValue.ptr1 = (dictRepPtr);                             \
-	ir.twoPtrValue.ptr2 = NULL;                                     \
+	ir.twoPtrValue.ptr1 = (dictRepPtr);				\
+	ir.twoPtrValue.ptr2 = NULL;					\
 	Tcl_StoreInternalRep((objPtr), &tclDictType, &ir);		\
     } while (0)
 
-#define DictGetInternalRep(objPtr, dictRepPtr)				\
-    do {                                                                \
+#define DictGetInternalRep(objPtr, dictRepPtr) \
+    do {								\
 	const Tcl_ObjInternalRep *irPtr;				\
 	irPtr = TclFetchInternalRep((objPtr), &tclDictType);		\
 	(dictRepPtr) = irPtr ? (Dict *)irPtr->twoPtrValue.ptr1 : NULL;	\
@@ -3966,31 +3966,6 @@ TclDictWithFinish(
     return TCL_OK;
 }
 
-/*
- *----------------------------------------------------------------------
- *
- * TclInitDictCmd --
- *
- *	This function is create the "dict" Tcl command. See the user
- *	documentation for details on what it does, and TIP#111 for the formal
- *	specification.
- *
- * Results:
- *	A Tcl command handle.
- *
- * Side effects:
- *	May advance compilation epoch.
- *
- *----------------------------------------------------------------------
- */
-
-Tcl_Command
-TclInitDictCmd(
-    Tcl_Interp *interp)
-{
-    return TclMakeEnsemble(interp, "dict", implementationMap);
-}
-
 /*
  * Local Variables:
  * mode: c

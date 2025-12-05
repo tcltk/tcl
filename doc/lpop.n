@@ -11,7 +11,7 @@
 .SH NAME
 lpop \- Get and remove an element in a list
 .SH SYNOPSIS
-\fBlpop \fIvarName ?index ...?\fR
+\fBlpop \fIvarName ?index ...\fR?
 .BE
 .SH DESCRIPTION
 .PP

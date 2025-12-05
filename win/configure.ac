@@ -337,6 +337,7 @@ eval "TCL_SRC_DIR=\"`cd $srcdir/..; $CYGPATH $(pwd)`\""
 
 eval "TCL_DLL_FILE=tcl${VER}${DLLSUFFIX}"
 
+eval "TCL_LIB_FLAG=\"-ltcl${VER}${LIBFLAGSUFFIX}\""
 eval "TCL_STUB_LIB_FILE=\"${LIBPREFIX}tclstub${LIBSUFFIX}\""
 eval "TCL_STUB_LIB_FLAG=\"-ltclstub${LIBFLAGSUFFIX}\""
 eval "TCL_BUILD_STUB_LIB_SPEC=\"-L`$CYGPATH $(pwd)` ${TCL_STUB_LIB_FLAG}\""
@@ -414,6 +415,7 @@ AC_SUBST(TCL_STATIC_LIB_FLAG)
 AC_SUBST(TCL_IMPORT_LIB_FILE)
 AC_SUBST(TCL_IMPORT_LIB_FLAG)
 # empty on win
+AC_SUBST(TCL_LIBS)
 AC_SUBST(TCL_LIB_SPEC)
 AC_SUBST(TCL_STUB_LIB_FILE)
 AC_SUBST(TCL_STUB_LIB_FLAG)
@@ -485,7 +487,7 @@ AC_SUBST(RC_DEFINE)
 AC_SUBST(RC_DEFINES)
 AC_SUBST(RES)
 
-AC_CONFIG_FILES([Makefile tclConfig.sh tclsh.exe.manifest])
+AC_CONFIG_FILES([Makefile tclConfig.sh tclsh.exe.manifest tcl.pc:../unix/tcl.pc.in])
 AC_OUTPUT
 
 dnl Local Variables:

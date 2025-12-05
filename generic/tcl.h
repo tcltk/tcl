@@ -880,10 +880,10 @@ typedef struct Tcl_DString {
  *	TCL_NUMBER_NAN		Value is NaN.
  */
 
-#define TCL_NUMBER_INT          2
-#define TCL_NUMBER_BIG          3
-#define TCL_NUMBER_DOUBLE       4
-#define TCL_NUMBER_NAN          5
+#define TCL_NUMBER_INT		2
+#define TCL_NUMBER_BIG		3
+#define TCL_NUMBER_DOUBLE	4
+#define TCL_NUMBER_NAN		5
 
 /*
  * Flag values passed to Tcl_ConvertElement.
@@ -944,7 +944,7 @@ typedef struct Tcl_DString {
 #define TCL_EVAL_DIRECT		0x040000
 #define TCL_EVAL_INVOKE		0x080000
 #define TCL_CANCEL_UNWIND	0x100000
-#define TCL_EVAL_NOERR          0x200000
+#define TCL_EVAL_NOERR		0x200000
 
 /*
  * Special freeProc values that may be passed to Tcl_SetResult (see the man
@@ -2230,8 +2230,7 @@ typedef Tcl_Size (Tcl_ArgvGenFuncProc)(void *clientData, Tcl_Interp *interp,
  * Single public declaration for NRE.
  */
 
-typedef int (Tcl_NRPostProc) (void *data[], Tcl_Interp *interp,
-				int result);
+typedef int (Tcl_NRPostProc) (void *data[], Tcl_Interp *interp, int result);
 
 /*
  *----------------------------------------------------------------------------
