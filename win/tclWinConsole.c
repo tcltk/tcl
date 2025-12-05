@@ -2022,12 +2022,12 @@ AllocateConsoleHandleInfo(
 	SetConsoleMode(consoleHandle, consoleMode);
     }
     handleInfoPtr->consoleThread = CreateThread(
-	    NULL, /* default security descriptor */
+	    NULL,		/* default security descriptor */
 	    2*CONSOLE_BUFFER_SIZE, /* Stack size - gets rounded up to granularity */
 	    permissions == TCL_READABLE ? ConsoleReaderThread : ConsoleWriterThread,
-	    handleInfoPtr, /* Pass to thread */
-	    0,             /* Flags - no special cases */
-	    NULL);         /* Don't care about thread id */
+	    handleInfoPtr,	/* Pass to thread */
+	    0,			/* Flags - no special cases */
+	    NULL);		/* Don't care about thread id */
     if (handleInfoPtr->consoleThread == NULL) {
 	/* Note - SRWLock and condition variables do not need finalization */
 	RingBufferClear(&handleInfoPtr->buffer);
