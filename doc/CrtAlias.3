@@ -121,10 +121,10 @@ child in which Tcl code has access only to set of Tcl commands defined as
 see the manual entry for the Tcl \fBinterp\fR command for details.
 If the creation of the new child interpreter failed, \fBNULL\fR is returned.
 .PP
-\fBTcl_IsSafe\fR returns \fB1\fR if \fIinterp\fR is
+\fBTcl_IsSafe\fR returns \fBtrue\fR if \fIinterp\fR is
 .QW safe
 (was created with the \fBTCL_SAFE_INTERPRETER\fR flag specified),
-\fB0\fR otherwise.
+\fBfalse\fR otherwise.
 .PP
 \fBTcl_GetChild\fR returns a pointer to a child interpreter of
 \fIinterp\fR. The child interpreter is identified by \fIname\fR.
