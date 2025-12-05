@@ -354,7 +354,7 @@ typedef DWORD_PTR * PDWORD_PTR;
  */
 
 #ifndef S_IFLNK
-#   define S_IFLNK        0120000  /* Symbolic Link */
+#   define S_IFLNK	0120000	/* Symbolic Link */
 #endif
 
 /*

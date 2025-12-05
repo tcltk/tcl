@@ -142,23 +142,23 @@ typedef struct Dict {
 
 const Tcl_ObjType tclDictType = {
     "dict",
-    FreeDictInternalRep,	/* freeIntRepProc */
-    DupDictInternalRep,		/* dupIntRepProc */
-    UpdateStringOfDict,		/* updateStringProc */
-    SetDictFromAny,		/* setFromAnyProc */
+    FreeDictInternalRep,
+    DupDictInternalRep,
+    UpdateStringOfDict,
+    SetDictFromAny,
     TCL_OBJTYPE_V0
 };
 
-#define DictSetInternalRep(objPtr, dictRepPtr)				\
-    do {                                                                \
+#define DictSetInternalRep(objPtr, dictRepPtr) \
+    do {								\
 	Tcl_ObjInternalRep ir;						\
-	ir.twoPtrValue.ptr1 = (dictRepPtr);                             \
-	ir.twoPtrValue.ptr2 = NULL;                                     \
+	ir.twoPtrValue.ptr1 = (dictRepPtr);				\
+	ir.twoPtrValue.ptr2 = NULL;					\
 	Tcl_StoreInternalRep((objPtr), &tclDictType, &ir);		\
     } while (0)
 
-#define DictGetInternalRep(objPtr, dictRepPtr)				\
-    do {                                                                \
+#define DictGetInternalRep(objPtr, dictRepPtr) \
+    do {								\
 	const Tcl_ObjInternalRep *irPtr;				\
 	irPtr = TclFetchInternalRep((objPtr), &tclDictType);		\
 	(dictRepPtr) = irPtr ? (Dict *)irPtr->twoPtrValue.ptr1 : NULL;	\

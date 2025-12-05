@@ -645,11 +645,11 @@ ClockFmtScnStorageDelete(
  */
 
 static const Tcl_ObjType ClockFmtObjType = {
-    "clock-format",			/* name */
-    ClockFmtObj_FreeInternalRep,	/* freeIntRepProc */
-    ClockFmtObj_DupInternalRep,		/* dupIntRepProc */
-    ClockFmtObj_UpdateString,		/* updateStringProc */
-    ClockFmtObj_SetFromAny,		/* setFromAnyProc */
+    "clock-format",
+    ClockFmtObj_FreeInternalRep,
+    ClockFmtObj_DupInternalRep,
+    ClockFmtObj_UpdateString,
+    ClockFmtObj_SetFromAny,
     TCL_OBJTYPE_V0
 };
 

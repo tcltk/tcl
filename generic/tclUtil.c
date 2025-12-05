@@ -148,11 +148,11 @@ static int		FindElement(Tcl_Interp *interp, const char *string,
  */
 
 static const Tcl_ObjType endOffsetType = {
-    "end-offset",			/* name */
-    NULL,				/* freeIntRepProc */
-    NULL,				/* dupIntRepProc */
-    NULL,				/* updateStringProc */
-    NULL,				/* setFromAnyProc */
+    "end-offset",
+    NULL,			// FreeIntRep
+    NULL,			// DupIntRep
+    NULL,			// UpdateString
+    NULL,			// SetFromAny
     TCL_OBJTYPE_V1(TclLengthOne)
 };
 

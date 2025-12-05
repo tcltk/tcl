@@ -288,7 +288,10 @@ const EnsembleImplMap tclArrayImplMap[] = {
 
 static const Tcl_ObjType localVarNameType = {
     "localVarName",
-    FreeLocalVarName, DupLocalVarName, NULL, NULL,
+    FreeLocalVarName,
+    DupLocalVarName,
+    NULL,			// UpdateString
+    NULL,			// SetFromAny
     TCL_OBJTYPE_V0
 };
 
@@ -314,7 +317,10 @@ static const Tcl_ObjType localVarNameType = {
 
 static const Tcl_ObjType parsedVarNameType = {
     "parsedVarName",
-    FreeParsedVarName, DupParsedVarName, NULL, NULL,
+    FreeParsedVarName,
+    DupParsedVarName,
+    NULL,			// UpdateString
+    NULL,			// SetFromAny
     TCL_OBJTYPE_V0
 };
 

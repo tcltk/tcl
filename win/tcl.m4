@@ -896,33 +896,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
     fi
 
     if test "${GCC}" = "yes" ; then
-	AC_CACHE_CHECK(for SEH support in compiler,
-	    tcl_cv_seh,
-	AC_RUN_IFELSE([AC_LANG_SOURCE([[
-	    #define WIN32_LEAN_AND_MEAN
-	    #include <windows.h>
-	    #undef WIN32_LEAN_AND_MEAN
-
-	    int main(int argc, char** argv) {
-		int a, b = 0;
-		__try {
-		    a = 666 / b;
-		}
-		__except (EXCEPTION_EXECUTE_HANDLER) {
-		    return 0;
-		}
-		return 1;
-	    }
-	]])],
-	    [tcl_cv_seh=yes],
-	    [tcl_cv_seh=no],
-	    [tcl_cv_seh=no])
-	)
-	if test "$tcl_cv_seh" = "no" ; then
-	    AC_DEFINE(HAVE_NO_SEH, 1,
-		    [Defined when mingw does not support SEH])
-	fi
-
 	#
 	# Check to see if the excpt.h include file provided contains the
 	# definition for EXCEPTION_DISPOSITION; if not, which is the case

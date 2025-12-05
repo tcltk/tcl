@@ -296,31 +296,32 @@ static Tcl_ObjCmdProc	TestSimpleFilesystemCmd;
 static void		TestReport(const char *cmd, Tcl_Obj *arg1,
 			    Tcl_Obj *arg2);
 static Tcl_Obj *	TestReportGetNativePath(Tcl_Obj *pathPtr);
-static Tcl_FSStatProc TestReportStat;
+static Tcl_FSStatProc	TestReportStat;
 static Tcl_FSAccessProc TestReportAccess;
 static Tcl_FSOpenFileChannelProc TestReportOpenFileChannel;
 static Tcl_FSMatchInDirectoryProc TestReportMatchInDirectory;
-static Tcl_FSChdirProc TestReportChdir;
-static Tcl_FSLstatProc TestReportLstat;
+static Tcl_FSChdirProc	TestReportChdir;
+static Tcl_FSLstatProc	TestReportLstat;
 static Tcl_FSCopyFileProc TestReportCopyFile;
 static Tcl_FSDeleteFileProc TestReportDeleteFile;
 static Tcl_FSRenameFileProc TestReportRenameFile;
 static Tcl_FSCreateDirectoryProc TestReportCreateDirectory;
 static Tcl_FSCopyDirectoryProc TestReportCopyDirectory;
 static Tcl_FSRemoveDirectoryProc TestReportRemoveDirectory;
-static int TestReportLoadFile(Tcl_Interp *interp, Tcl_Obj *pathPtr,
-	Tcl_LoadHandle *handlePtr, Tcl_FSUnloadFileProc **unloadProcPtr);
-static Tcl_FSLinkProc TestReportLink;
+static int		TestReportLoadFile(Tcl_Interp *interp, Tcl_Obj *pathPtr,
+			    Tcl_LoadHandle *handlePtr,
+			    Tcl_FSUnloadFileProc **unloadProcPtr);
+static Tcl_FSLinkProc	TestReportLink;
 static Tcl_FSFileAttrStringsProc TestReportFileAttrStrings;
 static Tcl_FSFileAttrsGetProc TestReportFileAttrsGet;
 static Tcl_FSFileAttrsSetProc TestReportFileAttrsSet;
-static Tcl_FSUtimeProc TestReportUtime;
+static Tcl_FSUtimeProc	TestReportUtime;
 static Tcl_FSNormalizePathProc TestReportNormalizePath;
 static Tcl_FSPathInFilesystemProc TestReportInFilesystem;
 static Tcl_FSFreeInternalRepProc TestReportFreeInternalRep;
 static Tcl_FSDupInternalRepProc TestReportDupInternalRep;
 static Tcl_ObjCmdProc	TestServiceModeCmd;
-static Tcl_FSStatProc SimpleStat;
+static Tcl_FSStatProc	SimpleStat;
 static Tcl_FSAccessProc SimpleAccess;
 static Tcl_FSOpenFileChannelProc SimpleOpenFileChannel;
 static Tcl_FSListVolumesProc SimpleListVolumes;
@@ -2083,7 +2084,8 @@ TestdstringCmd(
  * Tcl_DStringGetResult handles freeProc's other than free.
  */
 
-static void SpecialFree(
+static void
+SpecialFree(
     void *blockPtr)		/* Block to free. */
 {
     Tcl_Free(((char *)blockPtr) - 16);
@@ -2133,7 +2135,7 @@ typedef int
 UtfTransformFn(Tcl_Interp *interp, Tcl_Encoding encoding, const char *src,
 	Tcl_Size srcLen, int flags, Tcl_EncodingState *statePtr, char *dst,
 	Tcl_Size dstLen, int *srcReadPtr, int *dstWrotePtr, int *dstCharsPtr);
-typedef enum { 
+typedef enum {
 	UTF_TO_EXTERNAL,
 	EXTERNAL_TO_UTF,
 	UTF_TO_EXTERNAL_EX,
@@ -2141,7 +2143,10 @@ typedef enum {
 } UtfTransformType;
 
 static int UtfExtWrapper(
-    Tcl_Interp *interp, UtfTransformType transform, int objc, Tcl_Obj *const objv[])
+    Tcl_Interp *interp,
+    UtfTransformType transform,
+    int objc,
+    Tcl_Obj *const objv[])
 {
     Tcl_Encoding encoding;
     Tcl_EncodingState encState, *encStatePtr;
