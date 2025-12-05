@@ -42,6 +42,7 @@
 #undef Tcl_DumpActiveMemory
 #undef Tcl_ValidateAllMemory
 #undef Tcl_FindExecutable
+#undef Tcl_IsShared
 #undef TclpGetPid
 #undef TclSockMinimumBuffers
 #undef Tcl_SetIntObj
@@ -193,6 +194,52 @@ int TclGetAliasObj(Tcl_Interp *interp, const char *childCmd,
     return result;
 }
 #endif /* !TCL_NO_DEPRECATED */
+
+/* Wrapper-functions restoring binary compatibility of bool functions */
+
+static int TclIsSafe_(Tcl_Interp *interp) {return Tcl_IsSafe(interp);}
+#define Tcl_IsSafe (bool (*)(Tcl_Interp *))(void *)TclIsSafe_
+static int TclIsChannelShared_(Tcl_Channel chan) {return Tcl_IsChannelShared(chan);}
+#define Tcl_IsChannelShared (bool (*)(Tcl_Channel))(void *)TclIsChannelShared_
+static int TclIsChannelRegistered_(Tcl_Interp *interp, Tcl_Channel chan) {return Tcl_IsChannelRegistered(interp, chan);}
+#define Tcl_IsChannelRegistered (bool (*)(Tcl_Interp *, Tcl_Channel))(void *)TclIsChannelRegistered_
+static int TclIsChannelExisting_(const char *channelName) {return Tcl_IsChannelExisting(channelName);}
+#define Tcl_IsChannelExisting (bool (*)(const char *c))(void *)TclIsChannelExisting_
+static int TclIsStandardChannel_(Tcl_Channel chan) {return Tcl_IsStandardChannel(chan);}
+#define Tcl_IsStandardChannel (bool (*)(Tcl_Channel))(void *)TclIsStandardChannel_
+static int TclIsEnsemble_(Tcl_Command token) {return Tcl_IsEnsemble(token);}
+#define Tcl_IsEnsemble (bool (*)(Tcl_Command))(void *)TclIsEnsemble_
+static int TclIsShared_(Tcl_Obj *obj) {return Tcl_IsShared(obj);}
+#define Tcl_IsShared (bool (*)(Tcl_Obj *))(void *)TclIsShared_
+static int TclDbIsShared_(Tcl_Obj *obj, const char *file, int line) {return Tcl_DbIsShared(obj, file, line);}
+#define Tcl_DbIsShared (bool (*)(Tcl_Obj *, const char *, int))(void *)TclDbIsShared_
+static int TclAsyncReady_(void) {return Tcl_AsyncReady();}
+#define Tcl_AsyncReady (bool (*)(void))(void *)TclAsyncReady_
+
+static int TclUniCharIsAlnum_(int ch) {return Tcl_UniCharIsAlnum(ch);}
+#define Tcl_UniCharIsAlnum (bool (*)(int))(void *)TclUniCharIsAlnum_
+static int TclUniCharIsAlpha_(int ch) {return Tcl_UniCharIsAlpha(ch);}
+#define Tcl_UniCharIsAlpha (bool (*)(int))(void *)TclUniCharIsAlpha_
+static int TclUniCharIsDigit_(int ch) {return Tcl_UniCharIsDigit(ch);}
+#define Tcl_UniCharIsDigit (bool (*)(int))(void *)TclUniCharIsDigit_
+static int TclUniCharIsLower_(int ch) {return Tcl_UniCharIsLower(ch);}
+#define Tcl_UniCharIsLower (bool (*)(int))(void *)TclUniCharIsLower_
+static int TclUniCharIsSpace_(int ch) {return Tcl_UniCharIsSpace(ch);}
+#define Tcl_UniCharIsSpace (bool (*)(int))(void *)TclUniCharIsSpace_
+static int TclUniCharIsUpper_(int ch) {return Tcl_UniCharIsUpper(ch);}
+#define Tcl_UniCharIsUpper (bool (*)(int))(void *)TclUniCharIsUpper_
+static int TclUniCharIsWordChar_(int ch) {return Tcl_UniCharIsWordChar(ch);}
+#define Tcl_UniCharIsWordChar (bool (*)(int))(void *)TclUniCharIsWordChar_
+static int TclUniCharIsControl_(int ch) {return Tcl_UniCharIsControl(ch);}
+#define Tcl_UniCharIsControl (bool (*)(int))(void *)TclUniCharIsControl_
+static int TclUniCharIsGraph_(int ch) {return Tcl_UniCharIsGraph(ch);}
+#define Tcl_UniCharIsGraph (bool (*)(int))(void *)TclUniCharIsGraph_
+static int TclUniCharIsPrint_(int ch) {return Tcl_UniCharIsPrint(ch);}
+#define Tcl_UniCharIsPrint (bool (*)(int))(void *)TclUniCharIsPrint_
+static int TclUniCharIsPunct_(int ch) {return Tcl_UniCharIsPunct(ch);}
+#define Tcl_UniCharIsPunct (bool (*)(int))(void *)TclUniCharIsPunct_
+
+/* End of wrapper functions section */
 
 #define TclBN_mp_add mp_add
 #define TclBN_mp_add_d mp_add_d
