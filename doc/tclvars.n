@@ -208,7 +208,7 @@ message corresponding to \fIerrName\fR, such as
 .QW "no such file or directory"
 for the \fBENOENT\fR case.
 .TP
-\fBTCL\fR ...
+\fBTCL ...\fR
 .
 Indicates some sort of problem generated in relation to Tcl itself, e.g. a
 failure to look up a channel or variable.

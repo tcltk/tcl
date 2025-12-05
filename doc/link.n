@@ -13,10 +13,10 @@
 link \- Create link from command to method of object
 .SH SYNOPSIS
 .nf
-package require tcl::oo
+\fBpackage require tcl::oo\fR
 
-\fBlink\fI methodName\fR ?\fI...\fR?
-\fBlink\fR \fB{\fIcommandName methodName\fB}\fR ?\fI...\fR?
+\fBlink\fI methodName\fR ?...?
+\fBlink\fR \fB{\fIcommandName methodName\fB}\fR ?...?
 .fi
 .BE
 .SH DESCRIPTION

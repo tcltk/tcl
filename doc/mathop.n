@@ -12,34 +12,34 @@
 mathop \- Mathematical operators as Tcl commands
 .SH SYNOPSIS
 .nf
-package require \fBTcl 8.5-\fR
+\fBpackage require Tcl 8.5-\fR
 
 \fB::tcl::mathop::!\fI number\fR
 \fB::tcl::mathop::~\fI number\fR
-\fB::tcl::mathop::+\fR ?\fInumber\fR ...?
-\fB::tcl::mathop::\-\fI number\fR ?\fInumber\fR ...?
-\fB::tcl::mathop::*\fR ?\fInumber\fR ...?
-\fB::tcl::mathop::/\fI number\fR ?\fInumber\fR ...?
+\fB::tcl::mathop::+\fR ?\fInumber ...\fR?
+\fB::tcl::mathop::\-\fI number\fR ?\fInumber ...\fR?
+\fB::tcl::mathop::*\fR ?\fInumber ...\fR?
+\fB::tcl::mathop::/\fI number\fR ?\fInumber ...\fR?
 \fB::tcl::mathop::%\fI number number\fR
-\fB::tcl::mathop::**\fR ?\fInumber\fR ...?
-\fB::tcl::mathop::&\fR ?\fInumber\fR ...?
-\fB::tcl::mathop::|\fR ?\fInumber\fR ...?
-\fB::tcl::mathop::^\fR ?\fInumber\fR ...?
+\fB::tcl::mathop::**\fR ?\fInumber ...\fR?
+\fB::tcl::mathop::&\fR ?\fInumber ...\fR?
+\fB::tcl::mathop::|\fR ?\fInumber ...\fR?
+\fB::tcl::mathop::^\fR ?\fInumber ...\fR?
 \fB::tcl::mathop::<<\fI number number\fR
 \fB::tcl::mathop::>>\fI number number\fR
-\fB::tcl::mathop::==\fR ?\fIarg\fR ...?
+\fB::tcl::mathop::==\fR ?\fIarg ...\fR?
 \fB::tcl::mathop::!=\fI arg arg\fR
-\fB::tcl::mathop::<\fR ?\fIarg\fR ...?
-\fB::tcl::mathop::<=\fR ?\fIarg\fR ...?
-\fB::tcl::mathop::>=\fR ?\fIarg\fR ...?
-\fB::tcl::mathop::>\fR ?\fIarg\fR ...?
-\fB::tcl::mathop::eq\fR ?\fIarg\fR ...?
+\fB::tcl::mathop::<\fR ?\fIarg ...\fR?
+\fB::tcl::mathop::<=\fR ?\fIarg ...\fR?
+\fB::tcl::mathop::>=\fR ?\fIarg ...\fR?
+\fB::tcl::mathop::>\fR ?\fIarg ...\fR?
+\fB::tcl::mathop::eq\fR ?\fIarg ...\fR?
 \fB::tcl::mathop::ne\fI arg arg\fR
 .VS TIP461
-\fB::tcl::mathop::lt\fR ?\fIarg\fR ...?
-\fB::tcl::mathop::le\fR ?\fIarg\fR ...?
-\fB::tcl::mathop::gt\fR ?\fIarg\fR ...?
-\fB::tcl::mathop::ge\fR ?\fIarg\fR ...?
+\fB::tcl::mathop::lt\fR ?\fIarg ...\fR?
+\fB::tcl::mathop::le\fR ?\fIarg ...\fR?
+\fB::tcl::mathop::gt\fR ?\fIarg ...\fR?
+\fB::tcl::mathop::ge\fR ?\fIarg ...\fR?
 .VE TIP461
 \fB::tcl::mathop::in\fI arg list\fR
 \fB::tcl::mathop::ni\fI arg list\fR
@@ -77,14 +77,14 @@ argument is falsity or zero, and falsity if the argument is truth or
 non-zero).
 .\" COMMAND: +
 .TP
-\fB+\fR ?\fInumber\fR ...?
+\fB+\fR ?\fInumber ...\fR?
 .
 Returns the sum of arbitrarily many arguments. Each \fInumber\fR argument may
 be any numeric value. If no arguments are given, the result will be zero (the
 summation identity).
 .\" COMMAND: -
 .TP
-\fB\-\fI number\fR ?\fInumber\fR ...?
+\fB\-\fI number\fR ?\fInumber ...\fR?
 .
 If only a single \fInumber\fR argument is given, returns the negation of that
 numeric value. Otherwise returns the number that results when all subsequent
@@ -92,14 +92,14 @@ numeric values are subtracted from the first one. All \fInumber\fR arguments
 must be numeric values. At least one argument must be given.
 .\" COMMAND: *
 .TP
-\fB*\fR ?\fInumber\fR ...?
+\fB*\fR ?\fInumber ...\fR?
 .
 Returns the product of arbitrarily many arguments. Each \fInumber\fR may be
 any numeric value. If no arguments are given, the result will be one (the
 multiplicative identity).
 .\" COMMAND: /
 .TP
-\fB/\fI number\fR ?\fInumber\fR ...?
+\fB/\fI number\fR ?\fInumber ...\fR?
 .
 If only a single \fInumber\fR argument is given, returns the reciprocal of that
 numeric value (i.e. the value obtained by dividing 1.0 by that value).
@@ -135,7 +135,7 @@ clarity):
 .RE
 .\" COMMAND: **
 .TP
-\fB**\fR ?\fInumber\fR ...?
+\fB**\fR ?\fInumber ...\fR?
 .
 Returns the result of raising each value to the power of the result of
 recursively operating on the result of processing the following arguments, so
@@ -155,7 +155,7 @@ The behaviors of the comparison operator commands (most of which operate
 preferentially on numeric arguments) are as follows:
 .\" COMMAND: ==
 .TP
-\fB==\fR ?\fIarg\fR ...?
+\fB==\fR ?\fIarg ...\fR?
 .
 Returns whether each argument is equal to the arguments on each side of it in
 the sense of the \fBexpr\fR == operator (\fIi.e.\fR, numeric comparison if
@@ -163,7 +163,7 @@ possible, exact string comparison otherwise). If fewer than two arguments
 are given, this operation always returns a true value.
 .\" COMMAND: eq
 .TP
-\fBeq\fR ?\fIarg\fR ...?
+\fBeq\fR ?\fIarg ...\fR?
 .
 Returns whether each argument is equal to the arguments on each side of it
 using exact string comparison. If fewer than two arguments are given, this
@@ -183,7 +183,7 @@ Returns whether the two arguments are not equal to each other using exact
 string comparison.
 .\" COMMAND: <
 .TP
-\fB<\fR ?\fIarg\fR ...?
+\fB<\fR ?\fIarg ...\fR?
 .
 Returns whether the arbitrarily-many arguments are ordered, with each argument
 after the first having to be strictly more than the one preceding it.
@@ -194,7 +194,7 @@ arguments are numeric but should be compared as strings, the \fBlt\fR
 operator or the \fBstring compare\fR command should be used instead.
 .\" COMMAND: <=
 .TP
-\fB<=\fR ?\fIarg\fR ...?
+\fB<=\fR ?\fIarg ...\fR?
 .
 Returns whether the arbitrarily-many arguments are ordered, with each argument
 after the first having to be equal to or more than the one preceding it.
@@ -205,7 +205,7 @@ arguments are numeric but should be compared as strings,  the \fBle\fR
 operator or the \fBstring compare\fR command should be used instead.
 .\" COMMAND: >
 .TP
-\fB>\fR ?\fIarg\fR ...?
+\fB>\fR ?\fIarg ...\fR?
 .
 Returns whether the arbitrarily-many arguments are ordered, with each argument
 after the first having to be strictly less than the one preceding it.
@@ -216,7 +216,7 @@ arguments are numeric but should be compared as strings, the \fBgt\fR
 operator or the \fBstring compare\fR command should be used instead.
 .\" COMMAND: >=
 .TP
-\fB>=\fR ?\fIarg\fR ...?
+\fB>=\fR ?\fIarg ...\fR?
 .
 Returns whether the arbitrarily-many arguments are ordered, with each argument
 after the first having to be equal to or less than the one preceding it.
@@ -227,7 +227,7 @@ arguments are numeric but should be compared as strings, the \fBge\fR
 operator or the \fBstring compare\fR command should be used instead.
 .\" COMMAND: lt
 .TP
-\fBlt\fR ?\fIarg\fR ...?
+\fBlt\fR ?\fIarg ...\fR?
 .VS TIP461
 Returns whether the arbitrarily-many arguments are ordered, with each argument
 after the first having to be strictly more than the one preceding it.
@@ -236,7 +236,7 @@ arguments are present, this operation always returns a true value.
 .VE TIP461
 .\" COMMAND: le
 .TP
-\fBle\fR ?\fIarg\fR ...?
+\fBle\fR ?\fIarg ...\fR?
 .VS TIP461
 Returns whether the arbitrarily-many arguments are ordered, with each argument
 after the first having to be equal to or strictly more than the one preceding it.
@@ -245,7 +245,7 @@ arguments are present, this operation always returns a true value.
 .VE TIP461
 .\" COMMAND: gt
 .TP
-\fBgt\fR ?\fIarg\fR ...?
+\fBgt\fR ?\fIarg ...\fR?
 .VS TIP461
 Returns whether the arbitrarily-many arguments are ordered, with each argument
 after the first having to be strictly less than the one preceding it.
@@ -254,7 +254,7 @@ arguments are present, this operation always returns a true value.
 .VE TIP461
 .\" COMMAND: ge
 .TP
-\fBge\fR ?\fIarg\fR ...?
+\fBge\fR ?\fIarg ...\fR?
 .VS TIP461
 Returns whether the arbitrarily-many arguments are ordered, with each argument
 after the first having to be equal to or strictly less than the one preceding it.
@@ -274,21 +274,21 @@ of any size. Note that the result of this operation will always have the
 opposite sign to the input \fInumber\fR.
 .\" COMMAND: &
 .TP
-\fB&\fR ?\fInumber\fR ...?
+\fB&\fR ?\fInumber ...\fR?
 .
 Returns the bit-wise AND of each of the arbitrarily many arguments. Each
 \fInumber\fR must have an integral value. If no arguments are given, the
 result will be minus one.
 .\" COMMAND: |
 .TP
-\fB|\fR ?\fInumber\fR ...?
+\fB|\fR ?\fInumber ...\fR?
 .
 Returns the bit-wise OR of each of the arbitrarily many arguments. Each
 \fInumber\fR must have an integral value. If no arguments are given, the
 result will be zero.
 .\" COMMAND: ^
 .TP
-\fB^\fR ?\fInumber\fR ...?
+\fB^\fR ?\fInumber ...\fR?
 .
 Returns the bit-wise XOR of each of the arbitrarily many arguments. Each
 \fInumber\fR must have an integral value. If no arguments are given, the
