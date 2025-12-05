@@ -76,11 +76,11 @@ static void		UpdateStringOfString(Tcl_Obj *objPtr);
  */
 
 const Tcl_ObjType tclStringType = {
-    "string",			/* name */
-    FreeStringInternalRep,	/* freeIntRepPro */
-    DupStringInternalRep,	/* dupIntRepProc */
-    UpdateStringOfString,	/* updateStringProc */
-    SetStringFromAny,		/* setFromAnyProc */
+    "string",
+    FreeStringInternalRep,
+    DupStringInternalRep,
+    UpdateStringOfString,
+    SetStringFromAny,
     TCL_OBJTYPE_V0
 };
 

@@ -951,7 +951,8 @@ IcuNormalizeUCharDString(
 /*
  * Common function for parsing convert options.
  */
-static int IcuParseConvertOptions(
+static int
+IcuParseConvertOptions(
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[],

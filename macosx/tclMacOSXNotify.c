@@ -656,7 +656,7 @@ StartNotifierThread(void)
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 	pthread_attr_setstacksize(&attr, 60 * 1024);
 	result = pthread_create(&notifierThread, &attr,
-		(void * (*)(void *)) NotifierThreadProc, NULL);
+		(void * (*)(void *))(void *)NotifierThreadProc, NULL);
 	pthread_attr_destroy(&attr);
 	if (result) {
 	    Tcl_Panic("StartNotifierThread: unable to start notifier thread");
@@ -794,7 +794,7 @@ void
 TclpAlertNotifier(
     void *clientData)
 {
-    ThreadSpecificData *tsdPtr = (ThreadSpecificData *) clientData;
+    ThreadSpecificData *tsdPtr = (ThreadSpecificData *)clientData;
 
     LOCK_NOTIFIER_TSD;
     if (tsdPtr->runLoop) {
@@ -942,7 +942,7 @@ TclpCreateFileHandler(
     FileHandler *filePtr = LookUpFileHandler(tsdPtr, fd, NULL);
 
     if (filePtr == NULL) {
-	filePtr = (FileHandler *) Tcl_Alloc(sizeof(FileHandler));
+	filePtr = (FileHandler *)Tcl_Alloc(sizeof(FileHandler));
 	filePtr->fd = fd;
 	filePtr->readyMask = 0;
 	filePtr->nextPtr = tsdPtr->firstFileHandlerPtr;
@@ -1300,7 +1300,7 @@ QueueFileEvents(
 {
     SelectMasks readyMasks;
     FileHandler *filePtr;
-    ThreadSpecificData *tsdPtr = (ThreadSpecificData *) info;
+    ThreadSpecificData *tsdPtr = (ThreadSpecificData *)info;
 
     /*
      * Queue all detected file events.
@@ -1373,7 +1373,7 @@ UpdateWaitingListAndServiceEvents(
     CFRunLoopActivity activity,
     void *info)
 {
-    ThreadSpecificData *tsdPtr = (ThreadSpecificData *) info;
+    ThreadSpecificData *tsdPtr = (ThreadSpecificData *)info;
 
     if (tsdPtr->sleeping) {
 	return;
@@ -1539,7 +1539,7 @@ Tcl_Sleep(
 	waitTime.tv_sec = vdelay.sec;
 	waitTime.tv_nsec = vdelay.usec * 1000;
 	while (nanosleep(&waitTime, &waitTime)) {
-	    // Empty body
+	    /* Empty body */
 	}
     }
 }
@@ -1638,7 +1638,7 @@ TclUnixWaitForFile(
     while (1) {
 	if (timeout > 0) {
 	    blockTime.tv_sec = abortTime.sec - now.sec;
-	    blockTime.tv_usec = (int)(abortTime.usec - now.usec);
+	    blockTime.tv_usec = abortTime.usec - now.usec;
 	    if (blockTime.tv_usec < 0) {
 		blockTime.tv_sec -= 1;
 		blockTime.tv_usec += 1000000;

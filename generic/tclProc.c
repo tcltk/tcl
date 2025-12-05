@@ -56,9 +56,9 @@ static Tcl_ObjCmdProc NRInterpProc;
  */
 
 const Tcl_ObjType tclProcBodyType = {
-    "procbody",			/* name for this type */
-    ProcBodyFree,		/* FreeInternalRep function */
-    ProcBodyDup,		/* DupInternalRep function */
+    "procbody",
+    ProcBodyFree,
+    ProcBodyDup,
     NULL,			/* UpdateString function; Tcl_GetString and
 				 * Tcl_GetStringFromObj should panic
 				 * instead. */
@@ -93,10 +93,10 @@ const Tcl_ObjType tclProcBodyType = {
 
 static const Tcl_ObjType levelReferenceType = {
     "levelReference",
-    NULL,
-    NULL,
-    NULL,
-    NULL,
+    NULL,			// FreeIntRep
+    NULL,			// DupIntRep
+    NULL,			// UpdateString
+    NULL,			// SetFromAny
     TCL_OBJTYPE_V1(TclLengthOne)
 };
 
@@ -110,11 +110,11 @@ static const Tcl_ObjType levelReferenceType = {
  */
 
 static const Tcl_ObjType lambdaType = {
-    "lambdaExpr",		/* name */
-    FreeLambdaInternalRep,	/* freeIntRepProc */
-    DupLambdaInternalRep,	/* dupIntRepProc */
-    NULL,			/* updateStringProc */
-    SetLambdaFromAny,		/* setFromAnyProc */
+    "lambdaExpr",
+    FreeLambdaInternalRep,
+    DupLambdaInternalRep,
+    NULL,			// UpdateString
+    SetLambdaFromAny,
     TCL_OBJTYPE_V0
 };
 

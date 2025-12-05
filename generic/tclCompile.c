@@ -1035,11 +1035,11 @@ static void		ReleaseCmdWordData(ExtCmdLoc *eclPtr);
  */
 
 const Tcl_ObjType tclByteCodeType = {
-    "bytecode",			/* name */
-    FreeByteCodeInternalRep,	/* freeIntRepProc */
-    DupByteCodeInternalRep,	/* dupIntRepProc */
-    NULL,			/* updateStringProc */
-    SetByteCodeFromAny,		/* setFromAnyProc */
+    "bytecode",
+    FreeByteCodeInternalRep,
+    DupByteCodeInternalRep,
+    NULL,			// UpdateString
+    SetByteCodeFromAny,
     TCL_OBJTYPE_V0
 };
 
@@ -1049,11 +1049,11 @@ const Tcl_ObjType tclByteCodeType = {
  */
 
 static const Tcl_ObjType substCodeType = {
-    "substcode",		/* name */
-    FreeSubstCodeInternalRep,	/* freeIntRepProc */
-    DupByteCodeInternalRep,	/* dupIntRepProc - shared with bytecode */
-    NULL,			/* updateStringProc */
-    NULL,			/* setFromAnyProc */
+    "substcode",
+    FreeSubstCodeInternalRep,
+    DupByteCodeInternalRep,	// Shared with bytecode
+    NULL,			// UpdateString
+    NULL,			// SetFromAny
     TCL_OBJTYPE_V0
 };
 #define SubstFlags(objPtr) (objPtr)->internalRep.twoPtrValue.ptr2
