@@ -50,13 +50,13 @@ int
 int
 \fBTcl_BadChannelOption\fR(\fIinterp, optionName, optionList\fR)
 .sp
-int
+bool
 \fBTcl_IsChannelShared\fR(\fIchannel\fR)
 .sp
-int
+bool
 \fBTcl_IsChannelRegistered\fR(\fIinterp, channel\fR)
 .sp
-int
+bool
 \fBTcl_IsChannelExisting\fR(\fIchannelName\fR)
 .sp
 \fBTcl_CutChannel\fR(\fIchannel\fR)
@@ -279,15 +279,15 @@ buffers for the stack of channels the supplied channel is part of.
 .PP
 \fBTcl_IsChannelShared\fR checks the refcount of the specified
 \fIchannel\fR and returns whether the \fIchannel\fR was shared among
-multiple interpreters (result == 1) or not (result == 0).
+multiple interpreters (result == true) or not (result == false).
 .PP
 \fBTcl_IsChannelRegistered\fR checks whether the specified \fIchannel\fR is
-registered in the given \fIinterp\fRreter (result == 1) or not
-(result == 0).
+registered in the given \fIinterp\fRreter (result == true) or not
+(result == false).
 .PP
 \fBTcl_IsChannelExisting\fR checks whether a channel with the specified
 name is registered in the (thread)-global list of all channels (result
-== 1) or not (result == 0).
+== true) or not (result == false).
 .PP
 \fBTcl_CutChannel\fR removes the specified \fIchannel\fR from the
 (thread)global list of all channels (of the current thread).

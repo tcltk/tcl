@@ -22,7 +22,7 @@ struct ThreadSpecificData;
  */
 
 typedef struct AsyncHandler {
-    int ready;			/* Non-zero means this handler should be
+    signed char ready;			/* Non-zero means this handler should be
 				 * invoked in the next call to
 				 * Tcl_AsyncInvoke. */
     struct AsyncHandler *nextPtr, *prevPtr;
@@ -221,7 +221,7 @@ Tcl_AsyncMark(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Tcl_AsyncMarkFromSignal(
     Tcl_AsyncHandler async,	/* Token for handler. */
     int sigNumber)		/* Signal number. */
@@ -235,7 +235,7 @@ Tcl_AsyncMarkFromSignal(
     (void)sigNumber;
 
     Tcl_AsyncMark(async);
-    return 1;
+    return true;
 #endif
 }
 

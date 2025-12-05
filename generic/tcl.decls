@@ -2239,7 +2239,7 @@ declare 659 {
 
 # TIP #511
 declare 660 {
-    int Tcl_AsyncMarkFromSignal(Tcl_AsyncHandler async, int sigNumber)
+    bool Tcl_AsyncMarkFromSignal(Tcl_AsyncHandler async, int sigNumber)
 }
 
 # TIP #616

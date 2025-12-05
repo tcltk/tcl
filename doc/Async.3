@@ -20,7 +20,7 @@ Tcl_AsyncHandler
 void
 \fBTcl_AsyncMark\fR(\fIasync\fR)
 .sp
-int
+bool
 \fBTcl_AsyncMarkFromSignal\fR(\fIasync\fR, \fIsigNumber\fR)
 .sp
 int
@@ -29,7 +29,7 @@ int
 void
 \fBTcl_AsyncDelete\fR(\fIasync\fR)
 .sp
-int
+bool
 \fBTcl_AsyncReady\fR()
 .fi
 .SH ARGUMENTS
@@ -124,7 +124,7 @@ In this case \fIinterp\fR will be NULL and \fIcode\fR will be
 .PP
 The procedure \fBTcl_AsyncInvoke\fR is called to invoke all of the
 handlers that are ready.
-The procedure \fBTcl_AsyncReady\fR will return non-zero whenever any
+The procedure \fBTcl_AsyncReady\fR will return true whenever any
 asynchronous handlers are ready;  it can be checked to avoid calls
 to \fBTcl_AsyncInvoke\fR when there are no ready handlers.
 Tcl calls \fBTcl_AsyncReady\fR after each command is evaluated
