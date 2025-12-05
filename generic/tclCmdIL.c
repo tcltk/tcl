@@ -149,7 +149,7 @@ static Tcl_Obj *	SelectObjFromSublist(Tcl_Obj *firstPtr,
  * "info" command.
  */
 
-static const EnsembleImplMap defaultInfoMap[] = {
+const EnsembleImplMap tclInfoImplMap[] = {
     {"args",		   InfoArgsCmd,		    TclCompileBasic1ArgCmd, NULL, NULL, 0},
     {"body",		   InfoBodyCmd,		    TclCompileBasic1ArgCmd, NULL, NULL, 0},
     {"cmdcount",	   InfoCmdCountCmd,	    TclCompileBasic0ArgCmd, NULL, NULL, 0},
@@ -419,30 +419,6 @@ Tcl_IncrObjCmd(
 
     Tcl_SetObjResult(interp, newValuePtr);
     return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclInitInfoCmd --
- *
- *	This function is called to create the "info" Tcl command. See the user
- *	documentation for details on what it does.
- *
- * Results:
- *	Handle for the info command, or NULL on failure.
- *
- * Side effects:
- *	none
- *
- *----------------------------------------------------------------------
- */
-
-Tcl_Command
-TclInitInfoCmd(
-    Tcl_Interp *interp)		/* Current interpreter. */
-{
-    return TclMakeEnsemble(interp, "info", defaultInfoMap);
 }
 
 /*

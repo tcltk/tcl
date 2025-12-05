@@ -89,102 +89,31 @@ static inline void	RecomputeClassCacheFlag(Object *oPtr);
 static int		RenameDeleteMethod(Tcl_Interp *interp, Object *oPtr,
 			    int useClass, Tcl_Obj *const fromPtr,
 			    Tcl_Obj *const toPtr);
-static int		Slot_Append(void *,
-			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    int objc, Tcl_Obj *const *objv);
-static int		Slot_AppendNew(void *,
-			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    int objc, Tcl_Obj *const *objv);
-static int		Slot_Clear(void *,
-			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    int objc, Tcl_Obj *const *objv);
-static int		Slot_Prepend(void *,
-			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    int objc, Tcl_Obj *const *objv);
-static int		Slot_Remove(void *,
-			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    int objc, Tcl_Obj *const *objv);
-static int		Slot_Resolve(void *,
-			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    int objc, Tcl_Obj *const *objv);
-static int		Slot_Set(void *,
-			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    int objc, Tcl_Obj *const *objv);
-static int		Slot_Unimplemented(void *,
-			    Tcl_Interp *interp, Tcl_ObjectContext,
-			    int, Tcl_Obj *const *);
-static int		Slot_Unknown(void *,
-			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    int objc, Tcl_Obj *const *objv);
-static int		ClassFilter_Get(void *clientData,
-			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    int objc, Tcl_Obj *const *objv);
-static int		ClassFilter_Set(void *clientData,
-			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    int objc, Tcl_Obj *const *objv);
-static int		ClassMixin_Get(void *clientData,
-			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    int objc, Tcl_Obj *const *objv);
-static int		ClassMixin_Set(void *clientData,
-			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    int objc, Tcl_Obj *const *objv);
-static int		ClassSuper_Get(void *clientData,
-			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    int objc, Tcl_Obj *const *objv);
-static int		ClassSuper_Set(void *clientData,
-			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    int objc, Tcl_Obj *const *objv);
-static int		ClassVars_Get(void *clientData,
-			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    int objc, Tcl_Obj *const *objv);
-static int		ClassVars_Set(void *clientData,
-			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    int objc, Tcl_Obj *const *objv);
-static int		ObjFilter_Get(void *clientData,
-			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    int objc, Tcl_Obj *const *objv);
-static int		ObjFilter_Set(void *clientData,
-			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    int objc, Tcl_Obj *const *objv);
-static int		ObjMixin_Get(void *clientData,
-			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    int objc, Tcl_Obj *const *objv);
-static int		ObjMixin_Set(void *clientData,
-			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    int objc, Tcl_Obj *const *objv);
-static int		ObjVars_Get(void *clientData,
-			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    int objc, Tcl_Obj *const *objv);
-static int		ObjVars_Set(void *clientData,
-			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    int objc, Tcl_Obj *const *objv);
-static int		Configurable_ClassReadableProps_Get(void *clientData,
-			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    int objc, Tcl_Obj *const *objv);
-static int		Configurable_ClassReadableProps_Set(void *clientData,
-			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    int objc, Tcl_Obj *const *objv);
-static int		Configurable_ClassWritableProps_Get(void *clientData,
-			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    int objc, Tcl_Obj *const *objv);
-static int		Configurable_ClassWritableProps_Set(void *clientData,
-			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    int objc, Tcl_Obj *const *objv);
-static int		Configurable_ObjectReadableProps_Get(void *clientData,
-			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    int objc, Tcl_Obj *const *objv);
-static int		Configurable_ObjectReadableProps_Set(void *clientData,
-			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    int objc, Tcl_Obj *const *objv);
-static int		Configurable_ObjectWritableProps_Get(void *clientData,
-			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    int objc, Tcl_Obj *const *objv);
-static int		Configurable_ObjectWritableProps_Set(void *clientData,
-			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    int objc, Tcl_Obj *const *objv);
-static int		Slot_ResolveClass(void *clientData,
-			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    int objc, Tcl_Obj *const *objv);
+static Tcl_MethodCallProc Slot_Append;
+static Tcl_MethodCallProc Slot_AppendNew;
+static Tcl_MethodCallProc Slot_Clear;
+static Tcl_MethodCallProc Slot_Prepend;
+static Tcl_MethodCallProc Slot_Remove;
+static Tcl_MethodCallProc Slot_Resolve;
+static Tcl_MethodCallProc Slot_ResolveClass;
+static Tcl_MethodCallProc Slot_Set;
+static Tcl_MethodCallProc Slot_Unimplemented;
+static Tcl_MethodCallProc Slot_Unknown;
+static Tcl_MethodCallProc ClassFilter_Get, ClassFilter_Set;
+static Tcl_MethodCallProc ClassMixin_Get, ClassMixin_Set;
+static Tcl_MethodCallProc ClassSuper_Get, ClassSuper_Set;
+static Tcl_MethodCallProc ClassVars_Get, ClassVars_Set;
+static Tcl_MethodCallProc ObjFilter_Get, ObjFilter_Set;
+static Tcl_MethodCallProc ObjMixin_Get, ObjMixin_Set;
+static Tcl_MethodCallProc ObjVars_Get, ObjVars_Set;
+static Tcl_MethodCallProc Configurable_ClassReadableProps_Get;
+static Tcl_MethodCallProc Configurable_ClassReadableProps_Set;
+static Tcl_MethodCallProc Configurable_ClassWritableProps_Get;
+static Tcl_MethodCallProc Configurable_ClassWritableProps_Set;
+static Tcl_MethodCallProc Configurable_ObjectReadableProps_Get;
+static Tcl_MethodCallProc Configurable_ObjectReadableProps_Set;
+static Tcl_MethodCallProc Configurable_ObjectWritableProps_Get;
+static Tcl_MethodCallProc Configurable_ObjectWritableProps_Set;
 
 /*
  * Now define the slots used in declarations.
@@ -362,6 +291,60 @@ RecomputeClassCacheFlag(
     } else {
 	oPtr->flags &= ~USE_CLASS_CACHE;
     }
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * ReportAbuse --
+ *
+ *	Generate a message about a user doing something weird. If this was
+ *	behind a C API, this would be a Tcl_Panic, but it's script-visible
+ *	so it's an error.
+ *
+ * ----------------------------------------------------------------------
+ */
+static inline int
+ReportAbuse(
+    Tcl_Interp *interp)
+{
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+	    "attempt to misuse API", TCL_AUTO_LENGTH));
+    OO_ERROR(interp, MONKEY_BUSINESS);
+    return TCL_ERROR;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * ValidateVarNameForResolver --
+ *
+ *	Check a variable name for validity as a name for the resolvers.
+ *
+ * ----------------------------------------------------------------------
+ */
+static inline int
+ValidateVarNameForResolver(
+    Tcl_Interp *interp,
+    Tcl_Obj *varNameObj)
+{
+    const char *varName = TclGetString(varNameObj);
+
+    if (strstr(varName, "::") != NULL) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"invalid declared variable name \"%s\": must not %s",
+		varName, "contain namespace separators"));
+	OO_ERROR(interp, BAD_DECLVAR);
+	return TCL_ERROR;
+    }
+    if (Tcl_StringMatch(varName, "*(*)")) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"invalid declared variable name \"%s\": must not %s",
+		varName, "refer to an array element"));
+	OO_ERROR(interp, BAD_DECLVAR);
+	return TCL_ERROR;
+    }
+    return TCL_OK;
 }
 
 /*
@@ -1044,9 +1027,7 @@ TclOOGetClassDefineCmdContext(
 	return NULL;
     }
     if (!oPtr->classPtr) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"attempt to misuse API", TCL_AUTO_LENGTH));
-	OO_ERROR(interp, MONKEY_BUSINESS);
+	(void) ReportAbuse(interp);
 	return NULL;
     }
     return oPtr->classPtr;
@@ -1989,10 +1970,7 @@ TclOODefineDeleteMethodObjCmd(
 	return TCL_ERROR;
     }
     if (!isInstanceDeleteMethod && !oPtr->classPtr) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"attempt to misuse API", TCL_AUTO_LENGTH));
-	OO_ERROR(interp, MONKEY_BUSINESS);
-	return TCL_ERROR;
+	return ReportAbuse(interp);
     }
 
     for (i = 1; i < objc; i++) {
@@ -2107,10 +2085,7 @@ TclOODefineExportObjCmd(
     }
     Class *clsPtr = oPtr->classPtr;
     if (!isInstanceExport && !clsPtr) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"attempt to misuse API", TCL_AUTO_LENGTH));
-	OO_ERROR(interp, MONKEY_BUSINESS);
-	return TCL_ERROR;
+	return ReportAbuse(interp);
     }
 
     for (i = 1; i < objc; i++) {
@@ -2178,10 +2153,7 @@ TclOODefineForwardObjCmd(
 	return TCL_ERROR;
     }
     if (!isInstanceForward && !oPtr->classPtr) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"attempt to misuse API", TCL_AUTO_LENGTH));
-	OO_ERROR(interp, MONKEY_BUSINESS);
-	return TCL_ERROR;
+	return ReportAbuse(interp);
     }
     isPublic = Tcl_StringMatch(TclGetString(objv[1]), PUBLIC_PATTERN)
 	    ? PUBLIC_METHOD : 0;
@@ -2303,10 +2275,7 @@ TclOODefineMethodObjCmd(
 	return TCL_ERROR;
     }
     if (!isInstanceMethod && !oPtr->classPtr) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"attempt to misuse API", TCL_AUTO_LENGTH));
-	OO_ERROR(interp, MONKEY_BUSINESS);
-	return TCL_ERROR;
+	return ReportAbuse(interp);
     }
     if (objc == 5) {
 	if (Tcl_GetIndexFromObj(interp, objv[2], exportModes, "export flag",
@@ -2450,10 +2419,7 @@ TclOODefineRenameMethodObjCmd(
 	return TCL_ERROR;
     }
     if (!isInstanceRenameMethod && !oPtr->classPtr) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"attempt to misuse API", TCL_AUTO_LENGTH));
-	OO_ERROR(interp, MONKEY_BUSINESS);
-	return TCL_ERROR;
+	return ReportAbuse(interp);
     }
 
     /*
@@ -2510,10 +2476,7 @@ TclOODefineUnexportObjCmd(
     }
     clsPtr = oPtr->classPtr;
     if (!isInstanceUnexport && !clsPtr) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"attempt to misuse API", TCL_AUTO_LENGTH));
-	OO_ERROR(interp, MONKEY_BUSINESS);
-	return TCL_ERROR;
+	return ReportAbuse(interp);
     }
 
     for (i = 1; i < objc; i++) {
@@ -3606,20 +3569,7 @@ ClassVars_Set(
     }
 
     for (i = 0; i < varc; i++) {
-	const char *varName = TclGetString(varv[i]);
-
-	if (strstr(varName, "::") != NULL) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "invalid declared variable name \"%s\": must not %s",
-		    varName, "contain namespace separators"));
-	    OO_ERROR(interp, BAD_DECLVAR);
-	    return TCL_ERROR;
-	}
-	if (Tcl_StringMatch(varName, "*(*)")) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "invalid declared variable name \"%s\": must not %s",
-		    varName, "refer to an array element"));
-	    OO_ERROR(interp, BAD_DECLVAR);
+	if (ValidateVarNameForResolver(interp, varv[i]) != TCL_OK) {
 	    return TCL_ERROR;
 	}
     }
@@ -3877,20 +3827,7 @@ ObjVars_Set(
     }
 
     for (i = 0; i < varc; i++) {
-	const char *varName = TclGetString(varv[i]);
-
-	if (strstr(varName, "::") != NULL) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "invalid declared variable name \"%s\": must not %s",
-		    varName, "contain namespace separators"));
-	    OO_ERROR(interp, BAD_DECLVAR);
-	    return TCL_ERROR;
-	}
-	if (Tcl_StringMatch(varName, "*(*)")) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "invalid declared variable name \"%s\": must not %s",
-		    varName, "refer to an array element"));
-	    OO_ERROR(interp, BAD_DECLVAR);
+	if (ValidateVarNameForResolver(interp, varv[i]) != TCL_OK) {
 	    return TCL_ERROR;
 	}
     }

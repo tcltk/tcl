@@ -18,7 +18,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Prepare
         run: |
           touch generic/tclStubInit.c generic/tclOOStubInit.c
@@ -61,9 +61,9 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Checkout create-dmg
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           repository: create-dmg/create-dmg
           ref: v1.2.2
@@ -139,7 +139,7 @@ jobs:
           msystem: UCRT64
           install: git mingw-w64-ucrt-x86_64-toolchain make zip
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Prepare
         run: |
           touch generic/tclStubInit.c generic/tclOOStubInit.c
@@ -219,7 +219,7 @@ jobs:
           # MUST be a literal passwordless key
       - name: Publish files
         # https://github.com/marketplace/actions/ssh-remote-commands
-        uses: appleboy/ssh-action@v1.2.2
+        uses: appleboy/ssh-action@v1.2.4
         id: ssh
         if: steps.rsync.outcome == 'success'
         with:

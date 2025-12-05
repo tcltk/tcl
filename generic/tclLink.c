@@ -107,11 +107,11 @@ static int		SetInvalidRealFromAny(Tcl_Interp *interp,
  */
 
 static const Tcl_ObjType invalidRealType = {
-    "invalidReal",			/* name */
-    NULL,				/* freeIntRepProc */
-    NULL,				/* dupIntRepProc */
-    NULL,				/* updateStringProc */
-    NULL,				/* setFromAnyProc */
+    "invalidReal",
+    NULL,			// FreeIntRep
+    NULL,			// DupIntRep
+    NULL,			// UpdateString
+    NULL,			// SetFromAny
     TCL_OBJTYPE_V1(TclLengthOne)
 };
 
