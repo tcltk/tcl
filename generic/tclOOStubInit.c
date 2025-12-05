@@ -14,6 +14,19 @@ MODULE_SCOPE const TclOOStubs tclOOStubs;
 #pragma GCC dependency "tclOO.decls"
 #endif
 
+/* Wrapper-functions restoring binary compatibility of bool functions */
+
+static int TclMethodIsType_(Tcl_Method method, const Tcl_MethodType *typePtr,
+	    void **clientDataPtr) {return Tcl_MethodIsType(method, typePtr, clientDataPtr);}
+#define Tcl_MethodIsType (bool (*)(Tcl_Method, const Tcl_MethodType *, void **))(void *)TclMethodIsType_
+static int TclMethodIsType2_(Tcl_Method method, const Tcl_MethodType2 *typePtr,
+	    void **clientDataPtr) {return Tcl_MethodIsType2(method, typePtr, clientDataPtr);}
+#define Tcl_MethodIsType2 (bool (*)(Tcl_Method, const Tcl_MethodType2 *, void **))(void *)TclMethodIsType2_
+static int TclObjectContextIsFiltering_(Tcl_ObjectContext context) {return Tcl_ObjectContextIsFiltering(context);}
+#define Tcl_ObjectContextIsFiltering (bool (*)(Tcl_ObjectContext ))(void *)TclObjectContextIsFiltering_
+
+/* End of wrapper functions section */
+
 /* !BEGIN!: Do not edit below this line. */
 
 static const TclOOIntStubs tclOOIntStubs = {
