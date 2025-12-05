@@ -197,6 +197,7 @@ int TclGetAliasObj(Tcl_Interp *interp, const char *childCmd,
 
 /* Wrapper-functions restoring binary compatibility of bool functions */
 
+#ifndef TCL_NO_DEPRECATED
 static int TclIsSafe_(Tcl_Interp *interp) {return Tcl_IsSafe(interp);}
 #define Tcl_IsSafe (bool (*)(Tcl_Interp *))(void *)TclIsSafe_
 static int TclIsChannelShared_(Tcl_Channel chan) {return Tcl_IsChannelShared(chan);}
@@ -215,6 +216,8 @@ static int TclDbIsShared_(Tcl_Obj *obj, const char *file, int line) {return Tcl_
 #define Tcl_DbIsShared (bool (*)(Tcl_Obj *, const char *, int))(void *)TclDbIsShared_
 static int TclAsyncReady_(void) {return Tcl_AsyncReady();}
 #define Tcl_AsyncReady (bool (*)(void))(void *)TclAsyncReady_
+static int TclAsyncMarkFromSignal_(Tcl_AsyncHandler async, int sigNumber) {return Tcl_AsyncMarkFromSignal(async, sigNumber);}
+#define Tcl_AsyncMarkFromSignal (bool (*)(Tcl_AsyncHandler, int))(void *)TclAsyncMarkFromSignal_
 
 static int TclUniCharIsAlnum_(int ch) {return Tcl_UniCharIsAlnum(ch);}
 #define Tcl_UniCharIsAlnum (bool (*)(int))(void *)TclUniCharIsAlnum_
@@ -238,6 +241,7 @@ static int TclUniCharIsPrint_(int ch) {return Tcl_UniCharIsPrint(ch);}
 #define Tcl_UniCharIsPrint (bool (*)(int))(void *)TclUniCharIsPrint_
 static int TclUniCharIsPunct_(int ch) {return Tcl_UniCharIsPunct(ch);}
 #define Tcl_UniCharIsPunct (bool (*)(int))(void *)TclUniCharIsPunct_
+#endif /* TCL_NO_DEPRECATED */
 
 /* End of wrapper functions section */
 

@@ -1777,7 +1777,7 @@ EXTERN int		Tcl_UtfToExternalDStringEx(Tcl_Interp *interp,
 				Tcl_DString *dsPtr,
 				Tcl_Size *errorLocationPtr);
 /* 660 */
-EXTERN int		Tcl_AsyncMarkFromSignal(Tcl_AsyncHandler async,
+EXTERN bool		Tcl_AsyncMarkFromSignal(Tcl_AsyncHandler async,
 				int sigNumber);
 /* 661 */
 EXTERN int		Tcl_ListObjGetElements(Tcl_Interp *interp,
@@ -2570,7 +2570,7 @@ typedef struct TclStubs {
     int (*tcl_FSTildeExpand) (Tcl_Interp *interp, const char *path, Tcl_DString *dsPtr); /* 657 */
     int (*tcl_ExternalToUtfDStringEx) (Tcl_Interp *interp, Tcl_Encoding encoding, const char *src, Tcl_Size srcLen, int flags, Tcl_DString *dsPtr, Tcl_Size *errorLocationPtr); /* 658 */
     int (*tcl_UtfToExternalDStringEx) (Tcl_Interp *interp, Tcl_Encoding encoding, const char *src, Tcl_Size srcLen, int flags, Tcl_DString *dsPtr, Tcl_Size *errorLocationPtr); /* 659 */
-    int (*tcl_AsyncMarkFromSignal) (Tcl_AsyncHandler async, int sigNumber); /* 660 */
+    bool (*tcl_AsyncMarkFromSignal) (Tcl_AsyncHandler async, int sigNumber); /* 660 */
     int (*tcl_ListObjGetElements) (Tcl_Interp *interp, Tcl_Obj *listPtr, Tcl_Size *objcPtr, Tcl_Obj ***objvPtr); /* 661 */
     int (*tcl_ListObjLength) (Tcl_Interp *interp, Tcl_Obj *listPtr, Tcl_Size *lengthPtr); /* 662 */
     int (*tcl_DictObjSize) (Tcl_Interp *interp, Tcl_Obj *dictPtr, Tcl_Size *sizePtr); /* 663 */

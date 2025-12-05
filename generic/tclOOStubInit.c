@@ -16,6 +16,7 @@ MODULE_SCOPE const TclOOStubs tclOOStubs;
 
 /* Wrapper-functions restoring binary compatibility of bool functions */
 
+#ifndef TCL_NO_DEPRECATED
 static int TclMethodIsType_(Tcl_Method method, const Tcl_MethodType *typePtr,
 	    void **clientDataPtr) {return Tcl_MethodIsType(method, typePtr, clientDataPtr);}
 #define Tcl_MethodIsType (bool (*)(Tcl_Method, const Tcl_MethodType *, void **))(void *)TclMethodIsType_
@@ -24,6 +25,7 @@ static int TclMethodIsType2_(Tcl_Method method, const Tcl_MethodType2 *typePtr,
 #define Tcl_MethodIsType2 (bool (*)(Tcl_Method, const Tcl_MethodType2 *, void **))(void *)TclMethodIsType2_
 static int TclObjectContextIsFiltering_(Tcl_ObjectContext context) {return Tcl_ObjectContextIsFiltering(context);}
 #define Tcl_ObjectContextIsFiltering (bool (*)(Tcl_ObjectContext ))(void *)TclObjectContextIsFiltering_
+#endif /* TCL_NO_DEPRECATED */
 
 /* End of wrapper functions section */
 
