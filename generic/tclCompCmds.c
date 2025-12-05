@@ -387,7 +387,7 @@ TclCompileArraySetCmd(
 	 */
 
 	localIndex = TclFindCompiledLocal(varTokenPtr->start,
-		varTokenPtr->size, 1, envPtr);
+		varTokenPtr->size, true, envPtr);
 	PUSH(			"0");
 	OP(			SWAP);
 	OP4(			UPVAR, localIndex);
@@ -2683,7 +2683,7 @@ TclCompileForCmd(
     CONTINUE_TARGET(	bodyRange);
     if (!TclIsEmptyToken(nextTokenPtr)) {
 	nextRange = MAKE_LOOP_RANGE();
-	envPtr->exceptAuxArrayPtr[nextRange].supportsContinue = 0;
+	envPtr->exceptAuxArrayPtr[nextRange].supportsContinue = false;
 	CATCH_RANGE(nextRange) {
 	    BODY(		nextTokenPtr, 3);
 	}
