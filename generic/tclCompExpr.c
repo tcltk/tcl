@@ -3379,9 +3379,11 @@ TclCompileEqualsCmd(
     // Local variable to track if all pre-substitutions produce numbers:
     Tcl_LVTIndex allNumericIndex = TCL_INDEX_NONE;
 
-    // Following the example of TclCompileConcatCmd here...
-    for (i = 1, tokenPtr = parsePtr->tokenPtr; i < numWords; i++) {
-	tokenPtr = TokenAfter(tokenPtr);
+    // Scan the command and arguments, appending them to listObj
+    for (i = 0, tokenPtr = parsePtr->tokenPtr;
+	i < numWords;
+	i++, tokenPtr = TokenAfter(tokenPtr)
+    ) {
 	TclNewObj(objPtr);
 	if (!TclWordKnownAtCompileTime(tokenPtr, objPtr)) {
 	    // Pre-substitution detected, make a local variable for it.
@@ -3427,7 +3429,7 @@ TclCompileEqualsCmd(
     // will give numeric values.
     TclListObjGetElements(NULL, listObj, &len, &objs);
     //printf("TclCompileEqualsCmd SIMPLE COMPILATION, %ld args\n", len);
-    EqInput input = {len, objs, 0, 0, 0, 0, "", 0, 0};
+    EqInput input = {len, objs, 1, 0, 0, 0, "", 0, 0};
     EqNextLex(&input);
     EqParse(&input,envPtr,0);
     if (input.errorFound) {
@@ -3451,8 +3453,6 @@ TclCompileEqualsCmd(
     // Note that pre-substituted arguments will have been computed
     // before reaching this code, we should not compute them again
     // in case that has side-effects.
-    PUSH_OBJ(Tcl_NewStringObj("=", -1));
-
     for (i = 0; i < len; i++) {
 	objPtr = objs[i];
         if (TclHasInternalRep(objPtr, &eqPresubType)) {
