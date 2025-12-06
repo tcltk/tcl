@@ -3182,6 +3182,7 @@ void EqParsePrefix(
 	    irPtr = TclFetchInternalRep(inLit, &eqPresubType);
 	    assert(irPtr != NULL);
 	    localIndex = irPtr->wideValue;
+	    //printf("EqParsePrefix COMPILING RUNTIME SUBSTITUTION %ld\n", localIndex);
 	    OP4(LOAD_SCALAR, localIndex);
 	    EqNextLex(in);
 	    return;
@@ -3383,22 +3384,13 @@ TclCompileEqualsCmd(
 	tokenPtr = TokenAfter(tokenPtr);
 	TclNewObj(objPtr);
 	if (!TclWordKnownAtCompileTime(tokenPtr, objPtr)) {
-	    // Pre-substitution detected, we need a Local Variable Table
-	    // to handle this case.
-	    if (!EnvHasLVT(envPtr)) {
-		//printf("Presub and no LVT, abandoning compilation.\n");
-		Tcl_BounceRefCount(objPtr);
-		Tcl_BounceRefCount(listObj);
-		return TCL_ERROR;
-	    }
-	    //printf("Presub and have LVT, continuing compilation.\n");
-
-	    // Generate code to get the value  and check that it's numeric.
+	    // Pre-substitution detected, make a local variable for it.
 	    presubIndex = AnonymousLocal(envPtr);
 	    Tcl_ObjInternalRep ir;
 	    ir.wideValue = presubIndex;
 	    Tcl_StoreInternalRep(objPtr, &eqPresubType, &ir);
 
+	    // Generate code to get the value  and check that it's numeric.
 	    PUSH_TOKEN(tokenPtr, i);
 	    OP4(STORE_SCALAR, presubIndex);
 	    OP(NUM_TYPE);
@@ -3410,6 +3402,15 @@ TclCompileEqualsCmd(
 	    }
 	    OP4(STORE_SCALAR, allNumericIndex);
 	    OP(POP);
+
+	    // Check that the local variables exist, if not abandon compilation.
+	    if (presubIndex == TCL_INDEX_NONE || allNumericIndex == TCL_INDEX_NONE) {
+		//printf("Could not compile pre-substitution.\n");
+		Tcl_BounceRefCount(objPtr);
+		Tcl_BounceRefCount(listObj);
+		return TCL_ERROR;
+	    }
+	    //printf("Compiled pre-substitution %ld.\n", presubIndex);
 	}
 	(void) Tcl_ListObjAppendElement(NULL, listObj, objPtr);
     }
