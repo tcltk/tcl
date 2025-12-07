@@ -3177,7 +3177,7 @@ ChildInvokeHidden(
     Tcl_Preserve(childInterp);
     Tcl_AllowExceptions(childInterp);
 
-    // Push the namespace if one has been requested. 
+    // Push the namespace if one has been requested.
     Tcl_CallFrame *framePtr = NULL;
     if (namespaceName != NULL) {
 	Namespace *nsPtr, *dummy1, *dummy2;

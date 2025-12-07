@@ -218,7 +218,7 @@ struct vars {
     struct subre *tree;		/* subexpression tree */
     struct subre *treechain;	/* all tree nodes allocated */
     struct subre *treefree;	/* any free tree nodes */
-    size_t ntree;			/* number of tree nodes, plus one */
+    size_t ntree;		/* number of tree nodes, plus one */
     struct cvec *cv;		/* interface cvec */
     struct cvec *cv2;		/* utility cvec */
     struct subre *lacons;	/* lookahead-constraint vector */
@@ -1815,7 +1815,7 @@ freesrnode(
 static size_t			/* next number */
 numst(
     struct subre *t,
-    size_t start)			/* starting point for subtree numbers */
+    size_t start)		/* starting point for subtree numbers */
 {
     size_t i;
 
