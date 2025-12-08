@@ -441,12 +441,12 @@ static const CmdInfo builtInCmds[] = {
 };
 
 static const UnsupportedCmdInfo unsupportedCmds[] = {
-    {"disassemble",	Tcl_DisassembleObjCmd,	NULL,			NULL,	INT2PTR(0), CMD_IS_SAFE},
-    {"getbytecode",	Tcl_DisassembleObjCmd,	NULL,			NULL,	INT2PTR(1), CMD_IS_SAFE},
-    {"representation",	Tcl_RepresentationCmd,	NULL,			NULL,	NULL, CMD_IS_SAFE},
-    {"assemble",	Tcl_AssembleObjCmd,	TclCompileAssembleCmd,	TclNRAssembleObjCmd, NULL, CMD_IS_SAFE},
-    {"corotype",	CoroTypeObjCmd,		NULL,			NULL,	NULL, CMD_IS_SAFE},
-    {"loadIcu",		TclLoadIcuObjCmd,	NULL,			NULL,	NULL, CMD_IS_SAFE},
+    {"disassemble",	Tcl_DisassembleObjCmd,	NULL,			NULL,	INT2PTR(0), 0},
+    {"getbytecode",	Tcl_DisassembleObjCmd,	NULL,			NULL,	INT2PTR(1), 0},
+    {"representation",	Tcl_RepresentationCmd,	NULL,			NULL,	NULL, 0},
+    {"assemble",	Tcl_AssembleObjCmd,	TclCompileAssembleCmd,	TclNRAssembleObjCmd, NULL, 0},
+    {"corotype",	CoroTypeObjCmd,		NULL,			NULL,	NULL, 0},
+    {"loadIcu",		TclLoadIcuObjCmd,	NULL,			NULL,	NULL, 0},
     {NULL, NULL, NULL, NULL, NULL, 0}
 };
 
@@ -1557,9 +1557,7 @@ TclHideUnsafeCommands(
     }
 
     for (unsCmdInfoPtr=unsupportedCmds; unsCmdInfoPtr->name; unsCmdInfoPtr++) {
-	if (!(unsCmdInfoPtr->flags & CMD_IS_SAFE)) {
-	    HideCommandInTclNs(interp, "unsupported", unsCmdInfoPtr->name, NULL);
-	}
+	HideCommandInTclNs(interp, "unsupported", unsCmdInfoPtr->name, NULL);
     }
 
     return TCL_OK;
