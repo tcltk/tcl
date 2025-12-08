@@ -46,6 +46,8 @@ Tcl_NewObj, Tcl_DuplicateObj, Tcl_IncrRefCount, Tcl_DecrRefCount, Tcl_BounceRefC
 
 # Introduction
 
+N.B. Refer to the **Tcl_UniChar** documentation page for a description of the *TUTF-8* encoding and related terms referenced here.
+
 This man page presents an overview of Tcl values (called **Tcl_Obj**s for historical reasons) and how they are used. It also describes generic procedures for managing Tcl values. These procedures are used to create and copy values, and increment and decrement the count of references (pointers) to values. The procedures are used in conjunction with ones that operate on specific types of values such as **Tcl_GetIntFromObj** and **Tcl_ListObjAppendElement**. The individual procedures are described along with the data structures they manipulate.
 
 Tcl's *dual-ported* values provide a general-purpose mechanism for storing and exchanging Tcl values. They largely replace the use of strings in Tcl. For example, they are used to store variable values, command arguments, command results, and scripts. Tcl values behave like strings but also hold an internal representation that can be manipulated more efficiently. For example, a Tcl list is now represented as a value that holds the list's string representation as well as an array of pointers to the values for each list element. Dual-ported values avoid most runtime type conversions. They also improve the speed of many operations since an appropriate representation is immediately available. The compiler itself uses Tcl values to cache the instruction bytecodes resulting from compiling scripts.
@@ -87,7 +89,7 @@ typedef struct {
 } Tcl_Obj;
 ```
 
-The *bytes* and the *length* members together hold a value's UTF-8 string representation, which is a *counted string* not containing null bytes (UTF-8 null characters should be encoded as a two byte sequence: 192, 128.) *bytes* points to the first byte of the string representation. The *length* member gives the number of bytes. The byte array must always have a null byte after the last data byte, at offset *length*; this allows string representations to be treated as conventional null-terminated C strings. C programs use **Tcl_GetStringFromObj** and **Tcl_GetString** to get a value's string representation. If *bytes* is NULL, the string representation is invalid.
+The *bytes* and the *length* members together hold a value's TUTF-8 byte sequence representation. *bytes* points to the first byte of the string representation. The *length* member gives the number of bytes. The byte array must always have a null byte after the last data byte, at offset *length*; this allows string representations to be treated as conventional null-terminated C strings. C programs use **Tcl_GetStringFromObj** and **Tcl_GetString** to get a value's string representation. If *bytes* is NULL, the string representation is invalid.
 
 A value's type manages its internal representation. The member *typePtr* points to the Tcl_ObjType structure that describes the type. If *typePtr* is NULL, the internal representation is invalid.
 

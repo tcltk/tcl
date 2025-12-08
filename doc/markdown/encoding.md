@@ -34,43 +34,31 @@ Different operating system interfaces or applications may generate strings in ot
 
 Performs one of several encoding related operations, depending on *option*.  The legal *option*s are:
 
-**encoding convertfrom** ?*encoding*? *data*
+[encoding]{.cmd} [convertfrom]{.sub} [encoding]{.optarg} [data]{.arg}
 : ...see next...
 
-**encoding convertfrom** ?**-profile** *profile*? ?**-failindex var**? *encoding data*
-: Converts *data*, which should be in binary string encoded as per *encoding*, to a Tcl string. If *encoding* is not specified, the current system encoding is used.
+[encoding]{.cmd} [convertfrom]{.sub} [[-profile]{.lit} [profile]{.arg}]{.optarg} [[-failindex]{.lit} [varName]{.arg}]{.optarg} [encoding]{.arg} [data]{.arg}
+: Converts *data*, which should be a binary string encoded as per *encoding*, to a Tcl string. In the first form of the command, if *encoding* is not specified, the current system encoding is used. In the second form, the **-profile** option determines the command behavior in the presence of conversion errors. See the **PROFILES** section below for details. Any premature termination of processing due to errors is reported through an exception if the **-failindex** option is not specified. If the **-failindex** is specified, instead of an exception being raised on premature termination, the result of the conversion up to the point of the error is returned as the result of the command. In addition, the index of the source byte triggering the error is stored in the variable specified by *varName*. If no errors are encountered, the entire result of the conversion is returned and the value **-1** is stored in *varName*.
 
-
-::: {.info version="TIP607, TIP656"}
-The **-profile** option determines the command behavior in the presence of conversion errors. See the **PROFILES** section below for details. Any premature termination of processing due to errors is reported through an exception if the **-failindex** option is not specified.
-:::
-
-If the **-failindex** is specified, instead of an exception being raised on premature termination, the result of the conversion up to the point of the error is returned as the result of the command. In addition, the index of the source byte triggering the error is stored in **var**. If no errors are encountered, the entire result of the conversion is returned and the value **-1** is stored in **var**.
-
-**encoding convertto** ?*encoding*? *data*
+[encoding]{.cmd} [convertto]{.sub} [encoding]{.optarg} [data]{.arg}
 : ...see next...
 
-**encoding convertto** ?**-profile** *profile*? ?**-failindex var**? *encoding data*
-: Convert *string* to the specified *encoding*. The result is a Tcl binary string that contains the sequence of bytes representing the converted string in the specified encoding. If *encoding* is not specified, the current system encoding is used.
+[encoding]{.cmd} [convertto]{.sub} [[-profile]{.lit} [profile]{.arg}]{.optarg} [[-failindex]{.lit} [varName]{.arg}]{.optarg} [encoding]{.arg} [data]{.arg}
+: Converts *data* to the specified *encoding*. The result is a Tcl binary string that contains the sequence of bytes representing the converted string in the specified encoding. In the first form of the command, if *encoding* is not specified, the current system encoding is used. In the second form of the command, the **-profile** and **-failindex** options have the same effect as described for the **encoding convertfrom** command.
 
-
-::: {.info version="TIP607, TIP656"}
-The **-profile** and **-failindex** options have the same effect as described for the **encoding convertfrom** command.
-:::
-
-**encoding dirs** ?*directoryList*?
+[encoding]{.cmd} [dirs]{.sub} [directoryList]{.optarg}
 : Tcl can load encoding data files from the file system that describe additional encodings for it to work with. This command sets the search path for ***.enc** encoding data files to the list of directories *directoryList*. If *directoryList* is omitted then the command returns the current list of directories that make up the search path. It is an error for *directoryList* to not be a valid list. If, when a search for an encoding data file is happening, an element in *directoryList* does not refer to a readable, searchable directory, that element is ignored.
 
-**encoding names**
+[encoding]{.cmd} [names]{.sub}
 : Returns a list containing the names of all of the encodings that are currently available. The encodings "utf-8" and "iso8859-1" are guaranteed to be present in the list.
 
-**encoding profiles**
+[encoding]{.cmd} [profiles]{.sub}
 : Returns a list of the names of encoding profiles. See **PROFILES** below.
 
-**encoding system** ?*encoding*?
+[encoding]{.cmd} [system]{.sub} [encoding]{.optarg}
 : Set the system encoding to *encoding*. If *encoding* is omitted then the command returns the current system encoding.  The system encoding is used whenever Tcl passes strings to system calls.
 
-**encoding user**
+[encoding]{.cmd} [user]{.sub}
 : Returns the name of encoding as per the user's preferences. On Windows systems, this is based on the user's code page settings in the registry. On other platforms, the returned value is the same as returned by **encoding system**.
 
 

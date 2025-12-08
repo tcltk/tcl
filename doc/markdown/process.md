@@ -35,34 +35,34 @@ tcl::process - Subprocess management
 
 This command provides a way to manage subprocesses created by the **open** and **exec** commands, as identified by the process identifiers (PIDs) of those subprocesses. The legal *options* (which may be abbreviated) are:
 
-**::tcl::process autopurge** ?*flag*?
+[::tcl::process]{.cmd} [autopurge]{.sub} [flag]{.optarg}
 : Automatic purge facility. If *flag* is specified as a boolean value then it activates or deactivate autopurge. In all cases it returns the current status as a boolean value. When autopurge is active, **Tcl_ReapDetachedProcs** is called each time the **exec** command is executed or a pipe channel created by **open** is closed. When autopurge is inactive, **::tcl::process** purge must be called explicitly. By default autopurge is active.
 
-**::tcl::process list**
+[::tcl::process]{.cmd} [list]{.sub}
 : Returns the list of subprocess PIDs. This includes all currently executing subprocesses and all terminated subprocesses that have not yet had their corresponding process table entries purged.
 
-**::tcl::process purge** ?*pids*?
+[::tcl::process]{.cmd} [purge]{.sub} [pids]{.optarg}
 : Cleans up all data associated with terminated subprocesses. If *pids* is specified as a list of PIDs then the command only cleans up data for the matching subprocesses if they exist. If a process listed is still active, this command does nothing to that process. Any PID that does not correspond to a subprocess is ignored.
 
-**::tcl::process status** ?*switches*? ?*pids*?
+[::tcl::process]{.cmd} [status]{.sub} [switches]{.optarg} [pids]{.optarg}
 : Returns a dictionary mapping subprocess PIDs to their respective status. If *pids* is specified as a list of PIDs then the command only returns the status of the matching subprocesses if they exist. Any PID that does not correspond to a subprocess is ignored. For active processes, the status is an empty value. For terminated processes, the status is a list with the following format: "**{***code* ?*msg errorCode*?**}**", where:
 
-*code*
+[code]{.ins} []{.sub}
 : is a standard Tcl return code, i.e., **0** for TCL_OK and **1** for TCL_ERROR,
 
-*msg*
+[msg]{.ins} []{.sub}
 : is the human-readable error message,
 
-*errorCode*
+[errorCode]{.ins} []{.sub}
 : uses the same format as the **errorCode** global variable
 
     Note that **msg** and **errorCode** are only present for abnormally terminated processes (i.e. those where the *code* is nonzero). Under the hood this command calls **Tcl_WaitPid** with the **WNOHANG** flag set for non-blocking behavior, unless the **-wait** switch is set (see below).
     Additionally, **::tcl::process status** accepts the following switches:
 
-**-wait**
+[-wait]{.lit}
 : By default the command returns immediately (the underlying **Tcl_WaitPid** is called with the **WNOHANG** flag set) unless this switch is set. If *pids* is specified as a list of PIDs then the command waits until the status of the matching subprocesses are available. If *pids* was not specified, this command will wait for all known subprocesses.
 
-**-\|-**
+[-|-]{.lit}
 : Marks the end of switches.  The argument following this one will be treated as the first *arg* even if it starts with a **-**.
 
 

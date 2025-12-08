@@ -37,31 +37,31 @@ If additional arguments are specified after *string* then they are treated as th
 
 If the initial arguments to **regexp** start with **-** then they are treated as switches.  The following switches are currently supported:
 
-**-about**
+[-about]{.lit}
 : Instead of attempting to match the regular expression, returns a list containing information about the regular expression.  The first element of the list is a subexpression count.  The second element is a list of property names that describe various attributes of the regular expression. This switch is primarily intended for debugging purposes.
 
-**-expanded**
+[-expanded]{.lit}
 : Enables use of the expanded regular expression syntax where whitespace and comments are ignored.  This is the same as specifying the **(?x)** embedded option (see the **re_syntax** manual page).
 
-**-indices**
+[-indices]{.lit}
 : Changes what is stored in the *matchVar* and *subMatchVar*s. Instead of storing the matching characters from *string*, each variable will contain a list of two decimal strings giving the indices in *string* of the first and last characters in the matching range of characters.
 
-**-line**
+[-line]{.lit}
 : Enables newline-sensitive matching.  By default, newline is a completely ordinary character with no special meaning.  With this flag, "[^" bracket expressions and "." never match newline, "^" matches an empty string after any newline in addition to its normal function, and "$" matches an empty string before any newline in addition to its normal function.  This flag is equivalent to specifying both **-linestop** and **-lineanchor**, or the **(?n)** embedded option (see the **re_syntax** manual page).
 
-**-linestop**
+[-linestop]{.lit}
 : Changes the behavior of "[^" bracket expressions and "." so that they stop at newlines.  This is the same as specifying the **(?p)** embedded option (see the **re_syntax** manual page).
 
-**-lineanchor**
+[-lineanchor]{.lit}
 : Changes the behavior of "^" and "$" (the "anchors") so they match the beginning and end of a line respectively.  This is the same as specifying the **(?w)** embedded option (see the **re_syntax** manual page).
 
-**-nocase**
+[-nocase]{.lit}
 : Causes upper-case characters in *string* to be treated as lower case during the matching process.
 
-**-all**
+[-all]{.lit}
 : Causes the regular expression to be matched as many times as possible in the string, returning the total number of matches found.  If this is specified with match variables, they will contain information for the last match only.
 
-**-inline**
+[-inline]{.lit}
 : Causes the command to return, as a list, the data that would otherwise be placed in match variables.  When using **-inline**, match variables may not be specified.  If used with **-all**, the list will be concatenated at each iteration, such that a flat list is always returned.  For each match iteration, the command will append the overall match data, plus one element for each subexpression in the regular expression.  Examples are:
 
     ```
@@ -71,10 +71,10 @@ If the initial arguments to **regexp** start with **-** then they are treated as
           \(-> in n li i ne e
     ```
 
-**-start** *index*
+[-start]{.lit} [index]{.arg}
 : Specifies a character index offset into the string to start matching the regular expression at. The *index* value is interpreted in the same manner as the *index* argument to **string index**. When using this switch, "^" will not match the beginning of the line, and \A will still match the start of the string at *index*.  If **-indices** is specified, the indices will be indexed starting from the absolute beginning of the input string. *index* will be constrained to the bounds of the input string.
 
-**-\|-**
+[-|-]{.lit}
 : Marks the end of switches.  The argument following this one will be treated as *exp* even if it starts with a **-**.
 
 

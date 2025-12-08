@@ -110,7 +110,9 @@ using the same rules as for \fBstring match\fR.  If the
 specified \fIkeyName\fR does not exist, then an error is generated.
 .\" METHOD: set
 .TP
-\fBregistry set \fIkeyName\fR ?\fIvalueName data \fR?\fItype\fR??
+\fBregistry set \fIkeyName\fR ?\fIvalueName data\fR?
+.TP
+\fBregistry set \fIkeyName\fR ?\fIvalueName data type\fR?
 .
 If \fIvalueName\fR is not specified, creates the key \fIkeyName\fR if
 it does not already exist.  If \fIvalueName\fR is specified, creates

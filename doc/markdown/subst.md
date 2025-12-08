@@ -29,6 +29,7 @@ subst - Perform backslash, command, and variable substitutions
 
 ::: {.synopsis} :::
 [subst]{.cmd} [-nobackslashes]{.optlit} [-nocommands]{.optlit} [-novariables]{.optlit} [string]{.arg}
+[subst]{.cmd} [-backslashes]{.optlit} [-commands]{.optlit} [-variables]{.optlit} [string]{.arg}
 :::
 
 # Description
@@ -36,6 +37,15 @@ subst - Perform backslash, command, and variable substitutions
 This command performs variable substitutions, command substitutions, and backslash substitutions on its *string* argument and returns the fully-substituted result. The substitutions are performed in exactly the same way as for Tcl commands. As a result, the *string* argument is actually substituted twice, once by the Tcl parser in the usual fashion for Tcl commands, and again by the *subst* command.
 
 If any of the **-nobackslashes**, **-nocommands**, or **-novariables** are specified, then the corresponding substitutions are not performed. For example, if **-nocommands** is specified, command substitution is not performed:  open and close brackets are treated as ordinary characters with no special interpretation.
+
+If any of the **-backslashes**, **-commands**, or **-variables** are specified, then only the corresponding substitutions are performed. This means that the following lines are equivalent:
+
+```
+subst -nobackslashes -nocommands $string
+subst -variables $string
+```
+
+It is not allowed to combine positive and negated options.
 
 Note that the substitution of one kind can include substitution of other kinds.  For example, even when the **-novariables** option is specified, command substitution is performed without restriction. This means that any variable substitution necessary to complete the command substitution will still take place.  Likewise, any command substitution necessary to complete a variable substitution will take place, even when **-nocommands** is specified.  See the **EXAMPLES** below.
 

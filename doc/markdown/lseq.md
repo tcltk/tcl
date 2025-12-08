@@ -46,7 +46,7 @@ lseq - Build a numeric sequence returned as a list
 
 # Description
 
-The **lseq** command creates a sequence of numeric values using the arguments *start*, *end*, *count*, and optionally *stepSpec*/*stepValue*. 
+The **lseq** command creates a sequence of numeric values, which may be either wide integers or doubles, using the arguments *start*, *end*, *count*, and optionally *stepSpec*/*stepValue*. 
 
 If a *start* value is specified as the first argument, the *end* value of the sequence can be specified as the next argument, optionally preceeded by the literal word "**to**" or "**..**". Alternatively, the *count* (number of elements in the sequence) can be defined instead when preceeded by the word **count**. In both cases, the interval between the subsequent numbers of the sequence can be specified using the optional *stepSpec* argument. It is defined as "?**by**? *stepValue*", i.e. the optional word **by** followed by the step value.
 
@@ -60,6 +60,9 @@ The **lseq** command can produce both increasing and decreasing sequences. When 
 
 % lseq 5 to 1    ;# decreasing
 \(-> 5 4 3 2 1
+
+% lseq 0 0.5 by 0.1  ;# doubles
+\(-> 0.0 0.1 0.2 0.3 0.4 0.5
 
 % lseq 6 to 1 by 2   ;# decreasing, step wrong sign, empty list
 

@@ -119,14 +119,14 @@ for example, \fI3 seconds\fR or \fI1 year\fR.
 .SS "OPTIONS"
 .\" OPTION: -base
 .TP
-\fB\-base\fR time
+\fB\-base\fR \fItime\fR
 .
 Specifies that any relative times present in a \fBclock scan\fR command
 are to be given relative to \fItime\fR.  \fItime\fR must be expressed as
 a count of nominal seconds from the epoch time of 1 January 1970, 00:00 UTC.
 .\" OPTION: -format
 .TP
-\fB\-format\fR format
+\fB\-format\fR \fIformat\fR
 .
 Specifies the desired output format for \fBclock format\fR or the
 expected input format for \fBclock scan\fR.  The \fIformat\fR string consists
@@ -149,7 +149,7 @@ is requested; see \fBFREE FORM SCAN\fR for a description of what happens.
 .RE
 .\" OPTION: -gmt
 .TP
-\fB\-gmt\fR boolean
+\fB\-gmt\fR \fIboolean\fR
 .
 If \fIboolean\fR is true, specifies that a time specified to \fBclock add\fR,
 \fBclock format\fR or \fBclock scan\fR should be processed in
@@ -160,7 +160,7 @@ specify the UTC time zone with
 or any of the equivalent ways to specify it.
 .\" OPTION: -locale
 .TP
-\fB\-locale\fR localeName
+\fB\-locale\fR \fIlocaleName\fR
 .
 Specifies that locale-dependent scanning and formatting (and date arithmetic
 for dates preceding the adoption of the Gregorian calendar) is to be done in
@@ -177,7 +177,7 @@ The effect of locale on clock arithmetic is discussed under
 .RE
 .\" OPTION: -timezone
 .TP
-\fB\-timezone\fR zoneName
+\fB\-timezone\fR \fIzoneName\fR
 .
 Specifies that clock arithmetic, formatting, and scanning are to be done
 according to the rules for the time zone specified by \fIzoneName\fR.
@@ -196,7 +196,7 @@ on Windows systems, the time zone settings from the Control Panel.
 .RE
 .\" OPTION: -validate
 .TP
-\fB\-validate\fR boolean
+\fB\-validate\fR \fIboolean\fR
 .
 If \fIboolean\fR is true (default), \fBclock scan\fR will raise an error
 if the input contains invalid values, e.g. day of month greater than

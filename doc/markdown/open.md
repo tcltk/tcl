@@ -109,7 +109,7 @@ If a new file is created as part of opening it, *permissions* (an integer) is us
 When the file opened is an ordinary disk file, the **chan configure** and **fconfigure** commands can be used to query this additional configuration option:
 :::
 
-**-stat**
+[-stat]{.lit}
 : This option, when read, returns a dictionary of values much as is obtained from the **file stat** command, where that stat information relates to the real opened file. Keys in the dictionary may include **atime**, **ctime**, **dev**, **gid**, **ino**, **mode**, **mtime**, **nlink**, **size**, **type**, and **uid** among others; the **mtime**, **size** and **type** fields are guaranteed to be present and meaningful on all platforms; other keys may be present too.
     *Implementation note:* This option maps to a call to **fstat()** on POSIX platforms, and to a call to **GetFileInformationByHandle()** on Windows; the information reported is what those system calls produce.
 
@@ -128,29 +128,29 @@ If *fileName* refers to a serial port, then the specified serial port is opened 
 
 The **chan configure** and **fconfigure** commands can be used to query and set additional configuration options specific to serial ports (where supported):
 
-**-mode** *baud***,***parity***,***data***,***stop*
+[-mode]{.lit} [baud=§,=+parity=§,=+data=§,=+stop]{.arg}
 : This option is a set of 4 comma-separated values: the baud rate, parity, number of data bits, and number of stop bits for this serial port.  The *baud* rate is a simple integer that specifies the connection speed. *Parity* is one of the following letters: **n**, **o**, **e**, **m**, **s**; respectively signifying the parity options of "none", "odd", "even", "mark", or "space". *Data* is the number of data bits and should be an integer from 5 to 8, while *stop* is the number of stop bits and should be the integer 1 or 2.
 
-**-handshake** *type*
+[-handshake]{.lit} [type]{.arg}
 : (Windows and Unix). This option is used to setup automatic handshake control. Note that not all handshake types maybe supported by your operating system. The *type* parameter is case-independent.
     If *type* is **none** then any handshake is switched off. **rtscts** activates hardware handshake. Hardware handshake signals are described below. For software handshake **xonxoff** the handshake characters can be redefined with **-xchar**. An additional hardware handshake **dtrdsr** is available only under Windows. There is no default handshake configuration, the initial value depends on your operating system settings. The **-handshake** option cannot be queried.
 
-**-queue**
+[-queue]{.lit}
 : (Windows and Unix). The **-queue** option can only be queried. It returns a list of two integers representing the current number of bytes in the input and output queue respectively.
 
-**-timeout** *msec*
+[-timeout]{.lit} [msec]{.arg}
 : (Windows and Unix). This option is used to set the timeout for blocking read operations. It specifies the maximum interval between the reception of two bytes in milliseconds. For Unix systems the granularity is 100 milliseconds. The **-timeout** option does not affect write operations or nonblocking reads. This option cannot be queried.
 
-**-ttycontrol** *{signal boolean signal boolean ...}*
+[-ttycontrol]{.lit} [{signal]{.arg} [boolean]{.arg} [signal]{.arg} [boolean]{.arg} [...}]{.arg}
 : (Windows and Unix). This option is used to setup the handshake output lines (see below) permanently or to send a BREAK over the serial line. The *signal* names are case-independent. **{RTS 1 DTR 0}** sets the RTS output to high and the DTR output to low. The BREAK condition (see below) is enabled and disabled with **{BREAK 1}** and **{BREAK 0}** respectively. It is not a good idea to change the **RTS** (or **DTR**) signal with active hardware handshake **rtscts** (or **dtrdsr**). The result is unpredictable. The **-ttycontrol** option cannot be queried.
 
-**-ttystatus**
+[-ttystatus]{.lit}
 : (Windows and Unix). The **-ttystatus** option can only be queried.  It returns the current modem status and handshake input signals (see below). The result is a list of signal,value pairs with a fixed order, e.g. **{CTS 1 DSR 0 RING 1 DCD 0}**. The *signal* names are returned upper case.
 
-**-xchar** *{xonChar xoffChar}*
+[-xchar]{.lit} [{xonChar]{.arg} [xoffChar}]{.arg}
 : (Windows and Unix). This option is used to query or change the software handshake characters. Normally the operating system default should be DC1 (0x11) and DC3 (0x13) representing the ASCII standard XON and XOFF characters.
 
-**-closemode** *closeMode*
+[-closemode]{.lit} [closeMode]{.arg}
 : (Windows and Unix). This option is used to query or change the close mode of the serial channel, which defines how pending output in operating system buffers is handled when the channel is closed. The following values for *closeMode* are supported:
 
 **default**
@@ -163,7 +163,7 @@ The **chan configure** and **fconfigure** commands can be used to query and set 
 : indicates that Tcl should wait when closing the channel until all output has been consumed. This may slow down **close** noticeably.
 
 
-**-inputmode** *inputMode*
+[-inputmode]{.lit} [inputMode]{.arg}
 : (Unix only; Windows has the equivalent option on console channels). This option is used to query or change the input mode of the serial channel under the assumption that it is talking to a terminal, which controls how interactive input from users is handled. The following values for *inputMode* are supported:
 
 **normal**
@@ -175,24 +175,24 @@ The **chan configure** and **fconfigure** commands can be used to query and set 
 **raw**
 : indicates that all keyboard input should be given directly to Tcl with the terminal doing no processing at all. It does not echo the keys, leaving it up to the Tcl script to interpret what to do.
 
-**reset** (set only)
-: indicates that the terminal should be reset to what state it was in when the terminal was opened.
+**reset**
+: (set only) indicates that the terminal should be reset to what state it was in when the terminal was opened.
 
     Note that setting this option (technically, anything that changes the terminal state from its initial value *via this option*) will cause the channel to turn on an automatic reset of the terminal when the channel is closed.
 
-**-winsize**
+[-winsize]{.lit}
 : (Unix only; Windows has the equivalent option on console channels). This option is query only. It retrieves a two-element list with the the current width and height of the terminal.
 
-**-pollinterval** *msec*
+[-pollinterval]{.lit} [msec]{.arg}
 : (Windows only). This option is used to set the maximum time between polling for fileevents. This affects the time interval between checking for events throughout the Tcl interpreter (the smallest value always wins).  Use this option only if you want to poll the serial port more or less often than 10 msec (the default).
 
-**-sysbuffer** *inSize*
+[-sysbuffer]{.lit} [inSize]{.arg}
 : ...see next...
 
-**-sysbuffer** *{inSize outSize}*
+[-sysbuffer]{.lit} [{inSize]{.arg} [outSize}]{.arg}
 : (Windows only). This option is used to change the size of Windows system buffers for a serial channel. Especially at higher communication rates the default input buffer size of 4096 bytes can overrun for latent systems. The first form specifies the input buffer size, in the second form both input and output buffers are defined.
 
-**-lasterror**
+[-lasterror]{.lit}
 : (Windows only). This option is query only. In case of a serial communication error, **read** or **puts** returns a general Tcl file I/O error. **fconfigure** **-lasterror** can be called to get a list of error details. See below for an explanation of the various error codes.
 
 
@@ -274,7 +274,7 @@ See the **PORTABILITY ISSUES** section of the **exec** command for additional in
 On Windows only, console channels (usually **stdin** or **stdout**) support the following options:
 :::
 
-**-inputmode** *inputMode*
+[-inputmode]{.lit} [inputMode]{.arg}
 : This option is used to query or change the input mode of the console channel, which controls how interactive input from users is handled. The following values for *inputMode* are supported:
 
 **normal**
@@ -286,12 +286,12 @@ On Windows only, console channels (usually **stdin** or **stdout**) support the 
 **raw**
 : indicates that all keyboard input should be given directly to Tcl with the console doing no processing at all. It does not echo the keys, leaving it up to the Tcl script to interpret what to do.
 
-**reset** (set only)
-: indicates that the console should be reset to what state it was in when the console channel was opened.
+[reset]{.cmd}
+: (set only) indicates that the console should be reset to what state it was in when the console channel was opened.
 
     Note that setting this option (technically, anything that changes the console state from its default *via this option*) will cause the channel to turn on an automatic reset of the console when the channel is closed.
 
-**-winsize**
+[-winsize]{.lit}
 : This option is query only. It retrieves a two-element list with the current width and height of the console that this channel is talking to.
 
 

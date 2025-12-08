@@ -206,13 +206,15 @@ The initial recursion limit of the child interpreter is set to the
 current recursion limit of its parent interpreter.
 .\" METHOD: debug
 .TP
-\fBinterp debug \fIpath\fR ?\fB\-frame\fR ?\fIbool\fR??
+\fBinterp debug \fIpath\fR ?\fB\-frame\fR?
+.TP
+\fBinterp debug \fIpath\fR ?\fB\-frame\fR \fIboolean\fR?
 .
 Controls whether frame-level stack information is captured in the
 child interpreter identified by \fIpath\fR.  If no arguments are
-given, option and current setting are returned.  If \fB\-frame\fR
-is given, the debug setting is set to the given boolean if provided
-and the current setting is returned.
+specified, the option and its current setting are returned.  If \fB\-frame\fR
+is specified, the current setting is returned. If \fIboolean\fR if provided as well,
+the debug setting is set to the specified value. 
 This only affects the output of \fBinfo frame\fR, in that exact
 frame-level information for command invocation at the bytecode level
 is only captured with this setting on.

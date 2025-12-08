@@ -50,16 +50,16 @@ Files within mounted archives can be written to but new files or directories can
 
 Paths in mounted archives are case-sensitive on all platforms.
 
-**zipfs canonical** ?*mountpoint*? *filename*
+[zipfs]{.cmd} [canonical]{.sub} [mountpoint]{.optarg} [filename]{.arg}
 : This takes the name of a file, *filename*, and produces where it would be mapped into a zipfs mount as its result. If specified, *mountpoint* says within which mount the mapping will be done; if omitted, the main root of the zipfs system is used.
 
-**zipfs exists** *filename*
+[zipfs]{.cmd} [exists]{.sub} [filename]{.arg}
 : Return 1 if the given filename exists in the mounted zipfs and 0 if it does not.
 
-**zipfs find** *directoryName*
+[zipfs]{.cmd} [find]{.sub} [directoryName]{.arg}
 : Returns the list of paths under directory *directoryName* which need not be within a zipfs mounted archive. The paths are prefixed with *directoryName*. This command is also used by the **zipfs mkzip** and **zipfs mkimg** commands.
 
-**zipfs info** *file*
+[zipfs]{.cmd} [info]{.sub} [file]{.arg}
 : Return information about the given *file* in the mounted zipfs.  The information consists of:
 
 1.     the name of the ZIP archive file that contains the file,
@@ -72,16 +72,16 @@ Paths in mounted archives are case-sensitive on all platforms.
 
     As a special case, querying the mount point gives the start of the zip data as the offset in (4), which can be used to truncate the zip information from an executable. Querying an ancestor of a mount point will raise an error.
 
-**zipfs list** ?*matchingType*? ?*pattern*?
+[zipfs]{.cmd} [list]{.sub} [matchingType]{.optarg} [pattern]{.optarg}
 : If *pattern* is not specified, the command returns a list of files across all zipfs mounted archives. If *pattern* is specified, only those paths matching the pattern are returned. By default, or with *matchingType* specified as **-glob**, the pattern is treated as a glob pattern and matching is done as described for the **string match** command. Alternatively, the *matchingType* **-regexp** may be used to specify a matching **pattern** as a regular expression. The file names are returned in arbitrary order. Note that path separators are treated as ordinary characters in the matching. Thus forward slashes should be used as path separators in the pattern. The returned paths only include those actually in the archive and does not include intermediate directories in mount paths.
 
-**zipfs mount**
+[zipfs]{.cmd} [mount]{.sub}
 : ...see next...
 
-**zipfs mount** *mountpoint*
+[zipfs]{.cmd} [mount]{.sub} [mountpoint]{.arg}
 : ...see next...
 
-**zipfs mount** *zipfile mountpoint* ?*password*?
+[zipfs]{.cmd} [mount]{.sub} [zipfile]{.arg} [mountpoint]{.arg} [password]{.optarg}
 : The **zipfs mount** command mounts ZIP archives as Tcl virtual file systems and returns information about current mounts.
     With no arguments, the command returns a dictionary mapping mount points to the path of the corresponding ZIP archive.
     In the single argument form, the command returns the file path of the ZIP archive mounted at the specified mount point.
@@ -89,13 +89,13 @@ Paths in mounted archives are case-sensitive on all platforms.
     If not under the zipfs file system root, *mountpoint* is normalized with respect to it. For example, a mount point passed as either **mt** or **/mt** would be normalized to **//zipfs:/mt** (given that **zipfs root** returns "//zipfs:/"). An error is raised if the mount point includes a drive or UNC volume.
     **NB:** because the current working directory is a concept maintained by the operating system, using **cd** into a mounted archive will only work in the current process, and then not entirely consistently (e.g., if a shared library uses direct access to the OS rather than through Tcl's filesystem API, it will not see the current directory as being inside the mount and will not be able to access the files inside the mount).
 
-**zipfs mountdata** *data* *mountpoint*
+[zipfs]{.cmd} [mountdata]{.sub} [data]{.arg} [mountpoint]{.arg}
 : Mounts the ZIP archive content *data* as a Tcl virtual filesystem at *mountpoint*.
 
-**zipfs root**
+[zipfs]{.cmd} [root]{.sub}
 : Returns a constant string which indicates the mount point for zipfs volumes for the current platform. User should not rely on the mount point being the same constant string for all platforms.
 
-**zipfs unmount** *mountpoint*
+[zipfs]{.cmd} [unmount]{.sub} [mountpoint]{.arg}
 : Unmounts a previously mounted ZIP archive mounted to *mountpoint*. The command will fail with an error exception if there are any files within the mounted archive are open.
 
 
@@ -103,23 +103,23 @@ Paths in mounted archives are case-sensitive on all platforms.
 
 This package also provides several commands to aid the creation of ZIP archives as Tcl applications.
 
-**zipfs mkzip** *outfile indir* ?*strip*? ?*password*?
+[zipfs]{.cmd} [mkzip]{.sub} [outfile]{.arg} [indir]{.arg} [strip]{.optarg} [password]{.optarg}
 : Creates a ZIP archive file named *outfile* from the contents of the input directory *indir* (contained regular files only) with optional ZIP password *password*. While processing the files below *indir* the optional file name prefix given in *strip* is stripped off the beginning of the respective file name if non-empty.  When stripping, it is common to remove either the whole source directory name or the name of its parent directory.
     **Caution:** the choice of the *indir* parameter (less the optional stripped prefix) determines the later root name of the archive's content.
 
-**zipfs mkimg** *outfile indir* ?*strip*? ?*password*? ?*infile*?
+[zipfs]{.cmd} [mkimg]{.sub} [outfile]{.arg} [indir]{.arg} [strip]{.optarg} [password]{.optarg} [infile]{.optarg}
 : Creates an image (potentially a new executable file) similar to **zipfs mkzip**; see that command for a description of most parameters to this command, as they behave identically here. If *outfile* exists, it will be silently overwritten.
     If the *infile* parameter is specified, this file is prepended in front of the ZIP archive, otherwise the file returned by **info nameofexecutable** (i.e., the executable file of the running process, typically **wish** or **tclsh**) is used. If the *password* parameter is not the empty string, an obfuscated version of that password (see **zipfs mkkey**) is placed between the image and ZIP chunks of the output file and the contents of the ZIP chunk are protected with that password. If the starting image has a ZIP archive already attached to it, it is removed from the copy in *outfile* before the new ZIP archive is added.
     If there is a file, **main.tcl**, in the root directory of the resulting archive and the image file that the archive is attached to is a **tclsh** (or **wish**) instance (true by default, but depends on your configuration), then the resulting image is an executable that will **source** the script in that **main.tcl** after mounting the ZIP archive, and will **exit** once that script has been executed.
     **Note:** **tclsh** and **wish** can be built using either dynamic binding or static binding of the core implementation libraries. With a dynamic binding, the base application Tcl_Library contents are attached to the **libtcl** and **libtk** shared library, respectively. With a static binding, the Tcl_Library contents, etc., are attached to the application, **tclsh** or **wish**. When using **mkimg** with a statically built tclsh, it is the user's responsibility to preserve the attached archive by first extracting it to a temporary location, and then add whatever additional files desired, before creating and attaching the new archive to the new application.
 
-**zipfs mkkey** *password*
+[zipfs]{.cmd} [mkkey]{.sub} [password]{.arg}
 : Given the clear text *password* argument, an obfuscated string version is returned with the same format used in the **zipfs mkimg** command.
 
-**zipfs lmkimg** *outfile inlist* ?*password*? ?*infile*?
+[zipfs]{.cmd} [lmkimg]{.sub} [outfile]{.arg} [inlist]{.arg} [password]{.optarg} [infile]{.optarg}
 : This command is like **zipfs mkimg**, but instead of an input directory, *inlist* must be a Tcl list where the odd elements are the names of files to be copied into the archive in the image, and the even elements are their respective names within that archive.
 
-**zipfs lmkzip** *outfile inlist* ?*password*?
+[zipfs]{.cmd} [lmkzip]{.sub} [outfile]{.arg} [inlist]{.arg} [password]{.optarg}
 : This command is like **zipfs mkzip**, but instead of an input directory, *inlist* must be a Tcl list where the odd elements are the names of files to be copied into the archive, and the even elements are their respective names within that archive.
 
 

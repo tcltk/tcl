@@ -48,32 +48,35 @@ The **interp** command, described below, accepts qualified interpreter names as 
 
 The **interp** command is used to create, delete, and manipulate child interpreters, and to share or transfer channels between interpreters.  It can have any of several forms, depending on the *subcommand* argument:
 
-**interp alias** *srcPath srcToken*
+[interp]{.cmd} [alias]{.sub} [srcPath]{.arg} [srcToken]{.arg}
 : Returns a Tcl list whose elements are the *targetCmd* and *arg*s associated with the alias represented by *srcToken* (this is the value returned when the alias was created; it is possible that the name of the source command in the child is different from *srcToken*).
 
-**interp alias** *srcPath srcToken* **{}**
+[interp]{.cmd} [alias]{.sub} [srcPath]{.arg} [srcToken]{.arg} [{}]{.lit}
 : Deletes the alias for *srcToken* in the child interpreter identified by *srcPath*. *srcToken* refers to the value returned when the alias was created;  if the source command has been renamed, the renamed command will be deleted.
 
-**interp alias** *srcPath srcCmd targetPath targetCmd* ?*arg arg ...*?
+[interp]{.cmd} [alias]{.sub} [srcPath]{.arg} [srcCmd]{.arg} [targetPath]{.arg} [targetCmd]{.arg} [arg arg]{.optdot}
 : This command creates an alias between one child and another (see the **alias** child command below for creating aliases between a child and its parent).  In this command, either of the child interpreters may be anywhere in the hierarchy of interpreters under the interpreter invoking the command. *SrcPath* and *srcCmd* identify the source of the alias. *SrcPath* is a Tcl list whose elements select a particular interpreter.  For example, "**a b**" identifies an interpreter "**b**", which is a child of interpreter "**a**", which is a child of the invoking interpreter.  An empty list specifies the interpreter invoking the command.  *srcCmd* gives the name of a new command, which will be created in the source interpreter. *TargetPath* and *targetCmd* specify a target interpreter and command, and the *arg* arguments, if any, specify additional arguments to *targetCmd* which are prepended to any arguments specified in the invocation of *srcCmd*. *TargetCmd* may be undefined at the time of this call, or it may already exist; it is not created by this command. The alias arranges for the given target command to be invoked in the target interpreter whenever the given source command is invoked in the source interpreter.  See **ALIAS INVOCATION** below for more details. The command returns a token that uniquely identifies the command created *srcCmd*, even if the command is renamed afterwards. The token may but does not have to be equal to *srcCmd*.
 
-**interp aliases** ?*path*?
+[interp]{.cmd} [aliases]{.sub} [path]{.optarg}
 : This command returns a Tcl list of the tokens of all the source commands for aliases defined in the interpreter identified by *path*. The tokens correspond to the values returned when the aliases were created (which may not be the same as the current names of the commands).
 
-**interp bgerror** *path* ?*cmdPrefix*?
+[interp]{.cmd} [bgerror]{.sub} [path]{.arg} [cmdPrefix]{.optarg}
 : This command either gets or sets the current background exception handler for the interpreter identified by *path*. If *cmdPrefix* is absent, the current background exception handler is returned, and if it is present, it is a list of words (of minimum length one) that describes what to set the interpreter's background exception handler to. See the **BACKGROUND EXCEPTION HANDLING** section for more details.
 
-**interp cancel** ?**-unwind**? ?**-\|-**? ?*path*? ?*result*?
+[interp]{.cmd} [cancel]{.sub} [-unwind]{.optlit} [-|-]{.optlit} [path]{.optarg} [result]{.optarg}
 : Cancels the script being evaluated in the interpreter identified by *path*. Without the **-unwind** switch the evaluation stack for the interpreter is unwound until an enclosing catch command is found or there are no further invocations of the interpreter left on the call stack. With the **-unwind** switch the evaluation stack for the interpreter is unwound without regard to any intervening catch command until there are no further invocations of the interpreter left on the call stack. The **-\|-** switch can be used to mark the end of switches; it may be needed if *path* is an unusual value such as **-safe**. If *result* is present, it will be used as the error message string; otherwise, a default error message string will be used.
 
-**interp children** ?*path*?
+[interp]{.cmd} [children]{.sub} [path]{.optarg}
 : Returns a Tcl list of the names of all the child interpreters associated with the interpreter identified by *path*. If *path* is omitted, the invoking interpreter is used.
 
-**interp create** ?**-safe**? ?**-\|-**? ?*path*?
+[interp]{.cmd} [create]{.sub} [-safe]{.optlit} [-|-]{.optlit} [path]{.optarg}
 : Creates a child interpreter identified by *path* and a new command, called a *child command*. The name of the child command is the last component of *path*. The new child interpreter and the child command are created in the interpreter identified by the path obtained by removing the last component from *path*. For example, if *path* is **a b c** then a new child interpreter and child command named **c** are created in the interpreter identified by the path **a b**. The child command may be used to manipulate the new interpreter as described below. If *path* is omitted, Tcl creates a unique name of the form **interp***x*, where *x* is an integer, and uses it for the interpreter and the child command. If the **-safe** switch is specified (or if the parent interpreter is a safe interpreter), the new child interpreter will be created as a safe interpreter with limited functionality; otherwise the child will include the full set of Tcl built-in commands and variables. The **-\|-** switch can be used to mark the end of switches;  it may be needed if *path* is an unusual value such as **-safe**. The result of the command is the name of the new interpreter. The name of a child interpreter must be unique among all the children for its parent;  an error occurs if a child interpreter by the given name already exists in this parent. The initial recursion limit of the child interpreter is set to the current recursion limit of its parent interpreter.
 
-**interp debug** *path* ?**-frame** ?*bool*??
-: Controls whether frame-level stack information is captured in the child interpreter identified by *path*.  If no arguments are given, option and current setting are returned.  If **-frame** is given, the debug setting is set to the given boolean if provided and the current setting is returned. This only affects the output of **info frame**, in that exact frame-level information for command invocation at the bytecode level is only captured with this setting on.
+[interp]{.cmd} [debug]{.sub} [path]{.arg} [-frame]{.optlit}
+: ...see next...
+
+[interp]{.cmd} [debug]{.sub} [path]{.arg} [[-frame]{.lit} [boolean]{.arg}]{.optarg}
+: Controls whether frame-level stack information is captured in the child interpreter identified by *path*.  If no arguments are specified, the option and its current setting are returned.  If **-frame** is specified, the current setting is returned. If *boolean* if provided as well, the debug setting is set to the specified value.  This only affects the output of **info frame**, in that exact frame-level information for command invocation at the bytecode level is only captured with this setting on.
     For example, with code like
 
     ```
@@ -93,50 +96,53 @@ The **interp** command is used to create, delete, and manipulate child interpret
     the standard setting will provide a relative line number for the command **somecode** and the relevant frame will be of type **eval**. With frame-debug active on the other hand the tracking extends so far that the system will be able to determine the file and absolute line number of this command, and return a frame of type **source**. This more exact information is paid for with slower execution of all commands.
     Note that once it is on, this flag cannot be switched back off: such attempts are silently ignored. This is needed to maintain the consistency of the underlying interpreter's state.
 
-**interp delete** ?*path ...*?
+[interp]{.cmd} [delete]{.sub} [path]{.optdot}
 : Deletes zero or more interpreters given by the optional *path* arguments, and for each interpreter, it also deletes its children. The command also deletes the child command for each interpreter deleted. For each *path* argument, if no interpreter by that name exists, the command raises an error.
 
-**interp eval** *path arg* ?*arg ...*?
+[interp]{.cmd} [eval]{.sub} [path]{.arg} [arg]{.arg} [arg]{.optdot}
 : This command concatenates all of the *arg* arguments in the same fashion as the **concat** command, then evaluates the resulting string as a Tcl script in the child interpreter identified by *path*. The result of this evaluation (including all **return** options, such as **-errorinfo** and **-errorcode** information, if an error occurs) is returned to the invoking interpreter.
     Note that the script will be executed in the current context stack frame of the *path* interpreter; this is so that the implementations (in a parent interpreter) of aliases in a child interpreter can execute scripts in the child that find out information about the child's current state and stack frame.
 
-**interp exists** *path*
+[interp]{.cmd} [exists]{.sub} [path]{.arg}
 : Returns **1** if a child interpreter by the specified *path* exists in this parent, **0** otherwise. If *path* is omitted, the invoking interpreter is used.
 
-**interp expose** *path hiddenName* ?*exposedCmdName*?
+[interp]{.cmd} [expose]{.sub} [path]{.arg} [hiddenName]{.arg} [exposedCmdName]{.optarg}
 : Makes the hidden command *hiddenName* exposed, eventually bringing it back under a new *exposedCmdName* name (this name is currently accepted only if it is a valid global name space name without any ::), in the interpreter denoted by *path*. If an exposed command with the targeted name already exists, this command fails. Hidden commands are explained in more detail in **HIDDEN COMMANDS**, below.
 
-**interp hide** *path exposedCmdName* ?*hiddenCmdName*?
+[interp]{.cmd} [hide]{.sub} [path]{.arg} [exposedCmdName]{.arg} [hiddenCmdName]{.optarg}
 : Makes the exposed command *exposedCmdName* hidden, renaming it to the hidden command *hiddenCmdName*, or keeping the same name if *hiddenCmdName* is not given, in the interpreter denoted by *path*. If a hidden command with the targeted name already exists, this command fails. Currently both *exposedCmdName* and *hiddenCmdName* can not contain namespace qualifiers, or an error is raised. Commands to be hidden by **interp hide** are looked up in the global namespace even if the current namespace is not the global one. This prevents children from fooling a parent interpreter into hiding the wrong command, by making the current namespace be different from the global one. Hidden commands are explained in more detail in **HIDDEN COMMANDS**, below.
 
-**interp hidden** *path*
+[interp]{.cmd} [hidden]{.sub} [path]{.arg}
 : Returns a list of the names of all hidden commands in the interpreter identified by *path*.
 
-**interp invokehidden** *path* ?*-option ...*? *hiddenCmdName* ?*arg ...*?
+[interp]{.cmd} [invokehidden]{.sub} [path]{.arg} [-option]{.optdot} [hiddenCmdName]{.arg} [arg]{.optdot}
 : Invokes the hidden command *hiddenCmdName* with the arguments supplied in the interpreter denoted by *path*. No substitutions or evaluation are applied to the arguments. Three *-option*s are supported, all of which start with **-**: **-namespace** (which takes a single argument afterwards, *nsName*), **-global**, and **-\|-**. If the **-namespace** flag is present, the hidden command is invoked in the namespace called *nsName* in the target interpreter. If the **-global** flag is present, the hidden command is invoked at the global level in the target interpreter; otherwise it is invoked at the current call frame and can access local variables in that and outer call frames. The **-\|-** flag allows the *hiddenCmdName* argument to start with a "-" character, and is otherwise unnecessary. If both the **-namespace** and **-global** flags are present, the **-namespace** flag is ignored.
     Note that the hidden command will be executed (by default) in the current context stack frame of the *path* interpreter.
     Hidden commands are explained in more detail in **HIDDEN COMMANDS**, below.
 
-**interp issafe** ?*path*?
+[interp]{.cmd} [issafe]{.sub} [path]{.optarg}
 : Returns **1** if the interpreter identified by the specified *path* is safe, **0** otherwise.
 
-**interp limit** *path limitType* ?*-option*? ?*value ...*?
+[interp]{.cmd} [limit]{.sub} [path]{.arg} [limitType]{.arg} [-option]{.optarg} [value]{.optdot}
 : Sets up, manipulates and queries the configuration of the resource limit *limitType* for the interpreter denoted by *path*.  If no *-option* is specified, return the current configuration of the limit.  If *-option* is the sole argument, return the value of that option.  Otherwise, a list of *-option*/*value* argument pairs must supplied. See **RESOURCE LIMITS** below for a more detailed explanation of what limits and options are supported.
 
-**interp marktrusted** *path*
+[interp]{.cmd} [marktrusted]{.sub} [path]{.arg}
 : Marks the interpreter identified by *path* as trusted. Does not expose the hidden commands. This command can only be invoked from a trusted interpreter. The command has no effect if the interpreter identified by *path* is already trusted.
 
-**interp recursionlimit** *path* ?*newlimit*?
+[interp]{.cmd} [recursionlimit]{.sub} [path]{.arg} [newlimit]{.optarg}
 : Returns the maximum allowable nesting depth for the interpreter specified by *path*.  If *newlimit* is specified, the interpreter recursion limit will be set so that nesting of more than *newlimit* calls to **Tcl_Eval** and related procedures in that interpreter will return an error. The *newlimit* value is also returned. The *newlimit* value must be a positive integer between 1 and the maximum value of a non-long integer on the platform.
     The command sets the maximum size of the Tcl call stack only. It cannot by itself prevent stack overflows on the C stack being used by the application. If your machine has a limit on the size of the C stack, you may get stack overflows before reaching the limit set by the command. If this happens, see if there is a mechanism in your system for increasing the maximum size of the C stack.
 
-**interp share** *srcPath channel destPath*
+[interp]{.cmd} [set]{.sub} [path]{.arg} [varName]{.arg} [value]{.optarg}
+: Writes to, or reads from, the variable *varName* in the interpreter specifed by *path*. If *value* is given, writes to the variable and returns its new value; if *value* is omitted, reads from the variable. As with the **set** command, traces may affect what the value of the variable is.
+
+[interp]{.cmd} [share]{.sub} [srcPath]{.arg} [channel]{.arg} [destPath]{.arg}
 : Causes the IO channel identified by *channel* to become shared between the interpreter identified by *srcPath* and the interpreter identified by *destPath*. Both interpreters have the same permissions on the IO channel. Both interpreters must close it to close the underlying IO channel; IO channels accessible in an interpreter are automatically closed when an interpreter is destroyed.
 
-**interp target** *path alias*
+[interp]{.cmd} [target]{.sub} [path]{.arg} [alias]{.arg}
 : Returns a Tcl list describing the target interpreter for an alias. The alias is specified with an interpreter path and source command name, just as in **interp alias** above. The name of the target interpreter is returned as an interpreter path, relative to the invoking interpreter. If the target interpreter for the alias is the invoking interpreter then an empty list is returned. If the target interpreter for the alias is not the invoking interpreter or one of its descendants then an error is generated. The target command does not have to be defined at the time of this invocation.
 
-**interp transfer** *srcPath channel destPath*
+[interp]{.cmd} [transfer]{.sub} [srcPath]{.arg} [channel]{.arg} [destPath]{.arg}
 : Causes the IO channel identified by *channel* to become available in the interpreter identified by *destPath* and unavailable in the interpreter identified by *srcPath*.
 
 
@@ -150,51 +156,54 @@ child command ?arg arg ...?
 
 *Child* is the name of the interpreter, and *command* and the *arg*s determine the exact behavior of the command. The valid forms of this command are:
 
-*child* **aliases**
+[child]{.ins} [aliases]{.sub}
 : Returns a Tcl list whose elements are the tokens of all the aliases in *child*.  The tokens correspond to the values returned when the aliases were created (which may not be the same as the current names of the commands).
 
-*child* **alias** *srcToken*
+[child]{.ins} [alias]{.sub} [srcToken]{.arg}
 : Returns a Tcl list whose elements are the *targetCmd* and *arg*s associated with the alias represented by *srcToken* (this is the value returned when the alias was created; it is possible that the actual source command in the child is different from *srcToken*).
 
-*child* **alias** *srcToken* **{}**
+[child]{.ins} [alias]{.sub} [srcToken]{.arg} [{}]{.lit}
 : Deletes the alias for *srcToken* in the child interpreter. *srcToken* refers to the value returned when the alias was created;  if the source command has been renamed, the renamed command will be deleted.
 
-*child* **alias** *srcCmd targetCmd* ?*arg ..*?
+[child]{.ins} [alias]{.sub} [srcCmd]{.arg} [targetCmd]{.arg} [arg ..]{.optarg}
 : Creates an alias such that whenever *srcCmd* is invoked in *child*, *targetCmd* is invoked in the parent. The *arg* arguments will be passed to *targetCmd* as additional arguments, prepended before any arguments passed in the invocation of *srcCmd*. See **ALIAS INVOCATION** below for details. The command returns a token that uniquely identifies the command created *srcCmd*, even if the command is renamed afterwards. The token may but does not have to be equal to *srcCmd*.
 
-*child* **bgerror** ?*cmdPrefix*?
+[child]{.ins} [bgerror]{.sub} [cmdPrefix]{.optarg}
 : This command either gets or sets the current background exception handler for the *child* interpreter. If *cmdPrefix* is absent, the current background exception handler is returned, and if it is present, it is a list of words (of minimum length one) that describes what to set the interpreter's background exception handler to. See the **BACKGROUND EXCEPTION HANDLING** section for more details.
 
-*child* **eval** *arg* ?*arg ..*?
+[child]{.ins} [eval]{.sub} [arg]{.arg} [arg ..]{.optarg}
 : This command concatenates all of the *arg* arguments in the same fashion as the **concat** command, then evaluates the resulting string as a Tcl script in *child*. The result of this evaluation (including all **return** options, such as **-errorinfo** and **-errorcode** information, if an error occurs) is returned to the invoking interpreter.
     Note that the script will be executed in the current context stack frame of *child*; this is so that the implementations (in a parent interpreter) of aliases in a child interpreter can execute scripts in the child that find out information about the child's current state and stack frame.
 
-*child* **expose** *hiddenName* ?*exposedCmdName*?
+[child]{.ins} [expose]{.sub} [hiddenName]{.arg} [exposedCmdName]{.optarg}
 : This command exposes the hidden command *hiddenName*, eventually bringing it back under a new *exposedCmdName* name (this name is currently accepted only if it is a valid global name space name without any ::), in *child*. If an exposed command with the targeted name already exists, this command fails. For more details on hidden commands, see **HIDDEN COMMANDS**, below.
 
-*child* **hide** *exposedCmdName* ?*hiddenCmdName*?
+[child]{.ins} [hide]{.sub} [exposedCmdName]{.arg} [hiddenCmdName]{.optarg}
 : This command hides the exposed command *exposedCmdName*, renaming it to the hidden command *hiddenCmdName*, or keeping the same name if the argument is not given, in the *child* interpreter. If a hidden command with the targeted name already exists, this command fails. Currently both *exposedCmdName* and *hiddenCmdName* can not contain namespace qualifiers, or an error is raised. Commands to be hidden are looked up in the global namespace even if the current namespace is not the global one. This prevents children from fooling a parent interpreter into hiding the wrong command, by making the current namespace be different from the global one. For more details on hidden commands, see **HIDDEN COMMANDS**, below.
 
-*child* **hidden**
+[child]{.ins} [hidden]{.sub}
 : Returns a list of the names of all hidden commands in *child*.
 
-*child* **invokehidden** ?*-option ...*? *hiddenName* ?*arg ..*?
+[child]{.ins} [invokehidden]{.sub} [-option]{.optdot} [hiddenName]{.arg} [arg ..]{.optarg}
 : This command invokes the hidden command *hiddenName* with the supplied arguments, in *child*. No substitutions or evaluations are applied to the arguments. Three *-option*s are supported, all of which start with **-**: **-namespace** (which takes a single argument afterwards, *nsName*), **-global**, and **-\|-**. If the **-namespace** flag is given, the hidden command is invoked in the specified namespace in the child. If the **-global** flag is given, the command is invoked at the global level in the child; otherwise it is invoked at the current call frame and can access local variables in that or outer call frames. The **-\|-** flag allows the *hiddenCmdName* argument to start with a "-" character, and is otherwise unnecessary. If both the **-namespace** and **-global** flags are given, the **-namespace** flag is ignored.
     Note that the hidden command will be executed (by default) in the current context stack frame of *child*.
     For more details on hidden commands, see **HIDDEN COMMANDS**, below.
 
-*child* **issafe**
+[child]{.ins} [issafe]{.sub}
 : Returns **1** if the child interpreter is safe, **0** otherwise.
 
-*child* **limit** *limitType* ?*-option*? ?*value ...*?
+[child]{.ins} [limit]{.sub} [limitType]{.arg} [-option]{.optarg} [value]{.optdot}
 : Sets up, manipulates and queries the configuration of the resource limit *limitType* for the child interpreter.  If no *-option* is specified, return the current configuration of the limit.  If *-option* is the sole argument, return the value of that option. Otherwise, a list of *-option*/*value* argument pairs must supplied. See **RESOURCE LIMITS** below for a more detailed explanation of what limits and options are supported.
 
-*child* **marktrusted**
+[child]{.ins} [marktrusted]{.sub}
 : Marks the child interpreter as trusted. Can only be invoked by a trusted interpreter. This command does not expose any hidden commands in the child interpreter. The command has no effect if the child is already trusted.
 
-*child* **recursionlimit** ?*newlimit*?
+[child]{.ins} [recursionlimit]{.sub} [newlimit]{.optarg}
 : Returns the maximum allowable nesting depth for the *child* interpreter. If *newlimit* is specified, the recursion limit in *child* will be set so that nesting of more than *newlimit* calls to **Tcl_Eval()** and related procedures in *child* will return an error. The *newlimit* value is also returned. The *newlimit* value must be a positive integer between 1 and the maximum value of a non-long integer on the platform.
     The command sets the maximum size of the Tcl call stack only. It cannot by itself prevent stack overflows on the C stack being used by the application. If your machine has a limit on the size of the C stack, you may get stack overflows before reaching the limit set by the command. If this happens, see if there is a mechanism in your system for increasing the maximum size of the C stack.
+
+[child]{.ins} [set]{.sub} [varName]{.arg} [value]{.optarg}
+: Writes to, or reads from, the variable *varName* in the *child* interpreter. If *value* is given, writes to the variable and returns its new value; if *value* is omitted, reads from the variable. As with the **set** command, traces may affect what the value of the variable is.
 
 
 # Safe interpreters
@@ -247,20 +256,20 @@ When a limit is exceeded for an interpreter, first any handler callbacks defined
 
 Every limit has a number of options associated with it, some of which are common across all kinds of limits, and others of which are particular to the kind of limit.
 
-**-command**
+[-command]{.lit}
 : This option (common for all limit types) specifies (if non-empty) a Tcl script to be executed in the global namespace of the interpreter reading and writing the option when the particular limit in the limited interpreter is exceeded. The callback may modify the limit on the interpreter if it wishes the limited interpreter to continue executing. If the callback generates an exception, it is reported through the background exception mechanism (see **BACKGROUND EXCEPTION HANDLING**).
     Note that the callbacks defined by one interpreter are completely isolated from the callbacks defined by another, and that the order in which those callbacks are called is undefined.
 
-**-granularity**
+[-granularity]{.lit}
 : This option (common for all limit types) specifies how frequently (out of the points when the Tcl interpreter is in a consistent state where limit checking is possible) that the limit is actually checked. This allows the tuning of how frequently a limit is checked, and hence how often the limit-checking overhead (which may be substantial in the case of time limits) is incurred.
 
-**-milliseconds**
+[-milliseconds]{.lit}
 : This option specifies the number of milliseconds after the moment defined in the **-seconds** option that the time limit will fire. It should only ever be specified in conjunction with the **-seconds** option (whether it was set previously or is being set this invocation.)
 
-**-seconds**
+[-seconds]{.lit}
 : This option specifies the number of seconds after the epoch (see **clock seconds**) that the time limit for the interpreter will be triggered. The limit will be triggered at the start of the second unless specified at a sub-second level using the **-milliseconds** option. This option may be the empty string, which indicates that a time limit is not set for the interpreter.
 
-**-value**
+[-value]{.lit}
 : This option specifies the number of commands that the interpreter may execute before triggering the command limit. This option may be the empty string, which indicates that a command limit is not set for the interpreter.
 
 

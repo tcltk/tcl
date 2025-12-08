@@ -43,25 +43,25 @@ This command allows an application to send Dynamic Data Exchange (DDE) command w
 
 The following commands are a subset of the full Dynamic Data Exchange set of commands.
 
-**dde servername** ?**-force**? ?**-handler** *proc*? ?**-\|-**? ?*topic*?
+[dde]{.cmd} [servername]{.sub} [-force]{.optlit} [[-handler]{.lit} [proc]{.arg}]{.optarg} [-|-]{.optlit} [topic]{.optarg}
 : **dde servername** registers the interpreter as a DDE server with the service name **TclEval** and the topic name specified by *topic*. If no *topic* is given, **dde servername** returns the name of the current topic or the empty string if it is not registered as a service. If the given *topic* name is already in use, then a suffix of the form " #2" or " #3" is appended to the name to make it unique. The command's result will be the name actually used. The **-force** option is used to force registration of precisely the given *topic* name.
     The **-handler** option specifies a Tcl procedure that will be called to process calls to the dde server. If the package has been loaded into a safe interpreter then a **-handler** procedure must be defined. The procedure is called with all the arguments provided by the remote call.
 
-**dde execute** ?**-async**? ?**-binary**? *service topic data*
+[dde]{.cmd} [execute]{.sub} [-async]{.optlit} [-binary]{.optlit} [service]{.arg} [topic]{.arg} [data]{.arg}
 : **dde execute** takes the *data* and sends it to the server indicated by *service* with the topic indicated by *topic*. Typically, *service* is the name of an application, and *topic* is a file to work on.  The *data* field is given to the remote application. Typically, the application treats the *data* field as a script, and the script is run in the application.  The **-async** option requests asynchronous invocation.  The command returns an error message if the script did not run, unless the **-async** flag was used, in which case the command returns immediately with no error.
     Without the **-binary** option all data will be sent in unicode. For dde clients which don't implement the CF_UNICODE clipboard format, this will automatically be translated to the system encoding. You can use the **-binary** option in combination with the result of **encoding convertto** to send data in any other encoding.
 
-**dde poke** ?**-binary**? *service topic item data*
+[dde]{.cmd} [poke]{.sub} [-binary]{.optlit} [service]{.arg} [topic]{.arg} [item]{.arg} [data]{.arg}
 : **dde poke** passes the *data* to the server indicated by *service* using the *topic* and *item* specified.  Typically, *service* is the name of an application.  *topic* is application specific but can be a command to the server or the name of a file to work on.  The *item* is also application specific and is often not used, but it must always be non-null.  The *data* field is given to the remote application.
     Without the **-binary** option all data will be sent in unicode. For dde clients which don't implement the CF_UNICODE clipboard format, this will automatically be translated to the system encoding. You can use the **-binary** option in combination with the result of **encoding convertto** to send data in any other encoding.
 
-**dde request** ?**-binary**? *service topic item*
+[dde]{.cmd} [request]{.sub} [-binary]{.optlit} [service]{.arg} [topic]{.arg} [item]{.arg}
 : **dde request** is typically used to get the value of something; the value of a cell in Microsoft Excel or the text of a selection in Microsoft Word. *service* is typically the name of an application, *topic* is typically the name of the file, and *item* is application-specific. The command returns the value of *item* as defined in the application.  Normally this is interpreted to be a string with terminating null.  If **-binary** is specified, the result is returned as a byte array.
 
-**dde services** *service topic*
+[dde]{.cmd} [services]{.sub} [service]{.arg} [topic]{.arg}
 : **dde services** returns a list of service-topic pairs that currently exist on the machine. If *service* and *topic* are both empty strings ({}), then all service-topic pairs currently available on the system are returned. If *service* is empty and *topic* is not, then all services with the specified topic are returned. If *service* is non-empty and *topic* is, all topics for a given service are returned. If both are non-empty, if that service-topic pair currently exists, it is returned; otherwise, an empty string is returned.
 
-**dde eval** ?**-async**? *topic cmd* ?*arg arg ...*?
+[dde]{.cmd} [eval]{.sub} [-async]{.optlit} [topic]{.arg} [cmd]{.arg} [arg arg]{.optdot}
 : **dde eval** evaluates a command and its arguments using the interpreter specified by *topic*. The DDE service must be the **TclEval** service.  The **-async** option requests asynchronous invocation.  The command returns an error message if the script did not run, unless the **-async** flag was used, in which case the command returns immediately with no error.  This command can be used to replace send on Windows.
 
 

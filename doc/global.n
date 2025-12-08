@@ -12,7 +12,7 @@
 .SH NAME
 global \- Access global variables
 .SH SYNOPSIS
-\fBglobal \fR?\fIvarname ...\fR?
+\fBglobal \fR?\fIvarName ...\fR?
 .BE
 .SH DESCRIPTION
 .PP
@@ -22,11 +22,11 @@ creates local variables linked to the corresponding global variables (though
 these linked variables, like those created by \fBupvar\fR, are not included
 in the list returned by \fBinfo locals\fR).
 .PP
-If \fIvarname\fR contains namespace qualifiers, the local variable's name is
+If \fIvarName\fR contains namespace qualifiers, the local variable's name is
 the unqualified name of the global variable, as determined by the
 \fBnamespace tail\fR command.
 .PP
-\fIvarname\fR is always treated as the name of a variable, not an
+\fIvarName\fR is always treated as the name of a variable, not an
 array element.  An error is returned if the name looks like an array element,
 such as \fBa(b)\fR.
 .SH EXAMPLES

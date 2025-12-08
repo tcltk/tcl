@@ -56,7 +56,7 @@ typedef int Tcl_CmdProc(
 
 When *proc* is invoked the *clientData* and *interp* parameters will be copies of the *clientData* and *interp* arguments given to **Tcl_CreateCommand**. Typically, *clientData* points to an application-specific data structure that describes what to do when the command procedure is invoked.  *Argc* and *argv* describe the arguments to the command, *argc* giving the number of arguments (including the command name) and *argv* giving the values of the arguments as strings.  The *argv* array will contain *argc*+1 values; the first *argc* values point to the argument strings, and the last value is NULL.
 
-Note that the argument strings should not be modified as they may point to constant strings or may be shared with other parts of the interpreter. Note also that the argument strings are encoded in normalized UTF-8 since version 8.1 of Tcl.
+Note that the argument strings should not be modified as they may point to constant strings or may be shared with other parts of the interpreter. Note also that the argument strings are encoded in normalized TUTF-8 since version 8.1 of Tcl.
 
 *Proc* must return an integer code that is expected to be one of **TCL_OK**, **TCL_ERROR**, **TCL_RETURN**, **TCL_BREAK**, or **TCL_CONTINUE**. See the **return** man page for details on what these codes mean and the use of extended values for an extension's private use. Most normal commands will only return **TCL_OK** or **TCL_ERROR**.
 

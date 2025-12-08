@@ -17,7 +17,7 @@ Copyright:
 
 # Name
 
-oo::singleton - a class that does only allows one instance of itself
+oo::singleton - A class that does only allows one instance of itself
 
 # Synopsis
 
@@ -47,7 +47,7 @@ The **oo::singleton** class does not define an explicit destructor; destroying a
 
 ## Exported methods
 
-*cls* **new** ?*arg ...*?
+[cls]{.ins} [new]{.sub} [arg]{.optdot}
 : This returns the current instance of the singleton class, if one exists, and creates a new instance only if there is no existing instance. The additional arguments, *arg ...*, are only used if a new instance is actually manufactured; that construction is via the **oo::class** class's **new** method.
     This is an override of the behaviour of a superclass's method with an identical call signature to the superclass's implementation.
 

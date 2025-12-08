@@ -18,7 +18,7 @@ Copyright:
 
 # Name
 
-oo::abstract - a class that does not allow direct instances of itself
+oo::abstract - A class that does not allow direct instances of itself
 
 # Synopsis
 

@@ -44,46 +44,46 @@ This command keeps a simple database of the packages available for use by the cu
 
 The behavior of the **package** command is determined by its first argument. The following forms are permitted:
 
-**package files** *package*
+[package]{.cmd} [files]{.sub} [package]{.arg}
 : Lists all files forming part of *package*. Auto-loaded files are not included in this list, only files which were directly sourced during package initialization. The list order corresponds with the order in which the files were sourced.
 
-**package forget** ?*package package ...*?
+[package]{.cmd} [forget]{.sub} [package package]{.optdot}
 : Removes all information about each specified package from this interpreter, including information provided by both **package ifneeded** and **package provide**.
 
-**package ifneeded** *package version* ?*script*?
+[package]{.cmd} [ifneeded]{.sub} [package]{.arg} [version]{.arg} [script]{.optarg}
 : This command typically appears only in system configuration scripts to set up the package database. It indicates that a particular version of a particular package is available if needed, and that the package can be added to the interpreter by executing *script*. The script is saved in a database for use by subsequent **package require** commands;  typically, *script* sets up auto-loading for the commands in the package (or calls **load** and/or **source** directly), then invokes **package provide** to indicate that the package is present. There may be information in the database for several different versions of a single package. If the database already contains information for *package* and *version*, the new *script* replaces the existing one. If the *script* argument is omitted, the current script for version *version* of package *package* is returned, or an empty string if no **package ifneeded** command has been invoked for this *package* and *version*.
 
-**package names**
+[package]{.cmd} [names]{.sub}
 : Returns a list of the names of all packages in the interpreter for which a version has been provided (via **package provide**) or for which a **package ifneeded** script is available. The order of elements in the list is arbitrary.
 
-**package present** ?**-exact**? *package* ?*requirement...*?
+[package]{.cmd} [present]{.sub} [-exact]{.optlit} [package]{.arg} [requirement...]{.optarg}
 : This command is equivalent to **package require** except that it does not try and load the package if it is not already loaded.
 
-**package provide** *package* ?*version*?
+[package]{.cmd} [provide]{.sub} [package]{.arg} [version]{.optarg}
 : This command is invoked to indicate that version *version* of package *package* is now present in the interpreter. It is typically invoked once as part of an **ifneeded** script, and again by the package itself when it is finally loaded. An error occurs if a different version of *package* has been provided by a previous **package provide** command. If the *version* argument is omitted, then the command returns the version number that is currently provided, or an empty string if no **package provide** command has been invoked for *package* in this interpreter.
 
-**package require** *package* ?*requirement...*?
+[package]{.cmd} [require]{.sub} [package]{.arg} [requirement...]{.optarg}
 : This command is typically invoked by Tcl code that wishes to use a particular version of a particular package.  The arguments indicate which package is wanted, and the command ensures that a suitable version of the package is loaded into the interpreter. If the command succeeds, it returns the version number that is loaded;  otherwise it generates an error.
     A suitable version of the package is any version which satisfies at least one of the requirements as defined in the section **REQUIREMENT** below. If multiple versions are suitable the implementation with the highest version is chosen. This last part is additionally influenced by the selection mode set with **package prefer**.
     In the "stable" selection mode the command will select the highest stable version satisfying the requirements, if any. If no stable version satisfies the requirements, the highest unstable version satisfying the requirements will be selected.  In the "latest" selection mode the command will accept the highest version satisfying all the requirements, regardless of its stableness.
     If a version of *package* has already been provided (by invoking the **package provide** command), then its version number must satisfy the *requirement*s and the command returns immediately. Otherwise, the command searches the database of information provided by previous **package ifneeded** commands to see if an acceptable version of the package is available. If so, the script for the highest acceptable version number is evaluated in the global namespace; it must do whatever is necessary to load the package, including calling **package provide** for the package. If the **package ifneeded** database does not contain an acceptable version of the package and a **package unknown** command has been specified for the interpreter then that command is evaluated in the global namespace;  when it completes, Tcl checks again to see if the package is now provided or if there is a **package ifneeded** script for it. If all of these steps fail to provide an acceptable version of the package, then the command returns an error.
 
-**package require -exact** *package version*
+[package]{.cmd} [require]{.sub} [-exact]{.lit} [package]{.arg} [version]{.arg}
 : This form of the command is used when only the given *version* of *package* is acceptable to the caller.  This command is equivalent to **package require** *package version*-*version*.
 
-**package unknown** ?*command*?
+[package]{.cmd} [unknown]{.sub} [command]{.optarg}
 : This command supplies a "last resort" command to invoke during **package require** if no suitable version of a package can be found in the **package ifneeded** database. If the *command* argument is supplied, it contains the first part of a command;  when the command is invoked during a **package require** command, Tcl appends one or more additional arguments giving the desired package name and requirements. For example, if *command* is **foo bar** and later the command **package require test 2.4** is invoked, then Tcl will execute the command **foo bar test 2.4** to load the package. If no requirements are supplied to the **package require** command, then only the name will be added to invoked command. If the **package unknown** command is invoked without a *command* argument, then the current **package unknown** script is returned, or an empty string if there is none. If *command* is specified as an empty string, then the current **package unknown** script is removed, if there is one.
 
-**package vcompare** *version1 version2*
+[package]{.cmd} [vcompare]{.sub} [version1]{.arg} [version2]{.arg}
 : Compares the two version numbers given by *version1* and *version2*. Returns -1 if *version1* is an earlier version than *version2*, 0 if they are equal, and 1 if *version1* is later than *version2*.
 
-**package versions** *package*
+[package]{.cmd} [versions]{.sub} [package]{.arg}
 : Returns a list of all the version numbers of *package* for which information has been provided by **package ifneeded** commands.
 
-**package vsatisfies** *version requirement...*
+[package]{.cmd} [vsatisfies]{.sub} [version]{.arg} [requirement...]{.arg}
 : Returns 1 if the *version* satisfies at least one of the given requirements, and 0 otherwise. *requirements* are defined in the **REQUIREMENT** section below.
 
-**package prefer** ?**latest**|**stable**?
+[package]{.cmd} [prefer]{.sub} [latest=|§stable]{.optlit}
 : With no arguments, the commands returns either "latest" or "stable", whichever describes the current mode of selection logic used by **package require**.
     When passed the argument "latest", it sets the selection logic mode to "latest".
     When passed the argument "stable", if the mode is already "stable", that value is kept.  If the mode is already "latest", then the attempt to set it back to "stable" is ineffective and the mode value remains "latest".

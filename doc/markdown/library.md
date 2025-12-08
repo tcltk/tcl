@@ -22,7 +22,7 @@ Copyright:
 
 # Name
 
-auto_execok, auto_import, auto_load, auto_mkindex, auto_qualify, auto_reset, foreachLine, parray, readFile, tcl_findLibrary, tcl_endOfWord, tcl_nonwordchars, tcl_startOfNextWord, tcl_startOfPreviousWord, tcl_wordBreakAfter, tcl_wordBreakBefore, tcl_wordchars, writeFile - standard library of Tcl procedures
+auto_execok, auto_import, auto_load, auto_mkindex, auto_qualify, auto_reset, foreachLine, parray, readFile, tcl_findLibrary, tcl_endOfWord, tcl_nonwordchars, tcl_startOfNextWord, tcl_startOfPreviousWord, tcl_wordBreakAfter, tcl_wordBreakBefore, tcl_wordchars, writeFile - Standard library of Tcl procedures
 
 # Synopsis
 
@@ -105,7 +105,7 @@ The following procedures are provided in the Tcl library:
     **Auto_qualify** is used by the auto-loading facilities in Tcl, both for producing auto-loading indexes such as *pkgIndex.tcl*, and for performing the actual auto-loading of functions at runtime.
 
 **tcl_findLibrary** *basename version patch initScript enVarName varName*
-: This is a standard search procedure for use by extensions during their initialization.  They call this procedure to look for their script library in several standard directories. The last component of the name of the library directory is normally *basenameversion* (e.g., tk8.0), but it might be "library" when in the build hierarchies. The *initScript* file will be sourced into the interpreter once it is found.  The directory in which this file is found is stored into the global variable *varName*. If this variable is already defined (e.g., by C code during application initialization) then no searching is done. Otherwise the search looks in these directories: the directory named by the environment variable *enVarName*; relative to the Tcl library directory; relative to the executable file in the standard installation bin or bin/*arch* directory; relative to the executable file in the current build tree; relative to the executable file in a parallel build tree.
+: This is a standard search procedure for use by extensions during their initialization.  They call this procedure to look for their script library in several standard directories. The last component of the name of the library directory is normally *basenameversion* (e.g., tk8.0), but it might be "library" when in the build hierarchies. The *patch* argument is not used. The *initScript* file will be sourced into the interpreter once it is found.  The directory in which this file is found is stored into the global variable *varName*. If this variable is already defined (e.g., by C code during application initialization) then no searching is done. Otherwise the search looks in these directories: the directory named by the environment variable *enVarName*; relative to the Tcl library directory; relative to the executable file in the standard installation bin or bin/*arch* directory; relative to the executable file in the current build tree; relative to the executable file in a parallel build tree.
 
 **parray** *arrayName* ?*pattern*?
 : Prints on standard output the names and values of all the elements in the array *arrayName*, or just the names that match *pattern* (using the matching rules of **string match**) and their values if *pattern* is given. *ArrayName* must be an array accessible to the caller of **parray**. It may be either local or global. The result of this command is the empty string.
@@ -200,9 +200,9 @@ The following global variables are defined or used by the procedures in the Tcl 
 These variables are only used in the **tcl_endOfWord**, **tcl_startOfNextWord**, **tcl_startOfPreviousWord**, **tcl_wordBreakAfter**, and **tcl_wordBreakBefore** commands.
 
 **tcl_nonwordchars**
-: This variable contains a regular expression that is used by routines like **tcl_endOfWord** to identify whether a character is part of a word or not.  If the pattern matches a character, the character is considered to be a non-word character. The default value is **\W**.
+: This variable contains a regular expression that is used by routines like **tcl_endOfWord** to identify whether a character is part of a word or not.  If the pattern matches a character, the character is considered to be a non-word character.  The default value is **\W**.
 
 **tcl_wordchars**
-: This variable contains a regular expression that is used by routines like **tcl_endOfWord** to identify whether a character is part of a word or not.  If the pattern matches a character, the character is considered to be a word character. The default value is **\w**.
+: This variable contains a regular expression that is used by routines like **tcl_endOfWord** to identify whether a character is part of a word or not.  If the pattern matches a character, the character is considered to be a word character.  The default value is **\w**.
 
 

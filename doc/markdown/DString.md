@@ -42,6 +42,8 @@ Tcl_DStringInit, Tcl_DStringAppend, Tcl_DStringAppendElement, Tcl_DStringStartSu
 
 # Description
 
+N.B. Refer to the **Tcl_UniChar** documentation page for a description of the *TUTF-8* encoding and related terms referenced here.
+
 Dynamic strings provide a mechanism for building up arbitrarily long strings by gradually appending information.  If the dynamic string is short then there will be no memory allocation overhead;  as the string gets larger, additional space will be allocated as needed.
 
 **Tcl_DStringInit** initializes a dynamic string to zero length. The Tcl_DString structure must have been allocated by the caller. No assumptions are made about the current state of the structure; anything already in it is discarded. If the structure has been used previously, **Tcl_DStringFree** should be called first to free up any memory allocated for the old string.
@@ -58,9 +60,9 @@ Dynamic strings provide a mechanism for building up arbitrarily long strings by 
 
 **Tcl_DStringFree** should be called when you are finished using the string.  It frees up any memory that was allocated for the string and reinitializes the string's value to an empty string.
 
-**Tcl_DStringResult** sets the result of *interp* to the value of the dynamic string given by *dsPtr*.  It does this by moving a pointer from *dsPtr* to the interpreter's result. This saves the cost of allocating new memory and copying the string. **Tcl_DStringResult** also reinitializes the dynamic string to an empty string. Since the dynamic string is reinitialized, there is no need to further call **Tcl_DStringFree** on it and it can be reused without calling **Tcl_DStringInit**. The caller must ensure that the dynamic string stored in *dsPtr* is encoded in Tcl's internal UTF-8 format.
+**Tcl_DStringResult** sets the result of *interp* to the value of the dynamic string given by *dsPtr*.  It does this by moving a pointer from *dsPtr* to the interpreter's result. This saves the cost of allocating new memory and copying the string. **Tcl_DStringResult** also reinitializes the dynamic string to an empty string. Since the dynamic string is reinitialized, there is no need to further call **Tcl_DStringFree** on it and it can be reused without calling **Tcl_DStringInit**. The caller must ensure that the dynamic string stored in *dsPtr* is encoded in TUTF-8.
 
 **Tcl_DStringGetResult** does the opposite of **Tcl_DStringResult**. It sets the value of *dsPtr* to the result of *interp* and it clears *interp*'s result. If possible it does this by moving a pointer rather than by copying the string.
 
-**Tcl_DStringToObj** returns a **Tcl_Obj** containing the value of the dynamic string given by *dsPtr*. It does this by moving a pointer from *dsPtr* to a newly allocated **Tcl_Obj** and reinitializing to dynamic string to an empty string. This saves the cost of allocating new memory and copying the string. Since the dynamic string is reinitialized, there is no need to further call **Tcl_DStringFree** on it and it can be reused without calling **Tcl_DStringInit**. The returned **Tcl_Obj** has a reference count of 0. The caller must ensure that the dynamic string stored in *dsPtr* is encoded in Tcl's internal UTF-8 format. 
+**Tcl_DStringToObj** returns a **Tcl_Obj** containing the value of the dynamic string given by *dsPtr*. It does this by moving a pointer from *dsPtr* to a newly allocated **Tcl_Obj** and reinitializing to dynamic string to an empty string. This saves the cost of allocating new memory and copying the string. Since the dynamic string is reinitialized, there is no need to further call **Tcl_DStringFree** on it and it can be reused without calling **Tcl_DStringInit**. The returned **Tcl_Obj** has a reference count of 0. The caller must ensure that the dynamic string stored in *dsPtr* is encoded in TUTF-8. 
 

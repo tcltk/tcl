@@ -25,16 +25,16 @@ global - Access global variables
 # Synopsis
 
 ::: {.synopsis} :::
-[global]{.cmd} [varname]{.optdot}
+[global]{.cmd} [varName]{.optdot}
 :::
 
 # Description
 
 This command has no effect unless executed in the context of a proc body. If the **global** command is executed in the context of a proc body, it creates local variables linked to the corresponding global variables (though these linked variables, like those created by **upvar**, are not included in the list returned by **info locals**).
 
-If *varname* contains namespace qualifiers, the local variable's name is the unqualified name of the global variable, as determined by the **namespace tail** command.
+If *varName* contains namespace qualifiers, the local variable's name is the unqualified name of the global variable, as determined by the **namespace tail** command.
 
-*varname* is always treated as the name of a variable, not an array element.  An error is returned if the name looks like an array element, such as **a(b)**.
+*varName* is always treated as the name of a variable, not an array element.  An error is returned if the name looks like an array element, such as **a(b)**.
 
 # Examples
 

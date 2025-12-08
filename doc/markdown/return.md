@@ -79,19 +79,19 @@ In addition to a result and a return code, evaluation of a command in Tcl also p
 
 As documented above, the **-code** entry in the return options dictionary receives special treatment by Tcl.  There are other return options also recognized and treated specially by Tcl.  They are:
 
-**-errorcode** *list*
+[-errorcode]{.lit} [list]{.arg}
 : The **-errorcode** option receives special treatment only when the value of the **-code** option is **TCL_ERROR**.  Then the *list* value is meant to be additional information about the error, presented as a Tcl list for further processing by programs. If no **-errorcode** option is provided to **return** when the **-code error** option is provided, Tcl will set the value of the **-errorcode** entry in the return options dictionary to the default value of **NONE**.  The **-errorcode** return option will also be stored in the global variable **errorCode**.
 
-**-errorinfo** *info*
+[-errorinfo]{.lit} [info]{.arg}
 : The **-errorinfo** option receives special treatment only when the value of the **-code** option is **TCL_ERROR**.  Then *info* is the initial stack trace, meant to provide to a human reader additional information about the context in which the error occurred.  The stack trace will also be stored in the global variable **errorInfo**. If no **-errorinfo** option is provided to **return** when the **-code error** option is provided, Tcl will provide its own initial stack trace value in the entry for **-errorinfo**.  Tcl's initial stack trace will include only the call to the procedure, and stack unwinding will append information about higher stack levels, but there will be no information about the context of the error within the procedure.  Typically the *info* value is supplied from the value of **-errorinfo** in a return options dictionary captured by the **catch** command (or from the copy of that information stored in the global variable **errorInfo**).
 
-**-errorstack** *list*
+[-errorstack]{.lit} [list]{.arg}
 : The **-errorstack** option receives special treatment only when the value of the **-code** option is **TCL_ERROR**.  Then *list* is the initial error stack, recording actual argument values passed to each proc level. The error stack will also be reachable through **info errorstack**. If no **-errorstack** option is provided to **return** when the **-code error** option is provided, Tcl will provide its own initial error stack in the entry for **-errorstack**.  Tcl's initial error stack will include only the call to the procedure, and stack unwinding will append information about higher stack levels, but there will be no information about the context of the error within the procedure.  Typically the *list* value is supplied from the value of **-errorstack** in a return options dictionary captured by the **catch** command (or from the copy of that information from **info errorstack**).
 
-**-level** *level*
+[-level]{.lit} [level]{.arg}
 : The **-level** and **-code** options work together to set the return code to be returned by one of the commands currently being evaluated. The *level* value must be a non-negative integer representing a number of levels on the call stack.  It defines the number of levels up the stack at which the return code of a command currently being evaluated should be *code*.  If no **-level** option is provided, the default value of *level* is 1, so that **return** sets the return code that the current procedure returns to its caller, 1 level up the call stack.  The mechanism by which these options work is described in more detail below.
 
-**-options** *options*
+[-options]{.lit} [options]{.arg}
 : The value *options* must be a valid dictionary.  The entries of that dictionary are treated as additional *option value* pairs for the **return** command.
 
 

@@ -53,9 +53,15 @@ This section lists the shortcoming which are still present in the pages that alr
 ## General
 - handling of '\fB\e\fIk\fR' (see test script) not correct yet
 - no handling of ".AS" and ".AP" macros yet
+- general alignment of the wording in the manual pages to the one in the Tcl error messages emitted (e.g. `dict for` uses "dictionaryValue body" in the manual page but "dictionary script" in the C code)
+- alignment of changed wording/presentation of Tcl syntax within the C code error messages emitted by Tcl when using wrong Tcl syntax
+  (example: `dict for {keyVarName valueVarName} dictionary script` --> `dict for varaibleList dictionary script`)
+- use camelCase consistently for Tcl syntax arguments
+- handling of the "|" character for alternatives (see `memory init on|off`) is not yet good, leaves it as `on=|§off`
 
 ## Specific pages
 - oo::... pages: no handling of the class hierarchy subsection yet
+- RegConfig.3: besides the C API, this page describes Tcl-level commands that are created. These use a non-standard format in the form of ::, followed by an .arg, followed by ::, followed by a .lit – all in one word!
 
 
 # Implemented and missing features in conversion script

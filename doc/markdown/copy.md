@@ -19,7 +19,7 @@ Copyright:
 
 # Name
 
-oo::copy - create copies of objects and classes
+oo::copy - Create copies of objects and classes
 
 # Synopsis
 

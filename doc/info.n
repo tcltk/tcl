@@ -32,7 +32,7 @@ Returns the names of the parameters to the procedure named \fIprocname\fR.
 Returns the body of the procedure named \fIprocname\fR.
 .\" METHOD: class
 .TP
-\fBinfo class\fI subcommand class\fR ?\fIarg ...\fR
+\fBinfo class\fI subcommand class\fR ?\fIarg ...\fR?
 .
 Returns information about the class named \fIclass\fR.
 See \fBCLASS INTROSPECTION\fR below.
@@ -305,7 +305,7 @@ Returns the absolute pathname of the program for the current interpreter.  If
 such a file can not be identified an empty string is returned.
 .\" METHOD: object
 .TP
-\fBinfo object\fI subcommand object\fR ?\fIarg ...\fR
+\fBinfo object\fI subcommand object\fR ?\fIarg ...\fR?
 .
 Returns information about the object named \fIobject\fR. \fIsubcommand\fR is
 described \fBOBJECT INTROSPECTION\fR below.
@@ -528,7 +528,7 @@ This subcommand returns a list of all classes that have been mixed into the
 class named \fIclass\fR.
 .\" METHOD: properties
 .TP
-\fBinfo class properties\fI class\fR ?\fIoptions...\fR
+\fBinfo class properties\fI class\fR ?\fIoptions ...\fR?
 .VS TIP558
 This subcommand returns a sorted list of properties defined on the class named
 \fIclass\fR. The \fIoptions\fR define exactly which properties are returned:
@@ -761,7 +761,7 @@ This subcommand returns the name of the internal namespace of the object named
 \fIobject\fR.
 .\" METHOD: properties
 .TP
-\fBinfo object properties\fI object\fR ?\fIoptions...\fR
+\fBinfo object properties\fI object\fR ?\fIoptions...\fR?
 .VS TIP558
 This subcommand returns a sorted list of properties defined on the object
 named \fIobject\fR. The \fIoptions\fR define exactly which properties are

@@ -60,7 +60,7 @@ The second portion of a conversion specifier may contain any of the following fl
 : Specifies that the number should be padded on the left with zeroes instead of spaces.
 
 **#**
-: Requests an alternate output form. For **o** conversions, **0o** will be added to the beginning of the result unless it is zero. For **x** or **X** conversions, **0x** will be added to the beginning of the result unless it is zero. For **b** conversions, **0b** will be added to the beginning of the result unless it is zero. For **d** conversions, **0d** there is no effect unless the **0** specifier is used as well: In that case, **0d** will be added to the beginning. For all floating-point conversions (**e**, **E**, **f**, **g**, and **G**) it guarantees that the result always has a decimal point. For **g** and **G** conversions it specifies that trailing zeroes should not be removed.
+: Requests an alternate output form. For **o** conversions, **0o** will be added to the beginning of the result unless it is zero. For **x** or **X** conversions, **0x** will be added to the beginning of the result unless it is zero. For **b** conversions, **0b** will be added to the beginning of the result unless it is zero. For **d** conversions, **0d** will be added to the beginning of the result unless it is zero. For all floating-point conversions (**e**, **E**, **f**, **g**, and **G**) it guarantees that the result always has a decimal point. For **g** and **G** conversions it specifies that trailing zeroes should not be removed.
 
 
 ## Optional field width

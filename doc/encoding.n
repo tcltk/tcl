@@ -32,40 +32,36 @@ Performs one of several encoding related operations, depending on
 \fBencoding convertfrom\fR ?\fIencoding\fR? \fIdata\fR
 .VS "TIP607, TIP656"
 .TP
-\fBencoding convertfrom\fR ?\fB-profile \fIprofile\fR? ?\fB-failindex var\fR? \fIencoding data\fR
+\fBencoding convertfrom\fR ?\fB-profile \fIprofile\fR? ?\fB-failindex\fR \fIvarName\fR? \fIencoding data\fR
 .VE "TIP607, TIP656"
 .
-Converts \fIdata\fR, which should be in binary string encoded as per
-\fIencoding\fR, to a Tcl string. If \fIencoding\fR is not specified, the current
-system encoding is used.
-.PP
+Converts \fIdata\fR, which should be a binary string encoded as per
+\fIencoding\fR, to a Tcl string. In the first form of the command, if \fIencoding\fR
+is not specified, the current system encoding is used.
 .VS "TIP607, TIP656"
-The \fB-profile\fR option determines the command behavior in the presence
+In the second form, the \fB-profile\fR option determines the command behavior in the presence
 of conversion errors. See the \fBPROFILES\fR section below for details. Any premature
 termination of processing due to errors is reported through an exception if
-the \fB-failindex\fR option is not specified.
-.PP
-If the \fB-failindex\fR is specified, instead of an exception being raised
-on premature termination, the result of the conversion up to the point of the
-error is returned as the result of the command. In addition, the index
-of the source byte triggering the error is stored in \fBvar\fR. If no
-errors are encountered, the entire result of the conversion is returned and
-the value \fB-1\fR is stored in \fBvar\fR.
+the \fB-failindex\fR option is not specified. If the \fB-failindex\fR is specified,
+instead of an exception being raised on premature termination, the result of the
+conversion up to the point of the error is returned as the result of the command.
+In addition, the index of the source byte triggering the error is stored in the variable
+specified by \fIvarName\fR. If no errors are encountered, the entire result of
+the conversion is returned and the value \fB-1\fR is stored in \fIvarName\fR.
 .VE "TIP607, TIP656"
 .\" METHOD: convertto
 .TP
 \fBencoding convertto\fR ?\fIencoding\fR? \fIdata\fR
 .TP
-\fBencoding convertto\fR ?\fB-profile \fIprofile\fR? ?\fB-failindex var\fR? \fIencoding data\fR
+\fBencoding convertto\fR ?\fB-profile \fIprofile\fR? ?\fB-failindex \fIvarName\fR? \fIencoding data\fR
 .
-Convert \fIstring\fR to the specified \fIencoding\fR. The result is a Tcl binary
+Converts \fIdata\fR to the specified \fIencoding\fR. The result is a Tcl binary
 string that contains the sequence of bytes representing the converted string in
-the specified encoding. If \fIencoding\fR is not specified, the current system
-encoding is used.
-.PP
+the specified encoding. In the first form of the command, if \fIencoding\fR
+is not specified, the current system encoding is used.
 .VS "TIP607, TIP656"
-The \fB-profile\fR and \fB-failindex\fR options have the same effect as
-described for the \fBencoding convertfrom\fR command.
+In the second form of the command, the \fB-profile\fR and \fB-failindex\fR options
+have the same effect as described for the \fBencoding convertfrom\fR command.
 .VE "TIP607, TIP656"
 .\" METHOD: dirs
 .TP

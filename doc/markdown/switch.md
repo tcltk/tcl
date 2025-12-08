@@ -24,36 +24,39 @@ switch - Evaluate one of several scripts, depending on a given value
 # Synopsis
 
 ::: {.synopsis} :::
-[switch]{.cmd} [options=?+ string pattern body= ?+pattern body]{.optdot}
-[switch]{.cmd} [options=?+ string= +pattern body= ?+pattern body ...]{.optarg}
+[switch]{.cmd} [options=?+ value pattern body= ?+pattern body]{.optdot}
+[switch]{.cmd} [options=?+ value= +pattern body= ?+pattern body ...]{.optarg}
 :::
 
 # Description
 
-The **switch** command matches its *string* argument against each of the *pattern* arguments in order. As soon as it finds a *pattern* that matches *string* it evaluates the following *body* argument by passing it recursively to the Tcl interpreter and returns the result of that evaluation. If the last *pattern* argument is **default** then it matches anything. If no *pattern* argument matches *string* and no default is given, then the **switch** command returns an empty string.
+The **switch** command matches its *value* argument against each of the *pattern* arguments in order. As soon as it finds a *pattern* that matches *value* it evaluates the following *body* argument by passing it recursively to the Tcl interpreter and returns the result of that evaluation. If the last *pattern* argument is **default** then it matches anything. If no *pattern* argument matches *value* and no default is given, then the **switch** command returns an empty string.
 
-If the initial arguments to **switch** start with **-** then they are treated as options unless there are exactly two arguments to **switch** (in which case the first must the *string* and the second must be the *pattern*/*body* list). The following options are currently supported:
+If the initial arguments to **switch** start with **-** then they are treated as options unless there are exactly two arguments to **switch** (in which case the first must the *value* and the second must be the *pattern*/*body* list). The following options are currently supported:
 
-**-exact**
-: Use exact matching when comparing *string* to a pattern.  This is the default.
+[-exact]{.lit}
+: Use exact matching when comparing *value* to a pattern.  This is the default.
 
-**-glob**
-: When matching *string* to the patterns, use glob-style matching (i.e. the same as implemented by the **string match** command).
+[-glob]{.lit}
+: When matching *value* to the patterns, use glob-style matching (i.e. the same as implemented by the **string match** command).
 
-**-regexp**
-: When matching *string* to the patterns, use regular expression matching (as described in the **re_syntax** reference page).
+[-integer]{.lit}
+: When matching *value* to the patterns, use integer comparisons. Note that this makes using a non-integer *value* or *pattern* (other than a final **default**) into an error.
 
-**-nocase**
-: Causes comparisons to be handled in a case-insensitive manner.
+[-regexp]{.lit}
+: When matching *value* to the patterns, use regular expression matching (as described in the **re_syntax** reference page).
 
-**-matchvar** *varName*
-: This option (only legal when **-regexp** is also specified) specifies the name of a variable into which the list of matches found by the regular expression engine will be written.  The first element of the list written will be the overall substring of the input string (i.e. the *string* argument to **switch**) matched, the second element of the list will be the substring matched by the first capturing parenthesis in the regular expression that matched, and so on.  When a **default** branch is taken, the variable will have the empty list written to it.  This option may be specified at the same time as the **-indexvar** option.
+[-nocase]{.lit}
+: Causes comparisons to be handled in a case-insensitive manner. Not supported with the **-integer** option.
 
-**-indexvar** *varName*
-: This option (only legal when **-regexp** is also specified) specifies the name of a variable into which the list of indices referring to matching substrings found by the regular expression engine will be written.  The first element of the list written will be a two-element list specifying the index of the start and index of the first character after the end of the overall substring of the input string (i.e. the *string* argument to **switch**) matched, in a similar way to the **-indices** option to the **regexp** can obtain.  Similarly, the second element of the list refers to the first capturing parenthesis in the regular expression that matched, and so on.  When a **default** branch is taken, the variable will have the empty list written to it.  This option may be specified at the same time as the **-matchvar** option.
+[-matchvar]{.lit} [varName]{.arg}
+: This option (only legal when **-regexp** is also specified) specifies the name of a variable into which the list of matches found by the regular expression engine will be written.  The first element of the list written will be the overall substring of the input string (i.e. the *value* argument to **switch**) matched, the second element of the list will be the substring matched by the first capturing parenthesis in the regular expression that matched, and so on.  When a **default** branch is taken, the variable will have the empty list written to it.  This option may be specified at the same time as the **-indexvar** option.
 
-**-\|-**
-: Marks the end of options.  The argument following this one will be treated as *string* even if it starts with a **-**. This is not required when the matching patterns and bodies are grouped together in a single argument.
+[-indexvar]{.lit} [varName]{.arg}
+: This option (only legal when **-regexp** is also specified) specifies the name of a variable into which the list of indices referring to matching substrings found by the regular expression engine will be written.  The first element of the list written will be a two-element list specifying the index of the start and index of the first character after the end of the overall substring of the input string (i.e. the *value* argument to **switch**) matched, in a similar way to the **-indices** option to the **regexp** can obtain.  Similarly, the second element of the list refers to the first capturing parenthesis in the regular expression that matched, and so on.  When a **default** branch is taken, the variable will have the empty list written to it.  This option may be specified at the same time as the **-matchvar** option.
+
+[-|-]{.lit}
+: Marks the end of options.  The argument following this one will be treated as *value* even if it starts with a **-**. This is not required when the matching patterns and bodies are grouped together in a single argument.
 
 
 Two syntaxes are provided for the *pattern* and *body* arguments. The first uses a separate argument for each of the patterns and commands; this form is convenient if substitutions are desired on some of the patterns or commands. The second form places all of the patterns and commands together into a single argument; the argument must have proper list structure, with the elements of the list being the patterns and commands. The second form makes it easy to construct multi-line switch commands, since the braces around the whole list make it unnecessary to include a backslash at the end of each line. Since the *pattern* arguments are in braces in the second form, no command or variable substitutions are performed on them;  this makes the behavior of the second form different than the first form in some cases.
@@ -110,6 +113,26 @@ switch -regexp -matchvar foo -- $bar {
     d(e*)f(g*)h {
         puts "Found [string length [lindex $foo 1]] 'e's and\
                 [string length [lindex $foo 2]] 'g's"
+    }
+}
+```
+
+::: {.info version="9.1"}
+Deciding what to do with a procedure based on the number of arguments:
+:::
+
+```
+proc example args {
+    switch -integer -- [llength $args] {
+        0 {
+            puts "no arguments"
+        }
+        1 {
+            puts "one argument: [lindex $args 0]"
+        }
+        default {
+            puts "many arguments: $args"
+        }
     }
 }
 ```

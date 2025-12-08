@@ -26,6 +26,8 @@ Summary of Tcl language syntax.
 
 # Description
 
+## Syntax
+
 The following rules define the syntax and semantics of the Tcl language:
 
 [1] **Commands.**
@@ -125,4 +127,16 @@ Backslash substitution is not performed on words enclosed in braces, except for 
 [12] **Substitution and word boundaries.**
 : Substitutions do not affect the word boundaries of a command, except for argument expansion as specified in rule [5]. For example, during variable substitution the entire value of the variable becomes part of a single word, even if the variable's value contains spaces.
 
+
+## Tcl values
+
+Conceptually, all values in Tcl are strings, or to be precise, sequences of Unicode code points. This characteristic of all values being strings is commonly referred to as the *Everything Is A String (EIAS)* principle.
+
+For the most part, Tcl strings can be thought of as strings of characters instead of sequences of code points and following common usage, command descriptions refer to them as such. However, the distinction is to be noted as some characters may have multiple representations as Unicode code point sequences and in operations like comparisons, Tcl compares individual code points and not individual abstract characters.
+
+While all values are strings, individual commands may treat or expect their arguments to be representations of data of a particular type. For example, the **incr** command expects its operands to be integers.
+
+The most important consequence of the EIAS principle is that all commands must treat arguments that have a particular string representation exactly the same irrespective of how that value was produced. Thus the **incr** command must treat **100** produced by appending **0** to **10** exactly the same as **100** produced by multiplying 10 by itself.
+
+Note this EIAS principle is only true at a conceptual level and for reasons of efficiency the implementation may choose different internal representations for a value depending on its usage. For example, arithmetic operations on integers may internally store the value as a native machine word. Similarly, a *binary string* is a sequence of Unicode code points in the range U+0000 to U+00FF and may be stored as an array of bytes. In all cases this internal representation is irrelevant at the Tcl language level but exposed in the Tcl C API.
 

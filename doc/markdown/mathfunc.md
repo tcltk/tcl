@@ -148,10 +148,10 @@ In addition to these predefined functions, applications may define additional fu
 **log10** *arg*
 : Returns the base 10 logarithm of *arg*.  *Arg* must be a positive value.
 
-**max** *arg* *...*
+**max** *arg* ?*arg ...*?
 : Accepts one or more numeric arguments.  Returns the one argument with the greatest value.
 
-**min** *arg* *...*
+**min** *arg* ?*arg ...*?
 : Accepts one or more numeric arguments.  Returns the one argument with the least value.
 
 **pow** *x y*
