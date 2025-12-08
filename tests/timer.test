@@ -45,7 +45,7 @@ test timer-1.1.1 {Tcl_CreateTimerHandler procedure - timer in} -setup {
     foreach i {100 200 1000 50 150} {
 	timer in $i ms [list lappend x $i]
     }
-    timer in 200 ms set done 1
+    timer in 200 ms {set done 1}
     vwait done
     return $x
 } -cleanup {
@@ -889,7 +889,7 @@ test timer-6.22.1 {timer info} -setup {
 } -cleanup {
     timer cancel $event1
     timer cancel $event2
-} -result {{{event 1} idle} {{event 2} timer}}
+} -match glob -result {{{event 1} idle} {{event 2} monotonic *}}
 
 test timer-6.23 {Tcl_AfterCmd procedure, no option, script with NUL} -setup {
     foreach i [after info] {
@@ -1207,7 +1207,7 @@ test timer-8.3.1 {timer procedure, deleting handler from itself} -setup {
     timer in 1 seconds {error "I shouldn't ever have executed"}
     update idletasks
     return $x
-} -result {{{error "I shouldn't ever have executed"} timer}}
+} -match glob -result {{{error "I shouldn't ever have executed"} monotonic *}}
 
 # Same as 8.3, isn't it?
 test timer-8.4 {AfterProc procedure, deleting handler from itself} -setup {
@@ -1399,6 +1399,28 @@ test timer-13.3 {timer at, unit us} -setup {
 	timer cancel $i
     }
 } -result ok
+
+test timer-13.4 {timer info at value - maxlong} -body {
+    set maxwide [expr {2**63-1}]
+    set id [timer at $maxwide us {event 1}]
+    set res [timer info $id]
+    timer cancel $id
+    expr {
+	{event 1} eq [lindex $res 0]
+	&& "wallclock" eq [lindex $res 1]
+	&& $maxwide == [lindex $res 2]}
+} -result 1
+
+test timer-13.5 {timer info at value - negative} -body {
+    set id [timer at -1 s {event 1}]
+    set res [timer info $id]
+    timer cancel $id
+    expr {
+	{event 1} eq [lindex $res 0]
+	&& "wallclock" eq [lindex $res 1]
+	&& 0 == [lindex $res 2]}
+} -result 1
+
 
 # cleanup
 ::tcltest::cleanupTests
