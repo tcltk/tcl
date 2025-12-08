@@ -38573,11 +38573,11 @@ test clock-69.3 {clock microseconds syntax} {
     clock microseconds -wallclock
 } -returnCodes ok
 
-test clock-69.4 {clock microseconds syntax} {
+test clock-69.4 {clock microseconds syntax} -body {
     clock microseconds -junk
 } -returnCodes error -result {bad option "-junk": must be -monotonic or -wallclock}
 
-test clock-69.5 {clock microseconds syntax} {
+test clock-69.5 {clock microseconds syntax} -body {
     clock microseconds -monotonic junk
 } -returnCodes error -result {wrong # args: should be "clock microseconds ?-switch?"}
 
