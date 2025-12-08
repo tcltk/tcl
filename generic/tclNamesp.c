@@ -2387,11 +2387,16 @@ TclEnsureNamespace(
     Tcl_Namespace *namespacePtr)
 {
     Namespace *nsPtr = (Namespace *) namespacePtr;
+    Tcl_Namespace *newNsPtr;
     if (!(nsPtr->flags & NS_DYING)) {
-	    return namespacePtr;
+	return namespacePtr;
     }
-    return Tcl_CreateNamespace(interp, nsPtr->fullName, NULL, NULL);
-}
+    newNsPtr = Tcl_CreateNamespace(interp, nsPtr->fullName, NULL, NULL);
+    if (newNsPtr == NULL) {
+	nsPtr->flags &= ~(NS_DYING|NS_KILLED);
+	newNsPtr = (Tcl_Namespace *) nsPtr;
+    }
+    return newNsPtr;}
 
 /*
  *----------------------------------------------------------------------
