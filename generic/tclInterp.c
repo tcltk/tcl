@@ -3094,8 +3094,6 @@ ChildInvokeHidden(
     Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int result;
-
     if (Tcl_IsSafe(interp)) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"not allowed to invoke hidden commands from safe interpreter",
@@ -3103,6 +3101,9 @@ ChildInvokeHidden(
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP", "UNSAFE",
 		(char *)NULL);
 	return TCL_ERROR;
+    }
+    if (objc < 1) {
+	Tcl_Panic("need at least one word: hidden command name");
     }
 
     Tcl_Preserve(childInterp);
@@ -3118,7 +3119,7 @@ ChildInvokeHidden(
 	Namespace *nsPtr, *dummy1, *dummy2;
 	const char *tail;
 
-	result = TclGetNamespaceForQualName(childInterp, namespaceName, NULL,
+	int result = TclGetNamespaceForQualName(childInterp, namespaceName, NULL,
 		TCL_FIND_ONLY_NS | TCL_GLOBAL_ONLY | TCL_LEAVE_ERR_MSG
 		| TCL_CREATE_NS_IF_UNKNOWN, &nsPtr, &dummy1, &dummy2, &tail);
 	if (result == TCL_OK) {
