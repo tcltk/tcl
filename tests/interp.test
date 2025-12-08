@@ -36,6 +36,11 @@ set hidden_cmds [list {*}{
     tcl:info:cmdtype tcl:info:nameofexecutable
 
     tcl:process:autopurge tcl:process:list tcl:process:purge tcl:process:status
+
+    tcl:unsupported:assemble tcl:unsupported:corotype
+    tcl:unsupported:disassemble tcl:unsupported:getbytecode
+    tcl:unsupported:loadIcu tcl:unsupported:representation
+
     tcl:zipfs:canonical tcl:zipfs:exists tcl:zipfs:info tcl:zipfs:list
     tcl:zipfs:lmkimg tcl:zipfs:lmkzip tcl:zipfs:mkimg tcl:zipfs:mkkey
     tcl:zipfs:mkzip tcl:zipfs:mount tcl:zipfs:mountdata tcl:zipfs:root
