@@ -812,7 +812,7 @@ BinaryFormatCmd(
     int value = 0;		/* Current integer value to be packed.
 				 * Initialized to avoid compiler warning. */
     char cmd;			/* Current format character. */
-    Tcl_Size count;			/* Count associated with current format
+    Tcl_Size count;		/* Count associated with current format
 				 * character. */
     int flags;			/* Format field flags */
     const char *format;		/* Pointer to current position in format
@@ -1324,7 +1324,7 @@ BinaryScanCmd(
     int value = 0;		/* Current integer value to be packed.
 				 * Initialized to avoid compiler warning. */
     char cmd;			/* Current format character. */
-    Tcl_Size count;			/* Count associated with current format
+    Tcl_Size count;		/* Count associated with current format
 				 * character. */
     int flags;			/* Format field flags */
     const char *format;		/* Pointer to current position in format
@@ -1736,14 +1736,14 @@ GetFormatSpec(
 	(*formatPtr)++;
 	*countPtr = BINARY_ALL;
     } else if (isdigit(UCHAR(**formatPtr))) { /* INTL: digit */
-	unsigned long count;
+	unsigned long long count;
 
 	errno = 0;
-	count = strtoul(*formatPtr, (char **) formatPtr, 10);
-	if (errno || (count > (unsigned long) INT_MAX)) {
-	    *countPtr = INT_MAX;
+	count = strtoull(*formatPtr, (char **) formatPtr, 10);
+	if (errno || (count > TCL_SIZE_MAX)) {
+	    *countPtr = TCL_SIZE_MAX;
 	} else {
-	    *countPtr = (int) count;
+	    *countPtr = count;
 	}
     } else {
 	*countPtr = BINARY_NOCOUNT;
@@ -2584,8 +2584,8 @@ BinaryEncode64(
     Tcl_WideInt maxlen = 0;
     const char *wrapchar = "\n";
     Tcl_Size i, wrapcharlen = 1;
-    int index, outindex = 0, purewrap = 1;
-    Tcl_Size offset, size, count = 0;
+    int index, purewrap = 1;
+    Tcl_Size offset, size, outindex = 0, count = 0;
     enum { OPT_MAXLEN, OPT_WRAPCHAR };
     static const char *const optStrings[] = { "-maxlen", "-wrapchar", NULL };
 
@@ -2944,11 +2944,11 @@ BinaryDecodeUu(
 	 */
 
 	if (lineLen > 0) {
-	    *cursor++ = (unsigned char)((((d[0] - 0x20) & 0x3F) << 2)
-		    | (((d[1] - 0x20) & 0x3F) >> 4));
+	    *cursor++ = (unsigned char)(((d[0] - 0x20) & 0x3F) << 2)
+		    | (((d[1] - 0x20) & 0x3F) >> 4);
 	    if (--lineLen > 0) {
-		*cursor++ = (unsigned char)((((d[1] - 0x20) & 0x3F) << 4)
-			| (((d[2] - 0x20) & 0x3F) >> 2));
+		*cursor++ = (unsigned char)(((d[1] - 0x20) & 0x3F) << 4)
+			| (((d[2] - 0x20) & 0x3F) >> 2);
 		if (--lineLen > 0) {
 		    *cursor++ = (unsigned char)((((d[2] - 0x20) & 0x3F) << 6)
 			    | (((d[3] - 0x20) & 0x3F)));
