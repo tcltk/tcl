@@ -3240,11 +3240,42 @@ ClockMicrosecondsObjCmd(
     int objc,			/* Parameter count */
     Tcl_Obj *const *objv)	/* Parameter values */
 {
-    if (objc != 1) {
-	Tcl_WrongNumArgs(interp, 0, objv, "clock microseconds");
+    static const char *const microsecondsSwitches[] = {
+	"-monotonic", "-wallclock", NULL
+    };
+    enum MicrosecondsSwitch {
+	MICROSECONDS_MONOTONIC, MICROSECONDS_WALLCLOCK
+    };
+    int index = MICROSECONDS_WALLCLOCK;
+    Tcl_WideInt us = 0;
+    Tcl_Time time;
+
+    switch (objc) {
+    case 1:
+	break;
+    case 2:
+	if (Tcl_GetIndexFromObj(interp, objv[1], microsecondsSwitches, "option", 0,
+		&index) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	break;
+    default:
+	Tcl_WrongNumArgs(interp, 0, objv, "clock microseconds ?-switch?");
 	return TCL_ERROR;
     }
-    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(TclpGetMicroseconds()));
+
+    switch (index) {
+    case MICROSECONDS_MONOTONIC:
+	Tcl_GetMonotonicTime(&time);
+	us = time.sec*1000000+time.usec;
+	break;
+    case MICROSECONDS_WALLCLOCK:
+	us = TclpGetMicroseconds();
+	break;
+    default:
+	TCL_UNREACHABLE();
+    }
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(us));
     return TCL_OK;
 }
 
