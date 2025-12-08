@@ -38561,6 +38561,28 @@ test clock-68.2 {Leap second, "24:00", regression test (validity check)} -constr
     join $res \n; # must be empty
 } -result {}
 
+test clock-69.1 {clock microseconds syntax} {
+    clock microseconds
+} -returnCodes ok
+
+test clock-69.2 {clock microseconds syntax} {
+    clock microseconds -monotonic
+} -returnCodes ok
+
+test clock-69.3 {clock microseconds syntax} {
+    clock microseconds -wallclock
+} -returnCodes ok
+
+test clock-69.4 {clock microseconds syntax} {
+    clock microseconds -junk
+} -returnCodes error -result {bad option "-junk": must be -monotonic or -wallclock}
+
+test clock-69.5 {clock microseconds syntax} {
+    clock microseconds -monotonic junk
+} -returnCodes error -result {wrong # args: should be "clock microseconds ?-switch?"}
+
+
+
 # cleanup
 
 ::tcl::clock::ClearCaches
