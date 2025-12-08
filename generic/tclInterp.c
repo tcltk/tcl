@@ -179,7 +179,7 @@ typedef struct {
     Tcl_Interp *interp;		/* The interpreter that the limit callback was
 				 * attached to. This is not the interpreter
 				 * that the callback runs in! */
-    long type;			/* The type of callback that this is. */
+    int type;			/* The type of callback that this is. */
 } ScriptLimitCallbackKey;
 
 /*
