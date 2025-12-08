@@ -62,7 +62,7 @@ Note that *inchan* can become readable during a background copy. You should turn
 
 ## Channel encoding options
 
-**Fcopy** obeys the encodings, profiles and character translations configured for the channels. This means that the incoming characters are converted internally first UTF-8 and then into the encoding of the channel **fcopy** writes to. See the manual entry for **fconfigure** for details on the **-encoding** and **-profile** options. No conversion is done if both channels are set to encoding "binary" and have matching translations. If only the output channel is set to encoding "binary" the system will write the internal UTF-8 representation of the incoming characters. If only the input channel is set to encoding "binary" the system will assume that the incoming bytes are valid UTF-8 characters and convert them according to the output encoding. The behaviour of the system for bytes which are not valid UTF-8 characters is undefined in this case.
+**Fcopy** obeys the encodings, profiles and character translations configured for the channels. This means that the incoming characters are converted from the encoding configured for the input channel and then encoded as per the encoding of the output channel. See the manual entry for **fconfigure** for details on the **-encoding** and **-profile** options. No conversion is done if both channels are set to encoding "binary" and have matching translations.
 
 **Fcopy** may throw encoding errors (error code **EILSEQ**), if input or output channel is configured to the "strict" encoding profile.
 

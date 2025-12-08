@@ -20,7 +20,7 @@ Copyright:
 
 # Name
 
-const - create and initialize a constant
+const - Create and initialize a constant
 
 # Synopsis
 

@@ -37,19 +37,23 @@ string - Manipulate strings
 
 # Description
 
-Performs one of several string operations, depending on *option*. The legal *option*s (which may be abbreviated) are:
+Performs one of several string operations, depending on *option*.
 
-**string cat** ?*string1*? ?*string2...*?
+**Following common usage, the command descriptions below use the term** *character* **in place of the more accurate term** *code point*.
+
+The legal *option*s (which may be abbreviated) are:
+
+[string]{.cmd} [cat]{.sub} [string1]{.optarg} [string2...]{.optarg}
 : Concatenate the given *string*s just like placing them directly next to each other and return the resulting compound string.  If no *string*s are present, the result is an empty string.
     This primitive is occasionally handier than juxtaposition of strings when mixed quoting is wanted, or when the aim is to return the result of a concatenation without resorting to **return** **-level 0**, and is more efficient than building a list of arguments and using **join** with an empty join string.
 
-**string compare** ?**-nocase**? ?**-length** *length*? *string1 string2*
+[string]{.cmd} [compare]{.sub} [-nocase]{.optlit} [[-length]{.lit} [length]{.arg}]{.optarg} [string1]{.arg} [string2]{.arg}
 : Perform a character-by-character comparison of strings *string1* and *string2*.  Returns -1, 0, or 1, depending on whether *string1* is lexicographically less than, equal to, or greater than *string2*.  If **-length** is specified, then only the first *length* characters are used in the comparison.  If **-length** is negative, it is ignored.  If **-nocase** is specified, then the strings are compared in a case-insensitive manner.
 
-**string equal** ?**-nocase**? ?**-length** *length*? *string1 string2*
+[string]{.cmd} [equal]{.sub} [-nocase]{.optlit} [[-length]{.lit} [length]{.arg}]{.optarg} [string1]{.arg} [string2]{.arg}
 : Perform a character-by-character comparison of strings *string1* and *string2*.  Returns 1 if *string1* and *string2* are identical, or 0 when not.  If **-length** is specified, then only the first *length* characters are used in the comparison.  If **-length** is negative, it is ignored.  If **-nocase** is specified, then the strings are compared in a case-insensitive manner.
 
-**string first** *needleString haystackString* ?*startIndex*?
+[string]{.cmd} [first]{.sub} [needleString]{.arg} [haystackString]{.arg} [startIndex]{.optarg}
 : Search *haystackString* for a sequence of characters that exactly match the characters in *needleString*.  If found, return the index of the first character in the first such match within *haystackString*.  If not found, return -1.  If *startIndex* is specified (in any of the forms described in **STRING INDICES**), then the search is constrained to start with the character in *haystackString* specified by the index.  For example,
 
     ```
@@ -62,16 +66,16 @@ Performs one of several string operations, depending on *option*. The legal *opt
     ```
     will return **-1**.
 
-**string index** *string charIndex*
+[string]{.cmd} [index]{.sub} [string]{.arg} [charIndex]{.arg}
 : Returns the *charIndex*'th character of the *string* argument. A *charIndex* of 0 corresponds to the first character of the string.  *charIndex* may be specified as described in the **STRING INDICES** section.
     If *charIndex* is less than 0 or greater than or equal to the length of the string then this command returns an empty string.
 
-**string insert** *string index insertString*
+[string]{.cmd} [insert]{.sub} [string]{.arg} [index]{.arg} [insertString]{.arg}
 : Returns a copy of *string* with *insertString* inserted at the *index*'th character.  The *index* may be specified as described in the **STRING INDICES** section.
     If *index* is start-relative, the first character inserted in the returned string will be at the specified index.  If *index* is end-relative, the last character inserted in the returned string will be at the specified index.
     If *index* is at or before the start of *string* (e.g., *index* is **0**), *insertString* is prepended to *string*.  If *index* is at or after the end of *string* (e.g., *index* is **end**), *insertString* is appended to *string*.
 
-**string is** *class* ?**-strict**? ?**-failindex** *varname*? *string*
+[string]{.cmd} [is]{.sub} [class]{.arg} [-strict]{.optlit} [[-failindex]{.lit} [varname]{.arg}]{.optarg} [string]{.arg}
 : Returns 1 if *string* is a valid member of the specified character class, otherwise returns 0.  If **-strict** is specified, then an empty string returns 0, otherwise an empty string will return 1 on any class.  If **-failindex** is specified, then if the function returns 0, the index in the string where the class was no longer valid will be stored in the variable named *varname*.  The *varname* will not be set if **string is** returns 1.  The following character classes are recognized (the class name can be abbreviated):
 
 **alnum**
@@ -142,7 +146,7 @@ Performs one of several string operations, depending on *option*. The legal *opt
 
     In the case of **boolean**, **true** and **false**, if the function will return 0, then the *varname* will always be set to 0, due to the varied nature of a valid boolean value.
 
-**string last** *needleString haystackString* ?*lastIndex*?
+[string]{.cmd} [last]{.sub} [needleString]{.arg} [haystackString]{.arg} [lastIndex]{.optarg}
 : Search *haystackString* for a sequence of characters that exactly match the characters in *needleString*.  If found, return the index of the first character in the last such match within *haystackString*.  If there is no match, then return -1.  If *lastIndex* is specified (in any of the forms described in **STRING INDICES**), then only the characters in *haystackString* at or before the specified *lastIndex* will be considered by the search.  For example,
 
     ```
@@ -155,10 +159,10 @@ Performs one of several string operations, depending on *option*. The legal *opt
     ```
     will return **1**.
 
-**string length** *string*
+[string]{.cmd} [length]{.sub} [string]{.arg}
 : Returns a decimal string giving the number of characters in *string*.  Note that this is not necessarily the same as the number of bytes used to store the string.  If the value is a byte array value (such as those returned from reading a binary encoded channel), then this will return the actual byte length of the value.
 
-**string map** ?**-nocase**? *mapping string*
+[string]{.cmd} [map]{.sub} [-nocase]{.optlit} [mapping]{.arg} [string]{.arg}
 : Replaces substrings in *string* based on the key-value pairs in *mapping*.  *mapping* is a list of *key value key value ...* as in the form returned by **array get**.  Each instance of a key in the string will be replaced with its corresponding value.  If **-nocase** is specified, then matching is done without regard to case differences. Both *key* and *value* may be multiple characters.  Replacement is done in an ordered manner, so the key appearing first in the list will be checked first, and so on. *string* is only iterated over once, so earlier key replacements will have no affect for later key matches.  For example,
 
     ```
@@ -172,7 +176,7 @@ Performs one of several string operations, depending on *option*. The legal *opt
     ```
     it will return the string **02c322c222c**.
 
-**string match** ?**-nocase**? *pattern string*
+[string]{.cmd} [match]{.sub} [-nocase]{.optlit} [pattern]{.arg} [string]{.arg}
 : See if *pattern* matches *string*; return 1 if it does, 0 if it does not.  If **-nocase** is specified, then the pattern attempts to match against the string in a case insensitive manner.  For the two strings to match, their contents must be identical except that the following special sequences may appear in *pattern*:
 
 *****
@@ -188,34 +192,34 @@ Performs one of several string operations, depending on *option*. The legal *opt
 : Matches the single character *x*.  This provides a way of avoiding the special interpretation of the characters ***?[]\** in *pattern*.
 
 
-**string range** *string first last*
+[string]{.cmd} [range]{.sub} [string]{.arg} [first]{.arg} [last]{.arg}
 : Returns a range of consecutive characters from *string*, starting with the character whose index is *first* and ending with the character whose index is *last* (using the forms described in **STRING INDICES**). An index of **0** refers to the first character of the string; an index of **end** refers to last character of the string.  *first* and *last* may be specified as for the **index** method.  If *first* is less than zero then it is treated as if it were zero, and if *last* is greater than or equal to the length of the string then it is treated as if it were **end**.  If *first* is greater than *last* then an empty string is returned.
 
-**string repeat** *string count*
+[string]{.cmd} [repeat]{.sub} [string]{.arg} [count]{.arg}
 : Returns a string consisting of *string* concatenated with itself *count* times. If *count* is 0, the empty string will be returned.
 
-**string replace** *string first last* ?*newstring*?
+[string]{.cmd} [replace]{.sub} [string]{.arg} [first]{.arg} [last]{.arg} [newstring]{.optarg}
 : Removes a range of consecutive characters from *string*, starting with the character whose index is *first* and ending with the character whose index is *last* (using the forms described in **STRING INDICES**).  An index of 0 refers to the first character of the string.  *First* and *last* may be specified as for the **index** method.  If *newstring* is specified, then it is placed in the removed character range.  If *first* is less than zero then it is treated as if it were zero, and if *last* is greater than or equal to the length of the string then it is treated as if it were **end**.  The initial string is returned untouched, if *first* is greater than *last*, or if *first* is equal to or greater than the length of the initial string, or *last* is less than 0.
 
-**string reverse** *string*
+[string]{.cmd} [reverse]{.sub} [string]{.arg}
 : Returns a string that is the same length as *string* but with its characters in the reverse order.
 
-**string tolower** *string* ?*first*? ?*last*?
-: Returns a value equal to *string* except that all upper (or title) case letters have been converted to lower case.  If *first* is specified, it refers to the first char index in the string to start modifying.  If *last* is specified, it refers to the char index in the string to stop at (inclusive).  *first* and *last* may be specified using the forms described in **STRING INDICES**.
+[string]{.cmd} [tolower]{.sub} [string]{.arg} [first]{.optarg} [last]{.optarg}
+: Returns a value equal to *string* except that all upper (or title) case letters have been converted to lower case.  If *first* is specified, it refers to the first char index in the string to start modifying.  If *last* is not specified, only the character at position *first* is converted, otherwise *last* refers to the char index in the string to stop at (inclusive).  *first* and *last* may be specified using the forms described in **STRING INDICES**.
 
-**string totitle** *string* ?*first*? ?*last*?
-: Returns a value equal to *string* except that the first character in *string* is converted to its Unicode title case variant (or upper case if there is no title case variant) and the rest of the string is converted to lower case.  If *first* is specified, it refers to the first char index in the string to start modifying.  If *last* is specified, it refers to the char index in the string to stop at (inclusive).  *first* and *last* may be specified using the forms described in **STRING INDICES**.
+[string]{.cmd} [totitle]{.sub} [string]{.arg} [first]{.optarg} [last]{.optarg}
+: Returns a value equal to *string* except that the first character in *string* is converted to its Unicode title case variant (or upper case if there is no title case variant) and the rest of the string is converted to lower case.  If *first* is specified, it refers to the first char index in the string to start modifying.  If *last* is not specified, only the character at position *first* is converted, otherwise *last* refers to the char index in the string to stop at (inclusive).  *first* and *last* may be specified using the forms described in **STRING INDICES**.
 
-**string toupper** *string* ?*first*? ?*last*?
-: Returns a value equal to *string* except that all lower (or title) case letters have been converted to upper case.  If *first* is specified, it refers to the first char index in the string to start modifying.  If *last* is specified, it refers to the char index in the string to stop at (inclusive).  *first* and *last* may be specified using the forms described in **STRING INDICES**.
+[string]{.cmd} [toupper]{.sub} [string]{.arg} [first]{.optarg} [last]{.optarg}
+: Returns a value equal to *string* except that all lower (or title) case letters have been converted to upper case.  If *first* is specified, it refers to the first char index in the string to start modifying.  If *last* is not specified, only the character at position *first* is converted, otherwise *last* refers to the char index in the string to stop at (inclusive).  *first* and *last* may be specified using the forms described in **STRING INDICES**.
 
-**string trim** *string* ?*chars*?
+[string]{.cmd} [trim]{.sub} [string]{.arg} [chars]{.optarg}
 : Returns a value equal to *string* except that any leading or trailing characters present in the string given by *chars* are removed.  If *chars* is not specified then white space is removed (any character for which **string is space** returns 1, and "\0").
 
-**string trimleft** *string* ?*chars*?
+[string]{.cmd} [trimleft]{.sub} [string]{.arg} [chars]{.optarg}
 : Returns a value equal to *string* except that any leading characters present in the string given by *chars* are removed.  If *chars* is not specified then white space is removed (any character for which **string is space** returns 1, and "\0").
 
-**string trimright** *string* ?*chars*?
+[string]{.cmd} [trimright]{.sub} [string]{.arg} [chars]{.optarg}
 : Returns a value equal to *string* except that any trailing characters present in the string given by *chars* are removed.  If *chars* is not specified then white space is removed (any character for which **string is space** returns 1, and "\0").
 
 
@@ -223,10 +227,10 @@ Performs one of several string operations, depending on *option*. The legal *opt
 
 These subcommands are currently supported, but are likely to go away in a future release as their functionality is either virtually never used or highly misleading.
 
-**string wordend** *string charIndex*
+[string]{.cmd} [wordend]{.sub} [string]{.arg} [charIndex]{.arg}
 : Returns the index of the character just after the last one in the word containing character *charIndex* of *string*.  *charIndex* may be specified using the forms in **STRING INDICES**.  A word is considered to be any contiguous range of alphanumeric (Unicode letters or decimal digits) or underscore (Unicode connector punctuation) characters, or any single character other than these.
 
-**string wordstart** *string charIndex*
+[string]{.cmd} [wordstart]{.sub} [string]{.arg} [charIndex]{.arg}
 : Returns the index of the first character in the word containing character *charIndex* of *string*.  *charIndex* may be specified using the forms in **STRING INDICES**.  A word is considered to be any contiguous range of alphanumeric (Unicode letters or decimal digits) or underscore (Unicode connector punctuation) characters, or any single character other than these.
 
 

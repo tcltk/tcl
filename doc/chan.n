@@ -99,7 +99,7 @@ switch them back to blocking or (b) use the environment variable
 .RE
 .\" METHOD: configure
 .TP
-\fBchan configure \fIchannel\fR ?\fIoptionName\fR? ?\fIvalue\fR? ?\fIoptionName value\fR?...
+\fBchan configure \fIchannel\fR ?\fIoptionName\fR? ?\fIvalue\fR? ?\fIoptionName value ...\fR?
 .
 Query or set the configuration options of the channel named
 \fIchannel\fR.
@@ -211,9 +211,7 @@ profiles.
 .VE TIP656
 .\" OPTION: -translation
 .TP
-\fB\-translation\fI translation\fR
-.TP
-\fB\-translation\fR \fB{\fIinTranslation outTranslation\fB}\fR
+\fB\-translation\fR \fItranslationMode\fR
 .
 In Tcl scripts the end of a line is always represented using a single
 newline character (\en).  However, in actual files and devices the end
@@ -230,8 +228,9 @@ automatically, but the \fB\-translation\fR option provides explicit
 control over the end of line translations.
 .RS
 .PP
-The value associated with \fB\-translation\fR is a single item for
-read-only and write-only channels.  The value is a two-element list for
+The value of \fItranslationMode\fR associated with \fB\-translation\fR
+is a single item for read-only and write-only channels.
+The value is a two-element list for
 read-write channels; the read translation mode is the first element of
 the list, and the write translation mode is the second element.  As a
 convenience, when setting the translation mode for a read-write channel

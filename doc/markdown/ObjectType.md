@@ -181,7 +181,7 @@ For a custom value type that is scalar or atomic in nature, i.e., not a divisibl
 
 ## Version 2: abstract lists
 
-Version 2, **TCL_OBJTYPE_V2**, allows full List support when the functions described below are provided.  This allows for script level use of the List commands without causing the type of the Tcl_Obj value to be converted to a list.  Unless specified otherwise, all functions specific to Version 2 should return **TCL_OK** on success and **TCL_ERROR** on failure. Further, in the case that a **Tcl_Obj*** is also returned, the reference count of the returned **Tcl_Obj** should not be incremented so, for example, if a new **Tcl_Obj** value is returned it should have a reference count of zero. 
+Version 2, **TCL_OBJTYPE_V2**, allows full List support when the functions described below are provided.  This allows for script level use of the List commands without causing the type of the Tcl_Obj value to be converted to a list.  Unless specified otherwise, all functions specific to Version 2 should return **TCL_OK** on success and **TCL_ERROR** on failure.  In the case that a **Tcl_Obj*** is also returned, the reference count of the returned **Tcl_Obj** should not be incremented so, for example, if a new **Tcl_Obj** value is returned it should have a reference count of zero.  The functions should not assume that any **Tcl_Obj** passed in is unshared. 
 
 ## The lengthproc field
 

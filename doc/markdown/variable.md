@@ -20,7 +20,7 @@ Copyright:
 
 # Name
 
-variable - create and initialize a namespace variable
+variable - Create and initialize a namespace variable
 
 # Synopsis
 

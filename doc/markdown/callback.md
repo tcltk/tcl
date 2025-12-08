@@ -20,7 +20,7 @@ Copyright:
 
 # Name
 
-callback, mymethod - generate callbacks to methods
+callback, mymethod - Generate callbacks to methods
 
 # Synopsis
 

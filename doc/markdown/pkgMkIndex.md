@@ -44,19 +44,19 @@ If you install the package anywhere else, then you must ensure that the director
 
 The optional switches are:
 
-**-direct**
+[-direct]{.lit}
 : The generated index will implement direct loading of the package upon **package require**.  This is the default.
 
-**-lazy**
+[-lazy]{.lit}
 : The generated index will manage to delay loading the package until the use of one of the commands provided by the package, instead of loading it immediately upon **package require**.  This is not compatible with the use of *auto_reset*, and therefore its use is discouraged.
 
-**-load** *pkgPat*
+[-load]{.lit} [pkgPat]{.arg}
 : The index process will preload any packages that exist in the current interpreter and match *pkgPat* into the child interpreter used to generate the index.  The pattern match uses string match rules, but without making case distinctions. See **COMPLEX CASES** below.
 
-**-verbose**
+[-verbose]{.lit}
 : Generate output during the indexing process.  Output is via the **tclLog** procedure, which by default prints to stderr.
 
-**--**
+[--]{.lit}
 : End of the flags, in case *dir* begins with a dash.
 
 

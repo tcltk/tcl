@@ -125,25 +125,25 @@ The following commands are provided in the parent interpreter:
 
 The following options are common to **::safe::interpCreate**, **::safe::interpInit**, and **::safe::interpConfigure**. Any option name can be abbreviated to its minimal non-ambiguous name. Option names are not case sensitive.
 
-**-accessPath** *directoryList*
+[-accessPath]{.lit} [directoryList]{.arg}
 : This option sets the list of directories from which the safe interpreter can **source** and **load** files. If this option is not specified, or if it is given as the empty list, the safe interpreter will use the same directories as its parent for auto-loading. See the section **SECURITY** below for more detail about virtual paths, tokens and access control.
 
-**-autoPath** *directoryList*
+[-autoPath]{.lit} [directoryList]{.arg}
 : This option sets the list of directories in the safe interpreter's ::auto_path.  The option is undefined if the Safe Base has "Sync Mode" on - in that case the safe interpreter's ::auto_path is managed by the Safe Base and is a tokenized form of its access path. See the section **SYNC MODE** below for details.
 
-**-statics** *boolean*
+[-statics]{.lit} [boolean]{.arg}
 : This option specifies if the safe interpreter will be allowed to load statically linked packages (like **load {} Tk**). The default value is **true** : safe interpreters are allowed to load statically linked packages.
 
-**-noStatics**
+[-noStatics]{.lit}
 : This option is a convenience shortcut for **-statics false** and thus specifies that the safe interpreter will not be allowed to load statically linked packages.
 
-**-nested** *boolean*
+[-nested]{.lit} [boolean]{.arg}
 : This option specifies if the safe interpreter will be allowed to load packages into its own sub-interpreters. The default value is **false** : safe interpreters are not allowed to load packages into their own sub-interpreters.
 
-**-nestedLoadOk**
+[-nestedLoadOk]{.lit}
 : This option is a convenience shortcut for **-nested true** and thus specifies the safe interpreter will be allowed to load packages into its own sub-interpreters.
 
-**-deleteHook** *script*
+[-deleteHook]{.lit} [script]{.arg}
 : When this option is given a non-empty *script*, it will be evaluated in the parent with the name of the safe interpreter as an additional argument just before actually deleting the safe interpreter. Giving an empty value removes any currently installed deletion hook script for that safe interpreter. The default value (**{}**) is not to have any deletion call back.
 
 

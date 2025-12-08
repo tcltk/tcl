@@ -23,7 +23,7 @@ msgcat \- Tcl message catalog
 .VE TIP490
 \fB::msgcat::mclocale \fR?\fInewLocale\fR?
 .VS TIP499
-\fB::msgcat::mcpreferences\fR ?\fIlocale preference  ...\fR?
+\fB::msgcat::mcpreferences\fR ?\fIlocale preference ...\fR?
 .VE TIP499
 \fB::msgcat::mcloadedlocales subcommand\fR
 \fB::msgcat::mcload \fIdirname\fR
@@ -569,7 +569,7 @@ Return the package private locale or the global locale, if no package private
 locale is set.
 .\" METHOD: preferences
 .TP
-\fB::msgcat::mcpackagelocale preferences\fR ?\fIlocale preference\fR? ...
+\fB::msgcat::mcpackagelocale preferences\fR ?\fIlocale preference ...\fR?
 .
 With no parameters, return the package private preferences or the global
 preferences, if no package private locale is set.

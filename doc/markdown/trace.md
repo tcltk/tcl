@@ -35,18 +35,18 @@ trace - Monitor variable accesses, command usages and command executions
 
 This command causes Tcl commands to be executed whenever certain operations are invoked.  The legal *option*s (which may be abbreviated) are:
 
-**trace add** *type name ops* ?*args*?
+[trace]{.cmd} [add]{.sub} [type]{.arg} [name]{.arg} [ops]{.arg} [args]{.optarg}
 : Where *type* is **command**, **execution**, or **variable**.
 
-**trace add command** *name ops commandPrefix*
+[trace]{.cmd} [add]{.sub} [command]{.lit} [name]{.arg} [ops]{.arg} [commandPrefix]{.arg}
 : Arrange for *commandPrefix* to be executed (with additional arguments) whenever command *name* is modified in one of the ways given by the list *ops*. *Name* will be resolved using the usual namespace resolution rules used by commands. If the command does not exist, an error will be thrown.
 
     *Ops* indicates which operations are of interest, and is a list of one or more of the following items:
 
-**rename**
+[rename]{.cmd}
 : Invoke *commandPrefix* whenever the traced command is renamed.  Note that renaming to the empty string is considered deletion, and will not be traced with "**rename**".
 
-**delete**
+[delete]{.cmd}
 : Invoke *commandPrefix* when the traced command is deleted. Commands can be deleted explicitly by using the **rename** command to rename the command to an empty string. Commands are also deleted when the interpreter is deleted, but traces will not be invoked because there is no interpreter in which to execute them.
 
     When the trace triggers, depending on the operations being traced, a number of arguments are appended to *commandPrefix* so that the actual command is as follows:
@@ -56,20 +56,20 @@ This command causes Tcl commands to be executed whenever certain operations are 
     ```
     *OldName* and *newName* give the traced command's current (old) name, and the name to which it is being renamed (the empty string if this is a "delete" operation). *Op* indicates what operation is being performed on the command, and is one of **rename** or **delete** as defined above.  The trace operation cannot be used to stop a command from being deleted.  Tcl will always remove the command once the trace is complete.  Recursive renaming or deleting will not cause further traces of the same type to be evaluated, so a delete trace which itself deletes the command, or a rename trace which itself renames the command will not cause further trace evaluations to occur. Both *oldName* and *newName* are fully qualified with any namespace(s) in which they appear.
 
-**trace add execution** *name ops commandPrefix*
+[trace]{.cmd} [add]{.sub} [execution]{.lit} [name]{.arg} [ops]{.arg} [commandPrefix]{.arg}
 : Arrange for *commandPrefix* to be executed (with additional arguments) whenever command *name* is executed, with traces occurring at the points indicated by the list *ops*.  *Name* will be resolved using the usual namespace resolution rules used by commands.  If the command does not exist, an error will be thrown.
     *Ops* indicates which operations are of interest, and is a list of one or more of the following items:
 
-**enter**
+[enter]{.cmd}
 : Invoke *commandPrefix* whenever the command *name* is executed, just before the actual execution takes place.
 
-**leave**
+[leave]{.cmd}
 : Invoke *commandPrefix* whenever the command *name* is executed, just after the actual execution takes place.
 
-**enterstep**
+[enterstep]{.cmd}
 : Invoke *commandPrefix* for every Tcl command which is executed from the start of the execution of the procedure *name* until that procedure finishes. *CommandPrefix* is invoked just before the actual execution of the Tcl command being reported takes place.  For example if we have "proc foo {} { puts \"hello\" }", then an *enterstep* trace would be invoked just before "*puts \"hello\"*" is executed. Setting an *enterstep* trace on a command *name* that does not refer to a procedure will not result in an error and is simply ignored.
 
-**leavestep**
+[leavestep]{.cmd}
 : Invoke *commandPrefix* for every Tcl command which is executed from the start of the execution of the procedure *name* until that procedure finishes. *CommandPrefix* is invoked just after the actual execution of the Tcl command being reported takes place. Setting a *leavestep* trace on a command *name* that does not refer to a procedure will not result in an error and is simply ignored.
 
     When the trace triggers, depending on the operations being traced, a number of arguments are appended to *commandPrefix* so that the actual command is as follows:
@@ -91,20 +91,20 @@ This command causes Tcl commands to be executed whenever certain operations are 
     When multiple traces are set on *name*, then for *enter* and *enterstep* operations, the traced commands are invoked in the reverse order of how the traces were originally created; and for *leave* and *leavestep* operations, the traced commands are invoked in the original order of creation.
     The behavior of execution traces is currently undefined for a command *name* imported into another namespace.
 
-**trace add variable** *name ops commandPrefix*
+[trace]{.cmd} [add]{.sub} [variable]{.lit} [name]{.arg} [ops]{.arg} [commandPrefix]{.arg}
 : Arrange for *commandPrefix* to be executed whenever variable *name* is accessed in one of the ways given by the list *ops*.  *Name* may refer to a normal variable, an element of an array, or to an array as a whole (i.e. *name* may be just the name of an array, with no parenthesized index).  If *name* refers to a whole array, then *commandPrefix* is invoked whenever any element of the array is manipulated.  If the variable does not exist, it will be created but will not be given a value, so it will be visible to **namespace which** queries, but not to **info exists** queries.
     *Ops* indicates which operations are of interest, and is a list of one or more of the following items:
 
-**array**
+[array]{.cmd}
 : Invoke *commandPrefix* whenever the variable is accessed or modified via the **array** command, provided that *name* is not a scalar variable at the time that the **array** command is invoked.  If *name* is a scalar variable, the access via the **array** command will not trigger the trace.
 
-**read**
+[read]{.cmd}
 : Invoke *commandPrefix* whenever the variable is read.
 
-**write**
+[write]{.cmd}
 : Invoke *commandPrefix* whenever the variable is written.
 
-**unset**
+[unset]{.cmd}
 : Invoke *commandPrefix* whenever the variable is unset.  Variables can be unset explicitly with the **unset** command, or implicitly when procedures return (all of their local variables are unset).  Variables are also unset when interpreters are deleted, but traces will not be invoked because there is no interpreter in which to execute them.
 
     When the trace triggers, three arguments are appended to *commandPrefix* so that the actual command is as follows:
@@ -121,29 +121,29 @@ This command causes Tcl commands to be executed whenever certain operations are 
     Once created, the trace remains in effect either until the trace is removed with the **trace remove variable** command described below, until the variable is unset, or until the interpreter is deleted. Unsetting an element of array will remove any traces on that element, but will not remove traces on the overall array.
     This command returns an empty string.
 
-**trace remove** *type name opList commandPrefix*
+[trace]{.cmd} [remove]{.sub} [type]{.arg} [name]{.arg} [opList]{.arg} [commandPrefix]{.arg}
 : Where *type* is either **command**, **execution** or **variable**.
 
-**trace remove command** *name opList commandPrefix*
+[trace]{.cmd} [remove]{.sub} [command]{.lit} [name]{.arg} [opList]{.arg} [commandPrefix]{.arg}
 : If there is a trace set on command *name* with the operations and command given by *opList* and *commandPrefix*, then the trace is removed, so that *commandPrefix* will never again be invoked.  Returns an empty string.   If *name* does not exist, the command will throw an error.
 
-**trace remove execution** *name opList commandPrefix*
+[trace]{.cmd} [remove]{.sub} [execution]{.lit} [name]{.arg} [opList]{.arg} [commandPrefix]{.arg}
 : If there is a trace set on command *name* with the operations and command given by *opList* and *commandPrefix*, then the trace is removed, so that *commandPrefix* will never again be invoked.  Returns an empty string.   If *name* does not exist, the command will throw an error.
 
-**trace remove variable** *name opList commandPrefix*
+[trace]{.cmd} [remove]{.sub} [variable]{.lit} [name]{.arg} [opList]{.arg} [commandPrefix]{.arg}
 : If there is a trace set on variable *name* with the operations and command given by *opList* and *commandPrefix*, then the trace is removed, so that *commandPrefix* will never again be invoked.  Returns an empty string.
 
 
-**trace info** *type name*
+[trace]{.cmd} [info]{.sub} [type]{.arg} [name]{.arg}
 : Where *type* is either **command**, **execution** or **variable**.
 
-**trace info command** *name*
+[trace]{.cmd} [info]{.sub} [command]{.lit} [name]{.arg}
 : Returns a list containing one element for each trace currently set on command *name*. Each element of the list is itself a list containing two elements, which are the *opList* and *commandPrefix* associated with the trace.  If *name* does not have any traces set, then the result of the command will be an empty string.  If *name* does not exist, the command will throw an error.
 
-**trace info execution** *name*
+[trace]{.cmd} [info]{.sub} [execution]{.lit} [name]{.arg}
 : Returns a list containing one element for each trace currently set on command *name*. Each element of the list is itself a list containing two elements, which are the *opList* and *commandPrefix* associated with the trace.  If *name* does not have any traces set, then the result of the command will be an empty string.  If *name* does not exist, the command will throw an error.
 
-**trace info variable** *name*
+[trace]{.cmd} [info]{.sub} [variable]{.lit} [name]{.arg}
 : Returns a list containing one element for each trace currently set on variable *name*.  Each element of the list is itself a list containing two elements, which are the *opList* and *commandPrefix* associated with the trace.  If *name* does not exist or does not have any traces set, then the result of the command will be an empty string.
 
 

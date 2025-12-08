@@ -179,7 +179,7 @@ The subcommand **clear** removes all locales and their data, which are not in th
 : The calling package clears all its state within the **msgcat** package including all settings and translations.
 
 
-**::msgcat::mcutil getpreferences** *locale*
+[::msgcat::mcutil]{.cmd} [getpreferences]{.sub} [locale]{.arg}
 : Return the preferences list of the given locale as described in the section **LOCALE SPECIFICATION**. An example is the composition of a preference list for the bilingual region "Biel/Bienne" as a concatenation of swiss german and swiss french:
 
     ```
@@ -187,7 +187,7 @@ The subcommand **clear** removes all locales and their data, which are not in th
     fr_ch fr de_ch de {}
     ```
 
-**::msgcat::mcutil getsystemlocale**
+[::msgcat::mcutil]{.cmd} [getsystemlocale]{.sub}
 : The system locale is returned as described by the section **LOCALE SPECIFICATION**.
 
 
@@ -335,16 +335,16 @@ This allows a package to change its locale without causing any locales load or r
 
 This action is controled by the following ensemble:
 
-**::msgcat::mcpackagelocale set** ?*locale*?
+[::msgcat::mcpackagelocale]{.cmd} [set]{.sub} [locale]{.optarg}
 : Set or change a package private locale. The package private locale is set to the given *locale* if the *locale* is given. If the option *locale* is not given, the package is set to package private locale mode, but no locale is changed (e.g. if the global locale was valid for the package before, it is copied to the package private locale).
 
 
 This command may cause the load of locales.
 
-**::msgcat::mcpackagelocale get**
+[::msgcat::mcpackagelocale]{.cmd} [get]{.sub}
 : Return the package private locale or the global locale, if no package private locale is set.
 
-**::msgcat::mcpackagelocale preferences** ?*locale preference*? ...
+[::msgcat::mcpackagelocale]{.cmd} [preferences]{.sub} [locale preference]{.optdot}
 : With no parameters, return the package private preferences or the global preferences, if no package private locale is set. The package locale state (set or not) is not changed (in contrast to the command **::msgcat::mcpackagelocale set**).
 
 
@@ -354,19 +354,19 @@ If a set of locale preferences is given, it is set as package locale preference 
 
 Locale preferences are loaded now for the package, if not yet loaded.
 
-**::msgcat::mcpackagelocale loaded**
+[::msgcat::mcpackagelocale]{.cmd} [loaded]{.sub}
 : Return the list of locales loaded for this package.
 
-**::msgcat::mcpackagelocale isset**
+[::msgcat::mcpackagelocale]{.cmd} [isset]{.sub}
 : Returns true, if a package private locale is set.
 
-**::msgcat::mcpackagelocale unset**
+[::msgcat::mcpackagelocale]{.cmd} [unset]{.sub}
 : Unset the package private locale and use the global locale. Load and remove locales to adjust the list of loaded locales for the package to the global loaded locales list.
 
-**::msgcat::mcpackagelocale present** *locale*
+[::msgcat::mcpackagelocale]{.cmd} [present]{.sub} [locale]{.arg}
 : Returns true, if the given locale is loaded for the package.
 
-**::msgcat::mcpackagelocale clear**
+[::msgcat::mcpackagelocale]{.cmd} [clear]{.sub}
 : Clear any loaded locales of the package not present in the package preferences.
 
 
@@ -374,16 +374,16 @@ Locale preferences are loaded now for the package, if not yet loaded.
 
 Each package using msgcat has a set of options within **msgcat**. The package options are described in the next sectionPackage options. Each package option may be set or unset individually using the following ensemble:
 
-**::msgcat::mcpackageconfig get** *option*
+[::msgcat::mcpackageconfig]{.cmd} [get]{.sub} [option]{.arg}
 : Return the current value of the given *option*. This call returns an error if the option is not set for the package.
 
-**::msgcat::mcpackageconfig isset** *option*
+[::msgcat::mcpackageconfig]{.cmd} [isset]{.sub} [option]{.arg}
 : Returns 1, if the given *option* is set for the package, 0 otherwise.
 
-**::msgcat::mcpackageconfig set** *option value*
+[::msgcat::mcpackageconfig]{.cmd} [set]{.sub} [option]{.arg} [value]{.arg}
 : Set the given *option* to the given *value*. This may invoke additional actions in dependency of the *option*. The return value is 0 or the number of loaded packages for the option **mcfolder**.
 
-**::msgcat::mcpackageconfig unset** *option*
+[::msgcat::mcpackageconfig]{.cmd} [unset]{.sub} [option]{.arg}
 : Unsets the given *option* for the package. No action is taken if the *option* is not set for the package. The empty string is returned.
 
 

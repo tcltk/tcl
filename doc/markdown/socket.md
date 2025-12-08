@@ -47,13 +47,13 @@ If the **-server** option is not specified, then the client side of a connection
 
 The following options may also be present before *host* to specify additional information about the connection:
 
-**-myaddr** *addr*
+[-myaddr]{.lit} [addr]{.arg}
 : *Addr* gives the domain-style name or numerical IP address of the client-side network interface to use for the connection. This option may be useful if the client machine has multiple network interfaces.  If the option is omitted then the client-side interface will be chosen by the system software.
 
-**-myport** *port*
+[-myport]{.lit} [port]{.arg}
 : *Port* specifies an integer port number (or service name, where supported and understood by the host operating system) to use for the client's side of the connection.  If this option is omitted, the client's port number will be chosen at random by the system software.
 
-**-async**
+[-async]{.lit}
 : This option will cause the client socket to be connected asynchronously. This means that the socket will be created immediately but may not yet be connected to the server, when the call to **socket** returns.
     When a **gets** or **flush** is done on the socket before the connection attempt succeeds or fails, if the socket is in blocking mode, the operation will wait until the connection is completed or fails. If the socket is in nonblocking mode and a **gets** or **flush** is done on the socket before the connection attempt succeeds or fails, the operation returns immediately and **fblocked** on the socket returns 1. Synchronous client sockets may be switched (after they have connected) to operating in asynchronous mode using:
 
@@ -72,13 +72,13 @@ If the **-server** option is specified then the new socket will be a server that
 
 The following additional option may also be specified before *port*:
 
-**-myaddr** *addr*
+[-myaddr]{.lit} [addr]{.arg}
 : *Addr* gives the domain-style name or numerical IP address of the server-side network interface to use for the connection.  This option may be useful if the server machine has multiple network interfaces. If the option is omitted then the server socket is bound to the wildcard address so that it can accept connections from any interface. If *addr* is a domain name that resolves to multiple IP addresses that are available on the local machine, the socket will listen on all of them.
 
-**-reuseaddr** *boolean*
+[-reuseaddr]{.lit} [boolean]{.arg}
 : Tells the kernel whether to reuse the local address if there is no socket actively listening on it. This is the default on Windows.
 
-**-reuseport** *boolean*
+[-reuseport]{.lit} [boolean]{.arg}
 : Tells the kernel whether to allow the binding of multiple sockets to the same address and port.
 
 
@@ -92,24 +92,24 @@ If *port* is specified as zero, the operating system will allocate an unused por
 
 The **chan configure** command can be used to query several readonly configuration options for socket channels or in some cases to set alternative properties on socket channels:
 
-**-error**
+[-error]{.lit}
 : This option gets the current error status of the given socket.  This is useful when you need to determine if an asynchronous connect operation succeeded.  If there was an error, the error message is returned.  If there was no error, an empty string is returned.
     Note that the error status is reset by the read operation; this mimics the underlying getsockopt(SO_ERROR) call.
 
-**-sockname**
+[-sockname]{.lit}
 : For client sockets (including the channels that get created when a client connects to a server socket) this option returns a list of three elements, the address, the host name and the port number for the socket. If the host name cannot be computed, the second element is identical to the address, the first element of the list.
     For server sockets this option returns a list of a multiple of three elements each group of which have the same meaning as described above. The list contains more than one group when the server socket was created without **-myaddr** or with the argument to **-myaddr** being a domain name that resolves multiple IP addresses that are local to the invoking host.
 
-**-peername**
+[-peername]{.lit}
 : This option is not supported by server sockets. For client and accepted sockets, this option returns a list of three elements; these are the address, the host name and the port to which the peer socket is connected or bound. If the host name cannot be computed, the second element of the list is identical to the address, its first element.
 
-**-connecting**
+[-connecting]{.lit}
 : This option is not supported by server sockets. For client sockets, this option returns 1 if an asynchronous connect is still in progress, 0 otherwise.
 
-**-keepalive**
+[-keepalive]{.lit}
 : This option sets or queries the TCP keepalive option on the socket as 1 if keepalive is turned on, 0 otherwise.
 
-**-nodelay**
+[-nodelay]{.lit}
 : This option sets or queries the TCP nodelay option on the socket as 1 if nodelay is turned on, 0 otherwise.
 
 

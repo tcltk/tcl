@@ -19,7 +19,7 @@ Copyright:
 
 # Name
 
-transchan - command handler API of channel transforms
+transchan - Command handler API for channel transforms implemented in Tcl code
 
 # Synopsis
 
@@ -48,13 +48,13 @@ Note that in the descriptions below *cmdPrefix* may be more than one word, and *
 
 The following subcommands are relevant to all types of channel.
 
-*cmdPrefix* **clear** *handle*
+[cmdPrefix]{.ins} [clear]{.sub} [handle]{.arg}
 : This optional subcommand is called to signify to the transformation that any data stored in internal buffers (either incoming or outgoing) must be cleared. It is called when a **chan seek** is performed on the channel being transformed.
 
-*cmdPrefix* **finalize** *handle*
+[cmdPrefix]{.ins} [finalize]{.sub} [handle]{.arg}
 : This mandatory subcommand is called last for the given *handle*, and then never again, and it exists to allow for cleaning up any Tcl-level data structures associated with the transformation. *Warning!* Any errors thrown by this subcommand will be ignored. It is not guaranteed to be called if the interpreter is deleted.
 
-*cmdPrefix* **initialize** *handle mode*
+[cmdPrefix]{.ins} [initialize]{.sub} [handle]{.arg} [mode]{.arg}
 : This mandatory subcommand is called first, and then never again (for the given *handle*). Its responsibility is to initialize all parts of the transformation at the Tcl level. The *mode* is a list containing any of **read** and **write**.
 
 **write**
@@ -70,14 +70,14 @@ The following subcommands are relevant to all types of channel.
 
 These subcommands are used for handling transformations applied to readable channels; though strictly **read** is optional, it must be supported if any of the others is or the channel will be made non-readable.
 
-*cmdPrefix* **drain** *handle*
+[cmdPrefix]{.ins} [drain]{.sub} [handle]{.arg}
 : This optional subcommand is called whenever data in the transformation input (i.e. read) buffer has to be forced upward, i.e. towards the user or script. The result returned by the method is taken as the *binary* data to push upward to the level above this transformation (the reader or a higher-level transformation).
     In other words, when this method is called the transformation cannot defer the actual transformation operation anymore and has to transform all data waiting in its internal read buffers and return the result of that action.
 
-*cmdPrefix* **limit?** *handle*
+[cmdPrefix]{.ins} [limit?]{.sub} [handle]{.arg}
 : This optional subcommand is called to allow the Tcl I/O engine to determine how far ahead it should read. If present, it should return an integer number greater than zero which indicates how many bytes ahead should be read, or an integer less than zero to indicate that the I/O engine may read as far ahead as it likes.
 
-*cmdPrefix* **read** *handle buffer*
+[cmdPrefix]{.ins} [read]{.sub} [handle]{.arg} [buffer]{.arg}
 : This subcommand, which must be present if the transformation is to work with readable channels, is called whenever the base channel, or a transformation below this transformation, pushes data upward. The *buffer* contains the binary data which has been given to us from below. It is the responsibility of this subcommand to actually transform the data. The result returned by the subcommand is taken as the binary data to push further upward to the transformation above this transformation. This can also be the user or script that originally read from the channel.
     Note that the result is allowed to be empty, or even less than the data we received; the transformation is not required to transform everything given to it right now. It is allowed to store incoming data in internal buffers and to defer the actual transformation until it has more data.
 
@@ -86,11 +86,11 @@ These subcommands are used for handling transformations applied to readable chan
 
 These subcommands are used for handling transformations applied to writable channels; though strictly **write** is optional, it must be supported if any of the others is or the channel will be made non-writable.
 
-*cmdPrefix* **flush** *handle*
+[cmdPrefix]{.ins} [flush]{.sub} [handle]{.arg}
 : This optional subcommand is called whenever data in the transformation 'write' buffer has to be forced downward, i.e. towards the base channel. The result returned by the subcommand is taken as the binary data to write to the transformation below the current transformation. This can be the base channel as well.
     In other words, when this subcommand is called the transformation cannot defer the actual transformation operation anymore and has to transform all data waiting in its internal write buffers and return the result of that action.
 
-*cmdPrefix* **write** *handle buffer*
+[cmdPrefix]{.ins} [write]{.sub} [handle]{.arg} [buffer]{.arg}
 : This subcommand, which must be present if the transformation is to work with writable channels, is called whenever the user, or a transformation above this transformation, writes data downward. The *buffer* contains the binary data which has been written to us. It is the responsibility of this subcommand to actually transform the data.
     The result returned by the subcommand is taken as the binary data to write to the transformation below this transformation. This can be the base channel as well. Note that the result is allowed to be empty, or less than the data we got; the transformation is not required to transform everything which was written to it right now. It is allowed to store this data in internal buffers and to defer the actual transformation until it has more data.
 

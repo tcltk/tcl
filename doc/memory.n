@@ -43,7 +43,7 @@ to \fBTcl_Free\fR), the current bytes allocated, and the maximum number
 of packets and bytes allocated.
 .\" METHOD: init
 .TP
-\fBmemory init \fR[\fBon\fR|\fBoff\fR]
+\fBmemory init on\fR|\fBoff\fR
 .
 Turn on or off the preinitialization of all allocated memory
 with bogus bytes.  Useful for detecting the use of uninitialized
@@ -74,7 +74,7 @@ is printed along with other information about the packet.  The
 to \fBTcl_Alloc\fR to be \fIstring\fR.
 .\" METHOD: trace
 .TP
-\fBmemory trace \fR[\fBon\fR|\fBoff\fR]
+\fBmemory trace on\fR|\fBoff\fR
 .
 Turns memory tracing on or off.  When memory tracing is on, every call
 to \fBTcl_Alloc\fR causes a line of trace information to be written to
@@ -104,7 +104,7 @@ the problem sets in.  The current number of memory allocations that have
 occurred since Tcl started is printed on a guard zone failure.
 .\" METHOD: validate
 .TP
-\fBmemory validate \fR[\fBon\fR|\fBoff\fR]
+\fBmemory validate on\fR|\fBoff\fR
 .
 Turns memory validation on or off. When memory validation is enabled,
 on every call to \fBTcl_Alloc\fR or \fBTcl_Free\fR, the guard zones are

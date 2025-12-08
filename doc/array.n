@@ -102,9 +102,9 @@ Returns 1 if \fIarrayName\fR is an array variable, 0 if there
 is no variable by that name or if it is a scalar variable.
 .\" METHOD: for
 .TP
-\fBarray for {\fIkeyVariable valueVariable\fB} \fIarrayName body\fR
+\fBarray for\fR \fIvariableList arrayName body\fR
 .
-The first argument is a two element list of variable names for the
+The first argument \fIvariableList\fR is a two-element list of variable names for the
 key and value of each entry in the array.  The second argument is the
 array name to iterate over.  The third argument is the body to execute
 for each key and value returned.

@@ -20,7 +20,7 @@ Copyright:
 
 # Name
 
-my, myclass - invoke any method of current object or its class
+my, myclass - Invoke any method of current object or its class
 
 # Synopsis
 

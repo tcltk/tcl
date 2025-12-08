@@ -19,7 +19,7 @@ Copyright:
 
 # Name
 
-next, nextto - invoke superclass method implementations
+next, nextto - Invoke superclass method implementations
 
 # Synopsis
 

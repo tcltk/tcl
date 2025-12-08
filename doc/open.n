@@ -288,8 +288,8 @@ terminal (except for newlines). Some terminals may indicate this specially.
 indicates that all keyboard input should be given directly to Tcl with the
 terminal doing no processing at all. It does not echo the keys, leaving it up
 to the Tcl script to interpret what to do.
-.IP "\fBreset\fR (set only)"
-indicates that the terminal should be reset to what state it was in when the
+.IP "\fBreset\fR"
+(set only) indicates that the terminal should be reset to what state it was in when the
 terminal was opened.
 .PP
 Note that setting this option (technically, anything that changes the terminal
@@ -485,9 +485,9 @@ indicates that all keyboard input should be given directly to Tcl with the
 console doing no processing at all. It does not echo the keys, leaving it up
 to the Tcl script to interpret what to do.
 .TP
-\fBreset\fR (set only)
+\fBreset\fR
 .
-indicates that the console should be reset to what state it was in when the
+(set only) indicates that the console should be reset to what state it was in when the
 console channel was opened.
 .PP
 Note that setting this option (technically, anything that changes the console

@@ -19,7 +19,7 @@ Copyright:
 
 # Name
 
-oo::configurable, configure, property - class that makes configurable classes and objects, and supports making configurable properties
+oo::configurable, configure, property - A class that makes configurable classes and objects, and supports making configurable properties
 
 # Synopsis
 
@@ -69,14 +69,14 @@ When a class has been manufactured by the **oo::configurable** metaclass (or one
 
 The **property** command takes the name of a property to define first, *without a leading hyphen*, followed by a number of option-value pairs that modify the basic behavior of the property. This can then be followed by an arbitrary number of other property definitions. The supported options are:
 
-**-get** *getterScript*
+[-get]{.lit} [getterScript]{.arg}
 : This defines the implementation of how to read from the property; the *getterScript* will become the body of a method (taking no arguments) defined on the class, if the kind of the property is such that the property can be read from. The method will be named **<ReadProp-***propertyName***>**, and will default to being a simple read of the instance variable with the same name as the property (e.g., "**property** xyz" will result in a method "<ReadProp-xyz>" being created).
 
-**-kind** *propertyKind*
+[-kind]{.lit} [propertyKind]{.arg}
 : This defines what sort of property is being created. The *propertyKind* must be exactly one of **readable**, **writable**, or **readwrite** (which is the default) which will make the property read-only, write-only or read-write, respectively.  Read-only properties can only ever be read from, write-only properties can only ever be written to, and read-write properties can be both read and written.
     Note that write-only properties are not particularly discoverable as they are never reported by the **configure** method other than by error messages when attempting to write to a property that does not exist.
 
-**-set** *setterScript*
+[-set]{.lit} [setterScript]{.arg}
 : This defines the implementation of how to write to the property; the *setterScript* will become the body of a method taking a single argument, *value*, defined on the class, if the kind of the property is such that the property can be written to. The method will be named **<WriteProp-***propertyName***>**, and will default to being a simple write of the instance variable with the same name as the property (e.g., "**property** xyz" will result in a method "<WriteProp-xyz>" being created).
 
 
@@ -102,16 +102,16 @@ The underlying property discovery mechanism relies on four slots (see **oo::defi
 
 These slots, and their intended semantics, are:
 
-**oo::configuresupport::readableproperties**
+[oo::configuresupport::readableproperties]{.cmd}
 : The set of properties of a class (not including those from its superclasses) that may be read from when configuring an instance of the class. This slot can also be read with the **info class properties** command.
 
-**oo::configuresupport::writableproperties**
+[oo::configuresupport::writableproperties]{.cmd}
 : The set of properties of a class (not including those from its superclasses) that may be written to when configuring an instance of the class. This slot can also be read with the **info class properties** command.
 
-**oo::configuresupport::objreadableproperties**
+[oo::configuresupport::objreadableproperties]{.cmd}
 : The set of properties of an object instance (not including those from its classes) that may be read from when configuring the object. This slot can also be read with the **info object properties** command.
 
-**oo::configuresupport::objwritableproperties**
+[oo::configuresupport::objwritableproperties]{.cmd}
 : The set of properties of an object instance (not including those from its classes) that may be written to when configuring the object. This slot can also be read with the **info object properties** command.
 
 

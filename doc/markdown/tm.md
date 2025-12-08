@@ -31,19 +31,19 @@ tm - Facilities for locating and loading of Tcl Modules
 
 This document describes the facilities for locating and loading Tcl Modules (see **MODULE DEFINITION** for the definition of a Tcl Module). The following commands are supported:
 
-**::tcl::tm::path add** ?*path ...*?
+[::tcl::tm::path]{.cmd} [add]{.sub} [path]{.optdot}
 : The paths are added at the head to the list of module paths, in order of appearance. This means that the last argument ends up as the new head of the list.
     The command enforces the restriction that no path may be an ancestor directory of any other path on the list. If any of the new paths violates this restriction an error will be raised, before any of the paths have been added. In other words, if only one path argument violates the restriction then none will be added.
     If a path is already present as is, no error will be raised and no action will be taken.
     Paths are searched later in the order of their appearance in the list. As they are added to the front of the list they are searched in reverse order of addition. In other words, the paths added last are looked at first.
 
-**::tcl::tm::path remove** ?*path ...*?
+[::tcl::tm::path]{.cmd} [remove]{.sub} [path]{.optdot}
 : Removes the paths from the list of module paths. The command silently ignores all paths which are not on the list.
 
-**::tcl::tm::path list**
+[::tcl::tm::path]{.cmd} [list]{.sub}
 : Returns a list containing all registered module paths, in the order that they are searched for modules.
 
-**::tcl::tm::roots** *paths*
+[::tcl::tm::roots]{.cmd} [paths]{.arg}
 : Similar to **path add**, and layered on top of it. This command takes a single argument containing a list of paths, extends each with "**tcl***X***/site-tcl**", and "**tcl***X***/***X***.***y*", for major version *X* of the Tcl interpreter and minor version *y* less than or equal to the minor version of the interpreter, and adds the resulting set of paths to the list of paths to search.
     This command is used internally by the system to set up the system-specific default paths.
     The command has been exposed to allow a build system to define additional root paths beyond those described by this document.

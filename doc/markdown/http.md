@@ -133,7 +133,7 @@ When the HTTP server has replied to the request, call the command **::http::resp
 : The *encoding* used for creating the x-url-encoded URLs with **::http::formatQuery** and **::http::quoteString**. The default is **utf-8**, as specified by RFC 2718.
 
 **-useragent** *string*
-: The value of the User-Agent header in the HTTP request.  In an unsafe interpreter, the default value depends upon the operating system, and the version numbers of **http** and **Tcl**, and is (for example) "**Mozilla/5.0 (Windows; U; Windows NT 10.0) http/2.10.0 Tcl/9.0.0**". A safe interpreter cannot determine its operating system, and so the default in a safe interpreter is to use a Windows 10 value with the current version numbers of **http** and **Tcl**.
+: The value of the User-Agent header in the HTTP request.  In an unsafe interpreter, the default value depends upon the operating system, and the version numbers of **http** and **Tcl**, and is (for example) "**Mozilla/5.0 (Windows; U; Windows NT 10.0) http/2.10.1 Tcl/9.0.0**". A safe interpreter cannot determine its operating system, and so the default in a safe interpreter is to use a Windows 10 value with the current version numbers of **http** and **Tcl**.
 
 **-zip** *boolean*
 : If the value is boolean **true**, then by default requests will send a header "**Accept-Encoding: gzip,deflate**". If the value is boolean **false**, then by default requests will send a header "**Accept-Encoding: identity**". In either case the default can be overridden for an individual request by supplying a custom **Accept-Encoding** header in the **-headers** option of **http::geturl**. The default value is 1.
@@ -247,7 +247,7 @@ When the HTTP server has replied to the request, call the command **::http::resp
 **-validate** *boolean*
 : If *boolean* is non-zero, then **::http::geturl** does an HTTP HEAD request.  This server returns the same status line and response headers as it would for a HTTP GET request, but omits the response entity (the URL "contents").  The response headers are available after the transaction using command **::http::responseHeaders** or, for selected information, **::http::responseInfo**.
 
-**::http::formatQuery** *key value* ?*key value* ...?
+**::http::formatQuery** *key value* ?*key value ...*?
 : This procedure does x-url-encoding of query data.  It takes an even number of arguments that are the keys and values of the query.  It encodes the keys and values, and generates one string that has the proper & and = separators.  The result is suitable for the **-query** value passed to **::http::geturl**.
 
 **::http::quoteString** *value*
@@ -669,11 +669,11 @@ Cookie storage management commands \(em "cookie jars" \(em must support these su
 
 Though not formally part of the protocol, it is expected that particular values of *cookieJar* will correspond to sessions; it is up to the caller of **::http::config** to decide what session applies and to manage the deletion of said sessions when they are no longer desired (which should be when they not configured as the current cookie jar).
 
-*cookieJar* **getCookies** *protocol host requestPath*
+[cookieJar]{.ins} [getCookies]{.sub} [protocol]{.arg} [host]{.arg} [requestPath]{.arg}
 : This command asks the cookie jar what cookies should be supplied for a particular request. It should take the *protocol* (typically **http** or **https**), *host* name and *requestPath* (parsed from the *url* argument to **::http::geturl**) and return a list of cookie keys and values that describe the cookies to supply to the remote host. The list must have an even number of elements.
     There should only ever be at most one cookie with a particular key for any request (typically the one with the most specific *host*/domain match and most specific *requestPath*/path match), but there may be many cookies with different names in any request.
 
-*cookieJar* **storeCookie** *cookieDictionary*
+[cookieJar]{.ins} [storeCookie]{.sub} [cookieDictionary]{.arg}
 : This command asks the cookie jar to store a particular cookie that was returned by a request; the result of this command is ignored. The cookie (which will have been parsed by the http package) is described by a dictionary, *cookieDictionary*, that may have the following keys:
 
 **domain**

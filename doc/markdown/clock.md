@@ -29,7 +29,6 @@ clock - Obtain and manipulate dates and times
 [clock]{.cmd} [microseconds]{.sub}
 [clock]{.cmd} [milliseconds]{.sub}
 [clock]{.cmd} [scan]{.sub} [inputString]{.arg} [-option value]{.optdot}
-[clock]{.cmd} [scan]{.sub} [inputString]{.arg} [-option value]{.optdot}
 [clock]{.cmd} [seconds]{.sub}
 :::
 
@@ -37,27 +36,27 @@ clock - Obtain and manipulate dates and times
 
 The **clock** command performs several operations that obtain and manipulate values that represent times.  The command supports several subcommands that determine what action is carried out by the command.
 
-**clock add** *timeVal* ?*count unit...*? ?*-option value*?
+[clock]{.cmd} [add]{.sub} [timeVal]{.arg} [count unit...]{.optarg} [-option value]{.optarg}
 : Adds a (possibly negative) offset to a time that is expressed as an integer number of seconds.  See **CLOCK ARITHMETIC** for a full description.
 
-**clock clicks** ?*-option*?
+[clock]{.cmd} [clicks]{.sub} [-option]{.optarg}
 : If no *-option* argument is supplied, returns a high-resolution time value as a system-dependent integer value.  The unit of the value is system-dependent but should be the highest resolution clock available on the system such as a CPU cycle counter. See **HIGH RESOLUTION TIMERS** for a full description.
     If the *-option* argument is **-milliseconds**, then the command is synonymous with **clock milliseconds** (see below).  This usage is obsolete, and **clock milliseconds** is to be considered the preferred way of obtaining a count of milliseconds.
     If the *-option* argument is **-microseconds**, then the command is synonymous with **clock microseconds** (see below).  This usage is obsolete, and **clock microseconds** is to be considered the preferred way of obtaining a count of microseconds.
 
-**clock format** *timeVal* ?*-option value*...?
+[clock]{.cmd} [format]{.sub} [timeVal]{.arg} [-option value]{.optdot}
 : Formats a time that is expressed as an integer number of seconds into a format intended for consumption by users or external programs. See **FORMATTING TIMES** for a full description.
 
-**clock microseconds**
+[clock]{.cmd} [microseconds]{.sub}
 : Returns the current time as an integer number of microseconds. See **HIGH RESOLUTION TIMERS** for a full description.
 
-**clock milliseconds**
+[clock]{.cmd} [milliseconds]{.sub}
 : Returns the current time as an integer number of milliseconds. See **HIGH RESOLUTION TIMERS** for a full description.
 
-**clock scan** *inputString* ?*-option value*...?
+[clock]{.cmd} [scan]{.sub} [inputString]{.arg} [-option value]{.optdot}
 : Scans a time that is expressed as a character string and produces an integer number of seconds. See **SCANNING TIMES** for a full description.
 
-**clock seconds**
+[clock]{.cmd} [seconds]{.sub}
 : Returns the current time as an integer number of seconds.
 
 
@@ -78,10 +77,10 @@ The **clock** command performs several operations that obtain and manipulate val
 
 ## Options
 
-**-base** time
+[-base]{.lit} [time]{.arg}
 : Specifies that any relative times present in a **clock scan** command are to be given relative to *time*.  *time* must be expressed as a count of nominal seconds from the epoch time of 1 January 1970, 00:00 UTC.
 
-**-format** format
+[-format]{.lit} [format]{.arg}
 : Specifies the desired output format for **clock format** or the expected input format for **clock scan**.  The *format* string consists of any number of characters other than the per-cent sign ("**%**") interspersed with any number of *format groups*, which are two- or three-character sequences beginning with the per-cent sign.  The permissible format groups, and their interpretation, are described under **FORMAT GROUPS**.
     On **clock format**, the default format is
 
@@ -90,14 +89,14 @@ The **clock** command performs several operations that obtain and manipulate val
     ```
     On **clock scan**, the lack of a **-format** option indicates that a "free format scan" is requested; see **FREE FORM SCAN** for a description of what happens.
 
-**-gmt** boolean
+[-gmt]{.lit} [boolean]{.arg}
 : If *boolean* is true, specifies that a time specified to **clock add**, **clock format** or **clock scan** should be processed in UTC.  If *boolean* is false, the processing defaults to the local time zone.  This usage is obsolete; the correct current usage is to specify the UTC time zone with "**-timezone** *:UTC*" or any of the equivalent ways to specify it.
 
-**-locale** localeName
+[-locale]{.lit} [localeName]{.arg}
 : Specifies that locale-dependent scanning and formatting (and date arithmetic for dates preceding the adoption of the Gregorian calendar) is to be done in the locale identified by *localeName*.  The locale name may be any of the locales acceptable to the **msgcat** package, or it may be the special name *system*, which represents the current locale of the process, or the null string, which represents Tcl's default locale.
     The effect of locale on scanning and formatting is discussed in the descriptions of the individual format groups under **FORMAT GROUPS**. The effect of locale on clock arithmetic is discussed under **CLOCK ARITHMETIC**.
 
-**-timezone** zoneName
+[-timezone]{.lit} [zoneName]{.arg}
 : Specifies that clock arithmetic, formatting, and scanning are to be done according to the rules for the time zone specified by *zoneName*. The permissible values, and their interpretation, are discussed under **TIME ZONES**. On subcommands that expect a **-timezone** argument, the default is to use the *current time zone*.  The current time zone is determined, in order of preference, by:
 
 1.     the environment variable **TCL_TZ**.
@@ -107,7 +106,7 @@ The **clock** command performs several operations that obtain and manipulate val
 3.     on Windows systems, the time zone settings from the Control Panel.
 
 
-**-validate** boolean
+[-validate]{.lit} [boolean]{.arg}
 : If *boolean* is true (default), **clock scan** will raise an error if the input contains invalid values, e.g. day of month greater than number of days in the month. If specified as false, the command makes an adjustment to bring values within acceptable range. See **SCANNING TIMES** for details.
 
 

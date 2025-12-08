@@ -62,7 +62,7 @@ An important constraint of the Tcl threads implementation is that *only the thre
 
 Tcl provides **Tcl_CreateThread** for creating threads. The caller can determine the size of the stack given to the new thread and modify the behavior through the supplied *flags*. The value **TCL_THREAD_STACK_DEFAULT** for the *stackSize* indicates that the default size as specified by the operating system is to be used for the new thread. As for the flags, currently only the values **TCL_THREAD_NOFLAGS** and **TCL_THREAD_JOINABLE** are defined. The first of them invokes the default behavior with no special settings. Using the second value marks the new thread as *joinable*. This means that another thread can wait for the such marked thread to exit and join it.
 
-Restrictions: On some UNIX systems the pthread-library does not contain the functionality to specify the stack size of a thread. The specified value for the stack size is ignored on these systems. Windows currently does not support joinable threads. This flag value is therefore ignored on this platform.
+Restrictions: On some UNIX systems the pthread-library does not contain the functionality to specify the stack size of a thread. The specified value for the stack size is ignored on these systems.
 
 Tcl provides the **Tcl_ExitThread** and **Tcl_FinalizeThread** functions for terminating threads and invoking optional per-thread exit handlers.  See the **Tcl_Exit** page for more information on these procedures.
 

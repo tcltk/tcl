@@ -22,14 +22,14 @@ Copyright:
 
 # Name
 
-classvariable - create link from local variable to variable in class
+classvariable - Create link from local variable to variable in class
 
 # Synopsis
 
 ::: {.synopsis} :::
 [package]{.cmd} [require]{.sub} [tcl::oo]{.lit}
 
-[classvariable]{.cmd} [variableName]{.arg} [...]{.optarg}
+[classvariable]{.cmd} [variableName]{.arg} [variableName]{.optdot}
 :::
 
 # Description

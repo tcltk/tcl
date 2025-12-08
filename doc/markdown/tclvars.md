@@ -86,7 +86,7 @@ The following global variables are created and managed automatically by the Tcl 
 **POSIX** *errName msg*
 : If the first element is **POSIX**, then the error occurred during a POSIX kernel call. The *errName* element will contain the symbolic name of the error that occurred, such as **ENOENT**; this will be one of the values defined in the include file errno.h. The *msg* element will be a human-readable message corresponding to *errName*, such as "no such file or directory" for the **ENOENT** case.
 
-**TCL** ...
+**TCL ...**
 : Indicates some sort of problem generated in relation to Tcl itself, e.g. a failure to look up a channel or variable.
 
 
@@ -133,9 +133,6 @@ To set the **-errorcode** return option, applications should use library procedu
 
 **pointerSize**
 : This gives the size of the native-machine pointer in bytes (strictly, it is same as the result of evaluating *sizeof(void*)* in C.)
-
-**threaded**
-: If this variable exists, then the interpreter was compiled with threads enabled.
 
 **user**
 : This identifies the current user based on the login information available on the platform. This value comes from the getuid() and getpwuid() system calls on Unix, and the value from the GetUserName() system call on Windows.

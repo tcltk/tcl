@@ -33,9 +33,11 @@ Tcl_UniCharToUpper, Tcl_UniCharToLower, Tcl_UniCharToTitle, Tcl_UtfToUpper, Tcl_
 
 # Arguments
 
-.AP int ch in The Unicode character to be converted. .AP char *str in/out Pointer to UTF-8 string to be converted in place. 
+.AP int ch in The Unicode character to be converted. .AP char *str in/out Pointer to the TUTF-8 byte sequence to be converted in place. 
 
 # Description
+
+N.B. Refer to the **Tcl_UniChar** documentation page for a description of the *TUTF-8* encoding and related terms referenced here.
 
 The first three routines convert the case of individual Unicode characters:
 
@@ -45,9 +47,9 @@ If *ch* represents an upper-case character, **Tcl_UniCharToLower** returns the c
 
 If *ch* represents a lower-case character, **Tcl_UniCharToTitle** returns the corresponding title-case character.  If no title-case character is defined, it returns the corresponding upper-case character.  If no upper-case character is defined, it returns the character unchanged.  Title-case is defined for a small number of characters that have a different appearance when they are at the beginning of a capitalized word.
 
-The next three routines convert the case of UTF-8 strings in place in memory:
+The next three routines convert the case of null-terminated TUTF-8 byte sequences in place in memory:
 
-**Tcl_UtfToUpper** changes every UTF-8 character in *str* to upper-case.  Because changing the case of a character may change its size, the byte offset of each character in the resulting string may differ from its original location.  **Tcl_UtfToUpper** writes a null byte at the end of the converted string.  **Tcl_UtfToUpper** returns the new length of the string in bytes.  This new length is guaranteed to be no longer than the original string length.
+**Tcl_UtfToUpper** changes every TUTF-8 encoded character in *str* to upper-case.  Because changing the case of a character may change its size, the byte offset of each character in the resulting string may differ from its original location.  **Tcl_UtfToUpper** writes a null byte at the end of the converted string.  **Tcl_UtfToUpper** returns the new length of the string in bytes.  This new length is guaranteed to be no longer than the original string length.
 
 **Tcl_UtfToLower** is the same as **Tcl_UtfToUpper** except it turns each character in the string into its lower-case equivalent.
 

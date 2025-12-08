@@ -26,7 +26,7 @@
 #
 # ```
 # # (from the tools directory)
-# tclsh man2markdown.tcl ../doc ../markdown
+# tclsh man2markdown.tcl ../doc ../doc/markdown
 # ```
 #
 # The last invocation can be used to check what changed with respect to the last `fossil commit`.
@@ -563,7 +563,7 @@ proc ::ndoc::blocksExpand {blockList} {
 			ListItem - DlistItem {
 				if {$blockType eq "DlistItem"} {
 					set content [dict get $blockAttributes -definition]
-					if {[string range $content 0 5] in {METHOD OPTION}} {
+					if {[string range $content 0 5] in {METHOD OPTION COMMAN}} {
 						# a Tcl syntax element to convert to proper custom AST
 						set startIndex [string first "_" $content]
 						incr startIndex
@@ -773,10 +773,11 @@ proc ::ndoc::parseBlock {parent manContent} {
 									# itemTitle is on the next line
 									set manContent [lrange $manContent 1 end]
 									set itemTitle [parseBackslash [BIRPclean [lindex $manContent 0]]]
-									# if we are supposed to see a METHOD or OPTION here,
+									# if we are supposed to see a COMMAND, METHOD or OPTION here,
 									# as determined by the comment line above the .TP line,
 									# then mark it as such so that expandBlock can handle it nicely:
-									if {[dict get $manual lastComment] in {OPTION: METHOD: OPTION METHOD}} {
+									# (skip RegConfig.3 as it has non-standard syntax for generated Tcl-level commands)
+									if {[dict get $manual lastComment] in {OPTION: METHOD: OPTION METHOD COMMAND} && [dict get $manual name] ne "RegConfig"} {
 										set itemTitle [dict get $manual lastComment]_$itemTitle
 									}
 								}
@@ -828,6 +829,7 @@ proc ::ndoc::parseBlock {parent manContent} {
 			.SH {
 				# section heading (assumption: everything is on one single line)
 				# this will typically also be one ending a block of "AP" elements
+				dict set manual lastComment {}
 				if {$blockType ne ""} {set doCloseBlock 1; continue}
 				if $verbose {puts Section}
 				set SHcontent [string totitle [string trim [string range $line 3 end] \"\ ]]
@@ -899,6 +901,7 @@ proc ::ndoc::parseBlock {parent manContent} {
 			}
 			.SS {
 				# subsection heading (assumption: everything is on one single line)
+				dict set manual lastComment {}
 				if {$blockType ne ""} {set doCloseBlock 1; continue}
 				if $verbose {puts Subsection}
 				set SScontent [string totitle [string trim [string range $line 3 end] \"\ ]]
@@ -1031,6 +1034,13 @@ proc ::ndoc::parseCommand {mode line} {
 			# the first word
 			if $DEBUG {puts "1st-word: $word"}
 			switch -regexp $word {
+				{^§-.+=$} {
+					# (this comes first in the switch as otherwise the .cmd branch will match)
+					# a word starting with a dash (.i.e a mandatory literal but not a command!),
+					# should on occur in sections where OPTIONs are described, not whole commands:
+					lappend spanList [list Span .lit [string range $word 1 end-1]]
+					if $DEBUG {puts "single .lit describing a command options: $spanList"}
+				}
 				{^§.+=$} {
 					# only one cmd without subcommand:
 					if {[string range $word 1 4] eq "Tcl_" || [string range $word 1 9] eq "TclZipfs_"} {
@@ -1592,7 +1602,7 @@ proc ::ndoc::main {} {
 		}
 		# first the files in section "n", then in section "1", finally in section "3":
 		foreach section {n 1 3} {
-			foreach file [glob [file join $inDir *.$section]] {
+			foreach file [lsort -dictionary [glob [file join $inDir *.$section]]] {
 				puts "converting $file ..."
 				set md [man2markdown [readFile $file]]
 				set stem [file rootname [file tail $file]]

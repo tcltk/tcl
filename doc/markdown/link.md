@@ -20,7 +20,7 @@ Copyright:
 
 # Name
 
-link - create link from command to method of object
+link - Create link from command to method of object
 
 # Synopsis
 
@@ -32,7 +32,7 @@ link - create link from command to method of object
 
 # Description
 
-The **link** command is available within methods. It takes a series of one or more method names and makes the named methods available as commands without requiring the explicit use of the name of the object or the **my** command. The method does not need to exist at the time that the link is made. If the link command is invoked when the method does not exist, the standard **unknown** method handling system is used.
+The **link** command is available within methods. It takes a series of one or more methods and makes these methods available as commands without requiring the explicit use of the name of the object or the **my** command. The method does not need to exist at the time that the link is made. If the link command is invoked when the method does not exist, the standard **unknown** method handling system is used.
 
 Each *method* argument of the command is treated as a list. If the list has two elements, the first element is the name of the command to be linked and the second element is the name of the method of the current object to which the command links, i.e. the alias for the command in the current context. If the list has only one element, both the linked command and the method alias are the same string. Thus, the command name under which the method becomes available defaults to the method name, except where explicitly specified through an alias/method pair.
 
@@ -106,7 +106,7 @@ oo::class create Ex {
 }
 
 set o [Ex new]
-$o 3 5 7
+$o call 3 5 7
         \(-> This is a
         \(-> This is b(3)
         \(-> This is c(5,7)

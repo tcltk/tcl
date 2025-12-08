@@ -23,7 +23,7 @@ Copyright:
 
 # Name
 
-zlib - compression and decompression operations
+zlib - Compression and decompression operations
 
 # Synopsis
 
@@ -37,16 +37,16 @@ The **zlib** command provides access to the compression and check-summing facili
 
 ## Compression subcommands
 
-**zlib compress** *string* ?*level*?
+[zlib]{.cmd} [compress]{.sub} [string]{.arg} [level]{.optarg}
 : Returns the zlib-format compressed binary data of the binary string in *string*. If present, *level* gives the compression level to use (from 0, which is uncompressed, to 9, maximally compressed).
 
-**zlib decompress** *string* ?*bufferSize*?
+[zlib]{.cmd} [decompress]{.sub} [string]{.arg} [bufferSize]{.optarg}
 : Returns the uncompressed version of the raw compressed binary data in *string*. If present, *bufferSize* is a hint as to what size of buffer is to be used to receive the data.
 
-**zlib deflate** *string* ?*level*?
+[zlib]{.cmd} [deflate]{.sub} [string]{.arg} [level]{.optarg}
 : Returns the raw compressed binary data of the binary string in *string*. If present, *level* gives the compression level to use (from 0, which is uncompressed, to 9, maximally compressed).
 
-**zlib gunzip** *string* ?**-headerVar** *varName*?
+[zlib]{.cmd} [gunzip]{.sub} [string]{.arg} [[-headerVar]{.lit} [varName]{.arg}]{.optarg}
 : Return the uncompressed contents of binary string *string*, which must have been in gzip format. If **-headerVar** is given, store a dictionary describing the contents of the gzip header in the variable called *varName*. The keys of the dictionary that may be present are:
 
 **comment**
@@ -71,7 +71,7 @@ The **zlib** command provides access to the compression and check-summing facili
 : The type of the uncompressed data (**binary** or **text**) if known.
 
 
-**zlib gzip** *string* ?**-level** *level*? ?**-header** *dict*?
+[zlib]{.cmd} [gzip]{.sub} [string]{.arg} [[-level]{.lit} [level]{.arg}]{.optarg} [[-header]{.lit} [dict]{.arg}]{.optarg}
 : Return the compressed contents of binary string *string* in gzip format. If **-level** is given, *level* gives the compression level to use (from 0, which is uncompressed, to 9, maximally compressed). If **-header** is given, *dict* is a dictionary containing values used for the gzip header. The following keys may be defined:
 
 **comment**
@@ -93,13 +93,13 @@ The **zlib** command provides access to the compression and check-summing facili
 : The type of the data being compressed, being **binary** or **text**.
 
 
-**zlib inflate** *string* ?*bufferSize*?
+[zlib]{.cmd} [inflate]{.sub} [string]{.arg} [bufferSize]{.optarg}
 : Returns the uncompressed version of the raw compressed binary data in *string*. If present, *bufferSize* is a hint as to what size of buffer is to be used to receive the data.
 
 
 ## Channel subcommand
 
-**zlib push** *mode channel* ?*options ...*?
+[zlib]{.cmd} [push]{.sub} [mode]{.arg} [channel]{.arg} [options]{.optdot}
 : Pushes a compressing or decompressing transformation onto the channel *channel*. The transformation can be removed again with **chan pop**. The *mode* argument determines what type of transformation is pushed; the following are supported:
 
 **compress**
@@ -122,16 +122,16 @@ The **zlib** command provides access to the compression and check-summing facili
 
     The following options may be set when creating a transformation via the "*options ...*" to the **zlib push** command:
 
-**-dictionary** *binData*
+[-dictionary]{.lit} [binData]{.arg}
 : Sets the compression dictionary to use when working with compressing or decompressing the data to be *binData*. Not valid for transformations that work with gzip-format data.  The dictionary should consist of strings (byte sequences) that are likely to be encountered later in the data to be compressed, with the most commonly used strings preferably put towards the end of the dictionary. Tcl provides no mechanism for choosing a good such dictionary for a particular data sequence.
 
-**-header** *dictionary*
+[-header]{.lit} [dictionary]{.arg}
 : Passes a description of the gzip header to create, in the same format that **zlib gzip** understands.
 
-**-level** *compressionLevel*
+[-level]{.lit} [compressionLevel]{.arg}
 : How hard to compress the data. Must be an integer from 0 (uncompressed) to 9 (maximally compressed).
 
-**-limit** *readaheadLimit*
+[-limit]{.lit} [readaheadLimit]{.arg}
 : The maximum number of bytes ahead to read when decompressing.
 
     This option has become **irrelevant**. It was originally introduced to prevent Tcl from reading beyond the end of a compressed stream in multi-stream channels to ensure that the data after was left alone for further reading, at the cost of speed.
@@ -140,53 +140,53 @@ The **zlib** command provides access to the compression and check-summing facili
 
 Both compressing and decompressing channel transformations add extra configuration options that may be accessed through **chan configure**. The options are:
 
-**-checksum** *checksum*
+[-checksum]{.lit} [checksum]{.arg}
 : This read-only option gets the current checksum for the uncompressed data that the compression engine has seen so far. It is valid for both compressing and decompressing transforms, but not for the raw inflate and deflate formats. The compression algorithm depends on what format is being produced or consumed.
 
-**-dictionary** *binData*
+[-dictionary]{.lit} [binData]{.arg}
 : This read-write options gets or sets the initial compression dictionary to use when working with compressing or decompressing the data to be *binData*. It is not valid for transformations that work with gzip-format data, and should not normally be set on compressing transformations other than at the point where the transformation is stacked. Note that this cannot be used to get the current active compression dictionary mid-stream, as that information is not exposed by the underlying library.
 
-**-flush** *type*
+[-flush]{.lit} [type]{.arg}
 : This write-only operation flushes the current state of the compressor to the underlying channel. It is only valid for compressing transformations. The *type* must be either **sync** or **full** for a normal flush or an expensive flush respectively. Flushing degrades the compression ratio, but makes it easier for a decompressor to recover more of the file in the case of data corruption.
 
-**-header** *dictionary*
+[-header]{.lit} [dictionary]{.arg}
 : This read-only option, only valid for decompressing transforms that are processing gzip-format data, returns the dictionary describing the header read off the data stream.
 
-**-limit** *readaheadLimit*
+[-limit]{.lit} [readaheadLimit]{.arg}
 : This read-write option is used by decompressing channels to control the maximum number of bytes ahead to read from the underlying data source. See above for more information.
 
 
 ## Streaming subcommand
 
-**zlib stream** *mode* ?*options*?
+[zlib]{.cmd} [stream]{.sub} [mode]{.arg} [options]{.optarg}
 : Creates a streaming compression or decompression command based on the *mode*, and return the name of the command. For a description of how that command works, see **STREAMING INSTANCE COMMAND** below. The following modes and *options* are supported:
 
-**zlib stream compress** ?**-dictionary** *bindata*? ?**-level** *level*?
+[zlib]{.cmd} [stream]{.sub} [compress]{.lit} [[-dictionary]{.lit} [bindata]{.arg}]{.optarg} [[-level]{.lit} [level]{.arg}]{.optarg}
 : The stream will be a compressing stream that produces zlib-format output, using compression level *level* (if specified) which will be an integer from 0 to 9, and the compression dictionary *bindata* (if specified).
 
-**zlib stream decompress** ?**-dictionary** *bindata*?
+[zlib]{.cmd} [stream]{.sub} [decompress]{.lit} [[-dictionary]{.lit} [bindata]{.arg}]{.optarg}
 : The stream will be a decompressing stream that takes zlib-format input and produces uncompressed output. If *bindata* is supplied, it is a compression dictionary to use if required.
 
-**zlib stream deflate** ?**-dictionary** *bindata*? ?**-level** *level*?
+[zlib]{.cmd} [stream]{.sub} [deflate]{.lit} [[-dictionary]{.lit} [bindata]{.arg}]{.optarg} [[-level]{.lit} [level]{.arg}]{.optarg}
 : The stream will be a compressing stream that produces raw output, using compression level *level* (if specified) which will be an integer from 0 to 9, and the compression dictionary *bindata* (if specified). Note that the raw compressed data includes no metadata about what compression dictionary was used, if any; that is a feature of the zlib-format data.
 
-**zlib stream gunzip**
+[zlib]{.cmd} [stream]{.sub} [gunzip]{.lit}
 : The stream will be a decompressing stream that takes gzip-format input and produces uncompressed output.
 
-**zlib stream gzip** ?**-header** *header*? ?**-level** *level*?
+[zlib]{.cmd} [stream]{.sub} [gzip]{.lit} [[-header]{.lit} [header]{.arg}]{.optarg} [[-level]{.lit} [level]{.arg}]{.optarg}
 : The stream will be a compressing stream that produces gzip-format output, using compression level *level* (if specified) which will be an integer from 0 to 9, and the header descriptor dictionary *header* (if specified; for keys see **zlib gzip**).
 
-**zlib stream inflate** ?**-dictionary** *bindata*?
+[zlib]{.cmd} [stream]{.sub} [inflate]{.lit} [[-dictionary]{.lit} [bindata]{.arg}]{.optarg}
 : The stream will be a decompressing stream that takes raw compressed input and produces uncompressed output. If *bindata* is supplied, it is a compression dictionary to use. Note that there are no checks in place to determine whether the compression dictionary is correct.
 
 
 
 ## Checksumming subcommands
 
-**zlib adler32** *string* ?*initValue*?
+[zlib]{.cmd} [adler32]{.sub} [string]{.arg} [initValue]{.optarg}
 : Compute a checksum of binary string *string* using the Adler-32 algorithm. If given, *initValue* is used to initialize the checksum engine.
 
-**zlib crc32** *string* ?*initValue*?
+[zlib]{.cmd} [crc32]{.sub} [string]{.arg} [initValue]{.optarg}
 : Compute a checksum of binary string *string* using the CRC-32 algorithm. If given, *initValue* is used to initialize the checksum engine.
 
 
@@ -196,53 +196,53 @@ Streaming compression instance commands are produced by the **zlib stream** comm
 
 The full set of subcommands supported by a streaming instance command, *stream*, is as follows:
 
-*stream* **add** ?*option...*? *data*
+[stream]{.ins} [add]{.sub} [option...]{.optarg} [data]{.arg}
 : A short-cut for "*stream* **put** ?*option...*? *data*" followed by "*stream* **get**".
 
-*stream* **checksum**
+[stream]{.ins} [checksum]{.sub}
 : Returns the checksum of the uncompressed data seen so far by this stream.
 
-*stream* **close**
+[stream]{.ins} [close]{.sub}
 : Deletes this stream and frees up all resources associated with it.
 
-*stream* **eof**
+[stream]{.ins} [eof]{.sub}
 : Returns a boolean indicating whether the end of the stream (as determined by the compressed data itself) has been reached. Not all formats support detection of the end of the stream.
 
-*stream* **finalize**
+[stream]{.ins} [finalize]{.sub}
 : A short-cut for "*stream* **put -finalize {}**".
 
-*stream* **flush**
+[stream]{.ins} [flush]{.sub}
 : A short-cut for "*stream* **put -flush {}**".
 
-*stream* **fullflush**
+[stream]{.ins} [fullflush]{.sub}
 : A short-cut for "*stream* **put -fullflush {}**".
 
-*stream* **get** ?*count*?
+[stream]{.ins} [get]{.sub} [count]{.optarg}
 : Return up to *count* bytes from *stream*'s internal buffers with the transformation applied. If *count* is omitted, the entire contents of the buffers are returned.
 
-*stream* **header**
+[stream]{.ins} [header]{.sub}
 : Return the gzip header description dictionary extracted from the stream. Only supported for streams created with their *mode* parameter set to **gunzip**.
 
-*stream* **put** ?*option...*? *data*
+[stream]{.ins} [put]{.sub} [option...]{.optarg} [data]{.arg}
 : Append the contents of the binary string *data* to *stream*'s internal buffers while applying the transformation. The following *option*s are supported (or an unambiguous prefix of them), which are used to modify the way in which the transformation is applied:
 
-**-dictionary** *binData*
+[-dictionary]{.lit} [binData]{.arg}
 : Sets the compression dictionary to use when working with compressing or decompressing the data to be *binData*.
 
-**-finalize**
+[-finalize]{.lit}
 : Mark the stream as finished, ensuring that all bytes have been wholly compressed or decompressed. For gzip streams, this also ensures that the footer is written to the stream. The stream will need to be reset before having more data written to it after this, though data can still be read out of the stream with the **get** subcommand.
 
     This option is mutually exclusive with the **-flush** and **-fullflush** options.
 
-**-flush**
+[-flush]{.lit}
 : Ensure that a decompressor consuming the bytes that the current (compressing) stream is producing will be able to produce all the bytes that have been compressed so far, at some performance penalty.
     This option is mutually exclusive with the **-finalize** and **-fullflush** options.
 
-**-fullflush**
+[-fullflush]{.lit}
 : Ensure that not only can a decompressor handle all the bytes produced so far (as with **-flush** above) but also that it can restart from this point if it detects that the stream is partially corrupt. This incurs a substantial performance penalty.
     This option is mutually exclusive with the **-finalize** and **-flush** options.
 
-*stream* **reset**
+[stream]{.ins} [reset]{.sub}
 : Puts any stream, including those that have been finalized or that have reached eof, back into a state where it can process more data. Throws away all internally buffered data.
 
 

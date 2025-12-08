@@ -35,64 +35,64 @@ This command treats its arguments as the specification of one or more subprocess
 
 If the initial arguments to **exec** start with **-** then they are treated as command-line switches and are not part of the pipeline specification.  The following switches are currently supported:
 
-**-encoding** *encodingName*
+[-encoding]{.lit} [encodingName]{.arg}
 : Specifies the name of the encoding to use to decode the output of the first subprocess. Defaults to that returned by the **encoding system** command.
 
-**-ignorestderr**
+[-ignorestderr]{.lit}
 : Stops the **exec** command from treating the output of messages to the pipeline's standard error channel as an error case.
 
-**-keepnewline**
+[-keepnewline]{.lit}
 : Retains a trailing newline in the pipeline's output. Normally a trailing newline will be deleted.
 
-**-\|-**
+[-|-]{.lit}
 : Marks the end of switches.  The argument following this one will be treated as the first *arg* even if it starts with a **-**.
 
 
 If an *arg* (or pair of *arg*s) has one of the forms described below then it is used by **exec** to control the flow of input and output among the subprocess(es). Such arguments will not be passed to the subprocess(es).  In forms such as "**<** *fileName*", *fileName* may either be in a separate argument from "**<**" or in the same argument with no intervening space (i.e. "**<***fileName*").
 
-**|**
+[|]{.cmd}
 : Separates distinct commands in the pipeline.  The standard output of the preceding command will be piped into the standard input of the next command.
 
-**|&**
+[|&]{.cmd}
 : Separates distinct commands in the pipeline.  Both standard output and standard error of the preceding command will be piped into the standard input of the next command. This form of redirection overrides forms such as 2> and >&.
 
-**<\0***fileName*
+[<0=+fileName]{.cmd}
 : The file named by *fileName* is opened and used as the standard input for the first command in the pipeline.
 
-**<@\0***fileId*
+[<@0=+fileId]{.cmd}
 : *FileId* must be the identifier for an open file, such as the return value from a previous call to **open**. It is used as the standard input for the first command in the pipeline. *FileId* must have been opened for reading.
 
-**<<\0***value*
+[<<0=+value]{.cmd}
 : *Value* is encoded using the system encoding, newlines replaced by platform-specific line ending sequences, and then passed to the first command as its standard input.
 
-**>\0***fileName*
+[>0=+fileName]{.cmd}
 : Standard output from the last command is redirected to the file named *fileName*, overwriting its previous contents.
 
-**2>\0***fileName*
+[2>0=+fileName]{.cmd}
 : Standard error from all commands in the pipeline is redirected to the file named *fileName*, overwriting its previous contents.
 
-**>&\0***fileName*
+[>&0=+fileName]{.cmd}
 : Both standard output from the last command and standard error from all commands are redirected to the file named *fileName*, overwriting its previous contents.
 
-**>>\0***fileName*
+[>>0=+fileName]{.cmd}
 : Standard output from the last command is redirected to the file named *fileName*, appending to it rather than overwriting it.
 
-**2>>\0***fileName*
+[2>>0=+fileName]{.cmd}
 : Standard error from all commands in the pipeline is redirected to the file named *fileName*, appending to it rather than overwriting it.
 
-**>>&\0***fileName*
+[>>&0=+fileName]{.cmd}
 : Both standard output from the last command and standard error from all commands are redirected to the file named *fileName*, appending to it rather than overwriting it.
 
-**>@\0***fileId*
+[>@0=+fileId]{.cmd}
 : *FileId* must be the identifier for an open file, such as the return value from a previous call to **open**. Standard output from the last command is redirected to *fileId*'s file, which must have been opened for writing.
 
-**2>@\0***fileId*
+[2>@0=+fileId]{.cmd}
 : *FileId* must be the identifier for an open file, such as the return value from a previous call to **open**. Standard error from all commands in the pipeline is redirected to *fileId*'s file. The file must have been opened for writing.
 
-**2>@1\0**
+[2>@10]{.cmd}
 : Standard error from all commands in the pipeline is redirected to the command result.  This operator is only valid at the end of the command pipeline.
 
-**>&@\0***fileId*
+[>&@0=+fileId]{.cmd}
 : *FileId* must be the identifier for an open file, such as the return value from a previous call to **open**. Both standard output from the last command and standard error from all commands are redirected to *fileId*'s file. The file must have been opened for writing.
 
 

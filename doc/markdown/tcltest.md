@@ -246,36 +246,36 @@ The *description* should be a short textual description of the test.  The *descr
 
 Valid attributes and associated values are:
 
-**-constraints** *keywordList*|*expression*
+[-constraints]{.lit} [keywordList=|+expression]{.arg}
 : The optional **-constraints** attribute can be list of one or more keywords or an expression.  If the **-constraints** value is a list of keywords, each of these keywords should be the name of a constraint defined by a call to **testConstraint**.  If any of the listed constraints is false or does not exist, the test is skipped.  If the **-constraints** value is an expression, that expression is evaluated. If the expression evaluates to true, then the test is run.
     Note that the expression form of **-constraints** may interfere with the operation of **configure -constraints** and **configure -limitconstraints**, and is not recommended.
     Appropriate constraints should be added to any tests that should not always be run.  That is, conditional evaluation of a test should be accomplished by the **-constraints** option, not by conditional evaluation of **test**.  In that way, the same number of tests are always reported by the test suite, though the number skipped may change based on the testing environment. The default value is an empty list. See **TEST CONSTRAINTS** below for a list of built-in constraints and information on how to add your own constraints.
 
-**-setup** *script*
+[-setup]{.lit} [script]{.arg}
 : The optional **-setup** attribute indicates a *script* that will be run before the script indicated by the **-body** attribute.  If evaluation of *script* raises an error, the test will fail.  The default value is an empty script.
 
-**-body** *script*
+[-body]{.lit} [script]{.arg}
 : The **-body** attribute indicates the *script* to run to carry out the test, which must return a result that can be checked for correctness. If evaluation of *script* raises an error, the test will fail (unless the **-returnCodes** option is used to state that an error is expected). The default value is an empty script.
 
-**-cleanup** *script*
+[-cleanup]{.lit} [script]{.arg}
 : The optional **-cleanup** attribute indicates a *script* that will be run after the script indicated by the **-body** attribute. If evaluation of *script* raises an error, the test will fail. The default value is an empty script.
 
-**-match** *mode*
+[-match]{.lit} [mode]{.arg}
 : The **-match** attribute determines how expected answers supplied by **-result**, **-output**, and **-errorOutput** are compared.  Valid values for *mode* are **regexp**, **glob**, **exact**, and any value registered by a prior call to **customMatch**.  The default value is **exact**.
 
-**-result** *expectedValue*
+[-result]{.lit} [expectedValue]{.arg}
 : The **-result** attribute supplies the *expectedValue* against which the return value from script will be compared. The default value is an empty string.
 
-**-output** *expectedValue*
+[-output]{.lit} [expectedValue]{.arg}
 : The **-output** attribute supplies the *expectedValue* against which any output sent to **stdout** or **outputChannel** during evaluation of the script(s) will be compared.  Note that only output printed using the global **puts** command is used for comparison.  If **-output** is not specified, output sent to **stdout** and **outputChannel** is not processed for comparison.
 
-**-errorOutput** *expectedValue*
+[-errorOutput]{.lit} [expectedValue]{.arg}
 : The **-errorOutput** attribute supplies the *expectedValue* against which any output sent to **stderr** or **errorChannel** during evaluation of the script(s) will be compared. Note that only output printed using the global **puts** command is used for comparison.  If **-errorOutput** is not specified, output sent to **stderr** and **errorChannel** is not processed for comparison.
 
-**-returnCodes** *expectedCodeList*
+[-returnCodes]{.lit} [expectedCodeList]{.arg}
 : The optional **-returnCodes** attribute supplies *expectedCodeList*, a list of return codes that may be accepted from evaluation of the **-body** script.  If evaluation of the **-body** script returns a code not in the *expectedCodeList*, the test fails.  All return codes known to **return**, in both numeric and symbolic form, including extended return codes, are acceptable elements in the *expectedCodeList*.  Default value is "**ok return**".
 
-**-errorCode** *expectedErrorCode*
+[-errorCode]{.lit} [expectedErrorCode]{.arg}
 : The optional **-errorCode** attribute supplies *expectedErrorCode*, a glob pattern that should match the error code reported from evaluation of the **-body** script.  If evaluation of the **-body** script returns a code not matching *expectedErrorCode*, the test fails.  Default value is "*****". If **-returnCodes** does not include **error** it is set to **error**.
 
 
@@ -394,10 +394,10 @@ Having completed and summarized all selected test files, **runAllTests** then re
 
 The **configure** command is used to set and query the configurable options of **tcltest**.  The valid options are:
 
-**-singleproc** *boolean*
+[-singleproc]{.lit} [boolean]{.arg}
 : Controls whether or not **runAllTests** spawns a child process for each test file.  No spawning when *boolean* is true.  Default value is false.
 
-**-debug** *level*
+[-debug]{.lit} [level]{.arg}
 : Sets the debug level to *level*, an integer value indicating how much debugging information should be printed to **stdout**.  Note that debug messages always go to **stdout**, independent of the value of **configure -outfile**.  Default value is 0.  Levels are defined as:
 
 0
@@ -413,7 +413,7 @@ The **configure** command is used to set and query the configurable options of *
 : Display information regarding what individual procs in the test harness are doing.
 
 
-**-verbose** *level*
+[-verbose]{.lit} [level]{.arg}
 : Sets the type of output verbosity desired to *level*, a list of zero or more of the elements **body**, **pass**, **skip**, **start**, **error**, **line**, **msec** and **usec**. Default value is "**body error**". Levels are defined as:
 
 body (**b**)
@@ -443,7 +443,7 @@ usec (**u**)
     Note that the **msec** and **usec** verbosity levels are provided as indicative measures only. They do not tackle the problem of repeatability which should be considered in performance tests or benchmarks. To use these verbosity levels to thoroughly track performance degradations, consider wrapping your test bodies with **time** commands.
     The single letter abbreviations noted above are also recognized so that "**configure -verbose pt**" is the same as "**configure -verbose {pass start}**".
 
-**-preservecore** *level*
+[-preservecore]{.lit} [level]{.arg}
 : Sets the core preservation level to *level*.  This level determines how stringent checks for core files are.  Default value is 0.  Levels are defined as:
 
 0
@@ -456,46 +456,46 @@ usec (**u**)
 : Check for core files at all times described above, and save a copy of each core file produced in **configure -tmpdir**.
 
 
-**-limitconstraints** *boolean*
+[-limitconstraints]{.lit} [boolean]{.arg}
 : Sets the mode by which **test** honors constraints as described in **TESTS** above.  Default value is false.
 
-**-constraints** *list*
+[-constraints]{.lit} [list]{.arg}
 : Sets all the constraints in *list* to true.  Also used in combination with **configure -limitconstraints true** to control an alternative constraint mode as described in **TESTS** above. Default value is an empty list.
 
-**-tmpdir** *directory*
+[-tmpdir]{.lit} [directory]{.arg}
 : Sets the temporary directory to be used by **makeFile**, **makeDirectory**, **viewFile**, **removeFile**, and **removeDirectory** as the default directory where temporary files and directories created by test files should be created.  Default value is **workingDirectory**.
 
-**-testdir** *directory*
+[-testdir]{.lit} [directory]{.arg}
 : Sets the directory searched by **runAllTests** for test files and subdirectories.  Default value is **workingDirectory**.
 
-**-file** *patternList*
+[-file]{.lit} [patternList]{.arg}
 : Sets the list of patterns used by **runAllTests** to determine what test files to evaluate.  Default value is "***.test**".
 
-**-notfile** *patternList*
+[-notfile]{.lit} [patternList]{.arg}
 : Sets the list of patterns used by **runAllTests** to determine what test files to skip.  Default value is "**l.*.test**", so that any SCCS lock files are skipped.
 
-**-relateddir** *patternList*
+[-relateddir]{.lit} [patternList]{.arg}
 : Sets the list of patterns used by **runAllTests** to determine what subdirectories to search for an **all.tcl** file.  Default value is "*****".
 
-**-asidefromdir** *patternList*
+[-asidefromdir]{.lit} [patternList]{.arg}
 : Sets the list of patterns used by **runAllTests** to determine what subdirectories to skip when searching for an **all.tcl** file. Default value is an empty list.
 
-**-match** *patternList*
+[-match]{.lit} [patternList]{.arg}
 : Set the list of patterns used by **test** to determine whether a test should be run.  Default value is "*****".
 
-**-skip** *patternList*
+[-skip]{.lit} [patternList]{.arg}
 : Set the list of patterns used by **test** to determine whether a test should be skipped.  Default value is an empty list.
 
-**-load** *script*
+[-load]{.lit} [script]{.arg}
 : Sets a script to be evaluated by **loadTestedCommands**. Default value is an empty script.
 
-**-loadfile** *filename*
+[-loadfile]{.lit} [filename]{.arg}
 : Sets the filename from which to read a script to be evaluated by **loadTestedCommands**.  This is an alternative to **-load**.  They cannot be used together.
 
-**-outfile** *filename*
+[-outfile]{.lit} [filename]{.arg}
 : Sets the file to which all output produced by tcltest should be written.  A file named *filename* will be **open**ed for writing, and the resulting channel will be set as the value of **outputChannel**.
 
-**-errfile** *filename*
+[-errfile]{.lit} [filename]{.arg}
 : Sets the file to which all error output produced by tcltest should be written.  A file named *filename* will be **open**ed for writing, and the resulting channel will be set as the value of **errorChannel**.
 
 

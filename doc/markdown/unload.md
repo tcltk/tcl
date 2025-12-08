@@ -35,13 +35,13 @@ This command tries to unload shared libraries previously loaded with **load** fr
 
 If the initial arguments to **unload** start with **-** then they are treated as switches.  The following switches are currently supported:
 
-**-nocomplain**
+[-nocomplain]{.lit}
 : Suppresses all error messages. If this switch is given, **unload** will never report an error.
 
-**-keeplibrary**
+[-keeplibrary]{.lit}
 : This switch will prevent **unload** from issuing the operating system call that will unload the library from the process.
 
-**-\|-**
+[-|-]{.lit}
 : Marks the end of switches.  The argument following this one will be treated as a *fileName* even if it starts with a **-**.
 
 
