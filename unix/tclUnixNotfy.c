@@ -406,7 +406,7 @@ AtForkChild(void)
     pthread_cond_init(&notifierCV, NULL);
 
 #ifdef NOTIFIER_SELECT
-    asyncPending = 0;
+    asyncPending = false;
 #endif
 
     /*
