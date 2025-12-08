@@ -31,7 +31,7 @@
 #
 # The last invocation can be used to check what changed with respect to the last `fossil commit`.
 # Any change reported by fossil (before committing) is a change that might have issues
-# compared to teh previous version, so it should be checked before the commit
+# compared to the previous version, so it should be checked before the commit
 # and amended before the commit!
 #
 # This script is part of the implementation of TIP 700 <https://core.tcl-lang.org/tips/doc/trunk/tip/700.md>
@@ -562,7 +562,16 @@ proc ::ndoc::blocksExpand {blockList} {
 			}
 			ListItem - DlistItem {
 				if {$blockType eq "DlistItem"} {
-					dict set blockAttributes -definition [list [parseInline Inline {} [dict get $blockAttributes -definition]]]
+					set content [dict get $blockAttributes -definition]
+					if {[string range $content 0 5] in {METHOD OPTION}} {
+						# a Tcl syntax element to convert to proper custom AST
+						set startIndex [string first "_" $content]
+						incr startIndex
+						set content [string range $content $startIndex end]
+						dict set blockAttributes -definition [parseCommand -ast $content]
+					} else {
+						dict set blockAttributes -definition [list [parseInline Inline {} $content]]
+					}
 				}
 				lappend newList [list $blockType $blockAttributes [blocksExpand $blockContent]]
 			}
@@ -636,6 +645,9 @@ proc ::ndoc::parseBlock {parent manContent} {
 					if $verbose {puts COPYRIGHT}
 					dict lappend manual copyright [lrange $line 1 end]
 				}
+				# remember the wording of the last comment since we can use it for
+				# detecting lines with Tcl command syntax:
+				dict set manual lastComment [lindex $line 1]
 				set manContent [lrange $manContent 1 end]
 			}
 			.so - .BS - .BE - .AS - .ta - .RS - .RE - .nf - .fi {
@@ -672,7 +684,7 @@ proc ::ndoc::parseBlock {parent manContent} {
 				# .TP is always a definition list
 				# .IP is a bullet list when "\(bu 3" is used, a numbered list when "[1]" or "(1)" or "1)" is used
 				#     and a definition list when other text is used
-				# Once an .IP list start, it cannot change to .TP in the middle
+				# Once an .IP list starts, it cannot change to .TP in the middle
 				#
 				# Todo: StdChannels.3 uses
 				#     ../nroff/tcl9.0/doc/StdChannels.3:.IP 1)
@@ -761,6 +773,12 @@ proc ::ndoc::parseBlock {parent manContent} {
 									# itemTitle is on the next line
 									set manContent [lrange $manContent 1 end]
 									set itemTitle [parseBackslash [BIRPclean [lindex $manContent 0]]]
+									# if we are supposed to see a METHOD or OPTION here,
+									# as determined by the comment line above the .TP line,
+									# then mark it as such so that expandBlock can handle it nicely:
+									if {[dict get $manual lastComment] in {OPTION: METHOD: OPTION METHOD}} {
+										set itemTitle [dict get $manual lastComment]_$itemTitle
+									}
 								}
 								set itemContent {}
 							}
