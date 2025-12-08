@@ -10,8 +10,10 @@ Tcl patch releases have the primary purpose of delivering bug fixes
 to the userbase.
 
 # Bug fixes
+ - [unsupported commands should not be available in safe interpreters](https://core.tcl-lang.org/tcl/tktview/82d12c)
 
 # Updated bundled packages, libraries, standards, data
+ - sqlite3 3.51.1
 
 Release Tcl 9.0.3 arises from the check-in with tag `core-9-0-3`.
 
