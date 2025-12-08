@@ -130,16 +130,16 @@ depending on function.
 .AP "const wchar_t" *wcharStr in
 A sequence of \fBwchar_t\fR units with null-termination optional
 depending on function.
-.AP int numBytes in
+.AP Tcl_Size numBytes in
 The length of the TUTF-8 input in bytes.  If
 negative, the length includes all bytes until the first null byte.
-.AP int numUtf16 in
+.AP Tcl_Size numUtf16 in
 The length of the input in UTF-16 units.
 If negative, the length includes all bytes until the first null.
-.AP int numUniChars in
+.AP Tcl_Size numUniChars in
 The length of the input in Tcl_UniChar units.
 If negative, the length includes all bytes until the first null.
-.AP int numWChars in
+.AP Tcl_Size numWChars in
 The length of the input in wchar_t units.
 If negative, the length includes all bytes until the first null.
 .AP "Tcl_DString" *dsPtr in/out

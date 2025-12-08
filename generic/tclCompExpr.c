@@ -497,7 +497,7 @@ typedef struct JumpList {
 static void		CompileExprTree(Tcl_Interp *interp, OpNode *nodes,
 			    Tcl_Size index, Tcl_Obj *const **litObjvPtr,
 			    Tcl_Obj *const *funcObjv, Tcl_Token *tokenPtr,
-			    CompileEnv *envPtr, int optimize);
+			    CompileEnv *envPtr, bool optimize);
 static void		ConvertTreeToTokens(const char *start, Tcl_Size numBytes,
 			    OpNode *nodes, Tcl_Token *tokenPtr,
 			    Tcl_Parse *parsePtr);
@@ -506,7 +506,7 @@ static int		ExecConstantExprTree(Tcl_Interp *interp, OpNode *nodes,
 static int		ParseExpr(Tcl_Interp *interp, const char *start,
 			    Tcl_Size numBytes, OpNode **opTreePtr,
 			    Tcl_Obj *litList, Tcl_Obj *funcList,
-			    Tcl_Parse *parsePtr, int parseOnly);
+			    Tcl_Parse *parsePtr, bool parseOnly);
 static Tcl_Size		ParseLexeme(const char *start, Tcl_Size numBytes,
 			    unsigned char *lexemePtr, Tcl_Obj **literalPtr);
 
@@ -553,7 +553,7 @@ ParseExpr(
     Tcl_Parse *parsePtr,	/* Structure to fill with tokens representing
 				 * those operands that require run time
 				 * substitutions. */
-    int parseOnly)		/* A boolean indicating whether the caller's
+    bool parseOnly)		/* A boolean indicating whether the caller's
 				 * aim is just a parse, or whether it will go
 				 * on to compile the expression. Different
 				 * optimizations are appropriate for the two
@@ -1873,7 +1873,7 @@ Tcl_ParseExpr(
     }
 
     code = ParseExpr(interp, start, numBytes, &opTree, litList, funcList,
-	    exprParsePtr, 1 /* parseOnly */);
+	    exprParsePtr, true /* parseOnly */);
     Tcl_DecrRefCount(funcList);
     Tcl_DecrRefCount(litList);
 
@@ -2194,7 +2194,7 @@ TclCompileExpr(
     const char *script,		/* The source script to compile. */
     Tcl_Size numBytes,		/* Number of bytes in script. */
     CompileEnv *envPtr,		/* Holds resulting instructions. */
-    int optimize)		/* 0 for one-off expressions. */
+    bool optimize)		/* false for one-off expressions. */
 {
     OpNode *opTree = NULL;	/* Will point to the tree of operators */
     Tcl_Obj *litList;		/* List to hold the literals */
@@ -2206,7 +2206,7 @@ TclCompileExpr(
     TclNewObj(litList);
     TclNewObj(funcList);
     code = ParseExpr(interp, script, numBytes, &opTree, litList,
-	    funcList, parsePtr, 0 /* parseOnly */);
+	    funcList, parsePtr, false /* parseOnly */);
 
     if (code == TCL_OK) {
 	/*
@@ -2275,7 +2275,7 @@ ExecConstantExprTree(
     envPtr = (CompileEnv *)TclStackAlloc(interp, sizeof(CompileEnv));
     TclInitCompileEnv(interp, envPtr, NULL, 0, NULL, 0);
     CompileExprTree(interp, nodes, index, litObjvPtr, NULL, NULL, envPtr,
-	    0 /* optimize */);
+	    false /* optimize */);
     OP(				DONE);
     byteCodePtr = TclInitByteCode(envPtr);
     TclFreeCompileEnv(envPtr);
@@ -2318,7 +2318,7 @@ CompileExprTree(
     Tcl_Obj *const *funcObjv,
     Tcl_Token *tokenPtr,
     CompileEnv *envPtr,
-    int optimize)
+    bool optimize)
 {
     OpNode *nodePtr = nodes + index;
     OpNode *rootPtr = nodePtr;
@@ -2508,7 +2508,7 @@ CompileExprTree(
 		}
 	    } else {
 		/*
-		 * When optimize==0, we know the expression is a one-off and
+		 * When optimize==false, we know the expression is a one-off and
 		 * there's nothing to be gained from sharing literals when
 		 * they won't live long, and the copies we have already have
 		 * an appropriate internalrep. In this case, skip literal
