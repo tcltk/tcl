@@ -349,17 +349,25 @@ Tcl_GetMonotonicTime(
     LARGE_INTEGER Frequency, PerformanceCount;
 
     /*
-     * The implementation is verbatim from here:
+     * The implementation
+     * microSeconds = ((PerformanceCount.QuadPart) * 1000000) /
+     * Frequency.QuadPart; as given
      * https://learn.microsoft.com/en-us/windows/win32/sysinfo/acquiring-high-resolution-time-stamps#using-qpc-in-native-code
+     * can overflow when system has been up for just a few days so break down
+     * the computation to avoid overflows ASSUMING processor frequencies
+     * are under such that remainingCounterTicks * 1000000 does not overflow
+     * (this will be true for the foreseeable future).
      */
 
     if (0 != QueryPerformanceFrequency(&Frequency)
 	    && 0 != QueryPerformanceCounter(&PerformanceCount)) {
-	ULONGLONG microSeconds;
-	microSeconds = ((PerformanceCount.QuadPart) * 1000000) / Frequency.QuadPart;
-	timePtr->sec = (long)(microSeconds/1000000);
-	timePtr->usec = (long)(microSeconds%1000000);
-    } else {
+	timePtr->sec = PerformanceCount.QuadPart / Frequency.QuadPart;
+	LONGLONG remainingCounterTicks =
+	    PerformanceCount.QuadPart % Frequency.QuadPart;
+	timePtr->usec =
+	    (long)((remainingCounterTicks * 1000000) / Frequency.QuadPart);
+    }
+    else {
 
 	/*
 	 * Following the documentation, this does not happen since Windows XP
