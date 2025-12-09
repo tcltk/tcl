@@ -39,7 +39,7 @@ static const char checkCommand[] = "check";
 
 typedef struct {
     const char *cmdName;	/* command name */
-    Tcl_ObjCmdProc *proc;	/* command proc */
+    Tcl_ObjCmdProc2 *proc;	/* command proc */
     int exportIt;		/* if 1, export the command */
 } CmdTable;
 
@@ -47,8 +47,8 @@ typedef struct {
  * Declarations for functions defined in this file.
  */
 
-static Tcl_ObjCmdProc ProcBodyTestProcCmd;
-static Tcl_ObjCmdProc ProcBodyTestCheckCmd;
+static Tcl_ObjCmdProc2 ProcBodyTestProcObjCmd;
+static Tcl_ObjCmdProc2 ProcBodyTestCheckObjCmd;
 static int	ProcBodyTestInitInternal(Tcl_Interp *interp, int isSafe);
 static int	RegisterCommand(Tcl_Interp* interp,
 			const char *namesp, const CmdTable *cmdTablePtr);
@@ -59,14 +59,14 @@ static int	RegisterCommand(Tcl_Interp* interp,
  */
 
 static const CmdTable commands[] = {
-    { procCommand,	ProcBodyTestProcCmd,	1 },
-    { checkCommand,	ProcBodyTestCheckCmd,	1 },
+    { procCommand,	ProcBodyTestProcObjCmd,	1 },
+    { checkCommand,	ProcBodyTestCheckObjCmd,	1 },
     { 0, 0, 0 }
 };
 
 static const CmdTable safeCommands[] = {
-    { procCommand,	ProcBodyTestProcCmd,	1 },
-    { checkCommand,	ProcBodyTestCheckCmd,	1 },
+    { procCommand,	ProcBodyTestProcObjCmd,	1 },
+    { checkCommand,	ProcBodyTestCheckObjCmd,	1 },
     { 0, 0, 0 }
 };
 
@@ -154,7 +154,7 @@ RegisterCommand(
     }
 
     snprintf(buf, sizeof(buf), "%s::%s", namesp, cmdTablePtr->cmdName);
-    Tcl_CreateObjCommand(interp, buf, cmdTablePtr->proc, 0, 0);
+    Tcl_CreateObjCommand2(interp, buf, cmdTablePtr->proc, 0, 0);
     return TCL_OK;
 }
 
@@ -196,7 +196,7 @@ ProcBodyTestInitInternal(
 /*
  *----------------------------------------------------------------------
  *
- * ProcBodyTestProcCmd --
+ * ProcBodyTestProcObjCmd --
  *
  *  Implements the "procbodytest::proc" command. Here is the command
  *  description:
@@ -227,10 +227,10 @@ ProcBodyTestInitInternal(
  */
 
 static int
-ProcBodyTestProcCmd(
+ProcBodyTestProcObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* the current interpreter */
-    int objc,			/* argument count */
+    Tcl_Size objc,			/* argument count */
     Tcl_Obj *const objv[])	/* arguments */
 {
     const char *fullName;
@@ -263,7 +263,7 @@ ProcBodyTestProcCmd(
      * If a procedure, cmdPtr->objClientData is TclIsProc(cmdPtr).
      */
 
-    if (cmdPtr->objClientData != TclIsProc(cmdPtr)) {
+    if (cmdPtr->objClientData2 != TclIsProc(cmdPtr)) {
 	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 		"command \"", fullName, "\" is not a Tcl procedure", (char *)NULL);
 	return TCL_ERROR;
@@ -273,7 +273,7 @@ ProcBodyTestProcCmd(
      * it is a Tcl procedure: the client data is the Proc structure
      */
 
-    procPtr = (Proc *) cmdPtr->objClientData;
+    procPtr = (Proc *) cmdPtr->objClientData2;
     if (procPtr == NULL) {
 	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "procedure \"",
 		fullName, "\" does not have a Proc struct!", (char *)NULL);
@@ -308,7 +308,7 @@ ProcBodyTestProcCmd(
 /*
  *----------------------------------------------------------------------
  *
- * ProcBodyTestCheckCmd --
+ * ProcBodyTestCheckObjCmd --
  *
  *  Implements the "procbodytest::check" command. Here is the command
  *  description:
@@ -326,10 +326,10 @@ ProcBodyTestProcCmd(
  */
 
 static int
-ProcBodyTestCheckCmd(
+ProcBodyTestCheckObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* the current interpreter */
-    int objc,			/* argument count */
+    Tcl_Size objc,			/* argument count */
     Tcl_Obj *const objv[])	/* arguments */
 {
     const char *version;

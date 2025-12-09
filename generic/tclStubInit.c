@@ -51,7 +51,6 @@
 #undef Tcl_ParseArgsObjv
 #undef TclStaticLibrary
 #define TclStaticLibrary Tcl_StaticLibrary
-#undef TclObjInterpProc
 #if !defined(_WIN32) && !defined(__CYGWIN__)
 # undef Tcl_WinConvertError
 # define Tcl_WinConvertError 0
@@ -62,11 +61,23 @@
 # define TclGetBytesFromObj 0
 # define TclGetUnicodeFromObj 0
 #endif
-#undef Tcl_Close
-#define Tcl_Close 0
-#undef Tcl_GetByteArrayFromObj
-#define Tcl_GetByteArrayFromObj 0
 #define TclUnusedStubEntry 0
+
+#ifdef TCL_NO_DEPRECATED
+#   undef Tcl_CreateObjCommand
+#   undef Tcl_CreateTrace
+#   undef Tcl_CreateObjTrace
+#   undef Tcl_NRCallObjProc
+#   undef Tcl_NRCreateCommand
+#   undef TclGetObjInterpProc
+#   define Tcl_CreateObjCommand 0
+#   define Tcl_CreateTrace 0
+#   define Tcl_CreateObjTrace 0
+#   define Tcl_NRCallObjProc 0
+#   define Tcl_NRCreateCommand 0
+#   define TclGetObjInterpProc 0
+#endif
+
 #define TclUtfCharComplete Tcl_UtfCharComplete
 #define TclUtfNext Tcl_UtfNext
 #define TclUtfPrev Tcl_UtfPrev
@@ -182,7 +193,7 @@ int TclGetAliasObj(Tcl_Interp *interp, const char *childCmd,
     Tcl_Size n = TCL_INDEX_NONE;
     int result = Tcl_GetAliasObj(interp, childCmd, targetInterpPtr, targetCmdPtr, &n, objv);
     if (objcPtr) {
-	if ((sizeof(int) != sizeof(Tcl_Size)) && (result == TCL_OK) && (n > INT_MAX)) {
+	if ((sizeof(int) != sizeof(size_t)) && (result == TCL_OK) && (n > INT_MAX)) {
 	    if (interp) {
 		Tcl_AppendResult(interp, "List too large to be processed", (char *)NULL);
 	    }
