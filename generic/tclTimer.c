@@ -191,7 +191,7 @@ static int		TimerIdleCmd(void *clientData, Tcl_Interp *interp,
 			    int obj, Tcl_Obj *const objv[]);
 static int		TimerInfoCmd(void *clientData, Tcl_Interp *interp,
 			    int obj, Tcl_Obj *const objv[]);
-static void		TimeToFarError(Tcl_Interp *interp);
+static void		TimeTooFarError(Tcl_Interp *interp);
 static int		ParseTimeUnit(Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[], Tcl_Time *wakeupPtr);
 static int		TimerInfoDo(Tcl_Interp *interp, int objc,
@@ -1029,7 +1029,7 @@ Tcl_AfterObjCmd(
 	 */
 
 	if (LLONG_MAX - seconds < wakeup.sec) {
-	    TimeToFarError(interp);
+	    TimeTooFarError(interp);
 	    return TCL_ERROR;
 	}
 	
@@ -1037,11 +1037,23 @@ Tcl_AfterObjCmd(
 	wakeup.usec += ms % 1000 * 1000;
 	if (wakeup.usec > 1000000) {
 	    if (LLONG_MAX == wakeup.usec) {
-		TimeToFarError(interp);
+		TimeTooFarError(interp);
 		return TCL_ERROR;
 	    }
 	    wakeup.sec++;
 	    wakeup.usec -= 1000000;
+	}
+	
+	/*
+	 * Tcl_Time should be representable in us.
+	 * Error out if not.
+	 * We take the next lower limit in seconds and ignore the
+	 * microseconds fractional part.
+	 */
+
+	if (wakeup.sec >= LLONG_MAX / 1000000) {
+	    TimeTooFarError(interp);
+	    return TCL_ERROR;
 	}
 
 	if (objc == 2) {
@@ -1613,6 +1625,18 @@ TimerAtCmd(
 	return TCL_ERROR;
     }
 
+    /*
+     * Tcl_Time should be representable in us.
+     * Error out if not.
+     * We take the next lower limit in seconds and ignore the
+     * microseconds fractional part.
+     */
+
+    if (wakeup.sec >= LLONG_MAX / 1000000) {
+	TimeTooFarError(interp);
+	return TCL_ERROR;
+    }
+
     if (objc < 4) {
 	/*
 	 * No script given - wait until given time point
@@ -1649,9 +1673,9 @@ TimerAtCmd(
 /*
  *----------------------------------------------------------------------
  *
- * TimeToFarError --
+ * TimeTooFarError --
  *
- *	Set the time to far error in the interpreter.
+ *	Set the time too far error in the interpreter.
  *
  * Results:
  *	None.
@@ -1663,7 +1687,7 @@ TimerAtCmd(
  */
 
 static void
-TimeToFarError(
+TimeTooFarError(
     Tcl_Interp *interp)		/* Current interpreter. */
 {
     if (interp != NULL) {
@@ -1712,21 +1736,31 @@ TimerInCmd(
     Tcl_GetMonotonicTime(&wakeup);
     
     if ( LLONG_MAX - wakeup.sec < wakeupArg.sec ) {
-	TimeToFarError(interp);
+	TimeTooFarError(interp);
 	return TCL_ERROR;
     }
     wakeup.sec += wakeupArg.sec;
     wakeup.usec += wakeupArg.usec;
     if (wakeup.usec >= 1000000) {
 	if (wakeup.sec == LLONG_MAX) {
-	    TimeToFarError(interp);
+	    TimeTooFarError(interp);
 	    return TCL_ERROR;
 	}
 	wakeup.sec++;
 	wakeup.usec -= 1000000;
     }
 
-    
+    /*
+     * Tcl_Time should be representable in us.
+     * Error out if not.
+     * We take the next lower limit in seconds and ignore the
+     * microseconds fractional part.
+     */
+
+    if (wakeup.sec >= LLONG_MAX / 1000000) {
+	TimeTooFarError(interp);
+	return TCL_ERROR;
+    }
 
     if (objc < 4) {
 
@@ -2059,13 +2093,13 @@ TimerInfoDo(
 				    "monotonic":"wallclock")
 				    , -1));
 			
-			if (timerHandlerPtr->time.sec > LLONG_MAX/1000000) {
-			    TimeToFarError(interp);
+			if (timerHandlerPtr->time.sec >= LLONG_MAX/1000000) {
+			    TimeTooFarError(interp);
 			    return TCL_ERROR;
 			}
 			time = timerHandlerPtr->time.sec*1000000;
 			if ( time > LLONG_MAX - timerHandlerPtr->time.usec ) {
-			    TimeToFarError(interp);
+			    TimeTooFarError(interp);
 			    return TCL_ERROR;
 			}
 			time += timerHandlerPtr->time.usec;

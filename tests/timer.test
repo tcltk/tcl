@@ -1356,6 +1356,27 @@ test timer-12.2 {timer in, unit} -setup {
     }
 } -result ok
 
+test timer-12.3 {timer in over maximum value} -body {
+    # Max internal value is LLONG_MAX
+    set max [expr {2**63-1}]
+    # Substract current clock, but add one seconds.
+    # The internal comparision is only on seconds level
+    set max [expr {$max - [clock monotonic] + 1000000}]
+    set id [timer in $max us {event 1}]
+} -cleanup {
+} -result "time too far away" -returnCodes error
+
+test timer-12.4 {after over maximum value} -body {
+    # Max internal value is LLONG_MAX
+    set max [expr {2**63-1}]
+    # Substract current clock, but add one seconds.
+    # The internal comparision is only on seconds level
+    set max [expr {$max - [clock monotonic] + 1000000}]
+    set max [expr {$max/1000}]
+    set id [after $max s {event 1}]
+} -cleanup {
+} -result "time too far away" -returnCodes error
+
 ## timer at
 
 test timer-13.1 {timer at, unit sec} -setup {
@@ -1400,13 +1421,21 @@ test timer-13.3 {timer at, unit us} -setup {
     }
 } -result ok
 
-test timer-13.4 {timer info at value - maxlong ms} -body {
-    set maxwide [expr {2**63-1}]
-    set id [timer at $maxwide us {event 1}]
+test timer-13.4 {timer at maximum value} -body {
+    set maxwideSeconds [expr {(2**63-1)/1000000}]
+    set id [timer at $maxwideSeconds s {event 1}]
+} -cleanup {
+} -result "time too far away" -returnCodes error
+
+## timer info
+
+test timer-14.1 {timer info at value - maximum} -body {
+    set maxwideSeconds [expr {((2**63-1)/1000000)-1}]
+    set id [timer at $maxwideSeconds s {event 1}]
     set res [timer info $id]
     set ret [list [expr {{event 1} eq [lindex $res 0]}]]
     lappend ret [expr {"wallclock" eq [lindex $res 1]}]
-    lappend ret [expr {$maxwide == [lindex $res 2]}]
+    lappend ret [expr {$maxwideSeconds*1000000 == [lindex $res 2]}]
     set ret
 } -cleanup {
     timer cancel $id
@@ -1419,15 +1448,6 @@ test timer-13.5 {timer info at value - negative} -body {
 } -cleanup {
     timer cancel $id
 } -result {wallclock 0}
-
-test timer-13.6 {timer info at value - maxlong s - not representable} -body {
-    set maxwide [expr {2**63-1}]
-    set id [timer at $maxwide s {event 1}]
-    set res [timer info $id]
-} -cleanup {
-    timer cancel $id
-} -result "given time to far away" -returnCodes error
-
 
 # cleanup
 ::tcltest::cleanupTests
