@@ -378,26 +378,6 @@ TclpInitPlatform(void)
 
     (void) dlopen(NULL, RTLD_NOW);			/* INTL: Native. */
 #endif
-
-    /*
-     * Initialize the C library's locale subsystem. This is required for input
-     * methods to work properly on X11. We only do this for LC_CTYPE because
-     * that's the necessary one, and we don't want to affect LC_TIME here.
-     * The side effect of setting the default locale should be to load any
-     * locale specific modules that are needed by X. [BUG: 5422 3345 4236 2522
-     * 2521].
-     */
-
-    setlocale(LC_CTYPE, "");
-
-    /*
-     * In case the initial locale is not "C", ensure that the numeric
-     * processing is done in "C" locale regardless. This is needed because Tcl
-     * relies on routines like strtol/strtoul, but should not have locale dependent
-     * behavior.
-     */
-
-    setlocale(LC_NUMERIC, "C");
 }
 
 /*

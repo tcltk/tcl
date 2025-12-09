@@ -179,7 +179,7 @@ typedef struct {
     Tcl_Interp *interp;		/* The interpreter that the limit callback was
 				 * attached to. This is not the interpreter
 				 * that the callback runs in! */
-    long type;			/* The type of callback that this is. */
+    int type;			/* The type of callback that this is. */
 } ScriptLimitCallbackKey;
 
 /*
@@ -3177,7 +3177,7 @@ ChildInvokeHidden(
     Tcl_Preserve(childInterp);
     Tcl_AllowExceptions(childInterp);
 
-    // Push the namespace if one has been requested. 
+    // Push the namespace if one has been requested.
     Tcl_CallFrame *framePtr = NULL;
     if (namespaceName != NULL) {
 	Namespace *nsPtr, *dummy1, *dummy2;
@@ -4400,7 +4400,7 @@ TclRemoveScriptLimitCallbacks(
     while (hashPtr != NULL) {
 	keyPtr = (ScriptLimitCallbackKey *)
 		Tcl_GetHashKey(&iPtr->limit.callbacks, hashPtr);
-	Tcl_LimitRemoveHandler(keyPtr->interp, (int)keyPtr->type,
+	Tcl_LimitRemoveHandler(keyPtr->interp, keyPtr->type,
 		CallScriptLimitCallback, Tcl_GetHashValue(hashPtr));
 	hashPtr = Tcl_NextHashEntry(&search);
     }

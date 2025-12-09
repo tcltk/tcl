@@ -168,7 +168,7 @@ static int notifierThreadRunning = 0;
  * The following static flag indicates that async handlers are pending.
  */
 
-static int asyncPending = 0;
+static bool asyncPending = false;
 
 /*
  * The notifier thread signals the notifierCV when it has finished
@@ -429,7 +429,7 @@ TclpFinalizeNotifier(
 	     * If async marks are outstanding, perform actions now.
 	     */
 	    if (asyncPending) {
-		asyncPending = 0;
+		asyncPending = false;
 		TclAsyncMarkFromNotifier();
 	    }
 	}
@@ -905,13 +905,13 @@ TclpWaitForEvent(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 TclAsyncNotifier(
     int sigNumber,		/* Signal number. */
     TCL_UNUSED(Tcl_ThreadId),	/* Target thread. */
     TCL_UNUSED(void *),	/* Notifier data. */
-    int *flagPtr,		/* Flag to mark. */
-    int value)			/* Value of mark. */
+    signed char *flagPtr,		/* Flag to mark. */
+    signed char value)			/* Value of mark. */
 {
 #if TCL_THREADS
     /*
@@ -925,15 +925,15 @@ TclAsyncNotifier(
 	if (notifierThreadRunning) {
 	    *flagPtr = value;
 	    if (!asyncPending) {
-		asyncPending = 1;
+		asyncPending = true;
 		if (write(triggerPipe, "S", 1) != 1) {
-		    asyncPending = 0;
-		    return 0;
+		    asyncPending = false;
+		    return false;
 		}
 	    }
-	    return 1;
+	    return true;
 	}
-	return 0;
+	return false;
     }
 
     /*
@@ -946,7 +946,7 @@ TclAsyncNotifier(
     (void)flagPtr;
     (void)value;
 #endif
-    return 0;
+    return false;
 }
 
 /*
@@ -1118,7 +1118,7 @@ NotifierThreadProc(
 	     * perform work on async handlers now.
 	     */
 	    if (errno == EINTR && asyncPending) {
-		asyncPending = 0;
+		asyncPending = false;
 		TclAsyncMarkFromNotifier();
 	    }
 
@@ -1182,7 +1182,7 @@ NotifierThreadProc(
 	} while (1);
 
 	if (asyncPending) {
-	    asyncPending = 0;
+	    asyncPending = false;
 	    TclAsyncMarkFromNotifier();
 	}
 
