@@ -1668,7 +1668,7 @@ TimeToFarError(
 {
     if (interp != NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"given time to far away", -1));
+		"time too far away", -1));
 	Tcl_SetErrorCode(interp, "TCL","TIME","OVERFLOW", (char *)NULL);
     }
 }

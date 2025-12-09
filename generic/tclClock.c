@@ -102,6 +102,7 @@ static Tcl_ObjCmdProc	ClockGetenvObjCmd;
 static Tcl_ObjCmdProc	ClockMicrosecondsObjCmd;
 static Tcl_ObjCmdProc	ClockMillisecondsObjCmd;
 static Tcl_ObjCmdProc	ClockSecondsObjCmd;
+static Tcl_ObjCmdProc	ClockMonotonicObjCmd;
 static Tcl_ObjCmdProc	ClockFormatObjCmd;
 static Tcl_ObjCmdProc	ClockScanObjCmd;
 static int		ClockScanCommit(DateInfo *info,
@@ -166,6 +167,7 @@ const EnsembleImplMap tclClockImplMap[] = {
     {"format",		NULL,			NULL, NULL, NULL, 1},
     {"microseconds",	ClockMicrosecondsObjCmd,TclCompileClockReadingCmd, NULL, INT2PTR(CLOCK_READ_MICROS), 0},
     {"milliseconds",	ClockMillisecondsObjCmd,TclCompileClockReadingCmd, NULL, INT2PTR(CLOCK_READ_MILLIS), 0},
+    {"monotonic",	ClockMonotonicObjCmd,TclCompileClockReadingCmd, NULL, INT2PTR(CLOCK_READ_MONOTONIC), 0},
     {"scan",		NULL,			NULL, NULL, NULL, 1},
     {"seconds",		ClockSecondsObjCmd,	TclCompileClockReadingCmd, NULL, INT2PTR(CLOCK_READ_SECS), 0},
     {NULL, NULL, NULL, NULL, NULL, 0}
@@ -3240,41 +3242,51 @@ ClockMicrosecondsObjCmd(
     int objc,			/* Parameter count */
     Tcl_Obj *const *objv)	/* Parameter values */
 {
-    static const char *const microsecondsSwitches[] = {
-	"-monotonic", "-wallclock", NULL
-    };
-    enum MicrosecondsSwitch {
-	MICROSECONDS_MONOTONIC, MICROSECONDS_WALLCLOCK
-    };
-    int index = MICROSECONDS_WALLCLOCK;
+    if (objc != 1) {
+	Tcl_WrongNumArgs(interp, 0, objv, "clock microseconds");
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(TclpGetMicroseconds()));
+    return TCL_OK;
+}
+
+/*----------------------------------------------------------------------
+ *
+ * ClockMonotonicObjCmd -
+ *
+ *	Returns a count of monotonic microseconds.
+ *
+ * Results:
+ *	Returns a standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ * This function implements the 'clock monotonic' Tcl command. Refer to the
+ * user documentation for details on what it does.
+ *
+ * Note that tclExecute.c contains a byte compiled version.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+ClockMonotonicObjCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* Tcl interpreter */
+    int objc,			/* Parameter count */
+    Tcl_Obj *const *objv)	/* Parameter values */
+{
     Tcl_WideInt us = 0;
     Tcl_Time time;
 
-    switch (objc) {
-    case 1:
-	break;
-    case 2:
-	if (Tcl_GetIndexFromObj(interp, objv[1], microsecondsSwitches, "option", 0,
-		&index) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-	break;
-    default:
-	Tcl_WrongNumArgs(interp, 0, objv, "clock microseconds ?-switch?");
+    if (objc != 1) {
+	Tcl_WrongNumArgs(interp, 0, objv, "clock monotonic");
 	return TCL_ERROR;
     }
 
-    switch (index) {
-    case MICROSECONDS_MONOTONIC:
-	Tcl_GetMonotonicTime(&time);
-	us = time.sec*1000000+time.usec;
-	break;
-    case MICROSECONDS_WALLCLOCK:
-	us = TclpGetMicroseconds();
-	break;
-    default:
-	TCL_UNREACHABLE();
-    }
+    Tcl_GetMonotonicTime(&time);
+    us = time.sec*1000000+time.usec;
     Tcl_SetObjResult(interp, Tcl_NewWideIntObj(us));
     return TCL_OK;
 }
