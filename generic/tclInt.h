@@ -2283,7 +2283,7 @@ typedef struct Interp {
     void *pendingObjDataPtr;	/* Pointer to the Cache and PendingObjData
 				 * structs for this interp's thread; see
 				 * tclObj.c and tclThreadAlloc.c */
-    int *asyncReadyPtr;		/* Pointer to the asyncReady indicator for
+    bool *asyncReadyPtr;		/* Pointer to the asyncReady indicator for
 				 * this interp's thread; see tclAsync.c */
     /*
      * The pointer to the object system root ekeko. c.f. TIP #257.
@@ -3325,8 +3325,8 @@ MODULE_SCOPE void	TclArgumentBCRelease(Tcl_Interp *interp,
 			    CmdFrame *cfPtr);
 MODULE_SCOPE void	TclArgumentGet(Tcl_Interp *interp, Tcl_Obj *obj,
 			    CmdFrame **cfPtrPtr, int *wordPtr);
-MODULE_SCOPE int	TclAsyncNotifier(int sigNumber, Tcl_ThreadId threadId,
-			    void *clientData, int *flagPtr, int value);
+MODULE_SCOPE bool	TclAsyncNotifier(int sigNumber, Tcl_ThreadId threadId,
+			    void *clientData, signed char *flagPtr, signed char value);
 MODULE_SCOPE void	TclAsyncMarkFromNotifier(void);
 MODULE_SCOPE double	TclBignumToDouble(const void *bignum);
 MODULE_SCOPE int	TclByteArrayMatch(const unsigned char *string,
@@ -3446,7 +3446,7 @@ MODULE_SCOPE Tcl_Command TclNRCreateCommandInNs(Tcl_Interp *interp,
 			    void *clientData, Tcl_CmdDeleteProc *deleteProc);
 MODULE_SCOPE int	TclNREvalFile(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 			    const char *encodingName);
-MODULE_SCOPE int *	TclGetAsyncReadyPtr(void);
+MODULE_SCOPE bool *	TclGetAsyncReadyPtr(void);
 MODULE_SCOPE Tcl_Obj *	TclGetBgErrorHandler(Tcl_Interp *interp);
 MODULE_SCOPE int	TclGetChannelFromObj(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, Tcl_Channel *chanPtr,
