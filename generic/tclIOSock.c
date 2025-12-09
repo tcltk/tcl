@@ -129,7 +129,7 @@ TclSockMinimumBuffers(
 {
     int current;
     socklen_t len;
-    int size = size1;
+    int size = (int)size1;
 
     if (size != size1) {
 	return TCL_ERROR;
