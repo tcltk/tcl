@@ -3291,7 +3291,8 @@ enum ClockOps {
     CLOCK_READ_CLICKS = 0,	/* Read the click counter. */
     CLOCK_READ_MICROS = 1,	/* Time in microseconds. */
     CLOCK_READ_MILLIS = 2,	/* Time in milliseconds. */
-    CLOCK_READ_SECS = 3		/* Time in seconds. */
+    CLOCK_READ_SECS = 3,	/* Time in seconds. */
+    CLOCK_READ_MONOTONIC = 4	/* Time in monotonic microseconds. */
 };
 
 /*
