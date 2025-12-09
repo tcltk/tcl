@@ -2055,10 +2055,14 @@ TimerInfoDo(
 		    if (timerHandlerPtr->token == afterPtr->token) {
 			Tcl_ListObjAppendElement(interp, resultListPtr,
 				Tcl_NewStringObj(
-					(timerHandlerIndex == timerHandlerMonotonic ?
-					"monotonic":"wallclock")
-					, -1));
+				    (timerHandlerIndex == timerHandlerMonotonic ?
+				    "monotonic":"wallclock")
+				    , -1));
 			
+			if (timerHandlerPtr->time.sec > LLONG_MAX/1000000) {
+			    TimeToFarError(interp);
+			    return TCL_ERROR;
+			}
 			time = timerHandlerPtr->time.sec*1000000;
 			if ( time > LLONG_MAX - timerHandlerPtr->time.usec ) {
 			    TimeToFarError(interp);

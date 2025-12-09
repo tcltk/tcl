@@ -1400,26 +1400,33 @@ test timer-13.3 {timer at, unit us} -setup {
     }
 } -result ok
 
-test timer-13.4 {timer info at value - maxlong} -body {
+test timer-13.4 {timer info at value - maxlong ms} -body {
     set maxwide [expr {2**63-1}]
     set id [timer at $maxwide us {event 1}]
     set res [timer info $id]
+    set ret [list [expr {{event 1} eq [lindex $res 0]}]]
+    lappend ret [expr {"wallclock" eq [lindex $res 1]}]
+    lappend ret [expr {$maxwide == [lindex $res 2]}]
+    set ret
+} -cleanup {
     timer cancel $id
-    expr {
-	{event 1} eq [lindex $res 0]
-	&& "wallclock" eq [lindex $res 1]
-	&& $maxwide == [lindex $res 2]}
-} -result 1
+} -result {1 1 1}
 
 test timer-13.5 {timer info at value - negative} -body {
     set id [timer at -1 s {event 1}]
     set res [timer info $id]
+    lrange $res 1 2
+} -cleanup {
     timer cancel $id
-    expr {
-	{event 1} eq [lindex $res 0]
-	&& "wallclock" eq [lindex $res 1]
-	&& 0 == [lindex $res 2]}
-} -result 1
+} -result {wallclock 0}
+
+test timer-13.6 {timer info at value - maxlong s - not representable} -body {
+    set maxwide [expr {2**63-1}]
+    set id [timer at $maxwide s {event 1}]
+    set res [timer info $id]
+} -cleanup {
+    timer cancel $id
+} -result "given time to far away" -returnCodes error
 
 
 # cleanup
