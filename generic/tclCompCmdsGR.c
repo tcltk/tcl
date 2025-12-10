@@ -3199,7 +3199,7 @@ IndexTailVarIfKnown(
 	tailName = p;
     }
 
-    localIndex = TclFindCompiledLocal(tailName, len, 1, envPtr);
+    localIndex = TclFindCompiledLocal(tailName, len, true, envPtr);
     Tcl_DecrRefCount(tailPtr);
     return localIndex;
 }
