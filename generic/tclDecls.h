@@ -895,7 +895,7 @@ EXTERN Tcl_Size		Tcl_WriteChars(Tcl_Channel chan, const char *src,
 /* 339 */
 EXTERN Tcl_Size		Tcl_WriteObj(Tcl_Channel chan, Tcl_Obj *objPtr);
 /* 340 */
-EXTERN void		Tcl_GetMonotonicTime(Tcl_Time *timeBuf);
+EXTERN long long	Tcl_GetMonotonicTime();
 /* 341 */
 EXTERN Tcl_TimerToken	Tcl_CreateTimerHandlerMicroSeconds(
 				long long microSeconds, Tcl_TimerProc *proc,
@@ -2255,7 +2255,7 @@ typedef struct TclStubs {
     Tcl_Size (*tcl_UtfToUpper) (char *src); /* 337 */
     Tcl_Size (*tcl_WriteChars) (Tcl_Channel chan, const char *src, Tcl_Size srcLen); /* 338 */
     Tcl_Size (*tcl_WriteObj) (Tcl_Channel chan, Tcl_Obj *objPtr); /* 339 */
-    void (*tcl_GetMonotonicTime) (Tcl_Time *timeBuf); /* 340 */
+    long long (*tcl_GetMonotonicTime) (); /* 340 */
     Tcl_TimerToken (*tcl_CreateTimerHandlerMicroSeconds) (long long microSeconds, Tcl_TimerProc *proc, void *clientData); /* 341 */
     void (*tcl_SleepMicroSeconds) (long long microSeconds); /* 342 */
     void (*tcl_AlertNotifier) (void *clientData); /* 343 */

@@ -309,12 +309,15 @@ Tcl_CreateTimerHandlerMicroSeconds(
     void *clientData)		/* Arbitrary data to pass to proc. */
 {
     Tcl_Time time;
+    long long timeUS;
 
     /*
      * Compute when the event should fire.
      */
 
-    Tcl_GetMonotonicTime(&time);
+    timeUS = Tcl_GetMonotonicTime();
+    time.sec = timeUS/1000000;
+    time.usec = timeUS%1000000;
     if (microSeconds <= 0) {
 	microSeconds = 0;
     } else {
@@ -364,12 +367,16 @@ Tcl_CreateTimerHandler(
     void *clientData)		/* Arbitrary data to pass to proc. */
 {
     Tcl_Time time;
+    long long timeUS;
 
     /*
      * Compute when the event should fire.
      */
 
-    Tcl_GetMonotonicTime(&time);
+    timeUS = Tcl_GetMonotonicTime();
+    time.sec = timeUS/1000000;
+    time.usec = timeUS%1000000;
+    
     time.sec += milliseconds/1000;
     time.usec += (milliseconds%1000)*1000;
     if (time.usec >= 1000000) {
@@ -554,7 +561,10 @@ TimerSetupProc(
 		continue;
 	    }
 	    if (timerHandlerIndex ==timerHandlerMonotonic) {
-		Tcl_GetMonotonicTime(&myTime);
+		long long myTimeUS;
+		myTimeUS = Tcl_GetMonotonicTime();
+		myTime.sec = myTimeUS/1000000;
+		myTime.usec = myTimeUS%1000000;
 	    } else {
 		Tcl_GetTime(&myTime);
 	    }
@@ -629,7 +639,10 @@ TimerCheckProc(
 		continue;
 	    }
 	    if (timerHandlerIndex == timerHandlerMonotonic) {
-		Tcl_GetMonotonicTime(&blockTime);
+		long long blockTimeUS;
+		blockTimeUS = Tcl_GetMonotonicTime();
+		blockTime.sec = blockTimeUS/1000000;
+		blockTime.usec = blockTimeUS%1000000;
 	    } else {
 		Tcl_GetTime(&blockTime);
 	    }
@@ -748,7 +761,10 @@ TimerHandlerEventProc(
 	currentTimerId = tsdPtr->lastTimerIdQueue[timerHandlerIndex];
 
 	if (timerHandlerIndex == timerHandlerMonotonic) {
-	    Tcl_GetMonotonicTime(&time);
+	    long long timeUS;
+	    timeUS = Tcl_GetMonotonicTime();
+	    time.sec = timeUS/1000000;
+	    time.usec = timeUS%1000000;
 	} else {
 	    Tcl_GetTime(&time);
 	}
@@ -1018,7 +1034,10 @@ Tcl_AfterObjCmd(
 	    ms = 0;
 	}
 
-	Tcl_GetMonotonicTime(&wakeup);
+	long long wakeupUS;
+	wakeupUS = Tcl_GetMonotonicTime();
+	wakeup.sec = wakeupUS/1000000;
+	wakeup.usec = wakeupUS%1000000;
 	seconds = ms / 1000;
 	/*
 	* Check for numerical overflow.
@@ -1175,7 +1194,10 @@ TimerDelay(
 
     Tcl_GetTime(&nowLimit);
     if (monotonic) {
-	Tcl_GetMonotonicTime(&nowEvent);
+	long long nowEventUS;
+	nowEventUS = Tcl_GetMonotonicTime();
+	nowEvent.sec = nowEventUS/1000000;
+	nowEvent.usec = nowEventUS%1000000;
     } else {
 	nowEvent = nowLimit;
     }
@@ -1282,7 +1304,10 @@ TimerDelay(
 
 	Tcl_GetTime(&nowLimit);
 	if (monotonic) {
-	    Tcl_GetMonotonicTime(&nowEvent);
+	    long long nowEventUS;
+	    nowEventUS = Tcl_GetMonotonicTime();
+	    nowEvent.sec = nowEventUS/1000000;
+	    nowEvent.usec = nowEventUS%1000000;
 	} else {
 	    nowEvent = nowLimit;
 	}
@@ -1733,7 +1758,10 @@ TimerInCmd(
      * Sum current time and time argument
      */
 
-    Tcl_GetMonotonicTime(&wakeup);
+    long long wakeupUS;
+    wakeupUS = Tcl_GetMonotonicTime();
+    wakeup.sec = wakeupUS/1000000;
+    wakeup.usec = wakeupUS%1000000;
     
     if ( LLONG_MAX - wakeup.sec < wakeupArg.sec ) {
 	TimeTooFarError(interp);

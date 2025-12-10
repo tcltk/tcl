@@ -1294,7 +1294,7 @@ typedef void (Tcl_ScaleTimeProc) (Tcl_Time *timebuf, void *clientData);
  * TIP #723 (Monotonic Time)
  */
 
-typedef void (Tcl_GetMonotonicTimeProc)   (Tcl_Time *timebuf, void *clientData);
+typedef long long (Tcl_GetMonotonicTimeProc)   (void *clientData);
 
 /*
  *----------------------------------------------------------------------------
