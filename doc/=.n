@@ -39,7 +39,7 @@ A literal \fBnumeric value\fR
 .
 Any of the forms accepted by \fBstring is integer\fR or \fBstring is double\fR
 \fIunless\fR it starts with a letter.
-Exceptional values like "inf" or "nan" are not accepted.
+So exceptional values like "inf" or "nan" are not accepted.
 .TP
 A \fBvariable\fR
 .
@@ -47,7 +47,6 @@ Any sequence of characters which starts with an alphabetic character and
 continues with alphanumeric characters, underscores or colons and \fIdoes not\fR
 terminate with \fB(\fR will be treated as a variable name and its value
 will be substituted into the expression.
-It is an error for that value to be non-numeric.
 This is \fInot\fR compatible with \fBexpr\fR, which requires \fB$\fR in
 front of each variable name.
 .TP
@@ -72,7 +71,8 @@ it is not necessary to enclose expressions in braces to avoid double substitutio
 Any of the numeric and logical operators described in \fBexpr\fR(n) can be used,
 with the same precedence and associativity. 
 Internally the same code is used and so should always give the same results.
-The string operators \fBeq ne in ni lt le gt ge\fR are not available.
+The string operators \fBeq ne in ni lt le gt ge\fR are not available as they
+would be interpreted as variable names.
 .SH "SAFETY AND PERFORMANCE CONSIDERATIONS"
 .PP
 In general, it is both safer and more efficient to write all variables used in
@@ -96,25 +96,24 @@ This command will not substitute array elements without \fB$\fR as these
 cannot be distinguished from function calls.  If an expression needs to
 use an array element, that can be written with \fB$\fR and it will then
 be substituted by \fBTcl\fR before the \fB=\fR command runs, assuming
-the arguments are not braced.
-\fBBeware\fR, the array element's value should be numeric;
-if it is alphanumeric it will be treated as a variable name by \fB=\fR.
-More efficient code can be generated if such an array reference is
-written as a distinct argument, i.e. separated by space from the rest
-of the expression, e.g.
-.CS
-set x [= 2* $foo(bar) -1]
-.CE
-rather than
+the arguments are not braced, e.g.
 .CS
 set x [= 2*$foo(bar)-1]
 .CE
+\fBBeware\fR, the array element's value should be numeric;
+otherwise it will be treated as a variable name or other subexpression
+by \fB=\fR, which could change the whole meaning of the expression.
 .PP
 Similarly, the \fB=\fR command will not do \fB[]\fR command substitutions
-internally as \fBexpr\fR does, but these can be done before \fB=\fR runs.
-The same caveats apply: the result should be numeric, and writing the
-\fB[]\fR substitution as a separate argument will allow more efficient
-execution.
+internally as \fBexpr\fR does, but these can be done before \fB=\fR runs, e.g.
+.CS
+set x [= 2*[foobar]-1]
+.CE
+The same caveat applies: the result should be numeric.
+.PP
+The \fB=\fR command is \fInot recommended\fR for performance-critical
+calculations. The \fBexpr\fR command is more complicated to use but can
+generate faster code.
 .SH EXAMPLES
 .PP
 Calculate distance in 2-D coordinates:
