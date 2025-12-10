@@ -182,8 +182,8 @@ static int		TimerAtCmd(void *clientData, Tcl_Interp *interp,
 			    int obj, Tcl_Obj *const objv[]);
 static int		TimerInCmd(void *clientData, Tcl_Interp *interp,
 			    int obj, Tcl_Obj *const objv[]);
-static int		TimerDelay(Tcl_Interp *interp, Tcl_Time endTime,
-			    bool monotonic);
+static int		TimerDelay(Tcl_Interp *interp, Tcl_Time endTime);
+static int		TimerDelayMonotonic(Tcl_Interp *interp,long long endTimeUS);
 static int		TimerCancelCmd(void *clientData, Tcl_Interp *interp,
 			    int obj, Tcl_Obj *const objv[]);
 static AfterAssocData *	TimerAssocDataGet(Tcl_Interp *interp);
@@ -193,7 +193,7 @@ static int		TimerInfoCmd(void *clientData, Tcl_Interp *interp,
 			    int obj, Tcl_Obj *const objv[]);
 static void		TimeTooFarError(Tcl_Interp *interp);
 static int		ParseTimeUnit(Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[], Tcl_Time *wakeupPtr);
+			    Tcl_Obj *const objv[], long long *wakeupPtr);
 static int		TimerInfoDo(Tcl_Interp *interp, int objc,
 			Tcl_Obj *const objv[], bool isAfter);
 static Tcl_TimerToken	CreateTimerHandler(Tcl_Time *timePtr,
@@ -1102,10 +1102,7 @@ Tcl_AfterObjCmd(
 	     * No command given: wait the given monotonic time.
 	     */
 
-	    Tcl_Time wakeup;
-	    wakeup.sec = wakeupUS / 1000000;
-	    wakeup.usec = wakeupUS % 1000000;
-	    return TimerDelay(interp, wakeup, true);
+	    return TimerDelayMonotonic(interp, wakeupUS);
 	}
 
 	/*
@@ -1202,8 +1199,7 @@ Tcl_AfterObjCmd(
 static int
 TimerDelay(
     Tcl_Interp *interp,
-    Tcl_Time endTime,
-    bool monotonic)
+    Tcl_Time endTime)
 {
     Interp *iPtr = (Interp *) interp;
 
@@ -1217,14 +1213,7 @@ TimerDelay(
      */
 
     Tcl_GetTime(&nowLimit);
-    if (monotonic) {
-	long long nowEventUS;
-	nowEventUS = Tcl_GetMonotonicTime();
-	nowEvent.sec = nowEventUS/1000000;
-	nowEvent.usec = nowEventUS%1000000;
-    } else {
-	nowEvent = nowLimit;
-    }
+    nowEvent = nowLimit;
 
     do {
 	if (Tcl_AsyncReady()) {
@@ -1327,16 +1316,155 @@ TimerDelay(
 	 */
 
 	Tcl_GetTime(&nowLimit);
-	if (monotonic) {
-	    long long nowEventUS;
-	    nowEventUS = Tcl_GetMonotonicTime();
-	    nowEvent.sec = nowEventUS/1000000;
-	    nowEvent.usec = nowEventUS%1000000;
-	} else {
-	    nowEvent = nowLimit;
-	}
+	nowEvent = nowLimit;
 
     } while (TCL_TIME_BEFORE(nowEvent, endTime));
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TimerDelayMonotonic --
+ *
+ *	Implements the blocking delay behaviour of [timer at $time],
+ *	[timer in $delay] and [after $delay].
+ *	Tricky because it has to take into account any time limit that has
+ *	been set.
+ *
+ * Results:
+ *	Standard Tcl result code (with error set if an error occurred due to a
+ *	time limit being exceeded or being canceled).
+ *
+ * Side effects:
+ *	May adjust the time limit granularity marker.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TimerDelayMonotonic(
+    Tcl_Interp *interp,
+    long long endTimeUS)
+{
+    Interp *iPtr = (Interp *) interp;
+
+    Tcl_Time nowLimit;
+    long long nowEventUS;
+    Tcl_WideInt diffUS, diffLimitMS;
+    bool limitDiff;
+
+    /*
+     * Interpreter limits are expressed in wallclock time
+     */
+
+    Tcl_GetTime(&nowLimit);
+    nowEventUS = Tcl_GetMonotonicTime();
+
+    do {
+	if (Tcl_AsyncReady()) {
+	    if (Tcl_AsyncInvoke(interp, TCL_OK) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	}
+	if (Tcl_Canceled(interp, TCL_LEAVE_ERR_MSG) == TCL_ERROR) {
+	    return TCL_ERROR;
+	}
+	if (iPtr->limit.timeEvent != NULL
+		&& TCL_TIME_BEFORE(iPtr->limit.time, nowLimit)) {
+	    iPtr->limit.granularityTicker = 0;
+	    if (Tcl_LimitCheck(interp) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	}
+
+	/*
+	 * Find event delay in micro-seconds
+	 */
+
+	diffUS = endTimeUS - nowEventUS;
+
+	/*
+	 * Remember, that the event limit is active
+	 */
+
+	limitDiff = false;
+
+	/*
+	 * Check for interpreter wall clock time limit
+	 */
+
+	if (iPtr->limit.timeEvent != NULL) {
+	    diffLimitMS = TCL_TIME_DIFF_MS_CEILING(iPtr->limit.time, nowLimit);
+	    if (diffLimitMS*1000 < diffUS) {
+
+		/*
+		 * Interpreter limit time will fire before the event limit.
+		 * Update waiting time and remember, that the interpreter
+		 * limit was the reason.
+		 */
+
+		diffUS = diffLimitMS*1000;
+		limitDiff = true;
+	    }
+	}
+	if (diffUS > TCL_TIME_MAXIMUM_SLICE*1000) {
+	    diffUS = TCL_TIME_MAXIMUM_SLICE*1000;
+	}
+
+	/*
+	 * If event timing was overwritten by limit, we wait at least 1ms.
+	 */
+
+	if (diffUS == 0 && limitDiff) {
+	    diffUS = 1000;
+	}
+
+	if (diffUS > 0) {
+	    Tcl_SleepMicroSeconds(diffUS);
+	}
+
+	if (limitDiff) {
+
+	    /*
+	     * Interpreter time limit limited the sleep time.
+	     * Normally, we should exit below for the limit check.
+	     */
+
+	    if (Tcl_AsyncReady()) {
+		if (Tcl_AsyncInvoke(interp, TCL_OK) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+	    }
+	    if (Tcl_Canceled(interp, TCL_LEAVE_ERR_MSG) == TCL_ERROR) {
+		return TCL_ERROR;
+	    }
+	    if (Tcl_LimitCheck(interp) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	} else {
+
+	    /*
+	     * Event limit gave the sleep time.
+	     * Check, if we slept correctly only, if sleep time is above
+	     * this limit.
+	     * This is for performance reasons to not call the time functions
+	     * again below for no gain.
+	     */
+
+	    if (diffUS < SLEEP_OFFLOAD_GETTIMEOFDAY*1000) {
+		break;
+	    }
+	}
+
+	/*
+	 * We slept. Get new time base, to be compared below.
+	 */
+
+	Tcl_GetTime(&nowLimit);
+	nowEventUS = Tcl_GetMonotonicTime();
+
+    } while ( nowEventUS < endTimeUS);
     return TCL_OK;
 }
 
@@ -1581,7 +1709,7 @@ ParseTimeUnit(
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[],	/* Argument objects. */
-    Tcl_Time *wakeupPtr)	/* Output time */
+    long long *wakeupPtr)	/* Output time */
 {
     Tcl_WideInt timeArg;
     int unitIndex;
@@ -1624,17 +1752,22 @@ ParseTimeUnit(
     switch(unitIndex) {
     case UNIT_MICROSECONDS:
     case UNIT_US:
-	wakeupPtr->sec = timeArg / 1000000;
-	wakeupPtr->usec = timeArg % 1000000;
+	*wakeupPtr = timeArg;
 	break;
     case UNIT_MILLISECONDS:
     case UNIT_MS:
-	wakeupPtr->sec = timeArg / 1000;
-	wakeupPtr->usec = (timeArg % 1000)*1000;
+	if ( timeArg >= LLONG_MAX/1000 ) {
+	    TimeTooFarError(interp);
+	    return TCL_ERROR;
+	}
+	*wakeupPtr = timeArg * 1000;
 	break;
     default:
-	wakeupPtr->sec = timeArg;
-	wakeupPtr->usec = 0;
+	if ( timeArg >= LLONG_MAX/1000000 ) {
+	    TimeTooFarError(interp);
+	    return TCL_ERROR;
+	}
+	*wakeupPtr = timeArg*1000000;
 	break;
     }
     return TCL_OK;
@@ -1664,34 +1797,25 @@ TimerAtCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_WideInt timeArg = 0;	/* Time point to wait */
+    long long timeArgUS;
     Tcl_Time wakeup;
     AfterInfo *afterPtr;
     AfterAssocData *assocPtr = TimerAssocDataGet(interp);
     ThreadSpecificData *tsdPtr = InitTimer();
 
-    if (TCL_OK != ParseTimeUnit(interp, objc, objv, &wakeup)) {
+    if (TCL_OK != ParseTimeUnit(interp, objc, objv, &timeArgUS)) {
 	return TCL_ERROR;
     }
 
-    /*
-     * Tcl_Time should be representable in us.
-     * Error out if not.
-     * We take the next lower limit in seconds and ignore the
-     * microseconds fractional part.
-     */
-
-    if (wakeup.sec >= LLONG_MAX / 1000000) {
-	TimeTooFarError(interp);
-	return TCL_ERROR;
-    }
+    wakeup.sec = timeArgUS / 1000000;
+    wakeup.usec = timeArgUS % 1000000;
 
     if (objc < 4) {
 	/*
 	 * No script given - wait until given time point
 	 */
 
-	return TimerDelay(interp, wakeup, false);
+	return TimerDelay(interp, wakeup);
     }
     afterPtr = (AfterInfo *)Tcl_Alloc(sizeof(AfterInfo));
     afterPtr->assocPtr = assocPtr;
@@ -1769,12 +1893,12 @@ TimerInCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_Time wakeupArg, wakeup;
+    long long wakeupArgUS;
     AfterInfo *afterPtr;
     AfterAssocData *assocPtr = TimerAssocDataGet(interp);
     ThreadSpecificData *tsdPtr = InitTimer();
 
-    if (TCL_OK != ParseTimeUnit(interp, objc, objv, &wakeupArg)) {
+    if (TCL_OK != ParseTimeUnit(interp, objc, objv, &wakeupArgUS)) {
 	return TCL_ERROR;
     }
 
@@ -1784,36 +1908,12 @@ TimerInCmd(
 
     long long wakeupUS;
     wakeupUS = Tcl_GetMonotonicTime();
-    wakeup.sec = wakeupUS/1000000;
-    wakeup.usec = wakeupUS%1000000;
     
-    if ( LLONG_MAX - wakeup.sec < wakeupArg.sec ) {
+    if ( LLONG_MAX - wakeupUS < wakeupArgUS ) {
 	TimeTooFarError(interp);
 	return TCL_ERROR;
     }
-    wakeup.sec += wakeupArg.sec;
-    wakeup.usec += wakeupArg.usec;
-    if (wakeup.usec >= 1000000) {
-	if (wakeup.sec == LLONG_MAX) {
-	    TimeTooFarError(interp);
-	    return TCL_ERROR;
-	}
-	wakeup.sec++;
-	wakeup.usec -= 1000000;
-    }
-
-    /*
-     * Tcl_Time should be representable in us.
-     * Error out if not.
-     * We take the next lower limit in seconds and ignore the
-     * microseconds fractional part.
-     */
-
-    if (wakeup.sec >= LLONG_MAX / 1000000) {
-	TimeTooFarError(interp);
-	return TCL_ERROR;
-    }
-    
+    wakeupUS += wakeupArgUS;
 
     if (objc < 4) {
 
@@ -1821,10 +1921,8 @@ TimerInCmd(
 	 * No script given - just wait the monotonic time
 	 */
 
-	return TimerDelay(interp, wakeup, true);
+	return TimerDelayMonotonic(interp, wakeupUS);
     }
-
-    wakeupUS = wakeup.sec*1000000+wakeup.usec;
 
     afterPtr = (AfterInfo *)Tcl_Alloc(sizeof(AfterInfo));
     afterPtr->assocPtr = assocPtr;
