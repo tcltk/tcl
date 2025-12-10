@@ -19,7 +19,7 @@ The command performs one of several Unicode character transformations, depending
 .\" METHOD: tonfc
 .VS "TIP726"
 .TP
-\fBunicode tonfc\fR ?\fB-profile\fR \fIprofile\fR \fIstring\fR
+\fBunicode tonfc\fR ?\fB-profile\fR \fIprofile\fR? \fIstring\fR
 .VE "TIP726"
 .
 Returns \fIstring\fR normalized as per Unicode \fBNormalization Form C\fR (NFC).
@@ -27,7 +27,7 @@ Returns \fIstring\fR normalized as per Unicode \fBNormalization Form C\fR (NFC).
 .\" METHOD: tonfd
 .VS "TIP726"
 .TP
-\fBunicode tonfd\fR ?\fB-profile\fR \fIprofile\fR \fIstring\fR
+\fBunicode tonfd\fR ?\fB-profile\fR \fIprofile\fR? \fIstring\fR
 .VE "TIP726"
 .
 Returns \fIstring\fR normalized as per Unicode \fBNormalization Form D\fR (NFD).
@@ -35,7 +35,7 @@ Returns \fIstring\fR normalized as per Unicode \fBNormalization Form D\fR (NFD).
 .\" METHOD: tonfkc
 .VS "TIP726"
 .TP
-\fBunicode tonfkc\fR ?\fB-profile\fR \fIprofile\fR \fIstring\fR
+\fBunicode tonfkc\fR ?\fB-profile\fR \fIprofile\fR? \fIstring\fR
 .VE "TIP726"
 .
 Returns \fIstring\fR normalized as per Unicode \fBNormalization Form KC\fR (NFKC).
@@ -43,7 +43,7 @@ Returns \fIstring\fR normalized as per Unicode \fBNormalization Form KC\fR (NFKC
 .\" METHOD: tonfkd
 .VS "TIP726"
 .TP
-\fBunicode tonfkd\fR ?\fB-profile\fR \fIprofile\fR \fIstring\fR
+\fBunicode tonfkd\fR ?\fB-profile\fR \fIprofile\fR? \fIstring\fR
 .VE "TIP726"
 .
 Returns \fIstring\fR normalized as per Unicode \fBNormalization Form KD\fR (NFKD).
