@@ -234,7 +234,7 @@ TclpWideClickInMicrosec(void)
  *
  * Tcl_GetMonotonicTime --
  *
- *	Gets the current monotonic time in seconds and microseconds.
+ *	Gets the current monotonic time in microseconds.
  *	In the Windows case, this is the time elapsed since system
  *	startup.
  *	The current resolution is 10 to 16 milli-seconds. The implementation
@@ -250,10 +250,10 @@ TclpWideClickInMicrosec(void)
  *----------------------------------------------------------------------
  */
 
-void
-Tcl_GetMonotonicTime(
-    Tcl_Time *timePtr)		/* Location to store time information. */
+long long
+Tcl_GetMonotonicTime()		/* Location to store time information. */
 {
+    long long microSeconds;
 #ifdef HAVE_CLOCK_GETTIME
     int ret;
     struct timespec ts;
@@ -273,14 +273,12 @@ Tcl_GetMonotonicTime(
 	(void) clock_gettime(CLOCK_REALTIME, &ts);
 	ret = 0;
     }
-    timePtr->sec = ts.tv_sec;
-    timePtr->usec = ts.tv_nsec / 1000;
+    microSeconds = (long long)ts.tv_sec * 1000000 + ts.tv_nsec / 1000;
 #else
     struct timeval tv;
 
     (void) gettimeofday(&tv, NULL);
-    timePtr->sec = tv.tv_sec;
-    timePtr->usec = tv.tv_usec;
+    microSeconds = (long long)tv.tv_sec * 1000000 + tv.tv_usec;
 #endif
 }
 

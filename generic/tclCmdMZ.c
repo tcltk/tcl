@@ -4078,11 +4078,7 @@ Tcl_TimeObjCmd(
     int i, result;
     int count;
     double totalMicroSec;
-#ifndef TCL_WIDE_CLICKS
-    Tcl_Time start, stop;
-#else
     Tcl_WideInt start, stop;
-#endif
 
     if (objc == 2) {
 	count = 1;
@@ -4099,7 +4095,7 @@ Tcl_TimeObjCmd(
     objPtr = objv[1];
     i = count;
 #ifndef TCL_WIDE_CLICKS
-    Tcl_GetMonotonicTime(&start);
+    start = Tcl_GetMonotonicTime();
 #else
     start = TclpGetWideClicks();
 #endif
@@ -4110,9 +4106,8 @@ Tcl_TimeObjCmd(
 	}
     }
 #ifndef TCL_WIDE_CLICKS
-    Tcl_GetMonotonicTime(&stop);
-    totalMicroSec = ((double) (stop.sec - start.sec)) * 1.0e6
-	    + (stop.usec - start.usec);
+    stop = Tcl_GetMonotonicTime();
+    totalMicroSec = ((double) (stop - start);
 #else
     stop = TclpGetWideClicks();
     totalMicroSec = ((double) TclpWideClicksToNanoseconds(stop - start))/1.0e3;

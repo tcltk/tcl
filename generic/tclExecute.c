@@ -7750,8 +7750,7 @@ TEBCresume(
 	    wval = (Tcl_WideInt)now.sec;
 	    break;
 	case CLOCK_READ_MONOTONIC:
-	    Tcl_GetMonotonicTime(&now);
-	    wval = (Tcl_WideInt)now.sec * 1000000 + now.usec;
+	    wval = Tcl_GetMonotonicTime();
 	    break;
 	default:
 	    Tcl_Panic("clockRead instruction with unknown clock#");

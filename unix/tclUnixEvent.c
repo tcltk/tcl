@@ -36,6 +36,7 @@ Tcl_SleepMicroSeconds(
 {
     struct timeval delay;
     Tcl_Time before, after, vdelay;
+    long long beforeUS;
 
     /*
      * The only trick here is that select appears to return early under some
@@ -43,7 +44,9 @@ Tcl_SleepMicroSeconds(
      * time really has elapsed.  If it's too early, go back to sleep again.
      */
 
-    Tcl_GetMonotonicTime(&before);
+    beforeUS = Tcl_GetMonotonicTime();
+    before.sec = beforeUS/1000000;
+    before.usec = beforeUS%1000000;
     after = before;
     after.sec += microSeconds / 1000000;
     after.usec += microSeconds % 1000000;
@@ -74,7 +77,9 @@ Tcl_SleepMicroSeconds(
 	}
 	(void) select(0, (SELECT_MASK *) 0, (SELECT_MASK *) 0,
 		(SELECT_MASK *) 0, &delay);
-	Tcl_GetMonotonicTime(&before);
+	beforeUS = Tcl_GetMonotonicTime();
+	before.sec = beforeUS/1000000;
+	before.usec = beforeUS%1000000;
     }
 }
 

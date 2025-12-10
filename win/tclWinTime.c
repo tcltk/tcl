@@ -342,11 +342,11 @@ TclpGetMicroseconds(void)
  *----------------------------------------------------------------------
  */
 
-void
-Tcl_GetMonotonicTime(
-    Tcl_Time *timePtr)		/* Location to store time information. */
+long long
+Tcl_GetMonotonicTime()
 {
     LARGE_INTEGER Frequency, PerformanceCount;
+    long long microSeconds, clicks;
 
     /*
      * The implementation
@@ -361,11 +361,19 @@ Tcl_GetMonotonicTime(
 
     if (0 != QueryPerformanceFrequency(&Frequency)
 	    && 0 != QueryPerformanceCounter(&PerformanceCount)) {
-	timePtr->sec = PerformanceCount.QuadPart / Frequency.QuadPart;
-	LONGLONG remainingCounterTicks =
-	    PerformanceCount.QuadPart % Frequency.QuadPart;
-	timePtr->usec =
-	    (long)((remainingCounterTicks * 1000000) / Frequency.QuadPart);
+	clicks = PerformanceCount.QuadPart;
+	if (clicks >= LLONG_MAX / 1000000) {
+	    /*
+	     * Will overflow - hope this never happens
+	     */
+	    if (clicks >= LLONG_MAX / 1000) {
+		microSeconds = clicks / Frequency.QuadPart * 1000000;
+	    } else {
+		microSeconds = clicks * 1000 / Frequency.QuadPart * 1000;
+	    }
+	} else {
+	    microSeconds = clicks * 1000000 / Frequency.QuadPart;
+	}
     }
     else {
 
@@ -375,11 +383,9 @@ Tcl_GetMonotonicTime(
 	 * The resolution is only 10 to 16 ms.
 	 */
 
-	ULONGLONG ms;
-	ms = GetTickCount64();
-	timePtr->sec = (long)(ms/1000);
-	timePtr->usec = ((long)(ms%1000))*1000;
+	microSeconds = (long long)GetTickCount64()*1000;
     }
+    return microSeconds;
 }
 
 /*

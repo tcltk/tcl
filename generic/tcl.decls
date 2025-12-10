@@ -1039,7 +1039,7 @@ declare 339 {
     Tcl_Size Tcl_WriteObj(Tcl_Channel chan, Tcl_Obj *objPtr)
 }
 declare 340 {
-    void Tcl_GetMonotonicTime(Tcl_Time *timeBuf)
+    long long Tcl_GetMonotonicTime()
 }
 declare 341 {
     Tcl_TimerToken  Tcl_CreateTimerHandlerMicroSeconds(long long microSeconds,
