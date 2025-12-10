@@ -196,6 +196,9 @@ static int		ParseTimeUnit(Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[], Tcl_Time *wakeupPtr);
 static int		TimerInfoDo(Tcl_Interp *interp, int objc,
 			Tcl_Obj *const objv[], bool isAfter);
+static Tcl_TimerToken	CreateTimerHandler(Tcl_Time *timePtr,
+			    Tcl_TimerProc *proc, void *clientData,
+			    bool monotonic);
 
 /*
  * How to construct the ensembles.
@@ -308,37 +311,23 @@ Tcl_CreateTimerHandlerMicroSeconds(
     Tcl_TimerProc *proc,	/* Function to invoke. */
     void *clientData)		/* Arbitrary data to pass to proc. */
 {
-    Tcl_Time time;
     long long timeUS;
 
     /*
      * Compute when the event should fire.
      */
 
-    timeUS = Tcl_GetMonotonicTime();
-    time.sec = timeUS/1000000;
-    time.usec = timeUS%1000000;
     if (microSeconds <= 0) {
-	microSeconds = 0;
+	timeUS = 0;
     } else {
-	long long seconds;
-	seconds = microSeconds/1000000;
-	if (LLONG_MAX - seconds < time.sec) {
+	timeUS = Tcl_GetMonotonicTime();
+	if (LLONG_MAX - microSeconds < timeUS) {
 	    /* here might be an assertion */
 	    return NULL;
 	}
-	time.sec += seconds;
-	time.usec += microSeconds%1000000;
-	if (time.usec >= 1000000) {
-	    if (time.sec == LLONG_MAX) {
-		/* here might be an assertion */
-		return NULL;
-	    }
-	    time.usec -= 1000000;
-	    time.sec += 1;
-	}
+	timeUS += microSeconds;
     }
-    return TclCreateAbsoluteTimerHandler(&time, proc, clientData, true);
+    return TclCreateMonotonicTimerHandler(timeUS, proc, clientData);
 }
 
 /*
@@ -366,7 +355,6 @@ Tcl_CreateTimerHandler(
     Tcl_TimerProc *proc,	/* Function to invoke. */
     void *clientData)		/* Arbitrary data to pass to proc. */
 {
-    Tcl_Time time;
     long long timeUS;
 
     /*
@@ -374,22 +362,43 @@ Tcl_CreateTimerHandler(
      */
 
     timeUS = Tcl_GetMonotonicTime();
-    time.sec = timeUS/1000000;
-    time.usec = timeUS%1000000;
-    
-    time.sec += milliseconds/1000;
-    time.usec += (milliseconds%1000)*1000;
-    if (time.usec >= 1000000) {
-	time.usec -= 1000000;
-	time.sec += 1;
-    }
-    return TclCreateAbsoluteTimerHandler(&time, proc, clientData, true);
+    timeUS += milliseconds*1000;
+
+    return TclCreateMonotonicTimerHandler(timeUS, proc, clientData);
 }
 
 /*
  *--------------------------------------------------------------
  *
  * TclCreateAbsoluteTimerHandler --
+ *
+ *	Arrange for a given function to be invoked at a particular time in the
+ *	future.
+ *
+ * Results:
+ *	The return value is a token for the timer event, which may be used to
+ *	delete the event before it fires.
+ *
+ * Side effects:
+ *	When the time in timePtr has been reached, proc will be invoked
+ *	exactly once.
+ *
+ *--------------------------------------------------------------
+ */
+
+Tcl_TimerToken
+TclCreateAbsoluteTimerHandler(
+    Tcl_Time *timePtr,
+    Tcl_TimerProc *proc,
+    void *clientData)
+{
+    return CreateTimerHandler(timePtr, proc, clientData, false);
+}
+
+/*
+ *--------------------------------------------------------------
+ *
+ * TclCreateMonotonicTimerHandler --
  *
  *	Arrange for a given function to be invoked at a particular time in the
  *	future.
@@ -408,7 +417,41 @@ Tcl_CreateTimerHandler(
  */
 
 Tcl_TimerToken
-TclCreateAbsoluteTimerHandler(
+TclCreateMonotonicTimerHandler(
+    long long timeUS,
+    Tcl_TimerProc *proc,
+    void *clientData)
+{
+    Tcl_Time time;
+    time.sec = timeUS / 1000000;
+    time.usec = timeUS % 1000000;
+
+    return CreateTimerHandler(&time, proc, clientData, true);
+}
+
+/*
+ *--------------------------------------------------------------
+ *
+ * CreateTimerHandler --
+ *
+ *	Arrange for a given function to be invoked at a particular time in the
+ *	future.
+ *	The parameter 'monotonic' controls, if the monotonic clock or
+ *	the wall clock is used.
+ *
+ * Results:
+ *	The return value is a token for the timer event, which may be used to
+ *	delete the event before it fires.
+ *
+ * Side effects:
+ *	When the time in timePtr has been reached, proc will be invoked
+ *	exactly once.
+ *
+ *--------------------------------------------------------------
+ */
+
+static Tcl_TimerToken
+CreateTimerHandler(
     Tcl_Time *timePtr,
     Tcl_TimerProc *proc,
     void *clientData,
@@ -1028,7 +1071,7 @@ Tcl_AfterObjCmd(
 	AfterInfo *afterPtr;
 	AfterAssocData *assocPtr;
 	ThreadSpecificData *tsdPtr;
-	Tcl_WideInt seconds;
+	long long microSeconds;
 
 	if (ms < 0) {
 	    ms = 0;
@@ -1038,42 +1081,20 @@ Tcl_AfterObjCmd(
 	wakeupUS = Tcl_GetMonotonicTime();
 	wakeup.sec = wakeupUS/1000000;
 	wakeup.usec = wakeupUS%1000000;
-	seconds = ms / 1000;
-	/*
-	* Check for numerical overflow.
-	 * Overflow handling is complicated, as an overflow of the sum of
-	 * two signed values is undefined. In consequence, gcc optimizes
-	 * out any error handling code.
-	 * So, check in advance, if an overflow might happen.
-	 */
+	
+	if (ms >= LLONG_MAX / 1000) {
+	    TimeTooFarError(interp);
+	    return TCL_ERROR;
+	}
+	microSeconds = ms * 1000;
 
-	if (LLONG_MAX - seconds < wakeup.sec) {
+	if (LLONG_MAX - microSeconds < wakeupUS) {
 	    TimeTooFarError(interp);
 	    return TCL_ERROR;
 	}
 	
-	wakeup.sec += seconds;
-	wakeup.usec += ms % 1000 * 1000;
-	if (wakeup.usec > 1000000) {
-	    if (LLONG_MAX == wakeup.usec) {
-		TimeTooFarError(interp);
-		return TCL_ERROR;
-	    }
-	    wakeup.sec++;
-	    wakeup.usec -= 1000000;
-	}
+	wakeupUS += microSeconds;
 	
-	/*
-	 * Tcl_Time should be representable in us.
-	 * Error out if not.
-	 * We take the next lower limit in seconds and ignore the
-	 * microseconds fractional part.
-	 */
-
-	if (wakeup.sec >= LLONG_MAX / 1000000) {
-	    TimeTooFarError(interp);
-	    return TCL_ERROR;
-	}
 
 	if (objc == 2) {
 
@@ -1081,6 +1102,9 @@ Tcl_AfterObjCmd(
 	     * No command given: wait the given monotonic time.
 	     */
 
+	    Tcl_Time wakeup;
+	    wakeup.sec = wakeupUS / 1000000;
+	    wakeup.usec = wakeupUS % 1000000;
 	    return TimerDelay(interp, wakeup, true);
 	}
 
@@ -1111,8 +1135,8 @@ Tcl_AfterObjCmd(
 
 	afterPtr->id = tsdPtr->afterId;
 	tsdPtr->afterId += 1;
-	afterPtr->token = TclCreateAbsoluteTimerHandler(&wakeup,
-		AfterProc, afterPtr, true);
+	afterPtr->token = TclCreateMonotonicTimerHandler(wakeupUS,
+		AfterProc, afterPtr);
 	afterPtr->nextPtr = assocPtr->firstAfterPtr;
 	assocPtr->firstAfterPtr = afterPtr;
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf("after#%d", afterPtr->id));
@@ -1687,7 +1711,7 @@ TimerAtCmd(
     afterPtr->id = tsdPtr->afterId;
     tsdPtr->afterId += 1;
     afterPtr->token = TclCreateAbsoluteTimerHandler(&wakeup,
-	    AfterProc, afterPtr, false);
+	    AfterProc, afterPtr);
     afterPtr->nextPtr = assocPtr->firstAfterPtr;
     assocPtr->firstAfterPtr = afterPtr;
     Tcl_SetObjResult(interp, Tcl_ObjPrintf("after#%d", afterPtr->id));
@@ -1789,6 +1813,7 @@ TimerInCmd(
 	TimeTooFarError(interp);
 	return TCL_ERROR;
     }
+    
 
     if (objc < 4) {
 
@@ -1798,6 +1823,8 @@ TimerInCmd(
 
 	return TimerDelay(interp, wakeup, true);
     }
+
+    wakeupUS = wakeup.sec*1000000+wakeup.usec;
 
     afterPtr = (AfterInfo *)Tcl_Alloc(sizeof(AfterInfo));
     afterPtr->assocPtr = assocPtr;
@@ -1816,8 +1843,8 @@ TimerInCmd(
 
     afterPtr->id = tsdPtr->afterId;
     tsdPtr->afterId += 1;
-    afterPtr->token = TclCreateAbsoluteTimerHandler(&wakeup,
-	    AfterProc, afterPtr, true);
+    afterPtr->token = TclCreateMonotonicTimerHandler(wakeupUS,
+	    AfterProc, afterPtr);
     afterPtr->nextPtr = assocPtr->firstAfterPtr;
     assocPtr->firstAfterPtr = afterPtr;
     Tcl_SetObjResult(interp, Tcl_ObjPrintf("after#%d", afterPtr->id));
