@@ -585,38 +585,29 @@ Tcl_SleepMicroSeconds(
      * requisite amount.
      */
 
-    Tcl_Time now;		/* Current wall clock time. */
-    Tcl_Time desired;		/* Desired wakeup time. */
-    Tcl_Time vdelay;		/* Time to sleep, for scaling virtual ->
+    long long nowUS;		/* Current wall clock time. */
+    long long desiredUS;	/* Desired wakeup time. */
+    long long vdelayUS;		/* Time to sleep, for scaling virtual ->
 				 * real. */
     DWORD sleepTime;		/* Time to sleep, real-time */
 
-    vdelay.sec = microSeconds / 1000000;
-    vdelay.usec = microSeconds % 1000000;
+    vdelayUS = microSeconds;
 
-    Tcl_GetMonotonicTime(&now);
-    desired.sec  = now.sec  + vdelay.sec;
-    desired.usec = now.usec + vdelay.usec;
-    if (desired.usec > 1000000) {
-	++desired.sec;
-	desired.usec -= 1000000;
-    }
+    nowUS = Tcl_GetMonotonicTime();
+    desiredUS = nowUS + vdelayUS;
 
-    sleepTime = (DWORD)vdelay.sec * 1000 + (unsigned long)vdelay.usec / 1000;
+    sleepTime = (DWORD) (unsigned long long)vdelayUS / 1000;
 
     for (;;) {
 	SleepEx(sleepTime, TRUE);
-	Tcl_GetMonotonicTime(&now);
-	if (now.sec > desired.sec) {
-	    break;
-	} else if ((now.sec == desired.sec) && (now.usec >= desired.usec)) {
+	nowUS = Tcl_GetMonotonicTime();
+	if (nowUS >= desiredUS) {
 	    break;
 	}
 
-	vdelay.sec  = desired.sec  - now.sec;
-	vdelay.usec = desired.usec - now.usec;
+	vdelayUS = desiredUS - nowUS;
 
-	sleepTime = (DWORD)vdelay.sec * 1000 + (unsigned long)vdelay.usec / 1000;
+	sleepTime = (DWORD) (unsigned long long)vdelayUS / 1000;
     }
 }
 

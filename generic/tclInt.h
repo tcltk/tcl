@@ -3768,7 +3768,7 @@ MODULE_SCOPE Tcl_ObjCmdProc Tcl_ConcatObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_ConstObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_ContinueObjCmd;
 MODULE_SCOPE Tcl_TimerToken TclCreateAbsoluteTimerHandler(
-			    Tcl_Time *timePtr, Tcl_TimerProc *proc,
+			    Tcl_Time *time, Tcl_TimerProc *proc,
 			    void *clientData, bool monotonic);
 MODULE_SCOPE Tcl_ObjCmdProc TclDefaultBgErrorHandlerObjCmd;
 MODULE_SCOPE int	TclDictWithFinish(Tcl_Interp *interp, Var *varPtr,

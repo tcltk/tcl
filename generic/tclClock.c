@@ -3278,15 +3278,13 @@ ClockMonotonicObjCmd(
     Tcl_Obj *const *objv)	/* Parameter values */
 {
     Tcl_WideInt us = 0;
-    Tcl_Time time;
 
     if (objc != 1) {
 	Tcl_WrongNumArgs(interp, 0, objv, "clock monotonic");
 	return TCL_ERROR;
     }
 
-    Tcl_GetMonotonicTime(&time);
-    us = time.sec*1000000+time.usec;
+    us = Tcl_GetMonotonicTime();
     Tcl_SetObjResult(interp, Tcl_NewWideIntObj(us));
     return TCL_OK;
 }
