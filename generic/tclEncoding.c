@@ -271,8 +271,8 @@ static const Tcl_ObjType encodingType = {
     "encoding",
     FreeEncodingInternalRep,
     DupEncodingInternalRep,
-    NULL,
-    NULL,
+    NULL,			// UpdateString
+    NULL,			// SetFromAny
     TCL_OBJTYPE_V0
 };
 

@@ -168,7 +168,7 @@ static int notifierThreadRunning = 0;
  * The following static flag indicates that async handlers are pending.
  */
 
-static int asyncPending = 0;
+static bool asyncPending = false;
 
 /*
  * The notifier thread signals the notifierCV when it has finished
@@ -253,25 +253,25 @@ typedef struct {
     const void *lpszClassName;
 } WNDCLASSW;
 
-extern void CloseHandle(void *);
-extern void *CreateEventW(void *, unsigned char, unsigned char,
+extern void		CloseHandle(void *);
+extern void *		CreateEventW(void *, unsigned char, unsigned char,
 			    void *);
-extern void *CreateWindowExW(void *, const void *, const void *,
+extern void *		CreateWindowExW(void *, const void *, const void *,
 			    unsigned int, int, int, int, int, void *, void *,
 			    void *, void *);
-extern unsigned int DefWindowProcW(void *, int, void *, void *);
-extern unsigned char DestroyWindow(void *);
-extern int DispatchMessageW(const MSG *);
-extern unsigned char GetMessageW(MSG *, void *, int, int);
-extern void MsgWaitForMultipleObjects(unsigned int, void *,
+extern unsigned int	DefWindowProcW(void *, int, void *, void *);
+extern unsigned char	DestroyWindow(void *);
+extern int		DispatchMessageW(const MSG *);
+extern unsigned char	GetMessageW(MSG *, void *, int, int);
+extern void		MsgWaitForMultipleObjects(unsigned int, void *,
 			    unsigned char, unsigned int, unsigned int);
-extern unsigned char PeekMessageW(MSG *, void *, int, int, int);
-extern unsigned char PostMessageW(void *, unsigned int, void *,
-				    void *);
-extern void PostQuitMessage(int);
-extern void *RegisterClassW(const WNDCLASSW *);
-extern unsigned char ResetEvent(void *);
-extern unsigned char TranslateMessage(const MSG *);
+extern unsigned char	PeekMessageW(MSG *, void *, int, int, int);
+extern unsigned char	PostMessageW(void *, unsigned int, void *,
+			    void *);
+extern void		PostQuitMessage(int);
+extern void *		RegisterClassW(const WNDCLASSW *);
+extern unsigned char	ResetEvent(void *);
+extern unsigned char	TranslateMessage(const MSG *);
 
 /*
  * Threaded-cygwin specific constants and functions in this file:
@@ -279,7 +279,7 @@ extern unsigned char TranslateMessage(const MSG *);
 
 #if TCL_THREADS && defined(__CYGWIN__)
 static const WCHAR className[] = L"TclNotifier";
-static unsigned int NotifierProc(void *hwnd, unsigned int message,
+static unsigned int	NotifierProc(void *hwnd, unsigned int message,
 			    void *wParam, void *lParam);
 #endif /* TCL_THREADS && defined(__CYGWIN__) */
 #ifdef __cplusplus
@@ -429,7 +429,7 @@ TclpFinalizeNotifier(
 	     * If async marks are outstanding, perform actions now.
 	     */
 	    if (asyncPending) {
-		asyncPending = 0;
+		asyncPending = false;
 		TclAsyncMarkFromNotifier();
 	    }
 	}
@@ -916,13 +916,13 @@ TclpWaitForEvent(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 TclAsyncNotifier(
     int sigNumber,		/* Signal number. */
     TCL_UNUSED(Tcl_ThreadId),	/* Target thread. */
     TCL_UNUSED(void *),	/* Notifier data. */
-    int *flagPtr,		/* Flag to mark. */
-    int value)			/* Value of mark. */
+    signed char *flagPtr,		/* Flag to mark. */
+    signed char value)			/* Value of mark. */
 {
 #if TCL_THREADS
     /*
@@ -936,15 +936,15 @@ TclAsyncNotifier(
 	if (notifierThreadRunning) {
 	    *flagPtr = value;
 	    if (!asyncPending) {
-		asyncPending = 1;
+		asyncPending = true;
 		if (write(triggerPipe, "S", 1) != 1) {
-		    asyncPending = 0;
-		    return 0;
+		    asyncPending = false;
+		    return false;
 		}
 	    }
-	    return 1;
+	    return true;
 	}
-	return 0;
+	return false;
     }
 
     /*
@@ -957,7 +957,7 @@ TclAsyncNotifier(
     (void)flagPtr;
     (void)value;
 #endif
-    return 0;
+    return false;
 }
 
 /*
@@ -1129,7 +1129,7 @@ NotifierThreadProc(
 	     * perform work on async handlers now.
 	     */
 	    if (errno == EINTR && asyncPending) {
-		asyncPending = 0;
+		asyncPending = false;
 		TclAsyncMarkFromNotifier();
 	    }
 
@@ -1193,7 +1193,7 @@ NotifierThreadProc(
 	} while (1);
 
 	if (asyncPending) {
-	    asyncPending = 0;
+	    asyncPending = false;
 	    TclAsyncMarkFromNotifier();
 	}
 

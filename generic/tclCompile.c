@@ -1035,11 +1035,11 @@ static void		ReleaseCmdWordData(ExtCmdLoc *eclPtr);
  */
 
 const Tcl_ObjType tclByteCodeType = {
-    "bytecode",			/* name */
-    FreeByteCodeInternalRep,	/* freeIntRepProc */
-    DupByteCodeInternalRep,	/* dupIntRepProc */
-    NULL,			/* updateStringProc */
-    SetByteCodeFromAny,		/* setFromAnyProc */
+    "bytecode",
+    FreeByteCodeInternalRep,
+    DupByteCodeInternalRep,
+    NULL,			// UpdateString
+    SetByteCodeFromAny,
     TCL_OBJTYPE_V0
 };
 
@@ -1049,11 +1049,11 @@ const Tcl_ObjType tclByteCodeType = {
  */
 
 static const Tcl_ObjType substCodeType = {
-    "substcode",		/* name */
-    FreeSubstCodeInternalRep,	/* freeIntRepProc */
-    DupByteCodeInternalRep,	/* dupIntRepProc - shared with bytecode */
-    NULL,			/* updateStringProc */
-    NULL,			/* setFromAnyProc */
+    "substcode",
+    FreeSubstCodeInternalRep,
+    DupByteCodeInternalRep,	// Shared with bytecode
+    NULL,			// UpdateString
+    NULL,			// SetFromAny
     TCL_OBJTYPE_V0
 };
 #define SubstFlags(objPtr) (objPtr)->internalRep.twoPtrValue.ptr2
@@ -1779,7 +1779,7 @@ TclInitCompileEnv(
     envPtr->codeStart = envPtr->staticCodeSpace;
     envPtr->codeNext = envPtr->codeStart;
     envPtr->codeEnd = envPtr->codeStart + COMPILEENV_INIT_CODE_BYTES;
-    envPtr->mallocedCodeArray = 0;
+    envPtr->mallocedCodeArray = false;
 
     envPtr->literalArrayPtr = envPtr->staticLiteralSpace;
     envPtr->literalArrayNext = 0;
@@ -1790,11 +1790,11 @@ TclInitCompileEnv(
     envPtr->exceptAuxArrayPtr = envPtr->staticExAuxArraySpace;
     envPtr->exceptArrayNext = 0;
     envPtr->exceptArrayEnd = COMPILEENV_INIT_EXCEPT_RANGES;
-    envPtr->mallocedExceptArray = 0;
+    envPtr->mallocedExceptArray = false;
 
     envPtr->cmdMapPtr = envPtr->staticCmdMapSpace;
     envPtr->cmdMapEnd = COMPILEENV_INIT_CMD_MAP_SIZE;
-    envPtr->mallocedCmdMap = 0;
+    envPtr->mallocedCmdMap = false;
     envPtr->atCmdStart = 1;
     envPtr->expandCount = 0;
 
@@ -1932,7 +1932,7 @@ TclInitCompileEnv(
     envPtr->auxDataArrayPtr = envPtr->staticAuxDataArraySpace;
     envPtr->auxDataArrayNext = 0;
     envPtr->auxDataArrayEnd = COMPILEENV_INIT_AUX_DATA_SIZE;
-    envPtr->mallocedAuxDataArray = 0;
+    envPtr->mallocedAuxDataArray = false;
 }
 
 /*
@@ -2705,7 +2705,7 @@ TclCompileVarSubst(
 
     localVar = TCL_INDEX_NONE;
     if (localVarName != -1) {
-	localVar = TclFindCompiledLocal(name, nameBytes, localVarName, envPtr);
+	localVar = TclFindCompiledLocal(name, nameBytes, localVarName != 0, envPtr);
     }
     if (localVar < 0) {
 	PushLiteral(envPtr, name, nameBytes);
@@ -3014,7 +3014,7 @@ TclCompileExprWords(
      */
 
     if ((numWords == 1) && (tokenPtr->type == TCL_TOKEN_SIMPLE_WORD)) {
-	TclCompileExpr(interp, tokenPtr[1].start,tokenPtr[1].size, envPtr, 1);
+	TclCompileExpr(interp, tokenPtr[1].start,tokenPtr[1].size, envPtr, true);
 	return;
     }
 
@@ -3338,7 +3338,7 @@ TclFindCompiledLocal(
 				 * scalar or array variable. If NULL, a
 				 * temporary var should be created. */
     Tcl_Size nameBytes,		/* Number of bytes in the name. */
-    int create,			/* If 1, allocate a local frame entry for the
+    bool create,			/* If 1, allocate a local frame entry for the
 				 * variable if it is new. */
     CompileEnv *envPtr)		/* Points to the current compile environment*/
 {
@@ -3479,7 +3479,7 @@ TclExpandCodeArray(
 
 	memcpy(newPtr, envPtr->codeStart, currBytes);
 	envPtr->codeStart = newPtr;
-	envPtr->mallocedCodeArray = 1;
+	envPtr->mallocedCodeArray = true;
     }
 
     envPtr->codeNext = envPtr->codeStart + currBytes;
@@ -3548,7 +3548,7 @@ EnterCmdStartData(
 
 	    memcpy(newPtr, envPtr->cmdMapPtr, currBytes);
 	    envPtr->cmdMapPtr = newPtr;
-	    envPtr->mallocedCmdMap = 1;
+	    envPtr->mallocedCmdMap = true;
 	}
 	envPtr->cmdMapEnd = newElems;
     }
@@ -3761,7 +3761,7 @@ TclCreateExceptRange(
 	    memcpy(newPtr2, envPtr->exceptAuxArrayPtr, currBytes2);
 	    envPtr->exceptArrayPtr = newPtr;
 	    envPtr->exceptAuxArrayPtr = newPtr2;
-	    envPtr->mallocedExceptArray = 1;
+	    envPtr->mallocedExceptArray = true;
 	}
 	envPtr->exceptArrayEnd = newElems;
     }
@@ -3776,7 +3776,7 @@ TclCreateExceptRange(
     rangePtr->continueOffset = TCL_INDEX_NONE;
     rangePtr->catchOffset = TCL_INDEX_NONE;
     auxPtr = &envPtr->exceptAuxArrayPtr[index];
-    auxPtr->supportsContinue = 1;
+    auxPtr->supportsContinue = true;
     auxPtr->stackDepth = envPtr->currStackDepth;
     auxPtr->expandTarget = envPtr->expandCount;
     auxPtr->expandTargetDepth = TCL_INDEX_NONE;
@@ -4117,7 +4117,7 @@ TclCreateAuxData(
 
 	    memcpy(newPtr, envPtr->auxDataArrayPtr, currBytes);
 	    envPtr->auxDataArrayPtr = newPtr;
-	    envPtr->mallocedAuxDataArray = 1;
+	    envPtr->mallocedAuxDataArray = true;
 	}
 	envPtr->auxDataArrayEnd = newElems;
     }
@@ -4155,7 +4155,7 @@ TclInitJumpFixupArray(
     fixupArrayPtr->fixup = fixupArrayPtr->staticFixupSpace;
     fixupArrayPtr->next = 0;
     fixupArrayPtr->end = JUMPFIXUP_INIT_ENTRIES - 1;
-    fixupArrayPtr->mallocedArray = 0;
+    fixupArrayPtr->mallocedArray = false;
 }
 
 /*
@@ -4206,7 +4206,7 @@ TclExpandJumpFixupArray(
 
 	memcpy(newPtr, fixupArrayPtr->fixup, currBytes);
 	fixupArrayPtr->fixup = newPtr;
-	fixupArrayPtr->mallocedArray = 1;
+	fixupArrayPtr->mallocedArray = true;
     }
     fixupArrayPtr->end = newElems;
 }
@@ -5078,7 +5078,7 @@ TclPushVarName(
 	 */
 
 	if (!hasNsQualifiers) {
-	    localIndex = TclFindCompiledLocal(name, nameLen, 1, envPtr);
+	    localIndex = TclFindCompiledLocal(name, nameLen, true, envPtr);
 	}
 	if (interp && localIndex < 0) {
 	    PushLiteral(envPtr, name, nameLen);

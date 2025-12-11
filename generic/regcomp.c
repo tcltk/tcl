@@ -59,7 +59,7 @@ static void wordchrs(struct vars *);
 static struct subre *sub_re(struct vars *, int, int, struct state *, struct state *);
 static void freesubre(struct vars *, struct subre *);
 static void freesrnode(struct vars *, struct subre *);
-static int numst(struct subre *, int);
+static size_t numst(struct subre *, size_t);
 static void markst(struct subre *);
 static void cleanst(struct vars *);
 static long nfatree(struct vars *, struct subre *, FILE *);
@@ -218,7 +218,7 @@ struct vars {
     struct subre *tree;		/* subexpression tree */
     struct subre *treechain;	/* all tree nodes allocated */
     struct subre *treefree;	/* any free tree nodes */
-    int ntree;			/* number of tree nodes, plus one */
+    size_t ntree;		/* number of tree nodes, plus one */
     struct cvec *cv;		/* interface cvec */
     struct cvec *cv2;		/* utility cvec */
     struct subre *lacons;	/* lookahead-constraint vector */
@@ -1810,14 +1810,14 @@ freesrnode(
 
 /*
  - numst - number tree nodes (assigning "id" indexes)
- ^ static int numst(struct subre *, int);
+ ^ static size_t numst(struct subre *, size_t);
  */
-static int			/* next number */
+static size_t			/* next number */
 numst(
     struct subre *t,
-    int start)			/* starting point for subtree numbers */
+    size_t start)		/* starting point for subtree numbers */
 {
-    int i;
+    size_t i;
 
     assert(t != NULL);
 

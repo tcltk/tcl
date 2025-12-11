@@ -16,9 +16,9 @@
 #include "tclFileSystem.h"
 #include <winioctl.h>
 #include <shlobj.h>
-#include <lm.h>		        /* For TclpGetUserHome(). */
+#include <lm.h>			/* For TclpGetUserHome(). */
 #include <userenv.h>		/* For TclpGetUserHome(). */
-#include <aclapi.h>             /* For GetNamedSecurityInfo */
+#include <aclapi.h>		/* For GetNamedSecurityInfo(). */
 #if defined (__clang__) && (__clang_major__ > 20)
 #pragma clang diagnostic ignored "-Wc++-keyword"
 #endif
@@ -3360,13 +3360,13 @@ TclWinFileOwned(
      */
 
     if (secd) {
-	LocalFree(secd);            /* Also frees ownerSid */
+	LocalFree(secd);	/* Also frees ownerSid */
     }
     if (buf) {
 	Tcl_Free(buf);
     }
 
-    return (owned != 0);        /* Convert non-0 to 1 */
+    return (owned != 0);	/* Convert non-0 to 1 */
 }
 
 /*
