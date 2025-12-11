@@ -173,14 +173,14 @@ static const DeclaredSlotMethod slotMethods[] = {
  * ----------------------------------------------------------------------
  */
 
-static inline int
+static inline bool
 IsPrivateDefine(
     Tcl_Interp *interp)
 {
     Interp *iPtr = (Interp *) interp;
 
     if (!iPtr->varFramePtr) {
-	return 0;
+	return false;
     }
     return iPtr->varFramePtr->isProcCallFrame == PRIVATE_FRAME;
 }
@@ -726,7 +726,7 @@ static int
 RenameDeleteMethod(
     Tcl_Interp *interp,
     Object *oPtr,
-    int useClass,
+    bool useClass,
     Tcl_Obj *const fromPtr,
     Tcl_Obj *const toPtr)
 {
@@ -1164,7 +1164,7 @@ MagicDefinitionInvoke(
 {
     Tcl_Obj *objPtr, *obj2Ptr, **objs;
     Tcl_Command cmd;
-    int isRoot, result, offset = cmdIndex + 1;
+    int result, offset = cmdIndex + 1;
     Tcl_Size dummy;
 
     /*
@@ -1176,7 +1176,7 @@ MagicDefinitionInvoke(
      * that finds command names in the wrong namespace at the moment. Ugly!
      */
 
-    isRoot = TclInitRewriteEnsemble(interp, offset, 1, objv);
+    bool isRoot = TclInitRewriteEnsemble(interp, offset, 1, objv);
 
     /*
      * Build the list of arguments using a Tcl_Obj as a workspace. See
@@ -1233,8 +1233,7 @@ GetOrCreateMethod(
     Tcl_Obj *namePtr,
     int *isNew)
 {
-    Tcl_HashEntry *hPtr = Tcl_CreateHashEntry(tablePtr, namePtr,
-		    isNew);
+    Tcl_HashEntry *hPtr = Tcl_CreateHashEntry(tablePtr, namePtr, isNew);
     if (*isNew) {
 	Method *mPtr = (Method *) Tcl_Alloc(sizeof(Method));
 	memset(mPtr, 0, sizeof(Method));
@@ -1248,7 +1247,7 @@ GetOrCreateMethod(
     }
 }
 
-static int
+static bool
 ExportMethod(
     Class *clsPtr,
     Tcl_Obj *namePtr)
@@ -1263,7 +1262,7 @@ ExportMethod(
     return isNew;
 }
 
-static int
+static bool
 UnexportMethod(
     Class *clsPtr,
     Tcl_Obj *namePtr)
@@ -1289,7 +1288,7 @@ InitMethodTable(
     }
 }
 
-static int
+static bool
 ExportInstanceMethod(
     Object *oPtr,
     Tcl_Obj *namePtr)
@@ -1306,7 +1305,7 @@ ExportInstanceMethod(
     return isNew;
 }
 
-static int
+static bool
 UnexportInstanceMethod(
     Object *oPtr,
     Tcl_Obj *namePtr)
@@ -1532,7 +1531,7 @@ TclOODefineSelfObjCmd(
 {
     Tcl_Namespace *nsPtr;
     Object *oPtr;
-    int result, isPrivate;
+    int result;
 
     oPtr = (Object *) TclOOGetDefineCmdContext(interp);
     if (oPtr == NULL) {
@@ -1544,7 +1543,7 @@ TclOODefineSelfObjCmd(
 	return TCL_OK;
     }
 
-    isPrivate = IsPrivateDefine(interp);
+    bool isPrivate = IsPrivateDefine(interp);
 
     /*
      * Make the oo::objdefine namespace the current namespace and evaluate the
@@ -1635,7 +1634,7 @@ TclOODefinePrivateObjCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    int isInstancePrivate = (clientData != NULL);
+    bool isInstancePrivate = (clientData != NULL);
 				/* Just so that we can generate the correct
 				 * error message depending on the context of
 				 * usage of this function. */
@@ -1711,7 +1710,6 @@ TclOODefineClassObjCmd(
     Object *oPtr;
     Class *clsPtr;
     Foundation *fPtr = TclOOGetFoundation(interp);
-    int wasClass, willBeClass;
 
     /*
      * Parse the context to get the object to operate on.
@@ -1761,8 +1759,8 @@ TclOODefineClassObjCmd(
      * Set the object's class.
      */
 
-    wasClass = (oPtr->classPtr != NULL);
-    willBeClass = (TclOOIsReachable(fPtr->classCls, clsPtr));
+    bool wasClass = (oPtr->classPtr != NULL);
+    bool willBeClass = TclOOIsReachable(fPtr->classCls, clsPtr);
 
     if (oPtr->selfCls != clsPtr) {
 	TclOORemoveFromInstances(oPtr, oPtr->selfCls);
@@ -1956,7 +1954,7 @@ TclOODefineDeleteMethodObjCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    int isInstanceDeleteMethod = (clientData != NULL);
+    bool isInstanceDeleteMethod = (clientData != NULL);
     Object *oPtr;
     int i;
 
@@ -2071,8 +2069,8 @@ TclOODefineExportObjCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    int isInstanceExport = (clientData != NULL);
-    int i, changed = 0;
+    bool isInstanceExport = (clientData != NULL), changed = false;
+    int i;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name ?name ...?");
@@ -2137,10 +2135,10 @@ TclOODefineForwardObjCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    int isInstanceForward = (clientData != NULL);
+    bool isInstanceForward = (clientData != NULL);
     Object *oPtr;
     Method *mPtr;
-    int isPublic;
+    int flags;
     Tcl_Obj *prefixObj;
 
     if (objc < 3) {
@@ -2155,10 +2153,10 @@ TclOODefineForwardObjCmd(
     if (!isInstanceForward && !oPtr->classPtr) {
 	return ReportAbuse(interp);
     }
-    isPublic = Tcl_StringMatch(TclGetString(objv[1]), PUBLIC_PATTERN)
+    flags = Tcl_StringMatch(TclGetString(objv[1]), PUBLIC_PATTERN)
 	    ? PUBLIC_METHOD : 0;
     if (IsPrivateDefine(interp)) {
-	isPublic = TRUE_PRIVATE_METHOD;
+	flags = TRUE_PRIVATE_METHOD;
     }
 
     /*
@@ -2167,10 +2165,10 @@ TclOODefineForwardObjCmd(
 
     prefixObj = Tcl_NewListObj(objc - 2, objv + 2);
     if (isInstanceForward) {
-	mPtr = TclOONewForwardInstanceMethod(interp, oPtr, isPublic, objv[1],
+	mPtr = TclOONewForwardInstanceMethod(interp, oPtr, flags, objv[1],
 		prefixObj);
     } else {
-	mPtr = TclOONewForwardMethod(interp, oPtr->classPtr, isPublic,
+	mPtr = TclOONewForwardMethod(interp, oPtr->classPtr, flags,
 		objv[1], prefixObj);
     }
     if (mPtr == NULL) {
@@ -2261,9 +2259,9 @@ TclOODefineMethodObjCmd(
 	MODE_UNEXPORT
     } exportMode;
 
-    int isInstanceMethod = (clientData != NULL);
+    bool isInstanceMethod = (clientData != NULL);
     Object *oPtr;
-    int isPublic = 0;
+    int flags = 0;
 
     if (objc < 4 || objc > 5) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name ?option? args body");
@@ -2284,22 +2282,22 @@ TclOODefineMethodObjCmd(
 	}
 	switch (exportMode) {
 	case MODE_EXPORT:
-	    isPublic = PUBLIC_METHOD;
+	    flags = PUBLIC_METHOD;
 	    break;
 	case MODE_PRIVATE:
-	    isPublic = TRUE_PRIVATE_METHOD;
+	    flags = TRUE_PRIVATE_METHOD;
 	    break;
 	case MODE_UNEXPORT:
-	    isPublic = 0;
+	    flags = 0;
 	    break;
 	default:
 	    TCL_UNREACHABLE();
 	}
     } else {
 	if (IsPrivateDefine(interp)) {
-	    isPublic = TRUE_PRIVATE_METHOD;
+	    flags = TRUE_PRIVATE_METHOD;
 	} else {
-	    isPublic = Tcl_StringMatch(TclGetString(objv[1]), PUBLIC_PATTERN)
+	    flags = Tcl_StringMatch(TclGetString(objv[1]), PUBLIC_PATTERN)
 		    ? PUBLIC_METHOD : 0;
 	}
     }
@@ -2309,12 +2307,12 @@ TclOODefineMethodObjCmd(
      */
 
     if (isInstanceMethod) {
-	if (TclOONewProcInstanceMethod(interp, oPtr, isPublic, objv[1],
+	if (TclOONewProcInstanceMethod(interp, oPtr, flags, objv[1],
 		objv[objc - 2], objv[objc - 1], NULL) == NULL) {
 	    return TCL_ERROR;
 	}
     } else {
-	if (TclOONewProcMethod(interp, oPtr->classPtr, isPublic, objv[1],
+	if (TclOONewProcMethod(interp, oPtr->classPtr, flags, objv[1],
 		objv[objc - 2], objv[objc - 1], NULL) == NULL) {
 	    return TCL_ERROR;
 	}
@@ -2349,7 +2347,7 @@ TclOODefineClassMethodObjCmd(
 	return TCL_ERROR;
     }
 
-    int isPublic = Tcl_StringMatch(TclGetString(objv[1]), PUBLIC_PATTERN)
+    int flags = Tcl_StringMatch(TclGetString(objv[1]), PUBLIC_PATTERN)
 	    ? PUBLIC_METHOD : 0;
 
     // Create the method on the delegate class if the caller gave arguments and body
@@ -2362,9 +2360,9 @@ TclOODefineClassMethodObjCmd(
 	    return TCL_ERROR;
 	}
 	if (IsPrivateDefine(interp)) {
-	    isPublic = 0;
+	    flags = 0;
 	}
-	if (TclOONewProcMethod(interp, delegatePtr, isPublic, objv[1],
+	if (TclOONewProcMethod(interp, delegatePtr, flags, objv[1],
 		objv[2], objv[3], NULL) == NULL) {
 	    return TCL_ERROR;
 	}
@@ -2372,14 +2370,14 @@ TclOODefineClassMethodObjCmd(
 
     // Make the connection to the delegate by forwarding
     if (IsPrivateDefine(interp)) {
-	isPublic = TRUE_PRIVATE_METHOD;
+	flags = TRUE_PRIVATE_METHOD;
     }
     Tcl_Obj *forwardArgs[] = {
 	Tcl_NewStringObj("myclass", -1),
 	objv[1]
     };
     Tcl_Obj *prefixObj = Tcl_NewListObj(2, forwardArgs);
-    Method *mPtr = TclOONewForwardMethod(interp, clsPtr, isPublic,
+    Method *mPtr = TclOONewForwardMethod(interp, clsPtr, flags,
 	    objv[1], prefixObj);
     if (mPtr == NULL) {
 	Tcl_DecrRefCount(prefixObj);
@@ -2406,7 +2404,7 @@ TclOODefineRenameMethodObjCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    int isInstanceRenameMethod = (clientData != NULL);
+    bool isInstanceRenameMethod = (clientData != NULL);
     Object *oPtr;
 
     if (objc != 3) {
@@ -2460,10 +2458,10 @@ TclOODefineUnexportObjCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    int isInstanceUnexport = (clientData != NULL);
+    int isInstanceUnexport = (clientData != NULL), changed = false;
     Object *oPtr;
     Class *clsPtr;
-    int i, changed = 0;
+    int i;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name ?name ...?");
@@ -4142,22 +4140,23 @@ Configurable_ObjectWritableProps_Set(
  * ----------------------------------------------------------------------
  */
 
-static int
+static bool
 BuildPropertyList(
     PropertyList *propsList,	/* Property list to scan. */
     Tcl_Obj *propName,		/* Property to add/remove. */
-    int addingProp,		/* True if we're adding, false if removing. */
+    bool addingProp,		/* True if we're adding, false if removing. */
     Tcl_Obj *listObj)		/* The list of property names we're building */
 {
-    int present = 0, changed = 0, i;
+    bool present = false, changed = false;
+    int i;
     Tcl_Obj *other;
 
     Tcl_SetListObj(listObj, 0, NULL);
     FOREACH(other, *propsList) {
 	if (!TclStringCmp(propName, other, 1, 0, TCL_INDEX_NONE)) {
-	    present = 1;
+	    present = true;
 	    if (!addingProp) {
-		changed = 1;
+		changed = true;
 		continue;
 	    }
 	}
@@ -4165,7 +4164,7 @@ BuildPropertyList(
     }
     if (!present && addingProp) {
 	Tcl_ListObjAppendElement(NULL, listObj, propName);
-	changed = 1;
+	changed = true;
     }
     return changed;
 }
@@ -4176,10 +4175,10 @@ TclOORegisterInstanceProperty(
     Tcl_Obj *propName,		/* Property to add/remove. Must include the
 				 * hyphen if one is desired; this is the value
 				 * that is actually placed in the slot. */
-    int registerReader,		/* True if we're adding the property name to
+    bool registerReader,	/* True if we're adding the property name to
 				 * the readable property slot. False if we're
 				 * removing the property name from the slot. */
-    int registerWriter)		/* True if we're adding the property name to
+    bool registerWriter)	/* True if we're adding the property name to
 				 * the writable property slot. False if we're
 				 * removing the property name from the slot. */
 {
@@ -4207,30 +4206,30 @@ TclOORegisterProperty(
     Tcl_Obj *propName,		/* Property to add/remove. Must include the
 				 * hyphen if one is desired; this is the value
 				 * that is actually placed in the slot. */
-    int registerReader,		/* True if we're adding the property name to
+    bool registerReader,	/* True if we're adding the property name to
 				 * the readable property slot. False if we're
 				 * removing the property name from the slot. */
-    int registerWriter)		/* True if we're adding the property name to
+    bool registerWriter)	/* True if we're adding the property name to
 				 * the writable property slot. False if we're
 				 * removing the property name from the slot. */
 {
     Tcl_Obj *listObj = Tcl_NewObj();	/* Working buffer. */
     Tcl_Obj **objv;
     Tcl_Size count;
-    int changed = 0;
+    bool changed = false;
 
     if (BuildPropertyList(&clsPtr->properties.readable, propName,
 	    registerReader, listObj)) {
 	TclListObjGetElements(NULL, listObj, &count, &objv);
 	TclOOInstallReadableProperties(&clsPtr->properties, count, objv);
-	changed = 1;
+	changed = true;
     }
 
     if (BuildPropertyList(&clsPtr->properties.writable, propName,
 	    registerWriter, listObj)) {
 	TclListObjGetElements(NULL, listObj, &count, &objv);
 	TclOOInstallWritableProperties(&clsPtr->properties, count, objv);
-	changed = 1;
+	changed = true;
     }
     Tcl_BounceRefCount(listObj);
     if (changed) {
