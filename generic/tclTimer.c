@@ -1081,7 +1081,7 @@ Tcl_AfterObjCmd(
 	wakeupUS = Tcl_GetMonotonicTime();
 	wakeup.sec = wakeupUS/1000000;
 	wakeup.usec = wakeupUS%1000000;
-	
+
 	if (ms >= LLONG_MAX / 1000) {
 	    TimeTooFarError(interp);
 	    return TCL_ERROR;
@@ -1092,9 +1092,9 @@ Tcl_AfterObjCmd(
 	    TimeTooFarError(interp);
 	    return TCL_ERROR;
 	}
-	
+
 	wakeupUS += microSeconds;
-	
+
 
 	if (objc == 2) {
 
@@ -1743,12 +1743,12 @@ ParseTimeUnit(
 	    != TCL_OK) {
 	return TCL_ERROR;
     }
-    
+
     /*
      * Transfer to Tcl_Timer structure
      */
 
-    
+
     switch(unitIndex) {
     case UNIT_MICROSECONDS:
     case UNIT_US:
@@ -1908,7 +1908,7 @@ TimerInCmd(
 
     long long wakeupUS;
     wakeupUS = Tcl_GetMonotonicTime();
-    
+
     if ( LLONG_MAX - wakeupUS < wakeupArgUS ) {
 	TimeTooFarError(interp);
 	return TCL_ERROR;
@@ -2172,7 +2172,7 @@ TimerInfoDo(
 	Tcl_SetObjResult(interp, resultObj);
 	return TCL_OK;
     }
-    
+
     /*
      * This is not used for "after info", as then, the word "after"
      * is missing in the error message
@@ -2214,7 +2214,7 @@ TimerInfoDo(
     } else {
 
 	/*
-	 * wall clock and monotonic timers have different return values for 
+	 * wall clock and monotonic timers have different return values for
 	 * after info or timer info:
 	 * after info: Cmd "timer"
 	 * timer info: Cmd "monotonic/real" us
@@ -2245,7 +2245,7 @@ TimerInfoDo(
 				    (timerHandlerIndex == timerHandlerMonotonic ?
 				    "monotonic":"wallclock")
 				    , -1));
-			
+
 			if (timerHandlerPtr->time.sec >= LLONG_MAX/1000000) {
 			    TimeTooFarError(interp);
 			    return TCL_ERROR;
