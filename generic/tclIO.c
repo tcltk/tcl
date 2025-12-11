@@ -340,11 +340,11 @@ static void		DupChannelInternalRep(Tcl_Obj *objPtr, Tcl_Obj *copyPtr);
 static void		FreeChannelInternalRep(Tcl_Obj *objPtr);
 
 static const Tcl_ObjType chanObjType = {
-    "channel",			/* name for this type */
-    FreeChannelInternalRep,	/* freeIntRepProc */
-    DupChannelInternalRep,	/* dupIntRepProc */
-    NULL,			/* updateStringProc */
-    NULL,			/* setFromAnyProc */
+    "channel",
+    FreeChannelInternalRep,
+    DupChannelInternalRep,
+    NULL,			// UpdateString
+    NULL,			// SetFromAny
     TCL_OBJTYPE_V0
 };
 

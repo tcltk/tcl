@@ -196,6 +196,140 @@ TclOOGetClassFromObj(
 /*
  * ----------------------------------------------------------------------
  *
+ * GetClassMethodFromObj --
+ *
+ *	Helper for looking up a class-defined method.
+ *
+ * ----------------------------------------------------------------------
+ */
+static inline Method *
+GetClassMethodFromObj(
+    Tcl_Interp *interp,
+    Class *clsPtr,
+    Tcl_Obj *methodName)
+{
+    Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&clsPtr->classMethods, methodName);
+    Method *mPtr;
+
+    if (hPtr == NULL) {
+	goto unknownMethod;
+    }
+    mPtr = (Method *)Tcl_GetHashValue(hPtr);
+    if (mPtr->typePtr == NULL) {
+	/*
+	 * Special entry for visibility control: pretend the method doesnt
+	 * exist.
+	 */
+
+	goto unknownMethod;
+    }
+    return mPtr;
+
+  unknownMethod:
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    "unknown method \"%s\"", TclGetString(methodName)));
+    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
+	    TclGetString(methodName), (char *)NULL);
+    return NULL;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * GetInstanceMethodFromObj --
+ *
+ *	Helper for looking up an object-instance-defined method.
+ *
+ * ----------------------------------------------------------------------
+ */
+static inline Method *
+GetInstanceMethodFromObj(
+    Tcl_Interp *interp,
+    Object *oPtr,
+    Tcl_Obj *methodName)
+{
+    Tcl_HashEntry *hPtr;
+    Method *mPtr;
+
+    if (!oPtr->methodsPtr) {
+	goto unknownMethod;
+    }
+    hPtr = Tcl_FindHashEntry(oPtr->methodsPtr, methodName);
+    if (hPtr == NULL) {
+	goto unknownMethod;
+    }
+    mPtr = (Method *)Tcl_GetHashValue(hPtr);
+    if (mPtr->typePtr == NULL) {
+	/*
+	 * Special entry for visibility control: pretend the method doesnt
+	 * exist.
+	 */
+
+	goto unknownMethod;
+    }
+    return mPtr;
+
+  unknownMethod:
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    "unknown method \"%s\"", TclGetString(methodName)));
+    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
+	    TclGetString(methodName), (char *)NULL);
+    return NULL;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * GetProcFromMethod --
+ *
+ *	Helper for looking up a procedure-like method's definition details.
+ *
+ * ----------------------------------------------------------------------
+ */
+static inline Proc *
+GetProcFromMethod(
+    Tcl_Interp *interp,
+    Method *mPtr)
+{
+    Proc *procPtr = TclOOGetProcFromMethod(mPtr);
+    if (procPtr == NULL) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"definition not available for this kind of method",
+		TCL_AUTO_LENGTH));
+	OO_ERROR(interp, METHOD_TYPE);
+	return NULL;
+    }
+    return procPtr;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * GetForwardFromMethod --
+ *
+ *	Helper for looking up a forwarded method's definition details.
+ *
+ * ----------------------------------------------------------------------
+ */
+static inline Tcl_Obj *
+GetForwardFromMethod(
+    Tcl_Interp *interp,
+    Method *mPtr)
+{
+    Tcl_Obj *prefixObj = TclOOGetFwdFromMethod(mPtr);
+    if (prefixObj == NULL) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"prefix argument list not available for this kind of method",
+		TCL_AUTO_LENGTH));
+	OO_ERROR(interp, METHOD_TYPE);
+	return NULL;
+    }
+    return prefixObj;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
  * InfoObjectClassCmd --
  *
  *	Implements [info object class $objName ?$className?]
@@ -268,7 +402,7 @@ InfoObjectDefnCmd(
     Tcl_Obj *const objv[])
 {
     Object *oPtr;
-    Tcl_HashEntry *hPtr;
+    Method *mPtr;
     Proc *procPtr;
     Tcl_Obj *resultObjs[2];
 
@@ -282,16 +416,13 @@ InfoObjectDefnCmd(
 	return TCL_ERROR;
     }
 
-    if (!oPtr->methodsPtr) {
-	goto unknownMethod;
+    mPtr = GetInstanceMethodFromObj(interp, oPtr, objv[2]);
+    if (!mPtr) {
+	return TCL_ERROR;
     }
-    hPtr = Tcl_FindHashEntry(oPtr->methodsPtr, objv[2]);
-    if (hPtr == NULL) {
-	goto unknownMethod;
-    }
-    procPtr = TclOOGetProcFromMethod((Method *) Tcl_GetHashValue(hPtr));
+    procPtr = GetProcFromMethod(interp, mPtr);
     if (procPtr == NULL) {
-	goto wrongType;
+	return TCL_ERROR;
     }
 
     /*
@@ -299,28 +430,9 @@ InfoObjectDefnCmd(
      */
 
     resultObjs[0] = DescribeMethodArgs(procPtr);
-    resultObjs[1] = TclOOGetMethodBody((Method *) Tcl_GetHashValue(hPtr));
+    resultObjs[1] = TclOOGetMethodBody(mPtr);
     Tcl_SetObjResult(interp, Tcl_NewListObj(2, resultObjs));
     return TCL_OK;
-
-    /*
-     * Errors...
-     */
-
-  unknownMethod:
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "unknown method \"%s\"", TclGetString(objv[2])));
-    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
-	    TclGetString(objv[2]), (char *)NULL);
-    return TCL_ERROR;
-
-  wrongType:
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-	    "definition not available for this kind of method",
-	    TCL_AUTO_LENGTH));
-    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
-	    TclGetString(objv[2]), (char *)NULL);
-    return TCL_ERROR;
 }
 
 /*
@@ -380,7 +492,7 @@ InfoObjectForwardCmd(
     Tcl_Obj *const objv[])
 {
     Object *oPtr;
-    Tcl_HashEntry *hPtr;
+    Method *mPtr;
     Tcl_Obj *prefixObj;
 
     if (objc != 3) {
@@ -392,17 +504,13 @@ InfoObjectForwardCmd(
     if (oPtr == NULL) {
 	return TCL_ERROR;
     }
-
-    if (!oPtr->methodsPtr) {
-	goto unknownMethod;
+    mPtr = GetInstanceMethodFromObj(interp, oPtr, objv[2]);
+    if (mPtr == NULL) {
+	return TCL_ERROR;
     }
-    hPtr = Tcl_FindHashEntry(oPtr->methodsPtr, objv[2]);
-    if (hPtr == NULL) {
-	goto unknownMethod;
-    }
-    prefixObj = TclOOGetFwdFromMethod((Method *) Tcl_GetHashValue(hPtr));
+    prefixObj = GetForwardFromMethod(interp, mPtr);
     if (prefixObj == NULL) {
-	goto wrongType;
+	return TCL_ERROR;
     }
 
     /*
@@ -411,25 +519,6 @@ InfoObjectForwardCmd(
 
     Tcl_SetObjResult(interp, prefixObj);
     return TCL_OK;
-
-    /*
-     * Errors...
-     */
-
-  unknownMethod:
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "unknown method \"%s\"", TclGetString(objv[2])));
-    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
-	    TclGetString(objv[2]), (char *)NULL);
-    return TCL_ERROR;
-
-  wrongType:
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-	    "prefix argument list not available for this kind of method",
-	    TCL_AUTO_LENGTH));
-    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
-	    TclGetString(objv[2]), (char *)NULL);
-    return TCL_ERROR;
 }
 
 /*
@@ -665,14 +754,10 @@ InfoObjectMethodsCmd(
 
     TclNewObj(resultObj);
     if (recurse) {
-	const char **names;
-	int i, numNames = TclOOGetSortedMethodList(oPtr, NULL, NULL, flag,
-		&names);
+	Tcl_Obj **names;
+	int numNames = TclOOGetSortedMethodList(oPtr, NULL, NULL, flag, &names);
 
-	for (i=0 ; i<numNames ; i++) {
-	    Tcl_ListObjAppendElement(NULL, resultObj,
-		    Tcl_NewStringObj(names[i], TCL_AUTO_LENGTH));
-	}
+	TclListObjAppendElements(NULL, resultObj, numNames, names);
 	if (numNames > 0) {
 	    Tcl_Free((void *)names);
 	}
@@ -718,7 +803,6 @@ InfoObjectMethodTypeCmd(
     Tcl_Obj *const objv[])
 {
     Object *oPtr;
-    Tcl_HashEntry *hPtr;
     Method *mPtr;
 
     if (objc != 3) {
@@ -730,34 +814,14 @@ InfoObjectMethodTypeCmd(
     if (oPtr == NULL) {
 	return TCL_ERROR;
     }
-
-    if (!oPtr->methodsPtr) {
-	goto unknownMethod;
-    }
-    hPtr = Tcl_FindHashEntry(oPtr->methodsPtr, objv[2]);
-    if (hPtr == NULL) {
-	goto unknownMethod;
-    }
-    mPtr = (Method *) Tcl_GetHashValue(hPtr);
-    if (mPtr->typePtr == NULL) {
-	/*
-	 * Special entry for visibility control: pretend the method doesnt
-	 * exist.
-	 */
-
-	goto unknownMethod;
+    mPtr = GetInstanceMethodFromObj(interp, oPtr, objv[2]);
+    if (mPtr == NULL) {
+	return TCL_ERROR;
     }
 
     Tcl_SetObjResult(interp,
 	    Tcl_NewStringObj(mPtr->typePtr->name, TCL_AUTO_LENGTH));
     return TCL_OK;
-
-  unknownMethod:
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "unknown method \"%s\"", TclGetString(objv[2])));
-    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
-	    TclGetString(objv[2]), (char *)NULL);
-    return TCL_ERROR;
 }
 
 /*
@@ -1019,12 +1083,8 @@ InfoClassConstrCmd(
     if (clsPtr->constructorPtr == NULL) {
 	return TCL_OK;
     }
-    procPtr = TclOOGetProcFromMethod(clsPtr->constructorPtr);
+    procPtr = GetProcFromMethod(interp, clsPtr->constructorPtr);
     if (procPtr == NULL) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"definition not available for this kind of method",
-		TCL_AUTO_LENGTH));
-	OO_ERROR(interp, METHOD_TYPE);
 	return TCL_ERROR;
     }
 
@@ -1051,7 +1111,7 @@ InfoClassDefnCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    Tcl_HashEntry *hPtr;
+    Method *mPtr;
     Proc *procPtr;
     Tcl_Obj *resultObjs[2];
     Class *clsPtr;
@@ -1064,26 +1124,17 @@ InfoClassDefnCmd(
     if (clsPtr == NULL) {
 	return TCL_ERROR;
     }
-    hPtr = Tcl_FindHashEntry(&clsPtr->classMethods, objv[2]);
-    if (hPtr == NULL) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"unknown method \"%s\"", TclGetString(objv[2])));
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
-		TclGetString(objv[2]), (char *)NULL);
+    mPtr = GetClassMethodFromObj(interp, clsPtr, objv[2]);
+    if (mPtr == NULL) {
 	return TCL_ERROR;
     }
-    procPtr = TclOOGetProcFromMethod((Method *) Tcl_GetHashValue(hPtr));
+    procPtr = GetProcFromMethod(interp, mPtr);
     if (procPtr == NULL) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"definition not available for this kind of method",
-		TCL_AUTO_LENGTH));
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
-		TclGetString(objv[2]), (char *)NULL);
 	return TCL_ERROR;
     }
 
     resultObjs[0] = DescribeMethodArgs(procPtr);
-    resultObjs[1] = TclOOGetMethodBody((Method *) Tcl_GetHashValue(hPtr));
+    resultObjs[1] = TclOOGetMethodBody(mPtr);
     Tcl_SetObjResult(interp, Tcl_NewListObj(2, resultObjs));
     return TCL_OK;
 }
@@ -1170,12 +1221,8 @@ InfoClassDestrCmd(
     if (clsPtr->destructorPtr == NULL) {
 	return TCL_OK;
     }
-    procPtr = TclOOGetProcFromMethod(clsPtr->destructorPtr);
+    procPtr = GetProcFromMethod(interp, clsPtr->destructorPtr);
     if (procPtr == NULL) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"definition not available for this kind of method",
-		TCL_AUTO_LENGTH));
-	OO_ERROR(interp, METHOD_TYPE);
 	return TCL_ERROR;
     }
 
@@ -1238,7 +1285,7 @@ InfoClassForwardCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    Tcl_HashEntry *hPtr;
+    Method *mPtr;
     Tcl_Obj *prefixObj;
     Class *clsPtr;
 
@@ -1250,21 +1297,12 @@ InfoClassForwardCmd(
     if (clsPtr == NULL) {
 	return TCL_ERROR;
     }
-    hPtr = Tcl_FindHashEntry(&clsPtr->classMethods, objv[2]);
-    if (hPtr == NULL) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"unknown method \"%s\"", TclGetString(objv[2])));
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
-		TclGetString(objv[2]), (char *)NULL);
+    mPtr = GetClassMethodFromObj(interp, clsPtr, objv[2]);
+    if (mPtr == NULL) {
 	return TCL_ERROR;
     }
-    prefixObj = TclOOGetFwdFromMethod((Method *) Tcl_GetHashValue(hPtr));
+    prefixObj = GetForwardFromMethod(interp, mPtr);
     if (prefixObj == NULL) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"prefix argument list not available for this kind of method",
-		TCL_AUTO_LENGTH));
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
-		TclGetString(objv[2]), (char *)NULL);
 	return TCL_ERROR;
     }
 
@@ -1418,13 +1456,10 @@ InfoClassMethodsCmd(
 
     TclNewObj(resultObj);
     if (recurse) {
-	const char **names;
-	Tcl_Size i, numNames = TclOOGetSortedClassMethodList(clsPtr, flag, &names);
+	Tcl_Obj **names;
+	Tcl_Size numNames = TclOOGetSortedClassMethodList(clsPtr, flag, &names);
 
-	for (i=0 ; i<numNames ; i++) {
-	    Tcl_ListObjAppendElement(NULL, resultObj,
-		    Tcl_NewStringObj(names[i], TCL_AUTO_LENGTH));
-	}
+	TclListObjAppendElements(NULL, resultObj, numNames, names);
 	if (numNames > 0) {
 	    Tcl_Free((void *)names);
 	}
@@ -1471,7 +1506,6 @@ InfoClassMethodTypeCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    Tcl_HashEntry *hPtr;
     Method *mPtr;
     Class *clsPtr;
 
@@ -1484,29 +1518,13 @@ InfoClassMethodTypeCmd(
 	return TCL_ERROR;
     }
 
-    hPtr = Tcl_FindHashEntry(&clsPtr->classMethods, objv[2]);
-    if (hPtr == NULL) {
-	goto unknownMethod;
-    }
-    mPtr = (Method *) Tcl_GetHashValue(hPtr);
-    if (mPtr->typePtr == NULL) {
-	/*
-	 * Special entry for visibility control: pretend the method doesnt
-	 * exist.
-	 */
-
-	goto unknownMethod;
+    mPtr = GetClassMethodFromObj(interp, clsPtr, objv[2]);
+    if (mPtr == NULL) {
+	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp,
 	    Tcl_NewStringObj(mPtr->typePtr->name, TCL_AUTO_LENGTH));
     return TCL_OK;
-
-  unknownMethod:
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "unknown method \"%s\"", TclGetString(objv[2])));
-    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
-	    TclGetString(objv[2]), (char *)NULL);
-    return TCL_ERROR;
 }
 
 /*

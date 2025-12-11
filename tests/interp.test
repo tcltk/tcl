@@ -40,6 +40,7 @@ set hidden_cmds [list {*}{
 
     tcl:process:autopurge tcl:process:list tcl:process:purge tcl:process:status
 
+    tcl:unsupported:assemble tcl:unsupported:corotype
     tcl:unsupported:disassemble tcl:unsupported:getbytecode
     tcl:unsupported:loadIcu tcl:unsupported:representation
 

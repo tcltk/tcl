@@ -23,8 +23,8 @@
 #define GOT_BITS(var, bits)     (((var) & (bits)) != 0)
 
 /* "sock" + a pointer in hex + \0 */
-#define SOCK_CHAN_LENGTH        (4 + sizeof(void *) * 2 + 1)
-#define SOCK_TEMPLATE           "sock%" TCL_Z_MODIFIER "x"
+#define SOCK_CHAN_LENGTH	(4 + sizeof(void *) * 2 + 1)
+#define SOCK_TEMPLATE		"sock%" TCL_Z_MODIFIER "x"
 
 #undef SOCKET   /* Possible conflict with win32 SOCKET */
 

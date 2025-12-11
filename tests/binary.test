@@ -656,6 +656,9 @@ test binary-17.2 {Tcl_BinaryObjCmd: format} {
 test binary-17.3 {Tcl_BinaryObjCmd: format} {
     binary format {a*  @0  a2 @* a*} "foobar" "ab" "blat"
 } abobarblat
+test binary-17.4 {Tcl_BinaryObjCmd: format} pointerIs64bit {
+    string length [binary format a2147483648 A]
+} 2147483648
 
 test binary-18.1 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
     binary format u0a3 abc abd

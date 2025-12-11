@@ -163,7 +163,7 @@ static const Tcl_ObjType properByteArrayType = {
     FreeProperByteArrayInternalRep,
     DupProperByteArrayInternalRep,
     UpdateStringOfByteArray,
-    NULL,
+    NULL,			// SetFromAny
     TCL_OBJTYPE_V0
 };
 
@@ -808,7 +808,7 @@ BinaryFormatCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int arg;			/* Index of next argument to consume. */
+    Tcl_Size arg;		/* Index of next argument to consume. */
     int value = 0;		/* Current integer value to be packed.
 				 * Initialized to avoid compiler warning. */
     char cmd;			/* Current format character. */
@@ -1320,7 +1320,7 @@ BinaryScanCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int arg;			/* Index of next argument to consume. */
+    Tcl_Size arg;		/* Index of next argument to consume. */
     int value = 0;		/* Current integer value to be packed.
 				 * Initialized to avoid compiler warning. */
     char cmd;			/* Current format character. */
@@ -2455,8 +2455,8 @@ BinaryDecodeHex(
     Tcl_Obj *resultObj = NULL;
     unsigned char *data, *datastart, *dataend;
     unsigned char *begin, *cursor, c;
-    int i, index, value, pure = 1, strict = 0;
-    Tcl_Size size, cut = 0, count = 0;
+    int index, value, pure = 1, strict = 0;
+    Tcl_Size i, size, cut = 0, count = 0;
     int ucs4;
     enum {OPT_STRICT };
     static const char *const optStrings[] = { "-strict", NULL };
@@ -2583,9 +2583,9 @@ BinaryEncode64(
     unsigned char *data, *limit;
     Tcl_WideInt maxlen = 0;
     const char *wrapchar = "\n";
-    Tcl_Size wrapcharlen = 1;
+    Tcl_Size i, wrapcharlen = 1;
     int index, purewrap = 1;
-    Tcl_Size i, offset, size, outindex = 0, count = 0;
+    Tcl_Size offset, size, outindex = 0, count = 0;
     enum { OPT_MAXLEN, OPT_WRAPCHAR };
     static const char *const optStrings[] = { "-maxlen", "-wrapchar", NULL };
 
@@ -2709,12 +2709,11 @@ BinaryEncodeUu(
 {
     Tcl_Obj *resultObj;
     unsigned char *data, *start, *cursor;
-    int i, bits;
-    unsigned int n;
-    int lineLength = 61;
+    int bits, lineLength = 61;
+    Tcl_Size rawLength;
     const unsigned char SingleNewline[] = { UCHAR('\n') };
     const unsigned char *wrapchar = SingleNewline;
-    Tcl_Size j, rawLength, offset, count = 0, wrapcharlen = sizeof(SingleNewline);
+    Tcl_Size n, i, j, offset, count = 0, wrapcharlen = sizeof(SingleNewline);
     enum { OPT_MAXLEN, OPT_WRAPCHAR } index;
     static const char *const optStrings[] = { "-maxlen", "-wrapchar", NULL };
 
@@ -2860,8 +2859,8 @@ BinaryDecodeUu(
     Tcl_Obj *resultObj = NULL;
     unsigned char *data, *datastart, *dataend;
     unsigned char *begin, *cursor;
-    int i, index, pure = 1, strict = 0, lineLen;
-    Tcl_Size size, count = 0;
+    int index, pure = 1, strict = 0, lineLen;
+    Tcl_Size i, size, count = 0;
     unsigned char c;
     int ucs4;
     enum { OPT_STRICT };
@@ -3038,8 +3037,8 @@ BinaryDecode64(
     unsigned char *begin = NULL;
     unsigned char *cursor = NULL;
     int pure = 1, strict = 0;
-    int i, index, cut = 0;
-    Tcl_Size size, count = 0;
+    int index, cut = 0;
+    Tcl_Size i, size, count = 0;
     int ucs4;
     enum { OPT_STRICT };
     static const char *const optStrings[] = { "-strict", NULL };

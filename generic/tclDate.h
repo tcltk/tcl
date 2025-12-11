@@ -390,10 +390,8 @@ typedef struct ClockClientData {
 
 typedef struct ClockScanToken ClockScanToken;
 
-typedef int ClockScanTokenProc(
-	ClockFmtScnCmdArgs *opts,
-	DateInfo *info,
-	const ClockScanToken *tok);
+typedef int (ClockScanTokenProc)(ClockFmtScnCmdArgs *opts,
+	DateInfo *info, const ClockScanToken *tok);
 
 typedef enum {
    CTOKT_INT = 1, CTOKT_WIDE, CTOKT_PARSER, CTOKT_SPACE, CTOKT_WORD, CTOKT_CHAR,
@@ -446,11 +444,8 @@ enum ClockFormatTokenMapFlags {
 
 typedef struct ClockFormatToken ClockFormatToken;
 
-typedef int ClockFormatTokenProc(
-	ClockFmtScnCmdArgs *opts,
-	DateFormat *dateFmt,
-	ClockFormatToken *tok,
-	int *val);
+typedef int (ClockFormatTokenProc)(ClockFmtScnCmdArgs *opts,
+	DateFormat *dateFmt, ClockFormatToken *tok, int *val);
 
 typedef struct ClockFormatTokenMap {
     unsigned short type;
