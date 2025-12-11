@@ -1089,13 +1089,13 @@ TclOOLookupObjectVar(
 	    } else if (mPtr->declaringClassPtr &&
 		    mPtr->declaringClassPtr->privateVariables.num) {
 		Class *clsPtr = mPtr->declaringClassPtr;
-		int isInstance = TclOOIsReachable(clsPtr, oPtr->selfCls);
+		bool isInstance = TclOOIsReachable(clsPtr, oPtr->selfCls);
 		Class *mixinCls;
 
 		if (!isInstance) {
 		    FOREACH(mixinCls, oPtr->mixins) {
 			if (TclOOIsReachable(clsPtr, mixinCls)) {
-			    isInstance = 1;
+			    isInstance = true;
 			    break;
 			}
 		    }
