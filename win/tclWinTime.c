@@ -346,7 +346,7 @@ long long
 Tcl_GetMonotonicTime()
 {
     LARGE_INTEGER Frequency, PerformanceCount;
-    long long microSeconds, clicks;
+    long long microSeconds, clicks, seconds, remainder;
 
     /*
      * The implementation
@@ -361,19 +361,12 @@ Tcl_GetMonotonicTime()
 
     if (0 != QueryPerformanceFrequency(&Frequency)
 	    && 0 != QueryPerformanceCounter(&PerformanceCount)) {
+
 	clicks = PerformanceCount.QuadPart;
-	if (clicks >= LLONG_MAX / 1000000) {
-	    /*
-	     * Will overflow - hope this never happens
-	     */
-	    if (clicks >= LLONG_MAX / 1000) {
-		microSeconds = clicks / Frequency.QuadPart * 1000000;
-	    } else {
-		microSeconds = clicks * 1000 / Frequency.QuadPart * 1000;
-	    }
-	} else {
-	    microSeconds = clicks * 1000000 / Frequency.QuadPart;
-	}
+	seconds = clicks / Frequency.QuadPart;
+	remainder = clicks % Frequency.QuadPart;
+	microSeconds = seconds * 1000000
+		+ remainder * 1000000 / Frequency.QuadPart;
     }
     else {
 
