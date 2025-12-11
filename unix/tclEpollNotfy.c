@@ -111,7 +111,7 @@ typedef struct ThreadSpecificData {
 				/* Pointer to at most maxReadyEvents events
 				 * returned by epoll_wait(2). */
     size_t maxReadyEvents;	/* Count of epoll_events in readyEvents. */
-    int asyncPending;		/* True when signal triggered thread. */
+    bool asyncPending;		/* True when signal triggered thread. */
 } ThreadSpecificData;
 
 static Tcl_ThreadDataKey dataKey;
@@ -121,7 +121,7 @@ static Tcl_ThreadDataKey dataKey;
  */
 
 static void		PlatformEventsControl(FileHandler *filePtr,
-			    ThreadSpecificData *tsdPtr, int op, int isNew);
+			    ThreadSpecificData *tsdPtr, int op, bool isNew);
 static void		PlatformEventsInit(void);
 static int		PlatformEventsTranslate(struct epoll_event *event);
 static int		PlatformEventsWait(struct epoll_event *events,
@@ -193,7 +193,7 @@ PlatformEventsControl(
     FileHandler *filePtr,
     ThreadSpecificData *tsdPtr,
     int op,
-    int isNew)
+    bool isNew)
 {
     struct epoll_event newEvent;
     struct PlatformEventData *newPedPtr;
@@ -370,7 +370,7 @@ PlatformEventsInit(void)
 	Tcl_Panic("epoll_create1: %s", strerror(errno));
     }
     filePtr->mask = TCL_READABLE;
-    PlatformEventsControl(filePtr, tsdPtr, EPOLL_CTL_ADD, 1);
+    PlatformEventsControl(filePtr, tsdPtr, EPOLL_CTL_ADD, true);
     if (!tsdPtr->readyEvents) {
 	tsdPtr->maxReadyEvents = 512;
 	tsdPtr->readyEvents = (struct epoll_event *) Tcl_Alloc(
@@ -485,7 +485,7 @@ PlatformEventsWait(
 	}
     }
     if (tsdPtr->asyncPending) {
-	tsdPtr->asyncPending = 0;
+	tsdPtr->asyncPending = false;
 	TclAsyncMarkFromNotifier();
     }
     return numFound;
@@ -522,7 +522,7 @@ TclpCreateFileHandler(
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     FileHandler *filePtr = LookUpFileHandler(tsdPtr, fd, NULL);
-    int isNew = (filePtr == NULL);
+    bool isNew = (filePtr == NULL);
 
     if (isNew) {
 	filePtr = (FileHandler *) Tcl_Alloc(sizeof(FileHandler));
@@ -580,7 +580,7 @@ TclpDeleteFileHandler(
      * Update the check masks for this file.
      */
 
-    PlatformEventsControl(filePtr, tsdPtr, EPOLL_CTL_DEL, 0);
+    PlatformEventsControl(filePtr, tsdPtr, EPOLL_CTL_DEL, false);
     if (filePtr->pedPtr) {
 	Tcl_Free(filePtr->pedPtr);
     }
@@ -792,13 +792,13 @@ TclpWaitForEvent(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 TclAsyncNotifier(
     int sigNumber,		/* Signal number. */
     Tcl_ThreadId threadId,	/* Target thread. */
     void *clientData,		/* Notifier data. */
-    int *flagPtr,		/* Flag to mark. */
-    int value)			/* Value of mark. */
+    signed char *flagPtr,		/* Flag to mark. */
+    signed char value)			/* Value of mark. */
 {
 #if TCL_THREADS
     /*
@@ -813,11 +813,11 @@ TclAsyncNotifier(
 
 	*flagPtr = value;
 	if (tsdPtr != NULL && !tsdPtr->asyncPending) {
-	    tsdPtr->asyncPending = 1;
+	    tsdPtr->asyncPending = true;
 	    TclpAlertNotifier(tsdPtr);
-	    return 1;
+	    return true;
 	}
-	return 0;
+	return false;
     }
 
     /*
@@ -832,7 +832,7 @@ TclAsyncNotifier(
     (void)flagPtr;
     (void)value;
 #endif
-    return 0;
+    return false;
 }
 
 #endif /* NOTIFIER_EPOLL && TCL_THREADS */

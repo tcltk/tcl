@@ -1648,7 +1648,7 @@ namespace eval test_ns_zipfs {
     } -body {
 	file copy [file join $defMountPt testdir] $dst
 	zipfs find $dst
-    } -result [file join [temporaryDirectory] dstdir.tmp test2]
+    } -result [list [file join [temporaryDirectory] dstdir.tmp test2]]
     test zipfs-file-copymount-fromzip-new {Copy archive mount to native} -setup {
 	mount [zippath test.zip]
 	set dst [file join [temporaryDirectory] dstdir2.tmp]
@@ -1932,7 +1932,7 @@ namespace eval test_ns_zipfs {
 	append script {open [zipfs root]test} \n
 	append script "exit\n"
     } -body {
-	set fd [open |[info nameofexecutable] r+]
+	set fd [open |[list [info nameofexecutable]] r+]
 	puts $fd $script
 	flush $fd
 	read $fd

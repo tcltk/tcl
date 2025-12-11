@@ -96,7 +96,7 @@ typedef struct {
 
 static Tcl_ThreadDataKey dataKey;
 
-static void             TclThreadFinalizeContLines(void *clientData);
+static void		TclThreadFinalizeContLines(void *clientData);
 static ThreadSpecificData *TclGetContLineTable(void);
 
 /*
@@ -225,35 +225,35 @@ static int		SetCmdNameFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
  */
 
 const Tcl_ObjType tclBooleanType= {
-    "boolean",			/* name */
-    NULL,			/* freeIntRepProc */
-    NULL,			/* dupIntRepProc */
-    NULL,			/* updateStringProc */
-    TclSetBooleanFromAny,	/* setFromAnyProc */
+    "boolean",
+    NULL,			// FreeIntRep
+    NULL,			// DupIntRep
+    NULL,			// UpdateString
+    TclSetBooleanFromAny,
     TCL_OBJTYPE_V1(TclLengthOne)
 };
 const Tcl_ObjType tclDoubleType= {
-    "double",			/* name */
-    NULL,			/* freeIntRepProc */
-    NULL,			/* dupIntRepProc */
-    UpdateStringOfDouble,	/* updateStringProc */
-    SetDoubleFromAny,		/* setFromAnyProc */
+    "double",
+    NULL,			// FreeIntRep
+    NULL,			// DupIntRep
+    UpdateStringOfDouble,
+    SetDoubleFromAny,
     TCL_OBJTYPE_V1(TclLengthOne)
 };
 const Tcl_ObjType tclIntType = {
-    "int",			/* name */
-    NULL,			/* freeIntRepProc */
-    NULL,			/* dupIntRepProc */
-    UpdateStringOfInt,		/* updateStringProc */
-    SetIntFromAny,		/* setFromAnyProc */
+    "int",
+    NULL,			// FreeIntRep
+    NULL,			// DupIntRep
+    UpdateStringOfInt,
+    SetIntFromAny,
     TCL_OBJTYPE_V1(TclLengthOne)
 };
 const Tcl_ObjType tclBignumType = {
-    "bignum",			/* name */
-    FreeBignum,			/* freeIntRepProc */
-    DupBignum,			/* dupIntRepProc */
-    UpdateStringOfBignum,	/* updateStringProc */
-    NULL,			/* setFromAnyProc */
+    "bignum",
+    FreeBignum,
+    DupBignum,
+    UpdateStringOfBignum,
+    NULL,			// SetFromAny
     TCL_OBJTYPE_V1(TclLengthOne)
 };
 
@@ -294,11 +294,11 @@ const Tcl_HashKeyType tclObjHashKeyType = {
  */
 
 Tcl_ObjType tclCmdNameType = {
-    "cmdName",			/* name */
-    FreeCmdNameInternalRep,	/* freeIntRepProc */
-    DupCmdNameInternalRep,	/* dupIntRepProc */
-    NULL,			/* updateStringProc */
-    SetCmdNameFromAny,		/* setFromAnyProc */
+    "cmdName",
+    FreeCmdNameInternalRep,
+    DupCmdNameInternalRep,
+    NULL,			// UpdateString
+    SetCmdNameFromAny,
     TCL_OBJTYPE_V0
 };
 

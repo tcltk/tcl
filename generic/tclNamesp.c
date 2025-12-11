@@ -127,11 +127,11 @@ static Tcl_NRPostProc NsEval_Callback;
  */
 
 static const Tcl_ObjType nsNameType = {
-    "nsName",			/* the type's name */
-    FreeNsNameInternalRep,	/* freeIntRepProc */
-    DupNsNameInternalRep,	/* dupIntRepProc */
-    NULL,			/* updateStringProc */
-    SetNsNameFromAny,		/* setFromAnyProc */
+    "nsName",
+    FreeNsNameInternalRep,
+    DupNsNameInternalRep,
+    NULL,			// UpdateString
+    SetNsNameFromAny,
     TCL_OBJTYPE_V0
 };
 
