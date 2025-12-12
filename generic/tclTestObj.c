@@ -368,7 +368,7 @@ TestbooleanobjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Size varIndex;
-    int boolValue;
+    bool boolValue;
     const char *subCmd;
     Tcl_Obj **varPtr;
 
