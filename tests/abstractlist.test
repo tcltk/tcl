@@ -141,7 +141,7 @@ test abstractlist-2.7 {no shimmer linsert} -constraints {testobj lstring} -body 
     lappend res $p ${p-isa} $i ${i-isa2}
 } -cleanup {
 unset l i l-isa i-isa res p p-isa
-} -result {lstring {I f { } y o u { } c a n { } t r u l y { } t r u s t { } y o u r s e l f { } w h e n { } a l l { } m e n { } d o u b t { } y o u , { } B u t { } m a k e { } a l l o w a n c e { } f o r { } t h e i r { } d o u b t i n g , { } t o o .} lstring y none {I f { } y o u { } c a n { } t r u l y { } t r u s t { } o u r s e l f { } w h e n { } a l l { } m e n { } d o u b t { } y o u , { } B u t { } m a k e { } a l l o w a n c e { } f o r { } t h e i r { } d o u b t i n g , { } t o o .} lstring}
+} -result {lstring {I f { } y o u { } c a n { } t r u l y { } t r u s t { } y o u r s e l f { } w h e n { } a l l { } m e n { } d o u b t { } y o u , { } B u t { } m a k e { } a l l o w a n c e { } f o r { } t h e i r { } d o u b t i n g , { } t o o .} lstring y smallstring {I f { } y o u { } c a n { } t r u l y { } t r u s t { } o u r s e l f { } w h e n { } a l l { } m e n { } d o u b t { } y o u , { } B u t { } m a k e { } a l l o w a n c e { } f o r { } t h e i r { } d o u b t i n g , { } t o o .} lstring}
 
 test abstractlist-2.8 {shimmer lassign} {testobj lstring} {
     set l [lstring Inconceivable]
@@ -194,7 +194,7 @@ test abstractlist-2.13 {no shimmer join llength==1} {testobj lstring} {
     set j [join $l :]
     set j-isa [testobj objtype $j]
     list ${l-isa} $l ${j-isa} $j
-} {lstring G none G}
+} {lstring G smallstring G}
 
 test abstractlist-2.14 {error case lset multiple indicies} -constraints {testobj lstring} -body {
     set l [lstring Inconceivable]
@@ -302,7 +302,7 @@ test abstractlist-3.7 {no shimmer linsert} {testobj lstring} {
     set p-isa [testobj objtype $p]
     set i-isa2 [testobj objtype $i]
     lappend res $p ${p-isa} $i ${i-isa2}
-} {lstring {I f { } y o u { } c a n { } t r u s t { } y o u r s e l f { } w h e n { } a l l { } w o m e n { } d o u b t { } y o u , { } B u t { } m a k e { } a l l o w a n c e { } f o r { } t h e i r { } d o u b t i n g , { } t o o .} lstring l none {I f { } y o u { } c a n { } t r u s t { } y o u r s e f { } w h e n { } a l l { } w o m e n { } d o u b t { } y o u , { } B u t { } m a k e { } a l l o w a n c e { } f o r { } t h e i r { } d o u b t i n g , { } t o o .} lstring}
+} {lstring {I f { } y o u { } c a n { } t r u s t { } y o u r s e l f { } w h e n { } a l l { } w o m e n { } d o u b t { } y o u , { } B u t { } m a k e { } a l l o w a n c e { } f o r { } t h e i r { } d o u b t i n g , { } t o o .} lstring l smallstring {I f { } y o u { } c a n { } t r u s t { } y o u r s e f { } w h e n { } a l l { } w o m e n { } d o u b t { } y o u , { } B u t { } m a k e { } a l l o w a n c e { } f o r { } t h e i r { } d o u b t i n g , { } t o o .} lstring}
 
 test abstractlist-3.8 {shimmer lassign} {testobj lstring} {
     set l [lstring -not SLICE Inconceivable]
