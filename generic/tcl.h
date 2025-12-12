@@ -689,7 +689,7 @@ typedef union Tcl_ObjInternalRep {/* The internal representation: */
     void *otherValuePtr;	/*   - another, type-specific value, */
 				/*     not used internally any more. */
     Tcl_WideInt wideValue;	/*   - an integer value >= 64bits */
-    struct {			/*   - internal rep as two pointers. */
+    struct twoPtrs {		/*   - internal rep as two pointers. */
 	void *ptr1;
 	void *ptr2;
     } twoPtrValue;
@@ -701,7 +701,17 @@ typedef union Tcl_ObjInternalRep {/* The internal representation: */
 	void *ptr;
 	Tcl_Size size;
     } ptrAndSize;
+    struct {
+	unsigned char smallLen;
+	char smallString[sizeof(struct twoPtrs) - 1];
+    } smallStringValue;
 } Tcl_ObjInternalRep;
+
+/*
+ * Max length of small string rep - does not include terminating null
+ */
+#define TCL_SMALL_STRING_MAX \
+    ((long) (sizeof(((Tcl_ObjInternalRep *)0)->smallStringValue.smallString) - 1))
 
 /*
  * One of the following structures exists for each object in the Tcl system.

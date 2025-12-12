@@ -67,6 +67,8 @@ static void		SetUnicodeObj(Tcl_Obj *objPtr,
 static Tcl_Size		UnicodeLength(const Tcl_UniChar *unicode);
 static void		UpdateStringOfString(Tcl_Obj *objPtr);
 
+static Tcl_Obj*		TclNewSmallStringObj(const char *bytes, Tcl_Size length);
+
 #define ISCONTINUATION(bytes) (\
 	((bytes)[0] & 0xC0) == 0x80)
 
@@ -248,12 +250,17 @@ Tcl_NewStringObj(
 				 * when initializing the new object. If -1,
 				 * use bytes up to the first NUL byte. */
 {
-    Tcl_Obj *objPtr;
+    Tcl_Obj *objPtr = NULL;
 
     if (length < 0) {
 	length = (bytes? strlen(bytes) : 0);
     }
-    TclNewStringObj(objPtr, bytes, length);
+    if (length <= TCL_SMALL_STRING_MAX) {
+	objPtr = TclNewSmallStringObj(bytes, length);
+    }
+    if (objPtr == NULL) {
+	TclNewStringObj(objPtr, bytes, length);
+    }
     return objPtr;
 }
 #endif /* TCL_MEM_DEBUG */
@@ -492,6 +499,10 @@ TclCheckEmptyString(
 	return TCL_EMPTYSTRING_YES;
     }
 
+    if (TclExistingTUtf8(objPtr, &length) != NULL) {
+	return length == 0 ? TCL_EMPTYSTRING_YES : TCL_EMPTYSTRING_NO;
+    }
+
     if (TclIsPureByteArray(objPtr)
 	    && Tcl_GetCharLength(objPtr) == 0) {
 	return TCL_EMPTYSTRING_YES;
@@ -499,18 +510,19 @@ TclCheckEmptyString(
 
     if (TclListObjIsCanonical(objPtr)) {
 	TclListObjLength(NULL, objPtr, &length);
-	return length == 0;
+	return length == 0 ? TCL_EMPTYSTRING_YES : TCL_EMPTYSTRING_NO;
     }
 
     if (TclIsPureDict(objPtr)) {
 	Tcl_DictObjSize(NULL, objPtr, &length);
-	return length == 0;
+	return length == 0 ? TCL_EMPTYSTRING_YES : TCL_EMPTYSTRING_NO;
     }
 
     if (objPtr->bytes == NULL) {
 	return TCL_EMPTYSTRING_UNKNOWN;
     }
-    return objPtr->length == 0;
+
+    return objPtr->length == 0 ? TCL_EMPTYSTRING_YES : TCL_EMPTYSTRING_NO;
 }
 
 /*
@@ -3188,21 +3200,24 @@ TclStringCat(
     ov = objv, oc = objc;
     do {
 	Tcl_Obj *objPtr = *ov++;
+	const char *tutf8Ptr;
+	Tcl_Size    tutf8Length;
 
 	if (TclIsPureByteArray(objPtr)) {
 	    allowUniChar = 0;
-	} else if (objPtr->bytes) {
+	} else if ((tutf8Ptr = TclExistingTUtf8(objPtr, &tutf8Length)) != NULL) {
 	    /* Value has a string rep. */
-	    if (objPtr->length) {
+	    if (tutf8Length) {
 		/*
 		 * Non-empty string rep. Not a pure byte-array, so we won't
 		 * create a pure byte-array.
 		 */
 
 		binary = 0;
-		if (ov > objv+1 && ISCONTINUATION(TclGetString(objPtr))) {
+		if (ov > objv+1 && ISCONTINUATION(tutf8Ptr)) {
 		    forceUniChar = 1;
-		} else if ((objPtr->typePtr) && !TclHasInternalRep(objPtr, &tclStringType)) {
+		} else if ((objPtr->typePtr) &&
+			   !TclIsAStringOrSmallString(objPtr)) {
 		    /* Prevent shimmer of non-string types. */
 		    allowUniChar = 0;
 		}
@@ -3297,7 +3312,7 @@ TclStringCat(
 		    /* No string rep; Take the chance we can avoid making it */
 		    pendingPtr = objPtr;
 		} else {
-		    (void) TclGetStringFromObj(objPtr, &length); /* PANIC? */
+		    (void) TclGetTUtf8(objPtr, &length); /* PANIC? */
 		}
 	    } while (--oc && (length == 0) && (pendingPtr == NULL));
 
@@ -3321,14 +3336,14 @@ TclStringCat(
 
 		do {
 		    Tcl_Obj *objPtr = *ov++;
-		    (void)TclGetStringFromObj(objPtr, &numBytes); /* PANIC? */
+		    (void)TclGetTUtf8(objPtr, &numBytes); /* PANIC? */
 		} while (--oc && numBytes == 0 && pendingPtr->bytes == NULL);
 
 		if (numBytes) {
 		    last = objc -oc -1;
 		}
 		if (oc || numBytes) {
-		    (void)TclGetStringFromObj(pendingPtr, &length);
+		    (void)TclGetTUtf8(pendingPtr, &length);
 		}
 		if (length == 0) {
 		    if (numBytes) {
@@ -3345,8 +3360,7 @@ TclStringCat(
 	    Tcl_Size numBytes;
 	    Tcl_Obj *objPtr = *ov++;
 
-	    TclGetString(objPtr); /* PANIC? */
-	    numBytes = objPtr->length;
+	    TclGetTUtf8(objPtr, &numBytes);
 	    if (numBytes) {
 		last = objc - oc;
 		if (numBytes > (TCL_SIZE_MAX - length)) {
@@ -3498,7 +3512,7 @@ TclStringCat(
 
 	    if ((objPtr->bytes == NULL) || (objPtr->length)) {
 		Tcl_Size more;
-		char *src = TclGetStringFromObj(objPtr, &more);
+		const char *src = TclGetTUtf8(objPtr, &more);
 
 		memcpy(dst, src, more);
 		dst += more;
@@ -4671,6 +4685,82 @@ FreeStringInternalRep(
     objPtr->typePtr = NULL;
 }
 
+/*
+ * The structure below defines the Tcl object type for small strings that
+ * fit within the Tcl_Obj structure itself.
+ */
+static void	UpdateStringOfSmallString(Tcl_Obj *objPtr);
+
+const Tcl_ObjType tclSmallStringType = {
+    "smallstring",
+    NULL,			/* FreeIntRep */
+    NULL,			/* DupIntRep */
+    UpdateStringOfSmallString,
+    NULL,			/* SetFromAny */
+    TCL_OBJTYPE_V0
+};
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * UpdateStringOfSmallString --
+ *
+ *	Update the string representation for an object whose internal
+ *	representation is "SmallString".
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The object's string may be set based on its small string internal rep.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+UpdateStringOfSmallString(
+    Tcl_Obj *objPtr)		/* Object with string rep to update. */
+{
+    TclInitStringRep(objPtr,
+		     objPtr->internalRep.smallStringValue.smallString,
+		     objPtr->internalRep.smallStringValue.smallLen);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclNewSmallString --
+ *
+ *	Allocate a new Tcl_Obj with a small string internal representation.
+ *
+ * Results:
+ *	Returns a pointer to the newly allocated object or NULL if the string
+ *	is too large to fit in the small string internal representation.
+ *
+ *----------------------------------------------------------------------
+ */
+static Tcl_Obj *
+TclNewSmallStringObj(
+    const char *bytes,		/* Points to the first of the length bytes
+				 * used to initialize the new object. */
+    Tcl_Size numBytes)		/* The number of bytes to copy from "bytes"
+				 * when initializing the new object. If
+				 * < 0, use bytes up to the first NUL
+				 * byte. */
+{
+    if (numBytes < 0) {
+	numBytes = (bytes? strlen(bytes) : 0);
+    }
+    if (numBytes > TCL_SMALL_STRING_MAX) {
+	return NULL;
+    }
+
+    Tcl_Obj *objPtr;
+    TclAllocObjStorage(objPtr);
+    objPtr->refCount = 0;
+    (void) TclInitSmallStringRep(objPtr, bytes, numBytes);
+    return objPtr;
+}
+
 /*
  * Local Variables:
  * mode: c

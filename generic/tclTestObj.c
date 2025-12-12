@@ -1184,6 +1184,7 @@ TestobjCmd(
 	    goto wrongNumArgs;
 	} else {
 	    Tcl_Obj *listObjPtr = Tcl_NewStringObj(Tcl_GetString(objv[2]), -1);
+	    (void)Tcl_GetString(listObjPtr); /* force string rep */
 	    listObjPtr->typePtr = &v1TestListType;
 	    Tcl_SetObjResult(interp, listObjPtr);
 	}

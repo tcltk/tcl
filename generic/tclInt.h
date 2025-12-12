@@ -4572,9 +4572,10 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 #define TclInvalidateStringRep(objPtr) \
     do {								\
 	Tcl_Obj *_isobjPtr = (Tcl_Obj *)(objPtr);			\
-	if (_isobjPtr->bytes != NULL) {					\
-	    if (_isobjPtr->bytes != &tclEmptyString) {			\
-		Tcl_Free((void *)_isobjPtr->bytes);			\
+	const char *_bytes = _isobjPtr->bytes;				\
+	if (_bytes != NULL) {						\
+	    if (_bytes != &tclEmptyString) {				\
+		Tcl_Free((void *)_bytes);				\
 	    }								\
 	    _isobjPtr->bytes = NULL;					\
 	}								\
@@ -4607,6 +4608,85 @@ MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
 
 #define TclHasStringRep(objPtr) \
     ((objPtr)->bytes != NULL)
+
+/*
+ * Check if an object has an existing TUTF-8 representation, and return it.
+ * This may be in objPtr->bytes or elsewhere including objPtr->internalRep.
+ * Caller should make no assumptions.
+ */
+extern const Tcl_ObjType tclStringType;
+extern const Tcl_ObjType tclSmallStringType;
+static inline const char *
+TclExistingTUtf8(
+    Tcl_Obj *objPtr,
+    Tcl_Size *lengthPtr)
+{
+    if (objPtr->bytes) {
+	*lengthPtr = objPtr->length;
+	return objPtr->bytes;
+    } else if (objPtr->typePtr == &tclSmallStringType) {
+	*lengthPtr = objPtr->internalRep.smallStringValue.smallLen;
+	return objPtr->internalRep.smallStringValue.smallString;
+    }
+    *lengthPtr = 0;
+    return NULL;
+}
+
+static inline int
+TclIsAStringOrSmallString(
+    Tcl_Obj *objPtr)
+{
+    return (objPtr->typePtr == &tclStringType) ||
+	   (objPtr->typePtr == &tclSmallStringType);
+}
+
+/*
+ * Returns the TUTF-8 representation of an object, creating it if necessary.
+ * This may be in objPtr->bytes or elsewhere including objPtr->internalRep.
+ * Caller should make no assumptions, in particular it may point into
+ * internalRep.
+ */
+static inline const char *
+TclGetTUtf8(
+    Tcl_Obj *objPtr,
+    Tcl_Size *numBytesPtr)
+{
+    const char *bytes = TclExistingTUtf8(objPtr, numBytesPtr);
+    return bytes ? bytes : Tcl_GetStringFromObj(objPtr, numBytesPtr);
+}
+
+static inline const char *
+TclInitSmallStringRep(
+    Tcl_Obj *objPtr,
+    const char *bytes,
+    Tcl_Size numBytes)
+{
+    assert(numBytes >= 0 && numBytes <= TCL_SMALL_STRING_MAX);
+    objPtr->bytes = NULL;
+    objPtr->length = 0;
+    memmove(objPtr->internalRep.smallStringValue.smallString, bytes, numBytes);
+    objPtr->internalRep.smallStringValue.smallString[numBytes] = '\0';
+    objPtr->internalRep.smallStringValue.smallLen = (unsigned char)numBytes;
+    objPtr->typePtr = &tclSmallStringType;
+    return objPtr->internalRep.smallStringValue.smallString;
+}
+
+static inline const char *
+TclAttemptInitTUtf8(
+    Tcl_Obj *objPtr,
+    const char *bytes,
+    Tcl_Size numBytes)
+{
+    assert(numBytes >= 0);
+    if (numBytes == 0) {
+	TclInitEmptyStringRep(objPtr);
+	return objPtr->bytes;
+    } else if (numBytes <= TCL_SMALL_STRING_MAX) {
+	return TclInitSmallStringRep(objPtr, bytes, numBytes);
+    } else {
+	return TclAttemptInitStringRep(objPtr, bytes, numBytes);
+    }
+}
 
 /*
  *----------------------------------------------------------------
