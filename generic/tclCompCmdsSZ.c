@@ -4687,7 +4687,8 @@ TclCompileWhileCmd(
     Tcl_Token *testTokenPtr, *bodyTokenPtr;
     Tcl_BytecodeLabel jumpEvalCond, bodyCodeOffset;
     Tcl_ExceptionRange range;
-    int code, boolVal;
+    int code;
+	bool boolVal;
     int loopMayEnd = 1;		/* This is set to 0 if it is recognized as an
 				 * infinite loop. */
     Tcl_Obj *boolObj;

@@ -494,12 +494,12 @@ Tcl_SetByteArrayLength(
  *----------------------------------------------------------------------
  */
 
-static int
+static bool
 MakeByteArray(
     Tcl_Interp *interp,
     Tcl_Obj *objPtr,
     Tcl_Size limit,
-    int demandProper,
+    bool demandProper,
     ByteArray **byteArrayPtrPtr)
 {
     Tcl_Size length;
@@ -509,14 +509,14 @@ MakeByteArray(
     unsigned char *dst = byteArrayPtr->bytes;
     unsigned char *dstEnd = dst + numBytes;
     const char *srcEnd = src + length;
-    int proper = 1;
+    bool proper = true;
 
     for (; src < srcEnd && dst < dstEnd; ) {
 	int ch;
 	Tcl_Size count = TclUtfToUniChar(src, &ch);
 
 	if (ch > 255) {
-	    proper = 0;
+	    proper = false;
 	    if (demandProper) {
 		if (interp) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -548,7 +548,7 @@ TclNarrowToBytes(
 	Tcl_ObjInternalRep ir;
 	ByteArray *byteArrayPtr;
 
-	if (0 == MakeByteArray(NULL, objPtr, TCL_INDEX_NONE, 0, &byteArrayPtr)) {
+	if (!MakeByteArray(NULL, objPtr, TCL_INDEX_NONE, 0, &byteArrayPtr)) {
 	    TclNewObj(objPtr);
 	    TclInvalidateStringRep(objPtr);
 	}
@@ -584,7 +584,7 @@ SetByteArrayFromAny(
     ByteArray *byteArrayPtr;
     Tcl_ObjInternalRep ir;
 
-    if (0 == MakeByteArray(interp, objPtr, limit, 1, &byteArrayPtr)) {
+    if (!MakeByteArray(interp, objPtr, limit, 1, &byteArrayPtr)) {
 	return TCL_ERROR;
     }
 
