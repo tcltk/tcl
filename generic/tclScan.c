@@ -76,9 +76,10 @@ BuildCharSet(
     CharSet *cset,
     const char *format)		/* Points to first char of set. */
 {
-    Tcl_UniChar ch = 0, start;
-    int offset, nranges;
     const char *end;
+    Tcl_Size offset;
+    int nranges;
+    Tcl_UniChar ch = 0, start;
 
     memset(cset, 0, sizeof(CharSet));
 
@@ -595,13 +596,13 @@ int
 Tcl_ScanObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     const char *format;
     int numVars, nconversions, totalVars = -1;
-    int objIndex, offset, i, result, code;
-    int value;
+    int objIndex, value, i, result, code;
+    Tcl_Size offset;
     const char *string, *end, *baseString;
     char op = 0;
     int underflow = 0;
@@ -611,14 +612,14 @@ Tcl_ScanObjCmd(
     Tcl_Obj **objs = NULL, *objPtr = NULL;
     int flags;
 
-    if (objc < 3) {
+    if (objc < 3 || objc - 3 > INT_MAX) {
 	Tcl_WrongNumArgs(interp, 1, objv,
 		"string format ?varName ...?");
 	return TCL_ERROR;
     }
 
     format = TclGetString(objv[2]);
-    numVars = objc-3;
+    numVars = (int)objc-3;
 
     /*
      * Check for errors in the format string.
