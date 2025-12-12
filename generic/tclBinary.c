@@ -73,15 +73,15 @@ static int		NeedReversing(int format);
 static void		CopyNumber(const void *from, void *to,
 			    size_t length, int type);
 /* Binary ensemble commands */
-static Tcl_ObjCmdProc	BinaryFormatCmd;
-static Tcl_ObjCmdProc	BinaryScanCmd;
+static Tcl_ObjCmdProc2	BinaryFormatCmd;
+static Tcl_ObjCmdProc2	BinaryScanCmd;
 /* Binary encoding sub-ensemble commands */
-static Tcl_ObjCmdProc	BinaryEncodeHex;
-static Tcl_ObjCmdProc	BinaryDecodeHex;
-static Tcl_ObjCmdProc	BinaryEncode64;
-static Tcl_ObjCmdProc	BinaryDecode64;
-static Tcl_ObjCmdProc	BinaryEncodeUu;
-static Tcl_ObjCmdProc	BinaryDecodeUu;
+static Tcl_ObjCmdProc2	BinaryEncodeHex;
+static Tcl_ObjCmdProc2	BinaryDecodeHex;
+static Tcl_ObjCmdProc2	BinaryEncode64;
+static Tcl_ObjCmdProc2	BinaryDecode64;
+static Tcl_ObjCmdProc2	BinaryEncodeUu;
+static Tcl_ObjCmdProc2	BinaryDecodeUu;
 
 /*
  * The following tables are used by the binary encoders
@@ -805,7 +805,7 @@ static int
 BinaryFormatCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Size arg;		/* Index of next argument to consume. */
@@ -1317,7 +1317,7 @@ static int
 BinaryScanCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Size arg;		/* Index of next argument to consume. */
@@ -2401,7 +2401,7 @@ static int
 BinaryEncodeHex(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Tcl_Obj *resultObj = NULL;
@@ -2449,7 +2449,7 @@ static int
 BinaryDecodeHex(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Tcl_Obj *resultObj = NULL;
@@ -2576,7 +2576,7 @@ static int
 BinaryEncode64(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Tcl_Obj *resultObj;
@@ -2704,7 +2704,7 @@ static int
 BinaryEncodeUu(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Tcl_Obj *resultObj;
@@ -2853,7 +2853,7 @@ static int
 BinaryDecodeUu(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Tcl_Obj *resultObj = NULL;
@@ -3029,7 +3029,7 @@ static int
 BinaryDecode64(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Tcl_Obj *resultObj = NULL;
