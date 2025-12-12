@@ -250,7 +250,7 @@ TclCreateLiteral(
     if ((flags & LITERAL_ON_HEAP)) {
 	objPtr->bytes = (char *) bytes;
 	objPtr->length = length;
-    } else if (!TclAttemptInitStringRep(objPtr, bytes, length)) {
+    } else if (!TclAttemptInitTUtf8(objPtr, bytes, length)) {
 	Tcl_DecrRefCount(objPtr);
 	return NULL;
     }
@@ -407,7 +407,6 @@ TclRegisterLiteral(
     Interp *iPtr = envPtr->iPtr;
     LiteralTable *localTablePtr = &envPtr->localLitTable;
     LiteralEntry *globalPtr, *localPtr;
-    Tcl_Obj *objPtr;
     size_t hash, localHash, objIndex;
     int isNew;
     Namespace *nsPtr;
@@ -425,10 +424,13 @@ TclRegisterLiteral(
     localHash = (hash & localTablePtr->mask);
     for (localPtr=localTablePtr->buckets[localHash] ; localPtr!=NULL;
 	    localPtr = localPtr->nextPtr) {
-	objPtr = localPtr->objPtr;
-	if ((objPtr->length == length) && ((length == 0)
-		|| ((objPtr->bytes[0] == bytes[0])
-		&& (memcmp(objPtr->bytes, bytes, length) == 0)))) {
+	Tcl_Size objStringLength;
+	const char *objBytes =
+	    TclExistingTUtf8(localPtr->objPtr, &objStringLength);
+	assert(objBytes != NULL); /* Based on how entries are stored */
+	if ((objStringLength == length) && ((length == 0)
+		|| ((objBytes[0] == bytes[0])
+		&& (memcmp(objBytes, bytes, length) == 0)))) {
 	    if ((flags & LITERAL_ON_HEAP)) {
 		Tcl_Free((void *)bytes);
 	    }
@@ -466,7 +468,7 @@ TclRegisterLiteral(
      */
 
     globalPtr = NULL;
-    objPtr = TclCreateLiteral(iPtr, bytes, length, hash, &isNew, nsPtr, flags,
+    Tcl_Obj *objPtr = TclCreateLiteral(iPtr, bytes, length, hash, &isNew, nsPtr, flags,
 	    &globalPtr);
     objIndex = AddLocalLiteralEntry(envPtr, objPtr, localHash);
 

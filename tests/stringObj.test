@@ -34,30 +34,36 @@ test stringObj-1.1 {string type registration} testobj {
 set INT_MAX 0x7fffffff; # Assumes sizeof(int) == 4
 set SIZE_MAX [expr {(1 << (8*$::tcl_platform(pointerSize) - 1)) - 1}]
 
-test stringObj-2.1 {Tcl_NewStringObj} testobj {
-    set result ""
-    lappend result [testobj freeallvars]
-    lappend result [teststringobj set 1 abcd]
-    lappend result [testobj type 1]
-    lappend result [testobj refcount 1]
-} {{} abcd string 2}
+array set STRINGTYPES [list smallstring abc string abcdefghijklmnopqrstuvwxyz]
 
-test stringObj-3.1 {Tcl_SetStringObj, existing "empty string" object} testobj {
-    set result ""
-    lappend result [testobj freeallvars]
-    lappend result [testobj newobj 1]
-    lappend result [teststringobj set 1 xyz]	;# makes existing obj a string
-    lappend result [testobj type 1]
-    lappend result [testobj refcount 1]
-} {{} {} xyz string 2}
-test stringObj-3.2 {Tcl_SetStringObj, existing non-"empty string" object} testobj {
-    set result ""
-    lappend result [testobj freeallvars]
-    lappend result [testintobj set 1 512]
-    lappend result [teststringobj set 1 foo]	;# makes existing obj a string
-    lappend result [testobj type 1]
-    lappend result [testobj refcount 1]
-} {{} 512 foo string 2}
+foreach {strType str} [array get STRINGTYPES] {
+    test stringObj-$strType-2.1 "Tcl_NewStringObj $strType" testobj {
+        set result ""
+        lappend result [testobj freeallvars]
+        lappend result [teststringobj set 1 $str]
+        lappend result [testobj type 1]
+        lappend result [testobj refcount 1]
+    } [list {} $str $strType 2]
+
+    test stringObj-$strType-3.1 "Tcl_SetStringObj, existing empty object to $strType" testobj {
+        set result ""
+        lappend result [testobj freeallvars]
+        lappend result [testobj newobj 1]
+        lappend result [teststringobj set 1 $str] ;# makes existing obj a string
+        lappend result [testobj type 1]
+        lappend result [testobj refcount 1]
+    } [list {} {} $str $strType 2]
+
+    test stringObj-3.2 "Tcl_SetStringObj, existing non-empty string object to $strType" testobj {
+        set result ""
+        lappend result [testobj freeallvars]
+        lappend result [testintobj set 1 512]
+        lappend result [teststringobj set 1 $str] ;# makes existing obj a string
+        lappend result [testobj type 1]
+        lappend result [testobj refcount 1]
+    } [list {} 512 $str $strType 2]
+
+}
 
 test stringObj-4.1 {Tcl_SetObjLength procedure, string gets shorter} testobj {
     testobj freeallvars
@@ -121,16 +127,17 @@ test stringObj-6.1 {Tcl_AppendStringsToObj procedure, type conversion} testobj {
 } {a bxyz 1234 foo}
 test stringObj-6.2 {Tcl_AppendStringsToObj procedure, counting space} testobj {
     testobj freeallvars
-    teststringobj set 1 abc
+    teststringobj set 1 $STRINGTYPES(string)
     teststringobj appendstrings 1
     list [teststringobj length 1] [teststringobj get 1]
-} {3 abc}
+} [list [string length $STRINGTYPES(string)] $STRINGTYPES(string)]
+
 test stringObj-6.3 {Tcl_AppendStringsToObj procedure, counting space} testobj {
     testobj freeallvars
-    teststringobj set 1 abc
+    teststringobj set 1 $STRINGTYPES(string)
     teststringobj appendstrings 1 {} {} {} {}
     list [teststringobj length 1] [teststringobj get 1]
-} {3 abc}
+} [list [string length $STRINGTYPES(string)] $STRINGTYPES(string)]
 test stringObj-6.4 {Tcl_AppendStringsToObj procedure, counting space} testobj {
     testobj freeallvars
     teststringobj set 1 abc
@@ -246,7 +253,7 @@ test stringObj-9.1 {TclAppendObjToObj, mixed src & dest} {testobj testdstring} {
     string length $x
     list [testobj objtype $x] [testobj objtype $y] [append x $y] \
 	    [set y] [testobj objtype $x] [testobj objtype $y]
-} "string none abc\xEF\xBF\xAEghi\xAE\xBF\xEF \xAE\xBF\xEF string none"
+} "string smallstring abc\xEF\xBF\xAEghi\xAE\xBF\xEF \xAE\xBF\xEF string smallstring"
 test stringObj-9.2 {TclAppendObjToObj, mixed src & dest} testobj {
     set x abc\xEF\xBF\xAEghi
     string length $x
@@ -263,7 +270,7 @@ test stringObj-9.3 {TclAppendObjToObj, mixed src & 1-byte dest} {testobj testdst
     string length $x
     list [testobj objtype $x] [testobj objtype $y] [append x $y] \
 	    [set y] [testobj objtype $x] [testobj objtype $y]
-} "string none abcdefghi\xAE\xBF\xEF \xAE\xBF\xEF string none"
+} "string smallstring abcdefghi\xAE\xBF\xEF \xAE\xBF\xEF string smallstring"
 test stringObj-9.4 {TclAppendObjToObj, 1-byte src & dest} {testobj testdstring} {
     set x abcdefghi
     testdstring free
@@ -272,7 +279,7 @@ test stringObj-9.4 {TclAppendObjToObj, 1-byte src & dest} {testobj testdstring} 
     string length $x
     list [testobj objtype $x] [testobj objtype $y] [append x $y] \
 	    [set y] [testobj objtype $x] [testobj objtype $y]
-} {string none abcdefghijkl jkl string none}
+} {string smallstring abcdefghijkl jkl string smallstring}
 test stringObj-9.5 {TclAppendObjToObj, 1-byte src & dest} testobj {
     set x abcdefghi
     string length $x
@@ -288,7 +295,7 @@ test stringObj-9.6 {TclAppendObjToObj, 1-byte src & mixed dest} {testobj testdst
     string length $x
     list [testobj objtype $x] [testobj objtype $y] [append x $y] \
 	    [set y] [testobj objtype $x] [testobj objtype $y]
-} "string none abc\xEF\xBF\xAEghijkl jkl string none"
+} "string smallstring abc\xEF\xBF\xAEghijkl jkl string smallstring"
 test stringObj-9.7 {TclAppendObjToObj, integer src & dest} testobj {
     set x [expr {4 * 5}]
     set y [expr {4 + 5}]
@@ -338,14 +345,14 @@ test stringObj-10.1 {Tcl_GetRange with all byte-size chars} {testobj testdstring
     set x [testdstring get]
     list [testobj objtype $x] [set y [string range $x 1 end-1]] \
 	    [testobj objtype $x] [testobj objtype $y]
-} [list none bcde string string]
+} [list smallstring bcde string string]
 test stringObj-10.2 {Tcl_GetRange with some mixed width chars} {testobj testdstring} {
     testdstring free
     testdstring append "abcïïdef" -1
     set x [testdstring get]
     list [testobj objtype $x] [set y [string range $x 1 end-1]] \
 	    [testobj objtype $x] [testobj objtype $y]
-} [list none "bcïïde" string string]
+} [list smallstring "bcïïde" string string]
 test stringObj-10.3 {Tcl_GetRange with some mixed width chars} testobj {
     set x "abcïïdef"
     string length $x
