@@ -7313,7 +7313,8 @@ TestFilesystemCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    int res, boolVal;
+    int res;
+    bool boolVal;
     const char *msg;
 
     if (objc != 2) {
@@ -7684,7 +7685,8 @@ TestSimpleFilesystemCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    int res, boolVal;
+    int res;
+    bool boolVal;
     const char *msg;
 
     if (objc != 2) {
