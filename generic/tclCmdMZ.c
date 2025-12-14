@@ -1292,7 +1292,7 @@ Tcl_SplitObjCmd(
 	    len = TclUtfToUniChar(stringPtr, &ch);
 	    hPtr = Tcl_CreateHashEntry(&charReuseTable, INT2PTR(ch), &isNew);
 	    if (isNew) {
-		TclNewStringObj(objPtr, stringPtr, len);
+		TclNewTUtf8Obj(objPtr, stringPtr, len);
 
 		/*
 		 * Don't need to fiddle with refcount...
@@ -1320,7 +1320,7 @@ Tcl_SplitObjCmd(
 	    Tcl_ListObjAppendElement(NULL, listPtr, objPtr);
 	    stringPtr = p + 1;
 	}
-	TclNewStringObj(objPtr, stringPtr, end - stringPtr);
+	TclNewTUtf8Obj(objPtr, stringPtr, end - stringPtr);
 	Tcl_ListObjAppendElement(NULL, listPtr, objPtr);
     } else {
 	const char *element, *p, *splitEnd;
@@ -1339,7 +1339,7 @@ Tcl_SplitObjCmd(
 	    for (p = splitChars; p < splitEnd; p += splitLen) {
 		splitLen = TclUtfToUniChar(p, &splitChar);
 		if (ch == splitChar) {
-		    TclNewStringObj(objPtr, element, stringPtr - element);
+		    TclNewTUtf8Obj(objPtr, element, stringPtr - element);
 		    Tcl_ListObjAppendElement(NULL, listPtr, objPtr);
 		    element = stringPtr + len;
 		    break;
@@ -1347,7 +1347,7 @@ Tcl_SplitObjCmd(
 	    }
 	}
 
-	TclNewStringObj(objPtr, element, stringPtr - element);
+	TclNewTUtf8Obj(objPtr, element, stringPtr - element);
 	Tcl_ListObjAppendElement(NULL, listPtr, objPtr);
     }
     Tcl_SetObjResult(interp, listPtr);
@@ -1737,7 +1737,7 @@ StringIsCmd(
 		    while (TclIsSpaceProc(*p)) {
 			p++;
 		    }
-		    TclNewStringObj(tmpStr, string1, p-string1);
+		    TclNewTUtf8Obj(tmpStr, string1, p-string1);
 		    failat = Tcl_GetCharLength(tmpStr);
 		    TclDecrRefCount(tmpStr);
 		    break;
@@ -1918,7 +1918,7 @@ StringIsCmd(
 		    while (TclIsSpaceProcM(*p)) {
 			p++;
 		    }
-		    TclNewStringObj(tmpStr, string1, p-string1);
+		    TclNewTUtf8Obj(tmpStr, string1, p-string1);
 		    failat = Tcl_GetCharLength(tmpStr);
 		    TclDecrRefCount(tmpStr);
 		    break;

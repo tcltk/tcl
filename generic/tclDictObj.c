@@ -657,7 +657,7 @@ SetDictFromAny(
 	    }
 
 	    if (literal) {
-		TclNewStringObj(keyPtr, elemStart, elemSize);
+		TclNewTUtf8Obj(keyPtr, elemStart, elemSize);
 	    } else {
 		/* Avoid double copy */
 		char *dst;
@@ -677,7 +677,7 @@ SetDictFromAny(
 	    }
 
 	    if (literal) {
-		TclNewStringObj(valuePtr, elemStart, elemSize);
+		TclNewTUtf8Obj(valuePtr, elemStart, elemSize);
 	    } else {
 		/* Avoid double copy */
 		char *dst;

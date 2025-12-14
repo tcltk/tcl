@@ -5635,7 +5635,7 @@ TEBCresume(
 	if (Tcl_IsShared(valuePtr)) {
 	    // Make copy of UTF-8 representation ONLY; we're about to modify it
 	    s1 = TclGetStringFromObj(valuePtr, &slength);
-	    TclNewStringObj(objResultPtr, s1, slength);
+	    TclNewTUtf8Obj(objResultPtr, s1, slength);
 	    slength = transform(TclGetString(objResultPtr));
 	    Tcl_SetObjLength(objResultPtr, slength);
 	    TRACE_APPEND_OBJ(objResultPtr);

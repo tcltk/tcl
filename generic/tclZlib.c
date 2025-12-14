@@ -3494,7 +3494,7 @@ ZlibTransformSetOption(			/* not used */
 	Tcl_Obj *compDictObj;
 	int code;
 
-	TclNewStringObj(compDictObj, value, strlen(value));
+	TclNewTUtf8Obj(compDictObj, value, strlen(value));
 	Tcl_IncrRefCount(compDictObj);
 	if (NULL == Tcl_GetBytesFromObj(interp, compDictObj, (Tcl_Size *)NULL)) {
 	    Tcl_DecrRefCount(compDictObj);

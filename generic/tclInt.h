@@ -4632,12 +4632,45 @@ TclExistingTUtf8(
     return NULL;
 }
 
+static inline void
+TclUpdateStringOfSmallString(
+    Tcl_Obj *objPtr)
+{
+    assert(objPtr->typePtr == &tclSmallStringType);
+    assert(objPtr->bytes == NULL);
+    TclInitStringRep(objPtr,
+		     objPtr->internalRep.smallStringValue.smallString,
+		     objPtr->internalRep.smallStringValue.smallLen);
+}
+
 static inline int
 TclIsAStringOrSmallString(
     Tcl_Obj *objPtr)
 {
     return (objPtr->typePtr == &tclStringType) ||
 	   (objPtr->typePtr == &tclSmallStringType);
+}
+
+/*
+ * Returns the TUTF-8 representation and length of an object, creating it if
+ * necessary. This may be in objPtr->bytes or elsewhere including
+ * objPtr->internalRep. Caller should make no assumptions, in particular it
+ * may point into internalRep.
+ */
+static inline const char *
+TclGetTUtf8FromObj(
+    Tcl_Obj *objPtr,
+    Tcl_Size *numBytesPtr)
+{
+    if (objPtr->bytes) {
+	*numBytesPtr = objPtr->length;
+	return objPtr->bytes;
+    } else if (objPtr->typePtr == &tclSmallStringType) {
+	*numBytesPtr = objPtr->internalRep.smallStringValue.smallLen;
+	return objPtr->internalRep.smallStringValue.smallString;
+    } else {
+	return Tcl_GetStringFromObj(objPtr, numBytesPtr);
+    }
 }
 
 /*
@@ -4648,11 +4681,15 @@ TclIsAStringOrSmallString(
  */
 static inline const char *
 TclGetTUtf8(
-    Tcl_Obj *objPtr,
-    Tcl_Size *numBytesPtr)
+    Tcl_Obj *objPtr)
 {
-    const char *bytes = TclExistingTUtf8(objPtr, numBytesPtr);
-    return bytes ? bytes : Tcl_GetStringFromObj(objPtr, numBytesPtr);
+    if (objPtr->bytes) {
+	return objPtr->bytes;
+    } else if (objPtr->typePtr == &tclSmallStringType) {
+	return objPtr->internalRep.smallStringValue.smallString;
+    } else {
+	return Tcl_GetString(objPtr);
+    }
 }
 
 static inline const char *
@@ -4669,6 +4706,22 @@ TclInitSmallStringRep(
     objPtr->internalRep.smallStringValue.smallLen = (unsigned char)numBytes;
     objPtr->typePtr = &tclSmallStringType;
     return objPtr->internalRep.smallStringValue.smallString;
+}
+
+static inline void
+TclInitTUtf8Rep(
+    Tcl_Obj *objPtr,
+    const char *bytes,
+    Tcl_Size numBytes)
+{
+    assert(numBytes >= 0);
+    if (numBytes == 0) {
+	TclInitEmptyStringRep(objPtr);
+    } else if (numBytes <= TCL_SMALL_STRING_MAX) {
+	TclInitSmallStringRep(objPtr, bytes, numBytes);
+    } else {
+	TclInitStringRep(objPtr, bytes, numBytes);
+    }
 }
 
 static inline const char *
@@ -4987,6 +5040,16 @@ MODULE_SCOPE Tcl_LibraryInitProc Tcl_ABSListTest_Init;
 	TCL_DTRACE_OBJ_CREATE(objPtr);					\
     } while (0)
 
+#define TclNewTUtf8Obj(objPtr, s, len) \
+    do {								\
+	TclIncrObjsAllocated();						\
+	TclAllocObjStorage(objPtr);					\
+	(objPtr)->refCount = 0;						\
+	(objPtr)->typePtr = NULL;					\
+	TclInitTUtf8Rep((objPtr), (s), (len));				\
+	TCL_DTRACE_OBJ_CREATE(objPtr);					\
+    } while (0)
+
 #else /* TCL_MEM_DEBUG */
 #define TclNewIntObj(objPtr, w) \
     (objPtr) = Tcl_NewWideIntObj(w)
@@ -5021,7 +5084,7 @@ MODULE_SCOPE Tcl_LibraryInitProc Tcl_ABSListTest_Init;
  * sizeof(sLiteral "") will fail to compile otherwise.
  */
 #define TclNewLiteralStringObj(objPtr, sLiteral) \
-    TclNewStringObj((objPtr), (sLiteral), sizeof(sLiteral "") - 1)
+    TclNewTUtf8Obj((objPtr), (sLiteral), sizeof(sLiteral "") - 1)
 
 /*
  *----------------------------------------------------------------

@@ -3022,7 +3022,7 @@ Tcl_DStringToObj(
 	     * Static buffer, so must copy.
 	     */
 
-	    TclNewStringObj(result, dsPtr->string, dsPtr->length);
+	    TclNewTUtf8Obj(result, dsPtr->string, dsPtr->length);
 	}
     } else {
 	/*

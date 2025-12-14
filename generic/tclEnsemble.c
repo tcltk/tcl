@@ -3122,7 +3122,7 @@ TclCompileEnsemble(
 	 * No map, so check the dictionary directly.
 	 */
 
-	TclNewStringObj(subcmdObj, word, numBytes);
+	TclNewTUtf8Obj(subcmdObj, word, numBytes);
 	result = Tcl_DictObjGet(NULL, mapObj, subcmdObj, &targetCmdObj);
 	if (result == TCL_OK && targetCmdObj != NULL) {
 	    /*

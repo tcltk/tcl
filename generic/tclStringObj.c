@@ -3312,7 +3312,7 @@ TclStringCat(
 		    /* No string rep; Take the chance we can avoid making it */
 		    pendingPtr = objPtr;
 		} else {
-		    (void) TclGetTUtf8(objPtr, &length); /* PANIC? */
+		    (void) TclGetTUtf8FromObj(objPtr, &length); /* PANIC? */
 		}
 	    } while (--oc && (length == 0) && (pendingPtr == NULL));
 
@@ -3336,14 +3336,14 @@ TclStringCat(
 
 		do {
 		    Tcl_Obj *objPtr = *ov++;
-		    (void)TclGetTUtf8(objPtr, &numBytes); /* PANIC? */
+		    (void)TclGetTUtf8FromObj(objPtr, &numBytes); /* PANIC? */
 		} while (--oc && numBytes == 0 && pendingPtr->bytes == NULL);
 
 		if (numBytes) {
 		    last = objc -oc -1;
 		}
 		if (oc || numBytes) {
-		    (void)TclGetTUtf8(pendingPtr, &length);
+		    (void)TclGetTUtf8FromObj(pendingPtr, &length);
 		}
 		if (length == 0) {
 		    if (numBytes) {
@@ -3360,7 +3360,7 @@ TclStringCat(
 	    Tcl_Size numBytes;
 	    Tcl_Obj *objPtr = *ov++;
 
-	    TclGetTUtf8(objPtr, &numBytes);
+	    TclGetTUtf8FromObj(objPtr, &numBytes);
 	    if (numBytes) {
 		last = objc - oc;
 		if (numBytes > (TCL_SIZE_MAX - length)) {
@@ -3512,7 +3512,7 @@ TclStringCat(
 
 	    if ((objPtr->bytes == NULL) || (objPtr->length)) {
 		Tcl_Size more;
-		const char *src = TclGetTUtf8(objPtr, &more);
+		const char *src = TclGetTUtf8FromObj(objPtr, &more);
 
 		memcpy(dst, src, more);
 		dst += more;
@@ -4720,9 +4720,7 @@ static void
 UpdateStringOfSmallString(
     Tcl_Obj *objPtr)		/* Object with string rep to update. */
 {
-    TclInitStringRep(objPtr,
-		     objPtr->internalRep.smallStringValue.smallString,
-		     objPtr->internalRep.smallStringValue.smallLen);
+    TclUpdateStringOfSmallString(objPtr);
 }
 
 /*
