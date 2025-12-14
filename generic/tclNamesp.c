@@ -3059,6 +3059,10 @@ TclNewNamespaceObj(
      */
 
     len = strlen(nsPtr->fullName);
+    /* 
+     * Note: do not use TclNewTUtfObj here since NsNameSetInternalRep
+     * overwrites tthe internal rep without calling Tcl_GetStringFromObj.
+     */
     TclNewStringObj(objPtr, nsPtr->fullName, len);
 
     /*
