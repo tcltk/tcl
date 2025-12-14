@@ -2866,10 +2866,15 @@ TclNoIdentOpCmd(
     return TclVariadicOpCmd(clientData, interp, objc, objv);
 }
 
-// Compilation support for the Equals '=' command.
+// Implementation of the Equals '=' command follows.
 
 // Custom Object Type for compiling an expression with pre-substitutions.
-// The InternalRep will hold the Tcl_LVTIndex of the runtime value.
+// In the InternalRep, if ptrAndSize.ptr is NULL, the value will be
+// precomputed, checked to be numeric and then stored at the Tcl_LVTIndex
+// in ptrAndSize.size.  If ptrAndSize.ptr is non-NULL, it points to the
+// start of the command, with ptrAndSize.size giving its length - this
+// means the command is known to produce a numeric value so we will
+// compile it inline without further checking.
 static const Tcl_ObjType eqPresubType = {
     "presub",			/* name */
     NULL,			/* freeIntRepProc */
@@ -3038,8 +3043,6 @@ void EqParseSetError(
     EqInput *in,
     const char *expected)
 {
-    //printf("ERROR: argpos=%d charpos=%d lex=%d\n", in->argpos, in->charpos, in->lex);
-
     // Only record the first error.
     if (in->errorFound) return;
     in->errorFound = expected;
@@ -3169,7 +3172,6 @@ void EqParsePrefix(
 		const char *name = TclGetStringFromObj(inLit, &nameLen);
 		localIndex = TclFindCompiledLocal(name, nameLen, 0, envPtr);
 		if (localIndex != TCL_INDEX_NONE) {
-		    //printf("EqParsePrefix COMPILING LOCAL VARIABLE %ld\n", localIndex);
 		    OP4(LOAD_SCALAR, localIndex);
 		    return;
 		}
@@ -3192,7 +3194,6 @@ void EqParsePrefix(
 	    } else {
 		// Substitution was checked and found to be numeric/boolean.
 		localIndex = irPtr->ptrAndSize.size;
-		//printf("EqParsePrefix COMPILING RUNTIME SUBSTITUTION %ld\n", localIndex);
 		OP4(LOAD_SCALAR, localIndex);
 	    }
 	    EqNextLex(in);
@@ -3317,7 +3318,6 @@ Tcl_EqualsObjCmd(
     Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    //printf("Tcl_EqualsObjCmd CALLED\n");
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "arg ?arg ...?");
 	return TCL_ERROR;
@@ -3415,7 +3415,6 @@ int EqCompileRuntimeWord(
     Tcl_Obj *objPtr;
     Tcl_Size count, size;
     const char *start;
-    //printf("EqCompileRuntimeWord CALLED\n");
 
     // Process each subtoken of the argument.
     for (count = tokenPtr->numComponents; count > 0; count--) {
@@ -3488,7 +3487,6 @@ int EqCompileRuntimeWord(
 	    OP4(LOAD_SCALAR, *allNumericIndex);
 	    OP(BITAND);
 	}
-	//printf("Compiled pre-substitution %ld.\n", presubIndex);
     }
     return TCL_OK;
 }
@@ -3530,7 +3528,6 @@ TclCompileEqualsCmd(
     Tcl_Size len, i, numWords = parsePtr->numWords;
     Tcl_Token *tokenPtr;
     Tcl_Size depth = TclGetStackDepth(envPtr);
-    //printf("TclCompileEqualsCmd CALLED, numWords=%ld\n", numWords);
 
     if (numWords == 1 || numWords > UINT_MAX) {
 	return TCL_ERROR;
@@ -3553,12 +3550,9 @@ TclCompileEqualsCmd(
 	    Tcl_BounceRefCount(objPtr);
 	    if (EqCompileRuntimeWord(interp, envPtr, tokenPtr, listObj,
 			&allNumericIndex) != TCL_OK) {
-		//printf("Could not compile runtime word %ld.\n", i);
 		Tcl_BounceRefCount(listObj);
 		return TCL_ERROR;
 	    }
-
-	    //printf("Compiled runtime word %ld.\n", i);
 	}
     }
     Tcl_BytecodeLabel noncompiled=0, end;
@@ -3566,7 +3560,6 @@ TclCompileEqualsCmd(
 	// If we found any pre-substituted values which are non-numeric,
 	// skip to the non-compiled implementation.
 	FWDJUMP(JUMP_FALSE, noncompiled);
-	//printf("TclCompileEqualsCmd COMPILED PRE-SUBSTITUTION CHECK\n");
     }
 
     // Compile the expression, asssuming that any pre-substitutions
@@ -3579,7 +3572,6 @@ TclCompileEqualsCmd(
 	Tcl_BounceRefCount(listObj);
 	return TCL_ERROR;
     }
-    //printf("TclCompileEqualsCmd COMPILED EXPRESSION, %ld args\n", len);
     TclCheckStackDepth(depth+1, envPtr);
     // If there are no pre-substitutions we are done.
     if (allNumericIndex == TCL_INDEX_NONE) {
