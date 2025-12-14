@@ -496,14 +496,14 @@ typedef struct JumpList {
  */
 
 static void		CompileExprTree(Tcl_Interp *interp, OpNode *nodes,
-			    int index, Tcl_Obj *const **litObjvPtr,
+			    Tcl_Size index, Tcl_Obj *const **litObjvPtr,
 			    Tcl_Obj *const *funcObjv, Tcl_Token *tokenPtr,
 			    CompileEnv *envPtr, bool optimize);
 static void		ConvertTreeToTokens(const char *start, Tcl_Size numBytes,
 			    OpNode *nodes, Tcl_Token *tokenPtr,
 			    Tcl_Parse *parsePtr);
 static int		ExecConstantExprTree(Tcl_Interp *interp, OpNode *nodes,
-			    int index, Tcl_Obj * const **litObjvPtr);
+			    Tcl_Size index, Tcl_Obj * const **litObjvPtr);
 static int		ParseExpr(Tcl_Interp *interp, const char *start,
 			    Tcl_Size numBytes, OpNode **opTreePtr,
 			    Tcl_Obj *litList, Tcl_Obj *funcList,
@@ -2259,7 +2259,7 @@ static int
 ExecConstantExprTree(
     Tcl_Interp *interp,
     OpNode *nodes,
-    int index,
+    Tcl_Size index,
     Tcl_Obj *const **litObjvPtr)
 {
     CompileEnv *envPtr;
@@ -2314,7 +2314,7 @@ static void
 CompileExprTree(
     Tcl_Interp *interp,
     OpNode *nodes,
-    int index,
+    Tcl_Size index,
     Tcl_Obj *const **litObjvPtr,
     Tcl_Obj *const *funcObjv,
     Tcl_Token *tokenPtr,
@@ -2597,7 +2597,7 @@ int
 TclSingleOpCmd(
     void *clientData,
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     TclOpCmdClientData *occdPtr = (TclOpCmdClientData *)clientData;
@@ -2650,7 +2650,7 @@ int
 TclSortingOpCmd(
     void *clientData,
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     int code = TCL_OK;
@@ -2664,7 +2664,8 @@ TclSortingOpCmd(
 	OpNode *nodes = (OpNode *)TclStackAlloc(interp,
 		2 * (objc-2) * sizeof(OpNode));
 	unsigned char lexeme;
-	int i, lastAnd = 1;
+	Tcl_Size i;
+	int lastAnd = 1;
 	Tcl_Obj *const *litObjPtrPtr = litObjv;
 
 	ParseLexeme(occdPtr->op, strlen(occdPtr->op), &lexeme, NULL);
@@ -2684,12 +2685,12 @@ TclSortingOpCmd(
 	    nodes[j].lexeme = AND;
 	    nodes[j].mark = MARK_LEFT;
 	    nodes[j].left = lastAnd;
-	    nodes[lastAnd].p.parent = j;
+	    nodes[lastAnd].p.parent = 2*((int)i-1);
 
-	    nodes[j].right = j + 1;
-	    nodes[j + 1].p.parent= j;
+	    nodes[2*(i-1)].right = 2*((int)i-1)+1;
+	    nodes[2*(i-1)+1].p.parent= 2*((int)i-1);
 
-	    lastAnd = j;
+	    lastAnd = 2*((int)i-1);
 	}
 	litObjv[2 * (objc - 2) - 1] = objv[objc - 1];
 
@@ -2732,7 +2733,7 @@ int
 TclVariadicOpCmd(
     void *clientData,
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     TclOpCmdClientData *occdPtr = (TclOpCmdClientData *)clientData;
@@ -2792,7 +2793,8 @@ TclVariadicOpCmd(
 	Tcl_Obj *const *litObjv = objv + 1;
 	OpNode *nodes = (OpNode *)TclStackAlloc(interp,
 		(objc - 1) * sizeof(OpNode));
-	int i, lastOp = OT_LITERAL;
+	Tcl_Size i;
+	int lastOp = OT_LITERAL;
 
 	nodes[0].lexeme = START;
 	nodes[0].mark = MARK_RIGHT;
@@ -2803,9 +2805,9 @@ TclVariadicOpCmd(
 		nodes[i].left = OT_LITERAL;
 		nodes[i].right = lastOp;
 		if (lastOp >= 0) {
-		    nodes[lastOp].p.parent = i;
+		    nodes[lastOp].p.parent = (int)i;
 		}
-		lastOp = i;
+		lastOp = (int)i;
 	    }
 	} else {
 	    for (i=1; i<objc-1; i++) {
@@ -2813,10 +2815,10 @@ TclVariadicOpCmd(
 		nodes[i].mark = MARK_LEFT;
 		nodes[i].left = lastOp;
 		if (lastOp >= 0) {
-		    nodes[lastOp].p.parent = i;
+		    nodes[lastOp].p.parent = (int)i;
 		}
 		nodes[i].right = OT_LITERAL;
-		lastOp = i;
+		lastOp = (int)i;
 	    }
 	}
 	nodes[0].right = lastOp;
@@ -2852,7 +2854,7 @@ int
 TclNoIdentOpCmd(
     void *clientData,
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     TclOpCmdClientData *occdPtr = (TclOpCmdClientData *)clientData;
@@ -2879,6 +2881,7 @@ static const Tcl_ObjType eqPresubType = {
 
 // EqInput holds the current state of scanning the input expression.
 typedef struct EqInput {
+    Tcl_Interp *interp;		/* Interpreter */
     int argc;			/* Argument count. */
     Tcl_Obj *const *argv;	/* Argument objects. */
     int argpos;			/* Current argument. */
@@ -3181,9 +3184,17 @@ void EqParsePrefix(
 	    const Tcl_ObjInternalRep *irPtr;
 	    irPtr = TclFetchInternalRep(inLit, &eqPresubType);
 	    assert(irPtr != NULL);
-	    localIndex = irPtr->wideValue;
-	    //printf("EqParsePrefix COMPILING RUNTIME SUBSTITUTION %ld\n", localIndex);
-	    OP4(LOAD_SCALAR, localIndex);
+	    if (irPtr->ptrAndSize.ptr) {
+		// This is a command known to produce a numeric/boolean result
+		// so we compile it inline here.
+		TclCompileScript(in->interp, (const char *)irPtr->ptrAndSize.ptr,
+				irPtr->ptrAndSize.size, envPtr);
+	    } else {
+		// Substitution was checked and found to be numeric/boolean.
+		localIndex = irPtr->ptrAndSize.size;
+		//printf("EqParsePrefix COMPILING RUNTIME SUBSTITUTION %ld\n", localIndex);
+		OP4(LOAD_SCALAR, localIndex);
+	    }
 	    EqNextLex(in);
 	    return;
     }
@@ -3303,7 +3314,7 @@ int
 Tcl_EqualsObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     //printf("Tcl_EqualsObjCmd CALLED\n");
@@ -3311,7 +3322,7 @@ Tcl_EqualsObjCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "arg ?arg ...?");
 	return TCL_ERROR;
     }
-    EqInput input = {objc, objv, 1, 0, 0, 0, "", 0, 0};
+    EqInput input = {interp, objc, objv, 1, 0, 0, 0, "", 0, 0};
     CompileEnv compEnv;		/* Compilation environment structure */
     CompileEnv *envPtr = &compEnv;
     TclInitCompileEnv(interp, envPtr, NULL, 0, NULL, 0);
@@ -3336,6 +3347,59 @@ Tcl_EqualsObjCmd(
     return code;
 }
 
+// Helper for compilation.
+// Check whether a runtime command substitution is known to return a number.
+// Rather simple-minded but false negatives are no big deal.
+int EqCmdReturnsNum(
+	const char *command,
+	int len)
+{
+	// Give up if it's not a single command.
+	for (int i=0; i<len; i++) {
+		if (command[i] == ';' || command[i] == '\n') return 0;
+	}
+
+	switch (*command) {
+	case 'l':
+		return (strncmp(command, "llength ", 8)==0);
+	case 'd':
+		return (strncmp(command, "dict exists ", 12)==0);
+	case 'i':
+		if (strncmp(command, "incr ", 5)==0) return 1;
+		if (strncmp(command, "info ", 5)==0) {
+			command += 5;
+			if (strncmp(command, "exists ", 7)==0) return 1;
+			if (strncmp(command, "constant ", 9)==0) return 1;
+			if (strncmp(command, "complete ", 9)==0) return 1;
+		}
+		return 0;
+	case 's':
+		if (strncmp(command, "string ", 7)==0) {
+			command += 7;
+			if (strncmp(command, "length ", 7)==0) return 1;
+			if (strncmp(command, "compare ", 8)==0) return 1;
+			if (strncmp(command, "equal ", 6)==0) return 1;
+			if (strncmp(command, "first ", 6)==0) return 1;
+			if (strncmp(command, "is ", 3)==0) return 1;
+			if (strncmp(command, "last ", 5)==0) return 1;
+			if (strncmp(command, "match ", 6)==0) return 1;
+		}
+		return 0;
+	case 'c':
+		if (strncmp(command, "clock ", 6)==0) {
+			command += 6;
+			if (strncmp(command, "seconds", 7)==0) return 1;
+			if (strncmp(command, "add ", 4)==0) return 1;
+			if (strncmp(command, "clicks", 6)==0) return 1;
+			if (strncmp(command, "microseconds", 12)==0) return 1;
+			if (strncmp(command, "milliseconds", 12)==0) return 1;
+			if (strncmp(command, "scan ", 5)==0) return 1;
+		}
+		return 0;
+	}
+	return 0;
+}
+
 // We are compiling, but found an argument of '=' which will not be known
 // until runtime because it includes one or more command or variable
 // substitutions. We compile code to get these values and check that they
@@ -3349,7 +3413,8 @@ int EqCompileRuntimeWord(
     Tcl_LVTIndex *allNumericIndex)
 {
     Tcl_Obj *objPtr;
-    Tcl_Size count;
+    Tcl_Size count, size;
+    const char *start;
     //printf("EqCompileRuntimeWord CALLED\n");
 
     // Process each subtoken of the argument.
@@ -3362,15 +3427,29 @@ int EqCompileRuntimeWord(
 	    continue;
 
 	case TCL_TOKEN_COMMAND:
+	    start = tokenPtr->start+1;
+	    size = tokenPtr->size-2;
+	    if (EqCmdReturnsNum(start, size)) {
+		// This pre-substituted command always gives a numeric/boolean
+		// result, so we will just compile it inline
+		Tcl_ObjInternalRep ir;
+		ir.ptrAndSize.ptr = (void *)start;
+		ir.ptrAndSize.size = size;
+		TclNewObj(objPtr);
+		Tcl_StoreInternalRep(objPtr, &eqPresubType, &ir);
+		(void) Tcl_ListObjAppendElement(NULL, listObj, objPtr);
+		continue;
+	    }
+	    // Otherwise we need a runtime check
 	    if (*allNumericIndex != TCL_INDEX_NONE) {
 		OP4(STORE_SCALAR, *allNumericIndex);
 		OP(POP);
 	    }
-	    TclCompileScript(interp, tokenPtr->start+1,
-		    tokenPtr->size-2, envPtr);
+	    TclCompileScript(interp, start, size, envPtr);
 	    break;
 
 	case TCL_TOKEN_VARIABLE:
+	    // Presubstituted variables always need a runtime check
 	    if (*allNumericIndex != TCL_INDEX_NONE) {
 		OP4(STORE_SCALAR, *allNumericIndex);
 		OP(POP);
@@ -3389,7 +3468,8 @@ int EqCompileRuntimeWord(
 	Tcl_LVTIndex presubIndex = AnonymousLocal(envPtr);
 	if (presubIndex == TCL_INDEX_NONE) {return TCL_ERROR;}
 	Tcl_ObjInternalRep ir;
-	ir.wideValue = presubIndex;
+	ir.ptrAndSize.ptr = 0;
+	ir.ptrAndSize.size = presubIndex;
 	TclNewObj(objPtr);
 	Tcl_StoreInternalRep(objPtr, &eqPresubType, &ir);
 	(void) Tcl_ListObjAppendElement(NULL, listObj, objPtr);
@@ -3492,7 +3572,7 @@ TclCompileEqualsCmd(
     // Compile the expression, asssuming that any pre-substitutions
     // will give numeric values.
     TclListObjGetElements(NULL, listObj, &len, &objs);
-    EqInput input = {len, objs, 1, 0, 0, 0, "", 0, 0};
+    EqInput input = {interp, len, objs, 1, 0, 0, 0, "", 0, 0};
     EqNextLex(&input);
     EqParse(&input,envPtr,0);
     if (input.errorFound) {
@@ -3524,7 +3604,7 @@ TclCompileEqualsCmd(
 	    const Tcl_ObjInternalRep *irPtr;
 	    irPtr = TclFetchInternalRep(objPtr, &eqPresubType);
 	    assert(irPtr != NULL);
-	    Tcl_LVTIndex presubIndex = irPtr->wideValue;
+	    Tcl_LVTIndex presubIndex = irPtr->ptrAndSize.size;
 	    OP4(LOAD_SCALAR, presubIndex);
 	} else {
 	    PUSH_OBJ(objPtr);
