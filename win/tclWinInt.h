@@ -39,6 +39,8 @@ MODULE_SCOPE void	TclWinGenerateChannelName(char channelName[],
 			    const char *channelTypeName, void *channelImpl);
 MODULE_SCOPE const char*TclpGetUserName(Tcl_DString *bufferPtr);
 
+MODULE_SCOPE void	TclWinAppendSystemError(Tcl_Interp *, DWORD error);
+
 /* Needed by tclWinFile.c and tclWinFCmd.c */
 #ifndef FILE_ATTRIBUTE_REPARSE_POINT
 #define FILE_ATTRIBUTE_REPARSE_POINT 0x00000400
@@ -109,5 +111,51 @@ MODULE_SCOPE int	TclPipeThreadStopSignal(TclPipeThreadInfo **pipeTIPtr);
 MODULE_SCOPE void	TclPipeThreadStop(TclPipeThreadInfo **pipeTIPtr,
 			    HANDLE hThread);
 MODULE_SCOPE void	TclPipeThreadExit(TclPipeThreadInfo **pipeTIPtr);
+
+/*
+ * Utilities dealing with path buffers
+ */
+typedef struct TclWinPath {
+    WCHAR buffer[MAX_PATH];	/* buffer for path */
+    WCHAR *bufferPtr;		/* pointer to buffer (may be same as buffer
+				 * or a heap-allocated extension) */
+} TclWinPath;
+
+/* Initialize a path buffer. Never returns NULL. */
+static inline WCHAR *
+TclWinPathInit(
+    TclWinPath *pathBufPtr,	/* Structure to be initialized */
+    DWORD *capacityPtr)			/* On return, capacity in WCHARS
+					   Must NOT be NULL */
+{
+    pathBufPtr->bufferPtr = pathBufPtr->buffer;
+    *capacityPtr = (DWORD)(sizeof(pathBufPtr->buffer) / sizeof(WCHAR));
+    return pathBufPtr->bufferPtr;
+}
+
+/* Returns pointer to the current buffer */
+static inline WCHAR *
+TclWinPathGet(
+    TclWinPath *pathBufPtr)
+{
+    return pathBufPtr->bufferPtr;
+}
+
+/* Frees a previously initialized path buffer, reseting its state */
+static inline void
+TclWinPathFree(
+    TclWinPath *pathBufPtr)	/* Structure to be freed */
+{
+    if (pathBufPtr->bufferPtr != pathBufPtr->buffer) {
+	Tcl_Free(pathBufPtr->bufferPtr);
+    }
+    pathBufPtr->bufferPtr = pathBufPtr->buffer;
+}
+
+MODULE_SCOPE WCHAR *	TclWinPathResize(TclWinPath *winPathPtr,
+			    DWORD capacityNeeded);
+MODULE_SCOPE WCHAR *	TclWinGetFullPathName(const WCHAR *pathPtr,
+			    TclWinPath *winPathPtr,
+			    WCHAR **filePartPtrPtr);
 
 #endif	/* _TCLWININT */
