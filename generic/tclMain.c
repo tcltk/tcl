@@ -537,13 +537,25 @@ Tcl_MainEx(
 	    } else if (is.tty) {
 		resultPtr = Tcl_GetObjResult(interp);
 		Tcl_IncrRefCount(resultPtr);
-		(void)Tcl_GetStringFromObj(resultPtr, &length);
-		chan = Tcl_GetStdChannel(TCL_STDOUT);
-		if ((length > 0) && chan) {
-		    if (Tcl_WriteObj(chan, resultPtr) < 0) {
-			Tcl_WriteChars(chan, ENCODING_ERROR, -1);
+		if (!Tcl_AttemptGetStringFromObj(resultPtr, &length)) {
+		    chan = Tcl_GetStdChannel(TCL_STDERR);
+		    if (chan) {
+			char buf[24];
+			snprintf(buf, sizeof(buf), "%" TCL_SIZE_MODIFIER "d", resultPtr->length + 1);
+			Tcl_WriteChars(chan, "cannot allocate ", -1);
+			Tcl_WriteChars(chan, buf, -1);
+			Tcl_WriteChars(chan, " bytes for type \'", -1);
+			Tcl_WriteChars(chan, resultPtr->typePtr->name , -1);
+			Tcl_WriteChars(chan, "\'\n", -1);
 		    }
-		    Tcl_WriteChars(chan, "\n", 1);
+		} else {
+		    chan = Tcl_GetStdChannel(TCL_STDOUT);
+		    if ((length > 0) && chan) {
+			if (Tcl_WriteObj(chan, resultPtr) < 0) {
+			    Tcl_WriteChars(chan, ENCODING_ERROR, -1);
+			}
+			Tcl_WriteChars(chan, "\n", 1);
+		    }
 		}
 		Tcl_DecrRefCount(resultPtr);
 	    }
@@ -817,12 +829,24 @@ StdinProc(
 	chan = Tcl_GetStdChannel(TCL_STDOUT);
 
 	Tcl_IncrRefCount(resultPtr);
-	(void)Tcl_GetStringFromObj(resultPtr, &length);
-	if ((length > 0) && (chan != NULL)) {
-	    if (Tcl_WriteObj(chan, resultPtr) < 0) {
-		Tcl_WriteChars(chan, ENCODING_ERROR, -1);
+	if (!Tcl_AttemptGetStringFromObj(resultPtr, &length)) {
+	    chan = Tcl_GetStdChannel(TCL_STDERR);
+	    if (chan) {
+		char buf[24];
+		snprintf(buf, sizeof(buf), "%" TCL_SIZE_MODIFIER "d", resultPtr->length + 1);
+		Tcl_WriteChars(chan, "cannot allocate ", -1);
+		Tcl_WriteChars(chan, buf, -1);
+		Tcl_WriteChars(chan, " bytes for type \'", -1);
+		Tcl_WriteChars(chan, resultPtr->typePtr->name , -1);
+		Tcl_WriteChars(chan, "\'\n", -1);
 	    }
-	    Tcl_WriteChars(chan, "\n", 1);
+	} else {
+	    if ((length > 0) && (chan != NULL)) {
+		if (Tcl_WriteObj(chan, resultPtr) < 0) {
+		    Tcl_WriteChars(chan, ENCODING_ERROR, -1);
+		}
+		Tcl_WriteChars(chan, "\n", 1);
+	    }
 	}
 	Tcl_DecrRefCount(resultPtr);
     }
