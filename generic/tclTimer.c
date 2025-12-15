@@ -190,7 +190,7 @@ static int		TimerDelayMonotonic(Tcl_Interp *interp,
 			    long long endTimeUS);
 static Tcl_ObjCmdProc2	TimerCancelCmd;
 static int		TimerCancelDo(Tcl_Interp *interp,
-			    Tcl_Obj *const objArg);
+			    Tcl_Obj *const objArg, bool notFoundError);
 static AfterAssocData *	TimerAssocDataGet(Tcl_Interp *interp);
 static Tcl_ObjCmdProc2	TimerIdleCmd;
 static int		TimerIdleDo(Tcl_Interp *interp,
@@ -1154,10 +1154,10 @@ Tcl_AfterObjCmd(
 	    return TCL_ERROR;
 	}
 	if (objc == 3) {
-	    res = TimerCancelDo(interp, objv[2]);
+	    res = TimerCancelDo(interp, objv[2], false);
 	} else {
 	    cmdObj = Tcl_ConcatObj(objc-2, objv+2);
-	    res = TimerCancelDo(interp, cmdObj);
+	    res = TimerCancelDo(interp, cmdObj, false);
 
 	    /*
 	     * When Tcl_ConcatObj was used, the created object is only
@@ -2150,11 +2150,11 @@ TimerCancelCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     if (objc != 2) {
-	Tcl_WrongNumArgs(interp, 0, objv, "timer cancel id|command");
+	Tcl_WrongNumArgs(interp, 0, objv, "timer cancel id|script");
 	return TCL_ERROR;
     }
 
-    return TimerCancelDo(interp, objv[1]);
+    return TimerCancelDo(interp, objv[1], true);
 }
 
 /*
@@ -2176,28 +2176,45 @@ TimerCancelCmd(
 static int
 TimerCancelDo(
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Obj *const objArg)	/* Id or command. */
+    Tcl_Obj *const objArg,	/* Id or command. */
+    bool isTimerCancel)		/* true, if "timer cancel" and not "after cancel" */
 {
     const char *command, *tempCommand;
     Tcl_Size tempLength;
 
-    AfterInfo *afterPtr;
+    AfterInfo *afterPtr = NULL;
     AfterAssocData *assocPtr = TimerAssocDataGet(interp);
     Tcl_Size length;
 
-    command = TclGetStringFromObj(objArg, &length);
-    for (afterPtr = assocPtr->firstAfterPtr;  afterPtr != NULL;
-	    afterPtr = afterPtr->nextPtr) {
-	tempCommand = TclGetStringFromObj(afterPtr->commandPtr,
-		&tempLength);
-	if ((length == tempLength)
-		&& !memcmp(command, tempCommand, length)) {
-	    break;
+    /*
+     * "after cancel" also searches for the command name
+     */
+
+    if (! isTimerCancel) {
+	command = TclGetStringFromObj(objArg, &length);
+	for (afterPtr = assocPtr->firstAfterPtr;  afterPtr != NULL;
+		afterPtr = afterPtr->nextPtr) {
+	    tempCommand = TclGetStringFromObj(afterPtr->commandPtr,
+		    &tempLength);
+	    if ((length == tempLength)
+		    && !memcmp(command, tempCommand, length)) {
+		break;
+	    }
 	}
     }
+
+    /*
+     * Search for the after Id
+     */
+
     if (afterPtr == NULL) {
 	afterPtr = GetAfterEvent(assocPtr, objArg);
     }
+
+    /*
+     * Delete the after event if found
+     */
+
     if (afterPtr != NULL) {
 	if (afterPtr->token != NULL) {
 	    Tcl_DeleteTimerHandler(afterPtr->token);
@@ -2205,6 +2222,13 @@ TimerCancelDo(
 	    Tcl_CancelIdleCall(AfterProc, afterPtr);
 	}
 	FreeAfterPtr(afterPtr);
+    } else if (isTimerCancel) {
+	if (interp != NULL) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "event not found", -1));
+	    Tcl_SetErrorCode(interp, "TCL","TIME","CANCEL", (char *)NULL);
+	}
+	return TCL_ERROR;
     }
     return TCL_OK;
 }

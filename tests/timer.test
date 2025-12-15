@@ -100,10 +100,10 @@ test timer-2.1.1 {Tcl_DeleteTimerHandler procedure - timer in} -setup {
 } -body {
     set x ""
     foreach i {100 200 1000 50 150} {
-	timer in $i ms [list lappend x $i]
+	set id($i) [timer in $i ms [list lappend x $i]]
     }
-    timer cancel {lappend x 150}
-    timer cancel {lappend x 50}
+    timer cancel $id(150)
+    timer cancel $id(50)
     timer in 200 ms {set done 1}
     vwait done
     return $x
@@ -111,6 +111,7 @@ test timer-2.1.1 {Tcl_DeleteTimerHandler procedure - timer in} -setup {
     foreach i [after info] {
 	after cancel $i
     }
+    array unset id
 } -result {100 200}
 
 test timer-2.1.2 {Tcl_DeleteTimerHandler procedure - timer at} -setup {
@@ -121,10 +122,10 @@ test timer-2.1.2 {Tcl_DeleteTimerHandler procedure - timer at} -setup {
     set x ""
     set us [clock microseconds]
     foreach i {100 200 1000 50 150} {
-	timer at [expr {$i*1000+$us}] us [list lappend x $i]
+	set id($i) [timer at [expr {$i*1000+$us}] us [list lappend x $i]]
     }
-    timer cancel {lappend x 150}
-    timer cancel {lappend x 50}
+    timer cancel $id(150)
+    timer cancel $id(50)
     timer at [expr {200_000+$us}] us {set done 1}
     vwait done
     return $x
@@ -132,6 +133,7 @@ test timer-2.1.2 {Tcl_DeleteTimerHandler procedure - timer at} -setup {
     foreach i [after info] {
 	after cancel $i
     }
+    array unset id
 } -result {100 200}
 
 # No tests for Tcl_ServiceTimer or ResetTimer, since it is already tested
@@ -541,24 +543,12 @@ test timer-6.6 {Tcl_AfterCmd procedure, cancel option} -body {
     after cancel
 } -returnCodes error -result {wrong # args: should be "after cancel id|script ?script?"}
 
-test timer-6.6.1 {timer cancel option} -body {
-    timer cancel
-} -returnCodes error -result {wrong # args: should be "timer cancel id|command"}
-
 test timer-6.7 {Tcl_AfterCmd procedure, cancel option} {
     after cancel after#1
 } {}
 
-test timer-6.7.1 {timer cancel option} {
-    timer cancel after#1
-} {}
-
 test timer-6.8 {Tcl_AfterCmd procedure, cancel option} {
     after cancel {foo bar}
-} {}
-
-test timer-6.8.1 {timer cancel option} {
-    timer cancel {foo bar}
 } {}
 
 test timer-6.9 {Tcl_AfterCmd procedure, cancel option} -setup {
@@ -596,19 +586,6 @@ test timer-6.10 {Tcl_AfterCmd procedure, cancel option} -setup {
     after 100 set x after
     after cancel {set x after}
     after 200
-    update
-    return $x
-} -result {before}
-
-test timer-6.10.1 {timer cancel option} -setup {
-    foreach i [timer info] {
-	timer cancel $i
-    }
-} -body {
-    set x before
-    timer in 100 ms {set x after}
-    timer cancel {set x after}
-    timer sleep for 200 ms
     update
     return $x
 } -result {before}
@@ -673,7 +650,7 @@ test timer-6.12.1 {timer cancel option} -setup {
     timer idle {lappend x second}
     timer idle {lappend x third}
     set i [timer idle {lappend x fourth}]
-    timer cancel {lappend x second}
+    after cancel {lappend x second}
     timer cancel $i
     update idletasks
     return $x
@@ -703,7 +680,7 @@ test timer-6.13.1 {timer cancel, multiple arguments for command} -setup {
     timer idle {lappend x second}
     timer idle {lappend x third}
     set i [timer idle {lappend x fourth}]
-    timer cancel {lappend x second}
+    after cancel {lappend x second}
     timer cancel $i
     update idletasks
     return $x
@@ -730,12 +707,12 @@ test timer-6.14.1 {timer cancel during handler} -setup {
 } -body {
     set id [
 	timer in 100 ms {
-	    set x done
-	    timer cancel $id
+	    set x [catch [list timer cancel $id]]
 	}
     ]
     vwait x
-} -result {}
+    set x
+} -result {1}
 
 test timer-6.15 {Tcl_AfterCmd procedure, cancel option, multiple interps} -setup {
     foreach i [after info] {
@@ -747,6 +724,7 @@ test timer-6.15 {Tcl_AfterCmd procedure, cancel option, multiple interps} -setup
 	    after idle {set b b-after}}
     set result [llength [x eval after info]]
     lappend result [llength [after info]]
+    # This event does not exist jet
     after cancel {set b b-after}
     set a aaa
     set b bbb
@@ -763,14 +741,13 @@ test timer-6.15.1 {timer cancel, multiple interps} -setup {
     }
 } -body {
     interp create x
-    x eval {set a before; set b before; timer idle {set a a-after};
+    x eval {set a before; set b before; set id [timer idle {set a a-after}];
 	    timer idle {set b b-after}}
     set result [llength [x eval timer info]]
     lappend result [llength [timer info]]
-    timer cancel {set b b-after}
     set a aaa
     set b bbb
-    x eval {timer cancel {set a a-after}}
+    x eval {timer cancel $id}
     update idletasks
     lappend result $a $b [x eval {list $a $b}]
 } -cleanup {
@@ -940,13 +917,11 @@ test timer-6.25.1 {timer cancel, script with NUL} -setup {
     set x "hello world"
     timer in 1 ms "set x ab\x00cd"
     timer cancel "set x ab\x00ef"
-    llength [timer info]
 } -cleanup {
     foreach i [timer info] {
 	timer cancel $i
     }
-} -result {1}
-
+} -returnCodes 1 -result "event not found"
 
 # Same as 6.25, isn't it?
 test timer-6.26 {Tcl_AfterCmd procedure, cancel option, script with NUL} -setup {
@@ -1158,12 +1133,15 @@ test timer-8.3 {AfterProc procedure, deleting handler from itself} -setup {
 	foreach i [after info] {
 	    lappend x [after info $i]
 	}
-	after cancel foo
     }
     after idle foo
     after 1000 {error "I shouldn't ever have executed"}
     update idletasks
     return $x
+} -cleanup {
+    foreach i [after info] {
+	after cancel $i
+    }
 } -result {{{error "I shouldn't ever have executed"} timer}}
 
 test timer-8.3.1 {timer procedure, deleting handler from itself} -setup {
@@ -1177,12 +1155,15 @@ test timer-8.3.1 {timer procedure, deleting handler from itself} -setup {
 	foreach i [timer info] {
 	    lappend x [timer info $i]
 	}
-	timer cancel foo
     }
     timer idle foo
     timer in 1 seconds {error "I shouldn't ever have executed"}
     update idletasks
     return $x
+} -cleanup {
+    foreach i [after info] {
+	after cancel $i
+    }
 } -match glob -result {{{error "I shouldn't ever have executed"} monotonic *}}
 
 # Same as 8.3, isn't it?
@@ -1450,7 +1431,9 @@ test timer-14.1 {timer info at value - maximum} -body {
     lappend ret [expr {$maxwideSeconds*1000000 == [lindex $res 2]}]
     set ret
 } -cleanup {
-    timer cancel $id
+    foreach i [timer info] {
+	timer cancel $i
+    }
 } -result {1 1 1}
 
 test timer-14.2 {timer info at value - negative} -body {
@@ -1458,7 +1441,9 @@ test timer-14.2 {timer info at value - negative} -body {
     set res [timer info $id]
     lrange $res 1 2
 } -cleanup {
-    timer cancel $id
+    foreach i [timer info] {
+	timer cancel $i
+    }
 } -result {wallclock 0}
 
 ## timer sleep
@@ -1505,6 +1490,30 @@ test timer-15.8 {"timer sleep until" time measurment} -body {
     time [list timer sleep until $wallclockUS us]
     # The match accepts 100 to 200 ms
 } -match glob -result {1[0-9][0-9][0-9][0-9][0-9] microseconds per iteration}
+
+## timer cancel
+
+test timer-16.1 {"timer cancel" basic} -body {
+    timer cancel
+}  -returnCodes error -result {wrong # args: should be "timer cancel id|script"}
+
+test timer-16.2 {"timer cancel" basic} -body {
+    timer cancel event 1
+}  -returnCodes error -result {wrong # args: should be "timer cancel id|script"}
+
+test timer-16.3 {"timer cancel" on unknown event} -body {
+    timer cancel {event 1}
+}  -returnCodes error -result {event not found}
+
+## timer idle
+
+test timer-17.1 {"timer idle" basic} -body {
+    timer idle
+}  -returnCodes error -result {wrong # args: should be "timer idle script"}
+
+test timer-17.2 {"timer idle" basic} -body {
+    timer idle event 1
+}  -returnCodes error -result {wrong # args: should be "timer idle script"}
 
 # cleanup
 ::tcltest::cleanupTests
