@@ -45,7 +45,8 @@ static Tcl_ObjCmdProc2	TestwinsleepCmd;
 static Tcl_ObjCmdProc2	TestExceptionCmd;
 static int		TestplatformChmod(const char *nativePath, int pmode);
 static Tcl_ObjCmdProc2	TestchmodCmd;
-
+static Tcl_ObjCmdProc2	TestlongpathsettingCmd;
+ 
 /*
  *----------------------------------------------------------------------
  *
@@ -78,6 +79,8 @@ TclplatformtestInit(
     Tcl_CreateObjCommand2(interp, "testwinclock", TestwinclockCmd, NULL, NULL);
     Tcl_CreateObjCommand2(interp, "testwinsleep", TestwinsleepCmd, NULL, NULL);
     Tcl_CreateObjCommand2(interp, "testexcept", TestExceptionCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "testlongpathsetting", TestlongpathsettingCmd, NULL, NULL);
+
     return TCL_OK;
 }
 
@@ -668,6 +671,40 @@ TestchmodCmd(
 	}
 	Tcl_DStringFree(&buffer);
     }
+    return TCL_OK;
+}
+
+/*
+ * TclWinGetLongPathSetting --
+ *
+ *	Returns whether long path support is enabled on this system.
+ *	Primary use is during testing.
+ *
+ * Results:
+ *	1 if long path support is enabled, 0 if not.
+ */
+static int 
+TestlongpathsettingCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,
+    Tcl_Size objc,
+    Tcl_Obj *const * objv)
+{
+    static DWORD longPathsEnabled = UINT_MAX;
+    /*
+     * We do not bother with thread synchronization as the initialization
+     * should only happen at init time.
+     */
+    if (longPathsEnabled == -1) {
+	DWORD dw = sizeof(longPathsEnabled);
+	if (RegGetValueA(HKEY_LOCAL_MACHINE,
+		"SYSTEM\\CurrentControlSet\\Control\\FileSystem",
+		"LongPathsEnabled", RRF_RT_REG_DWORD, NULL, &longPathsEnabled,
+		&dw) != ERROR_SUCCESS) {
+	    longPathsEnabled = 0;
+	}
+    }
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(longPathsEnabled));
     return TCL_OK;
 }
 
