@@ -52,10 +52,10 @@ static TclProcessWaitStatus WaitProcessStatus(Tcl_Pid pid, Tcl_Size resolvedPid,
 			    int options, int *codePtr, Tcl_Obj **msgPtr,
 			    Tcl_Obj **errorObjPtr);
 static Tcl_Obj *	BuildProcessStatusObj(ProcessInfo *info);
-static Tcl_ObjCmdProc	ProcessListObjCmd;
-static Tcl_ObjCmdProc	ProcessStatusObjCmd;
-static Tcl_ObjCmdProc	ProcessPurgeObjCmd;
-static Tcl_ObjCmdProc	ProcessAutopurgeObjCmd;
+static Tcl_ObjCmdProc2	ProcessListObjCmd;
+static Tcl_ObjCmdProc2	ProcessStatusObjCmd;
+static Tcl_ObjCmdProc2	ProcessPurgeObjCmd;
+static Tcl_ObjCmdProc2	ProcessAutopurgeObjCmd;
 
 const EnsembleImplMap tclProcessImplMap[] = {
     {"list",		ProcessListObjCmd,	TclCompileBasic0ArgCmd, NULL, NULL, 1},
@@ -428,7 +428,7 @@ static int
 ProcessListObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *list;
@@ -479,7 +479,7 @@ static int
 ProcessStatusObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *dict;
@@ -627,7 +627,7 @@ static int
 ProcessPurgeObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_HashEntry *entry;
@@ -725,7 +725,7 @@ static int
 ProcessAutopurgeObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
 

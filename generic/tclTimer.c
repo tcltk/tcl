@@ -178,25 +178,19 @@ static void		TimerExitProc(void *clientData);
 static int		TimerHandlerEventProc(Tcl_Event *evPtr, int flags);
 static void		TimerCheckProc(void *clientData, int flags);
 static void		TimerSetupProc(void *clientData, int flags);
-static int		TimerAtCmd(void *clientData, Tcl_Interp *interp,
-			    int obj, Tcl_Obj *const objv[]);
-static int		TimerInCmd(void *clientData, Tcl_Interp *interp,
-			    int obj, Tcl_Obj *const objv[]);
-static int		TimerSleepCmd(void *clientData, Tcl_Interp *interp,
-			    int obj, Tcl_Obj *const objv[]);
+static Tcl_ObjCmdProc2	TimerAtCmd;
+static Tcl_ObjCmdProc2	TimerInCmd;
+static Tcl_ObjCmdProc2	TimerSleepCmd;
 static int		TimerSleepForCmd(Tcl_Interp *interp,
 			    long long sleepArgUS);
 static int		TimerSleepUntilCmd(Tcl_Interp *interp,
 			    long long sleepArgUS);
 static int		TimerDelay(Tcl_Interp *interp, Tcl_Time endTime);
 static int		TimerDelayMonotonic(Tcl_Interp *interp,long long endTimeUS);
-static int		TimerCancelCmd(void *clientData, Tcl_Interp *interp,
-			    int obj, Tcl_Obj *const objv[]);
+static Tcl_ObjCmdProc2	TimerCancelCmd;
 static AfterAssocData *	TimerAssocDataGet(Tcl_Interp *interp);
-static int		TimerIdleCmd(void *clientData, Tcl_Interp *interp,
-			    int obj, Tcl_Obj *const objv[]);
-static int		TimerInfoCmd(void *clientData, Tcl_Interp *interp,
-			    int obj, Tcl_Obj *const objv[]);
+static Tcl_ObjCmdProc2	TimerIdleCmd;
+static Tcl_ObjCmdProc2	TimerInfoCmd;
 static void		TimeTooFarError(Tcl_Interp *interp);
 static int		ParseTimeUnit(Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[], long long *wakeupPtr);
@@ -1034,7 +1028,7 @@ int
 Tcl_AfterObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_WideInt ms = 0;		/* Number of milliseconds to wait */
@@ -1796,7 +1790,7 @@ static int
 TimerAtCmd(
     TCL_UNUSED(void *),		/* Client data. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     long long timeArgUS;
@@ -1890,7 +1884,7 @@ static int
 TimerInCmd(
     TCL_UNUSED(void *),		/* Client data. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     long long wakeupArgUS;
@@ -1974,7 +1968,7 @@ static int
 TimerSleepCmd(
     TCL_UNUSED(void *),		/* Client data. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     long long sleepArgUS;
@@ -2131,7 +2125,7 @@ static int
 TimerCancelCmd(
     TCL_UNUSED(void *),		/* Client data. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *commandPtr;
@@ -2199,7 +2193,7 @@ static int
 TimerIdleCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     AfterInfo *afterPtr;
@@ -2249,7 +2243,7 @@ static int
 TimerInfoCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     return TimerInfoDo(interp, objc, objv, false);

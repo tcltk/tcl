@@ -935,7 +935,7 @@ CompileRegexp(
      */
 
     regexpPtr->flags = flags;
-    status = TclReComp(&regexpPtr->re, uniString, (size_t) numChars, flags);
+    status = TclReComp(&regexpPtr->re, uniString, (size_t)numChars, flags);
     Tcl_DStringFree(&stringBuf);
 
     if (status != REG_OKAY) {
