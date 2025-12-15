@@ -45,7 +45,7 @@ jobs:
           ulimit -a || echo 'get limit failed'
           echo 'puts exe:\t[info nameofexecutable]\nver:\t[info patchlevel]\t[if {![catch tcl::build-info ret]} {set ret}]\nlib:\t[info library]\nplat:\t[lsort -dictionary -stride 2 [array get tcl_platform]]' | make runtest || echo 'get info failed'
       - name: Upload
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: Tclsh ${{ env.TCL_PATCHLEVEL }} Linux single-file build (snapshot)
           path: 1dist/*.tar
@@ -115,7 +115,7 @@ jobs:
           ulimit -a || echo 'get limit failed'
           echo 'puts exe:\t[info nameofexecutable]\nver:\t[info patchlevel]\t[if {![catch tcl::build-info ret]} {set ret}]\nlib:\t[info library]\nplat:\t[lsort -dictionary -stride 2 [array get tcl_platform]]' | make runtest || echo 'get info failed'
       - name: Upload
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: Tclsh ${{ env.TCL_PATCHLEVEL }} macOS single-file build (snapshot)
           path: 1dist/*.dmg
@@ -167,7 +167,7 @@ jobs:
           ulimit -a || echo 'get limit failed'
           echo 'puts exe:\t[info nameofexecutable]\nver:\t[info patchlevel]\t[if {![catch tcl::build-info ret]} {set ret}]\nlib:\t[info library]\nplat:\t[lsort -dictionary -stride 2 [array get tcl_platform]]' | make runtest || echo 'get info failed'
       - name: Upload
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: Tclsh ${{ env.TCL_PATCHLEVEL }} Windows single-file build (snapshot)
           path: '1dist/*_snapshot.exe'
