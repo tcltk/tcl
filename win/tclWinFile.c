@@ -197,81 +197,54 @@ WinLink(
     const WCHAR *linkTargetPath,
     int linkAction)
 {
-    WCHAR tempFileName[MAX_PATH];
+    WCHAR *tempFileName;
     WCHAR *tempFilePart;
     DWORD attr;
+    TclWinPath winPath;
 
-    /*
-     * Get the full path referenced by the target.
-     */
-
-    if (!GetFullPathNameW(linkTargetPath, MAX_PATH, tempFileName,
-	    &tempFilePart)) {
-	/*
-	 * Invalid file.
-	 */
-
+    /* Q for original author - why retrieve full path if not used? */
+    tempFileName =
+	TclWinGetFullPathName(linkTargetPath, &winPath, &tempFilePart);
+    if (tempFileName == NULL) {
+	/* Invalid file */
 	Tcl_WinConvertError(GetLastError());
 	return -1;
     }
+    TclWinPathFree(&winPath);
 
-    /*
-     * Make sure source file doesn't exist.
-     */
-
+    /* Make sure source file doesn't exist. */
     attr = GetFileAttributesW(linkSourcePath);
     if (attr != INVALID_FILE_ATTRIBUTES) {
+	TclWinPathFree(&winPath);
 	Tcl_SetErrno(EEXIST);
 	return -1;
     }
 
-    /*
-     * Get the full path referenced by the source file/directory.
-     */
-
-    if (!GetFullPathNameW(linkSourcePath, MAX_PATH, tempFileName,
-	    &tempFilePart)) {
-	/*
-	 * Invalid file.
-	 */
-
+    /* Get the full path referenced by the source file/directory. */
+    /* Q for original author - why retrieve full path if not used? */
+    tempFileName =
+	TclWinGetFullPathName(linkSourcePath, &winPath, &tempFilePart);
+    if (tempFileName == NULL) {
+	/* Invalid file */
 	Tcl_WinConvertError(GetLastError());
 	return -1;
     }
+    TclWinPathFree(&winPath);
 
-    /*
-     * Check the target.
-     */
-
+    /* Make sure target exists. */
     attr = GetFileAttributesW(linkTargetPath);
     if (attr == INVALID_FILE_ATTRIBUTES) {
-	/*
-	 * The target doesn't exist.
-	 */
-
 	Tcl_WinConvertError(GetLastError());
     } else if ((attr & FILE_ATTRIBUTE_DIRECTORY) == 0) {
-	/*
-	 * It is a file.
-	 */
-
+	/* It is a file. */
 	if (linkAction & TCL_CREATE_HARD_LINK) {
 	    if (CreateHardLinkW(linkSourcePath, linkTargetPath, NULL)) {
-		/*
-		 * Success!
-		 */
-
 		return 0;
 	    }
-
 	    Tcl_WinConvertError(GetLastError());
 	} else if (linkAction & TCL_CREATE_SYMBOLIC_LINK) {
 	    if (CreateSymbolicLinkW(linkSourcePath, linkTargetPath,
 		    0x2 /* SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE */)) {
-		/*
-		 * Success!
-		 */
-
 		return 0;
 	    } else {
 		Tcl_WinConvertError(GetLastError());
@@ -287,12 +260,8 @@ WinLink(
 
 	if (linkAction & TCL_CREATE_SYMBOLIC_LINK) {
 	    return WinSymLinkDirectory(linkSourcePath, linkTargetPath);
-
 	} else if (linkAction & TCL_CREATE_HARD_LINK) {
-	    /*
-	     * Can't hard link directories.
-	     */
-
+	    /* Can't hard link directories. */
 	    Tcl_SetErrno(EISDIR);
 	} else {
 	    Tcl_SetErrno(ENODEV);
@@ -315,42 +284,30 @@ static Tcl_Obj *
 WinReadLink(
     const WCHAR *linkSourcePath)
 {
-    WCHAR tempFileName[MAX_PATH];
+    WCHAR *tempFileName;
     WCHAR *tempFilePart;
     DWORD attr;
+    TclWinPath winPath;
 
-    /*
-     * Get the full path referenced by the target.
-     */
-
-    if (!GetFullPathNameW(linkSourcePath, MAX_PATH, tempFileName,
-	    &tempFilePart)) {
-	/*
-	 * Invalid file.
-	 */
-
+    /* Get the full path referenced by the source file/directory. */
+    /* Q for original author - why retrieve full path if not used? */
+    tempFileName =
+	TclWinGetFullPathName(linkSourcePath, &winPath, &tempFilePart);
+    if (tempFileName == NULL) {
+	/* Invalid file */
 	Tcl_WinConvertError(GetLastError());
 	return NULL;
     }
+    TclWinPathFree(&winPath);
 
-    /*
-     * Make sure source file does exist.
-     */
-
+    /* Make sure source file does exist. */
     attr = GetFileAttributesW(linkSourcePath);
     if (attr == INVALID_FILE_ATTRIBUTES) {
-	/*
-	 * The source doesn't exist.
-	 */
-
+	/* The source doesn't exist. */
 	Tcl_WinConvertError(GetLastError());
 	return NULL;
-
     } else if ((attr & FILE_ATTRIBUTE_DIRECTORY) == 0) {
-	/*
-	 * It is a file - this is not yet supported.
-	 */
-
+	/* It is a file - this is not yet supported. */
 	Tcl_SetErrno(ENOTDIR);
 	return NULL;
     }
@@ -1974,11 +1931,12 @@ TclpGetCwd(
     Tcl_DString *bufferPtr)	/* Uninitialized or free DString filled with
 				 * name of current directory. */
 {
-    WCHAR buffer[MAX_PATH];
     char *p;
     WCHAR *native;
+    TclWinPath winPath;
 
-    if (GetCurrentDirectoryW(MAX_PATH, buffer) == 0) {
+    native = TclWinGetCurrentDirectory(&winPath);
+    if (native == NULL) {
 	Tcl_WinConvertError(GetLastError());
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -1988,21 +1946,17 @@ TclpGetCwd(
 	return NULL;
     }
 
-    /*
-     * Watch for the weird Windows c:\\UNC syntax.
-     */
+    /* Watch for the weird Windows c:\\UNC syntax. */
 
-    native = (WCHAR *) buffer;
     if ((native[0] != '\0') && (native[1] == ':')
 	    && (native[2] == '\\') && (native[3] == '\\')) {
 	native += 2;
     }
     Tcl_DStringInit(bufferPtr);
     Tcl_WCharToUtfDString(native, TCL_INDEX_NONE, bufferPtr);
+    TclWinPathFree(&winPath);
 
-    /*
-     * Convert to forward slashes for easier use in scripts.
-     */
+    /* Convert to forward slashes for easier use in scripts. */
 
     for (p = Tcl_DStringValue(bufferPtr); *p != '\0'; p++) {
 	if (*p == '\\') {
@@ -2201,13 +2155,19 @@ NativeDev(
 {
     int dev;
     Tcl_DString ds;
-    WCHAR nativeFullPath[MAX_PATH];
+    WCHAR *nativeFullPath;
     WCHAR *nativePart;
     const char *fullPath;
+    TclWinPath winPath;
 
-    GetFullPathNameW(nativePath, MAX_PATH, nativeFullPath, &nativePart);
+    nativeFullPath =
+	TclWinGetFullPathName(nativePath, &winPath, &nativePart);
+    if (nativeFullPath == NULL) {
+	return -1;
+    }
     Tcl_DStringInit(&ds);
     fullPath = Tcl_WCharToUtfDString(nativeFullPath, TCL_INDEX_NONE, &ds);
+    TclWinPathFree(&winPath);
 
     if ((fullPath[0] == '\\') && (fullPath[1] == '\\')) {
 	const char *p;
@@ -2375,22 +2335,27 @@ void *
 TclpGetNativeCwd(
     void *clientData)
 {
-    WCHAR buffer[MAX_PATH];
+    WCHAR *native;
+    TclWinPath winPath;
 
-    if (GetCurrentDirectoryW(MAX_PATH, buffer) == 0) {
+    native = TclWinGetCurrentDirectory(&winPath);
+    if (native == NULL) {
 	Tcl_WinConvertError(GetLastError());
 	return NULL;
     }
 
     if (clientData != NULL) {
-	if (wcscmp((const WCHAR *) clientData, buffer) == 0) {
+	if (wcscmp((const WCHAR *) clientData, native) == 0) {
+	    TclWinPathFree(&winPath);
 	    return clientData;
 	}
     }
 
-    return TclNativeDupInternalRep(buffer);
+    void *pv = TclNativeDupInternalRep(native);
+    TclWinPathFree(&winPath);
+    return pv;
 }
-
+
 int
 TclpObjAccess(
     Tcl_Obj *pathPtr,
@@ -3157,6 +3122,7 @@ TclNativeCreateNativeRep(
      * and the path is larger than MAX_PATH chars, no Win32 API function can
      * handle that unless it is prefixed with the extended path prefix. See:
      * <https://docs.microsoft.com/en-us/windows/win32/fileio/naming-a-file#maxpath>
+	 *  TODO - is this still true with long path support?
      */
 
     if (((str[0] >= 'A' && str[0] <= 'Z') || (str[0] >= 'a' && str[0] <= 'z'))
@@ -3410,8 +3376,6 @@ TclWinPathResize(
 }
 
 /*
- *----------------------------------------------------------------------
- *
  * TclWinGetFullPathName --
  *
  *      Wrapper for GetFullPathNameW that automatically grows the buffer
@@ -3427,8 +3391,6 @@ TclWinPathResize(
  *      May allocate memory that must be freed with TclWinPathFree
  *      on a non-NULL return. Sets *filePartPtr to point to the
  *      filename portion of the path if filePartPtr is not NULL.
- *
- *----------------------------------------------------------------------
  */
 
 WCHAR *
@@ -3477,6 +3439,70 @@ TclWinGetFullPathName(
     if (filePartPtrPtr != NULL) {
         *filePartPtrPtr = filePartPtr;
     }
+    return fullPathPtr;
+
+errorReturn:
+    DWORD err = GetLastError();
+    TclWinPathFree(winPathPtr);
+    SetLastError(err);
+    return NULL;
+}
+
+/*
+ * TclWinGetCurrentDirectory --
+ *
+ *      Wrapper for GetCurrentDirectoryW that automatically grows the buffer
+ *      as needed to accommodate the full path.
+ *
+ * Results:
+ *      Returns a pointer to the full path name on success, The returned
+ *      pointer is valid until TclWinPathFree or TclWinPathResize is called
+ *      on winPathPtr. Returns NULL on failure. An error code may be
+ *      retrieved via GetLastError() as for GetCurrentDirectoryW.
+ *
+ * Side effects:
+ *      May allocate memory that must be freed with TclWinPathFree
+ *      on a non-NULL return.
+ */
+
+WCHAR *
+TclWinGetCurrentDirectory(
+    TclWinPath *winPathPtr)	/* Buffer to receive full path. Should be
+				 * uninitialized or previously reset with
+				 * TclWinPathFree. */
+{
+    DWORD numChars;
+    DWORD capacity;
+    WCHAR *fullPathPtr;
+    WCHAR *filePartPtr = NULL;
+
+    fullPathPtr = TclWinPathInit(winPathPtr, &capacity);
+    numChars = GetCurrentDirectoryW(capacity, fullPathPtr);
+
+    if (numChars == 0) {
+	goto errorReturn;
+    }
+
+    /*
+     * numChars does not include the null terminator so even if numChars
+     * equal to capacity, the buffer was too small.
+     */
+    if (numChars < capacity) {
+        return fullPathPtr;
+    }
+
+    /*
+     * Buffer too small. In this case, numChars is required space INCLUDING
+     * the null terminator. Allocate a larger buffer and try again.
+     */
+    capacity = numChars;
+    fullPathPtr = TclWinPathResize(winPathPtr, capacity);
+    numChars = GetCurrentDirectoryW(capacity, fullPathPtr);
+    if (numChars == 0 || numChars >= capacity) {
+        /* Failed or still too small (shouldn't happen). */
+	goto errorReturn;
+    }
+
     return fullPathPtr;
 
 errorReturn:

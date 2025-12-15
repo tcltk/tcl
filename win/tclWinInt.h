@@ -157,5 +157,6 @@ MODULE_SCOPE WCHAR *	TclWinPathResize(TclWinPath *winPathPtr,
 MODULE_SCOPE WCHAR *	TclWinGetFullPathName(const WCHAR *pathPtr,
 			    TclWinPath *winPathPtr,
 			    WCHAR **filePartPtrPtr);
+MODULE_SCOPE WCHAR *	TclWinGetCurrentDirectory(TclWinPath *winPathPtr);
 
 #endif	/* _TCLWININT */
