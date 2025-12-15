@@ -9441,4 +9441,6 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 
 2025-11-21 (bug) tcl_wordchars and tcl_nonwordchars documentation in two places
 
+2025-12-15 tzdata updated to Olson's tzdata2025c (nijtmans)
+
 - (to be) Released 8.6.18, Apr ??, 2026 - details at https://core.tcl-lang.org/tcl/ -
