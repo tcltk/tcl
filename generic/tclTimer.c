@@ -182,6 +182,12 @@ static int		TimerAtCmd(void *clientData, Tcl_Interp *interp,
 			    int obj, Tcl_Obj *const objv[]);
 static int		TimerInCmd(void *clientData, Tcl_Interp *interp,
 			    int obj, Tcl_Obj *const objv[]);
+static int		TimerSleepCmd(void *clientData, Tcl_Interp *interp,
+			    int obj, Tcl_Obj *const objv[]);
+static int		TimerSleepForCmd(Tcl_Interp *interp,
+			    long long sleepArgUS);
+static int		TimerSleepUntilCmd(Tcl_Interp *interp,
+			    long long sleepArgUS);
 static int		TimerDelay(Tcl_Interp *interp, Tcl_Time endTime);
 static int		TimerDelayMonotonic(Tcl_Interp *interp,long long endTimeUS);
 static int		TimerCancelCmd(void *clientData, Tcl_Interp *interp,
@@ -210,6 +216,7 @@ static const EnsembleImplMap timerMap[] = {
     {"cancel", TimerCancelCmd, TclCompileBasicMin1ArgCmd, NULL, NULL, 0 },
     {"idle", TimerIdleCmd, TclCompileBasicMin1ArgCmd, NULL, NULL, 0 },
     {"info", TimerInfoCmd, TclCompileBasicMin1ArgCmd, NULL, NULL, 0 },
+    {"sleep", TimerSleepCmd, TclCompileBasicMin1ArgCmd, NULL, NULL, 0 },
     { NULL, NULL, NULL, NULL, NULL, 0 }
 };
 
@@ -1707,7 +1714,7 @@ TclInitTimerCmd(
 static int
 ParseTimeUnit(
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    int timeIndex,		/* Index of time value in objv. */
     Tcl_Obj *const objv[],	/* Argument objects. */
     long long *wakeupPtr)	/* Output time */
 {
@@ -1719,16 +1726,11 @@ ParseTimeUnit(
     enum unitEnum {UNIT_US, UNIT_MICROSECONDS, UNIT_MILLISECONDS, UNIT_MS,
 	    UNIT_S, UNIT_SECONDS};
 
-    if (objc < 3 || objc > 4) {
-	Tcl_WrongNumArgs(interp, 1, objv, "time unit ?script?");
-	return TCL_ERROR;
-    }
-
     /*
      * Get the time point to wait
      */
 
-    if (TclGetWideIntFromObj(interp, objv[1], &timeArg) != TCL_OK) {
+    if (TclGetWideIntFromObj(interp, objv[timeIndex], &timeArg) != TCL_OK) {
 	return TCL_ERROR;
     }
     if (timeArg < 0) {
@@ -1739,7 +1741,7 @@ ParseTimeUnit(
      * Get the unit of the time point
      */
 
-    if (Tcl_GetIndexFromObj(interp, objv[2], unitItems, "unit", 1, &unitIndex)
+    if (Tcl_GetIndexFromObj(interp, objv[timeIndex+1], unitItems, "unit", 1, &unitIndex)
 	    != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -1803,20 +1805,18 @@ TimerAtCmd(
     AfterAssocData *assocPtr = TimerAssocDataGet(interp);
     ThreadSpecificData *tsdPtr = InitTimer();
 
-    if (TCL_OK != ParseTimeUnit(interp, objc, objv, &timeArgUS)) {
+    if (objc != 4) {
+	Tcl_WrongNumArgs(interp, 1, objv, "time unit script");
+	return TCL_ERROR;
+    }
+
+    if (TCL_OK != ParseTimeUnit(interp, 1, objv, &timeArgUS)) {
 	return TCL_ERROR;
     }
 
     wakeup.sec = timeArgUS / 1000000;
     wakeup.usec = timeArgUS % 1000000;
 
-    if (objc < 4) {
-	/*
-	 * No script given - wait until given time point
-	 */
-
-	return TimerDelay(interp, wakeup);
-    }
     afterPtr = (AfterInfo *)Tcl_Alloc(sizeof(AfterInfo));
     afterPtr->assocPtr = assocPtr;
     afterPtr->commandPtr = objv[3];
@@ -1898,7 +1898,12 @@ TimerInCmd(
     AfterAssocData *assocPtr = TimerAssocDataGet(interp);
     ThreadSpecificData *tsdPtr = InitTimer();
 
-    if (TCL_OK != ParseTimeUnit(interp, objc, objv, &wakeupArgUS)) {
+    if (objc != 4) {
+	Tcl_WrongNumArgs(interp, 1, objv, "time unit script");
+	return TCL_ERROR;
+    }
+
+    if (TCL_OK != ParseTimeUnit(interp, 1, objv, &wakeupArgUS)) {
 	return TCL_ERROR;
     }
 
@@ -1949,6 +1954,129 @@ TimerInCmd(
     return TCL_OK;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TimerSleepCmd --
+ *
+ *	This procedure implements the "timer sleep" Tcl command.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TimerSleepCmd(
+    TCL_UNUSED(void *),		/* Client data. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    long long sleepArgUS;
+    static const char *const sleepOptionItems[] = {
+	    "for", "until", NULL};
+    enum sleepOptionEnum {MODE_FOR, MODE_UNTIL};
+    int optionIndex;
+
+    if (objc != 4) {
+	Tcl_WrongNumArgs(interp, 1, objv, "option time unit");
+	return TCL_ERROR;
+    }
+
+    /*
+     * Get the sleep mode
+     */
+
+    if (Tcl_GetIndexFromObj(interp, objv[1], sleepOptionItems, "option", 1, &optionIndex)
+	    != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    if (TCL_OK != ParseTimeUnit(interp, 2, objv, &sleepArgUS)) {
+	return TCL_ERROR;
+    }
+
+    switch (optionIndex) {
+	case MODE_FOR:
+	    return TimerSleepForCmd(interp, sleepArgUS);
+	default:
+	    return TimerSleepUntilCmd(interp, sleepArgUS);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TimerSleepForCmd --
+ *
+ *	This procedure implements the "timer sleep for" Tcl command.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TimerSleepForCmd(
+    Tcl_Interp *interp,		/* Current interpreter. */
+    long long sleepArgUS)	/* Sleeping time distance in us. */
+{
+    /*
+     * Sum current time and time argument
+     */
+
+    long long monotonicTimeUS;
+    monotonicTimeUS = Tcl_GetMonotonicTime();
+
+    if ( LLONG_MAX - monotonicTimeUS < sleepArgUS ) {
+	TimeTooFarError(interp);
+	return TCL_ERROR;
+    }
+    monotonicTimeUS += sleepArgUS;
+
+    return TimerDelayMonotonic(interp, monotonicTimeUS);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TimerSleepUntilCmd --
+ *
+ *	This procedure implements the "timer sleep for" Tcl command.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TimerSleepUntilCmd(
+    Tcl_Interp *interp,		/* Current interpreter. */
+    long long timeArgUS)	/* Sleeping time point in us. */
+{
+    Tcl_Time wakeup;
+
+    wakeup.sec = timeArgUS / 1000000;
+    wakeup.usec = timeArgUS % 1000000;
+
+    return TimerDelay(interp, wakeup);
+}
+
+
 /*
  *----------------------------------------------------------------------
  *
