@@ -14,6 +14,7 @@ to the userbase.
 
 # Updated bundled packages, libraries, standards, data
  - sqlite3 3.51.1
+ - tzdata 2025b
 
 Release Tcl 9.0.3 arises from the check-in with tag `core-9-0-3`.
 
