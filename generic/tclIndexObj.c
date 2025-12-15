@@ -401,7 +401,7 @@ UpdateStringOfIndex(
     const char *indexStr = EXPAND_OF(indexRep);
     size_t len = strlen(indexStr);
 
-    TclOOM(Tcl_InitStringRep(objPtr, indexStr, len), len+1);
+    Tcl_InitStringRep(objPtr, indexStr, len);
 }
 
 /*
