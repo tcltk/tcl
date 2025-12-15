@@ -152,7 +152,7 @@ test timer-3.1.1 {TimerHandlerEventProc procedure: event masks - timer in} {
     timer in 100 ms { set x fired }
     update idletasks
     set result $x
-    timer in 200 ms
+    timer sleep for 200 ms
     update
     lappend result $x
 } {start fired}
@@ -163,7 +163,7 @@ test timer-3.1.2 {TimerHandlerEventProc procedure: event masks - timer at} {
     timer at [expr {100_000+$us}] us { set x fired }
     update idletasks
     set result $x
-    timer at [expr {200_000+$us}] us
+    timer sleep until [expr {200_000+$us}] us
     update
     lappend result $x
 } {start fired}
@@ -206,10 +206,10 @@ test timer-3.2.1 {TimerHandlerEventProc procedure: multiple timers - mixed} -set
     set x ""
     update
     lappend result $x
-    timer in 400 ms
+    timer sleep for 400 ms
     update
     lappend result $x
-    timer at [expr {400_000+[clock microseconds]}] us
+    timer sleep until [expr {400_000+[clock microseconds]}] us
     update
     lappend result $x
 } -cleanup {
@@ -243,7 +243,7 @@ test timer-3.3.1 {TimerHandlerEventProc procedure: reentrant timer deletion - ti
     # When waiting in a delay, always the monotonic clock fires first
     # As a consequence, timer at may not be used here, as it would fire as last event
     timer in 200 ms [list after cancel $i]
-    timer in 400 ms
+    timer sleep for 400 ms
     update
     return $x
 } -result 100
@@ -258,7 +258,7 @@ test timer-3.3.2 {TimerHandlerEventProc procedure: reentrant timer deletion - ti
     timer at [expr {$ms+100_000}] us {lappend x 100}
     set i [timer at [expr {$ms+300_000}] us {lappend x 300}]
     timer at [expr {$ms+200_000}] us [list after cancel $i]
-    timer at [expr {$ms+400_000}] us
+    timer sleep until [expr {$ms+400_000}] us
     update
     return $x
 } -result 100
@@ -325,7 +325,7 @@ test timer-3.5.1 {TimerHandlerEventProc procedure: reentrantly added timers don'
 } -body {
     set x {}
     timer at [expr {[clock microseconds]+100_000}] us {lappend x a; timer at 0 us {lappend x b}}
-    timer at [expr {[clock microseconds]+100_000}] us
+    timer sleep until [expr {[clock microseconds]+100_000}] us
     vwait x
     return $x
 } -cleanup {
@@ -341,7 +341,7 @@ test timer-3.5.2 {TimerHandlerEventProc procedure: reentrantly added timers don'
 } -body {
     set x {}
     timer at [expr {[clock microseconds]+100_000}] us {lappend x a; timer in 0 ms {lappend x b}}
-    timer at [expr {[clock microseconds]+100_000}] us
+    timer sleep until [expr {[clock microseconds]+100_000}] us
     vwait x
     return $x
 } -cleanup {
@@ -357,7 +357,7 @@ test timer-3.5.3 {TimerHandlerEventProc procedure: reentrantly added timers don'
 } -body {
     set x {}
     timer in 100 ms {lappend x a; timer at 0 us {lappend x b}}
-    timer in 100 ms
+    timer sleep for 100 ms
     vwait x
     return $x
 } -cleanup {
@@ -386,8 +386,8 @@ test timer-3.6.1 {TimerHandlerEventProc procedure: reentrantly added timers don'
     }
 } -body {
     set x {}
-    timer at [expr {[clock microseconds]+100_000}] us {lappend x a; timer at [expr {[clock microseconds]+100_000}] us {lappend x b}; timer at [expr {[clock microseconds]+100_000}] us}
-    timer at [expr {[clock microseconds]+100_000}] us
+    timer at [expr {[clock microseconds]+100_000}] us {lappend x a; timer at [expr {[clock microseconds]+100_000}] us {lappend x b}; timer sleep until [expr {[clock microseconds]+100_000}] us}
+    timer sleep until [expr {[clock microseconds]+100_000}] us
     vwait x
     set result $x
     vwait x
@@ -400,8 +400,8 @@ test timer-3.6.2 {TimerHandlerEventProc procedure: reentrantly added timers don'
     }
 } -body {
     set x {}
-    timer in 100 ms {lappend x a; timer at [expr {[clock microseconds]+100_000}] us {lappend x b}; timer in 100 ms}
-    timer in 100 ms
+    timer in 100 ms {lappend x a; timer at [expr {[clock microseconds]+100_000}] us {lappend x b}; timer sleep for 100 ms}
+    timer sleep for 100 ms
     vwait x
     set result $x
     vwait x
@@ -414,8 +414,8 @@ test timer-3.6.3 {TimerHandlerEventProc procedure: reentrantly added timers don'
     }
 } -body {
     set x {}
-    timer at [expr {[clock microseconds]+100_000}] us {lappend x a; timer in 100 ms {lappend x b}; timer in 100 ms}
-    timer at [expr {[clock microseconds]+100_000}] us
+    timer at [expr {[clock microseconds]+100_000}] us {lappend x a; timer in 100 ms {lappend x b}; timer sleep for 100 ms}
+    timer sleep until [expr {[clock microseconds]+100_000}] us
     vwait x
     set result $x
     vwait x
@@ -475,7 +475,7 @@ test timer-6.1 {Tcl_AfterCmd procedure, basics} -returnCodes error -body {
     after
 } -result {wrong # args: should be "after option ?arg ...?"}
 
-test timer-6.1.1 {timer ensemble, basics} -returnCodes error -body {
+test timer-6.1.1 {timer ensemble, argument count} -returnCodes error -body {
     timer
 } -result {wrong # args: should be "timer subcommand ?arg ...?"}
 
@@ -483,37 +483,13 @@ test timer-6.2 {Tcl_AfterCmd procedure, basics} -returnCodes error -body {
     after 2x
 } -result {bad argument "2x": must be cancel, idle, info, or an integer}
 
-test timer-6.2.1 {timer in, basics} -returnCodes error -body {
-    timer in 2x us
-} -result {expected integer but got "2x"}
-
-test timer-6.2.2 {timer in, basics} -returnCodes error -body {
-    timer in 0 bla
-} -result {bad unit "bla": must be us, microseconds, milliseconds, ms, s, or seconds}
-
-test timer-6.2.3 {timer at, basics} -returnCodes error -body {
-    timer at 2x us
-} -result {expected integer but got "2x"}
-
-test timer-6.2.4 {timer at, basics} -returnCodes error -body {
-    timer at 0 bla
-} -result {bad unit "bla": must be us, microseconds, milliseconds, ms, s, or seconds}
-
-test timer-6.2.5 {timer at, basics} -returnCodes error -body {
-    timer at 0 ms cmd junk
-} -result {wrong # args: should be "::tcl::timer::at time unit ?script?"}
-
-test timer-6.2.6 {timer at, basics} -returnCodes error -body {
-    timer in 0 ms cmd junk
-} -result {wrong # args: should be "::tcl::timer::in time unit ?script?"}
-
 test timer-6.3 {Tcl_AfterCmd procedure, basics} -returnCodes error -body {
     after gorp
 } -result {bad argument "gorp": must be cancel, idle, info, or an integer}
 
 test timer-6.3.1 {timer ensemble, basics} -returnCodes error -body {
     timer gorp
-} -result {unknown or ambiguous subcommand "gorp": must be at, cancel, idle, in, or info}
+} -result {unknown or ambiguous subcommand "gorp": must be at, cancel, idle, in, info, or sleep}
 
 test timer-6.4 {Tcl_AfterCmd procedure, ms argument} {
     set x before
@@ -529,10 +505,10 @@ test timer-6.4 {Tcl_AfterCmd procedure, ms argument} {
 test timer-6.4.1 {timer in, us argument} {
     set x before
     timer in 400 ms {set x after}
-    timer in 200 ms
+    timer sleep for 200 ms
     update
     set y $x
-    timer in 400 ms
+    timer sleep for 400 ms
     update
     list $y $x
 } {before after}
@@ -541,10 +517,10 @@ test timer-6.4.2 {timer at, us argument} {
     set x before
     set us [clock microseconds]
     timer at [expr {$us+400_000}] us {set x after}
-    timer at [expr {$us+200_000}] us
+    timer sleep until [expr {$us+200_000}] us
     update
     set y $x
-    timer at [expr {$us+600_000}] us
+    timer sleep until [expr {$us+600_000}] us
     update
     list $y $x
 } {before after}
@@ -606,7 +582,7 @@ test timer-6.9.1 {timer cancel option} -setup {
     set x before
     set y [timer in 100 ms {set x after}]
     timer cancel $y
-    timer in 200 ms
+    timer sleep for 200 ms
     update
     return $x
 } -result {before}
@@ -632,7 +608,7 @@ test timer-6.10.1 {timer cancel option} -setup {
     set x before
     timer in 100 ms {set x after}
     timer cancel {set x after}
-    timer in 200 ms
+    timer sleep for 200 ms
     update
     return $x
 } -result {before}
@@ -664,11 +640,11 @@ test timer-6.11.1 {timer cancel option} -setup {
     timer in 100 ms {set x after}
     set id [timer in 300 ms {set x after}]
     timer cancel $id
-    timer in 200 ms
+    timer sleep for 200 ms
     update
     set y $x
     set x cleared
-    timer in 200 ms
+    timer sleep for 200 ms
     update
     list $y $x
 } -result {after cleared}
@@ -910,7 +886,7 @@ test timer-6.23.1 {timer in, script with NUL} -setup {
 } -body {
     set x "hello world"
     timer in 1 ms "set x ab\x00cd"
-    timer in 10 ms
+    timer sleep for 10 ms
     update
     string length $x
 } -result {5}
@@ -923,7 +899,7 @@ test timer-6.23.2 {timer at, script with NUL} -setup {
     set x "hello world"
     set us [clock microseconds]
     timer at [expr {$us+1000}] us "set x ab\x00cd"
-    timer at [expr {$us+10_000}] us
+    timer sleep until [expr {$us+10_000}] us
     update
     string length $x
 } -result {5}
@@ -1124,7 +1100,7 @@ test timer-8.1.1 {timer procedure} {
     proc foo {} {
 	set x untouched
 	timer in 100 ms {set x after}
-	timer in 200 ms
+	timer sleep for 200 ms
 	update
 	return $x
     }
@@ -1160,7 +1136,7 @@ test timer-8.2.1 {timer procedure} -setup {
     interp bgerror {} [namespace which myHandler]
 } -body {
     timer in 100 ms {error "After error"}
-    timer in 200 ms
+    timer sleep for 200 ms
     set y $x
     update
     list $y $x
@@ -1280,7 +1256,7 @@ test timer-9.1.1 {timer AfterCleanupProc procedure} -setup {
     }}
     interp delete x
     set x before
-    timer in 300 ms
+    timer sleep for 300 ms
     update
     return $x
 } -result {before after2 after4}
@@ -1302,7 +1278,7 @@ test timer-10.1.1 {[timer] overwrites imports} -setup {
     child eval namespace export timer
     child eval namespace eval foo namespace import ::timer
 } -body {
-    child eval foo::timer in 1 seconds
+    child eval foo::timer sleep for 1 seconds
     child eval namespace origin foo::timer
 } -cleanup {
     interp delete child
@@ -1328,12 +1304,32 @@ test timer-11.2 {Bug 1350293: [after] negative argument} -body {
 
 ## timer in
 
-test timer-12.1 {timer in, unit} -setup {
+test timer-12.1 {timer in, basics} -returnCodes error -body {
+    timer in 0 ms
+} -result {wrong # args: should be "::tcl::timer::in time unit script"}
+
+test timer-12.2 {timer in, basics} -returnCodes error -body {
+    timer in 0 ms cmd junk
+} -result {wrong # args: should be "::tcl::timer::in time unit script"}
+
+test timer-12.3 {timer in, basics} -returnCodes error -body {
+    timer in 0 ms cmd junk
+} -result {wrong # args: should be "::tcl::timer::in time unit script"}
+
+test timer-12.4 {timer in, basics} -returnCodes error -body {
+    timer in 2x us {event 1}
+} -result {expected integer but got "2x"}
+
+test timer-12.5 {timer in, basics} -returnCodes error -body {
+    timer in 0 bla {event 1}
+} -result {bad unit "bla": must be us, microseconds, milliseconds, ms, s, or seconds}
+
+test timer-12.6 {timer in, unit} -setup {
     set x ""
 } -body {
     timer in 100_000 microseconds {lappend x ok}
     timer in 300 ms {lappend x late}
-    timer in 200 ms
+    timer sleep for 200 ms
     update
     set x
 } -cleanup {
@@ -1342,12 +1338,12 @@ test timer-12.1 {timer in, unit} -setup {
     }
 } -result ok
 
-test timer-12.2 {timer in, unit} -setup {
+test timer-12.7 {timer in, unit} -setup {
     set x ""
 } -body {
     timer in 100 milliseconds {lappend x ok}
     timer in 300 ms {lappend x late}
-    timer in 200 ms
+    timer sleep for 200 ms
     update
     set x
 } -cleanup {
@@ -1356,7 +1352,7 @@ test timer-12.2 {timer in, unit} -setup {
     }
 } -result ok
 
-test timer-12.3 {timer in over maximum value} -body {
+test timer-12.8 {timer in over maximum value} -body {
     # Max internal value is LLONG_MAX
     set max [expr {2**63-1}]
     # Substract current clock, but add one seconds.
@@ -1366,7 +1362,7 @@ test timer-12.3 {timer in over maximum value} -body {
 } -cleanup {
 } -result "time too far away" -returnCodes error
 
-test timer-12.4 {after over maximum value} -body {
+test timer-12.9 {after over maximum value} -body {
     # Max internal value is LLONG_MAX
     set max [expr {2**63-1}]
     # Substract current clock, but add one seconds.
@@ -1379,12 +1375,28 @@ test timer-12.4 {after over maximum value} -body {
 
 ## timer at
 
-test timer-13.1 {timer at, unit sec} -setup {
+test timer-13.1 {timer at, basics} -returnCodes error -body {
+    timer at 0 ms
+} -result {wrong # args: should be "::tcl::timer::at time unit script"}
+
+test timer-13.2 {timer at, basics} -returnCodes error -body {
+    timer at 0 ms cmd junk
+} -result {wrong # args: should be "::tcl::timer::at time unit script"}
+
+test timer-13.3 {timer at, basics} -returnCodes error -body {
+    timer at 2x us {event 1}
+} -result {expected integer but got "2x"}
+
+test timer-13.4 {timer at, basics} -returnCodes error -body {
+    timer at 0 bla {event 1}
+} -result {bad unit "bla": must be us, microseconds, milliseconds, ms, s, or seconds}
+
+test timer-13.5 {timer at, unit sec} -setup {
 } -body {
     set x ""
     timer at [expr {[clock seconds]+1}] seconds {lappend x ok}
     timer in 1200 ms {lappend x late}
-    timer in 1100 ms
+    timer sleep for 1100 ms
     update
     set x
 } -cleanup {
@@ -1393,12 +1405,12 @@ test timer-13.1 {timer at, unit sec} -setup {
     }
 } -result ok
 
-test timer-13.2 {timer at, unit ms} -setup {
+test timer-13.6 {timer at, unit ms} -setup {
 } -body {
     set x ""
     timer at [expr {[clock milliseconds]+100}] milliseconds {lappend x ok}
     timer in 300 ms {lappend x late}
-    timer in 200 ms
+    timer sleep for 200 ms
     update
     set x
 } -cleanup {
@@ -1407,12 +1419,12 @@ test timer-13.2 {timer at, unit ms} -setup {
     }
 } -result ok
 
-test timer-13.3 {timer at, unit us} -setup {
+test timer-13.7 {timer at, unit us} -setup {
 } -body {
     set x ""
     timer at [expr {[clock microseconds]+100_000}] microseconds {lappend x ok}
     timer in 300 ms {lappend x late}
-    timer in 200 ms
+    timer sleep for 200 ms
     update
     set x
 } -cleanup {
@@ -1421,7 +1433,7 @@ test timer-13.3 {timer at, unit us} -setup {
     }
 } -result ok
 
-test timer-13.4 {timer at maximum value} -body {
+test timer-13.8 {timer at maximum value} -body {
     set maxwideSeconds [expr {(2**63-1)/1000000}]
     set id [timer at $maxwideSeconds s {event 1}]
 } -cleanup {
@@ -1441,13 +1453,58 @@ test timer-14.1 {timer info at value - maximum} -body {
     timer cancel $id
 } -result {1 1 1}
 
-test timer-13.5 {timer info at value - negative} -body {
+test timer-14.2 {timer info at value - negative} -body {
     set id [timer at -1 s {event 1}]
     set res [timer info $id]
     lrange $res 1 2
 } -cleanup {
     timer cancel $id
 } -result {wallclock 0}
+
+## timer sleep
+
+test timer-15.1 {timer sleep, basics} -returnCodes error -body {
+    timer sleep for 0
+} -result {wrong # args: should be "::tcl::timer::sleep option time unit"}
+
+test timer-15.2 {timer sleep, basics} -returnCodes error -body {
+    timer sleep for 0 us junk
+} -result {wrong # args: should be "::tcl::timer::sleep option time unit"}
+
+test timer-15.3 {timer sleep, basics} -returnCodes error -body {
+    timer sleep junk 0 us
+} -result {bad option "junk": must be for or until}
+
+test timer-15.4 {timer sleep, basics} -returnCodes error -body {
+    timer sleep for 0 bla
+} -result {bad unit "bla": must be us, microseconds, milliseconds, ms, s, or seconds}
+
+test timer-15.5 {"timer sleep for" over maximum value} -body {
+    # Max internal value is LLONG_MAX
+    set max [expr {2**63-1}]
+    # Substract current clock, but add one seconds.
+    # The internal comparision is only on seconds level
+    set max [expr {$max - [clock monotonic] + 1000000}]
+    set id [timer sleep for $max us]
+} -cleanup {
+} -result "time too far away" -returnCodes error
+
+test timer-15.6 {"timer sleep until" maximum value} -body {
+    set maxwideSeconds [expr {(2**63-1)/1000000}]
+    set id [timer sleep until $maxwideSeconds s]
+} -cleanup {
+} -result "time too far away" -returnCodes error
+
+test timer-15.7 {"timer sleep for" time measurment} -body {
+    time {timer sleep for 100 ms}
+    # The match accepts 100 to 200 ms
+} -match glob -result {1[0-9][0-9][0-9][0-9][0-9] microseconds per iteration}
+
+test timer-15.8 {"timer sleep until" time measurment} -body {
+    set wallclockUS [expr {[clock microseconds] + 100_000}]
+    time [list timer sleep until $wallclockUS us]
+    # The match accepts 100 to 200 ms
+} -match glob -result {1[0-9][0-9][0-9][0-9][0-9] microseconds per iteration}
 
 # cleanup
 ::tcltest::cleanupTests
