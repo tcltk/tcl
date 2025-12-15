@@ -2372,7 +2372,7 @@ EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
  * Tcl_Free for use in Tcl-8.x-compatible extensions.
  */
 
-#ifndef BUILD_tcl
+#if !defined(BUILD_tcl) && !defined(TCL_NO_DEPRECATED)
 #   define ckalloc Tcl_Alloc
 #   define attemptckalloc Tcl_AttemptAlloc
 #   ifdef _MSC_VER
