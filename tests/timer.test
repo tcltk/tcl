@@ -102,8 +102,8 @@ test timer-2.1.1 {Tcl_DeleteTimerHandler procedure - timer in} -setup {
     foreach i {100 200 1000 50 150} {
 	timer in $i ms [list lappend x $i]
     }
-    timer cancel lappend x 150
-    timer cancel lappend x 50
+    timer cancel {lappend x 150}
+    timer cancel {lappend x 50}
     timer in 200 ms {set done 1}
     vwait done
     return $x
@@ -123,8 +123,8 @@ test timer-2.1.2 {Tcl_DeleteTimerHandler procedure - timer at} -setup {
     foreach i {100 200 1000 50 150} {
 	timer at [expr {$i*1000+$us}] us [list lappend x $i]
     }
-    timer cancel lappend x 150
-    timer cancel lappend x 50
+    timer cancel {lappend x 150}
+    timer cancel {lappend x 50}
     timer at [expr {200_000+$us}] us {set done 1}
     vwait done
     return $x
@@ -539,7 +539,7 @@ test timer-6.5 {Tcl_AfterCmd procedure, ms argument} {
 
 test timer-6.6 {Tcl_AfterCmd procedure, cancel option} -body {
     after cancel
-} -returnCodes error -result {wrong # args: should be "after cancel id|command"}
+} -returnCodes error -result {wrong # args: should be "after cancel id|script ?script?"}
 
 test timer-6.6.1 {timer cancel option} -body {
     timer cancel
@@ -670,9 +670,9 @@ test timer-6.12.1 {timer cancel option} -setup {
     }
 } -body {
     set x first
-    timer idle lappend x second
-    timer idle lappend x third
-    set i [timer idle lappend x fourth]
+    timer idle {lappend x second}
+    timer idle {lappend x third}
+    set i [timer idle {lappend x fourth}]
     timer cancel {lappend x second}
     timer cancel $i
     update idletasks
@@ -700,10 +700,10 @@ test timer-6.13.1 {timer cancel, multiple arguments for command} -setup {
     }
 } -body {
     set x first
-    timer idle lappend x second
-    timer idle lappend x third
-    set i [timer idle lappend x fourth]
-    timer cancel lappend x second
+    timer idle {lappend x second}
+    timer idle {lappend x third}
+    set i [timer idle {lappend x fourth}]
+    timer cancel {lappend x second}
     timer cancel $i
     update idletasks
     return $x
@@ -770,7 +770,7 @@ test timer-6.15.1 {timer cancel, multiple interps} -setup {
     timer cancel {set b b-after}
     set a aaa
     set b bbb
-    x eval {timer cancel set a a-after}
+    x eval {timer cancel {set a a-after}}
     update idletasks
     lappend result $a $b [x eval {list $a $b}]
 } -cleanup {
@@ -783,7 +783,7 @@ test timer-6.16 {Tcl_AfterCmd procedure, idle option} -body {
 
 test timer-6.16.1 {timer idle option} -body {
     timer idle
-} -returnCodes error -result {wrong # args: should be "timer idle script ?script ...?"}
+} -returnCodes error -result {wrong # args: should be "timer idle script"}
 
 test timer-6.17 {Tcl_AfterCmd procedure, idle option} {
     set x before
@@ -821,7 +821,7 @@ test timer-6.19 {Tcl_AfterCmd, info option} -setup {
 } -result 1
 
 test timer-6.19.1 {timer info} -setup {
-    set event1 [timer idle event 1]
+    set event1 [timer idle {event 1}]
     set event2 [timer in 1 s {event 2}]
 } -body {
     expr {[lsort [timer info]] eq [lsort "$event1 $event2"]}
@@ -836,7 +836,7 @@ test timer-6.20 {Tcl_AfterCmd, info option} -returnCodes error -body {
 
 test timer-6.20.1 {timer info} -returnCodes error -body {
     timer info a b
-} -result {wrong # args: should be "::tcl::timer::info ?id?"}
+} -result {wrong # args: should be "timer info ?id?"}
 
 test timer-6.21 {Tcl_AfterCmd, info option} -returnCodes error -setup {
     interp create x
@@ -858,7 +858,7 @@ test timer-6.22 {Tcl_AfterCmd, info option} -setup {
 } -result {{{event 1} idle} {{event 2} timer}}
 
 test timer-6.22.1 {timer info} -setup {
-    set event1 [timer idle event 1]
+    set event1 [timer idle {event 1}]
     set event2 [timer in 1 seconds {event 2}]
 } -body {
     list [timer info $event1] [timer info $event2]
@@ -1306,15 +1306,15 @@ test timer-11.2 {Bug 1350293: [after] negative argument} -body {
 
 test timer-12.1 {timer in, basics} -returnCodes error -body {
     timer in 0 ms
-} -result {wrong # args: should be "::tcl::timer::in time unit script"}
+} -result {wrong # args: should be "timer in time unit script"}
 
 test timer-12.2 {timer in, basics} -returnCodes error -body {
     timer in 0 ms cmd junk
-} -result {wrong # args: should be "::tcl::timer::in time unit script"}
+} -result {wrong # args: should be "timer in time unit script"}
 
 test timer-12.3 {timer in, basics} -returnCodes error -body {
     timer in 0 ms cmd junk
-} -result {wrong # args: should be "::tcl::timer::in time unit script"}
+} -result {wrong # args: should be "timer in time unit script"}
 
 test timer-12.4 {timer in, basics} -returnCodes error -body {
     timer in 2x us {event 1}
@@ -1377,11 +1377,11 @@ test timer-12.9 {after over maximum value} -body {
 
 test timer-13.1 {timer at, basics} -returnCodes error -body {
     timer at 0 ms
-} -result {wrong # args: should be "::tcl::timer::at time unit script"}
+} -result {wrong # args: should be "timer at time unit script"}
 
 test timer-13.2 {timer at, basics} -returnCodes error -body {
     timer at 0 ms cmd junk
-} -result {wrong # args: should be "::tcl::timer::at time unit script"}
+} -result {wrong # args: should be "timer at time unit script"}
 
 test timer-13.3 {timer at, basics} -returnCodes error -body {
     timer at 2x us {event 1}
@@ -1465,11 +1465,11 @@ test timer-14.2 {timer info at value - negative} -body {
 
 test timer-15.1 {timer sleep, basics} -returnCodes error -body {
     timer sleep for 0
-} -result {wrong # args: should be "::tcl::timer::sleep option time unit"}
+} -result {wrong # args: should be "timer sleep option time unit"}
 
 test timer-15.2 {timer sleep, basics} -returnCodes error -body {
     timer sleep for 0 us junk
-} -result {wrong # args: should be "::tcl::timer::sleep option time unit"}
+} -result {wrong # args: should be "timer sleep option time unit"}
 
 test timer-15.3 {timer sleep, basics} -returnCodes error -body {
     timer sleep junk 0 us
