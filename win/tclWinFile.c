@@ -3425,7 +3425,7 @@ TclWinPathResize(
  *
  * Side effects:
  *      May allocate memory that must be freed with TclWinPathFree
- *      IRRESPECTIVE of return status. Sets *filePartPtr to point to the
+ *      on a non-NULL return. Sets *filePartPtr to point to the
  *      filename portion of the path if filePartPtr is not NULL.
  *
  *----------------------------------------------------------------------
@@ -3434,7 +3434,9 @@ TclWinPathResize(
 WCHAR *
 TclWinGetFullPathName(
     const WCHAR *pathPtr,	/* Input path (relative or absolute) */
-    TclWinPath *winPathPtr,	/* Buffer to receive full path */
+    TclWinPath *winPathPtr,	/* Buffer to receive full path. Should be
+				 * uninitialized or previously reset with
+				 * TclWinPathFree. */
     WCHAR **filePartPtrPtr)	/* Receives pointer to filename if non-NULL */
 {
     DWORD numChars;
@@ -3446,12 +3448,12 @@ TclWinGetFullPathName(
     numChars = GetFullPathNameW(pathPtr, capacity, fullPathPtr, &filePartPtr);
 
     if (numChars == 0) {
-	return NULL;
+	goto errorReturn;
     }
 
     /*
-     * numChars does not include the null terminator. If equal to capacity,
-     * the buffer was too small.
+     * numChars does not include the null terminator so even if numChars
+     * equal to capacity, the buffer was too small.
      */
     if (numChars < capacity) {
         if (filePartPtrPtr != NULL) {
@@ -3469,13 +3471,19 @@ TclWinGetFullPathName(
     numChars = GetFullPathNameW(pathPtr, capacity, fullPathPtr, &filePartPtr);
     if (numChars == 0 || numChars >= capacity) {
         /* Failed or still too small (shouldn't happen). */
-	return NULL;
+	goto errorReturn;
     }
 
     if (filePartPtrPtr != NULL) {
         *filePartPtrPtr = filePartPtr;
     }
     return fullPathPtr;
+
+errorReturn:
+    DWORD err = GetLastError();
+    TclWinPathFree(winPathPtr);
+    SetLastError(err);
+    return NULL;
 }
 
 /*

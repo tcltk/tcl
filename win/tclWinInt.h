@@ -125,8 +125,8 @@ typedef struct TclWinPath {
 static inline WCHAR *
 TclWinPathInit(
     TclWinPath *pathBufPtr,	/* Structure to be initialized */
-    DWORD *capacityPtr)			/* On return, capacity in WCHARS
-					   Must NOT be NULL */
+    DWORD *capacityPtr)		/* On return, capacity in WCHARS
+				   Must NOT be NULL */
 {
     pathBufPtr->bufferPtr = pathBufPtr->buffer;
     *capacityPtr = (DWORD)(sizeof(pathBufPtr->buffer) / sizeof(WCHAR));
