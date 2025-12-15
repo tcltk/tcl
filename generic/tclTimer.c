@@ -186,10 +186,15 @@ static int		TimerSleepForCmd(Tcl_Interp *interp,
 static int		TimerSleepUntilCmd(Tcl_Interp *interp,
 			    long long sleepArgUS);
 static int		TimerDelay(Tcl_Interp *interp, Tcl_Time endTime);
-static int		TimerDelayMonotonic(Tcl_Interp *interp,long long endTimeUS);
+static int		TimerDelayMonotonic(Tcl_Interp *interp,
+			    long long endTimeUS);
 static Tcl_ObjCmdProc2	TimerCancelCmd;
+static int		TimerCancelDo(Tcl_Interp *interp,
+			    Tcl_Obj *const objArg);
 static AfterAssocData *	TimerAssocDataGet(Tcl_Interp *interp);
 static Tcl_ObjCmdProc2	TimerIdleCmd;
+static int		TimerIdleDo(Tcl_Interp *interp,
+			    Tcl_Obj *const objCmd);
 static Tcl_ObjCmdProc2	TimerInfoCmd;
 static void		TimeTooFarError(Tcl_Interp *interp);
 static int		ParseTimeUnit(Tcl_Interp *interp, int objc,
@@ -1037,6 +1042,8 @@ Tcl_AfterObjCmd(
 	"cancel", "idle", "info", NULL
     };
     enum afterSubCmdsEnum {AFTER_CANCEL, AFTER_IDLE, AFTER_INFO};
+    Tcl_Obj *cmdObj;
+    int res;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "option ?arg ...?");
@@ -1142,23 +1149,37 @@ Tcl_AfterObjCmd(
     }
     case AFTER_CANCEL:
 
-	/*
-	 * The error message is also contained in TimerCancel Cmd, but the
-	 * prefix "after" is not present. We may find a way to fix this
-	 * and output the right error message in TimerCancelCmd.
-	 */
-
 	if (objc < 3) {
-	    Tcl_WrongNumArgs(interp, 2, objv, "id|command");
+	    Tcl_WrongNumArgs(interp, 2, objv, "id|script ?script?");
 	    return TCL_ERROR;
 	}
-	return TimerCancelCmd(NULL, interp, objc-1, objv+1);
+	if (objc == 3) {
+	    res = TimerCancelDo(interp, objv[2]);
+	} else {
+	    cmdObj = Tcl_ConcatObj(objc-2, objv+2);
+	    res = TimerCancelDo(interp, cmdObj);
+
+	    /*
+	     * When Tcl_ConcatObj was used, the created object is only
+	     * decremented in this case, not in the other 3 cases in this
+	     * function. I don't know why.
+	     */
+
+	    Tcl_DecrRefCount(cmdObj);
+	}
+	return res;
     case AFTER_IDLE:
 	if (objc < 3) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "script ?script ...?");
 	    return TCL_ERROR;
 	}
-	return TimerIdleCmd(NULL, interp, objc-1, objv+1);
+	if (objc == 3) {
+	    cmdObj = objv[2];
+	} else {
+	    cmdObj = Tcl_ConcatObj(objc-2, objv+2);
+
+	}
+	return TimerIdleDo(interp, cmdObj);
     case AFTER_INFO:
 	if (objc > 3) {
 
@@ -1800,7 +1821,7 @@ TimerAtCmd(
     ThreadSpecificData *tsdPtr = InitTimer();
 
     if (objc != 4) {
-	Tcl_WrongNumArgs(interp, 1, objv, "time unit script");
+	Tcl_WrongNumArgs(interp, 0, objv, "timer at time unit script");
 	return TCL_ERROR;
     }
 
@@ -1893,7 +1914,7 @@ TimerInCmd(
     ThreadSpecificData *tsdPtr = InitTimer();
 
     if (objc != 4) {
-	Tcl_WrongNumArgs(interp, 1, objv, "time unit script");
+	Tcl_WrongNumArgs(interp, 0, objv, "timer in time unit script");
 	return TCL_ERROR;
     }
 
@@ -1978,7 +1999,7 @@ TimerSleepCmd(
     int optionIndex;
 
     if (objc != 4) {
-	Tcl_WrongNumArgs(interp, 1, objv, "option time unit");
+	Tcl_WrongNumArgs(interp, 0, objv, "timer sleep option time unit");
 	return TCL_ERROR;
     }
 
@@ -2128,7 +2149,35 @@ TimerCancelCmd(
     Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_Obj *commandPtr;
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 0, objv, "timer cancel id|command");
+	return TCL_ERROR;
+    }
+
+    return TimerCancelDo(interp, objv[1]);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TimerCancelDo --
+ *
+ *	Execute "after cancel" and "timer cancel".
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TimerCancelDo(
+    Tcl_Interp *interp,		/* Current interpreter. */
+    Tcl_Obj *const objArg)	/* Id or command. */
+{
     const char *command, *tempCommand;
     Tcl_Size tempLength;
 
@@ -2136,16 +2185,7 @@ TimerCancelCmd(
     AfterAssocData *assocPtr = TimerAssocDataGet(interp);
     Tcl_Size length;
 
-    if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "id|command");
-	return TCL_ERROR;
-    }
-    if (objc == 2) {
-	commandPtr = objv[1];
-    } else {
-	commandPtr = Tcl_ConcatObj(objc-1, objv+1);
-    }
-    command = TclGetStringFromObj(commandPtr, &length);
+    command = TclGetStringFromObj(objArg, &length);
     for (afterPtr = assocPtr->firstAfterPtr;  afterPtr != NULL;
 	    afterPtr = afterPtr->nextPtr) {
 	tempCommand = TclGetStringFromObj(afterPtr->commandPtr,
@@ -2156,10 +2196,7 @@ TimerCancelCmd(
 	}
     }
     if (afterPtr == NULL) {
-	afterPtr = GetAfterEvent(assocPtr, commandPtr);
-    }
-    if (objc != 2) {
-	Tcl_DecrRefCount(commandPtr);
+	afterPtr = GetAfterEvent(assocPtr, objArg);
     }
     if (afterPtr != NULL) {
 	if (afterPtr->token != NULL) {
@@ -2196,21 +2233,45 @@ TimerIdleCmd(
     Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
+    AfterAssocData *assocPtr = TimerAssocDataGet(interp);
+    ThreadSpecificData *tsdPtr = InitTimer();
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 0, objv, "timer idle script");
+	return TCL_ERROR;
+    }
+    return TimerIdleDo(interp, objv[1]);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TimerIdleDo--
+ *
+ *	Execute the "after/timer idle" Tcl command.
+ *	See the user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TimerIdleDo(
+    Tcl_Interp *interp,		/* Current interpreter. */
+    Tcl_Obj *const objCmd)	/* Idle command. */
+{
     AfterInfo *afterPtr;
     AfterAssocData *assocPtr = TimerAssocDataGet(interp);
     ThreadSpecificData *tsdPtr = InitTimer();
 
-    if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "script ?script ...?");
-	return TCL_ERROR;
-    }
     afterPtr = (AfterInfo *)Tcl_Alloc(sizeof(AfterInfo));
     afterPtr->assocPtr = assocPtr;
-    if (objc == 2) {
-	afterPtr->commandPtr = objv[1];
-    } else {
-	afterPtr->commandPtr = Tcl_ConcatObj(objc-1, objv+1);
-    }
+    afterPtr->commandPtr = objCmd;
     Tcl_IncrRefCount(afterPtr->commandPtr);
     afterPtr->id = tsdPtr->afterId;
     tsdPtr->afterId += 1;
@@ -2295,13 +2356,8 @@ TimerInfoDo(
 	return TCL_OK;
     }
 
-    /*
-     * This is not used for "after info", as then, the word "after"
-     * is missing in the error message
-     */
-
     if (objc != 2) {
-	Tcl_WrongNumArgs(interp, (isAfter?2:1), objv, "?id?");
+	Tcl_WrongNumArgs(interp, 0, objv, "timer info ?id?");
 	return TCL_ERROR;
     }
 
