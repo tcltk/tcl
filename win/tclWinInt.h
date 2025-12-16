@@ -152,11 +152,14 @@ TclWinPathFree(
     pathBufPtr->bufferPtr = pathBufPtr->buffer;
 }
 
+MODULE_SCOPE char *	TclWinWCharToUtfDString(const WCHAR *wsPtr,
+			    DWORD numChars, Tcl_DString *);
 MODULE_SCOPE WCHAR *	TclWinPathResize(TclWinPath *winPathPtr,
 			    DWORD capacityNeeded);
 MODULE_SCOPE WCHAR *	TclWinGetFullPathName(const WCHAR *pathPtr,
 			    TclWinPath *winPathPtr,
 			    WCHAR **filePartPtrPtr);
 MODULE_SCOPE WCHAR *	TclWinGetCurrentDirectory(TclWinPath *winPathPtr);
+MODULE_SCOPE WCHAR *	TclWinGetModuleFileName(HMODULE, TclWinPath *);
 
 #endif	/* _TCLWININT */
