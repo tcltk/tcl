@@ -1421,8 +1421,12 @@ TclpGetUserHome(
     int rc = 0;
     const char *domain;
     WCHAR *wName, *wHomeDir, *wDomain;
+    TclWinPath winPath;
+    DWORD winPathSize;
+    WCHAR *winPathBuf;
 
     Tcl_DStringInit(bufferPtr);
+    winPathBuf = TclWinPathInit(&winPath, &winPathSize);
 
     wDomain = NULL;
     domain = Tcl_UtfFindFirst(name, '@');
@@ -1449,15 +1453,27 @@ TclpGetUserHome(
 	ptr = TclpGetUserName(&ds);
 	if (ptr != NULL && strcasecmp(name, ptr) == 0) {
 	    HANDLE hProcess;
-	    WCHAR buf[MAX_PATH];
-	    DWORD nChars = sizeof(buf) / sizeof(buf[0]);
 	    /* Sadly GetCurrentProcessToken not in Win 7 so slightly longer */
 	    hProcess = GetCurrentProcess(); /* Need not be closed */
 	    if (hProcess) {
 		HANDLE hToken;
 		if (OpenProcessToken(hProcess, TOKEN_QUERY, &hToken)) {
-		    if (GetUserProfileDirectoryW(hToken, buf, &nChars)) {
-			result = Tcl_WCharToUtfDString(buf, nChars-1, (bufferPtr));
+		    if (GetUserProfileDirectoryW(hToken,
+			    winPathBuf, &winPathSize) != TRUE) {
+			if (GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
+			    winPathBuf = NULL;
+			} else {
+			    winPathBuf = TclWinPathResize(&winPath,
+					    winPathSize);
+			    if (GetUserProfileDirectoryW(hToken, winPathBuf,
+				    &winPathSize) != TRUE) {
+				winPathBuf = NULL; /* Still failed */
+			    }
+			}
+		    }
+		    if (winPathBuf) {
+			result = Tcl_WCharToUtfDString(winPathBuf, 
+				     winPathSize-1, bufferPtr);
 			rc = 1;
 		    }
 		    CloseHandle(hToken);
@@ -1504,16 +1520,27 @@ TclpGetUserHome(
 		size = lstrlenW(wHomeDir);
 		Tcl_WCharToUtfDString(wHomeDir, size, bufferPtr);
 	    } else {
-		WCHAR buf[MAX_PATH];
 		/*
 		 * User exists but has no home dir. Return
 		 * "{GetProfilesDirectory}/<user>".
 		 */
 
-		GetProfilesDirectoryW(buf, &size);
-		Tcl_WCharToUtfDString(buf, size-1, bufferPtr);
-		Tcl_DStringAppend(bufferPtr, "/", 1);
-		Tcl_DStringAppend(bufferPtr, name, nameLen);
+		if (GetProfilesDirectoryW(winPathBuf, &winPathSize) != TRUE) {
+		    if (GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
+			winPathBuf = NULL;
+		    } else {
+			winPathBuf = TclWinPathResize(&winPath, winPathSize);
+			if (GetProfilesDirectoryW(winPathBuf, &winPathSize) != TRUE) {
+			    winPathBuf = NULL; /* Still failed :-( */
+			}
+		    }
+		}
+		if (winPathBuf) {
+		    /* Unlike some Win APIs, winPathSize includes null terminator */
+		    Tcl_WCharToUtfDString(winPathBuf, winPathSize - 1, bufferPtr);
+		    Tcl_DStringAppend(bufferPtr, "/", 1);
+		    Tcl_DStringAppend(bufferPtr, name, nameLen);
+		}
 	    }
 	    result = Tcl_DStringValue(bufferPtr);
 
@@ -1533,8 +1560,9 @@ TclpGetUserHome(
     if (wDomain != NULL) {
 	NetApiBufferFree((void *)wDomain);
     }
+    TclWinPathFree(&winPath);
 
-    return result;
+    return *result ? result : NULL;
 }
 
 /*
@@ -3122,7 +3150,7 @@ TclNativeCreateNativeRep(
      * and the path is larger than MAX_PATH chars, no Win32 API function can
      * handle that unless it is prefixed with the extended path prefix. See:
      * <https://docs.microsoft.com/en-us/windows/win32/fileio/naming-a-file#maxpath>
-	 *  TODO - is this still true with long path support?
+     *  TODO - is this still true with long path support?
      */
 
     if (((str[0] >= 'A' && str[0] <= 'Z') || (str[0] >= 'a' && str[0] <= 'z'))
