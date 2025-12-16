@@ -402,6 +402,65 @@ AppendEnvironment(
 }
 
 /*
+ * AllocateGrandparentSiblingPath --
+ *
+ *	Allocates and initializes a path corresponding to a sibling of
+ *	the module's grandparent, or parent if no grandparent.
+ *
+ * Results:
+ *	TCL_OK on success, TCL_ERROR on failure.
+ *
+ * Side effects:
+ *
+ *      The new path is allocated with Tcl_Alloc and a pointer to it is
+ *	stored in *valuePtr and its length, not including the nul terminator
+ *	is stored in *lengthPtr. The memory must be eventually released with
+ *      with Tcl_Free.
+ */
+static int
+AllocateGrandparentSiblingPath(
+    const char *siblingPtr,	/* sub directory to append. Path separators
+				 * (if any) must be forward slashes and the
+				 * string must not have leading separators */
+    char **valuePtr,		/* location to store pointer to path */
+    size_t *lengthPtr)		/* location to store length of path */
+{
+    HMODULE hModule = (HMODULE)TclWinGetTclInstance();
+    TclWinPath winPath;
+    WCHAR *wNamePtr;
+    int result = TCL_ERROR;
+
+    wNamePtr = TclWinGetModuleFileName(hModule, &winPath);
+    if (wNamePtr != NULL) {
+	char *utf8Ptr;
+	Tcl_DString ds;
+	/* Do not use Tcl encoding API as it may not be initialized yet */
+	utf8Ptr = TclWinWCharToUtfDString(wNamePtr, -1, &ds);
+	if (utf8Ptr) {
+	    char *end, *p;
+	    TclWinNoBackslash(utf8Ptr);
+	    end = strrchr(utf8Ptr, '/');
+	    *end = '\0';
+	    p = strrchr(utf8Ptr, '/');
+	    if (p != NULL) {
+		end = p;
+	    }
+	    *end = '/';
+	    Tcl_DStringSetLength(&ds, (Tcl_Size)(end - utf8Ptr + 1));
+	    Tcl_DStringAppend(&ds, siblingPtr, TCL_AUTO_LENGTH);
+	    utf8Ptr = Tcl_DStringValue(&ds);
+	    *lengthPtr = (size_t)Tcl_DStringLength(&ds);
+	    *valuePtr = (char *)Tcl_Alloc(*lengthPtr + 1);
+	    memcpy(*valuePtr, utf8Ptr, *lengthPtr + 1);
+	    Tcl_DStringFree(&ds);
+	    result = TCL_OK;
+	}
+	TclWinPathFree(&winPath);
+    }
+    return result;
+}
+
+/*
  *---------------------------------------------------------------------------
  *
  * InitializeDefaultLibraryDir --
@@ -424,28 +483,9 @@ InitializeDefaultLibraryDir(
     size_t *lengthPtr,
     Tcl_Encoding *encodingPtr)
 {
-    HMODULE hModule = (HMODULE)TclWinGetTclInstance();
-    WCHAR wName[MAX_PATH + LIBRARY_SIZE];
-    char name[(MAX_PATH + LIBRARY_SIZE) * 3];
-    char *end, *p;
-
-    GetModuleFileNameW(hModule, wName, sizeof(wName)/sizeof(WCHAR));
-    WideCharToMultiByte(CP_UTF8, 0, wName, -1, name, sizeof(name), NULL, NULL);
-
-    end = strrchr(name, '\\');
-    *end = '\0';
-    p = strrchr(name, '\\');
-    if (p != NULL) {
-	end = p;
-    }
-    *end = '\\';
-
-    TclWinNoBackslash(name);
-    snprintf(end + 1, LIBRARY_SIZE, "lib/tcl%s", TCL_VERSION);
-    *lengthPtr = strlen(name);
-    *valuePtr = (char *)Tcl_Alloc(*lengthPtr + 1);
     *encodingPtr = NULL;
-    memcpy(*valuePtr, name, *lengthPtr + 1);
+    (void) AllocateGrandparentSiblingPath("lib/tcl" TCL_VERSION,
+	       valuePtr, lengthPtr);
 }
 
 /*
@@ -472,28 +512,8 @@ InitializeSourceLibraryDir(
     size_t *lengthPtr,
     Tcl_Encoding *encodingPtr)
 {
-    HMODULE hModule = (HMODULE)TclWinGetTclInstance();
-    WCHAR wName[MAX_PATH + LIBRARY_SIZE];
-    char name[(MAX_PATH + LIBRARY_SIZE) * 3];
-    char *end, *p;
-
-    GetModuleFileNameW(hModule, wName, sizeof(wName)/sizeof(WCHAR));
-    WideCharToMultiByte(CP_UTF8, 0, wName, -1, name, sizeof(name), NULL, NULL);
-
-    end = strrchr(name, '\\');
-    *end = '\0';
-    p = strrchr(name, '\\');
-    if (p != NULL) {
-	end = p;
-    }
-    *end = '\\';
-
-    TclWinNoBackslash(name);
-    snprintf(end + 1, LIBRARY_SIZE, "../library");
-    *lengthPtr = strlen(name);
-    *valuePtr = (char *)Tcl_Alloc(*lengthPtr + 1);
     *encodingPtr = NULL;
-    memcpy(*valuePtr, name, *lengthPtr + 1);
+    (void) AllocateGrandparentSiblingPath("../library", valuePtr, lengthPtr);
 }
 
 /*
@@ -777,6 +797,64 @@ TclpFindVariable(
     Tcl_DStringFree(&envString);
     Tcl_Free(nameUpper);
     return result;
+}
+
+/*
+ * TclWinWCharToUtfDString --
+ *
+ *	Convert the passed WCHAR (UTF-16) to UTF-8 returning the result
+ *	in a Tcl_DString. The primary utility of this function is to
+ *	allow the conversion before Tcl encoding subsystem is initialized.
+ *
+ * Results:
+ *	A pointer into the output Tcl_DString holding the result and NULL
+ *	on failure.
+ *
+ * Side effects:
+ *	The dsPtr Tcl_DString may allocate storage and caller should
+ *	call Tcl_DStringFree on it on success.
+ */
+char *
+TclWinWCharToUtfDString(
+    const WCHAR *wsPtr,		/* string to convert */
+    int numChars,		/* wsPtr character count */
+    Tcl_DString *dsPtr)		/* output */
+{
+    int needed;
+
+    Tcl_DStringInit(dsPtr);
+
+    if (numChars == -1) {
+	numChars = wcslen(wsPtr);
+    }
+
+    if (numChars == 0) {
+	return Tcl_DStringValue(dsPtr);
+    }
+
+    needed = WideCharToMultiByte(CP_UTF8, WC_NO_BEST_FIT_CHARS, wsPtr, numChars, NULL,
+		0, NULL, NULL);
+    if (needed > 0) {
+	/*
+	 * Allocate needed + 1 so we can ensure a terminating NUL in all cases
+	 * (WideCharToMultiByte writes a NUL only when source length is -1).
+	 */
+	int written;
+	char *utf8Ptr;
+
+	Tcl_DStringSetLength(dsPtr, (needed + 1));
+	utf8Ptr = Tcl_DStringValue(dsPtr);
+
+	written = WideCharToMultiByte(CP_UTF8, WC_NO_BEST_FIT_CHARS, wsPtr, numChars, utf8Ptr,
+	    needed + 1, NULL, NULL);
+	if (written > 0) {
+	    Tcl_DStringSetLength(dsPtr, written);
+	    return Tcl_DStringValue(dsPtr);
+	}
+
+    }
+    Tcl_DStringFree(dsPtr);
+    return NULL;
 }
 
 /*

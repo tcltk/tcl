@@ -821,21 +821,35 @@ void
 TclpFindExecutable(
     TCL_UNUSED(const char *))
 {
-    WCHAR wName[MAX_PATH];
-    char name[MAX_PATH * TCL_UTF_MAX];
+    TclWinPath winPath;
+    WCHAR *wNamePtr;
+    char *utf8Ptr;
+    Tcl_DString ds;
 
-    GetModuleFileNameW(NULL, wName, sizeof(wName)/sizeof(wName[0]));
-    WideCharToMultiByte(CP_UTF8, 0, wName, -1, name, sizeof(name), NULL, NULL);
-    TclWinNoBackslash(name);
-    TclSetObjNameOfExecutable(Tcl_NewStringObj(name, TCL_INDEX_NONE), NULL);
+    /* Do not use Tcl encoding functions as Tcl may not be initialized yet */
+
+    wNamePtr = TclWinGetModuleFileName(NULL, &winPath);
+    if (wNamePtr == NULL ||
+	(utf8Ptr = TclWinWCharToUtfDString(wNamePtr, -1, &ds)) == NULL) {
+	Tcl_Panic("Could not retrieve executable module name.");
+    }
+
+    TclWinNoBackslash(utf8Ptr);
+    TclSetObjNameOfExecutable(Tcl_NewStringObj(utf8Ptr, TCL_AUTO_LENGTH), NULL);
+    TclWinPathFree(&winPath);
+    Tcl_DStringFree(&ds);
 
 #if !defined(STATIC_BUILD)
     HMODULE hModule = (HMODULE)TclWinGetTclInstance();
     if (hModule) {
-	GetModuleFileNameW(hModule, wName, sizeof(wName) / sizeof(wName[0]));
-	WideCharToMultiByte(CP_UTF8, 0, wName, -1,
-				name, sizeof(name), NULL, NULL);
-	TclSetObjNameOfShlib(Tcl_NewStringObj(name, TCL_AUTO_LENGTH), NULL);
+	wNamePtr = TclWinGetModuleFileName(hModule, &winPath);
+	if (wNamePtr == NULL ||
+	    (utf8Ptr = TclWinWCharToUtfDString(wNamePtr, -1, &ds)) == NULL) {
+	    Tcl_Panic("Could not retrieve library module name.");
+	}
+	TclSetObjNameOfShlib(Tcl_NewStringObj(utf8Ptr, TCL_AUTO_LENGTH), NULL);
+	TclWinPathFree(&winPath);
+	Tcl_DStringFree(&ds);
     }
 #endif
 }
@@ -1543,14 +1557,14 @@ TclpGetUserHome(
 		}
 	    }
 	    result = Tcl_DStringValue(bufferPtr);
-
-	    /*
-	     * Be sure we return normalized path
-	     */
-
-	    for (i = 0; i < size; ++i) {
-		if (result[i] == '\\') {
-		    result[i] = '/';
+	    if (*result == '\0') {
+		result = NULL;
+	    } else {
+		/* Be sure we return normalized path using /, not \ */
+		for (i = 0; i < size; ++i) {
+		    if (result[i] == '\\') {
+			result[i] = '/';
+		    }
 		}
 	    }
 	    NetApiBufferFree((void *)uiPtr);
@@ -1562,9 +1576,9 @@ TclpGetUserHome(
     }
     TclWinPathFree(&winPath);
 
-    return *result ? result : NULL;
+    return result;
 }
-
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -3537,6 +3551,66 @@ errorReturn:
     DWORD err = GetLastError();
     TclWinPathFree(winPathPtr);
     SetLastError(err);
+    return NULL;
+}
+
+/*
+ * TclWinGetModuleFileName --
+ *
+ *      Wrapper for GetModuleFileNameW that automatically grows the buffer
+ *      as needed to accommodate the full path.
+ *
+ * Results:
+ *      Returns a pointer to the full path name on success, The returned
+ *      pointer is valid until TclWinPathFree or TclWinPathResize is called
+ *      on winPathPtr. Returns NULL on failure. An error code may be
+ *      retrieved via GetLastError() as for GetModuleFileNameW.
+ *
+ * Side effects:
+ *      May allocate memory that must be freed with TclWinPathFree
+ *      on a non-NULL return.
+ */
+
+WCHAR *
+TclWinGetModuleFileName(
+    HMODULE hModule,
+    TclWinPath *winPathPtr) /* Buffer to receive full path. Should be
+			     * uninitialized or previously reset with
+			     * TclWinPathFree. */
+{
+    DWORD numChars;
+    DWORD capacity;
+    WCHAR *pathPtr;
+    DWORD err;
+
+    pathPtr = TclWinPathInit(winPathPtr, &capacity);
+    while (capacity < USHRT_MAX) {
+	numChars = GetModuleFileNameW(hModule, pathPtr, capacity);
+	if (numChars == 0) {
+	    err = GetLastError();
+	    break;
+	}
+	/*
+	 * numChars does not include the null terminator so even if numChars
+	 * equal to capacity, the buffer was too small.
+	 */
+	if (numChars < capacity) {
+	    return pathPtr;
+	}
+	err = GetLastError();
+	if (err != ERROR_INSUFFICIENT_BUFFER) {
+	    break;
+	}
+	/*
+	 * Unlike in the case of some other Win32 functions, numChars is NOT
+	 * required size so just double the capacity we just tried.
+	 */
+	pathPtr = TclWinPathResize(winPathPtr, 2 * capacity);
+    }
+
+    /* Failure */
+    TclWinPathFree(winPathPtr);
+    SetLastError(err); /* In case TclWinPathFree overwrote GetLastError */
     return NULL;
 }
 
