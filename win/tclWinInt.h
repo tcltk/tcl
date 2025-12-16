@@ -160,6 +160,8 @@ MODULE_SCOPE WCHAR *	TclWinGetFullPathName(const WCHAR *pathPtr,
 			    TclWinPath *winPathPtr,
 			    WCHAR **filePartPtrPtr);
 MODULE_SCOPE WCHAR *	TclWinGetCurrentDirectory(TclWinPath *winPathPtr);
+MODULE_SCOPE WCHAR *	TclWinGetEnvironmentVariable(const WCHAR *envName,
+			    TclWinPath *winPathPtr);
 MODULE_SCOPE WCHAR *	TclWinGetModuleFileName(HMODULE, TclWinPath *);
 
 #endif	/* _TCLWININT */

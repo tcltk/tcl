@@ -334,13 +334,11 @@ AppendEnvironment(
     const char *lib)
 {
     Tcl_Size pathc;
-    WCHAR wBuf[MAX_PATH];
-    DWORD dw;
-    char buf[MAX_PATH * 3];
     Tcl_Obj *objPtr;
-    Tcl_DString ds;
     const char **pathv;
     char *shortlib;
+    TclWinPath winPath;
+    DWORD winPathCapacity;
 
     /*
      * The shortlib value needs to be the tail component of the lib path. For
@@ -360,12 +358,14 @@ AppendEnvironment(
 	Tcl_Panic("no '/' character found in lib");
     }
 
-    dw = GetEnvironmentVariableW(L"TCL_LIBRARY", wBuf, MAX_PATH);
-    if (dw <= 0 || dw >= MAX_PATH) {
+    WCHAR *wEnvValue = TclWinGetEnvironmentVariable(L"TCL_LIBRARY", &winPath);
+    if (wEnvValue == NULL || *wEnvValue == 0) {
 	return;
     }
-    if (WideCharToMultiByte(
-	    CP_UTF8, 0, wBuf, -1, buf, MAX_PATH * 3, NULL, NULL) == 0) {
+
+    Tcl_DString dsEnvValue;
+    char *buf = TclWinWCharToUtfDString(wEnvValue, -1, &dsEnvValue);
+    if (buf == NULL) {
 	return;
     }
 
@@ -388,7 +388,7 @@ AppendEnvironment(
 	     * directory to make it refer to this installation by removing the
 	     * old "tclX.Y" and substituting the current version string.
 	     */
-
+	    Tcl_DString ds;
 	    pathv[pathc - 1] = shortlib;
 	    Tcl_DStringInit(&ds);
 	    (void) Tcl_JoinPath(pathc, pathv, &ds);
@@ -399,8 +399,9 @@ AppendEnvironment(
 	Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
 	Tcl_Free((void *)pathv);
     }
+    Tcl_DStringFree(&dsEnvValue);
 }
-
+
 /*
  * AllocateGrandparentSiblingPath --
  *
@@ -856,6 +857,71 @@ TclWinWCharToUtfDString(
     Tcl_DStringFree(dsPtr);
     return NULL;
 }
+
+/*
+ * TclWinGetEnvironmentVariable --
+ *
+ *      Wrapper for GetEnvironmentVariableW that automatically grows the
+ *      buffer as needed.
+ *
+ * Results:
+ *      Returns a pointer to the environment variable value. The returned
+ *      pointer is valid until TclWinPathFree or TclWinPathResize is called
+ *      on winPathPtr. Returns NULL on failure. An error code may be
+ *      retrieved via GetLastError() as for GetEnvironmentVariableW.
+ *
+ * Side effects:
+ *      May allocate memory that must be freed with TclWinPathFree
+ *      on a non-NULL return.
+ */
+
+WCHAR *
+TclWinGetEnvironmentVariable(
+    const WCHAR *envName,	/* Environment variable name */
+    TclWinPath *winPathPtr)	/* Buffer to receive full path. Should be
+				 * uninitialized or previously reset with
+				 * TclWinPathFree. */
+{
+    DWORD numChars;
+    DWORD capacity;
+    WCHAR *fullPathPtr;
+    WCHAR *filePartPtr = NULL;
+
+    fullPathPtr = TclWinPathInit(winPathPtr, &capacity);
+    numChars = GetEnvironmentVariableW(envName, fullPathPtr, capacity);
+
+    if (numChars == 0) {
+	goto errorReturn;
+    }
+
+    /*
+     * numChars does not include the null terminator so even if numChars
+     * equal to capacity, the buffer was too small.
+     */
+    if (numChars < capacity) {
+        return fullPathPtr;
+    }
+
+    /*
+     * Buffer too small. In this case, numChars is required space INCLUDING
+     * the null terminator. Allocate a larger buffer and try again.
+     */
+    capacity = numChars;
+    fullPathPtr = TclWinPathResize(winPathPtr, capacity);
+    numChars = GetEnvironmentVariableW(envName, fullPathPtr, capacity);
+    if (numChars == 0 || numChars >= capacity) {
+        /* Failed or still too small (shouldn't happen). */
+	goto errorReturn;
+    }
+
+    return fullPathPtr;
+
+errorReturn:
+    DWORD err = GetLastError();
+    TclWinPathFree(winPathPtr);
+    SetLastError(err);
+    return NULL;}
+
 
 /*
  * Local Variables:
