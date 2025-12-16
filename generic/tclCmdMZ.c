@@ -4105,7 +4105,7 @@ Tcl_TimeObjCmd(
     }
 #ifndef TCL_WIDE_CLICKS
     stop = Tcl_GetMonotonicTime();
-    totalMicroSec = ((double) (stop - start);
+    totalMicroSec = (double) (stop - start);
 #else
     stop = TclpGetWideClicks();
     totalMicroSec = ((double) TclpWideClicksToNanoseconds(stop - start))/1.0e3;
