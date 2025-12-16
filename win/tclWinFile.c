@@ -1527,12 +1527,9 @@ TclpGetUserHome(
 	    domain = (const char *)INT2PTR(-1); /* repeat once */
 	}
 	if (rc == 0) {
-	    DWORD i, size = MAX_PATH;
-
 	    wHomeDir = uiPtr->usri1_home_dir;
 	    if ((wHomeDir != NULL) && (wHomeDir[0] != '\0')) {
-		size = lstrlenW(wHomeDir);
-		Tcl_WCharToUtfDString(wHomeDir, size, bufferPtr);
+		Tcl_WCharToUtfDString(wHomeDir, lstrlenW(wHomeDir), bufferPtr);
 	    } else {
 		/*
 		 * User exists but has no home dir. Return
@@ -1561,11 +1558,7 @@ TclpGetUserHome(
 		result = NULL;
 	    } else {
 		/* Be sure we return normalized path using /, not \ */
-		for (i = 0; i < size; ++i) {
-		    if (result[i] == '\\') {
-			result[i] = '/';
-		    }
-		}
+		TclWinNoBackslash(result);
 	    }
 	    NetApiBufferFree((void *)uiPtr);
 	}
