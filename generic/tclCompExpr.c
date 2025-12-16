@@ -495,18 +495,18 @@ typedef struct JumpList {
  */
 
 static void		CompileExprTree(Tcl_Interp *interp, OpNode *nodes,
-			    int index, Tcl_Obj *const **litObjvPtr,
+			    Tcl_Size index, Tcl_Obj *const **litObjvPtr,
 			    Tcl_Obj *const *funcObjv, Tcl_Token *tokenPtr,
-			    CompileEnv *envPtr, int optimize);
+			    CompileEnv *envPtr, bool optimize);
 static void		ConvertTreeToTokens(const char *start, Tcl_Size numBytes,
 			    OpNode *nodes, Tcl_Token *tokenPtr,
 			    Tcl_Parse *parsePtr);
 static int		ExecConstantExprTree(Tcl_Interp *interp, OpNode *nodes,
-			    int index, Tcl_Obj * const **litObjvPtr);
+			    Tcl_Size index, Tcl_Obj * const **litObjvPtr);
 static int		ParseExpr(Tcl_Interp *interp, const char *start,
 			    Tcl_Size numBytes, OpNode **opTreePtr,
 			    Tcl_Obj *litList, Tcl_Obj *funcList,
-			    Tcl_Parse *parsePtr, int parseOnly);
+			    Tcl_Parse *parsePtr, bool parseOnly);
 static Tcl_Size		ParseLexeme(const char *start, Tcl_Size numBytes,
 			    unsigned char *lexemePtr, Tcl_Obj **literalPtr);
 
@@ -553,7 +553,7 @@ ParseExpr(
     Tcl_Parse *parsePtr,	/* Structure to fill with tokens representing
 				 * those operands that require run time
 				 * substitutions. */
-    int parseOnly)		/* A boolean indicating whether the caller's
+    bool parseOnly)		/* A boolean indicating whether the caller's
 				 * aim is just a parse, or whether it will go
 				 * on to compile the expression. Different
 				 * optimizations are appropriate for the two
@@ -1873,7 +1873,7 @@ Tcl_ParseExpr(
     }
 
     code = ParseExpr(interp, start, numBytes, &opTree, litList, funcList,
-	    exprParsePtr, 1 /* parseOnly */);
+	    exprParsePtr, true /* parseOnly */);
     Tcl_DecrRefCount(funcList);
     Tcl_DecrRefCount(litList);
 
@@ -2194,7 +2194,7 @@ TclCompileExpr(
     const char *script,		/* The source script to compile. */
     Tcl_Size numBytes,		/* Number of bytes in script. */
     CompileEnv *envPtr,		/* Holds resulting instructions. */
-    int optimize)		/* 0 for one-off expressions. */
+    bool optimize)		/* false for one-off expressions. */
 {
     OpNode *opTree = NULL;	/* Will point to the tree of operators */
     Tcl_Obj *litList;		/* List to hold the literals */
@@ -2206,7 +2206,7 @@ TclCompileExpr(
     TclNewObj(litList);
     TclNewObj(funcList);
     code = ParseExpr(interp, script, numBytes, &opTree, litList,
-	    funcList, parsePtr, 0 /* parseOnly */);
+	    funcList, parsePtr, false /* parseOnly */);
 
     if (code == TCL_OK) {
 	/*
@@ -2258,7 +2258,7 @@ static int
 ExecConstantExprTree(
     Tcl_Interp *interp,
     OpNode *nodes,
-    int index,
+    Tcl_Size index,
     Tcl_Obj *const **litObjvPtr)
 {
     CompileEnv *envPtr;
@@ -2275,7 +2275,7 @@ ExecConstantExprTree(
     envPtr = (CompileEnv *)TclStackAlloc(interp, sizeof(CompileEnv));
     TclInitCompileEnv(interp, envPtr, NULL, 0, NULL, 0);
     CompileExprTree(interp, nodes, index, litObjvPtr, NULL, NULL, envPtr,
-	    0 /* optimize */);
+	    false /* optimize */);
     OP(				DONE);
     byteCodePtr = TclInitByteCode(envPtr);
     TclFreeCompileEnv(envPtr);
@@ -2313,12 +2313,12 @@ static void
 CompileExprTree(
     Tcl_Interp *interp,
     OpNode *nodes,
-    int index,
+    Tcl_Size index,
     Tcl_Obj *const **litObjvPtr,
     Tcl_Obj *const *funcObjv,
     Tcl_Token *tokenPtr,
     CompileEnv *envPtr,
-    int optimize)
+    bool optimize)
 {
     OpNode *nodePtr = nodes + index;
     OpNode *rootPtr = nodePtr;
@@ -2508,7 +2508,7 @@ CompileExprTree(
 		}
 	    } else {
 		/*
-		 * When optimize==0, we know the expression is a one-off and
+		 * When optimize==false, we know the expression is a one-off and
 		 * there's nothing to be gained from sharing literals when
 		 * they won't live long, and the copies we have already have
 		 * an appropriate internalrep. In this case, skip literal
@@ -2596,7 +2596,7 @@ int
 TclSingleOpCmd(
     void *clientData,
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     TclOpCmdClientData *occdPtr = (TclOpCmdClientData *)clientData;
@@ -2649,7 +2649,7 @@ int
 TclSortingOpCmd(
     void *clientData,
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     int code = TCL_OK;
@@ -2663,7 +2663,8 @@ TclSortingOpCmd(
 	OpNode *nodes = (OpNode *)TclStackAlloc(interp,
 		2 * (objc-2) * sizeof(OpNode));
 	unsigned char lexeme;
-	int i, lastAnd = 1;
+	Tcl_Size i;
+	int lastAnd = 1;
 	Tcl_Obj *const *litObjPtrPtr = litObjv;
 
 	ParseLexeme(occdPtr->op, strlen(occdPtr->op), &lexeme, NULL);
@@ -2683,12 +2684,12 @@ TclSortingOpCmd(
 	    nodes[j].lexeme = AND;
 	    nodes[j].mark = MARK_LEFT;
 	    nodes[j].left = lastAnd;
-	    nodes[lastAnd].p.parent = j;
+	    nodes[lastAnd].p.parent = 2*((int)i-1);
 
-	    nodes[j].right = j + 1;
-	    nodes[j + 1].p.parent= j;
+	    nodes[2*(i-1)].right = 2*((int)i-1)+1;
+	    nodes[2*(i-1)+1].p.parent= 2*((int)i-1);
 
-	    lastAnd = j;
+	    lastAnd = 2*((int)i-1);
 	}
 	litObjv[2 * (objc - 2) - 1] = objv[objc - 1];
 
@@ -2731,7 +2732,7 @@ int
 TclVariadicOpCmd(
     void *clientData,
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     TclOpCmdClientData *occdPtr = (TclOpCmdClientData *)clientData;
@@ -2791,7 +2792,8 @@ TclVariadicOpCmd(
 	Tcl_Obj *const *litObjv = objv + 1;
 	OpNode *nodes = (OpNode *)TclStackAlloc(interp,
 		(objc - 1) * sizeof(OpNode));
-	int i, lastOp = OT_LITERAL;
+	Tcl_Size i;
+	int lastOp = OT_LITERAL;
 
 	nodes[0].lexeme = START;
 	nodes[0].mark = MARK_RIGHT;
@@ -2802,9 +2804,9 @@ TclVariadicOpCmd(
 		nodes[i].left = OT_LITERAL;
 		nodes[i].right = lastOp;
 		if (lastOp >= 0) {
-		    nodes[lastOp].p.parent = i;
+		    nodes[lastOp].p.parent = (int)i;
 		}
-		lastOp = i;
+		lastOp = (int)i;
 	    }
 	} else {
 	    for (i=1; i<objc-1; i++) {
@@ -2812,10 +2814,10 @@ TclVariadicOpCmd(
 		nodes[i].mark = MARK_LEFT;
 		nodes[i].left = lastOp;
 		if (lastOp >= 0) {
-		    nodes[lastOp].p.parent = i;
+		    nodes[lastOp].p.parent = (int)i;
 		}
 		nodes[i].right = OT_LITERAL;
-		lastOp = i;
+		lastOp = (int)i;
 	    }
 	}
 	nodes[0].right = lastOp;
@@ -2851,7 +2853,7 @@ int
 TclNoIdentOpCmd(
     void *clientData,
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     TclOpCmdClientData *occdPtr = (TclOpCmdClientData *)clientData;
