@@ -1388,13 +1388,20 @@ StringFirstCmd(
     }
 
     if (objc == 4) {
-	Tcl_Size end = Tcl_GetCharLength(objv[2]) - 1;
+	Tcl_Size end = Tcl_AttemptGetCharLength(objv[2]);
+	if (end-- < 0) {
+	    return TclCannotAllocateError(interp, objv[2]);
+	}
 
 	if (TCL_OK != TclGetIntForIndexM(interp, objv[3], end, &start)) {
 	    return TCL_ERROR;
 	}
     }
-    Tcl_SetObjResult(interp, TclStringFirst(objv[1], objv[2], start));
+    Tcl_Obj *objPtr = TclStringFirst(objv[1], objv[2], start);
+    if (!objPtr) {
+	return TclCannotAllocateError(interp, objPtr);
+    }
+    Tcl_SetObjResult(interp, objPtr);
     return TCL_OK;
 }
 
@@ -2366,7 +2373,11 @@ StringRangeCmd(
      * 'end' refers to the last character, not one past it.
      */
 
-    end = Tcl_GetCharLength(objv[1]) - 1;
+    end = Tcl_AttemptGetCharLength(objv[1]);
+    if (end < 0) {
+	return TclCannotAllocateError(interp, objv[1]);
+    }
+    end--;
 
     if (TclGetIntForIndexM(interp, objv[2], end, &first) != TCL_OK ||
 	    TclGetIntForIndexM(interp, objv[3], end, &last) != TCL_OK) {
@@ -2542,7 +2553,11 @@ StringRevCmd(
 	return TCL_ERROR;
     }
 
-    Tcl_SetObjResult(interp, TclStringReverse(objv[1], TCL_STRING_IN_PLACE));
+    Tcl_Obj *objPtr = TclStringReverse(objv[1], TCL_STRING_IN_PLACE);
+    if (!objPtr) {
+	return TclCannotAllocateError(interp, objv[1]);
+    }
+    Tcl_SetObjResult(interp, objPtr);
     return TCL_OK;
 }
 
@@ -2754,6 +2769,11 @@ StringEqualCmd(
 
     objv += objc-2;
     match = TclStringCmp(objv[0], objv[1], 1, nocase, reqlength);
+    if (match == INT_MIN) {
+	Tcl_AppendResult(interp, "cannot allocate", (char *)NULL);
+	Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
+	return TCL_ERROR;
+    }
     Tcl_SetObjResult(interp, Tcl_NewBooleanObj(match ? 0 : 1));
     return TCL_OK;
 }
@@ -2799,6 +2819,13 @@ StringCmpCmd(
 
     objv += objc-2;
     match = TclStringCmp(objv[0], objv[1], 0, nocase, reqlength);
+    if (match == INT_MIN) {
+	if (interp) {
+	    Tcl_AppendResult(interp, "cannot allocate", (char *)NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
+	}
+	return TCL_ERROR;
+    }
     Tcl_SetObjResult(interp, Tcl_NewWideIntObj(match));
     return TCL_OK;
 }
