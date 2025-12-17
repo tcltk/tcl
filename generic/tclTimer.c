@@ -1075,7 +1075,6 @@ Tcl_AfterObjCmd(
 
     switch (index) {
     case -1: {
-	Tcl_Time wakeup;
 	AfterInfo *afterPtr;
 	AfterAssocData *assocPtr;
 	ThreadSpecificData *tsdPtr;
@@ -1087,8 +1086,6 @@ Tcl_AfterObjCmd(
 
 	long long wakeupUS;
 	wakeupUS = Tcl_GetMonotonicTime();
-	wakeup.sec = wakeupUS/1000000;
-	wakeup.usec = wakeupUS%1000000;
 
 	if (ms >= LLONG_MAX / 1000) {
 	    TimeTooFarError(interp);
@@ -2250,9 +2247,6 @@ TimerIdleCmd(
     Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    AfterAssocData *assocPtr = TimerAssocDataGet(interp);
-    ThreadSpecificData *tsdPtr = InitTimer();
-
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 0, objv, "timer idle script");
 	return TCL_ERROR;
