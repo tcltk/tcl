@@ -280,6 +280,7 @@ Tcl_GetMonotonicTime()		/* Location to store time information. */
     (void) gettimeofday(&tv, NULL);
     microSeconds = (long long)tv.tv_sec * 1000000 + tv.tv_usec;
 #endif
+    return microSeconds;
 }
 
 /*
