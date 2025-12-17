@@ -52,7 +52,7 @@ If a *start* value is specified as the first argument, the *end* value of the se
 
 A short form use of the command with a single argument *count* will create a sequence from 0 to *count*-1. It can optioanlly be followed by a step value preceeded by the word **by**.
 
-The **lseq** command can produce both increasing and decreasing sequences. When both *start* and *end* are provided without a *stepValue*, then if *start* <= *end*, the sequence will be increasing and if *start* > *end* it will be decreasing. If the *stepValue* is included, it's sign should agree with the direction of the sequence (descending \(-> negative and ascending \(-> positive), otherwise an empty list is returned.  For example:
+The **lseq** command can produce both increasing and decreasing sequences. When both *start* and *end* are provided without a *stepValue*, then if *start* <= *end*, the sequence will be increasing and if *start* > *end* it will be decreasing. If the *stepValue* is included, it's sign should agree with the direction of the sequence (descending → negative and ascending → positive), otherwise an empty list is returned.  For example:
 
 ```
 % lseq 1 to 5    ;# increasing

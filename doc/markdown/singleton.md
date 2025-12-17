@@ -29,7 +29,15 @@ oo::singleton - A class that does only allows one instance of itself
 
 # Class hierarchy
 
-**oo::object**    \(-> **oo::class**        \(-> **oo::singleton**
+::: {.classhierarchy} :::
+
+```
+oo::object
+   → oo::class
+       → oo::singleton
+```
+
+:::
 
 # Description
 

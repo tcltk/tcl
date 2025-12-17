@@ -70,6 +70,7 @@ List of nroff commands/macros currently implemented (partly not a complete imple
 
 - .\" (comments)
 - '\" (comments)
+- \(-> (right arrow, converted to \u2192)
 - \\N'34' (literal double quote)
 - backslash escapes "e" and "c"
 - . (single dot as placeholder)
@@ -85,7 +86,7 @@ List of nroff commands/macros currently implemented (partly not a complete imple
 - .AS (maximum sizes of arguments for setting tab stops)
 - .ta (set tab stops)
 - .RS .RE (relative inset, i.e. indentation)
-- .nf .fi (turn off/on filling of lines)
+- .nf .fi (turn off/on filling of lines, only used in SYNOPSIS and oo CLASS HIERARCHY, the effect being similar to <pre> and <code> for HTML)
 - .TH (title heading)
 - .TP (tagged paragraph)
 - .IP (indented paragaph)

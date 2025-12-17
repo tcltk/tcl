@@ -37,7 +37,14 @@ oo::define, oo::objdefine, oo::Slot - Define and configure classes and objects
 
 # Class hierarchy
 
-**oo::object**    \(-> **oo::Slot**
+::: {.classhierarchy} :::
+
+```
+oo::object
+   → oo::Slot
+```
+
+:::
 
 # Description
 

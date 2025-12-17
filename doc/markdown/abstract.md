@@ -30,7 +30,15 @@ oo::abstract - A class that does not allow direct instances of itself
 
 # Class hierarchy
 
-**oo::object**    \(-> **oo::class**        \(-> **oo::abstract**
+::: {.classhierarchy} :::
+
+```
+oo::object
+   → oo::class
+       → oo::abstract
+```
+
+:::
 
 # Description
 

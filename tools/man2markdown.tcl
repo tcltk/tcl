@@ -501,7 +501,8 @@ proc ::ndoc::parseBackslash {text} {
 		\u005ce \u005c
 		\u005c- -
 		\N'34' \"
-		\(en –
+		\\(en –
+		\\(-> \u2192
 	} $text]
 	return $text
 }
@@ -890,6 +891,28 @@ proc ::ndoc::parseBlock {parent manContent} {
 						# add to AST wrapped in a fenced div:
 						lappend blockList [list Div .synopsis $contentList]
 						# remove eaten lines from manContent:
+						set manContent [lrange $manContent $lineCount end]
+					}
+					"Class hierarchy" {
+						# this is a section only present for oo commands
+						# and presenting a hierarchical view of the object in the man page
+						lappend blockList [list Header {-level 1} $SHcontent]
+						# go to first line of section content after the .nf
+						# (assuming no blank lines and identical formatting in all relevant pages):
+						set manContent [lrange $manContent 2 end]
+						set line [lindex $manContent 0]
+						set cmd [string range $line 0 2]
+						set contentList [list]
+						set lineCount 0
+						while {$cmd ne ".fi"} {
+							lappend contentList [BIRPstrip $line]
+							# go to next line:
+							incr lineCount
+							set line [lindex $manContent $lineCount]
+							set cmd [string range $line 0 2]
+						}
+						set contentList [join [parseBackslash $contentList] \n]
+						lappend blockList [list Div .classhierarchy [list [list Code {} $contentList]]]
 						set manContent [lrange $manContent $lineCount end]
 					}
 					default {

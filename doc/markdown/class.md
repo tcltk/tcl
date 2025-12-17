@@ -29,7 +29,14 @@ oo::class - The class of all classes
 
 # Class hierarchy
 
-**oo::object**    \(-> **oo::class**
+::: {.classhierarchy} :::
+
+```
+oo::object
+   → oo::class
+```
+
+:::
 
 # Description
 

@@ -361,7 +361,7 @@ The following format groups are recognized by the **clock scan** and **clock for
 : Synonymous with **%H:%M:%S**.
 
 **%u**
-: On output, produces the number of the day of the week (**1**\(->Monday, **7**\(->Sunday). On input, accepts a single digit and interprets it as the day of the week. Sunday may be either **0** or **7**.
+: On output, produces the number of the day of the week (**1**→Monday, **7**→Sunday). On input, accepts a single digit and interprets it as the day of the week. Sunday may be either **0** or **7**.
 
 **%U**
 : On output, produces the ordinal number of the week of the year (00-53). The first Sunday of the year is the first day of week 01. On input accepts two digits which are otherwise ignored. This format group is never used in determining an input date.  This interpretation of the week of the year was once common in US banking but is now largely obsolete.  See **%V** for the ISO8601 week number.

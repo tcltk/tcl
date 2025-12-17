@@ -30,7 +30,13 @@ oo::object - The root class of the class hierarchy
 
 # Class hierarchy
 
-**oo::object**
+::: {.classhierarchy} :::
+
+```
+oo::object
+```
+
+:::
 
 # Description
 

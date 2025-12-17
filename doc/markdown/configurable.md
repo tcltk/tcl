@@ -45,7 +45,19 @@ oo::configurable, configure, property - A class that makes configurable classes 
 
 # Class hierarchy
 
-**oo::object**    \(-> **oo::class**        \(-> **oo::configurable**  **oo::object**    \(-> **oo::class**        \(-> **oo::configurablesupport::configurable**
+::: {.classhierarchy} :::
+
+```
+oo::object
+   → oo::class
+       → oo::configurable
+
+oo::object
+   → oo::class
+       → oo::configurablesupport::configurable
+```
+
+:::
 
 # Description
 
