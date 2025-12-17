@@ -707,12 +707,12 @@ test timer-6.14.1 {timer cancel during handler} -setup {
 } -body {
     set id [
 	timer in 100 ms {
-	    set x [catch [list timer cancel $id]]
+	    set x done
+	    timer cancel $id
 	}
     ]
     vwait x
-    set x
-} -result {1}
+} -result {}
 
 test timer-6.15 {Tcl_AfterCmd procedure, cancel option, multiple interps} -setup {
     foreach i [after info] {
@@ -908,20 +908,6 @@ test timer-6.25 {Tcl_AfterCmd procedure, cancel option, script with NUL} -setup 
 	after cancel $i
     }
 } -result {1}
-
-test timer-6.25.1 {timer cancel, script with NUL} -setup {
-    foreach i [timer info] {
-	timer cancel $i
-    }
-} -body {
-    set x "hello world"
-    timer in 1 ms "set x ab\x00cd"
-    timer cancel "set x ab\x00ef"
-} -cleanup {
-    foreach i [timer info] {
-	timer cancel $i
-    }
-} -returnCodes 1 -result "event not found"
 
 # Same as 6.25, isn't it?
 test timer-6.26 {Tcl_AfterCmd procedure, cancel option, script with NUL} -setup {
@@ -1502,8 +1488,8 @@ test timer-16.2 {"timer cancel" basic} -body {
 }  -returnCodes error -result {wrong # args: should be "timer cancel id|script"}
 
 test timer-16.3 {"timer cancel" on unknown event} -body {
-    timer cancel {event 1}
-}  -returnCodes error -result {event not found}
+    timer cancel unknown
+}  -result {}
 
 ## timer idle
 

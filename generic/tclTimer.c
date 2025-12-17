@@ -2222,13 +2222,6 @@ TimerCancelDo(
 	    Tcl_CancelIdleCall(AfterProc, afterPtr);
 	}
 	FreeAfterPtr(afterPtr);
-    } else if (isTimerCancel) {
-	if (interp != NULL) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "event not found", -1));
-	    Tcl_SetErrorCode(interp, "TCL","TIME","CANCEL", (char *)NULL);
-	}
-	return TCL_ERROR;
     }
     return TCL_OK;
 }
