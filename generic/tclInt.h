@@ -2509,14 +2509,6 @@ struct TclMaxAlignment {
 	(((x) + (TCL_ALIGN_BYTES - 1)) & ~(TCL_ALIGN_BYTES - 1))
 
 /*
- * A common panic alert when memory allocation fails.
- */
-
-#define TclOOM(ptr, size) \
-    ((size) && ((ptr) || (Tcl_Panic(					\
-	"unable to alloc %" TCL_Z_MODIFIER "u bytes", (size_t)(size)), 1)))
-
-/*
  * The following enum values are used to specify the runtime platform setting
  * of the tclPlatform variable.
  */
@@ -3019,11 +3011,6 @@ TclUpsizeRetry(
     }
 }
 
-MODULE_SCOPE void *	TclAllocElemsEx(Tcl_Size elemCount, Tcl_Size elemSize,
-			    Tcl_Size leadSize, Tcl_Size *capacityPtr);
-MODULE_SCOPE void *	TclReallocElemsEx(void *oldPtr, Tcl_Size elemCount,
-			    Tcl_Size elemSize, Tcl_Size leadSize,
-			    Tcl_Size *capacityPtr);
 MODULE_SCOPE void *	TclAttemptReallocElemsEx(void *oldPtr,
 			    Tcl_Size elemCount, Tcl_Size elemSize,
 			    Tcl_Size leadSize, Tcl_Size *capacityPtr);
@@ -3043,30 +3030,11 @@ TclAttemptAllocElemsEx(
 
 /* Alloc numByte bytes, returning actual capacity in *capacityPtr. */
 static inline void *
-TclAllocEx(
-    Tcl_Size numBytes,
-    Tcl_Size *capacityPtr)
-{
-    return TclAllocElemsEx(numBytes, 1, 0, capacityPtr);
-}
-
-/* Alloc numByte bytes, returning actual capacity in *capacityPtr. */
-static inline void *
 TclAttemptAllocEx(
     Tcl_Size numBytes,
     Tcl_Size *capacityPtr)
 {
     return TclAttemptAllocElemsEx(numBytes, 1, 0, capacityPtr);
-}
-
-/* Realloc numByte bytes, returning actual capacity in *capacityPtr. */
-static inline void *
-TclReallocEx(
-    void *oldPtr,
-    Tcl_Size numBytes,
-    Tcl_Size *capacityPtr)
-{
-    return TclReallocElemsEx(oldPtr, numBytes, 1, 0, capacityPtr);
 }
 
 /* Realloc numByte bytes, returning actual capacity in *capacityPtr. */
@@ -4188,6 +4156,7 @@ MODULE_SCOPE Tcl_Size	TclIndexDecode(int encoded, Tcl_Size endValue);
  * Error message utility functions
  */
 MODULE_SCOPE int	TclListLimitExceededError(Tcl_Interp *interp);
+MODULE_SCOPE int	TclCannotAllocateError(Tcl_Interp *interp, Tcl_Obj *objPtr);
 
 /* Constants used in index value encoding routines. */
 #define TCL_INDEX_END	((Tcl_Size)-2)
@@ -4541,6 +4510,14 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
     ((objPtr)->bytes							\
 	    ? (*(lenPtr) = (objPtr)->length, (objPtr)->bytes)		\
 	    : (Tcl_GetStringFromObj)((objPtr), (lenPtr)))
+
+#define TclAttemptGetString(objPtr) \
+    ((objPtr)->bytes? (objPtr)->bytes : Tcl_AttemptGetString(objPtr))
+
+#define TclAttemptGetStringFromObj(objPtr, lenPtr) \
+    ((objPtr)->bytes							\
+	    ? (*(lenPtr) = (objPtr)->length, (objPtr)->bytes)		\
+	    : (Tcl_AttemptGetStringFromObj)((objPtr), (lenPtr)))
 
 /*
  *----------------------------------------------------------------
@@ -4907,6 +4884,21 @@ MODULE_SCOPE Tcl_LibraryInitProc Tcl_ABSListTest_Init;
 	TCL_DTRACE_OBJ_CREATE(objPtr);					\
     } while (0)
 
+#define TclAttemptNewStringObj(objPtr, s, len)				\
+    do {								\
+	TclIncrObjsAllocated();						\
+	TclAllocObjStorage(objPtr);					\
+	(objPtr)->refCount = 0;						\
+	if (TclAttemptInitStringRep((objPtr), (s), (len))) {		\
+	    (objPtr)->typePtr = NULL;					\
+	    TCL_DTRACE_OBJ_CREATE(objPtr);				\
+	} else {							\
+	    TclFreeObjStorage(objPtr);					\
+	    objPtr = NULL;						\
+	    TclIncrObjsFreed();						\
+	}											\
+    } while (0)
+
 #else /* TCL_MEM_DEBUG */
 #define TclNewIntObj(objPtr, w) \
     (objPtr) = Tcl_NewWideIntObj(w)
@@ -4934,6 +4926,10 @@ MODULE_SCOPE Tcl_LibraryInitProc Tcl_ABSListTest_Init;
 
 #define TclNewStringObj(objPtr, s, len) \
     (objPtr) = Tcl_NewStringObj((s), (len))
+
+#define TclAttemptNewStringObj(objPtr, s, len) \
+    (objPtr) = Tcl_AttemptNewStringObj((s), (len))
+
 #endif /* TCL_MEM_DEBUG */
 
 /*
