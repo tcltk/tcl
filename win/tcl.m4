@@ -579,7 +579,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 
     if test "${GCC}" = "yes" ; then
 	extra_cflags="-pipe"
-	extra_ldflags="-pipe -static-libgcc"
+	extra_ldflags="-pipe -static-libgcc -municode"
 	AC_CACHE_CHECK(for mingw32 version of gcc,
 	    ac_cv_win32,
 	    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
@@ -597,20 +597,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    extra_cflags="$extra_cflags -DHAVE_CPUID=1"
 	fi
 
-	hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -mwindows -municode -Dmain=xxmain"
-	AC_CACHE_CHECK(for working -municode linker flag,
-	    ac_cv_municode,
-	AC_LINK_IFELSE([AC_LANG_PROGRAM([[
-	#include <windows.h>
-	int APIENTRY wWinMain(HINSTANCE a, HINSTANCE b, LPWSTR c, int d) {return 0;}
-	]], [[]])],
-	    [ac_cv_municode=yes],
-	    [ac_cv_municode=no])
-	)
-	CFLAGS=$hold_cflags
-	if test "$ac_cv_municode" = "yes" ; then
-	    extra_ldflags="$extra_ldflags -municode"
-	fi
 	hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -fno-lto"
 	AC_CACHE_CHECK(for working -fno-lto,
 	    ac_cv_nolto,
