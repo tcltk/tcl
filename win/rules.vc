@@ -24,7 +24,7 @@ _RULES_VC = 1
 # For modifications that are not backward-compatible, you *must* change
 # the major version.
 RULES_VERSION_MAJOR = 1
-RULES_VERSION_MINOR = 15
+RULES_VERSION_MINOR = 16
 
 # The PROJECT macro must be defined by parent makefile.
 !if "$(PROJECT)" == ""
@@ -1079,7 +1079,7 @@ BUILDDIRTOP =$(BUILDDIRTOP)_$(MACHINE)
 BUILDDIRTOP =$(BUILDDIRTOP)_VC$(VCVER)
 !endif
 
-!if !$(DEBUG) || $(TCL_VERSION) > 86 || $(DEBUG) && $(UNCHECKED)
+!if !$(DEBUG) || $(TCL_VERSION) >= 90 || $(DEBUG) && $(UNCHECKED)
 SUFX	    = $(SUFX:g=)
 !endif
 
@@ -1094,13 +1094,13 @@ SUFX	    = $(SUFX:x=)
 !else
 TMP_DIRFULL = $(TMP_DIRFULL:Dynamic=)
 EXT	    = lib
-!if $(MSVCRT) && $(TCL_VERSION) > 86 || !$(MSVCRT) && $(TCL_VERSION) < 87
+!if $(MSVCRT) && $(TCL_VERSION) >= 90 || !$(MSVCRT) && $(TCL_VERSION) < 90
 TMP_DIRFULL = $(TMP_DIRFULL:X=)
 SUFX	    = $(SUFX:x=)
 !endif
 !endif
 
-!if !$(TCL_THREADS) || $(TCL_VERSION) > 86
+!if !$(TCL_THREADS) || $(TCL_VERSION) >= 90
 TMP_DIRFULL = $(TMP_DIRFULL:Threaded=)
 SUFX	    = $(SUFX:t=)
 !endif
@@ -1383,7 +1383,7 @@ INCLUDE_INSTALL_DIR	= $(_INSTALLDIR)\..\include
 # baselibs - minimum Windows libraries required. Parent makefile can
 #    define PRJ_LIBS before including rules.rc if additional libs are needed
 
-OPTDEFINES	= /DSTDC_HEADERS /DUSE_NMAKE=1
+OPTDEFINES	= /DSTDC_HEADERS /DUSE_NMAKE=1 /HIGHENTROPYVA:NO
 !if $(VCVERSION) > 1600
 OPTDEFINES	= $(OPTDEFINES) /DHAVE_STDINT_H=1
 !else
@@ -1399,15 +1399,15 @@ OPTDEFINES	= $(OPTDEFINES) /DTCL_MEM_DEBUG
 !if $(TCL_COMPILE_DEBUG)
 OPTDEFINES	= $(OPTDEFINES) /DTCL_COMPILE_DEBUG /DTCL_COMPILE_STATS
 !endif
-!if $(TCL_THREADS) && $(TCL_VERSION) < 87
+!if $(TCL_THREADS) && $(TCL_VERSION) < 90
 OPTDEFINES	= $(OPTDEFINES) /DTCL_THREADS=1
-!if $(USE_THREAD_ALLOC) && $(TCL_VERSION) < 87
+!if $(USE_THREAD_ALLOC) && $(TCL_VERSION) < 90
 OPTDEFINES	= $(OPTDEFINES) /DUSE_THREAD_ALLOC=1
 !endif
 !endif
 !if $(STATIC_BUILD)
 OPTDEFINES	= $(OPTDEFINES) /DSTATIC_BUILD
-!elseif $(TCL_VERSION) > 86
+!elseif $(TCL_VERSION) >= 90
 OPTDEFINES	= $(OPTDEFINES) /DTCL_WITH_EXTERNAL_TOMMATH
 !if "$(MACHINE)" == "AMD64" || "$(MACHINE)" == "ARM64"
 OPTDEFINES	= $(OPTDEFINES) /DMP_64BIT
@@ -1883,7 +1883,7 @@ TCLNMAKECONFIG	= "$(_TCLDIR)\win\$(BUILDDIRTOP)\tcl.nmake"
 !if defined(CORE_MACHINE) && "$(CORE_MACHINE)" != "$(MACHINE)"
 !error ERROR: Build target ($(MACHINE)) does not match the Tcl library architecture ($(CORE_MACHINE)).
 !endif
-!if $(TCL_VERSION) < 87 && defined(CORE_USE_THREAD_ALLOC) && $(CORE_USE_THREAD_ALLOC) != $(USE_THREAD_ALLOC)
+!if $(TCL_VERSION) < 90 && defined(CORE_USE_THREAD_ALLOC) && $(CORE_USE_THREAD_ALLOC) != $(USE_THREAD_ALLOC)
 !message WARNING: Value of USE_THREAD_ALLOC ($(USE_THREAD_ALLOC)) does not match its Tcl core value ($(CORE_USE_THREAD_ALLOC)).
 !endif
 !if defined(CORE_DEBUG) && $(CORE_DEBUG) != $(DEBUG)
