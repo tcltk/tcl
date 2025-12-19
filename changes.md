@@ -27,6 +27,7 @@ writing Tcl scripts.
 
 - [Memory efficient internal representations](https://core.tcl-lang.org/tcl/wiki?name=New+abstract+list+representations)
 for list operations on large lists.
+- [Continued 64-bit capacity: Command line arguments larger than 2Gb](https://core.tcl-lang.org/tips/doc/trunk/tip/626.md)
 
 # Bug fixes
  - [tclEpollNotfy PlatformEventsControl panics if websocket disconnected](https://core.tcl-lang.org/tcl/tktview/010d8f38)

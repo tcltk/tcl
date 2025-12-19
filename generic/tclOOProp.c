@@ -41,10 +41,10 @@ static const char *const propOptNames[] = {
 
 static int		Configurable_Getter(void *clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    int objc, Tcl_Obj *const *objv);
+			    Tcl_Size objc, Tcl_Obj *const *objv);
 static int		Configurable_Setter(void *clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    int objc, Tcl_Obj *const *objv);
+			    Tcl_Size objc, Tcl_Obj *const *objv);
 static void		DetailsDeleter(void *clientData);
 static int		DetailsCloner(Tcl_Interp *, void *oldClientData,
 			    void **newClientData);
@@ -59,16 +59,16 @@ static void		ImplementClassProperty(Tcl_Class targetObject,
  * Method descriptors
  */
 
-static const Tcl_MethodType GetterType = {
-    TCL_OO_METHOD_VERSION_1,
+static const Tcl_MethodType2 GetterType = {
+    TCL_OO_METHOD_VERSION_2,
     "PropertyGetter",
     Configurable_Getter,
     DetailsDeleter,
     DetailsCloner
 };
 
-static const Tcl_MethodType SetterType = {
-    TCL_OO_METHOD_VERSION_1,
+static const Tcl_MethodType2 SetterType = {
+    TCL_OO_METHOD_VERSION_2,
     "PropertySetter",
     Configurable_Setter,
     DetailsDeleter,
@@ -253,7 +253,7 @@ TclOO_Configurable_Configure(
     Tcl_Interp *interp,		/* Interpreter used for the result, error
 				 * reporting, etc. */
     Tcl_ObjectContext context,	/* The object/call context. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* The actual arguments. */
 {
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
@@ -373,7 +373,7 @@ Configurable_Getter(
     Tcl_Interp *interp,		/* Interpreter used for the result, error
 				 * reporting, etc. */
     Tcl_ObjectContext context,	/* The object/call context. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* The actual arguments. */
 {
     Tcl_Obj *propNamePtr = (Tcl_Obj *) clientData;
@@ -409,7 +409,7 @@ Configurable_Setter(
     Tcl_Interp *interp,		/* Interpreter used for the result, error
 				 * reporting, etc. */
     Tcl_ObjectContext context,	/* The object/call context. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* The actual arguments. */
 {
     Tcl_Obj *propNamePtr = (Tcl_Obj *) clientData;
@@ -542,18 +542,18 @@ FindClassProps(
 				 * property set. */
     Tcl_HashTable *accumulator)	/* Where to gather the names. */
 {
-    int i;
+    Tcl_Size i;
     Tcl_Obj *propName;
     Class *mixin, *sup;
 
   tailRecurse:
     if (writable) {
 	FOREACH(propName, clsPtr->properties.writable) {
-	    Tcl_CreateHashEntry(accumulator, (void *) propName, NULL);
+	    Tcl_CreateHashEntry(accumulator, propName, NULL);
 	}
     } else {
 	FOREACH(propName, clsPtr->properties.readable) {
-	    Tcl_CreateHashEntry(accumulator, (void *) propName, NULL);
+	    Tcl_CreateHashEntry(accumulator, propName, NULL);
 	}
     }
     if (clsPtr->thisPtr->flags & ROOT_OBJECT) {
@@ -593,17 +593,17 @@ FindObjectProps(
 				 * property set. */
     Tcl_HashTable *accumulator)	/* Where to gather the names. */
 {
-    int i;
+    Tcl_Size i;
     Tcl_Obj *propName;
     Class *mixin;
 
     if (writable) {
 	FOREACH(propName, oPtr->properties.writable) {
-	    Tcl_CreateHashEntry(accumulator, (void *) propName, NULL);
+	    Tcl_CreateHashEntry(accumulator, propName, NULL);
 	}
     } else {
 	FOREACH(propName, oPtr->properties.readable) {
-	    Tcl_CreateHashEntry(accumulator, (void *) propName, NULL);
+	    Tcl_CreateHashEntry(accumulator, propName, NULL);
 	}
     }
     FOREACH(mixin, oPtr->mixins) {
@@ -1028,10 +1028,10 @@ int
 TclOODefinePropertyCmd(
     void *useInstance,		/* NULL for class, non-NULL for object. */
     Tcl_Interp *interp,		/* For error reporting and lookup. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Arguments. */
 {
-    int i;
+    Tcl_Size i;
     const char *const options[] = {
 	"-get", "-kind", "-set", NULL
     };
@@ -1193,11 +1193,12 @@ int
 TclOOInfoClassPropCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Class *clsPtr;
-    int i, idx;
+    Tcl_Size i;
+    int idx;
     bool all = false, writable = false, allocated = false;
     Tcl_Obj *result;
 
@@ -1254,13 +1255,12 @@ int
 TclOOInfoObjectPropCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Object *oPtr;
-    int i, idx;
+    Tcl_Size i;
     bool all = false, writable = false;
-    Tcl_Obj *result;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "objName ?options...?");
@@ -1271,6 +1271,7 @@ TclOOInfoObjectPropCmd(
 	return TCL_ERROR;
     }
     for (i = 2; i < objc; i++) {
+	int idx;
 	if (Tcl_GetIndexFromObj(interp, objv[i], propOptNames, "option", 0,
 		&idx) != TCL_OK) {
 	    return TCL_ERROR;
@@ -1294,6 +1295,7 @@ TclOOInfoObjectPropCmd(
      * Get the properties.
      */
 
+    Tcl_Obj *result;
     if (all) {
 	result = TclOOGetAllObjectProperties(oPtr, writable);
     } else {

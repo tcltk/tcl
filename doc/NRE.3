@@ -162,7 +162,7 @@ int
 \fITheCmdOldObjProc\fR(
     void *clientData,
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     int result;
@@ -176,7 +176,7 @@ int
 
     return result;
 }
-\fBTcl_CreateObjCommand\fR(interp, "theCommand",
+\fBTcl_CreateObjCommand2\fR(interp, "theCommand",
         \fITheCmdOldObjProc\fR, clientData, TheCmdDeleteProc);
 .CE
 .PP
@@ -193,10 +193,10 @@ int
 \fITheCmdOldObjProc\fR(
     void *clientData,
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
-    return \fBTcl_NRCallObjProc\fR(interp, \fITheCmdNRObjProc\fR,
+    return \fBTcl_NRCallObjProc2\fR(interp, \fITheCmdNRObjProc\fR,
             clientData, objc, objv);
 }
 .CE
@@ -206,7 +206,7 @@ int
 \fITheCmdNRObjProc\fR
     void *clientData,
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Tcl_Obj *objPtr;

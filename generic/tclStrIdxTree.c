@@ -487,7 +487,7 @@ TclStrIdxTreePrint(
 int
 TclStrIdxTreeTestObjCmd(
     void *clientData, Tcl_Interp *interp,
-    int objc, Tcl_Obj *const objv[])
+    Tcl_Size objc, Tcl_Obj *const objv[])
 {
     const char *cs, *cin, *ret;
     static const char *const options[] = {

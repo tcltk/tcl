@@ -64,7 +64,7 @@ typedef struct BasicBlock {
 				 * block */
     int startLine;		/* Line number in the input script of the
 				 * instruction at the start of the block */
-    int jumpOffset;		/* Bytecode offset of the 'jump' instruction
+    Tcl_Size jumpOffset;	/* Bytecode offset of the 'jump' instruction
 				 * that ends the block, or -1 if there is no
 				 * jump. */
     int jumpLine;		/* Line number in the input script of the
@@ -734,7 +734,7 @@ int
 Tcl_AssembleObjCmd(
     void *clientData,		/* clientData */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     /*
@@ -742,7 +742,7 @@ Tcl_AssembleObjCmd(
      * because there needs to be one in place to execute bytecode.
      */
 
-    return Tcl_NRCallObjProc(interp, TclNRAssembleObjCmd, clientData,
+    return Tcl_NRCallObjProc2(interp, TclNRAssembleObjCmd, clientData,
 	    objc, objv);
 }
 
@@ -750,7 +750,7 @@ int
 TclNRAssembleObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     ByteCode *codePtr;		/* Pointer to the bytecode to execute */
