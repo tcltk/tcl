@@ -73,15 +73,15 @@ static int		NeedReversing(int format);
 static void		CopyNumber(const void *from, void *to,
 			    size_t length, int type);
 /* Binary ensemble commands */
-static Tcl_ObjCmdProc	BinaryFormatCmd;
-static Tcl_ObjCmdProc	BinaryScanCmd;
+static Tcl_ObjCmdProc2	BinaryFormatCmd;
+static Tcl_ObjCmdProc2	BinaryScanCmd;
 /* Binary encoding sub-ensemble commands */
-static Tcl_ObjCmdProc	BinaryEncodeHex;
-static Tcl_ObjCmdProc	BinaryDecodeHex;
-static Tcl_ObjCmdProc	BinaryEncode64;
-static Tcl_ObjCmdProc	BinaryDecode64;
-static Tcl_ObjCmdProc	BinaryEncodeUu;
-static Tcl_ObjCmdProc	BinaryDecodeUu;
+static Tcl_ObjCmdProc2	BinaryEncodeHex;
+static Tcl_ObjCmdProc2	BinaryDecodeHex;
+static Tcl_ObjCmdProc2	BinaryEncode64;
+static Tcl_ObjCmdProc2	BinaryDecode64;
+static Tcl_ObjCmdProc2	BinaryEncodeUu;
+static Tcl_ObjCmdProc2	BinaryDecodeUu;
 
 /*
  * The following tables are used by the binary encoders
@@ -494,12 +494,12 @@ Tcl_SetByteArrayLength(
  *----------------------------------------------------------------------
  */
 
-static int
+static bool
 MakeByteArray(
     Tcl_Interp *interp,
     Tcl_Obj *objPtr,
     Tcl_Size limit,
-    int demandProper,
+    bool demandProper,
     ByteArray **byteArrayPtrPtr)
 {
     Tcl_Size length;
@@ -509,14 +509,14 @@ MakeByteArray(
     unsigned char *dst = byteArrayPtr->bytes;
     unsigned char *dstEnd = dst + numBytes;
     const char *srcEnd = src + length;
-    int proper = 1;
+    bool proper = true;
 
     for (; src < srcEnd && dst < dstEnd; ) {
 	int ch;
 	Tcl_Size count = TclUtfToUniChar(src, &ch);
 
 	if (ch > 255) {
-	    proper = 0;
+	    proper = false;
 	    if (demandProper) {
 		if (interp) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -548,7 +548,7 @@ TclNarrowToBytes(
 	Tcl_ObjInternalRep ir;
 	ByteArray *byteArrayPtr;
 
-	if (0 == MakeByteArray(NULL, objPtr, TCL_INDEX_NONE, 0, &byteArrayPtr)) {
+	if (!MakeByteArray(NULL, objPtr, TCL_INDEX_NONE, 0, &byteArrayPtr)) {
 	    TclNewObj(objPtr);
 	    TclInvalidateStringRep(objPtr);
 	}
@@ -584,7 +584,7 @@ SetByteArrayFromAny(
     ByteArray *byteArrayPtr;
     Tcl_ObjInternalRep ir;
 
-    if (0 == MakeByteArray(interp, objPtr, limit, 1, &byteArrayPtr)) {
+    if (!MakeByteArray(interp, objPtr, limit, 1, &byteArrayPtr)) {
 	return TCL_ERROR;
     }
 
@@ -805,7 +805,7 @@ static int
 BinaryFormatCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Size arg;		/* Index of next argument to consume. */
@@ -1317,7 +1317,7 @@ static int
 BinaryScanCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Size arg;		/* Index of next argument to consume. */
@@ -2401,7 +2401,7 @@ static int
 BinaryEncodeHex(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Tcl_Obj *resultObj = NULL;
@@ -2449,7 +2449,7 @@ static int
 BinaryDecodeHex(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Tcl_Obj *resultObj = NULL;
@@ -2576,7 +2576,7 @@ static int
 BinaryEncode64(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Tcl_Obj *resultObj;
@@ -2704,7 +2704,7 @@ static int
 BinaryEncodeUu(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Tcl_Obj *resultObj;
@@ -2853,7 +2853,7 @@ static int
 BinaryDecodeUu(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Tcl_Obj *resultObj = NULL;
@@ -3029,7 +3029,7 @@ static int
 BinaryDecode64(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Tcl_Obj *resultObj = NULL;
