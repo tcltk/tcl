@@ -25,6 +25,7 @@
 #include "tclInt.h"
 #include "tclOO.h"
 #include <math.h>
+#include <assert.h>
 
 /*
  * Required for Testregexp*Cmd
@@ -287,6 +288,7 @@ static Tcl_ObjCmdProc2	TestWrongNumArgsCmd;
 static Tcl_ObjCmdProc2	TestGetIndexFromObjStructCmd;
 static Tcl_ObjCmdProc2	TestChannelCmd;
 static Tcl_ObjCmdProc2	TestChannelEventCmd;
+static Tcl_ObjCmdProc2	TestChanCreateCmd;
 static Tcl_ObjCmdProc2	TestSocketCmd;
 static Tcl_ObjCmdProc2	TestFilesystemCmd;
 static Tcl_ObjCmdProc2	TestSimpleFilesystemCmd;
@@ -596,6 +598,8 @@ Tcltest_Init(
 	    NULL, NULL);
     Tcl_CreateObjCommand2(interp, "testchannelevent", TestChannelEventCmd,
 	    NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "testchancreate", TestChanCreateCmd,
+                         NULL, NULL);
     Tcl_CreateObjCommand2(interp, "testcmdtoken", TestcmdtokenCmd, NULL,
 	    NULL);
     Tcl_CreateObjCommand2(interp, "testcmdinfo", TestcmdinfoCmd, NULL,
@@ -2039,19 +2043,21 @@ SpecialFree(
  *    these functions (i/o command cannot test all combinations)
  *    The arguments at the script level are roughly those of the above
  *    functions:
- *	encodingname srcbytes flags state dstlen ?srcreadvar? ?dstwrotevar? ?dstcharsvar?
- *
- * Results:
- *    TCL_OK or TCL_ERROR. This indicates any errors running the test, NOT the
- *    result of Tcl_UtfToExternal or Tcl_ExternalToUtf.
- *
- * Side effects:
+ *	encodingname srcbytes flags state dstlen prefixlen ?srcreadvar? ?dstwrotevar? ?dstcharsvar?
  *
  *    The result in the interpreter is a list of the return code from the
  *    Tcl_UtfToExternal/Tcl_ExternalToUtf functions, the encoding state, and
  *    an encoded binary string of length dstLen. Note the string is the
  *    entire output buffer, not just the part containing the decoded
  *    portion. This allows for additional checks at test script level.
+ *
+ *    The prefixUnit argument indicates the bytes to use as a prefix unit.
+ *    The main purpose of the prefix is to allow testing of very large
+ *    strings without the caller having to allocate at the script level
+ *    which is slow and memory intensive. The source string is appended to
+ *    the prefix in the buffer before calling the transform function.
+ *    Generally, it is used to test conditions at the INT_MAX length
+ *    boundary.
  *
  *    If any of the srcreadvar, dstwrotevar and dstcharsvar are specified and
  *    not empty, they are treated as names of variables where the *srcRead,
@@ -2060,17 +2066,27 @@ SpecialFree(
  *    The function also checks internally whether nuls are correctly
  *    appended as requested but the TCL_ENCODING_NO_TERMINATE flag
  *    and that no buffer overflows occur.
+ *
+ * Results:
+ *    TCL_OK or TCL_ERROR. This indicates any errors running the test, NOT the
+ *    result of Tcl_UtfToExternal or Tcl_ExternalToUtf.
+ *
  *------------------------------------------------------------------------
  */
 typedef int
 UtfTransformFn(Tcl_Interp *interp, Tcl_Encoding encoding, const char *src,
 	Tcl_Size srcLen, int flags, Tcl_EncodingState *statePtr, char *dst,
 	Tcl_Size dstLen, int *srcReadPtr, int *dstWrotePtr, int *dstCharsPtr);
+typedef enum {
+	UTF_TO_EXTERNAL,
+	EXTERNAL_TO_UTF,
+	UTF_TO_EXTERNAL_EX,
+	EXTERNAL_TO_UTF_EX
+} UtfTransformType;
 
-static int
-UtfExtWrapper(
+static int UtfExtWrapper(
     Tcl_Interp *interp,
-    UtfTransformFn *transformer,
+    UtfTransformType transform,
     Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
@@ -2078,34 +2094,64 @@ UtfExtWrapper(
     Tcl_EncodingState encState, *encStatePtr;
     Tcl_Size srcLen, bufLen;
     const unsigned char *bytes;
-    unsigned char *bufPtr;
-    int srcRead, dstLen, dstWrote, dstChars;
-    Tcl_Obj *srcReadVar, *dstWroteVar, *dstCharsVar;
+    char *dstBufPtr = NULL;
+    char *srcBufPtr = NULL;
+    Tcl_Size srcRead, prefixLen, dstLen, dstWrote, dstChars;
     int result;
     int flags;
     Tcl_Obj **flagObjs;
     Tcl_Size nflags;
+    const char *opts[] = {"-srcreadvar", "-dstwrotevar", "-dstcharsvar",
+	"-prefix", "-prefixlen", NULL};
+    enum {SRCREADVAR, DSTWROTEVAR, DSTCHARSVAR,
+	PREFIX, PREFIXLEN } optIndex;
+    Tcl_Obj *optObjs[(sizeof(opts) / sizeof(opts[0])) - 1];
     static const struct {
 	const char *flagKey;
 	int flag;
-    } flagMap[] = {
-	{"start", TCL_ENCODING_START},
-	{"end", TCL_ENCODING_END},
+    } flagMap[] = {{"start", TCL_ENCODING_START}, {"end", TCL_ENCODING_END},
 	{"noterminate", TCL_ENCODING_NO_TERMINATE},
 	{"charlimit", TCL_ENCODING_CHAR_LIMIT},
 	{"tcl8", TCL_ENCODING_PROFILE_TCL8},
 	{"strict", TCL_ENCODING_PROFILE_STRICT},
-	{"replace", TCL_ENCODING_PROFILE_REPLACE},
-	{NULL, 0}
-    };
+	{"replace", TCL_ENCODING_PROFILE_REPLACE}, {NULL, 0}};
     Tcl_Size i;
     Tcl_WideInt wide;
 
-    if (objc < 7 || objc > 10) {
+    if (objc < 7) {
 	Tcl_WrongNumArgs(interp, 2, objv,
-		"encoding srcbytes flags state dstlen ?srcreadvar? ?dstwrotevar? ?dstcharsvar?");
+	    "encoding srcbytes flags state dstlen ?-prefix prefix? ?-prefixlen "
+	    "prefixLen? ?-srcreadvar srcreadvar? ?-dstwrotevar dstwrotevar? "
+	    "?-dstcharsvar dstcharsvar?");
 	return TCL_ERROR;
     }
+    for (i = 0; i < (Tcl_Size) (sizeof(optObjs) / sizeof(optObjs[0])); ++i) {
+	optObjs[i] = NULL;
+    }
+    for (i = 7; i < objc; ++i) {
+	if (Tcl_GetIndexFromObj(interp, objv[i], opts, "option", 0,
+		&optIndex) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if (++i == objc) {
+	    Tcl_SetObjResult(interp,
+		Tcl_ObjPrintf("missing value for option \"%s\"",
+		    opts[optIndex]));
+	    return TCL_ERROR;
+	}
+	optObjs[optIndex] = objv[i];
+    }
+    prefixLen = 0;
+    if (optObjs[PREFIXLEN] != NULL && optObjs[PREFIX] != NULL) {
+	if (Tcl_GetSizeIntFromObj(interp, optObjs[PREFIXLEN], &prefixLen) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if (prefixLen < 0) {
+	    Tcl_SetResult(interp, "prefixLen must be non-negative", TCL_STATIC);
+	    return TCL_ERROR;
+	}
+    }
+
     if (Tcl_GetEncodingFromObj(interp, objv[2], &encoding) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -2113,6 +2159,7 @@ UtfExtWrapper(
     /* Flags may be specified as list of integers and keywords */
     flags = 0;
     if (Tcl_ListObjGetElements(interp, objv[4], &nflags, &flagObjs) != TCL_OK) {
+	Tcl_FreeEncoding(encoding);
 	return TCL_ERROR;
     }
 
@@ -2124,6 +2171,7 @@ UtfExtWrapper(
 	    int idx;
 	    if (Tcl_GetIndexFromObjStruct(interp, flagObjs[i], flagMap, sizeof(flagMap[0]),
 		    "flag", 0, &idx) != TCL_OK) {
+		Tcl_FreeEncoding(encoding);
 		return TCL_ERROR;
 	    }
 	    flags |= flagMap[idx].flag;
@@ -2140,60 +2188,107 @@ UtfExtWrapper(
 	return TCL_ERROR;
     }
 
-    if (Tcl_GetIntFromObj(interp, objv[6], &dstLen) != TCL_OK) {
+    if (Tcl_GetSizeIntFromObj(interp, objv[6], &dstLen) != TCL_OK) {
+	Tcl_FreeEncoding(encoding);
 	return TCL_ERROR;
     }
-    srcReadVar = NULL;
-    dstWroteVar = NULL;
-    dstCharsVar = NULL;
-    if (objc > 7) {
-	/* Has caller requested srcRead? */
-	if (Tcl_GetCharLength(objv[7])) {
-	    srcReadVar = objv[7];
-	}
-	if (objc > 8) {
-	    /* Ditto for dstWrote */
-	    if (Tcl_GetCharLength(objv[8])) {
-		dstWroteVar = objv[8];
-	    }
-	    if (objc > 9) {
-		if (Tcl_GetCharLength(objv[9])) {
-		    dstCharsVar = objv[9];
-		}
-	    }
-	}
-    }
+
     if (flags & TCL_ENCODING_CHAR_LIMIT) {
 	/* Caller should have specified the dest char limit */
 	Tcl_Obj *valueObj;
-	if (dstCharsVar == NULL ||
-		(valueObj = Tcl_ObjGetVar2(interp, dstCharsVar, NULL, 0)) == NULL) {
+	if (optObjs[DSTCHARSVAR] == NULL ||
+		(valueObj = Tcl_ObjGetVar2(interp, optObjs[DSTCHARSVAR], NULL, 0)) == NULL) {
 	    Tcl_SetResult(interp,
-		    "dstCharsVar must be specified with integer value if "
-		    "TCL_ENCODING_CHAR_LIMIT set in flags.", TCL_STATIC);
+		"-dstcharsvar DSTCHARSVAR must be specified with integer value "
+		"in DSTCHARSVAR if TCL_ENCODING_CHAR_LIMIT set in flags.",
+		TCL_STATIC);
 	    return TCL_ERROR;
 	}
-	if (Tcl_GetIntFromObj(interp, valueObj, &dstChars) != TCL_OK) {
+	if (Tcl_GetSizeIntFromObj(interp, valueObj, &dstChars) != TCL_OK) {
 	    return TCL_ERROR;
 	}
     } else {
 	dstChars = 0; /* Only used for output */
     }
 
+    /* Set up output buffer */
     bufLen = dstLen + 4; /* 4 -> overflow detection */
-    bufPtr = (unsigned char *) Tcl_Alloc(bufLen);
-    memset(bufPtr, 0xFF, dstLen); /* Need to check nul terminator */
-    memmove(bufPtr + dstLen, "\xAB\xCD\xEF\xAB", 4);   /* overflow detection */
-    bytes = Tcl_GetByteArrayFromObj(objv[3], &srcLen); /* Last! to avoid shimmering */
-    result = (*transformer)(interp, encoding, (const char *)bytes, srcLen, flags,
-	    encStatePtr, (char *)bufPtr, dstLen,
-	    srcReadVar ? &srcRead : NULL,
-	    &dstWrote,
-	    dstCharsVar ? &dstChars : NULL);
-    if (memcmp(bufPtr + bufLen - 4, "\xAB\xCD\xEF\xAB", 4)) {
+    dstBufPtr = (char *) Tcl_Alloc(bufLen);
+    memset(dstBufPtr, 0xFF, dstLen); /* Need to check nul terminator */
+    memmove(dstBufPtr + dstLen, "\xAB\xCD\xEF\xAB", 4);   /* overflow detection */
+
+    /* Set up input buffer, including prefix if one has been specified */
+    bytes = Tcl_GetByteArrayFromObj(objv[3], &srcLen);
+    srcBufPtr = (char *) Tcl_Alloc(prefixLen+srcLen+1); /* +1 to ensure not 0 */
+    if (prefixLen != 0) {
+	const unsigned char *prefixBytes;
+	Tcl_Size nbytes;
+	prefixBytes = Tcl_GetBytesFromObj(interp, optObjs[PREFIX], &nbytes);
+	if (prefixBytes == NULL) {
+	    result = TCL_ERROR;
+	    goto done;
+	}
+	if (nbytes == 1) {
+	    memset(srcBufPtr, *prefixBytes, prefixLen);
+	} else if (nbytes > 1) {
+	    Tcl_Size units = prefixLen / nbytes;
+	    prefixLen = units * nbytes;
+	    char *to = srcBufPtr;
+	    while (units--) {
+		memmove(to, prefixBytes, nbytes);
+		to += nbytes;
+	    }
+	} else {
+	    prefixLen = 0;
+	}
+    }
+    Tcl_Size srcNumBytes = prefixLen + srcLen;
+    memmove(srcBufPtr + prefixLen, bytes, srcLen);
+    switch (transform) {
+    case UTF_TO_EXTERNAL:
+    case EXTERNAL_TO_UTF:
+	{
+	    int dstWrote32 = 0, dstChars32 = 0, srcRead32 = 0;
+	    if ((flags & TCL_ENCODING_CHAR_LIMIT) && (dstChars > INT_MAX)) {
+		Tcl_SetResult(interp,
+		    "dstChars too large for Tcl_UtfToExternal/Tcl_ExternalToUtf",
+		    TCL_STATIC);
+		result = TCL_ERROR;
+		goto done;
+	    }
+	    dstChars32 = (int)dstChars;
+	    result = (transform == UTF_TO_EXTERNAL ?
+			Tcl_UtfToExternal : Tcl_ExternalToUtf) (
+				interp, encoding, srcBufPtr,
+				srcNumBytes, flags, encStatePtr,
+				dstBufPtr, dstLen,
+				optObjs[SRCREADVAR] ? &srcRead32 : NULL,
+				optObjs[DSTWROTEVAR] ? &dstWrote32 : NULL,
+				optObjs[DSTCHARSVAR] ? &dstChars32 : NULL);
+	    srcRead = (Tcl_Size)srcRead32;
+	    dstWrote = (Tcl_Size)dstWrote32;
+	    dstChars = (Tcl_Size)dstChars32;
+	    break;
+	}
+    case EXTERNAL_TO_UTF_EX:
+	result = Tcl_ExternalToUtfEx(interp, encoding, srcBufPtr, srcNumBytes,
+	    flags, encStatePtr, dstBufPtr, dstLen,
+	    optObjs[SRCREADVAR] ? &srcRead : NULL,
+	    optObjs[DSTWROTEVAR] ? &dstWrote : NULL,
+	    optObjs[DSTCHARSVAR] ? &dstChars : NULL);
+	break;
+    case UTF_TO_EXTERNAL_EX:
+	result = Tcl_UtfToExternalEx(interp, encoding, srcBufPtr,
+		srcNumBytes, flags, encStatePtr, dstBufPtr, dstLen,
+	    	optObjs[SRCREADVAR] ? &srcRead : NULL,
+		&dstWrote,
+	    	optObjs[DSTCHARSVAR] ? &dstChars : NULL);
+	break;
+    }
+    if (memcmp(dstBufPtr + bufLen - 4, "\xAB\xCD\xEF\xAB", 4)) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"%s wrote past output buffer",
-		transformer == Tcl_ExternalToUtf ?
+		transform == EXTERNAL_TO_UTF ?
 			"Tcl_ExternalToUtf" : "Tcl_UtfToExternal"));
 	result = TCL_ERROR;
     } else if (result != TCL_ERROR) {
@@ -2221,29 +2316,34 @@ UtfExtWrapper(
 	result = TCL_OK;
 	resultObjs[1] =
 	    encStatePtr ? Tcl_NewWideIntObj((Tcl_WideInt)(size_t)encState) : Tcl_NewObj();
-	resultObjs[2] = Tcl_NewByteArrayObj(bufPtr, dstLen);
-	if (srcReadVar) {
-	    if (Tcl_ObjSetVar2(interp, srcReadVar, NULL, Tcl_NewIntObj(srcRead),
+	resultObjs[2] = Tcl_NewByteArrayObj((const unsigned char *)dstBufPtr, dstLen);
+	if (optObjs[SRCREADVAR]) {
+	    if (Tcl_ObjSetVar2(interp, optObjs[SRCREADVAR], NULL, Tcl_NewWideIntObj(srcRead),
 		    TCL_LEAVE_ERR_MSG) == NULL) {
 		result = TCL_ERROR;
 	    }
 	}
-	if (dstWroteVar) {
-	    if (Tcl_ObjSetVar2(interp, dstWroteVar, NULL, Tcl_NewIntObj(dstWrote),
+	if (optObjs[DSTWROTEVAR]) {
+	    if (Tcl_ObjSetVar2(interp, optObjs[DSTWROTEVAR], NULL, Tcl_NewWideIntObj(dstWrote),
 		    TCL_LEAVE_ERR_MSG) == NULL) {
 		result = TCL_ERROR;
 	    }
 	}
-	if (dstCharsVar) {
-	    if (Tcl_ObjSetVar2(interp, dstCharsVar, NULL, Tcl_NewIntObj(dstChars),
+	if (optObjs[DSTCHARSVAR]) {
+	    if (Tcl_ObjSetVar2(interp, optObjs[DSTCHARSVAR], NULL, Tcl_NewWideIntObj(dstChars),
 		    TCL_LEAVE_ERR_MSG) == NULL) {
 		result = TCL_ERROR;
 	    }
 	}
 	Tcl_SetObjResult(interp, Tcl_NewListObj(3, resultObjs));
     }
-
-    Tcl_Free(bufPtr);
+done:
+    if (srcBufPtr) {
+	Tcl_Free(srcBufPtr);
+    }
+    if (dstBufPtr) {
+	Tcl_Free(dstBufPtr);
+    }
     Tcl_FreeEncoding(encoding); /* Free returned reference */
     return result;
 }
@@ -2277,11 +2377,15 @@ TestencodingCmd(
     const char *string;
     TclEncoding *encodingPtr;
     static const char *const optionStrings[] = {
-	"create", "delete", "nullength", "Tcl_ExternalToUtf", "Tcl_UtfToExternal",
+	"create", "delete", "nullength", 
+	"Tcl_ExternalToUtf", "Tcl_UtfToExternal",
+	"Tcl_ExternalToUtfEx", "Tcl_UtfToExternalEx",
 	"Tcl_GetEncodingNameFromEnvironment", "Tcl_GetEncodingNameForUser", NULL
     };
     enum options {
-	ENC_CREATE, ENC_DELETE, ENC_NULLENGTH, ENC_EXTTOUTF, ENC_UTFTOEXT,
+	ENC_CREATE, ENC_DELETE, ENC_NULLENGTH,
+	ENC_EXTTOUTF, ENC_UTFTOEXT,
+	ENC_EXTTOUTF_EX, ENC_UTFTOEXT_EX,
 	ENC_GETNAMEENV, ENC_GETNAMEUSER
     } index;
 
@@ -2353,9 +2457,13 @@ TestencodingCmd(
 	Tcl_FreeEncoding(encoding);
 	break;
     case ENC_EXTTOUTF:
-	return UtfExtWrapper(interp,Tcl_ExternalToUtf,objc,objv);
+	return UtfExtWrapper(interp,EXTERNAL_TO_UTF,objc,objv);
     case ENC_UTFTOEXT:
-	return UtfExtWrapper(interp,Tcl_UtfToExternal,objc,objv);
+	return UtfExtWrapper(interp,UTF_TO_EXTERNAL,objc,objv);
+    case ENC_EXTTOUTF_EX:
+	return UtfExtWrapper(interp,EXTERNAL_TO_UTF_EX,objc,objv);
+    case ENC_UTFTOEXT_EX:
+	return UtfExtWrapper(interp,UTF_TO_EXTERNAL_EX,objc,objv);
     case ENC_GETNAMEUSER:
     case ENC_GETNAMEENV:
 	if (objc != 2) {
@@ -9062,6 +9170,316 @@ vamoose:
 	Tcl_DecrRefCount(l2Obj);
     }
     return ret;
+}
+
+/*
+ * testchan{source,sink} implementation - TestChanCreateObjCmd
+ */
+
+/*
+ * Common blocking procedure for source and sink.
+ * Channel is always ready so no-op :-)
+ */
+static int
+TestChanBlockMode(
+    TCL_UNUSED(ClientData), /* instanceData */
+    TCL_UNUSED(int))	    /* mode */
+{
+    return 0;
+}
+
+static void
+TestChanSourceWatch(
+    TCL_UNUSED(ClientData), /* instanceData */
+    int mask)
+{
+    if (mask)
+	Tcl_Panic("WatchModeProc not implemented for testchansource");
+}
+
+static void
+TestChanSinkWatch(
+    TCL_UNUSED(ClientData), /* instanceData */
+    int mask)
+{
+    if (mask)
+	Tcl_Panic("WatchModeProc not implemented for testchansink");
+}
+
+typedef struct TestChanSourceState {
+    Tcl_Size numSourced; /* How many bytes returned so far */
+    int len;             /* Length of data[] */
+    unsigned char data[1];
+
+} TestChanSourceState;
+
+static int
+TestChanSourceInput(
+    ClientData instanceData,
+    char *outPtr,      /* Where to store data. Assumed aligned */
+    const int maxReadCount, /* Maximum number of bytes to read. */
+    TCL_UNUSED(int *)) /* errorCodePtr - Where to store error codes. */
+{
+    TestChanSourceState *chanPtr = (TestChanSourceState *)instanceData;
+
+    /* Arbitrary failsafe to prevent running out of memory */
+    if (chanPtr->numSourced > 100000000)
+	return 0;
+
+    /*
+     * Bit of optimization to minimize overhead since goal is channel i/o
+     * measurement. Wonder if compiler would have been better anyways...
+     */
+    if (chanPtr->len == 1) {
+	memset(outPtr, chanPtr->data[0], maxReadCount);
+    } else if (chanPtr->len == sizeof(unsigned short) &&
+	       sizeof(unsigned short) == 2) {
+	union {
+	    unsigned short val;
+	    unsigned char bytes[sizeof(unsigned short)];
+	} u;
+	if (chanPtr->numSourced & 1) {
+	    u.bytes[0] = chanPtr->data[1];
+	    u.bytes[1] = chanPtr->data[0];
+	} else {
+	    u.bytes[0] = chanPtr->data[0];
+	    u.bytes[1] = chanPtr->data[1];
+	}
+	unsigned short *to = (unsigned short *)outPtr;
+	unsigned short *end = to + (maxReadCount / sizeof(unsigned short));
+	while (to < end)
+	    *to++ = u.val;
+	if (maxReadCount - (sizeof(unsigned short) * (end-to))) {
+	    *to = u.bytes[0];
+	}
+    } else if (chanPtr->len == sizeof(unsigned int) &&
+	       sizeof(unsigned int) == 4) {
+	union {
+	    unsigned int val;
+	    unsigned char bytes[sizeof(unsigned int)];
+	} u;
+	int offset = chanPtr->numSourced & 3;
+	u.bytes[0] = chanPtr->data[(offset + 0) & 3];
+	u.bytes[1] = chanPtr->data[(offset + 1) & 3];
+	u.bytes[2] = chanPtr->data[(offset + 2) & 3];
+	u.bytes[3] = chanPtr->data[(offset + 3) & 3];
+
+	unsigned int *to = (unsigned int *)outPtr;
+	unsigned int *end = to + (maxReadCount / sizeof(unsigned int));
+	int nremain = maxReadCount - (sizeof(unsigned int) * (end - to));
+	while (to < end)
+	    *to++ = u.val;
+	assert(nremain < chanPtr->len);
+	while (nremain--)
+	    *(nremain + (char *)to) = u.bytes[nremain];
+    } else {
+	char *to = outPtr;
+	int ncopied = 0;
+	int offset = chanPtr->numSourced % chanPtr->len;
+	if (offset) {
+	    int nbytes = (chanPtr->len - offset);
+	    if (maxReadCount <= nbytes) {
+		nbytes = maxReadCount;
+	    }
+	    memmove(to, chanPtr->data + offset, nbytes);
+	    to += nbytes;
+	    ncopied += nbytes;
+	}
+        int nchunks = (maxReadCount-ncopied)/chanPtr->len;
+	char *end = to + (nchunks * chanPtr->len);
+	int nremain = (maxReadCount-ncopied) - (end - to);
+	/* Copy the data in chunks */
+	while (to < end) {
+	    memmove(to, chanPtr->data, chanPtr->len);
+	    to += chanPtr->len;
+	}
+        assert(to == end);
+	if (nremain) {
+	    assert(nremain < chanPtr->len);
+	    memmove(outPtr + maxReadCount - nremain, chanPtr->data, nremain);
+	}
+    }
+    chanPtr->numSourced += maxReadCount;
+    return maxReadCount;
+}
+
+static int
+TestChanSourceClose2 (
+    ClientData instanceData,
+    TCL_UNUSED(Tcl_Interp *),	/* interp */
+    int flags)
+{
+    if (flags && instanceData)
+        Tcl_Free(instanceData);
+    return 0;
+}
+
+static int
+TestChanSinkOutput (
+    TCL_UNUSED(ClientData),	/* Instance data */
+    TCL_UNUSED(const char *),	/* Bytes to write */
+    int         nbytes,
+    TCL_UNUSED(int *))		/* errorCodePtr */
+{
+    return nbytes;
+}
+
+static int
+TestChanSinkClose2 (
+    TCL_UNUSED(ClientData),	/* Instance data */
+    TCL_UNUSED(Tcl_Interp *),	/* interp */
+    TCL_UNUSED(int))		/* flags */
+{
+    return 0;
+}
+
+Tcl_ChannelType TestChanSourceDispatch = {
+    "testchansource", /* Channel type name */
+    (Tcl_ChannelTypeVersion)TCL_CHANNEL_VERSION_5,
+    NULL,
+    TestChanSourceInput,
+    NULL, /* closeProc - not needed for Tcl 9 */
+    NULL, /* Seek */
+    NULL, /* SetOption */
+    NULL, /* GetOption */
+    TestChanSourceWatch,
+    NULL, /* GetHandle */
+    TestChanSourceClose2,
+    TestChanBlockMode, /* BlockMode */
+    NULL, /* Flush */
+    NULL, /* Handler */
+    NULL, /* WideSeek. */
+    NULL, /* ThreadAction */
+    NULL  /* Truncate */
+};
+
+Tcl_ChannelType TestChanSinkDispatch = {
+    "testchansink", /* Channel type name */
+    (Tcl_ChannelTypeVersion)TCL_CHANNEL_VERSION_5,
+    NULL,
+    NULL,
+    TestChanSinkOutput,
+    NULL, /* No Seek ability */
+    NULL, /* SetOption */
+    NULL, /* GetOption */
+    TestChanSinkWatch,
+    NULL, /* GetHandle */
+    TestChanSinkClose2,
+    TestChanBlockMode, /* BlockMode */
+    NULL, /* Flush */
+    NULL, /* Handler */
+    NULL, /* WideSeekProc. */
+    NULL, /* ThreadAction */
+    NULL  /* Truncate */
+};
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestChanCreateCmd --
+ *
+ *	This procedure implements the "testchancreate" command. The
+ *	purpose is primarily isolated performance testing of channels
+ *	and encodings.
+ *
+ *	testchancreate source ?BINARY?
+ *        Creates a read-only channel that will continuously return
+ *        BINARY (defaults to '\0')
+ *	testchancreate sink
+ *        Sends written data off into the void.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	Creates, deletes and returns channel event handlers.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestChanCreateCmd(
+    TCL_UNUSED(void*),
+    Tcl_Interp *interp,
+    Tcl_Size objc,
+    Tcl_Obj *const *objv)
+{
+    Tcl_Size len;
+    static const char *cmds[] = {"source", "sink", NULL};
+    enum { SOURCE, SINK } cmd;
+    int ret;
+    int flags = 0;
+    void *instancePtr = NULL;
+    Tcl_ChannelType *dispatchPtr = NULL;
+    const unsigned char *bytes = NULL;
+
+    if (objc < 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "source|sink ...");
+	return TCL_ERROR;
+    }
+    ret = Tcl_GetIndexFromObj(interp, objv[1], cmds, "source|sink", 0, &cmd);
+    if (ret != TCL_OK)
+	return ret;
+
+    switch (cmd) {
+    case SINK:
+	if (objc > 2) {
+	    Tcl_WrongNumArgs(interp, 1, objv, "sink");
+	    return TCL_ERROR;
+	}
+	flags = TCL_WRITABLE;
+	instancePtr = NULL;
+	dispatchPtr = &TestChanSinkDispatch;
+	break;
+    case SOURCE:
+	if (objc > 3) {
+	    Tcl_WrongNumArgs(interp, 1, objv, "source ?BINARY?");
+	    return TCL_ERROR;
+	}
+	if (objc == 2) {
+	    bytes = NULL;
+	    len = 0;
+	}
+	else {
+	    bytes = Tcl_GetBytesFromObj(interp, objv[2], &len);
+	    if (bytes == NULL)
+		return TCL_ERROR;
+	}
+	if (len == 0) {
+	    len = 1;
+	    bytes = (const unsigned char *)"\0";
+	}
+	TestChanSourceState *sourceStatePtr;
+	sourceStatePtr = (TestChanSourceState *) Tcl_Alloc(
+	    sizeof(TestChanSourceState) + len - sizeof(sourceStatePtr->data));
+	sourceStatePtr->numSourced = 0;
+	sourceStatePtr->len = len;
+	memmove(sourceStatePtr->data, bytes, len);
+	instancePtr = sourceStatePtr;
+	flags = TCL_READABLE;
+	dispatchPtr = &TestChanSourceDispatch;
+	break;
+    }
+
+    Tcl_Channel chan;
+    char channelName[100];
+    static int nameCounter;
+    snprintf(channelName,
+	     sizeof(channelName) / sizeof(channelName[0]),
+	     "%s%d",
+	     cmds[cmd],
+	     ++nameCounter);/* don't bother about race conditions */
+
+    chan = Tcl_CreateChannel(dispatchPtr, channelName, instancePtr, flags);
+    if (chan == NULL) {
+	if (instancePtr)
+	    Tcl_Free(instancePtr);
+	Tcl_SetResult(interp, "Failed to create channel", TCL_STATIC);
+	return TCL_ERROR;
+    }
+    Tcl_RegisterChannel(interp, chan);
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(channelName, -1));
+    return TCL_OK;
 }
 
 /*
