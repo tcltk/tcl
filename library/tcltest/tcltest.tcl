@@ -2266,6 +2266,18 @@ proc tcltest::test {name description args} {
 	if {$scriptCompare} {
 	    puts [outputChannel] "---- Error testing result: $scriptMatch"
 	} else {
+            if {[string length $actualAnswer] > 1000} {
+                set actualAnswer [string cat \
+                                      [string range $actualAnswer 0 499] \
+                                      "(long output elided)" \
+                                      [string range $actualAnswer end-499 end]]
+            }
+            if {[string length $result] > 1000} {
+                set result [string cat \
+                                      [string range $result 0 499] \
+                                      "(long output elided)" \
+                                      [string range $result end-499 end]]
+            }
 	    if {[catch {
 		puts [outputChannel] "---- Result was:\n[Asciify $actualAnswer]"
 	    } errMsg]} {
