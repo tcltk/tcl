@@ -1903,6 +1903,20 @@ EXTERN int		Tcl_UtfToNormalized(Tcl_Interp *interp,
 				int profile, char *bufPtr, Tcl_Size bufLen,
 				Tcl_Size *lengthPtr);
 /* 697 */
+EXTERN int		Tcl_ExternalToUtfEx(Tcl_Interp *interp,
+				Tcl_Encoding encoding, const char *src,
+				Tcl_Size srcLen, int flags,
+				Tcl_EncodingState *statePtr, char *dst,
+				Tcl_Size dstLen, Tcl_Size *srcReadPtr,
+				Tcl_Size *dstWrotePtr, Tcl_Size *dstCharsPtr);
+/* 698 */
+EXTERN int		Tcl_UtfToExternalEx(Tcl_Interp *interp,
+				Tcl_Encoding encoding, const char *src,
+				Tcl_Size srcLen, int flags,
+				Tcl_EncodingState *statePtr, char *dst,
+				Tcl_Size dstLen, Tcl_Size *srcReadPtr,
+				Tcl_Size *dstWrotePtr, Tcl_Size *dstCharsPtr);
+/* 699 */
 EXTERN void		TclUnusedStubEntry(void);
 
 typedef struct {
@@ -2612,7 +2626,9 @@ typedef struct TclStubs {
     int (*tcl_ListObjRange) (Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Size start, Tcl_Size end, Tcl_Obj **resultPtrPtr); /* 694 */
     int (*tcl_UtfToNormalizedDString) (Tcl_Interp *interp, const char *bytes, Tcl_Size length, Tcl_UnicodeNormalizationForm normForm, int profile, Tcl_DString *dsPtr); /* 695 */
     int (*tcl_UtfToNormalized) (Tcl_Interp *interp, const char *bytes, Tcl_Size length, Tcl_UnicodeNormalizationForm normForm, int profile, char *bufPtr, Tcl_Size bufLen, Tcl_Size *lengthPtr); /* 696 */
-    void (*tclUnusedStubEntry) (void); /* 697 */
+    int (*tcl_ExternalToUtfEx) (Tcl_Interp *interp, Tcl_Encoding encoding, const char *src, Tcl_Size srcLen, int flags, Tcl_EncodingState *statePtr, char *dst, Tcl_Size dstLen, Tcl_Size *srcReadPtr, Tcl_Size *dstWrotePtr, Tcl_Size *dstCharsPtr); /* 697 */
+    int (*tcl_UtfToExternalEx) (Tcl_Interp *interp, Tcl_Encoding encoding, const char *src, Tcl_Size srcLen, int flags, Tcl_EncodingState *statePtr, char *dst, Tcl_Size dstLen, Tcl_Size *srcReadPtr, Tcl_Size *dstWrotePtr, Tcl_Size *dstCharsPtr); /* 698 */
+    void (*tclUnusedStubEntry) (void); /* 699 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3956,8 +3972,12 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_UtfToNormalizedDString) /* 695 */
 #define Tcl_UtfToNormalized \
 	(tclStubsPtr->tcl_UtfToNormalized) /* 696 */
+#define Tcl_ExternalToUtfEx \
+	(tclStubsPtr->tcl_ExternalToUtfEx) /* 697 */
+#define Tcl_UtfToExternalEx \
+	(tclStubsPtr->tcl_UtfToExternalEx) /* 698 */
 #define TclUnusedStubEntry \
-	(tclStubsPtr->tclUnusedStubEntry) /* 697 */
+	(tclStubsPtr->tclUnusedStubEntry) /* 699 */
 
 #endif /* defined(USE_TCL_STUBS) */
 

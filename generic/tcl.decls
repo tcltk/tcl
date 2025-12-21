@@ -2405,9 +2405,26 @@ declare 696 {
 	    char *bufPtr, Tcl_Size bufLen, Tcl_Size *lengthPtr)
 }
 
+# TIP 732
+declare 697 {
+    int Tcl_ExternalToUtfEx(
+	    Tcl_Interp *interp, Tcl_Encoding encoding, const char *src,
+	    Tcl_Size srcLen, int flags, Tcl_EncodingState *statePtr, char *dst,
+	    Tcl_Size dstLen, Tcl_Size *srcReadPtr, Tcl_Size *dstWrotePtr,
+	    Tcl_Size *dstCharsPtr)
+}
+
+declare 698 {
+    int Tcl_UtfToExternalEx(
+	    Tcl_Interp *interp, Tcl_Encoding encoding, const char *src,
+	    Tcl_Size srcLen, int flags, Tcl_EncodingState *statePtr, char *dst,
+	    Tcl_Size dstLen, Tcl_Size *srcReadPtr, Tcl_Size *dstWrotePtr,
+	    Tcl_Size *dstCharsPtr)
+}
+
 # ----- BASELINE -- FOR -- 9.1.0 ----- #
 
-declare 697 {
+declare 699 {
     void TclUnusedStubEntry(void)
 }
 
