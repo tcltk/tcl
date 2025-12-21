@@ -495,6 +495,9 @@ proc tclPkgUnknown {name args} {
 		    } trap {POSIX EACCES} {} {
 			# $file was not readable; silently ignore
 			continue
+		    } trap {TCL PACKAGE VERSIONCONFLICT} {} {
+			# In case of version conflict, silently ignore
+			continue
 		    } on error msg {
 			tclLog "error reading package index file $file: $msg"
 		    } on ok {} {
@@ -507,11 +510,14 @@ proc tclPkgUnknown {name args} {
 	if {![info exists procdDirs($dir)]} {
 	    set file [file join $dir pkgIndex.tcl]
 	    # safe interps usually don't have "file exists",
-	    if {([interp issafe] || [file exists $file])} {
+	    if {[interp issafe] || [file exists $file]} {
 		try {
 		    source -encoding utf-8 $file
 		} trap {POSIX EACCES} {} {
 		    # $file was not readable; silently ignore
+		    continue
+		} trap {TCL PACKAGE VERSIONCONFLICT} {} {
+		    # In case of version conflict, silently ignore
 		    continue
 		} on error msg {
 		    tclLog "error reading package index file $file: $msg"
@@ -597,6 +603,9 @@ proc tcl::MacOSXPkgUnknown {original name args} {
 		    source $file
 		} trap {POSIX EACCES} {} {
 		    # $file was not readable; silently ignore
+		    continue
+		} trap {TCL PACKAGE VERSIONCONFLICT} {} {
+		    # In case of version conflict, silently ignore
 		    continue
 		} on error msg {
 		    tclLog "error reading package index file $file: $msg"
