@@ -87,7 +87,7 @@ static inline int	InitDefineContext(Tcl_Interp *interp,
 			    Tcl_Size objc, Tcl_Obj *const objv[]);
 static inline void	RecomputeClassCacheFlag(Object *oPtr);
 static int		RenameDeleteMethod(Tcl_Interp *interp, Object *oPtr,
-			    int useClass, Tcl_Obj *const fromPtr,
+			    bool useClass, Tcl_Obj *const fromPtr,
 			    Tcl_Obj *const toPtr);
 static Tcl_MethodCallProc2 Slot_Append;
 static Tcl_MethodCallProc2 Slot_AppendNew;
