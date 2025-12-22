@@ -1066,7 +1066,7 @@ UpdateStringOfLgen(
 
     char *str = Tcl_GetStringFromObj(tmpstr, &bytlen);
 
-    TclOOM(Tcl_InitStringRep(objPtr, str, bytlen), bytlen+1);
+    Tcl_InitStringRep(objPtr, str, bytlen);
     Tcl_DecrRefCount(tmpstr);
 
     return;

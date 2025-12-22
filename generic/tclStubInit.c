@@ -839,7 +839,7 @@ const TclStubs tclStubs = {
     Tcl_DbDecrRefCount, /* 19 */
     Tcl_DbIncrRefCount, /* 20 */
     Tcl_DbIsShared, /* 21 */
-    0, /* 22 */
+    Tcl_DbGetStringFromObj, /* 22 */
     Tcl_DbNewByteArrayObj, /* 23 */
     Tcl_DbNewDoubleObj, /* 24 */
     Tcl_DbNewListObj, /* 25 */
@@ -871,19 +871,19 @@ const TclStubs tclStubs = {
     Tcl_NewDoubleObj, /* 51 */
     0, /* 52 */
     Tcl_NewListObj, /* 53 */
-    0, /* 54 */
+    Tcl_AttemptGetUnicodeFromObj, /* 54 */
     Tcl_NewObj, /* 55 */
     Tcl_NewStringObj, /* 56 */
-    0, /* 57 */
+    Tcl_AttemptNewStringObj, /* 57 */
     Tcl_SetByteArrayLength, /* 58 */
     Tcl_SetByteArrayObj, /* 59 */
     Tcl_SetDoubleObj, /* 60 */
-    0, /* 61 */
+    Tcl_AttemptGetCharLength, /* 61 */
     Tcl_SetListObj, /* 62 */
     0, /* 63 */
     Tcl_SetObjLength, /* 64 */
     Tcl_SetStringObj, /* 65 */
-    0, /* 66 */
+    Tcl_AttemptSetUnicodeObj, /* 66 */
     0, /* 67 */
     Tcl_AllowExceptions, /* 68 */
     Tcl_AppendElement, /* 69 */
@@ -912,7 +912,7 @@ const TclStubs tclStubs = {
     Tcl_CreateEventSource, /* 92 */
     Tcl_CreateExitHandler, /* 93 */
     Tcl_CreateInterp, /* 94 */
-    0, /* 95 */
+    Tcl_DStringAttemptAppendElement, /* 95 */
     Tcl_CreateObjCommand, /* 96 */
     Tcl_CreateChild, /* 97 */
     Tcl_CreateTimerHandler, /* 98 */
@@ -1157,9 +1157,9 @@ const TclStubs tclStubs = {
     Tcl_UtfToUpper, /* 337 */
     Tcl_WriteChars, /* 338 */
     Tcl_WriteObj, /* 339 */
-    0, /* 340 */
-    0, /* 341 */
-    0, /* 342 */
+    Tcl_AttemptGetStringFromObj, /* 340 */
+    Tcl_AttemptSetStringObj, /* 341 */
+    Tcl_AttemptDuplicateObj, /* 342 */
     Tcl_AlertNotifier, /* 343 */
     Tcl_ServiceModeHook, /* 344 */
     Tcl_UniCharIsAlnum, /* 345 */
