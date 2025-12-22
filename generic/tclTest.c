@@ -599,7 +599,7 @@ Tcltest_Init(
     Tcl_CreateObjCommand2(interp, "testchannelevent", TestChannelEventCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand2(interp, "testchancreate", TestChanCreateCmd,
-                         NULL, NULL);
+	     NULL, NULL);
     Tcl_CreateObjCommand2(interp, "testcmdtoken", TestcmdtokenCmd, NULL,
 	    NULL);
     Tcl_CreateObjCommand2(interp, "testcmdinfo", TestcmdinfoCmd, NULL,
@@ -2280,9 +2280,9 @@ static int UtfExtWrapper(
     case UTF_TO_EXTERNAL_EX:
 	result = Tcl_UtfToExternalEx(interp, encoding, srcBufPtr,
 		srcNumBytes, flags, encStatePtr, dstBufPtr, dstLen,
-	    	optObjs[SRCREADVAR] ? &srcRead : NULL,
+		optObjs[SRCREADVAR] ? &srcRead : NULL,
 		&dstWrote,
-	    	optObjs[DSTCHARSVAR] ? &dstChars : NULL);
+		optObjs[DSTCHARSVAR] ? &dstChars : NULL);
 	break;
     }
     if (memcmp(dstBufPtr + bufLen - 4, "\xAB\xCD\xEF\xAB", 4)) {
@@ -2377,7 +2377,7 @@ TestencodingCmd(
     const char *string;
     TclEncoding *encodingPtr;
     static const char *const optionStrings[] = {
-	"create", "delete", "nullength", 
+	"create", "delete", "nullength",
 	"Tcl_ExternalToUtf", "Tcl_UtfToExternal",
 	"Tcl_ExternalToUtfEx", "Tcl_UtfToExternalEx",
 	"Tcl_GetEncodingNameFromEnvironment", "Tcl_GetEncodingNameForUser", NULL
@@ -9285,7 +9285,7 @@ TestChanSourceInput(
 	    to += nbytes;
 	    ncopied += nbytes;
 	}
-        int nchunks = (maxReadCount-ncopied)/chanPtr->len;
+	int nchunks = (maxReadCount-ncopied)/chanPtr->len;
 	char *end = to + (nchunks * chanPtr->len);
 	int nremain = (maxReadCount-ncopied) - (end - to);
 	/* Copy the data in chunks */
@@ -9293,7 +9293,7 @@ TestChanSourceInput(
 	    memmove(to, chanPtr->data, chanPtr->len);
 	    to += chanPtr->len;
 	}
-        assert(to == end);
+	assert(to == end);
 	if (nremain) {
 	    assert(nremain < chanPtr->len);
 	    memmove(outPtr + maxReadCount - nremain, chanPtr->data, nremain);
@@ -9310,7 +9310,7 @@ TestChanSourceClose2 (
     int flags)
 {
     if (flags && instanceData)
-        Tcl_Free(instanceData);
+	Tcl_Free(instanceData);
     return 0;
 }
 
