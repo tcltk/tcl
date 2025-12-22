@@ -100,7 +100,7 @@ COMPILE_DEBUG_FLAGS =
 
 SRC_DIR			= @srcdir@
 ROOT_DIR		= @srcdir@/..
-TOP_DIR			= $(shell cd @srcdir@/..; pwd -W 2>/dev/null || pwd -P)
+TOP_DIR			= $(shell cd '@srcdir@/..'; pwd -W 2>/dev/null || pwd -P)
 BUILD_DIR		= @builddir@
 GENERIC_DIR		= $(TOP_DIR)/generic
 WIN_DIR			= $(TOP_DIR)/win
@@ -561,7 +561,7 @@ ${TCL_ZIP_FILE}:  ${ZIP_INSTALL_OBJS} ${DDE_DLL_FILE} ${REG_DLL_FILE}
 	)
 	(zip=`(realpath '${NATIVE_ZIP}' || readlink -m '${NATIVE_ZIP}') 2>/dev/null || \
 	  (echo '${NATIVE_ZIP}' | sed "s?^\./?$$(pwd)/?")`; \
-	  cd ${TCL_VFS_ROOT} && \
+	  cd '${TCL_VFS_ROOT}' && \
 	  $$zip ${ZIP_PROG_OPTIONS} ../${TCL_ZIP_FILE} ${ZIP_PROG_VFSSEARCH} >/dev/null && \
 	  echo "${TCL_ZIP_FILE} successful created with $$zip" && \
 	  cd ..)
@@ -737,7 +737,7 @@ tclTest.${OBJEXT}: tclTest.c tclUuid.h
 
 $(TOP_DIR)/manifest.uuid:
 	printf "git-" >$(TOP_DIR)/manifest.uuid
-	(cd $(TOP_DIR); git rev-parse HEAD >>$(TOP_DIR)/manifest.uuid || \
+	(cd '$(TOP_DIR)'; git rev-parse HEAD >>$(TOP_DIR)/manifest.uuid || \
 	    (printf "svn-r" >$(TOP_DIR)/manifest.uuid ; \
 	    svn info --show-item last-changed-revision >>$(TOP_DIR)/manifest.uuid) || \
 	    printf "unknown" >$(TOP_DIR)/manifest.uuid)
@@ -1001,7 +1001,7 @@ install-doc: doc
 	@for i in $(TOP_DIR)/doc/*.n; do \
 	    $(SHELL) $(UNIX_DIR)/installManPage $(MAN_FLAGS) $$i "$(MANN_INSTALL_DIR)"; \
 	done
- 
+
 install-headers:
 	@for i in "$(INCLUDE_INSTALL_DIR)"; \
 	    do \
@@ -1013,14 +1013,13 @@ install-headers:
 		fi; \
 	    done;
 	@echo "Installing header files to $(INCLUDE_INSTALL_DIR)/";
-	@for i in $(GENERIC_DIR)/tcl.h $(GENERIC_DIR)/tclDecls.h \
-		$(GENERIC_DIR)/tclOO.h $(GENERIC_DIR)/tclOODecls.h \
-		$(GENERIC_DIR)/tclPlatDecls.h \
-		$(GENERIC_DIR)/tclTomMath.h \
-		$(GENERIC_DIR)/tclTomMathDecls.h \
-		$(TOMMATH_DIR)/tommath.h ; \
+	@for i in "$(GENERIC_DIR)/tcl.h" "$(GENERIC_DIR)/tclDecls.h" \
+		"$(GENERIC_DIR)/tclOO.h" "$(GENERIC_DIR)/tclOODecls.h" \
+		"$(GENERIC_DIR)/tclPlatDecls.h" \
+		"$(GENERIC_DIR)/tclTomMath.h" \
+		"$(GENERIC_DIR)/tclTomMathDecls.h"; \
 	    do \
-	    $(COPY) $$i "$(INCLUDE_INSTALL_DIR)"; \
+	    $(COPY) "$$i" "$(INCLUDE_INSTALL_DIR)"; \
 	    done;
 
 # Optional target to install private headers
@@ -1056,7 +1055,7 @@ test-tcl: tcltest
 # Useful target to launch a built tclsh with the proper path,...
 runtest: tcltest
 	@TCL_LIBRARY="$(LIBRARY_DIR)"; export TCL_LIBRARY; \
-	$(WINE) ./$(TCLSH) $(TESTFLAGS) -load "$(TEST_LOAD_FACILITIES)" $(SCRIPT)
+	$(WINE) ./$(TCLSH) $(SCRIPT) $(TESTFLAGS) -load "$(TEST_LOAD_FACILITIES)"
 
 # This target can be used to run tclsh from the build directory via
 # `make shell SCRIPT=foo.tcl`
@@ -1108,75 +1107,73 @@ distclean: distclean-packages clean
 PKG_DIR			= ./pkgs
 
 packages:
-	@builddir=`$(CYGPATH) $$(pwd -P)`; \
-	for i in $(PKGS_DIR)/*; do \
-	  if [ -d $$i ] ; then \
+	@builddir="`$(CYGPATH) "$$(pwd -P)"`"; \
+	for i in '$(PKGS_DIR)'/*/; do \
 	    if [ -x $$i/configure ] ; then \
 	      pkg=`basename $$i`; \
-	      mkdir -p $(PKG_DIR)/$$pkg; \
-	      if [ ! -f $(PKG_DIR)/$$pkg/Makefile ]; then \
-		( cd $(PKG_DIR)/$$pkg; \
+	      mkdir -p '$(PKG_DIR)'/$$pkg; \
+	      if [ ! -f '$(PKG_DIR)'/$$pkg/Makefile ]; then \
+		( cd '$(PKG_DIR)'/$$pkg; \
 		  echo "Configuring package '$$i' wd = `$(CYGPATH) $$(pwd -P)`"; \
 		  $$i/configure --with-tcl=$$builddir --with-tclinclude=$(GENERIC_DIR_NATIVE) $(PKG_CFG_ARGS) --enable-shared; ) \
 	      fi ; \
 	      echo "Building package '$$pkg'"; \
-	      ( cd $(PKG_DIR)/$$pkg; $(MAKE); ) \
+	      ( cd '$(PKG_DIR)'/$$pkg; $(MAKE); ) \
 	    fi; \
-	  fi; \
 	done; \
-	cd $$builddir
+	cd "$$builddir"
 
 install-packages: packages
 	@builddir=`pwd -P`; \
-	for i in $(PKGS_DIR)/*; do \
+	for i in '$(PKGS_DIR)'/*; do \
 	  if [ -d $$i ]; then \
 	    pkg=`basename $$i`; \
-	    if [ -f $(PKG_DIR)/$$pkg/Makefile ]; then \
+	    if [ -f '$(PKG_DIR)'/$$pkg/Makefile ]; then \
 		echo "Installing package '$$pkg'"; \
-		( cd $(PKG_DIR)/$$pkg; $(MAKE) install "DESTDIR=$(INSTALL_ROOT)"; ) \
+		( cd '$(PKG_DIR)'/$$pkg; $(MAKE) install "DESTDIR=$(INSTALL_ROOT)"; ) \
 	    fi; \
 	  fi; \
 	done; \
-	cd $$builddir
+	cd "$$builddir"
 
 test-packages: tcltest packages
 	@builddir=`pwd -P`; \
 	for i in $(PKGS_DIR)/*; do \
 	  if [ -d $$i ]; then \
 	    pkg=`basename $$i`; \
-	    if [ -f $(PKG_DIR)/$$pkg/Makefile ]; then \
+	    if [ -f '$(PKG_DIR)'/$$pkg/Makefile ]; then \
 		echo "Testing package '$$pkg'"; \
-		( cd $(PKG_DIR)/$$pkg; $(MAKE) "LD_LIBRARY_PATH=$$builddir:${LD_LIBRARY_PATH}" "TCL_LIBRARY=${TCL_BUILDTIME_LIBRARY}" "TCLLIBPATH=$$builddir/pkgs" test "TCLSH_PROG=$$builddir/${TCLSH}"; ) \
+		( cd '$(PKG_DIR)'/$$pkg; $(MAKE) "LD_LIBRARY_PATH=$$builddir:${LD_LIBRARY_PATH}" "TCL_LIBRARY=${TCL_BUILDTIME_LIBRARY}" "TCLLIBPATH=$$builddir/pkgs" test "TCLSH_PROG=$$builddir/${TCLSH}"; ) \
 	    fi; \
 	  fi; \
 	done; \
-	cd $$builddir
+	cd "$$builddir"
 
 clean-packages:
 	@builddir=`pwd -P`; \
-	for i in $(PKGS_DIR)/*; do \
+	for i in '$(PKGS_DIR)'/*; do \
 	  if [ -d $$i ]; then \
 	    pkg=`basename $$i`; \
-	    if [ -f $(PKG_DIR)/$$pkg/Makefile ]; then \
-		( cd $(PKG_DIR)/$$pkg; $(MAKE) clean; ) \
+	    if [ -f '$(PKG_DIR)'/$$pkg/Makefile ]; then \
+		( cd '$(PKG_DIR)'/$$pkg; $(MAKE) clean; ) \
 	    fi; \
 	  fi; \
 	done; \
-	cd $$builddir
+	cd "$$builddir"
 
 distclean-packages:
 	@builddir=`pwd -P`; \
 	for i in $(PKGS_DIR)/*; do \
 	  if [ -d $$i ]; then \
 	    pkg=`basename $$i`; \
-	    if [ -f $(PKG_DIR)/$$pkg/Makefile ]; then \
-		( cd $(PKG_DIR)/$$pkg; $(MAKE) distclean; ) \
+	    if [ -f '$(PKG_DIR)'/$$pkg/Makefile ]; then \
+		( cd '$(PKG_DIR)'/$$pkg; $(MAKE) distclean; ) \
 	    fi; \
 	    cd $$builddir; \
-	    rm -rf $(PKG_DIR)/$$pkg; \
+	    rm -rf '$(PKG_DIR)'/$$pkg; \
 	  fi; \
 	done; \
-	rm -rf $(PKG_DIR)
+	rm -rf '$(PKG_DIR)'
 
 #
 # Regenerate the stubs files.
