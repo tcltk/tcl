@@ -296,13 +296,10 @@ Tcl_MainEx(
     Tcl_Channel chan;
     InteractiveState is;
 
-    TclpSetInitialEncodings();
     if (argc > 0) {
 	--argc;			/* consume argv[0] */
 	++i;
     }
-    TclpFindExecutable((const char *)argv[0]);	/* nb: this could be NULL
-						 * w/ (eg) an empty argv supplied to execve() */
 
     Tcl_InitMemory(interp);
 

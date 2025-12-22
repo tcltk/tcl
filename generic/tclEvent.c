@@ -1128,6 +1128,16 @@ static const struct {
 #endif // TCL_WITH_INTERNAL_ZLIB
 }};
 
+/*
+ * Wrapper to retrieve version+build to other modules.
+ */
+const char *
+TclGetBuildInfo()
+{
+    return stubInfo.version;
+}
+
+
 const char *
 Tcl_InitSubsystems(void)
 {
@@ -1197,7 +1207,7 @@ Tcl_InitSubsystems(void)
 	TclpInitUnlock();
     }
     TclInitNotifier();
-    return stubInfo.version;
+    return TclGetBuildInfo();
 }
 
 /*
