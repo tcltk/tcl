@@ -3736,7 +3736,8 @@ MODULE_SCOPE void *	TclpThreadGetGlobalTSD(void *tsdKeyPtr);
 MODULE_SCOPE void	TclErrorStackResetIf(Tcl_Interp *interp,
 			    const char *msg, Tcl_Size length);
 /* Tip 430 */
-MODULE_SCOPE int	TclZipfs_Init(Tcl_Interp *interp);
+MODULE_SCOPE int	TclZipfsInitInterp(Tcl_Interp *interp);
+MODULE_SCOPE int	TclZipfsInit(void);
 MODULE_SCOPE int	TclIsZipfsPath(const char *path);
 MODULE_SCOPE void	TclZipfsFinalize(void);
 
