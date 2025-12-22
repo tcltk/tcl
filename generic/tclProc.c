@@ -1679,7 +1679,7 @@ int
 TclObjInterpProc(
     void *clientData,		/* Record describing procedure to be
 				 * interpreted. */
-    Tcl_Interp *interp, 	/* Interpreter in which procedure was
+    Tcl_Interp *interp,	/* Interpreter in which procedure was
 				 * invoked. */
     int objc,			/* Count of number of arguments to this
 				 * procedure. */
