@@ -31,6 +31,32 @@ testConstraint longFileNames 0
 testConstraint notInCIenv     [expr {![info exists ::env(CI)]}]
 testConstraint knownMsvcBug [expr {[tcl::build-info msvc] eq 0}]
 
+# Long path support (not to be confused with long name support!) depends on
+# the system being recent enough AND configured for long paths in the registry.
+# Need to test on both - systems with and without support and further, neither
+# set of tests should run if we cannot figure out so we need two separate
+# constraints.
+testConstraint longPathAware 0
+testConstraint notLongPathAware 0
+if {![catch {exec {*}[auto_execok cmd.exe] /c ver} winVer]} {
+    if {[regexp {(\d+)\.\d+\.(\d+)\.\d+} $winVer -> winMajor winBuild]} {
+        # Must be Win 10 
+        if {$winMajor > 10 || ($winMajor == 10 && $winBuild >= 14393)} {
+            if {[llength [info commands testlongpathsetting]]} {
+                testConstraint longPathAware [testlongpathsetting]
+                testConstraint notLongPathAware [expr {![testlongpathsetting]}]
+            } else {
+                catch {
+                    package require registry
+                    testConstraint longPathAware [registry get "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\FileSystem" LongPathsEnabled]
+                    testConstraint notLongPathAware [expr {![testConstraint longPathAware]}]
+                }
+            }
+        }
+    }
+}
+unset -nocomplain winMajor winBuild winVer
+
 proc createfile {file {string a}} {
     set f [open $file w]
     puts -nonewline $f $string
@@ -1397,6 +1423,51 @@ test winFCmd-19.9 {Windows devices path names} -constraints win -body {
     file normalize //./com1
 } -result //./com1
 
+################################################################
+# Tests for long path support. On systems that support long paths, verify
+# various commands work. On systems that don't, verify commands return
+# appropriate errors (in particular, do not crash!). Commands are tested with
+# the usual "file" command as well as the testsuite "testfile" command which
+# tests the C API without the sanity checks of the "file" command.
+
+namespace eval testlongpaths {
+    # A long path should not have any individual component longer than MAX_PATH
+    variable longPath [file join \
+                              [tcltest::configure -tmpdir] \
+                              {*}[lrepeat 4 [string repeat X\u4e2d 128]]]
+    variable deepPath [file join \
+                           [tcltest::configure -tmpdir] \
+                           {*}[lrepeat 64 [string repeat Y\u6587 8]]]
+    proc testlongpath {id comment body good bad args} {
+        set opts [list ]
+        set constraints [list win]
+        foreach {opt optval} $args {
+            if {$opt eq "-constraints"} {
+                lappend constraints {*}$optval
+                continue
+            }
+            lappend opts $opt $optval
+        }
+        if {$bad eq ""} {
+            set bad $good
+            set returnCodes ok
+        }
+        uplevel [list test $id.0 $comment -body $body {*}$args \
+            -constraints [list {*}$constraints notLongPathAware] \
+                     -result $bad -returnCodes $returnCodes]
+        test $id.1 $comment -body $body {*}$args \
+            -constraints [list {*}$constraints longPathAware] \
+            -result $good
+    }
+
+    testlongpath mkdir-longpath-1 "Create a directory with a long path" \
+        {string length $longPath} ok
+
+}
+namespace delete testlongpaths
+
+
+################################################################
 
 # This block of code used to occur after the "return" call, so I'm
 # commenting it out and assuming that this code is still under construction.
