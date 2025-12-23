@@ -696,9 +696,7 @@ InfoObjectMethodsCmd(
 	return TCL_ERROR;
     }
     if (objc != 2) {
-	int i;
-
-	for (i=2 ; i<objc ; i++) {
+	for (Tcl_Size i=2 ; i<objc ; i++) {
 	    if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0,
 		    &idx) != TCL_OK) {
 		return TCL_ERROR;
@@ -1404,9 +1402,7 @@ InfoClassMethodsCmd(
 	return TCL_ERROR;
     }
     if (objc != 2) {
-	int i;
-
-	for (i=2 ; i<objc ; i++) {
+	for (Tcl_Size i=2 ; i<objc ; i++) {
 	    if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0,
 		    &idx) != TCL_OK) {
 		return TCL_ERROR;
