@@ -134,29 +134,29 @@ static Tcl_CmdDeleteProc	MyClassDeleted;
 	{TCL_OO_METHOD_VERSION_2,"core method: "#name,proc,NULL,NULL}}
 
 static const DeclaredClassMethod objMethods[] = {
-    DCM("<cloned>", 0,	TclOO_Object_Cloned),
-    DCM("destroy", 1,	TclOO_Object_Destroy),
-    DCM("eval", 0,	TclOO_Object_Eval),
-    DCM("unknown", 0,	TclOO_Object_Unknown),
-    DCM("variable", 0,	TclOO_Object_LinkVar),
-    DCM("varname", 0,	TclOO_Object_VarName),
-    {NULL, 0, {0, NULL, NULL, NULL, NULL}}
+    DCM("<cloned>", false,	TclOO_Object_Cloned),
+    DCM("destroy", true,	TclOO_Object_Destroy),
+    DCM("eval", false,		TclOO_Object_Eval),
+    DCM("unknown", false,	TclOO_Object_Unknown),
+    DCM("variable", false,	TclOO_Object_LinkVar),
+    DCM("varname", false,	TclOO_Object_VarName),
+    {NULL, false, {0, NULL, NULL, NULL, NULL}}
 }, clsMethods[] = {
-    DCM("<cloned>", 0,	TclOO_Class_Cloned),
-    DCM("create", 1,	TclOO_Class_Create),
-    DCM("new", 1,	TclOO_Class_New),
-    DCM("createWithNamespace", 0, TclOO_Class_CreateNs),
-    {NULL, 0, {0, NULL, NULL, NULL, NULL}}
+    DCM("<cloned>", false,	TclOO_Class_Cloned),
+    DCM("create", true,		TclOO_Class_Create),
+    DCM("new", true,		TclOO_Class_New),
+    DCM("createWithNamespace", false, TclOO_Class_CreateNs),
+    {NULL, false, {0, NULL, NULL, NULL, NULL}}
 }, cfgMethods[] = {
-    DCM("configure", 1, TclOO_Configurable_Configure),
-    {NULL, 0, {0, NULL, NULL, NULL, NULL}}
+    DCM("configure", true,	TclOO_Configurable_Configure),
+    {NULL, false, {0, NULL, NULL, NULL, NULL}}
 }, singletonMethods[] = {
-    DCM("new", 1,	TclOO_Singleton_New),
-    {NULL, 0, {0, NULL, NULL, NULL, NULL}}
+    DCM("new", true,		TclOO_Singleton_New),
+    {NULL, false, {0, NULL, NULL, NULL, NULL}}
 }, singletonInstanceMethods[] = {
-    DCM("<cloned>", 0,	TclOO_SingletonInstance_Cloned),
-    DCM("destroy", 1,	TclOO_SingletonInstance_Destroy),
-    {NULL, 0, {0, NULL, NULL, NULL, NULL}}
+    DCM("<cloned>", false,	TclOO_SingletonInstance_Cloned),
+    DCM("destroy", true,	TclOO_SingletonInstance_Destroy),
+    {NULL, false, {0, NULL, NULL, NULL, NULL}}
 };
 
 /*

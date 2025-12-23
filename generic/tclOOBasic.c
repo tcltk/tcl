@@ -151,7 +151,7 @@ InstallDelegateAsMixin(
     }
     Class **mixins = (Class **) TclStackAlloc(interp,
 	    sizeof(Class *) * (clsPtr->thisPtr->mixins.num + 1));
-    for (int i = 0; i < clsPtr->thisPtr->mixins.num; i++) {
+    for (Tcl_Size i = 0; i < clsPtr->thisPtr->mixins.num; i++) {
 	mixins[i] = clsPtr->thisPtr->mixins.list[i];
 	if (mixins[i] == delegatePtr) {
 	    TclStackFree(interp, (void *) mixins);
@@ -324,7 +324,7 @@ TclOO_Class_Create(
     Tcl_Interp *interp,		/* Interpreter in which to create the object;
 				 * also used for error reporting. */
     Tcl_ObjectContext context,	/* The object/call context. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const *objv)	/* The actual arguments. */
 {
     Tcl_Class cls = ContextClass(interp, context);
@@ -383,7 +383,7 @@ TclOO_Class_CreateNs(
     Tcl_Interp *interp,		/* Interpreter in which to create the object;
 				 * also used for error reporting. */
     Tcl_ObjectContext context,	/* The object/call context. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const *objv)	/* The actual arguments. */
 {
     Tcl_Class cls = ContextClass(interp, context);
@@ -450,7 +450,7 @@ TclOO_Class_New(
     Tcl_Interp *interp,		/* Interpreter in which to create the object;
 				 * also used for error reporting. */
     Tcl_ObjectContext context,	/* The object/call context. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const *objv)	/* The actual arguments. */
 {
     Tcl_Class cls = ContextClass(interp, context);
@@ -490,7 +490,7 @@ TclOO_Class_Cloned(
     Tcl_Interp *interp,		/* Interpreter in which to create the object;
 				 * also used for error reporting. */
     Tcl_ObjectContext context,	/* The object/call context. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const *objv)	/* The actual arguments. */
 {
     Tcl_Object targetObject = Tcl_ObjectContextObject(context);
@@ -659,7 +659,7 @@ TclOO_Object_Destroy(
     Tcl_Interp *interp,		/* Interpreter in which to create the object;
 				 * also used for error reporting. */
     Tcl_ObjectContext context,	/* The object/call context. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const *objv)	/* The actual arguments. */
 {
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
@@ -723,7 +723,7 @@ TclOO_Object_Eval(
     Tcl_Interp *interp,		/* Interpreter in which to create the object;
 				 * also used for error reporting. */
     Tcl_ObjectContext context,	/* The object/call context. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const *objv)	/* The actual arguments. */
 {
     CallContext *contextPtr = (CallContext *) context;
@@ -826,7 +826,7 @@ TclOO_Object_Unknown(
     Tcl_Interp *interp,		/* Interpreter in which to create the object;
 				 * also used for error reporting. */
     Tcl_ObjectContext context,	/* The object/call context. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const *objv)	/* The actual arguments. */
 {
     CallContext *contextPtr = (CallContext *) context;
@@ -933,7 +933,7 @@ TclOO_Object_LinkVar(
     Tcl_Interp *interp,		/* Interpreter in which to create the object;
 				 * also used for error reporting. */
     Tcl_ObjectContext context,	/* The object/call context. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const *objv)	/* The actual arguments. */
 {
     Interp *iPtr = (Interp *) interp;
@@ -1088,13 +1088,13 @@ TclOOLookupObjectVar(
 	    } else if (mPtr->declaringClassPtr &&
 		    mPtr->declaringClassPtr->privateVariables.num) {
 		Class *clsPtr = mPtr->declaringClassPtr;
-		int isInstance = TclOOIsReachable(clsPtr, oPtr->selfCls);
+		bool isInstance = TclOOIsReachable(clsPtr, oPtr->selfCls);
 		Class *mixinCls;
 
 		if (!isInstance) {
 		    FOREACH(mixinCls, oPtr->mixins) {
 			if (TclOOIsReachable(clsPtr, mixinCls)) {
-			    isInstance = 1;
+			    isInstance = true;
 			    break;
 			}
 		    }
@@ -1150,7 +1150,7 @@ TclOO_Object_VarName(
     Tcl_Interp *interp,		/* Interpreter in which to create the object;
 				 * also used for error reporting. */
     Tcl_ObjectContext context,	/* The object/call context. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const *objv)	/* The actual arguments. */
 {
     Tcl_Var varPtr, aryVar;
@@ -1234,7 +1234,7 @@ TclOOLinkObjCmd(
     }
 
     // For each argument
-    for (int i=1; i<objc; i++) {
+    for (Tcl_Size i=1; i<objc; i++) {
 	Tcl_Size linkc;
 	Tcl_Obj **linkv, *src, *dst;
 
@@ -1818,7 +1818,7 @@ TclOOClassVariableObjCmd(
     Tcl_Namespace *clsNsPtr = clsPtr->thisPtr->namespacePtr;
 
     // Check the list of variable names
-    for (int i = 1; i < objc; i++) {
+    for (Tcl_Size i = 1; i < objc; i++) {
 	const char *varName = TclGetString(objv[i]);
 	if (Tcl_StringMatch(varName, "*(*)")) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -1839,7 +1839,7 @@ TclOOClassVariableObjCmd(
     // Lastly, link the caller's local variables to the class's variables
     Interp *iPtr = (Interp *) interp;
     Tcl_Namespace *ourNsPtr = (Tcl_Namespace *) iPtr->varFramePtr->nsPtr;
-    for (int i = 1; i < objc; i++) {
+    for (Tcl_Size i = 1; i < objc; i++) {
 	// Locate the other variable.
 	iPtr->varFramePtr->nsPtr = (Namespace *) clsNsPtr;
 	Var *arrayPtr, *otherPtr = TclObjLookupVarEx(interp, objv[i], NULL,
@@ -1910,7 +1910,7 @@ TclOO_Singleton_New(
     Tcl_Interp *interp,		/* Interpreter in which to create the object;
 				 * also used for error reporting. */
     Tcl_ObjectContext context,	/* The object/call context. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const *objv)	/* The actual arguments. */
 {
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
