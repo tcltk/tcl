@@ -51,15 +51,6 @@ static const char *const processors[NUMPROCESSORS] = {
 };
 
 /*
- * Common system information that is initialized once at startup.
- */
-typedef struct {
-    OSVERSIONINFOW osVersion;	/* Windows version information */
-    DWORD longPathsSupported;	/* Long paths supported without \\?\ ? */
-    char codePage[20];          /* User code page */
-} TclWinInfo;
-
-/*
  * Forward declarations
  */
 
@@ -163,7 +154,7 @@ TclGetWinInfoOnce(
  *	is initialized only once and remains valid for the lifetime of the
  *	process.
  */
-static const TclWinInfo *
+const TclWinInfo *
 TclGetWinInfo(void)
 {
     static INIT_ONCE winInfoOnce = INIT_ONCE_STATIC_INIT;
@@ -171,41 +162,6 @@ TclGetWinInfo(void)
     BOOL result = InitOnceExecuteOnce(
 	&winInfoOnce, TclGetWinInfoOnce, NULL, (LPVOID *)&winInfoPtr);
     return result ? winInfoPtr : NULL;
-}
-
-/*
- * TclpGetWindowsVersion --
- *
- *	Returns a pointer to the OSVERSIONINFOW structure containing the
- *	version information for the current Windows version.
- *
- * Results:
- *	Pointer to OSVERSIONINFOW structure that remains valid for lifetime
- *	of the process or NULL on failure.
- */
-static const OSVERSIONINFOW *
-TclpGetWindowsVersion(void)
-{
-    TclWinInfo *winInfoPtr = TclGetWinInfo();
-    return winInfoPtr ? &winInfoPtr->osVersion : NULL;
-}
-
-/*
- * TclpGetCodePage --
- *
- *  Returns a pointer to the string identifying the user code page.
- *
- *  For consistency with Windows, which caches the code page at program
- *  startup, the code page is not updated even if the value in the registry
- *  changes. (This is similar to environment variables.)
- */
-static const char *
-TclpGetCodePage(void)
-{
-    TclWinInfo *winInfoPtr = TclGetWinInfo();
-    assert(winInfoPtr);
-    assert(winInfoPtr->codePage[0] != '\0');
-	return winInfoPtr->codePage;
 }
 
 /*
