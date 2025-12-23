@@ -3163,7 +3163,8 @@ TclNativeCreateNativeRep(
     if (((str[0] >= 'A' && str[0] <= 'Z') || (str[0] >= 'a' && str[0] <= 'z'))
 	    && str[1] == ':') {
 	if (wp == nativePathPtr && len > MAX_PATH
-		&& (str[2] == '\\' || str[2] == '/')) {
+		&& (str[2] == '\\' || str[2] == '/')
+		&& !TclpLongPathSupported()) {
 	    memmove(wp + 4, wp, len * sizeof(WCHAR));
 	    memcpy(wp, L"\\\\?\\", 4 * sizeof(WCHAR));
 	    wp += 4;

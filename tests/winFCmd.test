@@ -1435,24 +1435,26 @@ namespace eval testlongpaths {
     # Use string operations with FORWARD slash to generate paths, not [file
     # join] since [file join] itself is under test.
 
-    variable pathComponent X\u4e2d
     variable pathTail Y\u6587
+    variable longPathComponent [string repeat X\u4e2d 120]
     variable longPathRoot "[tcltest::configure -tmpdir]/longpathtest"
+    variable longPathComponents [lrepeat 4 $longPathComponent]
     variable longPathDir [join [list $longPathRoot \
-                                    {*}[lrepeat 4 [string repeat $pathComponent 120]]] /]
+                                    {*}$longPathComponents] /]
     variable longPathFile [string cat $longPathDir / $pathTail]
+    variable deepPathComponent [string repeat X\u4e2d 8]
+    variable deepPathComponents [lrepeat 64 $deepPathComponent]
     variable deepPathDir [join [list $longPathRoot \
-                                    {*}[lrepeat 64 [string repeat $pathComponent 8]]] /]
+                                    {*}$deepPathComponents] /]
     variable deepPathFile [string cat $deepPathDir / $pathTail]
 
     # TODO's -
-    # Paths - dirname, tail, root, join, normalize, split
-    # Directories - create, delete, rename, copy, attributes, isdirectory, exists, size, stat, type
-    # Files - open, delete, rename, copy, attributes, isfile, exists, size, stat, type
-    # nesting depth
-    # relative paths
+    # Directories - rename, copy, attributes 
+    # Files - atime, mtime, owned, open, delete, rename, copy, attributes, isfile, exists, executable,
+    #    size, readable, writable, stat, type, tildeexpand, relative paths
     # Glob
-    # links
+    # links, lstat, readlink
+    # zipfs
 
     proc testlongpath {id comment body args} {
         uplevel [list test $id $comment -body $body \
@@ -1461,7 +1463,91 @@ namespace eval testlongpaths {
                      -cleanup {file delete -force $longPathRoot} \
                      {*}$args]
     }
+
+    #
+    # Path operations - file cmdname ...
+    testlongpath file-dirname-longpath-0 "long path file dirname" {
+        file dirname $longPathDir
+    } -result [join [lrange [split $longPathDir /] 0 end-1] /]
+
+    testlongpath file-extension-longpath-0 "long path file extension" {
+        file extension $longPathFile.ext
+    } -result .ext
+
+
+    testlongpath file-join-longpath-0 "deep path file join" {
+        file join $longPathRoot {*}$deepPathComponents $pathTail
+    } -result $deepPathFile
+
+    testlongpath file-join-longpath-1 "long path file join - native name" {
+        file join $longPathRoot [join $longPathComponents \\] $pathTail
+    } -result $longPathFile
+
+    testlongpath file-nativename-longpath-0 "long path nativename" {
+        file nativename $longPathDir
+    } -result [string map [list / \\] $longPathDir]
+
+    testlongpath file-normalize-longpath-0 "long path normalize" {
+        file normalize $longPathDir
+    } -result $longPathDir
+
+    testlongpath file-normalize-longpath-1 "long path normalize - dotdot" {
+        file normalize $longPathDir/../../$longPathComponent/$pathTail
+    } -result [join [list $longPathRoot {*}[lrange $longPathComponents 0 end-1] $pathTail] /]
+
+    testlongpath file-normalize-longpath-2 "long path normalize - dot, native" {
+        file normalize [string map [list / \\] $longPathDir/././$pathTail]
+    } -result $longPathFile
+
+    testlongpath file-normalize-longpath-3 "Long path normalize - relative name" {
+        set origDir [pwd]
+        file mkdir $longPathDir
+        cd $longPathDir
+        set path [file normalize foo]
+        cd $origDir
+        set path
+    } -result $longPathDir/foo
+
+    testlongpath file-rootname-longpath-0 "long path file rootname" {
+        file rootname $longPathFile.ext
+    } -result $longPathFile
+
+    testlongpath file-split-longpath-0 "long path file split" {
+        file split $longPathFile
+    } -result [list {*}[file split $longPathRoot] {*}$longPathComponents $pathTail]
+
+    testlongpath file-split-longpath-1 "deep path file split - native" {
+        file split [string map [list / \\] $deepPathFile]
+    } -result [list {*}[file split $longPathRoot] {*}$deepPathComponents $pathTail]
+
+    testlongpath file-tail-longpath-0 "long path file tail" {
+        file tail $longPathFile.ext
+    } -result $pathTail.ext
+
+    testlongpath file-pathtype-longpath-0 "long path type" {
+        file pathtype $longPathDir
+    } -result absolute
+
+    testlongpath file-pathtype-longpath-1 "long path type - relative" {
+        file pathtype [join $longPathComponents /]
+    } -result relative
+
+    testlongpath file-pathtype-longpath-2 "long path type - volumerelative" {
+        file pathtype C:[join $longPathComponents /]
+    } -result volumerelative
+
+    testlongpath file-separator-longpath-0 "long path separator" {
+        file separator $longPathDir
+    } -result \\
+
+    testlongpath file-system-longpath-0 "long path system" {
+        lindex [file system $longPathDir] 0
+    } -result native
+
+    #
+    # Directory operations
     proc dirOps {path} {
+        set newpath $path-new
         list \
             [file mkdir $path] \
             [file exists $path] \
@@ -1471,22 +1557,31 @@ namespace eval testlongpaths {
             [file size $path] \
             [file type $path] \
             [dict get [file stat $path] type] \
-            [file delete $path] \
+            [file rename $path $newpath] \
             [file exists $path] \
+            [file exists $newpath] \
+            [file delete $newpath] \
+            [file exists $newpath]
     }
-    testlongpath longpath-directory-0 "Long path directory operations" {
+    variable dirOpsResult [list {} 1 1 1 0 0 directory directory {} 0 1 {} 0]
+
+    testlongpath dirops-longpath-dirops-0 "Long path directory operations" {
         dirOps $longPathDir
-    } -result [list {} 1 1 1 0 0 directory directory {} 0]
+    } -result $dirOpsResult
 
-    testlongpath longpath-directory-1 "Long path directory operations - native paths" {
+    testlongpath dirops-longpath-1 "Long path directory operations - native paths" {
         dirOps [file nativename $longPathDir]
-    } -result [list {} 1 1 1 0 0 directory directory {} 0]
+    } -result $dirOpsResult
 
-    testlongpath longpath-directory-2 "Long path directory operations - deep nesting" {
+    testlongpath dirops-longpath-2 "Long path directory operations - deep nesting" {
         dirOps $deepPathDir
-    } -result [list {} 1 1 1 0 0 directory directory {} 0]
+    } -result $dirOpsResult
 
-    testlongpath longpath-directory-3 "Long path directory - cd, pwd" {
+    testlongpath dirops-longpath-2 "Long path directory operations - dot, dotdot" {
+        dirOps $longPathDir/.././$longPathComponent
+    } -result $dirOpsResult
+
+    testlongpath cd-longpath-0 "Long path directory - cd, pwd" {
         set origDir [pwd]
         file mkdir $longPathDir
         cd $longPathDir
