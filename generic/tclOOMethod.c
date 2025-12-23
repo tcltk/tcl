@@ -405,14 +405,11 @@ TclOODefineBasicMethods(
     const DeclaredClassMethod *dcmAry)
 				/* Static table of method definitions. */
 {
-    int i;
-
-    for (i = 0 ; dcmAry[i].name ; i++) {
-	Tcl_Obj *namePtr = Tcl_NewStringObj(dcmAry[i].name, TCL_AUTO_LENGTH);
+    for (const DeclaredClassMethod *dcm = dcmAry; dcm->name ; dcm++) {
+	Tcl_Obj *namePtr = Tcl_NewStringObj(dcm->name, TCL_AUTO_LENGTH);
 
 	TclNewMethod((Tcl_Class) clsPtr, namePtr,
-		(dcmAry[i].isPublic ? PUBLIC_METHOD : 0),
-		&dcmAry[i].definition, NULL);
+		(dcm->isPublic ? PUBLIC_METHOD : 0), &dcm->definition, NULL);
 	Tcl_BounceRefCount(namePtr);
     }
 }

@@ -1321,13 +1321,13 @@ UnexportInstanceMethod(
     return isNew;
 }
 
-int
+bool
 TclOOExportMethods(
     Class *clsPtr,
     ...)
 {
     va_list argList;
-    int changed = 0;
+    bool changed = false;
     va_start(argList, clsPtr);
     while (1) {
 	const char *name = va_arg(argList, char *);
@@ -1342,13 +1342,13 @@ TclOOExportMethods(
     return changed;
 }
 
-int
+bool
 TclOOUnexportMethods(
     Class *clsPtr,
     ...)
 {
     va_list argList;
-    int changed = 0;
+    bool changed = false;
     va_start(argList, clsPtr);
     while (1) {
 	const char *name = va_arg(argList, char *);
@@ -1956,7 +1956,6 @@ TclOODefineDeleteMethodObjCmd(
 {
     bool isInstanceDeleteMethod = (clientData != NULL);
     Object *oPtr;
-    int i;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name ?name ...?");
@@ -1971,7 +1970,7 @@ TclOODefineDeleteMethodObjCmd(
 	return ReportAbuse(interp);
     }
 
-    for (i = 1; i < objc; i++) {
+    for (Tcl_Size i = 1; i < objc; i++) {
 	/*
 	 * Delete the method structure from the appropriate hash table.
 	 */
@@ -2070,7 +2069,6 @@ TclOODefineExportObjCmd(
     Tcl_Obj *const *objv)
 {
     bool isInstanceExport = (clientData != NULL), changed = false;
-    int i;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name ?name ...?");
@@ -2086,7 +2084,7 @@ TclOODefineExportObjCmd(
 	return ReportAbuse(interp);
     }
 
-    for (i = 1; i < objc; i++) {
+    for (Tcl_Size i = 1; i < objc; i++) {
 	/*
 	 * Exporting is done by adding the PUBLIC_METHOD flag to the method
 	 * record. If there is no such method in this object or class (i.e.
@@ -2458,10 +2456,9 @@ TclOODefineUnexportObjCmd(
     Tcl_Size objc,
     Tcl_Obj *const *objv)
 {
-    int isInstanceUnexport = (clientData != NULL), changed = false;
+    bool isInstanceUnexport = (clientData != NULL), changed = false;
     Object *oPtr;
     Class *clsPtr;
-    int i;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name ?name ...?");
@@ -2477,7 +2474,7 @@ TclOODefineUnexportObjCmd(
 	return ReportAbuse(interp);
     }
 
-    for (i = 1; i < objc; i++) {
+    for (Tcl_Size i = 1; i < objc; i++) {
 	if (isInstanceUnexport) {
 	    changed |= UnexportInstanceMethod(oPtr, objv[i]);
 	} else {
@@ -2715,7 +2712,7 @@ ResolveAll(
 	Tcl_ResetResult(interp);
     }
     Tcl_Obj *resolvedList = Tcl_NewListObj(objc, resolvedItems);
-    for (int i = 0; i < objc; i++) {
+    for (Tcl_Size i = 0; i < objc; i++) {
 	TclDecrRefCount(resolvedItems[i]);
     }
     TclStackFree(interp, (void *) resolvedItems);
@@ -4148,7 +4145,7 @@ BuildPropertyList(
     Tcl_Obj *listObj)		/* The list of property names we're building */
 {
     bool present = false, changed = false;
-    int i;
+    Tcl_Size i;
     Tcl_Obj *other;
 
     Tcl_SetListObj(listObj, 0, NULL);
