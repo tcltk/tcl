@@ -813,7 +813,7 @@ InvokeProcedureMethod(
     void *clientData,		/* Pointer to the per-method record. */
     Tcl_Interp *interp,
     Tcl_ObjectContext context,	/* The method calling context. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Arguments as actually seen. */
 {
     ProcedureMethod *pmPtr = (ProcedureMethod *) clientData;
@@ -952,7 +952,7 @@ PushMethodCallFrame(
     CallContext *contextPtr,	/* Current method call context. */
     ProcedureMethod *pmPtr,	/* Information about this procedure-like
 				 * method. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const *objv,	/* Array of arguments. */
     PMFrameData *fdPtr)		/* Place to store information about the call
 				 * frame. */
@@ -1582,7 +1582,7 @@ InvokeForwardMethod(
     void *clientData,		/* Pointer to some per-method context. */
     Tcl_Interp *interp,
     Tcl_ObjectContext context,	/* The method calling context. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Arguments as actually seen. */
 {
     CallContext *contextPtr = (CallContext *) context;
@@ -1732,12 +1732,12 @@ TclOOGetFwdFromMethod(
 static Tcl_Obj **
 InitEnsembleRewrite(
     Tcl_Interp *interp,		/* Place to log the rewrite info. */
-    Tcl_Size objc,			/* Number of real arguments. */
+    Tcl_Size objc,		/* Number of real arguments. */
     Tcl_Obj *const *objv,	/* The real arguments. */
     Tcl_Size toRewrite,		/* Number of real arguments to replace. */
-    Tcl_Size rewriteLength,		/* Number of arguments to insert instead. */
+    Tcl_Size rewriteLength,	/* Number of arguments to insert instead. */
     Tcl_Obj *const *rewriteObjs,/* Arguments to insert instead. */
-    Tcl_Size *lengthPtr)		/* Where to write the resulting length of the
+    Tcl_Size *lengthPtr)	/* Where to write the resulting length of the
 				 * array of rewritten arguments. */
 {
     size_t len = rewriteLength + objc - toRewrite;
