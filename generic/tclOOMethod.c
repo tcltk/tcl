@@ -405,14 +405,11 @@ TclOODefineBasicMethods(
     const DeclaredClassMethod *dcmAry)
 				/* Static table of method definitions. */
 {
-    int i;
-
-    for (i = 0 ; dcmAry[i].name ; i++) {
-	Tcl_Obj *namePtr = Tcl_NewStringObj(dcmAry[i].name, TCL_AUTO_LENGTH);
+    for (const DeclaredClassMethod *dcm = dcmAry; dcm->name ; dcm++) {
+	Tcl_Obj *namePtr = Tcl_NewStringObj(dcm->name, TCL_AUTO_LENGTH);
 
 	TclNewMethod((Tcl_Class) clsPtr, namePtr,
-		(dcmAry[i].isPublic ? PUBLIC_METHOD : 0),
-		&dcmAry[i].definition, NULL);
+		(dcm->isPublic ? PUBLIC_METHOD : 0), &dcm->definition, NULL);
 	Tcl_BounceRefCount(namePtr);
     }
 }
@@ -816,7 +813,7 @@ InvokeProcedureMethod(
     void *clientData,		/* Pointer to the per-method record. */
     Tcl_Interp *interp,
     Tcl_ObjectContext context,	/* The method calling context. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Arguments as actually seen. */
 {
     ProcedureMethod *pmPtr = (ProcedureMethod *) clientData;
@@ -955,7 +952,7 @@ PushMethodCallFrame(
     CallContext *contextPtr,	/* Current method call context. */
     ProcedureMethod *pmPtr,	/* Information about this procedure-like
 				 * method. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const *objv,	/* Array of arguments. */
     PMFrameData *fdPtr)		/* Place to store information about the call
 				 * frame. */
@@ -1104,7 +1101,8 @@ ProcedureMethodCompiledVarConnect(
     Tcl_Obj *variableObj;
     PrivateVariableMapping *privateVar;
     Tcl_HashEntry *hPtr;
-    int isNew, cacheIt;
+    int isNew;
+    bool cacheIt;
     Tcl_Size i, varLen, len;
     const char *match, *varName;
 
@@ -1142,7 +1140,7 @@ ProcedureMethodCompiledVarConnect(
 	    match = Tcl_GetStringFromObj(privateVar->variableObj, &len);
 	    if ((len == varLen) && !memcmp(match, varName, len)) {
 		variableObj = privateVar->fullNameObj;
-		cacheIt = 0;
+		cacheIt = false;
 		goto gotMatch;
 	    }
 	}
@@ -1150,7 +1148,7 @@ ProcedureMethodCompiledVarConnect(
 		.mPtr->declaringClassPtr->variables) {
 	    match = Tcl_GetStringFromObj(variableObj, &len);
 	    if ((len == varLen) && !memcmp(match, varName, len)) {
-		cacheIt = 0;
+		cacheIt = false;
 		goto gotMatch;
 	    }
 	}
@@ -1159,14 +1157,14 @@ ProcedureMethodCompiledVarConnect(
 	    match = Tcl_GetStringFromObj(privateVar->variableObj, &len);
 	    if ((len == varLen) && !memcmp(match, varName, len)) {
 		variableObj = privateVar->fullNameObj;
-		cacheIt = 1;
+		cacheIt = true;
 		goto gotMatch;
 	    }
 	}
 	FOREACH(variableObj, contextPtr->oPtr->variables) {
 	    match = Tcl_GetStringFromObj(variableObj, &len);
 	    if ((len == varLen) && !memcmp(match, varName, len)) {
-		cacheIt = 1;
+		cacheIt = true;
 		goto gotMatch;
 	    }
 	}
@@ -1584,7 +1582,7 @@ InvokeForwardMethod(
     void *clientData,		/* Pointer to some per-method context. */
     Tcl_Interp *interp,
     Tcl_ObjectContext context,	/* The method calling context. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Arguments as actually seen. */
 {
     CallContext *contextPtr = (CallContext *) context;
@@ -1734,12 +1732,12 @@ TclOOGetFwdFromMethod(
 static Tcl_Obj **
 InitEnsembleRewrite(
     Tcl_Interp *interp,		/* Place to log the rewrite info. */
-    Tcl_Size objc,			/* Number of real arguments. */
+    Tcl_Size objc,		/* Number of real arguments. */
     Tcl_Obj *const *objv,	/* The real arguments. */
     Tcl_Size toRewrite,		/* Number of real arguments to replace. */
-    Tcl_Size rewriteLength,		/* Number of arguments to insert instead. */
+    Tcl_Size rewriteLength,	/* Number of arguments to insert instead. */
     Tcl_Obj *const *rewriteObjs,/* Arguments to insert instead. */
-    Tcl_Size *lengthPtr)		/* Where to write the resulting length of the
+    Tcl_Size *lengthPtr)	/* Where to write the resulting length of the
 				 * array of rewritten arguments. */
 {
     size_t len = rewriteLength + objc - toRewrite;

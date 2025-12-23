@@ -490,7 +490,7 @@ enum TclOOCallChainFlags {
  */
 struct DeclaredClassMethod {
     const char *name;		/* Name of the method in question. */
-    int isPublic;		/* Whether the method is public by default. */
+    bool isPublic;		/* Whether the method is public by default. */
     Tcl_MethodType2 definition;	/* How to call the method. */
 };
 
@@ -592,7 +592,7 @@ MODULE_SCOPE void	TclOODeleteContext(CallContext *contextPtr);
 MODULE_SCOPE void	TclOODeleteDescendants(Tcl_Interp *interp,
 			    Object *oPtr);
 MODULE_SCOPE void	TclOODelMethodRef(Method *method);
-MODULE_SCOPE int	TclOOExportMethods(Class *clsPtr, ...);
+MODULE_SCOPE bool	TclOOExportMethods(Class *clsPtr, ...);
 MODULE_SCOPE CallContext *TclOOGetCallContext(Object *oPtr,
 			    Tcl_Obj *methodNameObj, int flags,
 			    Object *contextObjPtr, Class *contextClsPtr,
@@ -643,9 +643,9 @@ MODULE_SCOPE void	TclOOSetSuperclasses(Class *clsPtr, Tcl_Size superc,
 MODULE_SCOPE void	TclOOStashContext(Tcl_Obj *objPtr,
 			    CallContext *contextPtr);
 MODULE_SCOPE void	TclOOSetupVariableResolver(Tcl_Namespace *nsPtr);
-MODULE_SCOPE int	TclOOUnexportMethods(Class *clsPtr, ...);
+MODULE_SCOPE bool	TclOOUnexportMethods(Class *clsPtr, ...);
 MODULE_SCOPE Tcl_Obj *	TclOOGetAllObjectProperties(Object *oPtr,
-			    int writable);
+			    bool writable);
 MODULE_SCOPE Tcl_Obj *	TclOOGetPropertyList(PropertyList *propList);
 MODULE_SCOPE void	TclOOReleasePropertyStorage(PropertyStorage *propsPtr);
 MODULE_SCOPE void	TclOOInstallReadableProperties(PropertyStorage *props,
@@ -654,11 +654,11 @@ MODULE_SCOPE void	TclOOInstallWritableProperties(PropertyStorage *props,
 			    Tcl_Size objc, Tcl_Obj *const objv[]);
 MODULE_SCOPE int	TclOOInstallStdPropertyImpls(void *useInstance,
 			    Tcl_Interp *interp, Tcl_Obj *propName,
-			    int readable, int writable);
+			    bool readable, bool writable);
 MODULE_SCOPE void	TclOORegisterProperty(Class *clsPtr,
-			    Tcl_Obj *propName, int mayRead, int mayWrite);
+			    Tcl_Obj *propName, bool mayRead, bool mayWrite);
 MODULE_SCOPE void	TclOORegisterInstanceProperty(Object *oPtr,
-			    Tcl_Obj *propName, int mayRead, int mayWrite);
+			    Tcl_Obj *propName, bool mayRead, bool mayWrite);
 
 /*
  * Include all the private API, generated from tclOO.decls.
