@@ -674,7 +674,7 @@ static const size_t Exp64ValueSize = sizeof(Exp64Value) / sizeof(Tcl_WideInt);
  */
 
 #ifdef TCL_COMPILE_STATS
-static Tcl_ObjCmdProc EvalStatsCmd;
+static Tcl_ObjCmdProc2 EvalStatsCmd;
 #endif /* TCL_COMPILE_STATS */
 #ifdef TCL_COMPILE_DEBUG
 static const char *	GetOpcodeName(const unsigned char *pc);
@@ -724,10 +724,10 @@ static Tcl_NRPostProc   TEBCresume;
 
 const Tcl_ObjType tclExprCodeType = {
     "exprcode",
-    FreeExprCodeInternalRep,	/* freeIntRepProc */
-    DupExprCodeInternalRep,	/* dupIntRepProc */
-    NULL,			/* updateStringProc */
-    NULL,			/* setFromAnyProc */
+    FreeExprCodeInternalRep,
+    DupExprCodeInternalRep,
+    NULL,			// UpdateString
+    NULL,			// SetFromAny
     TCL_OBJTYPE_V0
 };
 
@@ -739,7 +739,9 @@ const Tcl_ObjType tclExprCodeType = {
 static const Tcl_ObjType dictIteratorType = {
     "dictIterator",
     ReleaseDictIterator,
-    NULL, NULL, NULL,
+    NULL,			// DupIntRep
+    NULL,			// UpdateString
+    NULL,			// SetFromAny
     TCL_OBJTYPE_V0
 };
 
@@ -815,7 +817,7 @@ InitByteCodeExecution(
     }
 #endif
 #ifdef TCL_COMPILE_STATS
-    Tcl_CreateObjCommand(interp, "evalstats", EvalStatsCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "evalstats", EvalStatsCmd, NULL, NULL);
 #endif /* TCL_COMPILE_STATS */
 }
 
@@ -1488,7 +1490,7 @@ CompileExprObj(
 	const char *string = TclGetStringFromObj(objPtr, &length);
 
 	TclInitCompileEnv(interp, &compEnv, string, length, NULL, 0);
-	TclCompileExpr(interp, string, length, &compEnv, 0);
+	TclCompileExpr(interp, string, length, &compEnv, false);
 
 	/*
 	 * Successful compilation. If the expression yielded no instructions,
@@ -1954,33 +1956,6 @@ FindTclOOMethodIndex(
 	}
     }
     return TCL_INDEX_NONE;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * GetTclOOCallContext --
- *
- *	A helper for INST_TCLOO_NEXT in TEBC. Returns the call context if one
- *	exists.
- *
- * Results:
- *	The call context, or NULL if not found.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-static inline CallContext *
-GetTclOOCallContext(
-    Interp *iPtr)
-{
-    CallFrame *framePtr = iPtr->varFramePtr;
-    if (!framePtr || !(framePtr->isProcCallFrame & FRAME_IS_METHOD)) {
-	return NULL;
-    }
-    return (CallContext *) framePtr->clientData;
 }
 
 /*
@@ -2748,7 +2723,7 @@ TEBCresume(
 	Tcl_Obj *scriptObj = OBJ_AT_TOS;
 	CallFrame *framePtr;
 	CmdFrame *invoker = NULL;
-	int word = 0;
+	Tcl_Size word = 0;
 
 	TRACE("\"%.30s\" \"%.30s\" => ", O2S(levelObj), O2S(scriptObj));
 	if (TclObjGetFrame(interp, levelObj, &framePtr) == -1) {
@@ -3087,12 +3062,8 @@ TEBCresume(
 
 	pc += pcAdjustment;
 	TEBC_YIELD();
-	if (objc > INT_MAX) {
-	    return TclCommandWordLimitError(interp, objc);
-	} else {
-	    return TclNREvalObjv(interp, objc, objv,
+	return TclNREvalObjv(interp, objc, objv,
 		    TCL_EVAL_NOERR | TCL_EVAL_SOURCE_IN_FRAME, NULL);
-	}
 
     case INST_INVOKE_REPLACE:
 	objc = TclGetUInt4AtPtr(pc + 1);
@@ -4747,17 +4718,13 @@ TEBCresume(
 
     case INST_TCLOO_SELF:
 	TRACE("=> ");
-	contextPtr = GetTclOOCallContext(iPtr);
+	DECACHE_STACK_INFO();
+	contextPtr = TclOOGetContextFromCurrentStackFrame(interp, "self");
 	if (!contextPtr) {
-	    TRACE_APPEND("ERROR: no TclOO call context\n");
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "self may only be called from inside a method",
-		    -1));
-	    DECACHE_STACK_INFO();
-	    OO_ERROR(interp, CONTEXT_REQUIRED);
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
+	CACHE_STACK_INFO();
 
 	/*
 	 * Call out to get the name; it's expensive to compute but cached.
@@ -4799,12 +4766,13 @@ TEBCresume(
 	TRACE("%u => ", (unsigned)numArgs);
     invokeNextClass:
 	skip = 2;
-	contextPtr = GetTclOOCallContext(iPtr);
+	DECACHE_STACK_INFO();
+	contextPtr = TclOOGetContextFromCurrentStackFrame(interp,
+		TclGetString(objv[0]));
 	if (!contextPtr) {
 	    goto tclooFrameRequired;
 	}
 
-	DECACHE_STACK_INFO();
 	clsPtr = TclOOGetClassFromObj(interp, valuePtr);
 	if (clsPtr == NULL) {
 	    TRACE_APPEND("ERROR: \"%.30s\" not class\n", O2S(valuePtr));
@@ -4847,12 +4815,13 @@ TEBCresume(
 	TRACE("%u => ", (unsigned)numArgs);
     invokeNext:
 	skip = 1;
-	contextPtr = GetTclOOCallContext(iPtr);
+	DECACHE_STACK_INFO();
+	contextPtr = TclOOGetContextFromCurrentStackFrame(interp,
+		TclGetString(objv[0]));
 	if (!contextPtr) {
 	    goto tclooFrameRequired;
 	}
 
-	DECACHE_STACK_INFO();
 	newDepth = contextPtr->index + 1;
 	if (newDepth >= contextPtr->callPtr->numChain) {
 	    /*
@@ -4917,21 +4886,25 @@ TEBCresume(
 
 	    // Call the selected next method non-recursively
 	    const Method *mPtr = contextPtr->callPtr->chain[newDepth].mPtr;
-	    if (mPtr->typePtr->version < TCL_OO_METHOD_VERSION_2) {
-		return mPtr->typePtr->callProc(mPtr->clientData, interp,
+#ifndef TCL_NO_DEPRECATED
+	    if (mPtr->typePtr->version == TCL_OO_METHOD_VERSION_1) {
+		if (objc > INT_MAX) {
+		    TRACE_ERROR(interp);
+		    goto gotError;
+		}
+		// Ugly indirect cast
+		Tcl_MethodCallProc *callProc = (Tcl_MethodCallProc *)
+			(void *)mPtr->type2Ptr->callProc;
+		return callProc(mPtr->clientData, interp,
 			(Tcl_ObjectContext) contextPtr, (int)numArgs, objv);
 	    }
+#endif /* TCL_NO_DEPRECATED */
 	    return mPtr->type2Ptr->callProc(mPtr->clientData, interp,
 		    (Tcl_ObjectContext) contextPtr, numArgs, objv);
 	}
 
     tclooFrameRequired:
 	TRACE_APPEND("ERROR: no TclOO call context\n");
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"%s may only be called from inside a method",
-		TclGetString(objv[0])));
-	DECACHE_STACK_INFO();
-	OO_ERROR(interp, CONTEXT_REQUIRED);
 	CACHE_STACK_INFO();
 	goto gotError;
     tclooNoNext:
@@ -10144,7 +10117,7 @@ static int
 EvalStatsCmd(
     TCL_UNUSED(void *),		/* Unused. */
     Tcl_Interp *interp,		/* The current interpreter. */
-    int objc,			/* The number of arguments. */
+    Tcl_Size objc,			/* The number of arguments. */
     Tcl_Obj *const objv[])	/* The argument strings. */
 {
     Interp *iPtr = (Interp *) interp;

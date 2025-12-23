@@ -53,6 +53,9 @@ trigger proper error-handling), otherwise expect it to crash.
 .BE
 .SH DESCRIPTION
 .PP
+N.B. Refer to the \fBTcl_UniChar\fR documentation page for a description of the
+\fITUTF-8\fR encoding and related terms referenced here.
+.PP
 These routines are used to create, modify, store, transfer, and retrieve
 arbitrary binary data in Tcl values.  Specifically, data that can be
 represented as a sequence of arbitrary byte values is supported.
@@ -74,8 +77,7 @@ of \fIN\fR bytes is transformed into the corresponding sequence
 of \fIN\fR characters, where each byte value transforms to the same
 character codepoint value in the range (U+0000 - U+00FF).  Obtaining the
 string representation of a byte-array value (by calling
-\fBTcl_GetStringFromObj\fR) produces this string in Tcl's usual
-Modified UTF-8 encoding.
+\fBTcl_GetStringFromObj\fR) produces this string in TUTF-8 encoding.
 .PP
 \fBTcl_NewByteArrayObj\fR and \fBTcl_SetByteArrayObj\fR
 create a new value or overwrite an existing unshared value, respectively,

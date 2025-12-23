@@ -14,7 +14,7 @@
 mathfunc \- Mathematical functions for Tcl expressions
 .SH SYNOPSIS
 .nf
-package require \fBTcl 8.5-\fR
+\fBpackage require Tcl 8.5-\fR
 
 \fB::tcl::mathfunc::abs\fI arg\fR
 \fB::tcl::mathfunc::acos\fI arg\fR
@@ -45,8 +45,8 @@ package require \fBTcl 8.5-\fR
 .VE TIP521
 \fB::tcl::mathfunc::log\fI arg\fR
 \fB::tcl::mathfunc::log10\fI arg\fR
-\fB::tcl::mathfunc::max\fI arg\fR ?\fIarg\fR ...?
-\fB::tcl::mathfunc::min\fI arg\fR ?\fIarg\fR ...?
+\fB::tcl::mathfunc::max\fI arg\fR ?\fIarg ...\fR?
+\fB::tcl::mathfunc::min\fI arg\fR ?\fIarg ...\fR?
 \fB::tcl::mathfunc::pow\fI x y\fR
 \fB::tcl::mathfunc::rand\fR
 \fB::tcl::mathfunc::round\fI arg\fR
@@ -277,13 +277,13 @@ Returns the base 10 logarithm of \fIarg\fR.  \fIArg\fR must be a
 positive value.
 .\" COMMAND: max
 .TP
-\fBmax \fIarg\fB \fI...\fR
+\fBmax \fIarg\fB \fR...
 .
 Accepts one or more numeric arguments.  Returns the one argument
 with the greatest value.
 .\" COMMAND: min
 .TP
-\fBmin \fIarg\fB \fI...\fR
+\fBmin \fIarg\fB \fR...
 .
 Accepts one or more numeric arguments.  Returns the one argument
 with the least value.

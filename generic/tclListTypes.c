@@ -377,19 +377,20 @@ static Tcl_ObjTypeInOperatorProc LreverseTypeInOper;
  * modification.
  */
 static const Tcl_ObjType lreverseType = {
-    "reversedList",                     /* name */
-    LreverseFreeIntrep,                 /* freeIntRepProc */
-    LreverseDupIntrep,                  /* dupIntRepProc */
-    TclAbstractListUpdateString,        /* updateStringProc */
-    NULL,                               /* setFromAnyProc */
-    TCL_OBJTYPE_V2(LreverseTypeLength,  /* lengthProc */
-		   LreverseTypeIndex,   /* indexProc */
-		   NULL,                /* sliceProc */
-		   LreverseTypeReverse, /* reverseProc */
-		   NULL,                /* getElementsProc */
-		   NULL,                /* setElementProc - FUTURES */
-		   NULL,                /* replaceProc - FUTURES */
-		   LreverseTypeInOper)  /* inOperProc */
+    "reversedList",
+    LreverseFreeIntrep,
+    LreverseDupIntrep,
+    TclAbstractListUpdateString,
+    NULL,			// SetFromAny
+    TCL_OBJTYPE_V2(
+	LreverseTypeLength,
+	LreverseTypeIndex,
+	NULL,			// Slice
+	LreverseTypeReverse,
+	NULL,			// GetElements
+	NULL,			// SetElement - FUTURES
+	NULL,			// Replace - FUTURES
+	LreverseTypeInOper)
 };
 
 static void
@@ -584,19 +585,20 @@ static Tcl_ObjTypeInOperatorProc LrepeatTypeInOper;
  * may be shared must be checked before modification.
  */
 static const Tcl_ObjType lrepeatType = {
-    "repeatedList",                   /* name */
-    LrepeatFreeIntrep,                /* freeIntRepProc */
-    LrepeatDupIntrep,                 /* dupIntRepProc */
-    TclAbstractListUpdateString,      /* updateStringProc */
-    NULL,                             /* setFromAnyProc */
-    TCL_OBJTYPE_V2(LrepeatTypeLength, /* lengthProc */
-		   LrepeatTypeIndex,  /* indexProc */
-		   NULL,              /* sliceProc */
-		   NULL,              /* Must be NULL - see above comment */
-		   NULL,              /* getElementsProc */
-		   NULL,              /* Must be NULL - see above comment */
-		   NULL,              /* Must be NULL - see above comment */
-		   LrepeatTypeInOper) /* inOperProc */
+    "repeatedList",
+    LrepeatFreeIntrep,
+    LrepeatDupIntrep,
+    TclAbstractListUpdateString,
+    NULL,			// SetFromAny
+    TCL_OBJTYPE_V2(
+	LrepeatTypeLength,
+	LrepeatTypeIndex,
+	NULL,			// Slice
+	NULL,			// Must be NULL - see above comment
+	NULL,			// GetElements
+	NULL,			// Must be NULL - see above comment
+	NULL,			// Must be NULL - see above comment
+	LrepeatTypeInOper)
 };
 
 static void
@@ -796,19 +798,20 @@ static Tcl_ObjTypeSliceProc LrangeSlice;
  * may be shared and must be checked before modification.
  */
 static const Tcl_ObjType lrangeType = {
-    "rangeList",                     /* name */
-    LrangeFreeIntrep,                /* freeIntRepProc */
-    LrangeDupIntrep,                 /* dupIntRepProc */
-    TclAbstractListUpdateString,     /* updateStringProc */
-    NULL,                            /* setFromAnyProc */
-    TCL_OBJTYPE_V2(LrangeTypeLength, /* lengthProc */
-		   LrangeTypeIndex,  /* indexProc */
-		   LrangeSlice,      /* sliceProc */
-		   NULL,             /* reverseProc, see above comment */
-		   NULL,             /* getElementsProc */
-		   NULL,             /* setElementProc, see above comment */
-		   NULL,             /* replaceProc, see above comment */
-		   NULL)             /* inOperProc */
+    "rangeList",
+    LrangeFreeIntrep,
+    LrangeDupIntrep,
+    TclAbstractListUpdateString,
+    NULL,			// SetFromAny
+    TCL_OBJTYPE_V2(
+	LrangeTypeLength,
+	LrangeTypeIndex,
+	LrangeSlice,
+	NULL,			// ReverseP, see above comment
+	NULL,			// GetElements
+	NULL,			// SetElement, see above comment
+	NULL,			// Replace, see above comment
+	NULL)			// InOper
 };
 
 static inline int

@@ -303,7 +303,7 @@ It does not check whether the namespace names are, in fact,
 the names of currently defined namespaces.
 .\" METHOD: upvar
 .TP
-\fBnamespace upvar\fI namespace\fR ?\fIotherVar myVar \fR...?
+\fBnamespace upvar\fI namespace\fR ?\fIotherVar myVar ...\fR?
 .
 This command arranges for zero or more local variables in the current
 procedure to refer to variables in \fInamespace\fR. The namespace name is

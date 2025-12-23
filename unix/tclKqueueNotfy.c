@@ -102,7 +102,7 @@ typedef struct ThreadSpecificData {
     struct kevent *readyEvents;	/* Pointer to at most maxReadyEvents events
 				 * returned by kevent(2). */
     size_t maxReadyEvents;	/* Count of kevents in readyEvents. */
-    int asyncPending;		/* True when signal triggered thread. */
+    bool asyncPending;		/* True when signal triggered thread. */
 } ThreadSpecificData;
 
 static Tcl_ThreadDataKey dataKey;
@@ -112,7 +112,7 @@ static Tcl_ThreadDataKey dataKey;
  */
 
 static void		PlatformEventsControl(FileHandler *filePtr,
-			    ThreadSpecificData *tsdPtr, int op, int isNew);
+			    ThreadSpecificData *tsdPtr, int op, bool isNew);
 static int		PlatformEventsTranslate(struct kevent *eventPtr);
 static int		PlatformEventsWait(struct kevent *events,
 			    size_t numEvents, struct timeval *timePtr);
@@ -158,7 +158,7 @@ PlatformEventsControl(
     FileHandler *filePtr,
     ThreadSpecificData *tsdPtr,
     int op,
-    int isNew)
+    bool isNew)
 {
     int numChanges;
     struct kevent changeList[2];
@@ -361,7 +361,7 @@ TclpInitNotifier(void)
     filePtr = (FileHandler *) Tcl_Alloc(sizeof(FileHandler));
     filePtr->fd = tsdPtr->triggerPipe[0];
     filePtr->mask = TCL_READABLE;
-    PlatformEventsControl(filePtr, tsdPtr, EV_ADD, 1);
+    PlatformEventsControl(filePtr, tsdPtr, EV_ADD, true);
     if (!tsdPtr->readyEvents) {
 	tsdPtr->maxReadyEvents = 512;
 	tsdPtr->readyEvents = (struct kevent *) Tcl_Alloc(
@@ -484,7 +484,7 @@ PlatformEventsWait(
 	}
     }
     if (tsdPtr->asyncPending) {
-	tsdPtr->asyncPending = 0;
+	tsdPtr->asyncPending = false;
 	TclAsyncMarkFromNotifier();
     }
     return numFound;
@@ -521,7 +521,7 @@ TclpCreateFileHandler(
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     FileHandler *filePtr = LookUpFileHandler(tsdPtr, fd, NULL);
-    int isNew = (filePtr == NULL);
+    bool isNew = (filePtr == NULL);
 
     if (isNew) {
 	filePtr = (FileHandler *) Tcl_Alloc(sizeof(FileHandler));
@@ -578,7 +578,7 @@ TclpDeleteFileHandler(
      * Update the check masks for this file.
      */
 
-    PlatformEventsControl(filePtr, tsdPtr, EV_DELETE, 0);
+    PlatformEventsControl(filePtr, tsdPtr, EV_DELETE, false);
     if (filePtr->pedPtr) {
 	Tcl_Free(filePtr->pedPtr);
     }
@@ -782,13 +782,13 @@ TclpWaitForEvent(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 TclAsyncNotifier(
     int sigNumber,		/* Signal number. */
     Tcl_ThreadId threadId,	/* Target thread. */
     void *clientData,		/* Notifier data. */
-    int *flagPtr,		/* Flag to mark. */
-    int value)			/* Value of mark. */
+    signed char *flagPtr,		/* Flag to mark. */
+    signed char value)			/* Value of mark. */
 {
 #if TCL_THREADS
     /*
@@ -803,11 +803,11 @@ TclAsyncNotifier(
 
 	*flagPtr = value;
 	if (tsdPtr != NULL && !tsdPtr->asyncPending) {
-	    tsdPtr->asyncPending = 1;
+	    tsdPtr->asyncPending = true;
 	    TclpAlertNotifier(tsdPtr);
-	    return 1;
+	    return true;
 	}
-	return 0;
+	return false;
     }
 
     /*
@@ -822,7 +822,7 @@ TclAsyncNotifier(
     (void)flagPtr;
     (void)value;
 #endif
-    return 0;
+    return false;
 }
 
 #endif /* NOTIFIER_KQUEUE && TCL_THREADS */

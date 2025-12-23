@@ -92,6 +92,39 @@
 #  define CFG_PROFILED		"0"
 #endif
 
+/*
+  The macOS framework build first installs the framework in the build
+  directory and then copies it to /Library/Frameworks/Tcl.framework.
+  Without these macros the pkgconfig paths point into the build
+  directory instead of into the installed framework.
+*/
+
+#if defined(MAC_OSX_TCL) && defined(TCL_FRAMEWORK)
+  #define VERSION_DIR "/Library/Frameworks/Tcl.framework/Versions/"TCL_VERSION
+  #undef CFG_INSTALL_LIBDIR
+  #undef CFG_RUNTIME_LIBDIR
+  #undef CFG_INSTALL_BINDIR
+  #undef CFG_RUNTIME_BINDIR
+  #undef CFG_INSTALL_DOCDIR
+  #undef CFG_RUNTIME_DOCDIR
+  #undef CFG_INSTALL_SCRDIR
+  #undef CFG_RUNTIME_SCRDIR
+  #undef CFG_INSTALL_INCDIR
+  #undef CFG_RUNTIME_INCDIR
+  #undef CFG_INSTALL_DEMODIR
+  #undef CFG_RUNTIME_DEMODIR
+  #define CFG_INSTALL_LIBDIR VERSION_DIR
+  #define CFG_RUNTIME_LIBDIR CFG_INSTALL_LIBDIR
+  #define CFG_INSTALL_BINDIR VERSION_DIR
+  #define CFG_RUNTIME_BINDIR CFG_INSTALL_BINDIR
+  #define CFG_INSTALL_DOCDIR VERSION_DIR "/Resources/Documentation"
+  #define CFG_RUNTIME_DOCDIR CFG_INSTALL_DOCDIR
+  #define CFG_INSTALL_SCRDIR VERSION_DIR "/Resources/Scripts"
+  #define CFG_RUNTIME_SCRDIR CFG_INSTALL_SCRDIR
+  #define CFG_INSTALL_INCDIR VERSION_DIR "/Headers"
+  #define CFG_RUNTIME_INCDIR CFG_INSTALL_INCDIR
+#endif
+
 static Tcl_Config const cfg[] = {
     {"debug",			CFG_DEBUG},
     {"threaded",		CFG_THREADED},
@@ -109,7 +142,7 @@ static Tcl_Config const cfg[] = {
     {"scriptdir,runtime",	CFG_RUNTIME_SCRDIR},
     {"includedir,runtime",	CFG_RUNTIME_INCDIR},
     {"docdir,runtime",		CFG_RUNTIME_DOCDIR},
-#if !defined(STATIC_BUILD)
+#if !defined(STATIC_BUILD) && defined(CFG_RUNTIME_DLLFILE)
     {"dllfile,runtime",		CFG_RUNTIME_DLLFILE},
 #endif
 

@@ -83,7 +83,7 @@ A suspended coroutine (i.e., one that has \fByield\fRed or \fByieldto\fR-d)
 may have its state inspected (or modified) at that point by using
 \fBcoroprobe\fR to run a command at the point where the coroutine is at. The
 command takes the name of the coroutine to run the command in, \fIcoroName\fR,
-and the name of a command (any any arguments it requires) to immediately run
+and the name of a command (and any arguments it requires) to immediately run
 at that point. The result of that command is the result of the \fBcoroprobe\fR
 command, and the gross state of the coroutine remains the same afterwards
 (i.e., the coroutine is still expecting the results of a \fByield\fR or

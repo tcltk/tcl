@@ -25,9 +25,9 @@ static int		GetIndexFromObjList(Tcl_Interp *interp,
 static void		UpdateStringOfIndex(Tcl_Obj *objPtr);
 static void		DupIndex(Tcl_Obj *srcPtr, Tcl_Obj *dupPtr);
 static void		FreeIndex(Tcl_Obj *objPtr);
-static Tcl_ObjCmdProc PrefixAllObjCmd;
-static Tcl_ObjCmdProc PrefixLongestObjCmd;
-static Tcl_ObjCmdProc PrefixMatchObjCmd;
+static Tcl_ObjCmdProc2 PrefixAllObjCmd;
+static Tcl_ObjCmdProc2 PrefixLongestObjCmd;
+static Tcl_ObjCmdProc2 PrefixMatchObjCmd;
 static void		PrintUsage(Tcl_Interp *interp,
 			    const Tcl_ArgvInfo *argTable);
 
@@ -44,11 +44,11 @@ const EnsembleImplMap tclPrefixImplMap[] = {
  */
 
 const Tcl_ObjType tclIndexType = {
-    "index",			/* name */
-    FreeIndex,			/* freeIntRepProc */
-    DupIndex,			/* dupIntRepProc */
-    UpdateStringOfIndex,	/* updateStringProc */
-    NULL,			/* setFromAnyProc */
+    "index",
+    FreeIndex,
+    DupIndex,
+    UpdateStringOfIndex,
+    NULL,			// SetFromAny
     TCL_OBJTYPE_V0
 };
 
@@ -482,7 +482,7 @@ FreeIndex(
 int
 TclSetUpPrefixCmd(
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Command ensemble)	/* The prefix ensemble. */ 
+    Tcl_Command ensemble)	/* The prefix ensemble. */
 {
     return Tcl_Export(interp, (Tcl_Namespace*)((Command *)ensemble)->nsPtr,
 	    "prefix", 0);
@@ -508,7 +508,7 @@ static int
 PrefixMatchObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int flags = 0, result;
@@ -632,7 +632,7 @@ static int
 PrefixAllObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int result;
@@ -690,7 +690,7 @@ static int
 PrefixLongestObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int result;
@@ -1177,11 +1177,6 @@ Tcl_ParseArgsObjv(
 	}
 	case TCL_ARGV_GENFUNC: {
 
-	    if (objc > INT_MAX) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"too many (%" TCL_SIZE_MODIFIER "d) arguments for TCL_ARGV_GENFUNC", objc));
-		goto error;
-	    }
 	    Tcl_ArgvGenFuncProc *handlerProc = (Tcl_ArgvGenFuncProc *)
 		    infoPtr->srcPtr;
 

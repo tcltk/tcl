@@ -786,7 +786,9 @@ try {
 		    if {[string trim $line] eq ""} continue
 		    if {[string match #* $line]} continue
 		    lassign $line dir name
-		    lappend packageDirNameMap $dir $name
+		    dict append packageDirNameMap [string tolower $dir] $name
+		    dict append packageDirNameMap [string toupper $dir] $name
+		    dict append packageDirNameMap [string totitle $dir] $name
 		}
 	    } finally {
 		close $f

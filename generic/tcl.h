@@ -535,12 +535,14 @@ typedef void (Tcl_CloseProc) (void *data);
 typedef void (Tcl_CmdDeleteProc) (void *clientData);
 typedef int (Tcl_CmdProc) (void *clientData, Tcl_Interp *interp,
 	int argc, const char *argv[]);
+#ifndef TCL_NO_DEPRECATED
 typedef void (Tcl_CmdTraceProc) (void *clientData, Tcl_Interp *interp,
 	int level, char *command, Tcl_CmdProc *proc,
 	void *cmdClientData, int argc, const char *argv[]);
 typedef int (Tcl_CmdObjTraceProc) (void *clientData, Tcl_Interp *interp,
 	int level, const char *command, Tcl_Command commandInfo, int objc,
 	struct Tcl_Obj *const *objv);
+#endif /* TCL_NO_DEPRECATED */
 typedef void (Tcl_CmdObjTraceDeleteProc) (void *clientData);
 typedef void (Tcl_DupInternalRepProc) (struct Tcl_Obj *srcPtr,
 	struct Tcl_Obj *dupPtr);
@@ -560,8 +562,10 @@ typedef void (Tcl_IdleProc) (void *clientData);
 typedef void (Tcl_InterpDeleteProc) (void *clientData,
 	Tcl_Interp *interp);
 typedef void (Tcl_NamespaceDeleteProc) (void *clientData);
+#ifndef TCL_NO_DEPRECATED
 typedef int (Tcl_ObjCmdProc) (void *clientData, Tcl_Interp *interp,
 	int objc, struct Tcl_Obj *const *objv);
+#endif /* TCL_NO_DEPRECATED */
 typedef int (Tcl_ObjCmdProc2) (void *clientData, Tcl_Interp *interp,
 	Tcl_Size objc, struct Tcl_Obj *const *objv);
 typedef int (Tcl_CmdObjTraceProc2) (void *clientData, Tcl_Interp *interp,
@@ -813,8 +817,13 @@ typedef struct {
 				 * Tcl_CreateObjCommand; 2 if objProc was registered by
 				 * a call to Tcl_CreateObjCommand2; 0 otherwise.
 				 * Tcl_SetCmdInfo does not modify this field. */
+#ifdef TCL_NO_DEPRECATED
+    void *objProcNotUsed;	/* Command's object-based function. */
+    void *objClientDataNotUsed;	/* ClientData for object proc. */
+#else
     Tcl_ObjCmdProc *objProc;	/* Command's object-based function. */
     void *objClientData;	/* ClientData for object proc. */
+#endif
     Tcl_CmdProc *proc;		/* Command's string-based function. */
     void *clientData;		/* ClientData for string proc. */
     Tcl_CmdDeleteProc *deleteProc;
@@ -880,10 +889,10 @@ typedef struct Tcl_DString {
  *	TCL_NUMBER_NAN		Value is NaN.
  */
 
-#define TCL_NUMBER_INT          2
-#define TCL_NUMBER_BIG          3
-#define TCL_NUMBER_DOUBLE       4
-#define TCL_NUMBER_NAN          5
+#define TCL_NUMBER_INT		2
+#define TCL_NUMBER_BIG		3
+#define TCL_NUMBER_DOUBLE	4
+#define TCL_NUMBER_NAN		5
 
 /*
  * Flag values passed to Tcl_ConvertElement.
@@ -944,7 +953,7 @@ typedef struct Tcl_DString {
 #define TCL_EVAL_DIRECT		0x040000
 #define TCL_EVAL_INVOKE		0x080000
 #define TCL_CANCEL_UNWIND	0x100000
-#define TCL_EVAL_NOERR          0x200000
+#define TCL_EVAL_NOERR		0x200000
 
 /*
  * Special freeProc values that may be passed to Tcl_SetResult (see the man
@@ -2230,8 +2239,7 @@ typedef Tcl_Size (Tcl_ArgvGenFuncProc)(void *clientData, Tcl_Interp *interp,
  * Single public declaration for NRE.
  */
 
-typedef int (Tcl_NRPostProc) (void *data[], Tcl_Interp *interp,
-				int result);
+typedef int (Tcl_NRPostProc) (void *data[], Tcl_Interp *interp, int result);
 
 /*
  *----------------------------------------------------------------------------

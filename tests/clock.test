@@ -36111,6 +36111,52 @@ test clock-32.1 {scan/format across the Gregorian change} {
     }
     set problems
 } {}
+# year 1500, 1700 is still in julian calendar in en locale (< 1752), so not affected by y/100 & y/400 logic yet, thus it is leap year,
+# but years 1800, 1900 and 2000 are in gregorian calendar, so 1800 and 1900 are not leap years, but year 2000 is a leap year:
+test clock-32.2 {scan/format: leap year of old date (considering julian-gregorian transition)} {
+    # leap years:
+    list [clock format [clock scan "29.02.1500" -format {%d.%m.%Y} -gmt 1 -locale en] -format {%d.%m.%Y} -gmt 1 -locale en] \
+	 [clock format [clock scan "29.02.1600" -format {%d.%m.%Y} -gmt 1 -locale en] -format {%d.%m.%Y} -gmt 1 -locale en] \
+	 [clock format [clock scan "29.02.1700" -format {%d.%m.%Y} -gmt 1 -locale en] -format {%d.%m.%Y} -gmt 1 -locale en] \
+	 [clock format [clock scan "29.02.2000" -format {%d.%m.%Y} -gmt 1 -locale en] -format {%d.%m.%Y} -gmt 1 -locale en]
+} {29.02.1500 29.02.1600 29.02.1700 29.02.2000}
+test clock-32.3 {scan/format: leap year of old date (considering julian-gregorian transition)} {
+    # not leap years, so 29 Feb is invalid if valid mode, and results to 01 Mar otherwise:
+    list [catch {clock format [clock scan "29.02.1800" -format {%d.%m.%Y} -gmt 1 -locale en] -format {%d.%m.%Y} -gmt 1 -locale en} v] $v \
+	 [catch {clock format [clock scan "29.02.1900" -format {%d.%m.%Y} -gmt 1 -locale en] -format {%d.%m.%Y} -gmt 1 -locale en} v] $v
+} [list \
+    [expr {$valid_mode}] [expr {$valid_mode ? "unable to convert input string: invalid day" : "01.03.1800"}] \
+    [expr {$valid_mode}] [expr {$valid_mode ? "unable to convert input string: invalid day" : "01.03.1900"}]
+]
+test clock-32.4 {freescan/format: leap year of old date (considering julian-gregorian transition)} -setup {
+    # currently locale is unsupported by freescan, so temporary change global locale:
+    package require msgcat
+    set current [msgcat::mclocale]
+    msgcat::mclocale en_us
+} -body {
+    # leap years:
+    list [clock format [clock scan "02/29/1500" -gmt 1] -format {%m/%d/%Y} -gmt 1] \
+	 [clock format [clock scan "02/29/1600" -gmt 1] -format {%m/%d/%Y} -gmt 1] \
+	 [clock format [clock scan "02/29/1700" -gmt 1] -format {%m/%d/%Y} -gmt 1] \
+	 [clock format [clock scan "02/29/2000" -gmt 1] -format {%m/%d/%Y} -gmt 1]
+} -cleanup {
+    msgcat::mclocale $current
+} -result {02/29/1500 02/29/1600 02/29/1700 02/29/2000}
+test clock-32.5 {freescan/format: leap year of old date (considering julian-gregorian transition)} -setup {
+    # currently locale is unsupported by freescan, so temporary change global locale:
+    package require msgcat
+    set current [msgcat::mclocale]
+    msgcat::mclocale en_us
+} -body {
+    # not leap years, so 29 Feb is invalid if valid mode, and results to 01 Mar otherwise:
+    list [catch {clock format [clock scan "02/29/1800" -gmt 1] -format {%m/%d/%Y} -gmt 1} v] $v \
+	 [catch {clock format [clock scan "02/29/1900" -gmt 1] -format {%m/%d/%Y} -gmt 1} v] $v
+} -cleanup {
+    msgcat::mclocale $current
+} -result [list \
+    [expr {$valid_mode}] [expr {$valid_mode ? "unable to convert input string: invalid day" : "03/01/1800"}] \
+    [expr {$valid_mode}] [expr {$valid_mode ? "unable to convert input string: invalid day" : "03/01/1900"}]
+]
 
 # Legacy tests
 

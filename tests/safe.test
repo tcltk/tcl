@@ -1596,7 +1596,7 @@ test safe-13.2 {mimic the valid glob call by ::tcl::tm::UnknownHandler [Bug 2964
     buildEnvironment deleteme.tm
 } -body {
     ::safe::interpAddToAccessPath $i $testdir2
-    set result [$i eval glob -nocomplain -directory $testdir2 *.tm]
+    set result [$i eval [list glob -nocomplain -directory $testdir2 *.tm]]
     if {$result eq [list $testfile]} {
 	return "glob match"
     } else {
@@ -1610,7 +1610,7 @@ test safe-13.3 {cf 13.2 but test glob failure when -directory is outside access 
     set i [safe::interpCreate]
     buildEnvironment deleteme.tm
 } -body {
-    $i eval glob -directory $testdir2 *.tm
+    $i eval [list glob -directory $testdir2 *.tm]
 } -returnCodes error -cleanup {
     safe::interpDelete $i
     removeDirectory $testdir
@@ -1621,8 +1621,8 @@ test safe-13.4 {another valid glob call [Bug 2964715]} -setup {
 } -body {
     ::safe::interpAddToAccessPath $i $testdir
     ::safe::interpAddToAccessPath $i $testdir2
-    set result [$i eval \
-	    glob -nocomplain -directory $testdir [file join deletemetoo *.tm]]
+    set result [$i eval [list \
+	    glob -nocomplain -directory $testdir [file join deletemetoo *.tm]]]
     if {$result eq [list $testfile]} {
 	return "glob match"
     } else {
@@ -1696,8 +1696,8 @@ test safe-13.9 {as 13.8 but test glob failure when -directory is outside access 
     buildEnvironment notIndex.tcl
 } -body {
     ::safe::interpAddToAccessPath $i $testdir2
-    set result [$i eval \
-	    glob -directory $testdir -join -nocomplain * notIndex.tcl]
+    set result [$i eval [list \
+	    glob -directory $testdir -join -nocomplain * notIndex.tcl]]
     if {$result eq [list $testfile]} {
 	return {glob match}
     } else {
@@ -1712,7 +1712,7 @@ test safe-13.10 {as 13.8 but test silent failure when result is outside access_p
     buildEnvironment notIndex.tcl
 } -body {
     ::safe::interpAddToAccessPath $i $testdir
-    $i eval glob -directory $testdir -join -nocomplain * notIndex.tcl
+    $i eval [list glob -directory $testdir -join -nocomplain * notIndex.tcl]
 } -cleanup {
     safe::interpDelete $i
     removeDirectory $testdir

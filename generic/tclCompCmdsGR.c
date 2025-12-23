@@ -181,10 +181,10 @@ TclCompileIfCmd(
     Tcl_Size jumpIndex = 0;	/* Avoid compiler warning. */
     Tcl_Size j, numWords, wordIdx;
     int code;
-    int realCond = 1;		/* Set to 0 for static conditions:
+    bool realCond = true;		/* Set to 0 for static conditions:
 				 * "if 0 {..}" */
-    int boolVal;		/* Value of static condition. */
-    int compileScripts = 1;
+    bool boolVal;		/* Value of static condition. */
+    bool compileScripts = true;
 
     /*
      * Only compile the "if" command if all arguments are simple words, in
@@ -252,9 +252,9 @@ TclCompileIfCmd(
 		 * A static condition.
 		 */
 
-		realCond = 0;
+		realCond = false;
 		if (!boolVal) {
-		    compileScripts = 0;
+		    compileScripts = false;
 		}
 	    } else {
 		Tcl_ResetResult(interp);
@@ -321,15 +321,15 @@ TclCompileIfCmd(
 	     * We were processing an "if 1 {...}"; stop compiling scripts.
 	     */
 
-	    compileScripts = 0;
+	    compileScripts = false;
 	} else {
 	    /*
 	     * We were processing an "if 0 {...}"; reset so that the rest
 	     * (elseif, else) is compiled correctly.
 	     */
 
-	    realCond = 1;
-	    compileScripts = 1;
+	    realCond = true;
+	    compileScripts = true;
 	}
 
 	tokenPtr = TokenAfter(tokenPtr);
@@ -3199,7 +3199,7 @@ IndexTailVarIfKnown(
 	tailName = p;
     }
 
-    localIndex = TclFindCompiledLocal(tailName, len, 1, envPtr);
+    localIndex = TclFindCompiledLocal(tailName, len, true, envPtr);
     Tcl_DecrRefCount(tailPtr);
     return localIndex;
 }

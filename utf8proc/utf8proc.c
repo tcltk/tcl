@@ -595,7 +595,17 @@ UTF8PROC_DLLEXPORT utf8proc_ssize_t utf8proc_decompose_custom(
       utf8proc_int32_t uc1, uc2;
       const utf8proc_property_t *property1, *property2;
       uc1 = buffer[pos];
+      if (uc1 < 0) {
+        /* skip grapheme break */
+        pos++;
+        continue;
+      }
       uc2 = buffer[pos+1];
+      if (uc2 < 0) {
+        /* cannot recombine; skip grapheme break */
+        pos+=2;
+        continue;
+      }
       property1 = unsafe_get_property(uc1);
       property2 = unsafe_get_property(uc2);
       if (property1->combining_class > property2->combining_class &&
@@ -674,7 +684,7 @@ UTF8PROC_DLLEXPORT utf8proc_ssize_t utf8proc_normalize_utf32(utf8proc_int32_t *b
             (hangul_sindex % UTF8PROC_HANGUL_TCOUNT) == 0) {
           utf8proc_int32_t hangul_tindex;
           hangul_tindex = current_char - UTF8PROC_HANGUL_TBASE;
-          if (hangul_tindex >= 0 && hangul_tindex < UTF8PROC_HANGUL_TCOUNT) {
+          if (hangul_tindex > 0 && hangul_tindex < UTF8PROC_HANGUL_TCOUNT) {
             *starter += hangul_tindex;
             starter_property = NULL;
             continue;
