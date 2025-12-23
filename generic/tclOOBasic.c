@@ -151,7 +151,7 @@ InstallDelegateAsMixin(
     }
     Class **mixins = (Class **) TclStackAlloc(interp,
 	    sizeof(Class *) * (clsPtr->thisPtr->mixins.num + 1));
-    for (int i = 0; i < clsPtr->thisPtr->mixins.num; i++) {
+    for (Tcl_Size i = 0; i < clsPtr->thisPtr->mixins.num; i++) {
 	mixins[i] = clsPtr->thisPtr->mixins.list[i];
 	if (mixins[i] == delegatePtr) {
 	    TclStackFree(interp, (void *) mixins);
@@ -1234,7 +1234,7 @@ TclOOLinkObjCmd(
     }
 
     // For each argument
-    for (int i=1; i<objc; i++) {
+    for (Tcl_Size i=1; i<objc; i++) {
 	Tcl_Size linkc;
 	Tcl_Obj **linkv, *src, *dst;
 
@@ -1818,7 +1818,7 @@ TclOOClassVariableObjCmd(
     Tcl_Namespace *clsNsPtr = clsPtr->thisPtr->namespacePtr;
 
     // Check the list of variable names
-    for (int i = 1; i < objc; i++) {
+    for (Tcl_Size i = 1; i < objc; i++) {
 	const char *varName = TclGetString(objv[i]);
 	if (Tcl_StringMatch(varName, "*(*)")) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -1839,7 +1839,7 @@ TclOOClassVariableObjCmd(
     // Lastly, link the caller's local variables to the class's variables
     Interp *iPtr = (Interp *) interp;
     Tcl_Namespace *ourNsPtr = (Tcl_Namespace *) iPtr->varFramePtr->nsPtr;
-    for (int i = 1; i < objc; i++) {
+    for (Tcl_Size i = 1; i < objc; i++) {
 	// Locate the other variable.
 	iPtr->varFramePtr->nsPtr = (Namespace *) clsNsPtr;
 	Var *arrayPtr, *otherPtr = TclObjLookupVarEx(interp, objv[i], NULL,

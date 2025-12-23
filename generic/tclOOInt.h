@@ -592,7 +592,7 @@ MODULE_SCOPE void	TclOODeleteContext(CallContext *contextPtr);
 MODULE_SCOPE void	TclOODeleteDescendants(Tcl_Interp *interp,
 			    Object *oPtr);
 MODULE_SCOPE void	TclOODelMethodRef(Method *method);
-MODULE_SCOPE int	TclOOExportMethods(Class *clsPtr, ...);
+MODULE_SCOPE bool	TclOOExportMethods(Class *clsPtr, ...);
 MODULE_SCOPE CallContext *TclOOGetCallContext(Object *oPtr,
 			    Tcl_Obj *methodNameObj, int flags,
 			    Object *contextObjPtr, Class *contextClsPtr,
@@ -643,7 +643,7 @@ MODULE_SCOPE void	TclOOSetSuperclasses(Class *clsPtr, Tcl_Size superc,
 MODULE_SCOPE void	TclOOStashContext(Tcl_Obj *objPtr,
 			    CallContext *contextPtr);
 MODULE_SCOPE void	TclOOSetupVariableResolver(Tcl_Namespace *nsPtr);
-MODULE_SCOPE int	TclOOUnexportMethods(Class *clsPtr, ...);
+MODULE_SCOPE bool	TclOOUnexportMethods(Class *clsPtr, ...);
 MODULE_SCOPE Tcl_Obj *	TclOOGetAllObjectProperties(Object *oPtr,
 			    bool writable);
 MODULE_SCOPE Tcl_Obj *	TclOOGetPropertyList(PropertyList *propList);
