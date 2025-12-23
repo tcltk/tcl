@@ -51,10 +51,19 @@ static const char *const processors[NUMPROCESSORS] = {
 };
 
 /*
+ * Common system information that is initialized once at startup.
+ */
+typedef struct {
+    OSVERSIONINFOW osVersion;	/* Windows version information */
+    DWORD longPathsSupported;	/* Long paths supported without \\?\ ? */
+    char codePage[20];          /* User code page */
+} TclWinInfo;
+
+/*
  * Forward declarations
  */
 
-static TclInitProcessGlobalValueProc	InitializeDefaultLibraryDir;
+static TclInitProcessGlobalValueProc InitializeDefaultLibraryDir;
 static TclInitProcessGlobalValueProc	InitializeSourceLibraryDir;
 static void		AppendEnvironment(Tcl_Obj *listPtr, const char *lib);
 
@@ -69,22 +78,23 @@ static ProcessGlobalValue sourceLibraryDir =
 
 
 /*
- * TclpGetWindowsVersionOnce --
+ * TclGetWinInfoOnce --
  *
- *	Callback to retrieve Windows version information. To be invoked only
- *	through InitOnceExecuteOnce for thread safety.
+ *	Callback to retrieve bits of Windows platform information.
+ *	To be invoked only through InitOnceExecuteOnce for thread safety.
  *
  * Results:
  *	None.
  */
 static BOOL CALLBACK
-TclpGetWindowsVersionOnce(
+TclGetWinInfoOnce(
     TCL_UNUSED(PINIT_ONCE),
     TCL_UNUSED(PVOID),
     PVOID *lpContext)
 {
+    static TclWinInfo tclWinInfo;
     typedef int(__stdcall getVersionProc)(void *);
-    static OSVERSIONINFOW osInfo;
+    DWORD dw;
 
     /*
      * GetVersionExW will not return the "real" Windows version so use
@@ -94,55 +104,30 @@ TclpGetWindowsVersionOnce(
     getVersionProc *getVersion =
 	(getVersionProc *)(void *)GetProcAddress(handle, "RtlGetVersion");
 
-    osInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOW);
-    if (getVersion == NULL || getVersion(&osInfo)) {
-	if (!GetVersionExW(&osInfo)) {
+    tclWinInfo.osVersion.dwOSVersionInfoSize = sizeof(tclWinInfo.osVersion);
+    if (getVersion == NULL || getVersion(&tclWinInfo.osVersion) != 0) {
+	if (!GetVersionExW(&tclWinInfo.osVersion)) {
 	    /* Should never happen but ...*/
 	    return FALSE;
 	}
     }
-    *lpContext = (LPVOID)&osInfo;
-    return TRUE;
-}
 
-/*
- * TclpGetWindowsVersion --
- *
- *	Returns a pointer to the OSVERSIONINFOW structure containing the
- *	version information for the current Windows version.
- *
- * Results:
- *	Pointer to OSVERSIONINFOW structure.
- */
-static const OSVERSIONINFOW *
-TclpGetWindowsVersion(void)
-{
-    static INIT_ONCE osInfoOnce = INIT_ONCE_STATIC_INIT;
-    OSVERSIONINFOW *osInfoPtr = NULL;
-    BOOL result = InitOnceExecuteOnce(
-	&osInfoOnce, TclpGetWindowsVersionOnce, NULL, (LPVOID *)&osInfoPtr);
-    return result ? osInfoPtr : NULL;
-}
+    tclWinInfo.longPathsSupported = 0;
+    if (tclWinInfo.osVersion.dwMajorVersion > 10 || 
+	    (tclWinInfo.osVersion.dwMajorVersion == 10 &&
+	    tclWinInfo.osVersion.dwBuildNumber >= 14393)) {
+	dw = sizeof(tclWinInfo.longPathsSupported);
+	if (RegGetValueA(HKEY_LOCAL_MACHINE,
+		"SYSTEM\\CurrentControlSet\\Control\\FileSystem",
+		"LongPathsEnabled", RRF_RT_REG_DWORD, NULL,
+		&tclWinInfo.longPathsSupported, &dw) != ERROR_SUCCESS) {
+	    tclWinInfo.longPathsSupported = 0; /* Reset in case modified */
+	}
+    }
 
-/*
- * TclpGetCodePageOnce --
- *
- *	Callback to retrieve user code page. To be invoked only
- *	through InitOnceExecuteOnce for thread safety.
- *
- * Results:
- *	None.
- */
-static BOOL CALLBACK
-TclpGetCodePageOnce(
-    TCL_UNUSED(PINIT_ONCE),
-    TCL_UNUSED(PVOID),
-    PVOID *lpContext)
-{
-    static char codePage[20];
-    codePage[0] = 'c';
-    codePage[1] = 'p';
-    DWORD size = sizeof(codePage) - 2;
+    tclWinInfo.codePage[0] = 'c';
+    tclWinInfo.codePage[1] = 'p';
+    dw = sizeof(tclWinInfo.codePage) - 2;
 
     /*
      * When retrieving code page from registry,
@@ -153,17 +138,56 @@ TclpGetCodePageOnce(
      */
     if (RegGetValueA(HKEY_LOCAL_MACHINE,
 	    "SYSTEM\\CurrentControlSet\\Control\\Nls\\CodePage",
-	    "ACP", RRF_RT_REG_SZ, NULL, codePage+2,
-	    &size) != ERROR_SUCCESS) {
+	    "ACP", RRF_RT_REG_SZ, NULL, &tclWinInfo.codePage[2],
+	    &dw) != ERROR_SUCCESS) {
 	/* On failure, fallback to GetACP() */
-	UINT acp = GetACP();
-	snprintf(codePage, sizeof(codePage), "cp%u", acp);
+	snprintf(tclWinInfo.codePage, sizeof(tclWinInfo.codePage), "cp%u",
+	    GetACP());
     }
-    if (strcmp(codePage, "cp65001") == 0) {
-	strcpy(codePage, "utf-8");
+    if (strcmp(tclWinInfo.codePage, "cp65001") == 0) {
+	strcpy(tclWinInfo.codePage, "utf-8");
     }
-    *lpContext = (LPVOID)&codePage[0];
+
+    *lpContext = (LPVOID)&tclWinInfo;
     return TRUE;
+}
+
+/*
+ * TclGetWinInfo --
+ *
+ *	Returns a pointer to the TclWinInfo structure containing various bits
+ *	of Windows platform information.
+ *
+ * Results:
+ *	Pointer to TclWinInfo structure and NULL on failure. The structure
+ *	is initialized only once and remains valid for the lifetime of the
+ *	process.
+ */
+static const TclWinInfo *
+TclGetWinInfo(void)
+{
+    static INIT_ONCE winInfoOnce = INIT_ONCE_STATIC_INIT;
+    TclWinInfo *winInfoPtr = NULL;
+    BOOL result = InitOnceExecuteOnce(
+	&winInfoOnce, TclGetWinInfoOnce, NULL, (LPVOID *)&winInfoPtr);
+    return result ? winInfoPtr : NULL;
+}
+
+/*
+ * TclpGetWindowsVersion --
+ *
+ *	Returns a pointer to the OSVERSIONINFOW structure containing the
+ *	version information for the current Windows version.
+ *
+ * Results:
+ *	Pointer to OSVERSIONINFOW structure that remains valid for lifetime
+ *	of the process or NULL on failure.
+ */
+static const OSVERSIONINFOW *
+TclpGetWindowsVersion(void)
+{
+    TclWinInfo *winInfoPtr = TclGetWinInfo();
+    return winInfoPtr ? &winInfoPtr->osVersion : NULL;
 }
 
 /*
@@ -178,19 +202,11 @@ TclpGetCodePageOnce(
 static const char *
 TclpGetCodePage(void)
 {
-    static INIT_ONCE codePageOnce = INIT_ONCE_STATIC_INIT;
-    const char *codePagePtr = NULL;
-    BOOL result = InitOnceExecuteOnce(
-	&codePageOnce, TclpGetCodePageOnce, NULL, (LPVOID *)&codePagePtr);
-#ifdef NDEBUG
-    (void) result; /* Keep gcc unused variable quiet */
-#else
-    assert(result == TRUE);
-#endif
-    assert(codePagePtr != NULL);
-    return codePagePtr;
+    TclWinInfo *winInfoPtr = TclGetWinInfo();
+    assert(winInfoPtr);
+    assert(winInfoPtr->codePage[0] != '\0');
+	return winInfoPtr->codePage;
 }
-
 
 /*
  *---------------------------------------------------------------------------
@@ -235,8 +251,9 @@ TclpInitPlatform(void)
     TclWinInit(GetModuleHandleW(NULL));
 #endif
 
-    /* Initialize code page once at startup, will not be updated */
-    (void)TclpGetCodePage();
+    if (TclGetWinInfo() == NULL) {
+	Tcl_Panic("TclpInitPlatform: unable to get Windows information");
+    }
 }
 
 /*
@@ -338,7 +355,6 @@ AppendEnvironment(
     const char **pathv;
     char *shortlib;
     TclWinPath winPath;
-    DWORD winPathCapacity;
 
     /*
      * The shortlib value needs to be the tail component of the lib path. For

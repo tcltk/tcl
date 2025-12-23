@@ -153,7 +153,7 @@ TclWinPathFree(
 }
 
 MODULE_SCOPE char *	TclWinWCharToUtfDString(const WCHAR *wsPtr,
-			    DWORD numChars, Tcl_DString *);
+			    int numChars, Tcl_DString *);
 MODULE_SCOPE WCHAR *	TclWinPathResize(TclWinPath *winPathPtr,
 			    DWORD capacityNeeded);
 MODULE_SCOPE WCHAR *	TclWinGetFullPathName(const WCHAR *pathPtr,

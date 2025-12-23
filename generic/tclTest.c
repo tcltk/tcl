@@ -5545,6 +5545,7 @@ TestfileCmd(
     Tcl_Size j;
 
     if (objc < 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "subcmd arg ?arg ...");
 	return TCL_ERROR;
     }
 
@@ -5580,6 +5581,7 @@ TestfileCmd(
     } else if (strcmp(subcmd, "rmdir") == 0) {
 	result = TclpObjRemoveDirectory(objv[i], force, &error);
     } else {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf("Unknown subcommand \"%s\".", subcmd));
 	result = TCL_ERROR;
 	goto end;
     }
