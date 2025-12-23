@@ -253,7 +253,7 @@ TclOO_Configurable_Configure(
     Tcl_Interp *interp,		/* Interpreter used for the result, error
 				 * reporting, etc. */
     Tcl_ObjectContext context,	/* The object/call context. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const *objv)	/* The actual arguments. */
 {
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
@@ -373,7 +373,7 @@ Configurable_Getter(
     Tcl_Interp *interp,		/* Interpreter used for the result, error
 				 * reporting, etc. */
     Tcl_ObjectContext context,	/* The object/call context. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const *objv)	/* The actual arguments. */
 {
     Tcl_Obj *propNamePtr = (Tcl_Obj *) clientData;
@@ -409,7 +409,7 @@ Configurable_Setter(
     Tcl_Interp *interp,		/* Interpreter used for the result, error
 				 * reporting, etc. */
     Tcl_ObjectContext context,	/* The object/call context. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const *objv)	/* The actual arguments. */
 {
     Tcl_Obj *propNamePtr = (Tcl_Obj *) clientData;
@@ -1028,7 +1028,7 @@ int
 TclOODefinePropertyCmd(
     void *useInstance,		/* NULL for class, non-NULL for object. */
     Tcl_Interp *interp,		/* For error reporting and lookup. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Arguments. */
 {
     Tcl_Size i;
