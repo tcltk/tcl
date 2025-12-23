@@ -150,11 +150,11 @@ static Tcl_Size ListLength(Tcl_Obj *listPtr);
  */
 
 const Tcl_ObjType tclListType = {
-    "list",			/* name */
-    FreeListInternalRep,	/* freeIntRepProc */
-    DupListInternalRep,		/* dupIntRepProc */
-    UpdateStringOfList,		/* updateStringProc */
-    SetListFromAny,		/* setFromAnyProc */
+    "list",
+    FreeListInternalRep,
+    DupListInternalRep,
+    UpdateStringOfList,
+    SetListFromAny,
     TCL_OBJTYPE_V1(ListLength)
 };
 

@@ -147,7 +147,7 @@ static int
 TestMutexObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     static const char *const mutexOptions[] = {
@@ -559,7 +559,7 @@ int
 TclMutex_Init(
     Tcl_Interp *interp)		/* The current Tcl interpreter */
 {
-    Tcl_CreateObjCommand(interp, "testmutex", TestMutexObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "testmutex", TestMutexObjCmd, NULL, NULL);
     return TCL_OK;
 }
 #endif /* TCL_THREADS */

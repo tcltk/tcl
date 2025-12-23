@@ -1147,9 +1147,9 @@ Here is a sketch of a sample test file illustrating those points:
 .RS
 .PP
 .CS
-package require tcltest 2.5
+\fBpackage require tcltest 2.5\fR
 eval \fB::tcltest::configure\fR $argv
-package require example
+\fBpackage require example\fR
 namespace eval ::example::test {
     namespace import ::tcltest::*
     \fBtestConstraint\fR X [expr {...}]
@@ -1181,8 +1181,8 @@ Here is a sketch of a sample test suite main script:
 .RS
 .PP
 .CS
-package require tcltest 2.5
-package require example
+\fBpackage require tcltest 2.5\fR
+\fBpackage require example\fR
 \fB::tcltest::configure\fR -testdir \e
         [file dirname [file normalize [info script]]]
 eval \fB::tcltest::configure\fR $argv

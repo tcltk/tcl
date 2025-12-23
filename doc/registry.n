@@ -187,7 +187,7 @@ Print out how double-clicking on a Tcl script file will invoke a Tcl
 interpreter:
 .PP
 .CS
-package require registry
+\fBpackage require registry\fR
 set ext .tcl
 
 # Read the type name

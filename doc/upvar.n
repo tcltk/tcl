@@ -12,7 +12,7 @@
 .SH NAME
 upvar \- Create link to variable in a different stack frame
 .SH SYNOPSIS
-\fBupvar \fR?\fIlevel\fR? \fIotherVar myVar \fR?\fIotherVar myVar \fR...?
+\fBupvar \fR?\fIlevel\fR? \fIotherVar myVar \fR?\fIotherVar myVar ...\fR?
 .BE
 .SH DESCRIPTION
 .PP

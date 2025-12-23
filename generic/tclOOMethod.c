@@ -47,18 +47,18 @@ typedef struct OOResVarInfo {
  * Function declarations for things defined in this file.
  */
 
-static Tcl_Obj **	InitEnsembleRewrite(Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const *objv, int toRewrite,
-			    int rewriteLength, Tcl_Obj *const *rewriteObjs,
-			    int *lengthPtr);
+static Tcl_Obj **	InitEnsembleRewrite(Tcl_Interp *interp, Tcl_Size objc,
+			    Tcl_Obj *const *objv, Tcl_Size toRewrite,
+			    Tcl_Size rewriteLength, Tcl_Obj *const *rewriteObjs,
+			    Tcl_Size *lengthPtr);
 static int		InvokeProcedureMethod(void *clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    int objc, Tcl_Obj *const *objv);
+			    Tcl_Size objc, Tcl_Obj *const *objv);
 static Tcl_NRPostProc	FinalizeForwardCall;
 static Tcl_NRPostProc	FinalizePMCall;
 static int		PushMethodCallFrame(Tcl_Interp *interp,
 			    CallContext *contextPtr, ProcedureMethod *pmPtr,
-			    int objc, Tcl_Obj *const *objv,
+			    Tcl_Size objc, Tcl_Obj *const *objv,
 			    PMFrameData *fdPtr);
 static void		DeleteProcedureMethodRecord(ProcedureMethod *pmPtr);
 static void		DeleteProcedureMethod(void *clientData);
@@ -71,7 +71,7 @@ static Tcl_Obj *	RenderMethodName(void *clientData);
 static Tcl_Obj *	RenderDeclarerName(void *clientData);
 static int		InvokeForwardMethod(void *clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    int objc, Tcl_Obj *const *objv);
+			    Tcl_Size objc, Tcl_Obj *const *objv);
 static void		DeleteForwardMethod(void *clientData);
 static int		CloneForwardMethod(Tcl_Interp *interp,
 			    void *clientData, void **newClientData);
@@ -82,12 +82,12 @@ static Tcl_ResolveCompiledVarProc	ProcedureMethodCompiledVarResolver;
  * The types of methods defined by the core OO system.
  */
 
-static const Tcl_MethodType procMethodType = {
-    TCL_OO_METHOD_VERSION_CURRENT, "method",
+static const Tcl_MethodType2 procMethodType = {
+    TCL_OO_METHOD_VERSION_2, "method",
     InvokeProcedureMethod, DeleteProcedureMethod, CloneProcedureMethod
 };
-static const Tcl_MethodType fwdMethodType = {
-    TCL_OO_METHOD_VERSION_CURRENT, "forward",
+static const Tcl_MethodType2 fwdMethodType = {
+    TCL_OO_METHOD_VERSION_2, "forward",
     InvokeForwardMethod, DeleteForwardMethod, CloneForwardMethod
 };
 
@@ -142,7 +142,7 @@ TclNewInstanceMethod(
 				 * up to caller to manage storage (e.g., when
 				 * it is a constructor or destructor). */
     int flags,			/* Whether this is a public method. */
-    const Tcl_MethodType *typePtr,
+    const Tcl_MethodType2 *typePtr,
 				/* The type of method this is, which defines
 				 * how to invoke, delete and clone the
 				 * method. */
@@ -174,13 +174,13 @@ TclNewInstanceMethod(
 	Tcl_SetHashValue(hPtr, mPtr);
     } else {
 	mPtr = (Method *) Tcl_GetHashValue(hPtr);
-	if (mPtr->typePtr != NULL && mPtr->typePtr->deleteProc != NULL) {
-	    mPtr->typePtr->deleteProc(mPtr->clientData);
+	if (mPtr->type2Ptr != NULL && mPtr->type2Ptr->deleteProc != NULL) {
+	    mPtr->type2Ptr->deleteProc(mPtr->clientData);
 	}
     }
 
   populate:
-    mPtr->typePtr = typePtr;
+    mPtr->type2Ptr = typePtr;
     mPtr->clientData = clientData;
     mPtr->flags = 0;
     mPtr->declaringObjectPtr = oPtr;
@@ -195,6 +195,9 @@ TclNewInstanceMethod(
     oPtr->epoch++;
     return (Tcl_Method) mPtr;
 }
+
+#ifndef TCL_NO_DEPRECATED
+#undef Tcl_NewInstanceMethod
 Tcl_Method
 Tcl_NewInstanceMethod(
     TCL_UNUSED(Tcl_Interp *),
@@ -215,9 +218,11 @@ Tcl_NewInstanceMethod(
 	Tcl_Panic("%s: Wrong version in typePtr->version, should be %s",
 		"Tcl_NewInstanceMethod", "TCL_OO_METHOD_VERSION_1");
     }
-    return TclNewInstanceMethod(NULL, object, nameObj, flags, typePtr,
-	    clientData);
+    return TclNewInstanceMethod(NULL, object, nameObj, flags,
+	    (const Tcl_MethodType2 *)typePtr, clientData);
 }
+#endif /* TCL_NO_DEPRECATED */
+
 Tcl_Method
 Tcl_NewInstanceMethod2(
     TCL_UNUSED(Tcl_Interp *),
@@ -239,7 +244,7 @@ Tcl_NewInstanceMethod2(
 		"Tcl_NewInstanceMethod2", "TCL_OO_METHOD_VERSION_2");
     }
     return TclNewInstanceMethod(NULL, object, nameObj, flags,
-	    (const Tcl_MethodType *) typePtr, clientData);
+	    typePtr, clientData);
 }
 
 /*
@@ -259,7 +264,7 @@ TclNewMethod(
 				 * for constructors or destructors); if so, up
 				 * to caller to manage storage. */
     int flags,			/* Whether this is a public method. */
-    const Tcl_MethodType *typePtr,
+    const Tcl_MethodType2 *typePtr,
 				/* The type of method this is, which defines
 				 * how to invoke, delete and clone the
 				 * method. */
@@ -286,14 +291,14 @@ TclNewMethod(
 	Tcl_SetHashValue(hPtr, mPtr);
     } else {
 	mPtr = (Method *) Tcl_GetHashValue(hPtr);
-	if (mPtr->typePtr != NULL && mPtr->typePtr->deleteProc != NULL) {
-	    mPtr->typePtr->deleteProc(mPtr->clientData);
+	if (mPtr->type2Ptr != NULL && mPtr->type2Ptr->deleteProc != NULL) {
+	    mPtr->type2Ptr->deleteProc(mPtr->clientData);
 	}
     }
 
   populate:
     clsPtr->thisPtr->fPtr->epoch++;
-    mPtr->typePtr = typePtr;
+    mPtr->type2Ptr = typePtr;
     mPtr->clientData = clientData;
     mPtr->flags = 0;
     mPtr->declaringObjectPtr = NULL;
@@ -309,6 +314,8 @@ TclNewMethod(
     return (Tcl_Method) mPtr;
 }
 
+#ifndef TCL_NO_DEPRECATED
+#undef Tcl_NewMethod
 Tcl_Method
 Tcl_NewMethod(
     TCL_UNUSED(Tcl_Interp *),
@@ -328,8 +335,10 @@ Tcl_NewMethod(
 	Tcl_Panic("%s: Wrong version in typePtr->version, should be %s",
 		"Tcl_NewMethod", "TCL_OO_METHOD_VERSION_1");
     }
-    return TclNewMethod(cls, nameObj, flags, typePtr, clientData);
+    return TclNewMethod(cls, nameObj, flags,
+	    (const Tcl_MethodType2 *)typePtr, clientData);
 }
+#endif /* TCL_NO_DEPRECATED */
 
 Tcl_Method
 Tcl_NewMethod2(
@@ -350,8 +359,7 @@ Tcl_NewMethod2(
 	Tcl_Panic("%s: Wrong version in typePtr->version, should be %s",
 		"Tcl_NewMethod2", "TCL_OO_METHOD_VERSION_2");
     }
-    return TclNewMethod(cls, nameObj, flags,
-	    (const Tcl_MethodType *) typePtr, clientData);
+    return TclNewMethod(cls, nameObj, flags, typePtr, clientData);
 }
 
 /*
@@ -369,8 +377,8 @@ TclOODelMethodRef(
     Method *mPtr)
 {
     if ((mPtr != NULL) && (mPtr->refCount-- <= 1)) {
-	if (mPtr->typePtr != NULL && mPtr->typePtr->deleteProc != NULL) {
-	    mPtr->typePtr->deleteProc(mPtr->clientData);
+	if (mPtr->type2Ptr != NULL && mPtr->type2Ptr->deleteProc != NULL) {
+	    mPtr->type2Ptr->deleteProc(mPtr->clientData);
 	}
 	if (mPtr->namePtr != NULL) {
 	    Tcl_DecrRefCount(mPtr->namePtr);
@@ -397,14 +405,11 @@ TclOODefineBasicMethods(
     const DeclaredClassMethod *dcmAry)
 				/* Static table of method definitions. */
 {
-    int i;
-
-    for (i = 0 ; dcmAry[i].name ; i++) {
-	Tcl_Obj *namePtr = Tcl_NewStringObj(dcmAry[i].name, TCL_AUTO_LENGTH);
+    for (const DeclaredClassMethod *dcm = dcmAry; dcm->name ; dcm++) {
+	Tcl_Obj *namePtr = Tcl_NewStringObj(dcm->name, TCL_AUTO_LENGTH);
 
 	TclNewMethod((Tcl_Class) clsPtr, namePtr,
-		(dcmAry[i].isPublic ? PUBLIC_METHOD : 0),
-		&dcmAry[i].definition, NULL);
+		(dcm->isPublic ? PUBLIC_METHOD : 0), &dcm->definition, NULL);
 	Tcl_BounceRefCount(namePtr);
     }
 }
@@ -443,7 +448,7 @@ TclOONewProcInstanceMethod(
 	return NULL;
     }
     pmPtr = AllocProcedureMethodRecord(flags);
-    method = TclOOMakeProcInstanceMethod(interp, oPtr, flags, nameObj,
+    method = TclOOMakeProcInstanceMethod2(interp, oPtr, flags, nameObj,
 	    argsObj, bodyObj, &procMethodType, pmPtr, &pmPtr->procPtr);
     if (method == NULL) {
 	Tcl_Free(pmPtr);
@@ -499,7 +504,7 @@ TclOONewProcMethod(
     }
 
     pmPtr = AllocProcedureMethodRecord(flags);
-    method = TclOOMakeProcMethod(interp, clsPtr, flags, nameObj, procName,
+    method = TclOOMakeProcMethod2(interp, clsPtr, flags, nameObj, procName,
 	    argsObj, bodyObj, &procMethodType, pmPtr, &pmPtr->procPtr);
 
     if (argsLen == TCL_INDEX_NONE) {
@@ -610,6 +615,8 @@ InitCmdFrame(
  * ----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
+#undef TclOOMakeProcInstanceMethod
 Tcl_Method
 TclOOMakeProcInstanceMethod(
     Tcl_Interp *interp,		/* The interpreter containing the object. */
@@ -646,8 +653,9 @@ TclOOMakeProcInstanceMethod(
     InitCmdFrame(iPtr, procPtr);
 
     return TclNewInstanceMethod(interp, (Tcl_Object) oPtr, nameObj, flags,
-	    typePtr, clientData);
+	    (const Tcl_MethodType2 *)typePtr, clientData);
 }
+#endif /* TCL_NO_DEPRECATED */
 
 Tcl_Method
 TclOOMakeProcInstanceMethod2(
@@ -685,7 +693,7 @@ TclOOMakeProcInstanceMethod2(
     InitCmdFrame(iPtr, procPtr);
 
     return TclNewInstanceMethod(interp, (Tcl_Object) oPtr, nameObj, flags,
-	    (const Tcl_MethodType *)typePtr, clientData);
+	    typePtr, clientData);
 }
 
 /*
@@ -701,6 +709,8 @@ TclOOMakeProcInstanceMethod2(
  * ----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
+#undef TclOOMakeProcMethod
 Tcl_Method
 TclOOMakeProcMethod(
     Tcl_Interp *interp,		/* The interpreter containing the class. */
@@ -741,8 +751,9 @@ TclOOMakeProcMethod(
     InitCmdFrame(iPtr, procPtr);
 
     return TclNewMethod(
-	    (Tcl_Class) clsPtr, nameObj, flags, typePtr, clientData);
+	    (Tcl_Class) clsPtr, nameObj, flags, (const Tcl_MethodType2 *)typePtr, clientData);
 }
+#endif /* TCL_NO_DEPRECATED */
 
 Tcl_Method
 TclOOMakeProcMethod2(
@@ -784,7 +795,7 @@ TclOOMakeProcMethod2(
     InitCmdFrame(iPtr, procPtr);
 
     return TclNewMethod((Tcl_Class) clsPtr, nameObj, flags,
-	    (const Tcl_MethodType *)typePtr, clientData);
+	    typePtr, clientData);
 }
 
 /*
@@ -802,7 +813,7 @@ InvokeProcedureMethod(
     void *clientData,		/* Pointer to the per-method record. */
     Tcl_Interp *interp,
     Tcl_ObjectContext context,	/* The method calling context. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Arguments as actually seen. */
 {
     ProcedureMethod *pmPtr = (ProcedureMethod *) clientData;
@@ -941,7 +952,7 @@ PushMethodCallFrame(
     CallContext *contextPtr,	/* Current method call context. */
     ProcedureMethod *pmPtr,	/* Information about this procedure-like
 				 * method. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const *objv,	/* Array of arguments. */
     PMFrameData *fdPtr)		/* Place to store information about the call
 				 * frame. */
@@ -1090,7 +1101,8 @@ ProcedureMethodCompiledVarConnect(
     Tcl_Obj *variableObj;
     PrivateVariableMapping *privateVar;
     Tcl_HashEntry *hPtr;
-    int isNew, cacheIt;
+    int isNew;
+    bool cacheIt;
     Tcl_Size i, varLen, len;
     const char *match, *varName;
 
@@ -1128,7 +1140,7 @@ ProcedureMethodCompiledVarConnect(
 	    match = Tcl_GetStringFromObj(privateVar->variableObj, &len);
 	    if ((len == varLen) && !memcmp(match, varName, len)) {
 		variableObj = privateVar->fullNameObj;
-		cacheIt = 0;
+		cacheIt = false;
 		goto gotMatch;
 	    }
 	}
@@ -1136,7 +1148,7 @@ ProcedureMethodCompiledVarConnect(
 		.mPtr->declaringClassPtr->variables) {
 	    match = Tcl_GetStringFromObj(variableObj, &len);
 	    if ((len == varLen) && !memcmp(match, varName, len)) {
-		cacheIt = 0;
+		cacheIt = false;
 		goto gotMatch;
 	    }
 	}
@@ -1145,14 +1157,14 @@ ProcedureMethodCompiledVarConnect(
 	    match = Tcl_GetStringFromObj(privateVar->variableObj, &len);
 	    if ((len == varLen) && !memcmp(match, varName, len)) {
 		variableObj = privateVar->fullNameObj;
-		cacheIt = 1;
+		cacheIt = true;
 		goto gotMatch;
 	    }
 	}
 	FOREACH(variableObj, contextPtr->oPtr->variables) {
 	    match = Tcl_GetStringFromObj(variableObj, &len);
 	    if ((len == varLen) && !memcmp(match, varName, len)) {
-		cacheIt = 1;
+		cacheIt = true;
 		goto gotMatch;
 	    }
 	}
@@ -1570,14 +1582,14 @@ InvokeForwardMethod(
     void *clientData,		/* Pointer to some per-method context. */
     Tcl_Interp *interp,
     Tcl_ObjectContext context,	/* The method calling context. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Arguments as actually seen. */
 {
     CallContext *contextPtr = (CallContext *) context;
     ForwardMethod *fmPtr = (ForwardMethod *) clientData;
     Tcl_Obj **argObjs, **prefixObjs;
     Tcl_Size numPrefixes, skip = contextPtr->skip;
-    int len;
+    Tcl_Size len;
 
     /*
      * Build the real list of arguments to use. Note that we know that the
@@ -1662,7 +1674,7 @@ Proc *
 TclOOGetProcFromMethod(
     Method *mPtr)
 {
-    if (mPtr->typePtr == &procMethodType) {
+    if (mPtr->type2Ptr == &procMethodType) {
 	ProcedureMethod *pmPtr = (ProcedureMethod *) mPtr->clientData;
 
 	return pmPtr->procPtr;
@@ -1674,7 +1686,7 @@ Tcl_Obj *
 TclOOGetMethodBody(
     Method *mPtr)
 {
-    if (mPtr->typePtr == &procMethodType) {
+    if (mPtr->type2Ptr == &procMethodType) {
 	ProcedureMethod *pmPtr = (ProcedureMethod *) mPtr->clientData;
 
 	(void) TclGetString(pmPtr->procPtr->bodyPtr);
@@ -1687,7 +1699,7 @@ Tcl_Obj *
 TclOOGetFwdFromMethod(
     Method *mPtr)
 {
-    if (mPtr->typePtr == &fwdMethodType) {
+    if (mPtr->type2Ptr == &fwdMethodType) {
 	ForwardMethod *fwPtr = (ForwardMethod *) mPtr->clientData;
 
 	return fwPtr->prefixObj;
@@ -1720,12 +1732,12 @@ TclOOGetFwdFromMethod(
 static Tcl_Obj **
 InitEnsembleRewrite(
     Tcl_Interp *interp,		/* Place to log the rewrite info. */
-    int objc,			/* Number of real arguments. */
+    Tcl_Size objc,		/* Number of real arguments. */
     Tcl_Obj *const *objv,	/* The real arguments. */
-    int toRewrite,		/* Number of real arguments to replace. */
-    int rewriteLength,		/* Number of arguments to insert instead. */
+    Tcl_Size toRewrite,		/* Number of real arguments to replace. */
+    Tcl_Size rewriteLength,	/* Number of arguments to insert instead. */
     Tcl_Obj *const *rewriteObjs,/* Arguments to insert instead. */
-    int *lengthPtr)		/* Where to write the resulting length of the
+    Tcl_Size *lengthPtr)	/* Where to write the resulting length of the
 				 * array of rewritten arguments. */
 {
     size_t len = rewriteLength + objc - toRewrite;
@@ -1784,12 +1796,12 @@ Tcl_MethodName(
 int
 TclMethodIsType(
     Tcl_Method method,
-    const Tcl_MethodType *typePtr,
+    const Tcl_MethodType2 *typePtr,
     void **clientDataPtr)
 {
     Method *mPtr = (Method *) method;
 
-    if (mPtr->typePtr == typePtr) {
+    if (mPtr->type2Ptr == typePtr) {
 	if (clientDataPtr != NULL) {
 	    *clientDataPtr = mPtr->clientData;
 	}
@@ -1798,6 +1810,8 @@ TclMethodIsType(
     return 0;
 }
 
+#ifndef TCL_NO_DEPRECATED
+#undef Tcl_MethodIsType
 int
 Tcl_MethodIsType(
     Tcl_Method method,
@@ -1810,7 +1824,7 @@ Tcl_MethodIsType(
 	Tcl_Panic("%s: Wrong version in typePtr->version, should be %s",
 		"Tcl_MethodIsType", "TCL_OO_METHOD_VERSION_1");
     }
-    if (mPtr->typePtr == typePtr) {
+    if (mPtr->typePtr == (const Tcl_MethodType *) typePtr) {
 	if (clientDataPtr != NULL) {
 	    *clientDataPtr = mPtr->clientData;
 	}
@@ -1818,6 +1832,7 @@ Tcl_MethodIsType(
     }
     return 0;
 }
+#endif
 
 int
 Tcl_MethodIsType2(
@@ -1831,7 +1846,7 @@ Tcl_MethodIsType2(
 	Tcl_Panic("%s: Wrong version in typePtr->version, should be %s",
 		"Tcl_MethodIsType2", "TCL_OO_METHOD_VERSION_2");
     }
-    if (mPtr->typePtr == (const Tcl_MethodType *) typePtr) {
+    if (mPtr->type2Ptr == typePtr) {
 	if (clientDataPtr != NULL) {
 	    *clientDataPtr = mPtr->clientData;
 	}

@@ -39,11 +39,11 @@ static int		MakeTildeRelativePath(Tcl_Interp *interp,
  */
 
 static const Tcl_ObjType fsPathType = {
-    "path",			/* name */
-    FreeFsPathInternalRep,	/* freeIntRepProc */
-    DupFsPathInternalRep,	/* dupIntRepProc */
-    UpdateStringOfFsPath,	/* updateStringProc */
-    SetFsPathFromAny,		/* setFromAnyProc */
+    "path",
+    FreeFsPathInternalRep,
+    DupFsPathInternalRep,
+    UpdateStringOfFsPath,
+    SetFsPathFromAny,
     TCL_OBJTYPE_V0
 };
 

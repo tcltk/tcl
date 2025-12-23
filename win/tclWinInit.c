@@ -77,7 +77,8 @@ static ProcessGlobalValue sourceLibraryDir =
  * Results:
  *	None.
  */
-static BOOL CALLBACK TclpGetWindowsVersionOnce(
+static BOOL CALLBACK
+TclpGetWindowsVersionOnce(
     TCL_UNUSED(PINIT_ONCE),
     TCL_UNUSED(PVOID),
     PVOID *lpContext)
@@ -113,7 +114,8 @@ static BOOL CALLBACK TclpGetWindowsVersionOnce(
  * Results:
  *	Pointer to OSVERSIONINFOW structure.
  */
-static const OSVERSIONINFOW *TclpGetWindowsVersion(void)
+static const OSVERSIONINFOW *
+TclpGetWindowsVersion(void)
 {
     static INIT_ONCE osInfoOnce = INIT_ONCE_STATIC_INIT;
     OSVERSIONINFOW *osInfoPtr = NULL;

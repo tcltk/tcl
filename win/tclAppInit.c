@@ -101,13 +101,6 @@ _tmain(
     TCHAR *p;
 
     /*
-     * Set up the default locale to be standard "C" locale so parsing is
-     * performed correctly.
-     */
-
-    setlocale(LC_ALL, "C");
-
-    /*
      * Forward slashes substituted for backslashes.
      */
 

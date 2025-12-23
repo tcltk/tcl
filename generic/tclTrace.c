@@ -52,7 +52,7 @@ typedef struct {
 				 * invoked step trace */
     int curFlags;		/* Trace flags for the current command */
     int curCode;		/* Return code for the current command */
-    size_t refCount;		/* Used to ensure this structure is not
+    Tcl_Size refCount;		/* Used to ensure this structure is not
 				 * deleted too early. Keeps track of how many
 				 * pieces of code have a pointer to this
 				 * structure. */
@@ -132,11 +132,13 @@ static void		TraceCommandProc(void *clientData,
 			    Tcl_Interp *interp, const char *oldName,
 			    const char *newName, int flags);
 static Tcl_CmdObjTraceProc2 TraceExecutionProc;
+#ifndef TCL_NO_DEPRECATED
 static int		StringTraceProc(void *clientData,
 			    Tcl_Interp *interp, Tcl_Size level,
 			    const char *command, Tcl_Command commandInfo,
 			    Tcl_Size objc, Tcl_Obj *const objv[]);
 static void		StringTraceDeleteProc(void *clientData);
+#endif /* TCL_NO_DEPRECATED */
 static void		DisposeTraceResult(int flags, char *result);
 static int		TraceVarEx(Tcl_Interp *interp, const char *part1,
 			    const char *part2, VarTrace *tracePtr);
@@ -146,10 +148,12 @@ static int		TraceVarEx(Tcl_Interp *interp, const char *part1,
  * trace procs
  */
 
+#ifndef TCL_NO_DEPRECATED
 typedef struct {
     void *clientData;		/* Client data from Tcl_CreateTrace */
     Tcl_CmdTraceProc *proc;	/* Trace function from Tcl_CreateTrace */
 } StringTraceData;
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  * Convenience macros for iterating over the list of traces. Note that each of
@@ -189,7 +193,7 @@ int
 Tcl_TraceObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     /* Main sub commands to 'trace' */
@@ -1991,6 +1995,7 @@ TraceVarProc(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 typedef struct {
     Tcl_CmdObjTraceProc *proc;
     Tcl_CmdObjTraceDeleteProc *delProc;
@@ -2027,6 +2032,7 @@ TraceWrapperDelProc(
     Tcl_Free(info);
 }
 
+#undef Tcl_CreateObjTrace
 Tcl_Trace
 Tcl_CreateObjTrace(
     Tcl_Interp *interp,		/* Tcl interpreter */
@@ -2045,6 +2051,7 @@ Tcl_CreateObjTrace(
 	    (proc ? TraceWrapperProc : NULL),
 	    info, TraceWrapperDelProc);
 }
+#endif /* TCL_NO_DEPRECATED */
 
 Tcl_Trace
 Tcl_CreateObjTrace2(
@@ -2135,6 +2142,7 @@ Tcl_CreateObjTrace2(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 Tcl_Trace
 Tcl_CreateTrace(
     Tcl_Interp *interp,		/* Interpreter in which to create trace. */
@@ -2230,6 +2238,7 @@ StringTraceDeleteProc(
 {
     Tcl_Free(clientData);
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------

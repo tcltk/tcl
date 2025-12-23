@@ -148,11 +148,11 @@ static int		FindElement(Tcl_Interp *interp, const char *string,
  */
 
 static const Tcl_ObjType endOffsetType = {
-    "end-offset",			/* name */
-    NULL,				/* freeIntRepProc */
-    NULL,				/* dupIntRepProc */
-    NULL,				/* updateStringProc */
-    NULL,				/* setFromAnyProc */
+    "end-offset",
+    NULL,			// FreeIntRep
+    NULL,			// DupIntRep
+    NULL,			// UpdateString
+    NULL,			// SetFromAny
     TCL_OBJTYPE_V1(TclLengthOne)
 };
 
@@ -3993,42 +3993,6 @@ TclIndexDecode(
 	return endValue;
     }
     return TCL_INDEX_NONE;
-}
-
-/*
- *------------------------------------------------------------------------
- *
- * TclCommandWordLimitErrpr --
- *
- *    Generates an error message limit on number of command words exceeded.
- *
- * Results:
- *    Always return TCL_ERROR.
- *
- * Side effects:
- *    If interp is not-NULL, an error message is stored in it.
- *
- *------------------------------------------------------------------------
- */
-int
-TclCommandWordLimitError(
-    Tcl_Interp *interp,		/* May be NULL */
-    Tcl_Size count)		/* If <= 0, "unknown" */
-{
-    if (interp) {
-	if (count > 0) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "Number of words (%" TCL_SIZE_MODIFIER
-		    "d) in command exceeds limit %" TCL_SIZE_MODIFIER "d.",
-		    count, (Tcl_Size)INT_MAX));
-	} else {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "Number of words in command exceeds limit %"
-		    TCL_SIZE_MODIFIER "d.",
-		    (Tcl_Size)INT_MAX));
-	}
-    }
-    return TCL_ERROR; /* Always */
 }
 
 /*
