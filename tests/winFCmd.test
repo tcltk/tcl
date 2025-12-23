@@ -1432,36 +1432,68 @@ test winFCmd-19.9 {Windows devices path names} -constraints win -body {
 
 namespace eval testlongpaths {
     # A long path should not have any individual component longer than MAX_PATH
-    variable longPath [file join \
-                              [tcltest::configure -tmpdir] \
-                              {*}[lrepeat 4 [string repeat X\u4e2d 128]]]
-    variable deepPath [file join \
-                           [tcltest::configure -tmpdir] \
-                           {*}[lrepeat 64 [string repeat Y\u6587 8]]]
-    proc testlongpath {id comment body good bad args} {
-        set opts [list ]
-        set constraints [list win]
-        foreach {opt optval} $args {
-            if {$opt eq "-constraints"} {
-                lappend constraints {*}$optval
-                continue
-            }
-            lappend opts $opt $optval
-        }
-        if {$bad eq ""} {
-            set bad $good
-            set returnCodes ok
-        }
-        uplevel [list test $id.0 $comment -body $body {*}$args \
-            -constraints [list {*}$constraints notLongPathAware] \
-                     -result $bad -returnCodes $returnCodes]
-        test $id.1 $comment -body $body {*}$args \
-            -constraints [list {*}$constraints longPathAware] \
-            -result $good
-    }
+    # Use string operations with FORWARD slash to generate paths, not [file
+    # join] since [file join] itself is under test.
 
-    testlongpath mkdir-longpath-1 "Create a directory with a long path" \
-        {string length $longPath} ok
+    variable pathComponent X\u4e2d
+    variable pathTail Y\u6587
+    variable longPathRoot "[tcltest::configure -tmpdir]/longpathtest"
+    variable longPathDir [join [list $longPathRoot \
+                                    {*}[lrepeat 4 [string repeat $pathComponent 120]]] /]
+    variable longPathFile [string cat $longPathDir / $pathTail]
+    variable deepPathDir [join [list $longPathRoot \
+                                    {*}[lrepeat 64 [string repeat $pathComponent 8]]] /]
+    variable deepPathFile [string cat $deepPathDir / $pathTail]
+
+    # TODO's -
+    # Paths - dirname, tail, root, join, normalize, split
+    # Directories - create, delete, rename, copy, attributes, isdirectory, exists, size, stat, type
+    # Files - open, delete, rename, copy, attributes, isfile, exists, size, stat, type
+    # nesting depth
+    # relative paths
+    # Glob
+    # links
+
+    proc testlongpath {id comment body args} {
+        uplevel [list test $id $comment -body $body \
+                     -constraints {win longPathAware} \
+                     -setup [list if {[file exists $longPathRoot]} {error "Precondition failed: $longPathRoot exists"}] \
+                     -cleanup {file delete -force $longPathRoot} \
+                     {*}$args]
+    }
+    proc dirOps {path} {
+        list \
+            [file mkdir $path] \
+            [file exists $path] \
+            [file isdirectory $path] \
+            [file isdirectory $path/..] \
+            [file isfile $path] \
+            [file size $path] \
+            [file type $path] \
+            [dict get [file stat $path] type] \
+            [file delete $path] \
+            [file exists $path] \
+    }
+    testlongpath longpath-directory-0 "Long path directory operations" {
+        dirOps $longPathDir
+    } -result [list {} 1 1 1 0 0 directory directory {} 0]
+
+    testlongpath longpath-directory-1 "Long path directory operations - native paths" {
+        dirOps [file nativename $longPathDir]
+    } -result [list {} 1 1 1 0 0 directory directory {} 0]
+
+    testlongpath longpath-directory-2 "Long path directory operations - deep nesting" {
+        dirOps $deepPathDir
+    } -result [list {} 1 1 1 0 0 directory directory {} 0]
+
+    testlongpath longpath-directory-3 "Long path directory - cd, pwd" {
+        set origDir [pwd]
+        file mkdir $longPathDir
+        cd $longPathDir
+        set newDir [pwd]
+        cd $origDir
+        set newDir
+    } -result $longPathDir
 
 }
 namespace delete testlongpaths
