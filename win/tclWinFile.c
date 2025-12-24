@@ -3157,7 +3157,7 @@ TclNativeCreateNativeRep(
      * and the path is larger than MAX_PATH chars, no Win32 API function can
      * handle that unless it is prefixed with the extended path prefix. See:
      * <https://docs.microsoft.com/en-us/windows/win32/fileio/naming-a-file#maxpath>
-     *  TODO - is this still true with long path support?
+     * This is not required on systems where long paths are enabled by policy.
      */
 
     if (((str[0] >= 'A' && str[0] <= 'Z') || (str[0] >= 'a' && str[0] <= 'z'))

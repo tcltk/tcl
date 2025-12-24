@@ -675,7 +675,7 @@ TestchmodCmd(
 }
 
 /*
- * TclWinGetLongPathSetting --
+ * TestlongpathsettingCmd --
  *
  *	Returns whether long path support is enabled on this system.
  *	Primary use is during testing.

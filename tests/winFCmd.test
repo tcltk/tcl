@@ -1450,11 +1450,9 @@ namespace eval testlongpaths {
 
     # TODO's -
     # links, lstat, readlink - links are not currently tested as the Tcl
-    # implementation seems to make use of undocumented structures that
-    # limit path lengths to MAX_PATH
-    # zipfs - mount archive
-    # exec, open |pipe
-    # env - TCL_LIBRARY points to long path
+    #   implementation seems to make use of undocumented structures that
+    #   limit path lengths to MAX_PATH
+    # exec, open |pipe - CreateProcessW is not long path aware
 
     proc testlongpath {id comment body args} {
         uplevel [list test $id $comment -body $body \
@@ -1598,15 +1596,18 @@ namespace eval testlongpaths {
 
     proc getAttrs {path} {
         set attrs [file attributes $path]
+        # We do not test -shortname because Windows is unpredictable in how
+        # it is constructed and whether it is constructed at all
         return [list \
                     [dict get $attrs -archive] \
                     [dict get $attrs -hidden] \
                     [dict get $attrs -readonly] \
                     [dict get $attrs -system] \
-                    [dict get $attrs -longname] \
-                    [dict get $attrs -shortname]]
+                    [dict get $attrs -longname]]
     }
 
+    variable testsDir [file normalize [file dirname [info script]]]
+    variable zipTestDir [file join $testsDir zipfiles]
 
     #
     # Test directory ops
@@ -1639,13 +1640,13 @@ namespace eval testlongpaths {
     testlongpath dir-attributes-longpath-0 "Long path directory attributes" {
         file mkdir $deepPathDir
         getAttrs $deepPathDir
-    } -result [list 0 0 0 0 $deepPathDir $deepPathDir]
+    } -result [list 0 0 0 0 $deepPathDir]
 
     testlongpath dir-attributes-longpath-1 "Long path directory attributes - set" {
         file mkdir $longPathDir
         file attributes $longPathDir -archive 1 -hidden 1 -system 1 -readonly 1
         getAttrs $longPathDir
-    } -result [list 1 1 1 1 $longPathDir $longPathDir]
+    } -result [list 1 1 1 1 $longPathDir]
 
     testlongpath dir-glob-longpath-0 "Long path glob" {
         file mkdir $deepPathDir
@@ -1691,14 +1692,60 @@ namespace eval testlongpaths {
         file mkdir [file dirname $deepPathFile]
         close [open $deepPathFile w]
         getAttrs $deepPathFile
-    } -result [list 1 0 0 0 $deepPathFile $deepPathFile]
+    } -result [list 1 0 0 0 $deepPathFile]
 
     testlongpath file-attributes-longpath-1 "Long path file attributes - set" {
         file mkdir $longPathDir
         close [open $longPathFile w]
         file attributes $longPathFile -archive 0 -hidden 1 -system 1 -readonly 1
         getAttrs $longPathFile
-    } -result [list 0 1 1 1 $longPathFile $longPathFile]
+    } -result [list 0 1 1 1 $longPathFile]
+
+    #
+    # zipfs mounts
+    testlongpath zipfs-mount-longpath-0 "Long path archive" {
+        file mkdir $longPathDir
+        set mt //zipfs:/longpathtest
+        set archive [file join $longPathDir test.zip]
+        file copy [file join $zipTestDir test.zip] $archive
+        zipfs mount $archive $mt
+        set text [readFile $mt/test]
+        zipfs unmount $mt
+        set text
+    } -result "test\n"
+
+    #
+    # exec and running Tcl from a deep install
+    if {0} {
+        # CreateProcessW is not long path aware. Have to wait for Microsoft
+        # to make it so.
+        variable srcBinDir [file dirname [info nameofexecutable]]
+        variable installDir $deepPathDir
+        set deepExe [file join $installDir bin [file tail [info nameofexecutable]]]
+        testlongpath exec-longpath-0 "Long path Tcl installation" {
+            file mkdir $installDir/bin
+            file mkdir $installDir/lib
+            # Copy executables and library
+            set srcdir [file dirname [info nameofexecutable]]
+            file copy -force [info nameofexecutable] $deepExe
+            foreach f [glob [file join $srcBinDir *.dll]] {
+                file copy -force $f [file join $installDir bin]
+            }
+            file copy -force [file join $testsDir .. library] [file join $installDir lib/tcl[info tclversion]]
+            set script [file join $installDir x.tcl]
+            writeFile $script {puts [info nameofexecutable],[info library]}
+            catch {set oldenv $env(TCL_LIBRARY)}
+            set env(TCL_LIBRARY) [file join $installDir lib]
+            set olddir [pwd]
+            cd $installDir/bin
+            set code [catch {exec $deepExe $script} output]
+            cd $olddir
+            if {[info exists oldenv]} {
+                set env(TCL_LIBRARY) $oldenv
+            }
+            list $code $output
+        } -result [list 0 $deepExe,[file join $deepPathDir lib]]
+    }
 
 }
 namespace delete testlongpaths
