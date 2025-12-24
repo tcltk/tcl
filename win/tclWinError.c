@@ -376,7 +376,7 @@ Tcl_WinConvertError(
  */
 int
 Tcl_WinAppendMessageFromModule(
-    DWORD messageId,		/* Result code from error. */
+    unsigned long messageId,	/* Result code from error. */
     HANDLE hModule,		/* Windows module containing message resource.
 				 * NULL means use system messages. */
     int useDefaultMsg,		/* If no message found, use generic msg */
@@ -385,8 +385,6 @@ Tcl_WinAppendMessageFromModule(
 {
     Tcl_Size length;
     WCHAR *tMsgPtr, **tMsgPtrPtr = &tMsgPtr;
-    const char *msg;
-    char id[TCL_INTEGER_SPACE], msgBuf[24 + TCL_INTEGER_SPACE];
     DWORD flags =
 	FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_ALLOCATE_BUFFER;
     flags |= (hModule == NULL) ? FORMAT_MESSAGE_FROM_SYSTEM
@@ -397,6 +395,7 @@ Tcl_WinAppendMessageFromModule(
     if (length == 0 || tMsgPtr == NULL) {
 	if (useDefaultMsg) {
 	    /* Presume it is an error code */
+	    char msgBuf[24 + TCL_INTEGER_SPACE];
 	    snprintf(msgBuf, sizeof(msgBuf), "unknown error: 0x%lx", messageId);
 	    Tcl_DStringAppend(dsPtr, msgBuf, -1);
 	}
