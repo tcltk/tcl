@@ -362,6 +362,68 @@ Tcl_WinConvertError(
 	Tcl_SetErrno(errorTable[errCode]);
     }
 }
+
+/*
+ * Tcl_WinAppendMessageFromModule --
+ *
+ *      Appends a Windows system message identified by its id to a Tcl_DString
+ *	encoded as TUTF-8.
+ *
+ * Results:
+ *	1 if the message id was mapped to a message string.
+ *	0 if no message was found. Even in this case, if useDefaultMsg is
+ *	true, a generic message is appended to the Tcl_DString.
+ */
+int
+Tcl_WinAppendMessageFromModule(
+    DWORD messageId,		/* Result code from error. */
+    HANDLE hModule,		/* Windows module containing message resource.
+				 * NULL means use system messages. */
+    int useDefaultMsg,		/* If no message found, use generic msg */
+    Tcl_DString *dsPtr)		/* Tcl_DString to which message is appended.
+				 * Must have been initialized by the caller */
+{
+    Tcl_Size length;
+    WCHAR *tMsgPtr, **tMsgPtrPtr = &tMsgPtr;
+    const char *msg;
+    char id[TCL_INTEGER_SPACE], msgBuf[24 + TCL_INTEGER_SPACE];
+    DWORD flags =
+	FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_ALLOCATE_BUFFER;
+    flags |= (hModule == NULL) ? FORMAT_MESSAGE_FROM_SYSTEM
+			       : FORMAT_MESSAGE_FROM_HMODULE;
+    length = FormatMessageW(flags, NULL, messageId,
+		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+		(WCHAR *) tMsgPtrPtr, 0, NULL);
+    if (length == 0 || tMsgPtr == NULL) {
+	if (useDefaultMsg) {
+	    /* Presume it is an error code */
+	    snprintf(msgBuf, sizeof(msgBuf), "unknown error: 0x%lx", messageId);
+	    Tcl_DStringAppend(dsPtr, msgBuf, -1);
+	}
+	return 0;
+    } else {
+	char *msgPtr;
+
+	Tcl_Char16ToUtfDString(tMsgPtr, length, dsPtr);
+	LocalFree(tMsgPtr);
+
+	msgPtr = Tcl_DStringValue(dsPtr);
+	length = Tcl_DStringLength(dsPtr);
+
+	/*
+	 * Trim the trailing CR/LF from the system message.
+	 */
+
+	if (length && msgPtr[length-1] == '\n') {
+	    --length;
+	}
+	if (length && msgPtr[length-1] == '\r') {
+	    --length;
+	}
+	Tcl_DStringSetLength(dsPtr, length);
+    }
+    return 1;
+}
 
 #ifdef __CYGWIN__
 /*
