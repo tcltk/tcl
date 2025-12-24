@@ -3374,10 +3374,10 @@ Tcl_SetCommandInfoFromToken(
 	if (infoPtr->objProc == NULL) {
 	    info->proc = InvokeObj2Command;
 	    info->clientData = cmdPtr;
-	   	info->nreProc = NULL;
+	    info->nreProc = NULL;
 	} else {
 	    if (infoPtr->objProc != info->proc) {
-	   	info->nreProc = NULL;
+		info->nreProc = NULL;
 		info->proc = infoPtr->objProc;
 	    }
 	    info->clientData = infoPtr->objClientData;
