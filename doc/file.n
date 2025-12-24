@@ -574,15 +574,17 @@ Returns a string giving the type of file \fIname\fR, which will be one of
 \fBfile volumes\fR
 .
 Returns the absolute paths to the volumes mounted on the system, as a
-proper Tcl list.  Without any virtual filesystems mounted as root
-volumes, on UNIX, the command will always return
+proper Tcl list.  Without any additional virtual filesystems mounted
+as root volumes, on UNIX, the command will return
+.QW //zipfs:/ / ,
+or
 .QW / ,
-since all filesystems are locally mounted.
+(in case of a --disable-zipfs build), since all filesystems are locally mounted.
 On Windows, it will return a list of the available local drives
 (e.g.
-.QW "a:/ c:/" ).
+.QW "//zipfs:/ C:/" ).
 If any virtual filesystem has mounted additional
-volumes, they will be in the returned list.
+volumes, they will be in the returned list too.
 .\" METHOD: writable
 .TP
 \fBfile writable \fIname\fR
