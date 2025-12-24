@@ -2439,6 +2439,10 @@ declare 2 {
 declare 3 {
     void Tcl_WinConvertError(unsigned errCode)
 }
+declare 4 {
+    int Tcl_WinAppendMessageFromModule(DWORD messageId, HANDLE hModule,
+	int useDefaultMsg, Tcl_DString *dsPtr)
+}
 
 ##############################################################################
 

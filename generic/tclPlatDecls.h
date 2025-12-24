@@ -70,6 +70,10 @@ EXTERN void		Tcl_MacOSXNotifierAddRunLoopMode(
 				const void *runLoopMode);
 /* 3 */
 EXTERN void		Tcl_WinConvertError(unsigned errCode);
+/* 4 */
+EXTERN int		Tcl_WinAppendMessageFromModule(DWORD messageId,
+				HANDLE hModule, int useDefaultMsg,
+				Tcl_DString *dsPtr);
 
 typedef struct TclPlatStubs {
     int magic;
@@ -79,6 +83,7 @@ typedef struct TclPlatStubs {
     int (*tcl_MacOSXOpenVersionedBundleResources) (Tcl_Interp *interp, const char *bundleName, const char *bundleVersion, int hasResourceFile, Tcl_Size maxPathLen, char *libraryPath); /* 1 */
     void (*tcl_MacOSXNotifierAddRunLoopMode) (const void *runLoopMode); /* 2 */
     void (*tcl_WinConvertError) (unsigned errCode); /* 3 */
+    int (*tcl_WinAppendMessageFromModule) (DWORD messageId, HANDLE hModule, int useDefaultMsg, Tcl_DString *dsPtr); /* 4 */
 } TclPlatStubs;
 
 extern const TclPlatStubs *tclPlatStubsPtr;
@@ -100,6 +105,8 @@ extern const TclPlatStubs *tclPlatStubsPtr;
 	(tclPlatStubsPtr->tcl_MacOSXNotifierAddRunLoopMode) /* 2 */
 #define Tcl_WinConvertError \
 	(tclPlatStubsPtr->tcl_WinConvertError) /* 3 */
+#define Tcl_WinAppendMessageFromModule \
+	(tclPlatStubsPtr->tcl_WinAppendMessageFromModule) /* 4 */
 
 #endif /* defined(USE_TCL_STUBS) */
 

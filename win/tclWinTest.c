@@ -46,7 +46,7 @@ static Tcl_ObjCmdProc2	TestExceptionCmd;
 static int		TestplatformChmod(const char *nativePath, int pmode);
 static Tcl_ObjCmdProc2	TestchmodCmd;
 static Tcl_ObjCmdProc2	TestlongpathsettingCmd;
- 
+static Tcl_ObjCmdProc2	TestwinappendmessageCmd;
 /*
  *----------------------------------------------------------------------
  *
@@ -79,7 +79,10 @@ TclplatformtestInit(
     Tcl_CreateObjCommand2(interp, "testwinclock", TestwinclockCmd, NULL, NULL);
     Tcl_CreateObjCommand2(interp, "testwinsleep", TestwinsleepCmd, NULL, NULL);
     Tcl_CreateObjCommand2(interp, "testexcept", TestExceptionCmd, NULL, NULL);
-    Tcl_CreateObjCommand2(interp, "testlongpathsetting", TestlongpathsettingCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "testlongpathsetting",
+	TestlongpathsettingCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "testwinappendmessage",
+	TestwinappendmessageCmd, NULL, NULL);
 
     return TCL_OK;
 }
@@ -708,6 +711,83 @@ TestlongpathsettingCmd(
     return TCL_OK;
 }
 
+/*
+ * TestwinappendmessageCmd --
+ *
+ *	Tests retrieval of message strings from a module.
+ *	   testwinappendmessage messageId useDefaultMsg ?header? ?modulePath?
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	Sets interpreter result to the message string.
+ */
+static int 
+TestwinappendmessageCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,
+    Tcl_Size objc,
+    Tcl_Obj *const * objv)
+{
+    if (objc < 2 || objc > 5) {
+	Tcl_WrongNumArgs(interp, 1, objv, "messageId ?header? ?useDefaultMsg? ?modulePath?");
+	return TCL_ERROR;
+    }
+
+    int messageId;
+    Tcl_Size headerLen = 0;
+    const char *header = NULL;
+    int useDefaultMsg = 1;
+    HANDLE hModule = NULL;
+
+    if (Tcl_GetIntFromObj(interp, objv[1], &messageId) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    if (objc > 2) {
+	header = Tcl_GetStringFromObj(objv[2], &headerLen);
+	if (objc > 3) {
+	    if (Tcl_GetBooleanFromObj(interp, objv[3], &useDefaultMsg) !=
+		TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    if (objc > 4) {
+		Tcl_Size tutf8len;
+		Tcl_DString ds;
+		const char *module;
+		const WCHAR *wsModule;
+		Tcl_DStringInit(&ds);
+		module= Tcl_GetStringFromObj(objv[4], &tutf8len);
+		wsModule = Tcl_UtfToChar16DString(module, tutf8len, &ds);
+		hModule = LoadLibraryW(wsModule);
+		Tcl_DStringFree(&ds);
+		if (hModule == NULL) {
+		    Tcl_AppendResult(interp, "could not load module \"",
+			    module, (char *)NULL);
+		}
+		return TCL_ERROR;
+	    }
+	}
+    }
+
+    Tcl_DString messageDs;
+    Tcl_DStringInit(&messageDs);
+    if (header) {
+	Tcl_DStringAppend(&messageDs, header, -1);
+    }
+
+    Tcl_Obj *results[2];
+    results[0] = Tcl_NewIntObj(Tcl_WinAppendMessageFromModule(
+			(DWORD)messageId, hModule, useDefaultMsg, &messageDs));
+    if (hModule) {
+	FreeLibrary(hModule);
+    }
+    results[1] = Tcl_DStringToObj(&messageDs);
+    Tcl_SetObjResult(interp, Tcl_NewListObj(2, results));
+    return TCL_OK;
+}
+
 /*
  * Local Variables:
  * mode: c
