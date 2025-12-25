@@ -366,8 +366,9 @@ Tcl_WinConvertError(
 /*
  * Tcl_WinAppendMessageFromModule --
  *
- *      Appends a Windows system message identified by its id to a Tcl_DString
- *	encoded as TUTF-8.
+ *	Appends a Windows system message identified by its id to a Tcl_DString
+ *	encoded as TUTF-8. If the Tcl_DString is not empty and
+ *	does not end with a space, a space is added before the message.
  *
  * Results:
  *	1 if the message id was mapped to a message string.
@@ -384,25 +385,35 @@ Tcl_WinAppendMessageFromModule(
 				 * Must have been initialized by the caller */
 {
     Tcl_Size length;
+    int needSpace = 0;
     WCHAR *tMsgPtr, **tMsgPtrPtr = &tMsgPtr;
-    DWORD flags =
-	FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_ALLOCATE_BUFFER;
+    DWORD flags;
+
+    length = Tcl_DStringLength(dsPtr);
+    if (length > 0 && Tcl_DStringValue(dsPtr)[length-1] != ' ') {
+	    needSpace = 1;
+    }
+
+    flags = FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_ALLOCATE_BUFFER;
     flags |= (hModule == NULL) ? FORMAT_MESSAGE_FROM_SYSTEM
 			       : FORMAT_MESSAGE_FROM_HMODULE;
-    length = FormatMessageW(flags, NULL, messageId,
-		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+    length = FormatMessageW(flags, hModule, messageId,
+    		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
 		(WCHAR *) tMsgPtrPtr, 0, NULL);
     if (length == 0 || tMsgPtr == NULL) {
 	if (useDefaultMsg) {
 	    /* Presume it is an error code */
 	    char msgBuf[24 + TCL_INTEGER_SPACE];
-	    snprintf(msgBuf, sizeof(msgBuf), "unknown error: 0x%lx", messageId);
+	    snprintf(msgBuf, sizeof(msgBuf), "%sunknown error: 0x%lx",
+		needSpace ? " " : "", messageId);
 	    Tcl_DStringAppend(dsPtr, msgBuf, -1);
 	}
 	return 0;
     } else {
 	char *msgPtr;
-
+	if (needSpace) {
+	    Tcl_DStringAppend(dsPtr, " ", 1);
+	}
 	Tcl_Char16ToUtfDString(tMsgPtr, length, dsPtr);
 	LocalFree(tMsgPtr);
 
@@ -422,6 +433,56 @@ Tcl_WinAppendMessageFromModule(
 	Tcl_DStringSetLength(dsPtr, length);
     }
     return 1;
+}
+
+/*
+ * Tcl_WinRaiseError --
+ *
+ *	Retrieves an error message for a Windows system error code and stores
+ *	it as the interpreter result and the Tcl's error code. An optional
+ *	prefix message can be provided.
+ *
+ * Results:
+ *	Always returns TCL_ERROR so caller can directly return that value.
+ */
+int
+Tcl_WinRaiseError(
+    Tcl_Interp *interp,		/* Current interpreter. */
+    unsigned long errorCode,	/* Result code from error. */
+    const char *messageDll,	/* DLL containing message. NULL for system */
+    const char *prefix)		/* Optional prefix message to be added
+				 * before the system message. Can be NULL. */
+{
+    Tcl_DString ds;
+    Tcl_DStringInit(&ds);
+    HMODULE hModule = NULL;
+
+    if (messageDll != NULL) {
+	hModule = LoadLibraryExA(messageDll, NULL,
+	    LOAD_LIBRARY_AS_DATAFILE | LOAD_LIBRARY_SEARCH_SYSTEM32);
+	if (hModule == NULL) {
+	    Tcl_SetObjResult(interp,
+		Tcl_ObjPrintf("could not load message DLL \"%s\" to resolve "
+			      "message id %lu",
+		    messageDll, errorCode));
+	    return TCL_ERROR;
+	}
+	/* N.B. Once loaded, handle is not freed until process exit. */
+    }
+    if (prefix != NULL) {
+	Tcl_DStringAppend(&ds, prefix, -1);
+    }
+
+    (void)Tcl_WinAppendMessageFromModule(errorCode, hModule, 1, &ds);
+
+    Tcl_Obj *errorCodeObjs[3];
+    errorCodeObjs[0] = Tcl_NewStringObj("WINDOWS", -1);
+    errorCodeObjs[1] = Tcl_ObjPrintf("0x%lx", errorCode);
+    errorCodeObjs[2] = Tcl_DStringToObj(&ds);
+    Tcl_SetObjResult(interp, errorCodeObjs[2]);
+    Tcl_SetObjErrorCode(interp, Tcl_NewListObj(3, errorCodeObjs));
+
+    return TCL_ERROR;
 }
 
 #ifdef __CYGWIN__

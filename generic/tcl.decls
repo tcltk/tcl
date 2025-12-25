@@ -2460,6 +2460,10 @@ declare 4 {
     int Tcl_WinAppendMessageFromModule(unsigned long messageId, void *hModule,
 	int useDefaultMsg, Tcl_DString *dsPtr)
 }
+declare 5 {
+    int Tcl_WinRaiseError(Tcl_Interp *interp, unsigned long messageId,
+	const char *messageDll, const char *prefix)
+}
 
 ##############################################################################
 
