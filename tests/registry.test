@@ -216,7 +216,7 @@ test registry-3.2 {DeleteValue: bad key} -constraints {win reg english} -returnC
     registry delete HKEY_CURRENT_USER\\TclFoobar
 } -body {
     registry delete HKEY_CURRENT_USER\\TclFoobar test
-} -result {unable to open key: The system cannot find the file specified.}
+} -result {unable to open key "TclFoobar": The system cannot find the file specified.}
 test registry-3.3 {DeleteValue: bad value} -constraints {win reg english} -returnCodes error -setup {
     registry delete HKEY_CURRENT_USER\\TclFoobar
 } -body {
@@ -240,7 +240,7 @@ test registry-4.1 {GetKeyNames: bad key} -constraints {win reg english} -setup {
     registry delete HKEY_CURRENT_USER\\TclFoobar
 } -returnCodes error -body {
     registry keys HKEY_CURRENT_USER\\TclFoobar
-} -result {unable to open key: The system cannot find the file specified.}
+} -result {unable to open key "TclFoobar": The system cannot find the file specified.}
 test registry-4.2 {GetKeyNames} -constraints {win reg} -setup {
     registry delete HKEY_CURRENT_USER\\TclFoobar
 } -body {
@@ -320,7 +320,7 @@ test registry-5.1 {GetType} -constraints {win reg english} -setup {
     registry delete HKEY_CURRENT_USER\\TclFoobar
 } -returnCodes error -body {
     registry type HKEY_CURRENT_USER\\TclFoobar val1
-} -result {unable to open key: The system cannot find the file specified.}
+} -result {unable to open key "TclFoobar": The system cannot find the file specified.}
 test registry-5.2 {GetType} -constraints {win reg english} -setup {
     registry delete HKEY_CURRENT_USER\\TclFoobar
 } -returnCodes error -body {
@@ -430,7 +430,7 @@ test registry-6.1 {GetValue} -constraints {win reg english} -setup {
     registry delete HKEY_CURRENT_USER\\TclFoobar
 } -returnCodes error -body {
     registry get HKEY_CURRENT_USER\\TclFoobar val1
-} -result {unable to open key: The system cannot find the file specified.}
+} -result {unable to open key "TclFoobar": The system cannot find the file specified.}
 test registry-6.2 {GetValue} -constraints {win reg english} -setup {
     registry delete HKEY_CURRENT_USER\\TclFoobar
 } -returnCodes error -body {
@@ -597,7 +597,7 @@ test registry-7.1 {GetValueNames: bad key} -constraints {win reg english} -setup
     registry delete HKEY_CURRENT_USER\\TclFoobar
 } -body {
     registry values HKEY_CURRENT_USER\\TclFoobar
-} -returnCodes error -result {unable to open key: The system cannot find the file specified.}
+} -returnCodes error -result {unable to open key "TclFoobar": The system cannot find the file specified.}
 test registry-7.2 {GetValueNames} -constraints {win reg} -setup {
     registry delete HKEY_CURRENT_USER\\TclFoobar
 } -body {
@@ -672,7 +672,7 @@ test registry-8.3 {OpenSubKey} -constraints {win reg english} -setup {
 } -body {
     registry keys HKEY_CURRENT_USER\\TclFoobar
 } -returnCodes error \
-    -result "unable to open key: The system cannot find the file specified."
+    -result {unable to open key "TclFoobar": The system cannot find the file specified.}
 
 test registry-9.1 {ParseKeyName: bad keys} -constraints {win reg} -body {
     registry values \\
@@ -688,7 +688,7 @@ test registry-9.4 {ParseKeyName: bad keys} -constraints {win reg} -body {
 } -returnCodes error -result {bad root name "": must be HKEY_LOCAL_MACHINE, HKEY_USERS, HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_CURRENT_CONFIG, HKEY_PERFORMANCE_DATA, or HKEY_DYN_DATA}
 test registry-9.5 {ParseKeyName: bad keys} -constraints {win reg english} -body {
     registry values \\\\\\HKEY_CLASSES_ROOT
-} -returnCodes error -result {unable to open key: The network address is invalid.}
+} -returnCodes error -result {unable to open key "": The network address is invalid.}
 test registry-9.6 {ParseKeyName: bad keys} -constraints {win reg} -body {
     registry values \\\\gaspode
 } -returnCodes error -result {bad root name "": must be HKEY_LOCAL_MACHINE, HKEY_USERS, HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_CURRENT_CONFIG, HKEY_PERFORMANCE_DATA, or HKEY_DYN_DATA}
@@ -702,7 +702,7 @@ test registry-9.9 {ParseKeyName: null keys} \
     -constraints {win reg english} \
     -body {registry keys HKEY_CLASSES_ROOT\\TclFoobar\\baz} \
     -returnCodes error \
-    -result {unable to open key: The system cannot find the file specified.}
+    -result {unable to open key "TclFoobar\baz": The system cannot find the file specified.}
 
 test registry-10.1 {RecursiveDeleteKey} -constraints {win reg} -setup {
     registry delete HKEY_CURRENT_USER\\TclFoobar
@@ -760,6 +760,25 @@ test registry-12.4 {BroadcastValue} -constraints {win reg notWine} -body {
 test registry-12.5 {BroadcastValue} -constraints {win reg notWine} -body {
     registry b {}
 } -result {1 0}
+
+test registry-13.1 {Failure - no such key} -constraints {win reg} -body {
+    list \
+        [catch {registry get HKEY_CURRENT_USER\\NoSuchKey blat} r d] \
+        $r \
+        [dict get $d -errorcode]
+} -result [list 1 \
+               {unable to open key "NoSuchKey": The system cannot find the file specified.} \
+               {WINDOWS 0x2 {unable to open key "NoSuchKey": The system cannot find the file specified.}}]
+
+test registry-13.1 {Failure - no such value} -constraints {win reg} -body {
+    list \
+        [catch {registry get HKEY_CURRENT_USER\\Microsoft NoSuchValue} r d] \
+        $r \
+        [dict get $d -errorcode]
+} -result [list 1 \
+               {unable to get value "NoSuchValue" from key "HKEY_CURRENT_USER\Microsoft": The system cannot find the file specified.} \
+               {WINDOWS 0x2 {unable to get value "NoSuchValue" from key "HKEY_CURRENT_USER\Microsoft": The system cannot find the file specified.}}]
+
 
 # cleanup
 ::tcltest::cleanupTests
