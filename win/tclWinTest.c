@@ -46,7 +46,7 @@ static Tcl_ObjCmdProc2	TestExceptionCmd;
 static int		TestplatformChmod(const char *nativePath, int pmode);
 static Tcl_ObjCmdProc2	TestchmodCmd;
 static Tcl_ObjCmdProc2	TestlongpathsettingCmd;
-static Tcl_ObjCmdProc2	TestwinappendmessageCmd;
+static Tcl_ObjCmdProc2	TestwinerrorCmd;
 /*
  *----------------------------------------------------------------------
  *
@@ -81,8 +81,8 @@ TclplatformtestInit(
     Tcl_CreateObjCommand2(interp, "testexcept", TestExceptionCmd, NULL, NULL);
     Tcl_CreateObjCommand2(interp, "testlongpathsetting",
 	TestlongpathsettingCmd, NULL, NULL);
-    Tcl_CreateObjCommand2(interp, "testwinappendmessage",
-	TestwinappendmessageCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "testwinerror",
+	TestwinerrorCmd, NULL, NULL);
 
     return TCL_OK;
 }
@@ -710,28 +710,29 @@ TestlongpathsettingCmd(
     Tcl_SetObjResult(interp, Tcl_NewWideIntObj(longPathsEnabled));
     return TCL_OK;
 }
-
 /*
- * TestwinappendmessageCmd --
+ * Testappendmessagefrommodule --
  *
- *	Tests retrieval of message strings from a module.
- *	   testwinappendmessage messageId useDefaultMsg ?header? ?modulePath?
+ *	Tests Tcl_WinAppendMessageFromModule function.
  *
  * Results:
  *	A standard Tcl result.
  *
  * Side effects:
- *	Sets interpreter result to the message string.
+ *	Sets interpreter result list consisting of return code from
+ *	Tcl_WinAppendMessageFromModule and the message string.
  */
-static int 
-TestwinappendmessageCmd(
-    TCL_UNUSED(void *),
+static int
+Testappendmessagefrommodule(
     Tcl_Interp *interp,
     Tcl_Size objc,
     Tcl_Obj *const * objv)
 {
-    if (objc < 2 || objc > 5) {
-	Tcl_WrongNumArgs(interp, 1, objv, "messageId ?header? ?useDefaultMsg? ?modulePath?");
+    /* Caller should have checked objv[1] is "appendmessagefrommodule" */
+    assert(objc >= 2);
+
+    if (objc < 3 || objc > 6) {
+	Tcl_WrongNumArgs(interp, 2, objv, "messageId ?header? ?useDefaultMsg? ?modulePath?");
 	return TCL_ERROR;
     }
 
@@ -741,32 +742,32 @@ TestwinappendmessageCmd(
     int useDefaultMsg = 1;
     HANDLE hModule = NULL;
 
-    if (Tcl_GetIntFromObj(interp, objv[1], &messageId) != TCL_OK) {
+    if (Tcl_GetIntFromObj(interp, objv[2], &messageId) != TCL_OK) {
 	return TCL_ERROR;
     }
 
-    if (objc > 2) {
-	header = Tcl_GetStringFromObj(objv[2], &headerLen);
-	if (objc > 3) {
-	    if (Tcl_GetBooleanFromObj(interp, objv[3], &useDefaultMsg) !=
+    if (objc > 3) {
+	header = Tcl_GetStringFromObj(objv[3], &headerLen);
+	if (objc > 4) {
+	    if (Tcl_GetBooleanFromObj(interp, objv[4], &useDefaultMsg) !=
 		TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    if (objc > 4) {
+	    if (objc > 5) {
 		Tcl_Size tutf8len;
 		Tcl_DString ds;
 		const char *module;
 		const WCHAR *wsModule;
 		Tcl_DStringInit(&ds);
-		module= Tcl_GetStringFromObj(objv[4], &tutf8len);
+		module= Tcl_GetStringFromObj(objv[5], &tutf8len);
 		wsModule = Tcl_UtfToChar16DString(module, tutf8len, &ds);
 		hModule = LoadLibraryW(wsModule);
 		Tcl_DStringFree(&ds);
 		if (hModule == NULL) {
 		    Tcl_AppendResult(interp, "could not load module \"",
 			    module, (char *)NULL);
+		    return TCL_ERROR;
 		}
-		return TCL_ERROR;
 	    }
 	}
     }
@@ -786,6 +787,61 @@ TestwinappendmessageCmd(
     results[1] = Tcl_DStringToObj(&messageDs);
     Tcl_SetObjResult(interp, Tcl_NewListObj(2, results));
     return TCL_OK;
+}
+
+
+/*
+ * TestwinerrorCmd --
+ *
+ *	Tests various functions related to Windows errors.
+ *	   testwinerror appendmessage messageId useDefaultMsg ?header? ?modulePath?
+ *	   testwinerror raiseerror messageId ?header? ?modulePath?
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	Sets interpreter result to the message string.
+ */
+static int
+TestwinerrorCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,
+    Tcl_Size objc,
+    Tcl_Obj *const * objv)
+{
+    const char *options[] = {"appendmessage", "raiseerror", NULL};
+    enum { APPENDMESSAGE, RAISEERROR } opt;
+    int messageId;
+
+    if (objc < 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "command ?args...?");
+	return TCL_ERROR;
+    }
+
+    if (Tcl_GetIndexFromObj(interp, objv[1], options, "command",
+	    0, &opt) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    switch (opt) {
+    case APPENDMESSAGE:
+	return Testappendmessagefrommodule(interp, objc, objv);
+    case RAISEERROR:
+	if (objc < 3 || objc > 5) {
+	    Tcl_WrongNumArgs(interp, 2, objv,
+		"messageId ?header? ?modulePath?");
+	    return TCL_ERROR;
+	}
+	if (Tcl_GetIntFromObj(interp, objv[2], &messageId) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	return Tcl_WinRaiseError(interp, messageId,
+	    (objc > 4) ? Tcl_GetString(objv[4]) : NULL,
+	    (objc > 3) ? Tcl_GetString(objv[3]) : NULL);
+    default:
+	TCL_UNREACHABLE();
+    }
 }
 
 /*

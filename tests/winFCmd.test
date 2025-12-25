@@ -1746,9 +1746,99 @@ namespace eval testlongpaths {
             list $code $output
         } -result [list 0 $deepExe,[file join $deepPathDir lib]]
     }
-
 }
 namespace delete testlongpaths
+
+#
+# Tests for C error interfaces
+testConstraint testwinerror [llength [info commands testwinerror]]
+namespace eval testwinerror {
+    catch {
+        variable regOut [exec {*}[auto_execok reg] query {HKCU\Control Panel\International} /v LocaleName]
+        if {[regexp -nocase {en-US} $regOut]} {
+            testConstraint englishLocale 1
+        }
+    }
+    variable pdhErrorCode 0x800007D0 
+    proc test args {
+        uplevel 1 [list ::tcltest::test {*}$args -constraints [list win englishLocale testwinerror]]
+    }
+    test winerror-appendmessage-0 "Get Windows error message" -body {
+        testwinerror appendmessage 4
+    } -result [list 1 {The system cannot open the file.}]
+
+    test winerror-appendmessage-1 "Get Windows error message with a header" -body {
+        testwinerror appendmessage 4 "System error:"
+    } -result [list 1 {System error: The system cannot open the file.}]
+
+    test winerror-appendmessage-2 {
+        Get Windows error message with a header having trailing space
+    } -body {
+        testwinerror appendmessage 4 "System error: "
+    } -result [list 1 {System error: The system cannot open the file.}]
+
+    test winerror-appendmessage-3 {
+        Get Windows message for non-system message id
+    } -body {
+        testwinerror appendmessage $pdhErrorCode
+    } -result [list 0 {unknown error: 0x800007d0}]
+
+    test winerror-appendmessage-4 {
+        Get Windows message for non-system message id with header
+    } -body {
+        testwinerror appendmessage $pdhErrorCode "Non-system error:"
+    } -result [list 0 {Non-system error: unknown error: 0x800007d0}]
+
+    test winerror-appendmessage-5 {
+        Get Windows message for non-system message id - no default message
+    } -body {
+        testwinerror appendmessage $pdhErrorCode "" 0
+    } -result [list 0 {}]
+
+    test winerror-appendmessage-6 {
+        Get message for non-system message id
+    } -body {
+        testwinerror appendmessage $pdhErrorCode "" 0 pdh.dll
+    } -result [list 1 {Unable to connect to the specified computer or the computer is offline.}]
+
+    test winerror-appendmessage-7 {
+        Get non-existent message for non-system message id
+    } -body {
+        testwinerror appendmessage 0x123 "" 1 pdh.dll
+    } -result [list 0 {unknown error: 0x123}]
+
+    test winerror-raiseerror-0 {
+        Raise a Windows error
+    } -body {
+        list [catch {testwinerror raiseerror 4} m d] $m [dict get $d -errorcode]
+    } -result [list 1 {The system cannot open the file.} {WINDOWS 0x4 {The system cannot open the file.}}]
+
+    test winerror-raiseerror-1 {
+        Raise a Windows error with prefix
+    } -body {
+        list [catch {testwinerror raiseerror 4 "System error:"} m d] $m [dict get $d -errorcode]
+    } -result [list 1 {System error: The system cannot open the file.} {WINDOWS 0x4 {System error: The system cannot open the file.}}]
+
+    test winerror-raiseerror-2 {
+        Raise a Windows error with prefix with trailing space
+    } -body {
+        list [catch {testwinerror raiseerror 4 "System error: "} m d] $m [dict get $d -errorcode]
+    } -result [list 1 {System error: The system cannot open the file.} {WINDOWS 0x4 {System error: The system cannot open the file.}}]
+
+    test winerror-raiseerror-3 {
+        Raise a Windows error with bad error code
+    } -body {
+        list [catch {testwinerror raiseerror $pdhErrorCode} m d] $m [dict get $d -errorcode]
+    } -result [list 1 {unknown error: 0x800007d0} {WINDOWS 0x800007d0 {unknown error: 0x800007d0}}]
+
+    test winerror-raiseerror-4 {
+        Raise a Windows error with non-system error code
+    } -body {
+        list [catch {testwinerror raiseerror $pdhErrorCode "" pdh.dll} m d] $m [dict get $d -errorcode]
+    } -result [list 1 {Unable to connect to the specified computer or the computer is offline.} {WINDOWS 0x800007d0 {Unable to connect to the specified computer or the computer is offline.}}]
+
+}
+namespace delete testwinerror
 
 
 ################################################################

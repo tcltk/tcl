@@ -721,6 +721,7 @@ static const TclPlatStubs tclPlatStubs = {
     Tcl_MacOSXNotifierAddRunLoopMode, /* 2 */
     Tcl_WinConvertError, /* 3 */
     Tcl_WinAppendMessageFromModule, /* 4 */
+    Tcl_WinRaiseError, /* 5 */
 };
 
 const TclTomMathStubs tclTomMathStubs = {
