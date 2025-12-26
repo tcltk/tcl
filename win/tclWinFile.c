@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
-
+#undef NDEBUG
 #include "tclWinInt.h"
 #include "tclFileSystem.h"
 #include <winioctl.h>
@@ -337,56 +337,78 @@ WinSymLinkDirectory(
     const WCHAR *linkDirPath,
     const WCHAR *linkTargetPath)
 {
-    DUMMY_REPARSE_BUFFER dummy;
-    REPARSE_DATA_BUFFER *reparseBuffer = (REPARSE_DATA_BUFFER *) &dummy;
-    size_t len;
-    WCHAR nativeTarget[MAX_PATH];
-    WCHAR *loop;
+    REPARSE_DATA_BUFFER *reparseBuffer;
+    size_t bufferSize;
+    size_t targetNumBytes;
+#define PREFIX_BYTES L"\\??\\"
 
     /*
-     * Make the native target name.
+     * The required buffer size is sum of
+     * - REPARSE_MOUNTPOINT_HEADER_SIZE (first three REPARSE_DATA_BUFFER fields)
+     * - REPARSE_DATA_BUFFER.{Substitute,Print}{NameLength,NameOffset} fields
+     * - space for the SubstituteName string including the leading \??\ prefix
+     *   and trailing nul
+     * We currently leave out the PrintName except for nul as that is
+     * what has been done historically in Tcl.
+     *
+     * Note terminating nuls are not necessary but help debugging display.
      */
+    targetNumBytes =
+	(sizeof(WCHAR) * wcslen(linkTargetPath)) \
+	+ sizeof(PREFIX_BYTES); /* Including terminating nul */
 
-    memcpy(nativeTarget, L"\\??\\", 4 * sizeof(WCHAR));
-    memcpy(nativeTarget + 4, linkTargetPath,
-	    sizeof(WCHAR) * (1+wcslen((WCHAR *) linkTargetPath)));
-    len = wcslen(nativeTarget);
+    bufferSize = REPARSE_MOUNTPOINT_HEADER_SIZE
+		    + 4 * sizeof(WORD)
+		    + targetNumBytes
+		    + sizeof(WCHAR); /* For PrintName terminating nul */
+    reparseBuffer = (REPARSE_DATA_BUFFER *) Tcl_Alloc(bufferSize);
+    reparseBuffer->ReparseDataLength = bufferSize - REPARSE_MOUNTPOINT_HEADER_SIZE;
+    reparseBuffer->ReparseTag = IO_REPARSE_TAG_MOUNT_POINT;
+    reparseBuffer->Reserved = 0;
+    reparseBuffer->MountPointReparseBuffer.SubstituteNameOffset = 0;
+    reparseBuffer->MountPointReparseBuffer.SubstituteNameLength =
+	    targetNumBytes - sizeof(WCHAR); /* Excluding nul */
+    reparseBuffer->MountPointReparseBuffer.PrintNameLength = 0;
+    reparseBuffer->MountPointReparseBuffer.PrintNameOffset = targetNumBytes;
 
+    WCHAR *to = reparseBuffer->MountPointReparseBuffer.PathBuffer;
+    memcpy(to, PREFIX_BYTES, sizeof(PREFIX_BYTES)-sizeof(WCHAR));
+    to += (sizeof(PREFIX_BYTES)/sizeof(WCHAR)) - 1;
+    WCHAR *from = (WCHAR *)linkTargetPath;
     /*
      * We must have backslashes only. This is VERY IMPORTANT. If we have any
      * forward slashes everything appears to work, but the resulting symlink
      * is useless!
      */
-
-    for (loop = nativeTarget; *loop != 0; loop++) {
-	if (*loop == '/') {
-	    *loop = '\\';
+    while (*from) {
+	WCHAR ch = *from++;
+	if (ch == L'/') {
+	    ch = L'\\';
 	}
+	*to++ = ch;
     }
-    if ((nativeTarget[len-1] == '\\') && (nativeTarget[len-2] != ':')) {
-	nativeTarget[len-1] = 0;
+    assert((char *)to ==
+	   (char *)reparseBuffer->MountPointReparseBuffer.PathBuffer +
+	       reparseBuffer->MountPointReparseBuffer.SubstituteNameLength);
+    *to++ = L'\0';
+    assert((char *)to ==
+	   (char *)reparseBuffer->MountPointReparseBuffer.PathBuffer +
+	       reparseBuffer->MountPointReparseBuffer.PrintNameOffset);
+    /* PrintName unused but store terminator anyways */
+    assert(((char *)to - (char *)reparseBuffer->MountPointReparseBuffer.PathBuffer) ==
+	   targetNumBytes);
+    if (to[-1] == '\\' && to[-2] != ':') {
+	to[-1] = L'\0';
+	reparseBuffer->MountPointReparseBuffer.SubstituteNameLength -=
+	    sizeof(WCHAR);
     }
+    *to++ = L'\0'; /* Where PrintName begins */
+    assert((char *)to == (bufferSize + (char *)reparseBuffer));
 
-    /*
-     * Build the reparse info.
-     */
-
-    memset(reparseBuffer, 0, sizeof(DUMMY_REPARSE_BUFFER));
-    reparseBuffer->ReparseTag = IO_REPARSE_TAG_MOUNT_POINT;
-    reparseBuffer->MountPointReparseBuffer.SubstituteNameLength =
-	    (WORD)(wcslen(nativeTarget) * sizeof(WCHAR));
-    reparseBuffer->Reserved = 0;
-    reparseBuffer->MountPointReparseBuffer.PrintNameLength = 0;
-    reparseBuffer->MountPointReparseBuffer.PrintNameOffset =
-	    reparseBuffer->MountPointReparseBuffer.SubstituteNameLength
-	    + sizeof(WCHAR);
-    memcpy(reparseBuffer->MountPointReparseBuffer.PathBuffer, nativeTarget,
-	    sizeof(WCHAR)
-	    + reparseBuffer->MountPointReparseBuffer.SubstituteNameLength);
-    reparseBuffer->ReparseDataLength =
-	    reparseBuffer->MountPointReparseBuffer.SubstituteNameLength+12;
-
-    return NativeWriteReparse(linkDirPath, reparseBuffer);
+    int result = NativeWriteReparse(linkDirPath, reparseBuffer);
+    Tcl_Free(reparseBuffer);
+    return result;
+#undef PREFIX_BYTES
 }
 
 /*
