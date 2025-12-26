@@ -95,12 +95,9 @@
 #define INVALID_FILE_ATTRIBUTES		((DWORD)-1)
 #endif
 
-/*
- * Maximum reparse buffer info size. The max user defined reparse data is
- * 16KB, plus there's a header.
- */
-
-#define MAX_REPARSE_SIZE		17000
+#ifndef MAXIMUM_REPARSE_DATA_BUFFER_SIZE
+#define MAXIMUM_REPARSE_DATA_BUFFER_SIZE 16384
+#endif
 
 /*
  * Undocumented REPARSE_MOUNTPOINT_HEADER_SIZE structure definition. This is
@@ -109,8 +106,9 @@
  * IMPORTANT: caution when using this structure, since the actual structures
  * used will want to store a full path in the 'PathBuffer' field, but there
  * isn't room (there's only a single WCHAR!). Therefore one must artificially
- * create a larger space of memory and then cast it to this type. We use the
- * 'DUMMY_REPARSE_BUFFER' struct just below to deal with this problem.
+ * create a larger space of memory and then cast it to this type. When
+ * reading from kernel, we just allocate a max size buffer since it is not
+ * a frequent operation and is a temporary allocation.
  */
 
 #define REPARSE_MOUNTPOINT_HEADER_SIZE	 8
@@ -142,11 +140,6 @@ typedef struct _REPARSE_DATA_BUFFER {
 } REPARSE_DATA_BUFFER;
 #endif
 
-typedef struct {
-    REPARSE_DATA_BUFFER dummy;
-    WCHAR dummyBuf[MAX_PATH * 3];
-} DUMMY_REPARSE_BUFFER;
-
 /*
  * Other typedefs required by this code.
  */
@@ -166,7 +159,8 @@ static unsigned short	NativeStatMode(DWORD attr, int checkLinks,
 			    int isExec);
 static int		NativeIsExec(const WCHAR *path);
 static int		NativeReadReparse(const WCHAR *LinkDirectory,
-			    REPARSE_DATA_BUFFER *buffer, DWORD desiredAccess);
+			    REPARSE_DATA_BUFFER *buffer, DWORD bufferSize,
+			    DWORD desiredAccess);
 static int		NativeWriteReparse(const WCHAR *LinkDirectory,
 			    REPARSE_DATA_BUFFER *buffer);
 static int		NativeMatchType(int isDrive, DWORD attr,
@@ -431,13 +425,21 @@ TclWinSymLinkCopyDirectory(
     const WCHAR *linkOrigPath,	/* Existing junction - reparse point */
     const WCHAR *linkCopyPath)	/* Will become a duplicate junction */
 {
-    DUMMY_REPARSE_BUFFER dummy;
-    REPARSE_DATA_BUFFER *reparseBuffer = (REPARSE_DATA_BUFFER *) &dummy;
+    REPARSE_DATA_BUFFER *reparseBuffer;
+    int result = -1;
+    /*
+     * No reliable means of getting required size. Since this is an infrequent
+     * operation, just allocate max possible reparse buffer.
+     */
+    reparseBuffer =
+	(REPARSE_DATA_BUFFER *)Tcl_Alloc(MAXIMUM_REPARSE_DATA_BUFFER_SIZE);
 
-    if (NativeReadReparse(linkOrigPath, reparseBuffer, GENERIC_READ)) {
-	return -1;
+    if (NativeReadReparse(linkOrigPath, reparseBuffer,
+	    MAXIMUM_REPARSE_DATA_BUFFER_SIZE, GENERIC_READ) == 0) {
+	result = NativeWriteReparse(linkCopyPath, reparseBuffer);
     }
-    return NativeWriteReparse(linkCopyPath, reparseBuffer);
+    Tcl_Free(reparseBuffer);
+    return result;
 }
 
 /*
@@ -466,18 +468,18 @@ TclWinSymLinkDelete(
      * It is a symbolic link - remove it.
      */
 
-    DUMMY_REPARSE_BUFFER dummy;
-    REPARSE_DATA_BUFFER *reparseBuffer = (REPARSE_DATA_BUFFER *) &dummy;
+    /* Only reparse header matters, data immaterial so just use GUID version */
+    REPARSE_GUID_DATA_BUFFER reparse;
     HANDLE hFile;
     DWORD returnedLength;
 
-    memset(reparseBuffer, 0, sizeof(DUMMY_REPARSE_BUFFER));
-    reparseBuffer->ReparseTag = IO_REPARSE_TAG_MOUNT_POINT;
+    memset(&reparse, 0, sizeof(reparse));
+    reparse.ReparseTag = IO_REPARSE_TAG_MOUNT_POINT;
     hFile = CreateFileW(linkOrigPath, GENERIC_WRITE, 0, NULL, OPEN_EXISTING,
 	    FILE_FLAG_OPEN_REPARSE_POINT | FILE_FLAG_BACKUP_SEMANTICS, NULL);
 
     if (hFile != INVALID_HANDLE_VALUE) {
-	if (!DeviceIoControl(hFile, FSCTL_DELETE_REPARSE_POINT, reparseBuffer,
+	if (!DeviceIoControl(hFile, FSCTL_DELETE_REPARSE_POINT, &reparse,
 		REPARSE_MOUNTPOINT_HEADER_SIZE,NULL,0,&returnedLength,NULL)) {
 	    /*
 	     * Error setting junction.
@@ -528,8 +530,7 @@ WinReadLinkDirectory(
 {
     int attr, offset;
     Tcl_Size len;
-    DUMMY_REPARSE_BUFFER dummy;
-    REPARSE_DATA_BUFFER *reparseBuffer = (REPARSE_DATA_BUFFER *) &dummy;
+    REPARSE_DATA_BUFFER *reparseBuffer = NULL;
     Tcl_Obj *retVal;
     Tcl_DString ds;
     const char *copy;
@@ -538,7 +539,17 @@ WinReadLinkDirectory(
     if (!(attr & FILE_ATTRIBUTE_REPARSE_POINT)) {
 	goto invalidError;
     }
-    if (NativeReadReparse(linkDirPath, reparseBuffer, 0)) {
+
+    /*
+     * No reliable means of getting required size. Since this is an infrequent
+     * operation, just allocate max possible reparse buffer.
+     */
+    reparseBuffer =
+	(REPARSE_DATA_BUFFER *)Tcl_Alloc(MAXIMUM_REPARSE_DATA_BUFFER_SIZE);
+
+    if (NativeReadReparse(linkDirPath, reparseBuffer,
+	    MAXIMUM_REPARSE_DATA_BUFFER_SIZE, 0)) {
+	Tcl_Free(reparseBuffer);
 	return NULL;
     }
 
@@ -590,6 +601,7 @@ WinReadLinkDirectory(
 		    driveSpec[0] = drive;
 		    retVal = Tcl_NewStringObj(driveSpec,2);
 		    Tcl_IncrRefCount(retVal);
+		    Tcl_Free(reparseBuffer);
 		    return retVal;
 		}
 
@@ -632,10 +644,14 @@ WinReadLinkDirectory(
 	retVal = Tcl_NewStringObj(copy,len);
 	Tcl_IncrRefCount(retVal);
 	Tcl_DStringFree(&ds);
+	Tcl_Free(reparseBuffer);
 	return retVal;
     }
 
   invalidError:
+    if (reparseBuffer) {
+	Tcl_Free(reparseBuffer);
+    }
     Tcl_SetErrno(EINVAL);
     return NULL;
 }
@@ -660,9 +676,9 @@ WinReadLinkDirectory(
  */
 
 static int
-NativeReadReparse(
-    const WCHAR *linkDirPath,	/* The junction to read */
-    REPARSE_DATA_BUFFER *buffer,/* Pointer to buffer. Cannot be NULL */
+NativeReadReparse(const WCHAR *linkDirPath, /* The junction to read */
+    REPARSE_DATA_BUFFER *buffer,	/* Pointer to buffer. Cannot be NULL. */
+    DWORD bufferSize,			/* Size of buffer[] */
     DWORD desiredAccess)
 {
     HANDLE hFile;
@@ -686,7 +702,7 @@ NativeReadReparse(
      */
 
     if (!DeviceIoControl(hFile, FSCTL_GET_REPARSE_POINT, NULL, 0, buffer,
-	    sizeof(DUMMY_REPARSE_BUFFER), &returnedLength, NULL)) {
+	    bufferSize, &returnedLength, NULL)) {
 	/*
 	 * Error setting junction.
 	 */
