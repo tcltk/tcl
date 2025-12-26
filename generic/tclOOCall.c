@@ -624,7 +624,6 @@ SortMethodNames(
     Tcl_Obj ***namesLstPtr)	/* Where to store the sorted list of strings
 				 * that we produce. Tcl_Alloced() */
 {
-    Tcl_Obj **namesLst;
     FOREACH_HASH_DECLS;
     Tcl_Obj *namePtr;
     void *isWanted;
@@ -646,7 +645,8 @@ SortMethodNames(
      * sorted when it is long enough to matter.
      */
 
-    namesLst = (Tcl_Obj **) Tcl_Alloc(sizeof(Tcl_Obj *) * namesTbl->numEntries);
+    Tcl_Obj **namesLst = (Tcl_Obj **)
+	    Tcl_Alloc(sizeof(Tcl_Obj *) * namesTbl->numEntries);
     FOREACH_HASH(namePtr, isWanted, namesTbl) {
 	if (!WANT_PUBLIC(flags) || (PTR2INT(isWanted) & IN_LIST)) {
 	    if (PTR2INT(isWanted) & NO_IMPLEMENTATION) {
@@ -685,7 +685,7 @@ CmpNames(
     Tcl_Obj **namePtr1 = (Tcl_Obj **) ptr1;
     Tcl_Obj **namePtr2 = (Tcl_Obj **) ptr2;
 
-    return TclStringCmp(*namePtr1, *namePtr2, 0, 0, -1);
+    return TclStringCmp(*namePtr1, *namePtr2, 0, 0, TCL_AUTO_LENGTH);
 }
 
 /*
@@ -742,8 +742,7 @@ AddClassMethodNames(
 	Method *mPtr;
 	int isNew;
 
-	(void) Tcl_CreateHashEntry(examinedClassesPtr, clsPtr,
-		&isNew);
+	(void) Tcl_CreateHashEntry(examinedClassesPtr, clsPtr, &isNew);
 	if (!isNew) {
 	    break;
 	}
@@ -818,7 +817,7 @@ AddStandardMethodName(
 		Tcl_CreateHashEntry(namesPtr, namePtr, &isNew);
 
 	if (isNew) {
-	    int isWanted = (!WANT_PUBLIC(flags) || IS_PUBLIC(mPtr))
+	    Tcl_Size isWanted = (!WANT_PUBLIC(flags) || IS_PUBLIC(mPtr))
 		    ? IN_LIST : 0;
 
 	    isWanted |= (mPtr->type2Ptr == NULL ? NO_IMPLEMENTATION : 0);
@@ -854,14 +853,12 @@ AddInstancePrivateToCallContext(
     ChainBuilder *const cbPtr,	/* Where to add the call chain entries. */
     int flags)			/* What sort of call chain are we building. */
 {
-    Tcl_HashEntry *hPtr;
-    Method *mPtr;
     bool donePrivate = false;
 
     if (oPtr->methodsPtr) {
-	hPtr = Tcl_FindHashEntry(oPtr->methodsPtr, methodName);
+	Tcl_HashEntry *hPtr = Tcl_FindHashEntry(oPtr->methodsPtr, methodName);
 	if (hPtr != NULL) {
-	    mPtr = (Method *) Tcl_GetHashValue(hPtr);
+	    Method *mPtr = (Method *) Tcl_GetHashValue(hPtr);
 	    if (IS_PRIVATE(mPtr)) {
 		AddMethodToCallChain(mPtr, cbPtr, NULL, NULL, flags);
 		donePrivate = true;
@@ -1196,7 +1193,6 @@ TclOOGetCallContext(
 {
     CallContext *contextPtr;
     CallChain *callPtr;
-    ChainBuilder cb;
     Tcl_Size i, count;
     bool doFilters, donePrivate = false;
     Tcl_HashEntry *hPtr;
@@ -1290,9 +1286,7 @@ TclOOGetCallContext(
     callPtr = (CallChain *) Tcl_Alloc(sizeof(CallChain));
     InitCallChain(callPtr, oPtr, flags);
 
-    cb.callChainPtr = callPtr;
-    cb.filterLength = 0;
-    cb.oPtr = oPtr;
+    ChainBuilder cb = { callPtr, 0, oPtr };
 
     /*
      * If we're working with a forced use of unknown, do that now.
@@ -1872,7 +1866,6 @@ TclOORenderCallChain(
     CallChain *callPtr)
 {
     Tcl_Obj *filterLiteral, *methodLiteral, *objectLiteral, *privateLiteral;
-    Tcl_Obj *resultObj, *descObjs[4], **objv;
     Foundation *fPtr = TclOOGetFoundation(interp);
     Tcl_Size i;
 
@@ -1897,10 +1890,11 @@ TclOORenderCallChain(
      * method (or "object" if it is declared on the instance).
      */
 
-    objv = (Tcl_Obj **)
+    Tcl_Obj **objv = (Tcl_Obj **)
 	    TclStackAlloc(interp, callPtr->numChain * sizeof(Tcl_Obj *));
     for (i = 0 ; i < callPtr->numChain ; i++) {
 	MInvoke *miPtr = &callPtr->chain[i];
+	Tcl_Obj *descObjs[4];
 
 	descObjs[0] =
 	    miPtr->isFilter ? filterLiteral :
@@ -1935,7 +1929,7 @@ TclOORenderCallChain(
      * Finish building the description and return it.
      */
 
-    resultObj = Tcl_NewListObj(callPtr->numChain, objv);
+    Tcl_Obj *resultObj = Tcl_NewListObj(callPtr->numChain, objv);
     TclStackFree(interp, objv);
     return resultObj;
 }
@@ -1971,15 +1965,11 @@ TclOOGetDefineContextNamespace(
 				 * [oo::define], otherwise, we are going to
 				 * use this for [oo::objdefine]. */
 {
-    DefineChain define;
     DefineEntry staticSpace[DEFINE_CHAIN_STATIC_SIZE];
+    DefineChain define = { staticSpace, 0, DEFINE_CHAIN_STATIC_SIZE };
     DefineEntry *entryPtr;
     Tcl_Namespace *nsPtr = NULL;
     int i, flags = (forClass ? DEFINE_FOR_CLASS : 0);
-
-    define.list = staticSpace;
-    define.num = 0;
-    define.size = DEFINE_CHAIN_STATIC_SIZE;
 
     /*
      * Add the actual define locations. We have to do this twice to handle
