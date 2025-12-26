@@ -100,13 +100,13 @@ ReadProperty(
 	oPtr->fPtr->myName,
 	Tcl_ObjPrintf("<ReadProp%s>", propName)
     };
-    int code;
 
     Tcl_IncrRefCount(args[0]);
     Tcl_IncrRefCount(args[1]);
-    code = TclOOPrivateObjectCmd(oPtr, interp, 2, args);
+    int code = TclOOPrivateObjectCmd(oPtr, interp, 2, args);
     Tcl_DecrRefCount(args[0]);
     Tcl_DecrRefCount(args[1]);
+
     switch (code) {
     case TCL_BREAK:
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -133,15 +133,15 @@ WriteProperty(
 	Tcl_ObjPrintf("<WriteProp%s>", propName),
 	valueObj
     };
-    int code;
 
     Tcl_IncrRefCount(args[0]);
     Tcl_IncrRefCount(args[1]);
     Tcl_IncrRefCount(args[2]);
-    code = TclOOPrivateObjectCmd(oPtr, interp, 3, args);
+    int code = TclOOPrivateObjectCmd(oPtr, interp, 3, args);
     Tcl_DecrRefCount(args[0]);
     Tcl_DecrRefCount(args[1]);
     Tcl_DecrRefCount(args[2]);
+
     switch (code) {
     case TCL_BREAK:
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -258,8 +258,6 @@ TclOO_Configurable_Configure(
 {
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
     Tcl_Size skip = Tcl_ObjectContextSkippedArgs(context);
-    Tcl_Obj *namePtr;
-    Tcl_Size i, namec;
     int code = TCL_OK;
 
     objc -= skip;
@@ -280,11 +278,12 @@ TclOO_Configurable_Configure(
 
 	Tcl_Obj *listPtr = TclOOGetAllObjectProperties(oPtr, 0);
 	Tcl_Obj *resultPtr = Tcl_NewObj(), **namev;
+	Tcl_Size namec;
 
 	Tcl_IncrRefCount(listPtr);
 	ListObjGetElements(listPtr, namec, namev);
 
-	for (i = 0; i < namec; ) {
+	for (Tcl_Size i = 0; i < namec; ) {
 	    code = ReadProperty(interp, oPtr, TclGetString(namev[i]));
 	    if (code != TCL_OK) {
 		Tcl_DecrRefCount(resultPtr);
@@ -305,7 +304,7 @@ TclOO_Configurable_Configure(
 	 * Read a single named property.
 	 */
 
-	namePtr = GetPropertyName(interp, oPtr, 0, objv[0], NULL);
+	Tcl_Obj *namePtr = GetPropertyName(interp, oPtr, 0, objv[0], NULL);
 	if (namePtr == NULL) {
 	    return TCL_ERROR;
 	}
@@ -316,7 +315,8 @@ TclOO_Configurable_Configure(
 	 * cache in this common case.
 	 */
 
-	namePtr = GetPropertyName(interp, oPtr, GPN_WRITABLE, objv[0], NULL);
+	Tcl_Obj *namePtr = GetPropertyName(interp, oPtr, GPN_WRITABLE, objv[0],
+		NULL);
 	if (namePtr == NULL) {
 	    return TCL_ERROR;
 	}
@@ -333,9 +333,9 @@ TclOO_Configurable_Configure(
 	GPNCache *cache = NULL;
 
 	code = TCL_OK;
-	for (i = 0; i < objc; i += 2) {
-	    namePtr = GetPropertyName(interp, oPtr, GPN_WRITABLE, objv[i],
-		    &cache);
+	for (Tcl_Size i = 0; i < objc; i += 2) {
+	    Tcl_Obj *namePtr = GetPropertyName(interp, oPtr, GPN_WRITABLE,
+		    objv[i], &cache);
 	    if (namePtr == NULL) {
 		code = TCL_ERROR;
 		break;
@@ -377,8 +377,6 @@ Configurable_Getter(
     Tcl_Obj *const *objv)	/* The actual arguments. */
 {
     Tcl_Obj *propNamePtr = (Tcl_Obj *) clientData;
-    Tcl_Var varPtr, aryVar;
-    Tcl_Obj *valuePtr;
 
     if (Tcl_ObjectContextSkippedArgs(context) != objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context),
@@ -386,13 +384,14 @@ Configurable_Getter(
 	return TCL_ERROR;
     }
 
+    Tcl_Var varPtr, aryVar;
     varPtr = TclOOLookupObjectVar(interp, Tcl_ObjectContextObject(context),
 	    propNamePtr, &aryVar);
     if (varPtr == NULL) {
 	return TCL_ERROR;
     }
 
-    valuePtr = TclPtrGetVar(interp, varPtr, aryVar, propNamePtr, NULL,
+    Tcl_Obj *valuePtr = TclPtrGetVar(interp, varPtr, aryVar, propNamePtr, NULL,
 	    TCL_NAMESPACE_ONLY | TCL_LEAVE_ERR_MSG);
     if (valuePtr == NULL) {
 	return TCL_ERROR;
@@ -413,7 +412,6 @@ Configurable_Setter(
     Tcl_Obj *const *objv)	/* The actual arguments. */
 {
     Tcl_Obj *propNamePtr = (Tcl_Obj *) clientData;
-    Tcl_Var varPtr, aryVar;
 
     if (Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context),
@@ -421,6 +419,7 @@ Configurable_Setter(
 	return TCL_ERROR;
     }
 
+    Tcl_Var varPtr, aryVar;
     varPtr = TclOOLookupObjectVar(interp, Tcl_ObjectContextObject(context),
 	    propNamePtr, &aryVar);
     if (varPtr == NULL) {
@@ -634,7 +633,6 @@ GetAllClassProperties(
 				 * Tcl_Obj was allocated and may be safely
 				 * modified by the caller. */
 {
-    Tcl_HashTable hashTable;
     FOREACH_HASH_DECLS;
     Tcl_Obj *propName, *result;
 
@@ -661,6 +659,7 @@ GetAllClassProperties(
      */
 
     *allocated = true;
+    Tcl_HashTable hashTable;
     Tcl_InitObjHashTable(&hashTable);
     FindClassProps(clsPtr, writable, &hashTable);
     TclNewObj(result);
@@ -748,9 +747,8 @@ TclOOGetAllObjectProperties(
 				 * false, readable properties will be returned
 				 * instead. */
 {
-    Tcl_HashTable hashTable;
     FOREACH_HASH_DECLS;
-    Tcl_Obj *propName, *result;
+    Tcl_Obj *propName;
 
     /*
      * Look in the cache.
@@ -772,9 +770,10 @@ TclOOGetAllObjectProperties(
      * Gather the information. Unsorted! (Caller will sort.)
      */
 
+    Tcl_HashTable hashTable;
     Tcl_InitObjHashTable(&hashTable);
     FindObjectProps(oPtr, writable, &hashTable);
-    TclNewObj(result);
+    Tcl_Obj *result = Tcl_NewObj();
     FOREACH_HASH_KEY(propName, &hashTable) {
 	Tcl_ListObjAppendElement(NULL, result, propName);
     }
@@ -823,8 +822,6 @@ SetPropertyList(
 {
     Tcl_Size i, n;
     Tcl_Obj *propObj;
-    int created;
-    Tcl_HashTable uniqueTable;
 
     for (i=0 ; i<objc ; i++) {
 	Tcl_IncrRefCount(objv[i]);
@@ -845,8 +842,10 @@ SetPropertyList(
     }
     propList->num = 0;
     if (objc > 0) {
+	Tcl_HashTable uniqueTable;
 	Tcl_InitObjHashTable(&uniqueTable);
 	for (i=n=0 ; i<objc ; i++) {
+	    int created;
 	    Tcl_CreateHashEntry(&uniqueTable, objv[i], &created);
 	    if (created) {
 		propList->list[n++] = objv[i];
@@ -929,10 +928,9 @@ Tcl_Obj *
 TclOOGetPropertyList(
     PropertyList *propList)	/* The property list to read. */
 {
-    Tcl_Obj *resultObj, *propNameObj;
+    Tcl_Obj *resultObj = Tcl_NewObj(), *propNameObj;
     Tcl_Size i;
 
-    TclNewObj(resultObj);
     FOREACH(propNameObj, *propList) {
 	Tcl_ListObjAppendElement(NULL, resultObj, propNameObj);
     }
@@ -1196,21 +1194,18 @@ TclOOInfoClassPropCmd(
     Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
-    Class *clsPtr;
-    Tcl_Size i;
-    int idx;
-    bool all = false, writable = false, allocated = false;
-    Tcl_Obj *result;
+    bool all = false, writable = false;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "className ?options...?");
 	return TCL_ERROR;
     }
-    clsPtr = TclOOGetClassFromObj(interp, objv[1]);
+    Class *clsPtr = TclOOGetClassFromObj(interp, objv[1]);
     if (clsPtr == NULL) {
 	return TCL_ERROR;
     }
-    for (i = 2; i < objc; i++) {
+    for (Tcl_Size i = 2; i < objc; i++) {
+	int idx;
 	if (Tcl_GetIndexFromObj(interp, objv[i], propOptNames, "option", 0,
 		&idx) != TCL_OK) {
 	    return TCL_ERROR;
@@ -1234,7 +1229,9 @@ TclOOInfoClassPropCmd(
      * Get the properties.
      */
 
+    Tcl_Obj *result;
     if (all) {
+	bool allocated = false;
 	result = GetAllClassProperties(clsPtr, writable, &allocated);
 	if (allocated) {
 	    SortPropList(result);
@@ -1258,19 +1255,17 @@ TclOOInfoObjectPropCmd(
     Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
-    Object *oPtr;
-    Tcl_Size i;
     bool all = false, writable = false;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "objName ?options...?");
 	return TCL_ERROR;
     }
-    oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[1]);
+    Object *oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[1]);
     if (oPtr == NULL) {
 	return TCL_ERROR;
     }
-    for (i = 2; i < objc; i++) {
+    for (Tcl_Size i = 2; i < objc; i++) {
 	int idx;
 	if (Tcl_GetIndexFromObj(interp, objv[i], propOptNames, "option", 0,
 		&idx) != TCL_OK) {

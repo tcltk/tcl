@@ -863,12 +863,7 @@ AllocObject(
 				 * will be the same as if this was NULL. */
 {
     Foundation *fPtr = GetFoundation(interp);
-    Object *oPtr;
-    Command *cmdPtr;
-    CommandTrace *tracePtr;
-    size_t creationEpoch;
-
-    oPtr = (Object *) Tcl_Alloc(sizeof(Object));
+    Object *oPtr = (Object *) Tcl_Alloc(sizeof(Object));
     memset(oPtr, 0, sizeof(Object));
 
     /*
@@ -883,6 +878,7 @@ AllocObject(
      * created.
      */
 
+    size_t creationEpoch;
     if (nsNameStr != NULL) {
 	oPtr->namespacePtr = Tcl_CreateNamespace(interp, nsNameStr, oPtr, NULL);
 	if (oPtr->namespacePtr == NULL) {
@@ -983,9 +979,9 @@ AllocObject(
      * abstractions, it is faster and we're inside Tcl here so we're allowed.
      */
 
-    cmdPtr = (Command *) oPtr->command;
+    Command *cmdPtr = (Command *) oPtr->command;
     cmdPtr->nreProc2 = PublicNRObjectCmd;
-    cmdPtr->tracePtr = tracePtr = (CommandTrace *)
+    CommandTrace *tracePtr = cmdPtr->tracePtr = (CommandTrace *)
 	    Tcl_Alloc(sizeof(CommandTrace));
     tracePtr->traceProc = ObjectRenamedTrace;
     tracePtr->clientData = oPtr;
@@ -1962,10 +1958,8 @@ Tcl_NewObjectInstance(
 				 * constructor. */
 {
     Class *classPtr = (Class *) cls;
-    Object *oPtr;
-    void *clientData[4];
-
-    oPtr = TclNewObjectInstanceCommon(interp, classPtr, nameStr, nsNameStr);
+    Object *oPtr = TclNewObjectInstanceCommon(interp, classPtr,
+	    nameStr, nsNameStr);
     if (oPtr == NULL) {
 	return NULL;
     }
@@ -1999,11 +1993,12 @@ Tcl_NewObjectInstance(
 		TclResetRewriteEnsemble(interp, 1);
 	    }
 
-	    clientData[0] = contextPtr;
-	    clientData[1] = oPtr;
-	    clientData[2] = state;
-	    clientData[3] = &oPtr;
-
+	    void *clientData[] = {
+		contextPtr,
+		oPtr,
+		state,
+		&oPtr
+	    };
 	    result = FinalizeAlloc(clientData, interp, result);
 	    if (result != TCL_OK) {
 		return NULL;
@@ -2032,31 +2027,30 @@ TclNRNewObjectInstance(
 				 * successful allocation. */
 {
     Class *classPtr = (Class *) cls;
-    CallContext *contextPtr;
-    Tcl_InterpState state;
-    Object *oPtr;
-
-    oPtr = TclNewObjectInstanceCommon(interp, classPtr, nameStr, nsNameStr);
+    Object *oPtr = TclNewObjectInstanceCommon(interp, classPtr,
+	    nameStr, nsNameStr);
     if (oPtr == NULL) {
 	return TCL_ERROR;
     }
 
     /*
-     * Run constructors, except when objc == TCL_INDEX_NONE (a special flag case used for
-     * object cloning only). If there aren't any constructors, we do nothing.
+     * Run constructors, except when objc == TCL_INDEX_NONE (a special flag
+     * case used for object cloning only). If there aren't any constructors,
+     * we do nothing.
      */
 
     if (objc < 0) {
 	*objectPtr = (Tcl_Object) oPtr;
 	return TCL_OK;
     }
-    contextPtr = TclOOGetCallContext(oPtr, NULL, CONSTRUCTOR, NULL, NULL, NULL);
+    CallContext *contextPtr = TclOOGetCallContext(oPtr, NULL, CONSTRUCTOR,
+	    NULL, NULL, NULL);
     if (contextPtr == NULL) {
 	*objectPtr = (Tcl_Object) oPtr;
 	return TCL_OK;
     }
 
-    state = Tcl_SaveInterpState(interp, TCL_OK);
+    Tcl_InterpState state = Tcl_SaveInterpState(interp, TCL_OK);
     contextPtr->callPtr->flags |= CONSTRUCTOR;
     contextPtr->skip = skip;
 
@@ -2095,14 +2089,13 @@ TclNewObjectInstanceCommon(
     const char *nameStr,
     const char *nsNameStr)
 {
-    Tcl_HashEntry *hPtr;
     Foundation *fPtr = GetFoundation(interp);
-    Object *oPtr;
     const char *simpleName = NULL;
-    Namespace *nsPtr = NULL, *dummy;
-    Namespace *inNsPtr = (Namespace *) TclGetCurrentNamespace(interp);
+    Namespace *nsPtr = NULL, *inNsPtr = (Namespace *)
+	    TclGetCurrentNamespace(interp);
 
     if (nameStr) {
+	Namespace *dummy;
 	TclGetNamespaceForQualName(interp, nameStr, inNsPtr,
 		TCL_CREATE_NS_IF_UNKNOWN, &nsPtr, &dummy, &dummy, &simpleName);
 
@@ -2110,7 +2103,7 @@ TclNewObjectInstanceCommon(
 	 * Disallow creation of an object over an existing command.
 	 */
 
-	hPtr = Tcl_FindHashEntry(&nsPtr->cmdTable, simpleName);
+	Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&nsPtr->cmdTable, simpleName);
 	if (hPtr) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "can't create object \"%s\": command already exists with"
@@ -2124,7 +2117,7 @@ TclNewObjectInstanceCommon(
      * Create the object.
      */
 
-    oPtr = AllocObject(interp, simpleName, nsPtr, nsNameStr);
+    Object *oPtr = AllocObject(interp, simpleName, nsPtr, nsNameStr);
     if (oPtr == NULL) {
 	return NULL;
     }
