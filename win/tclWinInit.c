@@ -104,7 +104,7 @@ TclGetWinInfoOnce(
     }
 
     tclWinInfo.longPathsSupported = 0;
-    if (tclWinInfo.osVersion.dwMajorVersion > 10 || 
+    if (tclWinInfo.osVersion.dwMajorVersion > 10 ||
 	    (tclWinInfo.osVersion.dwMajorVersion == 10 &&
 	    tclWinInfo.osVersion.dwBuildNumber >= 14393)) {
 	dw = sizeof(tclWinInfo.longPathsSupported);
@@ -871,7 +871,7 @@ TclWinGetEnvironmentVariable(
      * equal to capacity, the buffer was too small.
      */
     if (numChars < capacity) {
-        return fullPathPtr;
+	return fullPathPtr;
     }
 
     /*
@@ -882,7 +882,7 @@ TclWinGetEnvironmentVariable(
     fullPathPtr = TclWinPathResize(winPathPtr, capacity);
     numChars = GetEnvironmentVariableW(envName, fullPathPtr, capacity);
     if (numChars == 0 || numChars >= capacity) {
-        /* Failed or still too small (shouldn't happen). */
+	/* Failed or still too small (shouldn't happen). */
 	goto errorReturn;
     }
 

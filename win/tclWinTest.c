@@ -686,7 +686,7 @@ TestchmodCmd(
  * Results:
  *	1 if long path support is enabled, 0 if not.
  */
-static int 
+static int
 TestlongpathsettingCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
