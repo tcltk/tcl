@@ -2893,6 +2893,7 @@ EachloopCmd(
 
 	TclNRAddCallback(interp, ForeachLoopStep, statePtr, NULL, NULL, NULL);
 	if (statePtr->primeValueObj) {
+	    // FIXME: Convert this case to a body script
 	    return Tcl_NRExprObj(interp, objv[objc-1], statePtr->exprResult);
 	} else {
 	    return TclNREvalObjEx(interp, objv[objc-1], 0,
@@ -2984,6 +2985,7 @@ ForeachLoopStep(
 
 	TclNRAddCallback(interp, ForeachLoopStep, statePtr, NULL, NULL, NULL);
 	if (statePtr->primeValueObj) {
+	    // FIXME: Convert this case to a body script
 	    return Tcl_NRExprObj(interp, statePtr->bodyPtr, statePtr->exprResult);
 	} else {
 	    return TclNREvalObjEx(interp, statePtr->bodyPtr, 0,
