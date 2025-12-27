@@ -676,7 +676,8 @@ WinReadLinkDirectory(
  */
 
 static int
-NativeReadReparse(const WCHAR *linkDirPath, /* The junction to read */
+NativeReadReparse(
+    const WCHAR *linkDirPath, /* The junction to read */
     REPARSE_DATA_BUFFER *buffer,	/* Pointer to buffer. Cannot be NULL. */
     DWORD bufferSize,			/* Size of buffer[] */
     DWORD desiredAccess)
