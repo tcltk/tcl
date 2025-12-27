@@ -1449,9 +1449,6 @@ namespace eval testlongpaths {
     variable deepPathFile [string cat $deepPathDir / $pathTail]
 
     # TODO's -
-    # links, lstat, readlink - links are not currently tested as the Tcl
-    #   implementation seems to make use of undocumented structures that
-    #   limit path lengths to MAX_PATH
     # exec, open |pipe - CreateProcessW is not long path aware
 
     proc testlongpath {id comment body args} {
@@ -1713,6 +1710,95 @@ namespace eval testlongpaths {
         zipfs unmount $mt
         set text
     } -result "test\n"
+
+    #
+    # file link
+    testlongpath file-link-dir-longpath-0 "Link to a long path directory" {
+        file mkdir $deepPathDir
+        writeFile $deepPathFile abc
+        set link [file join [temporaryDirectory] dirlink]
+        file link $link $deepPathDir
+        set result [list [file link $link] [readFile $link/[file tail $deepPathFile]]]
+        file delete $link
+        set result
+    } -result [list [file nativename $deepPathDir] abc]
+
+    testlongpath file-link-dir-longpath-1 "Long path Link to a directory" {
+        set target [file join [temporaryDirectory] dirtarget]
+        file mkdir $target
+        writeFile $target/file.txt abc
+        file mkdir $deepPathDir
+        set link [file join $deepPathDir dirlink]
+        file link $link $target
+        set result [list [file link $link] [readFile $link/file.txt]]
+        file delete -force $target
+        set result
+    } -result [list [file nativename [file join [temporaryDirectory] dirtarget]] abc]
+
+    testlongpath file-link-file-longpath-0 "Test link to a long path file" {
+        file mkdir $longPathDir
+        writeFile $longPathFile abc
+        set link [file join [temporaryDirectory] filelink]
+        file link $link $longPathFile
+        set result [readFile $link]
+        file delete $link
+        set result
+    } -result abc
+
+    testlongpath file-link-file-longpath-1 "Test long path link to a file" {
+        set target [file join [temporaryDirectory] filetarget]
+        writeFile $target abc
+        file mkdir $deepPathDir
+        set link [file join $deepPathDir filelink]
+        file link $link $target
+        set result [readFile $link]
+        file delete -force $target
+        set result
+    } -result abc
+
+    #
+    # file lstat
+    testlongpath file-lstat-dir-longpath-0 "Lstat link to a long path directory" {
+        file mkdir $deepPathDir
+        set link [file join [temporaryDirectory] dirlink]
+        file link $link $deepPathDir
+        set result [list [dict get [file lstat $link] type] [dict get [file stat $link] type]]
+        file delete $link
+        set result
+    } -result {link directory}
+
+    testlongpath file-lstat-dir-longpath-1 "lstat long path Link to a directory" {
+        set target [file join [temporaryDirectory] dirtarget]
+        file mkdir $target
+        file mkdir $deepPathDir
+        set link [file join $deepPathDir dirlink]
+        file link $link $target
+        set result [list [dict get [file lstat $link] type] [dict get [file stat $link] type]]
+        file delete -force $target
+        set result
+    } -result {link directory}
+
+    testlongpath file-lstat-file-longpath-0 "lstat link to a long path file" {
+        file mkdir $longPathDir
+        writeFile $longPathFile abc
+        set link [file join [temporaryDirectory] filelink]
+        file link $link $longPathFile
+        set result [list [dict get [file lstat $link] type] [dict get [file stat $link] type]]
+        file delete $link
+        # Result is {file file} because file links are symbolic?
+        set result
+    } -result {file file}
+
+    testlongpath file-lstat-file-longpath-1 "lstat long path link to a file" {
+        set target [file join [temporaryDirectory] filetarget]
+        writeFile $target abc
+        file mkdir $deepPathDir
+        set link [file join $deepPathDir filelink]
+        file link $link $target
+        set result [list [dict get [file lstat $link] type] [dict get [file stat $link] type]]
+        file delete -force $target
+        set result
+    } -result {file file}
 
     #
     # exec and running Tcl from a deep install
