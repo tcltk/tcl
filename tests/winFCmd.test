@@ -260,13 +260,13 @@ test winFCmd-1.21 {TclpRenameFile: long src} -setup {
     cleanup
 } -constraints {win testfile} -body {
     testfile mv $longname tf1
-} -returnCodes error -result ENAMETOOLONG
+} -returnCodes error -result ENOENT
 test winFCmd-1.22 {TclpRenameFile: long dst} -setup {
     cleanup
 } -constraints {win testfile} -body {
     createfile tf1
     testfile mv tf1 $longname
-} -returnCodes error -result ENAMETOOLONG
+} -returnCodes error -result ENOENT
 test winFCmd-1.23 {TclpRenameFile: move dir into self} -setup {
     cleanup
 } -constraints {win testfile notInCIenv} -body {
