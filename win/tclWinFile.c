@@ -1525,7 +1525,7 @@ TclpGetUserHome(
 			}
 		    }
 		    if (winPathBuf) {
-			result = Tcl_WCharToUtfDString(winPathBuf, 
+			result = Tcl_WCharToUtfDString(winPathBuf,
 				     winPathSize-1, bufferPtr);
 			rc = 1;
 		    }
@@ -3493,10 +3493,10 @@ TclWinGetFullPathName(
      * equal to capacity, the buffer was too small.
      */
     if (numChars < capacity) {
-        if (filePartPtrPtr != NULL) {
-            *filePartPtrPtr = filePartPtr;
-        }
-        return fullPathPtr;
+	if (filePartPtrPtr != NULL) {
+	    *filePartPtrPtr = filePartPtr;
+	}
+	return fullPathPtr;
     }
 
     /*
@@ -3507,12 +3507,12 @@ TclWinGetFullPathName(
     fullPathPtr = TclWinPathResize(winPathPtr, capacity);
     numChars = GetFullPathNameW(pathPtr, capacity, fullPathPtr, &filePartPtr);
     if (numChars == 0 || numChars >= capacity) {
-        /* Failed or still too small (shouldn't happen). */
+	/* Failed or still too small (shouldn't happen). */
 	goto errorReturn;
     }
 
     if (filePartPtrPtr != NULL) {
-        *filePartPtrPtr = filePartPtr;
+	*filePartPtrPtr = filePartPtr;
     }
     return fullPathPtr;
 
@@ -3563,7 +3563,7 @@ TclWinGetCurrentDirectory(
      * equal to capacity, the buffer was too small.
      */
     if (numChars < capacity) {
-        return fullPathPtr;
+	return fullPathPtr;
     }
 
     /*
@@ -3574,7 +3574,7 @@ TclWinGetCurrentDirectory(
     fullPathPtr = TclWinPathResize(winPathPtr, capacity);
     numChars = GetCurrentDirectoryW(capacity, fullPathPtr);
     if (numChars == 0 || numChars >= capacity) {
-        /* Failed or still too small (shouldn't happen). */
+	/* Failed or still too small (shouldn't happen). */
 	goto errorReturn;
     }
 

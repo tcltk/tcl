@@ -236,7 +236,7 @@ DoRenameFile(
 	    }
 	} else {
 	    if ((dstAttr & FILE_ATTRIBUTE_DIRECTORY) == 0) {
-		/* 
+		/*
 		 * MoveFileEx will actually allow this but that is not 9.0-
 		 * behaved when emulating the Unix DoRenameFile.
 		 */
