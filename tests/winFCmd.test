@@ -33,23 +33,17 @@ testConstraint knownMsvcBug [expr {[tcl::build-info msvc] eq 0}]
 
 # Long path support (not to be confused with long name support!) depends on
 # the system being recent enough AND configured for long paths in the registry.
-# Need to test on both - systems with and without support and further, neither
-# set of tests should run if we cannot figure out so we need two separate
-# constraints.
 testConstraint longPathAware 0
-testConstraint notLongPathAware 0
 if {![catch {exec {*}[auto_execok cmd.exe] /c ver} winVer]} {
     if {[regexp {(\d+)\.\d+\.(\d+)\.\d+} $winVer -> winMajor winBuild]} {
         # Must be Win 10 
         if {$winMajor > 10 || ($winMajor == 10 && $winBuild >= 14393)} {
             if {[llength [info commands testlongpathsetting]]} {
                 testConstraint longPathAware [testlongpathsetting]
-                testConstraint notLongPathAware [expr {![testlongpathsetting]}]
             } else {
                 catch {
                     package require registry
                     testConstraint longPathAware [registry get "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\FileSystem" LongPathsEnabled]
-                    testConstraint notLongPathAware [expr {![testConstraint longPathAware]}]
                 }
             }
         }
@@ -1448,9 +1442,12 @@ namespace eval testlongpaths {
                                     {*}$deepPathComponents] /]
     variable deepPathFile [string cat $deepPathDir / $pathTail]
 
-    # TODO's -
-    # exec, open |pipe - CreateProcessW is not long path aware
+    # Generator that only depends on parsing path syntax, not actual file system ops
+    proc testlongpathsyntax {id comment body args} {
+        uplevel [list test $id $comment -body $body -constraints win {*}$args]
+    }
 
+    # Generator that requires actual file system ops
     proc testlongpath {id comment body args} {
         uplevel [list test $id $comment -body $body \
                      -constraints {win longPathAware} \
@@ -1467,15 +1464,15 @@ namespace eval testlongpaths {
 
     #
     # Path operations - file cmdname ...
-    testlongpath file-dirname-longpath-0 "long path file dirname" {
+    testlongpathsyntax file-dirname-longpath-0 "long path file dirname" {
         file dirname $longPathDir
     } -result [join [lrange [split $longPathDir /] 0 end-1] /]
 
-    testlongpath file-extension-longpath-0 "long path file extension" {
+    testlongpathsyntax file-extension-longpath-0 "long path file extension" {
         file extension $longPathFile.ext
     } -result .ext
 
-    testlongpath file-join-longpath-0 "deep path file join" {
+    testlongpathsyntax file-join-longpath-0 "deep path file join" {
         file join $longPathRoot {*}$deepPathComponents $pathTail
     } -result $deepPathFile
 
@@ -1487,23 +1484,23 @@ namespace eval testlongpaths {
         file join {*}$deepPathComponents
     } -result [join $deepPathComponents /]
 
-    testlongpath file-nativename-longpath-0 "long path nativename" {
+    testlongpathsyntax file-nativename-longpath-0 "long path nativename" {
         file nativename $longPathDir
     } -result [string map [list / \\] $longPathDir]
 
-    testlongpath file-normalize-longpath-0 "long path normalize" {
+    testlongpathsyntax file-normalize-longpath-0 "long path normalize" {
         file normalize $longPathDir
-    } -result $longPathDir
+    } -constraints win -result $longPathDir
 
-    testlongpath file-normalize-longpath-1 "long path normalize - dotdot" {
+    testlongpathsyntax file-normalize-longpath-1 "long path normalize - dotdot" {
         file normalize $longPathDir/../../$longPathComponent/$pathTail
     } -result [join [list $longPathRoot {*}[lrange $longPathComponents 0 end-1] $pathTail] /]
 
-    testlongpath file-normalize-longpath-2 "long path normalize - dot, native" {
+    testlongpathsyntax file-normalize-longpath-2 "long path normalize - dot, native" {
         file normalize [string map [list / \\] $longPathDir/././$pathTail]
     } -result $longPathFile
 
-    testlongpath file-normalize-longpath-3 "Long path normalize - relative name" {
+    testlongpath file-normalize-longpath-3 "Long path normalize - pwd-relative name" {
         set origDir [pwd]
         file mkdir $longPathDir
         cd $longPathDir
@@ -1512,43 +1509,43 @@ namespace eval testlongpaths {
         set path
     } -result $longPathDir/foo
 
-    testlongpath file-rootname-longpath-0 "long path file rootname" {
+    testlongpathsyntax file-rootname-longpath-0 "long path file rootname" {
         file rootname $longPathFile.ext
     } -result $longPathFile
 
-    testlongpath file-split-longpath-0 "long path file split" {
+    testlongpathsyntax file-split-longpath-0 "long path file split" {
         file split $longPathFile
     } -result [list {*}[file split $longPathRoot] {*}$longPathComponents $pathTail]
 
-    testlongpath file-split-longpath-1 "deep path file split - native" {
+    testlongpathsyntax file-split-longpath-1 "deep path file split - native" {
         file split [string map [list / \\] $deepPathFile]
     } -result [list {*}[file split $longPathRoot] {*}$deepPathComponents $pathTail]
 
-    testlongpath file-tail-longpath-0 "long path file tail" {
+    testlongpathsyntax file-tail-longpath-0 "long path file tail" {
         file tail $longPathFile.ext
     } -result $pathTail.ext
 
-    testlongpath file-pathtype-longpath-0 "long path type" {
+    testlongpathsyntax file-pathtype-longpath-0 "long path type" {
         file pathtype $longPathDir
     } -result absolute
 
-    testlongpath file-pathtype-longpath-1 "long path type - relative" {
+    testlongpathsyntax file-pathtype-longpath-1 "long path type - relative" {
         file pathtype [join $longPathComponents /]
     } -result relative
 
-    testlongpath file-pathtype-longpath-2 "long path type - volumerelative" {
+    testlongpathsyntax file-pathtype-longpath-2 "long path type - volumerelative" {
         file pathtype C:[join $longPathComponents /]
     } -result volumerelative
 
-    testlongpath file-separator-longpath-0 "long path separator" {
+    testlongpathsyntax file-separator-longpath-0 "long path separator" {
         file separator $longPathDir
     } -result \\
 
-    testlongpath file-system-longpath-0 "long path system" {
+    testlongpathsyntax file-system-longpath-0 "long path system" {
         lindex [file system $longPathDir] 0
     } -result native
 
-    testlongpath file-tildeexpand-longpath-0 "long path tildeexpand" {
+    testlongpathsyntax file-tildeexpand-longpath-0 "long path tildeexpand" {
         file tildeexpand ~/[join $longPathComponents /]
     } -result [join [list [file home] {*}$longPathComponents] /]
 
