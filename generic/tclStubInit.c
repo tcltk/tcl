@@ -52,7 +52,6 @@
 #undef TclStaticLibrary
 #define TclStaticLibrary Tcl_StaticLibrary
 #if !defined(_WIN32) && !defined(__CYGWIN__)
-# undef Tcl_WinConvertError
 # define Tcl_WinConvertError 0
 #endif
 #undef TclGetStringFromObj
