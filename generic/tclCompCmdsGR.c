@@ -16,6 +16,7 @@
 
 #include "tclInt.h"
 #include "tclCompile.h"
+#include <math.h>
 
 /*
  * Prototypes for procedures defined later in this file:
@@ -1733,13 +1734,21 @@ TclIssueLseqArgument(
     CompileEnv *envPtr,
     LineInformation lineInfo)
 {
-    if (tokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
-	PUSH_EXPR_TOKEN(	tokenPtr, idx);
+    Tcl_Obj *tmpObj = Tcl_NewObj();
+    if (TclWordKnownAtCompileTime(tokenPtr, tmpObj)) {
+	void *data;
+	int type;
+	if (Tcl_GetNumberFromObj(NULL, tmpObj, &data, &type) == TCL_OK) {
+	    PUSH_TOKEN(		tokenPtr, idx);
+	} else {
+	    PUSH_EXPR_TOKEN(	tokenPtr, idx);
+	}
+	Tcl_BounceRefCount(tmpObj);
 	return flag;
-    } else {
-	PUSH_TOKEN(		tokenPtr, idx);
-	return 0;
     }
+    Tcl_BounceRefCount(tmpObj);
+    PUSH_TOKEN(			tokenPtr, idx);
+    return 0;
 }
 
 int
@@ -1770,7 +1779,7 @@ TclCompileLseqCmd(
     }
 
 #define LSEQ_ARG(tokenPtr, idx, flag) \
-    flags |= TclIssueLseqArgument(interp, tokenPtr, idx, flags, envPtr, lineInfo)
+    flags |= TclIssueLseqArgument(interp, tokenPtr, idx, flag, envPtr, lineInfo)
 
 #define IS_ANY_LSEQ_KEYWORD(tokenPtr) \
 	(IS_TOKEN_LITERALLY(tokenPtr, "to") \
