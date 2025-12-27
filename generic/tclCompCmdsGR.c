@@ -1779,7 +1779,8 @@ TclCompileLseqCmd(
     }
 
 #define LSEQ_ARG(tokenPtr, idx, flag) \
-    flags |= TclIssueLseqArgument(interp, tokenPtr, idx, flag, envPtr, lineInfo)
+    flags |= TclIssueLseqArgument(interp, tokenPtr, idx, \
+	    TCL_ARITHSERIES_##flag##_EVAL, envPtr, lineInfo)
 
 #define IS_ANY_LSEQ_KEYWORD(tokenPtr) \
 	(IS_TOKEN_LITERALLY(tokenPtr, "to") \
@@ -1799,7 +1800,7 @@ TclCompileLseqCmd(
     PUSH(			"0");		// from
     PUSH(			"");		// to
     PUSH(			"1");		// step
-    LSEQ_ARG(			tokenPtr, 1, TCL_ARITHSERIES_COUNT_EVAL); // count
+    LSEQ_ARG(			tokenPtr, 1, COUNT);
     OP1(			ARITH_SERIES, flags);
     return TCL_OK;
 
@@ -1811,8 +1812,8 @@ TclCompileLseqCmd(
     if (IS_ANY_LSEQ_KEYWORD(tokenPtr) || IS_ANY_LSEQ_KEYWORD(token2Ptr)) {
 	return TCL_ERROR;
     }
-    LSEQ_ARG(			tokenPtr, 1, TCL_ARITHSERIES_FROM_EVAL); // from
-    LSEQ_ARG(			token2Ptr, 2, TCL_ARITHSERIES_TO_EVAL); // to
+    LSEQ_ARG(			tokenPtr, 1, FROM);
+    LSEQ_ARG(			token2Ptr, 2, TO);
     PUSH(			"");		// step
     PUSH(			"");		// count
     OP1(			ARITH_SERIES, flags);
@@ -1828,30 +1829,30 @@ TclCompileLseqCmd(
     }
     if (IS_TOKEN_LITERALLY(token2Ptr, "to") || IS_TOKEN_LITERALLY(token2Ptr, "..")) {
 	flags = (TCL_ARITHSERIES_FROM | TCL_ARITHSERIES_TO);
-	LSEQ_ARG(		tokenPtr, 1, TCL_ARITHSERIES_FROM_EVAL); // from
-	LSEQ_ARG(		token3Ptr, 3, TCL_ARITHSERIES_TO_EVAL);  // to
+	LSEQ_ARG(		tokenPtr, 1, FROM);
+	LSEQ_ARG(		token3Ptr, 3, TO);
 	PUSH(			"");		// step
 	PUSH(			"");		// count
     } else if (IS_TOKEN_LITERALLY(token2Ptr, "count")) {
 	flags = (TCL_ARITHSERIES_FROM | TCL_ARITHSERIES_STEP | TCL_ARITHSERIES_COUNT |
 		TCL_ARITHSERIES_STEP_EVAL);
-	LSEQ_ARG(		tokenPtr, 1, TCL_ARITHSERIES_FROM_EVAL); // from
+	LSEQ_ARG(		tokenPtr, 1, FROM);
 	PUSH(			"");		// to
 	PUSH(			"1");		// step
-	LSEQ_ARG(		token3Ptr, 3, TCL_ARITHSERIES_COUNT_EVAL); // count
+	LSEQ_ARG(		token3Ptr, 3, COUNT);
     } else if (IS_TOKEN_LITERALLY(token2Ptr, "by")) {
 	flags = (TCL_ARITHSERIES_FROM | TCL_ARITHSERIES_STEP | TCL_ARITHSERIES_COUNT |
 		TCL_ARITHSERIES_FROM_EVAL);
 	PUSH(			"0");		// from
 	PUSH(			"");		// to
-	LSEQ_ARG(		tokenPtr, 1, TCL_ARITHSERIES_COUNT_EVAL); // count
-	LSEQ_ARG(		token3Ptr, 3, TCL_ARITHSERIES_STEP_EVAL); // step
+	LSEQ_ARG(		tokenPtr, 1, COUNT);
+	LSEQ_ARG(		token3Ptr, 3, STEP);
 	OP(			SWAP);
     } else {
 	flags = (TCL_ARITHSERIES_FROM | TCL_ARITHSERIES_TO | TCL_ARITHSERIES_STEP);
-	LSEQ_ARG(		tokenPtr, 1, TCL_ARITHSERIES_FROM_EVAL);  // from
-	LSEQ_ARG(		token2Ptr, 2, TCL_ARITHSERIES_TO_EVAL);   // to
-	LSEQ_ARG(		token3Ptr, 3, TCL_ARITHSERIES_STEP_EVAL); // step
+	LSEQ_ARG(		tokenPtr, 1, FROM);
+	LSEQ_ARG(		token2Ptr, 2, TO);
+	LSEQ_ARG(		token3Ptr, 3, STEP);
 	PUSH(			"");		// count
     }
     OP1(			ARITH_SERIES, flags);
@@ -1871,28 +1872,28 @@ TclCompileLseqCmd(
 	if (IS_ANY_LSEQ_KEYWORD(token3Ptr)) {
 	    return TCL_ERROR;
 	}
-	LSEQ_ARG(		tokenPtr, 1, TCL_ARITHSERIES_FROM_EVAL);  // from
-	LSEQ_ARG(		token3Ptr, 3, TCL_ARITHSERIES_TO_EVAL);	  // to
-	LSEQ_ARG(		token4Ptr, 4, TCL_ARITHSERIES_STEP_EVAL); // step
+	LSEQ_ARG(		tokenPtr, 1, FROM);
+	LSEQ_ARG(		token3Ptr, 3, TO);
+	LSEQ_ARG(		token4Ptr, 4, STEP);
 	PUSH(			"");		// count
     } else if (IS_TOKEN_LITERALLY(token2Ptr, "count")) {
 	flags = (TCL_ARITHSERIES_FROM | TCL_ARITHSERIES_STEP | TCL_ARITHSERIES_COUNT);
 	if (IS_ANY_LSEQ_KEYWORD(token3Ptr)) {
 	    return TCL_ERROR;
 	}
-	LSEQ_ARG(		tokenPtr, 1, TCL_ARITHSERIES_FROM_EVAL);   // from
+	LSEQ_ARG(		tokenPtr, 1, FROM);
 	PUSH(			"");		// to
-	LSEQ_ARG(		token3Ptr, 3, TCL_ARITHSERIES_COUNT_EVAL); // count
-	LSEQ_ARG(		token4Ptr, 4, TCL_ARITHSERIES_STEP_EVAL);  // step
+	LSEQ_ARG(		token3Ptr, 3, COUNT);
+	LSEQ_ARG(		token4Ptr, 4, STEP);
 	OP(			SWAP);
     } else if (IS_TOKEN_LITERALLY(token3Ptr, "by")) {
 	flags = (TCL_ARITHSERIES_FROM | TCL_ARITHSERIES_TO | TCL_ARITHSERIES_STEP);
 	if (IS_ANY_LSEQ_KEYWORD(token2Ptr)) {
 	    return TCL_ERROR;
 	}
-	LSEQ_ARG(		tokenPtr, 1, TCL_ARITHSERIES_FROM_EVAL);  // from
-	LSEQ_ARG(		token2Ptr, 2, TCL_ARITHSERIES_TO_EVAL);   // to
-	LSEQ_ARG(		token4Ptr, 4, TCL_ARITHSERIES_STEP_EVAL); // count
+	LSEQ_ARG(		tokenPtr, 1, FROM);
+	LSEQ_ARG(		token2Ptr, 2, TO);
+	LSEQ_ARG(		token4Ptr, 4, STEP);
 	PUSH(			"");		// count
     } else {
 	return TCL_ERROR;
@@ -1916,16 +1917,16 @@ TclCompileLseqCmd(
     }
     if (IS_TOKEN_LITERALLY(token2Ptr, "to") || IS_TOKEN_LITERALLY(token2Ptr, "..")) {
 	flags = (TCL_ARITHSERIES_FROM | TCL_ARITHSERIES_TO | TCL_ARITHSERIES_STEP);
-	LSEQ_ARG(		tokenPtr, 1, TCL_ARITHSERIES_FROM_EVAL);  // from
-	LSEQ_ARG(		token3Ptr, 3, TCL_ARITHSERIES_TO_EVAL);   // to
-	LSEQ_ARG(		token5Ptr, 5, TCL_ARITHSERIES_STEP_EVAL); // step
+	LSEQ_ARG(		tokenPtr, 1, FROM);
+	LSEQ_ARG(		token3Ptr, 3, TO);
+	LSEQ_ARG(		token5Ptr, 5, STEP);
 	PUSH(			"");		// count
     } else if (IS_TOKEN_LITERALLY(token2Ptr, "count")) {
 	flags = (TCL_ARITHSERIES_FROM | TCL_ARITHSERIES_STEP | TCL_ARITHSERIES_COUNT);
-	LSEQ_ARG(		tokenPtr, 1, TCL_ARITHSERIES_FROM_EVAL); // count
+	LSEQ_ARG(		tokenPtr, 1, FROM);
 	PUSH(			"");		// to
-	LSEQ_ARG(		token3Ptr, 3, TCL_ARITHSERIES_COUNT_EVAL); // count
-	LSEQ_ARG(		token5Ptr, 5, TCL_ARITHSERIES_STEP_EVAL); // step
+	LSEQ_ARG(		token3Ptr, 3, COUNT);
+	LSEQ_ARG(		token5Ptr, 5, STEP);
 	OP(			SWAP);
     } else {
 	return TCL_ERROR;
