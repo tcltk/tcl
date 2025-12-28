@@ -810,7 +810,7 @@ TestwinerrorCmd(
     Tcl_Size objc,
     Tcl_Obj *const * objv)
 {
-    const char *options[] = {"appendmessage", "raiseerror", NULL};
+    static const char *const options[] = {"appendmessage", "raiseerror", NULL};
     enum { APPENDMESSAGE, RAISEERROR } opt;
     int messageId;
 
