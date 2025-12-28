@@ -104,6 +104,10 @@ TclGetWinInfoOnce(
     }
 
     tclWinInfo.longPathsSupported = 0;
+    if (tclWinInfo.osVersion.dwMajorVersion == 10 &&
+	tclWinInfo.osVersion.dwBuildNumber >= 22000) {
+	tclWinInfo.osVersion.dwMajorVersion = 11;
+    }
     if (tclWinInfo.osVersion.dwMajorVersion > 10 ||
 	    (tclWinInfo.osVersion.dwMajorVersion == 10 &&
 	    tclWinInfo.osVersion.dwBuildNumber >= 14393)) {
@@ -599,25 +603,11 @@ TclpSetVariables(
 	SYSTEM_INFO info;
 	OemId oemId;
     } sys;
-    static OSVERSIONINFOW osInfo;
-    static int osInfoInitialized = 0;
+    OSVERSIONINFOW *osInfoPtr;
     Tcl_DString ds;
 
     Tcl_SetVar2Ex(interp, "tclDefaultLibrary", NULL,
 	    TclGetProcessGlobalValue(&defaultLibraryDir), TCL_GLOBAL_ONLY);
-
-    if (!osInfoInitialized) {
-	HMODULE handle = GetModuleHandleW(L"NTDLL");
-	getVersionProc *getVersion = (getVersionProc *) (void *)
-		GetProcAddress(handle, "RtlGetVersion");
-
-	osInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOW);
-	if (!getVersion || getVersion(&osInfo)) {
-	    GetVersionExW(&osInfo);
-	}
-	osInfoInitialized = 1;
-    }
-    GetSystemInfo(&sys.info);
 
     /*
      * Define the tcl_platform array.
@@ -626,12 +616,13 @@ TclpSetVariables(
     Tcl_SetVar2(interp, "tcl_platform", "platform", "windows",
 	    TCL_GLOBAL_ONLY);
     Tcl_SetVar2(interp, "tcl_platform", "os", "Windows NT", TCL_GLOBAL_ONLY);
-    if (osInfo.dwMajorVersion == 10 && osInfo.dwBuildNumber >= 22000) {
-	osInfo.dwMajorVersion = 11;
-    }
-    snprintf(buffer, sizeof(buffer), "%ld.%ld",
-	    osInfo.dwMajorVersion, osInfo.dwMinorVersion);
+    osInfoPtr = TclpGetWindowsVersion();
+    assert(osInfoPtr);
+    snprintf(buffer, sizeof(buffer), "%ld.%ld", osInfoPtr->dwMajorVersion,
+	osInfoPtr->dwMinorVersion);
     Tcl_SetVar2(interp, "tcl_platform", "osVersion", buffer, TCL_GLOBAL_ONLY);
+
+    GetSystemInfo(&sys.info);
     if (sys.oemId.wProcessorArchitecture < NUMPROCESSORS) {
 	Tcl_SetVar2(interp, "tcl_platform", "machine",
 		processors[sys.oemId.wProcessorArchitecture],
