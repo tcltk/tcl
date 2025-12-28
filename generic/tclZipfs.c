@@ -487,33 +487,33 @@ static const Tcl_Filesystem zipfsFilesystem = {
     sizeof(Tcl_Filesystem),
     TCL_FILESYSTEM_VERSION_2,
     ZipFSPathInFilesystemProc,
-    NULL, /* dupInternalRepProc */
-    NULL, /* freeInternalRepProc */
-    NULL, /* internalToNormalizedProc */
-    NULL, /* createInternalRepProc */
-    NULL, /* normalizePathProc */
+    NULL,	/* dupInternalRepProc */
+    NULL,	/* freeInternalRepProc */
+    NULL,	/* internalToNormalizedProc */
+    NULL,	/* createInternalRepProc */
+    NULL,	/* normalizePathProc */
     ZipFSFilesystemPathTypeProc,
     ZipFSFilesystemSeparatorProc,
     ZipFSStatProc,
     ZipFSAccessProc,
     ZipFSOpenFileChannelProc,
     ZipFSMatchInDirectoryProc,
-    NULL, /* utimeProc */
-    NULL, /* linkProc */
+    NULL,	/* utimeProc */
+    NULL,	/* linkProc */
     ZipFSListVolumesProc,
     ZipFSFileAttrStringsProc,
     ZipFSFileAttrsGetProc,
     ZipFSFileAttrsSetProc,
-    NULL, /* createDirectoryProc */
-    NULL, /* removeDirectoryProc */
-    NULL, /* deleteFileProc */
-    NULL, /* copyFileProc */
-    NULL, /* renameFileProc */
-    NULL, /* copyDirectoryProc */
-    NULL, /* lstatProc */
+    NULL,	/* createDirectoryProc */
+    NULL,	/* removeDirectoryProc */
+    NULL,	/* deleteFileProc */
+    NULL,	/* copyFileProc */
+    NULL,	/* renameFileProc */
+    NULL,	/* copyDirectoryProc */
+    NULL,	/* lstatProc */
     (Tcl_FSLoadFileProc *) (void *) ZipFSLoadFile,
-    NULL, /* getCwdProc */
-    NULL, /* chdirProc */
+    NULL,	/* getCwdProc */
+    NULL	/* chdirProc */
 };
 
 /*
@@ -3893,8 +3893,7 @@ SerializeCentralDirectorySuffix(
     const unsigned char *end,	/* The end of writable memory. */
     unsigned char *buf,		/* Where to serialize to */
     int entryCount,		/* The number of entries in the directory */
-    long long dataStartOffset,
-				/* The overall file offset of the start of the
+    long long dataStartOffset,	/* The overall file offset of the start of the
 				 * data file. */
     long long directoryStartOffset,
 				/* The overall file offset of the start of the
@@ -4234,12 +4233,12 @@ ZipFSListObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    char *pattern = NULL;
+    const char *pattern = NULL;
     Tcl_RegExp regexp = NULL;
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
     Tcl_Obj *result = Tcl_GetObjResult(interp);
-    const char *options[] = {"-glob", "-regexp", NULL};
+    static const char *const options[] = {"-glob", "-regexp", NULL};
     enum list_options { OPT_GLOB, OPT_REGEXP };
 
     /*
@@ -4333,7 +4332,7 @@ ZipFSListObjCmd(
  *-------------------------------------------------------------------------
  */
 static int
-TclZipfsMountExe()
+TclZipfsMountExe(void)
 {
     WriteLock();
     if (!ZipFS.initialized) {
@@ -4382,7 +4381,7 @@ TclZipfsMountExe()
  *-------------------------------------------------------------------------
  */
 static int
-TclZipfsMountShlib()
+TclZipfsMountShlib(void)
 {
 #if defined(STATIC_BUILD)
     /* Static builds have no shared library */
@@ -5744,7 +5743,7 @@ ZipFSMatchInDirectoryProc(
     Tcl_DString dsPref, *prefixBuf = NULL;
     int foundInHash, notDuplicate;
     ZipEntry *z;
-    int wanted; /* TCL_GLOB_TYPE* */
+    int wanted;			/* TCL_GLOB_TYPE* */
 
     if (!normPathPtr) {
 	return -1;
@@ -6450,12 +6449,13 @@ TclZipfs_Init(
 	"namespace eval ::tcl::zipfs {}\n"
 	"proc ::tcl::zipfs::Find dir {\n"
 	"    set result {}\n"
-	"    if {[catch {\n"
-	"        concat [glob -directory $dir -nocomplain *] [glob -directory $dir -types hidden -nocomplain *]\n"
-	"    } list]} {\n"
+	"    try {\n"
+	"        set normal [glob -directory $dir -nocomplain *]\n"
+	"        set hidden [glob -directory $dir -types hidden -nocomplain *]\n"
+	"    } on error {} {\n"
 	"        return $result\n"
 	"    }\n"
-	"    foreach file $list {\n"
+	"    foreach file [concat $normal $hidden] {\n"
 	"        if {[file tail $file] in {. ..}} {\n"
 	"            continue\n"
 	"        }\n"

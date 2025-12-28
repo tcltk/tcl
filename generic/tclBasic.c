@@ -290,12 +290,12 @@ enum CmdInfoFlags {
 
 typedef struct {
     const char *ensembleNsName;        /* The ensemble's name within ::tcl. NULL for
-                                * the end of the list of commands to hide. */
+				* the end of the list of commands to hide. */
     const char *commandName;   /* The name of the command within the
-                                * ensemble. If this is NULL, we want to also
-                                * make the overall command be hidden, an ugly
-                                * hack because it is expected by security
-                                * policies in the wild. */
+				* ensemble. If this is NULL, we want to also
+				* make the overall command be hidden, an ugly
+				* hack because it is expected by security
+				* policies in the wild. */
 } UnsafeEnsembleInfo;
 
 /*
@@ -715,7 +715,7 @@ BuildInfoObjCmd2(
     const char *arg, *p, *q;
     Tcl_Size len;
     int idx;
-    static const char *identifiers[] = {
+    static const char * const identifiers[] = {
 	"commit", "compiler", "patchlevel", "version", NULL
     };
     enum Identifiers {
