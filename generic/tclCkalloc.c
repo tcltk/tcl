@@ -806,7 +806,7 @@ MemoryCmd(
     Tcl_WideInt value;
     int result, option;
     size_t len;
-    static const char *options[] = {
+    static const char *const options[] = {
 	"active",	"break_on_malloc",	"info",
 	"init",		"objs",			"onexit",
 	"tag",		"trace",		"trace_on_at_malloc",
