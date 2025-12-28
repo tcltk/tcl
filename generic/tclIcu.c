@@ -1340,7 +1340,7 @@ TclIcuInit(
     if (icu_fns.nopen == 0) {
 	int i = 0;
 	Tcl_Obj *nameobj;
-	static const char *iculibs[] = {
+	static const char * const iculibs[] = {
 #if defined(_WIN32)
 #  define DLLNAME "icu%s%s.dll"
 	    "icuuc??.dll", /* Windows, user-provided */
