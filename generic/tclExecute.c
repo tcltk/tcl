@@ -10115,7 +10115,7 @@ static int
 EvalStatsCmd(
     TCL_UNUSED(void *),		/* Unused. */
     Tcl_Interp *interp,		/* The current interpreter. */
-    Tcl_Size objc,			/* The number of arguments. */
+    Tcl_Size objc,		/* The number of arguments. */
     Tcl_Obj *const objv[])	/* The argument strings. */
 {
     Interp *iPtr = (Interp *) interp;

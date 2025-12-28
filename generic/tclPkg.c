@@ -1054,7 +1054,7 @@ int
 Tcl_PackageObjCmd(
     void *clientData,
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     return Tcl_NRCallObjProc2(interp, TclNRPackageObjCmd, clientData, objc, objv);
@@ -1064,7 +1064,7 @@ int
 TclNRPackageObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     static const char *const pkgOptions[] = {
@@ -1954,7 +1954,7 @@ CompareVersions(
 static int
 CheckAllRequirements(
     Tcl_Interp *interp,
-    Tcl_Size reqc,			/* Requirements to check. */
+    Tcl_Size reqc,		/* Requirements to check. */
     Tcl_Obj *const reqv[])
 {
     Tcl_Size i;
@@ -2060,7 +2060,7 @@ CheckRequirement(
 static void
 AddRequirementsToResult(
     Tcl_Interp *interp,
-    Tcl_Size reqc,			/* Requirements constraining the desired
+    Tcl_Size reqc,		/* Requirements constraining the desired
 				 * version. */
     Tcl_Obj *const reqv[])	/* 0 means to use the latest version
 				 * available. */
@@ -2140,7 +2140,7 @@ static int
 SomeRequirementSatisfied(
     char *availVersionI,	/* Candidate version to check against the
 				 * requirements. */
-    Tcl_Size reqc,			/* Requirements constraining the desired
+    Tcl_Size reqc,		/* Requirements constraining the desired
 				 * version. */
     Tcl_Obj *const reqv[])	/* 0 means to use the latest version
 				 * available. */
