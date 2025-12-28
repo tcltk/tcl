@@ -631,7 +631,7 @@ BuildInfoObjCmd2(
     const char *arg, *p, *q;
     Tcl_Size len;
     int idx;
-    static const char *identifiers[] = {
+    static const char *const identifiers[] = {
 	"commit", "compiler", "patchlevel", "version", NULL
     };
     enum Identifiers {
@@ -2734,7 +2734,7 @@ CmdWrapperProc(
     void *clientData,
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj * const *objv)
+    Tcl_Obj *const *objv)
 {
     CmdWrapperInfo *info = (CmdWrapperInfo *) clientData;
     if (objc > INT_MAX) {

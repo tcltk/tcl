@@ -538,15 +538,8 @@ TestCommonInit(
 	return TCL_ERROR;
     }
     if (Tcl_GetCommandInfo(interp, "::tcl::build-info", &info)) {
-	if (info.isNativeObjectProc == 2) {
-	    Tcl_CreateObjCommand2(interp, "::tcl::test::build-info",
-		    info.objProc2, (void *)version, NULL);
-#ifndef TCL_NO_DEPRECATED
-	} else {
-	    Tcl_CreateObjCommand(interp, "::tcl::test::build-info",
-		    info.objProc, (void *)version, NULL);
-#endif /* TCL_NO_DEPRECATED */
-	}
+	Tcl_CreateObjCommand2(interp, "::tcl::test::build-info",
+		info.objProc2, (void *)version, NULL);
     }
     if (Tcl_PkgProvideEx(interp, "tcl::test", TCL_PATCH_LEVEL, NULL) == TCL_ERROR) {
 	return TCL_ERROR;
@@ -1828,9 +1821,9 @@ TestdoubledigitsCmd(
     TCL_UNUSED(void *),
     Tcl_Interp* interp,		/* Tcl interpreter */
     Tcl_Size objc,			/* Parameter count */
-    Tcl_Obj* const objv[])	/* Parameter vector */
+    Tcl_Obj *const objv[])	/* Parameter vector */
 {
-    static const char *options[] = {
+    static const char *const options[] = {
 	"shortest",
 	"e",
 	"f",
@@ -2101,7 +2094,7 @@ static int UtfExtWrapper(
     int flags;
     Tcl_Obj **flagObjs;
     Tcl_Size nflags;
-    const char *opts[] = {"-srcreadvar", "-dstwrotevar", "-dstcharsvar",
+    const char *const opts[] = {"-srcreadvar", "-dstwrotevar", "-dstcharsvar",
 	"-prefix", "-prefixlen", NULL};
     enum {SRCREADVAR, DSTWROTEVAR, DSTCHARSVAR,
 	PREFIX, PREFIXLEN } optIndex;
@@ -4066,7 +4059,7 @@ TestlistapiCmd(
     Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    static const char* const subcommands[] = {
+    static const char *const subcommands[] = {
 	"Tcl_ListObjRange",
 	"Tcl_ListObjRepeat",
 	"Tcl_ListObjReverse",
@@ -9108,10 +9101,10 @@ TestLutilCmd(
     Tcl_Obj **l1Elems;
     Tcl_Obj **l2Elems;
     static const char *const subcmds[] = {
-	"equal", "diffindex", NULL
+	    "equal", "diffindex", NULL
     };
     enum options {
-	LUTIL_EQUAL, LUTIL_DIFFINDEX
+	    LUTIL_EQUAL, LUTIL_DIFFINDEX
     } idx;
 
     if (objc != 4) {
@@ -9405,7 +9398,7 @@ TestChanCreateCmd(
     Tcl_Obj *const *objv)
 {
     Tcl_Size len;
-    static const char *cmds[] = {"source", "sink", NULL};
+    static const char *const cmds[] = {"source", "sink", NULL};
     enum { SOURCE, SINK } cmd;
     int ret;
     int flags = 0;
@@ -9697,10 +9690,10 @@ TestAppVerifierPresentCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "");
 	return TCL_ERROR;
     }
-    const char *dlls[] = {
+    static const char *const dlls[] = {
 	"verifier.dll", "vfbasics.dll", "vfcompat.dll", "vfnet.dll", NULL
     };
-    const char **dll;
+    const char *const *dll;
     for (dll = dlls; dll; ++dll) {
 	if (GetModuleHandleA(*dll) != NULL) {
 	    break;
