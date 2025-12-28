@@ -780,7 +780,7 @@ EncodingNamesObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp* interp,		/* Tcl interpreter */
     Tcl_Size objc,			/* Number of command line args */
-    Tcl_Obj* const objv[])	/* Vector of command line args */
+    Tcl_Obj *const objv[])	/* Vector of command line args */
 {
     if (objc > 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, NULL);
@@ -808,7 +808,7 @@ EncodingProfilesObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp* interp,	    /* Tcl interpreter */
     Tcl_Size objc,		    /* Number of command line args */
-    Tcl_Obj* const objv[])  /* Vector of command line args */
+    Tcl_Obj *const objv[])  /* Vector of command line args */
 {
     if (objc > 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, NULL);
@@ -839,7 +839,7 @@ EncodingSystemObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp* interp,     /* Tcl interpreter */
     Tcl_Size objc,		    /* Number of command line args */
-    Tcl_Obj* const objv[])  /* Vector of command line args */
+    Tcl_Obj *const objv[])  /* Vector of command line args */
 {
     if (objc > 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?encoding?");
@@ -872,7 +872,7 @@ EncodingUserObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp* interp,     /* Tcl interpreter */
     Tcl_Size objc,		    /* Number of command line args */
-    Tcl_Obj* const objv[])  /* Vector of command line args */
+    Tcl_Obj *const objv[])  /* Vector of command line args */
 {
     if (objc > 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, "");

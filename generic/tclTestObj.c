@@ -903,7 +903,7 @@ TestlistobjCmd(
     Tcl_Obj *const objv[])	/* Argument objects */
 {
     /* Subcommands supported by this command */
-    static const char* const subcommands[] = {
+    static const char *const subcommands[] = {
 	"set",
 	"get",
 	"replace",
