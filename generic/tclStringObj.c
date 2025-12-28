@@ -3156,10 +3156,10 @@ Tcl_Obj *
 TclStringCat(
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj * const objv[],
+    Tcl_Obj *const objv[],
     int flags)
 {
-    Tcl_Obj *objResultPtr, * const *ov;
+    Tcl_Obj *objResultPtr, *const *ov;
     int binary = 1;
     Tcl_Size oc, length = 0;
     int allowUniChar = 1, requestUniChar = 0, forceUniChar = 0;
