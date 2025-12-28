@@ -1958,32 +1958,29 @@ ResetFileACL(
 	return winError;
     }
     PTOKEN_USER userInfoPtr = (PTOKEN_USER)Tcl_Alloc(userInfoSize);
-    if (!GetTokenInformation(GetCurrentProcessToken(), TokenUser, userInfoPtr,
+    if (GetTokenInformation(GetCurrentProcessToken(), TokenUser, userInfoPtr,
 	   			userInfoSize, &userInfoSize)) {
-	Tcl_Free(userInfoPtr);
-	return GetLastError();
+	EXPLICIT_ACCESS_W access;
+	ZeroMemory(&access, sizeof(access));
+	access.grfAccessPermissions = GENERIC_ALL;
+	access.grfAccessMode = GRANT_ACCESS;
+	access.grfInheritance = NO_INHERITANCE;
+	access.Trustee.TrusteeForm = TRUSTEE_IS_SID;
+	access.Trustee.TrusteeType = TRUSTEE_IS_USER;
+	access.Trustee.ptstrName = userInfoPtr->User.Sid;
+	PACL aclPtr = NULL;
+	winError = SetEntriesInAclW(1, &access, NULL, &aclPtr);
+	if (winError == ERROR_SUCCESS) {
+	    winError = SetNamedSecurityInfoW(path, SE_FILE_OBJECT,
+		DACL_SECURITY_INFORMATION, NULL, NULL, aclPtr, NULL);
+	}
+	LocalFree(aclPtr);
+    } else {
+	winError = GetLastError();
     }
 
-    EXPLICIT_ACCESS_W access;
-    ZeroMemory(&access, sizeof(access));
-    access.grfAccessPermissions = GENERIC_ALL;
-    access.grfAccessMode = GRANT_ACCESS;
-    access.grfInheritance = NO_INHERITANCE;
-    access.Trustee.TrusteeForm = TRUSTEE_IS_SID;
-    access.Trustee.TrusteeType = TRUSTEE_IS_USER;
-    access.Trustee.ptstrName = userInfoPtr->User.Sid;
-
-    PACL aclPtr = NULL;
-    winError = SetEntriesInAclW(1, &access, NULL, &aclPtr);
-    if (winError != ERROR_SUCCESS) {
-	return winError;
-    }
-
-    winError = SetNamedSecurityInfoW(path, SE_FILE_OBJECT,
-	DACL_SECURITY_INFORMATION, NULL, NULL, aclPtr, NULL);
-    LocalFree(aclPtr);
     Tcl_Free(userInfoPtr);
-    return 0;
+    return winError;
 }
 
 /*
