@@ -377,7 +377,7 @@ Tcl_WinConvertError(
  */
 int
 Tcl_WinAppendMessageFromModule(
-    unsigned long messageId,	/* Result code from error. */
+    unsigned messageId,	/* Result code from error. */
     HANDLE hModule,		/* Windows module containing message resource.
 				 * NULL means use system messages. */
     int useDefaultMsg,		/* If no message found, use generic msg */
@@ -404,7 +404,7 @@ Tcl_WinAppendMessageFromModule(
 	if (useDefaultMsg) {
 	    /* Presume it is an error code */
 	    char msgBuf[24 + TCL_INTEGER_SPACE];
-	    snprintf(msgBuf, sizeof(msgBuf), "%sunknown error: 0x%lx",
+	    snprintf(msgBuf, sizeof(msgBuf), "%sunknown error: 0x%x",
 		needSpace ? " " : "", messageId);
 	    Tcl_DStringAppend(dsPtr, msgBuf, -1);
 	}
@@ -448,7 +448,7 @@ Tcl_WinAppendMessageFromModule(
 int
 Tcl_WinRaiseError(
     Tcl_Interp *interp,		/* Current interpreter. */
-    unsigned long errorCode,	/* Result code from error. */
+    unsigned errorCode,	/* Result code from error. */
     const char *messageDll,	/* DLL containing message. NULL for system */
     const char *prefix)		/* Optional prefix message to be added
 				 * before the system message. Can be NULL. */
@@ -463,7 +463,7 @@ Tcl_WinRaiseError(
 	if (hModule == NULL) {
 	    Tcl_SetObjResult(interp,
 		Tcl_ObjPrintf("could not load message DLL \"%s\" to resolve "
-			      "message id %lu",
+			      "errorCode 0x%x",
 		    messageDll, errorCode));
 	    return TCL_ERROR;
 	}
@@ -477,7 +477,7 @@ Tcl_WinRaiseError(
 
     Tcl_Obj *errorCodeObjs[3];
     errorCodeObjs[0] = Tcl_NewStringObj("WINDOWS", -1);
-    errorCodeObjs[1] = Tcl_ObjPrintf("0x%lx", errorCode);
+    errorCodeObjs[1] = Tcl_ObjPrintf("0x%x", errorCode);
     errorCodeObjs[2] = Tcl_DStringToObj(&ds);
     Tcl_SetObjResult(interp, errorCodeObjs[2]);
     Tcl_SetObjErrorCode(interp, Tcl_NewListObj(3, errorCodeObjs));
