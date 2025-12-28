@@ -20,10 +20,10 @@ int
 int
 \fBTcl_ZlibInflate\fR(\fIinterp, format, dataObj, bufferSize, dictObj\fR)
 .sp
-unsigned int
+unsigned
 \fBTcl_ZlibCRC32\fR(\fIinitValue, bytes, length\fR)
 .sp
-unsigned int
+unsigned
 \fBTcl_ZlibAdler32\fR(\fIinitValue, bytes, length\fR)
 .sp
 int
@@ -83,7 +83,7 @@ a NULL is passed, a default header will be used on compression and the header
 will be ignored (apart from integrity checks) on decompression. See the
 section \fBGZIP OPTIONS DICTIONARY\fR for details about the contents of this
 dictionary.
-.AP "unsigned int" initValue in
+.AP "unsigned" initValue in
 The initial value for the checksum algorithm.
 .AP "Tcl_Size" bufferSize in
 A hint as to what size of buffer is to be used to receive the data.
