@@ -89,7 +89,7 @@ extern "C" {
 #   define SOCKET unsigned int
 #   define WSAEWOULDBLOCK 10035
     typedef unsigned short WCHAR;
-    __declspec(dllimport) extern int GetModuleHandleExW(unsigned int, const void *, void *);
+    __declspec(dllimport) extern int GetModuleHandleExW(unsigned, const void *, void *);
     __declspec(dllimport) extern int GetModuleFileNameW(void *, const void *, int);
     __declspec(dllimport) extern int WideCharToMultiByte(int, int, const void *, int,
 	    char *, int, const char *, void *);
