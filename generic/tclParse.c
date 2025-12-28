@@ -626,7 +626,7 @@ ParseWhiteSpace(
     Tcl_Size numBytes,		/* Max number of bytes to scan. */
     int *incompletePtr,		/* Set this boolean memory to true if parsing
 				 * indicates an incomplete command. */
-    unsigned char *typePtr)		/* Points to location to store character type
+    unsigned char *typePtr)	/* Points to location to store character type
 				 * of character that ends run of whitespace */
 {
     unsigned char type = TYPE_NORMAL;

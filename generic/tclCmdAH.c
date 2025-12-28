@@ -181,7 +181,7 @@ int
 Tcl_BreakObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     if (objc != 1) {
@@ -212,7 +212,7 @@ int
 Tcl_CatchObjCmd(
     void *clientData,
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     return Tcl_NRCallObjProc2(interp, TclNRCatchObjCmd, clientData, objc, objv);
@@ -222,7 +222,7 @@ int
 TclNRCatchObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *varNamePtr = NULL;
@@ -317,7 +317,7 @@ int
 Tcl_CdObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *dir;
@@ -380,7 +380,7 @@ int
 Tcl_ConcatObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     if (objc >= 2) {
@@ -414,7 +414,7 @@ int
 Tcl_ContinueObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     if (objc != 1) {
@@ -449,14 +449,13 @@ Tcl_ContinueObjCmd(
  */
 static int
 EncodingConvertParseOptions(
-    Tcl_Interp *interp,    /* For error messages. May be NULL */
-    Tcl_Size objc,		   /* Number of arguments */
-    Tcl_Obj *const objv[], /* Argument objects as passed to command. */
-    Tcl_Encoding *encPtr,  /* Where to store the encoding */
-    Tcl_Obj **dataObjPtr,  /* Where to store ptr to Tcl_Obj containing data */
-    int *profilePtr,         /* Bit mask of encoding option profile */
-    Tcl_Obj **failVarPtr   /* Where to store -failindex option value */
-)
+    Tcl_Interp *interp,		/* For error messages. May be NULL */
+    Tcl_Size objc,		/* Number of arguments */
+    Tcl_Obj *const objv[],	/* Argument objects as passed to command. */
+    Tcl_Encoding *encPtr,	/* Where to store the encoding */
+    Tcl_Obj **dataObjPtr,	/* Where to store ptr to Tcl_Obj containing data */
+    int *profilePtr,		/* Bit mask of encoding option profile */
+    Tcl_Obj **failVarPtr)	/* Where to store -failindex option value */
 {
     static const char *const options[] = {"-profile", "-failindex", NULL};
     enum convertfromOptions { PROFILE, FAILINDEX } optIndex;
@@ -545,7 +544,7 @@ int
 EncodingConvertfromObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *data;		/* Byte array to convert */
@@ -643,7 +642,7 @@ int
 EncodingConverttoObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *data;		/* String to convert */
@@ -711,7 +710,7 @@ EncodingConverttoObjCmd(
 
     result = TCL_OK;
 
-done:
+  done:
     Tcl_DStringFree(&ds);
     if (encoding) {
 	Tcl_FreeEncoding(encoding);
@@ -739,7 +738,7 @@ int
 EncodingDirsObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *dirListObj;
@@ -783,8 +782,8 @@ int
 EncodingNamesObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp* interp,		/* Tcl interpreter */
-    Tcl_Size objc,			/* Number of command line args */
-    Tcl_Obj* const objv[])	/* Vector of command line args */
+    Tcl_Size objc,		/* Number of command line args */
+    Tcl_Obj *const objv[])	/* Vector of command line args */
 {
     if (objc > 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, NULL);
@@ -810,9 +809,9 @@ EncodingNamesObjCmd(
 int
 EncodingProfilesObjCmd(
     TCL_UNUSED(void *),
-    Tcl_Interp* interp,	    /* Tcl interpreter */
-    Tcl_Size objc,		    /* Number of command line args */
-    Tcl_Obj* const objv[])  /* Vector of command line args */
+    Tcl_Interp* interp,		/* Tcl interpreter */
+    Tcl_Size objc,		/* Number of command line args */
+    Tcl_Obj *const objv[])	/* Vector of command line args */
 {
     if (objc > 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, NULL);
@@ -841,9 +840,9 @@ EncodingProfilesObjCmd(
 int
 EncodingSystemObjCmd(
     TCL_UNUSED(void *),
-    Tcl_Interp* interp,     /* Tcl interpreter */
-    Tcl_Size objc,		    /* Number of command line args */
-    Tcl_Obj* const objv[])  /* Vector of command line args */
+    Tcl_Interp* interp,		/* Tcl interpreter */
+    Tcl_Size objc,		/* Number of command line args */
+    Tcl_Obj *const objv[])	/* Vector of command line args */
 {
     if (objc > 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?encoding?");
@@ -874,9 +873,9 @@ EncodingSystemObjCmd(
 int
 EncodingUserObjCmd(
     TCL_UNUSED(void *),
-    Tcl_Interp* interp,     /* Tcl interpreter */
-    Tcl_Size objc,		    /* Number of command line args */
-    Tcl_Obj* const objv[])  /* Vector of command line args */
+    Tcl_Interp* interp,		/* Tcl interpreter */
+    Tcl_Size objc,		/* Number of command line args */
+    Tcl_Obj *const objv[])	/* Vector of command line args */
 {
     if (objc > 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, "");
@@ -909,7 +908,7 @@ int
 Tcl_ErrorObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *options, *optName;
@@ -971,7 +970,7 @@ int
 Tcl_EvalObjCmd(
     void *clientData,
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     return Tcl_NRCallObjProc2(interp, TclNREvalObjCmd, clientData, objc, objv);
@@ -981,7 +980,7 @@ int
 TclNREvalObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *objPtr;
@@ -1040,7 +1039,7 @@ int
 Tcl_ExitObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_WideInt value;
@@ -1087,7 +1086,7 @@ int
 Tcl_ExprObjCmd(
     void *clientData,
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     return Tcl_NRCallObjProc2(interp, TclNRExprObjCmd, clientData, objc, objv);
@@ -1097,7 +1096,7 @@ int
 TclNRExprObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *resultPtr, *objPtr;
@@ -2493,7 +2492,7 @@ int
 Tcl_ForObjCmd(
     void *clientData,
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     return Tcl_NRCallObjProc2(interp, TclNRForObjCmd, clientData, objc, objv);
@@ -2503,7 +2502,7 @@ int
 TclNRForObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Interp *iPtr = (Interp *) interp;
@@ -2687,7 +2686,7 @@ int
 Tcl_ForeachObjCmd(
     void *clientData,
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     return Tcl_NRCallObjProc2(interp, TclNRForeachCmd, clientData, objc, objv);
@@ -2707,7 +2706,7 @@ int
 Tcl_LmapObjCmd(
     void *clientData,
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     return Tcl_NRCallObjProc2(interp, TclNRLmapCmd, clientData, objc, objv);
@@ -3102,7 +3101,7 @@ int
 Tcl_FormatObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *resultPtr;		/* Where result is stored finally. */
