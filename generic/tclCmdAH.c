@@ -42,8 +42,7 @@ struct ForeachState {
     Tcl_Obj *primeValueObj;	/* If not NULL, the value to be appended to
 				 * the resultList if the expression of
 				 * [lfilter] is true. */
-    Tcl_Obj *exprResult;	/* The object that the result of the expression
-				 * will be written to in [lfilter] mode. */
+    int mode;			/* Which mode the machinery is operating in. */
 };
 
 /*
@@ -2759,13 +2758,8 @@ EachloopCmd(
     Tcl_Size j;
 
     if (objc < 4 || (objc%2 != 0)) {
-	if (collect == TCL_EACH_FILTER) {
-	    Tcl_WrongNumArgs(interp, 1, objv,
-		    "varList list ?varList list ...? expression");
-	} else {
-	    Tcl_WrongNumArgs(interp, 1, objv,
-		    "varList list ?varList list ...? command");
-	}
+	Tcl_WrongNumArgs(interp, 1, objv,
+		"varList list ?varList list ...? command");
 	return TCL_ERROR;
     }
 
@@ -2798,7 +2792,7 @@ EachloopCmd(
     statePtr->varcList = statePtr->index + numLists;
     statePtr->argcList = statePtr->varcList + numLists;
     statePtr->primeValueObj = NULL;
-    statePtr->exprResult = NULL;
+    statePtr->mode = collect;
 
     statePtr->numLists = numLists;
     statePtr->bodyPtr = objv[objc - 1];
@@ -2808,10 +2802,6 @@ EachloopCmd(
 	statePtr->resultList = Tcl_NewListObj(0, NULL);
     } else {
 	statePtr->resultList = NULL;
-    }
-    if (collect == TCL_EACH_FILTER) {
-	TclNewObj(statePtr->exprResult);
-	Tcl_IncrRefCount(statePtr->exprResult);
     }
 
     /*
@@ -2835,11 +2825,11 @@ EachloopCmd(
 	if (statePtr->varcList[i] < 1) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "%s varlist is empty",
-		    (statePtr->exprResult ? "lfilter" :
-			statePtr->resultList ? "lmap" : "foreach")));
+		    (statePtr->mode == TCL_EACH_FILTER ? "lfilter" :
+			statePtr->mode == TCL_EACH_COLLECT ? "lmap" : "foreach")));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION",
-		    (statePtr->exprResult ? "LFILTER" :
-			statePtr->resultList ? "LMAP" : "FOREACH"),
+		    (statePtr->mode == TCL_EACH_FILTER ? "LFILTER" :
+			statePtr->mode == TCL_EACH_COLLECT ? "LMAP" : "FOREACH"),
 		    "NEEDVARS", (char *)NULL);
 	    result = TCL_ERROR;
 	    goto done;
@@ -2892,13 +2882,8 @@ EachloopCmd(
 	}
 
 	TclNRAddCallback(interp, ForeachLoopStep, statePtr, NULL, NULL, NULL);
-	if (statePtr->primeValueObj) {
-	    // FIXME: Convert this case to a body script
-	    return Tcl_NRExprObj(interp, objv[objc-1], statePtr->exprResult);
-	} else {
-	    return TclNREvalObjEx(interp, objv[objc-1], 0,
-		    ((Interp *) interp)->cmdFramePtr, objc-1);
-	}
+	return TclNREvalObjEx(interp, objv[objc-1], 0,
+		((Interp *) interp)->cmdFramePtr, objc-1);
     }
 
     /*
@@ -2934,28 +2919,21 @@ ForeachLoopStep(
 	result = TCL_OK;
 	break;
     case TCL_OK:
-	if (statePtr->primeValueObj) {
+	if (statePtr->mode == TCL_EACH_FILTER) {
 	    int filterAccepts;
-	    result = Tcl_GetBooleanFromObj(interp, statePtr->exprResult,
+	    result = Tcl_GetBooleanFromObj(interp, Tcl_GetObjResult(interp),
 		    &filterAccepts);
-	    if (result != TCL_OK) {
-		goto done;
+	    if (result == TCL_OK && filterAccepts) {
+		result = Tcl_ListObjAppendElement(interp,
+			statePtr->resultList, statePtr->primeValueObj);
 	    }
-	    if (!filterAccepts) {
-		break;
-	    }
-	    result = Tcl_ListObjAppendElement(
-		    interp, statePtr->resultList, statePtr->primeValueObj);
-	    if (result != TCL_OK) {
-		goto done;
-	    }
-	} else if (statePtr->resultList != NULL) {
+	} else if (statePtr->mode == TCL_EACH_COLLECT) {
 	    result = Tcl_ListObjAppendElement(
 		    interp, statePtr->resultList, Tcl_GetObjResult(interp));
-	    if (result != TCL_OK) {
-		/* e.g. memory alloc failure on big data tests */
-		goto done;
-	    }
+	}
+	if (result != TCL_OK) {
+	    /* e.g. memory alloc failure on big data tests */
+	    goto done;
 	}
 	break;
     case TCL_BREAK:
@@ -2964,8 +2942,8 @@ ForeachLoopStep(
     case TCL_ERROR:
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 		"\n    (\"%s\" body line %d)",
-		(statePtr->exprResult ? "lfilter" :
-		    statePtr->resultList ? "lmap" : "foreach"),
+		(statePtr->mode == TCL_EACH_FILTER ? "lfilter" :
+		    statePtr->mode == TCL_EACH_COLLECT ? "lmap" : "foreach"),
 		Tcl_GetErrorLine(interp)));
 	TCL_FALLTHROUGH();
     default:
@@ -2984,13 +2962,8 @@ ForeachLoopStep(
 	}
 
 	TclNRAddCallback(interp, ForeachLoopStep, statePtr, NULL, NULL, NULL);
-	if (statePtr->primeValueObj) {
-	    // FIXME: Convert this case to a body script
-	    return Tcl_NRExprObj(interp, statePtr->bodyPtr, statePtr->exprResult);
-	} else {
-	    return TclNREvalObjEx(interp, statePtr->bodyPtr, 0,
-		    ((Interp *) interp)->cmdFramePtr, statePtr->bodyIdx);
-	}
+	return TclNREvalObjEx(interp, statePtr->bodyPtr, 0,
+		((Interp *) interp)->cmdFramePtr, statePtr->bodyIdx);
     }
 
     /*
@@ -3035,8 +3008,9 @@ ForeachAssignments(
 			    &valuePtr) != TCL_OK) {
 			Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 				"\n    (setting %s loop variable \"%s\")",
-				(statePtr->exprResult ? "lfilter" :
-				    statePtr->resultList ? "lmap" : "foreach"),
+				(statePtr->mode == TCL_EACH_FILTER ? "lfilter" :
+				    statePtr->mode == TCL_EACH_COLLECT ? "lmap" :
+				    "foreach"),
 				TclGetString(statePtr->varvList[i][v])));
 			return TCL_ERROR;
 		    }
@@ -3047,7 +3021,7 @@ ForeachAssignments(
 		TclNewObj(valuePtr);	/* Empty string */
 	    }
 
-	    if (statePtr->exprResult && i==0 && v==0) {
+	    if (statePtr->mode == TCL_EACH_FILTER && i==0 && v==0) {
 		if (statePtr->primeValueObj) {
 		    Tcl_DecrRefCount(statePtr->primeValueObj);
 		}
@@ -3062,8 +3036,8 @@ ForeachAssignments(
 	    if (varValuePtr == NULL) {
 		Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 			"\n    (setting %s loop variable \"%s\")",
-			(statePtr->exprResult ? "lfilter" :
-			    statePtr->resultList ? "lmap" : "foreach"),
+			(statePtr->mode == TCL_EACH_FILTER ? "lfilter" :
+			    statePtr->mode == TCL_EACH_COLLECT ? "lmap" : "foreach"),
 			TclGetString(statePtr->varvList[i][v])));
 		return TCL_ERROR;
 	    }
@@ -3094,9 +3068,6 @@ ForeachCleanup(
     }
     if (statePtr->primeValueObj) {
 	TclDecrRefCount(statePtr->primeValueObj);
-    }
-    if (statePtr->exprResult) {
-	TclDecrRefCount(statePtr->exprResult);
     }
     if (statePtr->resultList) {
 	TclDecrRefCount(statePtr->resultList);

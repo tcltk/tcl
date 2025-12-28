@@ -3167,8 +3167,7 @@ TclCompileLfilterCmd(
 	OP(			SWAP);
 	OP(			LIST_INDEX);
 	// Don't bother with the constant optimisation of [if]
-	// FIXME: Convert this case to a body script
-	PUSH_EXPR_TOKEN(	bodyTokenPtr, numWords - 1);
+	BODY(			bodyTokenPtr, numWords - 1);
 	FWDJUMP(		JUMP_TRUE, collectVal);
 	OP(			POP);
 	FWDJUMP(		JUMP, continueTarget);
