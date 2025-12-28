@@ -2026,11 +2026,11 @@ declare 611 {
 	    Tcl_Size buffersize, Tcl_Obj *gzipHeaderDictObj)
 }
 declare 612 {
-    unsigned int Tcl_ZlibCRC32(unsigned int crc, const unsigned char *buf,
+    unsigned Tcl_ZlibCRC32(unsigned crc, const unsigned char *buf,
 	    Tcl_Size len)
 }
 declare 613 {
-    unsigned int Tcl_ZlibAdler32(unsigned int adler, const unsigned char *buf,
+    unsigned Tcl_ZlibAdler32(unsigned adler, const unsigned char *buf,
 	    Tcl_Size len)
 }
 declare 614 {
@@ -2108,7 +2108,7 @@ declare 630 {
 # TIP #456/#468
 declare 631 {
     Tcl_Channel Tcl_OpenTcpServerEx(Tcl_Interp *interp, const char *service,
-	    const char *host, unsigned int flags, int backlog,
+	    const char *host, unsigned flags, int backlog,
 	    Tcl_TcpAcceptProc *acceptProc, void *callbackData)
 }
 
