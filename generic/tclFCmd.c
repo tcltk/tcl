@@ -78,7 +78,7 @@ TclFileRenameCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Interp for error reporting or recursive
 				 * calls in the case of a tricky rename. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument strings passed to Tcl_FileCmd. */
 {
     return FileCopyRename(interp, objc, objv, 0);
@@ -107,7 +107,7 @@ TclFileCopyCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Used for error reporting or recursive calls
 				 * in the case of a tricky copy. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument strings passed to Tcl_FileCmd. */
 {
     return FileCopyRename(interp, objc, objv, 1);
@@ -133,7 +133,7 @@ TclFileCopyCmd(
 static int
 FileCopyRename(
     Tcl_Interp *interp,		/* Used for error reporting. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[],	/* Argument strings passed to Tcl_FileCmd. */
     int copyFlag)		/* If non-zero, copy source(s). Otherwise,
 				 * rename them. */
@@ -248,7 +248,7 @@ int
 TclFileMakeDirsCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Used for error reporting. */
-    Tcl_Size objc,			/* Number of arguments */
+    Tcl_Size objc,		/* Number of arguments */
     Tcl_Obj *const objv[])	/* Argument strings passed to Tcl_FileCmd. */
 {
     Tcl_Obj *errfile = NULL;
@@ -377,7 +377,7 @@ int
 TclFileDeleteCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Used for error reporting */
-    Tcl_Size objc,			/* Number of arguments */
+    Tcl_Size objc,		/* Number of arguments */
     Tcl_Obj *const objv[])	/* Argument strings passed to Tcl_FileCmd. */
 {
     int force, result;
@@ -866,7 +866,7 @@ CopyRenameOneFile(
 static size_t
 FileForceOption(
     Tcl_Interp *interp,		/* Interp, for error return. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[],	/* Argument strings.  First command line
 				 * option, if it exists, begins at 0. */
     int *forcePtr)		/* If the "-force" was specified, *forcePtr is
@@ -988,7 +988,7 @@ int
 TclFileAttrsCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* The interpreter for error reporting. */
-    Tcl_Size objc,			/* Number of command line arguments. */
+    Tcl_Size objc,		/* Number of command line arguments. */
     Tcl_Obj *const objv[])	/* The command line objects. */
 {
     int result;
