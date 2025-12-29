@@ -470,6 +470,8 @@ static const BuiltinFuncDef BuiltinFuncTable[] = {
     { "cosh",	ExprUnaryFunc,	cosh			},
     { "double",	ExprDoubleFunc,	NULL			},
     { "entier",	ExprIntFunc,	NULL			},
+    { "erf",	ExprUnaryFunc,	erf			},
+    { "erfc",	ExprUnaryFunc,	erfc			},
     { "exp",	ExprUnaryFunc,	exp			},
     { "exp2",	ExprUnaryFunc,	exp2			},
     { "expm1",	ExprUnaryFunc,	expm1			},
@@ -484,6 +486,7 @@ static const BuiltinFuncDef BuiltinFuncTable[] = {
     { "isqrt",	ExprIsqrtFunc,	NULL			},
     { "issubnormal", ExprIsSubnormalFunc, NULL,		},
     { "isunordered", ExprIsUnorderedFunc, NULL,		},
+    { "lgamma",	ExprUnaryFunc,	lgamma			},
     { "log",	ExprUnaryFunc,	log			},
     { "log10",	ExprUnaryFunc,	log10			},
     { "log1p",	ExprUnaryFunc,	log1p			},
@@ -499,6 +502,7 @@ static const BuiltinFuncDef BuiltinFuncTable[] = {
     { "srand",	ExprSrandFunc,	NULL			},
     { "tan",	ExprUnaryFunc,	tan			},
     { "tanh",	ExprUnaryFunc,	tanh			},
+    { "tgamma",	ExprUnaryFunc,	tgamma			},
     { "wide",	ExprWideFunc,	NULL			},
     { NULL, NULL, NULL }
 };
