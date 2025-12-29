@@ -19,7 +19,7 @@ Tcl_Command
 Tcl_Command
 \fBTcl_FindEnsemble\fR(\fIinterp, cmdNameObj, flags\fR)
 .sp
-int
+bool
 \fBTcl_IsEnsemble\fR(\fItoken\fR)
 .sp
 int
@@ -125,8 +125,8 @@ set in \fIflags\fR) an error message is left in the interpreter
 result.
 .PP
 A command token may be checked to see if it refers to an ensemble
-using \fBTcl_IsEnsemble\fR. This returns 1 if the token refers to an
-ensemble, or 0 otherwise.
+using \fBTcl_IsEnsemble\fR. This returns true if the token refers to an
+ensemble, or false otherwise.
 .SS "ENSEMBLE PROPERTIES"
 Every ensemble has four read-write properties and a read-only
 property. The properties are:
