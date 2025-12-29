@@ -387,7 +387,7 @@ TclCompileArraySetCmd(
 	 */
 
 	localIndex = TclFindCompiledLocal(varTokenPtr->start,
-		varTokenPtr->size, 1, envPtr);
+		varTokenPtr->size, true, envPtr);
 	PUSH(			"0");
 	OP(			SWAP);
 	OP4(			UPVAR, localIndex);
@@ -821,7 +821,7 @@ TclCompileClockReadingCmd(
 	return TCL_ERROR;
     }
 
-    OP1(			CLOCK_READ, PTR2INT(cmdPtr->objClientData));
+    OP1(			CLOCK_READ, PTR2INT(cmdPtr->objClientData2));
     return TCL_OK;
 }
 
@@ -2683,7 +2683,7 @@ TclCompileForCmd(
     CONTINUE_TARGET(	bodyRange);
     if (!TclIsEmptyToken(nextTokenPtr)) {
 	nextRange = MAKE_LOOP_RANGE();
-	envPtr->exceptAuxArrayPtr[nextRange].supportsContinue = 0;
+	envPtr->exceptAuxArrayPtr[nextRange].supportsContinue = false;
 	CATCH_RANGE(nextRange) {
 	    BODY(		nextTokenPtr, 3);
 	}
@@ -3282,6 +3282,7 @@ TclCompileFormatCmd(
     Tcl_Obj **objv, *formatObj, *tmpObj;
     const char *bytes, *start;
     Tcl_Size i, j, numWords = parsePtr->numWords;
+    /* TODO: Consider support for runtime formats. */
     /* TODO: Consider support for compiling expanded args. */
 
     /*

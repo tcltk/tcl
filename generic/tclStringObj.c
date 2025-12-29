@@ -76,11 +76,11 @@ static void		UpdateStringOfString(Tcl_Obj *objPtr);
  */
 
 const Tcl_ObjType tclStringType = {
-    "string",			/* name */
-    FreeStringInternalRep,	/* freeIntRepPro */
-    DupStringInternalRep,	/* dupIntRepProc */
-    UpdateStringOfString,	/* updateStringProc */
-    SetStringFromAny,		/* setFromAnyProc */
+    "string",
+    FreeStringInternalRep,
+    DupStringInternalRep,
+    UpdateStringOfString,
+    SetStringFromAny,
     TCL_OBJTYPE_V0
 };
 
@@ -214,7 +214,7 @@ GrowUnicodeBuffer(
  *
  * Side effects:
  *	The new object's internal string representation will be set to a copy
- *	of the length bytes starting at "bytes". If "length" is TCL_INDEX_NONE, use
+ *	of the length bytes starting at "bytes". If "length" is < 0, use
  *	bytes up to the first NUL byte; i.e., assume "bytes" points to a
  *	C-style NUL-terminated string. The object's type is set to NULL. An
  *	extra NUL is added to the end of the new object's byte array.
@@ -230,7 +230,7 @@ Tcl_NewStringObj(
 				 * used to initialize the new object. */
     Tcl_Size length)		/* The number of bytes to copy from "bytes"
 				 * when initializing the new object. If
-				 * TCL_INDEX_NONE, use bytes up to the first NUL
+				 * < 0, use bytes up to the first NUL
 				 * byte. */
 {
     return Tcl_DbNewStringObj(bytes, length, "unknown", 0);
@@ -279,7 +279,7 @@ Tcl_NewStringObj(
  *
  * Side effects:
  *	The new object's internal string representation will be set to a copy
- *	of the length bytes starting at "bytes". If "length" is TCL_INDEX_NONE, use
+ *	of the length bytes starting at "bytes". If "length" is < 0, use
  *	bytes up to the first NUL byte; i.e., assume "bytes" points to a
  *	C-style NUL-terminated string. The object's type is set to NULL. An
  *	extra NUL is added to the end of the new object's byte array.
@@ -293,7 +293,7 @@ Tcl_DbNewStringObj(
     const char *bytes,		/* Points to the first of the length bytes
 				 * used to initialize the new object. */
     Tcl_Size length,		/* The number of bytes to copy from "bytes"
-				 * when initializing the new object. If -1,
+				 * when initializing the new object. If <0,
 				 * use bytes up to the first NUL byte. */
     const char *file,		/* The name of the source file calling this
 				 * function; used for debugging. */
@@ -302,7 +302,7 @@ Tcl_DbNewStringObj(
 {
     Tcl_Obj *objPtr;
 
-    if (length == TCL_INDEX_NONE) {
+    if (length < 0) {
 	length = (bytes? strlen(bytes) : 0);
     }
     TclDbNewObj(objPtr, file, line);
@@ -710,9 +710,9 @@ Tcl_GetUnicodeFromObj(
  *	Create a Tcl Object that contains the chars between first
  *	and last of the object indicated by "objPtr". If the object
  *	is not a byte-array object, and not already a String object,
- *	convert it to a String object. If first is TCL_INDEX_NONE,
+ *	convert it to a String object. If first is < 0,
  *	the returned string start at the beginning of objPtr. If
- *	last is TCL_INDEX_NONE, the returned string ends at the
+ *	last is < 0, the returned string ends at the
  *	end of objPtr.
  *
  * Results:
@@ -863,7 +863,7 @@ TclGetRange(
  *
  * Side effects:
  *	The object's string representation will be set to a copy of the
- *	"length" bytes starting at "bytes". If "length" is TCL_INDEX_NONE, use bytes
+ *	"length" bytes starting at "bytes". If "length" is < 0, use bytes
  *	up to the first NUL byte; i.e., assume "bytes" points to a C-style
  *	NUL-terminated string. The object's old string and internal
  *	representations are freed and the object's type is set NULL.
@@ -877,7 +877,7 @@ Tcl_SetStringObj(
     const char *bytes,		/* Points to the first of the length bytes
 				 * used to initialize the object. */
     Tcl_Size length)		/* The number of bytes to copy from "bytes"
-				 * when initializing the object. If -1,
+				 * when initializing the object. If < 0,
 				 * use bytes up to the first NUL byte.*/
 {
     if (Tcl_IsShared(objPtr)) {
@@ -896,7 +896,7 @@ Tcl_SetStringObj(
      */
 
     TclInvalidateStringRep(objPtr);
-    if (length == TCL_INDEX_NONE) {
+    if (length < 0) {
 	length = (bytes? strlen(bytes) : 0);
     }
     TclInitStringRep(objPtr, bytes, length);
@@ -1208,7 +1208,7 @@ Tcl_AppendLimitedToObj(
     const char *bytes,		/* Points to the bytes to append to the
 				 * object. */
     Tcl_Size length,		/* The number of bytes available to be
-				 * appended from "bytes". If -1, then
+				 * appended from "bytes". If < 0, then
 				 * all bytes up to a NUL byte are available. */
     Tcl_Size limit,		/* The maximum number of bytes to append to
 				 * the object. */
@@ -1304,7 +1304,7 @@ Tcl_AppendToObj(
     const char *bytes,		/* Points to the bytes to append to the
 				 * object. */
     Tcl_Size length)		/* The number of bytes to append from "bytes".
-				 * If TCL_INDEX_NONE, then append all bytes up to NUL
+				 * If < 0, then append all bytes up to NUL
 				 * byte. */
 {
     Tcl_AppendLimitedToObj(objPtr, bytes, length, TCL_SIZE_MAX, NULL);
@@ -1890,7 +1890,7 @@ Tcl_AppendFormatToObj(
 	int newXpg, allocSegment = 0;
 	Tcl_Size numChars, segmentLimit, segmentNumBytes;
 	Tcl_Obj *segment;
-	int step = TclUtfToUniChar(format, &ch);
+	Tcl_Size step = TclUtfToUniChar(format, &ch);
 
 	format += step;
 	if (ch != '%') {
@@ -2034,7 +2034,7 @@ Tcl_AppendFormatToObj(
 	 * Step 4. Precision.
 	 */
 
-	gotPrecision = precision = 0;
+	gotPrecision = (int)(precision = 0);
 	if (ch == '.') {
 	    gotPrecision = 1;
 	    format += step;
@@ -2155,8 +2155,9 @@ Tcl_AppendFormatToObj(
 	    }
 	    break;
 	case 'c': {
+	    Tcl_Size length;
+	    int code;
 	    char buf[4] = "";
-	    int code, length;
 
 	    if (TclGetIntFromObj(interp, segment, &code) != TCL_OK) {
 		goto error;
@@ -2374,7 +2375,7 @@ Tcl_AppendFormatToObj(
 		    bits = (Tcl_WideUInt) us;
 		    while (us) {
 			numDigits++;
-			us /= base;
+			us = (unsigned short)(us / base);
 		    }
 		} else if (useWide) {
 		    Tcl_WideUInt uw = (Tcl_WideUInt) w;
@@ -2431,15 +2432,15 @@ Tcl_AppendFormatToObj(
 			}
 			shift -= numBits;
 		    }
-		    digitOffset = bits % base;
+		    digitOffset = (int)(bits % base);
 		    if (digitOffset > 9) {
 			if (ch == 'X') {
-			    bytes[numDigits] = 'A' + digitOffset - 10;
+			    bytes[numDigits] = 'A' + (char)digitOffset - 10;
 			} else {
-			    bytes[numDigits] = 'a' + digitOffset - 10;
+			    bytes[numDigits] = 'a' + (char)digitOffset - 10;
 			}
 		    } else {
-			bytes[numDigits] = '0' + digitOffset;
+			bytes[numDigits] = '0' + (char)digitOffset;
 		    }
 		    bits /= base;
 		}
@@ -2516,18 +2517,18 @@ Tcl_AppendFormatToObj(
 	    if (width) {
 		p += snprintf(p, TCL_INTEGER_SPACE, "%" TCL_LL_MODIFIER "d", width);
 		if (width > length) {
-		    length = width;
+		    length = (int)width;
 		}
 	    }
 	    if (gotPrecision) {
 		*p++ = '.';
 		p += snprintf(p, TCL_INTEGER_SPACE, "%" TCL_LL_MODIFIER "d", precision);
-		if (precision > TCL_SIZE_MAX - length) {
+		if (precision > INT_MAX - length) {
 		    msg = overflow;
 		    errCode = "OVERFLOW";
 		    goto errorMsg;
 		}
-		length += precision;
+		length += (int)precision;
 	    }
 
 	    /*
@@ -3155,10 +3156,10 @@ Tcl_Obj *
 TclStringCat(
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj * const objv[],
+    Tcl_Obj *const objv[],
     int flags)
 {
-    Tcl_Obj *objResultPtr, * const *ov;
+    Tcl_Obj *objResultPtr, *const *ov;
     int binary = 1;
     Tcl_Size oc, length = 0;
     int allowUniChar = 1, requestUniChar = 0, forceUniChar = 0;
@@ -3652,7 +3653,7 @@ TclStringCmp(
     int checkEq,		/* comparison is only for equality */
     int nocase,			/* comparison is not case sensitive */
     Tcl_Size reqlength)		/* requested length in characters;
-				 * TCL_INDEX_NONE to compare whole strings */
+				 * negative value to compare whole strings */
 {
     const char *s1, *s2;
     int empty, match;
@@ -3814,9 +3815,10 @@ TclStringCmp(
 	    match = memCmpFn(s1, s2, length);
 	}
 	if ((match == 0) && (reqlength > length)) {
-	    match = s1len - s2len;
+	    match = (s1len > s2len) ? 1 : (s1len < s2len) ? -1 : 0;
+	} else {
+	    match = (match > 0) ? 1 : (match < 0) ? -1 : 0;
 	}
-	match = (match > 0) ? 1 : (match < 0) ? -1 : 0;
     }
   matchdone:
     return match;
@@ -4144,7 +4146,7 @@ TclStringReverse(
 		 * skip calling Tcl_UtfCharComplete() here.
 		 */
 
-		int bytesInChar = TclUtfToUniChar(from, &chw);
+		Tcl_Size bytesInChar = TclUtfToUniChar(from, &chw);
 
 		ReverseBytes((unsigned char *)to, (unsigned char *)from,
 			bytesInChar);
@@ -4457,7 +4459,7 @@ DupStringInternalRep(
     }
 
     if (srcStringPtr->hasUnicode) {
-	int copyMaxChars;
+	Tcl_Size copyMaxChars;
 
 	if (srcStringPtr->maxChars / 2 >= srcStringPtr->numChars) {
 	    copyMaxChars = 2 * srcStringPtr->numChars;

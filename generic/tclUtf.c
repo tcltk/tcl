@@ -1193,7 +1193,6 @@ Tcl_UniCharAtIndex(
     Tcl_Size index)		/* The position of the desired character. */
 {
     Tcl_UniChar ch = 0;
-    int i = 0;
 
     if (index < 0) {
 	return -1;
@@ -1201,8 +1200,8 @@ Tcl_UniCharAtIndex(
     while (index--) {
 	src += TclUtfToUniChar(src, &ch);
     }
-    TclUtfToUniChar(src, &i);
-    return i;
+    TclUtfToUniChar(src, &ch);
+    return ch;
 }
 
 /*

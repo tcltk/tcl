@@ -39,11 +39,11 @@ static int		MakeTildeRelativePath(Tcl_Interp *interp,
  */
 
 static const Tcl_ObjType fsPathType = {
-    "path",			/* name */
-    FreeFsPathInternalRep,	/* freeIntRepProc */
-    DupFsPathInternalRep,	/* dupIntRepProc */
-    UpdateStringOfFsPath,	/* updateStringProc */
-    SetFsPathFromAny,		/* setFromAnyProc */
+    "path",
+    FreeFsPathInternalRep,
+    DupFsPathInternalRep,
+    UpdateStringOfFsPath,
+    SetFsPathFromAny,
     TCL_OBJTYPE_V0
 };
 
@@ -837,7 +837,7 @@ Tcl_FSJoinPath(
 Tcl_Obj *
 TclJoinPath(
     Tcl_Size elements,		/* Number of elements to use */
-    Tcl_Obj * const objv[],	/* Path elements to join */
+    Tcl_Obj *const objv[],	/* Path elements to join */
     int forceRelative)		/* If non-zero, assume all more paths are
 				 * relative (e.g. simple normalization) */
 {

@@ -27,7 +27,7 @@ testConstraint testcmdtoken [llength [info commands testcmdtoken]]
 test cmdinfo-1.1 {command procedure and clientData} {testcmdinfo} {
     testcmdinfo create x1
     testcmdinfo get x1
-} {CmdProc1 original CmdDelProc1 original :: stringProc}
+} {CmdProc1 original CmdDelProc1 original :: nativeObjectProc2}
 test cmdinfo-1.2 {command procedure and clientData} {testcmdinfo} {
     testcmdinfo create x1
     x1

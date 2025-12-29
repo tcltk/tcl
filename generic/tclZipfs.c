@@ -478,6 +478,20 @@ static int		TclZipfsInitEncodingDirs(void);
 static int		TclZipfsMountExe(void);
 static int		TclZipfsMountShlib(void);
 
+static Tcl_ObjCmdProc2	ZipFSMkImgObjCmd;
+static Tcl_ObjCmdProc2	ZipFSMkZipObjCmd;
+static Tcl_ObjCmdProc2	ZipFSLMkImgObjCmd;
+static Tcl_ObjCmdProc2	ZipFSLMkZipObjCmd;
+static Tcl_ObjCmdProc2	ZipFSMountObjCmd;
+static Tcl_ObjCmdProc2	ZipFSMountBufferObjCmd;
+static Tcl_ObjCmdProc2	ZipFSUnmountObjCmd;
+static Tcl_ObjCmdProc2	ZipFSMkKeyObjCmd;
+static Tcl_ObjCmdProc2	ZipFSExistsObjCmd;
+static Tcl_ObjCmdProc2	ZipFSInfoObjCmd;
+static Tcl_ObjCmdProc2	ZipFSListObjCmd;
+static Tcl_ObjCmdProc2	ZipFSCanonicalObjCmd;
+static Tcl_ObjCmdProc2	ZipFSRootObjCmd;
+
 /*
  * Define the ZIP filesystem dispatch table.
  */
@@ -487,33 +501,33 @@ static const Tcl_Filesystem zipfsFilesystem = {
     sizeof(Tcl_Filesystem),
     TCL_FILESYSTEM_VERSION_2,
     ZipFSPathInFilesystemProc,
-    NULL, /* dupInternalRepProc */
-    NULL, /* freeInternalRepProc */
-    NULL, /* internalToNormalizedProc */
-    NULL, /* createInternalRepProc */
-    NULL, /* normalizePathProc */
+    NULL,	/* dupInternalRepProc */
+    NULL,	/* freeInternalRepProc */
+    NULL,	/* internalToNormalizedProc */
+    NULL,	/* createInternalRepProc */
+    NULL,	/* normalizePathProc */
     ZipFSFilesystemPathTypeProc,
     ZipFSFilesystemSeparatorProc,
     ZipFSStatProc,
     ZipFSAccessProc,
     ZipFSOpenFileChannelProc,
     ZipFSMatchInDirectoryProc,
-    NULL, /* utimeProc */
-    NULL, /* linkProc */
+    NULL,	/* utimeProc */
+    NULL,	/* linkProc */
     ZipFSListVolumesProc,
     ZipFSFileAttrStringsProc,
     ZipFSFileAttrsGetProc,
     ZipFSFileAttrsSetProc,
-    NULL, /* createDirectoryProc */
-    NULL, /* removeDirectoryProc */
-    NULL, /* deleteFileProc */
-    NULL, /* copyFileProc */
-    NULL, /* renameFileProc */
-    NULL, /* copyDirectoryProc */
-    NULL, /* lstatProc */
+    NULL,	/* createDirectoryProc */
+    NULL,	/* removeDirectoryProc */
+    NULL,	/* deleteFileProc */
+    NULL,	/* copyFileProc */
+    NULL,	/* renameFileProc */
+    NULL,	/* copyDirectoryProc */
+    NULL,	/* lstatProc */
     (Tcl_FSLoadFileProc *) (void *) ZipFSLoadFile,
-    NULL, /* getCwdProc */
-    NULL, /* chdirProc */
+    NULL,	/* getCwdProc */
+    NULL	/* chdirProc */
 };
 
 /*
@@ -537,6 +551,27 @@ static const Tcl_ChannelType zipChannelType = {
     ZipChannelWideSeek,
     NULL,			/* Thread action function. */
     NULL,			/* Truncate function. */
+};
+
+/*
+ * The description of the [zipfs] ensemble command.
+ */
+const EnsembleImplMap tclZipfsImplMap[] = {
+    {"mkimg",		ZipFSMkImgObjCmd,	NULL, NULL, NULL, 1},
+    {"mkzip",		ZipFSMkZipObjCmd,	NULL, NULL, NULL, 1},
+    {"lmkimg",		ZipFSLMkImgObjCmd,	NULL, NULL, NULL, 1},
+    {"lmkzip",		ZipFSLMkZipObjCmd,	NULL, NULL, NULL, 1},
+    {"mount",		ZipFSMountObjCmd,	NULL, NULL, NULL, 1},
+    {"mountdata",	ZipFSMountBufferObjCmd,	NULL, NULL, NULL, 1},
+    {"unmount",		ZipFSUnmountObjCmd,	NULL, NULL, NULL, 1},
+    {"mkkey",		ZipFSMkKeyObjCmd,	NULL, NULL, NULL, 1},
+    {"exists",		ZipFSExistsObjCmd,	NULL, NULL, NULL, 1},
+    {"find",		NULL,			NULL, NULL, NULL, 0},
+    {"info",		ZipFSInfoObjCmd,	NULL, NULL, NULL, 1},
+    {"list",		ZipFSListObjCmd,	NULL, NULL, NULL, 1},
+    {"canonical",	ZipFSCanonicalObjCmd,	NULL, NULL, NULL, 1},
+    {"root",		ZipFSRootObjCmd,	NULL, NULL, NULL, 1},
+    {NULL, NULL, NULL, NULL, NULL, 0}
 };
 
 /*
@@ -2659,7 +2694,7 @@ static int
 ZipFSMountObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     const char *mountPoint = NULL, *zipFile = NULL, *password = NULL;
@@ -2710,7 +2745,7 @@ static int
 ZipFSMountBufferObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     const char *mountPoint = NULL;	/* Mount point path. */
@@ -2749,7 +2784,7 @@ static int
 ZipFSRootObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const *objv)
 {
     if (objc != 1) {
@@ -2780,7 +2815,7 @@ static int
 ZipFSUnmountObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     if (objc != 2) {
@@ -2811,7 +2846,7 @@ static int
 ZipFSMkKeyObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Size len, i = 0;
@@ -3910,7 +3945,7 @@ static int
 ZipFSMkZipObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *stripPrefix, *password;
@@ -3935,7 +3970,7 @@ static int
 ZipFSLMkZipObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *password;
@@ -3976,7 +4011,7 @@ static int
 ZipFSMkImgObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *originFile, *stripPrefix, *password;
@@ -4003,7 +4038,7 @@ static int
 ZipFSLMkImgObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *originFile, *password;
@@ -4045,7 +4080,7 @@ static int
 ZipFSCanonicalObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     const char *mntPoint = NULL;
@@ -4095,7 +4130,7 @@ static int
 ZipFSExistsObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     char *filename;
@@ -4144,7 +4179,7 @@ static int
 ZipFSInfoObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     char *filename;
@@ -4204,15 +4239,15 @@ static int
 ZipFSListObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    char *pattern = NULL;
+    const char *pattern = NULL;
     Tcl_RegExp regexp = NULL;
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
     Tcl_Obj *result = Tcl_GetObjResult(interp);
-    const char *options[] = {"-glob", "-regexp", NULL};
+    static const char *const options[] = {"-glob", "-regexp", NULL};
     enum list_options { OPT_GLOB, OPT_REGEXP };
 
     /*
@@ -4306,7 +4341,7 @@ ZipFSListObjCmd(
  *-------------------------------------------------------------------------
  */
 static int
-TclZipfsMountExe()
+TclZipfsMountExe(void)
 {
     WriteLock();
     if (!ZipFS.initialized) {
@@ -4355,7 +4390,7 @@ TclZipfsMountExe()
  *-------------------------------------------------------------------------
  */
 static int
-TclZipfsMountShlib()
+TclZipfsMountShlib(void)
 {
 #if defined(STATIC_BUILD)
     /* Static builds have no shared library */
@@ -4525,7 +4560,7 @@ static int
 ZipFSTclLibraryObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    TCL_UNUSED(int) /*objc*/,
+    TCL_UNUSED(Tcl_Size) /*objc*/,
     TCL_UNUSED(Tcl_Obj *const *)) /*objv*/
 {
     if (!Tcl_IsSafe(interp)) {
@@ -6403,32 +6438,17 @@ int
 TclZipfs_Init(
     Tcl_Interp *interp)		/* Current interpreter. */
 {
-    static const EnsembleImplMap initMap[] = {
-	{"mkimg",	ZipFSMkImgObjCmd,	NULL, NULL, NULL, 1},
-	{"mkzip",	ZipFSMkZipObjCmd,	NULL, NULL, NULL, 1},
-	{"lmkimg",	ZipFSLMkImgObjCmd,	NULL, NULL, NULL, 1},
-	{"lmkzip",	ZipFSLMkZipObjCmd,	NULL, NULL, NULL, 1},
-	{"mount",	ZipFSMountObjCmd,	NULL, NULL, NULL, 1},
-	{"mountdata",	ZipFSMountBufferObjCmd,	NULL, NULL, NULL, 1},
-	{"unmount",	ZipFSUnmountObjCmd,	NULL, NULL, NULL, 1},
-	{"mkkey",	ZipFSMkKeyObjCmd,	NULL, NULL, NULL, 1},
-	{"exists",	ZipFSExistsObjCmd,	NULL, NULL, NULL, 1},
-	{"info",	ZipFSInfoObjCmd,	NULL, NULL, NULL, 1},
-	{"list",	ZipFSListObjCmd,	NULL, NULL, NULL, 1},
-	{"canonical",	ZipFSCanonicalObjCmd,	NULL, NULL, NULL, 1},
-	{"root",	ZipFSRootObjCmd,	NULL, NULL, NULL, 1},
-	{NULL, NULL, NULL, NULL, NULL, 0}
-    };
     static const char findproc[] =
 	"namespace eval ::tcl::zipfs {}\n"
 	"proc ::tcl::zipfs::Find dir {\n"
 	"    set result {}\n"
-	"    if {[catch {\n"
-	"        concat [glob -directory $dir -nocomplain *] [glob -directory $dir -types hidden -nocomplain *]\n"
-	"    } list]} {\n"
+	"    try {\n"
+	"        set normal [glob -directory $dir -nocomplain *]\n"
+	"        set hidden [glob -directory $dir -types hidden -nocomplain *]\n"
+	"    } on error {} {\n"
 	"        return $result\n"
 	"    }\n"
-	"    foreach file $list {\n"
+	"    foreach file [concat $normal $hidden] {\n"
 	"        if {[file tail $file] in {. ..}} {\n"
 	"            continue\n"
 	"        }\n"
@@ -6451,9 +6471,6 @@ TclZipfs_Init(
     Unlock();
 
     if (interp) {
-	Tcl_Command ensemble;
-	Tcl_Obj *mapObj;
-
 	Tcl_EvalEx(interp, findproc, TCL_INDEX_NONE, TCL_EVAL_GLOBAL);
 	if (!Tcl_IsSafe(interp)) {
 	    Tcl_LinkVar(interp, "::tcl::zipfs::wrmax", (char *) &ZipFS.wrmax,
@@ -6461,16 +6478,7 @@ TclZipfs_Init(
 	    Tcl_LinkVar(interp, "::tcl::zipfs::fallbackEntryEncoding",
 		    (char *) &ZipFS.fallbackEntryEncoding, TCL_LINK_STRING);
 	}
-	ensemble = TclMakeEnsemble(interp, "zipfs",
-		Tcl_IsSafe(interp) ? (initMap + 4) : initMap);
-
-	/*
-	 * Add the [zipfs find] subcommand.
-	 */
-
-	Tcl_GetEnsembleMappingDict(NULL, ensemble, &mapObj);
-	TclDictPutString(NULL, mapObj, "find", "::tcl::zipfs::find");
-	Tcl_CreateObjCommand(interp, "::tcl::zipfs::tcl_library_init",
+	Tcl_CreateObjCommand2(interp, "::tcl::zipfs::tcl_library_init",
 		ZipFSTclLibraryObjCmd, NULL, NULL);
     }
     return TCL_OK;

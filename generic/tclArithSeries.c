@@ -47,23 +47,23 @@
  */
 
 typedef struct {
-    Tcl_Size len;
-    Tcl_Obj **elements;
-    int isDouble;
-    Tcl_Size refCount;
+    Tcl_Size len;		// Number of elements.
+    Tcl_Obj **elements;		// Allocated element cache; can be NULL.
+    bool isDouble;		// Which subtype; Dbl or Int.
+    Tcl_Size refCount;		// Internal reference count.
 } ArithSeries;
 
 typedef struct {
     ArithSeries base;
-    Tcl_WideInt start;
-    Tcl_WideInt step;
+    Tcl_WideInt start;		// Start of sequence.
+    Tcl_WideInt step;		// Step of sequence.
 } ArithSeriesInt;
 
 typedef struct {
     ArithSeries base;
-    double start;
-    double step;
-    unsigned precision;		/* Number of decimal places to render. */
+    double start;		// Start of sequence.
+    double step;		// Step of sequence.
+    unsigned precision;		// Number of decimal places to render.
 } ArithSeriesDbl;
 
 /* Forward declarations. */
@@ -91,20 +91,20 @@ static int		ArithSeriesInOperation(Tcl_Interp *interp,
 /* ------------------------ ArithSeries object type -------------------------- */
 
 static const Tcl_ObjType arithSeriesType = {
-    "arithseries",			/* name */
-    FreeArithSeriesInternalRep,		/* freeIntRepProc */
-    DupArithSeriesInternalRep,		/* dupIntRepProc */
-    UpdateStringOfArithSeries,		/* updateStringProc */
-    NULL,				/* setFromAnyProc */
+    "arithseries",
+    FreeArithSeriesInternalRep,
+    DupArithSeriesInternalRep,
+    UpdateStringOfArithSeries,
+    NULL,			// SetFromAny
     TCL_OBJTYPE_V2(
-    ArithSeriesObjLength,
-    TclArithSeriesObjIndex,
-    TclArithSeriesObjRange,
-    TclArithSeriesObjReverse,
-    TclArithSeriesGetElements,
-    NULL, // SetElement
-    NULL, // Replace
-    ArithSeriesInOperation) // "in" operator
+	ArithSeriesObjLength,
+	TclArithSeriesObjIndex,
+	TclArithSeriesObjRange,
+	TclArithSeriesObjReverse,
+	TclArithSeriesGetElements,
+	NULL,			// SetElement
+	NULL,			// Replace
+	ArithSeriesInOperation)
 };
 
 /*
@@ -165,7 +165,7 @@ ArithSeriesEndDbl(
     if (!dblRepPtr->base.len) {
 	return dblRepPtr->start;
     }
-    d = dblRepPtr->start + ((double)(dblRepPtr->base.len-1) * dblRepPtr->step);
+    d = dblRepPtr->start + ((double)(dblRepPtr->base.len - 1) * dblRepPtr->step);
     return ArithRound(d, dblRepPtr->precision);
 }
 
@@ -176,7 +176,7 @@ ArithSeriesEndInt(
     if (!intRepPtr->base.len) {
 	return intRepPtr->start;
     }
-    return intRepPtr->start + ((intRepPtr->base.len-1) * intRepPtr->step);
+    return intRepPtr->start + ((intRepPtr->base.len - 1) * intRepPtr->step);
 }
 
 static inline double
@@ -188,7 +188,7 @@ ArithSeriesIndexDbl(
     assert(arithSeriesRepPtr->isDouble);
     double d = dblRepPtr->start;
     if (index) {
-	d += ((double)index * dblRepPtr->step);
+	d += (double)index * dblRepPtr->step;
     }
 
     return ArithRound(d, dblRepPtr->precision);
@@ -234,7 +234,7 @@ ObjPrecision(
 	}
 	/* don't calculate precision for e-notation */
     }
-    /* no fraction for TCL_NUMBER_NAN, TCL_NUMBER_INT, TCL_NUMBER_BIG */
+    // no fraction for TCL_NUMBER_NAN, TCL_NUMBER_INT, TCL_NUMBER_BIG
     return 0;
 }
 
@@ -510,7 +510,7 @@ NewArithSeriesInt(
     arithSeriesRepPtr = (ArithSeriesInt *) Tcl_Alloc(sizeof(ArithSeriesInt));
     arithSeriesRepPtr->base.len = length;
     arithSeriesRepPtr->base.elements = NULL;
-    arithSeriesRepPtr->base.isDouble = 0;
+    arithSeriesRepPtr->base.isDouble = false;
     arithSeriesRepPtr->base.refCount = 1;
     arithSeriesRepPtr->start = start;
     arithSeriesRepPtr->step = step;
@@ -568,7 +568,7 @@ NewArithSeriesDbl(
     arithSeriesRepPtr = (ArithSeriesDbl *) Tcl_Alloc(sizeof(ArithSeriesDbl));
     arithSeriesRepPtr->base.len = length;
     arithSeriesRepPtr->base.elements = NULL;
-    arithSeriesRepPtr->base.isDouble = 1;
+    arithSeriesRepPtr->base.isDouble = true;
     arithSeriesRepPtr->base.refCount = 1;
     arithSeriesRepPtr->start = start;
     arithSeriesRepPtr->step = step;
@@ -604,7 +604,7 @@ NewArithSeriesDbl(
 static int
 assignNumber(
     Tcl_Interp *interp,
-    int useDoubles,
+    bool useDoubles,
     Tcl_WideInt *intNumberPtr,
     double *dblNumberPtr,
     Tcl_Obj *numberObj)
@@ -666,7 +666,7 @@ assignNumber(
 Tcl_Obj *
 TclNewArithSeriesObj(
     Tcl_Interp *interp,		/* For error reporting */
-    int useDoubles,		/* Flag indicates values start,
+    bool useDoubles,		/* Flag indicates values start,
 				 * end, step, are treated as doubles */
     Tcl_Obj *startObj,		/* Starting value */
     Tcl_Obj *endObj,		/* Ending limit */
@@ -924,7 +924,7 @@ TclArithSeriesObjRange(
 	ArithSeriesDbl *dblRepPtr = (ArithSeriesDbl *)arithSeriesRepPtr;
 	double dstart = ArithSeriesIndexDbl(arithSeriesRepPtr, fromIdx);
 
-	if (Tcl_IsShared(arithSeriesObj) || ((arithSeriesRepPtr->refCount > 1))) {
+	if (Tcl_IsShared(arithSeriesObj) || (arithSeriesRepPtr->refCount > 1)) {
 	    /* as new object */
 	    *newObjPtr = NewArithSeriesDbl(dstart, dblRepPtr->step, len,
 		dblRepPtr->precision);
@@ -946,7 +946,7 @@ TclArithSeriesObjRange(
 	ArithSeriesInt *intRepPtr = (ArithSeriesInt *) arithSeriesRepPtr;
 	Tcl_WideInt start = ArithSeriesIndexInt(arithSeriesRepPtr, fromIdx);
 
-	if (Tcl_IsShared(arithSeriesObj) || ((arithSeriesRepPtr->refCount > 1))) {
+	if (Tcl_IsShared(arithSeriesObj) || (arithSeriesRepPtr->refCount > 1)) {
 	    /* as new object */
 	    *newObjPtr = NewArithSeriesInt(start, intRepPtr->step, len);
 	} else {
@@ -1184,11 +1184,12 @@ UpdateStringOfArithSeries(
 	    Tcl_Size elen;
 
 	    tmp[0] = '\0';
-	    Tcl_PrintDouble(NULL,d,tmp);
+	    Tcl_PrintDouble(NULL, d, tmp);
 	    elen = strlen(tmp);
 	    if (bytlen > TCL_SIZE_MAX - elen) {
-		/* overflow, todo: check we could use some representation instead of the panic
-		 * to signal it is too large for string representation, because too heavy */
+		/* overflow, todo: check we could use some representation
+		 * instead of the panic to signal it is too large for string
+		 * representation, because too heavy */
 		Tcl_Panic("UpdateStringOfArithSeries: too large to represent");
 	    }
 	    bytlen += elen;
@@ -1215,7 +1216,7 @@ UpdateStringOfArithSeries(
 	    double d = ArithSeriesIndexDbl(arithSeriesRepPtr, i);
 
 	    *p = '\0';
-	    Tcl_PrintDouble(NULL,d,p);
+	    Tcl_PrintDouble(NULL, d, p);
 	    p += strlen(p);
 	    assert(p - arithSeriesObjPtr->bytes <= bytlen);
 	    *p++ = ' ';
@@ -1258,12 +1259,12 @@ ArithSeriesInOperation(
     if (repPtr->isDouble) {
 	ArithSeriesDbl *dblRepPtr = (ArithSeriesDbl *) repPtr;
 	double y;
-	int test = 0;
+	bool test = false;
 
 	incr = 0; // Check index+incr where incr is 0 and 1
 	status = Tcl_GetDoubleFromObj(interp, valueObj, &y);
 	if (status != TCL_OK) {
-	    test = 0;
+	    test = false;
 	} else {
 	    const char *vstr = TclGetStringFromObj(valueObj, &vlen);
 	    index = (y - dblRepPtr->start) / dblRepPtr->step;
@@ -1276,7 +1277,7 @@ ArithSeriesInOperation(
 		const char *estr = elemObj ? TclGetStringFromObj(elemObj, &elen) : "";
 
 		/* "in" operation defined as a string compare */
-		test = (elen == vlen) ? (memcmp(estr, vstr, elen) == 0) : 0;
+		test = (elen == vlen) && (memcmp(estr, vstr, elen) == 0);
 		Tcl_BounceRefCount(elemObj);
 		/* Stop if we have a match */
 		if (test) {
@@ -1286,7 +1287,7 @@ ArithSeriesInOperation(
 	    }
 	}
 	if (boolResult) {
-	    *boolResult = test;
+	    *boolResult = test ? 1 : 0;
 	}
     } else {
 	ArithSeriesInt *intRepPtr = (ArithSeriesInt *) repPtr;

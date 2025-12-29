@@ -41,34 +41,34 @@ static const char *const propOptNames[] = {
 
 static int		Configurable_Getter(void *clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    int objc, Tcl_Obj *const *objv);
+			    Tcl_Size objc, Tcl_Obj *const *objv);
 static int		Configurable_Setter(void *clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    int objc, Tcl_Obj *const *objv);
+			    Tcl_Size objc, Tcl_Obj *const *objv);
 static void		DetailsDeleter(void *clientData);
 static int		DetailsCloner(Tcl_Interp *, void *oldClientData,
 			    void **newClientData);
 static void		ImplementObjectProperty(Tcl_Object targetObject,
-			    Tcl_Obj *propNamePtr, int installGetter,
-			    int installSetter);
+			    Tcl_Obj *propNamePtr, bool installGetter,
+			    bool installSetter);
 static void		ImplementClassProperty(Tcl_Class targetObject,
-			    Tcl_Obj *propNamePtr, int installGetter,
-			    int installSetter);
+			    Tcl_Obj *propNamePtr, bool installGetter,
+			    bool installSetter);
 
 /*
  * Method descriptors
  */
 
-static const Tcl_MethodType GetterType = {
-    TCL_OO_METHOD_VERSION_1,
+static const Tcl_MethodType2 GetterType = {
+    TCL_OO_METHOD_VERSION_2,
     "PropertyGetter",
     Configurable_Getter,
     DetailsDeleter,
     DetailsCloner
 };
 
-static const Tcl_MethodType SetterType = {
-    TCL_OO_METHOD_VERSION_1,
+static const Tcl_MethodType2 SetterType = {
+    TCL_OO_METHOD_VERSION_2,
     "PropertySetter",
     Configurable_Setter,
     DetailsDeleter,
@@ -253,7 +253,7 @@ TclOO_Configurable_Configure(
     Tcl_Interp *interp,		/* Interpreter used for the result, error
 				 * reporting, etc. */
     Tcl_ObjectContext context,	/* The object/call context. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const *objv)	/* The actual arguments. */
 {
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
@@ -373,7 +373,7 @@ Configurable_Getter(
     Tcl_Interp *interp,		/* Interpreter used for the result, error
 				 * reporting, etc. */
     Tcl_ObjectContext context,	/* The object/call context. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const *objv)	/* The actual arguments. */
 {
     Tcl_Obj *propNamePtr = (Tcl_Obj *) clientData;
@@ -409,7 +409,7 @@ Configurable_Setter(
     Tcl_Interp *interp,		/* Interpreter used for the result, error
 				 * reporting, etc. */
     Tcl_ObjectContext context,	/* The object/call context. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const *objv)	/* The actual arguments. */
 {
     Tcl_Obj *propNamePtr = (Tcl_Obj *) clientData;
@@ -473,8 +473,8 @@ void
 ImplementObjectProperty(
     Tcl_Object targetObject,	/* What to install into. */
     Tcl_Obj *propNamePtr,	/* Property name. */
-    int installGetter,		/* Whether to install a standard getter. */
-    int installSetter)		/* Whether to install a standard setter. */
+    bool installGetter,		/* Whether to install a standard getter. */
+    bool installSetter)		/* Whether to install a standard setter. */
 {
     const char *propName = TclGetString(propNamePtr);
 
@@ -501,8 +501,8 @@ void
 ImplementClassProperty(
     Tcl_Class targetClass,	/* What to install into. */
     Tcl_Obj *propNamePtr,	/* Property name. */
-    int installGetter,		/* Whether to install a standard getter. */
-    int installSetter)		/* Whether to install a standard setter. */
+    bool installGetter,		/* Whether to install a standard getter. */
+    bool installSetter)		/* Whether to install a standard setter. */
 {
     const char *propName = TclGetString(propNamePtr);
 
@@ -538,22 +538,22 @@ ImplementClassProperty(
 static void
 FindClassProps(
     Class *clsPtr,		/* The object to inspect. Must exist. */
-    int writable,		/* Whether we're after the readable or writable
+    bool writable,		/* Whether we're after the readable or writable
 				 * property set. */
     Tcl_HashTable *accumulator)	/* Where to gather the names. */
 {
-    int i;
+    Tcl_Size i;
     Tcl_Obj *propName;
     Class *mixin, *sup;
 
   tailRecurse:
     if (writable) {
 	FOREACH(propName, clsPtr->properties.writable) {
-	    Tcl_CreateHashEntry(accumulator, (void *) propName, NULL);
+	    Tcl_CreateHashEntry(accumulator, propName, NULL);
 	}
     } else {
 	FOREACH(propName, clsPtr->properties.readable) {
-	    Tcl_CreateHashEntry(accumulator, (void *) propName, NULL);
+	    Tcl_CreateHashEntry(accumulator, propName, NULL);
 	}
     }
     if (clsPtr->thisPtr->flags & ROOT_OBJECT) {
@@ -589,21 +589,21 @@ FindClassProps(
 static void
 FindObjectProps(
     Object *oPtr,		/* The object to inspect. Must exist. */
-    int writable,		/* Whether we're after the readable or writable
+    bool writable,		/* Whether we're after the readable or writable
 				 * property set. */
     Tcl_HashTable *accumulator)	/* Where to gather the names. */
 {
-    int i;
+    Tcl_Size i;
     Tcl_Obj *propName;
     Class *mixin;
 
     if (writable) {
 	FOREACH(propName, oPtr->properties.writable) {
-	    Tcl_CreateHashEntry(accumulator, (void *) propName, NULL);
+	    Tcl_CreateHashEntry(accumulator, propName, NULL);
 	}
     } else {
 	FOREACH(propName, oPtr->properties.readable) {
-	    Tcl_CreateHashEntry(accumulator, (void *) propName, NULL);
+	    Tcl_CreateHashEntry(accumulator, propName, NULL);
 	}
     }
     FOREACH(mixin, oPtr->mixins) {
@@ -627,10 +627,10 @@ FindObjectProps(
 static Tcl_Obj *
 GetAllClassProperties(
     Class *clsPtr,		/* The class to inspect. Must exist. */
-    int writable,		/* Whether to get writable properties. If
+    bool writable,		/* Whether to get writable properties. If
 				 * false, readable properties will be returned
 				 * instead. */
-    int *allocated)		/* Address of variable to set to true if a
+    bool *allocated)		/* Address of variable to set to true if a
 				 * Tcl_Obj was allocated and may be safely
 				 * modified by the caller. */
 {
@@ -645,12 +645,12 @@ GetAllClassProperties(
     if (clsPtr->properties.epoch == clsPtr->thisPtr->fPtr->epoch) {
 	if (writable) {
 	    if (clsPtr->properties.allWritableCache) {
-		*allocated = 0;
+		*allocated = false;
 		return clsPtr->properties.allWritableCache;
 	    }
 	} else {
 	    if (clsPtr->properties.allReadableCache) {
-		*allocated = 0;
+		*allocated = false;
 		return clsPtr->properties.allReadableCache;
 	    }
 	}
@@ -660,7 +660,7 @@ GetAllClassProperties(
      * Gather the information. Unsorted! (Caller will sort.)
      */
 
-    *allocated = 1;
+    *allocated = true;
     Tcl_InitObjHashTable(&hashTable);
     FindClassProps(clsPtr, writable, &hashTable);
     TclNewObj(result);
@@ -744,7 +744,7 @@ SortPropList(
 Tcl_Obj *
 TclOOGetAllObjectProperties(
     Object *oPtr,		/* The object to inspect. Must exist. */
-    int writable)		/* Whether to get writable properties. If
+    bool writable)		/* Whether to get writable properties. If
 				 * false, readable properties will be returned
 				 * instead. */
 {
@@ -954,8 +954,8 @@ TclOOInstallStdPropertyImpls(
     void *useInstance,
     Tcl_Interp *interp,
     Tcl_Obj *propName,
-    int readable,
-    int writable)
+    bool readable,
+    bool writable)
 {
     const char *name, *reason;
     Tcl_Size len;
@@ -1028,10 +1028,10 @@ int
 TclOODefinePropertyCmd(
     void *useInstance,		/* NULL for class, non-NULL for object. */
     Tcl_Interp *interp,		/* For error reporting and lookup. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Arguments. */
 {
-    int i;
+    Tcl_Size i;
     const char *const options[] = {
 	"-get", "-kind", "-set", NULL
     };
@@ -1193,11 +1193,13 @@ int
 TclOOInfoClassPropCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Class *clsPtr;
-    int i, idx, all = 0, writable = 0, allocated = 0;
+    Tcl_Size i;
+    int idx;
+    bool all = false, writable = false, allocated = false;
     Tcl_Obj *result;
 
     if (objc < 2) {
@@ -1215,13 +1217,13 @@ TclOOInfoClassPropCmd(
 	}
 	switch (idx) {
 	case PROP_ALL:
-	    all = 1;
+	    all = true;
 	    break;
 	case PROP_READABLE:
-	    writable = 0;
+	    writable = false;
 	    break;
 	case PROP_WRITABLE:
-	    writable = 1;
+	    writable = true;
 	    break;
 	default:
 	    TCL_UNREACHABLE();
@@ -1253,12 +1255,12 @@ int
 TclOOInfoObjectPropCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Object *oPtr;
-    int i, idx, all = 0, writable = 0;
-    Tcl_Obj *result;
+    Tcl_Size i;
+    bool all = false, writable = false;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "objName ?options...?");
@@ -1269,19 +1271,20 @@ TclOOInfoObjectPropCmd(
 	return TCL_ERROR;
     }
     for (i = 2; i < objc; i++) {
+	int idx;
 	if (Tcl_GetIndexFromObj(interp, objv[i], propOptNames, "option", 0,
 		&idx) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	switch (idx) {
 	case PROP_ALL:
-	    all = 1;
+	    all = true;
 	    break;
 	case PROP_READABLE:
-	    writable = 0;
+	    writable = false;
 	    break;
 	case PROP_WRITABLE:
-	    writable = 1;
+	    writable = true;
 	    break;
 	default:
 	    TCL_UNREACHABLE();
@@ -1292,6 +1295,7 @@ TclOOInfoObjectPropCmd(
      * Get the properties.
      */
 
+    Tcl_Obj *result;
     if (all) {
 	result = TclOOGetAllObjectProperties(oPtr, writable);
     } else {

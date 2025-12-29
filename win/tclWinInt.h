@@ -14,23 +14,6 @@
 
 #include "tclInt.h"
 
-#ifdef HAVE_NO_SEH
-/*
- * Unlike Borland and Microsoft, we don't register exception handlers by
- * pushing registration records onto the runtime stack. Instead, we register
- * them by creating an TCLEXCEPTION_REGISTRATION within the activation record.
- */
-
-typedef struct TCLEXCEPTION_REGISTRATION {
-    struct TCLEXCEPTION_REGISTRATION *link;
-    EXCEPTION_DISPOSITION (*handler)(
-	    struct _EXCEPTION_RECORD*, void*, struct _CONTEXT*, void*);
-    void *ebp;
-    void *esp;
-    int status;
-} TCLEXCEPTION_REGISTRATION;
-#endif
-
 /*
  * Declarations of functions that are not accessible by way of the
  * stubs table.
@@ -51,7 +34,7 @@ MODULE_SCOPE int	TclWinSymLinkCopyDirectory(const WCHAR *LinkOriginal,
 			    const WCHAR *LinkCopy);
 MODULE_SCOPE int	TclWinSymLinkDelete(const WCHAR *LinkOriginal,
 			    int linkOnly);
-MODULE_SCOPE int        TclWinFileOwned(Tcl_Obj *);
+MODULE_SCOPE int	TclWinFileOwned(Tcl_Obj *);
 MODULE_SCOPE void	TclWinGenerateChannelName(char channelName[],
 			    const char *channelTypeName, void *channelImpl);
 MODULE_SCOPE const char*TclpGetUserName(Tcl_DString *bufferPtr);

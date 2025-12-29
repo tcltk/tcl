@@ -230,7 +230,6 @@ exec(
     v->start = (chr *)string;
     v->stop = (chr *)string + len;
     v->err = 0;
-    assert(v->g->ntree >= 0);
     n = v->g->ntree;
     if (n <= LOCALDFAS) {
 	v->subdfas = subdfas;

@@ -60,12 +60,12 @@ static void		StrIdxTreeObj_DupIntRepProc(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr);
 static void		StrIdxTreeObj_FreeIntRepProc(Tcl_Obj *objPtr);
 static void		StrIdxTreeObj_UpdateStringProc(Tcl_Obj *objPtr);
 
-static const Tcl_ObjType StrIdxTreeObjType = {
-    "str-idx-tree",			/* name */
-    StrIdxTreeObj_FreeIntRepProc,	/* freeIntRepProc */
-    StrIdxTreeObj_DupIntRepProc,	/* dupIntRepProc */
-    StrIdxTreeObj_UpdateStringProc,	/* updateStringProc */
-    NULL,				/* setFromAnyProc */
+static const Tcl_ObjType strIdxTreeType = {
+    "str-idx-tree",
+    StrIdxTreeObj_FreeIntRepProc,
+    StrIdxTreeObj_DupIntRepProc,
+    StrIdxTreeObj_UpdateStringProc,
+    NULL,			// SetFromAny
     TCL_OBJTYPE_V0
 };
 
@@ -389,7 +389,7 @@ TclStrIdxTreeNewObj(void)
 
     tree->firstPtr = NULL;
     tree->lastPtr = NULL;
-    objPtr->typePtr = &StrIdxTreeObjType;
+    objPtr->typePtr = &strIdxTreeType;
     /* return tree root in internal representation */
     return objPtr;
 }
@@ -406,7 +406,7 @@ StrIdxTreeObj_DupIntRepProc(
     TclInitObjRef(*((Tcl_Obj **) &copyPtr->internalRep.twoPtrValue.ptr1),
 	    srcPtr);
     copyPtr->internalRep.twoPtrValue.ptr2 = NULL;
-    copyPtr->typePtr = &StrIdxTreeObjType;
+    copyPtr->typePtr = &strIdxTreeType;
 }
 
 static void
@@ -443,7 +443,7 @@ TclStrIdxTree *
 TclStrIdxTreeGetFromObj(
     Tcl_Obj *objPtr)
 {
-    if (objPtr->typePtr != &StrIdxTreeObjType) {
+    if (objPtr->typePtr != &strIdxTreeType) {
 	return NULL;
     }
 
@@ -487,7 +487,7 @@ TclStrIdxTreePrint(
 int
 TclStrIdxTreeTestObjCmd(
     void *clientData, Tcl_Interp *interp,
-    int objc, Tcl_Obj *const objv[])
+    Tcl_Size objc, Tcl_Obj *const objv[])
 {
     const char *cs, *cin, *ret;
     static const char *const options[] = {

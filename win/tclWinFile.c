@@ -16,9 +16,9 @@
 #include "tclFileSystem.h"
 #include <winioctl.h>
 #include <shlobj.h>
-#include <lm.h>		        /* For TclpGetUserHome(). */
+#include <lm.h>			/* For TclpGetUserHome(). */
 #include <userenv.h>		/* For TclpGetUserHome(). */
-#include <aclapi.h>             /* For GetNamedSecurityInfo */
+#include <aclapi.h>		/* For GetNamedSecurityInfo(). */
 #if defined (__clang__) && (__clang_major__ > 20)
 #pragma clang diagnostic ignored "-Wc++-keyword"
 #endif
@@ -1491,20 +1491,12 @@ TclpGetUserHome(
 	 */
 	ptr = TclpGetUserName(&ds);
 	if (ptr != NULL && strcasecmp(name, ptr) == 0) {
-	    HANDLE hProcess;
 	    WCHAR buf[MAX_PATH];
 	    DWORD nChars = sizeof(buf) / sizeof(buf[0]);
-	    /* Sadly GetCurrentProcessToken not in Win 7 so slightly longer */
-	    hProcess = GetCurrentProcess(); /* Need not be closed */
-	    if (hProcess) {
-		HANDLE hToken;
-		if (OpenProcessToken(hProcess, TOKEN_QUERY, &hToken)) {
-		    if (GetUserProfileDirectoryW(hToken, buf, &nChars)) {
-			result = Tcl_WCharToUtfDString(buf, nChars-1, (bufferPtr));
-			rc = 1;
-		    }
-		    CloseHandle(hToken);
-		}
+	    if (GetUserProfileDirectoryW(GetCurrentProcessToken(), buf,
+		    &nChars)) {
+		result = Tcl_WCharToUtfDString(buf, nChars - 1, (bufferPtr));
+		rc = 1;
 	    }
 	}
 	Tcl_DStringFree(&ds);
@@ -2565,7 +2557,7 @@ TclpObjNormalizePath(
     TCL_UNUSED(Tcl_Interp *),
     Tcl_Obj *pathPtr,		/* An unshared object containing the path to
 				 * normalize */
-    int nextCheckpoint1)		/* offset to start at in pathPtr */
+    int nextCheckpoint1)	/* offset to start at in pathPtr */
 {
     char *lastValidPathEnd = NULL;
     Tcl_DString dsNorm;		/* This will hold the normalized string. */
@@ -3339,20 +3331,15 @@ TclWinFileOwned(
      * up its own token.
      */
 
-    if (OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &token)) {
-	/*
-	 * Find out how big the buffer needs to be.
-	 */
-
-	bufsz = 0;
-	GetTokenInformation(token, TokenUser, NULL, 0, &bufsz);
-	if (bufsz) {
-	    buf = (LPBYTE)Tcl_Alloc(bufsz);
-	    if (GetTokenInformation(token, TokenUser, buf, bufsz, &bufsz)) {
-		owned = EqualSid(ownerSid, ((PTOKEN_USER) buf)->User.Sid);
-	    }
+    token = GetCurrentProcessToken(); /* Need not be closed */
+    bufsz = 0;
+    /* Find out how big the buffer needs to be.  */
+    GetTokenInformation(token, TokenUser, NULL, 0, &bufsz);
+    if (bufsz) {
+	buf = (LPBYTE)Tcl_Alloc(bufsz);
+	if (GetTokenInformation(token, TokenUser, buf, bufsz, &bufsz)) {
+	    owned = EqualSid(ownerSid, ((PTOKEN_USER)buf)->User.Sid);
 	}
-	CloseHandle(token);
     }
 
     /*
@@ -3360,13 +3347,13 @@ TclWinFileOwned(
      */
 
     if (secd) {
-	LocalFree(secd);            /* Also frees ownerSid */
+	LocalFree(secd);	/* Also frees ownerSid */
     }
     if (buf) {
 	Tcl_Free(buf);
     }
 
-    return (owned != 0);        /* Convert non-0 to 1 */
+    return (owned != 0);	/* Convert non-0 to 1 */
 }
 
 /*

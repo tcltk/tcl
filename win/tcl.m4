@@ -579,7 +579,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 
     if test "${GCC}" = "yes" ; then
 	extra_cflags="-pipe"
-	extra_ldflags="-pipe -static-libgcc"
+	extra_ldflags="-pipe -static-libgcc -municode"
 	AC_CACHE_CHECK(for mingw32 version of gcc,
 	    ac_cv_win32,
 	    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
@@ -597,20 +597,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    extra_cflags="$extra_cflags -DHAVE_CPUID=1"
 	fi
 
-	hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -mwindows -municode -Dmain=xxmain"
-	AC_CACHE_CHECK(for working -municode linker flag,
-	    ac_cv_municode,
-	AC_LINK_IFELSE([AC_LANG_PROGRAM([[
-	#include <windows.h>
-	int APIENTRY wWinMain(HINSTANCE a, HINSTANCE b, LPWSTR c, int d) {return 0;}
-	]], [[]])],
-	    [ac_cv_municode=yes],
-	    [ac_cv_municode=no])
-	)
-	CFLAGS=$hold_cflags
-	if test "$ac_cv_municode" = "yes" ; then
-	    extra_ldflags="$extra_ldflags -municode"
-	fi
 	hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -fno-lto"
 	AC_CACHE_CHECK(for working -fno-lto,
 	    ac_cv_nolto,
@@ -896,33 +882,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
     fi
 
     if test "${GCC}" = "yes" ; then
-	AC_CACHE_CHECK(for SEH support in compiler,
-	    tcl_cv_seh,
-	AC_RUN_IFELSE([AC_LANG_SOURCE([[
-	    #define WIN32_LEAN_AND_MEAN
-	    #include <windows.h>
-	    #undef WIN32_LEAN_AND_MEAN
-
-	    int main(int argc, char** argv) {
-		int a, b = 0;
-		__try {
-		    a = 666 / b;
-		}
-		__except (EXCEPTION_EXECUTE_HANDLER) {
-		    return 0;
-		}
-		return 1;
-	    }
-	]])],
-	    [tcl_cv_seh=yes],
-	    [tcl_cv_seh=no],
-	    [tcl_cv_seh=no])
-	)
-	if test "$tcl_cv_seh" = "no" ; then
-	    AC_DEFINE(HAVE_NO_SEH, 1,
-		    [Defined when mingw does not support SEH])
-	fi
-
 	#
 	# Check to see if the excpt.h include file provided contains the
 	# definition for EXCEPTION_DISPOSITION; if not, which is the case

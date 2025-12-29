@@ -22,11 +22,13 @@ writing Tcl scripts.
 - [Tcl\_AttemptCreateHashEntry - version of Tcl\_CreateHashEntry that returns NULL instead of panic'ing on memory allocation errors](https://core.tcl-lang.org/tips/doc/trunk/tip/717.md)
 - [Tcl\_ListObjRange, Tcl\_ListObjRepeat, Tcl\_TclListObjReverse - C API for new list operations](https://core.tcl-lang.org/tips/doc/trunk/tip/649.md)
 - [Tcl\_UtfToNormalized, Tcl\_UtfToNormalizedDString - C API for Unicode normalization](https://core.tcl-lang.org/tips/doc/trunk/tip/726.md)
+- [Tcl\_UtfToExternalEx and Tcl\_ExternalToUtfEx - C encoding API supporting output buffers larger than INT_MAX](https://core.tcl-lang.org/tips/doc/trunk/tip/737.md)
 
 # Performance
 
 - [Memory efficient internal representations](https://core.tcl-lang.org/tcl/wiki?name=New+abstract+list+representations)
 for list operations on large lists.
+- [Continued 64-bit capacity: Command line arguments larger than 2Gb](https://core.tcl-lang.org/tips/doc/trunk/tip/626.md)
 
 # Bug fixes
  - [tclEpollNotfy PlatformEventsControl panics if websocket disconnected](https://core.tcl-lang.org/tcl/tktview/010d8f38)
