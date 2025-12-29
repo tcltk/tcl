@@ -189,11 +189,22 @@ DoRenameFile(
     }
 
     /*
+     * MoveFileEx would be more efficient but unfortunately, the semantics
+     * differ slightly from Tcl file rename semantics for existing directories.
+     */
+#ifdef USE_MOVEFILEEXW
+    const DWORD moveFlags = MOVEFILE_COPY_ALLOWED | MOVEFILE_REPLACE_EXISTING;
+#define MOVEFILE(src_, dst_) MoveFileExW(src_, dst_, moveFlags)
+#else
+#define MOVEFILE(src_, dst_) MoveFileW(src_, dst_)
+#endif
+
+    /*
      * The MoveFile API would throw an exception under NT if one of the
      * arguments is a char block device.
      */
 
-    if (MoveFileW(nativeSrc, nativeDst) != FALSE) {
+    if (MOVEFILE(nativeSrc, nativeDst) != FALSE) {
 	retval = TCL_OK;
     }
 
@@ -303,6 +314,13 @@ DoRenameFile(
 
 	    Tcl_Free((void *)srcArgv);
 	    Tcl_Free((void *)dstArgv);
+	} else {
+	    /* Not a directory. Try resetting ACL */
+	    if (ResetFileACL(nativeSrc) == ERROR_SUCCESS) {
+		if (MOVEFILE(nativeSrc, nativeDst) != FALSE) {
+		    return TCL_OK;
+		}
+	    }
 	}
 
 	/*
@@ -333,7 +351,7 @@ DoRenameFile(
 		     * directory back, for completeness.
 		     */
 
-		    if (MoveFileW(nativeSrc, nativeDst) != FALSE) {
+		    if (MOVEFILE(nativeSrc, nativeDst) != FALSE) {
 			return TCL_OK;
 		    }
 
@@ -394,14 +412,14 @@ DoRenameFile(
 
 		    nativeTmp = tempBuf;
 		    DeleteFileW(nativeTmp);
-		    if (MoveFileW(nativeDst, nativeTmp) != FALSE) {
-			if (MoveFileW(nativeSrc, nativeDst) != FALSE) {
+		    if (MOVEFILE(nativeDst, nativeTmp) != FALSE) {
+			if (MOVEFILE(nativeSrc, nativeDst) != FALSE) {
 			    SetFileAttributesW(nativeTmp, FILE_ATTRIBUTE_NORMAL);
 			    DeleteFileW(nativeTmp);
 			    return TCL_OK;
 			} else {
 			    DeleteFileW(nativeDst);
-			    MoveFileW(nativeTmp, nativeDst);
+			    MOVEFILE(nativeTmp, nativeDst);
 			}
 		    }
 
