@@ -25,7 +25,19 @@ MODULE_SCOPE const TclOOStubs tclOOStubs;
 #   define Tcl_NewMethod 0
 #   define TclOOMakeProcInstanceMethod 0
 #   define TclOOMakeProcMethod 0
-#endif
+#else
+/* Wrapper-functions restoring binary compatibility of bool functions */
+static int MethodIsType(Tcl_Method method, const Tcl_MethodType *typePtr,
+	    void **clientDataPtr) {return Tcl_MethodIsType(method, typePtr, clientDataPtr);}
+#define Tcl_MethodIsType (bool (*)(Tcl_Method, const Tcl_MethodType *, void **))(void *)MethodIsType
+static int MethodIsType2(Tcl_Method method, const Tcl_MethodType2 *typePtr,
+	    void **clientDataPtr) {return Tcl_MethodIsType2(method, typePtr, clientDataPtr);}
+#define Tcl_MethodIsType2 (bool (*)(Tcl_Method, const Tcl_MethodType2 *, void **))(void *)MethodIsType2
+static int ObjectContextIsFiltering(Tcl_ObjectContext context) {return Tcl_ObjectContextIsFiltering(context);}
+#define Tcl_ObjectContextIsFiltering (bool (*)(Tcl_ObjectContext ))(void *)ObjectContextIsFiltering
+#endif /* TCL_NO_DEPRECATED */
+
+/* End of wrapper functions section */
 
 /* !BEGIN!: Do not edit below this line. */
 

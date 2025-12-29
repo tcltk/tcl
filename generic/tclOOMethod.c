@@ -1812,7 +1812,7 @@ TclMethodIsType(
 
 #ifndef TCL_NO_DEPRECATED
 #undef Tcl_MethodIsType
-int
+bool
 Tcl_MethodIsType(
     Tcl_Method method,
     const Tcl_MethodType *typePtr,
@@ -1828,13 +1828,13 @@ Tcl_MethodIsType(
 	if (clientDataPtr != NULL) {
 	    *clientDataPtr = mPtr->clientData;
 	}
-	return 1;
+	return true;
     }
-    return 0;
+    return false;
 }
 #endif
 
-int
+bool
 Tcl_MethodIsType2(
     Tcl_Method method,
     const Tcl_MethodType2 *typePtr,
@@ -1850,23 +1850,23 @@ Tcl_MethodIsType2(
 	if (clientDataPtr != NULL) {
 	    *clientDataPtr = mPtr->clientData;
 	}
-	return 1;
+	return true;
     }
-    return 0;
+    return false;
 }
 
-int
+bool
 Tcl_MethodIsPublic(
     Tcl_Method method)
 {
-    return (((Method *) method)->flags & PUBLIC_METHOD) ? 1 : 0;
+    return (((Method *) method)->flags & PUBLIC_METHOD) != 0;
 }
 
-int
+bool
 Tcl_MethodIsPrivate(
     Tcl_Method method)
 {
-    return (((Method *) method)->flags & TRUE_PRIVATE_METHOD) ? 1 : 0;
+    return (((Method *) method)->flags & TRUE_PRIVATE_METHOD) != 0;
 }
 
 /*

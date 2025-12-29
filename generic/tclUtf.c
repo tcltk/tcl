@@ -2005,7 +2005,7 @@ TclUniCharNcasecmp(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Tcl_UniCharIsAlnum(
     int ch)			/* Unicode character to test. */
 {
@@ -2028,7 +2028,7 @@ Tcl_UniCharIsAlnum(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Tcl_UniCharIsAlpha(
     int ch)			/* Unicode character to test. */
 {
@@ -2051,7 +2051,7 @@ Tcl_UniCharIsAlpha(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Tcl_UniCharIsControl(
     int ch)			/* Unicode character to test. */
 {
@@ -2074,7 +2074,7 @@ Tcl_UniCharIsControl(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Tcl_UniCharIsDigit(
     int ch)			/* Unicode character to test. */
 {
@@ -2097,7 +2097,7 @@ Tcl_UniCharIsDigit(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Tcl_UniCharIsGraph(
     int ch)			/* Unicode character to test. */
 {
@@ -2120,7 +2120,7 @@ Tcl_UniCharIsGraph(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Tcl_UniCharIsLower(
     int ch)			/* Unicode character to test. */
 {
@@ -2143,7 +2143,7 @@ Tcl_UniCharIsLower(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Tcl_UniCharIsPrint(
     int ch)			/* Unicode character to test. */
 {
@@ -2166,7 +2166,7 @@ Tcl_UniCharIsPrint(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Tcl_UniCharIsPunct(
     int ch)			/* Unicode character to test. */
 {
@@ -2189,7 +2189,7 @@ Tcl_UniCharIsPunct(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Tcl_UniCharIsSpace(
     int ch)			/* Unicode character to test. */
 {
@@ -2227,7 +2227,7 @@ Tcl_UniCharIsSpace(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Tcl_UniCharIsUpper(
     int ch)			/* Unicode character to test. */
 {
@@ -2250,7 +2250,7 @@ Tcl_UniCharIsUpper(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Tcl_UniCharIsWordChar(
     int ch)			/* Unicode character to test. */
 {
@@ -2280,7 +2280,7 @@ Tcl_UniCharIsWordChar(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 TclUniCharCaseMatch(
     const Tcl_UniChar *uniStr,	/* Unicode String. */
     const Tcl_UniChar *uniPattern,
@@ -2303,7 +2303,7 @@ TclUniCharCaseMatch(
 	    return (*uniStr == 0);
 	}
 	if ((*uniStr == 0) && (p != '*')) {
-	    return 0;
+	    return false;
 	}
 
 	/*
@@ -2324,7 +2324,7 @@ TclUniCharCaseMatch(
 	    }
 	    p = *uniPattern;
 	    if (p == 0) {
-		return 1;
+		return true;
 	    }
 	    if (nocase) {
 		p = Tcl_UniCharToLower(p);
@@ -2349,10 +2349,10 @@ TclUniCharCaseMatch(
 		    }
 		}
 		if (TclUniCharCaseMatch(uniStr, uniPattern, nocase)) {
-		    return 1;
+		    return true;
 		}
 		if (*uniStr == 0) {
-		    return 0;
+		    return false;
 		}
 		uniStr++;
 	    }
@@ -2425,7 +2425,7 @@ TclUniCharCaseMatch(
 
 	if (p == '\\') {
 	    if (*(++uniPattern) == '\0') {
-		return 0;
+		return false;
 	    }
 	}
 
@@ -2437,10 +2437,10 @@ TclUniCharCaseMatch(
 	if (nocase) {
 	    if (Tcl_UniCharToLower(*uniStr) !=
 		    Tcl_UniCharToLower(*uniPattern)) {
-		return 0;
+		return false;
 	    }
 	} else if (*uniStr != *uniPattern) {
-	    return 0;
+	    return false;
 	}
 	uniStr++;
 	uniPattern++;
@@ -2468,7 +2468,7 @@ TclUniCharCaseMatch(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 TclUniCharMatch(
     const Tcl_UniChar *string,	/* Unicode String. */
     Tcl_Size strLen,		/* Length of String */
@@ -2495,7 +2495,7 @@ TclUniCharMatch(
 	}
 	p = *pattern;
 	if ((string == stringEnd) && (p != '*')) {
-	    return 0;
+	    return false;
 	}
 
 	/*
@@ -2515,7 +2515,7 @@ TclUniCharMatch(
 		/* empty body */
 	    }
 	    if (pattern == patternEnd) {
-		return 1;
+		return true;
 	    }
 	    p = *pattern;
 	    if (nocase) {
@@ -2542,10 +2542,10 @@ TclUniCharMatch(
 		}
 		if (TclUniCharMatch(string, stringEnd - string,
 			pattern, patternEnd - pattern, nocase)) {
-		    return 1;
+		    return true;
 		}
 		if (string == stringEnd) {
-		    return 0;
+		    return false;
 		}
 		string++;
 	    }
@@ -2576,14 +2576,14 @@ TclUniCharMatch(
 	    string++;
 	    while (1) {
 		if ((*pattern == ']') || (pattern == patternEnd)) {
-		    return 0;
+		    return false;
 		}
 		startChar = (nocase ? Tcl_UniCharToLower(*pattern) : *pattern);
 		pattern++;
 		if (*pattern == '-') {
 		    pattern++;
 		    if (pattern == patternEnd) {
-			return 0;
+			return false;
 		    }
 		    endChar = (nocase ? Tcl_UniCharToLower(*pattern)
 			    : *pattern);
@@ -2617,7 +2617,7 @@ TclUniCharMatch(
 
 	if (p == '\\') {
 	    if (++pattern == patternEnd) {
-		return 0;
+		return false;
 	    }
 	}
 
@@ -2628,10 +2628,10 @@ TclUniCharMatch(
 
 	if (nocase) {
 	    if (Tcl_UniCharToLower(*string) != Tcl_UniCharToLower(*pattern)) {
-		return 0;
+		return false;
 	    }
 	} else if (*string != *pattern) {
-	    return 0;
+	    return false;
 	}
 	string++;
 	pattern++;
