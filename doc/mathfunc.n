@@ -18,16 +18,36 @@ mathfunc \- Mathematical functions for Tcl expressions
 
 \fB::tcl::mathfunc::abs\fI arg\fR
 \fB::tcl::mathfunc::acos\fI arg\fR
+.VS new
+\fB::tcl::mathfunc::acosh\fI arg\fR
+.VE new
 \fB::tcl::mathfunc::asin\fI arg\fR
+.VS new
+\fB::tcl::mathfunc::asin\fI arg\fR
+.VE new
 \fB::tcl::mathfunc::atan\fI arg\fR
 \fB::tcl::mathfunc::atan2\fI y x\fR
+.VS new
+\fB::tcl::mathfunc::atan\fI arg\fR
+.VE new
 \fB::tcl::mathfunc::bool\fI arg\fR
+.VS new
+\fB::tcl::mathfunc::cbrt\fI arg\fR
+.VE new
 \fB::tcl::mathfunc::ceil\fI arg\fR
 \fB::tcl::mathfunc::cos\fI arg\fR
 \fB::tcl::mathfunc::cosh\fI arg\fR
 \fB::tcl::mathfunc::double\fI arg\fR
 \fB::tcl::mathfunc::entier\fI arg\fR
+.VS new
+\fB::tcl::mathfunc::erf\fI arg\fR
+\fB::tcl::mathfunc::erfc\fI arg\fR
+.VE new
 \fB::tcl::mathfunc::exp\fI arg\fR
+.VS new
+\fB::tcl::mathfunc::exp2\fI arg\fR
+\fB::tcl::mathfunc::expm1\fI arg\fR
+.VE new
 \fB::tcl::mathfunc::floor\fI arg\fR
 \fB::tcl::mathfunc::fmod\fI x y\fR
 \fB::tcl::mathfunc::hypot\fI x y\fR
@@ -43,8 +63,15 @@ mathfunc \- Mathematical functions for Tcl expressions
 \fB::tcl::mathfunc::issubnormal\fI arg\fR
 \fB::tcl::mathfunc::isunordered\fI x y\fR
 .VE TIP521
+.VS new
+\fB::tcl::mathfunc::lgamma\fI arg\fR
+.VE new
 \fB::tcl::mathfunc::log\fI arg\fR
 \fB::tcl::mathfunc::log10\fI arg\fR
+.VS new
+\fB::tcl::mathfunc::log1p\fI arg\fR
+\fB::tcl::mathfunc::log2\fI arg\fR
+.VE new
 \fB::tcl::mathfunc::max\fI arg\fR ?\fIarg ...\fR?
 \fB::tcl::mathfunc::min\fI arg\fR ?\fIarg ...\fR?
 \fB::tcl::mathfunc::pow\fI x y\fR
@@ -56,6 +83,9 @@ mathfunc \- Mathematical functions for Tcl expressions
 \fB::tcl::mathfunc::srand\fI arg\fR
 \fB::tcl::mathfunc::tan\fI arg\fR
 \fB::tcl::mathfunc::tanh\fI arg\fR
+.VS new
+\fB::tcl::mathfunc::tgamma\fI arg\fR
+.VE new
 \fB::tcl::mathfunc::wide\fI arg\fR
 .fi
 .BE
@@ -74,15 +104,18 @@ Tcl supports the following mathematical functions in expressions, all
 of which work solely with floating-point numbers unless otherwise noted:
 .DS
 .ta 3.2c 6.4c 9.6c
-\fBabs\fR	\fBacos\fR	\fBasin\fR	\fBatan\fR
-\fBatan2\fR	\fBbool\fR	\fBceil\fR	\fBcos\fR
-\fBcosh\fR	\fBdouble\fR	\fBentier\fR	\fBexp\fR
+\fBabs\fR	\fBacos\fR	.fBacosh\fR	\fBasin\fR
+\fBasinh\fR	\fBatan\fR	\fBatan2\fR	\fBatanh\fR
+\fBbool\fR	\fBcbrt\fR	\fBceil\fR	\fBcos\fR
+\fBcosh\fR	\fBdouble\fR	\fBentier\fR	\fBerf\fR
+\fBerfc\fR	\fBexp\fR	\fBexp2\fR	\fBexpm1\fR
 \fBfloor\fR	\fBfmod\fR	\fBhypot\fR	\fBint\fR
 \fBisfinite\fR	\fBisinf\fR	\fBisnan\fR	\fBisnormal\fR
-\fBisqrt\fR	\fBissubnormal\fR	\fBisunordered\fR	\fBlog\fR
-\fBlog10\fR	\fBmax\fR	\fBmin\fR	\fBpow\fR
-\fBrand\fR	\fBround\fR	\fBsin\fR	\fBsinh\fR
-\fBsqrt\fR	\fBsrand\fR	\fBtan\fR	\fBtanh\fR
+\fBisqrt\fR	\fBissubnormal\fR	\fBisunordered\fR	\fBlgamma\fR
+\fBlog\fR	\fBlog10\fR	\fBlog1p\fR	\fBlog2\fR
+\fBmax\fR	\fBmin\fR	\fBpow\fR	\fBrand\fR
+\fBround\fR	\fBsin\fR	\fBsinh\fR	\fBsqrt\fR
+\fBsrand\fR	\fBtan\fR	\fBtanh\fR	\fBtgamma\fR
 \fBwide\fR
 .DE
 .PP
@@ -103,12 +136,25 @@ integer or floating-point, and the result is returned in the same form.
 .
 Returns the arc cosine of \fIarg\fR, in the range [\fI0\fR,\fIpi\fR]
 radians. \fIArg\fR should be in the range [\fI\-1\fR,\fI1\fR].
+.\" COMMAND: acosh
+.TP
+\fBacosh \fIarg\fR
+.VS new
+Returns the arc hyperbolic cosine of \fIarg\fR, in the range [\fI0\fR,\fIinf\fR]
+radians. \fIArg\fR should be in the range [\fI1\fR,\fIinf\fR].
+.VE new
 .\" COMMAND: asin
 .TP
 \fBasin \fIarg\fR
 .
 Returns the arc sine of \fIarg\fR, in the range [\fI\-pi/2\fR,\fIpi/2\fR]
 radians.  \fIArg\fR should be in the range [\fI\-1\fR,\fI1\fR].
+.\" COMMAND: asinh
+.TP
+\fBasinh \fIarg\fR
+.VS new
+Returns the arc hyperbolic sine of \fIarg\fR, in the range [\fI\-inf\fR,\fIinf\fR].
+.VE new
 .\" COMMAND: atan
 .TP
 \fBatan \fIarg\fR
@@ -123,6 +169,13 @@ Returns the arc tangent of \fIy\fR/\fIx\fR, in the range [\fI\-pi\fR,\fIpi\fR]
 radians.  \fIx\fR and \fIy\fR cannot both be 0.  If \fIx\fR is greater
 than \fI0\fR, this is equivalent to
 .QW "\fBatan \fR[\fBexpr\fR {\fIy\fB/\fIx\fR}]" .
+.\" COMMAND: atanh
+.TP
+\fBatanh \fIarg\fR
+.VS new
+Returns the arc hyperbolic tangent of \fIarg\fR, in the range [\fI\-inf\fR,\fIinf\fR].
+\fIArg\fR should be in the range [\fI\-1\fR,\fI1\fR].
+.VE new
 .\" COMMAND: bool
 .TP
 \fBbool \fIarg\fR
@@ -132,6 +185,15 @@ Accepts any numeric value, or any string acceptable to
 boolean value \fB0\fR or \fB1\fR.  Non-zero numbers are true.
 Other numbers are false.  Non-numeric strings produce boolean value in
 agreement with \fBstring is true\fR and \fBstring is false\fR.
+.\" COMMAND: cbrt
+.TP
+\fBcbrt \fIarg\fR
+.VS new
+The argument may be any numeric value.  Returns a floating-point
+value that is the cube root of \fIarg\fR.  May return \fBInf\fR when the
+argument is a numeric value that exceeds the cube of the maximum value of
+the floating-point range.
+.VE new
 .\" COMMAND: ceil
 .TP
 \fBceil \fIarg\fR
@@ -167,12 +229,41 @@ The argument may be any numeric value.  The integer part of \fIarg\fR
 is determined and returned.  The integer range returned by this function
 is unlimited, unlike \fBint\fR and \fBwide\fR which
 truncate their range to fit in particular storage widths.
+.\" COMMAND: erf
+.TP
+\fBerf \fIarg\fR
+.VS new
+Computes the Gauss error function of the numeric value \fIarg\fR.
+.VE new
+.\" COMMAND: erfc
+.TP
+\fBerfc \fIarg\fR
+.VS new
+Computes the complementary error function of the numeric value \fIarg\fR.
+.VE new
 .\" COMMAND: exp
 .TP
 \fBexp \fIarg\fR
 .
 Returns the exponential of \fIarg\fR, defined as \fIe\fR**\fIarg\fR.
 If the result would cause an overflow, an error is returned.
+.\" COMMAND: exp2
+.TP
+\fBexp2 \fIarg\fR
+.VS new
+Returns the 2 to the power of \fIarg\fR, defined as \fB2\fR**\fIarg\fR.
+The result is always a floating point number except if it would cause an
+overflow, when an error is returned.
+.VE new
+.\" COMMAND: expm1
+.TP
+\fBexpm1 \fIarg\fR
+.VS new
+Returns the exponential of \fIarg\fR, minus 1, defined as \fIe\fR**\fIarg\fR\-\fB1\fR.
+If the result would cause an overflow, an error is returned.
+Use of this function can be numerically preferable to of \fBexp\fR for values
+close to 1, and is matched with \fBlog1p\fR.
+.VE new
 .\" COMMAND: floor
 .TP
 \fBfloor \fIarg\fR
@@ -263,6 +354,13 @@ are both chosen from among the set of zero, subnormal, normal and infinite
 values. Throws an error if either \fIx\fR or \fIy\fR cannot be promoted to a
 floating-point value.
 .VE TIP521
+.\" COMMAND: lgamma
+.TP
+\fBlgamma \fIarg\fR
+.VS new
+Returns the natural logarithm of the absolute value of the gamma function of \fIarg\fR.
+If the result would cause an overflow, an error is returned.
+.VE new
 .\" COMMAND: log
 .TP
 \fBlog \fIarg\fR
@@ -274,6 +372,19 @@ positive value.
 \fBlog10 \fIarg\fR
 .
 Returns the base 10 logarithm of \fIarg\fR.  \fIArg\fR must be a
+positive value.
+.\" COMMAND: log1p
+.TP
+\fBlog1p \fIarg\fR
+.
+Returns the natural logarithm of \fIarg\fR+\fB1\fR.  \fIArg\fR must be a
+value greater than \-1. This function is numerically preferable to \fBlog\fR
+for values very close to 1, and is matched with \fBexpm1\fR.
+.\" COMMAND: log2
+.TP
+\fBlog2 \fIarg\fR
+.
+Returns the base 2 logarithm of \fIarg\fR.  \fIArg\fR must be a
 positive value.
 .\" COMMAND: max
 .TP
@@ -346,6 +457,13 @@ Returns the tangent of \fIarg\fR, measured in radians.
 \fBtanh \fIarg\fR
 .
 Returns the hyperbolic tangent of \fIarg\fR.
+.\" COMMAND: tgamma
+.TP
+\fBtgamma \fIarg\fR
+.VS new
+Returns the absolute value of the gamma function of \fIarg\fR (a generalized factorial).
+If the result would cause an overflow, an error is returned.
+.VE new
 .\" COMMAND: wide
 .TP
 \fBwide \fIarg\fR
