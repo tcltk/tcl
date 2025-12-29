@@ -213,7 +213,7 @@ LookUpFileHandler(
 
 void
 TclpSetTimer(
-    TCL_UNUSED(const Tcl_Time *))		/* Timeout value, may be NULL. */
+    TCL_UNUSED(const Tcl_Time *))	/* Timeout value, may be NULL. */
 {
     /*
      * The interval timer doesn't do anything in this implementation, because
@@ -406,7 +406,7 @@ AtForkChild(void)
     pthread_cond_init(&notifierCV, NULL);
 
 #ifdef NOTIFIER_SELECT
-    asyncPending = 0;
+    asyncPending = false;
 #endif
 
     /*

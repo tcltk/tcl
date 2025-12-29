@@ -18,6 +18,10 @@
 #   define USE_TCLOO_STUBS
 #endif
 
+#ifdef TCL_NO_DEPRECATED
+#   define Tcl_MethodType void
+#endif
+
 /* !BEGIN!: Do not edit below this line. */
 
 #ifdef __cplusplus
@@ -269,5 +273,48 @@ extern const TclOOStubs *tclOOStubsPtr;
 #endif /* defined(USE_TCLOO_STUBS) */
 
 /* !END!: Do not edit above this line. */
+
+#ifdef TCL_NO_DEPRECATED
+#   undef Tcl_MethodType
+#   undef Tcl_MethodIsType
+#   undef Tcl_NewInstanceMethod
+#   undef Tcl_NewMethod
+#endif
+
+
+#if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 201112L)
+#ifndef TclOOGeneric
+/* Select method based on type of argument. */
+#define TclOOGeneric(typePtr, impl) \
+    _Generic(typePtr, default: impl, const Tcl_MethodType2 *: impl ## 2)
+#endif
+
+#ifdef USE_TCLOO_STUBS
+
+#undef Tcl_MethodIsType
+#define Tcl_MethodIsType(method, typePtr, clientDataPtr) \
+    (TclOOGeneric((typePtr), tclOOStubsPtr->tcl_MethodIsType) \
+	((method), (typePtr), (clientDataPtr)))
+#undef Tcl_NewInstanceMethod
+#define Tcl_NewInstanceMethod(interp, object, nameObj, flags, typePtr, clientData) \
+    (TclOOGeneric((typePtr), tclOOStubsPtr->tcl_NewInstanceMethod) \
+	((interp), (object), (nameObj), (flags), (typePtr), (clientData)))
+#undef Tcl_NewMethod
+#define Tcl_NewMethod(interp, cls, nameObj, flags, typePtr, clientData) \
+    (TclOOGeneric((typePtr), tclOOStubsPtr->tcl_NewMethod) \
+	((interp), (cls), (nameObj), (flags), (typePtr), (clientData)))
+#else
+#define Tcl_MethodIsType(method, typePtr, clientDataPtr) \
+    (TclOOGeneric((typePtr), Tcl_MethodIsType) \
+	((method), (typePtr), (clientDataPtr)))
+#define Tcl_NewInstanceMethod(interp, object, nameObj, flags, typePtr, clientData) \
+    (TclOOGeneric((typePtr), Tcl_NewInstanceMethod) \
+	((interp), (object), (nameObj), (flags), (typePtr), (clientData)))
+
+#define Tcl_NewMethod(interp, cls, nameObj, flags, typePtr, clientData) \
+    (TclOOGeneric((typePtr), Tcl_NewMethod) \
+	((interp), (cls), (nameObj), (flags), (typePtr), (clientData)))
+#endif
+#endif
 
 #endif /* _TCLOODECLS */

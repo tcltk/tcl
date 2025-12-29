@@ -340,11 +340,11 @@ static void		DupChannelInternalRep(Tcl_Obj *objPtr, Tcl_Obj *copyPtr);
 static void		FreeChannelInternalRep(Tcl_Obj *objPtr);
 
 static const Tcl_ObjType chanObjType = {
-    "channel",			/* name for this type */
-    FreeChannelInternalRep,	/* freeIntRepProc */
-    DupChannelInternalRep,	/* dupIntRepProc */
-    NULL,			/* updateStringProc */
-    NULL,			/* setFromAnyProc */
+    "channel",
+    FreeChannelInternalRep,
+    DupChannelInternalRep,
+    NULL,			// UpdateString
+    NULL,			// SetFromAny
     TCL_OBJTYPE_V0
 };
 
@@ -1655,7 +1655,7 @@ Tcl_CreateChannel(
      */
 
     if (chanName != NULL) {
-	unsigned len = strlen(chanName) + 1;
+	size_t len = strlen(chanName) + 1;
 
 	/*
 	 * Make sure we allocate at least 7 bytes, so it fits for "stdout"
@@ -2813,7 +2813,7 @@ FlushChannel(
 	 */
 
 	PreserveChannelBuffer(bufPtr);
-	written = ChanWrite(chanPtr, RemovePoint(bufPtr), BytesLeft(bufPtr),
+	written = (int)ChanWrite(chanPtr, RemovePoint(bufPtr), BytesLeft(bufPtr),
 		&errorCode);
 
 	/*
@@ -4090,7 +4090,7 @@ Tcl_Write(
 	return TCL_INDEX_NONE;
     }
 
-    if (srcLen == TCL_INDEX_NONE) {
+    if (srcLen < 0) {
 	srcLen = strlen(src);
     }
     if (WriteBytes(chanPtr, src, srcLen) == -1) {
@@ -4140,7 +4140,7 @@ Tcl_WriteRaw(
 	return TCL_INDEX_NONE;
     }
 
-    if (srcLen == TCL_INDEX_NONE) {
+    if (srcLen < 0) {
 	srcLen = strlen(src);
     }
 
@@ -4199,7 +4199,7 @@ Tcl_WriteChars(
 
     chanPtr = statePtr->topChanPtr;
 
-    if (len == TCL_INDEX_NONE) {
+    if (len < 0) {
 	len = strlen(src);
     }
     if (statePtr->encoding) {
@@ -6453,7 +6453,7 @@ ReadChars(
 	     * we only have the one decoded char?
 	     */
 
-	    if (code != TCL_OK) {
+	    if (1 || code != TCL_OK) {
 		int read, decoded, count;
 		char buffer[TCL_UTF_MAX + 1];
 
@@ -6485,7 +6485,16 @@ ReadChars(
 		    code = TCL_OK;
 		}
 
-		if (count == 2) {
+		assert(count <= 2);
+		if (count == 1) {
+		    assert(buffer[0] == '\r');
+		    if (GotFlag(statePtr, CHANNEL_EOF)) {
+			dst[0] = '\r';
+			bufPtr->nextRemoved = bufPtr->nextAdded;
+			Tcl_SetObjLength(objPtr, numBytes + 1);
+			return 1;
+		    }
+		} else if (count == 2) {
 		    if (buffer[1] == '\n') {
 			/* \r\n translate to \n */
 			dst[0] = '\n';
@@ -6500,7 +6509,6 @@ ReadChars(
 		    Tcl_SetObjLength(objPtr, numBytes + 1);
 		    return 1;
 		}
-
 	    } else if (GotFlag(statePtr, CHANNEL_EOF)) {
 		/*
 		 * The bare \r is the only char and we will never read a
@@ -9241,7 +9249,7 @@ Tcl_FileEventObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Interpreter in which the channel for which
 				 * to create the handler is found. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Channel *chanPtr;		/* The channel to create the handler for. */

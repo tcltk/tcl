@@ -40,9 +40,10 @@ static int		TclGlob(Tcl_Interp *interp, char *pattern,
 			    Tcl_GlobTypeData *types);
 
 /* Flag values used by TclGlob() */
-
-#define TCL_GLOBMODE_DIR	4
-#define TCL_GLOBMODE_TAILS	8
+enum GlobModeFlags {
+    TCL_GLOBMODE_DIR = 4,
+    TCL_GLOBMODE_TAILS = 8
+};
 
 /*
  * When there is no support for getting the block size of a file in a stat()
@@ -1116,11 +1117,11 @@ int
 Tcl_GlobObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int i, globFlags, join, dir, result;
-    Tcl_Size length;
+    int globFlags, join, dir, result;
+    Tcl_Size i, length;
     char *string;
     const char *separators;
     Tcl_Obj *typePtr, *look;

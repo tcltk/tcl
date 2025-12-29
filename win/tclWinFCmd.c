@@ -11,6 +11,8 @@
  */
 
 #include "tclWinInt.h"
+#include <AccCtrl.h>
+#include <AclAPI.h>
 #if defined (__clang__) && (__clang_major__ > 20)
 #pragma clang diagnostic ignored "-Wc++-keyword"
 #endif
@@ -40,12 +42,13 @@ static int		SetWinFileAttributes(Tcl_Interp *interp, int objIndex,
 			    Tcl_Obj *fileName, Tcl_Obj *attributePtr);
 static int		CannotSetAttribute(Tcl_Interp *interp, int objIndex,
 			    Tcl_Obj *fileName, Tcl_Obj *attributePtr);
+static int		ResetFileACL(const WCHAR *path);
 
 /*
  * Constants and variables necessary for file attributes subcommand.
  */
 
-enum {
+enum TclWinFCmdAttributes {
     WIN_ARCHIVE_ATTRIBUTE,
     WIN_HIDDEN_ATTRIBUTE,
     WIN_LONGNAME_ATTRIBUTE,
@@ -171,9 +174,6 @@ DoRenameFile(
     const WCHAR *nativeDst)	/* New pathname for file or directory
 				 * (native). */
 {
-#if defined(HAVE_NO_SEH) && !defined(_WIN64)
-    TCLEXCEPTION_REGISTRATION registration;
-#endif
     DWORD srcAttr, dstAttr;
     int retval = -1;
 
@@ -189,106 +189,24 @@ DoRenameFile(
     }
 
     /*
+     * MoveFileEx would be more efficient but unfortunately, the semantics
+     * differ slightly from Tcl file rename semantics for existing directories.
+     */
+#ifdef USE_MOVEFILEEXW
+    const DWORD moveFlags = MOVEFILE_COPY_ALLOWED | MOVEFILE_REPLACE_EXISTING;
+#define MOVEFILE(src_, dst_) MoveFileExW(src_, dst_, moveFlags)
+#else
+#define MOVEFILE(src_, dst_) MoveFileW(src_, dst_)
+#endif
+
+    /*
      * The MoveFile API would throw an exception under NT if one of the
      * arguments is a char block device.
      */
 
-#if defined(HAVE_NO_SEH) && !defined(_WIN64)
-    /*
-     * Don't have SEH available, do things the hard way. Note that this needs
-     * to be one block of asm, to avoid stack imbalance; also, it is illegal
-     * for one asm block to contain a jump to another.
-     */
-
-    __asm__ __volatile__ (
-	/*
-	 * Pick up params before messing with the stack.
-	 */
-
-	"movl	    %[nativeDst],   %%ebx"	    "\n\t"
-	"movl	    %[nativeSrc],   %%ecx"	    "\n\t"
-
-	/*
-	 * Construct an TCLEXCEPTION_REGISTRATION to protect the call to
-	 * MoveFile.
-	 */
-
-	"leal	    %[registration], %%edx"	    "\n\t"
-	"movl	    %%fs:0,	    %%eax"	    "\n\t"
-	"movl	    %%eax,	    0x0(%%edx)"	    "\n\t" /* link */
-	"leal	    1f,		    %%eax"	    "\n\t"
-	"movl	    %%eax,	    0x4(%%edx)"	    "\n\t" /* handler */
-	"movl	    %%ebp,	    0x8(%%edx)"	    "\n\t" /* ebp */
-	"movl	    %%esp,	    0xC(%%edx)"	    "\n\t" /* esp */
-	"movl	    $0,		    0x10(%%edx)"    "\n\t" /* status */
-
-	/*
-	 * Link the TCLEXCEPTION_REGISTRATION on the chain.
-	 */
-
-	"movl	    %%edx,	    %%fs:0"	    "\n\t"
-
-	/*
-	 * Call MoveFileW(nativeSrc, nativeDst)
-	 */
-
-	"pushl	    %%ebx"			    "\n\t"
-	"pushl	    %%ecx"			    "\n\t"
-	"movl	    %[moveFileW],    %%eax"	    "\n\t"
-	"call	    *%%eax"			    "\n\t"
-
-	/*
-	 * Come here on normal exit. Recover the TCLEXCEPTION_REGISTRATION and
-	 * put the status return from MoveFile into it.
-	 */
-
-	"movl	    %%fs:0,	    %%edx"	    "\n\t"
-	"movl	    %%eax,	    0x10(%%edx)"    "\n\t"
-	"jmp	    2f"				    "\n"
-
-	/*
-	 * Come here on an exception. Recover the TCLEXCEPTION_REGISTRATION
-	 */
-
-	"1:"					    "\t"
-	"movl	    %%fs:0,	    %%edx"	    "\n\t"
-	"movl	    0x8(%%edx),	    %%edx"	    "\n\t"
-
-	/*
-	 * Come here however we exited. Restore context from the
-	 * TCLEXCEPTION_REGISTRATION in case the stack is unbalanced.
-	 */
-
-	"2:"					    "\t"
-	"movl	    0xC(%%edx),	    %%esp"	    "\n\t"
-	"movl	    0x8(%%edx),	    %%ebp"	    "\n\t"
-	"movl	    0x0(%%edx),	    %%eax"	    "\n\t"
-	"movl	    %%eax,	    %%fs:0"	    "\n\t"
-
-	:
-	/* No outputs */
-	:
-	[registration]	"m"	(registration),
-	[nativeDst]	"m"	(nativeDst),
-	[nativeSrc]	"m"	(nativeSrc),
-	[moveFileW]	"r"	(MoveFileW)
-	:
-	"%eax", "%ebx", "%ecx", "%edx", "memory"
-	);
-    if (registration.status != FALSE) {
+    if (MOVEFILE(nativeSrc, nativeDst) != FALSE) {
 	retval = TCL_OK;
     }
-#else
-#ifndef HAVE_NO_SEH
-    __try {
-#endif
-	if ((*MoveFileW)(nativeSrc, nativeDst) != FALSE) {
-	    retval = TCL_OK;
-	}
-#ifndef HAVE_NO_SEH
-    } __except (EXCEPTION_EXECUTE_HANDLER) {}
-#endif
-#endif
 
     if (retval != -1) {
 	return retval;
@@ -396,6 +314,13 @@ DoRenameFile(
 
 	    Tcl_Free((void *)srcArgv);
 	    Tcl_Free((void *)dstArgv);
+	} else {
+	    /* Not a directory. Try resetting ACL */
+	    if (ResetFileACL(nativeSrc) == ERROR_SUCCESS) {
+		if (MOVEFILE(nativeSrc, nativeDst) != FALSE) {
+		    return TCL_OK;
+		}
+	    }
 	}
 
 	/*
@@ -426,7 +351,7 @@ DoRenameFile(
 		     * directory back, for completeness.
 		     */
 
-		    if (MoveFileW(nativeSrc, nativeDst) != FALSE) {
+		    if (MOVEFILE(nativeSrc, nativeDst) != FALSE) {
 			return TCL_OK;
 		    }
 
@@ -487,14 +412,14 @@ DoRenameFile(
 
 		    nativeTmp = tempBuf;
 		    DeleteFileW(nativeTmp);
-		    if (MoveFileW(nativeDst, nativeTmp) != FALSE) {
-			if (MoveFileW(nativeSrc, nativeDst) != FALSE) {
+		    if (MOVEFILE(nativeDst, nativeTmp) != FALSE) {
+			if (MOVEFILE(nativeSrc, nativeDst) != FALSE) {
 			    SetFileAttributesW(nativeTmp, FILE_ATTRIBUTE_NORMAL);
 			    DeleteFileW(nativeTmp);
 			    return TCL_OK;
 			} else {
 			    DeleteFileW(nativeDst);
-			    MoveFileW(nativeTmp, nativeDst);
+			    MOVEFILE(nativeTmp, nativeDst);
 			}
 		    }
 
@@ -560,9 +485,6 @@ DoCopyFile(
     const WCHAR *nativeSrc,	/* Pathname of file to be copied (native). */
     const WCHAR *nativeDst)	/* Pathname of file to copy to (native). */
 {
-#if defined(HAVE_NO_SEH) && !defined(_WIN64)
-    TCLEXCEPTION_REGISTRATION registration;
-#endif
     int retval = -1;
 
     /*
@@ -581,104 +503,9 @@ DoCopyFile(
      * arguments is a char block device.
      */
 
-#if defined(HAVE_NO_SEH) && !defined(_WIN64)
-    /*
-     * Don't have SEH available, do things the hard way. Note that this needs
-     * to be one block of asm, to avoid stack imbalance; also, it is illegal
-     * for one asm block to contain a jump to another.
-     */
-
-    __asm__ __volatile__ (
-
-	/*
-	 * Pick up parameters before messing with the stack
-	 */
-
-	"movl	    %[nativeDst],   %%ebx"	    "\n\t"
-	"movl	    %[nativeSrc],   %%ecx"	    "\n\t"
-
-	/*
-	 * Construct an TCLEXCEPTION_REGISTRATION to protect the call to
-	 * CopyFile.
-	 */
-
-	"leal	    %[registration], %%edx"	    "\n\t"
-	"movl	    %%fs:0,	    %%eax"	    "\n\t"
-	"movl	    %%eax,	    0x0(%%edx)"	    "\n\t" /* link */
-	"leal	    1f,		    %%eax"	    "\n\t"
-	"movl	    %%eax,	    0x4(%%edx)"	    "\n\t" /* handler */
-	"movl	    %%ebp,	    0x8(%%edx)"	    "\n\t" /* ebp */
-	"movl	    %%esp,	    0xC(%%edx)"	    "\n\t" /* esp */
-	"movl	    $0,		    0x10(%%edx)"    "\n\t" /* status */
-
-	/*
-	 * Link the TCLEXCEPTION_REGISTRATION on the chain.
-	 */
-
-	"movl	    %%edx,	    %%fs:0"	    "\n\t"
-
-	/*
-	 * Call CopyFileW(nativeSrc, nativeDst, 0)
-	 */
-
-	"movl	    %[copyFileW],    %%eax"	    "\n\t"
-	"pushl	    $0"				    "\n\t"
-	"pushl	    %%ebx"			    "\n\t"
-	"pushl	    %%ecx"			    "\n\t"
-	"call	    *%%eax"			    "\n\t"
-
-	/*
-	 * Come here on normal exit. Recover the TCLEXCEPTION_REGISTRATION and
-	 * put the status return from CopyFile into it.
-	 */
-
-	"movl	    %%fs:0,	    %%edx"	    "\n\t"
-	"movl	    %%eax,	    0x10(%%edx)"    "\n\t"
-	"jmp	    2f"				    "\n"
-
-	/*
-	 * Come here on an exception. Recover the TCLEXCEPTION_REGISTRATION
-	 */
-
-	"1:"					    "\t"
-	"movl	    %%fs:0,	    %%edx"	    "\n\t"
-	"movl	    0x8(%%edx),	    %%edx"	    "\n\t"
-
-	/*
-	 * Come here however we exited. Restore context from the
-	 * TCLEXCEPTION_REGISTRATION in case the stack is unbalanced.
-	 */
-
-	"2:"					    "\t"
-	"movl	    0xC(%%edx),	    %%esp"	    "\n\t"
-	"movl	    0x8(%%edx),	    %%ebp"	    "\n\t"
-	"movl	    0x0(%%edx),	    %%eax"	    "\n\t"
-	"movl	    %%eax,	    %%fs:0"	    "\n\t"
-
-	:
-	/* No outputs */
-	:
-	[registration]	"m"	(registration),
-	[nativeDst]	"m"	(nativeDst),
-	[nativeSrc]	"m"	(nativeSrc),
-	[copyFileW]	"r"	(CopyFileW)
-	:
-	"%eax", "%ebx", "%ecx", "%edx", "memory"
-	);
-    if (registration.status != FALSE) {
+    if (CopyFileW(nativeSrc, nativeDst, 0) != FALSE) {
 	retval = TCL_OK;
     }
-#else
-#ifndef HAVE_NO_SEH
-    __try {
-#endif
-	if (CopyFileW(nativeSrc, nativeDst, 0) != FALSE) {
-	    retval = TCL_OK;
-	}
-#ifndef HAVE_NO_SEH
-    } __except (EXCEPTION_EXECUTE_HANDLER) {}
-#endif
-#endif
 
     if (retval != -1) {
 	return retval;
@@ -803,15 +630,26 @@ TclpDeleteFile(
 		 */
 
 		Tcl_SetErrno(EISDIR);
-	    } else if (attr & FILE_ATTRIBUTE_READONLY) {
-		int res = SetFileAttributesW(path,
-			attr & ~((DWORD) FILE_ATTRIBUTE_READONLY));
+	    }  else {
+		/* It's a file, perhaps forbidden by attribute or ACL */
+		int fileAttrChanged;
+		if (attr & FILE_ATTRIBUTE_READONLY) {
+		    fileAttrChanged = SetFileAttributesW(path,
+			attr & ~((DWORD)FILE_ATTRIBUTE_READONLY));
 
-		if ((res != 0) && (DeleteFileW(path) != FALSE)) {
-		    return TCL_OK;
+		    if (fileAttrChanged && (DeleteFileW(path) != FALSE)) {
+			return TCL_OK;
+		    }
 		}
-		Tcl_WinConvertError(GetLastError());
-		if (res != 0) {
+		DWORD winError = GetLastError();
+		if (ResetFileACL(path) == 0) {
+		    if (DeleteFileW(path) != FALSE) {
+			return TCL_OK;
+		    }
+		    winError = GetLastError();
+		}
+		Tcl_WinConvertError(winError);
+		if (fileAttrChanged != 0) {
 		    SetFileAttributesW(path, attr);
 		}
 	    }
@@ -2108,7 +1946,61 @@ TclpCreateTemporaryDirectory(
     Tcl_DStringFree(&base);
     return Tcl_DStringToObj(&name);
 }
+
 
+/*
+ * ResetFileACL --
+ *
+ *      Resets a file ACL to allow full access as long the process
+ *      user id has permissions.
+ *
+ * Results:
+ *	0 on success, or a Windows error code.
+ *
+ * Side effects:
+ *	Changes the ACL on the file.
+ */
+int
+ResetFileACL(
+    const WCHAR *path) /* Path whose ACL should reset to allow all access */
+{
+    /* Never fails and does not have to be freed */
+    HANDLE processToken = GetCurrentProcessToken();
+
+    /* Get the user information from token to extract the SID. */
+    DWORD winError;
+    DWORD userInfoSize;
+    if (!GetTokenInformation(GetCurrentProcessToken(), TokenUser,
+				NULL, 0, &userInfoSize) &&
+	(winError = GetLastError()) != ERROR_INSUFFICIENT_BUFFER) {
+	return winError;
+    }
+    PTOKEN_USER userInfoPtr = (PTOKEN_USER)Tcl_Alloc(userInfoSize);
+    if (GetTokenInformation(GetCurrentProcessToken(), TokenUser, userInfoPtr,
+	   			userInfoSize, &userInfoSize)) {
+	EXPLICIT_ACCESS_W access;
+	ZeroMemory(&access, sizeof(access));
+	access.grfAccessPermissions = GENERIC_ALL;
+	access.grfAccessMode = GRANT_ACCESS;
+	access.grfInheritance = NO_INHERITANCE;
+	access.Trustee.TrusteeForm = TRUSTEE_IS_SID;
+	access.Trustee.TrusteeType = TRUSTEE_IS_USER;
+	access.Trustee.ptstrName = userInfoPtr->User.Sid;
+	PACL aclPtr = NULL;
+	winError = SetEntriesInAclW(1, &access, NULL, &aclPtr);
+	if (winError == ERROR_SUCCESS) {
+	    winError = SetNamedSecurityInfoW(path, SE_FILE_OBJECT,
+		DACL_SECURITY_INFORMATION, NULL, NULL, aclPtr, NULL);
+	}
+	LocalFree(aclPtr);
+    } else {
+	winError = GetLastError();
+    }
+
+    Tcl_Free(userInfoPtr);
+    return winError;
+}
+
 /*
  * Local Variables:
  * mode: c

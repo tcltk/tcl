@@ -24,16 +24,16 @@
 #endif
 
 /*
- * We must specify the lower version we intend to support.
+ * We must specify the lowest version we intend to support.
  *
- * WINVER = 0x0601 means Windows 7 and above
+ * 0x0A00 means Windows 10 and above
  */
 
-#ifndef WINVER
-#   define WINVER 0x0601
-#endif
 #ifndef _WIN32_WINNT
-#   define _WIN32_WINNT 0x0601
+#   define _WIN32_WINNT 0x0A00
+#endif
+#ifndef WINVER
+#   define WINVER _WIN32_WINNT		/* Should match _WIN32_WINNT */
 #endif
 
 #define WIN32_LEAN_AND_MEAN
@@ -354,7 +354,7 @@ typedef DWORD_PTR * PDWORD_PTR;
  */
 
 #ifndef S_IFLNK
-#   define S_IFLNK        0120000  /* Symbolic Link */
+#   define S_IFLNK	0120000	/* Symbolic Link */
 #endif
 
 /*
