@@ -770,14 +770,14 @@ test registry-13.1 {Failure - no such key} -constraints {win reg} -body {
 	       {unable to open key "NoSuchKey": The system cannot find the file specified.} \
 	       {WINDOWS 0x2 {unable to open key "NoSuchKey": The system cannot find the file specified.}}]
 
-test registry-13.1 {Failure - no such value} -constraints {win reg} -body {
+test registry-13.2 {Failure - no such value} -constraints {win reg} -body {
     list \
-	[catch {registry get HKEY_CURRENT_USER\\Microsoft NoSuchValue} r d] \
+	[catch {registry get HKEY_CURRENT_USER\\SOFTWARE NoSuchValue} r d] \
 	$r \
 	[dict get $d -errorcode]
 } -result [list 1 \
-	       {unable to get value "NoSuchValue" from key "HKEY_CURRENT_USER\Microsoft": The system cannot find the file specified.} \
-	       {WINDOWS 0x2 {unable to get value "NoSuchValue" from key "HKEY_CURRENT_USER\Microsoft": The system cannot find the file specified.}}]
+	       {unable to get value "NoSuchValue" from key "HKEY_CURRENT_USER\SOFTWARE": The system cannot find the file specified.} \
+	       {WINDOWS 0x2 {unable to get value "NoSuchValue" from key "HKEY_CURRENT_USER\SOFTWARE": The system cannot find the file specified.}}]
 
 
 # cleanup
