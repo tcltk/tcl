@@ -655,7 +655,7 @@ test info-19.6 {info vars: Bug 1072654} -setup {
     namespace delete x
 } -result {}
 
-set functions {abs acos asin atan atan2 bool ceil cos cosh double entier exp floor fmod hypot int isfinite isinf isnan isnormal isqrt issubnormal isunordered log log10 max min pow rand round sin sinh sqrt srand tan tanh wide}
+set functions {abs acos acosh asin asinh atan atan2 atanh bool cbrt ceil cos cosh double entier erf erfc exp exp2 expm1 floor fmod hypot int isfinite isinf isnan isnormal isqrt issubnormal isunordered lgamma log log10 log1p log2 max min pow rand round sin sinh sqrt srand tan tanh tgamma wide}
 # Check whether the extra testing functions are defined...
 if {!([catch {expr {T1()}} msg] && ($msg eq {invalid command name "tcl::mathfunc::T1"}))} {
     set functions "T1 T2 T3 $functions"  ;# A lazy way of prepending!
@@ -664,10 +664,10 @@ test info-20.1 {info functions option} {info functions sin} sin
 test info-20.2 {info functions option} {lsort [info functions]} $functions
 test info-20.3 {info functions option} {
     lsort [info functions a*]
-} {abs acos asin atan atan2}
+} {abs acos acosh asin asinh atan atan2 atanh}
 test info-20.4 {info functions option} {
     lsort [info functions *tan*]
-} {atan atan2 tan tanh}
+} {atan atan2 atanh tan tanh}
 test info-20.5 {info functions option} -returnCodes error -body {
     info functions raise an error
 } -result {wrong # args: should be "info functions ?pattern?"}
