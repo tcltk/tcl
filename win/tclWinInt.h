@@ -38,7 +38,7 @@ MODULE_SCOPE const TclWinInfo *	TclGetWinInfo(void);
 static inline const OSVERSIONINFOW *
 TclpGetWindowsVersion(void)
 {
-    TclWinInfo *winInfoPtr = TclGetWinInfo();
+    const TclWinInfo *winInfoPtr = TclGetWinInfo();
     return winInfoPtr ? &winInfoPtr->osVersion : NULL;
 }
 
@@ -54,7 +54,7 @@ TclpGetWindowsVersion(void)
 static inline const char *
 TclpGetCodePage(void)
 {
-    TclWinInfo *winInfoPtr = TclGetWinInfo();
+    const TclWinInfo *winInfoPtr = TclGetWinInfo();
     assert(winInfoPtr);
     assert(winInfoPtr->codePage[0] != '\0');
 	return winInfoPtr->codePage;
@@ -65,10 +65,10 @@ TclpGetCodePage(void)
  *
  *  Returns 1 if OS supports long paths without a \\?\ prefix, 0 otherwise.
  */
-static int
+static inline int
 TclpLongPathSupported(void)
 {
-    TclWinInfo *winInfoPtr = TclGetWinInfo();
+    const TclWinInfo *winInfoPtr = TclGetWinInfo();
     assert(winInfoPtr);
     return winInfoPtr->longPathsSupported;
 }

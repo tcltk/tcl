@@ -389,8 +389,8 @@ WinSymLinkDirectory(
 	   (char *)reparseBuffer->MountPointReparseBuffer.PathBuffer +
 	       reparseBuffer->MountPointReparseBuffer.PrintNameOffset);
     /* PrintName unused but store terminator anyways */
-    assert(((char *)to - (char *)reparseBuffer->MountPointReparseBuffer.PathBuffer) ==
-	   targetNumBytes);
+    assert((char *)to ==
+	   (char *)reparseBuffer->MountPointReparseBuffer.PathBuffer + targetNumBytes);
     if (to[-1] == '\\' && to[-2] != ':') {
 	to[-1] = L'\0';
 	reparseBuffer->MountPointReparseBuffer.SubstituteNameLength -=
@@ -3480,6 +3480,7 @@ TclWinGetFullPathName(
     DWORD capacity;
     WCHAR *fullPathPtr;
     WCHAR *filePartPtr = NULL;
+    DWORD err;
 
     fullPathPtr = TclWinPathInit(winPathPtr, &capacity);
     numChars = GetFullPathNameW(pathPtr, capacity, fullPathPtr, &filePartPtr);
@@ -3517,7 +3518,7 @@ TclWinGetFullPathName(
     return fullPathPtr;
 
 errorReturn:
-    DWORD err = GetLastError();
+    err = GetLastError();
     TclWinPathFree(winPathPtr);
     SetLastError(err);
     return NULL;
@@ -3550,6 +3551,7 @@ TclWinGetCurrentDirectory(
     DWORD capacity;
     WCHAR *fullPathPtr;
     WCHAR *filePartPtr = NULL;
+    DWORD err;
 
     fullPathPtr = TclWinPathInit(winPathPtr, &capacity);
     numChars = GetCurrentDirectoryW(capacity, fullPathPtr);
@@ -3581,7 +3583,7 @@ TclWinGetCurrentDirectory(
     return fullPathPtr;
 
 errorReturn:
-    DWORD err = GetLastError();
+    err = GetLastError();
     TclWinPathFree(winPathPtr);
     SetLastError(err);
     return NULL;
