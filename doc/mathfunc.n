@@ -85,6 +85,7 @@ mathfunc \- Mathematical functions for Tcl expressions
 \fB::tcl::mathfunc::tanh\fI arg\fR
 .VS new
 \fB::tcl::mathfunc::tgamma\fI arg\fR
+\fB::tcl::mathfunc::trunc\fI arg\fR
 .VE new
 \fB::tcl::mathfunc::wide\fI arg\fR
 .fi
@@ -116,7 +117,7 @@ of which work solely with floating-point numbers unless otherwise noted:
 \fBmax\fR	\fBmin\fR	\fBpow\fR	\fBrand\fR
 \fBround\fR	\fBsin\fR	\fBsinh\fR	\fBsqrt\fR
 \fBsrand\fR	\fBtan\fR	\fBtanh\fR	\fBtgamma\fR
-\fBwide\fR
+\fBtrunc\fR	\fBwide\fR
 .DE
 .PP
 In addition to these predefined functions, applications may
@@ -463,6 +464,12 @@ Returns the hyperbolic tangent of \fIarg\fR.
 .VS new
 Returns the absolute value of the gamma function of \fIarg\fR (a generalized factorial).
 If the result would cause an overflow, an error is returned.
+.VE new
+.\" COMMAND: trunc
+.TP
+\fBtrunc \fIarg\fR
+.VS new
+Returns the nearest integer not greater in magnitude than \fIarg\fR.
 .VE new
 .\" COMMAND: wide
 .TP
