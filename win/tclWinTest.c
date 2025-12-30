@@ -690,15 +690,15 @@ static int
 TestlongpathsettingCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    Tcl_Size objc,
-    Tcl_Obj *const * objv)
+    TCL_UNUSED(Tcl_Size), /* objc */
+    TCL_UNUSED(Tcl_Obj *const *)) /* objv */
 {
     static DWORD longPathsEnabled = UINT_MAX;
     /*
      * We do not bother with thread synchronization as the initialization
      * should only happen at init time.
      */
-    if (longPathsEnabled == -1) {
+    if (longPathsEnabled == UINT_MAX) {
 	DWORD dw = sizeof(longPathsEnabled);
 	if (RegGetValueA(HKEY_LOCAL_MACHINE,
 		"SYSTEM\\CurrentControlSet\\Control\\FileSystem",
@@ -780,7 +780,7 @@ Testappendmessagefrommodule(
 
     Tcl_Obj *results[2];
     results[0] = Tcl_NewIntObj(Tcl_WinAppendMessageFromModule(
-			(DWORD)messageId, hModule, useDefaultMsg, &messageDs));
+			(DWORD)messageId, NULL, hModule, useDefaultMsg, &messageDs));
     if (hModule) {
 	FreeLibrary(hModule);
     }
@@ -828,15 +828,16 @@ TestwinerrorCmd(
     case APPENDMESSAGE:
 	return Testappendmessagefrommodule(interp, objc, objv);
     case RAISEERROR:
-	if (objc < 3 || objc > 5) {
+	if (objc < 3 || objc > 6) {
 	    Tcl_WrongNumArgs(interp, 2, objv,
-		"messageId ?header? ?modulePath?");
+		"messageId ?header? ?modulePath? ?locale?");
 	    return TCL_ERROR;
 	}
 	if (Tcl_GetIntFromObj(interp, objv[2], &messageId) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	return Tcl_WinRaiseError(interp, messageId,
+	    (objc > 5 && Tcl_GetString(objv[5])[0]) ? Tcl_GetString(objv[5]) : NULL,
 	    (objc > 4) ? Tcl_GetString(objv[4]) : NULL,
 	    (objc > 3) ? Tcl_GetString(objv[3]) : NULL);
     default:

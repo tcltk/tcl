@@ -378,6 +378,7 @@ Tcl_WinConvertError(
 int
 Tcl_WinAppendMessageFromModule(
     unsigned messageId,	/* Result code from error. */
+    const char *locale,		/* Locale. NULL means use default. */
     HANDLE hModule,		/* Windows module containing message resource.
 				 * NULL means use system messages. */
     int useDefaultMsg,		/* If no message found, use generic msg */
@@ -397,6 +398,11 @@ Tcl_WinAppendMessageFromModule(
     flags = FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_ALLOCATE_BUFFER;
     flags |= (hModule == NULL) ? FORMAT_MESSAGE_FROM_SYSTEM
 			       : FORMAT_MESSAGE_FROM_HMODULE;
+    LCID lcid = LocaleNameToLCID(L"en_US", 0); // TODO: convert locale to WSTR
+    (void)locale; // silence warning.
+    if (lcid == 0) {
+    	lcid = MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT);
+    }
     length = FormatMessageW(flags, hModule, messageId,
     		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
 		(WCHAR *) tMsgPtrPtr, 0, NULL);
@@ -449,6 +455,7 @@ int
 Tcl_WinRaiseError(
     Tcl_Interp *interp,		/* Current interpreter. */
     unsigned errorCode,	/* Result code from error. */
+    const char *locale, /* locale */
     const char *messageDll,	/* DLL containing message. NULL for system */
     const char *prefix)		/* Optional prefix message to be added
 				 * before the system message. Can be NULL. */
@@ -473,7 +480,7 @@ Tcl_WinRaiseError(
 	Tcl_DStringAppend(&ds, prefix, -1);
     }
 
-    (void)Tcl_WinAppendMessageFromModule(errorCode, hModule, 1, &ds);
+    (void)Tcl_WinAppendMessageFromModule(errorCode, locale, hModule, 1, &ds);
 
     Tcl_Obj *errorCodeObjs[3];
     errorCodeObjs[0] = Tcl_NewStringObj("WINDOWS", -1);
