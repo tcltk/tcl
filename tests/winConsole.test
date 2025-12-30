@@ -203,6 +203,16 @@ test console-input-3.3 {Console gets nonblocking small channel buffer size - lon
     list [yesno "Did you hit ENTER only once?"] [expr {$len > 256}] [yesno "Line length was $len characters. Is this correct?"]
 } -result {1 1 1}
 
+test console-input-3.4 {Console command line arrow keys} -constraints {
+    win interactive
+} -body {
+   prompt "Type \"abc\" and hit ENTER\n"
+   set first [gets stdin]
+   prompt "Hit the UP ARROW key to retrieve the previous line and use the LEFT ARROW key to change the b to a d, then hit ENTER\n"
+   set second [gets stdin]
+   list $first $second
+} -result [list abc adc]
+
 # Output tests
 
 test console-output-1.0 {Console blocking puts stdout} -constraints {win interactive} -body {
