@@ -1122,6 +1122,7 @@ Tcl_ExternalToUtfDString(
 
     if (src == NULL) {
 	srcLen = 0;
+	src = "";
     } else if (srcLen < 0) {
 	srcLen = encodingPtr->lengthProc(src);
     }
@@ -1212,6 +1213,7 @@ Tcl_ExternalToUtf(
 
     if (src == NULL) {
 	srcLen = 0;
+	src = "";
     } else if (srcLen < 0) {
 	srcLen = encodingPtr->lengthProc(src);
     }
@@ -1316,6 +1318,7 @@ Tcl_UtfToExternalDString(
 
     if (src == NULL) {
 	srcLen = 0;
+	src = "";
     } else if (srcLen < 0) {
 	srcLen = strlen(src);
     }
@@ -1405,6 +1408,7 @@ Tcl_UtfToExternal(
 
     if (src == NULL) {
 	srcLen = 0;
+	src = "";
     } else if (srcLen < 0) {
 	srcLen = strlen(src);
     }
