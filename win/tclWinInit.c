@@ -596,14 +596,13 @@ void
 TclpSetVariables(
     Tcl_Interp *interp)		/* Interp to initialize. */
 {
-    typedef int(__stdcall getVersionProc)(void *);
     const char *ptr;
     char buffer[TCL_INTEGER_SPACE * 2];
     union {
 	SYSTEM_INFO info;
 	OemId oemId;
     } sys;
-    OSVERSIONINFOW *osInfoPtr;
+    const OSVERSIONINFOW *osInfoPtr;
     Tcl_DString ds;
 
     Tcl_SetVar2Ex(interp, "tclDefaultLibrary", NULL,
@@ -848,7 +847,7 @@ TclWinGetEnvironmentVariable(
     DWORD numChars;
     DWORD capacity;
     WCHAR *fullPathPtr;
-    WCHAR *filePartPtr = NULL;
+    DWORD err;
 
     fullPathPtr = TclWinPathInit(winPathPtr, &capacity);
     numChars = GetEnvironmentVariableW(envName, fullPathPtr, capacity);
@@ -880,7 +879,7 @@ TclWinGetEnvironmentVariable(
     return fullPathPtr;
 
 errorReturn:
-    DWORD err = GetLastError();
+    err = GetLastError();
     TclWinPathFree(winPathPtr);
     SetLastError(err);
     return NULL;}
