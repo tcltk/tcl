@@ -690,15 +690,15 @@ static int
 TestlongpathsettingCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    Tcl_Size objc,
-    Tcl_Obj *const * objv)
+    TCL_UNUSED(Tcl_Size), /* objc */
+    TCL_UNUSED(Tcl_Obj *const *)) /* objv */
 {
     static DWORD longPathsEnabled = UINT_MAX;
     /*
      * We do not bother with thread synchronization as the initialization
      * should only happen at init time.
      */
-    if (longPathsEnabled == -1) {
+    if (longPathsEnabled == UINT_MAX) {
 	DWORD dw = sizeof(longPathsEnabled);
 	if (RegGetValueA(HKEY_LOCAL_MACHINE,
 		"SYSTEM\\CurrentControlSet\\Control\\FileSystem",

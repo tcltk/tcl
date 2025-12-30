@@ -172,7 +172,6 @@ DoRenameFile(
 				 * (native). */
 {
     DWORD srcAttr, dstAttr;
-    int retval = -1;
     TclWinPath srcPathBuf, dstPathBuf;
 
     if (nativeSrc == NULL || nativeSrc[0] == '\0' ||

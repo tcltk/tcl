@@ -3550,7 +3550,6 @@ TclWinGetCurrentDirectory(
     DWORD numChars;
     DWORD capacity;
     WCHAR *fullPathPtr;
-    WCHAR *filePartPtr = NULL;
     DWORD err;
 
     fullPathPtr = TclWinPathInit(winPathPtr, &capacity);
