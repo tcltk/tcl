@@ -503,6 +503,7 @@ static const BuiltinFuncDef BuiltinFuncTable[] = {
     { "tan",	ExprUnaryFunc,	tan			},
     { "tanh",	ExprUnaryFunc,	tanh			},
     { "tgamma",	ExprUnaryFunc,	tgamma			},
+    { "trunc",	ExprUnaryFunc,	trunc			},
     { "wide",	ExprWideFunc,	NULL			},
     { NULL, NULL, NULL }
 };
