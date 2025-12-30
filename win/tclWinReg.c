@@ -159,7 +159,7 @@ Registry_Init(
 {
     Tcl_Command cmd;
 
-    if (Tcl_InitStubs(interp, "9.0-", 0) == NULL) {
+    if (Tcl_InitStubs(interp, "9.1", 0) == NULL) {
 	return TCL_ERROR;
     }
 
