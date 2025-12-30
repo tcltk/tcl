@@ -265,7 +265,6 @@ static ConsoleHandleInfo *FindConsoleInfo(const ConsoleChannelInfo *);
 static DWORD WINAPI	ConsoleReaderThread(LPVOID arg);
 static DWORD WINAPI	ConsoleWriterThread(LPVOID arg);
 static void		NudgeWatchers(HANDLE consoleHandle);
-static int		ConsoleDataAvailable(HANDLE consoleHandle);
 #ifndef NDEBUG
 static int		RingBufferCheck(const RingBuffer *ringPtr);
 #endif
@@ -1589,7 +1588,7 @@ static int
 ConsoleDataAvailable(
     HANDLE consoleHandle)
 {
-    INPUT_RECORD input[20];
+    INPUT_RECORD input[10];
     DWORD count;
     DWORD i;
 
@@ -1612,9 +1611,8 @@ ConsoleDataAvailable(
 	return 1;
     }
     for (i = 0; i < count; ++i) {
-	if (input[i].EventType == KEY_EVENT &&
-	    input[i].Event.KeyEvent.bKeyDown &&
-	    input[i].Event.KeyEvent.uChar.UnicodeChar != 0) {
+	if (input[i].EventType == KEY_EVENT
+		&& input[i].Event.KeyEvent.bKeyDown) {
 	    return 1;
 	}
     }
