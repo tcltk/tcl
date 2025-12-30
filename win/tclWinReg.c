@@ -1452,7 +1452,7 @@ AppendSystemError(
 
     /* Tcl_WinRaiseError will reset interp result so increment ref first! */
     Tcl_IncrRefCount(resultPtr);
-    Tcl_WinRaiseError(interp, error, NULL, Tcl_GetString(resultPtr));
+    Tcl_WinRaiseError(interp, error, NULL, NULL, Tcl_GetString(resultPtr));
     Tcl_DecrRefCount(resultPtr);
 }
 
