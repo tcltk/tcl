@@ -882,7 +882,7 @@ CopyArray(
 				 * that they are C strings of dynamic
 				 * length. */
     char *buf,			/* Buffer to copy into. */
-    size_t buflen)			/* Size of buffer. */
+    size_t buflen)		/* Size of buffer. */
 {
     size_t i, j, len = 0;
     char *p, **newBuffer;
@@ -943,7 +943,7 @@ static size_t
 CopyString(
     const char *src,		/* String to copy. */
     char *buf,			/* Buffer to copy into. */
-    size_t buflen)			/* Size of buffer. */
+    size_t buflen)		/* Size of buffer. */
 {
     size_t len = 0;
 

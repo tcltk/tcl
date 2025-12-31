@@ -11,6 +11,8 @@
  */
 
 #include "tclWinInt.h"
+#include <AccCtrl.h>
+#include <AclAPI.h>
 #if defined (__clang__) && (__clang_major__ > 20)
 #pragma clang diagnostic ignored "-Wc++-keyword"
 #endif
@@ -40,6 +42,7 @@ static int		SetWinFileAttributes(Tcl_Interp *interp, int objIndex,
 			    Tcl_Obj *fileName, Tcl_Obj *attributePtr);
 static int		CannotSetAttribute(Tcl_Interp *interp, int objIndex,
 			    Tcl_Obj *fileName, Tcl_Obj *attributePtr);
+static int		ResetFileACL(const WCHAR *path);
 
 /*
  * Constants and variables necessary for file attributes subcommand.
@@ -271,12 +274,19 @@ DoRenameFile(
 	return TCL_ERROR;
     }
 
+    /* errno is EACCESS at this point */
+
     /*
      * We want to be more specific about the error if we can so caller can
      * try copy across volumes if possible. Only possible for directories
      * since MoveFileEx will move files across volumes if at all possible.
      */
     if ((srcAttr & FILE_ATTRIBUTE_DIRECTORY) == 0) {
+	if (ResetFileACL(nativeSrc) == ERROR_SUCCESS) {
+	    if (MoveFileW(nativeSrc, nativeDst) != FALSE) {
+		return TCL_OK;
+	    }
+	}
 	if (dstAttr & FILE_ATTRIBUTE_DIRECTORY) {
 	    errno = EISDIR;
 	} /* else leave as EACCES */
@@ -342,7 +352,11 @@ DoRenameFile(
     Tcl_DStringFree(&dstString);
 
     if (srcArgc == 1) {
-	/* Root directory. Cannot move no matter what. */
+		/*
+		 * They are trying to move a root directory. Whether or not it
+		 * is across filesystems, this cannot be done.
+		 */
+
 	Tcl_SetErrno(EINVAL);
     } else if ((srcArgc > 0) && (dstArgc > 0) &&
 	       (strcmp(srcArgv[0], dstArgv[0]) != 0)) {
@@ -538,7 +552,7 @@ TclpDeleteFile(
 
     if (Tcl_GetErrno() == EACCES) {
 	attr = GetFileAttributesW(path);
-	if (attr != 0xFFFFFFFF) {
+	if (attr != INVALID_FILE_ATTRIBUTES) {
 	    if (attr & FILE_ATTRIBUTE_DIRECTORY) {
 		if (attr & FILE_ATTRIBUTE_REPARSE_POINT) {
 		    /*
@@ -557,15 +571,26 @@ TclpDeleteFile(
 		 */
 
 		Tcl_SetErrno(EISDIR);
-	    } else if (attr & FILE_ATTRIBUTE_READONLY) {
-		int res = SetFileAttributesW(path,
-			attr & ~((DWORD) FILE_ATTRIBUTE_READONLY));
+	    } else {
+		/* It's a file, perhaps forbidden by attribute or ACL */
+		int fileAttrChanged;
+		if (attr & FILE_ATTRIBUTE_READONLY) {
+		    fileAttrChanged = SetFileAttributesW(path,
+			attr & ~((DWORD)FILE_ATTRIBUTE_READONLY));
 
-		if ((res != 0) && (DeleteFileW(path) != FALSE)) {
-		    return TCL_OK;
+		    if (fileAttrChanged && (DeleteFileW(path) != FALSE)) {
+			return TCL_OK;
+		    }
 		}
-		Tcl_WinConvertError(GetLastError());
-		if (res != 0) {
+		DWORD winError = GetLastError();
+		if (ResetFileACL(path) == 0) {
+		    if (DeleteFileW(path) != FALSE) {
+			return TCL_OK;
+		    }
+		    winError = GetLastError();
+		}
+		Tcl_WinConvertError(winError);
+		if (fileAttrChanged != 0) {
 		    SetFileAttributesW(path, attr);
 		}
 	    }
@@ -1862,6 +1887,60 @@ TclpCreateTemporaryDirectory(
     Tcl_DStringFree(&base);
     return Tcl_DStringToObj(&name);
 }
+
+/*
+ * ResetFileACL --
+ *
+ *      Resets a file ACL to allow full access as long the process
+ *      user id has permissions.
+ *
+ * Results:
+ *	0 on success, or a Windows error code.
+ *
+ * Side effects:
+ *	Changes the ACL on the file.
+ */
+int
+ResetFileACL(
+    const WCHAR *path) /* Path whose ACL should reset to allow all access */
+{
+    /* Never fails and does not have to be freed */
+    HANDLE processToken = GetCurrentProcessToken();
+
+    /* Get the user information from token to extract the SID. */
+    DWORD winError;
+    DWORD userInfoSize;
+    if (!GetTokenInformation(GetCurrentProcessToken(), TokenUser,
+				NULL, 0, &userInfoSize) &&
+	(winError = GetLastError()) != ERROR_INSUFFICIENT_BUFFER) {
+	return winError;
+    }
+    PTOKEN_USER userInfoPtr = (PTOKEN_USER)Tcl_Alloc(userInfoSize);
+    if (GetTokenInformation(GetCurrentProcessToken(), TokenUser, userInfoPtr,
+	   			userInfoSize, &userInfoSize)) {
+	EXPLICIT_ACCESS_W access;
+	ZeroMemory(&access, sizeof(access));
+	access.grfAccessPermissions = GENERIC_ALL;
+	access.grfAccessMode = GRANT_ACCESS;
+	access.grfInheritance = NO_INHERITANCE;
+	access.Trustee.TrusteeForm = TRUSTEE_IS_SID;
+	access.Trustee.TrusteeType = TRUSTEE_IS_USER;
+	access.Trustee.ptstrName = userInfoPtr->User.Sid;
+	PACL aclPtr = NULL;
+	winError = SetEntriesInAclW(1, &access, NULL, &aclPtr);
+	if (winError == ERROR_SUCCESS) {
+	    winError = SetNamedSecurityInfoW(path, SE_FILE_OBJECT,
+		DACL_SECURITY_INFORMATION, NULL, NULL, aclPtr, NULL);
+	}
+	LocalFree(aclPtr);
+    } else {
+	winError = GetLastError();
+    }
+
+    Tcl_Free(userInfoPtr);
+    return winError;
+}
+
 
 /*
  * Local Variables:
