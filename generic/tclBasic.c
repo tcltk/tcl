@@ -186,10 +186,12 @@ static Tcl_NRPostProc	DTraceCmdReturn;
 static Tcl_ObjCmdProc2	InvokeStringCommand;
 static Tcl_ObjCmdProc2	ExprAbsFunc;
 static Tcl_ObjCmdProc2	ExprBinaryFunc;
+static Tcl_ObjCmdProc2	ExprBinaryDIFunc;
 static Tcl_ObjCmdProc2	ExprBoolFunc;
 static Tcl_ObjCmdProc2	ExprCeilFunc;
 static Tcl_ObjCmdProc2	ExprDoubleFunc;
 static Tcl_ObjCmdProc2	ExprFloorFunc;
+static Tcl_ObjCmdProc2	ExprFmaFunc;
 static Tcl_ObjCmdProc2	ExprIntFunc;
 static Tcl_ObjCmdProc2	ExprIsqrtFunc;
 static Tcl_ObjCmdProc2	ExprIsFiniteFunc;
@@ -446,8 +448,11 @@ static const EnsembleSetup ensembleCommands[] = {
 
 typedef double (BuiltinUnaryFunc)(double x);
 typedef double (BuiltinBinaryFunc)(double x, double y);
+typedef double (BuiltinBinaryDIFunc)(double x, int y);
 #define BINARY_TYPECAST(fn) \
 	(BuiltinUnaryFunc *)(void *)(BuiltinBinaryFunc *) fn
+#define BINARY_DI_TYPECAST(fn) \
+	(BuiltinUnaryFunc *)(void *)(BuiltinBinaryDIFunc *) fn
 typedef struct {
     const char *name;		/* Name of the function. The full name is
 				 * "::tcl::mathfunc::<name>". */
@@ -466,8 +471,10 @@ static const BuiltinFuncDef BuiltinFuncTable[] = {
     { "bool",	ExprBoolFunc,	NULL			},
     { "cbrt",	ExprUnaryFunc,	cbrt			},
     { "ceil",	ExprCeilFunc,	NULL			},
+    { "copysign", ExprBinaryFunc, BINARY_TYPECAST(copysign)	},
     { "cos",	ExprUnaryFunc,	cos			},
     { "cosh",	ExprUnaryFunc,	cosh			},
+    { "dim",	ExprBinaryFunc,	BINARY_TYPECAST(fdim)	},
     { "double",	ExprDoubleFunc,	NULL			},
     { "entier",	ExprIntFunc,	NULL			},
     { "erf",	ExprUnaryFunc,	erf			},
@@ -476,6 +483,7 @@ static const BuiltinFuncDef BuiltinFuncTable[] = {
     { "exp2",	ExprUnaryFunc,	exp2			},
     { "expm1",	ExprUnaryFunc,	expm1			},
     { "floor",	ExprFloorFunc,	NULL			},
+    { "fma",	ExprFmaFunc,	NULL			},
     { "fmod",	ExprBinaryFunc,	BINARY_TYPECAST(fmod)	},
     { "hypot",	ExprBinaryFunc,	BINARY_TYPECAST(hypot)	},
     { "int",	ExprIntFunc,	NULL			},
@@ -486,6 +494,7 @@ static const BuiltinFuncDef BuiltinFuncTable[] = {
     { "isqrt",	ExprIsqrtFunc,	NULL			},
     { "issubnormal", ExprIsSubnormalFunc, NULL,		},
     { "isunordered", ExprIsUnorderedFunc, NULL,		},
+    { "ldexp",	ExprBinaryDIFunc, BINARY_DI_TYPECAST(ldexp)	},
     { "lgamma",	ExprUnaryFunc,	lgamma			},
     { "log",	ExprUnaryFunc,	log			},
     { "log10",	ExprUnaryFunc,	log10			},
@@ -493,8 +502,10 @@ static const BuiltinFuncDef BuiltinFuncTable[] = {
     { "log2",	ExprUnaryFunc,	log2			},
     { "max",	ExprMaxFunc,	NULL			},
     { "min",	ExprMinFunc,	NULL			},
+    { "nextafter", ExprBinaryFunc, BINARY_TYPECAST(nextafter)	},
     { "pow",	ExprBinaryFunc,	BINARY_TYPECAST(pow)	},
     { "rand",	ExprRandFunc,	NULL			},
+    { "remainder", ExprBinaryFunc, BINARY_TYPECAST(remainder)	},
     { "round",	ExprRoundFunc,	NULL			},
     { "sin",	ExprUnaryFunc,	sin			},
     { "sinh",	ExprUnaryFunc,	sinh			},
@@ -7016,6 +7027,28 @@ Tcl_GetVersion(
  *----------------------------------------------------------------------
  */
 
+// Like Tcl_GetDoubleFromObj(), but may accept NaN as compile-time option.
+static inline int
+GetDoubleFuncArg(
+    Tcl_Interp *interp,
+    Tcl_Obj *objPtr,
+    double *d)
+{
+    int code = Tcl_GetDoubleFromObj(interp, objPtr, d);
+#ifdef ACCEPT_NAN
+    if (code != TCL_OK) {
+	const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(objPtr, &tclDoubleType);
+
+	if (irPtr) {
+	    *d = irPtr->doubleValue;
+	    Tcl_ResetResult(interp);
+	    code = TCL_OK;
+	}
+    }
+#endif
+    return code;
+}
+
 static int
 ExprCeilFunc(
     TCL_UNUSED(void *),
@@ -7032,7 +7065,7 @@ ExprCeilFunc(
 	MathFuncWrongNumArgs(interp, 2, objc, objv);
 	return TCL_ERROR;
     }
-    code = Tcl_GetDoubleFromObj(interp, objv[1], &d);
+    code = GetDoubleFuncArg(interp, objv[1], &d);
 #ifdef ACCEPT_NAN
     if (code != TCL_OK) {
 	const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(objv[1], &tclDoubleType);
@@ -7272,18 +7305,7 @@ ExprUnaryFunc(
 	MathFuncWrongNumArgs(interp, 2, objc, objv);
 	return TCL_ERROR;
     }
-    code = Tcl_GetDoubleFromObj(interp, objv[1], &d);
-#ifdef ACCEPT_NAN
-    if (code != TCL_OK) {
-	const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(objv[1], &tclDoubleType);
-
-	if (irPtr) {
-	    d = irPtr->doubleValue;
-	    Tcl_ResetResult(interp);
-	    code = TCL_OK;
-	}
-    }
-#endif
+    code = GetDoubleFuncArg(interp, objv[1], &d);
     if (code != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -7336,38 +7358,47 @@ ExprBinaryFunc(
 	MathFuncWrongNumArgs(interp, 3, objc, objv);
 	return TCL_ERROR;
     }
-    code = Tcl_GetDoubleFromObj(interp, objv[1], &d1);
-#ifdef ACCEPT_NAN
-    if (code != TCL_OK) {
-	const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(objv[1], &tclDoubleType);
-
-	if (irPtr) {
-	    d1 = irPtr->doubleValue;
-	    Tcl_ResetResult(interp);
-	    code = TCL_OK;
-	}
-    }
-#endif
+    code = GetDoubleFuncArg(interp, objv[1], &d1);
     if (code != TCL_OK) {
 	return TCL_ERROR;
     }
-    code = Tcl_GetDoubleFromObj(interp, objv[2], &d2);
-#ifdef ACCEPT_NAN
-    if (code != TCL_OK) {
-	const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(objv[1], &tclDoubleType);
-
-	if (irPtr) {
-	    d2 = irPtr->doubleValue;
-	    Tcl_ResetResult(interp);
-	    code = TCL_OK;
-	}
-    }
-#endif
+    code = GetDoubleFuncArg(interp, objv[2], &d2);
     if (code != TCL_OK) {
 	return TCL_ERROR;
     }
     errno = 0;
     return CheckDoubleResult(interp, func(d1, d2));
+}
+
+static int
+ExprBinaryDIFunc(
+    void *clientData,		/* Contains the address of a function that
+				 * takes one double argument and one int
+				 * argument, and returns a double result. */
+    Tcl_Interp *interp,		/* The interpreter in which to execute the
+				 * function. */
+    Tcl_Size objc,		/* Actual parameter count. */
+    Tcl_Obj *const *objv)	/* Parameter vector. */
+{
+    int code;
+    double d1;
+    int i2;
+    BuiltinBinaryDIFunc *func = (BuiltinBinaryDIFunc *)clientData;
+
+    if (objc != 3) {
+	MathFuncWrongNumArgs(interp, 3, objc, objv);
+	return TCL_ERROR;
+    }
+    code = GetDoubleFuncArg(interp, objv[1], &d1);
+    if (code != TCL_OK) {
+	return TCL_ERROR;
+    }
+    code = Tcl_GetIntFromObj(interp, objv[2], &i2);
+    if (code != TCL_OK) {
+	return TCL_ERROR;
+    }
+    errno = 0;
+    return CheckDoubleResult(interp, func(d1, i2));
 }
 
 static int
@@ -7881,6 +7912,39 @@ ExprSrandFunc(
      */
 
     return ExprRandFunc(NULL, interp, 1, objv);
+}
+
+static int
+ExprFmaFunc(
+    void *clientData,		/* Contains the address of a function that
+				 * takes two double arguments and returns a
+				 * double result. */
+    Tcl_Interp *interp,		/* The interpreter in which to execute the
+				 * function. */
+    Tcl_Size objc,		/* Actual parameter count. */
+    Tcl_Obj *const *objv)	/* Parameter vector. */
+{
+    int code;
+    double d1, d2, d3;
+
+    if (objc != 4) {
+	MathFuncWrongNumArgs(interp, 4, objc, objv);
+	return TCL_ERROR;
+    }
+    code = GetDoubleFuncArg(interp, objv[1], &d1);
+    if (code != TCL_OK) {
+	return TCL_ERROR;
+    }
+    code = GetDoubleFuncArg(interp, objv[2], &d2);
+    if (code != TCL_OK) {
+	return TCL_ERROR;
+    }
+    code = GetDoubleFuncArg(interp, objv[3], &d3);
+    if (code != TCL_OK) {
+	return TCL_ERROR;
+    }
+    errno = 0;
+    return CheckDoubleResult(interp, fma(d1, d2, d3));
 }
 
 /*
