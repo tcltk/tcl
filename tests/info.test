@@ -655,7 +655,7 @@ test info-19.6 {info vars: Bug 1072654} -setup {
     namespace delete x
 } -result {}
 
-set functions {abs acos acosh asin asinh atan atan2 atanh bool cbrt ceil cos cosh double entier erf erfc exp exp2 expm1 floor fmod hypot int isfinite isinf isnan isnormal isqrt issubnormal isunordered lgamma log log10 log1p log2 max min pow rand round sin sinh sqrt srand tan tanh tgamma trunc wide}
+set functions {abs acos acosh asin asinh atan atan2 atanh bool cbrt ceil copysign cos cosh dim double entier erf erfc exp exp2 expm1 floor fma fmod hypot int isfinite isinf isnan isnormal isqrt issubnormal isunordered ldexp lgamma log log10 log1p log2 max min nextafter pow rand remainder round sin sinh sqrt srand tan tanh tgamma trunc wide}
 # Check whether the extra testing functions are defined...
 if {!([catch {expr {T1()}} msg] && ($msg eq {invalid command name "tcl::mathfunc::T1"}))} {
     set functions "T1 T2 T3 $functions"  ;# A lazy way of prepending!
