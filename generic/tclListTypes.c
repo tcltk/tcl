@@ -46,7 +46,7 @@ TclMakeResultObj(
 static Tcl_Size
 FindInArrayOfObjs(
     Tcl_Size haySize,
-    Tcl_Obj * const hayElems[],
+    Tcl_Obj *const hayElems[],
     Tcl_Obj *needlePtr)
 {
     Tcl_Size needleLen;
@@ -81,7 +81,7 @@ typedef struct TclObjArray {
 static TclObjArray *
 TclObjArrayNew(
     size_t nelems,
-    Tcl_Obj * const elemPtrs[])
+    Tcl_Obj *const elemPtrs[])
 {
     TclObjArray *arrayPtr = (TclObjArray *)Tcl_Alloc(
 	    offsetof(TclObjArray, elemPtrs) + nelems * sizeof(Tcl_Obj *));

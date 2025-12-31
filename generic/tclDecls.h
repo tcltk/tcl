@@ -1637,10 +1637,10 @@ EXTERN int		Tcl_ZlibInflate(Tcl_Interp *interp, int format,
 				Tcl_Obj *data, Tcl_Size buffersize,
 				Tcl_Obj *gzipHeaderDictObj);
 /* 612 */
-EXTERN unsigned int	Tcl_ZlibCRC32(unsigned int crc,
-				const unsigned char *buf, Tcl_Size len);
+EXTERN unsigned		Tcl_ZlibCRC32(unsigned crc, const unsigned char *buf,
+				Tcl_Size len);
 /* 613 */
-EXTERN unsigned int	Tcl_ZlibAdler32(unsigned int adler,
+EXTERN unsigned		Tcl_ZlibAdler32(unsigned adler,
 				const unsigned char *buf, Tcl_Size len);
 /* 614 */
 EXTERN int		Tcl_ZlibStreamInit(Tcl_Interp *interp, int mode,
@@ -1693,7 +1693,7 @@ EXTERN void		Tcl_ZlibStreamSetCompressionDictionary(
 /* 631 */
 EXTERN Tcl_Channel	Tcl_OpenTcpServerEx(Tcl_Interp *interp,
 				const char *service, const char *host,
-				unsigned int flags, int backlog,
+				unsigned flags, int backlog,
 				Tcl_TcpAcceptProc *acceptProc,
 				void *callbackData);
 /* 632 */
@@ -2541,8 +2541,8 @@ typedef struct TclStubs {
     void (*tcl_BackgroundException) (Tcl_Interp *interp, int code); /* 609 */
     int (*tcl_ZlibDeflate) (Tcl_Interp *interp, int format, Tcl_Obj *data, int level, Tcl_Obj *gzipHeaderDictObj); /* 610 */
     int (*tcl_ZlibInflate) (Tcl_Interp *interp, int format, Tcl_Obj *data, Tcl_Size buffersize, Tcl_Obj *gzipHeaderDictObj); /* 611 */
-    unsigned int (*tcl_ZlibCRC32) (unsigned int crc, const unsigned char *buf, Tcl_Size len); /* 612 */
-    unsigned int (*tcl_ZlibAdler32) (unsigned int adler, const unsigned char *buf, Tcl_Size len); /* 613 */
+    unsigned (*tcl_ZlibCRC32) (unsigned crc, const unsigned char *buf, Tcl_Size len); /* 612 */
+    unsigned (*tcl_ZlibAdler32) (unsigned adler, const unsigned char *buf, Tcl_Size len); /* 613 */
     int (*tcl_ZlibStreamInit) (Tcl_Interp *interp, int mode, int format, int level, Tcl_Obj *dictObj, Tcl_ZlibStream *zshandle); /* 614 */
     Tcl_Obj * (*tcl_ZlibStreamGetCommandName) (Tcl_ZlibStream zshandle); /* 615 */
     int (*tcl_ZlibStreamEof) (Tcl_ZlibStream zshandle); /* 616 */
@@ -2560,7 +2560,7 @@ typedef struct TclStubs {
     void * (*tcl_FindSymbol) (Tcl_Interp *interp, Tcl_LoadHandle handle, const char *symbol); /* 628 */
     int (*tcl_FSUnloadFile) (Tcl_Interp *interp, Tcl_LoadHandle handlePtr); /* 629 */
     void (*tcl_ZlibStreamSetCompressionDictionary) (Tcl_ZlibStream zhandle, Tcl_Obj *compressionDictionaryObj); /* 630 */
-    Tcl_Channel (*tcl_OpenTcpServerEx) (Tcl_Interp *interp, const char *service, const char *host, unsigned int flags, int backlog, Tcl_TcpAcceptProc *acceptProc, void *callbackData); /* 631 */
+    Tcl_Channel (*tcl_OpenTcpServerEx) (Tcl_Interp *interp, const char *service, const char *host, unsigned flags, int backlog, Tcl_TcpAcceptProc *acceptProc, void *callbackData); /* 631 */
     int (*tclZipfs_Mount) (Tcl_Interp *interp, const char *zipname, const char *mountPoint, const char *passwd); /* 632 */
     int (*tclZipfs_Unmount) (Tcl_Interp *interp, const char *mountPoint); /* 633 */
     Tcl_Obj * (*tclZipfs_TclLibrary) (void); /* 634 */

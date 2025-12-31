@@ -1752,12 +1752,12 @@ void
 TclInitCompileEnv(
     Tcl_Interp *interp,		/* The interpreter for which a CompileEnv
 				 * structure is initialized. */
-    CompileEnv *envPtr,/* Points to the CompileEnv structure to
+    CompileEnv *envPtr,		/* Points to the CompileEnv structure to
 				 * initialize. */
     const char *stringPtr,	/* The source string to be compiled. */
     size_t numBytes,		/* Number of bytes in source string. */
     const CmdFrame *invoker,	/* Location context invoking the bcc */
-    Tcl_Size word)			/* Index of the word in that context getting
+    Tcl_Size word)		/* Index of the word in that context getting
 				 * compiled */
 {
     Interp *iPtr = (Interp *) interp;
@@ -3338,7 +3338,7 @@ TclFindCompiledLocal(
 				 * scalar or array variable. If NULL, a
 				 * temporary var should be created. */
     Tcl_Size nameBytes,		/* Number of bytes in the name. */
-    bool create,			/* If 1, allocate a local frame entry for the
+    bool create,		/* If 1, allocate a local frame entry for the
 				 * variable if it is new. */
     CompileEnv *envPtr)		/* Points to the current compile environment*/
 {
