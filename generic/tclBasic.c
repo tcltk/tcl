@@ -208,6 +208,7 @@ static Tcl_ObjCmdProc2	ExprSqrtFunc;
 static Tcl_ObjCmdProc2	ExprSrandFunc;
 static Tcl_ObjCmdProc2	ExprUnaryFunc;
 static Tcl_ObjCmdProc2	ExprWideFunc;
+static Tcl_ObjCmdProc2	FracExpObjCmd;
 static Tcl_ObjCmdProc2	FloatClassifyObjCmd;
 static void		MathFuncWrongNumArgs(Tcl_Interp *interp, Tcl_Size expected,
 			    Tcl_Size actual, Tcl_Obj *const *objv);
@@ -329,6 +330,7 @@ static const CmdInfo builtInCmds[] = {
     {"foreach",		Tcl_ForeachObjCmd,	TclCompileForeachCmd,	TclNRForeachCmd,	CMD_IS_SAFE},
     {"format",		Tcl_FormatObjCmd,	TclCompileFormatCmd,	NULL,	CMD_IS_SAFE},
     {"fpclassify",	FloatClassifyObjCmd,    NULL,			NULL,	CMD_IS_SAFE},
+    {"frexp",		FracExpObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
     {"global",		Tcl_GlobalObjCmd,	TclCompileGlobalCmd,	NULL,	CMD_IS_SAFE},
     {"if",		Tcl_IfObjCmd,		TclCompileIfCmd,	TclNRIfObjCmd,	CMD_IS_SAFE},
     {"incr",		Tcl_IncrObjCmd,		TclCompileIncrCmd,	NULL,	CMD_IS_SAFE},
@@ -8280,6 +8282,35 @@ FloatClassifyObjCmd(
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, objPtr);
+    return TCL_OK;
+}
+
+static int
+FracExpObjCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* The interpreter in which to execute the
+				 * function. */
+    Tcl_Size objc,		/* Actual parameter count */
+    Tcl_Obj *const *objv)	/* Actual parameter list */
+{
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "floatValue");
+	return TCL_ERROR;
+    }
+
+    double d;
+    if (Tcl_GetDoubleFromObj(interp, objv[1], &d) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    int exp;
+    double frac = frexp(d, &exp);
+
+    Tcl_Obj *result[] = {
+	Tcl_NewDoubleObj(frac),
+	Tcl_NewIntObj(exp)
+    };
+    Tcl_SetObjResult(interp, Tcl_NewListObj(2, result));
     return TCL_OK;
 }
 
