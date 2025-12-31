@@ -159,7 +159,7 @@ Registry_Init(
 {
     Tcl_Command cmd;
 
-    if (Tcl_InitStubs(interp, "9.1", 0) == NULL) {
+    if (Tcl_InitStubs(interp, "9.0-", 0) == NULL) {
 	return TCL_ERROR;
     }
 
@@ -965,8 +965,8 @@ OpenKey(
     if (result == TCL_OK) {
 	result = OpenSubKey(hostName, rootKey, keyName, mode, flags, keyPtr);
 	if (result != ERROR_SUCCESS) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "unable to open key \"%s\": ", keyName ? keyName : ""));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "unable to open key: ", -1));
 	    AppendSystemError(interp, result);
 	    result = TCL_ERROR;
 	} else {
@@ -1448,12 +1448,55 @@ AppendSystemError(
     Tcl_Interp *interp,		/* Current interpreter. */
     DWORD error)		/* Result code from error. */
 {
+    Tcl_Size length;
+    WCHAR *tMsgPtr, **tMsgPtrPtr = &tMsgPtr;
+    const char *msg;
+    char id[TCL_INTEGER_SPACE], msgBuf[24 + TCL_INTEGER_SPACE];
+    Tcl_DString ds;
     Tcl_Obj *resultPtr = Tcl_GetObjResult(interp);
 
-    /* Tcl_WinRaiseError will reset interp result so increment ref first! */
-    Tcl_IncrRefCount(resultPtr);
-    Tcl_WinRaiseError(interp, error, NULL, Tcl_GetString(resultPtr));
-    Tcl_DecrRefCount(resultPtr);
+    if (Tcl_IsShared(resultPtr)) {
+	resultPtr = Tcl_DuplicateObj(resultPtr);
+    }
+    length = FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM
+	    | FORMAT_MESSAGE_ALLOCATE_BUFFER, NULL, error,
+	    MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (WCHAR *) tMsgPtrPtr,
+	    0, NULL);
+    if (length == 0) {
+	snprintf(msgBuf, sizeof(msgBuf), "unknown error: %ld", error);
+	msg = msgBuf;
+    } else {
+	char *msgPtr;
+
+	Tcl_DStringInit(&ds);
+	Tcl_WCharToUtfDString(tMsgPtr, wcslen(tMsgPtr), &ds);
+	LocalFree(tMsgPtr);
+
+	msgPtr = Tcl_DStringValue(&ds);
+	length = Tcl_DStringLength(&ds);
+
+	/*
+	 * Trim the trailing CR/LF from the system message.
+	 */
+
+	if (msgPtr[length-1] == '\n') {
+	    --length;
+	}
+	if (msgPtr[length-1] == '\r') {
+	    --length;
+	}
+	msgPtr[length] = 0;
+	msg = msgPtr;
+    }
+
+    snprintf(id, sizeof(id), "%ld", error);
+    Tcl_SetErrorCode(interp, "WINDOWS", id, msg, (char *)NULL);
+    Tcl_AppendToObj(resultPtr, msg, length);
+    Tcl_SetObjResult(interp, resultPtr);
+
+    if (length != 0) {
+	Tcl_DStringFree(&ds);
+    }
 }
 
 /*

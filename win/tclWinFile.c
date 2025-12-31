@@ -11,7 +11,6 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
-#undef NDEBUG
 #include "tclWinInt.h"
 #include "tclFileSystem.h"
 #include <winioctl.h>
