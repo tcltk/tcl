@@ -2456,14 +2456,6 @@ declare 2 {
 declare 3 {
     void Tcl_WinConvertError(unsigned errCode)
 }
-declare 4 {
-    int Tcl_WinAppendMessageFromModule(unsigned messageId, void *hModule,
-	int useDefaultMsg, Tcl_DString *dsPtr)
-}
-declare 5 {
-    int Tcl_WinRaiseError(Tcl_Interp *interp, unsigned errorCode,
-	const char *messageDll, const char *prefix)
-}
 
 ##############################################################################
 
