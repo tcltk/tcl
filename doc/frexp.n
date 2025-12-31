@@ -1,0 +1,41 @@
+'\"
+'\" Copyright (c) 2025 Donal Fellows
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH frexp n 9.1 Tcl "Tcl Float Decomposition"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+frexp \- Split a floating-point number into fraction and exponent parts
+.SH SYNOPSIS
+\fBpackage require tcl 9.1\fR
+.sp
+\fBfrexp \fIvalue\fR
+.BE
+.SH DESCRIPTION
+The \fBfrexp\fR command takes a floating-point number, \fIvalue\fR, and
+returns a list of two values. The first element of the result is the
+fractional part of \fIvalue\fR (signed, of magnitude between 0.5 and 1.0),
+and the second element of the result is the integer exponent from \fIvalue\fR.
+When \fIvalue\fR is infinite, the fraction is also infinite (of the same sign).
+.SH EXAMPLE
+.PP
+The \fBfrexp\fR command is paired with the \fRldexp\fR function, like this:
+.PP
+.CS
+set value 123.456
+lassign [frexp $value] frac exp
+set recovered [expr { ldexp($frac, $exp) }]
+puts "$value -> $frac*2**$exp -> $recovered"
+#       123.456 -> 0.9645*2**7 -> 123.456
+.CE
+.SH "SEE ALSO"
+expr(n), mathfunc(n)
+.SH KEYWORDS
+floating point
+'\" Local Variables:
+'\" mode: nroff
+'\" End:
