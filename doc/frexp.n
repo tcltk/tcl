@@ -27,13 +27,13 @@ The \fBfrexp\fR command is paired with the \fRldexp\fR function, like this:
 .PP
 .CS
 set value 123.456
-lassign [frexp $value] frac exp
+lassign [\fBfrexp\fR $value] frac exp
 set recovered [expr { ldexp($frac, $exp) }]
 puts "$value -> $frac*2**$exp -> $recovered"
 #       123.456 -> 0.9645*2**7 -> 123.456
 .CE
 .SH "SEE ALSO"
-expr(n), mathfunc(n)
+expr(n), mathfunc(n), modf(n)
 .SH KEYWORDS
 floating point
 '\" Local Variables:

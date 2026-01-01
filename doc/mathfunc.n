@@ -92,6 +92,9 @@ mathfunc \- Mathematical functions for Tcl expressions
 \fB::tcl::mathfunc::remainder\fI x y\fR
 .VE new
 \fB::tcl::mathfunc::round\fI arg\fR
+.VS new
+\fB::tcl::mathfunc::signbit\fI arg\fR
+.VE new
 \fB::tcl::mathfunc::sin\fI arg\fR
 \fB::tcl::mathfunc::sinh\fI arg\fR
 \fB::tcl::mathfunc::sqrt\fI arg\fR
@@ -476,6 +479,12 @@ Computes the IEEE remainder of the floating point division operation \fIx\fR/\fI
 .
 If \fIarg\fR is an integer value, returns \fIarg\fR, otherwise converts
 \fIarg\fR to integer by rounding and returns the converted value.
+.\" COMMAND: signbit
+.TP
+\fBsignbit \fIarg\fR
+.VS new
+Get the sign bit of the numeric value, \fIarg\fR, as 0 (positive) or 1 (negative).
+.VE new
 .\" COMMAND: sin
 .TP
 \fBsin \fIarg\fR

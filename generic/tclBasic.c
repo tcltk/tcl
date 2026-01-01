@@ -204,6 +204,7 @@ static Tcl_ObjCmdProc2	ExprMaxFunc;
 static Tcl_ObjCmdProc2	ExprMinFunc;
 static Tcl_ObjCmdProc2	ExprRandFunc;
 static Tcl_ObjCmdProc2	ExprRoundFunc;
+static Tcl_ObjCmdProc2	ExprSignBitFunc;
 static Tcl_ObjCmdProc2	ExprSqrtFunc;
 static Tcl_ObjCmdProc2	ExprSrandFunc;
 static Tcl_ObjCmdProc2	ExprUnaryFunc;
@@ -212,6 +213,7 @@ static Tcl_ObjCmdProc2	FracExpObjCmd;
 static Tcl_ObjCmdProc2	FloatClassifyObjCmd;
 static void		MathFuncWrongNumArgs(Tcl_Interp *interp, Tcl_Size expected,
 			    Tcl_Size actual, Tcl_Obj *const *objv);
+static Tcl_ObjCmdProc2	ModFObjCmd;
 static Tcl_NRPostProc	NRCoroutineCallerCallback;
 static Tcl_NRPostProc	NRCoroutineExitCallback;
 static Tcl_NRPostProc	NRCommand;
@@ -353,6 +355,7 @@ static const CmdInfo builtInCmds[] = {
     {"lseq",		Tcl_LseqObjCmd,		TclCompileLseqCmd,	NULL,	CMD_IS_SAFE},
     {"lset",		Tcl_LsetObjCmd,		TclCompileLsetCmd,	NULL,	CMD_IS_SAFE},
     {"lsort",		Tcl_LsortObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
+    {"modf",		ModFObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
     {"package",		Tcl_PackageObjCmd,	NULL,			TclNRPackageObjCmd,	CMD_IS_SAFE},
     {"proc",		Tcl_ProcObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
     {"regexp",		Tcl_RegexpObjCmd,	TclCompileRegexpCmd,	NULL,	CMD_IS_SAFE},
@@ -509,6 +512,7 @@ static const BuiltinFuncDef BuiltinFuncTable[] = {
     { "rand",	ExprRandFunc,	NULL			},
     { "remainder", ExprBinaryFunc, BINARY_TYPECAST(remainder)	},
     { "round",	ExprRoundFunc,	NULL			},
+    { "signbit", ExprSignBitFunc, NULL			},
     { "sin",	ExprUnaryFunc,	sin			},
     { "sinh",	ExprUnaryFunc,	sinh			},
     { "sqrt",	ExprSqrtFunc,	NULL			},
@@ -7918,9 +7922,7 @@ ExprSrandFunc(
 
 static int
 ExprFmaFunc(
-    void *clientData,		/* Contains the address of a function that
-				 * takes two double arguments and returns a
-				 * double result. */
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     Tcl_Size objc,		/* Actual parameter count. */
@@ -8303,14 +8305,88 @@ FracExpObjCmd(
 	return TCL_ERROR;
     }
 
-    int exp;
-    double frac = frexp(d, &exp);
+    int expPart;
+    double fracPart = frexp(d, &expPart);
 
     Tcl_Obj *result[] = {
-	Tcl_NewDoubleObj(frac),
-	Tcl_NewIntObj(exp)
+	Tcl_NewDoubleObj(fracPart),
+	Tcl_NewIntObj(expPart)
     };
     Tcl_SetObjResult(interp, Tcl_NewListObj(2, result));
+    return TCL_OK;
+}
+
+static int
+ModFObjCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* The interpreter in which to execute the
+				 * function. */
+    Tcl_Size objc,		/* Actual parameter count */
+    Tcl_Obj *const *objv)	/* Actual parameter list */
+{
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "floatValue");
+	return TCL_ERROR;
+    }
+
+    double d;
+    if (Tcl_GetDoubleFromObj(interp, objv[1], &d) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    double integralPart, fracPart = modf(d, &integralPart);
+
+    Tcl_Obj *result[] = {
+	Tcl_NewDoubleObj(integralPart),
+	Tcl_NewDoubleObj(fracPart)
+    };
+    Tcl_SetObjResult(interp, Tcl_NewListObj(2, result));
+    return TCL_OK;
+}
+
+static int
+ExprSignBitFunc(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* The interpreter in which to execute the
+				 * function. */
+    Tcl_Size objc,		/* Actual parameter count */
+    Tcl_Obj *const *objv)	/* Actual parameter list */
+{
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "numericValue");
+	return TCL_ERROR;
+    }
+
+    void *data;
+    int type;
+    if (Tcl_GetNumberFromObj(interp, objv[1], &data, &type) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    bool bit;
+    switch (type) {
+    case TCL_NUMBER_DOUBLE:
+    case TCL_NUMBER_NAN: {
+	// Special case; handle NaN as conventional double
+	double d = *((double *) data);
+	bit = signbit(d);
+	break;
+    }
+    case TCL_NUMBER_INT: {
+	Tcl_WideInt i = *((Tcl_WideInt *) data);
+	bit = i < 0;
+	break;
+    }
+    case TCL_NUMBER_BIG: {
+	mp_int *bigPtr = (mp_int *) data;
+	bit = mp_isneg(bigPtr);
+	break;
+    }
+    default:
+	TCL_UNREACHABLE();
+    }
+
+    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(bit));
     return TCL_OK;
 }
 
