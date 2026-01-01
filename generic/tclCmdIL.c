@@ -2136,7 +2136,6 @@ Tcl_JoinObjCmd(
     Tcl_Obj *const objv[])	/* The argument objects. */
 {
     Tcl_Size length, listLen;
-    int isAbstractList = 0;
     Tcl_Obj *resObjPtr = NULL;
     Tcl_Obj *joinObjPtr = NULL;
     Tcl_Obj **elemPtrs = NULL;
@@ -2165,7 +2164,6 @@ Tcl_JoinObjCmd(
     } else if (TclObjTypeHasProc(objv[1], getElementsProc)) {
 	/* Has a getElementsProc, use it */
 	listLen = TclObjTypeLength(objv[1]);
-	isAbstractList = (listLen ? 1 : 0);
 	if (listLen > 1 && TclObjTypeGetElements(interp, objv[1],
 		&listLen, &elemPtrs) != TCL_OK) {
 	    return TCL_ERROR;
@@ -2175,7 +2173,6 @@ Tcl_JoinObjCmd(
 	assert(TclObjTypeHasProc(objv[1], indexProc));
 	assert(TclObjTypeHasProc(objv[1], lengthProc));
 	listLen = TclObjTypeLength(objv[1]);
-	isAbstractList = 1;
     }
 
     if (listLen == 0) {
