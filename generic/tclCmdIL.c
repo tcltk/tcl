@@ -2147,8 +2147,11 @@ Tcl_JoinObjCmd(
     }
 
     /*
-     * Make sure the list argument is a list object and get its length and a
-     * pointer to its array of element pointers.
+     * For native lists and lists that do not have methods for either
+     * generating an element array or indexing elements, retrieve elements
+     * with the general TclListObjGetElements procedure. Otherwise, use the
+     * getElementsProc or indexProc methods as appopriate. The intent is to
+     * avoid shimmering abstract lists.
      */
 
     if (TclHasInternalRep(objv[1], &tclListType) ||
@@ -2181,12 +2184,11 @@ Tcl_JoinObjCmd(
     }
     if (listLen == 1) {
 	/* One element; return it */
-	if (!isAbstractList) {
-	    assert(elemPtrs);
+	if (elemPtrs) {
 	    Tcl_SetObjResult(interp, elemPtrs[0]);
 	} else {
 	    Tcl_Obj *elemObj;
-
+	    assert(TclObjTypeHasProc(objv[1], indexProc));
 	    if (TclObjTypeIndex(interp, objv[1], 0, &elemObj) != TCL_OK) {
 		return TCL_ERROR;
 	    }
