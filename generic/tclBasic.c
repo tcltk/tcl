@@ -200,6 +200,7 @@ static Tcl_ObjCmdProc2	ExprIsNaNFunc;
 static Tcl_ObjCmdProc2	ExprIsNormalFunc;
 static Tcl_ObjCmdProc2	ExprIsSubnormalFunc;
 static Tcl_ObjCmdProc2	ExprIsUnorderedFunc;
+static Tcl_ObjCmdProc2	ExprLgammaFunc;
 static Tcl_ObjCmdProc2	ExprMaxFunc;
 static Tcl_ObjCmdProc2	ExprMinFunc;
 static Tcl_ObjCmdProc2	ExprRandFunc;
@@ -490,6 +491,7 @@ static const BuiltinFuncDef BuiltinFuncTable[] = {
     { "floor",	ExprFloorFunc,	NULL			},
     { "fma",	ExprFmaFunc,	NULL			},
     { "fmod",	ExprBinaryFunc,	BINARY_TYPECAST(fmod)	},
+    { "gamma",	ExprUnaryFunc,	tgamma			},
     { "hypot",	ExprBinaryFunc,	BINARY_TYPECAST(hypot)	},
     { "int",	ExprIntFunc,	NULL			},
     { "isfinite", ExprIsFiniteFunc, NULL		},
@@ -500,7 +502,7 @@ static const BuiltinFuncDef BuiltinFuncTable[] = {
     { "issubnormal", ExprIsSubnormalFunc, NULL,		},
     { "isunordered", ExprIsUnorderedFunc, NULL,		},
     { "ldexp",	ExprBinaryDIFunc, BINARY_DI_TYPECAST(ldexp)	},
-    { "lgamma",	ExprUnaryFunc,	lgamma			},
+    { "lgamma",	ExprLgammaFunc,	NULL			},
     { "log",	ExprUnaryFunc,	log			},
     { "log10",	ExprUnaryFunc,	log10			},
     { "log1p",	ExprUnaryFunc,	log1p			},
@@ -519,7 +521,6 @@ static const BuiltinFuncDef BuiltinFuncTable[] = {
     { "srand",	ExprSrandFunc,	NULL			},
     { "tan",	ExprUnaryFunc,	tan			},
     { "tanh",	ExprUnaryFunc,	tanh			},
-    { "tgamma",	ExprUnaryFunc,	tgamma			},
     { "trunc",	ExprUnaryFunc,	trunc			},
     { "wide",	ExprWideFunc,	NULL			},
     { NULL, NULL, NULL }
@@ -7317,6 +7318,57 @@ ExprUnaryFunc(
     }
     errno = 0;
     return CheckDoubleResult(interp, func(d));
+}
+
+static int
+ExprLgammaFunc(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* The interpreter in which to execute the
+				 * function. */
+    Tcl_Size objc,		/* Actual parameter count */
+    Tcl_Obj *const *objv)	/* Actual parameter list */
+{
+    double d, result;
+
+    if (objc != 2) {
+	MathFuncWrongNumArgs(interp, 2, objc, objv);
+	return TCL_ERROR;
+    }
+    int code = GetDoubleFuncArg(interp, objv[1], &d);
+    if (code != TCL_OK) {
+	return TCL_ERROR;
+    }
+    errno = 0;
+
+#ifdef _POSIX_VERSION
+    /*
+     * Stupid misfeatures time! POSIX requires that the sign of the result be
+     * stored in a global variable, signgam (that isn't universally available
+     * anyway, so we're not interested in it). That that is not a per-thread
+     * variable is very stupid indeed, but we're stuck with it. We make sure
+     * we hold a mutex when calling the function, even though we don't care at
+     * all about the global state it manages, since then we'll definitely be
+     * safe, whatever sort of stupidity is going on in the C library.
+     *
+     * We pay a bit of a penalty for this caution, but we'll worry about that
+     * if someone states they're calling the function frequently from multiple
+     * threads...
+     *
+     * Citations:
+     *  https://en.cppreference.com/w/c/numeric/math/lgamma.html
+     *  https://pubs.opengroup.org/onlinepubs/9699919799/functions/lgamma.html
+     */
+
+    TCL_DECLARE_MUTEX(lgammaMutex)
+    Tcl_MutexLock(&lgammaMutex);
+    result = lgamma(d);
+    Tcl_MutexUnlock(&lgammaMutex);
+#else
+    /* No such nonsense elsewhere. Thank goodness! */
+    result = lgamma(d);
+#endif
+
+    return CheckDoubleResult(interp, result);
 }
 
 static int
