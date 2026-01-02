@@ -8405,7 +8405,7 @@ ExprSignBitFunc(
     Tcl_Obj *const *objv)	/* Actual parameter list */
 {
     if (objc != 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "numericValue");
+	MathFuncWrongNumArgs(interp, 2, objc, objv);
 	return TCL_ERROR;
     }
 

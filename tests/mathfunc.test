@@ -1,0 +1,214 @@
+# Commands covered: tcl::mathfunc::*
+#
+# This file contains a collection of tests for one or more of the Tcl
+# built-in commands. Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
+#
+# Copyright © 2026 Donal K. Fellows.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
+    namespace import -force ::tcltest::*
+}
+
+::tcltest::loadTestedCommands
+
+# start of tests
+
+test mathfunc-acosh.1 {acosh: no expression} -body {
+    tcl::mathfunc::acosh
+} -returnCodes error -result {not enough arguments for math function "acosh"}
+test mathfunc-acosh.2 {acosh: out of bounds} -body {
+    tcl::mathfunc::acosh -1
+} -returnCodes error -result {domain error: argument not in valid range}
+test mathfunc-acosh.3 {acosh: valid result} {
+    tcl::mathfunc::acosh 1
+} 0.0
+
+test mathfunc-asinh.1 {asinh: no expression} -body {
+    tcl::mathfunc::asinh
+} -returnCodes error -result {not enough arguments for math function "asinh"}
+test mathfunc-asinh.2 {asinh: valid result} {
+    tcl::mathfunc::asinh 1
+} 0.881373587019543
+
+test mathfunc-atanh.1 {atanh: no expression} -body {
+    tcl::mathfunc::atanh
+} -returnCodes error -result {not enough arguments for math function "atanh"}
+test mathfunc-atanh.2 {atanh: out of bounds} -body {
+    tcl::mathfunc::atanh -2
+} -returnCodes error -result {domain error: argument not in valid range}
+test mathfunc-atanh.3 {atanh: valid result} {
+    tcl::mathfunc::atanh 0.5
+} 0.5493061443340549
+
+test mathfunc-cbrt.1 {cbrt: no expression} -body {
+    tcl::mathfunc::cbrt
+} -returnCodes error -result {not enough arguments for math function "cbrt"}
+test mathfunc-cbrt.2 {cbrt: valid result} {
+    tcl::mathfunc::cbrt -27
+} -3.0
+
+test mathfunc-copysign.1 {copysign: no expressions} -body {
+    tcl::mathfunc::copysign
+} -returnCodes error -result {not enough arguments for math function "copysign"}
+test mathfunc-copysign.2 {copysign: valid result} {
+    tcl::mathfunc::copysign 0 -1
+} -0.0
+
+test mathfunc-dim.1 {dim: no expressions} -body {
+    tcl::mathfunc::dim
+} -returnCodes error -result {not enough arguments for math function "dim"}
+test mathfunc-dim.2 {dim: valid result} {
+    tcl::mathfunc::dim 2 1
+} 1.0
+test mathfunc-dim.3 {dim: valid result} {
+    tcl::mathfunc::dim 1 2
+} 0.0
+
+test mathfunc-erf.1 {erf: no expression} -body {
+    tcl::mathfunc::erf
+} -returnCodes error -result {not enough arguments for math function "erf"}
+test mathfunc-erf.2 {erf: valid result} {
+    tcl::mathfunc::erf 1
+} 0.8427007929497149
+
+test mathfunc-erfc.1 {erfc: no expression} -body {
+    tcl::mathfunc::erfc
+} -returnCodes error -result {not enough arguments for math function "erfc"}
+test mathfunc-erfc.2 {erfc: valid result} {
+    tcl::mathfunc::erfc 1
+} 0.1572992070502851
+
+test mathfunc-exp2.1 {exp2: no expression} -body {
+    tcl::mathfunc::exp2
+} -returnCodes error -result {not enough arguments for math function "exp2"}
+test mathfunc-exp2.2 {exp2: valid result} {
+    tcl::mathfunc::exp2 1
+} 2.0
+
+test mathfunc-expm1.1 {expm1: no expression} -body {
+    tcl::mathfunc::expm1
+} -returnCodes error -result {not enough arguments for math function "expm1"}
+test mathfunc-expm1.2 {expm1: valid result} {
+    tcl::mathfunc::expm1 1
+} 1.718281828459045
+
+test mathfunc-fma.1 {fma: no expressions} -body {
+    tcl::mathfunc::fma
+} -returnCodes error -result {not enough arguments for math function "fma"}
+test mathfunc-fma.2 {fma: valid result} {
+    tcl::mathfunc::fma 2 3 5
+} 11.0
+
+test mathfunc-frexp.1 {frexp: no expression} -body {
+    frexp
+} -returnCodes error -result {wrong # args: should be "frexp floatValue"}
+test mathfunc-frexp.2 {frexp: valid result} {
+    frexp 1.5
+} {0.75 1}
+
+test mathfunc-gamma.1 {gamma: no expression} -body {
+    tcl::mathfunc::gamma
+} -returnCodes error -result {not enough arguments for math function "gamma"}
+test mathfunc-gamma.2 {gamma: valid result} {
+    tcl::mathfunc::gamma 4.5
+} 11.63172839656745
+
+test mathfunc-ldexp.1 {ldexp: no expressions} -body {
+    tcl::mathfunc::ldexp
+} -returnCodes error -result {not enough arguments for math function "ldexp"}
+test mathfunc-ldexp.2 {ldexp: valid result} {
+    tcl::mathfunc::ldexp 0.75 1
+} 1.5
+
+test mathfunc-lgamma.1 {lgamma: no expression} -body {
+    tcl::mathfunc::lgamma
+} -returnCodes error -result {not enough arguments for math function "lgamma"}
+test mathfunc-lgamma.2 {lgamma: valid result} {
+    tcl::mathfunc::lgamma 4.5
+} 2.4537365708424423
+
+test mathfunc-log1p.1 {log1p: no expression} -body {
+    tcl::mathfunc::log1p
+} -returnCodes error -result {not enough arguments for math function "log1p"}
+test mathfunc-log1p.2 {log1p: valid result} {
+    tcl::mathfunc::log1p 4.5
+} 1.7047480922384253
+
+test mathfunc-log2.1 {log2: no expression} -body {
+    tcl::mathfunc::log2
+} -returnCodes error -result {not enough arguments for math function "log2"}
+test mathfunc-log2.2 {log2: valid result} {
+    tcl::mathfunc::log2 8
+} 3.0
+
+test mathfunc-modf.1 {modf: no expression} -body {
+    modf
+} -returnCodes error -result {wrong # args: should be "modf floatValue"}
+test mathfunc-modf.2 {modf: valid result} {
+    modf 1.5
+} {1.0 0.5}
+
+test mathfunc-nextafter.1 {nextafter: no expression} -body {
+    tcl::mathfunc::nextafter
+} -returnCodes error -result {not enough arguments for math function "nextafter"}
+test mathfunc-nextafter.2 {nextafter: valid result} {
+    tcl::mathfunc::nextafter 123 inf
+} 123.00000000000001
+
+test mathfunc-remainder.1 {remainder: no expressions} -body {
+    tcl::mathfunc::remainder
+} -returnCodes error -result {not enough arguments for math function "remainder"}
+test mathfunc-remainder.2 {remainder: valid result} {
+    tcl::mathfunc::remainder 12.5 1.5
+} 0.5
+
+test mathfunc-signbit.1 {signbit: no expression} -body {
+    tcl::mathfunc::signbit
+} -returnCodes error -result {not enough arguments for math function "signbit"}
+test mathfunc-signbit.2 {signbit: valid result: float} {
+    tcl::mathfunc::signbit 123.456
+} 0
+test mathfunc-signbit.3 {signbit: valid result: float} {
+    tcl::mathfunc::signbit -0.0
+} 1
+test mathfunc-signbit.4 {signbit: valid result: float} {
+    tcl::mathfunc::signbit -inf
+} 1
+test mathfunc-signbit.5 {signbit: valid result: int} {
+    tcl::mathfunc::signbit 0
+} 0
+test mathfunc-signbit.6 {signbit: valid result: int} {
+    tcl::mathfunc::signbit 123
+} 0
+test mathfunc-signbit.7 {signbit: valid result: int} {
+    tcl::mathfunc::signbit -12
+} 1
+test mathfunc-signbit.8 {signbit: valid result: bignum} {
+    tcl::mathfunc::signbit 1231231231231231231231231231231231231231231231231223
+} 0
+test mathfunc-signbit.9 {signbit: valid result: nan} -body {
+    # Not defined which value is returned for this
+    tcl::mathfunc::signbit NaN
+} -match glob -result {[01]}
+
+test mathfunc-trunc.1 {trunc: no expression} -body {
+    tcl::mathfunc::trunc
+} -returnCodes error -result {not enough arguments for math function "trunc"}
+test mathfunc-trunc.2 {trunc: valid result} {
+    tcl::mathfunc::trunc 12.5
+} 12.0
+test mathfunc-trunc.3 {trunc: valid result} {
+    tcl::mathfunc::trunc -12.5
+} -12.0
+
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# End:
