@@ -18,46 +18,46 @@ mathfunc \- Mathematical functions for Tcl expressions
 
 \fB::tcl::mathfunc::abs\fI arg\fR
 \fB::tcl::mathfunc::acos\fI arg\fR
-.VS new
+.VS TIP745
 \fB::tcl::mathfunc::acosh\fI arg\fR
-.VE new
+.VE TIP745
 \fB::tcl::mathfunc::asin\fI arg\fR
-.VS new
+.VS TIP745
 \fB::tcl::mathfunc::asin\fI arg\fR
-.VE new
+.VE TIP745
 \fB::tcl::mathfunc::atan\fI arg\fR
 \fB::tcl::mathfunc::atan2\fI y x\fR
-.VS new
+.VS TIP745
 \fB::tcl::mathfunc::atan\fI arg\fR
-.VE new
+.VE TIP745
 \fB::tcl::mathfunc::bool\fI arg\fR
-.VS new
+.VS TIP745
 \fB::tcl::mathfunc::cbrt\fI arg\fR
-.VE new
+.VE TIP745
 \fB::tcl::mathfunc::ceil\fI arg\fR
-.VS new
+.VS TIP745
 \fB::tcl::mathfunc::copysign\fI x y\fR
-.VE new
+.VE TIP745
 \fB::tcl::mathfunc::cos\fI arg\fR
 \fB::tcl::mathfunc::cosh\fI arg\fR
-.VS new
+.VS TIP745
 \fB::tcl::mathfunc::dim\fI x y\fR
-.VE new
+.VE TIP745
 \fB::tcl::mathfunc::double\fI arg\fR
 \fB::tcl::mathfunc::entier\fI arg\fR
-.VS new
+.VS TIP745
 \fB::tcl::mathfunc::erf\fI arg\fR
 \fB::tcl::mathfunc::erfc\fI arg\fR
-.VE new
+.VE TIP745
 \fB::tcl::mathfunc::exp\fI arg\fR
-.VS new
+.VS TIP745
 \fB::tcl::mathfunc::exp2\fI arg\fR
 \fB::tcl::mathfunc::expm1\fI arg\fR
-.VE new
+.VE TIP745
 \fB::tcl::mathfunc::floor\fI arg\fR
-.VS new
+.VS TIP745
 \fB::tcl::mathfunc::fma\fI x y z\fR
-.VE new
+.VE TIP745
 \fB::tcl::mathfunc::fmod\fI x y\fR
 \fB::tcl::mathfunc::hypot\fI x y\fR
 \fB::tcl::mathfunc::int\fI arg\fR
@@ -72,39 +72,40 @@ mathfunc \- Mathematical functions for Tcl expressions
 \fB::tcl::mathfunc::issubnormal\fI arg\fR
 \fB::tcl::mathfunc::isunordered\fI x y\fR
 .VE TIP521
-.VS new
+.VS TIP745
 \fB::tcl::mathfunc::lgamma\fI arg\fR
-.VE new
+.VE TIP745
 \fB::tcl::mathfunc::log\fI arg\fR
 \fB::tcl::mathfunc::log10\fI arg\fR
-.VS new
+.VS TIP745
 \fB::tcl::mathfunc::log1p\fI arg\fR
 \fB::tcl::mathfunc::log2\fI arg\fR
-.VE new
+\fB::tcl::mathfunc::logb\fI arg\fR
+.VE TIP745
 \fB::tcl::mathfunc::max\fI arg\fR ?\fIarg ...\fR?
 \fB::tcl::mathfunc::min\fI arg\fR ?\fIarg ...\fR?
-.VS new
+.VS TIP745
 \fB::tcl::mathfunc::nextafter\fI x y\fR
-.VE new
+.VE TIP745
 \fB::tcl::mathfunc::pow\fI x y\fR
 \fB::tcl::mathfunc::rand\fR
-.VS new
+.VS TIP745
 \fB::tcl::mathfunc::remainder\fI x y\fR
-.VE new
+.VE TIP745
 \fB::tcl::mathfunc::round\fI arg\fR
-.VS new
+.VS TIP745
 \fB::tcl::mathfunc::signbit\fI arg\fR
-.VE new
+.VE TIP745
 \fB::tcl::mathfunc::sin\fI arg\fR
 \fB::tcl::mathfunc::sinh\fI arg\fR
 \fB::tcl::mathfunc::sqrt\fI arg\fR
 \fB::tcl::mathfunc::srand\fI arg\fR
 \fB::tcl::mathfunc::tan\fI arg\fR
 \fB::tcl::mathfunc::tanh\fI arg\fR
-.VS new
+.VS TIP745
 \fB::tcl::mathfunc::tgamma\fI arg\fR
 \fB::tcl::mathfunc::trunc\fI arg\fR
-.VE new
+.VE TIP745
 \fB::tcl::mathfunc::wide\fI arg\fR
 .fi
 .BE
@@ -133,10 +134,11 @@ of which work solely with floating-point numbers unless otherwise noted:
 \fBisinf\fR	\fBisnan\fR	\fBisnormal\fR	\fBisqrt\fR
 \fBissubnormal\fR	\fBisunordered\fR	\fBldexp\fR	\fBlgamma\fR
 \fBlog\fR	\fBlog10\fR	\fBlog1p\fR	\fBlog2\fR
-\fBmax\fR	\fBmin\fR	\fBnextafter\fR	\fBpow\fR
-\fBrand\fR	\fBremainder\fR	\fBround\fR	\fBsin\fR
-\fBsinh\fR	\fBsqrt\fR	\fBsrand\fR	\fBtan\fR
-\fBtanh\fR	\fBtgamma\fR	\fBtrunc\fR	\fBwide\fR
+\fBlogb\fR	\fBmax\fR	\fBmin\fR	\fBnextafter\fR
+\fBpow\fR	\fBrand\fR	\fBremainder\fR	\fBround\fR
+\fBsin\fR	\fBsinh\fR	\fBsqrt\fR	\fBsrand\fR
+\fBtan\fR	\fBtanh\fR	\fBtgamma\fR	\fBtrunc\fR
+\fBwide\fR
 .DE
 .PP
 In addition to these predefined functions, applications may
@@ -159,10 +161,10 @@ radians. \fIArg\fR should be in the range [\fI\-1\fR,\fI1\fR].
 .\" COMMAND: acosh
 .TP
 \fBacosh \fIarg\fR
-.VS new
+.VS TIP745
 Returns the arc hyperbolic cosine of \fIarg\fR, in the range [\fI0\fR,\fIinf\fR]
 radians. \fIArg\fR should be in the range [\fI1\fR,\fIinf\fR].
-.VE new
+.VE TIP745
 .\" COMMAND: asin
 .TP
 \fBasin \fIarg\fR
@@ -172,9 +174,9 @@ radians.  \fIArg\fR should be in the range [\fI\-1\fR,\fI1\fR].
 .\" COMMAND: asinh
 .TP
 \fBasinh \fIarg\fR
-.VS new
+.VS TIP745
 Returns the arc hyperbolic sine of \fIarg\fR, in the range [\fI\-inf\fR,\fIinf\fR].
-.VE new
+.VE TIP745
 .\" COMMAND: atan
 .TP
 \fBatan \fIarg\fR
@@ -192,10 +194,10 @@ than \fI0\fR, this is equivalent to
 .\" COMMAND: atanh
 .TP
 \fBatanh \fIarg\fR
-.VS new
+.VS TIP745
 Returns the arc hyperbolic tangent of \fIarg\fR, in the range [\fI\-inf\fR,\fIinf\fR].
 \fIArg\fR should be in the range [\fI\-1\fR,\fI1\fR].
-.VE new
+.VE TIP745
 .\" COMMAND: bool
 .TP
 \fBbool \fIarg\fR
@@ -208,12 +210,12 @@ agreement with \fBstring is true\fR and \fBstring is false\fR.
 .\" COMMAND: cbrt
 .TP
 \fBcbrt \fIarg\fR
-.VS new
+.VS TIP745
 The argument may be any numeric value.  Returns a floating-point
 value that is the cube root of \fIarg\fR.  May return \fBInf\fR when the
 argument is a numeric value that exceeds the cube of the maximum value of
 the floating-point range.
-.VE new
+.VE TIP745
 .\" COMMAND: ceil
 .TP
 \fBceil \fIarg\fR
@@ -224,9 +226,9 @@ numeric value.
 .\" COMMAND: copysign
 .TP
 \fBcopysign \fIx y\fR
-.VS new
+.VS TIP745
 Returns the floating-point value with the magnitude of \fIx\fR and sign of \fIy\fR.
-.VE new
+.VE TIP745
 .\" COMMAND: cos
 .TP
 \fBcos \fIarg\fR
@@ -241,9 +243,9 @@ an overflow, an error is returned.
 .\" COMMAND: dim
 .TP
 \fBdim \fIx y\fR
-.VS new
+.VS TIP745
 Returns the floating-point value that is the maximum of 0 and \fIx\fR\-\fIy\fR.
-.VE new
+.VE TIP745
 .\" COMMAND: double
 .TP
 \fBdouble \fIarg\fR
@@ -264,15 +266,15 @@ truncate their range to fit in particular storage widths.
 .\" COMMAND: erf
 .TP
 \fBerf \fIarg\fR
-.VS new
+.VS TIP745
 Computes the Gauss error function of the numeric value \fIarg\fR.
-.VE new
+.VE TIP745
 .\" COMMAND: erfc
 .TP
 \fBerfc \fIarg\fR
-.VS new
+.VS TIP745
 Computes the complementary error function of the numeric value \fIarg\fR.
-.VE new
+.VE TIP745
 .\" COMMAND: exp
 .TP
 \fBexp \fIarg\fR
@@ -282,20 +284,20 @@ If the result would cause an overflow, an error is returned.
 .\" COMMAND: exp2
 .TP
 \fBexp2 \fIarg\fR
-.VS new
+.VS TIP745
 Returns the 2 to the power of \fIarg\fR, defined as \fB2\fR**\fIarg\fR.
 The result is always a floating point number except if it would cause an
 overflow, when an error is returned.
-.VE new
+.VE TIP745
 .\" COMMAND: expm1
 .TP
 \fBexpm1 \fIarg\fR
-.VS new
+.VS TIP745
 Returns the exponential of \fIarg\fR, minus 1, defined as \fIe\fR**\fIarg\fR\-\fB1\fR.
 If the result would cause an overflow, an error is returned.
 Use of this function can be numerically preferable to of \fBexp\fR for values
 close to 1, and is matched with \fBlog1p\fR.
-.VE new
+.VE TIP745
 .\" COMMAND: floor
 .TP
 \fBfloor \fIarg\fR
@@ -306,10 +308,10 @@ any numeric value.
 .\" COMMAND: fma
 .TP
 \fBfma \fIx y z\fR
-.VS new
+.VS TIP745
 Returns the floating-point value that is the sum of the product of \fIx\fR and
 \fIy\fR, and \fIz\fR, without unnecessarily losing intermediate accuracy.
-.VE new
+.VE TIP745
 .\" COMMAND: fmod
 .TP
 \fBfmod \fIx y\fR
@@ -396,16 +398,16 @@ floating-point value.
 .\" COMMAND: ldexp
 .TP
 \fBldexp \fIx y\fR
-.VS new
+.VS TIP745
 Multiplies a floating-point value \fIx\fR by the number 2 raised to the \fIy\fR power.
-.VE new
+.VE TIP745
 .\" COMMAND: lgamma
 .TP
 \fBlgamma \fIarg\fR
-.VS new
+.VS TIP745
 Returns the natural logarithm of the absolute value of the gamma function of \fIarg\fR.
 If the result would cause an overflow, an error is returned.
-.VE new
+.VE TIP745
 .\" COMMAND: log
 .TP
 \fBlog \fIarg\fR
@@ -421,16 +423,25 @@ positive value.
 .\" COMMAND: log1p
 .TP
 \fBlog1p \fIarg\fR
-.
+.VS TIP745
 Returns the natural logarithm of \fIarg\fR+\fB1\fR.  \fIArg\fR must be a
 value greater than \-1. This function is numerically preferable to \fBlog\fR
 for values very close to 1, and is matched with \fBexpm1\fR.
+.VE TIP745
 .\" COMMAND: log2
 .TP
 \fBlog2 \fIarg\fR
-.
+.VS TIP745
 Returns the base 2 logarithm of \fIarg\fR.  \fIArg\fR must be a
 positive value.
+.VE TIP745
+.\" COMMAND: logb
+.TP
+\fBlogb \fIarg\fR
+.VS TIP745
+Returns the value of the unbiased radix-independent exponent from the
+floating-point argument \fIarg\fR.
+.VE TIP745
 .\" COMMAND: max
 .TP
 \fBmax \fIarg\fB \fR...
@@ -446,10 +457,10 @@ with the least value.
 .\" COMMAND: nextafter
 .TP
 \fBnextafter \fIx y\fR
-.VS new
+.VS TIP745
 Returns the next floating-point value after (or before) \fIx\fR in the
 direction of \fIy\fR. If \fIx\fR and \fIy\fR are equal, returns \fIy\fR.
-.VE new
+.VE TIP745
 .\" COMMAND: pow
 .TP
 \fBpow \fIx y\fR
@@ -470,9 +481,9 @@ internal clock of the machine or may be set with the \fBsrand\fR function.
 .\" COMMAND: remainder
 .TP
 \fBremainder \fIx y\fR
-.VS new
+.VS TIP745
 Computes the IEEE remainder of the floating point division operation \fIx\fR/\fIy\fR.
-.VE new
+.VE TIP745
 .\" COMMAND: round
 .TP
 \fBround \fIarg\fR
@@ -482,9 +493,9 @@ If \fIarg\fR is an integer value, returns \fIarg\fR, otherwise converts
 .\" COMMAND: signbit
 .TP
 \fBsignbit \fIarg\fR
-.VS new
+.VS TIP745
 Get the sign bit of the numeric value, \fIarg\fR, as 0 (positive) or 1 (negative).
-.VE new
+.VE TIP745
 .\" COMMAND: sin
 .TP
 \fBsin \fIarg\fR
@@ -524,16 +535,16 @@ Returns the hyperbolic tangent of \fIarg\fR.
 .\" COMMAND: tgamma
 .TP
 \fBtgamma \fIarg\fR
-.VS new
+.VS TIP745
 Returns the absolute value of the gamma function of \fIarg\fR (a generalized factorial).
 If the result would cause an overflow, an error is returned.
-.VE new
+.VE TIP745
 .\" COMMAND: trunc
 .TP
 \fBtrunc \fIarg\fR
-.VS new
+.VS TIP745
 Returns the nearest integer not greater in magnitude than \fIarg\fR.
-.VE new
+.VE TIP745
 .\" COMMAND: wide
 .TP
 \fBwide \fIarg\fR

@@ -221,6 +221,7 @@ static Tcl_NRPostProc	NRCommand;
 
 static void		ProcessUnexpectedResult(Tcl_Interp *interp,
 			    int returnCode);
+static Tcl_ObjCmdProc2	RemQuoObjCmd;
 static int		RewindCoroutine(CoroutineData *corPtr, int result);
 static void		TEOV_SwitchVarFrame(Tcl_Interp *interp);
 static void		TEOV_PushExceptionHandlers(Tcl_Interp *interp,
@@ -361,6 +362,7 @@ static const CmdInfo builtInCmds[] = {
     {"proc",		Tcl_ProcObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
     {"regexp",		Tcl_RegexpObjCmd,	TclCompileRegexpCmd,	NULL,	CMD_IS_SAFE},
     {"regsub",		Tcl_RegsubObjCmd,	TclCompileRegsubCmd,	NULL,	CMD_IS_SAFE},
+    {"remquo",		RemQuoObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
     {"rename",		Tcl_RenameObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
     {"return",		Tcl_ReturnObjCmd,	TclCompileReturnCmd,	NULL,	CMD_IS_SAFE},
     {"scan",		Tcl_ScanObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
@@ -507,6 +509,7 @@ static const BuiltinFuncDef BuiltinFuncTable[] = {
     { "log10",	ExprUnaryFunc,	log10			},
     { "log1p",	ExprUnaryFunc,	log1p			},
     { "log2",	ExprUnaryFunc,	log2			},
+    { "logb",	ExprUnaryFunc,	logb			},
     { "max",	ExprMaxFunc,	NULL			},
     { "min",	ExprMinFunc,	NULL			},
     { "nextafter", ExprBinaryFunc, BINARY_TYPECAST(nextafter)	},
@@ -8391,6 +8394,38 @@ ModFObjCmd(
     Tcl_Obj *result[] = {
 	Tcl_NewDoubleObj(integralPart),
 	Tcl_NewDoubleObj(fracPart)
+    };
+    Tcl_SetObjResult(interp, Tcl_NewListObj(2, result));
+    return TCL_OK;
+}
+
+static int
+RemQuoObjCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* The interpreter in which to execute the
+				 * function. */
+    Tcl_Size objc,		/* Actual parameter count */
+    Tcl_Obj *const *objv)	/* Actual parameter list */
+{
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "floatValue");
+	return TCL_ERROR;
+    }
+
+    double d1, d2;
+    if (Tcl_GetDoubleFromObj(interp, objv[1], &d1) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (Tcl_GetDoubleFromObj(interp, objv[2], &d2) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    int quoVal;
+    double remainderVal = remquo(d1, d2, &quoVal);
+
+    Tcl_Obj *result[] = {
+	Tcl_NewDoubleObj(remainderVal),
+	Tcl_NewIntObj(quoVal)
     };
     Tcl_SetObjResult(interp, Tcl_NewListObj(2, result));
     return TCL_OK;
