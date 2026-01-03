@@ -183,7 +183,10 @@ test mathfunc-log1p.1 {log1p: no args} -body {
 test mathfunc-log1p.2 {log1p: too many args} -body {
     tcl::mathfunc::log1p a b
 } -returnCodes error -result {too many arguments for math function "log1p"}
-test mathfunc-log1p.3 {log1p: valid result} {
+test mathfunc-log1p.3 {log1p: invalid arg} -body {
+    tcl::mathfunc::log1p -4
+} -returnCodes error -result {domain error: argument not in valid range}
+test mathfunc-log1p.4 {log1p: valid result} {
     tcl::mathfunc::log1p 4.5
 } 1.7047480922384253
 
@@ -193,9 +196,25 @@ test mathfunc-log2.1 {log2: no args} -body {
 test mathfunc-log2.2 {log2: too many args} -body {
     tcl::mathfunc::log2 a b
 } -returnCodes error -result {too many arguments for math function "log2"}
-test mathfunc-log2.3 {log2: valid result} {
+test mathfunc-log2.3 {log2: invalid arg} -body {
+    tcl::mathfunc::log2 -4
+} -returnCodes error -result {domain error: argument not in valid range}
+test mathfunc-log2.4 {log2: valid result} {
     tcl::mathfunc::log2 8
 } 3.0
+
+test mathfunc-logb.1 {logb: no args} -body {
+    tcl::mathfunc::logb
+} -returnCodes error -result {not enough arguments for math function "logb"}
+test mathfunc-logb.2 {logb: too many args} -body {
+    tcl::mathfunc::logb a b
+} -returnCodes error -result {too many arguments for math function "logb"}
+test mathfunc-logb.3 {logb: valid result} {
+    tcl::mathfunc::logb 9
+} 3.0
+test mathfunc-logb.4 {logb: valid with negative} {
+    tcl::mathfunc::logb -4
+} 2.0
 
 test mathfunc-modf.1 {modf: no args} -body {
     modf
@@ -226,6 +245,19 @@ test mathfunc-remainder.2 {remainder: too many args} -body {
 test mathfunc-remainder.3 {remainder: valid result} {
     tcl::mathfunc::remainder 12.5 1.5
 } 0.5
+
+test mathfunc-remquo.1 {remquo: no args} -body {
+    remquo
+} -returnCodes error -result {wrong # args: should be "remquo floatValue"}
+test mathfunc-remquo.2 {remquo: too many args} -body {
+    remquo a b c
+} -returnCodes error -result {wrong # args: should be "remquo floatValue"}
+test mathfunc-remquo.3 {remquo: valid result} {
+    remquo 12.5 1.5
+} {0.5 8}
+test mathfunc-remquo.3 {remquo: valid result} {
+    remquo 12.5 -1.5
+} {0.5 -8}
 
 test mathfunc-signbit.1 {signbit: no args} -body {
     tcl::mathfunc::signbit

@@ -1,0 +1,37 @@
+'\"
+'\" Copyright (c) 2025 Donal Fellows
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH remquo n 9.1 Tcl "Tcl Float Remainder"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+remquo \- Compute floating point remainder and quadrant determinant
+.SH SYNOPSIS
+\fBpackage require tcl 9.1\fR
+.sp
+\fBremquo \fIx y\fR
+.BE
+.SH DESCRIPTION
+The \fBremquo\fR command computes the floating-point remainder of
+\fIx\fR/\fIy\fR, much like the \fBremainder\fR function. Its result is a list
+of two values; the first value is the remainder, and the second value is an
+integer containing sign and bits sufficient to determine which octant the
+gradient was located within.
+.SH EXAMPLE
+.PP
+.CS
+lassign [\fBremquo\fR 12.3 3.89] rem quo
+puts "rem=$rem, quo=$quo"
+#       rem=0.6300000000000003, quo=3
+.CE
+.SH "SEE ALSO"
+expr(n), mathfunc(n)
+.SH KEYWORDS
+floating point
+'\" Local Variables:
+'\" mode: nroff
+'\" End:
