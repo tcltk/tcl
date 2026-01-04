@@ -53,8 +53,6 @@
 #define TclStaticLibrary Tcl_StaticLibrary
 #if !defined(_WIN32) && !defined(__CYGWIN__)
 # define Tcl_WinConvertError 0
-# define Tcl_WinAppendMessageFromModule 0
-# define Tcl_WinRaiseError 0
 #endif
 #undef TclGetStringFromObj
 #ifdef TCL_NO_DEPRECATED
