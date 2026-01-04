@@ -1626,7 +1626,7 @@ TestdoubledigitsObjCmd(
     int objc,			/* Parameter count */
     Tcl_Obj* const objv[])	/* Parameter vector */
 {
-    static const char *options[] = {
+    static const char *const options[] = {
 	"shortest",
 	"Steele",
 	"e",
