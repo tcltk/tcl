@@ -119,8 +119,6 @@ extern const TclPlatStubs *tclPlatStubsPtr;
 #   undef Tcl_GetOpenFile
 #else
 #   undef Tcl_WinConvertError
-#   undef Tcl_WinAppendMessageFromModule
-#   undef Tcl_WinRaiseError
 #endif
 #ifndef MAC_OSX_TCL
 #   undef Tcl_MacOSXOpenVersionedBundleResources
