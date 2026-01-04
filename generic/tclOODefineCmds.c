@@ -1877,7 +1877,7 @@ TclOODefineDefnNsObjCmd(
     Tcl_Size objc,
     Tcl_Obj *const *objv)
 {
-    static const char *kindList[] = {
+    static const char *const kindList[] = {
 	"-class",
 	"-instance",
 	NULL

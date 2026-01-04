@@ -3771,16 +3771,16 @@ TestlinkarrayCmd(
     Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    static const char *LinkOption[] = {
+    static const char *const LinkOption[] = {
 	"update", "remove", "create", NULL
     };
     enum LinkOptionEnum { LINK_UPDATE, LINK_REMOVE, LINK_CREATE } optionIndex;
-    static const char *LinkType[] = {
+    static const char *const LinkType[] = {
 	"char", "uchar", "short", "ushort", "int", "uint", "long", "ulong",
 	"wide", "uwide", "float", "double", "string", "char*", "binary", NULL
     };
     /* all values after TCL_LINK_CHARS_ARRAY are used as arrays (see below) */
-    static int LinkTypes[] = {
+    static const int LinkTypes[] = {
 	TCL_LINK_CHAR, TCL_LINK_UCHAR,
 	TCL_LINK_SHORT, TCL_LINK_USHORT, TCL_LINK_INT, TCL_LINK_UINT,
 	TCL_LINK_LONG, TCL_LINK_ULONG, TCL_LINK_WIDE_INT, TCL_LINK_WIDE_UINT,
