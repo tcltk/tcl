@@ -1,0 +1,40 @@
+'\"
+'\" Copyright (c) 2025 Donal Fellows
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH divmod n 9.1 Tcl "Tcl Integer Division"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+divmod \- Divide an integer by another and report quotient and remainder
+.SH SYNOPSIS
+\fBpackage require tcl 9.1\fR
+.sp
+\fBdivmod \fIx y\fR
+.BE
+.SH DESCRIPTION
+The \fBdivmod\fR command takes two integer numbers, \fIx\fR and \fIy\fR, and
+returns a list of two values. The first element of the result is the
+whole quotient of \fIx\fR/\fIy\fR, and the second is the remainder such that
+the sum of the remainder and the product of the quotient and \fIy\fR is equal
+to \fIx\fR.
+.PP
+The quotient and remainder are calculated using the same rules as for Tcl's
+\fB/\fR and \fB%\fR operators.
+.SH EXAMPLE
+.PP
+.CS
+lassign [\fBdivmod\fR 123 50] q r
+puts "quotient=$q remainder=$r"
+#       quotient=2 remainder=23
+.CE
+.SH "SEE ALSO"
+expr(n), mathfunc(n), mathop(n)
+.SH KEYWORDS
+division, integer value
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

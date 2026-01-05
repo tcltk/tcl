@@ -177,6 +177,7 @@ static int		CheckDoubleResult(Tcl_Interp *interp, double dResult);
 static void		DeleteCoroutine(void *clientData);
 static Tcl_FreeProc	DeleteInterpProc;
 static void		DeleteOpCmdClientData(void *clientData);
+static Tcl_ObjCmdProc2	DivModObjCmd;
 #ifdef USE_DTRACE
 static Tcl_ObjCmdProc2	DTraceObjCmd;
 static Tcl_NRPostProc	DTraceCmdReturn;
@@ -327,6 +328,7 @@ static const CmdInfo builtInCmds[] = {
     {"coroinject",	NULL,			NULL,			TclNRCoroInjectObjCmd,	CMD_IS_SAFE},
     {"coroprobe",	NULL,			NULL,			TclNRCoroProbeObjCmd,	CMD_IS_SAFE},
     {"coroutine",	NULL,			NULL,			TclNRCoroutineObjCmd,	CMD_IS_SAFE},
+    {"divmod",		DivModObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
     {"error",		Tcl_ErrorObjCmd,	TclCompileErrorCmd,	NULL,	CMD_IS_SAFE},
     {"eval",		Tcl_EvalObjCmd,		NULL,			TclNREvalObjCmd,	CMD_IS_SAFE},
     {"expr",		Tcl_ExprObjCmd,		TclCompileExprCmd,	TclNRExprObjCmd,	CMD_IS_SAFE},
@@ -8005,6 +8007,52 @@ ExprFmaFunc(
     errno = 0;
     return CheckDoubleResult(interp, fma(d1, d2, d3));
 }
+
+static int
+ExprSignBitFunc(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* The interpreter in which to execute the
+				 * function. */
+    Tcl_Size objc,		/* Actual parameter count */
+    Tcl_Obj *const *objv)	/* Actual parameter list */
+{
+    if (objc != 2) {
+	MathFuncWrongNumArgs(interp, 2, objc, objv);
+	return TCL_ERROR;
+    }
+
+    void *data;
+    int type;
+    if (Tcl_GetNumberFromObj(interp, objv[1], &data, &type) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    bool bit;
+    switch (type) {
+    case TCL_NUMBER_DOUBLE:
+    case TCL_NUMBER_NAN: {
+	// Special case; handle NaN as conventional double
+	double d = *((double *) data);
+	bit = signbit(d);
+	break;
+    }
+    case TCL_NUMBER_INT: {
+	Tcl_WideInt i = *((Tcl_WideInt *) data);
+	bit = i < 0;
+	break;
+    }
+    case TCL_NUMBER_BIG: {
+	mp_int *bigPtr = (mp_int *) data;
+	bit = mp_isneg(bigPtr);
+	break;
+    }
+    default:
+	TCL_UNREACHABLE();
+    }
+
+    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(bit));
+    return TCL_OK;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -8341,6 +8389,146 @@ FloatClassifyObjCmd(
     Tcl_SetObjResult(interp, objPtr);
     return TCL_OK;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Misc Function-like Commands --
+ *
+ *	This page contains the commands that return multiple values. They'd
+ *	be things callable from [expr], except their results aren't directly
+ *	processable there.
+ *
+ * Results:
+ *	Each command returns TCL_OK if it succeeds and pushes an Tcl object
+ *	holding the result. If it fails it returns TCL_ERROR and leaves an
+ *	error message in the interpreter's result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+DivModObjCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* The interpreter in which to execute the
+				 * function. */
+    Tcl_Size objc,		/* Actual parameter count */
+    Tcl_Obj *const *objv)	/* Actual parameter list */
+{
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "dividend divisor");
+	return TCL_ERROR;
+    }
+
+    int typeX, typeY;
+    void *dataX, *dataY;
+
+    if (Tcl_GetNumberFromObj(interp, objv[1], &dataX, &typeX) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (typeX != TCL_NUMBER_INT && typeX != TCL_NUMBER_BIG) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf("dividend must be an integer"));
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", NULL);
+	return TCL_ERROR;
+    }
+
+    if (Tcl_GetNumberFromObj(interp, objv[2], &dataY, &typeY) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (typeY != TCL_NUMBER_INT && typeY != TCL_NUMBER_BIG) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf("divisor must be an integer"));
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", NULL);
+	return TCL_ERROR;
+    }
+
+    if (typeX == TCL_NUMBER_BIG || typeY == TCL_NUMBER_BIG) {
+	mp_int x, y, quotientVal, remainderVal;
+
+	Tcl_GetBignumFromObj(NULL, objv[1], &x);
+	Tcl_GetBignumFromObj(NULL, objv[2], &y);
+	if (mp_iszero(&y)) {
+	    mp_clear(&x);
+	    mp_clear(&y);
+	    goto divZero;
+	}
+
+	int err = mp_init_multi(&quotientVal, &remainderVal, (void *)NULL);
+	if (err != MP_OKAY) {
+	    mp_clear(&x);
+	    mp_clear(&y);
+	    goto outOfMemory;
+	}
+	err = mp_div(&x, &y, &quotientVal, &remainderVal);
+	mp_clear(&x);
+	if ((err == MP_OKAY) && !mp_iszero(&remainderVal)
+		&& (remainderVal.sign != y.sign)) {
+	    /*
+	     * Convert to Tcl's integer division rules.
+	     */
+
+	    err = mp_sub_d(&quotientVal, 1, &quotientVal);
+	    if (err == MP_OKAY) {
+		err = mp_add(&remainderVal, &y, &remainderVal);
+	    }
+	}
+	mp_clear(&y);
+	if (err != MP_OKAY) {
+	    mp_clear(&quotientVal);
+	    mp_clear(&remainderVal);
+	    goto outOfMemory;
+	}
+
+	Tcl_Obj *result[] = {
+	    Tcl_NewBignumObj(&quotientVal),
+	    Tcl_NewBignumObj(&remainderVal)
+	};
+	Tcl_SetObjResult(interp, Tcl_NewListObj(2, result));
+	return TCL_OK;
+    } else {
+	Tcl_WideInt x, y, quotientVal, remainderVal;
+
+	(void) Tcl_GetWideIntFromObj(NULL, objv[1], &x);
+	(void) Tcl_GetWideIntFromObj(NULL, objv[2], &y);
+	if (y == 0) {
+	    goto divZero;
+	}
+
+	quotientVal = x / y;
+
+	/*
+	 * Force Tcl's integer division rules.
+	 * TODO: examine for logic simplification
+	 */
+
+	if (((quotientVal < 0) || ((quotientVal == 0) &&
+		((x < 0 && y > 0) || (x > 0 && y < 0)))) &&
+		((quotientVal * y) != y)) {
+	    quotientVal -= 1;
+	}
+
+	remainderVal = (Tcl_WideInt)((Tcl_WideUInt)x -
+		(Tcl_WideUInt)y * (Tcl_WideUInt)quotientVal);
+
+	Tcl_Obj *result[] = {
+	    Tcl_NewWideIntObj(quotientVal),
+	    Tcl_NewWideIntObj(remainderVal)
+	};
+	Tcl_SetObjResult(interp, Tcl_NewListObj(2, result));
+	return TCL_OK;
+    }
+
+  divZero:
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf("divide by zero"));
+    Tcl_SetErrorCode(interp, "ARITH", "DIVZERO", "divide by zero", NULL);
+    return TCL_ERROR;
+  outOfMemory:
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf("cannot allocate"));
+    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+    return TCL_ERROR;
+}
 
 static int
 FracExpObjCmd(
@@ -8408,7 +8596,7 @@ RemQuoObjCmd(
     Tcl_Obj *const *objv)	/* Actual parameter list */
 {
     if (objc != 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "floatValue");
+	Tcl_WrongNumArgs(interp, 1, objv, "dividend divisor");
 	return TCL_ERROR;
     }
 
@@ -8428,52 +8616,6 @@ RemQuoObjCmd(
 	Tcl_NewIntObj(quoVal)
     };
     Tcl_SetObjResult(interp, Tcl_NewListObj(2, result));
-    return TCL_OK;
-}
-
-static int
-ExprSignBitFunc(
-    TCL_UNUSED(void *),
-    Tcl_Interp *interp,		/* The interpreter in which to execute the
-				 * function. */
-    Tcl_Size objc,		/* Actual parameter count */
-    Tcl_Obj *const *objv)	/* Actual parameter list */
-{
-    if (objc != 2) {
-	MathFuncWrongNumArgs(interp, 2, objc, objv);
-	return TCL_ERROR;
-    }
-
-    void *data;
-    int type;
-    if (Tcl_GetNumberFromObj(interp, objv[1], &data, &type) != TCL_OK) {
-	return TCL_ERROR;
-    }
-
-    bool bit;
-    switch (type) {
-    case TCL_NUMBER_DOUBLE:
-    case TCL_NUMBER_NAN: {
-	// Special case; handle NaN as conventional double
-	double d = *((double *) data);
-	bit = signbit(d);
-	break;
-    }
-    case TCL_NUMBER_INT: {
-	Tcl_WideInt i = *((Tcl_WideInt *) data);
-	bit = i < 0;
-	break;
-    }
-    case TCL_NUMBER_BIG: {
-	mp_int *bigPtr = (mp_int *) data;
-	bit = mp_isneg(bigPtr);
-	break;
-    }
-    default:
-	TCL_UNREACHABLE();
-    }
-
-    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(bit));
     return TCL_OK;
 }
 
