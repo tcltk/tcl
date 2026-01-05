@@ -601,7 +601,7 @@ MODULE_SCOPE Class *	TclOOGetClassDefineCmdContext(Tcl_Interp *interp);
 MODULE_SCOPE Class *	TclOOGetClassFromObj(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr);
 MODULE_SCOPE Tcl_Namespace *TclOOGetDefineContextNamespace(
-			    Tcl_Interp *interp, Object *oPtr, int forClass);
+			    Tcl_Interp *interp, Object *oPtr, bool forClass);
 MODULE_SCOPE CallChain *TclOOGetStereotypeCallChain(Class *clsPtr,
 			    Tcl_Obj *methodNameObj, int flags);
 MODULE_SCOPE Foundation	*TclOOGetFoundation(Tcl_Interp *interp);

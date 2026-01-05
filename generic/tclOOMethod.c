@@ -1135,6 +1135,61 @@ GetRealVarName(
     return NULL;
 }
 
+// Helper for ProcedureMethodCompiledVarConnect() that looks up if a variable
+// is in the list of variables we want to resolve (and maps it to the
+// implementation name, for private variables).
+static inline Tcl_Obj *
+GetRealVarName(
+    CallContext *contextPtr,
+    OOResVarInfo *infoPtr,
+    bool *cacheIt)
+{
+    PrivateVariableMapping *privateVar;
+    Tcl_Size i, varLen, len;
+    const char *varName = Tcl_GetStringFromObj(infoPtr->variableObj, &varLen);
+    const char *match;
+    Tcl_Obj *variableObj;
+
+    if (contextPtr->callPtr->chain[contextPtr->index]
+	    .mPtr->declaringClassPtr != NULL) {
+	FOREACH_STRUCT(privateVar, contextPtr->callPtr->chain[contextPtr->index]
+		.mPtr->declaringClassPtr->privateVariables) {
+	    match = Tcl_GetStringFromObj(privateVar->variableObj, &len);
+	    if ((len == varLen) && !memcmp(match, varName, len)) {
+		*cacheIt = false;
+		return privateVar->fullNameObj;
+	    }
+	}
+	FOREACH(variableObj, contextPtr->callPtr->chain[contextPtr->index]
+		.mPtr->declaringClassPtr->variables) {
+	    match = Tcl_GetStringFromObj(variableObj, &len);
+	    if ((len == varLen) && !memcmp(match, varName, len)) {
+		*cacheIt = false;
+		return variableObj;
+	    }
+	}
+    } else {
+	FOREACH_STRUCT(privateVar, contextPtr->oPtr->privateVariables) {
+	    match = Tcl_GetStringFromObj(privateVar->variableObj, &len);
+	    if ((len == varLen) && !memcmp(match, varName, len)) {
+		*cacheIt = true;
+		return privateVar->fullNameObj;
+	    }
+	}
+	FOREACH(variableObj, contextPtr->oPtr->variables) {
+	    match = Tcl_GetStringFromObj(variableObj, &len);
+	    if ((len == varLen) && !memcmp(match, varName, len)) {
+		*cacheIt = true;
+		return variableObj;
+	    }
+	}
+    }
+    return NULL;
+}
+
+// Called on entry to a compiled context to connect the local variables to
+// be resolved to the actual variables in the object instance. If we want to
+// connect it, we return the variable; otherwise NULL.
 static Tcl_Var
 ProcedureMethodCompiledVarConnect(
     Tcl_Interp *interp,
@@ -1182,8 +1237,7 @@ ProcedureMethodCompiledVarConnect(
 
     int isNew;
     Tcl_HashEntry *hPtr = Tcl_CreateHashEntry(
-	    TclVarTable(contextPtr->oPtr->namespacePtr),
-	    variableObj, &isNew);
+	    TclVarTable(contextPtr->oPtr->namespacePtr), variableObj, &isNew);
     if (isNew) {
 	TclSetVarNamespaceVar((Var *) TclVarHashGetValue(hPtr));
     }

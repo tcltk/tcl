@@ -1410,7 +1410,7 @@ TclOODefineObjCmd(
      * command(s).
      */
 
-    Tcl_Namespace *nsPtr = TclOOGetDefineContextNamespace(interp, oPtr, 1);
+    Tcl_Namespace *nsPtr = TclOOGetDefineContextNamespace(interp, oPtr, true);
     if (InitDefineContext(interp, nsPtr, oPtr, objc, objv) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -1476,7 +1476,7 @@ TclOOObjDefObjCmd(
      * command(s).
      */
 
-    Tcl_Namespace *nsPtr = TclOOGetDefineContextNamespace(interp, oPtr, 0);
+    Tcl_Namespace *nsPtr = TclOOGetDefineContextNamespace(interp, oPtr, false);
     if (InitDefineContext(interp, nsPtr, oPtr, objc, objv) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -1544,7 +1544,7 @@ TclOODefineSelfObjCmd(
      * command(s).
      */
 
-    Tcl_Namespace *nsPtr = TclOOGetDefineContextNamespace(interp, oPtr, 0);
+    Tcl_Namespace *nsPtr = TclOOGetDefineContextNamespace(interp, oPtr, false);
     if (InitDefineContext(interp, nsPtr, oPtr, objc, objv) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -1868,7 +1868,7 @@ TclOODefineDefnNsObjCmd(
     Tcl_Size objc,
     Tcl_Obj *const *objv)
 {
-    static const char *kindList[] = {
+    static const char *const kindList[] = {
 	"-class",
 	"-instance",
 	NULL

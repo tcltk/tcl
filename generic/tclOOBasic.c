@@ -25,6 +25,9 @@ static Tcl_NRPostProc	FinalizeEval;
 static Tcl_NRPostProc	NextRestoreFrame;
 static Tcl_NRPostProc	MarkAsSingleton;
 static Tcl_NRPostProc	UpdateClassDelegatesAfterClone;
+
+#define CurrentlyInvoked(contextPtr) \
+    ((contextPtr)->callPtr->chain[(contextPtr)->index])
 
 /*
  * ----------------------------------------------------------------------
@@ -857,8 +860,7 @@ TclOO_Object_Unknown(
 
     if (framePtr->isProcCallFrame & FRAME_IS_METHOD) {
 	CallContext *callerContext = (CallContext *) framePtr->clientData;
-	Method *mPtr = callerContext->callPtr->chain[
-		    callerContext->index].mPtr;
+	Method *mPtr = CurrentlyInvoked(callerContext).mPtr;
 
 	if (mPtr->declaringObjectPtr) {
 	    if (oPtr == mPtr->declaringObjectPtr) {
@@ -1070,8 +1072,7 @@ TclOOLookupObjectVar(
 	if (framePtr->isProcCallFrame & FRAME_IS_METHOD) {
 	    Object *oPtr = (Object *) object;
 	    CallContext *callerContext = (CallContext *) framePtr->clientData;
-	    Method *mPtr = callerContext->callPtr->chain[
-		    callerContext->index].mPtr;
+	    Method *mPtr = CurrentlyInvoked(callerContext).mPtr;
 	    PrivateVariableMapping *pvPtr;
 	    Tcl_Size i;
 
@@ -1436,18 +1437,28 @@ NextRestoreFrame(
 static inline Tcl_Obj *
 MethodName(
     Foundation *fPtr,
-    CallChain *callPtr,
+    CallContext *contextPtr,
     Method *mPtr)
 {
-    if (callPtr->flags & CONSTRUCTOR) {
+    switch (contextPtr->callPtr->flags & (CONSTRUCTOR | DESTRUCTOR)) {
+    case CONSTRUCTOR:
 	return fPtr->constructorName;
-    } else if (callPtr->flags & DESTRUCTOR) {
+    case DESTRUCTOR:
 	return fPtr->destructorName;
-    } else {
+    default:
 	return mPtr->namePtr;
     }
 }
-
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * Declarer --
+ *
+ *	Helper for TclOOSelfObjCmd to get the (named) entity declaring a method.
+ *
+ * ----------------------------------------------------------------------
+ */
 static inline Object *
 Declarer(
     Method *mPtr)
@@ -1488,10 +1499,8 @@ TclOOSelfObjCmd(
 	SELF_NEXT, SELF_OBJECT, SELF_TARGET
     } index;
     Interp *iPtr = (Interp *) interp;
+    Foundation *fPtr = (Foundation *) iPtr->objectFoundation;
     CallFrame *framePtr = iPtr->varFramePtr;
-
-#define CurrentlyInvoked(contextPtr) \
-    ((contextPtr)->callPtr->chain[(contextPtr)->index])
 
     /*
      * Start with sanity checks on the calling context and the method context.
@@ -1540,14 +1549,8 @@ TclOOSelfObjCmd(
 	return TCL_OK;
     }
     case SELF_METHOD:
-	if (contextPtr->callPtr->flags & CONSTRUCTOR) {
-	    Tcl_SetObjResult(interp, contextPtr->oPtr->fPtr->constructorName);
-	} else if (contextPtr->callPtr->flags & DESTRUCTOR) {
-	    Tcl_SetObjResult(interp, contextPtr->oPtr->fPtr->destructorName);
-	} else {
-	    Tcl_SetObjResult(interp,
-		    CurrentlyInvoked(contextPtr).mPtr->namePtr);
-	}
+	Tcl_SetObjResult(interp, MethodName(fPtr, contextPtr,
+		CurrentlyInvoked(contextPtr).mPtr));
 	return TCL_OK;
     case SELF_FILTER:
 	if (!CurrentlyInvoked(contextPtr).isFilter) {
@@ -1586,12 +1589,11 @@ TclOOSelfObjCmd(
 	} else {
 	    CallContext *callerPtr = (CallContext *)
 		    framePtr->callerVarPtr->clientData;
-	    Method *mPtr = callerPtr->callPtr->chain[callerPtr->index].mPtr;
-	    Object *declarerPtr = Declarer(mPtr);
+	    Method *mPtr = CurrentlyInvoked(callerPtr).mPtr;
 	    Tcl_Obj *result[] = {
-		TclOOObjectName(interp, declarerPtr),
+		TclOOObjectName(interp, Declarer(mPtr)),
 		TclOOObjectName(interp, callerPtr->oPtr),
-		MethodName(declarerPtr->fPtr, callerPtr->callPtr, mPtr)
+		MethodName(fPtr, callerPtr, mPtr)
 	    };
 	    Tcl_SetObjResult(interp, Tcl_NewListObj(3, result));
 	    return TCL_OK;
@@ -1600,10 +1602,9 @@ TclOOSelfObjCmd(
 	if (contextPtr->index < contextPtr->callPtr->numChain - 1) {
 	    Method *mPtr =
 		    contextPtr->callPtr->chain[contextPtr->index + 1].mPtr;
-	    Object *declarerPtr = Declarer(mPtr);
 	    Tcl_Obj *result[] = {
-		TclOOObjectName(interp, declarerPtr),
-		MethodName(declarerPtr->fPtr, contextPtr->callPtr, mPtr)
+		TclOOObjectName(interp, Declarer(mPtr)),
+		MethodName(fPtr, contextPtr, mPtr)
 	    };
 	    Tcl_SetObjResult(interp, Tcl_NewListObj(2, result));
 	}
@@ -1628,7 +1629,7 @@ TclOOSelfObjCmd(
 	    Method *mPtr = contextPtr->callPtr->chain[i].mPtr;
 	    Tcl_Obj *result[] = {
 		TclOOObjectName(interp, Declarer(mPtr)),
-		mPtr->namePtr
+		MethodName(fPtr, contextPtr, mPtr)
 	    };
 	    Tcl_SetObjResult(interp, Tcl_NewListObj(2, result));
 	    return TCL_OK;
