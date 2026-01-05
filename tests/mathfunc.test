@@ -16,8 +16,7 @@ if {"::tcltest" ni [namespace children]} {
 
 ::tcltest::loadTestedCommands
 
-# start of tests
-
+# acosh tests
 test mathfunc-acosh.1 {acosh: no args} -body {
     tcl::mathfunc::acosh
 } -returnCodes error -result {not enough arguments for math function "acosh"}
@@ -31,6 +30,7 @@ test mathfunc-acosh.4 {acosh: valid result} {
     tcl::mathfunc::acosh 1
 } 0.0
 
+# asinh tests
 test mathfunc-asinh.1 {asinh: no args} -body {
     tcl::mathfunc::asinh
 } -returnCodes error -result {not enough arguments for math function "asinh"}
@@ -41,6 +41,7 @@ test mathfunc-asinh.3 {asinh: valid result} {
     tcl::mathfunc::asinh 1
 } 0.881373587019543
 
+# atanh tests
 test mathfunc-atanh.1 {atanh: no args} -body {
     tcl::mathfunc::atanh
 } -returnCodes error -result {not enough arguments for math function "atanh"}
@@ -54,6 +55,7 @@ test mathfunc-atanh.4 {atanh: valid result} {
     tcl::mathfunc::atanh 0.5
 } 0.5493061443340549
 
+# cbrt tests
 test mathfunc-cbrt.1 {cbrt: no args} -body {
     tcl::mathfunc::cbrt
 } -returnCodes error -result {not enough arguments for math function "cbrt"}
@@ -64,6 +66,7 @@ test mathfunc-cbrt.3 {cbrt: valid result} {
     tcl::mathfunc::cbrt -27
 } -3.0
 
+# copysign tests
 test mathfunc-copysign.1 {copysign: no args} -body {
     tcl::mathfunc::copysign
 } -returnCodes error -result {not enough arguments for math function "copysign"}
@@ -74,6 +77,7 @@ test mathfunc-copysign.3 {copysign: valid result} {
     tcl::mathfunc::copysign 0 -1
 } -0.0
 
+# dim tests
 test mathfunc-dim.1 {dim: no args} -body {
     tcl::mathfunc::dim
 } -returnCodes error -result {not enough arguments for math function "dim"}
@@ -87,6 +91,7 @@ test mathfunc-dim.4 {dim: valid result} {
     tcl::mathfunc::dim 1 2
 } 0.0
 
+# erf tests
 test mathfunc-erf.1 {erf: no args} -body {
     tcl::mathfunc::erf
 } -returnCodes error -result {not enough arguments for math function "erf"}
@@ -97,6 +102,7 @@ test mathfunc-erf.3 {erf: valid result} {
     tcl::mathfunc::erf 1
 } 0.8427007929497149
 
+# erfc tests
 test mathfunc-erfc.1 {erfc: no args} -body {
     tcl::mathfunc::erfc
 } -returnCodes error -result {not enough arguments for math function "erfc"}
@@ -107,6 +113,7 @@ test mathfunc-erfc.3 {erfc: valid result} {
     tcl::mathfunc::erfc 1
 } 0.1572992070502851
 
+# exp2 tests
 test mathfunc-exp2.1 {exp2: no args} -body {
     tcl::mathfunc::exp2
 } -returnCodes error -result {not enough arguments for math function "exp2"}
@@ -117,6 +124,7 @@ test mathfunc-exp2.3 {exp2: valid result} {
     tcl::mathfunc::exp2 1
 } 2.0
 
+# expm1 tests
 test mathfunc-expm1.1 {expm1: no args} -body {
     tcl::mathfunc::expm1
 } -returnCodes error -result {not enough arguments for math function "expm1"}
@@ -127,6 +135,7 @@ test mathfunc-expm1.3 {expm1: valid result} {
     tcl::mathfunc::expm1 1
 } 1.718281828459045
 
+# fma tests
 test mathfunc-fma.1 {fma: no args} -body {
     tcl::mathfunc::fma
 } -returnCodes error -result {not enough arguments for math function "fma"}
@@ -137,6 +146,7 @@ test mathfunc-fma.3 {fma: valid result} {
     tcl::mathfunc::fma 2 3 5
 } 11.0
 
+# frexp tests
 test mathfunc-frexp.1 {frexp: no args} -body {
     frexp
 } -returnCodes error -result {wrong # args: should be "frexp floatValue"}
@@ -147,6 +157,7 @@ test mathfunc-frexp.3 {frexp: valid result} {
     frexp 1.5
 } {0.75 1}
 
+# gamma tests
 test mathfunc-gamma.1 {gamma: no args} -body {
     tcl::mathfunc::gamma
 } -returnCodes error -result {not enough arguments for math function "gamma"}
@@ -157,6 +168,7 @@ test mathfunc-gamma.3 {gamma: valid result} {
     tcl::mathfunc::gamma 4.5
 } 11.63172839656745
 
+# ldexp tests
 test mathfunc-ldexp.1 {ldexp: no args} -body {
     tcl::mathfunc::ldexp
 } -returnCodes error -result {not enough arguments for math function "ldexp"}
@@ -167,6 +179,7 @@ test mathfunc-ldexp.3 {ldexp: valid result} {
     tcl::mathfunc::ldexp 0.75 1
 } 1.5
 
+# lgamma tests
 test mathfunc-lgamma.1 {lgamma: no args} -body {
     tcl::mathfunc::lgamma
 } -returnCodes error -result {not enough arguments for math function "lgamma"}
@@ -177,6 +190,7 @@ test mathfunc-lgamma.3 {lgamma: valid result} {
     tcl::mathfunc::lgamma 4.5
 } 2.4537365708424423
 
+# log1p tests
 test mathfunc-log1p.1 {log1p: no args} -body {
     tcl::mathfunc::log1p
 } -returnCodes error -result {not enough arguments for math function "log1p"}
@@ -190,6 +204,7 @@ test mathfunc-log1p.4 {log1p: valid result} {
     tcl::mathfunc::log1p 4.5
 } 1.7047480922384253
 
+# log2 tests
 test mathfunc-log2.1 {log2: no args} -body {
     tcl::mathfunc::log2
 } -returnCodes error -result {not enough arguments for math function "log2"}
@@ -203,6 +218,7 @@ test mathfunc-log2.4 {log2: valid result} {
     tcl::mathfunc::log2 8
 } 3.0
 
+# logb tests
 test mathfunc-logb.1 {logb: no args} -body {
     tcl::mathfunc::logb
 } -returnCodes error -result {not enough arguments for math function "logb"}
@@ -216,6 +232,7 @@ test mathfunc-logb.4 {logb: valid with negative} {
     tcl::mathfunc::logb -4
 } 2.0
 
+# modf tests
 test mathfunc-modf.1 {modf: no args} -body {
     modf
 } -returnCodes error -result {wrong # args: should be "modf floatValue"}
@@ -226,6 +243,7 @@ test mathfunc-modf.3 {modf: valid result} {
     modf 1.5
 } {1.0 0.5}
 
+# nextafter tests
 test mathfunc-nextafter.1 {nextafter: no args} -body {
     tcl::mathfunc::nextafter
 } -returnCodes error -result {not enough arguments for math function "nextafter"}
@@ -236,6 +254,7 @@ test mathfunc-nextafter.3 {nextafter: valid result} {
     tcl::mathfunc::nextafter 123 inf
 } 123.00000000000001
 
+# remainder tests
 test mathfunc-remainder.1 {remainder: no args} -body {
     tcl::mathfunc::remainder
 } -returnCodes error -result {not enough arguments for math function "remainder"}
@@ -246,6 +265,7 @@ test mathfunc-remainder.3 {remainder: valid result} {
     tcl::mathfunc::remainder 12.5 1.5
 } 0.5
 
+# remquo tests
 test mathfunc-remquo.1 {remquo: no args} -body {
     remquo
 } -returnCodes error -result {wrong # args: should be "remquo floatValue"}
@@ -259,6 +279,7 @@ test mathfunc-remquo.3 {remquo: valid result} {
     remquo 12.5 -1.5
 } {0.5 -8}
 
+# signbit tests
 test mathfunc-signbit.1 {signbit: no args} -body {
     tcl::mathfunc::signbit
 } -returnCodes error -result {not enough arguments for math function "signbit"}
@@ -291,6 +312,7 @@ test mathfunc-signbit.10 {signbit: valid result: nan} -body {
     tcl::mathfunc::signbit NaN
 } -match glob -result {[01]}
 
+# trunc tests
 test mathfunc-trunc.1 {trunc: no args} -body {
     tcl::mathfunc::trunc
 } -returnCodes error -result {not enough arguments for math function "trunc"}
