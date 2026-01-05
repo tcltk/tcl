@@ -91,6 +91,40 @@ test mathfunc-dim.4 {dim: valid result} {
     tcl::mathfunc::dim 1 2
 } 0.0
 
+# divmod tests
+test mathfunc-divmod.1 {divmod: no args} -body {
+    divmod
+} -returnCodes error -result {wrong # args: should be "divmod dividend divisor"}
+test mathfunc-divmod.2 {divmod: too many args} -body {
+    divmod a b c
+} -returnCodes error -result {wrong # args: should be "divmod dividend divisor"}
+test mathfunc-divmod.3 {divmod: invalid args} -body {
+    divmod 1.5 0.5
+} -returnCodes error -result {dividend must be an integer}
+test mathfunc-divmod.4 {divmod: invalid args} -body {
+    divmod 15 0.5
+} -returnCodes error -result {divisor must be an integer}
+test mathfunc-divmod.5 {divmod: invalid args} -body {
+    divmod 15 0
+} -returnCodes error -result {divide by zero}
+test mathfunc-divmod.6 {divmod: invalid args} -body {
+    divmod 15151515151515151515151515151515151515151515151515151515 0
+} -returnCodes error -result {divide by zero}
+test mathfunc-divmod.7 {divmod: valid args: integer} {
+    divmod 15 4
+} {3 3}
+test mathfunc-divmod.8 {divmod: valid args: integer} {
+    divmod 155 -4
+} {-39 -1}
+test mathfunc-divmod.9 {divmod: valid args: bignum} {
+    divmod 15151515151515151515151515151515151515151515151515151515 \
+	    44444444444444444444444444444444444444444444444
+} {340909090 40404040404040404040404040404040404040555555555}
+test mathfunc-divmod.9 {divmod: valid args: bignum} {
+    divmod 15151515151515151515151515151515151515151515151515151515 \
+	    -4444444444444444444444444444444444444444444444
+} {-3409090910 -4040404040404040404040404040404040402525252525}
+
 # erf tests
 test mathfunc-erf.1 {erf: no args} -body {
     tcl::mathfunc::erf
@@ -268,10 +302,10 @@ test mathfunc-remainder.3 {remainder: valid result} {
 # remquo tests
 test mathfunc-remquo.1 {remquo: no args} -body {
     remquo
-} -returnCodes error -result {wrong # args: should be "remquo floatValue"}
+} -returnCodes error -result {wrong # args: should be "remquo dividend divisor"}
 test mathfunc-remquo.2 {remquo: too many args} -body {
     remquo a b c
-} -returnCodes error -result {wrong # args: should be "remquo floatValue"}
+} -returnCodes error -result {wrong # args: should be "remquo dividend divisor"}
 test mathfunc-remquo.3 {remquo: valid result} {
     remquo 12.5 1.5
 } {0.5 8}
