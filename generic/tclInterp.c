@@ -620,7 +620,7 @@ int
 Tcl_InterpObjCmd(
     void *clientData,
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     return Tcl_NRCallObjProc2(interp, NRInterpCmd, clientData, objc, objv);
@@ -630,7 +630,7 @@ static int
 NRInterpCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Interp *childInterp;
@@ -1790,7 +1790,7 @@ static int
 AliasNRCmd(
     void *clientData,		/* Alias record. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument vector. */
 {
     Alias *aliasPtr = (Alias *) clientData;
@@ -1843,7 +1843,7 @@ int
 TclAliasObjCmd(
     void *clientData,		/* Alias record. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument vector. */
 {
 #define ALIAS_CMDV_PREALLOC 10
@@ -1934,7 +1934,7 @@ int
 TclLocalAliasObjCmd(
     void *clientData,		/* Alias record. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument vector. */
 {
 #define ALIAS_CMDV_PREALLOC 10
@@ -2520,7 +2520,7 @@ int
 TclChildObjCmd(
     void *clientData,		/* Child interpreter. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     return Tcl_NRCallObjProc2(interp, NRChildCmd, clientData, objc, objv);
@@ -2530,7 +2530,7 @@ static int
 NRChildCmd(
     void *clientData,		/* Child interpreter. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Interp *childInterp = (Tcl_Interp *) clientData;

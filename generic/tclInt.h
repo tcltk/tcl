@@ -4652,7 +4652,7 @@ MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
 
 /* Token growth tuning, default to the general value. */
 #ifndef TCL_MIN_TOKEN_GROWTH
-#define TCL_MIN_TOKEN_GROWTH TCL_MIN_GROWTH/sizeof(Tcl_Token)
+#define TCL_MIN_TOKEN_GROWTH (TCL_MIN_GROWTH/sizeof(Tcl_Token))
 #endif
 
 static inline void
@@ -4669,16 +4669,16 @@ TclGrowParseTokenArray(
 	    oldPtr = NULL;
 	}
 	newPtr = (Tcl_Token *)Tcl_AttemptRealloc((char *) oldPtr,
-		allocated * sizeof(Tcl_Token));
+		(size_t)allocated * sizeof(Tcl_Token));
 	if (newPtr == NULL) {
-	    allocated = needed + append + TCL_MIN_TOKEN_GROWTH;
+	    allocated = needed + append + (Tcl_Size)TCL_MIN_TOKEN_GROWTH;
 	    newPtr = (Tcl_Token *)Tcl_Realloc((char *) oldPtr,
-		    allocated * sizeof(Tcl_Token));
+		    (size_t)allocated * sizeof(Tcl_Token));
 	}
 	parsePtr->tokensAvailable = allocated;
 	if (oldPtr == NULL) {
 	    memcpy(newPtr, parsePtr->staticTokens,
-		    parsePtr->numTokens * sizeof(Tcl_Token));
+		    (size_t)parsePtr->numTokens * sizeof(Tcl_Token));
 	}
 	parsePtr->tokenPtr = newPtr;
     }
