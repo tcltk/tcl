@@ -256,7 +256,7 @@ static struct {
 TCL_DECLARE_MUTEX(icu_mutex);
 
 /* Options used by multiple normalization functions */
-static const char *normalizationForms[] = {"nfc", "nfd", "nfkc", "nfkd", NULL};
+static const char *const normalizationForms[] = {"nfc", "nfd", "nfkc", "nfkd", NULL};
 typedef enum { MODE_NFC, MODE_NFD, MODE_NFKC, MODE_NFKD } NormalizationMode;
 
 
@@ -967,7 +967,7 @@ IcuParseConvertOptions(
 
     /* Use GetIndexFromObj for option parsing so -failindex can be added later */
 
-    static const char *optNames[] = {"-profile", "-failindex", NULL};
+    static const char *const optNames[] = {"-profile", "-failindex", NULL};
     enum { OPT_PROFILE, OPT_FAILINDEX } opt;
     int i;
     int strict = 1;
@@ -1130,7 +1130,7 @@ IcuNormalizeObjCmd(
     Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    static const char *optNames[] = {"-profile", "-mode", NULL};
+    static const char *const optNames[] = {"-profile", "-mode", NULL};
     enum { OPT_PROFILE, OPT_MODE } opt;
 
     if (objc < 2) {
