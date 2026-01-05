@@ -1410,7 +1410,7 @@ TclOODefineObjCmd(
      * command(s).
      */
 
-    nsPtr = TclOOGetDefineContextNamespace(interp, oPtr, 1);
+    nsPtr = TclOOGetDefineContextNamespace(interp, oPtr, true);
     if (InitDefineContext(interp, nsPtr, oPtr, objc, objv) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -1479,7 +1479,7 @@ TclOOObjDefObjCmd(
      * command(s).
      */
 
-    nsPtr = TclOOGetDefineContextNamespace(interp, oPtr, 0);
+    nsPtr = TclOOGetDefineContextNamespace(interp, oPtr, false);
     if (InitDefineContext(interp, nsPtr, oPtr, objc, objv) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -1550,7 +1550,7 @@ TclOODefineSelfObjCmd(
      * command(s).
      */
 
-    nsPtr = TclOOGetDefineContextNamespace(interp, oPtr, 0);
+    nsPtr = TclOOGetDefineContextNamespace(interp, oPtr, false);
     if (InitDefineContext(interp, nsPtr, oPtr, objc, objv) != TCL_OK) {
 	return TCL_ERROR;
     }
