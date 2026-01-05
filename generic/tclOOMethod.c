@@ -1085,56 +1085,6 @@ ProcedureMethodVarResolver(
     return (*varPtr ? TCL_OK : TCL_CONTINUE);
 }
 
-// Helper for ProcedureMethodCompiledVarConnect
-static inline Tcl_Obj *
-GetRealVarName(
-    CallContext *contextPtr,
-    OOResVarInfo *infoPtr,
-    bool *cacheIt)
-{
-    PrivateVariableMapping *privateVar;
-    Tcl_Size i, varLen, len;
-    const char *varName = Tcl_GetStringFromObj(infoPtr->variableObj, &varLen);
-    const char *match;
-    Tcl_Obj *variableObj;
-
-    if (contextPtr->callPtr->chain[contextPtr->index]
-	    .mPtr->declaringClassPtr != NULL) {
-	FOREACH_STRUCT(privateVar, contextPtr->callPtr->chain[contextPtr->index]
-		.mPtr->declaringClassPtr->privateVariables) {
-	    match = Tcl_GetStringFromObj(privateVar->variableObj, &len);
-	    if ((len == varLen) && !memcmp(match, varName, len)) {
-		*cacheIt = false;
-		return privateVar->fullNameObj;
-	    }
-	}
-	FOREACH(variableObj, contextPtr->callPtr->chain[contextPtr->index]
-		.mPtr->declaringClassPtr->variables) {
-	    match = Tcl_GetStringFromObj(variableObj, &len);
-	    if ((len == varLen) && !memcmp(match, varName, len)) {
-		*cacheIt = false;
-		return variableObj;
-	    }
-	}
-    } else {
-	FOREACH_STRUCT(privateVar, contextPtr->oPtr->privateVariables) {
-	    match = Tcl_GetStringFromObj(privateVar->variableObj, &len);
-	    if ((len == varLen) && !memcmp(match, varName, len)) {
-		*cacheIt = true;
-		return privateVar->fullNameObj;
-	    }
-	}
-	FOREACH(variableObj, contextPtr->oPtr->variables) {
-	    match = Tcl_GetStringFromObj(variableObj, &len);
-	    if ((len == varLen) && !memcmp(match, varName, len)) {
-		*cacheIt = true;
-		return variableObj;
-	    }
-	}
-    }
-    return NULL;
-}
-
 // Helper for ProcedureMethodCompiledVarConnect() that looks up if a variable
 // is in the list of variables we want to resolve (and maps it to the
 // implementation name, for private variables).
