@@ -1000,14 +1000,13 @@ install-headers:
 		fi; \
 	    done;
 	@echo "Installing header files to $(INCLUDE_INSTALL_DIR)/";
-	@for i in $(GENERIC_DIR)/tcl.h $(GENERIC_DIR)/tclDecls.h \
-		$(GENERIC_DIR)/tclOO.h $(GENERIC_DIR)/tclOODecls.h \
-		$(GENERIC_DIR)/tclPlatDecls.h \
-		$(GENERIC_DIR)/tclTomMath.h \
-		$(GENERIC_DIR)/tclTomMathDecls.h \
-		$(TOMMATH_DIR)/tommath.h ; \
+	@for i in "$(GENERIC_DIR)/tcl.h" "$(GENERIC_DIR)/tclDecls.h" \
+		"$(GENERIC_DIR)/tclOO.h" "$(GENERIC_DIR)/tclOODecls.h" \
+		"$(GENERIC_DIR)/tclPlatDecls.h" \
+		"$(GENERIC_DIR)/tclTomMath.h" \
+		"$(GENERIC_DIR)/tclTomMathDecls.h"; \
 	    do \
-	    $(COPY) $$i "$(INCLUDE_INSTALL_DIR)"; \
+	    $(COPY) "$$i" "$(INCLUDE_INSTALL_DIR)"; \
 	    done;
 
 # Optional target to install private headers

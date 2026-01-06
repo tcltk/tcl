@@ -52,7 +52,6 @@
 #undef TclStaticLibrary
 #define TclStaticLibrary Tcl_StaticLibrary
 #if !defined(_WIN32) && !defined(__CYGWIN__)
-# undef Tcl_WinConvertError
 # define Tcl_WinConvertError 0
 #endif
 #undef TclGetStringFromObj
@@ -1514,7 +1513,9 @@ const TclStubs tclStubs = {
     Tcl_ListObjRange, /* 694 */
     Tcl_UtfToNormalizedDString, /* 695 */
     Tcl_UtfToNormalized, /* 696 */
-    TclUnusedStubEntry, /* 697 */
+    Tcl_ExternalToUtfEx, /* 697 */
+    Tcl_UtfToExternalEx, /* 698 */
+    TclUnusedStubEntry, /* 699 */
 };
 
 /* !END!: Do not edit above this line. */
