@@ -129,6 +129,7 @@ VarHashNextVar(
 static const char NOSUCHVAR[] =		"no such variable";
 static const char MEMERROR[] =		"memory error";
 static const char ISARRAY[] =		"variable is array";
+static const char ISTRACED[] =		"variable is traced";
 static const char NEEDARRAY[] =		"variable isn't array";
 static const char NOSUCHELEMENT[] =	"no such element in array";
 static const char DANGLINGELEMENT[] =
@@ -1939,6 +1940,58 @@ StringAppendInVar(
 }
 
 /*
+ * TclVarVerifyDataType --
+ *
+ *	This function is invoked to verify the value that is stored
+ *	in a variable against a given data type.
+ *
+ * Results:
+ *	A standard Tcl object result value.
+ *
+ * Side effects:
+ *	See the user documentation.
+ */
+static int
+TclVarVerifyDataType(
+    Tcl_Interp *interp,		/* Current interpreter */
+    Tcl_Obj *valuePtr,		/* Value to verify */
+    enum TclVarFlags dataType)	/* Expected data type */
+{
+    int boolValue;
+    double doubleValue;
+    Tcl_WideInt wideValue;
+
+    switch (dataType) {
+    case VAR_DATATYPE_WIDEINT:
+	if (Tcl_GetWideIntFromObj(interp, valuePtr, &wideValue) != TCL_OK) {
+	    Tcl_SetErrorCode(interp, "TCL", "TYPEDVAR", "INTEGER",
+		    (char *)NULL);
+	    return TCL_ERROR;
+	}
+	break;
+    case VAR_DATATYPE_DOUBLE:
+	if (Tcl_GetDoubleFromObj(interp, valuePtr, &doubleValue) != TCL_OK) {
+	    Tcl_SetErrorCode(interp, "TCL", "TYPEDVAR", "DOUBLE",
+		    (char *)NULL);
+	    return TCL_ERROR;
+	}
+	break;
+    case VAR_DATATYPE_BOOLEAN:
+	if (Tcl_GetBooleanFromObj(interp, valuePtr, &boolValue) != TCL_OK) {
+	    Tcl_SetErrorCode(interp, "TCL", "TYPEDVAR", "BOOLEAN",
+		    (char *)NULL);
+	    return TCL_ERROR;
+	}
+	break;
+    default:
+	/* Unknown type: should not happen */
+	Tcl_Panic("TclVarVerifyDataType: unknown data type %d", dataType);
+    }
+
+    return TCL_OK;
+}
+
+/*
  *----------------------------------------------------------------------
  *
  * TclPtrSetVarIdx --
@@ -2019,6 +2072,12 @@ TclPtrSetVarIdx(
 	    TclObjVarErrMsg(interp, part1Ptr, part2Ptr, "set", ISCONST,index);
 	    Tcl_SetErrorCode(interp, "TCL", "WRITE", "CONST", (char *)NULL);
 	}
+	goto earlyError;
+    }
+
+    int dataType = TclGetVarDataType(varPtr);
+    if (dataType &&
+	TclVarVerifyDataType(interp, newValuePtr, dataType) != TCL_OK) {
 	goto earlyError;
     }
 
@@ -2117,15 +2176,22 @@ TclPtrSetVarIdx(
 
     resultPtr = iPtr->emptyObjPtr;
 
-    /*
-     * If the variable doesn't exist anymore and no-one's using it, then free
-     * up the relevant structures and hash table entries.
-     */
-
   cleanup:
     if (resultPtr == NULL) {
 	Tcl_SetErrorCode(interp, "TCL", "WRITE", "VARNAME", (char *)NULL);
     }
+    /*
+     * If the variable doesn't exist anymore and no-one's using it, then free
+     * up the relevant structures and hash table entries. As an exception,
+     * preserve data type information for undefined variables. This last
+     * is needed so that the following sequence raises an error even on the
+     * second set, not just on the first.
+     *     global x
+     *     vartype int x
+     *     set x foo
+     *     set x foo
+     */
+
     if (TclIsVarUndefined(varPtr)) {
 	TclCleanupVar(varPtr, arrayPtr);
     }
@@ -5029,6 +5095,128 @@ Tcl_GlobalObjCmd(
 	    return result;
 	}
     }
+    return TCL_OK;
+}
+
+/*
+ * Tcl_VarTypeObjCmd --
+ *
+ *	This function is invoked to process the "vartype" Tcl command.
+ *	See the user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl object result value.
+ *
+ * Side effects:
+ *	See the user documentation.
+ */
+
+int
+Tcl_VarTypeObjCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* Current interpreter. */
+    Tcl_Size objc,		/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    Var *varPtr, *arrayPtr;
+    Tcl_Obj *part1Ptr;
+    enum TclVarFlags dataType;
+
+    if (objc == 1) {
+	Tcl_WrongNumArgs(interp, 1, objv, "dataType ?varName varName ...?");
+	return TCL_ERROR;
+    }
+
+    static const char *valueTypeNames[] = {"int", "double", "boolean", NULL};
+    enum valueType {TYPE_WIDE, TYPE_DOUBLE, TYPE_BOOLEAN} valueType;
+
+    if (Tcl_GetIndexFromObj(interp, objv[1], valueTypeNames, "dataType",
+	    0, &valueType) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    switch (valueType) {
+    case TYPE_WIDE:
+	dataType = VAR_DATATYPE_WIDEINT;
+	break;
+    case TYPE_DOUBLE:
+	dataType = VAR_DATATYPE_DOUBLE;
+	break;
+    case TYPE_BOOLEAN:
+	dataType = VAR_DATATYPE_BOOLEAN;
+	break;
+    }
+
+    /* First do error checking across all variables */
+    for (Tcl_Size i = 2; i < objc; i++) {
+	part1Ptr = objv[i];
+	varPtr = TclObjLookupVarEx(interp, part1Ptr, NULL, TCL_LEAVE_ERR_MSG,
+	    "dataType", /*createPart1*/ 1, /*createPart2*/ 1, &arrayPtr);
+
+	/* Arrays cannot be assigned types */
+	if (TclIsVarArray(varPtr)) {
+	    TclObjVarErrMsg(interp, part1Ptr, NULL, "assign type to", ISARRAY,
+		-1);
+	    Tcl_SetErrorCode(interp, "TCL", "TYPEDVAR", "ARRAY", (char *)NULL);
+	    return TCL_ERROR;
+	}
+
+	/* Array elements cannot be assigned types */
+	if (TclIsVarArrayElement(varPtr)) {
+	    if (TclIsVarUndefined(varPtr)) {
+		CleanupVar(varPtr, arrayPtr);
+	    }
+	    TclObjVarErrMsg(interp, part1Ptr, NULL, "assign type to",
+		ISARRAYELEMENT, -1);
+	    Tcl_SetErrorCode(interp, "TCL", "TYPEDVAR", "ARRAYELEMENT", (char *)NULL);
+	    return TCL_ERROR;
+	}
+
+	/*
+	 * TODO - For now, allow traces. To be revisited as I'm not sure what
+	 * the behavior should be (for example) if a read trace on a "int"
+	 * variable returns a non-integer value.
+	 */
+	if (0 && TclIsVarTraced(varPtr)) {
+	    TclObjVarErrMsg(interp, part1Ptr, NULL, "assign type to", ISTRACED,
+		-1);
+	    Tcl_SetErrorCode(interp, "TCL", "TYPEDVAR", "TRACED", (char *)NULL);
+	    return TCL_ERROR;
+	}
+
+	int currentType = TclGetVarDataType(varPtr);
+	if (currentType == dataType) {
+	    /* Already the right type */
+	    continue;
+	}
+
+	if (currentType) {
+	    /* Different type already assigned */
+	    TclObjVarErrMsg(interp, part1Ptr, NULL, "change type of", EXISTS,
+		-1);
+	    Tcl_SetErrorCode(interp, "TCL", "TYPEDVAR", "EXISTS", (char *)NULL);
+	    return TCL_ERROR;
+	}
+
+	/*
+	 * Verify current value if variable already exists. We have already
+	 * resolved linked variables (TclObjLookupVarEx) and checked for
+	 * traces and arrays above so avoid the overhead of TclPtrGetVarIdx
+	 * and directly check the variable value.
+	 */
+	if (varPtr->value.objPtr != NULL) {
+	    if (TclVarVerifyDataType(interp, varPtr->value.objPtr, dataType)
+		    != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	}
+    }
+
+    /* Now that error checking has passed, mark all vars with the type */
+    for (Tcl_Size i = 2; i < objc; i++) {
+	TclSetVarDataType(varPtr, dataType);
+    }
+
     return TCL_OK;
 }
 
