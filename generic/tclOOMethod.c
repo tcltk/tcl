@@ -1098,46 +1098,45 @@ GetRealVarName(
     OOResVarInfo *infoPtr,
     bool *cacheIt)
 {
-    PrivateVariableMapping *privateVar;
-    Tcl_Size i, varLen, len;
-    const char *varName = Tcl_GetStringFromObj(infoPtr->variableObj, &varLen);
-    const char *match;
+    const Class *clsPtr = contextPtr->callPtr->chain[contextPtr->index]
+	    .mPtr->declaringClassPtr;
+    const PrivateVariableMapping *privateVar;
+    Tcl_Size i;
     Tcl_Obj *variableObj;
 
-    if (contextPtr->callPtr->chain[contextPtr->index]
-	    .mPtr->declaringClassPtr != NULL) {
-	FOREACH_STRUCT(privateVar, contextPtr->callPtr->chain[contextPtr->index]
-		.mPtr->declaringClassPtr->privateVariables) {
-	    match = Tcl_GetStringFromObj(privateVar->variableObj, &len);
-	    if ((len == varLen) && !memcmp(match, varName, len)) {
+    if (clsPtr != NULL) {
+	FOREACH_STRUCT(privateVar, clsPtr->privateVariables) {
+	    if (!TclStringCmp(infoPtr->variableObj, privateVar->variableObj,
+		    1, 0, TCL_AUTO_LENGTH)) {
 		*cacheIt = false;
 		return privateVar->fullNameObj;
 	    }
 	}
-	FOREACH(variableObj, contextPtr->callPtr->chain[contextPtr->index]
-		.mPtr->declaringClassPtr->variables) {
-	    match = Tcl_GetStringFromObj(variableObj, &len);
-	    if ((len == varLen) && !memcmp(match, varName, len)) {
+	FOREACH(variableObj, clsPtr->variables) {
+	    if (!TclStringCmp(infoPtr->variableObj, variableObj,
+		    1, 0, TCL_AUTO_LENGTH)) {
 		*cacheIt = false;
 		return variableObj;
 	    }
 	}
     } else {
-	FOREACH_STRUCT(privateVar, contextPtr->oPtr->privateVariables) {
-	    match = Tcl_GetStringFromObj(privateVar->variableObj, &len);
-	    if ((len == varLen) && !memcmp(match, varName, len)) {
+	const Object *oPtr = contextPtr->oPtr;
+	FOREACH_STRUCT(privateVar, oPtr->privateVariables) {
+	    if (!TclStringCmp(infoPtr->variableObj, privateVar->variableObj,
+		    1, 0, TCL_AUTO_LENGTH)) {
 		*cacheIt = true;
 		return privateVar->fullNameObj;
 	    }
 	}
-	FOREACH(variableObj, contextPtr->oPtr->variables) {
-	    match = Tcl_GetStringFromObj(variableObj, &len);
-	    if ((len == varLen) && !memcmp(match, varName, len)) {
+	FOREACH(variableObj, oPtr->variables) {
+	    if (!TclStringCmp(infoPtr->variableObj, variableObj,
+		    1, 0, TCL_AUTO_LENGTH)) {
 		*cacheIt = true;
 		return variableObj;
 	    }
 	}
     }
+    *cacheIt = false;
     return NULL;
 }
 
