@@ -1553,7 +1553,7 @@ TclOOSelfObjCmd(
 	return TCL_OK;
     }
     case SELF_METHOD:
-        Tcl_SetObjResult(interp, MethodName(fPtr, contextPtr,
+	Tcl_SetObjResult(interp, MethodName(fPtr, contextPtr,
 		CurrentlyInvoked(contextPtr).mPtr));
 	return TCL_OK;
     case SELF_FILTER:
