@@ -1477,6 +1477,10 @@ test timer-15.8 {"timer sleep until" time measurment} -body {
     # The match accepts 100 to 200 ms
 } -match glob -result {1[0-9][0-9][0-9][0-9][0-9] microseconds per iteration}
 
+test timer-15.9 {timer sleep, unit abbreviation} -body {
+    timer sleep for 1 micro
+}
+
 ## timer cancel
 
 test timer-16.1 {"timer cancel" basic} -body {

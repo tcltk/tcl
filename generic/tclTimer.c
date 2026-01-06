@@ -1750,10 +1750,10 @@ ParseTimeUnit(
     }
 
     /*
-     * Get the unit of the time point
+     * Get the unit of the time point. Allow abbreviations.
      */
 
-    if (Tcl_GetIndexFromObj(interp, objv[timeIndex+1], unitItems, "unit", 1, &unitIndex)
+    if (Tcl_GetIndexFromObj(interp, objv[timeIndex+1], unitItems, "unit", 0, &unitIndex)
 	    != TCL_OK) {
 	return TCL_ERROR;
     }
