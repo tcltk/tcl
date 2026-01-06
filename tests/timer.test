@@ -1435,12 +1435,12 @@ test timer-14.2 {timer info at value - negative} -body {
 ## timer sleep
 
 test timer-15.1 {timer sleep, basics} -returnCodes error -body {
-    timer sleep for 0
-} -result {wrong # args: should be "timer sleep option time unit"}
+    timer sleep for
+} -result {wrong # args: should be "timer sleep option time ?unit?"}
 
 test timer-15.2 {timer sleep, basics} -returnCodes error -body {
     timer sleep for 0 us junk
-} -result {wrong # args: should be "timer sleep option time unit"}
+} -result {wrong # args: should be "timer sleep option time ?unit?"}
 
 test timer-15.3 {timer sleep, basics} -returnCodes error -body {
     timer sleep junk 0 us
@@ -1480,6 +1480,17 @@ test timer-15.8 {"timer sleep until" time measurment} -body {
 test timer-15.9 {timer sleep, unit abbreviation} -body {
     timer sleep for 1 micro
 }
+
+test timer-15.10 {timer sleep for, default unit} -body {
+    time {timer sleep for 1}
+    # allow 1000 to 1999 microseconds
+} -match glob -result {1[0-9][0-9][0-9] *}
+
+test timer-15.11 {timer sleep until, default unit} -body {
+    time [list timer sleep until [expr {[clock seconds]+2}]]
+    # this may be from 1 to 3 seconds, as "clock seconds" may have
+    # been 0 to 999 ms in the past.
+} -match glob -result {[1-3][0-9][0-9][0-9][0-9][0-9][0-9] *}
 
 ## timer cancel
 

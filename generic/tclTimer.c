@@ -127,6 +127,17 @@ typedef struct {
 static Tcl_ThreadDataKey dataKey;
 
 /*
+ * time point and distance unit strings and values.
+ * Used for argument parsing.
+ */
+
+static const char *const unitItems[] = {
+	"us", "microseconds", "milliseconds", "ms", "s", "seconds", NULL};
+enum unitEnum {UNIT_US, UNIT_MICROSECONDS, UNIT_MILLISECONDS, UNIT_MS,
+	UNIT_S, UNIT_SECONDS};
+
+
+/*
  * Helper macros for working with times. TCL_TIME_BEFORE encodes how to write
  * the ordering relation on (normalized) times, and TCL_TIME_DIFF_MS computes
  * the number of milliseconds difference between two times. Both macros use
@@ -198,7 +209,9 @@ static int		TimerIdleDo(Tcl_Interp *interp,
 static Tcl_ObjCmdProc2	TimerInfoCmd;
 static void		TimeTooFarError(Tcl_Interp *interp);
 static int		ParseTimeUnit(Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[], long long *wakeupPtr);
+			    Tcl_Obj *const objv[],
+			    bool useDefaultUnit, enum unitEnum defaultUnit,
+			    long long *wakeupPtr);
 static int		TimerInfoDo(Tcl_Interp *interp, int objc,
 			Tcl_Obj *const objv[], bool isAfter);
 static Tcl_TimerToken	CreateTimerHandler(Tcl_Time *timePtr,
@@ -1728,15 +1741,13 @@ ParseTimeUnit(
     Tcl_Interp *interp,		/* Current interpreter. */
     int timeIndex,		/* Index of time value in objv. */
     Tcl_Obj *const objv[],	/* Argument objects. */
+    bool useDefaultUnit,	/* True, if the default unit is used.
+				 * False, if unit object follows the time value */
+    enum unitEnum defaultUnit,	/* Default unit value */
     long long *wakeupPtr)	/* Output time */
 {
     Tcl_WideInt timeArg;
     int unitIndex;
-
-    static const char *const unitItems[] = {
-	    "us", "microseconds", "milliseconds", "ms", "s", "seconds", NULL};
-    enum unitEnum {UNIT_US, UNIT_MICROSECONDS, UNIT_MILLISECONDS, UNIT_MS,
-	    UNIT_S, UNIT_SECONDS};
 
     /*
      * Get the time point to wait
@@ -1753,15 +1764,18 @@ ParseTimeUnit(
      * Get the unit of the time point. Allow abbreviations.
      */
 
-    if (Tcl_GetIndexFromObj(interp, objv[timeIndex+1], unitItems, "unit", 0, &unitIndex)
-	    != TCL_OK) {
-	return TCL_ERROR;
+    if (useDefaultUnit) {
+	unitIndex = defaultUnit;
+    } else {
+	if (Tcl_GetIndexFromObj(interp, objv[timeIndex+1], unitItems, "unit", 0, &unitIndex)
+		!= TCL_OK) {
+	    return TCL_ERROR;
+	}
     }
 
     /*
-     * Transfer to Tcl_Timer structure
+     * Create time value by applying the unit to the value
      */
-
 
     switch(unitIndex) {
     case UNIT_MICROSECONDS:
@@ -1822,7 +1836,7 @@ TimerAtCmd(
 	return TCL_ERROR;
     }
 
-    if (TCL_OK != ParseTimeUnit(interp, 1, objv, &timeArgUS)) {
+    if (TCL_OK != ParseTimeUnit(interp, 1, objv, false, 0, &timeArgUS)) {
 	return TCL_ERROR;
     }
 
@@ -1915,7 +1929,7 @@ TimerInCmd(
 	return TCL_ERROR;
     }
 
-    if (TCL_OK != ParseTimeUnit(interp, 1, objv, &wakeupArgUS)) {
+    if (TCL_OK != ParseTimeUnit(interp, 1, objv, false, 0, &wakeupArgUS)) {
 	return TCL_ERROR;
     }
 
@@ -1986,7 +2000,7 @@ static int
 TimerSleepCmd(
     TCL_UNUSED(void *),		/* Client data. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     long long sleepArgUS;
@@ -1995,8 +2009,8 @@ TimerSleepCmd(
     enum sleepOptionEnum {MODE_FOR, MODE_UNTIL};
     int optionIndex;
 
-    if (objc != 4) {
-	Tcl_WrongNumArgs(interp, 0, objv, "timer sleep option time unit");
+    if (objc < 3 || objc > 4) {
+	Tcl_WrongNumArgs(interp, 0, objv, "timer sleep option time ?unit?");
 	return TCL_ERROR;
     }
 
@@ -2009,7 +2023,14 @@ TimerSleepCmd(
 	return TCL_ERROR;
     }
 
-    if (TCL_OK != ParseTimeUnit(interp, 2, objv, &sleepArgUS)) {
+    /*
+     * Parse the unit. The default unit is milli-seconds for "sleep for"
+     * and seconds for "sleep until".
+     */
+
+    if (TCL_OK != ParseTimeUnit(interp, 2, objv, objc == 3,
+	    optionIndex==MODE_FOR? UNIT_MS: UNIT_S,
+	    &sleepArgUS)) {
 	return TCL_ERROR;
     }
 
