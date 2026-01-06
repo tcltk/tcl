@@ -405,14 +405,11 @@ TclOODefineBasicMethods(
     const DeclaredClassMethod *dcmAry)
 				/* Static table of method definitions. */
 {
-    int i;
-
-    for (i = 0 ; dcmAry[i].name ; i++) {
-	Tcl_Obj *namePtr = Tcl_NewStringObj(dcmAry[i].name, TCL_AUTO_LENGTH);
+    for (const DeclaredClassMethod *dcm = dcmAry; dcm->name ; dcm++) {
+	Tcl_Obj *namePtr = Tcl_NewStringObj(dcm->name, TCL_AUTO_LENGTH);
 
 	TclNewMethod((Tcl_Class) clsPtr, namePtr,
-		(dcmAry[i].isPublic ? PUBLIC_METHOD : 0),
-		&dcmAry[i].definition, NULL);
+		(dcm->isPublic ? PUBLIC_METHOD : 0), &dcm->definition, NULL);
 	Tcl_BounceRefCount(namePtr);
     }
 }
@@ -816,7 +813,7 @@ InvokeProcedureMethod(
     void *clientData,		/* Pointer to the per-method record. */
     Tcl_Interp *interp,
     Tcl_ObjectContext context,	/* The method calling context. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Arguments as actually seen. */
 {
     ProcedureMethod *pmPtr = (ProcedureMethod *) clientData;
@@ -955,7 +952,7 @@ PushMethodCallFrame(
     CallContext *contextPtr,	/* Current method call context. */
     ProcedureMethod *pmPtr,	/* Information about this procedure-like
 				 * method. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const *objv,	/* Array of arguments. */
     PMFrameData *fdPtr)		/* Place to store information about the call
 				 * frame. */
@@ -1092,6 +1089,60 @@ ProcedureMethodVarResolver(
     return (*varPtr ? TCL_OK : TCL_CONTINUE);
 }
 
+// Helper for ProcedureMethodCompiledVarConnect() that looks up if a variable
+// is in the list of variables we want to resolve (and maps it to the
+// implementation name, for private variables).
+static inline Tcl_Obj *
+GetRealVarName(
+    CallContext *contextPtr,
+    OOResVarInfo *infoPtr,
+    bool *cacheIt)
+{
+    const Class *clsPtr = contextPtr->callPtr->chain[contextPtr->index]
+	    .mPtr->declaringClassPtr;
+    const PrivateVariableMapping *privateVar;
+    Tcl_Size i;
+    Tcl_Obj *variableObj;
+
+    if (clsPtr != NULL) {
+	FOREACH_STRUCT(privateVar, clsPtr->privateVariables) {
+	    if (!TclStringCmp(infoPtr->variableObj, privateVar->variableObj,
+		    1, 0, TCL_AUTO_LENGTH)) {
+		*cacheIt = false;
+		return privateVar->fullNameObj;
+	    }
+	}
+	FOREACH(variableObj, clsPtr->variables) {
+	    if (!TclStringCmp(infoPtr->variableObj, variableObj,
+		    1, 0, TCL_AUTO_LENGTH)) {
+		*cacheIt = false;
+		return variableObj;
+	    }
+	}
+    } else {
+	const Object *oPtr = contextPtr->oPtr;
+	FOREACH_STRUCT(privateVar, oPtr->privateVariables) {
+	    if (!TclStringCmp(infoPtr->variableObj, privateVar->variableObj,
+		    1, 0, TCL_AUTO_LENGTH)) {
+		*cacheIt = true;
+		return privateVar->fullNameObj;
+	    }
+	}
+	FOREACH(variableObj, oPtr->variables) {
+	    if (!TclStringCmp(infoPtr->variableObj, variableObj,
+		    1, 0, TCL_AUTO_LENGTH)) {
+		*cacheIt = true;
+		return variableObj;
+	    }
+	}
+    }
+    *cacheIt = false;
+    return NULL;
+}
+
+// Called on entry to a compiled context to connect the local variables to
+// be resolved to the actual variables in the object instance. If we want to
+// connect it, we return the variable; otherwise NULL.
 static Tcl_Var
 ProcedureMethodCompiledVarConnect(
     Tcl_Interp *interp,
@@ -1102,11 +1153,9 @@ ProcedureMethodCompiledVarConnect(
     CallFrame *framePtr = iPtr->varFramePtr;
     CallContext *contextPtr;
     Tcl_Obj *variableObj;
-    PrivateVariableMapping *privateVar;
     Tcl_HashEntry *hPtr;
-    int isNew, cacheIt;
-    Tcl_Size i, varLen, len;
-    const char *match, *varName;
+    int isNew;
+    bool cacheIt;
 
     /*
      * Check that the variable is being requested in a context that is also a
@@ -1134,50 +1183,15 @@ ProcedureMethodCompiledVarConnect(
      * either.
      */
 
-    varName = Tcl_GetStringFromObj(infoPtr->variableObj, &varLen);
-    if (contextPtr->callPtr->chain[contextPtr->index]
-	    .mPtr->declaringClassPtr != NULL) {
-	FOREACH_STRUCT(privateVar, contextPtr->callPtr->chain[contextPtr->index]
-		.mPtr->declaringClassPtr->privateVariables) {
-	    match = Tcl_GetStringFromObj(privateVar->variableObj, &len);
-	    if ((len == varLen) && !memcmp(match, varName, len)) {
-		variableObj = privateVar->fullNameObj;
-		cacheIt = 0;
-		goto gotMatch;
-	    }
-	}
-	FOREACH(variableObj, contextPtr->callPtr->chain[contextPtr->index]
-		.mPtr->declaringClassPtr->variables) {
-	    match = Tcl_GetStringFromObj(variableObj, &len);
-	    if ((len == varLen) && !memcmp(match, varName, len)) {
-		cacheIt = 0;
-		goto gotMatch;
-	    }
-	}
-    } else {
-	FOREACH_STRUCT(privateVar, contextPtr->oPtr->privateVariables) {
-	    match = Tcl_GetStringFromObj(privateVar->variableObj, &len);
-	    if ((len == varLen) && !memcmp(match, varName, len)) {
-		variableObj = privateVar->fullNameObj;
-		cacheIt = 1;
-		goto gotMatch;
-	    }
-	}
-	FOREACH(variableObj, contextPtr->oPtr->variables) {
-	    match = Tcl_GetStringFromObj(variableObj, &len);
-	    if ((len == varLen) && !memcmp(match, varName, len)) {
-		cacheIt = 1;
-		goto gotMatch;
-	    }
-	}
+    variableObj = GetRealVarName(contextPtr, infoPtr, &cacheIt);
+    if (!variableObj) {
+	return NULL;
     }
-    return NULL;
 
     /*
      * It is a variable we want to resolve, so resolve it.
      */
 
-  gotMatch:
     hPtr = Tcl_CreateHashEntry(TclVarTable(contextPtr->oPtr->namespacePtr),
 	    variableObj, &isNew);
     if (isNew) {
@@ -1584,7 +1598,7 @@ InvokeForwardMethod(
     void *clientData,		/* Pointer to some per-method context. */
     Tcl_Interp *interp,
     Tcl_ObjectContext context,	/* The method calling context. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Arguments as actually seen. */
 {
     CallContext *contextPtr = (CallContext *) context;
@@ -1734,12 +1748,12 @@ TclOOGetFwdFromMethod(
 static Tcl_Obj **
 InitEnsembleRewrite(
     Tcl_Interp *interp,		/* Place to log the rewrite info. */
-    Tcl_Size objc,			/* Number of real arguments. */
+    Tcl_Size objc,		/* Number of real arguments. */
     Tcl_Obj *const *objv,	/* The real arguments. */
     Tcl_Size toRewrite,		/* Number of real arguments to replace. */
-    Tcl_Size rewriteLength,		/* Number of arguments to insert instead. */
+    Tcl_Size rewriteLength,	/* Number of arguments to insert instead. */
     Tcl_Obj *const *rewriteObjs,/* Arguments to insert instead. */
-    Tcl_Size *lengthPtr)		/* Where to write the resulting length of the
+    Tcl_Size *lengthPtr)	/* Where to write the resulting length of the
 				 * array of rewritten arguments. */
 {
     size_t len = rewriteLength + objc - toRewrite;

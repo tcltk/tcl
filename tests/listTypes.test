@@ -792,13 +792,11 @@ namespace eval listtype {
 
     ################################################################
     # join tests
-    # TODO - join shimmers its argument. Modify to avoid and add a check
-    # to the test below.
     foreach ltype $listTypes {
 	    testdef join-$ltype "join $ltype" -body {
 		set l [makeList $ltype]
-		join $l ,
-	    } -result [join [getNonAbstract $ltype] ,]
+		list [join $l ,] [getListType $l]
+	    } -result [list [join [getNonAbstract $ltype] ,] $ltype]
     }
 
     ################################################################

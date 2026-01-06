@@ -2022,6 +2022,11 @@ enum ArithSeqriesFlags {
     TCL_ARITHSERIES_TO = 1 << 1,	// to is defined (conventionally empty otherwise)
     TCL_ARITHSERIES_STEP = 1 << 2,	// step is defined (conventionally empty otherwise)
     TCL_ARITHSERIES_COUNT = 1 << 3,	// count is defined (conventionally empty otherwise)
+    TCL_ARITHSERIES_FROM_EVAL = 1 << 4,	// from was already evaluated as an expression
+    TCL_ARITHSERIES_TO_EVAL = 1 << 5,	// to was already evaluated as an expression
+    TCL_ARITHSERIES_STEP_EVAL = 1 << 6,	// step was already evaluated as an expression
+    TCL_ARITHSERIES_COUNT_EVAL = 1 << 7,// count was already evaluated as an expression
+    TCL_ARITHSERIES_EVAL_MASK = 15 << 4	// all the eval bits
 };
 
 /*
