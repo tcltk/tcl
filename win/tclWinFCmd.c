@@ -11,8 +11,8 @@
  */
 
 #include "tclWinInt.h"
-#include <AccCtrl.h>
-#include <AclAPI.h>
+#include <accctrl.h>
+#include <aclapi.h>
 #if defined (__clang__) && (__clang_major__ > 20)
 #pragma clang diagnostic ignored "-Wc++-keyword"
 #endif
