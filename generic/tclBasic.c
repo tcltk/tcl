@@ -368,6 +368,7 @@ static const CmdInfo builtInCmds[] = {
     {"uplevel",		Tcl_UplevelObjCmd,	TclCompileUplevelCmd,	TclNRUplevelObjCmd,	CMD_IS_SAFE},
     {"upvar",		Tcl_UpvarObjCmd,	TclCompileUpvarCmd,	NULL,	CMD_IS_SAFE},
     {"variable",	Tcl_VariableObjCmd,	TclCompileVariableCmd,	NULL,	CMD_IS_SAFE},
+    {"vartype",		Tcl_VarTypeObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
     {"while",		Tcl_WhileObjCmd,	TclCompileWhileCmd,	TclNRWhileObjCmd,	CMD_IS_SAFE},
     {"yield",		NULL,			TclCompileYieldCmd,	TclNRYieldObjCmd,	CMD_IS_SAFE},
     {"yieldto",		NULL,			TclCompileYieldToCmd,	TclNRYieldToObjCmd,	CMD_IS_SAFE|CMD_COMPILES_EXPANDED},

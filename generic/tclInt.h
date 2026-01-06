@@ -734,6 +734,13 @@ typedef struct VarInHash {
  *				variable.
  * VAR_IS_ARGS			1 if this variable is the last argument and is
  *				named "args".
+ *
+ * Flags restricting the type of data a variable can hold:
+ *
+ * VAR_DATATYPE_WIDEINT -	Variable is restricted to hold integer values.
+ * VAR_DATATYPE_DOUBLE -	Variable is restricted to hold double values.
+ * VAR_DATATYPE_BOOLEAN -	Variable is restricted to hold boolean values.
+ * VAR_DATATYPE_MASK -		Mask for all datatype restriction bits.
  */
 enum TclVarFlags {
 /* Type of value (0 is scalar) */
@@ -774,7 +781,16 @@ enum TclVarFlags {
     VAR_ARGUMENT = 0x100,	/* KEEP OLD VALUE! See tclProc.c */
     VAR_TEMPORARY = 0x200,	/* KEEP OLD VALUE! See tclProc.c */
     VAR_IS_ARGS = 0x400,
-    VAR_RESOLVED = 0x8000
+    VAR_RESOLVED = 0x8000,
+
+    /*
+     * Flags restricting the type of data a variable can hold.
+     */
+    VAR_DATATYPE_WIDEINT = 0x100000,
+    VAR_DATATYPE_DOUBLE = 0x200000,
+    VAR_DATATYPE_BOOLEAN = 0x400000,
+    VAR_DATATYPE_MASK = (VAR_DATATYPE_WIDEINT
+		| VAR_DATATYPE_DOUBLE | VAR_DATATYPE_BOOLEAN),
 };
 
 #define TCL_HASH_FIND	((int *)-1)
@@ -790,6 +806,7 @@ enum TclVarFlags {
  * MODULE_SCOPE void	TclSetVarArrayElement(Var *varPtr);
  * MODULE_SCOPE void	TclSetVarUndefined(Var *varPtr);
  * MODULE_SCOPE void	TclClearVarUndefined(Var *varPtr);
+ * MODULE_SCOPE void	TclSetVarDataType(Var *varPtr, TclVarFlags dataType);
  */
 
 #define TclSetVarScalar(varPtr) \
@@ -835,6 +852,9 @@ enum TclVarFlags {
 	}							\
     }
 
+#define TclSetVarDataType(varPtr, dataType) \
+    (varPtr)->flags = ((varPtr)->flags & ~VAR_DATATYPE_MASK) | dataType
+
 /*
  * Macros to read various flag bits of variables.
  * The ANSI C "prototypes" for these macros are:
@@ -848,6 +868,9 @@ enum TclVarFlags {
  * MODULE_SCOPE int	TclIsVarTemporary(Var *varPtr);
  * MODULE_SCOPE int	TclIsVarArgument(Var *varPtr);
  * MODULE_SCOPE int	TclIsVarResolved(Var *varPtr);
+ *
+ * Returns 0 if no data type or one of VAR_DATATYPE_* if typed
+ * MODULE_SCOPE int	TclGetVarDataType(Var *varPtr);
  */
 
 #define TclVarFindHiddenArray(varPtr,arrayPtr)				\
@@ -914,6 +937,9 @@ enum TclVarFlags {
 
 #define VarHashGetKey(varPtr) \
     (((VarInHash *)(varPtr))->entry.key.objPtr)
+
+#define TclGetVarDataType(varPtr) \
+    ((varPtr)->flags & VAR_DATATYPE_MASK)
 
 /*
  * Macros for direct variable access by TEBC.
@@ -3859,6 +3885,7 @@ MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_TimeObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_TimeRateObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_TraceObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_TryObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_VarTypeObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_UnloadObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_UnsetObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_UpdateObjCmd;
