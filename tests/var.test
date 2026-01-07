@@ -2261,7 +2261,7 @@ test var-31.3 {info consts: syntax} -returnCodes error -body {
 catch {namespace delete test_vartype}
 namespace eval test_vartype {
     test vartype-1 {Byte coded assignment via storeScalar to LVT entry} -setup {
-        proc p {} {vartype int x; set x foo}
+        proc p {} {vartype wideInteger x; set x foo}
     } -cleanup {
         rename p {}
     } -body {
@@ -2274,7 +2274,7 @@ namespace eval test_vartype {
         uplevel #0 {unset -nocomplain nosuchvar}
     } -body {
         uplevel #0 {
-            vartype int nosuchvar
+            vartype wideInteger nosuchvar
             list [catch {set nosuchvar foo}] [catch {set nosuchvar foo}]
         }
     } -result [list 1 1]
@@ -2285,7 +2285,7 @@ namespace eval test_vartype {
         uplevel #0 {unset -nocomplain nosuchvar}
     } -body {
         uplevel #0 {
-            vartype int nosuchvar
+            vartype wideInteger nosuchvar
             list [info exists nosuchvar] [catch {set nosuchvar foo}]
         }
     } -result [list 0 1]

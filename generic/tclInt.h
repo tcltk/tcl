@@ -735,12 +735,9 @@ typedef struct VarInHash {
  * VAR_IS_ARGS			1 if this variable is the last argument and is
  *				named "args".
  *
- * Flags restricting the type of data a variable can hold:
+ * Field restricting the type of data a variable can hold:
  *
- * VAR_DATATYPE_WIDEINT -	Variable is restricted to hold integer values.
- * VAR_DATATYPE_DOUBLE -	Variable is restricted to hold double values.
- * VAR_DATATYPE_BOOLEAN -	Variable is restricted to hold boolean values.
- * VAR_DATATYPE_MASK -		Mask for all datatype restriction bits.
+ * VAR_DATATYPE_MASK -		A Tcl_VarType value shifted appropriately.
  */
 enum TclVarFlags {
 /* Type of value (0 is scalar) */
@@ -784,13 +781,11 @@ enum TclVarFlags {
     VAR_RESOLVED = 0x8000,
 
     /*
-     * Flags restricting the type of data a variable can hold.
+     * Field restricting the type of data a variable can hold. The contained
+     * values (after shifting) are Tcl_VarType enum members.
      */
-    VAR_DATATYPE_WIDEINT = 0x100000,
-    VAR_DATATYPE_DOUBLE = 0x200000,
-    VAR_DATATYPE_BOOLEAN = 0x400000,
-    VAR_DATATYPE_MASK = (VAR_DATATYPE_WIDEINT
-		| VAR_DATATYPE_DOUBLE | VAR_DATATYPE_BOOLEAN),
+#define VAR_DATATYPE_SHIFT 20
+    VAR_DATATYPE_MASK = (0xF << VAR_DATATYPE_SHIFT) /* 0xF00000*/
 };
 
 #define TCL_HASH_FIND	((int *)-1)
@@ -806,7 +801,7 @@ enum TclVarFlags {
  * MODULE_SCOPE void	TclSetVarArrayElement(Var *varPtr);
  * MODULE_SCOPE void	TclSetVarUndefined(Var *varPtr);
  * MODULE_SCOPE void	TclClearVarUndefined(Var *varPtr);
- * MODULE_SCOPE void	TclSetVarDataType(Var *varPtr, TclVarFlags dataType);
+ * MODULE_SCOPE void	TclSetVarDataType(Var *varPtr, Tcl_VarType dataType);
  */
 
 #define TclSetVarScalar(varPtr) \
@@ -852,8 +847,12 @@ enum TclVarFlags {
 	}							\
     }
 
-#define TclSetVarDataType(varPtr, dataType) \
-    (varPtr)->flags = ((varPtr)->flags & ~VAR_DATATYPE_MASK) | dataType
+static inline void
+TclSetVarDataType(Var *varPtr, Tcl_VarType dataType)
+{
+    varPtr->flags &= ~VAR_DATATYPE_MASK;
+    varPtr->flags |= (dataType << VAR_DATATYPE_SHIFT);
+}
 
 /*
  * Macros to read various flag bits of variables.
@@ -938,8 +937,11 @@ enum TclVarFlags {
 #define VarHashGetKey(varPtr) \
     (((VarInHash *)(varPtr))->entry.key.objPtr)
 
-#define TclGetVarDataType(varPtr) \
-    ((varPtr)->flags & VAR_DATATYPE_MASK)
+static inline Tcl_VarType
+TclGetVarDataType(Var *varPtr)
+{
+    return (varPtr->flags & VAR_DATATYPE_MASK) >> VAR_DATATYPE_SHIFT;
+}
 
 /*
  * Macros for direct variable access by TEBC.

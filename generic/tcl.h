@@ -516,6 +516,20 @@ typedef struct stat *Tcl_OldStat_;
 #define TCL_SUBST_ALL		007
 
 /*
+ * Variables may have types assigned to them. Any contained value will be
+ * interpretable as that type. The defined values must fit the
+ * VAR_DATATYPE_MASK field in the TclVarFlags enum defined in tclInt.h.
+ * The order of definitions must also match the order of their corresponding
+ * names in the tclVarTypeNames[] array defined in tclVar.c.
+ */
+typedef enum Tcl_VarType {
+    TCL_DATATYPE_NONE = 0,
+    TCL_DATATYPE_WIDEINT = 1,
+    TCL_DATATYPE_DOUBLE = 2,
+    TCL_DATATYPE_BOOLEAN = 3
+} Tcl_VarType;
+
+/*
  * Forward declaration of Tcl_Obj to prevent an error when the forward
  * reference to Tcl_Obj is encountered in the function types declared below.
  */

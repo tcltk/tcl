@@ -48,6 +48,17 @@ static inline void	CleanupVar(Var *varPtr, Var *arrayPtr);
     ((Var *) ((char *)hPtr - offsetof(VarInHash, entry)))
 
 /*
+ * Names corresponding to the members of Tcl_VarType enum. The order must be
+ * the same!
+ */
+static const char *tclVarTypeNames[] = {
+    "",			/* TCL_DATATYPE_NONE */
+    "wideInteger",	/* TCL_DATATYPE_WIDEINT */
+    "double",		/* TCL_DATATYPE_DOUBLE */
+    "boolean",		/* TCL_DATATYPE_BOOLEAN */
+    NULL};
+
+/*
  * NOTE: VarHashCreateVar increments the recount of its key argument.
  * All callers that will call Tcl_DecrRefCount on that argument must
  * call Tcl_IncrRefCount on it before passing it in.  This requirement
@@ -1955,28 +1966,28 @@ static int
 TclVarVerifyDataType(
     Tcl_Interp *interp,		/* Current interpreter */
     Tcl_Obj *valuePtr,		/* Value to verify */
-    enum TclVarFlags dataType)	/* Expected data type */
+    Tcl_VarType dataType)	/* Expected data type */
 {
     int boolValue;
     double doubleValue;
     Tcl_WideInt wideValue;
 
     switch (dataType) {
-    case VAR_DATATYPE_WIDEINT:
+    case TCL_DATATYPE_WIDEINT:
 	if (Tcl_GetWideIntFromObj(interp, valuePtr, &wideValue) != TCL_OK) {
 	    Tcl_SetErrorCode(interp, "TCL", "TYPEDVAR", "INTEGER",
 		    (char *)NULL);
 	    return TCL_ERROR;
 	}
 	break;
-    case VAR_DATATYPE_DOUBLE:
+    case TCL_DATATYPE_DOUBLE:
 	if (Tcl_GetDoubleFromObj(interp, valuePtr, &doubleValue) != TCL_OK) {
 	    Tcl_SetErrorCode(interp, "TCL", "TYPEDVAR", "DOUBLE",
 		    (char *)NULL);
 	    return TCL_ERROR;
 	}
 	break;
-    case VAR_DATATYPE_BOOLEAN:
+    case TCL_DATATYPE_BOOLEAN:
 	if (Tcl_GetBooleanFromObj(interp, valuePtr, &boolValue) != TCL_OK) {
 	    Tcl_SetErrorCode(interp, "TCL", "TYPEDVAR", "BOOLEAN",
 		    (char *)NULL);
@@ -5120,32 +5131,21 @@ Tcl_VarTypeObjCmd(
 {
     Var *varPtr, *arrayPtr;
     Tcl_Obj *part1Ptr;
-    enum TclVarFlags dataType;
+    int index;
+    Tcl_VarType dataType;
 
     if (objc == 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dataType ?varName varName ...?");
 	return TCL_ERROR;
     }
 
-    static const char *valueTypeNames[] = {"int", "double", "boolean", NULL};
-    enum valueType {TYPE_WIDE, TYPE_DOUBLE, TYPE_BOOLEAN} valueType;
-
-    if (Tcl_GetIndexFromObj(interp, objv[1], valueTypeNames, "dataType",
-	    0, &valueType) != TCL_OK) {
+    /* First element of tclVarTypeNames skipped as it is not a real type */
+    if (Tcl_GetIndexFromObj(interp, objv[1], &tclVarTypeNames[1], "dataType",
+	    0, &dataType) != TCL_OK) {
 	return TCL_ERROR;
     }
 
-    switch (valueType) {
-    case TYPE_WIDE:
-	dataType = VAR_DATATYPE_WIDEINT;
-	break;
-    case TYPE_DOUBLE:
-	dataType = VAR_DATATYPE_DOUBLE;
-	break;
-    case TYPE_BOOLEAN:
-	dataType = VAR_DATATYPE_BOOLEAN;
-	break;
-    }
+    dataType = (Tcl_VarType)(index+1); /* Adjust for skipped first entry */
 
     /* First do error checking across all variables */
     for (Tcl_Size i = 2; i < objc; i++) {
