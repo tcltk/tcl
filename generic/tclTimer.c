@@ -1836,7 +1836,7 @@ TimerAtCmd(
 	return TCL_ERROR;
     }
 
-    if (TCL_OK != ParseTimeUnit(interp, 1, objv, false, 0, &timeArgUS)) {
+    if (TCL_OK != ParseTimeUnit(interp, 1, objv, false, UNIT_US, &timeArgUS)) {
 	return TCL_ERROR;
     }
 
@@ -1929,7 +1929,7 @@ TimerInCmd(
 	return TCL_ERROR;
     }
 
-    if (TCL_OK != ParseTimeUnit(interp, 1, objv, false, 0, &wakeupArgUS)) {
+    if (TCL_OK != ParseTimeUnit(interp, 1, objv, false, UNIT_US, &wakeupArgUS)) {
 	return TCL_ERROR;
     }
 
