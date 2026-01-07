@@ -38,6 +38,7 @@ typedef struct OOResVarInfo {
     Tcl_ResolvedVarInfo info;	/* "Type" information so that the compiled
 				 * variable can be linked to the namespace
 				 * variable at the right time. */
+    bool noCache;		/* If true, don't try to cache. */
     Tcl_Obj *variableObj;	/* The name of the variable. */
     Tcl_Var cachedObjectVar;	/* TODO: When to flush this cache? Can class
 				 * variables be cached? */
@@ -1061,32 +1062,12 @@ TclOOSetupVariableResolver(
     }
 }
 
-static int
-ProcedureMethodVarResolver(
-    Tcl_Interp *interp,
-    const char *varName,
-    Tcl_Namespace *contextNs,
-    TCL_UNUSED(int) /*flags*/,	// Ignoring variable access flags (???)
-    Tcl_Var *varPtr)
+// Identify var names we definitely aren't handling.
+static inline bool
+IsInvalidVarName(
+    const char *varName)
 {
-    int result;
-    Tcl_ResolvedVarInfo *rPtr = NULL;
-
-    result = ProcedureMethodCompiledVarResolver(interp, varName,
-	    strlen(varName), contextNs, &rPtr);
-
-    if (result != TCL_OK) {
-	return result;
-    }
-
-    *varPtr = rPtr->fetchProc(interp, rPtr);
-
-    /*
-     * Must not retain reference to resolved information. [Bug 3105999]
-     */
-
-    rPtr->deleteProc(rPtr);
-    return (*varPtr ? TCL_OK : TCL_CONTINUE);
+    return strstr(varName, "::") != NULL || Tcl_StringMatch(varName, "*(*)");
 }
 
 // Helper for ProcedureMethodCompiledVarConnect() that looks up if a variable
@@ -1096,7 +1077,7 @@ static inline Tcl_Obj *
 GetRealVarName(
     CallContext *contextPtr,
     OOResVarInfo *infoPtr,
-    bool *cacheIt)
+    bool *isInstanceVar)
 {
     const Class *clsPtr = contextPtr->callPtr->chain[contextPtr->index]
 	    .mPtr->declaringClassPtr;
@@ -1108,14 +1089,14 @@ GetRealVarName(
 	FOREACH_STRUCT(privateVar, clsPtr->privateVariables) {
 	    if (!TclStringCmp(infoPtr->variableObj, privateVar->variableObj,
 		    1, 0, TCL_AUTO_LENGTH)) {
-		*cacheIt = false;
+		*isInstanceVar = false;
 		return privateVar->fullNameObj;
 	    }
 	}
 	FOREACH(variableObj, clsPtr->variables) {
 	    if (!TclStringCmp(infoPtr->variableObj, variableObj,
 		    1, 0, TCL_AUTO_LENGTH)) {
-		*cacheIt = false;
+		*isInstanceVar = false;
 		return variableObj;
 	    }
 	}
@@ -1124,38 +1105,49 @@ GetRealVarName(
 	FOREACH_STRUCT(privateVar, oPtr->privateVariables) {
 	    if (!TclStringCmp(infoPtr->variableObj, privateVar->variableObj,
 		    1, 0, TCL_AUTO_LENGTH)) {
-		*cacheIt = true;
+		*isInstanceVar = true;
 		return privateVar->fullNameObj;
 	    }
 	}
 	FOREACH(variableObj, oPtr->variables) {
 	    if (!TclStringCmp(infoPtr->variableObj, variableObj,
 		    1, 0, TCL_AUTO_LENGTH)) {
-		*cacheIt = true;
+		*isInstanceVar = true;
 		return variableObj;
 	    }
 	}
     }
-    *cacheIt = false;
+    *isInstanceVar = false;
     return NULL;
+}
+
+// Get or allocate a variable in an object.
+static inline Tcl_Var
+GetObjectVar(
+    Object *oPtr,
+    Tcl_Obj *variableObj)
+{
+    int isNew;
+    Tcl_HashEntry *hPtr = Tcl_CreateHashEntry(
+	    TclVarTable(oPtr->namespacePtr), variableObj, &isNew);
+    Tcl_Var var = TclVarHashGetValue(hPtr);
+    if (isNew) {
+	TclSetVarNamespaceVar((Var *) var);
+    }
+    return var;
 }
 
 // Called on entry to a compiled context to connect the local variables to
 // be resolved to the actual variables in the object instance. If we want to
 // connect it, we return the variable; otherwise NULL.
+// This is the core of the variable resolver.
 static Tcl_Var
 ProcedureMethodCompiledVarConnect(
     Tcl_Interp *interp,
     Tcl_ResolvedVarInfo *rPtr)
 {
     OOResVarInfo *infoPtr = (OOResVarInfo *) rPtr;
-    Interp *iPtr = (Interp *) interp;
-    CallFrame *framePtr = iPtr->varFramePtr;
-    CallContext *contextPtr;
-    Tcl_Obj *variableObj;
-    Tcl_HashEntry *hPtr;
-    int isNew;
-    bool cacheIt;
+    CallFrame *framePtr = ((Interp *) interp)->varFramePtr;
 
     /*
      * Check that the variable is being requested in a context that is also a
@@ -1166,14 +1158,14 @@ ProcedureMethodCompiledVarConnect(
     if (framePtr == NULL || !(framePtr->isProcCallFrame & FRAME_IS_METHOD)) {
 	return NULL;
     }
-    contextPtr = (CallContext *) framePtr->clientData;
+    CallContext *contextPtr = (CallContext *) framePtr->clientData;
 
     /*
      * If we've done the work before (in a comparable context) then reuse that
      * rather than performing resolution ourselves.
      */
 
-    if (infoPtr->cachedObjectVar) {
+    if (infoPtr->cachedObjectVar && !infoPtr->noCache) {
 	return infoPtr->cachedObjectVar;
     }
 
@@ -1183,7 +1175,8 @@ ProcedureMethodCompiledVarConnect(
      * either.
      */
 
-    variableObj = GetRealVarName(contextPtr, infoPtr, &cacheIt);
+    bool cacheIt;
+    Tcl_Obj *variableObj = GetRealVarName(contextPtr, infoPtr, &cacheIt);
     if (!variableObj) {
 	return NULL;
     }
@@ -1192,13 +1185,9 @@ ProcedureMethodCompiledVarConnect(
      * It is a variable we want to resolve, so resolve it.
      */
 
-    hPtr = Tcl_CreateHashEntry(TclVarTable(contextPtr->oPtr->namespacePtr),
-	    variableObj, &isNew);
-    if (isNew) {
-	TclSetVarNamespaceVar((Var *) TclVarHashGetValue(hPtr));
-    }
-    if (cacheIt) {
-	infoPtr->cachedObjectVar = TclVarHashGetValue(hPtr);
+    Tcl_Var var = GetObjectVar(contextPtr->oPtr, variableObj);
+    if (cacheIt && !infoPtr->noCache) {
+	infoPtr->cachedObjectVar = var;
 
 	/*
 	 * We must keep a reference to the variable so everything will
@@ -1208,7 +1197,7 @@ ProcedureMethodCompiledVarConnect(
 
 	VarHashRefCount(infoPtr->cachedObjectVar)++;
     }
-    return TclVarHashGetValue(hPtr);
+    return var;
 }
 
 static void
@@ -1230,14 +1219,43 @@ ProcedureMethodCompiledVarDelete(
 }
 
 static int
+ProcedureMethodVarResolver(
+    Tcl_Interp *interp,
+    const char *varName,
+    TCL_UNUSED(Tcl_Namespace *) /*contextNs*/,
+    TCL_UNUSED(int) /*flags*/,	// Ignoring variable access flags (???)
+    Tcl_Var *varPtr)
+{
+    /*
+     * Do not resolve for cases that contain namespace separators or
+     * which look like array accesses. Both will lead us astray.
+     */
+
+    if (IsInvalidVarName(varName)) {
+	return TCL_CONTINUE;
+    }
+
+    Tcl_Obj *variableObj = Tcl_NewStringObj(varName, TCL_AUTO_LENGTH);
+
+    // Fake up a resolver structure.
+    OOResVarInfo info = {{NULL, NULL}, true, variableObj, NULL};
+
+    // Delegate to the real resolver core.
+    *varPtr = ProcedureMethodCompiledVarConnect(interp, &info.info);
+
+    // Clean up.
+    Tcl_BounceRefCount(variableObj);
+    return (*varPtr ? TCL_OK : TCL_CONTINUE);
+}
+
+static int
 ProcedureMethodCompiledVarResolver(
-    TCL_UNUSED(Tcl_Interp *),
+    TCL_UNUSED(Tcl_Interp *)/*interp*/,
     const char *varName,
     Tcl_Size length,
-    TCL_UNUSED(Tcl_Namespace *),
+    TCL_UNUSED(Tcl_Namespace *)/*contextNs*/,
     Tcl_ResolvedVarInfo **rPtrPtr)
 {
-    OOResVarInfo *infoPtr;
     Tcl_Obj *variableObj = Tcl_NewStringObj(varName, length);
 
     /*
@@ -1245,15 +1263,15 @@ ProcedureMethodCompiledVarResolver(
      * which look like array accesses. Both will lead us astray.
      */
 
-    if (strstr(TclGetString(variableObj), "::") != NULL ||
-	    Tcl_StringMatch(TclGetString(variableObj), "*(*)")) {
+    if (IsInvalidVarName(TclGetString(variableObj))) {
 	Tcl_DecrRefCount(variableObj);
 	return TCL_CONTINUE;
     }
 
-    infoPtr = (OOResVarInfo *) Tcl_Alloc(sizeof(OOResVarInfo));
+    OOResVarInfo *infoPtr = (OOResVarInfo *) Tcl_Alloc(sizeof(OOResVarInfo));
     infoPtr->info.fetchProc = ProcedureMethodCompiledVarConnect;
     infoPtr->info.deleteProc = ProcedureMethodCompiledVarDelete;
+    infoPtr->noCache = false;
     infoPtr->cachedObjectVar = NULL;
     infoPtr->variableObj = variableObj;
     Tcl_IncrRefCount(variableObj);
