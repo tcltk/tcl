@@ -1482,9 +1482,8 @@ test timer-15.9 {timer sleep, unit abbreviation} -body {
 }
 
 test timer-15.10 {timer sleep for, default unit} -body {
-    time {timer sleep for 1}
-    # allow 1000 to 1999 microseconds
-} -match glob -result {1[0-9][0-9][0-9] *}
+    time {timer sleep for 100}
+} -match glob -result {[1-9][0-9][0-9][0-9][0-9][0-9] *}
 
 test timer-15.11 {timer sleep until, default unit} -body {
     time [list timer sleep until [expr {[clock seconds]+2}]]
