@@ -2255,6 +2255,42 @@ test var-31.2 {info constant: syntax} -returnCodes error -body {
 test var-31.3 {info consts: syntax} -returnCodes error -body {
     info consts foo bar
 } -result {wrong # args: should be "info consts ?pattern?"}
+
+#
+# vartype tests
+catch {namespace delete test_vartype}
+namespace eval test_vartype {
+    test vartype-1 {Byte coded assignment via storeScalar to LVT entry} -setup {
+        proc p {} {vartype int x; set x foo}
+    } -cleanup {
+        rename p {}
+    } -body {
+        p
+    } -returnCodes error -result "expected integer but got \"foo\""
+
+    test vartype-2 {Type not lost on error for undefined global} -setup {
+        uplevel #0 {unset -nocomplain nosuchvar}
+    } -cleanup {
+        uplevel #0 {unset -nocomplain nosuchvar}
+    } -body {
+        uplevel #0 {
+            vartype int nosuchvar
+            list [catch {set nosuchvar foo}] [catch {set nosuchvar foo}]
+        }
+    } -result [list 1 1]
+
+    test vartype-3 {Type not lost on existence check for undefined global} -setup {
+        uplevel #0 {unset -nocomplain nosuchvar}
+    } -cleanup {
+        uplevel #0 {unset -nocomplain nosuchvar}
+    } -body {
+        uplevel #0 {
+            vartype int nosuchvar
+            list [info exists nosuchvar] [catch {set nosuchvar foo}]
+        }
+    } -result [list 0 1]
+}
+
 
 catch {namespace delete ns}
 catch {unset arr}
@@ -2271,6 +2307,7 @@ catch {unset i}
 catch {unset a}
 catch {unset xxxxx}
 catch {unset aaaaa}
+catch {namespace delete test_vartype}
 
 # cleanup
 ::tcltest::cleanupTests
