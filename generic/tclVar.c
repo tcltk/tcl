@@ -51,7 +51,7 @@ static inline void	CleanupVar(Var *varPtr, Var *arrayPtr);
  * Names corresponding to the members of Tcl_VarType enum. The order must be
  * the same!
  */
-static const char *tclVarTypeNames[] = {
+const char *tclVarTypeNames[] = {
     "",			/* TCL_DATATYPE_NONE */
     "wideInteger",	/* TCL_DATATYPE_WIDEINT */
     "double",		/* TCL_DATATYPE_DOUBLE */
@@ -1382,6 +1382,37 @@ Tcl_ObjGetVar2(
 	    flags, -1);
 }
 
+/*
+ * Tcl_GetVarType --
+ *
+ *	Return the type of a Tcl variable as a member of Tcl_VarType enum.
+ *
+ * Results:
+ *	TCL_OK or TCL_ERROR.
+ *
+ * Side effects:
+ *	The type is stored in *varTypePtr.
+ */
+int
+Tcl_GetVarType(
+    Tcl_Interp *interp,		/* Command interpreter in which variable is to
+				 * be looked up. */
+    Tcl_Obj *varNamePtr,	/* Points to an object holding variable name */
+    Tcl_VarType *varTypePtr,	/* Location to store the variable type */
+    int flags)			/* OR-ed combination of TCL_GLOBAL_ONLY,
+				 * TCL_NAMESPACE_ONLY, TCL_LEAVE_ERR_MSG. */
+{
+    Var *varPtr, *arrayPtr;
+    flags &= (TCL_GLOBAL_ONLY|TCL_NAMESPACE_ONLY|TCL_LEAVE_ERR_MSG);
+    varPtr = TclObjLookupVarEx(interp, varNamePtr, NULL, flags,
+		"vartype", 0, 0, &arrayPtr);
+    if (varPtr == NULL) {
+	return TCL_ERROR;
+    }
+    *varTypePtr = TclGetVarDataType(varPtr);
+    return TCL_OK;
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -5141,7 +5172,7 @@ Tcl_VarTypeObjCmd(
 
     /* First element of tclVarTypeNames skipped as it is not a real type */
     if (Tcl_GetIndexFromObj(interp, objv[1], &tclVarTypeNames[1], "dataType",
-	    0, &dataType) != TCL_OK) {
+	    0, &index) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -5149,9 +5180,20 @@ Tcl_VarTypeObjCmd(
 
     /* First do error checking across all variables */
     for (Tcl_Size i = 2; i < objc; i++) {
+	/*
+	 * We require any referenced variables to already exist. This avoids
+	 * the case where a variable is created with a type but no value,
+	 * which is then freed (as a side effect if there are no LVT or
+	 * namespace references) by commands such as "info exists" resulting
+	 * in the loss of the type information.
+	 */
+
 	part1Ptr = objv[i];
 	varPtr = TclObjLookupVarEx(interp, part1Ptr, NULL, TCL_LEAVE_ERR_MSG,
-	    "dataType", /*createPart1*/ 1, /*createPart2*/ 1, &arrayPtr);
+	    "dataType", /*createPart1*/ 0, /*createPart2*/ 0, &arrayPtr);
+	if (varPtr == NULL) {
+	    return TCL_ERROR;
+	}
 
 	/* Arrays cannot be assigned types */
 	if (TclIsVarArray(varPtr)) {

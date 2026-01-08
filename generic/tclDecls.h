@@ -1917,6 +1917,10 @@ EXTERN int		Tcl_UtfToExternalEx(Tcl_Interp *interp,
 				Tcl_Size dstLen, Tcl_Size *srcReadPtr,
 				Tcl_Size *dstWrotePtr, Tcl_Size *dstCharsPtr);
 /* 699 */
+EXTERN int		Tcl_GetVarType(Tcl_Interp *interp,
+				Tcl_Obj *varNamePtr, Tcl_VarType *varTypePtr,
+				int flags);
+/* 700 */
 EXTERN void		TclUnusedStubEntry(void);
 
 typedef struct {
@@ -2628,7 +2632,8 @@ typedef struct TclStubs {
     int (*tcl_UtfToNormalized) (Tcl_Interp *interp, const char *bytes, Tcl_Size length, Tcl_UnicodeNormalizationForm normForm, int profile, char *bufPtr, Tcl_Size bufLen, Tcl_Size *lengthPtr); /* 696 */
     int (*tcl_ExternalToUtfEx) (Tcl_Interp *interp, Tcl_Encoding encoding, const char *src, Tcl_Size srcLen, int flags, Tcl_EncodingState *statePtr, char *dst, Tcl_Size dstLen, Tcl_Size *srcReadPtr, Tcl_Size *dstWrotePtr, Tcl_Size *dstCharsPtr); /* 697 */
     int (*tcl_UtfToExternalEx) (Tcl_Interp *interp, Tcl_Encoding encoding, const char *src, Tcl_Size srcLen, int flags, Tcl_EncodingState *statePtr, char *dst, Tcl_Size dstLen, Tcl_Size *srcReadPtr, Tcl_Size *dstWrotePtr, Tcl_Size *dstCharsPtr); /* 698 */
-    void (*tclUnusedStubEntry) (void); /* 699 */
+    int (*tcl_GetVarType) (Tcl_Interp *interp, Tcl_Obj *varNamePtr, Tcl_VarType *varTypePtr, int flags); /* 699 */
+    void (*tclUnusedStubEntry) (void); /* 700 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3976,8 +3981,10 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_ExternalToUtfEx) /* 697 */
 #define Tcl_UtfToExternalEx \
 	(tclStubsPtr->tcl_UtfToExternalEx) /* 698 */
+#define Tcl_GetVarType \
+	(tclStubsPtr->tcl_GetVarType) /* 699 */
 #define TclUnusedStubEntry \
-	(tclStubsPtr->tclUnusedStubEntry) /* 699 */
+	(tclStubsPtr->tclUnusedStubEntry) /* 700 */
 
 #endif /* defined(USE_TCL_STUBS) */
 

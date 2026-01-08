@@ -177,6 +177,7 @@ const EnsembleImplMap tclInfoImplMap[] = {
     {"sharedlibextension", InfoSharedlibCmd,	    TclCompileBasic0ArgCmd, NULL, NULL, 0},
     {"tclversion",	   InfoTclVersionCmd,	    TclCompileBasic0ArgCmd, NULL, NULL, 0},
     {"vars",		   TclInfoVarsCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
+    {"vartype",		   TclInfoVarTypeCmd,	    NULL, NULL, NULL, 0},
     {NULL, NULL, NULL, NULL, NULL, 0}
 };
 
@@ -2109,6 +2110,50 @@ InfoCmdTypeCmd(
 		Tcl_NewStringObj(TclGetCommandTypeName(command), -1));
     }
     return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclInfoVarTypeCmd --
+ *
+ *	Implements the "info vartype" command that returns the data
+ *	type associated with a variable if any.
+ *
+ *	    info vartype varName
+ *
+ * Results:
+ *	Returns TCL_OK if successful and TCL_ERROR if there is an error.
+ *
+ * Side effects:
+ *	Returns a result in the interpreter's result object. If there is an
+ *	error, the result is an error message.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclInfoVarTypeCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* Current interpreter. */
+    Tcl_Size objc,		/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "varName");
+	return TCL_ERROR;
+    }
+
+    Tcl_VarType dataType;
+    int result = Tcl_GetVarType(interp, objv[1], &dataType, TCL_LEAVE_ERR_MSG);
+    if (result == TCL_OK) {
+	size_t index = (size_t)(dataType);
+	if (index > TCL_DATATYPE_LAST) {
+	    Tcl_Panic("Tcl_GetVarType returned data type");
+	}
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(tclVarTypeNames[index], -1));
+    }
+    return result;
 }
 
 /*

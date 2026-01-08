@@ -522,11 +522,13 @@ typedef struct stat *Tcl_OldStat_;
  * The order of definitions must also match the order of their corresponding
  * names in the tclVarTypeNames[] array defined in tclVar.c.
  */
+extern const char *tclVarTypeNames[];
 typedef enum Tcl_VarType {
     TCL_DATATYPE_NONE = 0,
     TCL_DATATYPE_WIDEINT = 1,
     TCL_DATATYPE_DOUBLE = 2,
-    TCL_DATATYPE_BOOLEAN = 3
+    TCL_DATATYPE_BOOLEAN = 3,
+    TCL_DATATYPE_LAST = TCL_DATATYPE_BOOLEAN
 } Tcl_VarType;
 
 /*

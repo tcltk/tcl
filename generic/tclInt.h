@@ -940,7 +940,8 @@ TclSetVarDataType(Var *varPtr, Tcl_VarType dataType)
 static inline Tcl_VarType
 TclGetVarDataType(Var *varPtr)
 {
-    return (varPtr->flags & VAR_DATATYPE_MASK) >> VAR_DATATYPE_SHIFT;
+    return (Tcl_VarType)((varPtr->flags & VAR_DATATYPE_MASK)
+		>> VAR_DATATYPE_SHIFT);
 }
 
 /*
@@ -3506,6 +3507,7 @@ MODULE_SCOPE Tcl_Obj *	TclInfoFrame(Tcl_Interp *interp, CmdFrame *framePtr);
 MODULE_SCOPE Tcl_ObjCmdProc2 TclInfoGlobalsCmd;
 MODULE_SCOPE Tcl_ObjCmdProc2 TclInfoLocalsCmd;
 MODULE_SCOPE Tcl_ObjCmdProc2 TclInfoVarsCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclInfoVarTypeCmd;
 MODULE_SCOPE Tcl_ObjCmdProc2 TclInfoConstsCmd;
 MODULE_SCOPE Tcl_ObjCmdProc2 TclInfoConstantCmd;
 MODULE_SCOPE void	TclInitAlloc(void);
