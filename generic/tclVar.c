@@ -49,13 +49,16 @@ static inline void	CleanupVar(Var *varPtr, Var *arrayPtr);
 
 /*
  * Names corresponding to the members of Tcl_VarType enum. The order must be
- * the same!
+ * the same as the TCL_DATATYPE_* definitions there!
  */
 const char *tclVarTypeNames[] = {
     "",			/* TCL_DATATYPE_NONE */
-    "wideInteger",	/* TCL_DATATYPE_WIDEINT */
-    "double",		/* TCL_DATATYPE_DOUBLE */
-    "boolean",		/* TCL_DATATYPE_BOOLEAN */
+    "wideInteger",
+    "integer",
+    "double",
+    "boolean",
+    "list",
+    "dict",
     NULL};
 
 /*
@@ -1999,30 +2002,57 @@ TclVarVerifyDataType(
     Tcl_Obj *valuePtr,		/* Value to verify */
     Tcl_VarType dataType)	/* Expected data type */
 {
-    int boolValue;
     double doubleValue;
     Tcl_WideInt wideValue;
+    Tcl_Size size;
 
+    assert((size_t)dataType <= TCL_DATATYPE_LAST);
     switch (dataType) {
     case TCL_DATATYPE_WIDEINT:
-	if (Tcl_GetWideIntFromObj(interp, valuePtr, &wideValue) != TCL_OK) {
-	    Tcl_SetErrorCode(interp, "TCL", "TYPEDVAR", "INTEGER",
-		    (char *)NULL);
-	    return TCL_ERROR;
+	if (TclHasInternalRep(valuePtr, &tclIntType) ||
+	    Tcl_GetWideIntFromObj(interp, valuePtr, &wideValue) == TCL_OK) {
+	    return TCL_OK;
 	}
 	break;
+    case TCL_DATATYPE_INTEGER:
+	if (TclHasInternalRep(valuePtr, &tclIntType) ||
+	    TclHasInternalRep(valuePtr, &tclBignumType)) {
+	    return TCL_OK;
+	} else {
+	    const char *s = TclGetStringFromObj(valuePtr, &size);
+	    const char *s2;
+	    const char *end = s + size;
+	    if (TclParseNumber(interp, valuePtr, NULL, NULL, size, &s2,
+		    TCL_PARSE_INTEGER_ONLY) == TCL_OK &&
+		s2 == end) {
+		return TCL_OK;
+	    }
+	}
+
+	break;
     case TCL_DATATYPE_DOUBLE:
-	if (Tcl_GetDoubleFromObj(interp, valuePtr, &doubleValue) != TCL_OK) {
-	    Tcl_SetErrorCode(interp, "TCL", "TYPEDVAR", "DOUBLE",
-		    (char *)NULL);
-	    return TCL_ERROR;
+	if (TclHasInternalRep(valuePtr, &tclDoubleType) ||
+	    TclHasInternalRep(valuePtr, &tclIntType) ||
+	    Tcl_GetDoubleFromObj(interp, valuePtr, &doubleValue) == TCL_OK) {
+	    return TCL_OK;
 	}
 	break;
     case TCL_DATATYPE_BOOLEAN:
-	if (Tcl_GetBooleanFromObj(interp, valuePtr, &boolValue) != TCL_OK) {
-	    Tcl_SetErrorCode(interp, "TCL", "TYPEDVAR", "BOOLEAN",
-		    (char *)NULL);
-	    return TCL_ERROR;
+	if (TclHasInternalRep(valuePtr, &tclBooleanType) ||
+	    TclSetBooleanFromAny(interp, valuePtr)) {
+	    return TCL_OK;
+	}
+	break;
+    case TCL_DATATYPE_LIST:
+	if (TclHasInternalRep(valuePtr, &tclListType) ||
+	    TclListObjLength(interp, valuePtr, &size) == TCL_OK) {
+	    return TCL_OK;
+	}
+	break;
+    case TCL_DATATYPE_DICT:
+	if (TclHasInternalRep(valuePtr, &tclDictType) || 
+	    Tcl_DictObjSize(interp, valuePtr, &size) == TCL_OK) {
+	    return TCL_OK;
 	}
 	break;
     default:
@@ -2030,9 +2060,12 @@ TclVarVerifyDataType(
 	Tcl_Panic("TclVarVerifyDataType: unknown data type %d", dataType);
     }
 
-    return TCL_OK;
+    Tcl_SetErrorCode(interp, "TCL", "VARTYPE",
+	tclVarTypeNames[(size_t)dataType]);
+
+    return TCL_ERROR;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -2117,7 +2150,7 @@ TclPtrSetVarIdx(
 	goto earlyError;
     }
 
-    int dataType = TclGetVarDataType(varPtr);
+    Tcl_VarType dataType = TclGetVarDataType(varPtr);
     if (dataType &&
 	TclVarVerifyDataType(interp, newValuePtr, dataType) != TCL_OK) {
 	goto earlyError;
@@ -5226,13 +5259,13 @@ Tcl_VarTypeObjCmd(
 	    return TCL_ERROR;
 	}
 
-	int currentType = TclGetVarDataType(varPtr);
+	Tcl_VarType currentType = TclGetVarDataType(varPtr);
 	if (currentType == dataType) {
 	    /* Already the right type */
 	    continue;
 	}
 
-	if (currentType) {
+	if (currentType != TCL_DATATYPE_NONE) {
 	    /* Different type already assigned */
 	    TclObjVarErrMsg(interp, part1Ptr, NULL, "change type of", EXISTS,
 		-1);
