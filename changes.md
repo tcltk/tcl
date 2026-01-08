@@ -14,6 +14,7 @@ writing Tcl scripts.
 
 - [New options -backslashes, -commands and -variables for subst command](https://core.tcl-lang.org/tips/doc/trunk/tip/712.md)
 - [New command unicode for Unicode normalization](https://core.tcl-lang.org/tips/doc/trunk/tip/726.md)
+- [New timer command, switch to monotonic clock and microsecond resolution](https://core.tcl-lang.org/tips/doc/trunk/tip/723.md)
 
 # New public C API
 
@@ -23,6 +24,7 @@ writing Tcl scripts.
 - [Tcl\_ListObjRange, Tcl\_ListObjRepeat, Tcl\_TclListObjReverse - C API for new list operations](https://core.tcl-lang.org/tips/doc/trunk/tip/649.md)
 - [Tcl\_UtfToNormalized, Tcl\_UtfToNormalizedDString - C API for Unicode normalization](https://core.tcl-lang.org/tips/doc/trunk/tip/726.md)
 - [Tcl\_UtfToExternalEx and Tcl\_ExternalToUtfEx - C encoding API supporting output buffers larger than INT_MAX](https://core.tcl-lang.org/tips/doc/trunk/tip/737.md)
+- [New API for monotonic clock and microseconds resolution](https://core.tcl-lang.org/tips/doc/trunk/tip/723.md)
 
 # Performance
 
