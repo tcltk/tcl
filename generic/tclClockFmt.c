@@ -1380,7 +1380,7 @@ static TclStrIdxTree *
 ClockMCGetMultiListIdxTree(
     ClockFmtScnCmdArgs *opts,
     int	mcKey,
-    int *mcKeys)
+    const int *mcKeys)
 {
     TclStrIdxTree * idxTree;
     Tcl_Obj *objPtr = TclClockMCGetIdx(opts, mcKey);
@@ -1481,11 +1481,11 @@ static int
 StaticListSearch(
     ClockFmtScnCmdArgs *opts,
     DateInfo *info,
-    const char **lst,
+    const char *const *lst,
     int *val)
 {
     size_t len;
-    const char **s = lst;
+    const char *const *s = lst;
 
     while (*s != NULL) {
 	len = strlen(*s);
@@ -1535,7 +1535,7 @@ ClockScnToken_Month_Proc(
 {
 #if 0
 /* currently unused, test purposes only */
-    static const char * months[] = {
+    static const char *const months[] = {
 	/* full */
 	"January", "February", "March",
 	"April",   "May",      "June",
@@ -1552,7 +1552,7 @@ ClockScnToken_Month_Proc(
     }
     yyMonth = (val % 12) + 1;
 #else
-    static int monthsKeys[] = {MCLIT_MONTHS_FULL, MCLIT_MONTHS_ABBREV, 0};
+    static const int monthsKeys[] = {MCLIT_MONTHS_FULL, MCLIT_MONTHS_ABBREV, 0};
 
     int ret, val;
     int minLen, maxLen;
@@ -1583,7 +1583,7 @@ ClockScnToken_DayOfWeek_Proc(
     DateInfo *info,
     const ClockScanToken *tok)
 {
-    static int dowKeys[] = {MCLIT_DAYS_OF_WEEK_ABBREV, MCLIT_DAYS_OF_WEEK_FULL, 0};
+    static const int dowKeys[] = {MCLIT_DAYS_OF_WEEK_ABBREV, MCLIT_DAYS_OF_WEEK_FULL, 0};
 
     int ret, val;
     int minLen, maxLen;

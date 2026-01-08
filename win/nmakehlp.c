@@ -271,7 +271,7 @@ CheckForCompilerFeature(
     if (!ok) {
 	DWORD err = GetLastError();
 	int chars = snprintf(msg, sizeof(msg) - 1,
-		"Tried to launch: \"%s\", but got error [%u]: ", cmdline, err);
+		"Tried to launch: \"%s\", but got error [%lu]: ", cmdline, err);
 
 	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS|
 		FORMAT_MESSAGE_MAX_WIDTH_MASK, 0L, err, 0, (LPSTR)&msg[chars],
@@ -405,12 +405,12 @@ CheckForLinkerFeature(
     if (!ok) {
 	DWORD err = GetLastError();
 	int chars = snprintf(msg, sizeof(msg) - 1,
-		"Tried to launch: \"%s\", but got error [%u]: ", cmdline, err);
+		"Tried to launch: \"%s\", but got error [%lu]: ", cmdline, err);
 
 	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS|
 		FORMAT_MESSAGE_MAX_WIDTH_MASK, 0L, err, 0, (LPSTR)&msg[chars],
 		(300-chars), 0);
-	WriteFile(GetStdHandle(STD_ERROR_HANDLE), msg, lstrlen(msg), &err,NULL);
+	WriteFile(GetStdHandle(STD_ERROR_HANDLE), msg, lstrlen(msg), &err, NULL);
 	return 2;
     }
 
@@ -797,7 +797,7 @@ static int LocateDependency(const char *keypath)
 {
     size_t i;
     int ret;
-    static const char *paths[] = {"..", "..\\..", "..\\..\\.."};
+    static const char *const paths[] = {"..", "..\\..", "..\\..\\.."};
 
     for (i = 0; i < (sizeof(paths)/sizeof(paths[0])); ++i) {
 	ret = LocateDependencyHelper(paths[i], keypath);

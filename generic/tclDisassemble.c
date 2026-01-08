@@ -1353,7 +1353,7 @@ int
 Tcl_DisassembleObjCmd(
     void *clientData,		/* What type of operation. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     static const char *const types[] = {
