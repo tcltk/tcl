@@ -2422,9 +2422,15 @@ declare 698 {
 	    Tcl_Size *dstCharsPtr)
 }
 
+declare 699 {
+    int Tcl_GetVarType(
+	    Tcl_Interp *interp, Tcl_Obj *varNamePtr, Tcl_VarType *varTypePtr,
+	    int flags)
+}
+
 # ----- BASELINE -- FOR -- 9.1.0 ----- #
 
-declare 699 {
+declare 700 {
     void TclUnusedStubEntry(void)
 }
 

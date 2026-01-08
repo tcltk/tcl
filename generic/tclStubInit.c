@@ -1515,7 +1515,8 @@ const TclStubs tclStubs = {
     Tcl_UtfToNormalized, /* 696 */
     Tcl_ExternalToUtfEx, /* 697 */
     Tcl_UtfToExternalEx, /* 698 */
-    TclUnusedStubEntry, /* 699 */
+    Tcl_GetVarType, /* 699 */
+    TclUnusedStubEntry, /* 700 */
 };
 
 /* !END!: Do not edit above this line. */
