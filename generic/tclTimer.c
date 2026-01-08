@@ -617,19 +617,19 @@ TimerSetupProc(
 
 	for (int timerHandlerIndex = timerHandlerMonotonic;
 		timerHandlerIndex <= timerHandlerWallclock; timerHandlerIndex++ ) {
+	    long long myTimeUS;
 	    TimerHandler *firstTimerHandlerPtrCur;
 	    firstTimerHandlerPtrCur = tsdPtr->firstTimerHandlerPtr[timerHandlerIndex];
 	    if (firstTimerHandlerPtrCur == NULL) {
 		continue;
 	    }
 	    if (timerHandlerIndex ==timerHandlerMonotonic) {
-		long long myTimeUS;
 		myTimeUS = Tcl_GetMonotonicTime();
-		myTime.sec = myTimeUS/1000000;
-		myTime.usec = myTimeUS%1000000;
 	    } else {
-		Tcl_GetTime(&myTime);
+		myTimeUS = TclpGetMicroseconds();
 	    }
+	    myTime.sec = myTimeUS/1000000;
+	    myTime.usec = myTimeUS%1000000;
 	    myBlockTime.sec = firstTimerHandlerPtrCur->time.sec - myTime.sec;
 	    myBlockTime.usec = firstTimerHandlerPtrCur->time.usec - myTime.usec;
 	    if (myBlockTime.usec < 0) {
@@ -695,19 +695,19 @@ TimerCheckProc(
 
 	for (int timerHandlerIndex = timerHandlerMonotonic;
 		timerHandlerIndex <= timerHandlerWallclock; timerHandlerIndex++ ) {
+	    long long blockTimeUS;
 	    TimerHandler *firstTimerHandlerPtrCur;
 	    firstTimerHandlerPtrCur = tsdPtr->firstTimerHandlerPtr[timerHandlerIndex];
 	    if (firstTimerHandlerPtrCur == NULL) {
 		continue;
 	    }
 	    if (timerHandlerIndex == timerHandlerMonotonic) {
-		long long blockTimeUS;
 		blockTimeUS = Tcl_GetMonotonicTime();
-		blockTime.sec = blockTimeUS/1000000;
-		blockTime.usec = blockTimeUS%1000000;
 	    } else {
-		Tcl_GetTime(&blockTime);
+		blockTimeUS = TclpGetMicroseconds();
 	    }
+	    blockTime.sec = blockTimeUS/1000000;
+	    blockTime.usec = blockTimeUS%1000000;
 	    blockTime.sec = firstTimerHandlerPtrCur->time.sec - blockTime.sec;
 	    blockTime.usec = firstTimerHandlerPtrCur->time.usec -
 		    blockTime.usec;
@@ -805,6 +805,7 @@ TimerHandlerEventProc(
     for (int timerHandlerIndex = timerHandlerMonotonic;
 	    timerHandlerIndex <= timerHandlerWallclock; timerHandlerIndex++ ) {
 
+	long long timeUS;
 	TimerHandler *timerHandlerPtr, **nextPtrPtr;
 	Tcl_Time time;
 	int currentTimerId;
@@ -823,13 +824,12 @@ TimerHandlerEventProc(
 	currentTimerId = tsdPtr->lastTimerIdQueue[timerHandlerIndex];
 
 	if (timerHandlerIndex == timerHandlerMonotonic) {
-	    long long timeUS;
 	    timeUS = Tcl_GetMonotonicTime();
-	    time.sec = timeUS/1000000;
-	    time.usec = timeUS%1000000;
 	} else {
-	    Tcl_GetTime(&time);
+	    timeUS = TclpGetMicroseconds();
 	}
+	time.sec = timeUS/1000000;
+	time.usec = timeUS%1000000;
 	while (1) {
 	    nextPtrPtr = &tsdPtr->firstTimerHandlerPtr[timerHandlerIndex];
 	    timerHandlerPtr = tsdPtr->firstTimerHandlerPtr[timerHandlerIndex];
