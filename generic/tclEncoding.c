@@ -1206,6 +1206,7 @@ Tcl_ExternalToUtfDStringEx(
 
     if (src == NULL) {
 	srcLen = 0;
+	src = "";	/* Avoid ABSAN warnings about ops on NULL pointers */
     } else if (srcLen < 0) {
 	srcLen = encodingPtr->lengthProc(src);
     }
@@ -1342,6 +1343,7 @@ Tcl_ExternalToUtf(
 
     if (src == NULL) {
 	srcLen = 0;
+	src = "";	/* Avoid ABSAN warnings about ops on NULL pointers */
     } else if (srcLen < 0) {
 	Encoding *encodingPtr = (Encoding *)encoding;
 	if (encodingPtr == NULL) {
@@ -1462,6 +1464,7 @@ Tcl_ExternalToUtfEx(
 
     if (src == NULL) {
 	srcLen = 0;
+	src = "";	/* Avoid ABSAN warnings about ops on NULL pointers */
     } else if (srcLen < 0) {
 	srcLen = encodingPtr->lengthProc(src);
     }
@@ -1491,7 +1494,7 @@ Tcl_ExternalToUtfEx(
     }
 
     if (encodingPtr->toUtfProc == UtfToUtfProc) {
-        /* UTF-8 -> TUTF-8 */
+	/* UTF-8 -> TUTF-8 */
 	flags |= ENCODING_INPUT;
     }
 
@@ -1510,14 +1513,14 @@ Tcl_ExternalToUtfEx(
 	int chunkFlags = flags;
 	int chunkCharLimit = INT_MAX;
 
-        /* Determine chunk sizes */
+	/* Determine chunk sizes */
 	chunkDstLen = dstSpaceLeft > INT_MAX ? INT_MAX : (int)dstSpaceLeft;
 	if (srcBytesLeft > INT_MAX) {
 	    chunkSrcLen = INT_MAX;
 	    /* not last chunk: ensure END not set */
 	    chunkFlags &= ~TCL_ENCODING_END;
 	} else {
-            /* For the last chunk we pass on the original TCL_ENCODING_END flag */
+	    /* For the last chunk we pass on the original TCL_ENCODING_END flag */
 	    chunkSrcLen = (int)srcBytesLeft;
 	}
 	if (srcBytesRead > 0) {
@@ -1546,7 +1549,7 @@ Tcl_ExternalToUtfEx(
 	    &chunkDstWritten, &chunkDstChars);
 
 
-        assert(chunkSrcRead <= srcBytesLeft);
+	assert(chunkSrcRead <= srcBytesLeft);
 	srcBytesLeft -= chunkSrcRead;
 	srcBytesRead += chunkSrcRead;
 	src += chunkSrcRead;
@@ -1554,7 +1557,7 @@ Tcl_ExternalToUtfEx(
 	assert(chunkDstWritten <= dstSpaceLeft);
 	dstSpaceLeft -= chunkDstWritten;
 	dstBytesWritten += chunkDstWritten;
-        dst += chunkDstWritten;
+	dst += chunkDstWritten;
 
 	assert(chunkDstChars <= chunkCharLimit); /* NOT necessarily true in 9.0! */
 	dstCharsWritten += chunkDstChars;
@@ -1773,6 +1776,7 @@ Tcl_UtfToExternalDStringEx(
 
     if (src == NULL) {
 	srcLen = 0;
+	src = "";	/* Avoid ABSAN warnings about ops on NULL pointers */
     } else if (srcLen < 0) {
 	srcLen = strlen(src);
     }
@@ -1911,6 +1915,7 @@ Tcl_UtfToExternal(
 
     if (src == NULL) {
 	srcLen = 0;
+	src = "";	/* Avoid ABSAN warnings about ops on NULL pointers */
     } else if (srcLen < 0) {
 	srcLen = strlen(src);
     }
@@ -2033,6 +2038,7 @@ Tcl_UtfToExternalEx(
 
     if (src == NULL) {
 	srcLen = 0;
+	src = "";	/* Avoid ABSAN warnings about ops on NULL pointers */
     } else if (srcLen < 0) {
 	srcLen = strlen(src); /* strlen works for TUTF-8 */
     }
@@ -2062,7 +2068,7 @@ Tcl_UtfToExternalEx(
     }
 
     if (encodingPtr->toUtfProc == UtfToUtfProc) {
-        /* TUTF-8 -> UTF-8 */
+	/* TUTF-8 -> UTF-8 */
 	flags &= ~ENCODING_INPUT; /* Ensure bit not set */
     }
 
@@ -2086,14 +2092,14 @@ Tcl_UtfToExternalEx(
 	int chunkFlags = flags;
 	int chunkCharLimit = INT_MAX;
 
-        /* Determine chunk sizes */
+	/* Determine chunk sizes */
 	chunkDstLen = dstSpaceLeft > INT_MAX ? INT_MAX : (int)dstSpaceLeft;
 	if (srcBytesLeft > INT_MAX) {
 	    chunkSrcLen = INT_MAX;
 	    /* not last chunk: ensure END not set */
 	    chunkFlags &= ~TCL_ENCODING_END;
 	} else {
-            /* For last chunk we pass on the original TCL_ENCODING_END flag */
+	    /* For last chunk we pass on the original TCL_ENCODING_END flag */
 	    chunkSrcLen = (int)srcBytesLeft;
 	}
 	if (srcBytesRead > 0) {
@@ -2121,7 +2127,7 @@ Tcl_UtfToExternalEx(
 	    chunkSrcLen, chunkFlags, statePtr, dst, chunkDstLen, &chunkSrcRead,
 	    &chunkDstWritten, &chunkDstChars);
 
-        assert(chunkSrcRead <= srcBytesLeft);
+	assert(chunkSrcRead <= srcBytesLeft);
 	srcBytesLeft -= chunkSrcRead;
 	srcBytesRead += chunkSrcRead;
 	src += chunkSrcRead;
@@ -2129,7 +2135,7 @@ Tcl_UtfToExternalEx(
 	assert(chunkDstWritten <= dstSpaceLeft);
 	dstSpaceLeft -= chunkDstWritten;
 	dstBytesWritten += chunkDstWritten;
-        dst += chunkDstWritten;
+	dst += chunkDstWritten;
 
 	assert(chunkDstChars <= chunkCharLimit); /* NOT necessarily true in 9.0! */
 	dstCharsWritten += chunkDstChars;

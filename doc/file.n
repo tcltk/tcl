@@ -413,7 +413,9 @@ unless the \fB\-force\fR option is specified.  When operating inside a
 single filesystem, Tcl will rename symbolic links rather than the
 things that they point to.  Trying to overwrite a non-empty directory,
 overwrite a directory with a file, or a file with a directory will all
-result in errors.  Arguments are processed in the order specified,
+result in errors. There is no guarantee that metadata such as attributes
+or access control lists are preserved by the command.
+Arguments are processed in the order specified,
 halting at the first error, if any.  A \fB\-\|\-\fR marks the end of
 switches; the argument following the \fB\-\|\-\fR will be treated as a
 \fIsource\fR even if it starts with a \fB\-\fR.

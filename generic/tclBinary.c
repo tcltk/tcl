@@ -805,7 +805,7 @@ static int
 BinaryFormatCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Size arg;		/* Index of next argument to consume. */
@@ -1317,7 +1317,7 @@ static int
 BinaryScanCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Size arg;		/* Index of next argument to consume. */
@@ -2808,14 +2808,16 @@ BinaryEncodeUu(
 	}
 	*cursor++ = UueDigits[lineLen];
 	for (i = 0 ; i < lineLen ; i++) {
-	    n <<= 8;
+	    /* Left shift cast to unsigned type to prevent UB on overflow */
+	    n = (Tcl_Size)((size_t)n << 8);
 	    n |= data[offset++];
 	    for (bits += 8; bits > 6 ; bits -= 6) {
 		*cursor++ = UueDigits[(n >> (bits - 6)) & 0x3F];
 	    }
 	}
 	if (bits > 0) {
-	    n <<= 8;
+	    /* Left shift cast to unsigned type to prevent UB on overflow */
+	    n = (Tcl_Size)((size_t)n << 8);
 	    *cursor++ = UueDigits[(n >> (bits + 2)) & 0x3F];
 	    bits = 0;
 	}

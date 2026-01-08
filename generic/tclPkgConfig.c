@@ -142,7 +142,7 @@ static Tcl_Config const cfg[] = {
     {"scriptdir,runtime",	CFG_RUNTIME_SCRDIR},
     {"includedir,runtime",	CFG_RUNTIME_INCDIR},
     {"docdir,runtime",		CFG_RUNTIME_DOCDIR},
-#if !defined(STATIC_BUILD)
+#if !defined(STATIC_BUILD) && defined(CFG_RUNTIME_DLLFILE)
     {"dllfile,runtime",		CFG_RUNTIME_DLLFILE},
 #endif
 
