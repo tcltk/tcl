@@ -14,8 +14,9 @@ to the userbase.
  - [Check for -municode doesn't work on WSL](https://core.tcl-lang.org/tcl/tktview/632710)
 
 # Updated bundled packages, libraries, standards, data
+ - Itcl 4.3.6
  - sqlite3 3.51.1
- - tzdata 2025b
+ - tzdata 2025c
 
 Release Tcl 9.0.3 arises from the check-in with tag `core-9-0-3`.
 
