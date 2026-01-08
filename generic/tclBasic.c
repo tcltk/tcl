@@ -1131,6 +1131,7 @@ Tcl_CreateInterp(void)
 	    }
 	}
     }
+    TclInitTimerCmd(interp);
 
     /*
      * Register "clock" subcommands. These *do* go through

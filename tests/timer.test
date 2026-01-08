@@ -36,6 +36,43 @@ test timer-1.1 {Tcl_CreateTimerHandler procedure} -setup {
     }
 } -result {50 100 150 200}
 
+test timer-1.1.1 {Tcl_CreateTimerHandler procedure - timer in} -setup {
+    foreach i [timer info] {
+	timer cancel $i
+    }
+} -body {
+    set x ""
+    foreach i {100 200 1000 50 150} {
+	timer in $i ms [list lappend x $i]
+    }
+    timer in 200 ms {set done 1}
+    vwait done
+    return $x
+} -cleanup {
+    foreach i [after info] {
+	after cancel $i
+    }
+} -result {50 100 150 200}
+
+test timer-1.1.2 {Tcl_CreateTimerHandler procedure - timer at} -setup {
+    foreach i [timer info] {
+	timer cancel $i
+    }
+} -body {
+    set x ""
+    set us [clock microseconds]
+    foreach i {100 200 1000 50 150} {
+	timer at [expr {$i*1000+$us}] us [list lappend x $i]
+    }
+    timer at [expr {$us+200_000}] us {set done 1}
+    vwait done
+    return $x
+} -cleanup {
+    foreach i [after info] {
+	after cancel $i
+    }
+} -result {50 100 150 200}
+
 test timer-2.1 {Tcl_DeleteTimerHandler procedure} -setup {
     foreach i [after info] {
 	after cancel $i
@@ -50,6 +87,53 @@ test timer-2.1 {Tcl_DeleteTimerHandler procedure} -setup {
     after 200 set done 1
     vwait done
     return $x
+} -cleanup {
+    foreach i [after info] {
+	after cancel $i
+    }
+} -result {100 200}
+
+test timer-2.1.1 {Tcl_DeleteTimerHandler procedure - timer in} -setup {
+    foreach i [timer info] {
+	timer cancel $i
+    }
+} -body {
+    set x ""
+    foreach i {100 200 1000 50 150} {
+	set id($i) [timer in $i ms [list lappend x $i]]
+    }
+    timer cancel $id(150)
+    timer cancel $id(50)
+    timer in 200 ms {set done 1}
+    vwait done
+    return $x
+} -cleanup {
+    foreach i [after info] {
+	after cancel $i
+    }
+    array unset id
+} -result {100 200}
+
+test timer-2.1.2 {Tcl_DeleteTimerHandler procedure - timer at} -setup {
+    foreach i [timer info] {
+	timer cancel $i
+    }
+} -body {
+    set x ""
+    set us [clock microseconds]
+    foreach i {100 200 1000 50 150} {
+	set id($i) [timer at [expr {$i*1000+$us}] us [list lappend x $i]]
+    }
+    timer cancel $id(150)
+    timer cancel $id(50)
+    timer at [expr {200_000+$us}] us {set done 1}
+    vwait done
+    return $x
+} -cleanup {
+    foreach i [after info] {
+	after cancel $i
+    }
+    array unset id
 } -result {100 200}
 
 # No tests for Tcl_ServiceTimer or ResetTimer, since it is already tested
@@ -64,6 +148,28 @@ test timer-3.1 {TimerHandlerEventProc procedure: event masks} {
     update
     lappend result $x
 } {start fired}
+
+test timer-3.1.1 {TimerHandlerEventProc procedure: event masks - timer in} {
+    set x start
+    timer in 100 ms { set x fired }
+    update idletasks
+    set result $x
+    timer sleep for 200 ms
+    update
+    lappend result $x
+} {start fired}
+
+test timer-3.1.2 {TimerHandlerEventProc procedure: event masks - timer at} {
+    set x start
+    set us [clock microseconds]
+    timer at [expr {100_000+$us}] us { set x fired }
+    update idletasks
+    set result $x
+    timer sleep until [expr {200_000+$us}] us
+    update
+    lappend result $x
+} {start fired}
+
 test timer-3.2 {TimerHandlerEventProc procedure: multiple timers} -setup {
     foreach i [after info] {
 	after cancel $i
@@ -83,7 +189,37 @@ test timer-3.2 {TimerHandlerEventProc procedure: multiple timers} -setup {
     after 400
     update
     lappend result $x
+} -cleanup {
+    foreach i [after info] {
+	after cancel $i
+    }
 } -result {200 {200 600} {200 600 1000}}
+
+test timer-3.2.1 {TimerHandlerEventProc procedure: multiple timers - mixed} -setup {
+    foreach i [after info] {
+	after cancel $i
+    }
+} -body {
+    after 200 lappend x 200
+    timer in 600 ms {lappend x 600}
+    timer at [expr {1000_000+[clock microseconds]}] us {lappend x 1000}
+    after 200
+    set result ""
+    set x ""
+    update
+    lappend result $x
+    timer sleep for 400 ms
+    update
+    lappend result $x
+    timer sleep until [expr {400_000+[clock microseconds]}] us
+    update
+    lappend result $x
+} -cleanup {
+    foreach i [after info] {
+	after cancel $i
+    }
+} -result {200 {200 600} {200 600 1000}}
+
 test timer-3.3 {TimerHandlerEventProc procedure: reentrant timer deletion} -setup {
     foreach i [after info] {
 	after cancel $i
@@ -97,7 +233,39 @@ test timer-3.3 {TimerHandlerEventProc procedure: reentrant timer deletion} -setu
     update
     return $x
 } -result 100
-test timer-3.4 {TimerHandlerEventProc procedure: all expired timers fire} -setup {
+
+test timer-3.3.1 {TimerHandlerEventProc procedure: reentrant timer deletion - timer in} -setup {
+    foreach i [timer info] {
+	timer cancel $i
+    }
+} -body {
+    set x {}
+    timer in 100 ms {lappend x 100}
+    set i [timer in 300 ms {lappend x 300}]
+    # When waiting in a delay, always the monotonic clock fires first
+    # As a consequence, timer at may not be used here, as it would fire as last event
+    timer in 200 ms [list after cancel $i]
+    timer sleep for 400 ms
+    update
+    return $x
+} -result 100
+
+test timer-3.3.2 {TimerHandlerEventProc procedure: reentrant timer deletion - timer at} -setup {
+    foreach i [timer info] {
+	timer cancel $i
+    }
+} -body {
+    set x {}
+    set ms [clock microseconds]
+    timer at [expr {$ms+100_000}] us {lappend x 100}
+    set i [timer at [expr {$ms+300_000}] us {lappend x 300}]
+    timer at [expr {$ms+200_000}] us [list after cancel $i]
+    timer sleep until [expr {$ms+400_000}] us
+    update
+    return $x
+} -result 100
+
+test timer-3.4 {TimerHandlerEventProc procedure: all expired timers fire- monotonic queue} -setup {
     foreach i [after info] {
 	after cancel $i
     }
@@ -110,6 +278,36 @@ test timer-3.4 {TimerHandlerEventProc procedure: all expired timers fire} -setup
     vwait x
     return $x
 } -result {a b c}
+
+test timer-3.4.1 {TimerHandlerEventProc procedure: all expired timers fire - timer at queue} -setup {
+    foreach i [after info] {
+	timer cancel $i
+    }
+} -body {
+    set x {}
+    set us [clock microseconds]
+    timer at [expr {$us+100_000}] us {lappend x a}
+    timer at [expr {$us+200_000}] us {lappend x b}
+    timer at [expr {$us+300_000}] us {lappend x c}
+    after 400
+    vwait x
+    return $x
+} -result {a b c}
+
+test timer-3.4.2 {TimerHandlerEventProc procedure: all expired timers fire - both queues} -setup {
+    foreach i [after info] {
+	timer cancel $i
+    }
+} -body {
+    set x {}
+    after 100 lappend x a
+    timer in 200 ms {lappend x b}
+    timer at [expr {[clock microseconds]+300_000}] us {lappend x c}
+    after 300
+    vwait x
+    return $x
+} -result {a b c}
+
 test timer-3.5 {TimerHandlerEventProc procedure: reentrantly added timers don't fire} -setup {
     foreach i [after info] {
 	after cancel $i
@@ -121,6 +319,55 @@ test timer-3.5 {TimerHandlerEventProc procedure: reentrantly added timers don't 
     vwait x
     return $x
 } -result a
+
+test timer-3.5.1 {TimerHandlerEventProc procedure: reentrantly added timers don't fire - timer at} -setup {
+    foreach i [timer info] {
+	timer cancel $i
+    }
+} -body {
+    set x {}
+    timer at [expr {[clock microseconds]+100_000}] us {lappend x a; timer at 0 us {lappend x b}}
+    timer sleep until [expr {[clock microseconds]+100_000}] us
+    vwait x
+    return $x
+} -cleanup {
+    foreach i [timer info] {
+	timer cancel $i
+    }
+} -result a
+
+test timer-3.5.2 {TimerHandlerEventProc procedure: reentrantly added timers don't fire - mixed queues 1} -setup {
+    foreach i [timer info] {
+	timer cancel $i
+    }
+} -body {
+    set x {}
+    timer at [expr {[clock microseconds]+100_000}] us {lappend x a; timer in 0 ms {lappend x b}}
+    timer sleep until [expr {[clock microseconds]+100_000}] us
+    vwait x
+    return $x
+} -cleanup {
+    foreach i [timer info] {
+	timer cancel $i
+    }
+} -result a
+
+test timer-3.5.3 {TimerHandlerEventProc procedure: reentrantly added timers don't fire - mixed queues 2} -setup {
+    foreach i [timer info] {
+	timer cancel $i
+    }
+} -body {
+    set x {}
+    timer in 100 ms {lappend x a; timer at 0 us {lappend x b}}
+    timer sleep for 100 ms
+    vwait x
+    return $x
+} -cleanup {
+    foreach i [timer info] {
+	timer cancel $i
+    }
+} -result a
+
 test timer-3.6 {TimerHandlerEventProc procedure: reentrantly added timers don't fire} -setup {
     foreach i [after info] {
 	after cancel $i
@@ -129,6 +376,48 @@ test timer-3.6 {TimerHandlerEventProc procedure: reentrantly added timers don't 
     set x {}
     after 100 {lappend x a; after 100 lappend x b; after 100}
     after 100
+    vwait x
+    set result $x
+    vwait x
+    lappend result $x
+} -result {a {a b}}
+
+test timer-3.6.1 {TimerHandlerEventProc procedure: reentrantly added timers don't fire - timer at} -setup {
+    foreach i [after info] {
+	after cancel $i
+    }
+} -body {
+    set x {}
+    timer at [expr {[clock microseconds]+100_000}] us {lappend x a; timer at [expr {[clock microseconds]+100_000}] us {lappend x b}; timer sleep until [expr {[clock microseconds]+100_000}] us}
+    timer sleep until [expr {[clock microseconds]+100_000}] us
+    vwait x
+    set result $x
+    vwait x
+    lappend result $x
+} -result {a {a b}}
+
+test timer-3.6.2 {TimerHandlerEventProc procedure: reentrantly added timers don't fire - mixed queues 1} -setup {
+    foreach i [after info] {
+	after cancel $i
+    }
+} -body {
+    set x {}
+    timer in 100 ms {lappend x a; timer at [expr {[clock microseconds]+100_000}] us {lappend x b}; timer sleep for 100 ms}
+    timer sleep for 100 ms
+    vwait x
+    set result $x
+    vwait x
+    lappend result $x
+} -result {a {a b}}
+
+test timer-3.6.3 {TimerHandlerEventProc procedure: reentrantly added timers don't fire - mixed queues 2} -setup {
+    foreach i [after info] {
+	after cancel $i
+    }
+} -body {
+    set x {}
+    timer at [expr {[clock microseconds]+100_000}] us {lappend x a; timer in 100 ms {lappend x b}; timer sleep for 100 ms}
+    timer sleep until [expr {[clock microseconds]+100_000}] us
     vwait x
     set result $x
     vwait x
@@ -187,12 +476,23 @@ test timer-5.1 {Tcl_ServiceIdle, self-rescheduling handlers} -setup {
 test timer-6.1 {Tcl_AfterCmd procedure, basics} -returnCodes error -body {
     after
 } -result {wrong # args: should be "after option ?arg ...?"}
+
+test timer-6.1.1 {timer ensemble, argument count} -returnCodes error -body {
+    timer
+} -result {wrong # args: should be "timer subcommand ?arg ...?"}
+
 test timer-6.2 {Tcl_AfterCmd procedure, basics} -returnCodes error -body {
     after 2x
 } -result {bad argument "2x": must be cancel, idle, info, or an integer}
+
 test timer-6.3 {Tcl_AfterCmd procedure, basics} -returnCodes error -body {
     after gorp
 } -result {bad argument "gorp": must be cancel, idle, info, or an integer}
+
+test timer-6.3.1 {timer ensemble, basics} -returnCodes error -body {
+    timer gorp
+} -result {unknown or ambiguous subcommand "gorp": must be at, cancel, idle, in, info, or sleep}
+
 test timer-6.4 {Tcl_AfterCmd procedure, ms argument} {
     set x before
     after 400 {set x after}
@@ -203,6 +503,31 @@ test timer-6.4 {Tcl_AfterCmd procedure, ms argument} {
     update
     list $y $x
 } {before after}
+
+test timer-6.4.1 {timer in, us argument} {
+    set x before
+    timer in 400 ms {set x after}
+    timer sleep for 200 ms
+    update
+    set y $x
+    timer sleep for 400 ms
+    update
+    list $y $x
+} {before after}
+
+test timer-6.4.2 {timer at, us argument} {
+    set x before
+    set us [clock microseconds]
+    timer at [expr {$us+400_000}] us {set x after}
+    timer sleep until [expr {$us+200_000}] us
+    update
+    set y $x
+    timer sleep until [expr {$us+600_000}] us
+    update
+    list $y $x
+} {before after}
+
+# This is identical to 6.4, isn't it ?
 test timer-6.5 {Tcl_AfterCmd procedure, ms argument} {
     set x before
     after 400 set x after
@@ -213,15 +538,19 @@ test timer-6.5 {Tcl_AfterCmd procedure, ms argument} {
     update
     list $y $x
 } {before after}
+
 test timer-6.6 {Tcl_AfterCmd procedure, cancel option} -body {
     after cancel
-} -returnCodes error -result {wrong # args: should be "after cancel id|command"}
+} -returnCodes error -result {wrong # args: should be "after cancel id|script ?script?"}
+
 test timer-6.7 {Tcl_AfterCmd procedure, cancel option} {
     after cancel after#1
 } {}
+
 test timer-6.8 {Tcl_AfterCmd procedure, cancel option} {
     after cancel {foo bar}
 } {}
+
 test timer-6.9 {Tcl_AfterCmd procedure, cancel option} -setup {
     foreach i [after info] {
 	after cancel $i
@@ -234,6 +563,20 @@ test timer-6.9 {Tcl_AfterCmd procedure, cancel option} -setup {
     update
     return $x
 } -result {before}
+
+test timer-6.9.1 {timer cancel option} -setup {
+    foreach i [timer info] {
+	timer cancel $i
+    }
+} -body {
+    set x before
+    set y [timer in 100 ms {set x after}]
+    timer cancel $y
+    timer sleep for 200 ms
+    update
+    return $x
+} -result {before}
+
 test timer-6.10 {Tcl_AfterCmd procedure, cancel option} -setup {
     foreach i [after info] {
 	after cancel $i
@@ -246,6 +589,7 @@ test timer-6.10 {Tcl_AfterCmd procedure, cancel option} -setup {
     update
     return $x
 } -result {before}
+
 test timer-6.11 {Tcl_AfterCmd procedure, cancel option} -setup {
     foreach i [after info] {
 	after cancel $i
@@ -263,6 +607,25 @@ test timer-6.11 {Tcl_AfterCmd procedure, cancel option} -setup {
     update
     list $y $x
 } -result {after cleared}
+
+test timer-6.11.1 {timer cancel option} -setup {
+    foreach i [timer info] {
+	timer cancel $i
+    }
+} -body {
+    set x before
+    timer in 100 ms {set x after}
+    set id [timer in 300 ms {set x after}]
+    timer cancel $id
+    timer sleep for 200 ms
+    update
+    set y $x
+    set x cleared
+    timer sleep for 200 ms
+    update
+    list $y $x
+} -result {after cleared}
+
 test timer-6.12 {Tcl_AfterCmd procedure, cancel option} -setup {
     foreach i [after info] {
 	after cancel $i
@@ -277,6 +640,22 @@ test timer-6.12 {Tcl_AfterCmd procedure, cancel option} -setup {
     update idletasks
     return $x
 } -result {first third}
+
+test timer-6.12.1 {timer cancel option} -setup {
+    foreach i [timer info] {
+	timer cancel $i
+    }
+} -body {
+    set x first
+    timer idle {lappend x second}
+    timer idle {lappend x third}
+    set i [timer idle {lappend x fourth}]
+    after cancel {lappend x second}
+    timer cancel $i
+    update idletasks
+    return $x
+} -result {first third}
+
 test timer-6.13 {Tcl_AfterCmd procedure, cancel option, multiple arguments for command} -setup {
     foreach i [after info] {
 	after cancel $i
@@ -291,6 +670,22 @@ test timer-6.13 {Tcl_AfterCmd procedure, cancel option, multiple arguments for c
     update idletasks
     return $x
 } -result {first third}
+
+test timer-6.13.1 {timer cancel, multiple arguments for command} -setup {
+    foreach i [timer info] {
+	timer cancel $i
+    }
+} -body {
+    set x first
+    timer idle {lappend x second}
+    timer idle {lappend x third}
+    set i [timer idle {lappend x fourth}]
+    after cancel {lappend x second}
+    timer cancel $i
+    update idletasks
+    return $x
+} -result {first third}
+
 test timer-6.14 {Tcl_AfterCmd procedure, cancel option, cancel during handler, used to dump core} -setup {
     foreach i [after info] {
 	after cancel $i
@@ -304,6 +699,21 @@ test timer-6.14 {Tcl_AfterCmd procedure, cancel option, cancel during handler, u
     ]
     vwait x
 } -result {}
+
+test timer-6.14.1 {timer cancel during handler} -setup {
+    foreach i [timer info] {
+	timer cancel $i
+    }
+} -body {
+    set id [
+	timer in 100 ms {
+	    set x done
+	    timer cancel $id
+	}
+    ]
+    vwait x
+} -result {}
+
 test timer-6.15 {Tcl_AfterCmd procedure, cancel option, multiple interps} -setup {
     foreach i [after info] {
 	after cancel $i
@@ -314,6 +724,7 @@ test timer-6.15 {Tcl_AfterCmd procedure, cancel option, multiple interps} -setup
 	    after idle {set b b-after}}
     set result [llength [x eval after info]]
     lappend result [llength [after info]]
+    # This event does not exist jet
     after cancel {set b b-after}
     set a aaa
     set b bbb
@@ -323,9 +734,34 @@ test timer-6.15 {Tcl_AfterCmd procedure, cancel option, multiple interps} -setup
 } -cleanup {
     interp delete x
 } -result {2 0 aaa bbb {before b-after}}
+
+test timer-6.15.1 {timer cancel, multiple interps} -setup {
+    foreach i [timer info] {
+	timer cancel $i
+    }
+} -body {
+    interp create x
+    x eval {set a before; set b before; set id [timer idle {set a a-after}];
+	    timer idle {set b b-after}}
+    set result [llength [x eval timer info]]
+    lappend result [llength [timer info]]
+    set a aaa
+    set b bbb
+    x eval {timer cancel $id}
+    update idletasks
+    lappend result $a $b [x eval {list $a $b}]
+} -cleanup {
+    interp delete x
+} -result {2 0 aaa bbb {before b-after}}
+
 test timer-6.16 {Tcl_AfterCmd procedure, idle option} -body {
     after idle
 } -returnCodes error -result {wrong # args: should be "after idle script ?script ...?"}
+
+test timer-6.16.1 {timer idle option} -body {
+    timer idle
+} -returnCodes error -result {wrong # args: should be "timer idle script"}
+
 test timer-6.17 {Tcl_AfterCmd procedure, idle option} {
     set x before
     after idle {set x after}
@@ -333,6 +769,16 @@ test timer-6.17 {Tcl_AfterCmd procedure, idle option} {
     update idletasks
     list $y $x
 } {before after}
+
+test timer-6.17.1 {timer idle} {
+    set x before
+    timer idle {set x after}
+    set y $x
+    update idletasks
+    list $y $x
+} {before after}
+
+# This is the same as 6.17, isn't it?
 test timer-6.18 {Tcl_AfterCmd procedure, idle option} {
     set x before
     after idle set x after
@@ -341,25 +787,62 @@ test timer-6.18 {Tcl_AfterCmd procedure, idle option} {
     list $y $x
 } {before after}
 
-set event1 [after idle event 1]
-set event2 [after 1000 event 2]
-interp create x
-set childEvent [x eval {after idle event in child}]
-test timer-6.19 {Tcl_AfterCmd, info option} {
-    lsort [after info]
-} [lsort "$event1 $event2"]
+test timer-6.19 {Tcl_AfterCmd, info option} -setup {
+    set event1 [after idle event 1]
+    set event2 [after 1000 event 2]
+} -body {
+    expr {[lsort [after info]] eq [lsort "$event1 $event2"]}
+} -cleanup {
+    after cancel $event1
+    after cancel $event2
+} -result 1
+
+test timer-6.19.1 {timer info} -setup {
+    set event1 [timer idle {event 1}]
+    set event2 [timer in 1 s {event 2}]
+} -body {
+    expr {[lsort [timer info]] eq [lsort "$event1 $event2"]}
+} -cleanup {
+    timer cancel $event1
+    timer cancel $event2
+} -result 1
+
 test timer-6.20 {Tcl_AfterCmd, info option} -returnCodes error -body {
     after info a b
 } -result {wrong # args: should be "after info ?id?"}
-test timer-6.21 {Tcl_AfterCmd, info option} -returnCodes error -body {
+
+test timer-6.20.1 {timer info} -returnCodes error -body {
+    timer info a b
+} -result {wrong # args: should be "timer info ?id?"}
+
+test timer-6.21 {Tcl_AfterCmd, info option} -returnCodes error -setup {
+    interp create x
+    set childEvent [x eval {after idle event in child}]
+} -body {
     after info $childEvent
-} -result "event \"$childEvent\" doesn't exist"
-test timer-6.22 {Tcl_AfterCmd, info option} {
+} -cleanup {
+    interp delete x
+} -match glob -result "event \"*\" doesn't exist"
+
+test timer-6.22 {Tcl_AfterCmd, info option} -setup {
+    set event1 [after idle event 1]
+    set event2 [after 1000 event 2]
+} -body {
     list [after info $event1] [after info $event2]
-} {{{event 1} idle} {{event 2} timer}}
-after cancel $event1
-after cancel $event2
-interp delete x
+} -cleanup {
+    after cancel $event1
+    after cancel $event2
+} -result {{{event 1} idle} {{event 2} timer}}
+
+test timer-6.22.1 {timer info} -setup {
+    set event1 [timer idle {event 1}]
+    set event2 [timer in 1 seconds {event 2}]
+} -body {
+    list [timer info $event1] [timer info $event2]
+} -cleanup {
+    timer cancel $event1
+    timer cancel $event2
+} -match glob -result {{{event 1} idle} {{event 2} monotonic *}}
 
 test timer-6.23 {Tcl_AfterCmd procedure, no option, script with NUL} -setup {
     foreach i [after info] {
@@ -372,6 +855,33 @@ test timer-6.23 {Tcl_AfterCmd procedure, no option, script with NUL} -setup {
     update
     string length $x
 } -result {5}
+
+test timer-6.23.1 {timer in, script with NUL} -setup {
+    foreach i [timer info] {
+	timer cancel $i
+    }
+} -body {
+    set x "hello world"
+    timer in 1 ms "set x ab\x00cd"
+    timer sleep for 10 ms
+    update
+    string length $x
+} -result {5}
+
+test timer-6.23.2 {timer at, script with NUL} -setup {
+    foreach i [timer info] {
+	timer cancel $i
+    }
+} -body {
+    set x "hello world"
+    set us [clock microseconds]
+    timer at [expr {$us+1000}] us "set x ab\x00cd"
+    timer sleep until [expr {$us+10_000}] us
+    update
+    string length $x
+} -result {5}
+
+# Same as 6.23, isn't it?
 test timer-6.24 {Tcl_AfterCmd procedure, no option, script with NUL} -setup {
     foreach i [after info] {
 	after cancel $i
@@ -383,6 +893,7 @@ test timer-6.24 {Tcl_AfterCmd procedure, no option, script with NUL} -setup {
     update
     string length $x
 } -result {5}
+
 test timer-6.25 {Tcl_AfterCmd procedure, cancel option, script with NUL} -setup {
     foreach i [after info] {
 	after cancel $i
@@ -397,6 +908,8 @@ test timer-6.25 {Tcl_AfterCmd procedure, cancel option, script with NUL} -setup 
 	after cancel $i
     }
 } -result {1}
+
+# Same as 6.25, isn't it?
 test timer-6.26 {Tcl_AfterCmd procedure, cancel option, script with NUL} -setup {
     foreach i [after info] {
 	after cancel $i
@@ -411,6 +924,7 @@ test timer-6.26 {Tcl_AfterCmd procedure, cancel option, script with NUL} -setup 
 	after cancel $i
     }
 } -result {1}
+
 test timer-6.27 {Tcl_AfterCmd procedure, idle option, script with NUL} -setup {
     foreach i [after info] {
 	after cancel $i
@@ -421,6 +935,19 @@ test timer-6.27 {Tcl_AfterCmd procedure, idle option, script with NUL} -setup {
     update
     string length $x
 } -result {5}
+
+test timer-6.27.1 {timer idle, script with NUL} -setup {
+    foreach i [timer info] {
+	timer cancel $i
+    }
+} -body {
+    set x "hello world"
+    timer idle "set x ab\x00cd"
+    update
+    string length $x
+} -result {5}
+
+# Same as 6.27, isn't it?
 test timer-6.28 {Tcl_AfterCmd procedure, idle option, script with NUL} -setup {
     foreach i [after info] {
 	after cancel $i
@@ -431,6 +958,7 @@ test timer-6.28 {Tcl_AfterCmd procedure, idle option, script with NUL} -setup {
     update
     string length $x
 } -result {5}
+
 test timer-6.29 {Tcl_AfterCmd procedure, info option, script with NUL} -setup {
     foreach i [after info] {
 	after cancel $i
@@ -447,26 +975,73 @@ test timer-6.29 {Tcl_AfterCmd procedure, info option, script with NUL} -setup {
     }
 } -result 5
 
+test timer-6.29.1 {timer info, script with NUL} -setup {
+    foreach i [timer info] {
+	timer cancel $i
+    }
+} -body {
+    set x "hello world"
+    set id junk
+    set id [timer in 10 ms "set x ab\x00cd"]
+    update
+    string length [lindex [lindex [timer info $id] 0] 2]
+} -cleanup {
+    foreach i [timer info] {
+	timer cancel $i
+    }
+} -result 5
+
 set event [after idle foo bar]
 scan $event after#%d lastId
+
 test timer-7.1 {GetAfterEvent procedure} -returnCodes error -body {
     after info xfter#$lastId
 } -result "event \"xfter#$lastId\" doesn't exist"
+
+test timer-7.1.1 {timer info} -returnCodes error -body {
+    timer info xfter#$lastId
+} -result "event \"xfter#$lastId\" doesn't exist"
+
 test timer-7.2 {GetAfterEvent procedure} -returnCodes error -body {
     after info afterx$lastId
 } -result "event \"afterx$lastId\" doesn't exist"
+
+test timer-7.2.1 {timer info} -returnCodes error -body {
+    timer info afterx$lastId
+} -result "event \"afterx$lastId\" doesn't exist"
+
 test timer-7.3 {GetAfterEvent procedure} -returnCodes error -body {
     after info after#ab
 } -result {event "after#ab" doesn't exist}
+
+test timer-7.3.1 {timer info} -returnCodes error -body {
+    timer info after#ab
+} -result {event "after#ab" doesn't exist}
+
 test timer-7.4 {GetAfterEvent procedure} -returnCodes error -body {
     after info after#
 } -result {event "after#" doesn't exist}
+
+test timer-7.4.1 {timer info} -returnCodes error -body {
+    timer info after#
+} -result {event "after#" doesn't exist}
+
 test timer-7.5 {GetAfterEvent procedure} -returnCodes error -body {
     after info after#${lastId}x
 } -result "event \"after#${lastId}x\" doesn't exist"
+
+test timer-7.5.1 {timer info} -returnCodes error -body {
+    timer info after#${lastId}x
+} -result "event \"after#${lastId}x\" doesn't exist"
+
 test timer-7.6 {GetAfterEvent procedure} -returnCodes error -body {
     after info afterx[expr {$lastId+1}]
 } -result "event \"afterx[expr {$lastId+1}]\" doesn't exist"
+
+test timer-7.6.1 {timer info} -returnCodes error -body {
+    timer info afterx[expr {$lastId+1}]
+} -result "event \"afterx[expr {$lastId+1}]\" doesn't exist"
+
 after cancel $event
 
 test timer-8.1 {AfterProc procedure} {
@@ -480,6 +1055,19 @@ test timer-8.1 {AfterProc procedure} {
     }
     list [foo] $x
 } {untouched after}
+
+test timer-8.1.1 {timer procedure} {
+    set x before
+    proc foo {} {
+	set x untouched
+	timer in 100 ms {set x after}
+	timer sleep for 200 ms
+	update
+	return $x
+    }
+    list [foo] $x
+} {untouched after}
+
 test timer-8.2 {AfterProc procedure} -setup {
     variable x empty
     proc myHandler {msg options} {
@@ -499,6 +1087,27 @@ test timer-8.2 {AfterProc procedure} -setup {
     while executing
 "error "After error""
     ("after" script)}}}
+
+test timer-8.2.1 {timer procedure} -setup {
+    variable x empty
+    proc myHandler {msg options} {
+	variable x [list $msg [dict get $options -errorinfo]]
+    }
+    set handler [interp bgerror {}]
+    interp bgerror {} [namespace which myHandler]
+} -body {
+    timer in 100 ms {error "After error"}
+    timer sleep for 200 ms
+    set y $x
+    update
+    list $y $x
+} -cleanup {
+    interp bgerror {} $handler
+} -result {empty {{After error} {After error
+    while executing
+"error "After error""
+    ("after" script)}}}
+
 test timer-8.3 {AfterProc procedure, deleting handler from itself} -setup {
     foreach i [after info] {
 	after cancel $i
@@ -510,13 +1119,40 @@ test timer-8.3 {AfterProc procedure, deleting handler from itself} -setup {
 	foreach i [after info] {
 	    lappend x [after info $i]
 	}
-	after cancel foo
     }
     after idle foo
     after 1000 {error "I shouldn't ever have executed"}
     update idletasks
     return $x
+} -cleanup {
+    foreach i [after info] {
+	after cancel $i
+    }
 } -result {{{error "I shouldn't ever have executed"} timer}}
+
+test timer-8.3.1 {timer procedure, deleting handler from itself} -setup {
+    foreach i [timer info] {
+	timer cancel $i
+    }
+} -body {
+    proc foo {} {
+	global x
+	set x {}
+	foreach i [timer info] {
+	    lappend x [timer info $i]
+	}
+    }
+    timer idle foo
+    timer in 1 seconds {error "I shouldn't ever have executed"}
+    update idletasks
+    return $x
+} -cleanup {
+    foreach i [after info] {
+	after cancel $i
+    }
+} -match glob -result {{{error "I shouldn't ever have executed"} monotonic *}}
+
+# Same as 8.3, isn't it?
 test timer-8.4 {AfterProc procedure, deleting handler from itself} -setup {
     foreach i [after info] {
 	after cancel $i
@@ -567,6 +1203,31 @@ test timer-9.1 {AfterCleanupProc procedure} -setup {
     return $x
 } -result {before after2 after4}
 
+test timer-9.1.1 {timer AfterCleanupProc procedure} -setup {
+    catch {interp delete x}
+} -body {
+    interp create x
+    x eval {timer in 200 ms {
+	lappend x after
+	puts "part 1: this message should not appear"
+    }}
+    timer in 200 ms {lappend x after2}
+    x eval {timer in 200 ms {
+	lappend x after3
+	puts "part 2: this message should not appear"
+    }}
+    timer in 200 ms {lappend x after4}
+    x eval {timer in 200 ms {
+	lappend x after5
+	puts "part 3: this message should not appear"
+    }}
+    interp delete x
+    set x before
+    timer sleep for 300 ms
+    update
+    return $x
+} -result {before after2 after4}
+
 test timer-10.1 {Bug 1016167: [after] overwrites imports} -setup {
     interp create child
     child eval namespace export after
@@ -579,6 +1240,17 @@ test timer-10.1 {Bug 1016167: [after] overwrites imports} -setup {
     interp delete child
 } -result ::after
 
+test timer-10.1.1 {[timer] overwrites imports} -setup {
+    interp create child
+    child eval namespace export timer
+    child eval namespace eval foo namespace import ::timer
+} -body {
+    child eval foo::timer sleep for 1 seconds
+    child eval namespace origin foo::timer
+} -cleanup {
+    interp delete child
+} -result ::timer
+
 test timer-11.1 {Bug 1350291: [after] overflowing 32-bit field} -body {
     set b ok
     set a [after 0x100000001 {set b "after fired early"}]
@@ -588,6 +1260,7 @@ test timer-11.1 {Bug 1350291: [after] overflowing 32-bit field} -body {
 } -cleanup {
     catch {after cancel $a}
 } -result ok
+
 test timer-11.2 {Bug 1350293: [after] negative argument} -body {
     set l {}
     after 100 {lappend l 100; set done 1}
@@ -595,6 +1268,252 @@ test timer-11.2 {Bug 1350293: [after] negative argument} -body {
     vwait done
     return $l
 } -result {-1 100}
+
+## timer in
+
+test timer-12.1 {timer in, basics} -returnCodes error -body {
+    timer in 0 ms
+} -result {wrong # args: should be "timer in time unit script"}
+
+test timer-12.2 {timer in, basics} -returnCodes error -body {
+    timer in 0 ms cmd junk
+} -result {wrong # args: should be "timer in time unit script"}
+
+test timer-12.3 {timer in, basics} -returnCodes error -body {
+    timer in 0 ms cmd junk
+} -result {wrong # args: should be "timer in time unit script"}
+
+test timer-12.4 {timer in, basics} -returnCodes error -body {
+    timer in 2x us {event 1}
+} -result {expected integer but got "2x"}
+
+test timer-12.5 {timer in, basics} -returnCodes error -body {
+    timer in 0 bla {event 1}
+} -result {bad unit "bla": must be us, microseconds, milliseconds, ms, s, or seconds}
+
+test timer-12.6 {timer in, unit} -setup {
+    set x ""
+} -body {
+    timer in 100_000 microseconds {lappend x ok}
+    timer in 300 ms {lappend x late}
+    timer sleep for 200 ms
+    update
+    set x
+} -cleanup {
+    foreach i [timer info] {
+	timer cancel $i
+    }
+} -result ok
+
+test timer-12.7 {timer in, unit} -setup {
+    set x ""
+} -body {
+    timer in 100 milliseconds {lappend x ok}
+    timer in 300 ms {lappend x late}
+    timer sleep for 200 ms
+    update
+    set x
+} -cleanup {
+    foreach i [timer info] {
+	timer cancel $i
+    }
+} -result ok
+
+test timer-12.8 {timer in over maximum value} -body {
+    # Max internal value is LLONG_MAX
+    set max [expr {2**63-1}]
+    # Substract current clock, but add one seconds.
+    # The internal comparision is only on seconds level
+    set max [expr {$max - [clock monotonic] + 1000000}]
+    set id [timer in $max us {event 1}]
+} -cleanup {
+} -result "time too far away" -returnCodes error
+
+test timer-12.9 {after over maximum value} -body {
+    # Max internal value is LLONG_MAX
+    set max [expr {2**63-1}]
+    # Substract current clock, but add one seconds.
+    # The internal comparision is only on seconds level
+    set max [expr {$max - [clock monotonic] + 1000000}]
+    set max [expr {$max/1000}]
+    set id [after $max s {event 1}]
+} -cleanup {
+} -result "time too far away" -returnCodes error
+
+## timer at
+
+test timer-13.1 {timer at, basics} -returnCodes error -body {
+    timer at 0 ms
+} -result {wrong # args: should be "timer at time unit script"}
+
+test timer-13.2 {timer at, basics} -returnCodes error -body {
+    timer at 0 ms cmd junk
+} -result {wrong # args: should be "timer at time unit script"}
+
+test timer-13.3 {timer at, basics} -returnCodes error -body {
+    timer at 2x us {event 1}
+} -result {expected integer but got "2x"}
+
+test timer-13.4 {timer at, basics} -returnCodes error -body {
+    timer at 0 bla {event 1}
+} -result {bad unit "bla": must be us, microseconds, milliseconds, ms, s, or seconds}
+
+test timer-13.5 {timer at, unit sec} -setup {
+} -body {
+    set x ""
+    timer at [expr {[clock seconds]+1}] seconds {lappend x ok}
+    timer in 1200 ms {lappend x late}
+    timer sleep for 1100 ms
+    update
+    set x
+} -cleanup {
+    foreach i [timer info] {
+	timer cancel $i
+    }
+} -result ok
+
+test timer-13.6 {timer at, unit ms} -setup {
+} -body {
+    set x ""
+    timer at [expr {[clock milliseconds]+100}] milliseconds {lappend x ok}
+    timer in 300 ms {lappend x late}
+    timer sleep for 200 ms
+    update
+    set x
+} -cleanup {
+    foreach i [timer info] {
+	timer cancel $i
+    }
+} -result ok
+
+test timer-13.7 {timer at, unit us} -setup {
+} -body {
+    set x ""
+    timer at [expr {[clock microseconds]+100_000}] microseconds {lappend x ok}
+    timer in 300 ms {lappend x late}
+    timer sleep for 200 ms
+    update
+    set x
+} -cleanup {
+    foreach i [timer info] {
+	timer cancel $i
+    }
+} -result ok
+
+test timer-13.8 {timer at maximum value} -body {
+    set maxwideSeconds [expr {(2**63-1)/1000000}]
+    set id [timer at $maxwideSeconds s {event 1}]
+} -cleanup {
+} -result "time too far away" -returnCodes error
+
+## timer info
+
+test timer-14.1 {timer info at value - maximum} -body {
+    set maxwideSeconds [expr {((2**63-1)/1000000)-1}]
+    set id [timer at $maxwideSeconds s {event 1}]
+    set res [timer info $id]
+    set ret [list [expr {{event 1} eq [lindex $res 0]}]]
+    lappend ret [expr {"wallclock" eq [lindex $res 1]}]
+    lappend ret [expr {$maxwideSeconds*1000000 == [lindex $res 2]}]
+    set ret
+} -cleanup {
+    foreach i [timer info] {
+	timer cancel $i
+    }
+} -result {1 1 1}
+
+test timer-14.2 {timer info at value - negative} -body {
+    set id [timer at -1 s {event 1}]
+    set res [timer info $id]
+    lrange $res 1 2
+} -cleanup {
+    foreach i [timer info] {
+	timer cancel $i
+    }
+} -result {wallclock 0}
+
+## timer sleep
+
+test timer-15.1 {timer sleep, basics} -returnCodes error -body {
+    timer sleep for
+} -result {wrong # args: should be "timer sleep option time ?unit?"}
+
+test timer-15.2 {timer sleep, basics} -returnCodes error -body {
+    timer sleep for 0 us junk
+} -result {wrong # args: should be "timer sleep option time ?unit?"}
+
+test timer-15.3 {timer sleep, basics} -returnCodes error -body {
+    timer sleep junk 0 us
+} -result {bad option "junk": must be for or until}
+
+test timer-15.4 {timer sleep, basics} -returnCodes error -body {
+    timer sleep for 0 bla
+} -result {bad unit "bla": must be us, microseconds, milliseconds, ms, s, or seconds}
+
+test timer-15.5 {"timer sleep for" over maximum value} -body {
+    # Max internal value is LLONG_MAX
+    set max [expr {2**63-1}]
+    # Substract current clock, but add one seconds.
+    # The internal comparision is only on seconds level
+    set max [expr {$max - [clock monotonic] + 1000000}]
+    set id [timer sleep for $max us]
+} -cleanup {
+} -result "time too far away" -returnCodes error
+
+test timer-15.6 {"timer sleep until" maximum value} -body {
+    set maxwideSeconds [expr {(2**63-1)/1000000}]
+    set id [timer sleep until $maxwideSeconds s]
+} -cleanup {
+} -result "time too far away" -returnCodes error
+
+test timer-15.7 {"timer sleep for" time measurment} -body {
+    time {timer sleep for 100 ms}
+    # The match accepts 100 to 200 ms
+} -match glob -result {1[0-9][0-9][0-9][0-9][0-9] microseconds per iteration}
+
+test timer-15.8 {"timer sleep until" time measurment} -body {
+    set wallclockUS [expr {[clock microseconds] + 100_000}]
+    time [list timer sleep until $wallclockUS us]
+    # The match accepts 100 to 200 ms
+} -match glob -result {1[0-9][0-9][0-9][0-9][0-9] microseconds per iteration}
+
+test timer-15.9 {timer sleep, unit abbreviation} -body {
+    timer sleep for 1 micro
+}
+
+test timer-15.10 {timer sleep for, default unit} -body {
+    time {timer sleep for 100}
+} -match glob -result {[1-9][0-9][0-9][0-9][0-9][0-9] *}
+
+test timer-15.11 {timer sleep until, default unit} -body {
+    time [list timer sleep until [expr {[clock seconds]+2}]]
+    # this may be from 1 to 3 seconds, as "clock seconds" may have
+    # been 0 to 999 ms in the past.
+} -match glob -result {[1-3][0-9][0-9][0-9][0-9][0-9][0-9] *}
+
+## timer cancel
+
+test timer-16.1 {"timer cancel" basic} -body {
+    timer cancel
+}  -returnCodes error -result {wrong # args: should be "timer cancel id|script"}
+
+test timer-16.2 {"timer cancel" basic} -body {
+    timer cancel event 1
+}  -returnCodes error -result {wrong # args: should be "timer cancel id|script"}
+
+test timer-16.3 {"timer cancel" on unknown event} -body {
+    timer cancel unknown
+}  -result {}
+
+## timer idle
+
+test timer-17.1 {"timer idle" basic} -body {
+    timer idle
+}  -returnCodes error -result {wrong # args: should be "timer idle script"}
+
+test timer-17.2 {"timer idle" basic} -body {
+    timer idle event 1
+}  -returnCodes error -result {wrong # args: should be "timer idle script"}
 
 # cleanup
 ::tcltest::cleanupTests
