@@ -78,6 +78,7 @@ is or becomes readable the wait operation completes.
 \fB\-timeout\fI milliseconds\fR
 .
 The wait operation is constrained to \fImilliseconds\fR.
+A monotonic clock is used if available.
 .\" OPTION: -variable
 .TP
 \fB\-variable\fI varName\fR

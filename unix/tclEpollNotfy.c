@@ -623,7 +623,6 @@ TclpWaitForEvent(
     const Tcl_Time *timePtr)	/* Maximum block time, or NULL. */
 {
     FileHandler *filePtr;
-    Tcl_Time vTime;
     struct timeval timeout, *timeoutPtr;
 				/* Impl. notes: timeout & timeoutPtr are used
 				 * if, and only if threads are not enabled.
@@ -642,17 +641,6 @@ TclpWaitForEvent(
      */
 
     if (timePtr != NULL) {
-	/*
-	 * TIP #233 (Virtualized Time). Is virtual time in effect? And do we
-	 * actually have something to scale? If yes to both then we call the
-	 * handler to do this scaling.
-	 */
-
-	if (timePtr->sec != 0 || timePtr->usec != 0) {
-	    vTime = *timePtr;
-	    TclScaleTime(&vTime);
-	    timePtr = &vTime;
-	}
 	timeout.tv_sec = timePtr->sec;
 	timeout.tv_usec = timePtr->usec;
 	timeoutPtr = &timeout;

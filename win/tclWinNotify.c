@@ -479,21 +479,11 @@ TclpWaitForEvent(
      */
 
     if (timePtr) {
-	/*
-	 * TIP #233 (Virtualized Time). Convert virtual domain delay to
-	 * real-time.
-	 */
 
-	Tcl_Time myTime;
-
-	myTime.sec  = timePtr->sec;
-	myTime.usec = timePtr->usec;
-
-	if (myTime.sec != 0 || myTime.usec != 0) {
-	    TclScaleTime(&myTime);
+	timeout = (DWORD)timePtr->sec * 1000 + (unsigned long)timePtr->usec / 1000;
+	if (timeout == INFINITE) {
+	    timeout--;
 	}
-
-	timeout = (DWORD)myTime.sec * 1000 + (unsigned long)myTime.usec / 1000;
     } else {
 	timeout = INFINITE;
     }
@@ -564,9 +554,70 @@ TclpWaitForEvent(
 /*
  *----------------------------------------------------------------------
  *
+ * Tcl_SleepMicroSeconds --
+ *
+ *	Delay execution for the specified number of monotonic
+ *	micro-seconds.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Time passes.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_SleepMicroSeconds(
+    long long microSeconds)	/* Number of micro-seconds to sleep. */
+{
+    /*
+     * HaO 2025-11-19: this comment is probably solved by the use of monotonic
+     * time. So, the loop may eventually be removed.
+     *
+     * Simply calling 'Sleep' for the requisite number of milliseconds can
+     * make the process appear to wake up early because it isn't synchronized
+     * with the CPU performance counter that is used in tclWinTime.c. This
+     * behavior is probably benign, but messes up some of the corner cases in
+     * the test suite. We get around this problem by repeating the 'Sleep'
+     * call as many times as necessary to make the clock advance by the
+     * requisite amount.
+     */
+
+    long long nowUS;		/* Current wall clock time. */
+    long long desiredUS;	/* Desired wakeup time. */
+    long long vdelayUS;		/* Time to sleep, for scaling virtual ->
+				 * real. */
+    DWORD sleepTime;		/* Time to sleep, real-time */
+
+    vdelayUS = microSeconds;
+
+    nowUS = Tcl_GetMonotonicTime();
+    desiredUS = nowUS + vdelayUS;
+
+    sleepTime = (DWORD) (unsigned long long)vdelayUS / 1000;
+
+    for (;;) {
+	SleepEx(sleepTime, TRUE);
+	nowUS = Tcl_GetMonotonicTime();
+	if (nowUS >= desiredUS) {
+	    break;
+	}
+
+	vdelayUS = desiredUS - nowUS;
+
+	sleepTime = (DWORD) (unsigned long long)vdelayUS / 1000;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_Sleep --
  *
- *	Delay execution for the specified number of milliseconds.
+ *	Delay execution for the specified number of monotonic
+ *	milliseconds.
  *
  * Results:
  *	None.
@@ -581,55 +632,7 @@ void
 Tcl_Sleep(
     int ms)			/* Number of milliseconds to sleep. */
 {
-    /*
-     * Simply calling 'Sleep' for the requisite number of milliseconds can
-     * make the process appear to wake up early because it isn't synchronized
-     * with the CPU performance counter that is used in tclWinTime.c. This
-     * behavior is probably benign, but messes up some of the corner cases in
-     * the test suite. We get around this problem by repeating the 'Sleep'
-     * call as many times as necessary to make the clock advance by the
-     * requisite amount.
-     */
-
-    Tcl_Time now;		/* Current wall clock time. */
-    Tcl_Time desired;		/* Desired wakeup time. */
-    Tcl_Time vdelay;		/* Time to sleep, for scaling virtual ->
-				 * real. */
-    DWORD sleepTime;		/* Time to sleep, real-time */
-
-    vdelay.sec  = ms / 1000;
-    vdelay.usec = (ms % 1000) * 1000;
-
-    Tcl_GetTime(&now);
-    desired.sec  = now.sec  + vdelay.sec;
-    desired.usec = now.usec + vdelay.usec;
-    if (desired.usec > 1000000) {
-	++desired.sec;
-	desired.usec -= 1000000;
-    }
-
-    /*
-     * TIP #233: Scale delay from virtual to real-time.
-     */
-
-    TclScaleTime(&vdelay);
-    sleepTime = (DWORD)vdelay.sec * 1000 + (unsigned long)vdelay.usec / 1000;
-
-    for (;;) {
-	SleepEx(sleepTime, TRUE);
-	Tcl_GetTime(&now);
-	if (now.sec > desired.sec) {
-	    break;
-	} else if ((now.sec == desired.sec) && (now.usec >= desired.usec)) {
-	    break;
-	}
-
-	vdelay.sec  = desired.sec  - now.sec;
-	vdelay.usec = desired.usec - now.usec;
-
-	TclScaleTime(&vdelay);
-	sleepTime = (DWORD)vdelay.sec * 1000 + (unsigned long)vdelay.usec / 1000;
-    }
+    Tcl_SleepMicroSeconds(ms*1000);
 }
 
 /*

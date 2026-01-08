@@ -22,7 +22,8 @@ typedef struct TimerHandler {
     Tcl_Time time;		/* When timer is to fire. */
     Tcl_TimerProc *proc;	/* Function to call. */
     void *clientData;		/* Argument to pass to proc. */
-    Tcl_TimerToken token;	/* Identifies handler so it can be deleted. */
+    Tcl_TimerToken token;	/* Identifies handler so it can be deleted.
+				 * NULL for [after/timer idle]. */
     struct TimerHandler *nextPtr;
 				/* Next event in queue, or NULL for end of
 				 * queue. */
@@ -44,9 +45,7 @@ typedef struct AfterInfo {
 				 * cancel it. */
     Tcl_TimerToken token;	/* Used to cancel the "after" command. NULL
 				 * means that the command is run as an idle
-				 * handler rather than as a timer handler.
-				 * NULL means this is an "after idle" handler
-				 * rather than a timer handler. */
+				 * handler rather than as a timer handler. */
     struct AfterInfo *nextPtr;	/* Next in list of all "after" commands for
 				 * this interpreter. */
 } AfterInfo;
@@ -60,9 +59,10 @@ typedef struct AfterInfo {
 typedef struct AfterAssocData {
     Tcl_Interp *interp;		/* The interpreter for which this data is
 				 * registered. */
-    AfterInfo *firstAfterPtr;	/* First in list of all "after" commands still
-				 * pending for this interpreter, or NULL if
-				 * none. */
+    AfterInfo *firstAfterPtr;	/* First in list of all "monotonic", "wallclock"
+				 * or "idle"
+				 * commands still pending for this interpreter, or
+				 * NULL if none. */
 } AfterAssocData;
 
 /* Associated data key used to look up the AfterAssocData for an interp. */
@@ -83,6 +83,15 @@ typedef struct IdleHandler {
 } IdleHandler;
 
 /*
+ * Create an enum to index the firstTimeHandlerPtr array below.
+ * There are 3 queues: monotonic, wall clock and idle.
+ * The idle queue is (still) handled separately, but may eventually be added here.
+ */
+
+enum timeHandlerType {timerHandlerMonotonic=0,
+	timerHandlerWallclock=1};
+
+/*
  * The timer and idle queues are per-thread because they are associated with
  * the notifier, which is also per-thread.
  *
@@ -95,10 +104,15 @@ typedef struct IdleHandler {
  */
 
 typedef struct {
-    TimerHandler *firstTimerHandlerPtr;	/* First event in queue. */
+    TimerHandler *firstTimerHandlerPtr[2];
+				/* [0] First event in monotonic queue. */
+				/* [1]: First event in wallclock queue. */
     int lastTimerId;		/* Timer identifier of most recently created
 				 * timer. */
-    int timerPending;		/* 1 if a timer event is in the queue. */
+    int lastTimerIdQueue[2];	/* Last timer ID for each queue. This is
+				 * compared to fired event to check, if there
+				 * were newer events added. */
+    int timerPendingQueue[2];	/* 1 if a timer event is in the given queue. */
     IdleHandler *idleList;	/* First in list of all idle handlers. */
     IdleHandler *lastIdlePtr;	/* Last in list (or NULL for empty list). */
     int idleGeneration;		/* Used to fill in the "generation" fields of
@@ -111,6 +125,17 @@ typedef struct {
 } ThreadSpecificData;
 
 static Tcl_ThreadDataKey dataKey;
+
+/*
+ * time point and distance unit strings and values.
+ * Used for argument parsing.
+ */
+
+static const char *const unitItems[] = {
+	"us", "microseconds", "milliseconds", "ms", "s", "seconds", NULL};
+enum unitEnum {UNIT_US, UNIT_MICROSECONDS, UNIT_MILLISECONDS, UNIT_MS,
+	UNIT_S, UNIT_SECONDS};
+
 
 /*
  * Helper macros for working with times. TCL_TIME_BEFORE encodes how to write
@@ -142,7 +167,7 @@ static Tcl_ThreadDataKey dataKey;
 #define SLEEP_OFFLOAD_GETTIMEOFDAY 20
 
 /*
- * The maximum number of milliseconds for each Tcl_Sleep call in AfterDelay.
+ * The maximum number of milliseconds for each Tcl_Sleep call in TimerDelay.
  * This is used to limit the maximum lag between interp limit and script
  * cancellation checks.
  */
@@ -155,7 +180,6 @@ static Tcl_ThreadDataKey dataKey;
 
 static void		AfterCleanupProc(void *clientData,
 			    Tcl_Interp *interp);
-static int		AfterDelay(Tcl_Interp *interp, Tcl_WideInt ms);
 static void		AfterProc(void *clientData);
 static void		FreeAfterPtr(AfterInfo *afterPtr);
 static AfterInfo *	GetAfterEvent(AfterAssocData *assocPtr,
@@ -165,6 +189,49 @@ static void		TimerExitProc(void *clientData);
 static int		TimerHandlerEventProc(Tcl_Event *evPtr, int flags);
 static void		TimerCheckProc(void *clientData, int flags);
 static void		TimerSetupProc(void *clientData, int flags);
+static Tcl_ObjCmdProc2	TimerAtCmd;
+static Tcl_ObjCmdProc2	TimerInCmd;
+static Tcl_ObjCmdProc2	TimerSleepCmd;
+static int		TimerSleepForCmd(Tcl_Interp *interp,
+			    long long sleepArgUS);
+static int		TimerSleepUntilCmd(Tcl_Interp *interp,
+			    long long sleepArgUS);
+static int		TimerDelay(Tcl_Interp *interp, Tcl_Time endTime);
+static int		TimerDelayMonotonic(Tcl_Interp *interp,
+			    long long endTimeUS);
+static Tcl_ObjCmdProc2	TimerCancelCmd;
+static int		TimerCancelDo(Tcl_Interp *interp,
+			    Tcl_Obj *const objArg, bool notFoundError);
+static AfterAssocData *	TimerAssocDataGet(Tcl_Interp *interp);
+static Tcl_ObjCmdProc2	TimerIdleCmd;
+static int		TimerIdleDo(Tcl_Interp *interp,
+			    Tcl_Obj *const objCmd);
+static Tcl_ObjCmdProc2	TimerInfoCmd;
+static void		TimeTooFarError(Tcl_Interp *interp);
+static int		ParseTimeUnit(Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[],
+			    bool useDefaultUnit, enum unitEnum defaultUnit,
+			    long long *wakeupPtr);
+static int		TimerInfoDo(Tcl_Interp *interp, int objc,
+			Tcl_Obj *const objv[], bool isAfter);
+static Tcl_TimerToken	CreateTimerHandler(Tcl_Time *timePtr,
+			    Tcl_TimerProc *proc, void *clientData,
+			    bool monotonic);
+
+/*
+ * How to construct the ensembles.
+ */
+
+static const EnsembleImplMap timerMap[] = {
+    { "at", TimerAtCmd, TclCompileBasicMin1ArgCmd, NULL, NULL, 0 },
+    {"in",TimerInCmd, TclCompileBasicMin1ArgCmd, NULL, NULL, 0 },
+    {"cancel", TimerCancelCmd, TclCompileBasicMin1ArgCmd, NULL, NULL, 0 },
+    {"idle", TimerIdleCmd, TclCompileBasicMin1ArgCmd, NULL, NULL, 0 },
+    {"info", TimerInfoCmd, TclCompileBasicMin1ArgCmd, NULL, NULL, 0 },
+    {"sleep", TimerSleepCmd, TclCompileBasicMin1ArgCmd, NULL, NULL, 0 },
+    { NULL, NULL, NULL, NULL, NULL, 0 }
+};
+
 
 /*
  *----------------------------------------------------------------------
@@ -222,11 +289,18 @@ TimerExitProc(
     if (tsdPtr != NULL) {
 	TimerHandler *timerHandlerPtr;
 
-	timerHandlerPtr = tsdPtr->firstTimerHandlerPtr;
-	while (timerHandlerPtr != NULL) {
-	    tsdPtr->firstTimerHandlerPtr = timerHandlerPtr->nextPtr;
-	    Tcl_Free(timerHandlerPtr);
-	    timerHandlerPtr = tsdPtr->firstTimerHandlerPtr;
+	/*
+	 * Loop over wallclock and monotonic clock queue
+	 */
+
+	for (int timerHandlerIndex = timerHandlerMonotonic;
+		timerHandlerIndex <=timerHandlerWallclock; timerHandlerIndex++) {
+	    timerHandlerPtr = tsdPtr->firstTimerHandlerPtr[timerHandlerIndex];
+	    while (timerHandlerPtr != NULL) {
+		tsdPtr->firstTimerHandlerPtr[timerHandlerIndex] = timerHandlerPtr->nextPtr;
+		Tcl_Free(timerHandlerPtr);
+		timerHandlerPtr = tsdPtr->firstTimerHandlerPtr[timerHandlerIndex];
+	    }
 	}
     }
 }
@@ -234,10 +308,54 @@ TimerExitProc(
 /*
  *--------------------------------------------------------------
  *
+ * Tcl_CreateTimerHandlerMicroSeconds --
+ *
+ *	Arrange for a given function to be invoked after a given monotonic
+ *	time interval in micro seconds.
+ *
+ * Results:
+ *	The return value is a token for the timer event, which may be used to
+ *	delete the event before it fires.
+ *
+ * Side effects:
+ *	When micro-seconds have elapsed, proc will be invoked exactly once.
+ *
+ *--------------------------------------------------------------
+ */
+
+Tcl_TimerToken
+Tcl_CreateTimerHandlerMicroSeconds(
+    long long microSeconds,	/* How many micro-seconds to wait before
+				 * invoking proc. */
+    Tcl_TimerProc *proc,	/* Function to invoke. */
+    void *clientData)		/* Arbitrary data to pass to proc. */
+{
+    long long timeUS;
+
+    /*
+     * Compute when the event should fire.
+     */
+
+    if (microSeconds <= 0) {
+	timeUS = 0;
+    } else {
+	timeUS = Tcl_GetMonotonicTime();
+	if (LLONG_MAX - microSeconds < timeUS) {
+	    /* here might be an assertion */
+	    return NULL;
+	}
+	timeUS += microSeconds;
+    }
+    return TclCreateMonotonicTimerHandler(timeUS, proc, clientData);
+}
+
+/*
+ *--------------------------------------------------------------
+ *
  * Tcl_CreateTimerHandler --
  *
- *	Arrange for a given function to be invoked at a particular time in the
- *	future.
+ *	Arrange for a given function to be invoked after a given monotonic
+ *	time interval.
  *
  * Results:
  *	The return value is a token for the timer event, which may be used to
@@ -256,20 +374,16 @@ Tcl_CreateTimerHandler(
     Tcl_TimerProc *proc,	/* Function to invoke. */
     void *clientData)		/* Arbitrary data to pass to proc. */
 {
-    Tcl_Time time;
+    long long timeUS;
 
     /*
      * Compute when the event should fire.
      */
 
-    Tcl_GetTime(&time);
-    time.sec += milliseconds/1000;
-    time.usec += (milliseconds%1000)*1000;
-    if (time.usec >= 1000000) {
-	time.usec -= 1000000;
-	time.sec += 1;
-    }
-    return TclCreateAbsoluteTimerHandler(&time, proc, clientData);
+    timeUS = Tcl_GetMonotonicTime();
+    timeUS += milliseconds*1000;
+
+    return TclCreateMonotonicTimerHandler(timeUS, proc, clientData);
 }
 
 /*
@@ -297,8 +411,77 @@ TclCreateAbsoluteTimerHandler(
     Tcl_TimerProc *proc,
     void *clientData)
 {
+    return CreateTimerHandler(timePtr, proc, clientData, false);
+}
+
+/*
+ *--------------------------------------------------------------
+ *
+ * TclCreateMonotonicTimerHandler --
+ *
+ *	Arrange for a given function to be invoked at a particular time in the
+ *	future.
+ *	The parameter 'monotonic' controls, if the monotonic clock or
+ *	the wall clock is used.
+ *
+ * Results:
+ *	The return value is a token for the timer event, which may be used to
+ *	delete the event before it fires.
+ *
+ * Side effects:
+ *	When the time in timePtr has been reached, proc will be invoked
+ *	exactly once.
+ *
+ *--------------------------------------------------------------
+ */
+
+Tcl_TimerToken
+TclCreateMonotonicTimerHandler(
+    long long timeUS,
+    Tcl_TimerProc *proc,
+    void *clientData)
+{
+    Tcl_Time time;
+    time.sec = timeUS / 1000000;
+    time.usec = timeUS % 1000000;
+
+    return CreateTimerHandler(&time, proc, clientData, true);
+}
+
+/*
+ *--------------------------------------------------------------
+ *
+ * CreateTimerHandler --
+ *
+ *	Arrange for a given function to be invoked at a particular time in the
+ *	future.
+ *	The parameter 'monotonic' controls, if the monotonic clock or
+ *	the wall clock is used.
+ *
+ * Results:
+ *	The return value is a token for the timer event, which may be used to
+ *	delete the event before it fires.
+ *
+ * Side effects:
+ *	When the time in timePtr has been reached, proc will be invoked
+ *	exactly once.
+ *
+ *--------------------------------------------------------------
+ */
+
+static Tcl_TimerToken
+CreateTimerHandler(
+    Tcl_Time *timePtr,
+    Tcl_TimerProc *proc,
+    void *clientData,
+    bool monotonic)
+{
     TimerHandler *timerHandlerPtr, *tPtr2, *prevPtr;
     ThreadSpecificData *tsdPtr = InitTimer();
+    enum timeHandlerType timerHandlerIndex;
+
+    timerHandlerIndex = ( monotonic ? timerHandlerMonotonic
+	    : timerHandlerWallclock );
 
     timerHandlerPtr = (TimerHandler *)Tcl_Alloc(sizeof(TimerHandler));
 
@@ -310,14 +493,16 @@ TclCreateAbsoluteTimerHandler(
     timerHandlerPtr->proc = proc;
     timerHandlerPtr->clientData = clientData;
     tsdPtr->lastTimerId++;
+    tsdPtr->lastTimerIdQueue[timerHandlerIndex] = tsdPtr->lastTimerId;
     timerHandlerPtr->token = (Tcl_TimerToken) INT2PTR(tsdPtr->lastTimerId);
 
     /*
-     * Add the event to the queue in the correct position (ordered by event
-     * firing time).
+     * Add the event to the corresponding queue in the correct position
+     * (ordered by event firing time).
      */
 
-    for (tPtr2 = tsdPtr->firstTimerHandlerPtr, prevPtr = NULL; tPtr2 != NULL;
+    tPtr2 = tsdPtr->firstTimerHandlerPtr[timerHandlerIndex];
+    for (prevPtr = NULL; tPtr2 != NULL;
 	    prevPtr = tPtr2, tPtr2 = tPtr2->nextPtr) {
 	if (TCL_TIME_BEFORE(timerHandlerPtr->time, tPtr2->time)) {
 	    break;
@@ -325,7 +510,7 @@ TclCreateAbsoluteTimerHandler(
     }
     timerHandlerPtr->nextPtr = tPtr2;
     if (prevPtr == NULL) {
-	tsdPtr->firstTimerHandlerPtr = timerHandlerPtr;
+	tsdPtr->firstTimerHandlerPtr[timerHandlerIndex] = timerHandlerPtr;
     } else {
 	prevPtr->nextPtr = timerHandlerPtr;
     }
@@ -365,19 +550,22 @@ Tcl_DeleteTimerHandler(
 	return;
     }
 
-    for (timerHandlerPtr = tsdPtr->firstTimerHandlerPtr, prevPtr = NULL;
-	    timerHandlerPtr != NULL; prevPtr = timerHandlerPtr,
-	    timerHandlerPtr = timerHandlerPtr->nextPtr) {
-	if (timerHandlerPtr->token != token) {
-	    continue;
+    for (int timerHandlerIndex = timerHandlerMonotonic;
+	    timerHandlerIndex <= timerHandlerWallclock; timerHandlerIndex++ ) {
+	for (timerHandlerPtr = tsdPtr->firstTimerHandlerPtr[timerHandlerIndex], prevPtr = NULL;
+		timerHandlerPtr != NULL; prevPtr = timerHandlerPtr,
+		timerHandlerPtr = timerHandlerPtr->nextPtr) {
+	    if (timerHandlerPtr->token != token) {
+		continue;
+	    }
+	    if (prevPtr == NULL) {
+		tsdPtr->firstTimerHandlerPtr[timerHandlerIndex] = timerHandlerPtr->nextPtr;
+	    } else {
+		prevPtr->nextPtr = timerHandlerPtr->nextPtr;
+	    }
+	    Tcl_Free(timerHandlerPtr);
+	    return;
 	}
-	if (prevPtr == NULL) {
-	    tsdPtr->firstTimerHandlerPtr = timerHandlerPtr->nextPtr;
-	} else {
-	    prevPtr->nextPtr = timerHandlerPtr->nextPtr;
-	}
-	Tcl_Free(timerHandlerPtr);
-	return;
     }
 }
 
@@ -408,29 +596,58 @@ TimerSetupProc(
     ThreadSpecificData *tsdPtr = InitTimer();
 
     if (((flags & TCL_IDLE_EVENTS) && tsdPtr->idleList)
-	    || ((flags & TCL_TIMER_EVENTS) && tsdPtr->timerPending)) {
+	    || ((flags & TCL_TIMER_EVENTS)
+		&& ( tsdPtr->timerPendingQueue[timerHandlerMonotonic]
+		    || tsdPtr->timerPendingQueue[timerHandlerWallclock]))) {
 	/*
 	 * There is an idle handler or a pending timer event, so just poll.
 	 */
 
 	blockTime.sec = 0;
 	blockTime.usec = 0;
-    } else if ((flags & TCL_TIMER_EVENTS) && tsdPtr->firstTimerHandlerPtr) {
+    } else if ((flags & TCL_TIMER_EVENTS) &&
+	    (tsdPtr->firstTimerHandlerPtr[timerHandlerMonotonic]
+	    || tsdPtr->firstTimerHandlerPtr[timerHandlerWallclock])) {
+	Tcl_Time myBlockTime, myTime;
+	bool blockTimePresent = false;
 	/*
-	 * Compute the timeout for the next timer on the list.
+	 * Find the earlier timeout of monotonic or wall clock
+	 * of the next wallclock and/or monotonic timer on the list.
 	 */
 
-	Tcl_GetTime(&blockTime);
-	blockTime.sec = tsdPtr->firstTimerHandlerPtr->time.sec - blockTime.sec;
-	blockTime.usec = tsdPtr->firstTimerHandlerPtr->time.usec -
-		blockTime.usec;
-	if (blockTime.usec < 0) {
-	    blockTime.sec -= 1;
-	    blockTime.usec += 1000000;
-	}
-	if (blockTime.sec < 0) {
-	    blockTime.sec = 0;
-	    blockTime.usec = 0;
+	for (int timerHandlerIndex = timerHandlerMonotonic;
+		timerHandlerIndex <= timerHandlerWallclock; timerHandlerIndex++ ) {
+	    TimerHandler *firstTimerHandlerPtrCur;
+	    firstTimerHandlerPtrCur = tsdPtr->firstTimerHandlerPtr[timerHandlerIndex];
+	    if (firstTimerHandlerPtrCur == NULL) {
+		continue;
+	    }
+	    if (timerHandlerIndex ==timerHandlerMonotonic) {
+		long long myTimeUS;
+		myTimeUS = Tcl_GetMonotonicTime();
+		myTime.sec = myTimeUS/1000000;
+		myTime.usec = myTimeUS%1000000;
+	    } else {
+		Tcl_GetTime(&myTime);
+	    }
+	    myBlockTime.sec = firstTimerHandlerPtrCur->time.sec - myTime.sec;
+	    myBlockTime.usec = firstTimerHandlerPtrCur->time.usec - myTime.usec;
+	    if (myBlockTime.usec < 0) {
+		myBlockTime.sec -= 1;
+		myBlockTime.usec += 1000000;
+	    }
+	    if (myBlockTime.sec < 0) {
+		myBlockTime.sec = 0;
+		myBlockTime.usec = 0;
+	    }
+	    if (!blockTimePresent) {
+		blockTime = myBlockTime;
+		blockTimePresent = true;
+	    } else {
+		if (TCL_TIME_BEFORE(myBlockTime, blockTime)) {
+		    blockTime = myBlockTime;
+		}
+	    }
 	}
     } else {
 	return;
@@ -466,31 +683,54 @@ TimerCheckProc(
     Tcl_Time blockTime;
     ThreadSpecificData *tsdPtr = InitTimer();
 
-    if ((flags & TCL_TIMER_EVENTS) && tsdPtr->firstTimerHandlerPtr) {
+    if ((flags & TCL_TIMER_EVENTS) &&
+		(tsdPtr->firstTimerHandlerPtr[timerHandlerMonotonic]
+		|| tsdPtr->firstTimerHandlerPtr[timerHandlerWallclock])) {
+
+	bool queueEvent = false;
 	/*
-	 * Compute the timeout for the next timer on the list.
+	 * Compute the timeout for the next timer on one of the lists.
+	 * Try wallclock and monotonic list.
 	 */
 
-	Tcl_GetTime(&blockTime);
-	blockTime.sec = tsdPtr->firstTimerHandlerPtr->time.sec - blockTime.sec;
-	blockTime.usec = tsdPtr->firstTimerHandlerPtr->time.usec -
-		blockTime.usec;
-	if (blockTime.usec < 0) {
-	    blockTime.sec -= 1;
-	    blockTime.usec += 1000000;
-	}
-	if (blockTime.sec < 0) {
-	    blockTime.sec = 0;
-	    blockTime.usec = 0;
-	}
+	for (int timerHandlerIndex = timerHandlerMonotonic;
+		timerHandlerIndex <= timerHandlerWallclock; timerHandlerIndex++ ) {
+	    TimerHandler *firstTimerHandlerPtrCur;
+	    firstTimerHandlerPtrCur = tsdPtr->firstTimerHandlerPtr[timerHandlerIndex];
+	    if (firstTimerHandlerPtrCur == NULL) {
+		continue;
+	    }
+	    if (timerHandlerIndex == timerHandlerMonotonic) {
+		long long blockTimeUS;
+		blockTimeUS = Tcl_GetMonotonicTime();
+		blockTime.sec = blockTimeUS/1000000;
+		blockTime.usec = blockTimeUS%1000000;
+	    } else {
+		Tcl_GetTime(&blockTime);
+	    }
+	    blockTime.sec = firstTimerHandlerPtrCur->time.sec - blockTime.sec;
+	    blockTime.usec = firstTimerHandlerPtrCur->time.usec -
+		    blockTime.usec;
+	    if (blockTime.usec < 0) {
+		blockTime.sec -= 1;
+		blockTime.usec += 1000000;
+	    }
+	    if (blockTime.sec < 0) {
+		blockTime.sec = 0;
+		blockTime.usec = 0;
+	    }
 
-	/*
-	 * If the first timer has expired, stick an event on the queue.
-	 */
+	    /*
+	     * If the first timer has expired, stick an event on the queue.
+	     */
 
-	if (blockTime.sec == 0 && blockTime.usec == 0 &&
-		!tsdPtr->timerPending) {
-	    tsdPtr->timerPending = 1;
+	    if (blockTime.sec == 0 && blockTime.usec == 0 &&
+		    !tsdPtr->timerPendingQueue[timerHandlerIndex]) {
+		tsdPtr->timerPendingQueue[timerHandlerIndex] = 1;
+		queueEvent = true;
+	    }
+	}
+	if (queueEvent) {
 	    timerEvPtr = (Tcl_Event *)Tcl_Alloc(sizeof(Tcl_Event));
 	    timerEvPtr->proc = TimerHandlerEventProc;
 	    Tcl_QueueEvent(timerEvPtr, TCL_QUEUE_TAIL);
@@ -525,9 +765,6 @@ TimerHandlerEventProc(
     int flags)			/* Flags that indicate what events to handle,
 				 * such as TCL_FILE_EVENTS. */
 {
-    TimerHandler *timerHandlerPtr, **nextPtrPtr;
-    Tcl_Time time;
-    int currentTimerId;
     ThreadSpecificData *tsdPtr = InitTimer();
 
     /*
@@ -565,36 +802,62 @@ TimerHandlerEventProc(
      *	  timers appearing before later ones.
      */
 
-    tsdPtr->timerPending = 0;
-    currentTimerId = tsdPtr->lastTimerId;
-    Tcl_GetTime(&time);
-    while (1) {
-	nextPtrPtr = &tsdPtr->firstTimerHandlerPtr;
-	timerHandlerPtr = tsdPtr->firstTimerHandlerPtr;
-	if (timerHandlerPtr == NULL) {
-	    break;
-	}
+    for (int timerHandlerIndex = timerHandlerMonotonic;
+	    timerHandlerIndex <= timerHandlerWallclock; timerHandlerIndex++ ) {
 
-	if (TCL_TIME_BEFORE(time, timerHandlerPtr->time)) {
-	    break;
+	TimerHandler *timerHandlerPtr, **nextPtrPtr;
+	Tcl_Time time;
+	int currentTimerId;
+
+	if ( !tsdPtr->timerPendingQueue[timerHandlerIndex] ) {
+	    continue;
 	}
+	tsdPtr->timerPendingQueue[timerHandlerIndex] = 0;
 
 	/*
-	 * Bail out if the next timer is of a newer generation.
+	 * As the queues are independent, but the timer ids are used for both,
+	 * its creation time should be compared per queue.
+	 * Thus, use the queues latest id.
 	 */
 
-	if ((currentTimerId - PTR2INT(timerHandlerPtr->token)) < 0) {
-	    break;
+	currentTimerId = tsdPtr->lastTimerIdQueue[timerHandlerIndex];
+
+	if (timerHandlerIndex == timerHandlerMonotonic) {
+	    long long timeUS;
+	    timeUS = Tcl_GetMonotonicTime();
+	    time.sec = timeUS/1000000;
+	    time.usec = timeUS%1000000;
+	} else {
+	    Tcl_GetTime(&time);
 	}
+	while (1) {
+	    nextPtrPtr = &tsdPtr->firstTimerHandlerPtr[timerHandlerIndex];
+	    timerHandlerPtr = tsdPtr->firstTimerHandlerPtr[timerHandlerIndex];
+	    if (timerHandlerPtr == NULL) {
+		break;
+	    }
 
-	/*
-	 * Remove the handler from the queue before invoking it, to avoid
-	 * potential reentrancy problems.
-	 */
+	    if (TCL_TIME_BEFORE(time, timerHandlerPtr->time)) {
+		break;
+	    }
 
-	*nextPtrPtr = timerHandlerPtr->nextPtr;
-	timerHandlerPtr->proc(timerHandlerPtr->clientData);
-	Tcl_Free(timerHandlerPtr);
+	    /*
+	     * Bail out if the next timer is of a newer generation.
+	     */
+
+	    if ((currentTimerId - PTR2INT(timerHandlerPtr->token)) < 0) {
+		break;
+	    }
+
+	    /*
+	     * Remove the handler from the queue before invoking it, to avoid
+	     * potential reentrancy problems.
+	     */
+
+	    *nextPtrPtr = timerHandlerPtr->nextPtr;
+	    timerHandlerPtr->proc(timerHandlerPtr->clientData);
+	    Tcl_Free(timerHandlerPtr);
+	}
     }
     TimerSetupProc(NULL, TCL_TIMER_EVENTS);
     return 1;
@@ -787,33 +1050,17 @@ Tcl_AfterObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_WideInt ms = 0;		/* Number of milliseconds to wait */
-    Tcl_Time wakeup;
-    AfterInfo *afterPtr;
-    AfterAssocData *assocPtr;
-    Tcl_Size length;
     int index = -1;
     static const char *const afterSubCmds[] = {
 	"cancel", "idle", "info", NULL
     };
     enum afterSubCmdsEnum {AFTER_CANCEL, AFTER_IDLE, AFTER_INFO};
-    ThreadSpecificData *tsdPtr = InitTimer();
+    Tcl_Obj *cmdObj;
+    int res;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "option ?arg ...?");
 	return TCL_ERROR;
-    }
-
-    /*
-     * Create the "after" information associated for this interpreter, if it
-     * doesn't already exist.
-     */
-
-    assocPtr = (AfterAssocData *)Tcl_GetAssocData(interp, ASSOC_KEY, NULL);
-    if (assocPtr == NULL) {
-	assocPtr = (AfterAssocData *)Tcl_Alloc(sizeof(AfterAssocData));
-	assocPtr->interp = interp;
-	assocPtr->firstAfterPtr = NULL;
-	Tcl_SetAssocData(interp, ASSOC_KEY, AfterCleanupProc, assocPtr);
     }
 
     /*
@@ -841,12 +1088,47 @@ Tcl_AfterObjCmd(
 
     switch (index) {
     case -1: {
+	AfterInfo *afterPtr;
+	AfterAssocData *assocPtr;
+	ThreadSpecificData *tsdPtr;
+	long long microSeconds;
+
 	if (ms < 0) {
 	    ms = 0;
 	}
-	if (objc == 2) {
-	    return AfterDelay(interp, ms);
+
+	long long wakeupUS;
+	wakeupUS = Tcl_GetMonotonicTime();
+
+	if (ms >= LLONG_MAX / 1000) {
+	    TimeTooFarError(interp);
+	    return TCL_ERROR;
 	}
+	microSeconds = ms * 1000;
+
+	if (LLONG_MAX - microSeconds < wakeupUS) {
+	    TimeTooFarError(interp);
+	    return TCL_ERROR;
+	}
+
+	wakeupUS += microSeconds;
+
+
+	if (objc == 2) {
+
+	    /*
+	     * No command given: wait the given monotonic time.
+	     */
+
+	    return TimerDelayMonotonic(interp, wakeupUS);
+	}
+
+	/*
+	 * Invoke command after given monotonic time distance.
+	 */
+
+	assocPtr = TimerAssocDataGet(interp);
+	tsdPtr = InitTimer();
 	afterPtr = (AfterInfo *)Tcl_Alloc(sizeof(AfterInfo));
 	afterPtr->assocPtr = assocPtr;
 	if (objc == 3) {
@@ -868,119 +1150,58 @@ Tcl_AfterObjCmd(
 
 	afterPtr->id = tsdPtr->afterId;
 	tsdPtr->afterId += 1;
-	Tcl_GetTime(&wakeup);
-	wakeup.sec += ms / 1000;
-	wakeup.usec += (long)ms % 1000 * 1000;
-	if (wakeup.usec > 1000000) {
-	    wakeup.sec++;
-	    wakeup.usec -= 1000000;
-	}
-	afterPtr->token = TclCreateAbsoluteTimerHandler(&wakeup,
+	afterPtr->token = TclCreateMonotonicTimerHandler(wakeupUS,
 		AfterProc, afterPtr);
 	afterPtr->nextPtr = assocPtr->firstAfterPtr;
 	assocPtr->firstAfterPtr = afterPtr;
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf("after#%d", afterPtr->id));
 	return TCL_OK;
     }
-    case AFTER_CANCEL: {
-	Tcl_Obj *commandPtr;
-	const char *command, *tempCommand;
-	Tcl_Size tempLength;
+    case AFTER_CANCEL:
 
 	if (objc < 3) {
-	    Tcl_WrongNumArgs(interp, 2, objv, "id|command");
+	    Tcl_WrongNumArgs(interp, 2, objv, "id|script ?script?");
 	    return TCL_ERROR;
 	}
 	if (objc == 3) {
-	    commandPtr = objv[2];
+	    res = TimerCancelDo(interp, objv[2], false);
 	} else {
-	    commandPtr = Tcl_ConcatObj(objc-2, objv+2);
+	    cmdObj = Tcl_ConcatObj(objc-2, objv+2);
+	    res = TimerCancelDo(interp, cmdObj, false);
+
+	    /*
+	     * When Tcl_ConcatObj was used, the created object is only
+	     * decremented in this case, not in the other 3 cases in this
+	     * function. I don't know why.
+	     */
+
+	    Tcl_DecrRefCount(cmdObj);
 	}
-	command = TclGetStringFromObj(commandPtr, &length);
-	for (afterPtr = assocPtr->firstAfterPtr;  afterPtr != NULL;
-		afterPtr = afterPtr->nextPtr) {
-	    tempCommand = TclGetStringFromObj(afterPtr->commandPtr,
-		    &tempLength);
-	    if ((length == tempLength)
-		    && !memcmp(command, tempCommand, length)) {
-		break;
-	    }
-	}
-	if (afterPtr == NULL) {
-	    afterPtr = GetAfterEvent(assocPtr, commandPtr);
-	}
-	if (objc != 3) {
-	    Tcl_DecrRefCount(commandPtr);
-	}
-	if (afterPtr != NULL) {
-	    if (afterPtr->token != NULL) {
-		Tcl_DeleteTimerHandler(afterPtr->token);
-	    } else {
-		Tcl_CancelIdleCall(AfterProc, afterPtr);
-	    }
-	    FreeAfterPtr(afterPtr);
-	}
-	break;
-    }
+	return res;
     case AFTER_IDLE:
 	if (objc < 3) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "script ?script ...?");
 	    return TCL_ERROR;
 	}
-	afterPtr = (AfterInfo *)Tcl_Alloc(sizeof(AfterInfo));
-	afterPtr->assocPtr = assocPtr;
 	if (objc == 3) {
-	    afterPtr->commandPtr = objv[2];
+	    cmdObj = objv[2];
 	} else {
-	    afterPtr->commandPtr = Tcl_ConcatObj(objc-2, objv+2);
-	}
-	Tcl_IncrRefCount(afterPtr->commandPtr);
-	afterPtr->id = tsdPtr->afterId;
-	tsdPtr->afterId += 1;
-	afterPtr->token = NULL;
-	afterPtr->nextPtr = assocPtr->firstAfterPtr;
-	assocPtr->firstAfterPtr = afterPtr;
-	Tcl_DoWhenIdle(AfterProc, afterPtr);
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf("after#%d", afterPtr->id));
-	break;
-    case AFTER_INFO:
-	if (objc == 2) {
-	    Tcl_Obj *resultObj;
+	    cmdObj = Tcl_ConcatObj(objc-2, objv+2);
 
-	    TclNewObj(resultObj);
-	    for (afterPtr = assocPtr->firstAfterPtr; afterPtr != NULL;
-		    afterPtr = afterPtr->nextPtr) {
-		if (assocPtr->interp == interp) {
-		    Tcl_ListObjAppendElement(NULL, resultObj, Tcl_ObjPrintf(
-			    "after#%d", afterPtr->id));
-		}
-	    }
-	    Tcl_SetObjResult(interp, resultObj);
-	    return TCL_OK;
 	}
-	if (objc != 3) {
+	return TimerIdleDo(interp, cmdObj);
+    case AFTER_INFO:
+	if (objc > 3) {
+
+	    /*
+	     * This is not moved to TimerInfoDo, as otherwise, the
+	     * word "after" is missing in the error message
+	     */
+
 	    Tcl_WrongNumArgs(interp, 2, objv, "?id?");
 	    return TCL_ERROR;
 	}
-	afterPtr = GetAfterEvent(assocPtr, objv[2]);
-	if (afterPtr == NULL) {
-	    const char *eventStr = TclGetString(objv[2]);
-
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "event \"%s\" doesn't exist", eventStr));
-	    Tcl_SetErrorCode(interp, "TCL","LOOKUP","EVENT", eventStr, (char *)NULL);
-	    return TCL_ERROR;
-	} else {
-	    Tcl_Obj *resultListPtr;
-
-	    TclNewObj(resultListPtr);
-	    Tcl_ListObjAppendElement(interp, resultListPtr,
-		    afterPtr->commandPtr);
-	    Tcl_ListObjAppendElement(interp, resultListPtr, Tcl_NewStringObj(
-		    (afterPtr->token == NULL) ? "idle" : "timer", -1));
-	    Tcl_SetObjResult(interp, resultListPtr);
-	}
-	break;
+	return TimerInfoDo(interp, objc-1, objv+1, true);
     default:
 	TCL_UNREACHABLE();
     }
@@ -990,10 +1211,12 @@ Tcl_AfterObjCmd(
 /*
  *----------------------------------------------------------------------
  *
- * AfterDelay --
+ * TimerDelay --
  *
- *	Implements the blocking delay behaviour of [after $time]. Tricky
- *	because it has to take into account any time limit that has been set.
+ *	Implements the blocking delay behaviour of [timer at $time],
+ *	[timer in $delay] and [after $delay].
+ *	Tricky because it has to take into account any time limit that has
+ *	been set.
  *
  * Results:
  *	Standard Tcl result code (with error set if an error occurred due to a
@@ -1006,23 +1229,23 @@ Tcl_AfterObjCmd(
  */
 
 static int
-AfterDelay(
+TimerDelay(
     Tcl_Interp *interp,
-    Tcl_WideInt ms)
+    Tcl_Time endTime)
 {
     Interp *iPtr = (Interp *) interp;
 
-    Tcl_Time endTime, now;
-    Tcl_WideInt diff;
+    Tcl_Time nowLimit;
+    Tcl_Time nowEvent;
+    Tcl_WideInt diff, diffLimit;
+    bool limitDiff;
 
-    Tcl_GetTime(&now);
-    endTime = now;
-    endTime.sec += (ms / 1000);
-    endTime.usec += ((long)ms % 1000) * 1000;
-    if (endTime.usec >= 1000000) {
-	endTime.sec++;
-	endTime.usec -= 1000000;
-    }
+    /*
+     * Interpreter limits are expressed in wallclock time
+     */
+
+    Tcl_GetTime(&nowLimit);
+    nowEvent = nowLimit;
 
     do {
 	if (Tcl_AsyncReady()) {
@@ -1034,37 +1257,66 @@ AfterDelay(
 	    return TCL_ERROR;
 	}
 	if (iPtr->limit.timeEvent != NULL
-		&& TCL_TIME_BEFORE(iPtr->limit.time, now)) {
+		&& TCL_TIME_BEFORE(iPtr->limit.time, nowLimit)) {
 	    iPtr->limit.granularityTicker = 0;
 	    if (Tcl_LimitCheck(interp) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	}
-	if (iPtr->limit.timeEvent == NULL
-		|| TCL_TIME_BEFORE(endTime, iPtr->limit.time)) {
-	    diff = TCL_TIME_DIFF_MS_CEILING(endTime, now);
-	    if (diff > TCL_TIME_MAXIMUM_SLICE) {
-		diff = TCL_TIME_MAXIMUM_SLICE;
+
+	/*
+	 * Find event delay in micro-seconds
+	 */
+
+	diff = TCL_TIME_DIFF_MS_CEILING(endTime, nowEvent);
+
+	/*
+	 * Remember, that the event limit is active
+	 */
+
+	limitDiff = false;
+
+	/*
+	 * Check for interpreter wall clock time limit
+	 */
+
+	if (iPtr->limit.timeEvent != NULL) {
+	    diffLimit = TCL_TIME_DIFF_MS_CEILING(iPtr->limit.time, nowLimit);
+	    if (diffLimit < diff) {
+
+		/*
+		 * Interpreter limit time will fire before the event limit.
+		 * Update waiting time and remember, that the interpreter
+		 * limit was the reason.
+		 */
+
+		diff = diffLimit;
+		limitDiff = true;
 	    }
-	    if (diff == 0 && TCL_TIME_BEFORE(now, endTime)) {
-		diff = 1;
-	    }
-	    if (diff > 0) {
-		Tcl_Sleep((int) diff);
-		if (diff < SLEEP_OFFLOAD_GETTIMEOFDAY) {
-		    break;
-		}
-	    } else {
-		break;
-	    }
-	} else {
-	    diff = TCL_TIME_DIFF_MS(iPtr->limit.time, now);
-	    if (diff > TCL_TIME_MAXIMUM_SLICE) {
-		diff = TCL_TIME_MAXIMUM_SLICE;
-	    }
-	    if (diff > 0) {
-		Tcl_Sleep((int) diff);
-	    }
+	}
+	if (diff > TCL_TIME_MAXIMUM_SLICE) {
+	    diff = TCL_TIME_MAXIMUM_SLICE;
+	}
+
+	/*
+	 * If event timing was overwritten by limit, we wait at least 1ms.
+	 */
+
+	if (diff == 0 && limitDiff) {
+	    diff = 1;
+	}
+
+	if (diff > 0) {
+	    Tcl_Sleep(diff);
+	}
+
+	if (limitDiff) {
+
+	    /*
+	     * Interpreter time limit limited the sleep time.
+	     * Normally, we should exit below for the limit check.
+	     */
+
 	    if (Tcl_AsyncReady()) {
 		if (Tcl_AsyncInvoke(interp, TCL_OK) != TCL_OK) {
 		    return TCL_ERROR;
@@ -1076,9 +1328,175 @@ AfterDelay(
 	    if (Tcl_LimitCheck(interp) != TCL_OK) {
 		return TCL_ERROR;
 	    }
+	} else {
+
+	    /*
+	     * Event limit gave the sleep time.
+	     * Check, if we slept correctly only, if sleep time is above
+	     * this limit.
+	     * This is for performance reasons to not call the time functions
+	     * again below for no gain.
+	     */
+
+	    if (diff < SLEEP_OFFLOAD_GETTIMEOFDAY) {
+		break;
+	    }
 	}
-	Tcl_GetTime(&now);
-    } while (TCL_TIME_BEFORE(now, endTime));
+
+	/*
+	 * We slept. Get new time base, to be compared below.
+	 */
+
+	Tcl_GetTime(&nowLimit);
+	nowEvent = nowLimit;
+
+    } while (TCL_TIME_BEFORE(nowEvent, endTime));
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TimerDelayMonotonic --
+ *
+ *	Implements the blocking delay behaviour of [timer at $time],
+ *	[timer in $delay] and [after $delay].
+ *	Tricky because it has to take into account any time limit that has
+ *	been set.
+ *
+ * Results:
+ *	Standard Tcl result code (with error set if an error occurred due to a
+ *	time limit being exceeded or being canceled).
+ *
+ * Side effects:
+ *	May adjust the time limit granularity marker.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TimerDelayMonotonic(
+    Tcl_Interp *interp,
+    long long endTimeUS)
+{
+    Interp *iPtr = (Interp *) interp;
+
+    Tcl_Time nowLimit;
+    long long nowEventUS;
+    Tcl_WideInt diffUS, diffLimitMS;
+    bool limitDiff;
+
+    /*
+     * Interpreter limits are expressed in wallclock time
+     */
+
+    Tcl_GetTime(&nowLimit);
+    nowEventUS = Tcl_GetMonotonicTime();
+
+    do {
+	if (Tcl_AsyncReady()) {
+	    if (Tcl_AsyncInvoke(interp, TCL_OK) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	}
+	if (Tcl_Canceled(interp, TCL_LEAVE_ERR_MSG) == TCL_ERROR) {
+	    return TCL_ERROR;
+	}
+	if (iPtr->limit.timeEvent != NULL
+		&& TCL_TIME_BEFORE(iPtr->limit.time, nowLimit)) {
+	    iPtr->limit.granularityTicker = 0;
+	    if (Tcl_LimitCheck(interp) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	}
+
+	/*
+	 * Find event delay in micro-seconds
+	 */
+
+	diffUS = endTimeUS - nowEventUS;
+
+	/*
+	 * Remember, that the event limit is active
+	 */
+
+	limitDiff = false;
+
+	/*
+	 * Check for interpreter wall clock time limit
+	 */
+
+	if (iPtr->limit.timeEvent != NULL) {
+	    diffLimitMS = TCL_TIME_DIFF_MS_CEILING(iPtr->limit.time, nowLimit);
+	    if (diffLimitMS*1000 < diffUS) {
+
+		/*
+		 * Interpreter limit time will fire before the event limit.
+		 * Update waiting time and remember, that the interpreter
+		 * limit was the reason.
+		 */
+
+		diffUS = diffLimitMS*1000;
+		limitDiff = true;
+	    }
+	}
+	if (diffUS > TCL_TIME_MAXIMUM_SLICE*1000) {
+	    diffUS = TCL_TIME_MAXIMUM_SLICE*1000;
+	}
+
+	/*
+	 * If event timing was overwritten by limit, we wait at least 1ms.
+	 */
+
+	if (diffUS == 0 && limitDiff) {
+	    diffUS = 1000;
+	}
+
+	if (diffUS > 0) {
+	    Tcl_SleepMicroSeconds(diffUS);
+	}
+
+	if (limitDiff) {
+
+	    /*
+	     * Interpreter time limit limited the sleep time.
+	     * Normally, we should exit below for the limit check.
+	     */
+
+	    if (Tcl_AsyncReady()) {
+		if (Tcl_AsyncInvoke(interp, TCL_OK) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+	    }
+	    if (Tcl_Canceled(interp, TCL_LEAVE_ERR_MSG) == TCL_ERROR) {
+		return TCL_ERROR;
+	    }
+	    if (Tcl_LimitCheck(interp) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	} else {
+
+	    /*
+	     * Event limit gave the sleep time.
+	     * Check, if we slept correctly only, if sleep time is above
+	     * this limit.
+	     * This is for performance reasons to not call the time functions
+	     * again below for no gain.
+	     */
+
+	    if (diffUS < SLEEP_OFFLOAD_GETTIMEOFDAY*1000) {
+		break;
+	    }
+	}
+
+	/*
+	 * We slept. Get new time base, to be compared below.
+	 */
+
+	Tcl_GetTime(&nowLimit);
+	nowEventUS = Tcl_GetMonotonicTime();
+
+    } while ( nowEventUS < endTimeUS);
     return TCL_OK;
 }
 
@@ -1273,6 +1691,854 @@ AfterCleanupProc(
 	Tcl_Free(afterPtr);
     }
     Tcl_Free(assocPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclInitTimerCmd --
+ *
+ *	This function is called to create the "timer" Tcl command. See the
+ *	user documentation for details on what it does.
+ *
+ * Results:
+ *	A command token for the new command.
+ *
+ * Side effects:
+ *	Creates a new timer command as a mapped ensemble.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Command
+TclInitTimerCmd(
+    Tcl_Interp *interp)
+{
+    Tcl_Command timerEnsemble;
+
+    timerEnsemble = TclMakeEnsemble(interp, "timer", timerMap);
+    return timerEnsemble;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ParseTimeUnit --
+ *
+ *	Parse a value and unit time argument and return it as Tcl_Time.
+ *
+ * Results:
+ *	Standard TCL result.
+ *
+ * Side effects:
+ *	On TCL_ERROR, an error message is left in the interpreter.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+ParseTimeUnit(
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int timeIndex,		/* Index of time value in objv. */
+    Tcl_Obj *const objv[],	/* Argument objects. */
+    bool useDefaultUnit,	/* True, if the default unit is used.
+				 * False, if unit object follows the time value */
+    enum unitEnum defaultUnit,	/* Default unit value */
+    long long *wakeupPtr)	/* Output time */
+{
+    Tcl_WideInt timeArg;
+    int unitIndex;
+
+    /*
+     * Get the time point to wait
+     */
+
+    if (TclGetWideIntFromObj(interp, objv[timeIndex], &timeArg) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (timeArg < 0) {
+	timeArg = 0;
+    }
+
+    /*
+     * Get the unit of the time point. Allow abbreviations.
+     */
+
+    if (useDefaultUnit) {
+	unitIndex = defaultUnit;
+    } else {
+	if (Tcl_GetIndexFromObj(interp, objv[timeIndex+1], unitItems, "unit", 0, &unitIndex)
+		!= TCL_OK) {
+	    return TCL_ERROR;
+	}
+    }
+
+    /*
+     * Create time value by applying the unit to the value
+     */
+
+    switch(unitIndex) {
+    case UNIT_MICROSECONDS:
+    case UNIT_US:
+	*wakeupPtr = timeArg;
+	break;
+    case UNIT_MILLISECONDS:
+    case UNIT_MS:
+	if ( timeArg >= LLONG_MAX/1000 ) {
+	    TimeTooFarError(interp);
+	    return TCL_ERROR;
+	}
+	*wakeupPtr = timeArg * 1000;
+	break;
+    default:
+	if ( timeArg >= LLONG_MAX/1000000 ) {
+	    TimeTooFarError(interp);
+	    return TCL_ERROR;
+	}
+	*wakeupPtr = timeArg*1000000;
+	break;
+    }
+    return TCL_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TimerAtCmd --
+ *
+ *	This procedure implements the "timer at" Tcl command.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TimerAtCmd(
+    TCL_UNUSED(void *),		/* Client data. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    long long timeArgUS;
+    Tcl_Time wakeup;
+    AfterInfo *afterPtr;
+    AfterAssocData *assocPtr = TimerAssocDataGet(interp);
+    ThreadSpecificData *tsdPtr = InitTimer();
+
+    if (objc != 4) {
+	Tcl_WrongNumArgs(interp, 0, objv, "timer at time unit script");
+	return TCL_ERROR;
+    }
+
+    if (TCL_OK != ParseTimeUnit(interp, 1, objv, false, UNIT_US, &timeArgUS)) {
+	return TCL_ERROR;
+    }
+
+    wakeup.sec = timeArgUS / 1000000;
+    wakeup.usec = timeArgUS % 1000000;
+
+    afterPtr = (AfterInfo *)Tcl_Alloc(sizeof(AfterInfo));
+    afterPtr->assocPtr = assocPtr;
+    afterPtr->commandPtr = objv[3];
+    Tcl_IncrRefCount(afterPtr->commandPtr);
+
+    /*
+     * The variable below is used to generate unique identifiers for after
+     * commands. This id can wrap around, which can potentially cause
+     * problems. However, there are not likely to be problems in practice,
+     * because after commands can only be requested to about a month in
+     * the future, and wrap-around is unlikely to occur in less than about
+     * 1-10 years. Thus it's unlikely that any old ids will still be
+     * around when wrap-around occurs.
+     */
+
+    afterPtr->id = tsdPtr->afterId;
+    tsdPtr->afterId += 1;
+    afterPtr->token = TclCreateAbsoluteTimerHandler(&wakeup,
+	    AfterProc, afterPtr);
+    afterPtr->nextPtr = assocPtr->firstAfterPtr;
+    assocPtr->firstAfterPtr = afterPtr;
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf("after#%d", afterPtr->id));
+    return TCL_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TimeTooFarError --
+ *
+ *	Set the time too far error in the interpreter.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+TimeTooFarError(
+    Tcl_Interp *interp)		/* Current interpreter. */
+{
+    if (interp != NULL) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"time too far away", -1));
+	Tcl_SetErrorCode(interp, "TCL","TIME","OVERFLOW", (char *)NULL);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TimerInCmd --
+ *
+ *	This procedure implements the "timer in" Tcl command.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TimerInCmd(
+    TCL_UNUSED(void *),		/* Client data. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    long long wakeupArgUS;
+    AfterInfo *afterPtr;
+    AfterAssocData *assocPtr = TimerAssocDataGet(interp);
+    ThreadSpecificData *tsdPtr = InitTimer();
+
+    if (objc != 4) {
+	Tcl_WrongNumArgs(interp, 0, objv, "timer in time unit script");
+	return TCL_ERROR;
+    }
+
+    if (TCL_OK != ParseTimeUnit(interp, 1, objv, false, UNIT_US, &wakeupArgUS)) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Sum current time and time argument
+     */
+
+    long long wakeupUS;
+    wakeupUS = Tcl_GetMonotonicTime();
+
+    if ( LLONG_MAX - wakeupUS < wakeupArgUS ) {
+	TimeTooFarError(interp);
+	return TCL_ERROR;
+    }
+    wakeupUS += wakeupArgUS;
+
+    if (objc < 4) {
+
+	/*
+	 * No script given - just wait the monotonic time
+	 */
+
+	return TimerDelayMonotonic(interp, wakeupUS);
+    }
+
+    afterPtr = (AfterInfo *)Tcl_Alloc(sizeof(AfterInfo));
+    afterPtr->assocPtr = assocPtr;
+    afterPtr->commandPtr = objv[3];
+    Tcl_IncrRefCount(afterPtr->commandPtr);
+
+    /*
+     * The variable below is used to generate unique identifiers for after
+     * commands. This id can wrap around, which can potentially cause
+     * problems. However, there are not likely to be problems in practice,
+     * because after commands can only be requested to about a month in
+     * the future, and wrap-around is unlikely to occur in less than about
+     * 1-10 years. Thus it's unlikely that any old ids will still be
+     * around when wrap-around occurs.
+     */
+
+    afterPtr->id = tsdPtr->afterId;
+    tsdPtr->afterId += 1;
+    afterPtr->token = TclCreateMonotonicTimerHandler(wakeupUS,
+	    AfterProc, afterPtr);
+    afterPtr->nextPtr = assocPtr->firstAfterPtr;
+    assocPtr->firstAfterPtr = afterPtr;
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf("after#%d", afterPtr->id));
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TimerSleepCmd --
+ *
+ *	This procedure implements the "timer sleep" Tcl command.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TimerSleepCmd(
+    TCL_UNUSED(void *),		/* Client data. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    Tcl_Size objc,		/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    long long sleepArgUS;
+    static const char *const sleepOptionItems[] = {
+	    "for", "until", NULL};
+    enum sleepOptionEnum {MODE_FOR, MODE_UNTIL};
+    int optionIndex;
+
+    if (objc < 3 || objc > 4) {
+	Tcl_WrongNumArgs(interp, 0, objv, "timer sleep option time ?unit?");
+	return TCL_ERROR;
+    }
+
+    /*
+     * Get the sleep mode
+     */
+
+    if (Tcl_GetIndexFromObj(interp, objv[1], sleepOptionItems, "option", 1, &optionIndex)
+	    != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Parse the unit. The default unit is milli-seconds for "sleep for"
+     * and seconds for "sleep until".
+     */
+
+    if (TCL_OK != ParseTimeUnit(interp, 2, objv, objc == 3,
+	    optionIndex==MODE_FOR? UNIT_MS: UNIT_S,
+	    &sleepArgUS)) {
+	return TCL_ERROR;
+    }
+
+    switch (optionIndex) {
+	case MODE_FOR:
+	    return TimerSleepForCmd(interp, sleepArgUS);
+	default:
+	    return TimerSleepUntilCmd(interp, sleepArgUS);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TimerSleepForCmd --
+ *
+ *	This procedure implements the "timer sleep for" Tcl command.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TimerSleepForCmd(
+    Tcl_Interp *interp,		/* Current interpreter. */
+    long long sleepArgUS)	/* Sleeping time distance in us. */
+{
+    /*
+     * Sum current time and time argument
+     */
+
+    long long monotonicTimeUS;
+    monotonicTimeUS = Tcl_GetMonotonicTime();
+
+    if ( LLONG_MAX - monotonicTimeUS < sleepArgUS ) {
+	TimeTooFarError(interp);
+	return TCL_ERROR;
+    }
+    monotonicTimeUS += sleepArgUS;
+
+    return TimerDelayMonotonic(interp, monotonicTimeUS);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TimerSleepUntilCmd --
+ *
+ *	This procedure implements the "timer sleep for" Tcl command.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TimerSleepUntilCmd(
+    Tcl_Interp *interp,		/* Current interpreter. */
+    long long timeArgUS)	/* Sleeping time point in us. */
+{
+    Tcl_Time wakeup;
+
+    wakeup.sec = timeArgUS / 1000000;
+    wakeup.usec = timeArgUS % 1000000;
+
+    return TimerDelay(interp, wakeup);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TimerAssocDataGet --
+ *
+ *	Create the "timer/after" information associated for this interpreter,
+ *	if it doesn't already exist.
+ *
+ * Results:
+ *	A pointer to the associated data.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static AfterAssocData *
+TimerAssocDataGet(
+    Tcl_Interp *interp		/* Current interpreter. */
+)
+{
+    AfterAssocData *assocPtr;
+    assocPtr = (AfterAssocData *)Tcl_GetAssocData(interp, ASSOC_KEY, NULL);
+    if (assocPtr == NULL) {
+	assocPtr = (AfterAssocData *)Tcl_Alloc(sizeof(AfterAssocData));
+	assocPtr->interp = interp;
+	assocPtr->firstAfterPtr = NULL;
+	Tcl_SetAssocData(interp, ASSOC_KEY, AfterCleanupProc, assocPtr);
+    }
+    return assocPtr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TimerCancelCmd --
+ *
+ *	This function is invoked to process the "timer cancel" Tcl command.
+ *	See the user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TimerCancelCmd(
+    TCL_UNUSED(void *),		/* Client data. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 0, objv, "timer cancel id|script");
+	return TCL_ERROR;
+    }
+
+    return TimerCancelDo(interp, objv[1], true);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TimerCancelDo --
+ *
+ *	Execute "after cancel" and "timer cancel".
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TimerCancelDo(
+    Tcl_Interp *interp,		/* Current interpreter. */
+    Tcl_Obj *const objArg,	/* Id or command. */
+    bool isTimerCancel)		/* true, if "timer cancel" and not "after cancel" */
+{
+    const char *command, *tempCommand;
+    Tcl_Size tempLength;
+
+    AfterInfo *afterPtr = NULL;
+    AfterAssocData *assocPtr = TimerAssocDataGet(interp);
+    Tcl_Size length;
+
+    /*
+     * "after cancel" also searches for the command name
+     */
+
+    if (! isTimerCancel) {
+	command = TclGetStringFromObj(objArg, &length);
+	for (afterPtr = assocPtr->firstAfterPtr;  afterPtr != NULL;
+		afterPtr = afterPtr->nextPtr) {
+	    tempCommand = TclGetStringFromObj(afterPtr->commandPtr,
+		    &tempLength);
+	    if ((length == tempLength)
+		    && !memcmp(command, tempCommand, length)) {
+		break;
+	    }
+	}
+    }
+
+    /*
+     * Search for the after Id
+     */
+
+    if (afterPtr == NULL) {
+	afterPtr = GetAfterEvent(assocPtr, objArg);
+    }
+
+    /*
+     * Delete the after event if found
+     */
+
+    if (afterPtr != NULL) {
+	if (afterPtr->token != NULL) {
+	    Tcl_DeleteTimerHandler(afterPtr->token);
+	} else {
+	    Tcl_CancelIdleCall(AfterProc, afterPtr);
+	}
+	FreeAfterPtr(afterPtr);
+    }
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TimerIdleCmd --
+ *
+ *	This function is invoked to process the "after/timer idle" Tcl command.
+ *	See the user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TimerIdleCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* Current interpreter. */
+    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 0, objv, "timer idle script");
+	return TCL_ERROR;
+    }
+    return TimerIdleDo(interp, objv[1]);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TimerIdleDo--
+ *
+ *	Execute the "after/timer idle" Tcl command.
+ *	See the user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TimerIdleDo(
+    Tcl_Interp *interp,		/* Current interpreter. */
+    Tcl_Obj *const objCmd)	/* Idle command. */
+{
+    AfterInfo *afterPtr;
+    AfterAssocData *assocPtr = TimerAssocDataGet(interp);
+    ThreadSpecificData *tsdPtr = InitTimer();
+
+    afterPtr = (AfterInfo *)Tcl_Alloc(sizeof(AfterInfo));
+    afterPtr->assocPtr = assocPtr;
+    afterPtr->commandPtr = objCmd;
+    Tcl_IncrRefCount(afterPtr->commandPtr);
+    afterPtr->id = tsdPtr->afterId;
+    tsdPtr->afterId += 1;
+    afterPtr->token = NULL;
+    afterPtr->nextPtr = assocPtr->firstAfterPtr;
+    assocPtr->firstAfterPtr = afterPtr;
+    Tcl_DoWhenIdle(AfterProc, afterPtr);
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf("after#%d", afterPtr->id));
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TimerInfoCmd --
+ *
+ *	This function is invoked to process the "timer info" Tcl command.
+ *	See the user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TimerInfoCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* Current interpreter. */
+    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    return TimerInfoDo(interp, objc, objv, false);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TimerInfoDo --
+ *
+ *	Implement "after info" and "timer info". The argument "isAfter"
+ *	is true, if called from "after info", otherwise false.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TimerInfoDo(
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[],	/* Argument objects. */
+    bool isAfter)
+{
+    AfterInfo *afterPtr;
+    AfterAssocData *assocPtr = TimerAssocDataGet(interp);
+
+    if (objc == 1) {
+	Tcl_Obj *resultObj;
+
+	/*
+	 * Return the list of the IDs
+	 */
+
+	TclNewObj(resultObj);
+	for (afterPtr = assocPtr->firstAfterPtr; afterPtr != NULL;
+		afterPtr = afterPtr->nextPtr) {
+	    if (assocPtr->interp == interp) {
+		Tcl_ListObjAppendElement(NULL, resultObj, Tcl_ObjPrintf(
+			"after#%d", afterPtr->id));
+	    }
+	}
+	Tcl_SetObjResult(interp, resultObj);
+	return TCL_OK;
+    }
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 0, objv, "timer info ?id?");
+	return TCL_ERROR;
+    }
+
+    /*
+     * Return information on the given event id string
+     */
+
+    afterPtr = GetAfterEvent(assocPtr, objv[1]);
+    if (afterPtr == NULL) {
+	const char *eventStr = TclGetString(objv[1]);
+
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"event \"%s\" doesn't exist", eventStr));
+	Tcl_SetErrorCode(interp, "TCL","LOOKUP","EVENT", eventStr, (char *)NULL);
+	return TCL_ERROR;
+    }
+
+    Tcl_Obj *resultListPtr;
+
+    TclNewObj(resultListPtr);
+    Tcl_ListObjAppendElement(interp, resultListPtr,
+	    afterPtr->commandPtr);
+    if (NULL == afterPtr->token) {
+
+	/*
+	 * Type: idle: the return value is identical for "after info"
+	 * and "timer info"
+	 */
+
+	Tcl_ListObjAppendElement(interp, resultListPtr,
+		Tcl_NewStringObj("idle", -1));
+    } else {
+
+	/*
+	 * wall clock and monotonic timers have different return values for
+	 * after info or timer info:
+	 * after info: Cmd "timer"
+	 * timer info: Cmd "monotonic/real" us
+	 */
+
+	if (isAfter) {
+	    Tcl_ListObjAppendElement(interp, resultListPtr,
+		    Tcl_NewStringObj("timer", -1));
+	} else {
+
+	    Tcl_WideInt time;
+	    bool found = false;
+	    TimerHandler *timerHandlerPtr;
+	    ThreadSpecificData *tsdPtr = InitTimer();
+
+	    /*
+	     * Walk through the queues to find this token
+	     */
+
+	    for (int timerHandlerIndex = timerHandlerMonotonic;
+		    timerHandlerIndex <=timerHandlerWallclock && ! found;
+		    timerHandlerIndex++) {
+		timerHandlerPtr = tsdPtr->firstTimerHandlerPtr[timerHandlerIndex];
+		while (timerHandlerPtr != NULL) {
+		    if (timerHandlerPtr->token == afterPtr->token) {
+			Tcl_ListObjAppendElement(interp, resultListPtr,
+				Tcl_NewStringObj(
+				    (timerHandlerIndex == timerHandlerMonotonic ?
+				    "monotonic":"wallclock")
+				    , -1));
+
+			if (timerHandlerPtr->time.sec >= LLONG_MAX/1000000) {
+			    TimeTooFarError(interp);
+			    return TCL_ERROR;
+			}
+			time = timerHandlerPtr->time.sec*1000000;
+			if ( time > LLONG_MAX - timerHandlerPtr->time.usec ) {
+			    TimeTooFarError(interp);
+			    return TCL_ERROR;
+			}
+			time += timerHandlerPtr->time.usec;
+			Tcl_ListObjAppendElement(interp, resultListPtr,
+				Tcl_NewWideIntObj(time));
+			found = true;
+			break;
+		    }
+		}
+	    }
+
+	    if (! found ) {
+		/*
+		 * Token not found -> this should not happen
+		 */
+
+		Tcl_Panic("Timer token not fount!");
+	    }
+
+	}
+    }
+    Tcl_SetObjResult(interp, resultListPtr);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_SetTimeProc --
+ *
+ *	TIP #233 (Virtualized Time): Registers two handlers for the
+ *	virtualization of Tcl's access to time information.
+ *	Not supported, so call panic.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Remembers the handlers, alters core behaviour.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_SetTimeProc(
+    TCL_UNUSED(Tcl_GetTimeProc *),
+    TCL_UNUSED(Tcl_ScaleTimeProc *),
+    TCL_UNUSED(void *))
+{
+    Tcl_Panic("Tcl_SetTimeProc is not supported in TCL 9.1");
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_QueryTimeProc --
+ *
+ *	TIP #233 (Virtualized Time): Query which time handlers are registered.
+ *	Not supported, so call panic.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_QueryTimeProc(
+    TCL_UNUSED(Tcl_GetTimeProc **),
+    TCL_UNUSED(Tcl_ScaleTimeProc **),
+    TCL_UNUSED(void **))
+{
+    Tcl_Panic("Tcl_QueryTimeProc is not supported in TCL 9.1");
 }
 
 /*

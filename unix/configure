@@ -4426,6 +4426,54 @@ then :
   LIBS="$LIBS -linet"
 fi
 
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for clock_gettime in -lrt" >&5
+printf %s "checking for clock_gettime in -lrt... " >&6; }
+if test ${ac_cv_lib_rt_clock_gettime+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) ac_check_lib_save_LIBS=$LIBS
+LIBS="-lrt  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.
+   The 'extern "C"' is for builds by C++ compilers;
+   although this is not generally supported in C code supporting it here
+   has little cost and some practical benefit (sr 110532).  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char clock_gettime (void);
+int
+main (void)
+{
+return clock_gettime ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_lib_rt_clock_gettime=yes
+else case e in #(
+  e) ac_cv_lib_rt_clock_gettime=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_rt_clock_gettime" >&5
+printf "%s\n" "$ac_cv_lib_rt_clock_gettime" >&6; }
+if test "x$ac_cv_lib_rt_clock_gettime" = xyes
+then :
+  LIBS="$LIBS -lrt"
+fi
+
     ac_fn_c_check_header_compile "$LINENO" "net/errno.h" "ac_cv_header_net_errno_h" "$ac_includes_default"
 if test "x$ac_cv_header_net_errno_h" = xyes
 then :
@@ -4899,6 +4947,12 @@ ac_fn_c_check_func "$LINENO" "pthread_atfork" "ac_cv_func_pthread_atfork"
 if test "x$ac_cv_func_pthread_atfork" = xyes
 then :
   printf "%s\n" "#define HAVE_PTHREAD_ATFORK 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "clock_gettime" "ac_cv_func_clock_gettime"
+if test "x$ac_cv_func_clock_gettime" = xyes
+then :
+  printf "%s\n" "#define HAVE_CLOCK_GETTIME 1" >>confdefs.h
 
 fi
 

@@ -3104,13 +3104,10 @@ MODULE_SCOPE const char *TclEncodingProfileIdToName(Tcl_Interp *interp,
 MODULE_SCOPE void	TclGetEncodingProfiles(Tcl_Interp *interp);
 
 /*
- * TIP #233 (Virtualized Time)
- * Data for the time hooks, if any.
+ * TIP #723 (Monotonic Time)
  */
 
-MODULE_SCOPE Tcl_GetTimeProc *tclGetTimeProcPtr;
-MODULE_SCOPE Tcl_ScaleTimeProc *tclScaleTimeProcPtr;
-MODULE_SCOPE void *tclTimeClientData;
+MODULE_SCOPE Tcl_GetMonotonicTimeProc *tclGetMonotonicTimeProcPtr;
 
 /*
  * Variables denoting the Tcl object types defined in the core.
@@ -3292,7 +3289,8 @@ enum ClockOps {
     CLOCK_READ_CLICKS = 0,	/* Read the click counter. */
     CLOCK_READ_MICROS = 1,	/* Time in microseconds. */
     CLOCK_READ_MILLIS = 2,	/* Time in milliseconds. */
-    CLOCK_READ_SECS = 3		/* Time in seconds. */
+    CLOCK_READ_SECS = 3,	/* Time in seconds. */
+    CLOCK_READ_MONOTONIC = 4	/* Time in monotonic microseconds. */
 };
 
 /*
@@ -3774,7 +3772,10 @@ MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_ConcatObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_ConstObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_ContinueObjCmd;
 MODULE_SCOPE Tcl_TimerToken TclCreateAbsoluteTimerHandler(
-			    Tcl_Time *timePtr, Tcl_TimerProc *proc,
+			    Tcl_Time *time, Tcl_TimerProc *proc,
+			    void *clientData);
+MODULE_SCOPE Tcl_TimerToken TclCreateMonotonicTimerHandler(
+			    long long timeUS, Tcl_TimerProc *proc,
 			    void *clientData);
 MODULE_SCOPE Tcl_ObjCmdProc2 TclDefaultBgErrorHandlerObjCmd;
 MODULE_SCOPE int	TclDictWithFinish(Tcl_Interp *interp, Var *varPtr,
@@ -3785,6 +3786,7 @@ MODULE_SCOPE Tcl_Obj *	TclDictWithInit(Tcl_Interp *interp, Tcl_Obj *dictPtr,
 			    Tcl_Size pathc, Tcl_Obj *const pathv[]);
 MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_DisassembleObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc2 TclLoadIcuObjCmd;
+MODULE_SCOPE Tcl_Command TclInitTimerCmd(Tcl_Interp *interp);
 
 /* Assemble command function */
 MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_AssembleObjCmd;
@@ -4192,37 +4194,6 @@ MODULE_SCOPE int	TclListLimitExceededError(Tcl_Interp *interp);
 /* Constants used in index value encoding routines. */
 #define TCL_INDEX_END	((Tcl_Size)-2)
 #define TCL_INDEX_START	((Tcl_Size)0)
-
-/*
- *----------------------------------------------------------------------
- *
- * TclScaleTime --
- *
- *	TIP #233 (Virtualized Time): Wrapper around the time virutalisation
- *	rescale function to hide the binding of the clientData.
- *
- *	This is static inline code; it's like a macro, but a function. It's
- *	used because this is a piece of code that ends up in places that are a
- *	bit performance sensitive.
- *
- * Results:
- *	None
- *
- * Side effects:
- *	Updates the time structure (given as an argument) with what the time
- *	should be after virtualisation.
- *
- *----------------------------------------------------------------------
- */
-
-static inline void
-TclScaleTime(
-    Tcl_Time *timePtr)
-{
-    if (timePtr != NULL) {
-	tclScaleTimeProcPtr(timePtr, tclTimeClientData);
-    }
-}
 
 /*
  *----------------------------------------------------------------
