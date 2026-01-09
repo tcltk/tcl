@@ -9,7 +9,7 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_CreateTimerHandler, Tcl_DeleteTimerHandler \- call a procedure at a given time
+Tcl_CreateTimerHandler, TclCreateTimerHandlerMicroSeconds, Tcl_DeleteTimerHandler \- call a procedure at a given time
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -17,10 +17,15 @@ Tcl_CreateTimerHandler, Tcl_DeleteTimerHandler \- call a procedure at a given ti
 Tcl_TimerToken
 \fBTcl_CreateTimerHandler\fR(\fImilliseconds, proc, clientData\fR)
 .sp
+Tcl_TimerToken
+\fBTcl_CreateTimerHandlerMicroSeconds\fR(\fImicroseconds, proc, clientData\fR)
+.sp
 \fBTcl_DeleteTimerHandler\fR(\fItoken\fR)
 .fi
 .SH ARGUMENTS
 .AS Tcl_TimerToken milliseconds
+.AP long_long microseconds  in
+How many microseconds to wait before invoking \fIproc\fR.
 .AP int milliseconds  in
 How many milliseconds to wait before invoking \fIproc\fR.
 .AP Tcl_TimerProc *proc in
@@ -36,12 +41,15 @@ from some previous call to \fBTcl_CreateTimerHandler\fR).
 \fBTcl_CreateTimerHandler\fR arranges for \fIproc\fR to be
 invoked at a time \fImilliseconds\fR milliseconds in the
 future.
+\fBTcl_CreateTimerHandlerMicroseconds\fR arranges for \fIproc\fR to be
+invoked at a time \fImicroseconds\fR microseconds in the
+future.
 The callback to \fIproc\fR will be made by \fBTcl_DoOneEvent\fR,
 so \fBTcl_CreateTimerHandler\fR is only useful in programs that
 dispatch events through \fBTcl_DoOneEvent\fR or through Tcl commands
 such as \fBvwait\fR.
 The call to \fIproc\fR may not be made at the exact time given by
-\fImilliseconds\fR:  it will be made at the next opportunity
+the parameter:  it will be made at the next opportunity
 after that time.  For example, if \fBTcl_DoOneEvent\fR is not
 called until long after the time has elapsed, or if there
 are other pending events to process before the call to
@@ -61,6 +69,12 @@ copy of the \fIclientData\fR argument given to
 was created.  Typically, \fIclientData\fR points to a data
 structure containing application-specific information about
 what to do in \fIproc\fR.
+.PP
+Both functions return a \fBtolken\fR.
+In case of \fBTcl_CreateTimerHandlerMicroSeconds\fR, the return value is \fBNULL\fR,
+if the given time interval is to much in the future and may not be
+represented. This is a theoretical case, as it is in around 26 thousand years.
+\fBTcl_CreateTimerHandler\fR does not check for overflow and never returns \fBNULL\fR.
 .PP
 \fBTcl_DeleteTimerHandler\fR may be called to delete a
 previously created timer handler.  It deletes the handler

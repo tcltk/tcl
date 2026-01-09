@@ -3855,10 +3855,10 @@ TclDictWithFinish(
 				 * parameter is >= 0 */
     Tcl_Obj *part2Ptr,		/* If non-NULL, gives the name of an element
 				 * in the array part1. */
-    Tcl_Size index,			/* Index into the local variable table of the
+    Tcl_Size index,		/* Index into the local variable table of the
 				 * variable, or -1. Only used when part1Ptr is
 				 * NULL. */
-    Tcl_Size pathc,			/* The number of elements in the path into the
+    Tcl_Size pathc,		/* The number of elements in the path into the
 				 * dictionary. */
     Tcl_Obj *const pathv[],	/* The elements of the path to the subdict. */
     Tcl_Obj *keysPtr)		/* List of keys to be synchronized. This is

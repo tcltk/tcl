@@ -12,6 +12,7 @@
  */
 
 #include "tclInt.h"
+#include <assert.h>
 
 /*
  * A pointer to a string that holds an initialization script that if non-NULL
@@ -279,6 +280,10 @@ static void		MakeSafe(Tcl_Interp *interp);
 static void		RunLimitHandlers(LimitHandler *handlerPtr,
 			    Tcl_Interp *interp);
 static void		TimeLimitCallback(void *clientData);
+static int		RunPreInitScript(Tcl_Interp *interp);
+static Tcl_Obj *	LocatePreInitScript(Tcl_Interp *interp);
+static Tcl_ObjCmdProc	InitAutoPathObjCmd;
+#define INIT_AUTO_PATH_CMD "::tcl::InitAutoPath"
 
 /* NRE enabling */
 static Tcl_NRPostProc	NRPostInvokeHidden;
@@ -311,6 +316,385 @@ Tcl_SetPreInitScript(
     return prevString;
 }
 
+/*
+ * CheckForFileInDir --
+ *
+ * Little helper to check if a file exists within a directory and is readable.
+ *
+ * Results:
+ *	Returns path to the file if it exists, NULL if not. Reference count
+ *	of returned Tcl_Obj is incremented before returning to account for the
+ *      caller owning a reference.
+ */
+static Tcl_Obj *
+CheckForFileInDir(
+    Tcl_Obj *dirPathPtr,
+    Tcl_Obj *fileNamePtr)
+{
+    Tcl_Obj *path[2];
+    path[0] = dirPathPtr;
+    path[1] = fileNamePtr;
+    Tcl_Obj *fullPathPtr = TclJoinPath(2, path, 0);
+    Tcl_IncrRefCount(fullPathPtr);
+    if (Tcl_FSAccess(fullPathPtr, R_OK) == 0) {
+	return fullPathPtr;
+    }
+    Tcl_DecrRefCount(fullPathPtr);
+    return NULL;
+}
+
+/*
+ * LocatePreInitScript --
+ *
+ *	Locates the Tcl initialization script, "init.tcl".
+ *
+ * Results:
+ *	Returns a Tcl_Obj containing the path or NULL if not found.
+ *	Reference count of returned Tcl_Obj is incremented before returning
+ *	to account for the caller owning a reference.
+ *
+ * Side effects:
+ *	Sets the tcl_library variable to the directory containing init.tcl.
+ */
+Tcl_Obj *
+LocatePreInitScript(Tcl_Interp *interp)
+{
+    /*
+     * The search order for the init.tcl is as follows:
+     *
+     * $tcl_library -
+     * Can specify a primary location, if set, no other locations will be
+     * checked. This is the recommended way for a program that embeds Tcl
+     * to specifically tell Tcl where to find an init.tcl file.
+     *
+     * $env(TCL_LIBRARY) -
+     * Highest priority so user can always override the search path unless
+     * the application has specified an exact directory above
+     *
+     * $tclDefaultLibrary -
+     * INTERNAL: This variable is set by Tcl on those platforms where it
+     * can determine at runtime the directory where it expects the init.tcl
+     * file to be. If set, this value is unset after use. External users of
+     * Tcl should not make use of the variable to customize this function.
+     *
+     * [tcl::pkgconfig get scriptdir,runtime] -
+     * The directory determined by configure to be the place where Tcl's
+     * script library is to be installed.
+     *
+     * ancestor directories of the executable -
+     * The lib and library subdirectories of the parent and grand-parent
+     * directories of the directory containing the executable.
+     *
+     * The first directory on this path that contains a init.tcl script
+     * will be set as the value of tcl_library and the init.tcl file sourced.
+     *
+     * Note the following differences from Tcl 9.0 where this functionality
+     * was implemented as a Tcl script.
+     *
+     * - the $tcl_libPath variable is no longer used. It was maked OBSOLETE
+     *   and not supposed to be used. Applications that embed Tcl and want
+     *   to customize should set tcl_library or call Tcl_PreInitScript
+     *   instead.
+     */
+
+    Tcl_Obj *dirPtr;
+    Tcl_Obj *searchedDirs;
+    Tcl_Obj *initScriptPathPtr = NULL;
+    Tcl_Obj *pathParts[3] = {NULL, NULL, NULL};
+
+    /*
+     * Need to track checked directories for error reporting. As a side
+     * benefit, because they are tracked here we can keep overwriting dirPtr
+     * without leaking memory.
+     */
+    searchedDirs = Tcl_NewListObj(0, NULL);
+
+    Tcl_Obj *initNamePtr = Tcl_NewStringObj("init.tcl", 8);
+    Tcl_IncrRefCount(initNamePtr);
+
+    /*
+     * Would be more elegant to use a loop over possible paths and check
+     * file existence in the body but that means paths that never get used
+     * are constructed. Instead we use a macro to reduce code duplication.
+     */
+#define TRY_PATH(dirarg_)                                         \
+    do {                                                          \
+	dirPtr = (dirarg_);                                       \
+	if (dirPtr) {                                             \
+	    Tcl_ListObjAppendElement(NULL, searchedDirs, dirPtr); \
+	    /* Tcl_IsEmpty check - bug 465d4546e2 */              \
+	    if (!Tcl_IsEmpty(dirPtr)) {                           \
+		initScriptPathPtr =                               \
+		    CheckForFileInDir(dirPtr, initNamePtr);       \
+		if (initScriptPathPtr != NULL) {                  \
+		    goto done;                                    \
+		}                                                 \
+	    }                                                     \
+	}                                                         \
+    } while (0)
+
+    TRY_PATH(Tcl_GetVar2Ex(interp, "tcl_library", NULL, TCL_GLOBAL_ONLY));
+    if (dirPtr && !Tcl_IsEmpty(dirPtr)) {
+	/* Do not look further irrespective of whether init.tcl was found. */
+	goto done;
+    }
+
+    TRY_PATH(Tcl_GetVar2Ex(interp, "env", "TCL_LIBRARY", TCL_GLOBAL_ONLY));
+    if (dirPtr && !Tcl_IsEmpty(dirPtr)) {
+	/* Do not look further irrespective of whether init.tcl was found. */
+	goto done;
+    }
+
+    TRY_PATH(TclZipfs_TclLibrary());
+
+    TRY_PATH(Tcl_GetVar2Ex(interp, "tclDefaultLibrary", NULL, TCL_GLOBAL_ONLY));
+    /* tcl::pkgconfig get scriptdir,runtime */
+#ifdef CFG_RUNTIME_SCRDIR
+	TRY_PATH(Tcl_NewStringObj(CFG_RUNTIME_SCRDIR, -1));
+#endif
+
+    assert(initScriptPathPtr == NULL);
+
+    /* Try parent/lib/tclVERSION */
+
+    /* Reminder - TclGetObjNameOfExecutable return need not be released */
+    Tcl_Obj *exePtr = TclGetObjNameOfExecutable();
+    if (exePtr == NULL) {
+	goto done;
+    }
+    Tcl_Obj *exeDirPtr = TclPathPart(interp, exePtr, TCL_PATH_DIRNAME);
+    if (exeDirPtr == NULL) {
+	goto done;
+    }
+    /*
+     * pathParts[0] is the parent of the directory containing the
+     * executable (i.e. "parent" in the above comment).
+     */
+    pathParts[0] = TclPathPart(interp, exeDirPtr, TCL_PATH_DIRNAME);
+    Tcl_DecrRefCount(exeDirPtr);
+    /*
+     * Note: pathParts[] freed at function end. TclPathPart returns
+     * Tcl_Obj with ref count incremented so do not incr ref pathParts[0] here.
+     */
+    if (pathParts[0] == NULL) {
+	goto done;
+    }
+
+    pathParts[1] = Tcl_NewStringObj("lib", 3);
+    Tcl_IncrRefCount(pathParts[1]);
+    pathParts[2] = Tcl_NewStringObj("tcl" TCL_VERSION, -1);
+    Tcl_IncrRefCount(pathParts[2]);
+
+    TRY_PATH(TclJoinPath(3, pathParts, 0));
+
+done: /* initScriptPtr != NULL => dirPtr holds dir of init.tcl */
+    if (initScriptPathPtr == NULL) {
+	Tcl_SetObjResult(interp,
+	    Tcl_ObjPrintf(
+		"Cannot find a usable init.tcl in the following directories: \n"
+		"    %s\n\n"
+		"This probably means that Tcl wasn't installed properly.\n",
+		Tcl_GetString(searchedDirs)));
+    } else {
+	Tcl_SetVar2Ex(interp, "tcl_library", NULL, dirPtr, TCL_GLOBAL_ONLY);
+    }
+    if (initNamePtr != NULL) {
+	Tcl_DecrRefCount(initNamePtr);
+    }
+    for (size_t i = 0; i < sizeof(pathParts)/sizeof(pathParts[0]); i++) {
+	if (pathParts[i] != NULL) {
+	    Tcl_DecrRefCount(pathParts[i]);
+	}
+    }
+    /* Note all examined dirPtr values get freed with searchedDirs */
+    Tcl_DecrRefCount(searchedDirs);
+    return initScriptPathPtr;
+#undef TRY_PATH
+}
+
+/*
+ * RunPreInitScript --
+ *
+ *	Locates and invokes the Tcl initialization script, "init.tcl".
+ *
+ * Results:
+ *	Returns a standard Tcl completion code.
+ *
+ * Side effects:
+ *	Pretty much anything, depending on the contents of the script.
+ */
+int
+RunPreInitScript(Tcl_Interp *interp)
+{
+    /*
+     * Note the following differences from 9.0. If a init.tcl is found and
+     * sourced, further directories are NOT searched even if the init.tcl
+     * sourcing raised errors. This is by design as it is indicative of some
+     * configuration error and attempting a fix through trial and error is
+     * not a robust solution.
+     *
+     * Further, this search mechanism cannot be bypassed by defining an
+     * alternate tclInit command before calling Tcl_Init() as was the case
+     * in Tcl 9.0. Use the Tcl_SetPreInitScript function to instead.
+     */
+    Tcl_Obj *initScriptPathPtr = LocatePreInitScript(interp);
+    /* Note initScriptPathPtr reference count already incremented */
+    if (initScriptPathPtr == NULL) {
+	return TCL_ERROR;
+    }
+    int result = Tcl_FSEvalFile(interp, initScriptPathPtr);
+    Tcl_DecrRefCount(initScriptPathPtr);
+    if (result != TCL_OK) {
+	Tcl_ObjPrintf("Error sourcing Tcl initialization script from %s:\n%s",
+	    Tcl_GetString(initScriptPathPtr),
+	    Tcl_GetString(Tcl_GetObjResult(interp)));
+    }
+    return result;
+}
+
+int
+AddPathsInVarToList(
+	Tcl_Interp *interp,
+	const char *name1,
+	const char *name2,
+	Tcl_Obj *toListPtr,
+	int doTildeExpand
+)
+{
+    Tcl_Obj **elems;
+    Tcl_Size nelems;
+    Tcl_Obj *fromListPtr= Tcl_GetVar2Ex(interp, name1, name2, TCL_GLOBAL_ONLY);
+    if (fromListPtr) {
+	if (TclListObjGetElements(interp, fromListPtr, &nelems, &elems) !=
+	    TCL_OK) {
+	    return TCL_ERROR;
+	}
+	for (Tcl_Size i = 0; i < nelems; ++i) {
+	    Tcl_Obj *pathPtr = elems[i];
+	    if (doTildeExpand) {
+		pathPtr = TclResolveTildePath(NULL, pathPtr);
+		if (pathPtr == NULL) {
+		    continue;
+		}
+	    }
+            /* Note: TclListObjAppendIfAbsent handles 0 and non-0 ref counts */
+	    if (TclListObjAppendIfAbsent(interp, toListPtr, pathPtr) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	}
+    }
+    return TCL_OK;
+}
+
+/*
+ * InitAutoPathObjCmd --
+ *
+ *	Initializes the auto_path variable in an interpreter. In safe interps,
+ *	it is set to empty. In unsafe interps, the following are added to it
+ *
+ *	- If auto_path does not exist, it is initialized with the content
+ *	  of the TCLLIBPATH environment variable with tilde expansion
+ *	- The tcl_library directory and its parent
+ *	- The lib subdirectory in the parent directory of the directory
+ *	  containing the executable
+ *	- The elements of tcl_pkgPath
+ *
+ *	The function also adds the encoding subdirectory of tcl_library
+ *	to the encodings search path if not already present.
+ *
+ * Results:
+ *	A standard Tcl result.
+ */
+int
+InitAutoPathObjCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument vector. */
+{
+    if (objc != 1) {
+	Tcl_WrongNumArgs(interp, 1, objv, "");
+	return TCL_ERROR;
+    }
+    Tcl_Obj *autoPathPtr;
+
+    autoPathPtr = Tcl_GetVar2Ex(interp, "auto_path", NULL, TCL_GLOBAL_ONLY);
+
+    /* Safe interps get empty auto_path if it does not exist. */
+    if (Tcl_IsSafe(interp)) {
+	if (autoPathPtr == NULL) {
+	    Tcl_SetVar2Ex(interp, "auto_path", NULL, Tcl_NewObj(),
+		TCL_GLOBAL_ONLY);
+	}
+	return TCL_OK;
+    }
+
+    /*
+     * Paths are added only if they do not exist. N**2 complexity but lengths
+     * should be short so not worth hashed lookups.
+     */
+
+    int result;
+
+    /* Initialize from TCLLIBPATH only if auto_path did not already exist */
+    if (autoPathPtr == NULL) {
+	autoPathPtr = Tcl_NewObj();
+	if (AddPathsInVarToList(interp, "env", "TCLLIBPATH", autoPathPtr, 1) != TCL_OK) {
+	    Tcl_DecrRefCount(autoPathPtr);
+	    return TCL_ERROR;
+	}
+    }
+
+    /* tcl_library and its parent */
+    Tcl_Obj *objPtr =
+	Tcl_GetVar2Ex(interp, "tcl_library", NULL, TCL_GLOBAL_ONLY);
+    if (objPtr) {
+	if (TclListObjAppendIfAbsent(interp, autoPathPtr, objPtr) != TCL_OK) {
+	    Tcl_DecrRefCount(autoPathPtr);
+	    return TCL_ERROR;
+	}
+	objPtr = TclPathPart(interp, objPtr, TCL_PATH_DIRNAME);
+	if (objPtr) {
+	    result = TclListObjAppendIfAbsent(interp, autoPathPtr, objPtr);
+	    Tcl_DecrRefCount(objPtr); /* TclPathPart returns a reference */
+	    if (result != TCL_OK) {
+		Tcl_DecrRefCount(autoPathPtr);
+		return TCL_ERROR;
+	    }
+	}
+    }
+
+    /* parent/lib */
+    Tcl_Obj *dirs[3] = {NULL, NULL, NULL}; /* exedir, exedirparent, lib */
+    Tcl_Size dirCount = TclGetObjExecutableAncestors(interp, 2, dirs);
+    if (dirCount == 2) {
+	assert(dirs[1]);
+	dirs[2] = Tcl_NewStringObj("lib", 3);
+	Tcl_IncrRefCount(dirs[2]);
+	objPtr = TclJoinPath(2, &dirs[1], 0);
+	if (objPtr != NULL) {
+            /* Note: TclListObjAppendIfAbsent handles 0 and non-0 ref counts */
+	    (void) TclListObjAppendIfAbsent(NULL, autoPathPtr, objPtr);
+	}
+    }
+    for (size_t i = 0; i < sizeof(dirs) / sizeof(dirs[0]); ++i) {
+	if (dirs[i] != NULL) {
+	    Tcl_DecrRefCount(dirs[i]);
+	}
+    }
+
+    /* tcl_pkgPath. Errors ignored like original. Note no tildeexpand */
+    (void) AddPathsInVarToList(interp, "tcl_pkgPath", NULL, autoPathPtr, 0);
+    autoPathPtr =
+	Tcl_SetVar2Ex(interp, "auto_path", NULL, autoPathPtr, TCL_GLOBAL_ONLY);
+    if (autoPathPtr) {
+	Tcl_SetObjResult(interp, autoPathPtr);
+	return TCL_OK;
+    } else {
+	return TCL_ERROR;
+    }
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -359,114 +743,7 @@ Tcl_Init(
 	}
     }
 
-    /*
-     * In order to find init.tcl during initialization, the following script
-     * is invoked by Tcl_Init(). It looks in several different directories:
-     *
-     *	$tcl_library		- can specify a primary location, if set, no
-     *				  other locations will be checked. This is the
-     *				  recommended way for a program that embeds
-     *				  Tcl to specifically tell Tcl where to find
-     *				  an init.tcl file.
-     *
-     *	$env(TCL_LIBRARY)	- highest priority so user can always override
-     *				  the search path unless the application has
-     *				  specified an exact directory above
-     *
-     *	$tclDefaultLibrary	- INTERNAL: This variable is set by Tcl on
-     *				  those platforms where it can determine at
-     *				  runtime the directory where it expects the
-     *				  init.tcl file to be. After [tclInit] reads
-     *				  and uses this value, it [unset]s it.
-     *				  External users of Tcl should not make use of
-     *				  the variable to customize [tclInit].
-     *
-     *	$tcl_libPath		- OBSOLETE: This variable is no longer set by
-     *				  Tcl itself, but [tclInit] examines it in
-     *				  case some program that embeds Tcl is
-     *				  customizing [tclInit] by setting this
-     *				  variable to a list of directories in which
-     *				  to search.
-     *
-     *	[tcl::pkgconfig get scriptdir,runtime]
-     *				- the directory determined by configure to be
-     *				  the place where Tcl's script library is to
-     *				  be installed.
-     *
-     * The first directory on this path that contains a valid init.tcl script
-     * will be set as the value of tcl_library.
-     *
-     * Note that this entire search mechanism can be bypassed by defining an
-     * alternate tclInit command before calling Tcl_Init().
-     */
-
-    result = Tcl_EvalEx(interp,
-"if {[namespace which -command tclInit] eq \"\"} {\n"
-"  proc tclInit {} {\n"
-"    global tcl_libPath tcl_library env tclDefaultLibrary\n"
-"    rename tclInit {}\n"
-"    if {[info exists tcl_library]} {\n"
-"	set scripts {{set tcl_library}}\n"
-"    } else {\n"
-"	set scripts {}\n"
-"	if {[info exists env(TCL_LIBRARY)] && ($env(TCL_LIBRARY) ne {})} {\n"
-"	    lappend scripts {set env(TCL_LIBRARY)}\n"
-"	    lappend scripts {\n"
-"if {[regexp ^tcl(.*)$ [file tail $env(TCL_LIBRARY)] -> tail] == 0} continue\n"
-"if {$tail eq [info tclversion]} continue\n"
-"file join [file dirname $env(TCL_LIBRARY)] tcl[info tclversion]}\n"
-"	}\n"
-"	lappend scripts {::tcl::zipfs::tcl_library_init}\n"
-"	if {[info exists tclDefaultLibrary]} {\n"
-"	    lappend scripts {set tclDefaultLibrary}\n"
-"	} else {\n"
-"	    lappend scripts {::tcl::pkgconfig get scriptdir,runtime}\n"
-"	}\n"
-"	lappend scripts {\n"
-"set parentDir [file dirname [file dirname [info nameofexecutable]]]\n"
-"set grandParentDir [file dirname $parentDir]\n"
-"file join $parentDir lib tcl[info tclversion]} \\\n"
-"	{file join $grandParentDir lib tcl[info tclversion]} \\\n"
-"	{file join $parentDir library} \\\n"
-"	{file join $grandParentDir library} \\\n"
-"	{file join $grandParentDir tcl[info tclversion] library} \\\n"
-"	{file join $grandParentDir tcl[info patchlevel] library} \\\n"
-"	{\n"
-"file join [file dirname $grandParentDir] tcl[info patchlevel] library}\n"
-"	if {[info exists tcl_libPath]\n"
-"		&& [catch {llength $tcl_libPath} len] == 0} {\n"
-"	    for {set i 0} {$i < $len} {incr i} {\n"
-"		lappend scripts [list lindex \\$tcl_libPath $i]\n"
-"	    }\n"
-"	}\n"
-"    }\n"
-"    set dirs {}\n"
-"    set errors {}\n"
-"    foreach script $scripts {\n"
-"	if {[set tcl_library [eval $script]] eq \"\"} continue\n"
-"	set tclfile [file join $tcl_library init.tcl]\n"
-"	if {[file exists $tclfile]} {\n"
-"	    try {\n"
-"		uplevel #0 [list source $tclfile]\n"
-"	    } on error {msg opts} {\n"
-"		append errors \"$tclfile: $msg\n\"\n"
-"		append errors \"[dict get $opts -errorinfo]\n\"\n"
-"		continue\n"
-"	    }\n"
-"	    unset -nocomplain tclDefaultLibrary\n"
-"	    return\n"
-"	}\n"
-"	lappend dirs $tcl_library\n"
-"    }\n"
-"    unset -nocomplain tclDefaultLibrary\n"
-"    set msg \"Cannot find a usable init.tcl in the following directories: \n\"\n"
-"    append msg \"    $dirs\n\n\"\n"
-"    append msg \"$errors\n\n\"\n"
-"    append msg \"This probably means that Tcl wasn't installed properly.\n\"\n"
-"    error $msg\n"
-"  }\n"
-"}\n"
-"tclInit", TCL_INDEX_NONE, 0);
+    result = RunPreInitScript(interp);
     TclpSetInitialEncodings();
 end:
     *names = (*names)->nextPtr;
@@ -516,7 +793,8 @@ TclInterpInit(
 
     Tcl_NRCreateCommand2(interp, "interp", Tcl_InterpObjCmd, NRInterpCmd,
 	    NULL, NULL);
-
+    Tcl_CreateObjCommand(interp, INIT_AUTO_PATH_CMD, InitAutoPathObjCmd,
+	    NULL, NULL);
     Tcl_CallWhenDeleted(interp, InterpInfoDeleteProc, NULL);
     return TCL_OK;
 }
@@ -620,7 +898,7 @@ int
 Tcl_InterpObjCmd(
     void *clientData,
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     return Tcl_NRCallObjProc2(interp, NRInterpCmd, clientData, objc, objv);
@@ -630,7 +908,7 @@ static int
 NRInterpCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Interp *childInterp;
@@ -1790,7 +2068,7 @@ static int
 AliasNRCmd(
     void *clientData,		/* Alias record. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument vector. */
 {
     Alias *aliasPtr = (Alias *) clientData;
@@ -1843,7 +2121,7 @@ int
 TclAliasObjCmd(
     void *clientData,		/* Alias record. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument vector. */
 {
 #define ALIAS_CMDV_PREALLOC 10
@@ -1934,7 +2212,7 @@ int
 TclLocalAliasObjCmd(
     void *clientData,		/* Alias record. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument vector. */
 {
 #define ALIAS_CMDV_PREALLOC 10
@@ -2520,7 +2798,7 @@ int
 TclChildObjCmd(
     void *clientData,		/* Child interpreter. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     return Tcl_NRCallObjProc2(interp, NRChildCmd, clientData, objc, objv);
@@ -2530,7 +2808,7 @@ static int
 NRChildCmd(
     void *clientData,		/* Child interpreter. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Interp *childInterp = (Tcl_Interp *) clientData;

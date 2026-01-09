@@ -588,7 +588,7 @@ static int
 SetEnsembleConfigOptions(
     Tcl_Interp *interp,
     Tcl_Command token,		/* The ensemble to configure. */
-    Tcl_Size objc,			/* The count of option-related arguments. */
+    Tcl_Size objc,		/* The count of option-related arguments. */
     Tcl_Obj *const objv[])	/* Option-related arguments. */
 {
     Tcl_Size len;
@@ -2347,7 +2347,7 @@ static inline int
 EnsembleUnknownCallback(
     Tcl_Interp *interp,
     EnsembleConfig *ensemblePtr,/* The ensemble structure. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[],	/* Actual arguments. */
     Tcl_Obj **prefixObjPtr)	/* Where to write the prefix suggested by the
 				 * unknown callback. Must not be NULL. Only has

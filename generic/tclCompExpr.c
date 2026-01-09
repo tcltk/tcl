@@ -503,7 +503,7 @@ static void		ConvertTreeToTokens(const char *start, Tcl_Size numBytes,
 			    OpNode *nodes, Tcl_Token *tokenPtr,
 			    Tcl_Parse *parsePtr);
 static int		ExecConstantExprTree(Tcl_Interp *interp, OpNode *nodes,
-			    Tcl_Size index, Tcl_Obj * const **litObjvPtr);
+			    Tcl_Size index, Tcl_Obj *const **litObjvPtr);
 static int		ParseExpr(Tcl_Interp *interp, const char *start,
 			    Tcl_Size numBytes, OpNode **opTreePtr,
 			    Tcl_Obj *litList, Tcl_Obj *funcList,
@@ -2910,44 +2910,44 @@ void EqNextLex(
     if (in->errorFound) return;
 
     while (1) {
-        // Check if we're at the end.
-        if (in->argpos >= in->argc) {
+	// Check if we're at the end.
+	if (in->argpos >= in->argc) {
 	    in->lex = 0;
 	    in->lastStart = "";
 	    in->lastLen = 0;
 	    return;
-        }
-        // If this argument already has a numeric internal rep, preserve that.
-        Tcl_Obj *const thisArg = in->argv[in->argpos];
-        if (in->charpos==0 && (
+	}
+	// If this argument already has a numeric internal rep, preserve that.
+	Tcl_Obj *const thisArg = in->argv[in->argpos];
+	if (in->charpos==0 && (
 	    TclHasInternalRep(thisArg, &tclIntType) ||
 	    TclHasInternalRep(thisArg, &tclBignumType) ||
 	    TclHasInternalRep(thisArg, &tclBooleanType) ||
 	    TclHasInternalRep(thisArg, &tclDoubleType)
-        ) ) {
+	) ) {
 	    in->lex = NUMBER;
 	    in->lit = in->argv[in->argpos++];
 	    return;
-        }
+	}
 	// Check if we are compiling but hit a value needing pre-substitution.
-        if (in->charpos==0 && (
+	if (in->charpos==0 && (
 	    TclHasInternalRep(thisArg, &eqPresubType)
-        ) ) {
+	) ) {
 	    // Not necessarily a script but some kind of value we need to
 	    // generate code to get at runtime.
 	    in->lex = SCRIPT;
 	    in->lit = in->argv[in->argpos++];
 	    return;
-        }
-        // Otherwise treat the argument as a string and scan it.
-        start = TclGetStringFromObj(thisArg, &numBytes);
-        start += in->charpos;
-        numBytes -= in->charpos;
+	}
+	// Otherwise treat the argument as a string and scan it.
+	start = TclGetStringFromObj(thisArg, &numBytes);
+	start += in->charpos;
+	numBytes -= in->charpos;
 
-        scanned = TclParseAllWhiteSpace(start, numBytes);
-        start += scanned;
-        numBytes -= scanned;
-        in->charpos += scanned;
+	scanned = TclParseAllWhiteSpace(start, numBytes);
+	start += scanned;
+	numBytes -= scanned;
+	in->charpos += scanned;
 
 	if (numBytes > 0) break;
 	in->argpos++;
@@ -3057,7 +3057,7 @@ Tcl_Obj *EqParseGetError(
 
     if (in->lex == NUMBER) {
 	// A pre-existing number might not have been scanned
-        in->lastStart = TclGetStringFromObj(in->lit, &in->lastLen);
+	in->lastStart = TclGetStringFromObj(in->lit, &in->lastLen);
     }
     return Tcl_ObjPrintf("= Expected %s but found '%.*s'",
 		    in->errorFound, (int)in->lastLen, in->lastStart);
@@ -3161,10 +3161,10 @@ void EqParsePrefix(
 	    if (in->lex == OPEN_PAREN) {
 		Tcl_Obj *funcName = Tcl_NewStringObj("tcl::mathfunc::", -1);
 		Tcl_AppendObjToObj(funcName, inLit);
-	        PUSH_OBJ(funcName);
+		PUSH_OBJ(funcName);
 		EqNextLex(in);
-	        EqParseFuncArgs(in, envPtr);
-	        return;
+		EqParseFuncArgs(in, envPtr);
+		return;
 	    }
 	    // Local variable reference?
 	    if (EnvHasLVT(envPtr)) {
@@ -3211,18 +3211,18 @@ void EqParseFuncArgs(
 {
     int numWords = 1;
     if (in->lex != CLOSE_PAREN) {
-        while (in->lex) {
+	while (in->lex) {
 
 	    EqParse(in, envPtr, PREC_COMMA);
 	    numWords++;
 
 	    if (in->lex == CLOSE_PAREN) break;
 	    if (in->lex != COMMA) {
-	        EqParseSetError(in, "')' or ','");
-	        return;
+		EqParseSetError(in, "')' or ','");
+		return;
 	    }
 	    EqNextLex(in);
-        }
+	}
     }
     INVOKE4(INVOKE_STK, numWords);
     EqNextLex(in);
@@ -3591,7 +3591,7 @@ TclCompileEqualsCmd(
     // in case that has side-effects.
     for (i = 0; i < len; i++) {
 	objPtr = objs[i];
-        if (TclHasInternalRep(objPtr, &eqPresubType)) {
+	if (TclHasInternalRep(objPtr, &eqPresubType)) {
 	    // Load the pre-substituted value.
 	    const Tcl_ObjInternalRep *irPtr;
 	    irPtr = TclFetchInternalRep(objPtr, &eqPresubType);

@@ -52,7 +52,6 @@
 #undef TclStaticLibrary
 #define TclStaticLibrary Tcl_StaticLibrary
 #if !defined(_WIN32) && !defined(__CYGWIN__)
-# undef Tcl_WinConvertError
 # define Tcl_WinConvertError 0
 #endif
 #undef TclGetStringFromObj
@@ -1157,9 +1156,9 @@ const TclStubs tclStubs = {
     Tcl_UtfToUpper, /* 337 */
     Tcl_WriteChars, /* 338 */
     Tcl_WriteObj, /* 339 */
-    0, /* 340 */
-    0, /* 341 */
-    0, /* 342 */
+    Tcl_GetMonotonicTime, /* 340 */
+    Tcl_CreateTimerHandlerMicroSeconds, /* 341 */
+    Tcl_SleepMicroSeconds, /* 342 */
     Tcl_AlertNotifier, /* 343 */
     Tcl_ServiceModeHook, /* 344 */
     Tcl_UniCharIsAlnum, /* 345 */
@@ -1514,7 +1513,9 @@ const TclStubs tclStubs = {
     Tcl_ListObjRange, /* 694 */
     Tcl_UtfToNormalizedDString, /* 695 */
     Tcl_UtfToNormalized, /* 696 */
-    TclUnusedStubEntry, /* 697 */
+    Tcl_ExternalToUtfEx, /* 697 */
+    Tcl_UtfToExternalEx, /* 698 */
+    TclUnusedStubEntry, /* 699 */
 };
 
 /* !END!: Do not edit above this line. */
