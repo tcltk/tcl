@@ -401,6 +401,8 @@ LocatePreInitScript(Tcl_Interp *interp)
     Tcl_Obj *searchedDirs;
     Tcl_Obj *initScriptPathPtr = NULL;
     Tcl_Obj *pathParts[3] = {NULL, NULL, NULL};
+    Tcl_Obj *exeDirPtr;
+    Tcl_Obj *exePtr;
 
     /*
      * Need to track checked directories for error reporting. As a side
@@ -458,11 +460,11 @@ LocatePreInitScript(Tcl_Interp *interp)
     /* Try parent/lib/tclVERSION */
 
     /* Reminder - TclGetObjNameOfExecutable return need not be released */
-    Tcl_Obj *exePtr = TclGetObjNameOfExecutable();
+    exePtr = TclGetObjNameOfExecutable();
     if (exePtr == NULL) {
 	goto done;
     }
-    Tcl_Obj *exeDirPtr = TclPathPart(interp, exePtr, TCL_PATH_DIRNAME);
+    exeDirPtr = TclPathPart(interp, exePtr, TCL_PATH_DIRNAME);
     if (exeDirPtr == NULL) {
 	goto done;
     }
