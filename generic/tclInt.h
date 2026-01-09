@@ -3438,6 +3438,9 @@ MODULE_SCOPE double	TclFloor(const void *a);
 MODULE_SCOPE void	TclFormatNaN(double value, char *buffer);
 MODULE_SCOPE int	TclFSFileAttrIndex(Tcl_Obj *pathPtr,
 			    const char *attributeName, int *indexPtr);
+MODULE_SCOPE int TclFSGetAncestorPaths(Tcl_Interp *interp, Tcl_Obj *pathPtr,
+			    Tcl_Size numPaths, Tcl_Obj *pathsPtrs[]);
+
 MODULE_SCOPE Tcl_Command TclNRCreateCommandInNs(Tcl_Interp *interp,
 			    const char *cmdName, Tcl_Namespace *nsPtr,
 			    Tcl_ObjCmdProc2 *proc, Tcl_ObjCmdProc2 *nreProc,
@@ -3445,6 +3448,7 @@ MODULE_SCOPE Tcl_Command TclNRCreateCommandInNs(Tcl_Interp *interp,
 MODULE_SCOPE int	TclNREvalFile(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 			    const char *encodingName);
 MODULE_SCOPE bool *	TclGetAsyncReadyPtr(void);
+MODULE_SCOPE const char * TclGetBuildInfo(void);
 MODULE_SCOPE Tcl_Obj *	TclGetBgErrorHandler(Tcl_Interp *interp);
 MODULE_SCOPE int	TclGetChannelFromObj(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, Tcl_Channel *chanPtr,
@@ -3731,11 +3735,15 @@ MODULE_SCOPE void *	TclpThreadGetGlobalTSD(void *tsdKeyPtr);
 MODULE_SCOPE void	TclErrorStackResetIf(Tcl_Interp *interp,
 			    const char *msg, Tcl_Size length);
 /* Tip 430 */
-MODULE_SCOPE int	TclZipfs_Init(Tcl_Interp *interp);
+MODULE_SCOPE int	TclZipfsInitInterp(Tcl_Interp *interp);
+MODULE_SCOPE int	TclZipfsInit(void);
 MODULE_SCOPE int	TclIsZipfsPath(const char *path);
 MODULE_SCOPE void	TclZipfsFinalize(void);
+
 MODULE_SCOPE Tcl_Obj *	TclGetObjNameOfShlib(void);
 MODULE_SCOPE void	TclSetObjNameOfShlib(Tcl_Obj *namePtr, Tcl_Encoding);
+MODULE_SCOPE Tcl_Size	TclGetObjExecutableAncestors(Tcl_Interp *interp,
+			    Tcl_Size numPaths, Tcl_Obj *pathsPtr[]);
 
 /*
  * Many parsing tasks need a common definition of whitespace.

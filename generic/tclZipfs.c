@@ -6418,25 +6418,21 @@ ZipFSLoadFile(
 }
 
 /*
- *-------------------------------------------------------------------------
+ * TclZipfsInitInterp --
  *
- * TclZipfs_Init --
- *
- *	Perform per interpreter initialization of this module.
+ *	Perform per interpreter-specific initialization of this module.
+ *	The interpreter-independent initialization must have already occurred.
  *
  * Results:
  *	The return value is a standard Tcl result.
  *
  * Side effects:
- *	Initializes this module if not already initialized, and adds module
- *	related commands to the given interpreter.
- *
- *-------------------------------------------------------------------------
+ *	Adds module related commands to the given interpreter.
  */
 
 int
-TclZipfs_Init(
-    Tcl_Interp *interp)		/* Current interpreter. */
+TclZipfsInitInterp(
+    Tcl_Interp *interp)		/* Current interpreter. Must not be NULL */
 {
     static const char findproc[] =
 	"namespace eval ::tcl::zipfs {}\n"
@@ -6460,27 +6456,44 @@ TclZipfs_Init(
 	"    return [lsort [Find $directoryName]]\n"
 	"}\n";
 
-    /*
-     * One-time initialization.
-     */
+    if (!ZipFS.initialized) {
+	Tcl_SetResult(interp, "ZIP filesystem not initialized", TCL_STATIC);
+	return TCL_ERROR;
+    }
 
+    Tcl_EvalEx(interp, findproc, TCL_INDEX_NONE, TCL_EVAL_GLOBAL);
+    if (!Tcl_IsSafe(interp)) {
+	Tcl_LinkVar(interp, "::tcl::zipfs::wrmax", (char *)&ZipFS.wrmax,
+	    TCL_LINK_INT);
+	Tcl_LinkVar(interp, "::tcl::zipfs::fallbackEntryEncoding",
+	    (char *)&ZipFS.fallbackEntryEncoding, TCL_LINK_STRING);
+    }
+    Tcl_CreateObjCommand2(interp, "::tcl::zipfs::tcl_library_init",
+	ZipFSTclLibraryObjCmd, NULL, NULL);
+    return TCL_OK;
+}
+
+
+/*
+ * TclZipfsInit --
+ *
+ *	Perform interpreter-independent initialization of this module.
+ *
+ * Results:
+ *	The return value is a standard Tcl result.
+ *
+ * Side effects:
+ *	Initializes this module if not already initialized.
+ */
+
+int
+TclZipfsInit()
+{
     WriteLock();
     if (!ZipFS.initialized) {
 	ZipfsSetup();
     }
     Unlock();
-
-    if (interp) {
-	Tcl_EvalEx(interp, findproc, TCL_INDEX_NONE, TCL_EVAL_GLOBAL);
-	if (!Tcl_IsSafe(interp)) {
-	    Tcl_LinkVar(interp, "::tcl::zipfs::wrmax", (char *) &ZipFS.wrmax,
-		    TCL_LINK_INT);
-	    Tcl_LinkVar(interp, "::tcl::zipfs::fallbackEntryEncoding",
-		    (char *) &ZipFS.fallbackEntryEncoding, TCL_LINK_STRING);
-	}
-	Tcl_CreateObjCommand2(interp, "::tcl::zipfs::tcl_library_init",
-		ZipFSTclLibraryObjCmd, NULL, NULL);
-    }
     return TCL_OK;
 }
 
@@ -6595,12 +6608,15 @@ TclZipfs_AppHook(
 {
     const char *result;
 
+    /*
+     * Tcl_FindExecutable also initializes the zipfs file system via
+     * Tcl_InitSubSystems.
+     */
 #ifdef _WIN32
     result = Tcl_FindExecutable(NULL);
 #else
     result = Tcl_FindExecutable((*argvPtr)[0]);
 #endif
-    TclZipfs_Init(NULL);
 
     /* Always mount archives attached to the application and shared library */
     int appZipfsPresent = TclZipfsMountExe();
