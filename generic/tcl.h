@@ -1293,10 +1293,17 @@ typedef int (Tcl_WaitForEventProc) (const Tcl_Time *timePtr);
 
 /*
  * TIP #233 (Virtualized Time)
+ * WARNING: functionality removed, calls TCL_Panic
  */
 
 typedef void (Tcl_GetTimeProc)   (Tcl_Time *timebuf, void *clientData);
 typedef void (Tcl_ScaleTimeProc) (Tcl_Time *timebuf, void *clientData);
+
+/*
+ * TIP #723 (Monotonic Time)
+ */
+
+typedef long long (Tcl_GetMonotonicTimeProc)   (void *clientData);
 
 /*
  *----------------------------------------------------------------------------

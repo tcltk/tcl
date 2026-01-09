@@ -25,6 +25,9 @@ static Tcl_NRPostProc	FinalizeEval;
 static Tcl_NRPostProc	NextRestoreFrame;
 static Tcl_NRPostProc	MarkAsSingleton;
 static Tcl_NRPostProc	UpdateClassDelegatesAfterClone;
+
+#define CurrentlyInvoked(contextPtr) \
+    ((contextPtr)->callPtr->chain[(contextPtr)->index])
 
 /*
  * ----------------------------------------------------------------------
@@ -857,8 +860,7 @@ TclOO_Object_Unknown(
 
     if (framePtr->isProcCallFrame & FRAME_IS_METHOD) {
 	CallContext *callerContext = (CallContext *) framePtr->clientData;
-	Method *mPtr = callerContext->callPtr->chain[
-		    callerContext->index].mPtr;
+	Method *mPtr = CurrentlyInvoked(callerContext).mPtr;
 
 	if (mPtr->declaringObjectPtr) {
 	    if (oPtr == mPtr->declaringObjectPtr) {
@@ -1072,8 +1074,7 @@ TclOOLookupObjectVar(
 	if (framePtr->isProcCallFrame & FRAME_IS_METHOD) {
 	    Object *oPtr = (Object *) object;
 	    CallContext *callerContext = (CallContext *) framePtr->clientData;
-	    Method *mPtr = callerContext->callPtr->chain[
-		    callerContext->index].mPtr;
+	    Method *mPtr = CurrentlyInvoked(callerContext).mPtr;
 	    PrivateVariableMapping *pvPtr;
 	    Tcl_Size i;
 
@@ -1429,6 +1430,53 @@ NextRestoreFrame(
 /*
  * ----------------------------------------------------------------------
  *
+ * MethodName --
+ *
+ *	Helper for TclOOSelfObjCmd to generate the correct name for a method.
+ *
+ * ----------------------------------------------------------------------
+ */
+static inline Tcl_Obj *
+MethodName(
+    Foundation *fPtr,
+    CallContext *contextPtr,
+    Method *mPtr)
+{
+    switch (contextPtr->callPtr->flags & (CONSTRUCTOR | DESTRUCTOR)) {
+    case CONSTRUCTOR:
+	return fPtr->constructorName;
+    case DESTRUCTOR:
+	return fPtr->destructorName;
+    default:
+	return mPtr->namePtr;
+    }
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * Declarer --
+ *
+ *	Helper for TclOOSelfObjCmd to get the (named) entity declaring a method.
+ *
+ * ----------------------------------------------------------------------
+ */
+static inline Object *
+Declarer(
+    Method *mPtr)
+{
+    if (mPtr->declaringClassPtr != NULL) {
+	return mPtr->declaringClassPtr->thisPtr;
+    } else if (mPtr->declaringObjectPtr != NULL) {
+	return mPtr->declaringObjectPtr;
+    } else {
+	TCL_UNREACHABLE();
+    }
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
  * TclOOSelfObjCmd --
  *
  *	Implementation of the [self] command, which provides introspection of
@@ -1453,12 +1501,10 @@ TclOOSelfObjCmd(
 	SELF_NEXT, SELF_OBJECT, SELF_TARGET
     } index;
     Interp *iPtr = (Interp *) interp;
+    Foundation *fPtr = (Foundation *) iPtr->objectFoundation;
     CallFrame *framePtr = iPtr->varFramePtr;
     CallContext *contextPtr;
     Tcl_Obj *result[3];
-
-#define CurrentlyInvoked(contextPtr) \
-    ((contextPtr)->callPtr->chain[(contextPtr)->index])
 
     /*
      * Start with sanity checks on the calling context and the method context.
@@ -1507,14 +1553,8 @@ TclOOSelfObjCmd(
 	return TCL_OK;
     }
     case SELF_METHOD:
-	if (contextPtr->callPtr->flags & CONSTRUCTOR) {
-	    Tcl_SetObjResult(interp, contextPtr->oPtr->fPtr->constructorName);
-	} else if (contextPtr->callPtr->flags & DESTRUCTOR) {
-	    Tcl_SetObjResult(interp, contextPtr->oPtr->fPtr->destructorName);
-	} else {
-	    Tcl_SetObjResult(interp,
-		    CurrentlyInvoked(contextPtr).mPtr->namePtr);
-	}
+	Tcl_SetObjResult(interp, MethodName(fPtr, contextPtr,
+		CurrentlyInvoked(contextPtr).mPtr));
 	return TCL_OK;
     case SELF_FILTER:
 	if (!CurrentlyInvoked(contextPtr).isFilter) {
@@ -1551,26 +1591,11 @@ TclOOSelfObjCmd(
 	} else {
 	    CallContext *callerPtr = (CallContext *)
 		    framePtr->callerVarPtr->clientData;
-	    Method *mPtr = callerPtr->callPtr->chain[callerPtr->index].mPtr;
-	    Object *declarerPtr;
+	    Method *mPtr = CurrentlyInvoked(callerPtr).mPtr;
 
-	    if (mPtr->declaringClassPtr != NULL) {
-		declarerPtr = mPtr->declaringClassPtr->thisPtr;
-	    } else if (mPtr->declaringObjectPtr != NULL) {
-		declarerPtr = mPtr->declaringObjectPtr;
-	    } else {
-		TCL_UNREACHABLE();
-	    }
-
-	    result[0] = TclOOObjectName(interp, declarerPtr);
+	    result[0] = TclOOObjectName(interp, Declarer(mPtr));
 	    result[1] = TclOOObjectName(interp, callerPtr->oPtr);
-	    if (callerPtr->callPtr->flags & CONSTRUCTOR) {
-		result[2] = declarerPtr->fPtr->constructorName;
-	    } else if (callerPtr->callPtr->flags & DESTRUCTOR) {
-		result[2] = declarerPtr->fPtr->destructorName;
-	    } else {
-		result[2] = mPtr->namePtr;
-	    }
+	    result[2] = MethodName(fPtr, callerPtr, mPtr);
 	    Tcl_SetObjResult(interp, Tcl_NewListObj(3, result));
 	    return TCL_OK;
 	}
@@ -1578,24 +1603,9 @@ TclOOSelfObjCmd(
 	if (contextPtr->index < contextPtr->callPtr->numChain - 1) {
 	    Method *mPtr =
 		    contextPtr->callPtr->chain[contextPtr->index + 1].mPtr;
-	    Object *declarerPtr;
 
-	    if (mPtr->declaringClassPtr != NULL) {
-		declarerPtr = mPtr->declaringClassPtr->thisPtr;
-	    } else if (mPtr->declaringObjectPtr != NULL) {
-		declarerPtr = mPtr->declaringObjectPtr;
-	    } else {
-		TCL_UNREACHABLE();
-	    }
-
-	    result[0] = TclOOObjectName(interp, declarerPtr);
-	    if (contextPtr->callPtr->flags & CONSTRUCTOR) {
-		result[1] = declarerPtr->fPtr->constructorName;
-	    } else if (contextPtr->callPtr->flags & DESTRUCTOR) {
-		result[1] = declarerPtr->fPtr->destructorName;
-	    } else {
-		result[1] = mPtr->namePtr;
-	    }
+	    result[0] = TclOOObjectName(interp, Declarer(mPtr));
+	    result[1] = MethodName(fPtr, contextPtr, mPtr);
 	    Tcl_SetObjResult(interp, Tcl_NewListObj(2, result));
 	}
 	return TCL_OK;
@@ -1607,7 +1617,6 @@ TclOOSelfObjCmd(
 	    return TCL_ERROR;
 	} else {
 	    Method *mPtr;
-	    Object *declarerPtr;
 	    Tcl_Size i;
 
 	    for (i=contextPtr->index ; i<contextPtr->callPtr->numChain ; i++) {
@@ -1619,15 +1628,8 @@ TclOOSelfObjCmd(
 		Tcl_Panic("filtering call chain without terminal non-filter");
 	    }
 	    mPtr = contextPtr->callPtr->chain[i].mPtr;
-	    if (mPtr->declaringClassPtr != NULL) {
-		declarerPtr = mPtr->declaringClassPtr->thisPtr;
-	    } else if (mPtr->declaringObjectPtr != NULL) {
-		declarerPtr = mPtr->declaringObjectPtr;
-	    } else {
-		TCL_UNREACHABLE();
-	    }
-	    result[0] = TclOOObjectName(interp, declarerPtr);
-	    result[1] = mPtr->namePtr;
+	    result[0] = TclOOObjectName(interp, Declarer(mPtr));
+	    result[1] = MethodName(fPtr, contextPtr, mPtr);
 	    Tcl_SetObjResult(interp, Tcl_NewListObj(2, result));
 	    return TCL_OK;
 	}

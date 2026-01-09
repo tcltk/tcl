@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-.TH Tcl_FindExecutable 3 8.1 Tcl "Tcl Library Procedures"
+.TH Tcl_FindExecutable 3 9.1 Tcl "Tcl Library Procedures"
 .so man.macros
 .BS
 .SH NAME
@@ -25,36 +25,37 @@ const char *
 The first command-line argument to the program, which gives the
 application's name.
 .BE
-
 .SH DESCRIPTION
 .PP
-The \fBTcl_FindExecutable\fR procedure computes the full path name of
-the executable file from which the application was invoked and saves
-it for Tcl's internal use.
-The executable's path name is needed for several purposes in
-Tcl.  For example, it is needed on some platforms in the
-implementation of the \fBload\fR command.
-It is also returned by the \fBinfo nameofexecutable\fR command.
+\fBTcl_FindExecutable\fR is one of two functions, \fBTclZipfs_AppHook\fR
+being the other, that must be called by an application to initialize
+Tcl prior to any other calls into Tcl. Applications that wish to use
+ZipFS-based builds should call \fBTclZipfs_AppHook\fR in preference
+to this function.
 .PP
-The result of \fBTcl_FindExecutable\fR is the full Tcl version with
-build information (e.g., \fB9.0.0+abcdef...abcdef.gcc-1002\fR).
+On UNIX platforms, the function should be passed \fIargv[0]\fR as its
+argument. It is important not to change the working directory before
+this invocation. \fBTcl_FindExecutable\fR uses \fIargv0\fR together
+with the \fBPATH\fR environment variable to locate the application's
+executable, if possible. If it fails to find the binary, subsequent
+calls to \fBinfo nameofexecutable\fR will return an empty string.
 .PP
-On UNIX platforms this procedure is typically invoked as the very
-first thing in the application's main program;  it must be passed
-\fIargv[0]\fR as its argument.  It is important not to change the
-working directory before the invocation.
-\fBTcl_FindExecutable\fR uses \fIargv0\fR
-along with the \fBPATH\fR environment variable to find the
-application's executable, if possible.  If it fails to find
-the binary, then future calls to \fBinfo nameofexecutable\fR
-will return an empty string.
+On Windows platforms, the \fIargv[0]\fR argument is used only to
+indicate whether the executable has a standard error channel (any
+non-null value) or not (the value null). If \fBTcl_SetPanicProc\fR is
+never called and no debugger is running, this setting determines
+whether a panic message is sent to standard error or displayed in a
+system dialog.
 .PP
-On Windows platforms this procedure is typically invoked as the very
-first thing in the application's main program as well; Its \fIargv[0]\fR
-argument is only used to indicate whether the executable has a stderr
-channel (any non-null value) or not (the value null). If \fBTcl_SetPanicProc\fR
-is never called and no debugger is running, this determines whether
-the panic message is sent to stderr or to a standard system dialog.
+As part of its initialization sequence,
+\fBTcl_FindExecutable\fR computes the full path name of the executable
+file from which the application was invoked. This result is saved for
+Tcl's internal use and is returned by the
+\fBinfo nameofexecutable\fR command.
+.PP
+The result of \fBTcl_FindExecutable\fR is the full Tcl version string,
+including build information (for example,
+\fB9.0.0+abcdef...abcdef.gcc-1002\fR).
 .PP
 \fBTcl_GetNameOfExecutable\fR simply returns a pointer to the
 internal full path name of the executable file as computed by

@@ -2136,8 +2136,9 @@ Tcl_JoinObjCmd(
     Tcl_Obj *const objv[])	/* The argument objects. */
 {
     Tcl_Size length, listLen;
-    int isAbstractList = 0;
-    Tcl_Obj *resObjPtr = NULL, *joinObjPtr, **elemPtrs;
+    Tcl_Obj *resObjPtr = NULL;
+    Tcl_Obj *joinObjPtr = NULL;
+    Tcl_Obj **elemPtrs = NULL;
 
     if ((objc < 2) || (objc > 3)) {
 	Tcl_WrongNumArgs(interp, 1, objv, "list ?joinString?");
@@ -2145,20 +2146,33 @@ Tcl_JoinObjCmd(
     }
 
     /*
-     * Make sure the list argument is a list object and get its length and a
-     * pointer to its array of element pointers.
+     * For native lists and lists that do not have methods for either
+     * generating an element array or indexing elements, retrieve elements
+     * with the general TclListObjGetElements procedure. Otherwise, use the
+     * getElementsProc or indexProc methods as appopriate. The intent is to
+     * avoid shimmering abstract lists.
      */
 
-    if (TclObjTypeHasProc(objv[1], getElementsProc)) {
+    if (TclHasInternalRep(objv[1], &tclListType) ||
+	!(TclObjTypeHasProc(objv[1], getElementsProc) ||
+	  TclObjTypeHasProc(objv[1], indexProc))) {
+	/* Native list or does not have suitable list method */
+	if (TclListObjGetElements(interp, objv[1], &listLen, &elemPtrs) !=
+	    TCL_OK) {
+	    return TCL_ERROR;
+	}
+    } else if (TclObjTypeHasProc(objv[1], getElementsProc)) {
+	/* Has a getElementsProc, use it */
 	listLen = TclObjTypeLength(objv[1]);
-	isAbstractList = (listLen ? 1 : 0);
 	if (listLen > 1 && TclObjTypeGetElements(interp, objv[1],
 		&listLen, &elemPtrs) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-    } else if (TclListObjGetElements(interp, objv[1], &listLen,
-	    &elemPtrs) != TCL_OK) {
-	return TCL_ERROR;
+    } else {
+	/* Avoid shimmering the source list. Iterate using indices */
+	assert(TclObjTypeHasProc(objv[1], indexProc));
+	assert(TclObjTypeHasProc(objv[1], lengthProc));
+	listLen = TclObjTypeLength(objv[1]);
     }
 
     if (listLen == 0) {
@@ -2167,11 +2181,11 @@ Tcl_JoinObjCmd(
     }
     if (listLen == 1) {
 	/* One element; return it */
-	if (!isAbstractList) {
+	if (elemPtrs) {
 	    Tcl_SetObjResult(interp, elemPtrs[0]);
 	} else {
 	    Tcl_Obj *elemObj;
-
+	    assert(TclObjTypeHasProc(objv[1], indexProc));
 	    if (TclObjTypeIndex(interp, objv[1], 0, &elemObj) != TCL_OK) {
 		return TCL_ERROR;
 	    }
@@ -2180,31 +2194,39 @@ Tcl_JoinObjCmd(
 	return TCL_OK;
     }
 
-    joinObjPtr = (objc == 2) ? Tcl_NewStringObj(" ", 1) : objv[2];
+    /* To avoid potential shimmering of elemPtrs while looping, dup objv[2] */
+    joinObjPtr =
+	(objc == 2) ? Tcl_NewStringObj(" ", 1) : Tcl_DuplicateObj(objv[2]);
     Tcl_IncrRefCount(joinObjPtr);
 
     (void)TclGetStringFromObj(joinObjPtr, &length);
-    if (length == 0) {
+    if (length == 0 && elemPtrs) {
 	resObjPtr = TclStringCat(interp, listLen, elemPtrs, 0);
     } else {
 	Tcl_Size i;
-
+	Tcl_ObjTypeIndexProc *proc = TclObjTypeHasProc(objv[1], indexProc);
 	TclNewObj(resObjPtr);
-	for (i = 0;  i < listLen;  i++) {
+	for (i = 0; i < listLen; i++) {
 	    if (i > 0) {
-
-		/*
-		 * NOTE: This code is relying on Tcl_AppendObjToObj() **NOT**
-		 * to shimmer joinObjPtr.  If it did, then the case where
-		 * objv[1] and objv[2] are the same value would not be safe.
-		 * Accessing elemPtrs would crash.
-		 */
-
 		Tcl_AppendObjToObj(resObjPtr, joinObjPtr);
 	    }
-	    Tcl_AppendObjToObj(resObjPtr, elemPtrs[i]);
+	    if (elemPtrs) {
+		Tcl_AppendObjToObj(resObjPtr, elemPtrs[i]);
+	    } else {
+		assert(proc);
+		Tcl_Obj *elemPtr;
+		if (proc(interp, objv[1], i, &elemPtr) != TCL_OK) {
+		    Tcl_DecrRefCount(resObjPtr);
+		    resObjPtr = NULL;
+		    break;
+		}
+		Tcl_IncrRefCount(elemPtr);
+		Tcl_AppendObjToObj(resObjPtr, elemPtr);
+		Tcl_DecrRefCount(elemPtr);
+	    }
 	}
     }
+
     Tcl_DecrRefCount(joinObjPtr);
     if (resObjPtr) {
 	Tcl_SetObjResult(interp, resObjPtr);

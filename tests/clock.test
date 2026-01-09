@@ -38561,6 +38561,29 @@ test clock-68.2 {Leap second, "24:00", regression test (validity check)} -constr
     join $res \n; # must be empty
 } -result {}
 
+test clock-69.1 {clock monotonic syntax} -body {
+    clock monotonic
+} -returnCodes ok -match glob -result *
+
+test clock-69.2 {clock monotonic syntax} -body {
+    clock monotonic junk
+} -returnCodes error -result {wrong # args: should be "clock monotonic"}
+
+test clock-69.3 {clock monotonic syntax byte compiled} -body {
+    proc clockmonotonic {} {clock monotonic}
+    clockmonotonic
+} -cleanup {
+    rename clockmonotonic {}
+} -returnCodes ok -match glob -result *
+
+test clock-69.4 {clock monotonic syntax byte compiled} -body {
+    proc clockmonotonic {} {clock monotonic junk}
+    clockmonotonic
+} -cleanup {
+    rename clockmonotonic {}
+} -returnCodes error -result {wrong # args: should be "clock monotonic"}
+
+
 # cleanup
 
 ::tcl::clock::ClearCaches

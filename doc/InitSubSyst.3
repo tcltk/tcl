@@ -17,20 +17,25 @@ const char *
 \fBTcl_InitSubsystems\fR()
 .fi
 .BE
+
 .SH DESCRIPTION
 .PP
-The \fBTcl_InitSubsystems\fR procedure initializes the Tcl
-library. This procedure is typically invoked as the very
-first thing in the application's main program.
+The \fBTcl_InitSubsystems\fR procedure initializes various Tcl subsystems. It
+should be called by any additional Tcl threads created after the main thread in
+a Tcl application that wish to use Tcl facilities without creating an
+interpreter. Threads that create interpreters using \fBTcl_CreateInterp\fR do
+not need to call this function, provided that \fBTcl_CreateInterp\fR is the
+first call into Tcl from that thread.
 .PP
-The result of \fBTcl_InitSubsystems\fR is the full Tcl version with
-build information (e.g., \fB9.0.0+abcdef...abcdef.gcc-1002\fR).
+Note that the main thread must have first called either \fBTclZipfs_AppHook\fR
+or \fBTcl_FindExecutable\fR to perform application-wide Tcl initialization
+before additional threads using Tcl are created. \fBTcl_InitSubsystems\fR does
+not suffice for this purpose and should only be used to initialize Tcl in
+secondary threads. It need not be called in the main thread invoking one of the
+two aforementioned functions.
 .PP
-\fBTcl_InitSubsystems\fR is very similar in use to
-\fBTcl_FindExecutable\fR. It can be used when Tcl is
-used as utility library, no other encodings than utf-8,
-iso8859-1 or utf-16 are used, and no interest exists in the
-value of \fBinfo nameofexecutable\fR. The system encoding will not
-be extracted from the environment, but falls back to utf-8.
+The result of \fBTcl_InitSubsystems\fR is the full Tcl version string,
+including build information (for example,
+\fB9.0.0+abcdef...abcdef.gcc-1002\fR).
 .SH KEYWORDS
 binary, executable file

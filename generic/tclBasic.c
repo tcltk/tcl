@@ -1131,6 +1131,7 @@ Tcl_CreateInterp(void)
 	    }
 	}
     }
+    TclInitTimerCmd(interp);
 
     /*
      * Register "clock" subcommands. These *do* go through
@@ -1293,7 +1294,7 @@ Tcl_CreateInterp(void)
 	Tcl_Panic("%s", Tcl_GetStringResult(interp));
     }
 
-    if (TclZlibInit(interp) != TCL_OK || TclZipfs_Init(interp) != TCL_OK) {
+    if (TclZlibInit(interp) != TCL_OK || TclZipfsInitInterp(interp) != TCL_OK) {
 	Tcl_Panic("%s", Tcl_GetStringResult(interp));
     }
 
