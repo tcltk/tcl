@@ -102,6 +102,7 @@ static Tcl_ObjCmdProc2	ClockGetenvObjCmd;
 static Tcl_ObjCmdProc2	ClockMicrosecondsObjCmd;
 static Tcl_ObjCmdProc2	ClockMillisecondsObjCmd;
 static Tcl_ObjCmdProc2	ClockSecondsObjCmd;
+static Tcl_ObjCmdProc2	ClockMonotonicObjCmd;
 static Tcl_ObjCmdProc2	ClockFormatObjCmd;
 static Tcl_ObjCmdProc2	ClockScanObjCmd;
 static int		ClockScanCommit(DateInfo *info,
@@ -166,6 +167,7 @@ const EnsembleImplMap tclClockImplMap[] = {
     {"format",		NULL,			NULL, NULL, NULL, 1},
     {"microseconds",	ClockMicrosecondsObjCmd,TclCompileClockReadingCmd, NULL, INT2PTR(CLOCK_READ_MICROS), 0},
     {"milliseconds",	ClockMillisecondsObjCmd,TclCompileClockReadingCmd, NULL, INT2PTR(CLOCK_READ_MILLIS), 0},
+    {"monotonic",	ClockMonotonicObjCmd,TclCompileClockReadingCmd, NULL, INT2PTR(CLOCK_READ_MONOTONIC), 0},
     {"scan",		NULL,			NULL, NULL, NULL, 1},
     {"seconds",		ClockSecondsObjCmd,	TclCompileClockReadingCmd, NULL, INT2PTR(CLOCK_READ_SECS), 0},
     {NULL, NULL, NULL, NULL, NULL, 0}
@@ -965,7 +967,7 @@ static int
 ClockConfigureObjCmd(
     void *clientData,		/* Client data containing literal pool */
     Tcl_Interp *interp,		/* Tcl interpreter */
-    Tcl_Size objc,			/* Parameter count */
+    Tcl_Size objc,		/* Parameter count */
     Tcl_Obj *const objv[])	/* Parameter vector */
 {
     ClockClientData *dataPtr = (ClockClientData *)clientData;
@@ -1400,7 +1402,7 @@ static int
 ClockConvertlocaltoutcObjCmd(
     void *clientData,		/* Literal table */
     Tcl_Interp *interp,		/* Tcl interpreter */
-    Tcl_Size objc,			/* Parameter count */
+    Tcl_Size objc,		/* Parameter count */
     Tcl_Obj *const *objv)	/* Parameter vector */
 {
     ClockClientData *dataPtr = (ClockClientData *)clientData;
@@ -1489,7 +1491,7 @@ int
 ClockGetdatefieldsObjCmd(
     void *clientData,		/* Opaque pointer to literal pool, etc. */
     Tcl_Interp *interp,		/* Tcl interpreter */
-    Tcl_Size objc,			/* Parameter count */
+    Tcl_Size objc,		/* Parameter count */
     Tcl_Obj *const *objv)	/* Parameter vector */
 {
     TclDateFields fields;
@@ -1683,7 +1685,7 @@ static int
 ClockGetjuliandayfromerayearmonthdayObjCmd(
     void *clientData,		/* Opaque pointer to literal pool, etc. */
     Tcl_Interp *interp,		/* Tcl interpreter */
-    Tcl_Size objc,			/* Parameter count */
+    Tcl_Size objc,		/* Parameter count */
     Tcl_Obj *const *objv)	/* Parameter vector */
 {
     TclDateFields fields;
@@ -1772,7 +1774,7 @@ static int
 ClockGetjuliandayfromerayearweekdayObjCmd(
     void *clientData,		/* Opaque pointer to literal pool, etc. */
     Tcl_Interp *interp,		/* Tcl interpreter */
-    Tcl_Size objc,			/* Parameter count */
+    Tcl_Size objc,		/* Parameter count */
     Tcl_Obj *const *objv)	/* Parameter vector */
 {
     TclDateFields fields;
@@ -1995,7 +1997,7 @@ static int
 ConvertLocalToUTCUsingTable(
     Tcl_Interp *interp,		/* Tcl interpreter */
     TclDateFields *fields,	/* Time to convert, with 'seconds' filled in */
-    Tcl_Size rowc,			/* Number of points at which time changes */
+    Tcl_Size rowc,		/* Number of points at which time changes */
     Tcl_Obj *const rowv[],	/* Points at which time changes */
     Tcl_WideInt *rangesVal)	/* Return bounds for time period */
 {
@@ -3126,7 +3128,7 @@ int
 ClockClicksObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Tcl interpreter */
-    Tcl_Size objc,			/* Parameter count */
+    Tcl_Size objc,		/* Parameter count */
     Tcl_Obj *const *objv)	/* Parameter values */
 {
     static const char *const clicksSwitches[] = {
@@ -3198,7 +3200,7 @@ int
 ClockMillisecondsObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Tcl interpreter */
-    Tcl_Size objc,			/* Parameter count */
+    Tcl_Size objc,		/* Parameter count */
     Tcl_Obj *const *objv)	/* Parameter values */
 {
     Tcl_Time now;
@@ -3237,7 +3239,7 @@ int
 ClockMicrosecondsObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Tcl interpreter */
-    Tcl_Size objc,			/* Parameter count */
+    Tcl_Size objc,		/* Parameter count */
     Tcl_Obj *const *objv)	/* Parameter values */
 {
     if (objc != 1) {
@@ -3245,6 +3247,45 @@ ClockMicrosecondsObjCmd(
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, Tcl_NewWideIntObj(TclpGetMicroseconds()));
+    return TCL_OK;
+}
+
+/*----------------------------------------------------------------------
+ *
+ * ClockMonotonicObjCmd -
+ *
+ *	Returns a count of monotonic microseconds.
+ *
+ * Results:
+ *	Returns a standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ * This function implements the 'clock monotonic' Tcl command. Refer to the
+ * user documentation for details on what it does.
+ *
+ * Note that tclExecute.c contains a byte compiled version.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+ClockMonotonicObjCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* Tcl interpreter */
+    Tcl_Size objc,			/* Parameter count */
+    Tcl_Obj *const *objv)	/* Parameter values */
+{
+    Tcl_WideInt us = 0;
+
+    if (objc != 1) {
+	Tcl_WrongNumArgs(interp, 0, objv, "clock monotonic");
+	return TCL_ERROR;
+    }
+
+    us = Tcl_GetMonotonicTime();
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(us));
     return TCL_OK;
 }
 
@@ -3533,7 +3574,7 @@ int
 ClockFormatObjCmd(
     void *clientData,		/* Client data containing literal pool */
     Tcl_Interp *interp,		/* Tcl interpreter */
-    Tcl_Size objc,			/* Parameter count */
+    Tcl_Size objc,		/* Parameter count */
     Tcl_Obj *const objv[])	/* Parameter values */
 {
     ClockClientData *dataPtr = (ClockClientData *)clientData;
@@ -3602,7 +3643,7 @@ int
 ClockScanObjCmd(
     void *clientData,		/* Client data containing literal pool */
     Tcl_Interp *interp,		/* Tcl interpreter */
-    Tcl_Size objc,			/* Parameter count */
+    Tcl_Size objc,		/* Parameter count */
     Tcl_Obj *const objv[])	/* Parameter values */
 {
     ClockClientData *dataPtr = (ClockClientData *)clientData;
@@ -4454,7 +4495,7 @@ int
 ClockAddObjCmd(
     void *clientData,		/* Client data containing literal pool */
     Tcl_Interp *interp,		/* Tcl interpreter */
-    Tcl_Size objc,			/* Parameter count */
+    Tcl_Size objc,		/* Parameter count */
     Tcl_Obj *const objv[])	/* Parameter values */
 {
     static const char *syntax = "clock add clockval|now ?number units?..."
@@ -4637,7 +4678,7 @@ int
 ClockSecondsObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Tcl interpreter */
-    Tcl_Size objc,			/* Parameter count */
+    Tcl_Size objc,		/* Parameter count */
     Tcl_Obj *const *objv)	/* Parameter values */
 {
     Tcl_Time now;

@@ -899,9 +899,14 @@ EXTERN Tcl_Size		Tcl_WriteChars(Tcl_Channel chan, const char *src,
 				Tcl_Size srcLen);
 /* 339 */
 EXTERN Tcl_Size		Tcl_WriteObj(Tcl_Channel chan, Tcl_Obj *objPtr);
-/* Slot 340 is reserved */
-/* Slot 341 is reserved */
-/* Slot 342 is reserved */
+/* 340 */
+EXTERN long long	Tcl_GetMonotonicTime(void);
+/* 341 */
+EXTERN Tcl_TimerToken	Tcl_CreateTimerHandlerMicroSeconds(
+				long long microSeconds, Tcl_TimerProc *proc,
+				void *clientData);
+/* 342 */
+EXTERN void		Tcl_SleepMicroSeconds(long long microSeconds);
 /* 343 */
 EXTERN void		Tcl_AlertNotifier(void *clientData);
 /* 344 */
@@ -1637,10 +1642,10 @@ EXTERN int		Tcl_ZlibInflate(Tcl_Interp *interp, int format,
 				Tcl_Obj *data, Tcl_Size buffersize,
 				Tcl_Obj *gzipHeaderDictObj);
 /* 612 */
-EXTERN unsigned int	Tcl_ZlibCRC32(unsigned int crc,
-				const unsigned char *buf, Tcl_Size len);
+EXTERN unsigned		Tcl_ZlibCRC32(unsigned crc, const unsigned char *buf,
+				Tcl_Size len);
 /* 613 */
-EXTERN unsigned int	Tcl_ZlibAdler32(unsigned int adler,
+EXTERN unsigned		Tcl_ZlibAdler32(unsigned adler,
 				const unsigned char *buf, Tcl_Size len);
 /* 614 */
 EXTERN int		Tcl_ZlibStreamInit(Tcl_Interp *interp, int mode,
@@ -1693,7 +1698,7 @@ EXTERN void		Tcl_ZlibStreamSetCompressionDictionary(
 /* 631 */
 EXTERN Tcl_Channel	Tcl_OpenTcpServerEx(Tcl_Interp *interp,
 				const char *service, const char *host,
-				unsigned int flags, int backlog,
+				unsigned flags, int backlog,
 				Tcl_TcpAcceptProc *acceptProc,
 				void *callbackData);
 /* 632 */
@@ -1903,6 +1908,20 @@ EXTERN int		Tcl_UtfToNormalized(Tcl_Interp *interp,
 				int profile, char *bufPtr, Tcl_Size bufLen,
 				Tcl_Size *lengthPtr);
 /* 697 */
+EXTERN int		Tcl_ExternalToUtfEx(Tcl_Interp *interp,
+				Tcl_Encoding encoding, const char *src,
+				Tcl_Size srcLen, int flags,
+				Tcl_EncodingState *statePtr, char *dst,
+				Tcl_Size dstLen, Tcl_Size *srcReadPtr,
+				Tcl_Size *dstWrotePtr, Tcl_Size *dstCharsPtr);
+/* 698 */
+EXTERN int		Tcl_UtfToExternalEx(Tcl_Interp *interp,
+				Tcl_Encoding encoding, const char *src,
+				Tcl_Size srcLen, int flags,
+				Tcl_EncodingState *statePtr, char *dst,
+				Tcl_Size dstLen, Tcl_Size *srcReadPtr,
+				Tcl_Size *dstWrotePtr, Tcl_Size *dstCharsPtr);
+/* 699 */
 EXTERN void		TclUnusedStubEntry(void);
 
 typedef struct {
@@ -2255,9 +2274,9 @@ typedef struct TclStubs {
     Tcl_Size (*tcl_UtfToUpper) (char *src); /* 337 */
     Tcl_Size (*tcl_WriteChars) (Tcl_Channel chan, const char *src, Tcl_Size srcLen); /* 338 */
     Tcl_Size (*tcl_WriteObj) (Tcl_Channel chan, Tcl_Obj *objPtr); /* 339 */
-    void (*reserved340)(void);
-    void (*reserved341)(void);
-    void (*reserved342)(void);
+    long long (*tcl_GetMonotonicTime) (void); /* 340 */
+    Tcl_TimerToken (*tcl_CreateTimerHandlerMicroSeconds) (long long microSeconds, Tcl_TimerProc *proc, void *clientData); /* 341 */
+    void (*tcl_SleepMicroSeconds) (long long microSeconds); /* 342 */
     void (*tcl_AlertNotifier) (void *clientData); /* 343 */
     void (*tcl_ServiceModeHook) (int mode); /* 344 */
     int (*tcl_UniCharIsAlnum) (int ch); /* 345 */
@@ -2527,8 +2546,8 @@ typedef struct TclStubs {
     void (*tcl_BackgroundException) (Tcl_Interp *interp, int code); /* 609 */
     int (*tcl_ZlibDeflate) (Tcl_Interp *interp, int format, Tcl_Obj *data, int level, Tcl_Obj *gzipHeaderDictObj); /* 610 */
     int (*tcl_ZlibInflate) (Tcl_Interp *interp, int format, Tcl_Obj *data, Tcl_Size buffersize, Tcl_Obj *gzipHeaderDictObj); /* 611 */
-    unsigned int (*tcl_ZlibCRC32) (unsigned int crc, const unsigned char *buf, Tcl_Size len); /* 612 */
-    unsigned int (*tcl_ZlibAdler32) (unsigned int adler, const unsigned char *buf, Tcl_Size len); /* 613 */
+    unsigned (*tcl_ZlibCRC32) (unsigned crc, const unsigned char *buf, Tcl_Size len); /* 612 */
+    unsigned (*tcl_ZlibAdler32) (unsigned adler, const unsigned char *buf, Tcl_Size len); /* 613 */
     int (*tcl_ZlibStreamInit) (Tcl_Interp *interp, int mode, int format, int level, Tcl_Obj *dictObj, Tcl_ZlibStream *zshandle); /* 614 */
     Tcl_Obj * (*tcl_ZlibStreamGetCommandName) (Tcl_ZlibStream zshandle); /* 615 */
     int (*tcl_ZlibStreamEof) (Tcl_ZlibStream zshandle); /* 616 */
@@ -2546,7 +2565,7 @@ typedef struct TclStubs {
     void * (*tcl_FindSymbol) (Tcl_Interp *interp, Tcl_LoadHandle handle, const char *symbol); /* 628 */
     int (*tcl_FSUnloadFile) (Tcl_Interp *interp, Tcl_LoadHandle handlePtr); /* 629 */
     void (*tcl_ZlibStreamSetCompressionDictionary) (Tcl_ZlibStream zhandle, Tcl_Obj *compressionDictionaryObj); /* 630 */
-    Tcl_Channel (*tcl_OpenTcpServerEx) (Tcl_Interp *interp, const char *service, const char *host, unsigned int flags, int backlog, Tcl_TcpAcceptProc *acceptProc, void *callbackData); /* 631 */
+    Tcl_Channel (*tcl_OpenTcpServerEx) (Tcl_Interp *interp, const char *service, const char *host, unsigned flags, int backlog, Tcl_TcpAcceptProc *acceptProc, void *callbackData); /* 631 */
     int (*tclZipfs_Mount) (Tcl_Interp *interp, const char *zipname, const char *mountPoint, const char *passwd); /* 632 */
     int (*tclZipfs_Unmount) (Tcl_Interp *interp, const char *mountPoint); /* 633 */
     Tcl_Obj * (*tclZipfs_TclLibrary) (void); /* 634 */
@@ -2612,7 +2631,9 @@ typedef struct TclStubs {
     int (*tcl_ListObjRange) (Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Size start, Tcl_Size end, Tcl_Obj **resultPtrPtr); /* 694 */
     int (*tcl_UtfToNormalizedDString) (Tcl_Interp *interp, const char *bytes, Tcl_Size length, Tcl_UnicodeNormalizationForm normForm, int profile, Tcl_DString *dsPtr); /* 695 */
     int (*tcl_UtfToNormalized) (Tcl_Interp *interp, const char *bytes, Tcl_Size length, Tcl_UnicodeNormalizationForm normForm, int profile, char *bufPtr, Tcl_Size bufLen, Tcl_Size *lengthPtr); /* 696 */
-    void (*tclUnusedStubEntry) (void); /* 697 */
+    int (*tcl_ExternalToUtfEx) (Tcl_Interp *interp, Tcl_Encoding encoding, const char *src, Tcl_Size srcLen, int flags, Tcl_EncodingState *statePtr, char *dst, Tcl_Size dstLen, Tcl_Size *srcReadPtr, Tcl_Size *dstWrotePtr, Tcl_Size *dstCharsPtr); /* 697 */
+    int (*tcl_UtfToExternalEx) (Tcl_Interp *interp, Tcl_Encoding encoding, const char *src, Tcl_Size srcLen, int flags, Tcl_EncodingState *statePtr, char *dst, Tcl_Size dstLen, Tcl_Size *srcReadPtr, Tcl_Size *dstWrotePtr, Tcl_Size *dstCharsPtr); /* 698 */
+    void (*tclUnusedStubEntry) (void); /* 699 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3255,9 +3276,12 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_WriteChars) /* 338 */
 #define Tcl_WriteObj \
 	(tclStubsPtr->tcl_WriteObj) /* 339 */
-/* Slot 340 is reserved */
-/* Slot 341 is reserved */
-/* Slot 342 is reserved */
+#define Tcl_GetMonotonicTime \
+	(tclStubsPtr->tcl_GetMonotonicTime) /* 340 */
+#define Tcl_CreateTimerHandlerMicroSeconds \
+	(tclStubsPtr->tcl_CreateTimerHandlerMicroSeconds) /* 341 */
+#define Tcl_SleepMicroSeconds \
+	(tclStubsPtr->tcl_SleepMicroSeconds) /* 342 */
 #define Tcl_AlertNotifier \
 	(tclStubsPtr->tcl_AlertNotifier) /* 343 */
 #define Tcl_ServiceModeHook \
@@ -3956,8 +3980,12 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_UtfToNormalizedDString) /* 695 */
 #define Tcl_UtfToNormalized \
 	(tclStubsPtr->tcl_UtfToNormalized) /* 696 */
+#define Tcl_ExternalToUtfEx \
+	(tclStubsPtr->tcl_ExternalToUtfEx) /* 697 */
+#define Tcl_UtfToExternalEx \
+	(tclStubsPtr->tcl_UtfToExternalEx) /* 698 */
 #define TclUnusedStubEntry \
-	(tclStubsPtr->tclUnusedStubEntry) /* 697 */
+	(tclStubsPtr->tclUnusedStubEntry) /* 699 */
 
 #endif /* defined(USE_TCL_STUBS) */
 

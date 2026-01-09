@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-.TH tclvars n 8.0 Tcl "Tcl Built-In Commands"
+.TH tclvars n 9.1 Tcl "Tcl Built-In Commands"
 .so man.macros
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
@@ -237,7 +237,7 @@ nested Tcl commands that had been invoked at the time of the error.
 \fBtcl_library\fR
 .
 This variable holds the name of a directory containing the
-system library of Tcl scripts, such as those used for auto-loading.
+system library of Tcl scripts and encodings.
 The value of this variable is returned by the \fBinfo library\fR command.
 See the \fBlibrary\fR manual entry for details of the facilities
 provided by the Tcl script library.
@@ -248,13 +248,18 @@ each application should set a global variable with a name like
 to hold the network file name for that application's library directory.
 The initial value of \fBtcl_library\fR is set when an interpreter
 is created by searching several different directories until one is
-found that contains an appropriate Tcl startup script.
-If the \fBTCL_LIBRARY\fR environment variable exists, then
-the directory it names is checked first.
-If \fBTCL_LIBRARY\fR is not set or doesn't refer to an appropriate
-directory, then Tcl checks several other directories based on a
-compiled-in default location, the location of the binary containing
-the application, and the current working directory.
+found that contains an appropriate Tcl startup script. If an
+application has already set the \fBtcl_library\fR variable in
+the interpreter, it is used directly. Otherwise,
+if the \fBTCL_LIBRARY\fR environment variable exists, then
+the directory it names is used to initialize \fBtcl_library\fR.
+In both cases, no further directories are searched. If neither
+of the above is set, Tcl will search several other directories
+in the following order: the ZipFS archive attached to the application
+or shared library for ZipFS-enabled builds, a platform specific default
+directory, the directory configured at build time, the directory
+\fBlib/tcl\fIVERSION\fR under the parent directory of the directory
+containing the application executable.
 .\" VARIABLE: tcl_patchLevel
 .TP
 \fBtcl_patchLevel\fR

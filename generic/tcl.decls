@@ -1038,6 +1038,16 @@ declare 338 {
 declare 339 {
     Tcl_Size Tcl_WriteObj(Tcl_Channel chan, Tcl_Obj *objPtr)
 }
+declare 340 {
+    long long Tcl_GetMonotonicTime(void)
+}
+declare 341 {
+    Tcl_TimerToken  Tcl_CreateTimerHandlerMicroSeconds(long long microSeconds,
+	    Tcl_TimerProc *proc, void *clientData)
+}
+declare 342 {
+    void Tcl_SleepMicroSeconds(long long microSeconds)
+}
 declare 343 {
     void Tcl_AlertNotifier(void *clientData)
 }
@@ -2026,11 +2036,11 @@ declare 611 {
 	    Tcl_Size buffersize, Tcl_Obj *gzipHeaderDictObj)
 }
 declare 612 {
-    unsigned int Tcl_ZlibCRC32(unsigned int crc, const unsigned char *buf,
+    unsigned Tcl_ZlibCRC32(unsigned crc, const unsigned char *buf,
 	    Tcl_Size len)
 }
 declare 613 {
-    unsigned int Tcl_ZlibAdler32(unsigned int adler, const unsigned char *buf,
+    unsigned Tcl_ZlibAdler32(unsigned adler, const unsigned char *buf,
 	    Tcl_Size len)
 }
 declare 614 {
@@ -2108,7 +2118,7 @@ declare 630 {
 # TIP #456/#468
 declare 631 {
     Tcl_Channel Tcl_OpenTcpServerEx(Tcl_Interp *interp, const char *service,
-	    const char *host, unsigned int flags, int backlog,
+	    const char *host, unsigned flags, int backlog,
 	    Tcl_TcpAcceptProc *acceptProc, void *callbackData)
 }
 
@@ -2405,9 +2415,26 @@ declare 696 {
 	    char *bufPtr, Tcl_Size bufLen, Tcl_Size *lengthPtr)
 }
 
+# TIP 732
+declare 697 {
+    int Tcl_ExternalToUtfEx(
+	    Tcl_Interp *interp, Tcl_Encoding encoding, const char *src,
+	    Tcl_Size srcLen, int flags, Tcl_EncodingState *statePtr, char *dst,
+	    Tcl_Size dstLen, Tcl_Size *srcReadPtr, Tcl_Size *dstWrotePtr,
+	    Tcl_Size *dstCharsPtr)
+}
+
+declare 698 {
+    int Tcl_UtfToExternalEx(
+	    Tcl_Interp *interp, Tcl_Encoding encoding, const char *src,
+	    Tcl_Size srcLen, int flags, Tcl_EncodingState *statePtr, char *dst,
+	    Tcl_Size dstLen, Tcl_Size *srcReadPtr, Tcl_Size *dstWrotePtr,
+	    Tcl_Size *dstCharsPtr)
+}
+
 # ----- BASELINE -- FOR -- 9.1.0 ----- #
 
-declare 697 {
+declare 699 {
     void TclUnusedStubEntry(void)
 }
 
