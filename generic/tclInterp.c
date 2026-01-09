@@ -282,7 +282,7 @@ static void		RunLimitHandlers(LimitHandler *handlerPtr,
 static void		TimeLimitCallback(void *clientData);
 static int		RunPreInitScript(Tcl_Interp *interp);
 static Tcl_Obj *	LocatePreInitScript(Tcl_Interp *interp);
-static Tcl_ObjCmdProc	InitAutoPathObjCmd;
+static Tcl_ObjCmdProc2	InitAutoPathObjCmd;
 #define INIT_AUTO_PATH_CMD "::tcl::InitAutoPath"
 
 /* NRE enabling */
@@ -609,7 +609,7 @@ int
 InitAutoPathObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument vector. */
 {
     if (objc != 1) {
@@ -793,7 +793,7 @@ TclInterpInit(
 
     Tcl_NRCreateCommand2(interp, "interp", Tcl_InterpObjCmd, NRInterpCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand(interp, INIT_AUTO_PATH_CMD, InitAutoPathObjCmd,
+    Tcl_CreateObjCommand2(interp, INIT_AUTO_PATH_CMD, InitAutoPathObjCmd,
 	    NULL, NULL);
     Tcl_CallWhenDeleted(interp, InterpInfoDeleteProc, NULL);
     return TCL_OK;
