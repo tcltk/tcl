@@ -2728,6 +2728,75 @@ TclResolveTildePathList(
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
+ * TclFSGetAncestorPaths --
+ *
+ *	This function retrieves the paths to the directory ancestor(s) of
+ *	the given path. The first element of the returned pathPtrs array is
+ *	the directory of the passed path, the second is the parent of that
+ *	directory and so on. If the number of elements requested is greater
+ *	that the depth of the directory depth, the additional elements will
+ *	contain NULL.
+ *
+ *	IMPORTANT: The objects returned in pathPtrs[] will have had their
+ *	reference counts incremented so caller owns them.
+ *
+ * Results:
+ *	Returns the number of elements filled with paths. On error, returns
+ *	-1 with an error message in interp if not NULL.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+TclFSGetAncestorPaths(
+    Tcl_Interp *interp,		/* interp for errors. May be NULL */
+    Tcl_Obj *pathPtr,		/* Path whose ancestor dirs are sought */
+    Tcl_Size numPaths,		/* Size of pathPtrs[] */
+    Tcl_Obj *pathsPtr[]	/* Output array holding ancestor paths */
+)
+{
+    Tcl_Obj **components;
+    Tcl_Size numComponents;
+    Tcl_Obj *splitPathPtr = Tcl_FSSplitPath(pathPtr, NULL);
+    if (splitPathPtr == NULL) {
+	return -1;
+    }
+    Tcl_IncrRefCount(splitPathPtr);
+    if (Tcl_ListObjGetElements(interp, splitPathPtr,
+	    &numComponents, &components) != TCL_OK) {
+	Tcl_DecrRefCount(splitPathPtr);
+	return -1;
+    }
+
+    /*
+     * /a/b/c ->
+     * [0] = /a/b
+     * [1] = /a
+     * [2] = /
+     * Remaining NULL.
+     * Note numComponents may be 0 (empty string) or 1 (single path part)
+     */
+
+    Tcl_Size i, count;
+    for (i = 0; i < numPaths && i < (numComponents-1); ++i) {
+	pathsPtr[i] = TclJoinPath(numComponents - i - 1, components, 0);
+	assert(pathsPtr[i]); /* Not supposed to ever fail */
+	Tcl_IncrRefCount(pathsPtr[i]); /* Caller now owns */
+    }
+    count = i;
+    /* Fill remaining with NULL */
+    while (i < numPaths) {
+	pathsPtr[i] = NULL;
+    }
+    Tcl_DecrRefCount(splitPathPtr);
+    return count;
+}
+
+/*
  * Local Variables:
  * mode: c
  * c-basic-offset: 4

@@ -16,9 +16,10 @@
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_Sleep --
+ * Tcl_SleepMicroSeconds --
  *
- *	Delay execution for the specified number of milliseconds.
+ *	Delay execution for the specified number of monotonic
+ *	micro-seconds.
  *
  * Results:
  *	None.
@@ -30,11 +31,12 @@
  */
 
 void
-Tcl_Sleep(
-    int ms)			/* Number of milliseconds to sleep. */
+Tcl_SleepMicroSeconds(
+    long long microSeconds)	/* Number of micro-seconds to sleep. */
 {
     struct timeval delay;
     Tcl_Time before, after, vdelay;
+    long long beforeUS;
 
     /*
      * The only trick here is that select appears to return early under some
@@ -42,29 +44,23 @@ Tcl_Sleep(
      * time really has elapsed.  If it's too early, go back to sleep again.
      */
 
-    Tcl_GetTime(&before);
+    beforeUS = Tcl_GetMonotonicTime();
+    before.sec = beforeUS/1000000;
+    before.usec = beforeUS%1000000;
     after = before;
-    after.sec += ms/1000;
-    after.usec += (ms%1000)*1000;
+    after.sec += microSeconds / 1000000;
+    after.usec += microSeconds % 1000000;
     if (after.usec > 1000000) {
 	after.usec -= 1000000;
 	after.sec += 1;
     }
     while (1) {
-	/*
-	 * TIP #233: Scale from virtual time to real-time for select.
-	 */
-
 	vdelay.sec  = after.sec  - before.sec;
 	vdelay.usec = after.usec - before.usec;
 
 	if (vdelay.usec < 0) {
 	    vdelay.usec += 1000000;
 	    vdelay.sec  -= 1;
-	}
-
-	if ((vdelay.sec != 0) || (vdelay.usec != 0)) {
-	    TclScaleTime(&vdelay);
 	}
 
 	delay.tv_sec  = vdelay.sec;
@@ -81,13 +77,41 @@ Tcl_Sleep(
 	}
 	(void) select(0, (SELECT_MASK *) 0, (SELECT_MASK *) 0,
 		(SELECT_MASK *) 0, &delay);
-	Tcl_GetTime(&before);
+	beforeUS = Tcl_GetMonotonicTime();
+	before.sec = beforeUS/1000000;
+	before.usec = beforeUS%1000000;
     }
 }
 
 #else
 TCL_MAC_EMPTY_FILE(unix_tclUnixEvent_c)
 #endif /* HAVE_COREFOUNDATION */
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_Sleep --
+ *
+ *	Delay execution for the specified number of monotonic
+ *	milliseconds.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Time passes.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_Sleep(
+    int ms)			/* Number of milliseconds to sleep. */
+{
+    Tcl_SleepMicroSeconds(ms*1000);
+}
+
+
 /*
  * Local Variables:
  * mode: c

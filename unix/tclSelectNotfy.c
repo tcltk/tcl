@@ -643,7 +643,6 @@ TclpWaitForEvent(
 {
     FileHandler *filePtr;
     int mask;
-    Tcl_Time vTime;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 #if TCL_THREADS
     int waitForFiles;
@@ -667,17 +666,7 @@ TclpWaitForEvent(
      */
 
     if (timePtr != NULL) {
-	/*
-	 * TIP #233 (Virtualized Time). Is virtual time in effect? And do we
-	 * actually have something to scale? If yes to both then we call the
-	 * handler to do this scaling.
-	 */
 
-	if (timePtr->sec != 0 || timePtr->usec != 0) {
-	    vTime = *timePtr;
-	    TclScaleTime(&vTime);
-	    timePtr = &vTime;
-	}
 #if !TCL_THREADS
 	timeout.tv_sec = timePtr->sec;
 	timeout.tv_usec = timePtr->usec;
