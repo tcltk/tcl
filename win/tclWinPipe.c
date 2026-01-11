@@ -171,7 +171,7 @@ typedef struct {
  */
 
 static int		ApplicationType(Tcl_Interp *interp,
-			    const char *fileName, char *fullName);
+			    const char *fileName, Tcl_DString *);
 static void		BuildCommandLine(const char *executable, size_t argc,
 			    const char **argv, Tcl_DString *linePtr);
 static BOOL		HasConsole(void);
@@ -949,13 +949,16 @@ TclpCreateProcess(
     PROCESS_INFORMATION procInfo;
     SECURITY_ATTRIBUTES secAtts;
     HANDLE hProcess, h, inputHandle, outputHandle, errorHandle;
-    char execPath[MAX_PATH * 3];
+    Tcl_DString execPath;
     WinFile *filePtr;
 
     PipeInit();
 
-    applType = ApplicationType(interp, argv[0], execPath);
+    applType = ApplicationType(interp, argv[0], &execPath);
+    /* execPath initialized no matter return value */
+
     if (applType == APPL_NONE) {
+	Tcl_DStringFree(&execPath);
 	return TCL_ERROR;
     }
 
@@ -1140,7 +1143,7 @@ TclpCreateProcess(
      * ab~1.def instead of "a b.default").
      */
 
-    BuildCommandLine(execPath, argc, argv, &cmdLine);
+    BuildCommandLine(Tcl_DStringValue(&execPath), argc, argv, &cmdLine);
 
     if (CreateProcessW(NULL, (WCHAR *) Tcl_DStringValue(&cmdLine),
 	    NULL, NULL, TRUE, (DWORD) createFlags, NULL, NULL, &startInfo,
@@ -1178,6 +1181,7 @@ TclpCreateProcess(
     result = TCL_OK;
 
   end:
+    Tcl_DStringFree(&execPath);
     Tcl_DStringFree(&cmdLine);
     if (startInfo.hStdInput != INVALID_HANDLE_VALUE) {
 	CloseHandle(startInfo.hStdInput);
@@ -1261,11 +1265,12 @@ HasConsole(void)
 static int
 ApplicationType(
     Tcl_Interp *interp,		/* Interp, for error message. */
-    const char *originalName,	/* Name of the application to find. */
-    char fullName[])		/* Filled with complete path to
-				 * application. */
+    const char *originalName,	/* Name of the application to find.
+				   Must not point into dsFullNamePtr */
+    Tcl_DString *dsFullNamePtr)	/* Filled with complete path to application.
+				 * Must always be Tcl_DStringFree'd */
 {
-    int applType, i, found;
+    int applType, i;
     Tcl_Size nameLen;
     HANDLE hFile;
     WCHAR *rest;
@@ -1274,9 +1279,14 @@ ApplicationType(
     DWORD attr, read;
     IMAGE_DOS_HEADER header;
     Tcl_DString nameBuf, ds;
+    TclWinPath winPath;
+    DWORD numChars, winPathCapacity = 0;
     const WCHAR *nativeName;
-    WCHAR nativeFullPath[MAX_PATH];
+    WCHAR *fullNativePath;
     static const char extensions[][5] = {"", ".com", ".exe", ".bat", ".cmd"};
+
+    Tcl_DStringInit(dsFullNamePtr);
+    fullNativePath = TclWinPathInit(&winPath, &winPathCapacity);
 
     /*
      * Look for the program as an external program. First try the name as it
@@ -1297,16 +1307,27 @@ ApplicationType(
     nameLen = Tcl_DStringLength(&nameBuf);
 
     for (i = 0; i < (int) (sizeof(extensions) / sizeof(extensions[0])); i++) {
+	Tcl_DStringFree(dsFullNamePtr); /* From previous iteration, if any */
 	Tcl_DStringSetLength(&nameBuf, nameLen);
 	Tcl_DStringAppend(&nameBuf, extensions[i], TCL_INDEX_NONE);
 	Tcl_DStringInit(&ds);
 	nativeName = Tcl_UtfToWCharDString(Tcl_DStringValue(&nameBuf),
 		Tcl_DStringLength(&nameBuf), &ds);
-	found = SearchPathW(NULL, nativeName, NULL, MAX_PATH,
-		nativeFullPath, &rest);
+	numChars = SearchPathW(NULL, nativeName, NULL, winPathCapacity,
+		fullNativePath, &rest);
 	Tcl_DStringFree(&ds);
-	if (found == 0) {
+	if (numChars == 0) {
 	    continue;
+	}
+	if (numChars > winPathCapacity) {
+	    /* Buffer too small; try again. */
+	    winPathCapacity = numChars;
+	    fullNativePath = TclWinPathResize(&winPath, winPathCapacity);
+	    numChars = SearchPathW(NULL, nativeName, NULL, winPathCapacity,
+		    fullNativePath, &rest);
+	    if (numChars == 0 || numChars >= winPathCapacity) {
+		continue; /* Give up */
+	    }
 	}
 
 	/*
@@ -1314,22 +1335,20 @@ ApplicationType(
 	 * known type.
 	 */
 
-	attr = GetFileAttributesW(nativeFullPath);
+	attr = GetFileAttributesW(fullNativePath);
 	if ((attr == 0xFFFFFFFF) || (attr & FILE_ATTRIBUTE_DIRECTORY)) {
 	    continue;
 	}
-	Tcl_DStringInit(&ds);
-	strcpy(fullName, Tcl_WCharToUtfDString(nativeFullPath, TCL_INDEX_NONE, &ds));
-	Tcl_DStringFree(&ds);
+	Tcl_WCharToUtfDString(fullNativePath, TCL_INDEX_NONE, dsFullNamePtr);
 
-	ext = strrchr(fullName, '.');
+	ext = strrchr(Tcl_DStringValue(dsFullNamePtr), '.');
 	if ((ext != NULL) &&
 		(strcasecmp(ext, ".cmd") == 0 || strcasecmp(ext, ".bat") == 0)) {
 	    applType = APPL_DOS;
 	    break;
 	}
 
-	hFile = CreateFileW(nativeFullPath,
+	hFile = CreateFileW(fullNativePath,
 		GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
 		FILE_ATTRIBUTE_NORMAL|FILE_FLAG_OPEN_REPARSE_POINT, NULL);
 	if (hFile == INVALID_HANDLE_VALUE) {
@@ -1410,6 +1429,8 @@ ApplicationType(
 	Tcl_WinConvertError(GetLastError());
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf("couldn't execute \"%s\": %s",
 		originalName, Tcl_PosixError(interp)));
+	Tcl_DStringFree(dsFullNamePtr);
+	TclWinPathFree(&winPath);
 	return APPL_NONE;
     }
 
@@ -1421,11 +1442,10 @@ ApplicationType(
 	 * application name from the arguments.
 	 */
 
-	GetShortPathNameW(nativeFullPath, nativeFullPath, MAX_PATH);
-	Tcl_DStringInit(&ds);
-	strcpy(fullName, Tcl_WCharToUtfDString(nativeFullPath, TCL_INDEX_NONE, &ds));
-	Tcl_DStringFree(&ds);
+	GetShortPathNameW(fullNativePath, fullNativePath, MAX_PATH);
+	Tcl_WCharToUtfDString(fullNativePath, TCL_INDEX_NONE, dsFullNamePtr);
     }
+    TclWinPathFree(&winPath);
     return applType;
 }
 

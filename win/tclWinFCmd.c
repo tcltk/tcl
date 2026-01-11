@@ -175,12 +175,7 @@ DoRenameFile(
 				 * (native). */
 {
     DWORD srcAttr, dstAttr;
-    int retval = -1;
-
-    /*
-     * The MoveFile API acts differently under Win95/98 and NT WRT NULL and
-     * "". Avoid passing these values.
-     */
+    TclWinPath srcPathBuf, dstPathBuf;
 
     if (nativeSrc == NULL || nativeSrc[0] == '\0' ||
 	    nativeDst == NULL || nativeDst[0] == '\0') {
@@ -189,161 +184,67 @@ DoRenameFile(
     }
 
     /*
-     * MoveFileEx would be more efficient but unfortunately, the semantics
-     * differ slightly from Tcl file rename semantics for existing directories.
-     */
-#ifdef USE_MOVEFILEEXW
-    const DWORD moveFlags = MOVEFILE_COPY_ALLOWED | MOVEFILE_REPLACE_EXISTING;
-#define MOVEFILE(src_, dst_) MoveFileExW(src_, dst_, moveFlags)
-#else
-#define MOVEFILE(src_, dst_) MoveFileW(src_, dst_)
-#endif
-
-    /*
      * The MoveFile API would throw an exception under NT if one of the
-     * arguments is a char block device.
+     * arguments is a char block device. TODO - test
+     * Note: MoveFileEx will overwrite files, not directories.
      */
 
-    if (MOVEFILE(nativeSrc, nativeDst) != FALSE) {
-	retval = TCL_OK;
-    }
-
-    if (retval != -1) {
-	return retval;
+    if (MoveFileW(nativeSrc, nativeDst) != FALSE) {
+	return TCL_OK;
     }
 
     Tcl_WinConvertError(GetLastError());
 
     srcAttr = GetFileAttributesW(nativeSrc);
     dstAttr = GetFileAttributesW(nativeDst);
-    if (srcAttr == 0xFFFFFFFF) {
-	if (GetFullPathNameW(nativeSrc, 0, NULL,
-		NULL) >= MAX_PATH) {
-	    errno = ENAMETOOLONG;
-	    return TCL_ERROR;
-	}
+    if (srcAttr == INVALID_FILE_ATTRIBUTES) {
 	srcAttr = 0;
     }
-    if (dstAttr == 0xFFFFFFFF) {
-	if (GetFullPathNameW(nativeDst, 0, NULL,
-		NULL) >= MAX_PATH) {
-	    errno = ENAMETOOLONG;
-	    return TCL_ERROR;
-	}
+    if (dstAttr == INVALID_FILE_ATTRIBUTES) {
 	dstAttr = 0;
     }
 
-    if (errno == EBADF) {
+    switch (errno) {
+    case EBADF:
 	errno = EACCES;
 	return TCL_ERROR;
-    }
-    if (errno == EACCES) {
-    decode:
-	if (srcAttr & FILE_ATTRIBUTE_DIRECTORY) {
-	    WCHAR *nativeSrcRest, *nativeDstRest;
-	    const char **srcArgv, **dstArgv;
-	    size_t size;
-	    Tcl_Size srcArgc, dstArgc;
-	    WCHAR nativeSrcPath[MAX_PATH];
-	    WCHAR nativeDstPath[MAX_PATH];
-	    Tcl_DString srcString, dstString;
-	    const char *src, *dst;
-
-	    size = GetFullPathNameW(nativeSrc, MAX_PATH,
-		    nativeSrcPath, &nativeSrcRest);
-	    if ((size == 0) || (size > MAX_PATH)) {
-		return TCL_ERROR;
-	    }
-	    size = GetFullPathNameW(nativeDst, MAX_PATH,
-		    nativeDstPath, &nativeDstRest);
-	    if ((size == 0) || (size > MAX_PATH)) {
-		return TCL_ERROR;
-	    }
-	    CharLowerW(nativeSrcPath);
-	    CharLowerW(nativeDstPath);
-
-	    Tcl_DStringInit(&srcString);
-	    Tcl_DStringInit(&dstString);
-	    src = Tcl_WCharToUtfDString(nativeSrcPath, TCL_INDEX_NONE, &srcString);
-	    dst = Tcl_WCharToUtfDString(nativeDstPath, TCL_INDEX_NONE, &dstString);
-
-	    /*
-	     * Check whether the destination path is actually inside the
-	     * source path. This is true if the prefix matches, and the next
-	     * character is either end-of-string or a directory separator
-	     */
-
-	    if ((strncmp(src, dst, Tcl_DStringLength(&srcString))==0)
-		    && (dst[Tcl_DStringLength(&srcString)] == '\\'
-		    || dst[Tcl_DStringLength(&srcString)] == '/'
-		    || dst[Tcl_DStringLength(&srcString)] == '\0')) {
-		/*
-		 * Trying to move a directory into itself.
-		 */
-
-		errno = EINVAL;
-		Tcl_DStringFree(&srcString);
-		Tcl_DStringFree(&dstString);
-		return TCL_ERROR;
-	    }
-	    Tcl_SplitPath(src, &srcArgc, &srcArgv);
-	    Tcl_SplitPath(dst, &dstArgc, &dstArgv);
-	    Tcl_DStringFree(&srcString);
-	    Tcl_DStringFree(&dstString);
-
-	    if (srcArgc == 1) {
-		/*
-		 * They are trying to move a root directory. Whether or not it
-		 * is across filesystems, this cannot be done.
-		 */
-
-		Tcl_SetErrno(EINVAL);
-	    } else if ((srcArgc > 0) && (dstArgc > 0) &&
-		    (strcmp(srcArgv[0], dstArgv[0]) != 0)) {
-		/*
-		 * If src is a directory and dst filesystem != src filesystem,
-		 * errno should be EXDEV. It is very important to get this
-		 * behavior, so that the caller can respond to a cross
-		 * filesystem rename by simulating it with copy and delete.
-		 * The MoveFile system call already handles the case of moving
-		 * a file between filesystems.
-		 */
-
-		Tcl_SetErrno(EXDEV);
-	    }
-
-	    Tcl_Free((void *)srcArgv);
-	    Tcl_Free((void *)dstArgv);
-	} else {
-	    /* Not a directory. Try resetting ACL */
-	    if (ResetFileACL(nativeSrc) == ERROR_SUCCESS) {
-		if (MOVEFILE(nativeSrc, nativeDst) != FALSE) {
+    default:
+	return TCL_ERROR;
+    case EACCES:
+	break; /* Returns a more specific error if possible */
+    case EEXIST:
+	/*
+	 * Possible cases:
+	 * 1. src file, dst file - MoveFileEx should have overwritten even on
+	 *     different volumes. If that failed, preserve the errno.
+	 * 2. src file, dst dir - EISDIR
+	 * 3. src dir, dst file - ENOTDIR TODO - test, is dst file overwritten?
+	 * 4. src dir, dst dir  - Delete dst iff empty and retry.
+	 */
+	if ((srcAttr & FILE_ATTRIBUTE_DIRECTORY) == 0) {
+	    if (dstAttr & FILE_ATTRIBUTE_DIRECTORY) {
+		errno = EISDIR; /* Case 2 */
+	    } else {
+		if (MoveFileExW(nativeSrc, nativeDst,
+			MOVEFILE_COPY_ALLOWED | MOVEFILE_REPLACE_EXISTING) !=
+		    FALSE) {
 		    return TCL_OK;
 		}
+		Tcl_WinConvertError(GetLastError());
+		if (Tcl_GetErrno() == EACCES) {
+		    /* Decode the EACCES to a more meaningful error. */
+		    break;
+		}
 	    }
-	}
-
-	/*
-	 * Other types of access failure is that dst is a read-only
-	 * filesystem, that an open file referred to src or dest, or that src
-	 * or dest specified the current working directory on the current
-	 * filesystem. EACCES is returned for those cases.
-	 */
-
-    } else if (Tcl_GetErrno() == EEXIST) {
-	/*
-	 * Reports EEXIST any time the target already exists. If it makes
-	 * sense, remove the old file and try renaming again.
-	 */
-
-	if (srcAttr & FILE_ATTRIBUTE_DIRECTORY) {
-	    if (dstAttr & FILE_ATTRIBUTE_DIRECTORY) {
+	} else {
+	    if ((dstAttr & FILE_ATTRIBUTE_DIRECTORY) == 0) {
 		/*
-		 * Overwrite empty dst directory with src directory. The
-		 * following call will remove an empty directory. If it fails,
-		 * it's because it wasn't empty.
+		 * MoveFileEx will actually allow this but that is not 9.0-
+		 * behaved when emulating the Unix DoRenameFile.
 		 */
-
+		errno = ENOTDIR; /* Case 3 */
+	    } else {
+		/* Case 4 */
 		if (DoRemoveJustDirectory(nativeDst, 0, NULL) == TCL_OK) {
 		    /*
 		     * Now that that empty directory is gone, we can try
@@ -351,7 +252,7 @@ DoRenameFile(
 		     * directory back, for completeness.
 		     */
 
-		    if (MOVEFILE(nativeSrc, nativeDst) != FALSE) {
+		    if (MoveFileW(nativeSrc, nativeDst) != FALSE) {
 			return TCL_OK;
 		    }
 
@@ -364,83 +265,123 @@ DoRenameFile(
 		    CreateDirectoryW(nativeDst, NULL);
 		    SetFileAttributesW(nativeDst, dstAttr);
 		    if (Tcl_GetErrno() == EACCES) {
-			/*
-			 * Decode the EACCES to a more meaningful error.
-			 */
-
-			goto decode;
+			/* Decode the EACCES to a more meaningful error. */
+			break;
 		    }
 		}
-	    } else {	/* (dstAttr & FILE_ATTRIBUTE_DIRECTORY) == 0 */
-		Tcl_SetErrno(ENOTDIR);
-	    }
-	} else {    /* (srcAttr & FILE_ATTRIBUTE_DIRECTORY) == 0 */
-	    if (dstAttr & FILE_ATTRIBUTE_DIRECTORY) {
-		Tcl_SetErrno(EISDIR);
-	    } else {
-		/*
-		 * Overwrite existing file by:
-		 *
-		 * 1. Rename existing file to temp name.
-		 * 2. Rename old file to new name.
-		 * 3. If success, delete temp file. If failure, put temp file
-		 *    back to old name.
-		 */
-
-		WCHAR *nativeRest, *nativeTmp, *nativePrefix;
-		int result, size;
-		WCHAR tempBuf[MAX_PATH];
-
-		size = GetFullPathNameW(nativeDst, MAX_PATH,
-			tempBuf, &nativeRest);
-		if ((size == 0) || (size > MAX_PATH) || (nativeRest == NULL)) {
-		    return TCL_ERROR;
-		}
-		nativeTmp = (WCHAR *) tempBuf;
-		nativeRest[0] = '\0';
-
-		result = TCL_ERROR;
-		nativePrefix = (WCHAR *)L"tclr";
-		if (GetTempFileNameW(nativeTmp, nativePrefix,
-			0, tempBuf) != 0) {
-		    /*
-		     * Strictly speaking, need the following DeleteFile and
-		     * MoveFile to be joined as an atomic operation so no
-		     * other app comes along in the meantime and creates the
-		     * same temp file.
-		     */
-
-		    nativeTmp = tempBuf;
-		    DeleteFileW(nativeTmp);
-		    if (MOVEFILE(nativeDst, nativeTmp) != FALSE) {
-			if (MOVEFILE(nativeSrc, nativeDst) != FALSE) {
-			    SetFileAttributesW(nativeTmp, FILE_ATTRIBUTE_NORMAL);
-			    DeleteFileW(nativeTmp);
-			    return TCL_OK;
-			} else {
-			    DeleteFileW(nativeDst);
-			    MOVEFILE(nativeTmp, nativeDst);
-			}
-		    }
-
-		    /*
-		     * Can't backup dst file or move src file. Return that
-		     * error. Could happen if an open file refers to dst.
-		     */
-
-		    Tcl_WinConvertError(GetLastError());
-		    if (Tcl_GetErrno() == EACCES) {
-			/*
-			 * Decode the EACCES to a more meaningful error.
-			 */
-
-			goto decode;
-		    }
-		}
-		return result;
 	    }
 	}
+	return TCL_ERROR;
     }
+
+    /* errno is EACCESS at this point */
+
+    /*
+     * We want to be more specific about the error if we can so caller can
+     * try copy across volumes if possible. Only possible for directories
+     * since MoveFileEx will move files across volumes if at all possible.
+     */
+    if ((srcAttr & FILE_ATTRIBUTE_DIRECTORY) == 0) {
+	if (ResetFileACL(nativeSrc) == ERROR_SUCCESS) {
+	    if (MoveFileW(nativeSrc, nativeDst) != FALSE) {
+		return TCL_OK;
+	    }
+	}
+	if (dstAttr & FILE_ATTRIBUTE_DIRECTORY) {
+	    errno = EISDIR;
+	} /* else leave as EACCES */
+	return TCL_ERROR;
+    }
+
+    WCHAR *nativeSrcRest, *nativeDstRest;
+    const char **srcArgv, **dstArgv;
+    Tcl_Size srcArgc, dstArgc;
+    WCHAR *nativeSrcPath;
+    WCHAR *nativeDstPath;
+    Tcl_DString srcString, dstString;
+    const char *src, *dst;
+
+    /*
+     * First check if the destination path is actually inside the source
+     * path. This is true if the prefix matches, and the next character is
+     * either end-of-string or a directory separator
+     */
+    nativeSrcPath =
+	TclWinGetFullPathName(nativeSrc, &srcPathBuf, &nativeSrcRest);
+    if (nativeSrcPath == NULL) {
+	return TCL_ERROR;
+    }
+    nativeDstPath =
+	TclWinGetFullPathName(nativeDst, &dstPathBuf, &nativeDstRest);
+    if (nativeDstPath == NULL) {
+	return TCL_ERROR;
+    }
+
+    CharLowerW(nativeSrcPath); /* In-place operation */
+    CharLowerW(nativeDstPath);
+
+    Tcl_DStringInit(&srcString);
+    Tcl_DStringInit(&dstString);
+    src = Tcl_WCharToUtfDString(nativeSrcPath, TCL_INDEX_NONE, &srcString);
+    dst = Tcl_WCharToUtfDString(nativeDstPath, TCL_INDEX_NONE, &dstString);
+    TclWinPathFree(&srcPathBuf);
+    TclWinPathFree(&dstPathBuf);
+
+    if ((strncmp(src, dst, Tcl_DStringLength(&srcString)) == 0) &&
+	(dst[Tcl_DStringLength(&srcString)] == '\\' ||
+	    dst[Tcl_DStringLength(&srcString)] == '/' ||
+	    dst[Tcl_DStringLength(&srcString)] == '\0')) {
+	/*
+	 * Yes, Trying to move a directory into itself.
+	 */
+
+	errno = EINVAL;
+	Tcl_DStringFree(&srcString);
+	Tcl_DStringFree(&dstString);
+	return TCL_ERROR;
+    }
+
+    /*
+     * Now check if -
+     *   - trying to move root directory, or
+     *   - src and dst are on different filesystems.
+     */
+    Tcl_SplitPath(src, &srcArgc, &srcArgv);
+    Tcl_SplitPath(dst, &dstArgc, &dstArgv);
+    Tcl_DStringFree(&srcString);
+    Tcl_DStringFree(&dstString);
+
+    if (srcArgc == 1) {
+		/*
+		 * They are trying to move a root directory. Whether or not it
+		 * is across filesystems, this cannot be done.
+		 */
+
+	Tcl_SetErrno(EINVAL);
+    } else if ((srcArgc > 0) && (dstArgc > 0) &&
+	       (strcmp(srcArgv[0], dstArgv[0]) != 0)) {
+	/*
+	 * If src is a directory and dst filesystem != src filesystem,
+	 * errno should be EXDEV. It is very important to get this
+	 * behavior, so that the caller can respond to a cross
+	 * filesystem rename by simulating it with copy and delete.
+	 * The MoveFile system call already handles the case of moving
+	 * a file between filesystems.
+	 */
+
+	Tcl_SetErrno(EXDEV);
+    } else {
+	/*
+	 * Other types of access failure is that dst is a read-only
+	 * filesystem, that an open file referred to src or dest, or that src
+	 * or dest specified the current working directory on the current
+	 * filesystem. Leave errno as is.
+	 */
+    }
+
+    Tcl_Free((void *)srcArgv);
+    Tcl_Free((void *)dstArgv);
+
     return TCL_ERROR;
 }
 
@@ -611,7 +552,7 @@ TclpDeleteFile(
 
     if (Tcl_GetErrno() == EACCES) {
 	attr = GetFileAttributesW(path);
-	if (attr != 0xFFFFFFFF) {
+	if (attr != INVALID_FILE_ATTRIBUTES) {
 	    if (attr & FILE_ATTRIBUTE_DIRECTORY) {
 		if (attr & FILE_ATTRIBUTE_REPARSE_POINT) {
 		    /*
@@ -630,7 +571,7 @@ TclpDeleteFile(
 		 */
 
 		Tcl_SetErrno(EISDIR);
-	    }  else {
+	    } else {
 		/* It's a file, perhaps forbidden by attribute or ACL */
 		int fileAttrChanged = 0;
 		if (attr & FILE_ATTRIBUTE_READONLY) {
@@ -1946,7 +1887,6 @@ TclpCreateTemporaryDirectory(
     Tcl_DStringFree(&base);
     return Tcl_DStringToObj(&name);
 }
-
 
 /*
  * ResetFileACL --
@@ -1998,6 +1938,7 @@ ResetFileACL(
     return winError;
 }
 
+
 /*
  * Local Variables:
  * mode: c
