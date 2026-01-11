@@ -118,80 +118,80 @@ namespace eval utftest {
     # The C wrapper fills entire destination buffer with FF.
     # Anything beyond expected output should have FF's
     proc fill {bin buflen {prefixlen 0}} {
-        return [string range "$bin[string repeat \xFF $buflen]" 0 $buflen-1]
+	return [string range "$bin[string repeat \xFF $buflen]" 0 $buflen-1]
     }
 
     proc testparams {direction enc prefixlen} {
-        variable prefixChars
+	variable prefixChars
 
-        switch $direction {
-            toutf -
-            toutfex {
-                set srcPrefixChar [encoding convertto $enc $prefixChars($enc)]
-                set dstPrefixChar [encoding convertto utf-8 $prefixChars($enc)]
-                if {$direction eq "toutf"} {
-                    set cmd Tcl_ExternalToUtf
-                } else {
-                    set cmd Tcl_ExternalToUtfEx
-                }
-            }
-            fromutf -
-            fromutfex {
-                set srcPrefixChar [encoding convertto utf-8 $prefixChars($enc)]
-                set dstPrefixChar [encoding convertto $enc $prefixChars($enc)]
-                if {$direction eq "fromutf"} {
-                    set cmd Tcl_UtfToExternal
-                } else {
-                    set cmd Tcl_UtfToExternalEx
-                }
-            }
-        }
-        set srcPrefixCharSize [string length $srcPrefixChar]
-        set dstPrefixCharSize [string length $dstPrefixChar]
+	switch $direction {
+	    toutf -
+	    toutfex {
+		set srcPrefixChar [encoding convertto $enc $prefixChars($enc)]
+		set dstPrefixChar [encoding convertto utf-8 $prefixChars($enc)]
+		if {$direction eq "toutf"} {
+		    set cmd Tcl_ExternalToUtf
+		} else {
+		    set cmd Tcl_ExternalToUtfEx
+		}
+	    }
+	    fromutf -
+	    fromutfex {
+		set srcPrefixChar [encoding convertto utf-8 $prefixChars($enc)]
+		set dstPrefixChar [encoding convertto $enc $prefixChars($enc)]
+		if {$direction eq "fromutf"} {
+		    set cmd Tcl_UtfToExternal
+		} else {
+		    set cmd Tcl_UtfToExternalEx
+		}
+	    }
+	}
+	set srcPrefixCharSize [string length $srcPrefixChar]
+	set dstPrefixCharSize [string length $dstPrefixChar]
 
-        # source prefixlen should be multiple of prefix char size in src encoding
-        set numPrefixChars [expr {$prefixlen/$srcPrefixCharSize}]
-        set srcPrefixLength [expr {$numPrefixChars * $srcPrefixCharSize}]
-        set dstPrefixLength [expr {$numPrefixChars*$dstPrefixCharSize}]
+	# source prefixlen should be multiple of prefix char size in src encoding
+	set numPrefixChars [expr {$prefixlen/$srcPrefixCharSize}]
+	set srcPrefixLength [expr {$numPrefixChars * $srcPrefixCharSize}]
+	set dstPrefixLength [expr {$numPrefixChars*$dstPrefixCharSize}]
 
-        return [list $cmd $numPrefixChars \
-                    $srcPrefixChar $srcPrefixLength \
-                    $dstPrefixChar $dstPrefixLength]
+	return [list $cmd $numPrefixChars \
+		    $srcPrefixChar $srcPrefixLength \
+		    $dstPrefixChar $dstPrefixLength]
     }
 
     proc testutf_verify {result expectedOut bufLen prefixCharBytes numPrefixChars} {
-        # result - the result returned from [testencoding]
-        # expectedOut - expected encoded output not including prefix and trailing
-        #   buffer fills
-        # bufLen - the buffer length that was passed to [testencoding]
-        #   and does not include space for prefix
-        # prefixCharBytes - byte sequence for the prefix character in the output
-        # numPrefixChars - number of prefix characters
+	# result - the result returned from [testencoding]
+	# expectedOut - expected encoded output not including prefix and trailing
+	#   buffer fills
+	# bufLen - the buffer length that was passed to [testencoding]
+	#   and does not include space for prefix
+	# prefixCharBytes - byte sequence for the prefix character in the output
+	# numPrefixChars - number of prefix characters
 
-        lassign $result status state output
-        # The output includes trailing FF fillers
-        set expectedOut [fill $expectedOut $bufLen]
-        if {$numPrefixChars == 0} {
-            set good [string equal $output $expectedOut]
-        } else {
-            # prefixes are generally very long so cannot afford to do full compare
-            set prefixCharLen [string length $prefixCharBytes]
-            # The actual prefix is a multiple of the prefixcharlen. Get the offset
-            # to end of prefix. Note assumes at least one prefix character.
-            set prefixEnd [expr {$prefixCharLen * $numPrefixChars}]
-            # Check the tail consisting of one prefix char and encoding test sample
-            set expectedTail [string cat $prefixCharBytes $expectedOut]
-            set good [string equal \
-                          [string range $output $prefixEnd-$prefixCharLen end] \
-                          $expectedTail]
-        }
-        return [list $status $state $good]
+	lassign $result status state output
+	# The output includes trailing FF fillers
+	set expectedOut [fill $expectedOut $bufLen]
+	if {$numPrefixChars == 0} {
+	    set good [string equal $output $expectedOut]
+	} else {
+	    # prefixes are generally very long so cannot afford to do full compare
+	    set prefixCharLen [string length $prefixCharBytes]
+	    # The actual prefix is a multiple of the prefixcharlen. Get the offset
+	    # to end of prefix. Note assumes at least one prefix character.
+	    set prefixEnd [expr {$prefixCharLen * $numPrefixChars}]
+	    # Check the tail consisting of one prefix char and encoding test sample
+	    set expectedTail [string cat $prefixCharBytes $expectedOut]
+	    set good [string equal \
+			  [string range $output $prefixEnd-$prefixCharLen end] \
+			  $expectedTail]
+	}
+	return [list $status $state $good]
     }
 
     proc testutf {direction enc comment hexin hexout args} {
-        variable prefixChars
+	variable prefixChars
 
-        # See comments in UtfTransformFn in tclTest.c
+	# See comments in UtfTransformFn in tclTest.c
 	set id $comment-[join $hexin ""]
 
 	set in [binary decode hex $hexin]
@@ -202,9 +202,9 @@ namespace eval utftest {
 	set flags [list start end]
 	set constraints [list testencoding]
 	set profiles [encoding profiles]
-        # prefixlen - is the total number of *bytes* of prefix that [testencoding]
-        #   that should be prepended to the input bytes
-        set prefixlen 0
+	# prefixlen - is the total number of *bytes* of prefix that [testencoding]
+	#   that should be prepended to the input bytes
+	set prefixlen 0
 	while {[llength $args] > 1} {
 	    set opt [lpop args 0]
 	    switch $opt {
@@ -212,7 +212,7 @@ namespace eval utftest {
 		-constraints { lappend constraints {*}[lpop args 0] }
 		-profiles    { set profiles [lpop args 0] }
 		-status      { set status [lpop args 0] }
-                -prefixlen   { set prefixlen [lpop args 0] }
+		-prefixlen   { set prefixlen [lpop args 0] }
 		default {
 		    error "Unknown option \"$opt\""
 		}
@@ -222,32 +222,32 @@ namespace eval utftest {
 	    error "No value supplied for option [lindex $args 0]."
 	}
 
-        lassign [testparams $direction $enc $prefixlen] \
-            cmd numPrefixChars srcPrefixChar srcPrefixLength \
-            dstPrefixChar dstPrefixLength
+	lassign [testparams $direction $enc $prefixlen] \
+	    cmd numPrefixChars srcPrefixChar srcPrefixLength \
+	    dstPrefixChar dstPrefixLength
 
-        set totalDstSpace [expr {$dstlen+$dstPrefixLength}]
+	set totalDstSpace [expr {$dstlen+$dstPrefixLength}]
 
 	test $cmd-$enc-$id-[join $flags -]-prefixlen-$prefixlen "$cmd - $enc - $hexin - $flags - $prefixlen" -body {
 	    testutf_verify \
-                [testencoding $cmd $enc $in $flags {} \
-                                      $totalDstSpace -prefixlen $srcPrefixLength \
-                                      -prefix $srcPrefixChar] \
-                $out $dstlen $dstPrefixChar $numPrefixChars
-        } -result [list $status {} 1] -constraints $constraints
-        # For keeping runtime reasonable, only run profile tests if no prefix
-        if {$prefixlen != 0} {
-            return
-        }
+		[testencoding $cmd $enc $in $flags {} \
+				      $totalDstSpace -prefixlen $srcPrefixLength \
+				      -prefix $srcPrefixChar] \
+		$out $dstlen $dstPrefixChar $numPrefixChars
+	} -result [list $status {} 1] -constraints $constraints
+	# For keeping runtime reasonable, only run profile tests if no prefix
+	if {$prefixlen != 0} {
+	    return
+	}
 	foreach profile $profiles {
 	    set flags2 [linsert $flags end $profile]
 	    test $cmd-$enc-$id-[join $flags2 -]-prefixlen-$prefixlen "$cmd - $enc - $hexin - $flags2 - $prefixlen" -body {
-                testutf_verify \
-                    [testencoding $cmd $enc $in $flags2 {} \
-                         $totalDstSpace -prefixlen $srcPrefixLength \
-                         -prefix $srcPrefixChar] \
-                    $out $dstlen $dstPrefixChar $numPrefixChars
-            } -result [list $status {} 1] -constraints $constraints
+		testutf_verify \
+		    [testencoding $cmd $enc $in $flags2 {} \
+			 $totalDstSpace -prefixlen $srcPrefixLength \
+			 -prefix $srcPrefixChar] \
+		    $out $dstlen $dstPrefixChar $numPrefixChars
+	    } -result [list $status {} 1] -constraints $constraints
 	}
     }
 
@@ -261,13 +261,13 @@ namespace eval utftest {
 
 	set status1 multibyte; # Return status to expect after first call
 	set constraints [list testencoding]
-        set prefixlen 0
+	set prefixlen 0
 	while {[llength $args] > 1} {
 	    set opt [lpop args 0]
 	    switch $opt {
 		-constraints { lappend constraints {*}[lpop args 0] }
 		-status1  { set status1 [lpop args 0]}
-                -prefixlen   { set prefixlen [lpop args 0] }
+		-prefixlen   { set prefixlen [lpop args 0] }
 		default {
 		    error "Unknown option \"$opt\""
 		}
@@ -277,66 +277,66 @@ namespace eval utftest {
 	    error "No value supplied for option [lindex $args 0]."
 	}
 
-        lassign [testparams $direction $enc $prefixlen] \
-            cmd numPrefixChars srcPrefixChar srcPrefixLength \
-            dstPrefixChar dstPrefixLength
+	lassign [testparams $direction $enc $prefixlen] \
+	    cmd numPrefixChars srcPrefixChar srcPrefixLength \
+	    dstPrefixChar dstPrefixLength
 
 	set in [binary decode hex $hexin]
 	set infrag [string range $in 0 $fragindex-1]
 	set out [binary decode hex $hexout]
 	set dstlen 40 ;# Should be enough for all encoding tests
 
-        set totalDstSpace [expr {$dstlen+$dstPrefixLength}]
+	set totalDstSpace [expr {$dstlen+$dstPrefixLength}]
 
 	test $cmd-$enc-$id-prefixlen-$prefixlen-0 "$cmd - $enc - $hexin - frag=$fragindex - prefixlen=$prefixlen" -constraints $constraints -body {
-            # Pass in first fragment - start flag without end flag
+	    # Pass in first fragment - start flag without end flag
 	    set frag1Result [testencoding $cmd $enc \
-                                 [string range $in 0 $fragindex-1] {start} 0 \
-                                 $totalDstSpace -srcreadvar frag1Read \
-                                 -dstwrotevar frag1Written \
-                                 -prefix $srcPrefixChar -prefixlen $srcPrefixLength]
+				 [string range $in 0 $fragindex-1] {start} 0 \
+				 $totalDstSpace -srcreadvar frag1Read \
+				 -dstwrotevar frag1Written \
+				 -prefix $srcPrefixChar -prefixlen $srcPrefixLength]
 	    lassign $frag1Result frag1Status frag1State frag1Decoded
-            # Just some sanity checks. Note frag1Read can be == srcPrefixLength
-            # when there is no prefix or a multi-byte prefix
-            if {$frag1Read <= $srcPrefixLength && $srcPrefixLength == 1} {
-                error "Test design error. Fragment length read $frag1Read should be longer than source prefix length $srcPrefixLength. [string length $srcPrefixChar]"
-            }
-            if {$frag1Written <= $dstPrefixLength && $dstPrefixLength == 1} {
-                error "Test design error. Fragment length written $frag1Written should be longer than output prefix length $dstPrefixLength"
-            }
-            # Pass in second fragment - end flag, without start flag
+	    # Just some sanity checks. Note frag1Read can be == srcPrefixLength
+	    # when there is no prefix or a multi-byte prefix
+	    if {$frag1Read <= $srcPrefixLength && $srcPrefixLength == 1} {
+		error "Test design error. Fragment length read $frag1Read should be longer than source prefix length $srcPrefixLength. [string length $srcPrefixChar]"
+	    }
+	    if {$frag1Written <= $dstPrefixLength && $dstPrefixLength == 1} {
+		error "Test design error. Fragment length written $frag1Written should be longer than output prefix length $dstPrefixLength"
+	    }
+	    # Pass in second fragment - end flag, without start flag
 	    set frag2Result [testencoding $cmd $enc \
-                                 [string range $in \
-                                      [expr {$frag1Read - $srcPrefixLength}] end] \
-                                 {end} $frag1State $dstlen -srcreadvar frag2Read \
-                                 -dstwrotevar frag2Written]
+				 [string range $in \
+				      [expr {$frag1Read - $srcPrefixLength}] end] \
+				 {end} $frag1State $dstlen -srcreadvar frag2Read \
+				 -dstwrotevar frag2Written]
 	    lassign $frag2Result frag2Status frag2State frag2Decoded
 
 	    set decoded [string cat \
-                             [string range $frag1Decoded $dstPrefixLength $frag1Written-1] \
-                             [string range $frag2Decoded 0 $frag2Written-1]]
+			     [string range $frag1Decoded $dstPrefixLength $frag1Written-1] \
+			     [string range $frag2Decoded 0 $frag2Written-1]]
 
 	    list $frag1Status [expr {($frag1Read-$srcPrefixLength) <= $fragindex}] \
 		$frag2Status [expr {$frag1Read+$frag2Read}] \
 		[expr {($frag1Written-$dstPrefixLength)+$frag2Written}] $decoded
 	} -result [list $status1 1 ok \
-                       [expr {$srcPrefixLength+[string length $in]}] \
-                       [string length $out] $out]
+		       [expr {$srcPrefixLength+[string length $in]}] \
+		       [string length $out] $out]
 
-        # This test is not run for fromutf* because going from internal utf to
-        # external encoding does not generate errors under the assumption that
-        # the internal utf should always be valid otherwise all bets are off.
-        # See https://core.tcl-lang.org/tcl/tktview/b69e00ecf6
+	# This test is not run for fromutf* because going from internal utf to
+	# external encoding does not generate errors under the assumption that
+	# the internal utf should always be valid otherwise all bets are off.
+	# See https://core.tcl-lang.org/tcl/tktview/b69e00ecf6
 	if {$direction in "toutf toutfex"} {
 	    # Fragmentation but with no more data.
 	    # Only check status. Content output is already checked in above test.
 	    test $cmd-$enc-$id-1 "$cmd - $enc - $hexin - frag=$fragindex - no more data" -constraints $constraints -body {
-                set frag1Result  \
-                    [testencoding $cmd $enc \
-                         [string range $in 0 $fragindex-1] {start end} 0 \
-                         $totalDstSpace -srcreadvar frag1Read \
-                         -dstwrotevar frag1Written \
-                         -prefix $srcPrefixChar -prefixlen $srcPrefixLength]
+		set frag1Result  \
+		    [testencoding $cmd $enc \
+			 [string range $in 0 $fragindex-1] {start end} 0 \
+			 $totalDstSpace -srcreadvar frag1Read \
+			 -dstwrotevar frag1Written \
+			 -prefix $srcPrefixChar -prefixlen $srcPrefixLength]
 		lassign $frag1Result frag1Status frag1State frag1Decoded
 		set frag1Status
 	    } -result syntax
@@ -345,18 +345,18 @@ namespace eval utftest {
 
     proc testcharlimit {direction enc comment hexin hexout args} {
 	if {$direction in "fromutf fromutfex"} {
-            error "Tcl_UtfToExternal and Tcl_UtfToExternalEx do not support char limits"
+	    error "Tcl_UtfToExternal and Tcl_UtfToExternalEx do not support char limits"
 	}
 
 	set id $comment-[join $hexin ""]-charlimit
 
 	set constraints [list testencoding]
-        set prefixlen 0
+	set prefixlen 0
 	while {[llength $args] > 1} {
 	    set opt [lpop args 0]
 	    switch $opt {
 		-constraints { lappend constraints {*}[lpop args 0] }
-                -prefixlen   { set prefixlen [lpop args 0] }
+		-prefixlen   { set prefixlen [lpop args 0] }
 		default {
 		    error "Unknown option \"$opt\""
 		}
@@ -365,42 +365,42 @@ namespace eval utftest {
 	if {[llength $args]} {
 	    error "No value supplied for option [lindex $args 0]."
 	}
-        lassign [testparams $direction $enc $prefixlen] \
-            cmd numPrefixChars srcPrefixChar srcPrefixLength \
-            dstPrefixChar dstPrefixLength
+	lassign [testparams $direction $enc $prefixlen] \
+	    cmd numPrefixChars srcPrefixChar srcPrefixLength \
+	    dstPrefixChar dstPrefixLength
 
 	set maxchars [llength $hexout]
 	set in [binary decode hex $hexin]
 	set out [binary decode hex $hexout]
 	set dstlen 40 ;# Should be enough for all encoding tests
-        set totalDstSpace [expr {$dstlen+$dstPrefixLength}]
+	set totalDstSpace [expr {$dstlen+$dstPrefixLength}]
 
 	for {set nchars 0} {$nchars <= $maxchars} {incr nchars} {
-            if {$prefixlen != 0 && $nchars != ($maxchars-1)} {
-                # For prefixes, only do one test for test run time reasons
-                continue
-            }
+	    if {$prefixlen != 0 && $nchars != ($maxchars-1)} {
+		# For prefixes, only do one test for test run time reasons
+		continue
+	    }
 	    set expected_bytes [binary decode hex [lrange $hexout 0 $nchars-1]]
-            set expected_nwritten \
-                [expr {
-                       $dstPrefixLength+[string length $expected_bytes]
-                   }]
+	    set expected_nwritten \
+		[expr {
+		       $dstPrefixLength+[string length $expected_bytes]
+		   }]
 	    test $cmd-$enc-$id-$nchars-prefix-$prefixlen "$cmd - $enc - $hexin - nchars $nchars - $prefixlen" -constraints $constraints -body {
 		set charlimit [expr {$numPrefixChars+$nchars}]
-                lassign \
-                    [testencoding $cmd $enc $in \
-                         {start end charlimit} 0 $totalDstSpace \
-                         -srcreadvar nread -dstwrotevar nwritten \
-                         -dstcharsvar charlimit -prefix $srcPrefixChar \
-                         -prefixlen $prefixlen] \
-                    status state buf
+		lassign \
+		    [testencoding $cmd $enc $in \
+			 {start end charlimit} 0 $totalDstSpace \
+			 -srcreadvar nread -dstwrotevar nwritten \
+			 -dstcharsvar charlimit -prefix $srcPrefixChar \
+			 -prefixlen $prefixlen] \
+		    status state buf
 		list $status $nwritten [string range $buf $dstPrefixLength $nwritten-1]
 	    } -result [list ok $expected_nwritten $expected_bytes]
 	}
     }
 
     proc testspacelimit {direction enc comment hexin hexout args} {
-        set prefixlen 0
+	set prefixlen 0
 	set id $comment-[join $hexin ""]-spacelimit
 
 	# Triple the input to avoid pathological short input case where
@@ -411,12 +411,12 @@ namespace eval utftest {
 
 	set flags [list start end]
 	set constraints [list testencoding]
-        set prefixlen 0
+	set prefixlen 0
 	while {[llength $args] > 1} {
 	    set opt [lpop args 0]
 	    switch $opt {
 		-constraints { lappend constraints {*}[lpop args 0] }
-                -prefixlen   { set prefixlen [lpop args 0] }
+		-prefixlen   { set prefixlen [lpop args 0] }
 		default {
 		    error "Unknown option \"$opt\""
 		}
@@ -425,9 +425,9 @@ namespace eval utftest {
 	if {[llength $args]} {
 	    error "No value supplied for option [lindex $args 0]."
 	}
-        lassign [testparams $direction $enc $prefixlen] \
-            cmd numPrefixChars srcPrefixChar srcPrefixLength \
-            dstPrefixChar dstPrefixLength
+	lassign [testparams $direction $enc $prefixlen] \
+	    cmd numPrefixChars srcPrefixChar srcPrefixLength \
+	    dstPrefixChar dstPrefixLength
 
 	set in [binary decode hex $hexin]
 	set out [binary decode hex $hexout]
@@ -452,9 +452,9 @@ namespace eval utftest {
 	    -constraints $constraints \
 	    -body {
 	    lassign [testencoding $cmd $enc $in $flags {} $dstlen \
-                         -srcreadvar nread -dstwrotevar nwritten \
-                         -dstcharsvar nchars -prefix $srcPrefixChar \
-                         -prefixlen $srcPrefixLength] status state buf
+			 -srcreadvar nread -dstwrotevar nwritten \
+			 -dstcharsvar nchars -prefix $srcPrefixChar \
+			 -prefixlen $srcPrefixLength] status state buf
 	    list \
 		$status \
 		[expr {$nread < ($srcPrefixLength+[string length $in])}] \
@@ -467,7 +467,7 @@ namespace eval utftest {
     #
     # Basic tests
     foreach {enc testcases} $utfExtMap {
-        set encnuls [hexnuls $enc]
+	set encnuls [hexnuls $enc]
 	foreach testcase $testcases {
 	    lassign $testcase {*}{comment utfhex hex internalfragindex externalfragindex}
 
@@ -475,8 +475,8 @@ namespace eval utftest {
 	    # Note by default output should be terminated with \0
 	    testutf toutf $enc $comment $hex ${utfhex}00
 	    testutf fromutf $enc $comment $utfhex $hex$encnuls
-            testutf toutfex $enc $comment $hex ${utfhex}00
-            testutf fromutfex $enc $comment $utfhex $hex$encnuls
+	    testutf toutfex $enc $comment $hex ${utfhex}00
+	    testutf fromutfex $enc $comment $utfhex $hex$encnuls
 
 	    # Test TCL_ENCODING_NO_TERMINATE
 	    testutf toutf $enc $comment $hex $utfhex -flags {start end noterminate}
@@ -503,28 +503,28 @@ namespace eval utftest {
 
 	# Cannot afford to test every single encoding for large strings. Test
 	# only the first two cases at the INT_MAX and UINT_MAX boundaries.
-        foreach testcase [lrange $testcases 0 1] {
-            lassign $testcase {*}{comment utfhex hex internalfragindex externalfragindex}
-            foreach prefixlen {0x7ffffffe 0xfffffffe} {
-                # Basic tests
-                testutf toutfex $enc $comment $hex ${utfhex}00 -prefixlen $prefixlen -constraints bigdata
-                testutf fromutfex $enc $comment $utfhex $hex$encnuls -prefixlen $prefixlen -constraints bigdata
-                testutf toutfex $enc $comment $hex $utfhex \
-                    -flags {start end noterminate} -prefixlen $prefixlen -constraints bigdata
-                testutf fromutfex $enc $comment $utfhex $hex \
-                    -flags {start end noterminate} -prefixlen $prefixlen -constraints bigdata
-                # Test fragments across chunks
-                testfragment toutfex $enc $comment $hex $utfhex $externalfragindex -prefixlen $prefixlen -constraints bigdata
-                testfragment fromutfex $enc $comment $utfhex $hex $internalfragindex -prefixlen $prefixlen -constraints bigdata
+	foreach testcase [lrange $testcases 0 1] {
+	    lassign $testcase {*}{comment utfhex hex internalfragindex externalfragindex}
+	    foreach prefixlen {0x7ffffffe 0xfffffffe} {
+		# Basic tests
+		testutf toutfex $enc $comment $hex ${utfhex}00 -prefixlen $prefixlen -constraints bigdata
+		testutf fromutfex $enc $comment $utfhex $hex$encnuls -prefixlen $prefixlen -constraints bigdata
+		testutf toutfex $enc $comment $hex $utfhex \
+		    -flags {start end noterminate} -prefixlen $prefixlen -constraints bigdata
+		testutf fromutfex $enc $comment $utfhex $hex \
+		    -flags {start end noterminate} -prefixlen $prefixlen -constraints bigdata
+		# Test fragments across chunks
+		testfragment toutfex $enc $comment $hex $utfhex $externalfragindex -prefixlen $prefixlen -constraints bigdata
+		testfragment fromutfex $enc $comment $utfhex $hex $internalfragindex -prefixlen $prefixlen -constraints bigdata
 
-                # Char limits - no fromutf as Tcl_UtfToExternalEx does not support it
-                testcharlimit toutfex $enc $comment $hex $utfhex -prefixlen $prefixlen -constraints bigdata
+		# Char limits - no fromutf as Tcl_UtfToExternalEx does not support it
+		testcharlimit toutfex $enc $comment $hex $utfhex -prefixlen $prefixlen -constraints bigdata
 
-                # Test space limits at INT_MAX/UINT_MAX
-                testspacelimit toutfex $enc $comment $hex $utfhex -prefixlen $prefixlen -constraints bigdata
-                testspacelimit fromutfex $enc $comment $utfhex $hex -prefixlen $prefixlen -constraints bigdata
-            }
-        }
+		# Test space limits at INT_MAX/UINT_MAX
+		testspacelimit toutfex $enc $comment $hex $utfhex -prefixlen $prefixlen -constraints bigdata
+		testspacelimit fromutfex $enc $comment $utfhex $hex -prefixlen $prefixlen -constraints bigdata
+	    }
+	}
     }
 
 
@@ -590,27 +590,27 @@ namespace eval utftest {
 
     # 9.0 compatibility tests. Detect errors on counter overflow
     test Tcl_ExternalToUtf-srcread-overflow-0 {
-        Test error generated if srcRead does not fit in int and srcRead specified
+	Test error generated if srcRead does not fit in int and srcRead specified
     } -constraints {testencoding bigdata} -body {
-        lindex [testencoding Tcl_ExternalToUtf utf-32le X\0\0\0 {start end} 0 0x40000000 -srcreadvar srcRead -prefix [encoding convertto utf-32le .] -prefixlen 0x80000000] 0
+	lindex [testencoding Tcl_ExternalToUtf utf-32le X\0\0\0 {start end} 0 0x40000000 -srcreadvar srcRead -prefix [encoding convertto utf-32le .] -prefixlen 0x80000000] 0
     } -returnCodes error -result "Tcl_ExternalToUtf does not support lengths greater than INT_MAX. Use Tcl_ExternalToUtfEx instead."
 
     test Tcl_ExternalToUtf-srcread-overflow-1 {
-        Success if srcRead does not fit in int but srcRead not specified
+	Success if srcRead does not fit in int but srcRead not specified
     } -constraints {testencoding bigdata} -body {
-        lindex [testencoding Tcl_ExternalToUtf utf-32le X\0\0\0 {start end} 0 0x40000000 -prefix [encoding convertto utf-32le .] -prefixlen 0x80000000] 0
+	lindex [testencoding Tcl_ExternalToUtf utf-32le X\0\0\0 {start end} 0 0x40000000 -prefix [encoding convertto utf-32le .] -prefixlen 0x80000000] 0
     } -result ok
 
     test Tcl_UtfToExternal-dstwrote-overflow-0 {
-        Test error generated if dstWrote does not fit in int and dstWrote specified
+	Test error generated if dstWrote does not fit in int and dstWrote specified
     } -constraints {testencoding bigdata} -body {
-        lindex [testencoding Tcl_UtfToExternal utf-32le X {start end} 0 0x80000100 -dstwrote dstWritten -prefix . -prefixlen 0x20000000] 0
+	lindex [testencoding Tcl_UtfToExternal utf-32le X {start end} 0 0x80000100 -dstwrote dstWritten -prefix . -prefixlen 0x20000000] 0
     } -returnCodes error -result "Tcl_UtfToExternal does not support lengths greater than INT_MAX. Use Tcl_UtfToExternalEx instead."
 
     test Tcl_UtfToExternal-dstwrote-overflow-1 {
-        Success if dstWrote does not fit in int but dstWrote not specified
+	Success if dstWrote does not fit in int but dstWrote not specified
     } -constraints {testencoding bigdata} -body {
-        lindex [testencoding Tcl_UtfToExternal utf-32le X {start end} 0 0x80000100 -prefix . -prefixlen 0x20000000] 0
+	lindex [testencoding Tcl_UtfToExternal utf-32le X {start end} 0 0x80000100 -prefix . -prefixlen 0x20000000] 0
     } -result ok
 
 }
