@@ -38,9 +38,10 @@ typedef struct OOResVarInfo {
     Tcl_ResolvedVarInfo info;	/* "Type" information so that the compiled
 				 * variable can be linked to the namespace
 				 * variable at the right time. */
-    Tcl_Obj *variableObj;	/* The name of the variable. */
     Tcl_Var cachedObjectVar;	/* TODO: When to flush this cache? Can class
 				 * variables be cached? */
+    Tcl_Size varNameLen;	/* The length of the variable name. */
+    char varName[TCLFLEXARRAY];	/* The name of the variable. */
 } OOResVarInfo;
 
 /*
@@ -1193,10 +1194,8 @@ ProcedureMethodCompiledVarConnect(
      */
 
     bool cacheIt;
-    Tcl_Size varNameLen;
-    const char *varName = TclGetStringFromObj(infoPtr->variableObj, &varNameLen);
-    Tcl_Obj *variableObj = GetRealVarName(contextPtr, varName, varNameLen,
-	    &cacheIt);
+    Tcl_Obj *variableObj = GetRealVarName(contextPtr, infoPtr->varName,
+	    infoPtr->varNameLen, &cacheIt);
     if (!variableObj) {
 	return NULL;
     }
@@ -1234,7 +1233,6 @@ ProcedureMethodCompiledVarDelete(
 	VarHashRefCount(infoPtr->cachedObjectVar)--;
 	TclCleanupVar((Var *) infoPtr->cachedObjectVar, NULL);
     }
-    Tcl_DecrRefCount(infoPtr->variableObj);
     Tcl_Free(infoPtr);
 }
 
@@ -1288,13 +1286,13 @@ ProcedureMethodCompiledVarResolver(
     TCL_UNUSED(Tcl_Namespace *)/*contextNs*/,
     Tcl_ResolvedVarInfo **rPtrPtr)
 {
-    Tcl_Obj *variableObj = Tcl_NewStringObj(varName, length);
-    OOResVarInfo *infoPtr = (OOResVarInfo *) Tcl_Alloc(sizeof(OOResVarInfo));
+    OOResVarInfo *infoPtr = (OOResVarInfo *) Tcl_Alloc(
+	    offsetof(OOResVarInfo, varName) + sizeof(char) * (length + 1));
     infoPtr->info.fetchProc = ProcedureMethodCompiledVarConnect;
     infoPtr->info.deleteProc = ProcedureMethodCompiledVarDelete;
     infoPtr->cachedObjectVar = NULL;
-    infoPtr->variableObj = variableObj;
-    Tcl_IncrRefCount(variableObj);
+    infoPtr->varNameLen = length;
+    memcpy(infoPtr->varName, varName, sizeof(char) * (length + 1));
     *rPtrPtr = &infoPtr->info;
     return TCL_OK;
 }
