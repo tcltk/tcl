@@ -282,7 +282,7 @@ static void		RunLimitHandlers(LimitHandler *handlerPtr,
 static void		TimeLimitCallback(void *clientData);
 static int		RunPreInitScript(Tcl_Interp *interp);
 static Tcl_Obj *	LocatePreInitScript(Tcl_Interp *interp);
-static Tcl_ObjCmdProc	InitAutoPathObjCmd;
+static Tcl_ObjCmdProc2	InitAutoPathObjCmd;
 #define INIT_AUTO_PATH_CMD "::tcl::InitAutoPath"
 
 /* NRE enabling */
@@ -401,6 +401,8 @@ LocatePreInitScript(Tcl_Interp *interp)
     Tcl_Obj *searchedDirs;
     Tcl_Obj *initScriptPathPtr = NULL;
     Tcl_Obj *pathParts[3] = {NULL, NULL, NULL};
+    Tcl_Obj *exeDirPtr;
+    Tcl_Obj *exePtr;
 
     /*
      * Need to track checked directories for error reporting. As a side
@@ -458,11 +460,11 @@ LocatePreInitScript(Tcl_Interp *interp)
     /* Try parent/lib/tclVERSION */
 
     /* Reminder - TclGetObjNameOfExecutable return need not be released */
-    Tcl_Obj *exePtr = TclGetObjNameOfExecutable();
+    exePtr = TclGetObjNameOfExecutable();
     if (exePtr == NULL) {
 	goto done;
     }
-    Tcl_Obj *exeDirPtr = TclPathPart(interp, exePtr, TCL_PATH_DIRNAME);
+    exeDirPtr = TclPathPart(interp, exePtr, TCL_PATH_DIRNAME);
     if (exeDirPtr == NULL) {
 	goto done;
     }
@@ -609,7 +611,7 @@ int
 InitAutoPathObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument vector. */
 {
     if (objc != 1) {
@@ -793,7 +795,7 @@ TclInterpInit(
 
     Tcl_NRCreateCommand2(interp, "interp", Tcl_InterpObjCmd, NRInterpCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand(interp, INIT_AUTO_PATH_CMD, InitAutoPathObjCmd,
+    Tcl_CreateObjCommand2(interp, INIT_AUTO_PATH_CMD, InitAutoPathObjCmd,
 	    NULL, NULL);
     Tcl_CallWhenDeleted(interp, InterpInfoDeleteProc, NULL);
     return TCL_OK;
