@@ -911,7 +911,10 @@ Tcl_SplitList(
     if (!argv) {
     memerror:
 	if (interp) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj("cannot allocate", -1));
+	    char buf[24];
+	    snprintf(buf, sizeof(buf), "%" TCL_SIZE_MODIFIER "d",
+		    (size * sizeof(char *)) + length + 1);
+	    Tcl_AppendResult(interp, "cannot allocate ", buf, " bytes", (char *)NULL);
 	    Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
 	}
 	return TCL_ERROR;
@@ -2663,7 +2666,10 @@ Tcl_DStringAppend(
     if (newSize > dsPtr->spaceAvl) {
 	if (dsPtr->string == dsPtr->staticSpace) {
 	    char *newString;
-	    newString = (char *) TclAllocEx(newSize, &dsPtr->spaceAvl);
+	    newString = (char *) TclAttemptAllocEx(newSize, &dsPtr->spaceAvl);
+	    if (!newString) {
+		Tcl_Panic("cannot allocate %" TCL_SIZE_MODIFIER "d bytes", newSize);
+	    }
 	    memcpy(newString, dsPtr->string, dsPtr->length);
 	    dsPtr->string = newString;
 	} else {
@@ -2675,8 +2681,12 @@ Tcl_DStringAppend(
 		/* Source string is within this DString. Note offset */
 		offset = bytes - dsPtr->string;
 	    }
-	    dsPtr->string =
-		(char *)TclReallocEx(dsPtr->string, newSize, &dsPtr->spaceAvl);
+	    char *newString =
+		    (char *)TclAttemptReallocEx(dsPtr->string, newSize, &dsPtr->spaceAvl);
+	    if (!newString) {
+		Tcl_Panic("cannot allocate %" TCL_SIZE_MODIFIER "d bytes", newSize);
+	    }
+	    dsPtr->string = newString;
 	    if (offset >= 0) {
 		bytes = dsPtr->string + offset;
 	    }
@@ -2736,7 +2746,7 @@ TclDStringAppendDString(
  *
  * Side effects:
  *	String is reformatted as a list element and added to the current value
- *	of the string. Memory gets reallocated if needed to accomodate the
+ *	of the string. Memory gets reallocated if needed to accommodate the
  *	string's new size.
  *
  *----------------------------------------------------------------------
@@ -2744,6 +2754,19 @@ TclDStringAppendDString(
 
 char *
 Tcl_DStringAppendElement(
+    Tcl_DString *dsPtr,		/* Structure describing dynamic string. */
+    const char *element)	/* String to append. Must be
+				 * null-terminated. */
+{
+    char *result = Tcl_DStringAttemptAppendElement(dsPtr, element);
+    if (!result) {
+	Tcl_Panic("cannot append element: allocation failed");
+    }
+    return result;
+}
+
+char *
+Tcl_DStringAttemptAppendElement(
     Tcl_DString *dsPtr,		/* Structure describing dynamic string. */
     const char *element)	/* String to append. Must be
 				 * null-terminated. */
@@ -2793,7 +2816,10 @@ Tcl_DStringAppendElement(
     newSize += 1; /* For terminating nul */
     if (newSize > dsPtr->spaceAvl) {
 	if (dsPtr->string == dsPtr->staticSpace) {
-	    char *newString = (char *) TclAllocEx(newSize, &dsPtr->spaceAvl);
+	    char *newString = (char *) TclAttemptAllocEx(newSize, &dsPtr->spaceAvl);
+	    if (!newString) {
+		return NULL;
+	    }
 	    memcpy(newString, dsPtr->string, dsPtr->length);
 	    dsPtr->string = newString;
 	} else {
@@ -2805,8 +2831,14 @@ Tcl_DStringAppendElement(
 		/* Source string is within this DString. Note offset */
 		offset = element - dsPtr->string;
 	    }
-	    dsPtr->string =
-		    (char *)TclReallocEx(dsPtr->string, newSize, &dsPtr->spaceAvl);
+	    char *newString =
+		    (char *)TclAttemptReallocEx(dsPtr->string, newSize, &dsPtr->spaceAvl);
+	    if (!newString) {
+		Tcl_Free(dsPtr->string);
+		dsPtr->string = dsPtr->staticSpace;
+		return NULL;
+	    }
+	    dsPtr->string = newString;
 	    if (offset >= 0) {
 		element = dsPtr->string + offset;
 	    }
@@ -3995,6 +4027,36 @@ TclIndexDecode(
     return TCL_INDEX_NONE;
 }
 
+/*
+ *------------------------------------------------------------------------
+ *
+ * TclCannotAllocateError --
+ *
+ *    Generates an error message limit on number of command words exceeded.
+ *
+ * Results:
+ *    Always return TCL_ERROR.
+ *
+ * Side effects:
+ *    If interp is not-NULL, an error message is stored in it.
+ *
+ *------------------------------------------------------------------------
+ */
+int
+TclCannotAllocateError(
+    Tcl_Interp *interp,		/* May be NULL */
+    Tcl_Obj *objPtr)
+{
+    if (interp) {
+	char buf[24];
+	snprintf(buf, sizeof(buf), "%" TCL_SIZE_MODIFIER "d", objPtr->length + 1);
+	Tcl_AppendResult(interp, "cannot allocate ", buf, " bytes for type \'",
+		objPtr->typePtr->name, "\'", (char *)NULL);
+    }
+    Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
+    return TCL_ERROR; /* Always */
+}
+
 /*
  *----------------------------------------------------------------------
  *
