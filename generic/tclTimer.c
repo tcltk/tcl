@@ -243,7 +243,7 @@ static Tcl_TimerToken	CreateTimerHandler(Tcl_Time *timePtr,
  * How to construct the ensembles.
  */
 
-static const EnsembleImplMap tclTimerMap[] = {
+const EnsembleImplMap tclTimerImplMap[] = {
     {"at",	TimerAtCmd,	TclCompileBasic3ArgCmd, NULL, NULL, 0},
     {"in",	TimerInCmd,	TclCompileBasic3ArgCmd, NULL, NULL, 0},
     {"cancel",	TimerCancelCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
@@ -1681,30 +1681,6 @@ AfterCleanupProc(
 	Tcl_Free(afterPtr);
     }
     Tcl_Free(assocPtr);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclInitTimerCmd --
- *
- *	This function is called to create the "timer" Tcl command. See the
- *	user documentation for details on what it does.
- *
- * Results:
- *	A command token for the new command.
- *
- * Side effects:
- *	Creates a new timer command as a mapped ensemble.
- *
- *----------------------------------------------------------------------
- */
-
-Tcl_Command
-TclInitTimerCmd(
-    Tcl_Interp *interp)
-{
-    return TclMakeEnsemble(interp, "timer", tclTimerMap);
 }
 
 /*
