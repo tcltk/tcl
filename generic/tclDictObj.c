@@ -519,7 +519,17 @@ UpdateStringOfDict(
     if (numElems <= LOCAL_SIZE) {
 	flagPtr = localFlags;
     } else {
-	flagPtr = (char *)Tcl_Alloc(numElems);
+	flagPtr = (char *)Tcl_AttemptAlloc(numElems);
+	if (!flagPtr) {
+	    dictPtr->length = numElems - 1;
+	allocError:
+	    /* Allocation error. Just give up. */
+	    if (dictPtr->bytes) {
+		Tcl_Free(dictPtr->bytes);
+		dictPtr->bytes = NULL;
+	    }
+	    return;
+	}
     }
     for (i=0,cPtr=dict->entryChainHead; i<numElems; i+=2,cPtr=cPtr->nextPtr) {
 	/*
@@ -529,11 +539,19 @@ UpdateStringOfDict(
 
 	flagPtr[i] = ( i ? TCL_DONT_QUOTE_HASH : 0 );
 	keyPtr = (Tcl_Obj *)Tcl_GetHashKey(&dict->table, &cPtr->entry);
-	elem = TclGetStringFromObj(keyPtr, &length);
+	elem = TclAttemptGetStringFromObj(keyPtr, &length);
+	if (!elem) {
+	    dictPtr->length = keyPtr->length;
+	    goto allocError;
+	}
 	bytesNeeded += TclScanElement(elem, length, flagPtr+i);
 	flagPtr[i+1] = TCL_DONT_QUOTE_HASH;
 	valuePtr = (Tcl_Obj *)Tcl_GetHashValue(&cPtr->entry);
-	elem = TclGetStringFromObj(valuePtr, &length);
+	elem = TclAttemptGetStringFromObj(valuePtr, &length);
+	if (!elem) {
+	    dictPtr->length = valuePtr->length;
+	    goto allocError;
+	}
 	bytesNeeded += TclScanElement(elem, length, flagPtr+i+1);
     }
     bytesNeeded += numElems;
@@ -543,7 +561,10 @@ UpdateStringOfDict(
      */
 
     dst = Tcl_InitStringRep(dictPtr, NULL, bytesNeeded - 1);
-    TclOOM(dst, bytesNeeded);
+    if (!dst) {
+	dictPtr->length = bytesNeeded - 1;
+	goto allocError;
+    }
     for (i=0,cPtr=dict->entryChainHead; i<numElems; i+=2,cPtr=cPtr->nextPtr) {
 	if (i) {
 	    flagPtr[i] |= TCL_DONT_QUOTE_HASH;
@@ -665,7 +686,11 @@ SetDictFromAny(
 		TclNewObj(keyPtr);
 		Tcl_InvalidateStringRep(keyPtr);
 		dst = Tcl_InitStringRep(keyPtr, NULL, elemSize);
-		TclOOM(dst, elemSize); /* Consider error */
+		if (!dst) {
+			TclCannotAllocateError(interp, keyPtr);
+			TclFreeObj(keyPtr);
+		    return TCL_ERROR;
+		}
 		(void)Tcl_InitStringRep(keyPtr, NULL,
 			TclCopyAndCollapse(elemSize, elemStart, dst));
 	    }
@@ -685,7 +710,11 @@ SetDictFromAny(
 		TclNewObj(valuePtr);
 		Tcl_InvalidateStringRep(valuePtr);
 		dst = Tcl_InitStringRep(valuePtr, NULL, elemSize);
-		TclOOM(dst, elemSize); /* Consider error */
+		if (!dst) {
+		    TclCannotAllocateError(interp, keyPtr);
+		    TclFreeObj(valuePtr);
+		    return TCL_ERROR;
+		}
 		(void)Tcl_InitStringRep(valuePtr, NULL,
 			TclCopyAndCollapse(elemSize, elemStart, dst));
 	    }
