@@ -664,7 +664,7 @@ static Tcl_Obj *
 my_NewLStringObj(
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj * const objv[])
+    Tcl_Obj *const objv[])
 {
     LString *lstringRepPtr;
     Tcl_ObjInternalRep itr;
@@ -923,7 +923,7 @@ lLStringObjCmd(
     void *clientData,
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj * const objv[])
+    Tcl_Obj *const objv[])
 {
     Tcl_Obj *lstringObj;
 
@@ -1141,7 +1141,7 @@ Tcl_Obj *
 newLgenObj(
     Tcl_Interp *interp,
 	Tcl_Size objc,
-    Tcl_Obj * const objv[])
+    Tcl_Obj *const objv[])
 {
     Tcl_WideInt length;
     LgenSeries *lGenSeriesRepPtr;
@@ -1192,7 +1192,7 @@ lGenObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj * const objv[])
+    Tcl_Obj *const objv[])
 {
     Tcl_Obj *genObj = newLgenObj(interp, objc-1, &objv[1]);
     if (genObj) {

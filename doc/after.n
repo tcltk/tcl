@@ -24,8 +24,9 @@ after \- Execute a command after a time delay
 .SH DESCRIPTION
 .PP
 This command is used to delay execution of the program or to execute
-a command in background sometime in the future.  It has several forms,
-depending on the first argument to the command:
+a command in background sometime in the future.
+This command uses a monotonic clock if available.
+It has several forms, depending on the first argument to the command:
 .\" METHOD: <none>
 .TP
 \fBafter \fIms\fR
@@ -62,7 +63,7 @@ which will wait for next round of events).
 Cancels the execution of a delayed command that
 was previously scheduled.
 \fIId\fR indicates which command should be canceled;  it must have
-been the return value from a previous \fBafter\fR command.
+been the return value from a previous \fBafter\fR or \fBtimer\fR command.
 If the command given by \fIid\fR has already been executed then
 the \fBafter cancel\fR command has no effect.
 .TP
@@ -105,6 +106,9 @@ The first element of the list is the script associated
 with \fIid\fR, and the second element is either
 \fBidle\fR or \fBtimer\fR to indicate what kind of event
 handler it is.
+Monotonic and wall clock events have the kind \fBtimer\fR.
+Use \fBtimer info\fR to differntiate between the two clocks and to
+retrieve the scheduled event time.
 .LP
 The \fBafter \fIms\fR and \fBafter idle\fR forms of the command
 assume that the application is event driven:  the delayed commands
@@ -112,6 +116,10 @@ will not be executed unless the application enters the event loop.
 In applications that are not normally event-driven, such as
 \fBtclsh\fR, the event loop can be entered with the \fBvwait\fR
 and \fBupdate\fR commands.
+.SH "TIME MAXIMUM VALUE"
+The argument \fIdelay\fR is bound to a resulting 63 bit monotonic clock value
+(in unit microseconds).
+Any higher value (which is after year 294441) will result in a \fBtime to far\fR error.
 .SH "EXAMPLES"
 This defines a command to make Tcl do nothing at all for \fIN\fR
 seconds:
@@ -148,8 +156,16 @@ proc doOneStep {} {
 }
 doOneStep
 .CE
+.SH "MAXIMUM TIME"
+The maximum supported time point is bound to a 63 bit microseconds value.
+This is minimum around year 294441.
+Specifying time delays resulting in larger monotonic time values will raise an error.
+.SH "COMPATIBILITY"
+This command uses a monotonic clock if available.
+All versions prior to 9.1 used a wall clock for this command.
+The new \fBtimer\fR command features options using the wall clock.
 .SH "SEE ALSO"
-concat(n), interp(n), update(n), vwait(n)
+concat(n), interp(n), timer(n), update(n), vwait(n)
 .SH KEYWORDS
 cancel, delay, idle callback, sleep, time
 '\" Local Variables:

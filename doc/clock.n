@@ -9,13 +9,14 @@
 clock \- Obtain and manipulate dates and times
 .SH "SYNOPSIS"
 .nf
-\fBpackage require Tcl 8.5-\fR
+\fBpackage require Tcl 9.1-\fR
 
 \fBclock add\fI timeVal\fR ?\fIcount unit ...\fR? ?\fI\-option value\fR?
 \fBclock clicks\fR ?\fI\-option\fR?
 \fBclock format\fI timeVal\fR ?\fI\-option value ...\fR?
 \fBclock microseconds\fR
 \fBclock milliseconds\fR
+\fBclock monotonic\fR
 \fBclock scan\fI inputString\fR ?\fI\-option value ...\fR?
 \fBclock seconds\fR
 .fi
@@ -63,13 +64,18 @@ See \fBFORMATTING TIMES\fR for a full description.
 .TP
 \fBclock microseconds\fR
 .
-Returns the current time as an integer number of microseconds.
+Returns the current wall clock time as an integer number of microseconds.
 See \fBHIGH RESOLUTION TIMERS\fR for a full description.
 .\" METHOD: milliseconds
 .TP
 \fBclock milliseconds\fR
 .
-Returns the current time as an integer number of milliseconds.
+Returns the current wall clock time as an integer number of milliseconds.
+See \fBHIGH RESOLUTION TIMERS\fR for a full description.
+.TP
+\fBclock monotonic\fR
+.
+Returns the current monontonic clock value in microseconds.
 See \fBHIGH RESOLUTION TIMERS\fR for a full description.
 .\" METHOD: scan
 .TP
@@ -82,7 +88,7 @@ See \fBSCANNING TIMES\fR for a full description.
 .TP
 \fBclock seconds\fR
 .
-Returns the current time as an integer number of seconds.
+Returns the current wall clock time as an integer number of seconds.
 .SS "PARAMETERS"
 .TP
 \fIcount\fR
@@ -322,7 +328,7 @@ are evaluated consecutively, from left to right.
 .PP
 Most of the subcommands supported by the \fBclock\fR command deal with
 times represented as a count of seconds from the epoch time, and this is the
-representation that \fBclock seconds\fR returns.  There are three exceptions,
+representation that \fBclock seconds\fR returns.  There are four exceptions,
 which are all intended for use where higher-resolution times are required.
 \fBclock milliseconds\fR returns the count of milliseconds from the
 epoch time, and \fBclock microseconds\fR returns the count of microseconds
@@ -333,6 +339,8 @@ of \fBclock clicks\fR is not guaranteed to be tied to any fixed
 epoch; it is simply intended to be the most precise interval timer
 available, and is intended only for relative timing studies such as
 benchmarks.
+\fBclock monotonic\fR is a system monotonic clock and has no fixed start value.
+As a difference to the others, it is guranteed to be contiguous.
 .SH "FORMATTING TIMES"
 .PP
 The \fBclock format\fR command produces times for display to a user

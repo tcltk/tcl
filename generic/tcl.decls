@@ -132,6 +132,15 @@ declare 29 {
 declare 30 {
     void TclFreeObj(Tcl_Obj *objPtr)
 }
+declare 31 {
+    char *Tcl_AttemptGetStringFromObj(Tcl_Obj *objPtr, Tcl_Size *lengthPtr)
+}
+declare 32 {
+    char  *Tcl_AttemptSetStringObj(Tcl_Obj *objPtr, const char *bytes, Tcl_Size length)
+}
+declare 33 {
+    Tcl_Obj *Tcl_AttemptDuplicateObj(Tcl_Obj *objPtr)
+}
 declare 34 {
     int Tcl_GetDouble(Tcl_Interp *interp, const char *src, double *doublePtr)
 }
@@ -1058,13 +1067,14 @@ declare 339 {
     Tcl_Size Tcl_WriteObj(Tcl_Channel chan, Tcl_Obj *objPtr)
 }
 declare 340 {
-    char *Tcl_AttemptGetStringFromObj(Tcl_Obj *objPtr, Tcl_Size *lengthPtr)
+    long long Tcl_GetMonotonicTime(void)
 }
 declare 341 {
-    char  *Tcl_AttemptSetStringObj(Tcl_Obj *objPtr, const char *bytes, Tcl_Size length)
+    Tcl_TimerToken  Tcl_CreateTimerHandlerMicroSeconds(long long microSeconds,
+	    Tcl_TimerProc *proc, void *clientData)
 }
 declare 342 {
-    Tcl_Obj *Tcl_AttemptDuplicateObj(Tcl_Obj *objPtr)
+    void Tcl_SleepMicroSeconds(long long microSeconds)
 }
 declare 343 {
     void Tcl_AlertNotifier(void *clientData)
@@ -2054,11 +2064,11 @@ declare 611 {
 	    Tcl_Size buffersize, Tcl_Obj *gzipHeaderDictObj)
 }
 declare 612 {
-    unsigned int Tcl_ZlibCRC32(unsigned int crc, const unsigned char *buf,
+    unsigned Tcl_ZlibCRC32(unsigned crc, const unsigned char *buf,
 	    Tcl_Size len)
 }
 declare 613 {
-    unsigned int Tcl_ZlibAdler32(unsigned int adler, const unsigned char *buf,
+    unsigned Tcl_ZlibAdler32(unsigned adler, const unsigned char *buf,
 	    Tcl_Size len)
 }
 declare 614 {
@@ -2136,7 +2146,7 @@ declare 630 {
 # TIP #456/#468
 declare 631 {
     Tcl_Channel Tcl_OpenTcpServerEx(Tcl_Interp *interp, const char *service,
-	    const char *host, unsigned int flags, int backlog,
+	    const char *host, unsigned flags, int backlog,
 	    Tcl_TcpAcceptProc *acceptProc, void *callbackData)
 }
 

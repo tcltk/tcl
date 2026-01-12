@@ -52,7 +52,6 @@
 #undef TclStaticLibrary
 #define TclStaticLibrary Tcl_StaticLibrary
 #if !defined(_WIN32) && !defined(__CYGWIN__)
-# undef Tcl_WinConvertError
 # define Tcl_WinConvertError 0
 #endif
 #undef TclGetStringFromObj
@@ -848,9 +847,9 @@ const TclStubs tclStubs = {
     Tcl_DbNewStringObj, /* 28 */
     Tcl_DuplicateObj, /* 29 */
     TclFreeObj, /* 30 */
-    0, /* 31 */
-    0, /* 32 */
-    0, /* 33 */
+    Tcl_AttemptGetStringFromObj, /* 31 */
+    Tcl_AttemptSetStringObj, /* 32 */
+    Tcl_AttemptDuplicateObj, /* 33 */
     Tcl_GetDouble, /* 34 */
     Tcl_GetDoubleFromObj, /* 35 */
     0, /* 36 */
@@ -1157,9 +1156,9 @@ const TclStubs tclStubs = {
     Tcl_UtfToUpper, /* 337 */
     Tcl_WriteChars, /* 338 */
     Tcl_WriteObj, /* 339 */
-    Tcl_AttemptGetStringFromObj, /* 340 */
-    Tcl_AttemptSetStringObj, /* 341 */
-    Tcl_AttemptDuplicateObj, /* 342 */
+    Tcl_GetMonotonicTime, /* 340 */
+    Tcl_CreateTimerHandlerMicroSeconds, /* 341 */
+    Tcl_SleepMicroSeconds, /* 342 */
     Tcl_AlertNotifier, /* 343 */
     Tcl_ServiceModeHook, /* 344 */
     Tcl_UniCharIsAlnum, /* 345 */

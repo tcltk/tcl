@@ -332,7 +332,7 @@ int
 TclDefaultBgErrorHandlerObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *valuePtr;
@@ -1128,6 +1128,16 @@ static const struct {
 #endif // TCL_WITH_INTERNAL_ZLIB
 }};
 
+/*
+ * Wrapper to retrieve version+build to other modules.
+ */
+const char *
+TclGetBuildInfo()
+{
+    return stubInfo.version;
+}
+
+
 const char *
 Tcl_InitSubsystems(void)
 {
@@ -1191,12 +1201,13 @@ Tcl_InitSubsystems(void)
 	    TclInitIOSubsystem();	/* Inits a tsd key (noop). */
 	    TclInitEncodingSubsystem();	/* Process wide encoding init. */
 	    TclInitNamespaceSubsystem();/* Register ns obj type (mutexed). */
+	    TclZipfsInit();            /* Initialize zipfs subsystem */
 	    subsystemsInitialized = 1;
 	}
 	TclpInitUnlock();
     }
     TclInitNotifier();
-    return stubInfo.version;
+    return TclGetBuildInfo();
 }
 
 /*
@@ -1526,7 +1537,7 @@ int
 Tcl_VwaitObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Size i, done = 0, numItems = 0, timedOut = 0;
@@ -1982,7 +1993,7 @@ int
 Tcl_UpdateObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int flags = 0;		/* Initialized to avoid compiler warning. */

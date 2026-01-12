@@ -3072,13 +3072,10 @@ MODULE_SCOPE const char *TclEncodingProfileIdToName(Tcl_Interp *interp,
 MODULE_SCOPE void	TclGetEncodingProfiles(Tcl_Interp *interp);
 
 /*
- * TIP #233 (Virtualized Time)
- * Data for the time hooks, if any.
+ * TIP #723 (Monotonic Time)
  */
 
-MODULE_SCOPE Tcl_GetTimeProc *tclGetTimeProcPtr;
-MODULE_SCOPE Tcl_ScaleTimeProc *tclScaleTimeProcPtr;
-MODULE_SCOPE void *tclTimeClientData;
+MODULE_SCOPE Tcl_GetMonotonicTimeProc *tclGetMonotonicTimeProcPtr;
 
 /*
  * Variables denoting the Tcl object types defined in the core.
@@ -3260,7 +3257,8 @@ enum ClockOps {
     CLOCK_READ_CLICKS = 0,	/* Read the click counter. */
     CLOCK_READ_MICROS = 1,	/* Time in microseconds. */
     CLOCK_READ_MILLIS = 2,	/* Time in milliseconds. */
-    CLOCK_READ_SECS = 3		/* Time in seconds. */
+    CLOCK_READ_SECS = 3,	/* Time in seconds. */
+    CLOCK_READ_MONOTONIC = 4	/* Time in monotonic microseconds. */
 };
 
 /*
@@ -3408,6 +3406,9 @@ MODULE_SCOPE double	TclFloor(const void *a);
 MODULE_SCOPE void	TclFormatNaN(double value, char *buffer);
 MODULE_SCOPE int	TclFSFileAttrIndex(Tcl_Obj *pathPtr,
 			    const char *attributeName, int *indexPtr);
+MODULE_SCOPE int TclFSGetAncestorPaths(Tcl_Interp *interp, Tcl_Obj *pathPtr,
+			    Tcl_Size numPaths, Tcl_Obj *pathsPtrs[]);
+
 MODULE_SCOPE Tcl_Command TclNRCreateCommandInNs(Tcl_Interp *interp,
 			    const char *cmdName, Tcl_Namespace *nsPtr,
 			    Tcl_ObjCmdProc2 *proc, Tcl_ObjCmdProc2 *nreProc,
@@ -3415,6 +3416,7 @@ MODULE_SCOPE Tcl_Command TclNRCreateCommandInNs(Tcl_Interp *interp,
 MODULE_SCOPE int	TclNREvalFile(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 			    const char *encodingName);
 MODULE_SCOPE bool *	TclGetAsyncReadyPtr(void);
+MODULE_SCOPE const char * TclGetBuildInfo(void);
 MODULE_SCOPE Tcl_Obj *	TclGetBgErrorHandler(Tcl_Interp *interp);
 MODULE_SCOPE int	TclGetChannelFromObj(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, Tcl_Channel *chanPtr,
@@ -3701,11 +3703,15 @@ MODULE_SCOPE void *	TclpThreadGetGlobalTSD(void *tsdKeyPtr);
 MODULE_SCOPE void	TclErrorStackResetIf(Tcl_Interp *interp,
 			    const char *msg, Tcl_Size length);
 /* Tip 430 */
-MODULE_SCOPE int	TclZipfs_Init(Tcl_Interp *interp);
+MODULE_SCOPE int	TclZipfsInitInterp(Tcl_Interp *interp);
+MODULE_SCOPE int	TclZipfsInit(void);
 MODULE_SCOPE int	TclIsZipfsPath(const char *path);
 MODULE_SCOPE void	TclZipfsFinalize(void);
+
 MODULE_SCOPE Tcl_Obj *	TclGetObjNameOfShlib(void);
 MODULE_SCOPE void	TclSetObjNameOfShlib(Tcl_Obj *namePtr, Tcl_Encoding);
+MODULE_SCOPE Tcl_Size	TclGetObjExecutableAncestors(Tcl_Interp *interp,
+			    Tcl_Size numPaths, Tcl_Obj *pathsPtr[]);
 
 /*
  * Many parsing tasks need a common definition of whitespace.
@@ -3742,7 +3748,10 @@ MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_ConcatObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_ConstObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_ContinueObjCmd;
 MODULE_SCOPE Tcl_TimerToken TclCreateAbsoluteTimerHandler(
-			    Tcl_Time *timePtr, Tcl_TimerProc *proc,
+			    Tcl_Time *time, Tcl_TimerProc *proc,
+			    void *clientData);
+MODULE_SCOPE Tcl_TimerToken TclCreateMonotonicTimerHandler(
+			    long long timeUS, Tcl_TimerProc *proc,
 			    void *clientData);
 MODULE_SCOPE Tcl_ObjCmdProc2 TclDefaultBgErrorHandlerObjCmd;
 MODULE_SCOPE int	TclDictWithFinish(Tcl_Interp *interp, Var *varPtr,
@@ -3753,6 +3762,7 @@ MODULE_SCOPE Tcl_Obj *	TclDictWithInit(Tcl_Interp *interp, Tcl_Obj *dictPtr,
 			    Tcl_Size pathc, Tcl_Obj *const pathv[]);
 MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_DisassembleObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc2 TclLoadIcuObjCmd;
+MODULE_SCOPE Tcl_Command TclInitTimerCmd(Tcl_Interp *interp);
 
 /* Assemble command function */
 MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_AssembleObjCmd;
@@ -4161,37 +4171,6 @@ MODULE_SCOPE int	TclCannotAllocateError(Tcl_Interp *interp, Tcl_Obj *objPtr);
 /* Constants used in index value encoding routines. */
 #define TCL_INDEX_END	((Tcl_Size)-2)
 #define TCL_INDEX_START	((Tcl_Size)0)
-
-/*
- *----------------------------------------------------------------------
- *
- * TclScaleTime --
- *
- *	TIP #233 (Virtualized Time): Wrapper around the time virutalisation
- *	rescale function to hide the binding of the clientData.
- *
- *	This is static inline code; it's like a macro, but a function. It's
- *	used because this is a piece of code that ends up in places that are a
- *	bit performance sensitive.
- *
- * Results:
- *	None
- *
- * Side effects:
- *	Updates the time structure (given as an argument) with what the time
- *	should be after virtualisation.
- *
- *----------------------------------------------------------------------
- */
-
-static inline void
-TclScaleTime(
-    Tcl_Time *timePtr)
-{
-    if (timePtr != NULL) {
-	tclScaleTimeProcPtr(timePtr, tclTimeClientData);
-    }
-}
 
 /*
  *----------------------------------------------------------------
@@ -4629,7 +4608,7 @@ MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
 
 /* Token growth tuning, default to the general value. */
 #ifndef TCL_MIN_TOKEN_GROWTH
-#define TCL_MIN_TOKEN_GROWTH TCL_MIN_GROWTH/sizeof(Tcl_Token)
+#define TCL_MIN_TOKEN_GROWTH (TCL_MIN_GROWTH/sizeof(Tcl_Token))
 #endif
 
 static inline void
@@ -4646,16 +4625,16 @@ TclGrowParseTokenArray(
 	    oldPtr = NULL;
 	}
 	newPtr = (Tcl_Token *)Tcl_AttemptRealloc((char *) oldPtr,
-		allocated * sizeof(Tcl_Token));
+		(size_t)allocated * sizeof(Tcl_Token));
 	if (newPtr == NULL) {
-	    allocated = needed + append + TCL_MIN_TOKEN_GROWTH;
+	    allocated = needed + append + (Tcl_Size)TCL_MIN_TOKEN_GROWTH;
 	    newPtr = (Tcl_Token *)Tcl_Realloc((char *) oldPtr,
-		    allocated * sizeof(Tcl_Token));
+		    (size_t)allocated * sizeof(Tcl_Token));
 	}
 	parsePtr->tokensAvailable = allocated;
 	if (oldPtr == NULL) {
 	    memcpy(newPtr, parsePtr->staticTokens,
-		    parsePtr->numTokens * sizeof(Tcl_Token));
+		    (size_t)parsePtr->numTokens * sizeof(Tcl_Token));
 	}
 	parsePtr->tokenPtr = newPtr;
     }

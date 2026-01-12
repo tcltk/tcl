@@ -136,9 +136,14 @@ EXTERN Tcl_Obj *	Tcl_DbNewStringObj(const char *bytes,
 EXTERN Tcl_Obj *	Tcl_DuplicateObj(Tcl_Obj *objPtr);
 /* 30 */
 EXTERN void		TclFreeObj(Tcl_Obj *objPtr);
-/* Slot 31 is reserved */
-/* Slot 32 is reserved */
-/* Slot 33 is reserved */
+/* 31 */
+EXTERN char *		Tcl_AttemptGetStringFromObj(Tcl_Obj *objPtr,
+				Tcl_Size *lengthPtr);
+/* 32 */
+EXTERN char *		Tcl_AttemptSetStringObj(Tcl_Obj *objPtr,
+				const char *bytes, Tcl_Size length);
+/* 33 */
+EXTERN Tcl_Obj *	Tcl_AttemptDuplicateObj(Tcl_Obj *objPtr);
 /* 34 */
 EXTERN int		Tcl_GetDouble(Tcl_Interp *interp, const char *src,
 				double *doublePtr);
@@ -913,13 +918,13 @@ EXTERN Tcl_Size		Tcl_WriteChars(Tcl_Channel chan, const char *src,
 /* 339 */
 EXTERN Tcl_Size		Tcl_WriteObj(Tcl_Channel chan, Tcl_Obj *objPtr);
 /* 340 */
-EXTERN char *		Tcl_AttemptGetStringFromObj(Tcl_Obj *objPtr,
-				Tcl_Size *lengthPtr);
+EXTERN long long	Tcl_GetMonotonicTime(void);
 /* 341 */
-EXTERN char *		Tcl_AttemptSetStringObj(Tcl_Obj *objPtr,
-				const char *bytes, Tcl_Size length);
+EXTERN Tcl_TimerToken	Tcl_CreateTimerHandlerMicroSeconds(
+				long long microSeconds, Tcl_TimerProc *proc,
+				void *clientData);
 /* 342 */
-EXTERN Tcl_Obj *	Tcl_AttemptDuplicateObj(Tcl_Obj *objPtr);
+EXTERN void		Tcl_SleepMicroSeconds(long long microSeconds);
 /* 343 */
 EXTERN void		Tcl_AlertNotifier(void *clientData);
 /* 344 */
@@ -1655,10 +1660,10 @@ EXTERN int		Tcl_ZlibInflate(Tcl_Interp *interp, int format,
 				Tcl_Obj *data, Tcl_Size buffersize,
 				Tcl_Obj *gzipHeaderDictObj);
 /* 612 */
-EXTERN unsigned int	Tcl_ZlibCRC32(unsigned int crc,
-				const unsigned char *buf, Tcl_Size len);
+EXTERN unsigned		Tcl_ZlibCRC32(unsigned crc, const unsigned char *buf,
+				Tcl_Size len);
 /* 613 */
-EXTERN unsigned int	Tcl_ZlibAdler32(unsigned int adler,
+EXTERN unsigned		Tcl_ZlibAdler32(unsigned adler,
 				const unsigned char *buf, Tcl_Size len);
 /* 614 */
 EXTERN int		Tcl_ZlibStreamInit(Tcl_Interp *interp, int mode,
@@ -1711,7 +1716,7 @@ EXTERN void		Tcl_ZlibStreamSetCompressionDictionary(
 /* 631 */
 EXTERN Tcl_Channel	Tcl_OpenTcpServerEx(Tcl_Interp *interp,
 				const char *service, const char *host,
-				unsigned int flags, int backlog,
+				unsigned flags, int backlog,
 				Tcl_TcpAcceptProc *acceptProc,
 				void *callbackData);
 /* 632 */
@@ -1978,9 +1983,9 @@ typedef struct TclStubs {
     Tcl_Obj * (*tcl_DbNewStringObj) (const char *bytes, Tcl_Size length, const char *file, int line); /* 28 */
     Tcl_Obj * (*tcl_DuplicateObj) (Tcl_Obj *objPtr); /* 29 */
     void (*tclFreeObj) (Tcl_Obj *objPtr); /* 30 */
-    void (*reserved31)(void);
-    void (*reserved32)(void);
-    void (*reserved33)(void);
+    char * (*tcl_AttemptGetStringFromObj) (Tcl_Obj *objPtr, Tcl_Size *lengthPtr); /* 31 */
+    char * (*tcl_AttemptSetStringObj) (Tcl_Obj *objPtr, const char *bytes, Tcl_Size length); /* 32 */
+    Tcl_Obj * (*tcl_AttemptDuplicateObj) (Tcl_Obj *objPtr); /* 33 */
     int (*tcl_GetDouble) (Tcl_Interp *interp, const char *src, double *doublePtr); /* 34 */
     int (*tcl_GetDoubleFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, double *doublePtr); /* 35 */
     void (*reserved36)(void);
@@ -2287,9 +2292,9 @@ typedef struct TclStubs {
     Tcl_Size (*tcl_UtfToUpper) (char *src); /* 337 */
     Tcl_Size (*tcl_WriteChars) (Tcl_Channel chan, const char *src, Tcl_Size srcLen); /* 338 */
     Tcl_Size (*tcl_WriteObj) (Tcl_Channel chan, Tcl_Obj *objPtr); /* 339 */
-    char * (*tcl_AttemptGetStringFromObj) (Tcl_Obj *objPtr, Tcl_Size *lengthPtr); /* 340 */
-    char * (*tcl_AttemptSetStringObj) (Tcl_Obj *objPtr, const char *bytes, Tcl_Size length); /* 341 */
-    Tcl_Obj * (*tcl_AttemptDuplicateObj) (Tcl_Obj *objPtr); /* 342 */
+    long long (*tcl_GetMonotonicTime) (void); /* 340 */
+    Tcl_TimerToken (*tcl_CreateTimerHandlerMicroSeconds) (long long microSeconds, Tcl_TimerProc *proc, void *clientData); /* 341 */
+    void (*tcl_SleepMicroSeconds) (long long microSeconds); /* 342 */
     void (*tcl_AlertNotifier) (void *clientData); /* 343 */
     void (*tcl_ServiceModeHook) (int mode); /* 344 */
     int (*tcl_UniCharIsAlnum) (int ch); /* 345 */
@@ -2559,8 +2564,8 @@ typedef struct TclStubs {
     void (*tcl_BackgroundException) (Tcl_Interp *interp, int code); /* 609 */
     int (*tcl_ZlibDeflate) (Tcl_Interp *interp, int format, Tcl_Obj *data, int level, Tcl_Obj *gzipHeaderDictObj); /* 610 */
     int (*tcl_ZlibInflate) (Tcl_Interp *interp, int format, Tcl_Obj *data, Tcl_Size buffersize, Tcl_Obj *gzipHeaderDictObj); /* 611 */
-    unsigned int (*tcl_ZlibCRC32) (unsigned int crc, const unsigned char *buf, Tcl_Size len); /* 612 */
-    unsigned int (*tcl_ZlibAdler32) (unsigned int adler, const unsigned char *buf, Tcl_Size len); /* 613 */
+    unsigned (*tcl_ZlibCRC32) (unsigned crc, const unsigned char *buf, Tcl_Size len); /* 612 */
+    unsigned (*tcl_ZlibAdler32) (unsigned adler, const unsigned char *buf, Tcl_Size len); /* 613 */
     int (*tcl_ZlibStreamInit) (Tcl_Interp *interp, int mode, int format, int level, Tcl_Obj *dictObj, Tcl_ZlibStream *zshandle); /* 614 */
     Tcl_Obj * (*tcl_ZlibStreamGetCommandName) (Tcl_ZlibStream zshandle); /* 615 */
     int (*tcl_ZlibStreamEof) (Tcl_ZlibStream zshandle); /* 616 */
@@ -2578,7 +2583,7 @@ typedef struct TclStubs {
     void * (*tcl_FindSymbol) (Tcl_Interp *interp, Tcl_LoadHandle handle, const char *symbol); /* 628 */
     int (*tcl_FSUnloadFile) (Tcl_Interp *interp, Tcl_LoadHandle handlePtr); /* 629 */
     void (*tcl_ZlibStreamSetCompressionDictionary) (Tcl_ZlibStream zhandle, Tcl_Obj *compressionDictionaryObj); /* 630 */
-    Tcl_Channel (*tcl_OpenTcpServerEx) (Tcl_Interp *interp, const char *service, const char *host, unsigned int flags, int backlog, Tcl_TcpAcceptProc *acceptProc, void *callbackData); /* 631 */
+    Tcl_Channel (*tcl_OpenTcpServerEx) (Tcl_Interp *interp, const char *service, const char *host, unsigned flags, int backlog, Tcl_TcpAcceptProc *acceptProc, void *callbackData); /* 631 */
     int (*tclZipfs_Mount) (Tcl_Interp *interp, const char *zipname, const char *mountPoint, const char *passwd); /* 632 */
     int (*tclZipfs_Unmount) (Tcl_Interp *interp, const char *mountPoint); /* 633 */
     Tcl_Obj * (*tclZipfs_TclLibrary) (void); /* 634 */
@@ -2722,9 +2727,12 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_DuplicateObj) /* 29 */
 #define TclFreeObj \
 	(tclStubsPtr->tclFreeObj) /* 30 */
-/* Slot 31 is reserved */
-/* Slot 32 is reserved */
-/* Slot 33 is reserved */
+#define Tcl_AttemptGetStringFromObj \
+	(tclStubsPtr->tcl_AttemptGetStringFromObj) /* 31 */
+#define Tcl_AttemptSetStringObj \
+	(tclStubsPtr->tcl_AttemptSetStringObj) /* 32 */
+#define Tcl_AttemptDuplicateObj \
+	(tclStubsPtr->tcl_AttemptDuplicateObj) /* 33 */
 #define Tcl_GetDouble \
 	(tclStubsPtr->tcl_GetDouble) /* 34 */
 #define Tcl_GetDoubleFromObj \
@@ -3295,12 +3303,12 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_WriteChars) /* 338 */
 #define Tcl_WriteObj \
 	(tclStubsPtr->tcl_WriteObj) /* 339 */
-#define Tcl_AttemptGetStringFromObj \
-	(tclStubsPtr->tcl_AttemptGetStringFromObj) /* 340 */
-#define Tcl_AttemptSetStringObj \
-	(tclStubsPtr->tcl_AttemptSetStringObj) /* 341 */
-#define Tcl_AttemptDuplicateObj \
-	(tclStubsPtr->tcl_AttemptDuplicateObj) /* 342 */
+#define Tcl_GetMonotonicTime \
+	(tclStubsPtr->tcl_GetMonotonicTime) /* 340 */
+#define Tcl_CreateTimerHandlerMicroSeconds \
+	(tclStubsPtr->tcl_CreateTimerHandlerMicroSeconds) /* 341 */
+#define Tcl_SleepMicroSeconds \
+	(tclStubsPtr->tcl_SleepMicroSeconds) /* 342 */
 #define Tcl_AlertNotifier \
 	(tclStubsPtr->tcl_AlertNotifier) /* 343 */
 #define Tcl_ServiceModeHook \
