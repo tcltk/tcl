@@ -434,6 +434,7 @@ static const EnsembleSetup ensembleCommands[] = {
     {"string",		tclStringImplMap,	NULL, CMD_IS_SAFE},
     {"::tcl::prefix",	tclPrefixImplMap,	TclSetUpPrefixCmd, CMD_IS_SAFE},
     {"::tcl::process",	tclProcessImplMap,	TclSetUpProcessCmd, CMD_IS_SAFE},
+    {"timer",		tclTimerImplMap,	NULL, CMD_IS_SAFE},
     {"unicode",		tclUnicodeImplMap,	NULL, CMD_IS_SAFE},
     {"zipfs",		tclZipfsImplMap,	NULL, 0},
     {"zlib",		tclZlibImplMap,		NULL, CMD_IS_SAFE},
@@ -1131,7 +1132,6 @@ Tcl_CreateInterp(void)
 	    }
 	}
     }
-    TclInitTimerCmd(interp);
 
     /*
      * Register "clock" subcommands. These *do* go through

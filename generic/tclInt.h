@@ -3155,6 +3155,7 @@ MODULE_SCOPE const EnsembleImplMap tclNamespaceImplMap[];
 MODULE_SCOPE const EnsembleImplMap tclPrefixImplMap[];
 MODULE_SCOPE const EnsembleImplMap tclProcessImplMap[];
 MODULE_SCOPE const EnsembleImplMap tclStringImplMap[];
+MODULE_SCOPE const EnsembleImplMap tclTimerImplMap[];
 MODULE_SCOPE const EnsembleImplMap tclUnicodeImplMap[];
 MODULE_SCOPE const EnsembleImplMap tclZipfsImplMap[];
 MODULE_SCOPE const EnsembleImplMap tclZlibImplMap[];
@@ -3794,7 +3795,6 @@ MODULE_SCOPE Tcl_Obj *	TclDictWithInit(Tcl_Interp *interp, Tcl_Obj *dictPtr,
 			    Tcl_Size pathc, Tcl_Obj *const pathv[]);
 MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_DisassembleObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc2 TclLoadIcuObjCmd;
-MODULE_SCOPE Tcl_Command TclInitTimerCmd(Tcl_Interp *interp);
 
 /* Assemble command function */
 MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_AssembleObjCmd;
