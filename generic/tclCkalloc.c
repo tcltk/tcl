@@ -797,7 +797,7 @@ static int
 MemoryCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Obj values of arguments. */
 {
     const char *fileName;
@@ -806,7 +806,7 @@ MemoryCmd(
     Tcl_WideInt value;
     int result, option;
     size_t len;
-    static const char *options[] = {
+    static const char *const options[] = {
 	"active",	"break_on_malloc",	"info",
 	"init",		"objs",			"onexit",
 	"tag",		"trace",		"trace_on_at_malloc",
@@ -967,7 +967,7 @@ static int
 CheckmemCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Interpreter for evaluation. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Obj values of arguments. */
 {
     if (objc != 2) {

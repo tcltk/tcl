@@ -133,7 +133,7 @@ static int
 TestfilehandlerCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument strings. */
 {
     Pipe *pipePtr;
@@ -347,7 +347,7 @@ static int
 TestfilewaitCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument strings. */
 {
     int mask, result, timeout;
@@ -415,7 +415,7 @@ static int
 TestfindexecutableCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument strings. */
 {
     Tcl_Obj *saveName;
@@ -457,7 +457,7 @@ static int
 TestforkCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument strings. */
 {
     pid_t pid;
@@ -503,7 +503,7 @@ static int
 TestalarmCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument strings. */
 {
 #ifdef SA_RESTART
@@ -612,7 +612,7 @@ static int
 TestchmodCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument strings. */
 {
     Tcl_Size i;

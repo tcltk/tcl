@@ -1206,6 +1206,7 @@ Tcl_ExternalToUtfDStringEx(
 
     if (src == NULL) {
 	srcLen = 0;
+	src = "";	/* Avoid ABSAN warnings about ops on NULL pointers */
     } else if (srcLen < 0) {
 	srcLen = encodingPtr->lengthProc(src);
     }
@@ -1342,6 +1343,7 @@ Tcl_ExternalToUtf(
 
     if (src == NULL) {
 	srcLen = 0;
+	src = "";	/* Avoid ABSAN warnings about ops on NULL pointers */
     } else if (srcLen < 0) {
 	Encoding *encodingPtr = (Encoding *)encoding;
 	if (encodingPtr == NULL) {
@@ -1462,6 +1464,7 @@ Tcl_ExternalToUtfEx(
 
     if (src == NULL) {
 	srcLen = 0;
+	src = "";	/* Avoid ABSAN warnings about ops on NULL pointers */
     } else if (srcLen < 0) {
 	srcLen = encodingPtr->lengthProc(src);
     }
@@ -1475,6 +1478,8 @@ Tcl_ExternalToUtfEx(
 	flags |= TCL_ENCODING_START | TCL_ENCODING_END;
 	statePtr = &localState;
     }
+
+    bool charLimited = ((flags & TCL_ENCODING_CHAR_LIMIT) != 0) && (dstCharsPtr != NULL);
 
     /* Note two separate checks to handle intermediate underflow */
     if (terminatorLength > dstLen) {
@@ -1494,8 +1499,6 @@ Tcl_ExternalToUtfEx(
 	/* UTF-8 -> TUTF-8 */
 	flags |= ENCODING_INPUT;
     }
-
-    int charLimited = (flags & TCL_ENCODING_CHAR_LIMIT) && (dstCharsPtr != NULL);
 
     /*
      * The low level encoding routines only take int arguments. Since they
@@ -1773,6 +1776,7 @@ Tcl_UtfToExternalDStringEx(
 
     if (src == NULL) {
 	srcLen = 0;
+	src = "";	/* Avoid ABSAN warnings about ops on NULL pointers */
     } else if (srcLen < 0) {
 	srcLen = strlen(src);
     }
@@ -1911,6 +1915,7 @@ Tcl_UtfToExternal(
 
     if (src == NULL) {
 	srcLen = 0;
+	src = "";	/* Avoid ABSAN warnings about ops on NULL pointers */
     } else if (srcLen < 0) {
 	srcLen = strlen(src);
     }
@@ -2033,6 +2038,7 @@ Tcl_UtfToExternalEx(
 
     if (src == NULL) {
 	srcLen = 0;
+	src = "";	/* Avoid ABSAN warnings about ops on NULL pointers */
     } else if (srcLen < 0) {
 	srcLen = strlen(src); /* strlen works for TUTF-8 */
     }
@@ -2046,6 +2052,14 @@ Tcl_UtfToExternalEx(
 	flags |= TCL_ENCODING_START | TCL_ENCODING_END;
 	statePtr = &localState;
     }
+
+    /*
+     * TODO - The fromUtf routines do not support the
+     * TCL_ENCODING_CHAR_LIMIT flag. Ignore if present. However, for future
+     * support, the looping code is prepared to handle it.
+     */
+    flags &= ~TCL_ENCODING_CHAR_LIMIT;
+    bool charLimited = ((flags & TCL_ENCODING_CHAR_LIMIT) != 0) && (dstCharsPtr != NULL);
 
     /* Note two separate checks to handle intermediate underflow */
     if (terminatorLength > dstLen) {
@@ -2065,14 +2079,6 @@ Tcl_UtfToExternalEx(
 	/* TUTF-8 -> UTF-8 */
 	flags &= ~ENCODING_INPUT; /* Ensure bit not set */
     }
-
-    /*
-     * TODO - The fromUtf routines do not support the
-     * TCL_ENCODING_CHAR_LIMIT flag. Ignore if present. However, for future
-     * support, the looping code is prepared to handle it.
-     */
-    flags &= ~TCL_ENCODING_CHAR_LIMIT;
-    int charLimited = (flags & TCL_ENCODING_CHAR_LIMIT) && (dstCharsPtr != NULL);
 
     /*
      * The low level encoding routines only take int arguments. Since they

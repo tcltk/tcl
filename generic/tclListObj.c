@@ -369,7 +369,7 @@ ListRepFreeUnreferenced(
  */
 static inline void
 ObjArrayIncrRefs(
-    Tcl_Obj * const *objv,	/* Pointer to the array */
+    Tcl_Obj *const *objv,	/* Pointer to the array */
     Tcl_Size startIdx,		/* Starting index of subarray within objv */
     Tcl_Size count)		/* Number of elements in the subarray */
 {
@@ -401,11 +401,11 @@ ObjArrayIncrRefs(
  */
 static inline void
 ObjArrayDecrRefs(
-    Tcl_Obj * const *objv,	/* Pointer to the array */
+    Tcl_Obj *const *objv,	/* Pointer to the array */
     Tcl_Size startIdx,		/* Starting index of subarray within objv */
     Tcl_Size count)		/* Number of elements in the subarray */
 {
-    Tcl_Obj * const *end;
+    Tcl_Obj *const *end;
     LIST_INDEX_ASSERT(startIdx);
     LIST_COUNT_ASSERT(count);
     objv += startIdx;
@@ -1763,7 +1763,7 @@ TclListObjAppendElements(
     Tcl_Interp *interp,		/* Used to report errors if not NULL. */
     Tcl_Obj *toObj,		/* List object to append */
     Tcl_Size elemCount,		/* Number of elements in elemObjs[] */
-    Tcl_Obj * const elemObjv[])	/* Objects to append to toObj's list. */
+    Tcl_Obj *const elemObjv[])	/* Objects to append to toObj's list. */
 {
     ListRep listRep;
     Tcl_Obj **toObjv;
