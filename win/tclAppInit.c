@@ -67,6 +67,13 @@ int _CRT_glob = 0;
 MODULE_SCOPE int TCL_LOCAL_APPINIT(Tcl_Interp *);
 
 /*
+ * The following allows changing of the script file read at startup.
+ */
+#ifndef TCL_RC_FILE
+#define TCL_RC_FILE "~/tclshrc.tcl"
+#endif
+
+/*
  * The following #if block allows you to change how Tcl finds the startup
  * script, prime the library or encoding paths, fiddle with the argv, etc.,
  * without needing to rewrite Tcl_Main()
@@ -75,6 +82,40 @@ MODULE_SCOPE int TCL_LOCAL_APPINIT(Tcl_Interp *);
 #ifdef TCL_LOCAL_MAIN_HOOK
 MODULE_SCOPE int TCL_LOCAL_MAIN_HOOK(int *argc, TCHAR ***argv);
 #endif
+
+/*
+ * TclSetRcFilePath --
+ *
+ *	Sets the path of the Tcl startup file (usually ".tclshrc"). Will
+ *	do tilde expansion and normalization of the passed path and set
+ *	the tclRcFilePath variable to the result
+ *
+ * Results:
+ *	A Tcl result code.
+ *
+ * Side effects:
+ *	Sets the tclRcFilePath variable.
+ *
+ * TODO - this function is duplicated in the Unix version of tclAppInit.c.
+ * Consider adding it to Tcl library and callable via the stubs table.
+ */
+static int
+TclSetRcFilePath(Tcl_Interp *interp, const char *path)
+{
+    Tcl_DString ds;
+    if (Tcl_FSTildeExpand(interp, path, &ds) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    Tcl_Obj *rcPathObj = Tcl_DStringToObj(&ds);
+    /* Reminder: don't worry about rcPathObj ref count on success/failure */
+    if (Tcl_SetVar2Ex(interp, "tcl_rcFileName", NULL, rcPathObj,
+	    TCL_GLOBAL_ONLY) == NULL) {
+	return TCL_ERROR;
+    }
+    return TCL_OK;
+
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -189,15 +230,14 @@ Tcl_AppInit(
      * run interactively. Typically the startup file is "~/.apprc" where "app"
      * is the name of the application. If this line is deleted then no
      * user-specific startup file will be run under any conditions.
+     * In keeping with the historical behavior, errors setting the name
+     * for example, if the home directory cannot be found, are ignored.
      */
-
-    (void)Tcl_EvalEx(interp,
-	    "set tcl_rcFileName [file tildeexpand ~/tclshrc.tcl]",
-	    TCL_AUTO_LENGTH, TCL_EVAL_GLOBAL);
-
+    (void) TclSetRcFilePath(interp, TCL_RC_FILE);
+    Tcl_ResetResult(interp);
     return TCL_OK;
 }
-
+
 /*
  * Local Variables:
  * mode: c

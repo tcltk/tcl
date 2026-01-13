@@ -54,7 +54,7 @@ static const char *const processors[NUMPROCESSORS] = {
  * Forward declarations
  */
 
-static TclInitProcessGlobalValueProc	InitializeDefaultLibraryDir;
+static TclInitProcessGlobalValueProc InitializeDefaultLibraryDir;
 static TclInitProcessGlobalValueProc	InitializeSourceLibraryDir;
 static void		AppendEnvironment(Tcl_Obj *listPtr, const char *lib);
 
@@ -69,22 +69,23 @@ static ProcessGlobalValue sourceLibraryDir =
 
 
 /*
- * TclpGetWindowsVersionOnce --
+ * TclGetWinInfoOnce --
  *
- *	Callback to retrieve Windows version information. To be invoked only
- *	through InitOnceExecuteOnce for thread safety.
+ *	Callback to retrieve bits of Windows platform information.
+ *	To be invoked only through InitOnceExecuteOnce for thread safety.
  *
  * Results:
  *	None.
  */
 static BOOL CALLBACK
-TclpGetWindowsVersionOnce(
+TclGetWinInfoOnce(
     TCL_UNUSED(PINIT_ONCE),
     TCL_UNUSED(PVOID),
     PVOID *lpContext)
 {
+    static TclWinInfo tclWinInfo;
     typedef int(__stdcall getVersionProc)(void *);
-    static OSVERSIONINFOW osInfo;
+    DWORD dw;
 
     /*
      * GetVersionExW will not return the "real" Windows version so use
@@ -94,55 +95,34 @@ TclpGetWindowsVersionOnce(
     getVersionProc *getVersion =
 	(getVersionProc *)(void *)GetProcAddress(handle, "RtlGetVersion");
 
-    osInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOW);
-    if (getVersion == NULL || getVersion(&osInfo)) {
-	if (!GetVersionExW(&osInfo)) {
+    tclWinInfo.osVersion.dwOSVersionInfoSize = sizeof(tclWinInfo.osVersion);
+    if (getVersion == NULL || getVersion(&tclWinInfo.osVersion) != 0) {
+	if (!GetVersionExW(&tclWinInfo.osVersion)) {
 	    /* Should never happen but ...*/
 	    return FALSE;
 	}
     }
-    *lpContext = (LPVOID)&osInfo;
-    return TRUE;
-}
 
-/*
- * TclpGetWindowsVersion --
- *
- *	Returns a pointer to the OSVERSIONINFOW structure containing the
- *	version information for the current Windows version.
- *
- * Results:
- *	Pointer to OSVERSIONINFOW structure.
- */
-static const OSVERSIONINFOW *
-TclpGetWindowsVersion(void)
-{
-    static INIT_ONCE osInfoOnce = INIT_ONCE_STATIC_INIT;
-    OSVERSIONINFOW *osInfoPtr = NULL;
-    BOOL result = InitOnceExecuteOnce(
-	&osInfoOnce, TclpGetWindowsVersionOnce, NULL, (LPVOID *)&osInfoPtr);
-    return result ? osInfoPtr : NULL;
-}
+    tclWinInfo.longPathsSupported = 0;
+    if (tclWinInfo.osVersion.dwMajorVersion == 10 &&
+	tclWinInfo.osVersion.dwBuildNumber >= 22000) {
+	tclWinInfo.osVersion.dwMajorVersion = 11;
+    }
+    if (tclWinInfo.osVersion.dwMajorVersion > 10 ||
+	    (tclWinInfo.osVersion.dwMajorVersion == 10 &&
+	    tclWinInfo.osVersion.dwBuildNumber >= 14393)) {
+	dw = sizeof(tclWinInfo.longPathsSupported);
+	if (RegGetValueA(HKEY_LOCAL_MACHINE,
+		"SYSTEM\\CurrentControlSet\\Control\\FileSystem",
+		"LongPathsEnabled", RRF_RT_REG_DWORD, NULL,
+		&tclWinInfo.longPathsSupported, &dw) != ERROR_SUCCESS) {
+	    tclWinInfo.longPathsSupported = 0; /* Reset in case modified */
+	}
+    }
 
-/*
- * TclpGetCodePageOnce --
- *
- *	Callback to retrieve user code page. To be invoked only
- *	through InitOnceExecuteOnce for thread safety.
- *
- * Results:
- *	None.
- */
-static BOOL CALLBACK
-TclpGetCodePageOnce(
-    TCL_UNUSED(PINIT_ONCE),
-    TCL_UNUSED(PVOID),
-    PVOID *lpContext)
-{
-    static char codePage[20];
-    codePage[0] = 'c';
-    codePage[1] = 'p';
-    DWORD size = sizeof(codePage) - 2;
+    tclWinInfo.codePage[0] = 'c';
+    tclWinInfo.codePage[1] = 'p';
+    dw = sizeof(tclWinInfo.codePage) - 2;
 
     /*
      * When retrieving code page from registry,
@@ -153,44 +133,40 @@ TclpGetCodePageOnce(
      */
     if (RegGetValueA(HKEY_LOCAL_MACHINE,
 	    "SYSTEM\\CurrentControlSet\\Control\\Nls\\CodePage",
-	    "ACP", RRF_RT_REG_SZ, NULL, codePage+2,
-	    &size) != ERROR_SUCCESS) {
+	    "ACP", RRF_RT_REG_SZ, NULL, &tclWinInfo.codePage[2],
+	    &dw) != ERROR_SUCCESS) {
 	/* On failure, fallback to GetACP() */
-	UINT acp = GetACP();
-	snprintf(codePage, sizeof(codePage), "cp%u", acp);
+	snprintf(tclWinInfo.codePage, sizeof(tclWinInfo.codePage), "cp%u",
+	    GetACP());
     }
-    if (strcmp(codePage, "cp65001") == 0) {
-	strcpy(codePage, "utf-8");
+    if (strcmp(tclWinInfo.codePage, "cp65001") == 0) {
+	strcpy(tclWinInfo.codePage, "utf-8");
     }
-    *lpContext = (LPVOID)&codePage[0];
+
+    *lpContext = (LPVOID)&tclWinInfo;
     return TRUE;
 }
 
 /*
- * TclpGetCodePage --
+ * TclGetWinInfo --
  *
- *  Returns a pointer to the string identifying the user code page.
+ *	Returns a pointer to the TclWinInfo structure containing various bits
+ *	of Windows platform information.
  *
- *  For consistency with Windows, which caches the code page at program
- *  startup, the code page is not updated even if the value in the registry
- *  changes. (This is similar to environment variables.)
+ * Results:
+ *	Pointer to TclWinInfo structure and NULL on failure. The structure
+ *	is initialized only once and remains valid for the lifetime of the
+ *	process.
  */
-static const char *
-TclpGetCodePage(void)
+const TclWinInfo *
+TclGetWinInfo(void)
 {
-    static INIT_ONCE codePageOnce = INIT_ONCE_STATIC_INIT;
-    const char *codePagePtr = NULL;
+    static INIT_ONCE winInfoOnce = INIT_ONCE_STATIC_INIT;
+    TclWinInfo *winInfoPtr = NULL;
     BOOL result = InitOnceExecuteOnce(
-	&codePageOnce, TclpGetCodePageOnce, NULL, (LPVOID *)&codePagePtr);
-#ifdef NDEBUG
-    (void) result; /* Keep gcc unused variable quiet */
-#else
-    assert(result == TRUE);
-#endif
-    assert(codePagePtr != NULL);
-    return codePagePtr;
+	&winInfoOnce, TclGetWinInfoOnce, NULL, (LPVOID *)&winInfoPtr);
+    return result ? winInfoPtr : NULL;
 }
-
 
 /*
  *---------------------------------------------------------------------------
@@ -235,8 +211,9 @@ TclpInitPlatform(void)
     TclWinInit(GetModuleHandleW(NULL));
 #endif
 
-    /* Initialize code page once at startup, will not be updated */
-    (void)TclpGetCodePage();
+    if (TclGetWinInfo() == NULL) {
+	Tcl_Panic("TclpInitPlatform: unable to get Windows information");
+    }
 }
 
 /*
@@ -334,13 +311,10 @@ AppendEnvironment(
     const char *lib)
 {
     Tcl_Size pathc;
-    WCHAR wBuf[MAX_PATH];
-    DWORD dw;
-    char buf[MAX_PATH * 3];
     Tcl_Obj *objPtr;
-    Tcl_DString ds;
     const char **pathv;
     char *shortlib;
+    TclWinPath winPath;
 
     /*
      * The shortlib value needs to be the tail component of the lib path. For
@@ -360,12 +334,14 @@ AppendEnvironment(
 	Tcl_Panic("no '/' character found in lib");
     }
 
-    dw = GetEnvironmentVariableW(L"TCL_LIBRARY", wBuf, MAX_PATH);
-    if (dw <= 0 || dw >= MAX_PATH) {
+    WCHAR *wEnvValue = TclWinGetEnvironmentVariable(L"TCL_LIBRARY", &winPath);
+    if (wEnvValue == NULL || *wEnvValue == 0) {
 	return;
     }
-    if (WideCharToMultiByte(
-	    CP_UTF8, 0, wBuf, -1, buf, MAX_PATH * 3, NULL, NULL) == 0) {
+
+    Tcl_DString dsEnvValue;
+    char *buf = TclWinWCharToUtfDString(wEnvValue, -1, &dsEnvValue);
+    if (buf == NULL) {
 	return;
     }
 
@@ -388,7 +364,7 @@ AppendEnvironment(
 	     * directory to make it refer to this installation by removing the
 	     * old "tclX.Y" and substituting the current version string.
 	     */
-
+	    Tcl_DString ds;
 	    pathv[pathc - 1] = shortlib;
 	    Tcl_DStringInit(&ds);
 	    (void) Tcl_JoinPath(pathc, pathv, &ds);
@@ -399,8 +375,68 @@ AppendEnvironment(
 	Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
 	Tcl_Free((void *)pathv);
     }
+    Tcl_DStringFree(&dsEnvValue);
 }
-
+
+/*
+ * AllocateGrandparentSiblingPath --
+ *
+ *	Allocates and initializes a path corresponding to a sibling of
+ *	the module's grandparent, or parent if no grandparent.
+ *
+ * Results:
+ *	TCL_OK on success, TCL_ERROR on failure.
+ *
+ * Side effects:
+ *
+ *      The new path is allocated with Tcl_Alloc and a pointer to it is
+ *	stored in *valuePtr and its length, not including the nul terminator
+ *	is stored in *lengthPtr. The memory must be eventually released with
+ *      with Tcl_Free.
+ */
+static int
+AllocateGrandparentSiblingPath(
+    const char *siblingPtr,	/* sub directory to append. Path separators
+				 * (if any) must be forward slashes and the
+				 * string must not have leading separators */
+    char **valuePtr,		/* location to store pointer to path */
+    size_t *lengthPtr)		/* location to store length of path */
+{
+    HMODULE hModule = (HMODULE)TclWinGetTclInstance();
+    TclWinPath winPath;
+    WCHAR *wNamePtr;
+    int result = TCL_ERROR;
+
+    wNamePtr = TclWinGetModuleFileName(hModule, &winPath);
+    if (wNamePtr != NULL) {
+	char *utf8Ptr;
+	Tcl_DString ds;
+	/* Do not use Tcl encoding API as it may not be initialized yet */
+	utf8Ptr = TclWinWCharToUtfDString(wNamePtr, -1, &ds);
+	if (utf8Ptr) {
+	    char *end, *p;
+	    TclWinNoBackslash(utf8Ptr);
+	    end = strrchr(utf8Ptr, '/');
+	    *end = '\0';
+	    p = strrchr(utf8Ptr, '/');
+	    if (p != NULL) {
+		end = p;
+	    }
+	    *end = '/';
+	    Tcl_DStringSetLength(&ds, (Tcl_Size)(end - utf8Ptr + 1));
+	    Tcl_DStringAppend(&ds, siblingPtr, TCL_AUTO_LENGTH);
+	    utf8Ptr = Tcl_DStringValue(&ds);
+	    *lengthPtr = (size_t)Tcl_DStringLength(&ds);
+	    *valuePtr = (char *)Tcl_Alloc(*lengthPtr + 1);
+	    memcpy(*valuePtr, utf8Ptr, *lengthPtr + 1);
+	    Tcl_DStringFree(&ds);
+	    result = TCL_OK;
+	}
+	TclWinPathFree(&winPath);
+    }
+    return result;
+}
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -424,28 +460,9 @@ InitializeDefaultLibraryDir(
     size_t *lengthPtr,
     Tcl_Encoding *encodingPtr)
 {
-    HMODULE hModule = (HMODULE)TclWinGetTclInstance();
-    WCHAR wName[MAX_PATH + LIBRARY_SIZE];
-    char name[(MAX_PATH + LIBRARY_SIZE) * 3];
-    char *end, *p;
-
-    GetModuleFileNameW(hModule, wName, sizeof(wName)/sizeof(WCHAR));
-    WideCharToMultiByte(CP_UTF8, 0, wName, -1, name, sizeof(name), NULL, NULL);
-
-    end = strrchr(name, '\\');
-    *end = '\0';
-    p = strrchr(name, '\\');
-    if (p != NULL) {
-	end = p;
-    }
-    *end = '\\';
-
-    TclWinNoBackslash(name);
-    snprintf(end + 1, LIBRARY_SIZE, "lib/tcl%s", TCL_VERSION);
-    *lengthPtr = strlen(name);
-    *valuePtr = (char *)Tcl_Alloc(*lengthPtr + 1);
     *encodingPtr = NULL;
-    memcpy(*valuePtr, name, *lengthPtr + 1);
+    (void) AllocateGrandparentSiblingPath("lib/tcl" TCL_VERSION,
+	       valuePtr, lengthPtr);
 }
 
 /*
@@ -472,28 +489,8 @@ InitializeSourceLibraryDir(
     size_t *lengthPtr,
     Tcl_Encoding *encodingPtr)
 {
-    HMODULE hModule = (HMODULE)TclWinGetTclInstance();
-    WCHAR wName[MAX_PATH + LIBRARY_SIZE];
-    char name[(MAX_PATH + LIBRARY_SIZE) * 3];
-    char *end, *p;
-
-    GetModuleFileNameW(hModule, wName, sizeof(wName)/sizeof(WCHAR));
-    WideCharToMultiByte(CP_UTF8, 0, wName, -1, name, sizeof(name), NULL, NULL);
-
-    end = strrchr(name, '\\');
-    *end = '\0';
-    p = strrchr(name, '\\');
-    if (p != NULL) {
-	end = p;
-    }
-    *end = '\\';
-
-    TclWinNoBackslash(name);
-    snprintf(end + 1, LIBRARY_SIZE, "../library");
-    *lengthPtr = strlen(name);
-    *valuePtr = (char *)Tcl_Alloc(*lengthPtr + 1);
     *encodingPtr = NULL;
-    memcpy(*valuePtr, name, *lengthPtr + 1);
+    (void) AllocateGrandparentSiblingPath("../library", valuePtr, lengthPtr);
 }
 
 /*
@@ -599,32 +596,17 @@ void
 TclpSetVariables(
     Tcl_Interp *interp)		/* Interp to initialize. */
 {
-    typedef int(__stdcall getVersionProc)(void *);
     const char *ptr;
     char buffer[TCL_INTEGER_SPACE * 2];
     union {
 	SYSTEM_INFO info;
 	OemId oemId;
     } sys;
-    static OSVERSIONINFOW osInfo;
-    static int osInfoInitialized = 0;
+    const OSVERSIONINFOW *osInfoPtr;
     Tcl_DString ds;
 
     Tcl_SetVar2Ex(interp, "tclDefaultLibrary", NULL,
 	    TclGetProcessGlobalValue(&defaultLibraryDir), TCL_GLOBAL_ONLY);
-
-    if (!osInfoInitialized) {
-	HMODULE handle = GetModuleHandleW(L"NTDLL");
-	getVersionProc *getVersion = (getVersionProc *) (void *)
-		GetProcAddress(handle, "RtlGetVersion");
-
-	osInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOW);
-	if (!getVersion || getVersion(&osInfo)) {
-	    GetVersionExW(&osInfo);
-	}
-	osInfoInitialized = 1;
-    }
-    GetSystemInfo(&sys.info);
 
     /*
      * Define the tcl_platform array.
@@ -633,12 +615,13 @@ TclpSetVariables(
     Tcl_SetVar2(interp, "tcl_platform", "platform", "windows",
 	    TCL_GLOBAL_ONLY);
     Tcl_SetVar2(interp, "tcl_platform", "os", "Windows NT", TCL_GLOBAL_ONLY);
-    if (osInfo.dwMajorVersion == 10 && osInfo.dwBuildNumber >= 22000) {
-	osInfo.dwMajorVersion = 11;
-    }
-    snprintf(buffer, sizeof(buffer), "%ld.%ld",
-	    osInfo.dwMajorVersion, osInfo.dwMinorVersion);
+    osInfoPtr = TclpGetWindowsVersion();
+    assert(osInfoPtr);
+    snprintf(buffer, sizeof(buffer), "%ld.%ld", osInfoPtr->dwMajorVersion,
+	osInfoPtr->dwMinorVersion);
     Tcl_SetVar2(interp, "tcl_platform", "osVersion", buffer, TCL_GLOBAL_ONLY);
+
+    GetSystemInfo(&sys.info);
     if (sys.oemId.wProcessorArchitecture < NUMPROCESSORS) {
 	Tcl_SetVar2(interp, "tcl_platform", "machine",
 		processors[sys.oemId.wProcessorArchitecture],
@@ -778,6 +761,129 @@ TclpFindVariable(
     Tcl_Free(nameUpper);
     return result;
 }
+
+/*
+ * TclWinWCharToUtfDString --
+ *
+ *	Convert the passed WCHAR (UTF-16) to UTF-8 returning the result
+ *	in a Tcl_DString. The primary utility of this function is to
+ *	allow the conversion before Tcl encoding subsystem is initialized.
+ *
+ * Results:
+ *	A pointer into the output Tcl_DString holding the result and NULL
+ *	on failure.
+ *
+ * Side effects:
+ *	The dsPtr Tcl_DString may allocate storage and caller should
+ *	call Tcl_DStringFree on it on success.
+ */
+char *
+TclWinWCharToUtfDString(
+    const WCHAR *wsPtr,		/* string to convert */
+    int numChars,		/* wsPtr character count */
+    Tcl_DString *dsPtr)		/* output */
+{
+    int needed;
+
+    Tcl_DStringInit(dsPtr);
+
+    if (numChars == -1) {
+	numChars = wcslen(wsPtr);
+    }
+
+    if (numChars == 0) {
+	return Tcl_DStringValue(dsPtr);
+    }
+
+    needed = WideCharToMultiByte(CP_UTF8, WC_NO_BEST_FIT_CHARS, wsPtr, numChars, NULL,
+		0, NULL, NULL);
+    if (needed > 0) {
+	/*
+	 * Allocate needed + 1 so we can ensure a terminating NUL in all cases
+	 * (WideCharToMultiByte writes a NUL only when source length is -1).
+	 */
+	int written;
+	char *utf8Ptr;
+
+	Tcl_DStringSetLength(dsPtr, (needed + 1));
+	utf8Ptr = Tcl_DStringValue(dsPtr);
+
+	written = WideCharToMultiByte(CP_UTF8, WC_NO_BEST_FIT_CHARS, wsPtr, numChars, utf8Ptr,
+	    needed + 1, NULL, NULL);
+	if (written > 0) {
+	    Tcl_DStringSetLength(dsPtr, written);
+	    return Tcl_DStringValue(dsPtr);
+	}
+
+    }
+    Tcl_DStringFree(dsPtr);
+    return NULL;
+}
+
+/*
+ * TclWinGetEnvironmentVariable --
+ *
+ *      Wrapper for GetEnvironmentVariableW that automatically grows the
+ *      buffer as needed.
+ *
+ * Results:
+ *      Returns a pointer to the environment variable value. The returned
+ *      pointer is valid until TclWinPathFree or TclWinPathResize is called
+ *      on winPathPtr. Returns NULL on failure. An error code may be
+ *      retrieved via GetLastError() as for GetEnvironmentVariableW.
+ *
+ * Side effects:
+ *      May allocate memory that must be freed with TclWinPathFree
+ *      on a non-NULL return.
+ */
+
+WCHAR *
+TclWinGetEnvironmentVariable(
+    const WCHAR *envName,	/* Environment variable name */
+    TclWinPath *winPathPtr)	/* Buffer to receive full path. Should be
+				 * uninitialized or previously reset with
+				 * TclWinPathFree. */
+{
+    DWORD numChars;
+    DWORD capacity;
+    WCHAR *fullPathPtr;
+    DWORD err;
+
+    fullPathPtr = TclWinPathInit(winPathPtr, &capacity);
+    numChars = GetEnvironmentVariableW(envName, fullPathPtr, capacity);
+
+    if (numChars == 0) {
+	goto errorReturn;
+    }
+
+    /*
+     * numChars does not include the null terminator so even if numChars
+     * equal to capacity, the buffer was too small.
+     */
+    if (numChars < capacity) {
+	return fullPathPtr;
+    }
+
+    /*
+     * Buffer too small. In this case, numChars is required space INCLUDING
+     * the null terminator. Allocate a larger buffer and try again.
+     */
+    capacity = numChars;
+    fullPathPtr = TclWinPathResize(winPathPtr, capacity);
+    numChars = GetEnvironmentVariableW(envName, fullPathPtr, capacity);
+    if (numChars == 0 || numChars >= capacity) {
+	/* Failed or still too small (shouldn't happen). */
+	goto errorReturn;
+    }
+
+    return fullPathPtr;
+
+errorReturn:
+    err = GetLastError();
+    TclWinPathFree(winPathPtr);
+    SetLastError(err);
+    return NULL;}
+
 
 /*
  * Local Variables:

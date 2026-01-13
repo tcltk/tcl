@@ -733,7 +733,7 @@ AC_DEFUN([SC_CONFIG_MANPAGES], [
 	AC_MSG_CHECKING([for compressed file suffix])
 	touch TeST
 	$enableval TeST
-	Z=`ls TeST* | sed 's/^....//'`
+	Z=`ls TeST.* | sed 's/^....//'`
 	rm -f TeST*
 	MAN_FLAGS="$MAN_FLAGS --extension $Z"
 	AC_MSG_RESULT([$Z])
