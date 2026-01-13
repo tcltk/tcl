@@ -4322,6 +4322,49 @@ TclGetObjNameOfExecutable(void)
 /*
  *----------------------------------------------------------------------
  *
+ * TclGetObjExecutableAncestors --
+ *
+ *	This function retrieves the paths to the directory ancestor(s) of
+ *	the application. The first element of the returned pathPtrs array is
+ *	the directory of the application, the second is the parent of that
+ *	directory and so on. If the number of elements requested is greater
+ *	that the directory depth, the additional elements will contain NULL.
+ *
+ *	IMPORTANT: The objects returned in pathPtrs[] will have had their
+ *	reference counts incremented so caller owns them.
+ *
+ * Results:
+ *	Returns the number of elements filled with paths. On error, returns
+ *	-1 with an error message in interp if not NULL.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Size
+TclGetObjExecutableAncestors(
+    Tcl_Interp *interp,		/* interp for errors. May be NULL */
+    Tcl_Size numPaths,		/* Size of pathPtrs[] */
+    Tcl_Obj *pathsPtr[]	/* Output array holding ancestor paths */
+)
+{
+    Tcl_Obj *exePtr = TclGetObjNameOfExecutable();
+    if (exePtr == NULL) {
+	if (interp) {
+	    Tcl_SetResult(interp, "Could not retrieve path of executable.",
+		TCL_STATIC);
+	}
+	return TCL_ERROR;
+    }
+
+    return TclFSGetAncestorPaths(interp, exePtr, numPaths, pathsPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_GetNameOfExecutable --
  *
  *	This function retrieves the absolute pathname of the application in

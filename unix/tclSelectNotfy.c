@@ -278,7 +278,7 @@ extern unsigned char	TranslateMessage(const MSG *);
  */
 
 #if TCL_THREADS && defined(__CYGWIN__)
-static const WCHAR className[] = L"TclNotifier";
+static const WCHAR className[] = {'T', 'c', 'l', 'N', 'o', 't', 'i', 'f', 'i', 'e', 'r', '\0'};
 static unsigned int	NotifierProc(void *hwnd, unsigned int message,
 			    void *wParam, void *lParam);
 #endif /* TCL_THREADS && defined(__CYGWIN__) */

@@ -15,6 +15,67 @@
 #include "tclInt.h"
 
 /*
+ * Common system information that is initialized once at startup.
+ */
+typedef struct {
+    OSVERSIONINFOW osVersion;	/* Windows version information */
+    DWORD longPathsSupported;	/* Long paths supported without \\?\ ? */
+    char codePage[20];          /* User code page */
+} TclWinInfo;
+
+MODULE_SCOPE const TclWinInfo *	TclGetWinInfo(void);
+
+/*
+ * TclpGetWindowsVersion --
+ *
+ *	Returns a pointer to the OSVERSIONINFOW structure containing the
+ *	version information for the current Windows version.
+ *
+ * Results:
+ *	Pointer to OSVERSIONINFOW structure that remains valid for lifetime
+ *	of the process or NULL on failure.
+ */
+static inline const OSVERSIONINFOW *
+TclpGetWindowsVersion(void)
+{
+    const TclWinInfo *winInfoPtr = TclGetWinInfo();
+    return winInfoPtr ? &winInfoPtr->osVersion : NULL;
+}
+
+/*
+ * TclpGetCodePage --
+ *
+ *  Returns a pointer to the string identifying the user code page.
+ *
+ *  For consistency with Windows, which caches the code page at program
+ *  startup, the code page is not updated even if the value in the registry
+ *  changes. (This is similar to environment variables.)
+ */
+static inline const char *
+TclpGetCodePage(void)
+{
+    const TclWinInfo *winInfoPtr = TclGetWinInfo();
+    assert(winInfoPtr);
+    assert(winInfoPtr->codePage[0] != '\0');
+	return winInfoPtr->codePage;
+}
+
+/*
+ * TclpLongPathSupported --
+ *
+ *  Returns 1 if OS supports long paths without a \\?\ prefix, 0 otherwise.
+ */
+static inline int
+TclpLongPathSupported(void)
+{
+    const TclWinInfo *winInfoPtr = TclGetWinInfo();
+    assert(winInfoPtr);
+    return winInfoPtr->longPathsSupported;
+}
+
+
+
+/*
  * Declarations of functions that are not accessible by way of the
  * stubs table.
  */
@@ -38,6 +99,8 @@ MODULE_SCOPE int	TclWinFileOwned(Tcl_Obj *);
 MODULE_SCOPE void	TclWinGenerateChannelName(char channelName[],
 			    const char *channelTypeName, void *channelImpl);
 MODULE_SCOPE const char*TclpGetUserName(Tcl_DString *bufferPtr);
+
+MODULE_SCOPE void	TclWinAppendSystemError(Tcl_Interp *, DWORD error);
 
 /* Needed by tclWinFile.c and tclWinFCmd.c */
 #ifndef FILE_ATTRIBUTE_REPARSE_POINT
@@ -109,5 +172,57 @@ MODULE_SCOPE int	TclPipeThreadStopSignal(TclPipeThreadInfo **pipeTIPtr);
 MODULE_SCOPE void	TclPipeThreadStop(TclPipeThreadInfo **pipeTIPtr,
 			    HANDLE hThread);
 MODULE_SCOPE void	TclPipeThreadExit(TclPipeThreadInfo **pipeTIPtr);
+
+/*
+ * Utilities dealing with path buffers
+ */
+typedef struct TclWinPath {
+    WCHAR buffer[MAX_PATH];	/* buffer for path */
+    WCHAR *bufferPtr;		/* pointer to buffer (may be same as buffer
+				 * or a heap-allocated extension) */
+} TclWinPath;
+
+/* Initialize a path buffer. Never returns NULL. */
+static inline WCHAR *
+TclWinPathInit(
+    TclWinPath *pathBufPtr,	/* Structure to be initialized */
+    DWORD *capacityPtr)		/* On return, capacity in WCHARS
+				   Must NOT be NULL */
+{
+    pathBufPtr->bufferPtr = pathBufPtr->buffer;
+    *capacityPtr = (DWORD)(sizeof(pathBufPtr->buffer) / sizeof(WCHAR));
+    return pathBufPtr->bufferPtr;
+}
+
+/* Returns pointer to the current buffer */
+static inline WCHAR *
+TclWinPathGet(
+    TclWinPath *pathBufPtr)
+{
+    return pathBufPtr->bufferPtr;
+}
+
+/* Frees a previously initialized path buffer, reseting its state */
+static inline void
+TclWinPathFree(
+    TclWinPath *pathBufPtr)	/* Structure to be freed */
+{
+    if (pathBufPtr->bufferPtr != pathBufPtr->buffer) {
+	Tcl_Free(pathBufPtr->bufferPtr);
+    }
+    pathBufPtr->bufferPtr = pathBufPtr->buffer;
+}
+
+MODULE_SCOPE char *	TclWinWCharToUtfDString(const WCHAR *wsPtr,
+			    int numChars, Tcl_DString *);
+MODULE_SCOPE WCHAR *	TclWinPathResize(TclWinPath *winPathPtr,
+			    DWORD capacityNeeded);
+MODULE_SCOPE WCHAR *	TclWinGetFullPathName(const WCHAR *pathPtr,
+			    TclWinPath *winPathPtr,
+			    WCHAR **filePartPtrPtr);
+MODULE_SCOPE WCHAR *	TclWinGetCurrentDirectory(TclWinPath *winPathPtr);
+MODULE_SCOPE WCHAR *	TclWinGetEnvironmentVariable(const WCHAR *envName,
+			    TclWinPath *winPathPtr);
+MODULE_SCOPE WCHAR *	TclWinGetModuleFileName(HMODULE, TclWinPath *);
 
 #endif	/* _TCLWININT */

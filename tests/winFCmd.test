@@ -31,6 +31,26 @@ testConstraint longFileNames 0
 testConstraint notInCIenv     [expr {![info exists ::env(CI)]}]
 testConstraint knownMsvcBug [expr {[tcl::build-info msvc] eq 0}]
 
+# Long path support (not to be confused with long name support!) depends on
+# the system being recent enough AND configured for long paths in the registry.
+testConstraint longPathAware 0
+if {![catch {exec {*}[auto_execok cmd.exe] /c ver} winVer]} {
+    if {[regexp {(\d+)\.\d+\.(\d+)\.\d+} $winVer -> winMajor winBuild]} {
+	# Must be Win 10
+	if {$winMajor > 10 || ($winMajor == 10 && $winBuild >= 14393)} {
+	    if {[llength [info commands testlongpathsetting]]} {
+		testConstraint longPathAware [testlongpathsetting]
+	    } else {
+		catch {
+		    package require registry
+		    testConstraint longPathAware [registry get "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\FileSystem" LongPathsEnabled]
+		}
+	    }
+	}
+    }
+}
+unset -nocomplain winMajor winBuild winVer
+
 proc createfile {file {string a}} {
     set f [open $file w]
     puts -nonewline $f $string
@@ -234,13 +254,13 @@ test winFCmd-1.21 {TclpRenameFile: long src} -setup {
     cleanup
 } -constraints {win testfile} -body {
     testfile mv $longname tf1
-} -returnCodes error -result ENAMETOOLONG
+} -returnCodes error -result ENOENT
 test winFCmd-1.22 {TclpRenameFile: long dst} -setup {
     cleanup
 } -constraints {win testfile} -body {
     createfile tf1
     testfile mv tf1 $longname
-} -returnCodes error -result ENAMETOOLONG
+} -returnCodes error -result ENOENT
 test winFCmd-1.23 {TclpRenameFile: move dir into self} -setup {
     cleanup
 } -constraints {win testfile notInCIenv} -body {
@@ -1397,6 +1417,514 @@ test winFCmd-19.9 {Windows devices path names} -constraints win -body {
     file normalize //./com1
 } -result //./com1
 
+################################################################
+# Tests for long path support. On systems that support long paths, verify
+# various commands work. On systems that don't, verify commands return
+# appropriate errors (in particular, do not crash!). Commands are tested with
+# the usual "file" command as well as the testsuite "testfile" command which
+# tests the C API without the sanity checks of the "file" command.
+
+namespace eval testlongpaths {
+    # A long path should not have any individual component longer than MAX_PATH
+    # Use string operations with FORWARD slash to generate paths, not [file
+    # join] since [file join] itself is under test.
+
+    variable pathTail Y\u6587
+    variable longPathComponent [string repeat X\u4e2d 120]
+    variable longPathRoot "[tcltest::configure -tmpdir]/longpathtest"
+    variable longPathComponents [lrepeat 4 $longPathComponent]
+    variable longPathDir [join [list $longPathRoot \
+				    {*}$longPathComponents] /]
+    variable longPathFile [string cat $longPathDir / $pathTail]
+    variable deepPathComponent [string repeat X\u4e2d 4]
+    variable deepPathComponents [lrepeat 128 $deepPathComponent]
+    variable deepPathDir [join [list $longPathRoot \
+				    {*}$deepPathComponents] /]
+    variable deepPathFile [string cat $deepPathDir / $pathTail]
+
+    # Generator that only depends on parsing path syntax, not actual file system ops
+    proc testlongpathsyntax {id comment body args} {
+	uplevel [list test $id $comment -body $body -constraints win {*}$args]
+    }
+
+    # Generator that requires actual file system ops
+    proc testlongpath {id comment body args} {
+	uplevel [list test $id $comment -body $body \
+		     -constraints {win longPathAware} \
+		     -setup [list if {[file exists $longPathRoot]} {error "Precondition failed: $longPathRoot exists"}] \
+		     -cleanup {file delete -force $longPathRoot} \
+		     {*}$args]
+    }
+
+    proc julian {seconds} {
+	clock format $seconds -format %J
+    }
+    # Assumes all tests will run within the same day to sanity check times
+    variable today [julian now]
+
+    #
+    # Path operations - file cmdname ...
+    testlongpathsyntax file-dirname-longpath-0 "long path file dirname" {
+	file dirname $longPathDir
+    } -result [join [lrange [split $longPathDir /] 0 end-1] /]
+
+    testlongpathsyntax file-extension-longpath-0 "long path file extension" {
+	file extension $longPathFile.ext
+    } -result .ext
+
+    testlongpathsyntax file-join-longpath-0 "deep path file join" {
+	file join $longPathRoot {*}$deepPathComponents $pathTail
+    } -result $deepPathFile
+
+    testlongpath file-join-longpath-1 "long path file join - native name" {
+	file join $longPathRoot [join $longPathComponents \\] $pathTail
+    } -result $longPathFile
+
+    testlongpath file-join-longpath-0 "deep path file join - relative" {
+	file join {*}$deepPathComponents
+    } -result [join $deepPathComponents /]
+
+    testlongpathsyntax file-nativename-longpath-0 "long path nativename" {
+	file nativename $longPathDir
+    } -result [string map [list / \\] $longPathDir]
+
+    testlongpathsyntax file-normalize-longpath-0 "long path normalize" {
+	file normalize $longPathDir
+    } -constraints win -result $longPathDir
+
+    testlongpathsyntax file-normalize-longpath-1 "long path normalize - dotdot" {
+	file normalize $longPathDir/../../$longPathComponent/$pathTail
+    } -result [join [list $longPathRoot {*}[lrange $longPathComponents 0 end-1] $pathTail] /]
+
+    testlongpathsyntax file-normalize-longpath-2 "long path normalize - dot, native" {
+	file normalize [string map [list / \\] $longPathDir/././$pathTail]
+    } -result $longPathFile
+
+    testlongpath file-normalize-longpath-3 "Long path normalize - pwd-relative name" {
+	set origDir [pwd]
+	file mkdir $longPathDir
+	cd $longPathDir
+	set path [file normalize foo]
+	cd $origDir
+	set path
+    } -result $longPathDir/foo
+
+    testlongpathsyntax file-rootname-longpath-0 "long path file rootname" {
+	file rootname $longPathFile.ext
+    } -result $longPathFile
+
+    testlongpathsyntax file-split-longpath-0 "long path file split" {
+	file split $longPathFile
+    } -result [list {*}[file split $longPathRoot] {*}$longPathComponents $pathTail]
+
+    testlongpathsyntax file-split-longpath-1 "deep path file split - native" {
+	file split [string map [list / \\] $deepPathFile]
+    } -result [list {*}[file split $longPathRoot] {*}$deepPathComponents $pathTail]
+
+    testlongpathsyntax file-tail-longpath-0 "long path file tail" {
+	file tail $longPathFile.ext
+    } -result $pathTail.ext
+
+    testlongpathsyntax file-pathtype-longpath-0 "long path type" {
+	file pathtype $longPathDir
+    } -result absolute
+
+    testlongpathsyntax file-pathtype-longpath-1 "long path type - relative" {
+	file pathtype [join $longPathComponents /]
+    } -result relative
+
+    testlongpathsyntax file-pathtype-longpath-2 "long path type - volumerelative" {
+	file pathtype C:[join $longPathComponents /]
+    } -result volumerelative
+
+    testlongpathsyntax file-separator-longpath-0 "long path separator" {
+	file separator $longPathDir
+    } -result \\
+
+    testlongpathsyntax file-system-longpath-0 "long path system" {
+	lindex [file system $longPathDir] 0
+    } -result native
+
+    testlongpathsyntax file-tildeexpand-longpath-0 "long path tildeexpand" {
+	file tildeexpand ~/[join $longPathComponents /]
+    } -result [join [list [file home] {*}$longPathComponents] /]
+
+    #
+    # File and directory operations
+    proc ops {path type} {
+	set cpath $path-copy
+	set rpath $path-renamed
+	if {$type eq "dir"} {
+	    lappend result [file mkdir $path]
+	} else {
+	    file mkdir [file dirname $path]
+	    lappend result [writeFile $path abc]
+	    lappend result [readFile $path]
+	}
+	# Note. For file owned, we only check no errors are generated since
+	# ownership semantics in NTFS are quirky depending on whether files
+	# created in admin mode etc.
+	lappend result \
+	    [file exists $path] \
+	    [file exists $path/..] \
+	    [file readable $path] \
+	    [file writable $path] \
+	    [file executable $path] \
+	    [catch {file owned $path}] \
+	    [file isdirectory $path] \
+	    [file isfile $path] \
+	    [file size $path] \
+	    [file type $path] \
+	    [dict get [file stat $path] type] \
+	    [julian [file atime $path]] \
+	    [julian [file mtime $path]] \
+	    [file rename $path $rpath] \
+	    [file exists $path] \
+	    [file copy $rpath $cpath] \
+	    [file exists $cpath] \
+	    [file delete $rpath] \
+	    [file exists $rpath]
+    }
+    variable dirOpsResult [list {} 1 1 1 1 1 0 1 0 0 directory directory $today $today {} 0 {} 1 {} 0]
+    variable fileOpsResult [list {} abc 1 1 1 1 0 0 0 1 3 file file $today $today {} 0 {} 1 {} 0]
+
+    proc getAttrs {path} {
+	set attrs [file attributes $path]
+	# We do not test -shortname because Windows is unpredictable in how
+	# it is constructed and whether it is constructed at all
+	return [list \
+		    [dict get $attrs -archive] \
+		    [dict get $attrs -hidden] \
+		    [dict get $attrs -readonly] \
+		    [dict get $attrs -system] \
+		    [dict get $attrs -longname]]
+    }
+
+    variable testsDir [file normalize [file dirname [info script]]]
+    variable zipTestDir [file join $testsDir zipfiles]
+
+    #
+    # Test directory ops
+
+    testlongpath dirops-longpath-0 "Long path directory operations" {
+	ops $longPathDir dir
+    } -result $dirOpsResult
+
+    testlongpath dirops-longpath-1 "Long path directory operations - native paths" {
+	ops [file nativename $longPathDir] dir
+    } -result $dirOpsResult
+
+    testlongpath dirops-longpath-2 "Long path directory operations - deep nesting" {
+	ops $deepPathDir dir
+    } -result $dirOpsResult
+
+    testlongpath dirops-longpath-2 "Long path directory operations - dot, dotdot" {
+	ops $longPathDir/.././$longPathComponent dir
+    } -result $dirOpsResult
+
+    testlongpath cd-longpath-0 "Long path directory - cd, pwd" {
+	set origDir [pwd]
+	file mkdir $longPathDir
+	cd $longPathDir
+	set newDir [pwd]
+	cd $origDir
+	set newDir
+    } -result $longPathDir
+
+    testlongpath dir-attributes-longpath-0 "Long path directory attributes" {
+	file mkdir $deepPathDir
+	getAttrs $deepPathDir
+    } -result [list 0 0 0 0 $deepPathDir]
+
+    testlongpath dir-attributes-longpath-1 "Long path directory attributes - set" {
+	file mkdir $longPathDir
+	file attributes $longPathDir -archive 1 -hidden 1 -system 1 -readonly 1
+	getAttrs $longPathDir
+    } -result [list 1 1 1 1 $longPathDir]
+
+    testlongpath dir-glob-longpath-0 "Long path glob" {
+	file mkdir $deepPathDir
+	writeFile $deepPathFile ""
+	writeFile $deepPathFile-2 ""
+	lsort [glob $deepPathDir/*]
+    } -result [list $deepPathFile $deepPathFile-2]
+
+    testlongpath dir-glob-longpath-1 "Long path glob -directory" {
+	file mkdir $deepPathDir
+	writeFile $deepPathFile ""
+	writeFile $deepPathFile-2 ""
+	lsort [glob -directory $deepPathDir *2]
+    } -result [list $deepPathFile-2]
+
+    testlongpath dir-glob-longpath-2 "Long path glob -path" {
+	file mkdir $deepPathDir
+	writeFile $deepPathFile ""
+	writeFile $deepPathFile-2 ""
+	lsort [glob -path $deepPathDir/[string index $pathTail 0] *[string range $pathTail 1 end]]
+    } -result [list $deepPathFile]
+
+    #
+    # Test file ops
+
+    testlongpath fileops-longpath-0 "Long path file operations" {
+	ops $longPathFile file
+    } -result $fileOpsResult
+
+    testlongpath fileops-longpath-1 "Long path file operations - native paths" {
+	ops [file nativename $longPathFile] file
+    } -result $fileOpsResult
+
+    testlongpath fileops-longpath-2 "Long path file operations - deep nesting" {
+	ops $deepPathFile file
+    } -result $fileOpsResult
+
+    testlongpath fileops-longpath-2 "Long path file operations - dot, dotdot" {
+	ops $longPathDir/.././$longPathComponent/$pathTail file
+    } -result $fileOpsResult
+
+    testlongpath file-attributes-longpath-0 "Long path file attributes" {
+	file mkdir [file dirname $deepPathFile]
+	close [open $deepPathFile w]
+	getAttrs $deepPathFile
+    } -result [list 1 0 0 0 $deepPathFile]
+
+    testlongpath file-attributes-longpath-1 "Long path file attributes - set" {
+	file mkdir $longPathDir
+	close [open $longPathFile w]
+	file attributes $longPathFile -archive 0 -hidden 1 -system 1 -readonly 1
+	getAttrs $longPathFile
+    } -result [list 0 1 1 1 $longPathFile]
+
+    #
+    # zipfs mounts
+    testlongpath zipfs-mount-longpath-0 "Long path archive" {
+	file mkdir $longPathDir
+	set mt //zipfs:/longpathtest
+	set archive [file join $longPathDir test.zip]
+	file copy [file join $zipTestDir test.zip] $archive
+	zipfs mount $archive $mt
+	set text [readFile $mt/test]
+	zipfs unmount $mt
+	set text
+    } -result "test\n"
+
+    #
+    # file link
+    testlongpath file-link-dir-longpath-0 "Link to a long path directory" {
+	file mkdir $deepPathDir
+	writeFile $deepPathFile abc
+	set link [file join [temporaryDirectory] dirlink]
+	file link $link $deepPathDir
+	set result [list [file link $link] [readFile $link/[file tail $deepPathFile]]]
+	file delete $link
+	set result
+    } -result [list [file nativename $deepPathDir] abc]
+
+    testlongpath file-link-dir-longpath-1 "Long path Link to a directory" {
+	set target [file join [temporaryDirectory] dirtarget]
+	file mkdir $target
+	writeFile $target/file.txt abc
+	file mkdir $deepPathDir
+	set link [file join $deepPathDir dirlink]
+	file link $link $target
+	set result [list [file link $link] [readFile $link/file.txt]]
+	file delete -force $target
+	set result
+    } -result [list [file nativename [file join [temporaryDirectory] dirtarget]] abc]
+
+    testlongpath file-link-file-longpath-0 "Test link to a long path file" {
+	file mkdir $longPathDir
+	writeFile $longPathFile abc
+	set link [file join [temporaryDirectory] filelink]
+	file link $link $longPathFile
+	set result [readFile $link]
+	file delete $link
+	set result
+    } -result abc
+
+    testlongpath file-link-file-longpath-1 "Test long path link to a file" {
+	set target [file join [temporaryDirectory] filetarget]
+	writeFile $target abc
+	file mkdir $deepPathDir
+	set link [file join $deepPathDir filelink]
+	file link $link $target
+	set result [readFile $link]
+	file delete -force $target
+	set result
+    } -result abc
+
+    #
+    # file lstat
+    testlongpath file-lstat-dir-longpath-0 "Lstat link to a long path directory" {
+	file mkdir $deepPathDir
+	set link [file join [temporaryDirectory] dirlink]
+	file link $link $deepPathDir
+	set result [list [dict get [file lstat $link] type] [dict get [file stat $link] type]]
+	file delete $link
+	set result
+    } -result {link directory}
+
+    testlongpath file-lstat-dir-longpath-1 "lstat long path Link to a directory" {
+	set target [file join [temporaryDirectory] dirtarget]
+	file mkdir $target
+	file mkdir $deepPathDir
+	set link [file join $deepPathDir dirlink]
+	file link $link $target
+	set result [list [dict get [file lstat $link] type] [dict get [file stat $link] type]]
+	file delete -force $target
+	set result
+    } -result {link directory}
+
+    testlongpath file-lstat-file-longpath-0 "lstat link to a long path file" {
+	file mkdir $longPathDir
+	writeFile $longPathFile abc
+	set link [file join [temporaryDirectory] filelink]
+	file link $link $longPathFile
+	set result [list [dict get [file lstat $link] type] [dict get [file stat $link] type]]
+	file delete $link
+	# Result is {file file} because file links are symbolic?
+	set result
+    } -result {file file}
+
+    testlongpath file-lstat-file-longpath-1 "lstat long path link to a file" {
+	set target [file join [temporaryDirectory] filetarget]
+	writeFile $target abc
+	file mkdir $deepPathDir
+	set link [file join $deepPathDir filelink]
+	file link $link $target
+	set result [list [dict get [file lstat $link] type] [dict get [file stat $link] type]]
+	file delete -force $target
+	set result
+    } -result {file file}
+
+    #
+    # exec and running Tcl from a deep install
+    if {0} {
+	# CreateProcessW is not long path aware. Have to wait for Microsoft
+	# to make it so.
+	variable srcBinDir [file dirname [info nameofexecutable]]
+	variable installDir $deepPathDir
+	set deepExe [file join $installDir bin [file tail [info nameofexecutable]]]
+	testlongpath exec-longpath-0 "Long path Tcl installation" {
+	    file mkdir $installDir/bin
+	    file mkdir $installDir/lib
+	    # Copy executables and library
+	    set srcdir [file dirname [info nameofexecutable]]
+	    file copy -force [info nameofexecutable] $deepExe
+	    foreach f [glob [file join $srcBinDir *.dll]] {
+		file copy -force $f [file join $installDir bin]
+	    }
+	    file copy -force [file join $testsDir .. library] [file join $installDir lib/tcl[info tclversion]]
+	    set script [file join $installDir x.tcl]
+	    writeFile $script {puts [info nameofexecutable],[info library]}
+	    catch {set oldenv $env(TCL_LIBRARY)}
+	    set env(TCL_LIBRARY) [file join $installDir lib]
+	    set olddir [pwd]
+	    cd $installDir/bin
+	    set code [catch {exec $deepExe $script} output]
+	    cd $olddir
+	    if {[info exists oldenv]} {
+		set env(TCL_LIBRARY) $oldenv
+	    }
+	    list $code $output
+	} -result [list 0 $deepExe,[file join $deepPathDir lib]]
+    }
+}
+namespace delete testlongpaths
+
+#
+# Tests for C error interfaces
+testConstraint testwinerror [llength [info commands testwinerror]]
+namespace eval testwinerror {
+    catch {
+	variable regOut [exec {*}[auto_execok reg] query {HKCU\Control Panel\International} /v LocaleName]
+	if {[regexp -nocase {en-US} $regOut]} {
+	    testConstraint englishLocale 1
+	}
+    }
+    variable pdhErrorCode 0x800007D0
+    proc test args {
+	uplevel 1 [list ::tcltest::test {*}$args -constraints [list win englishLocale testwinerror]]
+    }
+    test winerror-appendmessage-0 "Get Windows error message" -body {
+	testwinerror appendmessage 4
+    } -result [list 1 {The system cannot open the file.}]
+
+    test winerror-appendmessage-1 "Get Windows error message with a header" -body {
+	testwinerror appendmessage 4 "System error:"
+    } -result [list 1 {System error: The system cannot open the file.}]
+
+    test winerror-appendmessage-2 {
+	Get Windows error message with a header having trailing space
+    } -body {
+	testwinerror appendmessage 4 "System error: "
+    } -result [list 1 {System error: The system cannot open the file.}]
+
+    test winerror-appendmessage-3 {
+	Get Windows message for non-system message id
+    } -body {
+	testwinerror appendmessage $pdhErrorCode
+    } -result [list 0 {unknown error: 0x800007d0}]
+
+    test winerror-appendmessage-4 {
+	Get Windows message for non-system message id with header
+    } -body {
+	testwinerror appendmessage $pdhErrorCode "Non-system error:"
+    } -result [list 0 {Non-system error: unknown error: 0x800007d0}]
+
+    test winerror-appendmessage-5 {
+	Get Windows message for non-system message id - no default message
+    } -body {
+	testwinerror appendmessage $pdhErrorCode "" 0
+    } -result [list 0 {}]
+
+    test winerror-appendmessage-6 {
+	Get message for non-system message id
+    } -body {
+	testwinerror appendmessage $pdhErrorCode "" 0 pdh.dll
+    } -result [list 1 {Unable to connect to the specified computer or the computer is offline.}]
+
+    test winerror-appendmessage-7 {
+	Get non-existent message for non-system message id
+    } -body {
+	testwinerror appendmessage 0x123 "" 1 pdh.dll
+    } -result [list 0 {unknown error: 0x123}]
+
+    test winerror-raiseerror-0 {
+	Raise a Windows error
+    } -body {
+	list [catch {testwinerror raiseerror 4} m d] $m [dict get $d -errorcode]
+    } -result [list 1 {The system cannot open the file.} {WINDOWS 0x4 {The system cannot open the file.}}]
+
+    test winerror-raiseerror-1 {
+	Raise a Windows error with prefix
+    } -body {
+	list [catch {testwinerror raiseerror 4 "System error:"} m d] $m [dict get $d -errorcode]
+    } -result [list 1 {System error: The system cannot open the file.} {WINDOWS 0x4 {System error: The system cannot open the file.}}]
+
+    test winerror-raiseerror-2 {
+	Raise a Windows error with prefix with trailing space
+    } -body {
+	list [catch {testwinerror raiseerror 4 "System error: "} m d] $m [dict get $d -errorcode]
+    } -result [list 1 {System error: The system cannot open the file.} {WINDOWS 0x4 {System error: The system cannot open the file.}}]
+
+    test winerror-raiseerror-3 {
+	Raise a Windows error with bad error code
+    } -body {
+	list [catch {testwinerror raiseerror $pdhErrorCode} m d] $m [dict get $d -errorcode]
+    } -result [list 1 {unknown error: 0x800007d0} {WINDOWS 0x800007d0 {unknown error: 0x800007d0}}]
+
+    test winerror-raiseerror-4 {
+	Raise a Windows error with non-system error code
+    } -body {
+	list [catch {testwinerror raiseerror $pdhErrorCode "" pdh.dll} m d] $m [dict get $d -errorcode]
+    } -result [list 1 {Unable to connect to the specified computer or the computer is offline.} {WINDOWS 0x800007d0 {Unable to connect to the specified computer or the computer is offline.}}]
+
+}
+namespace delete testwinerror
+
+
+################################################################
 
 # This block of code used to occur after the "return" call, so I'm
 # commenting it out and assuming that this code is still under construction.

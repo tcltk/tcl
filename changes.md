@@ -26,11 +26,17 @@ writing Tcl scripts.
 - [Tcl\_UtfToExternalEx and Tcl\_ExternalToUtfEx - C encoding API supporting output buffers larger than INT_MAX](https://core.tcl-lang.org/tips/doc/trunk/tip/737.md)
 - [New API for monotonic clock and microseconds resolution](https://core.tcl-lang.org/tips/doc/trunk/tip/723.md)
 
+# Changes in interpreter initialization
+
+- [Custom applications must call Tcl\_FindExecutable or TclZipfs_AppHook to initialize Tcl](https://core.tcl-lang.org/tips/doc/trunk/tip/732.md) *Potential incompatibility*
+- [Search path for locating Tcl core script and encodings is changed](https://core.tcl-lang.org/tips/doc/trunk/tip/732.md) *Potential incompatibility*
+
 # Performance
 
 - [Memory efficient internal representations](https://core.tcl-lang.org/tcl/wiki?name=New+abstract+list+representations)
 for list operations on large lists.
 - [Continued 64-bit capacity: Command line arguments larger than 2Gb](https://core.tcl-lang.org/tips/doc/trunk/tip/626.md)
+- Speedup in interpreter creation
 
 # Bug fixes
  - [tclEpollNotfy PlatformEventsControl panics if websocket disconnected](https://core.tcl-lang.org/tcl/tktview/010d8f38)

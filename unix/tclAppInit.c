@@ -38,6 +38,17 @@ extern Tcl_LibraryInitProc Tclxttest_Init;
 #endif /* TCL_XT_TEST */
 
 /*
+ * The following allows changing of the script file read at startup.
+ */
+#ifndef TCL_RC_FILE
+#ifdef DJGPP
+#define TCL_RC_FILE "~/tclshrc.tcl"
+#else
+#define TCL_RC_FILE "~/.tclshrc"
+#endif
+#endif
+
+/*
  * The following #if block allows you to change the AppInit function by using
  * a #define of TCL_LOCAL_APPINIT instead of rewriting this entire file. The
  * #if checks for that #define and uses Tcl_AppInit if it does not exist.
@@ -46,6 +57,7 @@ extern Tcl_LibraryInitProc Tclxttest_Init;
 #ifndef TCL_LOCAL_APPINIT
 #define TCL_LOCAL_APPINIT Tcl_AppInit
 #endif
+
 #ifndef MODULE_SCOPE
 #   define MODULE_SCOPE extern
 #endif
@@ -61,6 +73,40 @@ MODULE_SCOPE int main(int, char **);
 #ifdef TCL_LOCAL_MAIN_HOOK
 MODULE_SCOPE int TCL_LOCAL_MAIN_HOOK(int *argc, char ***argv);
 #endif
+
+/*
+ * TclSetRcFilePath --
+ *
+ *	Sets the path of the Tcl startup file (usually ".tclshrc"). Will
+ *	do tilde expansion and normalization of the passed path and set
+ *	the tclRcFilePath variable to the result
+ *
+ * Results:
+ *	A Tcl result code.
+ *
+ * Side effects:
+ *	Sets the tclRcFilePath variable.
+ *
+ * TODO - this function is duplicated in the Windows version of tclAppInit.c.
+ * Consider adding it to Tcl library and callable via the stubs table.
+ */
+static int
+TclSetRcFilePath(Tcl_Interp *interp, const char *path)
+{
+    Tcl_DString ds;
+    if (Tcl_FSTildeExpand(interp, path, &ds) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    Tcl_Obj *rcPathObj = Tcl_DStringToObj(&ds);
+    /* Reminder: don't worry about rcPathObj ref count on success/failure */
+    if (Tcl_SetVar2Ex(interp, "tcl_rcFileName", NULL, rcPathObj,
+	    TCL_GLOBAL_ONLY) == NULL) {
+	return TCL_ERROR;
+    }
+    return TCL_OK;
+
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -161,19 +207,14 @@ Tcl_AppInit(
      * run interactively. Typically the startup file is "~/.apprc" where "app"
      * is the name of the application. If this line is deleted then no
      * user-specific startup file will be run under any conditions.
+     * In keeping with the historical behavior, errors setting the name
+     * for example, if the home directory cannot be found, are ignored.
      */
-#ifdef DJGPP
-#define INITFILENAME "tclshrc.tcl"
-#else
-#define INITFILENAME ".tclshrc"
-#endif
-
-    (void) Tcl_EvalEx(interp,
-	    "set tcl_rcFileName [file tildeexpand ~/" INITFILENAME "]",
-	    -1, TCL_EVAL_GLOBAL);
+    (void) TclSetRcFilePath(interp, TCL_RC_FILE);
+    Tcl_ResetResult(interp);
     return TCL_OK;
 }
-
+
 /*
  * Local Variables:
  * mode: c
