@@ -1416,7 +1416,7 @@ echo "${ECHO_T}$enableval" >&6
 echo $ECHO_N "checking for compressed file suffix... $ECHO_C" >&6
 	touch TeST
 	$enableval TeST
-	Z=`ls TeST* | sed 's/^....//'`
+	Z=`ls TeST.* | sed 's/^....//'`
 	rm -f TeST*
 	MAN_FLAGS="$MAN_FLAGS --extension $Z"
 	echo "$as_me:$LINENO: result: $Z" >&5
