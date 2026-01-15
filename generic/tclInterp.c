@@ -4347,19 +4347,21 @@ Tcl_LimitSetTime(
     Tcl_Time *timeLimitPtr)
 {
     Interp *iPtr = (Interp *) interp;
-    Tcl_Time nextMoment;
+    long long nextMoment;
+
 
     memcpy(&iPtr->limit.time, timeLimitPtr, sizeof(Tcl_Time));
     if (iPtr->limit.timeEvent != NULL) {
 	Tcl_DeleteTimerHandler(iPtr->limit.timeEvent);
     }
-    nextMoment.sec = timeLimitPtr->sec;
-    nextMoment.usec = timeLimitPtr->usec+10;
-    if (nextMoment.usec >= 1000000) {
-	nextMoment.sec++;
-	nextMoment.usec -= 1000000;
+    if (timeLimitPtr->sec >= LLONG_MAX / 1000000 + 10) {
+	nextMoment = LLONG_MAX;
+    } else {
+	nextMoment = timeLimitPtr->sec * 1000000 +
+		(timeLimitPtr->usec % 1000000) + 10;
     }
-    iPtr->limit.timeEvent = TclCreateAbsoluteTimerHandler(&nextMoment,
+
+    iPtr->limit.timeEvent = TclCreateAbsoluteTimerHandler(nextMoment,
 	    TimeLimitCallback, interp);
     iPtr->limit.exceeded &= ~TCL_LIMIT_TIME;
 }
