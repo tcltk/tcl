@@ -373,21 +373,21 @@ Tcl_CreateTimerHandler(
     long long timeUS;
     long long delayUS;
 
+    delayUS = milliseconds * US_PER_MS;
+    timeUS = Tcl_GetMonotonicTime();
+
     /*
-     * Compute when the event should fire.
-     * Use LLONG_MAX on any calculation overflow
+     * The max value for delayUS is 2^31*1000.
+     * This is far away from LLONG_MAX.
+     * Nevertheless, use the upper limit in case of overflow.
+     * Alternate possibility would be to return NULL, what is
+     * currently not foreseen.
      */
 
-    if (milliseconds >= LLONG_MAX / US_PER_MS) {
+    if (delayUS > LLONG_MAX - timeUS) {
 	timeUS = LLONG_MAX;
     } else {
-	delayUS = milliseconds * US_PER_MS;
-	timeUS = Tcl_GetMonotonicTime();
-	if (delayUS > LLONG_MAX - timeUS) {
-	    timeUS = LLONG_MAX;
-	} else {
-	    timeUS += delayUS;
-	}
+	timeUS += delayUS;
     }
 
     return CreateTimerHandler(timeUS, proc, clientData, true);
