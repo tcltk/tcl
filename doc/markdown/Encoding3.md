@@ -85,8 +85,10 @@ The caller must call **Tcl_DStringFree** to free up the ***dstPtr** resources ir
 : The source buffer contained an invalid byte or character sequence.  This may occur if the input stream has been damaged or if the input encoding method was misidentified.
 
 **TCL_CONVERT_UNKNOWN**
-: The source buffer contained a character that could not be represented in the target encoding. .LP **Tcl_UtfToExternalDString** converts a source buffer *src* from TUTF-8 into the specified *encoding*.  The converted bytes are stored in *dstPtr*, which is then terminated with the appropriate encoding-specific null.  The caller should eventually call **Tcl_DStringFree** to free any information stored in *dstPtr*.  When converting, if any of the characters in the source buffer cannot be represented in the target encoding, a default fallback character will be used.  The return value is a pointer to the value stored in the DString.
+: The source buffer contained a character that could not be represented in the target encoding.
 
+
+**Tcl_UtfToExternalDString** converts a source buffer *src* from TUTF-8 into the specified *encoding*.  The converted bytes are stored in *dstPtr*, which is then terminated with the appropriate encoding-specific null.  The caller should eventually call **Tcl_DStringFree** to free any information stored in *dstPtr*.  When converting, if any of the characters in the source buffer cannot be represented in the target encoding, a default fallback character will be used.  The return value is a pointer to the value stored in the DString.
 
 **Tcl_UtfToExternalDStringEx** is an enhanced version of **Tcl_UtfToExternalDString** that transforms TUTF-8 encoded source data to a specified *encoding*. Except for the direction of the transform, the parameters and return values are identical to those of **Tcl_ExternalToUtfDStringEx**. See that function above for details about the same.
 

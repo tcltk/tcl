@@ -68,8 +68,10 @@ In addition to the result of a procedure, the return code of a procedure may als
 : The return code of the procedure is 4 (**TCL_CONTINUE**).  The procedure command behaves in its calling context as if it were the command **continue**.
 
 *value*
-: *Value* must be an integer;  it will be returned as the return code for the current procedure. Applications and packages should use values in the range 5 to 1073741823 (0x3fffffff) for their own purposes. Values outside this range are reserved for use by Tcl. .LP When a procedure wants to signal that it has received invalid arguments from its caller, it may use **return -code error** with *result* set to a suitable error message.  Otherwise usage of the **return -code** option is mostly limited to procedures that implement a new control structure.
+: *Value* must be an integer;  it will be returned as the return code for the current procedure. Applications and packages should use values in the range 5 to 1073741823 (0x3fffffff) for their own purposes. Values outside this range are reserved for use by Tcl.
 
+
+When a procedure wants to signal that it has received invalid arguments from its caller, it may use **return -code error** with *result* set to a suitable error message.  Otherwise usage of the **return -code** option is mostly limited to procedures that implement a new control structure.
 
 The **return -code** command acts similarly within script files that are evaluated by the **source** command.  During the evaluation of the contents of a file as a script by **source**, an invocation of the **return -code** *code* command will cause the return code of **source** to be *code*.
 

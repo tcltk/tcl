@@ -709,7 +709,7 @@ proc ::ndoc::parseBlock {parent manContent} {
 				if $verbose {puts "$blockType (subtype $subType)"}
 				# collect all material until the end of the definition list
 				# - if a .TP item has more than one paragraph or a code block, then it is wrapped into a pair of .RS/.RE
-				# - the list ends at the next unwrapped .PP or at .SH/.SS
+				# - the list ends at the next unwrapped .PP or .LP or at .SH/.SS
 				set itemTitle {}
 				set itemContent {}
 				set itemVS [list]
@@ -731,7 +731,7 @@ proc ::ndoc::parseBlock {parent manContent} {
 							if $verbose {puts "inset ends"}
 							set dlistState {}
 						}
-						.PP {
+						.PP - .LP {
 							if {$dlistState eq "inset"} {
 								if $verbose {puts "new paragraph in inset"}
 								# - inside .RS/.RE we are still within one item
@@ -932,10 +932,10 @@ proc ::ndoc::parseBlock {parent manContent} {
 				lappend blockList [list Header {-level 2} $SScontent]
 				set manContent [lrange $manContent 1 end]
 			}
-			.PP - . {
+			.PP - .LP - . {
 				# beginning of new paragrah
 				if {$blockType ne ""} {set doCloseBlock 1; continue}
-				if $verbose {puts PP}
+				if $verbose {puts PP/LP/.}
 				set blockType Paragraph
 				set manContent [lrange $manContent 1 end]
 			}

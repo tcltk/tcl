@@ -44,8 +44,10 @@ Tcl_AppInit - perform application-specific initialization
 
 3. Invoke a startup script to initialize the application.
 
-4. Use the routines **Tcl_SetStartupScript** and **Tcl_GetStartupScript** to set or query the file and encoding that the active **Tcl_Main** or **Tk_Main** routine will use as a startup script. .LP **Tcl_AppInit** returns **TCL_OK** or **TCL_ERROR**. If it returns **TCL_ERROR** then it must leave an error message in for the interpreter's result;  otherwise the result is ignored.
+4. Use the routines **Tcl_SetStartupScript** and **Tcl_GetStartupScript** to set or query the file and encoding that the active **Tcl_Main** or **Tk_Main** routine will use as a startup script.
 
+
+**Tcl_AppInit** returns **TCL_OK** or **TCL_ERROR**. If it returns **TCL_ERROR** then it must leave an error message in for the interpreter's result;  otherwise the result is ignored.
 
 In addition to **Tcl_AppInit**, your application should also contain a procedure **main** that calls **Tcl_Main** as follows:
 
