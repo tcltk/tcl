@@ -30,9 +30,9 @@ global - Access global variables
 
 # Description
 
-This command has no effect unless executed in the context of a proc body. If the **global** command is executed in the context of a proc body, it creates local variables linked to the corresponding global variables (though these linked variables, like those created by **upvar**, are not included in the list returned by **info locals**).
+This command has no effect unless executed in the context of a proc body. If the **global** command is executed in the context of a proc body, it creates local variables linked to the corresponding global variables (though these linked variables, like those created by [upvar], are not included in the list returned by [info locals][info]).
 
-If *varName* contains namespace qualifiers, the local variable's name is the unqualified name of the global variable, as determined by the **namespace tail** command.
+If *varName* contains namespace qualifiers, the local variable's name is the unqualified name of the global variable, as determined by the [namespace tail][namespace] command.
 
 *varName* is always treated as the name of a variable, not an array element.  An error is returned if the name looks like an array element, such as **a(b)**.
 
@@ -47,7 +47,7 @@ proc reset {} {
 }
 ```
 
-This procedure accumulates the strings passed to it in a global buffer, separated by newlines.  It is useful for situations when you want to build a message piece-by-piece (as if with **puts**) but send that full message in a single piece (e.g. over a connection opened with **socket** or as part of a counted HTTP response).
+This procedure accumulates the strings passed to it in a global buffer, separated by newlines.  It is useful for situations when you want to build a message piece-by-piece (as if with [puts]) but send that full message in a single piece (e.g. over a connection opened with [socket] or as part of a counted HTTP response).
 
 ```
 proc accum {string} {
@@ -55,4 +55,11 @@ proc accum {string} {
     append accumulator $string \n
 }
 ```
+
+
+[info]: info.md
+[namespace]: namespace.md
+[puts]: puts.md
+[socket]: socket.md
+[upvar]: upvar.md
 

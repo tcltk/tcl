@@ -43,22 +43,22 @@ This command is used to delay execution of the program or to execute a command i
 : *Ms* must be an integer giving a time in milliseconds. A negative number is treated as 0. The command sleeps for *ms* milliseconds and then returns. While the command is sleeping the application does not respond to events.
 
 [after]{.cmd} [ms]{.arg} [script]{.arg} [script]{.optdot}
-: In this form the command returns immediately, but it arranges for a Tcl command to be executed *ms* milliseconds later as an event handler. The command will be executed exactly once, at the given time. The delayed command is formed by concatenating all the *script* arguments in the same fashion as the **concat** command. The command will be executed at global level (outside the context of any Tcl procedure). If an error occurs while executing the delayed command then the background error will be reported by the command registered with **interp bgerror**. The **after** command returns an identifier that can be used to cancel the delayed command using **after cancel**. A *ms* value of 0 (or negative) queues the event immediately with priority over other event types (if not installed with an event proc, which will wait for next round of events).
+: In this form the command returns immediately, but it arranges for a Tcl command to be executed *ms* milliseconds later as an event handler. The command will be executed exactly once, at the given time. The delayed command is formed by concatenating all the *script* arguments in the same fashion as the [concat] command. The command will be executed at global level (outside the context of any Tcl procedure). If an error occurs while executing the delayed command then the background error will be reported by the command registered with [interp bgerror][interp]. The **after** command returns an identifier that can be used to cancel the delayed command using **after cancel**. A *ms* value of 0 (or negative) queues the event immediately with priority over other event types (if not installed with an event proc, which will wait for next round of events).
 
 [after]{.cmd} [cancel]{.sub} [id]{.arg}
 : Cancels the execution of a delayed command that was previously scheduled. *Id* indicates which command should be canceled;  it must have been the return value from a previous **after** command. If the command given by *id* has already been executed then the **after cancel** command has no effect.
 
 [after]{.cmd} [cancel]{.sub} [script]{.arg} [script]{.optdot}
-: This command also cancels the execution of a delayed command. The *script* arguments are concatenated together with space separators (just as in the **concat** command). If there is a pending command that matches the string, it is canceled and will never be executed;  if no such command is currently pending then the **after cancel** command has no effect.
+: This command also cancels the execution of a delayed command. The *script* arguments are concatenated together with space separators (just as in the [concat] command). If there is a pending command that matches the string, it is canceled and will never be executed;  if no such command is currently pending then the **after cancel** command has no effect.
 
 [after]{.cmd} [idle]{.sub} [script]{.arg} [script]{.optdot}
-: Concatenates the *script* arguments together with space separators (just as in the **concat** command), and arranges for the resulting script to be evaluated later as an idle callback. The script will be run exactly once, the next time the event loop is entered and there are no events to process. The command returns an identifier that can be used to cancel the delayed command using **after cancel**. If an error occurs while executing the script then the background error will be reported by the command registered with **interp bgerror**.
+: Concatenates the *script* arguments together with space separators (just as in the [concat] command), and arranges for the resulting script to be evaluated later as an idle callback. The script will be run exactly once, the next time the event loop is entered and there are no events to process. The command returns an identifier that can be used to cancel the delayed command using **after cancel**. If an error occurs while executing the script then the background error will be reported by the command registered with [interp bgerror][interp].
 
 [after]{.cmd} [info]{.sub} [id]{.optarg}
 : This command returns information about existing event handlers. If no *id* argument is supplied, the command returns a list of the identifiers for all existing event handlers created by the **after** command for this interpreter. If *id* is supplied, it specifies an existing handler; *id* must have been the return value from some previous call to **after** and it must not have triggered yet or been canceled. In this case the command returns a list with two elements. The first element of the list is the script associated with *id*, and the second element is either **idle** or **timer** to indicate what kind of event handler it is.
 
 
-The **after** *ms* and **after idle** forms of the command assume that the application is event driven:  the delayed commands will not be executed unless the application enters the event loop. In applications that are not normally event-driven, such as **tclsh**, the event loop can be entered with the **vwait** and **update** commands.
+The **after** *ms* and **after idle** forms of the command assume that the application is event driven:  the delayed commands will not be executed unless the application enters the event loop. In applications that are not normally event-driven, such as **tclsh**, the event loop can be entered with the [vwait] and [update] commands.
 
 # Examples
 
@@ -86,4 +86,10 @@ proc doOneStep {} {
 }
 doOneStep
 ```
+
+
+[concat]: concat.md
+[interp]: interp.md
+[update]: update.md
+[vwait]: vwait.md
 

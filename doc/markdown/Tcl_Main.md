@@ -84,7 +84,7 @@ When the *appInitProc* is finished, **Tcl_Main** calls **Tcl_GetStartupScript** 
 typedef void Tcl_MainLoopProc(void);
 ```
 
-**Tcl_Main** does not return.  Normally a program based on **Tcl_Main** will terminate when the **exit** command is evaluated.  In interactive mode, if an EOF or channel error is encountered on the standard input channel, then **Tcl_Main** itself will evaluate the **exit** command after the main loop procedure (if any) returns.  In non-interactive mode, after **Tcl_Main** evaluates the startup script, and the main loop procedure (if any) returns, **Tcl_Main** will also evaluate the **exit** command.
+**Tcl_Main** does not return.  Normally a program based on **Tcl_Main** will terminate when the [exit] command is evaluated.  In interactive mode, if an EOF or channel error is encountered on the standard input channel, then **Tcl_Main** itself will evaluate the [exit] command after the main loop procedure (if any) returns.  In non-interactive mode, after **Tcl_Main** evaluates the startup script, and the main loop procedure (if any) returns, **Tcl_Main** will also evaluate the [exit] command.
 
 **Tcl_Main** can not be used in stub-enabled extensions.
 
@@ -95,4 +95,7 @@ The difference between Tcl_MainEx and Tcl_MainExW is that the arguments are pass
 **Tcl_SetStartupScript** takes a value (or NULL) for its *path* argument, and will increment the reference count of it.
 
 **Tcl_GetStartupScript** returns a value with reference count at least 1, or NULL. It's *encodingPtr* is also used (if non-NULL) to return a value with a reference count at least 1, or NULL. In both cases, the owner of the values is the current thread.
+
+
+[exit]: exit.md
 

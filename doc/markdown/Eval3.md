@@ -72,13 +72,19 @@ Any OR'ed combination of the following values may be used for the *flags* argume
 
 # Miscellaneous details
 
-During the processing of a Tcl command it is legal to make nested calls to evaluate other commands (this is how procedures and some control structures are implemented). If a code other than **TCL_OK** is returned from a nested **Tcl_EvalObjEx** invocation, then the caller should normally return immediately, passing that same return code back to its caller, and so on until the top-level application is reached. A few commands, like **for**, will check for certain return codes, like **TCL_BREAK** and **TCL_CONTINUE**, and process them specially without returning.
+During the processing of a Tcl command it is legal to make nested calls to evaluate other commands (this is how procedures and some control structures are implemented). If a code other than **TCL_OK** is returned from a nested **Tcl_EvalObjEx** invocation, then the caller should normally return immediately, passing that same return code back to its caller, and so on until the top-level application is reached. A few commands, like [for], will check for certain return codes, like **TCL_BREAK** and **TCL_CONTINUE**, and process them specially without returning.
 
-**Tcl_EvalObjEx** keeps track of how many nested **Tcl_EvalObjEx** invocations are in progress for *interp*. If a code of **TCL_RETURN**, **TCL_BREAK**, or **TCL_CONTINUE** is about to be returned from the topmost **Tcl_EvalObjEx** invocation for *interp*, it converts the return code to **TCL_ERROR** and sets *interp*'s result to an error message indicating that the **return**, **break**, or **continue** command was invoked in an inappropriate place. This means that top-level applications should never see a return code from **Tcl_EvalObjEx** other than **TCL_OK** or **TCL_ERROR**.
+**Tcl_EvalObjEx** keeps track of how many nested **Tcl_EvalObjEx** invocations are in progress for *interp*. If a code of **TCL_RETURN**, **TCL_BREAK**, or **TCL_CONTINUE** is about to be returned from the topmost **Tcl_EvalObjEx** invocation for *interp*, it converts the return code to **TCL_ERROR** and sets *interp*'s result to an error message indicating that the [return], [break], or [continue] command was invoked in an inappropriate place. This means that top-level applications should never see a return code from **Tcl_EvalObjEx** other than **TCL_OK** or **TCL_ERROR**.
 
 # Reference count management
 
 **Tcl_EvalObjEx** and **Tcl_GlobalEvalObj** both increment and decrement the reference count of their *objPtr* argument; you must not pass them any value with a reference count of zero. They also manipulate the interpreter result; you must not count on the interpreter result to hold the reference count of any value over these calls.
 
 **Tcl_EvalObjv** may increment and decrement the reference count of any value passed via its *objv* argument; you must not pass any value with a reference count of zero. This function also manipulates the interpreter result; you must not count on the interpreter result to hold the reference count of any value over this call. 
+
+
+[break]: break.md
+[continue]: continue.md
+[for]: for.md
+[return]: return.md
 

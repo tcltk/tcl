@@ -73,7 +73,7 @@ The fourth portion of a conversion specifier is a precision, which consists of a
 
 ## Optional size modifier
 
-The fifth part of a conversion specifier is a size modifier, which must be **ll**, **h**, **l**, **z**, **t**, or **L**. If it is **ll** it specifies that an integer value is taken without truncation for conversion to a formatted substring. If it is **h** it specifies that an integer value is truncated to a 16-bit range before converting.  This option is rarely useful. If it is **l** (or **j** or **q**) it specifies that the integer value is truncated to the same range as that produced by the **wide()** function of the **expr** command (at least a 64-bit range). If it is **z** or **t** it specifies that the integer value is truncated to the range determined by the value of the **pointerSize** element of the **tcl_platform** array. If it is **L** it specifies that an integer or double value is taken without truncation for conversion to a formatted substring. If neither of those are present, the integer value is truncated to a 32-bit range.
+The fifth part of a conversion specifier is a size modifier, which must be **ll**, **h**, **l**, **z**, **t**, or **L**. If it is **ll** it specifies that an integer value is taken without truncation for conversion to a formatted substring. If it is **h** it specifies that an integer value is truncated to a 16-bit range before converting.  This option is rarely useful. If it is **l** (or **j** or **q**) it specifies that the integer value is truncated to the same range as that produced by the **wide()** function of the [expr] command (at least a 64-bit range). If it is **z** or **t** it specifies that the integer value is truncated to the range determined by the value of the **pointerSize** element of the **tcl_platform** array. If it is **L** it specifies that an integer or double value is taken without truncation for conversion to a formatted substring. If neither of those are present, the integer value is truncated to a 32-bit range.
 
 ## Mandatory conversion type
 
@@ -144,7 +144,7 @@ set value 120
 set char [format %c $value]
 ```
 
-Convert the output of **time** into seconds to an accuracy of hundredths of a second:
+Convert the output of [time] into seconds to an accuracy of hundredths of a second:
 
 ```
 set us [lindex [time $someTclCode] 0]
@@ -191,4 +191,8 @@ for {set i 0} {$i<=20} {incr i} {
 # Finish off by printing the separator again
 puts $sep
 ```
+
+
+[expr]: expr.md
+[time]: time.md
 

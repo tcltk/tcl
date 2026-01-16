@@ -78,7 +78,7 @@ The lower layer provides type-specific channel drivers for each type of device s
 
 Channel drivers consist of a number of components: First, each channel driver provides a **Tcl_ChannelType** structure containing pointers to functions implementing the various operations used by the generic layer to communicate with the channel driver. The **Tcl_ChannelType** structure and the functions referenced by it are described in the section **TCL_CHANNELTYPE**, below.
 
-Second, channel drivers usually provide a Tcl command to create instances of that type of channel. For example, the Tcl **open** command creates channels that use the file and command channel drivers, and the Tcl **socket** command creates channels that use TCP sockets for network communication.
+Second, channel drivers usually provide a Tcl command to create instances of that type of channel. For example, the Tcl [open] command creates channels that use the file and command channel drivers, and the Tcl [socket] command creates channels that use TCP sockets for network communication.
 
 Third, a channel driver optionally provides a C function to open channel instances of that type. For example, **Tcl_OpenFileChannel** opens a channel that uses the file channel driver, and **Tcl_OpenTcpClient** opens a channel that uses the TCP network protocol.  These creation functions typically use **Tcl_CreateChannel** internally to open the channel.
 
@@ -160,7 +160,7 @@ The change to the structures was made in such a way that standard channel types 
 
 ## Typename
 
-The *typeName* field contains a null-terminated string that identifies the type of the device implemented by this driver, e.g. **file** or **socket**.
+The *typeName* field contains a null-terminated string that identifies the type of the device implemented by this driver, e.g. [file] or [socket].
 
 This value can be retrieved with **Tcl_ChannelName**, which returns a pointer to the string.
 
@@ -419,4 +419,9 @@ so you get for instance:
 when called with *optionList* equal to "peername sockname"
 
 "blah" is the *optionName* argument and "<specific options>" is a space separated list of specific option words. The function takes good care of inserting minus signs before each option, commas after, and an "or" before the last option.
+
+
+[file]: file.md
+[open]: open.md
+[socket]: socket.md
 

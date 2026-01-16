@@ -48,7 +48,7 @@ This document describes commands looking up a prefix in a list of strings. The f
 : Use *string* in the error message at a mismatch. Default is "option".
 
 [-error0=+options]{.lit}
-: The *options* are used when no match is found. If *options* is empty, no error is generated and an empty string is returned. Otherwise the *options* are used as **return** options when generating the error message. The default corresponds to setting "-level 0". Example: If "**-error** {-errorcode MyError -level 1}" is used, an error would be generated as:
+: The *options* are used when no match is found. If *options* is empty, no error is generated and an empty string is returned. Otherwise the *options* are used as [return] options when generating the error message. The default corresponds to setting "-level 0". Example: If "**-error** {-errorcode MyError -level 1}" is used, an error would be generated as:
 
 
     ```
@@ -86,7 +86,7 @@ foreach {arg val} $args {
 }
 ```
 
-Creating a **switch** that supports prefixes:
+Creating a [switch] that supports prefixes:
 
 ```
 switch [prefix match {apa bepa cepa} $arg] {
@@ -95,4 +95,8 @@ switch [prefix match {apa bepa cepa} $arg] {
     cepa { }
 }
 ```
+
+
+[return]: return.md
+[switch]: switch.md
 

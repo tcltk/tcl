@@ -45,7 +45,7 @@ file - Manipulate file names and attributes
 This command provides several operations on a file's name or attributes.  The *name* argument is the name of a file in most cases. The *option* argument indicates what to do with the file name.  Any unique abbreviation for *option* is acceptable.  The valid options are:
 
 [file]{.cmd} [atime]{.sub} [name]{.arg} [time]{.optarg}
-: Returns a decimal string giving the time at which file *name* was last accessed.  If *time* is specified, it is an access time to set for the file.  The time is measured in the standard POSIX fashion as seconds from a fixed starting time (often January 1, 1970).  If the file does not exist or its access time cannot be queried or set then an error is generated.  On Windows, FAT file systems do not support access time. On **zipfs** file systems, access time is mapped to the modification time.
+: Returns a decimal string giving the time at which file *name* was last accessed.  If *time* is specified, it is an access time to set for the file.  The time is measured in the standard POSIX fashion as seconds from a fixed starting time (often January 1, 1970).  If the file does not exist or its access time cannot be queried or set then an error is generated.  On Windows, FAT file systems do not support access time. On [zipfs] file systems, access time is mapped to the modification time.
 
 [file]{.cmd} [attributes]{.sub} [name]{.arg}
 : ...see next...
@@ -58,7 +58,7 @@ This command provides several operations on a file's name or attributes.  The *n
     On Unix, **-group** gets or sets the group name for the file. A group id can be given to the command, but it returns a group name. **-owner** gets or sets the user name of the owner of the file. The command returns the owner name, but the numerical id can be passed when setting the owner. **-permissions** retrieves or sets a file's access permissions, using octal notation by default. This option also provides limited support for setting permissions using the symbolic notation accepted by the **chmod** command, following the form [**ugo**]?[[**+-=**][**rwxst**]**,**[...]]. Multiple permission specifications may be given, separated by commas. E.g., **u+s,go-rw** would set the setuid bit for a file's owner as well as remove read and write permission for the file's group and other users. An **ls**-style string of the form **rwxrwxrwx** is also accepted but must always be 9 characters long. E.g., **rwxr-xr-t** is equivalent to **01755**. On versions of Unix supporting file flags, **-readonly** returns the value of, or sets, or clears the readonly attribute of a file, i.e., the user immutable flag (**uchg**) to the **chflags** command.
     On Windows, **-archive** gives the value or sets or clears the archive attribute of the file. **-hidden** gives the value or sets or clears the hidden attribute of the file. **-longname** will expand each path element to its long version. This attribute cannot be set. **-readonly** gives the value or sets or clears the readonly attribute of the file. **-shortname** gives a string where every path element is replaced with its short (8.3) version of the name if possible. For path elements that cannot be mapped to short names, the long name is retained. This attribute cannot be set. **-system** gives or sets or clears the value of the system attribute of the file.
     On macOS and Darwin, **-creator** gives or sets the Finder creator type of the file. **-hidden** gives or sets or clears the hidden attribute of the file. **-readonly** gives or sets or clears the readonly attribute of the file. **-rsrclength** gives the length of the resource fork of the file, this attribute can only be set to the value 0, which results in the resource fork being stripped off the file.
-    On all platforms, files in **zipfs** mounted archives return the following attributes. These are all read-only and cannot be directly set.
+    On all platforms, files in [zipfs] mounted archives return the following attributes. These are all read-only and cannot be directly set.
 
 [-archive]{.lit}
 : The path of the mounted ZIP archive containing the file.
@@ -83,7 +83,7 @@ This command provides several operations on a file's name or attributes.  The *n
 Other attributes may be present in the returned list. These should be ignored.
 
 [file]{.cmd} [channels]{.sub} [pattern]{.optarg}
-: If *pattern* is not specified, returns a list of names of all registered open channels in this interpreter.  If *pattern* is specified, only those names matching *pattern* are returned.  Matching is determined using the same rules as for **string match**.
+: If *pattern* is not specified, returns a list of names of all registered open channels in this interpreter.  If *pattern* is specified, only those names matching *pattern* are returned.  Matching is determined using the same rules as for [string match][string].
 
 [file]{.cmd} [copy]{.sub} [-force]{.optlit} [-|-]{.optlit} [source]{.arg} [target]{.arg}
 : ...see next...
@@ -143,10 +143,10 @@ Other attributes may be present in the returned list. These should be ignored.
 : Creates each directory specified.  For each pathname *dir* specified, this command will create all non-existing parent directories as well as *dir* itself.  If an existing directory is specified, then no action is taken and no error is returned.  Trying to overwrite an existing file with a directory will result in an error.  Arguments are processed in the order specified, halting at the first error, if any.
 
 [file]{.cmd} [mtime]{.sub} [name]{.arg} [time]{.optarg}
-: Returns a decimal string giving the time at which file *name* was last modified.  If *time* is specified, it is a modification time to set for the file (equivalent to Unix **touch**).  The time is measured in the standard POSIX fashion as seconds from a fixed starting time (often January 1, 1970).  If the file does not exist or its modified time cannot be queried or set then an error is generated. On **zipfs** file systems, modification time cannot be explicitly set.
+: Returns a decimal string giving the time at which file *name* was last modified.  If *time* is specified, it is a modification time to set for the file (equivalent to Unix **touch**).  The time is measured in the standard POSIX fashion as seconds from a fixed starting time (often January 1, 1970).  If the file does not exist or its modified time cannot be queried or set then an error is generated. On [zipfs] file systems, modification time cannot be explicitly set.
 
 [file]{.cmd} [nativename]{.sub} [name]{.arg}
-: Returns the platform-specific name of the file. This is useful if the filename is needed to pass to a platform-specific call, such as to a subprocess via **exec** under Windows (see **EXAMPLES** below).
+: Returns the platform-specific name of the file. This is useful if the filename is needed to pass to a platform-specific call, such as to a subprocess via [exec] under Windows (see **EXAMPLES** below).
 
 [file]{.cmd} [normalize]{.sub} [name]{.arg}
 : Returns a unique normalized path representation for the file-system object (file, directory, link, etc), whose string value can be used as a unique identifier for it.  A normalized path is an absolute path which has all "../" and "./" removed.  Also it is one which is in the "standard" format for the native platform.  On Unix, this means the segments leading up to the path must be free of symbolic links/aliases (but the very last path component may be a symbolic link), and on Windows it also means we want the long form with that form's case-dependence (which gives us a unique, case-dependent path).  The one exception concerning the last link in the path is necessary, because Tcl or the user may wish to operate on the actual symbolic link itself (for example **file delete**, **file rename**, **file copy** are defined to operate on symbolic links, not on the things that they point to).
@@ -214,7 +214,7 @@ Other attributes may be present in the returned list. These should be ignored.
     If the file name does not begin with a tilde, it is returned unmodified.
 
 [file]{.cmd} [type]{.sub} [name]{.arg}
-: Returns a string giving the type of file *name*, which will be one of **file**, **directory**, **characterSpecial**, **blockSpecial**, **fifo**, **link**, or **socket**.
+: Returns a string giving the type of file *name*, which will be one of **file**, **directory**, **characterSpecial**, **blockSpecial**, **fifo**, **link**, or [socket].
 
 [file]{.cmd} [volumes]{.sub}
 : Returns the absolute paths to the volumes mounted on the system, as a proper Tcl list.  Without any virtual filesystems mounted as root volumes, on UNIX, the command will always return "/", since all filesystems are locally mounted. On Windows, it will return a list of the available local drives (e.g. "a:/ c:/"). If any virtual filesystem has mounted additional volumes, they will be in the returned list.
@@ -275,4 +275,10 @@ On Windows, a file can be "started" easily enough (equivalent to double-clicking
 ```
 exec {*}[auto_execok start] {} [file nativename C:/Users/fred/example.txt]
 ```
+
+
+[exec]: exec.md
+[socket]: socket.md
+[string]: string.md
+[zipfs]: zipfs.md
 

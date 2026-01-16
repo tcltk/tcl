@@ -1,3 +1,5 @@
+package require Tcl 9
+
 # This script parses an nroff formatted Tcl/Tk manual page,
 # converts it into some AST (Abstract Syntax Tree)
 # and then writes it out again as a markdown file.
@@ -221,6 +223,61 @@ namespace eval ::ndoc {
 	set manual [dict create]
 	# whether to try and convert command names in the text to real links:
 	set convertCmdToLink 1
+	# list of Tcl commands to recognize for links between manual pages:
+	set tclCmdList [lsort [info commands]]
+	# array of pages in which specific cmd words should *not* be linked
+	# as they represent something else in that context
+	# (exclude_refs_map taken from core tools/tcltk-man2html.tcl of version d2328814c619
+	# and supplemented as we go and find more places):
+	array set tclCmdListExclude {
+		bind		{button destroy option}
+		clock		{next}
+		history		{exec}
+		next		{unknown destroy}
+		zlib		{binary close filename text}
+		canvas		{bitmap text}
+		chan		{read}
+		cookiejar	{destroy configure info error set}
+		console		{eval}
+		checkbutton	{image}
+		clipboard	{string}
+		entry		{string}
+		event		{return}
+		font		{menu}
+		getOpenFile	{file open text}
+		grab		{global}
+		http 		{error}
+		interp		{time}
+		menu		{checkbutton radiobutton}
+		messageBox	{error info}
+		options		{bitmap image set}
+		radiobutton	{image}
+		safe		{join split}
+		scale		{label variable}
+		scrollbar	{set}
+		selection	{string}
+		tcltest		{error}
+		text		{bind image lower raise}
+		tkvars		{tk}
+		tkwait		{variable}
+		tm		{exec}
+		ttk_checkbutton	{variable}
+		ttk_combobox	{selection}
+		ttk_entry	{focus variable}
+		ttk_intro	{focus text}
+		ttk_label	{font text}
+		ttk_labelframe	{text}
+		ttk_menubutton	{flush}
+		ttk_notebook	{image text}
+		ttk_progressbar	{variable}
+		ttk_radiobutton	{variable}
+		ttk_scale	{variable}
+		ttk_scrollbar	{set}
+		ttk_spinbox	{format}
+		ttk_treeview	{text open focus selection}
+		ttk_widget	{image text variable}
+		TclZlib		{binary flush filename text}
+	}
 }
 
 
@@ -1341,7 +1398,8 @@ proc ::ndoc::parseInline {keyword attributes content} {
 			if {$verbose || $DEBUG} {puts DEFAULT}
 			# put the first index where an '\f' or a quote was found into 'endMark'
 			# (note that 'endMark' is a list of two indices)
-			set found [regexp -indices {(\\f)[BIRP]|(§\")} $content endMark]
+			# \x22 is the quote character
+			set found [regexp -indices {(\\f)[BIRP]|(§\x22)} $content endMark]
 			# 
 			if {$found} {
 				set endMark [lindex $endMark 0]
@@ -1426,7 +1484,8 @@ proc ::ndoc::AST2Markdown_Element {parentType indent ASTelement} {
 					if {[dict size $attributes]} {
 						# put attributes into fenced div:
 						append output ::: { } \{ .info
-						dict for {k v} $attributes {append output { } $k=\"$v\"}
+						# \x22 is the quote character
+						dict for {k v} $attributes {append output { } $k=\x22$v\x22}
 						append output \} \n
 					}
 				}
@@ -1469,7 +1528,7 @@ proc ::ndoc::AST2Markdown_Element {parentType indent ASTelement} {
 		Text      {}
 		Emphasis  {append output *}
 		Strong    {append output **}
-		Quoted    {append output \"}
+		Quoted    {append output \x22}
 		Link      {}
 		Inline    {}
 		default {return -code error "no such AST element type '$type'"}
@@ -1526,7 +1585,7 @@ proc ::ndoc::AST2Markdown_Element {parentType indent ASTelement} {
 		Text      {}
 		Emphasis  {append output *}
 		Strong    {append output **}
-		Quoted    {append output \"}
+		Quoted    {append output \x22}
 		Link      {}
 		default   {}
 	}
@@ -1544,7 +1603,9 @@ proc ::ndoc::man2markdown {manContent} {
 	#
 	man2AST $manContent
 	set md [AST2Markdown]
-	return [mdExceptions $md]
+	set md [mdExceptions $md]
+	set md [mdLinks $md]
+	return $md
 }
 
 
@@ -1559,6 +1620,80 @@ proc ::ndoc::mdExceptions {md} {
 	switch $myFile {
 		re_syntax {
 			set md [string map {{Different flavors of res} {Different flavours of REs}} $md] 
+		}
+		append {
+			set md [string map {{"**append a $b**"} {`append a $b`} {"**set a $a$b**" if **$a**} {`set a $a$b` if `$a`}} $md]
+		}
+	}
+	return $md
+}
+
+
+proc ::ndoc::mdLinks {md} {
+	#
+	# find words in the final md output that qualify as links to other manual pages
+	# and insert markdown links there in the form of implicit reference links
+	# (using Pandoc's shortcut_reference_links extension)
+	#
+	# md - string containing manual page in markdown format
+	#
+	variable tclCmdList
+	variable manual
+	variable tclCmdListExclude
+	set refList [list]
+	set cmdName [dict get $manual meta CommandName]
+	# make sure there's an etry for the current command, so we do not need more code down below:
+	if {! [info exists tclCmdListExclude($cmdName)]} {set tclCmdListExclude($cmdName) {}}
+	# detect all strings with ** around, using a non-greedy regexp.
+	# we go through the file one by one as ce can't use '-all' here
+	# (it would shift indices into the md after each match is replaced)
+	set matchIndices [regexp -inline -expanded -indices -line {\*\*(.+?)\*\*} $md]
+	while {[llength $matchIndices]} {
+		lassign $matchIndices fullRange coreRange
+		set linkText [string range $md {*}$coreRange]
+		# check whether the string qualifies as a link to another Tcl command
+		## extract the command name:
+		set linkList [split $linkText { }]
+		set linkCmd [lindex $linkList 0]
+		set isValidLink 1
+		if {
+			[lindex $linkList 0] eq "const" && [llength $linkList] >= 1
+		} {
+			## exclude some corner cases
+			set isValidLink 0	
+		} elseif {$linkCmd ne $cmdName && $linkCmd in $tclCmdList && $linkCmd ni $tclCmdListExclude($cmdName)} {
+			## all ok
+			set isValidLink 1
+		} else {
+			## exclude links to self and the ones on the exclusion list:
+			set isValidLink 0
+		}
+		if $isValidLink {		
+			set md [string replace $md {*}$fullRange \[$linkText\]]
+			lappend refList $linkCmd
+			# the next search should start at the character after $fullMatch,
+			# but since we have changed the content with a string that is
+			# two characters shorter, the new index will be offset -1 instead of +1
+			set nextIndex [expr {[lindex $fullRange end] - 1}]
+			# if the link text consists of more than one word, we want to add the link label
+			# for the reference (which is only the first word)
+			# and then need to adjust nextIndex
+			if {[llength $linkList] == 2} {
+				set labelText \[$linkCmd\]
+				set md [string insert $md $nextIndex $labelText]
+				incr nextIndex [string length $labelText]
+			}
+		} else {
+			# no link, we did not change anything, so the next index is +1 here:
+			set nextIndex [expr {[lindex $fullRange end] + 1}]
+		}
+		set matchIndices [regexp -inline -expanded -indices -line -start $nextIndex {\*\*(.+?)\*\*} $md]
+	}
+	# add link references at the bottom of the page:
+	if {[llength $refList]} {
+		append md \n\n
+		foreach linkCmd [lsort -dictionary -unique $refList] {
+			append md \[ $linkCmd \] : { } $linkCmd .md \n
 		}
 	}
 	return $md
@@ -1585,7 +1720,7 @@ proc ::ndoc::readFile {filename} {
 }
 
 
-proc ::ndoc::main {} { 
+proc ::ndoc::main {} {
 	#
 	# main entry point to the script
 	# when called directly from the command line

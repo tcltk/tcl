@@ -42,7 +42,7 @@ Tcl_NewByteArrayObj, Tcl_SetByteArrayObj, Tcl_GetBytesFromObj, Tcl_GetByteArrayF
 
 N.B. Refer to the **Tcl_UniChar** documentation page for a description of the *TUTF-8* encoding and related terms referenced here.
 
-These routines are used to create, modify, store, transfer, and retrieve arbitrary binary data in Tcl values.  Specifically, data that can be represented as a sequence of arbitrary byte values is supported. This includes data read from binary channels, values created by the **binary** command, encrypted data, or other information representable as a finite byte sequence.
+These routines are used to create, modify, store, transfer, and retrieve arbitrary binary data in Tcl values.  Specifically, data that can be represented as a sequence of arbitrary byte values is supported. This includes data read from binary channels, values created by the [binary] command, encrypted data, or other information representable as a finite byte sequence.
 
 A byte is an 8-bit quantity with no inherent meaning.  When the 8 bits are interpreted as an integer value, the range of possible values is (0-255). The C type best suited to store a byte is the **unsigned char**. An **unsigned char** array of size *N* stores an arbitrary binary value of size *N* bytes.  We call this representation a byte-array. Here we document the routines that allow us to operate on Tcl values as byte-arrays.
 
@@ -67,4 +67,7 @@ On success, both **Tcl_GetBytesFromObj** and **Tcl_GetByteArrayFromObj** write t
 **Tcl_SetByteArrayObj** and **Tcl_SetByteArrayLength** do not modify the reference count of their *objPtr* arguments, but do require that the object be unshared.
 
 **Tcl_GetBytesFromObj** and **Tcl_GetByteArrayFromObj** do not modify the reference count of *objPtr*; they only read. 
+
+
+[binary]: binary.md
 

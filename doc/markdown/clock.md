@@ -179,7 +179,7 @@ Most of the subcommands supported by the **clock** command deal with times repre
 
 # Formatting times
 
-The **clock format** command produces times for display to a user or writing to an external medium.  The command accepts times that are expressed in seconds from the epoch time of 1 January 1970, 00:00 UTC, as returned by **clock seconds**, **clock scan**, **clock add**, **file atime** or **file mtime**.
+The **clock format** command produces times for display to a user or writing to an external medium.  The command accepts times that are expressed in seconds from the epoch time of 1 January 1970, 00:00 UTC, as returned by **clock seconds**, **clock scan**, **clock add**, [file atime][file] or [file mtime][file].
 
 If a **-format** option is present, the following argument is a string that specifies how the date and time are to be formatted. The string consists of any number of characters other than the per-cent sign ("**%**") interspersed with any number of *format groups*, which are two-character sequences beginning with the per-cent sign.  The permissible format groups, and their interpretation, are described under **FORMAT GROUPS**.
 
@@ -494,4 +494,7 @@ Fri Jan 27 00:00:00 GMT 1978
 # Copyright
 
 Copyright \(co 2004 Kevin B. Kenny <kennykb@acm.org>. All rights reserved. 
+
+
+[file]: file.md
 

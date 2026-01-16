@@ -49,7 +49,7 @@ Missing platform-specific standard channels do not matter here. This approach is
 2. All uninitialized standard channels are initialized to platform-specific default values:
 
 (a)
-: when open channels are listed with **Tcl_GetChannelNames** (or the **file channels** script command), or
+: when open channels are listed with **Tcl_GetChannelNames** (or the [file channels][file] script command), or
 
 (b)
 : when information about any standard channel is requested with a call to **Tcl_GetStdChannel**, or with a call to **Tcl_GetChannel** which specifies one of the standard names (**stdin**, **stdout** and **stderr**).
@@ -76,4 +76,7 @@ The Tcl shell (or rather the function **Tcl_Main**, which forms the core of the 
 ## Wish
 
 The windowing shell (or rather the function **Tk_MainEx**, which forms the core of the shell's implementation) uses method 1 to initialize the standard channels (See **Tk_InitConsoleChannels**) on non-Unix platforms.  On Unix platforms, **Tk_MainEx** implicitly uses method 2 to initialize the standard channels.
+
+
+[file]: file.md
 

@@ -46,7 +46,7 @@ When called **Tcl_RegisterConfig** will
 2. create the command **pkgconfig** in that namespace and link it to the provided information so that the keys from *configuration* and their associated values can be retrieved through calls to **pkgconfig**.
 
 
-The command **pkgconfig** will provide two subcommands, **list** and **get**:
+The command **pkgconfig** will provide two subcommands, [list] and **get**:
 
 ::*pkgName*::**pkgconfig** list
 : Returns a list containing the names of all defined keys.
@@ -65,4 +65,7 @@ typedef struct {
     const char *value;
 } Tcl_Config;
 ```
+
+
+[list]: list.md
 

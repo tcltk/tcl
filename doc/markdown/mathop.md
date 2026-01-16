@@ -56,7 +56,7 @@ mathop - Mathematical operators as Tcl commands
 
 # Description
 
-The commands in the **::tcl::mathop** namespace implement the same set of operations as supported by the **expr** command. All are exported from the namespace, but are not imported into any other namespace by default. Note that renaming, reimplementing or deleting any of the commands in the namespace does *not* alter the way that the **expr** command behaves, and nor does defining any new commands in the **::tcl::mathop** namespace.
+The commands in the **::tcl::mathop** namespace implement the same set of operations as supported by the [expr] command. All are exported from the namespace, but are not imported into any other namespace by default. Note that renaming, reimplementing or deleting any of the commands in the namespace does *not* alter the way that the [expr] command behaves, and nor does defining any new commands in the **::tcl::mathop** namespace.
 
 The following operator commands are supported: .DS **~**	**!**	**+**	**-**	***** **/**	**%**	******	**&**	**|** **^**	**>>**	**<<**	**==**	**eq** **!=**	**ne**	**<**	**<=**	**>** **>=**	**in**	**ni**	**lt**	**le** **gt**	**ge** .DE
 
@@ -97,28 +97,28 @@ The behaviors of the mathematical operator commands are as follows:
 The behaviors of the comparison operator commands (most of which operate preferentially on numeric arguments) are as follows:
 
 **==** ?*arg ...*?
-: Returns whether each argument is equal to the arguments on each side of it in the sense of the **expr** == operator (*i.e.*, numeric comparison if possible, exact string comparison otherwise). If fewer than two arguments are given, this operation always returns a true value.
+: Returns whether each argument is equal to the arguments on each side of it in the sense of the [expr] == operator (*i.e.*, numeric comparison if possible, exact string comparison otherwise). If fewer than two arguments are given, this operation always returns a true value.
 
 **eq** ?*arg ...*?
 : Returns whether each argument is equal to the arguments on each side of it using exact string comparison. If fewer than two arguments are given, this operation always returns a true value.
 
 **!=** *arg arg*
-: Returns whether the two arguments are not equal to each other, in the sense of the **expr** != operator (*i.e.*, numeric comparison if possible, exact string comparison otherwise).
+: Returns whether the two arguments are not equal to each other, in the sense of the [expr] != operator (*i.e.*, numeric comparison if possible, exact string comparison otherwise).
 
 **ne** *arg arg*
 : Returns whether the two arguments are not equal to each other using exact string comparison.
 
 **<** ?*arg ...*?
-: Returns whether the arbitrarily-many arguments are ordered, with each argument after the first having to be strictly more than the one preceding it. Comparisons are performed preferentially on the numeric values, and are otherwise performed using UNICODE string comparison. If fewer than two arguments are present, this operation always returns a true value. When the arguments are numeric but should be compared as strings, the **lt** operator or the **string compare** command should be used instead.
+: Returns whether the arbitrarily-many arguments are ordered, with each argument after the first having to be strictly more than the one preceding it. Comparisons are performed preferentially on the numeric values, and are otherwise performed using UNICODE string comparison. If fewer than two arguments are present, this operation always returns a true value. When the arguments are numeric but should be compared as strings, the **lt** operator or the [string compare][string] command should be used instead.
 
 **<=** ?*arg ...*?
-: Returns whether the arbitrarily-many arguments are ordered, with each argument after the first having to be equal to or more than the one preceding it. Comparisons are performed preferentially on the numeric values, and are otherwise performed using UNICODE string comparison. If fewer than two arguments are present, this operation always returns a true value. When the arguments are numeric but should be compared as strings,  the **le** operator or the **string compare** command should be used instead.
+: Returns whether the arbitrarily-many arguments are ordered, with each argument after the first having to be equal to or more than the one preceding it. Comparisons are performed preferentially on the numeric values, and are otherwise performed using UNICODE string comparison. If fewer than two arguments are present, this operation always returns a true value. When the arguments are numeric but should be compared as strings,  the **le** operator or the [string compare][string] command should be used instead.
 
 **>** ?*arg ...*?
-: Returns whether the arbitrarily-many arguments are ordered, with each argument after the first having to be strictly less than the one preceding it. Comparisons are performed preferentially on the numeric values, and are otherwise performed using UNICODE string comparison. If fewer than two arguments are present, this operation always returns a true value. When the arguments are numeric but should be compared as strings, the **gt** operator or the **string compare** command should be used instead.
+: Returns whether the arbitrarily-many arguments are ordered, with each argument after the first having to be strictly less than the one preceding it. Comparisons are performed preferentially on the numeric values, and are otherwise performed using UNICODE string comparison. If fewer than two arguments are present, this operation always returns a true value. When the arguments are numeric but should be compared as strings, the **gt** operator or the [string compare][string] command should be used instead.
 
 **>=** ?*arg ...*?
-: Returns whether the arbitrarily-many arguments are ordered, with each argument after the first having to be equal to or less than the one preceding it. Comparisons are performed preferentially on the numeric values, and are otherwise performed using UNICODE string comparison. If fewer than two arguments are present, this operation always returns a true value. When the arguments are numeric but should be compared as strings, the **ge** operator or the **string compare** command should be used instead.
+: Returns whether the arbitrarily-many arguments are ordered, with each argument after the first having to be equal to or less than the one preceding it. Comparisons are performed preferentially on the numeric values, and are otherwise performed using UNICODE string comparison. If fewer than two arguments are present, this operation always returns a true value. When the arguments are numeric but should be compared as strings, the **ge** operator or the [string compare][string] command should be used instead.
 
 **lt** ?*arg ...*?
 : Returns whether the arbitrarily-many arguments are ordered, with each argument after the first having to be strictly more than the one preceding it. Comparisons are performed using UNICODE string comparison. If fewer than two arguments are present, this operation always returns a true value.
@@ -169,7 +169,7 @@ The behaviors of the list-oriented operator commands are as follows:
 
 # Examples
 
-The simplest way to use the operators is often by using **namespace path** to make the commands available. This has the advantage of not affecting the set of commands defined by the current namespace.
+The simplest way to use the operators is often by using [namespace path][namespace] to make the commands available. This has the advantage of not affecting the set of commands defined by the current namespace.
 
 ```
 namespace path {::tcl::mathop ::tcl::mathfunc}
@@ -194,4 +194,9 @@ set sorted [<= {*}$list]
 set alphaList {a b c d e f}
 set sorted [le {*}$alphaList]
 ```
+
+
+[expr]: expr.md
+[namespace]: namespace.md
+[string]: string.md
 

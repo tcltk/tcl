@@ -36,13 +36,13 @@ Tcl_PkgRequire, Tcl_PkgRequireEx, Tcl_PkgRequireProc, Tcl_PkgPresent, Tcl_PkgPre
 
 # Arguments
 
-.AP Tcl_Interp *interp in Interpreter where package is needed or available. .AP "const char" *name in Name of package. .AP "const char" *version in A version specification string as described for **package require**. .AP int exact in Non-zero means that only the particular version specified by *version* is acceptable. Zero means that newer versions than *version* are also acceptable as long as they have the same major version number as *version*. .AP "const void" *clientData in Arbitrary value to be associated with the package. .AP void *clientDataPtr out Pointer to place to store the value associated with the matching package. It is only changed if the pointer is not NULL and the function completed successfully. The storage can be any pointer type with the same size as a void pointer. .AP Tcl_Size objc in Number of requirements. .AP Tcl_Obj* objv[] in Array of requirements.
+.AP Tcl_Interp *interp in Interpreter where package is needed or available. .AP "const char" *name in Name of package. .AP "const char" *version in A version specification string as described for [package require][package]. .AP int exact in Non-zero means that only the particular version specified by *version* is acceptable. Zero means that newer versions than *version* are also acceptable as long as they have the same major version number as *version*. .AP "const void" *clientData in Arbitrary value to be associated with the package. .AP void *clientDataPtr out Pointer to place to store the value associated with the matching package. It is only changed if the pointer is not NULL and the function completed successfully. The storage can be any pointer type with the same size as a void pointer. .AP Tcl_Size objc in Number of requirements. .AP Tcl_Obj* objv[] in Array of requirements.
 
 # Description
 
 These procedures provide C-level interfaces to Tcl's package and version management facilities.
 
-**Tcl_PkgRequire** is equivalent to the **package require** command, **Tcl_PkgPresent** is equivalent to the **package present** command, and **Tcl_PkgProvide** is equivalent to the **package provide** command.
+**Tcl_PkgRequire** is equivalent to the [package require][package] command, **Tcl_PkgPresent** is equivalent to the [package present][package] command, and **Tcl_PkgProvide** is equivalent to the [package provide][package] command.
 
 See the documentation for the Tcl commands for details on what these procedures do.
 
@@ -52,9 +52,12 @@ If **Tcl_PkgPresent** or **Tcl_PkgRequire** complete successfully they return a 
 
 **Tcl_PkgProvideEx**, **Tcl_PkgPresentEx** and **Tcl_PkgRequireEx** allow the setting and retrieving of the client data associated with the package. In all other respects they are equivalent to the matching functions.
 
-**Tcl_PkgRequireProc** is the form of **package require** handling multiple requirements. The other forms are present for backward compatibility and translate their invocations to this form.
+**Tcl_PkgRequireProc** is the form of [package require][package] handling multiple requirements. The other forms are present for backward compatibility and translate their invocations to this form.
 
 # Reference count management
 
 The requirements values given (in the *objv* argument) to **Tcl_PkgRequireProc** must have non-zero reference counts.
+
+
+[package]: package.md
 

@@ -33,10 +33,10 @@ tcl::process - Subprocess management
 
 # Description
 
-This command provides a way to manage subprocesses created by the **open** and **exec** commands, as identified by the process identifiers (PIDs) of those subprocesses. The legal *options* (which may be abbreviated) are:
+This command provides a way to manage subprocesses created by the [open] and [exec] commands, as identified by the process identifiers (PIDs) of those subprocesses. The legal *options* (which may be abbreviated) are:
 
 [::tcl::process]{.cmd} [autopurge]{.sub} [flag]{.optarg}
-: Automatic purge facility. If *flag* is specified as a boolean value then it activates or deactivate autopurge. In all cases it returns the current status as a boolean value. When autopurge is active, **Tcl_ReapDetachedProcs** is called each time the **exec** command is executed or a pipe channel created by **open** is closed. When autopurge is inactive, **::tcl::process** purge must be called explicitly. By default autopurge is active.
+: Automatic purge facility. If *flag* is specified as a boolean value then it activates or deactivate autopurge. In all cases it returns the current status as a boolean value. When autopurge is active, **Tcl_ReapDetachedProcs** is called each time the [exec] command is executed or a pipe channel created by [open] is closed. When autopurge is inactive, **::tcl::process** purge must be called explicitly. By default autopurge is active.
 
 [::tcl::process]{.cmd} [list]{.sub}
 : Returns the list of subprocess PIDs. This includes all currently executing subprocesses and all terminated subprocesses that have not yet had their corresponding process table entries purged.
@@ -120,4 +120,8 @@ exec command1 1 2 3 &
 ::tcl::process list
      \(-> 1213
 ```
+
+
+[exec]: exec.md
+[open]: open.md
 

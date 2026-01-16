@@ -28,7 +28,7 @@ glob - Return names of files that match patterns
 
 # Description
 
-This command performs file name "globbing" in a fashion similar to the csh shell or bash shell. It returns a list of the files whose names match any of the *pattern* arguments. No particular order is guaranteed in the list, so if a sorted list is required the caller should use **lsort**.
+This command performs file name "globbing" in a fashion similar to the csh shell or bash shell. It returns a list of the files whose names match any of the *pattern* arguments. No particular order is guaranteed in the list, so if a sorted list is required the caller should use [lsort].
 
 ## Options
 
@@ -47,7 +47,7 @@ If the initial arguments to **glob** start with **-** then they are treated as s
 : Search for files with the given *pathPrefix* where the rest of the name matches the given patterns. This allows searching for files with names similar to a given file (as opposed to a directory) even when the names contain glob-sensitive characters. This option may not be used in conjunction with **-directory**. For example, to find all files with the same root name as $path, but differing extensions, you should use "**glob -path [file rootname $path] .***" which will work even if **$path** contains numerous glob-sensitive characters.
 
 [-tails]{.lit}
-: Only return the part of each file found which follows the last directory named in any **-directory** or **-path** path specification. Thus "**glob -tails -directory $dir ***" is equivalent to "**set pwd [pwd]; cd $dir; glob *; cd $pwd**". For **-path** specifications, the returned names will include the last path segment, so "**glob -tails -path [file rootname /home/fred/foo.tex] .***" will return paths like **foo.aux foo.bib foo.tex** etc.
+: Only return the part of each file found which follows the last directory named in any **-directory** or **-path** path specification. Thus "**glob -tails -directory $dir ***" is equivalent to "[set pwd [pwd]; cd $dir; glob *; cd $pwd]". For **-path** specifications, the returned names will include the last path segment, so "**glob -tails -path [file rootname /home/fred/foo.tex] .***" will return paths like **foo.aux foo.bib foo.tex** etc.
 
 [-types]{.lit} [typeList]{.arg}
 : Only list files or directories which match *typeList*, where the items in the list have two forms. The first form is like the -type option of the Unix find command: *b* (block special file), *c* (character special file), *d* (directory), *f* (plain file), *l* (symbolic link), *p* (named pipe), or *s* (socket), where multiple types may be specified in the list. **Glob** will return all files which match at least one of the types given. Note that symbolic links will be returned both if **-types l** is given, or if the target of a link matches the requested type. So, a link to a directory will be returned if **-types d** was specified.
@@ -66,7 +66,7 @@ If the initial arguments to **glob** start with **-** then they are treated as s
 
 ## Globbing patterns
 
-The *pattern* arguments may contain any of the following special characters, which are a superset of those supported by **string match**:
+The *pattern* arguments may contain any of the following special characters, which are a superset of those supported by [string match][string]:
 
 **?**
 : Matches any single character.
@@ -86,13 +86,13 @@ The *pattern* arguments may contain any of the following special characters, whi
 
 On Unix, as with csh, a "."\| at the beginning of a file's name or just after a "/" must be matched explicitly or with a {} construct, unless the **-types hidden** flag is given (since "."\| at the beginning of a file's name indicates that it is hidden). On other platforms, files beginning with a "."\| are handled no differently to any others, except the special directories "."\| and ".."\| which must be matched explicitly (this is to avoid a recursive pattern like "glob -join * * * *" from recursing up the directory hierarchy as well as down). In addition, all "/" characters must be matched explicitly.
 
-The **glob** command differs from csh globbing in two ways. First, it does not sort its result list (use the **lsort** command if you want the list sorted). Second, **glob** only returns the names of files that actually exist; in csh no check for existence is made unless a pattern contains a ?, *, or [] construct.
+The **glob** command differs from csh globbing in two ways. First, it does not sort its result list (use the [lsort] command if you want the list sorted). Second, **glob** only returns the names of files that actually exist; in csh no check for existence is made unless a pattern contains a ?, *, or [] construct.
 
 # Windows portability issues
 
 For Windows UNC names, the servername and sharename components of the path may not contain ?, *, or [] constructs.
 
-Since the backslash character has a special meaning to the glob command, glob patterns containing Windows style path separators need special care. The pattern "*C:\\foo\\**" is interpreted as "*C:\foo\**" where "*\f*" will match the single character "*f*" and "*\**" will match the single character "***" and will not be interpreted as a wildcard character. One solution to this problem is to use the Unix style forward slash as a path separator. Windows style paths can be converted to Unix style paths with the command "**file join** **$path**" or "**file normalize** **$path**".
+Since the backslash character has a special meaning to the glob command, glob patterns containing Windows style path separators need special care. The pattern "*C:\\foo\\**" is interpreted as "*C:\foo\**" where "*\f*" will match the single character "*f*" and "*\**" will match the single character "***" and will not be interpreted as a wildcard character. One solution to this problem is to use the Unix style forward slash as a path separator. Windows style paths can be converted to Unix style paths with the command "[file join][file] **$path**" or "[file normalize][file] **$path**".
 
 # Examples
 
@@ -119,4 +119,10 @@ Find all files whose name contains an "a", a "b" or the sequence "cde":
 ```
 glob \-type f *{a,b,cde}*
 ```
+
+
+[file]: file.md
+[lsort]: lsort.md
+[set]: set.md
+[string]: string.md
 

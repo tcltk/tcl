@@ -53,9 +53,9 @@ When presented with a single index, the **lpop** command addresses the *index*'t
 
 If *index* is negative or greater or equal than the number of elements in the list in the variable called *varName*, an error occurs.
 
-The interpretation of each simple *index* value is the same as for the command **string index**, supporting simple index arithmetic and indices relative to the end of the list.
+The interpretation of each simple *index* value is the same as for the command [string index][string], supporting simple index arithmetic and indices relative to the end of the list.
 
-If additional *index* arguments are supplied, then each argument is used in turn to address an element within a sublist designated by the previous indexing operation, allowing the script to remove elements in sublists, similar to **lindex** and **lset**. The command,
+If additional *index* arguments are supplied, then each argument is used in turn to address an element within a sublist designated by the previous indexing operation, allowing the script to remove elements in sublists, similar to [lindex] and [lset]. The command,
 
 ```
 lpop a 1 2
@@ -103,4 +103,9 @@ The indicated value becomes the new value of *x*.
 lpop x 1 1 0
       \(-> {{a b} {c d}} {{e f} h}
 ```
+
+
+[lindex]: lindex.md
+[lset]: lset.md
+[string]: string.md
 

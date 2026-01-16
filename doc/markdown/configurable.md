@@ -67,7 +67,7 @@ The **oo::configurable** metaclass installs basic support for making configurabl
 
 ## Configure method
 
-The behavior of the **configure** method is modelled after the **fconfigure**/**chan configure** command.
+The behavior of the **configure** method is modelled after the [fconfigure]/[chan configure][chan] command.
 
 If passed no additional arguments, the **configure** method returns an alphabetically sorted dictionary of all *readable* and *read-write* properties and their current values.
 
@@ -104,10 +104,10 @@ The configurable class system is comprised of several pieces. The **oo::configur
 : This is a class that provides the implementation of the **configure** method (described above in **CONFIGURE METHOD**).
 
 **oo::configuresupport::configurableclass**
-: This is a namespace that contains the definition dialect that provides the **property** declaration for use in classes (i.e., via **oo::define**, and class constructors under normal circumstances), as described above in **PROPERTY DEFINITIONS**. It **namespace export**s its **property** command so that it may be used easily in user definition dialects.
+: This is a namespace that contains the definition dialect that provides the **property** declaration for use in classes (i.e., via **oo::define**, and class constructors under normal circumstances), as described above in **PROPERTY DEFINITIONS**. It [namespace export][namespace]s its **property** command so that it may be used easily in user definition dialects.
 
 **oo::configuresupport::configurableobject**
-: This is a namespace that contains the definition dialect that provides the **property** declaration for use in instance objects (i.e., via **oo::objdefine**, and the **self** declaration in **oo::define**), as described above in **PROPERTY DEFINITIONS**. It **namespace export**s its **property** command so that it may be used easily in user definition dialects.
+: This is a namespace that contains the definition dialect that provides the **property** declaration for use in instance objects (i.e., via **oo::objdefine**, and the **self** declaration in **oo::define**), as described above in **PROPERTY DEFINITIONS**. It [namespace export][namespace]s its **property** command so that it may be used easily in user definition dialects.
 
 
 The underlying property discovery mechanism relies on four slots (see **oo::define** for what that implies) that list the properties that can be configured. These slots do not themselves impose any semantics on what the slots mean other than that they have unique names, no important order, can be inherited and discovered on classes and instances.
@@ -115,23 +115,23 @@ The underlying property discovery mechanism relies on four slots (see **oo::defi
 These slots, and their intended semantics, are:
 
 [oo::configuresupport::readableproperties]{.cmd}
-: The set of properties of a class (not including those from its superclasses) that may be read from when configuring an instance of the class. This slot can also be read with the **info class properties** command.
+: The set of properties of a class (not including those from its superclasses) that may be read from when configuring an instance of the class. This slot can also be read with the [info class properties] command.
 
 [oo::configuresupport::writableproperties]{.cmd}
-: The set of properties of a class (not including those from its superclasses) that may be written to when configuring an instance of the class. This slot can also be read with the **info class properties** command.
+: The set of properties of a class (not including those from its superclasses) that may be written to when configuring an instance of the class. This slot can also be read with the [info class properties] command.
 
 [oo::configuresupport::objreadableproperties]{.cmd}
-: The set of properties of an object instance (not including those from its classes) that may be read from when configuring the object. This slot can also be read with the **info object properties** command.
+: The set of properties of an object instance (not including those from its classes) that may be read from when configuring the object. This slot can also be read with the [info object properties] command.
 
 [oo::configuresupport::objwritableproperties]{.cmd}
-: The set of properties of an object instance (not including those from its classes) that may be written to when configuring the object. This slot can also be read with the **info object properties** command.
+: The set of properties of an object instance (not including those from its classes) that may be written to when configuring the object. This slot can also be read with the [info object properties] command.
 
 
 Note that though these are slots, they are *not* in the standard **oo::define** or **oo::objdefine** namespaces; in order to use them inside a definition script, they need to be referred to by full name. This is because they are intended to be building bricks of configurable property system, and not directly used by normal user code.
 
 ## Implementation note
 
-The implementation of the **configure** method uses **info object properties** with the **-all** option to discover what properties it may manipulate.
+The implementation of the **configure** method uses [info object properties] with the **-all** option to discover what properties it may manipulate.
 
 # Examples
 
@@ -239,4 +239,10 @@ puts [$pt4 configure]
 $pt4 configure -x "obviously not a number"
              # ERROR: -x property must be a number
 ```
+
+
+[chan]: chan.md
+[fconfigure]: fconfigure.md
+[info]: info.md
+[namespace]: namespace.md
 

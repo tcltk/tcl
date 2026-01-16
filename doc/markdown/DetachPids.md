@@ -38,7 +38,10 @@ Tcl_DetachPids, Tcl_ReapDetachedProcs, Tcl_WaitPid - manage child processes in b
 
 **Tcl_DetachPids** may be called to ask Tcl to take responsibility for one or more processes whose process ids are contained in the *pidPtr* array passed as argument.  The caller presumably has started these processes running in background and does not want to have to deal with them again.
 
-**Tcl_ReapDetachedProcs** invokes the **waitpid** kernel call on each of the background processes so that its state can be cleaned up if it has exited.  If the process has not exited yet, **Tcl_ReapDetachedProcs** does not wait for it to exit;  it will check again the next time it is invoked. Tcl automatically calls **Tcl_ReapDetachedProcs** each time the **exec** command is executed, so in most cases it is not necessary for any code outside of Tcl to invoke **Tcl_ReapDetachedProcs**. However, if you call **Tcl_DetachPids** in situations where the **exec** command may never get executed, you may wish to call **Tcl_ReapDetachedProcs** from time to time so that background processes can be cleaned up.
+**Tcl_ReapDetachedProcs** invokes the **waitpid** kernel call on each of the background processes so that its state can be cleaned up if it has exited.  If the process has not exited yet, **Tcl_ReapDetachedProcs** does not wait for it to exit;  it will check again the next time it is invoked. Tcl automatically calls **Tcl_ReapDetachedProcs** each time the [exec] command is executed, so in most cases it is not necessary for any code outside of Tcl to invoke **Tcl_ReapDetachedProcs**. However, if you call **Tcl_DetachPids** in situations where the [exec] command may never get executed, you may wish to call **Tcl_ReapDetachedProcs** from time to time so that background processes can be cleaned up.
 
 **Tcl_WaitPid** is a thin wrapper around the facilities provided by the operating system to wait on the end of a spawned process and to check a whether spawned process is still running. It is used by **Tcl_ReapDetachedProcs** and the channel system to portably access the operating system. 
+
+
+[exec]: exec.md
 

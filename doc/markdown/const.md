@@ -30,9 +30,9 @@ const - Create and initialize a constant
 
 # Description
 
-This command is normally used within a procedure body (or method body, or lambda term) to create a constant within that procedure, or within a **namespace eval** body to create a constant within that namespace. The constant is an unmodifiable variable, called *varName*, that is initialized with *value*. The result of **const** is always the empty string on success.
+This command is normally used within a procedure body (or method body, or lambda term) to create a constant within that procedure, or within a [namespace eval][namespace] body to create a constant within that namespace. The constant is an unmodifiable variable, called *varName*, that is initialized with *value*. The result of **const** is always the empty string on success.
 
-If a variable *varName* does not exist, it is created with its value set to *value* and marked as a constant; this means that no other command (e.g., **set**, **append**, **incr**, **unset**) may modify or remove the variable; variables are checked for whether they are constants before any traces are called. If a variable *varName* already exists, it is an error unless that variable is marked as a constant (in which case **const** is a no-op).
+If a variable *varName* does not exist, it is created with its value set to *value* and marked as a constant; this means that no other command (e.g., [set], [append], [incr], [unset]) may modify or remove the variable; variables are checked for whether they are constants before any traces are called. If a variable *varName* already exists, it is an error unless that variable is marked as a constant (in which case **const** is a no-op).
 
 The *varName* may not be a qualified name or reference an element of an array by any means. If the variable exists and is an array, that is an error.
 
@@ -78,4 +78,11 @@ proc foo {n} {
     }
 }
 ```
+
+
+[append]: append.md
+[incr]: incr.md
+[namespace]: namespace.md
+[set]: set.md
+[unset]: unset.md
 

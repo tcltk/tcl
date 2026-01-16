@@ -42,7 +42,7 @@ Tcl_ExprLongObj, Tcl_ExprDoubleObj, Tcl_ExprBooleanObj, Tcl_ExprObj - evaluate a
 
 # Description
 
-These four procedures all evaluate an expression, returning the result in one of four different forms. The expression is given by the *objPtr* argument, and it can have any of the forms accepted by the **expr** command.
+These four procedures all evaluate an expression, returning the result in one of four different forms. The expression is given by the *objPtr* argument, and it can have any of the forms accepted by the [expr] command.
 
 The *interp* argument refers to an interpreter used to evaluate the expression (e.g. for variables and nested Tcl commands) and to return error information.
 
@@ -59,4 +59,7 @@ If **Tcl_ExprObj** successfully evaluates the expression, it stores a pointer to
 # Reference count management
 
 **Tcl_ExprLongObj**, **Tcl_ExprDoubleObj**, **Tcl_ExprBooleanObj**, and **Tcl_ExprObj** all increment and decrement the reference count of their *objPtr* arguments; you must not pass them any value with a reference count of zero. They also manipulate the interpreter result; you must not count on the interpreter result to hold the reference count of any value over these calls. 
+
+
+[expr]: expr.md
 

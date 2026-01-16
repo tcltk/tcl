@@ -42,13 +42,13 @@ It will then return a canonical Tcl-list of the form:
 
 which indicates:
 
-- the average amount of time required per iteration, in microseconds ([**lindex** $result 0])
+- the average amount of time required per iteration, in microseconds ([[lindex] $result 0])
 
-- the count how many times it was executed ([**lindex** $result 2])
+- the count how many times it was executed ([[lindex] $result 2])
 
-- the estimated rate per second ([**lindex** $result 4])
+- the estimated rate per second ([[lindex] $result 4])
 
-- the estimated real execution time without measurement overhead ([**lindex** $result 6])
+- the estimated real execution time without measurement overhead ([[lindex] $result 6])
 
 
 The following options may be supplied to the **timerate** command:
@@ -61,14 +61,14 @@ The following options may be supplied to the **timerate** command:
 : The **-overhead** parameter supplies an estimate (in microseconds, which may be a floating point number) of the measurement overhead of each iteration of the tested script. The passed value overrides, for the current invocation of **timerate**, the overhead estimated by a previous calibration. Overrides may themselves be measured using **timerate** as illustrated by a later example.
 
 [-direct]{.lit}
-: The **-direct** option causes direct execution of the supplied script, without compilation, in a manner similar to the **time** command. It can be used to measure the cost of **Tcl_EvalObjEx**, of the invocation of canonical lists, and of the uncompiled versions of bytecoded commands.
+: The **-direct** option causes direct execution of the supplied script, without compilation, in a manner similar to the [time] command. It can be used to measure the cost of **Tcl_EvalObjEx**, of the invocation of canonical lists, and of the uncompiled versions of bytecoded commands.
 
 
-As opposed to the **time** command, which runs the tested script for a fixed number of iterations, the **timerate** command runs it for a fixed time. Additionally, the compiled variant of the script will be used during the entire measurement, as if the script were part of a compiled procedure, if the **-direct** option is not specified. The fixed time period and possibility of compilation allow for more precise results and prevent very long execution times by slow scripts, making it practical for measuring scripts with highly uncertain execution times.
+As opposed to the [time] command, which runs the tested script for a fixed number of iterations, the **timerate** command runs it for a fixed time. Additionally, the compiled variant of the script will be used during the entire measurement, as if the script were part of a compiled procedure, if the **-direct** option is not specified. The fixed time period and possibility of compilation allow for more precise results and prevent very long execution times by slow scripts, making it practical for measuring scripts with highly uncertain execution times.
 
 # Examples
 
-Estimate how fast it takes for a simple Tcl **for** loop (including operations on variable *i*) to count to ten:
+Estimate how fast it takes for a simple Tcl [for] loop (including operations on variable *i*) to count to ten:
 
 ```
 # calibrate
@@ -78,7 +78,7 @@ timerate -calibrate {}
 timerate { for {set i 0} {$i<10} {incr i} {} } 5000
 ```
 
-Estimate how fast it takes for a simple Tcl **for** loop, ignoring the overhead of the management of the variable that controls the loop:
+Estimate how fast it takes for a simple Tcl [for] loop, ignoring the overhead of the management of the variable that controls the loop:
 
 ```
 # calibrate for overhead of variable operations
@@ -90,7 +90,7 @@ timerate {
 } 5000
 ```
 
-Estimate the speed of calculating the hour of the day using **clock format** only, ignoring overhead of the portion of the script that prepares the time for it to calculate:
+Estimate the speed of calculating the hour of the day using [clock format][clock] only, ignoring overhead of the portion of the script that prepares the time for it to calculate:
 
 ```
 # calibrate
@@ -111,4 +111,10 @@ timerate -overhead $ovh {
 ```
 
 In this last example, note that the overhead itself is measured using **timerate** invoked with **-overhead 0**. This is necessary because explicit overheads are assumed to be absolute values, and not an increment over the default calibrated overhead. It is therefore important that the calibrated overhead is excluded in the measurement of the overhead value itself. This is accomplished by passing **-overhead 0** when measuring the overhead.
+
+
+[clock]: clock.md
+[for]: for.md
+[lindex]: lindex.md
+[time]: time.md
 

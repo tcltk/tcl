@@ -35,7 +35,7 @@ Tcl_CreateFileHandler, Tcl_DeleteFileHandler - associate procedure callbacks wit
 
 # Description
 
-**Tcl_CreateFileHandler** arranges for *proc* to be invoked in the future whenever I/O becomes possible on a file or an exceptional condition exists for the file.  The file is indicated by *fd*, and the conditions of interest are indicated by *mask*.  For example, if *mask* is **TCL_READABLE**, *proc* will be called when the file is readable. The callback to *proc* is made by **Tcl_DoOneEvent**, so **Tcl_CreateFileHandler** is only useful in programs that dispatch events through **Tcl_DoOneEvent** or through Tcl commands such as **vwait**.
+**Tcl_CreateFileHandler** arranges for *proc* to be invoked in the future whenever I/O becomes possible on a file or an exceptional condition exists for the file.  The file is indicated by *fd*, and the conditions of interest are indicated by *mask*.  For example, if *mask* is **TCL_READABLE**, *proc* will be called when the file is readable. The callback to *proc* is made by **Tcl_DoOneEvent**, so **Tcl_CreateFileHandler** is only useful in programs that dispatch events through **Tcl_DoOneEvent** or through Tcl commands such as [vwait].
 
 *Proc* should have arguments and result that match the type **Tcl_FileProc**:
 
@@ -54,4 +54,7 @@ There may exist only one handler for a given file at a given time. If **Tcl_Crea
 The purpose of file handlers is to enable an application to respond to events while waiting for files to become ready for I/O.  For this to work correctly, the application may need to use non-blocking I/O operations on the files for which handlers are declared.  Otherwise the application may block if it reads or writes too much data; while waiting for the I/O to complete the application will not be able to service other events. Use **Tcl_SetChannelOption** with **-blocking** to set the channel into blocking or nonblocking mode as required.
 
 Note that these interfaces are only supported by the Unix implementation of the Tcl notifier.
+
+
+[vwait]: vwait.md
 

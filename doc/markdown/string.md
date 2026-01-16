@@ -45,7 +45,7 @@ The legal *option*s (which may be abbreviated) are:
 
 [string]{.cmd} [cat]{.sub} [string1]{.optarg} [string2...]{.optarg}
 : Concatenate the given *string*s just like placing them directly next to each other and return the resulting compound string.  If no *string*s are present, the result is an empty string.
-    This primitive is occasionally handier than juxtaposition of strings when mixed quoting is wanted, or when the aim is to return the result of a concatenation without resorting to **return** **-level 0**, and is more efficient than building a list of arguments and using **join** with an empty join string.
+    This primitive is occasionally handier than juxtaposition of strings when mixed quoting is wanted, or when the aim is to return the result of a concatenation without resorting to [return] **-level 0**, and is more efficient than building a list of arguments and using [join] with an empty join string.
 
 [string]{.cmd} [compare]{.sub} [-nocase]{.optlit} [[-length]{.lit} [length]{.arg}]{.optarg} [string1]{.arg} [string2]{.arg}
 : Perform a character-by-character comparison of strings *string1* and *string2*.  Returns -1, 0, or 1, depending on whether *string1* is lexicographically less than, equal to, or greater than *string2*.  If **-length** is specified, then only the first *length* characters are used in the comparison.  If **-length** is negative, it is ignored.  If **-nocase** is specified, then the strings are compared in a case-insensitive manner.
@@ -93,7 +93,7 @@ The legal *option*s (which may be abbreviated) are:
 **control**
 : Any Unicode control character.
 
-**dict**
+[dict]
 : Any proper dict structure, with optional surrounding whitespace. In case of improper dict structure, 0 is returned and the *varname* will contain the index of the "element" where the dict parsing fails, or -1 if this cannot be determined.
 
 **digit**
@@ -114,7 +114,7 @@ The legal *option*s (which may be abbreviated) are:
 **integer**
 : Any of the valid string formats for an integer value of arbitrary size in Tcl, with optional surrounding whitespace. The formats accepted are exactly those accepted by the C routine **Tcl_GetBignumFromObj**.
 
-**list**
+[list]
 : Any proper list structure, with optional surrounding whitespace. In case of improper list structure, 0 is returned and the *varname* will contain the index of the "element" where the list parsing fails, or -1 if this cannot be determined.
 
 **lower**
@@ -163,7 +163,7 @@ The legal *option*s (which may be abbreviated) are:
 : Returns a decimal string giving the number of characters in *string*.  Note that this is not necessarily the same as the number of bytes used to store the string.  If the value is a byte array value (such as those returned from reading a binary encoded channel), then this will return the actual byte length of the value.
 
 [string]{.cmd} [map]{.sub} [-nocase]{.optlit} [mapping]{.arg} [string]{.arg}
-: Replaces substrings in *string* based on the key-value pairs in *mapping*.  *mapping* is a list of *key value key value ...* as in the form returned by **array get**.  Each instance of a key in the string will be replaced with its corresponding value.  If **-nocase** is specified, then matching is done without regard to case differences. Both *key* and *value* may be multiple characters.  Replacement is done in an ordered manner, so the key appearing first in the list will be checked first, and so on. *string* is only iterated over once, so earlier key replacements will have no affect for later key matches.  For example,
+: Replaces substrings in *string* based on the key-value pairs in *mapping*.  *mapping* is a list of *key value key value ...* as in the form returned by [array get][array].  Each instance of a key in the string will be replaced with its corresponding value.  If **-nocase** is specified, then matching is done without regard to case differences. Both *key* and *value* may be multiple characters.  Replacement is done in an ordered manner, so the key appearing first in the list will be checked first, and so on. *string* is only iterated over once, so earlier key replacements will have no affect for later key matches.  For example,
 
     ```
     string map {abc 1 ab 2 a 3 1 0} 1abcaababcabababc
@@ -271,4 +271,11 @@ if {$length == 0} {
     set isPrefix [string equal -length $length $string "foobar"]
 }
 ```
+
+
+[array]: array.md
+[dict]: dict.md
+[join]: join.md
+[list]: list.md
+[return]: return.md
 

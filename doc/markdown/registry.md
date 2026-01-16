@@ -65,7 +65,7 @@ The optional *-mode* argument indicates which registry to work with; when it is 
 : Returns the data associated with the value *valueName* under the key *keyName*.  If either the key or the value does not exist, then an error is generated.  For more details on the format of the returned data, see **SUPPORTED TYPES**, below.
 
 [registry]{.cmd} [keys]{.sub} [keyName]{.arg} [pattern]{.optarg}
-: If *pattern* is not specified, returns a list of names of all the subkeys of *keyName*.  If *pattern* is specified, only those names matching *pattern* are returned.  Matching is determined using the same rules as for **string match**.  If the specified *keyName* does not exist, then an error is generated.
+: If *pattern* is not specified, returns a list of names of all the subkeys of *keyName*.  If *pattern* is specified, only those names matching *pattern* are returned.  Matching is determined using the same rules as for [string match][string].  If the specified *keyName* does not exist, then an error is generated.
 
 [registry]{.cmd} [set]{.sub} [keyName]{.arg} [valueName data]{.optarg}
 : ...see next...
@@ -77,14 +77,14 @@ The optional *-mode* argument indicates which registry to work with; when it is 
 : Returns the type of the value *valueName* in the key *keyName*.  For more information on the possible types, see **SUPPORTED TYPES**, below.
 
 [registry]{.cmd} [values]{.sub} [keyName]{.arg} [pattern]{.optarg}
-: If *pattern* is not specified, returns a list of names of all the values of *keyName*.  If *pattern* is specified, only those names matching *pattern* are returned.  Matching is determined using the same rules as for **string match**.
+: If *pattern* is not specified, returns a list of names of all the values of *keyName*.  If *pattern* is specified, only those names matching *pattern* are returned.  Matching is determined using the same rules as for [string match][string].
 
 
 # Supported types
 
 Each value under a key in the registry contains some data of a particular type in a type-specific representation.  The **registry** command converts between this internal representation and one that can be manipulated by Tcl scripts.  In most cases, the data is simply returned as a Tcl string.  The type indicates the intended use for the data, but does not actually change the representation.  For some types, the **registry** command returns the data in a different form to make it easier to manipulate.  The following types are recognized by the registry command:
 
-**binary**
+[binary]
 : The registry value contains arbitrary binary data.  The data is represented exactly in Tcl, including any embedded nulls.
 
 **none**
@@ -135,4 +135,8 @@ set command [registry get $path {}]
 
 puts "$ext opens with $command"
 ```
+
+
+[binary]: binary.md
+[string]: string.md
 

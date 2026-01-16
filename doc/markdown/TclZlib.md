@@ -66,7 +66,7 @@ Once a stream has been constructed, **Tcl_ZlibStreamPut** is used to add data to
 
 **Tcl_ZlibStreamChecksum** returns the checksum computed over the uncompressed data according to the format, and **Tcl_ZlibStreamEof** returns a boolean value indicating whether the end of the uncompressed data has been reached.
 
-**Tcl_ZlibStreamSetCompressionDictionary** is used to control the compression dictionary used with the stream, a compression dictionary being an array of bytes (such as might be created with **Tcl_NewByteArrayObj**) that is used to initialize the compression engine rather than leaving it to create it on the fly from the data being compressed. Setting a compression dictionary allows for more efficient compression in the case where the start of the data is highly regular, but it does require both the compressor and the decompressor to agree on the value to use. Compression dictionaries are only fully supported for zlib-format data; on compression, they must be set before any data is sent in with **Tcl_ZlibStreamPut**, and on decompression they should be set when **Tcl_ZlibStreamGet** produces an **error** with its **-errorcode** set to "**ZLIB NEED_DICT** *code*"; the *code* will be the Adler-32 checksum (see **Tcl_ZlibAdler32**) of the compression dictionary sought. (Note that this is only true for zlib-format streams; gzip streams ignore compression dictionaries as the format specification doesn't permit them, and raw streams just produce a data error if the compression dictionary is missing or incorrect.)
+**Tcl_ZlibStreamSetCompressionDictionary** is used to control the compression dictionary used with the stream, a compression dictionary being an array of bytes (such as might be created with **Tcl_NewByteArrayObj**) that is used to initialize the compression engine rather than leaving it to create it on the fly from the data being compressed. Setting a compression dictionary allows for more efficient compression in the case where the start of the data is highly regular, but it does require both the compressor and the decompressor to agree on the value to use. Compression dictionaries are only fully supported for zlib-format data; on compression, they must be set before any data is sent in with **Tcl_ZlibStreamPut**, and on decompression they should be set when **Tcl_ZlibStreamGet** produces an [error] with its **-errorcode** set to "**ZLIB NEED_DICT** *code*"; the *code* will be the Adler-32 checksum (see **Tcl_ZlibAdler32**) of the compression dictionary sought. (Note that this is only true for zlib-format streams; gzip streams ignore compression dictionaries as the format specification doesn't permit them, and raw streams just produce a data error if the compression dictionary is missing or incorrect.)
 
 If you wish to clear a stream and reuse it for a new compression or decompression action, **Tcl_ZlibStreamReset** will do this and return a normal Tcl result code to indicate whether it was successful; if the stream is registered with an interpreter, an error message will be left in the interpreter result when this function returns TCL_ERROR. Finally, **Tcl_ZlibStreamClose** will clean up the stream and delete the associated command: using **Tcl_DeleteCommand** on the stream's command is equivalent (when such a command exists).
 
@@ -83,7 +83,7 @@ The following fields in the dictionary value are understood. All other fields ar
 : A boolean value describing whether a CRC of the header is computed. Note that the **gzip** program does *not* use or allow a CRC on the header.
 
 **filename**
-: The name of the file that held the uncompressed data. This should not contain any directory separators, and should be sanitized before use on decompression with **file tail**.
+: The name of the file that held the uncompressed data. This should not contain any directory separators, and should be sanitized before use on decompression with [file tail][file].
 
 **os**
 : The operating system type code field from the header (if not the "unknown" value). See RFC 1952 for the meaning of these codes. On compression, if this is absent then the field will be set to the "unknown" value.
@@ -91,8 +91,8 @@ The following fields in the dictionary value are understood. All other fields ar
 **size**
 : The size of the uncompressed data. This is ignored on compression; the size of the data compressed depends on how much data is supplied to the compression engine.
 
-**time**
-: The time field from the header if non-zero, expected to be the time that the file named by the **filename** field was modified. Suitable for use with **clock format**. On creation, the right value to use is that from **clock seconds** or **file mtime**.
+[time]
+: The time field from the header if non-zero, expected to be the time that the file named by the **filename** field was modified. Suitable for use with [clock format][clock]. On creation, the right value to use is that from [clock seconds][clock] or [file mtime][file].
 
 **type**
 : The type of the uncompressed data (either **binary** or **text**) if known.
@@ -115,4 +115,10 @@ The *compDict* argument to **Tcl_ZlibStreamSetCompressionDictionary**, if non-NU
 # Portability notes
 
 These functions will fail gracefully if Tcl is not linked with the zlib library.
+
+
+[clock]: clock.md
+[error]: error.md
+[file]: file.md
+[time]: time.md
 

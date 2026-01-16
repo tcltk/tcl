@@ -35,7 +35,7 @@ upvar - Create link to variable in a different stack frame
 
 # Description
 
-This command arranges for one or more local variables in the current procedure to refer to variables in an enclosing procedure call or to global variables. *Level* may have any of the forms permitted for the **uplevel** command, and may be omitted (it defaults to **1**). For each *otherVar* argument, **upvar** makes the variable by that name in the procedure frame given by *level* (or at global level, if *level* is **#0**) accessible in the current procedure by the name given in the corresponding *myVar* argument. The variable named by *otherVar* need not exist at the time of the call;  it will be created the first time *myVar* is referenced, just like an ordinary variable.  There must not exist a variable by the name *myVar* at the time **upvar** is invoked. *MyVar* is always treated as the name of a variable, not an array element.  An error is returned if the name looks like an array element, such as **a(b)**. *OtherVar* may refer to a scalar variable, an array, or an array element. **Upvar** returns an empty string.
+This command arranges for one or more local variables in the current procedure to refer to variables in an enclosing procedure call or to global variables. *Level* may have any of the forms permitted for the [uplevel] command, and may be omitted (it defaults to **1**). For each *otherVar* argument, **upvar** makes the variable by that name in the procedure frame given by *level* (or at global level, if *level* is **#0**) accessible in the current procedure by the name given in the corresponding *myVar* argument. The variable named by *otherVar* need not exist at the time of the call;  it will be created the first time *myVar* is referenced, just like an ordinary variable.  There must not exist a variable by the name *myVar* at the time **upvar** is invoked. *MyVar* is always treated as the name of a variable, not an array element.  An error is returned if the name looks like an array element, such as **a(b)**. *OtherVar* may refer to a scalar variable, an array, or an array element. **Upvar** returns an empty string.
 
 The **upvar** command simplifies the implementation of call-by-name procedure calling and also makes it easier to build new control constructs as Tcl procedures. For example, consider the following procedure:
 
@@ -46,11 +46,11 @@ proc add2 name {
 }
 ```
 
-If *add2* is invoked with an argument giving the name of a variable, it adds two to the value of that variable. Although *add2* could have been implemented using **uplevel** instead of **upvar**, **upvar** makes it simpler for *add2* to access the variable in the caller's procedure frame.
+If *add2* is invoked with an argument giving the name of a variable, it adds two to the value of that variable. Although *add2* could have been implemented using [uplevel] instead of **upvar**, **upvar** makes it simpler for *add2* to access the variable in the caller's procedure frame.
 
-**namespace eval** is another way (besides procedure calls) that the Tcl naming context can change. It adds a call frame to the stack to represent the namespace context. This means each **namespace eval** command counts as another call level for **uplevel** and **upvar** commands. For example, **info level** **1** will return a list describing a command that is either the outermost procedure call or the outermost **namespace eval** command. Also, **uplevel #0** evaluates a script at top-level in the outermost namespace (the global namespace).
+[namespace eval][namespace] is another way (besides procedure calls) that the Tcl naming context can change. It adds a call frame to the stack to represent the namespace context. This means each [namespace eval][namespace] command counts as another call level for [uplevel] and **upvar** commands. For example, [info level][info] **1** will return a list describing a command that is either the outermost procedure call or the outermost [namespace eval][namespace] command. Also, [uplevel #0][uplevel] evaluates a script at top-level in the outermost namespace (the global namespace).
 
-If an upvar variable is unset (e.g. **x** in **add2** above), the **unset** operation affects the variable it is linked to, not the upvar variable.  There is no way to unset an upvar variable except by exiting the procedure in which it is defined.  However, it is possible to retarget an upvar variable by executing another **upvar** command.
+If an upvar variable is unset (e.g. **x** in **add2** above), the [unset] operation affects the variable it is linked to, not the upvar variable.  There is no way to unset an upvar variable except by exiting the procedure in which it is defined.  However, it is possible to retarget an upvar variable by executing another **upvar** command.
 
 # Traces and upvar
 
@@ -73,7 +73,7 @@ If *otherVar* refers to an element of an array, then the element name is passed 
 
 # Example
 
-A **decr** command that works like **incr** except it subtracts the value from the variable instead of adding it:
+A **decr** command that works like [incr] except it subtracts the value from the variable instead of adding it:
 
 ```
 proc decr {varName {decrement 1}} {
@@ -81,4 +81,11 @@ proc decr {varName {decrement 1}} {
     incr var [expr {-$decrement}]
 }
 ```
+
+
+[incr]: incr.md
+[info]: info.md
+[namespace]: namespace.md
+[unset]: unset.md
+[uplevel]: uplevel.md
 

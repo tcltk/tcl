@@ -62,7 +62,7 @@ The following commands are supported in the *defScript* for **oo::define**, each
     In a private definition context, the methods as invoked on classes are *not* private, but the methods as invoked on instances of classes are private.
 
 [constructor]{.cmd} [argList]{.arg} [bodyScript]{.arg}
-: This creates or updates the constructor for a class. The formal arguments to the constructor (defined using the same format as for the Tcl **proc** command) will be *argList*, and the body of the constructor will be *bodyScript*. When the body of the constructor is evaluated, the current namespace of the constructor will be a namespace that is unique to the object being constructed. Within the constructor, the **next** command should be used to call the superclasses' constructors. If *bodyScript* is the empty string, the constructor will be deleted.
+: This creates or updates the constructor for a class. The formal arguments to the constructor (defined using the same format as for the Tcl [proc] command) will be *argList*, and the body of the constructor will be *bodyScript*. When the body of the constructor is evaluated, the current namespace of the constructor will be a namespace that is unique to the object being constructed. Within the constructor, the **next** command should be used to call the superclasses' constructors. If *bodyScript* is the empty string, the constructor will be deleted.
     Classes do not need to have a constructor defined. If none is specified, the superclass's constructor will be used instead.
 
 [destructor]{.cmd} [bodyScript]{.arg}
@@ -82,7 +82,7 @@ The following commands are supported in the *defScript* for **oo::define**, each
 : This evaluates *script* in a context which supports local variables and where the current namespace is the instance namespace of the class object itself. This is useful for setting up, e.g., class-scoped variables.
 
 [method]{.cmd} [name]{.arg} [option]{.optarg} [argList]{.arg} [bodyScript]{.arg}
-: This creates or updates a method that is implemented as a procedure-like script. The name of the method is *name*, the formal arguments to the method (defined using the same format as for the Tcl **proc** command) will be *argList*, and the body of the method will be *bodyScript*. When the body of the method is evaluated, the current namespace of the method will be a namespace that is unique to the current object. The method will be exported if *name* starts with a lower-case letter, and non-exported otherwise; this behavior can be overridden via **export** and **unexport** or by specifying **-export**, **-private** or **-unexport** in the optional parameter *option*.
+: This creates or updates a method that is implemented as a procedure-like script. The name of the method is *name*, the formal arguments to the method (defined using the same format as for the Tcl [proc] command) will be *argList*, and the body of the method will be *bodyScript*. When the body of the method is evaluated, the current namespace of the method will be a namespace that is unique to the current object. The method will be exported if *name* starts with a lower-case letter, and non-exported otherwise; this behavior can be overridden via **export** and **unexport** or by specifying **-export**, **-private** or **-unexport** in the optional parameter *option*.
     If in a private definition context (see the **private** definition command, below) or if the **-private** flag is given for *option*, this command creates private procedure-like methods.
 
 [private]{.cmd} [cmd]{.arg} [arg...]{.arg}
@@ -90,7 +90,7 @@ The following commands are supported in the *defScript* for **oo::define**, each
 
 [private]{.cmd} [script]{.arg}
 : This evaluates the *script* (or the list of command and arguments given by *cmd* and *arg*s) in a context where the definitions made on the current class will be private definitions.
-    The following class definition commands are affected by **private**: **forward**, **method**, **self**, and **variable**. Nesting **private** inside **private** has no cumulative effect; the innermost definition context is just a private definition context. All other definition commands have no difference in behavior when used in a private definition context.
+    The following class definition commands are affected by **private**: **forward**, **method**, **self**, and [variable]. Nesting **private** inside **private** has no cumulative effect; the innermost definition context is just a private definition context. All other definition commands have no difference in behavior when used in a private definition context.
 
 [self]{.cmd} [subcommand]{.arg} [arg]{.arg} [...]{.arg}
 : ...see next...
@@ -147,7 +147,7 @@ The following commands are supported in the *defScript* for **oo::objdefine**, e
     If in a private definition context (see the **private** definition command, below), this command creates private forwarded methods.
 
 [method]{.cmd} [name]{.arg} [option]{.optarg} [argList]{.arg} [bodyScript]{.arg}
-: This creates, updates or deletes an object method. The name of the method is *name*, the formal arguments to the method (defined using the same format as for the Tcl **proc** command) will be *argList*, and the body of the method will be *bodyScript*. When the body of the method is evaluated, the current namespace of the method will be a namespace that is unique to the object. The method will be exported if *name* starts with a lower-case letter, and non-exported otherwise; this can be overridden by specifying **-export**, **-private** or **-unexport** in the optional parameter *option*, or via the **export** and **unexport** definitions.
+: This creates, updates or deletes an object method. The name of the method is *name*, the formal arguments to the method (defined using the same format as for the Tcl [proc] command) will be *argList*, and the body of the method will be *bodyScript*. When the body of the method is evaluated, the current namespace of the method will be a namespace that is unique to the object. The method will be exported if *name* starts with a lower-case letter, and non-exported otherwise; this can be overridden by specifying **-export**, **-private** or **-unexport** in the optional parameter *option*, or via the **export** and **unexport** definitions.
     If in a private definition context (see the **private** definition command, below) or if the **-private** flag is given for *option*, this command creates private procedure-like methods.
 
 [mixin]{.cmd} [-slotOperation]{.optarg} [className]{.optdot}
@@ -158,7 +158,7 @@ The following commands are supported in the *defScript* for **oo::objdefine**, e
 
 [private]{.cmd} [script]{.arg}
 : This evaluates the *script* (or the list of command and arguments given by *cmd* and *arg*s) in a context where the definitions made on the current object will be private definitions.
-    The following class definition commands are affected by **private**: **forward**, **method**, and **variable**. Nesting **private** inside **private** has no cumulative effect; the innermost definition context is just a private definition context. All other definition commands have no difference in behavior when used in a private definition context.
+    The following class definition commands are affected by **private**: **forward**, **method**, and [variable]. Nesting **private** inside **private** has no cumulative effect; the innermost definition context is just a private definition context. All other definition commands have no difference in behavior when used in a private definition context.
 
 [unexport]{.cmd} [name]{.arg} [name]{.optdot}
 : This arranges for each of the named methods, *name*, to be not exported (i.e. not usable outside the object through the object's command, but instead just through the **my** command visible in the object's context) by the object being defined. Note that the methods themselves may be actually defined by a class; instance unexports override class visibility.
@@ -225,7 +225,7 @@ You only need to make an instance of **oo::Slot** if you are definining your own
 
 ## Slot implementation
 
-Internally, slot objects also define a method **--default-operation** which is forwarded to the default operation of the slot (thus, for the class "**variable**" slot, this is forwarded to "**my -append**"), and these methods which provide the implementation interface:
+Internally, slot objects also define a method **--default-operation** which is forwarded to the default operation of the slot (thus, for the class "[variable]" slot, this is forwarded to "**my -append**"), and these methods which provide the implementation interface:
 
 [slot]{.ins} [Get]{.sub}
 : Returns a list that is the current contents of the slot, but does not modify the slot. This method must always be called from a stack frame created by a call to **oo::define** or **oo::objdefine**. This method *should not* return an error unless it is called from outside a definition context or with the wrong number of arguments.
@@ -245,7 +245,7 @@ The implementation of these methods is slot-dependent (and responsible for acces
 Note that slot instances are not expected to contain the storage for the slot they manage; that will be in or attached to the class or object that they manage. Those instances should provide their own implementations of the **Get** and **Set** methods (and optionally **Resolve**; that defaults to a do-nothing pass-through).
 
 ::: {.info version="TIP516"}
-Most slot operations will initially **Resolve** their argument list, combine it with the results of the **Get** method, and then **Set** the result. Some operations omit one or both of the first two steps; omitting the third would result in an idempotent read-only operation (but the standard mechanism for reading from slots is via **info class** and **info object**).
+Most slot operations will initially **Resolve** their argument list, combine it with the results of the **Get** method, and then **Set** the result. Some operations omit one or both of the first two steps; omitting the third would result in an idempotent read-only operation (but the standard mechanism for reading from slots is via [info class][info] and [info object][info]).
 :::
 
 # Examples
@@ -380,7 +380,7 @@ $g update "emailaddress=admins"
 ```
 
 ::: {.info version="TIP524"}
-This example shows how to make a custom definition for a class. Note that it explicitly includes delegation to the existing definition commands via **namespace path**.
+This example shows how to make a custom definition for a class. Note that it explicitly includes delegation to the existing definition commands via [namespace path][namespace].
 :::
 
 ```
@@ -430,4 +430,10 @@ for {set x 0} {$x <= 4} {incr x} {
         \(-> quad(3) = 18.00
         \(-> quad(4) = 27.00
 ```
+
+
+[info]: info.md
+[namespace]: namespace.md
+[proc]: proc.md
+[variable]: variable.md
 

@@ -67,7 +67,7 @@ If *index* is negative or greater than the number of elements in *$varName*, the
 
 If *index* is equal to the number of elements in *$varName*, then the given element is appended to the list.
 
-The interpretation of each simple *index* value is the same as for the command **string index**, supporting simple index arithmetic and indices relative to the end of the list.
+The interpretation of each simple *index* value is the same as for the command [string index][string], supporting simple index arithmetic and indices relative to the end of the list.
 
 If additional *index* arguments are supplied, then each argument is used in turn to address an element within a sublist designated by the previous indexing operation, allowing the script to alter elements in sublists (or append elements to sublists).  The command,
 
@@ -135,4 +135,7 @@ lset x 1 1 0 j
 lset x {1 1 0} j
       \(-> {{a b} {c d}} {{e f} {j h}}
 ```
+
+
+[string]: string.md
 

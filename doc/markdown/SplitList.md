@@ -70,7 +70,10 @@ If the result of **Tcl_Merge** is passed to **Tcl_SplitList**, the elements retu
 
 **Tcl_ConvertElement** uses one of two different approaches to handle the special characters in *src*.  Wherever possible, it handles special characters by surrounding the string with braces. This produces clean-looking output, but cannot be used in some situations, such as when *src* contains unmatched braces. In these situations, **Tcl_ConvertElement** handles special characters by generating backslash sequences for them. The caller may insist on the second approach by OR-ing the flag value returned by **Tcl_ScanElement** with **TCL_DONT_USE_BRACES**. Although this will produce an uglier result, it is useful in some special situations, such as when **Tcl_ConvertElement** is being used to generate a portion of an argument for a Tcl command. In this case, surrounding *src* with curly braces would cause the command not to be parsed correctly.
 
-By default, **Tcl_ConvertElement** will use quoting in its output to be sure the first character of an element is not the hash character ("#".) This is to be sure the first element of any list passed to **eval** is not mis-parsed as the beginning of a comment. When a list element is not the first element of a list, this quoting is not necessary.  When the caller can be sure that the element is not the first element of a list, it can disable quoting of the leading hash character by OR-ing the flag value returned by **Tcl_ScanElement** with **TCL_DONT_QUOTE_HASH**.
+By default, **Tcl_ConvertElement** will use quoting in its output to be sure the first character of an element is not the hash character ("#".) This is to be sure the first element of any list passed to [eval] is not mis-parsed as the beginning of a comment. When a list element is not the first element of a list, this quoting is not necessary.  When the caller can be sure that the element is not the first element of a list, it can disable quoting of the leading hash character by OR-ing the flag value returned by **Tcl_ScanElement** with **TCL_DONT_QUOTE_HASH**.
 
 **Tcl_ScanCountedElement** and **Tcl_ConvertCountedElement** are the same as **Tcl_ScanElement** and **Tcl_ConvertElement**, except the length of string *src* is specified by the *length* argument, and the string may contain embedded nulls.
+
+
+[eval]: eval.md
 

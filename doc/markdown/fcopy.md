@@ -48,31 +48,31 @@ Without the **-command** option, **fcopy** blocks until the copy is complete and
 
 ## Background operation mode
 
-The **-command** argument makes **fcopy** work in the background. In this case it returns immediately and the *callback* is invoked later when the copy completes. The *callback* is called with one or two additional arguments that indicates how many bytes were written to *outchan*. If an error occurred during the background copy, the second argument is the error string associated with the error. With a background copy, it is not necessary to put *inchan* or *outchan* into non-blocking mode; the **fcopy** command takes care of that automatically. However, it is necessary to enter the event loop by using the **vwait** command or by using Tk.
+The **-command** argument makes **fcopy** work in the background. In this case it returns immediately and the *callback* is invoked later when the copy completes. The *callback* is called with one or two additional arguments that indicates how many bytes were written to *outchan*. If an error occurred during the background copy, the second argument is the error string associated with the error. With a background copy, it is not necessary to put *inchan* or *outchan* into non-blocking mode; the **fcopy** command takes care of that automatically. However, it is necessary to enter the event loop by using the [vwait] command or by using Tk.
 
 You are not allowed to do other input operations with *inchan*, or output operations with *outchan*, during a background **fcopy**. The converse is entirely legitimate, as exhibited by the bidirectional fcopy example below.
 
 If either *inchan* or *outchan* get closed while the copy is in progress, the current copy is stopped and the command callback is *not* made. If *inchan* is closed, then all data already queued for *outchan* is written out.
 
-Note that *inchan* can become readable during a background copy. You should turn off any **fileevent** handlers during a background copy so those handlers do not interfere with the copy. Any wrong-sided I/O attempted (by a **fileevent** handler or otherwise) will get a "channel busy" error.
+Note that *inchan* can become readable during a background copy. You should turn off any [fileevent] handlers during a background copy so those handlers do not interfere with the copy. Any wrong-sided I/O attempted (by a [fileevent] handler or otherwise) will get a "channel busy" error.
 
 ## Channel translation options
 
-**Fcopy** translates end-of-line sequences in *inchan* and *outchan* according to the **-translation** option for these channels. See the manual entry for **fconfigure** for details on the **-translation** option. The translations mean that the number of bytes read from *inchan* can be different than the number of bytes written to *outchan*. Only the number of bytes written to *outchan* is reported, either as the return value of a synchronous **fcopy** or as the argument to the callback for an asynchronous **fcopy**.
+**Fcopy** translates end-of-line sequences in *inchan* and *outchan* according to the **-translation** option for these channels. See the manual entry for [fconfigure] for details on the **-translation** option. The translations mean that the number of bytes read from *inchan* can be different than the number of bytes written to *outchan*. Only the number of bytes written to *outchan* is reported, either as the return value of a synchronous **fcopy** or as the argument to the callback for an asynchronous **fcopy**.
 
 ## Channel encoding options
 
-**Fcopy** obeys the encodings, profiles and character translations configured for the channels. This means that the incoming characters are converted from the encoding configured for the input channel and then encoded as per the encoding of the output channel. See the manual entry for **fconfigure** for details on the **-encoding** and **-profile** options. No conversion is done if both channels are set to encoding "binary" and have matching translations.
+**Fcopy** obeys the encodings, profiles and character translations configured for the channels. This means that the incoming characters are converted from the encoding configured for the input channel and then encoded as per the encoding of the output channel. See the manual entry for [fconfigure] for details on the **-encoding** and **-profile** options. No conversion is done if both channels are set to encoding "binary" and have matching translations.
 
 **Fcopy** may throw encoding errors (error code **EILSEQ**), if input or output channel is configured to the "strict" encoding profile.
 
-If an encoding error arises on the input channel, any data before the error byte is written to the output channel. The input file pointer is located just before the values causing the encoding error. Error inspection or recovery is possible by changing the encoding parameters and invoking a file command (**read**, **fcopy**).
+If an encoding error arises on the input channel, any data before the error byte is written to the output channel. The input file pointer is located just before the values causing the encoding error. Error inspection or recovery is possible by changing the encoding parameters and invoking a file command ([read], **fcopy**).
 
 If an encoding error arises on the output channel, the erroneous data is lost. To make the difference between the input error case and the output error case, only the error message may be inspected (read or write), as both throw the error code *EILSEQ*.
 
 # Examples
 
-The first example transfers the contents of one channel exactly to another. Note that when copying one file to another, it is better to use **file copy** which also copies file metadata (e.g. the file access permissions) where possible.
+The first example transfers the contents of one channel exactly to another. Note that when copying one file to another, it is better to use [file copy][file] which also copies file metadata (e.g. the file access permissions) where possible.
 
 ```
 fconfigure $in -translation binary
@@ -136,4 +136,11 @@ fcopy $sok1 $sok2 -command [list Done UP]
 fcopy $sok2 $sok1 -command [list Done DOWN]
 vwait done
 ```
+
+
+[fconfigure]: fconfigure.md
+[file]: file.md
+[fileevent]: fileevent.md
+[read]: read.md
+[vwait]: vwait.md
 

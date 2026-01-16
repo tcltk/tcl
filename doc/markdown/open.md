@@ -45,7 +45,7 @@ open - Open a file-based or command pipeline channel
 
 # Description
 
-This command opens a file, serial port, or command pipeline and returns a channel identifier that may be used in future invocations of commands like **read**, **puts**, and **close**. If the first character of *fileName* is not **|** then the command opens a file: *fileName* gives the name of the file to open, and it must conform to the conventions described in the **filename** manual entry.
+This command opens a file, serial port, or command pipeline and returns a channel identifier that may be used in future invocations of commands like [read], [puts], and [close]. If the first character of *fileName* is not **|** then the command opens a file: *fileName* gives the name of the file to open, and it must conform to the conventions described in the **filename** manual entry.
 
 The *access* argument, if present, indicates the way in which the file (or command pipeline) is to be accessed. In the first form *access* may have any of the following values:
 
@@ -68,7 +68,7 @@ The *access* argument, if present, indicates the way in which the file (or comma
 : Open the file for reading and writing.  If the file does not exist, create a new empty file. Set the initial access position  to the end of the file.
 
 
-All of the legal *access* values above may have the character **b** added as the second or third character in the value to indicate that the opened channel should be configured as if with the **fconfigure** **-translation binary** option, making the channel suitable for reading or writing of binary data.
+All of the legal *access* values above may have the character **b** added as the second or third character in the value to indicate that the opened channel should be configured as if with the [fconfigure] **-translation binary** option, making the channel suitable for reading or writing of binary data.
 
 In the second form, *access* consists of a list of any of the following flags, most of which have the standard POSIX meanings. One of the flags must be either **RDONLY**, **WRONLY** or **RDWR**.
 
@@ -97,7 +97,7 @@ In the second form, *access* consists of a list of any of the following flags, m
 : If the file is a terminal device, this flag prevents the file from becoming the controlling terminal of the process.
 
 **NONBLOCK**
-: Prevents the process from blocking while opening the file, and possibly in subsequent I/O operations.  The exact behavior of this flag is system- and device-dependent;  its use is discouraged (it is better to use the **fconfigure** command to put a file in nonblocking mode). For details refer to your system documentation on the **open** system call's **O_NONBLOCK** flag.
+: Prevents the process from blocking while opening the file, and possibly in subsequent I/O operations.  The exact behavior of this flag is system- and device-dependent;  its use is discouraged (it is better to use the [fconfigure] command to put a file in nonblocking mode). For details refer to your system documentation on the **open** system call's **O_NONBLOCK** flag.
 
 **TRUNC**
 : If the file exists it is truncated to zero length.
@@ -106,27 +106,27 @@ In the second form, *access* consists of a list of any of the following flags, m
 If a new file is created as part of opening it, *permissions* (an integer) is used to set the permissions for the new file in conjunction with the process's file mode creation mask. *Permissions* defaults to 0666.
 
 ::: {.info version="TIP603"}
-When the file opened is an ordinary disk file, the **chan configure** and **fconfigure** commands can be used to query this additional configuration option:
+When the file opened is an ordinary disk file, the [chan configure][chan] and [fconfigure] commands can be used to query this additional configuration option:
 :::
 
 [-stat]{.lit}
-: This option, when read, returns a dictionary of values much as is obtained from the **file stat** command, where that stat information relates to the real opened file. Keys in the dictionary may include **atime**, **ctime**, **dev**, **gid**, **ino**, **mode**, **mtime**, **nlink**, **size**, **type**, and **uid** among others; the **mtime**, **size** and **type** fields are guaranteed to be present and meaningful on all platforms; other keys may be present too.
+: This option, when read, returns a dictionary of values much as is obtained from the [file stat][file] command, where that stat information relates to the real opened file. Keys in the dictionary may include **atime**, **ctime**, **dev**, **gid**, **ino**, **mode**, **mtime**, **nlink**, **size**, **type**, and **uid** among others; the **mtime**, **size** and **type** fields are guaranteed to be present and meaningful on all platforms; other keys may be present too.
     *Implementation note:* This option maps to a call to **fstat()** on POSIX platforms, and to a call to **GetFileInformationByHandle()** on Windows; the information reported is what those system calls produce.
 
 
 # Command pipelines
 
-If the first character of *fileName* is "**|**" then the remaining characters of *fileName* are treated as a list of arguments that describe a command pipeline to invoke, in the same style as the arguments for **exec**. In this case, the channel identifier returned by **open** may be used to write to the command's input pipe or read from its output pipe, depending on the value of *access*. If write-only access is used (e.g. *access* is "**w**"), then standard output for the pipeline is directed to the current standard output unless overridden by the command. If read-only access is used (e.g. *access* is "**r**"), standard input for the pipeline is taken from the current standard input unless overridden by the command. The id of the spawned process is accessible through the **pid** command, using the channel id returned by **open** as argument.
+If the first character of *fileName* is "**|**" then the remaining characters of *fileName* are treated as a list of arguments that describe a command pipeline to invoke, in the same style as the arguments for [exec]. In this case, the channel identifier returned by **open** may be used to write to the command's input pipe or read from its output pipe, depending on the value of *access*. If write-only access is used (e.g. *access* is "**w**"), then standard output for the pipeline is directed to the current standard output unless overridden by the command. If read-only access is used (e.g. *access* is "**r**"), standard input for the pipeline is taken from the current standard input unless overridden by the command. The id of the spawned process is accessible through the [pid] command, using the channel id returned by **open** as argument.
 
-If the command (or one of the commands) executed in the command pipeline returns an error (according to the definition in **exec**), a Tcl error is generated when **close** is called on the channel unless the pipeline is in non-blocking mode then no exit status is returned (a silent **close** with -blocking 0).
+If the command (or one of the commands) executed in the command pipeline returns an error (according to the definition in [exec]), a Tcl error is generated when [close] is called on the channel unless the pipeline is in non-blocking mode then no exit status is returned (a silent [close] with -blocking 0).
 
-It is often useful to use the **fileevent** command with pipelines so other processing may happen at the same time as running the command in the background.
+It is often useful to use the [fileevent] command with pipelines so other processing may happen at the same time as running the command in the background.
 
 # Serial communications
 
 If *fileName* refers to a serial port, then the specified serial port is opened and initialized in a platform-dependent manner.  Acceptable values for the *fileName* to use to open a serial port are described in the PORTABILITY ISSUES section.
 
-The **chan configure** and **fconfigure** commands can be used to query and set additional configuration options specific to serial ports (where supported):
+The [chan configure][chan] and [fconfigure] commands can be used to query and set additional configuration options specific to serial ports (where supported):
 
 [-mode]{.lit} [baud=§,=+parity=§,=+data=§,=+stop]{.arg}
 : This option is a set of 4 comma-separated values: the baud rate, parity, number of data bits, and number of stop bits for this serial port.  The *baud* rate is a simple integer that specifies the connection speed. *Parity* is one of the following letters: **n**, **o**, **e**, **m**, **s**; respectively signifying the parity options of "none", "odd", "even", "mark", or "space". *Data* is the number of data bits and should be an integer from 5 to 8, while *stop* is the number of stop bits and should be the integer 1 or 2.
@@ -160,7 +160,7 @@ The **chan configure** and **fconfigure** commands can be used to query and set 
 : indicates that the contents of the OS buffers should be discarded.  Note that this is *not recommended* when writing to a POSIX terminal, as it can interact unexpectedly with handling of **stderr**.
 
 **drain**
-: indicates that Tcl should wait when closing the channel until all output has been consumed. This may slow down **close** noticeably.
+: indicates that Tcl should wait when closing the channel until all output has been consumed. This may slow down [close] noticeably.
 
 
 [-inputmode]{.lit} [inputMode]{.arg}
@@ -193,7 +193,7 @@ The **chan configure** and **fconfigure** commands can be used to query and set 
 : (Windows only). This option is used to change the size of Windows system buffers for a serial channel. Especially at higher communication rates the default input buffer size of 4096 bytes can overrun for latent systems. The first form specifies the input buffer size, in the second form both input and output buffers are defined.
 
 [-lasterror]{.lit}
-: (Windows only). This option is query only. In case of a serial communication error, **read** or **puts** returns a general Tcl file I/O error. **fconfigure** **-lasterror** can be called to get a list of error details. See below for an explanation of the various error codes.
+: (Windows only). This option is query only. In case of a serial communication error, [read] or [puts] returns a general Tcl file I/O error. [fconfigure] **-lasterror** can be called to get a list of error details. See below for an explanation of the various error codes.
 
 
 ## Serial port signals
@@ -230,10 +230,10 @@ RS-232 is the most commonly used standard electrical interface for serial commun
 
 ## Error codes (windows only)
 
-A lot of different errors may occur during serial read operations or during event polling in background. The external device may have been switched off, the data lines may be noisy, system buffers may overrun or your mode settings may be wrong.  That is why a reliable software should always **catch** serial read operations.  In cases of an error Tcl returns a general file I/O error.  Then **fconfigure** **-lasterror** may help to locate the problem.  The following error codes may be returned.
+A lot of different errors may occur during serial read operations or during event polling in background. The external device may have been switched off, the data lines may be noisy, system buffers may overrun or your mode settings may be wrong.  That is why a reliable software should always [catch] serial read operations.  In cases of an error Tcl returns a general file I/O error.  Then [fconfigure] **-lasterror** may help to locate the problem.  The following error codes may be returned.
 
 **RXOVER**
-: Windows input buffer overrun. The data comes faster than your scripts reads it or your system is overloaded. Use **fconfigure** **-sysbuffer** to avoid a temporary bottleneck and/or make your script faster.
+: Windows input buffer overrun. The data comes faster than your scripts reads it or your system is overloaded. Use [fconfigure] **-sysbuffer** to avoid a temporary bottleneck and/or make your script faster.
 
 **TXFULL**
 : Windows output buffer overrun. Complement to RXOVER. This error should practically not happen, because Tcl cares about the output buffer status.
@@ -242,10 +242,10 @@ A lot of different errors may occur during serial read operations or during even
 : UART buffer overrun (hardware) with data lost. The data comes faster than the system driver receives it. Check your advanced serial port settings to enable the FIFO (16550) buffer and/or setup a lower(1) interrupt threshold value.
 
 **RXPARITY**
-: A parity error has been detected by your UART. Wrong parity settings with **fconfigure** **-mode** or a noisy data line (RXD) may cause this error.
+: A parity error has been detected by your UART. Wrong parity settings with [fconfigure] **-mode** or a noisy data line (RXD) may cause this error.
 
 **FRAME**
-: A stop-bit error has been detected by your UART. Wrong mode settings with **fconfigure** **-mode** or a noisy data line (RXD) may cause this error.
+: A stop-bit error has been detected by your UART. Wrong mode settings with [fconfigure] **-mode** or a noisy data line (RXD) may cause this error.
 
 **BREAK**
 : A BREAK condition has been detected by your UART (see above).
@@ -266,7 +266,7 @@ Files opened in the "**a**" mode or with the **APPEND** flag set are implemented
     When running Tcl interactively, there may be some strange interactions between the console, if one is present, and a command pipeline that uses standard input.  If a command pipeline is opened for reading, some of the lines entered at the console will be sent to the command pipeline and some will be sent to the Tcl evaluator.  This problem only occurs because both Tcl and the child application are competing for the console at the same time.  If the command pipeline is started from a script, so that Tcl is not accessing the console, or if the command pipeline does not use standard input, but is redirected from a file, then the above problem does not occur.
 
 
-See the **PORTABILITY ISSUES** section of the **exec** command for additional information not specific to command pipelines about executing applications on the various platforms
+See the **PORTABILITY ISSUES** section of the [exec] command for additional information not specific to command pipelines about executing applications on the various platforms
 
 # Console channels
 
@@ -344,4 +344,16 @@ try {
     chan configure stdin -inputmode reset
 }
 ```
+
+
+[catch]: catch.md
+[chan]: chan.md
+[close]: close.md
+[exec]: exec.md
+[fconfigure]: fconfigure.md
+[file]: file.md
+[fileevent]: fileevent.md
+[pid]: pid.md
+[puts]: puts.md
+[read]: read.md
 

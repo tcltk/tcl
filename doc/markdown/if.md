@@ -32,7 +32,7 @@ if - Execute scripts conditionally
 
 # Description
 
-The *if* command evaluates *expr1* as an expression (in the same way that **expr** evaluates its argument).  The result value of the expression must be a boolean (a numeric value, where 0 is false and anything is true, or a string value such as **true** or **yes** for true and **false** or **no** for false); if it is true then *body1* is executed by passing it to the Tcl interpreter. Otherwise, if present, the *elseifClause* is evaluated. This clause is defined as "**elseif** *exprN* ?**then**? *bodyN*" and there may be any number of such clauses following each other with diferent expressions and bodies. *exprN* is then evaluated as an expression and if it evaluates to true then *bodyN* is executed, and so on. If none of the expressions evaluates to true then *elseClause* is executed, if present. The *elseClause* is defined as "?**else**? *bodyM*". Note, that the **then** and **else** arguments are optional "syntactic sugar" to make the command easier to read.
+The *if* command evaluates *expr1* as an expression (in the same way that [expr] evaluates its argument).  The result value of the expression must be a boolean (a numeric value, where 0 is false and anything is true, or a string value such as **true** or **yes** for true and **false** or **no** for false); if it is true then *body1* is executed by passing it to the Tcl interpreter. Otherwise, if present, the *elseifClause* is evaluated. This clause is defined as "**elseif** *exprN* ?**then**? *bodyN*" and there may be any number of such clauses following each other with diferent expressions and bodies. *exprN* is then evaluated as an expression and if it evaluates to true then *bodyN* is executed, and so on. If none of the expressions evaluates to true then *elseClause* is executed, if present. The *elseClause* is defined as "?**else**? *bodyM*". Note, that the **then** and **else** arguments are optional "syntactic sugar" to make the command easier to read.
 
 The return value from the command is the result of the single body script that was executed, or an empty string if none of the expressions was non-zero and there was no *bodyM*.
 
@@ -77,4 +77,7 @@ if {
     puts "vbl is one, two or three"
 }
 ```
+
+
+[expr]: expr.md
 

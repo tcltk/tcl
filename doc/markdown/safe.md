@@ -50,7 +50,7 @@ Safe Tcl is a mechanism for executing untrusted Tcl scripts safely and for provi
 
 Safe Tcl ensures that untrusted Tcl scripts cannot harm the hosting application. It prevents integrity and privacy attacks. Untrusted Tcl scripts are prevented from corrupting the state of the hosting application or computer. Untrusted scripts are also prevented from disclosing information stored on the hosting computer or in the hosting application to any party.
 
-Safe Tcl allows a parent interpreter to create safe, restricted interpreters that contain a set of predefined aliases for the **source**, **load**, **file**, **encoding**, and **exit** commands and are able to use the auto-loading and package mechanisms.
+Safe Tcl allows a parent interpreter to create safe, restricted interpreters that contain a set of predefined aliases for the [source], [load], [file], [encoding], and [exit] commands and are able to use the auto-loading and package mechanisms.
 
 No knowledge of the file system structure is leaked to the safe interpreter, because it has access only to a virtualized path containing tokens. When the safe interpreter requests to source a file, it uses the token in the virtual path as part of the file name to source; the parent interpreter transparently translates the token into a real directory name and executes the requested operation (see the section **SECURITY** below for details). Different levels of security can be selected by using the optional flags of the commands described below.
 
@@ -65,7 +65,7 @@ The following commands are provided in the parent interpreter:
     The interpreter name *child* may include namespace separators, but may not have leading or trailing namespace separators, or excess colon characters in namespace separators.  The interpreter name is qualified relative to the global namespace ::, not the namespace in which the **::safe::interpCreate** command is evaluated.
 
 **::safe::interpInit** *child* ?*options...*?
-: This command is similar to **interpCreate** except it that does not create the safe interpreter. *child* must have been created by some other means, like **interp create** **-safe**.  The interpreter name *child* may include namespace separators, subject to the same restrictions as for **interpCreate**.
+: This command is similar to **interpCreate** except it that does not create the safe interpreter. *child* must have been created by some other means, like [interp create][interp] **-safe**.  The interpreter name *child* may include namespace separators, subject to the same restrictions as for **interpCreate**.
 
 **::safe::interpConfigure** *child* ?*options...*?
 : If no *options* are given, returns the settings for all options for the named safe interpreter as a list of options and their current values for that *child*. If a single additional argument is provided, it will return a list of 2 elements *name* and *value* where *name* is the full name of that option and *value* the current value for that option and the *child*. If more than two additional arguments are provided, it will reconfigure the safe interpreter and change each and only the provided options. See the section on **OPTIONS** below for options description. Example of use:
@@ -126,13 +126,13 @@ The following commands are provided in the parent interpreter:
 The following options are common to **::safe::interpCreate**, **::safe::interpInit**, and **::safe::interpConfigure**. Any option name can be abbreviated to its minimal non-ambiguous name. Option names are not case sensitive.
 
 [-accessPath]{.lit} [directoryList]{.arg}
-: This option sets the list of directories from which the safe interpreter can **source** and **load** files. If this option is not specified, or if it is given as the empty list, the safe interpreter will use the same directories as its parent for auto-loading. See the section **SECURITY** below for more detail about virtual paths, tokens and access control.
+: This option sets the list of directories from which the safe interpreter can [source] and [load] files. If this option is not specified, or if it is given as the empty list, the safe interpreter will use the same directories as its parent for auto-loading. See the section **SECURITY** below for more detail about virtual paths, tokens and access control.
 
 [-autoPath]{.lit} [directoryList]{.arg}
 : This option sets the list of directories in the safe interpreter's ::auto_path.  The option is undefined if the Safe Base has "Sync Mode" on - in that case the safe interpreter's ::auto_path is managed by the Safe Base and is a tokenized form of its access path. See the section **SYNC MODE** below for details.
 
 [-statics]{.lit} [boolean]{.arg}
-: This option specifies if the safe interpreter will be allowed to load statically linked packages (like **load {} Tk**). The default value is **true** : safe interpreters are allowed to load statically linked packages.
+: This option specifies if the safe interpreter will be allowed to load statically linked packages (like [load {} Tk]). The default value is **true** : safe interpreters are allowed to load statically linked packages.
 
 [-noStatics]{.lit}
 : This option is a convenience shortcut for **-statics false** and thus specifies that the safe interpreter will not be allowed to load statically linked packages.
@@ -151,19 +151,19 @@ The following options are common to **::safe::interpCreate**, **::safe::interpIn
 
 The following aliases are provided in a safe interpreter:
 
-**source** *fileName*
-: The requested file, a Tcl source file, is sourced into the safe interpreter if it is found. The **source** alias can only source files from directories in the virtual path for the safe interpreter. The **source** alias requires the safe interpreter to use one of the token names in its virtual path to denote the directory in which the file to be sourced can be found. See the section on **SECURITY** for more discussion of restrictions on valid filenames.
+[source] *fileName*
+: The requested file, a Tcl source file, is sourced into the safe interpreter if it is found. The [source] alias can only source files from directories in the virtual path for the safe interpreter. The [source] alias requires the safe interpreter to use one of the token names in its virtual path to denote the directory in which the file to be sourced can be found. See the section on **SECURITY** for more discussion of restrictions on valid filenames.
 
-**load** *fileName*
-: The requested file, a shared object file, is dynamically loaded into the safe interpreter if it is found. The filename must contain a token name mentioned in the virtual path for the safe interpreter for it to be found successfully. Additionally, the shared object file must contain a safe entry point; see the manual page for the **load** command for more details.
+[load] *fileName*
+: The requested file, a shared object file, is dynamically loaded into the safe interpreter if it is found. The filename must contain a token name mentioned in the virtual path for the safe interpreter for it to be found successfully. Additionally, the shared object file must contain a safe entry point; see the manual page for the [load] command for more details.
 
-**file** ?*subcommand args...*?
-: The **file** alias provides access to a safe subset of the subcommands of the **file** command; it allows only **dirname**, **join**, **extension**, **root**, **tail**, **pathtype** and **split** subcommands. For more details on what these subcommands do see the manual page for the **file** command.
+[file] ?*subcommand args...*?
+: The [file] alias provides access to a safe subset of the subcommands of the [file] command; it allows only **dirname**, [join], **extension**, **root**, **tail**, **pathtype** and [split] subcommands. For more details on what these subcommands do see the manual page for the [file] command.
 
-**encoding** ?*subcommand args...*?
-: The **encoding** alias provides access to a safe subset of the subcommands of the **encoding** command;  it disallows setting of the system encoding, but allows all other subcommands including **system** to check the current encoding.
+[encoding] ?*subcommand args...*?
+: The [encoding] alias provides access to a safe subset of the subcommands of the [encoding] command;  it disallows setting of the system encoding, but allows all other subcommands including **system** to check the current encoding.
 
-**exit**
+[exit]
 : The calling interpreter is deleted and its computation is stopped, but the Tcl process in which this interpreter exists is not terminated.
 
 
@@ -171,13 +171,13 @@ The following aliases are provided in a safe interpreter:
 
 Safe Tcl does not attempt to completely prevent annoyance and denial of service attacks. These forms of attack prevent the application or user from temporarily using the computer to perform useful work, for example by consuming all available CPU time or all available screen real estate. These attacks, while aggravating, are deemed to be of lesser importance in general than integrity and privacy attacks that Safe Tcl is to prevent.
 
-The commands available in a safe interpreter, in addition to the safe set as defined in **interp** manual page, are mediated aliases for **source**, **load**, **exit**, and safe subsets of **file** and **encoding**. The safe interpreter can also auto-load code and it can request that packages be loaded.
+The commands available in a safe interpreter, in addition to the safe set as defined in [interp] manual page, are mediated aliases for [source], [load], [exit], and safe subsets of [file] and [encoding]. The safe interpreter can also auto-load code and it can request that packages be loaded.
 
-Because some of these commands access the local file system, there is a potential for information leakage about its directory structure. To prevent this, commands that take file names as arguments in a safe interpreter use tokens instead of the real directory names. These tokens are translated to the real directory name while a request to, e.g., source a file is mediated by the parent interpreter. This virtual path system is maintained in the parent interpreter for each safe interpreter created by **::safe::interpCreate** or initialized by **::safe::interpInit** and the path maps tokens accessible in the safe interpreter into real path names on the local file system thus preventing safe interpreters from gaining knowledge about the structure of the file system of the host on which the interpreter is executing. The only valid file names arguments for the **source** and **load** aliases provided to the child are path in the form of **[file join** *token filename***]** (i.e. when using the native file path formats: *token***/***filename* on Unix and *token***\***filename* on Windows), where *token* is representing one of the directories of the *accessPath* list and *filename* is one file in that directory (no sub directories access are allowed).
+Because some of these commands access the local file system, there is a potential for information leakage about its directory structure. To prevent this, commands that take file names as arguments in a safe interpreter use tokens instead of the real directory names. These tokens are translated to the real directory name while a request to, e.g., source a file is mediated by the parent interpreter. This virtual path system is maintained in the parent interpreter for each safe interpreter created by **::safe::interpCreate** or initialized by **::safe::interpInit** and the path maps tokens accessible in the safe interpreter into real path names on the local file system thus preventing safe interpreters from gaining knowledge about the structure of the file system of the host on which the interpreter is executing. The only valid file names arguments for the [source] and [load] aliases provided to the child are path in the form of **[file join** *token filename***]** (i.e. when using the native file path formats: *token***/***filename* on Unix and *token***\***filename* on Windows), where *token* is representing one of the directories of the *accessPath* list and *filename* is one file in that directory (no sub directories access are allowed).
 
 When a token is used in a safe interpreter in a request to source or load a file, the token is checked and translated to a real path name and the file to be sourced or loaded is located on the file system. The safe interpreter never gains knowledge of the actual path name under which the file is stored on the file system.
 
-To further prevent potential information leakage from sensitive files that are accidentally included in the set of files that can be sourced by a safe interpreter, the **source** alias restricts access to files meeting the following constraints: the file name must fourteen characters or shorter, must not contain more than one dot ("**.**"), must end up with the extension ("**.tcl**") or be called ("**tclIndex**".)
+To further prevent potential information leakage from sensitive files that are accidentally included in the set of files that can be sourced by a safe interpreter, the [source] alias restricts access to files meeting the following constraints: the file name must fourteen characters or shorter, must not contain more than one dot ("**.**"), must end up with the extension ("**.tcl**") or be called ("**tclIndex**".)
 
 Each element of the initial access path list will be assigned a token that will be set in the child **auto_path** and the first element of that list will be set as the **tcl_library** for that child.
 
@@ -268,4 +268,14 @@ lassign [safe::interpConfigure foo -autoPath] DUM childAutoPath
 lappend childAutoPath /usr/local/TclHome/lib/extras/Img1.4.11
 safe::interpConfigure foo -autoPath $childAutoPath
 ```
+
+
+[encoding]: encoding.md
+[exit]: exit.md
+[file]: file.md
+[interp]: interp.md
+[join]: join.md
+[load]: load.md
+[source]: source.md
+[split]: split.md
 

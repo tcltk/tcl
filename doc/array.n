@@ -12,7 +12,7 @@
 .SH NAME
 array \- Manipulate array variables
 .SH SYNOPSIS
-\fBarray \fIoption arrayName\fR ?\fIarg arg ...\fR?
+\fBarray \fIoption arg\fR ?\fIarg ...\fR?
 .BE
 .SH DESCRIPTION
 .PP
@@ -39,7 +39,7 @@ with an empty name, since the return value from
 has been completed.
 .\" METHOD: default
 .TP
-\fBarray default \fIsubcommand arrayName args...\fR
+\fBarray default \fIsubcommand arrayName\fR ?\fIarg\fR?
 .VS TIP508
 Manages the default value of the array. Arrays initially have no default
 value, but this command allows you to set one; the default value will be

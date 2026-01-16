@@ -27,7 +27,7 @@ pkg::create - Construct an appropriate 'package ifneeded' command for a given pa
 
 # Description
 
-**::pkg::create** is a utility procedure that is part of the standard Tcl library.  It is used to create an appropriate **package ifneeded** command for a given package specification.  It can be used to construct a **pkgIndex.tcl** file for use with the **package** mechanism.
+**::pkg::create** is a utility procedure that is part of the standard Tcl library.  It is used to create an appropriate [package ifneeded][package] command for a given package specification.  It can be used to construct a **pkgIndex.tcl** file for use with the [package] mechanism.
 
 # Options
 
@@ -40,11 +40,16 @@ The parameters supported are:
 : This parameter specifies the version of the package.  It is required.
 
 [-load]{.lit} [filespec]{.arg}
-: This parameter specifies a library that must be loaded with the **load** command.  *filespec* is a list with two elements.  The first element is the name of the file to load.  The second, optional element is a list of commands supplied by loading that file.  If the list of procedures is empty or omitted, **::pkg::create** will set up the library for direct loading (see **pkg_mkIndex**).  Any number of **-load** parameters may be specified.
+: This parameter specifies a library that must be loaded with the [load] command.  *filespec* is a list with two elements.  The first element is the name of the file to load.  The second, optional element is a list of commands supplied by loading that file.  If the list of procedures is empty or omitted, **::pkg::create** will set up the library for direct loading (see **pkg_mkIndex**).  Any number of **-load** parameters may be specified.
 
 [-source]{.lit} [filespec]{.arg}
-: This parameter is similar to the **-load** parameter, except that it specifies a Tcl library that must be loaded with the **source** command.  Any number of **-source** parameters may be specified.
+: This parameter is similar to the **-load** parameter, except that it specifies a Tcl library that must be loaded with the [source] command.  Any number of **-source** parameters may be specified.
 
 
 At least one **-load** or **-source** parameter must be given.
+
+
+[load]: load.md
+[package]: package.md
+[source]: source.md
 

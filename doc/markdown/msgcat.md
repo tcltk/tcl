@@ -71,7 +71,7 @@ Object oriented programming is supported by the use of a package namespace.
 # Commands
 
 **::msgcat::mc** *src-string* ?*arg ...*?
-: Returns a translation of *src-string* according to the current locale.  If additional arguments past *src-string* are given, the **format** command is used to substitute the additional arguments in the translation of *src-string*.
+: Returns a translation of *src-string* according to the current locale.  If additional arguments past *src-string* are given, the [format] command is used to substitute the additional arguments in the translation of *src-string*.
     **::msgcat::mc** will search the messages defined in the current namespace for a translation of *src-string*; if none is found, it will search in the parent of the current namespace, and so on until it reaches the global namespace.  If no translation string exists, **::msgcat::mcunknown** is called and the string returned from **::msgcat::mcunknown** is returned.
     **::msgcat::mc** is the main function used to localize an application.  Instead of using an English string directly, an application can pass the English string through **::msgcat::mc** and use the result.  If an application is written for a single language in this fashion, then it is easy to add support for additional languages later simply by defining new message catalog entries.
 
@@ -278,7 +278,7 @@ en_gb.msg \(em United Kingdom English
 
 *Exception:* The message file for the root locale .MT is called "**ROOT.msg**". This exception is made so as not to cause peculiar behavior, such as marking the message file as "hidden" on Unix file systems.
 
-1. The file contains a series of calls to **mcflset** and **mcflmset**, setting the necessary translation strings for the language, likely enclosed in a **namespace eval** so that all source strings are tied to the namespace of the package. For example, a short **es.msg** might contain:
+1. The file contains a series of calls to **mcflset** and **mcflmset**, setting the necessary translation strings for the language, likely enclosed in a [namespace eval][namespace] so that all source strings are tied to the namespace of the package. For example, a short **es.msg** might contain:
 
 
 ```
@@ -289,7 +289,7 @@ namespace eval ::mypackage {
 
 # Recommended message setup for packages
 
-If a package is installed into a subdirectory of the **tcl_pkgPath** and loaded via **package require**, the following procedure is recommended.
+If a package is installed into a subdirectory of the **tcl_pkgPath** and loaded via [package require][package], the following procedure is recommended.
 
 1. During package installation, create a subdirectory **msgs** under your package directory.
 
@@ -305,7 +305,7 @@ If a package is installed into a subdirectory of the **tcl_pkgPath** and loaded 
 
 # Positional codes for format and scan commands
 
-It is possible that a message string used as an argument to **format** might have positionally dependent parameters that might need to be repositioned.  For example, it might be syntactically desirable to rearrange the sentence structure while translating.
+It is possible that a message string used as an argument to [format] might have positionally dependent parameters that might need to be repositioned.  For example, it might be syntactically desirable to rearrange the sentence structure while translating.
 
 ```
 format "We produced %d units in location %s" $num $city
@@ -319,7 +319,7 @@ format "We produced %1\$d units in location %2\$s" $num $city
 format "In location %2\$s we produced %1\$d units" $num $city
 ```
 
-Similarly, positional parameters can be used with **scan** to extract values from internationalized strings. Note that it is not necessary to pass the output of **::msgcat::mc** to **format** directly; by passing the values to substitute in as arguments, the formatting substitution is done directly.
+Similarly, positional parameters can be used with [scan] to extract values from internationalized strings. Note that it is not necessary to pass the output of **::msgcat::mc** to [format] directly; by passing the values to substitute in as arguments, the formatting substitution is done directly.
 
 ```
 msgcat::mc {Produced %1$d at %2$s} $num $city
@@ -418,7 +418,7 @@ See the callback invocation section below. The parameter list appended to this c
 
 The called procedure must return the formatted message which will finally be returned by **msgcat::mc**.
 
-A generic unknown handler is used if set to the empty string. This consists of returning the key if no arguments are given. With given arguments, the **format** command is used to process the arguments.
+A generic unknown handler is used if set to the empty string. This consists of returning the key if no arguments are given. With given arguments, the [format] command is used to process the arguments.
 
 See section **callback invocation** below. The appended arguments are identical to **msgcat::mcunknown**.
 
@@ -514,7 +514,7 @@ namespace eval db {
 }
 ```
 
-The **clock** command implementation uses **msgcat** with a package locale to implement the command line parameter **-locale**. Here are some sketches of the implementation:
+The [clock] command implementation uses **msgcat** with a package locale to implement the command line parameter **-locale**. Here are some sketches of the implementation:
 
 First, a package locale is initialized and the generic unknown function is deactivated:
 
@@ -529,7 +529,7 @@ As an example, the user requires the week day in a certain locale as follows:
 clock format [clock seconds] -format %A -locale fr
 ```
 
-**clock** sets the package locale to **fr** and looks for the day name as follows:
+[clock] sets the package locale to **fr** and looks for the day name as follows:
 
 ```
 msgcat::mcpackagelocale set $locale
@@ -537,7 +537,7 @@ return [lindex [msgcat::mc DAYS_OF_WEEK_FULL] $day]
 ### Returns "mercredi"
 ```
 
-Within **clock**, some message-catalog items are heavy in computation and thus are dynamically cached using:
+Within [clock], some message-catalog items are heavy in computation and thus are dynamically cached using:
 
 ```
 proc ::tcl::clock::LocalizeFormat { locale format } {
@@ -554,4 +554,11 @@ proc ::tcl::clock::LocalizeFormat { locale format } {
 # Credits
 
 The message catalog code was developed by Mark Harrison.
+
+
+[clock]: clock.md
+[format]: format.md
+[namespace]: namespace.md
+[package]: package.md
+[scan]: scan.md
 

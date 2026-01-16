@@ -51,13 +51,13 @@ This document describes the facilities for locating and loading Tcl Modules (see
 
 # Module definition
 
-A Tcl Module is a Tcl Package contained in a single file, and no other files required by it. This file has to be **source**able. In other words, a Tcl Module is always imported via:
+A Tcl Module is a Tcl Package contained in a single file, and no other files required by it. This file has to be [source]able. In other words, a Tcl Module is always imported via:
 
 ```
 source module_file
 ```
 
-The **load** command is not directly used. This restriction is not an actual limitation, as some may believe. Ever since 8.4 the Tcl **source** command reads only until the first ^Z character. This allows us to combine an arbitrary Tcl script with arbitrary binary data into one file, where the script processes the attached data in any it chooses to fully import and activate the package.
+The [load] command is not directly used. This restriction is not an actual limitation, as some may believe. Ever since 8.4 the Tcl [source] command reads only until the first ^Z character. This allows us to combine an arbitrary Tcl script with arbitrary binary data into one file, where the script processes the attached data in any it chooses to fully import and activate the package.
 
 The name of a module file has to match the regular expression:
 
@@ -127,7 +127,7 @@ The paths are added in the order as they are listed below, and for lists of path
 
 ## System specific paths
 
-**file normalize [info library]/../tcl***X***/***X***.***y*
+[file normalize [info library]/../tcl]*X***/***X***.***y*
 : In other words, the interpreter will look into a directory specified by its major version and whose minor versions are less than or equal to the minor version of the interpreter.
     For example for Tcl 8.4 the paths searched are:
 
@@ -140,14 +140,14 @@ The paths are added in the order as they are listed below, and for lists of path
     ```
     This definition assumes that a package defined for Tcl *X***.***y* can also be used by all interpreters which have the same major number *X* and a minor number greater than *y*.
 
-**file normalize EXEC/tcl***X***/***X***.***y*
-: Where **EXEC** is **file normalize [info nameofexecutable]/../lib** or **file normalize [::tcl::pkgconfig get libdir,runtime]**
+[file normalize EXEC/tcl]*X***/***X***.***y*
+: Where **EXEC** is [file normalize [info nameofexecutable]/../lib] or [file normalize [::tcl::pkgconfig get libdir,runtime]]
     This sets of paths is handled equivalently to the set coming before, except that it is anchored in **EXEC_PREFIX**. For a build with **PREFIX** = **EXEC_PREFIX** the two sets are identical.
 
 
 ## Site specific paths
 
-**file normalize [info library]/../tcl***X***/site-tcl**
+[file normalize [info library]/../tcl]*X***/site-tcl**
 : Note that this is always a single entry because *X* is always a specific value (the current major version of Tcl).
 
 
@@ -172,4 +172,9 @@ $::env(TCL9.0_TM_PATH)  $::env(TCL9_0_TM_PATH)
 Paths initialized from the environment variables undergo tilde substitution (see **filename**). Any path whose tilde substitution fails because the user is unknown will be omitted from search paths.
 
 "*Tcl Modules*" (online at https://core.tcl-lang.org/tips/doc/trunk/tip/189.md), Tcl Improvement Proposal #190 "*Implementation Choices for Tcl Modules*" (online at https://core.tcl-lang.org/tips/doc/trunk/tip/190.md)
+
+
+[file]: file.md
+[load]: load.md
+[source]: source.md
 

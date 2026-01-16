@@ -206,7 +206,7 @@ typedef int (Tcl_ObjTypeIndexProc) (
 
 ## The sliceproc field
 
-The **SliceProc** correlates with the **lrange** command, returning a new List or Abstract List for the portion of the original list specified.
+The **SliceProc** correlates with the [lrange] command, returning a new List or Abstract List for the portion of the original list specified.
 
 ```
 typedef int (Tcl_ObjTypeSliceProc) (
@@ -219,7 +219,7 @@ typedef int (Tcl_ObjTypeSliceProc) (
 
 ## The reverseproc field
 
-The **ReverseProc** correlates with the **lreverse** command, returning a List or Abstract List that has the same elements as the input Abstract List, but in reverse order.
+The **ReverseProc** correlates with the [lreverse] command, returning a List or Abstract List that has the same elements as the input Abstract List, but in reverse order.
 
 ```
 typedef int (Tcl_ObjTypeReverseProc) (
@@ -242,7 +242,7 @@ typedef int (Tcl_ObjTypeGetElements) (
 
 ## The setelement field
 
-The **SetElement** function replaces the element within the specified list at the give index. This function correlates to the **lset** command.
+The **SetElement** function replaces the element within the specified list at the give index. This function correlates to the [lset] command.
 
 ```
 typedef Tcl_Obj *(Tcl_ObjTypeSetElement) (
@@ -286,4 +286,9 @@ The *objPtr* argument to **Tcl_AppendAllObjTypes** should be an unshared value; 
 The *objPtr* argument to **Tcl_ConvertToType** can have any non-zero reference count; this function will not modify the reference count, but may write to the interpreter result on error so values that originate from there should have an additional reference made before calling this.
 
 None of the callback functions in the **Tcl_ObjType** structure should modify the reference count of their arguments, but if the values contain subsidiary values (e.g., the elements of a list or the keys of a dictionary) then those subsidiary values may have their reference counts modified.
+
+
+[lrange]: lrange.md
+[lreverse]: lreverse.md
+[lset]: lset.md
 

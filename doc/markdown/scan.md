@@ -43,7 +43,7 @@ If the **%** is followed by a decimal number and a **$**, as in "**%2$d**", then
 
 ## Optional size modifier
 
-The size modifier field is used only when scanning a substring into one of Tcl's integer values.  The size modifier field dictates the integer range acceptable to be stored in a variable, or, for the inline case, in a position in the result list. The syntactically valid values for the size modifier are **h**, **l**, **z**, **t**, **q**, **j**, **ll**, and **L**. The **h** size modifier value is equivalent to the absence of a size modifier in the the conversion specifier.  Either one indicates the integer range to be stored is limited to the 32-bit range.  The **L** size modifier is equivalent to the **ll** size modifier.  Either one indicates the integer range to be stored is unlimited.  The **l** (or **q** or **j**) size modifier indicates that the integer range to be stored is limited to the same range produced by the **wide()** function of the **expr** command. The **z** and **t** modifiers indicate the integer range to be the same as for either **h** or **l**, depending on the value of the **pointerSize** element of the **tcl_platform** array.
+The size modifier field is used only when scanning a substring into one of Tcl's integer values.  The size modifier field dictates the integer range acceptable to be stored in a variable, or, for the inline case, in a position in the result list. The syntactically valid values for the size modifier are **h**, **l**, **z**, **t**, **q**, **j**, **ll**, and **L**. The **h** size modifier value is equivalent to the absence of a size modifier in the the conversion specifier.  Either one indicates the integer range to be stored is limited to the 32-bit range.  The **L** size modifier is equivalent to the **ll** size modifier.  Either one indicates the integer range to be stored is unlimited.  The **l** (or **q** or **j**) size modifier indicates that the integer range to be stored is limited to the same range produced by the **wide()** function of the [expr] command. The **z** and **t** modifiers indicate the integer range to be the same as for either **h** or **l**, depending on the value of the **pointerSize** element of the **tcl_platform** array.
 
 ## Mandatory conversion character
 
@@ -167,4 +167,7 @@ An interactive session demonstrating the truncation of integer values determined
 % scan 20000000000000000000 %lld
 20000000000000000000
 ```
+
+
+[expr]: expr.md
 

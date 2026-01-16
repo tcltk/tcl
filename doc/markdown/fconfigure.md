@@ -24,5 +24,8 @@ fconfigure - Set and get options on a channel
 
 # Description
 
-The **fconfigure** command has been superceded by the **chan configure** command which supports the same syntax and options.
+The **fconfigure** command has been superceded by the [chan configure][chan] command which supports the same syntax and options.
+
+
+[chan]: chan.md
 

@@ -54,7 +54,7 @@ The *flags* argument to **Tcl_TraceVar** indicates when the trace procedure is t
 : Invoke *proc* whenever an attempt is made to modify the variable.
 
 **TCL_TRACE_UNSETS**
-: Invoke *proc* whenever the variable is unset. A variable may be unset either explicitly by an **unset** command, or implicitly when a procedure returns (its local variables are automatically unset) or when the interpreter or namespace is deleted (all variables are automatically unset).
+: Invoke *proc* whenever the variable is unset. A variable may be unset either explicitly by an [unset] command, or implicitly when a procedure returns (its local variables are automatically unset) or when the interpreter or namespace is deleted (all variables are automatically unset).
 
 **TCL_TRACE_ARRAY**
 : Invoke *proc* whenever the array command is invoked. This gives the trace procedure a chance to update the array before array names or array get is called.  Note that this is called before an array set, but that will trigger write traces.
@@ -77,7 +77,7 @@ typedef char *Tcl_VarTraceProc(
         int flags);
 ```
 
-The *clientData* and *interp* parameters will have the same values as those passed to **Tcl_TraceVar** when the trace was created. *clientData* typically points to an application-specific data structure that describes what to do when *proc* is invoked. *Name1* and *name2* give the name of the variable that triggered the callback in the normal two-part form (see the description of **Tcl_TraceVar2** below for details).  In case *name1* is an alias to an array element (created through facilities such as **upvar**), *name2* holds the index of the array element, rather than NULL. *Flags* is an OR-ed combination of bits providing several pieces of information. One of the bits **TCL_TRACE_READS**, **TCL_TRACE_WRITES**, **TCL_TRACE_ARRAY**, or **TCL_TRACE_UNSETS** will be set in *flags* to indicate which operation is being performed on the variable. The bit **TCL_GLOBAL_ONLY** will be set whenever the variable being accessed is a global one not accessible from the current level of procedure call:  the trace procedure will need to pass this flag back to variable-related procedures like **Tcl_GetVar** if it attempts to access the variable. The bit **TCL_NAMESPACE_ONLY** will be set whenever the variable being accessed is a namespace one not accessible from the current level of procedure call:  the trace procedure will need to pass this flag back to variable-related procedures like **Tcl_GetVar** if it attempts to access the variable. The bit **TCL_TRACE_DESTROYED** will be set in *flags* if the trace is about to be destroyed;  this information may be useful to *proc* so that it can clean up its own internal data structures (see the section **TCL_TRACE_DESTROYED** below for more details). The trace procedure's return value should normally be NULL;  see **ERROR RETURNS** below for information on other possibilities.
+The *clientData* and *interp* parameters will have the same values as those passed to **Tcl_TraceVar** when the trace was created. *clientData* typically points to an application-specific data structure that describes what to do when *proc* is invoked. *Name1* and *name2* give the name of the variable that triggered the callback in the normal two-part form (see the description of **Tcl_TraceVar2** below for details).  In case *name1* is an alias to an array element (created through facilities such as [upvar]), *name2* holds the index of the array element, rather than NULL. *Flags* is an OR-ed combination of bits providing several pieces of information. One of the bits **TCL_TRACE_READS**, **TCL_TRACE_WRITES**, **TCL_TRACE_ARRAY**, or **TCL_TRACE_UNSETS** will be set in *flags* to indicate which operation is being performed on the variable. The bit **TCL_GLOBAL_ONLY** will be set whenever the variable being accessed is a global one not accessible from the current level of procedure call:  the trace procedure will need to pass this flag back to variable-related procedures like **Tcl_GetVar** if it attempts to access the variable. The bit **TCL_NAMESPACE_ONLY** will be set whenever the variable being accessed is a namespace one not accessible from the current level of procedure call:  the trace procedure will need to pass this flag back to variable-related procedures like **Tcl_GetVar** if it attempts to access the variable. The bit **TCL_TRACE_DESTROYED** will be set in *flags* if the trace is about to be destroyed;  this information may be useful to *proc* so that it can clean up its own internal data structures (see the section **TCL_TRACE_DESTROYED** below for more details). The trace procedure's return value should normally be NULL;  see **ERROR RETURNS** below for information on other possibilities.
 
 **Tcl_UntraceVar** may be used to remove a trace. If the variable specified by *interp*, *varName*, and *flags* has a trace set with *flags*, *proc*, and *clientData*, then the corresponding trace is removed. If no such trace exists, then the call to **Tcl_UntraceVar** has no effect. The same bits are valid for *flags* as for calls to **Tcl_TraceVar**.
 
@@ -95,9 +95,9 @@ During unset traces the variable has already been completely expunged. It is pos
 
 # Callback timing
 
-When read tracing has been specified for a variable, the trace procedure will be invoked whenever the variable's value is read.  This includes **set** Tcl commands, **$**-notation in Tcl commands, and invocations of the **Tcl_GetVar** and **Tcl_GetVar2** procedures. *Proc* is invoked just before the variable's value is returned. It may modify the value of the variable to affect what is returned by the traced access. If it unsets the variable then the access will return an error just as if the variable never existed.
+When read tracing has been specified for a variable, the trace procedure will be invoked whenever the variable's value is read.  This includes [set] Tcl commands, **$**-notation in Tcl commands, and invocations of the **Tcl_GetVar** and **Tcl_GetVar2** procedures. *Proc* is invoked just before the variable's value is returned. It may modify the value of the variable to affect what is returned by the traced access. If it unsets the variable then the access will return an error just as if the variable never existed.
 
-When write tracing has been specified for a variable, the trace procedure will be invoked whenever the variable's value is modified.  This includes **set** commands, commands that modify variables as side effects (such as **catch** and **scan**), and calls to the **Tcl_SetVar** and **Tcl_SetVar2** procedures). *Proc* will be invoked after the variable's value has been modified, but before the new value of the variable has been returned. It may modify the value of the variable to override the change and to determine the value actually returned by the traced access. If it deletes the variable then the traced access will return an empty string.
+When write tracing has been specified for a variable, the trace procedure will be invoked whenever the variable's value is modified.  This includes [set] commands, commands that modify variables as side effects (such as [catch] and [scan]), and calls to the **Tcl_SetVar** and **Tcl_SetVar2** procedures). *Proc* will be invoked after the variable's value has been modified, but before the new value of the variable has been returned. It may modify the value of the variable to override the change and to determine the value actually returned by the traced access. If it deletes the variable then the traced access will return an empty string.
 
 When array tracing has been specified, the trace procedure will be invoked at the beginning of the array command implementation, before any of the operations like get, set, or names have been invoked. The trace procedure can modify the array elements with **Tcl_SetVar** and **Tcl_SetVar2**.
 
@@ -137,5 +137,13 @@ When a *proc* callback is invoked, and that callback was installed with the **TC
 
 # Bugs
 
-Array traces are not yet integrated with the Tcl **info exists** command, nor is there Tcl-level access to array traces.
+Array traces are not yet integrated with the Tcl [info exists][info] command, nor is there Tcl-level access to array traces.
+
+
+[catch]: catch.md
+[info]: info.md
+[scan]: scan.md
+[set]: set.md
+[unset]: unset.md
+[upvar]: upvar.md
 

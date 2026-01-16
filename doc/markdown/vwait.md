@@ -69,7 +69,7 @@ In the second more complex command form *options* allow for finer control of the
 
 The result returned by **vwait** is for the simple form an empty string. If the **-timeout** option is specified, the result is the number of milliseconds remaining when the wait condition has been met, or -1 if the wait operation timed out.
 
-If the **-extended** option is specified, the result is made up of a Tcl list with an even number of elements. Odd elements take the values **readable**, **timeleft**, **variable**, and **writable**. Even elements are the corresponding variable and channel names or the remaining number of milliseconds. The list is ordered by the occurrences of the event(s) with the exception of **timeleft** which always comes last.
+If the **-extended** option is specified, the result is made up of a Tcl list with an even number of elements. Odd elements take the values **readable**, **timeleft**, [variable], and **writable**. Even elements are the corresponding variable and channel names or the remaining number of milliseconds. The list is ordered by the occurrences of the event(s) with the exception of **timeleft** which always comes last.
 
 In some cases the **vwait** command may not return immediately after *varName* et.al. is set. This happens if the event handler that sets *varName* does not complete immediately.  For example, if an event handler sets *varName* and then itself calls **vwait** to wait for a different variable, then it may not return for a long time.  During this time the top-level **vwait** is blocked waiting for the event handler to complete, so it cannot return either. (See the **NESTED VWAITS BY EXAMPLE** below.)
 
@@ -77,7 +77,7 @@ To be clear, *multiple* **vwait** *calls will nest and will not happen in parall
 
 # Examples
 
-Run the event-loop continually until some event calls **exit**. (You can use any variable not mentioned elsewhere, but the name *forever* reminds you at a glance of the intent.)
+Run the event-loop continually until some event calls [exit]. (You can use any variable not mentioned elsewhere, but the name *forever* reminds you at a glance of the intent.)
 
 ```
 vwait forever
@@ -131,7 +131,7 @@ namespace eval example {
 }
 ```
 
-When running inside a **coroutine**, an alternative to using **vwait** is to **yield** to an outer event loop and to get recommenced when the variable is set, or at an idle moment after that.
+When running inside a [coroutine], an alternative to using **vwait** is to [yield] to an outer event loop and to get recommenced when the variable is set, or at an idle moment after that.
 
 ```
 coroutine task apply {{} {
@@ -154,7 +154,7 @@ coroutine task apply {{} {
 
 ## Nested vwaits by example
 
-This example demonstrates what can happen when the **vwait** command is nested. The script will never finish because the waiting for the *a* variable never finishes; that **vwait** command is still waiting for a script scheduled with **after** to complete, which just happens to be running an inner **vwait** (for *b*) even though the event that the outer **vwait** was waiting for (the setting of *a*) has occurred.
+This example demonstrates what can happen when the **vwait** command is nested. The script will never finish because the waiting for the *a* variable never finishes; that **vwait** command is still waiting for a script scheduled with [after] to complete, which just happens to be running an inner **vwait** (for *b*) even though the event that the outer **vwait** was waiting for (the setting of *a*) has occurred.
 
 ```
 after 500 {
@@ -181,7 +181,7 @@ waiting for b
 setting a
 ```
 
-The script will never print "a was set" until after it has printed "b was set" because of the nesting of **vwait** commands, and yet *b* will not be set until after the outer **vwait** returns, so the script has deadlocked. The only ways to avoid this are to either structure the overall program in continuation-passing style or to use **coroutine** to make the continuations implicit. The first of these options would be written as:
+The script will never print "a was set" until after it has printed "b was set" because of the nesting of **vwait** commands, and yet *b* will not be set until after the outer **vwait** returns, so the script has deadlocked. The only ways to avoid this are to either structure the overall program in continuation-passing style or to use [coroutine] to make the continuations implicit. The first of these options would be written as:
 
 ```
 after 500 {
@@ -209,7 +209,7 @@ trace add variable a write {apply {args {
 vwait done
 ```
 
-The second option, with **coroutine** and some helper procedures, is done like this:
+The second option, with [coroutine] and some helper procedures, is done like this:
 
 ```
 # A coroutine-based wait-for-variable command
@@ -249,4 +249,11 @@ coroutine task-3 eval {
 }
 vwait done
 ```
+
+
+[after]: after.md
+[coroutine]: coroutine.md
+[exit]: exit.md
+[variable]: variable.md
+[yield]: yield.md
 

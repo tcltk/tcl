@@ -58,7 +58,7 @@ When *proc* is invoked the *clientData* and *interp* parameters will be copies o
 
 Note that the argument strings should not be modified as they may point to constant strings or may be shared with other parts of the interpreter. Note also that the argument strings are encoded in normalized TUTF-8 since version 8.1 of Tcl.
 
-*Proc* must return an integer code that is expected to be one of **TCL_OK**, **TCL_ERROR**, **TCL_RETURN**, **TCL_BREAK**, or **TCL_CONTINUE**. See the **return** man page for details on what these codes mean and the use of extended values for an extension's private use. Most normal commands will only return **TCL_OK** or **TCL_ERROR**.
+*Proc* must return an integer code that is expected to be one of **TCL_OK**, **TCL_ERROR**, **TCL_RETURN**, **TCL_BREAK**, or **TCL_CONTINUE**. See the [return] man page for details on what these codes mean and the use of extended values for an extension's private use. Most normal commands will only return **TCL_OK** or **TCL_ERROR**.
 
 In addition, *proc* must set the interpreter result; in the case of a **TCL_OK** return code this gives the result of the command, and in the case of **TCL_ERROR** it gives an error message. The **Tcl_SetResult** procedure provides an easy interface for setting the return value;  for complete details on how the interpreter result field is managed, see the **Tcl_Interp** man page. Before invoking a command procedure, **Tcl_Eval** sets the interpreter result to point to an empty string, so simple commands can return an empty result by doing nothing at all.
 
@@ -72,4 +72,7 @@ typedef void Tcl_CmdDeleteProc(
 ```
 
 The *clientData* argument will be the same as the *clientData* argument passed to **Tcl_CreateCommand**.
+
+
+[return]: return.md
 

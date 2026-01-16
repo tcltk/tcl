@@ -89,13 +89,13 @@ The procedures described in this manual entry allow Tcl values to be manipulated
 
 **Tcl_AppendLimitedToObj** is similar to **Tcl_AppendToObj** except that it imposes a limit on how many bytes are appended. This can be handy when the string to be appended might be very large, but the value being constructed should not be allowed to grow without bound. A common usage is when constructing an error message, where the end result should be kept short enough to be read. Bytes from *bytes* are appended to *objPtr*, but no more than *limit* bytes total are to be appended. If the limit prevents all *length* bytes that are available from being appended, then the appending is done so that the last bytes appended are from the string *ellipsis*. This allows for an indication of the truncation to be left in the string. When *length* is negative, all bytes up to the first zero byte are appended, subject to the limit. When *ellipsis* is NULL, the default string **...** is used. When *ellipsis* is non-NULL, it must point to a zero-byte-terminated string in Tcl's internal UTF encoding. The number of bytes appended can be less than the lesser of *length* and *limit* when appending fewer bytes is necessary to append only whole multi-byte characters.
 
-**Tcl_Format** is the C-level interface to the engine of the **format** command.  The actual command procedure for **format** is little more than
+**Tcl_Format** is the C-level interface to the engine of the [format] command.  The actual command procedure for [format] is little more than
 
 ```
 Tcl_Format(interp, Tcl_GetString(objv[1]), objc-2, objv+2);
 ```
 
-The *objc* Tcl_Obj values in *objv* are formatted into a string according to the conversion specification in *format* argument, following the documentation for the **format** command.  The resulting formatted string is converted to a new Tcl_Obj with refcount of zero and returned. If some error happens during production of the formatted string, NULL is returned, and an error message is recorded in *interp*, if *interp* is non-NULL.
+The *objc* Tcl_Obj values in *objv* are formatted into a string according to the conversion specification in *format* argument, following the documentation for the [format] command.  The resulting formatted string is converted to a new Tcl_Obj with refcount of zero and returned. If some error happens during production of the formatted string, NULL is returned, and an error message is recorded in *interp*, if *interp* is non-NULL.
 
 **Tcl_AppendFormatToObj** is an appending alternative form of **Tcl_Format** with functionality equivalent to:
 
@@ -117,7 +117,7 @@ sprintf(buf, format, ...);
 Tcl_NewStringObj(buf, -1);
 ```
 
-but with greater convenience and no need to determine **SOME_SUITABLE_LENGTH**. The formatting is done with the same core formatting engine used by **Tcl_Format**.  This means the set of supported conversion specifiers is that of the **format** command but the behavior is as similar as possible to **sprintf**. The "hh" and (Microsoft-specific) "w" format specifiers are not supported. The "L" format specifier means that an "mp_int *" argument is expected (or a "long double" in combination with **[aAeEgGaA]**). When a conversion specifier passed to **Tcl_ObjPrintf** includes a precision, the value is taken as a number of bytes, as **sprintf** does, and not as a number of characters, as **format** does.  This is done on the assumption that C code is more likely to know how many bytes it is passing around than the number of encoded characters those bytes happen to represent.  The variable number of arguments passed in should be of the types that would be suitable for passing to **sprintf**.  Note in this example usage, *x* is of type **int**.
+but with greater convenience and no need to determine **SOME_SUITABLE_LENGTH**. The formatting is done with the same core formatting engine used by **Tcl_Format**.  This means the set of supported conversion specifiers is that of the [format] command but the behavior is as similar as possible to **sprintf**. The "hh" and (Microsoft-specific) "w" format specifiers are not supported. The "L" format specifier means that an "mp_int *" argument is expected (or a "long double" in combination with **[aAeEgGaA]**). When a conversion specifier passed to **Tcl_ObjPrintf** includes a precision, the value is taken as a number of bytes, as **sprintf** does, and not as a number of characters, as [format] does.  This is done on the assumption that C code is more likely to know how many bytes it is passing around than the number of encoded characters those bytes happen to represent.  The variable number of arguments passed in should be of the types that would be suitable for passing to **sprintf**.  Note in this example usage, *x* is of type **int**.
 
 ```
 int x = 5;
@@ -149,7 +149,7 @@ The **Tcl_SetObjLength** procedure changes the length of the string value of its
 
 **Tcl_AttemptSetObjLength** is identical in function to **Tcl_SetObjLength** except that if sufficient memory to satisfy the request cannot be allocated, it does not cause the Tcl interpreter to **panic**.  Thus, if *newLength* is greater than the space allocated for the value's string, and there is not enough memory available to satisfy the request, **Tcl_AttemptSetObjLength** will take no action and return 0 to indicate failure.  If there is enough memory to satisfy the request, **Tcl_AttemptSetObjLength** behaves just like **Tcl_SetObjLength** and returns 1 to indicate success.
 
-The **Tcl_ConcatObj** function returns a new string value whose value is the space-separated concatenation of the string representations of all of the values in the *objv* array. **Tcl_ConcatObj** eliminates leading and trailing white space as it copies the string representations of the *objv* array to the result. If an element of the *objv* array consists of nothing but white space, then that value is ignored entirely. This white-space removal was added to make the output of the **concat** command cleaner-looking. **Tcl_ConcatObj** returns a pointer to a newly-created value whose ref count is zero.
+The **Tcl_ConcatObj** function returns a new string value whose value is the space-separated concatenation of the string representations of all of the values in the *objv* array. **Tcl_ConcatObj** eliminates leading and trailing white space as it copies the string representations of the *objv* array to the result. If an element of the *objv* array consists of nothing but white space, then that value is ignored entirely. This white-space removal was added to make the output of the [concat] command cleaner-looking. **Tcl_ConcatObj** returns a pointer to a newly-created value whose ref count is zero.
 
 The **Tcl_IsEmpty** function returns 1 if *objPtr* is the empty string, 0 otherwise. It doesn't generate the string representation (unless there is no other way to do it), so it can safely be called on lists with billions of elements, or any other data structure for which it is impossible or expensive to construct the string representation.
 
@@ -164,4 +164,8 @@ The **Tcl_IsEmpty** function returns 1 if *objPtr* is the empty string, 0 otherw
 Additional arguments to the above functions (the *appendObjPtr* argument to **Tcl_AppendObjToObj**, values in the *objv* argument to **Tcl_Format**, **Tcl_AppendFormatToObj**, and **Tcl_ConcatObj**) can have any reference count, but reference counts of zero are not recommended.
 
 **Tcl_Format** and **Tcl_AppendFormatToObj** may modify the interpreter result, which involves changing the reference count of a value. 
+
+
+[concat]: concat.md
+[format]: format.md
 

@@ -24,5 +24,8 @@ read - Read from a channel
 
 # Description
 
-The **read** command has been superceded by the **chan read** command which supports the same syntax and options.
+The **read** command has been superceded by the [chan read][chan] command which supports the same syntax and options.
+
+
+[chan]: chan.md
 

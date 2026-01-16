@@ -23,5 +23,8 @@ puts - Write to a channel
 
 # Description
 
-The **puts** command has been superceded by the **chan puts** command which supports the same syntax and options.
+The **puts** command has been superceded by the [chan puts][chan] command which supports the same syntax and options.
+
+
+[chan]: chan.md
 

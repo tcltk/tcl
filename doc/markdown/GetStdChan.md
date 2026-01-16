@@ -36,7 +36,7 @@ Tcl_GetStdChannel, Tcl_SetStdChannel - procedures for retrieving and replacing t
 
 # Description
 
-Tcl defines three special channels that are used by various I/O related commands if no other channels are specified.  The standard input channel has a channel name of **stdin** and is used by **read** and **gets**. The standard output channel is named **stdout** and is used by **puts**.  The standard error channel is named **stderr** and is used for reporting errors.  In addition, the standard channels are inherited by any child processes created using **exec** or **open** in the absence of any other redirections.
+Tcl defines three special channels that are used by various I/O related commands if no other channels are specified.  The standard input channel has a channel name of **stdin** and is used by [read] and [gets]. The standard output channel is named **stdout** and is used by [puts].  The standard error channel is named **stderr** and is used for reporting errors.  In addition, the standard channels are inherited by any child processes created using [exec] or [open] in the absence of any other redirections.
 
 The standard channels are actually aliases for other normal channels.  The current channel associated with a standard channel can be retrieved by calling **Tcl_GetStdChannel** with one of **TCL_STDIN**, **TCL_STDOUT**, or **TCL_STDERR** as the *type*.  The return value will be a valid channel, or NULL.
 
@@ -55,4 +55,11 @@ If **Tcl_GetStdChannel** is called before **Tcl_SetStdChannel**, Tcl will constr
 If one of the standard channels is set to NULL, either by calling **Tcl_SetStdChannel** with a NULL *channel* argument, or by calling **Tcl_Close** on the channel, then the next call to **Tcl_CreateChannel** will automatically set the standard channel with the newly created channel.  If more than one standard channel is NULL, then the standard channels will be assigned starting with standard input, followed by standard output, with standard error being last.
 
 See **Tcl_StandardChannels** for a general treatise about standard channels and the behavior of the Tcl library with regard to them. 
+
+
+[exec]: exec.md
+[gets]: gets.md
+[open]: open.md
+[puts]: puts.md
+[read]: read.md
 

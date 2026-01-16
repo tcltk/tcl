@@ -9,12 +9,12 @@
 .SH NAME
 apply \- Apply an anonymous function
 .SH SYNOPSIS
-\fBapply \fIfunc\fR ?\fIarg1 arg2 ...\fR?
+\fBapply \fIfunc\fR ?\fIarg ...\fR?
 .BE
 .SH DESCRIPTION
 .PP
 The command \fBapply\fR applies the function \fIfunc\fR to the arguments
-\fIarg1 arg2 ...\fR and returns the result.
+\fIarg ...\fR and returns the result.
 .PP
 The function \fIfunc\fR is a two element list \fI{args body}\fR or a three
 element list \fI{args body namespace}\fR (as if the
@@ -26,7 +26,7 @@ corresponding manual page.
 .PP
 The contents of \fIbody\fR are executed by the Tcl interpreter
 after the local variables corresponding to the formal arguments are given
-the values of the actual parameters \fIarg1 arg2 ...\fR.
+the values of the actual parameters \fIarg ...\fR.
 When \fIbody\fR is being executed, variable names normally refer to
 local variables, which are created automatically when referenced and
 deleted when \fBapply\fR returns.  One local variable is automatically

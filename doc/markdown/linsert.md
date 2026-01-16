@@ -45,7 +45,7 @@ linsert - Insert elements into a list
 
 # Description
 
-This command produces a new list from *list* by inserting all of the *element* arguments just before the *index*'th element of *list*.  Each *element* argument will become a separate element of the new list.  If *index* is less than or equal to zero, then the new elements are inserted at the beginning of the list, and if *index* is greater or equal to the length of *list*, it is as if it was **end**. As with **string index**, the *index* value supports both simple index arithmetic and end-relative indexing.
+This command produces a new list from *list* by inserting all of the *element* arguments just before the *index*'th element of *list*.  Each *element* argument will become a separate element of the new list.  If *index* is less than or equal to zero, then the new elements are inserted at the beginning of the list, and if *index* is greater or equal to the length of *list*, it is as if it was **end**. As with [string index][string], the *index* value supports both simple index arithmetic and end-relative indexing.
 
 Subject to the restrictions that indices must refer to locations inside the list and that the *element*s will always be inserted in order, insertions are done so that when *index* is start-relative, the first *element* will be at that index in the resulting list, and when *index* is end-relative, the last *element* will be at that index in the resulting list.
 
@@ -60,4 +60,7 @@ set newList [linsert $midList end-1 lazy]
 # The old lists still exist though...
 set newerList [linsert [linsert $oldList end-1 quick] 1 lazy]
 ```
+
+
+[string]: string.md
 

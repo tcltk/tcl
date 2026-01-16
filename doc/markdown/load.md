@@ -33,7 +33,7 @@ load - Load machine code and initialize new commands
 
 # Description
 
-This command loads binary code from a file into the application's address space and calls an initialization procedure in the library to incorporate it into an interpreter.  *fileName* is the name of the file containing the code;  its exact form varies from system to system but on most systems it is a shared library, such as a **.so** file under Solaris or a DLL under Windows. *prefix* is used to compute the name of an initialization procedure. *interp* is the path name of the interpreter into which to load the library (see the **interp** manual entry for details); if *interp* is omitted, it defaults to the interpreter in which the **load** command was invoked.
+This command loads binary code from a file into the application's address space and calls an initialization procedure in the library to incorporate it into an interpreter.  *fileName* is the name of the file containing the code;  its exact form varies from system to system but on most systems it is a shared library, such as a **.so** file under Solaris or a DLL under Windows. *prefix* is used to compute the name of an initialization procedure. *interp* is the path name of the interpreter into which to load the library (see the [interp] manual entry for details); if *interp* is omitted, it defaults to the interpreter in which the **load** command was invoked.
 
 Once the file has been loaded into the application's address space, one of two initialization procedures will be invoked in the new code. Typically the initialization procedure will add new commands to a Tcl interpreter. The name of the initialization procedure is determined by *prefix* and whether or not the target interpreter is a safe one.  For normal interpreters the name of the initialization procedure will have the form *prefix***_Init**.  For example, if *prefix* is **Foo**, the initialization procedure's name will be **Foo_Init**.
 
@@ -48,7 +48,7 @@ typedef int Tcl_LibraryInitProc(
 
 The *interp* argument identifies the interpreter in which the library is to be loaded.  The initialization procedure must return **TCL_OK** or **TCL_ERROR** to indicate whether or not it completed successfully;  in the event of an error it should set the interpreter's result to point to an error message.  The result of the **load** command will be the result returned by the initialization procedure.
 
-The actual loading of a file will only be done once for each *fileName* in an application.  If a given *fileName* is loaded into multiple interpreters, then the first **load** will load the code and call the initialization procedure;  subsequent **load**s will call the initialization procedure without loading the code again. For Tcl versions lower than 8.5, it is not possible to unload or reload a library. From version 8.5 however, the **unload** command allows the unloading of libraries loaded with **load**, for libraries that are aware of the Tcl's unloading mechanism.
+The actual loading of a file will only be done once for each *fileName* in an application.  If a given *fileName* is loaded into multiple interpreters, then the first **load** will load the code and call the initialization procedure;  subsequent **load**s will call the initialization procedure without loading the code again. For Tcl versions lower than 8.5, it is not possible to unload or reload a library. From version 8.5 however, the [unload] command allows the unloading of libraries loaded with **load**, for libraries that are aware of the Tcl's unloading mechanism.
 
 The **load** command also supports libraries that are statically linked with the application, if those libraries have been registered by calling the **Tcl_StaticLibrary** procedure. If *fileName* is an empty string, then *prefix* must be specified.
 
@@ -112,4 +112,8 @@ switch $tcl_platform(platform) {
 # Now execute the command defined by the extension
 foo
 ```
+
+
+[interp]: interp.md
+[unload]: unload.md
 

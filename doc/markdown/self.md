@@ -32,7 +32,7 @@ self - Current method call introspection
 The **self** command, which should only be used from within the context of a call to a method (i.e. inside a method, constructor or destructor body) is used to allow the method to discover information about how it was called. It takes an argument, *subcommand*, that tells it what sort of information is actually desired; if omitted the result will be the same as if **self object** was invoked. The supported subcommands are:
 
 [self]{.cmd} [call]{.sub}
-: This returns a two-element list describing the method implementations used to implement the current call chain. The first element is the same as would be reported by **info object** **call** for the current method (except that this also reports useful values from within constructors and destructors, whose names are reported as **<constructor>** and **<destructor>** respectively, and for private methods, which are described as being **private** instead of being a **method**), and the second element is an index into the first element's list that indicates which actual implementation is currently executing (the first implementation to execute is always at index 0).
+: This returns a two-element list describing the method implementations used to implement the current call chain. The first element is the same as would be reported by [info object][info] **call** for the current method (except that this also reports useful values from within constructors and destructors, whose names are reported as **<constructor>** and **<destructor>** respectively, and for private methods, which are described as being **private** instead of being a **method**), and the second element is an index into the first element's list that indicates which actual implementation is currently executing (the first implementation to execute is always at index 0).
 
 [self]{.cmd} [caller]{.sub}
 : When the method was invoked from inside another object method, this subcommand returns a three element list describing the containing object and method. The first element describes the declaring object or class of the method, the second element is the name of the object on which the containing method was invoked, and the third element is the name of the method (with the strings **<constructor>** and **<destructor>** indicating constructors and destructors respectively).
@@ -100,4 +100,7 @@ a x     \(-> Obj: {{method x object method} {method x ::c method}} 0
         \(-> Cls: {{method x object method} {method x ::c method}} 1
         \(-> Obj: {{method x object method} {method x ::c method}} 0
 ```
+
+
+[info]: info.md
 

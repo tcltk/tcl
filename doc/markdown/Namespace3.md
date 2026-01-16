@@ -43,7 +43,7 @@ Tcl_AppendExportList, Tcl_CreateNamespace, Tcl_DeleteNamespace, Tcl_Export, Tcl_
 
 # Description
 
-Namespaces are hierarchic naming contexts that can contain commands and variables.  They also maintain a list of patterns that describes what commands are exported, and can import commands that have been exported by other namespaces.  Namespaces can also be manipulated through the Tcl command **namespace**.
+Namespaces are hierarchic naming contexts that can contain commands and variables.  They also maintain a list of patterns that describes what commands are exported, and can import commands that have been exported by other namespaces.  Namespaces can also be manipulated through the Tcl command [namespace].
 
 The *Tcl_Namespace* structure encapsulates a namespace, and is guaranteed to have the following fields in it: *name* (the local name of the namespace, with no namespace separator characters in it, with empty denoting the global namespace), *fullName* (the fully specified name of the namespace), *clientData*, *deleteProc* (the values specified in the call to **Tcl_CreateNamespace**), and *parentPtr* (a pointer to the containing namespace, or NULL for the global namespace.)
 
@@ -83,4 +83,7 @@ The *objPtr* argument to **Tcl_AppendExportList** should be an unshared object, 
 **Tcl_GetNamespaceUnknownHandler** returns a possibly shared value. Its reference count should be incremented if the value is to be retained.
 
 The *handlerPtr* argument to **Tcl_SetNamespaceUnknownHandler** will have its reference count incremented if it is a non-empty list.
+
+
+[namespace]: namespace.md
 

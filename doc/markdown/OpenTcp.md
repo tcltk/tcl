@@ -76,7 +76,7 @@ The *clientData* argument will be the same as the *clientData* argument to **Tcl
 
 The channel returned by **Tcl_OpenTcpServer** cannot be used for either input or output. It is simply a handle for the socket used to accept connections. The caller can close the channel to shut down the server and disallow further connections from new clients.
 
-TCP server channels operate correctly only in applications that dispatch events through **Tcl_DoOneEvent** or through Tcl commands such as **vwait**; otherwise Tcl will never notice that a connection request from a remote client is pending.
+TCP server channels operate correctly only in applications that dispatch events through **Tcl_DoOneEvent** or through Tcl commands such as [vwait]; otherwise Tcl will never notice that a connection request from a remote client is pending.
 
 The newly created channel is not registered in the supplied interpreter; to register it, use **Tcl_RegisterChannel**. If one of the standard channels, **stdin**, **stdout** or **stderr** was previously closed, the act of creating the new channel also assigns it as a replacement for the standard channel.
 
@@ -86,5 +86,9 @@ The newly created channel is not registered in the supplied interpreter; to regi
 
 # Platform issues
 
-On Unix platforms, the socket handle is a Unix file descriptor as returned by the **socket** system call.  On the Windows platform, the socket handle is a **SOCKET** as defined in the WinSock API.
+On Unix platforms, the socket handle is a Unix file descriptor as returned by the [socket] system call.  On the Windows platform, the socket handle is a **SOCKET** as defined in the WinSock API.
+
+
+[socket]: socket.md
+[vwait]: vwait.md
 

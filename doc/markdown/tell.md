@@ -23,5 +23,8 @@ tell - Return current access position for an open channel
 
 # Description
 
-The **tell** command has been superceded by the **chan tell** command which supports the same syntax and options.
+The **tell** command has been superceded by the [chan tell][chan] command which supports the same syntax and options.
+
+
+[chan]: chan.md
 

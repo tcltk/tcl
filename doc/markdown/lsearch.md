@@ -62,7 +62,7 @@ If all matching style options are omitted, the default matching style is **-glob
 : *Pattern* is a literal string that is compared for exact equality against each list element.
 
 [-glob]{.lit}
-: *Pattern* is a glob-style pattern which is matched against each list element using the same rules as the **string match** command.
+: *Pattern* is a glob-style pattern which is matched against each list element using the same rules as the [string match][string] command.
 
 [-regexp]{.lit}
 : *Pattern* is treated as a regular expression and matched against each list element using the rules described in the **re_syntax** reference page.
@@ -85,7 +85,7 @@ These options may be given with all matching styles.
 : This negates the sense of the match, returning the index of the first non-matching value in the list.
 
 [-start=0+index]{.lit}
-: The list is searched starting at position *index*. The interpretation of the *index* value is the same as for the command **string index**, supporting simple index arithmetic and indices relative to the end of the list.
+: The list is searched starting at position *index*. The interpretation of the *index* value is the same as for the command [string index][string], supporting simple index arithmetic and indices relative to the end of the list.
 
 
 ## Contents description options
@@ -96,7 +96,7 @@ These options describe how to interpret the items in the list being searched.  T
 : The list elements are to be examined as Tcl strings (i.e. sequences of Unicode code points; the name is for backward-compatibility reasons.)
 
 [-dictionary]{.lit}
-: The list elements are to be compared using dictionary-style comparisons (see **lsort** for a fuller description). Note that this only makes a meaningful difference from the **-ascii** option when the **-sorted** option is given, because values are only dictionary-equal when exactly equal.
+: The list elements are to be compared using dictionary-style comparisons (see [lsort] for a fuller description). Note that this only makes a meaningful difference from the **-ascii** option when the **-sorted** option is given, because values are only dictionary-equal when exactly equal.
 
 [-integer]{.lit}
 : The list elements are to be compared as integers.
@@ -133,10 +133,10 @@ These options are used to search lists of lists.  They may be used with any othe
 The list length must be an integer multiple of *strideLength*, which in turn must be at least 1. A *strideLength* of 1 is the default and indicates no grouping.
 
 [-index=0+indexList]{.lit}
-: This option is designed for use when searching within nested lists. The *indexList* argument gives a path of indices (much as might be used with the **lindex** or **lset** commands) within each element to allow the location of the term being matched against.
+: This option is designed for use when searching within nested lists. The *indexList* argument gives a path of indices (much as might be used with the [lindex] or [lset] commands) within each element to allow the location of the term being matched against.
 
 [-subindices]{.lit}
-: If this option is given, the index result from this command (or every index result when **-all** is also specified) will be a complete path (suitable for use with **lindex** or **lset**) within the overall list to the term found.  This option has no effect unless the **-index** is also specified, and is just a convenience short-cut.
+: If this option is given, the index result from this command (or every index result when **-all** is also specified) will be a complete path (suitable for use with [lindex] or [lset]) within the overall list to the term found.  This option has no effect unless the **-index** is also specified, and is just a convenience short-cut.
 
 
 # Examples
@@ -190,4 +190,10 @@ The same thing for a flattened list:
 lsearch -stride 2 -index 1 -all -inline {abc abc abc bcd abc cde} *bc*
       \(-> abc abc abc bcd
 ```
+
+
+[lindex]: lindex.md
+[lset]: lset.md
+[lsort]: lsort.md
+[string]: string.md
 

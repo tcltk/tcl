@@ -23,5 +23,8 @@ close - Close an open channel
 
 # Description
 
-The **close** command has been superceded by the **chan close** command which supports the same syntax and options.
+The **close** command has been superceded by the [chan close][chan] command which supports the same syntax and options.
+
+
+[chan]: chan.md
 

@@ -72,7 +72,7 @@ If the initial arguments to **regexp** start with **-** then they are treated as
     ```
 
 [-start]{.lit} [index]{.arg}
-: Specifies a character index offset into the string to start matching the regular expression at. The *index* value is interpreted in the same manner as the *index* argument to **string index**. When using this switch, "^" will not match the beginning of the line, and \A will still match the start of the string at *index*.  If **-indices** is specified, the indices will be indexed starting from the absolute beginning of the input string. *index* will be constrained to the bounds of the input string.
+: Specifies a character index offset into the string to start matching the regular expression at. The *index* value is interpreted in the same manner as the *index* argument to [string index][string]. When using this switch, "^" will not match the beginning of the line, and \A will still match the start of the string at *index*.  If **-indices** is specified, the indices will be indexed starting from the absolute beginning of the input string. *index* will be constrained to the bounds of the input string.
 
 [-|-]{.lit}
 : Marks the end of switches.  The argument following this one will be treated as *exp* even if it starts with a **-**.
@@ -108,9 +108,13 @@ This counts the number of octal digits in a string:
 regexp -all {[0-7]} $string
 ```
 
-This lists all words (consisting of all sequences of non-whitespace characters) in a string, and is useful as a more powerful version of the **split** command:
+This lists all words (consisting of all sequences of non-whitespace characters) in a string, and is useful as a more powerful version of the [split] command:
 
 ```
 regexp -all -inline {\S+} $string
 ```
+
+
+[split]: split.md
+[string]: string.md
 

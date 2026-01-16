@@ -57,7 +57,7 @@ Tcl_RegExpMatch, Tcl_RegExpCompile, Tcl_RegExpExec, Tcl_RegExpRange, Tcl_GetRegE
 **Tcl_GetRegExpFromObj** attempts to return a compiled regular expression from the *patObj*.  If the value does not already contain a compiled regular expression it will attempt to create one from the string in the value and assign it to the internal representation of the *patObj*.  The return value of this function is of type **Tcl_RegExp**.  The return value is a token for this compiled form, which can be used in subsequent calls to **Tcl_RegExpExecObj** or **Tcl_RegExpGetInfo**.  If an error occurs while compiling the regular expression then **Tcl_GetRegExpFromObj** returns NULL and leaves an error message in the interpreter result.  The regular expression token can be used as long as the internal representation of *patObj* refers to the compiled form.  The *cflags* argument is a bit-wise OR of zero or more of the following flags that control the compilation of *patObj*:
 
 **TCL_REG_ADVANCED**
-: Compile advanced regular expressions ("ARE"s). This mode corresponds to the normal regular expression syntax accepted by the Tcl **regexp** and **regsub** commands.
+: Compile advanced regular expressions ("ARE"s). This mode corresponds to the normal regular expression syntax accepted by the Tcl [regexp] and [regsub] commands.
 
 **TCL_REG_EXTENDED**
 : Compile extended regular expressions ("ERE"s). This mode corresponds to the regular expression syntax recognized by Tcl 8.0 and earlier versions.
@@ -131,4 +131,8 @@ The *textObj* and *patObj* arguments to **Tcl_RegExpMatchObj** must have referen
 The *patObj* argument to **Tcl_GetRegExpFromObj** must have a reference count of at least 1.  Note however that this function may set the interpreter result; the argument should not be the direct interpreter result without an additional reference being taken.
 
 The *textObj* argument to **Tcl_RegExpExecObj** must have a reference count of at least 1.  Note however that this function may set the interpreter result; the argument should not be the direct interpreter result without an additional reference being taken.
+
+
+[regexp]: regexp.md
+[regsub]: regsub.md
 

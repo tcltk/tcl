@@ -35,7 +35,7 @@ Tcl_Panic, Tcl_SetPanicProc, Tcl_ConsolePanic - report fatal error and abort
 
 # Description
 
-When the Tcl library detects that its internal data structures are in an inconsistent state, or that its C procedures have been called in a manner inconsistent with their documentation, it calls **Tcl_Panic** to display a message describing the error and abort the process.  The *format* argument is a format string describing how to format the remaining arguments *arg* into an error message, according to the same formatting rules used by the **printf** family of functions.  The same formatting rules are also used by the built-in Tcl command **format**.
+When the Tcl library detects that its internal data structures are in an inconsistent state, or that its C procedures have been called in a manner inconsistent with their documentation, it calls **Tcl_Panic** to display a message describing the error and abort the process.  The *format* argument is a format string describing how to format the remaining arguments *arg* into an error message, according to the same formatting rules used by the **printf** family of functions.  The same formatting rules are also used by the built-in Tcl command [format].
 
 In a freshly loaded Tcl library, **Tcl_Panic** prints the formatted error message to the standard error file of the process, and then calls **abort** to terminate the process.  **Tcl_Panic** does not return. On Windows, when a debugger is running, the formatted error message is sent to the debugger instead. If the windows executable does not have a stderr channel (e.g. **wish.exe**), then a system dialog box is used to display the panic message.
 
@@ -58,4 +58,7 @@ The typical use of **Tcl_SetPanicProc** arranges for the error message to be dis
 **Tcl_SetPanicProc** can not be used in stub-enabled extensions.
 
 Although the primary callers of **Tcl_Panic** are the procedures of the Tcl library, **Tcl_Panic** is a public function and may be called by any extension or application that wishes to abort the process and have a panic message displayed the same way that panic messages from Tcl will be displayed.
+
+
+[format]: format.md
 

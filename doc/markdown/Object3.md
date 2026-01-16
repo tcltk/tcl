@@ -125,7 +125,7 @@ puts "x is $x"
 incr x
 ```
 
-The **incr** command first gets an integer from *x*'s value by calling **Tcl_GetIntFromObj**. This procedure checks whether the value is already an integer value. Since it is not, it converts the value by setting the value's internal representation to the integer **123** and setting the value's *typePtr* to point to the integer Tcl_ObjType structure. Both representations are now valid. **incr** increments the value's integer internal representation then invalidates its string representation (by calling **Tcl_InvalidateStringRep**) since the string representation no longer corresponds to the internal representation.
+The [incr] command first gets an integer from *x*'s value by calling **Tcl_GetIntFromObj**. This procedure checks whether the value is already an integer value. Since it is not, it converts the value by setting the value's internal representation to the integer **123** and setting the value's *typePtr* to point to the integer Tcl_ObjType structure. Both representations are now valid. [incr] increments the value's integer internal representation then invalidates its string representation (by calling **Tcl_InvalidateStringRep**) since the string representation no longer corresponds to the internal representation.
 
 ```
 puts "x is now $x"
@@ -139,9 +139,9 @@ Tcl values are allocated on the heap and are shared as much as possible to reduc
 
 As an example, the bytecode interpreter shares argument values between calling and called Tcl procedures to avoid having to copy values. It assigns the call's argument values to the procedure's formal parameter variables. In doing so, it calls **Tcl_IncrRefCount** to increment the reference count of each argument since there is now a new reference to it from the formal parameter. When the called procedure returns, the interpreter calls **Tcl_DecrRefCount** to decrement each argument's reference count. When a value's reference count drops less than or equal to zero, **Tcl_DecrRefCount** reclaims its storage. 
 
-Most command procedures have not been concerned about reference counting since they use a value immediately and do not retain a pointer to the value after they return.  However, there are some procedures that may return a new value, with a refCount of 0. In this situation, it is the caller's responsibility to free the value before the procedure returns.  One way to cover this is to always call **Tcl_IncrRefCount** before using the value, then call **Tcl_DecrRefCount** before returning. The other way is to use **Tcl_BounceRefCount** after the value is no longer needed or referenced. This macro will free the value if there are no other references to the value. When retaining a pointer to a value in a data structure the procedure must be careful to increment its reference count since the retained pointer is a new reference. Examples of procedures that return new values are **Tcl_NewIntObj**, and commands like **lseq**, which creates an Abstract List, and an lindex on this list may return a new Obj with a refCount of 0. 
+Most command procedures have not been concerned about reference counting since they use a value immediately and do not retain a pointer to the value after they return.  However, there are some procedures that may return a new value, with a refCount of 0. In this situation, it is the caller's responsibility to free the value before the procedure returns.  One way to cover this is to always call **Tcl_IncrRefCount** before using the value, then call **Tcl_DecrRefCount** before returning. The other way is to use **Tcl_BounceRefCount** after the value is no longer needed or referenced. This macro will free the value if there are no other references to the value. When retaining a pointer to a value in a data structure the procedure must be careful to increment its reference count since the retained pointer is a new reference. Examples of procedures that return new values are **Tcl_NewIntObj**, and commands like [lseq], which creates an Abstract List, and an lindex on this list may return a new Obj with a refCount of 0. 
 
-Command procedures that directly modify values such as those for **lappend** and **linsert** must be careful to copy a shared value before changing it. They must first check whether the value is shared by calling **Tcl_IsShared**. If the value is shared they must copy the value by using **Tcl_DuplicateObj**; this returns a new duplicate of the original value that has *refCount* 0. If the value is not shared, the command procedure "owns" the value and can safely modify it directly. For example, the following code appears in the command procedure that implements **linsert**. This procedure modifies the list value passed to it in *objv[1]* by inserting *objc-3* new elements before *index*.
+Command procedures that directly modify values such as those for [lappend] and [linsert] must be careful to copy a shared value before changing it. They must first check whether the value is shared by calling **Tcl_IsShared**. If the value is shared they must copy the value by using **Tcl_DuplicateObj**; this returns a new duplicate of the original value that has *refCount* 0. If the value is not shared, the command procedure "owns" the value and can safely modify it directly. For example, the following code appears in the command procedure that implements [linsert]. This procedure modifies the list value passed to it in *objv[1]* by inserting *objc-3* new elements before *index*.
 
 ```
 listPtr = objv[1];
@@ -152,7 +152,13 @@ result = Tcl_ListObjReplace(interp, listPtr, index, 0,
         (objc-3), &(objv[3]));
 ```
 
-As another example, **incr**'s command procedure must check whether the variable's value is shared before incrementing the integer in its internal representation. If it is shared, it needs to duplicate the value in order to avoid accidentally changing values in other data structures.
+As another example, [incr]'s command procedure must check whether the variable's value is shared before incrementing the integer in its internal representation. If it is shared, it needs to duplicate the value in order to avoid accidentally changing values in other data structures.
 
 In cases where a value is obtained, used, and not retained, the value can be freed using **Tcl_BounceRefCount**. This is functionally equivalent to calling **Tcl_IncrRefCount** followed **Tcl_DecrRefCount**.
+
+
+[incr]: incr.md
+[lappend]: lappend.md
+[linsert]: linsert.md
+[lseq]: lseq.md
 

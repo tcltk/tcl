@@ -74,7 +74,7 @@ The *objProc* callback must not modify *objv* in any way.
 
 Tracing will only occur for commands at nesting level less than or equal to the *level* parameter (i.e. the *level* parameter to *objProc* will always be less than or equal to the *level* parameter to **Tcl_CreateTrace**).
 
-Tracing has a significant effect on runtime performance because it causes the bytecode compiler to refrain from generating in-line code for Tcl commands such as **if** and **while** in order that they may be traced.  If traces for the built-in commands are not required, the *flags* parameter may be set to the constant value **TCL_ALLOW_INLINE_COMPILATION**.  In this case, traces on built-in commands may or may not result in trace callbacks, depending on the state of the interpreter, but run-time performance will be improved significantly.  (This functionality is desirable, for example, when using **Tcl_CreateObjTrace** to implement an execution time profiler.)
+Tracing has a significant effect on runtime performance because it causes the bytecode compiler to refrain from generating in-line code for Tcl commands such as [if] and [while] in order that they may be traced.  If traces for the built-in commands are not required, the *flags* parameter may be set to the constant value **TCL_ALLOW_INLINE_COMPILATION**.  In this case, traces on built-in commands may or may not result in trace callbacks, depending on the state of the interpreter, but run-time performance will be improved significantly.  (This functionality is desirable, for example, when using **Tcl_CreateObjTrace** to implement an execution time profiler.)
 
 Calls to *objProc* will be made by the Tcl parser immediately before it calls the command procedure for the command (*cmdProc*).  This occurs after argument parsing and substitution, so tracing for substituted commands occurs before tracing of the commands containing the substitutions.  If there is a syntax error in a command, or if there is no command procedure associated with a command name, then no tracing will occur for that command.  If a string passed to Tcl_Eval contains multiple commands (bracketed, or on different lines) then multiple calls to *objProc* will occur, one for each command.
 
@@ -105,9 +105,13 @@ typedef void Tcl_CmdTraceProc(
 
 The parameters to the *proc* callback are similar to those of the *objProc* callback above. The *commandToken* is replaced with *cmdProc*, a pointer to the (string-based) command procedure that will be invoked; and *cmdClientData*, the client data that will be passed to the procedure.  The *objc* parameter is replaced with an *argv* parameter, that gives the arguments to the command as character strings. *Proc* must not modify the *command* or *argv* strings.
 
-If a trace created with **Tcl_CreateTrace** is in effect, inline compilation of Tcl commands such as **if** and **while** is always disabled.  There is no notification when a trace created with **Tcl_CreateTrace** is deleted. There is no way to be notified when the trace created by **Tcl_CreateTrace** is deleted.  There is no way for the *proc* associated with a call to **Tcl_CreateTrace** to abort execution of *command*.
+If a trace created with **Tcl_CreateTrace** is in effect, inline compilation of Tcl commands such as [if] and [while] is always disabled.  There is no notification when a trace created with **Tcl_CreateTrace** is deleted. There is no way to be notified when the trace created by **Tcl_CreateTrace** is deleted.  There is no way for the *proc* associated with a call to **Tcl_CreateTrace** to abort execution of *command*.
 
 # Reference count management
 
 When the *proc* passed to **Tcl_CreateObjTrace** is called, the values in its *objv* argument will have a reference count of at least 1, with that guaranteed reference being from the Tcl evaluation stack. You should not call **Tcl_DecrRefCount** on any of those values unless you call **Tcl_IncrRefCount** on them first.
+
+
+[if]: if.md
+[while]: while.md
 

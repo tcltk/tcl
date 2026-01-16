@@ -64,7 +64,7 @@ The following rules define the syntax and semantics of the Tcl language:
 : *Name* is the name of a scalar variable or array element.  It may contain any characters whatsoever except for close braces.  It indicates an array element if *name* is in the form "*arrayName***(***index***)**" where *arrayName* does not contain any open parenthesis characters, "**(**", or close brace characters, "**}**", and *index* can be any sequence of characters except for close brace characters.  No further substitutions are performed during the parsing of *name*.
 
     There may be any number of variable substitutions in a single word. Variable substitution is not performed on words enclosed in braces.
-    Note that variables may contain character sequences other than those listed above, but in that case other mechanisms must be used to access them (e.g., via the **set** command's single-argument form).
+    Note that variables may contain character sequences other than those listed above, but in that case other mechanisms must be used to access them (e.g., via the [set] command's single-argument form).
 
 [9] **Backslash substitution.**
 : If a backslash ("\") appears within a word then *backslash substitution* occurs. In all cases but those described below the backslash is dropped and the following character is treated as an ordinary character and included in the word. This allows characters such as double quotes, close brackets, and dollar signs to be included in words without triggering special processing. The following table lists the backslash sequences that are handled specially, along with the value that replaces each sequence.
@@ -134,9 +134,13 @@ Conceptually, all values in Tcl are strings, or to be precise, sequences of Unic
 
 For the most part, Tcl strings can be thought of as strings of characters instead of sequences of code points and following common usage, command descriptions refer to them as such. However, the distinction is to be noted as some characters may have multiple representations as Unicode code point sequences and in operations like comparisons, Tcl compares individual code points and not individual abstract characters.
 
-While all values are strings, individual commands may treat or expect their arguments to be representations of data of a particular type. For example, the **incr** command expects its operands to be integers.
+While all values are strings, individual commands may treat or expect their arguments to be representations of data of a particular type. For example, the [incr] command expects its operands to be integers.
 
-The most important consequence of the EIAS principle is that all commands must treat arguments that have a particular string representation exactly the same irrespective of how that value was produced. Thus the **incr** command must treat **100** produced by appending **0** to **10** exactly the same as **100** produced by multiplying 10 by itself.
+The most important consequence of the EIAS principle is that all commands must treat arguments that have a particular string representation exactly the same irrespective of how that value was produced. Thus the [incr] command must treat **100** produced by appending **0** to **10** exactly the same as **100** produced by multiplying 10 by itself.
 
 Note this EIAS principle is only true at a conceptual level and for reasons of efficiency the implementation may choose different internal representations for a value depending on its usage. For example, arithmetic operations on integers may internally store the value as a native machine word. Similarly, a *binary string* is a sequence of Unicode code points in the range U+0000 to U+00FF and may be stored as an array of bytes. In all cases this internal representation is irrelevant at the Tcl language level but exposed in the Tcl C API.
+
+
+[incr]: incr.md
+[set]: set.md
 

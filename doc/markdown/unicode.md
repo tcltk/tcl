@@ -45,5 +45,8 @@ The command performs one of several Unicode character transformations, depending
 
 The normalization forms NFC, NFD, NFKC and NFKD referenced above are defined in **Section 3.11** of the Unicode standard (see https://www.unicode.org/versions/Unicode16.0.0/core-spec/chapter-3/).
 
-The **-profile** option determines the command behavior in the presence of conversion errors. The passed profile must be **strict** or **replace**. See the **PROFILES** section in the documentation of the **encoding** command for details on profiles.
+The **-profile** option determines the command behavior in the presence of conversion errors. The passed profile must be **strict** or **replace**. See the **PROFILES** section in the documentation of the [encoding] command for details on profiles.
+
+
+[encoding]: encoding.md
 

@@ -31,7 +31,7 @@ Tcl_SubstObj - perform substitutions on Tcl values
 
 # Description
 
-The **Tcl_SubstObj** function is used to perform substitutions on strings in the fashion of the **subst** command.  It gets the value of the string contained in *objPtr* and scans it, copying characters and performing the chosen substitutions as it goes to an output value which is returned as the result of the function.  In the event of an error occurring during the execution of a command or variable substitution, the function returns NULL and an error message is left in *interp*'s result.
+The **Tcl_SubstObj** function is used to perform substitutions on strings in the fashion of the [subst] command.  It gets the value of the string contained in *objPtr* and scans it, copying characters and performing the chosen substitutions as it goes to an output value which is returned as the result of the function.  In the event of an error occurring during the execution of a command or variable substitution, the function returns NULL and an error message is left in *interp*'s result.
 
 Three kinds of substitutions are supported.  When the **TCL_SUBST_BACKSLASHES** bit is set in *flags*, sequences that look like backslash substitutions for Tcl commands are replaced by their corresponding character.
 
@@ -42,4 +42,7 @@ When the **TCL_SUBST_COMMANDS** bit is set in *flags*, sequences that look like 
 # Reference count management
 
 The *objPtr* argument to **Tcl_SubstObj** must not have a reference count of zero. This function modifies the interpreter result, both on success and on failure; the result of this function on success is exactly the current interpreter result. Successful results should have their reference count incremented if they are to be retained.
+
+
+[subst]: subst.md
 

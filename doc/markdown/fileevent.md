@@ -25,5 +25,8 @@ fileevent - Execute a script when a channel becomes readable or writable
 
 # Description
 
-The **fileevent** command has been superceded by the **chan event** command which supports the same syntax and options.
+The **fileevent** command has been superceded by the [chan event][chan] command which supports the same syntax and options.
+
+
+[chan]: chan.md
 

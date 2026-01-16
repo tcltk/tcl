@@ -46,7 +46,7 @@ Tcl_Exit, Tcl_Finalize, Tcl_CreateExitHandler, Tcl_DeleteExitHandler, Tcl_ExitTh
 
 The procedures described here provide a graceful mechanism to end the execution of a **Tcl** application. Exit handlers are invoked to cleanup the application's state before ending the execution of **Tcl** code.
 
-Invoke **Tcl_Exit** to end a **Tcl** application and to exit from this process. This procedure is invoked by the **exit** Tcl command, and can be invoked anyplace else to terminate the application. No-one should ever invoke the **exit()** system call directly;  always invoke **Tcl_Exit** instead, so that it can invoke exit handlers. Note that if other code invokes **exit()** system call directly, or otherwise causes the application to terminate without calling **Tcl_Exit**, the exit handlers will not be run. **Tcl_Exit** internally invokes the **exit()** system call, thus it never returns control to its caller. If an application exit handler has been installed (see **Tcl_SetExitProc**), that handler is invoked with an argument consisting of the exit status (cast to void *); the application exit handler should not return control to Tcl.
+Invoke **Tcl_Exit** to end a **Tcl** application and to exit from this process. This procedure is invoked by the [exit] Tcl command, and can be invoked anyplace else to terminate the application. No-one should ever invoke the **exit()** system call directly;  always invoke **Tcl_Exit** instead, so that it can invoke exit handlers. Note that if other code invokes **exit()** system call directly, or otherwise causes the application to terminate without calling **Tcl_Exit**, the exit handlers will not be run. **Tcl_Exit** internally invokes the **exit()** system call, thus it never returns control to its caller. If an application exit handler has been installed (see **Tcl_SetExitProc**), that handler is invoked with an argument consisting of the exit status (cast to void *); the application exit handler should not return control to Tcl.
 
 **Tcl_Finalize** is similar to **Tcl_Exit** except that it does not exit from the current process. It is useful for cleaning up when a process is finished using **Tcl** but wishes to continue executing, and when **Tcl** is used in a dynamically loaded extension that is about to be unloaded. Your code should always invoke **Tcl_Finalize** when **Tcl** is being unloaded, to ensure proper cleanup. **Tcl_Finalize** can be safely called more than once.
 
@@ -70,4 +70,7 @@ The *clientData* parameter to *proc* is a copy of the *clientData* argument give
 **Tcl_SetExitProc** installs an application exit handler, returning the previously-installed application exit handler or NULL if no application handler was installed.  If an application exit handler is installed, that exit handler takes over complete responsibility for finalization of Tcl's subsystems via **Tcl_Finalize** at an appropriate time.  The argument passed to *proc* when it is invoked will be the exit status code (as passed to **Tcl_Exit**) cast to a void *value.
 
 **Tcl_SetExitProc** can not be used in stub-enabled extensions.
+
+
+[exit]: exit.md
 

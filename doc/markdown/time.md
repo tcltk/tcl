@@ -36,7 +36,7 @@ which indicates the average amount of time required per iteration, in microsecon
 
 # Example
 
-Estimate how long it takes for a simple Tcl **for** loop to count to a thousand:
+Estimate how long it takes for a simple Tcl [for] loop to count to a thousand:
 
 ```
 time {
@@ -45,4 +45,7 @@ time {
     }
 }
 ```
+
+
+[for]: for.md
 

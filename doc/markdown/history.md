@@ -29,7 +29,7 @@ The **history** command performs one of several operations related to recently-e
 
 1. A number:  if positive, it refers to the event with that number (all events are numbered starting at 1).  If the number is negative, it selects an event relative to the current event (**-1** refers to the previous event, **-2** to the one before that, and so on).  Event **0** refers to the current event.
 
-2. A string:  selects the most recent event that matches the string. An event is considered to match the string either if the string is the same as the first characters of the event, or if the string matches the event in the sense of the **string match** command.
+2. A string:  selects the most recent event that matches the string. An event is considered to match the string either if the string is the same as the first characters of the event, or if the string matches the event in the sense of the [string match][string] command.
 
 
 The **history** command can take any of the following forms:
@@ -67,4 +67,7 @@ The **history** command can take any of the following forms:
 Pre-8.0 Tcl had a complex history revision mechanism. The current mechanism is more limited, and the old history operations **substitute** and **words** have been removed. (As a consolation, the **clear** operation was added.)
 
 The history option **redo** results in much simpler "history revision". When this option is invoked then the most recent event is modified to eliminate the **history** command and replace it with the result of the **history** command. If you want to redo an event without modifying history, then use the **event** operation to retrieve some event, and the **add** operation to add it to history and execute it.
+
+
+[string]: string.md
 

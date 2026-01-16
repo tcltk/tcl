@@ -64,8 +64,8 @@ The **zlib** command provides access to the compression and check-summing facili
 **size**
 : The size of the uncompressed data.
 
-**time**
-: The time field from the header if non-zero, expected to be time that the file named by the **filename** field was modified. Suitable for use with **clock format**.
+[time]
+: The time field from the header if non-zero, expected to be time that the file named by the **filename** field was modified. Suitable for use with [clock format][clock].
 
 **type**
 : The type of the uncompressed data (**binary** or **text**) if known.
@@ -86,8 +86,8 @@ The **zlib** command provides access to the compression and check-summing facili
 **os**
 : The operating system type code, which should be one of the values described in RFC 1952.
 
-**time**
-: The time that the file named in the **filename** key was last modified. This will be in the same as is returned by **clock seconds** or **file mtime**.
+[time]
+: The time that the file named in the **filename** key was last modified. This will be in the same as is returned by [clock seconds][clock] or [file mtime][file].
 
 **type**
 : The type of the data being compressed, being **binary** or **text**.
@@ -100,7 +100,7 @@ The **zlib** command provides access to the compression and check-summing facili
 ## Channel subcommand
 
 [zlib]{.cmd} [push]{.sub} [mode]{.arg} [channel]{.arg} [options]{.optdot}
-: Pushes a compressing or decompressing transformation onto the channel *channel*. The transformation can be removed again with **chan pop**. The *mode* argument determines what type of transformation is pushed; the following are supported:
+: Pushes a compressing or decompressing transformation onto the channel *channel*. The transformation can be removed again with [chan pop][chan]. The *mode* argument determines what type of transformation is pushed; the following are supported:
 
 **compress**
 : The transformation will be a compressing transformation that produces zlib-format data on *channel*, which must be writable.
@@ -138,7 +138,7 @@ The **zlib** command provides access to the compression and check-summing facili
     Tcl now automatically returns any bytes it has read beyond the end of a compressed stream back to the channel, making them appear as unread to further readers.
 
 
-Both compressing and decompressing channel transformations add extra configuration options that may be accessed through **chan configure**. The options are:
+Both compressing and decompressing channel transformations add extra configuration options that may be accessed through [chan configure][chan]. The options are:
 
 [-checksum]{.lit} [checksum]{.arg}
 : This read-only option gets the current checksum for the uncompressed data that the compression engine has seen so far. It is valid for both compressing and decompressing transforms, but not for the raw inflate and deflate formats. The compression algorithm depends on what format is being produced or consumed.
@@ -272,4 +272,10 @@ $strm finalize
 set compData [$strm get]
 $strm close
 ```
+
+
+[chan]: chan.md
+[clock]: clock.md
+[file]: file.md
+[time]: time.md
 

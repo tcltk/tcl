@@ -34,9 +34,14 @@ The tcl/doc directory contains 248 manual pages which are divided as follows:
 
 section | number of documents | initial conversion | final conversion
 --------|---------------------|--------------------|-----------------
-1       | 1                   | 1                  | 0
+1       | 1                   | 1                  | 3
 3       | 108                 | 108                | 0
 n       | 139                 | 139                | 0
+
+Final conversion of these files is currently done:
+- after
+- append
+- apply
 
 
 The tk/doc directory comes next, after finishing Tcl.
@@ -58,6 +63,7 @@ This section lists the shortcoming which are still present in the pages that alr
   (example: `dict for {keyVarName valueVarName} dictionary script` --> `dict for varaibleList dictionary script`)
 - use camelCase consistently for Tcl syntax arguments
 - handling of the "|" character for alternatives (see `memory init on|off`) is not yet good, leaves it as `on=|§off`
+- handling of links does not yet use all the exceptions defined in tools/tcltk-man2html.tcl and tools/tclsk-man2html-utils.tcl (for now only exclude_refs_map is used)
 
 ## Specific pages
 - oo::... pages: no handling of the class hierarchy subsection yet

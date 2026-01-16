@@ -28,9 +28,12 @@ Tcl_GetCwd, Tcl_Chdir - manipulate the current working directory
 
 # Description
 
-These procedures may be used to manipulate the current working directory for the application.  They provide C-level access to the same functionality as the Tcl **pwd** command.
+These procedures may be used to manipulate the current working directory for the application.  They provide C-level access to the same functionality as the Tcl [pwd] command.
 
 **Tcl_GetCwd** returns a pointer to a string specifying the current directory, or NULL if the current directory could not be determined. If NULL is returned, an error message is left in the *interp*'s result. Storage for the result string is allocated in bufferPtr; the caller must call **Tcl_DStringFree()** when the result is no longer needed. The format of the path is UTF-8.
 
 **Tcl_Chdir** changes the applications current working directory to the value specified in *dirName*.  The format of the passed in string must be UTF-8.  The function returns -1 on error or 0 on success. 
+
+
+[pwd]: pwd.md
 

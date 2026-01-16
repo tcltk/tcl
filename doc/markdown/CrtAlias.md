@@ -47,7 +47,7 @@ Tcl_IsSafe, Tcl_CreateChild, Tcl_GetChild, Tcl_GetParent, Tcl_GetInterpPath, Tcl
 
 These procedures are intended for access to the multiple interpreter facility from inside C programs. They enable managing multiple interpreters in a hierarchical relationship, and the management of aliases, commands that when invoked in one interpreter execute a command in another interpreter. The return value for those procedures that return an **int** is either **TCL_OK** or **TCL_ERROR**. If **TCL_ERROR** is returned then the interpreter's result contains an error message.
 
-**Tcl_CreateChild** creates a new interpreter as a child of *interp*. It also creates a child command named *name* in *interp* which allows *interp* to manipulate the new child. If *isSafe* is zero, the command creates a trusted child in which Tcl code has access to all the Tcl commands. If it is **1**, the command creates a "safe" child in which Tcl code has access only to set of Tcl commands defined as "Safe Tcl"; see the manual entry for the Tcl **interp** command for details. If the creation of the new child interpreter failed, **NULL** is returned.
+**Tcl_CreateChild** creates a new interpreter as a child of *interp*. It also creates a child command named *name* in *interp* which allows *interp* to manipulate the new child. If *isSafe* is zero, the command creates a trusted child in which Tcl code has access to all the Tcl commands. If it is **1**, the command creates a "safe" child in which Tcl code has access only to set of Tcl commands defined as "Safe Tcl"; see the manual entry for the Tcl [interp] command for details. If the creation of the new child interpreter failed, **NULL** is returned.
 
 **Tcl_IsSafe** returns **1** if *interp* is "safe" (was created with the **TCL_SAFE_INTERPRETER** flag specified), **0** otherwise.
 
@@ -74,4 +74,7 @@ For a description of the Tcl interface to multiple interpreters, see *interp(n)*
 **Tcl_CreateAliasObj** increments the reference counts of the values in its *objv* argument. (That reference lasts the same length of time as the owning alias.)
 
 **Tcl_GetAliasObj** returns (via its *objvPtr* argument) a pointer to values that it holds a reference to.
+
+
+[interp]: interp.md
 

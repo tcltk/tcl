@@ -62,7 +62,7 @@ When *proc* is invoked, the *clientData* and *interp* parameters will be copies 
 
 Additionally, when *proc* is invoked, it must not modify the contents of the *objv* array by assigning new pointer values to any element of the array (for example, *objv*[**2**] = **NULL**) because this will cause memory to be lost and the runtime stack to be corrupted.  The **const** in the declaration of *objv* will cause ANSI-compliant compilers to report any such attempted assignment as an error.  However, it is acceptable to modify the internal representation of any individual value argument.  For instance, the user may call **Tcl_GetIntFromObj** on *objv*[**2**] to obtain the integer representation of that value; that call may change the type of the value that *objv*[**2**] points at, but will not change where *objv*[**2**] points.
 
-*proc* must return an integer code that is either **TCL_OK**, **TCL_ERROR**, **TCL_RETURN**, **TCL_BREAK**, or **TCL_CONTINUE**. See the **return** man page for details on what these codes mean and the use of extended values for an extension's private use. Most normal commands will only return **TCL_OK** or **TCL_ERROR**.
+*proc* must return an integer code that is either **TCL_OK**, **TCL_ERROR**, **TCL_RETURN**, **TCL_BREAK**, or **TCL_CONTINUE**. See the [return] man page for details on what these codes mean and the use of extended values for an extension's private use. Most normal commands will only return **TCL_OK** or **TCL_ERROR**.
 
 In addition, if *proc* needs to return a non-empty result, it can call **Tcl_SetObjResult** to set the interpreter's result. In the case of a **TCL_OK** return code this gives the result of the command, and in the case of **TCL_ERROR** this gives an error message. Before invoking a command procedure, **Tcl_EvalObjEx** sets interpreter's result to point to a value representing an empty string, so simple commands can return an empty result by doing nothing at all.
 
@@ -118,7 +118,7 @@ The *isNativeObjectProc* field has the value 2 if **Tcl_CreateObjCommand2** was 
 
 **Tcl_SetCommandInfoFromToken** is identical to **Tcl_SetCommandInfo** except that it takes a command token as returned by **Tcl_CreateObjCommand** instead of the command name. If the *token* parameter is NULL, it returns 0.  Otherwise, it copies the information from **infoPtr* to Tcl's internal structure for the command and returns 1.
 
-Note that **Tcl_SetCommandInfo** and **Tcl_SetCommandInfoFromToken** both allow the clientData for a command's deletion procedure to be given a different value than the clientData for its command procedure. Note also that neither **Tcl_SetCommandInfo** nor **Tcl_SetCommandInfoFromToken** will change a command's namespace. Use **Tcl_Eval** to call the **rename** command to do that.
+Note that **Tcl_SetCommandInfo** and **Tcl_SetCommandInfoFromToken** both allow the clientData for a command's deletion procedure to be given a different value than the clientData for its command procedure. Note also that neither **Tcl_SetCommandInfo** nor **Tcl_SetCommandInfoFromToken** will change a command's namespace. Use **Tcl_Eval** to call the [rename] command to do that.
 
 **Tcl_GetCommandName** provides a mechanism for tracking commands that have been renamed. Given a token returned by **Tcl_CreateObjCommand** when the command was created, **Tcl_GetCommandName** returns the string name of the command.  If the command has been renamed since it was created, then **Tcl_GetCommandName** returns the current name. This name does not include any **::** namespace qualifiers. The command corresponding to *token* must not have been deleted. The string returned by **Tcl_GetCommandName** is in dynamic memory owned by Tcl and is only guaranteed to retain its value as long as the command is not deleted or renamed;  callers should copy the string if they need to keep it for a long time.
 
@@ -133,4 +133,8 @@ When the *proc* passed to **Tcl_CreateObjCommand** is called, the values in its 
 **Tcl_GetCommandFullName** does not modify the reference count of its *objPtr* argument, but does require that the object be unshared.
 
 **Tcl_GetCommandFromObj** does not modify the reference count of its *objPtr* argument; it only reads.
+
+
+[rename]: rename.md
+[return]: return.md
 

@@ -66,7 +66,7 @@ When an *encoding* is no longer needed, **Tcl_FreeEncoding** should be called to
 
 **Tcl_ExternalToUtfDString** converts a source buffer *src* from the specified *encoding* into TUTF-8.  The converted bytes are stored in *dstPtr*, which is then null-terminated.  The caller should eventually call **Tcl_DStringFree** to free any information stored in *dstPtr*. When converting, if any of the characters in the source buffer cannot be represented in the target encoding, a default fallback character will be used.  The return value is a pointer to the value stored in the DString.
 
-**Tcl_ExternalToUtfDStringEx** is a more flexible version of older **Tcl_ExternalToUtfDString** function. It takes three additional parameters, **interp**, **flags** and **errorIdxPtr**. The **flags** parameter may be used to specify the profile to be used for the transform. The **TCL_ENCODING_START** and **TCL_ENCODING_END** bits in **flags** are ignored as the function assumes the entire source string to be decoded is passed into the function. On success, the function returns **TCL_OK** with the converted string stored in ***dstPtr**. For errors *other than conversion errors*, such as invalid flags, the function returns **TCL_ERROR** with an error message in **interp** if it is not NULL. For conversion errors, **Tcl_ExternalToUtfDStringEx** returns one of the **TCL_CONVERT_*** errors listed below for **Tcl_ExternalToUtf**. When one of these conversion errors is returned, an error message is stored in **interp** only if **errorIdxPtr** is NULL. Otherwise, no error message is stored as the function expects the caller is interested the decoded data up to that point and not treating this as an immediate error condition. The index of the error location is stored in ***errorIdxPtr**.
+**Tcl_ExternalToUtfDStringEx** is a more flexible version of older **Tcl_ExternalToUtfDString** function. It takes three additional parameters, [interp], **flags** and **errorIdxPtr**. The **flags** parameter may be used to specify the profile to be used for the transform. The **TCL_ENCODING_START** and **TCL_ENCODING_END** bits in **flags** are ignored as the function assumes the entire source string to be decoded is passed into the function. On success, the function returns **TCL_OK** with the converted string stored in ***dstPtr**. For errors *other than conversion errors*, such as invalid flags, the function returns **TCL_ERROR** with an error message in [interp] if it is not NULL. For conversion errors, **Tcl_ExternalToUtfDStringEx** returns one of the **TCL_CONVERT_*** errors listed below for **Tcl_ExternalToUtf**. When one of these conversion errors is returned, an error message is stored in [interp] only if **errorIdxPtr** is NULL. Otherwise, no error message is stored as the function expects the caller is interested the decoded data up to that point and not treating this as an immediate error condition. The index of the error location is stored in ***errorIdxPtr**.
 
 The caller must call **Tcl_DStringFree** to free up the ***dstPtr** resources irrespective of the return value from the function.
 
@@ -100,7 +100,7 @@ Irrespective of the return code from the function, the caller must free resource
 
 **Tcl_GetEncodingNulLength** returns the length of the terminating nul byte sequence for strings in the specified encoding.
 
-**Tcl_SetSystemEncoding** sets the default encoding that should be used whenever the user passes a NULL value for the *encoding* argument to any of the other encoding functions.  If *name* is NULL, the system encoding is reset to the default system encoding, **binary**.  If the name did not refer to any known or loadable encoding, **TCL_ERROR** is returned and an error message is left in *interp*.  Otherwise, this procedure increments the reference count of the new system encoding, decrements the reference count of the old system encoding, and returns **TCL_OK**.
+**Tcl_SetSystemEncoding** sets the default encoding that should be used whenever the user passes a NULL value for the *encoding* argument to any of the other encoding functions.  If *name* is NULL, the system encoding is reset to the default system encoding, [binary].  If the name did not refer to any known or loadable encoding, **TCL_ERROR** is returned and an error message is left in *interp*.  Otherwise, this procedure increments the reference count of the new system encoding, decrements the reference count of the old system encoding, and returns **TCL_OK**.
 
 **Tcl_GetEncodingNameFromEnvironment** retrieves the encoding name to use as the system encoding. On non-Windows platforms, this is derived from the **nl_langinfo** system call if available, and environment variables **LC_ALL**, **LC_CTYPE** or **LANG** otherwise. On Windows versions Windows 10 Build 18362 and later the returned value is always **utf-8**. On earlier Windows versions, it is derived from the user settings in the Windows registry. **Tcl_GetEncodingNameForUser** retrieves the encoding name based on the user settings for the current user and is derived in the same manner as **Tcl_GetEncodingNameFromEnvironment** on non-Windows platforms. On Windows, unlike **Tcl_GetEncodingNameFromEnvironment**, it returns the encoding name as per the Windows registry settings irrespective of the Windows version. Both functions accept *bufPtr*, a pointer to an uninitialized or freed **Tcl_DString** and write the encoding name to it. They return **Tcl_DStringValue(bufPtr)** which points to the stored name.
 
@@ -243,7 +243,7 @@ ksc5601		\x1B$(C
 
 In the file, the first column represents an option and the second column is the associated value.  **init** is a string to emit or expect before the first character is converted, while **final** is a string to emit or expect after the last character.  All other options are names of table-based encodings; the associated value is the escape-sequence that marks that encoding.  Tcl syntax is used for the values; in the above example, for instance, "**{}**" represents the empty string and "**\x1B**" represents character 27.
 
-When **Tcl_GetEncoding** encounters an encoding *name* that has not been loaded, it attempts to load an encoding file called *name***.enc** from the **encoding** subdirectory of each directory that Tcl searches for its script library.  If the encoding file exists, but is malformed, an error message will be left in *interp*.
+When **Tcl_GetEncoding** encounters an encoding *name* that has not been loaded, it attempts to load an encoding file called *name***.enc** from the [encoding] subdirectory of each directory that Tcl searches for its script library.  If the encoding file exists, but is malformed, an error message will be left in *interp*.
 
 # Reference count management
 
@@ -255,5 +255,10 @@ When **Tcl_GetEncoding** encounters an encoding *name* that has not been loaded,
 
 Encoding profiles define the manner in which errors in the encoding transforms are handled by the encoding functions. An application can specify the profile to be used by OR-ing the **flags** parameter passed to the function with at most one of **TCL_ENCODING_PROFILE_TCL8**, **TCL_ENCODING_PROFILE_STRICT** or **TCL_ENCODING_PROFILE_REPLACE**. These correspond to the **tcl8**, **strict** and **replace** profiles respectively. If none are specified, a version-dependent default profile is used. For Tcl 9.0, the default profile is **strict**.
 
-For details about profiles, see the **PROFILES** section in the documentation of the **encoding** command.
+For details about profiles, see the **PROFILES** section in the documentation of the [encoding] command.
+
+
+[binary]: binary.md
+[encoding]: encoding.md
+[interp]: interp.md
 

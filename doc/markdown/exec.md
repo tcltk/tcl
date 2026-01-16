@@ -31,12 +31,12 @@ exec - Invoke subprocesses
 
 # Description
 
-This command treats its arguments as the specification of one or more subprocesses to execute. The arguments take the form of a standard shell pipeline where each *arg* becomes one word of a command, and each distinct command becomes a subprocess. The result of the command is the standard output of the final subprocess in the pipeline, interpreted using the system **encoding**; to use any other encoding (especially including binary data), the pipeline must be **open**ed, configured and read explicitly.
+This command treats its arguments as the specification of one or more subprocesses to execute. The arguments take the form of a standard shell pipeline where each *arg* becomes one word of a command, and each distinct command becomes a subprocess. The result of the command is the standard output of the final subprocess in the pipeline, interpreted using the system [encoding]; to use any other encoding (especially including binary data), the pipeline must be [open]ed, configured and read explicitly.
 
 If the initial arguments to **exec** start with **-** then they are treated as command-line switches and are not part of the pipeline specification.  The following switches are currently supported:
 
 [-encoding]{.lit} [encodingName]{.arg}
-: Specifies the name of the encoding to use to decode the output of the first subprocess. Defaults to that returned by the **encoding system** command.
+: Specifies the name of the encoding to use to decode the output of the first subprocess. Defaults to that returned by the [encoding system][encoding] command.
 
 [-ignorestderr]{.lit}
 : Stops the **exec** command from treating the output of messages to the pipeline's standard error channel as an error case.
@@ -60,7 +60,7 @@ If an *arg* (or pair of *arg*s) has one of the forms described below then it is 
 : The file named by *fileName* is opened and used as the standard input for the first command in the pipeline.
 
 [<@0=+fileId]{.cmd}
-: *FileId* must be the identifier for an open file, such as the return value from a previous call to **open**. It is used as the standard input for the first command in the pipeline. *FileId* must have been opened for reading.
+: *FileId* must be the identifier for an open file, such as the return value from a previous call to [open]. It is used as the standard input for the first command in the pipeline. *FileId* must have been opened for reading.
 
 [<<0=+value]{.cmd}
 : *Value* is encoded using the system encoding, newlines replaced by platform-specific line ending sequences, and then passed to the first command as its standard input.
@@ -84,16 +84,16 @@ If an *arg* (or pair of *arg*s) has one of the forms described below then it is 
 : Both standard output from the last command and standard error from all commands are redirected to the file named *fileName*, appending to it rather than overwriting it.
 
 [>@0=+fileId]{.cmd}
-: *FileId* must be the identifier for an open file, such as the return value from a previous call to **open**. Standard output from the last command is redirected to *fileId*'s file, which must have been opened for writing.
+: *FileId* must be the identifier for an open file, such as the return value from a previous call to [open]. Standard output from the last command is redirected to *fileId*'s file, which must have been opened for writing.
 
 [2>@0=+fileId]{.cmd}
-: *FileId* must be the identifier for an open file, such as the return value from a previous call to **open**. Standard error from all commands in the pipeline is redirected to *fileId*'s file. The file must have been opened for writing.
+: *FileId* must be the identifier for an open file, such as the return value from a previous call to [open]. Standard error from all commands in the pipeline is redirected to *fileId*'s file. The file must have been opened for writing.
 
 [2>@10]{.cmd}
 : Standard error from all commands in the pipeline is redirected to the command result.  This operator is only valid at the end of the command pipeline.
 
 [>&@0=+fileId]{.cmd}
-: *FileId* must be the identifier for an open file, such as the return value from a previous call to **open**. Both standard output from the last command and standard error from all commands are redirected to *fileId*'s file. The file must have been opened for writing.
+: *FileId* must be the identifier for an open file, such as the return value from a previous call to [open]. Both standard output from the last command and standard error from all commands are redirected to *fileId*'s file. The file must have been opened for writing.
 
 
 If standard output has not been redirected then the **exec** command returns the standard output from the last command in the pipeline, unless "2>@1" was specified, in which case standard error is included as well. If any of the commands in the pipeline exit abnormally or are killed or suspended, then **exec** will return an error and the error message will include the pipeline's output followed by error messages describing the abnormal terminations; the **-errorcode** return option will contain additional information about the last abnormal termination encountered. If any of the commands writes to its standard error file and that standard error is not redirected and **-ignorestderr** is not specified, then **exec** will return an error;  the error message will include the pipeline's standard output, followed by messages about abnormal terminations (if any), followed by the standard error output.
@@ -130,7 +130,7 @@ The Tk console text widget does not provide real standard IO capabilities. Under
 
 Either forward or backward slashes are accepted as path separators for arguments to Tcl commands.  When executing an application, the path name specified for the application may also contain forward or backward slashes as path separators.  Bear in mind, however, that most Windows applications accept arguments with forward slashes only as option delimiters and backslashes only in paths.  Any arguments to an application that specify a path name with forward slashes will not automatically be converted to use the backslash character.  If an argument contains forward slashes as the path separator, it may or may not be recognized as a path name, depending on the program.
 
-Two or more forward or backward slashes in a row in a path refer to a network path.  For example, a simple concatenation of the root directory **c:/** with a subdirectory **/windows/system** will yield **c://windows/system** (two slashes together), which refers to the mount point called **system** on the machine called **windows** (and the **c:/** is ignored), and is not equivalent to **c:/windows/system**, which describes a directory on the current computer.  The **file join** command should be used to concatenate path components.
+Two or more forward or backward slashes in a row in a path refer to a network path.  For example, a simple concatenation of the root directory **c:/** with a subdirectory **/windows/system** will yield **c://windows/system** (two slashes together), which refers to the mount point called **system** on the machine called **windows** (and the **c:/** is ignored), and is not equivalent to **c:/windows/system**, which describes a directory on the current computer.  The [file join][file] command should be used to concatenate path components.
 
 Note that there are two general types of Win32 console applications:
 
@@ -170,7 +170,7 @@ exec uname -a
 
 ## Working with non-zero results
 
-To execute a program that can return a non-zero result, you should wrap the call to **exec** in **catch** and check the contents of the **-errorcode** return option if you have an error:
+To execute a program that can return a non-zero result, you should wrap the call to **exec** in [catch] and check the contents of the **-errorcode** return option if you have an error:
 
 ```
 set status 0
@@ -185,7 +185,7 @@ if {[catch {exec grep foo bar.txt} results options]} {
 }
 ```
 
-This is more easily written using the **try** command, as that makes it simpler to trap specific types of errors. This is done using code like this:
+This is more easily written using the [try] command, as that makes it simpler to trap specific types of errors. This is done using code like this:
 
 ```
 try {
@@ -267,7 +267,7 @@ or like another variant using single parameters:
 
 Sometimes you need to be careful, as different programs may have the same name and be in the path. It can then happen that typing a command at the DOS prompt finds *a different program* than the same command run via **exec**. This is because of the (documented) differences in behaviour between **exec** and DOS batch files.
 
-When in doubt, use the command **auto_execok**: it will return the complete path to the program as seen by the **exec** command.  This applies especially when you want to run "internal" commands like *dir* from a Tcl script (if you just want to list filenames, use the **glob** command.)  To do that, use this:
+When in doubt, use the command [auto_execok]: it will return the complete path to the program as seen by the **exec** command.  This applies especially when you want to run "internal" commands like *dir* from a Tcl script (if you just want to list filenames, use the [glob] command.)  To do that, use this:
 
 ```
 exec {*}[auto_execok dir] *.tcl
@@ -275,11 +275,20 @@ exec {*}[auto_execok dir] *.tcl
 
 ## Working with native filenames
 
-Many programs on Windows require filename arguments to be passed in with backslashes as pathname separators. This is done with the help of the **file nativename** command. For example, to make a directory (on NTFS) encrypted so that only the current user can access it requires use of the *CIPHER* command, like this:
+Many programs on Windows require filename arguments to be passed in with backslashes as pathname separators. This is done with the help of the [file nativename][file] command. For example, to make a directory (on NTFS) encrypted so that only the current user can access it requires use of the *CIPHER* command, like this:
 
 ```
 set secureDir [file join [file home] Desktop/SecureDirectory]
 file mkdir $secureDir
 exec CIPHER /e /s:[file nativename $secureDir]
 ```
+
+
+[auto_execok]: auto_execok.md
+[catch]: catch.md
+[encoding]: encoding.md
+[file]: file.md
+[glob]: glob.md
+[open]: open.md
+[try]: try.md
 

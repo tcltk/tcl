@@ -12,7 +12,7 @@
 .SH NAME
 append \- Append to variable
 .SH SYNOPSIS
-\fBappend \fIvarName \fR?\fIvalue value value ...\fR?
+\fBappend \fIvarName \fR?\fIvalue ...\fR?
 .BE
 .SH DESCRIPTION
 .PP

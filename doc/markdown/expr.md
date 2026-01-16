@@ -48,7 +48,7 @@ expr 8.2 + 6
 
 evaluates to 14.2. Expressions differ from C expressions in the way that operands are specified.  Expressions also support non-numeric operands, string comparisons, and some additional operators not found in C.
 
-When the result of expression is an integer, it is in decimal form, and when the result is a floating-point number, it is in the form produced by the **%g** format specifier of **format**.
+When the result of expression is an integer, it is in decimal form, and when the result is a floating-point number, it is in the form produced by the **%g** format specifier of [format].
 
 ::: {.info version="TIP582"}
 At any point in the expression except within double quotes or braces, **#** is the beginning of a comment, which lasts to the end of the line or the end of the expression, whichever comes first.
@@ -78,9 +78,9 @@ expr 3_141_592_653_589e-1_2		3.141592653589
 ```
 
 A **boolean value**
-: Using any form understood by **string is** **boolean**.
+: Using any form understood by [string is][string] **boolean**.
 
-A **variable**
+A [variable]
 : Using standard **$** notation. The value of the variable is the value of the operand.
 
 A string enclosed in **double-quotes**
@@ -109,9 +109,9 @@ expr {{word one} < "word $a"}	0
 
 ## Operators
 
-For operators having both a numeric mode and a string mode, the numeric mode is chosen when all operands have a numeric interpretation.  The integer interpretation of an operand is preferred over the floating-point interpretation.  To ensure string operations on arbitrary values it is generally a good idea to use **eq**, **ne**, or the **string** command instead of more versatile operators such as **==**.
+For operators having both a numeric mode and a string mode, the numeric mode is chosen when all operands have a numeric interpretation.  The integer interpretation of an operand is preferred over the floating-point interpretation.  To ensure string operations on arbitrary values it is generally a good idea to use **eq**, **ne**, or the [string] command instead of more versatile operators such as **==**.
 
-Unless otherwise specified, operators accept non-numeric operands.  The value of a boolean operation is 1 if true, 0 otherwise.  See also **string is** **boolean**.  The valid operators, most of which are also available as commands in the **tcl::mathop** namespace (see **mathop**(n)), are listed below, grouped in decreasing order of precedence:
+Unless otherwise specified, operators accept non-numeric operands.  The value of a boolean operation is 1 if true, 0 otherwise.  See also [string is][string] **boolean**.  The valid operators, most of which are also available as commands in the **tcl::mathop** namespace (see **mathop**(n)), are listed below, grouped in decreasing order of precedence:
 
 **-\0\0+\0\0~\0\0!**
 : Unary minus, unary plus, bit-wise NOT, logical NOT.  These operators may only be applied to numeric operands, and bit-wise NOT may only be applied to integers.
@@ -133,7 +133,7 @@ Unless otherwise specified, operators accept non-numeric operands.  The value of
 : Boolean numeric-preferring comparisons: less than, greater than, less than or equal, and greater than or equal. If either argument is not numeric, the comparison is done using UNICODE string comparison, as with the string comparison operators below, which have the same precedence.
 
 **lt\0\0gt\0\0le\0\0ge**
-: Boolean string comparisons: less than, greater than, less than or equal, and greater than or equal. These always compare values using their UNICODE strings (also see **string compare**), unlike with the numeric-preferring comparisons above, which have the same precedence.
+: Boolean string comparisons: less than, greater than, less than or equal, and greater than or equal. These always compare values using their UNICODE strings (also see [string compare][string]), unlike with the numeric-preferring comparisons above, which have the same precedence.
 
 **==\0\0!=**
 : Boolean equal and not equal.
@@ -207,7 +207,7 @@ which in turn is the same as the evaluation of
 tcl::mathfunc::sin [expr {$x+$y}]
 ```
 
-**tcl::mathfunc::sin** is resolved as described in **NAMESPACE RESOLUTION** in the **namespace**(n) documentation.  Given the default value of **namespace path**, **[namespace current]::tcl::mathfunc::sin** or **::tcl::mathfunc::sin** are the typical resolutions.
+**tcl::mathfunc::sin** is resolved as described in **NAMESPACE RESOLUTION** in the [namespace](n) documentation.  Given the default value of [namespace path][namespace], **[namespace current]::tcl::mathfunc::sin** or **::tcl::mathfunc::sin** are the typical resolutions.
 
 As in C, a mathematical function may accept multiple arguments separated by commas. Thus,
 
@@ -348,4 +348,10 @@ set randNum [expr { int(100 * rand()) }]
 # Copyright
 
 Copyright \(co 1993 The Regents of the University of California. Copyright \(co 1994-2000 Sun Microsystems Incorporated. Copyright \(co 2005 Kevin B. Kenny <kennykb@acm.org>. All rights reserved. 
+
+
+[format]: format.md
+[namespace]: namespace.md
+[string]: string.md
+[variable]: variable.md
 

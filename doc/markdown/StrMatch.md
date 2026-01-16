@@ -31,7 +31,10 @@ Tcl_StringMatch, Tcl_StringCaseMatch - test whether a string matches a pattern
 
 # Description
 
-This utility procedure determines whether a string matches a given pattern.  If it does, then **Tcl_StringMatch** returns 1.  Otherwise **Tcl_StringMatch** returns 0.  The algorithm used for matching is the same algorithm used in the **string match** Tcl command and is similar to the algorithm used by the C-shell for file name matching;  see the Tcl manual entry for details.
+This utility procedure determines whether a string matches a given pattern.  If it does, then **Tcl_StringMatch** returns 1.  Otherwise **Tcl_StringMatch** returns 0.  The algorithm used for matching is the same algorithm used in the [string match][string] Tcl command and is similar to the algorithm used by the C-shell for file name matching;  see the Tcl manual entry for details.
 
 In **Tcl_StringCaseMatch**, the algorithm is the same, but you have the option to make the matching case-insensitive. If you choose this (by passing **TCL_MATCH_NOCASE**), then the string and pattern are essentially matched in the lower case. 
+
+
+[string]: string.md
 

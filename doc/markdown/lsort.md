@@ -75,7 +75,7 @@ By default ASCII sorting is used with the result returned in increasing order.  
 : Return a list of indices into *list* in sorted order instead of the values themselves.
 
 [-index0=+indexList]{.lit}
-: If this option is specified, each of the elements of *list* must itself be a proper Tcl sublist (unless **-stride** is used). Instead of sorting based on whole sublists, **lsort** will extract the *indexList*'th element from each sublist (as if the overall element and the *indexList* were passed to **lindex**) and sort based on the given element. For example,
+: If this option is specified, each of the elements of *list* must itself be a proper Tcl sublist (unless **-stride** is used). Instead of sorting based on whole sublists, **lsort** will extract the *indexList*'th element from each sublist (as if the overall element and the *indexList* were passed to [lindex]) and sort based on the given element. For example,
 
     ```
     lsort -integer -index 1 \
@@ -214,4 +214,7 @@ More complex sorting using a comparison function:
         {{3 apple} {0x2 carrot} {1 dingo} {2 banana}}
 {1 dingo} {2 banana} {0x2 carrot} {3 apple}
 ```
+
+
+[lindex]: lindex.md
 

@@ -43,7 +43,7 @@ If *objc* is 2, the result will be set to the following string:
 wrong # args: should be "foo bar fileName count"
 ```
 
-*Objc* is usually 1, but may be 2 or more for commands like **string** and the Tk widget commands, which use the first argument as a subcommand.
+*Objc* is usually 1, but may be 2 or more for commands like [string] and the Tk widget commands, which use the first argument as a subcommand.
 
 Some of the values in the *objv* array may be abbreviations for a subcommand.  The command **Tcl_GetIndexFromObj** will convert the abbreviated string value into an *indexObject*.  If an error occurs in the parsing of the subcommand we would like to use the full subcommand name rather than the abbreviation.  If the **Tcl_WrongNumArgs** command finds any *indexObject*s in the *objv* array, it will use the full subcommand name in the error message instead of the abbreviated name that was originally passed in.  Using the above example, let us assume that *bar* is actually an abbreviation for *barfly* and the value is now an *indexObject* because it was passed to **Tcl_GetIndexFromObj**.  In this case the error message would be:
 
@@ -54,4 +54,7 @@ wrong # args: should be "foo barfly fileName count"
 # Reference count management
 
 The *objv* argument to **Tcl_WrongNumArgs** should be the exact arguments passed to the command or method implementation function that is calling **Tcl_WrongNumArgs**. As such, all values referenced in it should have reference counts greater than zero; this is usually a non-issue.
+
+
+[string]: string.md
 

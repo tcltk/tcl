@@ -31,7 +31,7 @@ unload - Unload machine code
 
 # Description
 
-This command tries to unload shared libraries previously loaded with **load** from the application's address space.  *fileName* is the name of the file containing the library file to be unload;  it must be the same as the filename provided to **load** for loading the library. The *prefix* argument is the prefix (as determined by or passed to **load**), and is used to compute the name of the unload procedure; if not supplied, it is computed from *fileName* in the same manner as **load**. The *interp* argument is the path name of the interpreter from which to unload the package (see the **interp** manual entry for details); if *interp* is omitted, it defaults to the interpreter in which the **unload** command was invoked.
+This command tries to unload shared libraries previously loaded with [load] from the application's address space.  *fileName* is the name of the file containing the library file to be unload;  it must be the same as the filename provided to [load] for loading the library. The *prefix* argument is the prefix (as determined by or passed to [load]), and is used to compute the name of the unload procedure; if not supplied, it is computed from *fileName* in the same manner as [load]. The *interp* argument is the path name of the interpreter from which to unload the package (see the [interp] manual entry for details); if *interp* is omitted, it defaults to the interpreter in which the **unload** command was invoked.
 
 If the initial arguments to **unload** start with **-** then they are treated as switches.  The following switches are currently supported:
 
@@ -47,7 +47,7 @@ If the initial arguments to **unload** start with **-** then they are treated as
 
 ## Unload operation
 
-When a file containing a shared library is loaded through the **load** command, Tcl associates two reference counts to the library file. The first counter shows how many times the library has been loaded into normal (trusted) interpreters while the second describes how many times the library has been loaded into safe interpreters. As a file containing a shared library can be loaded only once by Tcl (with the first **load** call on the file), these counters track how many interpreters use the library. Each subsequent call to **load** after the first simply increments the proper reference count.
+When a file containing a shared library is loaded through the [load] command, Tcl associates two reference counts to the library file. The first counter shows how many times the library has been loaded into normal (trusted) interpreters while the second describes how many times the library has been loaded into safe interpreters. As a file containing a shared library can be loaded only once by Tcl (with the first [load] call on the file), these counters track how many interpreters use the library. Each subsequent call to [load] after the first simply increments the proper reference count.
 
 **unload** works in the opposite direction. As a first step, **unload** will check whether the library is unloadable: an unloadable library exports a special unload procedure. The name of the unload procedure is determined by *prefix* and whether or not the target interpreter is a safe one.  For normal interpreters the name of the initialization procedure will have the form *pfx***_Unload**, where *pfx* is the same as *prefix* except that the first letter is converted to upper case and all other letters are converted to lower case.  For example, if *prefix* is **foo** or **FOo**, the initialization procedure's name will be **Foo_Unload**. If the target interpreter is a safe interpreter, then the name of the initialization procedure will be *pkg***_SafeUnload** instead of *pkg***_Unload**.
 
@@ -81,11 +81,11 @@ If *prefix* is omitted or specified as an empty string, Tcl tries to guess the p
 
 # Bugs
 
-If the same file is **load**ed by different *fileName*s, it will be loaded into the process's address space multiple times.  The behavior of this varies from system to system (some systems may detect the redundant loads, others may not). In case a library has been silently detached by the operating system (and as a result Tcl thinks the library is still loaded), it may be dangerous to use **unload** on such a library (as the library will be completely detached from the application while some interpreters will continue to use it).
+If the same file is [load]ed by different *fileName*s, it will be loaded into the process's address space multiple times.  The behavior of this varies from system to system (some systems may detect the redundant loads, others may not). In case a library has been silently detached by the operating system (and as a result Tcl thinks the library is still loaded), it may be dangerous to use **unload** on such a library (as the library will be completely detached from the application while some interpreters will continue to use it).
 
 # Example
 
-If an unloadable module in the file **foobar.dll** had been loaded using the **load** command like this (on Windows):
+If an unloadable module in the file **foobar.dll** had been loaded using the [load] command like this (on Windows):
 
 ```
 load c:/some/dir/foobar.dll
@@ -98,4 +98,8 @@ unload c:/some/dir/foobar.dll
 ```
 
 This allows a C code module to be installed temporarily into a long-running Tcl program and then removed again (either because it is no longer needed or because it is being updated with a new version) without having to shut down the overall Tcl process.
+
+
+[interp]: interp.md
+[load]: load.md
 

@@ -36,7 +36,7 @@ binary - Insert and extract fields from binary strings
 
 This command provides facilities for manipulating binary data.  The subcommand **binary format** creates a binary string from normal Tcl values.  For example, given the values 16 and 22, on a 32-bit architecture, it might produce an 8-byte binary string consisting of two 4-byte integers, one for each of the numbers.  The subcommand **binary scan**, does the opposite: it extracts data from a binary string and returns it as ordinary Tcl string values. The **binary encode** and **binary decode** subcommands convert binary data to or from string encodings such as base64 (used in MIME messages for example).
 
-Note that other operations on binary data, such as taking a subsequence of it, getting its length, or reinterpreting it as a string in some encoding, are done by other Tcl commands (respectively **string range**, **string length** and **encoding convertfrom** in the example cases).  A binary string in Tcl is merely one where all the characters it contains are in the range \u0000-\u00FF.
+Note that other operations on binary data, such as taking a subsequence of it, getting its length, or reinterpreting it as a string in some encoding, are done by other Tcl commands (respectively [string range][string], [string length][string] and [encoding convertfrom][encoding] in the example cases).  A binary string in Tcl is merely one where all the characters it contains are in the range \u0000-\u00FF.
 
 # Binary encode and decode
 
@@ -101,7 +101,7 @@ The first argument is a list of four numbers, but because of the count of 3 for 
 Each type-count pair moves an imaginary cursor through the binary data, storing bytes at the current position and advancing the cursor to just after the last byte stored.  The cursor is initially at position 0 at the beginning of the data.  The type may be any one of the following characters:
 
 **a**
-: Stores a byte string of length *count* in the output string. Every character is taken as modulo 256 (i.e. the low byte of every character is used, and the high byte discarded) so when storing character strings not wholly expressible using the characters \u0000-\u00ff, the **encoding convertto** command should be used first to change the string into an external representation if this truncation is not desired (i.e. if the characters are not part of the ISO 8859-1 character set.) If *arg* has fewer than *count* bytes, then additional zero bytes are used to pad out the field.  If *arg* is longer than the specified length, the extra characters will be ignored.  If *count* is "*****", then all of the bytes in *arg* will be formatted.  If *count* is omitted, then one character will be formatted.  For example, the command:
+: Stores a byte string of length *count* in the output string. Every character is taken as modulo 256 (i.e. the low byte of every character is used, and the high byte discarded) so when storing character strings not wholly expressible using the characters \u0000-\u00ff, the [encoding convertto][encoding] command should be used first to change the string into an external representation if this truncation is not desired (i.e. if the characters are not part of the ISO 8859-1 character set.) If *arg* has fewer than *count* bytes, then additional zero bytes are used to pad out the field.  If *arg* is longer than the specified length, the extra characters will be ignored.  If *count* is "*****", then all of the bytes in *arg* will be formatted.  If *count* is omitted, then one character will be formatted.  For example, the command:
 
     ```
     binary format a7a*a alpha bravo charlie
@@ -408,7 +408,7 @@ binary scan $signShort su1 val; # val == 0x00008000
 Each type-count pair moves an imaginary cursor through the binary data, reading bytes from the current position.  The cursor is initially at position 0 at the beginning of the data.  The type may be any one of the following characters:
 
 **a**
-: The data is a byte string of length *count*.  If *count* is "*****", then all of the remaining bytes in *string* will be scanned into the variable.  If *count* is omitted, then one byte will be scanned. All bytes scanned will be interpreted as being characters in the range \u0000-\u00ff so the **encoding convertfrom** command will be needed if the string is not a binary string or a string encoded in ISO 8859-1. For example,
+: The data is a byte string of length *count*.  If *count* is "*****", then all of the remaining bytes in *string* will be scanned into the variable.  If *count* is omitted, then one byte will be scanned. All bytes scanned will be interpreted as being characters in the range \u0000-\u00ff so the [encoding convertfrom][encoding] command will be needed if the string is not a binary string or a string encoded in ISO 8859-1. For example,
 
     ```
     binary scan abcde\000fghi a6a10 var1 var2
@@ -594,7 +594,7 @@ Each type-count pair moves an imaginary cursor through the binary data, reading 
 
 # Portability issues
 
-The **r**, **R**, **q** and **Q** conversions will only work reliably for transferring data between computers which are all using IEEE floating point representations.  This is very common, but not universal.  To transfer floating-point numbers portably between all architectures, use their textual representation (as produced by **format**) instead.
+The **r**, **R**, **q** and **Q** conversions will only work reliably for transferring data between computers which are all using IEEE floating point representations.  This is very common, but not universal.  To transfer floating-point numbers portably between all architectures, use their textual representation (as produced by [format]) instead.
 
 # Examples
 
@@ -628,4 +628,9 @@ set data [read $f]
 close $f
 puts [binary encode base64 -maxlen 64 $data]
 ```
+
+
+[encoding]: encoding.md
+[format]: format.md
+[string]: string.md
 

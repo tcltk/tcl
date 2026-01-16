@@ -33,7 +33,7 @@ Rename the command that used to be called *oldName* so that it is now called *ne
 
 # Example
 
-The **rename** command can be used to wrap the standard Tcl commands with your own monitoring machinery.  For example, you might wish to count how often the **source** command is called:
+The **rename** command can be used to wrap the standard Tcl commands with your own monitoring machinery.  For example, you might wish to count how often the [source] command is called:
 
 ```
 rename ::source ::theRealSource
@@ -44,4 +44,7 @@ proc ::source args {
     uplevel 1 ::theRealSource $args
 }
 ```
+
+
+[source]: source.md
 

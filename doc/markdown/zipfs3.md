@@ -37,7 +37,7 @@ TclZipfs_AppHook, TclZipfs_Mount, TclZipfs_MountBuffer, TclZipfs_Unmount - handl
 
 **TclZipfs_AppHook** is a utility function to perform standard application initialization procedures, taking into account available ZIP archives as follows:
 
-1. If the current application has a mountable ZIP archive, that archive is mounted under *ZIPFS_VOLUME***/app** as a read-only Tcl virtual file system (VFS). The value of *ZIPFS_VOLUME* can be retrieved using the Tcl command **zipfs root**.
+1. If the current application has a mountable ZIP archive, that archive is mounted under *ZIPFS_VOLUME***/app** as a read-only Tcl virtual file system (VFS). The value of *ZIPFS_VOLUME* can be retrieved using the Tcl command [zipfs root][zipfs].
 
 2. If a file named **main.tcl** is located in the root directory of that file system (i.e., at *ZIPFS_VOLUME***/app/main.tcl** after the ZIP archive is mounted as described above) it is treated as the startup script for the process.
 
@@ -50,7 +50,7 @@ On Windows, **TclZipfs_AppHook** has a slightly different signature, since it us
 
 The result of **TclZipfs_AppHook** is the full Tcl version with build information (e.g., **9.0.0+abcdef...abcdef.gcc-1002**). The function *may* modify the variables pointed to by *argcPtr* and *argvPtr* to remove arguments; the current implementation does not do so, but callers *should not* assume that this will be true in the future.
 
-**TclZipfs_Mount** is used to mount ZIP archives and to retrieve information about currently mounted archives. If *mountpoint* and *zipname* are both specified (i.e. non-NULL), the function mounts the ZIP archive *zipname* on the mount point given in *mountpoint*. If *password* is not NULL, it should point to the NUL terminated password protecting the archive. If not under the zipfs file system root, *mountpoint* is normalized with respect to it. For example, a mount point passed as either **mt** or **/mt** would be normalized to **//zipfs:/mt**, given that *ZIPFS_VOLUME* as returned by **zipfs root** is "//zipfs:/". An error is raised if the mount point includes a drive or UNC volume. On success, *interp*'s result is set to the normalized mount point path.
+**TclZipfs_Mount** is used to mount ZIP archives and to retrieve information about currently mounted archives. If *mountpoint* and *zipname* are both specified (i.e. non-NULL), the function mounts the ZIP archive *zipname* on the mount point given in *mountpoint*. If *password* is not NULL, it should point to the NUL terminated password protecting the archive. If not under the zipfs file system root, *mountpoint* is normalized with respect to it. For example, a mount point passed as either **mt** or **/mt** would be normalized to **//zipfs:/mt**, given that *ZIPFS_VOLUME* as returned by [zipfs root][zipfs] is "//zipfs:/". An error is raised if the mount point includes a drive or UNC volume. On success, *interp*'s result is set to the normalized mount point path.
 
 If *mountpoint* is a NULL pointer, information on all currently mounted ZIP file systems is stored in *interp*'s result as a sequence of mount points and ZIP file names.
 
@@ -61,4 +61,7 @@ If *mountpoint* is not NULL but *zipfile* is NULL, the path to the archive mount
 **TclZipfs_Unmount** undoes the effect of **TclZipfs_Mount**, i.e., it unmounts the mounted ZIP file system that was mounted from *zipname* (at *mountpoint*). Errors are reported in the interpreter *interp*.  The result of this call is a standard Tcl result code.
 
 **TclZipfs_AppHook** can not be used in stub-enabled extensions.
+
+
+[zipfs]: zipfs.md
 

@@ -43,7 +43,7 @@ oo::object
 
 Singleton classes are classes that only permit at most one instance of themselves to exist. They unexport the **create** and **createWithNamespace** methods entirely, and override the **new** method so that it only makes a new instance if there is no existing instance.  It is not recommended to inherit from a singleton class; singleton-ness is *not* inherited. It is not recommended that a singleton class's constructor take any arguments.
 
-Instances have their** destroy** method overridden with a method that always returns an error in order to discourage destruction of the object, but destruction remains possible if strictly necessary (e.g., by destroying the class or using **rename** to delete it). They also have a (non-exported) **<cloned>** method defined on them that similarly always returns errors to make attempts to use the singleton instance with **oo::copy** fail.
+Instances have their** destroy** method overridden with a method that always returns an error in order to discourage destruction of the object, but destruction remains possible if strictly necessary (e.g., by destroying the class or using [rename] to delete it). They also have a (non-exported) **<cloned>** method defined on them that similarly always returns errors to make attempts to use the singleton instance with **oo::copy** fail.
 
 ## Constructor
 
@@ -87,4 +87,7 @@ if {$h1 eq $h3} {
 ```
 
 Note that the name of the instance of the singleton is not guaranteed to be anything in particular.
+
+
+[rename]: rename.md
 

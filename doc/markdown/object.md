@@ -40,7 +40,7 @@ oo::object
 
 # Description
 
-The **oo::object** class is the root class of the object hierarchy; every object is an instance of this class. Since classes are themselves objects, they are instances of this class too. Objects are always referred to by their name, and may be **rename**d while maintaining their identity.
+The **oo::object** class is the root class of the object hierarchy; every object is an instance of this class. Since classes are themselves objects, they are instances of this class too. Objects are always referred to by their name, and may be [rename]d while maintaining their identity.
 
 Instances of objects may be made with either the **create** or **new** methods of the **oo::object** object itself, or by invoking those methods on any of the subclass objects; see **oo::class** for more details. The configuration of individual objects (i.e., instance-specific methods, mixed-in classes, etc.) may be controlled with the **oo::objdefine** command.
 
@@ -59,7 +59,7 @@ The **oo::object** class does not define an explicit destructor.
 The **oo::object** class supports the following exported methods:
 
 [obj]{.ins} [destroy]{.sub}
-: This method destroys the object, *obj*, that it is invoked upon, invoking any destructors on the object's class in the process. It is equivalent to using **rename** to delete the object command. The result of this method is always the empty string.
+: This method destroys the object, *obj*, that it is invoked upon, invoking any destructors on the object's class in the process. It is equivalent to using [rename] to delete the object command. The result of this method is always the empty string.
 
 
 ## Non-exported methods
@@ -67,7 +67,7 @@ The **oo::object** class supports the following exported methods:
 The **oo::object** class supports the following non-exported methods:
 
 [obj]{.ins} [eval]{.sub} [arg]{.optdot}
-: This method concatenates the arguments, *arg*, as if with **concat**, and then evaluates the resulting script in the namespace that is uniquely associated with *obj*, returning the result of the evaluation.
+: This method concatenates the arguments, *arg*, as if with [concat], and then evaluates the resulting script in the namespace that is uniquely associated with *obj*, returning the result of the evaluation.
     Note that object-internal commands such as **my** and **self** can be invoked in this context.
 
 [obj]{.ins} [unknown]{.sub} [methodName]{.optarg} [arg]{.optdot}
@@ -100,4 +100,8 @@ $obj variable count  \(-> error "unknown method variable"
 $obj destroy
 $obj foo             \(-> error "unknown command obj"
 ```
+
+
+[concat]: concat.md
+[rename]: rename.md
 

@@ -110,7 +110,7 @@ typedef struct {
 } Tcl_MethodType2;
 ```
 
-The *version* field should always be declared equal to TCL_OO_METHOD_VERSION_CURRENT, TCL_OO_METHOD_VERSION_1 or TCL_OO_METHOD_VERSION_2. The *name* field provides a human-readable name for the type, and is the value that is exposed via the **info class methodtype** and **info object methodtype** Tcl commands.
+The *version* field should always be declared equal to TCL_OO_METHOD_VERSION_CURRENT, TCL_OO_METHOD_VERSION_1 or TCL_OO_METHOD_VERSION_2. The *name* field provides a human-readable name for the type, and is the value that is exposed via the [info class methodtype] and [info object methodtype] Tcl commands.
 
 The *callProc* field gives a function that is called when the method is invoked; it must never be NULL.
 
@@ -170,7 +170,11 @@ The *nameObj* argument to **Tcl_NewMethod** and **Tcl_NewInstanceMethod** (when 
 
 The result of **Tcl_MethodName** is a value with a reference count of at least one. It should not be modified without first duplicating it (with **Tcl_DuplicateObj**).
 
-The values in the first *objc* values of the *objv* argument to **Tcl_ObjectContextInvokeNext** are assumed to have a reference count of at least 1; the containing array is assumed to endure until the next method implementation (see **next**) returns. Be aware that methods may **yield**; if any post-call actions are desired (e.g., decrementing the reference count of values passed in here), they must be scheduled with **Tcl_NRAddCallback**.
+The values in the first *objc* values of the *objv* argument to **Tcl_ObjectContextInvokeNext** are assumed to have a reference count of at least 1; the containing array is assumed to endure until the next method implementation (see **next**) returns. Be aware that methods may [yield]; if any post-call actions are desired (e.g., decrementing the reference count of values passed in here), they must be scheduled with **Tcl_NRAddCallback**.
 
-The *callProc* of the **Tcl_MethodType** structure takes values of at least reference count 1 in its *objv* argument. It may add its own references, but must not decrement the reference count below that level; the caller of the method will decrement the reference count once the method returns properly (and the reference will be held if the method **yield**s).
+The *callProc* of the **Tcl_MethodType** structure takes values of at least reference count 1 in its *objv* argument. It may add its own references, but must not decrement the reference count below that level; the caller of the method will decrement the reference count once the method returns properly (and the reference will be held if the method [yield]s).
+
+
+[info]: info.md
+[yield]: yield.md
 

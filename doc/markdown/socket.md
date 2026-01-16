@@ -37,9 +37,9 @@ socket - Open a TCP network connection
 
 # Description
 
-This command opens a network socket and returns a channel identifier that may be used in future invocations of commands like **read**, **puts** and **flush**.  At present only the TCP network protocol is supported over IPv4 and IPv6; future releases may include support for additional protocols.  The **socket** command may be used to open either the client or server side of a connection, depending on whether the **-server** switch is specified.
+This command opens a network socket and returns a channel identifier that may be used in future invocations of commands like [read], [puts] and [flush].  At present only the TCP network protocol is supported over IPv4 and IPv6; future releases may include support for additional protocols.  The **socket** command may be used to open either the client or server side of a connection, depending on whether the **-server** switch is specified.
 
-Note that the default encoding for *all* sockets is the system encoding, as returned by **encoding system**.  Most of the time, you will need to use **chan configure** to alter this to something else, such as *utf-8* (ideal for communicating with other Tcl processes) or *iso8859-1* (useful for many network protocols, especially the older ones).
+Note that the default encoding for *all* sockets is the system encoding, as returned by [encoding system][encoding].  Most of the time, you will need to use [chan configure][chan] to alter this to something else, such as *utf-8* (ideal for communicating with other Tcl processes) or *iso8859-1* (useful for many network protocols, especially the older ones).
 
 # Client sockets
 
@@ -55,20 +55,20 @@ The following options may also be present before *host* to specify additional in
 
 [-async]{.lit}
 : This option will cause the client socket to be connected asynchronously. This means that the socket will be created immediately but may not yet be connected to the server, when the call to **socket** returns.
-    When a **gets** or **flush** is done on the socket before the connection attempt succeeds or fails, if the socket is in blocking mode, the operation will wait until the connection is completed or fails. If the socket is in nonblocking mode and a **gets** or **flush** is done on the socket before the connection attempt succeeds or fails, the operation returns immediately and **fblocked** on the socket returns 1. Synchronous client sockets may be switched (after they have connected) to operating in asynchronous mode using:
+    When a [gets] or [flush] is done on the socket before the connection attempt succeeds or fails, if the socket is in blocking mode, the operation will wait until the connection is completed or fails. If the socket is in nonblocking mode and a [gets] or [flush] is done on the socket before the connection attempt succeeds or fails, the operation returns immediately and [fblocked] on the socket returns 1. Synchronous client sockets may be switched (after they have connected) to operating in asynchronous mode using:
 
     ```
     chan configure chan \-blocking 0
     ```
-    See the **chan configure** command for more details.
-    The Tcl event loop should be running while an asynchronous connection is in progress, because it may have to do several connection attempts in the background. Running the event loop also allows you to set up a writable channel event on the socket to get notified when the asynchronous connection has succeeded or failed. See the **vwait** and the **chan** commands for more details on the event loop and channel events.
-    The **chan configure** option **-connecting** may be used to check if the connect is still running. To verify a successful connect, the option **-error** may be checked when **-connecting** returned 0.
-    Operation without the event queue requires at the moment calls to **chan configure** to advance the internal state machine.
+    See the [chan configure][chan] command for more details.
+    The Tcl event loop should be running while an asynchronous connection is in progress, because it may have to do several connection attempts in the background. Running the event loop also allows you to set up a writable channel event on the socket to get notified when the asynchronous connection has succeeded or failed. See the [vwait] and the [chan] commands for more details on the event loop and channel events.
+    The [chan configure][chan] option **-connecting** may be used to check if the connect is still running. To verify a successful connect, the option **-error** may be checked when **-connecting** returned 0.
+    Operation without the event queue requires at the moment calls to [chan configure][chan] to advance the internal state machine.
 
 
 # Server sockets
 
-If the **-server** option is specified then the new socket will be a server that listens on the given *port* (either an integer or a service name, where supported and understood by the host operating system; if *port* is zero, the operating system will allocate a free port to the server socket which may be discovered by using **chan configure** to read the **-sockname** option). If the host supports both, IPv4 and IPv6, the socket will listen on both address families. Tcl will automatically accept connections to the given port. For each connection Tcl will create a new channel that may be used to communicate with the client.  Tcl then invokes *command* (properly a command prefix list, see the **EXAMPLES** below) with three additional arguments: the name of the new channel, the address, in network address notation, of the client's host, and the client's port number.
+If the **-server** option is specified then the new socket will be a server that listens on the given *port* (either an integer or a service name, where supported and understood by the host operating system; if *port* is zero, the operating system will allocate a free port to the server socket which may be discovered by using [chan configure][chan] to read the **-sockname** option). If the host supports both, IPv4 and IPv6, the socket will listen on both address families. Tcl will automatically accept connections to the given port. For each connection Tcl will create a new channel that may be used to communicate with the client.  Tcl then invokes *command* (properly a command prefix list, see the **EXAMPLES** below) with three additional arguments: the name of the new channel, the address, in network address notation, of the client's host, and the client's port number.
 
 The following additional option may also be specified before *port*:
 
@@ -84,13 +84,13 @@ The following additional option may also be specified before *port*:
 
 Server channels cannot be used for input or output; their sole use is to accept new client connections. The channels created for each incoming client connection are opened for input and output. Closing the server channel shuts down the server so that no new connections will be accepted;  however, existing connections will be unaffected.
 
-Server sockets depend on the Tcl event mechanism to find out when new connections are opened.  If the application does not enter the event loop, for example by invoking the **vwait** command or calling the C procedure **Tcl_DoOneEvent**, then no connections will be accepted.
+Server sockets depend on the Tcl event mechanism to find out when new connections are opened.  If the application does not enter the event loop, for example by invoking the [vwait] command or calling the C procedure **Tcl_DoOneEvent**, then no connections will be accepted.
 
-If *port* is specified as zero, the operating system will allocate an unused port for use as a server socket.  The port number actually allocated may be retrieved from the created server socket using the **chan configure** command to retrieve the **-sockname** option as described below.
+If *port* is specified as zero, the operating system will allocate an unused port for use as a server socket.  The port number actually allocated may be retrieved from the created server socket using the [chan configure][chan] command to retrieve the **-sockname** option as described below.
 
 # Configuration options
 
-The **chan configure** command can be used to query several readonly configuration options for socket channels or in some cases to set alternative properties on socket channels:
+The [chan configure][chan] command can be used to query several readonly configuration options for socket channels or in some cases to set alternative properties on socket channels:
 
 [-error]{.lit}
 : This option gets the current error status of the given socket.  This is useful when you need to determine if an asynchronous connect operation succeeded.  If there was an error, the error message is returned.  If there was no error, an empty string is returned.
@@ -141,4 +141,14 @@ close $sockChan
 puts "The time on $server is $line1"
 puts "That is [lindex $line2 0]s since the server started"
 ```
+
+
+[chan]: chan.md
+[encoding]: encoding.md
+[fblocked]: fblocked.md
+[flush]: flush.md
+[gets]: gets.md
+[puts]: puts.md
+[read]: read.md
+[vwait]: vwait.md
 

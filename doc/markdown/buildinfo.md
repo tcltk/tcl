@@ -81,7 +81,7 @@ This command provides a way to retrieve information about how Tcl was built. Wit
 : Returns 1 if Tcl is compiled with an objective-c++ compiler, 0 otherwise.
 
 [::tcl::build-info]{.cmd} [patchlevel]{.sub}
-: Returns the Tcl patchlevel, same as **info patchlevel**.
+: Returns the Tcl patchlevel, same as [info patchlevel][info].
 
 [::tcl::build-info]{.cmd} [profile]{.sub}
 : Returns 1 if Tcl is compiled with **-DTCL_CFG_PROFILED**, 0 otherwise.
@@ -96,7 +96,7 @@ This command provides a way to retrieve information about how Tcl was built. Wit
 : Returns the libtommath version number (as 4 digits) if libtommath is built into Tcl, 0 otherwise.
 
 [::tcl::build-info]{.cmd} [version]{.sub}
-: Returns the Tcl version, same as **info tclversion**.
+: Returns the Tcl version, same as [info tclversion][info].
 
 [::tcl::build-info]{.cmd} [zlib]{.sub}
 : Returns the zlib version number (as 4 digits) if zlib is built into Tcl, 0 otherwise.
@@ -120,4 +120,7 @@ These show the use of **::tcl::build-info**.
 ::tcl::build-info patchlevel
      \(-> 9.0.2
 ```
+
+
+[info]: info.md
 

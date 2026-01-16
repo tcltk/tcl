@@ -49,11 +49,11 @@ The following commands are a subset of the full Dynamic Data Exchange set of com
 
 [dde]{.cmd} [execute]{.sub} [-async]{.optlit} [-binary]{.optlit} [service]{.arg} [topic]{.arg} [data]{.arg}
 : **dde execute** takes the *data* and sends it to the server indicated by *service* with the topic indicated by *topic*. Typically, *service* is the name of an application, and *topic* is a file to work on.  The *data* field is given to the remote application. Typically, the application treats the *data* field as a script, and the script is run in the application.  The **-async** option requests asynchronous invocation.  The command returns an error message if the script did not run, unless the **-async** flag was used, in which case the command returns immediately with no error.
-    Without the **-binary** option all data will be sent in unicode. For dde clients which don't implement the CF_UNICODE clipboard format, this will automatically be translated to the system encoding. You can use the **-binary** option in combination with the result of **encoding convertto** to send data in any other encoding.
+    Without the **-binary** option all data will be sent in unicode. For dde clients which don't implement the CF_UNICODE clipboard format, this will automatically be translated to the system encoding. You can use the **-binary** option in combination with the result of [encoding convertto][encoding] to send data in any other encoding.
 
 [dde]{.cmd} [poke]{.sub} [-binary]{.optlit} [service]{.arg} [topic]{.arg} [item]{.arg} [data]{.arg}
 : **dde poke** passes the *data* to the server indicated by *service* using the *topic* and *item* specified.  Typically, *service* is the name of an application.  *topic* is application specific but can be a command to the server or the name of a file to work on.  The *item* is also application specific and is often not used, but it must always be non-null.  The *data* field is given to the remote application.
-    Without the **-binary** option all data will be sent in unicode. For dde clients which don't implement the CF_UNICODE clipboard format, this will automatically be translated to the system encoding. You can use the **-binary** option in combination with the result of **encoding convertto** to send data in any other encoding.
+    Without the **-binary** option all data will be sent in unicode. For dde clients which don't implement the CF_UNICODE clipboard format, this will automatically be translated to the system encoding. You can use the **-binary** option in combination with the result of [encoding convertto][encoding] to send data in any other encoding.
 
 [dde]{.cmd} [request]{.sub} [-binary]{.optlit} [service]{.arg} [topic]{.arg} [item]{.arg}
 : **dde request** is typically used to get the value of something; the value of a cell in Microsoft Excel or the text of a selection in Microsoft Word. *service* is typically the name of an application, *topic* is typically the name of the file, and *item* is application-specific. The command returns the value of *item* as defined in the application.  Normally this is interpreted to be a string with terminating null.  If **-binary** is specified, the result is returned as a byte array.
@@ -75,7 +75,7 @@ When Tcl processes a **dde request** command, it returns the value of the variab
 
 An external application which wishes to run a script in Tcl should have that script store its result in a variable, run the **dde execute** command, and then run **dde request** to get the value of the variable.
 
-When using DDE, be careful to ensure that the event queue is flushed using either **update** or **vwait**.  This happens by default when using **wish** unless a blocking command is called (such as **exec** without adding the **&** to place the process in the background). If for any reason the event queue is not flushed, DDE commands may hang until the event queue is flushed.  This can create a deadlock situation.
+When using DDE, be careful to ensure that the event queue is flushed using either [update] or [vwait].  This happens by default when using **wish** unless a blocking command is called (such as [exec] without adding the **&** to place the process in the background). If for any reason the event queue is not flushed, DDE commands may hang until the event queue is flushed.  This can create a deadlock situation.
 
 # Example
 
@@ -85,4 +85,10 @@ This asks Internet Explorer (which must already be running) to go to a particula
 package require dde
 dde execute -async iexplore WWW_OpenURL http://www.tcl-lang.org/
 ```
+
+
+[encoding]: encoding.md
+[exec]: exec.md
+[update]: update.md
+[vwait]: vwait.md
 

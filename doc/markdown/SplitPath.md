@@ -36,7 +36,7 @@ Tcl_SplitPath, Tcl_JoinPath, Tcl_GetPathType - manipulate platform-dependent fil
 
 These procedures have been superseded by the Tcl-value-aware procedures in the **FileSystem** man page, which are more efficient.
 
-These procedures may be used to disassemble and reassemble file paths in a platform independent manner: they provide C-level access to the same functionality as the **file split**, **file join**, and **file pathtype** commands.
+These procedures may be used to disassemble and reassemble file paths in a platform independent manner: they provide C-level access to the same functionality as the [file split][file], [file join][file], and [file pathtype][file] commands.
 
 **Tcl_SplitPath** breaks a path into its constituent elements, returning an array of pointers to the elements using *argcPtr* and *argvPtr*.  The area of memory pointed to by **argvPtr* is dynamically allocated; in addition to the array of pointers, it also holds copies of all the path elements.  It is the caller's responsibility to free all of this storage. For example, suppose that you have called **Tcl_SplitPath** with the following code:
 
@@ -59,4 +59,7 @@ Tcl_Free(argv);
 If the result of **Tcl_SplitPath** is passed to **Tcl_JoinPath**, the result will refer to the same location, but may not be in the same form.  This is because **Tcl_SplitPath** and **Tcl_JoinPath** eliminate duplicate path separators and return a normalized form for each platform.
 
 **Tcl_GetPathType** returns the type of the specified *path*, where **Tcl_PathType** is one of **TCL_PATH_ABSOLUTE**, **TCL_PATH_RELATIVE**, or **TCL_PATH_VOLUME_RELATIVE**.  See the **filename** manual entry for a description of the path types for each platform. 
+
+
+[file]: file.md
 

@@ -23,5 +23,8 @@ gets - Read a line from a channel
 
 # Description
 
-The **gets** command has been superceded by the **chan gets** command which supports the same syntax and options.
+The **gets** command has been superceded by the [chan gets][chan] command which supports the same syntax and options.
+
+
+[chan]: chan.md
 

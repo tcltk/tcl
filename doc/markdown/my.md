@@ -71,7 +71,7 @@ o count              \(-> prints "2"
 o count              \(-> prints "3"
 ```
 
-This example shows how you can use **my** to make callbacks to private methods from outside the object (from a **trace**), using **namespace code** to enter the correct context. (See the **callback** command for the recommended way of doing this.)
+This example shows how you can use **my** to make callbacks to private methods from outside the object (from a [trace]), using [namespace code][namespace] to enter the correct context. (See the **callback** command for the recommended way of doing this.)
 
 ```
 oo::class create HasCallback {
@@ -120,4 +120,8 @@ x advanceTwice       \(-> prints "in ::x step A: 5"
 y advanceTwice       \(-> prints "in ::y step A: 7"
                      \(-> prints "in ::y step B: 8"
 ```
+
+
+[namespace]: namespace.md
+[trace]: trace.md
 

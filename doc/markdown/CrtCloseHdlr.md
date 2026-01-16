@@ -33,7 +33,7 @@ Tcl_CreateCloseHandler, Tcl_DeleteCloseHandler - arrange for callbacks when chan
 
 # Description
 
-**Tcl_CreateCloseHandler** arranges for *proc* to be called when *channel* is closed with **Tcl_Close** or **Tcl_UnregisterChannel**, or using the Tcl **close** command. *Proc* should match the following prototype:
+**Tcl_CreateCloseHandler** arranges for *proc* to be called when *channel* is closed with **Tcl_Close** or **Tcl_UnregisterChannel**, or using the Tcl [close] command. *Proc* should match the following prototype:
 
 ```
 typedef void Tcl_CloseProc(
@@ -43,4 +43,7 @@ typedef void Tcl_CloseProc(
 The *clientData* is the same as the value provided in the call to **Tcl_CreateCloseHandler**.
 
 **Tcl_DeleteCloseHandler** removes a close callback for *channel*. The *proc* and *clientData* identify which close callback to remove; **Tcl_DeleteCloseHandler** does nothing if its *proc* and *clientData* arguments do not match the *proc* and *clientData* for a  close handler for *channel*.
+
+
+[close]: close.md
 

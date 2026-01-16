@@ -35,7 +35,7 @@ The **tailcall** command replaces the currently executing procedure, lambda appl
 return [uplevel 1 [list command ?arg ...?]]
 ```
 
-This command may not be invoked from within an **uplevel** into a procedure or inside a **catch** inside a procedure or lambda.
+This command may not be invoked from within an [uplevel] into a procedure or inside a [catch] inside a procedure or lambda.
 
 # Example
 
@@ -66,4 +66,8 @@ proc printList2 {theList} {
     }
 }
 ```
+
+
+[catch]: catch.md
+[uplevel]: uplevel.md
 
