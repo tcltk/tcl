@@ -3781,7 +3781,7 @@ MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_ConcatObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_ConstObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_ContinueObjCmd;
 MODULE_SCOPE Tcl_TimerToken TclCreateAbsoluteTimerHandler(
-			    Tcl_Time *time, Tcl_TimerProc *proc,
+			    long long time, Tcl_TimerProc *proc,
 			    void *clientData);
 MODULE_SCOPE Tcl_TimerToken TclCreateMonotonicTimerHandler(
 			    long long timeUS, Tcl_TimerProc *proc,
