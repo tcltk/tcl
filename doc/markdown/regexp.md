@@ -66,9 +66,9 @@ If the initial arguments to **regexp** start with **-** then they are treated as
 
     ```
     regexp -inline -- {\w(\w)} " inlined "
-          \(-> in n
+          → in n
     regexp -all -inline -- {\w(\w)} " inlined "
-          \(-> in n li i ne e
+          → in n li i ne e
     ```
 
 [-start]{.lit} [index]{.arg}
@@ -85,7 +85,7 @@ If there are more *subMatchVar*s than parenthesized subexpressions within *exp*,
 Find the first occurrence of a word starting with **foo** in a string that is not actually an instance of **foobar**, and get the letters following it up to the end of the word into a variable:
 
 ```
-regexp {\mfoo(?!bar\M)(\w*)} $string \-> restOfWord
+regexp {\mfoo(?!bar\M)(\w*)} $string -> restOfWord
 ```
 
 Note that the whole matched substring has been placed in the variable "**->**", which is a name chosen to look nice given that we are not actually interested in its contents.

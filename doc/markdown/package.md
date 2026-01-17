@@ -64,8 +64,11 @@ The behavior of the **package** command is determined by its first argument. The
 
 [package]{.cmd} [require]{.sub} [package]{.arg} [requirement...]{.optarg}
 : This command is typically invoked by Tcl code that wishes to use a particular version of a particular package.  The arguments indicate which package is wanted, and the command ensures that a suitable version of the package is loaded into the interpreter. If the command succeeds, it returns the version number that is loaded;  otherwise it generates an error.
+
     A suitable version of the package is any version which satisfies at least one of the requirements as defined in the section **REQUIREMENT** below. If multiple versions are suitable the implementation with the highest version is chosen. This last part is additionally influenced by the selection mode set with **package prefer**.
+
     In the "stable" selection mode the command will select the highest stable version satisfying the requirements, if any. If no stable version satisfies the requirements, the highest unstable version satisfying the requirements will be selected.  In the "latest" selection mode the command will accept the highest version satisfying all the requirements, regardless of its stableness.
+
     If a version of *package* has already been provided (by invoking the **package provide** command), then its version number must satisfy the *requirement*s and the command returns immediately. Otherwise, the command searches the database of information provided by previous **package ifneeded** commands to see if an acceptable version of the package is available. If so, the script for the highest acceptable version number is evaluated in the global namespace; it must do whatever is necessary to load the package, including calling **package provide** for the package. If the **package ifneeded** database does not contain an acceptable version of the package and a **package unknown** command has been specified for the interpreter then that command is evaluated in the global namespace;  when it completes, Tcl checks again to see if the package is now provided or if there is a **package ifneeded** script for it. If all of these steps fail to provide an acceptable version of the package, then the command returns an error.
 
 [package]{.cmd} [require]{.sub} [-exact]{.lit} [package]{.arg} [version]{.arg}
@@ -85,9 +88,13 @@ The behavior of the **package** command is determined by its first argument. The
 
 [package]{.cmd} [prefer]{.sub} [latest=|§stable]{.optlit}
 : With no arguments, the commands returns either "latest" or "stable", whichever describes the current mode of selection logic used by **package require**.
+
     When passed the argument "latest", it sets the selection logic mode to "latest".
+
     When passed the argument "stable", if the mode is already "stable", that value is kept.  If the mode is already "latest", then the attempt to set it back to "stable" is ineffective and the mode value remains "latest".
+
     When passed any other value as an argument, raise an invalid argument error.
+
     When an interpreter is created, its initial selection mode value is set to "stable" unless the environment variable **TCL_PKG_PREFER_LATEST** is set (to any value) or the Tcl package itself is unstable. Otherwise the initial (and permanent) selection mode value is set to "latest".
 
 

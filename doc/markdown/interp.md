@@ -77,6 +77,7 @@ The **interp** command is used to create, delete, and manipulate child interpret
 
 [interp]{.cmd} [debug]{.sub} [path]{.arg} [[-frame]{.lit} [boolean]{.arg}]{.optarg}
 : Controls whether frame-level stack information is captured in the child interpreter identified by *path*.  If no arguments are specified, the option and its current setting are returned.  If **-frame** is specified, the current setting is returned. If *boolean* if provided as well, the debug setting is set to the specified value.  This only affects the output of [info frame][info], in that exact frame-level information for command invocation at the bytecode level is only captured with this setting on.
+
     For example, with code like
 
     ```
@@ -93,7 +94,9 @@ The **interp** command is used to create, delete, and manipulate child interpret
       }
     }
     ```
+
     the standard setting will provide a relative line number for the command **somecode** and the relevant frame will be of type [eval]. With frame-debug active on the other hand the tracking extends so far that the system will be able to determine the file and absolute line number of this command, and return a frame of type [source]. This more exact information is paid for with slower execution of all commands.
+
     Note that once it is on, this flag cannot be switched back off: such attempts are silently ignored. This is needed to maintain the consistency of the underlying interpreter's state.
 
 [interp]{.cmd} [delete]{.sub} [path]{.optdot}
@@ -101,6 +104,7 @@ The **interp** command is used to create, delete, and manipulate child interpret
 
 [interp]{.cmd} [eval]{.sub} [path]{.arg} [arg]{.arg} [arg]{.optdot}
 : This command concatenates all of the *arg* arguments in the same fashion as the [concat] command, then evaluates the resulting string as a Tcl script in the child interpreter identified by *path*. The result of this evaluation (including all [return] options, such as **-errorinfo** and **-errorcode** information, if an error occurs) is returned to the invoking interpreter.
+
     Note that the script will be executed in the current context stack frame of the *path* interpreter; this is so that the implementations (in a parent interpreter) of aliases in a child interpreter can execute scripts in the child that find out information about the child's current state and stack frame.
 
 [interp]{.cmd} [exists]{.sub} [path]{.arg}
@@ -117,7 +121,9 @@ The **interp** command is used to create, delete, and manipulate child interpret
 
 [interp]{.cmd} [invokehidden]{.sub} [path]{.arg} [-option]{.optdot} [hiddenCmdName]{.arg} [arg]{.optdot}
 : Invokes the hidden command *hiddenCmdName* with the arguments supplied in the interpreter denoted by *path*. No substitutions or evaluation are applied to the arguments. Three *-option*s are supported, all of which start with **-**: **-namespace** (which takes a single argument afterwards, *nsName*), **-global**, and **-\|-**. If the **-namespace** flag is present, the hidden command is invoked in the namespace called *nsName* in the target interpreter. If the **-global** flag is present, the hidden command is invoked at the global level in the target interpreter; otherwise it is invoked at the current call frame and can access local variables in that and outer call frames. The **-\|-** flag allows the *hiddenCmdName* argument to start with a "-" character, and is otherwise unnecessary. If both the **-namespace** and **-global** flags are present, the **-namespace** flag is ignored.
+
     Note that the hidden command will be executed (by default) in the current context stack frame of the *path* interpreter.
+
     Hidden commands are explained in more detail in **HIDDEN COMMANDS**, below.
 
 [interp]{.cmd} [issafe]{.sub} [path]{.optarg}
@@ -131,6 +137,7 @@ The **interp** command is used to create, delete, and manipulate child interpret
 
 [interp]{.cmd} [recursionlimit]{.sub} [path]{.arg} [newlimit]{.optarg}
 : Returns the maximum allowable nesting depth for the interpreter specified by *path*.  If *newlimit* is specified, the interpreter recursion limit will be set so that nesting of more than *newlimit* calls to **Tcl_Eval** and related procedures in that interpreter will return an error. The *newlimit* value is also returned. The *newlimit* value must be a positive integer between 1 and the maximum value of a non-long integer on the platform.
+
     The command sets the maximum size of the Tcl call stack only. It cannot by itself prevent stack overflows on the C stack being used by the application. If your machine has a limit on the size of the C stack, you may get stack overflows before reaching the limit set by the command. If this happens, see if there is a mechanism in your system for increasing the maximum size of the C stack.
 
 [interp]{.cmd} [set]{.sub} [path]{.arg} [varName]{.arg} [value]{.optarg}
@@ -173,6 +180,7 @@ child command ?arg arg ...?
 
 [child]{.ins} [eval]{.sub} [arg]{.arg} [arg ..]{.optarg}
 : This command concatenates all of the *arg* arguments in the same fashion as the [concat] command, then evaluates the resulting string as a Tcl script in *child*. The result of this evaluation (including all [return] options, such as **-errorinfo** and **-errorcode** information, if an error occurs) is returned to the invoking interpreter.
+
     Note that the script will be executed in the current context stack frame of *child*; this is so that the implementations (in a parent interpreter) of aliases in a child interpreter can execute scripts in the child that find out information about the child's current state and stack frame.
 
 [child]{.ins} [expose]{.sub} [hiddenName]{.arg} [exposedCmdName]{.optarg}
@@ -186,7 +194,9 @@ child command ?arg arg ...?
 
 [child]{.ins} [invokehidden]{.sub} [-option]{.optdot} [hiddenName]{.arg} [arg ..]{.optarg}
 : This command invokes the hidden command *hiddenName* with the supplied arguments, in *child*. No substitutions or evaluations are applied to the arguments. Three *-option*s are supported, all of which start with **-**: **-namespace** (which takes a single argument afterwards, *nsName*), **-global**, and **-\|-**. If the **-namespace** flag is given, the hidden command is invoked in the specified namespace in the child. If the **-global** flag is given, the command is invoked at the global level in the child; otherwise it is invoked at the current call frame and can access local variables in that or outer call frames. The **-\|-** flag allows the *hiddenCmdName* argument to start with a "-" character, and is otherwise unnecessary. If both the **-namespace** and **-global** flags are given, the **-namespace** flag is ignored.
+
     Note that the hidden command will be executed (by default) in the current context stack frame of *child*.
+
     For more details on hidden commands, see **HIDDEN COMMANDS**, below.
 
 [child]{.ins} [issafe]{.sub}
@@ -200,6 +210,7 @@ child command ?arg arg ...?
 
 [child]{.ins} [recursionlimit]{.sub} [newlimit]{.optarg}
 : Returns the maximum allowable nesting depth for the *child* interpreter. If *newlimit* is specified, the recursion limit in *child* will be set so that nesting of more than *newlimit* calls to **Tcl_Eval()** and related procedures in *child* will return an error. The *newlimit* value is also returned. The *newlimit* value must be a positive integer between 1 and the maximum value of a non-long integer on the platform.
+
     The command sets the maximum size of the Tcl call stack only. It cannot by itself prevent stack overflows on the C stack being used by the application. If your machine has a limit on the size of the C stack, you may get stack overflows before reaching the limit set by the command. If this happens, see if there is a mechanism in your system for increasing the maximum size of the C stack.
 
 [child]{.ins} [set]{.sub} [varName]{.arg} [value]{.optarg}
@@ -258,6 +269,7 @@ Every limit has a number of options associated with it, some of which are common
 
 [-command]{.lit}
 : This option (common for all limit types) specifies (if non-empty) a Tcl script to be executed in the global namespace of the interpreter reading and writing the option when the particular limit in the limited interpreter is exceeded. The callback may modify the limit on the interpreter if it wishes the limited interpreter to continue executing. If the callback generates an exception, it is reported through the background exception mechanism (see **BACKGROUND EXCEPTION HANDLING**).
+
     Note that the callbacks defined by one interpreter are completely isolated from the callbacks defined by another, and that the order in which those callbacks are called is undefined.
 
 [-granularity]{.lit}

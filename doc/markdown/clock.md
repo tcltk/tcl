@@ -41,7 +41,9 @@ The **clock** command performs several operations that obtain and manipulate val
 
 [clock]{.cmd} [clicks]{.sub} [-option]{.optarg}
 : If no *-option* argument is supplied, returns a high-resolution time value as a system-dependent integer value.  The unit of the value is system-dependent but should be the highest resolution clock available on the system such as a CPU cycle counter. See **HIGH RESOLUTION TIMERS** for a full description.
+
     If the *-option* argument is **-milliseconds**, then the command is synonymous with **clock milliseconds** (see below).  This usage is obsolete, and **clock milliseconds** is to be considered the preferred way of obtaining a count of milliseconds.
+
     If the *-option* argument is **-microseconds**, then the command is synonymous with **clock microseconds** (see below).  This usage is obsolete, and **clock microseconds** is to be considered the preferred way of obtaining a count of microseconds.
 
 [clock]{.cmd} [format]{.sub} [timeVal]{.arg} [-option value]{.optdot}
@@ -82,11 +84,13 @@ The **clock** command performs several operations that obtain and manipulate val
 
 [-format]{.lit} [format]{.arg}
 : Specifies the desired output format for **clock format** or the expected input format for **clock scan**.  The *format* string consists of any number of characters other than the per-cent sign ("**%**") interspersed with any number of *format groups*, which are two- or three-character sequences beginning with the per-cent sign.  The permissible format groups, and their interpretation, are described under **FORMAT GROUPS**.
+
     On **clock format**, the default format is
 
     ```
     %a %b %d %H:%M:%S %Z %Y
     ```
+
     On **clock scan**, the lack of a **-format** option indicates that a "free format scan" is requested; see **FREE FORM SCAN** for a description of what happens.
 
 [-gmt]{.lit} [boolean]{.arg}
@@ -94,6 +98,7 @@ The **clock** command performs several operations that obtain and manipulate val
 
 [-locale]{.lit} [localeName]{.arg}
 : Specifies that locale-dependent scanning and formatting (and date arithmetic for dates preceding the adoption of the Gregorian calendar) is to be done in the locale identified by *localeName*.  The locale name may be any of the locales acceptable to the **msgcat** package, or it may be the special name *system*, which represents the current locale of the process, or the null string, which represents Tcl's default locale.
+
     The effect of locale on scanning and formatting is discussed in the descriptions of the individual format groups under **FORMAT GROUPS**. The effect of locale on clock arithmetic is discussed under **CLOCK ARITHMETIC**.
 
 [-timezone]{.lit} [zoneName]{.arg}

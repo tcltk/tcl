@@ -52,6 +52,7 @@ The **namespace** command lets you create, access, and destroy separate contexts
 
 [namespace]{.cmd} [eval]{.sub} [namespace]{.arg} [arg]{.arg} [arg]{.optdot}
 : Activates a namespace called *namespace* and evaluates some code in that context. If the namespace does not already exist, it is created. If more than one *arg* argument is specified, the arguments are concatenated together with a space between each one in the same fashion as the [eval] command, and the result is evaluated.
+
     If *namespace* has leading namespace qualifiers and any leading namespaces do not exist, they are automatically created.
 
 [namespace]{.cmd} [exists]{.sub} [namespace]{.arg}
@@ -65,7 +66,9 @@ The **namespace** command lets you create, access, and destroy separate contexts
 
 [namespace]{.cmd} [import]{.sub} [-force]{.optlit} [pattern pattern]{.optdot}
 : Imports commands into a namespace, or queries the set of imported commands in a namespace.  When no arguments are present, **namespace import** returns the list of commands in the current namespace that have been imported from other namespaces.  The commands in the returned list are in the format of simple names, with no namespace qualifiers at all. This format is suitable for composition with **namespace forget** (see **EXAMPLES** below).
+
     When *pattern* arguments are present, each *pattern* is a qualified name like **foo::x** or **a::p***. That is, it includes the name of an exporting namespace and may have glob-style special characters in the command name at the end of the qualified name. Glob characters may not appear in a namespace name. When the namespace name is not fully qualified (i.e., does not start with a namespace separator) it is resolved as a namespace name in the way described in the **NAME RESOLUTION** section; it is an error if no namespace with that name can be found.
+
     All the commands that match a *pattern* string and which are currently exported from their namespace are added to the current namespace. This is done by creating a new command in the current namespace that points to the exported command in its original namespace; when the new imported command is called, it invokes the exported command. This command normally returns an error if an imported command conflicts with an existing command. However, if the **-force** option is given, imported commands will silently replace existing commands. The **namespace import** command has snapshot semantics: that is, only requested commands that are currently defined in the exporting namespace are imported. In other words, you can import only the commands that are in a namespace at the time when the **namespace import** command is executed. If another command is defined and exported in this namespace later on, it will not be imported.
 
 [namespace]{.cmd} [inscope]{.sub} [namespace]{.arg} [script]{.arg} [arg]{.optdot}
@@ -74,11 +77,13 @@ The **namespace** command lets you create, access, and destroy separate contexts
     ```
     namespace inscope ::foo $script $x $y $z
     ```
+
     is equivalent to
 
     ```
     namespace eval ::foo [concat $script [list $x $y $z]]
     ```
+
     thus additional arguments will not undergo a second round of substitution, as is the case with **namespace eval**.
 
 [namespace]{.cmd} [origin]{.sub} [command]{.arg}

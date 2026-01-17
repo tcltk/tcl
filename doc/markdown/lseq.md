@@ -56,13 +56,13 @@ The **lseq** command can produce both increasing and decreasing sequences. When 
 
 ```
 % lseq 1 to 5    ;# increasing
-\(-> 1 2 3 4 5
+→ 1 2 3 4 5
 
 % lseq 5 to 1    ;# decreasing
-\(-> 5 4 3 2 1
+→ 5 4 3 2 1
 
 % lseq 0 0.5 by 0.1  ;# doubles
-\(-> 0.0 0.1 0.2 0.3 0.4 0.5
+→ 0.0 0.1 0.2 0.3 0.4 0.5
 
 % lseq 6 to 1 by 2   ;# decreasing, step wrong sign, empty list
 
@@ -81,47 +81,47 @@ count = int( (end - start + stepValue) / stepValueq )
 
 ```
 lseq 3
-\(-> 0 1 2
+→ 0 1 2
 
 lseq 3 0
-\(-> 3 2 1 0
+→ 3 2 1 0
 
 lseq 10 .. 1 by -2
-\(-> 10 8 6 4 2
+→ 10 8 6 4 2
 
 set l [lseq 0 -5]
-\(-> 0 -1 -2 -3 -4 -5
+→ 0 -1 -2 -3 -4 -5
 
 foreach i [lseq [llength $l]] {
     puts l($i)=[lindex $l $i]
 }
-\(-> l(0)=0
-\(-> l(1)=-1
-\(-> l(2)=-2
-\(-> l(3)=-3
-\(-> l(4)=-4
-\(-> l(5)=-5
+→ l(0)=0
+→ l(1)=-1
+→ l(2)=-2
+→ l(3)=-3
+→ l(4)=-4
+→ l(5)=-5
 
 foreach i [lseq {[llength $l]-1} 0] {
     puts l($i)=[lindex $l $i]
 }
-\(-> l(5)=-5
-\(-> l(4)=-4
-\(-> l(3)=-3
-\(-> l(2)=-2
-\(-> l(1)=-1
-\(-> l(0)=0
+→ l(5)=-5
+→ l(4)=-4
+→ l(3)=-3
+→ l(2)=-2
+→ l(1)=-1
+→ l(0)=0
 
 set i 17
-         \(-> 17
+         → 17
 if {$i in [lseq 0 50]} { # equivalent to: (0 <= $i && $i <= 50)
     puts "Ok"
 } else {
     puts "outside :("
 }
-\(-> Ok
+→ Ok
 
 set sqrs [lmap i [lseq 1 10] { expr {$i*$i} }]
-\(-> 1 4 9 16 25 36 49 64 81 100
+→ 1 4 9 16 25 36 49 64 81 100
 ```
 

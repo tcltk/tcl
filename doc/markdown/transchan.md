@@ -57,11 +57,12 @@ The following subcommands are relevant to all types of channel.
 [cmdPrefix]{.ins} [initialize]{.sub} [handle]{.arg} [mode]{.arg}
 : This mandatory subcommand is called first, and then never again (for the given *handle*). Its responsibility is to initialize all parts of the transformation at the Tcl level. The *mode* is a list containing any of [read] and **write**.
 
-**write**
-: implies that the channel is writable.
+    **write**
+    : implies that the channel is writable.
 
-[read]
-: implies that the channel is readable.
+    [read]
+    : implies that the channel is readable.
+
 
     The return value of the subcommand should be a list containing the names of all subcommands supported by this handler. Any error thrown by the subcommand will prevent the creation of the transformation. The thrown error will appear as error thrown by [chan push][chan].
 
@@ -72,6 +73,7 @@ These subcommands are used for handling transformations applied to readable chan
 
 [cmdPrefix]{.ins} [drain]{.sub} [handle]{.arg}
 : This optional subcommand is called whenever data in the transformation input (i.e. read) buffer has to be forced upward, i.e. towards the user or script. The result returned by the method is taken as the *binary* data to push upward to the level above this transformation (the reader or a higher-level transformation).
+
     In other words, when this method is called the transformation cannot defer the actual transformation operation anymore and has to transform all data waiting in its internal read buffers and return the result of that action.
 
 [cmdPrefix]{.ins} [limit?]{.sub} [handle]{.arg}
@@ -79,6 +81,7 @@ These subcommands are used for handling transformations applied to readable chan
 
 [cmdPrefix]{.ins} [read]{.sub} [handle]{.arg} [buffer]{.arg}
 : This subcommand, which must be present if the transformation is to work with readable channels, is called whenever the base channel, or a transformation below this transformation, pushes data upward. The *buffer* contains the binary data which has been given to us from below. It is the responsibility of this subcommand to actually transform the data. The result returned by the subcommand is taken as the binary data to push further upward to the transformation above this transformation. This can also be the user or script that originally read from the channel.
+
     Note that the result is allowed to be empty, or even less than the data we received; the transformation is not required to transform everything given to it right now. It is allowed to store incoming data in internal buffers and to defer the actual transformation until it has more data.
 
 
@@ -88,10 +91,12 @@ These subcommands are used for handling transformations applied to writable chan
 
 [cmdPrefix]{.ins} [flush]{.sub} [handle]{.arg}
 : This optional subcommand is called whenever data in the transformation 'write' buffer has to be forced downward, i.e. towards the base channel. The result returned by the subcommand is taken as the binary data to write to the transformation below the current transformation. This can be the base channel as well.
+
     In other words, when this subcommand is called the transformation cannot defer the actual transformation operation anymore and has to transform all data waiting in its internal write buffers and return the result of that action.
 
 [cmdPrefix]{.ins} [write]{.sub} [handle]{.arg} [buffer]{.arg}
 : This subcommand, which must be present if the transformation is to work with writable channels, is called whenever the user, or a transformation above this transformation, writes data downward. The *buffer* contains the binary data which has been written to us. It is the responsibility of this subcommand to actually transform the data.
+
     The result returned by the subcommand is taken as the binary data to write to the transformation below this transformation. This can be the base channel as well. Note that the result is allowed to be empty, or less than the data we got; the transformation is not required to transform everything which was written to it right now. It is allowed to store this data in internal buffers and to defer the actual transformation until it has more data.
 
 

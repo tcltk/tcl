@@ -45,14 +45,17 @@ The following commands are a subset of the full Dynamic Data Exchange set of com
 
 [dde]{.cmd} [servername]{.sub} [-force]{.optlit} [[-handler]{.lit} [proc]{.arg}]{.optarg} [-|-]{.optlit} [topic]{.optarg}
 : **dde servername** registers the interpreter as a DDE server with the service name **TclEval** and the topic name specified by *topic*. If no *topic* is given, **dde servername** returns the name of the current topic or the empty string if it is not registered as a service. If the given *topic* name is already in use, then a suffix of the form " #2" or " #3" is appended to the name to make it unique. The command's result will be the name actually used. The **-force** option is used to force registration of precisely the given *topic* name.
+
     The **-handler** option specifies a Tcl procedure that will be called to process calls to the dde server. If the package has been loaded into a safe interpreter then a **-handler** procedure must be defined. The procedure is called with all the arguments provided by the remote call.
 
 [dde]{.cmd} [execute]{.sub} [-async]{.optlit} [-binary]{.optlit} [service]{.arg} [topic]{.arg} [data]{.arg}
 : **dde execute** takes the *data* and sends it to the server indicated by *service* with the topic indicated by *topic*. Typically, *service* is the name of an application, and *topic* is a file to work on.  The *data* field is given to the remote application. Typically, the application treats the *data* field as a script, and the script is run in the application.  The **-async** option requests asynchronous invocation.  The command returns an error message if the script did not run, unless the **-async** flag was used, in which case the command returns immediately with no error.
+
     Without the **-binary** option all data will be sent in unicode. For dde clients which don't implement the CF_UNICODE clipboard format, this will automatically be translated to the system encoding. You can use the **-binary** option in combination with the result of [encoding convertto][encoding] to send data in any other encoding.
 
 [dde]{.cmd} [poke]{.sub} [-binary]{.optlit} [service]{.arg} [topic]{.arg} [item]{.arg} [data]{.arg}
 : **dde poke** passes the *data* to the server indicated by *service* using the *topic* and *item* specified.  Typically, *service* is the name of an application.  *topic* is application specific but can be a command to the server or the name of a file to work on.  The *item* is also application specific and is often not used, but it must always be non-null.  The *data* field is given to the remote application.
+
     Without the **-binary** option all data will be sent in unicode. For dde clients which don't implement the CF_UNICODE clipboard format, this will automatically be translated to the system encoding. You can use the **-binary** option in combination with the result of [encoding convertto][encoding] to send data in any other encoding.
 
 [dde]{.cmd} [request]{.sub} [-binary]{.optlit} [service]{.arg} [topic]{.arg} [item]{.arg}

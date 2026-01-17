@@ -54,59 +54,61 @@ The following rules define the syntax and semantics of the Tcl language:
 [8] **Variable substitution.**
 : If a word contains a dollar-sign ("$") followed by one of the forms described below, then Tcl performs *variable substitution*:  the dollar-sign and the following characters are replaced in the word by the value of a variable. Variable substitution may take any of the following forms:
 
-**$***name*
-: *Name* is the name of a scalar variable;  the name is a sequence of one or more characters that are a letter, digit, underscore, or namespace separators (two or more colons). Letters and digits are *only* the standard ASCII ones (**0**–**9**, **A**–**Z** and **a**–**z**).
+    **$***name*
+    : *Name* is the name of a scalar variable;  the name is a sequence of one or more characters that are a letter, digit, underscore, or namespace separators (two or more colons). Letters and digits are *only* the standard ASCII ones (**0**–**9**, **A**–**Z** and **a**–**z**).
 
-**$***name***(***index***)**
-: *Name* gives the name of an array variable and *index* gives the name of an element within that array. *Name* must contain only letters, digits, underscores, and namespace separators, and may be an empty string. Letters and digits are *only* the standard ASCII ones (**0**–**9**, **A**–**Z** and **a**–**z**). Command substitutions, variable substitutions, and backslash substitutions are performed on the characters of *index*.
+    **$***name***(***index***)**
+    : *Name* gives the name of an array variable and *index* gives the name of an element within that array. *Name* must contain only letters, digits, underscores, and namespace separators, and may be an empty string. Letters and digits are *only* the standard ASCII ones (**0**–**9**, **A**–**Z** and **a**–**z**). Command substitutions, variable substitutions, and backslash substitutions are performed on the characters of *index*.
 
-**${***name***}**
-: *Name* is the name of a scalar variable or array element.  It may contain any characters whatsoever except for close braces.  It indicates an array element if *name* is in the form "*arrayName***(***index***)**" where *arrayName* does not contain any open parenthesis characters, "**(**", or close brace characters, "**}**", and *index* can be any sequence of characters except for close brace characters.  No further substitutions are performed during the parsing of *name*.
+    **${***name***}**
+    : *Name* is the name of a scalar variable or array element.  It may contain any characters whatsoever except for close braces.  It indicates an array element if *name* is in the form "*arrayName***(***index***)**" where *arrayName* does not contain any open parenthesis characters, "**(**", or close brace characters, "**}**", and *index* can be any sequence of characters except for close brace characters.  No further substitutions are performed during the parsing of *name*.
+
 
     There may be any number of variable substitutions in a single word. Variable substitution is not performed on words enclosed in braces.
+
     Note that variables may contain character sequences other than those listed above, but in that case other mechanisms must be used to access them (e.g., via the [set] command's single-argument form).
 
 [9] **Backslash substitution.**
 : If a backslash ("\") appears within a word then *backslash substitution* occurs. In all cases but those described below the backslash is dropped and the following character is treated as an ordinary character and included in the word. This allows characters such as double quotes, close brackets, and dollar signs to be included in words without triggering special processing. The following table lists the backslash sequences that are handled specially, along with the value that replaces each sequence.
 
-\**a**
-: Audible alert (bell) (Unicode U+000007).
+    \**a**
+    : Audible alert (bell) (Unicode U+000007).
 
-\**b**
-: Backspace (Unicode U+000008).
+    \**b**
+    : Backspace (Unicode U+000008).
 
-\**f**
-: Form feed (Unicode U+00000C).
+    \**f**
+    : Form feed (Unicode U+00000C).
 
-\**n**
-: Newline (Unicode U+00000A).
+    \**n**
+    : Newline (Unicode U+00000A).
 
-\**r**
-: Carriage-return (Unicode U+00000D).
+    \**r**
+    : Carriage-return (Unicode U+00000D).
 
-\**t**
-: Tab (Unicode U+000009).
+    \**t**
+    : Tab (Unicode U+000009).
 
-\**v**
-: Vertical tab (Unicode U+00000B).
+    \**v**
+    : Vertical tab (Unicode U+00000B).
 
-\**<newline>***whiteSpace*
-: A single space character replaces the backslash, newline, and all spaces and tabs after the newline.  This backslash sequence is unique in that it is replaced in a separate pre-pass before the command is actually parsed. This means that it will be replaced even when it occurs between braces, and the resulting space will be treated as a word separator if it is not in braces or quotes.
+    \**<newline>***whiteSpace*
+    : A single space character replaces the backslash, newline, and all spaces and tabs after the newline.  This backslash sequence is unique in that it is replaced in a separate pre-pass before the command is actually parsed. This means that it will be replaced even when it occurs between braces, and the resulting space will be treated as a word separator if it is not in braces or quotes.
 
-\\
-: Backslash ("\").
+    \\
+    : Backslash ("\").
 
-\*ooo*
-: The digits *ooo* (one, two, or three of them) give a eight-bit octal value for the Unicode character that will be inserted, in the range *000*–*377* (i.e., the range U+000000–U+0000FF). The parser will stop just before this range overflows, or when the maximum of three digits is reached.  The upper bits of the Unicode character will be 0.
+    \*ooo*
+    : The digits *ooo* (one, two, or three of them) give a eight-bit octal value for the Unicode character that will be inserted, in the range *000*–*377* (i.e., the range U+000000–U+0000FF). The parser will stop just before this range overflows, or when the maximum of three digits is reached.  The upper bits of the Unicode character will be 0.
 
-\**x***hh*
-: The hexadecimal digits *hh* (one or two of them) give an eight-bit hexadecimal value for the Unicode character that will be inserted.  The upper bits of the Unicode character will be 0 (i.e., the character will be in the range U+000000–U+0000FF).
+    \**x***hh*
+    : The hexadecimal digits *hh* (one or two of them) give an eight-bit hexadecimal value for the Unicode character that will be inserted.  The upper bits of the Unicode character will be 0 (i.e., the character will be in the range U+000000–U+0000FF).
 
-\**u***hhhh*
-: The hexadecimal digits *hhhh* (one, two, three, or four of them) give a sixteen-bit hexadecimal value for the Unicode character that will be inserted.  The upper bits of the Unicode character will be 0 (i.e., the character will be in the range U+000000–U+00FFFF).
+    \**u***hhhh*
+    : The hexadecimal digits *hhhh* (one, two, three, or four of them) give a sixteen-bit hexadecimal value for the Unicode character that will be inserted.  The upper bits of the Unicode character will be 0 (i.e., the character will be in the range U+000000–U+00FFFF).
 
-\**U***hhhhhhhh*
-: The hexadecimal digits *hhhhhhhh* (one up to eight of them) give a twenty-one-bit hexadecimal value for the Unicode character that will be inserted, in the range U+000000–U+10FFFF.  The parser will stop just before this range overflows, or when the maximum of eight digits is reached.  The upper bits of the Unicode character will be 0.
+    \**U***hhhhhhhh*
+    : The hexadecimal digits *hhhhhhhh* (one up to eight of them) give a twenty-one-bit hexadecimal value for the Unicode character that will be inserted, in the range U+000000–U+10FFFF.  The parser will stop just before this range overflows, or when the maximum of eight digits is reached.  The upper bits of the Unicode character will be 0.
 
 
 
@@ -117,11 +119,13 @@ Backslash substitution is not performed on words enclosed in braces, except for 
 
 [11] **Order of substitution.**
 : Each character is processed exactly once by the Tcl interpreter as part of creating the words of a command. For example, if variable substitution occurs then no further substitutions are performed on the value of the variable;  the value is inserted into the word verbatim. If command substitution occurs then the nested command is processed entirely by the recursive call to the Tcl interpreter; no substitutions are performed before making the recursive call and no additional substitutions are performed on the result of the nested script.
+
     Substitutions take place from left to right, and each substitution is evaluated completely before attempting to evaluate the next.  Thus, a sequence like
 
     ```
     set y [set x 0][incr x][incr x]
     ```
+
     will always set the variable *y* to the value, *012*.
 
 [12] **Substitution and word boundaries.**

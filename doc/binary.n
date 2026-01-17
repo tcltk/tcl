@@ -16,9 +16,9 @@ binary \- Insert and extract fields from binary strings
 .br
 \fBbinary encode \fIformat\fR ?\fI\-option value ...\fR? \fIdata\fR
 .br
-\fBbinary format \fIformatString \fR?\fIarg arg ...\fR?
+\fBbinary format \fIformatString \fR?\fIarg ...\fR?
 .br
-\fBbinary scan \fIstring formatString \fR?\fIvarName varName ...\fR?
+\fBbinary scan \fIstring formatString \fR?\fIvarName ...\fR?
 .BE
 .SH DESCRIPTION
 .PP

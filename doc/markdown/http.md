@@ -82,25 +82,27 @@ When the HTTP server has replied to the request, call the command **::http::resp
 **::http::config** ?*options*?
 : The **::http::config** command is used to set and query the name of the proxy server and port, and the User-Agent name used in the HTTP requests.  If no options are specified, then the current configuration is returned.  If a single argument is specified, then it should be one of the flags described below.  In this case the current value of that setting is returned.  Otherwise, the options should be a set of flags and values that define the configuration:
 
-**-accept** *mimetypes*
-: The Accept header of the request.  The default is */*, which means that all types of documents are accepted.  Otherwise you can supply a comma-separated list of mime type patterns that you are willing to receive.  For example, "image/gif, image/jpeg, text/*".
+    **-accept** *mimetypes*
+    : The Accept header of the request.  The default is */*, which means that all types of documents are accepted.  Otherwise you can supply a comma-separated list of mime type patterns that you are willing to receive.  For example, "image/gif, image/jpeg, text/*".
 
-**-cookiejar** *command*
-: The cookie store for the package to use to manage HTTP cookies. *command* is a command prefix list; if the empty list (the default value) is used, no cookies will be sent by requests or stored from responses. The command indicated by *command*, if supplied, must obey the **COOKIE JAR PROTOCOL** described below.
+    **-cookiejar** *command*
+    : The cookie store for the package to use to manage HTTP cookies. *command* is a command prefix list; if the empty list (the default value) is used, no cookies will be sent by requests or stored from responses. The command indicated by *command*, if supplied, must obey the **COOKIE JAR PROTOCOL** described below.
 
-**-pipeline** *boolean*
-: Specifies whether HTTP/1.1 transactions on a persistent socket will be pipelined.  See the **PERSISTENT SOCKETS** section for details. The default is 1.
+    **-pipeline** *boolean*
+    : Specifies whether HTTP/1.1 transactions on a persistent socket will be pipelined.  See the **PERSISTENT SOCKETS** section for details. The default is 1.
 
-**-postfresh** *boolean*
-: Specifies whether requests that use the **POST** method will always use a fresh socket, overriding the **-keepalive** option of command **http::geturl**.  See the **PERSISTENT SOCKETS** section for details. The default is 0.
+    **-postfresh** *boolean*
+    : Specifies whether requests that use the **POST** method will always use a fresh socket, overriding the **-keepalive** option of command **http::geturl**.  See the **PERSISTENT SOCKETS** section for details. The default is 0.
 
-**-proxyauth** *string*
-: If non-empty, the string is supplied to the proxy server as the value of the request header Proxy-Authorization.  This option can be used for HTTP Basic Authentication.  If the proxy server requires authentication by another technique, e.g. Digest Authentication, the **-proxyauth** option is not useful.  In that case the caller must expect a 407 response from the proxy, compute the authentication value to be supplied, and use the **-headers** option to supply it as the value of the Proxy-Authorization header.
+    **-proxyauth** *string*
+    : If non-empty, the string is supplied to the proxy server as the value of the request header Proxy-Authorization.  This option can be used for HTTP Basic Authentication.  If the proxy server requires authentication by another technique, e.g. Digest Authentication, the **-proxyauth** option is not useful.  In that case the caller must expect a 407 response from the proxy, compute the authentication value to be supplied, and use the **-headers** option to supply it as the value of the Proxy-Authorization header.
 
-**-proxyfilter** *command*
-: The command is a callback that is made during **::http::geturl** to determine if a proxy is required for a given host.  One argument, a host name, is added to *command* when it is invoked.  If a proxy is required, the callback should return a two-element list containing the proxy server and proxy port.  Otherwise the filter command should return an empty list.
+    **-proxyfilter** *command*
+    : The command is a callback that is made during **::http::geturl** to determine if a proxy is required for a given host.  One argument, a host name, is added to *command* when it is invoked.  If a proxy is required, the callback should return a two-element list containing the proxy server and proxy port.  Otherwise the filter command should return an empty list.
+
 
     The default value of **-proxyfilter** is **http::ProxyRequired**, and this command returns the values of the **-proxyhost** and **-proxyport** settings if they are non-empty.  The options **-proxyhost**, **-proxyport**, and **-proxynot** are used only by **http::ProxyRequired**, and nowhere else in **::http::geturl**. A user-supplied **-proxyfilter** command may use these options, or alternatively it may obtain values from elsewhere in the calling script. In the latter case, any values provided for **-proxyhost**, **-proxyport**, and **-proxynot** are unused.
+
     The **::http::geturl** command runs the **-proxyfilter** callback inside a [catch] command.  Therefore an error in the callback command does not call the **bgerror** handler.  See the **ERRORS** section for details.
 
 **-proxyhost** *hostname*
@@ -118,14 +120,15 @@ When the HTTP server has replied to the request, call the command **::http::resp
 **-threadlevel** *level*
 : Specifies whether and how to use the **Thread** package.  Possible values of *level* are 0, 1 or 2.
 
-**0**
-: (the default) do not use Thread
+    **0**
+    : (the default) do not use Thread
 
-**1**
-: use Thread if it is available, do not use it if it is unavailable
+    **1**
+    : use Thread if it is available, do not use it if it is unavailable
 
-**2**
-: use Thread if it is available, raise an error if it is unavailable
+    **2**
+    : use Thread if it is available, raise an error if it is unavailable
+
 
     The Tcl [socket -async][socket] command can block in adverse cases (e.g. a slow DNS lookup).  Using the Thread package works around this problem, for both HTTP and HTTPS transactions.  Values of *level* other than 0 are available only to the main interpreter in each thread.  See section **THREADS** for more information.
 
@@ -141,17 +144,17 @@ When the HTTP server has replied to the request, call the command **::http::resp
 **::http::geturl** *url* ?*options*?
 : The **::http::geturl** command is the main procedure in the package. The **-query** or **-querychannel** option causes a POST operation and the **-validate** option causes a HEAD operation; otherwise, a GET operation is performed.  The **::http::geturl** command returns a *token* value that can be passed as an argument to other commands to get information about the transaction.  See the **METADATA** and **ERRORS** section for details.  The **::http::geturl** command blocks until the operation completes, unless the **-command** option specifies a callback that is invoked when the HTTP transaction completes. **::http::geturl** takes several options:
 
-**-binary** *boolean*
-: Specifies whether to force interpreting the URL data as binary.  Normally this is auto-detected (anything not beginning with a **text** content type or whose content encoding is **gzip** or **deflate** is considered binary data).
+    **-binary** *boolean*
+    : Specifies whether to force interpreting the URL data as binary.  Normally this is auto-detected (anything not beginning with a **text** content type or whose content encoding is **gzip** or **deflate** is considered binary data).
 
-**-blocksize** *size*
-: The block size used when reading the URL. At most *size* bytes are read at once.  After each block, a call to the **-progress** callback is made (if that option is specified).
+    **-blocksize** *size*
+    : The block size used when reading the URL. At most *size* bytes are read at once.  After each block, a call to the **-progress** callback is made (if that option is specified).
 
-**-channel** *name*
-: Copy the URL contents to channel *name* instead of saving it in a Tcl variable for retrieval by **::http::responseBody**.
+    **-channel** *name*
+    : Copy the URL contents to channel *name* instead of saving it in a Tcl variable for retrieval by **::http::responseBody**.
 
-**-command** *callback*
-: The presence of this option causes **::http::geturl** to return immediately. After the HTTP transaction completes, the value of *callback* is expanded, an additional argument is added, and the resulting command is evaluated. The additional argument is the *token* returned from **::http::geturl**. This token is the name of an array that is described in the **STATE ARRAY** section.  Here is a template for the callback:
+    **-command** *callback*
+    : The presence of this option causes **::http::geturl** to return immediately. After the HTTP transaction completes, the value of *callback* is expanded, an additional argument is added, and the resulting command is evaluated. The additional argument is the *token* returned from **::http::geturl**. This token is the name of an array that is described in the **STATE ARRAY** section.  Here is a template for the callback:
 
 
     ```
@@ -162,6 +165,7 @@ When the HTTP server has replied to the request, call the command **::http::resp
         return
     }
     ```
+
     The **::http::geturl** command runs the **-command** callback inside a [catch] command.  Therefore an error in the callback command does not call the **bgerror** handler.  See the **ERRORS** section for details.
 
 **-guesstype** *boolean*
@@ -182,8 +186,11 @@ When the HTTP server has replied to the request, call the command **::http::resp
         return $nbytes
     }
     ```
+
     The **http::geturl** code for the **-handler** option is not compatible with either compression or chunked transfer-encoding.  If **-handler** is specified, then to work around these issues **http::geturl** will reduce the HTTP protocol to 1.0, and override the **-zip** option (i.e. it will send the header **Accept-Encoding: identity** instead of **Accept-Encoding: gzip,deflate**).
+
     If options **-handler** and **-channel** are used together, the handler is responsible for copying the data from the HTTP socket to the specified channel.  The name of the channel is available to the handler as element **-channel** of the token array.
+
     The **::http::geturl** command runs the **-handler** callback inside a [catch] command.  Therefore an error in the callback command does not call the **bgerror** handler.  See the **ERRORS** section for details.
 
 **-headers** *keyvaluelist*
@@ -198,10 +205,11 @@ When the HTTP server has replied to the request, call the command **::http::resp
 
 **-method** *type*
 : Force the HTTP request method to *type*. **::http::geturl** will auto-select GET, POST or HEAD based on other options, but this option overrides that selection and enables choices like PUT and DELETE for WebDAV support.
+
     It is the caller's responsibility to ensure that the headers and request body (if any) conform to the requirements of the request method.  For example, if using **-method** *POST* to send a POST with an empty request body, the caller must also supply the option
 
     ```
-    \-headers {Content-Length 0}
+    -headers {Content-Length 0}
     ```
 
 **-myaddr** *address*
@@ -224,6 +232,7 @@ When the HTTP server has replied to the request, call the command **::http::resp
 
 **-query** *query*
 : This flag (if the value is non-empty) causes **::http::geturl** to do a POST request that passes the string *query* verbatim to the server as the request payload. The content format (and encoding) of *query* is announced by the request header **Content-Type** which is set by the option **-type**.  Any value of **-type** is permitted, and it is the responsibility of the caller to supply *query* in the correct format.
+
     If **-type** is not specified, it defaults to *application/x-www-form-urlencoded*, which requires *query* to be an x-url-encoding formatted query-string (this **-type** and query format are used in a POST submitted from an html form).  The **::http::formatQuery** procedure can be used to do the formatting.
 
 **-queryblocksize** *size*
@@ -316,18 +325,25 @@ A registry of valid status codes is maintained at https://www.iana.org/assignmen
 
 **::http::responseInfo** *token*
 : This command returns a [dict] of selected response metadata that are essential for identifying a successful transaction and making use of the response, along with other metadata that are informational.  The keys of the [dict] are *stage*, *status*, *responseCode*, *reasonPhrase*, *contentType*, *binary*, *redirection*, *upgrade*, *error*, *postError*, *method*, *charset*, *compression*, *httpRequest*, *httpResponse*, *url*, *connectionRequest*, *connectionResponse*, *connectionActual*, *transferEncoding*, *totalPost*, *currentPost*, *totalSize*, and *currentSize*.  The meaning of these keys is described in the section **METADATA** below.
+
     It is always worth checking the value of *binary* after a HTTP transaction, to determine whether a misconfigured server has caused http to interpret a text resource as a binary, or vice versa.
+
     After a POST transaction, check the value of *postError* to verify that the request body was uploaded without error.
 
 **::http::responseBody** *token*
 : This command returns the entity sent by the HTTP server (unless *-channel* was used, in which case the entity was delivered to the channel, and the command returns the empty string).
+
     Other terms for "entity", with varying precision, include "representation of resource", "resource", "response body after decoding", "payload", "message body after decoding", "content(s)", and "file".
 
 **::http::register** *proto port command* ?*socketCmdVarName*? ?*useSockThread*? ?*endToEndProxy*?
 : This procedure allows one to provide custom HTTP transport types such as HTTPS, by registering a prefix, the default port, and the command to execute to create the Tcl **channel**. The optional arguments configure how **http** uses the custom transport, and have default values that are compatible with older versions of **http** in which **::http::register** has no optional arguments.
+
     Argument *socketCmdVarName* is the name of a variable provided by the transport, whose value is the command used by the transport to open a socket.  Its default value is set by the transport and is "::socket", but if the name of the variable is supplied to **::http::register**, then **http** will set a new value in order to make optional facilities available.  These facilities are enabled by the optional arguments *useSockThread*, *endToEndProxy*, which take boolean values with default value *false*.
+
     Iff argument *useSockThread* is supplied and is boolean *true*, then iff permitted by the value [**http::config** *-threadlevel*] and by the availability of package **Thread**, sockets created for the transport will be opened in a different thread so that a slow DNS lookup will not cause the script to block.
+
     Iff argument *endToEndProxy* is supplied and is boolean *true*, then when **http::geturl** accesses a server via a proxy, it will open a channel by sending a CONNECT request to the proxy, and it will then make its request over this channel.  This allows end-to-end encryption for HTTPS requests made through a proxy.
+
     For example,
 
     ```
@@ -671,37 +687,39 @@ Though not formally part of the protocol, it is expected that particular values 
 
 [cookieJar]{.ins} [getCookies]{.sub} [protocol]{.arg} [host]{.arg} [requestPath]{.arg}
 : This command asks the cookie jar what cookies should be supplied for a particular request. It should take the *protocol* (typically **http** or **https**), *host* name and *requestPath* (parsed from the *url* argument to **::http::geturl**) and return a list of cookie keys and values that describe the cookies to supply to the remote host. The list must have an even number of elements.
+
     There should only ever be at most one cookie with a particular key for any request (typically the one with the most specific *host*/domain match and most specific *requestPath*/path match), but there may be many cookies with different names in any request.
 
 [cookieJar]{.ins} [storeCookie]{.sub} [cookieDictionary]{.arg}
 : This command asks the cookie jar to store a particular cookie that was returned by a request; the result of this command is ignored. The cookie (which will have been parsed by the http package) is described by a dictionary, *cookieDictionary*, that may have the following keys:
 
-**domain**
-: This is always present. Its value describes the domain hostname *or prefix* that the cookie should be returned for.  The checking of the domain against the origin (below) should be careful since sites that issue cookies should only do so for domains related to themselves. Cookies that do not obey a relevant origin matching rule should be ignored.
+    **domain**
+    : This is always present. Its value describes the domain hostname *or prefix* that the cookie should be returned for.  The checking of the domain against the origin (below) should be careful since sites that issue cookies should only do so for domains related to themselves. Cookies that do not obey a relevant origin matching rule should be ignored.
 
-**expires**
-: This is optional. If present, the cookie is intended to be a persistent cookie and the value of the option is the Tcl timestamp (in seconds from the same base as [clock seconds][clock]) of when the cookie expires (which may be in the past, which should result in the cookie being deleted immediately). If absent, the cookie is intended to be a session cookie that should be not persisted beyond the lifetime of the cookie jar.
+    **expires**
+    : This is optional. If present, the cookie is intended to be a persistent cookie and the value of the option is the Tcl timestamp (in seconds from the same base as [clock seconds][clock]) of when the cookie expires (which may be in the past, which should result in the cookie being deleted immediately). If absent, the cookie is intended to be a session cookie that should be not persisted beyond the lifetime of the cookie jar.
 
-**hostonly**
-: This is always present. Its value is a boolean that describes whether the cookie is a single host cookie (true) or a domain-level cookie (false).
+    **hostonly**
+    : This is always present. Its value is a boolean that describes whether the cookie is a single host cookie (true) or a domain-level cookie (false).
 
-**httponly**
-: This is always present. Its value is a boolean that is true when the site wishes the cookie to only ever be used with HTTP (or HTTPS) traffic.
+    **httponly**
+    : This is always present. Its value is a boolean that is true when the site wishes the cookie to only ever be used with HTTP (or HTTPS) traffic.
 
-**key**
-: This is always present. Its value is the *key* of the cookie, which is part of the information that must be return when sending this cookie back in a future request.
+    **key**
+    : This is always present. Its value is the *key* of the cookie, which is part of the information that must be return when sending this cookie back in a future request.
 
-**origin**
-: This is always present. Its value describes where the http package believes it received the cookie from, which may be useful for checking whether the cookie's domain is valid.
+    **origin**
+    : This is always present. Its value describes where the http package believes it received the cookie from, which may be useful for checking whether the cookie's domain is valid.
 
-**path**
-: This is always present. Its value describes the path prefix of requests to the cookie domain where the cookie should be returned.
+    **path**
+    : This is always present. Its value describes the path prefix of requests to the cookie domain where the cookie should be returned.
 
-**secure**
-: This is always present. Its value is a boolean that is true when the cookie should only used on requests sent over secure channels (typically HTTPS).
+    **secure**
+    : This is always present. Its value is a boolean that is true when the cookie should only used on requests sent over secure channels (typically HTTPS).
 
-**value**
-: This is always present. Its value is the value of the cookie, which is part of the information that must be return when sending this cookie back in a future request.
+    **value**
+    : This is always present. Its value is the value of the cookie, which is part of the information that must be return when sending this cookie back in a future request.
+
 
     Other keys may always be ignored; they have no meaning in this protocol.
 

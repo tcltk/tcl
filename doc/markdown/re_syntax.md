@@ -114,7 +114,9 @@ A *constraint* matches an empty string when specific conditions are met. A const
 
 **$**
 : matches at the end of the string or a line (according to whether matching is newline-sensitive or not, as described in **MATCHING**, below).
+
     The difference between string and line matching modes is immaterial when the string does not contain a newline character.  The **\A** and **\Z** constraint escapes have a similar purpose but are always constraints for the overall string.
+
     The default newline-sensitivity depends on the command that uses the regular expression, and can be overridden as described in **METASYNTAX**, below.
 
 **(?=***re***)**

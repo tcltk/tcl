@@ -59,6 +59,7 @@ The **memory** command gives the Tcl developer control of Tcl's memory debugging
     ```
     Tcl_Alloc 40e478 98 tclProc.c 1406
     ```
+
     Calls to **Tcl_Free** are traced in the same manner.
 
 [memory]{.cmd} [trace_on_at_malloc]{.sub} [count]{.arg}

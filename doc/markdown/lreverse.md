@@ -48,8 +48,8 @@ The **lreverse** command returns a list that has the same elements as its input 
 
 ```
 lreverse {a a b c}
-      \(-> c b a a
+      → c b a a
 lreverse {a b {c d} e f}
-      \(-> f e {c d} b a
+      → f e {c d} b a
 ```
 

@@ -51,14 +51,14 @@ Performs one of several operations on dictionary values or variables containing 
 [dict]{.cmd} [filter]{.sub} [dictionaryValue]{.arg} [filterType]{.arg} [arg]{.arg} [arg]{.optdot}
 : This takes a dictionary value and returns a new dictionary that contains just those key/value pairs that match the specified filter type (which may be abbreviated.)  Supported filter types are:
 
-[dict]{.cmd} [filter]{.sub} [dictionaryValue]{.arg} [key]{.lit} [globPattern]{.optdot}
-: The **key** rule only matches those key/value pairs whose keys match any of the given patterns (in the style of [string match][string].)
+    [dict]{.cmd} [filter]{.sub} [dictionaryValue]{.arg} [key]{.lit} [globPattern]{.optdot}
+    : The **key** rule only matches those key/value pairs whose keys match any of the given patterns (in the style of [string match][string].)
 
-[dict]{.cmd} [filter]{.sub} [dictionaryValue]{.arg} [script]{.lit} [variableList]{.arg} [script]{.arg}
-: The **script** rule tests for matching by evaluating a script for each key/value pair. The argument after the rule selection word is a two-element list assigning the key to the variable name in the first element and the value to the variable name in the second element of the list, and then evaluating the given script which should result in a boolean value (with the key/value pair only being included in the result of the **dict filter** command when a true value is returned.) If the *script* returns with a condition of **TCL_BREAK**, no further key/value pairs are considered for inclusion in the resulting dictionary, and a condition of **TCL_CONTINUE** is equivalent to a false result. The key/value pairs are tested in the order in which the keys were inserted into the dictionary.
+    [dict]{.cmd} [filter]{.sub} [dictionaryValue]{.arg} [script]{.lit} [variableList]{.arg} [script]{.arg}
+    : The **script** rule tests for matching by evaluating a script for each key/value pair. The argument after the rule selection word is a two-element list assigning the key to the variable name in the first element and the value to the variable name in the second element of the list, and then evaluating the given script which should result in a boolean value (with the key/value pair only being included in the result of the **dict filter** command when a true value is returned.) If the *script* returns with a condition of **TCL_BREAK**, no further key/value pairs are considered for inclusion in the resulting dictionary, and a condition of **TCL_CONTINUE** is equivalent to a false result. The key/value pairs are tested in the order in which the keys were inserted into the dictionary.
 
-[dict]{.cmd} [filter]{.sub} [dictionaryValue]{.arg} [value]{.lit} [globPattern]{.optdot}
-: The **value** rule only matches those key/value pairs whose values match any of the given patterns (in the style of [string match][string].)
+    [dict]{.cmd} [filter]{.sub} [dictionaryValue]{.arg} [value]{.lit} [globPattern]{.optdot}
+    : The **value** rule only matches those key/value pairs whose values match any of the given patterns (in the style of [string match][string].)
 
 
 [dict]{.cmd} [for]{.sub} [variableList]{.arg} [dictionaryValue]{.arg} [body]{.arg}
@@ -71,7 +71,9 @@ Performs one of several operations on dictionary values or variables containing 
     dict get $dict foo bar spong
     dict get [dict get [dict get $dict foo] bar] spong
     ```
+
     If no keys are provided, **dict get** will return a list containing pairs of elements in a manner similar to [array get][array]. That is, the first element of each pair would be the key and the second element would be the value for that key.
+
     It is an error to attempt to retrieve a value for a key that is not present in the dictionary.
 
 [dict]{.cmd} [getdef]{.sub} [dictionaryValue]{.arg} [key]{.optdot} [key]{.arg} [default]{.arg}
@@ -79,6 +81,7 @@ Performs one of several operations on dictionary values or variables containing 
 
 [dict]{.cmd} [getwithdefault]{.sub} [dictionaryValue]{.arg} [key]{.optdot} [key]{.arg} [default]{.arg}
 : This behaves the same as **dict get** (with at least one *key* argument), returning the value that the key path maps to in the dictionary *dictionaryValue*, except that instead of producing an error because the *key* (or one of the *key*s on the key path) is absent, it returns the *default* argument instead.
+
     Note that there must always be at least one *key* provided, and that **dict getdef** and **dict getwithdefault** are aliases for each other.
 
 [dict]{.cmd} [incr]{.sub} [dictionaryVariable]{.arg} [key]{.arg} [increment]{.optarg}
@@ -95,6 +98,7 @@ Performs one of several operations on dictionary values or variables containing 
 
 [dict]{.cmd} [map]{.sub} [variableList]{.arg} [dictionaryValue]{.arg} [body]{.arg}
 : This command applies a transformation to each element of a dictionary, returning a new dictionary. It takes three arguments: the first is a two-element list of variable names (for the key and value respectively of each mapping in the dictionary), the second the dictionary value to iterate across, and the third a script to be evaluated for each mapping with the key and value variables set appropriately (in the manner of [lmap]). In an iteration where the evaluated script completes normally (**TCL_OK**, as opposed to an [error], etc.) the result of the script is put into an accumulator dictionary using the key that is the current contents of the *keyVariable* variable at that point. The result of the **dict map** command is the accumulator dictionary after all keys have been iterated over.
+
     If the evaluation of the body for any particular step generates a [break], no further pairs from the dictionary will be iterated over and the **dict map** command will terminate successfully immediately. If the evaluation of the body for a particular step generates a [continue] result, the current iteration is aborted and the accumulator dictionary is not modified. The order of iteration is the natural order of the dictionary (typically the order in which the keys were added to the dictionary; the order is the same as that used in **dict for**).
 
 [dict]{.cmd} [merge]{.sub} [dictionaryValue]{.optdot}
@@ -117,7 +121,9 @@ Performs one of several operations on dictionary values or variables containing 
 
 [dict]{.cmd} [update]{.sub} [dictionaryVariable]{.arg} [key]{.arg} [varName]{.arg} [key varName]{.optdot} [body]{.arg}
 : Execute the Tcl script in *body* with the value for each *key* (as found by reading the dictionary value in *dictionaryVariable*) mapped to the variable *varName*. There may be multiple *key*/*varName* pairs. If a *key* does not have a mapping, that corresponds to an unset *varName*. When *body* terminates, any changes made to the *varName*s is reflected back to the dictionary within *dictionaryVariable* (unless *dictionaryVariable* itself becomes unreadable, when all updates are silently discarded), even if the result of *body* is an error or some other kind of exceptional exit. The result of **dict update** is (unless some kind of error occurs) the result of the evaluation of *body*. If *dictionaryVariable* indicates an element that does not exist of an array that has a default value set, the default value and will be used as the value of the dictionary prior to the update operation.
+
     Each *varName* is mapped in the scope enclosing the **dict update**; it is recommended that this command only be used in a local scope ([proc]edure, lambda term for [apply], or method). Because of this, the variables set by **dict update** will continue to exist after the command finishes (unless explicitly [unset]).
+
     Note that the mapping of values to variables does not use traces; changes to the *dictionaryVariable*'s contents only happen when *body* terminates.
 
 [dict]{.cmd} [values]{.sub} [dictionaryValue]{.arg} [globPattern]{.optarg}
@@ -125,8 +131,11 @@ Performs one of several operations on dictionary values or variables containing 
 
 [dict]{.cmd} [with]{.sub} [dictionaryVariable]{.arg} [key]{.optdot} [body]{.arg}
 : Execute the Tcl script in *body* with the value for each key in *dictionaryVariable* mapped (in a manner similarly to **dict update**) to a variable with the same name. Where one or more *key*s are available, these indicate a chain of nested dictionaries, with the innermost dictionary being the one opened out for the execution of *body*. As with **dict update**, making *dictionaryVariable* unreadable will make the updates to the dictionary be discarded, and this also happens if the contents of *dictionaryVariable* are adjusted so that the chain of dictionaries no longer exists. The result of **dict with** is (unless some kind of error occurs) the result of the evaluation of *body*. If *dictionaryVariable* indicates an element that does not exist of an array that has a default value set, the default value and will be used as the value of the dictionary prior to the updating operation.
+
     The variables are mapped in the scope enclosing the **dict with**; it is recommended that this command only be used in a local scope ([proc]edure, lambda term for [apply], or method). Because of this, the variables set by **dict with** will continue to exist after the command finishes (unless explicitly [unset]).
+
     Note that the mapping of values to variables does not use traces; changes to the *dictionaryVariable*'s contents only happen when *body* terminates.
+
     If the *dictionaryVariable* contains a value that is not a dictionary at the point when the *body* terminates (which can easily happen if the name is the same as any of the keys in dictionary) then an error occurs at that point. This command is thus not recommended for use when the keys in the dictionary are expected to clash with the *dictionaryVariable* name itself. Where the contained key does map to a dictionary, the net effect is to combine that inner dictionary into the outer dictionary; see the **EXAMPLES** below for an illustration of this.
 
 

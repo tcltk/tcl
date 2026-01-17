@@ -68,14 +68,14 @@ oo::class create ABC {
 
 ABC create abc
 abc grill
-        \(-> Step 1:
-        \(-> This is Foo in ::abc
-        \(-> Step 2:
-        \(-> This is Foo in ::abc
+        → Step 1:
+        → This is Foo in ::abc
+        → Step 2:
+        → This is Foo in ::abc
 # Direct access via the linked command
 puts "Step 3:"; ExternalCall
-        \(-> Step 3:
-        \(-> This is Foo in ::abc
+        → Step 3:
+        → This is Foo in ::abc
 ```
 
 This example shows that multiple linked commands can be made in a call to **link**, and that they can handle arguments.
@@ -107,9 +107,9 @@ oo::class create Ex {
 
 set o [Ex new]
 $o call 3 5 7
-        \(-> This is a
-        \(-> This is b(3)
-        \(-> This is c(5,7)
+        → This is a
+        → This is b(3)
+        → This is c(5,7)
 ```
 
 

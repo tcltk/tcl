@@ -42,7 +42,9 @@ If the initial arguments to **regsub** start with **-** then they are treated as
 
 [-command]{.lit}
 : Changes the handling of *subSpec* so that it is not treated as a template for a substitution string and the substrings "&" and "\*n*" no longer have special meaning. Instead *subSpec* must be a command prefix, that is, a non-empty list.  The substring of *string* that matches *exp*, and then each substring that matches each capturing sub-RE within *exp* are appended as additional elements to that list. (The items appended to the list are much like what [regexp] **-inline** would return).  The completed list is then evaluated as a Tcl command, and the result of that command is the substitution string.  Any error or exception from command evaluation becomes an error or exception from the **regsub** command.
+
     If **-all** is not also given, the command callback will be invoked at most once (exactly when the regular expression matches). If **-all** is given, the command callback will be invoked for each matched location, in sequence. The exact location indices that matched are not made available to the script.
+
     See **EXAMPLES** below for illustrative cases.
 
 [-expanded]{.lit}
@@ -154,7 +156,7 @@ The **-command** option can also be useful for restricting the range of commands
 ```
 set message "the quIck broWn fOX JUmped oVer the laZy dogS..."
 puts [regsub -all -command {\w+} $message {string totitle}]
-# \(-> The Quick Brown Fox Jumped Over The Lazy Dogs..
+# → The Quick Brown Fox Jumped Over The Lazy Dogs..
 ```
 
 

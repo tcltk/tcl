@@ -50,13 +50,13 @@ Note that **lrepeat 1 element ...** is identical to [list element ...].
 
 ```
 lrepeat 3 a
-      \(-> a a a
+      → a a a
 lrepeat 3 [lrepeat 3 0]
-      \(-> {0 0 0} {0 0 0} {0 0 0}
+      → {0 0 0} {0 0 0} {0 0 0}
 lrepeat 3 a b c
-      \(-> a b c a b c a b c
+      → a b c a b c a b c
 lrepeat 3 [lrepeat 2 a] b c
-      \(-> {a a} b c {a a} b c {a a} b c
+      → {a a} b c {a a} b c {a a} b c
 ```
 
 

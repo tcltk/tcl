@@ -55,6 +55,7 @@ The following options may be supplied to the **timerate** command:
 
 [-calibrate]{.lit}
 : To measure very fast scripts as exactly as possible, a calibration process may be required. The **-calibrate** option is used to calibrate **timerate** itself, calculating the estimated overhead of the given script as the default overhead for future invocations of the **timerate** command. If the *time* parameter is not specified, the calibrate procedure runs for up to 10 seconds.
+
     Note that the calibration process is not thread safe in the current implementation.
 
 [-overhead]{.lit} [estimate]{.arg}

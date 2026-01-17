@@ -62,6 +62,7 @@ The following commands are provided in the parent interpreter:
 
 **::safe::interpCreate** ?*child*? ?*options...*?
 : Creates a safe interpreter, installs the aliases described in the section **ALIASES** and initializes the auto-loading and package mechanism as specified by the supplied *options*. See the **OPTIONS** section below for a description of the optional arguments. If the *child* argument is omitted, a name will be generated. **::safe::interpCreate** always returns the interpreter name.
+
     The interpreter name *child* may include namespace separators, but may not have leading or trailing namespace separators, or excess colon characters in namespace separators.  The interpreter name is qualified relative to the global namespace ::, not the namespace in which the **::safe::interpCreate** command is evaluated.
 
 **::safe::interpInit** *child* ?*options...*?
@@ -106,11 +107,13 @@ The following commands are provided in the parent interpreter:
 
 **::safe::setLogCmd** ?*cmd arg...*?
 : This command installs a script that will be called when interesting life cycle events occur for a safe interpreter. When called with no arguments, it returns the currently installed script. When called with one argument, an empty string, the currently installed script is removed and logging is turned off. The script will be invoked with one additional argument, a string describing the event of interest. The main purpose is to help in debugging safe interpreters. Using this facility you can get complete error messages while the safe interpreter gets only generic error messages. This prevents a safe interpreter from seeing messages about failures and other events that might contain sensitive information such as real directory names.
+
     Example of use:
 
     ```
     ::safe::setLogCmd puts stderr
     ```
+
     Below is the output of a sample session in which a safe interpreter attempted to source a file not found in its virtual access path. Note that the safe interpreter only received an error message saying that the file was not found:
 
     ```

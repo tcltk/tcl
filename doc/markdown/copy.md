@@ -48,7 +48,7 @@ oo::object create src
 oo::objdefine src method msg {} {puts foo}
 oo::copy src dst
 oo::objdefine src method msg {} {puts bar}
-src msg              \(-> prints "bar"
-dst msg              \(-> prints "foo"
+src msg              → prints "bar"
+dst msg              → prints "foo"
 ```
 

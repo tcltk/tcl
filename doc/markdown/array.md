@@ -38,19 +38,20 @@ This command performs one of several operations on the variable given by *arrayN
 
 [array]{.cmd} [default]{.sub} [subcommand]{.arg} [arrayName]{.arg} [arg]{.optarg}
 : Manages the default value of the array. Arrays initially have no default value, but this command allows you to set one; the default value will be returned when reading from an element of the array *arrayName* if the read would otherwise result in an error. Note that this may cause the [append], [dict], [incr] and [lappend] commands to change their behavior in relation to non-existing array elements.
+
     The *subcommand* argument controls what exact operation will be performed on the default value of *arrayName*. Supported *subcommand*s are:
 
-[array]{.cmd} [default]{.sub} [exists]{.lit} [arrayName]{.arg}
-: This returns a boolean value indicating whether a default value has been set for the array *arrayName*. Returns a false value if *arrayName* does not exist. Raises an error if *arrayName* is an existing variable that is not an array.
+    [array]{.cmd} [default]{.sub} [exists]{.lit} [arrayName]{.arg}
+    : This returns a boolean value indicating whether a default value has been set for the array *arrayName*. Returns a false value if *arrayName* does not exist. Raises an error if *arrayName* is an existing variable that is not an array.
 
-[array]{.cmd} [default]{.sub} [get]{.lit} [arrayName]{.arg}
-: This returns the current default value for the array *arrayName*.  Raises an error if *arrayName* is an existing variable that is not an array, or if *arrayName* is an array without a default value.
+    [array]{.cmd} [default]{.sub} [get]{.lit} [arrayName]{.arg}
+    : This returns the current default value for the array *arrayName*.  Raises an error if *arrayName* is an existing variable that is not an array, or if *arrayName* is an array without a default value.
 
-[array]{.cmd} [default]{.sub} [set]{.lit} [arrayName]{.arg} [value]{.arg}
-: This sets the default value for the array *arrayName* to *value*. Returns the empty string. Raises an error if *arrayName* is an existing variable that is not an array, or if *arrayName* is an illegal name for an array. If *arrayName* does not currently exist, it is created as an empty array as well as having its default value set.
+    [array]{.cmd} [default]{.sub} [set]{.lit} [arrayName]{.arg} [value]{.arg}
+    : This sets the default value for the array *arrayName* to *value*. Returns the empty string. Raises an error if *arrayName* is an existing variable that is not an array, or if *arrayName* is an illegal name for an array. If *arrayName* does not currently exist, it is created as an empty array as well as having its default value set.
 
-[array]{.cmd} [default]{.sub} [unset]{.lit} [arrayName]{.arg}
-: This removes the default value for the array *arrayName* and returns the empty string. Does nothing if *arrayName* does not have a default value. Raises an error if *arrayName* is an existing variable that is not an array.
+    [array]{.cmd} [default]{.sub} [unset]{.lit} [arrayName]{.arg}
+    : This removes the default value for the array *arrayName* and returns the empty string. Does nothing if *arrayName* does not have a default value. Raises an error if *arrayName* is an existing variable that is not an array.
 
 
 [array]{.cmd} [donesearch]{.sub} [arrayName]{.arg} [searchId]{.arg}
@@ -100,7 +101,7 @@ array set colorcount {
 foreach {color count} [array get colorcount] {
     puts "Color: $color Count: $count"
 }
-  \(-> Color: blue Count: 4
+  → Color: blue Count: 4
     Color: white Count: 9
     Color: green Count: 5
     Color: red Count: 1
@@ -108,7 +109,7 @@ foreach {color count} [array get colorcount] {
 foreach color [array names colorcount] {
     puts "Color: $color Count: $colorcount($color)"
 }
-  \(-> Color: blue Count: 4
+  → Color: blue Count: 4
     Color: white Count: 9
     Color: green Count: 5
     Color: red Count: 1
@@ -116,13 +117,13 @@ foreach color [array names colorcount] {
 foreach color [lsort [array names colorcount]] {
     puts "Color: $color Count: $colorcount($color)"
 }
-  \(-> Color: blue Count: 4
+  → Color: blue Count: 4
     Color: green Count: 5
     Color: red Count: 1
     Color: white Count: 9
 
 array statistics colorcount
-  \(-> 4 entries in table, 4 buckets
+  → 4 entries in table, 4 buckets
     number of buckets with 0 entries: 1
     number of buckets with 1 entries: 2
     number of buckets with 2 entries: 1

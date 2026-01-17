@@ -72,6 +72,7 @@ The *type* argument specifies the type of the C variable, or the type of the ele
 
 **TCL_LINK_CHAR**
 : The C variable, or each element of the C array, is of type **char**. Any value written into the Tcl variable must have a proper integer form acceptable to **Tcl_GetIntFromObj** and be in the range of the **char** datatype; attempts to write non-integer or out-of-range values into *varName* will be rejected with Tcl errors. Incomplete integer representations (like the empty string, '+', '-' or the hex/octal/decimal/binary prefix) are accepted as if they are valid too.
+
     If using an array of these, consider using **TCL_LINK_CHARS** instead.
 
 **TCL_LINK_CHARS**
@@ -79,6 +80,7 @@ The *type* argument specifies the type of the C variable, or the type of the ele
 
 **TCL_LINK_UCHAR**
 : The C variable, or each element of the C array, is of type **unsigned char**. Any value written into the Tcl variable must have a proper unsigned integer form acceptable to **Tcl_GetIntFromObj** and in the platform's defined range for the **unsigned char** type; attempts to write non-integer values (or values outside the range) into *varName* will be rejected with Tcl errors. Incomplete integer representations (like the empty string, '+', '-' or the hex/octal/decimal/binary prefix) are accepted as if they are valid too.
+
     If using an array of these, consider using **TCL_LINK_BINARY** instead.
 
 **TCL_LINK_BINARY**

@@ -33,8 +33,11 @@ This document describes the facilities for locating and loading Tcl Modules (see
 
 [::tcl::tm::path]{.cmd} [add]{.sub} [path]{.optdot}
 : The paths are added at the head to the list of module paths, in order of appearance. This means that the last argument ends up as the new head of the list.
+
     The command enforces the restriction that no path may be an ancestor directory of any other path on the list. If any of the new paths violates this restriction an error will be raised, before any of the paths have been added. In other words, if only one path argument violates the restriction then none will be added.
+
     If a path is already present as is, no error will be raised and no action will be taken.
+
     Paths are searched later in the order of their appearance in the list. As they are added to the front of the list they are searched in reverse order of addition. In other words, the paths added last are looked at first.
 
 [::tcl::tm::path]{.cmd} [remove]{.sub} [path]{.optdot}
@@ -45,7 +48,9 @@ This document describes the facilities for locating and loading Tcl Modules (see
 
 [::tcl::tm::roots]{.cmd} [paths]{.arg}
 : Similar to **path add**, and layered on top of it. This command takes a single argument containing a list of paths, extends each with "**tcl***X***/site-tcl**", and "**tcl***X***/***X***.***y*", for major version *X* of the Tcl interpreter and minor version *y* less than or equal to the minor version of the interpreter, and adds the resulting set of paths to the list of paths to search.
+
     This command is used internally by the system to set up the system-specific default paths.
+
     The command has been exposed to allow a build system to define additional root paths beyond those described by this document.
 
 
@@ -129,6 +134,7 @@ The paths are added in the order as they are listed below, and for lists of path
 
 [file normalize [info library]/../tcl]*X***/***X***.***y*
 : In other words, the interpreter will look into a directory specified by its major version and whose minor versions are less than or equal to the minor version of the interpreter.
+
     For example for Tcl 8.4 the paths searched are:
 
     ```
@@ -138,10 +144,12 @@ The paths are added in the order as they are listed below, and for lists of path
     [info library]/../tcl8/8.1
     [info library]/../tcl8/8.0
     ```
+
     This definition assumes that a package defined for Tcl *X***.***y* can also be used by all interpreters which have the same major number *X* and a minor number greater than *y*.
 
 [file normalize EXEC/tcl]*X***/***X***.***y*
 : Where **EXEC** is [file normalize [info nameofexecutable]/../lib] or [file normalize [::tcl::pkgconfig get libdir,runtime]]
+
     This sets of paths is handled equivalently to the set coming before, except that it is anchored in **EXEC_PREFIX**. For a build with **PREFIX** = **EXEC_PREFIX** the two sets are identical.
 
 

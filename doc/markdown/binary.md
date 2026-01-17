@@ -28,8 +28,8 @@ binary - Insert and extract fields from binary strings
 ::: {.synopsis} :::
 [binary]{.cmd} [decode]{.sub} [format]{.arg} [-option value]{.optdot} [data]{.arg}
 [binary]{.cmd} [encode]{.sub} [format]{.arg} [-option value]{.optdot} [data]{.arg}
-[binary]{.cmd} [format]{.sub} [formatString]{.arg} [arg arg]{.optdot}
-[binary]{.cmd} [scan]{.sub} [string]{.arg} [formatString]{.arg} [varName varName]{.optdot}
+[binary]{.cmd} [format]{.sub} [formatString]{.arg} [arg]{.optdot}
+[binary]{.cmd} [scan]{.sub} [string]{.arg} [formatString]{.arg} [varName]{.optdot}
 :::
 
 # Description
@@ -44,42 +44,48 @@ When encoding binary data as a readable string, the starting binary data is pass
 
 [base64]{.cmd}
 : The **base64** binary encoding is commonly used in mail messages and XML documents, and uses mostly upper and lower case letters and digits. It has the distinction of being able to be rewrapped arbitrarily without losing information.
+
     During encoding, the following options are supported:
 
-[-maxlen]{.lit} [length]{.arg}
-: Indicates that the output should be split into lines of no more than *length* characters. By default, lines are not split.
+    [-maxlen]{.lit} [length]{.arg}
+    : Indicates that the output should be split into lines of no more than *length* characters. By default, lines are not split.
 
-[-wrapchar]{.lit} [character]{.arg}
-: Indicates that, when lines are split because of the **-maxlen** option, *character* should be used to separate lines. By default, this is a newline character, "\n".
+    [-wrapchar]{.lit} [character]{.arg}
+    : Indicates that, when lines are split because of the **-maxlen** option, *character* should be used to separate lines. By default, this is a newline character, "\n".
+
 
     During decoding, the following options are supported:
 
-[-strict]{.lit}
-: Instructs the decoder to throw an error if it encounters any characters that are not strictly part of the encoding itself. Otherwise it ignores them. RFC 2045 calls for base64 decoders to be non-strict.
+    [-strict]{.lit}
+    : Instructs the decoder to throw an error if it encounters any characters that are not strictly part of the encoding itself. Otherwise it ignores them. RFC 2045 calls for base64 decoders to be non-strict.
 
 
 [hex]{.cmd}
 : The **hex** binary encoding converts each byte to a pair of hexadecimal digits that represent the byte value as a hexadecimal integer. When encoding, lower characters are used. When decoding, upper and lower characters are accepted.
+
     No options are supported during encoding. During decoding, the following options are supported:
 
-[-strict]{.lit}
-: Instructs the decoder to throw an error if it encounters whitespace characters. Otherwise it ignores them.
+    [-strict]{.lit}
+    : Instructs the decoder to throw an error if it encounters whitespace characters. Otherwise it ignores them.
 
 
 [uuencode]{.cmd}
 : The **uuencode** binary encoding used to be common for transfer of data between Unix systems and on USENET, but is less common these days, having been largely superseded by the **base64** binary encoding.
+
     During encoding, the following options are supported (though changing them may produce files that other implementations of decoders cannot process):
 
-[-maxlen]{.lit} [length]{.arg}
-: Indicates the maximum number of characters to produce for each encoded line. The valid range is 5 to 85. Line lengths outside that range cannot be accommodated by the encoding format. The default value is 61.
+    [-maxlen]{.lit} [length]{.arg}
+    : Indicates the maximum number of characters to produce for each encoded line. The valid range is 5 to 85. Line lengths outside that range cannot be accommodated by the encoding format. The default value is 61.
 
-[-wrapchar]{.lit} [character]{.arg}
-: Indicates the character(s) to use to mark the end of each encoded line. Acceptable values are a sequence of zero or more characters from the set { \\x09 (TAB), \\x0B (VT), \\x0C (FF), \\x0D (CR) } followed by zero or one newline \\x0A (LF).  Any other values are rejected because they would generate encoded text that could not be decoded. The default value is a single newline.
+    [-wrapchar]{.lit} [character]{.arg}
+    : Indicates the character(s) to use to mark the end of each encoded line. Acceptable values are a sequence of zero or more characters from the set { \\x09 (TAB), \\x0B (VT), \\x0C (FF), \\x0D (CR) } followed by zero or one newline \\x0A (LF).  Any other values are rejected because they would generate encoded text that could not be decoded. The default value is a single newline.
+
 
     During decoding, the following options are supported:
 
-[-strict]{.lit}
-: Instructs the decoder to throw an error if it encounters anything outside of the standard encoding format. Without this option, the decoder tolerates some deviations, mostly to forgive reflows of lines between the encoder and decoder.
+    [-strict]{.lit}
+    : Instructs the decoder to throw an error if it encounters anything outside of the standard encoding format. Without this option, the decoder tolerates some deviations, mostly to forgive reflows of lines between the encoder and decoder.
+
 
     Note that neither the encoder nor the decoder handle the header and footer of the uuencode format.
 
@@ -106,41 +112,49 @@ Each type-count pair moves an imaginary cursor through the binary data, storing 
     ```
     binary format a7a*a alpha bravo charlie
     ```
+
     will return a binary string equivalent to:
 
     ```
     alpha\000\000bravoc
     ```
+
     the command:
 
     ```
     binary format a* [encoding convertto utf-8 \u20ac]
     ```
+
     will return a binary string equivalent to:
 
     ```
     \342\202\254
     ```
+
     (which is the UTF-8 byte sequence for a Euro-currency character), and the command:
 
     ```
     binary format a* [encoding convertto iso8859-15 \u20ac]
     ```
+
     will return a binary string equivalent to:
 
     ```
     \244
     ```
+
     (which is the ISO 8859-15 byte sequence for a Euro-currency character). Contrast these last two with:
 
     ```
     binary format a* \u20ac
     ```
+
     which returns a binary string equivalent to:
 
     ```
     \254
     ```
+
     (i.e. **\xAC**) by truncating the high-bits of the character, and which is probably not what is desired.
 
 **A**
@@ -149,6 +163,7 @@ Each type-count pair moves an imaginary cursor through the binary data, storing 
     ```
     binary format A6A*A alpha bravo charlie
     ```
+
     will return
 
     ```
@@ -161,6 +176,7 @@ Each type-count pair moves an imaginary cursor through the binary data, storing 
     ```
     binary format b5b* 11100 111000011010
     ```
+
     will return a binary string equivalent to:
 
     ```
@@ -173,6 +189,7 @@ Each type-count pair moves an imaginary cursor through the binary data, storing 
     ```
     binary format B5B* 11100 111000011010
     ```
+
     will return a binary string equivalent to:
 
     ```
@@ -185,6 +202,7 @@ Each type-count pair moves an imaginary cursor through the binary data, storing 
     ```
     binary format H3H*H2 ab DEF 987
     ```
+
     will return a binary string equivalent to:
 
     ```
@@ -197,6 +215,7 @@ Each type-count pair moves an imaginary cursor through the binary data, storing 
     ```
     binary format h3h*h2 AB def 987
     ```
+
     will return a binary string equivalent to:
 
     ```
@@ -209,16 +228,19 @@ Each type-count pair moves an imaginary cursor through the binary data, storing 
     ```
     binary format c3cc* {3 -3 128 1} 260 {2 5}
     ```
+
     will return a binary string equivalent to:
 
     ```
     \x03\xFD\x80\x04\x02\x05
     ```
+
     whereas:
 
     ```
     binary format c {2 5}
     ```
+
     will generate an error.
 
 **s**
@@ -227,6 +249,7 @@ Each type-count pair moves an imaginary cursor through the binary data, storing 
     ```
     binary format s3 {3 -3 258 1}
     ```
+
     will return a binary string equivalent to:
 
     ```
@@ -239,6 +262,7 @@ Each type-count pair moves an imaginary cursor through the binary data, storing 
     ```
     binary format S3 {3 -3 258 1}
     ```
+
     will return a binary string equivalent to:
 
     ```
@@ -254,6 +278,7 @@ Each type-count pair moves an imaginary cursor through the binary data, storing 
     ```
     binary format i3 {3 -3 65536 1}
     ```
+
     will return a binary string equivalent to:
 
     ```
@@ -266,6 +291,7 @@ Each type-count pair moves an imaginary cursor through the binary data, storing 
     ```
     binary format I3 {3 -3 65536 1}
     ```
+
     will return a binary string equivalent to:
 
     ```
@@ -281,6 +307,7 @@ Each type-count pair moves an imaginary cursor through the binary data, storing 
     ```
     binary format w 7810179016327718216
     ```
+
     will return the binary string **HelloTcl**.
 
 **W**
@@ -289,6 +316,7 @@ Each type-count pair moves an imaginary cursor through the binary data, storing 
     ```
     binary format Wc 4785469626960341345 110
     ```
+
     will return the binary string **BigEndian**
 
 **m**
@@ -300,6 +328,7 @@ Each type-count pair moves an imaginary cursor through the binary data, storing 
     ```
     binary format f2 {1.6 3.4}
     ```
+
     will return a binary string equivalent to:
 
     ```
@@ -318,6 +347,7 @@ Each type-count pair moves an imaginary cursor through the binary data, storing 
     ```
     binary format d1 {1.6}
     ```
+
     will return a binary string equivalent to:
 
     ```
@@ -336,6 +366,7 @@ Each type-count pair moves an imaginary cursor through the binary data, storing 
     ```
     binary format a3xa3x2a3 abc def ghi
     ```
+
     will return a binary string equivalent to:
 
     ```
@@ -348,6 +379,7 @@ Each type-count pair moves an imaginary cursor through the binary data, storing 
     ```
     binary format a3X*a3X2a3 abc def ghi
     ```
+
     will return **dghi**.
 
 **@**
@@ -356,6 +388,7 @@ Each type-count pair moves an imaginary cursor through the binary data, storing 
     ```
     binary format a5@2a1@*a3@10a1 abcde f ghi j
     ```
+
     will return
 
     ```
@@ -413,12 +446,14 @@ Each type-count pair moves an imaginary cursor through the binary data, reading 
     ```
     binary scan abcde\000fghi a6a10 var1 var2
     ```
+
     will return **1** with the string equivalent to **abcde\000** stored in *var1* and *var2* left unmodified, and
 
     ```
     binary scan \342\202\254 a* var1
     set var2 [encoding convertfrom utf-8 $var1]
     ```
+
     will store a Euro-currency character in *var2*.
 
 **A**
@@ -427,6 +462,7 @@ Each type-count pair moves an imaginary cursor through the binary data, reading 
     ```
     binary scan "abc efghi  \000" A* var1
     ```
+
     will return **1** with **abc efghi** stored in *var1*.
 
 **b**
@@ -435,6 +471,7 @@ Each type-count pair moves an imaginary cursor through the binary data, reading 
     ```
     binary scan \x07\x87\x05 b5b* var1 var2
     ```
+
     will return **2** with **11100** stored in *var1* and **1110000110100000** stored in *var2*.
 
 **B**
@@ -443,6 +480,7 @@ Each type-count pair moves an imaginary cursor through the binary data, reading 
     ```
     binary scan \x70\x87\x05 B5B* var1 var2
     ```
+
     will return **2** with **01110** stored in *var1* and **1000011100000101** stored in *var2*.
 
 **C**
@@ -451,6 +489,7 @@ Each type-count pair moves an imaginary cursor through the binary data, reading 
     ```
     binary scan "abc\000efghi" C* var1
     ```
+
     will return **1** with **abc** stored in *var1*.
 
 **H**
@@ -459,6 +498,7 @@ Each type-count pair moves an imaginary cursor through the binary data, reading 
     ```
     binary scan \x07\xC6\x05\x1F\x34 H3H* var1 var2
     ```
+
     will return **2** with **07c** stored in *var1* and **051f34** stored in *var2*.
 
 **h**
@@ -467,7 +507,9 @@ Each type-count pair moves an imaginary cursor through the binary data, reading 
     ```
     binary scan \x07\x86\x05\x12\x34 h3h* var1 var2
     ```
+
     will return **2** with **706** stored in *var1* and **502143** stored in *var2*.
+
     Note that most code that wishes to parse the hexadecimal digits from multiple bytes in order should use the **H** format.
 
 **c**
@@ -476,6 +518,7 @@ Each type-count pair moves an imaginary cursor through the binary data, reading 
     ```
     binary scan \x07\x86\x05 c2c* var1 var2
     ```
+
     will return **2** with **7 -122** stored in *var1* and **5** stored in *var2*.  Note that the integers returned are signed unless **cu** in place of **c**.
 
 **s**
@@ -484,6 +527,7 @@ Each type-count pair moves an imaginary cursor through the binary data, reading 
     ```
     binary scan \x05\x00\x07\x00\xF0\xFF s2s* var1 var2
     ```
+
     will return **2** with **5 7** stored in *var1* and **-16** stored in *var2*.  Note that the integers returned are signed unless **su** is used in place of **s**.
 
 **S**
@@ -492,6 +536,7 @@ Each type-count pair moves an imaginary cursor through the binary data, reading 
     ```
     binary scan \x00\x05\x00\x07\xFF\xF0 S2S* var1 var2
     ```
+
     will return **2** with **5 7** stored in *var1* and **-16** stored in *var2*.
 
 **t**
@@ -504,6 +549,7 @@ Each type-count pair moves an imaginary cursor through the binary data, reading 
     set str \x05\x00\x00\x00\x07\x00\x00\x00\xF0\xFF\xFF\xFF
     binary scan $str i2i* var1 var2
     ```
+
     will return **2** with **5 7** stored in *var1* and **-16** stored in *var2*.  Note that the integers returned are signed unless **iu** is used in place of **i**.
 
 **I**
@@ -513,6 +559,7 @@ Each type-count pair moves an imaginary cursor through the binary data, reading 
     set str \x00\x00\x00\x05\x00\x00\x00\x07\xFF\xFF\xFF\xF0
     binary scan $str I2I* var1 var2
     ```
+
     will return **2** with **5 7** stored in *var1* and **-16** stored in *var2*.
 
 **n**
@@ -525,6 +572,7 @@ Each type-count pair moves an imaginary cursor through the binary data, reading 
     set str \x05\x00\x00\x00\x07\x00\x00\x00\xF0\xFF\xFF\xFF
     binary scan $str wi* var1 var2
     ```
+
     will return **2** with **30064771077** stored in *var1* and **-16** stored in *var2*.
 
 **W**
@@ -534,6 +582,7 @@ Each type-count pair moves an imaginary cursor through the binary data, reading 
     set str \x00\x00\x00\x05\x00\x00\x00\x07\xFF\xFF\xFF\xF0
     binary scan $str WI* var1 var2
     ```
+
     will return **2** with **21474836487** stored in *var1* and **-16** stored in *var2*.
 
 **m**
@@ -545,6 +594,7 @@ Each type-count pair moves an imaginary cursor through the binary data, reading 
     ```
     binary scan \x3F\xCC\xCC\xCD f var1
     ```
+
     will return **1** with **1.6000000238418579** stored in *var1*.
 
 **r**
@@ -559,6 +609,7 @@ Each type-count pair moves an imaginary cursor through the binary data, reading 
     ```
     binary scan \x9A\x99\x99\x99\x99\x99\xF9\x3F d var1
     ```
+
     will return **1** with **1.6000000000000001** stored in *var1*.
 
 **q**
@@ -573,6 +624,7 @@ Each type-count pair moves an imaginary cursor through the binary data, reading 
     ```
     binary scan \x01\x02\x03\x04 x2H* var1
     ```
+
     will return **1** with **0304** stored in *var1*.
 
 **X**
@@ -581,6 +633,7 @@ Each type-count pair moves an imaginary cursor through the binary data, reading 
     ```
     binary scan \x01\x02\x03\x04 c2XH* var1 var2
     ```
+
     will return **2** with **1 2** stored in *var1* and **020304** stored in *var2*.
 
 **@**
@@ -589,6 +642,7 @@ Each type-count pair moves an imaginary cursor through the binary data, reading 
     ```
     binary scan \x01\x02\x03\x04 c2@1H* var1 var2
     ```
+
     will return **2** with **1 2** stored in *var1* and **020304** stored in *var2*.
 
 

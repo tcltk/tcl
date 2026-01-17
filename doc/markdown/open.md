@@ -111,6 +111,7 @@ When the file opened is an ordinary disk file, the [chan configure][chan] and [f
 
 [-stat]{.lit}
 : This option, when read, returns a dictionary of values much as is obtained from the [file stat][file] command, where that stat information relates to the real opened file. Keys in the dictionary may include **atime**, **ctime**, **dev**, **gid**, **ino**, **mode**, **mtime**, **nlink**, **size**, **type**, and **uid** among others; the **mtime**, **size** and **type** fields are guaranteed to be present and meaningful on all platforms; other keys may be present too.
+
     *Implementation note:* This option maps to a call to **fstat()** on POSIX platforms, and to a call to **GetFileInformationByHandle()** on Windows; the information reported is what those system calls produce.
 
 
@@ -133,6 +134,7 @@ The [chan configure][chan] and [fconfigure] commands can be used to query and se
 
 [-handshake]{.lit} [type]{.arg}
 : (Windows and Unix). This option is used to setup automatic handshake control. Note that not all handshake types maybe supported by your operating system. The *type* parameter is case-independent.
+
     If *type* is **none** then any handshake is switched off. **rtscts** activates hardware handshake. Hardware handshake signals are described below. For software handshake **xonxoff** the handshake characters can be redefined with **-xchar**. An additional hardware handshake **dtrdsr** is available only under Windows. There is no default handshake configuration, the initial value depends on your operating system settings. The **-handshake** option cannot be queried.
 
 [-queue]{.lit}
@@ -153,30 +155,31 @@ The [chan configure][chan] and [fconfigure] commands can be used to query and se
 [-closemode]{.lit} [closeMode]{.arg}
 : (Windows and Unix). This option is used to query or change the close mode of the serial channel, which defines how pending output in operating system buffers is handled when the channel is closed. The following values for *closeMode* are supported:
 
-**default**
-: indicates that a system default operation should be used; all serial channels default to this.
+    **default**
+    : indicates that a system default operation should be used; all serial channels default to this.
 
-**discard**
-: indicates that the contents of the OS buffers should be discarded.  Note that this is *not recommended* when writing to a POSIX terminal, as it can interact unexpectedly with handling of **stderr**.
+    **discard**
+    : indicates that the contents of the OS buffers should be discarded.  Note that this is *not recommended* when writing to a POSIX terminal, as it can interact unexpectedly with handling of **stderr**.
 
-**drain**
-: indicates that Tcl should wait when closing the channel until all output has been consumed. This may slow down [close] noticeably.
+    **drain**
+    : indicates that Tcl should wait when closing the channel until all output has been consumed. This may slow down [close] noticeably.
 
 
 [-inputmode]{.lit} [inputMode]{.arg}
 : (Unix only; Windows has the equivalent option on console channels). This option is used to query or change the input mode of the serial channel under the assumption that it is talking to a terminal, which controls how interactive input from users is handled. The following values for *inputMode* are supported:
 
-**normal**
-: indicates that normal line-oriented input should be used, with standard terminal editing capabilities enabled.
+    **normal**
+    : indicates that normal line-oriented input should be used, with standard terminal editing capabilities enabled.
 
-**password**
-: indicates that non-echoing input should be used, with standard terminal editing capabilities enabled but no writing of typed characters to the terminal (except for newlines). Some terminals may indicate this specially.
+    **password**
+    : indicates that non-echoing input should be used, with standard terminal editing capabilities enabled but no writing of typed characters to the terminal (except for newlines). Some terminals may indicate this specially.
 
-**raw**
-: indicates that all keyboard input should be given directly to Tcl with the terminal doing no processing at all. It does not echo the keys, leaving it up to the Tcl script to interpret what to do.
+    **raw**
+    : indicates that all keyboard input should be given directly to Tcl with the terminal doing no processing at all. It does not echo the keys, leaving it up to the Tcl script to interpret what to do.
 
-**reset**
-: (set only) indicates that the terminal should be reset to what state it was in when the terminal was opened.
+    **reset**
+    : (set only) indicates that the terminal should be reset to what state it was in when the terminal was opened.
+
 
     Note that setting this option (technically, anything that changes the terminal state from its initial value *via this option*) will cause the channel to turn on an automatic reset of the terminal when the channel is closed.
 
@@ -263,6 +266,7 @@ Files opened in the "**a**" mode or with the **APPEND** flag set are implemented
 
 **Unix** 
 : Valid values for *fileName* to open a serial port are generally of the form **/dev/tty***X*, where *X* is **a** or **b**, but the name of any pseudo-file that maps to a serial port may be used. Advanced configuration options are only supported for serial ports when Tcl is built to use the POSIX serial interface.
+
     When running Tcl interactively, there may be some strange interactions between the console, if one is present, and a command pipeline that uses standard input.  If a command pipeline is opened for reading, some of the lines entered at the console will be sent to the command pipeline and some will be sent to the Tcl evaluator.  This problem only occurs because both Tcl and the child application are competing for the console at the same time.  If the command pipeline is started from a script, so that Tcl is not accessing the console, or if the command pipeline does not use standard input, but is redirected from a file, then the above problem does not occur.
 
 
@@ -277,17 +281,18 @@ On Windows only, console channels (usually **stdin** or **stdout**) support the 
 [-inputmode]{.lit} [inputMode]{.arg}
 : This option is used to query or change the input mode of the console channel, which controls how interactive input from users is handled. The following values for *inputMode* are supported:
 
-**normal**
-: indicates that normal line-oriented input should be used, with standard console editing capabilities enabled.
+    **normal**
+    : indicates that normal line-oriented input should be used, with standard console editing capabilities enabled.
 
-**password**
-: indicates that non-echoing input should be used, with standard console editing capabilities enabled but no writing of typed characters to the terminal (except for newlines).
+    **password**
+    : indicates that non-echoing input should be used, with standard console editing capabilities enabled but no writing of typed characters to the terminal (except for newlines).
 
-**raw**
-: indicates that all keyboard input should be given directly to Tcl with the console doing no processing at all. It does not echo the keys, leaving it up to the Tcl script to interpret what to do.
+    **raw**
+    : indicates that all keyboard input should be given directly to Tcl with the console doing no processing at all. It does not echo the keys, leaving it up to the Tcl script to interpret what to do.
 
-[reset]{.cmd}
-: (set only) indicates that the console should be reset to what state it was in when the console channel was opened.
+    [reset]{.cmd}
+    : (set only) indicates that the console should be reset to what state it was in when the console channel was opened.
+
 
     Note that setting this option (technically, anything that changes the console state from its default *via this option*) will cause the channel to turn on an automatic reset of the console when the channel is closed.
 

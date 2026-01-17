@@ -34,7 +34,7 @@ The tcl/doc directory contains 248 manual pages which are divided as follows:
 
 section | number of documents | initial conversion | final conversion
 --------|---------------------|--------------------|-----------------
-1       | 1                   | 1                  | 3
+1       | 1                   | 1                  | 5
 3       | 108                 | 108                | 0
 n       | 139                 | 139                | 0
 
@@ -42,6 +42,8 @@ Final conversion of these files is currently done:
 - after
 - append
 - apply
+- array
+- bgerror
 
 
 The tk/doc directory comes next, after finishing Tcl.
@@ -66,7 +68,6 @@ This section lists the shortcoming which are still present in the pages that alr
 - handling of links does not yet use all the exceptions defined in tools/tcltk-man2html.tcl and tools/tclsk-man2html-utils.tcl (for now only exclude_refs_map is used)
 
 ## Specific pages
-- oo::... pages: no handling of the class hierarchy subsection yet
 - RegConfig.3: besides the C API, this page describes Tcl-level commands that are created. These use a non-standard format in the form of ::, followed by an .arg, followed by ::, followed by a .lit – all in one word!
 
 
@@ -112,4 +113,4 @@ After the final round of conversion from nroff to Markdown, some manual work nee
 
 - find all instances of .VS/.VE macros to add the 'version="TIPxxx"' attribute to the corresponding elements (e.g. they are not caught inside the synopsis section)
 - subdivide certain manual pages (the nroff files only have sections and subsection, in the markdown version, also subsubsections are needed in some pages)
-- find all pages where nested definition lists occur (e.g. Tcl.md) and consider using subsections instead. Otherwise do the nesting manually in the markdown files
+- find all pages where nested definition lists occur (e.g. Tcl.md) and consider using subsections instead

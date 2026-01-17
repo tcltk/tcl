@@ -79,8 +79,8 @@ oo::class create banana {
     }
 }
 set b [banana new]
-$b peel              \(-> prints 'skin now off'
-$b eat               \(-> prints 'yummy!'
-set f [fruit new]    \(-> error 'unknown method "new"...'
+$b peel              → prints 'skin now off'
+$b eat               → prints 'yummy!'
+set f [fruit new]    → error 'unknown method "new"...'
 ```
 

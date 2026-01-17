@@ -110,9 +110,13 @@ The first word in each command is taken as the command name; if the result conta
 
 **Windows** (all versions)
 : Reading from or writing to a socket, using the "**@\0***fileId*" notation, does not work.  When reading from a socket, a 16-bit DOS application will hang and a 32-bit application will return immediately with end-of-file.  When either type of application writes to a socket, the information is instead sent to the console, if one is present, or is discarded.
+
     Note that the current escape resp. quoting of arguments for windows works only with executables using CommandLineToArgv, CRT-library or similar, as well as with the windows batch files (excepting the newline, see below). Although it is the common escape algorithm, but, in fact, the way how the executable parses the command-line (resp. splits it into single arguments) is decisive.
+
     Unfortunately, there is currently no way to supply newline character within an argument to the batch files (**.cmd** or **.bat**) or to the command processor (**cmd.exe /c**), because this causes truncation of command-line (also the argument chain) on the first newline character. But it works properly with an executable (using CommandLineToArgv, etc).
+
     **Argument quoting** The arguments of the **exec** command are mapped to the arguments of the called program. Additional quote characters (**"**) are automatically  added around arguments if expected. Special characters are escaped by inserting backslash characters.
+
     The MS-Windows environment does execute programs mentioned in the arguments and called batch files (conspec) replace environment variables, which may have side effects (vulnerabilities) or break any already existing quoting (for example, if the environment variable contains a special character like a **"**). Examples are:
 
     ```
@@ -122,7 +126,9 @@ The first word in each command is taken as the command name; if the result conta
     % exec my-echo.cmd "ENV X:%X%"
       ENV X: CONTENT OF X
     ```
+
     The following formatting is automatically performed on any argument item to avoid subprogram execution: Any special character argument containing a special character (**&**, **|**, **^**, **<**, **>**, **!**, **(**, **)**, **(**, **%**) is automatically enclosed in quotes (**"**). Any data quote is escaped by insertion of backslash characters.
+
     The automatic resolving of environment variables using "**%var%**" is critical, but has more use than danger and is not escaped.
 
 

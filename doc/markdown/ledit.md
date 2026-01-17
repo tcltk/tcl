@@ -61,32 +61,32 @@ Prepend to a list.
 
 ```
 set lst {c d e f g}
-      \(-> c d e f g
+      → c d e f g
 ledit lst -1 -1 a b
-      \(-> a b c d e f g
+      → a b c d e f g
 ```
 
 Append to the list.
 
 ```
 ledit lst end+1 end+1 h i
-      \(-> a b c d e f g h i
+      → a b c d e f g h i
 ```
 
 Delete third and fourth elements.
 
 ```
 ledit lst 2 3
-      \(-> a b e f g h i
+      → a b e f g h i
 ```
 
 Replace two elements with three.
 
 ```
 ledit lst 2 3 x y z
-      \(-> a b x y z g h i
+      → a b x y z g h i
 set lst
-      \(-> a b x y z g h i
+      → a b x y z g h i
 ```
 
 

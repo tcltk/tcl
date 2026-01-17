@@ -86,6 +86,7 @@ The **property** command takes the name of a property to define first, *without 
 
 [-kind]{.lit} [propertyKind]{.arg}
 : This defines what sort of property is being created. The *propertyKind* must be exactly one of **readable**, **writable**, or **readwrite** (which is the default) which will make the property read-only, write-only or read-write, respectively.  Read-only properties can only ever be read from, write-only properties can only ever be written to, and read-write properties can be both read and written.
+
     Note that write-only properties are not particularly discoverable as they are never reported by the **configure** method other than by error messages when attempting to write to a property that does not exist.
 
 [-set]{.lit} [setterScript]{.arg}

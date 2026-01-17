@@ -85,6 +85,7 @@ As noted above, the *type* field is used to describe the interpretation of the a
             Tcl_Obj *objPtr,
             void *dstPtr);
     ```
+
     The result is a boolean value indicating whether to consume the following argument. The *clientData* is the value from the table entry, the *objPtr* is the value that represents the following argument or NULL if there are no following arguments at all, and the *dstPtr* argument to the **Tcl_ArgvFuncProc** is the location to write the parsed value to.
 
 **TCL_ARGV_GENFUNC**
@@ -98,6 +99,7 @@ As noted above, the *type* field is used to describe the interpretation of the a
             Tcl_Obj *const *objv,
             void *dstPtr);
     ```
+
     The *clientData* is the value from the table entry, the *interp* is where to store any error messages, *objc* and *objv* describe an array of all the remaining arguments, and *dstPtr* argument to the **Tcl_ArgvGenFuncProc** is the location to write the parsed value (or values) to.
 
 **TCL_ARGV_HELP**

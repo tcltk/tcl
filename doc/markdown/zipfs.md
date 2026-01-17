@@ -70,6 +70,7 @@ Paths in mounted archives are case-sensitive on all platforms.
 
 4.     the offset of the compressed data in the ZIP archive file.
 
+
     As a special case, querying the mount point gives the start of the zip data as the offset in (4), which can be used to truncate the zip information from an executable. Querying an ancestor of a mount point will raise an error.
 
 [zipfs]{.cmd} [list]{.sub} [matchingType]{.optarg} [pattern]{.optarg}
@@ -83,10 +84,15 @@ Paths in mounted archives are case-sensitive on all platforms.
 
 [zipfs]{.cmd} [mount]{.sub} [zipfile]{.arg} [mountpoint]{.arg} [password]{.optarg}
 : The **zipfs mount** command mounts ZIP archives as Tcl virtual file systems and returns information about current mounts.
+
     With no arguments, the command returns a dictionary mapping mount points to the path of the corresponding ZIP archive.
+
     In the single argument form, the command returns the file path of the ZIP archive mounted at the specified mount point.
+
     In the third form, the command mounts the ZIP archive *zipfile* as a Tcl virtual filesystem at *mountpoint*.  After this command executes, files contained in *zipfile* will appear to Tcl to be regular files at the mount point. If *mountpoint* is specified as an empty string, it is defaulted to the **[zipfs root]**. The command returns the normalized mount point path.
+
     If not under the zipfs file system root, *mountpoint* is normalized with respect to it. For example, a mount point passed as either **mt** or **/mt** would be normalized to **//zipfs:/mt** (given that **zipfs root** returns "//zipfs:/"). An error is raised if the mount point includes a drive or UNC volume.
+
     **NB:** because the current working directory is a concept maintained by the operating system, using [cd] into a mounted archive will only work in the current process, and then not entirely consistently (e.g., if a shared library uses direct access to the OS rather than through Tcl's filesystem API, it will not see the current directory as being inside the mount and will not be able to access the files inside the mount).
 
 [zipfs]{.cmd} [mountdata]{.sub} [data]{.arg} [mountpoint]{.arg}
@@ -105,12 +111,16 @@ This package also provides several commands to aid the creation of ZIP archives 
 
 [zipfs]{.cmd} [mkzip]{.sub} [outfile]{.arg} [indir]{.arg} [strip]{.optarg} [password]{.optarg}
 : Creates a ZIP archive file named *outfile* from the contents of the input directory *indir* (contained regular files only) with optional ZIP password *password*. While processing the files below *indir* the optional file name prefix given in *strip* is stripped off the beginning of the respective file name if non-empty.  When stripping, it is common to remove either the whole source directory name or the name of its parent directory.
+
     **Caution:** the choice of the *indir* parameter (less the optional stripped prefix) determines the later root name of the archive's content.
 
 [zipfs]{.cmd} [mkimg]{.sub} [outfile]{.arg} [indir]{.arg} [strip]{.optarg} [password]{.optarg} [infile]{.optarg}
 : Creates an image (potentially a new executable file) similar to **zipfs mkzip**; see that command for a description of most parameters to this command, as they behave identically here. If *outfile* exists, it will be silently overwritten.
+
     If the *infile* parameter is specified, this file is prepended in front of the ZIP archive, otherwise the file returned by [info nameofexecutable][info] (i.e., the executable file of the running process, typically **wish** or **tclsh**) is used. If the *password* parameter is not the empty string, an obfuscated version of that password (see **zipfs mkkey**) is placed between the image and ZIP chunks of the output file and the contents of the ZIP chunk are protected with that password. If the starting image has a ZIP archive already attached to it, it is removed from the copy in *outfile* before the new ZIP archive is added.
+
     If there is a file, **main.tcl**, in the root directory of the resulting archive and the image file that the archive is attached to is a **tclsh** (or **wish**) instance (true by default, but depends on your configuration), then the resulting image is an executable that will [source] the script in that **main.tcl** after mounting the ZIP archive, and will [exit] once that script has been executed.
+
     **Note:** **tclsh** and **wish** can be built using either dynamic binding or static binding of the core implementation libraries. With a dynamic binding, the base application Tcl_Library contents are attached to the **libtcl** and **libtk** shared library, respectively. With a static binding, the Tcl_Library contents, etc., are attached to the application, **tclsh** or **wish**. When using **mkimg** with a statically built tclsh, it is the user's responsibility to preserve the attached archive by first extracting it to a temporary location, and then add whatever additional files desired, before creating and attaching the new archive to the new application.
 
 [zipfs]{.cmd} [mkkey]{.sub} [password]{.arg}

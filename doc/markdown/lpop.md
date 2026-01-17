@@ -69,24 +69,24 @@ In each of these examples, the initial value of *x* is:
 
 ```
 set x [list [list a b c] [list d e f] [list g h i]]
-      \(-> {a b c} {d e f} {g h i}
+      → {a b c} {d e f} {g h i}
 ```
 
 The indicated value becomes the new value of *x* (except in the last case, which is an error which leaves the value of *x* unchanged.)
 
 ```
 lpop x 0
-      \(-> {d e f} {g h i}
+      → {d e f} {g h i}
 lpop x 2
-      \(-> {a b c} {d e f}
+      → {a b c} {d e f}
 lpop x end
-      \(-> {a b c} {d e f}
+      → {a b c} {d e f}
 lpop x end-1
-      \(-> {a b c} {g h i}
+      → {a b c} {g h i}
 lpop x 2 1
-      \(-> {a b c} {d e f} {g i}
+      → {a b c} {d e f} {g i}
 lpop x 2 3 j
-      \(-> list index out of range
+      → list index out of range
 ```
 
 In the following examples, the initial value of *x* is:
@@ -94,14 +94,14 @@ In the following examples, the initial value of *x* is:
 ```
 set x [list [list [list a b] [list c d]] \
             [list [list e f] [list g h]]]
-      \(-> {{a b} {c d}} {{e f} {g h}}
+      → {{a b} {c d}} {{e f} {g h}}
 ```
 
 The indicated value becomes the new value of *x*.
 
 ```
 lpop x 1 1 0
-      \(-> {{a b} {c d}} {{e f} h}
+      → {{a b} {c d}} {{e f} h}
 ```
 
 

@@ -66,9 +66,9 @@ oo::class create c {
 }
 
 c create o
-o count              \(-> prints "1"
-o count              \(-> prints "2"
-o count              \(-> prints "3"
+o count              → prints "1"
+o count              → prints "2"
+o count              → prints "3"
 ```
 
 This example shows how you can use **my** to make callbacks to private methods from outside the object (from a [trace]), using [namespace code][namespace] to enter the correct context. (See the **callback** command for the recommended way of doing this.)
@@ -88,7 +88,7 @@ oo::class create HasCallback {
 
 set o [HasCallback new]
 trace add variable xyz write [$o makeCallback]
-set xyz "called"     \(-> prints "callback: xyz {} write"
+set xyz "called"     → prints "callback: xyz {} write"
 ```
 
 ::: {.info version="TIP478"}
@@ -111,14 +111,14 @@ oo::class create CountedSteps {
 
 CountedSteps create x
 CountedSteps create y
-x advanceTwice       \(-> prints "in ::x step A: 1"
-                     \(-> prints "in ::x step B: 2"
-y advanceTwice       \(-> prints "in ::y step A: 3"
-                     \(-> prints "in ::y step B: 4"
-x advanceTwice       \(-> prints "in ::x step A: 5"
-                     \(-> prints "in ::x step B: 6"
-y advanceTwice       \(-> prints "in ::y step A: 7"
-                     \(-> prints "in ::y step B: 8"
+x advanceTwice       → prints "in ::x step A: 1"
+                     → prints "in ::x step B: 2"
+y advanceTwice       → prints "in ::y step A: 3"
+                     → prints "in ::y step B: 4"
+x advanceTwice       → prints "in ::x step A: 5"
+                     → prints "in ::x step B: 6"
+y advanceTwice       → prints "in ::y step A: 7"
+                     → prints "in ::y step B: 8"
 ```
 
 

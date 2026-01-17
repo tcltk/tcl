@@ -36,18 +36,22 @@ The following global variables are created and managed automatically by the Tcl 
 
 **auto_path**
 : If set, then it must contain a valid Tcl list giving directories to search during auto-load operations (including for package index files when using the default [package unknown][package] handler). This variable is initialized during startup to contain, in order: the directories listed in the **TCLLIBPATH** environment variable, the directory named by the **tcl_library** global variable, the parent directory of **tcl_library**, **[file dirname [file dirname [info nameofexecutable]]]/lib**, the directories listed in the **tcl_pkgPath** variable. Additional locations to look for files and package indices should normally be added to this variable using [lappend]. Initialization of auto_path from the TCLLIBPATH environment variable undergoes tilde substitution (see **filename**) on each path. Any tilde substitution that fails because the user is unknown will be omitted from auto_path.
+
     Additional variables relating to package management exist. More details are listed in the **VARIABLES** section of the **library** manual page.
 
 **env**
 : This variable is maintained by Tcl as an array whose elements are the environment variables for the process. Reading an element will return the value of the corresponding environment variable. Setting an element of the array will modify the corresponding environment variable or create a new one if it does not already exist. Unsetting an element of **env** will remove the corresponding environment variable. Changes to the **env** array will affect the environment passed to children by commands like [exec]. If the entire **env** array is unset then Tcl will stop monitoring **env** accesses and will not update environment variables.
+
     Under Windows, the environment variables PATH and COMSPEC in any capitalization are converted automatically to upper case.  For instance, the PATH variable could be exported by the operating system as "path", "Path", "PaTh", etc., causing otherwise simple Tcl code to have to support many special cases.  All other environment variables inherited by Tcl are left unmodified.  Setting an env array variable to blank is the same as unsetting it as this is the behavior of the underlying Windows OS. It should be noted that relying on an existing and empty environment variable will not work on Windows and is discouraged for cross-platform usage.
+
     The following elements of **env** are special to Tcl:
 
-**env(HOME)**
-: This environment variable, if set, gives the location of the directory considered to be the current user's home directory. The value of this variable is returned by the [file home][file] command. Most platforms set this correctly by default; it does not normally need to be set by user code. On Windows, if not already set, it is set to the value of the **USERPROFILE** environment variable.
+    **env(HOME)**
+    : This environment variable, if set, gives the location of the directory considered to be the current user's home directory. The value of this variable is returned by the [file home][file] command. Most platforms set this correctly by default; it does not normally need to be set by user code. On Windows, if not already set, it is set to the value of the **USERPROFILE** environment variable.
 
-**env(TCL_LIBRARY)**
-: If set, then it specifies the location of the directory containing library scripts (the value of this variable will be assigned to the **tcl_library** variable and therefore returned by the command [info library][info]).  If this variable is not set then a default value is used.
+    **env(TCL_LIBRARY)**
+    : If set, then it specifies the location of the directory containing library scripts (the value of this variable will be assigned to the **tcl_library** variable and therefore returned by the command [info library][info]).  If this variable is not set then a default value is used.
+
 
     Note that this environment variable should *not* normally be set.
 
@@ -66,8 +70,9 @@ The following global variables are created and managed automatically by the Tcl 
 **errorCode**
 : This variable holds the value of the **-errorcode** return option set by the most recent error that occurred in this interpreter. This list value represents additional information about the error in a form that is easy to process with programs. The first element of the list identifies a general class of errors, and determines the format of the rest of the list. The following formats for **-errorcode** return options are used by the Tcl core; individual applications may define additional formats.
 
-**ARITH** *code msg*
-: This format is used when an arithmetic error occurs (e.g. an attempt to divide zero by zero in the [expr] command). *Code* identifies the precise error and *msg* provides a human-readable description of the error.  *Code* will be either DIVZERO (for an attempt to divide by zero), DOMAIN (if an argument is outside the domain of a function, such as acos(-3)), IOVERFLOW (for integer overflow), OVERFLOW (for a floating-point overflow), or UNKNOWN (if the cause of the error cannot be determined).
+    **ARITH** *code msg*
+    : This format is used when an arithmetic error occurs (e.g. an attempt to divide zero by zero in the [expr] command). *Code* identifies the precise error and *msg* provides a human-readable description of the error.  *Code* will be either DIVZERO (for an attempt to divide by zero), DOMAIN (if an argument is outside the domain of a function, such as acos(-3)), IOVERFLOW (for integer overflow), OVERFLOW (for a floating-point overflow), or UNKNOWN (if the cause of the error cannot be determined).
+
 
     Detection of these errors depends in part on the underlying hardware and system libraries.
 
@@ -107,38 +112,38 @@ To set the **-errorcode** return option, applications should use library procedu
 **tcl_platform**
 : This is an associative array whose elements contain information about the platform on which the application is running, such as the name of the operating system, its current release number, and the machine's instruction set.  The elements listed below will always be defined, but they may have empty strings as values if Tcl could not retrieve any relevant information.  In addition, extensions and applications may add additional values to the array.  The predefined elements are:
 
-**byteOrder**
-: The native byte order of this machine: either **littleEndian** or **bigEndian**.
+    **byteOrder**
+    : The native byte order of this machine: either **littleEndian** or **bigEndian**.
 
-**debug**
-: If this variable exists, then the interpreter was compiled with and linked to a debug-enabled C run-time.  This variable will only exist on Windows, so extension writers can specify which package to load depending on the C run-time library that is in use.  This is not an indication that this core contains symbols.
+    **debug**
+    : If this variable exists, then the interpreter was compiled with and linked to a debug-enabled C run-time.  This variable will only exist on Windows, so extension writers can specify which package to load depending on the C run-time library that is in use.  This is not an indication that this core contains symbols.
 
-**engine**
-: The name of the Tcl language implementation.  When the interpreter is first created, this is always set to the string **Tcl**.
+    **engine**
+    : The name of the Tcl language implementation.  When the interpreter is first created, this is always set to the string **Tcl**.
 
-**machine**
-: The instruction set executed by this machine, such as **intel**, **PPC**, **68k**, or **sun4m**.  On UNIX machines, this is the value returned by **uname -m**.
+    **machine**
+    : The instruction set executed by this machine, such as **intel**, **PPC**, **68k**, or **sun4m**.  On UNIX machines, this is the value returned by **uname -m**.
 
-**os**
-: The name of the operating system running on this machine, such as **Windows NT** or **SunOS**. On UNIX machines, this is the value returned by **uname -s**.
+    **os**
+    : The name of the operating system running on this machine, such as **Windows NT** or **SunOS**. On UNIX machines, this is the value returned by **uname -s**.
 
-**osVersion**
-: The version number for the operating system running on this machine. On UNIX machines, this is the value returned by **uname -r**.
+    **osVersion**
+    : The version number for the operating system running on this machine. On UNIX machines, this is the value returned by **uname -r**.
 
-**pathSeparator**
-: The character that should be used to [split] PATH-like environment variables into their corresponding list of directory names.
+    **pathSeparator**
+    : The character that should be used to [split] PATH-like environment variables into their corresponding list of directory names.
 
-**platform**
-: Either **windows**, or **unix**.  This identifies the general operating environment of the machine.
+    **platform**
+    : Either **windows**, or **unix**.  This identifies the general operating environment of the machine.
 
-**pointerSize**
-: This gives the size of the native-machine pointer in bytes (strictly, it is same as the result of evaluating *sizeof(void*)* in C.)
+    **pointerSize**
+    : This gives the size of the native-machine pointer in bytes (strictly, it is same as the result of evaluating *sizeof(void*)* in C.)
 
-**user**
-: This identifies the current user based on the login information available on the platform. This value comes from the getuid() and getpwuid() system calls on Unix, and the value from the GetUserName() system call on Windows.
+    **user**
+    : This identifies the current user based on the login information available on the platform. This value comes from the getuid() and getpwuid() system calls on Unix, and the value from the GetUserName() system call on Windows.
 
-**wordSize**
-: This gives the size of the native-machine word in bytes (strictly, it is same as the result of evaluating *sizeof(long)* in C.)
+    **wordSize**
+    : This gives the size of the native-machine word in bytes (strictly, it is same as the result of evaluating *sizeof(long)* in C.)
 
 
 **tcl_rcFileName**

@@ -55,28 +55,32 @@ This command provides several operations on a file's name or attributes.  The *n
 
 [file]{.cmd} [attributes]{.sub} [name]{.arg} [option value option value...]{.optarg}
 : This subcommand returns or sets platform-specific values associated with a file. The first form returns a list of the platform-specific options and their values. The second form returns the value for the given option. The third form sets one or more of the values. The values are as follows:
+
     On Unix, **-group** gets or sets the group name for the file. A group id can be given to the command, but it returns a group name. **-owner** gets or sets the user name of the owner of the file. The command returns the owner name, but the numerical id can be passed when setting the owner. **-permissions** retrieves or sets a file's access permissions, using octal notation by default. This option also provides limited support for setting permissions using the symbolic notation accepted by the **chmod** command, following the form [**ugo**]?[[**+-=**][**rwxst**]**,**[...]]. Multiple permission specifications may be given, separated by commas. E.g., **u+s,go-rw** would set the setuid bit for a file's owner as well as remove read and write permission for the file's group and other users. An **ls**-style string of the form **rwxrwxrwx** is also accepted but must always be 9 characters long. E.g., **rwxr-xr-t** is equivalent to **01755**. On versions of Unix supporting file flags, **-readonly** returns the value of, or sets, or clears the readonly attribute of a file, i.e., the user immutable flag (**uchg**) to the **chflags** command.
+
     On Windows, **-archive** gives the value or sets or clears the archive attribute of the file. **-hidden** gives the value or sets or clears the hidden attribute of the file. **-longname** will expand each path element to its long version. This attribute cannot be set. **-readonly** gives the value or sets or clears the readonly attribute of the file. **-shortname** gives a string where every path element is replaced with its short (8.3) version of the name if possible. For path elements that cannot be mapped to short names, the long name is retained. This attribute cannot be set. **-system** gives or sets or clears the value of the system attribute of the file.
+
     On macOS and Darwin, **-creator** gives or sets the Finder creator type of the file. **-hidden** gives or sets or clears the hidden attribute of the file. **-readonly** gives or sets or clears the readonly attribute of the file. **-rsrclength** gives the length of the resource fork of the file, this attribute can only be set to the value 0, which results in the resource fork being stripped off the file.
+
     On all platforms, files in [zipfs] mounted archives return the following attributes. These are all read-only and cannot be directly set.
 
-[-archive]{.lit}
-: The path of the mounted ZIP archive containing the file.
+    [-archive]{.lit}
+    : The path of the mounted ZIP archive containing the file.
 
-[-compsize]{.lit}
-: The compressed size of the file within the archive. This is **0** for directories.
+    [-compsize]{.lit}
+    : The compressed size of the file within the archive. This is **0** for directories.
 
-[-crc]{.lit}
-: The CRC of the file if present, else **0**.
+    [-crc]{.lit}
+    : The CRC of the file if present, else **0**.
 
-[-mount]{.lit}
-: The path where the containing archive is mounted.
+    [-mount]{.lit}
+    : The path where the containing archive is mounted.
 
-[-offset]{.lit}
-: The offset of the file within the archive.
+    [-offset]{.lit}
+    : The offset of the file within the archive.
 
-[-uncompsize]{.lit}
-: The uncompressed size of the file. This is **0** for directories.
+    [-uncompsize]{.lit}
+    : The uncompressed size of the file. This is **0** for directories.
 
 
 
@@ -100,6 +104,7 @@ Other attributes may be present in the returned list. These should be ignored.
     ```
     file dirname c:/
     ```
+
     returns **c:/**.
 
 [file]{.cmd} [executable]{.sub} [name]{.arg}
@@ -113,6 +118,7 @@ Other attributes may be present in the returned list. These should be ignored.
 
 [file]{.cmd} [home]{.sub} [username]{.optarg}
 : If no argument is specified, the command returns the home directory of the current user. This is generally the value of the **$HOME** environment variable except that on Windows platforms backslashes in the path are replaced by forward slashes. An error is raised if the **$HOME** environment variable is not set.
+
     If *username* is specified, the command returns the home directory configured in the system for the specified user. Note this may be different than the value of the **$HOME** environment variable even when *username* corresponds to the current user. An error is raised if the *username* does not correspond to a user account on the system.
 
 [file]{.cmd} [isdirectory]{.sub} [name]{.arg}
@@ -127,13 +133,18 @@ Other attributes may be present in the returned list. These should be ignored.
     ```
     file join a b /foo bar
     ```
+
     returns **/foo/bar**.
+
     Note that any of the names can contain separators, and that the result is always canonical for the current platform: **/** for Unix and Windows.
 
 [file]{.cmd} [link]{.sub} [-linktype]{.optarg} [linkName]{.arg} [target]{.optarg}
 : If only one argument is given, that argument is assumed to be *linkName*, and this command returns the value of the link given by *linkName* (i.e. the name of the file it points to).  If *linkName* is not a link or its value cannot be read (as, for example, seems to be the case with hard links, which look just like ordinary files), then an error is returned.
+
     If 2 arguments are given, then these are assumed to be *linkName* and *target*. If *linkName* already exists, or if *target* does not exist, an error will be returned.  Otherwise, Tcl creates a new link called *linkName* which points to the existing filesystem object at *target* (which is also the returned value), where the type of the link is platform-specific (on Unix a symbolic link will be the default).  This is useful for the case where the user wishes to create a link in a cross-platform way, and does not care what type of link is created.
+
     If the user wishes to make a link of a specific type only, (and signal an error if for some reason that is not possible), then the optional *-linktype* argument should be given.  Accepted values for *-linktype* are "**-symbolic**" and "**-hard**".
+
     On Unix, symbolic links can be made to relative paths, and those paths must be relative to the actual *linkName*'s location (not to the cwd), but on all other platforms where relative links are not supported, target paths will always be converted to absolute, normalized form before the link is created (and therefore relative paths are interpreted as relative to the cwd). When creating links on filesystems that either do not support any links, or do not support the specific type requested, an error message will be returned.  Most Unix platforms support both symbolic and hard links (the latter for files only). Windows supports symbolic directory links and hard file links on NTFS drives.
 
 [file]{.cmd} [lstat]{.sub} [name]{.arg} [varName]{.optarg}
@@ -192,6 +203,7 @@ Other attributes may be present in the returned list. These should be ignored.
 
 [file]{.cmd} [tempdir]{.sub} [template]{.optarg}
 : Creates a temporary directory (guaranteed to be newly created and writable by the current script) and returns its name. If *template* is given, it specifies one of or both of the existing directory (on a filesystem controlled by the operating system) to contain the temporary directory, and the base part of the directory name; it is considered to have the location of the directory if there is a directory separator in the name, and the base part is everything after the last directory separator (if non-empty).  The default containing directory is determined by system-specific operations, and the default base name prefix is "**tcl**".
+
     The following output is typical and illustrative; the actual output will vary between platforms:
 
     ```
@@ -207,10 +219,12 @@ Other attributes may be present in the returned list. These should be ignored.
 
 [file]{.cmd} [tempfile]{.sub} [nameVar]{.optarg} [template]{.optarg}
 : Creates a temporary file and returns a read-write channel opened on that file. If the *nameVar* is given, it specifies a variable that the name of the temporary file will be written into; if absent, Tcl will attempt to arrange for the temporary file to be deleted once it is no longer required. If the *template* is present, it specifies parts of the template of the filename to use when creating it (such as the directory, base-name or extension) though some platforms may ignore some or all of these parts and use a built-in default instead.
+
     Note that temporary files are *only* ever created on the native filesystem. As such, they can be relied upon to be used with operating-system native APIs and external programs that require a filename.
 
 [file]{.cmd} [tildeexpand]{.sub} [name]{.arg}
 : Returns the result of performing tilde substitution on *name*. If the name begins with a tilde, then the file name will be interpreted as if the first element is replaced with the location of the home directory for the given user. If the tilde is followed immediately by a path separator, the **$HOME** environment variable is substituted.  Otherwise the characters between the tilde and the next separator are taken as a user name, which is used to retrieve the user's home directory for substitution.  An error is raised if the **$HOME** environment variable or user does not exist.
+
     If the file name does not begin with a tilde, it is returned unmodified.
 
 [file]{.cmd} [type]{.sub} [name]{.arg}

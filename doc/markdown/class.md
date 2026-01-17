@@ -59,6 +59,7 @@ The **oo::class** class does not define an explicit destructor. However, when a 
 
 [cls]{.ins} [new]{.sub} [arg]{.optdot}
 : This creates a new instance of the class *cls* with a new unique name, passing the arguments, *arg ...*, to the constructor, and (if that returns a successful result) returning the fully qualified name of the created object (the result of the constructor is ignored). If the constructor fails (i.e., returns a non-OK result) then the object is destroyed and the error message is the result of this method call.
+
     Note that this method is not exported by the **oo::class** object itself, so classes should not be created using this method.
 
 
@@ -103,8 +104,8 @@ oo::class create banana {
     }
 }
 set b [banana new]
-$b eat               \(-> prints "skin now off" and "yummy!"
+$b eat               → prints "skin now off" and "yummy!"
 fruit destroy
-$b eat               \(-> error "unknown command"
+$b eat               → error "unknown command"
 ```
 

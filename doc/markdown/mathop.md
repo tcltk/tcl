@@ -78,14 +78,16 @@ The behaviors of the mathematical operator commands are as follows:
 
 **/** *number* ?*number ...*?
 : If only a single *number* argument is given, returns the reciprocal of that numeric value (i.e. the value obtained by dividing 1.0 by that value). Otherwise returns the number that results when the first numeric argument is divided by all subsequent numeric arguments. All *number* arguments must be numeric values. At least one argument must be given.
+
     Note that when the leading values in the list of arguments are integers, integer division will be used for those initial steps (i.e. the intermediate results will be as if the functions *floor* and *int* are applied to them, in that order). If all values in the operation are integers, the result will be an integer.
 
 **%** *number number*
 : Returns the integral modulus (i.e., remainder) of the first argument with respect to the second. Each *number* must have an integral value. Also, the sign of the result will be the same as the sign of the second *number*, which must not be zero.
+
     Note that Tcl defines this operation exactly even for negative numbers, so that the following command returns a true value (omitting the namespace for clarity):
 
     ```
-    == [* [/ x y] y] [\- x [% x y]]
+    == [* [/ x y] y] [- x [% x y]]
     ```
 
 ****** ?*number ...*?

@@ -69,11 +69,11 @@ oo::class create Counted {
 set a [Counted new]
 set b [Counted new]
 $a report
-        \(-> This is instance 1 of 2
+        → This is instance 1 of 2
 set c [Counted new]
 $b report
-        \(-> This is instance 2 of 3
+        → This is instance 2 of 3
 $c report
-        \(-> This is instance 3 of 3
+        → This is instance 3 of 3
 ```
 

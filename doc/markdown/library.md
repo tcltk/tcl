@@ -63,16 +63,19 @@ The following procedures are provided in the Tcl library:
 
 [auto_execok] *cmd*
 : Determines whether there is an executable file or shell builtin by the name *cmd*.  If so, it returns a list of arguments to be passed to [exec] to execute the executable file or shell builtin named by *cmd*.  If not, it returns an empty string.  This command examines the directories in the current search path (given by the PATH environment variable) in its search for an executable file named *cmd*.  On Windows platforms, the search is expanded with the same directories and file extensions as used by [exec]. **Auto_execok** remembers information about previous searches in an array named **auto_execs**;  this avoids the path search in future calls for the same *cmd*.  The command **auto_reset** may be used to force [auto_execok] to forget its cached information.
+
     For example, to run the *umask* shell builtin on Linux, you would do:
 
     ```
     exec {*}[auto_execok umask]
     ```
+
     To run the *DIR* shell builtin on Windows, you would do:
 
     ```
     exec {*}[auto_execok dir]
     ```
+
     To discover if there is a *frobnicate* binary on the user's PATH, you would do:
 
     ```
@@ -81,10 +84,12 @@ The following procedures are provided in the Tcl library:
 
 [auto_import] *pattern*
 : **Auto_import** is invoked during [namespace import][namespace] to see if the imported commands specified by *pattern* reside in an autoloaded library.  If so, the commands are loaded so that they will be available to the interpreter for creating the import links.  If the commands do not reside in an autoloaded library, [auto_import] does nothing.  The pattern matching is performed according to the matching rules of [namespace import][namespace].
+
     It is not normally necessary to call this command directly.
 
 [auto_load] *cmd*
 : This command attempts to load the definition for a Tcl command named *cmd*.  To do this, it searches an *auto-load path*, which is a list of one or more directories.  The auto-load path is given by the global variable **auto_path** if it exists.  If there is no **auto_path** variable, then the **TCLLIBPATH** environment variable is used, if it exists.  Otherwise the auto-load path consists of just the Tcl library directory.  Within each directory in the auto-load path there must be a file **tclIndex** that describes one or more commands defined in that directory and a script to evaluate to load each of the commands.  The **tclIndex** file should be generated with the **auto_mkindex** command.  If *cmd* is found in an index file, then the appropriate script is evaluated to create the command.  The [auto_load] command returns 1 if *cmd* was successfully created.  The command returns 0 if there was no index entry for *cmd* or if the script did not actually define *cmd* (e.g. because index information is out of date).  If an error occurs while processing the script, then that error is returned. **Auto_load** only reads the index information once and saves it in the array **auto_index**;  future calls to [auto_load] check for *cmd* in the array rather than re-reading the index files.  The cached index information may be deleted with the command **auto_reset**.  This will force the next [auto_load] command to reload the index database from disk.
+
     It is not normally necessary to call this command directly; the default [unknown] handler will do so.
 
 **auto_mkindex** *dir pattern pattern ...*
@@ -93,8 +98,11 @@ The following procedures are provided in the Tcl library:
     ```
     auto_mkindex foo *.tcl
     ```
+
     will read all the **.tcl** files in subdirectory **foo** and generate a new index file **foo/tclIndex**.
+
     **Auto_mkindex** parses the Tcl scripts by sourcing them into a child interpreter and monitoring the proc and namespace commands that are executed.  Extensions can use the (undocumented) auto_mkindex_parser package to register other commands that can contribute to the auto_load index. You will have to read through auto.tcl to see how this works.
+
     **Auto_mkindex_old** (which has the same syntax as **auto_mkindex**) parses the Tcl scripts in a relatively unsophisticated way:  if any line contains the word "[proc]" as its first characters then it is assumed to be a procedure definition and the next word of the line is taken as the procedure's name. Procedure definitions that do not appear in this way (e.g.\ they have spaces before the [proc]) will not be indexed.  If your script contains "dangerous" code, such as global initialization code or procedure names with special characters like **$**, *****, **[** or **]**, you are safer using **auto_mkindex_old**.
 
 **auto_reset**
@@ -102,6 +110,7 @@ The following procedures are provided in the Tcl library:
 
 [auto_qualify] *command namespace*
 : Computes a list of fully qualified names for *command*.  This list mirrors the path a standard Tcl interpreter follows for command lookups:  first it looks for the command in the current namespace, and then in the global namespace.  Accordingly, if *command* is relative and *namespace* is not **::**, the list returned has two elements:  *command* scoped by *namespace*, as if it were a command in the *namespace* namespace; and *command* as if it were a command in the global namespace.  Otherwise, if either *command* is absolute (it begins with **::**), or *namespace* is **::**, the list contains only *command* as if it were a command in the global namespace.
+
     **Auto_qualify** is used by the auto-loading facilities in Tcl, both for producing auto-loading indexes such as *pkgIndex.tcl*, and for performing the actual auto-loading of functions at runtime.
 
 **tcl_findLibrary** *basename version patch initScript enVarName varName*
@@ -109,6 +118,7 @@ The following procedures are provided in the Tcl library:
 
 **parray** *arrayName* ?*pattern*?
 : Prints on standard output the names and values of all the elements in the array *arrayName*, or just the names that match *pattern* (using the matching rules of [string match][string]) and their values if *pattern* is given. *ArrayName* must be an array accessible to the caller of **parray**. It may be either local or global. The result of this command is the empty string.
+
     For example, to print the contents of the **tcl_platform** array, do:
 
     ```
@@ -125,6 +135,7 @@ These procedures are mainly used internally by Tk.
 
 **tcl_startOfNextWord** *str start*
 : Returns the index of the first start-of-word location that occurs after a starting index *start* in the string *str*.  A start-of-word location is defined to be the first word character following a non-word character.  Returns -1 if there are no more start-of-word locations after the starting point.
+
     For example, to print the indices of the starts of each word in a string according to platform rules:
 
     ```
@@ -165,10 +176,12 @@ The following global variables are defined or used by the procedures in the Tcl 
 
 **auto_execs**
 : Used by [auto_execok] to record information about whether particular commands exist as executable files.
+
     Not normally usefully accessed directly by user code.
 
 **auto_index**
 : Used by [auto_load] to save the index information read from disk.
+
     Not normally usefully accessed directly by user code.
 
 **auto_noexec**
@@ -179,19 +192,23 @@ The following global variables are defined or used by the procedures in the Tcl 
 
 **auto_path**
 : If set, then it must contain a valid Tcl list giving directories to search during auto-load operations (including for package index files when using the default [package unknown][package] handler). This variable is initialized during startup to contain, in order: the directories listed in the **TCLLIBPATH** environment variable, the directory named by the **tcl_library** global variable, the parent directory of **tcl_library**, the directories listed in the **tcl_pkgPath** variable. Additional locations to look for files and package indices should normally be added to this variable using [lappend].
+
     For example, to add the *lib* directory next to the running script, you would do:
 
     ```
     lappend auto_path [file dirname [info script]]/lib
     ```
+
     Note that if the script uses [cd], it is advisable to ensure that entries on the **auto_path** are [file normalize][file]d.
 
 **env(TCL_LIBRARY)**
 : If set, then it specifies the location of the directory containing library scripts (the value of this variable will be assigned to the **tcl_library** variable and therefore returned by the command [info library][info]).  If this variable is not set then a default value is used.
+
     Use of this environment variable is not recommended outside of testing. Tcl installations should already know where to find their own script files, as the value is baked in during the build or installation.
 
 **env(TCLLIBPATH)**
 : If set, then it must contain a valid Tcl list giving directories to search during auto-load operations.  Directories must be specified in Tcl format, using "/" as the path separator, regardless of platform. This variable is only used when initializing the **auto_path** variable.
+
     A key consequence of this variable is that it gives a way to let the user of a script specify the list of places where that script may use [package require][package] to read packages from. It is not normally usefully settable within a Tcl script itself *except* to influence where other interpreters load from (whether made with [interp create][interp] or launched as their own threads or subprocesses).
 
 

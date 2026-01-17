@@ -72,7 +72,9 @@ Object oriented programming is supported by the use of a package namespace.
 
 **::msgcat::mc** *src-string* ?*arg ...*?
 : Returns a translation of *src-string* according to the current locale.  If additional arguments past *src-string* are given, the [format] command is used to substitute the additional arguments in the translation of *src-string*.
+
     **::msgcat::mc** will search the messages defined in the current namespace for a translation of *src-string*; if none is found, it will search in the parent of the current namespace, and so on until it reaches the global namespace.  If no translation string exists, **::msgcat::mcunknown** is called and the string returned from **::msgcat::mcunknown** is returned.
+
     **::msgcat::mc** is the main function used to localize an application.  Instead of using an English string directly, an application can pass the English string through **::msgcat::mc** and use the result.  If an application is written for a single language in this fashion, then it is easy to add support for additional languages later simply by defining new message catalog entries.
 
 **::msgcat::mcn** *namespace src-string* ?*arg arg ...*?
@@ -157,6 +159,7 @@ The subcommand **clear** removes all locales and their data, which are not in th
 
 **::msgcat::mcload** *dirname*
 : Searches the specified directory for files that match the language specifications returned by **::msgcat::mcloadedlocales loaded** (or **msgcat::mcpackagelocale preferences** if a package locale is set) (note that these are all lowercase), extended by the file extension ".msg". Each matching file is read in order, assuming a UTF-8 encoding.  The file contents are then evaluated as a Tcl script.  This means that Unicode characters may be present in the message file either directly in their UTF-8 encoded form, or by use of the backslash-u quoting recognized by Tcl evaluation.  The number of message files which matched the specification and were loaded is returned.
+
     In addition, the given folder is stored in the **msgcat** package configuration option *mcfolder* to eventually load message catalog files required by a locale change.
 
 **::msgcat::mcset** *locale src-string* ?*translate-string*?
@@ -173,6 +176,7 @@ The subcommand **clear** removes all locales and their data, which are not in th
 
 **::msgcat::mcunknown** *locale src-string* ?*arg arg ...*?
 : This routine is called by **::msgcat::mc** in the case when a translation for *src-string* is not defined in the current locale.  The default action is to return *src-string* passed by format if there are any arguments.  This procedure can be redefined by the application, for example to log error messages for each unknown string.  The **::msgcat::mcunknown** procedure is invoked at the same stack context as the call to **::msgcat::mc**.  The return value of **::msgcat::mcunknown** is used as the return value for the call to **::msgcat::mc**.
+
     Note that this routine is only called if the concerned package did not set a package locale unknown command name.
 
 **::msgcat::mcforgetpackage**
@@ -393,7 +397,9 @@ The following package options are available for each package:
 
 **mcfolder**
 : This is the message folder of the package. This option is set by mcload and by the subcommand set. Both are identical and both return the number of loaded message catalog files.
+
     Setting or changing this value will load all locales contained in the preferences valid for the package. This implies also to invoke any set loadcmd (see below).
+
     Unsetting this value will disable message file load for the package.
 
 **loadcmd**

@@ -108,17 +108,17 @@ These show the use of **::tcl::build-info**.
 
 ```
 ::tcl::build-info
-     \(-> 9.0.2+af16c07b81655fabde8028374161ad54b84ef9956843c63f49976b4ef601b611.gcc-1204
+     → 9.0.2+af16c07b81655fabde8028374161ad54b84ef9956843c63f49976b4ef601b611.gcc-1204
 ::tcl::build-info commit
-     \(-> af16c07b81655fabde8028374161ad54b84ef9956843c63f49976b4ef601b611
+     → af16c07b81655fabde8028374161ad54b84ef9956843c63f49976b4ef601b611
 ::tcl::build-info compiler
-     \(-> gcc-1204
+     → gcc-1204
 ::tcl::build-info gcc
-     \(-> 1204
+     → 1204
 ::tcl::build-info version
-     \(-> 9.0
+     → 9.0
 ::tcl::build-info patchlevel
-     \(-> 9.0.2
+     → 9.0.2
 ```
 
 

@@ -91,32 +91,32 @@ In each of these examples, the initial value of *x* is:
 
 ```
 set x [list [list a b c] [list d e f] [list g h i]]
-      \(-> {a b c} {d e f} {g h i}
+      → {a b c} {d e f} {g h i}
 ```
 
 The indicated return value also becomes the new value of *x* (except in the last case, which is an error which leaves the value of *x* unchanged.)
 
 ```
 lset x {j k l}
-      \(-> j k l
+      → j k l
 lset x {} {j k l}
-      \(-> j k l
+      → j k l
 lset x 0 j
-      \(-> j {d e f} {g h i}
+      → j {d e f} {g h i}
 lset x 2 j
-      \(-> {a b c} {d e f} j
+      → {a b c} {d e f} j
 lset x end j
-      \(-> {a b c} {d e f} j
+      → {a b c} {d e f} j
 lset x end-1 j
-      \(-> {a b c} j {g h i}
+      → {a b c} j {g h i}
 lset x 2 1 j
-      \(-> {a b c} {d e f} {g j i}
+      → {a b c} {d e f} {g j i}
 lset x {2 1} j
-      \(-> {a b c} {d e f} {g j i}
+      → {a b c} {d e f} {g j i}
 lset x {2 3} j
-      \(-> {a b c} {d e f} {g h i j}
+      → {a b c} {d e f} {g h i j}
 lset x {2 4} j
-      \(-> list index out of range
+      → list index out of range
 ```
 
 In the following examples, the initial value of *x* is:
@@ -124,16 +124,16 @@ In the following examples, the initial value of *x* is:
 ```
 set x [list [list [list a b] [list c d]] \
             [list [list e f] [list g h]]]
-      \(-> {{a b} {c d}} {{e f} {g h}}
+      → {{a b} {c d}} {{e f} {g h}}
 ```
 
 The indicated return value also becomes the new value of *x*.
 
 ```
 lset x 1 1 0 j
-      \(-> {{a b} {c d}} {{e f} {j h}}
+      → {{a b} {c d}} {{e f} {j h}}
 lset x {1 1 0} j
-      \(-> {{a b} {c d}} {{e f} {j h}}
+      → {{a b} {c d}} {{e f} {j h}}
 ```
 
 

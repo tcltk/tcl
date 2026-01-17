@@ -68,6 +68,7 @@ The **oo::object** class supports the following non-exported methods:
 
 [obj]{.ins} [eval]{.sub} [arg]{.optdot}
 : This method concatenates the arguments, *arg*, as if with [concat], and then evaluates the resulting script in the namespace that is uniquely associated with *obj*, returning the result of the evaluation.
+
     Note that object-internal commands such as **my** and **self** can be invoked in this context.
 
 [obj]{.ins} [unknown]{.sub} [methodName]{.optarg} [arg]{.optdot}
@@ -89,16 +90,16 @@ This example demonstrates basic use of an object.
 
 ```
 set obj [oo::object new]
-$obj foo             \(-> error "unknown method foo"
+$obj foo             → error "unknown method foo"
 oo::objdefine $obj method foo {} {
     my variable count
     puts "bar[incr count]"
 }
-$obj foo             \(-> prints "bar1"
-$obj foo             \(-> prints "bar2"
-$obj variable count  \(-> error "unknown method variable"
+$obj foo             → prints "bar1"
+$obj foo             → prints "bar2"
+$obj variable count  → error "unknown method variable"
 $obj destroy
-$obj foo             \(-> error "unknown command obj"
+$obj foo             → error "unknown command obj"
 ```
 
 

@@ -51,13 +51,16 @@ If the initial arguments to **glob** start with **-** then they are treated as s
 
 [-types]{.lit} [typeList]{.arg}
 : Only list files or directories which match *typeList*, where the items in the list have two forms. The first form is like the -type option of the Unix find command: *b* (block special file), *c* (character special file), *d* (directory), *f* (plain file), *l* (symbolic link), *p* (named pipe), or *s* (socket), where multiple types may be specified in the list. **Glob** will return all files which match at least one of the types given. Note that symbolic links will be returned both if **-types l** is given, or if the target of a link matches the requested type. So, a link to a directory will be returned if **-types d** was specified.
+
     The second form specifies types where all the types given must match. These are *r*, *w*, *x* as file permissions, and *readonly*, *hidden* as special permission cases. On the Macintosh, macOS types and creators are also supported, where any item which is four characters long is assumed to be a macOS type (e.g. **TEXT**). Items which are of the form *{macintosh type XXXX}* or *{macintosh creator XXXX}* will match types or creators respectively. Unrecognized types, or specifications of multiple macOS types/creators will signal an error.
+
     The two forms may be mixed, so **-types {d f r w}** will find all regular files OR directories that have both read AND write permissions. The following are equivalent:
 
     ```
-    glob \-type d *
+    glob -type d *
     glob */
     ```
+
     except that the first case doesn't return the trailing "/" and is more platform independent.
 
 [-|-]{.lit}
@@ -105,19 +108,19 @@ glob *.tcl
 Find all the Tcl files in the user's home directory, irrespective of what the current directory is:
 
 ```
-glob \-directory [file home] *.tcl
+glob -directory [file home] *.tcl
 ```
 
 Find all subdirectories of the current directory:
 
 ```
-glob \-type d *
+glob -type d *
 ```
 
 Find all files whose name contains an "a", a "b" or the sequence "cde":
 
 ```
-glob \-type f *{a,b,cde}*
+glob -type f *{a,b,cde}*
 ```
 
 

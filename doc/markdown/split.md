@@ -37,28 +37,28 @@ Divide up a USENET group name into its hierarchical components:
 
 ```
 split "comp.lang.tcl" .
-      \(-> comp lang tcl
+      → comp lang tcl
 ```
 
 See how the **split** command splits on *every* character in *splitChars*, which can result in information loss if you are not careful:
 
 ```
 split "alpha beta gamma" "temp"
-      \(-> al {ha b} {} {a ga} {} a
+      → al {ha b} {} {a ga} {} a
 ```
 
 Extract the list words from a string that is not a well-formed list:
 
 ```
 split "Example with {unbalanced brace character"
-      \(-> Example with \{unbalanced brace character
+      → Example with \{unbalanced brace character
 ```
 
 Split a string into its constituent characters
 
 ```
 split "Hello world" {}
-      \(-> H e l l o { } w o r l d
+      → H e l l o { } w o r l d
 ```
 
 ## Parsing record-oriented files

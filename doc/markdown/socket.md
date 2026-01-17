@@ -55,14 +55,19 @@ The following options may also be present before *host* to specify additional in
 
 [-async]{.lit}
 : This option will cause the client socket to be connected asynchronously. This means that the socket will be created immediately but may not yet be connected to the server, when the call to **socket** returns.
+
     When a [gets] or [flush] is done on the socket before the connection attempt succeeds or fails, if the socket is in blocking mode, the operation will wait until the connection is completed or fails. If the socket is in nonblocking mode and a [gets] or [flush] is done on the socket before the connection attempt succeeds or fails, the operation returns immediately and [fblocked] on the socket returns 1. Synchronous client sockets may be switched (after they have connected) to operating in asynchronous mode using:
 
     ```
-    chan configure chan \-blocking 0
+    chan configure chan -blocking 0
     ```
+
     See the [chan configure][chan] command for more details.
+
     The Tcl event loop should be running while an asynchronous connection is in progress, because it may have to do several connection attempts in the background. Running the event loop also allows you to set up a writable channel event on the socket to get notified when the asynchronous connection has succeeded or failed. See the [vwait] and the [chan] commands for more details on the event loop and channel events.
+
     The [chan configure][chan] option **-connecting** may be used to check if the connect is still running. To verify a successful connect, the option **-error** may be checked when **-connecting** returned 0.
+
     Operation without the event queue requires at the moment calls to [chan configure][chan] to advance the internal state machine.
 
 
@@ -94,10 +99,12 @@ The [chan configure][chan] command can be used to query several readonly configu
 
 [-error]{.lit}
 : This option gets the current error status of the given socket.  This is useful when you need to determine if an asynchronous connect operation succeeded.  If there was an error, the error message is returned.  If there was no error, an empty string is returned.
+
     Note that the error status is reset by the read operation; this mimics the underlying getsockopt(SO_ERROR) call.
 
 [-sockname]{.lit}
 : For client sockets (including the channels that get created when a client connects to a server socket) this option returns a list of three elements, the address, the host name and the port number for the socket. If the host name cannot be computed, the second element is identical to the address, the first element of the list.
+
     For server sockets this option returns a list of a multiple of three elements each group of which have the same meaning as described above. The list contains more than one group when the server socket was created without **-myaddr** or with the argument to **-myaddr** being a domain name that resolves multiple IP addresses that are local to the invoking host.
 
 [-peername]{.lit}

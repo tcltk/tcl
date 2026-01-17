@@ -166,15 +166,15 @@ oo::objdefine demo {
     }
 }
 
-puts [demo compute  1 2 3]      \(-> prints "7" after delay
-puts [demo compute2 4 5 6]      \(-> prints "26" after delay
-puts [demo compute  1 2 3]      \(-> prints "7" instantly
-puts [demo compute2 4 5 6]      \(-> prints "26" instantly
-puts [demo compute  4 5 6]      \(-> prints "34" after delay
-puts [demo compute  4 5 6]      \(-> prints "34" instantly
-puts [demo compute  1 2 3]      \(-> prints "7" instantly
+puts [demo compute  1 2 3]      → prints "7" after delay
+puts [demo compute2 4 5 6]      → prints "26" after delay
+puts [demo compute  1 2 3]      → prints "7" instantly
+puts [demo compute2 4 5 6]      → prints "26" instantly
+puts [demo compute  4 5 6]      → prints "34" after delay
+puts [demo compute  4 5 6]      → prints "34" instantly
+puts [demo compute  1 2 3]      → prints "7" instantly
 demo flushCache
-puts [demo compute  1 2 3]      \(-> prints "7" after delay
+puts [demo compute  1 2 3]      → prints "7" after delay
 ```
 
 

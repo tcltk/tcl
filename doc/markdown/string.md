@@ -45,6 +45,7 @@ The legal *option*s (which may be abbreviated) are:
 
 [string]{.cmd} [cat]{.sub} [string1]{.optarg} [string2...]{.optarg}
 : Concatenate the given *string*s just like placing them directly next to each other and return the resulting compound string.  If no *string*s are present, the result is an empty string.
+
     This primitive is occasionally handier than juxtaposition of strings when mixed quoting is wanted, or when the aim is to return the result of a concatenation without resorting to [return] **-level 0**, and is more efficient than building a list of arguments and using [join] with an empty join string.
 
 [string]{.cmd} [compare]{.sub} [-nocase]{.optlit} [[-length]{.lit} [length]{.arg}]{.optarg} [string1]{.arg} [string2]{.arg}
@@ -59,90 +60,96 @@ The legal *option*s (which may be abbreviated) are:
     ```
     string first a 0a23456789abcdef 5
     ```
+
     will return **10**, but
 
     ```
     string first a 0123456789abcdef 11
     ```
+
     will return **-1**.
 
 [string]{.cmd} [index]{.sub} [string]{.arg} [charIndex]{.arg}
 : Returns the *charIndex*'th character of the *string* argument. A *charIndex* of 0 corresponds to the first character of the string.  *charIndex* may be specified as described in the **STRING INDICES** section.
+
     If *charIndex* is less than 0 or greater than or equal to the length of the string then this command returns an empty string.
 
 [string]{.cmd} [insert]{.sub} [string]{.arg} [index]{.arg} [insertString]{.arg}
 : Returns a copy of *string* with *insertString* inserted at the *index*'th character.  The *index* may be specified as described in the **STRING INDICES** section.
+
     If *index* is start-relative, the first character inserted in the returned string will be at the specified index.  If *index* is end-relative, the last character inserted in the returned string will be at the specified index.
+
     If *index* is at or before the start of *string* (e.g., *index* is **0**), *insertString* is prepended to *string*.  If *index* is at or after the end of *string* (e.g., *index* is **end**), *insertString* is appended to *string*.
 
 [string]{.cmd} [is]{.sub} [class]{.arg} [-strict]{.optlit} [[-failindex]{.lit} [varname]{.arg}]{.optarg} [string]{.arg}
 : Returns 1 if *string* is a valid member of the specified character class, otherwise returns 0.  If **-strict** is specified, then an empty string returns 0, otherwise an empty string will return 1 on any class.  If **-failindex** is specified, then if the function returns 0, the index in the string where the class was no longer valid will be stored in the variable named *varname*.  The *varname* will not be set if **string is** returns 1.  The following character classes are recognized (the class name can be abbreviated):
 
-**alnum**
-: Any Unicode alphabet or digit character.
+    **alnum**
+    : Any Unicode alphabet or digit character.
 
-**alpha**
-: Any Unicode alphabet character.
+    **alpha**
+    : Any Unicode alphabet character.
 
-**ascii**
-: Any character with a value less than \u0080 (those that are in the 7-bit ascii range).
+    **ascii**
+    : Any character with a value less than \u0080 (those that are in the 7-bit ascii range).
 
-**boolean**
-: Any of the forms allowed to **Tcl_GetBoolean**.
+    **boolean**
+    : Any of the forms allowed to **Tcl_GetBoolean**.
 
-**control**
-: Any Unicode control character.
+    **control**
+    : Any Unicode control character.
 
-[dict]
-: Any proper dict structure, with optional surrounding whitespace. In case of improper dict structure, 0 is returned and the *varname* will contain the index of the "element" where the dict parsing fails, or -1 if this cannot be determined.
+    [dict]
+    : Any proper dict structure, with optional surrounding whitespace. In case of improper dict structure, 0 is returned and the *varname* will contain the index of the "element" where the dict parsing fails, or -1 if this cannot be determined.
 
-**digit**
-: Any Unicode digit character.  Note that this includes characters outside of the [0-9] range.
+    **digit**
+    : Any Unicode digit character.  Note that this includes characters outside of the [0-9] range.
 
-**double**
-: Any of the forms allowed to **Tcl_GetDoubleFromObj**.
+    **double**
+    : Any of the forms allowed to **Tcl_GetDoubleFromObj**.
 
-**entier**
-: Synonym for **integer**.
+    **entier**
+    : Synonym for **integer**.
 
-**false**
-: Any of the forms allowed to **Tcl_GetBoolean** where the value is false.
+    **false**
+    : Any of the forms allowed to **Tcl_GetBoolean** where the value is false.
 
-**graph**
-: Any Unicode printing character, except space.
+    **graph**
+    : Any Unicode printing character, except space.
 
-**integer**
-: Any of the valid string formats for an integer value of arbitrary size in Tcl, with optional surrounding whitespace. The formats accepted are exactly those accepted by the C routine **Tcl_GetBignumFromObj**.
+    **integer**
+    : Any of the valid string formats for an integer value of arbitrary size in Tcl, with optional surrounding whitespace. The formats accepted are exactly those accepted by the C routine **Tcl_GetBignumFromObj**.
 
-[list]
-: Any proper list structure, with optional surrounding whitespace. In case of improper list structure, 0 is returned and the *varname* will contain the index of the "element" where the list parsing fails, or -1 if this cannot be determined.
+    [list]
+    : Any proper list structure, with optional surrounding whitespace. In case of improper list structure, 0 is returned and the *varname* will contain the index of the "element" where the list parsing fails, or -1 if this cannot be determined.
 
-**lower**
-: Any Unicode lower case alphabet character.
+    **lower**
+    : Any Unicode lower case alphabet character.
 
-**print**
-: Any Unicode printing character, including space.
+    **print**
+    : Any Unicode printing character, including space.
 
-**punct**
-: Any Unicode punctuation character.
+    **punct**
+    : Any Unicode punctuation character.
 
-**space**
-: Any Unicode whitespace character, mongolian vowel separator (U+180e), zero width space (U+200b), word joiner (U+2060) or zero width no-break space (U+feff) (=BOM).
+    **space**
+    : Any Unicode whitespace character, mongolian vowel separator (U+180e), zero width space (U+200b), word joiner (U+2060) or zero width no-break space (U+feff) (=BOM).
 
-**true**
-: Any of the forms allowed to **Tcl_GetBoolean** where the value is true.
+    **true**
+    : Any of the forms allowed to **Tcl_GetBoolean** where the value is true.
 
-**upper**
-: Any upper case alphabet character in the Unicode character set.
+    **upper**
+    : Any upper case alphabet character in the Unicode character set.
 
-**wideinteger**
-: Any of the valid forms for a wide integer in Tcl, with optional surrounding whitespace.  In case of overflow in the value, 0 is returned and the *varname* will contain -1.
+    **wideinteger**
+    : Any of the valid forms for a wide integer in Tcl, with optional surrounding whitespace.  In case of overflow in the value, 0 is returned and the *varname* will contain -1.
 
-**wordchar**
-: Any Unicode word character.  That is any alphanumeric character, and any Unicode connector punctuation characters (e.g. underscore).
+    **wordchar**
+    : Any Unicode word character.  That is any alphanumeric character, and any Unicode connector punctuation characters (e.g. underscore).
 
-**xdigit**
-: Any hexadecimal digit character ([0-9A-Fa-f]).
+    **xdigit**
+    : Any hexadecimal digit character ([0-9A-Fa-f]).
+
 
     In the case of **boolean**, **true** and **false**, if the function will return 0, then the *varname* will always be set to 0, due to the varied nature of a valid boolean value.
 
@@ -152,11 +159,13 @@ The legal *option*s (which may be abbreviated) are:
     ```
     string last a 0a23456789abcdef 15
     ```
+
     will return **10**, but
 
     ```
     string last a 0a23456789abcdef 9
     ```
+
     will return **1**.
 
 [string]{.cmd} [length]{.sub} [string]{.arg}
@@ -168,28 +177,31 @@ The legal *option*s (which may be abbreviated) are:
     ```
     string map {abc 1 ab 2 a 3 1 0} 1abcaababcabababc
     ```
+
     will return the string **01321221**.
+
     Note that if an earlier *key* is a prefix of a later one, it will completely mask the later one.  So if the previous example is reordered like this,
 
     ```
     string map {1 0 ab 2 a 3 abc 1} 1abcaababcabababc
     ```
+
     it will return the string **02c322c222c**.
 
 [string]{.cmd} [match]{.sub} [-nocase]{.optlit} [pattern]{.arg} [string]{.arg}
 : See if *pattern* matches *string*; return 1 if it does, 0 if it does not.  If **-nocase** is specified, then the pattern attempts to match against the string in a case insensitive manner.  For the two strings to match, their contents must be identical except that the following special sequences may appear in *pattern*:
 
-*****
-: Matches any sequence of characters in *string*, including a null string.
+    *****
+    : Matches any sequence of characters in *string*, including a null string.
 
-**?**
-: Matches any single character in *string*.
+    **?**
+    : Matches any single character in *string*.
 
-**[***chars***]**
-: Matches any character in the set given by *chars*.  If a sequence of the form *x***-***y* appears in *chars*, then any character between *x* and *y*, inclusive, will match.  When used with **-nocase**, the end points of the range are converted to lower case first.  Whereas {[A-z]} matches "_" when matching case-sensitively (since "_" falls between the "Z" and "a"), with **-nocase** this is considered like {[A-Za-z]} (and probably what was meant in the first place).
+    **[***chars***]**
+    : Matches any character in the set given by *chars*.  If a sequence of the form *x***-***y* appears in *chars*, then any character between *x* and *y*, inclusive, will match.  When used with **-nocase**, the end points of the range are converted to lower case first.  Whereas {[A-z]} matches "_" when matching case-sensitively (since "_" falls between the "Z" and "a"), with **-nocase** this is considered like {[A-Za-z]} (and probably what was meant in the first place).
 
-**\***x*
-: Matches the single character *x*.  This provides a way of avoiding the special interpretation of the characters ***?[]\** in *pattern*.
+    **\***x*
+    : Matches the single character *x*.  This provides a way of avoiding the special interpretation of the characters ***?[]\** in *pattern*.
 
 
 [string]{.cmd} [range]{.sub} [string]{.arg} [first]{.arg} [last]{.arg}

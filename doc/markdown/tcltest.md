@@ -107,6 +107,7 @@ See **CREATING TEST SUITES WITH TCLTEST** below for an extended example of how t
 
 **cleanupTests**
 : Intended to clean up and summarize after several tests have been run.  Typically called once per test file, at the end of the file after all tests have been completed.  For best effectiveness, be sure that the **cleanupTests** is evaluated even if an error occurs earlier in the test file evaluation.
+
     Prints statistics about the tests run and removes files that were created by **makeDirectory** and **makeFile** since the last **cleanupTests**.  Names of files and directories in the directory **configure -tmpdir** created since the last **cleanupTests**, but not created by **makeFile** or **makeDirectory** are printed to **outputChannel**.  This command also restores the original shell environment, as described by the global **env** array. Returns an empty string.
 
 **runAllTests**
@@ -123,6 +124,7 @@ See **CREATING TEST SUITES WITH TCLTEST** below for an extended example of how t
 
 **configure** *option value* ?*-option value ...*?
 : Sets the value of each configurable option *option* to the corresponding value *value*, in order.  Raises an error if an *option* is not a supported configurable option, or if *value* is not a valid value for the corresponding *option*, or if a *value* is not provided.  When an error is raised, the operation of **configure** is halted, and subsequent *option value* arguments are not processed.
+
     If the environment variable **::env(TCLTEST_OPTIONS)** exists when the **tcltest** package is loaded (by [package require][package] **tcltest**) then its value is taken as a list of arguments to pass to **configure**. This allows the default values of the configuration options to be set by the environment.
 
 **customMatch** *mode script*
@@ -220,16 +222,16 @@ The valid options for **test** are summarized:
 
 ```
 test name description
-        ?\-constraints keywordList|expression?
-        ?\-setup setupScript?
-        ?\-body testScript?
-        ?\-cleanup cleanupScript?
-        ?\-result expectedAnswer?
-        ?\-output expectedOutput?
-        ?\-errorOutput expectedError?
-        ?\-returnCodes codeList?
-        ?\-errorCode expectedErrorCode?
-        ?\-match mode?
+        ?-constraints keywordList|expression?
+        ?-setup setupScript?
+        ?-body testScript?
+        ?-cleanup cleanupScript?
+        ?-result expectedAnswer?
+        ?-output expectedOutput?
+        ?-errorOutput expectedError?
+        ?-returnCodes codeList?
+        ?-errorCode expectedErrorCode?
+        ?-match mode?
 ```
 
 The *name* may be any string.  It is conventional to choose a *name* according to the pattern:
@@ -248,7 +250,9 @@ Valid attributes and associated values are:
 
 [-constraints]{.lit} [keywordList=|+expression]{.arg}
 : The optional **-constraints** attribute can be list of one or more keywords or an expression.  If the **-constraints** value is a list of keywords, each of these keywords should be the name of a constraint defined by a call to **testConstraint**.  If any of the listed constraints is false or does not exist, the test is skipped.  If the **-constraints** value is an expression, that expression is evaluated. If the expression evaluates to true, then the test is run.
+
     Note that the expression form of **-constraints** may interfere with the operation of **configure -constraints** and **configure -limitconstraints**, and is not recommended.
+
     Appropriate constraints should be added to any tests that should not always be run.  That is, conditional evaluation of a test should be accomplished by the **-constraints** option, not by conditional evaluation of **test**.  In that way, the same number of tests are always reported by the test suite, though the number skipped may change based on the testing environment. The default value is an empty list. See **TEST CONSTRAINTS** below for a list of built-in constraints and information on how to add your own constraints.
 
 [-setup]{.lit} [script]{.arg}
@@ -400,60 +404,62 @@ The **configure** command is used to set and query the configurable options of *
 [-debug]{.lit} [level]{.arg}
 : Sets the debug level to *level*, an integer value indicating how much debugging information should be printed to **stdout**.  Note that debug messages always go to **stdout**, independent of the value of **configure -outfile**.  Default value is 0.  Levels are defined as:
 
-0
-: Do not display any debug information.
+    0
+    : Do not display any debug information.
 
-1
-: Display information regarding whether a test is skipped because it does not match any of the tests that were specified using by **configure -match** (userSpecifiedNonMatch) or matches any of the tests specified by **configure -skip** (userSpecifiedSkip).  Also print warnings about possible lack of cleanup or balance in test files. Also print warnings about any re-use of test names.
+    1
+    : Display information regarding whether a test is skipped because it does not match any of the tests that were specified using by **configure -match** (userSpecifiedNonMatch) or matches any of the tests specified by **configure -skip** (userSpecifiedSkip).  Also print warnings about possible lack of cleanup or balance in test files. Also print warnings about any re-use of test names.
 
-2
-: Display the flag array parsed by the command line processor, the contents of the global **env** array, and all user-defined variables that exist in the current namespace as they are used.
+    2
+    : Display the flag array parsed by the command line processor, the contents of the global **env** array, and all user-defined variables that exist in the current namespace as they are used.
 
-3
-: Display information regarding what individual procs in the test harness are doing.
+    3
+    : Display information regarding what individual procs in the test harness are doing.
 
 
 [-verbose]{.lit} [level]{.arg}
 : Sets the type of output verbosity desired to *level*, a list of zero or more of the elements **body**, **pass**, **skip**, **start**, **error**, **line**, **msec** and **usec**. Default value is "**body error**". Levels are defined as:
 
-body (**b**)
-: Display the body of failed tests
+    body (**b**)
+    : Display the body of failed tests
 
-pass (**p**)
-: Print output when a test passes
+    pass (**p**)
+    : Print output when a test passes
 
-skip (**s**)
-: Print output when a test is skipped
+    skip (**s**)
+    : Print output when a test is skipped
 
-start (**t**)
-: Print output whenever a test starts
+    start (**t**)
+    : Print output whenever a test starts
 
-error (**e**)
-: Print errorInfo and errorCode, if they exist, when a test return code does not match its expected return code
+    error (**e**)
+    : Print errorInfo and errorCode, if they exist, when a test return code does not match its expected return code
 
-line (**l**)
-: Print source file line information of failed tests
+    line (**l**)
+    : Print source file line information of failed tests
 
-msec (**m**)
-: Print each test's execution time in milliseconds
+    msec (**m**)
+    : Print each test's execution time in milliseconds
 
-usec (**u**)
-: Print each test's execution time in microseconds
+    usec (**u**)
+    : Print each test's execution time in microseconds
+
 
     Note that the **msec** and **usec** verbosity levels are provided as indicative measures only. They do not tackle the problem of repeatability which should be considered in performance tests or benchmarks. To use these verbosity levels to thoroughly track performance degradations, consider wrapping your test bodies with [time] commands.
+
     The single letter abbreviations noted above are also recognized so that "**configure -verbose pt**" is the same as "**configure -verbose {pass start}**".
 
 [-preservecore]{.lit} [level]{.arg}
 : Sets the core preservation level to *level*.  This level determines how stringent checks for core files are.  Default value is 0.  Levels are defined as:
 
-0
-: No checking \(em do not check for core files at the end of each test command, but do check for them in **runAllTests** after all test files have been evaluated.
+    0
+    : No checking \(em do not check for core files at the end of each test command, but do check for them in **runAllTests** after all test files have been evaluated.
 
-1
-: Also check for core files at the end of each **test** command.
+    1
+    : Also check for core files at the end of each **test** command.
 
-2
-: Check for core files at all times described above, and save a copy of each core file produced in **configure -tmpdir**.
+    2
+    : Check for core files at all times described above, and save a copy of each core file produced in **configure -tmpdir**.
 
 
 [-limitconstraints]{.lit} [boolean]{.arg}

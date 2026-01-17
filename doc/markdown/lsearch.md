@@ -145,50 +145,50 @@ Basic searching:
 
 ```
 lsearch {a b c d e} c
-      \(-> 2
+      → 2
 lsearch -all {a b c a b c} c
-      \(-> 2 5
+      → 2 5
 ```
 
 Using **lsearch** to filter lists:
 
 ```
 lsearch -inline {a20 b35 c47} b*
-      \(-> b35
+      → b35
 lsearch -inline -not {a20 b35 c47} b*
-      \(-> a20
+      → a20
 lsearch -all -inline -not {a20 b35 c47} b*
-      \(-> a20 c47
+      → a20 c47
 lsearch -all -not {a20 b35 c47} b*
-      \(-> 0 2
+      → 0 2
 ```
 
 This can even do a "set-like" removal operation:
 
 ```
 lsearch -all -inline -not -exact {a b c a d e a f g a} a
-      \(-> b c d e f g
+      → b c d e f g
 ```
 
 Searching may start part-way through the list:
 
 ```
 lsearch -start 3 {a b c a b c} c
-      \(-> 5
+      → 5
 ```
 
 It is also possible to search inside elements:
 
 ```
 lsearch -index 1 -all -inline {{abc abc} {abc bcd} {abc cde}} *bc*
-      \(-> {abc abc} {abc bcd}
+      → {abc abc} {abc bcd}
 ```
 
 The same thing for a flattened list:
 
 ```
 lsearch -stride 2 -index 1 -all -inline {abc abc abc bcd abc cde} *bc*
-      \(-> abc abc abc bcd
+      → abc abc abc bcd
 ```
 
 

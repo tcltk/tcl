@@ -121,6 +121,7 @@ Unless otherwise specified, operators accept non-numeric operands.  The value of
 
 ***\0\0/\0\0%**
 : Multiply and divide, which are valid for numeric operands, and remainder, which is valid for integers.  The remainder, an absolute value smaller than the absolute value of the divisor, has the same sign as the divisor.
+
     When applied to integers, division and remainder can be considered to partition the number line into a sequence of adjacent non-overlapping pieces, where each piece is the size of the divisor; the quotient identifies which piece the dividend lies within, and the remainder identifies where within that piece the dividend lies. A consequence of this is that the result of "-57 **/** 10" is always -6, and the result of "-57 **%** 10" is always 3.
 
 **+\0\0-**

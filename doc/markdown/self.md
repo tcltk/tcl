@@ -39,6 +39,7 @@ The **self** command, which should only be used from within the context of a cal
 
 [self]{.cmd} [class]{.sub}
 : This returns the name of the class that the current method was defined within. Note that this will change as the chain of method implementations is traversed with **next**, and that if the method was defined on an object then this will fail.
+
     If you want the class of the current object, you need to use this other construct:
 
     ```
@@ -76,8 +77,8 @@ oo::class create c {
 }
 c create a
 c create b
-a foo                \(-> prints "this is the ::a object"
-b foo                \(-> prints "this is the ::b object"
+a foo                → prints "this is the ::a object"
+b foo                → prints "this is the ::b object"
 ```
 
 This demonstrates what a method call chain looks like, and how traversing along it changes the index into it:
@@ -96,9 +97,9 @@ oo::objdefine a {
         puts "Obj: [self call]"
     }
 }
-a x     \(-> Obj: {{method x object method} {method x ::c method}} 0
-        \(-> Cls: {{method x object method} {method x ::c method}} 1
-        \(-> Obj: {{method x object method} {method x ::c method}} 0
+a x     → Obj: {{method x object method} {method x ::c method}} 0
+        → Cls: {{method x object method} {method x ::c method}} 1
+        → Obj: {{method x object method} {method x ::c method}} 0
 ```
 
 

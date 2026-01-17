@@ -549,6 +549,12 @@ proc ::ndoc::parseBackslash {text} {
 	# parses an nroff text string and handles escaping of characters
 	# (both removing or adding backslashes)
 	#
+	# \u005ce \u005c = \e      ->   \
+	# \u005c- -      = \-      ->   - (dash)
+	# \N'34' \"      = \N'34'  ->   "
+	# \\(en –        = \(en    ->   – (em-dash)
+	# \\(-> \u2192   = \(->    ->   -> (arrow)
+	#
 	# Note: this procedure does not handle the \f... sequences
 	# (\fB, \fI and \fR are handled by BIRPclean, BIRPstrip and parseInline)
 	#
@@ -1349,7 +1355,7 @@ proc ::ndoc::parseInline {keyword attributes content} {
 		# apart from nroff backslash "formatting"
 		if $DEBUG {puts =Code}
 		set content [BIRPstrip $content]
-		set content [string map {{\e} "\\"} $content]
+		set content [parseBackslash $content]
 		return [list $keyword $attributes $content]
 	}
 	set content [BIRPclean $content]
@@ -1512,12 +1518,16 @@ proc ::ndoc::AST2Markdown_Element {parentType indent ASTelement} {
 				}
 			}
 		}
-		Dlist     {append output \n}
+		Dlist {
+			if {$parentType eq "Dlist"} {incr indent 4}
+			append output \n
+		}
 		DlistItem {
+			append output [string repeat { } $indent]
 			foreach item [dict get $attributes -definition] {
-				append output [AST2Markdown_Element DlistItem 0 $item]
+				append output [AST2Markdown_Element DlistItem $indent $item]
 			}
-			append output \n {: }
+			append output \n [string repeat { } $indent] {: }
 		}
 		Span      {}
 		Div       {
@@ -1546,7 +1556,11 @@ proc ::ndoc::AST2Markdown_Element {parentType indent ASTelement} {
 		}
 		DlistItem {
 			append output [AST2Markdown_Element $type 0 [lindex $content 0]]
-			foreach item [lrange $content 1 end] {append output [AST2Markdown_Element $type 4 $item]}
+			foreach item [lrange $content 1 end] {
+				lassign $item subtype
+				if {$subtype eq "Paragraph"} {append output \n}
+				append output [AST2Markdown_Element $type 4 $item]
+			}
 		}
 		Span {
 			append output \[

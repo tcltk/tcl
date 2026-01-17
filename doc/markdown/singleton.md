@@ -57,6 +57,7 @@ The **oo::singleton** class does not define an explicit destructor; destroying a
 
 [cls]{.ins} [new]{.sub} [arg]{.optdot}
 : This returns the current instance of the singleton class, if one exists, and creates a new instance only if there is no existing instance. The additional arguments, *arg ...*, are only used if a new instance is actually manufactured; that construction is via the **oo::class** class's **new** method.
+
     This is an override of the behaviour of a superclass's method with an identical call signature to the superclass's implementation.
 
 
@@ -78,11 +79,11 @@ oo::singleton create Highlander {
 set h1 [Highlander new]
 set h2 [Highlander new]
 if {$h1 eq $h2} {
-    puts "equal objects"    \(-> prints "equal objects"
+    puts "equal objects"    → prints "equal objects"
 }
 set h3 [Highlander new]
 if {$h1 eq $h3} {
-    puts "equal objects"    \(-> prints "equal objects"
+    puts "equal objects"    → prints "equal objects"
 }
 ```
 

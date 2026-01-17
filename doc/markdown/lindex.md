@@ -87,30 +87,30 @@ Lists can be indexed into from either end:
 
 ```
 lindex {a b c} 0
-      \(-> a
+      → a
 lindex {a b c} 2
-      \(-> c
+      → c
 lindex {a b c} end
-      \(-> c
+      → c
 lindex {a b c} end-1
-      \(-> b
+      → b
 ```
 
 Lists or sequences of indices allow selection into lists of lists:
 
 ```
 lindex {a b c}
-      \(-> a b c
+      → a b c
 lindex {a b c} {}
-      \(-> a b c
+      → a b c
 lindex {{a b c} {d e f} {g h i}} 2 1
-      \(-> h
+      → h
 lindex {{a b c} {d e f} {g h i}} {2 1}
-      \(-> h
+      → h
 lindex {{{a b} {c d}} {{e f} {g h}}} 1 1 0
-      \(-> g
+      → g
 lindex {{{a b} {c d}} {{e f} {g h}}} {1 1 0}
-      \(-> g
+      → g
 ```
 
 List indices may also perform limited computation, adding or subtracting fixed amounts from other indices:
@@ -118,10 +118,10 @@ List indices may also perform limited computation, adding or subtracting fixed a
 ```
 set idx 1
 lindex {a b c d e f} $idx+2
-      \(-> d
+      → d
 set idx 3
 lindex {a b c d e f} $idx+2
-      \(-> f
+      → f
 ```
 
 

@@ -81,12 +81,14 @@ By default ASCII sorting is used with the result returned in increasing order.  
     lsort -integer -index 1 \
           {{First 24} {Second 18} {Third 30}}
     ```
+
     returns **{Second 18} {First 24} {Third 30}**,
 
     ```
     lsort -index end-1 \
             {{a 1 e i} {b 2 3 f g} {c 4 5 6 d h}}
     ```
+
     returns **{c 4 5 6 d h} {a 1 e i} {b 2 3 f g}**, and
 
     ```
@@ -96,21 +98,26 @@ By default ASCII sorting is used with the result returned in increasing order.  
         {{c o d e} 54321}
     }
     ```
+
     returns **{{d e m o} 34512} {{b i g} 12345} {{c o d e} 54321}** (because **e** sorts before **i** which sorts before **o**.) This option is much more efficient than using **-command** to achieve the same effect.
 
 **-stride\0***strideLength*
 : If this option is specified, the list is treated as consisting of groups of *strideLength* elements and the groups are sorted by either their first element or, if the **-index** option is used, by the element within each group given by the first index passed to **-index** (which is then ignored by **-index**). Elements always remain in the same position within their group.
+
     The list length must be an integer multiple of *strideLength*, which in turn must be at least 2.
+
     For example,
 
     ```
     lsort -stride 2 {carrot 10 apple 50 banana 25}
     ```
+
     returns "apple 50 banana 25 carrot 10", and
 
     ```
     lsort -stride 2 -index 1 -integer {carrot 10 apple 50 banana 25}
     ```
+
     returns "carrot 10 banana 25 apple 50".
 
 **-nocase**

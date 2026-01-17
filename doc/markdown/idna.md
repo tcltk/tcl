@@ -43,11 +43,11 @@ This package provides an implementation of the punycode scheme used in Internati
 [tcl::idna]{.cmd} [puny]{.sub} [subcommand]{.arg} [...]{.arg}
 : This command provides direct access to the basic punycode encoder and decoder. It supports two *subcommand*s:
 
-[tcl::idna]{.cmd} [puny]{.sub} [decode]{.lit} [string]{.arg} [case]{.optarg}
-: This command decodes the punycode-encoded string, *string*, and returns the result. If *case* is provided, it is a boolean to make the case be folded to upper case (if *case* is true) or lower case (if *case* is false) during the decoding process; if omitted, no case transformation is applied.
+    [tcl::idna]{.cmd} [puny]{.sub} [decode]{.lit} [string]{.arg} [case]{.optarg}
+    : This command decodes the punycode-encoded string, *string*, and returns the result. If *case* is provided, it is a boolean to make the case be folded to upper case (if *case* is true) or lower case (if *case* is false) during the decoding process; if omitted, no case transformation is applied.
 
-[tcl::idna]{.cmd} [puny]{.sub} [encode]{.lit} [string]{.arg} [case]{.optarg}
-: This command encodes the string, *string*, and returns the punycode-encoded version of the string. If *case* is provided, it is a boolean to make the case be folded to upper case (if *case* is true) or lower case (if *case* is false) during the encoding process; if omitted, no case transformation is applied.
+    [tcl::idna]{.cmd} [puny]{.sub} [encode]{.lit} [string]{.arg} [case]{.optarg}
+    : This command encodes the string, *string*, and returns the punycode-encoded version of the string. If *case* is provided, it is a boolean to make the case be folded to upper case (if *case* is true) or lower case (if *case* is false) during the encoding process; if omitted, no case transformation is applied.
 
 
 [tcl::idna]{.cmd} [version]{.sub}
@@ -61,9 +61,9 @@ This is an example of how punycoding of a string works:
 ```
 package require tcl::idna
 
-puts [tcl::idna puny encode "abc\(->def"]
+puts [tcl::idna puny encode "abc→def"]
 #    prints: abcdef-kn2c
 puts [tcl::idna puny decode "abcdef-kn2c"]
-#    prints: abc\(->def
+#    prints: abc→def
 ```
 

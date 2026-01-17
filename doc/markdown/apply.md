@@ -69,9 +69,9 @@ proc map {lambda list} {
     return $result
 }
 map {x {return [string length $x]:$x}} {a bb ccc dddd}
-      \(-> 1:a 2:bb 3:ccc 4:dddd
+      → 1:a 2:bb 3:ccc 4:dddd
 map {x {expr {$x**2 + 3*$x - 2}}} {-4 -3 -2 -1 0 1 2 3 4}
-      \(-> 2 -2 -4 -4 -2 2 8 16 26
+      → 2 -2 -4 -4 -2 2 8 16 26
 ```
 
 The **apply** command is also useful for defining callbacks for use in the [trace] command:
