@@ -2206,13 +2206,13 @@ static int UtfExtWrapper(
 
     /* Set up output buffer */
     bufLen = dstLen + 4; /* 4 -> overflow detection */
-    dstBufPtr = (char *) Tcl_Alloc(bufLen);
+    dstBufPtr = (char *)Tcl_Alloc(bufLen);
     memset(dstBufPtr, 0xFF, dstLen); /* Need to check nul terminator */
     memmove(dstBufPtr + dstLen, "\xAB\xCD\xEF\xAB", 4);   /* overflow detection */
 
     /* Set up input buffer, including prefix if one has been specified */
     bytes = Tcl_GetByteArrayFromObj(objv[3], &srcLen);
-    srcBufPtr = (char *) Tcl_Alloc(prefixLen+srcLen+1); /* +1 to ensure not 0 */
+    srcBufPtr = (char *)Tcl_Alloc(prefixLen+srcLen+1); /* +1 to ensure not 0 */
     if (prefixLen != 0) {
 	const unsigned char *prefixBytes;
 	Tcl_Size nbytes;
@@ -9177,7 +9177,7 @@ vamoose:
  */
 static int
 TestChanBlockMode(
-    TCL_UNUSED(ClientData), /* instanceData */
+    TCL_UNUSED(void *), /* instanceData */
     TCL_UNUSED(int))	    /* mode */
 {
     return 0;
@@ -9185,7 +9185,7 @@ TestChanBlockMode(
 
 static void
 TestChanSourceWatch(
-    TCL_UNUSED(ClientData), /* instanceData */
+    TCL_UNUSED(void *), /* instanceData */
     int mask)
 {
     if (mask)
@@ -9194,7 +9194,7 @@ TestChanSourceWatch(
 
 static void
 TestChanSinkWatch(
-    TCL_UNUSED(ClientData), /* instanceData */
+    TCL_UNUSED(void *), /* instanceData */
     int mask)
 {
     if (mask)
@@ -9203,14 +9203,14 @@ TestChanSinkWatch(
 
 typedef struct TestChanSourceState {
     Tcl_Size numSourced; /* How many bytes returned so far */
-    int len;             /* Length of data[] */
-    unsigned char data[1];
+    size_t len;             /* Length of data[] */
+    unsigned char data[TCLFLEXARRAY];
 
 } TestChanSourceState;
 
 static int
 TestChanSourceInput(
-    ClientData instanceData,
+    void *instanceData,
     char *outPtr,      /* Where to store data. Assumed aligned */
     const int maxReadCount, /* Maximum number of bytes to read. */
     TCL_UNUSED(int *)) /* errorCodePtr - Where to store error codes. */
@@ -9261,7 +9261,7 @@ TestChanSourceInput(
 
 	unsigned int *to = (unsigned int *)outPtr;
 	unsigned int *end = to + (maxReadCount / sizeof(unsigned int));
-	int nremain = maxReadCount - (sizeof(unsigned int) * (end - to));
+	size_t nremain = maxReadCount - (sizeof(unsigned int) * (end - to));
 	while (to < end)
 	    *to++ = u.val;
 	assert(nremain < chanPtr->len);
@@ -9282,7 +9282,7 @@ TestChanSourceInput(
 	}
 	int nchunks = (maxReadCount-ncopied)/chanPtr->len;
 	char *end = to + (nchunks * chanPtr->len);
-	int nremain = (maxReadCount-ncopied) - (end - to);
+	size_t nremain = (maxReadCount-ncopied) - (end - to);
 	/* Copy the data in chunks */
 	while (to < end) {
 	    memmove(to, chanPtr->data, chanPtr->len);
@@ -9300,7 +9300,7 @@ TestChanSourceInput(
 
 static int
 TestChanSourceClose2 (
-    ClientData instanceData,
+    void *instanceData,
     TCL_UNUSED(Tcl_Interp *),	/* interp */
     int flags)
 {
@@ -9311,7 +9311,7 @@ TestChanSourceClose2 (
 
 static int
 TestChanSinkOutput (
-    TCL_UNUSED(ClientData),	/* Instance data */
+    TCL_UNUSED(void *),	/* Instance data */
     TCL_UNUSED(const char *),	/* Bytes to write */
     int         nbytes,
     TCL_UNUSED(int *))		/* errorCodePtr */
@@ -9321,14 +9321,14 @@ TestChanSinkOutput (
 
 static int
 TestChanSinkClose2 (
-    TCL_UNUSED(ClientData),	/* Instance data */
+    TCL_UNUSED(void *),	/* Instance data */
     TCL_UNUSED(Tcl_Interp *),	/* interp */
     TCL_UNUSED(int))		/* flags */
 {
     return 0;
 }
 
-Tcl_ChannelType TestChanSourceDispatch = {
+static const Tcl_ChannelType TestChanSourceDispatch = {
     "testchansource", /* Channel type name */
     (Tcl_ChannelTypeVersion)TCL_CHANNEL_VERSION_5,
     NULL,
@@ -9348,7 +9348,7 @@ Tcl_ChannelType TestChanSourceDispatch = {
     NULL  /* Truncate */
 };
 
-Tcl_ChannelType TestChanSinkDispatch = {
+static const Tcl_ChannelType TestChanSinkDispatch = {
     "testchansink", /* Channel type name */
     (Tcl_ChannelTypeVersion)TCL_CHANNEL_VERSION_5,
     NULL,
@@ -9405,7 +9405,7 @@ TestChanCreateCmd(
     int ret;
     int flags = 0;
     void *instancePtr = NULL;
-    Tcl_ChannelType *dispatchPtr = NULL;
+    const Tcl_ChannelType *dispatchPtr = NULL;
     const unsigned char *bytes = NULL;
 
     if (objc < 2) {
@@ -9445,8 +9445,8 @@ TestChanCreateCmd(
 	    bytes = (const unsigned char *)"\0";
 	}
 	TestChanSourceState *sourceStatePtr;
-	sourceStatePtr = (TestChanSourceState *) Tcl_Alloc(
-	    sizeof(TestChanSourceState) + len - sizeof(sourceStatePtr->data));
+	sourceStatePtr = (TestChanSourceState *)Tcl_Alloc(
+	    offsetof(TestChanSourceState, data) + len);
 	sourceStatePtr->numSourced = 0;
 	sourceStatePtr->len = len;
 	memmove(sourceStatePtr->data, bytes, len);

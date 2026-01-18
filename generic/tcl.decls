@@ -1781,12 +1781,12 @@ declare 551 {
 }
 
 # TIP#233 (virtualized time) akupries
-declare 552 {
+declare 552 {deprecated {No longer supported}} {
     void Tcl_SetTimeProc(Tcl_GetTimeProc *getProc,
 	    Tcl_ScaleTimeProc *scaleProc,
 	    void *clientData)
 }
-declare 553 {
+declare 553 {deprecated {No longer supported}} {
     void Tcl_QueryTimeProc(Tcl_GetTimeProc **getProc,
 	    Tcl_ScaleTimeProc **scaleProc,
 	    void **clientData)
