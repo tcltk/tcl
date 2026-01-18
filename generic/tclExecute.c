@@ -8739,7 +8739,7 @@ ExecuteExtendedUnaryMathOp(
 /*
  *----------------------------------------------------------------------
  *
- * CompareTwoNumbers --
+ * TclCompareTwoNumbers --
  *
  *	This function compares a pair of numbers in Tcl_Objs. Each argument
  *	must already be known to be numeric and not NaN.
@@ -8761,7 +8761,7 @@ TclCompareTwoNumbers(
 {
     int type1 = TCL_NUMBER_NAN, type2 = TCL_NUMBER_NAN, compare;
     void *ptr1, *ptr2;
-    mp_int big1, big2;
+    mp_int blx; const mp_int *bp1, *bp2;
     double d1, d2, tmp;
     Tcl_WideInt w1, w2;
 
@@ -8812,13 +8812,12 @@ TclCompareTwoNumbers(
 	    w2 = (Tcl_WideInt)d2;
 	    goto wideCompare;
 	case TCL_NUMBER_BIG:
-	    Tcl_GetBignumFromObj(NULL, value2Ptr, &big2);
-	    if (mp_isneg(&big2)) {
+	    bp2 = (const mp_int *)ptr2;
+	    if (mp_isneg(bp2)) {
 		compare = MP_GT;
 	    } else {
 		compare = MP_LT;
 	    }
-	    mp_clear(&big2);
 	    return compare;
 	}
     break;
@@ -8849,60 +8848,61 @@ TclCompareTwoNumbers(
 	    if (isinf(d1)) {
 		return (d1 > 0.0) ? MP_GT : MP_LT;
 	    }
-	    Tcl_GetBignumFromObj(NULL, value2Ptr, &big2);
+	    bp2 = (const mp_int *)ptr2;
 	    if ((d1 < (double)WIDE_MAX) && (d1 > (double)WIDE_MIN)) {
-		if (mp_isneg(&big2)) {
+		if (mp_isneg(bp2)) {
 		    compare = MP_GT;
 		} else {
 		    compare = MP_LT;
 		}
-		mp_clear(&big2);
 		return compare;
 	    }
 	    if (DBL_MANT_DIG > CHAR_BIT*sizeof(Tcl_WideInt)
 		    && modf(d1, &tmp) != 0.0) {
-		d2 = TclBignumToDouble(&big2);
-		mp_clear(&big2);
+		d2 = TclBignumToDouble(bp2);
 		goto doubleCompare;
 	    }
-	    Tcl_InitBignumFromDouble(NULL, d1, &big1);
+	    Tcl_InitBignumFromDouble(NULL, d1, &blx);
+	    bp1 = &blx;
 	    goto bigCompare;
 	}
     break;
 
     case TCL_NUMBER_BIG:
-	Tcl_GetBignumFromObj(NULL, valuePtr, &big1);
+	mp_int bl;
+	if (ptr1 != ptr2) { /* 2nd call of GetNumberFromObj got not a bignum */
+	    bp1 = (const mp_int *)ptr1;
+	} else { /* both pointers points to same place, so TSD is overwritten */
+	    TclUnpackBignum(valuePtr, bl);
+	    bp1 = &bl;
+	}
 	switch (type2) {
 	case TCL_NUMBER_INT:
-	    compare = mp_cmp_d(&big1, 0);
-	    mp_clear(&big1);
+	    compare = mp_cmp_d(bp1, 0);
 	    return compare;
 	case TCL_NUMBER_DOUBLE:
 	    d2 = *((const double *)ptr2);
 	    if (isinf(d2)) {
 		compare = (d2 > 0.0) ? MP_LT : MP_GT;
-		mp_clear(&big1);
 		return compare;
 	    }
 	    if ((d2 < (double)WIDE_MAX) && (d2 > (double)WIDE_MIN)) {
-		compare = mp_cmp_d(&big1, 0);
-		mp_clear(&big1);
+		compare = mp_cmp_d(bp1, 0);
 		return compare;
 	    }
 	    if (DBL_MANT_DIG > CHAR_BIT*sizeof(Tcl_WideInt)
 		    && modf(d2, &tmp) != 0.0) {
-		d1 = TclBignumToDouble(&big1);
-		mp_clear(&big1);
+		d1 = TclBignumToDouble(bp1);
 		goto doubleCompare;
 	    }
-	    Tcl_InitBignumFromDouble(NULL, d2, &big2);
+	    Tcl_InitBignumFromDouble(NULL, d2, &blx);
+	    bp2 = &blx;
 	    goto bigCompare;
 	case TCL_NUMBER_BIG:
-	    Tcl_GetBignumFromObj(NULL, value2Ptr, &big2);
+	    bp2 = (const mp_int *)ptr2;
 	bigCompare:
-	    compare = mp_cmp(&big1, &big2);
-	    mp_clear(&big1);
-	    mp_clear(&big2);
+	    compare = mp_cmp(bp1, bp2);
+	    if (bp1 == &blx || bp2 == &blx) { mp_clear(&blx); }
 	    return compare;
 	}
     break;
