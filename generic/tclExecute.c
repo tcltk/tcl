@@ -9199,7 +9199,7 @@ TclCompareTwoNumbers(
 	    TCL_UNREACHABLE();
 	}
 
-    case TCL_NUMBER_BIG:
+    case TCL_NUMBER_BIG: {
 	mp_int bl;
 	if (ptr1 != ptr2) { /* 2nd call of GetNumberFromObj got not a bignum */
 	    bp1 = (const mp_int *)ptr1;
@@ -9238,6 +9238,7 @@ TclCompareTwoNumbers(
 	default:
 	    TCL_UNREACHABLE();
 	}
+    }
     default:
 	Tcl_Panic("unexpected number type");
 	TCL_UNREACHABLE();
