@@ -75,6 +75,8 @@
 #   define Tcl_NRCallObjProc 0
 #   define Tcl_NRCreateCommand 0
 #   define TclGetObjInterpProc 0
+#   define Tcl_QueryTimeProc 0
+#   define Tcl_SetTimeProc 0
 #endif
 
 #define TclUtfCharComplete Tcl_UtfCharComplete

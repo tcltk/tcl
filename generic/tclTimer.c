@@ -2417,6 +2417,7 @@ TimerInfoDo(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 void
 Tcl_SetTimeProc(
     TCL_UNUSED(Tcl_GetTimeProc *),
@@ -2425,6 +2426,7 @@ Tcl_SetTimeProc(
 {
     Tcl_Panic("Tcl_SetTimeProc is not supported in TCL 9.1");
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -2443,6 +2445,7 @@ Tcl_SetTimeProc(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 void
 Tcl_QueryTimeProc(
     TCL_UNUSED(Tcl_GetTimeProc **),
@@ -2451,6 +2454,7 @@ Tcl_QueryTimeProc(
 {
     Tcl_Panic("Tcl_QueryTimeProc is not supported in TCL 9.1");
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  * Local Variables:

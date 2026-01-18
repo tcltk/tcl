@@ -47,9 +47,9 @@ The unit is micro-seconds.
 Only time differences are defined.
 The timer value 0 may be the epoc but may also be the start-up of the system.
 .PP
-The value is contigous but may jump due to timer virtualization or sleep mode.
+The value is contiguous but may jump due to timer virtualization or sleep mode.
 .PP
-The precision is system dependent and not guranteed to be micro-second precise.
+The precision is system dependent and not guaranteed to be micro-second precise.
 .PP
 The \fBTcl_GetTime\fR function retrieves the current time as a
 \fITcl_Time\fR structure in memory the caller provides.  This
@@ -72,7 +72,7 @@ The \fIusec\fR member of the structure is filled in with the number of
 microseconds that have elapsed since the start of the second
 designated by \fIsec\fR.
 .PP
-This command uses the system wall clock and is not contigous by definition.
+This command uses the system wall clock and is not contiguous by definition.
 It may have large jumps in short time, specially if the system is awaked from
 sleep mode.
 .SS "VIRTUALIZED TIME"
