@@ -1365,9 +1365,7 @@ TimerDelayMonotonic(
      * Interpreter limits are expressed in wallclock time
      */
 
-    if (iPtr->limit.timeEvent != NULL) {
-	nowLimitUS = TclpGetMicroseconds();
-    }
+    nowLimitUS = TclpGetMicroseconds();
     nowEventUS = Tcl_GetMonotonicTime();
 
     do {
@@ -1380,8 +1378,8 @@ TimerDelayMonotonic(
 	    return TCL_ERROR;
 	}
 	if (iPtr->limit.timeEvent != NULL) {
-	    long long limitUS;
-	    limitUS = iPtr->limit.time.sec * US_PER_S + iPtr->limit.time.usec;
+	    long long limitUS = iPtr->limit.time.sec * US_PER_S
+		    + iPtr->limit.time.usec;
 	    if (limitUS < nowLimitUS) {
 		iPtr->limit.granularityTicker = 0;
 		if (Tcl_LimitCheck(interp) != TCL_OK) {
@@ -1407,8 +1405,8 @@ TimerDelayMonotonic(
 	 */
 
 	if (iPtr->limit.timeEvent != NULL) {
-	    long long limitUS;
-	    limitUS = iPtr->limit.time.sec * US_PER_S + iPtr->limit.time.usec;
+	    long long limitUS = iPtr->limit.time.sec * US_PER_S
+		    + iPtr->limit.time.usec;
 	    diffLimitUS = limitUS - nowLimitUS;
 	    if (diffLimitUS < diffUS) {
 		/*
@@ -1467,9 +1465,7 @@ TimerDelayMonotonic(
 	 * We slept. Get new time base, to be compared below.
 	 */
 
-	if (iPtr->limit.timeEvent != NULL) {
-	    nowLimitUS = TclpGetMicroseconds();
-	}
+	nowLimitUS = TclpGetMicroseconds();
 	nowEventUS = Tcl_GetMonotonicTime();
     } while (nowEventUS < endTimeUS);
     return TCL_OK;
