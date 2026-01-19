@@ -158,6 +158,10 @@ enum unitEnum {
 // Microseconds per millisecond.
 #define US_PER_MS	1000
 
+// Convert a Tcl_Time timestamp to microseconds.
+#define TCL_TIME_US(time) \
+	((time).sec * US_PER_S + (time).usec)
+
 /*
  * Sleeps under that number of microseconds don't get double-checked
  * and are done in exactly one Tcl_Sleep(). This to limit gettimeofday()s.
@@ -1225,8 +1229,7 @@ TimerDelay(
 	    return TCL_ERROR;
 	}
 	if (iPtr->limit.timeEvent != NULL) {
-	    long long limitUS;
-	    limitUS = iPtr->limit.time.sec * US_PER_S + iPtr->limit.time.usec;
+	    long long limitUS = TCL_TIME_US(iPtr->limit.time);
 	    if (limitUS < nowLimitUS) {
 		iPtr->limit.granularityTicker = 0;
 		if (Tcl_LimitCheck(interp) != TCL_OK) {
@@ -1252,8 +1255,7 @@ TimerDelay(
 	 */
 
 	if (iPtr->limit.timeEvent != NULL) {
-	    long long limitUS;
-	    limitUS = iPtr->limit.time.sec * US_PER_S + iPtr->limit.time.usec;
+	    long long limitUS = TCL_TIME_US(iPtr->limit.time);
 	    diffLimitUS = limitUS - nowLimitUS;
 	    if (diffLimitUS < diffUS) {
 		/*
@@ -1378,8 +1380,7 @@ TimerDelayMonotonic(
 	    return TCL_ERROR;
 	}
 	if (iPtr->limit.timeEvent != NULL) {
-	    long long limitUS = iPtr->limit.time.sec * US_PER_S
-		    + iPtr->limit.time.usec;
+	    long long limitUS = TCL_TIME_US(iPtr->limit.time);
 	    if (limitUS < nowLimitUS) {
 		iPtr->limit.granularityTicker = 0;
 		if (Tcl_LimitCheck(interp) != TCL_OK) {
@@ -1405,8 +1406,7 @@ TimerDelayMonotonic(
 	 */
 
 	if (iPtr->limit.timeEvent != NULL) {
-	    long long limitUS = iPtr->limit.time.sec * US_PER_S
-		    + iPtr->limit.time.usec;
+	    long long limitUS = TCL_TIME_US(iPtr->limit.time);
 	    diffLimitUS = limitUS - nowLimitUS;
 	    if (diffLimitUS < diffUS) {
 		/*
