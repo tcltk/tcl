@@ -47,7 +47,7 @@ Performs one of several encoding related operations, depending on *option*.  The
 : Converts *data* to the specified *encoding*. The result is a Tcl binary string that contains the sequence of bytes representing the converted string in the specified encoding. In the first form of the command, if *encoding* is not specified, the current system encoding is used. In the second form of the command, the **-profile** and **-failindex** options have the same effect as described for the **encoding convertfrom** command.
 
 [encoding]{.cmd} [dirs]{.sub} [directoryList]{.optarg}
-: Tcl can load encoding data files from the file system that describe additional encodings for it to work with. This command sets the search path for ***.enc** encoding data files to the list of directories *directoryList*. If *directoryList* is omitted then the command returns the current list of directories that make up the search path. It is an error for *directoryList* to not be a valid list. If, when a search for an encoding data file is happening, an element in *directoryList* does not refer to a readable, searchable directory, that element is ignored.
+: Tcl can load encoding data files from the file system that describe additional encodings for it to work with. This command sets the search path for **\*.enc** encoding data files to the list of directories *directoryList*. If *directoryList* is omitted then the command returns the current list of directories that make up the search path. It is an error for *directoryList* to not be a valid list. If, when a search for an encoding data file is happening, an element in *directoryList* does not refer to a readable, searchable directory, that element is ignored.
 
 [encoding]{.cmd} [names]{.sub}
 : Returns a list containing the names of all of the encodings that are currently available. The encodings "utf-8" and "iso8859-1" are guaranteed to be present in the list.
@@ -102,11 +102,11 @@ Example 1: convert a byte sequence in Japanese euc-jp encoding to a TCL string:
 U+00306F
 ```
 
-The result is the unicode codepoint "\u306F", which is the Hiragana letter HA.
+The result is the unicode codepoint "\\u306F", which is the Hiragana letter HA.
 
 Example 2: Error handling based on profiles:
 
-The letter **A** is Unicode character U+0041 and the byte "\x80" is invalid in ASCII encoding.
+The letter **A** is Unicode character U+0041 and the byte "\\x80" is invalid in ASCII encoding.
 
 ```
 % codepoints [encoding convertfrom -profile tcl8 ascii A\x80]

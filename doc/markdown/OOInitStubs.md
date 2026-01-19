@@ -14,24 +14,24 @@ Copyright:
 
 # Name
 
-Tcl_OOInitStubs - initialize library access to TclOO functionality
+Tcl\_OOInitStubs - initialize library access to TclOO functionality
 
 # Synopsis
 
 ::: {.synopsis} :::
 **#include <tclOO.h>**
-[const char *]{.ret} [Tcl_OOInitStubs]{.ccmd}[interp]{.cargs}
+[const char \*]{.ret} [Tcl\_OOInitStubs]{.ccmd}[interp]{.cargs}
 :::
 
 # Arguments
 
-.AP Tcl_Interp *interp in The Tcl interpreter that the TclOO API is integrated with and whose C interface is going to be used.
+.AP Tcl\_Interp \*interp in The Tcl interpreter that the TclOO API is integrated with and whose C interface is going to be used.
 
 # Description
 
-When an extension library is going to use the C interface exposed by TclOO, it should use **Tcl_OOInitStubs** to initialize its access to that interface from within its *****_Init** (or *****_SafeInit**) function, passing in the *interp* that was passed into that routine as context. If the result of calling **Tcl_OOInitStubs** is NULL, the initialization failed and an error message will have been left in the interpreter's result. Otherwise, the initialization succeeded and the TclOO API may thereafter be used; the version of the TclOO API is returned.
+When an extension library is going to use the C interface exposed by TclOO, it should use **Tcl\_OOInitStubs** to initialize its access to that interface from within its *\****\_Init** (or *\****\_SafeInit**) function, passing in the *interp* that was passed into that routine as context. If the result of calling **Tcl\_OOInitStubs** is NULL, the initialization failed and an error message will have been left in the interpreter's result. Otherwise, the initialization succeeded and the TclOO API may thereafter be used; the version of the TclOO API is returned.
 
-When using this function, either the C #define symbol **USE_TCLOO_STUBS** should be defined and your library code linked against the Tcl stub library, or that #define symbol should *not* be defined and your library code linked against the Tcl main library directly.
+When using this function, either the C #define symbol **USE\_TCLOO\_STUBS** should be defined and your library code linked against the Tcl stub library, or that #define symbol should *not* be defined and your library code linked against the Tcl main library directly.
 
 # Backward compatibility note
 

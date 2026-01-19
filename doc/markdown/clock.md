@@ -104,7 +104,7 @@ The **clock** command performs several operations that obtain and manipulate val
 [-timezone]{.lit} [zoneName]{.arg}
 : Specifies that clock arithmetic, formatting, and scanning are to be done according to the rules for the time zone specified by *zoneName*. The permissible values, and their interpretation, are discussed under **TIME ZONES**. On subcommands that expect a **-timezone** argument, the default is to use the *current time zone*.  The current time zone is determined, in order of preference, by:
 
-1.     the environment variable **TCL_TZ**.
+1.     the environment variable **TCL\_TZ**.
 
 2.     the environment variable **TZ**.
 
@@ -190,7 +190,7 @@ If a **-format** option is present, the following argument is a string that spec
 
 If a **-timezone** option is present, the following argument is a string that specifies the time zone in which the date and time are to be formatted.  As an alternative to "**-timezone** *:UTC*", the obsolete usage "**-gmt** *true*" may be used.  See **TIME ZONES** for the permissible variants for the time zone.
 
-If a **-locale** option is present, the following argument is a string that specifies the locale in which the time is to be formatted, in the same format that is used for the **msgcat** package.  Note that the default, if **-locale** is not specified, is the root locale **{}** rather than the current locale.  The current locale may be obtained by using **-locale current**. In addition, some platforms support a **system** locale that reflects the user's current choices.  For instance, on Windows, the format that the user has selected from dates and times in the Control Panel can be obtained by using the **system** locale.  On platforms that do not define a user selection of date and time formats separate from **LC_TIME**, **-locale system** is synonymous with **-locale current**.
+If a **-locale** option is present, the following argument is a string that specifies the locale in which the time is to be formatted, in the same format that is used for the **msgcat** package.  Note that the default, if **-locale** is not specified, is the root locale **{}** rather than the current locale.  The current locale may be obtained by using **-locale current**. In addition, some platforms support a **system** locale that reflects the user's current choices.  For instance, on Windows, the format that the user has selected from dates and times in the Control Panel can be obtained by using the **system** locale.  On platforms that do not define a user selection of date and time formats separate from **LC\_TIME**, **-locale system** is synonymous with **-locale current**.
 
 # Scanning times
 
@@ -198,13 +198,13 @@ The **clock scan** command accepts times that are formatted as strings and conve
 
 If a **-timezone** option is present, the following argument is a string that specifies the time zone in which the date and time are to be interpreted.  As an alternative to **-timezone** *:UTC*, the obsolete usage **-gmt** *true* may be used.  See **TIME ZONES** for the permissible variants for the time zone.
 
-If a **-locale** option is present, the following argument is a string that specifies the locale in which the time is to be interpreted, in the same format that is used for the **msgcat** package.  Note that the default, if **-locale** is not specified, is the root locale **{}** rather than the current locale.  The current locale may be obtained by using **-locale current**. In addition, some platforms support a **system** locale that reflects the user's current choices.  For instance, on Windows, the format that the user has selected from dates and times in the Control Panel can be obtained by using the **system** locale.  On platforms that do not define a user selection of date and time formats separate from **LC_TIME**, **-locale system** is synonymous with **-locale current**.
+If a **-locale** option is present, the following argument is a string that specifies the locale in which the time is to be interpreted, in the same format that is used for the **msgcat** package.  Note that the default, if **-locale** is not specified, is the root locale **{}** rather than the current locale.  The current locale may be obtained by using **-locale current**. In addition, some platforms support a **system** locale that reflects the user's current choices.  For instance, on Windows, the format that the user has selected from dates and times in the Control Panel can be obtained by using the **system** locale.  On platforms that do not define a user selection of date and time formats separate from **LC\_TIME**, **-locale system** is synonymous with **-locale current**.
 
 If a **-base** option is present, the following argument is a time (expressed in seconds from the epoch time) that is used as a *base time* for interpreting relative times.  If no **-base** option is present, the base time is the current time.
 
 Scanning of times in fixed format works by determining three things: the date, the time of day, and the time zone.  These three are then combined into a point in time, which is returned as the number of seconds from the epoch.
 
-Before scanning begins, the format string is preprocessed to replace **%c**, **%Ec**, **%x**, **%Ex**, **%X**. **%Ex**, **%r**, **%R**, **%T**, **%D**, **%EY** and **%+** format groups with counterparts that are appropriate to the current locale and contain none of the above groups.  For instance, **%D** will (in the **en_US** locale) be replaced with **%m/%d/%Y**.
+Before scanning begins, the format string is preprocessed to replace **%c**, **%Ec**, **%x**, **%Ex**, **%X**. **%Ex**, **%r**, **%R**, **%T**, **%D**, **%EY** and **%+** format groups with counterparts that are appropriate to the current locale and contain none of the above groups.  For instance, **%D** will (in the **en\_US** locale) be replaced with **%m/%d/%Y**.
 
 The date is determined according to the fields that are present in the preprocessed format string.  In order of preference:
 
@@ -264,7 +264,7 @@ The following format groups are recognized by the **clock scan** and **clock for
 : On output, produces the number of the day of the month, as two decimal digits.  On input, matches one or two digits, possibly with leading whitespace, that are expected to be the number of the day of the month.
 
 **%D**
-: This format group is synonymous with **%m/%d/%Y**.  It should be used only in exchanging data within the **en_US** locale, since other locales typically do not use this order for the fields of the date.
+: This format group is synonymous with **%m/%d/%Y**.  It should be used only in exchanging data within the **en\_US** locale, since other locales typically do not use this order for the fields of the date.
 
 **%e**
 : On output, produces the number of the day of the month, as one or two decimal digits (with a leading blank for one-digit dates). On input, matches one or two digits, possibly with leading whitespace, that are expected to be the number of the day of the month.
@@ -413,7 +413,7 @@ When the **clock** command is processing a local time, it has several possible s
 
 2. A time zone specified with the **-timezone** option to the **clock** command (or, equivalently, by **-gmt 1**).
 
-3. A time zone specified in an environment variable **TCL_TZ**.
+3. A time zone specified in an environment variable **TCL\_TZ**.
 
 4. A time zone specified in an environment variable **TZ**.
 
@@ -440,11 +440,11 @@ If it is a string in the above list, it designates a known time zone, and is int
 
 For time zones in case [1] that do not match any of the above strings, and always for cases [2]-[6], the following rules apply.
 
-If the time zone begins with a colon, it is one of a standardized list of names like **:America/New_York** that give the rules for various locales.  A complete list of the location names is too lengthy to be listed here. On most Tcl installations, the definitions of the locations are to be found in named files in the directory "*/no_backup/tools/lib/tcl9.0/clock/tzdata*". On some Unix systems, these files are omitted, and the definitions are instead obtained from system files in "*/usr/share/zoneinfo*", "*/usr/share/lib/zoneinfo*" or "*/usr/local/etc/zoneinfo*". As a special case, the name **:localtime** refers to the local time zone as defined by the C library.
+If the time zone begins with a colon, it is one of a standardized list of names like **:America/New\_York** that give the rules for various locales.  A complete list of the location names is too lengthy to be listed here. On most Tcl installations, the definitions of the locations are to be found in named files in the directory "*/no\_backup/tools/lib/tcl9.0/clock/tzdata*". On some Unix systems, these files are omitted, and the definitions are instead obtained from system files in "*/usr/share/zoneinfo*", "*/usr/share/lib/zoneinfo*" or "*/usr/local/etc/zoneinfo*". As a special case, the name **:localtime** refers to the local time zone as defined by the C library.
 
 A time zone string consisting of a plus or minus sign followed by four or six decimal digits is interpreted as an offset in hours, minutes, and seconds (if six digits are present) from UTC.  The plus sign denotes a sign east of Greenwich; the minus sign one west of Greenwich.
 
-A time zone string conforming to the Posix specification of the **TZ** environment variable will be recognized.  The specification may be found at *https://pubs.opengroup.org/onlinepubs/009695399/basedefs/xbd_chap08.html*.
+A time zone string conforming to the Posix specification of the **TZ** environment variable will be recognized.  The specification may be found at *https://pubs.opengroup.org/onlinepubs/009695399/basedefs/xbd\_chap08.html*.
 
 If the Posix time zone string contains a DST (Daylight Savings Time) part, but doesn't contain a rule stating when DST starts or ends, then default rules are used. For Timezones with an offset between 0 and +12, the current European/Russian rules are used, otherwise the current US rules are used. In Europe (offset +0 to +2) the switch to summertime is done each last Sunday in March at 1:00 GMT, and the switch back is each last Sunday in October at 2:00 GMT. In Russia (offset +3 to +12), the switch dates are the same, only the switch to summertime is at 2:00 local time, and the switch back is at 3:00 local time in all time zones. The US switch to summertime takes place each second Sunday in March at 2:00 local time, and the switch back is each first Sunday in November at 3:00 local time. These default rules mean that in all European, Russian and US (or compatible) time zones, DST calculations will be correct for dates in 2007 and later, unless in the future the rules change again.
 
@@ -498,7 +498,7 @@ Fri Jan 27 00:00:00 GMT 1978
 
 # Copyright
 
-Copyright \(co 2004 Kevin B. Kenny <kennykb@acm.org>. All rights reserved. 
+Copyright \\(co 2004 Kevin B. Kenny <kennykb@acm.org>. All rights reserved. 
 
 
 [file]: file.md

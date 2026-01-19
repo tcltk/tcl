@@ -125,7 +125,7 @@ See **CREATING TEST SUITES WITH TCLTEST** below for an extended example of how t
 **configure** *option value* ?*-option value ...*?
 : Sets the value of each configurable option *option* to the corresponding value *value*, in order.  Raises an error if an *option* is not a supported configurable option, or if *value* is not a valid value for the corresponding *option*, or if a *value* is not provided.  When an error is raised, the operation of **configure** is halted, and subsequent *option value* arguments are not processed.
 
-    If the environment variable **::env(TCLTEST_OPTIONS)** exists when the **tcltest** package is loaded (by [package require][package] **tcltest**) then its value is taken as a list of arguments to pass to **configure**. This allows the default values of the configuration options to be set by the environment.
+    If the environment variable **::env(TCLTEST\_OPTIONS)** exists when the **tcltest** package is loaded (by [package require][package] **tcltest**) then its value is taken as a list of arguments to pass to **configure**. This allows the default values of the configuration options to be set by the environment.
 
 **customMatch** *mode script*
 : Registers *mode* as a new legal value of the **-match** option to **test**.  When the **-match** *mode* option is passed to **test**, the script *script* will be evaluated to compare the actual result of evaluating the body of the test to the expected result. To perform the match, the *script* is completed with two additional words, the expected result, and the actual result, and the completed script is evaluated in the global namespace. The completed script is expected to return a boolean value indicating whether or not the results match.  The built-in matching modes of **test** are **exact**, [glob], and [regexp].
@@ -240,7 +240,7 @@ The *name* may be any string.  It is conventional to choose a *name* according t
 target-majorNum.minorNum
 ```
 
-For white-box (regression) tests, the target should be the name of the C function or Tcl procedure being tested.  For black-box tests, the target should be the name of the feature being tested.  Some conventions call for the names of black-box tests to have the suffix **_bb**. Related tests should share a major number.  As a test suite evolves, it is best to have the same test name continue to correspond to the same test, so that it remains meaningful to say things like "Test foo-1.3 passed in all releases up to 3.4, but began failing in release 3.5."
+For white-box (regression) tests, the target should be the name of the C function or Tcl procedure being tested.  For black-box tests, the target should be the name of the feature being tested.  Some conventions call for the names of black-box tests to have the suffix **\_bb**. Related tests should share a major number.  As a test suite evolves, it is best to have the same test name continue to correspond to the same test, so that it remains meaningful to say things like "Test foo-1.3 passed in all releases up to 3.4, but began failing in release 3.5."
 
 During evaluation of **test**, the *name* will be compared to the lists of string matching patterns returned by **configure -match**, and **configure -skip**.  The test will be run only if *name* matches any of the patterns from **configure -match** and matches none of the patterns from **configure -skip**.
 
@@ -280,7 +280,7 @@ Valid attributes and associated values are:
 : The optional **-returnCodes** attribute supplies *expectedCodeList*, a list of return codes that may be accepted from evaluation of the **-body** script.  If evaluation of the **-body** script returns a code not in the *expectedCodeList*, the test fails.  All return codes known to [return], in both numeric and symbolic form, including extended return codes, are acceptable elements in the *expectedCodeList*.  Default value is "**ok return**".
 
 [-errorCode]{.lit} [expectedErrorCode]{.arg}
-: The optional **-errorCode** attribute supplies *expectedErrorCode*, a glob pattern that should match the error code reported from evaluation of the **-body** script.  If evaluation of the **-body** script returns a code not matching *expectedErrorCode*, the test fails.  Default value is "*****". If **-returnCodes** does not include **error** it is set to **error**.
+: The optional **-errorCode** attribute supplies *expectedErrorCode*, a glob pattern that should match the error code reported from evaluation of the **-body** script.  If evaluation of the **-body** script returns a code not matching *expectedErrorCode*, the test fails.  Default value is "**\***". If **-returnCodes** does not include **error** it is set to **error**.
 
 
 To pass, a test must successfully evaluate its **-setup**, **-body**, and **-cleanup** scripts.  The return code of the **-body** script and its result must match expected values, and if specified, output and error data from the test must match expected **-output** and **-errorOutput** values.  If any of these conditions are not met, then the test fails. Note that all scripts are evaluated in the context of the caller of **test**.
@@ -347,7 +347,7 @@ The following is a list of constraints predefined by the **tcltest** package its
 : This test requires interaction from the user.  This constraint has value false to causes tests to be skipped unless the user specifies otherwise.
 
 *interactive*
-: This test can only be run in if the interpreter is in interactive mode (when the global **::tcl_interactive** variable is set to 1).
+: This test can only be run in if the interpreter is in interactive mode (when the global **::tcl\_interactive** variable is set to 1).
 
 *nonBlockFiles*
 : This test can only be run if platform supports setting files into nonblocking mode.
@@ -453,7 +453,7 @@ The **configure** command is used to set and query the configurable options of *
 : Sets the core preservation level to *level*.  This level determines how stringent checks for core files are.  Default value is 0.  Levels are defined as:
 
     0
-    : No checking \(em do not check for core files at the end of each test command, but do check for them in **runAllTests** after all test files have been evaluated.
+    : No checking \\(em do not check for core files at the end of each test command, but do check for them in **runAllTests** after all test files have been evaluated.
 
     1
     : Also check for core files at the end of each **test** command.
@@ -475,19 +475,19 @@ The **configure** command is used to set and query the configurable options of *
 : Sets the directory searched by **runAllTests** for test files and subdirectories.  Default value is **workingDirectory**.
 
 [-file]{.lit} [patternList]{.arg}
-: Sets the list of patterns used by **runAllTests** to determine what test files to evaluate.  Default value is "***.test**".
+: Sets the list of patterns used by **runAllTests** to determine what test files to evaluate.  Default value is "**\*.test**".
 
 [-notfile]{.lit} [patternList]{.arg}
-: Sets the list of patterns used by **runAllTests** to determine what test files to skip.  Default value is "**l.*.test**", so that any SCCS lock files are skipped.
+: Sets the list of patterns used by **runAllTests** to determine what test files to skip.  Default value is "**l.\*.test**", so that any SCCS lock files are skipped.
 
 [-relateddir]{.lit} [patternList]{.arg}
-: Sets the list of patterns used by **runAllTests** to determine what subdirectories to search for an **all.tcl** file.  Default value is "*****".
+: Sets the list of patterns used by **runAllTests** to determine what subdirectories to search for an **all.tcl** file.  Default value is "**\***".
 
 [-asidefromdir]{.lit} [patternList]{.arg}
 : Sets the list of patterns used by **runAllTests** to determine what subdirectories to skip when searching for an **all.tcl** file. Default value is an empty list.
 
 [-match]{.lit} [patternList]{.arg}
-: Set the list of patterns used by **test** to determine whether a test should be run.  Default value is "*****".
+: Set the list of patterns used by **test** to determine whether a test should be run.  Default value is "**\***".
 
 [-skip]{.lit} [patternList]{.arg}
 : Set the list of patterns used by **test** to determine whether a test should be skipped.  Default value is an empty list.

@@ -225,31 +225,38 @@ namespace eval ::ndoc {
 	set convertCmdToLink 1
 	# list of Tcl commands to recognize for links between manual pages:
 	set tclCmdList [lsort [info commands]]
-	# array of pages in which specific cmd words should *not* be linked
+	# dictionary of links on pages that should link to a page
+	# not identical to the link text
+	# (the value for each key is a mapping with <cmdText filename ?cmdText filename ...?)
+	# where 'cmdText' is the command name mentioned in the manual and 'filename' is the
+	# name of the manual file in which the command is described:
+	set tclCmdListRemap [dict create {*}{
+		binary		{tcl_platform tclvars}
+	}]
+	# dictionary of pages in which specific cmd words should *not* be linked
 	# as they represent something else in that context
 	# (exclude_refs_map taken from core tools/tcltk-man2html.tcl of version d2328814c619
 	# and supplemented as we go and find more places):
-	array set tclCmdListExclude {
+	set tclCmdListExclude [dict create {*}{
 		bind		{button destroy option}
 		clock		{next}
-		history		{exec}
-		next		{unknown destroy}
-		zlib		{binary close filename text}
 		canvas		{bitmap text}
 		chan		{read}
+		checkbutton	{image}
 		cookiejar	{destroy configure info error set}
 		console		{eval}
-		checkbutton	{image}
 		clipboard	{string}
 		entry		{string}
 		event		{return}
 		font		{menu}
 		getOpenFile	{file open text}
 		grab		{global}
+		history		{exec}
 		http 		{error}
 		interp		{time}
 		menu		{checkbutton radiobutton}
 		messageBox	{error info}
+		next		{unknown destroy}
 		options		{bitmap image set}
 		radiobutton	{image}
 		safe		{join split}
@@ -261,6 +268,7 @@ namespace eval ::ndoc {
 		tkvars		{tk}
 		tkwait		{variable}
 		tm		{exec}
+		zlib		{binary close filename text}
 		ttk_checkbutton	{variable}
 		ttk_combobox	{selection}
 		ttk_entry	{focus variable}
@@ -277,7 +285,7 @@ namespace eval ::ndoc {
 		ttk_treeview	{text open focus selection}
 		ttk_widget	{image text variable}
 		TclZlib		{binary flush filename text}
-	}
+	}]
 }
 
 
@@ -1546,7 +1554,9 @@ proc ::ndoc::AST2Markdown_Element {parentType indent ASTelement} {
 	### content: ###
 	switch $type {
 		Text {
-			append output $content
+			# just output the text, but escape some characters with special meaning in markdown:
+			# \u005c = backslash
+			append output [string  map {* \u005c* \u005c \u005c\u005c _ \u005c_} $content]
 		}
 		Code {
 			foreach codeLine [split $content \n] {append output [string repeat { } $indent] $codeLine \n}
@@ -1652,12 +1662,11 @@ proc ::ndoc::mdLinks {md} {
 	# md - string containing manual page in markdown format
 	#
 	variable tclCmdList
+	variable tclCmdListRemap
 	variable manual
 	variable tclCmdListExclude
 	set refList [list]
 	set cmdName [dict get $manual meta CommandName]
-	# make sure there's an etry for the current command, so we do not need more code down below:
-	if {! [info exists tclCmdListExclude($cmdName)]} {set tclCmdListExclude($cmdName) {}}
 	# detect all strings with ** around, using a non-greedy regexp.
 	# we go through the file one by one as ce can't use '-all' here
 	# (it would shift indices into the md after each match is replaced)
@@ -1675,28 +1684,30 @@ proc ::ndoc::mdLinks {md} {
 		} {
 			## exclude some corner cases
 			set isValidLink 0	
-		} elseif {$linkCmd ne $cmdName && $linkCmd in $tclCmdList && $linkCmd ni $tclCmdListExclude($cmdName)} {
-			## all ok
+		} elseif {$linkCmd ne $cmdName && $linkCmd in $tclCmdList && $linkCmd ni [dict getwithdefault $tclCmdListExclude $cmdName {}]} {
+			## the file to link to is the same as the command name)
+			set linkTarget $linkCmd
 			set isValidLink 1
+		} elseif {$linkCmd ne $cmdName && [dict exists $tclCmdListRemap $cmdName]} {
+			## it's a valid link if there is a remapping entry here
+			## (note that we need to 'subst' the linkCmd word here as it may contain a literal backslash
+			##  used to escape an underscore in a command name in markdown such as in 'tcl\_platform'):
+			set linkTarget [dict getwithdefault $tclCmdListRemap $cmdName [subst $linkCmd] {}]
+			if {$linkTarget ne ""} {set isValidLink 1} else {set isValidLink 0}
 		} else {
 			## exclude links to self and the ones on the exclusion list:
 			set isValidLink 0
 		}
 		if $isValidLink {		
-			set md [string replace $md {*}$fullRange \[$linkText\]]
-			lappend refList $linkCmd
+			set replaceString \[$linkText\]
+			if {$linkTarget ne $linkText} {append replaceString \[$linkTarget\]}
+			set md [string replace $md {*}$fullRange $replaceString]
+			lappend refList $linkTarget
 			# the next search should start at the character after $fullMatch,
 			# but since we have changed the content with a string that is
-			# two characters shorter, the new index will be offset -1 instead of +1
-			set nextIndex [expr {[lindex $fullRange end] - 1}]
-			# if the link text consists of more than one word, we want to add the link label
-			# for the reference (which is only the first word)
-			# and then need to adjust nextIndex
-			if {[llength $linkList] == 2} {
-				set labelText \[$linkCmd\]
-				set md [string insert $md $nextIndex $labelText]
-				incr nextIndex [string length $labelText]
-			}
+			# different in length, the new index will be offset by the length
+			# of the replacement string, starting from the beginning of the match:
+			set nextIndex [expr {[lindex $fullRange 0] + [string length $replaceString]}]
 		} else {
 			# no link, we did not change anything, so the next index is +1 here:
 			set nextIndex [expr {[lindex $fullRange end] + 1}]

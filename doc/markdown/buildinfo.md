@@ -33,13 +33,13 @@ This command provides a way to retrieve information about how Tcl was built. Wit
 : Returns the fossil commit-id where Tcl was built from.
 
 [::tcl::build-info]{.cmd} [compiledebug]{.sub}
-: Returns 1 if Tcl is compiled with **-DTCL_COMPILE_DEBUG**, 0 otherwise.
+: Returns 1 if Tcl is compiled with **-DTCL\_COMPILE\_DEBUG**, 0 otherwise.
 
 [::tcl::build-info]{.cmd} [compiler]{.sub}
 : Returns the compiler name (either clang, gcc, icc or msvc), followed by a dash and a (4-digit) version number.
 
 [::tcl::build-info]{.cmd} [compilestats]{.sub}
-: Returns 1 if Tcl is compiled with **-DTCL_COMPILE_STATS**, 0 otherwise.
+: Returns 1 if Tcl is compiled with **-DTCL\_COMPILE\_STATS**, 0 otherwise.
 
 [::tcl::build-info]{.cmd} [cplusplus]{.sub}
 : Returns 1 if Tcl is compiled with a C++ compiler, 0 otherwise.
@@ -57,7 +57,7 @@ This command provides a way to retrieve information about how Tcl was built. Wit
 : Returns 1 if Tcl is compiled such that integers, longs and pointers are all 32-bit, 0 otherwise.
 
 [::tcl::build-info]{.cmd} [memdebug]{.sub}
-: Returns 1 if Tcl is compiled with **-DTCL_MEM_DEBUG**, 0 otherwise.
+: Returns 1 if Tcl is compiled with **-DTCL\_MEM\_DEBUG**, 0 otherwise.
 
 [::tcl::build-info]{.cmd} [msvc]{.sub}
 : Returns the msvc version number (as 4 digits) if Tcl is compiled with msvc, 0 otherwise.
@@ -66,13 +66,13 @@ This command provides a way to retrieve information about how Tcl was built. Wit
 : Returns 1 if Tcl is built using nmake, 0 otherwise.
 
 [::tcl::build-info]{.cmd} [no-deprecate]{.sub}
-: Returns 1 if Tcl is compiled with **-DTCL_NO_DEPRECATED**, 0 otherwise.
+: Returns 1 if Tcl is compiled with **-DTCL\_NO\_DEPRECATED**, 0 otherwise.
 
 [::tcl::build-info]{.cmd} [no-thread]{.sub}
-: Returns 1 if Tcl is compiled with **-DTCL_THREADS=0**, 0 otherwise.
+: Returns 1 if Tcl is compiled with **-DTCL\_THREADS=0**, 0 otherwise.
 
 [::tcl::build-info]{.cmd} [no-optimize]{.sub}
-: Returns 1 if Tcl is not compiled with **-DTCL_CFG_OPTIMIZED**, 0 otherwise.
+: Returns 1 if Tcl is not compiled with **-DTCL\_CFG\_OPTIMIZED**, 0 otherwise.
 
 [::tcl::build-info]{.cmd} [objective-c]{.sub}
 : Returns 1 if Tcl is compiled with an objective-c compiler, 0 otherwise.
@@ -84,7 +84,7 @@ This command provides a way to retrieve information about how Tcl was built. Wit
 : Returns the Tcl patchlevel, same as [info patchlevel][info].
 
 [::tcl::build-info]{.cmd} [profile]{.sub}
-: Returns 1 if Tcl is compiled with **-DTCL_CFG_PROFILED**, 0 otherwise.
+: Returns 1 if Tcl is compiled with **-DTCL\_CFG\_PROFILED**, 0 otherwise.
 
 [::tcl::build-info]{.cmd} [purify]{.sub}
 : Returns 1 if Tcl is compiled with **-DPURIFY**, 0 otherwise.

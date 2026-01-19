@@ -97,7 +97,7 @@ In the second form, *access* consists of a list of any of the following flags, m
 : If the file is a terminal device, this flag prevents the file from becoming the controlling terminal of the process.
 
 **NONBLOCK**
-: Prevents the process from blocking while opening the file, and possibly in subsequent I/O operations.  The exact behavior of this flag is system- and device-dependent;  its use is discouraged (it is better to use the [fconfigure] command to put a file in nonblocking mode). For details refer to your system documentation on the **open** system call's **O_NONBLOCK** flag.
+: Prevents the process from blocking while opening the file, and possibly in subsequent I/O operations.  The exact behavior of this flag is system- and device-dependent;  its use is discouraged (it is better to use the [fconfigure] command to put a file in nonblocking mode). For details refer to your system documentation on the **open** system call's **O\_NONBLOCK** flag.
 
 **TRUNC**
 : If the file exists it is truncated to zero length.

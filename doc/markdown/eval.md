@@ -66,7 +66,7 @@ for {set i 0} {$i<10} {incr i} {
 }
 ```
 
-Note that in the most common case (where the script fragment is actually just a list of words forming a command prefix), it is better to use **{*}$script** when doing this sort of invocation pattern.  It is less general than the **eval** command, and hence easier to make robust in practice. The following procedure acts in a way that is analogous to the [lappend] command, except it inserts the argument values at the start of the list in the variable:
+Note that in the most common case (where the script fragment is actually just a list of words forming a command prefix), it is better to use **{\*}$script** when doing this sort of invocation pattern.  It is less general than the **eval** command, and hence easier to make robust in practice. The following procedure acts in a way that is analogous to the [lappend] command, except it inserts the argument values at the start of the list in the variable:
 
 ```
 proc lprepend {varName args} {

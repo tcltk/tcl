@@ -48,7 +48,7 @@ chan - Read, write and manipulate channels
 # Synopsis
 
 ::: {.synopsis} :::
-[chan]{.cmd} [option]{.arg} [arg arg]{.optdot}
+[chan]{.cmd} [option]{.arg} [arg]{.optdot}
 :::
 
 # Description
@@ -75,7 +75,7 @@ This command provides several operations for reading from, writing to and otherw
 
     Note that half-closes of sockets and command pipelines can have important side effects because they result in a shutdown() or close() of the underlying system resource, which can change how other processes or systems respond to the Tcl program.
 
-    Channels are automatically closed when an interpreter is destroyed and when the process exits. Nonblocking channels are not switched to blocking mode when exiting; this guarantees a timely exit even when the peer or a communication channel is stalled. To ensure proper flushing of stalled nonblocking channels on exit, one must either (a) actively switch them back to blocking or (b) use the environment variable **TCL_FLUSH_NONBLOCKING_ON_EXIT**.
+    Channels are automatically closed when an interpreter is destroyed and when the process exits. Nonblocking channels are not switched to blocking mode when exiting; this guarantees a timely exit even when the peer or a communication channel is stalled. To ensure proper flushing of stalled nonblocking channels on exit, one must either (a) actively switch them back to blocking or (b) use the environment variable **TCL\_FLUSH\_NONBLOCKING\_ON\_EXIT**.
 
 [chan]{.cmd} [configure]{.sub} [channel]{.arg} [optionName]{.optarg} [value]{.optarg} [optionName value]{.optdot}
 : Query or set the configuration options of the channel named *channel*.
@@ -85,7 +85,7 @@ This command provides several operations for reading from, writing to and otherw
     The options described below are supported for all channels. In addition, each channel type may add options that only it supports. See the manual entry for the command that creates each type of channel for the options supported by that specific type of channel. For example, see the manual entry for the [socket] command for additional options for sockets, and the [open] command for additional options for serial devices.
 
 [-blocking]{.lit} [boolean]{.arg}
-: The **-blocking** option determines whether I/O operations on the channel can cause the process to block indefinitely.  The value of the option must be a proper boolean value.  Channels are normally in blocking mode; if a channel is placed into non-blocking mode it will affect the operation of the **chan gets**, **chan read**, **chan puts**, **chan flush**, and **chan close** commands; see the documentation for those commands for details.  For non-blocking mode to work correctly, the application must be using the Tcl event loop (e.g. by calling **Tcl_DoOneEvent** or invoking the [vwait] command).
+: The **-blocking** option determines whether I/O operations on the channel can cause the process to block indefinitely.  The value of the option must be a proper boolean value.  Channels are normally in blocking mode; if a channel is placed into non-blocking mode it will affect the operation of the **chan gets**, **chan read**, **chan puts**, **chan flush**, and **chan close** commands; see the documentation for those commands for details.  For non-blocking mode to work correctly, the application must be using the Tcl event loop (e.g. by calling **Tcl\_DoOneEvent** or invoking the [vwait] command).
 
 [-buffering]{.lit} [newValue]{.arg}
 : If *newValue* is **full** then the I/O system will buffer output until its internal buffer is full or until the **chan flush** command is invoked. If *newValue* is **line**, then the I/O system will automatically flush output for the channel whenever a newline character is output. If *newValue* is **none**, the I/O system will flush automatically after every output operation.  The default is for **-buffering** to be set to **full** except for channels that connect to terminal-like devices; for these channels the initial setting is **line**.  Additionally, **stdin** and **stdout** are initially set to **line**, and **stderr** is set to **none**.
@@ -101,13 +101,13 @@ This command provides several operations for reading from, writing to and otherw
     The default encoding for newly opened channels is the same platform- and locale-dependent system encoding used for interfacing with the operating system, as returned by [encoding system][encoding].
 
 [-eofchar]{.lit} [char]{.arg}
-: This option supports DOS file systems that use Control-z (\x1A) as an end of file marker.  If *char* is not an empty string, then this character signals end-of-file when it is encountered during input. Otherwise (the default) there is no special end of file character marker. The acceptable range for **-eofchar** values is \x01 - \x7f; attempting to set **-eofchar** to a value outside of this range will generate an error.
+: This option supports DOS file systems that use Control-z (\\x1A) as an end of file marker.  If *char* is not an empty string, then this character signals end-of-file when it is encountered during input. Otherwise (the default) there is no special end of file character marker. The acceptable range for **-eofchar** values is \\x01 - \\x7f; attempting to set **-eofchar** to a value outside of this range will generate an error.
 
 [-profile]{.lit} [profile]{.arg}
-: Specifies the encoding profile to be used on the channel. The encoding transforms in use for the channel's input and output will then be subject to the rules of that profile. Any failures will result in a channel error. See **PROFILES** in the **encoding(n)** documentation for details about encoding profiles.
+: Specifies the encoding profile to be used on the channel. The encoding transforms in use for the channel's input and output will then be subject to the rules of that profile. Any failures will result in a channel error. See **PROFILES** in the documentation of the [encoding] command for details about encoding profiles.
 
 [-translation]{.lit} [translationMode]{.arg}
-: In Tcl scripts the end of a line is always represented using a single newline character (\n).  However, in actual files and devices the end of a line may be represented differently on different platforms, or even for different devices on the same platform.  For example, under UNIX newlines are used in files, whereas carriage-return-linefeed sequences are normally used in network connections.  On input (i.e., with **chan gets** and **chan read**) the Tcl I/O system automatically translates the external end-of-line representation into newline characters.  Upon output (i.e., with **chan puts**), the I/O system translates newlines to the external end-of-line representation. The default translation mode, **auto**, handles all the common cases automatically, but the **-translation** option provides explicit control over the end of line translations.
+: In Tcl scripts the end of a line is always represented using a single newline character (\\n).  However, in actual files and devices the end of a line may be represented differently on different platforms, or even for different devices on the same platform.  For example, under UNIX newlines are used in files, whereas carriage-return-linefeed sequences are normally used in network connections.  On input (i.e., with **chan gets** and **chan read**) the Tcl I/O system automatically translates the external end-of-line representation into newline characters.  Upon output (i.e., with **chan puts**), the I/O system translates newlines to the external end-of-line representation. The default translation mode, **auto**, handles all the common cases automatically, but the **-translation** option provides explicit control over the end of line translations.
 
     The value of *translationMode* associated with **-translation** is a single item for read-only and write-only channels. The value is a two-element list for read-write channels; the read translation mode is the first element of the list, and the write translation mode is the second element.  As a convenience, when setting the translation mode for a read-write channel you can specify a single value that will apply to both reading and writing.  When querying the translation mode of a read-write channel, a two-element list will always be returned.  The following values are currently supported:
 
@@ -161,7 +161,7 @@ This command provides several operations for reading from, writing to and otherw
 [chan]{.cmd} [event]{.sub} [channel]{.arg} [event]{.arg} [script]{.optarg}
 : Arrange for the Tcl script *script* to be installed as a *file event handler* to be called whenever the channel called *channel* enters the state described by *event* (which must be either **readable** or **writable**); only one such handler may be installed per event per channel at a time.  If *script* is the empty string, the current handler is deleted (this also happens if the channel is closed or the interpreter deleted).  If *script* is omitted, the currently installed script is returned (or an empty string if no such handler is installed).  The callback is only performed if the event loop is being serviced (e.g. via [vwait] or [update]).
 
-    A file event handler is a binding between a channel and a script, such that the script is evaluated whenever the channel becomes readable or writable.  File event handlers are most commonly used to allow data to be received from another process on an event-driven basis, so that the receiver can continue to interact with the user or with other channels while waiting for the data to arrive.  If an application invokes **chan gets** or **chan read** on a blocking channel when there is no input data available, the process will block; until the input data arrives, it will not be able to service other events, so it will appear to the user to "freeze up" \&. With **chan event**, the process can tell when data is present and only invoke **chan gets** or **chan read** when they will not block.
+    A file event handler is a binding between a channel and a script, such that the script is evaluated whenever the channel becomes readable or writable.  File event handlers are most commonly used to allow data to be received from another process on an event-driven basis, so that the receiver can continue to interact with the user or with other channels while waiting for the data to arrive.  If an application invokes **chan gets** or **chan read** on a blocking channel when there is no input data available, the process will block; until the input data arrives, it will not be able to service other events, so it will appear to the user to "freeze up" . With **chan event**, the process can tell when data is present and only invoke **chan gets** or **chan read** when they will not block.
 
     A channel is considered to be readable if there is unread data available on the underlying device.  A channel is also considered to be readable if there is unread data in an input buffer, except in the special case where the most recent attempt to read from the channel was a **chan gets** call that could not find a complete line in the input buffer.  This feature allows a file to be read a line at a time in non-blocking mode using events.  A channel is also considered to be readable if an end of file or error condition is present on the underlying file or device.  It is important for *script* to check for these conditions and handle them appropriately; for example, if there is no special check for end of file, an infinite loop may occur where *script* reads no data, returns, and is immediately invoked again.
 
@@ -485,7 +485,7 @@ if {[read $chan 6] eq "foobar"} {
 
 ## Encoding error examples
 
-The example below illustrates handling of an encoding error encountered during channel input. First, creation of a test file containing the invalid UTF-8 sequence (**A \\xC3 B**):
+The example below illustrates handling of an encoding error encountered during channel input. First, creation of a test file containing the invalid UTF-8 sequence (**A \\\\xC3 B**):
 
 ```
 % set f [open test_A_195_B.txt wb]; chan puts -nonewline $f A\\xC3B; chan close $f

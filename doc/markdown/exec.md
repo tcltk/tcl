@@ -109,7 +109,7 @@ The first word in each command is taken as the command name; if the result conta
 # Portability issues
 
 **Windows** (all versions)
-: Reading from or writing to a socket, using the "**@\0***fileId*" notation, does not work.  When reading from a socket, a 16-bit DOS application will hang and a 32-bit application will return immediately with end-of-file.  When either type of application writes to a socket, the information is instead sent to the console, if one is present, or is discarded.
+: Reading from or writing to a socket, using the "**@\\0***fileId*" notation, does not work.  When reading from a socket, a 16-bit DOS application will hang and a 32-bit application will return immediately with end-of-file.  When either type of application writes to a socket, the information is instead sent to the console, if one is present, or is discarded.
 
     Note that the current escape resp. quoting of arguments for windows works only with executables using CommandLineToArgv, CRT-library or similar, as well as with the windows batch files (excepting the newline, see below). Although it is the common escape algorithm, but, in fact, the way how the executable parses the command-line (resp. splits it into single arguments) is decisive.
 
@@ -140,9 +140,9 @@ Two or more forward or backward slashes in a row in a path refer to a network pa
 
 Note that there are two general types of Win32 console applications:
 
-1. CLI \(em CommandLine Interface, simple stdio exchange. **netstat.exe** for example.
+1. CLI \\(em CommandLine Interface, simple stdio exchange. **netstat.exe** for example.
 
-2. TUI \(em Textmode User Interface, any application that accesses the console API for doing such things as cursor movement, setting text color, detecting key presses and mouse movement, etc.  An example would be **telnet.exe** from Windows 2000.  These types of applications are not common in a windows environment, but do exist.
+2. TUI \\(em Textmode User Interface, any application that accesses the console API for doing such things as cursor movement, setting text color, detecting key presses and mouse movement, etc.  An example would be **telnet.exe** from Windows 2000.  These types of applications are not common in a windows environment, but do exist.
 
 
 **exec** will not work well with TUI applications when a console is not present, as is done when launching applications under wish.  It is desirable to have console applications hidden and detached.  This is a designed-in limitation as **exec** wants to communicate over pipes.  The Expect extension addresses this issue when communicating with a TUI application.
@@ -160,7 +160,7 @@ When attempting to execute an application, **exec** first searches for the name 
 - The directories listed in the path.
 
 
-In order to execute shell built-in commands like **dir** and **copy**, the caller must prepend the desired command with "**cmd.exe /c\0**" because built-in commands are not implemented using executables.
+In order to execute shell built-in commands like **dir** and **copy**, the caller must prepend the desired command with "**cmd.exe /c\\0**" because built-in commands are not implemented using executables.
 
 **Unix** (including macOS)
 : The **exec** command is fully functional and works as described.
@@ -273,7 +273,7 @@ or like another variant using single parameters:
 
 Sometimes you need to be careful, as different programs may have the same name and be in the path. It can then happen that typing a command at the DOS prompt finds *a different program* than the same command run via **exec**. This is because of the (documented) differences in behaviour between **exec** and DOS batch files.
 
-When in doubt, use the command [auto_execok]: it will return the complete path to the program as seen by the **exec** command.  This applies especially when you want to run "internal" commands like *dir* from a Tcl script (if you just want to list filenames, use the [glob] command.)  To do that, use this:
+When in doubt, use the command **auto\_execok**: it will return the complete path to the program as seen by the **exec** command.  This applies especially when you want to run "internal" commands like *dir* from a Tcl script (if you just want to list filenames, use the [glob] command.)  To do that, use this:
 
 ```
 exec {*}[auto_execok dir] *.tcl
@@ -290,7 +290,6 @@ exec CIPHER /e /s:[file nativename $secureDir]
 ```
 
 
-[auto_execok]: auto_execok.md
 [catch]: catch.md
 [encoding]: encoding.md
 [file]: file.md

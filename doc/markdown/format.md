@@ -41,7 +41,7 @@ Each conversion specifier may contain up to six different parts: an XPG3 positio
 
 ## Optional positional specifier
 
-If the **%** is followed by a decimal number and a **$**, as in "**%2$d**", then the value to convert is not taken from the next sequential argument. Instead, it is taken from the argument indicated by the number, where 1 corresponds to the first *arg*. If the conversion specifier requires multiple arguments because of ***** characters in the specifier then successive arguments are used, starting with the argument given by the number. This follows the XPG3 conventions for positional specifiers. If there are any positional specifiers in *formatString* then all of the specifiers must be positional.
+If the **%** is followed by a decimal number and a **$**, as in "**%2$d**", then the value to convert is not taken from the next sequential argument. Instead, it is taken from the argument indicated by the number, where 1 corresponds to the first *arg*. If the conversion specifier requires multiple arguments because of **\*** characters in the specifier then successive arguments are used, starting with the argument given by the number. This follows the XPG3 conventions for positional specifiers. If there are any positional specifiers in *formatString* then all of the specifiers must be positional.
 
 ## Optional flags
 
@@ -65,15 +65,15 @@ The second portion of a conversion specifier may contain any of the following fl
 
 ## Optional field width
 
-The third portion of a conversion specifier is a decimal number giving a minimum field width for this conversion. It is typically used to make columns line up in tabular printouts. If the converted argument contains fewer characters than the minimum field width then it will be padded so that it is as wide as the minimum field width. Padding normally occurs by adding extra spaces on the left of the converted argument, but the **0** and **-** flags may be used to specify padding with zeroes on the left or with spaces on the right, respectively. If the minimum field width is specified as ***** rather than a number, then the next argument to the **format** command determines the minimum field width; it must be an integer value.
+The third portion of a conversion specifier is a decimal number giving a minimum field width for this conversion. It is typically used to make columns line up in tabular printouts. If the converted argument contains fewer characters than the minimum field width then it will be padded so that it is as wide as the minimum field width. Padding normally occurs by adding extra spaces on the left of the converted argument, but the **0** and **-** flags may be used to specify padding with zeroes on the left or with spaces on the right, respectively. If the minimum field width is specified as **\*** rather than a number, then the next argument to the **format** command determines the minimum field width; it must be an integer value.
 
 ## Optional precision/bound
 
-The fourth portion of a conversion specifier is a precision, which consists of a period followed by a number. The number is used in different ways for different conversions. For **e**, **E**, and **f** conversions it specifies the number of digits to appear to the right of the decimal point. For **g** and **G** conversions it specifies the total number of digits to appear, including those on both sides of the decimal point (however, trailing zeroes after the decimal point will still be omitted unless the **#** flag has been specified). For integer conversions, it specifies a minimum number of digits to print (leading zeroes will be added if necessary). For **s** conversions it specifies the maximum number of characters to be printed; if the string is longer than this then the trailing characters will be dropped. If the precision is specified with ***** rather than a number then the next argument to the **format** command determines the precision; it must be a numeric string.
+The fourth portion of a conversion specifier is a precision, which consists of a period followed by a number. The number is used in different ways for different conversions. For **e**, **E**, and **f** conversions it specifies the number of digits to appear to the right of the decimal point. For **g** and **G** conversions it specifies the total number of digits to appear, including those on both sides of the decimal point (however, trailing zeroes after the decimal point will still be omitted unless the **#** flag has been specified). For integer conversions, it specifies a minimum number of digits to print (leading zeroes will be added if necessary). For **s** conversions it specifies the maximum number of characters to be printed; if the string is longer than this then the trailing characters will be dropped. If the precision is specified with **\*** rather than a number then the next argument to the **format** command determines the precision; it must be a numeric string.
 
 ## Optional size modifier
 
-The fifth part of a conversion specifier is a size modifier, which must be **ll**, **h**, **l**, **z**, **t**, or **L**. If it is **ll** it specifies that an integer value is taken without truncation for conversion to a formatted substring. If it is **h** it specifies that an integer value is truncated to a 16-bit range before converting.  This option is rarely useful. If it is **l** (or **j** or **q**) it specifies that the integer value is truncated to the same range as that produced by the **wide()** function of the [expr] command (at least a 64-bit range). If it is **z** or **t** it specifies that the integer value is truncated to the range determined by the value of the **pointerSize** element of the **tcl_platform** array. If it is **L** it specifies that an integer or double value is taken without truncation for conversion to a formatted substring. If neither of those are present, the integer value is truncated to a 32-bit range.
+The fifth part of a conversion specifier is a size modifier, which must be **ll**, **h**, **l**, **z**, **t**, or **L**. If it is **ll** it specifies that an integer value is taken without truncation for conversion to a formatted substring. If it is **h** it specifies that an integer value is truncated to a 16-bit range before converting.  This option is rarely useful. If it is **l** (or **j** or **q**) it specifies that the integer value is truncated to the same range as that produced by the **wide()** function of the [expr] command (at least a 64-bit range). If it is **z** or **t** it specifies that the integer value is truncated to the range determined by the value of the **pointerSize** element of the **tcl\_platform** array. If it is **L** it specifies that an integer or double value is taken without truncation for conversion to a formatted substring. If neither of those are present, the integer value is truncated to a 32-bit range.
 
 ## Mandatory conversion type
 
@@ -107,13 +107,13 @@ The last thing in a conversion specifier is an alphabetic character that determi
 : Convert number to signed decimal string of the form *xx.yyy*, where the number of *y*'s is determined by the precision (default: 6). If the precision is 0 then no decimal point is output.
 
 **e** or **E**
-: Convert number to scientific notation in the form *x.yyy***e\(+-***zz*, where the number of *y*'s is determined by the precision (default: 6). If the precision is 0 then no decimal point is output. If the **E** form is used then **E** is printed instead of **e**.
+: Convert number to scientific notation in the form *x.yyy***e\\(+-***zz*, where the number of *y*'s is determined by the precision (default: 6). If the precision is 0 then no decimal point is output. If the **E** form is used then **E** is printed instead of **e**.
 
 **g** or **G**
 : If the exponent is less than -4 or greater than or equal to the precision, then convert number as for **%e** or **%E**. Otherwise convert as for **%f**. Trailing zeroes and a trailing decimal point are omitted.
 
 **a** or **A**
-: Convert double to hexadecimal notation in the form *0x1.yyy***p\(+-***zz*, where the number of *y*'s is determined by the precision (default: 13). If the **A** form is used then the hex characters are printed in uppercase.
+: Convert double to hexadecimal notation in the form *0x1.yyy***p\\(+-***zz*, where the number of *y*'s is determined by the precision (default: 13). If the **A** form is used then the hex characters are printed in uppercase.
 
 **%**
 : No conversion: just insert **%**.

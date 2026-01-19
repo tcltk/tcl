@@ -53,7 +53,7 @@ then the [set] command will modify the same variable **x** in **b**'s context:  
 
 **Uplevel** makes it possible to implement new control constructs as Tcl procedures (for example, **uplevel** could be used to implement the [while] construct as a Tcl procedure).
 
-The [namespace eval][namespace] and [apply] commands offer other ways (besides procedure calls) that the Tcl naming context can change. They add a call frame to the stack to represent the namespace context. This means each [namespace eval][namespace] command counts as another call level for **uplevel** and [upvar] commands. For example, [info level 1] will return a list describing a command that is either the outermost procedure call or the outermost [namespace eval][namespace] command. Also, **uplevel #0** evaluates a script at top-level in the outermost namespace (the global namespace).
+The [namespace eval][namespace] and [apply] commands offer other ways (besides procedure calls) that the Tcl naming context can change. They add a call frame to the stack to represent the namespace context. This means each [namespace eval][namespace] command counts as another call level for **uplevel** and [upvar] commands. For example, [info level 1][info] will return a list describing a command that is either the outermost procedure call or the outermost [namespace eval][namespace] command. Also, **uplevel #0** evaluates a script at top-level in the outermost namespace (the global namespace).
 
 # Example
 

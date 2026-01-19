@@ -89,7 +89,7 @@ The following additional option may also be specified before *port*:
 
 Server channels cannot be used for input or output; their sole use is to accept new client connections. The channels created for each incoming client connection are opened for input and output. Closing the server channel shuts down the server so that no new connections will be accepted;  however, existing connections will be unaffected.
 
-Server sockets depend on the Tcl event mechanism to find out when new connections are opened.  If the application does not enter the event loop, for example by invoking the [vwait] command or calling the C procedure **Tcl_DoOneEvent**, then no connections will be accepted.
+Server sockets depend on the Tcl event mechanism to find out when new connections are opened.  If the application does not enter the event loop, for example by invoking the [vwait] command or calling the C procedure **Tcl\_DoOneEvent**, then no connections will be accepted.
 
 If *port* is specified as zero, the operating system will allocate an unused port for use as a server socket.  The port number actually allocated may be retrieved from the created server socket using the [chan configure][chan] command to retrieve the **-sockname** option as described below.
 
@@ -100,7 +100,7 @@ The [chan configure][chan] command can be used to query several readonly configu
 [-error]{.lit}
 : This option gets the current error status of the given socket.  This is useful when you need to determine if an asynchronous connect operation succeeded.  If there was an error, the error message is returned.  If there was no error, an empty string is returned.
 
-    Note that the error status is reset by the read operation; this mimics the underlying getsockopt(SO_ERROR) call.
+    Note that the error status is reset by the read operation; this mimics the underlying getsockopt(SO\_ERROR) call.
 
 [-sockname]{.lit}
 : For client sockets (including the channels that get created when a client connects to a server socket) this option returns a list of three elements, the address, the host name and the port number for the socket. If the host name cannot be computed, the second element is identical to the address, the first element of the list.

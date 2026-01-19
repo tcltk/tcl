@@ -14,20 +14,20 @@ Copyright:
 
 # Name
 
-Tcl_SourceRCFile - source the Tcl rc file
+Tcl\_SourceRCFile - source the Tcl rc file
 
 # Synopsis
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[Tcl_SourceRCFile]{.ccmd}[interp]{.cargs}
+[Tcl\_SourceRCFile]{.ccmd}[interp]{.cargs}
 :::
 
 # Arguments
 
-.AP Tcl_Interp *interp in Tcl interpreter to source rc file into. 
+.AP Tcl\_Interp \*interp in Tcl interpreter to source rc file into. 
 
 # Description
 
-**Tcl_SourceRCFile** is used to source the Tcl rc file at startup. It is typically invoked by Tcl_Main or Tk_Main.  The name of the file sourced is obtained from the global variable **tcl_rcFileName** in the interpreter given by *interp*.  If this variable is not defined, or if the file it indicates cannot be found, no action is taken. 
+**Tcl\_SourceRCFile** is used to source the Tcl rc file at startup. It is typically invoked by Tcl\_Main or Tk\_Main.  The name of the file sourced is obtained from the global variable **tcl\_rcFileName** in the interpreter given by *interp*.  If this variable is not defined, or if the file it indicates cannot be found, no action is taken. 
 

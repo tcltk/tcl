@@ -101,7 +101,7 @@ By default ASCII sorting is used with the result returned in increasing order.  
 
     returns **{{d e m o} 34512} {{b i g} 12345} {{c o d e} 54321}** (because **e** sorts before **i** which sorts before **o**.) This option is much more efficient than using **-command** to achieve the same effect.
 
-**-stride\0***strideLength*
+**-stride\\0***strideLength*
 : If this option is specified, the list is treated as consisting of groups of *strideLength* elements and the groups are sorted by either their first element or, if the **-index** option is used, by the element within each group given by the first index passed to **-index** (which is then ignored by **-index**). Elements always remain in the same position within their group.
 
     The list length must be an integer multiple of *strideLength*, which in turn must be at least 2.

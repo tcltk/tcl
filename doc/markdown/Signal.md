@@ -13,14 +13,14 @@ Copyright:
 
 # Name
 
-Tcl_SignalId, Tcl_SignalMsg - Convert signal codes
+Tcl\_SignalId, Tcl\_SignalMsg - Convert signal codes
 
 # Synopsis
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[const char *]{.ret} [Tcl_SignalId]{.ccmd}[sig]{.cargs}
-[const char *]{.ret} [Tcl_SignalMsg]{.ccmd}[sig]{.cargs}
+[const char \*]{.ret} [Tcl\_SignalId]{.ccmd}[sig]{.cargs}
+[const char \*]{.ret} [Tcl\_SignalMsg]{.ccmd}[sig]{.cargs}
 :::
 
 # Arguments
@@ -29,5 +29,5 @@ Tcl_SignalId, Tcl_SignalMsg - Convert signal codes
 
 # Description
 
-**Tcl_SignalId** and **Tcl_SignalMsg** return a string representation of the provided signal number (*sig*). **Tcl_SignalId** returns a machine-readable textual identifier such as "SIGPIPE". **Tcl_SignalMsg** returns a human-readable string such as "bus error". The strings returned by these functions are statically allocated and the caller must not free or modify them. 
+**Tcl\_SignalId** and **Tcl\_SignalMsg** return a string representation of the provided signal number (*sig*). **Tcl\_SignalId** returns a machine-readable textual identifier such as "SIGPIPE". **Tcl\_SignalMsg** returns a human-readable string such as "bus error". The strings returned by these functions are statically allocated and the caller must not free or modify them. 
 

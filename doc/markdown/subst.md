@@ -67,7 +67,7 @@ set a "p\} q \{r"
 subst {xyz {$a}}
 ```
 
-returns "**xyz {p} q {r}**", not "**xyz {p\} q \{r}**"
+returns "**xyz {p} q {r}**", not "**xyz {p\\} q \\{r}**"
 
 When command substitution is performed, it includes any variable substitution necessary to evaluate the script.
 

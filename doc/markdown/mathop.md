@@ -29,10 +29,10 @@ mathop - Mathematical operators as Tcl commands
 [::tcl::mathop::~]{.cmd} [number]{.arg}
 [::tcl::mathop::+]{.cmd} [number]{.optdot}
 [::tcl::mathop::-]{.cmd} [number]{.arg} [number]{.optdot}
-[::tcl::mathop::*]{.cmd} [number]{.optdot}
+[::tcl::mathop::\*]{.cmd} [number]{.optdot}
 [::tcl::mathop::/]{.cmd} [number]{.arg} [number]{.optdot}
 [::tcl::mathop::%]{.cmd} [number]{.arg} [number]{.arg}
-[::tcl::mathop::**]{.cmd} [number]{.optdot}
+[::tcl::mathop::\*\*]{.cmd} [number]{.optdot}
 [::tcl::mathop::&]{.cmd} [number]{.optdot}
 [::tcl::mathop::|]{.cmd} [number]{.optdot}
 [::tcl::mathop::^]{.cmd} [number]{.optdot}
@@ -58,7 +58,7 @@ mathop - Mathematical operators as Tcl commands
 
 The commands in the **::tcl::mathop** namespace implement the same set of operations as supported by the [expr] command. All are exported from the namespace, but are not imported into any other namespace by default. Note that renaming, reimplementing or deleting any of the commands in the namespace does *not* alter the way that the [expr] command behaves, and nor does defining any new commands in the **::tcl::mathop** namespace.
 
-The following operator commands are supported: .DS **~**	**!**	**+**	**-**	***** **/**	**%**	******	**&**	**|** **^**	**>>**	**<<**	**==**	**eq** **!=**	**ne**	**<**	**<=**	**>** **>=**	**in**	**ni**	**lt**	**le** **gt**	**ge** .DE
+The following operator commands are supported: .DS **~**	**!**	**+**	**-**	**\*** **/**	**%**	**\*\***	**&**	**|** **^**	**>>**	**<<**	**==**	**eq** **!=**	**ne**	**<**	**<=**	**>** **>=**	**in**	**ni**	**lt**	**le** **gt**	**ge** .DE
 
 ## Mathematical operators
 
@@ -73,7 +73,7 @@ The behaviors of the mathematical operator commands are as follows:
 **-** *number* ?*number ...*?
 : If only a single *number* argument is given, returns the negation of that numeric value. Otherwise returns the number that results when all subsequent numeric values are subtracted from the first one. All *number* arguments must be numeric values. At least one argument must be given.
 
-***** ?*number ...*?
+**\*** ?*number ...*?
 : Returns the product of arbitrarily many arguments. Each *number* may be any numeric value. If no arguments are given, the result will be one (the multiplicative identity).
 
 **/** *number* ?*number ...*?
@@ -90,8 +90,8 @@ The behaviors of the mathematical operator commands are as follows:
     == [* [/ x y] y] [- x [% x y]]
     ```
 
-****** ?*number ...*?
-: Returns the result of raising each value to the power of the result of recursively operating on the result of processing the following arguments, so "**** 2 3 4**" is the same as "**** 2 [** 3 4]**". Each *number* may be any numeric value, though the second number must not be fractional if the first is negative.  The maximum exponent value that Tcl can handle if the first number is an integer > 1 is 268435455. If no arguments are given, the result will be one, and if only one argument is given, the result will be that argument. The result will have an integral value only when all arguments are integral values.
+**\*\*** ?*number ...*?
+: Returns the result of raising each value to the power of the result of recursively operating on the result of processing the following arguments, so "**\*\* 2 3 4**" is the same as "**\*\* 2 [\*\* 3 4]**". Each *number* may be any numeric value, though the second number must not be fractional if the first is negative.  The maximum exponent value that Tcl can handle if the first number is an integer > 1 is 268435455. If no arguments are given, the result will be one, and if only one argument is given, the result will be that argument. The result will have an integral value only when all arguments are integral values.
 
 
 ## Comparison operators

@@ -83,7 +83,7 @@ When the HTTP server has replied to the request, call the command **::http::resp
 : The **::http::config** command is used to set and query the name of the proxy server and port, and the User-Agent name used in the HTTP requests.  If no options are specified, then the current configuration is returned.  If a single argument is specified, then it should be one of the flags described below.  In this case the current value of that setting is returned.  Otherwise, the options should be a set of flags and values that define the configuration:
 
     **-accept** *mimetypes*
-    : The Accept header of the request.  The default is */*, which means that all types of documents are accepted.  Otherwise you can supply a comma-separated list of mime type patterns that you are willing to receive.  For example, "image/gif, image/jpeg, text/*".
+    : The Accept header of the request.  The default is \*/\*, which means that all types of documents are accepted.  Otherwise you can supply a comma-separated list of mime type patterns that you are willing to receive.  For example, "image/gif, image/jpeg, text/\*".
 
     **-cookiejar** *command*
     : The cookie store for the package to use to manage HTTP cookies. *command* is a command prefix list; if the empty list (the default value) is used, no cookies will be sent by requests or stored from responses. The command indicated by *command*, if supplied, must obey the **COOKIE JAR PROTOCOL** described below.
@@ -109,7 +109,7 @@ When the HTTP server has replied to the request, call the command **::http::resp
 : The host name or IP address of the proxy server, if any.  If this value is the empty string, the URL host is contacted directly.  See **-proxyfilter** for how the value is used.
 
 **-proxynot** *list*
-: A Tcl list of domain names and IP addresses that should be accessed directly, not through the proxy server.  The target hostname is compared with each list element using a case-insensitive [string match][string].  It is often convenient to use the wildcard "*" at the start of a domain name (e.g. *.example.com) or at the end of an IP address (e.g. 192.168.0.*).  See **-proxyfilter** for how the value is used.
+: A Tcl list of domain names and IP addresses that should be accessed directly, not through the proxy server.  The target hostname is compared with each list element using a case-insensitive [string match][string].  It is often convenient to use the wildcard "\*" at the start of a domain name (e.g. \*.example.com) or at the end of an IP address (e.g. 192.168.0.\*).  See **-proxyfilter** for how the value is used.
 
 **-proxyport** *number*
 : The port number of the proxy server.  See **-proxyfilter** for how the value is used.
@@ -547,7 +547,7 @@ Some of the header names (metadata keys) are listed below, but the HTTP standard
 
 # State array
 
-The **::http::geturl** procedure returns a *token* that can be used as an argument to other **::http::*** commands, which examine and manage the state of the HTTP transaction.  For most purposes these commands are sufficient.  The *token* can also be used to access the internal state of the transaction, which is stored in a Tcl array. This facility is most useful when writing callback commands for the options **-command**, **-handler**, **-progress**, or **-queryprogress**. Use the following command inside the proc to define an easy-to-use array *state* as a local variable within the proc
+The **::http::geturl** procedure returns a *token* that can be used as an argument to other **::http::\*** commands, which examine and manage the state of the HTTP transaction.  For most purposes these commands are sufficient.  The *token* can also be used to access the internal state of the transaction, which is stored in a Tcl array. This facility is most useful when writing callback commands for the options **-command**, **-handler**, **-progress**, or **-queryprogress**. Use the following command inside the proc to define an easy-to-use array *state* as a local variable within the proc
 
 ```
 upvar 0 $token state
@@ -681,7 +681,7 @@ Option **-repost**, if **true**, permits automatic retry of a POST request that 
 
 Cookies are short key-value pairs used to implement sessions within the otherwise-stateless HTTP protocol. (See RFC 6265 for details; Tcl does not implement the Cookie2 protocol as that is rarely seen in the wild.)
 
-Cookie storage management commands \(em "cookie jars" \(em must support these subcommands which form the HTTP cookie storage management protocol. Note that *cookieJar* below does not have to be a command name; it is properly a command prefix (a Tcl list of words that will be expanded in place) and admits many possible implementations.
+Cookie storage management commands \\(em "cookie jars" \\(em must support these subcommands which form the HTTP cookie storage management protocol. Note that *cookieJar* below does not have to be a command name; it is properly a command prefix (a Tcl list of words that will be expanded in place) and admits many possible implementations.
 
 Though not formally part of the protocol, it is expected that particular values of *cookieJar* will correspond to sessions; it is up to the caller of **::http::config** to decide what session applies and to manage the deletion of said sessions when they are no longer desired (which should be when they not configured as the current cookie jar).
 

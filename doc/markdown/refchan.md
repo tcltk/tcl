@@ -51,7 +51,7 @@ Of all the possible subcommands, the handler *must* support **initialize**, **fi
 
     The return value of the method has to be a list containing the names of all subcommands supported by the *cmdPrefix*. This also tells the Tcl core which version of the API for reflected channels is used by this command handler.
 
-    Any error thrown by the method will abort the creation of the channel and no channel will be created. The thrown error will appear as error thrown by [chan create][chan]. Any exception other than an [error] (e.g.,\ [break], etc.) is treated as (and converted to) an error.
+    Any error thrown by the method will abort the creation of the channel and no channel will be created. The thrown error will appear as error thrown by [chan create][chan]. Any exception other than an [error] (e.g.,\\ [break], etc.) is treated as (and converted to) an error.
 
     **Note:** If the creation of the channel was aborted due to failures here, then the **finalize** subcommand will not be called.
 
@@ -64,7 +64,7 @@ Of all the possible subcommands, the handler *must* support **initialize**, **fi
 
     The return value of this subcommand is ignored.
 
-    If the subcommand throws an error the command which caused its invocation (usually [chan close][chan]) will appear to have thrown this error. Any exception beyond [error] (e.g.,\ [break], etc.) is treated as (and converted to) an error.
+    If the subcommand throws an error the command which caused its invocation (usually [chan close][chan]) will appear to have thrown this error. Any exception beyond [error] (e.g.,\\ [break], etc.) is treated as (and converted to) an error.
 
     This subcommand is not invoked if the creation of the channel was aborted during **initialize** (See above).
 
@@ -113,7 +113,7 @@ Of all the possible subcommands, the handler *must* support **initialize**, **fi
 
     The symbolic string however is the same across systems, and internally translated to the correct number. No other error value has such a mapping to a symbolic string.
 
-    If the subcommand throws any other error, the command which caused its invocation (usually [gets], or [read]) will appear to have thrown this error. Any exception beyond [error], (e.g.,\ [break], etc.) is treated as and converted to an error.
+    If the subcommand throws any other error, the command which caused its invocation (usually [gets], or [read]) will appear to have thrown this error. Any exception beyond [error], (e.g.,\\ [break], etc.) is treated as and converted to an error.
 
 [cmdPrefix]{.ins} [write]{.sub} [channel]{.arg} [data]{.arg}
 : This *optional* subcommand is called when the user writes data to the channel *channel*. The *data* argument contains *bytes*, not characters. Any type of transformation (EOL, encoding) configured for the channel has already been applied at this point. If this subcommand is not supported then it is not possible to write to the channel handled by the command.
@@ -150,7 +150,7 @@ Of all the possible subcommands, the handler *must* support **initialize**, **fi
 
     The symbolic string however is the same across systems, and internally translated to the correct number. No other error value has such a mapping to a symbolic string.
 
-    If the subcommand throws any other error the command which caused its invocation (usually [puts]) will appear to have thrown this error. Any exception beyond [error] (e.g.,\ [break], etc.) is treated as and converted to an error.
+    If the subcommand throws any other error the command which caused its invocation (usually [puts]) will appear to have thrown this error. Any exception beyond [error] (e.g.,\\ [break], etc.) is treated as and converted to an error.
 
 [cmdPrefix]{.ins} [seek]{.sub} [channel]{.arg} [offset]{.arg} [base]{.arg}
 : This *optional* subcommand is responsible for the handling of [chan seek][chan] and [chan tell][chan] requests on the channel *channel*. If it is not supported then seeking will not be possible for the channel.
@@ -169,9 +169,9 @@ Of all the possible subcommands, the handler *must* support **initialize**, **fi
 
     The *offset* is an integer number specifying the amount of **bytes** to seek forward or backward. A positive number should seek forward, and a negative number should seek backward. A channel may provide only limited seeking. For example sockets can seek forward, but not backward.
 
-    The return value of the subcommand is taken as the (new) location of the channel, counted from the start. This has to be an integer number greater than or equal to zero. If the subcommand throws an error the command which caused its invocation (usually [chan seek][chan], or [chan tell][chan]) will appear to have thrown this error. Any exception beyond [error] (e.g.,\ [break], etc.) is treated as and converted to an error.
+    The return value of the subcommand is taken as the (new) location of the channel, counted from the start. This has to be an integer number greater than or equal to zero. If the subcommand throws an error the command which caused its invocation (usually [chan seek][chan], or [chan tell][chan]) will appear to have thrown this error. Any exception beyond [error] (e.g.,\\ [break], etc.) is treated as and converted to an error.
 
-    The offset/base combination of 0/**current** signals a [chan tell][chan] request, i.e.,\ seek nothing relative to the current location, making the new location identical to the current one, which is then returned.
+    The offset/base combination of 0/**current** signals a [chan tell][chan] request, i.e.,\\ seek nothing relative to the current location, making the new location identical to the current one, which is then returned.
 
 [cmdPrefix]{.ins} [configure]{.sub} [channel]{.arg} [option]{.arg} [value]{.arg}
 : This *optional* subcommand is for setting the type-specific options of channel *channel*. The *option* argument indicates the option to be written, and the *value* argument indicates the value to set the option to.
@@ -180,44 +180,44 @@ Of all the possible subcommands, the handler *must* support **initialize**, **fi
 
     The return value of the subcommand is ignored.
 
-    If the subcommand throws an error the command which performed the (re)configuration or query (usually [fconfigure] or [chan configure][chan]) will appear to have thrown this error. Any exception beyond [error] (e.g.,\ [break], etc.) is treated as and converted to an error.
+    If the subcommand throws an error the command which performed the (re)configuration or query (usually [fconfigure] or [chan configure][chan]) will appear to have thrown this error. Any exception beyond [error] (e.g.,\\ [break], etc.) is treated as and converted to an error.
 
 [cmdPrefix]{.ins} [cget]{.sub} [channel]{.arg} [option]{.arg}
 : This *optional* subcommand is used when reading a single type-specific option of channel *channel*. If this subcommand is supported then the subcommand **cgetall** must be supported as well.
 
     The subcommand should return the value of the specified *option*.
 
-    If the subcommand throws an error, the command which performed the (re)configuration or query (usually [fconfigure] or [chan configure][chan]) will appear to have thrown this error. Any exception beyond *error* (e.g.,\ [break], etc.) is treated as and converted to an error.
+    If the subcommand throws an error, the command which performed the (re)configuration or query (usually [fconfigure] or [chan configure][chan]) will appear to have thrown this error. Any exception beyond *error* (e.g.,\\ [break], etc.) is treated as and converted to an error.
 
 [cmdPrefix]{.ins} [cgetall]{.sub} [channel]{.arg}
 : This *optional* subcommand is used for reading all type-specific options of channel *channel*. If this subcommand is supported then the subcommand **cget** has to be supported as well.
 
     The subcommand should return a list of all options and their values. This list must have an even number of elements.
 
-    If the subcommand throws an error the command which performed the (re)configuration or query (usually [fconfigure] or [chan configure][chan]) will appear to have thrown this error. Any exception beyond [error] (e.g.,\ [break], etc.) is treated as and converted to an error.
+    If the subcommand throws an error the command which performed the (re)configuration or query (usually [fconfigure] or [chan configure][chan]) will appear to have thrown this error. Any exception beyond [error] (e.g.,\\ [break], etc.) is treated as and converted to an error.
 
 [cmdPrefix]{.ins} [blocking]{.sub} [channel]{.arg} [mode]{.arg}
 : This *optional* subcommand handles changes to the blocking mode of the channel *channel*. The *mode* is a boolean flag. A true value means that the channel has to be set to blocking, and a false value means that the channel should be non-blocking.
 
     The return value of the subcommand is ignored.
 
-    If the subcommand throws an error the command which caused its invocation (usually [fconfigure] or [chan configure][chan]) will appear to have thrown this error. Any exception beyond [error] (e.g.,\ [break], etc.) is treated as and converted to an error.
+    If the subcommand throws an error the command which caused its invocation (usually [fconfigure] or [chan configure][chan]) will appear to have thrown this error. Any exception beyond [error] (e.g.,\\ [break], etc.) is treated as and converted to an error.
 
 [cmdPrefix]{.ins} [truncate]{.sub} [channel]{.arg} [length]{.arg}
 : This *optional* subcommand handles changing the length of the underlying data stream for the channel *channel*. Its length gets set to *length*.
 
-    If the subcommand throws an error the command which caused its invocation (usually [chan truncate][chan]) will appear to have thrown this error. Any exception beyond [error] (e.g.,\ [break], etc.) is treated as and converted to an error.
+    If the subcommand throws an error the command which caused its invocation (usually [chan truncate][chan]) will appear to have thrown this error. Any exception beyond [error] (e.g.,\\ [break], etc.) is treated as and converted to an error.
 
 
 # Notes
 
 Some of the functions supported in channels defined in Tcl's C interface are not available to channels reflected to the Tcl level.
 
-The function **Tcl_DriverGetHandleProc** is not supported; i.e.,\ reflected channels do not have OS specific handles.
+The function **Tcl\_DriverGetHandleProc** is not supported; i.e.,\\ reflected channels do not have OS specific handles.
 
-The function **Tcl_DriverHandlerProc** is not supported. This driver function is relevant only for stacked channels, i.e.,\ transformations. Reflected channels are always base channels, not transformations.
+The function **Tcl\_DriverHandlerProc** is not supported. This driver function is relevant only for stacked channels, i.e.,\\ transformations. Reflected channels are always base channels, not transformations.
 
-The function **Tcl_DriverFlushProc** is not supported. This is because the current generic I/O layer of Tcl does not use this function anywhere at all. Therefore support at the Tcl level makes no sense either. This may be altered in the future (through extending the API defined here and changing its version number) should the function be used at some time in the future.
+The function **Tcl\_DriverFlushProc** is not supported. This is because the current generic I/O layer of Tcl does not use this function anywhere at all. Therefore support at the Tcl level makes no sense either. This may be altered in the future (through extending the API defined here and changing its version number) should the function be used at some time in the future.
 
 # Example
 

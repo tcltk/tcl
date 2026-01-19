@@ -74,7 +74,7 @@ Available commands:
     : *commandName* was created by [namespace import][namespace].
 
     **native**
-    : *commandName* was created by the **Tcl_CreateObjCommand** interface directly without further registration of the type of command.
+    : *commandName* was created by the **Tcl\_CreateObjCommand** interface directly without further registration of the type of command.
 
     **object**
     : *commandName* is the public command that represents an instance of **oo::object** or one of its subclasses.
@@ -170,7 +170,7 @@ In contrast, procedure definitions and [eval] within a dynamically [eval]uated e
 
 A different way of describing this behaviour is that file-based locations are tracked as deeply as possible, and where this is not possible the lines are counted based on the smallest possible [eval] or procedure body, as that scope is usually easier to find than any dynamic outer scope.
 
-The syntactic form **{*}** is handled like [eval]. I.e. if it is given a literal list argument the system tracks the line number within the list words as well, and otherwise all line numbers are counted relative to the start of each word (smallest scope)
+The syntactic form **{\*}** is handled like [eval]. I.e. if it is given a literal list argument the system tracks the line number within the list words as well, and otherwise all line numbers are counted relative to the start of each word (smallest scope)
 
 [info]{.cmd} [functions]{.sub} [pattern]{.optarg}
 : If *pattern* is not given, returns a list of all the math functions currently defined. If *pattern* is given, returns only those names that match *pattern* according to [string match][string].
@@ -187,7 +187,7 @@ The syntactic form **{*}** is handled like [eval]. I.e. if it is given a literal
 : If *number* is not given, the level this routine was called from. Otherwise returns the complete command active at the given level.  If *number* is greater than **0**, it is the desired level.  Otherwise, it is *number* levels up from the current level.  A complete command is the words in the command, with all substitutions performed, meaning that it is a list.  See [uplevel] for more information on levels.
 
 [info]{.cmd} [library]{.sub}
-: Returns the value of **tcl_library**, which is the name of the library directory in which the scripts distributed with Tcl scripts are stored.
+: Returns the value of **tcl\_library**, which is the name of the library directory in which the scripts distributed with Tcl scripts are stored.
 
 [info]{.cmd} [loaded]{.sub} [interp]{.optarg} [prefix]{.optarg}
 : Returns the name of each file loaded in *interp* by the [load] command with prefix *prefix* .  If *prefix* is not given, returns a list where each item is the name of the loaded file and the prefix for which the file was loaded.  For a statically-loaded package the name of the file is the empty string.  For *interp*, the empty string is the current interpreter.
@@ -202,7 +202,7 @@ The syntactic form **{*}** is handled like [eval]. I.e. if it is given a literal
 : Returns information about the object named *object*. *subcommand* is described **OBJECT INTROSPECTION** below.
 
 [info]{.cmd} [patchlevel]{.sub}
-: Returns the value of the global variable **tcl_patchLevel**, in which the exact version of the Tcl library initially stored.
+: Returns the value of the global variable **tcl\_patchLevel**, in which the exact version of the Tcl library initially stored.
 
 [info]{.cmd} [procs]{.sub} [pattern]{.optarg}
 : Returns the names of all visible procedures. If *pattern* is given, returns only those names that match according to [string match][string].  Only the final component in *pattern* is actually considered a pattern.  Any qualifying components simply select a namespace.  See **NAMESPACE RESOLUTION** in the [namespace](n) documentation.
@@ -214,7 +214,7 @@ The syntactic form **{*}** is handled like [eval]. I.e. if it is given a literal
 : Returns the extension used on this platform for names of shared libraries, e.g. **.so** under Solaris.  Returns the empty string if shared libraries are not supported on this platform.
 
 [info]{.cmd} [tclversion]{.sub}
-: Returns the value of the global variable **tcl_version**, in which the major and minor version of the Tcl library are stored.
+: Returns the value of the global variable **tcl\_version**, in which the major and minor version of the Tcl library are stored.
 
 [info]{.cmd} [vars]{.sub} [pattern]{.optarg}
 : If *pattern* is not given, returns the names of all visible variables.  If *pattern* is given, returns only those names that match according to [string match][string].  Only the last component of *pattern* is a pattern. Other components identify a namespace.  See **NAMESPACE RESOLUTION** in the [namespace](n) documentation.  When *pattern* is a qualified name, results are fully qualified.

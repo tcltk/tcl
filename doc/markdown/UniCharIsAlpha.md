@@ -13,23 +13,23 @@ Copyright:
 
 # Name
 
-Tcl_UniCharIsAlnum, Tcl_UniCharIsAlpha, Tcl_UniCharIsControl, Tcl_UniCharIsDigit, Tcl_UniCharIsGraph, Tcl_UniCharIsLower, Tcl_UniCharIsPrint, Tcl_UniCharIsPunct, Tcl_UniCharIsSpace, Tcl_UniCharIsUpper, Tcl_UniCharIsWordChar - routines for classification of Tcl_UniChar characters
+Tcl\_UniCharIsAlnum, Tcl\_UniCharIsAlpha, Tcl\_UniCharIsControl, Tcl\_UniCharIsDigit, Tcl\_UniCharIsGraph, Tcl\_UniCharIsLower, Tcl\_UniCharIsPrint, Tcl\_UniCharIsPunct, Tcl\_UniCharIsSpace, Tcl\_UniCharIsUpper, Tcl\_UniCharIsWordChar - routines for classification of Tcl\_UniChar characters
 
 # Synopsis
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[int]{.ret} [Tcl_UniCharIsAlnum]{.ccmd}[ch]{.cargs}
-[int]{.ret} [Tcl_UniCharIsAlpha]{.ccmd}[ch]{.cargs}
-[int]{.ret} [Tcl_UniCharIsControl]{.ccmd}[ch]{.cargs}
-[int]{.ret} [Tcl_UniCharIsDigit]{.ccmd}[ch]{.cargs}
-[int]{.ret} [Tcl_UniCharIsGraph]{.ccmd}[ch]{.cargs}
-[int]{.ret} [Tcl_UniCharIsLower]{.ccmd}[ch]{.cargs}
-[int]{.ret} [Tcl_UniCharIsPrint]{.ccmd}[ch]{.cargs}
-[int]{.ret} [Tcl_UniCharIsPunct]{.ccmd}[ch]{.cargs}
-[int]{.ret} [Tcl_UniCharIsSpace]{.ccmd}[ch]{.cargs}
-[int]{.ret} [Tcl_UniCharIsUpper]{.ccmd}[ch]{.cargs}
-[int]{.ret} [Tcl_UniCharIsWordChar]{.ccmd}[ch]{.cargs}
+[int]{.ret} [Tcl\_UniCharIsAlnum]{.ccmd}[ch]{.cargs}
+[int]{.ret} [Tcl\_UniCharIsAlpha]{.ccmd}[ch]{.cargs}
+[int]{.ret} [Tcl\_UniCharIsControl]{.ccmd}[ch]{.cargs}
+[int]{.ret} [Tcl\_UniCharIsDigit]{.ccmd}[ch]{.cargs}
+[int]{.ret} [Tcl\_UniCharIsGraph]{.ccmd}[ch]{.cargs}
+[int]{.ret} [Tcl\_UniCharIsLower]{.ccmd}[ch]{.cargs}
+[int]{.ret} [Tcl\_UniCharIsPrint]{.ccmd}[ch]{.cargs}
+[int]{.ret} [Tcl\_UniCharIsPunct]{.ccmd}[ch]{.cargs}
+[int]{.ret} [Tcl\_UniCharIsSpace]{.ccmd}[ch]{.cargs}
+[int]{.ret} [Tcl\_UniCharIsUpper]{.ccmd}[ch]{.cargs}
+[int]{.ret} [Tcl\_UniCharIsWordChar]{.ccmd}[ch]{.cargs}
 :::
 
 # Arguments
@@ -42,25 +42,25 @@ All of the routines described examine Unicode characters and return a boolean va
 
 # Character classes
 
-**Tcl_UniCharIsAlnum** tests if the character is an alphanumeric Unicode character.
+**Tcl\_UniCharIsAlnum** tests if the character is an alphanumeric Unicode character.
 
-**Tcl_UniCharIsAlpha** tests if the character is an alphabetic Unicode character.
+**Tcl\_UniCharIsAlpha** tests if the character is an alphabetic Unicode character.
 
-**Tcl_UniCharIsControl** tests if the character is a Unicode control character.
+**Tcl\_UniCharIsControl** tests if the character is a Unicode control character.
 
-**Tcl_UniCharIsDigit** tests if the character is a numeric Unicode character.
+**Tcl\_UniCharIsDigit** tests if the character is a numeric Unicode character.
 
-**Tcl_UniCharIsGraph** tests if the character is any Unicode print character except space.
+**Tcl\_UniCharIsGraph** tests if the character is any Unicode print character except space.
 
-**Tcl_UniCharIsLower** tests if the character is a lowercase Unicode character.
+**Tcl\_UniCharIsLower** tests if the character is a lowercase Unicode character.
 
-**Tcl_UniCharIsPrint** tests if the character is a Unicode print character.
+**Tcl\_UniCharIsPrint** tests if the character is a Unicode print character.
 
-**Tcl_UniCharIsPunct** tests if the character is a Unicode punctuation character.
+**Tcl\_UniCharIsPunct** tests if the character is a Unicode punctuation character.
 
-**Tcl_UniCharIsSpace** tests if the character is a whitespace Unicode character.
+**Tcl\_UniCharIsSpace** tests if the character is a whitespace Unicode character.
 
-**Tcl_UniCharIsUpper** tests if the character is an uppercase Unicode character.
+**Tcl\_UniCharIsUpper** tests if the character is an uppercase Unicode character.
 
-**Tcl_UniCharIsWordChar** tests if the character is alphanumeric or a connector punctuation mark. 
+**Tcl\_UniCharIsWordChar** tests if the character is alphanumeric or a connector punctuation mark. 
 

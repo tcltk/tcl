@@ -70,13 +70,13 @@ proc sleep {N} {
 }
 ```
 
-This arranges for the command *wake_up* to be run in eight hours (providing the event loop is active at that time):
+This arranges for the command *wake\_up* to be run in eight hours (providing the event loop is active at that time):
 
 ```
 after [expr {1000 * 60 * 60 * 8}] wake_up
 ```
 
-The following command can be used to do long-running calculations (as represented here by *::my_calc::one_step*, which is assumed to return a boolean indicating whether another step should be performed) in a step-by-step fashion, though the calculation itself needs to be arranged so it can work step-wise.  This technique is extra careful to ensure that the event loop is not starved by the rescheduling of processing steps (arranging for the next step to be done using an already-triggered timer event only when the event queue has been drained) and is useful when you want to ensure that a Tk GUI remains responsive during a slow task.
+The following command can be used to do long-running calculations (as represented here by *::my\_calc::one\_step*, which is assumed to return a boolean indicating whether another step should be performed) in a step-by-step fashion, though the calculation itself needs to be arranged so it can work step-wise.  This technique is extra careful to ensure that the event loop is not starved by the rescheduling of processing steps (arranging for the next step to be done using an already-triggered timer event only when the event queue has been drained) and is useful when you want to ensure that a Tk GUI remains responsive during a slow task.
 
 ```
 proc doOneStep {} {

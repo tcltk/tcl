@@ -34,16 +34,23 @@ The tcl/doc directory contains 248 manual pages which are divided as follows:
 
 section | number of documents | initial conversion | final conversion
 --------|---------------------|--------------------|-----------------
-1       | 1                   | 1                  | 5
+1       | 1                   | 1                  | 11 (chan not yet final)
 3       | 108                 | 108                | 0
 n       | 139                 | 139                | 0
 
 Final conversion of these files is currently done:
-- after
-- append
-- apply
-- array
-- bgerror
+1. after
+2. append
+3. apply
+4. array
+5. bgerror
+6. binary
+7. break
+8. buildinfo
+9. callback
+10. catch
+11. cd
+12. chan (indentation for [chan configure] is not ok -> will be dealt with when restructuring manual pages after TIP 700)
 
 
 The tk/doc directory comes next, after finishing Tcl.

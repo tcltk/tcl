@@ -51,7 +51,7 @@ This command treats the variable given by *varName* as a list and appends each o
 If *varName* indicate an element that does not exist of an array that has a default value set, list that is comprised of the default value with all the *value* arguments appended as elements will be stored in the array element.
 :::
 
-**Lappend** is similar to [append] except that the *value*s are appended as list elements rather than raw text. This command provides a relatively efficient way to build up large lists.  For example, "**lappend a $b**" is much more efficient than "[set a [concat $a [list $b]]]" when **$a** is long.
+**Lappend** is similar to [append] except that the *value*s are appended as list elements rather than raw text. This command provides a relatively efficient way to build up large lists.  For example, "**lappend a $b**" is much more efficient than "[set a [concat $a [list $b]]][set]" when **$a** is long.
 
 # Example
 

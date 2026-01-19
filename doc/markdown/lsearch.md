@@ -65,7 +65,7 @@ If all matching style options are omitted, the default matching style is **-glob
 : *Pattern* is a glob-style pattern which is matched against each list element using the same rules as the [string match][string] command.
 
 [-regexp]{.lit}
-: *Pattern* is treated as a regular expression and matched against each list element using the rules described in the **re_syntax** reference page.
+: *Pattern* is treated as a regular expression and matched against each list element using the rules described in the **re\_syntax** reference page.
 
 [-sorted]{.lit}
 : The list elements are in sorted order.  If this option is specified, **lsearch** will use a more efficient searching algorithm to search *list*.  If no other options are specified, *list* is assumed to be sorted in increasing order, and to contain ASCII strings.  This option is mutually exclusive with **-glob** and **-regexp**, and is treated exactly like **-exact** when either **-all** or **-not** are specified.

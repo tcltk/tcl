@@ -10,7 +10,7 @@
 .SH NAME
 chan \- Read, write and manipulate channels
 .SH SYNOPSIS
-\fBchan \fIoption\fR ?\fIarg arg ...\fR?
+\fBchan \fIoption\fR ?\fIarg ...\fR?
 .BE
 .SH DESCRIPTION
 .PP
@@ -206,7 +206,7 @@ generate an error.
 Specifies the encoding profile to be used on the channel. The encoding
 transforms in use for the channel's input and output will then be subject to the
 rules of that profile. Any failures will result in a channel error. See
-\fBPROFILES\fR in the \fBencoding(n)\fR documentation for details about encoding
+\fBPROFILES\fR in the documentation of the \fBencoding\fR command for details about encoding
 profiles.
 .VE TIP656
 .\" OPTION: -translation

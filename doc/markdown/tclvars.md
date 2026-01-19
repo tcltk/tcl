@@ -28,14 +28,14 @@ Copyright:
 
 # Name
 
-argc, argv, argv0, auto_path, env, errorCode, errorInfo, tcl_interactive, tcl_library, tcl_patchLevel, tcl_pkgPath, tcl_platform, tcl_rcFileName, tcl_traceCompile, tcl_traceExec, tcl_version - Variables used by Tcl
+argc, argv, argv0, auto\_path, env, errorCode, errorInfo, tcl\_interactive, tcl\_library, tcl\_patchLevel, tcl\_pkgPath, tcl\_platform, tcl\_rcFileName, tcl\_traceCompile, tcl\_traceExec, tcl\_version - Variables used by Tcl
 
 # Description
 
 The following global variables are created and managed automatically by the Tcl library.  Except where noted below, these variables should normally be treated as read-only by application-specific code and by users.
 
-**auto_path**
-: If set, then it must contain a valid Tcl list giving directories to search during auto-load operations (including for package index files when using the default [package unknown][package] handler). This variable is initialized during startup to contain, in order: the directories listed in the **TCLLIBPATH** environment variable, the directory named by the **tcl_library** global variable, the parent directory of **tcl_library**, **[file dirname [file dirname [info nameofexecutable]]]/lib**, the directories listed in the **tcl_pkgPath** variable. Additional locations to look for files and package indices should normally be added to this variable using [lappend]. Initialization of auto_path from the TCLLIBPATH environment variable undergoes tilde substitution (see **filename**) on each path. Any tilde substitution that fails because the user is unknown will be omitted from auto_path.
+**auto\_path**
+: If set, then it must contain a valid Tcl list giving directories to search during auto-load operations (including for package index files when using the default [package unknown][package] handler). This variable is initialized during startup to contain, in order: the directories listed in the **TCLLIBPATH** environment variable, the directory named by the **tcl\_library** global variable, the parent directory of **tcl\_library**, **[file dirname [file dirname [info nameofexecutable]]]/lib**, the directories listed in the **tcl\_pkgPath** variable. Additional locations to look for files and package indices should normally be added to this variable using [lappend]. Initialization of auto\_path from the TCLLIBPATH environment variable undergoes tilde substitution (see **filename**) on each path. Any tilde substitution that fails because the user is unknown will be omitted from auto\_path.
 
     Additional variables relating to package management exist. More details are listed in the **VARIABLES** section of the **library** manual page.
 
@@ -49,22 +49,22 @@ The following global variables are created and managed automatically by the Tcl 
     **env(HOME)**
     : This environment variable, if set, gives the location of the directory considered to be the current user's home directory. The value of this variable is returned by the [file home][file] command. Most platforms set this correctly by default; it does not normally need to be set by user code. On Windows, if not already set, it is set to the value of the **USERPROFILE** environment variable.
 
-    **env(TCL_LIBRARY)**
-    : If set, then it specifies the location of the directory containing library scripts (the value of this variable will be assigned to the **tcl_library** variable and therefore returned by the command [info library][info]).  If this variable is not set then a default value is used.
+    **env(TCL\_LIBRARY)**
+    : If set, then it specifies the location of the directory containing library scripts (the value of this variable will be assigned to the **tcl\_library** variable and therefore returned by the command [info library][info]).  If this variable is not set then a default value is used.
 
 
     Note that this environment variable should *not* normally be set.
 
 **env(TCLLIBPATH)**
-: If set, then it must contain a valid Tcl list giving directories to search during auto-load operations.  Directories must be specified in Tcl format, using "/" as the path separator, regardless of platform. This variable is only used when initializing the **auto_path** variable.
+: If set, then it must contain a valid Tcl list giving directories to search during auto-load operations.  Directories must be specified in Tcl format, using "/" as the path separator, regardless of platform. This variable is only used when initializing the **auto\_path** variable.
 
-**env(TCL_TZ)**, **env(TZ)**
+**env(TCL\_TZ)**, **env(TZ)**
 : These specify the default timezone used for parsing and formatting times and dates in the [clock] command. On many platforms, the TZ environment variable is set up by the operating system.
 
-**env(LC_ALL)**, **env(LC_MESSAGES)**, **env(LANG)**
+**env(LC\_ALL)**, **env(LC\_MESSAGES)**, **env(LANG)**
 : These environment variables are used by the **msgcat** package to determine what locale to format messages using.
 
-**env(TCL_INTERP_DEBUG_FRAME)**
+**env(TCL\_INTERP\_DEBUG\_FRAME)**
 : If existing, it has the same effect as running [interp debug][interp] **{} -frame 1** as the very first command of each new Tcl interpreter.
 
 **errorCode**
@@ -95,21 +95,21 @@ The following global variables are created and managed automatically by the Tcl 
 : Indicates some sort of problem generated in relation to Tcl itself, e.g. a failure to look up a channel or variable.
 
 
-To set the **-errorcode** return option, applications should use library procedures such as **Tcl_SetObjErrorCode**, **Tcl_SetReturnOptions**, and **Tcl_PosixError**, or they may invoke the **-errorcode** option of the [return] command. If none of these methods for setting the error code has been used, the Tcl interpreter will reset the variable to **NONE** after the next error.
+To set the **-errorcode** return option, applications should use library procedures such as **Tcl\_SetObjErrorCode**, **Tcl\_SetReturnOptions**, and **Tcl\_PosixError**, or they may invoke the **-errorcode** option of the [return] command. If none of these methods for setting the error code has been used, the Tcl interpreter will reset the variable to **NONE** after the next error.
 
 **errorInfo**
 : This variable holds the value of the **-errorinfo** return option set by the most recent error that occurred in this interpreter. This string value will contain one or more lines identifying the Tcl commands and procedures that were being executed when the most recent error occurred. Its contents take the form of a stack trace showing the various nested Tcl commands that had been invoked at the time of the error.
 
-**tcl_library**
-: This variable holds the name of a directory containing the system library of Tcl scripts, such as those used for auto-loading. The value of this variable is returned by the [info library][info] command. See the **library** manual entry for details of the facilities provided by the Tcl script library. Normally each application or package will have its own application-specific script library in addition to the Tcl script library; each application should set a global variable with a name like **$***app***_library** (where *app* is the application's name) to hold the network file name for that application's library directory. The initial value of **tcl_library** is set when an interpreter is created by searching several different directories until one is found that contains an appropriate Tcl startup script. If the **TCL_LIBRARY** environment variable exists, then the directory it names is checked first. If **TCL_LIBRARY** is not set or doesn't refer to an appropriate directory, then Tcl checks several other directories based on a compiled-in default location, the location of the binary containing the application, and the current working directory.
+**tcl\_library**
+: This variable holds the name of a directory containing the system library of Tcl scripts, such as those used for auto-loading. The value of this variable is returned by the [info library][info] command. See the **library** manual entry for details of the facilities provided by the Tcl script library. Normally each application or package will have its own application-specific script library in addition to the Tcl script library; each application should set a global variable with a name like **$***app***\_library** (where *app* is the application's name) to hold the network file name for that application's library directory. The initial value of **tcl\_library** is set when an interpreter is created by searching several different directories until one is found that contains an appropriate Tcl startup script. If the **TCL\_LIBRARY** environment variable exists, then the directory it names is checked first. If **TCL\_LIBRARY** is not set or doesn't refer to an appropriate directory, then Tcl checks several other directories based on a compiled-in default location, the location of the binary containing the application, and the current working directory.
 
-**tcl_patchLevel**
+**tcl\_patchLevel**
 : When an interpreter is created Tcl initializes this variable to hold a string giving the current patch level for Tcl, such as **8.4.16** for Tcl 8.4 with the first sixteen official patches, or **8.5b3** for the third beta release of Tcl 8.5. The value of this variable is returned by the [info patchlevel][info] command.
 
-**tcl_pkgPath**
-: This variable holds a list of directories indicating where packages are normally installed.  It is not used on Windows.  It typically contains either one or two entries; if it contains two entries, the first is normally a directory for platform-dependent packages (e.g., shared library binaries) and the second is normally a directory for platform-independent packages (e.g., script files). Typically a package is installed as a subdirectory of one of the entries in the **tcl_pkgPath** variable. The directories in the **tcl_pkgPath** variable are included by default in the **auto_path** variable, so they and their immediate subdirectories are automatically searched for packages during [package require][package] commands.  Note: **tcl_pkgPath** is not intended to be modified by the application.  Its value is added to **auto_path** at startup; changes to **tcl_pkgPath** are not reflected in **auto_path**.  If you want Tcl to search additional directories for packages you should add the names of those directories to **auto_path**, not **tcl_pkgPath**.
+**tcl\_pkgPath**
+: This variable holds a list of directories indicating where packages are normally installed.  It is not used on Windows.  It typically contains either one or two entries; if it contains two entries, the first is normally a directory for platform-dependent packages (e.g., shared library binaries) and the second is normally a directory for platform-independent packages (e.g., script files). Typically a package is installed as a subdirectory of one of the entries in the **tcl\_pkgPath** variable. The directories in the **tcl\_pkgPath** variable are included by default in the **auto\_path** variable, so they and their immediate subdirectories are automatically searched for packages during [package require][package] commands.  Note: **tcl\_pkgPath** is not intended to be modified by the application.  Its value is added to **auto\_path** at startup; changes to **tcl\_pkgPath** are not reflected in **auto\_path**.  If you want Tcl to search additional directories for packages you should add the names of those directories to **auto\_path**, not **tcl\_pkgPath**.
 
-**tcl_platform**
+**tcl\_platform**
 : This is an associative array whose elements contain information about the platform on which the application is running, such as the name of the operating system, its current release number, and the machine's instruction set.  The elements listed below will always be defined, but they may have empty strings as values if Tcl could not retrieve any relevant information.  In addition, extensions and applications may add additional values to the array.  The predefined elements are:
 
     **byteOrder**
@@ -137,7 +137,7 @@ To set the **-errorcode** return option, applications should use library procedu
     : Either **windows**, or **unix**.  This identifies the general operating environment of the machine.
 
     **pointerSize**
-    : This gives the size of the native-machine pointer in bytes (strictly, it is same as the result of evaluating *sizeof(void*)* in C.)
+    : This gives the size of the native-machine pointer in bytes (strictly, it is same as the result of evaluating *sizeof(void\*)* in C.)
 
     **user**
     : This identifies the current user based on the login information available on the platform. This value comes from the getuid() and getpwuid() system calls on Unix, and the value from the GetUserName() system call on Windows.
@@ -146,22 +146,22 @@ To set the **-errorcode** return option, applications should use library procedu
     : This gives the size of the native-machine word in bytes (strictly, it is same as the result of evaluating *sizeof(long)* in C.)
 
 
-**tcl_rcFileName**
+**tcl\_rcFileName**
 : This variable is used during initialization to indicate the name of a user-specific startup file.  If it is set by application-specific initialization, then the Tcl startup code will check for the existence of this file and [source] it if it exists.  For example, for **wish** the variable is set to **~/.wishrc** for Unix and **~/wishrc.tcl** for Windows.
 
-**tcl_traceCompile**
-: The value of this variable can be set to control how much tracing information is displayed during bytecode compilation. By default, **tcl_traceCompile** is zero and no information is displayed. Setting **tcl_traceCompile** to 1 generates a one-line summary in **stdout** whenever a procedure or top-level command is compiled. Setting it to 2 generates a detailed listing in **stdout** of the bytecode instructions emitted during every compilation. This variable is useful in tracking down suspected problems with the Tcl compiler.
+**tcl\_traceCompile**
+: The value of this variable can be set to control how much tracing information is displayed during bytecode compilation. By default, **tcl\_traceCompile** is zero and no information is displayed. Setting **tcl\_traceCompile** to 1 generates a one-line summary in **stdout** whenever a procedure or top-level command is compiled. Setting it to 2 generates a detailed listing in **stdout** of the bytecode instructions emitted during every compilation. This variable is useful in tracking down suspected problems with the Tcl compiler.
 
 
-This variable and functionality only exist if **TCL_COMPILE_DEBUG** was defined during Tcl's compilation.
+This variable and functionality only exist if **TCL\_COMPILE\_DEBUG** was defined during Tcl's compilation.
 
-**tcl_traceExec**
-: The value of this variable can be set to control how much tracing information is displayed during bytecode execution. By default, **tcl_traceExec** is zero and no information is displayed. Setting **tcl_traceExec** to 1 generates a one-line trace in **stdout** on each call to a Tcl procedure. Setting it to 2 generates a line of output whenever any Tcl command is invoked that contains the name of the command and its arguments. Setting it to 3 produces a detailed trace showing the result of executing each bytecode instruction. Note that when **tcl_traceExec** is 2 or 3, commands such as [set] and [incr] that have been entirely replaced by a sequence of bytecode instructions are not shown. Setting this variable is useful in tracking down suspected problems with the bytecode compiler and interpreter.
+**tcl\_traceExec**
+: The value of this variable can be set to control how much tracing information is displayed during bytecode execution. By default, **tcl\_traceExec** is zero and no information is displayed. Setting **tcl\_traceExec** to 1 generates a one-line trace in **stdout** on each call to a Tcl procedure. Setting it to 2 generates a line of output whenever any Tcl command is invoked that contains the name of the command and its arguments. Setting it to 3 produces a detailed trace showing the result of executing each bytecode instruction. Note that when **tcl\_traceExec** is 2 or 3, commands such as [set] and [incr] that have been entirely replaced by a sequence of bytecode instructions are not shown. Setting this variable is useful in tracking down suspected problems with the bytecode compiler and interpreter.
 
 
-This variable and functionality only exist if **TCL_COMPILE_DEBUG** was defined during Tcl's compilation.
+This variable and functionality only exist if **TCL\_COMPILE\_DEBUG** was defined during Tcl's compilation.
 
-**tcl_version**
+**tcl\_version**
 : When an interpreter is created Tcl initializes this variable to hold the version number for this version of Tcl in the form *x.y*. Changes to *x* represent major changes with probable incompatibilities and changes to *y* represent small enhancements and bug fixes that retain backward compatibility. The value of this variable is returned by the [info tclversion][info] command.
 
 
@@ -178,13 +178,13 @@ The following variables are only guaranteed to exist in **tclsh** and **wish** e
 **argv0**
 : The script that **tclsh** or **wish** started executing (if it was specified) or otherwise the name by which **tclsh** or **wish** was invoked.
 
-**tcl_interactive**
+**tcl\_interactive**
 : Contains 1 if **tclsh** or **wish** is running interactively (no script was specified and standard input is a terminal-like device), 0 otherwise.
 
 
 # Examples
 
-To add a directory to the collection of locations searched by [package require][package], e.g., because of some application-specific packages that are used, the **auto_path** variable needs to be updated:
+To add a directory to the collection of locations searched by [package require][package], e.g., because of some application-specific packages that are used, the **auto\_path** variable needs to be updated:
 
 ```
 lappend ::auto_path [file join [pwd] "theLibDir"]

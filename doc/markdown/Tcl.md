@@ -40,10 +40,10 @@ The following rules define the syntax and semantics of the Tcl language:
 : Words of a command are separated by white space (except for newlines, which are command separators).
 
 [4] **Double quotes.**
-: If the first character of a word is double-quote ("\"") then the word is terminated by the next double-quote character. If semi-colons, close brackets, or white space characters (including newlines) appear between the quotes then they are treated as ordinary characters and included in the word. Command substitution, variable substitution, and backslash substitution are performed on the characters between the quotes as described below. The double-quotes are not retained as part of the word.
+: If the first character of a word is double-quote ("\\"") then the word is terminated by the next double-quote character. If semi-colons, close brackets, or white space characters (including newlines) appear between the quotes then they are treated as ordinary characters and included in the word. Command substitution, variable substitution, and backslash substitution are performed on the characters between the quotes as described below. The double-quotes are not retained as part of the word.
 
 [5] **Argument expansion.**
-: If a word starts with the string "{*}" followed by a non-whitespace character, then the leading "{*}" is removed and the rest of the word is parsed and substituted as any other word. After substitution, the word is parsed as a list (without command or variable substitutions; backslash substitutions are performed as is normal for a list and individual internal words may be surrounded by either braces or double-quote characters), and its words are added to the command being substituted. For instance, "cmd a {*}{b [c]} d {*}{$e f {g h}}" is equivalent to "cmd a b {[c]} d {$e} f {g h}".
+: If a word starts with the string "{\*}" followed by a non-whitespace character, then the leading "{\*}" is removed and the rest of the word is parsed and substituted as any other word. After substitution, the word is parsed as a list (without command or variable substitutions; backslash substitutions are performed as is normal for a list and individual internal words may be surrounded by either braces or double-quote characters), and its words are added to the command being substituted. For instance, "cmd a {\*}{b [c]} d {\*}{$e f {g h}}" is equivalent to "cmd a b {[c]} d {$e} f {g h}".
 
 [6] **Braces.**
 : If the first character of a word is an open brace ("{") and rule [5] does not apply, then the word is terminated by the matching close brace ("}"). Braces nest within the word: for each additional open brace there must be an additional close brace (however, if an open brace or close brace within the word is quoted with a backslash then it is not counted in locating the matching close brace). No substitutions are performed on the characters between the braces except for backslash-newline substitutions described below, nor do semi-colons, newlines, close brackets, or white space receive any special interpretation. The word will consist of exactly the characters between the outer braces, not including the braces themselves.
@@ -69,45 +69,45 @@ The following rules define the syntax and semantics of the Tcl language:
     Note that variables may contain character sequences other than those listed above, but in that case other mechanisms must be used to access them (e.g., via the [set] command's single-argument form).
 
 [9] **Backslash substitution.**
-: If a backslash ("\") appears within a word then *backslash substitution* occurs. In all cases but those described below the backslash is dropped and the following character is treated as an ordinary character and included in the word. This allows characters such as double quotes, close brackets, and dollar signs to be included in words without triggering special processing. The following table lists the backslash sequences that are handled specially, along with the value that replaces each sequence.
+: If a backslash ("\\") appears within a word then *backslash substitution* occurs. In all cases but those described below the backslash is dropped and the following character is treated as an ordinary character and included in the word. This allows characters such as double quotes, close brackets, and dollar signs to be included in words without triggering special processing. The following table lists the backslash sequences that are handled specially, along with the value that replaces each sequence.
 
-    \**a**
+    \\**a**
     : Audible alert (bell) (Unicode U+000007).
 
-    \**b**
+    \\**b**
     : Backspace (Unicode U+000008).
 
-    \**f**
+    \\**f**
     : Form feed (Unicode U+00000C).
 
-    \**n**
+    \\**n**
     : Newline (Unicode U+00000A).
 
-    \**r**
+    \\**r**
     : Carriage-return (Unicode U+00000D).
 
-    \**t**
+    \\**t**
     : Tab (Unicode U+000009).
 
-    \**v**
+    \\**v**
     : Vertical tab (Unicode U+00000B).
 
-    \**<newline>***whiteSpace*
+    \\**<newline>***whiteSpace*
     : A single space character replaces the backslash, newline, and all spaces and tabs after the newline.  This backslash sequence is unique in that it is replaced in a separate pre-pass before the command is actually parsed. This means that it will be replaced even when it occurs between braces, and the resulting space will be treated as a word separator if it is not in braces or quotes.
 
-    \\
-    : Backslash ("\").
+    \\\\
+    : Backslash ("\\").
 
-    \*ooo*
+    \\*ooo*
     : The digits *ooo* (one, two, or three of them) give a eight-bit octal value for the Unicode character that will be inserted, in the range *000*–*377* (i.e., the range U+000000–U+0000FF). The parser will stop just before this range overflows, or when the maximum of three digits is reached.  The upper bits of the Unicode character will be 0.
 
-    \**x***hh*
+    \\**x***hh*
     : The hexadecimal digits *hh* (one or two of them) give an eight-bit hexadecimal value for the Unicode character that will be inserted.  The upper bits of the Unicode character will be 0 (i.e., the character will be in the range U+000000–U+0000FF).
 
-    \**u***hhhh*
+    \\**u***hhhh*
     : The hexadecimal digits *hhhh* (one, two, three, or four of them) give a sixteen-bit hexadecimal value for the Unicode character that will be inserted.  The upper bits of the Unicode character will be 0 (i.e., the character will be in the range U+000000–U+00FFFF).
 
-    \**U***hhhhhhhh*
+    \\**U***hhhhhhhh*
     : The hexadecimal digits *hhhhhhhh* (one up to eight of them) give a twenty-one-bit hexadecimal value for the Unicode character that will be inserted, in the range U+000000–U+10FFFF.  The parser will stop just before this range overflows, or when the maximum of eight digits is reached.  The upper bits of the Unicode character will be 0.
 
 

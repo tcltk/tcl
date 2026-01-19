@@ -38,7 +38,7 @@ transchan - Command handler API for channel transforms implemented in Tcl code
 
 # Description
 
-The Tcl-level handler for a channel transformation has to be a command with subcommands (termed an *ensemble* despite not implying that it must be created with [namespace ensemble create]; this mechanism is not tied to [namespace ensemble][namespace] in any way). Note that *cmdPrefix* is whatever was specified in the call to [chan push][chan], and may consist of multiple arguments; this will be expanded to multiple words in place of the prefix.
+The Tcl-level handler for a channel transformation has to be a command with subcommands (termed an *ensemble* despite not implying that it must be created with [namespace ensemble create][namespace]; this mechanism is not tied to [namespace ensemble][namespace] in any way). Note that *cmdPrefix* is whatever was specified in the call to [chan push][chan], and may consist of multiple arguments; this will be expanded to multiple words in place of the prefix.
 
 Of all the possible subcommands, the handler *must* support **initialize** and **finalize**. Transformations for writable channels must also support **write**, and transformations for readable channels must also support [read].
 

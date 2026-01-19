@@ -69,7 +69,7 @@ The [expr] command handles mathematical functions of the form **sin($x)** or **a
 
 Tcl supports the following mathematical functions in expressions, all of which work solely with floating-point numbers unless otherwise noted: .DS **abs**	**acos**	**asin**	**atan** **atan2**	**bool**	**ceil**	**cos** **cosh**	**double**	**entier**	**exp** **floor**	**fmod**	**hypot**	**int** **isfinite**	**isinf**	**isnan**	**isnormal** **isqrt**	**issubnormal**	**isunordered**	**log** **log10**	**max**	**min**	**pow** **rand**	**round**	**sin**	**sinh** **sqrt**	**srand**	**tan**	**tanh** **wide** .DE
 
-In addition to these predefined functions, applications may define additional functions by using [proc] (or any other method, such as [interp alias][interp] or **Tcl_CreateObjCommand**) to define new commands in the **tcl::mathfunc** namespace.
+In addition to these predefined functions, applications may define additional functions by using [proc] (or any other method, such as [interp alias][interp] or **Tcl\_CreateObjCommand**) to define new commands in the **tcl::mathfunc** namespace.
 
 ## Detailed definitions
 
@@ -89,7 +89,7 @@ In addition to these predefined functions, applications may define additional fu
 : Returns the arc tangent of *y*/*x*, in the range [*-pi*,*pi*] radians.  *x* and *y* cannot both be 0.  If *x* is greater than *0*, this is equivalent to "**atan** [[expr] {*y***/***x*}]".
 
 **bool** *arg*
-: Accepts any numeric value, or any string acceptable to [string is boolean], and returns the corresponding boolean value **0** or **1**.  Non-zero numbers are true. Other numbers are false.  Non-numeric strings produce boolean value in agreement with [string is true] and [string is false].
+: Accepts any numeric value, or any string acceptable to [string is boolean][string], and returns the corresponding boolean value **0** or **1**.  Non-zero numbers are true. Other numbers are false.  Non-numeric strings produce boolean value in agreement with [string is true][string] and [string is false][string].
 
 **ceil** *arg*
 : Returns the smallest integral floating-point value (i.e. with a zero fractional part) not less than *arg*.  The argument may be any numeric value.
@@ -107,7 +107,7 @@ In addition to these predefined functions, applications may define additional fu
 : The argument may be any numeric value.  The integer part of *arg* is determined and returned.  The integer range returned by this function is unlimited, unlike **int** and **wide** which truncate their range to fit in particular storage widths.
 
 **exp** *arg*
-: Returns the exponential of *arg*, defined as *e****arg*. If the result would cause an overflow, an error is returned.
+: Returns the exponential of *arg*, defined as *e*\*\**arg*. If the result would cause an overflow, an error is returned.
 
 **floor** *arg*
 : Returns the largest integral floating-point value (i.e. with a zero fractional part) not greater than *arg*.  The argument may be any numeric value.
@@ -116,10 +116,10 @@ In addition to these predefined functions, applications may define additional fu
 : Returns the floating-point remainder of the division of *x* by *y*.  If *y* is 0, an error is returned.
 
 **hypot** *x y*
-: Computes the length of the hypotenuse of a right-angled triangle, approximately "**sqrt** [[expr] {*x*******x***+***y*******y*}]" except for being more numerically stable when the two arguments have substantially different magnitudes.
+: Computes the length of the hypotenuse of a right-angled triangle, approximately "**sqrt** [[expr] {*x***\****x***+***y***\****y*}]" except for being more numerically stable when the two arguments have substantially different magnitudes.
 
 **int** *arg*
-: The argument may be any numeric value.  The integer part of *arg* is determined, and then the low order bits of that integer value up to the machine word size are returned as an integer value.  For reference, the number of bytes in the machine word are stored in the **wordSize** element of the **tcl_platform** array.
+: The argument may be any numeric value.  The integer part of *arg* is determined, and then the low order bits of that integer value up to the machine word size are returned as an integer value.  For reference, the number of bytes in the machine word are stored in the **wordSize** element of the **tcl\_platform** array.
 
 **isfinite** *arg*
 : Returns 1 if the floating-point number *arg* is finite. That is, if it is zero, subnormal, or normal. Returns 0 if the number is infinite or NaN. Throws an error if *arg* cannot be promoted to a floating-point value.
@@ -187,7 +187,7 @@ In addition to these predefined functions, applications may define additional fu
 
 # Copyright
 
-Copyright \(co 1993 The Regents of the University of California. Copyright \(co 1994-2000 Sun Microsystems Incorporated. Copyright \(co 2005-2006 Kevin B. Kenny <kennykb@acm.org>. 
+Copyright \\(co 1993 The Regents of the University of California. Copyright \\(co 1994-2000 Sun Microsystems Incorporated. Copyright \\(co 2005-2006 Kevin B. Kenny <kennykb@acm.org>. 
 
 
 [expr]: expr.md

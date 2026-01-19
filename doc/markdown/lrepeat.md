@@ -42,9 +42,9 @@ lrepeat - Build a list by repeating elements
 
 # Description
 
-The **lrepeat** command creates a list of size *count * number of elements* by repeating *count* times the sequence of elements *element ...*.  *count* must be a non-negative integer, *element* can be any Tcl value.
+The **lrepeat** command creates a list of size *count \* number of elements* by repeating *count* times the sequence of elements *element ...*.  *count* must be a non-negative integer, *element* can be any Tcl value.
 
-Note that **lrepeat 1 element ...** is identical to [list element ...].
+Note that **lrepeat 1 element ...** is identical to [list element ...][list].
 
 # Examples
 

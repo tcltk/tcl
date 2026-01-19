@@ -68,7 +68,7 @@ Either integer or floating-point.  The first two characters of an integer may al
 
 A floating-point number may be take any of several common decimal formats, and may use the decimal point **.**, **e** or **E** for scientific notation, and the sign characters **+** and **-**.  The following are all valid floating-point numbers:  2.1, 3., 6e4, 7.91e+16. The strings **Inf** and **NaN**, in any combination of case, are also recognized as floating point values.  An operand that doesn't have a numeric interpretation must be quoted with either braces or with double quotes.
 
-Digits in any numeric value may be separated with one or more underscore characters, "**_**".  A separator may only appear between digits, not appear at the start of a numeric value, between the leading 0 and radix specifier, or at the end of a numeric value.  Here are some examples:
+Digits in any numeric value may be separated with one or more underscore characters, "**\_**".  A separator may only appear between digits, not appear at the start of a numeric value, between the leading 0 and radix specifier, or at the end of a numeric value.  Here are some examples:
 
 ```
 expr 100_000_000		100000000
@@ -113,36 +113,36 @@ For operators having both a numeric mode and a string mode, the numeric mode is 
 
 Unless otherwise specified, operators accept non-numeric operands.  The value of a boolean operation is 1 if true, 0 otherwise.  See also [string is][string] **boolean**.  The valid operators, most of which are also available as commands in the **tcl::mathop** namespace (see **mathop**(n)), are listed below, grouped in decreasing order of precedence:
 
-**-\0\0+\0\0~\0\0!**
+**-\\0\\0+\\0\\0~\\0\\0!**
 : Unary minus, unary plus, bit-wise NOT, logical NOT.  These operators may only be applied to numeric operands, and bit-wise NOT may only be applied to integers.
 
-******
+**\*\***
 : Exponentiation.  Valid for numeric operands.  The maximum exponent value that Tcl can handle if the first number is an integer > 1 is 268435455.
 
-***\0\0/\0\0%**
+**\*\\0\\0/\\0\\0%**
 : Multiply and divide, which are valid for numeric operands, and remainder, which is valid for integers.  The remainder, an absolute value smaller than the absolute value of the divisor, has the same sign as the divisor.
 
     When applied to integers, division and remainder can be considered to partition the number line into a sequence of adjacent non-overlapping pieces, where each piece is the size of the divisor; the quotient identifies which piece the dividend lies within, and the remainder identifies where within that piece the dividend lies. A consequence of this is that the result of "-57 **/** 10" is always -6, and the result of "-57 **%** 10" is always 3.
 
-**+\0\0-**
+**+\\0\\0-**
 : Add and subtract.  Valid for numeric operands.
 
-**<<\0\0>>**
+**<<\\0\\0>>**
 : Left and right shift.  Valid for integers. A right shift always propagates the sign bit.
 
-**<\0\0>\0\0<=\0\0>=**
+**<\\0\\0>\\0\\0<=\\0\\0>=**
 : Boolean numeric-preferring comparisons: less than, greater than, less than or equal, and greater than or equal. If either argument is not numeric, the comparison is done using UNICODE string comparison, as with the string comparison operators below, which have the same precedence.
 
-**lt\0\0gt\0\0le\0\0ge**
+**lt\\0\\0gt\\0\\0le\\0\\0ge**
 : Boolean string comparisons: less than, greater than, less than or equal, and greater than or equal. These always compare values using their UNICODE strings (also see [string compare][string]), unlike with the numeric-preferring comparisons above, which have the same precedence.
 
-**==\0\0!=**
+**==\\0\\0!=**
 : Boolean equal and not equal.
 
-**eq\0\0ne**
+**eq\\0\\0ne**
 : Boolean string equal and string not equal.
 
-**in\0\0ni**
+**in\\0\\0ni**
 : List containment and negated list containment.  The first argument is interpreted as a string, the second as a list.  **in** tests for membership in the list, and **ni** is the inverse.
 
 **&**
@@ -255,7 +255,7 @@ returns **4.0**, not **4**.
 
 Where an expression contains syntax that Tcl would otherwise perform substitutions on, enclosing an expression in braces or otherwise quoting it so that it's a static value allows the Tcl compiler to generate bytecode for the expression, resulting in better speed and smaller storage requirements. This also avoids issues that can arise if Tcl is allowed to perform substitution on the value before **expr** is called.
 
-In the following example, the value of the expression is 11 because the Tcl parser first substitutes **$b** and **expr** then substitutes **$a** as part of evaluating the expression "$a + 2*4". Enclosing the expression in braces would result in a syntax error as **$b** does not evaluate to a numeric value.
+In the following example, the value of the expression is 11 because the Tcl parser first substitutes **$b** and **expr** then substitutes **$a** as part of evaluating the expression "$a + 2\*4". Enclosing the expression in braces would result in a syntax error as **$b** does not evaluate to a numeric value.
 
 ```
 set a 3
@@ -348,7 +348,7 @@ set randNum [expr { int(100 * rand()) }]
 
 # Copyright
 
-Copyright \(co 1993 The Regents of the University of California. Copyright \(co 1994-2000 Sun Microsystems Incorporated. Copyright \(co 2005 Kevin B. Kenny <kennykb@acm.org>. All rights reserved. 
+Copyright \\(co 1993 The Regents of the University of California. Copyright \\(co 1994-2000 Sun Microsystems Incorporated. Copyright \\(co 2005 Kevin B. Kenny <kennykb@acm.org>. All rights reserved. 
 
 
 [format]: format.md

@@ -31,7 +31,7 @@ regexp - Match a regular expression against a string
 
 # Description
 
-Determines whether the regular expression *exp* matches part or all of *string* and returns 1 if it does, 0 if it does not, unless **-inline** is specified (see below). (Regular expression matching is described in the **re_syntax** reference page.)
+Determines whether the regular expression *exp* matches part or all of *string* and returns 1 if it does, 0 if it does not, unless **-inline** is specified (see below). (Regular expression matching is described in the **re\_syntax** reference page.)
 
 If additional arguments are specified after *string* then they are treated as the names of variables in which to return information about which part(s) of *string* matched *exp*. *MatchVar* will be set to the range of *string* that matched all of *exp*.  The first *subMatchVar* will contain the characters in *string* that matched the leftmost parenthesized subexpression within *exp*, the next *subMatchVar* will contain the characters that matched the next parenthesized subexpression to the right in *exp*, and so on.
 
@@ -41,19 +41,19 @@ If the initial arguments to **regexp** start with **-** then they are treated as
 : Instead of attempting to match the regular expression, returns a list containing information about the regular expression.  The first element of the list is a subexpression count.  The second element is a list of property names that describe various attributes of the regular expression. This switch is primarily intended for debugging purposes.
 
 [-expanded]{.lit}
-: Enables use of the expanded regular expression syntax where whitespace and comments are ignored.  This is the same as specifying the **(?x)** embedded option (see the **re_syntax** manual page).
+: Enables use of the expanded regular expression syntax where whitespace and comments are ignored.  This is the same as specifying the **(?x)** embedded option (see the **re\_syntax** manual page).
 
 [-indices]{.lit}
 : Changes what is stored in the *matchVar* and *subMatchVar*s. Instead of storing the matching characters from *string*, each variable will contain a list of two decimal strings giving the indices in *string* of the first and last characters in the matching range of characters.
 
 [-line]{.lit}
-: Enables newline-sensitive matching.  By default, newline is a completely ordinary character with no special meaning.  With this flag, "[^" bracket expressions and "." never match newline, "^" matches an empty string after any newline in addition to its normal function, and "$" matches an empty string before any newline in addition to its normal function.  This flag is equivalent to specifying both **-linestop** and **-lineanchor**, or the **(?n)** embedded option (see the **re_syntax** manual page).
+: Enables newline-sensitive matching.  By default, newline is a completely ordinary character with no special meaning.  With this flag, "[^" bracket expressions and "." never match newline, "^" matches an empty string after any newline in addition to its normal function, and "$" matches an empty string before any newline in addition to its normal function.  This flag is equivalent to specifying both **-linestop** and **-lineanchor**, or the **(?n)** embedded option (see the **re\_syntax** manual page).
 
 [-linestop]{.lit}
-: Changes the behavior of "[^" bracket expressions and "." so that they stop at newlines.  This is the same as specifying the **(?p)** embedded option (see the **re_syntax** manual page).
+: Changes the behavior of "[^" bracket expressions and "." so that they stop at newlines.  This is the same as specifying the **(?p)** embedded option (see the **re\_syntax** manual page).
 
 [-lineanchor]{.lit}
-: Changes the behavior of "^" and "$" (the "anchors") so they match the beginning and end of a line respectively.  This is the same as specifying the **(?w)** embedded option (see the **re_syntax** manual page).
+: Changes the behavior of "^" and "$" (the "anchors") so they match the beginning and end of a line respectively.  This is the same as specifying the **(?w)** embedded option (see the **re\_syntax** manual page).
 
 [-nocase]{.lit}
 : Causes upper-case characters in *string* to be treated as lower case during the matching process.
@@ -72,7 +72,7 @@ If the initial arguments to **regexp** start with **-** then they are treated as
     ```
 
 [-start]{.lit} [index]{.arg}
-: Specifies a character index offset into the string to start matching the regular expression at. The *index* value is interpreted in the same manner as the *index* argument to [string index][string]. When using this switch, "^" will not match the beginning of the line, and \A will still match the start of the string at *index*.  If **-indices** is specified, the indices will be indexed starting from the absolute beginning of the input string. *index* will be constrained to the bounds of the input string.
+: Specifies a character index offset into the string to start matching the regular expression at. The *index* value is interpreted in the same manner as the *index* argument to [string index][string]. When using this switch, "^" will not match the beginning of the line, and \\A will still match the start of the string at *index*.  If **-indices** is specified, the indices will be indexed starting from the absolute beginning of the input string. *index* will be constrained to the bounds of the input string.
 
 [-|-]{.lit}
 : Marks the end of switches.  The argument following this one will be treated as *exp* even if it starts with a **-**.

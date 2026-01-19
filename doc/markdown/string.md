@@ -91,10 +91,10 @@ The legal *option*s (which may be abbreviated) are:
     : Any Unicode alphabet character.
 
     **ascii**
-    : Any character with a value less than \u0080 (those that are in the 7-bit ascii range).
+    : Any character with a value less than \\u0080 (those that are in the 7-bit ascii range).
 
     **boolean**
-    : Any of the forms allowed to **Tcl_GetBoolean**.
+    : Any of the forms allowed to **Tcl\_GetBoolean**.
 
     **control**
     : Any Unicode control character.
@@ -106,19 +106,19 @@ The legal *option*s (which may be abbreviated) are:
     : Any Unicode digit character.  Note that this includes characters outside of the [0-9] range.
 
     **double**
-    : Any of the forms allowed to **Tcl_GetDoubleFromObj**.
+    : Any of the forms allowed to **Tcl\_GetDoubleFromObj**.
 
     **entier**
     : Synonym for **integer**.
 
     **false**
-    : Any of the forms allowed to **Tcl_GetBoolean** where the value is false.
+    : Any of the forms allowed to **Tcl\_GetBoolean** where the value is false.
 
     **graph**
     : Any Unicode printing character, except space.
 
     **integer**
-    : Any of the valid string formats for an integer value of arbitrary size in Tcl, with optional surrounding whitespace. The formats accepted are exactly those accepted by the C routine **Tcl_GetBignumFromObj**.
+    : Any of the valid string formats for an integer value of arbitrary size in Tcl, with optional surrounding whitespace. The formats accepted are exactly those accepted by the C routine **Tcl\_GetBignumFromObj**.
 
     [list]
     : Any proper list structure, with optional surrounding whitespace. In case of improper list structure, 0 is returned and the *varname* will contain the index of the "element" where the list parsing fails, or -1 if this cannot be determined.
@@ -136,7 +136,7 @@ The legal *option*s (which may be abbreviated) are:
     : Any Unicode whitespace character, mongolian vowel separator (U+180e), zero width space (U+200b), word joiner (U+2060) or zero width no-break space (U+feff) (=BOM).
 
     **true**
-    : Any of the forms allowed to **Tcl_GetBoolean** where the value is true.
+    : Any of the forms allowed to **Tcl\_GetBoolean** where the value is true.
 
     **upper**
     : Any upper case alphabet character in the Unicode character set.
@@ -191,17 +191,17 @@ The legal *option*s (which may be abbreviated) are:
 [string]{.cmd} [match]{.sub} [-nocase]{.optlit} [pattern]{.arg} [string]{.arg}
 : See if *pattern* matches *string*; return 1 if it does, 0 if it does not.  If **-nocase** is specified, then the pattern attempts to match against the string in a case insensitive manner.  For the two strings to match, their contents must be identical except that the following special sequences may appear in *pattern*:
 
-    *****
+    **\***
     : Matches any sequence of characters in *string*, including a null string.
 
     **?**
     : Matches any single character in *string*.
 
     **[***chars***]**
-    : Matches any character in the set given by *chars*.  If a sequence of the form *x***-***y* appears in *chars*, then any character between *x* and *y*, inclusive, will match.  When used with **-nocase**, the end points of the range are converted to lower case first.  Whereas {[A-z]} matches "_" when matching case-sensitively (since "_" falls between the "Z" and "a"), with **-nocase** this is considered like {[A-Za-z]} (and probably what was meant in the first place).
+    : Matches any character in the set given by *chars*.  If a sequence of the form *x***-***y* appears in *chars*, then any character between *x* and *y*, inclusive, will match.  When used with **-nocase**, the end points of the range are converted to lower case first.  Whereas {[A-z]} matches "\_" when matching case-sensitively (since "\_" falls between the "Z" and "a"), with **-nocase** this is considered like {[A-Za-z]} (and probably what was meant in the first place).
 
-    **\***x*
-    : Matches the single character *x*.  This provides a way of avoiding the special interpretation of the characters ***?[]\** in *pattern*.
+    **\\***x*
+    : Matches the single character *x*.  This provides a way of avoiding the special interpretation of the characters **\*?[]\\** in *pattern*.
 
 
 [string]{.cmd} [range]{.sub} [string]{.arg} [first]{.arg} [last]{.arg}
@@ -226,13 +226,13 @@ The legal *option*s (which may be abbreviated) are:
 : Returns a value equal to *string* except that all lower (or title) case letters have been converted to upper case.  If *first* is specified, it refers to the first char index in the string to start modifying.  If *last* is not specified, only the character at position *first* is converted, otherwise *last* refers to the char index in the string to stop at (inclusive).  *first* and *last* may be specified using the forms described in **STRING INDICES**.
 
 [string]{.cmd} [trim]{.sub} [string]{.arg} [chars]{.optarg}
-: Returns a value equal to *string* except that any leading or trailing characters present in the string given by *chars* are removed.  If *chars* is not specified then white space is removed (any character for which **string is space** returns 1, and "\0").
+: Returns a value equal to *string* except that any leading or trailing characters present in the string given by *chars* are removed.  If *chars* is not specified then white space is removed (any character for which **string is space** returns 1, and "\\0").
 
 [string]{.cmd} [trimleft]{.sub} [string]{.arg} [chars]{.optarg}
-: Returns a value equal to *string* except that any leading characters present in the string given by *chars* are removed.  If *chars* is not specified then white space is removed (any character for which **string is space** returns 1, and "\0").
+: Returns a value equal to *string* except that any leading characters present in the string given by *chars* are removed.  If *chars* is not specified then white space is removed (any character for which **string is space** returns 1, and "\\0").
 
 [string]{.cmd} [trimright]{.sub} [string]{.arg} [chars]{.optarg}
-: Returns a value equal to *string* except that any trailing characters present in the string given by *chars* are removed.  If *chars* is not specified then white space is removed (any character for which **string is space** returns 1, and "\0").
+: Returns a value equal to *string* except that any trailing characters present in the string given by *chars* are removed.  If *chars* is not specified then white space is removed (any character for which **string is space** returns 1, and "\\0").
 
 
 ## Obsolete subcommands

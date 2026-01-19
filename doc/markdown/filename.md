@@ -32,10 +32,10 @@ File names are grouped into three general types based on the starting point for 
 
 # Path syntax
 
-The rules for native names depend on the value reported in the Tcl **platform** element of the **tcl_platform** array:
+The rules for native names depend on the value reported in the Tcl **platform** element of the **tcl\_platform** array:
 
 **Unix**
-: On Unix and Apple macOS platforms, Tcl uses path names where the components are separated by slashes.  Path names may be relative or absolute, and file names may contain any character other than slash. The file names **\&.** and **\&..** are special and refer to the current directory and the parent of the current directory respectively. Multiple adjacent slash characters are interpreted as a single separator, except for the first double slash **//** in absolute paths. Any number of trailing slash characters at the end of a path are simply ignored, so the paths **foo**, **foo/** and **foo//** are all identical, and in particular **foo/** does not necessarily mean a directory is being referred.
+: On Unix and Apple macOS platforms, Tcl uses path names where the components are separated by slashes.  Path names may be relative or absolute, and file names may contain any character other than slash. The file names **.** and **..** are special and refer to the current directory and the parent of the current directory respectively. Multiple adjacent slash characters are interpreted as a single separator, except for the first double slash **//** in absolute paths. Any number of trailing slash characters at the end of a path are simply ignored, so the paths **foo**, **foo/** and **foo//** are all identical, and in particular **foo/** does not necessarily mean a directory is being referred.
 
     The following examples illustrate various forms of path names:
 
@@ -45,7 +45,7 @@ The rules for native names depend on the value reported in the Tcl **platform** 
     **/etc/passwd**
     : Absolute path to the file named **passwd** in the directory **etc** in the root directory.
 
-    **\&.**
+    **.**
     : Relative path to the current directory.
 
     **foo**
@@ -54,14 +54,14 @@ The rules for native names depend on the value reported in the Tcl **platform** 
     **foo/bar**
     : Relative path to the file **bar** in the directory **foo** in the current directory.
 
-    **\&../foo**
+    **../foo**
     : Relative path to the file **foo** in the directory above the current directory.
 
 
 **Windows**
-: On Microsoft Windows platforms, Tcl supports both drive-relative and UNC style names.  Both **/** and **\** may be used as directory separators in either type of name.  Drive-relative names consist of an optional drive specifier followed by an absolute or relative path.  UNC paths follow the general form **\\servername\sharename\path\file**, but must at the very least contain the server and share components, i.e. **\\servername\sharename**.  In both forms, the file names **.** and **..** are special and refer to the current directory and the parent of the current directory respectively.  The following examples illustrate various forms of path names:
+: On Microsoft Windows platforms, Tcl supports both drive-relative and UNC style names.  Both **/** and **\\** may be used as directory separators in either type of name.  Drive-relative names consist of an optional drive specifier followed by an absolute or relative path.  UNC paths follow the general form **\\\\servername\\sharename\\path\\file**, but must at the very least contain the server and share components, i.e. **\\\\servername\\sharename**.  In both forms, the file names **.** and **..** are special and refer to the current directory and the parent of the current directory respectively.  The following examples illustrate various forms of path names:
 
-    **\&\\Host\share/file**
+    **\\\\Host\\share/file**
     : Absolute UNC path to a file called [file] in the root directory of the export point **share** on the host **Host**.  Note that repeated use of [file dirname][file] on this path will give **//Host/share**, and will never give just **//Host**.
 
     **c:foo**
@@ -70,13 +70,13 @@ The rules for native names depend on the value reported in the Tcl **platform** 
     **c:/foo**
     : Absolute path to a file **foo** in the root directory of drive **c**.
 
-    **foo\bar**
+    **foo\\bar**
     : Relative path to a file **bar** in the **foo** directory in the current directory on the current volume.
 
-    **\&\foo**
+    **\\foo**
     : Volume-relative path to a file **foo** in the root directory of the current volume.
 
-    **\&\\foo**
+    **\\\\foo**
     : Volume-relative path to a file **foo** in the root directory of the current volume.  This is not a valid UNC path, so the assumption is that the extra backslashes are superfluous.
 
 
@@ -88,11 +88,11 @@ The rules for native names depend on the value reported in the Tcl **platform** 
 
 Unlike earlier versions of Tcl, Tcl 9 does not do implicit tilde substitution on file paths with the exception noted below. The commands [file home][file] and [file tildeexpand][file] may be used to explicitly accomplish the same.
 
-The exception to the above is initialization of the **auto_path** variable and the Tcl module search paths as documented in the manpages for **tclvars** and **tm**. When any path in an environment variable used to initialize these starts with a tilde, it will be interpreted as if the first element is replaced with the location of the home directory for the given user. If the tilde is followed immediately by a separator, the **$HOME** environment variable is substituted. Otherwise the characters between the tilde and the next separator are taken as a user name, which is used to retrieve the user's home directory for substitution. This works on POSIX, macOS and Windows platforms.
+The exception to the above is initialization of the **auto\_path** variable and the Tcl module search paths as documented in the manpages for **tclvars** and **tm**. When any path in an environment variable used to initialize these starts with a tilde, it will be interpreted as if the first element is replaced with the location of the home directory for the given user. If the tilde is followed immediately by a separator, the **$HOME** environment variable is substituted. Otherwise the characters between the tilde and the next separator are taken as a user name, which is used to retrieve the user's home directory for substitution. This works on POSIX, macOS and Windows platforms.
 
 # Portability issues
 
-Not all file systems are case sensitive, so scripts should avoid code that depends on the case of characters in a file name.  In addition, the character sets allowed on different devices may differ, so scripts should choose file names that do not contain special characters like: **<>:?"/\|**. The safest approach is to use names consisting of alphanumeric characters only.  Care should be taken with filenames which contain spaces (common on Windows systems) and filenames where the backslash is the directory separator (Windows native path names).
+Not all file systems are case sensitive, so scripts should avoid code that depends on the case of characters in a file name.  In addition, the character sets allowed on different devices may differ, so scripts should choose file names that do not contain special characters like: **<>:?"/\\|**. The safest approach is to use names consisting of alphanumeric characters only.  Care should be taken with filenames which contain spaces (common on Windows systems) and filenames where the backslash is the directory separator (Windows native path names).
 
 On Windows platforms there are file and path length restrictions. Complete paths or filenames longer than about 260 characters will lead to errors in most file operations.
 

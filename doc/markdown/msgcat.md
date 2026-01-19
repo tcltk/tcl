@@ -60,7 +60,7 @@ The **msgcat** package provides a set of functions that can be used to manage mu
 
 **msgcat** distinguishes packages by its namespace. Each package has its own message catalog and configuration settings in **msgcat**.
 
-A *locale* is a specification string describing a user language like **de_ch** for Swiss German. In **msgcat**, there is a global locale initialized by the system locale of the current system. Each package may decide to use the global locale or to use a package specific locale.
+A *locale* is a specification string describing a user language like **de\_ch** for Swiss German. In **msgcat**, there is a global locale initialized by the system locale of the current system. Each package may decide to use the global locale or to use a package specific locale.
 
 The global locale may be changed on demand, for example by a user initiated language change or within a multi user application like a web server.
 
@@ -123,9 +123,9 @@ proc ::tooltip::show {widget messagenamespace message} {
 : If *newLocale* is omitted, the current locale is returned, otherwise the current locale is set to *newLocale*.
 
 
-If the new locale is set to *newLocale*, the corresponding preferences are calculated and set. For example, if the current locale is en_US_funky, then **::msgcat::mcpreferences** returns **{en_us_funky en_us en {}}**.
+If the new locale is set to *newLocale*, the corresponding preferences are calculated and set. For example, if the current locale is en\_US\_funky, then **::msgcat::mcpreferences** returns **{en\_us\_funky en\_us en {}}**.
 
-The same result may be achieved by **::msgcat::mcpreferences** {*}[**::msgcat::mcutil getpreferences** *newLocale*].
+The same result may be achieved by **::msgcat::mcpreferences** {\*}[**::msgcat::mcutil getpreferences** *newLocale*].
 
 The current locale is always the first element of the list returned by **mcpreferences**.
 
@@ -197,9 +197,9 @@ The subcommand **clear** removes all locales and their data, which are not in th
 
 # Locale specification
 
-The locale is specified to **msgcat** by a locale string passed to **::msgcat::mclocale**. The locale string consists of a language code, an optional country code, and an optional system-specific code, each separated by "_". The country and language codes are specified in standards ISO-639 and ISO-3166. For example, the locale "en" specifies English and "en_US" specifies U.S. English.
+The locale is specified to **msgcat** by a locale string passed to **::msgcat::mclocale**. The locale string consists of a language code, an optional country code, and an optional system-specific code, each separated by "\_". The country and language codes are specified in standards ISO-639 and ISO-3166. For example, the locale "en" specifies English and "en\_US" specifies U.S. English.
 
-When the msgcat package is first loaded, the locale is initialized according to the user's environment.  The variables **env(LC_ALL)**, **env(LC_MESSAGES)**, and **env(LANG)** are examined in order. The first of them to have a non-empty value is used to determine the initial locale.  The value is parsed according to the XPG4 pattern
+When the msgcat package is first loaded, the locale is initialized according to the user's environment.  The variables **env(LC\_ALL)**, **env(LC\_MESSAGES)**, and **env(LANG)** are examined in order. The first of them to have a non-empty value is used to determine the initial locale.  The value is parsed according to the XPG4 pattern
 
 ```
 language[_country][.codeset][@modifier]
@@ -211,9 +211,9 @@ to extract its parts.  The initial locale is then set by calling **::msgcat::mcl
 language[_country][_modifier]
 ```
 
-On Windows and Cygwin, if none of those environment variables is set, msgcat will attempt to extract locale information from the registry. The RFC4747 locale name "lang-script-country-options" is transformed to the locale as "lang_country_script" (Example: sr-Latn-CS -> sr_cs_latin). If all these attempts to discover an initial locale from the user's environment fail, msgcat defaults to an initial locale of "C".
+On Windows and Cygwin, if none of those environment variables is set, msgcat will attempt to extract locale information from the registry. The RFC4747 locale name "lang-script-country-options" is transformed to the locale as "lang\_country\_script" (Example: sr-Latn-CS -> sr\_cs\_latin). If all these attempts to discover an initial locale from the user's environment fail, msgcat defaults to an initial locale of "C".
 
-When a locale is specified by the user, a "best match" search is performed during string translation.  For example, if a user specifies en_GB_Funky, the locales "en_gb_funky", "en_gb", "en" and .MT (the empty string) are searched in order until a matching translation string is found.  If no translation string is available, then the unknown handler is called.
+When a locale is specified by the user, a "best match" search is performed during string translation.  For example, if a user specifies en\_GB\_Funky, the locales "en\_gb\_funky", "en\_gb", "en" and .MT (the empty string) are searched in order until a matching translation string is found.  If no translation string is available, then the unknown handler is called.
 
 # Namespaces and message catalogs
 
@@ -293,11 +293,11 @@ namespace eval ::mypackage {
 
 # Recommended message setup for packages
 
-If a package is installed into a subdirectory of the **tcl_pkgPath** and loaded via [package require][package], the following procedure is recommended.
+If a package is installed into a subdirectory of the **tcl\_pkgPath** and loaded via [package require][package], the following procedure is recommended.
 
 1. During package installation, create a subdirectory **msgs** under your package directory.
 
-2. Copy your *.msg files into that directory.
+2. Copy your \*.msg files into that directory.
 
 3. Add the following command to your package initialization script:
 

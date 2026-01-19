@@ -78,9 +78,9 @@ package vcompare $version 0
 
 # Finding modules
 
-The directory tree for storing Tcl modules is separate from other parts of the filesystem and independent of **auto_path**.
+The directory tree for storing Tcl modules is separate from other parts of the filesystem and independent of **auto\_path**.
 
-Tcl Modules are searched for in all directories listed in the result of the command **::tcl::tm::path list**. This is called the *Module path*. Neither the **auto_path** nor the **tcl_pkgPath** variables are used. All directories on the module path have to obey one restriction:
+Tcl Modules are searched for in all directories listed in the result of the command **::tcl::tm::path list**. This is called the *Module path*. Neither the **auto\_path** nor the **tcl\_pkgPath** variables are used. All directories on the module path have to obey one restriction:
 
 For any two directories, neither is an ancestor directory of the other.
 
@@ -116,7 +116,7 @@ Both package name **PNAME** and package version **PVERSION** are extracted from 
 MF = /module_path/PNAME\(fm-PVERSION.tm
 ```
 
-Where **PNAME\(fm** is the partial path of the module as defined in section **FINDING MODULES**, and translated into **PNAME** by changing all directory separators to "**::**", and **module_path** is the path (from the list of paths to search) that we found the module file under.
+Where **PNAME\\(fm** is the partial path of the module as defined in section **FINDING MODULES**, and translated into **PNAME** by changing all directory separators to "**::**", and **module\_path** is the path (from the list of paths to search) that we found the module file under.
 
 Note also that we are here creating a connection between package names and paths. Tcl is case-sensitive when it comes to comparing package names, but there are filesystems which are not, like NTFS. Luckily these filesystems do store the case of the name, despite not using the information when comparing.
 
@@ -132,7 +132,7 @@ The paths are added in the order as they are listed below, and for lists of path
 
 ## System specific paths
 
-[file normalize [info library]/../tcl]*X***/***X***.***y*
+[file normalize [info library]/../tcl][file]*X***/***X***.***y*
 : In other words, the interpreter will look into a directory specified by its major version and whose minor versions are less than or equal to the minor version of the interpreter.
 
     For example for Tcl 8.4 the paths searched are:
@@ -147,24 +147,24 @@ The paths are added in the order as they are listed below, and for lists of path
 
     This definition assumes that a package defined for Tcl *X***.***y* can also be used by all interpreters which have the same major number *X* and a minor number greater than *y*.
 
-[file normalize EXEC/tcl]*X***/***X***.***y*
-: Where **EXEC** is [file normalize [info nameofexecutable]/../lib] or [file normalize [::tcl::pkgconfig get libdir,runtime]]
+[file normalize EXEC/tcl][file]*X***/***X***.***y*
+: Where **EXEC** is [file normalize [info nameofexecutable]/../lib][file] or [file normalize [::tcl::pkgconfig get libdir,runtime]][file]
 
-    This sets of paths is handled equivalently to the set coming before, except that it is anchored in **EXEC_PREFIX**. For a build with **PREFIX** = **EXEC_PREFIX** the two sets are identical.
+    This sets of paths is handled equivalently to the set coming before, except that it is anchored in **EXEC\_PREFIX**. For a build with **PREFIX** = **EXEC\_PREFIX** the two sets are identical.
 
 
 ## Site specific paths
 
-[file normalize [info library]/../tcl]*X***/site-tcl**
+[file normalize [info library]/../tcl][file]*X***/site-tcl**
 : Note that this is always a single entry because *X* is always a specific value (the current major version of Tcl).
 
 
 ## User specific paths
 
-**$::env(TCL***X***_***y***_TM_PATH)**
+**$::env(TCL***X***\_***y***\_TM\_PATH)**
 : A list of paths, separated by either **:** (Unix) or **;** (Windows). This is user and site specific as this environment variable can be set not only by the user's profile, but by system configuration scripts as well.
 
-**$::env(TCL***X***.***y***_TM_PATH)**
+**$::env(TCL***X***.***y***\_TM\_PATH)**
 : Same meaning and content as the previous variable. However the use of dot '.' to separate major and minor version number makes this name less to non-portable and its use is discouraged. Support of this variable has been kept only for backward compatibility with the original specification, i.e. TIP 189.
 
 

@@ -75,5 +75,5 @@ This command depends on the **fpclassify**() C macro conforming to "ISO C99" (i.
 
 # Copyright
 
-Copyright \(co 2018 Kevin B. Kenny <kennykb@acm.org>. All rights reserved 
+Copyright \\(co 2018 Kevin B. Kenny <kennykb@acm.org>. All rights reserved 
 

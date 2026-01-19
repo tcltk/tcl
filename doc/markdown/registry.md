@@ -29,13 +29,13 @@ The **registry** package provides a general set of operations for manipulating t
 
 *KeyName* is the name of a registry key.  Registry keys must be one of the following forms:
 
-**\\***hostname***\***rootname***\***keypath*
+**\\\\***hostname***\\***rootname***\\***keypath*
 
-*rootname***\***keypath*
+*rootname***\\***keypath*
 
 *rootname*
 
-*Hostname* specifies the name of any valid Windows host that exports its registry.  The *rootname* component must be one of **HKEY_LOCAL_MACHINE**, **HKEY_USERS**, **HKEY_CLASSES_ROOT**, **HKEY_CURRENT_USER**, **HKEY_CURRENT_CONFIG**, **HKEY_PERFORMANCE_DATA**, or **HKEY_DYN_DATA**.  The *keypath* can be one or more registry key names separated by backslash (**\**) characters.
+*Hostname* specifies the name of any valid Windows host that exports its registry.  The *rootname* component must be one of **HKEY\_LOCAL\_MACHINE**, **HKEY\_USERS**, **HKEY\_CLASSES\_ROOT**, **HKEY\_CURRENT\_USER**, **HKEY\_CURRENT\_CONFIG**, **HKEY\_PERFORMANCE\_DATA**, or **HKEY\_DYN\_DATA**.  The *keypath* can be one or more registry key names separated by backslash (**\\**) characters.
 
 The optional *-mode* argument indicates which registry to work with; when it is **-32bit** the 32-bit registry will be used, and when it is **-64bit** the 64-bit registry will be used. If this argument is omitted, the system's default registry will be the subject of the requested operation.
 
@@ -93,22 +93,22 @@ Each value under a key in the registry contains some data of a particular type i
 **sz**
 : The registry value contains a null-terminated string.  The data is represented in Tcl as a string.
 
-**expand_sz**
+**expand\_sz**
 : The registry value contains a null-terminated string that contains unexpanded references to environment variables in the normal Windows style (for example, "%PATH%"). The data is represented in Tcl as a string.
 
 **dword**
 : The registry value contains a little-endian 32-bit number.  The data is represented in Tcl as a decimal string.
 
-**dword_big_endian**
+**dword\_big\_endian**
 : The registry value contains a big-endian 32-bit number.  The data is represented in Tcl as a decimal string.
 
 **link**
 : The registry value contains a symbolic link.  The data is represented exactly in Tcl, including any embedded nulls.
 
-**multi_sz**
+**multi\_sz**
 : The registry value contains an array of null-terminated strings.  The data is represented in Tcl as a list of strings.
 
-**resource_list**
+**resource\_list**
 : The registry value contains a device-driver resource list.  The data is represented exactly in Tcl, including any embedded nulls.
 
 

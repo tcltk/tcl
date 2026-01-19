@@ -44,7 +44,7 @@ If the initial arguments to **switch** start with **-** then they are treated as
 : When matching *value* to the patterns, use integer comparisons. Note that this makes using a non-integer *value* or *pattern* (other than a final **default**) into an error.
 
 [-regexp]{.lit}
-: When matching *value* to the patterns, use regular expression matching (as described in the **re_syntax** reference page).
+: When matching *value* to the patterns, use regular expression matching (as described in the **re\_syntax** reference page).
 
 [-nocase]{.lit}
 : Causes comparisons to be handled in a case-insensitive manner. Not supported with the **-integer** option.

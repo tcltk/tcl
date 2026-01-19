@@ -95,7 +95,7 @@ The behavior of the **package** command is determined by its first argument. The
 
     When passed any other value as an argument, raise an invalid argument error.
 
-    When an interpreter is created, its initial selection mode value is set to "stable" unless the environment variable **TCL_PKG_PREFER_LATEST** is set (to any value) or the Tcl package itself is unstable. Otherwise the initial (and permanent) selection mode value is set to "latest".
+    When an interpreter is created, its initial selection mode value is set to "stable" unless the environment variable **TCL\_PKG\_PREFER\_LATEST** is set (to any value) or the Tcl package itself is unstable. Otherwise the initial (and permanent) selection mode value is set to "latest".
 
 
 # Version numbers
@@ -104,7 +104,7 @@ Version numbers consist of one or more decimal numbers separated by dots, such a
 
 # Package indices
 
-The recommended way to use packages in Tcl is to invoke **package require** and **package provide** commands in scripts, and use the procedure **pkg_mkIndex** to create package index files. Once you have done this, packages will be loaded automatically in response to **package require** commands. See the documentation for **pkg_mkIndex** for details.
+The recommended way to use packages in Tcl is to invoke **package require** and **package provide** commands in scripts, and use the procedure **pkg\_mkIndex** to create package index files. Once you have done this, packages will be loaded automatically in response to **package require** commands. See the documentation for **pkg\_mkIndex** for details.
 
 # Requirement
 
