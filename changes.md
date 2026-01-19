@@ -37,6 +37,7 @@ writing Tcl scripts.
 for list operations on large lists.
 - [Continued 64-bit capacity: Command line arguments larger than 2Gb](https://core.tcl-lang.org/tips/doc/trunk/tip/626.md)
 - Speedup in interpreter creation
+- [New functions: Tcl_AttemptGetString() et al](https://core.tcl-lang.org/tips/doc/trunk/tip/721.md)
 
 # Bug fixes
  - [tclEpollNotfy PlatformEventsControl panics if websocket disconnected](https://core.tcl-lang.org/tcl/tktview/010d8f38)
