@@ -9090,7 +9090,8 @@ TclCompareTwoNumbers(
 {
     int type1 = TCL_NUMBER_NAN, type2 = TCL_NUMBER_NAN, compare;
     void *ptr1, *ptr2;
-    mp_int blx; const mp_int *bp1, *bp2;
+    mp_int blx;
+    const mp_int *bp1, *bp2;
     double d1, d2, tmp;
     Tcl_WideInt w1, w2;
 
@@ -9233,7 +9234,9 @@ TclCompareTwoNumbers(
 	    bp2 = (const mp_int *)ptr2;
 	bigCompare:
 	    compare = mp_cmp(bp1, bp2);
-	    if (bp1 == &blx || bp2 == &blx) { mp_clear(&blx); }
+	    if (bp1 == &blx || bp2 == &blx) {
+		mp_clear(&blx);
+	    }
 	    return compare;
 	default:
 	    TCL_UNREACHABLE();
