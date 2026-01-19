@@ -104,6 +104,9 @@ declare 20 {
 declare 21 {
     int Tcl_DbIsShared(Tcl_Obj *objPtr, const char *file, int line)
 }
+declare 22 {
+    char *Tcl_DbGetStringFromObj(Tcl_Obj *objPtr, Tcl_Size *lengthPtr, const char *file, int line)
+}
 declare 23 {
     Tcl_Obj *Tcl_DbNewByteArrayObj(const unsigned char *bytes,
 	    Tcl_Size numBytes, const char *file, int line)
@@ -128,6 +131,15 @@ declare 29 {
 }
 declare 30 {
     void TclFreeObj(Tcl_Obj *objPtr)
+}
+declare 31 {
+    char *Tcl_AttemptGetStringFromObj(Tcl_Obj *objPtr, Tcl_Size *lengthPtr)
+}
+declare 32 {
+    char  *Tcl_AttemptSetStringObj(Tcl_Obj *objPtr, const char *bytes, Tcl_Size length)
+}
+declare 33 {
+    Tcl_Obj *Tcl_AttemptDuplicateObj(Tcl_Obj *objPtr)
 }
 declare 34 {
     int Tcl_GetDouble(Tcl_Interp *interp, const char *src, double *doublePtr)
@@ -187,11 +199,17 @@ declare 51 {
 declare 53 {
     Tcl_Obj *Tcl_NewListObj(Tcl_Size objc, Tcl_Obj *const objv[])
 }
+declare 54 {
+    Tcl_UniChar *Tcl_AttemptGetUnicodeFromObj(Tcl_Obj *objPtr, Tcl_Size *lengthPtr)
+}
 declare 55 {
     Tcl_Obj *Tcl_NewObj(void)
 }
 declare 56 {
     Tcl_Obj *Tcl_NewStringObj(const char *bytes, Tcl_Size length)
+}
+declare 57 {
+    Tcl_Obj *Tcl_AttemptNewStringObj(const char *bytes, Tcl_Size length)
 }
 declare 58 {
     unsigned char *Tcl_SetByteArrayLength(Tcl_Obj *objPtr, Tcl_Size numBytes)
@@ -203,6 +221,9 @@ declare 59 {
 declare 60 {
     void Tcl_SetDoubleObj(Tcl_Obj *objPtr, double doubleValue)
 }
+declare 61 {
+    Tcl_Size Tcl_AttemptGetCharLength(Tcl_Obj *objPtr)
+}
 declare 62 {
     void Tcl_SetListObj(Tcl_Obj *objPtr, Tcl_Size objc, Tcl_Obj *const objv[])
 }
@@ -211,6 +232,10 @@ declare 64 {
 }
 declare 65 {
     void Tcl_SetStringObj(Tcl_Obj *objPtr, const char *bytes, Tcl_Size length)
+}
+declare 66 {
+    Tcl_UniChar *Tcl_AttemptSetUnicodeObj(Tcl_Obj *objPtr, const Tcl_UniChar *unicode,
+	    Tcl_Size numChars)
 }
 declare 68 {
     void Tcl_AllowExceptions(Tcl_Interp *interp)
@@ -297,6 +322,9 @@ declare 93 {
 }
 declare 94 {
     Tcl_Interp *Tcl_CreateInterp(void)
+}
+declare 95 {
+    char *Tcl_DStringAttemptAppendElement(Tcl_DString *dsPtr, const char *element)
 }
 declare 96 {
     Tcl_Command Tcl_CreateObjCommand(Tcl_Interp *interp,

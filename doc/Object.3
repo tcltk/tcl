@@ -8,7 +8,7 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_NewObj, Tcl_DuplicateObj, Tcl_IncrRefCount, Tcl_DecrRefCount, Tcl_BounceRefCount, Tcl_IsShared, Tcl_InvalidateStringRep \- manipulate Tcl values
+Tcl_NewObj, Tcl_DuplicateObj, Tcl_AttemptDuplicateObj, Tcl_IncrRefCount, Tcl_DecrRefCount, Tcl_BounceRefCount, Tcl_IsShared, Tcl_InvalidateStringRep \- manipulate Tcl values
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -18,6 +18,9 @@ Tcl_Obj *
 .sp
 Tcl_Obj *
 \fBTcl_DuplicateObj\fR(\fIobjPtr\fR)
+.sp
+Tcl_Obj *
+\fBTcl_AttemptDuplicateObj\fR(\fIobjPtr\fR)
 .sp
 \fBTcl_IncrRefCount\fR(\fIobjPtr\fR)
 .sp
