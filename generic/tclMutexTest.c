@@ -122,10 +122,6 @@ extern int		Tcltest_Init(Tcl_Interp *interp);
 #ifdef __cplusplus
 }
 #endif
-
-// Get the difference (in microseconds) between two Tcl_GetTime() timestamps.
-#define USEC_DIFF(before, after) \
-    (1000000 * ((after).sec - (before).sec) + ((after).usec - (before).usec))
 
 /*
  *----------------------------------------------------------------------
@@ -449,13 +445,13 @@ ProducerThreadProc(
     LockTestContext(contextPtr->numRecursions);
     while (contextPtr->u.queue.totalEnqueued < limit) {
 	if (contextPtr->u.queue.available == contextPtr->u.queue.capacity) {
-	    Tcl_Time before, after;
-	    Tcl_Time timeout = {CONDITION_TIMEOUT_SECS, 0};
-	    Tcl_GetTime(&before);
+	    long long before, after;
+	    const Tcl_Time timeout = {CONDITION_TIMEOUT_SECS, 0};
+	    before = Tcl_GetMonotonicTime();
 	    Tcl_ConditionWait(&contextPtr->u.queue.canEnqueue,
 		    &testContextMutex, &timeout);
-	    Tcl_GetTime(&after);
-	    if (USEC_DIFF(before, after) >= 1000000 * CONDITION_TIMEOUT_SECS) {
+	    after = Tcl_GetMonotonicTime();
+	    if (after >= before + CONDITION_TIMEOUT_SECS * 1000000LL) {
 		threadContextPtr->timeouts += 1;
 	    }
 	} else {
@@ -511,13 +507,13 @@ ConsumerThreadProc(
     LockTestContext(contextPtr->numRecursions);
     while (contextPtr->u.queue.totalDequeued < limit) {
 	if (contextPtr->u.queue.available == 0) {
-	    Tcl_Time before, after;
-	    Tcl_Time timeout = {CONDITION_TIMEOUT_SECS, 0};
-	    Tcl_GetTime(&before);
+	    long long before, after;
+	    const Tcl_Time timeout = {CONDITION_TIMEOUT_SECS, 0};
+	    before = Tcl_GetMonotonicTime();
 	    Tcl_ConditionWait(&contextPtr->u.queue.canDequeue,
 		    &testContextMutex, &timeout);
-	    Tcl_GetTime(&after);
-	    if (USEC_DIFF(before, after) >= 1000000 * CONDITION_TIMEOUT_SECS) {
+	    after = Tcl_GetMonotonicTime();
+	    if (after >= before + 1000000LL * CONDITION_TIMEOUT_SECS) {
 		threadContextPtr->timeouts += 1;
 	    }
 	} else {
