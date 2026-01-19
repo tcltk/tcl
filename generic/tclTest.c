@@ -2209,6 +2209,7 @@ static int UtfExtWrapper(
     dstBufPtr = (char *)Tcl_Alloc(bufLen);
     memset(dstBufPtr, 0xFF, dstLen); /* Need to check nul terminator */
     memmove(dstBufPtr + dstLen, "\xAB\xCD\xEF\xAB", 4);   /* overflow detection */
+    Tcl_Size srcNumBytes;
 
     /* Set up input buffer, including prefix if one has been specified */
     bytes = Tcl_GetByteArrayFromObj(objv[3], &srcLen);
@@ -2235,7 +2236,7 @@ static int UtfExtWrapper(
 	    prefixLen = 0;
 	}
     }
-    Tcl_Size srcNumBytes = prefixLen + srcLen;
+    srcNumBytes = prefixLen + srcLen;
     memmove(srcBufPtr + prefixLen, bytes, srcLen);
     switch (transform) {
     case UTF_TO_EXTERNAL:
