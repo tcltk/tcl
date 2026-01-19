@@ -1855,7 +1855,7 @@ TestdoubledigitsCmd(
     if (status != TCL_OK) {
 	doubleType = Tcl_GetObjType("double");
 	if (Tcl_FetchInternalRep(objv[1], doubleType)
-	    && isnan(objv[1]->internalRep.doubleValue)) {
+		&& isnan(objv[1]->internalRep.doubleValue)) {
 	    status = TCL_OK;
 	    memcpy(&d, &(objv[1]->internalRep.doubleValue), sizeof(double));
 	}
@@ -3753,11 +3753,11 @@ TestlinkCmd(
  *
  * TestlinkarrayCmd --
  *
- *      This function is invoked to process the "testlinkarray" Tcl command.
- *      It is used to test the 'Tcl_LinkArray' function.
+ *	This function is invoked to process the "testlinkarray" Tcl command.
+ *	It is used to test the 'Tcl_LinkArray' function.
  *
  * Results:
- *      A standard Tcl result.
+ *	A standard Tcl result.
  *
  * Side effects:
  *	Creates, deletes, and invokes variable links.
@@ -3873,11 +3873,11 @@ TestlinkarrayCmd(
  *
  * TestlistrepCmd --
  *
- *      This function is invoked to generate a list object with a specific
+ *	This function is invoked to generate a list object with a specific
  *	internal representation.
  *
  * Results:
- *      A standard Tcl result.
+ *	A standard Tcl result.
  *
  * Side effects:
  *	None.
@@ -3934,8 +3934,7 @@ TestlistrepCmd(
 		    return TCL_ERROR;
 		}
 		if (objc > 4) {
-		    if (Tcl_GetWideUIntFromObj(interp, objv[4], &endSpace)
-			!= TCL_OK) {
+		    if (Tcl_GetWideUIntFromObj(interp, objv[4], &endSpace) != TCL_OK) {
 			return TCL_ERROR;
 		    }
 		}
@@ -4003,10 +4002,10 @@ TestlistrepCmd(
 	    return TCL_ERROR;
 	}
 	resultObj = Tcl_NewListObj(2, NULL);
-	Tcl_ListObjAppendElement(
-	    NULL, resultObj, Tcl_NewStringObj("LIST_SPAN_THRESHOLD", -1));
-	Tcl_ListObjAppendElement(
-	    NULL, resultObj, Tcl_NewWideIntObj(LIST_SPAN_THRESHOLD));
+	Tcl_ListObjAppendElement(NULL, resultObj,
+		Tcl_NewStringObj("LIST_SPAN_THRESHOLD", -1));
+	Tcl_ListObjAppendElement(NULL, resultObj,
+		Tcl_NewWideIntObj(LIST_SPAN_THRESHOLD));
 	break;
 
     case LISTREP_VALIDATE:
@@ -4027,11 +4026,11 @@ TestlistrepCmd(
  *
  * TestlistapiCmd --
  *
- *      This function is invoked to test various public C API's to cover
+ *	This function is invoked to test various public C API's to cover
  *	paths that are not exercisable via the script level commands.
  *	The general format is:
  *	    testlistapi api refcount listoperand ?args ...?
- *      where api identifies the C function, refcount is the reference count
+ *	where api identifies the C function, refcount is the reference count
  *	to be set for the value listoperand passed into the list API.
  *
  *	The result of the command is a dictionary of with the following
@@ -4045,7 +4044,7 @@ TestlistrepCmd(
  *	    resultRefCount - reference count of resultPtr *after* the API call
  *	    result - the resultPtr value
  * Results:
- *      A standard Tcl result.
+ *	A standard Tcl result.
  *
  * Side effects:
  *	None.
@@ -4115,8 +4114,7 @@ TestlistapiCmd(
 		Tcl_WrongNumArgs(interp, 2, objv, "refcount list start end");
 		status = TCL_ERROR;
 		goto vamoose; /* To free up srcPtr */
-	    }
-	    else {
+	    } else {
 		Tcl_Size start, end;
 		if (Tcl_GetSizeIntFromObj(interp, objv[4], &start) != TCL_OK ||
 		    Tcl_GetSizeIntFromObj(interp, objv[5], &end) != TCL_OK) {
@@ -5286,7 +5284,7 @@ TesttranslatefilenameCmd(
  *
  *	This procedure implements the "testfstildeexpand" command.
  *	It is used to test the Tcl_FSTildeExpand command. It differs
- *      from the script level "file tildeexpand" tests because of a
+ *	from the script level "file tildeexpand" tests because of a
  *	slightly different code path.
  *
  * Results:
@@ -8111,8 +8109,6 @@ TestGetIntForIndexCmd(
     return TCL_OK;
 }
 
-
-
 #if defined(HAVE_CPUID) && !defined(MAC_OSX_TCL)
 /*
  *----------------------------------------------------------------------
@@ -9079,7 +9075,7 @@ TestApplyLambdaCmd(
  *
  *	This procedure implements the "testlequal" command. It is used to
  *	test compare two lists for equality using the string representation
- *      of each element. Implemented in C because script level loops are
+ *	of each element. Implemented in C because script level loops are
  *	too slow for comparing large (GB count) lists.
  *
  * Results:
@@ -9104,10 +9100,10 @@ TestLutilCmd(
     Tcl_Obj **l1Elems;
     Tcl_Obj **l2Elems;
     static const char *const subcmds[] = {
-	    "equal", "diffindex", NULL
+	"equal", "diffindex", NULL
     };
     enum options {
-	    LUTIL_EQUAL, LUTIL_DIFFINDEX
+	LUTIL_EQUAL, LUTIL_DIFFINDEX
     } idx;
 
     if (objc != 4) {
@@ -9189,8 +9185,9 @@ TestChanSourceWatch(
     TCL_UNUSED(void *), /* instanceData */
     int mask)
 {
-    if (mask)
+    if (mask) {
 	Tcl_Panic("WatchModeProc not implemented for testchansource");
+    }
 }
 
 static void
@@ -9198,29 +9195,30 @@ TestChanSinkWatch(
     TCL_UNUSED(void *), /* instanceData */
     int mask)
 {
-    if (mask)
+    if (mask) {
 	Tcl_Panic("WatchModeProc not implemented for testchansink");
+    }
 }
 
 typedef struct TestChanSourceState {
-    Tcl_Size numSourced; /* How many bytes returned so far */
-    size_t len;             /* Length of data[] */
+    Tcl_Size numSourced;	/* How many bytes returned so far */
+    size_t len;			/* Length of data[] */
     unsigned char data[TCLFLEXARRAY];
-
 } TestChanSourceState;
 
 static int
 TestChanSourceInput(
     void *instanceData,
-    char *outPtr,      /* Where to store data. Assumed aligned */
-    const int maxReadCount, /* Maximum number of bytes to read. */
-    TCL_UNUSED(int *)) /* errorCodePtr - Where to store error codes. */
+    char *outPtr,		/* Where to store data. Assumed aligned */
+    const int maxReadCount,	/* Maximum number of bytes to read. */
+    TCL_UNUSED(int *))		/* errorCodePtr - Where to store error codes. */
 {
     TestChanSourceState *chanPtr = (TestChanSourceState *)instanceData;
 
     /* Arbitrary failsafe to prevent running out of memory */
-    if (chanPtr->numSourced > 100000000)
+    if (chanPtr->numSourced > 100000000) {
 	return 0;
+    }
 
     /*
      * Bit of optimization to minimize overhead since goal is channel i/o
@@ -9229,7 +9227,7 @@ TestChanSourceInput(
     if (chanPtr->len == 1) {
 	memset(outPtr, chanPtr->data[0], maxReadCount);
     } else if (chanPtr->len == sizeof(unsigned short) &&
-	       sizeof(unsigned short) == 2) {
+	    sizeof(unsigned short) == 2) {
 	union {
 	    unsigned short val;
 	    unsigned char bytes[sizeof(unsigned short)];
@@ -9243,13 +9241,14 @@ TestChanSourceInput(
 	}
 	unsigned short *to = (unsigned short *)outPtr;
 	unsigned short *end = to + (maxReadCount / sizeof(unsigned short));
-	while (to < end)
+	while (to < end) {
 	    *to++ = u.val;
+	}
 	if (maxReadCount - (sizeof(unsigned short) * (end-to))) {
 	    *to = u.bytes[0];
 	}
     } else if (chanPtr->len == sizeof(unsigned int) &&
-	       sizeof(unsigned int) == 4) {
+	    sizeof(unsigned int) == 4) {
 	union {
 	    unsigned int val;
 	    unsigned char bytes[sizeof(unsigned int)];
@@ -9263,11 +9262,13 @@ TestChanSourceInput(
 	unsigned int *to = (unsigned int *)outPtr;
 	unsigned int *end = to + (maxReadCount / sizeof(unsigned int));
 	size_t nremain = maxReadCount - (sizeof(unsigned int) * (end - to));
-	while (to < end)
+	while (to < end) {
 	    *to++ = u.val;
+	}
 	assert(nremain < chanPtr->len);
-	while (nremain--)
+	while (nremain--) {
 	    *(nremain + (char *)to) = u.bytes[nremain];
+	}
     } else {
 	char *to = outPtr;
 	int ncopied = 0;
@@ -9305,8 +9306,9 @@ TestChanSourceClose2 (
     TCL_UNUSED(Tcl_Interp *),	/* interp */
     int flags)
 {
-    if (flags && instanceData)
+    if (flags && instanceData) {
 	Tcl_Free(instanceData);
+    }
     return 0;
 }
 
@@ -9314,7 +9316,7 @@ static int
 TestChanSinkOutput (
     TCL_UNUSED(void *),	/* Instance data */
     TCL_UNUSED(const char *),	/* Bytes to write */
-    int         nbytes,
+    int nbytes,
     TCL_UNUSED(int *))		/* errorCodePtr */
 {
     return nbytes;
@@ -9414,8 +9416,9 @@ TestChanCreateCmd(
 	return TCL_ERROR;
     }
     ret = Tcl_GetIndexFromObj(interp, objv[1], cmds, "source|sink", 0, &cmd);
-    if (ret != TCL_OK)
+    if (ret != TCL_OK) {
 	return ret;
+    }
 
     switch (cmd) {
     case SINK:
@@ -9435,11 +9438,11 @@ TestChanCreateCmd(
 	if (objc == 2) {
 	    bytes = NULL;
 	    len = 0;
-	}
-	else {
+	} else {
 	    bytes = Tcl_GetBytesFromObj(interp, objv[2], &len);
-	    if (bytes == NULL)
+	    if (bytes == NULL) {
 		return TCL_ERROR;
+	    }
 	}
 	if (len == 0) {
 	    len = 1;
@@ -9468,8 +9471,9 @@ TestChanCreateCmd(
 
     chan = Tcl_CreateChannel(dispatchPtr, channelName, instancePtr, flags);
     if (chan == NULL) {
-	if (instancePtr)
+	if (instancePtr) {
 	    Tcl_Free(instancePtr);
+	}
 	Tcl_SetResult(interp, "Failed to create channel", TCL_STATIC);
 	return TCL_ERROR;
     }
