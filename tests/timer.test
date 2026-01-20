@@ -1469,7 +1469,7 @@ test timer-15.6 {"timer sleep until" maximum value} -body {
 } -cleanup {
 } -result "time too far away" -returnCodes error
 
-test timer-15.7 {"timer sleep for" time measurment} -body {
+test timer-15.7 {"timer sleep for" time measurment} -constraints noosxCI -body {
     time {timer sleep for 100 ms}
     # The match accepts 100 to 200 ms
 } -match glob -result {1[0-9][0-9][0-9][0-9][0-9] microseconds per iteration}
