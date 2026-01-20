@@ -4073,15 +4073,15 @@ Tcl_TimeObjCmd(
 {
     Tcl_Obj *objPtr;
     Tcl_Obj *objs[4];
-    int i, result;
-    int count;
+    int result;
+    long long i, count;
     double totalMicroSec;
-    Tcl_WideInt start, stop;
+    long long start, stop;
 
     if (objc == 2) {
 	count = 1;
     } else if (objc == 3) {
-	result = TclGetIntFromObj(interp, objv[2], &count);
+	result = TclGetWideIntFromObj(interp, objv[2], &count);
 	if (result != TCL_OK) {
 	    return result;
 	}
@@ -4195,10 +4195,7 @@ Tcl_TimeRateObjCmd(
 				 * execution time by quadratic O() complexity. */
     unsigned short factor = 16;	/* Factor (2..50) limiting threshold to avoid
 				 * growth of execution time. */
-    Tcl_WideInt start, last, middle, stop;
-#ifndef TCL_WIDE_CLICKS
-    Tcl_Time now;
-#endif /* !TCL_WIDE_CLICKS */
+    long long start, last, middle, stop;
     static const char *const options[] = {
 	"-direct",	"-overhead",	"-calibrate",	"--",	NULL
     };
@@ -4277,7 +4274,7 @@ Tcl_TimeRateObjCmd(
 
 	if (maxms == WIDE_MIN) {
 	    Tcl_Obj *clobjv[6];
-	    Tcl_WideInt maxCalTime = 5000;
+	    long long maxCalTime = 5000;
 	    double lastMeasureOverhead = measureOverhead;
 
 	    clobjv[0] = objv[0];
@@ -4409,13 +4406,9 @@ Tcl_TimeRateObjCmd(
      * Time to stop execution (in wide clicks).
      */
 
-    stop = start + (Tcl_WideInt)((double)maxms * 1000.0 / TclpWideClickInMicrosec());
+    stop = start + (long long)((double)maxms * 1000.0 / TclpWideClickInMicrosec());
 #else
-    Tcl_GetTime(&now);
-    start = now.sec;
-    start *= 1000000;
-    start += now.usec;
-    last = middle = start;
+    start = last = middle = Tcl_GetMonotonicTime();
 
     /*
      * Time to stop execution (in microsecs).
@@ -4485,10 +4478,7 @@ Tcl_TimeRateObjCmd(
 #ifdef TCL_WIDE_CLICKS
 	    middle = TclpGetWideClicks();
 #else
-	    Tcl_GetTime(&now);
-	    middle = now.sec;
-	    middle *= 1000000;
-	    middle += now.usec;
+	    middle = Tcl_GetMonotonicTime();
 #endif /* TCL_WIDE_CLICKS */
 
 	    if (middle >= stop || count >= maxcnt) {
