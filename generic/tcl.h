@@ -1728,6 +1728,7 @@ typedef struct Tcl_Filesystem {
  * override with the Tcl_SetNotifier call.
  */
 
+ #ifndef TCL_NO_DEPRECATED
 typedef struct Tcl_NotifierProcs {
     Tcl_SetTimerProc *setTimerProc;
     Tcl_WaitForEventProc *waitForEventProc;
@@ -1738,6 +1739,7 @@ typedef struct Tcl_NotifierProcs {
     Tcl_AlertNotifierProc *alertNotifierProc;
     Tcl_ServiceModeHookProc *serviceModeHookProc;
 } Tcl_NotifierProcs;
+#endif
 
 /*
  *----------------------------------------------------------------------------

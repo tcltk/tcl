@@ -716,7 +716,7 @@ ReadLock(void)
     Tcl_MutexLock(&ZipFSMutex);
     while (ZipFS.lock < 0) {
 	ZipFS.waiters++;
-	Tcl_ConditionWait(&ZipFSCond, &ZipFSMutex, NULL);
+	Tcl_ConditionWait2(&ZipFSCond, &ZipFSMutex, -1);
 	ZipFS.waiters--;
     }
     ZipFS.lock++;
@@ -729,7 +729,7 @@ WriteLock(void)
     Tcl_MutexLock(&ZipFSMutex);
     while (ZipFS.lock != 0) {
 	ZipFS.waiters++;
-	Tcl_ConditionWait(&ZipFSCond, &ZipFSMutex, NULL);
+	Tcl_ConditionWait2(&ZipFSCond, &ZipFSMutex, -1);
 	ZipFS.waiters--;
     }
     ZipFS.lock = -1;
@@ -2241,14 +2241,12 @@ static void
 ZipfsSetup(void)
 {
 #if TCL_THREADS
-    static const Tcl_Time t = { 0, 0 };
-
     /*
      * Inflate condition variable.
      */
 
     Tcl_MutexLock(&ZipFSMutex);
-    Tcl_ConditionWait(&ZipFSCond, &ZipFSMutex, &t);
+    Tcl_ConditionWait2(&ZipFSCond, &ZipFSMutex, 0);
     Tcl_MutexUnlock(&ZipFSMutex);
 #endif /* TCL_THREADS */
 

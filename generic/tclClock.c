@@ -3158,17 +3158,17 @@ ClockClicksObjCmd(
     switch (index) {
     case CLICKS_MILLIS:
 	Tcl_GetTime(&now);
-	clicks = now.sec * 1000LL + now.usec / 1000;
+	clicks = Tcl_GetDayTime() / 1000;
 	break;
     case CLICKS_NATIVE:
 #ifdef TCL_WIDE_CLICKS
 	clicks = TclpGetWideClicks();
 #else
-	clicks = (Tcl_WideInt)TclpGetClicks();
+	clicks = (Tcl_WideInt)Tcl_GetDayTime();
 #endif
 	break;
     case CLICKS_MICROS:
-	clicks = TclpGetMicroseconds();
+	clicks = Tcl_GetDayTime();
 	break;
     default:
 	TCL_UNREACHABLE();
@@ -3246,7 +3246,7 @@ ClockMicrosecondsObjCmd(
 	Tcl_WrongNumArgs(interp, 0, objv, "clock microseconds");
 	return TCL_ERROR;
     }
-    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(TclpGetMicroseconds()));
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(Tcl_GetDayTime()));
     return TCL_OK;
 }
 

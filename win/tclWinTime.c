@@ -174,26 +174,7 @@ TclpGetSeconds(void)
 unsigned long long
 TclpGetClicks(void)
 {
-    long long usecSincePosixEpoch;
-
-    /*
-     * Try to use high resolution timer.
-     */
-
-    if ( (usecSincePosixEpoch = NativeGetMicroseconds()) ) {
-	return (Tcl_WideUInt) usecSincePosixEpoch;
-    } else {
-	/*
-	* Use the Tcl_GetTime abstraction to get the time in microseconds, as
-	* nearly as we can, and return it.
-	*/
-
-	Tcl_Time now;		/* Current Tcl time */
-
-	Tcl_GetTime(&now);
-	return ((unsigned long long)(now.sec)*1000000ULL) +
-		(unsigned long long)(now.usec);
-    }
+    return (unsigned long long)Tcl_GetDayTime();
 }
 
 /*
@@ -247,9 +228,9 @@ TclpGetWideClicks(void)
 	/* fallback using microseconds */
 	wideClick.perfCounter = 0;
 	wideClick.microsecsScale = 1;
-	return TclpGetMicroseconds();
+	return Tcl_GetDayTime();
     } else {
-	return TclpGetMicroseconds();
+	return Tcl_GetDayTime();
     }
 }
 
@@ -283,9 +264,9 @@ TclpWideClickInMicrosec(void)
 /*
  *----------------------------------------------------------------------
  *
- * TclpGetMicroseconds --
+ * Tcl_GetDayTime --
  *
- *	This procedure returns a WideInt value that represents the highest
+ *	This procedure returns a long long value that represents the highest
  *	resolution clock in microseconds available on the system.
  *
  * Results:
@@ -298,7 +279,7 @@ TclpWideClickInMicrosec(void)
  */
 
 long long
-TclpGetMicroseconds(void)
+Tcl_GetDayTime(void)
 {
     long long usecSincePosixEpoch;
 
@@ -306,19 +287,17 @@ TclpGetMicroseconds(void)
      * Try to use high resolution timer.
      */
 
-    if ( (usecSincePosixEpoch = NativeGetMicroseconds()) ) {
-	return usecSincePosixEpoch;
-    } else {
+    usecSincePosixEpoch = NativeGetMicroseconds();
+    if (!usecSincePosixEpoch) {
 	/*
-	 * Use the Tcl_GetTime abstraction to get the time in microseconds, as
-	 * nearly as we can, and return it.
+	 * High resolution timer is not available. Just use ftime.
 	 */
+	struct _timeb t;
 
-	Tcl_Time now;
-
-	Tcl_GetTime(&now);
-	return now.sec * 1000000 + now.usec;
+	_ftime(&t);
+	usecSincePosixEpoch = t.time * 1000000LL + t.millitm * 1000;
     }
+    return usecSincePosixEpoch;
 }
 
 /*

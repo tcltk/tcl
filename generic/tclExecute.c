@@ -7741,7 +7741,7 @@ TEBCresume(
 #ifdef TCL_WIDE_CLICKS
 	    wval = TclpGetWideClicks();
 #else
-	    wval = (Tcl_WideInt)TclpGetClicks();
+	    wval = (Tcl_WideInt)Tcl_GetDayTime();
 #endif
 	    break;
 	case CLOCK_READ_MICROS:

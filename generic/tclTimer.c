@@ -631,7 +631,7 @@ TimerSetupProc(
 	    if (timerHandlerIndex ==timerHandlerMonotonic) {
 		myTimeUS = Tcl_GetMonotonicTime();
 	    } else {
-		myTimeUS = TclpGetMicroseconds();
+		myTimeUS = Tcl_GetDayTime();
 	    }
 	    myBlockTimeUS = firstTimerHandlerPtrCur->time - myTimeUS;
 	    if (myBlockTimeUS < 0) {
@@ -700,7 +700,7 @@ TimerCheckProc(
 	    if (timerHandlerIndex == timerHandlerMonotonic) {
 		blockTimeUS = Tcl_GetMonotonicTime();
 	    } else {
-		blockTimeUS = TclpGetMicroseconds();
+		blockTimeUS = Tcl_GetDayTime();
 	    }
 	    blockTimeUS = firstTimerHandlerPtrCur->time - blockTimeUS;
 	    if (blockTimeUS < 0) {
@@ -811,7 +811,7 @@ TimerHandlerEventProc(
 	if (timerHandlerIndex == timerHandlerMonotonic) {
 	    timeUS = Tcl_GetMonotonicTime();
 	} else {
-	    timeUS = TclpGetMicroseconds();
+	    timeUS = Tcl_GetDayTime();
 	}
 	while (1) {
 	    nextPtrPtr = &tsdPtr->firstTimerHandlerPtr[timerHandlerIndex];
@@ -1216,7 +1216,7 @@ TimerDelay(
      * Interpreter limits are expressed in wallclock time
      */
 
-    nowLimitUS = TclpGetMicroseconds();
+    nowLimitUS = Tcl_GetDayTime();
     nowEventUS = nowLimitUS;
 
     do {
@@ -1326,7 +1326,7 @@ TimerDelay(
 	 * We slept. Get new time base, to be compared below.
 	 */
 
-	nowLimitUS = TclpGetMicroseconds();
+	nowLimitUS = Tcl_GetDayTime();
 	nowEventUS = nowLimitUS;
     } while (nowEventUS < endTimeUS);
     return TCL_OK;
@@ -1367,7 +1367,7 @@ TimerDelayMonotonic(
      * Interpreter limits are expressed in wallclock time
      */
 
-    nowLimitUS = TclpGetMicroseconds();
+    nowLimitUS = Tcl_GetDayTime();
     nowEventUS = Tcl_GetMonotonicTime();
 
     do {
@@ -1465,7 +1465,7 @@ TimerDelayMonotonic(
 	 * We slept. Get new time base, to be compared below.
 	 */
 
-	nowLimitUS = TclpGetMicroseconds();
+	nowLimitUS = Tcl_GetDayTime();
 	nowEventUS = Tcl_GetMonotonicTime();
     } while (nowEventUS < endTimeUS);
     return TCL_OK;

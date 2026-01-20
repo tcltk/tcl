@@ -60,7 +60,7 @@ typedef struct {
     int available;		/* Number of "resources" available */
     int capacity;		/* Max number allowed in queue */
 } ProducerConsumerQueue;
-#define CONDITION_TIMEOUT_SECS 5
+#define CONDITION_TIMEOUT_USECS 5000000LL
 
 /*
  * MutexSharedContext holds context shared amongst all threads in a test.
@@ -446,12 +446,11 @@ ProducerThreadProc(
     while (contextPtr->u.queue.totalEnqueued < limit) {
 	if (contextPtr->u.queue.available == contextPtr->u.queue.capacity) {
 	    long long before, after;
-	    const Tcl_Time timeout = {CONDITION_TIMEOUT_SECS, 0};
 	    before = Tcl_GetMonotonicTime();
-	    Tcl_ConditionWait(&contextPtr->u.queue.canEnqueue,
-		    &testContextMutex, &timeout);
+	    Tcl_ConditionWait2(&contextPtr->u.queue.canEnqueue,
+		    &testContextMutex, CONDITION_TIMEOUT_USECS);
 	    after = Tcl_GetMonotonicTime();
-	    if (after >= before + CONDITION_TIMEOUT_SECS * 1000000LL) {
+	    if (after >= before + CONDITION_TIMEOUT_USECS) {
 		threadContextPtr->timeouts += 1;
 	    }
 	} else {
@@ -508,12 +507,11 @@ ConsumerThreadProc(
     while (contextPtr->u.queue.totalDequeued < limit) {
 	if (contextPtr->u.queue.available == 0) {
 	    long long before, after;
-	    const Tcl_Time timeout = {CONDITION_TIMEOUT_SECS, 0};
 	    before = Tcl_GetMonotonicTime();
-	    Tcl_ConditionWait(&contextPtr->u.queue.canDequeue,
-		    &testContextMutex, &timeout);
+	    Tcl_ConditionWait2(&contextPtr->u.queue.canDequeue,
+		    &testContextMutex, CONDITION_TIMEOUT_USECS);
 	    after = Tcl_GetMonotonicTime();
-	    if (after >= before + 1000000LL * CONDITION_TIMEOUT_SECS) {
+	    if (after >= before + CONDITION_TIMEOUT_USECS) {
 		threadContextPtr->timeouts += 1;
 	    }
 	} else {

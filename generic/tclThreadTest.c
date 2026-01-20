@@ -524,7 +524,7 @@ ThreadCreate(
      * Wait for the thread to start because it is using something on our stack!
      */
 
-    Tcl_ConditionWait(&ctrl.condWait, &threadMutex, NULL);
+    Tcl_ConditionWait2(&ctrl.condWait, &threadMutex, -1);
     Tcl_MutexUnlock(&threadMutex);
     Tcl_ConditionFinalize(&ctrl.condWait);
     Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt)(size_t)id));
@@ -898,7 +898,7 @@ ThreadSend(
 
     Tcl_ResetResult(interp);
     while (resultPtr->result == NULL) {
-	Tcl_ConditionWait(&resultPtr->done, &threadMutex, NULL);
+	Tcl_ConditionWait2(&resultPtr->done, &threadMutex, -1);
     }
 
     /*

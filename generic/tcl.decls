@@ -116,6 +116,9 @@ declare 25 {
     Tcl_Obj *Tcl_DbNewListObj(Tcl_Size objc, Tcl_Obj *const *objv,
 	    const char *file, int line)
 }
+declare 26 {
+    void Tcl_SetTimer2(long long time)
+}
 declare 27 {
     Tcl_Obj *Tcl_DbNewObj(const char *file, int line)
 }
@@ -135,6 +138,9 @@ declare 34 {
 declare 35 {
     int Tcl_GetDoubleFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
 	    double *doublePtr)
+}
+declare 36 {
+    int Tcl_WaitForEvent2(long long time)
 }
 declare 37 {
     int Tcl_GetInt(Tcl_Interp *interp, const char *src, int *intPtr)
@@ -178,11 +184,18 @@ declare 48 {
     int Tcl_ListObjReplace(Tcl_Interp *interp, Tcl_Obj *listPtr, Tcl_Size first,
 	    Tcl_Size count, Tcl_Size objc, Tcl_Obj *const objv[])
 }
+declare 49 {
+    void Tcl_SetMaxBlockTime2(long long time)
+}
 declare 50 {
     Tcl_Obj *Tcl_NewByteArrayObj(const unsigned char *bytes, Tcl_Size numBytes)
 }
 declare 51 {
     Tcl_Obj *Tcl_NewDoubleObj(double doubleValue)
+}
+declare 52 {
+    void Tcl_ConditionWait2(Tcl_Condition *condPtr, Tcl_Mutex *mutexPtr,
+	    long long time)
 }
 declare 53 {
     Tcl_Obj *Tcl_NewListObj(Tcl_Size objc, Tcl_Obj *const objv[])
@@ -205,6 +218,9 @@ declare 60 {
 }
 declare 62 {
     void Tcl_SetListObj(Tcl_Obj *objPtr, Tcl_Size objc, Tcl_Obj *const objv[])
+}
+declare 63 {
+    void Tcl_LimitSetTime2(Tcl_Interp *interp, long long timeLimit)
 }
 declare 64 {
     void Tcl_SetObjLength(Tcl_Obj *objPtr, Tcl_Size length)
@@ -236,6 +252,12 @@ declare 74 {
 }
 declare 75 {
     int Tcl_AsyncReady(void)
+}
+declare 76 {
+    long long Tcl_LimitGetTime2(Tcl_Interp *interp)
+}
+declare 77 {
+    long long Tcl_GetDayTime(void)
 }
 declare 78 {
     int Tcl_BadChannelOption(Tcl_Interp *interp, const char *optionName,
@@ -1185,7 +1207,7 @@ declare 385 {
     int Tcl_RegExpMatchObj(Tcl_Interp *interp, Tcl_Obj *textObj,
 	    Tcl_Obj *patternObj)
 }
-declare 386 {
+declare 386 {deprecated {No longer supported}} {
     void Tcl_SetNotifier(const Tcl_NotifierProcs *notifierProcPtr)
 }
 declare 387 {
