@@ -50,7 +50,7 @@ static CRITICAL_SECTION initLock;
 
 typedef struct WMutex {
     CRITICAL_SECTION crit;
-    volatile LONG thread;
+    volatile DWORD thread;
     int counter;
 } WMutex;
 
@@ -564,7 +564,7 @@ static void
 WMutexLock(
     WMutex *wmPtr)
 {
-    LONG mythread = GetCurrentThreadId();
+    DWORD mythread = GetCurrentThreadId();
 
     if (wmPtr->thread == mythread) {
 	// We owned the lock already, so it's recursive.
@@ -813,7 +813,7 @@ Tcl_ConditionWait(
 
     counter = wmPtr->counter;
     wmPtr->counter = 0;
-    LONG mythread = GetCurrentThreadId();
+    DWORD mythread = GetCurrentThreadId();
     assert(wmPtr->thread == mythread);
     wmPtr->thread = 0;
     LeaveCriticalSection(&wmPtr->crit);
