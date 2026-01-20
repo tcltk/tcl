@@ -7682,7 +7682,7 @@ ExprRandFunc(
 	 * take into consideration the thread this interp is running in.
 	 */
 
-	iPtr->randSeed = (long)TclpGetClicks() + (long)PTR2UINT(Tcl_GetCurrentThread()) * 4093U;
+	iPtr->randSeed = (long)Tcl_GetDayTime() + (long)PTR2UINT(Tcl_GetCurrentThread()) * 4093U;
 
 	/*
 	 * Make sure 1 <= randSeed <= (2^31) - 2. See below.

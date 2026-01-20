@@ -77,6 +77,7 @@
 #   define TclGetObjInterpProc 0
 #   define Tcl_QueryTimeProc 0
 #   define Tcl_SetTimeProc 0
+#   define Tcl_SetNotifier 0
 #endif
 
 #define TclUtfCharComplete Tcl_UtfCharComplete
@@ -844,7 +845,7 @@ const TclStubs tclStubs = {
     Tcl_DbNewByteArrayObj, /* 23 */
     Tcl_DbNewDoubleObj, /* 24 */
     Tcl_DbNewListObj, /* 25 */
-    0, /* 26 */
+    Tcl_SetTimer2, /* 26 */
     Tcl_DbNewObj, /* 27 */
     Tcl_DbNewStringObj, /* 28 */
     Tcl_DuplicateObj, /* 29 */
@@ -854,7 +855,7 @@ const TclStubs tclStubs = {
     0, /* 33 */
     Tcl_GetDouble, /* 34 */
     Tcl_GetDoubleFromObj, /* 35 */
-    0, /* 36 */
+    Tcl_WaitForEvent2, /* 36 */
     Tcl_GetInt, /* 37 */
     Tcl_GetIntFromObj, /* 38 */
     Tcl_GetLongFromObj, /* 39 */
@@ -867,10 +868,10 @@ const TclStubs tclStubs = {
     Tcl_ListObjIndex, /* 46 */
     TclListObjLength, /* 47 */
     Tcl_ListObjReplace, /* 48 */
-    0, /* 49 */
+    Tcl_SetMaxBlockTime2, /* 49 */
     Tcl_NewByteArrayObj, /* 50 */
     Tcl_NewDoubleObj, /* 51 */
-    0, /* 52 */
+    Tcl_ConditionWait2, /* 52 */
     Tcl_NewListObj, /* 53 */
     0, /* 54 */
     Tcl_NewObj, /* 55 */
@@ -881,7 +882,7 @@ const TclStubs tclStubs = {
     Tcl_SetDoubleObj, /* 60 */
     0, /* 61 */
     Tcl_SetListObj, /* 62 */
-    0, /* 63 */
+    Tcl_LimitSetTime2, /* 63 */
     Tcl_SetObjLength, /* 64 */
     Tcl_SetStringObj, /* 65 */
     0, /* 66 */
@@ -894,8 +895,8 @@ const TclStubs tclStubs = {
     Tcl_AsyncInvoke, /* 73 */
     Tcl_AsyncMark, /* 74 */
     Tcl_AsyncReady, /* 75 */
-    0, /* 76 */
-    0, /* 77 */
+    Tcl_LimitGetTime2, /* 76 */
+    Tcl_GetDayTime, /* 77 */
     Tcl_BadChannelOption, /* 78 */
     Tcl_CallWhenDeleted, /* 79 */
     Tcl_CancelIdleCall, /* 80 */

@@ -19,15 +19,6 @@
 #include "tclInt.h"
 
 /*
- * Notifier hooks that are checked in the public wrappers for the default
- * notifier functions (for overriding via Tcl_SetNotifier).
- */
-
-static Tcl_NotifierProcs tclNotifierHooks = {
-    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
-};
-
-/*
  * For each event source (created with Tcl_CreateEventSource) there is a
  * structure of the following type:
  */
@@ -226,44 +217,15 @@ TclFinalizeNotifier(void)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 void
 Tcl_SetNotifier(
-    const Tcl_NotifierProcs *notifierProcPtr)
+    TCL_UNUSED(const Tcl_NotifierProcs *))
 {
-    tclNotifierHooks = *notifierProcPtr;
-
-    /*
-     * Don't allow hooks to refer to the hook point functions; avoids infinite
-     * loop.
-     */
-
-    if (tclNotifierHooks.setTimerProc == Tcl_SetTimer) {
-	tclNotifierHooks.setTimerProc = NULL;
-    }
-    if (tclNotifierHooks.waitForEventProc == Tcl_WaitForEvent) {
-	tclNotifierHooks.waitForEventProc = NULL;
-    }
-    if (tclNotifierHooks.initNotifierProc == Tcl_InitNotifier) {
-	tclNotifierHooks.initNotifierProc = NULL;
-    }
-    if (tclNotifierHooks.finalizeNotifierProc == Tcl_FinalizeNotifier) {
-	tclNotifierHooks.finalizeNotifierProc = NULL;
-    }
-    if (tclNotifierHooks.alertNotifierProc == Tcl_AlertNotifier) {
-	tclNotifierHooks.alertNotifierProc = NULL;
-    }
-    if (tclNotifierHooks.serviceModeHookProc == Tcl_ServiceModeHook) {
-	tclNotifierHooks.serviceModeHookProc = NULL;
-    }
-#ifndef _WIN32
-    if (tclNotifierHooks.createFileHandlerProc == Tcl_CreateFileHandler) {
-	tclNotifierHooks.createFileHandlerProc = NULL;
-    }
-    if (tclNotifierHooks.deleteFileHandlerProc == Tcl_DeleteFileHandler) {
-	tclNotifierHooks.deleteFileHandlerProc = NULL;
-    }
-#endif /* !_WIN32 */
+	
+    Tcl_Panic("Tcl_SetNotifier is not supported in TCL 9.1");
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -873,6 +835,63 @@ Tcl_SetMaxBlockTime(
 	Tcl_SetTimer(&tsdPtr->blockTime);
     }
 }
+
+void
+Tcl_SetMaxBlockTime2(
+    long long time)	/* Specifies a maximum elapsed time for the
+				 * next blocking operation in the event
+				 * tsdPtr-> */
+{
+    if (time < 0) {
+	return Tcl_SetMaxBlockTime(NULL);
+    } else {
+	Tcl_Time tm;
+	tm.usec = time % 100000000;
+	tm.sec = time / 1000000;
+	return Tcl_SetMaxBlockTime(&tm);
+    }
+}
+
+void
+Tcl_ConditionWait2(
+    Tcl_Condition *condPtr,
+    Tcl_Mutex *mutexPtr,
+    long long time)
+{
+    if (time < 0) {
+	return Tcl_ConditionWait(condPtr, mutexPtr, NULL);
+    } else {
+	Tcl_Time tm;
+	tm.usec = time % 100000000;
+	tm.sec = time / 1000000;
+	return Tcl_ConditionWait(condPtr, mutexPtr, &tm);
+    }
+}
+
+void
+Tcl_LimitSetTime2(
+    Tcl_Interp *interp,
+    long long time)
+{
+    if (time < 0) {
+	return Tcl_LimitSetTime(interp, NULL);
+    } else {
+	Tcl_Time tm;
+	tm.usec = time % 100000000;
+	tm.sec = time / 1000000;
+	return Tcl_LimitSetTime(interp, &tm);
+    }
+}
+
+long long
+Tcl_LimitGetTime2(
+    Tcl_Interp *interp)
+{
+    Tcl_Time tm;
+    Tcl_LimitGetTime(interp, &tm);
+	return tm.sec * 1000000 + tm.usec;
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -1209,11 +1228,7 @@ Tcl_ThreadAlert(
 void *
 Tcl_InitNotifier(void)
 {
-    if (tclNotifierHooks.initNotifierProc) {
-	return tclNotifierHooks.initNotifierProc();
-    } else {
-	return TclpInitNotifier();
-    }
+    return TclpInitNotifier();
 }
 
 /*
@@ -1239,11 +1254,7 @@ void
 Tcl_FinalizeNotifier(
     void *clientData)
 {
-    if (tclNotifierHooks.finalizeNotifierProc) {
-	tclNotifierHooks.finalizeNotifierProc(clientData);
-    } else {
-	TclpFinalizeNotifier(clientData);
-    }
+    TclpFinalizeNotifier(clientData);
 }
 
 /*
@@ -1272,11 +1283,7 @@ void
 Tcl_AlertNotifier(
     void *clientData)		/* Pointer to thread data. */
 {
-    if (tclNotifierHooks.alertNotifierProc) {
-	tclNotifierHooks.alertNotifierProc(clientData);
-    } else {
-	TclpAlertNotifier(clientData);
-    }
+    TclpAlertNotifier(clientData);
 }
 
 /*
@@ -1301,11 +1308,7 @@ Tcl_ServiceModeHook(
     int mode)			/* Either TCL_SERVICE_ALL, or
 				 * TCL_SERVICE_NONE. */
 {
-    if (tclNotifierHooks.serviceModeHookProc) {
-	tclNotifierHooks.serviceModeHookProc(mode);
-    } else {
-	TclpServiceModeHook(mode);
-    }
+    TclpServiceModeHook(mode);
 }
 
 /*
@@ -1329,10 +1332,20 @@ void
 Tcl_SetTimer(
     const Tcl_Time *timePtr)	/* Timeout value, may be NULL. */
 {
-    if (tclNotifierHooks.setTimerProc) {
-	tclNotifierHooks.setTimerProc(timePtr);
+    TclpSetTimer(timePtr);
+}
+
+void
+Tcl_SetTimer2(
+    long long time)	/* Timeout value, may be NULL. */
+{
+    if (time < 0) {
+	TclpSetTimer(NULL);
     } else {
-	TclpSetTimer(timePtr);
+	Tcl_Time tm;
+	tm.usec = time % 100000000;
+	tm.sec = time / 1000000;
+	TclpSetTimer(&tm);
     }
 }
 
@@ -1360,10 +1373,20 @@ int
 Tcl_WaitForEvent(
     const Tcl_Time *timePtr)	/* Maximum block time, or NULL. */
 {
-    if (tclNotifierHooks.waitForEventProc) {
-	return tclNotifierHooks.waitForEventProc(timePtr);
+    return TclpWaitForEvent(timePtr);
+}
+
+int
+Tcl_WaitForEvent2(
+    long long time)	/* Maximum block time, or NULL. */
+{
+    if (time < 0) {
+	return TclpWaitForEvent(NULL);
     } else {
-	return TclpWaitForEvent(timePtr);
+	Tcl_Time tm;
+	tm.usec = time % 100000000;
+	tm.sec = time / 1000000;
+	return TclpWaitForEvent(&tm);
     }
 }
 
@@ -1399,11 +1422,7 @@ Tcl_CreateFileHandler(
 				 * event. */
     void *clientData)		/* Arbitrary data to pass to proc. */
 {
-    if (tclNotifierHooks.createFileHandlerProc) {
-	tclNotifierHooks.createFileHandlerProc(fd, mask, proc, clientData);
-    } else {
-	TclpCreateFileHandler(fd, mask, proc, clientData);
-    }
+    TclpCreateFileHandler(fd, mask, proc, clientData);
 }
 #endif /* !_WIN32 */
 
@@ -1435,11 +1454,7 @@ Tcl_DeleteFileHandler(
     int fd)			/* Stream id for which to remove callback
 				 * function. */
 {
-    if (tclNotifierHooks.deleteFileHandlerProc) {
-	tclNotifierHooks.deleteFileHandlerProc(fd);
-    } else {
-	TclpDeleteFileHandler(fd);
-    }
+    TclpDeleteFileHandler(fd);
 }
 #endif /* !_WIN32 */
 

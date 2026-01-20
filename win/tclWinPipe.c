@@ -3267,7 +3267,7 @@ TclpOpenTemporaryFile(
 	memcpy(namePtr, baseStr, length);
 	namePtr += length;
     }
-    counter = (int)(TclpGetClicks() % 65533);
+    counter = (int)(Tcl_GetDayTime() % 65533);
     counter2 = 1024;			/* Only try this many times! Prevents
 					 * an infinite loop. */
 
