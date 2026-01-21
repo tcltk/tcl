@@ -538,8 +538,8 @@ ClockFmtScnStorageAllocProc(
     ClockFmtScnStorage *fss;
     const char *string = (const char *) keyPtr;
     Tcl_HashEntry *hPtr;
-    unsigned size = strlen(string) + 1;
-    unsigned allocsize = sizeof(ClockFmtScnStorage) + sizeof(Tcl_HashEntry);
+    size_t size = strlen(string) + 1;
+    size_t allocsize = sizeof(ClockFmtScnStorage) + sizeof(Tcl_HashEntry);
 
     allocsize += size;
     if (size > sizeof(hPtr->key)) {
@@ -624,11 +624,11 @@ ClockFmtScnStorageDelete(
  */
 
 static const Tcl_ObjType ClockFmtObjType = {
-    "clock-format",			/* name */
-    ClockFmtObj_FreeInternalRep,	/* freeIntRepProc */
-    ClockFmtObj_DupInternalRep,		/* dupIntRepProc */
-    ClockFmtObj_UpdateString,		/* updateStringProc */
-    ClockFmtObj_SetFromAny,		/* setFromAnyProc */
+    "clock-format",
+    ClockFmtObj_FreeInternalRep,
+    ClockFmtObj_DupInternalRep,
+    ClockFmtObj_UpdateString,
+    ClockFmtObj_SetFromAny,
     TCL_OBJTYPE_V0
 };
 

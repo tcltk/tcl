@@ -115,10 +115,10 @@ static size_t		TzsetIfNecessary(void);
 static void		ClockDeleteCmdProc(void *);
 static Tcl_ObjCmdProc	ClockSafeCatchCmd;
 static void		ClockFinalize(void *);
+
 /*
  * Structure containing description of "native" clock commands to create.
  */
-
 struct ClockCommand {
     const char *name;		/* The tail of the command name. The full name
 				 * is "::tcl::clock::<name>". When NULL marks
@@ -177,10 +177,9 @@ TclClockInit(
 				 *::tcl::clock::GetJulianDayFromEraYearMonthDay
 				 * plus a terminating NUL. */
     Command *cmdPtr;
-    ClockClientData *data;
-    int i;
 
     static int initialized = 0;	/* global clock engine initialized (in process) */
+
     /*
      * Register handler to finalize clock on exit.
      */
@@ -202,9 +201,10 @@ TclClockInit(
      * Create the client data, which is a refcounted literal pool.
      */
 
-    data = (ClockClientData *)Tcl_Alloc(sizeof(ClockClientData));
+    ClockClientData *data = (ClockClientData *)Tcl_Alloc(sizeof(ClockClientData));
     data->refCount = 0;
     data->literals = (Tcl_Obj **)Tcl_Alloc(LIT__END * sizeof(Tcl_Obj*));
+    int i;
     for (i = 0; i < LIT__END; ++i) {
 	TclInitObjRef(data->literals[i], Tcl_NewStringObj(
 		Literals[i], TCL_AUTO_LENGTH));
@@ -960,8 +960,8 @@ ClockConfigureObjCmd(
 {
     ClockClientData *dataPtr = (ClockClientData *)clientData;
     static const char *const options[] = {
-	"-default-locale",	"-clear",	  "-current-locale",
-	"-year-century",  "-century-switch",
+	"-default-locale",	"-clear",	"-current-locale",
+	"-year-century",	"-century-switch",
 	"-min-year", "-max-year", "-max-jdn", "-validate",
 	"-init-complete",	  "-setup-tz", "-system-tz", NULL
     };
@@ -1419,7 +1419,6 @@ ClockConvertlocaltoutcObjCmd(
     int changeover;
     TclDateFields fields;
     int created = 0;
-    int status;
 
     fields.tzName = NULL;
     /*
@@ -1456,15 +1455,15 @@ ClockConvertlocaltoutcObjCmd(
 	created = 1;
 	Tcl_IncrRefCount(dict);
     }
-    status = Tcl_DictObjPut(interp, dict, dataPtr->literals[LIT_SECONDS],
+    int result = Tcl_DictObjPut(interp, dict, dataPtr->literals[LIT_SECONDS],
 	    Tcl_NewWideIntObj(fields.seconds));
-    if (status == TCL_OK) {
+    if (result == TCL_OK) {
 	Tcl_SetObjResult(interp, dict);
     }
     if (created) {
 	Tcl_DecrRefCount(dict);
     }
-    return status;
+    return result;
 }
 
 /*
@@ -1703,7 +1702,6 @@ ClockGetjuliandayfromerayearmonthdayObjCmd(
     Tcl_Obj *const *lit = data->literals;
     int changeover;
     int copied = 0;
-    int status;
     int isBce = 0;
 
     fields.tzName = NULL;
@@ -1748,15 +1746,15 @@ ClockGetjuliandayfromerayearmonthdayObjCmd(
 	Tcl_IncrRefCount(dict);
 	copied = 1;
     }
-    status = Tcl_DictObjPut(interp, dict, lit[LIT_JULIANDAY],
+    int result = Tcl_DictObjPut(interp, dict, lit[LIT_JULIANDAY],
 	    Tcl_NewWideIntObj(fields.julianDay));
-    if (status == TCL_OK) {
+    if (result == TCL_OK) {
 	Tcl_SetObjResult(interp, dict);
     }
     if (copied) {
 	Tcl_DecrRefCount(dict);
     }
-    return status;
+    return result;
 }
 
 /*
@@ -1793,7 +1791,6 @@ ClockGetjuliandayfromerayearweekdayObjCmd(
     Tcl_Obj *const *lit = data->literals;
     int changeover;
     int copied = 0;
-    int status;
     int isBce = 0;
 
     fields.tzName = NULL;
@@ -1838,15 +1835,15 @@ ClockGetjuliandayfromerayearweekdayObjCmd(
 	Tcl_IncrRefCount(dict);
 	copied = 1;
     }
-    status = Tcl_DictObjPut(interp, dict, lit[LIT_JULIANDAY],
+    int result = Tcl_DictObjPut(interp, dict, lit[LIT_JULIANDAY],
 	    Tcl_NewWideIntObj(fields.julianDay));
-    if (status == TCL_OK) {
+    if (result == TCL_OK) {
 	Tcl_SetObjResult(interp, dict);
     }
     if (copied) {
 	Tcl_DecrRefCount(dict);
     }
-    return status;
+    return result;
 }
 
 /*
@@ -4767,11 +4764,7 @@ ClockSafeCatchCmd(
 
 typedef struct {
     WCHAR *was;			/* Previous value of TZ. */
-#if TCL_MAJOR_VERSION > 8
     long long lastRefresh;	/* Used for latency before next refresh. */
-#else
-    long lastRefresh;		/* Used for latency before next refresh. */
-#endif
     size_t epoch;		/* Epoch, signals that TZ changed. */
     size_t envEpoch;		/* Last env epoch, for faster signaling,
 				 * that TZ changed via TCL */
