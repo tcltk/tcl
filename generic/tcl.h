@@ -1288,6 +1288,7 @@ typedef struct Tcl_Time {
 #endif
 } Tcl_Time;
 
+#ifndef TCL_NO_DEPRECATED
 typedef void (Tcl_SetTimerProc) (const Tcl_Time *timePtr);
 typedef int (Tcl_WaitForEventProc) (const Tcl_Time *timePtr);
 
@@ -1296,7 +1297,6 @@ typedef int (Tcl_WaitForEventProc) (const Tcl_Time *timePtr);
  * WARNING: functionality removed, calls Tcl_Panic
  */
 
-#ifndef TCL_NO_DEPRECATED
 typedef void (Tcl_GetTimeProc)   (Tcl_Time *timebuf, void *clientData);
 typedef void (Tcl_ScaleTimeProc) (Tcl_Time *timebuf, void *clientData);
 #endif /* TCL_NO_DEPRECATED */
@@ -1728,7 +1728,7 @@ typedef struct Tcl_Filesystem {
  * override with the Tcl_SetNotifier call.
  */
 
- #ifndef TCL_NO_DEPRECATED
+#ifndef TCL_NO_DEPRECATED
 typedef struct Tcl_NotifierProcs {
     Tcl_SetTimerProc *setTimerProc;
     Tcl_WaitForEventProc *waitForEventProc;

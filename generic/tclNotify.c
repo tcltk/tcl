@@ -867,31 +867,6 @@ Tcl_ConditionWait2(
 	return Tcl_ConditionWait(condPtr, mutexPtr, &tm);
     }
 }
-
-void
-Tcl_LimitSetTime2(
-    Tcl_Interp *interp,
-    long long time)
-{
-    if (time < 0) {
-	return Tcl_LimitSetTime(interp, NULL);
-    } else {
-	Tcl_Time tm;
-	tm.usec = time % 100000000;
-	tm.sec = time / 1000000;
-	return Tcl_LimitSetTime(interp, &tm);
-    }
-}
-
-long long
-Tcl_LimitGetTime2(
-    Tcl_Interp *interp)
-{
-    Tcl_Time tm;
-    Tcl_LimitGetTime(interp, &tm);
-	return tm.sec * 1000000 + tm.usec;
-}
-
 
 /*
  *----------------------------------------------------------------------
