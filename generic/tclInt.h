@@ -2157,8 +2157,11 @@ typedef struct Interp {
 	int cmdGranularity;	/* Mod factor used to determine how often to
 				 * evaluate the limit check. */
 
-	Tcl_Time time;		/* Time limit for execution within the
-				 * interpreter. */
+	union {
+	    long long time;		/* Time limit for execution within the
+				    * interpreter. */
+	    Tcl_Time reserved; /* keep struct alignment the same as in Tcl 9.0 */
+	};
 	LimitHandler *timeHandlers;
 				/* Handlers to execute when the limit is
 				 * reached. */

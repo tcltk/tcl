@@ -3793,18 +3793,14 @@ Tcl_LimitCheck(
     if ((iPtr->limit.active & TCL_LIMIT_TIME) &&
 	    ((iPtr->limit.timeGranularity == 1) ||
 		(ticker % iPtr->limit.timeGranularity == 0))) {
-	Tcl_Time now;
+	long long now;
 
-	Tcl_GetTime(&now);
-	if (iPtr->limit.time.sec < now.sec ||
-		(iPtr->limit.time.sec == now.sec &&
-		iPtr->limit.time.usec < now.usec)) {
+	now = Tcl_GetDayTime();
+	if (iPtr->limit.time <= now) {
 	    iPtr->limit.exceeded |= TCL_LIMIT_TIME;
 	    Tcl_Preserve(interp);
 	    RunLimitHandlers(iPtr->limit.timeHandlers, interp);
-	    if (iPtr->limit.time.sec > now.sec ||
-		    (iPtr->limit.time.sec == now.sec &&
-		    iPtr->limit.time.usec >= now.usec)) {
+	    if (iPtr->limit.time >= now) {
 		iPtr->limit.exceeded &= ~TCL_LIMIT_TIME;
 	    } else if (iPtr->limit.exceeded & TCL_LIMIT_TIME) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
@@ -4342,28 +4338,32 @@ Tcl_LimitGetCommands(
  */
 
 void
+Tcl_LimitSetTime2(
+    Tcl_Interp *interp,
+    long long time)
+{
+    Interp *iPtr = (Interp *) interp;
+
+    iPtr->limit.time = time;
+    if (iPtr->limit.timeEvent != NULL) {
+	Tcl_DeleteTimerHandler(iPtr->limit.timeEvent);
+    }
+    time = (time > LLONG_MAX - 10) ? LLONG_MAX : time + 10;
+    iPtr->limit.timeEvent = TclCreateAbsoluteTimerHandler(time,
+	    TimeLimitCallback, interp);
+    iPtr->limit.exceeded &= ~TCL_LIMIT_TIME;
+}
+
+void
 Tcl_LimitSetTime(
     Tcl_Interp *interp,
     Tcl_Time *timeLimitPtr)
 {
-    Interp *iPtr = (Interp *) interp;
-    long long nextMoment;
-
-
-    iPtr->limit.time = *timeLimitPtr;
-    if (iPtr->limit.timeEvent != NULL) {
-	Tcl_DeleteTimerHandler(iPtr->limit.timeEvent);
-    }
-    if (timeLimitPtr->sec >= LLONG_MAX / 1000000 + 10) {
-	nextMoment = LLONG_MAX;
+    if (!timeLimitPtr || timeLimitPtr->sec > (LLONG_MAX - timeLimitPtr->usec) / 1000000) {
+	Tcl_LimitSetTime2(interp, LLONG_MAX);
     } else {
-	nextMoment = timeLimitPtr->sec * 1000000 +
-		(timeLimitPtr->usec % 1000000) + 10;
+	Tcl_LimitSetTime2(interp, timeLimitPtr->sec * 1000000 + timeLimitPtr->usec);
     }
-
-    iPtr->limit.timeEvent = TclCreateAbsoluteTimerHandler(nextMoment,
-	    TimeLimitCallback, interp);
-    iPtr->limit.exceeded &= ~TCL_LIMIT_TIME;
 }
 
 /*
@@ -4435,7 +4435,18 @@ Tcl_LimitGetTime(
 {
     Interp *iPtr = (Interp *) interp;
 
-    *timeLimitPtr = iPtr->limit.time;
+    timeLimitPtr->sec = iPtr->limit.time / 1000000;
+    timeLimitPtr->usec = iPtr->limit.time % 1000000;
+}
+
+
+long long
+Tcl_LimitGetTime2(
+    Tcl_Interp *interp)
+{
+    Interp *iPtr = (Interp *) interp;
+
+    return iPtr->limit.time;
 }
 
 /*
@@ -4719,7 +4730,7 @@ TclInitLimitSupport(
     iPtr->limit.cmdCount = 0;
     iPtr->limit.cmdHandlers = NULL;
     iPtr->limit.cmdGranularity = 1;
-    memset(&iPtr->limit.time, 0, sizeof(Tcl_Time));
+    iPtr->limit.time = 0;
     iPtr->limit.timeHandlers = NULL;
     iPtr->limit.timeEvent = NULL;
     iPtr->limit.timeGranularity = 10;
