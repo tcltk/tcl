@@ -1039,7 +1039,7 @@ TtySetOptionProc(
 	     * Reset to the initial state, whatever that is.
 	     */
 
-	    memcpy(&iostate, &fsPtr->initState, sizeof(struct termios));
+	    iostate = fsPtr->initState;
 	} else {
 	    if (interp) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
