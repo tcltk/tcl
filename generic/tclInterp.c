@@ -336,8 +336,8 @@ Tcl_Init(
      * pre-init and init scripts are running. The real version of this struct
      * is in tclPkg.c.
      */
-    typedef struct PkgName_ {
-	struct PkgName_ *nextPtr;/* Next in list of package names being
+    typedef struct PkgNameStruct {
+	struct PkgNameStruct *nextPtr;/* Next in list of package names being
 				 * initialized. */
 	char name[4];		/* Enough space for "tcl". The *real* version
 				 * of this structure uses a flex array. */
@@ -4000,7 +4000,7 @@ Tcl_LimitSetTime(
     Interp *iPtr = (Interp *) interp;
     Tcl_Time nextMoment;
 
-    memcpy(&iPtr->limit.time, timeLimitPtr, sizeof(Tcl_Time));
+    iPtr->limit.time = *timeLimitPtr;
     if (iPtr->limit.timeEvent != NULL) {
 	Tcl_DeleteTimerHandler(iPtr->limit.timeEvent);
     }
@@ -4084,7 +4084,7 @@ Tcl_LimitGetTime(
 {
     Interp *iPtr = (Interp *) interp;
 
-    memcpy(timeLimitPtr, &iPtr->limit.time, sizeof(Tcl_Time));
+    *timeLimitPtr = iPtr->limit.time;
 }
 
 /*
@@ -4411,8 +4411,7 @@ InheritLimitsFromParent(
     }
     if (parentPtr->limit.active & TCL_LIMIT_TIME) {
 	childPtr->limit.active |= TCL_LIMIT_TIME;
-	memcpy(&childPtr->limit.time, &parentPtr->limit.time,
-		sizeof(Tcl_Time));
+	childPtr->limit.time = parentPtr->limit.time;
 	childPtr->limit.timeGranularity = parentPtr->limit.timeGranularity;
     }
 }

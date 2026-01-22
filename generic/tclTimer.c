@@ -44,9 +44,7 @@ typedef struct AfterInfo {
 				 * cancel it. */
     Tcl_TimerToken token;	/* Used to cancel the "after" command. NULL
 				 * means that the command is run as an idle
-				 * handler rather than as a timer handler.
-				 * NULL means this is an "after idle" handler
-				 * rather than a timer handler. */
+				 * handler rather than as a timer handler. */
     struct AfterInfo *nextPtr;	/* Next in list of all "after" commands for
 				 * this interpreter. */
 } AfterInfo;
@@ -60,9 +58,9 @@ typedef struct AfterInfo {
 typedef struct AfterAssocData {
     Tcl_Interp *interp;		/* The interpreter for which this data is
 				 * registered. */
-    AfterInfo *firstAfterPtr;	/* First in list of all "after" commands still
-				 * pending for this interpreter, or NULL if
-				 * none. */
+    AfterInfo *firstAfterPtr;	/* First in list of all "after"
+				 * commands still pending for this interpreter, or
+				 * NULL if none. */
 } AfterAssocData;
 
 /*
@@ -73,7 +71,7 @@ typedef struct AfterAssocData {
 
 typedef struct IdleHandler {
     Tcl_IdleProc *proc;		/* Function to call. */
-    void *clientData;	/* Value to pass to proc. */
+    void *clientData;		/* Value to pass to proc. */
     int generation;		/* Used to distinguish older handlers from
 				 * recently-created ones. */
     struct IdleHandler *nextPtr;/* Next in list of active handlers. */
@@ -251,7 +249,7 @@ Tcl_CreateTimerHandler(
     int milliseconds,		/* How many milliseconds to wait before
 				 * invoking proc. */
     Tcl_TimerProc *proc,	/* Function to invoke. */
-    void *clientData)	/* Arbitrary data to pass to proc. */
+    void *clientData)		/* Arbitrary data to pass to proc. */
 {
     Tcl_Time time;
 
@@ -302,16 +300,15 @@ TclCreateAbsoluteTimerHandler(
     /*
      * Fill in fields for the event.
      */
-
-    memcpy(&timerHandlerPtr->time, timePtr, sizeof(Tcl_Time));
+    timerHandlerPtr->time = *timePtr;
     timerHandlerPtr->proc = proc;
     timerHandlerPtr->clientData = clientData;
     tsdPtr->lastTimerId++;
     timerHandlerPtr->token = (Tcl_TimerToken) INT2PTR(tsdPtr->lastTimerId);
 
     /*
-     * Add the event to the queue in the correct position (ordered by event
-     * firing time).
+     * Add the event to the corresponding queue in the correct position
+     * (ordered by event firing time).
      */
 
     for (tPtr2 = tsdPtr->firstTimerHandlerPtr, prevPtr = NULL; tPtr2 != NULL;
@@ -619,7 +616,7 @@ TimerHandlerEventProc(
 void
 Tcl_DoWhenIdle(
     Tcl_IdleProc *proc,		/* Function to invoke. */
-    void *clientData)	/* Arbitrary value to pass to proc. */
+    void *clientData)		/* Arbitrary value to pass to proc. */
 {
     IdleHandler *idlePtr;
     Tcl_Time blockTime;
@@ -663,10 +660,9 @@ Tcl_DoWhenIdle(
 void
 Tcl_CancelIdleCall(
     Tcl_IdleProc *proc,		/* Function that was previously registered. */
-    void *clientData)	/* Arbitrary value to pass to proc. */
+    void *clientData)		/* Arbitrary value to pass to proc. */
 {
-    IdleHandler *idlePtr, *prevPtr;
-    IdleHandler *nextPtr;
+    IdleHandler *idlePtr, *prevPtr, *nextPtr;
     ThreadSpecificData *tsdPtr = InitTimer();
 
     for (prevPtr = NULL, idlePtr = tsdPtr->idleList; idlePtr != NULL;
@@ -1115,7 +1111,7 @@ GetAfterEvent(
 	return NULL;
     }
     cmdString += 6;
-    id = strtoul(cmdString, &end, 10);
+    id = (int)strtoul(cmdString, &end, 10);
     if ((end == cmdString) || (*end != 0)) {
 	return NULL;
     }
@@ -1149,7 +1145,7 @@ GetAfterEvent(
 
 static void
 AfterProc(
-    void *clientData)	/* Describes command to execute. */
+    void *clientData)		/* Describes command to execute. */
 {
     AfterInfo *afterPtr = (AfterInfo *)clientData;
     AfterAssocData *assocPtr = afterPtr->assocPtr;
@@ -1214,14 +1210,14 @@ AfterProc(
 
 static void
 FreeAfterPtr(
-    AfterInfo *afterPtr)		/* Command to be deleted. */
+    AfterInfo *afterPtr)	/* Command to be deleted. */
 {
-    AfterInfo *prevPtr;
     AfterAssocData *assocPtr = afterPtr->assocPtr;
 
     if (assocPtr->firstAfterPtr == afterPtr) {
 	assocPtr->firstAfterPtr = afterPtr->nextPtr;
     } else {
+	AfterInfo *prevPtr;
 	for (prevPtr = assocPtr->firstAfterPtr; prevPtr->nextPtr != afterPtr;
 		prevPtr = prevPtr->nextPtr) {
 	    /* Empty loop body. */
@@ -1251,15 +1247,14 @@ FreeAfterPtr(
 
 static void
 AfterCleanupProc(
-    void *clientData,	/* Points to AfterAssocData for the
+    void *clientData,		/* Points to AfterAssocData for the
 				 * interpreter. */
     TCL_UNUSED(Tcl_Interp *))
 {
     AfterAssocData *assocPtr = (AfterAssocData *)clientData;
-    AfterInfo *afterPtr;
 
     while (assocPtr->firstAfterPtr != NULL) {
-	afterPtr = assocPtr->firstAfterPtr;
+	AfterInfo *afterPtr = assocPtr->firstAfterPtr;
 	assocPtr->firstAfterPtr = afterPtr->nextPtr;
 	if (afterPtr->token != NULL) {
 	    Tcl_DeleteTimerHandler(afterPtr->token);
