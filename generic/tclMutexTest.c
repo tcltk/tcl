@@ -55,12 +55,11 @@ UnlockTestContext(
 typedef struct {
     Tcl_Condition canEnqueue;	/* Signal producer if queue not full */
     Tcl_Condition canDequeue;	/* Signal consumer if queue not empty */
-    Tcl_WideUInt totalEnqueued;	/* Total enqueued so far */
-    Tcl_WideUInt totalDequeued;	/* Total dequeued so far */
+    unsigned long long totalEnqueued;	/* Total enqueued so far */
+    unsigned long long totalDequeued;	/* Total dequeued so far */
     int available;		/* Number of "resources" available */
     int capacity;		/* Max number allowed in queue */
 } ProducerConsumerQueue;
-#define CONDITION_TIMEOUT_SECS 5
 
 /*
  * MutexSharedContext holds context shared amongst all threads in a test.
@@ -73,7 +72,7 @@ typedef struct {
     int numIterations;		/* Number of times each thread should loop */
     int yield;			/* Whether threads should yield when looping */
     union {
-	Tcl_WideUInt counter;		/* Used in lock tests */
+	unsigned long long counter;		/* Used in lock tests */
 	ProducerConsumerQueue queue;	/* Used in condition variable tests */
     } u;
 } MutexSharedContext;
@@ -85,8 +84,8 @@ typedef struct {
 typedef struct {
     MutexSharedContext *sharedContextPtr; /* Pointer to shared context */
     Tcl_ThreadId threadId;		  /* Only access in creator */
-    Tcl_WideUInt numOperations;		  /* Use is dependent on the test */
-    Tcl_WideUInt timeouts;		  /* Timeouts on condition variables */
+    unsigned long long numOperations;		  /* Use is dependent on the test */
+    unsigned long long timeouts;		  /* Timeouts on condition variables */
 } MutexThreadContext;
 
 /* Used to track how many test threads running. Also used as trigger */
@@ -284,7 +283,7 @@ CounterThreadProc(
 
     for (int i = 0; i < contextPtr->numIterations; i++) {
 	LockTestContext(contextPtr->numRecursions);
-	Tcl_WideUInt temp = contextPtr->u.counter;
+	unsigned long long temp = contextPtr->u.counter;
 	if (contextPtr->yield) {
 	    /* Some delay. No one else is supposed to modify the counter */
 	    YieldToOtherThreads();
@@ -375,10 +374,10 @@ TestConditionVariable(
     results[1] = Tcl_NewListObj(numProducers, NULL);
     results[4] = Tcl_NewListObj(numConsumers, NULL);
 
-    Tcl_WideUInt producerTimeouts = 0;
-    Tcl_WideUInt producerOperations = 0;
-    Tcl_WideUInt consumerTimeouts = 0;
-    Tcl_WideUInt consumerOperations = 0;
+    unsigned long long producerTimeouts = 0;
+    unsigned long long producerOperations = 0;
+    unsigned long long consumerTimeouts = 0;
+    unsigned long long consumerOperations = 0;
     for (int i = 0; i < numProducers; i++) {
 	int threadResult;
 	Tcl_JoinThread(producerContextsPtr[i].threadId, &threadResult);
@@ -426,6 +425,9 @@ TestConditionVariable(
  *
  *------------------------------------------------------------------------
  */
+
+static const Tcl_Time CONDITION_TIMEOUT = {5, 0};
+
 static Tcl_ThreadCreateType
 ProducerThreadProc(
     void *clientData)
@@ -434,8 +436,8 @@ ProducerThreadProc(
     MutexSharedContext *contextPtr = threadContextPtr->sharedContextPtr;
 
     /* Limit on total number of operations across all threads */
-    Tcl_WideUInt limit;
-    limit = contextPtr->numThreads * (Tcl_WideUInt) contextPtr->numIterations;
+    unsigned long long limit;
+    limit = contextPtr->numThreads * (unsigned long long) contextPtr->numIterations;
 
     /* Spin wait until given the run signal */
     while (mutexThreadCount < contextPtr->numThreads) {
@@ -446,12 +448,11 @@ ProducerThreadProc(
     while (contextPtr->u.queue.totalEnqueued < limit) {
 	if (contextPtr->u.queue.available == contextPtr->u.queue.capacity) {
 	    long long before, after;
-	    const Tcl_Time timeout = {CONDITION_TIMEOUT_SECS, 0};
 	    before = Tcl_GetMonotonicTime();
 	    Tcl_ConditionWait(&contextPtr->u.queue.canEnqueue,
-		    &testContextMutex, &timeout);
+		    &testContextMutex, &CONDITION_TIMEOUT);
 	    after = Tcl_GetMonotonicTime();
-	    if (after >= before + CONDITION_TIMEOUT_SECS * 1000000LL) {
+	    if (after >= before + CONDITION_TIMEOUT.sec * 1000000) {
 		threadContextPtr->timeouts += 1;
 	    }
 	} else {
@@ -496,8 +497,8 @@ ConsumerThreadProc(
     MutexSharedContext *contextPtr = threadContextPtr->sharedContextPtr;
 
     /* Limit on total number of operations across all threads */
-    Tcl_WideUInt limit;
-    limit = contextPtr->numThreads * (Tcl_WideUInt) contextPtr->numIterations;
+    unsigned long long limit;
+    limit = contextPtr->numThreads * (unsigned long long) contextPtr->numIterations;
 
     /* Spin wait until given the run signal */
     while (mutexThreadCount < contextPtr->numThreads) {
@@ -508,12 +509,11 @@ ConsumerThreadProc(
     while (contextPtr->u.queue.totalDequeued < limit) {
 	if (contextPtr->u.queue.available == 0) {
 	    long long before, after;
-	    const Tcl_Time timeout = {CONDITION_TIMEOUT_SECS, 0};
 	    before = Tcl_GetMonotonicTime();
 	    Tcl_ConditionWait(&contextPtr->u.queue.canDequeue,
-		    &testContextMutex, &timeout);
+		    &testContextMutex, &CONDITION_TIMEOUT);
 	    after = Tcl_GetMonotonicTime();
-	    if (after >= before + 1000000LL * CONDITION_TIMEOUT_SECS) {
+	    if (after >= before + CONDITION_TIMEOUT.sec * 1000000) {
 		threadContextPtr->timeouts += 1;
 	    }
 	} else {
