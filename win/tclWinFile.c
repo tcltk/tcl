@@ -29,8 +29,7 @@
  * on the proleptic Gregorian calendar) and the Posix epoch (1970-01-01).
  */
 
-#define POSIX_EPOCH_AS_FILETIME	\
-	((long long) 116444736 * (long long) 1000000000)
+#define POSIX_EPOCH_AS_FILETIME 116444736000000000LL
 
 /*
  * Declarations for 'link' related information. This information should come
@@ -2346,7 +2345,7 @@ ToCTime(
     convertedTime.HighPart = (LONG) fileTime.dwHighDateTime;
 
     return (__time64_t) ((convertedTime.QuadPart -
-	    (long long) POSIX_EPOCH_AS_FILETIME) / (long long) 10000000);
+	    POSIX_EPOCH_AS_FILETIME) / 10000000);
 }
 
 /*

@@ -883,7 +883,6 @@ cbrdissect(
 
     assert(t != NULL);
     assert(t->op == 'b');
-    assert(n >= 0);
     assert((size_t)n < v->nmatch);
 
     MDEBUG(("cbackref n%d %d{%d-%d}\n", t->id, n, min, max));
