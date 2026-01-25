@@ -156,17 +156,17 @@ TclFSNormalizeAbsolutePath(
 	 */
 	dirSep += zipVolumeLen-1; /* Start parse after : */
     } else if (tclPlatform == TCL_PLATFORM_WINDOWS) {
-	if (   (dirSep[0] == '/' || dirSep[0] == '\\')
-	    && (dirSep[1] == '/' || dirSep[1] == '\\')
-	    && (dirSep[2] == '?')
-	    && (dirSep[3] == '/' || dirSep[3] == '\\')) {
+	if (	(dirSep[0] == '/' || dirSep[0] == '\\') &&
+		(dirSep[1] == '/' || dirSep[1] == '\\') &&
+		(dirSep[2] == '?')			&&
+		(dirSep[3] == '/' || dirSep[3] == '\\')) {
 	    /* NT extended path */
 	    dirSep += 4;
 
-	    if (   (dirSep[0] == 'U' || dirSep[0] == 'u')
-		&& (dirSep[1] == 'N' || dirSep[1] == 'n')
-		&& (dirSep[2] == 'C' || dirSep[2] == 'c')
-		&& (dirSep[3] == '/' || dirSep[3] == '\\')) {
+	    if (    (dirSep[0] == 'U' || dirSep[0] == 'u') &&
+		    (dirSep[1] == 'N' || dirSep[1] == 'n') &&
+		    (dirSep[2] == 'C' || dirSep[2] == 'c') &&
+		    (dirSep[3] == '/' || dirSep[3] == '\\')) {
 		/* NT extended UNC path */
 		dirSep += 4;
 	    }

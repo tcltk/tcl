@@ -1544,7 +1544,7 @@ ListRepRange(
 	}
 	memmove(&srcRepPtr->storePtr->slots[0],
 		&srcRepPtr->storePtr
-		     ->slots[srcRepPtr->storePtr->firstUsed + rangeStart],
+		    ->slots[srcRepPtr->storePtr->firstUsed + rangeStart],
 		rangeLen * sizeof(Tcl_Obj *));
 	srcRepPtr->storePtr->firstUsed = 0;
 	srcRepPtr->storePtr->numUsed = rangeLen;
@@ -1855,8 +1855,7 @@ TclListObjAppendElements(
 	listRep.storePtr->numUsed = finalLen;
 	if (listRep.spanPtr) {
 	    /* T:listrep-3.{4,5,6} */
-	    LIST_ASSERT(listRep.spanPtr->spanStart
-			== listRep.storePtr->firstUsed);
+	    LIST_ASSERT(listRep.spanPtr->spanStart == listRep.storePtr->firstUsed);
 	    listRep.spanPtr->spanLength = finalLen;
 	} /* else T:listrep-3.6.3 */
 	LIST_ASSERT(ListRepStart(&listRep) == listRep.storePtr->firstUsed);
