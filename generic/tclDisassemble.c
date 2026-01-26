@@ -919,14 +919,14 @@ UpdateStringOfInstName(
 
     if (inst >= LAST_INST_OPCODE) {
 	dst = Tcl_InitStringRep(objPtr, NULL, TCL_INTEGER_SPACE + 5);
-	TclOOM(dst, TCL_INTEGER_SPACE + 5);
-	snprintf(dst, TCL_INTEGER_SPACE + 5, "inst_%" TCL_Z_MODIFIER "u", inst);
-	(void) Tcl_InitStringRep(objPtr, NULL, strlen(dst));
+	if (dst) {
+	    snprintf(dst, TCL_INTEGER_SPACE + 5, "inst_%" TCL_Z_MODIFIER "u", inst);
+	    (void) Tcl_InitStringRep(objPtr, NULL, strlen(dst));
+	}
     } else {
 	const char *s = tclInstructionTable[inst].name;
 	size_t len = strlen(s);
-	dst = Tcl_InitStringRep(objPtr, s, len);
-	TclOOM(dst, len);
+	Tcl_InitStringRep(objPtr, s, len);
     }
 }
 
