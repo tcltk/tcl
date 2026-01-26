@@ -250,7 +250,7 @@ Tcl_AlertNotifier(
 /*
  *----------------------------------------------------------------------
  *
- * TclpSetTimer --
+ * Tcl_SetTimer2 --
  *
  *	This procedure sets the current notifier timer value. The notifier
  *	will ensure that Tcl_ServiceAll() is called after the specified
@@ -266,8 +266,8 @@ Tcl_AlertNotifier(
  */
 
 void
-TclpSetTimer(
-    const Tcl_Time *timePtr)	/* Maximum block time, or NULL. */
+Tcl_SetTimer2(
+    long long time)	/* Maximum block time, or -1. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     UINT timeout;
@@ -282,21 +282,19 @@ TclpSetTimer(
 	return;
     }
 
-    if (!timePtr) {
-	timeout = 0;
-    } else {
+    if (time >= 0) {
 	/*
 	 * Make sure we pass a non-zero value into the timeout argument.
 	 * Windows seems to get confused by zero length timers.
 	 */
-
-	timeout = (UINT)timePtr->sec * 1000 + (unsigned long)timePtr->usec / 1000;
+	if (time > (UINT_MAX * 1000LL)) {
+	    timeout = UINT_MAX;
+	} else {
+	    timeout = (UINT)(time / 1000);
+	}
 	if (timeout == 0) {
 	    timeout = 1;
 	}
-    }
-
-    if (timeout != 0) {
 	tsdPtr->timerActive = 1;
 	SetTimer(tsdPtr->hwnd, INTERVAL_TIMER, timeout, NULL);
     } else {

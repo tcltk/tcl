@@ -1204,20 +1204,14 @@ void
 Tcl_SetTimer(
     const Tcl_Time *timePtr)	/* Timeout value, may be NULL. */
 {
-    TclpSetTimer(timePtr);
-}
-
-void
-Tcl_SetTimer2(
-    long long time)	/* Timeout value, may be NULL. */
-{
-    if (time < 0) {
-	TclpSetTimer(NULL);
+    if (timePtr) {
+	if (timePtr->sec > (LLONG_MAX - timePtr->usec) / 1000000) {
+	    Tcl_SetTimer2(LLONG_MAX);
+	} else {
+	    Tcl_SetTimer2(timePtr->sec * 1000000 + timePtr->usec);
+	}
     } else {
-	Tcl_Time tm;
-	tm.usec = time % 100000000;
-	tm.sec = time / 1000000;
-	TclpSetTimer(&tm);
+	Tcl_SetTimer2(-1);
     }
 }
 
