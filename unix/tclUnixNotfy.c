@@ -196,7 +196,7 @@ LookUpFileHandler(
 /*
  *----------------------------------------------------------------------
  *
- * TclpSetTimer --
+ * Tcl_SetTimer2 --
  *
  *	This function sets the current notifier timer value. This interface is
  *	not implemented in this notifier because we are always running inside
@@ -212,8 +212,8 @@ LookUpFileHandler(
  */
 
 void
-TclpSetTimer(
-    TCL_UNUSED(const Tcl_Time *))	/* Timeout value, may be NULL. */
+Tcl_SetTimer2(
+    TCL_UNUSED(long long))	/* Timeout value, may be -1. */
 {
     /*
      * The interval timer doesn't do anything in this implementation, because

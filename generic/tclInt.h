@@ -3575,7 +3575,6 @@ MODULE_SCOPE Tcl_Obj *	TclNewFSPathObj(Tcl_Obj *dirPtr, const char *addStrRep,
 			    Tcl_Size len);
 MODULE_SCOPE Tcl_Obj *	TclNewNamespaceObj(Tcl_Namespace *namespacePtr);
 MODULE_SCOPE void *	TclpNotifierData(void);
-MODULE_SCOPE void	TclpSetTimer(const Tcl_Time *timePtr);
 MODULE_SCOPE int	TclpWaitForEvent(const Tcl_Time *timePtr);
 MODULE_SCOPE int	TclpDeleteFile(const void *path);
 MODULE_SCOPE void	TclpFinalizeCondition(Tcl_Condition *condPtr);

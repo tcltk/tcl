@@ -807,7 +807,7 @@ Tcl_AlertNotifier(
 /*
  *----------------------------------------------------------------------
  *
- * TclpSetTimer --
+ * Tcl_SetTimer2 --
  *
  *	This function sets the current notifier timer value.
  *
@@ -821,8 +821,8 @@ Tcl_AlertNotifier(
  */
 
 void
-TclpSetTimer(
-    const Tcl_Time *timePtr)	/* Timeout value, may be NULL. */
+Tcl_SetTimer2(
+    long long time)	/* Timeout value, may be -1. */
 {
     ThreadSpecificData *tsdPtr;
     CFRunLoopTimerRef runLoopTimer;
