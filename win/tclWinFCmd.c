@@ -227,7 +227,7 @@ DoRenameFile(
 	    } else {
 		if (MoveFileExW(nativeSrc, nativeDst,
 			MOVEFILE_COPY_ALLOWED | MOVEFILE_REPLACE_EXISTING) !=
-		    FALSE) {
+			FALSE) {
 		    return TCL_OK;
 		}
 		Tcl_WinConvertError(GetLastError());
@@ -328,7 +328,7 @@ DoRenameFile(
     TclWinPathFree(&dstPathBuf);
 
     if ((strncmp(src, dst, Tcl_DStringLength(&srcString)) == 0) &&
-	(dst[Tcl_DStringLength(&srcString)] == '\\' ||
+	    (dst[Tcl_DStringLength(&srcString)] == '\\' ||
 	    dst[Tcl_DStringLength(&srcString)] == '/' ||
 	    dst[Tcl_DStringLength(&srcString)] == '\0')) {
 	/*
@@ -359,7 +359,7 @@ DoRenameFile(
 
 	Tcl_SetErrno(EINVAL);
     } else if ((srcArgc > 0) && (dstArgc > 0) &&
-	       (strcmp(srcArgv[0], dstArgv[0]) != 0)) {
+	    (strcmp(srcArgv[0], dstArgv[0]) != 0)) {
 	/*
 	 * If src is a directory and dst filesystem != src filesystem,
 	 * errno should be EXDEV. It is very important to get this
@@ -1849,7 +1849,7 @@ TclpCreateTemporaryDirectory(
 	char tempbuf[SUFFIX_LENGTH + 1];
 	int i;
 	static const char randChars[] =
-	    "QWERTYUIOPASDFGHJKLZXCVBNM1234567890";
+		"QWERTYUIOPASDFGHJKLZXCVBNM1234567890";
 	static const int numRandChars = sizeof(randChars) - 1;
 
 	/*
@@ -1908,13 +1908,13 @@ ResetFileACL(
     DWORD winError;
     DWORD userInfoSize;
     if (!GetTokenInformation(GetCurrentProcessToken(), TokenUser,
-				NULL, 0, &userInfoSize) &&
-	(winError = GetLastError()) != ERROR_INSUFFICIENT_BUFFER) {
+	    NULL, 0, &userInfoSize) &&
+	    (winError = GetLastError()) != ERROR_INSUFFICIENT_BUFFER) {
 	return winError;
     }
     PTOKEN_USER userInfoPtr = (PTOKEN_USER)Tcl_Alloc(userInfoSize);
     if (GetTokenInformation(GetCurrentProcessToken(), TokenUser, userInfoPtr,
-	   			userInfoSize, &userInfoSize)) {
+	    userInfoSize, &userInfoSize)) {
 	EXPLICIT_ACCESS_W access;
 	ZeroMemory(&access, sizeof(access));
 	access.grfAccessPermissions = GENERIC_ALL;
@@ -1927,7 +1927,7 @@ ResetFileACL(
 	winError = SetEntriesInAclW(1, &access, NULL, &aclPtr);
 	if (winError == ERROR_SUCCESS) {
 	    winError = SetNamedSecurityInfoW((WCHAR *)path, SE_FILE_OBJECT,
-		DACL_SECURITY_INFORMATION, NULL, NULL, aclPtr, NULL);
+		    DACL_SECURITY_INFORMATION, NULL, NULL, aclPtr, NULL);
 	}
 	LocalFree(aclPtr);
     } else {

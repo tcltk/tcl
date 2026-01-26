@@ -2240,36 +2240,33 @@ static int UtfExtWrapper(
     memmove(srcBufPtr + prefixLen, bytes, srcLen);
     switch (transform) {
     case UTF_TO_EXTERNAL:
-    case EXTERNAL_TO_UTF:
-	{
-	    int dstWrote32 = 0, dstChars32 = 0, srcRead32 = 0;
-	    if ((flags & TCL_ENCODING_CHAR_LIMIT) && (dstChars > INT_MAX)) {
-		Tcl_SetResult(interp,
+    case EXTERNAL_TO_UTF: {
+	int dstWrote32 = 0, dstChars32 = 0, srcRead32 = 0;
+	if ((flags & TCL_ENCODING_CHAR_LIMIT) && (dstChars > INT_MAX)) {
+	    Tcl_SetResult(interp,
 		    "dstChars too large for Tcl_UtfToExternal/Tcl_ExternalToUtf",
 		    TCL_STATIC);
-		result = TCL_ERROR;
-		goto done;
-	    }
-	    dstChars32 = (int)dstChars;
-	    result = (transform == UTF_TO_EXTERNAL ?
-			Tcl_UtfToExternal : Tcl_ExternalToUtf) (
-				interp, encoding, srcBufPtr,
-				srcNumBytes, flags, encStatePtr,
-				dstBufPtr, dstLen,
-				optObjs[SRCREADVAR] ? &srcRead32 : NULL,
-				optObjs[DSTWROTEVAR] ? &dstWrote32 : NULL,
-				optObjs[DSTCHARSVAR] ? &dstChars32 : NULL);
-	    srcRead = (Tcl_Size)srcRead32;
-	    dstWrote = (Tcl_Size)dstWrote32;
-	    dstChars = (Tcl_Size)dstChars32;
-	    break;
+	    result = TCL_ERROR;
+	    goto done;
 	}
+	dstChars32 = (int)dstChars;
+	result = (transform == UTF_TO_EXTERNAL ? Tcl_UtfToExternal : Tcl_ExternalToUtf)(
+		interp, encoding, srcBufPtr, srcNumBytes, flags, encStatePtr,
+		dstBufPtr, dstLen,
+		optObjs[SRCREADVAR] ? &srcRead32 : NULL,
+		optObjs[DSTWROTEVAR] ? &dstWrote32 : NULL,
+		optObjs[DSTCHARSVAR] ? &dstChars32 : NULL);
+	srcRead = (Tcl_Size)srcRead32;
+	dstWrote = (Tcl_Size)dstWrote32;
+	dstChars = (Tcl_Size)dstChars32;
+	break;
+    }
     case EXTERNAL_TO_UTF_EX:
 	result = Tcl_ExternalToUtfEx(interp, encoding, srcBufPtr, srcNumBytes,
-	    flags, encStatePtr, dstBufPtr, dstLen,
-	    optObjs[SRCREADVAR] ? &srcRead : NULL,
-	    optObjs[DSTWROTEVAR] ? &dstWrote : NULL,
-	    optObjs[DSTCHARSVAR] ? &dstChars : NULL);
+		flags, encStatePtr, dstBufPtr, dstLen,
+		optObjs[SRCREADVAR] ? &srcRead : NULL,
+		optObjs[DSTWROTEVAR] ? &dstWrote : NULL,
+		optObjs[DSTCHARSVAR] ? &dstChars : NULL);
 	break;
     case UTF_TO_EXTERNAL_EX:
 	result = Tcl_UtfToExternalEx(interp, encoding, srcBufPtr,
@@ -2280,8 +2277,7 @@ static int UtfExtWrapper(
 	break;
     }
     if (memcmp(dstBufPtr + bufLen - 4, "\xAB\xCD\xEF\xAB", 4)) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"%s wrote past output buffer",
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf("%s wrote past output buffer",
 		transform == EXTERNAL_TO_UTF ?
 			"Tcl_ExternalToUtf" : "Tcl_UtfToExternal"));
 	result = TCL_ERROR;
@@ -2308,8 +2304,9 @@ static int UtfExtWrapper(
 	    break;
 	}
 	result = TCL_OK;
-	resultObjs[1] =
-	    encStatePtr ? Tcl_NewWideIntObj((Tcl_WideInt)(size_t)encState) : Tcl_NewObj();
+	resultObjs[1] = encStatePtr
+		? Tcl_NewWideIntObj((Tcl_WideInt)(size_t)encState)
+		: Tcl_NewObj();
 	resultObjs[2] = Tcl_NewByteArrayObj((const unsigned char *)dstBufPtr, dstLen);
 	if (optObjs[SRCREADVAR]) {
 	    if (Tcl_ObjSetVar2(interp, optObjs[SRCREADVAR], NULL, Tcl_NewWideIntObj(srcRead),
@@ -2331,7 +2328,7 @@ static int UtfExtWrapper(
 	}
 	Tcl_SetObjResult(interp, Tcl_NewListObj(3, resultObjs));
     }
-done:
+  done:
     if (srcBufPtr) {
 	Tcl_Free(srcBufPtr);
     }
@@ -8762,7 +8759,7 @@ InterpCmdResolver(
      *  A)  when the caller is a proc "x", and the proc is either in "::" or in "::ns2".
      *  B) the caller's namespace is "ctx1" or "ctx2"
      */
-    if ( (name[0] == 'z') && (name[1] == '\0') ) {
+    if ((name[0] == 'z') && (name[1] == '\0')) {
 	Namespace *ns2NsPtr = (Namespace *) Tcl_FindNamespace(interp, "::ns2", NULL, 0);
 
 	if (procPtr != NULL && (

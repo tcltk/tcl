@@ -588,6 +588,7 @@ typedef char * (Tcl_VarTraceProc) (void *clientData, Tcl_Interp *interp,
 	const char *part1, const char *part2, int flags);
 typedef void (Tcl_CommandTraceProc) (void *clientData, Tcl_Interp *interp,
 	const char *oldName, const char *newName, int flags);
+#ifndef TCL_NO_DEPRECATED
 typedef void (Tcl_CreateFileHandlerProc) (int fd, int mask, Tcl_FileProc *proc,
 	void *clientData);
 typedef void (Tcl_DeleteFileHandlerProc) (int fd);
@@ -595,6 +596,7 @@ typedef void (Tcl_AlertNotifierProc) (void *clientData);
 typedef void (Tcl_ServiceModeHookProc) (int mode);
 typedef void *(Tcl_InitNotifierProc) (void);
 typedef void (Tcl_FinalizeNotifierProc) (void *clientData);
+#endif
 typedef void (Tcl_MainLoopProc) (void);
 
 /* Abstract List functions */

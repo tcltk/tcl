@@ -107,19 +107,17 @@ Clock_str2int(
     }
     last = *p - '0';
     if (sign >= 0) {
-	if ( (val > INT_MAX / 10)
-	  || ((val == INT_MAX / 10) && (last > INT_MAX % 10))
-	) {
+	if ((val > INT_MAX / 10) ||
+		((val == INT_MAX / 10) && (last > INT_MAX % 10))) {
 	    return TCL_ERROR;   /* overflow*/
 	}
 	val = val * 10 + last;
     } else {
 	val = -val;
-	if ( (val < INT_MIN / 10)
-	  || ((val == INT_MIN / 10) && ((INT_MIN % 10 < 0) ?
-		(last > -(INT_MIN % 10)) : (last > 10-(INT_MIN % 10))
-	  ))
-	) {
+	if ((val < INT_MIN / 10) ||
+		((val == INT_MIN / 10) && ((INT_MIN % 10 < 0)
+			? (last > -(INT_MIN % 10))
+			: (last > 10-(INT_MIN % 10))))) {
 	    return TCL_ERROR;   /* overflow*/
 	}
 	val = val * 10 - last;
@@ -162,19 +160,17 @@ Clock_str2wideInt(
     }
     last = *p - '0';
     if (sign >= 0) {
-	if ( (val > WIDE_MAX / 10)
-	  || ((val == WIDE_MAX / 10) && (last > WIDE_MAX % 10))
-	) {
+	if ((val > WIDE_MAX / 10) ||
+		((val == WIDE_MAX / 10) && (last > WIDE_MAX % 10))) {
 	    return TCL_ERROR;   /* overflow*/
 	}
 	val = val * 10 + last;
     } else {
 	val = -val;
-	if ( (val < WIDE_MIN / 10)
-	  || ((val == WIDE_MIN / 10) && ((WIDE_MIN % 10 < 0) ?
-		(last > -(WIDE_MIN % 10)) : (last > 10-(WIDE_MIN % 10))
-	  ))
-	) {
+	if ((val < WIDE_MIN / 10) ||
+		((val == WIDE_MIN / 10) && ((WIDE_MIN % 10 < 0)
+			? (last > -(WIDE_MIN % 10))
+			: (last > 10-(WIDE_MIN % 10))))) {
 	    return TCL_ERROR;   /* overflow*/
 	}
 	val = val * 10 - last;

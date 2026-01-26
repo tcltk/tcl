@@ -81,7 +81,7 @@ StartNotifierThread(
 /*
  *----------------------------------------------------------------------
  *
- * TclpAlertNotifier --
+ * Tcl_AlertNotifier --
  *
  *	Wake up the specified notifier from any thread. This routine is called
  *	by the platform independent notifier code whenever the Tcl_ThreadAlert
@@ -104,7 +104,7 @@ StartNotifierThread(
  */
 
 void
-TclpAlertNotifier(
+Tcl_AlertNotifier(
     void *clientData)
 {
 #ifdef NOTIFIER_SELECT
@@ -239,7 +239,7 @@ TclpSetTimer(
  */
 
 void
-TclpServiceModeHook(
+Tcl_ServiceModeHook(
     int mode)			/* Either TCL_SERVICE_ALL, or
 				 * TCL_SERVICE_NONE. */
 {
