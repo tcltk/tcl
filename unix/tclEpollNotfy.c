@@ -97,7 +97,7 @@ typedef struct ThreadSpecificData {
 				 * that are ready for I/O. */
     pthread_mutex_t notifierMutex;
 				/* Mutex protecting notifier termination in
-				 * TclpFinalizeNotifier. */
+				 * Tcl_FinalizeNotifier. */
 #ifdef HAVE_EVENTFD
     int triggerEventFd;		/* eventfd(2) used by other threads to wake
 				 * up this thread for inter-thread IPC. */
@@ -136,7 +136,7 @@ static int		PlatformEventsWait(struct epoll_event *events,
 /*
  *----------------------------------------------------------------------
  *
- * TclpInitNotifier --
+ * Tcl_InitNotifier --
  *
  *	Initializes the platform specific notifier state.
  *
@@ -151,7 +151,7 @@ static int		PlatformEventsWait(struct epoll_event *events,
  */
 
 void *
-TclpInitNotifier(void)
+Tcl_InitNotifier(void)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
@@ -257,7 +257,7 @@ PlatformEventsControl(
 /*
  *----------------------------------------------------------------------
  *
- * TclpFinalizeNotifier --
+ * Tcl_FinalizeNotifier --
  *
  *	This function closes the eventfd and the epoll file descriptor and
  *	frees the epoll_event structs owned by the thread of the caller.  The
@@ -279,7 +279,7 @@ PlatformEventsControl(
  */
 
 void
-TclpFinalizeNotifier(
+Tcl_FinalizeNotifier(
     TCL_UNUSED(void *))
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -494,7 +494,7 @@ PlatformEventsWait(
 /*
  *----------------------------------------------------------------------
  *
- * TclpCreateFileHandler --
+ * Tcl_CreateFileHandler --
  *
  *	This function registers a file handler with the epoll notifier of the
  *	thread of the caller.
@@ -510,7 +510,7 @@ PlatformEventsWait(
  */
 
 void
-TclpCreateFileHandler(
+Tcl_CreateFileHandler(
     int fd,			/* Handle of stream to watch. */
     int mask,			/* OR'ed combination of TCL_READABLE,
 				 * TCL_WRITABLE, and TCL_EXCEPTION: indicates
@@ -542,7 +542,7 @@ TclpCreateFileHandler(
 /*
  *----------------------------------------------------------------------
  *
- * TclpDeleteFileHandler --
+ * Tcl_DeleteFileHandler --
  *
  *	Cancel a previously-arranged callback arrangement for a file on the
  *	epoll file descriptor of the thread of the caller.
@@ -560,7 +560,7 @@ TclpCreateFileHandler(
  */
 
 void
-TclpDeleteFileHandler(
+Tcl_DeleteFileHandler(
     int fd)			/* Stream id for which to remove callback
 				 * function. */
 {
@@ -802,7 +802,7 @@ TclAsyncNotifier(
 	*flagPtr = value;
 	if (tsdPtr != NULL && !tsdPtr->asyncPending) {
 	    tsdPtr->asyncPending = true;
-	    TclpAlertNotifier(tsdPtr);
+	    Tcl_AlertNotifier(tsdPtr);
 	    return true;
 	}
 	return false;

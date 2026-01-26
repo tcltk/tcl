@@ -2154,11 +2154,11 @@ Tcl_JoinObjCmd(
      */
 
     if (TclHasInternalRep(objv[1], &tclListType) ||
-	!(TclObjTypeHasProc(objv[1], getElementsProc) ||
-	  TclObjTypeHasProc(objv[1], indexProc))) {
+	    !(TclObjTypeHasProc(objv[1], getElementsProc) ||
+	    TclObjTypeHasProc(objv[1], indexProc))) {
 	/* Native list or does not have suitable list method */
-	if (TclListObjGetElements(interp, objv[1], &listLen, &elemPtrs) !=
-	    TCL_OK) {
+	if (TclListObjGetElements(interp, objv[1],
+		&listLen, &elemPtrs) != TCL_OK) {
 	    return TCL_ERROR;
 	}
     } else if (TclObjTypeHasProc(objv[1], getElementsProc)) {

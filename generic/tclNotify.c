@@ -843,12 +843,12 @@ Tcl_SetMaxBlockTime2(
 				 * tsdPtr-> */
 {
     if (time < 0) {
-	return Tcl_SetMaxBlockTime(NULL);
+	Tcl_SetMaxBlockTime(NULL);
     } else {
 	Tcl_Time tm;
 	tm.usec = time % 100000000;
 	tm.sec = time / 1000000;
-	return Tcl_SetMaxBlockTime(&tm);
+	Tcl_SetMaxBlockTime(&tm);
     }
 }
 
@@ -859,12 +859,12 @@ Tcl_ConditionWait2(
     long long time)
 {
     if (time < 0) {
-	return Tcl_ConditionWait(condPtr, mutexPtr, NULL);
+	Tcl_ConditionWait(condPtr, mutexPtr, NULL);
     } else {
 	Tcl_Time tm;
 	tm.usec = time % 100000000;
 	tm.sec = time / 1000000;
-	return Tcl_ConditionWait(condPtr, mutexPtr, &tm);
+	Tcl_ConditionWait(condPtr, mutexPtr, &tm);
     }
 }
 
@@ -1186,109 +1186,6 @@ Tcl_ThreadAlert(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_InitNotifier --
- *
- *	Initializes the platform specific notifier state. Forwards to the
- *	platform implementation when the hook is not enabled.
- *
- * Results:
- *	Returns a handle to the notifier state for this thread..
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-void *
-Tcl_InitNotifier(void)
-{
-    return TclpInitNotifier();
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_FinalizeNotifier --
- *
- *	This function is called to cleanup the notifier state before a thread
- *	is terminated. Forwards to the platform implementation when the hook
- *	is not enabled.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	If no finalizeNotifierProc notifier hook exists, TclpFinalizeNotifier
- *	is called.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Tcl_FinalizeNotifier(
-    void *clientData)
-{
-    TclpFinalizeNotifier(clientData);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_AlertNotifier --
- *
- *	Wake up the specified notifier from any thread. This routine is called
- *	by the platform independent notifier code whenever the Tcl_ThreadAlert
- *	routine is called. This routine is guaranteed not to be called by Tcl
- *	on a given notifier after Tcl_FinalizeNotifier is called for that
- *	notifier.  This routine is typically called from a thread other than
- *	the notifier's thread.  Forwards to the platform implementation when
- *	the hook is not enabled.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	See the platform-specific implementations.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Tcl_AlertNotifier(
-    void *clientData)		/* Pointer to thread data. */
-{
-    TclpAlertNotifier(clientData);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_ServiceModeHook --
- *
- *	This function is invoked whenever the service mode changes.  Forwards
- *	to the platform implementation when the hook is not enabled.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	See the platform-specific implementations.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Tcl_ServiceModeHook(
-    int mode)			/* Either TCL_SERVICE_ALL, or
-				 * TCL_SERVICE_NONE. */
-{
-    TclpServiceModeHook(mode);
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * Tcl_SetTimer --
  *
  *	This function sets the current notifier timer value.  Forwards to the
@@ -1364,74 +1261,6 @@ Tcl_WaitForEvent2(
 	return TclpWaitForEvent(&tm);
     }
 }
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_CreateFileHandler --
- *
- *	This function registers a file descriptor handler with the notifier.
- *	Forwards to the platform implementation when the hook is not enabled.
- *
- *	This function is not defined on Windows. The OS API there is too
- *	different.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Creates a new file handler structure.
- *
- *----------------------------------------------------------------------
- */
-
-#ifndef _WIN32
-void
-Tcl_CreateFileHandler(
-    int fd,			/* Handle of stream to watch. */
-    int mask,			/* OR'ed combination of TCL_READABLE,
-				 * TCL_WRITABLE, and TCL_EXCEPTION: indicates
-				 * conditions under which proc should be
-				 * called. */
-    Tcl_FileProc *proc,		/* Function to call for each selected
-				 * event. */
-    void *clientData)		/* Arbitrary data to pass to proc. */
-{
-    TclpCreateFileHandler(fd, mask, proc, clientData);
-}
-#endif /* !_WIN32 */
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_DeleteFileHandler --
- *
- *	Cancel a previously-arranged callback arrangement for a file
- *	descriptor.  Forwards to the platform implementation when the hook is
- *	not enabled.
- *
- *	This function is not defined on Windows. The OS API there is too
- *	different.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	If a callback was previously registered on the file descriptor, remove
- *	it.
- *
- *----------------------------------------------------------------------
- */
-
-#ifndef _WIN32
-void
-Tcl_DeleteFileHandler(
-    int fd)			/* Stream id for which to remove callback
-				 * function. */
-{
-    TclpDeleteFileHandler(fd);
-}
-#endif /* !_WIN32 */
 
 /*
  * Local Variables:

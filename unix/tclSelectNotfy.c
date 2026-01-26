@@ -296,7 +296,7 @@ static unsigned int	NotifierProc(void *hwnd, unsigned int message,
 /*
  *----------------------------------------------------------------------
  *
- * TclpInitNotifier --
+ * Tcl_InitNotifier --
  *
  *	Initializes the platform specific notifier state.
  *
@@ -310,7 +310,7 @@ static unsigned int	NotifierProc(void *hwnd, unsigned int message,
  */
 
 void *
-TclpInitNotifier(void)
+Tcl_InitNotifier(void)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
@@ -375,7 +375,7 @@ TclpInitNotifier(void)
 /*
  *----------------------------------------------------------------------
  *
- * TclpFinalizeNotifier --
+ * Tcl_FinalizeNotifier --
  *
  *	This function is called to cleanup the notifier state before a thread
  *	is terminated.
@@ -391,7 +391,7 @@ TclpInitNotifier(void)
  */
 
 void
-TclpFinalizeNotifier(
+Tcl_FinalizeNotifier(
     TCL_UNUSED(void *))
 {
 #if TCL_THREADS
@@ -454,7 +454,7 @@ TclpFinalizeNotifier(
 /*
  *----------------------------------------------------------------------
  *
- * TclpCreateFileHandler --
+ * Tcl_CreateFileHandler --
  *
  *	This function registers a file handler with the select notifier.
  *
@@ -468,7 +468,7 @@ TclpFinalizeNotifier(
  */
 
 void
-TclpCreateFileHandler(
+Tcl_CreateFileHandler(
     int fd,			/* Handle of stream to watch. */
     int mask,			/* OR'ed combination of TCL_READABLE,
 				 * TCL_WRITABLE, and TCL_EXCEPTION: indicates
@@ -519,7 +519,7 @@ TclpCreateFileHandler(
 /*
  *----------------------------------------------------------------------
  *
- * TclpDeleteFileHandler --
+ * Tcl_DeleteFileHandler --
  *
  *	Cancel a previously-arranged callback arrangement for a file.
  *
@@ -533,7 +533,7 @@ TclpCreateFileHandler(
  */
 
 void
-TclpDeleteFileHandler(
+Tcl_DeleteFileHandler(
     int fd)			/* Stream id for which to remove callback
 				 * function. */
 {

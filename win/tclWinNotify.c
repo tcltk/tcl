@@ -80,7 +80,7 @@ static LRESULT CALLBACK	NotifierProc(HWND hwnd, UINT message,
  */
 
 void *
-TclpInitNotifier(void)
+Tcl_InitNotifier(void)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
@@ -135,7 +135,7 @@ TclpInitNotifier(void)
 /*
  *----------------------------------------------------------------------
  *
- * TclpFinalizeNotifier --
+ * Tcl_FinalizeNotifier --
  *
  *	This function is called to cleanup the notifier state before a thread
  *	is terminated.
@@ -150,7 +150,7 @@ TclpInitNotifier(void)
  */
 
 void
-TclpFinalizeNotifier(
+Tcl_FinalizeNotifier(
     void *clientData)		/* Pointer to notifier data. */
 {
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *) clientData;
@@ -200,7 +200,7 @@ TclpFinalizeNotifier(
 /*
  *----------------------------------------------------------------------
  *
- * TclpAlertNotifier --
+ * Tcl_AlertNotifier --
  *
  *	Wake up the specified notifier from any thread. This routine is called
  *	by the platform independent notifier code whenever the Tcl_ThreadAlert
@@ -220,7 +220,7 @@ TclpFinalizeNotifier(
  */
 
 void
-TclpAlertNotifier(
+Tcl_AlertNotifier(
     void *clientData)		/* Pointer to thread data. */
 {
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *) clientData;
@@ -308,7 +308,7 @@ TclpSetTimer(
 /*
  *----------------------------------------------------------------------
  *
- * TclpServiceModeHook --
+ * Tcl_ServiceModeHook --
  *
  *	This function is invoked whenever the service mode changes.
  *
@@ -323,7 +323,7 @@ TclpSetTimer(
  */
 
 void
-TclpServiceModeHook(
+Tcl_ServiceModeHook(
     int mode)			/* Either TCL_SERVICE_ALL, or
 				 * TCL_SERVICE_NONE. */
 {
