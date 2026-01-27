@@ -46,7 +46,7 @@ Tcl\_CreateEnsemble, Tcl\_FindEnsemble, Tcl\_GetEnsembleFlags, Tcl\_GetEnsembleM
 
 An ensemble is a command, bound to some namespace, which consists of a collection of subcommands implemented by other Tcl commands. The first argument to the ensemble command is always interpreted as a selector that states what subcommand to execute.
 
-Ensembles are created using **Tcl\_CreateEnsemble**, which takes four arguments: the interpreter to work within, the name of the ensemble to create, the namespace within the interpreter to bind the ensemble to, and the default set of ensemble flags. The result of the function is the command token for the ensemble, which may be used to further configure the ensemble using the API described below in **ENSEMBLE PROPERTIES**.
+Ensembles are created using **Tcl\_CreateEnsemble**, which takes four arguments: the interpreter to work within, the name of the ensemble to create, the namespace within the interpreter to bind the ensemble to, and the default set of ensemble flags. The result of the function is the command token for the ensemble, which may be used to further configure the ensemble using the API described below in [Ensemble properties].
 
 Given the name of an ensemble command, the token for that command may be retrieved using **Tcl\_FindEnsemble**. If the given command name (in *cmdNameObj*) does not refer to an ensemble command, the result of the function is NULL and (if the **TCL\_LEAVE\_ERR\_MSG** bit is set in *flags*) an error message is left in the interpreter result.
 

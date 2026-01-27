@@ -52,7 +52,7 @@ Safe Tcl ensures that untrusted Tcl scripts cannot harm the hosting application.
 
 Safe Tcl allows a parent interpreter to create safe, restricted interpreters that contain a set of predefined aliases for the [source], [load], [file], [encoding], and [exit] commands and are able to use the auto-loading and package mechanisms.
 
-No knowledge of the file system structure is leaked to the safe interpreter, because it has access only to a virtualized path containing tokens. When the safe interpreter requests to source a file, it uses the token in the virtual path as part of the file name to source; the parent interpreter transparently translates the token into a real directory name and executes the requested operation (see the section **SECURITY** below for details). Different levels of security can be selected by using the optional flags of the commands described below.
+No knowledge of the file system structure is leaked to the safe interpreter, because it has access only to a virtualized path containing tokens. When the safe interpreter requests to source a file, it uses the token in the virtual path as part of the file name to source; the parent interpreter transparently translates the token into a real directory name and executes the requested operation (see the section [Security] below for details). Different levels of security can be selected by using the optional flags of the commands described below.
 
 All commands provided in the parent interpreter by Safe Tcl reside in the **safe** namespace.
 
@@ -61,7 +61,7 @@ All commands provided in the parent interpreter by Safe Tcl reside in the **safe
 The following commands are provided in the parent interpreter:
 
 **::safe::interpCreate** ?*child*? ?*options...*?
-: Creates a safe interpreter, installs the aliases described in the section **ALIASES** and initializes the auto-loading and package mechanism as specified by the supplied *options*. See the **OPTIONS** section below for a description of the optional arguments. If the *child* argument is omitted, a name will be generated. **::safe::interpCreate** always returns the interpreter name.
+: Creates a safe interpreter, installs the aliases described in the section [Aliases] and initializes the auto-loading and package mechanism as specified by the supplied *options*. See the [Options] section below for a description of the optional arguments. If the *child* argument is omitted, a name will be generated. **::safe::interpCreate** always returns the interpreter name.
 
     The interpreter name *child* may include namespace separators, but may not have leading or trailing namespace separators, or excess colon characters in namespace separators.  The interpreter name is qualified relative to the global namespace ::, not the namespace in which the **::safe::interpCreate** command is evaluated.
 
@@ -69,7 +69,7 @@ The following commands are provided in the parent interpreter:
 : This command is similar to **interpCreate** except it that does not create the safe interpreter. *child* must have been created by some other means, like [interp create][interp] **-safe**.  The interpreter name *child* may include namespace separators, subject to the same restrictions as for **interpCreate**.
 
 **::safe::interpConfigure** *child* ?*options...*?
-: If no *options* are given, returns the settings for all options for the named safe interpreter as a list of options and their current values for that *child*. If a single additional argument is provided, it will return a list of 2 elements *name* and *value* where *name* is the full name of that option and *value* the current value for that option and the *child*. If more than two additional arguments are provided, it will reconfigure the safe interpreter and change each and only the provided options. See the section on **OPTIONS** below for options description. Example of use:
+: If no *options* are given, returns the settings for all options for the named safe interpreter as a list of options and their current values for that *child*. If a single additional argument is provided, it will return a list of 2 elements *name* and *value* where *name* is the full name of that option and *value* the current value for that option and the *child*. If more than two additional arguments are provided, it will reconfigure the safe interpreter and change each and only the provided options. See the section on [Options] below for options description. Example of use:
 
     ```
     # Create new interp with the same configuration as "$i0":
@@ -103,7 +103,7 @@ The following commands are provided in the parent interpreter:
     ```
 
 **::safe::setSyncMode** ?*newValue*?
-: This command is used to get or set the "Sync Mode" of the Safe Base. When an argument is supplied, the command returns an error if the argument is not a boolean value, or if any Safe Base interpreters exist.  Typically the value will be set as part of initialization - boolean true for "Sync Mode" on (the default), false for "Sync Mode" off.  With "Sync Mode" on, the Safe Base keeps each child interpreter's ::auto\_path synchronized with its access path.  See the section **SYNC MODE** below for details.
+: This command is used to get or set the "Sync Mode" of the Safe Base. When an argument is supplied, the command returns an error if the argument is not a boolean value, or if any Safe Base interpreters exist.  Typically the value will be set as part of initialization - boolean true for "Sync Mode" on (the default), false for "Sync Mode" off.  With "Sync Mode" on, the Safe Base keeps each child interpreter's ::auto\_path synchronized with its access path.  See the section [Sync mode] below for details.
 
 **::safe::setLogCmd** ?*cmd arg...*?
 : This command installs a script that will be called when interesting life cycle events occur for a safe interpreter. When called with no arguments, it returns the currently installed script. When called with one argument, an empty string, the currently installed script is removed and logging is turned off. The script will be invoked with one additional argument, a string describing the event of interest. The main purpose is to help in debugging safe interpreters. Using this facility you can get complete error messages while the safe interpreter gets only generic error messages. This prevents a safe interpreter from seeing messages about failures and other events that might contain sensitive information such as real directory names.
@@ -129,10 +129,10 @@ The following commands are provided in the parent interpreter:
 The following options are common to **::safe::interpCreate**, **::safe::interpInit**, and **::safe::interpConfigure**. Any option name can be abbreviated to its minimal non-ambiguous name. Option names are not case sensitive.
 
 [-accessPath]{.lit} [directoryList]{.arg}
-: This option sets the list of directories from which the safe interpreter can [source] and [load] files. If this option is not specified, or if it is given as the empty list, the safe interpreter will use the same directories as its parent for auto-loading. See the section **SECURITY** below for more detail about virtual paths, tokens and access control.
+: This option sets the list of directories from which the safe interpreter can [source] and [load] files. If this option is not specified, or if it is given as the empty list, the safe interpreter will use the same directories as its parent for auto-loading. See the section [Security] below for more detail about virtual paths, tokens and access control.
 
 [-autoPath]{.lit} [directoryList]{.arg}
-: This option sets the list of directories in the safe interpreter's ::auto\_path.  The option is undefined if the Safe Base has "Sync Mode" on - in that case the safe interpreter's ::auto\_path is managed by the Safe Base and is a tokenized form of its access path. See the section **SYNC MODE** below for details.
+: This option sets the list of directories in the safe interpreter's ::auto\_path.  The option is undefined if the Safe Base has "Sync Mode" on - in that case the safe interpreter's ::auto\_path is managed by the Safe Base and is a tokenized form of its access path. See the section [Sync mode] below for details.
 
 [-statics]{.lit} [boolean]{.arg}
 : This option specifies if the safe interpreter will be allowed to load statically linked packages (like [load {} Tk][load]). The default value is **true** : safe interpreters are allowed to load statically linked packages.
@@ -155,7 +155,7 @@ The following options are common to **::safe::interpCreate**, **::safe::interpIn
 The following aliases are provided in a safe interpreter:
 
 [source] *fileName*
-: The requested file, a Tcl source file, is sourced into the safe interpreter if it is found. The [source] alias can only source files from directories in the virtual path for the safe interpreter. The [source] alias requires the safe interpreter to use one of the token names in its virtual path to denote the directory in which the file to be sourced can be found. See the section on **SECURITY** for more discussion of restrictions on valid filenames.
+: The requested file, a Tcl source file, is sourced into the safe interpreter if it is found. The [source] alias can only source files from directories in the virtual path for the safe interpreter. The [source] alias requires the safe interpreter to use one of the token names in its virtual path to denote the directory in which the file to be sourced can be found. See the section on [Security] for more discussion of restrictions on valid filenames.
 
 [load] *fileName*
 : The requested file, a shared object file, is dynamically loaded into the safe interpreter if it is found. The filename must contain a token name mentioned in the virtual path for the safe interpreter for it to be found successfully. Additionally, the shared object file must contain a safe entry point; see the manual page for the [load] command for more details.

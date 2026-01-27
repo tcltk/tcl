@@ -29,7 +29,7 @@ tm - Facilities for locating and loading of Tcl Modules
 
 # Description
 
-This document describes the facilities for locating and loading Tcl Modules (see **MODULE DEFINITION** for the definition of a Tcl Module). The following commands are supported:
+This document describes the facilities for locating and loading Tcl Modules (see [Module definition] for the definition of a Tcl Module). The following commands are supported:
 
 [::tcl::tm::path]{.cmd} [add]{.sub} [path]{.optdot}
 : The paths are added at the head to the list of module paths, in order of appearance. This means that the last argument ends up as the new head of the list.
@@ -94,7 +94,7 @@ Example:
 
 The requested package is **encoding::base64**. The generated partial path is "*encoding/base64*".
 
-After this translation the package is looked for in all module paths, by combining them one-by-one, first to last with the partial path to form a complete search pattern. Note that the search algorithm rejects all files where the filename does not match the regular expression given in the section **MODULE DEFINITION**. For the remaining files *provide scripts* are generated and added to the package ifneeded database.
+After this translation the package is looked for in all module paths, by combining them one-by-one, first to last with the partial path to form a complete search pattern. Note that the search algorithm rejects all files where the filename does not match the regular expression given in the section [Module definition]. For the remaining files *provide scripts* are generated and added to the package ifneeded database.
 
 The algorithm falls back to the previous unknown handler when none of the found module files satisfy the request. If the request was satisfied the fall-back is ignored.
 
@@ -116,7 +116,7 @@ Both package name **PNAME** and package version **PVERSION** are extracted from 
 MF = /module_path/PNAME\(fm-PVERSION.tm
 ```
 
-Where **PNAME\\(fm** is the partial path of the module as defined in section **FINDING MODULES**, and translated into **PNAME** by changing all directory separators to "**::**", and **module\_path** is the path (from the list of paths to search) that we found the module file under.
+Where **PNAME\\(fm** is the partial path of the module as defined in section [Finding modules], and translated into **PNAME** by changing all directory separators to "**::**", and **module\_path** is the path (from the list of paths to search) that we found the module file under.
 
 Note also that we are here creating a connection between package names and paths. Tcl is case-sensitive when it comes to comparing package names, but there are filesystems which are not, like NTFS. Luckily these filesystems do store the case of the name, despite not using the information when comparing.
 

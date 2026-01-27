@@ -162,7 +162,7 @@ Both compressing and decompressing channel transformations add extra configurati
 ## Streaming subcommand
 
 [zlib]{.cmd} [stream]{.sub} [mode]{.arg} [options]{.optarg}
-: Creates a streaming compression or decompression command based on the *mode*, and return the name of the command. For a description of how that command works, see **STREAMING INSTANCE COMMAND** below. The following modes and *options* are supported:
+: Creates a streaming compression or decompression command based on the *mode*, and return the name of the command. For a description of how that command works, see [Streaming instance command] below. The following modes and *options* are supported:
 
     [zlib]{.cmd} [stream]{.sub} [compress]{.lit} [[-dictionary]{.lit} [bindata]{.arg}]{.optarg} [[-level]{.lit} [level]{.arg}]{.optarg}
     : The stream will be a compressing stream that produces zlib-format output, using compression level *level* (if specified) which will be an integer from 0 to 9, and the compression dictionary *bindata* (if specified).

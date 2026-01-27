@@ -48,10 +48,10 @@ This command provides several operations on a file's name or attributes.  The *n
 : Returns a decimal string giving the time at which file *name* was last accessed.  If *time* is specified, it is an access time to set for the file.  The time is measured in the standard POSIX fashion as seconds from a fixed starting time (often January 1, 1970).  If the file does not exist or its access time cannot be queried or set then an error is generated.  On Windows, FAT file systems do not support access time. On [zipfs] file systems, access time is mapped to the modification time.
 
 [file]{.cmd} [attributes]{.sub} [name]{.arg}
-: ...see next...
+: see below ...
 
 [file]{.cmd} [attributes]{.sub} [name]{.arg} [option]{.optarg}
-: ...see next...
+: see below ...
 
 [file]{.cmd} [attributes]{.sub} [name]{.arg} [option value option value...]{.optarg}
 : This subcommand returns or sets platform-specific values associated with a file. The first form returns a list of the platform-specific options and their values. The second form returns the value for the given option. The third form sets one or more of the values. The values are as follows:
@@ -90,7 +90,7 @@ Other attributes may be present in the returned list. These should be ignored.
 : If *pattern* is not specified, returns a list of names of all registered open channels in this interpreter.  If *pattern* is specified, only those names matching *pattern* are returned.  Matching is determined using the same rules as for [string match][string].
 
 [file]{.cmd} [copy]{.sub} [-force]{.optlit} [-|-]{.optlit} [source]{.arg} [target]{.arg}
-: ...see next...
+: see below ...
 
 [file]{.cmd} [copy]{.sub} [-force]{.optlit} [-|-]{.optlit} [source]{.arg} [source]{.optdot} [targetDir]{.arg}
 : The first form makes a copy of the file or directory *source* under the pathname *target*. If *target* is an existing directory, then the second form is used.  The second form makes a copy inside *targetDir* of each *source* file listed.  If a directory is specified as a *source*, then the contents of the directory will be recursively copied into *targetDir*. Existing files will not be overwritten unless the **-force** option is specified (when Tcl will also attempt to adjust permissions on the destination file or directory if that is necessary to allow the copy to proceed).  When copying within a single filesystem, *file copy* will copy soft links (i.e. the links themselves are copied, not the things they point to).  Trying to overwrite a non-empty directory, overwrite a directory with a file, or overwrite a file with a directory will all result in errors even if **-force** was specified.  Arguments are processed in the order specified, halting at the first error, if any.  A **-\\|-** marks the end of switches; the argument following the **-\\|-** will be treated as a *source* even if it starts with a **-**.
@@ -157,7 +157,7 @@ Other attributes may be present in the returned list. These should be ignored.
 : Returns a decimal string giving the time at which file *name* was last modified.  If *time* is specified, it is a modification time to set for the file (equivalent to Unix **touch**).  The time is measured in the standard POSIX fashion as seconds from a fixed starting time (often January 1, 1970).  If the file does not exist or its modified time cannot be queried or set then an error is generated. On [zipfs] file systems, modification time cannot be explicitly set.
 
 [file]{.cmd} [nativename]{.sub} [name]{.arg}
-: Returns the platform-specific name of the file. This is useful if the filename is needed to pass to a platform-specific call, such as to a subprocess via [exec] under Windows (see **EXAMPLES** below).
+: Returns the platform-specific name of the file. This is useful if the filename is needed to pass to a platform-specific call, such as to a subprocess via [exec] under Windows (see [Examples] below).
 
 [file]{.cmd} [normalize]{.sub} [name]{.arg}
 : Returns a unique normalized path representation for the file-system object (file, directory, link, etc), whose string value can be used as a unique identifier for it.  A normalized path is an absolute path which has all "../" and "./" removed.  Also it is one which is in the "standard" format for the native platform.  On Unix, this means the segments leading up to the path must be free of symbolic links/aliases (but the very last path component may be a symbolic link), and on Windows it also means we want the long form with that form's case-dependence (which gives us a unique, case-dependent path).  The one exception concerning the last link in the path is necessary, because Tcl or the user may wish to operate on the actual symbolic link itself (for example **file delete**, **file rename**, **file copy** are defined to operate on symbolic links, not on the things that they point to).
@@ -175,7 +175,7 @@ Other attributes may be present in the returned list. These should be ignored.
 : Returns the value of the symbolic link given by *name* (i.e. the name of the file it points to).  If *name* is not a symbolic link or its value cannot be read, then an error is returned.  On systems that do not support symbolic links this option is undefined.
 
 [file]{.cmd} [rename]{.sub} [-force]{.optlit} [-|-]{.optlit} [source]{.arg} [target]{.arg}
-: ...see next...
+: see below ...
 
 [file]{.cmd} [rename]{.sub} [-force]{.optlit} [-|-]{.optlit} [source]{.arg} [source]{.optdot} [targetDir]{.arg}
 : The first form takes the file or directory specified by pathname *source* and renames it to *target*, moving the file if the pathname *target* specifies a name in a different directory.  If *target* is an existing directory, then the second form is used. The second form moves each *source* file or directory into the directory *targetDir*. Existing files will not be overwritten unless the **-force** option is specified.  When operating inside a single filesystem, Tcl will rename symbolic links rather than the things that they point to.  Trying to overwrite a non-empty directory, overwrite a directory with a file, or a file with a directory will all result in errors.  Arguments are processed in the order specified, halting at the first error, if any.  A **-\\|-** marks the end of switches; the argument following the **-\\|-** will be treated as a *source* even if it starts with a **-**.

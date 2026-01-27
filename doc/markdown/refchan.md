@@ -40,7 +40,7 @@ refchan - Command handler API for channels implemented in Tcl code
 
 # Description
 
-The Tcl-level handler for a reflected channel has to be a command with subcommands (termed an *ensemble*, as it is a command such as that created by [namespace ensemble][namespace] **create**, though the implementation of handlers for reflected channel *is not* tied to [namespace ensemble][namespace]s in any way; see **EXAMPLE** below for how to build an **oo::class** that supports the API). Note that *cmdPrefix* is whatever was specified in the call to [chan create][chan], and may consist of multiple arguments; this will be expanded to multiple words in place of the prefix.
+The Tcl-level handler for a reflected channel has to be a command with subcommands (termed an *ensemble*, as it is a command such as that created by [namespace ensemble][namespace] **create**, though the implementation of handlers for reflected channel *is not* tied to [namespace ensemble][namespace]s in any way; see [Example] below for how to build an **oo::class** that supports the API). Note that *cmdPrefix* is whatever was specified in the call to [chan create][chan], and may consist of multiple arguments; this will be expanded to multiple words in place of the prefix.
 
 Of all the possible subcommands, the handler *must* support **initialize**, **finalize**, and **watch**. Support for the other subcommands is optional.
 
@@ -274,7 +274,7 @@ oo::class create stringchan {
 }
 
 # Now we create an instance...
-set string "The quick brown fox jumps over the lazy dog.\\n"
+set string "The quick brown fox jumps over the lazy dog.\n"
 set ch [chan create read [stringchan new $string]]
 
 puts [gets $ch];   # Prints the whole string

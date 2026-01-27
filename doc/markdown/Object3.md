@@ -95,7 +95,7 @@ A value's type manages its internal representation. The member *typePtr* points 
 
 The *internalRep* union member holds a value's internal representation. This is either a (long) integer, a double-precision floating-point number, a pointer to a value containing additional information needed by the value's type to represent the value, a **Tcl\_WideInt** integer, two arbitrary pointers, a pair made up of a pointer and an unsigned long integer, or a pair made up of a pointer and **Tcl\_Size** which is a signed integer type capable of holding the maximum lengths permitted in Tcl.
 
-The *refCount* member is used to tell when it is safe to free a value's storage. It holds the count of active references to the value. Maintaining the correct reference count is a key responsibility of extension writers. Reference counting is discussed below in the section **STORAGE MANAGEMENT OF VALUES**.
+The *refCount* member is used to tell when it is safe to free a value's storage. It holds the count of active references to the value. Maintaining the correct reference count is a key responsibility of extension writers. Reference counting is discussed below in the section [Storage management of values].
 
 Although extension writers can directly access the members of a Tcl\_Obj structure, it is much better to use the appropriate procedures and macros. For example, extension writers should never read or update *refCount* directly; they should use macros such as **Tcl\_IncrRefCount** and **Tcl\_IsShared** instead.
 

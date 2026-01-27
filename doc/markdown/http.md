@@ -75,7 +75,7 @@ If the **-command** option is specified, then the HTTP operation is done in the 
 
 **Note:** The event queue is even used without the **-command** option. As a side effect, arbitrary commands may be processed while **http::geturl** is running.
 
-When the HTTP server has replied to the request, call the command **::http::responseInfo**, which returns a [dict] of metadata that is essential for identifying a successful transaction and making use of the response.  See section **METADATA** for details of the information returned. The response itself is returned by command **::http::responseBody**, unless it has been redirected to a file by the *-channel* option of **::http::geturl**.
+When the HTTP server has replied to the request, call the command **::http::responseInfo**, which returns a [dict] of metadata that is essential for identifying a successful transaction and making use of the response.  See section [Metadata] for details of the information returned. The response itself is returned by command **::http::responseBody**, unless it has been redirected to a file by the *-channel* option of **::http::geturl**.
 
 # Commands
 
@@ -86,7 +86,7 @@ When the HTTP server has replied to the request, call the command **::http::resp
     : The Accept header of the request.  The default is \*/\*, which means that all types of documents are accepted.  Otherwise you can supply a comma-separated list of mime type patterns that you are willing to receive.  For example, "image/gif, image/jpeg, text/\*".
 
     **-cookiejar** *command*
-    : The cookie store for the package to use to manage HTTP cookies. *command* is a command prefix list; if the empty list (the default value) is used, no cookies will be sent by requests or stored from responses. The command indicated by *command*, if supplied, must obey the **COOKIE JAR PROTOCOL** described below.
+    : The cookie store for the package to use to manage HTTP cookies. *command* is a command prefix list; if the empty list (the default value) is used, no cookies will be sent by requests or stored from responses. The command indicated by *command*, if supplied, must obey the [Cookie jar protocol] described below.
 
     **-pipeline** *boolean*
     : Specifies whether HTTP/1.1 transactions on a persistent socket will be pipelined.  See the **PERSISTENT SOCKETS** section for details. The default is 1.
@@ -103,7 +103,7 @@ When the HTTP server has replied to the request, call the command **::http::resp
 
     The default value of **-proxyfilter** is **http::ProxyRequired**, and this command returns the values of the **-proxyhost** and **-proxyport** settings if they are non-empty.  The options **-proxyhost**, **-proxyport**, and **-proxynot** are used only by **http::ProxyRequired**, and nowhere else in **::http::geturl**. A user-supplied **-proxyfilter** command may use these options, or alternatively it may obtain values from elsewhere in the calling script. In the latter case, any values provided for **-proxyhost**, **-proxyport**, and **-proxynot** are unused.
 
-    The **::http::geturl** command runs the **-proxyfilter** callback inside a [catch] command.  Therefore an error in the callback command does not call the **bgerror** handler.  See the **ERRORS** section for details.
+    The **::http::geturl** command runs the **-proxyfilter** callback inside a [catch] command.  Therefore an error in the callback command does not call the **bgerror** handler.  See the [Errors] section for details.
 
 **-proxyhost** *hostname*
 : The host name or IP address of the proxy server, if any.  If this value is the empty string, the URL host is contacted directly.  See **-proxyfilter** for how the value is used.
@@ -130,7 +130,7 @@ When the HTTP server has replied to the request, call the command **::http::resp
     : use Thread if it is available, raise an error if it is unavailable
 
 
-    The Tcl [socket -async][socket] command can block in adverse cases (e.g. a slow DNS lookup).  Using the Thread package works around this problem, for both HTTP and HTTPS transactions.  Values of *level* other than 0 are available only to the main interpreter in each thread.  See section **THREADS** for more information.
+    The Tcl [socket -async][socket] command can block in adverse cases (e.g. a slow DNS lookup).  Using the Thread package works around this problem, for both HTTP and HTTPS transactions.  Values of *level* other than 0 are available only to the main interpreter in each thread.  See section [Threads] for more information.
 
 **-urlencoding** *encoding*
 : The *encoding* used for creating the x-url-encoded URLs with **::http::formatQuery** and **::http::quoteString**. The default is **utf-8**, as specified by RFC 2718.
@@ -142,7 +142,7 @@ When the HTTP server has replied to the request, call the command **::http::resp
 : If the value is boolean **true**, then by default requests will send a header "**Accept-Encoding: gzip,deflate**". If the value is boolean **false**, then by default requests will send a header "**Accept-Encoding: identity**". In either case the default can be overridden for an individual request by supplying a custom **Accept-Encoding** header in the **-headers** option of **http::geturl**. The default value is 1.
 
 **::http::geturl** *url* ?*options*?
-: The **::http::geturl** command is the main procedure in the package. The **-query** or **-querychannel** option causes a POST operation and the **-validate** option causes a HEAD operation; otherwise, a GET operation is performed.  The **::http::geturl** command returns a *token* value that can be passed as an argument to other commands to get information about the transaction.  See the **METADATA** and **ERRORS** section for details.  The **::http::geturl** command blocks until the operation completes, unless the **-command** option specifies a callback that is invoked when the HTTP transaction completes. **::http::geturl** takes several options:
+: The **::http::geturl** command is the main procedure in the package. The **-query** or **-querychannel** option causes a POST operation and the **-validate** option causes a HEAD operation; otherwise, a GET operation is performed.  The **::http::geturl** command returns a *token* value that can be passed as an argument to other commands to get information about the transaction.  See the [Metadata] and [Errors] section for details.  The **::http::geturl** command blocks until the operation completes, unless the **-command** option specifies a callback that is invoked when the HTTP transaction completes. **::http::geturl** takes several options:
 
     **-binary** *boolean*
     : Specifies whether to force interpreting the URL data as binary.  Normally this is auto-detected (anything not beginning with a **text** content type or whose content encoding is **gzip** or **deflate** is considered binary data).
@@ -154,7 +154,7 @@ When the HTTP server has replied to the request, call the command **::http::resp
     : Copy the URL contents to channel *name* instead of saving it in a Tcl variable for retrieval by **::http::responseBody**.
 
     **-command** *callback*
-    : The presence of this option causes **::http::geturl** to return immediately. After the HTTP transaction completes, the value of *callback* is expanded, an additional argument is added, and the resulting command is evaluated. The additional argument is the *token* returned from **::http::geturl**. This token is the name of an array that is described in the **STATE ARRAY** section.  Here is a template for the callback:
+    : The presence of this option causes **::http::geturl** to return immediately. After the HTTP transaction completes, the value of *callback* is expanded, an additional argument is added, and the resulting command is evaluated. The additional argument is the *token* returned from **::http::geturl**. This token is the name of an array that is described in the [State array] section.  Here is a template for the callback:
 
 
     ```
@@ -166,13 +166,13 @@ When the HTTP server has replied to the request, call the command **::http::resp
     }
     ```
 
-    The **::http::geturl** command runs the **-command** callback inside a [catch] command.  Therefore an error in the callback command does not call the **bgerror** handler.  See the **ERRORS** section for details.
+    The **::http::geturl** command runs the **-command** callback inside a [catch] command.  Therefore an error in the callback command does not call the **bgerror** handler.  See the [Errors] section for details.
 
 **-guesstype** *boolean*
 : Attempt to guess the **Content-Type** and character set when a misconfigured server provides no information.  The default value is *false* (do nothing).  If boolean *true* then, if the server does not send a **Content-Type** header, or if it sends the value "application/octet-stream", **http::geturl** will attempt to guess appropriate values.  This is not intended to become a general-purpose tool, and currently it is limited to detecting XML documents that begin with an XML declaration.  In this case the **Content-Type** is changed to "application/xml", the binary flag state(binary) is changed to 0, and the character set is changed to the one specified by the "encoding" tag of the XML line, or to utf-8 if no encoding is specified.  Not used if a **-channel** is specified.
 
 **-handler** *callback*
-: If this option is absent, **http::geturl** processes incoming data itself, either appending it to the state(body) variable or writing it to the -channel. But if the **-handler** option is present, **http::geturl** does not do this processing and instead calls *callback*. Whenever HTTP data is available, the value of *callback* is expanded, an additional two arguments are added, and the resulting command is evaluated. The two additional arguments are: the socket for the HTTP data and the *token* returned from **::http::geturl**.  The token is the name of a global array that is described in the **STATE ARRAY** section.  The procedure is expected to return the number of bytes read from the socket.  Here is a template for the callback:
+: If this option is absent, **http::geturl** processes incoming data itself, either appending it to the state(body) variable or writing it to the -channel. But if the **-handler** option is present, **http::geturl** does not do this processing and instead calls *callback*. Whenever HTTP data is available, the value of *callback* is expanded, an additional two arguments are added, and the resulting command is evaluated. The two additional arguments are: the socket for the HTTP data and the *token* returned from **::http::geturl**.  The token is the name of a global array that is described in the [State array] section.  The procedure is expected to return the number of bytes read from the socket.  Here is a template for the callback:
 
     ```
     proc httpHandlerCallback {socket token} {
@@ -191,7 +191,7 @@ When the HTTP server has replied to the request, call the command **::http::resp
 
     If options **-handler** and **-channel** are used together, the handler is responsible for copying the data from the HTTP socket to the specified channel.  The name of the channel is available to the handler as element **-channel** of the token array.
 
-    The **::http::geturl** command runs the **-handler** callback inside a [catch] command.  Therefore an error in the callback command does not call the **bgerror** handler.  See the **ERRORS** section for details.
+    The **::http::geturl** command runs the **-handler** callback inside a [catch] command.  Therefore an error in the callback command does not call the **bgerror** handler.  See the [Errors] section for details.
 
 **-headers** *keyvaluelist*
 : This option is used to add headers not already specified by **::http::config** to the HTTP request.  The *keyvaluelist* argument must be a list with an even number of elements that alternate between keys and values.  The keys become header field names.  Newlines are stripped from the values so the header cannot be corrupted.  For example, if *keyvaluelist* is **Pragma no-cache** then the following header is included in the HTTP request:
@@ -216,7 +216,7 @@ When the HTTP server has replied to the request, call the command **::http::resp
 : Pass an specific local address to the underlying [socket] call in case multiple interfaces are available.
 
 **-progress** *callback*
-: If the **-progress** option is present, then the *callback* is made after each transfer of data from the URL. The value of *callback* is expanded, an additional three arguments are added, and the resulting command is evaluated. The three additional arguments are: the *token* returned from **::http::geturl**, the expected total size of the contents from the **Content-Length** response header, and the current number of bytes transferred so far.  The token is the name of a global array that is described in the **STATE ARRAY** section.  The expected total size may be unknown, in which case zero is passed to the callback.  Here is a template for the progress callback:
+: If the **-progress** option is present, then the *callback* is made after each transfer of data from the URL. The value of *callback* is expanded, an additional three arguments are added, and the resulting command is evaluated. The three additional arguments are: the *token* returned from **::http::geturl**, the expected total size of the contents from the **Content-Length** response header, and the current number of bytes transferred so far.  The token is the name of a global array that is described in the [State array] section.  The expected total size may be unknown, in which case zero is passed to the callback.  Here is a template for the progress callback:
 
     ```
     proc httpProgress {token total current} {
@@ -269,7 +269,7 @@ When the HTTP server has replied to the request, call the command **::http::resp
 : This command blocks and waits for the transaction to complete.  This only works in trusted code because it uses [vwait].  Also, it is not useful for the case where **::http::geturl** is called *without* the **-command** option because in this case the **::http::geturl** call does not return until the HTTP transaction is complete, and thus there is nothing to wait for.
 
 **::http::status** *token*
-: This command returns a description of the status of the HTTP transaction. The return value is the empty string until the HTTP transaction is completed; after completion it has one of the values ok, eof, error, timeout, and reset.  The meaning of these values is described in the section **ERRORS** (below).
+: This command returns a description of the status of the HTTP transaction. The return value is the empty string until the HTTP transaction is completed; after completion it has one of the values ok, eof, error, timeout, and reset.  The meaning of these values is described in the section [Errors] (below).
 
 
 The name "status" is not related to the terms "status line" and "status code" that are defined for a HTTP response.
@@ -318,13 +318,13 @@ The "reason phrase" returned by a HTTP server may differ from the recommended va
 A registry of valid status codes is maintained at https://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml
 
 **::http::responseHeaders** *token* ?*headerName*?
-: The response from a HTTP server includes metadata headers that describe the response body and the transaction itself. This command returns the HTTP response header names and values, in the order that they were received from the server, as a Tcl list of the form ?name value ...?  Header names are case-insensitive and are converted to lower case.  The return value is not a [dict] because some header names may occur more than once, notably **Set-Cookie**.  If the second argument is not supplied, all response headers are returned.  If the second argument is supplied, it provides the value of a header name.  Only headers with the requested name (converted to lower case) are returned.  If no such headers are found, an empty list is returned.  See section **METADATA** for more information.
+: The response from a HTTP server includes metadata headers that describe the response body and the transaction itself. This command returns the HTTP response header names and values, in the order that they were received from the server, as a Tcl list of the form ?name value ...?  Header names are case-insensitive and are converted to lower case.  The return value is not a [dict] because some header names may occur more than once, notably **Set-Cookie**.  If the second argument is not supplied, all response headers are returned.  If the second argument is supplied, it provides the value of a header name.  Only headers with the requested name (converted to lower case) are returned.  If no such headers are found, an empty list is returned.  See section [Metadata] for more information.
 
 **::http::responseHeaderValue** *token headerName*
 : This command returns the value of the HTTP response header named *headerName*.  Header names are case-insensitive and are converted to lower case.  If no such header exists, the return value is the empty string. If there are multiple headers named *headerName*, the result is obtained by joining the individual values with the string ", " (comma and space), preserving their order.  Multiple headers with the same name may be processed in this manner, except **Set-Cookie** which does not conform to the comma-separated-list syntax and cannot be combined into a single value. Each **Set-Cookie** header must be treated individually, e.g. by processing the return value of **::http::responseHeaders** *token* **Set-Cookie**.
 
 **::http::responseInfo** *token*
-: This command returns a [dict] of selected response metadata that are essential for identifying a successful transaction and making use of the response, along with other metadata that are informational.  The keys of the [dict] are *stage*, *status*, *responseCode*, *reasonPhrase*, *contentType*, *binary*, *redirection*, *upgrade*, *error*, *postError*, *method*, *charset*, *compression*, *httpRequest*, *httpResponse*, *url*, *connectionRequest*, *connectionResponse*, *connectionActual*, *transferEncoding*, *totalPost*, *currentPost*, *totalSize*, and *currentSize*.  The meaning of these keys is described in the section **METADATA** below.
+: This command returns a [dict] of selected response metadata that are essential for identifying a successful transaction and making use of the response, along with other metadata that are informational.  The keys of the [dict] are *stage*, *status*, *responseCode*, *reasonPhrase*, *contentType*, *binary*, *redirection*, *upgrade*, *error*, *postError*, *method*, *charset*, *compression*, *httpRequest*, *httpResponse*, *url*, *connectionRequest*, *connectionResponse*, *connectionActual*, *transferEncoding*, *totalPost*, *currentPost*, *totalSize*, and *currentSize*.  The meaning of these keys is described in the section [Metadata] below.
 
     It is always worth checking the value of *binary* after a HTTP transaction, to determine whether a misconfigured server has caused http to interpret a text resource as a binary, or vice versa.
 
@@ -423,7 +423,7 @@ The most important metadata can be accessed with the command **::http::responseI
 : This value, set by **::http::geturl**, describes the stage that the transaction has reached. Values, in order of the transaction lifecycle, are: "created", "connecting", "header", "body", and "complete".  The other [dict] keys will not be available until the value of **stage** is "body" or "complete".  The key **currentSize** has its final value only when **stage** is "complete".
 
 **status**
-: This value, set by **::http::geturl**, is "ok" for a successful transaction; "eof", "error", "timeout", or "reset" for an unsuccessful transaction; or "" if the transaction is still in progress.  The value is the same as that returned by command **::http::status**. The meaning of these values is described in the section **ERRORS** (above).
+: This value, set by **::http::geturl**, is "ok" for a successful transaction; "eof", "error", "timeout", or "reset" for an unsuccessful transaction; or "" if the transaction is still in progress.  The value is the same as that returned by command **::http::status**. The meaning of these values is described in the section [Errors] (above).
 
 **responseCode**
 : The "HTTP status code" sent by the server in the first line (the "status line") of the response.  If the value cannot be extracted from the status line, the full status line is returned.
@@ -448,7 +448,7 @@ It is always worth checking the value of "binary" after a HTTP transaction, to d
 : The URL that is the redirection target. The value is that of the **Location** response header.  This header is sent when a response has status code 3XX (redirection).
 
 **upgrade**
-: If not empty, the value indicates the protocol(s) to which the server will switch after completion of this transaction, while continuing to use the same connection.  When the server intends to switch protocols, it will also send the value "101" as the status code (the **responseCode** key), and the word "upgrade" as an element of the **Connection** response header (the **connectionResponse** key), and it will not send a response body. See the section **PROTOCOL UPGRADES** for more information.
+: If not empty, the value indicates the protocol(s) to which the server will switch after completion of this transaction, while continuing to use the same connection.  When the server intends to switch protocols, it will also send the value "101" as the status code (the **responseCode** key), and the word "upgrade" as an element of the **Connection** response header (the **connectionResponse** key), and it will not send a response body. See the section [Protocol upgrades] for more information.
 
 **error**
 : The error message, if there is one.  Further information, including a stack trace and error code, are available from command **::http::error**.
@@ -527,7 +527,7 @@ Some of the header names (metadata keys) are listed below, but the HTTP standard
 : This header is sent when a response has status code 3XX (redirection). It provides the URL that is the redirection target. Dictionary key *redirection*.
 
 **Set-Cookie**
-: This header is sent to offer a cookie to the client.  Cookie management is done by the **::http::config** option **-cookiejar**, and so the **Set-Cookie** headers need not be parsed by user scripts. See section **COOKIE JAR PROTOCOL**.
+: This header is sent to offer a cookie to the client.  Cookie management is done by the **::http::config** option **-cookiejar**, and so the **Set-Cookie** headers need not be parsed by user scripts. See section [Cookie jar protocol].
 
 **Connection**
 : The value can be supplied as a comma-separated list, or by multiple headers. The list often has only one element, either "close" or "keep-alive". The value "upgrade" indicates a successful upgrade request and is typically combined with the status code 101, an **Upgrade** response header, and no response body.  Dictionary key *connectionResponse*.
@@ -585,7 +585,7 @@ The following elements of the array are supported, and are the origin of the val
 : For dictionary key *httpResponse*.
 
 **meta**
-: For command **::http::responseHeaders**. Further discussion above in the section **MORE METADATA**.
+: For command **::http::responseHeaders**. Further discussion above in the section [More metadata].
 
 **method**
 : For dictionary key *method*.

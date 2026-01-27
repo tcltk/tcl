@@ -45,7 +45,7 @@ If the initial arguments to **regsub** start with **-** then they are treated as
 
     If **-all** is not also given, the command callback will be invoked at most once (exactly when the regular expression matches). If **-all** is given, the command callback will be invoked for each matched location, in sequence. The exact location indices that matched are not made available to the script.
 
-    See **EXAMPLES** below for illustrative cases.
+    See [Examples] below for illustrative cases.
 
 [-expanded]{.lit}
 : Enables use of the expanded regular expression syntax where whitespace and comments are ignored.  This is the same as specifying the **(?x)** embedded option (see the **re\_syntax** manual page).

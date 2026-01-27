@@ -102,13 +102,13 @@ Note that the property implementation methods that **property** defines should n
 The configurable class system is comprised of several pieces. The **oo::configurable** metaclass works by mixing in a class and setting definition namespaces during object creation that provide the other bits and pieces of machinery. The key pieces of the implementation are enumerated here so that they can be used by other code:
 
 **oo::configuresupport::configurable**
-: This is a class that provides the implementation of the **configure** method (described above in **CONFIGURE METHOD**).
+: This is a class that provides the implementation of the **configure** method (described above in [Configure method]).
 
 **oo::configuresupport::configurableclass**
-: This is a namespace that contains the definition dialect that provides the **property** declaration for use in classes (i.e., via **oo::define**, and class constructors under normal circumstances), as described above in **PROPERTY DEFINITIONS**. It [namespace export][namespace]s its **property** command so that it may be used easily in user definition dialects.
+: This is a namespace that contains the definition dialect that provides the **property** declaration for use in classes (i.e., via **oo::define**, and class constructors under normal circumstances), as described above in [Property definitions]. It [namespace export][namespace]s its **property** command so that it may be used easily in user definition dialects.
 
 **oo::configuresupport::configurableobject**
-: This is a namespace that contains the definition dialect that provides the **property** declaration for use in instance objects (i.e., via **oo::objdefine**, and the **self** declaration in **oo::define**), as described above in **PROPERTY DEFINITIONS**. It [namespace export][namespace]s its **property** command so that it may be used easily in user definition dialects.
+: This is a namespace that contains the definition dialect that provides the **property** declaration for use in instance objects (i.e., via **oo::objdefine**, and the **self** declaration in **oo::define**), as described above in [Property definitions]. It [namespace export][namespace]s its **property** command so that it may be used easily in user definition dialects.
 
 
 The underlying property discovery mechanism relies on four slots (see **oo::define** for what that implies) that list the properties that can be configured. These slots do not themselves impose any semantics on what the slots mean other than that they have unique names, no important order, can be inherited and discovered on classes and instances.

@@ -76,7 +76,7 @@ Methods are created by **Tcl\_NewMethod** and **Tcl\_NewInstanceMethod**, or by 
 or be marked as a private method,
 :::
 
-the *methodTypePtr* or *methodType2Ptr* (for TCL\_OO\_METHOD\_VERSION\_2) argument describes the implementation of the method (see the **METHOD TYPES** section below) and the *clientData* argument gives some implementation-specific data that is passed on to the implementation of the method when it is called.
+the *methodTypePtr* or *methodType2Ptr* (for TCL\_OO\_METHOD\_VERSION\_2) argument describes the implementation of the method (see the [Method types] section below) and the *clientData* argument gives some implementation-specific data that is passed on to the implementation of the method when it is called.
 
 When the *nameObj* argument to **Tcl\_NewMethod** or **Tcl\_NewMethod2** is NULL, an unnamed method is created, which is used for constructors and destructors. Constructors should be installed into their class using the **Tcl\_ClassSetConstructor** function, and destructors (which must not require any arguments) should be installed into their class using the **Tcl\_ClassSetDestructor** function. Unnamed methods should not be used for any other purpose, and named methods should not be used as either constructors or destructors. Also note that a NULL *methodTypePtr* or *methodType2Ptr* is used to provide internal signaling, and should not be used in client code.
 

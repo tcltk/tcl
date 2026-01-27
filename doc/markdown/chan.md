@@ -161,7 +161,7 @@ This command provides several operations for reading from, writing to and otherw
 [chan]{.cmd} [event]{.sub} [channel]{.arg} [event]{.arg} [script]{.optarg}
 : Arrange for the Tcl script *script* to be installed as a *file event handler* to be called whenever the channel called *channel* enters the state described by *event* (which must be either **readable** or **writable**); only one such handler may be installed per event per channel at a time.  If *script* is the empty string, the current handler is deleted (this also happens if the channel is closed or the interpreter deleted).  If *script* is omitted, the currently installed script is returned (or an empty string if no such handler is installed).  The callback is only performed if the event loop is being serviced (e.g. via [vwait] or [update]).
 
-    A file event handler is a binding between a channel and a script, such that the script is evaluated whenever the channel becomes readable or writable.  File event handlers are most commonly used to allow data to be received from another process on an event-driven basis, so that the receiver can continue to interact with the user or with other channels while waiting for the data to arrive.  If an application invokes **chan gets** or **chan read** on a blocking channel when there is no input data available, the process will block; until the input data arrives, it will not be able to service other events, so it will appear to the user to "freeze up" . With **chan event**, the process can tell when data is present and only invoke **chan gets** or **chan read** when they will not block.
+    A file event handler is a binding between a channel and a script, such that the script is evaluated whenever the channel becomes readable or writable.  File event handlers are most commonly used to allow data to be received from another process on an event-driven basis, so that the receiver can continue to interact with the user or with other channels while waiting for the data to arrive.  If an application invokes **chan gets** or **chan read** on a blocking channel when there is no input data available, the process will block; until the input data arrives, it will not be able to service other events, so it will appear to the user to "freeze up". With **chan event**, the process can tell when data is present and only invoke **chan gets** or **chan read** when they will not block.
 
     A channel is considered to be readable if there is unread data available on the underlying device.  A channel is also considered to be readable if there is unread data in an input buffer, except in the special case where the most recent attempt to read from the channel was a **chan gets** call that could not find a complete line in the input buffer.  This feature allows a file to be read a line at a time in non-blocking mode using events.  A channel is also considered to be readable if an end of file or error condition is present on the underlying file or device.  It is important for *script* to check for these conditions and handle them appropriately; for example, if there is no special check for end of file, an infinite loop may occur where *script* reads no data, returns, and is immediately invoked again.
 
@@ -185,7 +185,7 @@ This command provides several operations for reading from, writing to and otherw
 
     If a non-blocking channel is already at EOF, the command returns an empty line if *varName* is not specified. This can be distinguished from an empty line being returned by either a blank line being read or a full line not being available through the use of the **chan eof** and **chan blocked** commands. If **chan eof** returns true, the channel is at EOF. If **chan blocked** returns true, a full line was not available. If both commands return false, an empty line was read. If *varName* was specified for a non-bocking channel at EOF, the command returns -1. This can be distinguished from full line not being available either by **chan eof** or **chan blocked** as above. Note that when *varName* is specified, there is no need to distinguish between eof and blank lines as the latter will result in the command returning 0.
 
-    If the encoding profile **strict** is in effect for the channel, the command will raise an exception with the POSIX error code **EILSEQ** if any encoding errors are encountered in the channel input data. The file pointer remains unchanged and it is possible to introspect, and in some cases recover, by changing the encoding in use. See **ENCODING ERROR EXAMPLES** later.
+    If the encoding profile **strict** is in effect for the channel, the command will raise an exception with the POSIX error code **EILSEQ** if any encoding errors are encountered in the channel input data. The file pointer remains unchanged and it is possible to introspect, and in some cases recover, by changing the encoding in use. See [Encoding error examples] later.
 
 [chan]{.cmd} [isbinary]{.sub} [channel]{.arg}
 : Test whether the channel called *channel* is a binary channel, returning 1 if it is and, and 0 otherwise. A binary channel is a channel with iso8859-1 encoding, -eofchar set to {} and -translation set to lf.
@@ -230,7 +230,7 @@ This command provides several operations for reading from, writing to and otherw
     The command will raise an error exception with POSIX error code **EILSEQ** if the encoding profile **strict** is in effect for the channel and the output data cannot be encoded in the encoding configured for the channel. Data may be partially written to the channel in this case.
 
 [chan]{.cmd} [read]{.sub} [channel]{.arg} [numChars]{.optarg}
-: ...see next...
+: see below ...
 
 [chan]{.cmd} [read]{.sub} [-nonewline]{.optlit} [channel]{.arg}
 : In the first form, the result will be the next *numChars* characters read from the channel named *channel*; if *numChars* is omitted, all characters up to the point when the channel would signal a failure (whether an end-of-file, blocked or other error condition) are read. In the second form (i.e. when *numChars* has been omitted) the flag **-nonewline** may be given to indicate that any trailing newline in the string that has been read should be trimmed.
@@ -242,7 +242,7 @@ This command provides several operations for reading from, writing to and otherw
     When reading from a serial port, most applications should configure the serial port channel to be non-blocking, like this:
 
     ```
-    chan configure channel -blocking 0.
+    chan configure channel -blocking 0
     ```
 
     Then **chan read** behaves much like described above.  Note that most serial ports are comparatively slow; it is entirely possible to get a **readable** event for each character read from them. Care must be taken when using **chan read** on blocking serial ports:
@@ -254,10 +254,10 @@ This command provides several operations for reading from, writing to and otherw
     : In this form **chan read** blocks until the reception of the end-of-file character, see **chan configure -eofchar**. If there no end-of-file character has been configured for the channel, then **chan read** will block forever.
 
 
-    If the encoding profile **strict** is in effect for the channel, the command will raise an exception with the POSIX error code **EILSEQ** if any encoding errors are encountered in the channel input data. If the channel is in blocking mode, the error is thrown after advancing the file pointer to the beginning of the invalid data. The successfully decoded leading portion of the data prior to the error location is returned as the value of the **-data** key of the error option dictionary. If the channel is in non-blocking mode, the successfully decoded portion of data is returned by the command without an error exception being raised. A subsequent read will start at the invalid data and immediately raise a **EILSEQ** POSIX error exception. Unlike the blocking channel case, the **-data** key is not present in the error option dictionary. In the case of exception thrown due to encoding errors, it is possible to introspect, and in some cases recover, by changing the encoding in use. See **ENCODING ERROR EXAMPLES** later.
+    If the encoding profile **strict** is in effect for the channel, the command will raise an exception with the POSIX error code **EILSEQ** if any encoding errors are encountered in the channel input data. If the channel is in blocking mode, the error is thrown after advancing the file pointer to the beginning of the invalid data. The successfully decoded leading portion of the data prior to the error location is returned as the value of the **-data** key of the error option dictionary. If the channel is in non-blocking mode, the successfully decoded portion of data is returned by the command without an error exception being raised. A subsequent read will start at the invalid data and immediately raise a **EILSEQ** POSIX error exception. Unlike the blocking channel case, the **-data** key is not present in the error option dictionary. In the case of exception thrown due to encoding errors, it is possible to introspect, and in some cases recover, by changing the encoding in use. See [Encoding error examples] later.
 
 [chan]{.cmd} [seek]{.sub} [channel]{.arg} [offset]{.arg} [origin]{.optarg}
-: Sets the current access position within the underlying data stream for the channel named *channel* to be *offset* bytes relative to *origin*. *Offset* must be an integer (which may be negative) and *origin* must be one of the following:
+: Sets the current access position within the underlying data stream for the channel named *channel* to be *offset* bytes relative to *origin*. *offset* must be an integer (which may be negative) and *origin* must be one of the following:
 
     **start**
     : The new access position will be *offset* bytes from the start of the underlying file or device.
@@ -485,10 +485,10 @@ if {[read $chan 6] eq "foobar"} {
 
 ## Encoding error examples
 
-The example below illustrates handling of an encoding error encountered during channel input. First, creation of a test file containing the invalid UTF-8 sequence (**A \\\\xC3 B**):
+The example below illustrates handling of an encoding error encountered during channel input. First, creation of a test file containing the invalid UTF-8 sequence (**A \\xC3 B**):
 
 ```
-% set f [open test_A_195_B.txt wb]; chan puts -nonewline $f A\\xC3B; chan close $f
+% set f [open test_A_195_B.txt wb]; chan puts -nonewline $f A\xC3B; chan close $f
 ```
 
 An attempt to read the file will result in an encoding error which is then introspected by switching the channel to binary mode. Note in the example that when the error is reported the file position remains unchanged so that the **chan gets** during recovery returns the full line.

@@ -99,7 +99,7 @@ An explicit package namespace may be specified by the option **-namespace**. The
 :::
 
 **::msgcat::mcpackagenamespaceget**
-: Return the package namespace of the caller. This command handles all cases described in section **OBJECT ORIENTED PROGRAMMING**.
+: Return the package namespace of the caller. This command handles all cases described in section [Object oriented programming].
 
 
 Example usage is a tooltip package, which saves the caller package namespace to update the translation each time the tooltip is shown:
@@ -129,7 +129,7 @@ The same result may be achieved by **::msgcat::mcpreferences** {\*}[**::msgcat::
 
 The current locale is always the first element of the list returned by **mcpreferences**.
 
-msgcat stores and compares the locale in a case-insensitive manner, and returns locales in lowercase. The initial locale is determined by the locale specified in the user's environment.  See **LOCALE SPECIFICATION** below for a description of the locale string format.
+msgcat stores and compares the locale in a case-insensitive manner, and returns locales in lowercase. The initial locale is determined by the locale specified in the user's environment.  See [Locale specification] below for a description of the locale string format.
 
 If the locale is set, the preference list of locales is evaluated. Locales in this list are loaded now, if not jet loaded.
 
@@ -184,7 +184,7 @@ The subcommand **clear** removes all locales and their data, which are not in th
 
 
 [::msgcat::mcutil]{.cmd} [getpreferences]{.sub} [locale]{.arg}
-: Return the preferences list of the given locale as described in the section **LOCALE SPECIFICATION**. An example is the composition of a preference list for the bilingual region "Biel/Bienne" as a concatenation of swiss german and swiss french:
+: Return the preferences list of the given locale as described in the section [Locale specification]. An example is the composition of a preference list for the bilingual region "Biel/Bienne" as a concatenation of swiss german and swiss french:
 
     ```
     % concat [lrange [msgcat::mcutil getpreferences fr_CH] 0 end-1] [msgcat::mcutil getpreferences de_CH]
@@ -192,7 +192,7 @@ The subcommand **clear** removes all locales and their data, which are not in th
     ```
 
 [::msgcat::mcutil]{.cmd} [getsystemlocale]{.sub}
-: The system locale is returned as described by the section **LOCALE SPECIFICATION**.
+: The system locale is returned as described by the section [Locale specification].
 
 
 # Locale specification

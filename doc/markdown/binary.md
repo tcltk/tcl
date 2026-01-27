@@ -34,7 +34,7 @@ binary - Insert and extract fields from binary strings
 
 # Description
 
-This command provides facilities for manipulating binary data.  The subcommand **binary format** creates a binary string from normal Tcl values.  For example, given the values 16 and 22, on a 32-bit architecture, it might produce an 8-byte binary string consisting of two 4-byte integers, one for each of the numbers.  The subcommand **binary scan**, does the opposite: it extracts data from a binary string and returns it as ordinary Tcl string values. The **binary encode** and **binary decode** subcommands convert binary data to or from string encodings such as base64 (used in MIME messages for example).
+This command provides facilities for manipulating binary data.  The subcommand [binary format] creates a binary string from normal Tcl values.  For example, given the values 16 and 22, on a 32-bit architecture, it might produce an 8-byte binary string consisting of two 4-byte integers, one for each of the numbers.  The subcommand [binary scan], does the opposite: it extracts data from a binary string and returns it as ordinary Tcl string values. The **binary encode** and **binary decode** subcommands convert binary data to or from string encodings such as base64 (used in MIME messages for example).
 
 Note that other operations on binary data, such as taking a subsequence of it, getting its length, or reinterpreting it as a string in some encoding, are done by other Tcl commands (respectively [string range][string], [string length][string] and [encoding convertfrom][encoding] in the example cases).  A binary string in Tcl is merely one where all the characters it contains are in the range \\u0000-\\u00FF.
 
@@ -78,7 +78,7 @@ When encoding binary data as a readable string, the starting binary data is pass
     : Indicates the maximum number of characters to produce for each encoded line. The valid range is 5 to 85. Line lengths outside that range cannot be accommodated by the encoding format. The default value is 61.
 
     [-wrapchar]{.lit} [character]{.arg}
-    : Indicates the character(s) to use to mark the end of each encoded line. Acceptable values are a sequence of zero or more characters from the set { \\\\x09 (TAB), \\\\x0B (VT), \\\\x0C (FF), \\\\x0D (CR) } followed by zero or one newline \\\\x0A (LF).  Any other values are rejected because they would generate encoded text that could not be decoded. The default value is a single newline.
+    : Indicates the character(s) to use to mark the end of each encoded line. Acceptable values are a sequence of zero or more characters from the set { \\x09 (TAB), \\x0B (VT), \\x0C (FF), \\x0D (CR) } followed by zero or one newline \\x0A (LF).  Any other values are rejected because they would generate encoded text that could not be decoded. The default value is a single newline.
 
 
     During decoding, the following options are supported:

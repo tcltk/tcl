@@ -53,7 +53,7 @@ Available commands:
 : Returns the body of the procedure named *procname*.
 
 [info]{.cmd} [class]{.sub} [subcommand]{.arg} [class]{.arg} [arg]{.optdot}
-: Returns information about the class named *class*. See **CLASS INTROSPECTION** below.
+: Returns information about the class named *class*. See [Class introspection] below.
 
 [info]{.cmd} [cmdcount]{.sub}
 : Returns the total number of commands evaluated in this interpreter.
@@ -199,7 +199,7 @@ The syntactic form **{\*}** is handled like [eval]. I.e. if it is given a litera
 : Returns the absolute pathname of the program for the current interpreter.  If such a file can not be identified an empty string is returned.
 
 [info]{.cmd} [object]{.sub} [subcommand]{.arg} [object]{.arg} [arg]{.optdot}
-: Returns information about the object named *object*. *subcommand* is described **OBJECT INTROSPECTION** below.
+: Returns information about the object named *object*. *subcommand* is described [Object introspection] below.
 
 [info]{.cmd} [patchlevel]{.sub}
 : Returns the value of the global variable **tcl\_patchLevel**, in which the exact version of the Tcl library initially stored.

@@ -61,7 +61,7 @@ An expression consists of a combination of operands, operators, parentheses and 
 Each operand has one of the following forms:
 
 A **numeric value**
-: ...see next...
+: see below ...
 
 
 Either integer or floating-point.  The first two characters of an integer may also be **0d** for decimal, **0b** for binary, **0o** for octal or **0x** for hexadecimal.
@@ -93,7 +93,7 @@ A Tcl command enclosed in **brackets**
 : Command substitution is performed as according to the command substitution rule for **Tcl**.
 
 A function call.
-: This is mathematical function such as **sin($x)**, whose arguments have any of the above forms for operands.  See **MATH FUNCTIONS** below for a discussion of how mathematical functions are handled.
+: This is mathematical function such as **sin($x)**, whose arguments have any of the above forms for operands.  See [Math functions] below for a discussion of how mathematical functions are handled.
 
 
 Because **expr** parses and performs substitutions on values that have already been parsed and substituted by **Tcl**, it is usually best to enclose expressions in braces to avoid the first round of substitutions by **Tcl**.

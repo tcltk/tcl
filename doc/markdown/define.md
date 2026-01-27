@@ -80,7 +80,7 @@ The following commands are supported in the *defScript* for **oo::define**, each
     If in a private definition context (see the **private** definition command, below), this command creates private forwarded methods.
 
 [initialise]{.cmd} [script]{.arg}
-: ...see next...
+: see below ...
 
 [initialize]{.cmd} [script]{.arg}
 : This evaluates *script* in a context which supports local variables and where the current namespace is the instance namespace of the class object itself. This is useful for setting up, e.g., class-scoped variables.
@@ -91,7 +91,7 @@ The following commands are supported in the *defScript* for **oo::define**, each
     If in a private definition context (see the **private** definition command, below) or if the **-private** flag is given for *option*, this command creates private procedure-like methods.
 
 [private]{.cmd} [cmd]{.arg} [arg...]{.arg}
-: ...see next...
+: see below ...
 
 [private]{.cmd} [script]{.arg}
 : This evaluates the *script* (or the list of command and arguments given by *cmd* and *arg*s) in a context where the definitions made on the current class will be private definitions.
@@ -99,24 +99,24 @@ The following commands are supported in the *defScript* for **oo::define**, each
     The following class definition commands are affected by **private**: **forward**, **method**, **self**, and [variable]. Nesting **private** inside **private** has no cumulative effect; the innermost definition context is just a private definition context. All other definition commands have no difference in behavior when used in a private definition context.
 
 [self]{.cmd} [subcommand]{.arg} [arg]{.arg} [...]{.arg}
-: ...see next...
+: see below ...
 
 [self]{.cmd} [script]{.arg}
-: ...see next...
+: see below ...
 
 [self]{.cmd}
-: This command is equivalent to calling **oo::objdefine** on the class being defined (see **CONFIGURING OBJECTS** below for a description of the supported values of *subcommand*). It follows the same general pattern of argument handling as the **oo::define** and **oo::objdefine** commands, and "**oo::define** *cls* **self** *subcommand ...*" operates identically to "**oo::objdefine** *cls subcommand ...*".
+: This command is equivalent to calling **oo::objdefine** on the class being defined (see [Configuring objects] below for a description of the supported values of *subcommand*). It follows the same general pattern of argument handling as the **oo::define** and **oo::objdefine** commands, and "**oo::define** *cls* **self** *subcommand ...*" operates identically to "**oo::objdefine** *cls subcommand ...*".
 
     If no arguments at all are used, this gives the name of the class currently being configured. If in a private definition context (see the **private** definition command, below), the definitions on the class object will also be made in a private definition context.
 
 [superclass]{.cmd} [-slotOperation]{.optarg} [className]{.optdot}
-: This slot (see **SLOTTED DEFINITIONS** below) allows the alteration of the superclasses of the class being defined. Each *className* argument names one class that is to be a superclass of the defined class. Note that objects must not be changed from being classes to being non-classes or vice-versa, that an empty parent class is equivalent to **oo::object**, and that the parent classes of **oo::object** and **oo::class** may not be modified. By default, this slot works by replacement.
+: This slot (see [Slotted definitions] below) allows the alteration of the superclasses of the class being defined. Each *className* argument names one class that is to be a superclass of the defined class. Note that objects must not be changed from being classes to being non-classes or vice-versa, that an empty parent class is equivalent to **oo::object**, and that the parent classes of **oo::object** and **oo::class** may not be modified. By default, this slot works by replacement.
 
 [unexport]{.cmd} [name]{.arg} [name]{.optdot}
 : This arranges for each of the named methods, *name*, to be not exported (i.e. not usable outside the instance through the instance object's command, but instead just through the **my** command visible in each object's context) by the class being defined. Note that the methods themselves may be actually defined by a superclass; subclass unexports override superclass visibility, and may be overridden by instance unexports.
 
 [variable]{.cmd} [-slotOperation]{.optarg} [name]{.optdot}
-: This slot (see **SLOTTED DEFINITIONS** below) arranges for each of the named variables to be automatically made available in the methods, constructor and destructor declared by the class being defined. Each variable name must not have any namespace separators and must not look like an array access. All variables will be actually present in the namespace of the instance object on which the method is executed. Note that the variable lists declared by a superclass or subclass are completely disjoint, as are variable lists declared by instances; the list of variable names is just for methods (and constructors and destructors) declared by this class. By default, this slot works by appending.
+: This slot (see [Slotted definitions] below) arranges for each of the named variables to be automatically made available in the methods, constructor and destructor declared by the class being defined. Each variable name must not have any namespace separators and must not look like an array access. All variables will be actually present in the namespace of the instance object on which the method is executed. Note that the variable lists declared by a superclass or subclass are completely disjoint, as are variable lists declared by instances; the list of variable names is just for methods (and constructors and destructors) declared by this class. By default, this slot works by appending.
 
     If in a private definition context (see the **private** definition command, below), this slot manipulates the list of private variable bindings for this class. In a private variable binding, the name of the variable within the instance object is different to the name given in the definition; the name used in the definition is the name that you use to access the variable within the methods of this class, and the name of the variable in the instance namespace has a unique prefix that makes accidental use from other classes extremely unlikely.
 
@@ -136,10 +136,10 @@ The following definitions are also supported, but are not required in simple pro
 : This deletes each of the methods called *name* from a class. The methods must have previously existed in that class. Does not affect the superclasses of the class, nor does it affect the subclasses or instances of the class (except when they have a call chain through the class being modified) or the class object itself.
 
 [filter]{.cmd} [-slotOperation]{.optarg} [methodName]{.optdot}
-: This slot (see **SLOTTED DEFINITIONS** below) sets or updates the list of method names that are used to guard whether method call to instances of the class may be called and what the method's results are. Each *methodName* names a single filtering method (which may be exposed or not exposed); it is not an error for a non-existent method to be named since they may be defined by subclasses. By default, this slot works by appending.
+: This slot (see [Slotted definitions] below) sets or updates the list of method names that are used to guard whether method call to instances of the class may be called and what the method's results are. Each *methodName* names a single filtering method (which may be exposed or not exposed); it is not an error for a non-existent method to be named since they may be defined by subclasses. By default, this slot works by appending.
 
 [mixin]{.cmd} [-slotOperation]{.optarg} [className]{.optdot}
-: This slot (see **SLOTTED DEFINITIONS** below) sets or updates the list of additional classes that are to be mixed into all the instances of the class being defined. Each *className* argument names a single class that is to be mixed in. By default, this slot works by replacement.
+: This slot (see [Slotted definitions] below) sets or updates the list of additional classes that are to be mixed into all the instances of the class being defined. Each *className* argument names a single class that is to be mixed in. By default, this slot works by replacement.
 
 [renamemethod]{.cmd} [fromName]{.arg} [toName]{.arg}
 : This renames the method called *fromName* in a class to *toName*. The method must have previously existed in the class, and *toName* must not previously refer to a method in that class. Does not affect the superclasses of the class, nor does it affect the subclasses or instances of the class (except when they have a call chain through the class being modified), or the class object itself. Does not change the export status of the method; if it was exported before, it will be afterwards.
@@ -163,10 +163,10 @@ The following commands are supported in the *defScript* for **oo::objdefine**, e
     If in a private definition context (see the **private** definition command, below) or if the **-private** flag is given for *option*, this command creates private procedure-like methods.
 
 [mixin]{.cmd} [-slotOperation]{.optarg} [className]{.optdot}
-: This slot (see **SLOTTED DEFINITIONS** below) sets or updates a per-object list of additional classes that are to be mixed into the object. Each argument, *className*, names a single class that is to be mixed in. By default, this slot works by replacement.
+: This slot (see [Slotted definitions] below) sets or updates a per-object list of additional classes that are to be mixed into the object. Each argument, *className*, names a single class that is to be mixed in. By default, this slot works by replacement.
 
 [private]{.cmd} [cmd]{.arg} [arg...]{.arg}
-: ...see next...
+: see below ...
 
 [private]{.cmd} [script]{.arg}
 : This evaluates the *script* (or the list of command and arguments given by *cmd* and *arg*s) in a context where the definitions made on the current object will be private definitions.
@@ -177,7 +177,7 @@ The following commands are supported in the *defScript* for **oo::objdefine**, e
 : This arranges for each of the named methods, *name*, to be not exported (i.e. not usable outside the object through the object's command, but instead just through the **my** command visible in the object's context) by the object being defined. Note that the methods themselves may be actually defined by a class; instance unexports override class visibility.
 
 [variable]{.cmd} [-slotOperation]{.optarg} [name]{.optdot}
-: This slot (see **SLOTTED DEFINITIONS** below) arranges for each of the named variables to be automatically made available in the methods declared by the object being defined.  Each variable name must not have any namespace separators and must not look like an array access. All variables will be actually present in the namespace of the object on which the method is executed. Note that the variable lists declared by the classes and mixins of which the object is an instance are completely disjoint; the list of variable names is just for methods declared by this object. By default, this slot works by appending.
+: This slot (see [Slotted definitions] below) arranges for each of the named variables to be automatically made available in the methods declared by the object being defined.  Each variable name must not have any namespace separators and must not look like an array access. All variables will be actually present in the namespace of the object on which the method is executed. Note that the variable lists declared by the classes and mixins of which the object is an instance are completely disjoint; the list of variable names is just for methods declared by this object. By default, this slot works by appending.
 
     If in a private definition context (see the **private** definition command, below), this slot manipulates the list of private variable bindings for this object.  In a private variable binding, the name of the variable within the instance object is different to the name given in the definition; the name used in the definition is the name that you use to access the variable within the methods of this instance object, and the name of the variable in the instance namespace has a unique prefix that makes accidental use from superclass methods extremely unlikely.
 
@@ -193,7 +193,7 @@ The following definitions are also supported, but are not required in simple pro
 : This deletes each of the methods called *name* from an object. The methods must have previously existed in that object (e.g., because it was created through **oo::objdefine method**). Does not affect the classes that the object is an instance of, or remove the exposure of those class-provided methods in the instance of that class.
 
 [filter]{.cmd} [-slotOperation]{.optarg} [methodName]{.optdot}
-: This slot (see **SLOTTED DEFINITIONS** below) sets or updates the list of method names that are used to guard whether a method call to the object may be called and what the method's results are. Each *methodName* names a single filtering method (which may be exposed or not exposed); it is not an error for a non-existent method to be named. Note that the actual list of filters also depends on the filters set upon any classes that the object is an instance of. By default, this slot works by appending.
+: This slot (see [Slotted definitions] below) sets or updates the list of method names that are used to guard whether a method call to the object may be called and what the method's results are. Each *methodName* names a single filtering method (which may be exposed or not exposed); it is not an error for a non-existent method to be named. Note that the actual list of filters also depends on the filters set upon any classes that the object is an instance of. By default, this slot works by appending.
 
 [renamemethod]{.cmd} [fromName]{.arg} [toName]{.arg}
 : This renames the method called *fromName* in an object to *toName*. The method must have previously existed in the object, and *toName* must not previously refer to a method in that object. Does not affect the classes that the object is an instance of and cannot rename in an instance object the methods provided by those classes (though a **oo::objdefine forward**ed method may provide an equivalent capability). Does not change the export status of the method; if it was exported before, it will be afterwards.

@@ -221,8 +221,9 @@ namespace eval ::ndoc {
 	set verbose 0
 	# the dictionary into which the manual page is put
 	set manual [dict create]
-	# whether to try and convert command names in the text to real links:
-	set convertCmdToLink 1
+	# list of section/aubsection titles which can act as reference targets
+	# (will be reset for ever man page read):
+	set sectionTitles [list]
 	# list of Tcl commands to recognize for links between manual pages:
 	set tclCmdList [lsort [info commands]]
 	# dictionary of links on pages that should link to a page
@@ -562,6 +563,7 @@ proc ::ndoc::parseBackslash {text} {
 	# \N'34' \"      = \N'34'  ->   "
 	# \\(en –        = \(en    ->   – (em-dash)
 	# \\(-> \u2192   = \(->    ->   -> (arrow)
+	# \\\\           = \\      ->   undo backslash escaping during parsing, it will be added by the markdown writer if needed
 	#
 	# Note: this procedure does not handle the \f... sequences
 	# (\fB, \fI and \fR are handled by BIRPclean, BIRPstrip and parseInline)
@@ -574,6 +576,7 @@ proc ::ndoc::parseBackslash {text} {
 		\N'34' \"
 		\\(en –
 		\\(-> \u2192
+		\\\\ \\
 	} $text]
 	return $text
 }
@@ -679,6 +682,7 @@ proc ::ndoc::parseBlock {parent manContent} {
 	#
 	variable manual
 	variable verbose
+	variable sectionTitles
 	# the accumulative list of blocks so far:
 	set blockList [list]
 	# which blockType this one is (inside of $parent):
@@ -825,7 +829,7 @@ proc ::ndoc::parseBlock {parent manContent} {
 							} else {
 								# new item starts, so finish the current one, if any
 								if {$itemTitle ne ""} {
-									if {$itemContent eq ""} {set itemContent "...see next..."}
+									if {$itemContent eq ""} {set itemContent "see below ..."}
 									if $verbose {puts "finish ${blockType} item:\n+++\n$itemContent\n+++\n"}
 									if {$blockType eq "Dlist"} {set itemAttr [list -definition $itemTitle]} else {set itemAttr [list]}
 									if {[llength $itemVS]} {lappend itemAttr {*}$itemVS}
@@ -888,7 +892,7 @@ proc ::ndoc::parseBlock {parent manContent} {
 				}
 				# the list is over, finish it and look for the next block
 				if $verbose {puts "finish dlist"}
-				if {$itemContent eq ""} {set itemContent "...see next..."}
+				if {$itemContent eq ""} {set itemContent "see below ..."}
 				# as the content of the DlistItem block is itself some blocks, we need to parse it again here:
 				if $verbose {puts "finish last dlist item:\n+++\n$itemContent\n+++\n"}
 				if {$blockType eq "Dlist"} {set itemAttr [list -definition $itemTitle]} else {set itemAttr [list]}
@@ -905,6 +909,8 @@ proc ::ndoc::parseBlock {parent manContent} {
 				if {$blockType ne ""} {set doCloseBlock 1; continue}
 				if $verbose {puts Section}
 				set SHcontent [string totitle [string trim [string range $line 3 end] \"\ ]]
+				# add to list of possible cross reference targets:
+				lappend sectionTitles $SHcontent
 				switch $SHcontent {
 					"Keywords" -  "See also" {
 						# the content of this section is just a list of keywords
@@ -999,6 +1005,8 @@ proc ::ndoc::parseBlock {parent manContent} {
 				if {$blockType ne ""} {set doCloseBlock 1; continue}
 				if $verbose {puts Subsection}
 				set SScontent [string totitle [string trim [string range $line 3 end] \"\ ]]
+				# add to list of possible cross reference targets:
+				lappend sectionTitles $SScontent
 				#return [list [list Header {-level 2} $SScontent] {*}[parseBlock Header [lrange $manContent 1 end]]]
 				lappend blockList [list Header {-level 2} $SScontent]
 				set manContent [lrange $manContent 1 end]
@@ -1354,7 +1362,6 @@ proc ::ndoc::parseInline {keyword attributes content} {
 	# Returns a replacement AST where the content is replaced with a list of (possibly nested) Inline AST elements
 	#
 	variable verbose
-	variable convertCmdToLink
 	set DEBUG 0
 	set inlineAST [list]
 	if {$verbose || $DEBUG} {puts CONTENT=$content}
@@ -1642,11 +1649,16 @@ proc ::ndoc::mdExceptions {md} {
 	variable manual
 	set myFile [dict get $manual meta CommandName]
 	switch $myFile {
-		re_syntax {
-			set md [string map {{Different flavors of res} {Different flavours of REs}} $md] 
-		}
 		append {
 			set md [string map {{"**append a $b**"} {`append a $b`} {"**set a $a$b**" if **$a**} {`set a $a$b` if `$a`}} $md]
+		}
+		binary {
+			# add two cross references:
+			set md [string map {{subcommand **binary format**} {subcommand [binary format]}} $md]
+			set md [string map {{subcommand **binary scan**} {subcommand [binary scan]}} $md]
+		}
+		re_syntax {
+			set md [string map {{Different flavors of res} {Different flavours of REs}} $md] 
 		}
 	}
 	return $md
@@ -1665,6 +1677,7 @@ proc ::ndoc::mdLinks {md} {
 	variable tclCmdListRemap
 	variable manual
 	variable tclCmdListExclude
+	variable sectionTitles
 	set refList [list]
 	set cmdName [dict get $manual meta CommandName]
 	# detect all strings with ** around, using a non-greedy regexp.
@@ -1678,7 +1691,8 @@ proc ::ndoc::mdLinks {md} {
 		## extract the command name:
 		set linkList [split $linkText { }]
 		set linkCmd [lindex $linkList 0]
-		set isValidLink 1
+		# isValidLink: 0 = no link, 1 = external link, 2 = internal link:
+		set isValidLink 0
 		if {
 			[lindex $linkList 0] eq "const" && [llength $linkList] >= 1
 		} {
@@ -1694,6 +1708,11 @@ proc ::ndoc::mdLinks {md} {
 			##  used to escape an underscore in a command name in markdown such as in 'tcl\_platform'):
 			set linkTarget [dict getwithdefault $tclCmdListRemap $cmdName [subst $linkCmd] {}]
 			if {$linkTarget ne ""} {set isValidLink 1} else {set isValidLink 0}
+		} elseif {! [string is lower [string index $linkText 0]] && [string totitle $linkText] in $sectionTitles} {
+			# it's a valid cross reference to another section/subseczion in this text:
+			set linkText [string totitle $linkText]
+			set isValidLink 2
+			set linkTarget $linkText
 		} else {
 			## exclude links to self and the ones on the exclusion list:
 			set isValidLink 0
@@ -1702,7 +1721,8 @@ proc ::ndoc::mdLinks {md} {
 			set replaceString \[$linkText\]
 			if {$linkTarget ne $linkText} {append replaceString \[$linkTarget\]}
 			set md [string replace $md {*}$fullRange $replaceString]
-			lappend refList $linkTarget
+			# only add externl links, not internal ones:
+			if {$isValidLink == 1} {lappend refList $linkTarget}
 			# the next search should start at the character after $fullMatch,
 			# but since we have changed the content with a string that is
 			# different in length, the new index will be offset by the length
@@ -1754,6 +1774,7 @@ proc ::ndoc::main {} {
 	global argv
 	variable manual
 	variable verbose
+	variable sectionTitles
 	if {[lindex $argv 0] eq ""} {
 		#### main testing code follows (prints to stdout) ####
 		set myDir [file dirname [info script]]
@@ -1787,6 +1808,7 @@ proc ::ndoc::main {} {
 		foreach section {n 1 3} {
 			foreach file [lsort -dictionary [glob [file join $inDir *.$section]]] {
 				puts "converting $file ..."
+				set sectionTitles [list]
 				set md [man2markdown [readFile $file]]
 				set stem [file rootname [file tail $file]]
 				# make sure not to overwrite files in the n section with

@@ -30,7 +30,7 @@ Tcl\_SplitPath, Tcl\_JoinPath, Tcl\_GetPathType - manipulate platform-dependent 
 
 # Arguments
 
-.AP "const char" \*path in File path in a form appropriate for the current platform (see the **filename** manual entry for acceptable forms for path names). .AP "Tcl\_Size | int" \*argcPtr out Filled in with number of path elements in *path*. May be (Tcl\_Size \*)NULL when not used. If it points to a variable which type is not **Tcl\_Size**, a compiler warning will be generated. If your extensions is compiled with **-DTCL\_8\_API**, argcPtr will be filled with -1 for paths with more than INT\_MAX elements (which should trigger proper error-handling), otherwise expect it to crash. .AP "const char" \*\*\*argvPtr out *\*argvPtr* will be filled in with the address of an array of pointers to the strings that are the extracted elements of *path*. There will be *\*argcPtr* valid entries in the array, followed by a NULL entry. .AP Tcl\_Size argc in Number of elements in *argv*. .AP "const char \*const" \*argv in Array of path elements to merge together into a single path. .AP Tcl\_DString \*resultPtr in/out A pointer to an initialized **Tcl\_DString** to which the result of **Tcl\_JoinPath** will be appended. 
+.AP "const char" \*path in File path in a form appropriate for the current platform (see the **filename** manual entry for acceptable forms for path names). .AP "Tcl\_Size \\&| int" \*argcPtr out Filled in with number of path elements in *path*. May be (Tcl\_Size \*)NULL when not used. If it points to a variable which type is not **Tcl\_Size**, a compiler warning will be generated. If your extensions is compiled with **-DTCL\_8\_API**, argcPtr will be filled with -1 for paths with more than INT\_MAX elements (which should trigger proper error-handling), otherwise expect it to crash. .AP "const char" \*\*\*argvPtr out *\*argvPtr* will be filled in with the address of an array of pointers to the strings that are the extracted elements of *path*. There will be *\*argcPtr* valid entries in the array, followed by a NULL entry. .AP Tcl\_Size argc in Number of elements in *argv*. .AP "const char \*const" \*argv in Array of path elements to merge together into a single path. .AP Tcl\_DString \*resultPtr in/out A pointer to an initialized **Tcl\_DString** to which the result of **Tcl\_JoinPath** will be appended. 
 
 # Description
 
@@ -44,7 +44,7 @@ These procedures may be used to disassemble and reassemble file paths in a platf
 Tcl_Size argc;
 char *path;
 char **argv;
-...
+\&...
 Tcl_SplitPath(string, &argc, &argv);
 ```
 

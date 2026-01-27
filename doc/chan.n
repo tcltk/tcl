@@ -420,8 +420,7 @@ while waiting for the data to arrive.  If an application invokes
 no input data available, the process will block; until the input data
 arrives, it will not be able to service other events, so it will
 appear to the user to
-.QW "freeze up"
-\&.
+.QW "freeze up" .
 With \fBchan event\fR, the
 process can tell when data is present and only invoke \fBchan gets\fR
 or \fBchan read\fR when they will not block.
@@ -713,7 +712,7 @@ When reading from a serial port, most applications should configure
 the serial port channel to be non-blocking, like this:
 .PP
 .CS
-\fBchan configure \fIchannel \fB\-blocking \fI0\fR.
+\fBchan configure \fIchannel \fB\-blocking \fI0\fR
 .CE
 .PP
 Then \fBchan read\fR behaves much like described above.  Note that
@@ -754,7 +753,7 @@ changing the encoding in use. See \fBENCODING ERROR EXAMPLES\fR later.
 .
 Sets the current access position within the underlying data stream for
 the channel named \fIchannel\fR to be \fIoffset\fR bytes relative to
-\fIorigin\fR. \fIOffset\fR must be an integer (which may be negative)
+\fIorigin\fR. \fIoffset\fR must be an integer (which may be negative)
 and \fIorigin\fR must be one of the following:
 .RS
 .IP \fBstart\fR

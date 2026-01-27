@@ -73,16 +73,16 @@ tcltest - Test harness support code and utilities
 
 The **tcltest** package provides several utility commands useful in the construction of test suites for code instrumented to be run by evaluation of Tcl commands.  Notably the built-in commands of the Tcl library itself are tested by a test suite using the tcltest package.
 
-All the commands provided by the **tcltest** package are defined in and exported from the **::tcltest** namespace, as indicated in the **SYNOPSIS** above.  In the following sections, all commands will be described by their simple names, in the interest of brevity.
+All the commands provided by the **tcltest** package are defined in and exported from the **::tcltest** namespace, as indicated in the [Synopsis] above.  In the following sections, all commands will be described by their simple names, in the interest of brevity.
 
 The central command of **tcltest** is **test** that defines and runs a test.  Testing with **test** involves evaluation of a Tcl script and comparing the result to an expected result, as configured and controlled by a number of options.  Several other commands provided by **tcltest** govern the configuration of **test** and the collection of many **test** commands into test suites.
 
-See **CREATING TEST SUITES WITH TCLTEST** below for an extended example of how to use the commands of **tcltest** to produce test suites for your Tcl-enabled code.
+See [Creating test suites with tcltest] below for an extended example of how to use the commands of **tcltest** to produce test suites for your Tcl-enabled code.
 
 # Commands
 
 **test** *name description* ?*-option value ...*?
-: Defines and possibly runs a test with the name *name* and description *description*.  The name and description of a test are used in messages reported by **test** during the test, as configured by the options of **tcltest**.  The remaining *option value* arguments to **test** define the test, including the scripts to run, the conditions under which to run them, the expected result, and the means by which the expected and actual results should be compared. See **TESTS** below for a complete description of the valid options and how they define a test.  The **test** command returns an empty string.
+: Defines and possibly runs a test with the name *name* and description *description*.  The name and description of a test are used in messages reported by **test** during the test, as configured by the options of **tcltest**.  The remaining *option value* arguments to **test** define the test, including the scripts to run, the conditions under which to run them, the expected result, and the means by which the expected and actual results should be compared. See [Tests] below for a complete description of the valid options and how they define a test.  The **test** command returns an empty string.
 
 **test** *name description* ?*constraints*? *body result*
 : This form of **test** is provided to support test suites written for version 1 of the **tcltest** package, and also a simpler interface for a common usage.  It is the same as "**test** *name description* **-constraints** *constraints* **-body** *body* **-result** *result*". All other options to **test** take their default values.  When *constraints* is omitted, this form of **test** can be distinguished from the first because all *option*s begin with "-".
@@ -111,13 +111,13 @@ See **CREATING TEST SUITES WITH TCLTEST** below for an extended example of how t
     Prints statistics about the tests run and removes files that were created by **makeDirectory** and **makeFile** since the last **cleanupTests**.  Names of files and directories in the directory **configure -tmpdir** created since the last **cleanupTests**, but not created by **makeFile** or **makeDirectory** are printed to **outputChannel**.  This command also restores the original shell environment, as described by the global **env** array. Returns an empty string.
 
 **runAllTests**
-: This is a main command meant to run an entire suite of tests, spanning multiple files and/or directories, as governed by the configurable options of **tcltest**.  See **RUNNING ALL TESTS** below for a complete description of the many variations possible with **runAllTests**.
+: This is a main command meant to run an entire suite of tests, spanning multiple files and/or directories, as governed by the configurable options of **tcltest**.  See [Running all tests] below for a complete description of the many variations possible with **runAllTests**.
 
 
 ## Configuration commands
 
 **configure**
-: Returns the list of configurable options supported by **tcltest**. See **CONFIGURABLE OPTIONS** below for the full list of options, their valid values, and their effect on **tcltest** operations.
+: Returns the list of configurable options supported by **tcltest**. See [Configurable options] below for the full list of options, their valid values, and their effect on **tcltest** operations.
 
 **configure** *option*
 : Returns the current value of the supported configurable option *option*. Raises an error if *option* is not a supported configurable option.
@@ -131,7 +131,7 @@ See **CREATING TEST SUITES WITH TCLTEST** below for an extended example of how t
 : Registers *mode* as a new legal value of the **-match** option to **test**.  When the **-match** *mode* option is passed to **test**, the script *script* will be evaluated to compare the actual result of evaluating the body of the test to the expected result. To perform the match, the *script* is completed with two additional words, the expected result, and the actual result, and the completed script is evaluated in the global namespace. The completed script is expected to return a boolean value indicating whether or not the results match.  The built-in matching modes of **test** are **exact**, [glob], and [regexp].
 
 **testConstraint** *constraint* ?*boolean*?
-: Sets or returns the boolean value associated with the named *constraint*. See **TEST CONSTRAINTS** below for more information.
+: Sets or returns the boolean value associated with the named *constraint*. See [Test constraints] below for more information.
 
 **interpreter** ?*executableName*?
 : Sets or returns the name of the executable to be [exec]ed by **runAllTests** to run each test file when **configure -singleproc** is false. The default value for **interpreter** is the name of the currently running program as returned by [info nameofexecutable][info].
@@ -202,7 +202,7 @@ See **CREATING TEST SUITES WITH TCLTEST** below for an extended example of how t
 The remaining commands provided by **tcltest** have better alternatives provided by **tcltest** or **Tcl** itself.  They are retained to support existing test suites, but should be avoided in new code.
 
 **test** *name description optionList*
-: This form of **test** was provided to enable passing many options spanning several lines to **test** as a single argument quoted by braces, rather than needing to backslash quote the newlines between arguments to **test**.  The *optionList* argument is expected to be a list with an even number of elements representing *option* and *value* arguments to pass to **test**.  However, these values are not passed directly, as in the alternate forms of [switch].  Instead, this form makes an unfortunate attempt to overthrow Tcl's substitution rules by performing substitutions on some of the list elements as an attempt to implement a "do what I mean" interpretation of a brace-enclosed "block". The result is nearly impossible to document clearly, and for that reason this form is not recommended.  See the examples in **CREATING TEST SUITES WITH TCLTEST** below to see that this form is really not necessary to avoid backslash-quoted newlines. If you insist on using this form, examine the source code of **tcltest** if you want to know the substitution details, or just enclose the third through last argument to **test** in braces and hope for the best.
+: This form of **test** was provided to enable passing many options spanning several lines to **test** as a single argument quoted by braces, rather than needing to backslash quote the newlines between arguments to **test**.  The *optionList* argument is expected to be a list with an even number of elements representing *option* and *value* arguments to pass to **test**.  However, these values are not passed directly, as in the alternate forms of [switch].  Instead, this form makes an unfortunate attempt to overthrow Tcl's substitution rules by performing substitutions on some of the list elements as an attempt to implement a "do what I mean" interpretation of a brace-enclosed "block". The result is nearly impossible to document clearly, and for that reason this form is not recommended.  See the examples in [Creating test suites with tcltest] below to see that this form is really not necessary to avoid backslash-quoted newlines. If you insist on using this form, examine the source code of **tcltest** if you want to know the substitution details, or just enclose the third through last argument to **test** in braces and hope for the best.
 
 **workingDirectory** ?*directoryName*?
 : Sets or returns the current working directory when the test suite is running.  The default value for workingDirectory is the directory in which the test suite was launched.  The Tcl commands [cd] and [pwd] are sufficient replacements.
@@ -253,7 +253,7 @@ Valid attributes and associated values are:
 
     Note that the expression form of **-constraints** may interfere with the operation of **configure -constraints** and **configure -limitconstraints**, and is not recommended.
 
-    Appropriate constraints should be added to any tests that should not always be run.  That is, conditional evaluation of a test should be accomplished by the **-constraints** option, not by conditional evaluation of **test**.  In that way, the same number of tests are always reported by the test suite, though the number skipped may change based on the testing environment. The default value is an empty list. See **TEST CONSTRAINTS** below for a list of built-in constraints and information on how to add your own constraints.
+    Appropriate constraints should be added to any tests that should not always be run.  That is, conditional evaluation of a test should be accomplished by the **-constraints** option, not by conditional evaluation of **test**.  In that way, the same number of tests are always reported by the test suite, though the number skipped may change based on the testing environment. The default value is an empty list. See [Test constraints] below for a list of built-in constraints and information on how to add your own constraints.
 
 [-setup]{.lit} [script]{.arg}
 : The optional **-setup** attribute indicates a *script* that will be run before the script indicated by the **-body** attribute.  If evaluation of *script* raises an error, the test will fail.  The default value is an empty script.
@@ -285,7 +285,7 @@ Valid attributes and associated values are:
 
 To pass, a test must successfully evaluate its **-setup**, **-body**, and **-cleanup** scripts.  The return code of the **-body** script and its result must match expected values, and if specified, output and error data from the test must match expected **-output** and **-errorOutput** values.  If any of these conditions are not met, then the test fails. Note that all scripts are evaluated in the context of the caller of **test**.
 
-As long as **test** is called with valid syntax and legal values for all attributes, it will not raise an error.  Test failures are instead reported as output written to **outputChannel**. In default operation, a successful test produces no output.  The output messages produced by **test** are controlled by the **configure -verbose** option as described in **CONFIGURABLE OPTIONS** below.  Any output produced by the test scripts themselves should be produced using [puts] to **outputChannel** or **errorChannel**, so that users of the test suite may easily capture output with the **configure -outfile** and **configure -errfile** options, and so that the **-output** and **-errorOutput** attributes work properly.
+As long as **test** is called with valid syntax and legal values for all attributes, it will not raise an error.  Test failures are instead reported as output written to **outputChannel**. In default operation, a successful test produces no output.  The output messages produced by **test** are controlled by the **configure -verbose** option as described in [Configurable options] below.  Any output produced by the test scripts themselves should be produced using [puts] to **outputChannel** or **errorChannel**, so that users of the test suite may easily capture output with the **configure -outfile** and **configure -errfile** options, and so that the **-output** and **-errorOutput** attributes work properly.
 
 ## Test constraints
 
@@ -463,10 +463,10 @@ The **configure** command is used to set and query the configurable options of *
 
 
 [-limitconstraints]{.lit} [boolean]{.arg}
-: Sets the mode by which **test** honors constraints as described in **TESTS** above.  Default value is false.
+: Sets the mode by which **test** honors constraints as described in [Tests] above.  Default value is false.
 
 [-constraints]{.lit} [list]{.arg}
-: Sets all the constraints in *list* to true.  Also used in combination with **configure -limitconstraints true** to control an alternative constraint mode as described in **TESTS** above. Default value is an empty list.
+: Sets all the constraints in *list* to true.  Also used in combination with **configure -limitconstraints true** to control an alternative constraint mode as described in [Tests] above. Default value is an empty list.
 
 [-tmpdir]{.lit} [directory]{.arg}
 : Sets the temporary directory to be used by **makeFile**, **makeDirectory**, **viewFile**, **removeFile**, and **removeDirectory** as the default directory where temporary files and directories created by test files should be created.  Default value is **workingDirectory**.

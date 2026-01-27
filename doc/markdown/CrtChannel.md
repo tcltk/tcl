@@ -106,7 +106,7 @@ To add a new type of channel you must implement a C API or a Tcl command that op
 
 **Tcl\_SetChannelBufferSize** sets the size, in bytes, of buffers that will be allocated in subsequent operations on the channel to store input or output. The *size* argument should be between one and one million, allowing buffers of one byte to one million bytes. If *size* is outside this range, **Tcl\_SetChannelBufferSize** sets the buffer size to 4096.
 
-**Tcl\_NotifyChannel** is called by a channel driver to indicate to the generic layer that the events specified by *mask* have occurred on the channel.  Channel drivers are responsible for invoking this function whenever the channel handlers need to be called for the channel (or other pending tasks like a write flush should be performed). See **WATCHPROC** below for more details.
+**Tcl\_NotifyChannel** is called by a channel driver to indicate to the generic layer that the events specified by *mask* have occurred on the channel.  Channel drivers are responsible for invoking this function whenever the channel handlers need to be called for the channel (or other pending tasks like a write flush should be performed). See [Watchproc] below for more details.
 
 **Tcl\_BadChannelOption** is called from driver specific *setOptionProc* or *getOptionProc* to generate a complete error message.
 

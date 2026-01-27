@@ -65,7 +65,7 @@ A quantified atom is an *atom* possibly followed by a single *quantifier*. Witho
 : a sequence of *m* through *n* (inclusive) matches of the atom; *m* may not exceed *n*
 
 **\*?  +?  ??  {***m***}?  {***m***,}?  {***m***,***n***}?**
-: *non-greedy* quantifiers, which match the same possibilities, but prefer the smallest number rather than the largest number of matches (see **MATCHING**)
+: *non-greedy* quantifiers, which match the same possibilities, but prefer the smallest number rather than the largest number of matches (see [Matching])
 
 
 The forms using **{** and **}** are known as *bound*s. The numbers *m* and *n* are unsigned decimal integers with permissible values from 0 to 255 inclusive.
@@ -87,7 +87,7 @@ An atom is one of:
 : matches an empty string, without reporting
 
 **[***chars***]**
-: a *bracket expression*, matching any one of the *chars* (see **BRACKET EXPRESSIONS** for more detail)
+: a *bracket expression*, matching any one of the *chars* (see [Bracket expressions] for more detail)
 
 **.**
 : matches any single character
@@ -96,7 +96,7 @@ An atom is one of:
 : matches the non-alphanumeric character *k* taken as an ordinary character, e.g. **\\\\** matches a backslash character
 
 **\\***c*
-: where *c* is alphanumeric (possibly followed by other characters), an *escape* (AREs only), see **ESCAPES** below
+: where *c* is alphanumeric (possibly followed by other characters), an *escape* (AREs only), see [Escapes] below
 
 **{**
 : when followed by a character other than a digit, matches the left-brace character "**{**"; when followed by a digit, it is the beginning of a *bound* (see above)
@@ -107,17 +107,17 @@ An atom is one of:
 
 ## Constraints
 
-A *constraint* matches an empty string when specific conditions are met. A constraint may not be followed by a quantifier. The simple constraints are as follows; some more constraints are described later, under **ESCAPES**.
+A *constraint* matches an empty string when specific conditions are met. A constraint may not be followed by a quantifier. The simple constraints are as follows; some more constraints are described later, under [Escapes].
 
 **^**
-: matches at the beginning of the string or a line (according to whether matching is newline-sensitive or not, as described in **MATCHING**, below).
+: matches at the beginning of the string or a line (according to whether matching is newline-sensitive or not, as described in [Matching], below).
 
 **$**
-: matches at the end of the string or a line (according to whether matching is newline-sensitive or not, as described in **MATCHING**, below).
+: matches at the end of the string or a line (according to whether matching is newline-sensitive or not, as described in [Matching], below).
 
     The difference between string and line matching modes is immaterial when the string does not contain a newline character.  The **\\A** and **\\Z** constraint escapes have a similar purpose but are always constraints for the overall string.
 
-    The default newline-sensitivity depends on the command that uses the regular expression, and can be overridden as described in **METASYNTAX**, below.
+    The default newline-sensitivity depends on the command that uses the regular expression, and can be overridden as described in [Metasyntax], below.
 
 **(?=***re***)**
 : *positive lookahead* (AREs only), matches at any point where a substring matching *re* begins
@@ -197,7 +197,7 @@ For example, assume the collating sequence includes a **ch** multi-character col
 
 ## Equivalence classes
 
-Within a bracket expression, a collating element enclosed in **[=** and **=]** is an equivalence class, standing for the sequences of characters of all collating elements equivalent to that one, including itself. (If there are no other equivalent collating elements, the treatment is as if the enclosing delimiters were "**[.**" and "**.]**".) For example, if **o** and **\\(^o** are the members of an equivalence class, then "**[[=o=]]**", "**[[=\\(^o=]]**", and "**[o\\(^o]**" are all synonymous. An equivalence class may not be an endpoint of a range.
+Within a bracket expression, a collating element enclosed in **[=** and **=]** is an equivalence class, standing for the sequences of characters of all collating elements equivalent to that one, including itself. (If there are no other equivalent collating elements, the treatment is as if the enclosing delimiters were "**[.**"\\& and "**.]**".) For example, if **o** and **\\(^o** are the members of an equivalence class, then "**[[=o=]]**", "**[[=\\(^o=]]**", and "**[o\\(^o]**"\\& are all synonymous. An equivalence class may not be an endpoint of a range.
 
 (*Note:* Tcl implements only the Unicode locale. It does not define any equivalence classes. The examples above are just illustrations.)
 
@@ -285,14 +285,14 @@ Class-shorthand escapes (AREs only) provide shorthands for certain commonly-used
 : **[^[:alnum:]\_\\u203F\\u2040\\u2054\\uFE33\\uFE34\\uFE4D\\uFE4E\\uFE4F\\uFF3F]** (including punctuation connector characters)
 
 
-Within bracket expressions, "**\\d**", "**\\s**", and "**\\w**" lose their outer brackets, and "**\\D**", "**\\S**", and "**\\W**" are illegal. (So, for example, "**[a-c\\d]**" is equivalent to "**[a-c[:digit:]]**". Also, "**[a-c\\D]**", which is equivalent to "**[a-c^[:digit:]]**", is illegal.)
+Within bracket expressions, "**\\d**", "**\\s**", and "**\\w**"\\& lose their outer brackets, and "**\\D**", "**\\S**", and "**\\W**"\\& are illegal. (So, for example, "**[a-c\\d]**" is equivalent to "**[a-c[:digit:]]**". Also, "**[a-c\\D]**", which is equivalent to "**[a-c^[:digit:]]**", is illegal.)
 
 ## Constraint escapes
 
 A constraint escape (AREs only) is a constraint, matching the empty string if specific conditions are met, written as an escape:
 
 **\\A**
-: matches only at the beginning of the string (see **MATCHING**, below, for how this differs from "**^**")
+: matches only at the beginning of the string (see [Matching], below, for how this differs from "**^**")
 
 **\\m**
 : matches only at the beginning of a word
@@ -307,7 +307,7 @@ A constraint escape (AREs only) is a constraint, matching the empty string if sp
 : matches only at a point that is not the beginning or end of a word
 
 **\\Z**
-: matches only at the end of the string (see **MATCHING**, below, for how this differs from "**$**")
+: matches only at the end of the string (see [Matching], below, for how this differs from "**$**")
 
 **\\***m*
 : (where *m* is a nonzero digit) a *back reference*, see below
@@ -342,16 +342,16 @@ An ARE may begin with *embedded options*: a sequence **(?***xyz***)** (where *xy
 : rest of RE is an ERE
 
 **i**
-: case-insensitive matching (see **MATCHING**, below)
+: case-insensitive matching (see [Matching], below)
 
 **m**
 : historical synonym for **n**
 
 **n**
-: newline-sensitive matching (see **MATCHING**, below)
+: newline-sensitive matching (see [Matching], below)
 
 **p**
-: partial newline-sensitive matching (see **MATCHING**, below)
+: partial newline-sensitive matching (see [Matching], below)
 
 **q**
 : rest of RE is a literal ("quoted") string, all ordinary characters
@@ -363,7 +363,7 @@ An ARE may begin with *embedded options*: a sequence **(?***xyz***)** (where *xy
 : tight syntax (usual default; see below)
 
 **w**
-: inverse partial newline-sensitive ("weird") matching (see **MATCHING**, below)
+: inverse partial newline-sensitive ("weird") matching (see [Matching], below)
 
 **x**
 : expanded syntax (see below)

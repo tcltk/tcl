@@ -34,7 +34,7 @@ The **-errorinfo** return option of an interpreter is used to accumulate a stack
 ```
 catch {...} errMsg
 set savedInfo $::errorInfo
-...
+\&...
 error $errMsg $savedInfo
 ```
 
@@ -42,7 +42,7 @@ When working with Tcl 8.5 or later, the following code should be used instead:
 
 ```
 catch {...} errMsg options
-...
+\&...
 return -options $options $errMsg
 ```
 

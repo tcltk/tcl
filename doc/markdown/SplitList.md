@@ -37,7 +37,7 @@ Tcl\_SplitList, Tcl\_Merge, Tcl\_ScanElement, Tcl\_ConvertElement, Tcl\_ScanCoun
 
 # Arguments
 
-.AP Tcl\_Interp \*interp out Interpreter to use for error reporting.  If NULL, then no error message is left. .AP "const char" \*list in Pointer to a string with proper list structure. .AP "Tcl\_Size | int" \*argcPtr out Filled in with number of elements in *list*. May be (Tcl\_Size \*)NULL when not used. If it points to a variable which type is not **Tcl\_Size**, a compiler warning will be generated. If your extensions is compiled with **-DTCL\_8\_API**, this function will return TCL\_ERROR for lists with more than INT\_MAX elements (which should trigger proper error-handling), otherwise expect it to crash. .AP "const char" \*\*\*argvPtr out *\*argvPtr* will be filled in with the address of an array of pointers to the strings that are the extracted elements of *list*. There will be *\*argcPtr* valid entries in the array, followed by a NULL entry. .AP Tcl\_Size argc in Number of elements in *argv*. .AP "const char \*const" \*argv in Array of strings to merge together into a single list. Each string will become a separate element of the list. .AP "const char" \*src in String that is to become an element of a list. .AP int \*flagsPtr in Pointer to word to fill in with information about *src*. The value of \**flagsPtr* must be passed to **Tcl\_ConvertElement**. .AP Tcl\_Size length in Number of bytes in string *src*. .AP char \*dst in Place to copy converted list element.  Must contain enough characters to hold converted string. .AP int flags in Information about *src*. Must be value returned by previous call to **Tcl\_ScanElement**, possibly OR-ed with **TCL\_DONT\_USE\_BRACES**.
+.AP Tcl\_Interp \*interp out Interpreter to use for error reporting.  If NULL, then no error message is left. .AP "const char" \*list in Pointer to a string with proper list structure. .AP "Tcl\_Size \\&| int" \*argcPtr out Filled in with number of elements in *list*. May be (Tcl\_Size \*)NULL when not used. If it points to a variable which type is not **Tcl\_Size**, a compiler warning will be generated. If your extensions is compiled with **-DTCL\_8\_API**, this function will return TCL\_ERROR for lists with more than INT\_MAX elements (which should trigger proper error-handling), otherwise expect it to crash. .AP "const char" \*\*\*argvPtr out *\*argvPtr* will be filled in with the address of an array of pointers to the strings that are the extracted elements of *list*. There will be *\*argcPtr* valid entries in the array, followed by a NULL entry. .AP Tcl\_Size argc in Number of elements in *argv*. .AP "const char \*const" \*argv in Array of strings to merge together into a single list. Each string will become a separate element of the list. .AP "const char" \*src in String that is to become an element of a list. .AP int \*flagsPtr in Pointer to word to fill in with information about *src*. The value of \**flagsPtr* must be passed to **Tcl\_ConvertElement**. .AP Tcl\_Size length in Number of bytes in string *src*. .AP char \*dst in Place to copy converted list element.  Must contain enough characters to hold converted string. .AP int flags in Information about *src*. Must be value returned by previous call to **Tcl\_ScanElement**, possibly OR-ed with **TCL\_DONT\_USE\_BRACES**.
 
 # Description
 
@@ -48,7 +48,7 @@ Tcl_Size argc;
 int code;
 char *string;
 char **argv;
-...
+\&...
 code = Tcl_SplitList(interp, string, &argc, &argv);
 ```
 

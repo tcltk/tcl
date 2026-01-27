@@ -65,7 +65,7 @@ The behavior of the **package** command is determined by its first argument. The
 [package]{.cmd} [require]{.sub} [package]{.arg} [requirement...]{.optarg}
 : This command is typically invoked by Tcl code that wishes to use a particular version of a particular package.  The arguments indicate which package is wanted, and the command ensures that a suitable version of the package is loaded into the interpreter. If the command succeeds, it returns the version number that is loaded;  otherwise it generates an error.
 
-    A suitable version of the package is any version which satisfies at least one of the requirements as defined in the section **REQUIREMENT** below. If multiple versions are suitable the implementation with the highest version is chosen. This last part is additionally influenced by the selection mode set with **package prefer**.
+    A suitable version of the package is any version which satisfies at least one of the requirements as defined in the section [Requirement] below. If multiple versions are suitable the implementation with the highest version is chosen. This last part is additionally influenced by the selection mode set with **package prefer**.
 
     In the "stable" selection mode the command will select the highest stable version satisfying the requirements, if any. If no stable version satisfies the requirements, the highest unstable version satisfying the requirements will be selected.  In the "latest" selection mode the command will accept the highest version satisfying all the requirements, regardless of its stableness.
 
@@ -84,7 +84,7 @@ The behavior of the **package** command is determined by its first argument. The
 : Returns a list of all the version numbers of *package* for which information has been provided by **package ifneeded** commands.
 
 [package]{.cmd} [vsatisfies]{.sub} [version]{.arg} [requirement...]{.arg}
-: Returns 1 if the *version* satisfies at least one of the given requirements, and 0 otherwise. *requirements* are defined in the **REQUIREMENT** section below.
+: Returns 1 if the *version* satisfies at least one of the given requirements, and 0 otherwise. *requirements* are defined in the [Requirement] section below.
 
 [package]{.cmd} [prefer]{.sub} [latest=|§stable]{.optlit}
 : With no arguments, the commands returns either "latest" or "stable", whichever describes the current mode of selection logic used by **package require**.

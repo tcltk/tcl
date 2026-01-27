@@ -37,7 +37,7 @@ dict - Manipulate dictionaries
 
 # Description
 
-Performs one of several operations on dictionary values or variables containing dictionary values (see the **DICTIONARY VALUES** section below for a description), depending on *option*.  The legal *option*s (which may be abbreviated) are:
+Performs one of several operations on dictionary values or variables containing dictionary values (see the [Dictionary values] section below for a description), depending on *option*.  The legal *option*s (which may be abbreviated) are:
 
 [dict]{.cmd} [append]{.sub} [dictionaryVariable]{.arg} [key]{.arg} [string]{.optdot}
 : This appends the given string (or strings) to the value that the given key maps to in the dictionary value contained in the given variable, writing the resulting dictionary value back to that variable. Non-existent keys are treated as if they map to an empty string. The updated dictionary value is returned. If *dictionaryVariable* indicates an element that does not exist of an array that has a default value set, the default value and will be used as the value of the dictionary prior to the appending operation.
@@ -77,7 +77,7 @@ Performs one of several operations on dictionary values or variables containing 
     It is an error to attempt to retrieve a value for a key that is not present in the dictionary.
 
 [dict]{.cmd} [getdef]{.sub} [dictionaryValue]{.arg} [key]{.optdot} [key]{.arg} [default]{.arg}
-: ...see next...
+: see below ...
 
 [dict]{.cmd} [getwithdefault]{.sub} [dictionaryValue]{.arg} [key]{.optdot} [key]{.arg} [default]{.arg}
 : This behaves the same as **dict get** (with at least one *key* argument), returning the value that the key path maps to in the dictionary *dictionaryValue*, except that instead of producing an error because the *key* (or one of the *key*s on the key path) is absent, it returns the *default* argument instead.
@@ -136,7 +136,7 @@ Performs one of several operations on dictionary values or variables containing 
 
     Note that the mapping of values to variables does not use traces; changes to the *dictionaryVariable*'s contents only happen when *body* terminates.
 
-    If the *dictionaryVariable* contains a value that is not a dictionary at the point when the *body* terminates (which can easily happen if the name is the same as any of the keys in dictionary) then an error occurs at that point. This command is thus not recommended for use when the keys in the dictionary are expected to clash with the *dictionaryVariable* name itself. Where the contained key does map to a dictionary, the net effect is to combine that inner dictionary into the outer dictionary; see the **EXAMPLES** below for an illustration of this.
+    If the *dictionaryVariable* contains a value that is not a dictionary at the point when the *body* terminates (which can easily happen if the name is the same as any of the keys in dictionary) then an error occurs at that point. This command is thus not recommended for use when the keys in the dictionary are expected to clash with the *dictionaryVariable* name itself. Where the contained key does map to a dictionary, the net effect is to combine that inner dictionary into the outer dictionary; see the [Examples] below for an illustration of this.
 
 
 # Dictionary values
@@ -253,7 +253,7 @@ set myDict {
 sumDictionary myDict
 #    prints: last total was 15, for key b
 
-puts "dictionary is now \\"$myDict\\""
+puts "dictionary is now \"$myDict\""
 #    prints: dictionary is now "a {total 6} b {total 15}"
 ```
 

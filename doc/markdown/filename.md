@@ -35,7 +35,7 @@ File names are grouped into three general types based on the starting point for 
 The rules for native names depend on the value reported in the Tcl **platform** element of the **tcl\_platform** array:
 
 **Unix**
-: On Unix and Apple macOS platforms, Tcl uses path names where the components are separated by slashes.  Path names may be relative or absolute, and file names may contain any character other than slash. The file names **.** and **..** are special and refer to the current directory and the parent of the current directory respectively. Multiple adjacent slash characters are interpreted as a single separator, except for the first double slash **//** in absolute paths. Any number of trailing slash characters at the end of a path are simply ignored, so the paths **foo**, **foo/** and **foo//** are all identical, and in particular **foo/** does not necessarily mean a directory is being referred.
+: On Unix and Apple macOS platforms, Tcl uses path names where the components are separated by slashes.  Path names may be relative or absolute, and file names may contain any character other than slash. The file names **\\&.** and **\\&..** are special and refer to the current directory and the parent of the current directory respectively. Multiple adjacent slash characters are interpreted as a single separator, except for the first double slash **//** in absolute paths. Any number of trailing slash characters at the end of a path are simply ignored, so the paths **foo**, **foo/** and **foo//** are all identical, and in particular **foo/** does not necessarily mean a directory is being referred.
 
     The following examples illustrate various forms of path names:
 
@@ -45,7 +45,7 @@ The rules for native names depend on the value reported in the Tcl **platform** 
     **/etc/passwd**
     : Absolute path to the file named **passwd** in the directory **etc** in the root directory.
 
-    **.**
+    **\\&.**
     : Relative path to the current directory.
 
     **foo**
@@ -54,14 +54,14 @@ The rules for native names depend on the value reported in the Tcl **platform** 
     **foo/bar**
     : Relative path to the file **bar** in the directory **foo** in the current directory.
 
-    **../foo**
+    **\\&../foo**
     : Relative path to the file **foo** in the directory above the current directory.
 
 
 **Windows**
 : On Microsoft Windows platforms, Tcl supports both drive-relative and UNC style names.  Both **/** and **\\** may be used as directory separators in either type of name.  Drive-relative names consist of an optional drive specifier followed by an absolute or relative path.  UNC paths follow the general form **\\\\servername\\sharename\\path\\file**, but must at the very least contain the server and share components, i.e. **\\\\servername\\sharename**.  In both forms, the file names **.** and **..** are special and refer to the current directory and the parent of the current directory respectively.  The following examples illustrate various forms of path names:
 
-    **\\\\Host\\share/file**
+    **\\&\\Host\\share/file**
     : Absolute UNC path to a file called [file] in the root directory of the export point **share** on the host **Host**.  Note that repeated use of [file dirname][file] on this path will give **//Host/share**, and will never give just **//Host**.
 
     **c:foo**
@@ -73,10 +73,10 @@ The rules for native names depend on the value reported in the Tcl **platform** 
     **foo\\bar**
     : Relative path to a file **bar** in the **foo** directory in the current directory on the current volume.
 
-    **\\foo**
+    **\\&\\foo**
     : Volume-relative path to a file **foo** in the root directory of the current volume.
 
-    **\\\\foo**
+    **\\&\\foo**
     : Volume-relative path to a file **foo** in the root directory of the current volume.  This is not a valid UNC path, so the assumption is that the extra backslashes are superfluous.
 
 

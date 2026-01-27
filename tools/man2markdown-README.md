@@ -34,7 +34,7 @@ The tcl/doc directory contains 248 manual pages which are divided as follows:
 
 section | number of documents | initial conversion | final conversion
 --------|---------------------|--------------------|-----------------
-1       | 1                   | 1                  | 11 (chan not yet final)
+1       | 1                   | 1                  | 12
 3       | 108                 | 108                | 0
 n       | 139                 | 139                | 0
 
@@ -51,7 +51,7 @@ Final conversion of these files is currently done:
 10. catch
 11. cd
 12. chan (indentation for [chan configure] is not ok -> will be dealt with when restructuring manual pages after TIP 700)
-
+13 ...
 
 The tk/doc directory comes next, after finishing Tcl.
 

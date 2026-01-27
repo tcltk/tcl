@@ -190,7 +190,7 @@ The [chan configure][chan] and [fconfigure] commands can be used to query and se
 : (Windows only). This option is used to set the maximum time between polling for fileevents. This affects the time interval between checking for events throughout the Tcl interpreter (the smallest value always wins).  Use this option only if you want to poll the serial port more or less often than 10 msec (the default).
 
 [-sysbuffer]{.lit} [inSize]{.arg}
-: ...see next...
+: see below ...
 
 [-sysbuffer]{.lit} [{inSize]{.arg} [outSize}]{.arg}
 : (Windows only). This option is used to change the size of Windows system buffers for a serial channel. Especially at higher communication rates the default input buffer size of 4096 bytes can overrun for latent systems. The first form specifies the input buffer size, in the second form both input and output buffers are defined.
@@ -270,7 +270,7 @@ Files opened in the "**a**" mode or with the **APPEND** flag set are implemented
     When running Tcl interactively, there may be some strange interactions between the console, if one is present, and a command pipeline that uses standard input.  If a command pipeline is opened for reading, some of the lines entered at the console will be sent to the command pipeline and some will be sent to the Tcl evaluator.  This problem only occurs because both Tcl and the child application are competing for the console at the same time.  If the command pipeline is started from a script, so that Tcl is not accessing the console, or if the command pipeline does not use standard input, but is redirected from a file, then the above problem does not occur.
 
 
-See the **PORTABILITY ISSUES** section of the [exec] command for additional information not specific to command pipelines about executing applications on the various platforms
+See the [Portability issues] section of the [exec] command for additional information not specific to command pipelines about executing applications on the various platforms
 
 # Console channels
 
