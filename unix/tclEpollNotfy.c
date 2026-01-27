@@ -216,7 +216,7 @@ PlatformEventsControl(
     newEvent.data.ptr = filePtr->pedPtr;
 
     /*
-     * N.B. As discussed in Tcl_WaitForEvent(), epoll(7) does not support
+     * N.B. As discussed in Tcl_WaitForEvent2(), epoll(7) does not support
      * regular files (S_IFREG). Therefore, filePtr is in these cases simply
      * added or deleted from the list of FileHandlers associated with regular
      * files belonging to tsdPtr.
@@ -600,10 +600,10 @@ Tcl_DeleteFileHandler(
 /*
  *----------------------------------------------------------------------
  *
- * TclpWaitForEvent --
+ * Tcl_WaitForEvent2 --
  *
  *	This function is called by Tcl_DoOneEvent to wait for new events on
- *	the message queue. If the block time is 0, then TclpWaitForEvent just
+ *	the message queue. If the block time is 0, then Tcl_WaitForEvent2 just
  *	polls without blocking.
  *
  *	The waiting logic is implemented in PlatformEventsWait.
@@ -619,7 +619,7 @@ Tcl_DeleteFileHandler(
  */
 
 int
-TclpWaitForEvent(
+Tcl_WaitForEvent2(
     const Tcl_Time *timePtr)	/* Maximum block time, or NULL. */
 {
     FileHandler *filePtr;

@@ -287,7 +287,7 @@ Tcl_SetTimer2(
 	 * Make sure we pass a non-zero value into the timeout argument.
 	 * Windows seems to get confused by zero length timers.
 	 */
-	if (time > (UINT_MAX * 1000LL)) {
+	if (time > UINT_MAX * 1000LL) {
 	    timeout = UINT_MAX;
 	} else {
 	    timeout = (UINT)(time / 1000);
@@ -447,7 +447,7 @@ TclpNotifierData(void)
 /*
  *----------------------------------------------------------------------
  *
- * TclpWaitForEvent --
+ * Tcl_WaitForEvent2 --
  *
  *	This function is called by Tcl_DoOneEvent to wait for new events on
  *	the message queue. If the block time is 0, then Tcl_WaitForEvent just
@@ -464,22 +464,28 @@ TclpNotifierData(void)
  */
 
 int
-TclpWaitForEvent(
-    const Tcl_Time *timePtr)	/* Maximum block time, or NULL. */
+Tcl_WaitForEvent2(
+    long long time)	/* Maximum block time, or -1. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     MSG msg;
-    DWORD timeout, result;
+    UINT timeout;
+    DWORD result;
     int status;
 
     /*
      * Compute the timeout in milliseconds.
      */
 
-    if (timePtr) {
-
-	timeout = (DWORD)timePtr->sec * 1000 + (unsigned long)timePtr->usec / 1000;
-	if (timeout == INFINITE) {
+    if (time >= 0) {
+	if (time > UINT_MAX * 1000LL) {
+	    timeout = UINT_MAX;
+	} else {
+	    timeout = (UINT)(time / 1000);
+	}
+	if (timeout == 0) {
+	    timeout = 1;
+	} else if (timeout == INFINITE) {
 	    timeout--;
 	}
     } else {

@@ -663,10 +663,10 @@ TclpFinalizeMutex(
  */
 
 void
-Tcl_ConditionWait(
+Tcl_ConditionWait2(
     Tcl_Condition *condPtr,	/* Really (pthread_cond_t **) */
     Tcl_Mutex *mutexPtr,	/* Really (PMutex **) */
-    const Tcl_Time *timePtr)	/* Timeout on waiting period */
+    long long time)	/* Timeout on waiting period */
 {
     pthread_cond_t *pcondPtr;
     PMutex *pmutexPtr;
@@ -690,7 +690,7 @@ Tcl_ConditionWait(
     }
     pmutexPtr = *((PMutex **)mutexPtr);
     pcondPtr = *((pthread_cond_t **)condPtr);
-    if (timePtr == NULL) {
+    if (time < 0) {
 	PCondWait(pcondPtr, pmutexPtr);
     } else {
 	Tcl_Time now;
@@ -701,9 +701,8 @@ Tcl_ConditionWait(
 	 */
 
 	Tcl_GetTime(&now);
-	ptime.tv_sec = timePtr->sec + now.sec +
-	    (timePtr->usec + now.usec) / 1000000;
-	ptime.tv_nsec = 1000 * ((timePtr->usec + now.usec) % 1000000);
+	ptime.tv_sec = (time / 1000000 + now.sec);
+	ptime.tv_nsec = 1000 * (time % 1000000 + now.usec);
 	PCondTimedWait(pcondPtr, pmutexPtr, &ptime);
     }
 }

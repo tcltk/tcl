@@ -52,15 +52,15 @@ typedef struct ThreadSpecificData {
 				 * Tcl_ServiceEvent(). */
     Tcl_Mutex queueMutex;	/* Mutex to protect access to the previous
 				 * four fields. */
+    long long blockTime1;		/* If blockTimeSet is true, gives the maximum
+				 * elapsed time for the next block. */
     int serviceMode;		/* One of TCL_SERVICE_NONE or
 				 * TCL_SERVICE_ALL. */
-    int blockTimeSet;		/* 0 means there is no maximum block time:
+    bool blockTimeSet;		/* false means there is no maximum block time:
 				 * block forever. */
-    Tcl_Time blockTime;		/* If blockTimeSet is 1, gives the maximum
-				 * elapsed time for the next block. */
-    int inTraversal;		/* 1 if Tcl_SetMaxBlockTime is being called
+    bool inTraversal;		/* true if Tcl_SetMaxBlockTime is being called
 				 * during an event source traversal. */
-    int initialized;		/* 1 if notifier has been initialized. */
+    bool initialized;		/* true if notifier has been initialized. */
     EventSource *firstEventSourcePtr;
 				/* Pointer to first event source in list of
 				 * event sources for this thread. */
@@ -128,7 +128,7 @@ TclInitNotifier(void)
 	tsdPtr = TCL_TSD_INIT(&dataKey);
 	tsdPtr->threadId = threadId;
 	tsdPtr->clientData = Tcl_InitNotifier();
-	tsdPtr->initialized = 1;
+	tsdPtr->initialized = true;
 	tsdPtr->nextPtr = firstNotifierPtr;
 	firstNotifierPtr = tsdPtr;
     }
@@ -193,7 +193,7 @@ TclFinalizeNotifier(void)
 	    break;
 	}
     }
-    tsdPtr->initialized = 0;
+    tsdPtr->initialized = false;
 
     Tcl_MutexUnlock(&listLock);
 }
@@ -817,22 +817,10 @@ Tcl_SetMaxBlockTime(
 				 * next blocking operation in the event
 				 * tsdPtr-> */
 {
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-
-    if (!tsdPtr->blockTimeSet || (timePtr->sec < tsdPtr->blockTime.sec)
-	    || ((timePtr->sec == tsdPtr->blockTime.sec)
-	    && (timePtr->usec < tsdPtr->blockTime.usec))) {
-	tsdPtr->blockTime = *timePtr;
-	tsdPtr->blockTimeSet = 1;
-    }
-
-    /*
-     * If we are called outside an event source traversal, set the timeout
-     * immediately.
-     */
-
-    if (!tsdPtr->inTraversal) {
-	Tcl_SetTimer(&tsdPtr->blockTime);
+    if (timePtr) {
+	Tcl_SetMaxBlockTime2(timePtr->sec * 1000000 + timePtr->usec);
+    } else {
+	Tcl_SetMaxBlockTime2(-1);
     }
 }
 
@@ -842,31 +830,37 @@ Tcl_SetMaxBlockTime2(
 				 * next blocking operation in the event
 				 * tsdPtr-> */
 {
-    if (time < 0) {
-	Tcl_SetMaxBlockTime(NULL);
-    } else {
-	Tcl_Time tm;
-	tm.usec = time % 100000000;
-	tm.sec = time / 1000000;
-	Tcl_SetMaxBlockTime(&tm);
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+
+    if (!tsdPtr->blockTimeSet || (time < tsdPtr->blockTime1)) {
+	tsdPtr->blockTime1 = time;
+	tsdPtr->blockTimeSet = true;
+    }
+
+    /*
+     * If we are called outside an event source traversal, set the timeout
+     * immediately.
+     */
+
+    if (!tsdPtr->inTraversal) {
+	Tcl_SetTimer2(tsdPtr->blockTime1);
     }
 }
 
+#ifndef TCL_NO_DEPRECATED
 void
-Tcl_ConditionWait2(
+Tcl_ConditionWait(
     Tcl_Condition *condPtr,
     Tcl_Mutex *mutexPtr,
-    long long time)
+    Tcl_Time *timePtr)
 {
-    if (time < 0) {
-	Tcl_ConditionWait(condPtr, mutexPtr, NULL);
+    if (timePtr == NULL) {
+	Tcl_ConditionWait2(condPtr, mutexPtr, -1);
     } else {
-	Tcl_Time tm;
-	tm.usec = time % 100000000;
-	tm.sec = time / 1000000;
-	Tcl_ConditionWait(condPtr, mutexPtr, &tm);
+	Tcl_ConditionWait2(condPtr, mutexPtr, timePtr->sec * 1000000 + timePtr->usec);
     }
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -901,7 +895,7 @@ Tcl_DoOneEvent(
 {
     int result = 0, oldMode;
     EventSource *sourcePtr;
-    Tcl_Time *timePtr;
+    long long time;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     /*
@@ -962,11 +956,10 @@ Tcl_DoOneEvent(
 	 */
 
 	if (flags & TCL_DONT_WAIT) {
-	    tsdPtr->blockTime.sec = 0;
-	    tsdPtr->blockTime.usec = 0;
-	    tsdPtr->blockTimeSet = 1;
+	    tsdPtr->blockTime1 = 0;
+	    tsdPtr->blockTimeSet = true;
 	} else {
-	    tsdPtr->blockTimeSet = 0;
+	    tsdPtr->blockTimeSet = false;
 	}
 
 	/*
@@ -974,19 +967,19 @@ Tcl_DoOneEvent(
 	 * block time to be updated if necessary.
 	 */
 
-	tsdPtr->inTraversal = 1;
+	tsdPtr->inTraversal = true;
 	for (sourcePtr = tsdPtr->firstEventSourcePtr; sourcePtr != NULL;
 		sourcePtr = sourcePtr->nextPtr) {
 	    if (sourcePtr->setupProc) {
 		sourcePtr->setupProc(sourcePtr->clientData, flags);
 	    }
 	}
-	tsdPtr->inTraversal = 0;
+	tsdPtr->inTraversal = false;
 
 	if ((flags & TCL_DONT_WAIT) || tsdPtr->blockTimeSet) {
-	    timePtr = &tsdPtr->blockTime;
+	    time = tsdPtr->blockTime1;
 	} else {
-	    timePtr = NULL;
+	    time = -1;
 	}
 
 	/*
@@ -994,7 +987,7 @@ Tcl_DoOneEvent(
 	 * we should abort Tcl_DoOneEvent.
 	 */
 
-	result = Tcl_WaitForEvent(timePtr);
+	result = Tcl_WaitForEvent2(time);
 	if (result < 0) {
 	    result = 0;
 	    break;
@@ -1111,8 +1104,8 @@ Tcl_ServiceAll(void)
      * so we can avoid multiple changes.
      */
 
-    tsdPtr->inTraversal = 1;
-    tsdPtr->blockTimeSet = 0;
+    tsdPtr->inTraversal = true;
+    tsdPtr->blockTimeSet = false;
 
     for (sourcePtr = tsdPtr->firstEventSourcePtr; sourcePtr != NULL;
 	    sourcePtr = sourcePtr->nextPtr) {
@@ -1135,11 +1128,11 @@ Tcl_ServiceAll(void)
     }
 
     if (!tsdPtr->blockTimeSet) {
-	Tcl_SetTimer(NULL);
+	Tcl_SetTimer2(-1);
     } else {
-	Tcl_SetTimer(&tsdPtr->blockTime);
+	Tcl_SetTimer2(tsdPtr->blockTime1);
     }
-    tsdPtr->inTraversal = 0;
+    tsdPtr->inTraversal = false;
     tsdPtr->serviceMode = TCL_SERVICE_ALL;
     return result;
 }
@@ -1200,6 +1193,7 @@ Tcl_ThreadAlert(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 void
 Tcl_SetTimer(
     const Tcl_Time *timePtr)	/* Timeout value, may be NULL. */
@@ -1214,6 +1208,7 @@ Tcl_SetTimer(
 	Tcl_SetTimer2(-1);
     }
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -1235,26 +1230,22 @@ Tcl_SetTimer(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 int
 Tcl_WaitForEvent(
     const Tcl_Time *timePtr)	/* Maximum block time, or NULL. */
 {
-    return TclpWaitForEvent(timePtr);
-}
-
-int
-Tcl_WaitForEvent2(
-    long long time)	/* Maximum block time, or NULL. */
-{
-    if (time < 0) {
-	return TclpWaitForEvent(NULL);
+    if (timePtr) {
+	if (timePtr->sec > (LLONG_MAX - timePtr->usec) / 1000000) {
+	    return Tcl_WaitForEvent2(LLONG_MAX);
+	} else {
+	    return Tcl_WaitForEvent2(timePtr->sec * 1000000 + timePtr->usec);
+	}
     } else {
-	Tcl_Time tm;
-	tm.usec = time % 100000000;
-	tm.sec = time / 1000000;
-	return TclpWaitForEvent(&tm);
+	return Tcl_WaitForEvent2(-1);
     }
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  * Local Variables:
