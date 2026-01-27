@@ -5798,151 +5798,151 @@ GetTimesCmd(
     Interp *iPtr = (Interp *) interp;
     int i, n;
     double timePer;
-    Tcl_Time start, stop;
+    long long start, stop;
     Tcl_Obj *objPtr, **objv;
     const char *s;
     char newString[TCL_INTEGER_SPACE];
 
     /* alloc & free 100000 times */
     fprintf(stderr, "alloc & free 100000 6 word items\n");
-    Tcl_GetTime(&start);
+    start = Tcl_GetMonotonicTime();
     for (i = 0;  i < 100000;  i++) {
 	objPtr = (Tcl_Obj *)Tcl_Alloc(sizeof(Tcl_Obj));
 	Tcl_Free(objPtr);
     }
-    Tcl_GetTime(&stop);
-    timePer = (double)((stop.sec - start.sec)*1000000 + (stop.usec - start.usec));
+    stop = Tcl_GetMonotonicTime();
+    timePer = (double)(stop - start);
     fprintf(stderr, "   %.3f usec per alloc+free\n", timePer/100000);
 
     /* alloc 5000 times */
     fprintf(stderr, "alloc 5000 6 word items\n");
     objv = (Tcl_Obj **)Tcl_Alloc(5000 * sizeof(Tcl_Obj *));
-    Tcl_GetTime(&start);
+    start = Tcl_GetMonotonicTime();
     for (i = 0;  i < 5000;  i++) {
 	objv[i] = (Tcl_Obj *)Tcl_Alloc(sizeof(Tcl_Obj));
     }
-    Tcl_GetTime(&stop);
-    timePer = (double)((stop.sec - start.sec)*1000000 + (stop.usec - start.usec));
+    stop = Tcl_GetMonotonicTime();
+    timePer = (double)(stop - start);
     fprintf(stderr, "   %.3f usec per alloc\n", timePer/5000);
 
     /* free 5000 times */
     fprintf(stderr, "free 5000 6 word items\n");
-    Tcl_GetTime(&start);
+    start = Tcl_GetMonotonicTime();
     for (i = 0;  i < 5000;  i++) {
 	Tcl_Free(objv[i]);
     }
-    Tcl_GetTime(&stop);
-    timePer = (double)((stop.sec - start.sec)*1000000 + (stop.usec - start.usec));
+    stop = Tcl_GetMonotonicTime();
+    timePer = (double)(stop - start);
     fprintf(stderr, "   %.3f usec per free\n", timePer/5000);
 
     /* Tcl_NewObj 5000 times */
     fprintf(stderr, "Tcl_NewObj 5000 times\n");
-    Tcl_GetTime(&start);
+    start = Tcl_GetMonotonicTime();
     for (i = 0;  i < 5000;  i++) {
 	objv[i] = Tcl_NewObj();
     }
-    Tcl_GetTime(&stop);
-    timePer = (double)((stop.sec - start.sec)*1000000 + (stop.usec - start.usec));
+    stop = Tcl_GetMonotonicTime();
+    timePer = (double)(stop - start);
     fprintf(stderr, "   %.3f usec per Tcl_NewObj\n", timePer/5000);
 
     /* Tcl_DecrRefCount 5000 times */
     fprintf(stderr, "Tcl_DecrRefCount 5000 times\n");
-    Tcl_GetTime(&start);
+    start = Tcl_GetMonotonicTime();
     for (i = 0;  i < 5000;  i++) {
 	objPtr = objv[i];
 	Tcl_DecrRefCount(objPtr);
     }
-    Tcl_GetTime(&stop);
-    timePer = (double)((stop.sec - start.sec)*1000000 + (stop.usec - start.usec));
+    stop = Tcl_GetMonotonicTime();
+    timePer = (double)(stop - start);
     fprintf(stderr, "   %.3f usec per Tcl_DecrRefCount\n", timePer/5000);
     Tcl_Free(objv);
 
     /* TclGetString 100000 times */
     fprintf(stderr, "Tcl_GetStringFromObj of \"12345\" 100000 times\n");
     objPtr = Tcl_NewStringObj("12345", -1);
-    Tcl_GetTime(&start);
+    start = Tcl_GetMonotonicTime();
     for (i = 0;  i < 100000;  i++) {
 	(void) TclGetString(objPtr);
     }
-    Tcl_GetTime(&stop);
-    timePer = (double)((stop.sec - start.sec)*1000000 + (stop.usec - start.usec));
+    stop = Tcl_GetMonotonicTime();
+    timePer = (double)(stop - start);
     fprintf(stderr, "   %.3f usec per Tcl_GetStringFromObj of \"12345\"\n",
 	    timePer/100000);
 
     /* Tcl_GetIntFromObj 100000 times */
     fprintf(stderr, "Tcl_GetIntFromObj of \"12345\" 100000 times\n");
-    Tcl_GetTime(&start);
+    start = Tcl_GetMonotonicTime();
     for (i = 0;  i < 100000;  i++) {
 	if (Tcl_GetIntFromObj(interp, objPtr, &n) != TCL_OK) {
 	    return TCL_ERROR;
 	}
     }
-    Tcl_GetTime(&stop);
-    timePer = (double)((stop.sec - start.sec)*1000000 + (stop.usec - start.usec));
+    stop = Tcl_GetMonotonicTime();
+    timePer = (double)(stop - start);
     fprintf(stderr, "   %.3f usec per Tcl_GetIntFromObj of \"12345\"\n",
 	    timePer/100000);
     Tcl_DecrRefCount(objPtr);
 
     /* Tcl_GetInt 100000 times */
     fprintf(stderr, "Tcl_GetInt of \"12345\" 100000 times\n");
-    Tcl_GetTime(&start);
+    start = Tcl_GetMonotonicTime();
     for (i = 0;  i < 100000;  i++) {
 	if (Tcl_GetInt(interp, "12345", &n) != TCL_OK) {
 	    return TCL_ERROR;
 	}
     }
-    Tcl_GetTime(&stop);
-    timePer = (double)((stop.sec - start.sec)*1000000 + (stop.usec - start.usec));
+    stop = Tcl_GetMonotonicTime();
+    timePer = (double)(stop - start);
     fprintf(stderr, "   %.3f usec per Tcl_GetInt of \"12345\"\n",
 	    timePer/100000);
 
     /* snprintf 100000 times */
     fprintf(stderr, "snprintf of 12345 100000 times\n");
-    Tcl_GetTime(&start);
+    start = Tcl_GetMonotonicTime();
     for (i = 0;  i < 100000;  i++) {
 	snprintf(newString, sizeof(newString), "%d", 12345);
     }
-    Tcl_GetTime(&stop);
-    timePer = (double)((stop.sec - start.sec)*1000000 + (stop.usec - start.usec));
+    stop = Tcl_GetMonotonicTime();
+    timePer = (double)(stop - start);
     fprintf(stderr, "   %.3f usec per snprintf of 12345\n",
 	    timePer/100000);
 
     /* hashtable lookup 100000 times */
     fprintf(stderr, "hashtable lookup of \"gettimes\" 100000 times\n");
-    Tcl_GetTime(&start);
+    start = Tcl_GetMonotonicTime();
     for (i = 0;  i < 100000;  i++) {
 	(void) Tcl_FindHashEntry(&iPtr->globalNsPtr->cmdTable, "gettimes");
     }
-    Tcl_GetTime(&stop);
-    timePer = (double)((stop.sec - start.sec)*1000000 + (stop.usec - start.usec));
+    stop = Tcl_GetMonotonicTime();
+    timePer = (double)(stop - start);
     fprintf(stderr, "   %.3f usec per hashtable lookup of \"gettimes\"\n",
 	    timePer/100000);
 
     /* Tcl_SetVar 100000 times */
     fprintf(stderr, "Tcl_SetVar2 of \"12345\" 100000 times\n");
-    Tcl_GetTime(&start);
+    start = Tcl_GetMonotonicTime();
     for (i = 0;  i < 100000;  i++) {
 	s = Tcl_SetVar2(interp, "a", NULL, "12345", TCL_LEAVE_ERR_MSG);
 	if (s == NULL) {
 	    return TCL_ERROR;
 	}
     }
-    Tcl_GetTime(&stop);
-    timePer = (double)((stop.sec - start.sec)*1000000 + (stop.usec - start.usec));
+    stop = Tcl_GetMonotonicTime();
+    timePer = (double)(stop - start);
     fprintf(stderr, "   %.3f usec per Tcl_SetVar of a to \"12345\"\n",
 	    timePer/100000);
 
     /* Tcl_GetVar 100000 times */
     fprintf(stderr, "Tcl_GetVar of a==\"12345\" 100000 times\n");
-    Tcl_GetTime(&start);
+    start = Tcl_GetMonotonicTime();
     for (i = 0;  i < 100000;  i++) {
 	s = Tcl_GetVar2(interp, "a", NULL, TCL_LEAVE_ERR_MSG);
 	if (s == NULL) {
 	    return TCL_ERROR;
 	}
     }
-    Tcl_GetTime(&stop);
-    timePer = (double)((stop.sec - start.sec)*1000000 + (stop.usec - start.usec));
+    stop = Tcl_GetMonotonicTime();
+    timePer = (double)(stop - start);
     fprintf(stderr, "   %.3f usec per Tcl_GetVar of a==\"12345\"\n",
 	    timePer/100000);
 
