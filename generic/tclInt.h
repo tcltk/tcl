@@ -2156,12 +2156,13 @@ typedef struct Interp {
 				 * reached. */
 	int cmdGranularity;	/* Mod factor used to determine how often to
 				 * evaluate the limit check. */
-
-	union {
-	    long long time;		/* Time limit for execution within the
-				    * interpreter. */
-	    Tcl_Time reserved; /* keep struct alignment the same as in Tcl 9.0 */
-	};
+	long long time;		/* Time limit for execution within the
+				* interpreter. */
+#if defined(_CYGWIN_)
+	int reserved;			/* Not used any more. Allignment only. */
+#else
+	long reserved;			/* Not used any more. Allignment only. */
+#endif
 	LimitHandler *timeHandlers;
 				/* Handlers to execute when the limit is
 				 * reached. */
@@ -3575,7 +3576,6 @@ MODULE_SCOPE Tcl_Obj *	TclNewFSPathObj(Tcl_Obj *dirPtr, const char *addStrRep,
 			    Tcl_Size len);
 MODULE_SCOPE Tcl_Obj *	TclNewNamespaceObj(Tcl_Namespace *namespacePtr);
 MODULE_SCOPE void *	TclpNotifierData(void);
-MODULE_SCOPE int	TclpWaitForEvent(const Tcl_Time *timePtr);
 MODULE_SCOPE int	TclpDeleteFile(const void *path);
 MODULE_SCOPE void	TclpFinalizeCondition(Tcl_Condition *condPtr);
 MODULE_SCOPE void	TclpFinalizeMutex(Tcl_Mutex *mutexPtr);

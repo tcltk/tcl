@@ -484,12 +484,12 @@ Tcl_ExitThread(
  *----------------------------------------------------------------------
  */
 
-#undef Tcl_ConditionWait
+#undef Tcl_ConditionWait2
 void
-Tcl_ConditionWait(
+Tcl_ConditionWait2(
     TCL_UNUSED(Tcl_Condition *),	/* Really (pthread_cond_t **) */
     TCL_UNUSED(Tcl_Mutex *),	/* Really (pthread_mutex_t **) */
-    TCL_UNUSED(const Tcl_Time *)) /* Timeout on waiting period */
+    TCL_UNUSED(long long)) /* Timeout on waiting period */
 {
 }
 

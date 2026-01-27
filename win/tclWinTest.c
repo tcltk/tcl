@@ -254,7 +254,7 @@ TestwinclockCmd(
     static const FILETIME posixEpoch = { 0xD53E8000, 0x019DB1DE };
 				/* The Posix epoch, expressed as a Windows
 				 * FILETIME */
-    Tcl_Time tclTime;		/* Tcl clock */
+    long long tclTime;		/* Tcl clock */
     FILETIME sysTime;		/* System clock */
     Tcl_Obj *result;		/* Result of the command */
     LARGE_INTEGER t1, t2;
@@ -267,7 +267,7 @@ TestwinclockCmd(
 
     QueryPerformanceCounter(&p1);
 
-    Tcl_GetTime(&tclTime);
+    tclTime = Tcl_GetDayTime();
     GetSystemTimeAsFileTime(&sysTime);
     t1.LowPart = posixEpoch.dwLowDateTime;
     t1.HighPart = posixEpoch.dwHighDateTime;
@@ -282,8 +282,7 @@ TestwinclockCmd(
 	    Tcl_NewWideIntObj(t2.QuadPart / 10000000));
     Tcl_ListObjAppendElement(interp, result,
 	    Tcl_NewWideIntObj((t2.QuadPart / 10) % 1000000));
-    Tcl_ListObjAppendElement(interp, result, Tcl_NewWideIntObj(tclTime.sec));
-    Tcl_ListObjAppendElement(interp, result, Tcl_NewWideIntObj(tclTime.usec));
+    Tcl_ListObjAppendElement(interp, result, Tcl_NewWideIntObj(tclTime));
 
     Tcl_ListObjAppendElement(interp, result, Tcl_NewWideIntObj(p1.QuadPart));
     Tcl_ListObjAppendElement(interp, result, Tcl_NewWideIntObj(p2.QuadPart));

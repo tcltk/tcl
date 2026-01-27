@@ -590,7 +590,7 @@ TimerSetupProc(
     TCL_UNUSED(void *),
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
-    Tcl_Time blockTime;
+	long long blockTimeUS;
     ThreadSpecificData *tsdPtr = InitTimer();
 
     if (((flags & TCL_IDLE_EVENTS) && tsdPtr->idleList)
@@ -601,13 +601,11 @@ TimerSetupProc(
 	 * There is an idle handler or a pending timer event, so just poll.
 	 */
 
-	blockTime.sec = 0;
-	blockTime.usec = 0;
+	blockTimeUS = 0;
     } else if ((flags & TCL_TIMER_EVENTS) &&
 	    (tsdPtr->firstTimerHandlerPtr[timerHandlerMonotonic]
 	    || tsdPtr->firstTimerHandlerPtr[timerHandlerWallclock])) {
 	long long myBlockTimeUS;
-	long long blockTimeUS;
 	bool blockTimePresent = false;
 	/*
 	 * Find the earlier timeout of monotonic or wall clock
@@ -640,13 +638,11 @@ TimerSetupProc(
 		}
 	    }
 	}
-	blockTime.sec = blockTimeUS / US_PER_S;
-	blockTime.usec = blockTimeUS % US_PER_S;
     } else {
 	return;
     }
 
-    Tcl_SetMaxBlockTime(&blockTime);
+    Tcl_SetMaxBlockTime2(blockTimeUS);
 }
 
 /*

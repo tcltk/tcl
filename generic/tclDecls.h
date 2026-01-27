@@ -40,6 +40,7 @@
 #   define Tcl_GetTimeProc void
 #   define Tcl_ScaleTimeProc void
 #   define Tcl_NotifierProcs void
+#   //define Tcl_Time void
 #endif /* TCL_NO_DEPRECATED */
 
 /*
@@ -4408,6 +4409,13 @@ extern const TclStubs *tclStubsPtr;
 #   undef Tcl_SetTimeProc
 #   undef Tcl_GetTimeProc
 #   undef Tcl_NotifierProcs
+#   undef Tcl_SetNotifier
+#   undef Tcl_WaitForEvent
+#   undef Tcl_SetTimer
+#   undef Tcl_SetMaxBlockTime
+#   undef Tcl_ConditionWait
+#   undef Tcl_GetTime
+//#   undef Tcl_Time
 #endif /* TCL_NO_DEPRECATED */
 
 #endif /* _TCLDECLS */
