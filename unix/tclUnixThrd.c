@@ -693,17 +693,17 @@ Tcl_ConditionWait(
     if (timePtr == NULL) {
 	PCondWait(pcondPtr, pmutexPtr);
     } else {
-	Tcl_Time now;
+	long long now;
 
 	/*
 	 * Make sure to take into account the microsecond component of the
 	 * current time, including possible overflow situations. [Bug #411603]
 	 */
 
-	Tcl_GetTime(&now);
-	ptime.tv_sec = timePtr->sec + now.sec +
-	    (timePtr->usec + now.usec) / 1000000;
-	ptime.tv_nsec = 1000 * ((timePtr->usec + now.usec) % 1000000);
+	now = TclpGetMicroseconds();
+	ptime.tv_sec = timePtr->sec +
+	    (timePtr->usec + now) / 1000000;
+	ptime.tv_nsec = 1000 * ((timePtr->usec + now) % 1000000);
 	PCondTimedWait(pcondPtr, pmutexPtr, &ptime);
     }
 }

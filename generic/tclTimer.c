@@ -1229,7 +1229,7 @@ TimerDelay(
 	    return TCL_ERROR;
 	}
 	if (iPtr->limit.timeEvent != NULL) {
-	    long long limitUS = TCL_TIME_US(iPtr->limit.time);
+	    long long limitUS = iPtr->limit.time;
 	    if (limitUS < nowLimitUS) {
 		iPtr->limit.granularityTicker = 0;
 		if (Tcl_LimitCheck(interp) != TCL_OK) {
@@ -1255,7 +1255,7 @@ TimerDelay(
 	 */
 
 	if (iPtr->limit.timeEvent != NULL) {
-	    long long limitUS = TCL_TIME_US(iPtr->limit.time);
+	    long long limitUS = iPtr->limit.time;
 	    diffLimitUS = limitUS - nowLimitUS;
 	    if (diffLimitUS < diffUS) {
 		/*
@@ -1380,7 +1380,7 @@ TimerDelayMonotonic(
 	    return TCL_ERROR;
 	}
 	if (iPtr->limit.timeEvent != NULL) {
-	    long long limitUS = TCL_TIME_US(iPtr->limit.time);
+	    long long limitUS = iPtr->limit.time;
 	    if (limitUS < nowLimitUS) {
 		iPtr->limit.granularityTicker = 0;
 		if (Tcl_LimitCheck(interp) != TCL_OK) {
@@ -1406,7 +1406,7 @@ TimerDelayMonotonic(
 	 */
 
 	if (iPtr->limit.timeEvent != NULL) {
-	    long long limitUS = TCL_TIME_US(iPtr->limit.time);
+	    long long limitUS = iPtr->limit.time;
 	    diffLimitUS = limitUS - nowLimitUS;
 	    if (diffLimitUS < diffUS) {
 		/*

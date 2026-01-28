@@ -213,7 +213,7 @@ LookUpFileHandler(
 
 void
 TclpSetTimer(
-    TCL_UNUSED(const Tcl_Time *))	/* Timeout value, may be NULL. */
+    TCL_UNUSED(long long))	/* Timeout value, may be NULL. */
 {
     /*
      * The interval timer doesn't do anything in this implementation, because
@@ -243,7 +243,7 @@ TclpServiceModeHook(
     int mode)			/* Either TCL_SERVICE_ALL, or
 				 * TCL_SERVICE_NONE. */
 {
-    if (mode == TCL_SERVICE_ALL) {
+    if ((mode & TCL_SERVICE_ALL) != 0) {
 #ifdef NOTIFIER_SELECT
 #if TCL_THREADS
 	StartNotifierThread("Tcl_ServiceModeHook");
