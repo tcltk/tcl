@@ -1331,8 +1331,12 @@ Tcl_SetTimer(
 {
     if (tclNotifierHooks.setTimerProc) {
 	tclNotifierHooks.setTimerProc(timePtr);
+    } else if (!timePtr) {
+	TclpSetTimer(-1);
+    } else if (timePtr->sec >= (LLONG_MAX - timePtr->usec) / 1000000) {
+	TclpSetTimer(LLONG_MAX);
     } else {
-	TclpSetTimer(timePtr);
+	TclpSetTimer(timePtr->sec * 1000000 + timePtr->usec);
     }
 }
 

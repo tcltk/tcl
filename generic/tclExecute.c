@@ -7733,7 +7733,7 @@ TEBCresume(
 
     case INST_CLOCK_READ: {	/* Read the wall clock */
 	Tcl_WideInt wval;
-	Tcl_Time now;
+	long long now;
 	unsigned param = TclGetUInt1AtPtr(pc + 1);
 	TRACE("%u => ", param);
 	switch (param) {
@@ -7745,16 +7745,16 @@ TEBCresume(
 #endif
 	    break;
 	case CLOCK_READ_MICROS:
-	    Tcl_GetTime(&now);
-	    wval = (Tcl_WideInt)now.sec * 1000000 + now.usec;
+	    now = TclpGetMicroseconds();
+	    wval = now;
 	    break;
 	case CLOCK_READ_MILLIS:
-	    Tcl_GetTime(&now);
-	    wval = (Tcl_WideInt)now.sec * 1000 + now.usec / 1000;
+	    now = TclpGetMicroseconds();
+	    wval = now / 1000;
 	    break;
 	case CLOCK_READ_SECS:
-	    Tcl_GetTime(&now);
-	    wval = (Tcl_WideInt)now.sec;
+	    now = TclpGetMicroseconds();
+	    wval = now / 1000000;
 	    break;
 	case CLOCK_READ_MONOTONIC:
 	    wval = Tcl_GetMonotonicTime();

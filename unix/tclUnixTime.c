@@ -291,9 +291,6 @@ Tcl_GetMonotonicTime()		/* Location to store time information. */
  *	Gets the current system time in seconds and microseconds since the
  *	beginning of the epoch: 00:00 UCT, January 1, 1970.
  *
- *	This function is hooked, allowing users to specify their own virtual
- *	system time.
- *
  * Results:
  *	Returns the current time in timePtr.
  *

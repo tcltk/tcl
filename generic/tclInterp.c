@@ -3793,18 +3793,14 @@ Tcl_LimitCheck(
     if ((iPtr->limit.active & TCL_LIMIT_TIME) &&
 	    ((iPtr->limit.timeGranularity == 1) ||
 		(ticker % iPtr->limit.timeGranularity == 0))) {
-	Tcl_Time now;
+	long long now;
 
-	Tcl_GetTime(&now);
-	if (iPtr->limit.time.sec < now.sec ||
-		(iPtr->limit.time.sec == now.sec &&
-		iPtr->limit.time.usec < now.usec)) {
+	now = TclpGetMicroseconds();
+	if (iPtr->limit.time <= now) {
 	    iPtr->limit.exceeded |= TCL_LIMIT_TIME;
 	    Tcl_Preserve(interp);
 	    RunLimitHandlers(iPtr->limit.timeHandlers, interp);
-	    if (iPtr->limit.time.sec > now.sec ||
-		    (iPtr->limit.time.sec == now.sec &&
-		    iPtr->limit.time.usec >= now.usec)) {
+	    if (iPtr->limit.time >= now) {
 		iPtr->limit.exceeded &= ~TCL_LIMIT_TIME;
 	    } else if (iPtr->limit.exceeded & TCL_LIMIT_TIME) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
@@ -4350,15 +4346,17 @@ Tcl_LimitSetTime(
     long long nextMoment;
 
 
-    iPtr->limit.time = *timeLimitPtr;
     if (iPtr->limit.timeEvent != NULL) {
 	Tcl_DeleteTimerHandler(iPtr->limit.timeEvent);
     }
     if (timeLimitPtr->sec >= LLONG_MAX / 1000000 + 10) {
 	nextMoment = LLONG_MAX;
+	iPtr->limit.time = nextMoment;
     } else {
 	nextMoment = timeLimitPtr->sec * 1000000 +
-		(timeLimitPtr->usec % 1000000) + 10;
+		(timeLimitPtr->usec % 1000000);
+	iPtr->limit.time = nextMoment;
+	nextMoment += 10;
     }
 
     iPtr->limit.timeEvent = TclCreateAbsoluteTimerHandler(nextMoment,
@@ -4435,7 +4433,8 @@ Tcl_LimitGetTime(
 {
     Interp *iPtr = (Interp *) interp;
 
-    *timeLimitPtr = iPtr->limit.time;
+	timeLimitPtr->sec = iPtr->limit.time / 1000000;
+    timeLimitPtr->usec = iPtr->limit.time % 1000000;
 }
 
 /*
@@ -4719,7 +4718,7 @@ TclInitLimitSupport(
     iPtr->limit.cmdCount = 0;
     iPtr->limit.cmdHandlers = NULL;
     iPtr->limit.cmdGranularity = 1;
-    memset(&iPtr->limit.time, 0, sizeof(Tcl_Time));
+    iPtr->limit.time = 0;
     iPtr->limit.timeHandlers = NULL;
     iPtr->limit.timeEvent = NULL;
     iPtr->limit.timeGranularity = 10;
