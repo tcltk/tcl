@@ -466,7 +466,7 @@ TclpNotifierData(void)
 
 int
 TclpWaitForEvent(
-    const Tcl_Time *timePtr)	/* Maximum block time, or NULL. */
+    long long time)	/* Maximum block time, or -1. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     MSG msg;
@@ -477,9 +477,9 @@ TclpWaitForEvent(
      * Compute the timeout in milliseconds.
      */
 
-    if (timePtr) {
+    if (time >= 0) {
 
-	timeout = (DWORD)timePtr->sec * 1000 + (unsigned long)timePtr->usec / 1000;
+	timeout = (DWORD)(time / 1000);
 	if (timeout == INFINITE) {
 	    timeout--;
 	}

@@ -61,15 +61,15 @@ typedef struct ThreadSpecificData {
 				 * Tcl_ServiceEvent(). */
     Tcl_Mutex queueMutex;	/* Mutex to protect access to the previous
 				 * four fields. */
+    Tcl_Time blockTime;		/* If blockTimeSet is true, gives the maximum
+				 * elapsed time for the next block. */
     int serviceMode;		/* One of TCL_SERVICE_NONE or
 				 * TCL_SERVICE_ALL. */
-    int blockTimeSet;		/* 0 means there is no maximum block time:
+    bool blockTimeSet;		/* false means there is no maximum block time:
 				 * block forever. */
-    Tcl_Time blockTime;		/* If blockTimeSet is 1, gives the maximum
-				 * elapsed time for the next block. */
-    int inTraversal;		/* 1 if Tcl_SetMaxBlockTime is being called
+    bool inTraversal;		/* true if Tcl_SetMaxBlockTime is being called
 				 * during an event source traversal. */
-    int initialized;		/* 1 if notifier has been initialized. */
+    bool initialized;		/* true if notifier has been initialized. */
     EventSource *firstEventSourcePtr;
 				/* Pointer to first event source in list of
 				 * event sources for this thread. */
@@ -137,7 +137,7 @@ TclInitNotifier(void)
 	tsdPtr = TCL_TSD_INIT(&dataKey);
 	tsdPtr->threadId = threadId;
 	tsdPtr->clientData = Tcl_InitNotifier();
-	tsdPtr->initialized = 1;
+	tsdPtr->initialized = true;
 	tsdPtr->nextPtr = firstNotifierPtr;
 	firstNotifierPtr = tsdPtr;
     }
@@ -202,7 +202,7 @@ TclFinalizeNotifier(void)
 	    break;
 	}
     }
-    tsdPtr->initialized = 0;
+    tsdPtr->initialized = false;
 
     Tcl_MutexUnlock(&listLock);
 }
@@ -861,7 +861,7 @@ Tcl_SetMaxBlockTime(
 	    || ((timePtr->sec == tsdPtr->blockTime.sec)
 	    && (timePtr->usec < tsdPtr->blockTime.usec))) {
 	tsdPtr->blockTime = *timePtr;
-	tsdPtr->blockTimeSet = 1;
+	tsdPtr->blockTimeSet = true;
     }
 
     /*
@@ -970,9 +970,9 @@ Tcl_DoOneEvent(
 	if (flags & TCL_DONT_WAIT) {
 	    tsdPtr->blockTime.sec = 0;
 	    tsdPtr->blockTime.usec = 0;
-	    tsdPtr->blockTimeSet = 1;
+	    tsdPtr->blockTimeSet = true;
 	} else {
-	    tsdPtr->blockTimeSet = 0;
+	    tsdPtr->blockTimeSet = false;
 	}
 
 	/*
@@ -980,14 +980,14 @@ Tcl_DoOneEvent(
 	 * block time to be updated if necessary.
 	 */
 
-	tsdPtr->inTraversal = 1;
+	tsdPtr->inTraversal = true;
 	for (sourcePtr = tsdPtr->firstEventSourcePtr; sourcePtr != NULL;
 		sourcePtr = sourcePtr->nextPtr) {
 	    if (sourcePtr->setupProc) {
 		sourcePtr->setupProc(sourcePtr->clientData, flags);
 	    }
 	}
-	tsdPtr->inTraversal = 0;
+	tsdPtr->inTraversal = false;
 
 	if ((flags & TCL_DONT_WAIT) || tsdPtr->blockTimeSet) {
 	    timePtr = &tsdPtr->blockTime;
@@ -1117,8 +1117,8 @@ Tcl_ServiceAll(void)
      * so we can avoid multiple changes.
      */
 
-    tsdPtr->inTraversal = 1;
-    tsdPtr->blockTimeSet = 0;
+    tsdPtr->inTraversal = true;
+    tsdPtr->blockTimeSet = false;
 
     for (sourcePtr = tsdPtr->firstEventSourcePtr; sourcePtr != NULL;
 	    sourcePtr = sourcePtr->nextPtr) {
@@ -1145,7 +1145,7 @@ Tcl_ServiceAll(void)
     } else {
 	Tcl_SetTimer(&tsdPtr->blockTime);
     }
-    tsdPtr->inTraversal = 0;
+    tsdPtr->inTraversal = false;
     tsdPtr->serviceMode = TCL_SERVICE_ALL;
     return result;
 }
@@ -1366,9 +1366,14 @@ Tcl_WaitForEvent(
 {
     if (tclNotifierHooks.waitForEventProc) {
 	return tclNotifierHooks.waitForEventProc(timePtr);
+    } else if (!timePtr) {
+	return TclpWaitForEvent(-1);
+    } else if (timePtr->sec >= (LLONG_MAX - timePtr->usec) / 1000000) {
+	return TclpWaitForEvent(LLONG_MAX);
     } else {
-	return TclpWaitForEvent(timePtr);
+	return TclpWaitForEvent(timePtr->sec * 1000000 + timePtr->usec);
     }
+
 }
 
 /*

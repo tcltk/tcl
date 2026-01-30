@@ -639,7 +639,7 @@ NotifierProc(
 
 int
 TclpWaitForEvent(
-    const Tcl_Time *timePtr)	/* Maximum block time, or NULL. */
+    long long time)	/* Maximum block time, or -1. */
 {
     FileHandler *filePtr;
     int mask;
@@ -665,11 +665,11 @@ TclpWaitForEvent(
      * for, we return with a negative result rather than blocking forever.
      */
 
-    if (timePtr != NULL) {
+    if (time >= 0) {
 
 #if !TCL_THREADS
-	timeout.tv_sec = timePtr->sec;
-	timeout.tv_usec = timePtr->usec;
+	timeout.tv_sec = time / 1000000;
+	timeout.tv_usec = time % 1000000;
 	timeoutPtr = &timeout;
     } else if (tsdPtr->numFdBits == 0) {
 	/*
@@ -697,7 +697,7 @@ TclpWaitForEvent(
 
     pthread_mutex_lock(&notifierMutex);
 
-    if (timePtr != NULL && timePtr->sec == 0 && (timePtr->usec == 0
+    if (time == 0
 #if defined(__APPLE__) && defined(__LP64__)
 	    /*
 	     * On 64-bit Darwin, pthread_cond_timedwait() appears to have a
@@ -706,9 +706,9 @@ TclpWaitForEvent(
 	     * workaround, when given a very brief timeout, just do a poll.
 	     * [Bug 1457797]
 	     */
-	    || timePtr->usec < 10
+	    || (unsigned long long )time < 10
 #endif /* __APPLE__ && __LP64__ */
-	    )) {
+	    ) {
 	/*
 	 * Cannot emulate a polling select with a polling condition variable.
 	 * Instead, pretend to wait for files and tell the notifier thread
@@ -719,7 +719,7 @@ TclpWaitForEvent(
 
 	waitForFiles = 1;
 	tsdPtr->pollState = POLL_WANT;
-	timePtr = NULL;
+	time = -1;
     } else {
 	waitForFiles = (tsdPtr->numFdBits > 0);
 	tsdPtr->pollState = 0;
@@ -755,8 +755,8 @@ TclpWaitForEvent(
 	if (!PeekMessageW(&msg, NULL, 0, 0, 0)) {
 	    long long timeout;
 
-	    if (timePtr) {
-		timeout = timePtr->sec * 1000 + timePtr->usec / 1000;
+	    if (time >= 0) {
+		timeout = time / 1000;
 		if (timeout > UINT_MAX) {
 		    timeout = UINT_MAX;
 		}
@@ -768,14 +768,14 @@ TclpWaitForEvent(
 	    pthread_mutex_lock(&notifierMutex);
 	}
 #else /* !__CYGWIN__ */
-	if (timePtr != NULL) {
+	if (time >= 0) {
 	    Tcl_Time now;
 	    struct timespec ptime;
 
 	    Tcl_GetTime(&now);
-	    ptime.tv_sec = timePtr->sec + now.sec +
-		    (timePtr->usec + now.usec) / 1000000;
-	    ptime.tv_nsec = 1000 * ((timePtr->usec + now.usec) % 1000000);
+	    ptime.tv_sec = now.sec +
+		    (time + now.usec) / 1000000;
+	    ptime.tv_nsec = 1000 * ((time + now.usec) % 1000000);
 
 	    pthread_cond_timedwait(&tsdPtr->waitCV, &notifierMutex, &ptime);
 	} else {

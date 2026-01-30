@@ -618,7 +618,7 @@ TclpDeleteFileHandler(
 
 int
 TclpWaitForEvent(
-    const Tcl_Time *timePtr)	/* Maximum block time, or NULL. */
+    long long time)	/* Maximum block time, or NULL. */
 {
     FileHandler *filePtr;
     int mask;
@@ -640,9 +640,9 @@ TclpWaitForEvent(
      * for, we return with a negative result rather than blocking forever.
      */
 
-    if (timePtr != NULL) {
-	timeout.tv_sec = timePtr->sec;
-	timeout.tv_usec = timePtr->usec;
+    if (time > 0) {
+	timeout.tv_sec = time / 1000000;
+	timeout.tv_usec = time % 1000000;
 	timeoutPtr = &timeout;
     } else {
 	timeoutPtr = NULL;
