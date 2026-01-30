@@ -1175,7 +1175,7 @@ TclpNotifierData(void)
 
 int
 TclpWaitForEvent(
-    const Tcl_Time *timePtr)	/* Maximum block time, or NULL. */
+    long long time)	/* Maximum block time, or -1. */
 {
     int result;
     bool polling, runLoopRunning;
@@ -1193,14 +1193,12 @@ TclpWaitForEvent(
     }
 
     /*
-     * A NULL timePtr means wait forever.
+     * A -1 time means wait forever.
      */
 
-    if (timePtr) {
-	Tcl_Time vTime = *timePtr;
-
-	if (vTime.sec != 0 || vTime.usec != 0) {
-	    waitTime = vTime.sec + 1.0e-6 * vTime.usec;
+    if (time >= 0) {
+	if (time != 0) {
+	    waitTime = 1.0e-6 * (double)time;
 	} else {
 	    /*
 	     * The max block time was set to 0.

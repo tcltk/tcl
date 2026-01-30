@@ -3579,7 +3579,7 @@ MODULE_SCOPE void	TclpAlertNotifier(void *clientData);
 MODULE_SCOPE void *	TclpNotifierData(void);
 MODULE_SCOPE void	TclpServiceModeHook(int mode);
 MODULE_SCOPE void	TclpSetTimer(long long time);
-MODULE_SCOPE int	TclpWaitForEvent(const Tcl_Time *timePtr);
+MODULE_SCOPE int	TclpWaitForEvent(long long time);
 MODULE_SCOPE void	TclpCreateFileHandler(int fd, int mask,
 			    Tcl_FileProc *proc, void *clientData);
 MODULE_SCOPE int	TclpDeleteFile(const void *path);
