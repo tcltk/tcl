@@ -1552,8 +1552,8 @@ TclGetOpenMode(
 	    invRW:
 		if (interp != NULL) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-				"invalid access mode \"%s\": modes RDONLY, "
-				"RDWR, and WRONLY cannot be combined", flag));
+			    "invalid access mode \"%s\": modes RDONLY, "
+			    "RDWR, and WRONLY cannot be combined", flag));
 		}
 		goto invAccessMode;
 	    }

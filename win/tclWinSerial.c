@@ -92,8 +92,8 @@ typedef struct SerialInfo {
     int readable;		/* Flag that the channel is readable. */
     int writable;		/* Flag that the channel is writable. */
     int blockTime;		/* Maximum blocktime in msec. */
-    unsigned long long lastEventTime;
-				/* Time in milliseconds since last readable
+    long long lastEventTime;
+				/* Time in microseconds since last readable
 				 * event. */
 				/* Next readable event only after blockTime */
     DWORD error;		/* pending error code returned by
@@ -368,33 +368,6 @@ SerialBlockTime(
 /*
  *----------------------------------------------------------------------
  *
- * SerialGetMilliseconds --
- *
- *	Get current time in milliseconds,ignoring integer overruns.
- *
- * Results:
- *	The current time.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-static unsigned long long
-SerialGetMilliseconds(void)
-{
-    Tcl_Time time;
-
-    Tcl_GetTime(&time);
-
-    return (unsigned long long)time.sec * 1000
-	    + (unsigned long)time.usec / 1000;
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * SerialSetupProc --
  *
  *	This procedure is invoked before Tcl_DoOneEvent blocks waiting for an
@@ -478,7 +451,7 @@ SerialCheckProc(
     int needEvent;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     COMSTAT cStat;
-    unsigned long long time;
+    long long time;
 
     if (!(flags & TCL_FILE_EVENTS)) {
 	return;
@@ -527,9 +500,9 @@ SerialCheckProc(
 		    if ((cStat.cbInQue > 0) ||
 			    (infoPtr->error & SERIAL_READ_ERRORS)) {
 			infoPtr->readable = 1;
-			time = SerialGetMilliseconds();
+			time = Tcl_GetMonotonicTime();
 			if ((time - infoPtr->lastEventTime)
-				>= (unsigned long long) infoPtr->blockTime) {
+				>= infoPtr->blockTime * 1000LL) {
 			    needEvent = 1;
 			    infoPtr->lastEventTime = time;
 			}
