@@ -567,8 +567,8 @@ typedef struct ByteCode {
 				 * names and initialisation data for local
 				 * variables. */
 #ifdef TCL_COMPILE_STATS
-    Tcl_Time createTime;	/* Absolute time when the ByteCode was
-				 * created. */
+    long long createTime;	/* Absolute time when the ByteCode was
+				 * created (us). */
 #endif /* TCL_COMPILE_STATS */
 } ByteCode;
 

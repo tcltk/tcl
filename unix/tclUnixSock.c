@@ -1374,7 +1374,7 @@ TcpConnect(
 	     */
 
 	    ret = connect(statePtr->fds.fd, statePtr->addr->ai_addr,
-			statePtr->addr->ai_addrlen);
+		    statePtr->addr->ai_addrlen);
 	    if (ret < 0) {
 		error = errno;
 	    }

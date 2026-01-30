@@ -4407,7 +4407,7 @@ TclZipfsMountShlib(void)
 	Tcl_Obj *shlibPathObj = TclGetObjNameOfShlib();
 	if (shlibPathObj) {
 	    mounted = (TclZipfs_Mount(NULL, Tcl_GetString(shlibPathObj),
-			      ZIPFS_ZIP_MOUNT, NULL) == TCL_OK);
+		    ZIPFS_ZIP_MOUNT, NULL) == TCL_OK);
 	    if (!mounted) {
 		/*
 		 * Even if TclZipFS_Mount returns error, it could be some
@@ -5046,7 +5046,7 @@ ZipChannelOpen(
     if (z->isEncrypted) {
 	if (z->numCompressedBytes < ZIP_CRYPT_HDR_LEN) {
 	    ZIPFS_ERROR(interp,
-			"decryption failed: truncated decryption header");
+		    "decryption failed: truncated decryption header");
 	    ZIPFS_ERROR_CODE(interp, "DECRYPT");
 	    goto error;
 	}

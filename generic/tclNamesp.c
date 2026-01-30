@@ -2336,8 +2336,7 @@ TclGetNamespaceForQualName(
 	    start++;			/* Skip over a subsequent : */
 	}
 	nsPtr = globalNsPtr;
-	if (start[0] == '\0') {		/* qualName is just two or more
-					 * ":"s. */
+	if (start[0] == '\0') {		/* qualName is just two or more ":"s. */
 	    *nsPtrPtr = globalNsPtr;
 	    *altNsPtrPtr = NULL;
 	    *actualCxtPtrPtr = globalNsPtr;
