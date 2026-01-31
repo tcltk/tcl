@@ -407,7 +407,7 @@ LocatePreInitScript(Tcl_Interp *interp)
     /*
      * Need to track checked directories for error reporting. As a side
      * benefit, because they are tracked here we can keep overwriting dirPtr
-     * without leaking memory.
+     * without leaking memory despite not freeing up any allocated Tcl_Obj's.
      */
     searchedDirs = Tcl_NewListObj(0, NULL);
 
@@ -453,6 +453,9 @@ LocatePreInitScript(Tcl_Interp *interp)
     /* tcl::pkgconfig get scriptdir,runtime */
 #ifdef CFG_RUNTIME_SCRDIR
 	TRY_PATH(Tcl_NewStringObj(CFG_RUNTIME_SCRDIR, -1));
+#endif
+#ifdef CFG_INSTALL_SCRDIR
+	TRY_PATH(Tcl_NewStringObj(CFG_INSTALL_SCRDIR, -1));
 #endif
 
     assert(initScriptPathPtr == NULL);

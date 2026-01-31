@@ -1398,7 +1398,14 @@ tclIndexObj.o: $(GENERIC_DIR)/tclIndexObj.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclIndexObj.c
 
 tclInterp.o: $(GENERIC_DIR)/tclInterp.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclInterp.c
+	$(CC) -c $(CC_SWITCHES) \
+		-DCFG_INSTALL_LIBDIR="\"$(LIB_INSTALL_DIR)\"" \
+		-DCFG_INSTALL_BINDIR="\"$(BIN_INSTALL_DIR)\"" \
+		-DCFG_INSTALL_SCRDIR="\"$(SCRIPT_INSTALL_DIR)\"" \
+		-DCFG_RUNTIME_LIBDIR="\"$(libdir)\"" \
+		-DCFG_RUNTIME_BINDIR="\"$(bindir)\"" \
+		-DCFG_RUNTIME_SCRDIR="\"$(TCL_LIBRARY)\"" \
+		$(GENERIC_DIR)/tclInterp.c
 
 tclIO.o: $(GENERIC_DIR)/tclIO.c $(IOHDR)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclIO.c
