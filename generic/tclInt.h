@@ -149,7 +149,7 @@
 #if defined(__STDC__) && __STDC__ >= 202311L
 #include <stddef.h>
 #define TCL_UNREACHABLE()	unreachable()
-#elif defined(__GNUC__)
+#elif defined(__GNUC__) && ((__GNUC__ == 4 && __GNUC_MINOR__ >= 5) || __GNUC__ >= 5 || defined(__clang__))
 #define TCL_UNREACHABLE()	__builtin_unreachable()
 #elif defined(_MSC_VER)
 #define TCL_UNREACHABLE()	__assume(0)
