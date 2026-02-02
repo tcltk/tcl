@@ -71,7 +71,12 @@ The **clock** command performs several operations that obtain and manipulate val
 : An integer value passed to the **clock** command that represents an absolute time as a number of seconds from the *epoch time* of 1 January 1970, 00:00 UTC.  Note that the count of seconds does not include any leap seconds; seconds are counted as if each UTC day has exactly 86400 seconds.  Tcl responds to leap seconds by speeding or slowing its clock by a tiny fraction for some minutes until it is back in sync with UTC; its data model does not represent minutes that have 59 or 61 seconds.
 
 *now*
-: Instead of *timeVal* a non-integer value **now** can be used as replacement for today, which is simply interpolated to the run-time as value of **clock seconds**. For example: .sp **clock format now -f %a; # current day of the week** .sp **clock add now 1 month; # next month**
+: Instead of *timeVal* a non-integer value **now** can be used as replacement for today, which is simply interpolated to the run-time as value of **clock seconds**. For example: 
+
+    ```
+    clock format now -f %a; # current day of the week
+    clock add now 1 month; # next month
+    ```
 
 *unit*
 : One of the words, **seconds**, **minutes**, **hours**, **days**, **weekdays**, **weeks**, **months**, or **years**. Used in conjunction with *count* to identify an interval of time, for example, *3 seconds* or *1 year*.
@@ -104,12 +109,9 @@ The **clock** command performs several operations that obtain and manipulate val
 [-timezone]{.lit} [zoneName]{.arg}
 : Specifies that clock arithmetic, formatting, and scanning are to be done according to the rules for the time zone specified by *zoneName*. The permissible values, and their interpretation, are discussed under [Time zones]. On subcommands that expect a **-timezone** argument, the default is to use the *current time zone*.  The current time zone is determined, in order of preference, by:
 
-1.     the environment variable **TCL\_TZ**.
-
-2.     the environment variable **TZ**.
-
-3.     on Windows systems, the time zone settings from the Control Panel.
-
+    1. the environment variable **TCL\_TZ**.
+    2. the environment variable **TZ**.
+    3. on Windows systems, the time zone settings from the Control Panel.
 
 [-validate]{.lit} [boolean]{.arg}
 : If *boolean* is true (default), **clock scan** will raise an error if the input contains invalid values, e.g. day of month greater than number of days in the month. If specified as false, the command makes an adjustment to bring values within acceptable range. See [Scanning times] for details.
@@ -444,7 +446,7 @@ If the time zone begins with a colon, it is one of a standardized list of names 
 
 A time zone string consisting of a plus or minus sign followed by four or six decimal digits is interpreted as an offset in hours, minutes, and seconds (if six digits are present) from UTC.  The plus sign denotes a sign east of Greenwich; the minus sign one west of Greenwich.
 
-A time zone string conforming to the Posix specification of the **TZ** environment variable will be recognized.  The specification may be found at *https://pubs.opengroup.org/onlinepubs/009695399/basedefs/xbd\_chap08.html*.
+A time zone string conforming to the Posix specification of the **TZ** environment variable will be recognized.  The specification may be found at <https://pubs.opengroup.org/onlinepubs/009695399/basedefs/xbd_chap08.html>.
 
 If the Posix time zone string contains a DST (Daylight Savings Time) part, but doesn't contain a rule stating when DST starts or ends, then default rules are used. For Timezones with an offset between 0 and +12, the current European/Russian rules are used, otherwise the current US rules are used. In Europe (offset +0 to +2) the switch to summertime is done each last Sunday in March at 1:00 GMT, and the switch back is each last Sunday in October at 2:00 GMT. In Russia (offset +3 to +12), the switch dates are the same, only the switch to summertime is at 2:00 local time, and the switch back is at 3:00 local time in all time zones. The US switch to summertime takes place each second Sunday in March at 2:00 local time, and the switch back is each first Sunday in November at 3:00 local time. These default rules mean that in all European, Russian and US (or compatible) time zones, DST calculations will be correct for dates in 2007 and later, unless in the future the rules change again.
 
@@ -452,7 +454,7 @@ Any other time zone string is processed by prefixing a colon and attempting to u
 
 # Localization
 
-Developers wishing to localize the date and time formatting and parsing are referred to *https://tip.tcl-lang.org/173* for a specification.
+Developers wishing to localize the date and time formatting and parsing are referred to <https://tip.tcl-lang.org/173> for a specification.
 
 # Free form scan
 

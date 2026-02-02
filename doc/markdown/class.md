@@ -42,11 +42,11 @@ oo::object
 
 Classes are objects that can manufacture other objects according to a pattern stored in the factory object (the class). An instance of the class is created by calling one of the class's factory methods, typically either **create** if an explicit name is being given, or **new** if an arbitrary unique name is to be automatically selected.
 
-The **oo::class** class is the class of all classes; every class is an instance of this class, which is consequently an instance of itself. This class is a subclass of **oo::object**, so every class is also an object. Additional metaclasses (i.e., classes of classes) can be defined if necessary by subclassing **oo::class**. Note that the **oo::class** object hides the **new** method on itself, so new classes should always be made using the **create** method.
+The **oo::class** class is the class of all classes; every class is an instance of this class, which is consequently an instance of itself. This class is a subclass of [oo::object][object], so every class is also an object. Additional metaclasses (i.e., classes of classes) can be defined if necessary by subclassing **oo::class**. Note that the **oo::class** object hides the **new** method on itself, so new classes should always be made using the **create** method.
 
 ## Constructor
 
-The constructor of the **oo::class** class takes an optional argument which, if present, is sent to the **oo::define** command (along with the name of the newly-created class) to allow the class to be conveniently configured at creation time.
+The constructor of the **oo::class** class takes an optional argument which, if present, is sent to the [oo::define][define] command (along with the name of the newly-created class) to allow the class to be conveniently configured at creation time.
 
 ## Destructor
 
@@ -108,4 +108,8 @@ $b eat               → prints "skin now off" and "yummy!"
 fruit destroy
 $b eat               → error "unknown command"
 ```
+
+
+[define]: define.md
+[object]: object.md
 

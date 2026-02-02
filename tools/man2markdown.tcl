@@ -219,21 +219,29 @@ namespace eval ::ndoc {
 	
 	# give diagnostic output:
 	set verbose 0
+	
 	# the dictionary into which the manual page is put
 	set manual [dict create]
+	
 	# list of section/aubsection titles which can act as reference targets
 	# (will be reset for ever man page read):
 	set sectionTitles [list]
+	
 	# list of Tcl commands to recognize for links between manual pages:
 	set tclCmdList [lsort [info commands]]
+	
 	# dictionary of links on pages that should link to a page
-	# not identical to the link text
-	# (the value for each key is a mapping with <cmdText filename ?cmdText filename ...?)
+	# not identical to the link text.
+	# The keys of this dict are filenames (nroff files),
+	# the value for each key is a mapping with <cmdText filename ?cmdText filename ...?>
 	# where 'cmdText' is the command name mentioned in the manual and 'filename' is the
 	# name of the manual file in which the command is described:
 	set tclCmdListRemap [dict create {*}{
-		binary		{tcl_platform tclvars}
+		binary        {tcl_platform tclvars}
+		class         {oo::object object oo::define define}
+		classvariable {oo::objdefine objdefine}
 	}]
+	
 	# dictionary of pages in which specific cmd words should *not* be linked
 	# as they represent something else in that context
 	# (exclude_refs_map taken from core tools/tcltk-man2html.tcl of version d2328814c619
@@ -1659,6 +1667,27 @@ proc ::ndoc::mdExceptions {md} {
 		}
 		re_syntax {
 			set md [string map {{Different flavors of res} {Different flavours of REs}} $md] 
+		}
+		clock {
+			set md [string map [list \
+				{.sp **clock format now -f %a; # current day of the week** .sp **clock add now 1 month; # next month**} \
+				"\n\n    ```\n    clock format now -f %a; # current day of the week\n    clock add now 1 month; # next month\n    ```" \
+				\
+				"1.     the environment variable **TCL\\_TZ**.\n" \
+				{    1. the environment variable **TCL\_TZ**.} \
+				\
+				"2.     the environment variable **TZ**.\n" \
+				{    2. the environment variable **TZ**.} \
+				\
+				"3.     on Windows systems, the time zone settings from the Control Panel.\n" \
+				{    3. on Windows systems, the time zone settings from the Control Panel.} \
+				\
+				{*https://pubs.opengroup.org/onlinepubs/009695399/basedefs/xbd\_chap08.html*} \
+				{<https://pubs.opengroup.org/onlinepubs/009695399/basedefs/xbd_chap08.html>} \
+				\
+				{*https://tip.tcl-lang.org/173*} \
+				{<https://tip.tcl-lang.org/173>} \
+			] $md]
 		}
 	}
 	return $md

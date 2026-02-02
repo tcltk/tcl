@@ -34,9 +34,9 @@ The tcl/doc directory contains 248 manual pages which are divided as follows:
 
 section | number of documents | initial conversion | final conversion
 --------|---------------------|--------------------|-----------------
-1       | 1                   | 1                  | 12
+1       | 1                   | 1                  | 0
 3       | 108                 | 108                | 0
-n       | 139                 | 139                | 0
+n       | 139                 | 139                | 14
 
 Final conversion of these files is currently done:
 1. after
@@ -51,7 +51,10 @@ Final conversion of these files is currently done:
 10. catch
 11. cd
 12. chan (indentation for [chan configure] is not ok -> will be dealt with when restructuring manual pages after TIP 700)
-13 ...
+13. class
+14. classvariable
+15. clock -> we may need to use '(1)' instead of '[1]' for referencing list items as this might be misinterpreted during conversion to HTML
+(what to do with the COPYRIGHT section, why is is in the markdown and not only in the YAML metadata?)
 
 The tk/doc directory comes next, after finishing Tcl.
 
@@ -78,7 +81,7 @@ This section lists the shortcoming which are still present in the pages that alr
 - RegConfig.3: besides the C API, this page describes Tcl-level commands that are created. These use a non-standard format in the form of ::, followed by an .arg, followed by ::, followed by a .lit – all in one word!
 
 
-# Implemented and missing features in conversion script
+# Implemented features in conversion script
 
 List of nroff commands/macros currently implemented (partly not a complete implementation):
 
@@ -109,6 +112,7 @@ List of nroff commands/macros currently implemented (partly not a complete imple
 - .SS (subsection header)
 - .VS .VE (start and end of vertical line)
 - .CS .CE (start and end of code block)
+- .sp (inserts vertical space) > this is treated individually (currently by mdExceptions)
 
 
 
