@@ -9445,4 +9445,6 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 
 2026-01-13 configure --enable-man-compression error (nijtmans)
 
+2026-02-03 Update to zlib 1.3.1.2 (nijtmans)
+
 - (to be) Released 8.6.18, Apr ??, 2026 - details at https://core.tcl-lang.org/tcl/ -
