@@ -34,7 +34,9 @@
 #endif
 
 #ifdef TCL_NO_DEPRECATED
-#   define Tcl_ObjCmdProc void
+#   if defined(BUILD_tcl)
+#	define Tcl_ObjCmdProc void
+#   endif
 #   define Tcl_CmdTraceProc void
 #   define Tcl_CmdObjTraceProc void
 #   define Tcl_GetTimeProc void

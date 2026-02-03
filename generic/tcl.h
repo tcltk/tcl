@@ -562,7 +562,7 @@ typedef void (Tcl_IdleProc) (void *clientData);
 typedef void (Tcl_InterpDeleteProc) (void *clientData,
 	Tcl_Interp *interp);
 typedef void (Tcl_NamespaceDeleteProc) (void *clientData);
-#ifndef TCL_NO_DEPRECATED
+#if !defined(TCL_NO_DEPRECATED) || !defined(BUILD_tcl)
 typedef int (Tcl_ObjCmdProc) (void *clientData, Tcl_Interp *interp,
 	int objc, struct Tcl_Obj *const *objv);
 #endif /* TCL_NO_DEPRECATED */
