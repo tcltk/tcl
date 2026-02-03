@@ -535,7 +535,7 @@ int main(int argc, char *argv[]) {
                    (argv[i][1]=='a') || (argv[i][1]=='A') ||
                    (argv[i][1]=='p') || (argv[i][1]=='P') ||
                    (argv[i][1]=='r') || (argv[i][1]=='R') ||
-                   ((argv[i][1]>='0') || (argv[i][1]<='9'))) &&
+                   ((argv[i][1]>='0') && (argv[i][1]<='9'))) &&
                   (strlen(argv[i]) == 2)))
             {
                 if(opt_recursive) {
