@@ -62,10 +62,10 @@ TclpGetSeconds(void)
 long long
 TclpGetMicroseconds(void)
 {
-    Tcl_Time time;
+    struct timeval tv;
 
-    Tcl_GetTime(&time);
-    return time.sec * 1000000 + time.usec;
+    (void) gettimeofday(&tv, NULL);
+    return tv.tv_sec * 1000000 + tv.tv_usec;
 }
 
 /*
@@ -102,11 +102,11 @@ TclpGetClicks(void)
 
     now = (unsigned long long) times(&dummy);
 #else /* !NO_GETTOD */
-    Tcl_Time time;
+    struct timeval tv;
 
-    Tcl_GetTime(&time);
-    now = ((unsigned long long)(time.sec)*1000000ULL) +
-	    (unsigned long long)(time.usec);
+    (void) gettimeofday(&tv, NULL);
+    now = ((unsigned long long)(tv.tv_sec)*1000000ULL) +
+	    (unsigned long long)(tv.tv_usec);
 #endif /* NO_GETTOD */
 
     return now;

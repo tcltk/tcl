@@ -184,15 +184,10 @@ TclpGetClicks(void)
 	return (Tcl_WideUInt) usecSincePosixEpoch;
     } else {
 	/*
-	* Use the Tcl_GetTime abstraction to get the time in microseconds, as
+	* Use the TclpGetMicroseconds abstraction to get the time in microseconds, as
 	* nearly as we can, and return it.
 	*/
-
-	Tcl_Time now;		/* Current Tcl time */
-
-	Tcl_GetTime(&now);
-	return ((unsigned long long)(now.sec)*1000000ULL) +
-		(unsigned long long)(now.usec);
+	return TclpGetMicroseconds();
     }
 }
 
