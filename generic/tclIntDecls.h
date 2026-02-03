@@ -27,7 +27,7 @@
 #   endif
 #endif
 
-#ifdef TCL_NO_DEPRECATED
+#if defined(TCL_NO_DEPRECATED) && defined(BUILD_tcl)
 #define Tcl_ObjCmdProc void
 #endif
 
