@@ -2072,8 +2072,8 @@ TclNRNewObjectInstance(
      * Fire off the constructors non-recursively.
      */
 
-    TclNRAddCallback(interp, FinalizeAlloc, contextPtr, oPtr, state,
-	    objectPtr);
+    TclNRAddCallback(interp, FinalizeAlloc,
+	    contextPtr, oPtr, state, objectPtr);
     TclPushTailcallPoint(interp);
     return TclOOInvokeContext(contextPtr, interp, objc, objv);
 }
@@ -3075,7 +3075,7 @@ TclOOObjectCmdCore(
      * for the duration.
      */
 
-    TclNRAddCallback(interp, FinalizeObjectCall, contextPtr, NULL,NULL,NULL);
+    TclNRAddCallback(interp, FinalizeObjectCall, contextPtr, NULL, NULL, NULL);
     return TclOOInvokeContext(contextPtr, interp, objc, objv);
 }
 

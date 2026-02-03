@@ -1410,8 +1410,7 @@ Tcl_NRExprObj(
 
     Tcl_ResetResult(interp);
     ByteCode *codePtr = CompileExprObj(interp, objPtr);
-    Tcl_NRAddCallback(interp, ExprObjCallback, state, resultPtr,
-	    NULL, NULL);
+    TclNRAddCallback(interp, ExprObjCallback, state, resultPtr, NULL, NULL);
     return TclNRExecuteByteCode(interp, codePtr);
 }
 

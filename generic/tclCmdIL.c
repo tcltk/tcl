@@ -235,8 +235,8 @@ TclNRIfObjCmd(
      */
 
     TclNewObj(boolObj);
-    Tcl_NRAddCallback(interp, IfConditionCallback, INT2PTR(objc),
-	    (void *) objv, INT2PTR(1), boolObj);
+    TclNRAddCallback(interp, IfConditionCallback,
+	    INT2PTR(objc), objv, INT2PTR(1), boolObj);
     return Tcl_NRExprObj(interp, objv[1], boolObj);
 }
 
@@ -321,8 +321,8 @@ IfConditionCallback(
 	}
 	if (!thenScriptIndex) {
 	    TclNewObj(boolObj);
-	    Tcl_NRAddCallback(interp, IfConditionCallback, data[0], data[1],
-		    INT2PTR(i), boolObj);
+	    TclNRAddCallback(interp, IfConditionCallback,
+		    data[0], data[1], INT2PTR(i), boolObj);
 	    return Tcl_NRExprObj(interp, objv[i], boolObj);
 	}
     }

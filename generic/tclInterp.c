@@ -3479,7 +3479,7 @@ ChildInvokeHidden(
 		/*isProcFrame*/ 0);
     }
 
-    Tcl_NRAddCallback(interp, NRPostInvokeHidden, childInterp,
+    TclNRAddCallback(interp, NRPostInvokeHidden, childInterp,
 	    TOP_CB(childInterp), framePtr, NULL);
     return TclNRInvoke(NULL, childInterp, objc, objv);
 }
