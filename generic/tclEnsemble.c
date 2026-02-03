@@ -1970,8 +1970,8 @@ NsEnsembleImplementationCmdNR(
 
 	if (TclInitRewriteEnsemble(interp, 2 + ensemblePtr->numParameters,
 		prefixObjc + ensemblePtr->numParameters, objv)) {
-	    TclNRAddCallback(interp, TclClearRootEnsemble, NULL, NULL, NULL,
-		    NULL);
+	    TclNRAddCallback(interp, TclClearRootEnsemble,
+		    NULL, NULL, NULL, NULL);
 	}
 
 	/*

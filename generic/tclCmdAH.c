@@ -238,8 +238,8 @@ TclNRCatchObjCmd(
 	optionVarNamePtr = objv[3];
     }
 
-    TclNRAddCallback(interp, CatchObjCmdCallback, INT2PTR(objc),
-	    varNamePtr, optionVarNamePtr, NULL);
+    TclNRAddCallback(interp, CatchObjCmdCallback,
+	    INT2PTR(objc), varNamePtr, optionVarNamePtr, NULL);
 
     /*
      * TIP #280. Make invoking context available to caught script.
@@ -2564,8 +2564,8 @@ TclNRForIterCallback(
 
 	Tcl_ResetResult(interp);
 	TclNewObj(boolObj);
-	TclNRAddCallback(interp, ForCondCallback, iterPtr, boolObj, NULL,
-		NULL);
+	TclNRAddCallback(interp, ForCondCallback, iterPtr, boolObj,
+		NULL, NULL);
 	return Tcl_NRExprObj(interp, iterPtr->cond, boolObj);
     case TCL_BREAK:
 	result = TCL_OK;
@@ -2604,11 +2604,11 @@ ForCondCallback(
     if (value) {
 	/* TIP #280. */
 	if (iterPtr->next) {
-	    TclNRAddCallback(interp, ForNextCallback, iterPtr, NULL, NULL,
-		    NULL);
+	    TclNRAddCallback(interp, ForNextCallback, iterPtr,
+		    NULL, NULL, NULL);
 	} else {
-	    TclNRAddCallback(interp, TclNRForIterCallback, iterPtr, NULL,
-		    NULL, NULL);
+	    TclNRAddCallback(interp, TclNRForIterCallback, iterPtr,
+		    NULL, NULL, NULL);
 	}
 	return TclNREvalObjEx(interp, iterPtr->body, 0, iPtr->cmdFramePtr,
 		iterPtr->word);
@@ -2628,8 +2628,8 @@ ForNextCallback(
     Tcl_Obj *next = iterPtr->next;
 
     if ((result == TCL_OK) || (result == TCL_CONTINUE)) {
-	TclNRAddCallback(interp, ForPostNextCallback, iterPtr, NULL, NULL,
-		NULL);
+	TclNRAddCallback(interp, ForPostNextCallback, iterPtr,
+		NULL, NULL, NULL);
 
 	/*
 	 * TIP #280. Make invoking context available to next script.

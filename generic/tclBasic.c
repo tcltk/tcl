@@ -4756,8 +4756,7 @@ TEOV_PushExceptionHandlers(
 	 * Error messages
 	 */
 
-	TclNRAddCallback(interp, TEOV_Error, INT2PTR(objc),
-		objv, NULL, NULL);
+	TclNRAddCallback(interp, TEOV_Error, INT2PTR(objc), objv, NULL, NULL);
     }
 
     if (iPtr->numLevels == 1) {
@@ -4781,8 +4780,8 @@ TEOV_SwitchVarFrame(
      * restore things at the end.
      */
 
-    TclNRAddCallback(interp, TEOV_RestoreVarFrame, iPtr->varFramePtr, NULL,
-	    NULL, NULL);
+    TclNRAddCallback(interp, TEOV_RestoreVarFrame, iPtr->varFramePtr,
+	    NULL, NULL, NULL);
     iPtr->varFramePtr = iPtr->rootFramePtr;
 }
 
@@ -4946,8 +4945,8 @@ TEOV_NotFound(
 	varFramePtr->nsPtr = lookupNsPtr;
     }
     TclSkipTailcall(interp);
-    TclNRAddCallback(interp, TEOV_NotFoundCallback, INT2PTR(handlerObjc),
-	    newObjv, savedNsPtr, NULL);
+    TclNRAddCallback(interp, TEOV_NotFoundCallback,
+	    INT2PTR(handlerObjc), newObjv, savedNsPtr, NULL);
     return TclNREvalObjv(interp, newObjc, newObjv, TCL_EVAL_NOERR, NULL);
 }
 
@@ -6215,8 +6214,8 @@ TclNREvalObjEx(
 	}
 
 	TclMarkTailcall(interp);
-	TclNRAddCallback(interp, TEOEx_ListCallback, listPtr, eoFramePtr,
-		objPtr, NULL);
+	TclNRAddCallback(interp, TEOEx_ListCallback,
+		listPtr, eoFramePtr, objPtr, NULL);
 
 	TclListObjGetElements(NULL, listPtr, &objc, &objv);
 	return TclNREvalObjv(interp, objc, objv, flags, NULL);
@@ -6246,8 +6245,8 @@ TclNREvalObjEx(
 	Tcl_IncrRefCount(objPtr);
 	codePtr = TclCompileObj(interp, objPtr, invoker, word);
 
-	TclNRAddCallback(interp, TEOEx_ByteCodeCallback, savedVarFramePtr,
-		objPtr, INT2PTR(allowExceptions), NULL);
+	TclNRAddCallback(interp, TEOEx_ByteCodeCallback,
+		savedVarFramePtr, objPtr, INT2PTR(allowExceptions), NULL);
 	return TclNRExecuteByteCode(interp, codePtr);
     }
 
@@ -6706,7 +6705,7 @@ TclNRInvoke(
      */
 
     iPtr->numLevels++;
-    Tcl_NRAddCallback(interp, TclNRPostInvoke, NULL, NULL, NULL, NULL);
+    TclNRAddCallback(interp, TclNRPostInvoke, NULL, NULL, NULL, NULL);
 
     /*
      * Normal command resolution of objv[0] isn't going to find cmdPtr.
@@ -8660,8 +8659,7 @@ TclMarkTailcall(
     Interp *iPtr = (Interp *) interp;
 
     if (iPtr->deferredCallbacks == NULL) {
-	TclNRAddCallback(interp, NRCommand, NULL, NULL,
-		NULL, NULL);
+	TclNRAddCallback(interp, NRCommand, NULL, NULL, NULL, NULL);
 	iPtr->deferredCallbacks = TOP_CB(interp);
     }
 }
@@ -8834,7 +8832,7 @@ TclNRTailcallEval(
      */
 
     TclMarkTailcall(interp);
-    TclNRAddCallback(interp, TclNRReleaseValues, listPtr, NULL, NULL,NULL);
+    TclNRAddCallback(interp, TclNRReleaseValues, listPtr, NULL, NULL, NULL);
     iPtr->lookupNsPtr = (Namespace *) nsPtr;
     return TclNREvalObjv(interp, objc - 1, objv + 1, 0, NULL);
 }
@@ -8923,8 +8921,8 @@ TclNRYieldObjCmd(
     }
 
     NRE_ASSERT(!COR_IS_SUSPENDED(corPtr));
-    TclNRAddCallback(interp, TclNRCoroutineActivateCallback, corPtr,
-	    clientData, NULL, NULL);
+    TclNRAddCallback(interp, TclNRCoroutineActivateCallback,
+	    corPtr, clientData, NULL, NULL);
     return TCL_OK;
 }
 
@@ -9003,8 +9001,7 @@ RewindCoroutine(
     NRE_ASSERT(corPtr->eePtr != iPtr->execEnvPtr);
 
     corPtr->eePtr->rewind = 1;
-    TclNRAddCallback(interp, RewindCoroutineCallback, state,
-	    NULL, NULL, NULL);
+    TclNRAddCallback(interp, RewindCoroutineCallback, state, NULL, NULL, NULL);
     return TclNRInterpCoroutine(corPtr, interp, 0, NULL);
 }
 

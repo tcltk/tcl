@@ -995,8 +995,8 @@ TclNRUplevelObjCmd(
 	objPtr = Tcl_ConcatObj(objc, objv);
     }
 
-    TclNRAddCallback(interp, TclUplevelCallback, savedVarFramePtr, NULL, NULL,
-	    NULL);
+    TclNRAddCallback(interp, TclUplevelCallback, savedVarFramePtr,
+	    NULL, NULL, NULL);
     return TclNREvalObjEx(interp, objPtr, 0, invoker, word);
   uplevelSyntax:
     Tcl_WrongNumArgs(interp, 1, objv, "?level? command ?arg ...?");
