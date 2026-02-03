@@ -769,13 +769,12 @@ TclpWaitForEvent(
 	}
 #else /* !__CYGWIN__ */
 	if (time >= 0) {
-	    Tcl_Time now;
+	    long long now;
 	    struct timespec ptime;
 
-	    Tcl_GetTime(&now);
-	    ptime.tv_sec = now.sec +
-		    (time + now.usec) / 1000000;
-	    ptime.tv_nsec = 1000 * ((time + now.usec) % 1000000);
+	    now = TclpGetMicroseconds();
+	    ptime.tv_sec = (time + now) / 1000000;
+	    ptime.tv_nsec = 1000 * ((time + now) % 1000000);
 
 	    pthread_cond_timedwait(&tsdPtr->waitCV, &notifierMutex, &ptime);
 	} else {

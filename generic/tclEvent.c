@@ -1545,7 +1545,7 @@ Tcl_VwaitObjCmd(
     int extended = 0, result, mode, mask = TCL_ALL_EVENTS;
     Tcl_InterpState saved = NULL;
     Tcl_TimerToken timer = NULL;
-    Tcl_Time before, after;
+    long long before = -1, after;
     Tcl_Channel chan;
     Tcl_WideInt diff = -1;
     VwaitItem localItems[32], *vwaitItems = localItems;
@@ -1753,7 +1753,7 @@ Tcl_VwaitObjCmd(
 	vwaitItems[numItems].sourceObj = NULL;
 	timer = Tcl_CreateTimerHandler(timeout, VwaitTimeoutProc,
 		&vwaitItems[numItems]);
-	Tcl_GetTime(&before);
+	before = TclpGetMicroseconds();
     } else {
 	timeout = 0;
     }
@@ -1828,9 +1828,9 @@ Tcl_VwaitObjCmd(
     if (timedOut) {
 	diff = -1;
     } else {
-	Tcl_GetTime(&after);
-	diff = after.sec * 1000 + after.usec / 1000;
-	diff -= before.sec * 1000 + before.usec / 1000;
+	after = TclpGetMicroseconds();
+	diff = after / 1000;
+	diff -= before / 1000;
 	diff = timeout - diff;
 	if (diff < 0) {
 	    diff = 0;
