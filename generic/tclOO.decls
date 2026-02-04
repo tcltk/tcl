@@ -47,10 +47,10 @@ declare 7 {
     Tcl_Object Tcl_MethodDeclarerObject(Tcl_Method method)
 }
 declare 8 {
-    int Tcl_MethodIsPublic(Tcl_Method method)
+    bool Tcl_MethodIsPublic(Tcl_Method method)
 }
 declare 9 {
-    int Tcl_MethodIsType(Tcl_Method method, const Tcl_MethodType *typePtr,
+    bool Tcl_MethodIsType(Tcl_Method method, const Tcl_MethodType *typePtr,
 	    void **clientDataPtr)
 }
 declare 10 {
@@ -75,7 +75,7 @@ declare 14 {
     int Tcl_ObjectDeleted(Tcl_Object object)
 }
 declare 15 {
-    int Tcl_ObjectContextIsFiltering(Tcl_ObjectContext context)
+    bool Tcl_ObjectContextIsFiltering(Tcl_ObjectContext context)
 }
 declare 16 {
     Tcl_Method Tcl_ObjectContextMethod(Tcl_ObjectContext context)
@@ -127,7 +127,7 @@ declare 28 {
     Tcl_Obj *Tcl_GetObjectName(Tcl_Interp *interp, Tcl_Object object)
 }
 declare 29 {
-    int Tcl_MethodIsPrivate(Tcl_Method method)
+    bool Tcl_MethodIsPrivate(Tcl_Method method)
 }
 declare 30 {
     Tcl_Class Tcl_GetClassOfObject(Tcl_Object object)
@@ -136,7 +136,7 @@ declare 31 {
     Tcl_Obj *Tcl_GetObjectClassName(Tcl_Interp *interp, Tcl_Object object)
 }
 declare 32 {
-    int Tcl_MethodIsType2(Tcl_Method method, const Tcl_MethodType2 *typePtr,
+    bool Tcl_MethodIsType2(Tcl_Method method, const Tcl_MethodType2 *typePtr,
 	    void **clientDataPtr)
 }
 declare 33 {
@@ -188,7 +188,7 @@ declare 5 {
 	    Tcl_Obj *const *objv, int publicOnly, Class *startCls)
 }
 declare 6 {
-    int TclOOIsReachable(Class *targetPtr, Class *startPtr)
+    bool TclOOIsReachable(Class *targetPtr, Class *startPtr)
 }
 declare 7 {
     Method *TclOONewForwardMethod(Tcl_Interp *interp, Class *clsPtr,
