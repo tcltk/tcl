@@ -2790,7 +2790,7 @@ TclFSGetAncestorPaths(
     count = i;
     /* Fill remaining with NULL */
     while (i < numPaths) {
-	pathsPtr[i] = NULL;
+	pathsPtr[i++] = NULL;
     }
     Tcl_DecrRefCount(splitPathPtr);
     return count;
