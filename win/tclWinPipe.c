@@ -2039,7 +2039,7 @@ PipeClose2Proc(
     int errorCode, result;
     PipeInfo *infoPtr, **nextPtrPtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    int inExit = (TclInExit() || TclInThreadExit());
+    bool inExit = (TclInExit() || TclInThreadExit());
 
     errorCode = 0;
     result = 0;
@@ -3590,7 +3590,7 @@ TclPipeThreadStop(
 	GetExitCodeThread(hThread, &exitCode);
 
 	if (exitCode == STILL_ACTIVE) {
-	    int inExit = (TclInExit() || TclInThreadExit());
+	    bool inExit = (TclInExit() || TclInThreadExit());
 
 	    /*
 	     * Set the stop event so that if the pipe thread is blocked
