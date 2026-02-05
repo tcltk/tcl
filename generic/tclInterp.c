@@ -317,6 +317,8 @@ Tcl_SetPreInitScript(
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
  * CheckForFileInDir --
  *
  * Little helper to check if a file exists within a directory and is readable.
@@ -324,7 +326,9 @@ Tcl_SetPreInitScript(
  * Results:
  *	Returns path to the file if it exists, NULL if not. Reference count
  *	of returned Tcl_Obj is incremented before returning to account for the
- *      caller owning a reference.
+ *	caller owning a reference.
+ *
+ *----------------------------------------------------------------------
  */
 static Tcl_Obj *
 CheckForFileInDir(
@@ -344,6 +348,8 @@ CheckForFileInDir(
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
  * LocatePreInitScript --
  *
  *	Locates the Tcl initialization script, "init.tcl".
@@ -355,9 +361,12 @@ CheckForFileInDir(
  *
  * Side effects:
  *	Sets the tcl_library variable to the directory containing init.tcl.
+ *
+ *----------------------------------------------------------------------
  */
-Tcl_Obj *
-LocatePreInitScript(Tcl_Interp *interp)
+static Tcl_Obj *
+LocatePreInitScript(
+    Tcl_Interp *interp)
 {
     /*
      * The search order for the init.tcl is as follows:
@@ -419,20 +428,20 @@ LocatePreInitScript(Tcl_Interp *interp)
      * file existence in the body but that means paths that never get used
      * are constructed. Instead we use a macro to reduce code duplication.
      */
-#define TRY_PATH(dirarg_)                                         \
-    do {                                                          \
-	dirPtr = (dirarg_);                                       \
-	if (dirPtr) {                                             \
-	    Tcl_ListObjAppendElement(NULL, searchedDirs, dirPtr); \
-	    /* Tcl_IsEmpty check - bug 465d4546e2 */              \
-	    if (!Tcl_IsEmpty(dirPtr)) {                           \
-		initScriptPathPtr =                               \
-		    CheckForFileInDir(dirPtr, initNamePtr);       \
-		if (initScriptPathPtr != NULL) {                  \
-		    goto done;                                    \
-		}                                                 \
-	    }                                                     \
-	}                                                         \
+#define TRY_PATH(dirarg) \
+    do {								\
+	dirPtr = (dirarg);						\
+	if (dirPtr) {							\
+	    Tcl_ListObjAppendElement(NULL, searchedDirs, dirPtr);	\
+	    /* Tcl_IsEmpty check - bug 465d4546e2 */			\
+	    if (!Tcl_IsEmpty(dirPtr)) {					\
+		initScriptPathPtr =					\
+			CheckForFileInDir(dirPtr, initNamePtr);		\
+		if (initScriptPathPtr != NULL) {			\
+		    goto done;						\
+		}							\
+	    }								\
+	}								\
     } while (0)
 
     TRY_PATH(Tcl_GetVar2Ex(interp, "tcl_library", NULL, TCL_GLOBAL_ONLY));
@@ -492,10 +501,9 @@ LocatePreInitScript(Tcl_Interp *interp)
 
     TRY_PATH(TclJoinPath(3, pathParts, 0));
 
-done: /* initScriptPtr != NULL => dirPtr holds dir of init.tcl */
+  done:		/* initScriptPtr != NULL => dirPtr holds dir of init.tcl */
     if (initScriptPathPtr == NULL) {
-	Tcl_SetObjResult(interp,
-	    Tcl_ObjPrintf(
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"Cannot find a usable init.tcl in the following directories: \n"
 		"    %s\n\n"
 		"This probably means that Tcl wasn't installed properly.\n",
@@ -518,6 +526,8 @@ done: /* initScriptPtr != NULL => dirPtr holds dir of init.tcl */
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
  * RunPreInitScript --
  *
  *	Locates and invokes the Tcl initialization script, "init.tcl".
@@ -527,9 +537,12 @@ done: /* initScriptPtr != NULL => dirPtr holds dir of init.tcl */
  *
  * Side effects:
  *	Pretty much anything, depending on the contents of the script.
+ *
+ *----------------------------------------------------------------------
  */
-int
-RunPreInitScript(Tcl_Interp *interp)
+static int
+RunPreInitScript(
+    Tcl_Interp *interp)
 {
     /*
      * Note the following differences from 9.0. If a init.tcl is found and
@@ -550,28 +563,38 @@ RunPreInitScript(Tcl_Interp *interp)
     int result = Tcl_FSEvalFile(interp, initScriptPathPtr);
     Tcl_DecrRefCount(initScriptPathPtr);
     if (result != TCL_OK) {
-	Tcl_ObjPrintf("Error sourcing Tcl initialization script from %s:\n%s",
-	    Tcl_GetString(initScriptPathPtr),
-	    Tcl_GetString(Tcl_GetObjResult(interp)));
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"Error sourcing Tcl initialization script from %s:\n%s",
+		Tcl_GetString(initScriptPathPtr),
+		Tcl_GetString(Tcl_GetObjResult(interp))));
     }
     return result;
 }
 
-int
+/*
+ *----------------------------------------------------------------------
+ *
+ * AddPathsInVarToList --
+ *
+ *	Split the contents of a variable (if it exists and is readable) and
+ *	append the resulting words to a list.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
 AddPathsInVarToList(
-	Tcl_Interp *interp,
-	const char *name1,
-	const char *name2,
-	Tcl_Obj *toListPtr,
-	int doTildeExpand
-)
+    Tcl_Interp *interp,
+    const char *name1,		/* Name of variable (or array) to read. */
+    const char *name2,		/* Name of array element to read. */
+    Tcl_Obj *toListPtr,		/* List to append to. */
+    bool doTildeExpand)		/* Whether to expand tilde-prefixed paths. */
 {
     Tcl_Obj **elems;
     Tcl_Size nelems;
     Tcl_Obj *fromListPtr= Tcl_GetVar2Ex(interp, name1, name2, TCL_GLOBAL_ONLY);
     if (fromListPtr) {
 	if (TclListObjGetElements(interp, fromListPtr, &nelems, &elems) !=
-	    TCL_OK) {
+		TCL_OK) {
 	    return TCL_ERROR;
 	}
 	for (Tcl_Size i = 0; i < nelems; ++i) {
@@ -590,8 +613,10 @@ AddPathsInVarToList(
     }
     return TCL_OK;
 }
-
+
 /*
+ *----------------------------------------------------------------------
+ *
  * InitAutoPathObjCmd --
  *
  *	Initializes the auto_path variable in an interpreter. In safe interps,
@@ -609,12 +634,14 @@ AddPathsInVarToList(
  *
  * Results:
  *	A standard Tcl result.
+ *
+ *----------------------------------------------------------------------
  */
-int
+static int
 InitAutoPathObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument vector. */
 {
     if (objc != 1) {
@@ -629,7 +656,7 @@ InitAutoPathObjCmd(
     if (Tcl_IsSafe(interp)) {
 	if (autoPathPtr == NULL) {
 	    Tcl_SetVar2Ex(interp, "auto_path", NULL, Tcl_NewObj(),
-		TCL_GLOBAL_ONLY);
+		    TCL_GLOBAL_ONLY);
 	}
 	return TCL_OK;
     }
@@ -651,8 +678,7 @@ InitAutoPathObjCmd(
     }
 
     /* tcl_library and its parent */
-    Tcl_Obj *objPtr =
-	Tcl_GetVar2Ex(interp, "tcl_library", NULL, TCL_GLOBAL_ONLY);
+    Tcl_Obj *objPtr = Tcl_GetVar2Ex(interp, "tcl_library", NULL, TCL_GLOBAL_ONLY);
     if (objPtr) {
 	if (TclListObjAppendIfAbsent(interp, autoPathPtr, objPtr) != TCL_OK) {
 	    Tcl_DecrRefCount(autoPathPtr);
@@ -690,8 +716,8 @@ InitAutoPathObjCmd(
 
     /* tcl_pkgPath. Errors ignored like original. Note no tildeexpand */
     (void) AddPathsInVarToList(interp, "tcl_pkgPath", NULL, autoPathPtr, 0);
-    autoPathPtr =
-	Tcl_SetVar2Ex(interp, "auto_path", NULL, autoPathPtr, TCL_GLOBAL_ONLY);
+    autoPathPtr = Tcl_SetVar2Ex(interp, "auto_path", NULL, autoPathPtr,
+	    TCL_GLOBAL_ONLY);
     if (autoPathPtr) {
 	Tcl_SetObjResult(interp, autoPathPtr);
 	return TCL_OK;
@@ -699,7 +725,7 @@ InitAutoPathObjCmd(
 	return TCL_ERROR;
     }
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -3587,7 +3613,7 @@ Tcl_IsSafe(
  *----------------------------------------------------------------------
  */
 
-void
+static void
 MakeSafe(
     Tcl_Interp *interp)		/* Interpreter to be made safe. */
 {

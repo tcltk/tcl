@@ -10350,7 +10350,7 @@ CopyEventProc(
  *
  *----------------------------------------------------------------------
  */
-int
+static int
 Lossless(
     ChannelState *inStatePtr,
     ChannelState *outStatePtr,

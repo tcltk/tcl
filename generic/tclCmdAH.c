@@ -103,11 +103,11 @@ static Tcl_ObjCmdProc2 PathTypeCmd;
 const EnsembleImplMap tclEncodingImplMap[] = {
     {"convertfrom",	EncodingConvertfromObjCmd, TclCompileBasic1To3ArgCmd, NULL, NULL, 0},
     {"convertto",	EncodingConverttoObjCmd,   TclCompileBasic1To3ArgCmd, NULL, NULL, 0},
-    {"dirs",		EncodingDirsObjCmd,        TclCompileBasic0Or1ArgCmd, NULL, NULL, 1},
-    {"names",		EncodingNamesObjCmd,       TclCompileBasic0ArgCmd,    NULL, NULL, 0},
-    {"profiles",	EncodingProfilesObjCmd,    TclCompileBasic0ArgCmd,    NULL, NULL, 0},
-    {"system",		EncodingSystemObjCmd,      TclCompileBasic0Or1ArgCmd, NULL, NULL, 1},
-    {"user",		EncodingUserObjCmd,        TclCompileBasic0ArgCmd,    NULL, NULL, 0},
+    {"dirs",		EncodingDirsObjCmd,	   TclCompileBasic0Or1ArgCmd, NULL, NULL, 1},
+    {"names",		EncodingNamesObjCmd,	   TclCompileBasic0ArgCmd,    NULL, NULL, 0},
+    {"profiles",	EncodingProfilesObjCmd,	   TclCompileBasic0ArgCmd,    NULL, NULL, 0},
+    {"system",		EncodingSystemObjCmd,	   TclCompileBasic0Or1ArgCmd, NULL, NULL, 1},
+    {"user",		EncodingUserObjCmd,	   TclCompileBasic0ArgCmd,    NULL, NULL, 0},
     {NULL, NULL, NULL, NULL, NULL, 0}
 };
 
