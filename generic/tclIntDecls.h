@@ -140,7 +140,7 @@ EXTERN Tcl_ObjCmdProc2 * TclGetObjInterpProc2(void);
 /* 45 */
 EXTERN int		TclHideUnsafeCommands(Tcl_Interp *interp);
 /* 46 */
-EXTERN int		TclInExit(void);
+EXTERN bool		TclInExit(void);
 /* Slot 47 is reserved */
 /* Slot 48 is reserved */
 /* Slot 49 is reserved */
@@ -369,9 +369,9 @@ EXTERN int		TclCheckExecutionTraces(Tcl_Interp *interp,
 				Command *cmdPtr, int result, int traceFlags,
 				Tcl_Size objc, Tcl_Obj *const objv[]);
 /* 172 */
-EXTERN int		TclInThreadExit(void);
+EXTERN bool		TclInThreadExit(void);
 /* 173 */
-EXTERN int		TclUniCharMatch(const Tcl_UniChar *string,
+EXTERN bool		TclUniCharMatch(const Tcl_UniChar *string,
 				Tcl_Size strLen, const Tcl_UniChar *pattern,
 				Tcl_Size ptnLen, int flags);
 /* Slot 174 is reserved */
@@ -633,7 +633,7 @@ typedef struct TclIntStubs {
     Tcl_ObjCmdProc2 * (*tclGetObjInterpProc2) (void); /* 43 */
     void (*reserved44)(void);
     int (*tclHideUnsafeCommands) (Tcl_Interp *interp); /* 45 */
-    int (*tclInExit) (void); /* 46 */
+    bool (*tclInExit) (void); /* 46 */
     void (*reserved47)(void);
     void (*reserved48)(void);
     void (*reserved49)(void);
@@ -759,8 +759,8 @@ typedef struct TclIntStubs {
     int (*tclpUtfNcmp2) (const void *s1, const void *s2, size_t n); /* 169 */
     int (*tclCheckInterpTraces) (Tcl_Interp *interp, const char *command, Tcl_Size numChars, Command *cmdPtr, int result, int traceFlags, Tcl_Size objc, Tcl_Obj *const objv[]); /* 170 */
     int (*tclCheckExecutionTraces) (Tcl_Interp *interp, const char *command, Tcl_Size numChars, Command *cmdPtr, int result, int traceFlags, Tcl_Size objc, Tcl_Obj *const objv[]); /* 171 */
-    int (*tclInThreadExit) (void); /* 172 */
-    int (*tclUniCharMatch) (const Tcl_UniChar *string, Tcl_Size strLen, const Tcl_UniChar *pattern, Tcl_Size ptnLen, int flags); /* 173 */
+    bool (*tclInThreadExit) (void); /* 172 */
+    bool (*tclUniCharMatch) (const Tcl_UniChar *string, Tcl_Size strLen, const Tcl_UniChar *pattern, Tcl_Size ptnLen, int flags); /* 173 */
     void (*reserved174)(void);
     int (*tclCallVarTraces) (Interp *iPtr, Var *arrayPtr, Var *varPtr, const char *part1, const char *part2, int flags, int leaveErrMsg); /* 175 */
     void (*tclCleanupVar) (Var *varPtr, Var *arrayPtr); /* 176 */
