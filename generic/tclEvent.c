@@ -1483,10 +1483,10 @@ FinalizeThread(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 TclInExit(void)
 {
-    return inExit ? 1 : 0;
+    return inExit;
 }
 
 /*
@@ -1505,15 +1505,15 @@ TclInExit(void)
  *----------------------------------------------------------------------
  */
 
-int
+bool
 TclInThreadExit(void)
 {
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
 
     if (tsdPtr == NULL) {
-	return 0;
+	return false;
     }
-    return tsdPtr->inExit ? 1 : 0;
+    return tsdPtr->inExit;
 }
 
 /*

@@ -221,7 +221,7 @@ Tcl_AsyncMark(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Tcl_AsyncMarkFromSignal(
     Tcl_AsyncHandler async,	/* Token for handler. */
     int sigNumber)		/* Signal number. */
@@ -230,12 +230,12 @@ Tcl_AsyncMarkFromSignal(
     AsyncHandler *token = (AsyncHandler *) async;
 
     return TclAsyncNotifier(sigNumber, token->originThrdId,
-	    token->notifierData, &token->ready, -1) ? 1 : 0;
+	    token->notifierData, &token->ready, -1);
 #else
     (void)sigNumber;
 
     Tcl_AsyncMark(async);
-    return 1;
+    return true;
 #endif
 }
 
@@ -427,11 +427,11 @@ Tcl_AsyncDelete(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Tcl_AsyncReady(void)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    return tsdPtr->asyncReady ? 1 : 0;
+    return tsdPtr->asyncReady;
 }
 
 bool *
