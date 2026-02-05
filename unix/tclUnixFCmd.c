@@ -232,7 +232,7 @@ static int		TraverseUnixTree(TraversalProc *traversalProc,
 
 static char *		Realpath(const char *path, char *resolved);
 
-char *
+static char *
 Realpath(
     const char *path,
     char *resolved)

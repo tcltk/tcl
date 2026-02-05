@@ -2465,7 +2465,7 @@ TclNativePathInFilesystem(
  *
  *----------------------------------------------------------------------
  */
-int
+static int
 MakeTildeRelativePath(
     Tcl_Interp *interp,		/* May be NULL. Only used for error messages */
     const char *user,		/* User name. NULL -> current user */

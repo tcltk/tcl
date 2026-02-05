@@ -9298,7 +9298,7 @@ TestChanSourceInput(
 }
 
 static int
-TestChanSourceClose2 (
+TestChanSourceClose2(
     void *instanceData,
     TCL_UNUSED(Tcl_Interp *),	/* interp */
     int flags)
@@ -9310,7 +9310,7 @@ TestChanSourceClose2 (
 }
 
 static int
-TestChanSinkOutput (
+TestChanSinkOutput(
     TCL_UNUSED(void *),	/* Instance data */
     TCL_UNUSED(const char *),	/* Bytes to write */
     int nbytes,
@@ -9320,7 +9320,7 @@ TestChanSinkOutput (
 }
 
 static int
-TestChanSinkClose2 (
+TestChanSinkClose2(
     TCL_UNUSED(void *),	/* Instance data */
     TCL_UNUSED(Tcl_Interp *),	/* interp */
     TCL_UNUSED(int))		/* flags */

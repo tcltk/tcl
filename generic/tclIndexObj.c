@@ -104,7 +104,7 @@ typedef struct {
  *----------------------------------------------------------------------
  */
 
-int
+static int
 GetIndexFromObjList(
     Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
     Tcl_Obj *objPtr,		/* Object containing the string to lookup. */
