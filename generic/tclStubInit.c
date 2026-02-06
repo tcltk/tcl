@@ -330,19 +330,17 @@ static int TclUniCharIsPunct_(int ch) {return Tcl_UniCharIsPunct(ch);}
 #   define Tcl_CreateFileHandler 0
 #   define Tcl_DeleteFileHandler 0
 #   define Tcl_GetOpenFile 0
-#else
-#   define TclpIsAtty isatty
-#endif
-
-#ifdef _WIN32
 #   define TclUnixWaitForFile 0
 #   define TclUnixCopyFile 0
 #   define TclUnixOpenTemporaryFile 0
 #   define TclpReaddir 0
-#   undef TclpIsAtty
 #   define TclpIsAtty 0
+#else
+#define TclpIsAtty (bool (*)(int))(void *)isatty
+#endif
+
+#ifdef _WIN32
 #elif defined(__CYGWIN__)
-#   define TclpIsAtty isatty
 static void
 doNothing(void)
 {
