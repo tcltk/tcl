@@ -4067,13 +4067,12 @@ extern const TclStubs *tclStubsPtr;
 	} while(0)
 
 #if defined(USE_TCL_STUBS)
-#   if defined(__CYGWIN__) && defined(TCL_WIDE_INT_IS_LONG)
-/* On Cygwin64, long is 64-bit while on Win64 long is 32-bit. Therefore
- * we have to make sure that all stub entries on Cygwin64 follow the
- * Win64 signature. Cygwin64 stubbed extensions cannot use those stub
+#   if defined(__CYGWIN__)
+/* On Cygwin, long is 64-bit while on Win64 long is 32-bit. Therefore
+ * we have to make sure that all stub entries on Cygwin follow the
+ * Win64 signature. Cygwin stubbed extensions cannot use those stub
  * entries any more, they should use the 64-bit alternatives where
- * possible. Tcl 9 must find a better solution, but that cannot be done
- * without introducing a binary incompatibility.
+ * possible.
  */
 #	undef Tcl_GetLongFromObj
 #	undef Tcl_ExprLong
