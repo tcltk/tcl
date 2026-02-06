@@ -15,9 +15,7 @@
 #include "tclFileSystem.h"
 #include "tclIO.h"	/* To get Channel type declaration. */
 
-#undef SUPPORTS_TTY
 #if defined(HAVE_TERMIOS_H)
-#   define SUPPORTS_TTY 1
 #   include <termios.h>
 #   ifdef HAVE_SYS_IOCTL_H
 #	include <sys/ioctl.h>
@@ -83,17 +81,17 @@ typedef struct {
 
 typedef struct {
     FileState fileState;
-#ifdef SUPPORTS_TTY
+#ifdef HAVE_TERMIOS_H
     int closeMode;		/* One of CLOSE_DEFAULT, CLOSE_DRAIN or
 				 * CLOSE_DISCARD. */
-    int doReset;		/* Whether we should do a terminal reset on
+    bool doReset;		/* Whether we should do a terminal reset on
 				 * close. */
     struct termios initState;	/* The state of the terminal when it was
 				 * opened. */
-#endif	/* SUPPORTS_TTY */
+#endif	/* HAVE_TERMIOS_H */
 } TtyState;
 
-#ifdef SUPPORTS_TTY
+#ifdef HAVE_TERMIOS_H
 
 /*
  * The following structure is used to set or get the serial port attributes in
@@ -107,7 +105,7 @@ typedef struct {
     int stop;
 } TtyAttrs;
 
-#endif	/* SUPPORTS_TTY */
+#endif	/* HAVE_TERMIOS_H */
 
 #define UNSUPPORTED_OPTION(detail) \
     if (interp) {							\
@@ -137,7 +135,7 @@ static int		FileTruncateProc(void *instanceData,
 static long long	FileWideSeekProc(void *instanceData,
 			    long long offset, int mode, int *errorCode);
 static void		FileWatchProc(void *instanceData, int mask);
-#ifdef SUPPORTS_TTY
+#ifdef HAVE_TERMIOS_H
 static int		TtyCloseProc(void *instanceData,
 			    Tcl_Interp *interp, int flags);
 static void		TtyGetAttributes(int fd, TtyAttrs *ttyPtr);
@@ -154,7 +152,7 @@ static void		TtySetAttributes(int fd, TtyAttrs *ttyPtr);
 static int		TtySetOptionProc(void *instanceData,
 			    Tcl_Interp *interp, const char *optionName,
 			    const char *value);
-#endif	/* SUPPORTS_TTY */
+#endif	/* HAVE_TERMIOS_H */
 
 /*
  * This structure describes the channel type structure for file based IO:
@@ -180,7 +178,7 @@ static const Tcl_ChannelType fileChannelType = {
     FileTruncateProc
 };
 
-#ifdef SUPPORTS_TTY
+#ifdef HAVE_TERMIOS_H
 /*
  * This structure describes the channel type structure for serial IO.
  * Note that this type is a subclass of the "file" type.
@@ -205,7 +203,7 @@ static const Tcl_ChannelType ttyChannelType = {
     NULL,			/* Thread action proc. */
     NULL			/* Truncate proc. */
 };
-#endif	/* SUPPORTS_TTY */
+#endif	/* HAVE_TERMIOS_H */
 
 /*
  *----------------------------------------------------------------------
@@ -383,7 +381,7 @@ FileCloseProc(
     return errorCode;
 }
 
-#ifdef SUPPORTS_TTY
+#ifdef HAVE_TERMIOS_H
 static int
 TtyCloseProc(
     void *instanceData,
@@ -425,7 +423,7 @@ TtyCloseProc(
 
     return FileCloseProc(instanceData, interp, flags);
 }
-#endif /* SUPPORTS_TTY */
+#endif /* HAVE_TERMIOS_H */
 
 /*
  *----------------------------------------------------------------------
@@ -658,12 +656,12 @@ FileGetOptionProc(
     Tcl_DString *dsPtr)
 {
     FileState *fsPtr = (FileState *)instanceData;
-    int valid = 0;		/* Flag if valid option parsed. */
     size_t len;
+    bool valid = false;		/* Flag if valid option parsed. */
 
     if (optionName == NULL) {
 	len = 0;
-	valid = 1;
+	valid = true;
     } else {
 	len = strlen(optionName);
     }
@@ -705,7 +703,7 @@ FileGetOptionProc(
 		"stat");
 }
 
-#ifdef SUPPORTS_TTY
+#ifdef HAVE_TERMIOS_H
 /*
  *----------------------------------------------------------------------
  *
@@ -1107,7 +1105,7 @@ TtyGetOptionProc(
     TtyState *fsPtr = (TtyState *)instanceData;
     size_t len;
     char buf[3*TCL_INTEGER_SPACE + 16];
-    int valid = 0;		/* Flag if valid option parsed. */
+    bool valid = false;		/* Flag if valid option parsed. */
     struct termios iostate;
 
     if (optionName == NULL) {
@@ -1148,7 +1146,7 @@ TtyGetOptionProc(
 	Tcl_DStringAppendElement(dsPtr, "-inputmode");
     }
     if (len==0 || (len>1 && strncmp(optionName, "-inputmode", len)==0)) {
-	valid = 1;
+	valid = true;
 	if (tcgetattr(fsPtr->fileState.fd, &iostate) < 0) {
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -1178,7 +1176,7 @@ TtyGetOptionProc(
     if (len==0 || (len>2 && strncmp(optionName, "-mode", len)==0)) {
 	TtyAttrs tty;
 
-	valid = 1;
+	valid = true;
 	TtyGetAttributes(fsPtr->fileState.fd, &tty);
 	snprintf(buf, sizeof(buf), "%d,%c,%d,%d", tty.baud, tty.parity, tty.data, tty.stop);
 	Tcl_DStringAppendElement(dsPtr, buf);
@@ -1195,7 +1193,7 @@ TtyGetOptionProc(
     if (len==0 || (len>1 && strncmp(optionName, "-xchar", len)==0)) {
 	Tcl_DString ds;
 
-	valid = 1;
+	valid = true;
 	tcgetattr(fsPtr->fileState.fd, &iostate);
 	Tcl_DStringInit(&ds);
 
@@ -1222,7 +1220,7 @@ TtyGetOptionProc(
     if ((len > 1) && (strncmp(optionName, "-queue", len) == 0)) {
 	int inQueue=0, outQueue=0, inBuffered, outBuffered;
 
-	valid = 1;
+	valid = true;
 	GETREADQUEUE(fsPtr->fileState.fd, inQueue);
 	GETWRITEQUEUE(fsPtr->fileState.fd, outQueue);
 	inBuffered = Tcl_InputBuffered(fsPtr->fileState.channel);
@@ -1244,7 +1242,7 @@ TtyGetOptionProc(
     if ((len > 4) && (strncmp(optionName, "-ttystatus", len) == 0)) {
 	int status;
 
-	valid = 1;
+	valid = true;
 	ioctl(fsPtr->fileState.fd, TIOCMGET, &status);
 	TtyModemStatusStr(status, dsPtr);
     }
@@ -1260,7 +1258,7 @@ TtyGetOptionProc(
     if ((len > 1) && (strncmp(optionName, "-winsize", len) == 0)) {
 	struct winsize ws;
 
-	valid = 1;
+	valid = true;
 	if (ioctl(fsPtr->fileState.fd, TIOCGWINSZ, &ws) < 0) {
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -1716,7 +1714,7 @@ TtyInit(
 	tcsetattr(fd, TCSADRAIN, &iostate);
     }
 }
-#endif	/* SUPPORTS_TTY */
+#endif	/* HAVE_TERMIOS_H */
 
 /*
  *----------------------------------------------------------------------
@@ -1817,7 +1815,7 @@ TclpOpenFileChannel(
 
     fcntl(fd, F_SETFD, FD_CLOEXEC);
 
-#ifdef SUPPORTS_TTY
+#ifdef HAVE_TERMIOS_H
     if (strcmp(native, "/dev/tty") != 0 && isatty(fd)) {
 	/*
 	 * Initialize the serial port to a set of sane parameters. Especially
@@ -1838,7 +1836,7 @@ TclpOpenFileChannel(
 	TtyInit(fd);
 	snprintf(channelName, sizeof(channelName), "serial%d", fd);
     } else
-#endif	/* SUPPORTS_TTY */
+#endif	/* HAVE_TERMIOS_H */
     {
 	translation = NULL;
 	channelTypePtr = &fileChannelType;
@@ -1848,13 +1846,13 @@ TclpOpenFileChannel(
     fsPtr = (TtyState *)Tcl_Alloc(sizeof(TtyState));
     fsPtr->fileState.validMask = channelPermissions | TCL_EXCEPTION;
     fsPtr->fileState.fd = fd;
-#ifdef SUPPORTS_TTY
+#ifdef HAVE_TERMIOS_H
     if (channelTypePtr == &ttyChannelType) {
 	fsPtr->closeMode = CLOSE_DEFAULT;
-	fsPtr->doReset = 0;
+	fsPtr->doReset = false;
 	tcgetattr(fsPtr->fileState.fd, &fsPtr->initState);
     }
-#endif /* SUPPORTS_TTY */
+#endif /* HAVE_TERMIOS_H */
 
     fsPtr->fileState.channel = Tcl_CreateChannel(channelTypePtr, channelName,
 	    fsPtr, channelPermissions);
@@ -1910,12 +1908,12 @@ Tcl_MakeFileChannel(
 	return NULL;
     }
 
-#ifdef SUPPORTS_TTY
+#ifdef HAVE_TERMIOS_H
     if (isatty(fd)) {
 	channelTypePtr = &ttyChannelType;
 	snprintf(channelName, sizeof(channelName), "serial%d", fd);
     } else
-#endif /* SUPPORTS_TTY */
+#endif /* HAVE_TERMIOS_H */
     if (TclOSfstat(fd, &buf) == 0 && S_ISSOCK(buf.st_mode)) {
 	struct sockaddr sockaddr;
 	socklen_t sockaddrLen = sizeof(sockaddr);
@@ -1939,13 +1937,13 @@ Tcl_MakeFileChannel(
     fsPtr->fileState.validMask = mode | TCL_EXCEPTION;
     fsPtr->fileState.channel = Tcl_CreateChannel(channelTypePtr, channelName,
 	    fsPtr, mode);
-#ifdef SUPPORTS_TTY
+#ifdef HAVE_TERMIOS_H
     if (channelTypePtr == &ttyChannelType) {
 	fsPtr->closeMode = CLOSE_DEFAULT;
-	fsPtr->doReset = 0;
+	fsPtr->doReset = false;
 	tcgetattr(fsPtr->fileState.fd, &fsPtr->initState);
     }
-#endif /* SUPPORTS_TTY */
+#endif /* HAVE_TERMIOS_H */
 
     return fsPtr->fileState.channel;
 }
@@ -2101,9 +2099,9 @@ Tcl_GetOpenFile(
 
     chanTypePtr = Tcl_GetChannelType(chan);
     if ((chanTypePtr == &fileChannelType)
-#ifdef SUPPORTS_TTY
+#ifdef HAVE_TERMIOS_H
 	    || (chanTypePtr == &ttyChannelType)
-#endif /* SUPPORTS_TTY */
+#endif /* HAVE_TERMIOS_H */
 	    || (strcmp(chanTypePtr->typeName, "tcp") == 0)
 	    || (strcmp(chanTypePtr->typeName, "pipe") == 0)) {
 	if (Tcl_GetChannelHandle(chan,
