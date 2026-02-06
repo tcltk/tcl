@@ -43,7 +43,7 @@
 #define FSEEKO_FUNC(stream, offset, origin) fseeko64(stream, offset, origin)
 #endif
 
-#include "tinydir.h"
+#include <dirent.h>
 #ifndef _CRT_SECURE_NO_WARNINGS
 #  define _CRT_SECURE_NO_WARNINGS
 #endif
@@ -61,9 +61,9 @@
 # include <unistd.h>
 # include <utime.h>
 # include <sys/types.h>
-# include <sys/stat.h>
 #endif
 
+#include <sys/stat.h>
 #include "zip.h"
 #include "ints.h"
 
@@ -360,20 +360,20 @@ void addFileToZip(zipFile zf, const char *filenameinzip, const char *password, i
 
 
 void addPathToZip(zipFile zf, const char *filenameinzip, const char *password, int opt_exclude_path,int opt_compress_level) {
-    tinydir_dir dir;
-    int i;
     char newname[MAXFILENAME+1+MAXFILENAME+1];
+    struct dirent *dp;
 
-    tinydir_open_sorted(&dir, filenameinzip);
+    DIR *dir = opendir(filenameinzip);
 
-    for (i = 0; i < dir.n_files; i++)
+    while (dp = readdir(dir))
     {
-        tinydir_file file;
-        tinydir_readfile_n(&dir, &file, i);
-        if(strcmp(file.name,".")==0) continue;
-        if(strcmp(file.name,"..")==0) continue;
-        snprintf(newname, sizeof(newname), "%.*s/%.*s", MAXFILENAME, dir.path, MAXFILENAME, file.name);
-        if (file.is_dir)
+        struct stat path_stat;
+
+        if(strcmp(dp->d_name,".")==0) continue;
+        if(strcmp(dp->d_name,"..")==0) continue;
+        snprintf(newname, sizeof(newname), "%.*s/%.*s", MAXFILENAME, filenameinzip, MAXFILENAME, dp->d_name);
+        stat(newname, &path_stat);
+        if (S_ISDIR(path_stat.st_mode))
         {
             addPathToZip(zf,newname,password,opt_exclude_path,opt_compress_level);
         } else {
@@ -381,7 +381,7 @@ void addPathToZip(zipFile zf, const char *filenameinzip, const char *password, i
         }
     }
 
-    tinydir_close(&dir);
+    closedir(dir);
 }
 
 
