@@ -3985,7 +3985,7 @@ extern const TclStubs *tclStubsPtr;
 #if defined(USE_TCL_STUBS)
 #   if defined(_WIN32) && defined(_WIN64) && TCL_MAJOR_VERSION < 9
 #	undef Tcl_GetTime
-/* Handle Win64 tk.dll being loaded in Cygwin64 (only needed for Tcl 8). */
+/* Handle Win64 tk.dll being loaded in Cygwin (only needed for Tcl 8). */
 #	define Tcl_GetTime(t) \
 		do { \
 		    struct { \
@@ -4000,13 +4000,12 @@ extern const TclStubs *tclStubsPtr;
 		    *(t) = _t.now; \
 		} while (0)
 #   endif
-#   if defined(__CYGWIN__) && defined(TCL_WIDE_INT_IS_LONG)
-/* On Cygwin64, long is 64-bit while on Win64 long is 32-bit. Therefore
- * we have to make sure that all stub entries on Cygwin64 follow the
- * Win64 signature. Cygwin64 stubbed extensions cannot use those stub
+#   ifdef __CYGWIN__
+/* On Cygwin, long is 64-bit while on Win64 long is 32-bit. Therefore
+ * we have to make sure that all stub entries on Cygwin follow the
+ * Win64 signature. Cygwin stubbed extensions cannot use those stub
  * entries any more, they should use the 64-bit alternatives where
- * possible. Tcl 9 must find a better solution, but that cannot be done
- * without introducing a binary incompatibility.
+ * possible.
  */
 #	undef Tcl_GetLongFromObj
 #	undef Tcl_ExprLong
