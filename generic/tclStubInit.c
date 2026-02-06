@@ -297,7 +297,7 @@ Tcl_CreateHashEntry(
 #   define TclUnixCopyFile 0
 #   define TclUnixOpenTemporaryFile 0
 #   define TclpReaddir 0
-#   define TclpIsAtty 0
+#   define TclpIsAtty _isatty
 #else
 #   define TclpIsAtty isatty
 #endif
