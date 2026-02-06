@@ -28,11 +28,7 @@
         #endif
 #endif
 
-#if defined(_WIN32)
-#define FOPEN_FUNC(filename, mode) fopen(filename, mode)
-#define FTELLO_FUNC(stream) _ftelli64(stream)
-#define FSEEKO_FUNC(stream, offset, origin) _fseeki64(stream, offset, origin)
-#elif defined(__APPLE__) || defined(IOAPI_NO_64)
+#if defined(__APPLE__) || defined(__HAIKU__) || defined(MINIZIP_FOPEN_NO_64)
 // In darwin and perhaps other BSD variants off_t is a 64 bit value, hence no need for specific 64 bit functions
 #define FOPEN_FUNC(filename, mode) fopen(filename, mode)
 #define FTELLO_FUNC(stream) ftello(stream)
@@ -43,9 +39,13 @@
 #define FSEEKO_FUNC(stream, offset, origin) fseeko64(stream, offset, origin)
 #endif
 
-#include <dirent.h>
+
+
 #ifndef _CRT_SECURE_NO_WARNINGS
 #  define _CRT_SECURE_NO_WARNINGS
+#endif
+#ifdef HAVE_DIRENT_H
+#  include <dirent.h>
 #endif
 #include <stdio.h>
 #include <stdlib.h>
@@ -174,7 +174,7 @@ static void do_banner(void) {
 }
 
 static void do_help(void) {
-    printf("Usage : minizip [-o] [-a] [-0 to -9] [-p password] [-j] file.zip [files_to_add]\n\n" \
+    printf("Usage : minizip [-r] [-o] [-a] [-0 to -9] [-p password] [-j] file.zip [files_to_add]\n\n" \
            "  -r  Scan directories recursively\n" \
            "  -o  Overwrite existing file.zip\n" \
            "  -a  Append to existing file.zip\n" \
@@ -246,8 +246,8 @@ static int isLargeFile(const char* filename) {
 }
 
 void addFileToZip(zipFile zf, const char *filenameinzip, const char *password, int opt_exclude_path,int opt_compress_level) {
-    FILE * fin;
-    int size_read;
+    FILE * fin = NULL;
+    size_t size_read;
     const char *savefilenameinzip;
     zip_fileinfo zi;
     unsigned long crcFile=0;
@@ -324,7 +324,7 @@ void addFileToZip(zipFile zf, const char *filenameinzip, const char *password, i
         do
         {
             err = ZIP_OK;
-            size_read = (int)fread(buf,1,size_buf,fin);
+            size_read = fread(buf,1,size_buf,fin);
             if (size_read < size_buf)
                 if (feof(fin)==0)
             {
@@ -334,7 +334,7 @@ void addFileToZip(zipFile zf, const char *filenameinzip, const char *password, i
 
             if (size_read>0)
             {
-                err = zipWriteInFileInZip (zf,buf,size_read);
+                err = zipWriteInFileInZip (zf,buf,(unsigned)size_read);
                 if (err<0)
                 {
                     printf("error in writing %s in the zipfile\n",
@@ -360,6 +360,7 @@ void addFileToZip(zipFile zf, const char *filenameinzip, const char *password, i
 
 
 void addPathToZip(zipFile zf, const char *filenameinzip, const char *password, int opt_exclude_path,int opt_compress_level) {
+#ifdef HAVE_DIRENT_H
     char newname[MAXFILENAME+1+MAXFILENAME+1];
     struct dirent *dp;
 
@@ -382,6 +383,9 @@ void addPathToZip(zipFile zf, const char *filenameinzip, const char *password, i
     }
 
     closedir(dir);
+#else
+    printf("-r option not supported");
+#endif
 }
 
 
@@ -427,7 +431,6 @@ int main(int argc, char *argv[]) {
                         opt_exclude_path = 1;
                     if ((c=='r') || (c=='R'))
                         opt_recursive = 1;
-
                     if (((c=='p') || (c=='P')) && (i+1<argc))
                     {
                         password=argv[i+1];
