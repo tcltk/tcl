@@ -4072,23 +4072,22 @@ SequenceIdentifyArgument(
 	*keywordIndexPtr = opmode;
 	return RangeKeywordArg;
     } else {
-	Tcl_Obj *exprValueObj;
+	int keyword;
 	if (!(allowedArgs & NumericArg)) {
 	    return NoneArg;
 	}
     doExpr:
 	/* Check for an index expression */
-	if (Tcl_ExprObj(interp, argPtr, &exprValueObj) != TCL_OK) {
-	    return ErrArg;
-	}
-	int keyword;
+	/*if (Tcl_ExprObj(interp, argPtr, &exprValueObj) != TCL_OK) {*/
+	/*    return ErrArg;*/
+	/*}*/
 	/* Determine if result of expression is double or int */
-	if (Tcl_GetNumberFromObj(interp, exprValueObj, &internalPtr,
+	if (Tcl_GetNumberFromObj(interp, argPtr /*exprValueObj*/, &internalPtr,
 		&keyword) != TCL_OK
 	) {
 	    return ErrArg;
 	}
-	*numValuePtr = exprValueObj; /* incremented in Tcl_ExprObj */
+	*numValuePtr = argPtr; /*exprValueObj; /* incremented in Tcl_ExprObj */
 	*keywordIndexPtr = keyword; /* type of expression result */
 	return NumericArg;
     }
