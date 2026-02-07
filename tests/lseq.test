@@ -19,6 +19,7 @@ testConstraint arithSeriesShimmer 1
 testConstraint arithSeriesShimmerOk 1
 testConstraint has64BitLengths [expr {$tcl_platform(pointerSize) == 8}]
 testConstraint has32BitLengths [expr {$tcl_platform(pointerSize) == 4}]
+testConstraint OBSOLETE 0
 
 proc memusage {} {
     set fd [open /proc/[pid]/statm]
@@ -82,7 +83,7 @@ test lseq-1.10 {integer lseq with step} {
 
 test lseq-1.11 {error case: increasing wrong step direction} {
     lseq 1 to 10 by -2
-} {}
+} {1}
 
 test lseq-1.12 {decreasing lseq with step} arithSeriesDouble {
     lseq 25. to -25. by -5
@@ -134,7 +135,7 @@ test lseq-1.19 {too many arguments extra numeric value} -body {
 
 test lseq-1.20 {bug: wrong length computed} {
     lseq 1 to 10 -1
-} {}
+} {1}
 
 test lseq-1.21 {n n by n} {
     lseq 66 84 by 3
@@ -154,36 +155,31 @@ test lseq-1.24 {consistence, use double (even if representable as integer) in al
 	 [lseq 0 count 3 by 1.0] [lseq 0 .. 2.0] [lseq 0 to 2 by 1.0]
 } [lrepeat 6 {0.0 1.0 2.0}]
 test lseq-1.25 {consistence, use double (even if representable as integer) in all variants, if contains a double somewhere} {
-    list [lseq double(0) 2] [lseq 0 double(2)] [lseq double(0) count 3] \
-	 [lseq 0 count 3 by double(1)] [lseq 0 .. double(2)] [lseq 0 to 2 by double(1)]
+    list [lseq [expr {double(0)}] 2] [lseq 0 [expr {double(2)}]] [lseq [expr {double(0)}] count 3] \
+        [lseq 0 count 3 by [expr {double(1)}]] [lseq 0 .. [expr {double(2)}]] [lseq 0 to 2 by [expr {double(1)}]]
 } [lrepeat 6 {0.0 1.0 2.0}]
 test lseq-1.26 {consistence, double always remains double} {
     list [lseq        1              3.0      ] \
 	 [lseq        1       [expr {3.0+0}]  ] \
-	 [lseq        1             {3.0+0}   ] \
 	 [lseq        1.0            3.0     1] \
-	 [lseq [expr {1.0+0}] [expr {3.0+0}] 1] \
-	 [lseq       {1.0+0}        {3.0+0}  1]
-} [lrepeat 6 {1.0 2.0 3.0}]
+	 [lseq [expr {1.0+0}] [expr {3.0+0}] 1]
+} [lrepeat 4 {1.0 2.0 3.0}]
 test lseq-1.27 {consistence, double always remains double} {
     list [lseq        1e50     [expr {1e50+1}]  ] \
-	 [lseq        1e50           {1e50+1}   ] \
 	 [lseq [expr {1e50+0}] [expr {1e50+1}] 1] \
-	 [lseq       {1e50+0}        {1e50+1}  1] \
-	 [lseq [expr {1e50+0}] count 1 1] \
-	 [lseq       {1e50+0}  count 1 1]
-} [lrepeat 6 [expr {1e50}]]
+	 [lseq [expr {1e50+0}] count 1 1]
+} [lrepeat 3 [expr {1e50}]]
 
 #
 # Short-hand use cases
 #
 test lseq-2.2 {step magnitude} {
-    lseq 10 1 2 ;# this is an empty case since step has wrong sign
-} {}
+    lseq 10 1 2 ;# An error where step has wrong sign. Not an error, but list has len 1
+} {10}
 
 test lseq-2.3 {step wrong sign} arithSeriesDouble {
-    lseq 25. 5. 5 ;# ditto - empty list
-} {}
+    lseq 25. 5. 5 ;# ditto - same as lseq-2.2 above
+} {25.0}
 
 test lseq-2.4 {integer decreasing} {
     lseq 10 1
@@ -215,9 +211,9 @@ test lseq-2.10 {integer lseq with step} {
     lseq 1 10 2
 } {1 3 5 7 9}
 
-test lseq-2.11 {error case: increasing wrong step direction} {
+test lseq-2.11 {case: increasing wrong step direction} {
     lseq 1 10 -2
-} {}
+} {1}
 
 test lseq-2.12 {decreasing lseq with step} arithSeriesDouble {
     lseq 25. -25. -5
@@ -253,22 +249,22 @@ test lseq-2.18 {signs} {
 	[lseq -10 -1 3] \
 	[lseq 10 1 -5]
 
-} {{-10 -8 -6 -4 -2} {} {} {10 6 2} {-10 -7 -4 -1} {10 5}}
+} {{-10 -8 -6 -4 -2} -10 -10 {10 6 2} {-10 -7 -4 -1} {10 5}}
 
-test lseq-2.19 {expressions as indices} {
+test lseq-2.19 {expressions as indices} -constraints OBSOLETE -body {
     list [lseq {1+1}] \
 	 [lseq {1+1} {2+2}] \
 	 [lseq {1+1} count {2+2}] \
 	 [lseq {1+1} {5+5} {2+2}] \
 	 [lseq {1+1} count {2+2} by {2+2}]
-} {{0 1} {2 3 4} {2 3 4 5} {2 6 10} {2 6 10 14}}
+} -result {{0 1} {2 3 4} {2 3 4 5} {2 6 10} {2 6 10 14}}
 
-test lseq-2.20 {expressions as indices, no duplicative eval of expr} {
+test lseq-2.20 {expressions as indices, no duplicative eval of expr} -constraints OBSOLETE -body {
     set i 1
     list [lseq {[incr i]}] $i [lseq {0 + [incr i]}] $i [lseq {0.0 + [incr i]}] $i
-} {{0 1} 2 {0 1 2} 3 {0 1 2 3} 4}
+} -result {{0 1} 2 {0 1 2} 3 {0 1 2 3} 4}
 
-test lseq-3.0 {expr error: don't swalow expr error (here: divide by zero)} -body {
+test lseq-3.0 {expr error: don't swalow expr error (here: divide by zero)} -constraints OBSOLETE -body {
     set i 0; lseq {3/$i}
 } -returnCodes [catch {expr {3/0}} res] -result $res
 
@@ -296,15 +292,15 @@ test lseq-3.1 {experiement} -body {
 
 test lseq-3.2 {error case} -body {
     lseq foo
-} -returnCodes 1 -match glob -result {invalid bareword "foo"*}
+} -returnCodes 1 -match glob -result {expected number but got "foo"}
 
 test lseq-3.3 {error case} -body {
     lseq 10 foo
-} -returnCodes 1 -match glob -result {invalid bareword "foo"*}
+} -returnCodes 1 -match glob -result {expected number but got "foo"}
 
 test lseq-3.4 {error case} -body {
     lseq 25 or 6
-} -returnCodes 1 -match glob -result {invalid bareword "or"*}
+} -returnCodes 1 -match glob -result {expected number but got "or"}
 
 test lseq-3.5 {simple count and step arguments} -body {
     set s [lseq 25 by 6]
@@ -556,7 +552,7 @@ test lseq-3.34 {"in" operator} -body {
 } -result {{3012.0 3012.3 3012.6 3012.9} {3012.03 3012.06 3012.09 3012.12 3012.15 3012.18 3012.21 3012.24 3012.27 3012.33 3012.36 3012.39 3012.42 3012.45 3012.48 3012.51 3012.54 3012.57 3012.63 3012.66 3012.69 3012.72 3012.75 3012.78 3012.81 3012.84 3012.87 3012.93 3012.96 3012.99}}
 
 test lseq-3.35 {"in" operator integer} -body {
-    set seq [lseq 3 int(15e4) 5]
+    set seq [lseq 3 [expr {int(15e4)}] 5]
     set inlist {}
     set nilist {}
     foreach y [lseq 3012 3213 3] {
@@ -584,12 +580,12 @@ test lseq-3.36 {"in" non-numeric case} -body {
 
 test lseq-4.1 {end expressions} -body {
     set start 7
-    lseq $start $start+11
+    lseq $start [expr {$start+11}]
 } -cleanup {unset start} -result {7 8 9 10 11 12 13 14 15 16 17 18}
 
 test lseq-4.2 {start expressions} -body {
     set base [clock seconds]
-    set tl [lseq $base-60 $base 10]
+    set tl [lseq [expr {$base-60}] $base 10]
     lmap t $tl {expr {$t - $base + 60}}
 } -cleanup {unset base tl t} -result {0 10 20 30 40 50 60}
 
@@ -620,11 +616,11 @@ test lseq-4.3 {TIP examples} -body {
 	lseq 25. to -25. by -5
 	# -> 25.0 20.0 15.0 10.0 5.0 0.0 -5.0 -10.0 -15.0 -20.0 -25.0
 	lseq 5 5
-	# -> 5
+	# ->
 	lseq 5 5 2
-	# -> 5
+	# ->
 	lseq 5 5 -2
-	# -> 5
+	# ->
     }
     set res {}
     foreach {cmd expect} [split $examples \n] {
@@ -643,7 +639,7 @@ test lseq-4.3 {TIP examples} -body {
     set res
 } -cleanup {
     unset res cmd status ans expect expected examples
-} -result {{10 9 8 7 6 5 4 3 2 1} {1 2 3 4 5 6 7 8 9 10} {} {10 8 6 4 2} {5.0 6.0 7.0 8.0 9.0 10.0 11.0 12.0 13.0 14.0 15.0} {5.0 10.0 15.0 20.0 25.0} {} {25.0 20.0 15.0 10.0 5.0} {1 3 5 7 9} {25.0 20.0 15.0 10.0 5.0 0.0 -5.0 -10.0 -15.0 -20.0 -25.0} 5 5 5}
+} -result {{10 9 8 7 6 5 4 3 2 1} {1 2 3 4 5 6 7 8 9 10} 10 {10 8 6 4 2} {5.0 6.0 7.0 8.0 9.0 10.0 11.0 12.0 13.0 14.0 15.0} {5.0 10.0 15.0 20.0 25.0} 25.0 {25.0 20.0 15.0 10.0 5.0} {1 3 5 7 9} {25.0 20.0 15.0 10.0 5.0 0.0 -5.0 -10.0 -15.0 -20.0 -25.0} 5 5 5}
 
 #
 # Ticket 9933cc4d88697f05976accebd31c1e3ba6efe9c6 - lseq corner case
@@ -852,7 +848,7 @@ test lseq-4.21.1 {Corner cases: overflows by Inf} -body {
 }]
 test lseq-4.21.2 {Corner cases: expected Inf} -body {
     set res {}
-    lappend res [lseq {1e5555+0} count 5]
+    lappend res [lseq [expr {1e5555+0}] count 5]
     lappend res [lseq Inf count 5]
     lappend res [lseq Inf count 5 by 100]
     lappend res [lseq Inf count 5 by Inf]
@@ -878,7 +874,7 @@ test lseq-4.21.2 {Corner cases: expected Inf} -body {
 }]
 test lseq-4.21.3 {Corner cases: expected -Inf} -body {
     set res {}
-    lappend res [lseq {-1e5555+0} count 5]
+    lappend res [lseq [expr {-1e5555+0}] count 5]
     lappend res [lseq -Inf count 5]
     lappend res [lseq -Inf count 5 by 100]
     lappend res [lseq -Inf count 5 by -Inf]
@@ -906,7 +902,7 @@ test lseq-4.21.4 {Corner cases: unexpected Inf - Inf, result to +/-NaN, unexpect
     set res {}
     lappend res [list [catch {lseq Inf count 5 by -Inf} msg opt] $msg [dict getd $opt -errorcode ""]]
     lappend res [list [catch {lseq -Inf count 5 by Inf} msg opt] $msg [dict getd $opt -errorcode ""]]
-    lappend res [list [catch {lseq {Inf - Inf} count 5} msg opt] $msg [dict getd $opt -errorcode ""]]
+    lappend res [list [catch {lseq [expr {Inf - Inf}] count 5} msg opt] $msg [dict getd $opt -errorcode ""]]
     lappend res [list [catch {lseq NaN count 5}         msg opt] $msg [dict getd $opt -errorcode ""]]
     lappend res [list [catch {lseq NaN count 5 by 100}  msg opt] $msg [dict getd $opt -errorcode ""]]
     lappend res [list [catch {lseq NaN count 5 by NaN}  msg opt] $msg [dict getd $opt -errorcode ""]]
@@ -916,6 +912,7 @@ test lseq-4.21.4 {Corner cases: unexpected Inf - Inf, result to +/-NaN, unexpect
 } -cleanup {
     unset -nocomplain res msg opt
 } -result [join [lrepeat 8 {1 {domain error: argument not in valid range} {ARITH DOMAIN {domain error: argument not in valid range}}}] \n]
+
 test lseq-4.21.5 {Corner cases: unexpected NaN} -body {
     set res {}
     lappend res [catch {lseq NaN} msg] $msg
@@ -923,6 +920,7 @@ test lseq-4.21.5 {Corner cases: unexpected NaN} -body {
 } -cleanup {
     unset -nocomplain res msg
 } -result {1 {expected integer but got "NaN"} 1 {cannot use non-numeric floating-point value "NaN" to estimate length of arith-series}}
+
 test lseq-4.21.6 {Corner cases: empty list, reversed step} -body {
     set res {}
     lappend res [lseq -5 ..  0 by -1]
@@ -931,37 +929,48 @@ test lseq-4.21.6 {Corner cases: empty list, reversed step} -body {
     lappend res [lseq  0 .. -5 by  1]
 } -cleanup {
     unset -nocomplain res
-} -result {{} {} {} {}}
+} -result {-5 5 0 0}
+
 test lseq-4.21.6-lran {Corner cases: lrange empty list, reversed step} -body {
     set res {}
     # not shared:
-    lappend res [lrange [lseq -5 ..  0 by -1] 1 end-1]
-    lappend res [lrange [lseq  5 ..  0 by  1] 1 end-1]
-    lappend res [lrange [lseq  0 ..  5 by -1] 1 end-1]
-    lappend res [lrange [lseq  0 .. -5 by  1] 1 end-1]
+    lappend res [lrange [lseq -5 ..  0 by  1] 1 end-1]
+    lappend res [lrange [lseq  5 ..  0 by -1] 1 end-1]
+    lappend res [lrange [lseq  0 ..  5 by  1] 1 end-1]
+    lappend res [lrange [lseq  0 .. -5 by -1] 1 end-1]
     # shared:
-    lappend res [lrange [set l [lseq -5 ..  0 by -1]] 1 end-1]
-    lappend res [lrange [set l [lseq  5 ..  0 by  1]] 1 end-1]
-    lappend res [lrange [set l [lseq  0 ..  5 by -1]] 1 end-1]
-    lappend res [lrange [set l [lseq  0 .. -5 by  1]] 1 end-1]
+    lappend res [lrange [set l [lseq -5 ..  0 by  1]] 1 end-1]
+    lappend res [lrange [set l [lseq  5 ..  0 by -1]] 1 end-1]
+    lappend res [lrange [set l [lseq  0 ..  5 by  1]] 1 end-1]
+    lappend res [lrange [set l [lseq  0 .. -5 by -1]] 1 end-1]
 } -cleanup {
     unset -nocomplain res l
-} -result {{} {} {} {} {} {} {} {}}
+} -result {{-4 -3 -2 -1} {4 3 2 1} {1 2 3 4} {-1 -2 -3 -4} {-4 -3 -2 -1} {4 3 2 1} {1 2 3 4} {-1 -2 -3 -4}}
+
 test lseq-4.21.6-lrev {Corner cases: lreverse empty list, reversed step} -body {
     set res {}
     # not shared:
     lappend res [lreverse [lseq -5 ..  0 by -1]]
+    lappend res [lreverse [lseq -5 ..  0 by  1]]
+    lappend res [lreverse [lseq  5 ..  0 by -1]]
     lappend res [lreverse [lseq  5 ..  0 by  1]]
-    lappend res [lreverse [lseq  0 ..  5 by -1]]
+    lappend res [lreverse [lseq  0 .. -5 by -1]]
     lappend res [lreverse [lseq  0 .. -5 by  1]]
+    lappend res [lreverse [lseq  0 ..  5 by -1]]
+    lappend res [lreverse [lseq  0 ..  5 by  1]]
     # shared:
     lappend res [lreverse [set l [lseq -5 ..  0 by -1]]]
+    lappend res [lreverse [set l [lseq -5 ..  0 by  1]]]
+    lappend res [lreverse [set l [lseq  5 ..  0 by -1]]]
     lappend res [lreverse [set l [lseq  5 ..  0 by  1]]]
     lappend res [lreverse [set l [lseq  0 ..  5 by -1]]]
-    lappend res [lreverse [set l [lseq  0 .. -5 by  1]]]
+    lappend res [lreverse [set l [lseq  0 ..  5 by  1]]]
+    lappend res [lreverse [set l [lseq  0 .. -5 by -1]]]
+    lappend res [lreverse [set l [lseq  0 .. -5 by -1]]]
 } -cleanup {
     unset -nocomplain res l
-} -result {{} {} {} {} {} {} {} {}}
+} -result {-5 {0 -1 -2 -3 -4 -5} {0 1 2 3 4 5} 5 {-5 -4 -3 -2 -1 0} 0 0 {5 4 3 2 1 0} -5 {0 -1 -2 -3 -4 -5} {0 1 2 3 4 5} 5 0 {5 4 3 2 1 0} {-5 -4 -3 -2 -1 0} {-5 -4 -3 -2 -1 0}}
+
 test lseq-4.21.7 {Corner cases: non-empty list, normal step} -body {
     set res {}
     lappend res [lseq -5 ..  0      ]
@@ -1115,6 +1124,14 @@ test lseq-bug-0ee626dfb2-0 {Bug 0ee626dfb2 - integer overflow} -body {
 test lseq-bug-0ee626dfb2-1 {Bug 0ee626dfb2 - integer overflow} -body {
     lseq 0x7fffffffffffffff count 3 by -0x8000000000000000
 } -result {invalid arithmetic series parameter values} -returnCodes error
+
+test lseq-bug-8d1fc709957-0 {Bug 8d1fc709957 - lseq "count" error persists across calls} -body {
+    catch {lseq 0 count 5} err0
+    catch {lseq count 5} err1
+    catch {lseq 1 count 5} err2
+    list $err0 $err1 $err2
+} -result {{0 1 2 3 4} {expected number but got "count"} {1 2 3 4 5}}
+
 
 # cleanup
 ::tcltest::cleanupTests

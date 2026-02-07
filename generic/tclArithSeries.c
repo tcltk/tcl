@@ -297,12 +297,14 @@ ArithSeriesLenInt(
     Tcl_WideInt len;
 
     if (step == 0) {
-	return 0;
+	return 1;
     }
-    len = (end - start) / step + 1;
-    if (len < 0) {
-	return 0;
+
+    len = ((end - start) / step) + 1;
+    if (len <= 0) {
+	len = 1;
     }
+
     return len;
 }
 
@@ -320,7 +322,7 @@ ArithSeriesLenDbl(
 			  * with and w/o FPU_INLINE_ASM, _CONTROLFP, etc) */
 
     if (step == 0) {
-	return 0;
+	return 1;
     }
     if (precision) {
 	scaleFactor = power10(precision);
@@ -330,6 +332,7 @@ ArithSeriesLenDbl(
     }
     /* distance */
     end -= start;
+
     /*
      * To improve numerical stability use wide arithmetic instead of IEEE-754
      * when distance and step do not exceed wide-integers.
@@ -339,7 +342,8 @@ ArithSeriesLenDbl(
 	Tcl_WideInt iend = end < 0 ? end - 0.5 : end + 0.5;
 	Tcl_WideInt istep = step < 0 ? step - 0.5 : step + 0.5;
 	if (istep) { /* avoid div by zero, steps like 0.1, precision 0 */
-	    return (iend / istep) + 1;
+	    Tcl_WideInt len = (iend / istep) + 1;
+	    return (len <= 0 ? 1 : len);
 	}
     }
     /*
@@ -348,10 +352,10 @@ ArithSeriesLenDbl(
      */
     len = (end / step) + 1;
     if (len >= (double)TCL_SIZE_MAX) {
-	return TCL_SIZE_MAX;
+	len = TCL_SIZE_MAX;
     }
-    if (len < 0) {
-	return 0;
+    if (len <= 0) {
+	len = 1;
     }
     return (Tcl_WideInt)len;
 }
