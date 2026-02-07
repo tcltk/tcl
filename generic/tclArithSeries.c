@@ -342,8 +342,8 @@ ArithSeriesLenDbl(
 	Tcl_WideInt iend = end < 0 ? end - 0.5 : end + 0.5;
 	Tcl_WideInt istep = step < 0 ? step - 0.5 : step + 0.5;
 	if (istep) { /* avoid div by zero, steps like 0.1, precision 0 */
-	    Tcl_WideInt len = (iend / istep) + 1;
-	    return (len <= 0 ? 1 : len);
+	    Tcl_WideInt ilen = (iend / istep) + 1;
+	    return (ilen <= 0 ? 1 : ilen);
 	}
     }
     /*

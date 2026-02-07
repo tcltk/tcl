@@ -4047,10 +4047,6 @@ SequenceIdentifyArgument(
     void *internalPtr;
 
     if (allowedArgs & NumericArg) {
-	/* speed-up a bit (and avoid shimmer for compiled expressions) */
-	if (TclHasInternalRep(argPtr, &tclExprCodeType)) {
-	   goto doExpr;
-	}
 	result = Tcl_GetNumberFromObj(NULL, argPtr, &internalPtr, keywordIndexPtr);
 	if (result == TCL_OK) {
 	    *numValuePtr = argPtr;
@@ -4076,19 +4072,11 @@ SequenceIdentifyArgument(
 	if (!(allowedArgs & NumericArg)) {
 	    return NoneArg;
 	}
-    doExpr:
-	/* Check for an index expression */
-	/*if (Tcl_ExprObj(interp, argPtr, &exprValueObj) != TCL_OK) {*/
-	/*    return ErrArg;*/
-	/*}*/
-	/* Determine if result of expression is double or int */
-	if (Tcl_GetNumberFromObj(interp, argPtr /*exprValueObj*/, &internalPtr,
-		&keyword) != TCL_OK
-	) {
+	if (Tcl_GetNumberFromObj(interp, argPtr, &internalPtr, &keyword) != TCL_OK) {
 	    return ErrArg;
 	}
-	*numValuePtr = argPtr; /*exprValueObj; /* incremented in Tcl_ExprObj */
-	*keywordIndexPtr = keyword; /* type of expression result */
+	*numValuePtr = argPtr;
+	*keywordIndexPtr = keyword; /* type of result */
 	return NumericArg;
     }
 }
