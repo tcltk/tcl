@@ -31,9 +31,9 @@ The \fBlseq\fR command can produce both increasing and decreasing
 sequences. When both \fIstart\fR and \fIend\fR are provided without a
 \fIstep\fR value, then if \fIstart\fR <= \fIend\fR, the sequence will be
 increasing and if \fIstart\fR > \fIend\fR it will be decreasing. If a
-\fIstep\fR vale is included, it's sign should agree with the direction of the
-sequence (descending \(-> negative and ascending \(-> positive), otherwise an
-empty list is returned.  For example:
+\fIstep\fR value is included, it's sign should agree with the direction of the
+sequence (descending \(-> negative and ascending \(-> positive), otherwise the
+list will have a length of 1, containing the starting value.  For example:
 .RS
 .PP
 .CS \"
@@ -46,17 +46,14 @@ empty list is returned.  For example:
 % \fBlseq\fR 0 0.5 by 0.1  ;# doubles
 \fI\(-> 0.0 0.1 0.2 0.3 0.4 0.5\fR
 
-% \fBlseq\fR 6 to 1 by 2   ;# decreasing, step wrong sign, empty list
+% \fBlseq\fR 6 to 1 by 2   ;# decreasing, step wrong sign  
+\fI\(-> 6
 
-% \fBlseq\fR 1 to 5 by 0   ;# all step sizes of 0 produce an empty list
+% \fBlseq\fR 3 to 9 by 0   ;# step of 0, 
+\fI\(-> 3
 .\"
 .CE
 .RE
-.PP
-The numeric arguments, \fIstart\fR, \fIend\fR, \fIstep\fR, and \fIcount\fR,
-may also be a valid expression. The expression will be evaluated and the
-numeric result will be used.  An expression that does not evaluate to a number
-will produce an invalid argument error.
 .PP
 \fIStart\fR defines the initial value and \fIend\fR defines the limit, not
 necessarily the last value. \fBlseq\fR produces a list with \fIcount\fR
@@ -103,13 +100,13 @@ foreach i [\fBlseq\fR {[llength $l]-1} 0] {
 \fI\(-> l(0)=0\fR
 
 set i 17
-         \fI\(-> 17\fR
+\fI\(-> 17\fR
+
 if {$i in [\fBlseq\fR 0 50]} { # equivalent to: (0 <= $i && $i <= 50)
     puts "Ok"
 } else {
     puts "outside :("
-}
-\fI\(-> Ok\fR
+} \fI\(-> Ok\fR
 
 set sqrs [lmap i [\fBlseq\fR 1 10] { expr {$i*$i} }]
 \fI\(-> 1 4 9 16 25 36 49 64 81 100\fR
