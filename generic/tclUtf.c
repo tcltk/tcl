@@ -2270,7 +2270,7 @@ Tcl_UniCharIsWordChar(
  *	TclUniCharMatch where possible.
  *
  * Results:
- *	The return value is 1 if string matches pattern, and 0 otherwise. The
+ *	The return value is true if string matches pattern, and false otherwise. The
  *	matching operation permits the following special characters in the
  *	pattern: *?\[] (see the manual entry for details on what these mean).
  *
@@ -2280,7 +2280,7 @@ Tcl_UniCharIsWordChar(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 TclUniCharCaseMatch(
     const Tcl_UniChar *uniStr,	/* Unicode String. */
     const Tcl_UniChar *uniPattern,
@@ -2303,7 +2303,7 @@ TclUniCharCaseMatch(
 	    return (*uniStr == 0);
 	}
 	if ((*uniStr == 0) && (p != '*')) {
-	    return 0;
+	    return false;
 	}
 
 	/*
@@ -2324,7 +2324,7 @@ TclUniCharCaseMatch(
 	    }
 	    p = *uniPattern;
 	    if (p == 0) {
-		return 1;
+		return true;
 	    }
 	    if (nocase) {
 		p = Tcl_UniCharToLower(p);
@@ -2349,10 +2349,10 @@ TclUniCharCaseMatch(
 		    }
 		}
 		if (TclUniCharCaseMatch(uniStr, uniPattern, nocase)) {
-		    return 1;
+		    return true;
 		}
 		if (*uniStr == 0) {
-		    return 0;
+		    return false;
 		}
 		uniStr++;
 	    }
@@ -2383,7 +2383,7 @@ TclUniCharCaseMatch(
 	    uniStr++;
 	    while (1) {
 		if ((*uniPattern == ']') || (*uniPattern == 0)) {
-		    return 0;
+		    return false;
 		}
 		startChar = (nocase ? Tcl_UniCharToLower(*uniPattern)
 			: *uniPattern);
@@ -2391,7 +2391,7 @@ TclUniCharCaseMatch(
 		if (*uniPattern == '-') {
 		    uniPattern++;
 		    if (*uniPattern == 0) {
-			return 0;
+			return false;
 		    }
 		    endChar = (nocase ? Tcl_UniCharToLower(*uniPattern)
 			    : *uniPattern);
@@ -2425,7 +2425,7 @@ TclUniCharCaseMatch(
 
 	if (p == '\\') {
 	    if (*(++uniPattern) == '\0') {
-		return 0;
+		return false;
 	    }
 	}
 
@@ -2437,10 +2437,10 @@ TclUniCharCaseMatch(
 	if (nocase) {
 	    if (Tcl_UniCharToLower(*uniStr) !=
 		    Tcl_UniCharToLower(*uniPattern)) {
-		return 0;
+		return false;
 	    }
 	} else if (*uniStr != *uniPattern) {
-	    return 0;
+	    return false;
 	}
 	uniStr++;
 	uniPattern++;
@@ -2458,7 +2458,7 @@ TclUniCharCaseMatch(
  *	Strings, so embedded NULLs are allowed.
  *
  * Results:
- *	The return value is 1 if string matches pattern, and 0 otherwise. The
+ *	The return value is true if string matches pattern, and false otherwise. The
  *	matching operation permits the following special characters in the
  *	pattern: *?\[] (see the manual entry for details on what these mean).
  *
@@ -2468,7 +2468,7 @@ TclUniCharCaseMatch(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 TclUniCharMatch(
     const Tcl_UniChar *string,	/* Unicode String. */
     Tcl_Size strLen,		/* Length of String */
@@ -2495,7 +2495,7 @@ TclUniCharMatch(
 	}
 	p = *pattern;
 	if ((string == stringEnd) && (p != '*')) {
-	    return 0;
+	    return false;
 	}
 
 	/*
@@ -2515,7 +2515,7 @@ TclUniCharMatch(
 		/* empty body */
 	    }
 	    if (pattern == patternEnd) {
-		return 1;
+		return true;
 	    }
 	    p = *pattern;
 	    if (nocase) {
@@ -2542,10 +2542,10 @@ TclUniCharMatch(
 		}
 		if (TclUniCharMatch(string, stringEnd - string,
 			pattern, patternEnd - pattern, nocase)) {
-		    return 1;
+		    return true;
 		}
 		if (string == stringEnd) {
-		    return 0;
+		    return false;
 		}
 		string++;
 	    }
@@ -2576,14 +2576,14 @@ TclUniCharMatch(
 	    string++;
 	    while (1) {
 		if ((*pattern == ']') || (pattern == patternEnd)) {
-		    return 0;
+		    return false;
 		}
 		startChar = (nocase ? Tcl_UniCharToLower(*pattern) : *pattern);
 		pattern++;
 		if (*pattern == '-') {
 		    pattern++;
 		    if (pattern == patternEnd) {
-			return 0;
+			return false;
 		    }
 		    endChar = (nocase ? Tcl_UniCharToLower(*pattern)
 			    : *pattern);
@@ -2617,7 +2617,7 @@ TclUniCharMatch(
 
 	if (p == '\\') {
 	    if (++pattern == patternEnd) {
-		return 0;
+		return false;
 	    }
 	}
 
@@ -2628,10 +2628,10 @@ TclUniCharMatch(
 
 	if (nocase) {
 	    if (Tcl_UniCharToLower(*string) != Tcl_UniCharToLower(*pattern)) {
-		return 0;
+		return false;
 	    }
 	} else if (*string != *pattern) {
-	    return 0;
+	    return false;
 	}
 	string++;
 	pattern++;
