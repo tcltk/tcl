@@ -1420,7 +1420,7 @@ Tcl_FinalizeThread(void)
     FinalizeThread(/* quick */ 0);
 }
 
-void
+static void
 FinalizeThread(
     int quick)
 {
