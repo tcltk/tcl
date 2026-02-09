@@ -232,6 +232,7 @@ MODULE_SCOPE int TclMacOSXMatchType(Tcl_Interp *interp,
 #endif
 
 #if defined(_WIN32)
+#   undef TclpIsAtty
 #   ifndef TCL_NO_DEPRECATED
 #	define TclWinConvertError Tcl_WinConvertError
 #	define TclWinConvertWSAError Tcl_WinConvertError

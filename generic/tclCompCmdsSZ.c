@@ -1369,14 +1369,14 @@ TclCompileStringToTitleCmd(
  * Support definitions for the [string is] compilation.
  */
 
-static int
+static bool
 UniCharIsAscii(
     int character)
 {
     return (character >= 0) && (character < 0x80);
 }
 
-static int
+static bool
 UniCharIsHexDigit(
     int character)
 {

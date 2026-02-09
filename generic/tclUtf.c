@@ -2005,7 +2005,7 @@ TclUniCharNcasecmp(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Tcl_UniCharIsAlnum(
     int ch)			/* Unicode character to test. */
 {
@@ -2028,7 +2028,7 @@ Tcl_UniCharIsAlnum(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Tcl_UniCharIsAlpha(
     int ch)			/* Unicode character to test. */
 {
@@ -2051,7 +2051,7 @@ Tcl_UniCharIsAlpha(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Tcl_UniCharIsControl(
     int ch)			/* Unicode character to test. */
 {
@@ -2074,7 +2074,7 @@ Tcl_UniCharIsControl(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Tcl_UniCharIsDigit(
     int ch)			/* Unicode character to test. */
 {
@@ -2097,7 +2097,7 @@ Tcl_UniCharIsDigit(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Tcl_UniCharIsGraph(
     int ch)			/* Unicode character to test. */
 {
@@ -2120,7 +2120,7 @@ Tcl_UniCharIsGraph(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Tcl_UniCharIsLower(
     int ch)			/* Unicode character to test. */
 {
@@ -2143,7 +2143,7 @@ Tcl_UniCharIsLower(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Tcl_UniCharIsPrint(
     int ch)			/* Unicode character to test. */
 {
@@ -2166,7 +2166,7 @@ Tcl_UniCharIsPrint(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Tcl_UniCharIsPunct(
     int ch)			/* Unicode character to test. */
 {
@@ -2189,7 +2189,7 @@ Tcl_UniCharIsPunct(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Tcl_UniCharIsSpace(
     int ch)			/* Unicode character to test. */
 {
@@ -2227,7 +2227,7 @@ Tcl_UniCharIsSpace(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Tcl_UniCharIsUpper(
     int ch)			/* Unicode character to test. */
 {
@@ -2250,7 +2250,7 @@ Tcl_UniCharIsUpper(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Tcl_UniCharIsWordChar(
     int ch)			/* Unicode character to test. */
 {

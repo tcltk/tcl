@@ -68,9 +68,6 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stdint.h>
-#if defined(_MSC_VER) || (defined(__STDC_VERSION__) && (__STDC_VERSION__ < 202311L))
-#include <stdbool.h>
-#endif
 #include <string.h>
 #include <locale.h>
 
@@ -4719,11 +4716,11 @@ TclGrowParseTokenArray(
  * but we don't do that at the moment since this is purely about efficiency.
  * The ANSI C "prototype" for this macro is:
  *
- * MODULE_SCOPE int	TclIsPureByteArray(Tcl_Obj *objPtr);
+ * MODULE_SCOPE bool	TclIsPureByteArray(Tcl_Obj *objPtr);
  *----------------------------------------------------------------
  */
 
-MODULE_SCOPE int	TclIsPureByteArray(Tcl_Obj *objPtr);
+MODULE_SCOPE bool	TclIsPureByteArray(Tcl_Obj *objPtr);
 #define TclIsPureDict(objPtr) \
     (((objPtr)->bytes == NULL) && TclHasInternalRep((objPtr), &tclDictType))
 #define TclHasInternalRep(objPtr, type) \
