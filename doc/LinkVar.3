@@ -47,7 +47,7 @@ Type of C variable for \fBTcl_LinkVar\fR or type of array element for
 \fBTCL_LINK_SHORT\fR, \fBTCL_LINK_USHORT\fR, \fBTCL_LINK_LONG\fR,
 \fBTCL_LINK_ULONG\fR, \fBTCL_LINK_WIDE_INT\fR,
 \fBTCL_LINK_WIDE_UINT\fR, \fBTCL_LINK_FLOAT\fR, \fBTCL_LINK_DOUBLE\fR,
-\fBTCL_LINK_BOOLEAN\fR, or one of the extra ones listed below.
+\fBTCL_LINK_BOOL\fR, \fBTCL_LINK_BOOLEAN\fR, or one of the extra ones listed below.
 .sp
 In \fBTcl_LinkVar\fR, the additional linked type \fBTCL_LINK_STRING\fR may be
 used.
@@ -245,6 +245,20 @@ attempts to write non-integer values into \fIvarName\fR will be
 rejected with Tcl errors. Incomplete integer representations (like
 the empty string, '+', '-' or the hex/octal/decimal/binary prefix) are accepted
 as if they are valid too.
+.TP
+\fBTCL_LINK_BOOL\fR
+.
+The C variable, or each element of the C array, is of type \fBbool\fR.
+If its value is false then it will read from Tcl as
+.QW 0 ;
+otherwise it will read from Tcl as
+.QW 1 .
+Whenever \fIvarName\fR is
+modified, the C variable will be set to a false or true value.
+Any value written into the Tcl variable must have a proper boolean
+form acceptable to \fBTcl_GetBooleanFromObj\fR;  attempts to write
+non-boolean values into \fIvarName\fR will be rejected with
+Tcl errors.
 .TP
 \fBTCL_LINK_BOOLEAN\fR
 .
