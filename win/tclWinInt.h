@@ -20,7 +20,7 @@
 typedef struct {
     OSVERSIONINFOW osVersion;	/* Windows version information */
     DWORD longPathsSupported;	/* Long paths supported without \\?\ ? */
-    char codePage[20];          /* User code page */
+    char codePage[20];		/* User code page */
 } TclWinInfo;
 
 MODULE_SCOPE const TclWinInfo *	TclGetWinInfo(void);

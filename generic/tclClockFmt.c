@@ -978,8 +978,7 @@ ClockLocalizeFormat(
 	}
     }
 
-done:
-
+  done:
     TclUnsetObjRef(keyObj);
     return (opts->formatObj = valObj);
 }

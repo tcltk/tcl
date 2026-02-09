@@ -14,8 +14,8 @@ MODULE_SCOPE const TclOOStubs tclOOStubs;
 #pragma GCC dependency "tclOO.decls"
 #endif
 
+#undef Tcl_MethodIsType
 #ifdef TCL_NO_DEPRECATED
-#   undef Tcl_MethodIsType
 #   undef Tcl_NewInstanceMethod
 #   undef Tcl_NewMethod
 #   undef TclOOMakeProcInstanceMethod

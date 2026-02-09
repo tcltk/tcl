@@ -334,12 +334,12 @@ static int TclUniCharIsPunct_(int ch) {return Tcl_UniCharIsPunct(ch);}
 #   define TclUnixCopyFile 0
 #   define TclUnixOpenTemporaryFile 0
 #   define TclpReaddir 0
-#   define TclpIsAtty 0
+#   define TclpIsAtty (bool (*)(int))(void *)_isatty
 #else
 #define TclpIsAtty (bool (*)(int))(void *)isatty
 #endif
 
-#if defined(__CYGWIN__)
+#ifdef __CYGWIN__
 static void
 doNothing(void)
 {

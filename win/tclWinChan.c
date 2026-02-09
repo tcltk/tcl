@@ -244,7 +244,7 @@ FileChannelExitHandler(
  *----------------------------------------------------------------------
  */
 
-void
+static void
 FileSetupProc(
     TCL_UNUSED(void *),
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
@@ -1404,7 +1404,7 @@ TclpGetDefaultStdChannel(
  *----------------------------------------------------------------------
  */
 
-Tcl_Channel
+static Tcl_Channel
 OpenFileChannel(
     HANDLE handle,		/* Win32 HANDLE to swallow */
     char *channelName,		/* Buffer to receive channel name */
@@ -1565,7 +1565,7 @@ FileThreadActionProc(
  *----------------------------------------------------------------------
  */
 
-DWORD
+static DWORD
 FileGetType(
     HANDLE handle)		/* Opened file handle */
 {

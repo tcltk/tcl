@@ -1654,9 +1654,9 @@ TeststringobjCmd(
 static int
 TestbigdataCmd(
     TCL_UNUSED(void *),
-    Tcl_Interp *interp,    /* Current interpreter. */
-    Tcl_Size objc,         /* Number of arguments. */
-    Tcl_Obj *const objv[]) /* Argument objects. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    Tcl_Size objc,		/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     static const char *const subcmds[] = {
 	"string", "bytearray", "list", "dict", NULL

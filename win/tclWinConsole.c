@@ -769,7 +769,7 @@ NudgeWatchers(
  *----------------------------------------------------------------------
  */
 
-void
+static void
 ConsoleSetupProc(
     TCL_UNUSED(void *),
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */

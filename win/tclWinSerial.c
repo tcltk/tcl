@@ -386,7 +386,7 @@ SerialBlockTime(
 #define min(a, b)  (((a) < (b)) ? (a) : (b))
 #endif
 
-void
+static void
 SerialSetupProc(
     TCL_UNUSED(void *),
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */

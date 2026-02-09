@@ -2270,7 +2270,7 @@ Tcl_UniCharIsWordChar(
  *	TclUniCharMatch where possible.
  *
  * Results:
- *	The return value is 1 if string matches pattern, and 0 otherwise. The
+ *	The return value is true if string matches pattern, and false otherwise. The
  *	matching operation permits the following special characters in the
  *	pattern: *?\[] (see the manual entry for details on what these mean).
  *
@@ -2383,7 +2383,7 @@ TclUniCharCaseMatch(
 	    uniStr++;
 	    while (1) {
 		if ((*uniPattern == ']') || (*uniPattern == 0)) {
-		    return 0;
+		    return false;
 		}
 		startChar = (nocase ? Tcl_UniCharToLower(*uniPattern)
 			: *uniPattern);
@@ -2391,7 +2391,7 @@ TclUniCharCaseMatch(
 		if (*uniPattern == '-') {
 		    uniPattern++;
 		    if (*uniPattern == 0) {
-			return 0;
+			return false;
 		    }
 		    endChar = (nocase ? Tcl_UniCharToLower(*uniPattern)
 			    : *uniPattern);
@@ -2458,7 +2458,7 @@ TclUniCharCaseMatch(
  *	Strings, so embedded NULLs are allowed.
  *
  * Results:
- *	The return value is 1 if string matches pattern, and 0 otherwise. The
+ *	The return value is true if string matches pattern, and false otherwise. The
  *	matching operation permits the following special characters in the
  *	pattern: *?\[] (see the manual entry for details on what these mean).
  *

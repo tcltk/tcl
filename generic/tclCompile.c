@@ -5130,7 +5130,7 @@ TclPushVarName(
  *----------------------------------------------------------------------
  */
 
-void
+static void
 RecordByteCodeStats(
     ByteCode *codePtr)		/* Points to ByteCode structure with info
 				 * to add to accumulated statistics. */
