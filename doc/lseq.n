@@ -33,23 +33,33 @@ sequences. When both \fIstart\fR and \fIend\fR are provided without a
 increasing and if \fIstart\fR > \fIend\fR it will be decreasing. If a
 \fIstep\fR value is included, it's sign should agree with the direction of the
 sequence (descending \(-> negative and ascending \(-> positive), otherwise the
-list will have a length of 1, containing the starting value.  For example:
+list will have a length of 0.  For example:
 .RS
 .PP
 .CS \"
-% \fBlseq\fR 1 to 5    ;# increasing
+# increasing:
+.br
+% \fBlseq\fR 1 to 5
 \fI\(-> 1 2 3 4 5
 
-% \fBlseq\fR 5 to 1    ;# decreasing
+# decreasing:
+.br
+% \fBlseq\fR 5 to 1
 \fI\(-> 5 4 3 2 1
 
-% \fBlseq\fR 0 0.5 by 0.1  ;# doubles
+# doubles:
+.br
+% \fBlseq\fR 0 0.5 by 0.1
 \fI\(-> 0.0 0.1 0.2 0.3 0.4 0.5\fR
 
-% \fBlseq\fR 6 to 1 by 2   ;# decreasing, step wrong sign  
-\fI\(-> 6
+# decreasing, step with wrong sign:
+.br
+% \fBlseq\fR 6 to 1 by 2
+\fI\(-> {}
 
-% \fBlseq\fR 3 to 9 by 0   ;# step of 0, 
+# step of 0,
+.br
+% \fBlseq\fR 3 to 9 by 0
 \fI\(-> 3
 .\"
 .CE
@@ -61,7 +71,7 @@ elements, and if \fIcount\fR is not supplied, it is computed as:
 .RS
 .PP
 .CS
-\fIcount\fR = int( (\fIend\fR - \fIstart\fR + \fIstep\fR) / \fIstep\fR )
+\fIcount\fR = int( ( (\fIend\fR - \fIstart\fR) / \fIstep\fR ) + 1 )
 .CE
 .RE
 .SH EXAMPLES
