@@ -1453,11 +1453,12 @@ TclHideUnsafeCommands(
 	    while ((sub = strstr(ensembleNsName, "::")) != NULL) {
 		ensembleNsName = sub + 2;
 	    }
+	    Tcl_Obj *elems[2] = {
+		Tcl_NewStringObj(ensSetupPtr->name, TCL_AUTO_LENGTH),
+		Tcl_NewStringObj(implMapPtr->name, TCL_AUTO_LENGTH)
+	    };
 	    HideCommandInTclNs(interp, ensembleNsName, implMapPtr->name,
-		    Tcl_NewListObj(2, ((Tcl_Obj*[]) {
-			Tcl_NewStringObj(ensSetupPtr->name, TCL_AUTO_LENGTH),
-			Tcl_NewStringObj(implMapPtr->name, TCL_AUTO_LENGTH)
-		    })));
+		    Tcl_NewListObj(2, elems));
 	}
 
 	if (!(ensSetupPtr->flags & CMD_IS_SAFE)) {
