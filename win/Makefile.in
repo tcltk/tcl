@@ -790,7 +790,8 @@ deflate.$(HOST_OBJEXT):
 	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(ZLIB_DIR)/deflate.c
 
 ioapi.$(HOST_OBJEXT):
-	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -I$(ZLIB_DIR)/contrib/minizip -c $(ZLIB_DIR)/contrib/minizip/ioapi.c
+	$(HOST_CC) -o $@ -DMINIZIP_FOPEN_NO_64=1 -I$(ZLIB_DIR) -I$(ZLIB_DIR)/contrib/minizip -c \
+		$(ZLIB_DIR)/contrib/minizip/ioapi.c
 
 iowin32.$(HOST_OBJEXT):
 	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -I$(ZLIB_DIR)/contrib/minizip -c $(ZLIB_DIR)/contrib/minizip/iowin32.c
@@ -820,7 +821,8 @@ zutil.$(HOST_OBJEXT):
 	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(ZLIB_DIR)/zutil.c
 
 minizip.$(HOST_OBJEXT):
-	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -I$(ZLIB_DIR)/contrib/minizip -c $(ZLIB_DIR)/contrib/minizip/minizip.c
+	$(HOST_CC) -o $@ -DMINIZIP_FOPEN_NO_64=1 -I$(ZLIB_DIR) -I$(ZLIB_DIR)/contrib/minizip -c \
+		$(ZLIB_DIR)/contrib/minizip/minizip.c
 
 minizip${HOST_EXEEXT}: $(MINIZIP_OBJS)
 	$(HOST_CC) -o $@ $(MINIZIP_OBJS)
