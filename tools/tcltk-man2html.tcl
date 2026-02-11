@@ -657,7 +657,7 @@ array set exclude_refs_map {
     font.n		{menu}
     getOpenFile.n	{file open text}
     grab.n		{global}
-    http 		{error}
+    http		{error}
     interp.n		{time}
     menu.n		{checkbutton radiobutton}
     messageBox.n	{error info}

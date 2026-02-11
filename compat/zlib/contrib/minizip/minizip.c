@@ -61,18 +61,15 @@
 # include <unistd.h>
 # include <utime.h>
 # include <sys/types.h>
+# include <sys/stat.h>
 #endif
 
-#include <sys/stat.h>
 #include "zip.h"
 #include "ints.h"
 
 #ifdef _WIN32
         #define USEWIN32IOAPI
         #include "iowin32.h"
-#       if defined(_MSC_VER)
-#           define snprintf _snprintf
-#       endif
 #endif
 
 
@@ -359,32 +356,33 @@ void addFileToZip(zipFile zf, const char *filenameinzip, const char *password, i
 }
 
 
-void addPathToZip(zipFile zf, const char *filenameinzip, const char *password, int opt_exclude_path,int opt_compress_level) {
+int addPathToZip(zipFile zf, const char *filenameinzip, const char *password, int opt_exclude_path,int opt_compress_level) {
 #ifdef HAVE_DIRENT_H
+#   if defined(_MSC_VER)
+#       define snprintf _snprintf
+#   endif
     char newname[MAXFILENAME+1+MAXFILENAME+1];
     struct dirent *dp;
 
     DIR *dir = opendir(filenameinzip);
-
+    if (dir == NULL) {
+        return 0;
+    }
     while (dp = readdir(dir))
     {
-        struct stat path_stat;
-
         if(strcmp(dp->d_name,".")==0) continue;
         if(strcmp(dp->d_name,"..")==0) continue;
         snprintf(newname, sizeof(newname), "%.*s/%.*s", MAXFILENAME, filenameinzip, MAXFILENAME, dp->d_name);
-        stat(newname, &path_stat);
-        if (S_ISDIR(path_stat.st_mode))
-        {
-            addPathToZip(zf,newname,password,opt_exclude_path,opt_compress_level);
-        } else {
+        if (!addPathToZip(zf,newname,password,opt_exclude_path,opt_compress_level))
             addFileToZip(zf,newname,password,opt_exclude_path,opt_compress_level);
         }
     }
 
     closedir(dir);
+    return 1;
 #else
     printf("-r option not supported");
+    return 0;
 #endif
 }
 
@@ -431,6 +429,7 @@ int main(int argc, char *argv[]) {
                         opt_exclude_path = 1;
                     if ((c=='r') || (c=='R'))
                         opt_recursive = 1;
+
                     if (((c=='p') || (c=='P')) && (i+1<argc))
                     {
                         password=argv[i+1];

@@ -3323,9 +3323,10 @@ TestlinkCmd(
     static float floatVar = 4.5;
     static Tcl_WideUInt uwideVar = 123;
     static int created = 0;
-    char buffer[2*TCL_DOUBLE_SPACE];
-    int writable, flag;
+    int flag;
     Tcl_Obj *tmp;
+    char buffer[2*TCL_DOUBLE_SPACE];
+    bool writable;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "option ?arg arg arg arg arg arg arg arg arg arg arg arg"
@@ -4601,7 +4602,7 @@ TestparsevarnameCmd(
     Tcl_Obj *const objv[])	/* The argument objects. */
 {
     const char *script;
-    int append;
+    bool append;
     Tcl_Size length, dummy;
     Tcl_Parse parse;
 
@@ -5208,7 +5209,7 @@ TeststaticlibraryCmd(
     Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument strings. */
 {
-    int safe, loaded;
+    bool safe, loaded;
 
     if (objc != 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "prefix safe loaded");
@@ -7133,7 +7134,7 @@ TestSocketCmd(
     if ((cmdName[0] == 't') && (strncmp(cmdName, "testflags", len) == 0)) {
 	Tcl_Channel hChannel;
 	int modePtr;
-	int testMode;
+	bool testMode;
 	TcpState *statePtr;
 	/* Set test value in the socket driver
 	 */
