@@ -583,7 +583,8 @@ TestindexobjCmd(
     Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int allowAbbrev, index, setError, result;
+    bool allowAbbrev, setError;
+    int index, result;
     Tcl_Size i;
     Tcl_Size index2;
     const char **argv;
