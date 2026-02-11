@@ -356,7 +356,7 @@ void addFileToZip(zipFile zf, const char *filenameinzip, const char *password, i
 }
 
 
-int addPathToZip(zipFile zf, const char *filenameinzip, const char *password, int opt_exclude_path,int opt_compress_level) {
+void addPathToZip(zipFile zf, const char *filenameinzip, const char *password, int opt_exclude_path,int opt_compress_level) {
 #ifdef HAVE_DIRENT_H
 #   if defined(_MSC_VER)
 #       define snprintf _snprintf
@@ -366,23 +366,20 @@ int addPathToZip(zipFile zf, const char *filenameinzip, const char *password, in
 
     DIR *dir = opendir(filenameinzip);
     if (dir == NULL) {
-        return 0;
+        addFileToZip(zf,filenameinzip,password,opt_exclude_path,opt_compress_level);
+        return;
     }
-    while (dp = readdir(dir))
+    while ((dp = readdir(dir)))
     {
         if(strcmp(dp->d_name,".")==0) continue;
         if(strcmp(dp->d_name,"..")==0) continue;
         snprintf(newname, sizeof(newname), "%.*s/%.*s", MAXFILENAME, filenameinzip, MAXFILENAME, dp->d_name);
-        if (!addPathToZip(zf,newname,password,opt_exclude_path,opt_compress_level))
-            addFileToZip(zf,newname,password,opt_exclude_path,opt_compress_level);
-        }
+        addPathToZip(zf,newname,password,opt_exclude_path,opt_compress_level));
     }
 
     closedir(dir);
-    return 1;
 #else
     printf("-r option not supported");
-    return 0;
 #endif
 }
 
