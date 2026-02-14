@@ -420,7 +420,6 @@ proc ::platform::patterns {id} {
     return $res
 }
 
-
 # ### ### ### ######### ######### #########
 ## Ready
 

@@ -2048,7 +2048,6 @@ typedef struct Interp {
     Namespace *lookupNsPtr;	/* Namespace to use ONLY on the next
 				 * TCL_EVAL_INVOKE call to Tcl_EvalObjv. */
 
-
     /*
      * Information about packages. Used only in tclPkg.c.
      */

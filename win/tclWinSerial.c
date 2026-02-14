@@ -17,7 +17,6 @@
 #pragma clang diagnostic ignored "-Wc++-keyword"
 #endif
 
-
 /*
  * The following variable is used to tell whether this module has been
  * initialized.

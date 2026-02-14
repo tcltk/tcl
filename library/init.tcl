@@ -43,7 +43,6 @@ tcl::InitAutoPath
 
 namespace eval tcl::Pkg {}
 
-
 # Setup the unknown package handler
 if {[interp issafe]} {
     package unknown {::tcl::tm::UnknownHandler ::tclPkgUnknown}

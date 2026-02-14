@@ -217,7 +217,6 @@ proc tcl_findLibrary {basename version patch initScript enVarName varName} {
     error $msg
 }
 
-
 # ----------------------------------------------------------------------
 # auto_mkindex
 # ----------------------------------------------------------------------

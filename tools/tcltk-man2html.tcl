@@ -185,7 +185,6 @@ proc parse_command_line {} {
 	puts "using Tcl source directory [file join $tcltkdir $tcldir]"
     }
 
-
     if {$build_tk} {
 	# Find Tk (firstly using glob pattern / backwards compatible way)
 	set tkdir [lindex [lsort [glob -nocomplain -tails -type d \

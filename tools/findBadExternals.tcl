@@ -17,12 +17,10 @@
 #----------------------------------------------------------------------
 
 proc main {argc argv} {
-
     if {$argc != 1} {
 	puts stderr "syntax is: [info script] libtcl"
 	return 1
     }
-
 
     switch -exact -- $::tcl_platform(platform) {
 	unix -

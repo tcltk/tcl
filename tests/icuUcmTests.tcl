@@ -46,7 +46,6 @@ if {[info commands printable] eq ""} {
     }
 }
 
-
 #
 # cp1250 (generated from glibc-CP1250-2.1.2)
 

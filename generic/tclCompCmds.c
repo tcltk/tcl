@@ -1564,7 +1564,6 @@ TclCompileDictMergeCmd(
     }
     OP(				END_CATCH);
 
-
     /*
      * Clean up any state left over.
      */
