@@ -4378,7 +4378,6 @@ Tcl_LimitSetTime(
     Interp *iPtr = (Interp *) interp;
     long long nextMoment;
 
-
     iPtr->limit.time = *timeLimitPtr;
     if (iPtr->limit.timeEvent != NULL) {
 	Tcl_DeleteTimerHandler(iPtr->limit.timeEvent);

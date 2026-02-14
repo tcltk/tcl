@@ -73,8 +73,6 @@ TclpLongPathSupported(void)
     return winInfoPtr->longPathsSupported;
 }
 
-
-
 /*
  * Declarations of functions that are not accessible by way of the
  * stubs table.

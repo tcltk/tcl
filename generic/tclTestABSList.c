@@ -617,7 +617,6 @@ my_LStringReplace(
     // Terminate new string.
     newStr[newLen] = 0;
 
-
     if (oldStr != newStr) {
 	Tcl_Free(oldStr);
     }
@@ -835,7 +834,6 @@ UpdateStringOfLString(
     char *p;
     Tcl_Size bytesNeeded = 0;
     Tcl_Size llen, i;
-
 
     /*
      * Handle empty list case first, so rest of the routine is simpler.

@@ -281,7 +281,6 @@ extern const TclOOStubs *tclOOStubsPtr;
 #   undef Tcl_NewMethod
 #endif
 
-
 #if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 201112L)
 #ifndef TclOOGeneric
 /* Select method based on type of argument. */

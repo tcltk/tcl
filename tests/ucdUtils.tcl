@@ -5,7 +5,7 @@ if {[namespace exists tcltest::ucd]} {
 }
 
 namespace eval tcltests::ucd {
-	# UCD file paths
+    # UCD file paths
     variable normalizationDataFile \
 	[file join [file dirname [info script]] unicodeTestVectors NormalizationTest.txt]
     variable caseFoldDataFile \
@@ -13,8 +13,8 @@ namespace eval tcltests::ucd {
     variable derivedCorePropertiesFile \
 	[file join [file dirname [info script]] unicodeTestVectors DerivedCoreProperties.txt]
 
-	# Highest assigned Unicode code point
-	variable maxCodepoint 0x10ffff
+    # Highest assigned Unicode code point
+    variable maxCodepoint 0x10ffff
 
     tcltest::testConstraint ucdnormalization [file exists $normalizationDataFile]
     tcltest::testConstraint ucdproperties [file exists $derivedCorePropertiesFile]
@@ -77,16 +77,16 @@ namespace eval tcltests::ucd {
     }
 
     proc getNormalizationData {} {
-	    variable normalizationData
-		readNormalizationData
-		return $normalizationData
-	}
+	variable normalizationData
+	readNormalizationData
+	return $normalizationData
+    }
 
     proc getSingleFormChars {} {
-	    variable singleFormChars
-		readNormalizationData
-		return $singleFormChars
-	}
+	variable singleFormChars
+	readNormalizationData
+	return $singleFormChars
+    }
 
     proc readCaseFoldData {} {
 	variable caseFoldData {}
@@ -156,21 +156,20 @@ namespace eval tcltests::ucd {
     }
 
     proc getCaseFoldData {} {
-	    variable caseFoldData
-		readCaseFoldData
-		return $caseFoldData
-	}
+	variable caseFoldData
+	readCaseFoldData
+	return $caseFoldData
+    }
 
     proc getCaseFoldIdentities {} {
-	    variable caseFoldIdentities
-		readCaseFoldData
-		return $caseFoldIdentities
-	}
-
+	variable caseFoldIdentities
+	readCaseFoldData
+	return $caseFoldIdentities
+    }
 
     proc readDerivedCoreProperties {} {
 	variable derivedCorePropertiesFile
-		variable derivedCoreProperties; # Dict indexed by property name
+	variable derivedCoreProperties; # Dict indexed by property name
 
 	set fd [open $derivedCorePropertiesFile]
 	fconfigure $fd -encoding utf-8
@@ -192,7 +191,7 @@ namespace eval tcltests::ucd {
 	    set rangeOfChars [regexp -inline -all {[[:xdigit:]]+} $rangeOfChars]; # xxxx..yyyy
 	    foreach codePoint [lseq 0x[lindex $rangeOfChars 0] .. 0x[lindex $rangeOfChars end]] {
 		set char [format %c $codePoint]
-				dict set derivedCoreProperties $propertyName $char {}
+		dict set derivedCoreProperties $propertyName $char {}
 	    }
 	}
 
@@ -200,14 +199,14 @@ namespace eval tcltests::ucd {
     }
 
     proc getLowercaseChars {} {
-	    variable derivedCoreProperties
-		readDerivedCoreProperties
-		return [dict get $derivedCoreProperties Lowercase]
-	}
+	variable derivedCoreProperties
+	readDerivedCoreProperties
+	return [dict get $derivedCoreProperties Lowercase]
+    }
 
     proc getUppercaseChars {} {
-	    variable derivedCoreProperties
-		readDerivedCoreProperties
-		return [dict get $derivedCoreProperties Uppercase]
-	}
+	variable derivedCoreProperties
+	readDerivedCoreProperties
+	return [dict get $derivedCoreProperties Uppercase]
+    }
 }

@@ -8330,7 +8330,6 @@ TestNREUnwind(
     return TCL_OK;
 }
 
-
 static int
 TestNRELevels(
     TCL_UNUSED(void *),
@@ -9707,7 +9706,6 @@ TestAppVerifierPresentCmd(
     Tcl_SetObjResult(interp, Tcl_NewBooleanObj(*dll != NULL));
     return TCL_OK;
 }
-
 
 #endif /* _WIN32 */
 

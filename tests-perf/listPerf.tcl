@@ -256,7 +256,6 @@ namespace eval perf::list {
 	# Note: Const indices take different path through bytecode than variable
 	# indices hence separate cases below
 
-
 	# Var case
 	foreach share_mode {shared unshared} {
 	    set idx 0
@@ -1288,7 +1287,6 @@ namespace eval perf::list {
 	}
     }
 }
-
 
 if {[info exists ::argv0] && [file tail $::argv0] eq [file tail [info script]]} {
     ::perf::list::test
