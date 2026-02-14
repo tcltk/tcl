@@ -772,7 +772,7 @@ TclpFinalizeCondition(
 	*condPtr = NULL;
     }
 }
-
+
 /*
  * Additions by AOL for specialized thread memory allocator.
  */

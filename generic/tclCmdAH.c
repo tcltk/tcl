@@ -521,7 +521,7 @@ EncodingConvertParseOptions(
 
     return TCL_OK;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -882,7 +882,7 @@ EncodingUserObjCmd(
     Tcl_DStringResult(interp, &ds);
     return TCL_OK;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *

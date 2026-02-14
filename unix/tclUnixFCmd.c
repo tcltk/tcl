@@ -2250,7 +2250,7 @@ TclUnixOpenTemporaryFile(
 
     return fd;
 }
-
+
 /*
  * Helper that does *part* of what tempnam() does.
  */
@@ -2403,7 +2403,7 @@ winPathFromObj(
 static const int attributeArray[] = {
     0x20, 0, 2, 0, 0, 1, 4
 };
-
+
 /*
  *----------------------------------------------------------------------
  *

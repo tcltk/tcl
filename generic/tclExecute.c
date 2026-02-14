@@ -1014,7 +1014,7 @@ WordSkip(
 
 #define MEMSTART(markerPtr) \
     ((markerPtr) + WordSkip(markerPtr))
-
+
 /*
  *----------------------------------------------------------------------
  *

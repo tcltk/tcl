@@ -428,7 +428,7 @@ FreeArithSeriesInternalRep(
 	Tcl_Free((void *)arithSeriesRepPtr);
     }
 }
-
+
 /*
  *----------------------------------------------------------------------
  *

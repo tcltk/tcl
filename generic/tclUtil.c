@@ -4347,8 +4347,7 @@ Tcl_Size
 TclGetObjExecutableAncestors(
     Tcl_Interp *interp,		/* interp for errors. May be NULL */
     Tcl_Size numPaths,		/* Size of pathPtrs[] */
-    Tcl_Obj *pathsPtr[]	/* Output array holding ancestor paths */
-)
+    Tcl_Obj *pathsPtr[])	/* Output array holding ancestor paths */
 {
     Tcl_Obj *exePtr = TclGetObjNameOfExecutable();
     if (exePtr == NULL) {
@@ -4361,7 +4360,7 @@ TclGetObjExecutableAncestors(
 
     return TclFSGetAncestorPaths(interp, exePtr, numPaths, pathsPtr);
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -4415,7 +4414,7 @@ TclSetObjNameOfShlib(
 {
     TclSetProcessGlobalValue(&shlibName, name);
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -4857,7 +4856,7 @@ TclMSB(
 #undef LEAD
 #endif
 }
-
+
 /*
  * Local Variables:
  * mode: c

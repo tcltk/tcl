@@ -20,7 +20,7 @@
 #define LREVERSE_LENGTH_THRESHOLD	100
 #define LREPEAT_LENGTH_THRESHOLD	100
 #define LRANGE_LENGTH_THRESHOLD		100
-
+
 /*
  * We want the caller of the function that is operating on a list to be
  * able to treat the passed in srcPtr and resultPtr independently when
@@ -38,7 +38,7 @@ TclMakeResultObj(
 {
     return srcPtr == resultPtr ?  Tcl_DuplicateObj(resultPtr) : resultPtr;
 }
-
+
 /*
  * Returns index of first matching entry in an array of Tcl_Obj,
  * TCL_INDEX_NONE if not found.
@@ -61,7 +61,7 @@ FindInArrayOfObjs(
     }
     return TCL_INDEX_NONE;
 }
-
+
 /*
  * TclObjArray stores a reference counted Tcl_Obj array. Basically, a
  * cheaper, but less functional version of Tcl lists.
@@ -72,7 +72,7 @@ typedef struct TclObjArray {
     Tcl_Obj *elemPtrs[TCLFLEXARRAY];
 				/* Variable size array */
 } TclObjArray;
-
+
 /*
  * Allocate a new TclObjArray structure and initialize it with the
  * given Tcl_Obj elements, incrementing their reference counts.
@@ -93,7 +93,7 @@ TclObjArrayNew(
     arrayPtr->nelems = nelems;
     return arrayPtr;
 }
-
+
 /* Add a reference to a TclObjArray */
 static inline void
 TclObjArrayRef(
@@ -101,7 +101,7 @@ TclObjArrayRef(
 {
     arrayPtr->refCount++;
 }
-
+
 /* Frees a TclObjArray structure irrespective of the reference count. */
 static void
 TclObjArrayFree(
@@ -112,7 +112,7 @@ TclObjArrayFree(
     }
     Tcl_Free(arrayPtr);
 }
-
+
 /*
  * Remove a reference from an TclObjArray, freeing it if no more remain.
  * The reference count of the elements is decremented as well in that case.
@@ -127,7 +127,7 @@ TclObjArrayUnref(
 	arrayPtr->refCount--;
     }
 }
-
+
 /* Returns count of elements in array and pointer to them in objPtrPtr */
 static inline Tcl_Size
 TclObjArrayElems(
@@ -137,7 +137,7 @@ TclObjArrayElems(
     *objPtrPtr = arrayPtr->elemPtrs;
     return arrayPtr->nelems;
 }
-
+
 /* Returns index of first matching entry, TCL_INDEX_NONE if not found */
 static inline Tcl_Size
 TclObjArrayFind(
@@ -146,7 +146,7 @@ TclObjArrayFind(
 {
     return FindInArrayOfObjs(arrayPtr->nelems, arrayPtr->elemPtrs, needlePtr);
 }
-
+
 /*
  * Compute the length of a range given start and end indices after normalizing
  * the indices as follows:
@@ -174,7 +174,7 @@ TclNormalizeRangeLimits(
     }
     return *endPtr - *startPtr + 1;
 }
-
+
 /*
  * TclListContainsValue --
  *
@@ -252,7 +252,7 @@ TclListContainsValue(
     *foundPtr = 0;
     return TCL_OK;
 }
-
+
 /*
  *------------------------------------------------------------------------
  *
@@ -261,7 +261,7 @@ TclListContainsValue(
  *    Common function to update the string representation of an abstract list
  *    type. Adapted from UpdateStringOfList in tclListObj.c.
  *    Assumes no prior string representation exists.
-*
+ *
  * Results:
  *    None.
  *

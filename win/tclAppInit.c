@@ -237,7 +237,7 @@ Tcl_AppInit(
     Tcl_ResetResult(interp);
     return TCL_OK;
 }
-
+
 /*
  * Local Variables:
  * mode: c

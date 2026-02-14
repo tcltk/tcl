@@ -745,7 +745,7 @@ BuildInfoObjCmd(
     return BuildInfoObjCmd2(clientData, interp, objc, objv);
 }
 #endif
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -8464,7 +8464,7 @@ Tcl_NRCallObjProc(
     return TclNRRunCallbacks(interp, TCL_OK, rootPtr);
 }
 #endif /* TCL_NO_DEPRECATED */
-
+
 /*
  *----------------------------------------------------------------------
  *

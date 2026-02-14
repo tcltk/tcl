@@ -1137,7 +1137,6 @@ TclGetBuildInfo()
     return stubInfo.version;
 }
 
-
 const char *
 Tcl_InitSubsystems(void)
 {

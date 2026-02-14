@@ -821,8 +821,8 @@ my_LStringGetElements(
 }
 
 /*
-** UpdateStringRep
-*/
+ * UpdateStringRep
+ */
 
 static void
 UpdateStringOfLString(
@@ -941,10 +941,10 @@ lLStringObjCmd(
 }
 
 /*
-** lgen - Derived from TIP 192 - Lazy Lists
-** Generate a list using a command provided as argument(s).
-** The command computes the value for a given index.
-*/
+ * lgen - Derived from TIP 192 - Lazy Lists
+ * Generate a list using a command provided as argument(s).
+ * The command computes the value for a given index.
+ */
 
 /*
  * Internal rep for the Generate Series
@@ -1037,8 +1037,8 @@ lgenSeriesObjIndex(
 }
 
 /*
-** UpdateStringRep
-*/
+ * UpdateStringRep
+ */
 
 static void
 UpdateStringOfLgen(

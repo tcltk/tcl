@@ -22,7 +22,7 @@ struct ThreadSpecificData;
  */
 
 typedef struct AsyncHandler {
-    signed char ready;			/* Non-zero means this handler should be
+    signed char ready;		/* Non-zero means this handler should be
 				 * invoked in the next call to
 				 * Tcl_AsyncInvoke. */
     struct AsyncHandler *nextPtr, *prevPtr;

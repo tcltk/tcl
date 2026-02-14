@@ -14,11 +14,7 @@
 #if defined(TCL_WIDE_CLICKS) && defined(MAC_OSX_TCL)
 #include <mach/mach_time.h>
 #endif
-
-/*
- * Static functions declared in this file.
- */
-
+
 /*
  *----------------------------------------------------------------------
  *

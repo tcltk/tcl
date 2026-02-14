@@ -389,7 +389,7 @@ ChanClose(
 {
     return chanPtr->typePtr->close2Proc(chanPtr->instanceData, interp, 0);
 }
-
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -7603,7 +7603,7 @@ TclChanIsBinary(
 	    && (!GotFlag(statePtr, TCL_READABLE) || (statePtr->inputTranslation == TCL_TRANSLATE_LF))
 	    && (!GotFlag(statePtr, TCL_WRITABLE) || (statePtr->outputTranslation == TCL_TRANSLATE_LF)));
 }
-
+
 /*
  *----------------------------------------------------------------------
  *

@@ -328,7 +328,7 @@ static const Tcl_ChannelType consoleChannelType = {
     ConsoleThreadActionProc,
     NULL			/* Truncation proc. */
 };
-
+
 /*
  *------------------------------------------------------------------------
  *
@@ -915,7 +915,7 @@ ConsoleCheckProc(
 
     ReleaseSRWLockShared(&gConsoleLock);
 }
-
+
 /*
  *----------------------------------------------------------------------
  *

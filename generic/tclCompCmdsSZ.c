@@ -1452,12 +1452,12 @@ TclCompileSubstCmd(
 	wordTokenPtr = TokenAfter(wordTokenPtr);
     }
 
-/*
+#if 0
     if (TclSubstOptions(NULL, numOpts, objv, &flags) == TCL_OK) {
 	toSubst = objv[numOpts];
 	Tcl_IncrRefCount(toSubst);
     }
-*/
+#endif
 
     /* TODO: Figure out expansion to cover WordKnownAtCompileTime
      * The difficulty is that WKACT makes a copy, and if TclSubstParse

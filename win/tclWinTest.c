@@ -707,7 +707,7 @@ TestlongpathsettingCmd(
     Tcl_SetObjResult(interp, Tcl_NewWideIntObj(longPathsEnabled));
     return TCL_OK;
 }
-
+
 /*
  * Local Variables:
  * mode: c

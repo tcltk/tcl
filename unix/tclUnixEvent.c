@@ -111,7 +111,6 @@ Tcl_Sleep(
     Tcl_SleepMicroSeconds(ms*1000);
 }
 
-
 /*
  * Local Variables:
  * mode: c

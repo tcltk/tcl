@@ -95,7 +95,7 @@ InitProcessInfo(
     info->msg = NULL;
     info->error = NULL;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -133,7 +133,7 @@ FreeProcessInfo(
 
     Tcl_Free(info);
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -177,7 +177,7 @@ RefreshProcessInfo(
 	return 0;
     }
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -357,7 +357,7 @@ WaitProcessStatus(
 	return TCL_PROCESS_UNKNOWN_STATUS;
     }
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -755,7 +755,7 @@ ProcessAutopurgeObjCmd(
     Tcl_SetObjResult(interp, Tcl_NewBooleanObj(autopurge));
     return TCL_OK;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -791,7 +791,7 @@ TclSetUpProcessCmd(
     return Tcl_Export(interp, (Tcl_Namespace*)((Command *)ensemble)->nsPtr,
 	    "process", 0);
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -862,7 +862,7 @@ TclProcessCreated(
 
     Tcl_MutexUnlock(&infoTablesMutex);
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
