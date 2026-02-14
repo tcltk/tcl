@@ -115,7 +115,7 @@ static void		ResetCounterSamples(unsigned long long fileTime,
 static long long	AccumulateSample(long long perfCounter,
 			    unsigned long long fileTime);
 static long long	NativeGetMicroseconds(void);
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1054,7 +1054,7 @@ ResetCounterSamples(
     }
     timeInfo.sampleNo = 0;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *

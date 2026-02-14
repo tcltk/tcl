@@ -346,7 +346,7 @@ CheckForFileInDir(
     Tcl_DecrRefCount(fullPathPtr);
     return NULL;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *

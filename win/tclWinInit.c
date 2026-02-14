@@ -146,7 +146,7 @@ TclGetWinInfoOnce(
     *lpContext = (LPVOID)&tclWinInfo;
     return TRUE;
 }
-
+
 /*
  * TclGetWinInfo --
  *
@@ -167,7 +167,7 @@ TclGetWinInfo(void)
 	&winInfoOnce, TclGetWinInfoOnce, NULL, (LPVOID *)&winInfoPtr);
     return result ? winInfoPtr : NULL;
 }
-
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -215,7 +215,7 @@ TclpInitPlatform(void)
 	Tcl_Panic("TclpInitPlatform: unable to get Windows information");
     }
 }
-
+
 /*
  *-------------------------------------------------------------------------
  *
@@ -377,7 +377,7 @@ AppendEnvironment(
     }
     Tcl_DStringFree(&dsEnvValue);
 }
-
+
 /*
  * AllocateGrandparentSiblingPath --
  *
@@ -436,7 +436,7 @@ AllocateGrandparentSiblingPath(
     }
     return result;
 }
-
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -574,7 +574,7 @@ TclpGetUserName(
     }
     return Tcl_DStringValue(bufferPtr);
 }
-
+
 /*
  *---------------------------------------------------------------------------
  *

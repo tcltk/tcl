@@ -24,7 +24,7 @@ typedef struct {
 } TclWinInfo;
 
 MODULE_SCOPE const TclWinInfo *	TclGetWinInfo(void);
-
+
 /*
  * TclpGetWindowsVersion --
  *
@@ -41,7 +41,7 @@ TclpGetWindowsVersion(void)
     const TclWinInfo *winInfoPtr = TclGetWinInfo();
     return winInfoPtr ? &winInfoPtr->osVersion : NULL;
 }
-
+
 /*
  * TclpGetCodePage --
  *

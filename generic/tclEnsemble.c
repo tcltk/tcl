@@ -3306,7 +3306,7 @@ TclCompileEnsemble(
     Tcl_DecrRefCount(replaced);
     return ourResult;
 }
-
+
 int
 TclAttemptCompileProc(
     Tcl_Interp *interp,
@@ -3435,7 +3435,7 @@ TclAttemptCompileProc(
 
     return result;
 }
-
+
 /*
  * How to compile a subcommand to a _replacing_ invoke of its implementation
  * command.
