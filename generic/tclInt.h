@@ -598,7 +598,7 @@ typedef struct ActiveCommandTrace {
 				 * procedure returns; if this trace gets
 				 * deleted, must update pointer to avoid using
 				 * free'd memory. */
-    int reverseScan;		/* Boolean set true when traces are scanning
+    bool reverseScan;		/* Boolean set true when traces are scanning
 				 * in reverse order. */
 } ActiveCommandTrace;
 
@@ -1091,7 +1091,7 @@ typedef struct ActiveInterpTrace {
 				 * procedure returns; if this trace gets
 				 * deleted, must update pointer to avoid using
 				 * free'd memory. */
-    int reverseScan;		/* Boolean set true when traces are scanning
+    bool reverseScan;		/* Boolean set true when traces are scanning
 				 * in reverse order. */
 } ActiveInterpTrace;
 
