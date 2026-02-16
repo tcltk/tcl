@@ -285,7 +285,6 @@ typedef struct UnsupportedCmdInfo {
     CompileProc *compileProc;	// Function called to compile command.
     Tcl_ObjCmdProc2 *nreProc;	// NR-based function for command.
     void *clientData;		// ClientData to use for the command.
-    int flags;			// Various flag bits, as defined for CmdInfo.
 } UnsupportedCmdInfo;
 
 // A function that can configure an ensemble after it is created.
@@ -408,13 +407,13 @@ static const CmdInfo builtInCmds[] = {
 };
 
 static const UnsupportedCmdInfo unsupportedCmds[] = {
-    {"disassemble",	Tcl_DisassembleObjCmd,	NULL,			NULL,	INT2PTR(0), 0},
-    {"getbytecode",	Tcl_DisassembleObjCmd,	NULL,			NULL,	INT2PTR(1), 0},
-    {"representation",	Tcl_RepresentationCmd,	NULL,			NULL,	NULL, 0},
-    {"assemble",	Tcl_AssembleObjCmd,	TclCompileAssembleCmd,	TclNRAssembleObjCmd, NULL, 0},
-    {"corotype",	CoroTypeObjCmd,		NULL,			NULL,	NULL, 0},
-    {"loadIcu",		TclLoadIcuObjCmd,	NULL,			NULL,	NULL, 0},
-    {NULL, NULL, NULL, NULL, NULL, 0}
+    {"disassemble",	Tcl_DisassembleObjCmd,	NULL,			NULL,	INT2PTR(0)},
+    {"getbytecode",	Tcl_DisassembleObjCmd,	NULL,			NULL,	INT2PTR(1)},
+    {"representation",	Tcl_RepresentationCmd,	NULL,			NULL,	NULL},
+    {"assemble",	Tcl_AssembleObjCmd,	TclCompileAssembleCmd,	TclNRAssembleObjCmd, NULL},
+    {"corotype",	CoroTypeObjCmd,		NULL,			NULL,	NULL},
+    {"loadIcu",		TclLoadIcuObjCmd,	NULL,			NULL,	NULL},
+    {NULL, NULL, NULL, NULL, NULL}
 };
 
 // Table of definitions of ensemble commands.
@@ -504,10 +503,10 @@ typedef struct {
     const char *name;		/* Name of object-based command. */
     Tcl_ObjCmdProc2 *objProc;	/* Object-based function for command. */
     CompileProc *compileProc;	/* Function called to compile command. */
-    union {
+    union { /* OperatorParameter */
 	int numArgs;
 	int identity;
-    } i;
+    };
     const char *expected;	/* For error message, what argument(s)
 				 * were expected. */
 } OpCmdInfo;
@@ -1208,7 +1207,7 @@ Tcl_CreateInterp(void)
 	TclOpCmdClientData *occdPtr = (TclOpCmdClientData *)Tcl_Alloc(sizeof(TclOpCmdClientData));
 
 	occdPtr->op = opcmdInfoPtr->name;
-	occdPtr->i.numArgs = opcmdInfoPtr->i.numArgs;
+	occdPtr->numArgs = opcmdInfoPtr->numArgs;
 	occdPtr->expected = opcmdInfoPtr->expected;
 	strcpy(mathFuncName + MATH_OP_PREFIX_LEN, opcmdInfoPtr->name);
 	cmdPtr = (Command *) Tcl_CreateObjCommand2(interp, mathFuncName,
@@ -2546,7 +2545,8 @@ Tcl_CreateCommand(
     Command *cmdPtr;
     Tcl_HashEntry *hPtr;
     const char *tail;
-    int isNew = 0, deleted = 0;
+    int isNew = 0;
+    bool deleted = false;
     ImportedCmdData *dataPtr;
 
     if (iPtr->flags & DELETED) {
@@ -2619,7 +2619,7 @@ Tcl_CreateCommand(
 	    cmdPtr->importRefPtr = NULL;
 	}
 	TclCleanupCommandMacro(cmdPtr);
-	deleted = 1;
+	deleted = true;
     }
 
     if (!isNew) {
@@ -2854,7 +2854,8 @@ TclCreateObjCommandInNs(
 				/* If not NULL, gives a function to call when
 				 * this command is deleted. */
 {
-    int deleted = 0, isNew = 0;
+    bool deleted = false;
+    int isNew = 0;
     Command *cmdPtr;
     ImportRef *oldRefPtr = NULL;
     ImportedCmdData *dataPtr;
@@ -2913,7 +2914,7 @@ TclCreateObjCommandInNs(
 	    cmdPtr->importRefPtr = NULL;
 	}
 	TclCleanupCommandMacro(cmdPtr);
-	deleted = 1;
+	deleted = true;
     }
     if (!isNew) {
 	/*
@@ -3023,7 +3024,8 @@ InvokeStringCommand(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Command *cmdPtr = (Command *)clientData;
-    int i, result;
+    int i;
+    int result;
     const char **argv;
 
     if (objc > INT_MAX) {
@@ -4803,7 +4805,7 @@ TEOV_Exception(
     int result)
 {
     Interp *iPtr = (Interp *) interp;
-    int allowExceptions = (PTR2INT(data[0]) & TCL_ALLOW_EXCEPTIONS);
+    bool allowExceptions = (PTR2INT(data[0]) & TCL_ALLOW_EXCEPTIONS) != 0;
 
     if (result != TCL_OK) {
 	if (result == TCL_RETURN) {
@@ -5206,12 +5208,13 @@ TclEvalEx(
     char *expand;
     int *lines, *lineSpace;
     Tcl_Token *tokenPtr;
-    int expandRequested, code = TCL_OK;
+    bool expandRequested;
+    int code = TCL_OK;
     Tcl_Size bytesLeft, commandLength;
     CallFrame *savedVarFramePtr;/* Saves old copy of iPtr->varFramePtr in case
 				 * TCL_EVAL_GLOBAL was set. */
-    int allowExceptions = (iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS);
-    int gotParse = 0;
+    bool allowExceptions = (iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS) != 0;
+    bool gotParse = false;
     Tcl_Size i, objectsUsed = 0;
 				/* These variables keep track of how much
 				 * state has been allocated while evaluating
@@ -5337,7 +5340,7 @@ TclEvalEx(
 	TclAdvanceContinuations(&line, &clNext,
 		parsePtr->commandStart - outerScript);
 
-	gotParse = 1;
+	gotParse = true;
 	if (parsePtr->numWords > 0) {
 	    /*
 	     * TIP #280. Track lines within the words of the current
@@ -5363,7 +5366,7 @@ TclEvalEx(
 		lineSpace = (int *)
 			Tcl_Alloc(numWords * sizeof(int));
 	    }
-	    expandRequested = 0;
+	    expandRequested = false;
 	    objv = objvSpace;
 	    lines = lineSpace;
 
@@ -5417,7 +5420,7 @@ TclEvalEx(
 			Tcl_DecrRefCount(objv[objectsUsed]);
 			break;
 		    }
-		    expandRequested = 1;
+		    expandRequested = true;
 		    expand[objectsUsed] = 1;
 
 		    objectsNeeded += (numElements ? numElements : 1);
@@ -5551,7 +5554,7 @@ TclEvalEx(
 	p = next;
 	TclAdvanceLines(&line, parsePtr->commandStart, p);
 	Tcl_FreeParse(parsePtr);
-	gotParse = 0;
+	gotParse = false;
     } while (bytesLeft > 0);
     iPtr->varFramePtr = savedVarFramePtr;
     code = TCL_OK;
@@ -6230,7 +6233,7 @@ TclNREvalObjEx(
 	 * We transfer this to the byte code compiler.
 	 */
 
-	int allowExceptions = (iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS);
+	bool allowExceptions = (iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS) != 0;
 	ByteCode *codePtr;
 	CallFrame *savedVarFramePtr = NULL;	/* Saves old copy of
 						 * iPtr->varFramePtr in case
@@ -6247,7 +6250,7 @@ TclNREvalObjEx(
 	codePtr = TclCompileObj(interp, objPtr, invoker, word);
 
 	TclNRAddCallback(interp, TEOEx_ByteCodeCallback,
-		savedVarFramePtr, objPtr, INT2PTR(allowExceptions), NULL);
+		savedVarFramePtr, objPtr, INT2PTR(allowExceptions ? 1 : 0), NULL);
 	return TclNRExecuteByteCode(interp, codePtr);
     }
 
@@ -6305,7 +6308,7 @@ TEOEx_ByteCodeCallback(
     Interp *iPtr = (Interp *) interp;
     CallFrame *savedVarFramePtr = (CallFrame *)data[0];
     Tcl_Obj *objPtr = (Tcl_Obj *)data[1];
-    int allowExceptions = (int)PTR2INT(data[2]);
+    bool allowExceptions = PTR2INT(data[2]) != 0;
 
     if (iPtr->numLevels == 0) {
 	if (result == TCL_RETURN) {
@@ -7096,7 +7099,7 @@ ExprIsqrtFunc(
     double d;
     Tcl_WideInt w;
     mp_int big;
-    int exact = 0;		/* Flag ==1 if the argument can be represented
+    bool exact = false;		/* Flag == true if the argument can be represented
 				 * in a double as an exact integer. */
 
     /*
@@ -7127,7 +7130,7 @@ ExprIsqrtFunc(
 	}
 #ifdef IEEE_FLOATING_POINT
 	if (d <= MAX_EXACT) {
-	    exact = 1;
+	    exact = true;
 	}
 #endif
 	if (!exact) {
@@ -7155,7 +7158,7 @@ ExprIsqrtFunc(
 	d = (double) w;
 #ifdef IEEE_FLOATING_POINT
 	if (d < MAX_EXACT) {
-	    exact = 1;
+	    exact = true;
 	}
 #endif
 	if (!exact) {
@@ -7475,7 +7478,7 @@ ExprBoolFunc(
     Tcl_Size objc,		/* Actual parameter count. */
     Tcl_Obj *const *objv)	/* Actual parameter vector. */
 {
-    int value;
+    bool value;
 
     if (objc != 2) {
 	MathFuncWrongNumArgs(interp, 2, objc, objv);
