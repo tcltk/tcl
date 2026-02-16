@@ -107,8 +107,11 @@ TclpGetClicks(void)
 
     return now;
 }
-#ifdef TCL_WIDE_CLICKS
 
+#ifdef TCL_WIDE_CLICKS
+#ifndef MAC_OSX_TCL
+#error Wide high-resolution clicks not implemented on this platform
+#else /* MAC_OSX_TCL */
 /*
  *----------------------------------------------------------------------
  *
@@ -131,15 +134,7 @@ TclpGetClicks(void)
 long long
 TclpGetWideClicks(void)
 {
-    long long now;
-
-#ifdef MAC_OSX_TCL
-    now = (long long) (mach_absolute_time() & INT64_MAX);
-#else
-#error Wide high-resolution clicks not implemented on this platform
-#endif /* MAC_OSX_TCL */
-
-    return now;
+    return (long long) (mach_absolute_time() & INT64_MAX);
 }
 
 /*
@@ -164,8 +159,6 @@ TclpWideClicksToNanoseconds(
     long long clicks)
 {
     double nsec;
-
-#ifdef MAC_OSX_TCL
     static mach_timebase_info_data_t tb;
 	static uint64_t maxClicksForUInt64;
 
@@ -178,10 +171,6 @@ TclpWideClicksToNanoseconds(
     } else {
 	nsec = ((long double) (uint64_t) clicks) * tb.numer / tb.denom;
     }
-#else
-#error Wide high-resolution clicks not implemented on this platform
-#endif /* MAC_OSX_TCL */
-
     return nsec;
 }
 
@@ -206,7 +195,6 @@ TclpWideClicksToNanoseconds(
 double
 TclpWideClickInMicrosec(void)
 {
-#ifdef MAC_OSX_TCL
     static int initialized = 0;
     static double scale = 0.0;
 
@@ -219,10 +207,9 @@ TclpWideClickInMicrosec(void)
 	initialized = 1;
     }
     return scale;
-#else
-#error Wide high-resolution clicks not implemented on this platform
-#endif /* MAC_OSX_TCL */
 }
+
+#endif /* !MAC_OSX_TCL */
 #endif /* TCL_WIDE_CLICKS */
 
 /*
@@ -247,7 +234,7 @@ TclpWideClickInMicrosec(void)
  */
 
 long long
-Tcl_GetMonotonicTime()		/* Location to store time information. */
+Tcl_GetMonotonicTime(void)	/* Location to store time information. */
 {
     long long microSeconds;
 #ifdef HAVE_CLOCK_GETTIME
