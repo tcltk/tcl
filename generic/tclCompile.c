@@ -2754,6 +2754,7 @@ TclCompileTokens(
     Tcl_Size maxNumCL, numCL;
     Tcl_Size *clPosition = NULL;
     Tcl_Size depth = TclGetStackDepth(envPtr);
+	int twoCharsSymbol = 0; //used in expr subst context
 
     /*
      * If this is actually a literal, handle continuation lines by
@@ -2854,7 +2855,20 @@ TclCompileTokens(
 	    envPtr->line -= adjust;
 	    numObjsToConcat++;
 	    break;
-
+	case TCL_TOKEN_SUB_EXPR :
+	    if (Tcl_DStringLength(&textBuffer) > 1) {
+		int literal;
+		literal = TclRegisterDStringLiteral(envPtr, &textBuffer);
+		TclEmitPush(literal, envPtr);
+		numObjsToConcat++;
+		Tcl_DStringFree(&textBuffer);
+	    }
+	    twoCharsSymbol=1;
+	    envPtr->line += adjust;
+	    TclCompileExpr(interp,  tokenPtr->start+1, tokenPtr->size-2, envPtr, 0);
+	    envPtr->line -= adjust;
+	    numObjsToConcat++;	    
+	    break;
 	case TCL_TOKEN_VARIABLE:
 	    /*
 	     * Push any accumulated chars appearing before the $<var>.
@@ -2882,7 +2896,7 @@ TclCompileTokens(
      * Push any accumulated characters appearing at the end.
      */
 
-    if (Tcl_DStringLength(&textBuffer) > 0) {
+    if (Tcl_DStringLength(&textBuffer) > 0 &&  twoCharsSymbol != 1) {
 	int literal = TclPushDString(envPtr, &textBuffer);
 
 	numObjsToConcat++;
