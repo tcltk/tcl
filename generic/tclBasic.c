@@ -263,17 +263,8 @@ typedef struct {
     Tcl_ObjCmdProc2 *objProc;	// Object-based function for command.
     CompileProc *compileProc;	// Function called to compile command.
     Tcl_ObjCmdProc2 *nreProc;	// NR-based function for command.
-    int flags;			// Various flag bits, as defined below.
+    CommandFlags flags;	// Various flag bits.
 } CmdInfo;
-
-enum CmdInfoFlags {
-    CMD_IS_SAFE = 1		/* Whether this command is part of the set of
-				 * commands present by default in a safe
-				 * interpreter. */
-/* CMD_COMPILES_EXPANDED - Whether the compiler for this command can handle
- * expansion for itself rather than needing the generic layer to take care of
- * it for it. Defined in tclInt.h. */
-};
 
 /*
  * Description of commands in ::tcl::unsupported.
@@ -330,12 +321,12 @@ static const CmdInfo builtInCmds[] = {
     {"if",		Tcl_IfObjCmd,		TclCompileIfCmd,	TclNRIfObjCmd,	CMD_IS_SAFE},
     {"incr",		Tcl_IncrObjCmd,		TclCompileIncrCmd,	NULL,	CMD_IS_SAFE},
     {"join",		Tcl_JoinObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
-    {"lappend",		Tcl_LappendObjCmd,	TclCompileLappendCmd,	NULL,	CMD_IS_SAFE|CMD_COMPILES_EXPANDED},
+    {"lappend",		Tcl_LappendObjCmd,	TclCompileLappendCmd,	NULL,	(CommandFlags)(CMD_IS_SAFE|CMD_COMPILES_EXPANDED)},
     {"lassign",		Tcl_LassignObjCmd,	TclCompileLassignCmd,	NULL,	CMD_IS_SAFE},
     {"ledit",		Tcl_LeditObjCmd,	TclCompileLeditCmd,	NULL,	CMD_IS_SAFE},
     {"lindex",		Tcl_LindexObjCmd,	TclCompileLindexCmd,	NULL,	CMD_IS_SAFE},
     {"linsert",		Tcl_LinsertObjCmd,	TclCompileLinsertCmd,	NULL,	CMD_IS_SAFE},
-    {"list",		Tcl_ListObjCmd,		TclCompileListCmd,	NULL,	CMD_IS_SAFE|CMD_COMPILES_EXPANDED},
+    {"list",		Tcl_ListObjCmd,		TclCompileListCmd,	NULL,	(CommandFlags)(CMD_IS_SAFE|CMD_COMPILES_EXPANDED)},
     {"llength",		Tcl_LlengthObjCmd,	TclCompileLlengthCmd,	NULL,	CMD_IS_SAFE},
     {"lmap",		Tcl_LmapObjCmd,		TclCompileLmapCmd,	TclNRLmapCmd,	CMD_IS_SAFE},
     {"lpop",		Tcl_LpopObjCmd,		TclCompileLpopCmd,	NULL,	CMD_IS_SAFE},
@@ -359,7 +350,7 @@ static const CmdInfo builtInCmds[] = {
     {"split",		Tcl_SplitObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
     {"subst",		Tcl_SubstObjCmd,	TclCompileSubstCmd,	TclNRSubstObjCmd,	CMD_IS_SAFE},
     {"switch",		Tcl_SwitchObjCmd,	TclCompileSwitchCmd,	TclNRSwitchObjCmd, CMD_IS_SAFE},
-    {"tailcall",	NULL,			TclCompileTailcallCmd,	TclNRTailcallObjCmd,	CMD_IS_SAFE|CMD_COMPILES_EXPANDED},
+    {"tailcall",	NULL,			TclCompileTailcallCmd,	TclNRTailcallObjCmd,	(CommandFlags)(CMD_IS_SAFE|CMD_COMPILES_EXPANDED)},
     {"throw",		Tcl_ThrowObjCmd,	TclCompileThrowCmd,	NULL,	CMD_IS_SAFE},
     {"trace",		Tcl_TraceObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
     {"try",		Tcl_TryObjCmd,		TclCompileTryCmd,	TclNRTryObjCmd,	CMD_IS_SAFE},
@@ -369,41 +360,41 @@ static const CmdInfo builtInCmds[] = {
     {"variable",	Tcl_VariableObjCmd,	TclCompileVariableCmd,	NULL,	CMD_IS_SAFE},
     {"while",		Tcl_WhileObjCmd,	TclCompileWhileCmd,	TclNRWhileObjCmd,	CMD_IS_SAFE},
     {"yield",		NULL,			TclCompileYieldCmd,	TclNRYieldObjCmd,	CMD_IS_SAFE},
-    {"yieldto",		NULL,			TclCompileYieldToCmd,	TclNRYieldToObjCmd,	CMD_IS_SAFE|CMD_COMPILES_EXPANDED},
+    {"yieldto",		NULL,			TclCompileYieldToCmd,	TclNRYieldToObjCmd,	(CommandFlags)(CMD_IS_SAFE|CMD_COMPILES_EXPANDED)},
 
     /*
      * Commands in the OS-interface. Note that many of these are unsafe.
      */
 
     {"after",		Tcl_AfterObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
-    {"cd",		Tcl_CdObjCmd,		NULL,			NULL,	0},
+    {"cd",		Tcl_CdObjCmd,		NULL,			NULL,	CMD_NONE},
     {"close",		Tcl_CloseObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
     {"eof",		Tcl_EofObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
-    {"exec",		Tcl_ExecObjCmd,		NULL,			NULL,	0},
-    {"exit",		Tcl_ExitObjCmd,		NULL,			NULL,	0},
+    {"exec",		Tcl_ExecObjCmd,		NULL,			NULL,	CMD_NONE},
+    {"exit",		Tcl_ExitObjCmd,		NULL,			NULL,	CMD_NONE},
     {"fblocked",	Tcl_FblockedObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
-    {"fconfigure",	Tcl_FconfigureObjCmd,	NULL,			NULL,	0},
+    {"fconfigure",	Tcl_FconfigureObjCmd,	NULL,			NULL,	CMD_NONE},
     {"fcopy",		Tcl_FcopyObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
     {"fileevent",	Tcl_FileEventObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
     {"flush",		Tcl_FlushObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
     {"gets",		Tcl_GetsObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
-    {"glob",		Tcl_GlobObjCmd,		NULL,			NULL,	0},
-    {"load",		Tcl_LoadObjCmd,		NULL,			NULL,	0},
-    {"open",		Tcl_OpenObjCmd,		NULL,			NULL,	0},
+    {"glob",		Tcl_GlobObjCmd,		NULL,			NULL,	CMD_NONE},
+    {"load",		Tcl_LoadObjCmd,		NULL,			NULL,	CMD_NONE},
+    {"open",		Tcl_OpenObjCmd,		NULL,			NULL,	CMD_NONE},
     {"pid",		Tcl_PidObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
     {"puts",		Tcl_PutsObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
-    {"pwd",		Tcl_PwdObjCmd,		NULL,			NULL,	0},
+    {"pwd",		Tcl_PwdObjCmd,		NULL,			NULL,	CMD_NONE},
     {"read",		Tcl_ReadObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
     {"seek",		Tcl_SeekObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
-    {"socket",		Tcl_SocketObjCmd,	NULL,			NULL,	0},
-    {"source",		Tcl_SourceObjCmd,	NULL,			TclNRSourceObjCmd,	0},
+    {"socket",		Tcl_SocketObjCmd,	NULL,			NULL,	CMD_NONE},
+    {"source",		Tcl_SourceObjCmd,	NULL,			TclNRSourceObjCmd,	CMD_NONE},
     {"tell",		Tcl_TellObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
     {"time",		Tcl_TimeObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
     {"timerate",	Tcl_TimeRateObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
-    {"unload",		Tcl_UnloadObjCmd,	NULL,			NULL,	0},
+    {"unload",		Tcl_UnloadObjCmd,	NULL,			NULL,	CMD_NONE},
     {"update",		Tcl_UpdateObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
     {"vwait",		Tcl_VwaitObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
-    {NULL,		NULL,			NULL,			NULL,	0}
+    {NULL,		NULL,			NULL,			NULL,	CMD_NONE}
 };
 
 static const UnsupportedCmdInfo unsupportedCmds[] = {
