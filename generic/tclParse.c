@@ -1106,6 +1106,26 @@ ParseTokens(
 	    }
 	    src += parsePtr->tokenPtr[varToken].size;
 	    numBytes -= parsePtr->tokenPtr[varToken].size;
+	} else if (numBytes>=2 && src[0] == '[' && src[1] == '(') {
+	    /* Expression substition context */
+		Tcl_Parse *exprParsePtr;
+		exprParsePtr =(Tcl_Parse *)TclStackAlloc(parsePtr->interp, sizeof(Tcl_Parse));
+		
+		src++; 	// src == '['
+		numBytes --;
+		
+		Tcl_ParseExpr(parsePtr->interp, src, numBytes, exprParsePtr);
+		
+		src++;              // src == '('
+		numBytes --;
+		
+		tokenPtr->type = TCL_TOKEN_SUB_EXPR;
+		tokenPtr->start = &src[-1];
+		tokenPtr->size = exprParsePtr->commandSize+2;
+		parsePtr->numTokens++;
+		src+=exprParsePtr->commandSize+2;
+		numBytes-=exprParsePtr->commandSize+2;
+		TclStackFree(parsePtr->interp, exprParsePtr);
 	} else if (*src == '[') {
 	    Tcl_Parse *nestedPtr;
 
@@ -2254,7 +2274,15 @@ TclSubstTokens(
 	    appendObj = Tcl_GetObjResult(interp);
 	    break;
 	}
-
+	case TCL_TOKEN_SUB_EXPR : {
+	    Tcl_Obj * expressionObj;
+	    Tcl_Obj * expressionResult;
+	    expressionObj = Tcl_NewStringObj(tokenPtr->start+1, tokenPtr->size-2);
+	    
+	    code = Tcl_ExprObj(interp, expressionObj, &expressionResult);
+	    appendObj = expressionResult;
+	    break;
+	}
 	case TCL_TOKEN_VARIABLE: {
 	    Tcl_Obj *arrayIndex = NULL;
 	    Tcl_Obj *varName = NULL;
