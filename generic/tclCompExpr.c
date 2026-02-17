@@ -618,6 +618,18 @@ ParseExpr(
 				 * error message readable, we impose this
 				 * limit on the substring size we extract. */
 
+	int nb_paren=0;
+    int substExpressionContext=0;
+    Tcl_Size originalLength=numBytes;
+    
+    if(start[-1] == '[' && start[0] == '(' ) {
+	// Expression substitution context
+	substExpressionContext=1;
+
+	start++; //skip the open parenthesis '(' : it's part of the expression substitution syntax
+	numBytes--;
+    }
+	
     TclParseInit(interp, start, numBytes, parsePtr);
 
     nodes = (OpNode *)Tcl_AttemptAlloc(nodesAvailable * sizeof(OpNode));
@@ -944,11 +956,16 @@ ParseExpr(
 		break;
 
 	    case SCRIPT: {
+		int nestSubstExprShorthand = 0;
 		Tcl_Parse *nestedPtr = (Tcl_Parse *)
 			TclStackAlloc(interp, sizeof(Tcl_Parse));
 
 		tokenPtr = parsePtr->tokenPtr + parsePtr->numTokens;
-		tokenPtr->type = TCL_TOKEN_COMMAND;
+		if (start[1] == '(') {
+		    tokenPtr->type = TCL_TOKEN_SUB_EXPR;
+		} else {
+			tokenPtr->type = TCL_TOKEN_COMMAND;
+		}
 		tokenPtr->start = start;
 		tokenPtr->numComponents = 0;
 
@@ -963,7 +980,13 @@ ParseExpr(
 			parsePtr->incomplete = nestedPtr->incomplete;
 			break;
 		    }
-		    start = nestedPtr->commandStart + nestedPtr->commandSize;
+			if (nestSubstExprShorthand == 1) {			    
+			    start = nestedPtr->commandStart + nestedPtr->commandSize-3;
+			    // printf("size of nest expr : %d\n", (int)nestedPtr->commandSize-3);
+			    // printf("lastchars : %c%c\n", start[-1], start[0]);
+			} else {
+		    	start = nestedPtr->commandStart + nestedPtr->commandSize;
+			}
 		    Tcl_FreeParse(nestedPtr);
 		    if ((nestedPtr->term < end) && (nestedPtr->term[0] == ']')
 			    && !nestedPtr->incomplete) {
@@ -1054,7 +1077,11 @@ ParseExpr(
 	     * operator is a syntax error -- something trying to be the left
 	     * operand of an operator that doesn't take one.
 	     */
-
+		if (substExpressionContext == 1) {
+			if (start[0]== '(') {
+		    	nb_paren++;    
+			}
+	    }
 	    if (NotOperator(lastParsed)) {
 		msg = Tcl_ObjPrintf("missing operator at %s", mark);
 		scanned = 0;
@@ -1099,6 +1126,17 @@ ParseExpr(
 	     * A binary operator appearing just after another operator is a
 	     * syntax error -- one of the two operators is missing an operand.
 	     */
+		if (substExpressionContext == 1) {
+			if (start[0] == ')') {
+		    	nb_paren--;
+		        if (numBytes >= 1 && (nb_paren == -1 && start[1] ==']')) {
+					//// End of expr substitution
+					parsePtr->commandSize = originalLength - numBytes - 1;
+					numBytes=0;
+					continue;
+		    	}					   
+			}		
+	    }
 
 	    if (IsOperator(lastParsed)) {
 		if ((lexeme == CLOSE_PAREN)
@@ -1871,16 +1909,19 @@ Tcl_ParseExpr(
     if (numBytes < 0) {
 	numBytes = (start ? strlen(start) : 0);
     }
-
     code = ParseExpr(interp, start, numBytes, &opTree, litList, funcList,
-	    exprParsePtr, true /* parseOnly */);
+	    	exprParsePtr, true /* parseOnly */);
     Tcl_DecrRefCount(funcList);
     Tcl_DecrRefCount(litList);
-
-    TclParseInit(interp, start, numBytes, parsePtr);
-    if (code == TCL_OK) {
-	ConvertTreeToTokens(start, numBytes,
-		opTree, exprParsePtr->tokenPtr, parsePtr);
+	if (code == TCL_OK) {
+		if(start[-1] == '[' && start[0] == '(' ) {
+	    	// Expression Substitution Context
+			parsePtr->commandSize = exprParsePtr->commandSize;
+		} else {
+    		TclParseInit(interp, start, numBytes, parsePtr);
+    		ConvertTreeToTokens(start, numBytes,
+				opTree, exprParsePtr->tokenPtr, parsePtr);
+		}
     } else {
 	parsePtr->term = exprParsePtr->term;
 	parsePtr->errorType = exprParsePtr->errorType;
