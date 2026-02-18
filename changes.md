@@ -13,6 +13,7 @@ to the userbase.
  - [unsupported commands should not be available in safe interpreters](https://core.tcl-lang.org/tcl/tktview/82d12c)
  - [Check for -municode doesn't work on WSL](https://core.tcl-lang.org/tcl/tktview/632710)
  - [configure --enable-man-compression error](https://core.tcl-lang.org/tcl/tktview/886549)
+ - [nmake: rmdir and mkdir are picked from cygwin if available](https://core.tcl-lang.org/tcl/tktview/be40b7)
 
 # Updated bundled packages, libraries, standards, data
  - Itcl 4.3.6
