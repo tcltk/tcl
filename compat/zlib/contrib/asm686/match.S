@@ -145,7 +145,7 @@ LastMatchGood:
 		movl	%eax, %ebx
 LookaheadLess:	movl	%ebx, nicematch(%esp)
 
-/* register Bytef *scan = s->window + s->strstart;			*/
+/* Bytef *scan = s->window + s->strstart;			*/
 
 		movl	dsWindow(%edx), %esi
 		movl	%esi, window(%esp)
@@ -181,8 +181,8 @@ LimitPositive:
 		addl	%eax, %esi
 		movl	%esi, windowbestlen(%esp)
 
-/* register ush scan_start = *(ushf*)scan;				*/
-/* register ush scan_end   = *(ushf*)(scan+best_len-1);			*/
+/* ush scan_start = *(ushf*)scan;				*/
+/* ush scan_end   = *(ushf*)(scan+best_len-1);			*/
 /* Posf *prev = s->prev;						*/
 
 		movzwl	(%edi), %ebx
