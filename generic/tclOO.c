@@ -638,7 +638,7 @@ MarkAsMetaclass(
     AddRef(supers[0]->thisPtr);
     TclOOSetSuperclasses(classPtr, 1, supers);
 }
-
+
 /*
  * ----------------------------------------------------------------------
  *

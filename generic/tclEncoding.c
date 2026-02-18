@@ -986,7 +986,6 @@ Tcl_SetSystemEncoding(
 {
     Tcl_Encoding encoding = NULL;
 
-
     if (name && *name) {
 	encoding = Tcl_GetEncoding(interp, name); /* this increases refCount */
 	if (encoding == NULL) {
@@ -999,11 +998,7 @@ Tcl_SetSystemEncoding(
     if ((encoding ? encoding : defaultEncoding) == systemEncoding) {
 	if (encoding) {
 	    Tcl_FreeEncoding(encoding); /* paired to Tcl_GetEncoding */
-
-
 	}
-
-
 	return TCL_OK;
     }
 
@@ -1385,7 +1380,6 @@ Tcl_ExternalToUtf(
 	result = TCL_ERROR;
     }
 
-
     if (srcReadPtr) {
 	*srcReadPtr = (int)srcRead;
     }
@@ -1545,9 +1539,8 @@ Tcl_ExternalToUtfEx(
 	}
 
 	result = encodingPtr->toUtfProc(encodingPtr->clientData, src,
-	    chunkSrcLen, chunkFlags, statePtr, dst, chunkDstLen, &chunkSrcRead,
-	    &chunkDstWritten, &chunkDstChars);
-
+		chunkSrcLen, chunkFlags, statePtr, dst, chunkDstLen,
+		&chunkSrcRead, &chunkDstWritten, &chunkDstChars);
 
 	assert(chunkSrcRead <= srcBytesLeft);
 	srcBytesLeft -= chunkSrcRead;
@@ -2249,7 +2242,7 @@ storeResult:
 
     return result;
 }
-
+
 /*
  *---------------------------------------------------------------------------
  *

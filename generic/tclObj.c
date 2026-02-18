@@ -2026,7 +2026,7 @@ Tcl_GetBooleanFromObj(
     return Tcl_GetBoolFromObj(interp, objPtr, (TCL_NULL_OK-2)&(int)sizeof(int),
 	    (char *)(void *)intPtr);
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -2781,7 +2781,7 @@ Tcl_NewWideUIntObj(
     TclNewUIntObj(objPtr, uwideValue);
     return objPtr;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -2877,7 +2877,7 @@ Tcl_SetWideIntObj(
 
     TclSetIntObj(objPtr, wideValue);
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -3083,7 +3083,7 @@ Tcl_GetWideUIntFromObj(
 	    TCL_PARSE_INTEGER_ONLY)==TCL_OK);
     return TCL_ERROR;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *

@@ -2795,7 +2795,7 @@ TclFSGetAncestorPaths(
     Tcl_DecrRefCount(splitPathPtr);
     return count;
 }
-
+
 /*
  * Local Variables:
  * mode: c

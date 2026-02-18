@@ -613,7 +613,7 @@ TimerSetupProc(
 	    (tsdPtr->firstTimerHandlerPtr[timerHandlerMonotonic]
 	    || tsdPtr->firstTimerHandlerPtr[timerHandlerWallclock])) {
 	long long myBlockTimeUS;
-	long long blockTimeUS;
+	long long blockTimeUS = LLONG_MAX;
 	bool blockTimePresent = false;
 	/*
 	 * Find the earlier timeout of monotonic or wall clock

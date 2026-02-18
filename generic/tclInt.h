@@ -598,7 +598,7 @@ typedef struct ActiveCommandTrace {
 				 * procedure returns; if this trace gets
 				 * deleted, must update pointer to avoid using
 				 * free'd memory. */
-    int reverseScan;		/* Boolean set true when traces are scanning
+    bool reverseScan;		/* Boolean set true when traces are scanning
 				 * in reverse order. */
 } ActiveCommandTrace;
 
@@ -1091,7 +1091,7 @@ typedef struct ActiveInterpTrace {
 				 * procedure returns; if this trace gets
 				 * deleted, must update pointer to avoid using
 				 * free'd memory. */
-    int reverseScan;		/* Boolean set true when traces are scanning
+    bool reverseScan;		/* Boolean set true when traces are scanning
 				 * in reverse order. */
 } ActiveInterpTrace;
 
@@ -1874,7 +1874,8 @@ typedef struct Command {
 /*
  * Flag bits for commands.
  */
-enum CommandFlags {
+typedef enum {
+    CMD_NONE = 0x00,
     CMD_DYING = 0x01,		/* The command is in the process of being
 				 * deleted (its deleteProc is currently
 				 * executing). Other attempts to delete the
@@ -1899,13 +1900,16 @@ enum CommandFlags {
     CMD_DEAD = 0x40,		/* Command is at an advanced stage of being
 				 * deleted, and is no longer in any hash tables
 				 * but stale references may exist elsewhere. */
+    CMD_IS_SAFE = 0x80, /*  Whether this command is part of the set of
+				 * commands present by default in a safe
+				 * interpreter. */
     CMD_TRACE_RENAMING = TCL_TRACE_RENAME,
 				/* A rename trace is in progress. Further
 				 * recursive renames will not be traced. */
     CMD_TRACE_DELETING = TCL_TRACE_DELETE
 				/* A delete trace is in progress. Further
 				 * recursive deletes will not be traced. */
-};
+} CommandFlags;
 
 /*
  *----------------------------------------------------------------
@@ -2047,7 +2051,6 @@ typedef struct Interp {
 				 * interpreter. */
     Namespace *lookupNsPtr;	/* Namespace to use ONLY on the next
 				 * TCL_EVAL_INVOKE call to Tcl_EvalObjv. */
-
 
     /*
      * Information about packages. Used only in tclPkg.c.

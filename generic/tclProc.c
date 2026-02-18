@@ -1686,8 +1686,7 @@ TclObjInterpProc(
     return Tcl_NRCallObjProc(interp, NRInterpProc, clientData, objc, objv);
 }
 #endif /* TCL_NO_DEPRECATED */
-
-
+
 /*
  *----------------------------------------------------------------------
  *

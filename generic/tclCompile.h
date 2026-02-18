@@ -1221,10 +1221,10 @@ typedef struct DictUpdateInfo {
 typedef struct TclOpCmdClientData {
     const char *op;		/* Do not call it 'operator': C++ reserved */
     const char *expected;
-    union OperatorParameter {
+    union { /* OperatorParameter */
 	int numArgs;
 	int identity;
-    } i;
+    };
 } TclOpCmdClientData;
 
 /*

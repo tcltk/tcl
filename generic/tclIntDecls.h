@@ -15,7 +15,6 @@
 #ifndef _TCLINTDECLS
 #define _TCLINTDECLS
 
-
 #undef TCL_STORAGE_CLASS
 #ifdef BUILD_tcl
 #   define TCL_STORAGE_CLASS DLLEXPORT

@@ -25,9 +25,7 @@ testConstraint fileevent     [llength [info commands fileevent]]
 testConstraint thread        [expr {![catch {package require Thread 2.7-}]}]
 testConstraint notValgrind   [expr {![testConstraint valgrind]}]
 
-
 namespace eval ::tcltests {
-
     variable TCL_SIZE_MAX [expr {(2**(8*$::tcl_platform(pointerSize)-1))-1}]
 
     proc init {} {
@@ -39,7 +37,6 @@ namespace eval ::tcltests {
 	}
     }
 
-
     # Stolen from dict.test
     proc scriptmemcheck script {
 	set end [lindex [split [memory info] \n] 3 3]
@@ -50,7 +47,6 @@ namespace eval ::tcltests {
 	}
 	expr {$end - $tmp}
     }
-
 
     proc tempdir_alternate {} {
 	close [file tempfile tempfile]

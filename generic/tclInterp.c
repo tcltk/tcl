@@ -346,7 +346,7 @@ CheckForFileInDir(
     Tcl_DecrRefCount(fullPathPtr);
     return NULL;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -4377,7 +4377,6 @@ Tcl_LimitSetTime(
 {
     Interp *iPtr = (Interp *) interp;
     long long nextMoment;
-
 
     iPtr->limit.time = *timeLimitPtr;
     if (iPtr->limit.timeEvent != NULL) {

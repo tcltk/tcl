@@ -1876,7 +1876,6 @@ MakeHighPrecisionDouble(
      * Very high numbers are returned, if this is not handled
      */
 
-
     if (exponent < -511) {
 	if (mp_init_copy(&bntmp, significand) != MP_OKAY) {
 	    Tcl_Panic("initialization failure in MakeHighPrecisionDouble");

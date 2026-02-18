@@ -143,7 +143,6 @@ proc ::practcl::_pkgindex_directory {path} {
     return $buffer
 }
 
-
 proc ::practcl::_pkgindex_path_subdir {path} {
     set result {}
     foreach subpath [glob -nocomplain [file join $path *]] {

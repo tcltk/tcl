@@ -2338,7 +2338,7 @@ Tcl_LassignObjCmd(
 
     return TCL_OK;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -4205,7 +4205,6 @@ Tcl_LseqObjCmd(
 	    }
 	}
     }
-
 
     /*
      * Success!  Now lets create the series object.

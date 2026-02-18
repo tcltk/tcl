@@ -807,7 +807,7 @@ Tcltest_Init(
 
     return TclplatformtestInit(interp);
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1668,7 +1668,7 @@ TestdcallCmd(
     Tcl_DStringResult(interp, &delString);
     return TCL_OK;
 }
-
+
 /*
  * The deletion callback used by TestdcallCmd:
  */
@@ -2013,7 +2013,7 @@ TestdstringCmd(
     }
     return TCL_OK;
 }
-
+
 /*
  * The procedure below is used as a special freeProc to test how well
  * Tcl_DStringGetResult handles freeProc's other than free.
@@ -4201,7 +4201,7 @@ vamoose:
     }
     return status;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -5438,7 +5438,7 @@ TestuniClassCmd(
     Tcl_SetObjResult(interp, result);
     return TCL_OK;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -6308,7 +6308,7 @@ TestmainthreadCmd(
 	return TCL_ERROR;
     }
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -6334,7 +6334,7 @@ MainLoop(void)
     fprintf(stdout,"Exit MainLoop\n");
     fflush(stdout);
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -6363,7 +6363,7 @@ TestsetmainloopCmd(
     Tcl_SetMainLoop(MainLoop);
     return TCL_OK;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -7217,7 +7217,7 @@ TestServiceModeCmd(
     Tcl_SetObjResult(interp, Tcl_NewWideIntObj(oldmode));
     return TCL_OK;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -7407,7 +7407,7 @@ TestReportInFilesystem(
     *clientDataPtr = newPathPtr;
     return TCL_OK;
 }
-
+
 /*
  * Simple helper function to extract the native vfs representation of a path
  * object, or NULL if no such representation exists.
@@ -7704,7 +7704,7 @@ SimplePathInFilesystem(
     }
     return TCL_OK;
 }
-
+
 /*
  * This is a slightly 'hacky' filesystem which is used just to test a few
  * important features of the vfs code: (1) that you can load a shared library
@@ -7750,7 +7750,7 @@ TestSimpleFilesystemCmd(
     Tcl_SetObjResult(interp, Tcl_NewStringObj(msg , -1));
     return res;
 }
-
+
 /*
  * Treats a file name 'simplefs:/foo' by using the file 'foo' in the current
  * (native) directory.
@@ -8037,7 +8037,7 @@ TestGetUniCharCmd(
 
     return TCL_OK;
 }
-
+
 /*
  * Used to check correct operation of Tcl_UtfFindFirst
  */
@@ -8059,7 +8059,7 @@ TestFindFirstCmd(
     }
     return TCL_OK;
 }
-
+
 /*
  * Used to check correct operation of Tcl_UtfFindLast
  */
@@ -8329,7 +8329,6 @@ TestNREUnwind(
 	    INT2PTR(-1), NULL);
     return TCL_OK;
 }
-
 
 static int
 TestNRELevels(
@@ -8987,7 +8986,7 @@ TestInterpResolverCmd(
     }
     return TCL_OK;
 }
-
+
 /*
  *------------------------------------------------------------------------
  *
@@ -9065,7 +9064,7 @@ TestApplyLambdaCmd(
 
     return result;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -9368,7 +9367,7 @@ static const Tcl_ChannelType TestChanSinkDispatch = {
     NULL, /* ThreadAction */
     NULL  /* Truncate */
 };
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -9479,7 +9478,7 @@ TestChanCreateCmd(
     Tcl_SetObjResult(interp, Tcl_NewStringObj(channelName, -1));
     return TCL_OK;
 }
-
+
 /*
  * TestUtfToNormalizedCmd --
  *
@@ -9559,7 +9558,7 @@ TestUtfToNormalizedCmd(
     }
     return result;
 }
-
+
 /*
  * TestUtfToNormalizedDStringCmd --
  *
@@ -9666,7 +9665,7 @@ TestHandleCountCmd(
 	    "GetProcessHandleCount failed", -1));
     return TCL_ERROR;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -9708,9 +9707,8 @@ TestAppVerifierPresentCmd(
     return TCL_OK;
 }
 
-
 #endif /* _WIN32 */
-
+
 /*
  * Local Variables:
  * mode: c
