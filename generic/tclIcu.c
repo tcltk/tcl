@@ -258,7 +258,6 @@ TCL_DECLARE_MUTEX(icu_mutex);
 /* Options used by multiple normalization functions */
 static const char *const normalizationForms[] = {"nfc", "nfd", "nfkc", "nfkd", NULL};
 typedef enum { MODE_NFC, MODE_NFD, MODE_NFKC, MODE_NFKD } NormalizationMode;
-
 
 /* Error handlers. */
 
@@ -329,6 +328,7 @@ DetectEncoding(
     if (len > INT_MAX) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"Max length supported by ICU exceeded.", TCL_INDEX_NONE));
+	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LENGTH", (char *)NULL);
 	return TCL_ERROR;
     }
     UErrorCodex status = U_ZERO_ERRORZ;
@@ -439,13 +439,13 @@ DetectableEncodings(
  *
  * IcuObjToUCharDString --
  *
- *    Encodes a Tcl_Obj value in ICU UChars and stores in dsPtr.
+ *	Encodes a Tcl_Obj value in ICU UChars and stores in dsPtr.
  *
  * Results:
- *    Return TCL_OK / TCL_ERROR.
+ *	TCL_OK / TCL_ERROR.
  *
  * Side effects:
- *    *dsPtr should be cleared by caller only if return code is TCL_OK.
+ *	*dsPtr should be cleared by caller only if return code is TCL_OK.
  *
  *------------------------------------------------------------------------
  */
@@ -490,13 +490,13 @@ IcuObjToUCharDString(
  *
  * IcuObjFromUCharDString --
  *
- *    Stores a Tcl_Obj value by decoding ICU UChars in dsPtr.
+ *	Stores a Tcl_Obj value by decoding ICU UChars in dsPtr.
  *
  * Results:
- *    Return Tcl_Obj or NULL on error.
+ *	Return Tcl_Obj or NULL on error.
  *
  * Side effects:
- *    None.
+ *	None.
  *
  *------------------------------------------------------------------------
  */
@@ -544,8 +544,7 @@ IcuObjFromUCharDString(
  *	  ::tcl::unsupported::icu::detect BYTES ?-all? - return detected encoding(s)
  *
  * Results:
- *	TCL_OK    - Success.
- *	TCL_ERROR - Error.
+ *	TCL_OK / TCL_ERROR.
  *
  * Side effects:
  *	Interpreter result holds result or error message.
@@ -574,6 +573,7 @@ IcuDetectObjCmd(
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "Invalid option %s, must be \"-all\"",
 		    Tcl_GetString(objv[2])));
+	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "BADARG", (char *)NULL);
 	    return TCL_ERROR;
 	}
 	all = 1;
@@ -590,8 +590,7 @@ IcuDetectObjCmd(
  *	Sets interp result to list of available ICU converters.
  *
  * Results:
- *	TCL_OK    - Success.
- *	TCL_ERROR - Error.
+ *	TCL_OK / TCL_ERROR.
  *
  * Side effects:
  *	Interpreter result holds list of converter names.
@@ -640,8 +639,7 @@ IcuConverterNamesObjCmd(
  *	Sets interp result to list of available ICU converters.
  *
  * Results:
- *	TCL_OK    - Success.
- *	TCL_ERROR - Error.
+ *	TCL_OK / TCL_ERROR.
  *
  * Side effects:
  *	Interpreter result holds list of converter names.
@@ -698,13 +696,13 @@ IcuConverterAliasesObjCmd(
  *
  * IcuConverttoDString --
  *
- *    Converts a string in ICU default encoding to the specified encoding.
+ *	Converts a string in ICU default encoding to the specified encoding.
  *
  * Results:
- *    TCL_OK / TCL_ERROR
+ *	TCL_OK / TCL_ERROR.
  *
  * Side effects:
- *    On success, encoded string is stored in output dsOutPtr
+ *	On success, encoded string is stored in output dsOutPtr
  *
  *------------------------------------------------------------------------
  */
@@ -741,6 +739,7 @@ IcuConverttoDString(
     if (utf16len > INT_MAX) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"Max length supported by ICU exceeded.", TCL_INDEX_NONE));
+	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LENGTH", (char *)NULL);
 	return TCL_ERROR;
     }
 
@@ -778,13 +777,13 @@ IcuConverttoDString(
  *
  * IcuBytesToUCharDString --
  *
- *    Converts encoded bytes to ICU UChars in a Tcl_DString
+ *	Converts encoded bytes to ICU UChars in a Tcl_DString
  *
  * Results:
- *    TCL_OK / TCL_ERROR
+ *	TCL_OK / TCL_ERROR.
  *
  * Side effects:
- *    On success, encoded string is stored in output dsOutPtr
+ *	On success, encoded string is stored in output dsOutPtr
  *
  *------------------------------------------------------------------------
  */
@@ -805,6 +804,7 @@ IcuBytesToUCharDString(
     if (nbytes > INT_MAX) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"Max length supported by ICU exceeded.", TCL_INDEX_NONE));
+	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LENGTH", (char *)NULL);
 	return TCL_ERROR;
     }
 
@@ -859,14 +859,14 @@ IcuBytesToUCharDString(
  *
  * IcuNormalizeUCharDString --
  *
- *    Normalizes the UTF-16 encoded data
+ *	Normalizes the UTF-16 encoded data
  *
  * Results:
- *    TCL_OK / TCL_ERROR
+ *	TCL_OK / TCL_ERROR.
  *
  * Side effects:
- *    Normalized data is stored in dsOutPtr which should only be
- *    Tcl_DStringFree-ed if return code is TCL_OK.
+ *	Normalized data is stored in dsOutPtr which should only be
+ *	Tcl_DStringFree-ed if return code is TCL_OK.
  *
  *------------------------------------------------------------------------
  */
@@ -914,6 +914,7 @@ IcuNormalizeUCharDString(
     if (utf16len > INT_MAX) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"Max length supported by ICU exceeded.", TCL_INDEX_NONE));
+	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LENGTH", (char *)NULL);
 	return TCL_ERROR;
     }
     Tcl_DStringInit(dsOutPtr);
@@ -981,6 +982,7 @@ IcuParseConvertOptions(
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "Missing value for option %s.",
 		    Tcl_GetString(objv[i - 1])));
+	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "NOARG", (char *)NULL);
 	    return TCL_ERROR;
 	}
 	const char *s = Tcl_GetString(objv[i]);
@@ -993,6 +995,7 @@ IcuParseConvertOptions(
 			"Invalid value \"%s\" supplied for option"
 			" \"-profile\". Must be \"strict\" or \"replace\".",
 			s));
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "PROFILE", (char *)NULL);
 		return TCL_ERROR;
 	    }
 	    break;
@@ -1000,6 +1003,7 @@ IcuParseConvertOptions(
 	    /* TBD */
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "Option -failindex not implemented.", TCL_INDEX_NONE));
+	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "UNIMPLEMENTED", (char *)NULL);
 	    return TCL_ERROR;
 	default:
 	    TCL_UNREACHABLE();
@@ -1015,15 +1019,14 @@ IcuParseConvertOptions(
  *
  * IcuConvertfromObjCmd --
  *
- *    Implements the Tcl command "icu convertfrom"
- *        icu convertfrom ?-profile replace|strict? encoding string
+ *	Implements the Tcl command "icu convertfrom"
+ *	    icu convertfrom ?-profile replace|strict? encoding string
  *
  * Results:
- *    TCL_OK    - Success.
- *    TCL_ERROR - Error.
+ *	TCL_OK / TCL_ERROR.
  *
  * Side effects:
- *    Interpreter result holds result or error message.
+ *	Interpreter result holds result or error message.
  *
  *------------------------------------------------------------------------
  */
@@ -1066,15 +1069,14 @@ IcuConvertfromObjCmd(
  *
  * IcuConverttoObjCmd --
  *
- *    Implements the Tcl command "icu convertto"
- *        icu convertto ?-profile replace|strict? encoding string
+ *	Implements the Tcl command "icu convertto"
+ *	    icu convertto ?-profile replace|strict? encoding string
  *
  * Results:
- *    TCL_OK    - Success.
- *    TCL_ERROR - Error.
+ *	TCL_OK / TCL_ERROR.
  *
  * Side effects:
- *    Interpreter result holds result or error message.
+ *	Interpreter result holds result or error message.
  *
  *------------------------------------------------------------------------
  */
@@ -1111,15 +1113,14 @@ IcuConverttoObjCmd(
  *
  * IcuNormalizeObjCmd --
  *
- *    Implements the Tcl command "icu normalize"
- *        icu normalize ?-profile replace|strict? ?-mode nfc|nfd|nfkc|nfkd? string
+ *	Implements the Tcl command "icu normalize"
+ *	    icu normalize ?-profile replace|strict? ?-mode nfc|nfd|nfkc|nfkd? string
  *
  * Results:
- *    TCL_OK    - Success.
- *    TCL_ERROR - Error.
+ *	TCL_OK / TCL_ERROR.
  *
  * Side effects:
- *    Interpreter result holds result or error message.
+ *	Interpreter result holds result or error message.
  *
  *------------------------------------------------------------------------
  */
@@ -1151,6 +1152,7 @@ IcuNormalizeObjCmd(
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "Missing value for option %s.",
 		    Tcl_GetString(objv[i - 1])));
+	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "NOARG", (char *)NULL);
 	    return TCL_ERROR;
 	}
 	const char *s = Tcl_GetString(objv[i]);
@@ -1163,6 +1165,7 @@ IcuNormalizeObjCmd(
 			"Invalid value \"%s\" supplied for option \"-profile\". "
 			"Must be \"strict\" or \"replace\".",
 			s));
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "PROFILE", (char *)NULL);
 		return TCL_ERROR;
 	    }
 	    break;
@@ -1233,7 +1236,7 @@ TclIcuCleanup(
  *
  *	Finds an ICU symbol in a shared library and returns its value.
  *
- *      Caller must be holding icu_mutex lock.
+ *	Caller must be holding icu_mutex lock.
  *
  * Results:
  *	Returns the symbol value or NULL if not found.
@@ -1513,8 +1516,7 @@ TclIcuInit(
  *	Loads and initializes ICU
  *
  * Results:
- *	TCL_OK    - Success.
- *	TCL_ERROR - Error.
+ *	TCL_OK / TCL_ERROR.
  *
  * Side effects:
  *	Interpreter result holds result or error message.
