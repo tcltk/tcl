@@ -417,14 +417,24 @@ test lseq-3.18 {error case} -body {
 
 test lseq-3.19 {edge case} -body {
     lseq 1 count 5 by 0
-} -result {}
-# 1 1 1 1 1
+} -result {1 1 1 1 1}
 
-# My thought is that this is likely a user error, since they can always use lrepeat for this.
+# My thought is that this is likely a user error, since they can
+# always use lrepeat for this.
+
+# bsg: Nah. The count defines the required list length, regardless of
+#           the values produced by the equation.  Consider scenarios
+#           where arguments are variables that may include 0
+#           intentionally. A reasonable valid answer is better than
+#           always having to safeguard against errors.
+#
+#      Another way to look at it is that the sequence is an equation
+#      of a straight line. Every sequnce should be representable on a
+#      cartisian plane in any/all quadrants.
 
 test lseq-3.20 {edge case} -body {
     lseq 1 to 1 by 0
-} -result {}
+} -result {1}
 
 # hmmm, I guess this is right, in a way, so...
 
@@ -1140,6 +1150,9 @@ test lseq-bug-8d1fc709957-0 {Bug 8d1fc709957 - lseq "count" error persists acros
     list $err0 $err1 $err2
 } -result {{0 1 2 3 4} {expected number but got "count"} {1 2 3 4 5}}
 
+test lseq-bug-999b6966b2-0 {Bug 999b6966b2 - lseq has incorrect results in edge cases} -body {
+    lmap i [lseq -9 9] { lseq 10 10 $i }
+} -result {10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10}
 
 # cleanup
 ::tcltest::cleanupTests
