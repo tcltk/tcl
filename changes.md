@@ -13,13 +13,14 @@ to the userbase.
  - [unsupported commands should not be available in safe interpreters](https://core.tcl-lang.org/tcl/tktview/82d12c)
  - [Check for -municode doesn't work on WSL](https://core.tcl-lang.org/tcl/tktview/632710)
  - [configure --enable-man-compression error](https://core.tcl-lang.org/tcl/tktview/886549)
+ - [nmake: rmdir and mkdir are picked from cygwin if available](https://core.tcl-lang.org/tcl/tktview/be40b7)
 
 # Updated bundled packages, libraries, standards, data
  - Itcl 4.3.6
  - sqlite3 3.51.2
  - Thread 3.0.5
  - tzdata 2025c
- - zlib 1.3.1.2
+ - zlib 1.3.2
 
 Release Tcl 9.0.3 arises from the check-in with tag `core-9-0-3`.
 
