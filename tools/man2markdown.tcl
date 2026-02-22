@@ -229,6 +229,7 @@ namespace eval ::ndoc {
 	
 	# list of Tcl commands to recognize for links between manual pages:
 	set tclCmdList [lsort [info commands]]
+	lappend tclCmdList my
 	
 	# dictionary of links on pages that should link to a page
 	# not identical to the link text.
@@ -240,6 +241,8 @@ namespace eval ::ndoc {
 		binary        {tcl_platform tclvars}
 		class         {oo::object object oo::define define}
 		classvariable {oo::objdefine objdefine}
+		configurable  {oo::define define oo::objdefine objdefine}
+		copy          {oo::class class oo::object object}
 	}]
 	
 	# dictionary of pages in which specific cmd words should *not* be linked
@@ -1187,12 +1190,19 @@ proc ::ndoc::parseCommand {mode line} {
 				}
 				{^\+.+=$} {
 					# an instance as a command name:
-					# (this one is always followd by a subcommand)
+					# (this one is normally followd by a subcommand)
+					lappend spanList [list Span .ins [string range $word 1 end-1]]
 					incr i
 					set sub [lindex $line $i]
-					lappend spanList [list Span .ins [string range $word 1 end-1]] \
-						[list Space {} {}] \
-						[list Span .sub [string range $sub 1 end-1]]
+					if {[string index $sub 0] eq "?"} {
+						# not a subcommand anyway
+						# (rare case; e.g. for `coroutine`), so revert
+						incr i -1
+					} else {
+						lappend spanList \
+							[list Space {} {}] \
+							[list Span .sub [string range $sub 1 end-1]]
+					}
 					if $DEBUG {puts "instance command .ins: $spanList"}
 				}
 				{^#.+$} {
@@ -1688,6 +1698,15 @@ proc ::ndoc::mdExceptions {md} {
 				{*https://tip.tcl-lang.org/173*} \
 				{<https://tip.tcl-lang.org/173>} \
 			] $md]
+		}
+		configurable {
+			set md [string map {
+				{**CONFIGURE METHOD**} {[Configure method]}
+				{**PROPERTY DEFINITIONS**} {[Property definitions]}
+			} $md]
+		}
+		dde {
+			set md [string map {{Dde and tcl} {DDE and Tcl} Dde DDE} $md]
 		}
 	}
 	return $md

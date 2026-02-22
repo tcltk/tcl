@@ -63,7 +63,7 @@ oo::object
 
 Configurable objects are objects that support being configured with a **configure** method. Each of the configurable entities of the object is known as a property of the object. Properties may be defined on classes or instances; when configuring an object, any of the properties defined by its classes (direct or indirect) or by the instance itself may be configured.
 
-The **oo::configurable** metaclass installs basic support for making configurable objects into a class. This consists of making a **property** definition command available in definition scripts for the class and instances (e.g., from the class's constructor, within **oo::define** and within **oo::objdefine**) and making a **configure** method available within the instances.
+The **oo::configurable** metaclass installs basic support for making configurable objects into a class. This consists of making a **property** definition command available in definition scripts for the class and instances (e.g., from the class's constructor, within [oo::define][define] and within [oo::objdefine][objdefine]) and making a **configure** method available within the instances.
 
 ## Configure method
 
@@ -105,13 +105,13 @@ The configurable class system is comprised of several pieces. The **oo::configur
 : This is a class that provides the implementation of the **configure** method (described above in [Configure method]).
 
 **oo::configuresupport::configurableclass**
-: This is a namespace that contains the definition dialect that provides the **property** declaration for use in classes (i.e., via **oo::define**, and class constructors under normal circumstances), as described above in [Property definitions]. It [namespace export][namespace]s its **property** command so that it may be used easily in user definition dialects.
+: This is a namespace that contains the definition dialect that provides the **property** declaration for use in classes (i.e., via [oo::define][define], and class constructors under normal circumstances), as described above in [Property definitions]. It [namespace export][namespace]s its **property** command so that it may be used easily in user definition dialects.
 
 **oo::configuresupport::configurableobject**
-: This is a namespace that contains the definition dialect that provides the **property** declaration for use in instance objects (i.e., via **oo::objdefine**, and the **self** declaration in **oo::define**), as described above in [Property definitions]. It [namespace export][namespace]s its **property** command so that it may be used easily in user definition dialects.
+: This is a namespace that contains the definition dialect that provides the **property** declaration for use in instance objects (i.e., via [oo::objdefine][objdefine], and the **self** declaration in [oo::define][define]), as described above in [Property definitions]. It [namespace export][namespace]s its **property** command so that it may be used easily in user definition dialects.
 
 
-The underlying property discovery mechanism relies on four slots (see **oo::define** for what that implies) that list the properties that can be configured. These slots do not themselves impose any semantics on what the slots mean other than that they have unique names, no important order, can be inherited and discovered on classes and instances.
+The underlying property discovery mechanism relies on four slots (see [oo::define][define] for what that implies) that list the properties that can be configured. These slots do not themselves impose any semantics on what the slots mean other than that they have unique names, no important order, can be inherited and discovered on classes and instances.
 
 These slots, and their intended semantics, are:
 
@@ -128,7 +128,7 @@ These slots, and their intended semantics, are:
 : The set of properties of an object instance (not including those from its classes) that may be written to when configuring the object. This slot can also be read with the [info object properties][info] command.
 
 
-Note that though these are slots, they are *not* in the standard **oo::define** or **oo::objdefine** namespaces; in order to use them inside a definition script, they need to be referred to by full name. This is because they are intended to be building bricks of configurable property system, and not directly used by normal user code.
+Note that though these are slots, they are *not* in the standard [oo::define][define] or [oo::objdefine][objdefine] namespaces; in order to use them inside a definition script, they need to be referred to by full name. This is because they are intended to be building bricks of configurable property system, and not directly used by normal user code.
 
 ## Implementation note
 
@@ -243,7 +243,9 @@ $pt4 configure -x "obviously not a number"
 
 
 [chan]: chan.md
+[define]: define.md
 [fconfigure]: fconfigure.md
 [info]: info.md
 [namespace]: namespace.md
+[objdefine]: objdefine.md
 

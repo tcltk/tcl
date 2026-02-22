@@ -36,7 +36,7 @@ section | number of documents | initial conversion | final conversion
 --------|---------------------|--------------------|-----------------
 1       | 1                   | 1                  | 0
 3       | 108                 | 108                | 0
-n       | 139                 | 139                | 14
+n       | 139                 | 139                | 24
 
 Final conversion of these files is currently done:
 1. after
@@ -54,7 +54,15 @@ Final conversion of these files is currently done:
 13. class
 14. classvariable
 15. clock -> we may need to use '(1)' instead of '[1]' for referencing list items as this might be misinterpreted during conversion to HTML
-(what to do with the COPYRIGHT section, why is is in the markdown and not only in the YAML metadata?)
+16. close
+17. concat
+18. configurable ...
+19. const
+20. continue
+21. cookiejar
+22. copy
+23. coroutine
+24. dde
 
 The tk/doc directory comes next, after finishing Tcl.
 

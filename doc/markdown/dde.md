@@ -32,14 +32,14 @@ dde - Execute a Dynamic Data Exchange command
 [dde]{.cmd} [poke]{.sub} [-binary]{.optlit} [service]{.arg} [topic]{.arg} [item]{.arg} [data]{.arg}
 [dde]{.cmd} [request]{.sub} [-binary]{.optlit} [service]{.arg} [topic]{.arg} [item]{.arg}
 [dde]{.cmd} [services]{.sub} [service]{.arg} [topic]{.arg}
-[dde]{.cmd} [eval]{.sub} [-async]{.optlit} [topic]{.arg} [cmd]{.arg} [arg arg]{.optdot}
+[dde]{.cmd} [eval]{.sub} [-async]{.optlit} [topic]{.arg} [cmd]{.arg} [arg]{.optdot}
 :::
 
 # Description
 
 This command allows an application to send Dynamic Data Exchange (DDE) command when running under Microsoft Windows. Dynamic Data Exchange is a mechanism where applications can exchange raw data. Each DDE transaction needs a *service name* and a *topic*. Both the *service name* and *topic* are application defined; Tcl uses the service name **TclEval**, while the topic name is the name of the interpreter given by **dde servername**. Other applications have their own *service names* and *topics*. For instance, Microsoft Excel has the service name **Excel**.
 
-# Dde commands
+# DDE commands
 
 The following commands are a subset of the full Dynamic Data Exchange set of commands.
 
@@ -68,7 +68,7 @@ The following commands are a subset of the full Dynamic Data Exchange set of com
 : **dde eval** evaluates a command and its arguments using the interpreter specified by *topic*. The DDE service must be the **TclEval** service.  The **-async** option requests asynchronous invocation.  The command returns an error message if the script did not run, unless the **-async** flag was used, in which case the command returns immediately with no error.  This command can be used to replace send on Windows.
 
 
-# Dde and tcl
+# DDE and Tcl
 
 A Tcl interpreter always has a service name of **TclEval**.  Each different interpreter of all running Tcl applications must be given a unique name specified by **dde servername**. Each interp is available as a DDE topic only if the **dde servername** command was used to set the name of the topic for each interp. So a **dde services TclEval {}** command will return a list of service-topic pairs, where each of the currently running interps will be a topic.
 

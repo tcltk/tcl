@@ -498,10 +498,6 @@ Sat Jan 21 00:00:00 GMT 1978
 Fri Jan 27 00:00:00 GMT 1978
 ```
 
-# Copyright
-
-Copyright \\(co 2004 Kevin B. Kenny <kennykb@acm.org>. All rights reserved. 
-
 
 [file]: file.md
 

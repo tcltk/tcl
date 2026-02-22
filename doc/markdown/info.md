@@ -80,7 +80,7 @@ Available commands:
     : *commandName* is the public command that represents an instance of **oo::object** or one of its subclasses.
 
     **privateObject**
-    : *commandName* is the private command, **my** by default, that represents an instance of **oo::object** or one of its subclasses.
+    : *commandName* is the private command, [my] by default, that represents an instance of **oo::object** or one of its subclasses.
 
     [proc]
     : *commandName* was created by [proc].
@@ -270,7 +270,7 @@ The following *subcommand* values are supported by **info class**:
     : Only methods with *public* scope (i.e., callable from anywhere by any instance of this class) are to be returned.
 
     **unexported**
-    : Only methods with *unexported* scope (i.e., only callable via **my**) are to be returned.
+    : Only methods with *unexported* scope (i.e., only callable via [my]) are to be returned.
 
     **private**
     : Only methods with *private* scope (i.e., only callable from within this class's methods) are to be returned.
@@ -366,7 +366,7 @@ The following *subcommand* values are supported by **info object**:
     : Only methods with *public* scope (i.e., callable from anywhere) are to be returned.
 
     **unexported**
-    : Only methods with *unexported* scope (i.e., only callable via **my**) are to be returned.
+    : Only methods with *unexported* scope (i.e., only callable via [my]) are to be returned.
 
     **private**
     : Only methods with *private* scope (i.e., only callable from within this object's instance methods) are to be returned.
@@ -488,6 +488,7 @@ proc getDef {obj method} {
 [global]: global.md
 [interp]: interp.md
 [load]: load.md
+[my]: my.md
 [namespace]: namespace.md
 [proc]: proc.md
 [source]: source.md

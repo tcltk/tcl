@@ -12,15 +12,15 @@
 coroutine, yield, yieldto, coroinject, coroprobe \- Create and produce values from coroutines
 .SH SYNOPSIS
 .nf
-\fBcoroutine \fIname command\fR ?\fIarg...\fR?
+\fBcoroutine \fIname command\fR ?\fIarg ...\fR?
 
 \fByield\fR ?\fIvalue\fR?
-\fByieldto\fI command\fR ?\fIarg...\fR?
-\fIname\fR ?\fIvalue...\fR?
+\fByieldto\fI command\fR ?\fIarg ...\fR?
+\fIname\fR ?\fIvalue ...\fR?
 
 .VS TIP383
-\fBcoroinject \fIcoroName command\fR ?\fIarg...\fR?
-\fBcoroprobe \fIcoroName command\fR ?\fIarg...\fR?
+\fBcoroinject \fIcoroName command\fR ?\fIarg ...\fR?
+\fBcoroprobe \fIcoroName command\fR ?\fIarg ...\fR?
 .VE TIP383
 .fi
 .BE

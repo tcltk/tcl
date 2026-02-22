@@ -59,7 +59,7 @@ The following commands are supported in the *defScript* for **oo::define**, each
 [classmethod]{.cmd} [name]{.arg} [argList bodyScrip]{.optarg}
 : This creates a class method, or (if *argList* and *bodyScript* are omitted) promotes an existing method on the class object to be a class method. The *name*, *argList* and *bodyScript* arguments are as in the **method** definition, below.
 
-    Class methods can be called on either the class itself or on the instances of that class. When they are called, the current object (see the **sel** and **my** commands) is the class on which they are called or the class of the instance on which they are called, depending on whether they are called on the class or an instance of the class, respectively. If called on a subclass or instance of the subclass, the current object is the subclass.
+    Class methods can be called on either the class itself or on the instances of that class. When they are called, the current object (see the **sel** and [my] commands) is the class on which they are called or the class of the instance on which they are called, depending on whether they are called on the class or an instance of the class, respectively. If called on a subclass or instance of the subclass, the current object is the subclass.
 
     In a private definition context, the methods as invoked on classes are *not* private, but the methods as invoked on instances of classes are private.
 
@@ -113,7 +113,7 @@ The following commands are supported in the *defScript* for **oo::define**, each
 : This slot (see [Slotted definitions] below) allows the alteration of the superclasses of the class being defined. Each *className* argument names one class that is to be a superclass of the defined class. Note that objects must not be changed from being classes to being non-classes or vice-versa, that an empty parent class is equivalent to **oo::object**, and that the parent classes of **oo::object** and **oo::class** may not be modified. By default, this slot works by replacement.
 
 [unexport]{.cmd} [name]{.arg} [name]{.optdot}
-: This arranges for each of the named methods, *name*, to be not exported (i.e. not usable outside the instance through the instance object's command, but instead just through the **my** command visible in each object's context) by the class being defined. Note that the methods themselves may be actually defined by a superclass; subclass unexports override superclass visibility, and may be overridden by instance unexports.
+: This arranges for each of the named methods, *name*, to be not exported (i.e. not usable outside the instance through the instance object's command, but instead just through the [my] command visible in each object's context) by the class being defined. Note that the methods themselves may be actually defined by a superclass; subclass unexports override superclass visibility, and may be overridden by instance unexports.
 
 [variable]{.cmd} [-slotOperation]{.optarg} [name]{.optdot}
 : This slot (see [Slotted definitions] below) arranges for each of the named variables to be automatically made available in the methods, constructor and destructor declared by the class being defined. Each variable name must not have any namespace separators and must not look like an array access. All variables will be actually present in the namespace of the instance object on which the method is executed. Note that the variable lists declared by a superclass or subclass are completely disjoint, as are variable lists declared by instances; the list of variable names is just for methods (and constructors and destructors) declared by this class. By default, this slot works by appending.
@@ -174,7 +174,7 @@ The following commands are supported in the *defScript* for **oo::objdefine**, e
     The following class definition commands are affected by **private**: **forward**, **method**, and [variable]. Nesting **private** inside **private** has no cumulative effect; the innermost definition context is just a private definition context. All other definition commands have no difference in behavior when used in a private definition context.
 
 [unexport]{.cmd} [name]{.arg} [name]{.optdot}
-: This arranges for each of the named methods, *name*, to be not exported (i.e. not usable outside the object through the object's command, but instead just through the **my** command visible in the object's context) by the object being defined. Note that the methods themselves may be actually defined by a class; instance unexports override class visibility.
+: This arranges for each of the named methods, *name*, to be not exported (i.e. not usable outside the object through the object's command, but instead just through the [my] command visible in the object's context) by the object being defined. Note that the methods themselves may be actually defined by a class; instance unexports override class visibility.
 
 [variable]{.cmd} [-slotOperation]{.optarg} [name]{.optdot}
 : This slot (see [Slotted definitions] below) arranges for each of the named variables to be automatically made available in the methods declared by the object being defined.  Each variable name must not have any namespace separators and must not look like an array access. All variables will be actually present in the namespace of the object on which the method is executed. Note that the variable lists declared by the classes and mixins of which the object is an instance are completely disjoint; the list of variable names is just for methods declared by this object. By default, this slot works by appending.
@@ -239,7 +239,7 @@ You only need to make an instance of **oo::Slot** if you are definining your own
 
 ## Slot implementation
 
-Internally, slot objects also define a method **--default-operation** which is forwarded to the default operation of the slot (thus, for the class "[variable]" slot, this is forwarded to "**my -append**"), and these methods which provide the implementation interface:
+Internally, slot objects also define a method **--default-operation** which is forwarded to the default operation of the slot (thus, for the class "[variable]" slot, this is forwarded to "[my -append][my]"), and these methods which provide the implementation interface:
 
 [slot]{.ins} [Get]{.sub}
 : Returns a list that is the current contents of the slot, but does not modify the slot. This method must always be called from a stack frame created by a call to **oo::define** or **oo::objdefine**. This method *should not* return an error unless it is called from outside a definition context or with the wrong number of arguments.
@@ -450,6 +450,7 @@ for {set x 0} {$x <= 4} {incr x} {
 
 
 [info]: info.md
+[my]: my.md
 [namespace]: namespace.md
 [proc]: proc.md
 [variable]: variable.md

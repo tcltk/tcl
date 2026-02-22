@@ -23,14 +23,14 @@ coroutine, yield, yieldto, coroinject, coroprobe - Create and produce values fro
 # Synopsis
 
 ::: {.synopsis} :::
-[coroutine]{.cmd} [name]{.arg} [command]{.arg} [arg...]{.optarg}
+[coroutine]{.cmd} [name]{.arg} [command]{.arg} [arg]{.optdot}
 
 [yield]{.cmd} [value]{.optarg}
-[yieldto]{.cmd} [command]{.arg} [arg...]{.optarg}
-[name]{.ins} [+value...=]{.sub}
+[yieldto]{.cmd} [command]{.arg} [arg]{.optdot}
+[name]{.ins} [value]{.optdot}
 
-[coroinject]{.cmd} [coroName]{.arg} [command]{.arg} [arg...]{.optarg}
-[coroprobe]{.cmd} [coroName]{.arg} [command]{.arg} [arg...]{.optarg}
+[coroinject]{.cmd} [coroName]{.arg} [command]{.arg} [arg]{.optdot}
+[coroprobe]{.cmd} [coroName]{.arg} [command]{.arg} [arg]{.optdot}
 :::
 
 # Description
