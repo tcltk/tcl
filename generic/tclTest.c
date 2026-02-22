@@ -9212,11 +9212,6 @@ TestChanSourceInput(
 {
     TestChanSourceState *chanPtr = (TestChanSourceState *)instanceData;
 
-    /* Arbitrary failsafe to prevent running out of memory */
-    if (chanPtr->numSourced > 100000000) {
-	return 0;
-    }
-
     /*
      * Bit of optimization to minimize overhead since goal is channel i/o
      * measurement. Wonder if compiler would have been better anyways...
