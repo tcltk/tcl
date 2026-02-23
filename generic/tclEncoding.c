@@ -3067,7 +3067,6 @@ UtfToUtfProc(
 	(void) 0
 
     profile = ENCODING_PROFILE_GET(flags);
-    static volatile int enable_fastpath = 1;
     for (numChars = 0; src < srcEnd && numChars < charLimit; numChars++) {
 	if ((src > srcClose) && (!Tcl_UtfCharComplete(src, srcEnd - src))) {
 	    /*
@@ -3091,32 +3090,27 @@ UtfToUtfProc(
     	     *  - charLimit not reached
     	     *  - destination not full
     	     */
-	    if (enable_fastpath) {
-    		const char *p = src;
-		ptrdiff_t copyCount = srcEnd - src;
-		/* Limit to caller-specified character count */
-    		if (charLimit != INT_MAX) {
-		    if (copyCount > (charLimit - numChars)) {
-			copyCount = charLimit - numChars;
-		    }
-    		}
-		/*
-		 * Limit to remaining destination space. dstEnd is the last
-		 * location we can write to, not the upper bound.
-		 */
-		if (copyCount > (dstEnd - dst + 1)) {
-		    copyCount = dstEnd - dst + 1;
+	    const char *p = src;
+	    ptrdiff_t copyCount = srcEnd - src;
+	    /* Limit to caller-specified character count */
+	    if (charLimit != INT_MAX) {
+		if (copyCount > (charLimit - numChars)) {
+		    copyCount = charLimit - numChars;
 		}
-    		const char *srcStop = src + copyCount;
-    		while (p < srcStop && BYTE_COPYABLE(*p)) {
-    		    *dst++ = *p++;
-    		}
-		numChars += (int)(p - src) - 1; /* -1 to adjust loop increment */
-		src = p;
-		continue;
-    	    } else {
-		*dst++ = *src++;
 	    }
+	    /*
+	     * Limit to remaining destination space. dstEnd is the last
+	     * location we can write to, not the upper bound.
+	     */
+	    if (copyCount > (dstEnd - dst + 1)) {
+		copyCount = dstEnd - dst + 1;
+	    }
+	    const char *srcStop = src + copyCount;
+	    while (p < srcStop && BYTE_COPYABLE(*p)) {
+		*dst++ = *p++;
+	    }
+	    numChars += (int)(p - src) - 1; /* -1 to adjust loop increment */
+	    src = p;
 	} else if ((UCHAR(*src) == 0xC0) && (src + 1 < srcEnd) &&
 		(UCHAR(src[1]) == 0x80) &&
 		(!(flags & ENCODING_INPUT) || !PROFILE_TCL8(profile))) {
@@ -3140,7 +3134,6 @@ UtfToUtfProc(
 		*dst++ = 0;
 		src += 2;
 	    }
-
 	} else if (!Tcl_UtfCharComplete(src, srcEnd - src)) {
 	    /*
 	     * Incomplete byte sequence not because there are insufficient
