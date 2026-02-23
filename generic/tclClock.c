@@ -2945,12 +2945,12 @@ TclGetJulianDayFromEraYearDay(
  *	Gregorian calendar.
  *
  * Results:
- *	Returns 1 for a leap year, 0 otherwise.
+ *	Returns true for a leap year, false otherwise.
  *
  *----------------------------------------------------------------------
  */
 
-int
+bool
 TclIsGregorianLeapYear(
     TclDateFields *fields)	/* Date to test */
 {
@@ -2960,16 +2960,16 @@ TclIsGregorianLeapYear(
 	year = 1 - year;
     }
     if (year % 4 != 0) {
-	return 0;
+	return false;
     } else if (fields->flags & CLF_BGREG) {
 	/* Before Gregorian leap year didn't follow y/100 and y/400 logic. */
-	return 1;
+	return true;
     } else if (year % 400 == 0) {
-	return 1;
+	return true;
     } else if (year % 100 == 0) {
-	return 0;
+	return false;
     } else {
-	return 1;
+	return true;
     }
 }
 

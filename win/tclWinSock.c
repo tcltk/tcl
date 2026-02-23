@@ -249,7 +249,7 @@ static int		WaitForConnect(TcpState *statePtr, int *errorCodePtr);
 static int		WaitForSocketEvent(TcpState *statePtr, int events,
 			    int *errorCodePtr);
 static void		AddSocketInfoFd(TcpState *statePtr, SOCKET socket);
-static int		FindFDInList(TcpState *statePtr, SOCKET socket);
+static bool		FindFDInList(TcpState *statePtr, SOCKET socket);
 static DWORD WINAPI	SocketThread(LPVOID arg);
 static void		TcpThreadActionProc(void *instanceData,
 			    int action);
@@ -3207,7 +3207,7 @@ SocketProc(
  *----------------------------------------------------------------------
  */
 
-static int
+static bool
 FindFDInList(
     TcpState *statePtr,
     SOCKET socket)
@@ -3215,10 +3215,10 @@ FindFDInList(
     TcpFdList *fds;
     for (fds = statePtr->sockets; fds != NULL; fds = fds->next) {
 	if (fds->fd == socket) {
-	    return 1;
+	    return true;
 	}
     }
-    return 0;
+    return false;
 }
 
 /*

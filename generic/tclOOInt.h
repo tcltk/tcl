@@ -427,7 +427,7 @@ struct Foundation {
 struct MInvoke {
     Method *mPtr;		/* Reference to the method implementation
 				 * record. */
-    int isFilter;		/* Whether this is a filter invocation. */
+    bool isFilter;		/* Whether this is a filter invocation. */
     Class *filterDeclarer;	/* What class decided to add the filter; if
 				 * NULL, it was added by the object. */
 };
@@ -582,8 +582,8 @@ MODULE_SCOPE Object *	TclNewObjectInstanceCommon(Tcl_Interp *interp,
 			    Class *classPtr,
 			    const char *nameStr,
 			    const char *nsNameStr);
-MODULE_SCOPE int	TclOODecrRefCount(Object *oPtr);
-MODULE_SCOPE int	TclOOObjectDestroyed(Object *oPtr);
+MODULE_SCOPE bool	TclOODecrRefCount(Object *oPtr);
+MODULE_SCOPE bool	TclOOObjectDestroyed(Object *oPtr);
 MODULE_SCOPE const char *TclOOContextTypeName(CallContext *contextPtr);
 MODULE_SCOPE int	TclOODefineSlots(Foundation *fPtr);
 MODULE_SCOPE void	TclOODeleteChain(CallChain *callPtr);

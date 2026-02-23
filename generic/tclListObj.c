@@ -295,7 +295,7 @@ ListSpanDecrRefs(
  *
  *------------------------------------------------------------------------
  */
-static inline int
+static inline bool
 ListSpanMerited(
     Tcl_Size length,		/* Length of the proposed span */
     Tcl_Size usedStorageLength,	/* Number of slots currently in used */
@@ -311,16 +311,16 @@ ListSpanMerited(
      */
 
     if (length < LIST_SPAN_THRESHOLD) {
-	return 0;/* No span for small lists */
+	return false;/* No span for small lists */
     }
     if (length < (allocatedStorageLength / 2 - allocatedStorageLength / 8)) {
-	return 0; /* No span if less than 3/8 of allocation */
+	return false; /* No span if less than 3/8 of allocation */
     }
     if (length < usedStorageLength / 2) {
-	return 0; /* No span if less than half current storage */
+	return false; /* No span if less than half current storage */
     }
 
-    return 1;
+    return true;
 }
 
 /*

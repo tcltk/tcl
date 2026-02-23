@@ -3781,7 +3781,7 @@ TclUndoRefCount(
  */
 
 #undef Tcl_IsShared
-int
+bool
 Tcl_IsShared(
     Tcl_Obj *objPtr)	/* The object to test for being shared. */
 {
@@ -3960,7 +3960,7 @@ Tcl_DbDecrRefCount(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Tcl_DbIsShared(
     Tcl_Obj *objPtr,		/* The object to test for being shared. */
 #ifdef TCL_MEM_DEBUG
@@ -4088,7 +4088,7 @@ AllocObjEntry(
  *	Compares two Tcl_Obj * keys.
  *
  * Results:
- *	The return value is 0 if they are different and 1 if they are the
+ *	The return value is false if they are different and true if they are the
  *	same.
  *
  * Side effects:

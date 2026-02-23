@@ -3344,16 +3344,16 @@ TclPipeThreadCreateTI(
  *	Wait for work/stop signals inside pipe worker.
  *
  * Results:
- *	1 if signaled to work, 0 if signaled to stop.
+ *	true if signaled to work, false if signaled to stop.
  *
  * Side effects:
- *	If this function returns 0, TI-structure pointer given via pipeTIPtr
+ *	If this function returns false, TI-structure pointer given via pipeTIPtr
  *	may be NULL, so not accessible (can be owned by main thread).
  *
  *----------------------------------------------------------------------
  */
 
-int
+bool
 TclPipeThreadWaitForSignal(
     TclPipeThreadInfo **pipeTIPtr)
 {
@@ -3362,7 +3362,7 @@ TclPipeThreadWaitForSignal(
     DWORD waitResult;
 
     if (!pipeTI) {
-	return 0;
+	return false;
     }
 
     /*
@@ -3415,7 +3415,7 @@ TclPipeThreadWaitForSignal(
      * Signaled to work.
      */
 
-    return 1;
+    return true;
 
   end:
     /*
@@ -3425,7 +3425,7 @@ TclPipeThreadWaitForSignal(
     if (state != PTI_STATE_STOP) {
 	*pipeTIPtr = NULL;
     }
-    return 0;
+    return false;
 }
 
 /*
@@ -3444,7 +3444,7 @@ TclPipeThreadWaitForSignal(
  *----------------------------------------------------------------------
  */
 
-int
+void
 TclPipeThreadStopSignal(
     TclPipeThreadInfo **pipeTIPtr)
 {
@@ -3453,7 +3453,7 @@ TclPipeThreadStopSignal(
     int state;
 
     if (!pipeTI) {
-	return 1;
+	return;
     }
     evControl = pipeTI->evControl;
     state = InterlockedCompareExchange(&pipeTI->state, PTI_STATE_STOP,
@@ -3468,7 +3468,7 @@ TclPipeThreadStopSignal(
 	*pipeTIPtr = NULL;
 	TCL_FALLTHROUGH();
     case PTI_STATE_DOWN:
-	return 1;
+	break;
 
     default:
 	/*
@@ -3480,8 +3480,6 @@ TclPipeThreadStopSignal(
 	InterlockedExchange(&pipeTI->state, PTI_STATE_END);
 	break;
     }
-
-    return 0;
 }
 
 /*

@@ -168,7 +168,7 @@ static void		ChannelTimerProc(void *clientData);
 static int		ChanRead(Channel *chanPtr, char *dst, int dstSize);
 static int		CheckChannelErrors(ChannelState *statePtr,
 			    int direction);
-static int		CheckForDeadChannel(Tcl_Interp *interp,
+static bool		CheckForDeadChannel(Tcl_Interp *interp,
 			    ChannelState *statePtr);
 static void		CheckForStdChannelsBeingClosed(Tcl_Channel chan);
 static void		CleanupChannelHandlers(Tcl_Interp *interp,
@@ -1135,19 +1135,15 @@ CheckForStdChannelsBeingClosed(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Tcl_IsStandardChannel(
     Tcl_Channel chan)		/* Channel to check. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
-    if ((chan == tsdPtr->stdinChannel)
+    return ((chan == tsdPtr->stdinChannel)
 	    || (chan == tsdPtr->stdoutChannel)
-	    || (chan == tsdPtr->stderrChannel)) {
-	return 1;
-    } else {
-	return 0;
-    }
+	    || (chan == tsdPtr->stderrChannel));
 }
 
 /*
@@ -2688,13 +2684,13 @@ DiscardOutputQueued(
  *----------------------------------------------------------------------
  */
 
-static int
+static bool
 CheckForDeadChannel(
     Tcl_Interp *interp,		/* For error reporting (can be NULL) */
     ChannelState *statePtr)	/* The channel state to check. */
 {
     if (!GotFlag(statePtr, CHANNEL_DEAD)) {
-	return 0;
+	return false;
     }
 
     Tcl_SetErrno(EINVAL);
@@ -2702,7 +2698,7 @@ CheckForDeadChannel(
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"unable to access channel: invalid channel", -1));
     }
-    return 1;
+    return true;
 }
 
 /*
@@ -7580,7 +7576,7 @@ CheckChannelErrors(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 TclChanIsBinary(
     Tcl_Channel chan)		/* Does this channel have EOF? */
 {
@@ -7597,10 +7593,10 @@ TclChanIsBinary(
  *
  * Tcl_Eof --
  *
- *	Returns 1 if the channel is at EOF, 0 otherwise.
+ *	Returns true if the channel is at EOF, false otherwise.
  *
  * Results:
- *	1 or 0, always.
+ *	true or false, always.
  *
  * Side effects:
  *	None.
@@ -7608,17 +7604,17 @@ TclChanIsBinary(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Tcl_Eof(
     Tcl_Channel chan)		/* Does this channel have EOF? */
 {
     ChannelState *statePtr = ((Channel *) chan)->state;
 				/* State of real channel structure. */
 
-    if (GotFlag(statePtr, CHANNEL_ENCODING_ERROR)) {
-	return 0;
+    if (GotFlag(statePtr, CHANNEL_ENCODING_ERROR) != 0) {
+	return false;
     }
-    return GotFlag(statePtr, CHANNEL_EOF) ? 1 : 0;
+    return GotFlag(statePtr, CHANNEL_EOF) != 0;
 }
 
 /*
@@ -7626,10 +7622,10 @@ Tcl_Eof(
  *
  * TclChannelGetBlockingMode --
  *
- *	Returns 1 if the channel is in blocking mode (default), 0 otherwise.
+ *	Returns true if the channel is in blocking mode (default), false otherwise.
  *
  * Results:
- *	1 or 0, always.
+ *	true or false, always.
  *
  * Side effects:
  *	None.
@@ -7637,14 +7633,14 @@ Tcl_Eof(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 TclChannelGetBlockingMode(
     Tcl_Channel chan)
 {
     ChannelState *statePtr = ((Channel *) chan)->state;
 				/* State of real channel structure. */
 
-    return GotFlag(statePtr, CHANNEL_NONBLOCKING) ? 0 : 1;
+    return GotFlag(statePtr, CHANNEL_NONBLOCKING) == 0;
 }
 
 /*
@@ -7652,10 +7648,10 @@ TclChannelGetBlockingMode(
  *
  * Tcl_InputBlocked --
  *
- *	Returns 1 if input is blocked on this channel, 0 otherwise.
+ *	Returns true if input is blocked on this channel, false otherwise.
  *
  * Results:
- *	0 or 1, always.
+ *	false or true, always.
  *
  * Side effects:
  *	None.
@@ -7663,14 +7659,14 @@ TclChannelGetBlockingMode(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Tcl_InputBlocked(
     Tcl_Channel chan)		/* Is this channel blocked? */
 {
     ChannelState *statePtr = ((Channel *) chan)->state;
 				/* State of real channel structure. */
 
-    return GotFlag(statePtr, CHANNEL_BLOCKED) ? 1 : 0;
+    return GotFlag(statePtr, CHANNEL_BLOCKED) != 0;
 }
 
 /*
@@ -10691,7 +10687,7 @@ Tcl_GetChannelNamesEx(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Tcl_IsChannelRegistered(
     Tcl_Interp *interp,		/* The interp to query of the channel */
     Tcl_Channel chan)		/* The channel to check */
@@ -10711,17 +10707,13 @@ Tcl_IsChannelRegistered(
 
     hTblPtr = (Tcl_HashTable *)Tcl_GetAssocData(interp, ASSOC_KEY, NULL);
     if (hTblPtr == NULL) {
-	return 0;
+	return false;
     }
     hPtr = Tcl_FindHashEntry(hTblPtr, statePtr->channelName);
     if (hPtr == NULL) {
-	return 0;
+	return false;
     }
-    if ((Channel *) Tcl_GetHashValue(hPtr) != chanPtr) {
-	return 0;
-    }
-
-    return 1;
+    return ((Channel *)Tcl_GetHashValue(hPtr) == chanPtr);
 }
 
 /*
@@ -10740,14 +10732,14 @@ Tcl_IsChannelRegistered(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Tcl_IsChannelShared(
     Tcl_Channel chan)		/* The channel to query */
 {
     ChannelState *statePtr = ((Channel *) chan)->state;
 				/* State of real channel structure. */
 
-    return ((statePtr->refCount > 1) ? 1 : 0);
+    return (statePtr->refCount > 1);
 }
 
 /*
@@ -10768,7 +10760,7 @@ Tcl_IsChannelShared(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Tcl_IsChannelExisting(
     const char *chanName)	/* The name of the channel to look for. */
 {
@@ -10792,11 +10784,11 @@ Tcl_IsChannelExisting(
 
 	if ((*chanName == *name) &&
 		(memcmp(name, chanName, chanNameLen + 1) == 0)) {
-	    return 1;
+	    return true;
 	}
     }
 
-    return 0;
+    return false;
 }
 
 /*

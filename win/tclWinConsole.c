@@ -1577,14 +1577,14 @@ ConsoleGetHandleProc(
  *    Checks if there is data in the console input queue.
  *
  * Results:
- *    Returns 1 if the input queue has data, -1 on error else 0 if empty.
+ *    Returns true if the input queue has data or on error else false if empty.
  *
  * Side effects:
  *    None.
  *
  *------------------------------------------------------------------------
  */
-static int
+static bool
 ConsoleDataAvailable(
     HANDLE consoleHandle)
 {
@@ -1597,7 +1597,7 @@ ConsoleDataAvailable(
      */
     if (PeekConsoleInputW(consoleHandle, input,
 	    sizeof(input) / sizeof(input[0]), &count) == FALSE) {
-	return -1;
+	return true;
     }
     /*
      * Even if windows size and mouse events are disabled, can still have
@@ -1608,15 +1608,15 @@ ConsoleDataAvailable(
      * buffer but not worth...
      */
     if (count == (sizeof(input)/sizeof(input[0]))) {
-	return 1;
+	return true;
     }
     for (i = 0; i < count; ++i) {
 	if (input[i].EventType == KEY_EVENT
 		&& input[i].Event.KeyEvent.bKeyDown) {
-	    return 1;
+	    return true;
 	}
     }
-    return 0;
+    return false;
 }
 
 /*

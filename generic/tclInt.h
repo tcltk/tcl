@@ -68,9 +68,6 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stdint.h>
-#if defined(_MSC_VER) || (defined(__STDC_VERSION__) && (__STDC_VERSION__ < 202311L))
-#include <stdbool.h>
-#endif
 #include <string.h>
 #include <locale.h>
 
@@ -3337,14 +3334,14 @@ MODULE_SCOPE bool	TclByteArrayMatch(const unsigned char *string,
 MODULE_SCOPE double	TclCeil(const void *a);
 MODULE_SCOPE void	TclChannelPreserve(Tcl_Channel chan);
 MODULE_SCOPE void	TclChannelRelease(Tcl_Channel chan);
-MODULE_SCOPE int	TclChannelGetBlockingMode(Tcl_Channel chan);
+MODULE_SCOPE bool	TclChannelGetBlockingMode(Tcl_Channel chan);
 MODULE_SCOPE int	TclCheckArrayTraces(Tcl_Interp *interp, Var *varPtr,
 			    Var *arrayPtr, Tcl_Obj *name, Tcl_Size index);
 MODULE_SCOPE int	TclCheckEmptyString(Tcl_Obj *objPtr);
 MODULE_SCOPE int	TclChanCaughtErrorBypass(Tcl_Interp *interp,
 			    Tcl_Channel chan);
 MODULE_SCOPE Tcl_ObjCmdProc2 TclChannelNamesCmd;
-MODULE_SCOPE int	TclChanIsBinary(Tcl_Channel chan);
+MODULE_SCOPE bool	TclChanIsBinary(Tcl_Channel chan);
 MODULE_SCOPE Tcl_NRPostProc TclClearRootEnsemble;
 MODULE_SCOPE int	TclCompareTwoNumbers(Tcl_Obj *valuePtr,
 			    Tcl_Obj *value2Ptr);
@@ -3594,7 +3591,7 @@ MODULE_SCOPE void	TclInitSockets(void);
 #define TclInitSockets() /* do nothing */
 #endif
 struct addrinfo; /* forward declaration, needed for TclCreateSocketAddress */
-MODULE_SCOPE int	TclCreateSocketAddress(Tcl_Interp *interp,
+MODULE_SCOPE bool	TclCreateSocketAddress(Tcl_Interp *interp,
 			    struct addrinfo **addrlist,
 			    const char *host, int port, int willBind,
 			    const char **errorMsgPtr);
@@ -3757,7 +3754,7 @@ MODULE_SCOPE Tcl_Size	TclGetObjExecutableAncestors(Tcl_Interp *interp,
 
 MODULE_SCOPE bool	TclIsSpaceProc(int byte);
 #define TclIsSpaceProcM(byte) \
-    (((unsigned)(byte) > 0x20) ? 0 : TclIsSpaceProc(byte))
+    (((unsigned)(byte) > 0x20) ? false : TclIsSpaceProc(byte))
 
 /*
  *----------------------------------------------------------------
@@ -4722,11 +4719,11 @@ TclGrowParseTokenArray(
  * but we don't do that at the moment since this is purely about efficiency.
  * The ANSI C "prototype" for this macro is:
  *
- * MODULE_SCOPE int	TclIsPureByteArray(Tcl_Obj *objPtr);
+ * MODULE_SCOPE bool	TclIsPureByteArray(Tcl_Obj *objPtr);
  *----------------------------------------------------------------
  */
 
-MODULE_SCOPE int	TclIsPureByteArray(Tcl_Obj *objPtr);
+MODULE_SCOPE bool	TclIsPureByteArray(Tcl_Obj *objPtr);
 #define TclIsPureDict(objPtr) \
     (((objPtr)->bytes == NULL) && TclHasInternalRep((objPtr), &tclDictType))
 #define TclHasInternalRep(objPtr, type) \

@@ -152,18 +152,18 @@ static void		FromCTime(__time64_t posixTime, FILETIME *fileTime);
 static int		NativeAccess(const WCHAR *path, int mode);
 static int		NativeDev(const WCHAR *path);
 static int		NativeStat(const WCHAR *path, Tcl_StatBuf *statPtr,
-			    int checkLinks);
-static unsigned short	NativeStatMode(DWORD attr, int checkLinks,
-			    int isExec);
-static int		NativeIsExec(const WCHAR *path);
+			    bool checkLinks);
+static unsigned short	NativeStatMode(DWORD attr, bool checkLinks,
+			    bool isExec);
+static bool		NativeIsExec(const WCHAR *path);
 static int		NativeReadReparse(const WCHAR *LinkDirectory,
 			    REPARSE_DATA_BUFFER *buffer, DWORD bufferSize,
 			    DWORD desiredAccess);
 static int		NativeWriteReparse(const WCHAR *LinkDirectory,
 			    REPARSE_DATA_BUFFER *buffer);
-static int		NativeMatchType(int isDrive, DWORD attr,
+static bool		NativeMatchType(bool isDrive, DWORD attr,
 			    const WCHAR *nativeName, Tcl_GlobTypeData *types);
-static int		WinIsDrive(const char *name, size_t nameLen);
+static bool		WinIsDrive(const char *name, size_t nameLen);
 static size_t		WinIsReserved(const char *path);
 static Tcl_Obj *	WinReadLink(const WCHAR *LinkSource);
 static Tcl_Obj *	WinReadLinkDirectory(const WCHAR *LinkDirectory);
@@ -967,7 +967,7 @@ TclpMatchInDirectory(
 	const char *dirName;	/* UTF-8 dir name, later with pattern
 				 * appended. */
 	Tcl_Size dirLength;
-	int matchSpecialDots;
+	bool matchSpecialDots;
 	Tcl_DString ds;		/* Native encoding of dir, also used
 				 * temporarily for other things. */
 	Tcl_DString dsOrig;	/* UTF-8 encoding of dir. */
@@ -1101,12 +1101,8 @@ TclpMatchInDirectory(
 	 * './. ../..' etc.
 	 */
 
-	if ((pattern[0] == '.')
-		|| ((pattern[0] == '\\') && (pattern[1] == '.'))) {
-	    matchSpecialDots = 1;
-	} else {
-	    matchSpecialDots = 0;
-	}
+	matchSpecialDots = (pattern[0] == '.')
+		|| ((pattern[0] == '\\') && (pattern[1] == '.'));
 
 	/*
 	 * Now iterate over all of the files in the directory, starting with
@@ -1115,7 +1111,7 @@ TclpMatchInDirectory(
 
 	do {
 	    const char *utfname;
-	    int checkDrive = 0, isDrive;
+	    bool checkDrive = false, isDrive;
 
 	    native = data.cFileName;
 	    attr = data.dwFileAttributes;
@@ -1139,7 +1135,7 @@ TclpMatchInDirectory(
 		 * match 'hidden' and not hidden files.
 		 */
 
-		checkDrive = 1;
+		checkDrive = true;
 	    }
 
 	    /*
@@ -1166,7 +1162,7 @@ TclpMatchInDirectory(
 		    isDrive = WinIsDrive(fullname, Tcl_DStringLength(&dsOrig));
 		    Tcl_DStringSetLength(&dsOrig, dirLength);
 		} else {
-		    isDrive = 0;
+		    isDrive = false;
 		}
 		if (NativeMatchType(isDrive, attr, native, types)) {
 		    Tcl_ListObjAppendElement(interp, resultPtr,
@@ -1194,7 +1190,7 @@ TclpMatchInDirectory(
  * attribute when it should not.
  */
 
-static int
+static bool
 WinIsDrive(
     const char *name,		/* Name (UTF-8) */
     size_t len)			/* Length of name */
@@ -1242,18 +1238,18 @@ WinIsDrive(
 	     * Path is pointing to the root volume.
 	     */
 
-	    return 1;
+	    return true;
 	} else if ((name[1] == ':')
 		&& (len == 2 || (name[2] == '/' || name[2] == '\\'))) {
 	    /*
 	     * Path is of the form 'x:' or 'x:/' or 'x:\'
 	     */
 
-	    return 1;
+	    return true;
 	}
     }
 
-    return 0;
+    return false;
 }
 
 /*
@@ -1333,9 +1329,9 @@ WinIsReserved(
  *----------------------------------------------------------------------
  */
 
-static int
+static bool
 NativeMatchType(
-    int isDrive,		/* Is this a drive. */
+    bool isDrive,		/* Is this a drive. */
     DWORD attr,			/* We already know the attributes for the
 				 * file. */
     const WCHAR *nativeName,	/* Native path to check. */
@@ -1362,7 +1358,7 @@ NativeMatchType(
 	 */
 
 	if ((types->perm == 0) || !(types->perm & TCL_GLOB_PERM_HIDDEN)) {
-	    return 0;
+	    return false;
 	}
     } else {
 	/*
@@ -1370,7 +1366,7 @@ NativeMatchType(
 	 */
 
 	if (types->perm & TCL_GLOB_PERM_HIDDEN) {
-	    return 0;
+	    return false;
 	}
     }
 
@@ -1384,7 +1380,7 @@ NativeMatchType(
 		((types->perm & TCL_GLOB_PERM_X) &&
 		    (!(attr & FILE_ATTRIBUTE_DIRECTORY)
 		    && !NativeIsExec(nativeName)))) {
-	    return 0;
+	    return false;
 	}
     }
 
@@ -1394,13 +1390,13 @@ NativeMatchType(
 	 * Quicker test for directory, which is a common case.
 	 */
 
-	return 1;
+	return true;
 
     } else if (types->type != 0) {
 	unsigned short st_mode;
-	int isExec = NativeIsExec(nativeName);
+	bool isExec = NativeIsExec(nativeName);
 
-	st_mode = NativeStatMode(attr, 0, isExec);
+	st_mode = NativeStatMode(attr, false, isExec);
 
 	/*
 	 * In order bcdpfls as in 'find -t'
@@ -1420,16 +1416,16 @@ NativeMatchType(
 	} else {
 #ifdef S_ISLNK
 	    if (types->type & TCL_GLOB_TYPE_LINK) {
-		st_mode = NativeStatMode(attr, 1, isExec);
+		st_mode = NativeStatMode(attr, true, isExec);
 		if (S_ISLNK(st_mode)) {
-		    return 1;
+		    return true;
 		}
 	    }
 #endif /* S_ISLNK */
-	    return 0;
+	    return false;
 	}
     }
-    return 1;
+    return true;
 }
 
 /*
@@ -1895,23 +1891,23 @@ NativeAccess(
  *	by whether the path ends in a standard executable extension.
  *
  * Results:
- *	1 = executable, 0 = not.
+ *	true = executable, false = not.
  *
  *----------------------------------------------------------------------
  */
 
-static int
+static bool
 NativeIsExec(
     const WCHAR *path)
 {
     size_t len = wcslen(path);
 
     if (len < 5) {
-	return 0;
+	return false;
     }
 
     if (path[len-4] != '.') {
-	return 0;
+	return false;
     }
 
     path += len-3;
@@ -1919,9 +1915,9 @@ NativeIsExec(
 	    || (_wcsicmp(path, L"com") == 0)
 	    || (_wcsicmp(path, L"cmd") == 0)
 	    || (_wcsicmp(path, L"bat") == 0)) {
-	return 1;
+	return true;
     }
-    return 0;
+    return false;
 }
 
 /*
@@ -2067,7 +2063,7 @@ static int
 NativeStat(
     const WCHAR *nativePath,	/* Path of file to stat */
     Tcl_StatBuf *statPtr,	/* Filled with results of stat call. */
-    int checkLinks)		/* If non-zero, behave like 'lstat' */
+    bool checkLinks)		/* If non-zero, behave like 'lstat' */
 {
     DWORD attr;
     int dev, nlink = 1;
@@ -2287,8 +2283,8 @@ NativeDev(
 static unsigned short
 NativeStatMode(
     DWORD attr,
-    int checkLinks,
-    int isExec)
+    bool checkLinks,
+    bool isExec)
 {
     int mode;
 

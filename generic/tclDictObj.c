@@ -52,8 +52,6 @@ static inline void		InitChainTable(struct Dict *dict);
 static inline void		DeleteChainTable(struct Dict *dict);
 static inline Tcl_HashEntry *	CreateChainEntry(struct Dict *dict,
 					Tcl_Obj *keyPtr, int *newPtr);
-static inline int		DeleteChainEntry(struct Dict *dict,
-					Tcl_Obj *keyPtr);
 static Tcl_NRPostProc		FinalizeDictUpdate;
 static Tcl_NRPostProc		FinalizeDictWith;
 static Tcl_ObjCmdProc2		DictForNRCmd;
@@ -297,7 +295,7 @@ CreateChainEntry(
     return &cPtr->entry;
 }
 
-static inline int
+static inline bool
 DeleteChainEntry(
     Dict *dict,
     Tcl_Obj *keyPtr)
@@ -306,7 +304,7 @@ DeleteChainEntry(
 	    Tcl_FindHashEntry(&dict->table, keyPtr);
 
     if (cPtr == NULL) {
-	return 0;
+	return false;
     } else {
 	Tcl_Obj *valuePtr = (Tcl_Obj *)Tcl_GetHashValue(&cPtr->entry);
 
@@ -329,7 +327,7 @@ DeleteChainEntry(
     }
 
     Tcl_DeleteHashEntry(&cPtr->entry);
-    return 1;
+    return true;
 }
 
 /*

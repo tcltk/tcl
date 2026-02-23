@@ -170,7 +170,7 @@ TclSockMinimumBuffers(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 TclCreateSocketAddress(
     Tcl_Interp *interp,		/* Interpreter for querying the desired socket
 				 * family */
@@ -195,7 +195,7 @@ TclCreateSocketAddress(
 	if (Tcl_UtfToExternalDStringEx(interp, NULL, host, -1, 0, &ds,
 		NULL) != TCL_OK) {
 		Tcl_DStringFree(&ds);
-	    return 0;
+	    return false;
 	}
 	native = Tcl_DStringValue(&ds);
     }
@@ -266,7 +266,7 @@ TclCreateSocketAddress(
 		(result == EAI_SYSTEM) ? Tcl_PosixError(interp) :
 #endif /* EAI_SYSTEM */
 		gai_strerror(result);
-	return 0;
+	return false;
     }
 
     /*
@@ -304,7 +304,7 @@ TclCreateSocketAddress(
 	    *addrlist = v4head;
 	}
     }
-    return 1;
+    return true;
 }
 
 /*

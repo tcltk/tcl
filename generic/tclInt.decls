@@ -55,7 +55,7 @@ declare 12 {
     void TclDeleteVars(Interp *iPtr, TclVarHashTable *tablePtr)
 }
 declare 14 {
-    int TclDumpMemoryInfo(void *clientData, int flags)
+    bool TclDumpMemoryInfo(void *clientData, int flags)
 }
 declare 16 {
     void TclExprFloatError(Tcl_Interp *interp, double value)

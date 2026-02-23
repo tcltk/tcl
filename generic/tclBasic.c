@@ -1774,11 +1774,11 @@ Tcl_GetAssocData(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Tcl_InterpDeleted(
     Tcl_Interp *interp)
 {
-    return (((Interp *) interp)->flags & DELETED) ? 1 : 0;
+    return (((Interp *) interp)->flags & DELETED) != 0;
 }
 
 /*
@@ -3267,7 +3267,7 @@ TclRenameCommand(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Tcl_SetCommandInfo(
     Tcl_Interp *interp,		/* Interpreter in which to look for
 				 * command. */
@@ -3334,7 +3334,7 @@ CmdWrapper2Proc(
 }
 #endif
 
-int
+bool
 Tcl_SetCommandInfoFromToken(
     Tcl_Command cmd,
     const Tcl_CmdInfo *infoPtr)
@@ -3342,7 +3342,7 @@ Tcl_SetCommandInfoFromToken(
     Command *cmdPtr;		/* Internal representation of the command */
 
     if (cmd == NULL) {
-	return 0;
+	return false;
     }
 
     /*
@@ -3399,7 +3399,7 @@ Tcl_SetCommandInfoFromToken(
 	    cmdPtr->deleteData = infoPtr->deleteData;
 	}
     }
-    return 1;
+    return true;
 }
 
 /*
@@ -3420,7 +3420,7 @@ Tcl_SetCommandInfoFromToken(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Tcl_GetCommandInfo(
     Tcl_Interp *interp,		/* Interpreter in which to look for
 				 * command. */
@@ -3452,7 +3452,7 @@ Tcl_GetCommandInfo(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Tcl_GetCommandInfoFromToken(
     Tcl_Command cmd,
     Tcl_CmdInfo *infoPtr)
@@ -3460,7 +3460,7 @@ Tcl_GetCommandInfoFromToken(
     Command *cmdPtr;		/* Internal representation of the command */
 
     if (cmd == NULL) {
-	return 0;
+	return false;
     }
 
     /*
@@ -3497,7 +3497,7 @@ Tcl_GetCommandInfoFromToken(
 #endif
     }
     infoPtr->namespacePtr = (Tcl_Namespace *) cmdPtr->nsPtr;
-    return 1;
+    return true;
 }
 
 /*
@@ -4355,7 +4355,7 @@ Tcl_CancelEval(
  *
  * Tcl_InterpActive --
  *
- *	Returns non-zero if the specified interpreter is in use, i.e. if there
+ *	Returns true if the specified interpreter is in use, i.e. if there
  *	is an evaluation currently active in the interpreter.
  *
  * Results:
@@ -4367,7 +4367,7 @@ Tcl_CancelEval(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Tcl_InterpActive(
     Tcl_Interp *interp)
 {

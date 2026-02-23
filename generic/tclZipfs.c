@@ -414,7 +414,7 @@ static int		InitReadableChannel(Tcl_Interp *interp,
 static int		InitWritableChannel(Tcl_Interp *interp,
 			    ZipChannel *info, ZipEntry *z, int trunc);
 static int		ListMountPoints(Tcl_Interp *interp);
-static int		ContainsMountPoint(const char *path, int pathLen);
+static bool		ContainsMountPoint(const char *path, Tcl_Size pathLen);
 static void		CleanupMount(ZipFile *zf);
 static void		SerializeCentralDirectoryEntry(
 			    const unsigned char *start,
@@ -431,7 +431,7 @@ static void		SerializeLocalEntryHeader(
 			    const unsigned char *start,
 			    const unsigned char *end, unsigned char *buf,
 			    ZipEntry *z, int nameLength, int align);
-static int		IsCryptHeaderValid(ZipEntry *z,
+static bool		IsCryptHeaderValid(ZipEntry *z,
 			    unsigned char cryptHdr[ZIP_CRYPT_HDR_LEN]);
 static int		DecodeCryptHeader(Tcl_Interp *interp, ZipEntry *z,
 			    unsigned long keys[3],
@@ -880,14 +880,14 @@ CountSlashes(
  *    Computes the validity of the encryption header CRC for a ZipEntry.
  *
  * Results:
- *    Returns 1 if the header is valid else 0.
+ *    Returns true if the header is valid else false.
  *
  * Side effects:
  *    None.
  *
  *------------------------------------------------------------------------
  */
-static int
+static bool
 IsCryptHeaderValid(
     ZipEntry *z,
     unsigned char cryptHeader[ZIP_CRYPT_HDR_LEN])
@@ -907,7 +907,7 @@ IsCryptHeaderValid(
     int dosTime = ToDosTime(z->timestamp);
     if (cryptHeader[11] == (unsigned char)(dosTime >> 8)) {
 	/* Infozip style - Tested with test-password.zip */
-	return 1;
+	return true;
     }
     /* DOS time did not match, may be CRC does */
     if (z->crc32) {
@@ -916,7 +916,7 @@ IsCryptHeaderValid(
     }
 
     /* No CRC, no way to verify. Assume valid */
-    return 1;
+    return true;
 }
 
 /*
@@ -1301,24 +1301,24 @@ ZipFSLookupZip(
  *    Caller must hold read lock before calling.
  *
  * Results:
- *    1 - there is at least one mount point under the path
- *    0 - otherwise
+ *    true - there is at least one mount point under the path
+ *    false - otherwise
  *
  * Side effects:
  *    None.
  *
  *------------------------------------------------------------------------
  */
-static int
+static bool
 ContainsMountPoint(
     const char *path,
-    int pathLen)
+    Tcl_Size pathLen)
 {
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
 
     if (ZipFS.zipHash.numEntries == 0) {
-	return 0;
+	return false;
     }
     if (pathLen < 0) {
 	pathLen = strlen(path);
@@ -1341,11 +1341,11 @@ ContainsMountPoint(
 	    ZipEntry *z;
 
 	    for (z = zf->topEnts; z; z = z->tnext) {
-		int lenz = (int) strlen(z->name);
+		Tcl_Size lenz = strlen(z->name);
 		if ((lenz >= pathLen) &&
 			(z->name[pathLen] == '/' || z->name[pathLen] == '\0') &&
 			(strncmp(z->name, path, pathLen) == 0)) {
-		    return 1;
+		    return true;
 		}
 	    }
 	} else if ((zf->mountPointLen >= pathLen)
@@ -1354,10 +1354,10 @@ ContainsMountPoint(
 			|| pathLen == ZIPFS_VOLUME_LEN)
 		&& (strncmp(zf->mountPoint, path, pathLen) == 0)) {
 	    /* Matched standard mount */
-	    return 1;
+	    return true;
 	}
     }
-    return 0;
+    return false;
 }
 
 /*
@@ -4134,7 +4134,7 @@ ZipFSExistsObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     char *filename;
-    int exists;
+    bool exists;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "filename");

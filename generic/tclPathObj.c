@@ -25,7 +25,7 @@ static void		FreeFsPathInternalRep(Tcl_Obj *pathPtr);
 static void		UpdateStringOfFsPath(Tcl_Obj *pathPtr);
 static int		SetFsPathFromAny(Tcl_Interp *interp, Tcl_Obj *pathPtr);
 static Tcl_Size		FindSplitPos(const char *path, int separator);
-static int		IsSeparatorOrNull(int ch);
+static bool		IsSeparatorOrNull(int ch);
 static Tcl_Obj *	GetExtension(Tcl_Obj *pathPtr);
 static int		MakePathFromNormalized(Tcl_Interp *interp,
 			    Tcl_Obj *pathPtr);
@@ -1167,20 +1167,20 @@ Tcl_FSConvertToPathType(
  * Helper function for normalization.
  */
 
-static int
+static bool
 IsSeparatorOrNull(
     int ch)
 {
     if (ch == 0) {
-	return 1;
+	return true;
     }
     switch (tclPlatform) {
     case TCL_PLATFORM_UNIX:
-	return (ch == '/' ? 1 : 0);
+	return ch == '/';
     case TCL_PLATFORM_WINDOWS:
-	return ((ch == '/' || ch == '\\') ? 1 : 0);
+	return (ch == '/' || ch == '\\');
     }
-    return 0;
+    return false;
 }
 
 /*

@@ -444,7 +444,7 @@ FsThrExitProc(
     tsdPtr->initialized = 0;
 }
 
-int
+bool
 TclFSCwdIsNative(void)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&fsDataKey);
@@ -457,11 +457,7 @@ TclFSCwdIsNative(void)
 	}
     }
 
-    if (tsdPtr->cwdClientData != NULL) {
-	return 1;
-    } else {
-	return 0;
-    }
+    return (tsdPtr->cwdClientData != NULL);
 }
 
 /*
@@ -629,7 +625,7 @@ FsGetFirstFilesystem(void)
  * "system encoding" changes, and when env(HOME) changes.
  */
 
-int
+bool
 TclFSEpochOk(
     size_t filesystemEpoch)
 {

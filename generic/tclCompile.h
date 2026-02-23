@@ -1021,7 +1021,7 @@ typedef enum InstStringClassType {
 
 typedef struct StringClassDesc {
     char name[8];		/* Name of the class. */
-    int (*comparator)(int);	/* Function to test if a single unicode
+    bool (*comparator)(int);	/* Function to test if a single unicode
 				 * character is a member of the class. */
 } StringClassDesc;
 
@@ -1316,7 +1316,7 @@ MODULE_SCOPE void	TclInitJumpFixupArray(JumpFixupArray *fixupArrayPtr);
 MODULE_SCOPE void	TclInitLiteralTable(LiteralTable *tablePtr);
 MODULE_SCOPE ExceptionRange *TclGetInnermostExceptionRange(CompileEnv *envPtr,
 			    int returnCode, ExceptionAux **auxPtrPtr);
-MODULE_SCOPE int	TclIsEmptyToken(const Tcl_Token *tokenPtr);
+MODULE_SCOPE bool	TclIsEmptyToken(const Tcl_Token *tokenPtr);
 MODULE_SCOPE void	TclAddLoopBreakFixup(CompileEnv *envPtr,
 			    ExceptionAux *auxPtr);
 MODULE_SCOPE void	TclAddLoopContinueFixup(CompileEnv *envPtr,
@@ -1362,7 +1362,7 @@ MODULE_SCOPE Tcl_ObjCmdProc2	TclNoIdentOpCmd;
 MODULE_SCOPE void	TclVerifyGlobalLiteralTable(Interp *iPtr);
 MODULE_SCOPE void	TclVerifyLocalLiteralTable(CompileEnv *envPtr);
 #endif
-MODULE_SCOPE int	TclWordKnownAtCompileTime(Tcl_Token *tokenPtr,
+MODULE_SCOPE bool	TclWordKnownAtCompileTime(Tcl_Token *tokenPtr,
 			    Tcl_Obj *valuePtr);
 MODULE_SCOPE void	TclLogCommandInfo(Tcl_Interp *interp,
 			    const char *script, const char *command,

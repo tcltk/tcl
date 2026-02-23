@@ -250,7 +250,7 @@ static int		ValidateJumpTargets(AssemblyEnv*);
 static int		CheckForUnclosedCatches(AssemblyEnv*);
 static int		CheckForThrowInWrongContext(AssemblyEnv*);
 static int		CheckNonThrowingBlock(AssemblyEnv*, BasicBlock*);
-static int		BytecodeMightThrow(unsigned char);
+static bool		BytecodeMightThrow(unsigned char);
 static int		CheckJumpTableLabels(AssemblyEnv*, BasicBlock*);
 static int		CheckNamespaceQualifiers(Tcl_Interp*, const char*,
 			    Tcl_Size);
@@ -3255,7 +3255,7 @@ CheckNonThrowingBlock(
  *-----------------------------------------------------------------------------
  */
 
-static int
+static bool
 BytecodeMightThrow(
     unsigned char opcode)
 {
@@ -3280,11 +3280,11 @@ BytecodeMightThrow(
 	     * Opcode is nonthrowing.
 	     */
 
-	    return 0;
+	    return false;
 	}
     }
 
-    return 1;
+    return true;
 }
 
 /*

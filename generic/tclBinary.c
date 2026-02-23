@@ -61,7 +61,7 @@ static void		DupProperByteArrayInternalRep(Tcl_Obj *srcPtr,
 static int		FormatNumber(Tcl_Interp *interp, int type,
 			    Tcl_Obj *src, unsigned char **cursorPtr);
 static void		FreeProperByteArrayInternalRep(Tcl_Obj *objPtr);
-static int		GetFormatSpec(const char **formatPtr, char *cmdPtr,
+static bool		GetFormatSpec(const char **formatPtr, char *cmdPtr,
 			    Tcl_Size *countPtr, int *flagsPtr);
 static Tcl_Obj *	ScanNumber(unsigned char *buffer, int type,
 			    int flags, Tcl_HashTable **numberCachePtr);
@@ -193,7 +193,7 @@ typedef struct {
 #define SET_BYTEARRAY(irPtr, baPtr) \
 		(irPtr)->twoPtrValue.ptr1 = (baPtr)
 
-int
+bool
 TclIsPureByteArray(
     Tcl_Obj * objPtr)
 {
@@ -1699,7 +1699,7 @@ BinaryScanCmd(
  *----------------------------------------------------------------------
  */
 
-static int
+static bool
 GetFormatSpec(
     const char **formatPtr,	/* Pointer to format string. */
     char *cmdPtr,		/* Pointer to location of command char. */
@@ -1719,7 +1719,7 @@ GetFormatSpec(
      */
 
     if (!(**formatPtr)) {
-	return 0;
+	return false;
     }
 
     /*
@@ -1748,7 +1748,7 @@ GetFormatSpec(
     } else {
 	*countPtr = BINARY_NOCOUNT;
     }
-    return 1;
+    return true;
 }
 
 /*

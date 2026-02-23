@@ -29,7 +29,7 @@ TclPlatformType tclPlatform = TCL_PLATFORM_UNIX;
 static const char *	ExtractWinRoot(const char *path,
 			    Tcl_DString *resultPtr, int offset,
 			    Tcl_PathType *typePtr);
-static int		SkipToChar(char **stringPtr, int match);
+static bool		SkipToChar(char **stringPtr, int match);
 static Tcl_Obj *	SplitWinPath(const char *path);
 static Tcl_Obj *	SplitUnixPath(const char *path);
 static int		DoGlob(Tcl_Interp *interp, Tcl_Obj *resultPtr,
@@ -1894,7 +1894,7 @@ TclGlob(
  *----------------------------------------------------------------------
  */
 
-static int
+static bool
 SkipToChar(
     char **stringPtr,		/* Pointer string to check. */
     int match)			/* Character to find. */
@@ -1912,7 +1912,7 @@ SkipToChar(
 	}
 	if ((level == 0) && (*p == match)) {
 	    *stringPtr = p;
-	    return 1;
+	    return true;
 	}
 	if (*p == '{') {
 	    level++;
@@ -1923,7 +1923,7 @@ SkipToChar(
 	}
     }
     *stringPtr = p;
-    return 0;
+    return false;
 }
 
 /*

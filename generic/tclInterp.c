@@ -3582,16 +3582,16 @@ ChildMarkTrusted(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Tcl_IsSafe(
     Tcl_Interp *interp)		/* Is this interpreter "safe" ? */
 {
     Interp *iPtr = (Interp *) interp;
 
     if (iPtr == NULL) {
-	return 0;
+	return false;
     }
-    return (iPtr->flags & SAFE_INTERP) ? 1 : 0;
+    return (iPtr->flags & SAFE_INTERP) != 0;
 }
 
 /*
@@ -3743,7 +3743,7 @@ Tcl_LimitExceeded(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Tcl_LimitReady(
     Tcl_Interp *interp)
 {
@@ -3755,15 +3755,15 @@ Tcl_LimitReady(
 	if ((iPtr->limit.active & TCL_LIMIT_COMMANDS) &&
 		((iPtr->limit.cmdGranularity == 1) ||
 		    (ticker % iPtr->limit.cmdGranularity == 0))) {
-	    return 1;
+	    return true;
 	}
 	if ((iPtr->limit.active & TCL_LIMIT_TIME) &&
 		((iPtr->limit.timeGranularity == 1) ||
 		    (ticker % iPtr->limit.timeGranularity == 0))) {
-	    return 1;
+	    return true;
 	}
     }
-    return 0;
+    return false;
 }
 
 /*

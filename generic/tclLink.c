@@ -470,7 +470,7 @@ Tcl_UpdateLinkedVar(
  *----------------------------------------------------------------------
  */
 
-static inline int
+static inline bool
 GetInt(
     Tcl_Obj *objPtr,
     int *intPtr)
@@ -479,7 +479,7 @@ GetInt(
 	    && GetInvalidIntFromObj(objPtr, intPtr) != TCL_OK);
 }
 
-static inline int
+static inline bool
 GetWide(
     Tcl_Obj *objPtr,
     Tcl_WideInt *widePtr)
@@ -488,14 +488,14 @@ GetWide(
 	int intValue;
 
 	if (GetInvalidIntFromObj(objPtr, &intValue) != TCL_OK) {
-	    return 1;
+	    return true;
 	}
 	*widePtr = intValue;
     }
-    return 0;
+    return false;
 }
 
-static inline int
+static inline bool
 GetUWide(
     Tcl_Obj *objPtr,
     Tcl_WideUInt *uwidePtr)
@@ -504,34 +504,34 @@ GetUWide(
 	int intValue;
 
 	if (GetInvalidIntFromObj(objPtr, &intValue) != TCL_OK) {
-	    return 1;
+	    return true;
 	}
 	*uwidePtr = intValue;
     }
-    return 0;
+    return false;
 }
 
-static inline int
+static inline bool
 GetDouble(
     Tcl_Obj *objPtr,
     double *dblPtr)
 {
     if (Tcl_GetDoubleFromObj(NULL, objPtr, dblPtr) == TCL_OK) {
-	return 0;
+	return false;
     } else {
 #ifdef ACCEPT_NAN
 	Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(objPtr, &tclDoubleType);
 
 	if (irPtr != NULL) {
 	    *dblPtr = irPtr->doubleValue;
-	    return 0;
+	    return false;
 	}
 #endif /* ACCEPT_NAN */
 	return GetInvalidDoubleFromObj(objPtr, dblPtr) != TCL_OK;
     }
 }
 
-static inline int
+static inline bool
 EqualDouble(
     double a,
     double b)
@@ -543,7 +543,7 @@ EqualDouble(
 	;
 }
 
-static inline int
+static inline bool
 IsSpecial(
     double a)
 {

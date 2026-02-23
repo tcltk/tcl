@@ -1172,11 +1172,7 @@ TestcmdinfoCmd(
 	info.namespacePtr = NULL;
 	info.objProc2 = NULL;
 	info.objClientData2 = NULL;
-	if (Tcl_SetCommandInfo(interp, Tcl_GetString(objv[2]), &info) == 0) {
-	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(0));
-	} else {
-	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(1));
-	}
+	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(Tcl_SetCommandInfo(interp, Tcl_GetString(objv[2]), &info)));
 	break;
     }
 

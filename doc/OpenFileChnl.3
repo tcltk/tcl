@@ -40,7 +40,7 @@ int
 int
 \fBTcl_DetachChannel\fR(\fIinterp, channel\fR)
 .sp
-int
+bool
 \fBTcl_IsStandardChannel\fR(\fIchannel\fR)
 .sp
 int
@@ -79,13 +79,13 @@ Tcl_Size
 Tcl_Size
 \fBTcl_WriteRaw\fR(\fIchannel, byteBuf, bytesToWrite\fR)
 .sp
-int
+bool
 \fBTcl_Eof\fR(\fIchannel\fR)
 .sp
 int
 \fBTcl_Flush\fR(\fIchannel\fR)
 .sp
-int
+bool
 \fBTcl_InputBlocked\fR(\fIchannel\fR)
 .sp
 int
@@ -635,10 +635,10 @@ it returns \fBTCL_ERROR\fR;  in addition, if \fIinterp\fR is non-NULL,
 an end of file during the last input operation.
 .SH TCL_INPUTBLOCKED
 .PP
-\fBTcl_InputBlocked\fR returns a nonzero value if \fIchannel\fR is in
+\fBTcl_InputBlocked\fR returns true if \fIchannel\fR is in
 nonblocking mode and the last input operation returned less data than
 requested because there was insufficient data available.
-The call always returns zero if the channel is in blocking mode.
+The call always returns false if the channel is in blocking mode.
 .SH TCL_INPUTBUFFERED
 .PP
 \fBTcl_InputBuffered\fR returns the number of bytes of input currently
