@@ -191,8 +191,8 @@ typedef struct ArrayVarHashTable {
  */
 
 static void		AppendLocals(Tcl_Interp *interp, Tcl_Obj *listPtr,
-			    Tcl_Obj *patternPtr, int includeLinks,
-			    int justConstants);
+			    Tcl_Obj *patternPtr, bool includeLinks,
+			    bool justConstants);
 static Tcl_ObjCmdProc2	ArrayAnyMoreCmd;
 static Tcl_ObjCmdProc2	ArrayDoneSearchCmd;
 static Tcl_ObjCmdProc2	ArrayNextElementCmd;
@@ -660,7 +660,7 @@ TclObjLookupVarEx(
 				 * structure. */
     const char *errMsg = NULL;
     Tcl_Size index;
-    int parsed = 0;
+    bool parsed = false;
 
     Tcl_Size localIndex;
     Tcl_Obj *namePtr, *arrayPtr, *elem;
@@ -5766,7 +5766,7 @@ FreeLocalVarName(
 
     LocalGetInternalRep(objPtr, index, namePtr);
 
-    index++;	/* Compiler warning bait. */
+    (void)index;	/* Compiler warning bait. */
     if (namePtr) {
 	Tcl_DecrRefCount(namePtr);
     }
@@ -5801,11 +5801,11 @@ FreeParsedVarName(
     Tcl_Obj *objPtr)
 {
     Tcl_Obj *arrayPtr, *elem;
-    int parsed;
+    bool parsed;
 
     ParsedGetInternalRep(objPtr, parsed, arrayPtr, elem);
 
-    parsed++;				/* Silence compiler. */
+    (void)parsed;				/* Silence compiler. */
     if (arrayPtr != NULL) {
 	TclDecrRefCount(arrayPtr);
 	TclDecrRefCount(elem);
@@ -5818,11 +5818,11 @@ DupParsedVarName(
     Tcl_Obj *dupPtr)
 {
     Tcl_Obj *arrayPtr, *elem;
-    int parsed;
+    bool parsed;
 
     ParsedGetInternalRep(srcPtr, parsed, arrayPtr, elem);
 
-    parsed++;				/* Silence compiler. */
+    (void)parsed;				/* Silence compiler. */
     ParsedSetInternalRep(dupPtr, arrayPtr, elem);
 }
 
@@ -6136,7 +6136,7 @@ TclInfoVarsCmd(
 	    }
 	}
     } else if (iPtr->varFramePtr->procPtr != NULL) {
-	AppendLocals(interp, listPtr, simplePatternPtr, 1, 0);
+	AppendLocals(interp, listPtr, simplePatternPtr, true, false);
     }
 
     if (simplePatternPtr) {
@@ -6290,7 +6290,7 @@ TclInfoLocalsCmd(
      */
 
     listPtr = Tcl_NewListObj(0, NULL);
-    AppendLocals(interp, listPtr, patternPtr, 0, 0);
+    AppendLocals(interp, listPtr, patternPtr, false, false);
     Tcl_SetObjResult(interp, listPtr);
     return TCL_OK;
 }
@@ -6479,7 +6479,7 @@ TclInfoConstsCmd(
 	    }
 	}
     } else if (iPtr->varFramePtr->procPtr != NULL) {
-	AppendLocals(interp, listPtr, simplePatternPtr, 1, 1);
+	AppendLocals(interp, listPtr, simplePatternPtr, true, true);
     }
 
     if (simplePatternPtr) {
@@ -6529,8 +6529,8 @@ AppendLocals(
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Obj *listPtr,		/* List object to append names to. */
     Tcl_Obj *patternPtr,	/* Pattern to match against. */
-    int includeLinks,		/* 1 if upvars should be included, else 0. */
-    int justConstants)		/* 1 if just constants should be included. */
+    bool includeLinks,		/* true if upvars should be included, else false. */
+    bool justConstants)		/* true if just constants should be included. */
 {
     Interp *iPtr = (Interp *) interp;
     Var *varPtr;

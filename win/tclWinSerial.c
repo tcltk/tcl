@@ -17,7 +17,6 @@
 #pragma clang diagnostic ignored "-Wc++-keyword"
 #endif
 
-
 /*
  * The following variable is used to tell whether this module has been
  * initialized.
@@ -386,7 +385,7 @@ SerialBlockTime(
 #define min(a, b)  (((a) < (b)) ? (a) : (b))
 #endif
 
-void
+static void
 SerialSetupProc(
     TCL_UNUSED(void *),
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */

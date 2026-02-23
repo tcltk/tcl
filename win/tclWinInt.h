@@ -20,11 +20,11 @@
 typedef struct {
     OSVERSIONINFOW osVersion;	/* Windows version information */
     DWORD longPathsSupported;	/* Long paths supported without \\?\ ? */
-    char codePage[20];          /* User code page */
+    char codePage[20];		/* User code page */
 } TclWinInfo;
 
 MODULE_SCOPE const TclWinInfo *	TclGetWinInfo(void);
-
+
 /*
  * TclpGetWindowsVersion --
  *
@@ -41,7 +41,7 @@ TclpGetWindowsVersion(void)
     const TclWinInfo *winInfoPtr = TclGetWinInfo();
     return winInfoPtr ? &winInfoPtr->osVersion : NULL;
 }
-
+
 /*
  * TclpGetCodePage --
  *
@@ -72,8 +72,6 @@ TclpLongPathSupported(void)
     assert(winInfoPtr);
     return winInfoPtr->longPathsSupported;
 }
-
-
 
 /*
  * Declarations of functions that are not accessible by way of the

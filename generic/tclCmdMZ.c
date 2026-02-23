@@ -3934,14 +3934,14 @@ TclNRSwitchObjCmd(
      * TIP #280: Make invoking context available to switch branch.
      */
 
-    Tcl_NRAddCallback(interp, SwitchPostProc, INT2PTR(splitObjs), ctxPtr,
-	    INT2PTR(pc), (void *)pattern);
+    TclNRAddCallback(interp, SwitchPostProc, INT2PTR(splitObjs), ctxPtr,
+	    INT2PTR(pc), pattern);
     return TclNREvalObjEx(interp, objv[j], 0, ctxPtr, splitObjs ? j : bidx+j);
 }
 
 static int
 SwitchPostProc(
-    void *data[],		/* Data passed from Tcl_NRAddCallback above */
+    void *data[],		/* Data passed from TclNRAddCallback above */
     Tcl_Interp *interp,		/* Tcl interpreter */
     int result)			/* Result to return*/
 {
@@ -4900,8 +4900,8 @@ TclNRTryObjCmd(
      * Execute the body.
      */
 
-    Tcl_NRAddCallback(interp, TryPostBody, handlersObj, finallyObj,
-	    (void *)objv, INT2PTR(objc));
+    TclNRAddCallback(interp, TryPostBody,
+	    handlersObj, finallyObj, objv, INT2PTR(objc));
     return TclNREvalObjEx(interp, bodyObj, 0,
 	    ((Interp *) interp)->cmdFramePtr, 1);
 }
@@ -5111,7 +5111,7 @@ TryPostBody(
 	     */
 
 	    handlerBodyObj = info[4];
-	    Tcl_NRAddCallback(interp, TryPostHandler, objv, options, info[0],
+	    TclNRAddCallback(interp, TryPostHandler, objv, options, info[0],
 		    INT2PTR((finallyObj == NULL) ? 0 : objc - 1));
 	    Tcl_DecrRefCount(handlersObj);
 	    return TclNREvalObjEx(interp, handlerBodyObj, 0,
@@ -5139,7 +5139,7 @@ TryPostBody(
      */
 
     if (finallyObj != NULL) {
-	Tcl_NRAddCallback(interp, TryPostFinal, resultObj, options, cmdObj,
+	TclNRAddCallback(interp, TryPostFinal, resultObj, options, cmdObj,
 		NULL);
 	return TclNREvalObjEx(interp, finallyObj, 0,
 		((Interp *) interp)->cmdFramePtr, objc - 1);
@@ -5223,7 +5223,7 @@ TryPostHandler(
     if (finallyObj != NULL) {
 	Interp *iPtr = (Interp *) interp;
 
-	Tcl_NRAddCallback(interp, TryPostFinal, resultObj, options, cmdObj,
+	TclNRAddCallback(interp, TryPostFinal, resultObj, options, cmdObj,
 		NULL);
 
 	/* The 'finally' script is always the last argument word. */
@@ -5356,8 +5356,8 @@ TclNRWhileObjCmd(
     iterPtr->msg  = "\n    (\"while\" body line %d)";
     iterPtr->word = 2;
 
-    TclNRAddCallback(interp, TclNRForIterCallback, iterPtr, NULL,
-	    NULL, NULL);
+    TclNRAddCallback(interp, TclNRForIterCallback, iterPtr,
+	    NULL, NULL, NULL);
     return TCL_OK;
 }
 

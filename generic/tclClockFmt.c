@@ -414,7 +414,7 @@ static struct ClockFmtScnStorage_GC {
     ClockFmtScnStorage *stackBound;
     unsigned count;
 } ClockFmtScnStorage_GC = {NULL, NULL, 0};
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -457,7 +457,7 @@ ClockFmtScnStorageGC_In(
 	ClockFmtScnStorageDelete(delEnt);
     }
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -978,8 +978,7 @@ ClockLocalizeFormat(
 	}
     }
 
-done:
-
+  done:
     TclUnsetObjRef(keyObj);
     return (opts->formatObj = valObj);
 }
@@ -2144,7 +2143,7 @@ EstimateTokenCount(
 	(tokCnt) += CLOCK_MIN_TOK_CHAIN_BLOCK_SIZE;			 \
     }									 \
     memset(tok, 0, sizeof(*(tok)));
-
+
 /*
  *----------------------------------------------------------------------
  */

@@ -807,7 +807,7 @@ Tcltest_Init(
 
     return TclplatformtestInit(interp);
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1668,7 +1668,7 @@ TestdcallCmd(
     Tcl_DStringResult(interp, &delString);
     return TCL_OK;
 }
-
+
 /*
  * The deletion callback used by TestdcallCmd:
  */
@@ -2013,7 +2013,7 @@ TestdstringCmd(
     }
     return TCL_OK;
 }
-
+
 /*
  * The procedure below is used as a special freeProc to test how well
  * Tcl_DStringGetResult handles freeProc's other than free.
@@ -3323,9 +3323,10 @@ TestlinkCmd(
     static float floatVar = 4.5;
     static Tcl_WideUInt uwideVar = 123;
     static int created = 0;
-    char buffer[2*TCL_DOUBLE_SPACE];
-    int writable, flag;
+    int flag;
     Tcl_Obj *tmp;
+    char buffer[2*TCL_DOUBLE_SPACE];
+    bool writable;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "option ?arg arg arg arg arg arg arg arg arg arg arg arg"
@@ -4200,7 +4201,7 @@ vamoose:
     }
     return status;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -4601,7 +4602,7 @@ TestparsevarnameCmd(
     Tcl_Obj *const objv[])	/* The argument objects. */
 {
     const char *script;
-    int append;
+    bool append;
     Tcl_Size length, dummy;
     Tcl_Parse parse;
 
@@ -5208,7 +5209,7 @@ TeststaticlibraryCmd(
     Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument strings. */
 {
-    int safe, loaded;
+    bool safe, loaded;
 
     if (objc != 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "prefix safe loaded");
@@ -5437,7 +5438,7 @@ TestuniClassCmd(
     Tcl_SetObjResult(interp, result);
     return TCL_OK;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -6307,7 +6308,7 @@ TestmainthreadCmd(
 	return TCL_ERROR;
     }
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -6333,7 +6334,7 @@ MainLoop(void)
     fprintf(stdout,"Exit MainLoop\n");
     fflush(stdout);
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -6362,7 +6363,7 @@ TestsetmainloopCmd(
     Tcl_SetMainLoop(MainLoop);
     return TCL_OK;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -7133,7 +7134,7 @@ TestSocketCmd(
     if ((cmdName[0] == 't') && (strncmp(cmdName, "testflags", len) == 0)) {
 	Tcl_Channel hChannel;
 	int modePtr;
-	int testMode;
+	bool testMode;
 	TcpState *statePtr;
 	/* Set test value in the socket driver
 	 */
@@ -7216,7 +7217,7 @@ TestServiceModeCmd(
     Tcl_SetObjResult(interp, Tcl_NewWideIntObj(oldmode));
     return TCL_OK;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -7406,7 +7407,7 @@ TestReportInFilesystem(
     *clientDataPtr = newPathPtr;
     return TCL_OK;
 }
-
+
 /*
  * Simple helper function to extract the native vfs representation of a path
  * object, or NULL if no such representation exists.
@@ -7703,7 +7704,7 @@ SimplePathInFilesystem(
     }
     return TCL_OK;
 }
-
+
 /*
  * This is a slightly 'hacky' filesystem which is used just to test a few
  * important features of the vfs code: (1) that you can load a shared library
@@ -7749,7 +7750,7 @@ TestSimpleFilesystemCmd(
     Tcl_SetObjResult(interp, Tcl_NewStringObj(msg , -1));
     return res;
 }
-
+
 /*
  * Treats a file name 'simplefs:/foo' by using the file 'foo' in the current
  * (native) directory.
@@ -8036,7 +8037,7 @@ TestGetUniCharCmd(
 
     return TCL_OK;
 }
-
+
 /*
  * Used to check correct operation of Tcl_UtfFindFirst
  */
@@ -8058,7 +8059,7 @@ TestFindFirstCmd(
     }
     return TCL_OK;
 }
-
+
 /*
  * Used to check correct operation of Tcl_UtfFindLast
  */
@@ -8328,7 +8329,6 @@ TestNREUnwind(
 	    INT2PTR(-1), NULL);
     return TCL_OK;
 }
-
 
 static int
 TestNRELevels(
@@ -8986,7 +8986,7 @@ TestInterpResolverCmd(
     }
     return TCL_OK;
 }
-
+
 /*
  *------------------------------------------------------------------------
  *
@@ -9064,7 +9064,7 @@ TestApplyLambdaCmd(
 
     return result;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -9212,11 +9212,6 @@ TestChanSourceInput(
 {
     TestChanSourceState *chanPtr = (TestChanSourceState *)instanceData;
 
-    /* Arbitrary failsafe to prevent running out of memory */
-    if (chanPtr->numSourced > 100000000) {
-	return 0;
-    }
-
     /*
      * Bit of optimization to minimize overhead since goal is channel i/o
      * measurement. Wonder if compiler would have been better anyways...
@@ -9298,7 +9293,7 @@ TestChanSourceInput(
 }
 
 static int
-TestChanSourceClose2 (
+TestChanSourceClose2(
     void *instanceData,
     TCL_UNUSED(Tcl_Interp *),	/* interp */
     int flags)
@@ -9310,7 +9305,7 @@ TestChanSourceClose2 (
 }
 
 static int
-TestChanSinkOutput (
+TestChanSinkOutput(
     TCL_UNUSED(void *),	/* Instance data */
     TCL_UNUSED(const char *),	/* Bytes to write */
     int nbytes,
@@ -9320,7 +9315,7 @@ TestChanSinkOutput (
 }
 
 static int
-TestChanSinkClose2 (
+TestChanSinkClose2(
     TCL_UNUSED(void *),	/* Instance data */
     TCL_UNUSED(Tcl_Interp *),	/* interp */
     TCL_UNUSED(int))		/* flags */
@@ -9367,7 +9362,7 @@ static const Tcl_ChannelType TestChanSinkDispatch = {
     NULL, /* ThreadAction */
     NULL  /* Truncate */
 };
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -9478,7 +9473,7 @@ TestChanCreateCmd(
     Tcl_SetObjResult(interp, Tcl_NewStringObj(channelName, -1));
     return TCL_OK;
 }
-
+
 /*
  * TestUtfToNormalizedCmd --
  *
@@ -9558,7 +9553,7 @@ TestUtfToNormalizedCmd(
     }
     return result;
 }
-
+
 /*
  * TestUtfToNormalizedDStringCmd --
  *
@@ -9665,7 +9660,7 @@ TestHandleCountCmd(
 	    "GetProcessHandleCount failed", -1));
     return TCL_ERROR;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -9707,9 +9702,8 @@ TestAppVerifierPresentCmd(
     return TCL_OK;
 }
 
-
 #endif /* _WIN32 */
-
+
 /*
  * Local Variables:
  * mode: c

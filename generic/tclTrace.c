@@ -1340,7 +1340,7 @@ TclCheckExecutionTraces(
 	     * Execute the trace command in order of creation for "leave".
 	     */
 
-	    active.reverseScan = 1;
+	    active.reverseScan = true;
 	    active.nextTracePtr = NULL;
 	    tracePtr = cmdPtr->tracePtr;
 	    while (tracePtr->nextPtr != lastTracePtr) {
@@ -1348,7 +1348,7 @@ TclCheckExecutionTraces(
 		tracePtr = tracePtr->nextPtr;
 	    }
 	} else {
-	    active.reverseScan = 0;
+	    active.reverseScan = false;
 	    active.nextTracePtr = tracePtr->nextPtr;
 	}
 	if (tracePtr->traceProc == TraceCommandProc) {
@@ -1451,7 +1451,7 @@ TclCheckInterpTraces(
 	     * results in one more reversal of trace invocation.
 	     */
 
-	    active.reverseScan = 1;
+	    active.reverseScan = true;
 	    active.nextTracePtr = NULL;
 	    tracePtr = iPtr->tracePtr;
 	    while (tracePtr->nextPtr != lastTracePtr) {
@@ -1462,7 +1462,7 @@ TclCheckInterpTraces(
 		lastTracePtr = active.nextTracePtr->nextPtr;
 	    }
 	} else {
-	    active.reverseScan = 0;
+	    active.reverseScan = false;
 	    active.nextTracePtr = tracePtr->nextPtr;
 	}
 

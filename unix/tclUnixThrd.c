@@ -122,7 +122,6 @@ PMutexUnlock(
     }
 }
 
-
 static void
 PCondWait(
     pthread_cond_t *pcondPtr,

@@ -282,19 +282,16 @@ int TclGetAliasObj(Tcl_Interp *interp, const char *childCmd,
 #   define Tcl_CreateFileHandler 0
 #   define Tcl_DeleteFileHandler 0
 #   define Tcl_GetOpenFile 0
-#else
-#   define TclpIsAtty isatty
-#endif
-
-#ifdef _WIN32
 #   define TclUnixWaitForFile 0
 #   define TclUnixCopyFile 0
 #   define TclUnixOpenTemporaryFile 0
 #   define TclpReaddir 0
-#   undef TclpIsAtty
-#   define TclpIsAtty 0
-#elif defined(__CYGWIN__)
-#   define TclpIsAtty isatty
+#   define TclpIsAtty (bool (*)(int))(void *)_isatty
+#else
+#define TclpIsAtty (bool (*)(int))(void *)isatty
+#endif
+
+#ifdef __CYGWIN__
 static void
 doNothing(void)
 {
@@ -331,11 +328,8 @@ TclpGetPid(Tcl_Pid pid)
     return (Tcl_Size)PTR2INT(pid);
 }
 
-#if defined(TCL_WIDE_INT_IS_LONG)
-/* On Cygwin64, long is 64-bit while on Win64 long is 32-bit. Therefore
- * we have to make sure that all stub entries on Cygwin64 follow the Win64
- * signature. Tcl 9 must find a better solution, but that cannot be done
- * without introducing a binary incompatibility.
+/* On Cygwin, long is 64-bit while on Win64 long is 32-bit. Therefore we have
+ * to make sure that all stub entries on Cygwin follow the Win64 signature.
  */
 #define Tcl_GetLongFromObj (int(*)(Tcl_Interp*,Tcl_Obj*,long*))(void *)Tcl_GetIntFromObj
 static int exprInt(Tcl_Interp *interp, const char *expr, int *ptr){
@@ -370,7 +364,6 @@ static int exprIntObj(Tcl_Interp *interp, Tcl_Obj*expr, int *ptr){
     return result;
 }
 #define Tcl_ExprLongObj (int(*)(Tcl_Interp*,Tcl_Obj*,long*))(void *)exprIntObj
-#endif /* TCL_WIDE_INT_IS_LONG */
 
 #else /* __CYGWIN__ */
 #   define TclWinGetTclInstance 0

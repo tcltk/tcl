@@ -2465,7 +2465,7 @@ TclNativePathInFilesystem(
  *
  *----------------------------------------------------------------------
  */
-int
+static int
 MakeTildeRelativePath(
     Tcl_Interp *interp,		/* May be NULL. Only used for error messages */
     const char *user,		/* User name. NULL -> current user */
@@ -2790,12 +2790,12 @@ TclFSGetAncestorPaths(
     count = i;
     /* Fill remaining with NULL */
     while (i < numPaths) {
-	pathsPtr[i] = NULL;
+	pathsPtr[i++] = NULL;
     }
     Tcl_DecrRefCount(splitPathPtr);
     return count;
 }
-
+
 /*
  * Local Variables:
  * mode: c

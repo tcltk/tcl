@@ -61,17 +61,15 @@ OpenResourceMap(
     static short (*openresourcemap)(CFBundleRef) = NULL;
 
     if (!initialized) {
-	{
-	    openresourcemap = (short (*)(CFBundleRef))dlsym(RTLD_NEXT,
-		    "CFBundleOpenBundleResourceMap");
+	openresourcemap = (short (*)(CFBundleRef))dlsym(RTLD_NEXT,
+		"CFBundleOpenBundleResourceMap");
 #ifdef TCL_DEBUG_LOAD
-	    if (!openresourcemap) {
-		const char *errMsg = dlerror();
+	if (!openresourcemap) {
+	    const char *errMsg = dlerror();
 
-		TclLoadDbgMsg("dlsym() failed: %s", errMsg);
-	    }
-#endif /* TCL_DEBUG_LOAD */
+	    TclLoadDbgMsg("dlsym() failed: %s", errMsg);
 	}
+#endif /* TCL_DEBUG_LOAD */
 	initialized = TRUE;
     }
 
@@ -192,9 +190,7 @@ Tcl_MacOSXOpenVersionedBundleResources(
 	    CFRelease(libURL);
 	}
 	if (versionedBundleRef) {
-	    {
-		CFRelease(versionedBundleRef);
-	    }
+	    CFRelease(versionedBundleRef);
 	}
     }
 

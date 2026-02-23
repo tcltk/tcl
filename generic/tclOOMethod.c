@@ -1322,7 +1322,7 @@ RenderMethodName(
 	return Tcl_MethodName(pmPtr->method);
     }
 }
-
+
 /*
  * ----------------------------------------------------------------------
  *

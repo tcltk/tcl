@@ -64,7 +64,7 @@ MODULE_SCOPE Tcl_FSPathInFilesystemProc TclNativePathInFilesystem;
 MODULE_SCOPE Tcl_FSCreateInternalRepProc TclNativeCreateNativeRep;
 
 #endif /* _TCLFILESYSTEM */
-
+
 /*
  * Local Variables:
  * mode: c
