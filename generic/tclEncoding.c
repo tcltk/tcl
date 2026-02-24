@@ -3260,7 +3260,28 @@ UtfToUtfProc(
 		CHECK_ISOLATEDSURROGATE();
 	    }
 
-	    dst += Tcl_UniCharToUtf(ch, dst);
+	    if ((flags & TCL_COMBINE) || ch <= 0) {
+		dst += Tcl_UniCharToUtf(ch, dst);
+	    } else {
+		assert(ch > 0);
+		if (ch < 0x80) {
+		    *dst++ = (char)ch;
+		} else if (ch < 0x800) {
+		    *dst++ = (char)(0xC0 | (ch >> 6));
+		    *dst++ = (char)(0x80 | (ch & 0x3F));
+		} else if (ch < 0x10000) {
+		    *dst++ = (char)(0xE0 | (ch >> 12));
+		    *dst++ = (char)(0x80 | ((ch >> 6) & 0x3F));
+		    *dst++ = (char)(0x80 | (ch & 0x3F));
+		} else if (ch < 0x110000) {
+		    *dst++ = (char)(0xF0 | (ch >> 18));
+		    *dst++ = (char)(0x80 | ((ch >> 12) & 0x3F));
+		    *dst++ = (char)(0x80 | ((ch >> 6) & 0x3F));
+		    *dst++ = (char)(0x80 | (ch & 0x3F));
+		} else {
+		    dst += Tcl_UniCharToUtf(ch, dst);
+		}
+	    }
 	}
     }
 
