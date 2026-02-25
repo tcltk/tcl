@@ -289,6 +289,13 @@ maxObjPrecision(
  *----------------------------------------------------------------------
  */
 static Tcl_WideInt
+ArithSeriesLenDbl(
+    double start,
+    double end,
+    double step,
+    unsigned precision);
+
+static Tcl_WideInt
 ArithSeriesLenInt(
     Tcl_WideInt start,
     Tcl_WideInt end,
@@ -296,13 +303,21 @@ ArithSeriesLenInt(
 {
     Tcl_WideInt len;
 
+    // Check for opposite sequence directions
+    if ((step < 0 && (end-start) > 0) ||
+        (step > 0 && (end-start) < 0)) {
+        return 0;
+    }
     if (step == 0) {
-	return 0;
+        // Sequence consists of a single value
+	return 1;
     }
-    len = (end - start) / step + 1;
+
+    len = ((end - start) / step) + 1;
     if (len < 0) {
-	return 0;
+	len = 0;
     }
+
     return len;
 }
 
@@ -320,7 +335,7 @@ ArithSeriesLenDbl(
 			  * with and w/o FPU_INLINE_ASM, _CONTROLFP, etc) */
 
     if (step == 0) {
-	return 0;
+	return 1;
     }
     if (precision) {
 	scaleFactor = power10(precision);
@@ -330,6 +345,7 @@ ArithSeriesLenDbl(
     }
     /* distance */
     end -= start;
+
     /*
      * To improve numerical stability use wide arithmetic instead of IEEE-754
      * when distance and step do not exceed wide-integers.
@@ -339,7 +355,8 @@ ArithSeriesLenDbl(
 	Tcl_WideInt iend = end < 0 ? end - 0.5 : end + 0.5;
 	Tcl_WideInt istep = step < 0 ? step - 0.5 : step + 0.5;
 	if (istep) { /* avoid div by zero, steps like 0.1, precision 0 */
-	    return (iend / istep) + 1;
+	    Tcl_WideInt ilen = (iend / istep) + 1;
+	    return (ilen < 0 ? 0 : ilen);
 	}
     }
     /*
@@ -348,10 +365,10 @@ ArithSeriesLenDbl(
      */
     len = (end / step) + 1;
     if (len >= (double)TCL_SIZE_MAX) {
-	return TCL_SIZE_MAX;
+	len = TCL_SIZE_MAX;
     }
-    if (len < 0) {
-	return 0;
+    if (len <= 0) {
+	len = 1;
     }
     return (Tcl_WideInt)len;
 }
@@ -460,10 +477,13 @@ NewArithSeriesInt(
 
     TclNewObj(arithSeriesObj);
 
-    if (length <= 0) {
-	/* TODO - should negative lengths be an error? */
+    if (length < 0) {
+	// Negative length implies the step direction is opposite to the
+	// start/end direction. In mathmatical terms, an infinite length.
+        // Map this to an empty list (length of 0). An empty set is a vaild
+	// sequence.
 	return arithSeriesObj;
-    } else if (length > 1) {
+    } else if (length >= 1) {
 	/* Check for numeric overflow. Not needed for single element lists */
 	Tcl_WideUInt absoluteStep;
 	Tcl_WideInt numIntervals = length - 1;
@@ -481,9 +501,10 @@ NewArithSeriesInt(
 	    absoluteStep = -step;
 	}
 	/* First, step*number of intervals should not overflow */
-	if ((UWIDE_MAX / absoluteStep) < (Tcl_WideUInt) numIntervals) {
+	if (absoluteStep && (UWIDE_MAX / absoluteStep) < (Tcl_WideUInt) numIntervals) {
 	    goto invalid_range;
 	}
+        
 	if (step > 0) {
 	    /*
 	     * Because of check above and UWIDE_MAX=2*WIDE_MAX+1,
@@ -675,34 +696,42 @@ TclNewArithSeriesObj(
 {
     double dstart, dend, dstep = 1.0;
     Tcl_WideInt start, end, step = 1;
-    Tcl_WideInt len = -1;
+    Tcl_WideInt len;
     Tcl_Obj *objPtr;
     unsigned precision = (unsigned)-1; /* unknown precision */
+
+
+    if (lenObj) {
+	if (Tcl_GetWideIntFromObj(interp, lenObj, &len) != TCL_OK) {
+	    return NULL;
+	}
+    } else {
+	// Default
+	len = -1;
+    }
+
+    if (stepObj) {
+	if (assignNumber(interp, useDoubles, &step, &dstep, stepObj) != TCL_OK) {
+	    return NULL;
+	}
+    } else {
+	// Default
+	step = 1;
+	dstep = step;
+    }
 
     if (startObj) {
 	if (assignNumber(interp, useDoubles, &start, &dstart, startObj) != TCL_OK) {
 	    return NULL;
 	}
     } else {
+	// Default
 	start = 0;
-	dstart = 0.0;
+	dstart = start;
     }
-    if (stepObj) {
-	if (assignNumber(interp, useDoubles, &step, &dstep, stepObj) != TCL_OK) {
-	    return NULL;
-	}
-	if (!useDoubles ? !step : !dstep) {
-	    TclNewObj(objPtr);
-	    return objPtr;
-	}
-    }
+
     if (endObj) {
 	if (assignNumber(interp, useDoubles, &end, &dend, endObj) != TCL_OK) {
-	    return NULL;
-	}
-    }
-    if (lenObj) {
-	if (Tcl_GetWideIntFromObj(interp, lenObj, &len) != TCL_OK) {
 	    return NULL;
 	}
     }
@@ -711,17 +740,17 @@ TclNewArithSeriesObj(
 	if (!stepObj) {
 	    if (useDoubles) {
 		if (dstart > dend) {
-		    dstep = -1.0;
 		    step = -1;
+		    dstep = step;
 		}
 	    } else {
 		if (start > end) {
 		    step = -1;
-		    dstep = -1.0;
+		    dstep = step;
 		}
 	    }
 	}
-	assert(dstep!=0);
+
 	if (!lenObj) {
 	    if (useDoubles) {
 		if (isinf(dstart) || isinf(dend)) {
@@ -762,6 +791,13 @@ TclNewArithSeriesObj(
      * todo: check whether the boundary must be rather LIST_MAX, to be more
      * similar to plain lists, otherwise it'd generate an error or panic later
      * (0x0ffffffffffffffa instead of 0x7fffffffffffffff by 64bit)
+     */
+    /*
+     * Comment for future reference: The size concern would only be triggered
+     * via a shimmer or getElements of the abstract list. Otherwise, the
+     * abstract list is only limited by the max index value. Even then,
+     * indexing with a bignum is theoretically possible. This is because
+     * individual values are not stored. They are created upon request.
      */
     if (len > TCL_SIZE_MAX) {
     exceeded:

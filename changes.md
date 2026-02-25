@@ -14,7 +14,12 @@ to the userbase.
  - [Check for -municode doesn't work on WSL](https://core.tcl-lang.org/tcl/tktview/632710)
  - [configure --enable-man-compression error](https://core.tcl-lang.org/tcl/tktview/886549)
  - [nmake: rmdir and mkdir are picked from cygwin if available](https://core.tcl-lang.org/tcl/tktview/be40b7)
-
+ - [lseq: has incorrect results in edge cases](https://core.tcl-lang.org/tcl/tktview/999b69)
+ - [lseq: "count" error persists across calls](https://core.tcl-lang.org/tcl/tktview/8d1fc7)
+ - [lseq: tip-746 removes the ability to pass expressions as numeric
+   values in the lseq
+   command.](https://core.tcl-lang.org/tips/doc/trunk/tip/746.md)
+   
 # Updated bundled packages, libraries, standards, data
  - Itcl 4.3.6
  - sqlite3 3.51.2
