@@ -43,9 +43,37 @@ if {"::tcltest" ni [namespace children]} {
 catch [list package require -exact tcl::test [info patchlevel]]
 source [file join [file dirname [info script]] tcltests.tcl]
 
-testConstraint testobj [llength [info commands testobj]]
-testConstraint testlistobj [llength [info commands testobj]]
 testConstraint memory [llength [info commands memory]]
+
+testConstraint testobj [llength [info commands testobj]]
+testConstraint testlistobj [llength [info commands testlistobj]]
+testConstraint testlistrep [llength [info commands testlistrep]]
+testConstraint testlistapi [llength [info commands testlistapi]]
+
+# The tests in this file are heavily dependent on the test* commands.
+# Constraints do not suffice to skip those tests because they are used
+# not just in the test body but also the value to the -result option.
+# Using tclsh instead of tcltest to run these tests will generate errors
+# so we skip the entire file if these commands are not present.
+# At the same time, to record that tests based on these constraints
+# are skipped, define a dummy empty test.
+set _testcommands {
+    testobj
+    testlistobj
+    testlistrep
+    testlistapi
+}
+test listtype-constraint-check {Logs that tests are skipped} \
+    -constraints $_testcommands
+foreach _testcommand $_testcommands {
+    testConstraint $_testcommand [llength [info commands $_testcommand]]
+    if {![testConstraint $_testcommand]} {
+        ::tcltest::cleanupTests
+        unset _testcommand _testcommands
+        return
+    }
+}
+unset _testcommand _testcommands
 
 namespace eval listtype {
     variable listTypes {arithseries list rangeList repeatedList reversedList spanlist}

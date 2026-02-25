@@ -6,7 +6,6 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
     namespace import ::tcltest::*
 }
 tcltest::loadTestedCommands
-package require tcl::test
 
 testConstraint teststringobj [llength [info commands teststringobj]]
 tcltest::testConstraint haveUnicodeIsCmds [expr {![catch {unicode is lower A}]}]

@@ -6,8 +6,32 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
     namespace import ::tcltest::*
 }
 tcltest::loadTestedCommands
-package require tcl::test
 
+# The tests in this file are heavily dependent on the test* commands.
+# Constraints do not suffice to skip those tests because they are used
+# not just in the test body but also the value to the -result option.
+# Using tclsh instead of tcltest to run these tests will generate errors
+# so we skip the entire file if these commands are not present.
+# At the same time, to record that tests based on these constraints
+# are skipped, define a dummy empty test.
+set _testcommands {
+    teststringbytes
+    testutftonormalized
+    testutftonormalized
+}
+test listtype-constraint-check {Logs that tests are skipped} \
+    -constraints $_testcommands
+foreach _testcommand $_testcommands {
+    testConstraint $_testcommand [llength [info commands $_testcommand]]
+    if {![testConstraint $_testcommand]} {
+        ::tcltest::cleanupTests
+        unset _testcommand _testcommands
+        return
+    }
+}
+unset _testcommand _testcommands
+
+package require tcl::test
 source [file join [file dirname [info script]] ucdUtils.tcl]
 
 namespace eval unicode::normalization::test {
