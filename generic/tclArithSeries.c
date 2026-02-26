@@ -304,12 +304,12 @@ ArithSeriesLenInt(
     Tcl_WideInt len;
 
     // Check for opposite sequence directions
-    if ((step < 0 && (end-start) > 0) ||
-        (step > 0 && (end-start) < 0)) {
-        return 0;
+    if ((step < 0 && (end-start) > 0)
+	    || (step > 0 && (end-start) < 0)) {
+	return 0;
     }
     if (step == 0) {
-        // Sequence consists of a single value
+	// Sequence consists of a single value
 	return 1;
     }
 
@@ -365,7 +365,7 @@ ArithSeriesLenDbl(
      */
     len = (end / step) + 1;
     if (len >= (double)TCL_SIZE_MAX) {
-	len = TCL_SIZE_MAX;
+	len = (double)TCL_SIZE_MAX;
     }
     if (len <= 0) {
 	len = 1;
@@ -480,7 +480,7 @@ NewArithSeriesInt(
     if (length < 0) {
 	// Negative length implies the step direction is opposite to the
 	// start/end direction. In mathmatical terms, an infinite length.
-        // Map this to an empty list (length of 0). An empty set is a vaild
+	// Map this to an empty list (length of 0). An empty set is a vaild
 	// sequence.
 	return arithSeriesObj;
     } else if (length >= 1) {
@@ -504,7 +504,6 @@ NewArithSeriesInt(
 	if (absoluteStep && (UWIDE_MAX / absoluteStep) < (Tcl_WideUInt) numIntervals) {
 	    goto invalid_range;
 	}
-        
 	if (step > 0) {
 	    /*
 	     * Because of check above and UWIDE_MAX=2*WIDE_MAX+1,
