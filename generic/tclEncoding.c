@@ -3048,7 +3048,7 @@ UtfToUtfProc(
 
     /* Checks if a source byte can be copied directly to destination */
 #define BYTE_COPYABLE(byte_) \
-    (UCHAR(byte_) < 0x80 && !((UCHAR(byte_) == 0) && (flags & ENCODING_INPUT)))
+    (UCHAR(byte_) < 0x80 && ((UCHAR(byte_) != 0)))
 
     /*
      * Macro to check for isolated surrogate and either break with
@@ -3260,9 +3260,15 @@ UtfToUtfProc(
 		CHECK_ISOLATEDSURROGATE();
 	    }
 
-	    if (((unsigned)ch - 1) < 0x7F) {
-		*dst++ = (char)ch;
+	    assert(ch >= 0 && ch <= 0x10FFFF);
+	    if (ch == 0) {
+		/* Nul character must be encoded as \xC0\x80 in Tcl's UTF-8 */
+		assert(flags & ENCODING_INPUT);
+		*dst++ = (char)0xC0;
+		*dst++ = (char)0x80;
 	    } else if ((unsigned)ch < 0x800) {
+		/* 0 < ch < 0x80 case already handled in ASCII path earlier */
+		assert(ch >= 0x80);
 		*dst++ = (char)(0xC0 | (ch >> 6));
 		*dst++ = (char)(0x80 | (ch & 0x3F));
 	    } else if ((unsigned)ch < 0x10000) {
