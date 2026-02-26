@@ -3263,9 +3263,16 @@ UtfToUtfProc(
 	    assert(ch >= 0 && ch <= 0x10FFFF);
 	    if (ch == 0) {
 		/* Nul character must be encoded as \xC0\x80 in Tcl's UTF-8 */
-		assert(flags & ENCODING_INPUT);
-		*dst++ = (char)0xC0;
-		*dst++ = (char)0x80;
+		if (flags & ENCODING_INPUT) {
+		    *dst++ = (char)0xC0;
+		    *dst++ = (char)0x80;
+		} else {
+		    /*
+		     * Can only happen if Tcl's internal string rep contains a
+		     * nul byte (which is an invalid case but protect anyways)
+		     */
+		    *dst++ = 0;
+		}
 	    } else if ((unsigned)ch < 0x800) {
 		/* 0 < ch < 0x80 case already handled in ASCII path earlier */
 		assert(ch >= 0x80);
