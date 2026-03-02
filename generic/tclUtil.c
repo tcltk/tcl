@@ -1868,13 +1868,14 @@ TclTrim(
 	if (numBytes > 0) {
 	    int ch;
 	    const char *first = bytes + trimLeft;
-	    bytes += TclUtfToUCS4(first, &ch);
-	    numBytes -= (bytes - first);
+	    int pInc = TclUtfToUCS4(first, &ch);
+	    first += pInc;
+	    numBytes -= pInc;
 
 	    if (numBytes > 0) {
 		/* When bytes is NUL-terminated, returns
 		 * 0 <= trimRight <= numBytes */
-		trimRight = TclTrimRight(bytes, numBytes, trim, numTrim);
+		trimRight = TclTrimRight(first, numBytes, trim, numTrim);
 	    }
 	}
     }

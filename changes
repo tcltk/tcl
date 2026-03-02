@@ -9447,4 +9447,6 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 
 2026-02-18 Update to zlib 1.3.2 (nijtmans)
 
+2026-03-02 tring trim generates invalid utf-8 for some codepoints (chelmuth)
+
 - (to be) Released 8.6.18, Apr ??, 2026 - details at https://core.tcl-lang.org/tcl/ -
