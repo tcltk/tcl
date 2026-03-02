@@ -546,6 +546,12 @@ int tinydir_readfile(const tinydir_dir *dir, tinydir_file *file)
 #ifndef _MSC_VER
 #ifdef __MINGW32__
 	if (_tstat(
+#elif (defined _BSD_SOURCE) || (defined _DEFAULT_SOURCE)	\
+	|| ((defined _XOPEN_SOURCE) && (_XOPEN_SOURCE >= 500))	\
+	|| ((defined _POSIX_C_SOURCE) && (_POSIX_C_SOURCE >= 200112L)) \
+	|| ((defined __APPLE__) && (defined __MACH__)) \
+	|| (defined BSD)
+	if (lstat(
 #else
 	if (stat(
 #endif
@@ -637,7 +643,7 @@ int tinydir_file_open(tinydir_file *file, const _tinydir_char_t *path)
 	int result = 0;
 	int found = 0;
 	_tinydir_char_t dir_name_buf[_TINYDIR_PATH_MAX];
-	_tinydir_char_t file_name_buf[_TINYDIR_FILENAME_MAX];
+	_tinydir_char_t file_name_buf[_TINYDIR_PATH_MAX];
 	_tinydir_char_t *dir_name;
 	_tinydir_char_t *base_name;
 #if (defined _MSC_VER || defined __MINGW32__)
