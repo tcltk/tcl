@@ -16,12 +16,10 @@ to the userbase.
  - [nmake: rmdir and mkdir are picked from cygwin if available](https://core.tcl-lang.org/tcl/tktview/be40b7)
  - [lseq: has incorrect results in edge cases](https://core.tcl-lang.org/tcl/tktview/999b69)
  - [lseq: "count" error persists across calls](https://core.tcl-lang.org/tcl/tktview/8d1fc7)
- - [lseq: tip-746 removes the ability to pass expressions as numeric
-   values in the lseq
-   command.](https://core.tcl-lang.org/tips/doc/trunk/tip/746.md)
-   
+ - [lseq: Remove the ability to pass expressions as numeric values in the lseq command.](https://core.tcl-lang.org/tips/doc/trunk/tip/746.md)
+
 # Updated bundled packages, libraries, standards, data
- - Itcl 4.3.6
+ - Itcl 4.3.7
  - sqlite3 3.51.2
  - Thread 3.0.5
  - tzdata 2025c
@@ -274,11 +272,3 @@ writing Tcl scripts.
  - abstract and singleton classes
  - configurable properties
  - `method -export`, `method -unexport`
-
-# Known bugs
- - [changed behaviour wrt command names, namespaces and resolution](https://core.tcl-lang.org/tcl/tktview/f14b33)
- - [windows dos device paths inconsistencies and missing functionality](https://core.tcl-lang.org/tcl/tktview/d8f121)
- - [load library (dll) from zipfs-library causes a leak in temporary folder](https://core.tcl-lang.org/tcl/tktview/a8e4f7)
- - [lsearch -sorted -inline -subindices incorrect result](https://core.tcl-lang.org/tcl/tktview/bc4ac0)
- - ["No error" when load fails due to a missing secondary DLL](https://core.tcl-lang.org/tcl/tktview/66aa81c90a)
-
