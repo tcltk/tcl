@@ -22,7 +22,7 @@ to the userbase.
  - Itcl 4.3.7
  - sqlite3 3.51.2
  - Thread 3.0.5
- - tzdata 2025c
+ - tzdata 2026a
  - zlib 1.3.2
 
 Release Tcl 9.0.3 arises from the check-in with tag `core-9-0-3`.
