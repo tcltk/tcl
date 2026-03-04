@@ -38301,6 +38301,24 @@ test clock-59.2 {correct time zone names, format and scan back, bug and regressi
     set result
 } [lrepeat 12 1]
 
+test clock-59.3 {numeric TZs (inclusive hour only), format and scan back, bug and regression [51aa53616067cb63]} {
+    set result {}
+    foreach {base tz} {
+	 1700000000 "-02"
+	 1700000000 "+02"
+	 1301184000 "+0300"
+	 1301184000 "-0300"
+	  152632800 "+1345"
+	 -765317964 "-0330"
+	-2337928528 "+0845"
+    } {
+	set v [clock format $base -timezone $tz -format "%Y-%m-%d %H:%M:%S %Z"]
+	lappend result [expr {[set t [clock scan $v -format "%Y-%m-%d %H:%M:%S %Z" -timezone $tz]] == $base ? 1 : "0 ($t != $base for $v)"}]
+	lappend result [expr {[set t [clock scan $v -timezone $tz]] == $base ? 1 : "0 ($t != $base for $v)"}]
+    }
+    set result
+} [lrepeat 14 1]
+
 # case-insensitive matching of weekday and month names [Bug 1781282]
 
 test clock-60.1 {case insensitive weekday names} {
