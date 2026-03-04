@@ -39,6 +39,12 @@ testConstraint detroit \
 testConstraint y2038 \
     [expr {[clock format 2158894800 -format %z -timezone :America/Detroit] eq {-0400}}]
 
+testConstraint tcltzdata [file isdirectory $::tcl::clock::DataDir]
+testConstraint tz_us_east_indiana \
+    [expr {![catch {clock format 0 -timezone :US/East-Indiana -format %z}]}]
+testConstraint tz_us_eastern \
+    [expr {![catch {clock format 0 -timezone :US/Eastern -format %z}]}]
+
 # Test with both validity modes - validate on / off:
 
 set valid_mode [::tcl::unsupported::clock::configure -valid]
@@ -296,6 +302,11 @@ proc ::testClock::_cleanupRegistry {} {
     ::tcl::clock::ClearCaches
 }
 
+if {[testConstraint tcltzdata]} {
+    set ::testClock::tzCET CET
+} else {
+    set ::testClock::tzCET Europe/Berlin
+}
 proc ::testClock::_setupNoTZ {} {
     if { [info exists ::env(TZ)] } {
 	variable orgTZ $::env(TZ)
@@ -18859,8 +18870,8 @@ test clock-6.16 {input of ambiguous short locale token (%b)} {
 test clock-6.17 {spaces are always optional in non-strict mode (default)} {
     list [clock scan "2009-06-30T18:30:00+02:00" -format "%Y-%m-%dT%H:%M:%S%z" -gmt 1] \
 	 [clock scan "2009-06-30T18:30:00  +02:00" -format "%Y-%m-%dT%H:%M:%S%z" -gmt 1] \
-	 [clock scan "2009-06-30T18:30:00Z" -format "%Y-%m-%dT%H:%M:%S%z" -timezone CET] \
-	 [clock scan "2009-06-30T18:30:00  Z" -format "%Y-%m-%dT%H:%M:%S%z" -timezone CET]
+	 [clock scan "2009-06-30T18:30:00Z" -format "%Y-%m-%dT%H:%M:%S%z" -timezone $::testClock::tzCET] \
+	 [clock scan "2009-06-30T18:30:00  Z" -format "%Y-%m-%dT%H:%M:%S%z" -timezone $::testClock::tzCET]
 } {1246379400 1246379400 1246386600 1246386600}
 
 test clock-6.18 {zone token (%z) is optional} {
@@ -35922,12 +35933,12 @@ test clock-30.32 {regression test - add no int overflow} {
 test clock-30.33 {regression test - add with negative base (local seconds of the day, bug [482db1d796540e68])} {
     list \
       [list \
-	[clock add -631152000 27463 days 3000 seconds -timezone :CET] \
-	[clock add -631152000 902 months 10 days 3000 seconds -timezone :CET] \
-	[clock add -631152000 75 years 69 days 3000 seconds -timezone :CET] \
-	[clock add -631152000 659112 hours 3000 seconds -timezone :CET] \
-	[clock add -631152000 39546720 minutes 3000 seconds -timezone :CET] \
-	[clock add -631152000 2372806200 seconds -timezone :CET]
+	[clock add -631152000 27463 days 3000 seconds -timezone $::testClock::tzCET] \
+	[clock add -631152000 902 months 10 days 3000 seconds -timezone $::testClock::tzCET] \
+	[clock add -631152000 75 years 69 days 3000 seconds -timezone $::testClock::tzCET] \
+	[clock add -631152000 659112 hours 3000 seconds -timezone $::testClock::tzCET] \
+	[clock add -631152000 39546720 minutes 3000 seconds -timezone $::testClock::tzCET] \
+	[clock add -631152000 2372806200 seconds -timezone $::testClock::tzCET]
       ] \
       [list \
 	[clock add -631152000 27463 days 3000 seconds -gmt 1] \
@@ -35949,24 +35960,24 @@ test clock-30.34 {regression test - clock add jump over DST hole with TZ (1 day 
 	    list "\"$v\" ne \"$exp\"" "    while testing \[clock format \[clock add $t $args\] -format \"%Y-%m-%d %H:%M:%S %Z\" -timezone $tz\]"
 	}
     }
-    set t [clock scan "2024-03-31 01:59:59" -timezone :CET]; # 1 second before time switch CET/CEST
+    set t [clock scan "2024-03-31 01:59:59" -timezone $::testClock::tzCET]; # 1 second before time switch CET/CEST
     join [list \
-	{*}[test_add_dst $t -timezone :CET                         {2024-03-31 01:59:59 CET}] \
-	{*}[test_add_dst $t -1 month -timezone :CET                {2024-02-29 01:59:59 CET}] \
-	{*}[test_add_dst $t 1 second -1 month -timezone :CET       {2024-02-29 03:00:00 CET}] \
-	{*}[test_add_dst $t -1 day -timezone :CET                  {2024-03-30 01:59:59 CET}] \
-	{*}[test_add_dst $t 1 second -1 day -timezone :CET         {2024-03-30 03:00:00 CET}] \
-	{*}[test_add_dst $t 1 second -timezone :CET                {2024-03-31 03:00:00 CEST}] \
-	{*}[test_add_dst $t 1 day -timezone :CET                   {2024-04-01 01:59:59 CEST}] \
-	{*}[test_add_dst $t 24 hours -timezone :CET                {2024-04-01 02:59:59 CEST}] \
-	{*}[test_add_dst $t 1440 minutes -timezone :CET            {2024-04-01 02:59:59 CEST}] \
-	{*}[test_add_dst $t 86400 seconds -timezone :CET           {2024-04-01 02:59:59 CEST}] \
-	{*}[test_add_dst $t 1 second 1 day -timezone :CET          {2024-04-01 03:00:00 CEST}] \
-	{*}[test_add_dst $t 1 second 24 hours -timezone :CET       {2024-04-01 03:00:00 CEST}] \
-	{*}[test_add_dst $t 1 second 1440 minutes -timezone :CET   {2024-04-01 03:00:00 CEST}] \
-	{*}[test_add_dst $t 1 second 86400 seconds -timezone :CET  {2024-04-01 03:00:00 CEST}] \
-	{*}[test_add_dst $t 1 month -timezone :CET                 {2024-04-30 01:59:59 CEST}] \
-	{*}[test_add_dst $t 1 second 1 month -timezone :CET        {2024-04-30 03:00:00 CEST}] \
+	{*}[test_add_dst $t -timezone $::testClock::tzCET                         {2024-03-31 01:59:59 CET}] \
+	{*}[test_add_dst $t -1 month -timezone $::testClock::tzCET                {2024-02-29 01:59:59 CET}] \
+	{*}[test_add_dst $t 1 second -1 month -timezone $::testClock::tzCET       {2024-02-29 03:00:00 CET}] \
+	{*}[test_add_dst $t -1 day -timezone $::testClock::tzCET                  {2024-03-30 01:59:59 CET}] \
+	{*}[test_add_dst $t 1 second -1 day -timezone $::testClock::tzCET         {2024-03-30 03:00:00 CET}] \
+	{*}[test_add_dst $t 1 second -timezone $::testClock::tzCET                {2024-03-31 03:00:00 CEST}] \
+	{*}[test_add_dst $t 1 day -timezone $::testClock::tzCET                   {2024-04-01 01:59:59 CEST}] \
+	{*}[test_add_dst $t 24 hours -timezone $::testClock::tzCET                {2024-04-01 02:59:59 CEST}] \
+	{*}[test_add_dst $t 1440 minutes -timezone $::testClock::tzCET            {2024-04-01 02:59:59 CEST}] \
+	{*}[test_add_dst $t 86400 seconds -timezone $::testClock::tzCET           {2024-04-01 02:59:59 CEST}] \
+	{*}[test_add_dst $t 1 second 1 day -timezone $::testClock::tzCET          {2024-04-01 03:00:00 CEST}] \
+	{*}[test_add_dst $t 1 second 24 hours -timezone $::testClock::tzCET       {2024-04-01 03:00:00 CEST}] \
+	{*}[test_add_dst $t 1 second 1440 minutes -timezone $::testClock::tzCET   {2024-04-01 03:00:00 CEST}] \
+	{*}[test_add_dst $t 1 second 86400 seconds -timezone $::testClock::tzCET  {2024-04-01 03:00:00 CEST}] \
+	{*}[test_add_dst $t 1 month -timezone $::testClock::tzCET                 {2024-04-30 01:59:59 CEST}] \
+	{*}[test_add_dst $t 1 second 1 month -timezone $::testClock::tzCET        {2024-04-30 03:00:00 CEST}] \
 	\
 	{*}[test_add_dst $t -timezone :GMT                         {2024-03-31 00:59:59 GMT}] \
 	{*}[test_add_dst $t -1 month -timezone :GMT                {2024-02-29 00:59:59 GMT}] \
@@ -36548,7 +36559,7 @@ test clock-34.20.20 {clock scan tests (TZ, TZ + 1day)} {
     clock scan "00:00 GMT+1000 day" -base 100000000 -gmt 1
 } 100015200
 test clock-34.20.21 {clock scan tests (local date of base depends on given TZ, time apllied to different day)} {
-    list [clock scan "23:59:59 -0100" -base 0 -timezone :CET] \
+    list [clock scan "23:59:59 -0100" -base 0 -timezone $::testClock::tzCET] \
 	 [clock scan "23:59:59 -0100" -base 0 -gmt 1] \
 	 [clock scan "23:59:59 -0100" -base 0 -timezone -1400] \
 	 [clock scan "23:59:59 -0100" -base 0 -timezone :Pacific/Apia]
@@ -36826,30 +36837,30 @@ test clock-34.69.1 {relative from base, date switch} {
        -base $base -gmt 1] -gmt 1 -format {%Y-%m-%d %H:%M:%S}
 } {2017-01-01 00:00:00}
 test clock-34.69.2 {relative time, daylight switch} {
-    set base [clock scan "03/27/2016" -timezone CET]
+    set base [clock scan "03/27/2016" -timezone $::testClock::tzCET]
     set res {}
     lappend res [clock format [clock scan "+1 hour" \
-       -base $base -timezone CET] -timezone CET -format {%Y-%m-%d %H:%M:%S %Z}]
+       -base $base -timezone $::testClock::tzCET] -timezone $::testClock::tzCET -format {%Y-%m-%d %H:%M:%S %Z}]
     lappend res [clock format [clock scan "+2 hour" \
-       -base $base -timezone CET] -timezone CET -format {%Y-%m-%d %H:%M:%S %Z}]
+       -base $base -timezone $::testClock::tzCET] -timezone $::testClock::tzCET -format {%Y-%m-%d %H:%M:%S %Z}]
 } {{2016-03-27 01:00:00 CET} {2016-03-27 03:00:00 CEST}}
 
 test clock-34.69.3 {relative time with day increment / daylight switch} {
-    set base [clock scan "03/27/2016" -timezone CET]
+    set base [clock scan "03/27/2016" -timezone $::testClock::tzCET]
     set res {}
     lappend res [clock format [clock scan "+5 day +25 hour" \
-       -base [expr {$base - 6*24*60*60}] -timezone CET] -timezone CET -format {%Y-%m-%d %H:%M:%S %Z}]
+       -base [expr {$base - 6*24*60*60}] -timezone $::testClock::tzCET] -timezone $::testClock::tzCET -format {%Y-%m-%d %H:%M:%S %Z}]
     lappend res [clock format [clock scan "+5 day +26 hour" \
-       -base [expr {$base - 6*24*60*60}] -timezone CET] -timezone CET -format {%Y-%m-%d %H:%M:%S %Z}]
+       -base [expr {$base - 6*24*60*60}] -timezone $::testClock::tzCET] -timezone $::testClock::tzCET -format {%Y-%m-%d %H:%M:%S %Z}]
 } {{2016-03-27 01:00:00 CET} {2016-03-27 03:00:00 CEST}}
 
 test clock-34.69.4 {relative time with month & day increment / daylight switch} {
-    set base [clock scan "03/27/2016" -timezone CET]
+    set base [clock scan "03/27/2016" -timezone $::testClock::tzCET]
     set res {}
     lappend res [clock format [clock scan "next Mar +5 day +25 hour" \
-       -base [expr {$base - 35*24*60*60}] -timezone CET] -timezone CET -format {%Y-%m-%d %H:%M:%S %Z}]
+       -base [expr {$base - 35*24*60*60}] -timezone $::testClock::tzCET] -timezone $::testClock::tzCET -format {%Y-%m-%d %H:%M:%S %Z}]
     lappend res [clock format [clock scan "next Mar +5 day +26 hour" \
-       -base [expr {$base - 35*24*60*60}] -timezone CET] -timezone CET -format {%Y-%m-%d %H:%M:%S %Z}]
+       -base [expr {$base - 35*24*60*60}] -timezone $::testClock::tzCET] -timezone $::testClock::tzCET -format {%Y-%m-%d %H:%M:%S %Z}]
 } {{2016-03-27 01:00:00 CET} {2016-03-27 03:00:00 CEST}}
 
 test clock-34.70.1 {check date in DST-hole: daylight switch CET -> CEST} {
@@ -36857,15 +36868,15 @@ test clock-34.70.1 {check date in DST-hole: daylight switch CET -> CEST} {
     # forwards
     set base 1459033200
     for {set i 0} {$i <= 3} {incr i} {
-	set d [clock scan "+$i hour" -base $base -timezone CET]
-	lappend res "$d = [clock format $d -timezone CET -format {%Y-%m-%d %H:%M:%S %Z}]"
+	set d [clock scan "+$i hour" -base $base -timezone $::testClock::tzCET]
+	lappend res "$d = [clock format $d -timezone $::testClock::tzCET -format {%Y-%m-%d %H:%M:%S %Z}]"
     }
     lappend res "#--"
     # backwards
     set base 1459044000
     for {set i 0} {$i <= 3} {incr i} {
-	set d [clock scan "-$i hour" -base $base -timezone CET]
-	lappend res "$d = [clock format $d -timezone CET -format {%Y-%m-%d %H:%M:%S %Z}]"
+	set d [clock scan "-$i hour" -base $base -timezone $::testClock::tzCET]
+	lappend res "$d = [clock format $d -timezone $::testClock::tzCET -format {%Y-%m-%d %H:%M:%S %Z}]"
     }
     set res
 } [split [regsub -all {^\n|\n$} {
@@ -36885,15 +36896,15 @@ test clock-34.70.2 {check date in DST-hole: daylight switch CEST -> CET} {
     # forwards
     set base 1477782000
     for {set i 0} {$i <= 3} {incr i} {
-	set d [clock scan "+$i hour" -base $base -timezone CET]
-	lappend res "$d = [clock format $d -timezone CET -format {%Y-%m-%d %H:%M:%S %Z}]"
+	set d [clock scan "+$i hour" -base $base -timezone $::testClock::tzCET]
+	lappend res "$d = [clock format $d -timezone $::testClock::tzCET -format {%Y-%m-%d %H:%M:%S %Z}]"
     }
     lappend res "#--"
     # backwards
     set base 1477792800
     for {set i 0} {$i <= 3} {incr i} {
-	set d [clock scan "-$i hour" -base $base -timezone CET]
-	lappend res "$d = [clock format $d -timezone CET -format {%Y-%m-%d %H:%M:%S %Z}]"
+	set d [clock scan "-$i hour" -base $base -timezone $::testClock::tzCET]
+	lappend res "$d = [clock format $d -timezone $::testClock::tzCET -format {%Y-%m-%d %H:%M:%S %Z}]"
     }
     set res
 } [split [regsub -all {^\n|\n$} {
@@ -36949,18 +36960,18 @@ test clock-37.1 {%s gmt testing} {
 } {0 0}
 test clock-37.2 {%Es gmt testing CET} {
     set s [clock scan "2017-01-10 09:00:00" -gmt 1]
-    set a [clock format $s -format %Es -timezone CET]
+    set a [clock format $s -format %Es -timezone $::testClock::tzCET]
     set b [clock format $s -format %Es -gmt 1]
-    set c [clock scan $s -format %Es -timezone CET]
+    set c [clock scan $s -format %Es -timezone $::testClock::tzCET]
     set d [clock scan $s -format %Es -gmt 1]
     # %Es depend on the time zone (local seconds instead of posix seconds).
     list [expr {$b-$a}] [expr {$d-$c}]
 } {-3600 3600}
 test clock-37.3 {%Es gmt testing CEST} {
     set s [clock scan "2017-05-10 09:00:00" -gmt 1]
-    set a [clock format $s -format %Es -timezone CET]
+    set a [clock format $s -format %Es -timezone $::testClock::tzCET]
     set b [clock format $s -format %Es -gmt 1]
-    set c [clock scan $s -format %Es -timezone CET]
+    set c [clock scan $s -format %Es -timezone $::testClock::tzCET]
     set d [clock scan $s -format %Es -gmt 1]
     # %Es depend on the time zone (local seconds instead of posix seconds).
     list [expr {$b-$a}] [expr {$d-$c}]
@@ -37069,7 +37080,7 @@ test clock-38.4fm {ensure cache of base is correct for :localtime if TZ-env chan
 	::testClock::_cleanupRegistry
     } -match glob -result {1 *}
 
-test clock-39.1 {regression - synonym timezones} {
+test clock-39.1 {regression - synonym timezones} tz_us_eastern {
     clock format 0 -format {%H:%M:%S} -timezone :US/Eastern
 } {19:00:00}
 
@@ -37104,7 +37115,7 @@ test clock-42.1 {regression test - %z in :localtime when west of Greenwich } \
 
 # 43.1 was a bad test - mktime returning -1 is an error according to Posix.
 
-test clock-44.1 {regression test - time zone name containing hyphen } \
+test clock-44.1 {regression test - time zone name containing hyphen } -constraints tz_us_east_indiana \
     -setup {
 	set env(TZ) US/East-Indiana
     } \
@@ -37257,7 +37268,7 @@ proc _invalid_test {testtz scnargs args} {
     # of local time to UTC may adjust date/time tokens, depending on TZ:
     set res {}
     if {$testtz eq ""} {
-	set testtz {:GMT :CET {} :Europe/Berlin :localtime}
+	set testtz {GMT CET {} Europe/Berlin :localtime}
     }
     if {!$valid_mode} { # globally -valid 0, so add it explicitely
 	lappend scnargs -valid 1
@@ -37350,16 +37361,16 @@ rename _invalid_test {}
 unset -nocomplain idx relstr
 
 set dst_hole_check {
-    {":Europe/Berlin"
+    {"Europe/Berlin"
 	"2017-03-26 01:59:59" "2017-03-26 02:00:00" "2017-03-26 02:59:59" "2017-03-26 03:00:00"
 	"2017-10-29 01:59:59" "2017-10-29 02:00:00"}
-    {":Europe/Berlin"
+    {"Europe/Berlin"
 	"2018-03-25 01:59:59" "2018-03-25 02:00:00" "2018-03-25 02:59:59" "2018-03-25 03:00:00"
 	"2018-10-28 01:59:59" "2018-10-28 02:00:00"}
-    {":America/New_York"
+    {"America/New_York"
 	"2017-03-12 01:59:59" "2017-03-12 02:00:00" "2017-03-12 02:59:59" "2017-03-12 03:00:00"
 	"2017-11-05 01:59:59" "2017-11-05 02:00:00"}
-    {":America/New_York"
+    {"America/New_York"
 	"2018-03-11 01:59:59" "2018-03-11 02:00:00" "2018-03-11 02:59:59" "2018-03-11 03:00:00"
 	"2018-11-04 01:59:59" "2018-11-04 02:00:00"}
 }
@@ -37416,7 +37427,7 @@ proc _invalid_test {args} {
     # ensure validation works TZ independently, since the conversion
     # of local time to UTC may adjust date/time tokens, depending on TZ:
     set res {}
-    foreach tz {:GMT :CET {} :Europe/Berlin :localtime} {
+    foreach tz {GMT CET {} Europe/Berlin :localtime} {
 	foreach {v fmt} $args {
 	    if {$valid_mode} { # globally -valid 1
 		lappend res [catch {clock scan $v -format $fmt -timezone $tz} msg] $msg
@@ -37549,7 +37560,7 @@ test clock-49.2 {regression test - missing time zone file (Bug 1237907)} \
 	# put New York back on the map
 	dict set ::tcl::clock::WinZoneInfo \
 	    {-18000 0 3600 0 11 0 1 2 0 0 0 0 3 0 2 2 0 0 0} \
-	    :America/New_York
+	    America/New_York
 	::tcl::clock::ClearCaches
     } \
     -result {<-0500>+05:00:00<-0400>+04:00:00,M3.2.0/02:00:00,M11.1.0/02:00:00 {19:00:00 -0500} 1969}
@@ -38422,7 +38433,7 @@ test clock-65.1 {clock add, bad option [Bug 2481670]} {*}{
 
 test clock-65.2 {clock add with both -timezone and -gmt} {*}{
     -body {
-	clock add 0 1 year -timezone :CET -gmt true
+	clock add 0 1 year -timezone $::testClock::tzCET -gmt true
     }
     -match glob
     -returnCodes error

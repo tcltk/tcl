@@ -250,7 +250,11 @@ zone	: tZONE tDST {
 	    yyDSTmode = DSToff;
 	}
 	| sign INTNUM { /* +0100, -0100 */
-	    yyTimezone = -$1*($2 % 100 + ($2 / 100) * 60);
+	    if ($2 / 100) {
+		yyTimezone = -$1*($2 % 100 + ($2 / 100) * 60);
+	    } else { /* +01, -01 */
+		yyTimezone = -$1*($2 * 60);
+	    }
 	    yyDSTmode = DSToff;
 	}
 	;
