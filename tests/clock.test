@@ -37,7 +37,7 @@ package require msgcat 1.4
 testConstraint detroit \
     [expr {![catch {clock format 0 -timezone :America/Detroit -format %z}]}]
 testConstraint y2038 \
-    [expr {[clock format 2158894800 -format %z -timezone :America/Detroit] eq {-0400}}]
+    [expr {[testConstraint detroit] && [clock format 2158894800 -format %z -timezone :America/Detroit] eq {-0400}}]
 
 testConstraint tcltzdata [file isdirectory $::tcl::clock::DataDir]
 testConstraint tz_us_east_indiana \
