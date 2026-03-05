@@ -695,8 +695,7 @@ static Tcl_Obj *	ExecuteExtendedUnaryMathOp(int opcode,
 			    Tcl_Obj *valuePtr);
 static void		FreeExprCodeInternalRep(Tcl_Obj *objPtr);
 static Tcl_Obj *	GenerateArithSeries(Tcl_Interp *interp, Tcl_Obj *from,
-			    Tcl_Obj *to, Tcl_Obj *step, Tcl_Obj *count,
-			    unsigned evalMask);
+			    Tcl_Obj *to, Tcl_Obj *step, Tcl_Obj *count);
 static ExceptionRange *	GetExceptRangeForPc(const unsigned char *pc,
 			    int searchMode, ByteCode *codePtr);
 static const char *	GetSrcInfoForPc(const unsigned char *pc,
@@ -5535,8 +5534,7 @@ TEBCresume(
 	DECACHE_STACK_INFO();
 	// Decode arguments and construct the series.
 	// Note that arguments may be expressions and reenter TEBC.
-	objResultPtr = GenerateArithSeries(interp, from, to, step, count,
-		mask & TCL_ARITHSERIES_EVAL_MASK);
+	objResultPtr = GenerateArithSeries(interp, from, to, step, count);
 	CACHE_STACK_INFO();
 	if (objResultPtr == NULL) {
 	    TRACE_ERROR(interp);
@@ -9251,69 +9249,18 @@ TclCompareTwoNumbers(
 /*
  *----------------------------------------------------------------------
  *
- * ParseArithSeriesArgument --
- *
- *	Helper for GenerateArithSeries() that encapsulates the weird calling of
- *	Tcl_ExprObj() if the value isn't numeric. Never calls Tcl_ExprObj()
- *	when alreadyPostExpr is set (which indicates that the analysis was done
- *	by the compiler).
- *
- * Results:
- *	TCL_OK if the value was numeric or a numeric-yielding expression, or
- *	TCL_ERROR if not. The variables pointed at by ptrPtr and typePtr will
- *	be updated on OK, the interpreter result on ERROR.
- *
- * Side effects:
- *	Can call Tcl_ExprObj() which can call commands, so arbitrary side
- *	effects are possible. May update the variable pointed at by valuePtr
- *	to contain the expression result.
- *
- *----------------------------------------------------------------------
- */
-static inline int
-ParseArithSeriesArgument(
-    Tcl_Interp *interp,		// The interpreter.
-    Tcl_Obj **valuePtr,		// Var holding object reference to parse/update [IN/OUT]
-    bool alreadyPostExpr,	// Whether the value has already been parsed as an expression [IN]
-    void **ptrPtr,		// Var to receive ref to number contents [OUT]
-    int *typePtr)		// Var to receive number type [OUT]
-{
-    Tcl_Obj *value = *valuePtr, *tmp;
-    if (alreadyPostExpr) {
-	return GetNumberFromObj(interp, value, ptrPtr, typePtr);
-    }
-    if (TclHasInternalRep(value, &tclExprCodeType)
-	    || GetNumberFromObj(NULL, value, ptrPtr, typePtr) != TCL_OK) {
-	if (Tcl_ExprObj(interp, value, &tmp) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-	// Switch to the object out of the expression.
-	Tcl_DecrRefCount(value);
-	*valuePtr = value = tmp;
-	if (GetNumberFromObj(interp, value, ptrPtr, typePtr) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-    }
-    return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * GenerateArithSeries --
  *
  *	This is the core of the implementation of the INST_ARITH_SERIES opcode,
- *	handling the decoding of the arguments (applying Tcl_ExprObj() if
- *	necessary) before handing off to TclNewArithSeriesObj() to build the
- *	series.
+ *	handling the decoding of the arguments before handing off to
+ *	TclNewArithSeriesObj() to build the series.
  *
  * Results:
  *	The arithmetic series object (zero refcount) or NULL on error, when a
  *	message will be left in the interpreter result.
  *
  * Side effects:
- *	Can call Tcl_ExprObj() which can call commands, so arbitrary side
- *	effects are possible.
+ *	Parses arguments as numbers so type conversions may occur.
  *
  *----------------------------------------------------------------------
  */
@@ -9323,8 +9270,7 @@ GenerateArithSeries(
     Tcl_Obj *from,		// The from value, or NULL if not supplied.
     Tcl_Obj *to,		// The to value, or NULL if not supplied.
     Tcl_Obj *step,		// The step value, or NULL if not supplied.
-    Tcl_Obj *count,		// The count value, or NULL if not supplied.
-    unsigned evalMask)		// Which values are already expr results.
+    Tcl_Obj *count)		// The count value, or NULL if not supplied.
 {
     Tcl_Obj *result = NULL;
     int type, useDoubles = 0;
@@ -9350,8 +9296,7 @@ GenerateArithSeries(
      */
 
     if (from) {
-	if (ParseArithSeriesArgument(interp, &from,
-		evalMask & TCL_ARITHSERIES_FROM_EVAL, &ptr, &type) != TCL_OK) {
+	if (GetNumberFromObj(interp, from, &ptr, &type) != TCL_OK) {
 	    goto cleanupOnError;
 	}
 	switch (type) {
@@ -9368,8 +9313,7 @@ GenerateArithSeries(
     }
 
     if (to) {
-	if (ParseArithSeriesArgument(interp, &to,
-		evalMask & TCL_ARITHSERIES_TO_EVAL, &ptr, &type) != TCL_OK) {
+	if (GetNumberFromObj(interp, to, &ptr, &type) != TCL_OK) {
 	    goto cleanupOnError;
 	}
 	switch (type) {
@@ -9388,8 +9332,7 @@ GenerateArithSeries(
     }
 
     if (step) {
-	if (ParseArithSeriesArgument(interp, &step,
-		evalMask & TCL_ARITHSERIES_STEP_EVAL, &ptr, &type) != TCL_OK) {
+	if (GetNumberFromObj(interp, step, &ptr, &type) != TCL_OK) {
 	    goto cleanupOnError;
 	}
 	switch (type) {
@@ -9408,8 +9351,7 @@ GenerateArithSeries(
     // Convert count to integer if not already
     // Almost the same as above cases except how floats are really handled.
     if (count) {
-	if (ParseArithSeriesArgument(interp, &count,
-		evalMask & TCL_ARITHSERIES_COUNT_EVAL, &ptr, &type) != TCL_OK) {
+	if (GetNumberFromObj(interp, count, &ptr, &type) != TCL_OK) {
 	    goto cleanupOnError;
 	}
 	switch (type) {
