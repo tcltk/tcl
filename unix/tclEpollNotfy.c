@@ -111,7 +111,7 @@ typedef struct ThreadSpecificData {
 				/* Pointer to at most maxReadyEvents events
 				 * returned by epoll_wait(2). */
     size_t maxReadyEvents;	/* Count of epoll_events in readyEvents. */
-    int asyncPending;		/* True when signal triggered thread. */
+    bool asyncPending;		/* True when signal triggered thread. */
 } ThreadSpecificData;
 
 static Tcl_ThreadDataKey dataKey;
@@ -233,23 +233,22 @@ PlatformEventsControl(
 	 */
 	return;
     } else if (epoll_ctl(tsdPtr->eventsFd, op, filePtr->fd, &newEvent) == -1) {
-       switch (errno) {
-	    case EPERM:
-		switch (op) {
-		case EPOLL_CTL_ADD:
-		    if (isNew) {
-			LIST_INSERT_HEAD(&tsdPtr->firstReadyFileHandlerPtr, filePtr,
-				readyNode);
-		    }
-		    break;
-		case EPOLL_CTL_DEL:
-		    LIST_REMOVE(filePtr, readyNode);
-		    break;
-
+	switch (errno) {
+	case EPERM:
+	    switch (op) {
+	    case EPOLL_CTL_ADD:
+		if (isNew) {
+		    LIST_INSERT_HEAD(&tsdPtr->firstReadyFileHandlerPtr, filePtr,
+			    readyNode);
 		}
 		break;
-	    default:
-		Tcl_Panic("epoll_ctl: %s", strerror(errno));
+	    case EPOLL_CTL_DEL:
+		LIST_REMOVE(filePtr, readyNode);
+		break;
+	    }
+	    break;
+	default:
+	    Tcl_Panic("epoll_ctl: %s", strerror(errno));
 	}
     }
     return;
@@ -371,7 +370,7 @@ PlatformEventsInit(void)
 	Tcl_Panic("epoll_create1: %s", strerror(errno));
     }
     filePtr->mask = TCL_READABLE;
-    PlatformEventsControl(filePtr, tsdPtr, EPOLL_CTL_ADD, 1);
+    PlatformEventsControl(filePtr, tsdPtr, EPOLL_CTL_ADD, true);
     if (!tsdPtr->readyEvents) {
 	tsdPtr->maxReadyEvents = 512;
 	tsdPtr->readyEvents = (struct epoll_event *) Tcl_Alloc(
@@ -486,7 +485,7 @@ PlatformEventsWait(
 	}
     }
     if (tsdPtr->asyncPending) {
-	tsdPtr->asyncPending = 0;
+	tsdPtr->asyncPending = false;
 	TclAsyncMarkFromNotifier();
     }
     return numFound;
@@ -523,7 +522,7 @@ TclpCreateFileHandler(
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     FileHandler *filePtr = LookUpFileHandler(tsdPtr, fd, NULL);
-    int isNew = (filePtr == NULL);
+    bool isNew = (filePtr == NULL);
 
     if (isNew) {
 	filePtr = (FileHandler *) Tcl_Alloc(sizeof(FileHandler));
@@ -581,7 +580,7 @@ TclpDeleteFileHandler(
      * Update the check masks for this file.
      */
 
-    PlatformEventsControl(filePtr, tsdPtr, EPOLL_CTL_DEL, 0);
+    PlatformEventsControl(filePtr, tsdPtr, EPOLL_CTL_DEL, false);
     if (filePtr->pedPtr) {
 	Tcl_Free(filePtr->pedPtr);
     }
@@ -814,7 +813,7 @@ TclAsyncNotifier(
 
 	*flagPtr = value;
 	if (tsdPtr != NULL && !tsdPtr->asyncPending) {
-	    tsdPtr->asyncPending = 1;
+	    tsdPtr->asyncPending = true;
 	    TclpAlertNotifier(tsdPtr);
 	    return 1;
 	}
