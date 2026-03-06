@@ -36555,8 +36555,8 @@ test clock-34.20.19 {clock scan tests (no TZ)} {
 	 [clock scan "GMT -1000days" -base 100000000 -gmt 1] \
 	 [clock scan "00:00 GMT -1000 days" -base 100000000 -gmt 1] \
 } [lrepeat 4 13564800]
-test clock-34.20.20 {clock scan tests (TZ, TZ + 1day)} {
-    clock scan "00:00 GMT+1000 day" -base 100000000 -gmt 1
+test clock-34.20.20 {clock scan tests (TZ + 1day)} {
+    clock scan "00:00 GMT+1000 +1 day" -base 100000000 -gmt 1
 } 100015200
 test clock-34.20.21 {clock scan tests (local date of base depends on given TZ, time apllied to different day)} {
     list [clock scan "23:59:59 -0100" -base 0 -timezone $::testClock::tzCET] \

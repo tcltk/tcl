@@ -126,43 +126,58 @@ MODULE_SCOPE int	yyparse(DateInfo*);
 
 %}
 
+/* LOW_PRIO used to mark `relunits` with higher precedence as zone rules, thereby
+ * `tSEC_UNIT` is a first token of `runit` in `relunits` (both are non-terminal
+ * so cannot be used directly). */
+%nonassoc LOW_PRIO
+%nonassoc tRSEC_UNIT
+
 %token	tAGO
 %token	tDAY
 %token	tDAYZONE
 %token	tID
 %token	tMERIDIAN
 %token	tMONTH
-%token	tMONTH_UNIT
+%token	tRMONTH_UNIT
 %token	tSTARDATE
 %token	tSEC_UNIT
+%token	tRSEC_UNIT
 %token	tUNUMBER
 %token	tZONE
 %token	tZONEwO4
 %token	tZONEwO2
+%token	tNMZONE4
+%token	tNMZONE2
 %token	tEPOCH
 %token	tDST
 %token	tISOBAS8
 %token	tISOBAS6
 %token	tISOBASL
 %token	tDAY_UNIT
+%token	tRDAY_UNIT
 %token	tNEXT
 %token	SP
 
 %type	<Number>	tDAY
 %type	<Number>	tDAYZONE
 %type	<Number>	tMONTH
-%type	<Number>	tMONTH_UNIT
+%type	<Number>	tRMONTH_UNIT
 %type	<Number>	tDST
 %type	<Number>	tSEC_UNIT
+%type	<Number>	tRSEC_UNIT
 %type	<Number>	tUNUMBER
 %type	<Number>	INTNUM
 %type	<Number>	tZONE
 %type	<Number>	tZONEwO4
 %type	<Number>	tZONEwO2
+%type	<Number>	tNMZONE4
+%type	<Number>	tNMZONE2
 %type	<Number>	tISOBAS8
 %type	<Number>	tISOBAS6
 %type	<Number>	tISOBASL
 %type	<Number>	tDAY_UNIT
+%type	<Number>	tRDAY_UNIT
+%type	<Number>	runit
 %type	<Number>	unit
 %type	<Number>	sign
 %type	<Number>	tNEXT
@@ -249,12 +264,12 @@ zone	: tZONE tDST {
 	    yyTimezone = $1 - $2*($3 * 60);
 	    yyDSTmode = DSToff;
 	}
-	| sign INTNUM { /* +0100, -0100 */
-	    if ($2 / 100) {
-		yyTimezone = -$1*($2 % 100 + ($2 / 100) * 60);
-	    } else { /* +01, -01 */
-		yyTimezone = -$1*($2 * 60);
-	    }
+	| sign tNMZONE4 %prec LOW_PRIO { /* +0100, -0100 */
+	    yyTimezone = -$1*($2 % 100 + ($2 / 100) * 60);
+	    yyDSTmode = DSToff;
+	}
+	| sign tNMZONE2 %prec LOW_PRIO { /* +01, -01, +1, -1 */
+	    yyTimezone = -$1*($2 * 60);
 	    yyDSTmode = DSToff;
 	}
 	;
@@ -305,7 +320,7 @@ date	: tUNUMBER '/' tUNUMBER {
 	    yyYear = $5;
 	}
 	| isodate
-	| tUNUMBER '-' tMONTH '-' tUNUMBER {
+	| tUNUMBER '-' tMONTH '-' INTNUM {
 	    yyDay = $1;
 	    yyMonth = $3;
 	    yyYear = $5;
@@ -409,19 +424,19 @@ relspec : relunits tAGO {
 	| relunits
 	;
 
-relunits : sign SP INTNUM unit {
+relunits : sign SP INTNUM runit {
 	    *yyRelPointer += $1 * $3 * $4;
 	}
-	| sign INTNUM unit {
+	| sign INTNUM runit {
 	    *yyRelPointer += $1 * $2 * $3;
 	}
-	| INTNUM unit {
+	| INTNUM runit {
 	    *yyRelPointer += $1 * $2;
 	}
-	| tNEXT unit {
+	| tNEXT runit {
 	    *yyRelPointer += $2;
 	}
-	| tNEXT INTNUM unit {
+	| tNEXT INTNUM runit {
 	    *yyRelPointer += $2 * $3;
 	}
 	| unit {
@@ -437,6 +452,23 @@ sign	: '-' {
 	}
 	;
 
+runit	: tRSEC_UNIT {
+	    $$ = $1;
+	    yyRelPointer = &yyRelSeconds;
+	    /* no flag CLF_RELCONV needed by seconds */
+	}
+	| tRDAY_UNIT {
+	    $$ = $1;
+	    yyRelPointer = &yyRelDay;
+	    info->flags |= CLF_RELCONV;
+	}
+	| tRMONTH_UNIT {
+	    $$ = $1;
+	    yyRelPointer = &yyRelMonth;
+	    info->flags |= CLF_RELCONV;
+	}
+	;
+
 unit	: tSEC_UNIT {
 	    $$ = $1;
 	    yyRelPointer = &yyRelSeconds;
@@ -447,14 +479,15 @@ unit	: tSEC_UNIT {
 	    yyRelPointer = &yyRelDay;
 	    info->flags |= CLF_RELCONV;
 	}
-	| tMONTH_UNIT {
-	    $$ = $1;
-	    yyRelPointer = &yyRelMonth;
-	    info->flags |= CLF_RELCONV;
-	}
 	;
 
 INTNUM	: tUNUMBER {
+	    $$ = $1;
+	}
+	| tNMZONE2 {
+	    $$ = $1;
+	}
+	| tNMZONE4 {
 	    $$ = $1;
 	}
 	| tISOBAS6 {
@@ -529,16 +562,16 @@ static const TABLE MonthDayTable[] = {
  */
 
 static const TABLE UnitsTable[] = {
-    { "year",		tMONTH_UNIT,	12 },
-    { "month",		tMONTH_UNIT,	 1 },
-    { "fortnight",	tDAY_UNIT,	14 },
-    { "week",		tDAY_UNIT,	 7 },
-    { "day",		tDAY_UNIT,	 1 },
-    { "hour",		tSEC_UNIT, 60 * 60 },
-    { "minute",		tSEC_UNIT,	60 },
-    { "min",		tSEC_UNIT,	60 },
-    { "second",		tSEC_UNIT,	 1 },
-    { "sec",		tSEC_UNIT,	 1 },
+    { "year",		tRMONTH_UNIT,	12 },
+    { "month",		tRMONTH_UNIT,	 1 },
+    { "fortnight",	tRDAY_UNIT,	14 },
+    { "week",		tRDAY_UNIT,	 7 },
+    { "day",		tRDAY_UNIT,	 1 },
+    { "hour",		tRSEC_UNIT, 60 * 60 },
+    { "minute",		tRSEC_UNIT,	60 },
+    { "min",		tRSEC_UNIT,	60 },
+    { "second",		tRSEC_UNIT,	 1 },
+    { "sec",		tRSEC_UNIT,	 1 },
     { NULL, 0, 0 }
 };
 
@@ -931,6 +964,28 @@ TclDatelex(
 		    return tISOBAS6;
 		}
 	    }
+	    /*
+	     * A number with 1, 2 or 4 digits after sign can be time zone like
+	     * +1, -01 or +0100, also we'd firstly ignore it in case of digits 
+	     * before sign to avoid ambiguity with other tokens (...-00-01).
+	     */
+	    if ( tokStart > info->dateStart
+	      && (((c = *(tokStart-1)) == '+') || c == '-') && (
+		   yyDigitCount == 4
+  		|| tokStart-1 == info->dateStart || !isdigit(UCHAR(*(tokStart-2)))
+	      )
+	    ) {
+		switch (yyDigitCount) {
+		    case 1:
+		    case 2:
+			yyInput = bypassSpaces(yyInput);
+			return tNMZONE2;
+		    case 4:
+			yyInput = bypassSpaces(yyInput);
+			return tNMZONE4;
+		}
+	    }
+
 	    /* ignore spaces after digits (optional) */
 	    yyInput = bypassSpaces(yyInput);
 	    return tUNUMBER;
