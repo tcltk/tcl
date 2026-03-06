@@ -37,12 +37,3 @@ writing Tcl scripts.
 for list operations on large lists.
 - [Continued 64-bit capacity: Command line arguments larger than 2Gb](https://core.tcl-lang.org/tips/doc/trunk/tip/626.md)
 - Speedup in interpreter creation
-
-# Bug fixes
- - [tclEpollNotfy PlatformEventsControl panics if websocket disconnected](https://core.tcl-lang.org/tcl/tktview/010d8f38)
- - [lseq: has incorrect results in edge cases](https://core.tcl-lang.org/tcl/tktview/999b69)
- - [lseq: "count" error persists across calls](https://core.tcl-lang.org/tcl/tktview/8d1fc7)
- - [lseq: tip-746 removes the ability to pass expressions as numeric
-   values in the lseq
-   command.](https://core.tcl-lang.org/tips/doc/trunk/tip/746.md)
-
