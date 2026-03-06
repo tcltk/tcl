@@ -126,12 +126,6 @@ MODULE_SCOPE int	yyparse(DateInfo*);
 
 %}
 
-/* LOW_PRIO used to mark `relunits` with higher precedence as zone rules, thereby
- * `tSEC_UNIT` is a first token of `runit` in `relunits` (both are non-terminal
- * so cannot be used directly). */
-%nonassoc LOW_PRIO
-%nonassoc tRSEC_UNIT
-
 %token	tAGO
 %token	tDAY
 %token	tDAYZONE
@@ -146,8 +140,6 @@ MODULE_SCOPE int	yyparse(DateInfo*);
 %token	tZONE
 %token	tZONEwO4
 %token	tZONEwO2
-%token	tNMZONE4
-%token	tNMZONE2
 %token	tEPOCH
 %token	tDST
 %token	tISOBAS8
@@ -170,8 +162,6 @@ MODULE_SCOPE int	yyparse(DateInfo*);
 %type	<Number>	tZONE
 %type	<Number>	tZONEwO4
 %type	<Number>	tZONEwO2
-%type	<Number>	tNMZONE4
-%type	<Number>	tNMZONE2
 %type	<Number>	tISOBAS8
 %type	<Number>	tISOBAS6
 %type	<Number>	tISOBASL
@@ -211,6 +201,9 @@ item	: time {
 	}
 	| relspec {
 	    info->flags |= CLF_RELCONV;
+	}
+	| nmzone {
+	    yyIncrFlags(CLF_ZONE);
 	}
 	| iso {
 	    yyIncrFlags(CLF_TIME|CLF_HAVEDATE);
@@ -264,12 +257,13 @@ zone	: tZONE tDST {
 	    yyTimezone = $1 - $2*($3 * 60);
 	    yyDSTmode = DSToff;
 	}
-	| sign tNMZONE4 %prec LOW_PRIO { /* +0100, -0100 */
-	    yyTimezone = -$1*($2 % 100 + ($2 / 100) * 60);
-	    yyDSTmode = DSToff;
-	}
-	| sign tNMZONE2 %prec LOW_PRIO { /* +01, -01, +1, -1 */
-	    yyTimezone = -$1*($2 * 60);
+	;
+nmzone	: sign tUNUMBER %?{ yyDigitCount == 4 || yyDigitCount <= 2 } {
+	    if (yyDigitCount == 4) { /* +0100, -0100 */
+		yyTimezone = -$1*($2 % 100 + ($2 / 100) * 60);
+	    } else { /* +01, -01, +1, -1 */
+		yyTimezone = -$1*($2 * 60);
+	    }
 	    yyDSTmode = DSToff;
 	}
 	;
@@ -320,7 +314,7 @@ date	: tUNUMBER '/' tUNUMBER {
 	    yyYear = $5;
 	}
 	| isodate
-	| tUNUMBER '-' tMONTH '-' INTNUM {
+	| tUNUMBER '-' tMONTH '-' tUNUMBER {
 	    yyDay = $1;
 	    yyMonth = $3;
 	    yyYear = $5;
@@ -482,12 +476,6 @@ unit	: tSEC_UNIT {
 	;
 
 INTNUM	: tUNUMBER {
-	    $$ = $1;
-	}
-	| tNMZONE2 {
-	    $$ = $1;
-	}
-	| tNMZONE4 {
 	    $$ = $1;
 	}
 	| tISOBAS6 {
@@ -964,28 +952,6 @@ TclDatelex(
 		    return tISOBAS6;
 		}
 	    }
-	    /*
-	     * A number with 1, 2 or 4 digits after sign can be time zone like
-	     * +1, -01 or +0100, also we'd firstly ignore it in case of digits 
-	     * before sign to avoid ambiguity with other tokens (...-00-01).
-	     */
-	    if ( tokStart > info->dateStart
-	      && (((c = *(tokStart-1)) == '+') || c == '-') && (
-		   yyDigitCount == 4
-  		|| tokStart-1 == info->dateStart || !isdigit(UCHAR(*(tokStart-2)))
-	      )
-	    ) {
-		switch (yyDigitCount) {
-		    case 1:
-		    case 2:
-			yyInput = bypassSpaces(yyInput);
-			return tNMZONE2;
-		    case 4:
-			yyInput = bypassSpaces(yyInput);
-			return tNMZONE4;
-		}
-	    }
-
 	    /* ignore spaces after digits (optional) */
 	    yyInput = bypassSpaces(yyInput);
 	    return tUNUMBER;
