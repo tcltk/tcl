@@ -73,7 +73,7 @@ Pkg\u03C0_Init(
 {
     int code;
 
-    if (Tcl_InitStubs(interp, "9.0", 0) == NULL) {
+    if (Tcl_InitStubs(interp, "9.0-", 0) == NULL) {
 	return TCL_ERROR;
     }
     code = Tcl_PkgProvide(interp, "pkgπ", "1.0");
