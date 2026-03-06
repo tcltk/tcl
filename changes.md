@@ -4,7 +4,7 @@ changes to the Tcl source code at
 
 > [Tcl Source Code](https://core.tcl-lang.org/tcl/timeline)
 
-Release Tcl 9.1a1 arises from the check-in with tag `core-9-1-a1`.
+Release Tcl 9.1a2 arises from the check-in with tag `core-9-1-a2`.
 
 Highlighted differences between Tcl 9.1 and Tcl 9.0 are summarized below,
 with focus on changes important to programmers using the Tcl library and
@@ -40,4 +40,9 @@ for list operations on large lists.
 
 # Bug fixes
  - [tclEpollNotfy PlatformEventsControl panics if websocket disconnected](https://core.tcl-lang.org/tcl/tktview/010d8f38)
+ - [lseq: has incorrect results in edge cases](https://core.tcl-lang.org/tcl/tktview/999b69)
+ - [lseq: "count" error persists across calls](https://core.tcl-lang.org/tcl/tktview/8d1fc7)
+ - [lseq: tip-746 removes the ability to pass expressions as numeric
+   values in the lseq
+   command.](https://core.tcl-lang.org/tips/doc/trunk/tip/746.md)
 
