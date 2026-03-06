@@ -15,6 +15,7 @@ writing Tcl scripts.
 - [New options -backslashes, -commands and -variables for subst command](https://core.tcl-lang.org/tips/doc/trunk/tip/712.md)
 - [New command unicode for Unicode normalization](https://core.tcl-lang.org/tips/doc/trunk/tip/726.md)
 - [New timer command, switch to monotonic clock and microsecond resolution](https://core.tcl-lang.org/tips/doc/trunk/tip/723.md)
+- [Remove "expr" behavior from lseq](https://core.tcl-lang.org/tips/doc/trunk/tip/746.md) *Incompatibility*
 
 # New public C API
 
@@ -37,3 +38,4 @@ writing Tcl scripts.
 for list operations on large lists.
 - [Continued 64-bit capacity: Command line arguments larger than 2Gb](https://core.tcl-lang.org/tips/doc/trunk/tip/626.md)
 - Speedup in interpreter creation
+- [Support for long paths on Windows](https://core.tcl-lang.org/tips/doc/trunk/tip/744.md)
