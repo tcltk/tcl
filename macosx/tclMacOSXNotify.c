@@ -200,18 +200,18 @@ typedef struct {
 typedef struct ThreadSpecificData {
     FileHandler *firstFileHandlerPtr;
 				/* Pointer to head of file handler list. */
-    bool polled;			/* True if the notifier thread has polled for
+    bool polled;		/* True if the notifier thread has polled for
 				 * this thread. */
     bool sleeping;		/* True if runloop is inside Tcl_Sleep. */
-    bool runLoopSourcePerformed;	/* True after the runLoopSource callack was
+    bool runLoopSourcePerformed;/* True after the runLoopSource callack was
 				 * performed. */
-    bool runLoopRunning;		/* True if this thread's Tcl runLoop is
+    bool runLoopRunning;	/* True if this thread's Tcl runLoop is
 				 * running. */
     int runLoopNestingLevel;	/* Level of nested runLoop invocations. */
 
     /* Must hold the notifierLock before accessing the following fields: */
     /* Start notifierLock section */
-    bool onList;			/* True if this thread is on the
+    bool onList;		/* True if this thread is on the
 				 * waitingList */
     struct ThreadSpecificData *nextPtr, *prevPtr;
 				/* All threads that are currently waiting on

@@ -1113,15 +1113,15 @@ test lseq-comp-1.5 {compiled lseq memory leak: numbers} -constraints memory -bod
     leaktest {lseq 1.0 5.4 .3}
 } -result 0
 
-test lseq-comp-2.1 {compiled lseq memory leak: expressions} -constraints memory -body {
+test lseq-comp-2.1 {compiled lseq memory leak: expressions} -constraints {memory TIP746} -body {
     set x 123
     leaktest {lseq {$x - 2} .. {$x + 2}}
 } -result 0
-test lseq-comp-2.2 {compiled lseq memory leak: expressions} -constraints memory -body {
+test lseq-comp-2.2 {compiled lseq memory leak: expressions} -constraints {memory TIP746} -body {
     set x 123
     leaktest {lseq {$x} .. {$x + 2} by {$x - 17}}
 } -result 0
-test lseq-comp-2.3 {compiled lseq memory leak: expressions} -constraints memory -body {
+test lseq-comp-2.3 {compiled lseq memory leak: expressions} -constraints {memory TIP746} -body {
     set x 123
     leaktest {lseq {$x} count {$x + 2} by {$x - 17}}
 } -result 0
