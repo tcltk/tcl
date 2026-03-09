@@ -9451,4 +9451,6 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 
 2026-03-04 tzdata updated to Olson's tzdata2026a (sebres)
 
+2026-03-09 Valgrind reported error in SetScriptLimitCallback (nadkarni,nijtmans)
+
 - (to be) Released 8.6.18, Apr ??, 2026 - details at https://core.tcl-lang.org/tcl/ -

@@ -175,7 +175,7 @@ typedef struct ScriptLimitCallbackKey {
     Tcl_Interp *interp;		/* The interpreter that the limit callback was
 				 * attached to. This is not the interpreter
 				 * that the callback runs in! */
-    long type;			/* The type of callback that this is. */
+    int type;			/* The type of callback that this is. */
 } ScriptLimitCallbackKey;
 
 /*
@@ -4321,8 +4321,10 @@ TclInitLimitSupport(
     iPtr->limit.timeHandlers = NULL;
     iPtr->limit.timeEvent = NULL;
     iPtr->limit.timeGranularity = 10;
+    /* See [f7495f63c0]: Don't use sizeof(ScriptLimitCallbackKey) here, because it
+     * counts the end padding as well */
     Tcl_InitHashTable(&iPtr->limit.callbacks,
-	    sizeof(ScriptLimitCallbackKey)/sizeof(int));
+	    TclOffset(ScriptLimitCallbackKey, type)/sizeof(int) + 1);
 }
 
 /*
