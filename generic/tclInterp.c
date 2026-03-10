@@ -157,7 +157,7 @@ typedef struct {
 
 /*
  * Limit callbacks handled by scripts are modelled as structures which are
- * stored in hashes indexed by a two-word key. 
+ * stored in hashes indexed by a two- or three-word key.
  */
 
 typedef struct {
@@ -173,19 +173,11 @@ typedef struct {
 				 * table. */
 } ScriptLimitCallback;
 
-/*
- * ScriptLimitCallbackKey is the key used in the hash table storing callbacks.
- * Such hash table keys must NOT have any pad bytes and therefore the "type"
- * field is defined as intptr_t. Its real type is int but that introduces
- * trailing pad bytes resulting in valgrind errors. intptr_t is always (?)
- * same size as a pointer and will not have this padding issue. Details at
- * https://core.tcl-lang.org/tcl/info/f7495f63c01ea800
- */
 typedef struct {
     Tcl_Interp *interp;		/* The interpreter that the limit callback was
 				 * attached to. This is not the interpreter
 				 * that the callback runs in! */
-    intptr_t type;		/* The type of callback that this is. */
+    int type;			/* The type of callback that this is. */
 } ScriptLimitCallbackKey;
 
 /*
@@ -3241,7 +3233,7 @@ Tcl_IsSafe(
  *----------------------------------------------------------------------
  */
 
-void
+static void
 MakeSafe(
     Tcl_Interp *interp)		/* Interpreter to be made safe. */
 {
@@ -4337,7 +4329,7 @@ TclRemoveScriptLimitCallbacks(
     while (hashPtr != NULL) {
 	keyPtr = (ScriptLimitCallbackKey *)
 		Tcl_GetHashKey(&iPtr->limit.callbacks, hashPtr);
-	Tcl_LimitRemoveHandler(keyPtr->interp, (int) keyPtr->type,
+	Tcl_LimitRemoveHandler(keyPtr->interp, keyPtr->type,
 		CallScriptLimitCallback, Tcl_GetHashValue(hashPtr));
 	hashPtr = Tcl_NextHashEntry(&search);
     }
@@ -4378,8 +4370,10 @@ TclInitLimitSupport(
     iPtr->limit.timeHandlers = NULL;
     iPtr->limit.timeEvent = NULL;
     iPtr->limit.timeGranularity = 10;
+    /* See [f7495f63c0]: Don't use sizeof(ScriptLimitCallbackKey) here, because it
+     * counts the end padding as well */
     Tcl_InitHashTable(&iPtr->limit.callbacks,
-	    sizeof(ScriptLimitCallbackKey) / sizeof(int));
+	    offsetof(ScriptLimitCallbackKey, type) / sizeof(int) + 1);
 }
 
 /*
