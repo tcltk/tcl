@@ -213,7 +213,7 @@ LookUpFileHandler(
 
 void
 TclpSetTimer(
-    TCL_UNUSED(const Tcl_Time *))	/* Timeout value, may be NULL. */
+    TCL_UNUSED(long long))	/* Timeout value, may be NULL. */
 {
     /*
      * The interval timer doesn't do anything in this implementation, because
@@ -243,7 +243,7 @@ TclpServiceModeHook(
     int mode)			/* Either TCL_SERVICE_ALL, or
 				 * TCL_SERVICE_NONE. */
 {
-    if (mode == TCL_SERVICE_ALL) {
+    if ((mode & TCL_SERVICE_ALL) != 0) {
 #ifdef NOTIFIER_SELECT
 #if TCL_THREADS
 	StartNotifierThread("Tcl_ServiceModeHook");
@@ -547,7 +547,7 @@ TclUnixWaitForFile(
 				 * at all, and a value of -1 means wait
 				 * forever. */
 {
-    Tcl_Time abortTime = {0, 0}, now; /* silence gcc 4 warning */
+    long long abortTime = 0, now; /* silence gcc 4 warning */
     struct timeval blockTime, *timeoutPtr;
     struct pollfd pollFds[1];
     int numFound, result = 0, pollTimeout;
@@ -558,13 +558,8 @@ TclUnixWaitForFile(
      */
 
     if (timeout > 0) {
-	Tcl_GetTime(&now);
-	abortTime.sec = now.sec + timeout / 1000;
-	abortTime.usec = now.usec + (timeout % 1000) * 1000;
-	if (abortTime.usec >= 1000000) {
-	    abortTime.usec -= 1000000;
-	    abortTime.sec += 1;
-	}
+	now = TclpGetMicroseconds();
+	abortTime = now + timeout * 1000;
 	timeoutPtr = &blockTime;
     } else if (timeout == 0) {
 	timeoutPtr = &blockTime;
@@ -597,12 +592,8 @@ TclUnixWaitForFile(
 
     do {
 	if (timeout > 0) {
-	    blockTime.tv_sec = abortTime.sec - now.sec;
-	    blockTime.tv_usec = abortTime.usec - now.usec;
-	    if (blockTime.tv_usec < 0) {
-		blockTime.tv_sec -= 1;
-		blockTime.tv_usec += 1000000;
-	    }
+	    blockTime.tv_sec = (abortTime - now) / 1000000;
+	    blockTime.tv_usec = (abortTime - now) % 1000000;
 	    if (blockTime.tv_sec < 0) {
 		blockTime.tv_sec = 0;
 		blockTime.tv_usec = 0;
@@ -650,9 +641,8 @@ TclUnixWaitForFile(
 	 * The select returned early, so we need to recompute the timeout.
 	 */
 
-	Tcl_GetTime(&now);
-    } while ((abortTime.sec > now.sec)
-	    || (abortTime.sec == now.sec && abortTime.usec > now.usec));
+	now = TclpGetMicroseconds();
+    } while (abortTime > now);
     return result;
 }
 #endif /* !HAVE_COREFOUNDATION */

@@ -3138,7 +3138,6 @@ ClockClicksObjCmd(
 	CLICKS_MILLIS, CLICKS_MICROS, CLICKS_NATIVE
     };
     int index = CLICKS_NATIVE;
-    Tcl_Time now;
     Tcl_WideInt clicks = 0;
 
     switch (objc) {
@@ -3157,8 +3156,7 @@ ClockClicksObjCmd(
 
     switch (index) {
     case CLICKS_MILLIS:
-	Tcl_GetTime(&now);
-	clicks = now.sec * 1000LL + now.usec / 1000;
+	clicks = TclpGetMicroseconds() / 1000;
 	break;
     case CLICKS_NATIVE:
 #ifdef TCL_WIDE_CLICKS
@@ -3203,16 +3201,13 @@ ClockMillisecondsObjCmd(
     Tcl_Size objc,		/* Parameter count */
     Tcl_Obj *const *objv)	/* Parameter values */
 {
-    Tcl_Time now;
     Tcl_Obj *timeObj;
 
     if (objc != 1) {
 	Tcl_WrongNumArgs(interp, 0, objv, "clock milliseconds");
 	return TCL_ERROR;
     }
-    Tcl_GetTime(&now);
-    TclNewUIntObj(timeObj, (Tcl_WideUInt)
-	    now.sec * 1000 + now.usec / 1000);
+    TclNewIntObj(timeObj, TclpGetMicroseconds() / 1000);
     Tcl_SetObjResult(interp, timeObj);
     return TCL_OK;
 }
