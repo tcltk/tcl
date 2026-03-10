@@ -38,9 +38,13 @@
 #define FSEEKO_FUNC(stream, offset, origin) fseeko64(stream, offset, origin)
 #endif
 
-#include "tinydir.h"
+
+
 #ifndef _CRT_SECURE_NO_WARNINGS
 #  define _CRT_SECURE_NO_WARNINGS
+#endif
+#ifdef HAVE_DIRENT_H
+#  include <dirent.h>
 #endif
 #include <stdio.h>
 #include <stdlib.h>
@@ -65,9 +69,6 @@
 #ifdef _WIN32
         #define USEWIN32IOAPI
         #include "iowin32.h"
-#       if defined(_MSC_VER)
-#           define snprintf _snprintf
-#       endif
 #endif
 
 
@@ -319,7 +320,7 @@ void addFileToZip(zipFile zf, const char *filenameinzip, const char *password, i
         do
         {
             err = ZIP_OK;
-            size_read = (int)fread(buf,1,size_buf,fin);
+            size_read = fread(buf,1,size_buf,fin);
             if (size_read < size_buf)
                 if (feof(fin)==0)
             {
@@ -329,7 +330,7 @@ void addFileToZip(zipFile zf, const char *filenameinzip, const char *password, i
 
             if (size_read>0)
             {
-                err = zipWriteInFileInZip (zf,buf,size_read);
+                err = zipWriteInFileInZip (zf,buf,(unsigned)size_read);
                 if (err<0)
                 {
                     printf("error in writing %s in the zipfile\n",
@@ -355,28 +356,30 @@ void addFileToZip(zipFile zf, const char *filenameinzip, const char *password, i
 
 
 void addPathToZip(zipFile zf, const char *filenameinzip, const char *password, int opt_exclude_path,int opt_compress_level) {
-    tinydir_dir dir;
-    int i;
+#ifdef HAVE_DIRENT_H
+#   if defined(_MSC_VER)
+#       define snprintf _snprintf
+#   endif
     char newname[MAXFILENAME+1+MAXFILENAME+1];
+    struct dirent *dp;
 
-    tinydir_open_sorted(&dir, filenameinzip);
-
-    for (i = 0; i < dir.n_files; i++)
+    DIR *dir = opendir(filenameinzip);
+    if (dir == NULL) {
+        addFileToZip(zf,filenameinzip,password,opt_exclude_path,opt_compress_level);
+        return;
+    }
+    while ((dp = readdir(dir)))
     {
-        tinydir_file file;
-        tinydir_readfile_n(&dir, &file, i);
-        if(strcmp(file.name,".")==0) continue;
-        if(strcmp(file.name,"..")==0) continue;
-        snprintf(newname, sizeof(newname), "%.*s/%.*s", MAXFILENAME, dir.path, MAXFILENAME, file.name);
-        if (file.is_dir)
-        {
-            addPathToZip(zf,newname,password,opt_exclude_path,opt_compress_level);
-        } else {
-            addFileToZip(zf,newname,password,opt_exclude_path,opt_compress_level);
-        }
+        if(strcmp(dp->d_name,".")==0) continue;
+        if(strcmp(dp->d_name,"..")==0) continue;
+        snprintf(newname, sizeof(newname), "%.*s/%.*s", MAXFILENAME, filenameinzip, MAXFILENAME, dp->d_name);
+        addPathToZip(zf,newname,password,opt_exclude_path,opt_compress_level);
     }
 
-    tinydir_close(&dir);
+    closedir(dir);
+#else
+    printf("-r option not supported");
+#endif
 }
 
 
