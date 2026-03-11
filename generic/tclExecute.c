@@ -5041,16 +5041,11 @@ TEBCresume(
 	    }
 	    match = 0;
 	    if (length > 0) {
-		Tcl_Size i = 0;
 		int isAbstractList = TclObjTypeHasProc(value2Ptr, indexProc) != NULL;
-
-		/*
-		 * An empty list doesn't match anything.
-		 */
-
-		do {
-		    Tcl_Obj *o;
-		    if (isAbstractList) {
+		if (isAbstractList) {
+		    Tcl_Size i = 0;
+		    do {
+			Tcl_Obj *o;
 			DECACHE_STACK_INFO();
 			int status = TclObjTypeIndex(interp, value2Ptr, i, &o);
 			CACHE_STACK_INFO();
@@ -5058,24 +5053,37 @@ TEBCresume(
 			    TRACE_ERROR(interp);
 			    goto gotError;
 			}
-		    } else {
-			Tcl_ListObjIndex(NULL, value2Ptr, i, &o);
-		    }
-		    if (o != NULL) {
-			s2 = TclGetStringFromObj(o, &s2len);
-		    } else {
-			s2 = "";
-			s2len = 0;
-		    }
-		    if (s1len == s2len) {
-			match = (memcmp(s1, s2, s1len) == 0);
-		    }
+			if (o != NULL) {
+			    s2 = TclGetStringFromObj(o, &s2len);
+			} else {
+			    s2 = "";
+			    s2len = 0;
+			}
+			if (s1len == s2len) {
+			    match = (memcmp(s1, s2, s1len) == 0);
+			}
 
-		    /* Could be an ephemeral abstract obj */
-		    Tcl_BounceRefCount(o);
+			/* Could be an ephemeral abstract obj */
+			Tcl_BounceRefCount(o);
 
-		    i++;
-		} while (i < length && match == 0);
+			i++;
+		    } while (i < length && match == 0);
+		} else {
+		    Tcl_Size i = 0;
+		    Tcl_Obj **elemPtrs;
+		    if (TclListObjGetElements(interp, value2Ptr, &length,
+			    &elemPtrs) != TCL_OK) {
+			TRACE_ERROR(interp);
+			goto gotError;
+		    }
+		    do {
+			s2 = TclGetStringFromObj(elemPtrs[i], &s2len);
+			if (s1len == s2len) {
+			    match = (memcmp(s1, s2, s1len) == 0);
+			}
+			i++;
+		    } while (i < length && match == 0);
+		}
 	    }
 	}
 
