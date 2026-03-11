@@ -517,10 +517,10 @@ FillEncodingFileMap(void)
  */
 enum InternalEncodingFlags {
     TCL_ENCODING_LE = 0x100,	/* Used to distinguish LE/BE variants */
-    ENCODING_UTF = 0x200,	/* For UTF-8 encoding, allow 4-byte output
-				 * sequences */
-    ENCODING_INPUT = 0x400	/* For UTF-8/CESU-8 encoding, means
-				 * external -> internal */
+    ENCODING_INPUT = 0x400	/* Only affects UTF-8 encoder. If set,
+				 * external (standard UTF-8) ->
+				 * internal (Tcl TUTF-8). If unset, the
+				 * reverse */
 };
 
 void
@@ -567,9 +567,8 @@ TclInitEncodingSubsystem(void)
     type.fromUtfProc	= UtfToUtfProc;
     type.freeProc	= NULL;
     type.nullSize	= 1;
-    type.clientData	= INT2PTR(ENCODING_UTF);
+    type.clientData	= NULL;
     tclUtf8Encoding = Tcl_CreateEncoding(&type);
-
 
     type.encodingName	= "cesu-8";
     type.toUtfProc	= Cesu8ToUtfProc;
@@ -2984,7 +2983,7 @@ UtfToUtfProc(
     srcEnd = src + srcLen;
     srcClose = srcEnd;
     if ((flags & TCL_ENCODING_END) == 0) {
-	srcClose -= 6;
+	srcClose -= TCL_UTF_MAX;
     }
     if (flags & TCL_ENCODING_CHAR_LIMIT) {
 	charLimit = *dstCharsPtr;
@@ -3055,7 +3054,7 @@ UtfToUtfProc(
 	} else if (!Tcl_UtfCharComplete(src, srcEnd - src)) {
 	    /*
 	     * Incomplete byte sequence (truncated UTF-8, not just end of
-	     * buffer — that case is caught by the srcClose check above).
+	     * source buffer — that is caught by the srcClose check above).
 	     */
 	    if (flags & ENCODING_INPUT) {
 		if (PROFILE_STRICT(profile)) {
@@ -3080,8 +3079,17 @@ UtfToUtfProc(
 	    /* Have a complete character */
 	    size_t len = TclUtfToUniChar(src, &ch);
 
+	    /*
+	     * For invalid inputs, Tcl_UtfToUniChar will return the byte
+	     * itself and len == 1. We know this is invalid because valid
+	     * single byte ASCII is already handled above except for 0.
+	     * For the output case, Tcl should not have invalid byte sequences
+	     * internally but if it does, garbage in, garbage out. This is
+	     * historical behavior that should be changed imho. See
+	     * ticket [b69e00ecf6]. TODO.
+	     */
 	    if (flags & ENCODING_INPUT) {
-		if (((len < 2) && (ch != 0)) || ((ch > 0xFFFF) && !(flags & ENCODING_UTF))) {
+		if ((len < 2) && (ch != 0)) {
 		    if (PROFILE_STRICT(profile)) {
 			result = TCL_CONVERT_SYNTAX;
 			break;
@@ -3106,7 +3114,6 @@ UtfToUtfProc(
 		/* PROFILE_TCL8: fall through and output as-is */
 	    }
 	    /* Normal character (or surrogate resolved to replacement/as-is) */
-
 	    assert(ch >= 0 && ch <= 0x10FFFF);
 	    if (ch == 0) {
 		if (flags & ENCODING_INPUT) {
@@ -3356,7 +3363,7 @@ UtfToCesu8Proc(
 	    *statePtr = 0; /* Reset surrogate */
 
 	    if (flags & ENCODING_INPUT) {
-		if (((len < 2) && (ch != 0)) || ((ch > 0xFFFF) && !(flags & ENCODING_UTF))) {
+		if (((len < 2) && (ch != 0)) || (ch > 0xFFFF)) {
 		    if (PROFILE_STRICT(profile)) {
 			result = TCL_CONVERT_SYNTAX;
 			break;
@@ -3368,8 +3375,7 @@ UtfToCesu8Proc(
 
 	    const char *saveSrc = src;
 	    src += len;
-	    if (!(flags & ENCODING_UTF) && !(flags & ENCODING_INPUT)
-		    && (ch > 0x7FF)) {
+	    if (!(flags & ENCODING_INPUT) && (ch > 0x7FF)) {
 		assert(savedSurrogate == 0);	/* Since this flag combo
 						 * will never set *statePtr */
 		if (ch > 0xFFFF) {
@@ -3385,59 +3391,49 @@ UtfToCesu8Proc(
 		*dst++ = (char)((ch | 0x80) & 0xBF);
 		continue;
 	    } else if (SURROGATE(ch)) {
-		if ((flags & ENCODING_UTF)) {
-		    /* UTF-8, not CESU-8, so surrogates should not appear */
-		    if (PROFILE_STRICT(profile)) {
-			result = (flags & ENCODING_INPUT)
-				? TCL_CONVERT_SYNTAX : TCL_CONVERT_UNKNOWN;
-			src = saveSrc;
-			break;
-		    } else if (PROFILE_REPLACE(profile)) {
-			ch = UNICODE_REPLACE_CHAR;
+		/* CESU-8 */
+		if (LOW_SURROGATE(ch)) {
+		    if (savedSurrogate) {
+			assert(HIGH_SURROGATE(savedSurrogate));
+			ch = 0x10000 + ((savedSurrogate - 0xd800) << 10) +
+			     (ch - 0xdc00);
 		    } else {
-			/* PROFILE_TCL8 - output as is */
+			/* Isolated low surrogate */
+			if (PROFILE_STRICT(profile)) {
+			    result = (flags & ENCODING_INPUT)
+				       ? TCL_CONVERT_SYNTAX
+				       : TCL_CONVERT_UNKNOWN;
+			    src = saveSrc;
+			    break;
+			} else if (PROFILE_REPLACE(profile)) {
+			    ch = UNICODE_REPLACE_CHAR;
+			} else {
+			    /* Tcl8 profile. Output low surrogate as is */
+			}
 		    }
 		} else {
-		    /* CESU-8 */
-		    if (LOW_SURROGATE(ch)) {
-			if (savedSurrogate) {
-			    assert(HIGH_SURROGATE(savedSurrogate));
-			    ch = 0x10000 + ((savedSurrogate - 0xd800) << 10) + (ch - 0xdc00);
+		    assert(HIGH_SURROGATE(ch));
+		    /* Save the high surrogate */
+		    *statePtr = (Tcl_EncodingState)(ptrdiff_t)ch;
+		    if (savedSurrogate) {
+			assert(HIGH_SURROGATE(savedSurrogate));
+			if (PROFILE_STRICT(profile)) {
+			    result = (flags & ENCODING_INPUT)
+				       ? TCL_CONVERT_SYNTAX
+				       : TCL_CONVERT_UNKNOWN;
+			    src = saveSrc;
+			    break;
+			} else if (PROFILE_REPLACE(profile)) {
+			    ch = UNICODE_REPLACE_CHAR;
 			} else {
-			    /* Isolated low surrogate */
-			    if (PROFILE_STRICT(profile)) {
-				result = (flags & ENCODING_INPUT)
-					? TCL_CONVERT_SYNTAX : TCL_CONVERT_UNKNOWN;
-				src = saveSrc;
-				break;
-			    } else if (PROFILE_REPLACE(profile)) {
-				ch = UNICODE_REPLACE_CHAR;
-			    } else {
-				/* Tcl8 profile. Output low surrogate as is */
-			    }
+			    /* Output the isolated high surrogate */
+			    ch = savedSurrogate;
 			}
 		    } else {
-			assert(HIGH_SURROGATE(ch));
-			/* Save the high surrogate */
-			*statePtr = (Tcl_EncodingState) (ptrdiff_t) ch;
-			if (savedSurrogate) {
-			    assert(HIGH_SURROGATE(savedSurrogate));
-			    if (PROFILE_STRICT(profile)) {
-				result = (flags & ENCODING_INPUT)
-					? TCL_CONVERT_SYNTAX : TCL_CONVERT_UNKNOWN;
-				src = saveSrc;
-				break;
-			    } else if (PROFILE_REPLACE(profile)) {
-				ch = UNICODE_REPLACE_CHAR;
-			    } else {
-				/* Output the isolated high surrogate */
-				ch = savedSurrogate;
-			    }
-			} else {
-			    /* High surrogate saved in *statePtr. Do not output anything just yet. */
-			    --numChars; /* Cancel the increment at end of loop */
-			    continue;
-			}
+			/* High surrogate saved in *statePtr. Do not output
+			 * anything just yet. */
+			--numChars; /* Cancel the increment at end of loop */
+			continue;
 		    }
 		}
 	    } else {
@@ -3479,7 +3475,6 @@ UtfToCesu8Proc(
 
     /* Check if an high surrogate left over */
     if (*statePtr) {
-	assert(!(flags & ENCODING_UTF)); /* CESU-8, Not UTF-8 */
 	if (!(flags & TCL_ENCODING_END)) {
 	    /* More data coming */
 	} else {
