@@ -2779,20 +2779,25 @@ ChildCreate(
     /*
      * The [clock] command presents a safe API, but uses unsafe features in
      * its implementation. This means it has to be implemented in safe interps
-     * as an alias to a version in the (trusted) parent.
+     * as an alias to a version in the (trusted) parent, at least for its
+     * unsafe subcommands. This allows the (fully safe) compiled subcommands
+     * to still become efficient bytecode.
      */
 
     if (safe) {
-	Tcl_Obj *clockObj;
-	int status;
-
-	TclNewLiteralStringObj(clockObj, "clock");
-	Tcl_IncrRefCount(clockObj);
-	status = TclAliasCreate(interp, childInterp, parentInterp, clockObj,
-		clockObj, 0, NULL);
-	Tcl_DecrRefCount(clockObj);
-	if (status != TCL_OK) {
-	    goto error2;
+	for (int i=0; tclClockImplMap[i].name; i++) {
+	    if (!tclClockImplMap[i].unsafe) {
+		continue;
+	    }
+	    Tcl_Obj *clockSubcmd = Tcl_ObjPrintf("::tcl::clock::%s",
+		    tclClockImplMap[i].name);
+	    Tcl_IncrRefCount(clockSubcmd);
+	    int status = TclAliasCreate(interp, childInterp, parentInterp,
+		    clockSubcmd, clockSubcmd, 0, NULL);
+	    Tcl_DecrRefCount(clockSubcmd);
+	    if (status != TCL_OK) {
+		goto error2;
+	    }
 	}
     }
 
