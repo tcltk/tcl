@@ -588,6 +588,7 @@ typedef char * (Tcl_VarTraceProc) (void *clientData, Tcl_Interp *interp,
 	const char *part1, const char *part2, int flags);
 typedef void (Tcl_CommandTraceProc) (void *clientData, Tcl_Interp *interp,
 	const char *oldName, const char *newName, int flags);
+#ifndef TCL_NO_DEPRECATED
 typedef void (Tcl_CreateFileHandlerProc) (int fd, int mask, Tcl_FileProc *proc,
 	void *clientData);
 typedef void (Tcl_DeleteFileHandlerProc) (int fd);
@@ -595,6 +596,7 @@ typedef void (Tcl_AlertNotifierProc) (void *clientData);
 typedef void (Tcl_ServiceModeHookProc) (int mode);
 typedef void *(Tcl_InitNotifierProc) (void);
 typedef void (Tcl_FinalizeNotifierProc) (void *clientData);
+#endif
 typedef void (Tcl_MainLoopProc) (void);
 
 /* Abstract List functions */
@@ -1279,6 +1281,7 @@ typedef enum {
  * On Unix systems the epoch is Midnight Jan 1, 1970 GMT.
  */
 
+#ifndef TCL_NO_DEPRECATED
 typedef struct Tcl_Time {
     long long sec;		/* Seconds. */
 #if defined(_CYGWIN_)
@@ -1296,7 +1299,6 @@ typedef int (Tcl_WaitForEventProc) (const Tcl_Time *timePtr);
  * WARNING: functionality removed, calls Tcl_Panic
  */
 
-#ifndef TCL_NO_DEPRECATED
 typedef void (Tcl_GetTimeProc)   (Tcl_Time *timebuf, void *clientData);
 typedef void (Tcl_ScaleTimeProc) (Tcl_Time *timebuf, void *clientData);
 #endif /* TCL_NO_DEPRECATED */
@@ -1728,6 +1730,7 @@ typedef struct Tcl_Filesystem {
  * override with the Tcl_SetNotifier call.
  */
 
+#ifndef TCL_NO_DEPRECATED
 typedef struct Tcl_NotifierProcs {
     Tcl_SetTimerProc *setTimerProc;
     Tcl_WaitForEventProc *waitForEventProc;
@@ -1738,6 +1741,7 @@ typedef struct Tcl_NotifierProcs {
     Tcl_AlertNotifierProc *alertNotifierProc;
     Tcl_ServiceModeHookProc *serviceModeHookProc;
 } Tcl_NotifierProcs;
+#endif
 
 /*
  *----------------------------------------------------------------------------

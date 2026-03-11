@@ -315,8 +315,7 @@ PipeSetupProc(
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
     PipeInfo *infoPtr;
-    Tcl_Time blockTime = { 0, 0 };
-    int block = 1;
+    bool block = true;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     if (!(flags & TCL_FILE_EVENTS)) {
@@ -331,17 +330,17 @@ PipeSetupProc(
 	    infoPtr = infoPtr->nextPtr) {
 	if (infoPtr->watchMask & TCL_WRITABLE) {
 	    if (WaitForSingleObject(infoPtr->writable, 0) != WAIT_TIMEOUT) {
-		block = 0;
+		block = false;
 	    }
 	}
 	if (infoPtr->watchMask & TCL_READABLE) {
 	    if (WaitForRead(infoPtr, 0) >= 0) {
-		block = 0;
+		block = false;
 	    }
 	}
     }
     if (!block) {
-	Tcl_SetMaxBlockTime(&blockTime);
+	Tcl_SetMaxBlockTime2(0);
     }
 }
 
@@ -2493,13 +2492,12 @@ PipeWatchProc(
 
     infoPtr->watchMask = mask & infoPtr->validMask;
     if (infoPtr->watchMask) {
-	Tcl_Time blockTime = { 0, 0 };
 
 	if (!oldMask) {
 	    infoPtr->nextPtr = tsdPtr->firstPipePtr;
 	    tsdPtr->firstPipePtr = infoPtr;
 	}
-	Tcl_SetMaxBlockTime(&blockTime);
+	Tcl_SetMaxBlockTime2(0);
     } else {
 	if (oldMask) {
 	    /*

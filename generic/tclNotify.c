@@ -19,15 +19,6 @@
 #include "tclInt.h"
 
 /*
- * Notifier hooks that are checked in the public wrappers for the default
- * notifier functions (for overriding via Tcl_SetNotifier).
- */
-
-static Tcl_NotifierProcs tclNotifierHooks = {
-    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
-};
-
-/*
  * For each event source (created with Tcl_CreateEventSource) there is a
  * structure of the following type:
  */
@@ -212,58 +203,26 @@ TclFinalizeNotifier(void)
  *
  * Tcl_SetNotifier --
  *
- *	Install a set of alternate functions for use with the notifier. In
- *	particular, this can be used to install the Xt-based notifier for use
- *	with the Browser plugin.
+ *	Not supported any more in Tcl 9.1
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	Set the tclNotifierHooks global, which is checked in the default
- *	notifier functions.
+ *	None
  *
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 void
 Tcl_SetNotifier(
-    const Tcl_NotifierProcs *notifierProcPtr)
+    TCL_UNUSED(const Tcl_NotifierProcs *))
 {
-    tclNotifierHooks = *notifierProcPtr;
-
-    /*
-     * Don't allow hooks to refer to the hook point functions; avoids infinite
-     * loop.
-     */
-
-    if (tclNotifierHooks.setTimerProc == Tcl_SetTimer) {
-	tclNotifierHooks.setTimerProc = NULL;
-    }
-    if (tclNotifierHooks.waitForEventProc == Tcl_WaitForEvent) {
-	tclNotifierHooks.waitForEventProc = NULL;
-    }
-    if (tclNotifierHooks.initNotifierProc == Tcl_InitNotifier) {
-	tclNotifierHooks.initNotifierProc = NULL;
-    }
-    if (tclNotifierHooks.finalizeNotifierProc == Tcl_FinalizeNotifier) {
-	tclNotifierHooks.finalizeNotifierProc = NULL;
-    }
-    if (tclNotifierHooks.alertNotifierProc == Tcl_AlertNotifier) {
-	tclNotifierHooks.alertNotifierProc = NULL;
-    }
-    if (tclNotifierHooks.serviceModeHookProc == Tcl_ServiceModeHook) {
-	tclNotifierHooks.serviceModeHookProc = NULL;
-    }
-#ifndef _WIN32
-    if (tclNotifierHooks.createFileHandlerProc == Tcl_CreateFileHandler) {
-	tclNotifierHooks.createFileHandlerProc = NULL;
-    }
-    if (tclNotifierHooks.deleteFileHandlerProc == Tcl_DeleteFileHandler) {
-	tclNotifierHooks.deleteFileHandlerProc = NULL;
-    }
-#endif /* !_WIN32 */
+	
+    Tcl_Panic("Tcl_SetNotifier is not supported in Tcl 9.1");
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -853,33 +812,23 @@ Tcl_SetServiceMode(
 // Microseconds per second.
 #define US_PER_S	1000000
 
+#ifndef TCL_NO_DEPRECATED
 void
 Tcl_SetMaxBlockTime(
     const Tcl_Time *timePtr)	/* Specifies a maximum elapsed time for the
 				 * next blocking operation in the event
 				 * tsdPtr-> */
 {
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    long long blockTimeUS = (timePtr && (timePtr->sec < (LLONG_MAX - timePtr->usec) / US_PER_S))
-	    ? (timePtr->sec * US_PER_S + timePtr->usec) : LLONG_MAX;
-
-    if (!tsdPtr->blockTimeSet || (blockTimeUS < tsdPtr->blockTime)) {
-	tsdPtr->blockTime = blockTimeUS;
-	tsdPtr->blockTimeSet = true;
-    }
-
-    /*
-     * If we are called outside an event source traversal, set the timeout
-     * immediately.
-     */
-
-    if (!tsdPtr->inTraversal) {
-	TclpSetTimer(tsdPtr->blockTime);
+    if (timePtr) {
+	Tcl_SetMaxBlockTime2(timePtr->sec * US_PER_S + timePtr->usec);
+    } else {
+	Tcl_SetMaxBlockTime2(-1);
     }
 }
+#endif /* TCL_NO_DEPRECATED */
 
 void
-TclSetMaxBlockTime(
+Tcl_SetMaxBlockTime2(
     long long time)	/* Specifies a maximum elapsed time for the
 				 * next blocking operation in the event
 				 * tsdPtr-> */
@@ -897,9 +846,24 @@ TclSetMaxBlockTime(
      */
 
     if (!tsdPtr->inTraversal) {
-	TclpSetTimer(tsdPtr->blockTime);
+	Tcl_SetTimer2(tsdPtr->blockTime);
     }
 }
+
+#ifndef TCL_NO_DEPRECATED
+void
+Tcl_ConditionWait(
+    Tcl_Condition *condPtr,
+    Tcl_Mutex *mutexPtr,
+    const Tcl_Time *timePtr)
+{
+    if (timePtr == NULL) {
+	Tcl_ConditionWait2(condPtr, mutexPtr, -1);
+    } else {
+	Tcl_ConditionWait2(condPtr, mutexPtr, timePtr->sec * 1000000 + timePtr->usec);
+    }
+}
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -1026,7 +990,7 @@ Tcl_DoOneEvent(
 	 * we should abort Tcl_DoOneEvent.
 	 */
 
-	result = TclWaitForEvent(time);
+	result = Tcl_WaitForEvent2(time);
 	if (result < 0) {
 	    result = 0;
 	    break;
@@ -1167,9 +1131,9 @@ Tcl_ServiceAll(void)
     }
 
     if (!tsdPtr->blockTimeSet) {
-	TclpSetTimer(-1);
+	Tcl_SetTimer2(-1);
     } else {
-	TclpSetTimer(tsdPtr->blockTime);
+	Tcl_SetTimer2(tsdPtr->blockTime);
     }
     tsdPtr->inTraversal = false;
     tsdPtr->serviceMode = TCL_SERVICE_ALL;
@@ -1218,125 +1182,6 @@ Tcl_ThreadAlert(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_InitNotifier --
- *
- *	Initializes the platform specific notifier state. Forwards to the
- *	platform implementation when the hook is not enabled.
- *
- * Results:
- *	Returns a handle to the notifier state for this thread..
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-void *
-Tcl_InitNotifier(void)
-{
-    if (tclNotifierHooks.initNotifierProc) {
-	return tclNotifierHooks.initNotifierProc();
-    } else {
-	return TclpInitNotifier();
-    }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_FinalizeNotifier --
- *
- *	This function is called to cleanup the notifier state before a thread
- *	is terminated. Forwards to the platform implementation when the hook
- *	is not enabled.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	If no finalizeNotifierProc notifier hook exists, TclpFinalizeNotifier
- *	is called.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Tcl_FinalizeNotifier(
-    void *clientData)
-{
-    if (tclNotifierHooks.finalizeNotifierProc) {
-	tclNotifierHooks.finalizeNotifierProc(clientData);
-    } else {
-	TclpFinalizeNotifier(clientData);
-    }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_AlertNotifier --
- *
- *	Wake up the specified notifier from any thread. This routine is called
- *	by the platform independent notifier code whenever the Tcl_ThreadAlert
- *	routine is called. This routine is guaranteed not to be called by Tcl
- *	on a given notifier after Tcl_FinalizeNotifier is called for that
- *	notifier.  This routine is typically called from a thread other than
- *	the notifier's thread.  Forwards to the platform implementation when
- *	the hook is not enabled.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	See the platform-specific implementations.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Tcl_AlertNotifier(
-    void *clientData)		/* Pointer to thread data. */
-{
-    if (tclNotifierHooks.alertNotifierProc) {
-	tclNotifierHooks.alertNotifierProc(clientData);
-    } else {
-	TclpAlertNotifier(clientData);
-    }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_ServiceModeHook --
- *
- *	This function is invoked whenever the service mode changes.  Forwards
- *	to the platform implementation when the hook is not enabled.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	See the platform-specific implementations.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Tcl_ServiceModeHook(
-    int mode)			/* Either TCL_SERVICE_ALL, or
-				 * TCL_SERVICE_NONE. */
-{
-    if (tclNotifierHooks.serviceModeHookProc) {
-	tclNotifierHooks.serviceModeHookProc(mode);
-    } else {
-	TclpServiceModeHook(mode);
-    }
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * Tcl_SetTimer --
  *
  *	This function sets the current notifier timer value.  Forwards to the
@@ -1351,20 +1196,20 @@ Tcl_ServiceModeHook(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 void
 Tcl_SetTimer(
     const Tcl_Time *timePtr)	/* Timeout value, may be NULL. */
 {
-    if (tclNotifierHooks.setTimerProc) {
-	tclNotifierHooks.setTimerProc(timePtr);
-    } else if (!timePtr) {
-	TclpSetTimer(-1);
+    if (!timePtr) {
+	Tcl_SetTimer2(-1);
     } else if (timePtr->sec >= (LLONG_MAX - timePtr->usec) / US_PER_S) {
-	TclpSetTimer(LLONG_MAX);
+	Tcl_SetTimer2(LLONG_MAX);
     } else {
-	TclpSetTimer(timePtr->sec * US_PER_S + timePtr->usec);
+	Tcl_SetTimer2(timePtr->sec * US_PER_S + timePtr->usec);
     }
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -1386,113 +1231,21 @@ Tcl_SetTimer(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 int
 Tcl_WaitForEvent(
     const Tcl_Time *timePtr)	/* Maximum block time, or NULL. */
 {
-    if (tclNotifierHooks.waitForEventProc) {
-	return tclNotifierHooks.waitForEventProc(timePtr);
-    } else if (!timePtr) {
-	return TclpWaitForEvent(-1);
+    if (!timePtr) {
+	return Tcl_WaitForEvent2(-1);
     } else if (timePtr->sec >= (LLONG_MAX - timePtr->usec) / US_PER_S) {
-	return TclpWaitForEvent(LLONG_MAX);
+	return Tcl_WaitForEvent2(LLONG_MAX);
     } else {
-	return TclpWaitForEvent(timePtr->sec * US_PER_S + timePtr->usec);
+	return Tcl_WaitForEvent2(timePtr->sec * US_PER_S + timePtr->usec);
     }
 
 }
-
-int
-TclWaitForEvent(
-    long long time)	/* Maximum block time, or -1. */
-{
-    if (tclNotifierHooks.waitForEventProc) {
-	if (time >= 0) {
-	    Tcl_Time tm;
-	    tm.sec = time / US_PER_S;
-	    tm.usec = time % US_PER_S;
-	    return tclNotifierHooks.waitForEventProc(&tm);
-	}
-	return tclNotifierHooks.waitForEventProc(NULL);
-    }
-    return TclpWaitForEvent(time);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_CreateFileHandler --
- *
- *	This function registers a file descriptor handler with the notifier.
- *	Forwards to the platform implementation when the hook is not enabled.
- *
- *	This function is not defined on Windows. The OS API there is too
- *	different.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Creates a new file handler structure.
- *
- *----------------------------------------------------------------------
- */
-
-#ifndef _WIN32
-void
-Tcl_CreateFileHandler(
-    int fd,			/* Handle of stream to watch. */
-    int mask,			/* OR'ed combination of TCL_READABLE,
-				 * TCL_WRITABLE, and TCL_EXCEPTION: indicates
-				 * conditions under which proc should be
-				 * called. */
-    Tcl_FileProc *proc,		/* Function to call for each selected
-				 * event. */
-    void *clientData)		/* Arbitrary data to pass to proc. */
-{
-    if (tclNotifierHooks.createFileHandlerProc) {
-	tclNotifierHooks.createFileHandlerProc(fd, mask, proc, clientData);
-    } else {
-	TclpCreateFileHandler(fd, mask, proc, clientData);
-    }
-}
-#endif /* !_WIN32 */
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_DeleteFileHandler --
- *
- *	Cancel a previously-arranged callback arrangement for a file
- *	descriptor.  Forwards to the platform implementation when the hook is
- *	not enabled.
- *
- *	This function is not defined on Windows. The OS API there is too
- *	different.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	If a callback was previously registered on the file descriptor, remove
- *	it.
- *
- *----------------------------------------------------------------------
- */
-
-#ifndef _WIN32
-void
-Tcl_DeleteFileHandler(
-    int fd)			/* Stream id for which to remove callback
-				 * function. */
-{
-    if (tclNotifierHooks.deleteFileHandlerProc) {
-	tclNotifierHooks.deleteFileHandlerProc(fd);
-    } else {
-	TclpDeleteFileHandler(fd);
-    }
-}
-#endif /* !_WIN32 */
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  * Local Variables:

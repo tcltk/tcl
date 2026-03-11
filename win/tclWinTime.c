@@ -145,10 +145,10 @@ TclpGetSeconds(void)
     if ( (usecSincePosixEpoch = NativeGetMicroseconds()) ) {
 	return usecSincePosixEpoch / 1000000;
     } else {
-	Tcl_Time t;
+	long long t;
 
-	Tcl_GetTime(&t);
-	return (unsigned long long)t.sec;
+	t = Tcl_GetDayTime();
+	return (unsigned long long)t;
     }
 }
 
@@ -184,10 +184,10 @@ TclpGetClicks(void)
 	return (Tcl_WideUInt) usecSincePosixEpoch;
     } else {
 	/*
-	* Use the TclpGetMicroseconds abstraction to get the time in microseconds, as
+	* Use the Tcl_GetDayTime abstraction to get the time in microseconds, as
 	* nearly as we can, and return it.
 	*/
-	return TclpGetMicroseconds();
+	return Tcl_GetDayTime();
     }
 }
 
@@ -242,9 +242,9 @@ TclpGetWideClicks(void)
 	/* fallback using microseconds */
 	wideClick.perfCounter = 0;
 	wideClick.microsecsScale = 1;
-	return TclpGetMicroseconds();
+	return Tcl_GetDayTime();
     } else {
-	return TclpGetMicroseconds();
+	return Tcl_GetDayTime();
     }
 }
 
@@ -278,7 +278,7 @@ TclpWideClickInMicrosec(void)
 /*
  *----------------------------------------------------------------------
  *
- * TclpGetMicroseconds --
+ * Tcl_GetDayTime --
  *
  *	This procedure returns a WideInt value that represents the highest
  *	resolution clock in microseconds available on the system.
@@ -293,7 +293,7 @@ TclpWideClickInMicrosec(void)
  */
 
 long long
-TclpGetMicroseconds(void)
+Tcl_GetDayTime(void)
 {
     long long usecSincePosixEpoch;
 
@@ -301,18 +301,18 @@ TclpGetMicroseconds(void)
      * Try to use high resolution timer.
      */
 
-    if ( (usecSincePosixEpoch = NativeGetMicroseconds()) ) {
+    usecSincePosixEpoch = NativeGetMicroseconds();
+    if (usecSincePosixEpoch) {
 	return usecSincePosixEpoch;
     } else {
 	/*
-	 * Use the Tcl_GetTime abstraction to get the time in microseconds, as
-	 * nearly as we can, and return it.
+	 * High resolution timer is not available. Just use ftime.
 	 */
 
-	Tcl_Time now;
+	struct _timeb t;
 
-	Tcl_GetTime(&now);
-	return now.sec * 1000000 + now.usec;
+	_ftime(&t);
+	return t.time * 1000000 + t.millitm * 1000;
     }
 }
 
@@ -634,6 +634,7 @@ NativeGetMicroseconds(void)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 void
 Tcl_GetTime(
     Tcl_Time *timePtr)
@@ -660,6 +661,7 @@ Tcl_GetTime(
 	timePtr->usec = t.millitm * 1000;
     }
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------

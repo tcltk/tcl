@@ -357,11 +357,7 @@ static void
 SerialBlockTime(
     int msec)			/* milli-seconds */
 {
-    Tcl_Time blockTime;
-
-    blockTime.sec  =  msec / 1000;
-    blockTime.usec = (msec % 1000) * 1000;
-    Tcl_SetMaxBlockTime(&blockTime);
+    Tcl_SetMaxBlockTime2(msec * 1000LL);
 }
 
 /*

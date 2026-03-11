@@ -426,7 +426,7 @@ TestConditionVariable(
  *------------------------------------------------------------------------
  */
 
-static const Tcl_Time CONDITION_TIMEOUT = {5, 0};
+#define CONDITION_TIMEOUT_USEC 5000000LL
 
 static Tcl_ThreadCreateType
 ProducerThreadProc(
@@ -449,10 +449,10 @@ ProducerThreadProc(
 	if (contextPtr->u.queue.available == contextPtr->u.queue.capacity) {
 	    long long before, after;
 	    before = Tcl_GetMonotonicTime();
-	    Tcl_ConditionWait(&contextPtr->u.queue.canEnqueue,
-		    &testContextMutex, &CONDITION_TIMEOUT);
+	    Tcl_ConditionWait2(&contextPtr->u.queue.canEnqueue,
+		    &testContextMutex, CONDITION_TIMEOUT_USEC);
 	    after = Tcl_GetMonotonicTime();
-	    if (after >= before + CONDITION_TIMEOUT.sec * 1000000) {
+	    if (after >= before + CONDITION_TIMEOUT_USEC) {
 		threadContextPtr->timeouts += 1;
 	    }
 	} else {
@@ -510,10 +510,10 @@ ConsumerThreadProc(
 	if (contextPtr->u.queue.available == 0) {
 	    long long before, after;
 	    before = Tcl_GetMonotonicTime();
-	    Tcl_ConditionWait(&contextPtr->u.queue.canDequeue,
-		    &testContextMutex, &CONDITION_TIMEOUT);
+	    Tcl_ConditionWait2(&contextPtr->u.queue.canDequeue,
+		    &testContextMutex, CONDITION_TIMEOUT_USEC);
 	    after = Tcl_GetMonotonicTime();
-	    if (after >= before + CONDITION_TIMEOUT.sec * 1000000) {
+	    if (after >= before + CONDITION_TIMEOUT_USEC) {
 		threadContextPtr->timeouts += 1;
 	    }
 	} else {

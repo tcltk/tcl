@@ -662,10 +662,10 @@ TclpFinalizeMutex(
  */
 
 void
-Tcl_ConditionWait(
+Tcl_ConditionWait2(
     Tcl_Condition *condPtr,	/* Really (pthread_cond_t **) */
     Tcl_Mutex *mutexPtr,	/* Really (PMutex **) */
-    const Tcl_Time *timePtr)	/* Timeout on waiting period */
+    long long time)	/* Timeout on waiting period */
 {
     pthread_cond_t *pcondPtr;
     PMutex *pmutexPtr;
@@ -689,7 +689,7 @@ Tcl_ConditionWait(
     }
     pmutexPtr = *((PMutex **)mutexPtr);
     pcondPtr = *((pthread_cond_t **)condPtr);
-    if (timePtr == NULL) {
+    if (time < 0) {
 	PCondWait(pcondPtr, pmutexPtr);
     } else {
 	long long now;
@@ -699,10 +699,9 @@ Tcl_ConditionWait(
 	 * current time, including possible overflow situations. [Bug #411603]
 	 */
 
-	now = TclpGetMicroseconds();
-	ptime.tv_sec = timePtr->sec +
-	    (timePtr->usec + now) / 1000000;
-	ptime.tv_nsec = 1000 * ((timePtr->usec + now) % 1000000);
+	now = Tcl_GetDayTime();
+	ptime.tv_sec = (time + now) / 1000000;
+	ptime.tv_nsec = 1000 * ((time + now) % 1000000);
 	PCondTimedWait(pcondPtr, pmutexPtr, &ptime);
     }
 }

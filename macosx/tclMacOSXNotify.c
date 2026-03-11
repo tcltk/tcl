@@ -423,7 +423,7 @@ LookUpFileHandler(
 /*
  *----------------------------------------------------------------------
  *
- * TclpInitNotifier --
+ * Tcl_InitNotifier --
  *
  *	Initializes the platform specific notifier state.
  *
@@ -437,7 +437,7 @@ LookUpFileHandler(
  */
 
 void *
-TclpInitNotifier(void)
+Tcl_InitNotifier(void)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
@@ -671,7 +671,7 @@ StartNotifierThread(void)
 /*
  *----------------------------------------------------------------------
  *
- * TclpFinalizeNotifier --
+ * Tcl_FinalizeNotifier --
  *
  *	This function is called to cleanup the notifier state before a thread
  *	is terminated.
@@ -687,7 +687,7 @@ StartNotifierThread(void)
  */
 
 void
-TclpFinalizeNotifier(
+Tcl_FinalizeNotifier(
     TCL_UNUSED(void *))
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -770,7 +770,7 @@ TclpFinalizeNotifier(
 /*
  *----------------------------------------------------------------------
  *
- * TclpAlertNotifier --
+ * Tcl_AlertNotifier --
  *
  *	Wake up the specified notifier from any thread. This routine is called
  *	by the platform independent notifier code whenever the Tcl_ThreadAlert
@@ -787,7 +787,7 @@ TclpFinalizeNotifier(
  */
 
 void
-TclpAlertNotifier(
+Tcl_AlertNotifier(
     void *clientData)
 {
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *)clientData;
@@ -803,7 +803,7 @@ TclpAlertNotifier(
 /*
  *----------------------------------------------------------------------
  *
- * TclpSetTimer --
+ * Tcl_SetTimer2 --
  *
  *	This function sets the current notifier timer value.
  *
@@ -817,7 +817,7 @@ TclpAlertNotifier(
  */
 
 void
-TclpSetTimer(
+Tcl_SetTimer2(
     long long time)	/* Maximum block time, or -1. */
 {
     ThreadSpecificData *tsdPtr;
@@ -868,7 +868,7 @@ TimerWakeUp(
 /*
  *----------------------------------------------------------------------
  *
- * TclpServiceModeHook --
+ * Tcl_ServiceModeHook --
  *
  *	This function is invoked whenever the service mode changes.
  *
@@ -882,7 +882,7 @@ TimerWakeUp(
  */
 
 void
-TclpServiceModeHook(
+Tcl_ServiceModeHook(
     int mode)			/* Either TCL_SERVICE_ALL, or
 				 * TCL_SERVICE_NONE. */
 {
@@ -906,7 +906,7 @@ TclpServiceModeHook(
 /*
  *----------------------------------------------------------------------
  *
- * TclpCreateFileHandler --
+ * Tcl_CreateFileHandler --
  *
  *	This function registers a file handler with the notifier.
  *
@@ -920,7 +920,7 @@ TclpServiceModeHook(
  */
 
 void
-TclpCreateFileHandler(
+Tcl_CreateFileHandler(
     int fd,			/* Handle of stream to watch. */
     int mask,			/* OR'ed combination of TCL_READABLE,
 				 * TCL_WRITABLE, and TCL_EXCEPTION: indicates
@@ -973,7 +973,7 @@ TclpCreateFileHandler(
 /*
  *----------------------------------------------------------------------
  *
- * TclpDeleteFileHandler --
+ * Tcl_DeleteFileHandler --
  *
  *	Cancel a previously-arranged callback arrangement for a file.
  *
@@ -987,7 +987,7 @@ TclpCreateFileHandler(
  */
 
 void
-TclpDeleteFileHandler(
+Tcl_DeleteFileHandler(
     int fd)			/* Stream id for which to remove callback
 				 * function. */
 {
@@ -1157,7 +1157,7 @@ TclpNotifierData(void)
 /*
  *----------------------------------------------------------------------
  *
- * TclpWaitForEvent --
+ * Tcl_WaitForEvent2 --
  *
  *	This function is called by Tcl_DoOneEvent to wait for new events on
  *	the message queue. If the block time is 0, then Tcl_WaitForEvent just
@@ -1174,7 +1174,7 @@ TclpNotifierData(void)
  */
 
 int
-TclpWaitForEvent(
+Tcl_WaitForEvent2(
     long long time)	/* Maximum block time, or -1. */
 {
     int result;

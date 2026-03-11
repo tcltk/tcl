@@ -81,7 +81,7 @@ StartNotifierThread(
 /*
  *----------------------------------------------------------------------
  *
- * TclpAlertNotifier --
+ * Tcl_AlertNotifier --
  *
  *	Wake up the specified notifier from any thread. This routine is called
  *	by the platform independent notifier code whenever the Tcl_ThreadAlert
@@ -104,7 +104,7 @@ StartNotifierThread(
  */
 
 void
-TclpAlertNotifier(
+Tcl_AlertNotifier(
     void *clientData)
 {
 #ifdef NOTIFIER_SELECT
@@ -196,7 +196,7 @@ LookUpFileHandler(
 /*
  *----------------------------------------------------------------------
  *
- * TclpSetTimer --
+ * Tcl_SetTimer2 --
  *
  *	This function sets the current notifier timer value. This interface is
  *	not implemented in this notifier because we are always running inside
@@ -212,7 +212,7 @@ LookUpFileHandler(
  */
 
 void
-TclpSetTimer(
+Tcl_SetTimer2(
     TCL_UNUSED(long long))	/* Timeout value, may be NULL. */
 {
     /*
@@ -239,7 +239,7 @@ TclpSetTimer(
  */
 
 void
-TclpServiceModeHook(
+Tcl_ServiceModeHook(
     int mode)			/* Either TCL_SERVICE_ALL, or
 				 * TCL_SERVICE_NONE. */
 {
@@ -558,7 +558,7 @@ TclUnixWaitForFile(
      */
 
     if (timeout > 0) {
-	now = TclpGetMicroseconds();
+	now = Tcl_GetDayTime();
 	abortTime = now + timeout * 1000;
 	timeoutPtr = &blockTime;
     } else if (timeout == 0) {
@@ -641,7 +641,7 @@ TclUnixWaitForFile(
 	 * The select returned early, so we need to recompute the timeout.
 	 */
 
-	now = TclpGetMicroseconds();
+	now = Tcl_GetDayTime();
     } while (abortTime > now);
     return result;
 }

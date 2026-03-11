@@ -3822,7 +3822,7 @@ Tcl_LimitCheck(
 		(ticker % iPtr->limit.timeGranularity == 0))) {
 	long long now;
 
-	now = TclpGetMicroseconds();
+	now = Tcl_GetDayTime();
 	if (iPtr->limit.time <= now) {
 	    iPtr->limit.exceeded |= TCL_LIMIT_TIME;
 	    Tcl_Preserve(interp);
@@ -4365,30 +4365,35 @@ Tcl_LimitGetCommands(
  */
 
 void
+Tcl_LimitSetTime2(
+    Tcl_Interp *interp,
+    long long time)
+{
+    Interp *iPtr = (Interp *) interp;
+
+    iPtr->limit.time = time;
+    if (iPtr->limit.timeEvent != NULL) {
+	Tcl_DeleteTimerHandler(iPtr->limit.timeEvent);
+    }
+    time = (time > LLONG_MAX - 10) ? LLONG_MAX : time + 10;
+    iPtr->limit.timeEvent = TclCreateAbsoluteTimerHandler(time,
+	    TimeLimitCallback, interp);
+    iPtr->limit.exceeded &= ~TCL_LIMIT_TIME;
+}
+
+#ifndef TCL_NO_DEPRECATED
+void
 Tcl_LimitSetTime(
     Tcl_Interp *interp,
     Tcl_Time *timeLimitPtr)
 {
-    Interp *iPtr = (Interp *) interp;
-    long long nextMoment;
-
-    if (iPtr->limit.timeEvent != NULL) {
-	Tcl_DeleteTimerHandler(iPtr->limit.timeEvent);
-    }
-    if (timeLimitPtr->sec >= LLONG_MAX / 1000000 + 10) {
-	nextMoment = LLONG_MAX;
-	iPtr->limit.time = nextMoment;
+    if (!timeLimitPtr || timeLimitPtr->sec > (LLONG_MAX - timeLimitPtr->usec) / 1000000) {
+	Tcl_LimitSetTime2(interp, LLONG_MAX);
     } else {
-	nextMoment = timeLimitPtr->sec * 1000000 +
-		(timeLimitPtr->usec % 1000000);
-	iPtr->limit.time = nextMoment;
-	nextMoment += 10;
+	Tcl_LimitSetTime2(interp, timeLimitPtr->sec * 1000000 + timeLimitPtr->usec);
     }
-
-    iPtr->limit.timeEvent = TclCreateAbsoluteTimerHandler(nextMoment,
-	    TimeLimitCallback, interp);
-    iPtr->limit.exceeded &= ~TCL_LIMIT_TIME;
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -4452,6 +4457,7 @@ TimeLimitCallback(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 void
 Tcl_LimitGetTime(
     Tcl_Interp *interp,
@@ -4459,8 +4465,19 @@ Tcl_LimitGetTime(
 {
     Interp *iPtr = (Interp *) interp;
 
-	timeLimitPtr->sec = iPtr->limit.time / 1000000;
+    timeLimitPtr->sec = iPtr->limit.time / 1000000;
     timeLimitPtr->usec = iPtr->limit.time % 1000000;
+}
+#endif /* TCL_NO_DEPRECATED */
+
+
+long long
+Tcl_LimitGetTime2(
+    Tcl_Interp *interp)
+{
+    Interp *iPtr = (Interp *) interp;
+
+    return iPtr->limit.time;
 }
 
 /*
@@ -5059,13 +5076,13 @@ ChildTimeLimitCmd(
 		Tcl_LimitGetGranularity(childInterp, TCL_LIMIT_TIME)));
 
 	if (Tcl_LimitTypeEnabled(childInterp, TCL_LIMIT_TIME)) {
-	    Tcl_Time limitMoment;
+	    long long limitMoment;
 
-	    Tcl_LimitGetTime(childInterp, &limitMoment);
+	    limitMoment = Tcl_LimitGetTime2(childInterp);
 	    TclDictPut(NULL, dictPtr, options[2],
-		    Tcl_NewWideIntObj(limitMoment.usec / 1000));
+		    Tcl_NewWideIntObj((limitMoment / 1000) % 1000));
 	    TclDictPut(NULL, dictPtr, options[3],
-		    Tcl_NewWideIntObj(limitMoment.sec));
+		    Tcl_NewWideIntObj(limitMoment / 1000000));
 	} else {
 	    Tcl_Obj *empty;
 
@@ -5098,19 +5115,19 @@ ChildTimeLimitCmd(
 	    break;
 	case OPT_MILLI:
 	    if (Tcl_LimitTypeEnabled(childInterp, TCL_LIMIT_TIME)) {
-		Tcl_Time limitMoment;
+		long long limitMoment;
 
-		Tcl_LimitGetTime(childInterp, &limitMoment);
+		limitMoment = Tcl_LimitGetTime2(childInterp);
 		Tcl_SetObjResult(interp,
-			Tcl_NewWideIntObj(limitMoment.usec/1000));
+			Tcl_NewWideIntObj((limitMoment / 1000) % 1000));
 	    }
 	    break;
 	case OPT_SEC:
 	    if (Tcl_LimitTypeEnabled(childInterp, TCL_LIMIT_TIME)) {
-		Tcl_Time limitMoment;
+		long long limitMoment;
 
-		Tcl_LimitGetTime(childInterp, &limitMoment);
-		Tcl_SetObjResult(interp, Tcl_NewWideIntObj(limitMoment.sec));
+		limitMoment = Tcl_LimitGetTime2(childInterp);
+		Tcl_SetObjResult(interp, Tcl_NewWideIntObj(limitMoment / 1000000));
 	    }
 	    break;
 	default:
@@ -5125,10 +5142,10 @@ ChildTimeLimitCmd(
 	Tcl_Obj *scriptObj = NULL, *granObj = NULL;
 	Tcl_Obj *milliObj = NULL, *secObj = NULL;
 	int gran = 0;
-	Tcl_Time limitMoment;
+	long long limitMoment;
 	Tcl_WideInt tmp;
 
-	Tcl_LimitGetTime(childInterp, &limitMoment);
+	limitMoment = Tcl_LimitGetTime2(childInterp);
 	for (i=consumedObjc ; i<objc ; i+=2) {
 	    if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0,
 		    &index) != TCL_OK) {
@@ -5168,7 +5185,8 @@ ChildTimeLimitCmd(
 			    "BADVALUE", (char *)NULL);
 		    return TCL_ERROR;
 		}
-		limitMoment.usec = tmp*1000;
+		limitMoment -= limitMoment % 1000000;
+		limitMoment += tmp*1000;
 		break;
 	    case OPT_SEC:
 		secObj = objv[i+1];
@@ -5186,7 +5204,7 @@ ChildTimeLimitCmd(
 			    "BADVALUE", (char *)NULL);
 		    return TCL_ERROR;
 		}
-		limitMoment.sec = (long long) tmp;
+		limitMoment = (long long)tmp * 1000000 + limitMoment % 1000000;
 		break;
 	    default:
 		TCL_UNREACHABLE();
@@ -5218,16 +5236,8 @@ ChildTimeLimitCmd(
 	    }
 
 	    if (milliLen > 0 || secLen > 0) {
-		/*
-		 * Force usec to be in range [0..1000000), possibly
-		 * incrementing sec in the process. This makes it much easier
-		 * for people to write scripts that do small time increments.
-		 */
 
-		limitMoment.sec += limitMoment.usec / 1000000;
-		limitMoment.usec %= 1000000;
-
-		Tcl_LimitSetTime(childInterp, &limitMoment);
+		Tcl_LimitSetTime2(childInterp, limitMoment);
 		Tcl_LimitTypeSet(childInterp, TCL_LIMIT_TIME);
 	    } else {
 		Tcl_LimitTypeReset(childInterp, TCL_LIMIT_TIME);

@@ -41,6 +41,8 @@
 #   define Tcl_CmdObjTraceProc void
 #   define Tcl_GetTimeProc void
 #   define Tcl_ScaleTimeProc void
+#   define Tcl_NotifierProcs void
+#   define Tcl_Time void
 #endif /* TCL_NO_DEPRECATED */
 
 /*
@@ -127,7 +129,8 @@ EXTERN Tcl_Obj *	Tcl_DbNewDoubleObj(double doubleValue,
 /* 25 */
 EXTERN Tcl_Obj *	Tcl_DbNewListObj(Tcl_Size objc, Tcl_Obj *const *objv,
 				const char *file, int line);
-/* Slot 26 is reserved */
+/* 26 */
+EXTERN void		Tcl_SetTimer2(long long time);
 /* 27 */
 EXTERN Tcl_Obj *	Tcl_DbNewObj(const char *file, int line);
 /* 28 */
@@ -146,7 +149,8 @@ EXTERN int		Tcl_GetDouble(Tcl_Interp *interp, const char *src,
 /* 35 */
 EXTERN int		Tcl_GetDoubleFromObj(Tcl_Interp *interp,
 				Tcl_Obj *objPtr, double *doublePtr);
-/* Slot 36 is reserved */
+/* 36 */
+EXTERN int		Tcl_WaitForEvent2(long long time);
 /* 37 */
 EXTERN int		Tcl_GetInt(Tcl_Interp *interp, const char *src,
 				int *intPtr);
@@ -184,13 +188,16 @@ EXTERN int		Tcl_ListObjReplace(Tcl_Interp *interp,
 				Tcl_Obj *listPtr, Tcl_Size first,
 				Tcl_Size count, Tcl_Size objc,
 				Tcl_Obj *const objv[]);
-/* Slot 49 is reserved */
+/* 49 */
+EXTERN void		Tcl_SetMaxBlockTime2(long long time);
 /* 50 */
 EXTERN Tcl_Obj *	Tcl_NewByteArrayObj(const unsigned char *bytes,
 				Tcl_Size numBytes);
 /* 51 */
 EXTERN Tcl_Obj *	Tcl_NewDoubleObj(double doubleValue);
-/* Slot 52 is reserved */
+/* 52 */
+EXTERN void		Tcl_ConditionWait2(Tcl_Condition *condPtr,
+				Tcl_Mutex *mutexPtr, long long time);
 /* 53 */
 EXTERN Tcl_Obj *	Tcl_NewListObj(Tcl_Size objc, Tcl_Obj *const objv[]);
 /* Slot 54 is reserved */
@@ -212,7 +219,9 @@ EXTERN void		Tcl_SetDoubleObj(Tcl_Obj *objPtr, double doubleValue);
 /* 62 */
 EXTERN void		Tcl_SetListObj(Tcl_Obj *objPtr, Tcl_Size objc,
 				Tcl_Obj *const objv[]);
-/* Slot 63 is reserved */
+/* 63 */
+EXTERN void		Tcl_LimitSetTime2(Tcl_Interp *interp,
+				long long timeLimit);
 /* 64 */
 EXTERN void		Tcl_SetObjLength(Tcl_Obj *objPtr, Tcl_Size length);
 /* 65 */
@@ -238,8 +247,10 @@ EXTERN int		Tcl_AsyncInvoke(Tcl_Interp *interp, int code);
 EXTERN void		Tcl_AsyncMark(Tcl_AsyncHandler async);
 /* 75 */
 EXTERN int		Tcl_AsyncReady(void);
-/* Slot 76 is reserved */
-/* Slot 77 is reserved */
+/* 76 */
+EXTERN long long	Tcl_LimitGetTime2(Tcl_Interp *interp);
+/* 77 */
+EXTERN long long	Tcl_GetDayTime(void);
 /* 78 */
 EXTERN int		Tcl_BadChannelOption(Tcl_Interp *interp,
 				const char *optionName,
@@ -1023,7 +1034,8 @@ EXTERN void		Tcl_AppendUnicodeToObj(Tcl_Obj *objPtr,
 EXTERN int		Tcl_RegExpMatchObj(Tcl_Interp *interp,
 				Tcl_Obj *textObj, Tcl_Obj *patternObj);
 /* 386 */
-EXTERN void		Tcl_SetNotifier(
+TCL_DEPRECATED("No longer supported")
+void			Tcl_SetNotifier(
 				const Tcl_NotifierProcs *notifierProcPtr);
 /* 387 */
 EXTERN Tcl_Mutex *	Tcl_GetAllocMutex(void);
@@ -1966,7 +1978,7 @@ typedef struct TclStubs {
     Tcl_Obj * (*tcl_DbNewByteArrayObj) (const unsigned char *bytes, Tcl_Size numBytes, const char *file, int line); /* 23 */
     Tcl_Obj * (*tcl_DbNewDoubleObj) (double doubleValue, const char *file, int line); /* 24 */
     Tcl_Obj * (*tcl_DbNewListObj) (Tcl_Size objc, Tcl_Obj *const *objv, const char *file, int line); /* 25 */
-    void (*reserved26)(void);
+    void (*tcl_SetTimer2) (long long time); /* 26 */
     Tcl_Obj * (*tcl_DbNewObj) (const char *file, int line); /* 27 */
     Tcl_Obj * (*tcl_DbNewStringObj) (const char *bytes, Tcl_Size length, const char *file, int line); /* 28 */
     Tcl_Obj * (*tcl_DuplicateObj) (Tcl_Obj *objPtr); /* 29 */
@@ -1976,7 +1988,7 @@ typedef struct TclStubs {
     void (*reserved33)(void);
     int (*tcl_GetDouble) (Tcl_Interp *interp, const char *src, double *doublePtr); /* 34 */
     int (*tcl_GetDoubleFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, double *doublePtr); /* 35 */
-    void (*reserved36)(void);
+    int (*tcl_WaitForEvent2) (long long time); /* 36 */
     int (*tcl_GetInt) (Tcl_Interp *interp, const char *src, int *intPtr); /* 37 */
     int (*tcl_GetIntFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, int *intPtr); /* 38 */
     int (*tcl_GetLongFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, long *longPtr); /* 39 */
@@ -1989,10 +2001,10 @@ typedef struct TclStubs {
     int (*tcl_ListObjIndex) (Tcl_Interp *interp, Tcl_Obj *listPtr, Tcl_Size index, Tcl_Obj **objPtrPtr); /* 46 */
     int (*tclListObjLength) (Tcl_Interp *interp, Tcl_Obj *listPtr, void *lengthPtr); /* 47 */
     int (*tcl_ListObjReplace) (Tcl_Interp *interp, Tcl_Obj *listPtr, Tcl_Size first, Tcl_Size count, Tcl_Size objc, Tcl_Obj *const objv[]); /* 48 */
-    void (*reserved49)(void);
+    void (*tcl_SetMaxBlockTime2) (long long time); /* 49 */
     Tcl_Obj * (*tcl_NewByteArrayObj) (const unsigned char *bytes, Tcl_Size numBytes); /* 50 */
     Tcl_Obj * (*tcl_NewDoubleObj) (double doubleValue); /* 51 */
-    void (*reserved52)(void);
+    void (*tcl_ConditionWait2) (Tcl_Condition *condPtr, Tcl_Mutex *mutexPtr, long long time); /* 52 */
     Tcl_Obj * (*tcl_NewListObj) (Tcl_Size objc, Tcl_Obj *const objv[]); /* 53 */
     void (*reserved54)(void);
     Tcl_Obj * (*tcl_NewObj) (void); /* 55 */
@@ -2003,7 +2015,7 @@ typedef struct TclStubs {
     void (*tcl_SetDoubleObj) (Tcl_Obj *objPtr, double doubleValue); /* 60 */
     void (*reserved61)(void);
     void (*tcl_SetListObj) (Tcl_Obj *objPtr, Tcl_Size objc, Tcl_Obj *const objv[]); /* 62 */
-    void (*reserved63)(void);
+    void (*tcl_LimitSetTime2) (Tcl_Interp *interp, long long timeLimit); /* 63 */
     void (*tcl_SetObjLength) (Tcl_Obj *objPtr, Tcl_Size length); /* 64 */
     void (*tcl_SetStringObj) (Tcl_Obj *objPtr, const char *bytes, Tcl_Size length); /* 65 */
     void (*reserved66)(void);
@@ -2016,8 +2028,8 @@ typedef struct TclStubs {
     int (*tcl_AsyncInvoke) (Tcl_Interp *interp, int code); /* 73 */
     void (*tcl_AsyncMark) (Tcl_AsyncHandler async); /* 74 */
     int (*tcl_AsyncReady) (void); /* 75 */
-    void (*reserved76)(void);
-    void (*reserved77)(void);
+    long long (*tcl_LimitGetTime2) (Tcl_Interp *interp); /* 76 */
+    long long (*tcl_GetDayTime) (void); /* 77 */
     int (*tcl_BadChannelOption) (Tcl_Interp *interp, const char *optionName, const char *optionList); /* 78 */
     void (*tcl_CallWhenDeleted) (Tcl_Interp *interp, Tcl_InterpDeleteProc *proc, void *clientData); /* 79 */
     void (*tcl_CancelIdleCall) (Tcl_IdleProc *idleProc, void *clientData); /* 80 */
@@ -2326,7 +2338,7 @@ typedef struct TclStubs {
     Tcl_Obj * (*tclGetRange) (Tcl_Obj *objPtr, Tcl_Size first, Tcl_Size last); /* 383 */
     void (*tcl_AppendUnicodeToObj) (Tcl_Obj *objPtr, const Tcl_UniChar *unicode, Tcl_Size length); /* 384 */
     int (*tcl_RegExpMatchObj) (Tcl_Interp *interp, Tcl_Obj *textObj, Tcl_Obj *patternObj); /* 385 */
-    void (*tcl_SetNotifier) (const Tcl_NotifierProcs *notifierProcPtr); /* 386 */
+    TCL_DEPRECATED_API("No longer supported") void (*tcl_SetNotifier) (const Tcl_NotifierProcs *notifierProcPtr); /* 386 */
     Tcl_Mutex * (*tcl_GetAllocMutex) (void); /* 387 */
     int (*tcl_GetChannelNames) (Tcl_Interp *interp); /* 388 */
     int (*tcl_GetChannelNamesEx) (Tcl_Interp *interp, const char *pattern); /* 389 */
@@ -2705,7 +2717,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_DbNewDoubleObj) /* 24 */
 #define Tcl_DbNewListObj \
 	(tclStubsPtr->tcl_DbNewListObj) /* 25 */
-/* Slot 26 is reserved */
+#define Tcl_SetTimer2 \
+	(tclStubsPtr->tcl_SetTimer2) /* 26 */
 #define Tcl_DbNewObj \
 	(tclStubsPtr->tcl_DbNewObj) /* 27 */
 #define Tcl_DbNewStringObj \
@@ -2721,7 +2734,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_GetDouble) /* 34 */
 #define Tcl_GetDoubleFromObj \
 	(tclStubsPtr->tcl_GetDoubleFromObj) /* 35 */
-/* Slot 36 is reserved */
+#define Tcl_WaitForEvent2 \
+	(tclStubsPtr->tcl_WaitForEvent2) /* 36 */
 #define Tcl_GetInt \
 	(tclStubsPtr->tcl_GetInt) /* 37 */
 #define Tcl_GetIntFromObj \
@@ -2746,12 +2760,14 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tclListObjLength) /* 47 */
 #define Tcl_ListObjReplace \
 	(tclStubsPtr->tcl_ListObjReplace) /* 48 */
-/* Slot 49 is reserved */
+#define Tcl_SetMaxBlockTime2 \
+	(tclStubsPtr->tcl_SetMaxBlockTime2) /* 49 */
 #define Tcl_NewByteArrayObj \
 	(tclStubsPtr->tcl_NewByteArrayObj) /* 50 */
 #define Tcl_NewDoubleObj \
 	(tclStubsPtr->tcl_NewDoubleObj) /* 51 */
-/* Slot 52 is reserved */
+#define Tcl_ConditionWait2 \
+	(tclStubsPtr->tcl_ConditionWait2) /* 52 */
 #define Tcl_NewListObj \
 	(tclStubsPtr->tcl_NewListObj) /* 53 */
 /* Slot 54 is reserved */
@@ -2769,7 +2785,8 @@ extern const TclStubs *tclStubsPtr;
 /* Slot 61 is reserved */
 #define Tcl_SetListObj \
 	(tclStubsPtr->tcl_SetListObj) /* 62 */
-/* Slot 63 is reserved */
+#define Tcl_LimitSetTime2 \
+	(tclStubsPtr->tcl_LimitSetTime2) /* 63 */
 #define Tcl_SetObjLength \
 	(tclStubsPtr->tcl_SetObjLength) /* 64 */
 #define Tcl_SetStringObj \
@@ -2792,8 +2809,10 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_AsyncMark) /* 74 */
 #define Tcl_AsyncReady \
 	(tclStubsPtr->tcl_AsyncReady) /* 75 */
-/* Slot 76 is reserved */
-/* Slot 77 is reserved */
+#define Tcl_LimitGetTime2 \
+	(tclStubsPtr->tcl_LimitGetTime2) /* 76 */
+#define Tcl_GetDayTime \
+	(tclStubsPtr->tcl_GetDayTime) /* 77 */
 #define Tcl_BadChannelOption \
 	(tclStubsPtr->tcl_BadChannelOption) /* 78 */
 #define Tcl_CallWhenDeleted \
@@ -4390,6 +4409,14 @@ extern const TclStubs *tclStubsPtr;
 #   undef Tcl_ScaleTimeProc
 #   undef Tcl_SetTimeProc
 #   undef Tcl_GetTimeProc
+#   undef Tcl_NotifierProcs
+#   undef Tcl_SetNotifier
+#   undef Tcl_WaitForEvent
+#   undef Tcl_SetTimer
+#   undef Tcl_SetMaxBlockTime
+#   undef Tcl_ConditionWait
+#   undef Tcl_GetTime
+#   undef Tcl_Time
 #endif /* TCL_NO_DEPRECATED */
 
 #endif /* _TCLDECLS */

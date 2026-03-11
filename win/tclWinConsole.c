@@ -775,8 +775,7 @@ ConsoleSetupProc(
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
     ConsoleChannelInfo *chanInfoPtr;
-    Tcl_Time blockTime = { 0, 0 };
-    int block = 1;
+    bool block = true;
 
     if (!(flags & TCL_FILE_EVENTS)) {
 	return;
@@ -797,12 +796,12 @@ ConsoleSetupProc(
 	    if (chanInfoPtr->watchMask & TCL_READABLE) {
 		if (RingBufferLength(&handleInfoPtr->buffer) > 0
 			|| handleInfoPtr->lastError != ERROR_SUCCESS) {
-		    block = 0; /* Input data available */
+		    block = false; /* Input data available */
 		}
 	    } else if (chanInfoPtr->watchMask & TCL_WRITABLE) {
 		if (RingBufferHasFreeSpace(&handleInfoPtr->buffer)) {
 		    /* TCL_WRITABLE */
-		    block = 0; /* Output space available */
+		    block = false; /* Output space available */
 		}
 	    }
 	    ReleaseSRWLockShared(&handleInfoPtr->lock);
@@ -812,7 +811,7 @@ ConsoleSetupProc(
 
     if (!block) {
 	/* At least one channel is readable/writable. Set block time to 0 */
-	Tcl_SetMaxBlockTime(&blockTime);
+	Tcl_SetMaxBlockTime2(0);
     }
 }
 
@@ -1497,7 +1496,6 @@ ConsoleWatchProc(
 
     chanInfoPtr->watchMask = newMask & chanInfoPtr->permissions;
     if (chanInfoPtr->watchMask) {
-	Tcl_Time blockTime = { 0, 0 };
 
 	if (!oldMask) {
 	    AcquireSRWLockExclusive(&gConsoleLock);
@@ -1519,7 +1517,7 @@ ConsoleWatchProc(
 	    }
 	    ReleaseSRWLockExclusive(&gConsoleLock);
 	}
-	Tcl_SetMaxBlockTime(&blockTime);
+	Tcl_SetMaxBlockTime2(0);
     } else if (oldMask) {
 	/* Remove from list of watched channels */
 

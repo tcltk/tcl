@@ -3156,7 +3156,7 @@ ClockClicksObjCmd(
 
     switch (index) {
     case CLICKS_MILLIS:
-	clicks = TclpGetMicroseconds() / 1000;
+	clicks = Tcl_GetDayTime() / 1000;
 	break;
     case CLICKS_NATIVE:
 #ifdef TCL_WIDE_CLICKS
@@ -3166,7 +3166,7 @@ ClockClicksObjCmd(
 #endif
 	break;
     case CLICKS_MICROS:
-	clicks = TclpGetMicroseconds();
+	clicks = Tcl_GetDayTime();
 	break;
     default:
 	TCL_UNREACHABLE();
@@ -3207,7 +3207,7 @@ ClockMillisecondsObjCmd(
 	Tcl_WrongNumArgs(interp, 0, objv, "clock milliseconds");
 	return TCL_ERROR;
     }
-    TclNewIntObj(timeObj, TclpGetMicroseconds() / 1000);
+    TclNewIntObj(timeObj, Tcl_GetDayTime() / 1000);
     Tcl_SetObjResult(interp, timeObj);
     return TCL_OK;
 }
@@ -3241,7 +3241,7 @@ ClockMicrosecondsObjCmd(
 	Tcl_WrongNumArgs(interp, 0, objv, "clock microseconds");
 	return TCL_ERROR;
     }
-    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(TclpGetMicroseconds()));
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(Tcl_GetDayTime()));
     return TCL_OK;
 }
 
@@ -3501,11 +3501,11 @@ ClockParseFmtScnArgs(
 	    goto badOption;
 	}
     } else {
-	Tcl_Time now;
+	long long now;
 
     baseNow:
-	Tcl_GetTime(&now);
-	baseVal = (Tcl_WideInt) now.sec;
+	now = Tcl_GetDayTime();
+	baseVal = now / 1000000;
     }
 
     /*
@@ -4676,15 +4676,15 @@ ClockSecondsObjCmd(
     Tcl_Size objc,		/* Parameter count */
     Tcl_Obj *const *objv)	/* Parameter values */
 {
-    Tcl_Time now;
+    long long now;
     Tcl_Obj *timeObj;
 
     if (objc != 1) {
 	Tcl_WrongNumArgs(interp, 0, objv, "clock seconds");
 	return TCL_ERROR;
     }
-    Tcl_GetTime(&now);
-    TclNewUIntObj(timeObj, (Tcl_WideUInt)now.sec);
+    now = Tcl_GetDayTime();
+    TclNewUIntObj(timeObj, (Tcl_WideUInt)now / 1000000);
 
     Tcl_SetObjResult(interp, timeObj);
     return TCL_OK;
@@ -4734,7 +4734,7 @@ static size_t
 TzsetIfNecessary(void)
 {
     const WCHAR *tzNow;		/* Current value of TZ. */
-    Tcl_Time now;		/* Current time. */
+    long long now;		/* Current time. */
     size_t epoch;		/* The tz.epoch that the TZ was read at. */
 
     /*
@@ -4743,13 +4743,13 @@ TzsetIfNecessary(void)
      * no latency if environment was changed with tcl-env (compare both epoch values)
      */
 
-    Tcl_GetTime(&now);
-    if (now.sec == tz.lastRefresh && tz.envEpoch == TclEnvEpoch) {
+    now = Tcl_GetDayTime();
+    if ((tz.lastRefresh == now / 1000000)  && (tz.envEpoch == TclEnvEpoch)) {
 	return tz.epoch;
     }
 
     tz.envEpoch = TclEnvEpoch;
-    tz.lastRefresh = now.sec;
+    tz.lastRefresh = now / 1000000;
 
     /* check in lock */
     Tcl_MutexLock(&clockMutex);
