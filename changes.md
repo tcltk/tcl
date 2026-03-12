@@ -17,6 +17,8 @@ to the userbase.
  - [lseq: has incorrect results in edge cases](https://core.tcl-lang.org/tcl/tktview/999b69)
  - [lseq: "count" error persists across calls](https://core.tcl-lang.org/tcl/tktview/8d1fc7)
  - [lseq: Remove the ability to pass expressions as numeric values in the lseq command.](https://core.tcl-lang.org/tips/doc/trunk/tip/746.md)
+ - [Performance regression in expr in/ni operators](https://core.tcl-lang.org/tcl/info/8994c9)
+ - [Uninitialized memory access in setting script limits](https://core.tcl-lang.org/tcl/info/f7495f)
 
 # Updated bundled packages, libraries, standards, data
  - Itcl 4.3.7
