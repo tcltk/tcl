@@ -3925,7 +3925,7 @@ TEBCresume(
 	part1Ptr = OBJ_UNDER_TOS;
 	objPtr = OBJ_AT_TOS;
 	TRACE(("\"%.30s\" \"%.30s\" => ", O2S(part1Ptr), O2S(objPtr)));
-	varPtr = TclObjLookupVarEx(interp, part1Ptr, NULL, TCL_LEAVE_ERR_MSG, "set",
+	varPtr = TclObjLookupVarEx(interp, part1Ptr, NULL, TCL_LEAVE_ERR_MSG, "const",
 		/*createPart1*/1, /*createPart2*/0, &arrayPtr);
     doConst:
 	if (varPtr == NULL) {
