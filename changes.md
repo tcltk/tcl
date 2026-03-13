@@ -22,7 +22,7 @@ to the userbase.
 
 # Updated bundled packages, libraries, standards, data
  - Itcl 4.3.7
- - sqlite3 3.51.2
+ - sqlite3 3.51.3
  - Thread 3.0.5
  - tzdata 2026a
  - zlib 1.3.2
