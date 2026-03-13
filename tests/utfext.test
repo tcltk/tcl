@@ -2,7 +2,7 @@
 # Tcl_UtfToExternal that exercise various combinations of flags,
 # buffer lengths and fragmentation that cannot be tested by
 # normal script level commands. There tests are NOT intended to check
-# correct encodings; those are elsewhere.
+# correctness of encodings; those are elsewhere.
 #
 # Copyright (c) 2023 Ashok P. Nadkarni
 #
@@ -42,16 +42,28 @@ namespace eval utftest {
     #
     # THE HEX DEFINITIONS SHOULD SEPARATE EACH CHARACTER BY WHITESPACE
     # (assumed by the charlimit tests)
+    #
+    # Note: The utf-8 entry takes into consideration that the implementation
+    # is factored into a fastpath dealing with ascii and a separate path for
+    # non-ascii. The various conditions (space limits etc.) need to be tested
+    # for both as well as combinations.
     lappend utfExtMap {*}{
 	ascii {
 	    {basic {41 42 43} {41 42 43} -1 -1}
 	}
 	utf-8 {
-	    {bmp    {41 c3a9 42}     {41 c3a9 42}      2  2}
-	    {nonbmp-frag-1 {41 f09f9880 42} {41 f09f9880 42}  2  2}
-	    {nonbmp-frag-2 {41 f09f9880 42} {41 f09f9880 42}  3  3}
-	    {nonbmp-frag-3 {41 f09f9880 42} {41 f09f9880 42}  4  4}
-	    {null   {41 c080 42} {41 00 42}    2 -1}
+	    {asciionly    {41 42 43}     {41 42 43} -1 -1}
+	    {ascii+bmp    {41 c3a9 42}     {41 c3a9 42}      2  2}
+	    {ascii+nonbmp-frag-1 {41 f09f9880 42} {41 f09f9880 42}  2  2}
+	    {ascii+nonbmp-frag-2 {41 f09f9880 42} {41 f09f9880 42}  3  3}
+	    {ascii+nonbmp-frag-3 {41 f09f9880 42} {41 f09f9880 42}  4  4}
+	    {ascii+null   {41 c080 42} {41 00 42}    2 -1}
+	    {bmp    {c3a9 c3aa}     {c3a9 c3aa}      1  3}
+	    {bmp+null   {c3a9 c080 c3aa}     {c3a9 00 c3aa} 3  4}
+	    {nonbmp-frag-1 {f09f9880 f09f9881} {f09f9880 f09f9881}  1  5}
+	    {nonbmp-frag-2 {f09f9880 f09f9881} {f09f9880 f09f9881}  2  6}
+	    {nonbmp-frag-3 {f09f9880 f09f9881} {f09f9880 f09f9881}  3  7}
+	    {nonbmp+null {f09f9880 c080 f09f9881} {f09f9880 00 f09f9881}  5  7}
 	}
 	cesu-8 {
 	    {bmp    {41 c3a9 42}     {41 c3a9 42}      2  2}
