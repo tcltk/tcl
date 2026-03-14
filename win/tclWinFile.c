@@ -1046,7 +1046,7 @@ TclpMatchInDirectory(
 	    DWORD err = GetLastError();
 
 	    Tcl_DStringFree(&ds);
-	    if (err == ERROR_FILE_NOT_FOUND || ERROR_PATH_NOT_FOUND) {
+	    if (err == ERROR_FILE_NOT_FOUND || err == ERROR_PATH_NOT_FOUND) {
 		/*
 		 * We used our 'pattern' above, and matched nothing. This
 		 * means we just return TCL_OK, indicating no results found.
