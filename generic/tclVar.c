@@ -4893,6 +4893,9 @@ Tcl_ConstObjCmd(
     part1Ptr = objv[1];
     varPtr = TclObjLookupVarEx(interp, part1Ptr, NULL, TCL_LEAVE_ERR_MSG,
 	    "const", /*createPart1*/ 1, /*createPart2*/ 1, &arrayPtr);
+    if (varPtr == NULL) {
+	return TCL_ERROR;
+    }
     if (TclIsVarArray(varPtr)) {
 	TclObjVarErrMsg(interp, part1Ptr, NULL, "make constant", ISARRAY, -1);
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CONST", (char *)NULL);
