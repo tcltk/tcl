@@ -19,6 +19,7 @@ to the userbase.
  - [lseq: Remove the ability to pass expressions as numeric values in the lseq command.](https://core.tcl-lang.org/tips/doc/trunk/tip/746.md)
  - [Performance regression in expr in/ni operators](https://core.tcl-lang.org/tcl/info/8994c9)
  - [Uninitialized memory access in setting script limits](https://core.tcl-lang.org/tcl/info/f7495f)
+ - [Crash when defining const if namespace does not exist](https://core.tcl-lang.org/tcl/info/4b22d8)
 
 # Updated bundled packages, libraries, standards, data
  - Itcl 4.3.7
