@@ -4211,9 +4211,16 @@ TEBCresume(
 	part1Ptr = OBJ_UNDER_TOS;
 	objPtr = OBJ_AT_TOS;
 	TRACE("\"%.30s\" \"%.30s\" => ", O2S(part1Ptr), O2S(objPtr));
-	varPtr = TclObjLookupVarEx(interp, part1Ptr, NULL, 0, NULL,
+	varPtr = TclObjLookupVarEx(interp, part1Ptr, NULL, TCL_LEAVE_ERR_MSG, "const",
 		/*createPart1*/1, /*createPart2*/0, &arrayPtr);
     doConst:
+	if (varPtr == NULL) {
+	    if (Tcl_IsEmpty(Tcl_GetObjResult(interp))) {
+		Tcl_SetResult(interp, "variable not found", TCL_STATIC);
+	    }
+	    TRACE_ERROR(interp);
+	    goto gotError;
+	}
 	if (TclIsVarConstant(varPtr)) {
 	    TRACE_APPEND("already constant\n");
 	    NEXT_INST_V(pcAdjustment, cleanup, 0);
