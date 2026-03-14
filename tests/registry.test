@@ -15,8 +15,6 @@ if {"::tcltest" ni [namespace children]} {
     namespace import -force ::tcltest::*
 }
 ::tcltest::loadTestedCommands
-package require -exact tcl::test [info patchlevel]
-
 testConstraint reg 0
 catch {
     if {[testConstraint win]} {
