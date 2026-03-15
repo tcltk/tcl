@@ -740,23 +740,17 @@ CopyRenameOneFile(
 		 * cross-filesystem copy. We do this through our Tcl library.
 		 */
 
-		Tcl_Obj *copyCommand, *cmdObj, *opObj;
-
-		TclNewObj(copyCommand);
-		TclNewLiteralStringObj(cmdObj, "::tcl::CopyDirectory");
-		Tcl_ListObjAppendElement(interp, copyCommand, cmdObj);
-		if (copyFlag) {
-		    TclNewLiteralStringObj(opObj, "copying");
-		} else {
-		    TclNewLiteralStringObj(opObj, "renaming");
-		}
-		Tcl_ListObjAppendElement(interp, copyCommand, opObj);
-		Tcl_ListObjAppendElement(interp, copyCommand, source);
-		Tcl_ListObjAppendElement(interp, copyCommand, target);
-		Tcl_IncrRefCount(copyCommand);
-		result = Tcl_EvalObjEx(interp, copyCommand,
-			TCL_EVAL_GLOBAL | TCL_EVAL_DIRECT);
-		Tcl_DecrRefCount(copyCommand);
+		Tcl_Obj *copyDirectoryArgs[4] = {
+		    Tcl_NewStringObj("::tcl::CopyDirectory", -1),
+		    Tcl_NewStringObj(copyFlag ? "copying" : "renaming", -1),
+		    source,
+		    target
+		};
+		Tcl_IncrRefCount(copyDirectoryArgs[0]);
+		Tcl_IncrRefCount(copyDirectoryArgs[1]);
+		result = Tcl_EvalObjv(interp, 4, copyDirectoryArgs, 0);
+		Tcl_DecrRefCount(copyDirectoryArgs[0]);
+		Tcl_DecrRefCount(copyDirectoryArgs[1]);
 		if (result != TCL_OK) {
 		    /*
 		     * There was an error in the Tcl-level copy. We will pass
