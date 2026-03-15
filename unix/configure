@@ -2710,7 +2710,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 TCL_VERSION=9.1
 TCL_MAJOR_VERSION=9
 TCL_MINOR_VERSION=1
-TCL_PATCH_LEVEL="a1"
+TCL_PATCH_LEVEL="a2"
 VERSION=${TCL_VERSION}
 
 EXTRA_INSTALL_BINARIES=${EXTRA_INSTALL_BINARIES:-"@:"}
@@ -2793,7 +2793,7 @@ printf "%s\n" "$enableval" >&6; }
 printf %s "checking for compressed file suffix... " >&6; }
 	touch TeST
 	$enableval TeST
-	Z=`ls TeST* | sed 's/^....//'`
+	Z=`ls TeST.* | sed 's/^....//'`
 	rm -f TeST*
 	MAN_FLAGS="$MAN_FLAGS --extension $Z"
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $Z" >&5

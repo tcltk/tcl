@@ -158,9 +158,7 @@ typedef struct {
 
 /*
  * Limit callbacks handled by scripts are modelled as structures which are
- * stored in hashes indexed by a two-word key. Note that the type of the
- * 'type' field in the key is not int; this is to make sure that things are
- * likely to work properly on 64-bit architectures.
+ * stored in hashes indexed by a two-word key. 
  */
 
 typedef struct {
@@ -176,11 +174,19 @@ typedef struct {
 				 * table. */
 } ScriptLimitCallback;
 
+/*
+ * ScriptLimitCallbackKey is the key used in the hash table storing callbacks.
+ * Such hash table keys must NOT have any pad bytes and therefore the "type"
+ * field is defined as intptr_t. Its real type is int but that introduces
+ * trailing pad bytes resulting in valgrind errors. intptr_t is always (?)
+ * same size as a pointer and will not have this padding issue. Details at
+ * https://core.tcl-lang.org/tcl/info/f7495f63c01ea800
+ */
 typedef struct {
     Tcl_Interp *interp;		/* The interpreter that the limit callback was
 				 * attached to. This is not the interpreter
 				 * that the callback runs in! */
-    int type;			/* The type of callback that this is. */
+    intptr_t type;		/* The type of callback that this is. */
 } ScriptLimitCallbackKey;
 
 /*
@@ -282,7 +288,7 @@ static void		RunLimitHandlers(LimitHandler *handlerPtr,
 static void		TimeLimitCallback(void *clientData);
 static int		RunPreInitScript(Tcl_Interp *interp);
 static Tcl_Obj *	LocatePreInitScript(Tcl_Interp *interp);
-static Tcl_ObjCmdProc	InitAutoPathObjCmd;
+static Tcl_ObjCmdProc2	InitAutoPathObjCmd;
 #define INIT_AUTO_PATH_CMD "::tcl::InitAutoPath"
 
 /* NRE enabling */
@@ -317,6 +323,8 @@ Tcl_SetPreInitScript(
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
  * CheckForFileInDir --
  *
  * Little helper to check if a file exists within a directory and is readable.
@@ -324,7 +332,9 @@ Tcl_SetPreInitScript(
  * Results:
  *	Returns path to the file if it exists, NULL if not. Reference count
  *	of returned Tcl_Obj is incremented before returning to account for the
- *      caller owning a reference.
+ *	caller owning a reference.
+ *
+ *----------------------------------------------------------------------
  */
 static Tcl_Obj *
 CheckForFileInDir(
@@ -342,8 +352,10 @@ CheckForFileInDir(
     Tcl_DecrRefCount(fullPathPtr);
     return NULL;
 }
-
+
 /*
+ *----------------------------------------------------------------------
+ *
  * LocatePreInitScript --
  *
  *	Locates the Tcl initialization script, "init.tcl".
@@ -355,9 +367,12 @@ CheckForFileInDir(
  *
  * Side effects:
  *	Sets the tcl_library variable to the directory containing init.tcl.
+ *
+ *----------------------------------------------------------------------
  */
-Tcl_Obj *
-LocatePreInitScript(Tcl_Interp *interp)
+static Tcl_Obj *
+LocatePreInitScript(
+    Tcl_Interp *interp)
 {
     /*
      * The search order for the init.tcl is as follows:
@@ -401,11 +416,13 @@ LocatePreInitScript(Tcl_Interp *interp)
     Tcl_Obj *searchedDirs;
     Tcl_Obj *initScriptPathPtr = NULL;
     Tcl_Obj *pathParts[3] = {NULL, NULL, NULL};
+    Tcl_Obj *exeDirPtr;
+    Tcl_Obj *exePtr;
 
     /*
      * Need to track checked directories for error reporting. As a side
      * benefit, because they are tracked here we can keep overwriting dirPtr
-     * without leaking memory.
+     * without leaking memory despite not freeing up any allocated Tcl_Obj's.
      */
     searchedDirs = Tcl_NewListObj(0, NULL);
 
@@ -417,20 +434,20 @@ LocatePreInitScript(Tcl_Interp *interp)
      * file existence in the body but that means paths that never get used
      * are constructed. Instead we use a macro to reduce code duplication.
      */
-#define TRY_PATH(dirarg_)                                         \
-    do {                                                          \
-	dirPtr = (dirarg_);                                       \
-	if (dirPtr) {                                             \
-	    Tcl_ListObjAppendElement(NULL, searchedDirs, dirPtr); \
-	    /* Tcl_IsEmpty check - bug 465d4546e2 */              \
-	    if (!Tcl_IsEmpty(dirPtr)) {                           \
-		initScriptPathPtr =                               \
-		    CheckForFileInDir(dirPtr, initNamePtr);       \
-		if (initScriptPathPtr != NULL) {                  \
-		    goto done;                                    \
-		}                                                 \
-	    }                                                     \
-	}                                                         \
+#define TRY_PATH(dirarg) \
+    do {								\
+	dirPtr = (dirarg);						\
+	if (dirPtr) {							\
+	    Tcl_ListObjAppendElement(NULL, searchedDirs, dirPtr);	\
+	    /* Tcl_IsEmpty check - bug 465d4546e2 */			\
+	    if (!Tcl_IsEmpty(dirPtr)) {					\
+		initScriptPathPtr =					\
+			CheckForFileInDir(dirPtr, initNamePtr);		\
+		if (initScriptPathPtr != NULL) {			\
+		    goto done;						\
+		}							\
+	    }								\
+	}								\
     } while (0)
 
     TRY_PATH(Tcl_GetVar2Ex(interp, "tcl_library", NULL, TCL_GLOBAL_ONLY));
@@ -452,17 +469,20 @@ LocatePreInitScript(Tcl_Interp *interp)
 #ifdef CFG_RUNTIME_SCRDIR
 	TRY_PATH(Tcl_NewStringObj(CFG_RUNTIME_SCRDIR, -1));
 #endif
+#ifdef CFG_INSTALL_SCRDIR
+	TRY_PATH(Tcl_NewStringObj(CFG_INSTALL_SCRDIR, -1));
+#endif
 
     assert(initScriptPathPtr == NULL);
 
     /* Try parent/lib/tclVERSION */
 
     /* Reminder - TclGetObjNameOfExecutable return need not be released */
-    Tcl_Obj *exePtr = TclGetObjNameOfExecutable();
+    exePtr = TclGetObjNameOfExecutable();
     if (exePtr == NULL) {
 	goto done;
     }
-    Tcl_Obj *exeDirPtr = TclPathPart(interp, exePtr, TCL_PATH_DIRNAME);
+    exeDirPtr = TclPathPart(interp, exePtr, TCL_PATH_DIRNAME);
     if (exeDirPtr == NULL) {
 	goto done;
     }
@@ -487,10 +507,9 @@ LocatePreInitScript(Tcl_Interp *interp)
 
     TRY_PATH(TclJoinPath(3, pathParts, 0));
 
-done: /* initScriptPtr != NULL => dirPtr holds dir of init.tcl */
+  done:		/* initScriptPtr != NULL => dirPtr holds dir of init.tcl */
     if (initScriptPathPtr == NULL) {
-	Tcl_SetObjResult(interp,
-	    Tcl_ObjPrintf(
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"Cannot find a usable init.tcl in the following directories: \n"
 		"    %s\n\n"
 		"This probably means that Tcl wasn't installed properly.\n",
@@ -513,6 +532,8 @@ done: /* initScriptPtr != NULL => dirPtr holds dir of init.tcl */
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
  * RunPreInitScript --
  *
  *	Locates and invokes the Tcl initialization script, "init.tcl".
@@ -522,9 +543,12 @@ done: /* initScriptPtr != NULL => dirPtr holds dir of init.tcl */
  *
  * Side effects:
  *	Pretty much anything, depending on the contents of the script.
+ *
+ *----------------------------------------------------------------------
  */
-int
-RunPreInitScript(Tcl_Interp *interp)
+static int
+RunPreInitScript(
+    Tcl_Interp *interp)
 {
     /*
      * Note the following differences from 9.0. If a init.tcl is found and
@@ -545,28 +569,38 @@ RunPreInitScript(Tcl_Interp *interp)
     int result = Tcl_FSEvalFile(interp, initScriptPathPtr);
     Tcl_DecrRefCount(initScriptPathPtr);
     if (result != TCL_OK) {
-	Tcl_ObjPrintf("Error sourcing Tcl initialization script from %s:\n%s",
-	    Tcl_GetString(initScriptPathPtr),
-	    Tcl_GetString(Tcl_GetObjResult(interp)));
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"Error sourcing Tcl initialization script from %s:\n%s",
+		Tcl_GetString(initScriptPathPtr),
+		Tcl_GetString(Tcl_GetObjResult(interp))));
     }
     return result;
 }
 
-int
+/*
+ *----------------------------------------------------------------------
+ *
+ * AddPathsInVarToList --
+ *
+ *	Split the contents of a variable (if it exists and is readable) and
+ *	append the resulting words to a list.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
 AddPathsInVarToList(
-	Tcl_Interp *interp,
-	const char *name1,
-	const char *name2,
-	Tcl_Obj *toListPtr,
-	int doTildeExpand
-)
+    Tcl_Interp *interp,
+    const char *name1,		/* Name of variable (or array) to read. */
+    const char *name2,		/* Name of array element to read. */
+    Tcl_Obj *toListPtr,		/* List to append to. */
+    bool doTildeExpand)		/* Whether to expand tilde-prefixed paths. */
 {
     Tcl_Obj **elems;
     Tcl_Size nelems;
     Tcl_Obj *fromListPtr= Tcl_GetVar2Ex(interp, name1, name2, TCL_GLOBAL_ONLY);
     if (fromListPtr) {
 	if (TclListObjGetElements(interp, fromListPtr, &nelems, &elems) !=
-	    TCL_OK) {
+		TCL_OK) {
 	    return TCL_ERROR;
 	}
 	for (Tcl_Size i = 0; i < nelems; ++i) {
@@ -577,7 +611,7 @@ AddPathsInVarToList(
 		    continue;
 		}
 	    }
-            /* Note: TclListObjAppendIfAbsent handles 0 and non-0 ref counts */
+	    /* Note: TclListObjAppendIfAbsent handles 0 and non-0 ref counts */
 	    if (TclListObjAppendIfAbsent(interp, toListPtr, pathPtr) != TCL_OK) {
 		return TCL_ERROR;
 	    }
@@ -585,8 +619,10 @@ AddPathsInVarToList(
     }
     return TCL_OK;
 }
-
+
 /*
+ *----------------------------------------------------------------------
+ *
  * InitAutoPathObjCmd --
  *
  *	Initializes the auto_path variable in an interpreter. In safe interps,
@@ -604,12 +640,14 @@ AddPathsInVarToList(
  *
  * Results:
  *	A standard Tcl result.
+ *
+ *----------------------------------------------------------------------
  */
-int
+static int
 InitAutoPathObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument vector. */
 {
     if (objc != 1) {
@@ -624,7 +662,7 @@ InitAutoPathObjCmd(
     if (Tcl_IsSafe(interp)) {
 	if (autoPathPtr == NULL) {
 	    Tcl_SetVar2Ex(interp, "auto_path", NULL, Tcl_NewObj(),
-		TCL_GLOBAL_ONLY);
+		    TCL_GLOBAL_ONLY);
 	}
 	return TCL_OK;
     }
@@ -646,8 +684,7 @@ InitAutoPathObjCmd(
     }
 
     /* tcl_library and its parent */
-    Tcl_Obj *objPtr =
-	Tcl_GetVar2Ex(interp, "tcl_library", NULL, TCL_GLOBAL_ONLY);
+    Tcl_Obj *objPtr = Tcl_GetVar2Ex(interp, "tcl_library", NULL, TCL_GLOBAL_ONLY);
     if (objPtr) {
 	if (TclListObjAppendIfAbsent(interp, autoPathPtr, objPtr) != TCL_OK) {
 	    Tcl_DecrRefCount(autoPathPtr);
@@ -673,7 +710,7 @@ InitAutoPathObjCmd(
 	Tcl_IncrRefCount(dirs[2]);
 	objPtr = TclJoinPath(2, &dirs[1], 0);
 	if (objPtr != NULL) {
-            /* Note: TclListObjAppendIfAbsent handles 0 and non-0 ref counts */
+	    /* Note: TclListObjAppendIfAbsent handles 0 and non-0 ref counts */
 	    (void) TclListObjAppendIfAbsent(NULL, autoPathPtr, objPtr);
 	}
     }
@@ -685,8 +722,8 @@ InitAutoPathObjCmd(
 
     /* tcl_pkgPath. Errors ignored like original. Note no tildeexpand */
     (void) AddPathsInVarToList(interp, "tcl_pkgPath", NULL, autoPathPtr, 0);
-    autoPathPtr =
-	Tcl_SetVar2Ex(interp, "auto_path", NULL, autoPathPtr, TCL_GLOBAL_ONLY);
+    autoPathPtr = Tcl_SetVar2Ex(interp, "auto_path", NULL, autoPathPtr,
+	    TCL_GLOBAL_ONLY);
     if (autoPathPtr) {
 	Tcl_SetObjResult(interp, autoPathPtr);
 	return TCL_OK;
@@ -694,7 +731,7 @@ InitAutoPathObjCmd(
 	return TCL_ERROR;
     }
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -793,7 +830,7 @@ TclInterpInit(
 
     Tcl_NRCreateCommand2(interp, "interp", Tcl_InterpObjCmd, NRInterpCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand(interp, INIT_AUTO_PATH_CMD, InitAutoPathObjCmd,
+    Tcl_CreateObjCommand2(interp, INIT_AUTO_PATH_CMD, InitAutoPathObjCmd,
 	    NULL, NULL);
     Tcl_CallWhenDeleted(interp, InterpInfoDeleteProc, NULL);
     return TCL_OK;
@@ -3474,7 +3511,7 @@ ChildInvokeHidden(
 		/*isProcFrame*/ 0);
     }
 
-    Tcl_NRAddCallback(interp, NRPostInvokeHidden, childInterp,
+    TclNRAddCallback(interp, NRPostInvokeHidden, childInterp,
 	    TOP_CB(childInterp), framePtr, NULL);
     return TclNRInvoke(NULL, childInterp, objc, objv);
 }
@@ -3791,18 +3828,14 @@ Tcl_LimitCheck(
     if ((iPtr->limit.active & TCL_LIMIT_TIME) &&
 	    ((iPtr->limit.timeGranularity == 1) ||
 		(ticker % iPtr->limit.timeGranularity == 0))) {
-	Tcl_Time now;
+	long long now;
 
-	Tcl_GetTime(&now);
-	if (iPtr->limit.time.sec < now.sec ||
-		(iPtr->limit.time.sec == now.sec &&
-		iPtr->limit.time.usec < now.usec)) {
+	now = TclpGetMicroseconds();
+	if (iPtr->limit.time <= now) {
 	    iPtr->limit.exceeded |= TCL_LIMIT_TIME;
 	    Tcl_Preserve(interp);
 	    RunLimitHandlers(iPtr->limit.timeHandlers, interp);
-	    if (iPtr->limit.time.sec > now.sec ||
-		    (iPtr->limit.time.sec == now.sec &&
-		    iPtr->limit.time.usec >= now.usec)) {
+	    if (iPtr->limit.time >= now) {
 		iPtr->limit.exceeded &= ~TCL_LIMIT_TIME;
 	    } else if (iPtr->limit.exceeded & TCL_LIMIT_TIME) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
@@ -4345,19 +4378,22 @@ Tcl_LimitSetTime(
     Tcl_Time *timeLimitPtr)
 {
     Interp *iPtr = (Interp *) interp;
-    Tcl_Time nextMoment;
+    long long nextMoment;
 
-    memcpy(&iPtr->limit.time, timeLimitPtr, sizeof(Tcl_Time));
     if (iPtr->limit.timeEvent != NULL) {
 	Tcl_DeleteTimerHandler(iPtr->limit.timeEvent);
     }
-    nextMoment.sec = timeLimitPtr->sec;
-    nextMoment.usec = timeLimitPtr->usec+10;
-    if (nextMoment.usec >= 1000000) {
-	nextMoment.sec++;
-	nextMoment.usec -= 1000000;
+    if (timeLimitPtr->sec >= LLONG_MAX / 1000000 + 10) {
+	nextMoment = LLONG_MAX;
+	iPtr->limit.time = nextMoment;
+    } else {
+	nextMoment = timeLimitPtr->sec * 1000000 +
+		(timeLimitPtr->usec % 1000000);
+	iPtr->limit.time = nextMoment;
+	nextMoment += 10;
     }
-    iPtr->limit.timeEvent = TclCreateAbsoluteTimerHandler(&nextMoment,
+
+    iPtr->limit.timeEvent = TclCreateAbsoluteTimerHandler(nextMoment,
 	    TimeLimitCallback, interp);
     iPtr->limit.exceeded &= ~TCL_LIMIT_TIME;
 }
@@ -4431,7 +4467,8 @@ Tcl_LimitGetTime(
 {
     Interp *iPtr = (Interp *) interp;
 
-    memcpy(timeLimitPtr, &iPtr->limit.time, sizeof(Tcl_Time));
+	timeLimitPtr->sec = iPtr->limit.time / 1000000;
+    timeLimitPtr->usec = iPtr->limit.time % 1000000;
 }
 
 /*
@@ -4678,7 +4715,7 @@ TclRemoveScriptLimitCallbacks(
     while (hashPtr != NULL) {
 	keyPtr = (ScriptLimitCallbackKey *)
 		Tcl_GetHashKey(&iPtr->limit.callbacks, hashPtr);
-	Tcl_LimitRemoveHandler(keyPtr->interp, keyPtr->type,
+	Tcl_LimitRemoveHandler(keyPtr->interp, (int) keyPtr->type,
 		CallScriptLimitCallback, Tcl_GetHashValue(hashPtr));
 	hashPtr = Tcl_NextHashEntry(&search);
     }
@@ -4715,7 +4752,7 @@ TclInitLimitSupport(
     iPtr->limit.cmdCount = 0;
     iPtr->limit.cmdHandlers = NULL;
     iPtr->limit.cmdGranularity = 1;
-    memset(&iPtr->limit.time, 0, sizeof(Tcl_Time));
+    iPtr->limit.time = 0;
     iPtr->limit.timeHandlers = NULL;
     iPtr->limit.timeEvent = NULL;
     iPtr->limit.timeGranularity = 10;
@@ -4758,8 +4795,7 @@ InheritLimitsFromParent(
     }
     if (parentPtr->limit.active & TCL_LIMIT_TIME) {
 	childPtr->limit.active |= TCL_LIMIT_TIME;
-	memcpy(&childPtr->limit.time, &parentPtr->limit.time,
-		sizeof(Tcl_Time));
+	childPtr->limit.time = parentPtr->limit.time;
 	childPtr->limit.timeGranularity = parentPtr->limit.timeGranularity;
     }
 }

@@ -81,7 +81,7 @@ const EnsembleImplMap tclProcessImplMap[] = {
  *----------------------------------------------------------------------
  */
 
-void
+static void
 InitProcessInfo(
     ProcessInfo *info,		/* Structure to initialize. */
     Tcl_Pid pid,		/* Process id. */
@@ -95,7 +95,7 @@ InitProcessInfo(
     info->msg = NULL;
     info->error = NULL;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -112,7 +112,7 @@ InitProcessInfo(
  *----------------------------------------------------------------------
  */
 
-void
+static void
 FreeProcessInfo(
     ProcessInfo *info)		/* Structure to free. */
 {
@@ -133,7 +133,7 @@ FreeProcessInfo(
 
     Tcl_Free(info);
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -150,7 +150,7 @@ FreeProcessInfo(
  *----------------------------------------------------------------------
  */
 
-int
+static int
 RefreshProcessInfo(
     ProcessInfo *info,		/* Structure to refresh. */
     int options)		/* Options passed to WaitProcessStatus. */
@@ -177,7 +177,7 @@ RefreshProcessInfo(
 	return 0;
     }
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -194,7 +194,7 @@ RefreshProcessInfo(
  *----------------------------------------------------------------------
  */
 
-TclProcessWaitStatus
+static TclProcessWaitStatus
 WaitProcessStatus(
     Tcl_Pid pid,		/* Process id. */
     Tcl_Size resolvedPid,	/* Resolved process id. */
@@ -357,7 +357,7 @@ WaitProcessStatus(
 	return TCL_PROCESS_UNKNOWN_STATUS;
     }
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -377,7 +377,7 @@ WaitProcessStatus(
  *----------------------------------------------------------------------
  */
 
-Tcl_Obj *
+static Tcl_Obj *
 BuildProcessStatusObj(
     ProcessInfo *info)
 {
@@ -755,7 +755,7 @@ ProcessAutopurgeObjCmd(
     Tcl_SetObjResult(interp, Tcl_NewBooleanObj(autopurge));
     return TCL_OK;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -791,7 +791,7 @@ TclSetUpProcessCmd(
     return Tcl_Export(interp, (Tcl_Namespace*)((Command *)ensemble)->nsPtr,
 	    "process", 0);
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -862,7 +862,7 @@ TclProcessCreated(
 
     Tcl_MutexUnlock(&infoTablesMutex);
 }
-
+
 /*
  *----------------------------------------------------------------------
  *

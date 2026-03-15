@@ -115,7 +115,7 @@ static void		ResetCounterSamples(unsigned long long fileTime,
 static long long	AccumulateSample(long long perfCounter,
 			    unsigned long long fileTime);
 static long long	NativeGetMicroseconds(void);
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -184,15 +184,10 @@ TclpGetClicks(void)
 	return (Tcl_WideUInt) usecSincePosixEpoch;
     } else {
 	/*
-	* Use the Tcl_GetTime abstraction to get the time in microseconds, as
+	* Use the TclpGetMicroseconds abstraction to get the time in microseconds, as
 	* nearly as we can, and return it.
 	*/
-
-	Tcl_Time now;		/* Current Tcl time */
-
-	Tcl_GetTime(&now);
-	return ((unsigned long long)(now.sec)*1000000ULL) +
-		(unsigned long long)(now.usec);
+	return TclpGetMicroseconds();
     }
 }
 
@@ -343,15 +338,15 @@ TclpGetMicroseconds(void)
  */
 
 long long
-Tcl_GetMonotonicTime()
+Tcl_GetMonotonicTime(void)
 {
     LARGE_INTEGER Frequency, PerformanceCount;
     long long microSeconds, clicks, seconds, remainder;
 
     /*
      * The implementation
-     * microSeconds = ((PerformanceCount.QuadPart) * 1000000) /
-     * Frequency.QuadPart; as given
+     * microSeconds = ((PerformanceCount.QuadPart) * 1000000) / Frequency.QuadPart;
+     * as given in
      * https://learn.microsoft.com/en-us/windows/win32/sysinfo/acquiring-high-resolution-time-stamps#using-qpc-in-native-code
      * can overflow when system has been up for just a few days so break down
      * the computation to avoid overflows ASSUMING processor frequencies
@@ -361,15 +356,12 @@ Tcl_GetMonotonicTime()
 
     if (0 != QueryPerformanceFrequency(&Frequency)
 	    && 0 != QueryPerformanceCounter(&PerformanceCount)) {
-
 	clicks = PerformanceCount.QuadPart;
 	seconds = clicks / Frequency.QuadPart;
 	remainder = clicks % Frequency.QuadPart;
 	microSeconds = seconds * 1000000
 		+ remainder * 1000000 / Frequency.QuadPart;
-    }
-    else {
-
+    } else {
 	/*
 	 * Following the documentation, this does not happen since Windows XP
 	 * So, this legacy branch is IMHO obsolete.
@@ -1054,7 +1046,7 @@ ResetCounterSamples(
     }
     timeInfo.sampleNo = 0;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *

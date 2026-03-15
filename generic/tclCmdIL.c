@@ -235,8 +235,8 @@ TclNRIfObjCmd(
      */
 
     TclNewObj(boolObj);
-    Tcl_NRAddCallback(interp, IfConditionCallback, INT2PTR(objc),
-	    (void *) objv, INT2PTR(1), boolObj);
+    TclNRAddCallback(interp, IfConditionCallback,
+	    INT2PTR(objc), objv, INT2PTR(1), boolObj);
     return Tcl_NRExprObj(interp, objv[1], boolObj);
 }
 
@@ -321,8 +321,8 @@ IfConditionCallback(
 	}
 	if (!thenScriptIndex) {
 	    TclNewObj(boolObj);
-	    Tcl_NRAddCallback(interp, IfConditionCallback, data[0], data[1],
-		    INT2PTR(i), boolObj);
+	    TclNRAddCallback(interp, IfConditionCallback,
+		    data[0], data[1], INT2PTR(i), boolObj);
 	    return Tcl_NRExprObj(interp, objv[i], boolObj);
 	}
     }
@@ -2154,11 +2154,11 @@ Tcl_JoinObjCmd(
      */
 
     if (TclHasInternalRep(objv[1], &tclListType) ||
-	!(TclObjTypeHasProc(objv[1], getElementsProc) ||
-	  TclObjTypeHasProc(objv[1], indexProc))) {
+	    !(TclObjTypeHasProc(objv[1], getElementsProc) ||
+	    TclObjTypeHasProc(objv[1], indexProc))) {
 	/* Native list or does not have suitable list method */
-	if (TclListObjGetElements(interp, objv[1], &listLen, &elemPtrs) !=
-	    TCL_OK) {
+	if (TclListObjGetElements(interp, objv[1],
+		&listLen, &elemPtrs) != TCL_OK) {
 	    return TCL_ERROR;
 	}
     } else if (TclObjTypeHasProc(objv[1], getElementsProc)) {
@@ -2338,7 +2338,7 @@ Tcl_LassignObjCmd(
 
     return TCL_OK;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -3892,10 +3892,6 @@ SequenceIdentifyArgument(
     void *internalPtr;
 
     if (allowedArgs & NumericArg) {
-	/* speed-up a bit (and avoid shimmer for compiled expressions) */
-	if (TclHasInternalRep(argPtr, &tclExprCodeType)) {
-	    goto doExpr;
-	}
 	result = Tcl_GetNumberFromObj(NULL, argPtr, &internalPtr, keywordIndexPtr);
 	if (result == TCL_OK) {
 	    *numValuePtr = argPtr;
@@ -3917,23 +3913,15 @@ SequenceIdentifyArgument(
 	*keywordIndexPtr = opmode;
 	return RangeKeywordArg;
     } else {
-	Tcl_Obj *exprValueObj;
+	int keyword;
 	if (!(allowedArgs & NumericArg)) {
 	    return NoneArg;
 	}
-    doExpr:
-	/* Check for an index expression */
-	if (Tcl_ExprObj(interp, argPtr, &exprValueObj) != TCL_OK) {
+	if (Tcl_GetNumberFromObj(interp, argPtr, &internalPtr, &keyword) != TCL_OK) {
 	    return ErrArg;
 	}
-	int keyword;
-	/* Determine if result of expression is double or int */
-	if (Tcl_GetNumberFromObj(interp, exprValueObj, &internalPtr,
-		&keyword) != TCL_OK) {
-	    return ErrArg;
-	}
-	*numValuePtr = exprValueObj; /* incremented in Tcl_ExprObj */
-	*keywordIndexPtr = keyword; /* type of expression result */
+	*numValuePtr = argPtr;
+	*keywordIndexPtr = keyword; /* type of result */
 	return NumericArg;
     }
 }
@@ -4205,7 +4193,6 @@ Tcl_LseqObjCmd(
 	    }
 	}
     }
-
 
     /*
      * Success!  Now lets create the series object.

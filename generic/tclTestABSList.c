@@ -617,7 +617,6 @@ my_LStringReplace(
     // Terminate new string.
     newStr[newLen] = 0;
 
-
     if (oldStr != newStr) {
 	Tcl_Free(oldStr);
     }
@@ -822,8 +821,8 @@ my_LStringGetElements(
 }
 
 /*
-** UpdateStringRep
-*/
+ * UpdateStringRep
+ */
 
 static void
 UpdateStringOfLString(
@@ -835,7 +834,6 @@ UpdateStringOfLString(
     char *p;
     Tcl_Size bytesNeeded = 0;
     Tcl_Size llen, i;
-
 
     /*
      * Handle empty list case first, so rest of the routine is simpler.
@@ -943,10 +941,10 @@ lLStringObjCmd(
 }
 
 /*
-** lgen - Derived from TIP 192 - Lazy Lists
-** Generate a list using a command provided as argument(s).
-** The command computes the value for a given index.
-*/
+ * lgen - Derived from TIP 192 - Lazy Lists
+ * Generate a list using a command provided as argument(s).
+ * The command computes the value for a given index.
+ */
 
 /*
  * Internal rep for the Generate Series
@@ -1039,8 +1037,8 @@ lgenSeriesObjIndex(
 }
 
 /*
-** UpdateStringRep
-*/
+ * UpdateStringRep
+ */
 
 static void
 UpdateStringOfLgen(

@@ -160,8 +160,8 @@ TEST_DLL_FILE		= tcltest$(VER)${DLLSUFFIX}
 TEST_EXE_FILE		= tcltest${EXESUFFIX}
 TEST_LIB_FILE		= @LIBPREFIX@tcltest$(VER)${DLLSUFFIX}${LIBSUFFIX}
 TEST_LOAD_PRMS		= lappend ::auto_path {$(ROOT_DIR_WIN_NATIVE)/tests};\
-			  package ifneeded dde 1.5a1 [list load ${DDE_DLL_FILE}];\
-			  package ifneeded registry 1.4a1 [list load ${REG_DLL_FILE}]
+			  package ifneeded dde 1.5a2 [list load ${DDE_DLL_FILE}];\
+			  package ifneeded registry 1.4a2 [list load ${REG_DLL_FILE}]
 TEST_LOAD_FACILITIES	= package ifneeded tcl::test ${VERSION}@TCL_PATCH_LEVEL@ [list load ${TEST_DLL_FILE} Tcltest];\
 			  $(TEST_LOAD_PRMS)
 ZLIB_DLL_FILE		= zlib1.dll
@@ -790,7 +790,8 @@ deflate.$(HOST_OBJEXT):
 	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(ZLIB_DIR)/deflate.c
 
 ioapi.$(HOST_OBJEXT):
-	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -I$(ZLIB_DIR)/contrib/minizip -c $(ZLIB_DIR)/contrib/minizip/ioapi.c
+	$(HOST_CC) -o $@ -DMINIZIP_FOPEN_NO_64=1 -I$(ZLIB_DIR) -I$(ZLIB_DIR)/contrib/minizip -c \
+		$(ZLIB_DIR)/contrib/minizip/ioapi.c
 
 iowin32.$(HOST_OBJEXT):
 	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -I$(ZLIB_DIR)/contrib/minizip -c $(ZLIB_DIR)/contrib/minizip/iowin32.c
@@ -820,7 +821,8 @@ zutil.$(HOST_OBJEXT):
 	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(ZLIB_DIR)/zutil.c
 
 minizip.$(HOST_OBJEXT):
-	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -I$(ZLIB_DIR)/contrib/minizip -c $(ZLIB_DIR)/contrib/minizip/minizip.c
+	$(HOST_CC) -o $@ -DMINIZIP_FOPEN_NO_64=1 -DHAVE_DIRENT_H=1 -I$(ZLIB_DIR) -I$(ZLIB_DIR)/contrib/minizip -c \
+		$(ZLIB_DIR)/contrib/minizip/minizip.c
 
 minizip${HOST_EXEEXT}: $(MINIZIP_OBJS)
 	$(HOST_CC) -o $@ $(MINIZIP_OBJS)

@@ -93,11 +93,11 @@
 #endif
 
 /*
-  The macOS framework build first installs the framework in the build
-  directory and then copies it to /Library/Frameworks/Tcl.framework.
-  Without these macros the pkgconfig paths point into the build
-  directory instead of into the installed framework.
-*/
+ * The macOS framework build first installs the framework in the build
+ * directory and then copies it to /Library/Frameworks/Tcl.framework.
+ * Without these macros the pkgconfig paths point into the build
+ * directory instead of into the installed framework.
+ */
 
 #if defined(MAC_OSX_TCL) && defined(TCL_FRAMEWORK)
   #define VERSION_DIR "/Library/Frameworks/Tcl.framework/Versions/"TCL_VERSION

@@ -583,7 +583,8 @@ TestindexobjCmd(
     Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int allowAbbrev, index, setError, result;
+    bool allowAbbrev, setError;
+    int index, result;
     Tcl_Size i;
     Tcl_Size index2;
     const char **argv;
@@ -1654,9 +1655,9 @@ TeststringobjCmd(
 static int
 TestbigdataCmd(
     TCL_UNUSED(void *),
-    Tcl_Interp *interp,    /* Current interpreter. */
-    Tcl_Size objc,         /* Number of arguments. */
-    Tcl_Obj *const objv[]) /* Argument objects. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    Tcl_Size objc,		/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     static const char *const subcmds[] = {
 	"string", "bytearray", "list", "dict", NULL

@@ -986,7 +986,6 @@ Tcl_SetSystemEncoding(
 {
     Tcl_Encoding encoding = NULL;
 
-
     if (name && *name) {
 	encoding = Tcl_GetEncoding(interp, name); /* this increases refCount */
 	if (encoding == NULL) {
@@ -999,11 +998,7 @@ Tcl_SetSystemEncoding(
     if ((encoding ? encoding : defaultEncoding) == systemEncoding) {
 	if (encoding) {
 	    Tcl_FreeEncoding(encoding); /* paired to Tcl_GetEncoding */
-
-
 	}
-
-
 	return TCL_OK;
     }
 
@@ -1385,7 +1380,6 @@ Tcl_ExternalToUtf(
 	result = TCL_ERROR;
     }
 
-
     if (srcReadPtr) {
 	*srcReadPtr = (int)srcRead;
     }
@@ -1479,6 +1473,8 @@ Tcl_ExternalToUtfEx(
 	statePtr = &localState;
     }
 
+    bool charLimited = ((flags & TCL_ENCODING_CHAR_LIMIT) != 0) && (dstCharsPtr != NULL);
+
     /* Note two separate checks to handle intermediate underflow */
     if (terminatorLength > dstLen) {
 	terminatorLength = 0; /* So we do not try to store before returning */
@@ -1497,8 +1493,6 @@ Tcl_ExternalToUtfEx(
 	/* UTF-8 -> TUTF-8 */
 	flags |= ENCODING_INPUT;
     }
-
-    int charLimited = (flags & TCL_ENCODING_CHAR_LIMIT) && (dstCharsPtr != NULL);
 
     /*
      * The low level encoding routines only take int arguments. Since they
@@ -1545,9 +1539,8 @@ Tcl_ExternalToUtfEx(
 	}
 
 	result = encodingPtr->toUtfProc(encodingPtr->clientData, src,
-	    chunkSrcLen, chunkFlags, statePtr, dst, chunkDstLen, &chunkSrcRead,
-	    &chunkDstWritten, &chunkDstChars);
-
+		chunkSrcLen, chunkFlags, statePtr, dst, chunkDstLen,
+		&chunkSrcRead, &chunkDstWritten, &chunkDstChars);
 
 	assert(chunkSrcRead <= srcBytesLeft);
 	srcBytesLeft -= chunkSrcRead;
@@ -2053,6 +2046,14 @@ Tcl_UtfToExternalEx(
 	statePtr = &localState;
     }
 
+    /*
+     * TODO - The fromUtf routines do not support the
+     * TCL_ENCODING_CHAR_LIMIT flag. Ignore if present. However, for future
+     * support, the looping code is prepared to handle it.
+     */
+    flags &= ~TCL_ENCODING_CHAR_LIMIT;
+    bool charLimited = ((flags & TCL_ENCODING_CHAR_LIMIT) != 0) && (dstCharsPtr != NULL);
+
     /* Note two separate checks to handle intermediate underflow */
     if (terminatorLength > dstLen) {
 	terminatorLength = 0; /* So we do not try to store before returning */
@@ -2071,14 +2072,6 @@ Tcl_UtfToExternalEx(
 	/* TUTF-8 -> UTF-8 */
 	flags &= ~ENCODING_INPUT; /* Ensure bit not set */
     }
-
-    /*
-     * TODO - The fromUtf routines do not support the
-     * TCL_ENCODING_CHAR_LIMIT flag. Ignore if present. However, for future
-     * support, the looping code is prepared to handle it.
-     */
-    flags &= ~TCL_ENCODING_CHAR_LIMIT;
-    int charLimited = (flags & TCL_ENCODING_CHAR_LIMIT) && (dstCharsPtr != NULL);
 
     /*
      * The low level encoding routines only take int arguments. Since they
@@ -2249,7 +2242,7 @@ storeResult:
 
     return result;
 }
-
+
 /*
  *---------------------------------------------------------------------------
  *

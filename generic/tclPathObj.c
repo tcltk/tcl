@@ -156,17 +156,17 @@ TclFSNormalizeAbsolutePath(
 	 */
 	dirSep += zipVolumeLen-1; /* Start parse after : */
     } else if (tclPlatform == TCL_PLATFORM_WINDOWS) {
-	if (   (dirSep[0] == '/' || dirSep[0] == '\\')
-	    && (dirSep[1] == '/' || dirSep[1] == '\\')
-	    && (dirSep[2] == '?')
-	    && (dirSep[3] == '/' || dirSep[3] == '\\')) {
+	if (	(dirSep[0] == '/' || dirSep[0] == '\\') &&
+		(dirSep[1] == '/' || dirSep[1] == '\\') &&
+		(dirSep[2] == '?')			&&
+		(dirSep[3] == '/' || dirSep[3] == '\\')) {
 	    /* NT extended path */
 	    dirSep += 4;
 
-	    if (   (dirSep[0] == 'U' || dirSep[0] == 'u')
-		&& (dirSep[1] == 'N' || dirSep[1] == 'n')
-		&& (dirSep[2] == 'C' || dirSep[2] == 'c')
-		&& (dirSep[3] == '/' || dirSep[3] == '\\')) {
+	    if (    (dirSep[0] == 'U' || dirSep[0] == 'u') &&
+		    (dirSep[1] == 'N' || dirSep[1] == 'n') &&
+		    (dirSep[2] == 'C' || dirSep[2] == 'c') &&
+		    (dirSep[3] == '/' || dirSep[3] == '\\')) {
 		/* NT extended UNC path */
 		dirSep += 4;
 	    }
@@ -2465,7 +2465,7 @@ TclNativePathInFilesystem(
  *
  *----------------------------------------------------------------------
  */
-int
+static int
 MakeTildeRelativePath(
     Tcl_Interp *interp,		/* May be NULL. Only used for error messages */
     const char *user,		/* User name. NULL -> current user */
@@ -2790,12 +2790,12 @@ TclFSGetAncestorPaths(
     count = i;
     /* Fill remaining with NULL */
     while (i < numPaths) {
-	pathsPtr[i] = NULL;
+	pathsPtr[i++] = NULL;
     }
     Tcl_DecrRefCount(splitPathPtr);
     return count;
 }
-
+
 /*
  * Local Variables:
  * mode: c

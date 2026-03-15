@@ -2018,7 +2018,6 @@ TclOODefineDestructorObjCmd(
 	return TCL_ERROR;
     }
 
-
     (void) TclGetStringFromObj(objv[1], &bodyLength);
     if (bodyLength > 0) {
 	/*

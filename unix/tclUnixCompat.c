@@ -960,14 +960,6 @@ CopyString(
 #endif /* NEED_COPYSTRING */
 
 /*
- * Local Variables:
- * mode: c
- * c-basic-offset: 4
- * fill-column: 78
- * End:
- */
-
-/*
  *------------------------------------------------------------------------
  *
  * TclWinCPUID --
@@ -1012,7 +1004,7 @@ TclWinCPUID(
 #endif
     return status;
 }
-
+
 /*
  * Local Variables:
  * mode: c

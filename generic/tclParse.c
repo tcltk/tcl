@@ -723,7 +723,7 @@ TclParseAllWhiteSpace(
  *----------------------------------------------------------------------
  */
 
-Tcl_Size
+static Tcl_Size
 ParseHex(
     const char *src,		/* First character to parse. */
     Tcl_Size numBytes,		/* Max number of byes to scan */

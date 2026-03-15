@@ -969,12 +969,11 @@ Tcl_FSUnregister(
  *		glob -dir $dir -join * pkgIndex.tcl
  *
  * Results:
- *
- *	TCL_OK, or TCL_ERROR
+ *	A standard Tcl result. If an error occurs, an
+ *	error message is left in the interpreter's result.
  *
  * Side effects:
- *	resultPtr is populated, or in the case of an TCL_ERROR, an error message is
- *	set in the interpreter.
+ *	resultPtr is populated if the result is TCL_OK.
  *
  *----------------------------------------------------------------------
  */
@@ -1424,7 +1423,8 @@ TclFSNormalizeToUniquePath(
  *	Computes a POSIX mode mask for opening a file.
  *
  * Results:
- *	The mode to pass to "open", or -1 if an error occurs.
+ *	The mode to pass to "open", or -1 if an error occurs (in which case an
+ *	error message is set in the interpreter, if that is non-NULL).
  *
  * Side effects:
  *	Sets *modeFlagsPtr to 1 to tell the caller to
@@ -1432,9 +1432,6 @@ TclFSNormalizeToUniquePath(
  *
  *	Adds CHANNEL_RAW_MODE to *modeFlagsPtr to tell the caller
  *	to configure the channel as a binary channel.
- *
- *	If there is an error and interp is not NULL, sets
- *	interpreter result to an error message.
  *
  * Special note:
  *	Based on a prototype implementation contributed by Mark Diekhans.
@@ -1552,8 +1549,8 @@ TclGetOpenMode(
 	    invRW:
 		if (interp != NULL) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-				"invalid access mode \"%s\": modes RDONLY, "
-				"RDWR, and WRONLY cannot be combined", flag));
+			    "invalid access mode \"%s\": modes RDONLY, "
+			    "RDWR, and WRONLY cannot be combined", flag));
 		}
 		goto invAccessMode;
 	    }
@@ -2046,7 +2043,7 @@ Tcl_SetErrno(
  *	interpreter errorCode to machine-parsable information about the error.
  *
  * Results:
- *	A human-readable sring describing the error.
+ *	A human-readable string describing the error.
  *
  * Side effects:
  *	Sets the errorCode value of the interpreter.
@@ -3569,6 +3566,9 @@ DivertUnloadFile(
  *	Returns a pointer to the symbol if found.  Otherwise, sets
  *	an error message in the interpreter result and returns NULL.
  *
+ * Side effects:
+ *	None expected.
+ *
  *----------------------------------------------------------------------
  */
 
@@ -3586,7 +3586,7 @@ Tcl_FindSymbol(
  *
  * Tcl_FSUnloadFile --
  *
- *	Unloads a loaded  object if unloading is supported for the object.
+ *	Unloads a loaded object if unloading is supported for the object.
  *
  *----------------------------------------------------------------------
  */

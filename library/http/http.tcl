@@ -1518,7 +1518,6 @@ proc http::CreateToken {url args} {
     return $token
 }
 
-
 # ------------------------------------------------------------------------------
 #  Proc ::http::SockIsPlaceHolder
 # ------------------------------------------------------------------------------
@@ -1535,7 +1534,6 @@ proc http::CreateToken {url args} {
 proc http::SockIsPlaceHolder {sock} {
     expr {[string range $sock 0 16] eq {HTTP_PLACEHOLDER_}}
 }
-
 
 # ------------------------------------------------------------------------------
 # state(reusing)
@@ -1555,7 +1553,6 @@ proc http::SockIsPlaceHolder {sock} {
 #   - Event       - if (not reusing) and pipelined, send the next pipelined
 #                   write.
 # ------------------------------------------------------------------------------
-
 
 # ------------------------------------------------------------------------------
 #  Proc http::AsyncTransaction
@@ -1631,7 +1628,6 @@ proc http::AsyncTransaction {token} {
 
     return
 }
-
 
 # ------------------------------------------------------------------------------
 #  Proc http::PreparePersistentConnection
@@ -1827,7 +1823,6 @@ proc http::OpenSocket {token DoLater} {
     return
 }
 
-
 # ------------------------------------------------------------------------------
 #  Proc ::http::ConfigureNewSocket
 # ------------------------------------------------------------------------------
@@ -1943,7 +1938,6 @@ proc http::ConfigureNewSocket {token sockOld DoLater} {
     return
 }
 
-
 # ------------------------------------------------------------------------------
 # The values of array variables socketMapping etc.
 # ------------------------------------------------------------------------------
@@ -1975,7 +1969,6 @@ proc http::ConfigureNewSocket {token sockOld DoLater} {
 #                        is to set the value of state() for caller information.
 # ------------------------------------------------------------------------------
 
-
 # ------------------------------------------------------------------------------
 # Using socketWrState(*), socketWrQueue(*), socketRdState(*), socketRdQueue(*)
 # ------------------------------------------------------------------------------
@@ -1998,7 +1991,6 @@ proc http::ConfigureNewSocket {token sockOld DoLater} {
 # there is one.  The value Rready is not found when the interpreter is in
 # the event loop unless the socket is idle.
 # ------------------------------------------------------------------------------
-
 
 # ------------------------------------------------------------------------------
 #  Proc http::ScheduleRequest
@@ -2122,7 +2114,6 @@ proc http::ScheduleRequest {token} {
 
     return
 }
-
 
 # ------------------------------------------------------------------------------
 #  Proc http::SendHeader
@@ -2605,7 +2596,6 @@ proc http::ReceiveResponse {token} {
     return
 }
 
-
 # http::EventGateway
 #
 #	Bug [c2dc1da315].
@@ -2640,7 +2630,6 @@ proc http::EventGateway {sock token} {
     # If there was an error, re-throw it.
     return -options $opts $res
 }
-
 
 # http::NextPipelinedWrite
 #
@@ -2935,7 +2924,6 @@ proc http::ReplayIfDead {token doing} {
     lappend newQueue {*}$socketRdQueue($state(socketinfo))
     lappend newQueue {*}$InFlightW
     lappend newQueue {*}$socketWrQueue($state(socketinfo))
-
 
     # 2. Tidy up token.  This is a cut-down form of Finish/CloseSocket.
     #    Do not change state(status).
@@ -3256,7 +3244,6 @@ proc http::Meta {token who args} {
 	}
     }
 }
-
 
 # ------------------------------------------------------------------------------
 #  Proc http::responseInfo
@@ -4572,7 +4559,6 @@ proc http::Eot {token {reason {}}} {
     return
 }
 
-
 # ------------------------------------------------------------------------------
 #  Proc http::GuessType
 # ------------------------------------------------------------------------------
@@ -4652,7 +4638,6 @@ proc http::GuessType {token} {
     set state(charset) $res
     return 1
 }
-
 
 # http::wait --
 #
@@ -4806,7 +4791,6 @@ proc http::CharsetToEncoding {charset} {
     }
 }
 
-
 # ------------------------------------------------------------------------------
 #  Proc http::ContentEncoding
 # ------------------------------------------------------------------------------
@@ -4901,7 +4885,6 @@ proc http::SplitCommaSeparatedFieldValue {fieldValue} {
     return $r
 }
 
-
 # http::GetFieldValue --
 #	Return the value of a header field.
 #
@@ -4943,7 +4926,6 @@ interp alias {} http::mapReply {} http::quoteString
 interp alias {} http::meta {} http::responseHeaders
 interp alias {} http::metaValue {} http::responseHeaderValue
 interp alias {} http::ncode {} http::responseCode
-
 
 # ------------------------------------------------------------------------------
 #  Proc http::socketAsCallback
@@ -4998,7 +4980,6 @@ proc http::socketAsCallback {args} {
     }
     return $sock
 }
-
 
 # ------------------------------------------------------------------------------
 #  Proc http::SecureProxyConnect
@@ -5190,7 +5171,6 @@ proc http::AllDone {varName args} {
     return
 }
 
-
 # ------------------------------------------------------------------------------
 #  Proc http::AltSocket
 # ------------------------------------------------------------------------------
@@ -5332,7 +5312,6 @@ proc http::LoadThreadIfNeeded {} {
     return
 }
 
-
 # ------------------------------------------------------------------------------
 #  Proc http::SockInThread
 # ------------------------------------------------------------------------------
@@ -5357,7 +5336,6 @@ proc http::SockInThread {caller defcmd sockargs} {
     }
     return [list $catchCode $errdict $sock]
 }
-
 
 # ------------------------------------------------------------------------------
 #  Proc http::cwaiter::cwait
@@ -5414,7 +5392,6 @@ proc http::cwaiter::cwait {
     return
 }
 
-
 # ------------------------------------------------------------------------------
 #  Proc http::cwaiter::CwaitHelper
 # ------------------------------------------------------------------------------
@@ -5436,7 +5413,6 @@ proc http::cwaiter::CwaitHelper {varName coroName toe args} {
     after 0 $coroName
     return
 }
-
 
 # ------------------------------------------------------------------------------
 #  Proc http::cwaiter::LogInit

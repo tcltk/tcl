@@ -807,7 +807,7 @@ Tcltest_Init(
 
     return TclplatformtestInit(interp);
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1668,7 +1668,7 @@ TestdcallCmd(
     Tcl_DStringResult(interp, &delString);
     return TCL_OK;
 }
-
+
 /*
  * The deletion callback used by TestdcallCmd:
  */
@@ -1855,7 +1855,7 @@ TestdoubledigitsCmd(
     if (status != TCL_OK) {
 	doubleType = Tcl_GetObjType("double");
 	if (Tcl_FetchInternalRep(objv[1], doubleType)
-	    && isnan(objv[1]->internalRep.doubleValue)) {
+		&& isnan(objv[1]->internalRep.doubleValue)) {
 	    status = TCL_OK;
 	    memcpy(&d, &(objv[1]->internalRep.doubleValue), sizeof(double));
 	}
@@ -2013,7 +2013,7 @@ TestdstringCmd(
     }
     return TCL_OK;
 }
-
+
 /*
  * The procedure below is used as a special freeProc to test how well
  * Tcl_DStringGetResult handles freeProc's other than free.
@@ -2206,13 +2206,14 @@ static int UtfExtWrapper(
 
     /* Set up output buffer */
     bufLen = dstLen + 4; /* 4 -> overflow detection */
-    dstBufPtr = (char *) Tcl_Alloc(bufLen);
+    dstBufPtr = (char *)Tcl_Alloc(bufLen);
     memset(dstBufPtr, 0xFF, dstLen); /* Need to check nul terminator */
     memmove(dstBufPtr + dstLen, "\xAB\xCD\xEF\xAB", 4);   /* overflow detection */
+    Tcl_Size srcNumBytes;
 
     /* Set up input buffer, including prefix if one has been specified */
     bytes = Tcl_GetByteArrayFromObj(objv[3], &srcLen);
-    srcBufPtr = (char *) Tcl_Alloc(prefixLen+srcLen+1); /* +1 to ensure not 0 */
+    srcBufPtr = (char *)Tcl_Alloc(prefixLen+srcLen+1); /* +1 to ensure not 0 */
     if (prefixLen != 0) {
 	const unsigned char *prefixBytes;
 	Tcl_Size nbytes;
@@ -2235,40 +2236,37 @@ static int UtfExtWrapper(
 	    prefixLen = 0;
 	}
     }
-    Tcl_Size srcNumBytes = prefixLen + srcLen;
+    srcNumBytes = prefixLen + srcLen;
     memmove(srcBufPtr + prefixLen, bytes, srcLen);
     switch (transform) {
     case UTF_TO_EXTERNAL:
-    case EXTERNAL_TO_UTF:
-	{
-	    int dstWrote32 = 0, dstChars32 = 0, srcRead32 = 0;
-	    if ((flags & TCL_ENCODING_CHAR_LIMIT) && (dstChars > INT_MAX)) {
-		Tcl_SetResult(interp,
+    case EXTERNAL_TO_UTF: {
+	int dstWrote32 = 0, dstChars32 = 0, srcRead32 = 0;
+	if ((flags & TCL_ENCODING_CHAR_LIMIT) && (dstChars > INT_MAX)) {
+	    Tcl_SetResult(interp,
 		    "dstChars too large for Tcl_UtfToExternal/Tcl_ExternalToUtf",
 		    TCL_STATIC);
-		result = TCL_ERROR;
-		goto done;
-	    }
-	    dstChars32 = (int)dstChars;
-	    result = (transform == UTF_TO_EXTERNAL ?
-			Tcl_UtfToExternal : Tcl_ExternalToUtf) (
-				interp, encoding, srcBufPtr,
-				srcNumBytes, flags, encStatePtr,
-				dstBufPtr, dstLen,
-				optObjs[SRCREADVAR] ? &srcRead32 : NULL,
-				optObjs[DSTWROTEVAR] ? &dstWrote32 : NULL,
-				optObjs[DSTCHARSVAR] ? &dstChars32 : NULL);
-	    srcRead = (Tcl_Size)srcRead32;
-	    dstWrote = (Tcl_Size)dstWrote32;
-	    dstChars = (Tcl_Size)dstChars32;
-	    break;
+	    result = TCL_ERROR;
+	    goto done;
 	}
+	dstChars32 = (int)dstChars;
+	result = (transform == UTF_TO_EXTERNAL ? Tcl_UtfToExternal : Tcl_ExternalToUtf)(
+		interp, encoding, srcBufPtr, srcNumBytes, flags, encStatePtr,
+		dstBufPtr, dstLen,
+		optObjs[SRCREADVAR] ? &srcRead32 : NULL,
+		optObjs[DSTWROTEVAR] ? &dstWrote32 : NULL,
+		optObjs[DSTCHARSVAR] ? &dstChars32 : NULL);
+	srcRead = (Tcl_Size)srcRead32;
+	dstWrote = (Tcl_Size)dstWrote32;
+	dstChars = (Tcl_Size)dstChars32;
+	break;
+    }
     case EXTERNAL_TO_UTF_EX:
 	result = Tcl_ExternalToUtfEx(interp, encoding, srcBufPtr, srcNumBytes,
-	    flags, encStatePtr, dstBufPtr, dstLen,
-	    optObjs[SRCREADVAR] ? &srcRead : NULL,
-	    optObjs[DSTWROTEVAR] ? &dstWrote : NULL,
-	    optObjs[DSTCHARSVAR] ? &dstChars : NULL);
+		flags, encStatePtr, dstBufPtr, dstLen,
+		optObjs[SRCREADVAR] ? &srcRead : NULL,
+		optObjs[DSTWROTEVAR] ? &dstWrote : NULL,
+		optObjs[DSTCHARSVAR] ? &dstChars : NULL);
 	break;
     case UTF_TO_EXTERNAL_EX:
 	result = Tcl_UtfToExternalEx(interp, encoding, srcBufPtr,
@@ -2279,8 +2277,7 @@ static int UtfExtWrapper(
 	break;
     }
     if (memcmp(dstBufPtr + bufLen - 4, "\xAB\xCD\xEF\xAB", 4)) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"%s wrote past output buffer",
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf("%s wrote past output buffer",
 		transform == EXTERNAL_TO_UTF ?
 			"Tcl_ExternalToUtf" : "Tcl_UtfToExternal"));
 	result = TCL_ERROR;
@@ -2307,8 +2304,9 @@ static int UtfExtWrapper(
 	    break;
 	}
 	result = TCL_OK;
-	resultObjs[1] =
-	    encStatePtr ? Tcl_NewWideIntObj((Tcl_WideInt)(size_t)encState) : Tcl_NewObj();
+	resultObjs[1] = encStatePtr
+		? Tcl_NewWideIntObj((Tcl_WideInt)(size_t)encState)
+		: Tcl_NewObj();
 	resultObjs[2] = Tcl_NewByteArrayObj((const unsigned char *)dstBufPtr, dstLen);
 	if (optObjs[SRCREADVAR]) {
 	    if (Tcl_ObjSetVar2(interp, optObjs[SRCREADVAR], NULL, Tcl_NewWideIntObj(srcRead),
@@ -2330,7 +2328,7 @@ static int UtfExtWrapper(
 	}
 	Tcl_SetObjResult(interp, Tcl_NewListObj(3, resultObjs));
     }
-done:
+  done:
     if (srcBufPtr) {
 	Tcl_Free(srcBufPtr);
     }
@@ -3325,9 +3323,10 @@ TestlinkCmd(
     static float floatVar = 4.5;
     static Tcl_WideUInt uwideVar = 123;
     static int created = 0;
-    char buffer[2*TCL_DOUBLE_SPACE];
-    int writable, flag;
+    int flag;
     Tcl_Obj *tmp;
+    char buffer[2*TCL_DOUBLE_SPACE];
+    bool writable;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "option ?arg arg arg arg arg arg arg arg arg arg arg arg"
@@ -3752,11 +3751,11 @@ TestlinkCmd(
  *
  * TestlinkarrayCmd --
  *
- *      This function is invoked to process the "testlinkarray" Tcl command.
- *      It is used to test the 'Tcl_LinkArray' function.
+ *	This function is invoked to process the "testlinkarray" Tcl command.
+ *	It is used to test the 'Tcl_LinkArray' function.
  *
  * Results:
- *      A standard Tcl result.
+ *	A standard Tcl result.
  *
  * Side effects:
  *	Creates, deletes, and invokes variable links.
@@ -3872,11 +3871,11 @@ TestlinkarrayCmd(
  *
  * TestlistrepCmd --
  *
- *      This function is invoked to generate a list object with a specific
+ *	This function is invoked to generate a list object with a specific
  *	internal representation.
  *
  * Results:
- *      A standard Tcl result.
+ *	A standard Tcl result.
  *
  * Side effects:
  *	None.
@@ -3933,8 +3932,7 @@ TestlistrepCmd(
 		    return TCL_ERROR;
 		}
 		if (objc > 4) {
-		    if (Tcl_GetWideUIntFromObj(interp, objv[4], &endSpace)
-			!= TCL_OK) {
+		    if (Tcl_GetWideUIntFromObj(interp, objv[4], &endSpace) != TCL_OK) {
 			return TCL_ERROR;
 		    }
 		}
@@ -4002,10 +4000,10 @@ TestlistrepCmd(
 	    return TCL_ERROR;
 	}
 	resultObj = Tcl_NewListObj(2, NULL);
-	Tcl_ListObjAppendElement(
-	    NULL, resultObj, Tcl_NewStringObj("LIST_SPAN_THRESHOLD", -1));
-	Tcl_ListObjAppendElement(
-	    NULL, resultObj, Tcl_NewWideIntObj(LIST_SPAN_THRESHOLD));
+	Tcl_ListObjAppendElement(NULL, resultObj,
+		Tcl_NewStringObj("LIST_SPAN_THRESHOLD", -1));
+	Tcl_ListObjAppendElement(NULL, resultObj,
+		Tcl_NewWideIntObj(LIST_SPAN_THRESHOLD));
 	break;
 
     case LISTREP_VALIDATE:
@@ -4026,11 +4024,11 @@ TestlistrepCmd(
  *
  * TestlistapiCmd --
  *
- *      This function is invoked to test various public C API's to cover
+ *	This function is invoked to test various public C API's to cover
  *	paths that are not exercisable via the script level commands.
  *	The general format is:
  *	    testlistapi api refcount listoperand ?args ...?
- *      where api identifies the C function, refcount is the reference count
+ *	where api identifies the C function, refcount is the reference count
  *	to be set for the value listoperand passed into the list API.
  *
  *	The result of the command is a dictionary of with the following
@@ -4044,7 +4042,7 @@ TestlistrepCmd(
  *	    resultRefCount - reference count of resultPtr *after* the API call
  *	    result - the resultPtr value
  * Results:
- *      A standard Tcl result.
+ *	A standard Tcl result.
  *
  * Side effects:
  *	None.
@@ -4114,8 +4112,7 @@ TestlistapiCmd(
 		Tcl_WrongNumArgs(interp, 2, objv, "refcount list start end");
 		status = TCL_ERROR;
 		goto vamoose; /* To free up srcPtr */
-	    }
-	    else {
+	    } else {
 		Tcl_Size start, end;
 		if (Tcl_GetSizeIntFromObj(interp, objv[4], &start) != TCL_OK ||
 		    Tcl_GetSizeIntFromObj(interp, objv[5], &end) != TCL_OK) {
@@ -4204,7 +4201,7 @@ vamoose:
     }
     return status;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -4605,7 +4602,7 @@ TestparsevarnameCmd(
     Tcl_Obj *const objv[])	/* The argument objects. */
 {
     const char *script;
-    int append;
+    bool append;
     Tcl_Size length, dummy;
     Tcl_Parse parse;
 
@@ -5212,7 +5209,7 @@ TeststaticlibraryCmd(
     Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument strings. */
 {
-    int safe, loaded;
+    bool safe, loaded;
 
     if (objc != 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "prefix safe loaded");
@@ -5285,7 +5282,7 @@ TesttranslatefilenameCmd(
  *
  *	This procedure implements the "testfstildeexpand" command.
  *	It is used to test the Tcl_FSTildeExpand command. It differs
- *      from the script level "file tildeexpand" tests because of a
+ *	from the script level "file tildeexpand" tests because of a
  *	slightly different code path.
  *
  * Results:
@@ -5441,7 +5438,7 @@ TestuniClassCmd(
     Tcl_SetObjResult(interp, result);
     return TCL_OK;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -5802,151 +5799,151 @@ GetTimesCmd(
     Interp *iPtr = (Interp *) interp;
     int i, n;
     double timePer;
-    Tcl_Time start, stop;
+    long long start, stop;
     Tcl_Obj *objPtr, **objv;
     const char *s;
     char newString[TCL_INTEGER_SPACE];
 
     /* alloc & free 100000 times */
     fprintf(stderr, "alloc & free 100000 6 word items\n");
-    Tcl_GetTime(&start);
+    start = Tcl_GetMonotonicTime();
     for (i = 0;  i < 100000;  i++) {
 	objPtr = (Tcl_Obj *)Tcl_Alloc(sizeof(Tcl_Obj));
 	Tcl_Free(objPtr);
     }
-    Tcl_GetTime(&stop);
-    timePer = (double)((stop.sec - start.sec)*1000000 + (stop.usec - start.usec));
+    stop = Tcl_GetMonotonicTime();
+    timePer = (double)(stop - start);
     fprintf(stderr, "   %.3f usec per alloc+free\n", timePer/100000);
 
     /* alloc 5000 times */
     fprintf(stderr, "alloc 5000 6 word items\n");
     objv = (Tcl_Obj **)Tcl_Alloc(5000 * sizeof(Tcl_Obj *));
-    Tcl_GetTime(&start);
+    start = Tcl_GetMonotonicTime();
     for (i = 0;  i < 5000;  i++) {
 	objv[i] = (Tcl_Obj *)Tcl_Alloc(sizeof(Tcl_Obj));
     }
-    Tcl_GetTime(&stop);
-    timePer = (double)((stop.sec - start.sec)*1000000 + (stop.usec - start.usec));
+    stop = Tcl_GetMonotonicTime();
+    timePer = (double)(stop - start);
     fprintf(stderr, "   %.3f usec per alloc\n", timePer/5000);
 
     /* free 5000 times */
     fprintf(stderr, "free 5000 6 word items\n");
-    Tcl_GetTime(&start);
+    start = Tcl_GetMonotonicTime();
     for (i = 0;  i < 5000;  i++) {
 	Tcl_Free(objv[i]);
     }
-    Tcl_GetTime(&stop);
-    timePer = (double)((stop.sec - start.sec)*1000000 + (stop.usec - start.usec));
+    stop = Tcl_GetMonotonicTime();
+    timePer = (double)(stop - start);
     fprintf(stderr, "   %.3f usec per free\n", timePer/5000);
 
     /* Tcl_NewObj 5000 times */
     fprintf(stderr, "Tcl_NewObj 5000 times\n");
-    Tcl_GetTime(&start);
+    start = Tcl_GetMonotonicTime();
     for (i = 0;  i < 5000;  i++) {
 	objv[i] = Tcl_NewObj();
     }
-    Tcl_GetTime(&stop);
-    timePer = (double)((stop.sec - start.sec)*1000000 + (stop.usec - start.usec));
+    stop = Tcl_GetMonotonicTime();
+    timePer = (double)(stop - start);
     fprintf(stderr, "   %.3f usec per Tcl_NewObj\n", timePer/5000);
 
     /* Tcl_DecrRefCount 5000 times */
     fprintf(stderr, "Tcl_DecrRefCount 5000 times\n");
-    Tcl_GetTime(&start);
+    start = Tcl_GetMonotonicTime();
     for (i = 0;  i < 5000;  i++) {
 	objPtr = objv[i];
 	Tcl_DecrRefCount(objPtr);
     }
-    Tcl_GetTime(&stop);
-    timePer = (double)((stop.sec - start.sec)*1000000 + (stop.usec - start.usec));
+    stop = Tcl_GetMonotonicTime();
+    timePer = (double)(stop - start);
     fprintf(stderr, "   %.3f usec per Tcl_DecrRefCount\n", timePer/5000);
     Tcl_Free(objv);
 
     /* TclGetString 100000 times */
     fprintf(stderr, "Tcl_GetStringFromObj of \"12345\" 100000 times\n");
     objPtr = Tcl_NewStringObj("12345", -1);
-    Tcl_GetTime(&start);
+    start = Tcl_GetMonotonicTime();
     for (i = 0;  i < 100000;  i++) {
 	(void) TclGetString(objPtr);
     }
-    Tcl_GetTime(&stop);
-    timePer = (double)((stop.sec - start.sec)*1000000 + (stop.usec - start.usec));
+    stop = Tcl_GetMonotonicTime();
+    timePer = (double)(stop - start);
     fprintf(stderr, "   %.3f usec per Tcl_GetStringFromObj of \"12345\"\n",
 	    timePer/100000);
 
     /* Tcl_GetIntFromObj 100000 times */
     fprintf(stderr, "Tcl_GetIntFromObj of \"12345\" 100000 times\n");
-    Tcl_GetTime(&start);
+    start = Tcl_GetMonotonicTime();
     for (i = 0;  i < 100000;  i++) {
 	if (Tcl_GetIntFromObj(interp, objPtr, &n) != TCL_OK) {
 	    return TCL_ERROR;
 	}
     }
-    Tcl_GetTime(&stop);
-    timePer = (double)((stop.sec - start.sec)*1000000 + (stop.usec - start.usec));
+    stop = Tcl_GetMonotonicTime();
+    timePer = (double)(stop - start);
     fprintf(stderr, "   %.3f usec per Tcl_GetIntFromObj of \"12345\"\n",
 	    timePer/100000);
     Tcl_DecrRefCount(objPtr);
 
     /* Tcl_GetInt 100000 times */
     fprintf(stderr, "Tcl_GetInt of \"12345\" 100000 times\n");
-    Tcl_GetTime(&start);
+    start = Tcl_GetMonotonicTime();
     for (i = 0;  i < 100000;  i++) {
 	if (Tcl_GetInt(interp, "12345", &n) != TCL_OK) {
 	    return TCL_ERROR;
 	}
     }
-    Tcl_GetTime(&stop);
-    timePer = (double)((stop.sec - start.sec)*1000000 + (stop.usec - start.usec));
+    stop = Tcl_GetMonotonicTime();
+    timePer = (double)(stop - start);
     fprintf(stderr, "   %.3f usec per Tcl_GetInt of \"12345\"\n",
 	    timePer/100000);
 
     /* snprintf 100000 times */
     fprintf(stderr, "snprintf of 12345 100000 times\n");
-    Tcl_GetTime(&start);
+    start = Tcl_GetMonotonicTime();
     for (i = 0;  i < 100000;  i++) {
 	snprintf(newString, sizeof(newString), "%d", 12345);
     }
-    Tcl_GetTime(&stop);
-    timePer = (double)((stop.sec - start.sec)*1000000 + (stop.usec - start.usec));
+    stop = Tcl_GetMonotonicTime();
+    timePer = (double)(stop - start);
     fprintf(stderr, "   %.3f usec per snprintf of 12345\n",
 	    timePer/100000);
 
     /* hashtable lookup 100000 times */
     fprintf(stderr, "hashtable lookup of \"gettimes\" 100000 times\n");
-    Tcl_GetTime(&start);
+    start = Tcl_GetMonotonicTime();
     for (i = 0;  i < 100000;  i++) {
 	(void) Tcl_FindHashEntry(&iPtr->globalNsPtr->cmdTable, "gettimes");
     }
-    Tcl_GetTime(&stop);
-    timePer = (double)((stop.sec - start.sec)*1000000 + (stop.usec - start.usec));
+    stop = Tcl_GetMonotonicTime();
+    timePer = (double)(stop - start);
     fprintf(stderr, "   %.3f usec per hashtable lookup of \"gettimes\"\n",
 	    timePer/100000);
 
     /* Tcl_SetVar 100000 times */
     fprintf(stderr, "Tcl_SetVar2 of \"12345\" 100000 times\n");
-    Tcl_GetTime(&start);
+    start = Tcl_GetMonotonicTime();
     for (i = 0;  i < 100000;  i++) {
 	s = Tcl_SetVar2(interp, "a", NULL, "12345", TCL_LEAVE_ERR_MSG);
 	if (s == NULL) {
 	    return TCL_ERROR;
 	}
     }
-    Tcl_GetTime(&stop);
-    timePer = (double)((stop.sec - start.sec)*1000000 + (stop.usec - start.usec));
+    stop = Tcl_GetMonotonicTime();
+    timePer = (double)(stop - start);
     fprintf(stderr, "   %.3f usec per Tcl_SetVar of a to \"12345\"\n",
 	    timePer/100000);
 
     /* Tcl_GetVar 100000 times */
     fprintf(stderr, "Tcl_GetVar of a==\"12345\" 100000 times\n");
-    Tcl_GetTime(&start);
+    start = Tcl_GetMonotonicTime();
     for (i = 0;  i < 100000;  i++) {
 	s = Tcl_GetVar2(interp, "a", NULL, TCL_LEAVE_ERR_MSG);
 	if (s == NULL) {
 	    return TCL_ERROR;
 	}
     }
-    Tcl_GetTime(&stop);
-    timePer = (double)((stop.sec - start.sec)*1000000 + (stop.usec - start.usec));
+    stop = Tcl_GetMonotonicTime();
+    timePer = (double)(stop - start);
     fprintf(stderr, "   %.3f usec per Tcl_GetVar of a==\"12345\"\n",
 	    timePer/100000);
 
@@ -6311,7 +6308,7 @@ TestmainthreadCmd(
 	return TCL_ERROR;
     }
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -6337,7 +6334,7 @@ MainLoop(void)
     fprintf(stdout,"Exit MainLoop\n");
     fflush(stdout);
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -6366,7 +6363,7 @@ TestsetmainloopCmd(
     Tcl_SetMainLoop(MainLoop);
     return TCL_OK;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -7137,7 +7134,7 @@ TestSocketCmd(
     if ((cmdName[0] == 't') && (strncmp(cmdName, "testflags", len) == 0)) {
 	Tcl_Channel hChannel;
 	int modePtr;
-	int testMode;
+	bool testMode;
 	TcpState *statePtr;
 	/* Set test value in the socket driver
 	 */
@@ -7220,7 +7217,7 @@ TestServiceModeCmd(
     Tcl_SetObjResult(interp, Tcl_NewWideIntObj(oldmode));
     return TCL_OK;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -7410,7 +7407,7 @@ TestReportInFilesystem(
     *clientDataPtr = newPathPtr;
     return TCL_OK;
 }
-
+
 /*
  * Simple helper function to extract the native vfs representation of a path
  * object, or NULL if no such representation exists.
@@ -7707,7 +7704,7 @@ SimplePathInFilesystem(
     }
     return TCL_OK;
 }
-
+
 /*
  * This is a slightly 'hacky' filesystem which is used just to test a few
  * important features of the vfs code: (1) that you can load a shared library
@@ -7753,7 +7750,7 @@ TestSimpleFilesystemCmd(
     Tcl_SetObjResult(interp, Tcl_NewStringObj(msg , -1));
     return res;
 }
-
+
 /*
  * Treats a file name 'simplefs:/foo' by using the file 'foo' in the current
  * (native) directory.
@@ -8040,7 +8037,7 @@ TestGetUniCharCmd(
 
     return TCL_OK;
 }
-
+
 /*
  * Used to check correct operation of Tcl_UtfFindFirst
  */
@@ -8062,7 +8059,7 @@ TestFindFirstCmd(
     }
     return TCL_OK;
 }
-
+
 /*
  * Used to check correct operation of Tcl_UtfFindLast
  */
@@ -8109,8 +8106,6 @@ TestGetIntForIndexCmd(
     Tcl_SetObjResult(interp, Tcl_NewWideIntObj(result));
     return TCL_OK;
 }
-
-
 
 #if defined(HAVE_CPUID) && !defined(MAC_OSX_TCL)
 /*
@@ -8334,7 +8329,6 @@ TestNREUnwind(
 	    INT2PTR(-1), NULL);
     return TCL_OK;
 }
-
 
 static int
 TestNRELevels(
@@ -8765,7 +8759,7 @@ InterpCmdResolver(
      *  A)  when the caller is a proc "x", and the proc is either in "::" or in "::ns2".
      *  B) the caller's namespace is "ctx1" or "ctx2"
      */
-    if ( (name[0] == 'z') && (name[1] == '\0') ) {
+    if ((name[0] == 'z') && (name[1] == '\0')) {
 	Namespace *ns2NsPtr = (Namespace *) Tcl_FindNamespace(interp, "::ns2", NULL, 0);
 
 	if (procPtr != NULL && (
@@ -8992,7 +8986,7 @@ TestInterpResolverCmd(
     }
     return TCL_OK;
 }
-
+
 /*
  *------------------------------------------------------------------------
  *
@@ -9070,7 +9064,7 @@ TestApplyLambdaCmd(
 
     return result;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -9078,7 +9072,7 @@ TestApplyLambdaCmd(
  *
  *	This procedure implements the "testlequal" command. It is used to
  *	test compare two lists for equality using the string representation
- *      of each element. Implemented in C because script level loops are
+ *	of each element. Implemented in C because script level loops are
  *	too slow for comparing large (GB count) lists.
  *
  * Results:
@@ -9103,10 +9097,10 @@ TestLutilCmd(
     Tcl_Obj **l1Elems;
     Tcl_Obj **l2Elems;
     static const char *const subcmds[] = {
-	    "equal", "diffindex", NULL
+	"equal", "diffindex", NULL
     };
     enum options {
-	    LUTIL_EQUAL, LUTIL_DIFFINDEX
+	LUTIL_EQUAL, LUTIL_DIFFINDEX
     } idx;
 
     if (objc != 4) {
@@ -9177,7 +9171,7 @@ vamoose:
  */
 static int
 TestChanBlockMode(
-    TCL_UNUSED(ClientData), /* instanceData */
+    TCL_UNUSED(void *), /* instanceData */
     TCL_UNUSED(int))	    /* mode */
 {
     return 0;
@@ -9185,41 +9179,38 @@ TestChanBlockMode(
 
 static void
 TestChanSourceWatch(
-    TCL_UNUSED(ClientData), /* instanceData */
+    TCL_UNUSED(void *), /* instanceData */
     int mask)
 {
-    if (mask)
+    if (mask) {
 	Tcl_Panic("WatchModeProc not implemented for testchansource");
+    }
 }
 
 static void
 TestChanSinkWatch(
-    TCL_UNUSED(ClientData), /* instanceData */
+    TCL_UNUSED(void *), /* instanceData */
     int mask)
 {
-    if (mask)
+    if (mask) {
 	Tcl_Panic("WatchModeProc not implemented for testchansink");
+    }
 }
 
 typedef struct TestChanSourceState {
-    Tcl_Size numSourced; /* How many bytes returned so far */
-    int len;             /* Length of data[] */
-    unsigned char data[1];
-
+    Tcl_Size numSourced;	/* How many bytes returned so far */
+    size_t len;			/* Length of data[] */
+    unsigned char data[TCLFLEXARRAY];
 } TestChanSourceState;
 
 static int
 TestChanSourceInput(
-    ClientData instanceData,
-    char *outPtr,      /* Where to store data. Assumed aligned */
-    const int maxReadCount, /* Maximum number of bytes to read. */
-    TCL_UNUSED(int *)) /* errorCodePtr - Where to store error codes. */
+    void *instanceData,
+    char *outPtr,		/* Where to store data. Assumed aligned */
+    const int maxReadCount,	/* Maximum number of bytes to read. */
+    TCL_UNUSED(int *))		/* errorCodePtr - Where to store error codes. */
 {
     TestChanSourceState *chanPtr = (TestChanSourceState *)instanceData;
-
-    /* Arbitrary failsafe to prevent running out of memory */
-    if (chanPtr->numSourced > 100000000)
-	return 0;
 
     /*
      * Bit of optimization to minimize overhead since goal is channel i/o
@@ -9228,7 +9219,7 @@ TestChanSourceInput(
     if (chanPtr->len == 1) {
 	memset(outPtr, chanPtr->data[0], maxReadCount);
     } else if (chanPtr->len == sizeof(unsigned short) &&
-	       sizeof(unsigned short) == 2) {
+	    sizeof(unsigned short) == 2) {
 	union {
 	    unsigned short val;
 	    unsigned char bytes[sizeof(unsigned short)];
@@ -9242,13 +9233,14 @@ TestChanSourceInput(
 	}
 	unsigned short *to = (unsigned short *)outPtr;
 	unsigned short *end = to + (maxReadCount / sizeof(unsigned short));
-	while (to < end)
+	while (to < end) {
 	    *to++ = u.val;
+	}
 	if (maxReadCount - (sizeof(unsigned short) * (end-to))) {
 	    *to = u.bytes[0];
 	}
     } else if (chanPtr->len == sizeof(unsigned int) &&
-	       sizeof(unsigned int) == 4) {
+	    sizeof(unsigned int) == 4) {
 	union {
 	    unsigned int val;
 	    unsigned char bytes[sizeof(unsigned int)];
@@ -9261,12 +9253,14 @@ TestChanSourceInput(
 
 	unsigned int *to = (unsigned int *)outPtr;
 	unsigned int *end = to + (maxReadCount / sizeof(unsigned int));
-	int nremain = maxReadCount - (sizeof(unsigned int) * (end - to));
-	while (to < end)
+	size_t nremain = maxReadCount - (sizeof(unsigned int) * (end - to));
+	while (to < end) {
 	    *to++ = u.val;
+	}
 	assert(nremain < chanPtr->len);
-	while (nremain--)
+	while (nremain--) {
 	    *(nremain + (char *)to) = u.bytes[nremain];
+	}
     } else {
 	char *to = outPtr;
 	int ncopied = 0;
@@ -9282,7 +9276,7 @@ TestChanSourceInput(
 	}
 	int nchunks = (maxReadCount-ncopied)/chanPtr->len;
 	char *end = to + (nchunks * chanPtr->len);
-	int nremain = (maxReadCount-ncopied) - (end - to);
+	size_t nremain = (maxReadCount-ncopied) - (end - to);
 	/* Copy the data in chunks */
 	while (to < end) {
 	    memmove(to, chanPtr->data, chanPtr->len);
@@ -9299,36 +9293,37 @@ TestChanSourceInput(
 }
 
 static int
-TestChanSourceClose2 (
-    ClientData instanceData,
+TestChanSourceClose2(
+    void *instanceData,
     TCL_UNUSED(Tcl_Interp *),	/* interp */
     int flags)
 {
-    if (flags && instanceData)
+    if (flags && instanceData) {
 	Tcl_Free(instanceData);
+    }
     return 0;
 }
 
 static int
-TestChanSinkOutput (
-    TCL_UNUSED(ClientData),	/* Instance data */
+TestChanSinkOutput(
+    TCL_UNUSED(void *),	/* Instance data */
     TCL_UNUSED(const char *),	/* Bytes to write */
-    int         nbytes,
+    int nbytes,
     TCL_UNUSED(int *))		/* errorCodePtr */
 {
     return nbytes;
 }
 
 static int
-TestChanSinkClose2 (
-    TCL_UNUSED(ClientData),	/* Instance data */
+TestChanSinkClose2(
+    TCL_UNUSED(void *),	/* Instance data */
     TCL_UNUSED(Tcl_Interp *),	/* interp */
     TCL_UNUSED(int))		/* flags */
 {
     return 0;
 }
 
-Tcl_ChannelType TestChanSourceDispatch = {
+static const Tcl_ChannelType TestChanSourceDispatch = {
     "testchansource", /* Channel type name */
     (Tcl_ChannelTypeVersion)TCL_CHANNEL_VERSION_5,
     NULL,
@@ -9348,7 +9343,7 @@ Tcl_ChannelType TestChanSourceDispatch = {
     NULL  /* Truncate */
 };
 
-Tcl_ChannelType TestChanSinkDispatch = {
+static const Tcl_ChannelType TestChanSinkDispatch = {
     "testchansink", /* Channel type name */
     (Tcl_ChannelTypeVersion)TCL_CHANNEL_VERSION_5,
     NULL,
@@ -9367,7 +9362,7 @@ Tcl_ChannelType TestChanSinkDispatch = {
     NULL, /* ThreadAction */
     NULL  /* Truncate */
 };
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -9405,7 +9400,7 @@ TestChanCreateCmd(
     int ret;
     int flags = 0;
     void *instancePtr = NULL;
-    Tcl_ChannelType *dispatchPtr = NULL;
+    const Tcl_ChannelType *dispatchPtr = NULL;
     const unsigned char *bytes = NULL;
 
     if (objc < 2) {
@@ -9413,8 +9408,9 @@ TestChanCreateCmd(
 	return TCL_ERROR;
     }
     ret = Tcl_GetIndexFromObj(interp, objv[1], cmds, "source|sink", 0, &cmd);
-    if (ret != TCL_OK)
+    if (ret != TCL_OK) {
 	return ret;
+    }
 
     switch (cmd) {
     case SINK:
@@ -9434,19 +9430,19 @@ TestChanCreateCmd(
 	if (objc == 2) {
 	    bytes = NULL;
 	    len = 0;
-	}
-	else {
+	} else {
 	    bytes = Tcl_GetBytesFromObj(interp, objv[2], &len);
-	    if (bytes == NULL)
+	    if (bytes == NULL) {
 		return TCL_ERROR;
+	    }
 	}
 	if (len == 0) {
 	    len = 1;
 	    bytes = (const unsigned char *)"\0";
 	}
 	TestChanSourceState *sourceStatePtr;
-	sourceStatePtr = (TestChanSourceState *) Tcl_Alloc(
-	    sizeof(TestChanSourceState) + len - sizeof(sourceStatePtr->data));
+	sourceStatePtr = (TestChanSourceState *)Tcl_Alloc(
+	    offsetof(TestChanSourceState, data) + len);
 	sourceStatePtr->numSourced = 0;
 	sourceStatePtr->len = len;
 	memmove(sourceStatePtr->data, bytes, len);
@@ -9467,8 +9463,9 @@ TestChanCreateCmd(
 
     chan = Tcl_CreateChannel(dispatchPtr, channelName, instancePtr, flags);
     if (chan == NULL) {
-	if (instancePtr)
+	if (instancePtr) {
 	    Tcl_Free(instancePtr);
+	}
 	Tcl_SetResult(interp, "Failed to create channel", TCL_STATIC);
 	return TCL_ERROR;
     }
@@ -9476,7 +9473,7 @@ TestChanCreateCmd(
     Tcl_SetObjResult(interp, Tcl_NewStringObj(channelName, -1));
     return TCL_OK;
 }
-
+
 /*
  * TestUtfToNormalizedCmd --
  *
@@ -9556,7 +9553,7 @@ TestUtfToNormalizedCmd(
     }
     return result;
 }
-
+
 /*
  * TestUtfToNormalizedDStringCmd --
  *
@@ -9663,7 +9660,7 @@ TestHandleCountCmd(
 	    "GetProcessHandleCount failed", -1));
     return TCL_ERROR;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -9705,9 +9702,8 @@ TestAppVerifierPresentCmd(
     return TCL_OK;
 }
 
-
 #endif /* _WIN32 */
-
+
 /*
  * Local Variables:
  * mode: c

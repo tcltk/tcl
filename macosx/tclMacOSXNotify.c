@@ -200,18 +200,18 @@ typedef struct {
 typedef struct ThreadSpecificData {
     FileHandler *firstFileHandlerPtr;
 				/* Pointer to head of file handler list. */
-    bool polled;			/* True if the notifier thread has polled for
+    bool polled;		/* True if the notifier thread has polled for
 				 * this thread. */
     bool sleeping;		/* True if runloop is inside Tcl_Sleep. */
-    bool runLoopSourcePerformed;	/* True after the runLoopSource callack was
+    bool runLoopSourcePerformed;/* True after the runLoopSource callack was
 				 * performed. */
-    bool runLoopRunning;		/* True if this thread's Tcl runLoop is
+    bool runLoopRunning;	/* True if this thread's Tcl runLoop is
 				 * running. */
     int runLoopNestingLevel;	/* Level of nested runLoop invocations. */
 
     /* Must hold the notifierLock before accessing the following fields: */
     /* Start notifierLock section */
-    bool onList;			/* True if this thread is on the
+    bool onList;		/* True if this thread is on the
 				 * waitingList */
     struct ThreadSpecificData *nextPtr, *prevPtr;
 				/* All threads that are currently waiting on
@@ -255,9 +255,6 @@ typedef struct ThreadSpecificData {
 				/* Wakes up CFRunLoop after given timeout when
 				 * running embedded. */
     /* End tsdLock section */
-
-    CFTimeInterval waitTime;	/* runLoopTimer wait time when running
-				 * embedded. */
 } ThreadSpecificData;
 
 static Tcl_ThreadDataKey dataKey;
@@ -304,7 +301,7 @@ static int receivePipe = -1;	/* Output end of triggerPipe */
  * You must hold the notifierInitLock before accessing this variable.
  */
 
-static int notifierThreadRunning;
+static bool notifierThreadRunning;
 
 /*
  * The following static flag indicates that async handlers are pending.
@@ -322,7 +319,7 @@ static sigset_t allSigMask;
 
 /*
  * This is the thread ID of the notifier thread that does select. Only valid
- * when notifierThreadRunning is non-zero.
+ * when notifierThreadRunning is true.
  *
  * You must hold the notifierInitLock before accessing this variable.
  */
@@ -518,7 +515,6 @@ TclpInitNotifier(void)
 	tsdPtr->runLoopObserver = runLoopObserver;
 	tsdPtr->runLoopObserverTcl = runLoopObserverTcl;
 	tsdPtr->runLoopTimer = NULL;
-	tsdPtr->waitTime = CF_TIMEINTERVAL_FOREVER;
 #if defined(USE_OS_UNFAIR_LOCK)
 	tsdPtr->tsdLock = OS_UNFAIR_LOCK_INIT;
 #else
@@ -575,7 +571,7 @@ TclpInitNotifier(void)
 	 * execve() when more than one thread is present).
 	 */
 
-	notifierThreadRunning = 0;
+	notifierThreadRunning = false;
     }
     notifierCount++;
     UNLOCK_NOTIFIER_INIT;
@@ -661,7 +657,7 @@ StartNotifierThread(void)
 	if (result) {
 	    Tcl_Panic("StartNotifierThread: unable to start notifier thread");
 	}
-	notifierThreadRunning = 1;
+	notifierThreadRunning = true;
 
 	/*
 	 * Restore original signal mask.
@@ -727,7 +723,7 @@ TclpFinalizeNotifier(
 		    Tcl_Panic("Tcl_FinalizeNotifier: unable to join notifier "
 			    "thread");
 		}
-		notifierThreadRunning = 0;
+		notifierThreadRunning = false;
 
 		/*
 		 * If async marks are outstanding, perform actions now.
@@ -822,7 +818,7 @@ TclpAlertNotifier(
 
 void
 TclpSetTimer(
-    const Tcl_Time *timePtr)	/* Timeout value, may be NULL. */
+    long long time)	/* Maximum block time, or -1. */
 {
     ThreadSpecificData *tsdPtr;
     CFRunLoopTimerRef runLoopTimer;
@@ -833,18 +829,15 @@ TclpSetTimer(
     if (!runLoopTimer) {
 	return;
     }
-    if (timePtr) {
-	Tcl_Time vTime = *timePtr;
-
-	if (vTime.sec != 0 || vTime.usec != 0) {
-	    waitTime = vTime.sec + 1.0e-6 * vTime.usec;
+    if (time >= 0) {
+	if (time != 0) {
+	    waitTime = 1.0e-6 * time;
 	} else {
 	    waitTime = 0;
 	}
     } else {
 	waitTime = CF_TIMEINTERVAL_FOREVER;
     }
-    tsdPtr->waitTime = waitTime;
     CFRunLoopTimerSetNextFireDate(runLoopTimer,
 	    CFAbsoluteTimeGetCurrent() + waitTime);
 }
@@ -895,7 +888,7 @@ TclpServiceModeHook(
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
-    if (mode == TCL_SERVICE_ALL && !tsdPtr->runLoopTimer) {
+    if ((mode & TCL_SERVICE_ALL) != 0 && !tsdPtr->runLoopTimer) {
 	if (!tsdPtr->runLoop) {
 	    Tcl_Panic("Tcl_ServiceModeHook: Notifier not initialized");
 	}
@@ -1182,7 +1175,7 @@ TclpNotifierData(void)
 
 int
 TclpWaitForEvent(
-    const Tcl_Time *timePtr)	/* Maximum block time, or NULL. */
+    long long time)	/* Maximum block time, or -1. */
 {
     int result;
     bool polling, runLoopRunning;
@@ -1200,14 +1193,12 @@ TclpWaitForEvent(
     }
 
     /*
-     * A NULL timePtr means wait forever.
+     * A -1 time means wait forever.
      */
 
-    if (timePtr) {
-	Tcl_Time vTime = *timePtr;
-
-	if (vTime.sec != 0 || vTime.usec != 0) {
-	    waitTime = vTime.sec + 1.0e-6 * vTime.usec;
+    if (time >= 0) {
+	if (time != 0) {
+	    waitTime = 1.0e-6 * (double)time;
 	} else {
 	    /*
 	     * The max block time was set to 0.
@@ -2047,7 +2038,7 @@ AtForkChild(void)
     }
     if (notifierCount > 0) {
 	notifierCount = 1;
-	notifierThreadRunning = 0;
+	notifierThreadRunning = false;
 
 	/*
 	 * Restart the notifier thread for signal handling.

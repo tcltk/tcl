@@ -74,7 +74,7 @@ EXTERN int		TclpCreateProcess(Tcl_Interp *interp, size_t argc,
 				TclFile outputFile, TclFile errorFile,
 				Tcl_Pid *pidPtr);
 /* 16 */
-EXTERN int		TclpIsAtty(int fd);
+EXTERN bool		TclpIsAtty(int fd);
 /* 17 */
 EXTERN int		TclUnixCopyFile(const char *src, const char *dst,
 				const Tcl_StatBuf *statBufPtr,
@@ -120,7 +120,7 @@ typedef struct TclIntPlatStubs {
     void (*reserved13)(void);
     void (*reserved14)(void);
     int (*tclpCreateProcess) (Tcl_Interp *interp, size_t argc, const char **argv, TclFile inputFile, TclFile outputFile, TclFile errorFile, Tcl_Pid *pidPtr); /* 15 */
-    int (*tclpIsAtty) (int fd); /* 16 */
+    bool (*tclpIsAtty) (int fd); /* 16 */
     int (*tclUnixCopyFile) (const char *src, const char *dst, const Tcl_StatBuf *statBufPtr, int dontCopyAtts); /* 17 */
     void (*reserved18)(void);
     void (*reserved19)(void);

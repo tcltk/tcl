@@ -149,7 +149,7 @@
 #if defined(__STDC__) && __STDC__ >= 202311L
 #include <stddef.h>
 #define TCL_UNREACHABLE()	unreachable()
-#elif defined(__GNUC__)
+#elif defined(__GNUC__) && ((__GNUC__ == 4 && __GNUC_MINOR__ >= 5) || __GNUC__ >= 5 || defined(__clang__))
 #define TCL_UNREACHABLE()	__builtin_unreachable()
 #elif defined(_MSC_VER)
 #define TCL_UNREACHABLE()	__assume(0)
@@ -598,7 +598,7 @@ typedef struct ActiveCommandTrace {
 				 * procedure returns; if this trace gets
 				 * deleted, must update pointer to avoid using
 				 * free'd memory. */
-    int reverseScan;		/* Boolean set true when traces are scanning
+    bool reverseScan;		/* Boolean set true when traces are scanning
 				 * in reverse order. */
 } ActiveCommandTrace;
 
@@ -1091,7 +1091,7 @@ typedef struct ActiveInterpTrace {
 				 * procedure returns; if this trace gets
 				 * deleted, must update pointer to avoid using
 				 * free'd memory. */
-    int reverseScan;		/* Boolean set true when traces are scanning
+    bool reverseScan;		/* Boolean set true when traces are scanning
 				 * in reverse order. */
 } ActiveInterpTrace;
 
@@ -1874,7 +1874,8 @@ typedef struct Command {
 /*
  * Flag bits for commands.
  */
-enum CommandFlags {
+typedef enum {
+    CMD_NONE = 0x00,
     CMD_DYING = 0x01,		/* The command is in the process of being
 				 * deleted (its deleteProc is currently
 				 * executing). Other attempts to delete the
@@ -1899,13 +1900,16 @@ enum CommandFlags {
     CMD_DEAD = 0x40,		/* Command is at an advanced stage of being
 				 * deleted, and is no longer in any hash tables
 				 * but stale references may exist elsewhere. */
+    CMD_IS_SAFE = 0x80, /*  Whether this command is part of the set of
+				 * commands present by default in a safe
+				 * interpreter. */
     CMD_TRACE_RENAMING = TCL_TRACE_RENAME,
 				/* A rename trace is in progress. Further
 				 * recursive renames will not be traced. */
     CMD_TRACE_DELETING = TCL_TRACE_DELETE
 				/* A delete trace is in progress. Further
 				 * recursive deletes will not be traced. */
-};
+} CommandFlags;
 
 /*
  *----------------------------------------------------------------
@@ -2048,7 +2052,6 @@ typedef struct Interp {
     Namespace *lookupNsPtr;	/* Namespace to use ONLY on the next
 				 * TCL_EVAL_INVOKE call to Tcl_EvalObjv. */
 
-
     /*
      * Information about packages. Used only in tclPkg.c.
      */
@@ -2156,9 +2159,13 @@ typedef struct Interp {
 				 * reached. */
 	int cmdGranularity;	/* Mod factor used to determine how often to
 				 * evaluate the limit check. */
-
-	Tcl_Time time;		/* Time limit for execution within the
+	long long time;		/* Time limit for execution within the
 				 * interpreter. */
+#if defined(_CYGWIN_)
+	int reserved;			/* Not used any more. Allignment only. */
+#else
+	long reserved;			/* Not used any more. Allignment only. */
+#endif
 	LimitHandler *timeHandlers;
 				/* Handlers to execute when the limit is
 				 * reached. */
@@ -3108,6 +3115,8 @@ MODULE_SCOPE void	TclGetEncodingProfiles(Tcl_Interp *interp);
  */
 
 MODULE_SCOPE Tcl_GetMonotonicTimeProc *tclGetMonotonicTimeProcPtr;
+MODULE_SCOPE void TclSetMaxBlockTime(long long);
+MODULE_SCOPE int TclWaitForEvent(long long);
 
 /*
  * Variables denoting the Tcl object types defined in the core.
@@ -3155,6 +3164,7 @@ MODULE_SCOPE const EnsembleImplMap tclNamespaceImplMap[];
 MODULE_SCOPE const EnsembleImplMap tclPrefixImplMap[];
 MODULE_SCOPE const EnsembleImplMap tclProcessImplMap[];
 MODULE_SCOPE const EnsembleImplMap tclStringImplMap[];
+MODULE_SCOPE const EnsembleImplMap tclTimerImplMap[];
 MODULE_SCOPE const EnsembleImplMap tclUnicodeImplMap[];
 MODULE_SCOPE const EnsembleImplMap tclZipfsImplMap[];
 MODULE_SCOPE const EnsembleImplMap tclZlibImplMap[];
@@ -3327,7 +3337,7 @@ MODULE_SCOPE bool	TclAsyncNotifier(int sigNumber, Tcl_ThreadId threadId,
 			    void *clientData, signed char *flagPtr, signed char value);
 MODULE_SCOPE void	TclAsyncMarkFromNotifier(void);
 MODULE_SCOPE double	TclBignumToDouble(const void *bignum);
-MODULE_SCOPE int	TclByteArrayMatch(const unsigned char *string,
+MODULE_SCOPE bool	TclByteArrayMatch(const unsigned char *string,
 			    Tcl_Size strLen, const unsigned char *pattern,
 			    Tcl_Size ptnLen, int flags);
 MODULE_SCOPE double	TclCeil(const void *a);
@@ -3573,8 +3583,8 @@ MODULE_SCOPE Tcl_Obj *	TclNewNamespaceObj(Tcl_Namespace *namespacePtr);
 MODULE_SCOPE void	TclpAlertNotifier(void *clientData);
 MODULE_SCOPE void *	TclpNotifierData(void);
 MODULE_SCOPE void	TclpServiceModeHook(int mode);
-MODULE_SCOPE void	TclpSetTimer(const Tcl_Time *timePtr);
-MODULE_SCOPE int	TclpWaitForEvent(const Tcl_Time *timePtr);
+MODULE_SCOPE void	TclpSetTimer(long long time);
+MODULE_SCOPE int	TclpWaitForEvent(long long time);
 MODULE_SCOPE void	TclpCreateFileHandler(int fd, int mask,
 			    Tcl_FileProc *proc, void *clientData);
 MODULE_SCOPE int	TclpDeleteFile(const void *path);
@@ -3669,7 +3679,7 @@ MODULE_SCOPE int	TclStringCmp(Tcl_Obj *value1Ptr, Tcl_Obj *value2Ptr,
 			    int checkEq, int nocase, Tcl_Size reqlength);
 MODULE_SCOPE int	TclStringMatch(const char *str, Tcl_Size strLen,
 			    const char *pattern, int ptnLen, int flags);
-MODULE_SCOPE int	TclStringMatchObj(Tcl_Obj *stringObj,
+MODULE_SCOPE bool	TclStringMatchObj(Tcl_Obj *stringObj,
 			    Tcl_Obj *patternObj, int flags);
 MODULE_SCOPE void	TclSubstCompile(Tcl_Interp *interp, const char *bytes,
 			    Tcl_Size numBytes, int flags, int line,
@@ -3780,7 +3790,7 @@ MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_ConcatObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_ConstObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_ContinueObjCmd;
 MODULE_SCOPE Tcl_TimerToken TclCreateAbsoluteTimerHandler(
-			    Tcl_Time *time, Tcl_TimerProc *proc,
+			    long long time, Tcl_TimerProc *proc,
 			    void *clientData);
 MODULE_SCOPE Tcl_TimerToken TclCreateMonotonicTimerHandler(
 			    long long timeUS, Tcl_TimerProc *proc,
@@ -3794,7 +3804,6 @@ MODULE_SCOPE Tcl_Obj *	TclDictWithInit(Tcl_Interp *interp, Tcl_Obj *dictPtr,
 			    Tcl_Size pathc, Tcl_Obj *const pathv[]);
 MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_DisassembleObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc2 TclLoadIcuObjCmd;
-MODULE_SCOPE Tcl_Command TclInitTimerCmd(Tcl_Interp *interp);
 
 /* Assemble command function */
 MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_AssembleObjCmd;
@@ -4138,7 +4147,7 @@ MODULE_SCOPE int	TclUniCharNcmp(const Tcl_UniChar *ucs,
 			    const Tcl_UniChar *uct, size_t numChars);
 MODULE_SCOPE int	TclUniCharNcasecmp(const Tcl_UniChar *ucs,
 			    const Tcl_UniChar *uct, size_t numChars);
-MODULE_SCOPE int	TclUniCharCaseMatch(const Tcl_UniChar *uniStr,
+MODULE_SCOPE bool	TclUniCharCaseMatch(const Tcl_UniChar *uniStr,
 			    const Tcl_UniChar *uniPattern, int nocase);
 
 /*

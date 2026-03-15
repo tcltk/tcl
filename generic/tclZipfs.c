@@ -84,9 +84,9 @@
 static const z_crc_t* crc32tab;
 
 /*
-** We are compiling as part of the core.
-** TIP430 style zipfs prefix
-*/
+ * We are compiling as part of the core.
+ * TIP430 style zipfs prefix
+ */
 
 #define ZIPFS_VOLUME	  "//zipfs:/"
 #define ZIPFS_ROOTDIR_DEPTH 3 /* Number of / in root mount */
@@ -607,7 +607,7 @@ TclIsZipfsPath(
     return ZIPFS_VOLUME_LEN;
 #endif
 }
-
+
 /*
  *-------------------------------------------------------------------------
  *
@@ -681,7 +681,7 @@ ZipWriteShort(
     ptr[0] = value & 0xff;
     ptr[1] = (value >> 8) & 0xff;
 }
-
+
 /*
  * Need a separate mutex for locating libraries because the search calls
  * TclZipfs_Mount which takes out a write lock on the ZipFSMutex. Since
@@ -918,7 +918,7 @@ IsCryptHeaderValid(
     /* No CRC, no way to verify. Assume valid */
     return 1;
 }
-
+
 /*
  *------------------------------------------------------------------------
  *
@@ -971,7 +971,7 @@ DecodeCryptHeader(
     }
     return TCL_OK;
 }
-
+
 /*
  *-------------------------------------------------------------------------
  *
@@ -1147,7 +1147,7 @@ errorReturn:
     Tcl_DStringFree(&dsJoin);
     return TCL_ERROR;
 }
-
+
 /*
  *------------------------------------------------------------------------
  *
@@ -1359,7 +1359,7 @@ ContainsMountPoint(
     }
     return 0;
 }
-
+
 /*
  *-------------------------------------------------------------------------
  *
@@ -2350,7 +2350,7 @@ CleanupMount(
     }
     zf->entries = NULL;
 }
-
+
 /*
  *-------------------------------------------------------------------------
  *
@@ -4216,7 +4216,7 @@ ZipFSInfoObjCmd(
     Unlock();
     return ret;
 }
-
+
 /*
  *-------------------------------------------------------------------------
  *
@@ -4407,7 +4407,7 @@ TclZipfsMountShlib(void)
 	Tcl_Obj *shlibPathObj = TclGetObjNameOfShlib();
 	if (shlibPathObj) {
 	    mounted = (TclZipfs_Mount(NULL, Tcl_GetString(shlibPathObj),
-			      ZIPFS_ZIP_MOUNT, NULL) == TCL_OK);
+		    ZIPFS_ZIP_MOUNT, NULL) == TCL_OK);
 	    if (!mounted) {
 		/*
 		 * Even if TclZipFS_Mount returns error, it could be some
@@ -4423,8 +4423,7 @@ TclZipfsMountShlib(void)
     return mounted;
 #endif
 }
-
-
+
 /*
  *-------------------------------------------------------------------------
  *
@@ -4502,7 +4501,7 @@ unlock_and_return:
     }
     return;
 }
-
+
 /*
  *-------------------------------------------------------------------------
  *
@@ -5046,7 +5045,7 @@ ZipChannelOpen(
     if (z->isEncrypted) {
 	if (z->numCompressedBytes < ZIP_CRYPT_HDR_LEN) {
 	    ZIPFS_ERROR(interp,
-			"decryption failed: truncated decryption header");
+		    "decryption failed: truncated decryption header");
 	    ZIPFS_ERROR_CODE(interp, "DECRYPT");
 	    goto error;
 	}
@@ -5569,7 +5568,7 @@ ZipEntryAccess(
     Unlock();
     return access;
 }
-
+
 /*
  *-------------------------------------------------------------------------
  *
@@ -5601,7 +5600,7 @@ ZipFSOpenFileChannelProc(
 
     return ZipChannelOpen(interp, Tcl_GetString(pathPtr), mode);
 }
-
+
 /*
  *-------------------------------------------------------------------------
  *
@@ -6582,7 +6581,7 @@ TclZipfsInitEncodingDirs(void)
     TclpSetInitialEncodings();
     return TCL_OK;
 }
-
+
 /*
  *-------------------------------------------------------------------------
  *
