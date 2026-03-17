@@ -131,7 +131,7 @@ static int	TclListObjGetRep(Tcl_Interp *, Tcl_Obj *listPtr, ListRep *repPtr);
 static void	ListRepRange(ListRep *srcRepPtr,
 		    Tcl_Size rangeStart,
 		    Tcl_Size rangeEnd,
-		    int preserveSrcRep,
+		    bool preserveSrcRep,
 		    ListRep *rangeRepPtr);
 static ListStore *ListStoreReallocate(ListStore *storePtr, Tcl_Size numSlots);
 static void	ListRepValidate(const ListRep *repPtr, const char *file,
@@ -1408,7 +1408,7 @@ ListRepRange(
     ListRep *srcRepPtr,		/* Contains source of the range */
     Tcl_Size rangeStart,	/* Index of first element to include */
     Tcl_Size rangeEnd,		/* Index of last element to include */
-    int preserveSrcRep,		/* If true, srcRepPtr contents must not be
+    bool preserveSrcRep,		/* If true, srcRepPtr contents must not be
 				 * modified (generally because a shared Tcl_Obj
 				 * references it) */
     ListRep *rangeRepPtr)	/* Output. Must NOT be == srcRepPtr */
@@ -1597,12 +1597,12 @@ TclListObjRange(
     ListRep listRep;
     ListRep resultRep;
 
-    int isShared;
+    bool isShared;
     if (TclListObjGetRep(interp, listObj, &listRep) != TCL_OK) {
 	return NULL;
     }
 
-    isShared = Tcl_IsShared(listObj);
+    isShared = Tcl_IsShared(listObj) != 0;
 
     ListRepRange(&listRep, rangeStart, rangeEnd, isShared, &resultRep);
 
@@ -2048,7 +2048,7 @@ Tcl_ListObjIndex(
 	return TCL_OK;
     }
 
-    int hasAbstractList = TclObjTypeHasProc(listObj,indexProc) != 0;
+    bool hasAbstractList = TclObjTypeHasProc(listObj,indexProc) != 0;
     if (hasAbstractList) {
 	return TclObjTypeIndex(interp, listObj, index, objPtrPtr);
     }
@@ -2259,14 +2259,14 @@ Tcl_ListObjReplace(
 	    /* Delete from front, so return tail. */
 	    /* T:listrep-1.{4,5},2.{4,5},3.{15,16},4.7 */
 	    ListRep tailRep;
-	    ListRepRange(&listRep, numToDelete, origListLen-1, 0, &tailRep);
+	    ListRepRange(&listRep, numToDelete, origListLen-1, false, &tailRep);
 	    ListObjReplaceRepAndInvalidate(listObj, &tailRep);
 	    return TCL_OK;
 	} else if ((first+numToDelete) >= origListLen) {
 	    /* Delete from tail, so return head */
 	    /* T:listrep-1.{8,9},2.{6,7},3.{17,18},4.8 */
 	    ListRep headRep;
-	    ListRepRange(&listRep, 0, first-1, 0, &headRep);
+	    ListRepRange(&listRep, 0, first-1, false, &headRep);
 	    ListObjReplaceRepAndInvalidate(listObj, &headRep);
 	    return TCL_OK;
 	}

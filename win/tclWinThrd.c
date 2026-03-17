@@ -212,32 +212,6 @@ TclpThreadCreate(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_JoinThread --
- *
- *	This procedure waits upon the exit of the specified thread.
- *
- * Results:
- *	TCL_OK if the wait was successful, TCL_ERROR else.
- *
- * Side effects:
- *	The result area is set to the exit code of the thread we
- *	waited upon.
- *
- *----------------------------------------------------------------------
- */
-
-int
-Tcl_JoinThread(
-    Tcl_ThreadId threadId,	/* Id of the thread to wait upon */
-    int *result)		/* Reference to the storage the result of the
-				 * thread we wait upon will be written into. */
-{
-    return TclJoinThread(threadId, result);
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * TclpThreadExit --
  *
  *	This procedure terminates the current thread.

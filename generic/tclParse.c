@@ -1000,7 +1000,7 @@ ParseComment(
 		    break;
 		}
 	    }
-	    incomplete = (*p == '\n') ? 1 : 0;
+	    incomplete = (*p == '\n');
 	    p++;
 	    numBytes--;
 	}

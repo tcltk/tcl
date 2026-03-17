@@ -205,7 +205,7 @@ static const double pow_10_2_n[] = {	/* Inexact higher powers of ten. */
     1.0e+256
 };
 
-static int n770_fp;		/* Flag is 1 on Nokia N770 floating point.
+static bool n770_fp;		/* Flag is true on Nokia N770 floating point.
 				 * Nokia's floating point has the words
 				 * reversed: if big-endian is 7654 3210,
 				 * and little-endian is       0123 4567,
@@ -4755,9 +4755,9 @@ TclInitDoubleConversion(void)
     bitwhack.dv = 1.000000238418579;
 				/* 3ff0 0000 4000 0000 */
     if ((bitwhack.iv >> 32) == 0x3FF00000) {
-	n770_fp = 0;
+	n770_fp = false;
     } else if ((bitwhack.iv & 0xFFFFFFFF) == 0x3FF00000) {
-	n770_fp = 1;
+	n770_fp = true;
     } else {
 	Tcl_Panic("unknown floating point word order on this machine");
     }
@@ -5353,7 +5353,7 @@ Nokia770Twiddle(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 TclNokia770Doubles(void)
 {
     return n770_fp;

@@ -1410,9 +1410,9 @@ TestcmdtraceCmd(
 	 * to test return codes other than TCL_OK from the trace engine.
 	 */
 
-	static int deleteCalled;
+	static bool deleteCalled;
 
-	deleteCalled = 0;
+	deleteCalled = false;
 	cmdTrace = Tcl_CreateObjTrace2(interp, 50000,
 		TCL_ALLOW_INLINE_COMPILATION, TraceProc,
 		&deleteCalled, ObjTraceDeleteProc);
@@ -1524,8 +1524,8 @@ static void
 ObjTraceDeleteProc(
     void *clientData)
 {
-    int *intPtr = (int *) clientData;
-    *intPtr = 1;		/* Record that the trace was deleted */
+    bool *boolPtr = (bool *) clientData;
+    *boolPtr = true;		/* Record that the trace was deleted */
 }
 
 /*
@@ -1586,10 +1586,10 @@ CreatedCommandProc(
     TCL_UNUSED(Tcl_Obj *const *) /*objv*/)
 {
     Tcl_CmdInfo info;
-    int found;
+    bool found;
 
     found = Tcl_GetCommandInfo(interp, "test_ns_basic::createdcommand",
-	    &info);
+	    &info) != 0;
     if (!found) {
 	Tcl_AppendResult(interp,
 		"CreatedCommandProc could not get command info for test_ns_basic::createdcommand",
@@ -1609,9 +1609,9 @@ CreatedCommandProc2(
     TCL_UNUSED(Tcl_Obj *const *) /*objv*/)
 {
     Tcl_CmdInfo info;
-    int found;
+    bool found;
 
-    found = Tcl_GetCommandInfo(interp, "value:at:", &info);
+    found = Tcl_GetCommandInfo(interp, "value:at:", &info) != 0;
     if (!found) {
 	Tcl_AppendResult(interp,
 		"CreatedCommandProc2 could not get command info for test_ns_basic::createdcommand",
@@ -1910,7 +1910,7 @@ TestdstringCmd(
     Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Arguments. */
 {
-    int count;
+    Tcl_Size count;
 
     if (objc < 2) {
 	wrongNumArgs:
@@ -1921,7 +1921,7 @@ TestdstringCmd(
 	if (objc != 4) {
 	    goto wrongNumArgs;
 	}
-	if (Tcl_GetIntFromObj(interp, objv[3], &count) != TCL_OK) {
+	if (Tcl_GetSizeIntFromObj(interp, objv[3], &count) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	Tcl_DStringAppend(&dstring, Tcl_GetString(objv[2]), count);
@@ -1996,7 +1996,7 @@ TestdstringCmd(
 	if (objc != 3) {
 	    goto wrongNumArgs;
 	}
-	if (Tcl_GetIntFromObj(interp, objv[2], &count) != TCL_OK) {
+	if (Tcl_GetSizeIntFromObj(interp, objv[2], &count) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	Tcl_DStringSetLength(&dstring, count);
@@ -2094,7 +2094,7 @@ static int UtfExtWrapper(
     int flags;
     Tcl_Obj **flagObjs;
     Tcl_Size nflags;
-    const char *const opts[] = {"-srcreadvar", "-dstwrotevar", "-dstcharsvar",
+    static const char *const opts[] = {"-srcreadvar", "-dstwrotevar", "-dstcharsvar",
 	"-prefix", "-prefixlen", NULL};
     enum {SRCREADVAR, DSTWROTEVAR, DSTCHARSVAR,
 	PREFIX, PREFIXLEN } optIndex;
@@ -2623,13 +2623,13 @@ TestevalobjvCmd(
     Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int evalGlobal;
+    bool evalGlobal;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "global word ?word ...?");
 	return TCL_ERROR;
     }
-    if (Tcl_GetIntFromObj(interp, objv[1], &evalGlobal) != TCL_OK) {
+    if (Tcl_GetBooleanFromObj(interp, objv[1], &evalGlobal) != TCL_OK) {
 	return TCL_ERROR;
     }
     return Tcl_EvalObjv(interp, objc-2, objv+2,
@@ -3322,9 +3322,9 @@ TestlinkCmd(
     static unsigned long ulongVar = 3456789012UL;
     static float floatVar = 4.5;
     static Tcl_WideUInt uwideVar = 123;
-    static int created = 0;
-    int flag;
+    static bool created = false;
     Tcl_Obj *tmp;
+    int flag;
     char buffer[2*TCL_DOUBLE_SPACE];
     bool writable;
 
@@ -3355,7 +3355,7 @@ TestlinkCmd(
 	    Tcl_UnlinkVar(interp, "float");
 	    Tcl_UnlinkVar(interp, "uwide");
 	}
-	created = 1;
+	created = true;
 	if (Tcl_GetBooleanFromObj(interp, objv[2], &writable) != TCL_OK) {
 	    return TCL_ERROR;
 	}
@@ -5637,20 +5637,21 @@ TestfileCmd(
     Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const *objv)	/* The argument objects. */
 {
-    int force, i, result;
     Tcl_Obj *error = NULL;
     const char *subcmd;
     Tcl_Size j;
+    int i, result;
+    bool force = false;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "subcmd arg ?arg ...");
 	return TCL_ERROR;
     }
 
-    force = 0;
+    force = false;
     i = 2;
     if (strcmp(Tcl_GetString(objv[2]), "-force") == 0) {
-	force = 1;
+	force = true;
 	i = 3;
     }
 
@@ -6114,14 +6115,14 @@ TestsetbytearraylengthCmd(
     Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* The argument objects. */
 {
-    int n;
+    Tcl_Size n;
     Tcl_Obj *obj = NULL;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "value length");
 	return TCL_ERROR;
     }
-    if (TCL_OK != Tcl_GetIntFromObj(interp, objv[2], &n)) {
+    if (TCL_OK != Tcl_GetSizeIntFromObj(interp, objv[2], &n)) {
 	return TCL_ERROR;
     }
     obj = objv[1];
@@ -7198,23 +7199,23 @@ TestServiceModeCmd(
     Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Arguments. */
 {
-    int newmode, oldmode;
+    bool newmode, oldmode;
     if (objc > 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?newmode?");
 	return TCL_ERROR;
     }
     oldmode = (Tcl_GetServiceMode() != TCL_SERVICE_NONE);
     if (objc == 2) {
-	if (Tcl_GetIntFromObj(interp, objv[1], &newmode) == TCL_ERROR) {
+	if (Tcl_GetBooleanFromObj(interp, objv[1], &newmode) == TCL_ERROR) {
 	    return TCL_ERROR;
 	}
-	if (newmode == 0) {
+	if (!newmode) {
 	    Tcl_SetServiceMode(TCL_SERVICE_NONE);
 	} else {
 	    Tcl_SetServiceMode(TCL_SERVICE_ALL);
 	}
     }
-    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(oldmode));
+    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(oldmode));
     return TCL_OK;
 }
 
@@ -7293,7 +7294,7 @@ TestGetIndexFromObjStructCmd(
     Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    const char *const ary[] = {
+    static const char *const ary[] = {
 	"a", "b", "c", "d", "ee", "ff", NULL, NULL
     };
     int target, flags = 0;

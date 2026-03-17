@@ -212,7 +212,7 @@ FileCopyRename(
 	}
 	jargv[0] = objv[objc - 1];
 	jargv[1] = source;
-	newFileName = TclJoinPath(2, jargv, 1);
+	newFileName = TclJoinPath(2, jargv, true);
 	Tcl_IncrRefCount(newFileName);
 	result = CopyRenameOneFile(interp, objv[i], newFileName, copyFlag,
 		force);

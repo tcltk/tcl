@@ -1778,7 +1778,7 @@ int
 Tcl_InterpDeleted(
     Tcl_Interp *interp)
 {
-    return (((Interp *) interp)->flags & DELETED) ? 1 : 0;
+    return (((Interp *) interp)->flags & DELETED) != 0;
 }
 
 /*

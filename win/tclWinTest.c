@@ -440,7 +440,7 @@ TestplatformChmod(
 	DWORD sidLen;
     } aceEntry[3];
     DWORD dw;
-    int isDir;
+    bool isDir;
     TOKEN_USER *pTokenUser = NULL;
     Tcl_DString ds;
 

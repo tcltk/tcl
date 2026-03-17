@@ -606,7 +606,7 @@ InstallStandardVariableMapping(
 {
     Tcl_Obj *variableObj;
     Tcl_Size i, n;
-    int created;
+    int isNew;
     Tcl_HashTable uniqueTable;
 
     for (i=0 ; i<varc ; i++) {
@@ -629,8 +629,8 @@ InstallStandardVariableMapping(
     if (varc > 0) {
 	Tcl_InitObjHashTable(&uniqueTable);
 	for (i=n=0 ; i<varc ; i++) {
-	    Tcl_CreateHashEntry(&uniqueTable, varv[i], &created);
-	    if (created) {
+	    Tcl_CreateHashEntry(&uniqueTable, varv[i], &isNew);
+	    if (isNew) {
 		vnlPtr->list[n++] = varv[i];
 	    } else {
 		Tcl_DecrRefCount(varv[i]);
@@ -659,7 +659,7 @@ InstallPrivateVariableMapping(
 {
     PrivateVariableMapping *privatePtr;
     Tcl_Size i, n;
-    int created;
+    int isNew;
     Tcl_HashTable uniqueTable;
 
     for (i=0 ; i<varc ; i++) {
@@ -686,8 +686,8 @@ InstallPrivateVariableMapping(
     if (varc > 0) {
 	Tcl_InitObjHashTable(&uniqueTable);
 	for (i=n=0 ; i<varc ; i++) {
-	    Tcl_CreateHashEntry(&uniqueTable, varv[i], &created);
-	    if (created) {
+	    Tcl_CreateHashEntry(&uniqueTable, varv[i], &isNew);
+	    if (isNew) {
 		privatePtr = &(pvlPtr->list[n++]);
 		privatePtr->variableObj = varv[i];
 		privatePtr->fullNameObj = Tcl_ObjPrintf(
@@ -1133,7 +1133,7 @@ GenerateErrorInfo(
 	    ? savedNameObj : TclOOObjectName(interp, oPtr);
     const char *objName = TclGetStringFromObj(realNameObj, &length);
     int limit = OBJNAME_LENGTH_IN_ERRORINFO_LIMIT;
-    int overflow = (length > limit);
+    bool overflow = (length > limit);
 
     Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 	    "\n    (in definition script for %s \"%.*s%s\" line %d)",

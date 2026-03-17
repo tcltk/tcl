@@ -376,7 +376,6 @@ GENERIC_OBJS = \
 	tclStubInit.$(OBJEXT) \
 	tclThread.$(OBJEXT) \
 	tclThreadAlloc.$(OBJEXT) \
-	tclThreadJoin.$(OBJEXT) \
 	tclThreadStorage.$(OBJEXT) \
 	tclTimer.$(OBJEXT) \
 	tclTomMathInterface.$(OBJEXT) \
@@ -474,6 +473,7 @@ WIN_OBJS = \
 	tclWinPipe.$(OBJEXT) \
 	tclWinSock.$(OBJEXT) \
 	tclWinThrd.$(OBJEXT) \
+	tclWinThreadJoin.$(OBJEXT) \
 	tclWinTime.$(OBJEXT)
 
 DDE_OBJS = tclWinDde.$(OBJEXT)

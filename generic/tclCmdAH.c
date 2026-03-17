@@ -1938,7 +1938,7 @@ PathJoinCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "name ?name ...?");
 	return TCL_ERROR;
     }
-    Tcl_SetObjResult(interp, TclJoinPath(objc - 1, objv + 1, 0));
+    Tcl_SetObjResult(interp, TclJoinPath(objc - 1, objv + 1, false));
     return TCL_OK;
 }
 

@@ -7618,7 +7618,7 @@ Tcl_Eof(
     if (GotFlag(statePtr, CHANNEL_ENCODING_ERROR)) {
 	return 0;
     }
-    return GotFlag(statePtr, CHANNEL_EOF) ? 1 : 0;
+    return GotFlag(statePtr, CHANNEL_EOF) != 0;
 }
 
 /*
@@ -7670,7 +7670,7 @@ Tcl_InputBlocked(
     ChannelState *statePtr = ((Channel *) chan)->state;
 				/* State of real channel structure. */
 
-    return GotFlag(statePtr, CHANNEL_BLOCKED) ? 1 : 0;
+    return GotFlag(statePtr, CHANNEL_BLOCKED) != 0;
 }
 
 /*
@@ -10747,7 +10747,7 @@ Tcl_IsChannelShared(
     ChannelState *statePtr = ((Channel *) chan)->state;
 				/* State of real channel structure. */
 
-    return ((statePtr->refCount > 1) ? 1 : 0);
+    return (statePtr->refCount > 1);
 }
 
 /*

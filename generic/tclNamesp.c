@@ -74,7 +74,7 @@ static void		DeleteImportedCmd(void *clientData);
 static int		DoImport(Tcl_Interp *interp,
 			    Namespace *nsPtr, Tcl_HashEntry *hPtr,
 			    const char *cmdName, const char *pattern,
-			    Namespace *importNsPtr, int allowOverwrite);
+			    Namespace *importNsPtr, bool allowOverwrite);
 static void		DupNsNameInternalRep(Tcl_Obj *objPtr,
 			    Tcl_Obj *copyPtr);
 static char *		ErrorCodeRead(void *clientData, Tcl_Interp *interp,
@@ -1173,11 +1173,11 @@ Tcl_DeleteNamespace(
     TclNsDecrRefCount(nsPtr);
 }
 
-int
+bool
 TclNamespaceDeleted(
     Namespace *nsPtr)
 {
-    return (nsPtr->flags & NS_DYING) ? 1 : 0;
+    return (nsPtr->flags & NS_DYING) != 0;
 }
 
 void
@@ -1754,7 +1754,7 @@ Tcl_Import(
 	    return TCL_OK;
 	}
 	return DoImport(interp, nsPtr, hPtr, simplePattern, pattern,
-		importNsPtr, allowOverwrite);
+		importNsPtr, allowOverwrite != 0);
     }
     for (hPtr = Tcl_FirstHashEntry(&importNsPtr->cmdTable, &search);
 	    (hPtr != NULL); hPtr = Tcl_NextHashEntry(&search)) {
@@ -1762,7 +1762,7 @@ Tcl_Import(
 
 	if (Tcl_StringMatch(cmdName, simplePattern) &&
 		DoImport(interp, nsPtr, hPtr, cmdName, pattern, importNsPtr,
-		allowOverwrite) == TCL_ERROR) {
+		allowOverwrite != 0) == TCL_ERROR) {
 	    return TCL_ERROR;
 	}
     }
@@ -1796,7 +1796,7 @@ DoImport(
     const char *cmdName,
     const char *pattern,
     Namespace *importNsPtr,
-    int allowOverwrite)
+    bool allowOverwrite)
 {
     Tcl_Size i = 0, exported = 0;
     Tcl_HashEntry *found;
@@ -4999,8 +4999,9 @@ TclLogCommandInfo(
 {
     const char *p;
     Interp *iPtr = (Interp *) interp;
-    int overflow, limit = 150;
     Var *varPtr, *arrayPtr;
+    int limit = 150;
+    bool overflow;
 
     if (iPtr->flags & ERR_ALREADY_LOGGED) {
 	/*

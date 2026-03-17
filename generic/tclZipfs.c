@@ -3286,7 +3286,7 @@ ZipAddFile(
 
     z = AllocateZipEntry();
     Tcl_SetHashValue(hPtr, z);
-    z->isEncrypted = (passwd ? 1 : 0);
+    z->isEncrypted = (passwd != 0);
     z->offset = headerStartOffset;
     z->crc32 = crc;
     z->timestamp = mtime;
@@ -6385,7 +6385,7 @@ ZipFSLoadFile(
 		    TCL_PATH_DIRNAME);
 	}
 	if (objs[0]) {
-	    altPath = TclJoinPath(2, objs, 0);
+	    altPath = TclJoinPath(2, objs, false);
 	    if (altPath) {
 		Tcl_IncrRefCount(altPath);
 		if (Tcl_FSAccess(altPath, R_OK) == 0) {

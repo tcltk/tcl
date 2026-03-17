@@ -31,7 +31,7 @@
  * Forward declarations for functions defined later in this file:
  */
 
-static int		CheckIfVarUnset(Tcl_Interp *interp, Tcl_Obj **varPtr,
+static bool		CheckIfVarUnset(Tcl_Interp *interp, Tcl_Obj **varPtr,
 			    Tcl_Size varIndex);
 static int		GetVariableIndex(Tcl_Interp *interp,
 			    Tcl_Obj *obj, Tcl_Size *indexPtr);
@@ -1856,7 +1856,7 @@ GetVariableIndex(
  *----------------------------------------------------------------------
  */
 
-static int
+static bool
 CheckIfVarUnset(
     Tcl_Interp *interp,		/* Interpreter for error reporting. */
     Tcl_Obj ** varPtr,
@@ -1885,7 +1885,7 @@ TestisemptyCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "value");
 	return TCL_ERROR;
     }
-    result = Tcl_NewIntObj(Tcl_IsEmpty(objv[1]));
+    result = Tcl_NewBooleanObj(Tcl_IsEmpty(objv[1]));
     if (!objv[1]->bytes) {
 	Tcl_AppendToObj(result, " pure", TCL_INDEX_NONE);
     }

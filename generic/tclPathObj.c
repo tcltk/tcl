@@ -25,7 +25,7 @@ static void		FreeFsPathInternalRep(Tcl_Obj *pathPtr);
 static void		UpdateStringOfFsPath(Tcl_Obj *pathPtr);
 static int		SetFsPathFromAny(Tcl_Interp *interp, Tcl_Obj *pathPtr);
 static Tcl_Size		FindSplitPos(const char *path, int separator);
-static int		IsSeparatorOrNull(int ch);
+static bool		IsSeparatorOrNull(int ch);
 static Tcl_Obj *	GetExtension(Tcl_Obj *pathPtr);
 static int		MakePathFromNormalized(Tcl_Interp *interp,
 			    Tcl_Obj *pathPtr);
@@ -141,7 +141,7 @@ TclFSNormalizeAbsolutePath(
     Tcl_Obj *pathPtr)		/* Absolute path to normalize */
 {
     const char *dirSep, *oldDirSep;
-    int first = 1;		/* Set to zero once we've passed the first
+    bool first = true;		/* Set to false once we've passed the first
 				 * directory separator - we can't use '..' to
 				 * remove the volume in a path. */
     Tcl_Obj *retVal = NULL;
@@ -364,7 +364,7 @@ TclFSNormalizeAbsolutePath(
 		continue;
 	    }
 	}
-	first = 0;
+	first = false;
 	if (retVal != NULL) {
 	    Tcl_AppendToObj(retVal, oldDirSep, dirSep - oldDirSep);
 	}
@@ -402,16 +402,16 @@ TclFSNormalizeAbsolutePath(
      * Likewise for zipfs volumes.
      */
     if (zipVolumeLen || (tclPlatform == TCL_PLATFORM_WINDOWS)) {
-	int needTrailingSlash = 0;
+	bool needTrailingSlash = false;
 	Tcl_Size len;
 	const char *path = TclGetStringFromObj(retVal, &len);
 	if (zipVolumeLen) {
 	    if (len == (zipVolumeLen - 1)) {
-		needTrailingSlash = 1;
+		needTrailingSlash = true;
 	    }
 	} else {
 	    if (len == 2 && path[0] != 0 && path[1] == ':') {
-		needTrailingSlash = 1;
+		needTrailingSlash = true;
 	    }
 	}
 	if (needTrailingSlash) {
@@ -830,7 +830,7 @@ Tcl_FSJoinPath(
 
     elements = ((elements >= 0) && (elements <= objc)) ? elements : objc;
     TclListObjGetElements(NULL, listObj, &objc, &objv);
-    res = TclJoinPath(elements, objv, 0);
+    res = TclJoinPath(elements, objv, false);
     return res;
 }
 
@@ -838,7 +838,7 @@ Tcl_Obj *
 TclJoinPath(
     Tcl_Size elements,		/* Number of elements to use */
     Tcl_Obj *const objv[],	/* Path elements to join */
-    int forceRelative)		/* If non-zero, assume all more paths are
+    bool forceRelative)		/* If true, assume all more paths are
 				 * relative (e.g. simple normalization) */
 {
     Tcl_Obj *res = NULL;
@@ -1167,20 +1167,20 @@ Tcl_FSConvertToPathType(
  * Helper function for normalization.
  */
 
-static int
+static bool
 IsSeparatorOrNull(
     int ch)
 {
     if (ch == 0) {
-	return 1;
+	return true;
     }
     switch (tclPlatform) {
     case TCL_PLATFORM_UNIX:
-	return (ch == '/' ? 1 : 0);
+	return (ch == '/');
     case TCL_PLATFORM_WINDOWS:
-	return ((ch == '/' || ch == '\\') ? 1 : 0);
+	return ((ch == '/' || ch == '\\'));
     }
-    return 0;
+    return false;
 }
 
 /*
@@ -1194,7 +1194,7 @@ FindSplitPos(
     const char *path,
     int separator)
 {
-    int count = 0;
+    Tcl_Size count = 0;
     switch (tclPlatform) {
     case TCL_PLATFORM_UNIX:
 	while (path[count] != 0) {
@@ -1248,7 +1248,8 @@ TclNewFSPathObj(
     FsPath *fsPathPtr;
     Tcl_Obj *pathPtr;
     const char *p;
-    int state = 0, count = 0;
+    int state = 0;
+    bool count = false;
 
     /*
      * This comment is kept from the days of tilde expansion because
@@ -1301,7 +1302,7 @@ TclNewFSPathObj(
 	case 0:		/* So far only "." since last dirsep or start */
 	    switch (*p) {
 	    case '.':
-		count = 1;
+		count = true;
 		break;
 	    case '/':
 	    case '\\':
@@ -1312,7 +1313,7 @@ TclNewFSPathObj(
 		}
 		break;
 	    default:
-		count = 0;
+		count = false;
 		state = 1;
 	    }
 	    break;
@@ -2219,7 +2220,7 @@ SetFsPathFromAny(
      */
 
     TclGetStringFromObj(pathPtr, &len); /* TODO: Is this needed? */
-    transPtr = TclJoinPath(1, &pathPtr, 1);
+    transPtr = TclJoinPath(1, &pathPtr, true);
 
     /*
      * Now we have a translated filename in 'transPtr'. This will have forward
@@ -2751,7 +2752,7 @@ TclResolveTildePathList(
  *
  *----------------------------------------------------------------------
  */
-int
+Tcl_Size
 TclFSGetAncestorPaths(
     Tcl_Interp *interp,		/* interp for errors. May be NULL */
     Tcl_Obj *pathPtr,		/* Path whose ancestor dirs are sought */
@@ -2783,7 +2784,7 @@ TclFSGetAncestorPaths(
 
     Tcl_Size i, count;
     for (i = 0; i < numPaths && i < (numComponents-1); ++i) {
-	pathsPtr[i] = TclJoinPath(numComponents - i - 1, components, 0);
+	pathsPtr[i] = TclJoinPath(numComponents - i - 1, components, false);
 	assert(pathsPtr[i]); /* Not supposed to ever fail */
 	Tcl_IncrRefCount(pathsPtr[i]); /* Caller now owns */
     }

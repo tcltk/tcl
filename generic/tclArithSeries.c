@@ -720,7 +720,7 @@ TclNewArithSeriesObj(
     } else {
 	// Default
 	step = 1;
-	dstep = step;
+	dstep = (double)step;
     }
 
     if (startObj) {
@@ -730,7 +730,7 @@ TclNewArithSeriesObj(
     } else {
 	// Default
 	start = 0;
-	dstart = start;
+	dstart = (double)start;
     }
 
     if (endObj) {
@@ -749,12 +749,12 @@ TclNewArithSeriesObj(
 	    if (useDoubles) {
 		if (dstart > dend) {
 		    step = -1;
-		    dstep = step;
+		    dstep = (double)step;
 		}
 	    } else {
 		if (start > end) {
 		    step = -1;
-		    dstep = step;
+		    dstep = (double)step;
 		}
 	    }
 	}
@@ -1333,7 +1333,7 @@ ArithSeriesInOperation(
 	    }
 	}
 	if (boolResult) {
-	    *boolResult = test ? 1 : 0;
+	    *boolResult = test != 0;
 	}
     } else {
 	ArithSeriesInt *intRepPtr = (ArithSeriesInt *) repPtr;

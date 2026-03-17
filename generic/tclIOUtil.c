@@ -50,7 +50,7 @@ typedef struct FilesystemRecord {
  */
 
 typedef struct {
-    int initialized;
+    bool initialized;
     size_t cwdPathEpoch;	/* Compared with the global cwdPathEpoch to
 				 * determine whether cwdPathPtr is stale. */
     size_t filesystemEpoch;
@@ -441,7 +441,7 @@ FsThrExitProc(
 	fsRecPtr = tmpFsRecPtr;
     }
     tsdPtr->filesystemList = NULL;
-    tsdPtr->initialized = 0;
+    tsdPtr->initialized = false;
 }
 
 int
@@ -515,9 +515,9 @@ TclFSCwdPointerEquals(
     }
     Tcl_MutexUnlock(&cwdMutex);
 
-    if (tsdPtr->initialized == 0) {
+    if (!tsdPtr->initialized) {
 	Tcl_CreateThreadExitHandler(FsThrExitProc, tsdPtr);
-	tsdPtr->initialized = 1;
+	tsdPtr->initialized = true;
     }
 
     if (pathPtrPtr == NULL) {
@@ -607,9 +607,9 @@ FsRecacheFilesystemList(void)
      * Make sure the above gets released on thread exit.
      */
 
-    if (tsdPtr->initialized == 0) {
+    if (!tsdPtr->initialized) {
 	Tcl_CreateThreadExitHandler(FsThrExitProc, tsdPtr);
-	tsdPtr->initialized = 1;
+	tsdPtr->initialized = true;
     }
 }
 
