@@ -4355,7 +4355,7 @@ TclGetObjExecutableAncestors(
 	    Tcl_SetResult(interp, "Could not retrieve path of executable.",
 		TCL_STATIC);
 	}
-	return TCL_ERROR;
+	return -1;
     }
 
     return TclFSGetAncestorPaths(interp, exePtr, numPaths, pathsPtr);
