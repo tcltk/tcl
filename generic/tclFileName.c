@@ -735,10 +735,67 @@ SplitWinPath(
 /*
  *---------------------------------------------------------------------------
  *
+ * TclFSJoinPathHelper --
+ *
+ *	This function takes the given object, which should usually be a valid
+ *	path or NULL, and joins onto it the array of paths segments given.
+ *
+ *	The objects in the array given will temporarily have their refCount
+ *	increased by one, and then decreased by one when this function exits
+ *	(which means if they had zero refCount when we were called, they will
+ *	be freed).
+ *
+ * Results:
+ *	Returns object owned by the caller (which should increment its
+ *	refCount) - typically an object with refCount of zero.
+ *
+ * Side effects:
+ *	None.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+TclFSJoinPathHelper(
+    Tcl_Obj *pathPtr,		/* Valid path or NULL. */
+    Tcl_Size objc,		/* Number of array elements to join */
+    Tcl_Obj *const objv[],	/* Path elements to join. */
+    int forceRelative)		/* If non-zero, assume all paths except first
+				 * are relative */
+{
+    if (pathPtr == NULL) {
+	return TclJoinPath(objc, objv, forceRelative);
+    }
+    if (objc == 0) {
+	return TclJoinPath(1, &pathPtr, forceRelative);
+    }
+    if (objc == 1) {
+	Tcl_Obj *pair[2];
+
+	pair[0] = pathPtr;
+	pair[1] = objv[0];
+	return TclJoinPath(2, pair, forceRelative);
+    } else {
+	Tcl_Size elemc = objc + 1;
+	Tcl_Obj *ret, **elemv = (Tcl_Obj**)Tcl_Alloc(elemc*sizeof(Tcl_Obj *));
+
+	elemv[0] = pathPtr;
+	memcpy(elemv+1, objv, objc*sizeof(Tcl_Obj *));
+	ret = TclJoinPath(elemc, elemv, forceRelative);
+	Tcl_Free(elemv);
+	return ret;
+    }
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
  * Tcl_FSJoinToPath --
  *
  *	This function takes the given object, which should usually be a valid
  *	path or NULL, and joins onto it the array of paths segments given.
+ *	This function behaves as the join command in that any non-relative paths
+ *	will cause all previous segments to be ignored.
  *
  *	The objects in the array given will temporarily have their refCount
  *	increased by one, and then decreased by one when this function exits
@@ -761,28 +818,7 @@ Tcl_FSJoinToPath(
     Tcl_Size objc,		/* Number of array elements to join */
     Tcl_Obj *const objv[])	/* Path elements to join. */
 {
-    if (pathPtr == NULL) {
-	return TclJoinPath(objc, objv, 0);
-    }
-    if (objc == 0) {
-	return TclJoinPath(1, &pathPtr, 0);
-    }
-    if (objc == 1) {
-	Tcl_Obj *pair[2];
-
-	pair[0] = pathPtr;
-	pair[1] = objv[0];
-	return TclJoinPath(2, pair, 0);
-    } else {
-	Tcl_Size elemc = objc + 1;
-	Tcl_Obj *ret, **elemv = (Tcl_Obj**)Tcl_Alloc(elemc*sizeof(Tcl_Obj *));
-
-	elemv[0] = pathPtr;
-	memcpy(elemv+1, objv, objc*sizeof(Tcl_Obj *));
-	ret = TclJoinPath(elemc, elemv, 0);
-	Tcl_Free(elemv);
-	return ret;
-    }
+    return TclFSJoinPathHelper(pathPtr, objc, objv, 0);
 }
 
 /*

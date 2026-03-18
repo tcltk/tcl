@@ -1599,8 +1599,8 @@ Tcl_FSGetTranslatedPath(
 		return NULL;
 	    }
 
-	    retObj = Tcl_FSJoinToPath(translatedCwdPtr, 1,
-		    &srcFsPathPtr->normPathPtr);
+	    retObj = TclFSJoinPathHelper(translatedCwdPtr, 1,
+		    &srcFsPathPtr->normPathPtr, 1);
 	    Tcl_IncrRefCount(srcFsPathPtr->translatedPathPtr = retObj);
 	    translatedCwdIrPtr = TclFetchInternalRep(translatedCwdPtr, &fsPathType);
 	    if (translatedCwdIrPtr) {
