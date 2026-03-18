@@ -172,6 +172,18 @@ static int		WinLink(const WCHAR *LinkSource,
 static int		WinSymLinkDirectory(const WCHAR *LinkDirectory,
 			    const WCHAR *LinkTarget);
 MODULE_SCOPE void	tclWinDebugPanic(const char *format, ...);
+
+/*
+ * Check if a Windows error code is one that might be returned for
+ * non-existent files
+ */
+static inline int
+IsNoSuchFileError(DWORD winError)
+{
+    return (winError == ERROR_FILE_NOT_FOUND ||
+            winError == ERROR_PATH_NOT_FOUND ||
+            winError == ERROR_INVALID_NAME);
+}
 
 /*
  *--------------------------------------------------------------------
@@ -1064,7 +1076,7 @@ TclpMatchInDirectory(
 	    DWORD err = GetLastError();
 
 	    Tcl_DStringFree(&ds);
-	    if (err == ERROR_FILE_NOT_FOUND || err == ERROR_PATH_NOT_FOUND) {
+	    if (IsNoSuchFileError(err)) {
 		/*
 		 * We used our 'pattern' above, and matched nothing. This
 		 * means we just return TCL_OK, indicating no results found.
