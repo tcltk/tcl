@@ -1223,9 +1223,15 @@ test winFCmd-16.9 {Windows file normalization} -constraints {win} -body {
     file norm /bar/foo
 } -result "${d}:/bar/foo"
 if {$d eq "C"} { set dd "D" } else { set dd "C" }
-test winFCmd-16.10 {Windows file normalization} -constraints {win} -body {
-    file norm ${dd}:foo
-} -result "${dd}:/foo"
+test winFCmd-16.10 {Windows file normalization} -constraints {
+    win notInCIenv
+} -setup {
+    cd ${dd}:
+} -cleanup {
+    cd $pwd
+} -body {
+    file norm ${d}:foo
+} -result [file join $pwd foo]
 test winFCmd-16.11 {Windows file normalization} -body {
     cd ${d}:
     cd $cdrom
@@ -1275,6 +1281,16 @@ test winFCmd-16.14 {Windows file normalization - relative HOME} -setup {
     set ::env(HOME) $oldhome
     cd $pwd
 } -result $pwd
+test winFCmd-16.15 {Windows file normalization - invalid drive} -setup {
+    set volumes [file volumes]
+	foreach baddrive [split ABCDEFGHIJKLMNOPQRSTUVWXYZ ""] {
+		if {"$baddrive:/" ni $volumes} break
+	}
+} -cleanup {
+    unset volumes
+} -constraints win -body {
+    string equal [file norm ${baddrive}:foo] ${baddrive}:/foo
+} -result 1
 
 test winFCmd-17.1 {Windows bad permissions cd} -constraints win -body {
     set d {}

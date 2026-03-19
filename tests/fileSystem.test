@@ -329,13 +329,19 @@ test filesystem-1.37 {file normalisation with '/./'} -body {
 test filesystem-1.38 {file normalisation with volume relative} -setup {
     set dir [pwd]
 } -constraints {win moreThanOneDrive notInCIenv} -body {
+    if {[string index $dir 0] eq [string index [lindex $drives 0] 0]} {
+        set path "[string range [lindex $drives 0] 0 1]foo"
+        cd [lindex $drives 1]
+	} else {
+        set path "[string range [lindex $drives 1] 0 1]foo"
+        cd [lindex $drives 0]
+	}
     set path "[string range [lindex $drives 0] 0 1]foo"
-    cd [lindex $drives 1]
-    file norm $path
+    string equal [file norm $path] [file join $dir foo]
 } -cleanup {
     cd $dir
     unset -nocomplain path
-} -result "[lindex $drives 0]foo"
+} -result 1
 test filesystem-1.39 {file normalisation with volume relative} -setup {
     set old [pwd]
 } -constraints {win} -body {
